@@ -509,6 +509,7 @@ h2_do_req(struct worker *wrk, void *priv)
 {
 	struct req *req;
 	struct h2_req *r2;
+	struct h2_sess *h2;
 
 	CAST_OBJ_NOTNULL(req, priv, REQ_MAGIC);
 	CAST_OBJ_NOTNULL(r2, req->transport_priv, H2_REQ_MAGIC);
@@ -517,10 +518,16 @@ h2_do_req(struct worker *wrk, void *priv)
 	req->http->conds = 1;
 	if (CNT_Request(wrk, req) != REQ_FSM_DISEMBARK) {
 		AZ(req->ws->r);
+		h2 = r2->h2sess;
+		CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
+		Lck_Lock(&h2->sess->mtx);
 		r2->scheduled = 0;
 		r2->state = H2_S_CLOSED;
-		if (r2->h2sess->error)
-			AZ(pthread_cond_signal(r2->h2sess->cond));
+		if (h2->mailcall == r2) {
+			h2->mailcall = NULL;
+			AZ(pthread_cond_signal(h2->cond));
+		}
+		Lck_Unlock(&h2->sess->mtx);
 	}
 	THR_SetRequest(NULL);
 }

@@ -2,15 +2,30 @@ varnishtest "H2 POST"
 
 barrier b1 cond 2
 
+barrier b2 sock 2
+barrier b3 sock 2
+
 server s1 {
 	rxreq
 	expect req.http.content-length == 7
 	expect req.http.transfer-encoding == <undef>
 	barrier b1 sync
 	txresp -hdr "Content-Type: text/plain" -body response
+
+	rxreq
+	txresp
 } -start
 
-varnish v1 -vcl+backend {} -cliok "param.set feature +http2" -start
+varnish v1 -vcl+backend {
+	import vtc;
+	sub vcl_recv {
+		if (req.url == "/a") {
+			vtc.barrier_sync("${b2_sock}");
+			vtc.barrier_sync("${b3_sock}");
+			return (fail);
+		}
+	}
+} -cliok "param.set feature +http2" -start
 varnish v1 -cliok "param.set debug +syncvsl"
 
 logexpect l1 -v v1 -g raw {
@@ -37,6 +52,28 @@ client c1 {
 
 		# Then, payload checks
 		expect resp.body == response
+	} -run
+	stream 0 -wait
+} -run
+
+client c1 {
+	stream 0 {
+		barrier b2 sync
+		delay 1
+		barrier b3 sync
+		rxwinup
+	} -start
+	stream 1 {
+		txreq -url "/a" -req POST -nostrend
+		txdata -datalen 100
+		rxresp
+		rxwinup
+		expect resp.status == 503
+	} -run
+	stream 3 {
+		txreq -url "/b"
+		rxresp
+		expect resp.status == 200
 	} -run
 	stream 0 -wait
 } -run
