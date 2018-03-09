@@ -57,8 +57,8 @@ struct priv_vcl {
 static VCL_DURATION vcl_release_delay = 0.0;
 
 static pthread_mutex_t vsc_mtx = PTHREAD_MUTEX_INITIALIZER;
-static struct vsc_seg *vsc_seg;
-static struct VSC_debug *vsc;
+static struct vsc_seg *vsc_seg = NULL;
+static struct VSC_debug *vsc = NULL;
 
 VCL_STRING v_matchproto_(td_debug_author)
 xyzzy_author(VRT_CTX, VCL_ENUM person, VCL_ENUM someone)
@@ -364,9 +364,12 @@ xyzzy_vsc_new(VRT_CTX)
 {
 	(void)ctx;
 	AZ(pthread_mutex_lock(&vsc_mtx));
-	if (vsc == NULL)
+	if (vsc == NULL) {
+		AZ(vsc_seg);
 		vsc = VSC_debug_New(NULL, &vsc_seg, "");
+	}
 	AN(vsc);
+	AN(vsc_seg);
 	AZ(pthread_mutex_unlock(&vsc_mtx));
 }
 
@@ -375,8 +378,11 @@ xyzzy_vsc_destroy(VRT_CTX)
 {
 	(void)ctx;
 	AZ(pthread_mutex_lock(&vsc_mtx));
-	if (vsc != NULL)
+	if (vsc != NULL) {
+		AN(vsc_seg);
 		VSC_debug_Destroy(&vsc_seg);
-	AZ(vsc);
+	}
+	AZ(vsc_seg);
+	vsc = NULL;
 	AZ(pthread_mutex_unlock(&vsc_mtx));
 }
