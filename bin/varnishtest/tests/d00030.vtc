@@ -181,6 +181,6 @@ varnish v1 -errvcl {resolve=NOW can not be used in vcl_init} {
     sub vcl_init {
 	new shard = directors.shard();
 	new rr = directors.round_robin();
-	rr.add_backend(shard.backend());
+	rr.add_backend(shard.backend(resolve=NOW));
     }
 }

@@ -602,7 +602,13 @@ vmod_shard_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vshard, VMOD_SHARD_SHARD_MAGIC);
 	assert((args & ~_arg_mask) == 0);
-	resolve = (args & arg_resolve) ? parse_resolve_e(a->resolve) : NOW;
+
+	if (args & arg_resolve)
+		resolve = parse_resolve_e(a->resolve);
+	else if (ctx->method & VCL_MET_TASK_H)
+		resolve = LAZY;
+	else
+		resolve = NOW;
 
 	switch (resolve) {
 	case LAZY:

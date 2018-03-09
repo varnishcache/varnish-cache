@@ -535,6 +535,8 @@ is _not_ the order given when backends are added.
 
 * `resolve`
 
+  default: `LAZY` in ``vcl_init{}``, `NOW` otherwise
+
   * ``NOW``: look up a backend and return it.
 
     Can not be used in ``vcl_init{}``.
