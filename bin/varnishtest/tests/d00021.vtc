@@ -1,16 +1,16 @@
-varnishtest "shard director LAZY"
+varnishtest "shard director LAZY and layering"
 
-server s1 {
+server s1 -repeat 2 {
 	rxreq
 	txresp -body "ech3Ooj"
 } -start
 
-server s2 {
+server s2 -repeat 2 {
 	rxreq
 	txresp -body "ieQu2qua"
 } -start
 
-server s3 {
+server s3 -repeat 2 {
 	rxreq
 	txresp -body "xiuFi3Pe"
 } -start
@@ -33,30 +33,75 @@ varnish v1 -vcl+backend {
 	    if (!vd.reconfigure(replicas=25)) {
 		std.log("reconfigure failed");
 	    }
+
+	    new l = directors.shard();
+	    new lp = directors.shard_param();
+	    l.associate(lp.use());
+	    if (!l.add_backend(s1)) {
+		std.log("add s1 failed");
+	    }
+	    if (!l.add_backend(s2)) {
+		std.log("add s2 failed");
+	    }
+	    if (!l.add_backend(s3)) {
+		std.log("add s3 failed");
+	    }
+	    if (!l.reconfigure(replicas=25)) {
+		std.log("reconfigure failed");
+	    }
+	    new ll = directors.round_robin();
+	    ll.add_backend(l.backend(resolve=LAZY));
 	}
 
 	sub vcl_recv {
 	    return(pass);
 	}
 
-	sub vcl_backend_fetch {
+	sub backend_fetch_direct {
 	    if (bereq.url == "/1") {
 		set bereq.backend =
 		    vd.backend(resolve=LAZY, by=KEY, key=1);
-	    }
+	    } else
 	    if (bereq.url == "/2") {
 		set bereq.backend =
 		  vd.backend(resolve=LAZY, by=KEY, key=2147483647);
-	    }
+	    } else
 	    if (bereq.url == "/3") {
 		set bereq.backend =
 		  vd.backend(resolve=LAZY, by=KEY, key=4294967295);
 	    }
 	}
 
+	sub backend_fetch_layered {
+	    set bereq.backend = ll.backend();
+	    if (bereq.url == "/1") {
+		lp.set(by=KEY, key=1);
+	    } else
+	    if (bereq.url == "/2") {
+		lp.set(by=KEY, key=2147483647);
+	    } else
+	    if (bereq.url == "/3") {
+		lp.set(by=KEY, key=4294967295);
+	    }
+	}
+
+	sub vcl_backend_fetch {
+	    if (bereq.http.layered) {
+		call backend_fetch_layered;
+	    } else {
+		call backend_fetch_direct;
+	    }
+	}
+
 	sub vcl_backend_response {
-	    set beresp.http.healthy = std.healthy(
-	      vd.backend(resolve=LAZY, by=KEY, key=1));
+	    if (bereq.http.layered) {
+		set beresp.http.healthy = std.healthy(ll.backend());
+	    } else {
+		set beresp.http.healthy = std.healthy(
+		  vd.backend(resolve=LAZY, by=KEY, key=1));
+	    }
+	    set beresp.http.director = bereq.backend;
+	    set beresp.http.backend = beresp.backend;
 	}
 } -start
 
@@ -66,14 +111,41 @@ client c1 {
 	rxresp
 	expect resp.body == "ech3Ooj"
 	expect resp.http.healthy == "true"
+	expect resp.http.director == "vd"
+	expect resp.http.backend == "s1"
 
 	txreq -url /2
 	rxresp
 	expect resp.body == "ieQu2qua"
 	expect resp.http.healthy == "true"
+	expect resp.http.director == "vd"
+	expect resp.http.backend == "s2"
 
 	txreq -url /3
 	rxresp
 	expect resp.body == "xiuFi3Pe"
 	expect resp.http.healthy == "true"
+	expect resp.http.director == "vd"
+	expect resp.http.backend == "s3"
+
+	txreq -url /1 -hdr "layered: true"
+	rxresp
+	expect resp.body == "ech3Ooj"
+	expect resp.http.healthy == "true"
+	expect resp.http.director == "ll"
+	expect resp.http.backend == "s1"
+
+	txreq -url /2 -hdr "layered: true"
+	rxresp
+	expect resp.body == "ieQu2qua"
+	expect resp.http.healthy == "true"
+	expect resp.http.director == "ll"
+	expect resp.http.backend == "s2"
+
+	txreq -url /3 -hdr "layered: true"
+	rxresp
+	expect resp.body == "xiuFi3Pe"
+	expect resp.http.healthy == "true"
+	expect resp.http.director == "ll"
+	expect resp.http.backend == "s3"
 } -run
