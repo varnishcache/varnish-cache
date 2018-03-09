@@ -602,15 +602,16 @@ class s_module(stanza):
         fo.write("\n")
         fo.write(":Manual section: " + self.vcc.mansection + "\n")
 
-        fo.write("\n")
-        write_rst_hdr(fo, "SYNOPSIS", "=")
-        fo.write("\n")
-        fo.write("\n::\n\n")
-        fo.write('   import %s [from "path"] ;\n' % self.vcc.modname)
-        fo.write("   \n")
-        for c in self.vcc.contents:
-            c.synopsis(fo, man)
-        fo.write("\n")
+	if self.vcc.auto_synopsis:
+            fo.write("\n")
+            write_rst_hdr(fo, "SYNOPSIS", "=")
+            fo.write("\n")
+            fo.write("\n::\n\n")
+            fo.write('   import %s [from "path"] ;\n' % self.vcc.modname)
+            fo.write("   \n")
+            for c in self.vcc.contents:
+		c.synopsis(fo, man)
+	    fo.write("\n")
 
     def rsttail(self, fo, man):
 
@@ -649,6 +650,15 @@ class s_abi(stanza):
 class s_prefix(stanza):
     def parse(self):
         self.vcc.sympfx = self.line[1] + "_"
+        self.vcc.contents.append(self)
+
+
+class s_synopsis(stanza):
+    def parse(self):
+        if self.line[1] not in ('auto', 'manual'):
+            err("Valid Synopsis values are 'auto' or 'manual', got '%s'\n" %
+                self.line[1])
+        self.vcc.auto_synopsis = self.line[1] == 'auto'
         self.vcc.contents.append(self)
 
 
@@ -814,6 +824,7 @@ dispatch = {
     "Function": s_function,
     "Object":   s_object,
     "Method":   s_method,
+    "Synopsis": s_synopsis,
 }
 
 
@@ -828,6 +839,7 @@ class vcc(object):
         self.copyright = ""
         self.enums = {}
         self.strict_abi = True
+        self.auto_synopsis = True
 
     def openfile(self, fn):
         self.commit_files.append(fn)
