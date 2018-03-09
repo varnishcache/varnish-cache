@@ -468,6 +468,7 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 	const char *sa;
 	char ssa[64];
 	char ssa2[64];
+	int n;
 
 	CAST_OBJ_NOTNULL(vv, priv, VJSN_VAL_MAGIC);
 	assert(vv->type == VJSN_ARRAY);
@@ -574,7 +575,9 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 		e1 = vcc_mk_expr(rfmt, "%s(ctx%s,\v+(\n", cfunc, extra);
 	else
 		e1 = vcc_mk_expr(rfmt, "%s(ctx%s\v+", cfunc, extra);
+	n = 0;
 	VTAILQ_FOREACH_SAFE(fa, &head, list, fa2) {
+		n++;
 		if (fa->optional)
 			VSB_printf(tl->curproc->prologue,
 			    "  %s.valid_%s = %d;\n", sa, fa->name, fa->avail);
@@ -583,7 +586,12 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 		if (fa->result == NULL && fa->val != NULL)
 			fa->result = vcc_mk_expr(fa->type, "%s", fa->val);
 		if (fa->result != NULL && sa != NULL) {
-			bprintf(ssa2, "\v1%s.%s = \v2,\n", sa, fa->name);
+			if (fa->name && *fa->name != '\0')
+				bprintf(ssa2, "\v1%s.%s = \v2,\n",
+					sa, fa->name);
+			else
+				bprintf(ssa2, "\v1%s.arg%d = \v2,\n",
+					sa, n);
 			e1 = vcc_expr_edit(tl, e1->fmt, ssa2, e1, fa->result);
 		} else if (fa->result != NULL) {
 			e1 = vcc_expr_edit(tl, e1->fmt, "\v1,\n\v2",
