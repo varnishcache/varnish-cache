@@ -294,7 +294,12 @@ Other changes
     name of the listener address over which the request was received, see
     :ref:`vsl(7)`.
 
-  * XXX ...
+  * ``0.0.0.0`` and port ``0`` appear in the logs where an IP and port
+    otherwise appear, when the connection in question was addressed as
+    a Unix domain socket. This affects ``ReqStart`` and ``SessOpen``.
+    If you have more than one UDS listener, they can be distinguished
+    with the "listener name" field -- the third field for both
+    ``ReqStart`` and ``SessOpen``.
 
 * ``varnishtest(1)``:
 
