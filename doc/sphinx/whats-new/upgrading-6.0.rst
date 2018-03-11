@@ -73,6 +73,24 @@ Changes to VCL
 
 XXX: ... intro paragraph
 
+VCL variables
+~~~~~~~~~~~~~
+
+``sess.xid``
+------------
+
+This is the unique ID assigned by Varnish to the current session,
+which stands for the "conversation" with a single client connection
+that comprises one or more request/response transactions. It is the
+same XID shown in the log for session transactions (with
+``-g session`` grouping). ``sess.xid`` is read-only and is available
+as of VCL 4.1.
+
+XXX: VCL vars subhead 2
+-----------------------
+
+XXX: ...
+
 Unix domain sockets and VCL
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -261,19 +279,6 @@ The VMOD std function :ref:`func_port` always returns 0 when applied
 to a ``*.ip`` variable whose value is set to ``0.0.0.0`` because the
 listener is UDS.  :ref:`func_set_ip_tos` is silently ignored when the
 listener is UDS.
-
-VCL variables
-~~~~~~~~~~~~~
-
-XXX: VCL vars subhead 1
------------------------
-
-XXX: ...
-
-XXX: VCL vars subhead 2
------------------------
-
-XXX: ...
 
 XXX VCL subhead 2
 ~~~~~~~~~~~~~~~~~
