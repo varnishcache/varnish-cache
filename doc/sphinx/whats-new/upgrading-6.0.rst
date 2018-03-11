@@ -275,10 +275,10 @@ PROXY protocol.
 VMOD std
 --------
 
-The VMOD std function :ref:`func_port` always returns 0 when applied
-to a ``*.ip`` variable whose value is set to ``0.0.0.0`` because the
-listener is UDS.  :ref:`func_set_ip_tos` is silently ignored when the
-listener is UDS.
+:ref:`std.port(IP) <func_port>` always returns 0 when applied to a
+``*.ip`` variable whose value is set to ``0.0.0.0`` because the
+listener is UDS.  :ref:`std.set_ip_tos(INT) <func_set_ip_tos>` is
+silently ignored when the listener is UDS.
 
 XXX VCL subhead 2
 ~~~~~~~~~~~~~~~~~
