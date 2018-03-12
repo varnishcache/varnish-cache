@@ -154,6 +154,7 @@ vcldir=$(datarootdir)/$(PACKAGE)/vcl
 varnishd_CFLAGS = \
 	@PCRE_CFLAGS@ \
 	@SAN_CFLAGS@ \
+	-DNOT_IN_A_VMOD \
 	-DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"' \
 	-DVARNISH_VMOD_DIR='"${pkglibdir}/vmods"' \
 	-DVARNISH_VCL_DIR='"${pkgsysconfdir}:${vcldir}"'

@@ -41,7 +41,9 @@
 
 #include "common/common_param.h"
 
-#include "VSC_main.h"
+#ifdef NOT_IN_A_VMOD
+#  include "VSC_main.h"
+#endif
 
 /* -------------------------------------------------------------------*/
 
