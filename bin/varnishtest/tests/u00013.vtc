@@ -4,7 +4,7 @@ varnishtest "varnishncsa outputs when UDS addresses are in use"
 # which now may be a UDS address.
 
 # For UDS backends without a .hosthdr setting, the Host header is
-# set to "localhost", which may appear in %r output.
+# set to "0.0.0.0", which may appear in %r output.
 
 server s1 -listen "${tmpdir}/s1.sock" {
 	rxreq
