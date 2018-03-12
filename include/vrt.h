@@ -52,7 +52,10 @@
  * binary/load-time compatible, increment MAJOR version
  *
  *
- * 6.2 (scheduled for: 2018-03-15)
+ * 7.0 (2018-03-15)
+ *	lots of stuff moved from cache.h to cache_varnishd.h
+ *	   (ie: from "$Abi vrt" to "$Abi strict")
+ *	VCL_INT and VCL_BYTES are always 64 bits.
  *	path field added to struct vrt_backend
  *	VRT_Healthy() added
  *	VRT_VSC_Alloc() added
@@ -95,9 +98,9 @@
  *	vrt_acl type added
  */
 
-#define VRT_MAJOR_VERSION	6U
+#define VRT_MAJOR_VERSION	7U
 
-#define VRT_MINOR_VERSION	2U
+#define VRT_MINOR_VERSION	0U
 
 /***********************************************************************/
 
