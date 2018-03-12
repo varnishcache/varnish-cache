@@ -429,7 +429,7 @@ Other changes
     with the backend name field -- the second field in
     ``BackendOpen``.
 
-* ``varnishtest(1)``:
+* ``varnishtest(1)`` and ``vtc(7)``:
 
   * The ``client -connect`` and ``server -listen`` commands in vtc
     scripts now allow Unix domain sockets as addresses, recognized
@@ -450,12 +450,19 @@ Other changes
     ``varnish -arg`` command with the appropriate settings for the
     ``-a`` command line argument, see :ref:`varnishd(1)`.
 
+    The ``varnish -vcl+backend`` command now works to include backend
+    definitions for server objects that are listening at UDS. Backend
+    declarations are implicitly included for such servers with the
+    appropriate ``.path`` setting.
+
     A convenient location for socket files to be used in a test is the
     temporary directory created by ``varnishtest`` for each test,
     whose path is held in the macro ``${tmpdir}``. So this is a common
     idiom for tests that involve UDSen::
 
-      varnish v1 -arg "-a ${tmpdir}/v1.sock" -vcl { ... } -start
+      server s1 -listen "${tmpdir}/s1.sock" { ... } -start
+
+      varnish v1 -arg "-a ${tmpdir}/v1.sock" -vcl+backend { ... } -start
 
       client c1 -connect "${tmpdir}/v1.sock" { ... } -run
 
