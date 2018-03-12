@@ -108,6 +108,72 @@ XXX: ... intro paragraph
 VCL variables
 ~~~~~~~~~~~~~
 
+``local.socket`` and ``local.endpoint``
+---------------------------------------
+
+These read-only variables are available as of VCL 4.1, and provide
+information about the listener address over which the current client
+request was received.
+
+``local.socket`` is the name provided in the ``-a`` command-line
+argument for the current listener, which defaults to ``a0``, ``a1``
+and so on (see varnishd :ref:`ref-varnishd-options`).
+
+``local.endpoint`` is the value of the ``address[:port]`` or ``path``
+field provided as the ``-a`` value for the current listener, exactly
+as given on the command line. For example::
+
+  # When varnishd is invoked with these -a arguments ...
+  $ varnishd -a foo=12.34.56.78:4711 -a bar=/path/to/listen.sock
+
+  # ... then in VCL, for requests received over the first listener:
+  local.socket == "foo"
+  local.endpoint == "12.34.56.78:4711"
+
+  # ... and for requests received over the second listener:
+  local.socket == "bar"
+  local.endpoint == "/path/to/listen.sock"
+
+  # With this invocation ...
+  $ varnishd -a :80 -a 87.65.43.21
+
+  # ... then for requests received over the first listener:
+  local.socket == "a0"
+  local.endpoint == ":80"
+
+  # ... and for the second listener
+  local.socket == "a1"
+  local.endpoint == "87.65.43.21"
+
+So if you have more than one listener and need to tell them apart in
+VCL, for example a listener for "regular" client traffic and another
+one for "admin" requests that you must restrict to internal systems,
+these two variables can help you do so.
+
+``local.socket`` and ``local.endpoint`` are available on both the
+client and backend sides. But the values on the backend side are not
+necessarily the same as they were on the side of the client request
+that initiated the backend request. This is because of the separation
+of client and backend threads -- a backend thread may be re-used that
+was initiated by a client request over another listener, and
+``local.socket`` and ``local.endpoint`` on that thread retain the
+values for the original listener.
+
+So if, in your backend VCL code, you need to be sure about the
+listener that was used on the client side of the same transaction,
+assign ``local.socket`` and/or ``local.endpoint`` to a client request
+header, and retrieve the value from a backend request header::
+
+  sub vcl_miss {
+	set req.http.X-Listener = local.socket;
+  }
+
+  sub vcl_backend_fetch {
+	if (bereq.http.X-Listener == "a0") {
+		# ...
+	}
+  }
+
 ``sess.xid``
 ------------
 
@@ -117,11 +183,6 @@ that comprises one or more request/response transactions. It is the
 same XID shown in the log for session transactions (with
 ``-g session`` grouping). ``sess.xid`` is read-only and is available
 as of VCL 4.1.
-
-XXX: VCL vars subhead 2
------------------------
-
-XXX: ...
 
 Unix domain sockets and VCL
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
