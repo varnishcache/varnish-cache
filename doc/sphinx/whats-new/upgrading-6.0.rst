@@ -52,6 +52,38 @@ that must be done outside of the Varnish configuration).
 If you continue using only IP addresses in your ``-a`` arguments, you
 won't have to change them.
 
+Unix domain sockets as backend addresses
+========================================
+
+A backend declaration may now have the ``.path`` field to specify a
+Unix domain socket to which Varnish connects::
+
+  backend my_uds_backend {
+	.path = "/path/to/backend.sock";
+  }
+
+One of the fields ``.host`` or ``.path`` must be specified for a
+backend (but not both).
+
+The value of ``.path`` must be an absolute path (beginning with
+``/``), and the file at that path must exist and be accessible to
+Varnish at VCL load time; and it must be a socket.
+
+The platform-specific restrictions on UDSen mentioned above apply of
+course to backends as well; but in this case your deployment of the
+peer component listening at the socket file must fulfill those
+conditions, otherwise Varnish may not be able to connect to the
+backend.
+
+The path of a socket file may also be specified in the
+``varnishd -b`` command-line option (see varnishd
+:ref:`ref-varnishd-options`)::
+
+  $ varnishd -b /path/to/backend.sock
+
+The value of ``-b`` must fulfill the same conditions as the ``.path``
+field in a backend declaration.
+
 varnishd parameters
 ===================
 
