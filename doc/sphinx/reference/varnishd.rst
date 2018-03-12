@@ -15,7 +15,7 @@ HTTP accelerator daemon
 SYNOPSIS
 ========
 
-varnishd [-a [name=][address][:port][,PROTO][,user=<user>][,group=<group>][,mode=<mode>]] [-b host[:port]] [-C] [-d] [-F] [-f config] [-h type[,options]] [-I clifile] [-i identity] [-j jail[,jailoptions]] [-l vsl] [-M address:port] [-n name] [-P file] [-p param=value] [-r param[,param...]] [-S secret-file] [-s [name=]kind[,options]] [-T address[:port]] [-t TTL] [-V] [-W waiter]
+varnishd [-a [name=][address][:port][,PROTO][,user=<user>][,group=<group>][,mode=<mode>]] [-b [host[:port]|path]] [-C] [-d] [-F] [-f config] [-h type[,options]] [-I clifile] [-i identity] [-j jail[,jailoptions]] [-l vsl] [-M address:port] [-n name] [-P file] [-p param=value] [-r param[,param...]] [-S secret-file] [-s [name=]kind[,options]] [-T address[:port]] [-t TTL] [-V] [-W waiter]
 
 varnishd [-x parameter|vsl|cli|builtin|optstring]
 
@@ -61,11 +61,17 @@ Basic options
   Multiple listening addresses can be specified by using different
   -a arguments.
 
--b <host[:port]>
+-b <[host[:port]|path]>
 
   Use the specified host as backend server. If port is not specified,
-  the default is 8080. -b can be used only once, and not together with
-  -f.
+  the default is 8080.
+
+  If the value of ``-b`` begins with ``/``, it is interpreted as the
+  absolute path of a Unix domain socket to which Varnish connects. In
+  that case, the value of ``-b`` must satisfy the conditions required
+  for the ``.path`` field of a backend declaration, see :ref:`vcl(7)`.
+
+  -b can be used only once, and not together with f.
 
 -f config
 
