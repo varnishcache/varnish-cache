@@ -422,9 +422,9 @@ class prototype(object):
                 t = i.vcl()
             if t in privs:
                 continue
+	    if i.nm is not None:
+		t += " " + i.nm
             if not short:
-                if i.nm is not None:
-                    t += " " + i.nm
                 if i.defval is not None:
                     t += "=" + i.defval
             if i.opt:
@@ -843,18 +843,13 @@ class vcc(object):
         s = a.split("\n$")
         self.copyright = s.pop(0).strip()
         while len(s):
-            ss = s.pop(0)
-            i = ss.find("\n\n")
-            if i > -1:
-                i += 1
-            else:
-                i = len(ss)
-            inputline = ss[:i]
-            c = ss[:i].split()
+            ss = re.split('\n([^\t ])', s.pop(0), maxsplit=1)
+            c = ss[0].split()
+            d = "".join(ss[1:])
             m = dispatch.get(c[0])
             if m is None:
                 err("Unknown stanze $%s" % ss[:i])
-            m([c[0], " ".join(c[1:])], ss[i:].split('\n'), self)
+            m([c[0], " ".join(c[1:])], d.split('\n'), self)
             inputline = None
 
     def rst_copyright(self, fo):
