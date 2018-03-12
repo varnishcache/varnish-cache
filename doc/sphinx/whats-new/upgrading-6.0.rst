@@ -429,6 +429,32 @@ Other changes
     with the backend name field -- the second field in
     ``BackendOpen``.
 
+* ``varnishncsa(1)``
+
+  * The ``%h`` formatter (remote host) gets its value from
+    ``ReqStart`` for client requests and ``BackendStart`` for backend
+    requests.  The value will be ``0.0.0.0`` for client requests when
+    the listener is UDS, and for backend requests when the backend is
+    UDS.
+
+  * The ``%r`` formatter (first line of the request) is reconstructed
+    in part from the Host request header. For UDS backends, Host may
+    be ``0.0.0.0`` for the reasons explained above (no client Host
+    header and no ``.host_header`` setting for the backend), so that
+    may appear in the output for ``%r``. You can avoid that with the
+    measures discussed above.
+
+  * If you have more than one UDS listener and/or more than one UDS
+    backend, and you want to tell them apart in the ``varnishncsa``
+    output (rather than just see ``0.0.0.0``), use the ``%{VSL}x``
+    formatter to capture the listener name and the backend name.
+
+    For the listener name, use ``%{VSL:ReqStart[3]}x`` for client logs
+    (the third field of ``ReqStart`` logs).
+
+    For the backend name, use ``%{VSL:BackendOpen[2]}x`` for backend
+    logs.
+
 * ``varnishtest(1)`` and ``vtc(7)``:
 
   * The ``client -connect`` and ``server -listen`` commands in vtc
