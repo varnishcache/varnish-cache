@@ -1,0 +1,130 @@
+varnishtest "VMOD unix"
+
+# This test requires some manual verification, by checking the log,
+# because support for peer credentials via UDS varies by platform, see
+# below.
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import unix;
+
+	sub vcl_backend_response {
+		set beresp.http.b-uid = unix.uid();
+		set beresp.http.b-gid = unix.gid();
+		set beresp.http.b-user = unix.user();
+		set beresp.http.b-group = unix.group();
+	}
+
+	sub vcl_deliver {
+		set resp.http.c-uid = unix.uid();
+		set resp.http.c-gid = unix.gid();
+		set resp.http.c-user = unix.user();
+		set resp.http.c-group = unix.group();
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.b-uid == -1
+	expect resp.http.b-gid == -1
+	expect resp.http.b-user == ""
+	expect resp.http.b-group == ""
+	expect resp.http.c-uid == -1
+	expect resp.http.c-gid == -1
+	expect resp.http.c-user == ""
+	expect resp.http.c-group == ""
+} -run
+
+logexpect l1 -v v1 -d 1 -b {
+	expect * 1002 Begin     bereq
+	expect * =    VCL_Error	{^vmod unix error: not listening on a Unix domain socket$}
+	expect * =    VCL_Error	{^vmod unix error: not listening on a Unix domain socket$}
+	expect * =    VCL_Error	{^vmod unix error: not listening on a Unix domain socket$}
+	expect * =    VCL_Error	{^vmod unix error: not listening on a Unix domain socket$}
+} -run
+
+logexpect l1 -v v1 -d 1 -c {
+        expect * 1001 Begin     req
+        expect * =    VCL_Error {^vmod unix error: not listening on a Unix domain socket$}
+        expect * =    VCL_Error {^vmod unix error: not listening on a Unix domain socket$}
+        expect * =    VCL_Error {^vmod unix error: not listening on a Unix domain socket$}
+        expect * =    VCL_Error {^vmod unix error: not listening on a Unix domain socket$}
+} -run
+
+
+varnish v1 -errvcl {vmod unix failure: may not be called in vcl_init or vcl_fini} {
+	import unix;
+	import std;
+	backend b { .host = "${bad_ip}"; }
+
+	sub vcl_init {
+		std.log(unix.uid());
+	}
+}
+
+varnish v1 -errvcl {vmod unix failure: may not be called in vcl_init or vcl_fini} {
+	import unix;
+	import std;
+	backend b { .host = "${bad_ip}"; }
+
+	sub vcl_init {
+		std.log(unix.gid());
+	}
+}
+
+varnish v1 -errvcl {vmod unix failure: may not be called in vcl_init or vcl_fini} {
+	import unix;
+	import std;
+	backend b { .host = "${bad_ip}"; }
+
+	sub vcl_init {
+		std.log(unix.user());
+	}
+}
+
+varnish v1 -errvcl {vmod unix failure: may not be called in vcl_init or vcl_fini} {
+	import unix;
+	import std;
+	backend b { .host = "${bad_ip}"; }
+
+	sub vcl_init {
+		std.log(unix.group());
+	}
+}
+
+varnish v1 -stop
+server s1 -wait
+server s1 -start
+
+varnish v2 -arg "-a ${tmpdir}/v2.sock" -vcl+backend {
+	import unix;
+
+	sub vcl_backend_response {
+		set beresp.http.b-uid = unix.uid();
+		set beresp.http.b-gid = unix.gid();
+		set beresp.http.b-user = unix.user();
+		set beresp.http.b-group = unix.group();
+	}
+
+	sub vcl_deliver {
+		set resp.http.c-uid = unix.uid();
+		set resp.http.c-gid = unix.gid();
+		set resp.http.c-user = unix.user();
+		set resp.http.c-group = unix.group();
+	}
+} -start
+
+# Check the log output for the response header values to see how this
+# worked on your platform.
+
+client c2 -connect "${v2_addr}" {
+	txreq
+	rxresp
+	expect resp.status ~ "^(200|503)$"
+} -run

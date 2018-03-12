@@ -218,6 +218,10 @@ reference/vmod_blob.generated.rst: reference $(top_builddir)/lib/libvmod_blob/vm
 	cp $(top_builddir)/lib/libvmod_blob/vmod_blob.rst $@ || true
 BUILT_SOURCES += reference/vmod_blob.generated.rst
 
+reference/vmod_unix.generated.rst: reference $(top_builddir)/lib/libvmod_unix/vmod_unix.rst
+	cp $(top_builddir)/lib/libvmod_unix/vmod_unix.rst $@ || true
+BUILT_SOURCES += reference/vmod_unix.generated.rst
+
 EXTRA_DIST += $(BUILT_SOURCES)
 MAINTAINERCLEANFILES = $(EXTRA_DIST)
 
