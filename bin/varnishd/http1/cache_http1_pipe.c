@@ -84,7 +84,7 @@ V1P_Charge(struct req *req, const struct v1p_acct *a, struct VSC_vbe *b)
 }
 
 void
-V1P_Process(struct req *req, int fd, struct v1p_acct *v1a)
+V1P_Process(const struct req *req, int fd, struct v1p_acct *v1a)
 {
 	struct pollfd fds[2];
 	int i, j;

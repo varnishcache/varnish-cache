@@ -46,7 +46,7 @@
 static const char vpx1_sig[] = {'P', 'R', 'O', 'X', 'Y'};
 
 static int
-vpx_proto1(const struct worker *wrk, struct req *req)
+vpx_proto1(const struct worker *wrk, const struct req *req)
 {
 	const char *fld[5];
 	int i;

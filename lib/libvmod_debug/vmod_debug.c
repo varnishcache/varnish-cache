@@ -35,15 +35,12 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "cache/cache.h"
+#include "cache/cache_varnishd.h"
 
 #include "vsa.h"
-#include "vsb.h"
 #include "vtim.h"
 #include "vcc_if.h"
 #include "VSC_debug.h"
-
-#include "common/common_param.h"
 
 struct priv_vcl {
 	unsigned		magic;

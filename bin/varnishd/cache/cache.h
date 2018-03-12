@@ -90,12 +90,11 @@ struct backend;
 struct ban;
 struct ban_proto;
 struct cli;
-struct cli_proto;
+struct http_conn;
 struct mempool;
 struct objcore;
 struct objhead;
 struct pool;
-struct poolparam;
 struct sess;
 struct transport;
 struct worker;
@@ -125,6 +124,7 @@ enum fetch_step {
 };
 
 /*--------------------------------------------------------------------*/
+
 struct lock { void *priv; };	// Opaque
 
 /*--------------------------------------------------------------------
@@ -166,34 +166,6 @@ struct http {
 	uint8_t			conds;		/* If-* headers present */
 };
 
-/*--------------------------------------------------------------------
- * HTTP Protocol connection structure
- *
- * This is the protocol independent object for a HTTP connection, used
- * both for backend and client sides.
- *
- */
-
-struct http_conn {
-	unsigned		magic;
-#define HTTP_CONN_MAGIC		0x3e19edd1
-
-	int			*rfd;
-	enum sess_close		doclose;
-	enum body_status	body_status;
-	struct ws		*ws;
-	char			*rxbuf_b;
-	char			*rxbuf_e;
-	char			*pipeline_b;
-	char			*pipeline_e;
-	ssize_t			content_length;
-	void			*priv;
-
-	/* Timeouts */
-	double			first_byte_timeout;
-	double			between_bytes_timeout;
-};
-
 /*--------------------------------------------------------------------*/
 
 struct acct_req {
@@ -211,9 +183,9 @@ struct acct_bereq {
 /*--------------------------------------------------------------------*/
 
 struct vsl_log {
-	uint32_t		*wlb, *wlp, *wle;
-	unsigned		wlr;
-	unsigned		wid;
+	uint32_t                *wlb, *wlp, *wle;
+	unsigned                wlr;
+	unsigned                wid;
 };
 
 /*--------------------------------------------------------------------*/
@@ -512,7 +484,7 @@ struct req {
 	double			t_prev;		/* Previous timestamp logged */
 	double			t_req;		/* Headers complete */
 
-	struct http_conn	htc[1];
+	struct http_conn	*htc;
 	struct vfp_ctx		*vfc;
 	const char		*client_identity;
 
@@ -591,9 +563,6 @@ struct sess {
 
 /* Prototypes etc ----------------------------------------------------*/
 
-/* Cross file typedefs */
-
-typedef enum htc_status_e htc_complete_f(struct http_conn *);
 
 /* cache_ban.c */
 
@@ -607,47 +576,6 @@ void BAN_Abandon(struct ban_proto *b);
 /* cache_cli.c [CLI] */
 extern pthread_t cli_thread;
 #define ASSERT_CLI() do {assert(pthread_self() == cli_thread);} while (0)
-
-/* cache_expire.c */
-
-/*
- * The set of variables which control object expiry are inconveniently
- * 24 bytes long (double+3*float) and this causes alignment waste if
- * we put then in a struct.
- * These three macros operate on the struct we don't use.
- */
-
-#define EXP_ZERO(xx)							\
-	do {								\
-		(xx)->t_origin = 0.0;					\
-		(xx)->ttl = 0.0;					\
-		(xx)->grace = 0.0;					\
-		(xx)->keep = 0.0;					\
-	} while (0)
-
-#define EXP_COPY(to,fm)							\
-	do {								\
-		(to)->t_origin = (fm)->t_origin;			\
-		(to)->ttl = (fm)->ttl;					\
-		(to)->grace = (fm)->grace;				\
-		(to)->keep = (fm)->keep;				\
-	} while (0)
-
-#define EXP_WHEN(to)							\
-	((to)->t_origin + (to)->ttl + (to)->grace + (to)->keep)
-
-/* cache_exp.c */
-void EXP_Rearm(struct objcore *, double now, double ttl, double grace,
-    double keep);
-
-/* cache_fetch.c */
-enum vbf_fetch_mode_e {
-	VBF_NORMAL = 0,
-	VBF_PASS = 1,
-	VBF_BACKGROUND = 2,
-};
-void VBF_Fetch(struct worker *wrk, struct req *req,
-    struct objcore *oc, struct objcore *oldoc, enum vbf_fetch_mode_e);
 
 /* cache_http.c */
 unsigned HTTP_estimate(unsigned nhttp);
@@ -696,14 +624,6 @@ int HTTP_IterHdrPack(struct worker *, struct objcore *, const char **);
 const char *HTTP_GetHdrPack(struct worker *, struct objcore *, const char *hdr);
 enum sess_close http_DoConnection(struct http *hp);
 
-/* cache_http1_proto.c */
-
-htc_complete_f HTTP1_Complete;
-uint16_t HTTP1_DissectRequest(struct http_conn *, struct http *);
-uint16_t HTTP1_DissectResponse(struct http_conn *, struct http *resp,
-    const struct http *req);
-unsigned HTTP1_Write(const struct worker *w, const struct http *hp, const int*);
-
 #define HTTPH_R_PASS	(1 << 0)	/* Request (c->b) in pass mode */
 #define HTTPH_R_FETCH	(1 << 1)	/* Request (c->b) for fetch */
 #define HTTPH_A_INS	(1 << 2)	/* Response (b->o) for insert */
@@ -719,7 +639,6 @@ extern const char H__Reason[];
 /* cache_main.c */
 #define VXID(u) ((u) & VSL_IDENTMASK)
 uint32_t VXID_Get(struct worker *, uint32_t marker);
-extern volatile struct params * cache_param;
 extern pthread_key_t witness_key;
 
 /* cache_lck.c */
@@ -752,91 +671,28 @@ void Lck_DestroyClass(struct vsc_seg **);
 #define LOCK(nam) extern struct VSC_lck *lck_##nam;
 #include "tbl/locks.h"
 
-/* cache_mempool.c */
-void MPL_AssertSane(const void *item);
-struct mempool * MPL_New(const char *name, volatile struct poolparam *pp,
-    volatile unsigned *cur_size);
-void MPL_Destroy(struct mempool **mpp);
-void *MPL_Get(struct mempool *mpl, unsigned *size);
-void MPL_Free(struct mempool *mpl, void *item);
-
 /* cache_obj.c */
-struct objcore * ObjNew(const struct worker *);
-void ObjDestroy(const struct worker *, struct objcore **);
-typedef int objiterate_f(void *priv, int flush, const void *ptr, ssize_t len);
-int ObjIterate(struct worker *, struct objcore *,
-    void *priv, objiterate_f *func, int final);
-int ObjGetSpace(struct worker *, struct objcore *, ssize_t *sz, uint8_t **ptr);
-void ObjExtend(struct worker *, struct objcore *, ssize_t l);
-uint64_t ObjWaitExtend(const struct worker *, const struct objcore *,
-    uint64_t l);
-void ObjSetState(struct worker *, const struct objcore *,
-    enum boc_state_e next);
-void ObjWaitState(const struct objcore *, enum boc_state_e want);
-void ObjTrimStore(struct worker *, struct objcore *);
-void ObjTouch(struct worker *, struct objcore *, double now);
-unsigned ObjGetXID(struct worker *, struct objcore *);
-uint64_t ObjGetLen(struct worker *, struct objcore *);
-void ObjFreeObj(struct worker *, struct objcore *);
-void ObjSlim(struct worker *, struct objcore *);
+
 int ObjHasAttr(struct worker *, struct objcore *, enum obj_attr);
 const void *ObjGetAttr(struct worker *, struct objcore *, enum obj_attr,
     ssize_t *len);
-void *ObjSetAttr(struct worker *, struct objcore *, enum obj_attr,
-    ssize_t len, const void *);
-int ObjCopyAttr(struct worker *, struct objcore *, struct objcore *,
-    enum obj_attr attr);
-void ObjBocDone(struct worker *, struct objcore *, struct boc **);
 
-int ObjSetDouble(struct worker *, struct objcore *, enum obj_attr, double);
-int ObjSetU32(struct worker *, struct objcore *, enum obj_attr, uint32_t);
-int ObjSetU64(struct worker *, struct objcore *, enum obj_attr, uint64_t);
+typedef int objiterate_f(void *priv, int flush, const void *ptr, ssize_t len);
 
+int ObjIterate(struct worker *, struct objcore *,
+    void *priv, objiterate_f *func, int final);
+
+unsigned ObjGetXID(struct worker *, struct objcore *);
+uint64_t ObjGetLen(struct worker *, struct objcore *);
 int ObjGetDouble(struct worker *, struct objcore *, enum obj_attr, double *);
 int ObjGetU32(struct worker *, struct objcore *, enum obj_attr, uint32_t *);
 int ObjGetU64(struct worker *, struct objcore *, enum obj_attr, uint64_t *);
-
 int ObjCheckFlag(struct worker *, struct objcore *, enum obj_flags of);
-void ObjSetFlag(struct worker *, struct objcore *, enum obj_flags of, int val);
-
-#define OEV_INSERT	(1U<<1)
-#define OEV_BANCHG	(1U<<2)
-#define OEV_TTLCHG	(1U<<3)
-#define OEV_EXPIRE	(1U<<4)
-
-#define OEV_MASK (OEV_INSERT|OEV_BANCHG|OEV_TTLCHG|OEV_EXPIRE)
-
-typedef void obj_event_f(struct worker *, void *priv, struct objcore *,
-    unsigned);
-
-uintptr_t ObjSubscribeEvents(obj_event_f *, void *, unsigned mask);
-void ObjUnsubscribeEvents(uintptr_t *);
-void ObjSendEvent(struct worker *, struct objcore *oc, unsigned event);
-
-/* cache_panic.c */
-const char *body_status_2str(enum body_status e);
-const char *sess_close_2str(enum sess_close sc, int want_desc);
-
-/* cache_req_body.c */
-int VRB_Ignore(struct req *);
-ssize_t VRB_Cache(struct req *, ssize_t maxsize);
-ssize_t VRB_Iterate(struct req *, objiterate_f *func, void *priv);
-void VRB_Free(struct req *);
-
 /* cache_session.c [SES] */
 
-void HTC_RxInit(struct http_conn *htc, struct ws *ws);
-void HTC_RxPipeline(struct http_conn *htc, void *);
-enum htc_status_e HTC_RxStuff(struct http_conn *, htc_complete_f *,
-    double *t1, double *t2, double ti, double tn, int maxbytes);
-
 #define SESS_ATTR(UP, low, typ, len)					\
-	int SES_Set_##low(const struct sess *sp, const typ *src);	\
-	int SES_Get_##low(const struct sess *sp, typ **dst);		\
-	void SES_Reserve_##low(struct sess *sp, typ **dst);
+	int SES_Get_##low(const struct sess *sp, typ **dst);
 #include "tbl/sess_attr.h"
-
-void SES_Set_String_Attr(struct sess *sp, enum sess_attr a, const char *src);
 const char *SES_Get_String_Attr(const struct sess *sp, enum sess_attr a);
 
 /* cache_shmlog.c */

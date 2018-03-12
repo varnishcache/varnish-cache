@@ -95,8 +95,6 @@ Req_New(const struct worker *wrk, struct sess *sp)
 	req->sp = sp;
 	req->top = req;	// esi overrides
 
-	INIT_OBJ(req->htc, HTTP_CONN_MAGIC);
-
 	e = (char*)req + sz;
 	p = (char*)(req + 1);
 	p = (void*)PRNDUP(p);
@@ -129,10 +127,17 @@ Req_New(const struct worker *wrk, struct sess *sp)
 	INIT_OBJ(req->vfc, VFP_CTX_MAGIC);
 	p = (void*)PRNDUP(p + sizeof(*req->vfc));
 
+	req->htc = (void*)p;
+	p = (void*)PRNDUP(p + sizeof(*req->htc));
+
 	req->vdc = (void*)p;
 	INIT_OBJ(req->vdc, VDP_CTX_MAGIC);
 	VTAILQ_INIT(&req->vdc->vdp);
 	p = (void*)PRNDUP(p + sizeof(*req->vdc));
+
+	req->htc = (void*)p;
+	INIT_OBJ(req->htc, HTTP_CONN_MAGIC);
+	p = (void*)PRNDUP(p + sizeof(*req->htc));
 
 	assert(p < e);
 
