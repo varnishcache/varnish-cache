@@ -65,18 +65,6 @@ get_ids(int fd, uid_t *uid, gid_t *gid)
 		return (CREDS_FAIL);
 	return (0);
 
-#elif defined(HAVE_GETPEERUCRED)
-
-	ucred_t *ucred;
-
-	errno = 0;
-	if (getpeerucred(fd, &ucred) != 0)
-		return (CREDS_FAIL);
-	*uid = ucred_geteuid(ucred);
-	*gid = ucred_getegid(ucred);
-	ucred_free(ucred);
-	return (0);
-
 #else
 	(void) fd;
 	(void) uid;

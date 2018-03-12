@@ -48,12 +48,6 @@ one of the following:
 
 * ``getpeereid(3)`` (such as FreeBSD and other BSD-derived systems)
 
-* ``getpeerucred(3)`` (SunOS and descendants)
-
-  * Reading peer credentials on such a system may require that the
-    Varnish child process runs with certain privileges (such as
-    ``PRIV_PROC_INFO``)
-
 * the socket option ``SO_PEERCRED`` for ``getsockopt(2)`` (Linux)
 
 On most platforms, the value returned is the effective user or group
@@ -106,5 +100,4 @@ SEE ALSO
 * :ref:`varnishd(1)`
 * :ref:`vcl(7)`
 * ``getpeereid(3)``
-* ``getpeerucred(3)``
 * ``getsockopt(2)``
