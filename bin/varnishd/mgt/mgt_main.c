@@ -100,7 +100,8 @@ usage(void)
 	printf(FMT, "", "Proto can be \"PROXY\" or \"HTTP\" (default)");
 	printf(FMT, "", "user, group and mode set permissions for");
 	printf(FMT, "", "  a Unix domain socket.");
-	printf(FMT, "-b address[:port]", "Backend address and port");
+	printf(FMT, "-b [addr[:port]|path]", "Backend address and port");
+	printf(FMT, "", "  or socket file path");
 	printf(FMT, "", "  default: \":80\"");
 	printf(FMT, "-f vclfile", "VCL program");
 	printf(FMT, "", "Can be specified multiple times.");
