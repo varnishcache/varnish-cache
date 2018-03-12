@@ -260,9 +260,9 @@ vcc_ParseImport(struct vcc *tl)
 	    vmd->vrt_minor > VRT_MINOR_VERSION)) {
 		VSB_printf(tl->sb, "Incompatible VMOD %.*s\n", PF(mod));
 		VSB_printf(tl->sb, "\tFile name: %s\n", fnp);
-		VSB_printf(tl->sb, "\tVMOD version %u.%u\n",
+		VSB_printf(tl->sb, "\tVMOD wants ABI version %u.%u\n",
 		    vmd->vrt_major, vmd->vrt_minor);
-		VSB_printf(tl->sb, "\tvarnishd version %u.%u\n",
+		VSB_printf(tl->sb, "\tvarnishd provices ABI version %u.%u\n",
 		    VRT_MAJOR_VERSION, VRT_MINOR_VERSION);
 		vcc_ErrWhere(tl, mod);
 		return;
