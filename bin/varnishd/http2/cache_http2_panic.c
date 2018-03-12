@@ -48,6 +48,7 @@ h2_sess_panic(struct vsb *vsb, const struct sess *sp)
 	VSB_printf(vsb, "streams {\n");
 	VSB_indent(vsb, 2);
 	VTAILQ_FOREACH(r2, &h2->streams, list) {
+		PAN_CheckMagic(vsb, r2, H2_REQ_MAGIC);
 		VSB_printf(vsb, "0x%08x", r2->stream);
 		switch (r2->state) {
 #define H2_STREAM(U,sd,d) case H2_S_##U: VSB_printf(vsb, " %-6s", sd); break;

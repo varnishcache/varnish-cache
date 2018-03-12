@@ -118,7 +118,7 @@ sess_close_2str(enum sess_close sc, int want_desc)
 
 /*--------------------------------------------------------------------*/
 
-#define N_ALREADY 64
+#define N_ALREADY 256
 static const void *already_list[N_ALREADY];
 static int already_idx;
 

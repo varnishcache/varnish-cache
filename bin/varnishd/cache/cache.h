@@ -818,6 +818,6 @@ Tlen(const txt t)
 	do {								\
 		if ((ptr)->magic != (exp))				\
 			VSB_printf((vsb),				\
-			    "MAGIC 0x%08x (Should:%s/0x%08x)\n",	\
-			    (ptr)->magic, #exp, exp);			\
+			    "MAGIC at %p is 0x%08x (Should be: %s/0x%08x)\n", \
+			    ptr, (ptr)->magic, #exp, exp);		\
 	} while(0)
