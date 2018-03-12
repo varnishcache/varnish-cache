@@ -365,6 +365,35 @@ protocol is not used, then ``0.0.0.0`` will be added to
 Again, this is probably not a concern if ``client.ip`` is set via the
 PROXY protocol.
 
+UDS backends and the Host header
+--------------------------------
+
+By default, Varnish forwards the Host header from a client request to
+the backend. If there is no Host header in the client request, and the
+``.host_header`` field was set in the backend declaration, then that
+value is used for the backend Host header. For backends declared with
+the ``.host`` field (with a domain name or IP address), then if there
+is neither a client Host header nor a ``.host_header`` declaration,
+the value of ``.host`` is set as the Host header of the backend
+request.
+
+If the backend was declared with ``.path`` for a socket path, then the
+backend Host header is set to ``0.0.0.0`` under those conditions.
+
+To re-state that:
+
+* If the backend was declared with ``.path`` to connect to a Unix
+  domain socket, ...
+
+* and ``.host_header`` was not set in the backend declaration, ...
+
+* and there is no Host header in the client request, ...
+
+* then the Host header in the backend request is set to ``0.0.0.0``.
+
+If you want to avoid that, set a ``.host_header`` value for the
+backend, or set a value for the Host header in VCL.
+
 VMOD std
 --------
 
