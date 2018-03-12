@@ -212,16 +212,24 @@ backend. The actual declaration is in curly brackets, in a key/value fashion.::
         .attribute = "value";
     }
 
-The only mandatory attribute is ``.host``. The attributes will inherit
-their defaults from the global parameters. The following attributes
-are available:
+One of the attributes ``.host`` or ``.path`` is mandatory (but not
+both). The attributes will inherit their defaults from the global
+parameters. The following attributes are available:
 
-  ``.host`` *(mandatory)*
+  ``.host``
     The host to be used. IP address or a hostname that resolves to a
-    single IP address.
+    single IP address. This attribute is mandatory, unless ``.path``
+    is declared.
+
+  ``.path``
+    The absolute path of a Unix domain socket at which a backend is
+    listening. The file at that path must exist and must be accessible
+    to Varnish at VCL load time, and it must be a socket. One of
+    ``.path`` or ``.host`` must be declared (but not both).
 
   ``.port``
-    The port on the backend that Varnish should connect to.
+    The port on the backend that Varnish should connect to. Ignored if
+    a Unix domain socket is declared in ``.path``.
 
   ``.host_header``
     A host header to add to probes and regular backend requests if they have no
