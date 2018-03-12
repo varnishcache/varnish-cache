@@ -17,12 +17,13 @@ logexpect l1 -v v1 -d 1 -g session {
 	expect 0 =	SessOpen	"^0.0.0.0 0 foo 0.0.0.0 0"
 } -run
 
-logexpect l2 -v v1 -d 1 -g vxid -c {
-	expect 0 1001	Begin
-	expect * =	ReqStart	"^0.0.0.0 0$"
+logexpect l2 -v v1 -d 1 -g vxid {
+	expect * *	Begin		^req
+	expect * =	ReqStart	"^0.0.0.0 0 foo$"
 } -run
 
-logexpect l2 -v v1 -d 1 -g vxid -b {
-	expect 0 1002	Begin
-	expect * =	BackendOpen	"${s1_sock} - - -$"
+logexpect l3 -v v1 -d 1 -g vxid {
+	expect * *	Begin		^bereq
+	expect * =	BackendOpen	"0.0.0.0 0 0.0.0.0 0$"
+	expect * =	BackendStart	"^0.0.0.0 0$"
 } -run
