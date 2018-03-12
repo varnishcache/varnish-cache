@@ -418,10 +418,16 @@ Other changes
 
   * ``0.0.0.0`` and port ``0`` appear in the logs where an IP and port
     otherwise appear, when the connection in question was addressed as
-    a Unix domain socket. This affects ``ReqStart`` and ``SessOpen``.
+    a Unix domain socket. This affects ``ReqStart``, ``SessOpen``,
+    ``BackendStart`` and ``BackendOpen``.
+
     If you have more than one UDS listener, they can be distinguished
     with the "listener name" field -- the third field for both
     ``ReqStart`` and ``SessOpen``.
+
+    If you have more than one UDS backend, they can be distinguished
+    with the backend name field -- the second field in
+    ``BackendOpen``.
 
 * ``varnishtest(1)``:
 
