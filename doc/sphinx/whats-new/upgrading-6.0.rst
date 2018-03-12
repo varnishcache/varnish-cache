@@ -402,10 +402,30 @@ VMOD std
 listener is UDS.  :ref:`std.set_ip_tos(INT) <func_set_ip_tos>` is
 silently ignored when the listener is UDS.
 
-XXX VCL subhead 2
-~~~~~~~~~~~~~~~~~
+New VMODs
+~~~~~~~~~
 
-XXX: ...
+VMOD unix
+---------
+
+:ref:`vmod_unix(3)` provides functions to determine the credentials of
+the peer process (user and group of the process owner) that connected
+to Varnish over a listener at a Unix domain socket. You can use this,
+for example, to impose tighter restrictions on who can access certain
+resources::
+
+  import unix;
+
+  sub vcl_recv {
+	# Return "403 Forbidden" if the connected peer is
+	# not running as the user "trusteduser".
+	if (unix.user() != "trusteduser") {
+		return( synth(403) );
+	}
+
+This is not available on every platform. As always, check the
+documentation and test the code before you attempt something like this
+in production.
 
 Other changes
 =============
