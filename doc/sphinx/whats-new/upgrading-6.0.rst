@@ -538,7 +538,17 @@ Other changes
 
 * Changes for developers:
 
-  * XXX ...
+  * VMOD vcc sources may now include a directive ``$Synopsis`` whose
+    value may be ``auto`` or ``manual``, default ``auto``.
+
+    When ``$Synopsis`` is ``auto``, the vmodtool generates a more
+    comprehensive ``SYNOPSIS`` section in the documentation than in
+    previous versions -- an overview of the objects, methods and
+    functions in your VMOD, with their type signatures.
+
+    When ``$Synopsis`` is ``manual``, the ``SYNOPSIS`` is left out of
+    the generated docs altogether; so you can write the ``SYNOPSIS``
+    section yourself, if you prefer.
 
   * XXX ...
 
