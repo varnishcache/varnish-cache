@@ -31,6 +31,7 @@
 
 #include "cache/cache_varnishd.h"
 
+#include <errno.h>
 #include <stdio.h>
 
 #include "cache/cache_transport.h"
@@ -235,6 +236,18 @@ h2_b64url_settings(struct h2_sess *h2, struct req *req)
 /**********************************************************************/
 
 static int
+h2_ou_rel(struct worker *wrk, struct req *req)
+{
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	AN (req->vcl);
+	VCL_Rel(&req->vcl);
+	Req_AcctLogCharge(wrk->stats, req);
+	Req_Release(req);
+	return (0);
+}
+
+static int
 h2_ou_session(struct worker *wrk, struct h2_sess *h2,
     struct req *req)
 {
@@ -244,15 +257,15 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 
 	if (h2_b64url_settings(h2, req)) {
 		VSLb(h2->vsl, SLT_Debug, "H2: Bad HTTP-Settings");
-		AN (req->vcl);
-		VCL_Rel(&req->vcl);
-		Req_AcctLogCharge(wrk->stats, req);
-		Req_Release(req);
-		return (0);
+		return (h2_ou_rel(wrk, req));
 	}
 
 	sz = write(h2->sess->fd, h2_resp_101, strlen(h2_resp_101));
-	assert(sz == strlen(h2_resp_101));
+	if (sz != strlen(h2_resp_101)) {
+		VSLb(h2->vsl, SLT_Debug, "H2: Upgrade: Error writing 101"
+		    " response: %s\n", strerror(errno));
+		return (h2_ou_rel(wrk, req));
+	}
 
 	http_Unset(req->http, H_Upgrade);
 	http_Unset(req->http, H_HTTP2_Settings);
