@@ -318,7 +318,7 @@ vmod_shard_remove_backend(VRT_CTX, struct vmod_directors_shard *vshard,
     struct vmod_shard_remove_backend_arg *args)
 {
 	VCL_BACKEND be = args->valid_backend ? args->backend : NULL;
-	VCL_STRING ident = args->ident ? args->ident : NULL;
+	VCL_STRING ident = args->valid_ident ? args->ident : NULL;
 
 	CHECK_OBJ_NOTNULL(vshard, VMOD_SHARD_SHARD_MAGIC);
 
