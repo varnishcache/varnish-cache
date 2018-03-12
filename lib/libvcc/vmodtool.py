@@ -422,8 +422,8 @@ class prototype(object):
                 t = i.vcl()
             if t in privs:
                 continue
-	    if i.nm is not None:
-		t += " " + i.nm
+            if i.nm is not None:
+                t += " " + i.nm
             if not short:
                 if i.defval is not None:
                     t += "=" + i.defval
@@ -602,7 +602,7 @@ class s_module(stanza):
         fo.write("\n")
         fo.write(":Manual section: " + self.vcc.mansection + "\n")
 
-	if self.vcc.auto_synopsis:
+        if self.vcc.auto_synopsis:
             fo.write("\n")
             write_rst_hdr(fo, "SYNOPSIS", "=")
             fo.write("\n")
@@ -610,8 +610,8 @@ class s_module(stanza):
             fo.write('   import %s [from "path"] ;\n' % self.vcc.modname)
             fo.write("   \n")
             for c in self.vcc.contents:
-		c.synopsis(fo, man)
-	    fo.write("\n")
+                c.synopsis(fo, man)
+            fo.write("\n")
 
     def rsttail(self, fo, man):
 
