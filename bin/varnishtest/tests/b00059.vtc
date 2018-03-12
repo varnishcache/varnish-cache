@@ -1,6 +1,6 @@
 varnishtest "Run a lot of transactions through Unix domain sockets"
 
-server s0 {
+server s0 -listen "${tmpdir}/s1.sock" {
 	loop 10 {
 		rxreq
 		txresp -body "foo1"

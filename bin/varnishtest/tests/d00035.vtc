@@ -1,0 +1,59 @@
+varnishtest "Test dynamic UDS backends hot swap during a pipe"
+
+barrier b1 cond 2
+barrier b2 cond 2
+
+server s1 -listen "${tmpdir}/s1.sock" {
+	rxreq
+	expect req.url == "/foo"
+	barrier b1 sync
+	barrier b2 sync
+	txresp
+} -start
+
+server s2 -listen "${tmpdir}/s2.sock" {
+	rxreq
+	expect req.url == "/bar"
+	barrier b2 sync
+	txresp
+} -start
+
+varnish v1 -vcl {
+	import debug;
+
+	backend dummy { .host = "${bad_ip}"; }
+
+	sub vcl_init {
+		new s1 = debug.dyn_uds("${s1_sock}");
+	}
+
+	sub vcl_recv {
+		if (req.method == "SWAP") {
+			s1.refresh(req.http.X-Path);
+			return (synth(200));
+		}
+		set req.backend_hint = s1.backend();
+		return (pipe);
+	}
+} -start
+
+varnish v1 -expect MAIN.n_backend == 2
+
+client c1 {
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+} -start
+
+client c2 {
+	barrier b1 sync
+	txreq -req "SWAP" -hdr "X-Path: ${s2_sock}"
+	rxresp
+	expect resp.status == 200
+
+	txreq -url "/bar"
+	rxresp
+	expect resp.status == 200
+} -run
+
+client c1 -wait

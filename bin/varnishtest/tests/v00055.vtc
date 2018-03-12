@@ -1,0 +1,41 @@
+varnishtest "Check backend connection limit with UDS backends"
+
+barrier b1 cond 2
+barrier b2 cond 2
+
+server s1 -listen "${tmpdir}/s1.sock" {
+	rxreq
+	barrier b1 sync
+	barrier b2 sync
+	txresp
+} -start
+
+varnish v1 -vcl {
+
+	backend default {
+		.path = "${s1_sock}";
+		.max_connections = 1;
+	}
+	sub vcl_recv {
+		return(pass);
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -start
+
+
+client c2 {
+	barrier b1 sync
+	txreq
+	rxresp
+	expect resp.status == 503
+} -run
+
+barrier b2 sync
+client c1 -wait
+
+varnish v1 -expect backend_busy == 1

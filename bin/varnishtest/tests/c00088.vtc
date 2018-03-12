@@ -1,0 +1,44 @@
+varnishtest "Dropping polling of a backend that listens at UDS"
+
+server s1 -listen "${tmpdir}/s1.sock" -repeat 40 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl {
+	probe default {
+		.window = 8;
+		.initial = 7;
+		.threshold = 8;
+		.interval = 0.1s;
+	}
+	backend s1 {
+		.path = "${s1_sock}";
+	}
+} -start
+
+delay 1
+
+varnish v1 -vcl+backend { } -cliok "vcl.use vcl2" -cliok "vcl.discard vcl1"
+
+delay 1
+
+varnish v1 -cliok "vcl.list"
+varnish v1 -cliok "backend.list -p"
+
+server s1 -break {
+	rxreq
+	expect req.url == /foo
+	txresp -bodylen 4
+} -start
+
+delay 1
+
+client c1 {
+	txreq -url /foo
+	rxresp
+	txreq -url /foo
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 4
+} -run

@@ -392,9 +392,15 @@ cmd_server_genvcl(struct vsb *vsb)
 
 	AZ(pthread_mutex_lock(&server_mtx));
 	VTAILQ_FOREACH(s, &servers, list) {
-		VSB_printf(vsb,
-		    "backend %s { .host = \"%s\"; .port = \"%s\"; }\n",
-		    s->name, s->aaddr, s->aport);
+		if (*s->listen != '/')
+			VSB_printf(vsb,
+				   "backend %s { .host = \"%s\"; "
+				   ".port = \"%s\"; }\n",
+				   s->name, s->aaddr, s->aport);
+		else
+			VSB_printf(vsb,
+				   "backend %s { .path = \"%s\"; }\n",
+				   s->name, s->listen);
 	}
 	AZ(pthread_mutex_unlock(&server_mtx));
 }

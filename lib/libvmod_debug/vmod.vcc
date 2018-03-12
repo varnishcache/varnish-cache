@@ -141,6 +141,19 @@ $Method VOID .refresh(STRING addr, STRING port)
 
 Dynamically refresh & (always!) replace the backend by a new one.
 
+$Object dyn_uds(STRING path)
+
+Dynamically create a single-backend director listening at a Unix
+domain socket, path must not be empty.
+
+$Method BACKEND .backend()
+
+Return the dynamic UDS backend.
+
+$Method VOID .refresh(STRING path)
+
+Dynamically refresh & (always!) replace the backend by a new UDS backend.
+
 $Function VOID vcl_release_delay(DURATION)
 
 Hold a reference to the VCL when it goes cold for the given delay.

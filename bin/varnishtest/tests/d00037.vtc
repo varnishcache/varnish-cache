@@ -1,0 +1,76 @@
+varnishtest "Test a dynamic UDS backend discard during a request"
+
+barrier b1 cond 2
+barrier b2 cond 2
+
+server s1 -listen "${tmpdir}/s1.sock" {
+	rxreq
+	expect req.url == "/foo"
+	barrier b1 sync
+	barrier b2 sync
+	txresp
+} -start
+
+varnish v1 -arg "-p thread_pools=1" -vcl {
+	import debug;
+
+	backend dummy { .host = "${bad_ip}"; }
+
+	sub vcl_init {
+		new s1 = debug.dyn_uds("${s1_sock}");
+	}
+
+	sub vcl_recv {
+		set req.backend_hint = s1.backend();
+	}
+} -start
+
+client c1 {
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+} -start
+
+varnish v1 -expect MAIN.n_backend == 2
+
+server s2 -listen "${tmpdir}/s2.sock" {
+	rxreq
+	expect req.url == "/bar"
+	txresp
+} -start
+
+barrier b1 sync
+
+varnish v1 -vcl {
+	import debug;
+
+	backend dummy { .host = "${bad_ip}"; }
+
+	sub vcl_init {
+		new s2 = debug.dyn_uds("${s2_sock}");
+	}
+
+	sub vcl_recv {
+		set req.backend_hint = s2.backend();
+	}
+}
+
+varnish v1 -cli "vcl.discard vcl1"
+barrier b2 sync
+
+client c1 -wait
+delay 2
+
+varnish v1 -expect MAIN.n_backend == 4
+
+varnish v1 -expect n_vcl_avail == 1
+varnish v1 -expect n_vcl_discard == 1
+
+client c1 {
+	txreq -url "/bar"
+	rxresp
+	expect resp.status == 200
+} -run
+
+varnish v1 -cli "vcl.list"
+varnish v1 -expect n_vcl_avail == 1

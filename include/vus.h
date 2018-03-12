@@ -33,3 +33,4 @@ typedef int vus_resolved_f(void *priv, const struct sockaddr_un *);
 int VUS_resolver(const char *path, vus_resolved_f *func, void *priv,
 		 const char **err);
 int VUS_bind(const struct sockaddr_un *uds, const char **errp);
+int VUS_connect(const char *path, int msec);

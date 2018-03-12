@@ -136,8 +136,8 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
 	if (bp->proxy_header != 0)
 		VPX_Send_Proxy(*fdp, bp->proxy_header, bo->sp);
 
-	VTCP_myname(*fdp, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
-	VTCP_hisname(*fdp, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
+	PFD_LocalName(pfd, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
+	PFD_RemoteName(pfd, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
 	VSLb(bo->vsl, SLT_BackendOpen, "%d %s %s %s %s %s",
 	    *fdp, bp->director->display_name, abuf2, pbuf2, abuf1, pbuf1);
 
@@ -212,6 +212,7 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 	int i, extrachance = 1;
 	struct backend *bp;
 	struct pfd *pfd;
+	char abuf[VTCP_ADDRBUFSIZE], pbuf[VTCP_PORTBUFSIZE];
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -234,8 +235,9 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 		if (PFD_State(pfd) != PFD_STATE_STOLEN)
 			extrachance = 0;
 
+		PFD_RemoteName(pfd, abuf, sizeof abuf, pbuf, sizeof pbuf);
 		i = V1F_SendReq(wrk, bo, &bo->acct.bereq_hdrbytes,
-				&bo->acct.bereq_bodybytes, 0);
+				&bo->acct.bereq_bodybytes, 0, abuf, pbuf);
 
 		if (PFD_State(pfd) != PFD_STATE_USED) {
 			if (VTP_Wait(wrk, pfd, VTIM_real() +
@@ -300,6 +302,7 @@ vbe_dir_http1pipe(const struct director *d, struct req *req, struct busyobj *bo)
 	struct backend *bp;
 	struct v1p_acct v1a;
 	struct pfd *pfd;
+	char abuf[VTCP_ADDRBUFSIZE], pbuf[VTCP_PORTBUFSIZE];
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -320,7 +323,9 @@ vbe_dir_http1pipe(const struct director *d, struct req *req, struct busyobj *bo)
 		retval = SC_TX_ERROR;
 	} else {
 		CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
-		i = V1F_SendReq(req->wrk, bo, &v1a.bereq, &v1a.out, 1);
+		PFD_RemoteName(pfd, abuf, sizeof abuf, pbuf, sizeof pbuf);
+		i = V1F_SendReq(req->wrk, bo, &v1a.bereq, &v1a.out, 1, abuf,
+				pbuf);
 		VSLb_ts_req(req, "Pipe", W_TIM_real(req->wrk));
 		if (i == 0)
 			V1P_Process(req, *PFD_Fd(pfd), &v1a);
@@ -437,7 +442,12 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vrt, VRT_BACKEND_MAGIC);
-	assert(vrt->ipv4_suckaddr != NULL || vrt->ipv6_suckaddr != NULL);
+	if (vrt->path == NULL)
+		assert(vrt->ipv4_suckaddr != NULL
+		       || vrt->ipv6_suckaddr != NULL);
+	else
+		assert(vrt->ipv4_suckaddr == NULL
+		       && vrt->ipv6_suckaddr == NULL);
 
 	vcl = ctx->vcl;
 	AN(vcl);
@@ -480,7 +490,7 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 	VTAILQ_INSERT_TAIL(&backends, be, list);
 	VSC_C_main->n_backend++;
 	be->tcp_pool = VTP_Ref(vrt->ipv4_suckaddr, vrt->ipv6_suckaddr,
-	    vbe_proto_ident);
+	    vrt->path, vbe_proto_ident);
 	Lck_Unlock(&backends_mtx);
 
 	if (vbp != NULL) {

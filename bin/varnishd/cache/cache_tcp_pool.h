@@ -42,6 +42,8 @@ struct pfd;
 
 unsigned PFD_State(const struct pfd *);
 int *PFD_Fd(struct pfd *);
+void PFD_LocalName(const struct pfd *, char *, unsigned, char *, unsigned);
+void PFD_RemoteName(const struct pfd *, char *, unsigned, char *, unsigned);
 
 /*---------------------------------------------------------------------
 
@@ -49,11 +51,12 @@ int *PFD_Fd(struct pfd *);
  */
 
 struct tcp_pool *VTP_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6,
-    const void *id);
+    const char *uds, const void *id);
 	/*
-	 * Get a reference to a TCP pool.  Either ip4 or ip6 arg must be
-	 * non-NULL. If recycling is to be used, the id pointer distinguishes
-	 * the pool per protocol.
+	 * Get a reference to a TCP pool. Either one or both of ip4 or
+	 * ip6 arg must be non-NULL, or uds must be non-NULL. If recycling
+	 * is to be used, the id pointer distinguishes the pool per
+	 * protocol.
 	 */
 
 void VTP_AddRef(struct tcp_pool *);

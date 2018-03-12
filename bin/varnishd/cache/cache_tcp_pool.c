@@ -38,6 +38,7 @@
 
 #include "vsa.h"
 #include "vtcp.h"
+#include "vus.h"
 #include "vtim.h"
 #include "waiter/waiter.h"
 
@@ -62,31 +63,20 @@ struct pfd {
 	pthread_cond_t		*cond;
 };
 
-unsigned
-PFD_State(const struct pfd *p)
-{
-	CHECK_OBJ_NOTNULL(p, PFD_MAGIC);
-	return (p->state);
-}
-
-int *
-PFD_Fd(struct pfd *p)
-{
-	CHECK_OBJ_NOTNULL(p, PFD_MAGIC);
-	return (&(p->fd));
-}
-
 /*--------------------------------------------------------------------
  */
 
 typedef int cp_open_f(const struct conn_pool *, double tmo, const void **privp);
 typedef void cp_close_f(struct pfd *);
 typedef int cp_cmp_f(const struct conn_pool *, const void *priv);
+typedef void cp_name_f(const struct pfd *, char *, unsigned, char *, unsigned);
 
 struct cp_methods {
 	cp_open_f				*open;
 	cp_close_f				*close;
 	cp_cmp_f				*cmp;
+	cp_name_f				*local_name;
+	cp_name_f				*remote_name;
 };
 
 struct conn_pool {
@@ -117,12 +107,48 @@ struct tcp_pool {
 
 	struct suckaddr				*ip4;
 	struct suckaddr				*ip6;
+	char					*uds;
 	struct conn_pool			cp[1];
 };
 
 static struct lock		conn_pools_mtx;
 static VTAILQ_HEAD(, conn_pool)	conn_pools =
     VTAILQ_HEAD_INITIALIZER(conn_pools);
+
+/*--------------------------------------------------------------------
+ */
+
+unsigned
+PFD_State(const struct pfd *p)
+{
+	CHECK_OBJ_NOTNULL(p, PFD_MAGIC);
+	return (p->state);
+}
+
+int *
+PFD_Fd(struct pfd *p)
+{
+	CHECK_OBJ_NOTNULL(p, PFD_MAGIC);
+	return (&(p->fd));
+}
+
+void
+PFD_LocalName(const struct pfd *p, char *abuf, unsigned alen, char *pbuf,
+	      unsigned plen)
+{
+	CHECK_OBJ_NOTNULL(p, PFD_MAGIC);
+	CHECK_OBJ_NOTNULL(p->conn_pool, CONN_POOL_MAGIC);
+	p->conn_pool->methods->local_name(p, abuf, alen, pbuf, plen);
+}
+
+void
+PFD_RemoteName(const struct pfd *p, char *abuf, unsigned alen, char *pbuf,
+	       unsigned plen)
+{
+	CHECK_OBJ_NOTNULL(p, PFD_MAGIC);
+	CHECK_OBJ_NOTNULL(p->conn_pool, CONN_POOL_MAGIC);
+	p->conn_pool->methods->remote_name(p, abuf, alen, pbuf, plen);
+}
 
 /*--------------------------------------------------------------------
  * Waiter-handler
@@ -465,6 +491,20 @@ VCP_Wait(struct worker *wrk, struct pfd *pfd, double tmo)
 /*--------------------------------------------------------------------
  */
 
+struct vtp_cs {
+	unsigned			magic;
+#define VTP_CS_MAGIC			0xc1e40447
+	const struct suckaddr		*ip4;
+	const struct suckaddr		*ip6;
+	const char			*uds;
+};
+
+static inline int
+tmo2msec(double tmo)
+{
+	return ( (int)floor(tmo * 1000.0) );
+}
+
 static int v_matchproto_(cp_open_f)
 vtp_open(const struct conn_pool *cp, double tmo, const void **privp)
 {
@@ -475,7 +515,7 @@ vtp_open(const struct conn_pool *cp, double tmo, const void **privp)
 	CHECK_OBJ_NOTNULL(cp, CONN_POOL_MAGIC);
 	CAST_OBJ_NOTNULL(tp, cp->priv, TCP_POOL_MAGIC);
 
-	msec = (int)floor(tmo * 1000.0);
+	msec = tmo2msec(tmo);
 	if (cache_param->prefer_ipv6) {
 		*privp = tp->ip6;
 		s = VTCP_connect(tp->ip6, msec);
@@ -500,13 +540,6 @@ vtp_close(struct pfd *pfd)
 	CHECK_OBJ_NOTNULL(pfd, PFD_MAGIC);
 	VTCP_close(&pfd->fd);
 }
-
-struct vtp_cs {
-	unsigned			magic;
-#define VTP_CS_MAGIC			0xc1e40447
-	const struct suckaddr		*ip4;
-	const struct suckaddr		*ip6;
-};
 
 static int v_matchproto_(cp_cmp_f)
 vtp_cmp(const struct conn_pool *cp, const void *priv)
@@ -533,29 +566,102 @@ vtp_cmp(const struct conn_pool *cp, const void *priv)
 	return (0);
 }
 
+static void v_matchproto_(cp_name_f)
+vtp_local_name(const struct pfd *pfd, char *addr, unsigned alen, char *pbuf,
+	       unsigned plen)
+{
+	CHECK_OBJ_NOTNULL(pfd, PFD_MAGIC);
+	VTCP_myname(pfd->fd, addr, alen, pbuf, plen);
+}
+
+static void v_matchproto_(cp_name_f)
+vtp_remote_name(const struct pfd *pfd, char *addr, unsigned alen, char *pbuf,
+		unsigned plen)
+{
+	CHECK_OBJ_NOTNULL(pfd, PFD_MAGIC);
+	VTCP_hisname(pfd->fd, addr, alen, pbuf, plen);
+}
+
 static const struct cp_methods vtp_methods = {
 	.open = vtp_open,
 	.close = vtp_close,
 	.cmp = vtp_cmp,
+	.local_name = vtp_local_name,
+	.remote_name = vtp_remote_name,
 };
 
+/*--------------------------------------------------------------------
+ */
+
+static int v_matchproto_(cp_open_f)
+vus_open(const struct conn_pool *cp, double tmo, const void **privp)
+{
+	int s;
+	int msec;
+	struct tcp_pool *tp;
+
+	CHECK_OBJ_NOTNULL(cp, CONN_POOL_MAGIC);
+	CAST_OBJ_NOTNULL(tp, cp->priv, TCP_POOL_MAGIC);
+	AN(tp->uds);
+
+	msec = tmo2msec(tmo);
+	*privp = bogo_ip;
+	s = VUS_connect(tp->uds, msec);
+	return (s);
+}
+
+static int v_matchproto_(cp_cmp_f)
+vus_cmp(const struct conn_pool *cp, const void *priv)
+{
+	const struct vtp_cs *vcs;
+	const struct tcp_pool *tp;
+
+	CAST_OBJ_NOTNULL(vcs, priv, VTP_CS_MAGIC);
+	CAST_OBJ_NOTNULL(tp, cp->priv, TCP_POOL_MAGIC);
+	if (tp->uds != NULL && vcs->uds != NULL)
+		return (strcmp(tp->uds, vcs->uds));
+	return (1);
+}
+
+static void v_matchproto_(cp_name_f)
+vus_name(const struct pfd *pfd, char *addr, unsigned alen, char *pbuf,
+	 unsigned plen)
+{
+	(void) pfd;
+	assert(alen > strlen("0.0.0.0"));
+	assert(plen > 1);
+	strcpy(addr, "0.0.0.0");
+	strcpy(pbuf, "0");
+}
+
+static const struct cp_methods vus_methods = {
+	.open = vus_open,
+	.close = vtp_close,
+	.cmp = vus_cmp,
+	.local_name = vus_name,
+	.remote_name = vus_name,
+};
 
 /*--------------------------------------------------------------------
- * Reference a TCP pool given by {ip4, ip6} pair.  Create if it
- * doesn't exist already.
+ * Reference a TCP pool given by {ip4, ip6} pair or a UDS.  Create if
+ * it doesn't exist already.
  */
 
 struct tcp_pool *
-VTP_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6, const void *id)
+VTP_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6, const char *uds,
+	const void *id)
 {
 	struct tcp_pool *tp;
 	struct conn_pool *cp;
 	struct vtp_cs vcs;
+	const struct cp_methods *methods;
 
-	assert(ip4 != NULL || ip6 != NULL);
+	assert((uds != NULL && ip4 == NULL && ip6 == NULL)
+	       || (uds == NULL && (ip4 != NULL || ip6 != NULL)));
 	INIT_OBJ(&vcs, VTP_CS_MAGIC);
 	vcs.ip4 = ip4;
 	vcs.ip6 = ip6;
+	vcs.uds = uds;
 
 	cp = VCP_Ref(id, &vcs);
 	if (cp != NULL)
@@ -563,11 +669,18 @@ VTP_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6, const void *id)
 
 	ALLOC_OBJ(tp, TCP_POOL_MAGIC);
 	AN(tp);
-	if (ip4 != NULL)
-		tp->ip4 = VSA_Clone(ip4);
-	if (ip6 != NULL)
-		tp->ip6 = VSA_Clone(ip6);
-	return(VCP_New(tp->cp, id, tp, &vtp_methods));
+	if (uds != NULL) {
+		methods = &vus_methods;
+		tp->uds = strdup(uds);
+	}
+	else {
+		methods = &vtp_methods;
+		if (ip4 != NULL)
+			tp->ip4 = VSA_Clone(ip4);
+		if (ip6 != NULL)
+			tp->ip6 = VSA_Clone(ip6);
+	}
+	return(VCP_New(tp->cp, id, tp, methods));
 }
 
 /*--------------------------------------------------------------------
@@ -596,6 +709,7 @@ VTP_Rel(struct tcp_pool **tpp)
 
 	free(tp->ip4);
 	free(tp->ip6);
+	free(tp->uds);
 	FREE_OBJ(tp);
 }
 
@@ -608,6 +722,8 @@ int
 VTP_Open(const struct tcp_pool *tp, double tmo, const void **privp)
 {
 
+	if (tp->uds != NULL)
+		return (vus_open(tp->cp, tmo, privp));
 	return (vtp_open(tp->cp, tmo, privp));
 }
 

@@ -1,0 +1,65 @@
+varnishtest "Forcing health of backends listening at UDS"
+
+server s1 -listen "${tmpdir}/s1.sock" -repeat 3 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl {
+	backend s1 {
+		.path = "${s1_sock}";
+		.probe = {
+			.window = 8;
+			.initial = 7;
+			.threshold = 8;
+			.interval = 10s;
+		}
+	}
+
+	sub vcl_recv {
+		return(pass);
+	}
+
+} -start
+
+delay 1
+
+varnish v1 -cliok "vcl.list"
+varnish v1 -cliok "backend.list -p"
+varnish v1 -cliok "backend.set_health s1 auto"
+varnish v1 -cliok "backend.list -p"
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run
+
+varnish v1 -cliok "backend.list"
+varnish v1 -cliok "backend.set_health s1 sick"
+varnish v1 -cliok "backend.list"
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 503
+} -run
+
+varnish v1 -cliok "backend.list"
+varnish v1 -cliok "backend.set_health s1 healthy"
+varnish v1 -cliok "backend.list"
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run
+
+varnish v1 -clierr 106 "backend.set_health s1 foo"
+varnish v1 -clierr 106 "backend.set_health s2 foo"
+varnish v1 -clierr 106 "backend.set_health s2 auto"
+varnish v1 -cliok "vcl.list"
+varnish v1 -cliok "backend.list *"
+varnish v1 -cliok "backend.list *.foo"
+varnish v1 -cliok "backend.list vcl1.*"
+
