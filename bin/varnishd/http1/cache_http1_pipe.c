@@ -104,9 +104,9 @@ V1P_Process(const struct req *req, int fd, struct v1p_acct *v1a)
 	}
 	memset(fds, 0, sizeof fds);
 	fds[0].fd = fd;
-	fds[0].events = POLLIN | POLLERR;
+	fds[0].events = POLLIN;
 	fds[1].fd = req->sp->fd;
-	fds[1].events = POLLIN | POLLERR;
+	fds[1].events = POLLIN;
 
 	while (fds[0].fd > -1 || fds[1].fd > -1) {
 		fds[0].revents = 0;

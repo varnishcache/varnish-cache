@@ -1509,14 +1509,14 @@ cmd_http_expect_close(CMD_ARGS)
 		stop_h2(hp);
 	while (1) {
 		fds[0].fd = hp->fd;
-		fds[0].events = POLLIN | POLLERR;
+		fds[0].events = POLLIN;
 		fds[0].revents = 0;
 		i = poll(fds, 1, hp->timeout);
 		if (i < 0 && errno == EINTR)
 			continue;
 		if (i == 0)
 			vtc_log(vl, hp->fatal, "Expected close: timeout");
-		if (i != 1 || !(fds[0].revents & (POLLIN|POLLERR)))
+		if (i != 1 || !(fds[0].revents & (POLLIN|POLLERR|POLLHUP)))
 			vtc_log(vl, hp->fatal,
 			    "Expected close: poll = %d, revents = 0x%x",
 			    i, fds[0].revents);
