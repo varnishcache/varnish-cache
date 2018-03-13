@@ -124,9 +124,7 @@ noinst_HEADERS = \
 	cache/cache_pool.h \
 	cache/cache_tcp_pool.h \
 	cache/cache_transport.h \
-	cache/cache_varnishd.h \
 	cache/cache_vgz.h \
-	common/common_param.h \
 	common/heritage.h \
 	common/vsmw.h \
 	hash/hash_slinger.h \
@@ -147,6 +145,8 @@ nobase_pkginclude_HEADERS = \
 	cache/cache_backend.h \
 	cache/cache_director.h \
 	cache/cache_filter.h \
+	cache/cache_varnishd.h \
+	common/common_param.h \
 	waiter/waiter.h
 
 vcldir=$(datarootdir)/$(PACKAGE)/vcl
