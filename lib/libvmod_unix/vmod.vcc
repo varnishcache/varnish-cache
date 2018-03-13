@@ -13,8 +13,9 @@ DESCRIPTION
 ===========
 
 This VMOD provides information about the credentials of the peer
-process (user and group of the process owner) that is connected to
-Varnish via a Unix domain socket, if the platform supports it.
+process (user and group of the process owner) that is connected to a
+Varnish listener via a Unix domain socket, if the platform supports
+it.
 
 Examples::
 
