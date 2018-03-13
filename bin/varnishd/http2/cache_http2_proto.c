@@ -512,6 +512,7 @@ h2_do_req(struct worker *wrk, void *priv)
 		Lck_Lock(&h2->sess->mtx);
 		r2->scheduled = 0;
 		r2->state = H2_S_CLOSED;
+		r2->h2sess->do_sweep = 1;
 		if (h2->mailcall == r2) {
 			h2->mailcall = NULL;
 			AZ(pthread_cond_signal(h2->cond));
@@ -879,9 +880,7 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2,
 	}
 
 	VTAILQ_FOREACH_SAFE(r2, &h2->streams, list, r22) {
-		if (r2->state == H2_S_CLOSED && !r2->scheduled)
-			h2_del_req(wrk, r2);
-		else if (r2->stream == h2->rxf_stream)
+		if (r2->stream == h2->rxf_stream)
 			break;
 	}
 
@@ -944,6 +943,47 @@ h2_stream_tmo(struct h2_sess *h2, const struct h2_req *r2)
 	return (r);
 }
 
+/*
+ * This is the janitorial task of cleaning up any closed streams, and
+ * checking if the session is timed out.
+ */
+static int
+h2_sweep(struct worker *wrk, struct h2_sess *h2)
+{
+	int tmo = 0;
+	struct h2_req *r2, *r22;
+
+	ASSERT_RXTHR(h2);
+
+	h2->do_sweep = 0;
+	VTAILQ_FOREACH_SAFE(r2, &h2->streams, list, r22) {
+		if (r2 == h2->req0) {
+			assert (r2->state == H2_S_IDLE);
+			continue;
+		}
+		switch (r2->state) {
+		case H2_S_CLOSED:
+			if (!r2->scheduled)
+				h2_del_req(wrk, r2);
+			break;
+		case H2_S_CLOS_REM:
+		case H2_S_CLOS_LOC:
+		case H2_S_OPEN:
+			if (h2_stream_tmo(h2, r2)) {
+				tmo = 1;
+				continue;
+			}
+			break;
+		default:
+			break;
+		}
+	}
+	if (tmo)
+		return (0);
+	return (h2->refcnt > 1);
+}
+
+
 /***********************************************************************
  * Called in loop from h2_new_session()
  */
@@ -965,9 +1005,7 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 	enum htc_status_e hs;
 	h2_frame h2f;
 	h2_error h2e;
-	struct h2_req *r2, *r22;
 	char b[8];
-	int abandon = 0;
 
 	ASSERT_RXTHR(h2);
 	(void)VTCP_blocking(*h2->htc->rfd);
@@ -980,26 +1018,9 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 	case HTC_S_COMPLETE:
 		break;
 	case HTC_S_TIMEOUT:
-		VTAILQ_FOREACH_SAFE(r2, &h2->streams, list, r22) {
-			if (abandon)
-				break;
-			switch (r2->state) {
-			case H2_S_CLOSED:
-				if (!r2->scheduled)
-					h2_del_req(wrk, r2);
-				break;
-			case H2_S_OPEN:
-			case H2_S_CLOS_REM:
-			case H2_S_CLOS_LOC:
-				if (h2_stream_tmo(h2, r2)) {
-					abandon = 1;
-					continue;
-				}
-				return (1);
-			default:
-				break;
-			}
-		}
+		if (h2_sweep(wrk, h2))
+			return (1);
+
 		/* FALLTHROUGH */
 	default:
 		Lck_Lock(&h2->sess->mtx);
@@ -1008,6 +1029,9 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 		Lck_Unlock(&h2->sess->mtx);
 		return (0);
 	}
+
+	if (h2->do_sweep)
+		(void)h2_sweep(wrk, h2);
 
 	h2->rxf_len =  vbe32dec(h2->htc->rxbuf_b) >> 8;
 	h2->rxf_type =  h2->htc->rxbuf_b[3];

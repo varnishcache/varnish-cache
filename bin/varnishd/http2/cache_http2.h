@@ -150,6 +150,7 @@ struct h2_sess {
 	int				refcnt;
 	uint32_t			highest_stream;
 	int				bogosity;
+	int				do_sweep;
 
 	struct h2_req			*req0;
 
