@@ -184,6 +184,24 @@ same XID shown in the log for session transactions (with
 ``-g session`` grouping). ``sess.xid`` is read-only and is available
 as of VCL 4.1.
 
+Variable changes in VCL 4.0 and 4.1
+-----------------------------------
+
+The ``*.proto`` variables (``req.proto``, ``resp.proto``,
+``bereq.proto`` and ``beresp.proto``) are read-only as of VCL 4.1, but
+are still writable in VCL 4.0.
+
+``req.esi`` is available in VCL 4.0, but no longer in 4.1. In its
+place, ``resp.do_esi`` has been introduced in VCL 4.1. Set
+``resp.do_esi`` to false in ``vcl_deliver`` if you want to selectively
+disable ESI processing for a client response (even though
+``beresp.do_esi`` was true during fetch).
+
+``beresp.backend.ip`` and ``beresp.storage_hint`` are discontinued as
+of VCL 4.1, but are still available in 4.0. Note that
+``beresp.storage_hint`` has been deprecated since Varnish 5.1; you
+should use ``beresp.storage`` instead.
+
 Unix domain sockets and VCL
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
