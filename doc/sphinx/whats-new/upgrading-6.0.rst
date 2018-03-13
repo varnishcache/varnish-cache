@@ -538,6 +538,17 @@ Other changes
 
 * Changes for developers:
 
+  * As part of VRT version 7.0, the ``path`` field has been added to
+    to ``struct vrt_backend``, which a VMOD can use with
+    ``VRT_new_backend()`` to create a dynamic backend with a UDS
+    address (see ``vrt.h``).
+
+    If ``path`` is non-NULL, then both of the IPv4 and IPv6 addresses
+    must be NULL. If ``path`` is NULL, then (as before) one or both of
+    the IP addresses must be non-NULL. The ``dyn_uds`` object in VMOD
+    debug (available in the source tree) illustrates how this can be
+    done.
+
   * VMOD vcc sources may now include a directive ``$Synopsis`` whose
     value may be ``auto`` or ``manual``, default ``auto``.
 
