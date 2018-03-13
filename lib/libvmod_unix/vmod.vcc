@@ -26,13 +26,13 @@ Examples::
 	}
 
 	# Require the connected peer to run in the group
-        # "trustedgroup".
+	# "trustedgroup".
 	if (unix.group() != "trustedgroup") {
 		return( synth(403) );
 	}
 
 	# Require the connected peer to run under a specific numeric
-        # user id.
+	# user id.
 	if (unix.uid() != 4711) {
 		return( synth(403) );
 	}
@@ -87,7 +87,7 @@ All functions in this VMOD are subject to the following constraints:
 
   If the failure occurs during ``vcl_synth``, then ``vcl_synth`` is
   aborted, and the the response line "503 VCL failed" is sent.
-  
+
 * If the current listener is not a Unix domain socket, or if the
   attempt to read credentials fails, then a ``VCL_Error`` message is
   written to the log. The STRING functions (``vmod_user`` and

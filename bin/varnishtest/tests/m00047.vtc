@@ -50,11 +50,11 @@ logexpect l1 -v v1 -d 1 -b {
 } -run
 
 logexpect l1 -v v1 -d 1 -c {
-        expect * 1001 Begin     req
-        expect * =    VCL_Error {^vmod unix error: not listening on a Unix domain socket$}
-        expect * =    VCL_Error {^vmod unix error: not listening on a Unix domain socket$}
-        expect * =    VCL_Error {^vmod unix error: not listening on a Unix domain socket$}
-        expect * =    VCL_Error {^vmod unix error: not listening on a Unix domain socket$}
+	expect * 1001 Begin     req
+	expect * =    VCL_Error {^vmod unix error: not listening on a Unix domain socket$}
+	expect * =    VCL_Error {^vmod unix error: not listening on a Unix domain socket$}
+	expect * =    VCL_Error {^vmod unix error: not listening on a Unix domain socket$}
+	expect * =    VCL_Error {^vmod unix error: not listening on a Unix domain socket$}
 } -run
 
 
