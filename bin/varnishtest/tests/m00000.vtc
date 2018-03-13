@@ -13,10 +13,12 @@ varnish v1 -vcl+backend {
 
 	sub vcl_init {
 		new objx = debug.obj();
+		debug.vsc_new();
 	}
 
 	sub vcl_recv {
 		debug.rot52(req);
+		debug.vsc_count();
 	}
 
 	sub vcl_deliver {
@@ -36,6 +38,8 @@ varnish v1 -vcl+backend {
 	}
 } -start
 
+varnish v1 -expect DEBUG.count == 0
+
 client c1 {
 	txreq -url "/bar"
 	rxresp
@@ -49,6 +53,8 @@ client c1 {
 	expect resp.http.what >= 16
 	expect resp.http.not == -1
 } -run
+
+varnish v1 -expect DEBUG.count == 1
 
 logexpect l1 -v v1 -g raw -d 1 {
 	expect * 1001 VCL_call		{^DELIVER}

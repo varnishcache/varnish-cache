@@ -371,6 +371,14 @@ xyzzy_vsc_new(VRT_CTX)
 }
 
 VCL_VOID
+xyzzy_vsc_count(VRT_CTX, VCL_INT cnt)
+{
+	(void)ctx;
+	AN(vsc);
+	vsc->count += cnt;
+}
+
+VCL_VOID
 xyzzy_vsc_destroy(VRT_CTX)
 {
 	(void)ctx;

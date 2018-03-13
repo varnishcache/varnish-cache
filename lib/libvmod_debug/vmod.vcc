@@ -170,6 +170,10 @@ $Function VOID vsc_new()
 
 Add a vsc
 
+$Function VOID vsc_count(INT val = 1)
+
+Update counter
+
 $Function VOID vsc_destroy()
 
 Remove a vsc
