@@ -220,10 +220,10 @@ the component forwarding to Varnish via UDS uses the PROXY protocol,
 which sets ``client.ip`` and ``server.ip`` to the addresses sent in
 the PROXY header.
 
-If you don't use UDSen, then nothing about VCL changes. UDS support
-requires version 4.1, so if you are keeping your VCL level at 4.0 (and
-hence are staying with IP addresses), then none of the following is of
-concern.
+If you don't use UDSen, then nothing about VCL changes with respect to
+network addressing. UDS support requires version 4.1, so if you are
+keeping your VCL level at 4.0 (and hence are staying with IP
+addresses), then none of the following is of concern.
 
 ``client.ip``, ``server.ip``, ``local.ip`` and ``remote.ip``
 ------------------------------------------------------------
