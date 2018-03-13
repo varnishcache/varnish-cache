@@ -427,6 +427,115 @@ This is not available on every platform. As always, check the
 documentation and test the code before you attempt something like this
 in production.
 
+Packaging changes
+=================
+
+Supported platforms
+~~~~~~~~~~~~~~~~~~~
+
+Official Varnish packages went through major changes for this release,
+and target Debian 8 and 9, Ubuntu 16.04 LTS and (Red Hat) Enterprise
+Linux 7. Ubuntu 14.04 LTS will likely reach its end of life before
+Varnish 6 and the venerable Enterprise Linux 6 is getting too old and
+forced time-consuming workarounds so for these reasons we dropped
+community support for those platforms.
+
+Services
+~~~~~~~~
+
+As a result we ended up with ended up with systemd-only platforms for
+the official packages. The old services are still available as we
+archived them in the ``pkg-varnish-cache`` source tree. This was the
+occasion to remove differences between Red Hat and Debian derivatives
+since there's no more reasons to have them diverge: we initially
+inherited packaging support from downstream package maintainers, and
+they deserve many thanks for that.
+
+Another big difference between Red Hat and Debian derivatives was the
+way we handled VCL reloads via the service manager. We introduced a
+new ``varnishreload`` script that operates on top of ``varnishadm``
+to perform hot reloads of one VCL configuration or label at a time.
+All you need is enough privileges to contact ``varnishd``'s command
+line interface, which should not be a problem for package managers.
+
+Once the ``varnish`` package is installed, you can learn more::
+
+  varnishreload -h
+
+Again, many thanks to downstream maintainers and some early adopters
+for their help in testing the new script.
+
+To stay on the topic of the command line interface, packages no longer
+create a secret file for the CLI, and services omit ``-S`` and ``-T``
+options on the ``varnishd`` command. This means that out of the box,
+you can only connect to the CLI locally with enough privileges to read
+a secret generated randomly. This means less noise in our packages,
+and you need to change the service configuration to enable remote
+access to the CLI. With previous packages, you also needed to change
+your configuration because the CLI would only listen to the loopback
+interface anyway.
+
+To change how ``varnishd`` is started, please refer to the systemd
+documentation.
+
+Virtual provides
+~~~~~~~~~~~~~~~~
+
+Last but not least in the packaging space, we took a first step towards
+improving dependency management between official ``varnish`` packages
+and VMODs built on top of them. RPMs and Deb packages now provide the
+strict and VRT ABIs from ``varnishd`` and the goal is to ultimately
+prevent a package installation or upgrade that would prevent a VMOD
+from being loaded.
+
+For Deb packages::
+
+  Provides:
+   varnishd-abi-SHA1,
+   varnishd-vrt (= x.y)
+
+And for RPMs::
+
+  Provides: varnishd(abi)(x86-64) = SHA1
+  Provides: varnishd(vrt)(x86-64) = x.y
+
+For VMOD authors or downstream distributors, this means that depending
+on the ``$ABI`` stanza in the VMOD descriptor, they can either tie their
+backend manually to the git hash Varnish was built from or to the VRT
+version used at the time.
+
+For example, a VMOD RPM built against Varnish 6.0.0 could have::
+
+  Requires: varnishd(vrt)%{?_isa} >= 7.0
+  Requires: varnishd(vrt)%{?_isa} < 8
+
+Future plans include the ability to automate this for out-of-tree VMODs
+and remove manual steps. To learn more about the history behind this
+change, it was formalized via the Varnish Improvement Process:
+
+https://github.com/varnishcache/varnish-cache/wiki/VIP20%3A-Varnish-ABI-and-packaging
+
+Another thing available only to RPM packages as of 6.0.0 is virtual
+provides for VMODs.
+
+Instead of showing shared objects that aren't even in the dynamic
+linker's default path::
+
+  Provides: libvmod_std.so(64bit)
+  Provides: libvmod_directors.so(64bit)
+  [...]
+
+You get virtual VMOD provides with a version::
+
+  Provides: vmod(std)(x86-64) = 6.0.0-1
+  Provides: vmod(directors)(x86-64) = 6.0.0-1
+  [...]
+
+With the same mechanism it becomes possible to require a VMOD directly
+and let it bring along its dependencies, like ``varnish``. As this is
+currently not automated for out-of-tree VMODs, consider this a preview
+of what you will be able to do once VIP 20 is completed.
+
 Other changes
 =============
 
