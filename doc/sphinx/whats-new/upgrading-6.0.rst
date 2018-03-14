@@ -470,7 +470,7 @@ to preserve the previous behavior, see the
 for advice on how to do so.
 
 With the ``resolve=LAZY`` argument of the ``.backend()`` method, the
-shard director will now defer the selection of a a backend to when a
+shard director will now defer the selection of a backend to when a
 backend connection is actually made, which is how all other bundled
 directors work as well. This enables layering the shard director below
 other directors -- you can use ``.backend(resolve=LAZY)`` to set the
