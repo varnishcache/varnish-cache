@@ -160,13 +160,11 @@ struct pp2_tlv {
 	uint8_t type;
 	uint8_t length_hi;
 	uint8_t length_lo;
-	uint8_t value[0];
 }__attribute__((packed));
 
 struct pp2_tlv_ssl {
 	uint8_t  client;
 	uint32_t verify;
-	struct pp2_tlv sub_tlv[0];
 }__attribute__((packed));
 
 static const char vpx2_sig[] = {
