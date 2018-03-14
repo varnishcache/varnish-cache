@@ -723,6 +723,11 @@ Other changes
     For the backend name, use ``%{VSL:BackendOpen[2]}x`` for backend
     logs.
 
+  * varnishncsa does not accept output format strings (from the ``-F``
+    command-line argument or a configuration file) if they specify
+    tags for log entries whose payloads may contain control or binary
+    characters.
+
 * ``varnishtest(1)`` and ``vtc(7)``:
 
   * The ``client -connect`` and ``server -listen`` commands in vtc
