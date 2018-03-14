@@ -1,5 +1,7 @@
-Variables
----------
+.. _vcl_variables:
+
+VCL Variables
+-------------
 
 Variables provide read, write and delete access to almost all aspects
 of the work at hand.

@@ -3,7 +3,42 @@
 Changes in Varnish 6.0
 ======================
 
-XXX: ... intro paragraphs ...
+Usually when we do dot-zero releases in Varnish, it means that
+users are in for a bit of work to upgrade to the new version,
+but 6.0 is actually not that scary, because most of the changes
+are either under the hood or entirely new features.
+
+The biggest user-visible change is probably that we, or to be totally
+honest here: Geoff Simons, have added support for Unix Domain
+Sockets, both for clients and backend servers.
+
+Because UNIX Domain Sockets have nothing like IP numbers, we were
+forced to define a new level of the VCL language ``vcl 4.1`` to
+cope with UDS.
+
+Both ``vcl 4.0`` and ``vcl 4.1`` are supported, and it is the primary
+source-file which controls which it will be, and you can ``include``
+lower versions, but not higher versions that that.
+
+Some old variables are not available in 4.1 and some new variables
+are not available in 4.0.  Please see :ref:`vcl_variables` for
+specifics.
+
+There are a few other changes to the ``vcl 4.0``, most notably that
+we now consider upper- and lower-case the same for symbols.
+
+There are new and improved VMODs:
+
+* :ref:`vmod_purge(3)` -- fine-grained and "soft" purges
+
+* :ref:`vmod_unix(3)` -- Unix Domain Socket information
+
+* :ref:`vmod_blob(3)` -- Handling of binary blobs (think: Cookies)
+
+* :ref:`vmod_proxy(3)` -- Proxy protocol information
+
+* :ref:`vmod_vtc(3)` -- Utility functions for writing :ref:`varnishtest(1)` cases.
+
 
 .. _whatsnew_new_subhead_1:
 
