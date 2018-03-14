@@ -221,11 +221,12 @@ parameters. The following attributes are available:
     single IP address. This attribute is mandatory, unless ``.path``
     is declared.
 
-  ``.path``
+  ``.path``	(``VCL >= 4.1``)
     The absolute path of a Unix domain socket at which a backend is
     listening. The file at that path must exist and must be accessible
     to Varnish at VCL load time, and it must be a socket. One of
-    ``.path`` or ``.host`` must be declared (but not both).
+    ``.path`` or ``.host`` must be declared (but not both). ``.path``
+    may only be used in VCL since version 4.1.
 
   ``.port``
     The port on the backend that Varnish should connect to. Ignored if
