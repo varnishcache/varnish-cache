@@ -488,6 +488,26 @@ This is not available on every platform. As always, check the
 documentation and test the code before you attempt something like this
 in production.
 
+VMOD proxy
+----------
+
+:ref:`vmod_proxy(3)` provides functions to extract TLV attributes that
+may be optionally sent over a PROXYv2 connection to a Varnish listener.
+Most of these are properties of the peer component's TLS connection::
+
+  import proxy;
+
+  # Get the authority attribute -- corresponds to the SNI of a TLS
+  # connection.
+  set req.http.Authority = proxy.authority();
+
+Not all implementations send TLV attributes, and those that do don't
+necessarily support all of them; test your code to see what works in
+your configuration.
+
+See the
+`PROXY v2 specification <https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt>`_ for more information about TLV attributes.
+
 Packaging changes
 =================
 
