@@ -1,0 +1,64 @@
+varnishtest "#2563: Panic after reembark failure"
+
+barrier b1 cond 2
+barrier b2 cond 2
+
+server s1 {
+	rxreq
+	expect req.url == "/foo"
+	expect req.http.client == "c1"
+	send "HTTP/1.0 200 OK\r\nConnection: close\r\n\r\n"
+	delay .2
+	barrier b1 sync
+	delay .2
+	send "line1\n"
+	delay .2
+	barrier b2 sync
+	send "line2\n"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.do_stream = false;
+	}
+} -start
+
+varnish v1 -cliok "param.set feature +http2"
+varnish v1 -cliok "param.set debug +failresched"
+varnish v1 -cliok "param.set debug +waitinglist"
+varnish v1 -cliok "param.set debug +syncvsl"
+
+client c1 {
+	txreq -url "/foo" -hdr "client: c1"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 12
+	expect resp.http.x-varnish == "1001"
+} -start
+
+barrier b1 sync
+
+client c2 {
+	stream 1 {
+		txreq -url "/foo"
+		delay .2
+		barrier b2 sync
+		rxrst
+		expect rst.err == REFUSED_STREAM
+	} -start
+
+	stream 3 {
+		delay 1
+		txreq -url "/foo"
+		rxresp
+	} -run
+
+	stream 1 -wait
+} -run
+
+client c1 -wait
+
+varnish v1 -vsl_catchup
+varnish v1 -expect busy_sleep >= 1
+varnish v1 -expect busy_wakeup == 0
+varnish v1 -expect busy_killed == 1

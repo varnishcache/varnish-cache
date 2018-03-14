@@ -37,6 +37,7 @@
 #include "cache/cache_transport.h"
 #include "cache/cache_filter.h"
 #include "http2/cache_http2.h"
+#include "cache/cache_objhead.h"
 
 #include "vend.h"
 #include "vtcp.h"
@@ -946,8 +947,8 @@ h2_stream_tmo(struct h2_sess *h2, const struct h2_req *r2)
 }
 
 /*
- * This is the janitorial task of cleaning up any closed streams, and
- * checking if the session is timed out.
+ * This is the janitorial task of cleaning up any closed & refused
+ * streams, and checking if the session is timed out.
  */
 static int
 h2_sweep(struct worker *wrk, struct h2_sess *h2)
@@ -969,6 +970,13 @@ h2_sweep(struct worker *wrk, struct h2_sess *h2)
 				h2_del_req(wrk, r2);
 			break;
 		case H2_S_CLOS_REM:
+			if (!r2->scheduled) {
+				h2_tx_rst(wrk, h2, r2->stream,
+				    H2SE_REFUSED_STREAM);
+				h2_del_req(wrk, r2);
+				continue;
+			}
+			/* FALLTHROUGH */
 		case H2_S_CLOS_LOC:
 		case H2_S_OPEN:
 			if (h2_stream_tmo(h2, r2)) {
@@ -1087,4 +1095,22 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 		H2_Send_Rel(h2, h2->req0);
 	}
 	return (h2e ? 0 : 1);
+}
+
+void
+h2_cleanup_waiting(struct worker *wrk, struct h2_req *r2)
+{
+	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(r2->req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(r2->h2sess, H2_SESS_MAGIC);
+
+	AN(r2->req->ws->r);
+	WS_Release(r2->req->ws, 0);
+	AN(r2->req->hash_objhead);
+	(void)HSH_DerefObjHead(wrk, &r2->req->hash_objhead);
+	AZ(r2->req->hash_objhead);
+	assert(r2->state == H2_S_CLOS_REM);
+	AN(r2->scheduled);
+	r2->scheduled = 0;
+	r2->h2sess->do_sweep = 1;
 }

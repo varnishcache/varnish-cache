@@ -431,6 +431,7 @@ static void v_matchproto_(vtr_reembark_f)
 h2_reembark(struct worker *wrk, struct req *req)
 {
 	struct sess *sp;
+	struct h2_req *r2;
 
 	sp = req->sp;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -443,12 +444,9 @@ h2_reembark(struct worker *wrk, struct req *req)
 	/* Couldn't schedule, ditch */
 	wrk->stats->busy_wakeup--;
 	wrk->stats->busy_killed++;
-	AN (req->vcl);
-	VCL_Rel(&req->vcl);
-	Req_AcctLogCharge(wrk->stats, req);
-	Req_Release(req);
-	DSL(DBG_WAITINGLIST, req->vsl->wid, "kill from waiting list");
-	usleep(10000);
+	CAST_OBJ_NOTNULL(r2, req->transport_priv, H2_REQ_MAGIC);
+	VSLb(req->vsl, SLT_Error, "Fail to reschedule req from waiting list");
+	h2_cleanup_waiting(wrk, r2);
 }
 
 
