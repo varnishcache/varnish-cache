@@ -49,8 +49,13 @@ access the socket file. So you can reliably restrict access by
 restricting permissions on the directory containing the socket (but
 that must be done outside of the Varnish configuration).
 
+When UDS listeners are in use, VCL >= 4.1 will be required for all VCL
+programs loaded by Varnish. If you attempt to load a VCL source with
+``vcl 4.0;``, the load will fail with a message that the version is
+not supported.
+
 If you continue using only IP addresses in your ``-a`` arguments, you
-won't have to change them.
+won't have to change them, and you can continue using VCL 4.0.
 
 Unix domain sockets as backend addresses
 ========================================
@@ -83,6 +88,10 @@ The path of a socket file may also be specified in the
 
 The value of ``-b`` must fulfill the same conditions as the ``.path``
 field in a backend declaration.
+
+Backends with the ``.path`` specification require VCL 4.1, as do paths
+with the ``-b`` argument. If you don't use UDS backends, you can
+continue using VCL 4.0.
 
 varnishd parameters
 ===================
