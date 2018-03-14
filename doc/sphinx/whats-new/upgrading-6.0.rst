@@ -128,7 +128,20 @@ to do so by someone familiar with the innards of Varnish.
 Changes to VCL
 ==============
 
-XXX: ... intro paragraph
+VCL 4.0 and 4.1
+~~~~~~~~~~~~~~~
+
+The first line of code in a VCL program may now be either ``vcl 4.0;``
+or ``vcl 4.1;``, establishing the version of the language for that
+instance of VCL. Varnish 6.0 supports both versions.
+
+The VCL version mainly affects which variables may be used in your VCL
+program, or in some cases, whether the variable is writable or
+read-only. Only VCL 4.1 is permitted when Unix domain sockets are in
+use.
+
+For details, see :ref:`vcl_variables`, and the notes in the present
+document.
 
 VCL variables
 ~~~~~~~~~~~~~
