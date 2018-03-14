@@ -129,8 +129,12 @@ vbf_beresp2obj(struct busyobj *bo)
 	if (bo->uncacheable)
 		bo->fetch_objcore->flags |= OC_F_PASS;
 
-	if (!vbf_allocobj(bo, l))
+	if (!vbf_allocobj(bo, l)) {
+		if (vary != NULL)
+			VSB_destroy(&vary);
+		AZ(vary);
 		return (-1);
+	}
 
 	if (vary != NULL) {
 		AN(ObjSetAttr(bo->wrk, bo->fetch_objcore, OA_VARY, varyl,
