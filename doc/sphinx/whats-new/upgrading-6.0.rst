@@ -450,6 +450,15 @@ VMOD std
 listener is UDS.  :ref:`std.set_ip_tos(INT) <func_set_ip_tos>` is
 silently ignored when the listener is UDS.
 
+Restarts
+~~~~~~~~
+
+Restarts now leave all of the properties of the client request
+unchanged (all of the ``req.*`` variables, including the headers),
+except for ``req.restarts`` and ``req.xid``, which change by design.
+
+``return(restart)`` can now be called from ``vcl_recv{}``.
+
 New VMODs
 ~~~~~~~~~
 
