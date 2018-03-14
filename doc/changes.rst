@@ -159,6 +159,8 @@ Logging / statistics
 
 * added ``cache_hit_grace`` statistics counter
 
+* added ``n_lru_limited`` counter
+
 * The byte counters in ReqAcct now show the numbers reported from the
   operating system rather than what we anticipated to send. This will give
   more accurate numbers when e.g. the client hung up early without
@@ -259,13 +261,95 @@ Fixed bugs which may influence VCL behaviour
 Fixed bugs
 ----------
 
+* Honor first_byte_timeout for recycled backend connections. (1772_)
+
+* Limit backend connection retries to a single retry (2135_)
+
+* H2: Move the req-specific PRIV pointers to struct req. (2268_)
+
+* H2: Don't panic if we reembark with a request body (2305_)
+
+* Clear the objcore attributes flags when (re)initializing an stv object. (2319_)
+
+* H2: Fail streams with missing :method or :path. (2351_)
+
+* H2: Enforce sequence requirement of header block frames. (2387_)
+
+* H2: Hold the sess mutex when evaluating r2->cond. (2434_)
+
+* Use the idle read timeout only on empty requests. (2492_)
+
+* OH leak in http1_reembark. (2495_)
+
+* Fix objcore reference count leak. (2502_)
+
+* Close a race between backend probe and vcl.state=Cold by removing
+  the be->vsc under backend mtx. (2505_)
+
+* Fail gracefully if shard.backend() is called in housekeeping subs (2506_)
+
+* Fix issue #1799 for keep. (2519_)
+
+* oc->last_lru as float gives too little precision. (2527_)
+
+* H2: Don't HTC_RxStuff with a non-reserved workspace. (2539_)
+
+* Various optimalizations of VSM. (2430_, 2470_, 2518_, 2535_, 2541_, 2545_, 2546_)
+
 * Problems during late socket initialization performed by the Varnish
   child process can now be reported back to the management process with an
   error message. (2551_)
 
-.. _2551: https://github.com/varnishcache/varnish-cache/issues/2551
+* Fail if ESI is attempted on partial (206) objects.
 
-**TODO**
+* Assert error in ban_mark_completed() - ban lurker edge case. (2556_)
+
+* Accurate byte counters (2558_). See Logging / statistics above.
+
+* H2: Fix reembark failure handling. (2563_ and 2592_)
+
+* Working directory permissions insufficient when starting with
+  umask 027. (2570_)
+
+* Always use HTTP/1.1 on backend connections for pass & fetch. (2574_)
+
+* EPIPE is a documented errno in tcp(7) on linux. (2582_)
+
+* H2: Handle failed write(2) in h2_ou_session. (2607_)
+
+.. _1772: https://github.com/varnishcache/varnish-cache/issues/1772
+.. _2135: https://github.com/varnishcache/varnish-cache/pull/2135
+.. _2268: https://github.com/varnishcache/varnish-cache/issues/2268
+.. _2305: https://github.com/varnishcache/varnish-cache/issues/2305
+.. _2319: https://github.com/varnishcache/varnish-cache/issues/2319
+.. _2351: https://github.com/varnishcache/varnish-cache/issues/2351
+.. _2387: https://github.com/varnishcache/varnish-cache/issues/2387
+.. _2430: https://github.com/varnishcache/varnish-cache/issues/2430
+.. _2434: https://github.com/varnishcache/varnish-cache/issues/2434
+.. _2470: https://github.com/varnishcache/varnish-cache/issues/2470
+.. _2492: https://github.com/varnishcache/varnish-cache/issues/2492
+.. _2495: https://github.com/varnishcache/varnish-cache/issues/2495
+.. _2502: https://github.com/varnishcache/varnish-cache/issues/2502
+.. _2505: https://github.com/varnishcache/varnish-cache/issues/2505
+.. _2506: https://github.com/varnishcache/varnish-cache/issues/2506
+.. _2518: https://github.com/varnishcache/varnish-cache/issues/2518
+.. _2519: https://github.com/varnishcache/varnish-cache/pull/2519
+.. _2527: https://github.com/varnishcache/varnish-cache/issues/2527
+.. _2535: https://github.com/varnishcache/varnish-cache/issues/2535
+.. _2539: https://github.com/varnishcache/varnish-cache/issues/2539
+.. _2541: https://github.com/varnishcache/varnish-cache/issues/2541
+.. _2545: https://github.com/varnishcache/varnish-cache/pull/2545
+.. _2546: https://github.com/varnishcache/varnish-cache/issues/2546
+.. _2551: https://github.com/varnishcache/varnish-cache/issues/2551
+.. _2554: https://github.com/varnishcache/varnish-cache/pull/2554
+.. _2556: https://github.com/varnishcache/varnish-cache/issues/2556
+.. _2558: https://github.com/varnishcache/varnish-cache/pull/2558
+.. _2563: https://github.com/varnishcache/varnish-cache/issues/2563
+.. _2570: https://github.com/varnishcache/varnish-cache/issues/2570
+.. _2574: https://github.com/varnishcache/varnish-cache/issues/2574
+.. _2582: https://github.com/varnishcache/varnish-cache/issues/2582
+.. _2592: https://github.com/varnishcache/varnish-cache/issues/2592
+.. _2607: https://github.com/varnishcache/varnish-cache/issues/2607
 
 ================================
 Varnish Cache 5.2.1 (2017-11-14)
