@@ -9,7 +9,7 @@ but 6.0 is actually not that scary, because most of the changes
 are either under the hood or entirely new features.
 
 The biggest user-visible change is probably that we, or to be totally
-honest here: Geoff Simons, have added support for Unix Domain
+honest here: Geoff Simmons, have added support for Unix Domain
 Sockets, both for clients and backend servers.
 
 Because UNIX Domain Sockets have nothing like IP numbers, we were
@@ -38,6 +38,7 @@ There are new and improved VMODs:
 * :ref:`vmod_proxy(3)` -- Proxy protocol information
 
 * :ref:`vmod_vtc(3)` -- Utility functions for writing :ref:`varnishtest(1)` cases.
+
 
 
 .. _whatsnew_new_subhead_1:
