@@ -9,8 +9,9 @@ but 6.0 is actually not that scary, because most of the changes
 are either under the hood or entirely new features.
 
 The biggest user-visible change is probably that we, or to be totally
-honest here: Geoff Simmons, have added support for Unix Domain
-Sockets, both for clients and backend servers.
+honest here: Geoff Simmons (UPLEX), have added support for Unix Domain
+Sockets, both :ref:`for clients <upd_6_0_uds_acceptor>` and for
+:ref:`backend servers <upd_6_0_uds_backend>`.
 
 Because UNIX Domain Sockets have nothing like IP numbers, we were
 forced to define a new level of the VCL language ``vcl 4.1`` to
@@ -18,7 +19,7 @@ cope with UDS.
 
 Both ``vcl 4.0`` and ``vcl 4.1`` are supported, and it is the primary
 source-file which controls which it will be, and you can ``include``
-lower versions, but not higher versions that that.
+lower versions, but not higher versions than that.
 
 Some old variables are not available in 4.1 and some new variables
 are not available in 4.0.  Please see :ref:`vcl_variables` for
@@ -27,109 +28,118 @@ specifics.
 There are a few other changes to the ``vcl 4.0``, most notably that
 we now consider upper- and lower-case the same for symbols.
 
+The HTTP/2 code has received a lot of attention from Dag Haavi
+Finstad (Varnish Software) and it holds up in production on several
+large sites now.
+
 There are new and improved VMODs:
 
-* :ref:`vmod_purge(3)` -- fine-grained and "soft" purges
-
-* :ref:`vmod_unix(3)` -- Unix Domain Socket information
-
-* :ref:`vmod_blob(3)` -- Handling of binary blobs (think: Cookies)
+* :ref:`vmod_directors(3)` -- Much work on the ``shard`` director
 
 * :ref:`vmod_proxy(3)` -- Proxy protocol information
 
+* :ref:`vmod_unix(3)` -- Unix Domain Socket information
+
 * :ref:`vmod_vtc(3)` -- Utility functions for writing :ref:`varnishtest(1)` cases.
 
+The ``umem`` stevedore has been brought back on Solaris
+and it is the default storage method there now.
+
+More error situations now get vcl ``failure`` handling,
+this should make life simpler for everybody we hope.
+
+And it goes without saying that we have fixed a lot of bugs too.
 
 
-.. _whatsnew_new_subhead_1:
+Under the hood (mostly for developers)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-XXX subhead 1
-~~~~~~~~~~~~~
+The big thing is that the ``$Abi [vrt|strict]`` should now
+have settled.  We have removed all the stuff from ``<cache.h>``
+which is not available under ``$Abi vrt``, and this hopefully
+means that VMODS will work without recompilation on several
+subsequent varnish versions.  (There are some stuff related
+to packaging which takes advantage of this, but it didn't
+get into this release.)
 
-XXX ...
+VMODS can define their own stats counters now, and they work
+just like builtin counters, because there is no difference.
 
-XXX subsubhead 1.1
-------------------
+The counters are described in a ``.vsc`` file which is
+processed with a new python script which does a lot of
+magic etc.  There is a tiny example in ``vmod_debug`` in
+the source tree.
 
-XXX: ...
+This took a major retooling of the stats counters in general, and
+the VSM, VSC and VSL apis have all subtly or not so subtly changed
+as a result.
 
-XXX subsubhead 1.2
-------------------
+VMOD functions can take optional arguments, these are different
+from defaulted arguments in that a separate flag tells if they
+were specified or not in the call.  For reasons of everybodys
+sanity, all the arguments gets wrapped in a function-specific
+structure when this is used.
 
-XXX: ...
+The ``vmodtool.py`` script has learned other new tricks, and
+as a result also produces nicer ``.rst`` output.
 
-.. _whatsnew_new_uds:
+We have a new way of passing text-string arguments around
+called ``STRANDS``.  Instead of the ``stdarg.h`` representation,
+an ``argc+argv`` struct is passed, which means that a function
+can take multiple STRANDS arguments, which again means that
+many functions will not need to reassemble strings on a
+workspace any more, most notably string comparisons.
 
-Unix domain sockets as listen and backend addresses
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+VCL types ``INT`` and ``BYTES`` are now 64bits on all platforms.
 
-If you are using VCL 4.1, the ``varnishd -a`` command-line argument
-allows you to specify Unix domain sockets as listener addresses
-(beginning with ``/``, see varnishd :ref:`ref-varnishd-options`)::
+VCL ENUM have gotten a new implementation, so the pointers
+are now constant and can be compared as such, rather than
+with ``strcmp(3)``.
 
-  varnishd -a /path/to/listen.sock,PROXY,user=vcache,group=varnish,mode=660
+We have a new type of ``binary`` VSL records which are hexdumped
+by default, but on the API side, rather than in ``varnishd``.
+This saves both VSL bandwidth and processing power, as they are
+usually only used for deep debugging and mostly turned off.
 
-The ``user``, ``group`` and ``mode`` sub-arguments set the permissions
-of the newly created socket file.
+The ``VCC`` compilers has received a lot of work in two areas:
 
-A backend declaration in VCL 4.1 may now include the ``.path`` field
-(instead of ``.host``) for the absolute path of a Unix domain socket
-to which Varnish connects::
+The symbol table has been totally revamped to make it ready for
+variant symbols, presently symbols which are different in
+``vcl 4.0`` and ``vcl 4.1``.
 
-  backend uds {
-  	.path = "/path/to/backend.sock";
-  }
+The "prototype" information in the VMOD shared library has been
+changed to JSON, (look in your vcc_if.c file if you don't belive
+me), and this can express more detailed information, presently
+the optional arguments.
 
-This of course can only be used to communicate with other processes on
-the same host, if they also support socket file addresses. Until now,
-connections with other process co-located with Varnish were only
-possible over locally available IP addresses, such as loopback. Unix sockets
-may have some advantages for such a configuration:
+The stuff only we care about
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* Network traffic over Unix sockets does not have the overhead of the
-  TCP stack. You may see a significant improvement in throughput
-  compared to using the loopback address.
+Varnishtest's ``process`` has grown ``pty(4)`` support, so that
+we can test curses-based programs like our own utilities.
 
-* The file permission system can be used to impose restrictions on the
-  processes that can connect to Varnish, and the processes to which
-  Varnish can connect.
+This has (finally!) pushed our code coverage, across all the
+source code in the project up to 90%.
 
-* Using paths as addresses may be easier to configure than searching
-  for open port numbers on loopback, especially for automated
-  configurations.
+We have also decided to make our python scripts PEP8 compliant, and
+``vmodtool.py`` is already be there.
 
-The obvious use cases are SSL offloaders that decrypt traffic from the
-network and pass requests on to Varnish, and SSL "onloaders" that
-encrypt backend traffic from Varnish and forward requests over
-untrusted networks. But this should be useful for any configuration in
-which Varnish talks to processes on the same host.
+The VCL variables are now defined in the ``.rst`` file, rather
+than the other way around, this makes the documentation better
+at the cost of minor python-script complexity.
 
-The distribution has a new :ref:`VMOD unix <vmod_unix(3)>` that you
-may be able to use in VCL to get information about the credentials of
-a process (user and group of the process owner) that is connected to a
-Varnish listener over a Unix socket. This is not supported on every
-platform, so check the VMOD docs to see if it will work for you.
+We now produce weekly snapshots from ``-trunk``, this makes it
+easier for people to test all the new stuff.
 
-XXX subsubhead 2.1
-------------------
+We have not quite gotten the half-yearly release-procedure under
+control.
 
-XXX: ...
+I'm writing this the evening before the release, trying to squeeze
+out of my brain what I should have written here long time ago,
+and we have had far more commits this last week than is reasonable.
 
-News for authors of VMODs and Varnish API client applications
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+But we *have* gotten better at it.
 
-.. _whatsnew_dev_subhead_1:
-
-XXX dev subhead 1
------------------
-
-XXX ...
-
-.. _whatsnew_dev_subhead_2:
-
-XXX dev subhead 2
------------------
-
-XXX ...
+Really!
 
 *eof*
