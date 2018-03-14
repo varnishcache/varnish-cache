@@ -691,6 +691,12 @@ Other changes
     They can be turned on with the ``protocol`` flag of the varnishd
     :ref:`ref_param_debug` parameter (``-p debug=+protocol``).
 
+* ``varnishstat(1)``
+
+  * Added the counter ``cache_hit_grace`` -- how often objects in the
+    cache were hit when their TTL had expired, but they were still
+    in grace.
+
 * ``varnishncsa(1)``
 
   * The ``%h`` formatter (remote host) gets its value from
