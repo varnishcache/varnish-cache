@@ -44,6 +44,8 @@ VCL and bundled VMODs
   ``req.hash_always_miss`` are now accessible from all of the client
   side subs, not just ``vcl_recv{}``
 
+* ``obj.storage`` is now available in ``vcl_hit{}`` and ``vcl_deliver{}``.
+
 * Removed ``beresp.storage_hint`` for VCL 4.1 (was deprecated since
   Varnish 5.1)
 
