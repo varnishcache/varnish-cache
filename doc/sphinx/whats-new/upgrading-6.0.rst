@@ -678,6 +678,19 @@ Other changes
     with the backend name field -- the second field in
     ``BackendOpen``.
 
+  * The byte counters logged with ``ReqAcct`` now report the numbers
+    returned from the operating system telling us how many bytes were
+    actually sent in a request and response, rather than what Varnish
+    thought it was going to send. This gives a more accurate account
+    when there are errors, for example when a client hung up early
+    without receiving the entire response. The figures also include
+    any overhead in a request or response body, for example due to
+    chunked encoding.
+
+  * Debugging logs for the PROXY protocol are turned off by default.
+    They can be turned on with the ``protocol`` flag of the varnishd
+    :ref:`ref_param_debug` parameter (``-p debug=+protocol``).
+
 * ``varnishncsa(1)``
 
   * The ``%h`` formatter (remote host) gets its value from
