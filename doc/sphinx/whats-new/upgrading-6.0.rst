@@ -96,7 +96,12 @@ continue using VCL 4.0.
 varnishd parameters
 ===================
 
-XXX: ...
+The ``cli_buffer`` parameter, which was deprecated as of Varnish 5.2,
+is now retired.
+
+:ref:`ref_param_max_restarts` now works more correctly -- it is the
+number of ``return(restart)`` calls permitted per request. (It had
+been one less than the number of permitted restarts.)
 
 The parameters :ref:`ref_param_tcp_keepalive_intvl`,
 :ref:`ref_param_tcp_keepalive_probes` and
@@ -108,6 +113,15 @@ certainly have no effect on a UDS. It is not an error to use any of
 these parameters with a UDS; you may get error messages in the log for
 ``accept_filter`` or ``tcp_fastopen`` (with the VSL tag ``Error`` in
 raw grouping), but they are harmless.
+
+:ref:`ref_param_workspace_thread` is now used for IO buffers during
+the delivery of the client response. This space had previously been
+taken from :ref:`ref_param_workspace_client`. If you need to reduce
+memory footprint, consider reducing ``workspace_client`` by the amount
+in ``workspace_thread``.
+
+Added :ref:`ref_param_esi_iovs`. tl;dr: Don't touch it, unless advised
+to do so by someone familiar with the innards of Varnish.
 
 Changes to VCL
 ==============
