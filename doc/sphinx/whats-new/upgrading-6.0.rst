@@ -450,6 +450,45 @@ VMOD std
 listener is UDS.  :ref:`std.set_ip_tos(INT) <func_set_ip_tos>` is
 silently ignored when the listener is UDS.
 
+The ``shard`` director
+----------------------
+
+The ``alg`` argument of the shard director's ``.reconfigure()`` and
+``.key()`` methods has been removed. The choice of hash algorithms was
+experimental, and we have settled on SHA256 as providing the best
+dispersal.
+
+If you have been using other choices of ``alg`` for
+``.reconfigure()``, then after upgrading and removing ``alg``, the
+sharding of requests to backends will change once and only once.
+
+If you have been using other values of ``alg`` for ``.key()`` and need
+to preserve the previous behavior, see the
+`change log <https://github.com/varnishcache/varnish-cache/blob/master/doc/changes.rst>`_
+for advice on how to do so.
+
+With the ``resolve=LAZY`` argument of the ``.backend()`` method, the
+shard director will now defer the selection of a a backend to when a
+backend connection is actually made, which is how all other bundled
+directors work as well. This enables layering the shard director below
+other directors -- you can use ``.backend(resolve=LAZY)`` to set the
+shard director as a backend for another director. ``resolve=LAZY``
+MUST be used in ``vcl_init`` and on the client side.
+
+The shard director now provides a ``shard_param`` object that serves
+as a store for a set of parameters for the director's ``.backend()``
+method. This makes it possible to re-use a set of parameter values
+without having to restate them in every ``.backend()`` call. The
+``.backend()`` method has an argument ``param`` whose value, if it is
+used, must be returned from the ``shard_param.use()`` method.
+
+Because of these changes, support for positional arguments of the
+shard director ``.backend()`` method had to be removed. In other
+words, all parameters to the shard director ``.backend()`` method now
+need to be named.
+
+See :ref:`vmod_directors(3)` for details.
+
 Restarts
 ~~~~~~~~
 
