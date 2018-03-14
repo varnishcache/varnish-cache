@@ -51,7 +51,9 @@ Basic options
   user, group and mode sub-arguments may be used to specify the
   permissions of the socket file -- use names for user and group, and
   a 3-digit octal value for mode. These sub-arguments are not
-  permitted if an IP address is specified.
+  permitted if an IP address is specified. When Unix domain socket
+  listeners are in use, all VCL configurations must have version >=
+  4.1.
 
   Name is referenced in logs. If name is not specified, "a0", "a1",
   etc. is used. An additional protocol type can be set for the
@@ -70,6 +72,8 @@ Basic options
   absolute path of a Unix domain socket to which Varnish connects. In
   that case, the value of ``-b`` must satisfy the conditions required
   for the ``.path`` field of a backend declaration, see :ref:`vcl(7)`.
+  Backends with Unix socket addresses may only be used with VCL
+  versions >= 4.1.
 
   -b can be used only once, and not together with f.
 
