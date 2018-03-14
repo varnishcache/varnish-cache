@@ -457,6 +457,10 @@ Restarts now leave all of the properties of the client request
 unchanged (all of the ``req.*`` variables, including the headers),
 except for ``req.restarts`` and ``req.xid``, which change by design.
 
+If you need to reset the client request headers to their original
+state (before changes in VCL), call
+:ref:`std.rollback(req) <func_rollback>`.
+
 ``return(restart)`` can now be called from ``vcl_recv{}``.
 
 New VMODs
