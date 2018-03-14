@@ -280,8 +280,10 @@ VPX_tlv(const struct req *req, int tlv, void **dst, int *len)
 			if (ssltlv) {
 				char *sd;
 				int sl;
-				sd = d + sizeof(struct pp2_tlv) + sizeof(struct pp2_tlv_ssl);
-				sl = l - sizeof(struct pp2_tlv) - sizeof(struct pp2_tlv_ssl);
+				sd = d + sizeof(struct pp2_tlv) +
+				    sizeof(struct pp2_tlv_ssl);
+				sl = l - sizeof(struct pp2_tlv) -
+				    sizeof(struct pp2_tlv_ssl);
 				while (sl > sizeof(struct pp2_tlv)) {
 					uint16_t subv_len = vbe16dec(sd + 1);
 					if (sd[0] == ssltlv) {
@@ -445,7 +447,8 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 	while (l > sizeof(struct pp2_tlv)) {
 		int el = vbe16dec(d + 1) + 3;
 		if (el > l) {
-			VSL(SLT_ProxyGarbage, req->sp->vxid, "PROXY2: Ignoring TLV");
+			VSL(SLT_ProxyGarbage, req->sp->vxid,
+			    "PROXY2: Ignoring TLV");
 			return (0);
 		}
 		switch(d[0]) {
@@ -454,7 +457,8 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 			uint32_t n_crc32c = vbe32dec(d+3);
 			*(d+3) = 0; *(d+4) = 0; *(d+5) = 0; *(d+6) = 0;
 			if (crc32c(p, hdr_len) != n_crc32c) {
-				VSL(SLT_ProxyGarbage, req->sp->vxid, "PROXY2: CRC error");
+				VSL(SLT_ProxyGarbage, req->sp->vxid,
+				    "PROXY2: CRC error");
 				return (-1);
 			}
 			break;
@@ -463,12 +467,15 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 	        {
 			const char *sd;
 			int sl;
-			sd = d + sizeof(struct pp2_tlv) + sizeof(struct pp2_tlv_ssl);
-			sl = l - sizeof(struct pp2_tlv) - sizeof(struct pp2_tlv_ssl);
+			sd = d + sizeof(struct pp2_tlv) +
+			    sizeof(struct pp2_tlv_ssl);
+			sl = l - sizeof(struct pp2_tlv) -
+			    sizeof(struct pp2_tlv_ssl);
 			while (sl > sizeof(struct pp2_tlv)) {
 				int esl = vbe16dec(sd + 1) + 3;
 				if (esl > sl) {
-					VSL(SLT_ProxyGarbage, req->sp->vxid, "PROXY2: Ignoring SSL TLV");
+					VSL(SLT_ProxyGarbage, req->sp->vxid,
+					    "PROXY2: Ignoring SSL TLV");
 					return (0);
 				}
 				sd += esl;
@@ -481,7 +488,8 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 		l -= el;
 	}
 	if (l) {
-		VSL(SLT_ProxyGarbage, req->sp->vxid, "PROXY2: header length mismatch");
+		VSL(SLT_ProxyGarbage, req->sp->vxid,
+		    "PROXY2: header length mismatch");
 		return (0);
 	}
 	if (tlv_len && WS_Reserve(req->sp->ws, 2 + tlv_len)) {
