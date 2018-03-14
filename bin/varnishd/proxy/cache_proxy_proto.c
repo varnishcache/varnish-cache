@@ -254,6 +254,7 @@ int
 VPX_tlv(const struct req *req, int tlv, void **dst, int *len)
 {
 	uintptr_t *p;
+	uint16_t *tlv_len_p;
 	uint16_t l;
 	char *d;
 	int ssltlv = 0;
@@ -265,9 +266,9 @@ VPX_tlv(const struct req *req, int tlv, void **dst, int *len)
 		*dst = NULL;
 		return (-1);
 	}
-	d = (char *)*p;
-	l = *(uint16_t *)d;
-	d += 2;
+	tlv_len_p = (void *)(*p);
+	l = *tlv_len_p;
+	d = (char *)(tlv_len_p + 1);
 
 	if (tlv > PP2_TYPE_SSL && tlv <= PP2_SUBTYPE_SSL_MAX) {
 		ssltlv = tlv;
@@ -484,7 +485,7 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 		return (0);
 	}
 	if (tlv_len && WS_Reserve(req->sp->ws, 2 + tlv_len)) {
-		tlv_len_p = (uint16_t *)req->sp->ws->f;
+		tlv_len_p = (void *)req->sp->ws->f;
 		*tlv_len_p = tlv_len;
 		memcpy(req->sp->ws->f + 2, tlv_start, tlv_len);
 		WS_Release(req->sp->ws, 2 + tlv_len);
