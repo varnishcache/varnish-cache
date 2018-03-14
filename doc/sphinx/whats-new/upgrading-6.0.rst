@@ -661,6 +661,12 @@ of what you will be able to do once VIP 20 is completed.
 Other changes
 =============
 
+* ``varnishd(1)``:
+
+  * The ``umem`` storage allocator, which was removed as of Varnish
+    5.1, has been restored and is now the default on a system where
+    ``libumem`` is available (SunOS and descendants).
+
 * ``varnishlog(1)``:
 
   * Added a third field to the ``ReqStart`` log record that contains the
