@@ -30,6 +30,9 @@ Usage
   used during ESI delivery. It should not be tuned unless advised by a
   developer.
 
+* Support Unix domain sockets for the ``-a`` and ``-b`` command-line
+  arguments, and for backend declarations. This requires VCL >= 4.1.
+
 VCL and bundled VMODs
 ---------------------
 
@@ -52,6 +55,12 @@ VCL and bundled VMODs
   ``beresp.storage_hint`` to an invalid storage name and later
   retrieve it back. Doing so will now yield the last successfully set
   stevedore or the undefined (``NULL``) string.
+
+* IP-valued elements of VCL are equivalent to ``0.0.0.0:0`` when the
+  connection in question was addressed as a UDS. This is implemented
+  with the ``bogo_ip`` in ``vsa.c``.
+
+* ``beresp.backend.ip`` is retired as of VCL 4.1.
 
 * workspace overflows in ``std.log()`` now trigger a VCL failure
 
@@ -138,6 +147,9 @@ VCL and bundled VMODs
   rounded) and may even have their sign changed or trigger a C
   compiler warning / error.
 
+* Add VMOD unix.
+
+* Add VMOD proxy.
 
 Logging / statistics
 --------------------
@@ -162,6 +174,13 @@ bundled tools
   binary characters. At the time of writing, these are:
   ``%{H2RxHdr}x``, ``%{H2RxBody}x``, ``%{H2TxHdr}x``, ``%{H2TxBody}x``,
   ``%{Debug}x``, ``%{HttpGarbage}x`` and ``%{Hash}x``
+
+* The vtc ``server -listen`` command supports UDS addresses, as does
+  the ``client -connect`` command. vtc ``remote.path`` and
+  ``remote.port`` have the values ``0.0.0.0`` and ``0`` when the peer
+  address is UDS. Added ``remote.path`` to vtc, whose value is the
+  path when the address is UDS, and NULL (matching <undef>) for IP
+  addresses.
 
 C APIs (for vmod and utility authors)
 -------------------------------------
@@ -189,6 +208,13 @@ C APIs (for vmod and utility authors)
 
 * vcc files can now contain a ``$Prefix`` stanza to define the prefix
   for vmod function names (which was fixed to ``vmod`` before)
+
+* vcc files can contain a ``$Synopsis`` stanza with one of the values
+  ``auto`` or ``manual``, default ``auto``. With ``auto``, a more
+  comprehensive SYNOPSIS is generated in the doc output with an
+  overview of objects, methods, functions and their signatures. With
+  ``manual``, the auto-SYNOPSIS is left out, for VMOD authors who
+  prefer to write their own.
 
 * All varnish internal ``SHA256*`` symbols have been renamed to
   ``VSHA256*``
