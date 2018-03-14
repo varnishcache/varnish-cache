@@ -857,7 +857,7 @@ static h2_error
 h2_procframe(struct worker *wrk, struct h2_sess *h2,
     h2_frame h2f)
 {
-	struct h2_req *r2 = NULL, *r22;
+	struct h2_req *r2 = NULL;
 	h2_error h2e;
 
 	ASSERT_RXTHR(h2);
@@ -881,10 +881,9 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2,
 		return (H2CE_PROTOCOL_ERROR);
 	}
 
-	VTAILQ_FOREACH_SAFE(r2, &h2->streams, list, r22) {
+	VTAILQ_FOREACH(r2, &h2->streams, list)
 		if (r2->stream == h2->rxf_stream)
 			break;
-	}
 
 	if (r2 == NULL && h2f->act_sidle == 0) {
 		if (h2->rxf_stream <= h2->highest_stream)
