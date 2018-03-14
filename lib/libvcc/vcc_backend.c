@@ -365,6 +365,15 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 			vcc_NextToken(tl);
 			SkipToken(tl, ';');
 		} else if (vcc_IdIs(t_field, "path")) {
+			if (tl->syntax < VCL_41) {
+				VSB_printf(tl->sb,
+				    "Unix socket backends only supported"
+				    " in VCL4.1 and higher.\n");
+				vcc_ErrToken(tl, tl->t);
+				VSB_printf(tl->sb, " at ");
+				vcc_ErrWhere(tl, tl->t);
+				return;
+			}
 			vcc_Redef(tl, "Address", &t_did, t_field);
 			ERRCHK(tl);
 			ExpectErr(tl, CSTR);
