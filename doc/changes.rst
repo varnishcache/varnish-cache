@@ -129,6 +129,16 @@ VCL and bundled VMODs
   words, all parameters to the shard director ``.backend()`` method
   now need to be named.
 
+* Integers in VCL are now 64 bits wide across all platforms
+  (implemented as ``int64_t`` C type) , but due to implementation
+  specifics of the VCL compiler (VCC), integer literals' precision is
+  limited to that of a VCL real (``double`` C type, roughly 53 bits).
+
+  In effect, larger integers are not represented accurately (they get
+  rounded) and may even have their sign changed or trigger a C
+  compiler warning / error.
+
+
 Logging / statistics
 --------------------
 
