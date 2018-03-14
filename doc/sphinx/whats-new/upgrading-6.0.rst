@@ -789,9 +789,29 @@ Other changes
     other two. Its value is the path when the peer address is a UDS,
     and NULL otherwise (matching ``<undef>`` in the latter case).
 
-  * XXX ...
-
 * Changes for developers:
+
+  * The VRT API version has been bumped to 7.0, and comprises a variety
+    of new additions and changes. See ``vrt.h`` and the
+    `change log <https://github.com/varnishcache/varnish-cache/blob/master/doc/changes.rst>`_
+    for details.
+
+  * There are new rules about including API headers -- some may only
+    be included once, others must included in a specific order. Only
+    ``cache.h`` *or* ``vrt.h`` may be included (``cache.h`` includes
+    ``vrt.h``). See the ``#error`` directives in the headers.
+
+  * VMOD authors can use the ``VRT_VSC_*()`` series of functions and
+    the new ``vsctool`` to create statistics for a VMOD that will be
+    displayed by varnishstat.  Varnish uses the same technique to
+    create its counters, so you can look to the core code to see how
+    it's done.
+
+  * The ``VCL_INT`` and ``VCL_BYTES`` types are now defined to be
+    strictly 64 bit (rather than leave it to whatever your platform
+    defines as ``long``). But you may not get that full precision,
+    for reasons discussed in the
+    `change log <https://github.com/varnishcache/varnish-cache/blob/master/doc/changes.rst>`_.
 
   * As part of VRT version 7.0, the ``path`` field has been added to
     to ``struct vrt_backend``, which a VMOD can use with
@@ -804,8 +824,13 @@ Other changes
     debug (available in the source tree) illustrates how this can be
     done.
 
-  * VMOD vcc sources may now include a directive ``$Synopsis`` whose
-    value may be ``auto`` or ``manual``, default ``auto``.
+  * VMOD vcc sources may now include a directive ``$Prefix``, whose
+    value is the string prepended to the names of C objects and
+    functions in the generated C interface (in ``vcc_if.h``). So you
+    may choose another prefix besides ``vmod_``, if so desired.
+
+  * vcc sources may also include a directive ``$Synopsis`` whose value
+    may be ``auto`` or ``manual``, default ``auto``.
 
     When ``$Synopsis`` is ``auto``, the vmodtool generates a more
     comprehensive ``SYNOPSIS`` section in the documentation than in
@@ -815,7 +840,5 @@ Other changes
     When ``$Synopsis`` is ``manual``, the ``SYNOPSIS`` is left out of
     the generated docs altogether; so you can write the ``SYNOPSIS``
     section yourself, if you prefer.
-
-  * XXX ...
 
 *eof*
