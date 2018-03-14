@@ -4,9 +4,6 @@
 Upgrading to Varnish 6.0
 %%%%%%%%%%%%%%%%%%%%%%%%
 
-XXX: Most important change first
-================================
-
 .. _upd_6_0_uds_acceptor:
 
 Unix domain sockets as listen addresses
@@ -17,6 +14,10 @@ The ``varnishd -a`` command-line argument now has this form, where the
 begins with ``/`` (see varnishd :ref:`ref-varnishd-options`)::
 
   -a [name=][address][:port][,PROTO][,user=<user>][,group=<group>][,mode=<mode>]
+
+For example::
+
+  varnishd -a /path/to/listen.sock,PROXY,user=vcache,group=varnish,mode=660
 
 That means that an absolute path must always be specified for the
 socket file.  The socket file is created when Varnish starts, and any
