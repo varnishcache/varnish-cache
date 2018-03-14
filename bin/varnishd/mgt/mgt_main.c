@@ -592,7 +592,7 @@ main(int argc, char * const *argv)
 			REPLACE(fa->farg, "<-b argument>");
 			vsb = VSB_new_auto();
 			AN(vsb);
-			VSB_printf(vsb, "vcl 4.0;\n");
+			VSB_printf(vsb, "vcl 4.1;\n");
 			VSB_printf(vsb, "backend default {\n");
 			if (*optarg != '/')
 				VSB_printf(vsb, "    .host = \"%s\";\n",
