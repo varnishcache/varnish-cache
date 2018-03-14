@@ -25,6 +25,8 @@ FLOPS='
 	../../lib/libvmod_debug/*.c
 	../../lib/libvmod_directors/flint.lnt
 	../../lib/libvmod_directors/*.c
+	../../lib/libvmod_proxy/flint.lnt
+	../../lib/libvmod_proxy/*.c
 	../../lib/libvmod_purge/flint.lnt
 	../../lib/libvmod_purge/*.c
 	../../lib/libvmod_std/flint.lnt
