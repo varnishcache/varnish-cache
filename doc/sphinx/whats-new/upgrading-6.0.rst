@@ -7,7 +7,7 @@ Upgrading to Varnish 6.0
 XXX: Most important change first
 ================================
 
-XXX ...
+.. _upd_6_0_uds_acceptor:
 
 Unix domain sockets as listen addresses
 =======================================
@@ -56,6 +56,8 @@ not supported.
 
 If you continue using only IP addresses in your ``-a`` arguments, you
 won't have to change them, and you can continue using VCL 4.0.
+
+.. _upd_6_0_uds_backend:
 
 Unix domain sockets as backend addresses
 ========================================
