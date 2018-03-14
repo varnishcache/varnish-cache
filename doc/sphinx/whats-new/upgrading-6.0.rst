@@ -225,6 +225,13 @@ of VCL 4.1, but are still available in 4.0. Note that
 ``beresp.storage_hint`` has been deprecated since Varnish 5.1; you
 should use ``beresp.storage`` instead.
 
+Client-side variable access
+---------------------------
+
+``req.storage``, ``req.hash_ignore_busy`` and ``req.hash_always_miss``
+are now accessible from all of the client side subroutines (previously
+only in ``vcl_recv{}``).
+
 Unix domain sockets and VCL
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
