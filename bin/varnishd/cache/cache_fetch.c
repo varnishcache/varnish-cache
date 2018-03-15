@@ -531,10 +531,8 @@ vbf_figure_out_vfp(struct busyobj *bo)
 		return (0);
 	}
 
-	if (! cache_param->http_gzip_support) {
+	if (! cache_param->http_gzip_support)
 		bo->do_gzip = bo->do_gunzip = 0;
-		return (0);
-	}
 
 	/* No body -> done */
 	if (bo->htc->body_status == BS_NONE ||
