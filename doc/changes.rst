@@ -11,7 +11,7 @@ Usage
 
 * The ``cli_buffer`` parameter has been removed
 
-* Added back ``umem`` storage for Solaris descendents
+* Added back ``umem`` storage for Solaris descendants
 
 * The new storage backend type (stevedore) ``default`` now resolves to
   either ``umem`` (where available) or ``malloc``.
@@ -21,7 +21,7 @@ Usage
   the client workspace.
 
   We are now taking delivery IO vectors from the thread workspace, so
-  the parameter documemtation is in sync with reality again.
+  the parameter documentation is in sync with reality again.
 
   Users who need to minimize memory footprint might consider
   decreasing ``workspace_client`` by ``workspace_thread``.
@@ -296,7 +296,7 @@ Fixed bugs
 
 * H2: Don't HTC_RxStuff with a non-reserved workspace. (2539_)
 
-* Various optimalizations of VSM. (2430_, 2470_, 2518_, 2535_, 2541_, 2545_, 2546_)
+* Various optimizations of VSM. (2430_, 2470_, 2518_, 2535_, 2541_, 2545_, 2546_)
 
 * Problems during late socket initialization performed by the Varnish
   child process can now be reported back to the management process with an
