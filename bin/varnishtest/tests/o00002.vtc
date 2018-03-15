@@ -34,6 +34,13 @@ server s1 {
 	expect req.http.xyzzy1 == 4444
 	expect req.http.x-forwarded-for == "1:f::2, 1:f::2"
 	txresp -body "proxy4"
+
+	rxreq
+	expect req.url == "/pipe"
+	expect req.http.xyzzy1 == req.http.xyzzy2
+	expect req.http.xyzzy1 == 5555
+	expect req.http.x-forwarded-for == "1:f::2, 1:f::2"
+	txresp -hdr "Connection: close" -body "pipe"
 } -start
 
 varnish v1 -proto PROXY -vcl+backend {
@@ -63,6 +70,9 @@ varnish v2 -proto PROXY -vcl {
 			set req.backend_hint = bp1;
 		} else {
 			set req.backend_hint = bp2;
+		}
+		if (req.url ~ "^/pipe") {
+			return (pipe);
 		}
 	}
 	sub vcl_deliver {
@@ -97,3 +107,11 @@ client c1 -connect ${v2_sock} -proxy1 "[1:f::2]:4444 [5:a::8]:5678" {
 	expect resp.body == "proxy4"
 } -run
 delay .2
+
+client c1 -connect ${v2_sock} -proxy1 "[1:f::2]:5555 [5:a::8]:5678" {
+	txreq -url /pipe
+	rxresp
+	expect resp.body == "pipe"
+	expect resp.http.Connection == "close"
+	expect_close
+} -run
