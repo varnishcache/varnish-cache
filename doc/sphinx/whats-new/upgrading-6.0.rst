@@ -486,10 +486,15 @@ for advice on how to do so.
 With the ``resolve=LAZY`` argument of the ``.backend()`` method, the
 shard director will now defer the selection of a backend to when a
 backend connection is actually made, which is how all other bundled
-directors work as well. This enables layering the shard director below
-other directors -- you can use ``.backend(resolve=LAZY)`` to set the
-shard director as a backend for another director. ``resolve=LAZY``
-MUST be used in ``vcl_init`` and on the client side.
+directors work as well.
+
+In ``vcl_init``, ``resolve=LAZY`` is default and enables layering the
+shard director below other directors -- you can now use something like
+``mydirector.add_backend(myshard.backend())`` to set the shard
+director as a backend for another director.
+
+Use of ``resolve=LAZY`` on the client side is limited to using the
+default or associated parameters.
 
 The shard director now provides a ``shard_param`` object that serves
 as a store for a set of parameters for the director's ``.backend()``
