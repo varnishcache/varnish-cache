@@ -36,6 +36,10 @@ Usage
 VCL and bundled VMODs
 ---------------------
 
+* ``return (fetch)`` is no longer allowed in ``vcl_hit {}``, use
+  ``return (miss)`` instread. Note that ``return (fetch)`` has been
+  deprecated since 4.0.
+
 * Fix behaviour of restarts to how it was originally intended:
   Restarts now leave all the request properties in place except for
   ``req.restarts`` and ``req.xid``, which need to change by design.
