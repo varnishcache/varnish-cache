@@ -83,13 +83,6 @@ structure when this is used.
 The ``vmodtool.py`` script has learned other new tricks, and
 as a result also produces nicer ``.rst`` output.
 
-We have a new way of passing text-string arguments around
-called ``STRANDS``.  Instead of the ``stdarg.h`` representation,
-an ``argc+argv`` struct is passed, which means that a function
-can take multiple STRANDS arguments, which again means that
-many functions will not need to reassemble strings on a
-workspace any more, most notably string comparisons.
-
 VCL types ``INT`` and ``BYTES`` are now 64bits on all platforms.
 
 VCL ENUM have gotten a new implementation, so the pointers
