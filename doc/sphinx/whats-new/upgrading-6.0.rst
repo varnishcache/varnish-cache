@@ -866,4 +866,22 @@ Other changes
     the generated docs altogether; so you can write the ``SYNOPSIS``
     section yourself, if you prefer.
 
+  * Support for a new declaration of optional arguments in vcc files
+    has been added: ``[ argname ]`` can be used to mark *argname* as
+    optional.
+
+    If this declaration is used for any argument, _all_ user arguments
+    and ``PRIV_*`` pointers (no object pointers) to the respective
+    function/method will be passed in a ``struct`` *funcname*\
+    ``_arg`` specific to this function which contains the arguments by
+    their name (or the name ``arg``\ *n* for unnamed arguments, *n*
+    being the argument position starting with 1) plus ``valid_``\
+    *argname* members for optional arguments which are being set to
+    non-zero iff the respective *argname* was provided.
+
+    Argument presence is determined at VCC time, so it is not possible
+    to pass an unset argument from another function call.
+
+
+
 *eof*
