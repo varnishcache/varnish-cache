@@ -693,6 +693,8 @@ cnt_pipe(struct worker *wrk, struct req *req)
 	VSLb(bo->vsl, SLT_Begin, "bereq %u pipe", VXID(req->vsl->wid));
 	VSLb(req->vsl, SLT_Link, "bereq %u pipe", VXID(bo->vsl->wid));
 	THR_SetBusyobj(bo);
+	bo->sp = req->sp;
+	SES_Ref(bo->sp);
 
 	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, SLT_BereqMethod);
 	http_FilterReq(bo->bereq, req->http, 0);	// XXX: 0 ?
@@ -726,6 +728,7 @@ cnt_pipe(struct worker *wrk, struct req *req)
 		WRONG("Illegal return from vcl_pipe{}");
 	}
 	http_Teardown(bo->bereq);
+	SES_Rel(bo->sp);
 	VBO_ReleaseBusyObj(wrk, &bo);
 	THR_SetBusyobj(NULL);
 	return (nxt);
