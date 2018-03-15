@@ -190,8 +190,7 @@ C APIs (for vmod and utility authors)
 -------------------------------------
 
 * We have now defined three API Stability levels: ``VRT``,
-  ``PACKAGE``, ``SOURCE``. XXX: someone should write up an rst when
-  we've settled this.
+  ``PACKAGE``, ``SOURCE``.
 
 * New API namespace rules, see `phk_api_spaces_`
 
@@ -199,8 +198,6 @@ C APIs (for vmod and utility authors)
   * many headers can now only be included once
   * some headers require specific include ordering
   * only ``cache.h`` _or_ ``vrt.h`` can be included
-
-  XXX: More details?
 
 * Signatures of functions in the VLU API for bytestream into text
   serialization have been changed
@@ -243,8 +240,6 @@ C APIs (for vmod and utility authors)
 * Directors now have their own admin health information and always need to
   have the ``(struct director).admin_health`` initialized to
   ``VDI_AH_*`` (usually ``VDI_AH_HEALTHY``).
-
-  XXX improve / more details
 
 Other changes relevant for VMODs
 --------------------------------
