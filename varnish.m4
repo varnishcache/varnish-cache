@@ -1,4 +1,4 @@
-# Copyright (c) 2016-2017 Varnish Software AS
+# Copyright (c) 2016-2018 Varnish Software AS
 # All rights reserved.
 #
 # Author: Dridi Boukelmoune <dridi.boukelmoune@gmail.com>
@@ -29,7 +29,7 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # varnish.m4 - Macros to build against Varnish.         -*- Autoconf -*-
-# serial 9 (varnish-5.2.1)
+# serial 10 (varnish-6.0.0)
 #
 # This collection of macros helps create VMODs or tools interacting with
 # Varnish Cache using the GNU build system (autotools). In order to work
@@ -373,6 +373,98 @@ AC_DEFUN([VARNISH_VMODS], [
 	m4_foreach([_vmod_name],
 		m4_split(m4_normalize([$1])),
 		[_VARNISH_VMOD(_vmod_name)])
+])
+
+# _VARNISH_VSC_CONFIG
+# --------------------
+AC_DEFUN([_VARNISH_VSC_CONFIG], [
+
+	AC_REQUIRE([_VARNISH_PKG_CONFIG])
+	AC_REQUIRE([_VARNISH_CHECK_DEVEL])
+	AC_REQUIRE([_VARNISH_CHECK_PYTHON])
+
+	dnl Define an automake silent execution for vmodtool
+	[am__v_VSCTOOL_0='@echo "  VSCTOOL " $''@;']
+	[am__v_VSCTOOL_1='']
+	[am__v_VSCTOOL_='$(am__v_VSCTOOL_$(AM_DEFAULT_VERBOSITY))']
+	[AM_V_VSCTOOL='$(am__v_VSCTOOL_$(V))']
+	AC_SUBST([am__v_VSCTOOL_0])
+	AC_SUBST([am__v_VSCTOOL_1])
+	AC_SUBST([am__v_VSCTOOL_])
+	AC_SUBST([AM_V_VSCTOOL])
+])
+
+# _VARNISH_COUNTER(NAME)
+# ----------------------
+AC_DEFUN([_VARNISH_COUNTER], [
+
+	AC_REQUIRE([_VARNISH_VSC_CONFIG])
+
+	VSC_RULES="
+
+VSC_$1.h: $1.vsc
+	\$(A""M_V_VSCTOOL) \$(PYTHON) \$(VSCTOOL) -h \$(srcdir)/$1.vsc
+
+VSC_$1.c: $1.vsc
+	\$(A""M_V_VSCTOOL) \$(PYTHON) \$(VSCTOOL) -c \$(srcdir)/$1.vsc
+
+VSC_$1.rst: $1.vsc
+	\$(A""M_V_VSCTOOL) \$(PYTHON) \$(VSCTOOL) -r \$(srcdir)/$1.vsc >VSC_$1.rst
+
+clean: clean-vsc-$1
+
+distclean: clean-vsc-$1
+
+clean-vsc-$1:
+	rm -f VSC_$1.h VSC_$1.c VSC_$1.rst
+
+"
+
+	AC_SUBST(m4_toupper(BUILD_VSC_$1), [$VSC_RULES])
+	m4_ifdef([_AM_SUBST_NOTMAKE],
+		[_AM_SUBST_NOTMAKE(m4_toupper(BUILD_VSC_$1))])
+])
+
+# VARNISH_COUNTERS(NAMES)
+# -----------------------
+# Since: Varnish 6.0.0
+#
+# In order to manipulate custom counters that tools like varnishstat can
+# report, it is possible to do that via a VMOD. This macro allows you
+# to declare sets of counters, but does not associates them automatically
+# with their respective VMODs:
+#
+#     VARNISH_UTILITIES([foo bar])
+#
+# Two build rules will be available for use in Makefile.am for the counters
+# foo and bar:
+#
+#     @BUILD_VSC_FOO@
+#     @BUILD_VSC_BAR@
+#
+# They take care of turning VSC_foo.vsc and VCS_bar.vcs into C code and
+# RST documentation.
+#
+# Just like the vcc_*_if.[ch] files, you need to manually add the generated
+# sources to the appropriate VMODs:
+#
+#     nodist_libvmod_baz_la_SOURCES = \
+#             vcc_baz_if.c \
+#             vcc_baz_if.h \
+#             VSC_foo.c \
+#             VSC_foo.h
+#
+# You can then include the counters documentation somewhere in the VMOD's
+# VCC descriptor:
+#
+#     .. include:: VSC_foo.rst
+#
+# That should be all you need to do to start implementing custom counters.
+#
+AC_DEFUN([VARNISH_COUNTERS], [
+	m4_foreach([_vsc_name],
+		m4_split(m4_normalize([$1])),
+		[_VARNISH_COUNTER(_vsc_name)])
 ])
 
 # _VARNISH_UTILITY(NAME)
