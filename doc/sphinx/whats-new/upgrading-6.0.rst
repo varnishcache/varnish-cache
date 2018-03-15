@@ -575,7 +575,7 @@ Supported platforms
 ~~~~~~~~~~~~~~~~~~~
 
 Official Varnish packages went through major changes for this release,
-and target Debian 8 and 9, Ubuntu 16.04 LTS and (Red Hat) Enterprise
+and target Debian 9, Ubuntu 16.04 LTS and (Red Hat) Enterprise
 Linux 7. Ubuntu 14.04 LTS will likely reach its end of life before
 Varnish 6 and the venerable Enterprise Linux 6 is getting too old and
 forced time-consuming workarounds so for these reasons we dropped
