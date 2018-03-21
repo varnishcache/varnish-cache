@@ -506,7 +506,6 @@ main(int argc, char **argv)
 	pthread_t thr;
 	int fnum = -1;
 	struct profile cli_p = {0};
-	cli_p.name = 0;
 
 	vut = VUT_InitProg(argc, argv, &vopt_spec);
 	AN(vut);
