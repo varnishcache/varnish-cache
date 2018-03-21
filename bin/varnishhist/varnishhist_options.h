@@ -47,13 +47,14 @@
 	)
 
 #define HIS_OPT_P							\
-	VOPT("P:", "[-P <[cb:]tag:field_num:min:max>]",			\
+	VOPT("P:", "[-P <[cb:]tag:[prefix]:field_num:min:max>]",	\
 	    "Custom profile definition",				\
 	    "Graph the given custom definition defined as: an optional" \
 	    " (c)lient or (b)ackend filter (defaults to client), the"	\
-	    " tag we'll look for, and the field number of the value we" \
-	    " are interested in. min and max are the boundaries of the" \
-	    " graph (these are power of ten)."				\
+	    " tag we'll look for, a prefix to look for (can be empty,"	\
+	    " but must be terminated by a colon) and the field number"	\
+	    " of the value we are interested in. min and max are the"	\
+	    " boundaries of the graph (these are power of ten)."	\
 	)
 
 #define HIS_OPT_B							\

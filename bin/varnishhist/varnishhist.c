@@ -501,8 +501,8 @@ int
 main(int argc, char **argv)
 {
 	int i;
-	const char *colon, *ptag;
-	const char *profile = "responsetime";
+	char *colon;
+	const char *ptag, *profile = "responsetime";
 	pthread_t thr;
 	int fnum = -1;
 	struct profile cli_p = {0};
@@ -528,7 +528,7 @@ main(int argc, char **argv)
 				profile = optarg;
 				break;
 			}
-			/* else it's a definition, we hope */
+			/* else check if valid definition */
 			if (colon == optarg + 1 &&
 			    (*optarg == 'b' || *optarg == 'c')) {
 				cli_p.VSL_arg = *optarg;
@@ -542,15 +542,27 @@ main(int argc, char **argv)
 			}
 
 			assert(colon);
-			if (sscanf(colon + 1, "%d:%d:%d", &cli_p.field,
-			    &cli_p.hist_low, &cli_p.hist_high) != 3)
-				profile_error(optarg);
 
 			match_tag = VSL_Name2Tag(ptag, colon - ptag);
 			if (match_tag < 0)
 				VUT_Error(vut, 1,
 				    "-P: '%s' is not a valid tag name",
 				    optarg);
+
+			cli_p.prefix = colon + 1;
+			colon = strchr(colon + 1, ':');
+
+			if (colon == NULL)
+				profile_error(optarg);
+
+			*colon = '\0';
+			if (*cli_p.prefix == '\0')
+				cli_p.prefix = NULL;
+
+			if (sscanf(colon + 1, "%d:%d:%d", &cli_p.field,
+			    &cli_p.hist_low, &cli_p.hist_high) != 3)
+				profile_error(optarg);
+
 			if (VSL_tagflags[match_tag])
 				VUT_Error(vut, 1,
 				    "-P: '%s' is an unsafe or binary record",
