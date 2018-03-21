@@ -23,7 +23,7 @@ shell -err -expect "Invalid grouping mode: raw" \
 	"varnishhist -g raw"
 shell -err -expect "-P: No such profile 'foo'" \
 	"varnishhist -P foo"
-shell -err -expect "-P: 'foo:bar' is not a valid profile name or definition" \
-	"varnishhist -P foo:bar"
-shell -err -expect "-P: 'foo:0:0:0' is not a valid tag name" \
-	"varnishhist -P foo:0:0:0"
+shell -err -expect "-P: 'Timestamp:' is not a valid profile name or definition" \
+	"varnishhist -P Timestamp::"
+shell -err -expect "-P: 'foo::0:0:0' is not a valid tag name" \
+	"varnishhist -P foo::0:0:0"
