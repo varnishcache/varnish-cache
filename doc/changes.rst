@@ -1,3 +1,14 @@
+====================
+Varnish Cache master
+====================
+
+bundled tools
+-------------
+
+* ``varnishhist``: The format of the ``-P`` argument has been changed
+  for custom profile definitions to also contain a prefix to match the
+  tag against.
+
 ================================
 Varnish Cache 6.0.0 (2018-03-15)
 ================================
