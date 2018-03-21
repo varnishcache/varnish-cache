@@ -549,9 +549,14 @@ main(int argc, char **argv)
 				    "-P: '%s' is not a valid tag name",
 				    optarg);
 
-			cli_p.prefix = colon + 1;
-			colon = strchr(colon + 1, ':');
+			if (VSL_tagflags[match_tag])
+				VUT_Error(vut, 1,
+				    "-P: '%s' is an unsafe or binary record",
+				    optarg);
 
+			cli_p.prefix = colon + 1;
+
+			colon = strchr(colon + 1, ':');
 			if (colon == NULL)
 				profile_error(optarg);
 
@@ -559,19 +564,23 @@ main(int argc, char **argv)
 			if (*cli_p.prefix == '\0')
 				cli_p.prefix = NULL;
 
-			if (sscanf(colon + 1, "%d:%d:%d", &cli_p.field,
-			    &cli_p.hist_low, &cli_p.hist_high) != 3)
+			if (sscanf(colon + 1, "%d",  &cli_p.field) != 1)
 				profile_error(optarg);
-
-			if (VSL_tagflags[match_tag])
-				VUT_Error(vut, 1,
-				    "-P: '%s' is an unsafe or binary record",
-				    optarg);
 
 			cli_p.name = "custom";
 			cli_p.tag = match_tag;
+			cli_p.hist_low = -6;
+			cli_p.hist_high = 3;
 			profile = NULL;
 			active_profile = &cli_p;
+
+			colon = strchr(colon + 1, ':');
+			if (colon == NULL)
+				break;
+
+			if (sscanf(colon + 1, "%d:%d",  &cli_p.hist_low,
+				   &cli_p.hist_high) != 2)
+				profile_error(optarg);
 
 			break;
 		case 'B':
