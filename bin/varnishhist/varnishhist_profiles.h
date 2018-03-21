@@ -42,6 +42,16 @@ HIS_PROF(
     " client response"
     )
 HIS_PROF(
+    "reqbodytime",	// name
+    HIS_CLIENT,		// HIS_CLIENT | HIS_BACKEND
+    SLT_Timestamp,	// tag
+    "ReqBody:",		// prefix
+    3,			// field
+    -6,			// hist_low
+    3,			// hist_high
+    "graph the time for reading the request body"
+    )
+HIS_PROF(
     "size",		// name
     HIS_CLIENT,		// HIS_CLIENT | HIS_BACKEND
     SLT_ReqAcct,	// tag
