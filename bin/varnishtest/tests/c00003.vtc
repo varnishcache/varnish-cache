@@ -18,6 +18,11 @@ shell -err -expect "Too many protocol sub-args" {
 	varnishd -a 127.0.0.1:80000,HTTP,FOO -d
 }
 
+# -a UDS path too long
+shell -err -match "Got no socket" {
+	varnishd -a /Although/sizeof/sockaddr_un/sun_path/is/platform/specific/this/path/is/really/definitely/and/most/assuredly/too/long/on/any/platform/--/any/length/that/results/in/sizeof/sockaddr_un/being/greater/than/128/will/probably/be/enough/to/blow/it/up. -d
+}
+
 # -a relative path for a UDS address not permitted
 shell -err -expect "Unix domain socket addresses must be absolute paths" {
 	varnishd -a foo/bar.sock -d
