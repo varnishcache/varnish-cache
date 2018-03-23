@@ -1,0 +1,21 @@
+varnishtest "ESI with http_gzip_support off"
+
+server s1 {
+	rxreq
+	txresp -gzipbody {<esi:include src="/foo">}
+	rxreq
+	txresp -gzipbody "bar"
+} -start
+
+varnish v1 -arg "-p http_gzip_support=off" -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.do_esi = true;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	gunzip
+	expect resp.body == "bar"
+} -run
