@@ -90,7 +90,7 @@ mac_opensocket(struct listen_sock *ls)
 		ls->sock = VTCP_bind(ls->addr, NULL);
 	else {
 		uds.sun_family = PF_UNIX;
-		strcpy(uds.sun_path, ls->endpoint);
+		bprintf(uds.sun_path, "%s", ls->endpoint);
 		ls->sock = VUS_bind(&uds, NULL);
 	}
 	fail = errno;

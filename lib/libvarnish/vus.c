@@ -33,6 +33,7 @@
 #include <errno.h>
 #include <string.h>
 #include <poll.h>
+#include <stdio.h>
 
 #include "vdef.h"
 #include "vas.h"
@@ -55,7 +56,7 @@ VUS_resolver(const char *path, vus_resolved_f *func, void *priv,
 		*err = "Path too long for a Unix domain socket";
 		return(-1);
 	}
-	strcpy(uds.sun_path, path);
+	bprintf(uds.sun_path, "%s", path);
 	uds.sun_family = PF_UNIX;
 	if (func != NULL)
 		ret = func(priv, &uds);
@@ -108,10 +109,8 @@ VUS_connect(const char *path, int msec)
 
 	if (path == NULL)
 		return (-1);
-	/* Attempt the connect */
-	assert(strlen(path) + 1 <= sizeof(uds.sun_path));
 	uds.sun_family = PF_UNIX;
-	strcpy(uds.sun_path, path);
+	bprintf(uds.sun_path, "%s", path);
 	AN(sl);
 
 	s = socket(PF_UNIX, SOCK_STREAM, 0);
