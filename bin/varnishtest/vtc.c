@@ -189,6 +189,10 @@ macro_get(const char *b, const char *e)
 	int l;
 	char *retval = NULL;
 
+	AN(b);
+	if (e == NULL)
+		e = strchr(b, '\0');
+	AN(e);
 	l = e - b;
 
 	if (l == 4 && !memcmp(b, "date", l)) {
@@ -889,6 +893,8 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
     char *logbuf, unsigned loglen)
 {
 	FILE *f;
+	struct vsb *vsb;
+	const char *p;
 
 	(void)signal(SIGPIPE, SIG_IGN);
 
@@ -899,6 +905,21 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 
 	init_macro();
 	init_server();
+
+	vsb = VSB_new_auto();
+	AN(vsb);
+	if (*fn != '/')
+		VSB_cat(vsb, macro_get("pwd", NULL));
+	p = strrchr(fn, '/');
+	if (p != NULL) {
+		VSB_putc(vsb, '/');
+		VSB_bcat(vsb, fn, p - fn);
+	}
+	if (VSB_len == 0)
+		VSB_putc(vsb, '/');
+	AZ(VSB_finish(vsb));
+	macro_def(vltop, NULL, "testdir", "%s", VSB_data(vsb));
+	VSB_destroy(&vsb);
 
 	/* Move into our tmpdir */
 	AZ(chdir(tmpdir));
