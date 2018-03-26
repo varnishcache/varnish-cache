@@ -915,7 +915,7 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 		VSB_putc(vsb, '/');
 		VSB_bcat(vsb, fn, p - fn);
 	}
-	if (VSB_len == 0)
+	if (VSB_len(vsb) == 0)
 		VSB_putc(vsb, '/');
 	AZ(VSB_finish(vsb));
 	macro_def(vltop, NULL, "testdir", "%s", VSB_data(vsb));
