@@ -36,5 +36,6 @@ struct vpf_fh *VPF_Open(const char *path, mode_t mode, pid_t *pidptr);
 int VPF_Write(struct vpf_fh *pfh);
 int VPF_Close(struct vpf_fh *pfh);
 int VPF_Remove(struct vpf_fh *pfh);
+int VPF_read(const char *path, pid_t *);
 
 #endif

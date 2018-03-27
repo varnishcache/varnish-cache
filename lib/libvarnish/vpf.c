@@ -72,8 +72,8 @@ vpf_verify(const struct vpf_fh *pfh)
 	return (0);
 }
 
-static int
-vpf_read(const char *path, pid_t *pidptr)
+int
+VPF_read(const char *path, pid_t *pidptr)
 {
 	char buf[16], *endptr;
 	int error, fd, i;
@@ -129,7 +129,7 @@ VPF_Open(const char *path, mode_t mode, pid_t *pidptr)
 	    O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC | O_NONBLOCK, mode);
 	if (fd == -1) {
 		if (errno == EWOULDBLOCK && pidptr != NULL) {
-			errno = vpf_read(pfh->pf_path, pidptr);
+			errno = VPF_read(pfh->pf_path, pidptr);
 			if (errno == 0)
 				errno = EEXIST;
 		}
