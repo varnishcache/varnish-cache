@@ -374,32 +374,9 @@ static void *
 varnish_thread(void *priv)
 {
 	struct varnish *v;
-	char buf[65536];
-	struct pollfd fds[1];
-	int i;
 
 	CAST_OBJ_NOTNULL(v, priv, VARNISH_MAGIC);
-	(void)VTCP_nonblocking(v->fds[0]);
-	while (1) {
-		memset(fds, 0, sizeof fds);
-		fds->fd = v->fds[0];
-		fds->events = POLLIN;
-		i = poll(fds, 1, 10000);
-		if (i == 0)
-			continue;
-		if (fds->revents & POLLIN) {
-			i = read(v->fds[0], buf, sizeof buf - 1);
-			if (i > 0) {
-				buf[i] = '\0';
-				vtc_dump(v->vl, 3, "debug", buf, -2);
-			}
-		}
-		if (fds->revents & (POLLERR|POLLHUP)) {
-			vtc_log(v->vl, 4, "STDOUT poll 0x%x", fds->revents);
-			break;
-		}
-	}
-	return (NULL);
+	return (vtc_record(v->vl, v->fds[0]));
 }
 
 /**********************************************************************

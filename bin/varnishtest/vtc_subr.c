@@ -31,15 +31,19 @@
 #include <sys/types.h>
 #include <errno.h>
 #include <math.h>
+#include <poll.h>
 #include <string.h>
 #include <stdint.h>
+#include <unistd.h>
 #include <sys/wait.h>
 #include <sys/resource.h>
+
+#include "vtc.h"
 
 #include "vct.h"
 #include "vnum.h"
 #include "vre.h"
-#include "vtc.h"
+#include "vtcp.h"
 
 struct vsb *
 vtc_hex_to_bin(struct vtclog *vl, const char *arg)
@@ -180,3 +184,34 @@ vtc_wait4(struct vtclog *vl, long pid,
 	    WIFSIGNALED(status) ? WTERMSIG(status) : 0,
 	    WCOREDUMP(status));
 }
+
+void *
+vtc_record(struct vtclog *vl, int fd)
+{
+	char buf[65536];
+	struct pollfd fds[1];
+	int i;
+
+	(void)VTCP_nonblocking(fd);
+	while (1) {
+		memset(fds, 0, sizeof fds);
+		fds->fd = fd;
+		fds->events = POLLIN;
+		i = poll(fds, 1, 10000);
+		if (i == 0)
+			continue;
+		if (fds->revents & POLLIN) {
+			i = read(fd, buf, sizeof buf - 1);
+			if (i > 0) {
+				buf[i] = '\0';
+				vtc_dump(vl, 3, "debug", buf, -2);
+			}
+		}
+		if (fds->revents & (POLLERR|POLLHUP)) {
+			vtc_log(vl, 4, "STDOUT poll 0x%x", fds->revents);
+			break;
+		}
+	}
+	return (NULL);
+}
+
