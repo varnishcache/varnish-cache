@@ -39,6 +39,10 @@
 #include <string.h>
 #include <unistd.h>
 
+#ifdef HAVE_SYS_PERSONALITY_H
+#  include <sys/personality.h>
+#endif
+
 #include "vtc.h"
 
 #include "vnum.h"

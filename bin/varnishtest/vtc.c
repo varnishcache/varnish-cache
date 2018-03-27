@@ -42,10 +42,6 @@
 #include "vav.h"
 #include "vtim.h"
 
-#ifdef HAVE_SYS_PERSONALITY_H
-#  include <sys/personality.h>
-#endif
-
 #define		MAX_TOKENS		200
 
 volatile sig_atomic_t	vtc_error;	/* Error encountered */
