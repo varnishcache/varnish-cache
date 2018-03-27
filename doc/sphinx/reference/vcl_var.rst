@@ -739,6 +739,9 @@ beresp.do_gzip
 
 	Set to `true` to gzip the object while storing it.
 
+	If `http_gzip_support` is disabled, setting this variable
+	has no effect.
+
 beresp.do_gunzip
 
 	Type: BOOL
@@ -751,6 +754,9 @@ beresp.do_gunzip
 
 	Set to `true` to gunzip the object while storing it in the
 	cache.
+
+	If `http_gzip_support` is disabled, setting this variable
+	has no effect.
 
 beresp.was_304
 
