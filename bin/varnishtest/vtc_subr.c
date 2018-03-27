@@ -160,14 +160,15 @@ vtc_wait4(struct vtclog *vl, long pid,
 	if (r < 0)
 		vtc_fatal(vl, "wait4 failed on pid %ld: %s",
 		    pid, strerror(errno));
-	vtc_log(vl, 2, "WAIT4 pid=%ld r=%d status=0x%04x (user %.6f sys %.6f)",
-	    pid, r, status,
+	assert(r == pid);
+	vtc_log(vl, 2, "WAIT4 pid=%ld status=0x%04x (user %.6f sys %.6f)",
+	    pid, status,
 	    ru.ru_utime.tv_sec + 1e-6 * ru.ru_utime.tv_usec,
 	    ru.ru_stime.tv_sec + 1e-6 * ru.ru_stime.tv_usec
 	);
 
 	if (WIFEXITED(status) && expect_signal <= 0 &&
-	    (WEXITSTATUS(status) == expect_status))
+	    WEXITSTATUS(status) == expect_status)
 		return;
 
 	if (expect_signal < 0)

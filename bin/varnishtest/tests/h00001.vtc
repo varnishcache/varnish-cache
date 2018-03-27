@@ -1,0 +1,32 @@
+varnishtest "Basic HAproxy test"
+
+feature ignore_unknown_macro
+
+feature cmd {haproxy --version 2>&1 | grep -q 'HA-Proxy version'}
+
+server s1 {
+    rxreq
+    txresp -body "s1 >>> Hello world!"
+} -start
+
+haproxy h1 -arg "-d" -conf {
+    defaults
+	mode   http
+	timeout connect         5s
+	timeout server          30s
+	timeout client          30s
+
+    backend be1
+	server srv1 ${s1_addr}:${s1_port}
+
+    frontend http1
+	use_backend be1
+	bind "fd@${fe1}"
+} -start
+
+client c1 -connect ${h1_fe1_sock} {
+    txreq -url "/"
+    rxresp
+    expect resp.status == 200
+    expect resp.body == "s1 >>> Hello world!"
+} -run

@@ -27,6 +27,7 @@
  *
  */
 
+VTC_PROG(haproxy)
 VTC_PROG(varnishadm)
 VTC_PROG(varnishd)
 VTC_PROG(varnishhist)
