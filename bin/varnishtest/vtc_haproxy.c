@@ -548,7 +548,8 @@ cmd_haproxy(CMD_ARGS)
 		/* Reset and free */
 		VTAILQ_FOREACH_SAFE(h, &haproxies, list, h2) {
 			vtc_log(h->vl, 2,
-			    "Reset and free %s haproxy %d", h->name, h->pid);
+			    "Reset and free %s haproxy %ld",
+			    h->name, (long)h->pid);
 			if (h->pid >= 0)
 				haproxy_wait(h);
 			VTAILQ_REMOVE(&haproxies, h, list);
