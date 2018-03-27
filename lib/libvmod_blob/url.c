@@ -150,8 +150,8 @@ url_decode(const enum encoding dec, char *restrict const buf,
 				}
 				break;
 			case PERCENT:
-				if (isoutofrange(*s)
-				    || (nib = nibble[*s - '0']) == ILL) {
+				if (isoutofrange(*s) ||
+				    (nib = nibble[*s - '0']) == ILL) {
 					errno = EINVAL;
 					return -1;
 				}
@@ -162,8 +162,8 @@ url_decode(const enum encoding dec, char *restrict const buf,
 					errno = ENOMEM;
 					return -1;
 				}
-				if (isoutofrange(*s)
-				    || (nib2 = nibble[*s - '0']) == ILL) {
+				if (isoutofrange(*s) ||
+				    (nib2 = nibble[*s - '0']) == ILL) {
 					errno = EINVAL;
 					return -1;
 				}

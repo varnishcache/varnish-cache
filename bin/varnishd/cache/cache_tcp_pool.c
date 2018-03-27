@@ -656,8 +656,8 @@ VTP_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6, const char *uds,
 	struct vtp_cs vcs;
 	const struct cp_methods *methods;
 
-	assert((uds != NULL && ip4 == NULL && ip6 == NULL)
-	       || (uds == NULL && (ip4 != NULL || ip6 != NULL)));
+	assert((uds != NULL && ip4 == NULL && ip6 == NULL) ||
+	    (uds == NULL && (ip4 != NULL || ip6 != NULL)));
 	INIT_OBJ(&vcs, VTP_CS_MAGIC);
 	vcs.ip4 = ip4;
 	vcs.ip6 = ip6;

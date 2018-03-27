@@ -449,7 +449,7 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 			    "PROXY2: Ignoring TLV");
 			return (0);
 		}
-		switch(d[0]) {
+		switch (d[0]) {
 		case PP2_TYPE_CRC32C:
 		{
 			uint32_t n_crc32c = vbe32dec(d+3);

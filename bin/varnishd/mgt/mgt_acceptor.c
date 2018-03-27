@@ -102,8 +102,8 @@ mac_opensocket(struct listen_sock *ls)
 		CHECK_OBJ(ls->perms, UDS_PERMS_MAGIC);
 		assert(ls->uds);
 		errno = 0;
-		if (ls->perms->mode != 0
-		    && chmod(ls->endpoint, ls->perms->mode) != 0)
+		if (ls->perms->mode != 0 &&
+		    chmod(ls->endpoint, ls->perms->mode) != 0)
 			return errno;
 		if (chown(ls->endpoint, ls->perms->uid, ls->perms->gid) != 0)
 			return errno;
@@ -265,8 +265,8 @@ MAC_Arg(const char *spec)
 	la->name = name;
 
 	if (*la->endpoint != '/' && strchr(la->endpoint, '/') != NULL)
-		ARGV_ERR("Unix domain socket addresses must be absolute paths "
-			 "in -a (%s)\n", la->endpoint);
+		ARGV_ERR("Unix domain socket addresses must be"
+		    " absolute paths in -a (%s)\n", la->endpoint);
 
 	if (*la->endpoint == '/' && heritage.min_vcl < 41)
 		heritage.min_vcl = 41;
@@ -277,16 +277,16 @@ MAC_Arg(const char *spec)
 
 		if ((eq = strchr(av[i], '=')) == NULL) {
 			if (xp != NULL)
-				ARGV_ERR("Too many protocol sub-args in -a "
-					 "(%s)\n", av[i]);
+				ARGV_ERR("Too many protocol sub-args"
+				    " in -a (%s)\n", av[i]);
 			xp = XPORT_Find(av[i]);
 			if (xp == NULL)
 				ARGV_ERR("Unknown protocol '%s'\n", av[i]);
 			continue;
 		}
 		if (la->endpoint[0] != '/')
-			ARGV_ERR("Invalid sub-arg %s for IP addresses in -a\n",
-				 av[i]);
+			ARGV_ERR("Invalid sub-arg %s for IP addresses"
+			    " in -a\n", av[i]);
 
 		val = eq + 1;
 		len = eq - av[i];

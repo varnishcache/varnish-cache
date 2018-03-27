@@ -491,7 +491,7 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 	if (extra == NULL)
 		extra = "";
 	VTAILQ_INIT(&head);
-	for(;vv != NULL; vv = VTAILQ_NEXT(vv, list)) {
+	for (;vv != NULL; vv = VTAILQ_NEXT(vv, list)) {
 		assert(vv->type == VJSN_ARRAY);
 		fa = calloc(1, sizeof *fa);
 		AN(fa);

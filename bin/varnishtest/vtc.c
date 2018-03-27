@@ -256,8 +256,7 @@ macro_expand(struct vtclog *vl, const char *text)
 				NEEDLESS(return (NULL));
 			}
 			VSB_printf(vsb, "${%.*s}", (int)(q - p), p);
-		}
-		else {
+		} else {
 			VSB_printf(vsb, "%s", m);
 			free(m);
 		}

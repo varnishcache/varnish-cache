@@ -443,11 +443,11 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vrt, VRT_BACKEND_MAGIC);
 	if (vrt->path == NULL)
-		assert(vrt->ipv4_suckaddr != NULL
-		       || vrt->ipv6_suckaddr != NULL);
+		assert(vrt->ipv4_suckaddr != NULL ||
+		    vrt->ipv6_suckaddr != NULL);
 	else
-		assert(vrt->ipv4_suckaddr == NULL
-		       && vrt->ipv6_suckaddr == NULL);
+		assert(vrt->ipv4_suckaddr == NULL &&
+		    vrt->ipv6_suckaddr == NULL);
 
 	vcl = ctx->vcl;
 	AN(vcl);

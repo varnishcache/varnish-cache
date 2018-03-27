@@ -103,8 +103,8 @@ vrt_priv_dynamic(VRT_CTX, struct vrt_privs *vps, uintptr_t id,
 
 	VTAILQ_FOREACH(vp, &vps->privs, list) {
 		CHECK_OBJ_NOTNULL(vp, VRT_PRIV_MAGIC);
-		if (vp->vcl == ctx->vcl && vp->id == id
-		    && vp->vmod_id == vmod_id)
+		if (vp->vcl == ctx->vcl && vp->id == id &&
+		    vp->vmod_id == vmod_id)
 			return (vp->priv);
 	}
 	ALLOC_OBJ(vp, VRT_PRIV_MAGIC);

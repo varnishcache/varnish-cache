@@ -128,6 +128,7 @@ xyzzy_obj_test_priv_call(VRT_CTX,
 	(void)o;
 	xyzzy_test_priv_call(ctx, priv);
 }
+
 VCL_VOID v_matchproto_()
 xyzzy_obj_test_priv_vcl(VRT_CTX,
     struct xyzzy_debug_obj *o, struct vmod_priv *priv)
@@ -135,6 +136,7 @@ xyzzy_obj_test_priv_vcl(VRT_CTX,
 	(void)o;
 	xyzzy_test_priv_vcl(ctx, priv);
 }
+
 VCL_STRING v_matchproto_()
 xyzzy_obj_test_priv_task(VRT_CTX,
     struct xyzzy_debug_obj *o, struct vmod_priv *priv, VCL_STRING s)
@@ -142,6 +144,7 @@ xyzzy_obj_test_priv_task(VRT_CTX,
 	(void)o;
 	return (xyzzy_test_priv_task(ctx, priv, s));
 }
+
 VCL_STRING v_matchproto_()
 xyzzy_obj_test_priv_top(VRT_CTX,
     struct xyzzy_debug_obj *o, struct vmod_priv *priv, VCL_STRING s)
