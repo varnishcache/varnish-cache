@@ -29,9 +29,7 @@
 #include "config.h"
 
 #include <sys/types.h>
-#include <sys/wait.h>
 #include <sys/socket.h>
-#include <sys/resource.h>
 
 #include <errno.h>
 #include <fcntl.h>
@@ -198,7 +196,7 @@ vsl_catchup(const struct varnish *v)
 	int vsl_idle;
 
 	vsl_idle = v->vsl_idle;
-	while (!vtc_error && v->pid && vsl_idle == v->vsl_idle)
+	while (!vtc_error && vsl_idle == v->vsl_idle)
 		VTIM_sleep(0.1);
 }
 
@@ -224,7 +222,7 @@ varnishlog_thread(void *priv)
 
 	c = NULL;
 	opt = 0;
-	while (v->pid || c != NULL) {
+	while (v->fds[1] > 0 || c != NULL) {
 		if (c == NULL) {
 			if (vtc_error)
 				break;
@@ -386,7 +384,7 @@ varnish_thread(void *priv)
 		memset(fds, 0, sizeof fds);
 		fds->fd = v->fds[0];
 		fds->events = POLLIN;
-		i = poll(fds, 1, 1000);
+		i = poll(fds, 1, 10000);
 		if (i == 0)
 			continue;
 		if (fds->revents & POLLIN) {
@@ -635,8 +633,6 @@ static void
 varnish_cleanup(struct varnish *v)
 {
 	void *p;
-	int status, r;
-	struct rusage ru;
 
 	/* Close the CLI connection */
 	closefd(&v->cli_fd);
@@ -648,26 +644,11 @@ varnish_cleanup(struct varnish *v)
 	AZ(pthread_join(v->tp, &p));
 	closefd(&v->fds[0]);
 
-	r = wait4(v->pid, &status, 0, &ru);
-	v->pid = 0;
-	vtc_log(v->vl, 2, "R %d Status: %04x (u %.6f s %.6f)", r, status,
-	    ru.ru_utime.tv_sec + 1e-6 * ru.ru_utime.tv_usec,
-	    ru.ru_stime.tv_sec + 1e-6 * ru.ru_stime.tv_usec
-	);
-
 	/* Pick up the VSL thread */
 	AZ(pthread_join(v->tp_vsl, &p));
 
-	if (WIFEXITED(status) && (WEXITSTATUS(status) == v->expect_exit))
-		return;
-#ifdef WCOREDUMP
-	vtc_fatal(v->vl, "Bad exit code: %04x sig %x exit %x core %x",
-	    status, WTERMSIG(status), WEXITSTATUS(status),
-	    WCOREDUMP(status));
-#else
-	vtc_fatal(v->vl, "Bad exit code: %04x sig %x exit %x",
-	    status, WTERMSIG(status), WEXITSTATUS(status));
-#endif
+	vtc_wait4(v->vl, v->pid, v->expect_exit, 0);
+	v->pid = 0;
 }
 
 /**********************************************************************

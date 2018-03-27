@@ -29,9 +29,12 @@
 #include "config.h"
 
 #include <sys/types.h>
+#include <errno.h>
 #include <math.h>
 #include <string.h>
 #include <stdint.h>
+#include <sys/wait.h>
+#include <sys/resource.h>
 
 #include "vct.h"
 #include "vnum.h"
@@ -127,4 +130,38 @@ vtc_expect(struct vtclog *vl,
 	else
 		vtc_log(vl, 4, "EXPECT %s (%s) %s \"%s\" match",
 		    olhs, lhs, cmp, rhs);
+}
+
+void
+vtc_wait4(struct vtclog *vl, long pid, int expect_status, int expect_signal)
+{
+	int status, r;
+	struct rusage ru;
+
+	r = wait4(pid, &status, 0, &ru);
+	if (r < 0)
+		vtc_fatal(vl, "wait4 failed on pid %ld: %s",
+		    pid, strerror(errno));
+	vtc_log(vl, 2, "WAIT4 pid=%ld r=%d status=0x%04x (user %.6f sys %.6f)",
+	    pid, r, status,
+	    ru.ru_utime.tv_sec + 1e-6 * ru.ru_utime.tv_usec,
+	    ru.ru_stime.tv_sec + 1e-6 * ru.ru_stime.tv_usec
+	);
+
+	if (WIFEXITED(status) && (WEXITSTATUS(status) == expect_status))
+		return;
+	if (WIFSIGNALED(status) && (WTERMSIG(status) == expect_signal))
+		return;
+#ifdef WCOREDUMP
+	vtc_fatal(vl, "Bad exit code: 0x%04x exit 0x%x signal %d core %d",
+	    status,
+	    WEXITSTATUS(status),
+	    WIFSIGNALED(status) ? WTERMSIG(status) : 0,
+	    WCOREDUMP(status));
+#else
+	vtc_fatal(vl, "Bad exit code: 0x%04x exit 0x%x signal %d",
+	    status,
+	    WEXITSTATUS(status),
+	    WIFSIGNALED(status) ? WTERMSIG(status) : 0);
+#endif
 }
