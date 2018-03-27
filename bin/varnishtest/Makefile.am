@@ -27,22 +27,24 @@ bin_PROGRAMS =	varnishtest
 varnishtest_SOURCES = \
 		hpack.h \
 		programs.h \
+		cmds.h \
 		vmods.h \
-		vtc.c \
 		vtc.h \
+		vtc.c \
 		vtc_barrier.c \
 		vtc_client.c \
-		vtc_http.c \
-		vtc_http.h \
-		vtc_log.c \
-		vtc_http2.c \
 		vtc_h2_dectbl.h \
 		vtc_h2_enctbl.h \
 		vtc_h2_hpack.c \
 		vtc_h2_priv.h \
 		vtc_h2_stattbl.h \
 		vtc_h2_tbl.c \
+		vtc_http.c \
+		vtc_http.h \
+		vtc_http2.c \
+		vtc_log.c \
 		vtc_logexp.c \
+		vtc_misc.c \
 		vtc_main.c \
 		vtc_process.c \
 		vtc_proxy.c \

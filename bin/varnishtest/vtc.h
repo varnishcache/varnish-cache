@@ -69,16 +69,8 @@ void parse_string(const char *spec, const struct cmds *cmd, void *priv,
     struct vtclog *vl);
 int fail_out(void);
 
-#define CMD(n) cmd_f cmd_##n
-CMD(delay);
-CMD(server);
-CMD(client);
-CMD(varnish);
-CMD(barrier);
-CMD(logexpect);
-CMD(process);
-CMD(shell);
-#undef CMD
+#define CMD(n) cmd_f cmd_##n;
+#include "cmds.h"
 
 extern volatile sig_atomic_t vtc_error; /* Error, bail out */
 extern int vtc_stop;		/* Abandon current test, no error */
@@ -90,6 +82,7 @@ extern struct vsb *params_vsb;
 extern int leave_temp;
 extern int vtc_witness;
 extern int feature_dns;
+extern int ign_unknown_macro;
 
 void init_server(void);
 

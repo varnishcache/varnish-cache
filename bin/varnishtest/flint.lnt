@@ -35,6 +35,7 @@
 
 -e788	// enum value not used in defaulted switch
 
+-efile(451, cmds.h)
 -efile(451, vmods.h)
 -efile(451, programs.h)
 -efile(451, vtc_h2_stattbl.h)
