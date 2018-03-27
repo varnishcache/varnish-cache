@@ -138,7 +138,7 @@ character ``=``.
 
 The ``BASE64URLNOPAD`` encoding uses the same alphabet as
 ``BASE6URL``, but leaves out the padding. Thus the length of an
-encoding with this scheme is not necessarily a mutltiple of four.
+encoding with this scheme is not necessarily a multiple of four.
 
 The ``case`` ENUM MUST be set to ``DEFAULT`` for for all of the
 ``BASE64*`` encodings.
@@ -202,7 +202,7 @@ $Function STRING encode(ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD,
 			      HEX, URL} encoding="IDENTITY",
 			ENUM {LOWER, UPPER, DEFAULT} case="DEFAULT", BLOB blob)
 
-Returns a string representation of the BLOB ``blob`` as specifed by
+Returns a string representation of the BLOB ``blob`` as specified by
 ``encoding``. ``case`` determines the case of hex digits for the
 ``HEX`` and ``URL`` encodings, and is ignored for the other encodings.
 

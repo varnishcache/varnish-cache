@@ -78,7 +78,6 @@ Description
 	Add a backend to the round-robin director.
 Example
 	vdir.add_backend(backend1);
-	vdir.add_backend(backend2);
 
 $Method VOID .remove_backend(BACKEND)
 
@@ -86,7 +85,6 @@ Description
 	Remove a backend from the round-robin director.
 Example
 	vdir.remove_backend(backend1);
-	vdir.remove_backend(backend2);
 
 $Method BACKEND .backend()
 
@@ -121,7 +119,6 @@ Description
 
 Example
 	vdir.add_backend(backend1);
-	vdir.add_backend(backend2);
 
 $Method VOID .remove_backend(BACKEND)
 
@@ -129,7 +126,6 @@ Description
 	Remove a backend from the director.
 Example
 	vdir.remove_backend(backend1);
-	vdir.remove_backend(backend2);
 
 $Method BACKEND .backend()
 
@@ -162,9 +158,9 @@ Description
 	director.
 
 Example
-	# 2/3 to backend1, 1/3 to backend2.
-	vdir.add_backend(backend1, 10.0);
-	vdir.add_backend(backend2, 5.0);
+	| # 2/3 to backend1, 1/3 to backend2.
+	| vdir.add_backend(backend1, 10.0);
+	| vdir.add_backend(backend2, 5.0);
 
 $Method VOID .remove_backend(BACKEND)
 
@@ -172,7 +168,6 @@ Description
 	Remove a backend from the director.
 Example
 	vdir.remove_backend(backend1);
-	vdir.remove_backend(backend2);
 
 $Method BACKEND .backend()
 
@@ -205,7 +200,6 @@ Description
 
 Example
 	vdir.add_backend(backend1, 1.0);
-	vdir.add_backend(backend2, 1.0);
 
 $Method VOID .remove_backend(BACKEND)
 
@@ -213,7 +207,6 @@ Description
 	Remove a backend from the director.
 Example
 	vdir.remove_backend(backend1);
-	vdir.remove_backend(backend2);
 
 $Method BACKEND .backend(STRING_LIST)
 
@@ -222,8 +215,8 @@ Description
 
 	Use the string or list of strings provided to pick the backend.
 Example
-	# pick a backend based on the cookie header from the client
-	set req.backend_hint = vdir.backend(req.http.cookie);
+	| # pick a backend based on the cookie header from the client
+	| set req.backend_hint = vdir.backend(req.http.cookie);
 
 $Object shard()
 
@@ -573,7 +566,7 @@ is _not_ the order given when backends are added.
       associated parameter set affect the sharding decision once the
       director resolves to an actual backend.
 
-    * If other paramter arguments are also given, they have preference
+    * If other parameter arguments are also given, they have preference
       and are kept even if the parameter set given by the `param`
       argument is subsequently changed within the same backend request.
 
@@ -647,17 +640,17 @@ use. See `func_shard.backend`_.
 
 $Method INT .get_alt()
 
-Get the `alt` paramter which a shard director using this parameter
+Get the `alt` parameter which a shard director using this parameter
 object would use. See `func_shard.backend`_.
 
 $Method REAL .get_warmup()
 
-Get the `warmup` paramter which a shard director using this parameter
+Get the `warmup` parameter which a shard director using this parameter
 object would use. See `func_shard.backend`_.
 
 $Method BOOL .get_rampup()
 
-Get the `rampup` paramter which a shard director using this parameter
+Get the `rampup` parameter which a shard director using this parameter
 object would use. See `func_shard.backend`_.
 
 $Method STRING .get_healthy()

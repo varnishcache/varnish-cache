@@ -86,7 +86,7 @@ struct vmod_directors_shard_param {
 	const struct vmod_directors_shard_param *defaults;
 	enum vmod_directors_shard_param_scope	scope;
 
-	/* paramters */
+	/* parameters */
 	enum by_e				by;
 	enum healthy_e				healthy;
 	uint32_t				mask;

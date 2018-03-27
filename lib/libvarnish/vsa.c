@@ -91,7 +91,7 @@
  * Along the way the BSD people figured out that it was a bother
  * to carry the length argument separately, and added that to the
  * format of sockaddr, but other groups found this unclean, as
- * the length was already an explicit paramter.
+ * the length was already an explicit parameter.
  *
  * The net result of this is that your "portable" code, must take
  * care to handle the "sa_len" member on kernels which have it,
