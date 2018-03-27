@@ -339,16 +339,13 @@ when configuring the shard director, you are advised to check::
 $Method VOID .set_warmup(REAL probability=0.0)
 
 Set the default warmup probability. See the `warmup` parameter of
-``shard.backend()``.
-
-Default: 0.0 (no warmup)
+``shard.backend()``. If probability is 0.0 (default), warmup is
+disabled.
 
 $Method VOID .set_rampup(DURATION duration=0)
 
 Set the default rampup duration. See `rampup` parameter of
-`shard.backend()`.
-
-Default: 0s (no rampup)
+`shard.backend()`. If duration is 0 (default), rampup is disabled.
 
 $Method VOID .associate(BLOB param=0)
 
@@ -415,13 +412,13 @@ To generate sharding keys using other hashes, use a custom vmod like
 .. _vmod blobdigest: https://code.uplex.de/uplex-varnish/libvmod-blobdigest/blob/master/README.rst
 
 $Method BACKEND .backend(
-	[ ENUM {HASH, URL, KEY, BLOB} by ],
+	[ ENUM {HASH, URL, KEY, BLOB} by=HASH ],
 	[ INT key ],
 	[ BLOB key_blob ],
-	[ INT alt ],
-	[ REAL warmup ],
-	[ BOOL rampup ],
-	[ ENUM {CHOSEN, IGNORE, ALL} healthy ],
+	[ INT alt=0 ],
+	[ REAL warmup=-1 ],
+	[ BOOL rampup=1 ],
+	[ ENUM {CHOSEN, IGNORE, ALL} healthy=CHOSEN ],
 	[ BLOB param ],
 	[ ENUM {NOW, LAZY} resolve] )
 
@@ -436,8 +433,6 @@ is _not_ the order given when backends are added.
 
 * `by` how to determine the sharding key
 
-  default: `HASH`
-
   * `HASH`:
 
     * when called in backend context: Use the varnish hash value as
@@ -451,20 +446,18 @@ is _not_ the order given when backends are added.
 
   * `BLOB`: use the `key_blob` argument
 
-  * `key` lookup key with `by=KEY`
+* `key` lookup key with `by=KEY`
 
-    the `shard.key()` function may come handy to generate a sharding
-    key from custom strings.
+  the `shard.key()` function may come handy to generate a sharding
+  key from custom strings.
 
-  * `key_blob` lookup key with `by=BLOB`
+* `key_blob` lookup key with `by=BLOB`
 
-    Currently, this uses the first 4 bytes from the given blob in
-    network byte order (big endian), left-padded with zeros for blobs
-    smaller than 4 bytes.
+  Currently, this uses the first 4 bytes from the given blob in
+  network byte order (big endian), left-padded with zeros for blobs
+  smaller than 4 bytes.
 
 * `alt` alternative backend selection
-
-  default: `0`
 
   Select the `alt`-th alternative backend for the given `key`.
 
@@ -475,8 +468,6 @@ is _not_ the order given when backends are added.
   The rampup and warmup features are only active for `alt==0`
 
 * `rampup` slow start for servers which just went healthy
-
-  default: `true`
 
   If `alt==0` and the chosen backend is in its rampup period, with a
   probability proportional to the fraction of time since the backup
@@ -491,8 +482,6 @@ is _not_ the order given when backends are added.
 
   possible values: -1, 0..1
 
-  default: `-1`
-
   `-1`: use the warmup probability from the director definition
 
   Only used for `alt==0`: Sets the ratio of requests (0.0 to 1.0) that
@@ -504,8 +493,6 @@ is _not_ the order given when backends are added.
   over two backends under normal operating conditions.
 
 * `healthy`
-
-  default: `CHOSEN`
 
   * CHOSEN: Return a healthy backend if possible.
 
