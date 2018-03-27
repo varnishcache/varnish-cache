@@ -342,7 +342,7 @@ cmd_delay(CMD_ARGS)
  *        Do not fail the test if a string of the form ${...} is not
  *        recognized as a macro.
  * term
- *        Support for ADM3A terminal
+ *        Support for ansi.sys terminal
  *
  * persistent_storage
  *        Varnish was built with the deprecated persistent storage.
