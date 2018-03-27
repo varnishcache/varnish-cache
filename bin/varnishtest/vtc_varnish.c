@@ -647,7 +647,7 @@ varnish_cleanup(struct varnish *v)
 	/* Pick up the VSL thread */
 	AZ(pthread_join(v->tp_vsl, &p));
 
-	vtc_wait4(v->vl, v->pid, v->expect_exit, 0);
+	vtc_wait4(v->vl, v->pid, v->expect_exit, 0, 0);
 	v->pid = 0;
 }
 

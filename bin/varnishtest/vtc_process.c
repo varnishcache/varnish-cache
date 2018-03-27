@@ -32,8 +32,6 @@
 #include "config.h"
 
 #include <sys/ioctl.h>		// Linux: struct winsize
-#include <sys/resource.h>
-#include <sys/wait.h>
 
 #include <ctype.h>
 #include <errno.h>
@@ -85,7 +83,6 @@ struct process {
 	pthread_mutex_t		mtx;
 	pthread_t		tp;
 	unsigned		hasthread;
-	int			status;
 
 	struct term		*term;
 	int			lin;
@@ -247,10 +244,9 @@ static void *
 process_thread(void *priv)
 {
 	struct process *p;
-	struct rusage ru;
 	struct vev_root *evb;
 	struct vev *ev;
-	int core, sig, ext, r;
+	int r;
 
 	CAST_OBJ_NOTNULL(p, priv, PROCESS_MAGIC);
 
@@ -293,8 +289,8 @@ process_thread(void *priv)
 		vtc_fatal(p->vl, "VEV_Once() = %d, error %s", r,
 		    strerror(errno));
 
-	r = wait4(p->pid, &p->status, 0, &ru);
-
+	vtc_wait4(p->vl, p->pid,
+	    p->expect_exit, p->expect_signal, p->allow_core);
 	closefd(&p->f_stdout);
 	closefd(&p->f_stderr);
 
@@ -304,35 +300,7 @@ process_thread(void *priv)
 	macro_undef(p->vl, p->name, "pid");
 	p->pid = -1;
 
-	vtc_log(p->vl, 2, "R 0x%04x Status: %04x (u %.6f s %.6f)",
-	    r, p->status,
-	    ru.ru_utime.tv_sec + 1e-6 * ru.ru_utime.tv_usec,
-	    ru.ru_stime.tv_sec + 1e-6 * ru.ru_stime.tv_usec
-	);
-
 	AZ(pthread_mutex_unlock(&p->mtx));
-	sig = WTERMSIG(p->status);
-	ext = WEXITSTATUS(p->status);
-#ifdef WCOREDUMP
-	core = WCOREDUMP(p->status);
-	vtc_log(p->vl, 2, "Exit code: %04x sig %d exit %d core %d",
-	    p->status, sig, ext, core);
-#else
-	core = 0;
-	vtc_log(p->vl, 2, "Exit code: %04x sig %d exit %d",
-	    p->status, sig, ext);
-#endif
-	if (core && !p->allow_core)
-		vtc_fatal(p->vl, "Core dump");
-	if (p->expect_signal >= 0 && sig != p->expect_signal)
-		vtc_fatal(p->vl, "Expected signal %d got %d",
-			p->expect_signal, sig);
-	else if (sig != 0 && sig != -p->expect_signal)
-		vtc_fatal(p->vl, "Expected signal %d got %d",
-			-p->expect_signal, sig);
-	if (ext != p->expect_exit)
-		vtc_fatal(p->vl, "Expected exit %d got %d",
-			p->expect_exit, ext);
 
 	VEV_Destroy(&evb);
 	if (p->log == 1) {

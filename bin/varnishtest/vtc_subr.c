@@ -132,8 +132,22 @@ vtc_expect(struct vtclog *vl,
 		    olhs, lhs, cmp, rhs);
 }
 
+/**********************************************************************
+ * Wait for a subprocess.
+ *
+ * if expect_signal > 0, the process must die on that signal.
+ * if expect_signal < 0, dying on that signal is allowed, but not required.
+ * if allow_core > 0, a coredump is allowed, but not required.
+ * otherwise, the process must die on exit(expect_status)
+ */
+
+#ifndef WCOREDUMP
+#  define WCOREDUMP(s) (-1)
+#endif
+
 void
-vtc_wait4(struct vtclog *vl, long pid, int expect_status, int expect_signal)
+vtc_wait4(struct vtclog *vl, long pid,
+    int expect_status, int expect_signal, int allow_core)
 {
 	int status, r;
 	struct rusage ru;
@@ -148,20 +162,21 @@ vtc_wait4(struct vtclog *vl, long pid, int expect_status, int expect_signal)
 	    ru.ru_stime.tv_sec + 1e-6 * ru.ru_stime.tv_usec
 	);
 
-	if (WIFEXITED(status) && (WEXITSTATUS(status) == expect_status))
+	if (WIFEXITED(status) && expect_signal <= 0 &&
+	    (WEXITSTATUS(status) == expect_status))
 		return;
-	if (WIFSIGNALED(status) && (WTERMSIG(status) == expect_signal))
+
+	if (expect_signal < 0)
+		expect_signal = -expect_signal;
+
+	if (WIFSIGNALED(status) && WCOREDUMP(status) <= allow_core &&
+	    WTERMSIG(status) == expect_signal)
 		return;
-#ifdef WCOREDUMP
-	vtc_fatal(vl, "Bad exit code: 0x%04x exit 0x%x signal %d core %d",
+	vtc_log(vl, 1, "Expected exit: 0x%x signal: %d core: %d",
+	    expect_status, expect_signal, allow_core);
+	vtc_fatal(vl, "Bad exit status: 0x%04x exit 0x%x signal %d core %d",
 	    status,
 	    WEXITSTATUS(status),
 	    WIFSIGNALED(status) ? WTERMSIG(status) : 0,
 	    WCOREDUMP(status));
-#else
-	vtc_fatal(vl, "Bad exit code: 0x%04x exit 0x%x signal %d",
-	    status,
-	    WEXITSTATUS(status),
-	    WIFSIGNALED(status) ? WTERMSIG(status) : 0);
-#endif
 }
