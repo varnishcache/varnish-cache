@@ -54,7 +54,7 @@
 	    " tag we'll look for, a prefix to look for (can be empty,"	\
 	    " but must be terminated by a colon) and the field number"	\
 	    " of the value we are interested in. min and max are the"	\
-	    " boundaries of the graph in power of ten and default to"	\
+	    " boundaries of the graph in powers of ten and default to"	\
 	    " -6 and 3."						\
 	)
 
