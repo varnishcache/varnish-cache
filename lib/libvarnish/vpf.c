@@ -89,6 +89,8 @@ VPF_read(const char *path, pid_t *pidptr)
 		return (error);
 	else if (i == 0)
 		return (EAGAIN);
+	if (i > 0 && buf[i - 1] == '\n')
+		i--;
 	buf[i] = '\0';
 
 	*pidptr = strtol(buf, &endptr, 10);
