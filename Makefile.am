@@ -18,7 +18,7 @@ EXTRA_DIST = \
 	varnish.m4 \
 	varnish-legacy.m4
 
-DISTCHECK_CONFIGURE_FLAGS = \
+AM_DISTCHECK_CONFIGURE_FLAGS = \
     --enable-developer-warnings \
     --enable-debugging-symbols \
     --enable-dependency-tracking \

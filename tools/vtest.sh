@@ -131,7 +131,7 @@ makedistcheck () (
 	set -e
 	cd "${SRCDIR}"
 	nice make vtest-clean
-	nice make distcheck
+	nice make distcheck DISTCHECK_CONFIGURE_FLAGS=--with-persistent-storage
 )
 
 gcovtest () (
