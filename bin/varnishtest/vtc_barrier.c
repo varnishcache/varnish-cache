@@ -422,7 +422,8 @@ cmd_barrier(CMD_ARGS)
 			default:
 				WRONG("Wrong barrier type");
 			}
-			AZ(pthread_mutex_unlock(&b->mtx));
+			if (r == 0)
+				AZ(pthread_mutex_unlock(&b->mtx));
 		}
 		return;
 	}
