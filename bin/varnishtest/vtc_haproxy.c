@@ -283,7 +283,7 @@ haproxy_start(struct haproxy *h)
 
 	vsb = VSB_new_auto();
 	AN(vsb);
-	VSB_printf(vsb, "%s %s", h->filename, VSB_data(h->args));
+	VSB_printf(vsb, "exec %s %s", h->filename, VSB_data(h->args));
 
 	if (h->opt_worker || h->opt_daemon) {
 		bprintf(buf, "%s/pid", h->workdir);
