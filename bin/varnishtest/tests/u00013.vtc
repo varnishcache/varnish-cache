@@ -3,8 +3,8 @@ varnishtest "varnishncsa outputs when UDS addresses are in use"
 # The %h formatter gets its value from ReqStart or BackendStart,
 # which now may be a UDS address.
 
-# For UDS backends without a .hosthdr setting, the Host header is
-# set to "0.0.0.0", which may appear in %r output.
+# For UDS backends without a .host_header spec, the Host header is
+# set to "0.0.0.0" if the header is missing in the request.
 
 server s1 -listen "${tmpdir}/s1.sock" {
 	rxreq
@@ -14,7 +14,7 @@ server s1 -listen "${tmpdir}/s1.sock" {
 varnish v1 -arg "-a ${tmpdir}/v1.sock" -vcl+backend {} -start
 
 client c1 -connect "${tmpdir}/v1.sock" {
-	txreq
+	txreq -proto HTTP/1.0
 	rxresp
 } -run
 

@@ -16,17 +16,17 @@ varnish v1 -cli "param.set accept_filter false"
 varnish v1 -start
 
 client c1 {
-	send "GET /foo HTTP/1.1\r\n\r\nGET "
+	send "GET /foo HTTP/1.1\r\nHost: foo\r\n\r\nGET "
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 3
 	expect resp.http.x-varnish == "1001"
-	send "/bar HTTP/1.1\n\nGET /bar "
+	send "/bar HTTP/1.1\nHost: foo\n\nGET /bar "
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 6
 	expect resp.http.x-varnish == "1003"
-	send "HTTP/1.1\n\n"
+	send "HTTP/1.1\nHost: foo\n\n"
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 6

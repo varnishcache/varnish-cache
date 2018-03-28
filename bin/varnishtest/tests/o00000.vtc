@@ -199,7 +199,7 @@ delay .1
 
 # Try with appended request (See also: #1728)
 client c2 {
-	send "PROXY TCP6 1:f::3 5:a::8 1234 5678\r\nGET /3 HTTP/1.1\r\nHdr1: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\r\n\r\n"
+	send "PROXY TCP6 1:f::3 5:a::8 1234 5678\r\nGET /3 HTTP/1.1\r\nHost: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\r\n\r\n"
 	rxresp
 	expect resp.http.url == "/3"
 } -run

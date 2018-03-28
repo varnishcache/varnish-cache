@@ -12,6 +12,7 @@ varnish v1 -vcl+backend {
 
 client c1 {
 	send "POST / HTTP/1.1\r\n"
+	send "Host: foo\r\n"
 	send "Transfer-Encoding: chunked\r\n\r\n"
 	send "FFFFFFFFFFFFFFED\r\n"
 	send "0\r\n\r\n"
@@ -32,6 +33,7 @@ varnish v1 -vcl+backend {
 
 client c1 {
 	send "POST / HTTP/1.1\r\n"
+	send "Host: foo\r\n"
 	send "Transfer-Encoding: chunked\r\n\r\n"
 	send "FFFFFFFFFFFFFFED\r\n"
 

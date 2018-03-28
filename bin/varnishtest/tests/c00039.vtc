@@ -40,7 +40,7 @@ client c1 {
 
 client c1 {
 	# Each line is 32 bytes. Total: 32 * 8 == 256
-	send "GET /....0....5....0. HTTP/1.1\r\n"
+	send "GET /..... HTTP/1.1\r\nHost: foo\r\n"
 	send "1...5: ..0....5....0....5....0\r\n"
 	send "1...5: ..0....5....0....5....0\r\n"
 	send "1...5: ..0....5....0....5....0\r\n"
@@ -52,8 +52,7 @@ client c1 {
 	expect resp.status == 200
 
 	# Each line is 32 except last, which is 33. Total: 32 * 7 + 33 == 257
-	send "GET /....0....5....0. HTTP/1.1\r\n"
-	send "1...5: ..0....5....0....5....0\r\n"
+	send "GET /..... HTTP/1.1\r\nHost: foo\r\n"
 	send "1...5: ..0....5....0....5....0\r\n"
 	send "1...5: ..0....5....0....5....0\r\n"
 	send "1...5: ..0....5....0....5....0\r\n"

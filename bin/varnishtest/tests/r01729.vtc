@@ -23,6 +23,7 @@ client c1 {
 
 	non_fatal
 	send "PUT /1 HTTP/1.1\r\n"
+	send "Host: foo\r\n"
 	send "Content-Length: 31\r\n"
 	send "Transfer-Encoding: chunked\r\n"
 	send "\r\n"
@@ -39,6 +40,7 @@ client c1 {
 client c1 {
 	fatal
 	send "PUT /2 HTTP/1.1\r\n"
+	send "Host: foo\r\n"
 	send "Transfer-Encoding: chunked\r\n"
 	send "\r\n"
 	send "14\r\n"

@@ -22,9 +22,10 @@ varnish v1 -vcl+backend {
 
 # req:
 # POST / HTTP/1.1\r\n			17 bytes
+# Host: foo\r\n				11 bytes
 # Content-Length: 4\r\n			19 bytes
 # \r\n					 2 bytes
-# Total:				38 bytes
+# Total:				49 bytes
 
 # bereq:
 # POST / HTTP/1.1\r\n			17 bytes
@@ -45,12 +46,12 @@ varnish v1 -vcl+backend {
 
 logexpect l1 -v v1 -g request {
 	expect 0 1001	Begin		"^req .* rxreq"
-	expect * =	PipeAcct	"^38 49 4 42$"
+	expect * =	PipeAcct	"^49 60 4 42$"
 	expect 0 =	End
 } -start
 
 client c1 {
-	txreq -req "POST" -url "/" -hdr "Content-Length: 4"
+	txreq -req "POST" -url "/" -hdr "Content-Length: 4" -hdr "Host: foo"
 	send "asdf"
 	rxresp
 	expect resp.status == 200
@@ -58,6 +59,6 @@ client c1 {
 
 logexpect l1 -wait
 
-varnish v1 -expect s_pipe_hdrbytes == 38
+varnish v1 -expect s_pipe_hdrbytes == 49
 varnish v1 -expect s_pipe_in == 4
 varnish v1 -expect s_pipe_out == 42

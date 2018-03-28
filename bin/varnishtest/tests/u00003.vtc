@@ -32,9 +32,9 @@ shell {
 delay 1
 
 client c1 {
-	txreq -url /1?foo=bar -hdr "authorization: basic dXNlcjpwYXNz"
+	txreq -url /1?foo=bar -hdr "authorization: basic dXNlcjpwYXNz" -hdr "Host: ${localhost}"
 	rxresp
-	txreq -url /1?foo=bar -hdr "baz: qux"
+	txreq -url /1?foo=bar -hdr "baz: qux" -hdr "Host: ${localhost}"
 	rxresp
 } -run
 
@@ -44,7 +44,7 @@ shell "mv ${tmpdir}/ncsa.log ${tmpdir}/ncsa.old.log"
 shell "kill -HUP `cat ${tmpdir}/ncsa.pid`"
 
 client c1 {
-	txreq -url /2
+	txreq -url /2 -hdr "Host: ${localhost}"
 	rxresp
 } -run
 
@@ -53,10 +53,10 @@ delay 1
 shell "kill `cat ${tmpdir}/ncsa.pid`"
 
 # default formatter and rotation
-shell -match {^\d+.\d+.\d+.\d+ - user \[../.../20[1-9][0-9]:..:..:.. (?#
-)[+-]....\] "GET http://localhost/1\?foo=bar HTTP/1.1" 200 100 "-" "-"
-\d+.\d+.\d+.\d+ - - \[../.../20[1-9][0-9]:..:..:.. [+-]....\] (?#
-)"GET http://localhost/1\?foo=bar HTTP/1.1" 404 \d+ "-" "-"$} \
+shell -match {${localhost} - user \[../.../20[1-9][0-9]:..:..:.. (?#
+)[+-]....\] "GET http://${localhost}/1\?foo=bar HTTP/1.1" 200 100 "-" "-"
+${localhost} - - \[../.../20[1-9][0-9]:..:..:.. [+-]....\] (?#
+)"GET http://${localhost}/1\?foo=bar HTTP/1.1" 404 \d+ "-" "-"$} \
 	"cat ${tmpdir}/ncsa.old.log"
 shell "grep -q /2 ${tmpdir}/ncsa.log"
 
@@ -111,13 +111,13 @@ shell -err -match "Usage: .*varnishncsa <options>" \
 	{varnishncsa extra}
 
 # -b
-shell -match {^\d+.\d+.\d+.\d+ 100
-- 0$} \
+shell -match {^${localhost} 100
+${localhost} 0$} \
 	{varnishncsa -n ${v1_name} -b -d -F "%{Host}i %b"}
 # -c
-shell -match {^- 100
-- \d+
-- -$} \
+shell -match {^${localhost} 100
+${localhost} \d+
+${localhost} -$} \
 	{varnishncsa -n ${v1_name} -c -d -F "%{Host}i %b"}
 
 # -f and standard formatters

@@ -55,9 +55,8 @@ logexpect l1 -v v1 -g raw {
 	expect 0 1003	ReqMethod       {^POST$}
 	expect 0 1003	ReqURL          {^/$}
 	expect 0 1003	ReqProtocol     {^HTTP/1.1$}
-	expect 0 1003	ReqHeader       {^Content-Length: 20$}
-	expect 0 1003	ReqHeader       {^X-Forwarded-For:}
-	expect 0 1003	VCL_call        {^RECV$}
+	expect * 1003	ReqHeader       {^Content-Length: 20$}
+	expect * 1003	VCL_call        {^RECV$}
 	expect 0 1003	VCL_return      {^pass$}
 	expect 0 1003	RespProtocol    {^HTTP/1.1$}
 	expect 0 1003	RespStatus      {^100$}
@@ -70,9 +69,8 @@ logexpect l1 -v v1 -g raw {
 	expect 0 1005	ReqMethod       {^POST$}
 	expect 0 1005	ReqURL          {^/$}
 	expect 0 1005	ReqProtocol     {^HTTP/1.1$}
-	expect 0 1005	ReqHeader       {^Content-Length: 3$}
-	expect 0 1005	ReqHeader       {^X-Forwarded-For:}
-	expect 0 1005	VCL_call        {^RECV$}
+	expect * 1005	ReqHeader       {^Content-Length: 3$}
+	expect * 1005	VCL_call        {^RECV$}
 	expect 0 1005	VCL_return      {^pass$}
 	expect 0 1005	VCL_call        {^HASH$}
 
@@ -82,9 +80,8 @@ logexpect l1 -v v1 -g raw {
 	expect 0 1007	ReqMethod       {^POST$}
 	expect 0 1007	ReqURL          {^/late$}
 	expect 0 1007	ReqProtocol     {^HTTP/1.1$}
-	expect 0 1007	ReqHeader       {^Content-Length: 20$}
-	expect 0 1007	ReqHeader       {^X-Forwarded-For:}
-	expect 0 1007	VCL_call        {^RECV$}
+	expect * 1007	ReqHeader       {^Content-Length: 20$}
+	expect * 1007	VCL_call        {^RECV$}
 	expect 0 1007	VCL_return      {^pass$}
 	expect 0 1007	VCL_call        {^HASH$}
 	expect 0 1007	VCL_return      {^lookup$}
@@ -104,9 +101,8 @@ logexpect l1 -v v1 -g raw {
 	expect 0 1009	ReqMethod       {^POST$}
 	expect 0 1009	ReqURL          {^/latecache$}
 	expect 0 1009	ReqProtocol     {^HTTP/1.1$}
-	expect 0 1009	ReqHeader       {^Content-Length: 20$}
-	expect 0 1009	ReqHeader       {^X-Forwarded-For:}
-	expect 0 1009	VCL_call        {^RECV$}
+	expect * 1009	ReqHeader       {^Content-Length: 20$}
+	expect * 1009	VCL_call        {^RECV$}
 	expect 0 1009	Storage         {^(malloc|umem) Transient$}
 	expect 0 1009	RespProtocol    {^HTTP/1.1$}
 	expect 0 1009	RespStatus      {^100$}
@@ -121,9 +117,8 @@ logexpect l1 -v v1 -g raw {
 	expect 0 1011	ReqMethod       {^POST$}
 	expect 0 1011	ReqURL          {^/err$}
 	expect 0 1011	ReqProtocol     {^HTTP/1.1$}
-	expect 0 1011	ReqHeader       {^Content-Length: 20$}
-	expect 0 1011	ReqHeader       {^X-Forwarded-For:}
-	expect 0 1011	VCL_call        {^RECV$}
+	expect * 1011	ReqHeader       {^Content-Length: 20$}
+	expect * 1011	VCL_call        {^RECV$}
 	expect 0 1011	VCL_return      {^synth$}
 	expect 0 1011	VCL_call        {^HASH$}
 	expect 0 1011	VCL_return      {^lookup$}

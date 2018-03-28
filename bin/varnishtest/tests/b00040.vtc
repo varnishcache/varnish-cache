@@ -46,28 +46,28 @@ delay .1
 
 client c1 {
 	send "GET /4 HTTP/1.1\r\n"
-	send "\r\n"
+	send "Host: foo\r\n\r\n"
 	rxresp
 	expect resp.status == 200
 } -run
 delay .1
 
 client c1 {
-	send "GET /5 HTTP/1.1\r\nHost: localhost\r\nBogo: Header\001More\r\n\r\n"
+	send "GET /5 HTTP/1.1\r\nHost: foo\r\nBogo: Header\001More\r\n\r\n"
 	rxresp
 	expect resp.status == 400
 } -run
 delay .1
 
 client c1 {
-	send "GET /6 HTTP/1.1\r\nHost: localhost\r\nBogo: Header\r\r\n\r\n"
+	send "GET /6 HTTP/1.1\r\nHost: foo\r\nBogo: Header\r\r\n\r\n"
 	rxresp
 	expect resp.status == 400
 } -run
 delay .1
 
 client c1 {
-	send "GET /7 HTTP/1.1\r\nHost: localhost\r\nBogo: Header\rMore\r\n\r\n"
+	send "GET /7 HTTP/1.1\r\nHost: foo\r\nBogo: Header\rMore\r\n\r\n"
 	rxresp
 	expect resp.status == 400
 } -run
