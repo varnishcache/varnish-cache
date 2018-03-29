@@ -1,0 +1,18 @@
+varnishtest "Test -conf+backend"
+
+feature ignore_unknown_macro
+
+feature cmd {haproxy --version 2>&1 | grep -q 'HA-Proxy version'}
+
+haproxy h1 -conf-OK {
+    defaults
+	mode   http
+	timeout connect         5s
+	timeout server          30s
+	timeout client          30s
+
+}
+
+haproxy h2 -conf-BAD {unknown keyword 'FOOBAR' in 'global' section} {
+    FOOBAR
+}

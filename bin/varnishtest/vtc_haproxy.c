@@ -37,7 +37,6 @@
 
 #include "vtc.h"
 
-#include "vav.h"
 #include "vfil.h"
 #include "vpf.h"
 #include "vtcp.h"
@@ -46,9 +45,9 @@
 #define HAPROXY_PROGRAM_ENV_VAR	"HAPROXY_PROGRAM"
 #define HAPROXY_OPT_WORKER	"-W"
 #define HAPROXY_OPT_DAEMON	"-D"
-#define HAPROXY_OPT_CHECK_MODE	"-c"
 #define HAPROXY_SIGNAL		SIGINT
 #define HAPROXY_EXPECT_EXIT	(128 + HAPROXY_SIGNAL)
+#define HAPROXY_GOOD_CONF	"Configuration file is valid"
 
 struct haproxy {
 	unsigned		magic;
@@ -77,9 +76,8 @@ struct haproxy {
 	const char		*cli_fn;
 
 	char			*workdir;
+	struct vsb		*msgs;
 };
-
-static void haproxy_cleanup(struct haproxy *h, int is_haproxy_listener);
 
 static VTAILQ_HEAD(, haproxy)	haproxies =
     VTAILQ_HEAD_INITIALIZER(haproxies);
@@ -89,42 +87,14 @@ static VTAILQ_HEAD(, haproxy)	haproxies =
  */
 
 static void
-wait_stopped(struct haproxy *h)
-{
-	vtc_log(h->vl, 3, "wait-stopped");
-	while (1) {
-		if (h->kill_status >= 0 || h->kill_errno == ESRCH)
-			break;
-
-		usleep(1000);
-		h->kill_status = kill(h->pid, 0);
-		h->kill_errno = errno;
-	}
-}
-
-static void
-wait_running(struct haproxy *h)
+haproxy_wait_pidfile(struct haproxy *h)
 {
 	char buf_err[1024] = {0};
 	int usleep_time = 1000;
 	double t0;
 	pid_t pid;
 
-	if (h->opt_check_mode)
-		return;
-
-	if (h->pid_fn == NULL) {
-		/*
-		 * If we use no pid-file, check that the process
-		 * we started is still running.
-		 */
-		if (kill(h->pid, 0) < 0)
-			vtc_fatal(h->vl, "Process %ld not there: %s",
-			    (long)h->pid, strerror(errno));
-		return;
-	}
-
-	vtc_log(h->vl, 3, "wait-running");
+	vtc_log(h->vl, 3, "wait-pid-file");
 	for (t0 = VTIM_mono(); VTIM_mono() - t0 < 3;) {
 		if (vtc_error)
 			return;
@@ -243,7 +213,7 @@ haproxy_thread(void *priv)
 	struct haproxy *h;
 
 	CAST_OBJ_NOTNULL(h, priv, HAPROXY_MAGIC);
-	return (vtc_record(h->vl, h->fds[0], NULL));
+	return (vtc_record(h->vl, h->fds[0], h->msgs));
 }
 
 /**********************************************************************
@@ -253,35 +223,30 @@ haproxy_thread(void *priv)
 static void
 haproxy_start(struct haproxy *h)
 {
-	char **argv;
-	int i;
 	char buf[PATH_MAX];
 	struct vsb *vsb;
 
 	vtc_log(h->vl, 2, "%s", __func__);
 
 	AZ(VSB_finish(h->args));
-	argv = VAV_Parse(VSB_data(h->args), NULL, 0);
-	AN(argv);
-	if (argv[0] != NULL)
-		vtc_fatal(h->vl, "Could not parse argv-string: %s", argv[0]);
-	for (i = 1; argv[i] != NULL; i++) {
-		/* Check if HAPROXY_OPT_WORKER option was provided. */
-		if (!strcmp(argv[i], HAPROXY_OPT_WORKER)) {
-			h->opt_worker = 1;
-		} else if (!strcmp(argv[i], HAPROXY_OPT_DAEMON)) {
-			h->opt_daemon = 1;
-		} else if (!strcmp(argv[i], HAPROXY_OPT_CHECK_MODE)) {
-			h->opt_check_mode = 1;
-		}
-	}
-	VAV_Free(argv);
 	vtc_log(h->vl, 4, "opt_worker %d opt_daemon %d opt_check_mode %d",
 	    h->opt_worker, h->opt_daemon, h->opt_check_mode);
 
 	vsb = VSB_new_auto();
 	AN(vsb);
-	VSB_printf(vsb, "exec %s %s", h->filename, VSB_data(h->args));
+
+	VSB_printf(vsb, "exec %s", h->filename);
+	if (h->opt_check_mode)
+		VSB_printf(vsb, " -c");
+	else if (h->opt_daemon)
+		VSB_printf(vsb, " -D");
+	else
+		VSB_printf(vsb, " -d");
+
+	if (h->opt_worker)
+		VSB_printf(vsb, " -W");
+
+	VSB_printf(vsb, " %s", VSB_data(h->args));
 
 	VSB_printf(vsb, " -f %s ", h->cfg_fn);
 
@@ -301,11 +266,10 @@ haproxy_start(struct haproxy *h)
 		 * if signaled by <signum> signal.
 		 */
 		h->expect_exit = HAPROXY_EXPECT_EXIT;
-	} else {
-		h->expect_exit = 0;
 	}
 
 	AZ(pipe(&h->fds[0]));
+	vtc_log(h->vl, 4, "XXX %d @%d", h->fds[1], __LINE__);
 	AZ(pipe(&h->fds[2]));
 	h->pid = h->ppid = fork();
 	assert(h->pid >= 0);
@@ -334,57 +298,10 @@ haproxy_start(struct haproxy *h)
 
 	AZ(pthread_create(&h->tp, NULL, haproxy_thread, h));
 
-	wait_running(h);
+	if (h->pid_fn != NULL)
+		haproxy_wait_pidfile(h);
 }
 
-/**********************************************************************
- * Stop a HAProxy
- */
-
-static void
-haproxy_stop(struct haproxy *h)
-{
-	if (h->opt_check_mode)
-		return;
-
-	if (h->pid < 0)
-		haproxy_start(h);
-
-	vtc_log(h->vl, 2, "Stop");
-	h->kill_status = kill(h->pid, HAPROXY_SIGNAL);
-	h->kill_errno = errno;
-	h->expect_signal = -HAPROXY_SIGNAL;
-
-	wait_stopped(h);
-}
-
-/**********************************************************************
- * Cleanup
- */
-
-static void
-haproxy_cleanup(struct haproxy *h, int is_haproxy_listener)
-{
-	void *p;
-
-	vtc_log(h->vl, 2, "%s (%d)", __func__, is_haproxy_listener);
-	if (!is_haproxy_listener) {
-		/* Close the STDIN connection. */
-		closefd(&h->fds[1]);
-
-		/* Wait until STDOUT+STDERR closes */
-		AZ(pthread_join(h->tp, &p));
-		closefd(&h->fds[0]);
-		if (h->opt_daemon)
-			return;
-	}
-
-	if (h->ppid == -1)
-		return;
-
-	vtc_wait4(h->vl, h->ppid, h->expect_exit, h->expect_signal, 0);
-	h->ppid = -1;
-}
 
 /**********************************************************************
  * Wait for a HAProxy instance.
@@ -393,14 +310,32 @@ haproxy_cleanup(struct haproxy *h, int is_haproxy_listener)
 static void
 haproxy_wait(struct haproxy *h)
 {
-	if (h->pid < 0)
-		return;
+	void *p;
 
 	vtc_log(h->vl, 2, "Wait");
 
-	haproxy_stop(h);
+	if (h->pid < 0)
+		haproxy_start(h);
 
-	haproxy_cleanup(h, 0);
+	closefd(&h->fds[1]);
+
+	if (!h->opt_check_mode) {
+		assert(h->pid > 0);
+		vtc_log(h->vl, 2, "Stop HAproxy pid=%ld", (long)h->pid);
+		h->kill_status = kill(h->pid, HAPROXY_SIGNAL);
+		h->kill_errno = errno;
+		h->expect_signal = -HAPROXY_SIGNAL;
+		// XXX: loop over kills to ESRCH ?
+	}
+
+	AZ(pthread_join(h->tp, &p));
+	AZ(p);
+	closefd(&h->fds[0]);
+	if (!h->opt_daemon) {
+		vtc_wait4(h->vl, h->ppid, h->expect_exit, h->expect_signal, 0);
+		h->ppid = -1;
+	}
+	h->pid = -1;
 }
 
 #define HAPROXY_BE_FD_STR     "fd@${"
@@ -454,6 +389,22 @@ haproxy_build_backends(const struct haproxy *h, const char *vsb_data)
 	return (0);
 }
 
+static void
+haproxy_check_conf(struct haproxy *h, const char *expect)
+{
+
+	h->msgs = VSB_new_auto();
+	AN(h->msgs);
+	h->opt_check_mode = 1;
+	haproxy_start(h);
+	haproxy_wait(h);
+	AZ(VSB_finish(h->msgs));
+	if (strstr(VSB_data(h->msgs), expect) == NULL)
+		vtc_fatal(h->vl, "Did not find expected string '%s'", expect);
+	vtc_log(h->vl, 2, "Found expected '%s'", expect);
+	VSB_destroy(&h->msgs);
+}
+
 /**********************************************************************
  * Write a configuration for <h> HAProxy instance.
  */
@@ -498,7 +449,9 @@ haproxy_write_conf(const struct haproxy *h, const char *cfg, int auto_be)
  *
  * To define a haproxy server, you'll use this syntax::
  *
- *	haproxy hNAME [-arg STRING] [-conf[+vcl] STRING]
+ *	haproxy hNAME -conf-OK CONFIG
+ *	haproxy hNAME -conf-BAD ERROR CONFIG
+ *	haproxy hNAME [-D] [-W] [-arg STRING] [-conf[+vcl] STRING]
  *
  * The first ``haproxy hNAME`` invocation will start the haproxy master
  * process in the background, waiting for the ``-start`` switch to actually
@@ -508,6 +461,22 @@ haproxy_write_conf(const struct haproxy *h, const char *cfg, int auto_be)
  *
  * hNAME
  *	   Identify the HAProxy server with a string, it must starts with 'h'.
+ *
+ * \-conf-OK CONFIG
+ *         Run haproxy in '-c' mode to check config is OK
+ *	   stdout/stderr should contain 'Configuration file is valid'
+ *	   The exit code should be 0.
+ *
+ * \-conf-BAD ERROR CONFIG
+ *         Run haproxy in '-c' mode to check config is BAD.
+ *	   "ERROR" should be part of the diagnostics on stdout/stderr.
+ *	   The exit code should be 1.
+ *
+ * \-D
+ *         Run HAproxy in daemon mode.  If not given '-d' mode used.
+ *
+ * \-W
+ *         Enable HAproxy in Worker mode.
  *
  * \-arg STRING
  *         Pass an argument to haproxy, for example "-h simple_list".
@@ -519,25 +488,11 @@ haproxy_write_conf(const struct haproxy *h, const char *cfg, int auto_be)
  *         Specify the configuration to be loaded by this HAProxy instance,
  *	   all server instances will be automatically appended
  *
- * You can decide to start the HAProxy instance and/or wait for several events::
- *
- *         haproxy hNAME [-start] [-wait-running] [-wait-stopped]
- *
  * \-start
  *         Start this HAProxy instance.
  *
- * \-stop
+ * \-wait
  *         Stop this HAProxy instance.
- *
- * \-wait-running
- *         Wait for that instance to terminate.
- *
- * \-wait-stopped
- *         Wait for that instance to terminate.
- *
- * \-cleanup
- *         Once HAProxy is stopped, clean everything after it. This is only used
- *         in very few tests and you should never need it.
  *
  * \-expectexit NUMBER
  *	   Expect haproxy to exit(3) with this value
@@ -580,6 +535,33 @@ cmd_haproxy(CMD_ARGS)
 	for (; *av != NULL; av++) {
 		if (vtc_error)
 			break;
+
+		if (!strcmp(*av, "-conf-OK")) {
+			AN(av[1]);
+			haproxy_write_conf(h, av[1], 0);
+			av++;
+			haproxy_check_conf(h, HAPROXY_GOOD_CONF);
+			continue;
+		}
+		if (!strcmp(*av, "-conf-BAD")) {
+			AN(av[1]);
+			AN(av[2]);
+			haproxy_write_conf(h, av[2], 0);
+			h->expect_exit = 1;
+			haproxy_check_conf(h, av[1]);
+			av += 2;
+			continue;
+		}
+
+		if (!strcmp(*av, HAPROXY_OPT_DAEMON)) {
+			h->opt_daemon = 1;
+			continue;
+		}
+		if (!strcmp(*av, HAPROXY_OPT_WORKER)) {
+			h->opt_worker = 1;
+			continue;
+		}
+
 		if (!strcmp(*av, "-arg")) {
 			AN(av[1]);
 			AZ(h->pid);
@@ -588,6 +570,7 @@ cmd_haproxy(CMD_ARGS)
 			av++;
 			continue;
 		}
+
 		if (!strcmp(*av, "-conf")) {
 			AN(av[1]);
 			haproxy_write_conf(h, av[1], 0);
@@ -600,6 +583,7 @@ cmd_haproxy(CMD_ARGS)
 			av++;
 			continue;
 		}
+
 		if (!strcmp(*av, "-expectexit")) {
 			h->expect_exit = strtoul(av[1], NULL, 0);
 			av++;
@@ -610,7 +594,7 @@ cmd_haproxy(CMD_ARGS)
 			continue;
 		}
 		if (!strcmp(*av, "-wait")) {
-			wait_stopped(h);
+			haproxy_wait(h);
 			continue;
 		}
 		vtc_fatal(h->vl, "Unknown haproxy argument: %s", *av);

@@ -9,7 +9,7 @@ server s1 {
     txresp -body "s1 >>> Hello world!"
 } -start
 
-haproxy h1 -arg "-d" -conf {
+haproxy h1 -conf {
     defaults
 	mode   http
 	timeout connect         5s
