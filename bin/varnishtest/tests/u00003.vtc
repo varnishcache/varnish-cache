@@ -32,9 +32,9 @@ shell {
 delay 1
 
 client c1 {
-	txreq -url /1?foo=bar -hdr "authorization: basic dXNlcjpwYXNz" -hdr "Host: ${localhost}"
+	txreq -url /1?foo=bar -hdr "authorization: basic dXNlcjpwYXNz"
 	rxresp
-	txreq -url /1?foo=bar -hdr "baz: qux" -hdr "Host: ${localhost}"
+	txreq -url /1?foo=bar -hdr "baz: qux"
 	rxresp
 } -run
 
@@ -44,7 +44,7 @@ shell "mv ${tmpdir}/ncsa.log ${tmpdir}/ncsa.old.log"
 shell "kill -HUP `cat ${tmpdir}/ncsa.pid`"
 
 client c1 {
-	txreq -url /2 -hdr "Host: ${localhost}"
+	txreq -url /2
 	rxresp
 } -run
 

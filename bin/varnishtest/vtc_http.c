@@ -832,11 +832,12 @@ gzip_body(const struct http *hp, const char *txt, char **body, int *bodylen)
 
 static char* const *
 http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
-    char* body)
+    char *body, unsigned nohost)
 {
 	int bodylen = 0;
 	char *b, *c;
 	char *nullbody;
+	char *m;
 	int nolen = 0;
 	int l;
 
@@ -846,7 +847,11 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
 	for (; *av != NULL; av++) {
 		if (!strcmp(*av, "-nolen")) {
 			nolen = 1;
+		} else if (!strcmp(*av, "-nohost")) {
+			nohost = 1;
 		} else if (!strcmp(*av, "-hdr")) {
+			if (!strncasecmp(av[1], "Host:", 5))
+				nohost = 1;
 			VSB_printf(hp->vsb, "%s%s", av[1], nl);
 			av++;
 		} else if (!strcmp(*av, "-hdrlen")) {
@@ -904,6 +909,12 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
 		} else
 			break;
 	}
+	if (!nohost) {
+		m = macro_get("localhost", NULL);
+		AN(m);
+		VSB_printf(hp->vsb, "Host: %s%s", m, nl);
+		free(m);
+	}
 	if (body != NULL && !nolen)
 		VSB_printf(hp->vsb, "Content-Length: %d%s", bodylen, nl);
 	VSB_cat(hp->vsb, nl);
@@ -944,8 +955,11 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
  *         These three switches can appear in any order but must come before the
  *         following ones.
  *
+ *         \-nohost
+ *                 Don't include a Host header in the request.
+ *
  *         \-nolen
- *                 Don't include a Content-Length header in the response.
+ *                 Don't include a Content-Length header.
  *
  *         \-hdr STRING
  *                 Add STRING as a header, it must follow this format:
@@ -1019,7 +1033,7 @@ cmd_http_txresp(CMD_ARGS)
 	/* send a "Content-Length: 0" header unless something else happens */
 	REPLACE(body, "");
 
-	av = http_tx_parse_args(av, vl, hp, body);
+	av = http_tx_parse_args(av, vl, hp, body, 1);
 	if (*av != NULL)
 		vtc_fatal(hp->vl, "Unknown http txresp spec: %s\n", *av);
 
@@ -1207,6 +1221,7 @@ cmd_http_txreq(CMD_ARGS)
 	const char *url = "/";
 	const char *proto = "HTTP/1.1";
 	const char *up = NULL;
+	unsigned nohost;
 
 	(void)cmd;
 	(void)vl;
@@ -1240,7 +1255,8 @@ cmd_http_txreq(CMD_ARGS)
 				"Upgrade: h2c%s"
 				"HTTP2-Settings: %s%s", nl, nl, up, nl);
 
-	av = http_tx_parse_args(av, vl, hp, NULL);
+	nohost = strcasecmp(proto, "HTTP/1.1") != 0;
+	av = http_tx_parse_args(av, vl, hp, NULL, nohost);
 	if (*av != NULL)
 		vtc_fatal(hp->vl, "Unknown http txreq spec: %s\n", *av);
 	http_write(hp, 4, "txreq");

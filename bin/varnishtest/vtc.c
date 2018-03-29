@@ -172,7 +172,7 @@ macro_undef(struct vtclog *vl, const char *instance, const char *name)
 	AZ(pthread_mutex_unlock(&macro_mtx));
 }
 
-static char *
+char *
 macro_get(const char *b, const char *e)
 {
 	struct macro *m;
