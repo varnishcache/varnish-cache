@@ -200,8 +200,6 @@ haproxy_new(const char *name)
 	h->cfg_fn = strdup(buf);
 	AN(h->cfg_fn);
 
-	VSB_printf(h->args, "-f %s ", h->cfg_fn);
-
 	bprintf(buf, "rm -rf %s ; mkdir -p %s", h->workdir, h->workdir);
 	AZ(system(buf));
 
@@ -284,6 +282,8 @@ haproxy_start(struct haproxy *h)
 	vsb = VSB_new_auto();
 	AN(vsb);
 	VSB_printf(vsb, "exec %s %s", h->filename, VSB_data(h->args));
+
+	VSB_printf(vsb, " -f %s ", h->cfg_fn);
 
 	if (h->opt_worker || h->opt_daemon) {
 		bprintf(buf, "%s/pid", h->workdir);
@@ -459,7 +459,7 @@ haproxy_build_backends(const struct haproxy *h, const char *vsb_data)
  */
 
 static void
-haproxy_write_conf(const struct haproxy *h, const char *cfg)
+haproxy_write_conf(const struct haproxy *h, const char *cfg, int auto_be)
 {
 	struct vsb *vsb, *vsb2;
 
@@ -472,6 +472,10 @@ haproxy_write_conf(const struct haproxy *h, const char *cfg)
 	VSB_printf(vsb, "    global\n\tstats socket %s "
 		   "level admin mode 600\n", h->cli_fn);
 	AZ(VSB_cat(vsb, cfg));
+
+	if (auto_be)
+		cmd_server_gen_haproxy_conf(vsb);
+
 	AZ(VSB_finish(vsb));
 
 	AZ(haproxy_build_backends(h, VSB_data(vsb)));
@@ -494,7 +498,7 @@ haproxy_write_conf(const struct haproxy *h, const char *cfg)
  *
  * To define a haproxy server, you'll use this syntax::
  *
- *	haproxy hNAME [-arg STRING] [-conf STRING]
+ *	haproxy hNAME [-arg STRING] [-conf[+vcl] STRING]
  *
  * The first ``haproxy hNAME`` invocation will start the haproxy master
  * process in the background, waiting for the ``-start`` switch to actually
@@ -510,6 +514,10 @@ haproxy_write_conf(const struct haproxy *h, const char *cfg)
  *
  * \-conf STRING
  *         Specify the configuration to be loaded by this HAProxy instance.
+ *
+ * \-conf+backend STRING
+ *         Specify the configuration to be loaded by this HAProxy instance,
+ *	   all server instances will be automatically appended
  *
  * You can decide to start the HAProxy instance and/or wait for several events::
  *
@@ -587,7 +595,13 @@ cmd_haproxy(CMD_ARGS)
 		}
 		if (!strcmp(*av, "-conf")) {
 			AN(av[1]);
-			haproxy_write_conf(h, av[1]);
+			haproxy_write_conf(h, av[1], 0);
+			av++;
+			continue;
+		}
+		if (!strcmp(*av, "-conf+backend")) {
+			AN(av[1]);
+			haproxy_write_conf(h, av[1], 1);
 			av++;
 			continue;
 		}
