@@ -187,7 +187,7 @@ vtc_wait4(struct vtclog *vl, long pid,
 }
 
 void *
-vtc_record(struct vtclog *vl, int fd)
+vtc_record(struct vtclog *vl, int fd, struct vsb *vsb)
 {
 	char buf[65536];
 	struct pollfd fds[1];
@@ -204,6 +204,8 @@ vtc_record(struct vtclog *vl, int fd)
 		if (fds->revents & POLLIN) {
 			i = read(fd, buf, sizeof buf - 1);
 			if (i > 0) {
+				if (vsb != NULL)
+					VSB_bcat(vsb, buf, i);
 				buf[i] = '\0';
 				vtc_dump(vl, 3, "debug", buf, -2);
 			}

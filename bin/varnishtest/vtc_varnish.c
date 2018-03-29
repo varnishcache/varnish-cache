@@ -376,7 +376,7 @@ varnish_thread(void *priv)
 	struct varnish *v;
 
 	CAST_OBJ_NOTNULL(v, priv, VARNISH_MAGIC);
-	return (vtc_record(v->vl, v->fds[0]));
+	return (vtc_record(v->vl, v->fds[0], NULL));
 }
 
 /**********************************************************************

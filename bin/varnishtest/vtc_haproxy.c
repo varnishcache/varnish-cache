@@ -243,7 +243,7 @@ haproxy_thread(void *priv)
 	struct haproxy *h;
 
 	CAST_OBJ_NOTNULL(h, priv, HAPROXY_MAGIC);
-	return (vtc_record(h->vl, h->fds[0]));
+	return (vtc_record(h->vl, h->fds[0], NULL));
 }
 
 /**********************************************************************

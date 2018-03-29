@@ -134,7 +134,7 @@ struct vsb *vtc_hex_to_bin(struct vtclog *vl, const char *arg);
 void vtc_expect(struct vtclog *, const char *, const char *, const char *,
     const char *, const char *);
 void vtc_wait4(struct vtclog *, long, int, int, int);
-void *vtc_record(struct vtclog *, int);
+void *vtc_record(struct vtclog *, int, struct vsb *);
 
 /* vtc_term.c */
 struct term *Term_New(struct vtclog *, int, int);
