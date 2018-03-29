@@ -242,8 +242,11 @@ server_thread(void *priv)
 		fd = accept(s->sock, addr, &l);
 		if (fd < 0)
 			vtc_fatal(vl, "Accept failed: %s", strerror(errno));
-		VTCP_hisname(fd, abuf, sizeof abuf, pbuf, sizeof pbuf);
-		vtc_log(vl, 3, "accepted fd %d %s %s", fd, abuf, pbuf);
+		if (*s->listen != '/') {
+			VTCP_hisname(fd, abuf, sizeof abuf, pbuf, sizeof pbuf);
+			vtc_log(vl, 3, "accepted fd %d %s %s", fd, abuf, pbuf);
+		} else
+			vtc_log(vl, 3, "accepted fd %d 0.0.0.0 0", fd);
 		fd = http_process(vl, s->spec, fd, &s->sock, s->listen);
 		vtc_log(vl, 3, "shutting fd %d", fd);
 		j = shutdown(fd, SHUT_WR);
