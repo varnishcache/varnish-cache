@@ -588,11 +588,6 @@ cmd_haproxy(CMD_ARGS)
 			av++;
 			continue;
 		}
-		if (!strcmp(*av, "-cleanup")) {
-			AZ(av[1]);
-			haproxy_cleanup(h, 0);
-			continue;
-		}
 		if (!strcmp(*av, "-conf")) {
 			AN(av[1]);
 			haproxy_write_conf(h, av[1], 0);
@@ -614,16 +609,8 @@ cmd_haproxy(CMD_ARGS)
 			haproxy_start(h);
 			continue;
 		}
-		if (!strcmp(*av, "-stop")) {
-			haproxy_stop(h);
-			continue;
-		}
-		if (!strcmp(*av, "-wait-stopped")) {
+		if (!strcmp(*av, "-wait")) {
 			wait_stopped(h);
-			continue;
-		}
-		if (!strcmp(*av, "-wait-running")) {
-			wait_running(h);
 			continue;
 		}
 		vtc_fatal(h->vl, "Unknown haproxy argument: %s", *av);
