@@ -460,7 +460,8 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 {
 	FILE *f;
 	struct vsb *vsb;
-	char *p;
+	const char *p;
+	char *q;
 
 	(void)signal(SIGPIPE, SIG_IGN);
 
@@ -475,10 +476,10 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 	vsb = VSB_new_auto();
 	AN(vsb);
 	if (*fn != '/') {
-		p = macro_get("pwd", NULL);
-		AN(p);
-		VSB_cat(vsb, p);
-		free(p);
+		q = macro_get("pwd", NULL);
+		AN(q);
+		VSB_cat(vsb, q);
+		free(q);
 	}
 	p = strrchr(fn, '/');
 	if (p != NULL) {
