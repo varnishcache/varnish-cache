@@ -386,7 +386,7 @@ server_wait(struct server *s)
  */
 
 void
-cmd_server_genvcl(struct vsb *vsb)
+cmd_server_gen_vcl(struct vsb *vsb)
 {
 	struct server *s;
 
@@ -401,6 +401,39 @@ cmd_server_genvcl(struct vsb *vsb)
 			VSB_printf(vsb,
 				   "backend %s { .path = \"%s\"; }\n",
 				   s->name, s->listen);
+	}
+	AZ(pthread_mutex_unlock(&server_mtx));
+}
+
+
+/**********************************************************************
+ * Generate VCL backend decls for our servers
+ */
+
+void
+cmd_server_gen_haproxy_conf(struct vsb *vsb)
+{
+	struct server *s;
+
+	AZ(pthread_mutex_lock(&server_mtx));
+	VTAILQ_FOREACH(s, &servers, list) {
+		if (*s->listen != '/')
+			VSB_printf(vsb,
+			   "\n    backend be%s\n"
+			   "\tserver srv%s %s:%s\n",
+			   s->name + 1, s->name + 1, s->aaddr, s->aport);
+		else
+			INCOMPL();
+	}
+	VTAILQ_FOREACH(s, &servers, list) {
+		if (*s->listen != '/')
+			VSB_printf(vsb,
+			   "\n    frontend http%s\n"
+			   "\tuse_backend be%s\n"
+			   "\tbind \"fd@${fe%s}\"\n",
+			   s->name + 1, s->name + 1, s->name + 1);
+		else
+			INCOMPL();
 	}
 	AZ(pthread_mutex_unlock(&server_mtx));
 }

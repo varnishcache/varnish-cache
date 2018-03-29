@@ -91,7 +91,8 @@ int http_process(struct vtclog *vl, const char *spec, int sock, int *sfd,
 
 char * synth_body(const char *len, int rnd);
 
-void cmd_server_genvcl(struct vsb *vsb);
+void cmd_server_gen_vcl(struct vsb *vsb);
+void cmd_server_gen_haproxy_conf(struct vsb *vsb);
 
 void vtc_loginit(char *buf, unsigned buflen);
 struct vtclog *vtc_logopen(const char *id);

@@ -754,7 +754,7 @@ varnish_vclbackend(struct varnish *v, const char *vcl)
 
 	VSB_printf(vsb2, "vcl %.1f;\n", v->syntax);
 
-	cmd_server_genvcl(vsb2);
+	cmd_server_gen_vcl(vsb2);
 
 	AZ(VSB_finish(vsb2));
 
