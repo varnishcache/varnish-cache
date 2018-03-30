@@ -212,7 +212,7 @@ h2_b64url_settings(struct h2_sess *h2, struct req *req)
 		if (q == NULL)
 			return (-1);
 		i = q - s;
-		assert(i >= 0 && i <= 63);
+		assert(i >= 0 && i <= 64);
 		x <<= 6;
 		x |= i;
 		n += 6;
