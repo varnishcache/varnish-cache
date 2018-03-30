@@ -414,6 +414,7 @@ mgt_launch_child(struct cli *cli)
 		return;
 	}
 
+	free(p);
 	child_state = CH_RUNNING;
 }
 
