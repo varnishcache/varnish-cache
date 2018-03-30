@@ -17,3 +17,5 @@ leak:hpack/vhp_gen_hufdec.c
 leak:binheap_new
 # ev
 leak:mct_callback
+#
+leak:vsmw_newcluster
