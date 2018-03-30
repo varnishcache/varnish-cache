@@ -282,6 +282,7 @@ interactive(int sock)
 			}
 		}
 	}
+	free(answer);
 	cli_write(sock, "banner\n");
 	while (1) {
 		i = poll(fds, 2, -1);
