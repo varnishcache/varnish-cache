@@ -686,12 +686,12 @@ VRT_VSM_Cluster_New(VRT_CTX, size_t sz)
 }
 
 void v_matchproto_()
-VRT_VSM_Cluster_Destroy(VRT_CTX, struct vsmw_cluster **vcp)
+VRT_VSM_Cluster_Destroy(VRT_CTX, struct vsmw_cluster **vsmcp)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	AN(vcp);
-	VSMW_DestroyCluster(heritage.proc_vsmw, vcp);
+	AN(vsmcp);
+	VSMW_DestroyCluster(heritage.proc_vsmw, vsmcp);
 }
 
 /*--------------------------------------------------------------------

@@ -275,15 +275,15 @@ VSMW_NewCluster(struct vsmw *vsmw, size_t len, const char *pfx)
 }
 
 void
-VSMW_DestroyCluster(struct vsmw *vsmw, struct vsmw_cluster **vcp)
+VSMW_DestroyCluster(struct vsmw *vsmw, struct vsmw_cluster **vsmcp)
 {
 	struct vsmw_cluster *vc;
 
 	vsmw_lock();
 	CHECK_OBJ_NOTNULL(vsmw, VSMW_MAGIC);
-	AN(vcp);
-	vc = *vcp;
-	*vcp = NULL;
+	AN(vsmcp);
+	vc = *vsmcp;
+	*vsmcp = NULL;
 	CHECK_OBJ_NOTNULL(vc, VSMW_CLUSTER_MAGIC);
 
 	if (vc->cseg != NULL) {
