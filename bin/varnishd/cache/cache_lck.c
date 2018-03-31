@@ -112,6 +112,9 @@ Lck__Lock(struct lock *lck, const char *p, int l)
 	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC);
 	if (DO_DEBUG(DBG_WITNESS))
 		Lck_Witness_Lock(ilck, p, l, "");
+	else if (DO_DEBUG(DBG_LCK) &&
+		 Lck__Trylock(lck, p, l) == 0)
+		return;
 	AZ(pthread_mutex_lock(&ilck->mtx));
 	AZ(ilck->held);
 	ilck->stat->locks++;
@@ -163,6 +166,8 @@ Lck__Trylock(struct lock *lck, const char *p, int l)
 		ilck->held = 1;
 		ilck->stat->locks++;
 		ilck->owner = pthread_self();
+	} else {
+		ilck->stat->busy++;
 	}
 	return (r);
 }
