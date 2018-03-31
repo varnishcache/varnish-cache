@@ -510,7 +510,8 @@ MCF_InitParams(struct cli *cli)
 	low = sysconf(_SC_THREAD_STACK_MIN);
 	MCF_ParamConf(MCF_MINIMUM, "thread_pool_stack", "%jdb", (intmax_t)low);
 
-#if defined(__SANITIZER)
+#if defined(__SANITIZER) || \
+    (defined(__has_feature) && __has_feature(address_sanitizer))
 	def = 92 * 1024;
 #else
 	def = 48 * 1024;
