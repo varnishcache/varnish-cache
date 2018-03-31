@@ -43,6 +43,10 @@
 #include "vav.h"
 #include "vcli_serve.h"
 
+#if !defined(__has_feature)
+#define __has_feature(x)	0
+#endif
+
 struct plist {
 	unsigned			magic;
 #define PLIST_MAGIC			0xbfc3ea16
@@ -510,8 +514,7 @@ MCF_InitParams(struct cli *cli)
 	low = sysconf(_SC_THREAD_STACK_MIN);
 	MCF_ParamConf(MCF_MINIMUM, "thread_pool_stack", "%jdb", (intmax_t)low);
 
-#if defined(__SANITIZER) || \
-    (defined(__has_feature) && __has_feature(address_sanitizer))
+#if defined(__SANITIZER) || __has_feature(address_sanitizer)
 	def = 92 * 1024;
 #else
 	def = 48 * 1024;
