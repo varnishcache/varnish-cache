@@ -51,12 +51,13 @@ void PFD_RemoteName(const struct pfd *, char *, unsigned, char *, unsigned);
  */
 
 struct tcp_pool *VTP_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6,
-    const char *uds, const void *id);
+    const char *uds, const void *id, struct vsmw_cluster *vc);
 	/*
 	 * Get a reference to a TCP pool. Either one or both of ip4 or
 	 * ip6 arg must be non-NULL, or uds must be non-NULL. If recycling
 	 * is to be used, the id pointer distinguishes the pool per
 	 * protocol.
+	 * If vc is non-NULL, the VSC_vcp will be created in that cluster
 	 */
 
 void VTP_AddRef(struct tcp_pool *);

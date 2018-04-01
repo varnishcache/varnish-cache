@@ -227,7 +227,7 @@ VCP_Ref(const void *id, const void *priv)
 
 static void *
 VCP_New(struct conn_pool *cp, const void *id, void *priv,
-    const struct cp_methods *cm)
+	const struct cp_methods *cm, struct vsmw_cluster *vc)
 {
 	struct tcp_pool *tp = priv;
 	char a4buf[VTCP_ADDRBUFSIZE], a6buf[VTCP_ADDRBUFSIZE];
@@ -251,7 +251,6 @@ VCP_New(struct conn_pool *cp, const void *id, void *priv,
 
 	// XXX layering
 	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
-	// XXX common cluster/seg
 	if (tp->uds != NULL)
 		cp->stats = VSC_vcp_New(vc, &cp->vsc, "%p(%s)", id, tp->uds);
 	else {
@@ -770,7 +769,7 @@ static const struct cp_methods vus_methods = {
 
 struct tcp_pool *
 VTP_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6, const char *uds,
-	const void *id)
+	const void *id, struct vsmw_cluster *vc)
 {
 	struct tcp_pool *tp;
 	struct conn_pool *cp;
@@ -805,7 +804,7 @@ VTP_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6, const char *uds,
 		if (ip6 != NULL)
 			tp->ip6 = VSA_Clone(ip6);
 	}
-	return(VCP_New(tp->cp, id, tp, methods));
+	return(VCP_New(tp->cp, id, tp, methods, vc));
 }
 
 /*--------------------------------------------------------------------
