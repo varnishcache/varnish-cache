@@ -33,6 +33,7 @@
 #include "config.h"
 
 #include <stdlib.h>
+#include <errno.h>
 
 #include "cache_varnishd.h"
 
@@ -116,7 +117,8 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
 	pfd = VTP_Get(bp->tcp_pool, tmod, wrk, force_fresh);
 	if (pfd == NULL) {
 		VSLb(bo->vsl, SLT_FetchError,
-		     "backend %s: fail", bp->director->display_name);
+		     "backend %s: fail errno %d (%s)",
+		     bp->director->display_name, errno, strerror(errno));
 		// XXX: Per backend stats ?
 		VSC_C_main->backend_fail++;
 		bo->htc = NULL;
