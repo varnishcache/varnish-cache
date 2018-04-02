@@ -83,7 +83,7 @@ _VARNISH_CHECK_LIB(nsl, getaddrinfo)
 AC_SUBST(NET_LIBS, "${SOCKET_LIBS} ${NSL_LIBS}")
 
 # Userland slab allocator from Solaris, ported to other systems
-AC_CHECK_HEADERS([umem.h], [_VARNISH_CHECK_LIB(umem, umem_alloc)])
+AC_CHECK_HEADERS([umem.h])
 
 # XXX: This _may_ be for OS/X
 AC_CHECK_LIBM

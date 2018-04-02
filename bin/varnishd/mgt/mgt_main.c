@@ -136,7 +136,7 @@ usage(void)
 
 	printf(FMT, "-s [name=]kind[,options]", "Storage specification");
 	printf(FMT, "", "Can be specified multiple times.");
-#ifdef HAVE_LIBUMEM
+#ifdef HAVE_UMEM_H
 	printf(FMT, "", "  -s default (=umem)");
 	printf(FMT, "", "  -s umem");
 #else
