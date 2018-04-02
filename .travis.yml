@@ -23,6 +23,13 @@ addons:
   apt:
     packages:
       - python-docutils
+notifications:
+  irc:
+    channels:
+      - "irc.linpro.no#varnish-hacking"
+    on_success: change
+    use_notice: true
+    skip_join: true
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
       brew update;
@@ -50,4 +57,5 @@ before_install:
 script:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
       export PYTHONPATH=`brew --prefix`/lib/python2.7/site-packages; fi
-  - make -j3 check VERBOSE=1
+  - if [[ "$TRAVIS_PULL_REQUEST" != "false" ]]; then make -j3 distcheck; fi
+  - if [[ "$TRAVIS_PULL_REQUEST" == "false" ]]; then make -j3 check VERBOSE=1; fi
