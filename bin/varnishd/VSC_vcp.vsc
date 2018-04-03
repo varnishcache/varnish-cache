@@ -1,0 +1,120 @@
+..
+	This is *NOT* a RST file but the syntax has been chosen so
+	that it may become an RST file at some later date.
+
+.. varnish_vsc_begin::	vcp
+	:oneliner:	Connection Pool Counters
+	:order:		65
+
+
+	Counter for operations on connection pools.
+
+.. varnish_vsc:: n_conn
+	:type:	counter
+	:level:	diag
+	:oneliner:	Number of pooled connections
+
+
+.. varnish_vsc:: n_kill
+	:type:	counter
+	:level:	diag
+	:oneliner:	Number of connections still to be closed
+
+
+.. varnish_vsc:: n_used
+	:type:	counter
+	:level:	diag
+	:oneliner:	Number of open connections
+
+
+.. varnish_vsc:: opened
+	:type:	counter
+	:level:	diag
+	:oneliner:	Connections opened
+
+	Connections opened successfully
+
+	This counter may be slightly inaccurate for performance reasons.
+
+
+.. varnish_vsc:: closed
+	:type:	counter
+	:level:	diag
+	:oneliner:	Connections closed
+
+	Connections closed
+
+
+.. varnish_vsc:: recycle
+	:type:	counter
+	:level:	diag
+	:oneliner:	Connections recycled
+
+	Connections kept open (cached) for later reuse
+
+
+.. varnish_vsc:: recycle_fail
+	:type:	counter
+	:level:	diag
+	:oneliner:	Connection recycles (Wait_Enter) failed
+
+
+.. varnish_vsc:: helddown
+	:type:	counter
+	:level:	diag
+	:oneliner:	Connection not attempted due to holddown
+
+	See parameters backend_local_error_holddown and
+	backend_remote_error_holddown.
+
+
+.. varnish_vsc:: fail
+	:type:	counter
+	:level:	diag
+	:oneliner:	Connections failed
+
+
+	Counter of failed opens. Detailed reasons are given in the
+	fail_* counters and in Debug VSL.
+
+	This counter is the sum of all detailled fail_* counters.
+
+	All fail_* counters may be slightly inaccurate for efficiency.
+
+.. varnish_vsc:: fail_eacces
+	:type:	counter
+	:level:	diag
+	:oneliner:	Connections failed with EACCES or EPERM
+
+
+.. varnish_vsc:: fail_eaddrnotavail
+	:type:	counter
+	:level:	diag
+	:oneliner:	Connections failed with EADDRNOTAVAIL
+
+
+.. varnish_vsc:: fail_econnrefused
+	:type:	counter
+	:level:	diag
+	:oneliner:	Connections failed with ECONNREFUSED
+
+
+.. varnish_vsc:: fail_enetunreach
+	:type:	counter
+	:level:	diag
+	:oneliner:	Connections failed with ENETUNREACH
+
+
+.. varnish_vsc:: fail_etimedout
+	:type:	counter
+	:level:	diag
+	:oneliner:	Connections failed ETIMEDOUT
+
+
+.. varnish_vsc:: fail_other
+	:type:	counter
+	:level:	diag
+	:oneliner:	Connections failed for other reason
+
+
+.. varnish_vsc_end::	vcp

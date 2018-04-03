@@ -44,6 +44,7 @@
 
 #include "cache_tcp_pool.h"
 #include "cache_pool.h"
+#include "VSC_vcp.h"
 
 struct conn_pool;
 
@@ -91,14 +92,14 @@ struct conn_pool {
 	VTAILQ_ENTRY(conn_pool)			list;
 	int					refcnt;
 	struct lock				mtx;
+	struct VSC_vcp				*stats;
+	struct vsc_seg				*vsc;
 
+	/* length: stat->n_conn */
 	VTAILQ_HEAD(, pfd)			connlist;
-	int					n_conn;
 
+	/* length: stat->n_kill */
 	VTAILQ_HEAD(, pfd)			killlist;
-	int					n_kill;
-
-	int					n_used;
 };
 
 struct tcp_pool {
@@ -178,12 +179,14 @@ vcp_handle(struct waited *w, enum wait_event ev, double now)
 	case PFD_STATE_AVAIL:
 		cp->methods->close(pfd);
 		VTAILQ_REMOVE(&cp->connlist, pfd, list);
-		cp->n_conn--;
+		cp->stats->closed++;
+		cp->stats->n_conn--;
 		FREE_OBJ(pfd);
 		break;
 	case PFD_STATE_CLEANUP:
 		cp->methods->close(pfd);
-		cp->n_kill--;
+		cp->stats->closed++;
+		cp->stats->n_kill--;
 		VTAILQ_REMOVE(&cp->killlist, pfd, list);
 		memset(pfd, 0x11, sizeof *pfd);
 		free(pfd);
@@ -224,6 +227,9 @@ static void *
 VCP_New(struct conn_pool *cp, const void *id, void *priv,
     const struct cp_methods *cm)
 {
+	struct tcp_pool *tp = priv;
+	char a4buf[VTCP_ADDRBUFSIZE], a6buf[VTCP_ADDRBUFSIZE];
+	char pbuf[VTCP_PORTBUFSIZE];
 
 	AN(cp);
 	AN(cm);
@@ -240,8 +246,28 @@ VCP_New(struct conn_pool *cp, const void *id, void *priv,
 	VTAILQ_INIT(&cp->connlist);
 	VTAILQ_INIT(&cp->killlist);
 
+	// XXX layering
+	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
+	// XXX common cluster/seg
+	if (tp->uds != NULL)
+		cp->stats = VSC_vcp_New(vc, &cp->vsc, "%p(%s)", id, tp->uds);
+	else {
+		a6buf[0] = '-'; a6buf[1] = '\0';
+		a4buf[0] = '-'; a4buf[1] = '\0';
+		assert(tp->ip6 || tp->ip4);
+		if (tp->ip6)
+			VTCP_name(tp->ip6, a6buf, sizeof a6buf,
+			    pbuf, sizeof pbuf);
+		if (tp->ip4)
+			VTCP_name(tp->ip4, a4buf, sizeof a4buf,
+			    pbuf, sizeof pbuf);
+		cp->stats = VSC_vcp_New(vc, &cp->vsc, "%p(%s,%s,%s)",
+					id, a4buf, a6buf, pbuf);
+	}
+
 	Lck_Lock(&conn_pools_mtx);
 	VTAILQ_INSERT_HEAD(&conn_pools, cp, list);
+	VSC_C_main->vcp_create++;
 	Lck_Unlock(&conn_pools_mtx);
 
 	return (priv);
@@ -279,30 +305,83 @@ VCP_Rel(struct conn_pool *cp)
 		Lck_Unlock(&conn_pools_mtx);
 		return (1);
 	}
-	AZ(cp->n_used);
+	AZ(cp->stats->n_used);
 	VTAILQ_REMOVE(&conn_pools, cp, list);
+	VSC_C_main->vcp_destroy++;
 	Lck_Unlock(&conn_pools_mtx);
 
 	Lck_Lock(&cp->mtx);
 	VTAILQ_FOREACH_SAFE(pfd, &cp->connlist, list, pfd2) {
 		VTAILQ_REMOVE(&cp->connlist, pfd, list);
-		cp->n_conn--;
+		cp->stats->n_conn--;
 		assert(pfd->state == PFD_STATE_AVAIL);
 		pfd->state = PFD_STATE_CLEANUP;
 		(void)shutdown(pfd->fd, SHUT_WR);
 		VTAILQ_INSERT_TAIL(&cp->killlist, pfd, list);
-		cp->n_kill++;
+		cp->stats->n_kill++;
 	}
-	while (cp->n_kill) {
+	while (cp->stats->n_kill) {
 		Lck_Unlock(&cp->mtx);
 		(void)usleep(20000);
 		Lck_Lock(&cp->mtx);
 	}
 	Lck_Unlock(&cp->mtx);
 	Lck_Delete(&cp->mtx);
-	AZ(cp->n_conn);
-	AZ(cp->n_kill);
+	AZ(cp->stats->n_conn);
+	AZ(cp->stats->n_kill);
+	cp->stats = NULL;
+	VSC_vcp_Destroy(&cp->vsc);
+	AZ(cp->vsc);
 	return (0);
+}
+
+/*--------------------------------------------------------------------
+ * Open a new connection from pool.  This is a distinct function since
+ * probing cannot use a recycled connection.
+ */
+
+static int
+VCP_Open(struct conn_pool *cp, double tmo, const void **privp)
+{
+	int r;
+	double h;
+
+	CHECK_OBJ_NOTNULL(cp, CONN_POOL_MAGIC);
+
+	r = cp->methods->open(cp, tmo, privp);
+
+	if (r >= 0) {
+		cp->stats->opened++;
+		return (r);
+	}
+
+	/* stats access unprotected */
+	switch (errno) {
+	case EACCES:
+	case EPERM:
+		cp->stats->fail_eacces++;
+		break;
+	case EADDRNOTAVAIL:
+		cp->stats->fail_eaddrnotavail++;
+		break;
+	case ECONNREFUSED:
+		cp->stats->fail_econnrefused++;
+		break;
+	case ENETUNREACH:
+		cp->stats->fail_enetunreach++;
+		break;
+	case ETIMEDOUT:
+		cp->stats->fail_etimedout++;
+		break;
+	default:
+		cp->stats->fail_other++;
+		// XXX name
+		VSL(SLT_Debug, 0, "VTP open error %d (%s)",
+			errno, strerror(errno));
+	}
+	cp->stats->fail++;
+
+	return (r);
 }
 
 /*--------------------------------------------------------------------
@@ -327,7 +406,7 @@ VCP_Recycle(const struct worker *wrk, struct pfd **pfdp)
 	assert(pfd->fd > 0);
 
 	Lck_Lock(&cp->mtx);
-	cp->n_used--;
+	cp->stats->n_used--;
 
 	pfd->waited->priv1 = pfd;
 	pfd->waited->fd = pfd->fd;
@@ -339,15 +418,17 @@ VCP_Recycle(const struct worker *wrk, struct pfd **pfdp)
 		cp->methods->close(pfd);
 		memset(pfd, 0x33, sizeof *pfd);
 		free(pfd);
-		// XXX: stats
+		cp->stats->recycle_fail++;
+		cp->stats->closed++;
 		pfd = NULL;
 	} else {
 		VTAILQ_INSERT_HEAD(&cp->connlist, pfd, list);
+		cp->stats->recycle++;
 		i++;
 	}
 
 	if (pfd != NULL)
-		cp->n_conn++;
+		cp->stats->n_conn++;
 	Lck_Unlock(&cp->mtx);
 
 	if (i && DO_DEBUG(DBG_VTC_MODE)) {
@@ -389,16 +470,17 @@ VCP_Close(struct pfd **pfdp)
 
 	Lck_Lock(&cp->mtx);
 	assert(pfd->state == PFD_STATE_USED || pfd->state == PFD_STATE_STOLEN);
-	cp->n_used--;
+	cp->stats->n_used--;
 	if (pfd->state == PFD_STATE_STOLEN) {
 		(void)shutdown(pfd->fd, SHUT_RDWR);
 		VTAILQ_REMOVE(&cp->connlist, pfd, list);
 		pfd->state = PFD_STATE_CLEANUP;
 		VTAILQ_INSERT_HEAD(&cp->killlist, pfd, list);
-		cp->n_kill++;
+		cp->stats->n_kill++;
 	} else {
 		assert(pfd->state == PFD_STATE_USED);
 		cp->methods->close(pfd);
+		cp->stats->closed++;
 		memset(pfd, 0x44, sizeof *pfd);
 		free(pfd);
 	}
@@ -428,12 +510,12 @@ VCP_Get(struct conn_pool *cp, double tmo, struct worker *wrk,
 		assert(pfd->state == PFD_STATE_AVAIL);
 		VTAILQ_REMOVE(&cp->connlist, pfd, list);
 		VTAILQ_INSERT_TAIL(&cp->connlist, pfd, list);
-		cp->n_conn--;
+		cp->stats->n_conn--;
 		VSC_C_main->backend_reuse++;
 		pfd->state = PFD_STATE_STOLEN;
 		pfd->cond = &wrk->cond;
 	}
-	cp->n_used++;			// Opening mostly works
+	cp->stats->n_used++;			// Opening mostly works
 	Lck_Unlock(&cp->mtx);
 
 	if (pfd != NULL)
@@ -444,11 +526,11 @@ VCP_Get(struct conn_pool *cp, double tmo, struct worker *wrk,
 	INIT_OBJ(pfd->waited, WAITED_MAGIC);
 	pfd->state = PFD_STATE_USED;
 	pfd->conn_pool = cp;
-	pfd->fd = cp->methods->open(cp, tmo, &pfd->priv);
+	pfd->fd = VCP_Open(cp, tmo, &pfd->priv);
 	if (pfd->fd < 0) {
 		FREE_OBJ(pfd);
 		Lck_Lock(&cp->mtx);
-		cp->n_used--;		// Nope, didn't work after all.
+		cp->stats->n_used--;		// Nope, didn't work after all.
 		Lck_Unlock(&cp->mtx);
 	} else
 		VSC_C_main->backend_conn++;
@@ -718,17 +800,13 @@ VTP_Rel(struct tcp_pool **tpp)
 }
 
 /*--------------------------------------------------------------------
- * Open a new connection from pool.  This is a distinct function since
- * probing cannot use a recycled connection.
+ * Open a new connection from pool.
  */
 
 int
-VTP_Open(const struct tcp_pool *tp, double tmo, const void **privp)
+VTP_Open(struct tcp_pool *tp, double tmo, const void **privp)
 {
-
-	if (tp->uds != NULL)
-		return (vus_open(tp->cp, tmo, privp));
-	return (vtp_open(tp->cp, tmo, privp));
+	return (VCP_Open(tp->cp, tmo, privp));
 }
 
 /*--------------------------------------------------------------------

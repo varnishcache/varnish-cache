@@ -249,7 +249,8 @@ VSC_SRC = \
 	VSC_sma.vsc \
 	VSC_smf.vsc \
 	VSC_smu.vsc \
-	VSC_vbe.vsc
+	VSC_vbe.vsc \
+	VSC_vcp.vsc
 
 VSC_GEN_C = @VSC_GEN_C@
 VSC_GEN_H = @VSC_GEN_H@

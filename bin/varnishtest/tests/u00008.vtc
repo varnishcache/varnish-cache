@@ -25,7 +25,7 @@ process p1 -expect-text 0 0 "MAIN.s_sess"
 process p1 -screen_dump
 
 process p1 -write {vG}
-process p1 -expect-text 0 0 "VBE.vcl1.s1.req"
+process p1 -expect-text 0 1 "VCP.0x"
 process p1 -expect-text 0 0 "DIAG"
 process p1 -screen_dump
 
@@ -34,7 +34,7 @@ process p1 -expect-text 2 1 "Uptime child:   Not Running"
 process p1 -screen_dump
 
 process p1 -write {dek}
-process p1 -expect-text 0 1 "Concurrent connections to backend:"
+process p1 -expect-text 0 1 "Connections closed:"
 process p1 -screen_dump
 
 process p1 -winsz 25 132
