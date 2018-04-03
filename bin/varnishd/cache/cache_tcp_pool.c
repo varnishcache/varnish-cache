@@ -94,6 +94,8 @@ struct conn_pool {
 	struct lock				mtx;
 	struct VSC_vcp				*stats;
 	struct vsc_seg				*vsc;
+	double					holddown;
+	int					holddown_errno;
 
 	/* length: stat->n_conn */
 	VTAILQ_HEAD(, pfd)			connlist;
@@ -242,6 +244,7 @@ VCP_New(struct conn_pool *cp, const void *id, void *priv,
 	cp->priv = priv;
 	cp->methods = cm;
 	cp->refcnt = 1;
+	cp->holddown = 0;
 	Lck_New(&cp->mtx, lck_tcp_pool);
 	VTAILQ_INIT(&cp->connlist);
 	VTAILQ_INIT(&cp->killlist);
@@ -348,6 +351,25 @@ VCP_Open(struct conn_pool *cp, double tmo, const void **privp)
 
 	CHECK_OBJ_NOTNULL(cp, CONN_POOL_MAGIC);
 
+	while (cp->holddown > 0) {
+		Lck_Lock(&cp->mtx);
+		if (cp->holddown == 0) {
+			Lck_Unlock(&cp->mtx);
+			break;
+		}
+
+		if (VTIM_mono() >= cp->holddown) {
+			cp->holddown = 0;
+			Lck_Unlock(&cp->mtx);
+			break;
+		}
+
+		cp->stats->helddown++;
+		errno = cp->holddown_errno;
+		Lck_Unlock(&cp->mtx);
+		return (-1);
+	}
+
 	r = cp->methods->open(cp, tmo, privp);
 
 	if (r >= 0) {
@@ -355,20 +377,26 @@ VCP_Open(struct conn_pool *cp, double tmo, const void **privp)
 		return (r);
 	}
 
+	h = 0;
+
 	/* stats access unprotected */
 	switch (errno) {
 	case EACCES:
 	case EPERM:
 		cp->stats->fail_eacces++;
+		h = cache_param->backend_local_error_holddown;
 		break;
 	case EADDRNOTAVAIL:
 		cp->stats->fail_eaddrnotavail++;
+		h = cache_param->backend_local_error_holddown;
 		break;
 	case ECONNREFUSED:
 		cp->stats->fail_econnrefused++;
+		h = cache_param->backend_remote_error_holddown;
 		break;
 	case ENETUNREACH:
 		cp->stats->fail_enetunreach++;
+		h = cache_param->backend_remote_error_holddown;
 		break;
 	case ETIMEDOUT:
 		cp->stats->fail_etimedout++;
@@ -381,6 +409,17 @@ VCP_Open(struct conn_pool *cp, double tmo, const void **privp)
 	}
 	cp->stats->fail++;
 
+	if (h == 0)
+		return (r);
+
+	Lck_Lock(&cp->mtx);
+	h += VTIM_mono();
+	if (cp->holddown == 0 || h < cp->holddown) {
+		cp->holddown = h;
+		cp->holddown_errno = errno;
+	}
+
+	Lck_Unlock(&cp->mtx);
 	return (r);
 }
 
