@@ -2,6 +2,7 @@
 sudo: required
 language: c
 matrix:
+  fast_finish: true
   include:
   - os: linux
     dist: trusty
@@ -34,7 +35,7 @@ notifications:
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
       brew update;
-      brew install docutils nghttp2;
+      brew install docutils sphinx-doc nghttp2;
     fi
   - if [[ -n "$CLANG" ]]; then
       wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key |
