@@ -23,6 +23,7 @@ addons:
   apt:
     packages:
       - python-docutils
+      - python-sphinx
 notifications:
   irc:
     channels:
