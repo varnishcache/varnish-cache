@@ -180,7 +180,7 @@ if __name__ == "__main__":
 	optlist, args = getopt.getopt(sys.argv[1:], "g:o:x:")
 
 	fo = sys.stdout
-	gcovprog = "gcov6
+	gcovprog = "gcov6"
 
 	for f, v in optlist:
 		if f == '-o' and v == '-':
