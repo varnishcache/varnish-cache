@@ -307,7 +307,7 @@ smu_init(struct stevedore *parent, int ac, char * const *av)
 		if ((u != (uintmax_t)(size_t)u))
 			ARGV_ERR("(-sumem) size \"%s\": too big\n", av[0]);
 		if (u < 1024*1024)
-			ARGV_ERR("(-sumem) size \"%s\": too smull, "
+			ARGV_ERR("(-sumem) size \"%s\": too small, "
 				 "did you forget to specify M or G?\n", av[0]);
 		sc->smu_max = u;
 	}
