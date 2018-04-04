@@ -41,6 +41,7 @@
 #include <stdlib.h>
 #include <umem.h>
 #include <dlfcn.h>
+#include <link.h>
 
 #include "storage/storage.h"
 #include "storage/storage_simple.h"
@@ -262,7 +263,8 @@ smu_init(struct stevedore *parent, int ac, char * const *av)
 
 	/* Check if these load in the management process. */
 	(void) dlerror();
-	if ((libumem_hndl = dlopen("libumem.so", RTLD_NOW)) == NULL)
+	libumem_hndl = dlmopen(LM_ID_NEWLM, "libumem.so", RTLD_LAZY);
+	if (libumem_hndl == NULL)
 		ARGV_ERR("(-sumem) cannot open libumem.so: %s", dlerror());
 
 #define DLSYM_UMEM(fptr,sym)						\
@@ -281,6 +283,9 @@ smu_init(struct stevedore *parent, int ac, char * const *av)
 	DLSYM_UMEM(umem_cache_freef, umem_cache_free);
 
 #undef DLSYM_UMEM
+
+	AZ(dlclose(libumem_hndl));
+	libumem_hndl = NULL;
 
 	e = VNUM_2bytes(av[0], &u, 0);
 	if (e != NULL)
