@@ -33,13 +33,14 @@
 
 #include "config.h"
 
-#if defined(HAVE_LIBUMEM)
+#if defined(HAVE_UMEM_H)
 
 #include "cache/cache_varnishd.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <umem.h>
+#include <dlfcn.h>
 
 #include "storage/storage.h"
 #include "storage/storage_simple.h"
@@ -66,6 +67,30 @@ struct smu {
 	size_t			sz;
 	struct smu_sc		*sc;
 };
+
+/*
+ * We only want the umem slab allocator for cache storage, not also as a
+ * substitute for malloc and friends. So we don't link with libumem, but
+ * use dlopen/dlsym to get the slab allocator interface into function
+ * pointers.
+ */
+typedef void * (*umem_alloc_f)(size_t size, int flags);
+typedef void (*umem_free_f)(void *buf, size_t size);
+typedef umem_cache_t * (*umem_cache_create_f)(char *debug_name, size_t bufsize,
+    size_t align, umem_constructor_t *constructor,
+    umem_destructor_t *destructor, umem_reclaim_t *reclaim,
+    void *callback_data, vmem_t *source, int cflags);
+typedef void (*umem_cache_destroy_f)(umem_cache_t *cache);
+typedef void * (*umem_cache_alloc_f)(umem_cache_t *cache, int flags);
+typedef void (*umem_cache_free_f)(umem_cache_t *cache, void *buffer);
+
+static void *libumem_hndl = NULL;
+static umem_alloc_f umem_allocf = NULL;
+static umem_free_f umem_freef = NULL;
+static umem_cache_create_f umem_cache_createf = NULL;
+static umem_cache_destroy_f umem_cache_destroyf = NULL;
+static umem_cache_alloc_f umem_cache_allocf = NULL;
+static umem_cache_free_f umem_cache_freef = NULL;
 
 /* init required per cache get:
    smu->sz = size
@@ -142,14 +167,14 @@ smu_alloc(const struct stevedore *st, size_t size)
 	 * allocations growing another full page, just to accommodate the smu.
 	 */
 
-	p = umem_alloc(size, UMEM_DEFAULT);
+	p = umem_allocf(size, UMEM_DEFAULT);
 	if (p != NULL) {
 		AN(smu_sc->smu_cache);
-		smu = umem_cache_alloc(smu_sc->smu_cache, UMEM_DEFAULT);
+		smu = umem_cache_allocf(smu_sc->smu_cache, UMEM_DEFAULT);
 		if (smu != NULL)
 			smu->s.ptr = p;
 		else
-			umem_free(p, size);
+			umem_freef(p, size);
 	}
 	if (smu == NULL) {
 		Lck_Lock(&smu_sc->smu_mtx);
@@ -191,9 +216,9 @@ smu_free(struct storage *s)
 		sc->stats->g_space += smu->sz;
 	Lck_Unlock(&sc->smu_mtx);
 
-	umem_free(smu->s.ptr, smu->sz);
+	umem_freef(smu->s.ptr, smu->sz);
 	smu_smu_init(smu, sc);
-	umem_cache_free(sc->smu_cache, smu);
+	umem_cache_freef(sc->smu_cache, smu);
 }
 
 static VCL_BYTES v_matchproto_(stv_var_used_space)
@@ -235,6 +260,28 @@ smu_init(struct stevedore *parent, int ac, char * const *av)
 	if (ac == 0 || *av[0] == '\0')
 		 return;
 
+	/* Check if these load in the management process. */
+	(void) dlerror();
+	if ((libumem_hndl = dlopen("libumem.so", RTLD_NOW)) == NULL)
+		ARGV_ERR("(-sumem) cannot open libumem.so: %s", dlerror());
+
+#define DLSYM_UMEM(fptr,sym)						\
+	do {								\
+		(void) dlerror();					\
+		if ((fptr = dlsym(libumem_hndl, #sym)) == NULL)		\
+			ARGV_ERR("(-sumem) cannot find symbol " #sym ": %s", \
+			    dlerror());					\
+	} while(0)
+
+	DLSYM_UMEM(umem_allocf, umem_alloc);
+	DLSYM_UMEM(umem_freef, umem_free);
+	DLSYM_UMEM(umem_cache_createf, umem_cache_create);
+	DLSYM_UMEM(umem_cache_destroyf, umem_cache_destroy);
+	DLSYM_UMEM(umem_cache_allocf, umem_cache_alloc);
+	DLSYM_UMEM(umem_cache_freef, umem_cache_free);
+
+#undef DLSYM_UMEM
+
 	e = VNUM_2bytes(av[0], &u, 0);
 	if (e != NULL)
 		ARGV_ERR("(-sumem) size \"%s\": %s\n", av[0], e);
@@ -262,7 +309,32 @@ smu_open(struct stevedore *st)
 	if (smu_sc->smu_max != SIZE_MAX)
 		smu_sc->stats->g_space = smu_sc->smu_max;
 
-	smu_sc->smu_cache = umem_cache_create(st->ident,
+	/*
+	 * Load the symbols for use in the child process, assert if they
+	 * fail to load.
+	 */
+	if (libumem_hndl == NULL) {
+		libumem_hndl = dlopen("libumem.so", RTLD_NOW);
+		AN(libumem_hndl);
+
+#define DLSYM_UMEM(fptr,sym)					\
+		do {						\
+			fptr = dlsym(libumem_hndl, #sym);	\
+			AN(fptr);				\
+		} while(0)
+
+	DLSYM_UMEM(umem_allocf, umem_alloc);
+	DLSYM_UMEM(umem_freef, umem_free);
+	DLSYM_UMEM(umem_cache_createf, umem_cache_create);
+	DLSYM_UMEM(umem_cache_destroyf, umem_cache_destroy);
+	DLSYM_UMEM(umem_cache_allocf, umem_cache_alloc);
+	DLSYM_UMEM(umem_cache_freef, umem_cache_free);
+
+#undef DLSYM_UMEM
+
+	}
+
+	smu_sc->smu_cache = umem_cache_createf(st->ident,
 					  sizeof(struct smu),
 					  0,		// align
 					  smu_smu_constructor,
@@ -285,7 +357,7 @@ smu_close(const struct stevedore *st, int warn)
 	CAST_OBJ_NOTNULL(smu_sc, st->priv, SMU_SC_MAGIC);
 	if (warn)
 		return;
-	umem_cache_destroy(smu_sc->smu_cache);
+	umem_cache_destroyf(smu_sc->smu_cache);
 	smu_sc->smu_cache = NULL;
 
 	/*

@@ -126,7 +126,7 @@ static const struct choice STV_choice[] = {
 	{ "deprecated_persistent",	&smp_stevedore },
 	{ "persistent",			&smp_fake_stevedore },
 #endif
-#if defined(HAVE_LIBUMEM)
+#if defined(HAVE_UMEM_H)
 	{ "umem",			&smu_stevedore },
 	{ "default",			&smu_stevedore },
 #else
