@@ -1,4 +1,6 @@
 
++libh(teken/teken.h)
+
 // Tell FlexeLint when these don't return
 -function(exit, vtc_fatal)
 -function(__assert(1), vtc_log(2))
@@ -7,6 +9,8 @@
 
 -emacro({779}, ENC)		// String constant in comparison operator '!='
 -emacro({506}, CHKFRAME)	// Constant value Boolean
+
+-esym(522, teken_subr_*)
 
 -esym(850, av)
 

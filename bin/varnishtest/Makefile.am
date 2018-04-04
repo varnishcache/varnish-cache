@@ -30,6 +30,12 @@ varnishtest_SOURCES = \
 		cmds.h \
 		vmods.h \
 		vtc.h \
+		teken.c \
+		teken.h \
+		teken_scs.h \
+		teken_subr.h \
+		teken_subr_compat.h \
+		teken_wcwidth.h \
 		vtc.c \
 		vtc_barrier.c \
 		vtc_client.c \
@@ -51,7 +57,6 @@ varnishtest_SOURCES = \
 		vtc_proxy.c \
 		vtc_server.c \
 		vtc_subr.c \
-		vtc_term.c \
 		vtc_varnish.c
 
 varnishtest_LDADD = \
@@ -67,4 +72,16 @@ varnishtest_CFLAGS = \
 		-DTOP_BUILDDIR='"${top_builddir}"'
 
 EXTRA_DIST = $(top_srcdir)/bin/varnishtest/tests/*.vtc \
-	$(top_srcdir)/bin/varnishtest/tests/README
+	$(top_srcdir)/bin/varnishtest/tests/README \
+	$(top_srcdir)/bin/varnishtest/gensequences \
+	$(top_srcdir)/bin/varnishtest/sequences \
+	$(top_srcdir)/bin/varnishtest/teken.3
+
+teken_state.h:	$(srcdir)/sequences $(srcdir)/gensequences
+	awk -f $(srcdir)/gensequences $(srcdir)/sequences \
+	    > $(builddir)/teken_state.h
+
+BUILT_SOURCES = teken_state.h
+
+CLEANFILES = $(BUILT_SOURCES)
+
