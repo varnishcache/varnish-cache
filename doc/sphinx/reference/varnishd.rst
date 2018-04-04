@@ -320,6 +320,9 @@ The following storage types are available:
   umem is a storage backend which is more efficient than malloc on
   platforms where it is available.
 
+  See the section on umem in chapter `Storage backends` of `The
+  Varnish Users Guide` for details.
+
 -s <file,path[,size[,granularity[,advice]]]>
 
   The file backend stores data in a file on disk. The file will be

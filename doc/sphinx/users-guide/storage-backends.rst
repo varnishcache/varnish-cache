@@ -53,6 +53,8 @@ malloc's performance is bound to memory speed so it is very fast. If
 the dataset is bigger than available memory performance will
 depend on the operating systems ability to page effectively.
 
+.. _guide-storage_umem:
+
 umem
 ~~~~
 
@@ -68,6 +70,37 @@ considered more efficient and scalable than classical
 implementations. In particular, `libumem`_ is included in the family
 of OpenSolaris descendent operating systems where jemalloc(3) is not
 commonly available.
+
+If `libumem`_ is not used otherwise, varnish will only use it for
+storage allocations and keep the default libc allocator for all other
+varnish memory allocation purposes.
+
+If `libumem`_ is already loaded when varnish initializes, this message
+is output::
+
+  notice: libumem was already found to be loaded
+          and will likely be used for all allocations
+
+to indicate that `libumem`_ will not only be used for storage. Likely
+reasons for this to be the case are:
+
+* some library ``varnishd`` is linked against was linked against
+  `libumem`_ (most likely ``libpcre``, check with ``ldd``)
+
+* ``LD_PRELOAD_64=/usr/lib/amd64/libumem.so.1``,
+  ``LD_PRELOAD_32=/usr/lib/libumem.so.1`` or
+  ``LD_PRELOAD=/usr/lib/libumem.so.1`` is set
+
+varnish will also output this message to recommend settings for using
+`libumem`_ for all allocations::
+
+  it is recommended to set UMEM_OPTIONS=perthread_cache=0,backend=mmap
+  before starting varnish
+
+This recommendation should be followed to achieve an optimal
+`libumem`_ configuration for varnish. Setting this environment
+variable before starting varnish is required becuase `libumem`_ cannot
+be reconfigured once loaded.
 
 .. _libumem: http://dtrace.org/blogs/ahl/2004/07/13/number-11-of-20-libumem/
 
