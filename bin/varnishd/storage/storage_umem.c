@@ -42,6 +42,7 @@
 #include <umem.h>
 #include <dlfcn.h>
 #include <link.h>
+#include <string.h>
 
 #include "storage/storage.h"
 #include "storage/storage_simple.h"
@@ -92,6 +93,9 @@ static umem_cache_create_f umem_cache_createf = NULL;
 static umem_cache_destroy_f umem_cache_destroyf = NULL;
 static umem_cache_alloc_f umem_cache_allocf = NULL;
 static umem_cache_free_f umem_cache_freef = NULL;
+
+static const char * const def_umem_options = "perthread_cache=0,backend=mmap";
+static const char * const env_umem_options = "UMEM_OPTIONS";
 
 /* init required per cache get:
    smu->sz = size
@@ -241,8 +245,46 @@ smu_free_space(const struct stevedore *st)
 }
 
 static void
+smu_umem_loaded_warn(void)
+{
+	const char *e;
+	static int warned = 0;
+
+	if (warned++)
+		return;
+
+	fprintf(stderr, "notice:\tlibumem was already found to be loaded\n"
+		"\tand will likely be used for all allocations\n");
+
+	e = getenv(env_umem_options);
+	if (e == NULL || ! strstr(e, def_umem_options))
+		fprintf(stderr, "\tit is recommended to set %s=%s "
+			"before starting varnish\n",
+			env_umem_options, def_umem_options);
+}
+
+static int
+smu_umem_loaded(void)
+{
+	void *h = NULL;
+
+	h = dlopen("libumem.so", RTLD_NOLOAD);
+	if (h) {
+		AZ(dlclose(h));
+		return (1);
+	}
+
+	h = dlsym(RTLD_DEFAULT, "umem_alloc");
+	if (h)
+		return (1);
+
+	return (0);
+}
+
+static void
 smu_init(struct stevedore *parent, int ac, char * const *av)
 {
+	static int inited = 0;
 	const char *e;
 	uintmax_t u;
 	struct smu_sc *sc;
@@ -258,8 +300,25 @@ smu_init(struct stevedore *parent, int ac, char * const *av)
 	if (ac > 1)
 		ARGV_ERR("(-sumem) too many arguments\n");
 
-	if (ac == 0 || *av[0] == '\0')
-		 return;
+	if (ac == 1 && *av[0] != '\0') {
+		e = VNUM_2bytes(av[0], &u, 0);
+		if (e != NULL)
+			ARGV_ERR("(-sumem) size \"%s\": %s\n", av[0], e);
+		if ((u != (uintmax_t)(size_t)u))
+			ARGV_ERR("(-sumem) size \"%s\": too big\n", av[0]);
+		if (u < 1024*1024)
+			ARGV_ERR("(-sumem) size \"%s\": too smull, "
+				 "did you forget to specify M or G?\n", av[0]);
+		sc->smu_max = u;
+	}
+
+	if (inited++)
+		return;
+
+	if (smu_umem_loaded())
+		smu_umem_loaded_warn();
+	else
+		AZ(setenv(env_umem_options, def_umem_options, 0));
 
 	/* Check if these load in the management process. */
 	(void) dlerror();
@@ -286,17 +345,45 @@ smu_init(struct stevedore *parent, int ac, char * const *av)
 
 	AZ(dlclose(libumem_hndl));
 	libumem_hndl = NULL;
+}
 
-	e = VNUM_2bytes(av[0], &u, 0);
-	if (e != NULL)
-		ARGV_ERR("(-sumem) size \"%s\": %s\n", av[0], e);
-	if ((u != (uintmax_t)(size_t)u))
-		ARGV_ERR("(-sumem) size \"%s\": too big\n", av[0]);
-	if (u < 1024*1024)
-		ARGV_ERR("(-sumem) size \"%s\": too smull, "
-			 "did you forget to specify M or G?\n", av[0]);
+/*
+ * Load the symbols for use in the child process, assert if they fail to load.
+ */
+static void
+smu_open_init(void)
+{
+	static int inited = 0;
 
-	sc->smu_max = u;
+	if (inited++) {
+		AN(libumem_hndl);
+		AN(umem_allocf);
+		return;
+	}
+
+	if (smu_umem_loaded())
+		smu_umem_loaded_warn();
+	else
+		AN(getenv(env_umem_options));
+
+	AZ(libumem_hndl);
+	libumem_hndl = dlopen("libumem.so", RTLD_LAZY);
+	AN(libumem_hndl);
+
+#define DLSYM_UMEM(fptr,sym)					\
+	do {							\
+		fptr = dlsym(libumem_hndl, #sym);		\
+		AN(fptr);					\
+	} while(0)
+
+	DLSYM_UMEM(umem_allocf, umem_alloc);
+	DLSYM_UMEM(umem_freef, umem_free);
+	DLSYM_UMEM(umem_cache_createf, umem_cache_create);
+	DLSYM_UMEM(umem_cache_destroyf, umem_cache_destroy);
+	DLSYM_UMEM(umem_cache_allocf, umem_cache_alloc);
+	DLSYM_UMEM(umem_cache_freef, umem_cache_free);
+
+#undef DLSYM_UMEM
 }
 
 static void v_matchproto_(storage_open_f)
@@ -314,30 +401,7 @@ smu_open(struct stevedore *st)
 	if (smu_sc->smu_max != SIZE_MAX)
 		smu_sc->stats->g_space = smu_sc->smu_max;
 
-	/*
-	 * Load the symbols for use in the child process, assert if they
-	 * fail to load.
-	 */
-	if (libumem_hndl == NULL) {
-		libumem_hndl = dlopen("libumem.so", RTLD_NOW);
-		AN(libumem_hndl);
-
-#define DLSYM_UMEM(fptr,sym)					\
-		do {						\
-			fptr = dlsym(libumem_hndl, #sym);	\
-			AN(fptr);				\
-		} while(0)
-
-	DLSYM_UMEM(umem_allocf, umem_alloc);
-	DLSYM_UMEM(umem_freef, umem_free);
-	DLSYM_UMEM(umem_cache_createf, umem_cache_create);
-	DLSYM_UMEM(umem_cache_destroyf, umem_cache_destroy);
-	DLSYM_UMEM(umem_cache_allocf, umem_cache_alloc);
-	DLSYM_UMEM(umem_cache_freef, umem_cache_free);
-
-#undef DLSYM_UMEM
-
-	}
+	smu_open_init();
 
 	smu_sc->smu_cache = umem_cache_createf(st->ident,
 					  sizeof(struct smu),
