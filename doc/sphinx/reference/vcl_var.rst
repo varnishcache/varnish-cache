@@ -719,13 +719,17 @@ beresp.do_stream
 
 	Writable from: vcl_backend_response, vcl_backend_error
 
+	Default: true
+
 	Deliver the object to the client while fetching the whole
 	object into varnish.
 
 	For uncacheable objects, storage for parts of the body which
 	have been sent to the client may get freed early, depending
 	on the storage engine used.
-	
+
+	This variable has no effect if do_esi is true and when the
+	response body is empty.
 
 beresp.do_gzip
 
