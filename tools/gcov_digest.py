@@ -33,7 +33,7 @@ found in a subdirectory tree.
 Options:
 
 	-g gcov-program
-		default:gcov49
+		default:gcov6
 
 	-o output-filename
 		default: stdout
@@ -180,7 +180,7 @@ if __name__ == "__main__":
 	optlist, args = getopt.getopt(sys.argv[1:], "g:o:x:")
 
 	fo = sys.stdout
-	gcovprog = "gcov49"
+	gcovprog = "gcov6
 
 	for f, v in optlist:
 		if f == '-o' and v == '-':
