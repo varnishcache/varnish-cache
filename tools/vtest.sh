@@ -149,14 +149,6 @@ makegcov () (
 	set -x
 	cd "${SRCDIR}"
 
-	export CFLAGS="-fprofile-arcs -ftest-coverage -fstack-protector -DDONT_DLCLOSE_VMODS" CC=gcc49
-	export MAKEFLAGS=-j1
-	umask 0
-
-	find . -name '*.gc??' -print | xargs rm -f
-
-	sh autogen.des || exit 1
-
 	make || exit 1
 
 	if [ `id -u` -eq 0 ] ; then
@@ -180,13 +172,18 @@ failedtests () (
 
 	cd "${SRCDIR}"
 
+	VTCDIR=bin/varnishtest/tests
+
 	VERSION=`./configure --version | awk 'NR == 1 {print $NF}'`
 	LOGDIR="varnish-$VERSION/_build/sub/bin/varnishtest/tests"
-	VTCDIR=bin/varnishtest/tests
 
 	# cope with older automake, remove the sub directory
 	test ! -d $LOGDIR &&
 	LOGDIR="varnish-$VERSION/_build/bin/varnishtest/tests"
+
+	# gcov situation
+	test ! -d $LOGDIR &&
+	LOGDIR="bin/varnishtest/tests"
 
 	grep -l ':test-result: FAIL' "$LOGDIR"/*.trs |
 	while read trs
@@ -201,13 +198,15 @@ failedtests () (
 	done
 )
 
-
+if $enable_gcov ; then
+	export CC=gcc6
+	export CFLAGS="-fprofile-arcs -ftest-coverage -fstack-protector -DDONT_DLCLOSE_VMODS"
+	export MAKEFLAGS=-j1
+fi
 
 orev=000
 waitnext=${WAITBAD}
 i=0
-
-last_day=`date +%d`
 
 while [ $MAXRUNS -eq 0 ] || [ $i -lt $MAXRUNS ]
 do
@@ -231,19 +230,6 @@ do
 	rm -rf "${REPORTDIR}"
 	mkdir "${REPORTDIR}"
 
-	if ! $enable_gcov ; then
-		do_gcov=false
-	elif [ -f _force_gcov ] ; then
-		do_gcov=true
-		rm -f _force_gcov
-	elif [ `date +%d` == $last_day ] ; then
-		do_gcov=false
-	elif [ `date +%H` -lt 3 ] ; then
-		do_gcov=false
-	else
-		do_gcov=true
-	fi
-
 	echo "VTEST 1.04" > ${VTEST_REPORT}
 	echo "DATE `date +%s`" >> ${VTEST_REPORT}
 	echo "BRANCH trunk" >> ${VTEST_REPORT}
@@ -257,20 +243,24 @@ do
 	fi
 	echo "MESSAGE ${MESSAGE}" >> ${VTEST_REPORT}
 	echo "GITREV $rev" >> ${VTEST_REPORT}
+
+	find . -name '*.gc??' -print | xargs rm -f
+
 	if ! autogen >> ${REPORTDIR}/_autogen 2>&1 ; then
 		echo "AUTOGEN BAD" >> ${VTEST_REPORT}
 		echo "MANIFEST _autogen" >> ${VTEST_REPORT}
 	else
 		echo "AUTOGEN GOOD" >> ${VTEST_REPORT}
-		if $do_gcov ; then
-			last_day=`date +%d`
+		if $enable_gcov ; then
 			if makegcov >> ${REPORTDIR}/_makegcov 2>&1 ; then
 				mv ${SRCDIR}/_gcov ${REPORTDIR}/
 				echo "MAKEGCOV GOOD" >> ${VTEST_REPORT}
 				echo "MANIFEST _gcov" >> ${VTEST_REPORT}
+				waitnext=${WAITGOOD}
 			else
 				echo "MAKEGCOV BAD" >> ${VTEST_REPORT}
 				echo "MANIFEST _makegcov" >> ${VTEST_REPORT}
+				failedtests >> ${VTEST_REPORT}
 			fi
 		elif ! makedistcheck >> ${REPORTDIR}/_makedistcheck 2>&1 ; then
 			echo "MAKEDISTCHECK BAD" >> ${VTEST_REPORT}
