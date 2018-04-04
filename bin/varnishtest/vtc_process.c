@@ -54,6 +54,8 @@
 #include "vsb.h"
 #include "vsub.h"
 
+#include "teken.h"
+
 struct process {
 	unsigned		magic;
 #define PROCESS_MAGIC		0x1617b43e
@@ -84,13 +86,135 @@ struct process {
 	pthread_t		tp;
 	unsigned		hasthread;
 
-	struct term		*term;
-	int			lin;
-	int			col;
+	int			nlin;
+	int			ncol;
+	char			**vram;
+	teken_t			tek[1];
 };
 
 static VTAILQ_HEAD(, process)	processes =
     VTAILQ_HEAD_INITIALIZER(processes);
+
+/**********************************************************************
+ * Terminal emulation
+ */
+
+static void
+term_cursor(void *priv, const teken_pos_t *pos)
+{
+	(void)priv;
+	(void)pos;
+}
+
+static void
+term_putchar(void *priv, const teken_pos_t *pos, teken_char_t ch,
+    const teken_attr_t *at)
+{
+	struct process *pp;
+
+	CAST_OBJ_NOTNULL(pp, priv, PROCESS_MAGIC);
+	(void)at;
+	if (ch > 126 || ch < 32)
+		ch = '?';
+	assert(pos->tp_row < pp->nlin);
+	assert(pos->tp_col < pp->ncol);
+	pp->vram[pos->tp_row][pos->tp_col] = ch;
+}
+
+static void
+term_fill(void *priv, const teken_rect_t *r, teken_char_t c,
+    const teken_attr_t *a)
+{
+	teken_pos_t p;
+
+	/* Braindead implementation of fill() - just call putchar(). */
+	for (p.tp_row = r->tr_begin.tp_row;
+	    p.tp_row < r->tr_end.tp_row; p.tp_row++)
+		for (p.tp_col = r->tr_begin.tp_col;
+		    p.tp_col < r->tr_end.tp_col; p.tp_col++)
+			term_putchar(priv, &p, c, a);
+}
+
+static void
+term_copy(void *priv, const teken_rect_t *r, const teken_pos_t *p)
+{
+	struct process *pp;
+	int nrow, ncol, y; /* Has to be signed - >= 0 comparison */
+
+	/*
+	 * Copying is a little tricky. We must make sure we do it in
+	 * correct order, to make sure we don't overwrite our own data.
+	 */
+	CAST_OBJ_NOTNULL(pp, priv, PROCESS_MAGIC);
+
+	nrow = r->tr_end.tp_row - r->tr_begin.tp_row;
+	ncol = r->tr_end.tp_col - r->tr_begin.tp_col;
+
+	if (p->tp_row < r->tr_begin.tp_row) {
+		/* Copy from top to bottom. */
+		for (y = 0; y < nrow; y++)
+			memmove(&pp->vram[p->tp_row + y][p->tp_col],
+			    &pp->vram[r->tr_begin.tp_row + y][r->tr_begin.tp_col], ncol);
+	} else {
+		/* Copy from bottom to top. */
+		for (y = nrow - 1; y >= 0; y--)
+			memmove(&pp->vram[p->tp_row + y][p->tp_col],
+			    &pp->vram[r->tr_begin.tp_row + y][r->tr_begin.tp_col], ncol);
+	}
+}
+
+static const teken_funcs_t process_teken_func = {
+	.tf_cursor	=	term_cursor,
+	.tf_putchar	=	term_putchar,
+	.tf_fill	=	term_fill,
+	.tf_copy	=	term_copy,
+};
+
+static void
+term_screen_dump(const struct process *pp)
+{
+	int i;
+
+	for (i = 0; i < pp->nlin; i++)
+		vtc_dump(pp->vl, 3, "screen", pp->vram[i], pp->ncol);
+}
+
+static void
+term_resize(struct process *pp, int lin, int col)
+{
+	teken_pos_t pos;
+	char **vram;
+	int i, j;
+
+	vram = calloc(lin, sizeof *pp->vram);
+	AN(vram);
+	for (i = 0; i < lin; i++) {
+		vram[i] = malloc(col + 1L);
+		AN(vram[i]);
+		memset(vram[i], ' ', col);
+		vram[i][col] = '\0';
+	}
+	if (pp->vram != NULL) {
+		for (i = 0; i < lin; i++) {
+			if (i >= pp->nlin)
+				break;
+			j = col;
+			if (j > pp->ncol)
+				j = pp->ncol;
+			memcpy(vram[i], pp->vram[i], j);
+		}
+		for (i = 0; i < pp->nlin; i++)
+			free(pp->vram[i]);
+		free(pp->vram);
+	}
+	pp->vram = vram;
+	pp->nlin = lin;
+	pp->ncol = col;
+
+	pos.tp_row = lin;
+	pos.tp_col = col;
+	teken_set_winsize(pp->tek, &pos);
+}
 
 /**********************************************************************
  * Allocate and initialize a process
@@ -131,10 +255,8 @@ process_new(const char *name)
 	p->fd_term = -1;
 
 	VTAILQ_INSERT_TAIL(&processes, p, list);
-	p->lin = 25;
-	p->col = 80;
-	p->term = Term_New(p->vl, p->lin, p->col);
-	AN(p->term);
+	teken_init(p->tek, &process_teken_func, p);
+	term_resize(p, 25, 80);
 	return (p);
 }
 
@@ -214,7 +336,7 @@ process_stdout(const struct vev *ev, int what)
 	else if (p->log == 3)
 		vtc_hexdump(p->vl, 4, "stdout", buf, i);
 	(void)write(p->f_stdout, buf, i);
-	Term_Feed(p->term, buf, buf + i);
+	teken_input(p->tek, buf, i);
 	return (0);
 }
 
@@ -311,14 +433,14 @@ process_thread(void *priv)
 }
 
 static void
-process_winsz(struct process *p, int fd, int lin, int col)
+process_winsz(struct process *p, int fd)
 {
 	struct winsize ws;
 	int i;
 
 	memset(&ws, 0, sizeof ws);
-	ws.ws_row = (short)lin;
-	ws.ws_col = (short)col;
+	ws.ws_row = (short)p->nlin;
+	ws.ws_col = (short)p->ncol;
 	i = ioctl(fd, TIOCSWINSZ, &ws);
 	if (i)
 		vtc_log(p->vl, 4, "TIOCWINSZ %d %s", i, strerror(errno));
@@ -330,7 +452,7 @@ process_init_term(struct process *p, int fd)
 	struct termios tt;
 	int i;
 
-	process_winsz(p, fd, p->lin, p->col);
+	process_winsz(p, fd);
 
 	memset(&tt, 0, sizeof tt);
 	tt.c_cflag = CREAD | CS8 | HUPCL;
@@ -407,7 +529,7 @@ process_start(struct process *p)
 		VSUB_closefrom(STDERR_FILENO + 1);
 		process_init_term(p, slave);
 
-		AZ(setenv("TERM", "ansi.sys", 1));
+		AZ(setenv("TERM", "xterm", 1));
 		AZ(unsetenv("TERMCAP"));
 		// Not using NULL because GCC is now even more demented...
 		assert(write(STDERR_FILENO, "+", 1) == 1);
@@ -507,6 +629,23 @@ process_write(const struct process *p, const char *text)
 	if (r != len)
 		vtc_fatal(p->vl, "Failed to write: len=%d %s (%d)",
 		    len, strerror(errno), errno);
+}
+
+static void
+process_write_hex(const struct process *p, const char *text)
+{
+	struct vsb *vsb;
+	int j;
+
+	if (!p->hasthread)
+		vtc_fatal(p->vl, "Cannot write to a non-running process");
+
+	vsb = vtc_hex_to_bin(p->vl, text);
+	assert(VSB_len(vsb) >= 0);
+	vtc_hexdump(p->vl, 4, "sendhex", VSB_data(vsb), VSB_len(vsb));
+	j = write(p->fd_term, VSB_data(vsb), VSB_len(vsb));
+	assert(j == VSB_len(vsb));
+	VSB_destroy(&vsb);
 }
 
 static void
@@ -614,6 +753,7 @@ cmd_process(CMD_ARGS)
 {
 	struct process *p, *p2;
 	uintmax_t u, v;
+	unsigned lin,col;
 
 	(void)priv;
 	(void)cmd;
@@ -713,7 +853,7 @@ cmd_process(CMD_ARGS)
 			continue;
 		}
 		if (!strcmp(*av, "-screen_dump")) {
-			Term_Dump(p->term);
+			term_screen_dump(p);
 			continue;
 		}
 		if (!strcmp(*av, "-start")) {
@@ -730,16 +870,21 @@ cmd_process(CMD_ARGS)
 			continue;
 		}
 		if (!strcmp(*av, "-winsz")) {
-			p->lin = atoi(av[1]);
-			assert(p->lin > 1);
-			p->col = atoi(av[2]);
-			assert(p->col > 1);
+			lin = atoi(av[1]);
+			assert(lin > 1);
+			col = atoi(av[2]);
+			assert(col > 1);
 			av += 2;
-			Term_SetSize(p->term, p->lin, p->col);
-			process_winsz(p, p->fd_term, p->lin, p->col);
+			term_resize(p, lin, col);
+			process_winsz(p, p->fd_term);
 		}
 		if (!strcmp(*av, "-write")) {
 			process_write(p, av[1]);
+			av++;
+			continue;
+		}
+		if (!strcmp(*av, "-writehex")) {
+			process_write_hex(p, av[1]);
 			av++;
 			continue;
 		}

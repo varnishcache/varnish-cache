@@ -135,9 +135,3 @@ void vtc_expect(struct vtclog *, const char *, const char *, const char *,
     const char *, const char *);
 void vtc_wait4(struct vtclog *, long, int, int, int);
 void *vtc_record(struct vtclog *, int, struct vsb *);
-
-/* vtc_term.c */
-struct term *Term_New(struct vtclog *, int, int);
-void Term_Feed(struct term *, const char *, const char *);
-void Term_Dump(const struct term *);
-void Term_SetSize(struct term *, int, int);
