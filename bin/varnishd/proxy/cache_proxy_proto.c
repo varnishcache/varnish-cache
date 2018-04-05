@@ -311,7 +311,7 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 	int l, hdr_len;
 	uintptr_t *up;
 	uint16_t *tlv_len_p;
-	uint16_t tlv_len = 0;
+	uint16_t tlv_len;
 	const uint8_t *p;
 	char *d, *tlv_start;
 	sa_family_t pfam = 0xff;
