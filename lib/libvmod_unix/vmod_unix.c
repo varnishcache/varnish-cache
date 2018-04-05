@@ -25,7 +25,7 @@
  *
  */
 
-#include "cred_compat.h"
+#include "config.h"
 
 #include <pwd.h>
 #include <grp.h>
@@ -35,6 +35,7 @@
 #include "vcl.h"
 #include "common/heritage.h"
 
+#include "cred_compat.h"
 #include "vcc_if.h"
 
 #define FAIL(ctx, msg) \

@@ -25,8 +25,6 @@
  *
  */
 
-#include "config.h"
-
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <errno.h>
@@ -37,10 +35,34 @@
 
 #if defined(HAVE_GETPEERUCRED)
 #include <ucred.h>
+# if defined(HAVE_SETPPRIV)
+# include <priv.h>
+static priv_set_t *priv_proc_info = NULL;
+# endif
 #endif
 
 #define CREDS_FAIL -1
 #define NOT_SUPPORTED -2
+
+#if defined(HAVE_GETPEERUCRED) && defined(HAVE_SETPPRIV)
+static void __attribute__((constructor))
+cred_compat_init(void)
+{
+	AZ(priv_proc_info);
+	priv_proc_info = priv_allocset();
+	AN(priv_proc_info);
+	AZ(priv_addset(priv_proc_info, PRIV_PROC_INFO));
+}
+
+static void __attribute__((destructor))
+cred_compat_fini(void)
+{
+	if (priv_proc_info == NULL)
+		return;
+	priv_freeset(priv_proc_info);
+	priv_proc_info = NULL;
+}
+#endif
 
 static int
 get_ids(int fd, uid_t *uid, gid_t *gid)
@@ -65,6 +87,33 @@ get_ids(int fd, uid_t *uid, gid_t *gid)
 		return (CREDS_FAIL);
 	return (0);
 
+#elif defined(HAVE_GETPEERUCRED)
+	char buf[ucred_size()];
+	ucred_t *ucredp = (ucred_t *)buf;
+
+# if defined(HAVE_SETPPRIV)
+	priv_set_t *priv = NULL;
+
+	errno = 0;
+	if (! priv_ineffect(PRIV_PROC_INFO)) {
+		priv = priv_proc_info;
+		if (setppriv(PRIV_ON, PRIV_EFFECTIVE, priv))
+			return (CREDS_FAIL);
+	}
+# endif
+
+	errno = 0;
+	if (getpeerucred(fd, &ucredp))
+		return (CREDS_FAIL);
+	*uid = ucred_getruid(ucredp);
+	*gid = ucred_getrgid(ucredp);
+
+# if defined(HAVE_SETPPRIV)
+	if (priv != NULL)
+		AZ(setppriv(PRIV_OFF, PRIV_EFFECTIVE, priv)); // waive
+# endif
+
+	return (0);
 #else
 	(void) fd;
 	(void) uid;
