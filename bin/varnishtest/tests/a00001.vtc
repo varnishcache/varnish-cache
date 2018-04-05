@@ -1,26 +1,44 @@
-# the first token in a varnishtest file must be "varnishtest",
-    # but whitespace (SP)
-	# and (TAB) and comments are fine
-varnishtest "basic default HTTP transactions with expect"
+varnishtest "Test Teken terminal emulator"
 
-server s1 {
-	rxreq
-	expect req.method == GET
-	expect req.proto == HTTP/1.1
-	expect req.url == "/"
-	txresp
-}
+feature cmd "vttest --version 2>&1 | grep -q Usage"
 
-server s1 -start
+process p4 -dump {vttest} -start
 
-client c1 -connect ${s1_sock} {
-	txreq
-	rxresp
-	expect resp.proto == HTTP/1.1
-	expect resp.status == 200
-	expect resp.reason == OK
-}
+process p4 -expect-text 21 11 "Enter choice number (0 - 12):"
+process p4 -screen_dump
 
-client c1 -run
+process p4 -writehex "31 0d"
+process p4 -expect-text 14 61 "RETURN"
+process p4 -screen_dump
 
-server s1 -wait
+process p4 -writehex 0d
+process p4 -expect-text 14 87 "RETURN"
+process p4 -screen_dump
+
+process p4 -writehex 0d
+process p4 -expect-text 22 7 "RETURN"
+process p4 -screen_dump
+
+process p4 -writehex 0d
+process p4 -expect-text 3 132 "i"
+process p4 -expect-text 22 7 "RETURN"
+process p4 -screen_dump
+
+process p4 -writehex 0d
+process p4 -expect-text 9 7 "RETURN"
+process p4 -screen_dump
+
+process p4 -writehex 0d
+process p4 -expect-text 4 1 "This is a correct sentence"
+process p4 -expect-text 20 7 "RETURN"
+process p4 -screen_dump
+
+process p4 -writehex 0d
+process p4 -expect-text 21 11 "Enter choice number (0 - 12):"
+process p4 -screen_dump
+
+process p4 -writehex "30 0d"
+process p4 -expect-text 12 30 "That's all, folks!"
+process p4 -screen_dump
+
+process p4 -wait
