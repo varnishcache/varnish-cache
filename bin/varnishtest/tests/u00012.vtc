@@ -18,14 +18,14 @@ process p1 -log {cat | varnishadm -n ${v1_name}} -start
 
 process p1 -write "ping\r"
 
-process p1 -need-bytes 30
+process p1 -expect-text 0 1 "PONG"
 
 process p1 -write "vcl.list\r"
 
-process p1 -need-bytes 80
+process p1 -expect-text 0 0 "auto/warm"
 
 process p1 -write "vcl.show vcl1\r"
 
-process p1 -need-bytes 100
+process p1 -expect-text 0 0 "backend s1"
 
 process p1 -screen_dump -write "\x04" -wait

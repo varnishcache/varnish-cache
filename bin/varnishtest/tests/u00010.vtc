@@ -9,11 +9,12 @@ varnish v1 -vcl+backend {} -start
 
 process p1 -dump {varnishtop -n ${v1_name}} -start
 
-process p1 -need-bytes 1
+process p1 -expect-text 1 1 {list length}
 
 client c1 {
 	txreq
 	rxresp
 } -run
 
-process p1 -need-bytes 500 -screen_dump -write {q} -wait
+process p1 -expect-text 0 0 {Fetch_Body}
+process p1 -screen_dump -write {q} -wait
