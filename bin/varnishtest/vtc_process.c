@@ -95,6 +95,8 @@ struct process {
 static VTAILQ_HEAD(, process)	processes =
     VTAILQ_HEAD_INITIALIZER(processes);
 
+static void term_resize(struct process *pp, int lin, int col);
+
 /**********************************************************************
  * Terminal emulation
  */
@@ -163,11 +165,40 @@ term_copy(void *priv, const teken_rect_t *r, const teken_pos_t *p)
 	}
 }
 
+static void
+term_respond(void *priv, const void *p, size_t l)
+{
+	struct process *pp;
+	int r;
+
+	CAST_OBJ_NOTNULL(pp, priv, PROCESS_MAGIC);
+
+	vtc_dump(pp->vl, 4, "term_response", p, l);
+	r = write(pp->fd_term, p, l);
+	if (r != l)
+		vtc_fatal(pp->vl, "Could not write to process: %s",
+		    strerror(errno));
+}
+
+static void
+term_param(void *priv, int p, unsigned int v)
+{
+	struct process *pp;
+
+	CAST_OBJ_NOTNULL(pp, priv, PROCESS_MAGIC);
+	if (p == TP_132COLS && v)
+		term_resize(pp, pp->nlin, 132);
+	if (p == TP_132COLS && !v)
+		term_resize(pp, pp->nlin, 80);
+}
+
 static const teken_funcs_t process_teken_func = {
 	.tf_cursor	=	term_cursor,
 	.tf_putchar	=	term_putchar,
 	.tf_fill	=	term_fill,
 	.tf_copy	=	term_copy,
+	.tf_respond	=	term_respond,
+	.tf_param	=	term_param,
 };
 
 static void
@@ -216,6 +247,69 @@ term_resize(struct process *pp, int lin, int col)
 	teken_set_winsize(pp->tek, &pos);
 }
 
+static int
+term_match_textline(const struct process *pp, int *x, int y, const char *pat)
+{
+	const char *t;
+
+	if (*x == 0) {
+		t = strstr(pp->vram[y], pat);
+		if (t != NULL) {
+			*x = 1 + (t - pp->vram[y]);
+			return (1);
+		}
+	} else if (*x <= pp->ncol) {
+		t = pp->vram[y] + *x - 1;
+		if (!memcmp(t, pat, strlen(pat)))
+			return (1);
+	}
+	return (0);
+}
+
+static int
+term_match_text(const struct process *pp, int *x, int *y, const char *pat)
+{
+	int yy;
+
+	if (*y == 0) {
+		for (yy = 0; yy < pp->nlin; yy++) {
+			if (term_match_textline(pp, x, yy, pat)) {
+				*y = yy + 1;
+				return (1);
+			}
+		}
+	} else if (*y <= pp->nlin) {
+		if (term_match_textline(pp, x, *y - 1, pat))
+			return (1);
+	}
+	return (0);
+}
+
+static void
+term_expect_text(struct process *pp,
+    const char *lin, const char *col, const char *pat)
+{
+	int x, y, l;
+	char *t;
+
+	y = strtoul(lin, NULL, 0);
+	x = strtoul(col, NULL, 0);
+	l = strlen(pat);
+	AZ(pthread_mutex_lock(&pp->mtx));
+	while (!term_match_text(pp, &x, &y, pat)) {
+		if (x != 0 && y != 0) {
+			t = pp->vram[y - 1] + x - 1;
+			vtc_log(pp->vl, 4,
+			    "text at %d,%d: '%.*s'", y, x, l, t);
+		}
+		AZ(pthread_mutex_unlock(&pp->mtx));
+		usleep(1000000);
+		AZ(pthread_mutex_lock(&pp->mtx));
+	}
+	AZ(pthread_mutex_unlock(&pp->mtx));
+	vtc_log(pp->vl, 4, "found expected text at %d,%d: '%s'", y, x, pat);
+}
+
 /**********************************************************************
  * Allocate and initialize a process
  */
@@ -256,7 +350,7 @@ process_new(const char *name)
 
 	VTAILQ_INSERT_TAIL(&processes, p, list);
 	teken_init(p->tek, &process_teken_func, p);
-	term_resize(p, 25, 80);
+	term_resize(p, 24, 80);
 	return (p);
 }
 
@@ -336,7 +430,9 @@ process_stdout(const struct vev *ev, int what)
 	else if (p->log == 3)
 		vtc_hexdump(p->vl, 4, "stdout", buf, i);
 	(void)write(p->f_stdout, buf, i);
+	AZ(pthread_mutex_lock(&p->mtx));
 	teken_input(p->tek, buf, i);
+	AZ(pthread_mutex_unlock(&p->mtx));
 	return (0);
 }
 
@@ -740,6 +836,15 @@ process_close(struct process *p)
  * \-writeln STRING
  *	Same as -write followed by a newline (\\n).
  *
+ * \-writehex HEXSTRING
+ *	Same as -write but interpreted as hexadecimal bytes.
+ *
+ * \-expect-text LIN COL PAT
+ *	Wait for PAT to appear at LIN,COL on the virtual screen.
+ *	Lines and columns are numbered 1...N
+ *	LIN==0 means "on any line"
+ *	COL==0 means "anywhere on the line"
+ *
  * \-close
  *	Alias for "-kill HUP"
  *
@@ -852,6 +957,14 @@ cmd_process(CMD_ARGS)
 			process_wait(p);
 			continue;
 		}
+		if (!strcmp(*av, "-expect-text")) {
+			AN(av[1]);
+			AN(av[2]);
+			AN(av[3]);
+			term_expect_text(p, av[1], av[2], av[3]);
+			av += 3;
+			continue;
+		}
 		if (!strcmp(*av, "-screen_dump")) {
 			term_screen_dump(p);
 			continue;
@@ -875,7 +988,9 @@ cmd_process(CMD_ARGS)
 			col = atoi(av[2]);
 			assert(col > 1);
 			av += 2;
+			AZ(pthread_mutex_lock(&p->mtx));
 			term_resize(p, lin, col);
+			AZ(pthread_mutex_unlock(&p->mtx));
 			process_winsz(p, p->fd_term);
 		}
 		if (!strcmp(*av, "-write")) {

@@ -1,5 +1,5 @@
 
-+libh(teken/teken.h)
++libh(teken.h)
 
 // Tell FlexeLint when these don't return
 -function(exit, vtc_fatal)
