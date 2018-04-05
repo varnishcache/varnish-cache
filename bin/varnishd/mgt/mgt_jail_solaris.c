@@ -355,8 +355,6 @@ vjs_add_permitted(priv_set_t *pset, enum jail_gen_e jge)
 	case JAILG_SUBPROC_VCLLOAD:
 		break;
 	case JAILG_SUBPROC_WORKER:
-		/* for raising limits in cache_waiter_ports.c */
-		AZ(priv_addset(pset, PRIV_SYS_RESOURCE));
 		break;
 	default:
 		INCOMPL();
