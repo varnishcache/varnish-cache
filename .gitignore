@@ -89,6 +89,7 @@ cscope.*out
 /bin/varnishncsa/varnishncsa
 /bin/varnishstat/varnishstat
 /bin/varnishstat/vsc2rst
+/bin/varnishtest/teken_state.h
 /bin/varnishtest/varnishtest
 /bin/varnishtop/varnishtop
 
