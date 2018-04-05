@@ -217,6 +217,7 @@ AC_CHECK_FUNCS([fallocate])
 AC_CHECK_FUNCS([closefrom])
 AC_CHECK_FUNCS([sigaltstack])
 AC_CHECK_FUNCS([getpeereid])
+AC_CHECK_FUNCS([getpeerucred])
 
 save_LIBS="${LIBS}"
 LIBS="${PTHREAD_LIBS}"
