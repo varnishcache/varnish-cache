@@ -329,9 +329,11 @@ smu_init(struct stevedore *parent, int ac, char * const *av)
 #define DLSYM_UMEM(fptr,sym)						\
 	do {								\
 		(void) dlerror();					\
-		if ((fptr = dlsym(libumem_hndl, #sym)) == NULL)		\
-			ARGV_ERR("(-sumem) cannot find symbol " #sym ": %s", \
-			    dlerror());					\
+		if (dlsym(libumem_hndl, #sym) == NULL)			\
+			ARGV_ERR("(-sumem) cannot find symbol "		\
+				 #sym ": %s",				\
+				 dlerror());				\
+		fptr = NULL;						\
 	} while(0)
 
 	DLSYM_UMEM(umem_allocf, umem_alloc);
@@ -372,7 +374,7 @@ smu_open_init(void)
 
 #define DLSYM_UMEM(fptr,sym)					\
 	do {							\
-		fptr = dlsym(libumem_hndl, #sym);		\
+		fptr = (sym ## _f) dlsym(libumem_hndl, #sym);	\
 		AN(fptr);					\
 	} while(0)
 
