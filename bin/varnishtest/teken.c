@@ -42,7 +42,7 @@
 #define	teken_assert(x)		assert(x)
 
 /* debug messages */
-#define	teken_printf(x,...)
+#define	teken_printf(...)
 
 /* Private flags for t_stateflags. */
 #define	TS_FIRSTDIGIT	0x0001	/* First numeric digit in escape sequence. */
