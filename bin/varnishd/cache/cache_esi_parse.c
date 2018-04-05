@@ -616,7 +616,8 @@ VEP_Parse(struct vep_state *vep, const char *p, size_t l)
 		 */
 
 		if (vep->state == VEP_START) {
-			if (FEATURE(FEATURE_ESI_REMOVE_BOM) && *p == '\xeb') {
+			if (FEATURE(FEATURE_ESI_REMOVE_BOM) &&
+			    *p == (char)0xeb) {
 				vep->match = vep_match_bom;
 				vep->state = VEP_MATCH;
 			} else
@@ -638,7 +639,7 @@ VEP_Parse(struct vep_state *vep, const char *p, size_t l)
 			if (p < e && *p == '<') {
 				p++;
 				vep->state = VEP_STARTTAG;
-			} else if (p < e && *p == '\xeb') {
+			} else if (p < e && *p == (char)0xeb) {
 				VSLb(vep->vc->wrk->vsl, SLT_ESI_xmlerror,
 				    "No ESI processing, "
 				    "first char not '<' but BOM."
