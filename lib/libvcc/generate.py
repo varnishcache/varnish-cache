@@ -737,7 +737,7 @@ vcc_Var_Init(struct vcc *tl)
 """)
 
 
-parse_var_doc(join(buildroot, "doc/sphinx/reference/vcl_var.rst"))
+parse_var_doc(join(srcroot, "doc/sphinx/reference/vcl_var.rst"))
 fo.write("}\n")
 
 for i in stv_variables:
