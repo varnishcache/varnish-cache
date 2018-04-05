@@ -349,6 +349,7 @@ vjs_add_effective(priv_set_t *pset, enum jail_gen_e jge)
 static void
 vjs_add_permitted(priv_set_t *pset, enum jail_gen_e jge)
 {
+	(void) pset;
 	switch (jge) {
 	case JAILG_SUBPROC_VCC:
 	case JAILG_SUBPROC_CC:
