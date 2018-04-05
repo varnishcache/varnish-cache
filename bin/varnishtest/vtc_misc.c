@@ -341,8 +341,6 @@ cmd_delay(CMD_ARGS)
  * ignore_unknown_macro
  *        Do not fail the test if a string of the form ${...} is not
  *        recognized as a macro.
- * term
- *        Support for ansi.sys terminal
  *
  * persistent_storage
  *        Varnish was built with the deprecated persistent storage.
@@ -357,23 +355,6 @@ static const unsigned with_persistent_storage = 1;
 #else
 static const unsigned with_persistent_storage = 0;
 #endif
-
-static int
-test_term(struct vtclog *vl)
-{
-	FILE *p;
-	int a, b;
-
-	p = popen("tput -T ansi.sys clear 2>&1", "r");
-	if (p == NULL)
-		return (0);
-	a = fgetc(p);
-	b = fgetc(p);
-	if (a == 0x1b && b == '[')
-		return (1);
-	vtc_log(vl, 3, "No 'ansi.sys' terminfo entry.");
-	return (0);
-}
 
 void v_matchproto_(cmd_f)
 cmd_feature(CMD_ARGS)
@@ -423,7 +404,6 @@ cmd_feature(CMD_ARGS)
 		FEATURE("user_varnish", getpwnam("varnish") != NULL);
 		FEATURE("user_vcache", getpwnam("vcache") != NULL);
 		FEATURE("group_varnish", getgrnam("varnish") != NULL);
-		FEATURE("term", test_term(vl));
 		FEATURE("persistent_storage", with_persistent_storage);
 
 		if (!strcmp(*av, "disable_aslr")) {

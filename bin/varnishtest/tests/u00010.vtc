@@ -1,7 +1,5 @@
 varnishtest	"trivial run of varnishtop in curses mode"
 
-feature term
-
 server s1 {
 	rxreq
 	txresp

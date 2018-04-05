@@ -1,7 +1,5 @@
 varnishtest	"trivial run of varnishadm in pass mode"
 
-feature term
-
 server s1 {
 	rxreq
 	txresp
