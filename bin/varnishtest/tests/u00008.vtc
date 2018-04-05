@@ -13,26 +13,33 @@ varnish v1 -vcl+backend {
 
 process p1 -dump {varnishstat -n ${v1_name}} -start
 
-process p1 -need-bytes 1
+process p1 -expect-text 0 0 "VBE.vcl1.s1.happy"
+process p1 -screen_dump
 
 client c1 {
 	txreq
 	rxresp
 } -run
 
-process p1 -need-bytes 1000
+process p1 -expect-text 0 0 "MAIN.s_sess"
+process p1 -screen_dump
 
 process p1 -write {vG}
+process p1 -expect-text 0 0 "VBE.vcl1.s1.req"
+process p1 -expect-text 0 0 "DIAG"
+process p1 -screen_dump
 
 varnish v1 -stop
+process p1 -expect-text 2 1 "Uptime child:   Not Running"
+process p1 -screen_dump
 
 process p1 -write {dek}
-
-delay 1
-
-process p1 -need-bytes 5000 -screen_dump
+process p1 -expect-text 0 1 "Concurrent connections to backend:"
+process p1 -screen_dump
 
 process p1 -winsz 25 132
+process p1 -expect-text 4 124 "AVG_1000"
+process p1 -expect-text 22 108 "UNSEEN  DIAG"
 
-process p1 -need-bytes 4000 -screen_dump -write {q} -wait
+process p1 -screen_dump -write {q} -wait
 

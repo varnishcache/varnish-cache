@@ -2,7 +2,7 @@ varnishtest "Simple process tests"
 
 process p1 "cat" -start
 process p1 -writeln "foo"
-process p1 -need-bytes 3
+process p1 -expect-text 2 1 foo
 process p1 -stop
 process p1 -wait
 shell "grep -q foo ${p1_out}"
@@ -10,7 +10,7 @@ shell "test -f ${p1_err} -a ! -s ${p1_err}"
 
 process p2 -log "cat" -start
 process p2 -writeln "bar"
-process p2 -need-bytes 3
+process p2 -expect-text 2 1 bar
 process p2 -write "\x04"
 process p2 -wait
 shell "grep -q bar ${p2_out}"
@@ -18,7 +18,7 @@ shell "test -f ${p2_err} -a ! -s ${p2_err}"
 
 process p3 -dump "cat" -start
 process p3 -writeln "baz"
-process p3 -need-bytes 3
+process p3 -expect-text 2 1 baz
 process p3 -kill KILL
 process p3 -wait
 shell "grep -q baz ${p3_out}"
@@ -26,7 +26,7 @@ shell "test -f ${p3_err} -a ! -s ${p3_err}"
 
 process p4 -hexdump "cat" -start
 process p4 -writeln "b\001z"
-process p4 -need-bytes 3
+process p4 -expect-text 2 1 "b"
 process p4 -kill TERM
 process p4 -wait -screen_dump
 
