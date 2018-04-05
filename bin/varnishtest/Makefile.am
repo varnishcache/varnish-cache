@@ -77,11 +77,10 @@ EXTRA_DIST = $(top_srcdir)/bin/varnishtest/tests/*.vtc \
 	$(top_srcdir)/bin/varnishtest/sequences \
 	$(top_srcdir)/bin/varnishtest/teken.3
 
+teken.c: teken_state.h
+
 teken_state.h:	$(srcdir)/sequences $(srcdir)/gensequences
 	awk -f $(srcdir)/gensequences $(srcdir)/sequences \
 	    > $(builddir)/teken_state.h
 
-BUILT_SOURCES = teken_state.h
-
-CLEANFILES = $(BUILT_SOURCES)
-
+CLEANFILES = $(builddir)/teken_state.h
