@@ -1,6 +1,11 @@
-====================
-Varnish Cache master
-====================
+================================
+Varnish Cache 6.0.1 (ongoing)
+================================
+
+VCL and bundled VMODs
+---------------------
+
+* VMOD unix now supports the ``getpeerucred(3)`` case.
 
 bundled tools
 -------------
