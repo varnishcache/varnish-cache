@@ -53,6 +53,12 @@ one of the following:
 
 * the socket option ``SO_PEERCRED`` for ``getsockopt(2)`` (Linux)
 
+* ``getpeerucred(3C)`` (SunOS and descendants)
+
+On SunOS and friends, the ``PRIV_PROC_INFO`` privilege set is added to
+the Varnish child process while the VMOD is loaded, see
+``setppriv(2)``.
+
 On most platforms, the value returned is the effective user or group
 that was valid when the peer process initiated the connection.
 
@@ -104,3 +110,5 @@ SEE ALSO
 * :ref:`vcl(7)`
 * ``getpeereid(3)``
 * ``getsockopt(2)``
+* ``getpeerucred(3C)``
+* ``setppriv(2)``
