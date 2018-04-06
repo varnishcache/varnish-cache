@@ -2,7 +2,7 @@ varnishtest "Test Teken terminal emulator"
 
 feature cmd "vttest --version 2>&1 | grep -q Usage"
 
-process p4 -dump {vttest} -start
+process p4 {vttest} -start
 
 process p4 -expect-text 21 11 "Enter choice number (0 - 12):"
 process p4 -screen_dump
@@ -31,6 +31,73 @@ process p4 -screen_dump
 process p4 -writehex 0d
 process p4 -expect-text 4 1 "This is a correct sentence"
 process p4 -expect-text 20 7 "RETURN"
+process p4 -screen_dump
+
+process p4 -writehex 0d
+process p4 -expect-text 21 11 "Enter choice number (0 - 12):"
+process p4 -screen_dump
+
+process p4 -writehex "32 0d"
+process p4 -expect-text 8 1 "Push <RETURN>"
+process p4 -screen_dump
+
+process p4 -writehex 0d
+process p4 -expect-text 5 1 "should look the same. Push <RETURN>"
+process p4 -screen_dump
+
+process p4 -writehex 0d
+process p4 -expect-text 0 0 "This is 132 column mode, light background.Push <RETURN>"
+process p4 -screen_dump
+
+process p4 -writehex 0d
+process p4 -expect-text 0 0 "This is 80 column mode, light background.Push <RETURN>"
+process p4 -screen_dump
+
+process p4 -writehex 0d
+process p4 -expect-text 0 0 "This is 132 column mode, dark background.Push <RETURN>"
+process p4 -screen_dump
+
+process p4 -writehex 0d
+process p4 -expect-text 0 0 "This is 80 column mode, dark background.Push <RETURN>"
+process p4 -screen_dump
+
+process p4 -writehex 0d
+process p4 -expect-text 0 1 "Push <RETURN>"
+process p4 -screen_dump
+
+process p4 -writehex 0d
+process p4 -expect-text 3 1 "Soft scroll down region [1..24] size 24 Line 28"
+process p4 -expect-text 1 1 "Push <RETURN>"
+process p4 -screen_dump
+
+process p4 -writehex 0d
+process p4 -expect-text 0 1 "Jump scroll down region [12..13] size 2 Line 29"
+process p4 -expect-text 0 1 "Push <RETURN>"
+process p4 -screen_dump
+
+process p4 -writehex 0d
+process p4 -expect-text 3 1 "Jump scroll down region [1..24] size 24 Line 28"
+process p4 -expect-text 1 1 "Push <RETURN>"
+process p4 -screen_dump
+
+process p4 -writehex 0d
+process p4 -expect-text 23 0 "Push <RETURN>"
+process p4 -screen_dump
+
+process p4 -writehex 0d
+process p4 -expect-text 1 0 "Push <RETURN>"
+process p4 -screen_dump
+
+process p4 -writehex 0d
+process p4 -expect-text 23 1 "Dark background. Push <RETURN>"
+process p4 -screen_dump
+
+process p4 -writehex 0d
+process p4 -expect-text 23 1 "Light background. Push <RETURN>"
+process p4 -screen_dump
+
+process p4 -writehex 0d
+process p4 -expect-text 24 1 "Push <RETURN>"
 process p4 -screen_dump
 
 process p4 -writehex 0d
