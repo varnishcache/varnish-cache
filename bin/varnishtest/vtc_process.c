@@ -859,6 +859,7 @@ cmd_process(CMD_ARGS)
 	struct process *p, *p2;
 	uintmax_t u, v;
 	unsigned lin,col;
+	int spec_set = 0;
 
 	(void)priv;
 	(void)cmd;
@@ -1009,9 +1010,10 @@ cmd_process(CMD_ARGS)
 			av++;
 			continue;
 		}
-		if (**av == '-')
+		if (**av == '-' || spec_set)
 			vtc_fatal(p->vl, "Unknown process argument: %s",
 			    *av);
 		REPLACE(p->spec, *av);
+		spec_set = 1;
 	}
 }
