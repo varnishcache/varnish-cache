@@ -105,8 +105,8 @@ get_ids(int fd, uid_t *uid, gid_t *gid)
 	errno = 0;
 	if (getpeerucred(fd, &ucredp))
 		return (CREDS_FAIL);
-	*uid = ucred_getruid(ucredp);
-	*gid = ucred_getrgid(ucredp);
+	*uid = ucred_geteuid(ucredp);
+	*gid = ucred_getegid(ucredp);
 
 # if defined(HAVE_SETPPRIV)
 	if (priv != NULL)
