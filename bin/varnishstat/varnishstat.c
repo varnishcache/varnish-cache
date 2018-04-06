@@ -199,12 +199,17 @@ do_once_cb(void *priv, const struct VSC_point * const pt)
 static void
 do_once(struct vsm *vsm, struct vsc *vsc)
 {
+	struct vsc *vsconce = VSC_New();
 	struct once_priv op;
+
+	AN(vsconce);
+	AN(VSC_Arg(vsconce, 'f', "MAIN.uptime"));
 
 	memset(&op, 0, sizeof op);
 	op.pad = 18;
 
-	(void)VSC_Iter(vsc, vsm, do_once_cb_first, &op);
+	(void)VSC_Iter(vsconce, vsm, do_once_cb_first, &op);
+	VSC_Destroy(&vsconce, vsm);
 	(void)VSC_Iter(vsc, vsm, do_once_cb, &op);
 }
 
