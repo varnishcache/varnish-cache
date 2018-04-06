@@ -324,6 +324,9 @@ haproxy_wait(struct haproxy *h)
 		vtc_log(h->vl, 2, "Stop HAproxy pid=%ld", (long)h->pid);
 		h->kill_status = kill(h->pid, HAPROXY_SIGNAL);
 		h->kill_errno = errno;
+		if (h->kill_status)
+			vtc_log(h->vl, 4, "Kill=%d: %s",
+			    h->kill_status, strerror(h->kill_errno));
 		h->expect_signal = -HAPROXY_SIGNAL;
 		// XXX: loop over kills to ESRCH ?
 	}
