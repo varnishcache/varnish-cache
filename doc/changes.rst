@@ -2,6 +2,11 @@
 Varnish Cache Trunk (ongoing)
 =============================
 
+VCL and bundled VMODs
+---------------------
+
+* VMOD unix now supports the ``getpeerucred(3)`` case.
+
 bundled tools
 -------------
 
