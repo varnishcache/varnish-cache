@@ -289,7 +289,7 @@ static void
 term_expect_text(struct process *pp,
     const char *lin, const char *col, const char *pat)
 {
-	int x, y, l;
+	int x, y, l, d = 10000;
 	char *t;
 
 	y = strtoul(lin, NULL, 0);
@@ -303,8 +303,10 @@ term_expect_text(struct process *pp,
 			    "text at %d,%d: '%.*s'", y, x, l, t);
 		}
 		AZ(pthread_mutex_unlock(&pp->mtx));
-		usleep(1000000);
+		usleep(d);
 		AZ(pthread_mutex_lock(&pp->mtx));
+		if (d < 300000)
+			d += d;
 	}
 	AZ(pthread_mutex_unlock(&pp->mtx));
 	vtc_log(pp->vl, 4, "found expected text at %d,%d: '%s'", y, x, pat);
