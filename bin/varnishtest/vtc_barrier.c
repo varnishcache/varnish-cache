@@ -35,6 +35,7 @@
 #include <unistd.h>
 
 #include <sys/socket.h>
+#include <sys/time.h> /* for MUSL */
 
 #include "vtc.h"
 #include "vtcp.h"
