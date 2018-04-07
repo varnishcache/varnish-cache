@@ -312,7 +312,7 @@ static void
 haproxy_wait(struct haproxy *h)
 {
 	void *p;
-	int i;
+	int i, n, sig;
 
 	vtc_log(h->vl, 2, "Wait");
 
@@ -321,16 +321,28 @@ haproxy_wait(struct haproxy *h)
 
 	closefd(&h->fds[1]);
 
+	sig = SIGINT;
+	n = 0;
+	vtc_log(h->vl, 2, "Stop HAproxy pid=%ld", (long)h->pid);
 	while (!h->opt_check_mode && !h->its_dead_jim) {
 		assert(h->pid > 0);
-		vtc_log(h->vl, 2, "Stop HAproxy pid=%ld", (long)h->pid);
-		i= kill(h->pid, HAPROXY_SIGNAL);
-		h->expect_signal = -HAPROXY_SIGNAL;
-		if (i && errno == ESRCH)
-			break;
-		if (i)
-			vtc_log(h->vl, 4, "Kill=%d: %s", i, strerror(errno));
+		if (n == 0) {
+			i= kill(h->pid, sig);
+			vtc_log(h->vl, 4,
+			    "Kill(%d)=%d: %s", sig, i, strerror(errno));
+			h->expect_signal = -sig;
+			if (i && errno == ESRCH)
+				break;
+		}
 		usleep(100000);
+		if (++n == 20) {
+			switch (sig) {
+			case SIGINT:	sig = SIGTERM ; break;
+			case SIGTERM:	sig = SIGKILL ; break;
+			default:	break;
+			}
+			n = 0;
+		}
 	}
 
 	AZ(pthread_join(h->tp, &p));
