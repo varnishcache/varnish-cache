@@ -70,8 +70,7 @@ struct haproxy {
 	pthread_t		tp;
 	int			expect_exit;
 	int			expect_signal;
-	int			kill_status;
-	int			kill_errno;
+	int			its_dead_jim;
 
 	const char		*cli_fn;
 
@@ -213,7 +212,9 @@ haproxy_thread(void *priv)
 	struct haproxy *h;
 
 	CAST_OBJ_NOTNULL(h, priv, HAPROXY_MAGIC);
-	return (vtc_record(h->vl, h->fds[0], h->msgs));
+	(void)vtc_record(h->vl, h->fds[0], h->msgs);
+	h->its_dead_jim = 1;
+	return (NULL);
 }
 
 /**********************************************************************
@@ -311,6 +312,7 @@ static void
 haproxy_wait(struct haproxy *h)
 {
 	void *p;
+	int i;
 
 	vtc_log(h->vl, 2, "Wait");
 
@@ -319,16 +321,16 @@ haproxy_wait(struct haproxy *h)
 
 	closefd(&h->fds[1]);
 
-	if (!h->opt_check_mode) {
+	while (!h->opt_check_mode && !h->its_dead_jim) {
 		assert(h->pid > 0);
 		vtc_log(h->vl, 2, "Stop HAproxy pid=%ld", (long)h->pid);
-		h->kill_status = kill(h->pid, HAPROXY_SIGNAL);
-		h->kill_errno = errno;
-		if (h->kill_status)
-			vtc_log(h->vl, 4, "Kill=%d: %s",
-			    h->kill_status, strerror(h->kill_errno));
+		i= kill(h->pid, HAPROXY_SIGNAL);
 		h->expect_signal = -HAPROXY_SIGNAL;
-		// XXX: loop over kills to ESRCH ?
+		if (i && errno == ESRCH)
+			break;
+		if (i)
+			vtc_log(h->vl, 4, "Kill=%d: %s", i, strerror(errno));
+		usleep(100000);
 	}
 
 	AZ(pthread_join(h->tp, &p));
