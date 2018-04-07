@@ -32,6 +32,7 @@
 LOCK(backend)
 LOCK(ban)
 LOCK(busyobj)
+LOCK(busyobj_pipe)
 LOCK(cli)
 LOCK(exp)
 LOCK(hcb)

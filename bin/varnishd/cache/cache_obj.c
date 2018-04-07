@@ -107,6 +107,8 @@ obj_newboc(void)
 	AN(boc);
 	Lck_New(&boc->mtx, lck_busyobj);
 	AZ(pthread_cond_init(&boc->cond, NULL));
+	Lck_New(&boc->mtx_pipe, lck_busyobj_pipe);
+	AZ(pthread_cond_init(&boc->cond_pipe, NULL));
 	boc->refcount = 1;
 	return (boc);
 }
@@ -119,6 +121,8 @@ obj_deleteboc(struct boc **p)
 	TAKE_OBJ_NOTNULL(boc, p, BOC_MAGIC);
 	Lck_Delete(&boc->mtx);
 	AZ(pthread_cond_destroy(&boc->cond));
+	Lck_Delete(&boc->mtx_pipe);
+	AZ(pthread_cond_destroy(&boc->cond_pipe));
 	free(boc->vary);
 	FREE_OBJ(boc);
 }
@@ -191,7 +195,8 @@ ObjIterate(struct worker *wrk, struct objcore *oc,
  */
 
 int
-ObjGetSpace(struct worker *wrk, struct objcore *oc, ssize_t *sz, uint8_t **ptr)
+ObjGetSpace(struct worker *wrk, struct objcore *oc, ssize_t *sz, uint8_t **ptr,
+	    int pipe)
 {
 	const struct obj_methods *om = obj_getmethods(oc);
 
@@ -202,7 +207,7 @@ ObjGetSpace(struct worker *wrk, struct objcore *oc, ssize_t *sz, uint8_t **ptr)
 	assert(*sz > 0);
 
 	AN(om->objgetspace);
-	return (om->objgetspace(wrk, oc, sz, ptr));
+	return (om->objgetspace(wrk, oc, sz, ptr, pipe));
 }
 
 /*====================================================================

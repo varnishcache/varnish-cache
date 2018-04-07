@@ -478,6 +478,7 @@ vbf_stp_fetchbody(struct worker *wrk, struct busyobj *bo)
 	enum vfp_status vfps = VFP_ERROR;
 	ssize_t est;
 	struct vfp_ctx *vfc;
+	int pipe = 0;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	vfc = bo->vfc;
@@ -488,6 +489,9 @@ vbf_stp_fetchbody(struct worker *wrk, struct busyobj *bo)
 	est = bo->htc->content_length;
 	if (est < 0)
 		est = 0;
+
+	if (vfc->oc->flags & (OC_F_PRIVATE | OC_F_HFM | OC_F_HFP))
+		pipe = 1;
 
 	do {
 		if (vfc->oc->flags & OC_F_ABANDON) {
@@ -505,7 +509,9 @@ vbf_stp_fetchbody(struct worker *wrk, struct busyobj *bo)
 		AZ(vfc->failed);
 		l = est;
 		assert(l >= 0);
-		if (VFP_GetStorage(vfc, &l, &ptr) != VFP_OK) {
+		if (VFP_GetStorage(vfc, &l, &ptr, pipe) != VFP_OK) {
+			if (pipe && vfc->oc->flags & OC_F_ABANDON)
+				continue;
 			bo->htc->doclose = SC_RX_BODY;
 			break;
 		}
@@ -668,7 +674,7 @@ vbf_objiterator(void *priv, unsigned flush, const void *ptr, ssize_t len)
 
 	while (len > 0) {
 		l = len;
-		if (VFP_GetStorage(bo->vfc, &l, &pd) != VFP_OK)
+		if (VFP_GetStorage(bo->vfc, &l, &pd, 0) != VFP_OK)
 			return (1);
 		if (len < l)
 			l = len;
@@ -831,7 +837,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	o = 0;
 	while (ll > 0) {
 		l = ll;
-		if (VFP_GetStorage(bo->vfc, &l, &ptr) != VFP_OK)
+		if (VFP_GetStorage(bo->vfc, &l, &ptr, 0) != VFP_OK)
 			break;
 		if (l > ll)
 			l = ll;

@@ -107,7 +107,7 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 			break;
 		}
 		l = yet;
-		if (VFP_GetStorage(vfc, &l, &ptr) != VFP_OK)
+		if (VFP_GetStorage(vfc, &l, &ptr, 0) != VFP_OK)
 			break;
 		AZ(vfc->failed);
 		AN(ptr);

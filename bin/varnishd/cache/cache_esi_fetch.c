@@ -88,7 +88,7 @@ vfp_vep_callback(struct vfp_ctx *vc, void *priv, ssize_t l, enum vgz_flag flg)
 	VGZ_Ibuf(vef->vgz, vef->ibuf_o, l);
 	do {
 		dl = 0;
-		if (VFP_GetStorage(vc, &dl, &ptr) != VFP_OK) {
+		if (VFP_GetStorage(vc, &dl, &ptr, 0) != VFP_OK) {
 			vef->error = ENOMEM;
 			vef->tot += l;
 			return (vef->tot);

@@ -67,7 +67,7 @@ VFP_Error(struct vfp_ctx *vc, const char *fmt, ...)
  */
 
 enum vfp_status
-VFP_GetStorage(struct vfp_ctx *vc, ssize_t *sz, uint8_t **ptr)
+VFP_GetStorage(struct vfp_ctx *vc, ssize_t *sz, uint8_t **ptr, int pipe)
 {
 	ssize_t l;
 
@@ -77,14 +77,18 @@ VFP_GetStorage(struct vfp_ctx *vc, ssize_t *sz, uint8_t **ptr)
 	AN(ptr);
 
 	l = fetchfrag;
+	if (l == 0 && pipe)
+		l = cache_param->fetch_chunksize;
 	if (l == 0)
 		l = *sz;
 	if (l == 0)
 		l = cache_param->fetch_chunksize;
 	*sz = l;
-	if (!ObjGetSpace(vc->wrk, vc->oc, sz, ptr)) {
+	if (!ObjGetSpace(vc->wrk, vc->oc, sz, ptr, pipe)) {
 		*sz = 0;
 		*ptr = NULL;
+		if (pipe && vc->oc->flags & OC_F_ABANDON)
+			return (VFP_NULL);
 		return (VFP_Error(vc, "Could not get storage"));
 	}
 	assert(*sz > 0);

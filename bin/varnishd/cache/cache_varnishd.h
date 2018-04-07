@@ -242,7 +242,7 @@ void Bereq_Rollback(struct busyobj *);
 
 /* cache_fetch_proc.c */
 void VFP_Init(void);
-enum vfp_status VFP_GetStorage(struct vfp_ctx *, ssize_t *sz, uint8_t **ptr);
+enum vfp_status VFP_GetStorage(struct vfp_ctx *, ssize_t *sz, uint8_t **ptr, int pipe);
 void VFP_Extend(const struct vfp_ctx *, ssize_t sz);
 struct vfp_entry *VFP_Push(struct vfp_ctx *, const struct vfp *);
 void VFP_Setup(struct vfp_ctx *vc, struct worker *wrk);
@@ -290,7 +290,7 @@ void MPL_Free(struct mempool *mpl, void *item);
 void ObjInit(void);
 struct objcore * ObjNew(const struct worker *);
 void ObjDestroy(const struct worker *, struct objcore **);
-int ObjGetSpace(struct worker *, struct objcore *, ssize_t *sz, uint8_t **ptr);
+int ObjGetSpace(struct worker *, struct objcore *, ssize_t *sz, uint8_t **ptr, int pipe);
 void ObjExtend(struct worker *, struct objcore *, ssize_t l);
 uint64_t ObjWaitExtend(const struct worker *, const struct objcore *,
     uint64_t l);

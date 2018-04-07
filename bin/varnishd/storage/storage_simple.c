@@ -313,8 +313,11 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 			st = VTAILQ_NEXT(st, list);
 			if (VTAILQ_NEXT(st, list) != NULL) {
 				if (final && checkpoint != NULL) {
+					Lck_Lock(&oc->boc->mtx_pipe);
 					VTAILQ_REMOVE(&obj->list,
 					    checkpoint, list);
+					Lck_Unlock(&oc->boc->mtx_pipe);
+					AZ(pthread_cond_signal(&oc->boc->cond_pipe));
 					sml_stv_free(stv, checkpoint);
 				}
 				checkpoint = st;
@@ -335,6 +338,8 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 		if (ret)
 			break;
 	}
+	if (final)
+		AZ(pthread_cond_signal(&oc->boc->cond_pipe));
 	HSH_DerefBoc(wrk, oc);
 	return (ret);
 }
@@ -376,7 +381,7 @@ objallocwithnuke(struct worker *wrk, const struct stevedore *stv, size_t size,
 
 static int v_matchproto_(objgetspace_f)
 sml_getspace(struct worker *wrk, struct objcore *oc, ssize_t *sz,
-    uint8_t **ptr)
+    uint8_t **ptr, int pipe)
 {
 	struct object *o;
 	struct storage *st;
@@ -396,6 +401,29 @@ sml_getspace(struct worker *wrk, struct objcore *oc, ssize_t *sz,
 		*ptr = st->ptr + st->len;
 		assert (*sz > 0);
 		return (1);
+	}
+
+	if (pipe) {
+		int limit;
+		struct storage *st2;
+		Lck_Lock(&oc->boc->mtx_pipe);
+		do {
+			if (oc->flags & OC_F_ABANDON) {
+				Lck_Unlock(&oc->boc->mtx_pipe);
+				return(0);
+			}
+			/* XXX at least 4 x cache_param->fetch_chunksize */
+			limit = 4;
+			VTAILQ_FOREACH_SAFE(st, &o->list, list, st2) {
+				limit -= 1;
+				if (limit == 0) {
+					(void)Lck_CondWait(&oc->boc->cond_pipe,
+							   &oc->boc->mtx_pipe, 0);
+					break;
+				}
+			}
+		} while(limit == 0);
+		Lck_Unlock(&oc->boc->mtx_pipe);
 	}
 
 	st = objallocwithnuke(wrk, oc->stobj->stevedore, *sz,
