@@ -9,13 +9,15 @@ varnish v1 -vcl+backend {} -start
 
 process p1 -dump {varnishhist -n ${v1_name}} -start
 
-process p1 -expect-text 0 0 {1e2}
+process p1 -expect-text 24 0 {1e2}
+
+delay 1
 
 client c1 {
 	txreq
 	rxresp
 } -run
 
-process p1 -expect-text 0 0 {#}
+process p1 -expect-text 22 0 {#}
 
 process p1 -screen_dump -write {q} -wait

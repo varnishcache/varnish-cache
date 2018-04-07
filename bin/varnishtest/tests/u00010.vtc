@@ -11,6 +11,8 @@ process p1 -dump {varnishtop -n ${v1_name}} -start
 
 process p1 -expect-text 1 1 {list length}
 
+delay 1
+
 client c1 {
 	txreq
 	rxresp
