@@ -40,6 +40,7 @@
 #include <errno.h>
 #include <string.h>
 #include <signal.h>
+#include <sys/stat.h> /* for MUSL */
 
 #include "compat/daemon.h"
 #include "vdef.h"
