@@ -9,13 +9,11 @@ libvgz_a_CFLAGS = -D_LARGEFILE64_SOURCE=1 -DZLIB_CONST \
 
 libvgz_a_SOURCES = \
 	adler32.c \
-	compress.c \
 	crc32.c \
 	crc32.h \
 	deflate.c \
 	deflate.h \
 	gzguts.h \
-	infback.c \
 	inffast.c \
 	inffast.h \
 	inffixed.h \
@@ -25,7 +23,6 @@ libvgz_a_SOURCES = \
 	inftrees.h \
 	trees.c \
 	trees.h \
-	uncompr.c \
 	zconf.h \
 	vgz.h \
 	zutil.c \
