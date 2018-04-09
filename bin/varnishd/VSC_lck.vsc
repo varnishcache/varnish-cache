@@ -30,5 +30,15 @@
 	:oneliner:	Lock Operations
 
 
+.. varnish_vsc:: busy
+	:type:	counter
+	:level:	debug
+	:oneliner:	Contended locks
+
+	For trylock operations, counts the number of EBUSY returns.
+
+	If the LCK debug bit is enabled, all lock operations are
+	changed to issue a trylock first to report contended locks.
+
 .. varnish_vsc_end::	lck
 
