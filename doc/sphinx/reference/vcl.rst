@@ -252,6 +252,21 @@ parameters. The following attributes are available:
     The PROXY protocol version Varnish should use when connecting to
     this backend. Allowed values are ``1`` and ``2``.
 
+    *Notice* this setting will lead to backend connections being used
+    for a single request only (subject to future improvements). Thus,
+    extra care should be taken to avoid running into failing backend
+    connections with EADDRNOTAVAIL due to no local ports being
+    available. Possible options are:
+
+    * Use additional backend connections to extra IP addresses or TCP
+      ports
+
+    * Increase the number of available ports (Linux sysctl
+      ``net.ipv4.ip_local_port_range``)
+
+    * Reuse backend connection ports early (Linux sysctl
+      ``net.ipv4.tcp_tw_reuse``)
+
   ``.max_connections``
     Maximum number of open connections towards this backend. If
     Varnish reaches the maximum Varnish it will start failing
