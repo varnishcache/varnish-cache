@@ -524,7 +524,6 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 		if (!memcmp(vvp->value, "PRIV_", 5)) {
 			fa->result = vcc_priv_arg(tl, vvp->value,
 			    sym->name, sym->vmod);
-			fa->name = "";
 			continue;
 		}
 		fa->type = VCC_Type(vvp->value);
@@ -579,6 +578,7 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 			return;
 		}
 		if (fa->result != NULL) {
+			AN(fa->name);
 			VSB_printf(tl->sb, "Argument '%s' already used\n",
 			    fa->name);
 			vcc_ErrWhere(tl, tl->t);
@@ -602,6 +602,7 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 	VTAILQ_FOREACH_SAFE(fa, &head, list, fa2) {
 		n++;
 		if (fa->optional) {
+			AN(fa->name);
 			bprintf(ssa, "\v1.valid_%s = %d,\n",
 				fa->name, fa->avail);
 			e1 = vcc_expr_edit(tl, e1->fmt, ssa, e1, NULL);
@@ -611,7 +612,7 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 		if (fa->result == NULL && fa->val != NULL)
 			fa->result = vcc_mk_expr(fa->type, "%s", fa->val);
 		if (fa->result != NULL && sa != NULL) {
-			if (fa->name && *fa->name != '\0')
+			if (fa->name)
 				bprintf(ssa, "\v1.%s = \v2,\n", fa->name);
 			else
 				bprintf(ssa, "\v1.arg%d = \v2,\n", n);
@@ -620,8 +621,11 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 			e1 = vcc_expr_edit(tl, e1->fmt, "\v1,\n\v2",
 			    e1, fa->result);
 		} else if (!fa->optional) {
-			VSB_printf(tl->sb, "Argument '%s' missing\n",
-			    fa->name);
+			if (fa->name)
+				VSB_printf(tl->sb, "Argument '%s' missing\n",
+					   fa->name);
+			else
+				VSB_printf(tl->sb, "Argument %d missing\n", n);
 			vcc_ErrWhere(tl, tl->t);
 		}
 		free(fa);
