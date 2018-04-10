@@ -35,7 +35,6 @@
 #include "cache/cache.h"
 
 #include "vend.h"
-#include "vcl.h"
 
 #include "proxy/cache_proxy.h"
 
