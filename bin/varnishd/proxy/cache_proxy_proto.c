@@ -42,6 +42,13 @@
 #include "vsa.h"
 #include "vtcp.h"
 
+struct vpx_tlv {
+	unsigned		magic;
+#define VPX_TLV_MAGIC		0xdeb9a4a5
+	unsigned		len;
+	char			tlv[1];
+};
+
 /**********************************************************************
  * PROXY 1 protocol
  */
@@ -156,17 +163,6 @@ vpx_proto1(const struct worker *wrk, const struct req *req)
  * PROXY 2 protocol
  */
 
-struct pp2_tlv {
-	uint8_t type;
-	uint8_t length_hi;
-	uint8_t length_lo;
-}__attribute__((packed));
-
-struct pp2_tlv_ssl {
-	uint8_t  client;
-	uint32_t verify;
-}__attribute__((packed));
-
 static const char vpx2_sig[] = {
 	'\r', '\n', '\r', '\n', '\0', '\r', '\n',
 	'Q', 'U', 'I', 'T', '\n',
@@ -248,60 +244,85 @@ static uint32_t crc32c(const uint8_t *buf, int len)
 	return (crc ^ 0xffffffff);
 }
 
-int
-VPX_tlv(const struct req *req, int tlv, void **dst, int *len)
+struct vpx_tlv_iter {
+	uint8_t		t;
+	void		*p;
+	uint16_t	l;
+	const char	*e;
+
+	unsigned char	*_p;
+	uint16_t	_l;
+};
+
+static void
+vpx_tlv_iter0(struct vpx_tlv_iter *vpi, void *p, unsigned l)
 {
-	uintptr_t *p;
-	uint16_t *tlv_len_p;
-	uint16_t l;
-	char *d;
-	int ssltlv = 0;
+
+	AN(p);
+	assert(l < 65536);
+	memset(vpi, 0, sizeof *vpi);
+	vpi->_p = p;
+	vpi->_l = l;
+}
+
+static int
+vpx_tlv_itern(struct vpx_tlv_iter *vpi)
+{
+	if (vpi->_l == 0 || vpi->e != NULL)
+		return (0);
+	if (vpi->_l < 3) {
+		vpi->e = "Dribble bytes";
+		return (0);
+	}
+	vpi->t = *vpi->_p;
+	vpi->l = vbe16dec(vpi->_p + 1);
+	if (vpi->l + 3 > vpi->_l) {
+		vpi->e = "Length Error";
+		return (0);
+	}
+	vpi->p = vpi->_p + 3;
+	vpi->_p += 3 + vpi->l;
+	vpi->_l -= 3 + vpi->l;
+	return (1);
+}
+
+#define VPX_TLV_FOREACH(ptr, len, itv) \
+	for(vpx_tlv_iter0(itv, ptr, len); vpx_tlv_itern(itv);)
+
+int
+VPX_tlv(const struct req *req, int typ, void **dst, int *len)
+{
+	struct vpx_tlv *tlv;
+	struct vpx_tlv_iter vpi[1], vpi2[1];
+	uintptr_t *up;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->sp, SESS_MAGIC);
+	AN(dst);
+	AN(len);
+	*dst = NULL;
+	*len = 0;
 
-	if (SES_Get_xport_priv(req->sp, &p) != 0) {
-		*dst = NULL;
+	if (SES_Get_proxy_tlv(req->sp, &up) != 0 || *up == 0)
 		return (-1);
-	}
-	tlv_len_p = (void *)(*p);
-	l = *tlv_len_p;
-	d = (char *)(tlv_len_p + 1);
+	CAST_OBJ_NOTNULL(tlv, (void*)(*up), VPX_TLV_MAGIC);
 
-	if (tlv > PP2_TYPE_SSL && tlv <= PP2_SUBTYPE_SSL_MAX) {
-		ssltlv = tlv;
-		tlv = PP2_TYPE_SSL;
-	}
-	while (l > sizeof(struct pp2_tlv)) {
-		uint16_t v_len = vbe16dec(d + 1);
-		if (d[0] == tlv) {
-			if (ssltlv) {
-				char *sd;
-				int sl;
-				sd = d + sizeof(struct pp2_tlv) +
-				    sizeof(struct pp2_tlv_ssl);
-				sl = l - sizeof(struct pp2_tlv) -
-				    sizeof(struct pp2_tlv_ssl);
-				while (sl > sizeof(struct pp2_tlv)) {
-					uint16_t subv_len = vbe16dec(sd + 1);
-					if (sd[0] == ssltlv) {
-						*dst = sd + 3;
-						*len = subv_len;
-						return (0);
-					}
-					sd += (subv_len + 3);
-					sl -= (subv_len + 3);
-				}
-			} else {
-				*dst = d + 3;
-				*len = v_len;
+	VPX_TLV_FOREACH(tlv->tlv, tlv->len, vpi) {
+		if (vpi->t == typ) {
+			*dst = vpi->p;
+			*len = vpi->l;
+			return (0);
+		}
+		if (vpi->t != PP2_TYPE_SSL)
+			continue;
+		VPX_TLV_FOREACH((char*)vpi->p + 5, vpi->l - 5, vpi2) {
+			if (vpi2->t == typ) {
+				*dst = vpi2->p;
+				*len = vpi2->l;
 				return (0);
 			}
 		}
-		d += (v_len + 3);
-		l -= (v_len + 3);
 	}
-	*dst = NULL;
 	return (-1);
 }
 
@@ -310,7 +331,6 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 {
 	int l, hdr_len;
 	uintptr_t *up;
-	uint16_t *tlv_len_p;
 	uint16_t tlv_len;
 	const uint8_t *p;
 	char *d, *tlv_start;
@@ -322,6 +342,8 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 	char pa[VTCP_PORTBUFSIZE];
 	char hb[VTCP_ADDRBUFSIZE];
 	char pb[VTCP_PORTBUFSIZE];
+	struct vpx_tlv_iter vpi[1], vpi2[1];
+	struct vpx_tlv *tlv;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -374,27 +396,6 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 		}
 		l -= 12;
 		d += 12;
-		break;
-	case 0x21:
-		/* IPv6|TCP */
-		pfam = AF_INET6;
-		if (l < 36) {
-			VSL(SLT_ProxyGarbage, req->sp->vxid,
-			    "PROXY2: Ignoring short IPv6 addresses (%d)", l);
-			return (0);
-		}
-		l -= 36;
-		d += 36;
-		break;
-	default:
-		/* Ignore proxy header */
-		VSL(SLT_ProxyGarbage, req->sp->vxid,
-		    "PROXY2: Ignoring unsupported protocol (0x%02x)", p[13]);
-		return (0);
-	}
-
-	switch (pfam) {
-	case AF_INET:
 		memset(&sin4, 0, sizeof sin4);
 		sin4.sin_family = pfam;
 
@@ -411,7 +412,16 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 		SES_Reserve_client_addr(req->sp, &sa);
 		AN(VSA_Build(sa, &sin4, sizeof sin4));
 		break;
-	case AF_INET6:
+	case 0x21:
+		/* IPv6|TCP */
+		pfam = AF_INET6;
+		if (l < 36) {
+			VSL(SLT_ProxyGarbage, req->sp->vxid,
+			    "PROXY2: Ignoring short IPv6 addresses (%d)", l);
+			return (0);
+		}
+		l -= 36;
+		d += 36;
 		memset(&sin6, 0, sizeof sin6);
 		sin6.sin6_family = pfam;
 
@@ -429,7 +439,10 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 		AN(VSA_Build(sa, &sin6, sizeof sin6));
 		break;
 	default:
-		WRONG("Wrong pfam");
+		/* Ignore proxy header */
+		VSL(SLT_ProxyGarbage, req->sp->vxid,
+		    "PROXY2: Ignoring unsupported protocol (0x%02x)", p[13]);
+		return (0);
 	}
 
 	AN(sa);
@@ -442,62 +455,36 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 	tlv_start = d;
 	tlv_len = l;
 
-	while (l > sizeof(struct pp2_tlv)) {
-		int el = vbe16dec(d + 1) + 3;
-		if (el > l) {
-			VSL(SLT_ProxyGarbage, req->sp->vxid,
-			    "PROXY2: Ignoring TLV");
-			return (0);
-		}
-		switch (d[0]) {
-		case PP2_TYPE_CRC32C:
-		{
-			uint32_t n_crc32c = vbe32dec(d+3);
-			*(d+3) = 0; *(d+4) = 0; *(d+5) = 0; *(d+6) = 0;
+	VPX_TLV_FOREACH(d, l, vpi) {
+		if (vpi->t == PP2_TYPE_SSL) {
+			VPX_TLV_FOREACH((char*)vpi->p + 5, vpi->l - 5, vpi2) {
+			}
+			vpi->e = vpi2->e;
+		} else if (vpi->t == PP2_TYPE_CRC32C) {
+			uint32_t n_crc32c = vbe32dec(vpi->p);
+			vbe32enc(vpi->p, 0);
 			if (crc32c(p, hdr_len) != n_crc32c) {
 				VSL(SLT_ProxyGarbage, req->sp->vxid,
 				    "PROXY2: CRC error");
 				return (-1);
 			}
-			break;
 		}
-		case PP2_TYPE_SSL:
-	        {
-			const char *sd;
-			int sl;
-			sd = d + sizeof(struct pp2_tlv) +
-			    sizeof(struct pp2_tlv_ssl);
-			sl = l - sizeof(struct pp2_tlv) -
-			    sizeof(struct pp2_tlv_ssl);
-			while (sl > sizeof(struct pp2_tlv)) {
-				int esl = vbe16dec(sd + 1) + 3;
-				if (esl > sl) {
-					VSL(SLT_ProxyGarbage, req->sp->vxid,
-					    "PROXY2: Ignoring SSL TLV");
-					return (0);
-				}
-				sd += esl;
-				sl -= esl;
-			}
-			break;
-		}
-		}
-		d += el;
-		l -= el;
 	}
-	if (l) {
+	if (vpi->e != NULL) {
+		VSL(SLT_ProxyGarbage, req->sp->vxid, "PROXY2: TLV %s", vpi->e);
+		return (-1);
+	}
+	tlv = WS_Alloc(req->sp->ws, sizeof *tlv + tlv_len);
+	if (tlv == NULL) {
 		VSL(SLT_ProxyGarbage, req->sp->vxid,
-		    "PROXY2: header length mismatch");
-		return (0);
+		    "PROXY2: TLV overflows WS");
+		return (-1);
 	}
-	if (tlv_len && WS_Reserve(req->sp->ws, 2 + tlv_len)) {
-		tlv_len_p = (void *)req->sp->ws->f;
-		*tlv_len_p = tlv_len;
-		memcpy(req->sp->ws->f + 2, tlv_start, tlv_len);
-		WS_Release(req->sp->ws, 2 + tlv_len);
-		SES_Reserve_xport_priv(req->sp, &up);
-		*up = (uintptr_t)tlv_len_p;
-	}
+	INIT_OBJ(tlv, VPX_TLV_MAGIC);
+	tlv->len = tlv_len;
+	memcpy(tlv->tlv, tlv_start, tlv_len);
+	SES_Reserve_proxy_tlv(req->sp, &up);
+	*up = (uintptr_t)tlv;
 	return (0);
 }
 
