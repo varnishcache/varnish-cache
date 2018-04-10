@@ -467,7 +467,6 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 	const struct vjsn_val *vv, *vvp;
 	const char *sa;
 	char ssa[64];
-	char ssa2[64];
 	int n;
 
 	CAST_OBJ_NOTNULL(vv, priv, VJSN_VAL_MAGIC);
@@ -481,10 +480,6 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 	sa = vv->value;
 	if (*sa == '\0') {
 		sa = NULL;
-	} else {
-		bprintf(ssa, "args_%u", tl->unique++);
-		VSB_printf(tl->curproc->prologue, "  %s %s;\n", sa, ssa);
-		sa = ssa;
 	}
 	vv = VTAILQ_NEXT(vv, list);
 	SkipToken(tl, '(');
@@ -572,27 +567,28 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 	}
 
 	if (sa != NULL)
-		e1 = vcc_mk_expr(rfmt, "%s(ctx%s,\v+(\n", cfunc, extra);
+		e1 = vcc_mk_expr(rfmt, "%s(ctx%s,\v+ &(%s){\n",
+				 cfunc, extra, sa);
 	else
 		e1 = vcc_mk_expr(rfmt, "%s(ctx%s\v+", cfunc, extra);
 	n = 0;
 	VTAILQ_FOREACH_SAFE(fa, &head, list, fa2) {
 		n++;
-		if (fa->optional)
-			VSB_printf(tl->curproc->prologue,
-			    "  %s.valid_%s = %d;\n", sa, fa->name, fa->avail);
+		if (fa->optional) {
+			bprintf(ssa, "\v1.valid_%s = %d,\n",
+				fa->name, fa->avail);
+			e1 = vcc_expr_edit(tl, e1->fmt, ssa, e1, NULL);
+		}
 		if (fa->result == NULL && fa->type == ENUM && fa->val != NULL)
 			vcc_do_enum(tl, fa, strlen(fa->val), fa->val);
 		if (fa->result == NULL && fa->val != NULL)
 			fa->result = vcc_mk_expr(fa->type, "%s", fa->val);
 		if (fa->result != NULL && sa != NULL) {
 			if (fa->name && *fa->name != '\0')
-				bprintf(ssa2, "\v1%s.%s = \v2,\n",
-					sa, fa->name);
+				bprintf(ssa, "\v1.%s = \v2,\n", fa->name);
 			else
-				bprintf(ssa2, "\v1%s.arg%d = \v2,\n",
-					sa, n);
-			e1 = vcc_expr_edit(tl, e1->fmt, ssa2, e1, fa->result);
+				bprintf(ssa, "\v1.arg%d = \v2,\n", n);
+			e1 = vcc_expr_edit(tl, e1->fmt, ssa, e1, fa->result);
 		} else if (fa->result != NULL) {
 			e1 = vcc_expr_edit(tl, e1->fmt, "\v1,\n\v2",
 			    e1, fa->result);
@@ -604,8 +600,7 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 		free(fa);
 	}
 	if (sa != NULL) {
-		bprintf(ssa2, "\v1&%s\v-\n))", sa);
-		*e = vcc_expr_edit(tl, e1->fmt, ssa2, e1, NULL);
+		*e = vcc_expr_edit(tl, e1->fmt, "\v1\n})\v-", e1, NULL);
 	} else {
 		*e = vcc_expr_edit(tl, e1->fmt, "\v1\n)\v-", e1, NULL);
 	}
