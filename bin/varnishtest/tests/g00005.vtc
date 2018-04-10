@@ -3,7 +3,17 @@ varnishtest "test gunzip for client + Range"
 server s1 -repeat 3 {
 	rxreq
 	expect req.http.accept-encoding == "gzip"
-	txresp -gzipbody FOOBARBARF
+	txresp -nolen -hdr "Transfer-encoding: chunked" \
+		-hdr "Content-encoding: gzip"
+	delay 1
+	# Compressed "FOOBARBARF"
+	sendhex {
+		31 43 0d 0a
+		1f 8b 08 00 75 96 cc 5a  02 03 73 f3 f7 77 72 0c
+		02 22 37 00 06 8e 8c 83  0a 00 00 00
+		0d 0a
+		30 0d 0a 0d 0a
+	}
 } -start
 
 varnish v1 -cliok "param.set http_gzip_support true" -vcl+backend {
@@ -21,33 +31,49 @@ client c1 {
 	expect resp.status == 200
 	expect resp.bodylen == "10"
 	expect resp.http.content-encoding == <undef>
+} -run
 
+varnish v1 -vsl_catchup
+
+client c1 {
 	txreq -hdr "Accept-encoding: gzip;q=0.1"
 	rxresp
 	expect resp.http.content-encoding == "gzip"
 	gunzip
 	expect resp.bodylen == "10"
+} -run
 
-	# This delay attempts to ensure that the busyobj
-	# is completed before we attempt the range request
-	delay 1
+varnish v1 -vsl_catchup
 
+# This delay attempts to ensure that the busyobj
+# is completed before we attempt the range request
+delay 2
+
+client c1 {
 	txreq -hdr "Range: bytes=3-5"
 	rxresp
 	expect resp.status == 206
 	expect resp.http.content-encoding == "<undef>"
 	expect resp.bodylen == "3"
 	expect resp.body == "BAR"
+} -run
 
+varnish v1 -vsl_catchup
+
+client c1 {
 	txreq -url "/nostreamcachemiss" -hdr "Range: bytes=3-5"
 	rxresp
 	expect resp.status == 206
 	expect resp.http.content-encoding == "<undef>"
 	expect resp.bodylen == "3"
 	expect resp.body == "BAR"
+} -run
 
-	# simple cache miss no gunzip
-	txreq -url "/2" -hdr "Range: bytes=3-5" -hdr "Accept-Encoding: gzip"
+varnish v1 -vsl_catchup
+
+client c1 {
+	# simple cache miss, no stream, no gunzip
+	txreq -url "/nostream2" -hdr "Range: bytes=3-5" -hdr "Accept-Encoding: gzip"
 	rxresp
 	expect resp.status == 206
 	expect resp.http.content-encoding == "gzip"
