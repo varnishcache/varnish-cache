@@ -317,7 +317,7 @@ vdp_gunzip(struct req *req, enum vdp_action act, void **priv,
 		req->resp_len = -1;
 
 		p = ObjGetAttr(req->wrk, req->objcore, OA_GZIPBITS, &dl);
-		if (p != NULL || dl == 32) {
+		if (p != NULL && dl == 32) {
 			u = vbe64dec(p + 24);
 			/*
 			 * If the size is non-zero AND we are the top VDP
