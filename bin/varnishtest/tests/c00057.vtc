@@ -39,6 +39,8 @@ client c1 {
 	expect_close
 } -run
 
+varnish v1 -cliexpect "STACK OVERFLOW" "panic.show"
+
 varnish v1 -cliok "panic.clear"
 
 # Also check without the handler
@@ -51,3 +53,31 @@ client c1 {
 } -run
 
 varnish v1 -expectexit 0x20
+
+####################
+
+varnish v2 \
+	-arg "-p feature=+no_coredump" \
+	-arg "-p vcc_allow_inline_c=true" \
+	-vcl+backend {
+
+	C{
+	#include <stdio.h>
+	}C
+
+	sub vcl_recv { C{
+	    int *i = (void *)VRT_GetHdr;
+	    *i = 42;
+	}C }
+} -start
+
+client c2 -connect ${v2_sock} {
+	txreq
+	expect_close
+} -run
+
+varnish v2 -cliexpect "Segmentation fault" "panic.show"
+
+varnish v2 -cliok "panic.clear"
+
+varnish v2 -expectexit 0x20
