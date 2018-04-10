@@ -39,7 +39,7 @@ SESS_ATTR(CLIENT_ADDR,	  client_addr,	struct suckaddr,    vsa_suckaddr_len)
 SESS_ATTR(SERVER_ADDR,	  server_addr,	struct suckaddr,    vsa_suckaddr_len)
 SESS_ATTR(CLIENT_IP,	  client_ip,	char,		    -1)
 SESS_ATTR(CLIENT_PORT,	  client_port,	char,		    -1)
-SESS_ATTR(XPORT_PRIV,	  xport_priv,	uintptr_t,	    sizeof(uintptr_t))
+SESS_ATTR(PROXY_TLV,	  proxy_tlv,	uintptr_t,	    sizeof(uintptr_t))
 SESS_ATTR(PROTO_PRIV,	  proto_priv,	uintptr_t,	    sizeof(uintptr_t))
 #undef SESS_ATTR
 
