@@ -205,9 +205,13 @@ static void
 term_screen_dump(const struct process *pp)
 {
 	int i;
+	const teken_pos_t *pos;
 
 	for (i = 0; i < pp->nlin; i++)
 		vtc_dump(pp->vl, 3, "screen", pp->vram[i], pp->ncol);
+	pos = teken_get_cursor(pp->tek);
+	vtc_log(pp->vl, 3, "Cursor at line %d column %d",
+	    pos->tp_row + 1, pos->tp_col + 1);
 }
 
 static void
@@ -310,6 +314,23 @@ term_expect_text(struct process *pp,
 	}
 	AZ(pthread_mutex_unlock(&pp->mtx));
 	vtc_log(pp->vl, 4, "found expected text at %d,%d: '%s'", y, x, pat);
+}
+
+static void
+term_expect_cursor(struct process *pp, const char *lin, const char *col)
+{
+	int x, y;
+	const teken_pos_t *pos;
+
+	pos = teken_get_cursor(pp->tek);
+	y = strtoul(lin, NULL, 0);
+	x = strtoul(col, NULL, 0);
+	if (y != 0 && (y-1) != pos->tp_row)
+		vtc_fatal(pp->vl, "Cursor on line %d (expected %d)",
+		    pos->tp_row + 1, y);
+	if (x != 0 && (x-1) != pos->tp_col)
+		vtc_fatal(pp->vl, "Cursor in column %d (expected %d)",
+		    pos->tp_col + 1, y);
 }
 
 /**********************************************************************
@@ -968,7 +989,15 @@ cmd_process(CMD_ARGS)
 			av += 3;
 			continue;
 		}
-		if (!strcmp(*av, "-screen_dump")) {
+		if (!strcmp(*av, "-expect-cursor")) {
+			AN(av[1]);
+			AN(av[2]);
+			term_expect_cursor(p, av[1], av[2]);
+			av += 2;
+			continue;
+		}
+		if (!strcmp(*av, "-screen_dump") ||
+		    !strcmp(*av, "-screen-dump")) {
 			term_screen_dump(p);
 			continue;
 		}
