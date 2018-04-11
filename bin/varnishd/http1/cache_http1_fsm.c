@@ -247,7 +247,7 @@ http1_reembark(struct worker *wrk, struct req *req)
 static int v_matchproto_(vtr_minimal_response_f)
 http1_minimal_response(struct req *req, uint16_t status)
 {
-	size_t wl, l;
+	ssize_t wl, l;
 	char buf[80];
 	const char *reason;
 
