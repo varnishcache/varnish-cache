@@ -388,6 +388,7 @@ haproxy_build_backends(const struct haproxy *h, const char *vsb_data)
 		if (err != NULL)
 			vtc_fatal(h->vl,
 			    "Create listen socket failed: %s", err);
+		assert(sock > 0);
 
 		VTCP_myname(sock, addr, sizeof addr, port, sizeof port);
 		bprintf(buf, "%s_%s", h->name, p);
