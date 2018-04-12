@@ -93,12 +93,11 @@ h2_local_settings(struct h2_settings *h2s)
  * WS, VSL, HTC &c,  but rather than implement all that stuff over, we
  * grab an actual struct req, and mirror the relevant fields into
  * struct h2_sess.
- * To make things really incestuous, we allocate the h2_sess on
- * the WS of that "Session ReQuest".
  */
 
 static struct h2_sess *
-h2_new_sess(const struct worker *wrk, struct sess *sp, struct req *srq)
+h2_init_sess(const struct worker *wrk, struct sess *sp,
+    struct h2_sess *h2s, struct req *srq)
 {
 	uintptr_t *up;
 	struct h2_sess *h2;
@@ -112,7 +111,7 @@ h2_new_sess(const struct worker *wrk, struct sess *sp, struct req *srq)
 		if (srq == NULL)
 			srq = Req_New(wrk, sp);
 		AN(srq);
-		h2 = WS_Alloc(srq->ws, sizeof *h2);
+		h2 = h2s;
 		AN(h2);
 		INIT_OBJ(h2, H2_SESS_MAGIC);
 		h2->srq = srq;
@@ -331,9 +330,9 @@ h2_new_session(struct worker *wrk, void *arg)
 {
 	struct req *req;
 	struct sess *sp;
+	struct h2_sess h2s;
 	struct h2_sess *h2;
 	struct h2_req *r2, *r22;
-	uintptr_t wsp;
 	int again;
 	uint8_t settings[48];
 	size_t l;
@@ -347,8 +346,8 @@ h2_new_session(struct worker *wrk, void *arg)
 
 	assert (req->err_code == H2_PU_MARKER || req->err_code == H2_OU_MARKER);
 
-	h2 = h2_new_sess(wrk, sp, req->err_code == H2_PU_MARKER ? req : NULL);
-	wsp = WS_Snapshot(h2->ws);
+	h2 = h2_init_sess(wrk, sp, &h2s,
+	    req->err_code == H2_PU_MARKER ? req : NULL);
 	h2->req0 = h2_new_req(wrk, h2, 0, NULL);
 
 	if (req->err_code == H2_OU_MARKER && !h2_ou_session(wrk, h2, req)) {
@@ -359,6 +358,7 @@ h2_new_session(struct worker *wrk, void *arg)
 	}
 	assert(HTC_S_COMPLETE == H2_prism_complete(h2->htc));
 	HTC_RxPipeline(h2->htc, h2->htc->rxbuf_b + sizeof(H2_prism));
+	WS_Reset(h2->ws, 0);
 	HTC_RxInit(h2->htc, h2->ws);
 	AN(h2->ws->r);
 	VSLb(h2->vsl, SLT_Debug, "H2: Got pu PRISM");
@@ -380,7 +380,7 @@ h2_new_session(struct worker *wrk, void *arg)
 	h2->cond = &wrk->cond;
 
 	while (h2_rxframe(wrk, h2)) {
-		WS_Reset(h2->ws, wsp);
+		WS_Reset(h2->ws, 0);
 		HTC_RxInit(h2->htc, h2->ws);
 		if (WS_Overflowed(h2->ws)) {
 			VSLb(h2->vsl, SLT_Debug, "H2: Empty Rx Workspace");
