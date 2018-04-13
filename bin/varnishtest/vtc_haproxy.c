@@ -56,7 +56,7 @@ struct haproxy {
 	struct vtclog		*vl;
 	VTAILQ_ENTRY(haproxy)	list;
 
-	char			*filename;
+	const char		*filename;
 	struct vsb		*args;
 	int			opt_worker;
 	int			opt_daemon;
@@ -72,7 +72,7 @@ struct haproxy {
 	int			expect_signal;
 	int			its_dead_jim;
 
-	const char		*cli_fn;
+	char			*cli_fn;
 
 	char			*workdir;
 	struct vsb		*msgs;
@@ -152,7 +152,7 @@ haproxy_new(const char *name)
 
 	h->filename = getenv(HAPROXY_PROGRAM_ENV_VAR);
 	if (h->filename == NULL)
-		REPLACE(h->filename, "haproxy");
+		h->filename = "haproxy";
 
 	bprintf(buf, "${tmpdir}/%s", name);
 	vsb = macro_expand(h->vl, buf);
@@ -196,6 +196,9 @@ haproxy_delete(struct haproxy *h)
 
 	free(h->name);
 	free(h->workdir);
+	free(h->cli_fn);
+	free(h->cfg_fn);
+	free(h->pid_fn);
 	VSB_destroy(&h->args);
 
 	/* XXX: MEMLEAK (?) */

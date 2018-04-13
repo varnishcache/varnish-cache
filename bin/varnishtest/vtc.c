@@ -167,7 +167,7 @@ macro_undef(struct vtclog *vl, const char *instance, const char *name)
 		VTAILQ_REMOVE(&macro_list, m, list);
 		free(m->name);
 		free(m->val);
-		free(m);
+		FREE_OBJ(m);
 	}
 	AZ(pthread_mutex_unlock(&macro_mtx));
 }

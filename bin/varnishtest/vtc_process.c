@@ -386,6 +386,7 @@ process_new(const char *name)
 static void
 process_delete(struct process *p)
 {
+	int i;
 
 	CHECK_OBJ_NOTNULL(p, PROCESS_MAGIC);
 	AZ(pthread_mutex_destroy(&p->mtx));
@@ -400,6 +401,10 @@ process_delete(struct process *p)
 	 * and stderr files. They will be deleted on account of belonging
 	 * to the test's tmpdir.
 	 */
+
+	for (i = 0; i < p->nlin; i++)
+		free(p->vram[i]);
+	free(p->vram);
 
 	/* XXX: MEMLEAK (?) */
 	FREE_OBJ(p);
