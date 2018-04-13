@@ -1,0 +1,14 @@
+varnishtest "Cleanly stop a VUT app via vtc process -stop"
+
+varnish v1 -vcl { backend b { .host="${bad_ip}"; } } -start
+
+process p1 {
+	varnishncsa -n ${v1_name} -P ${tmpdir}/ncsa.pid -w ${tmpdir}/ncsa.log
+} -start
+
+delay 1
+
+process p1 -expect-exit 0 -stop -wait
+
+# Expect empty stderr output
+shell -match {^0\b} "wc -c ${tmpdir}/p1/stderr"

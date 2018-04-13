@@ -315,7 +315,8 @@ VUT_Fini(struct VUT **vutp)
 {
 	struct VUT *vut;
 
-	TAKE_OBJ_NOTNULL(vut, vutp, VUT_MAGIC);
+	vut = *vutp;
+	CHECK_OBJ_NOTNULL(vut, VUT_MAGIC);
 	AN(vut->progname);
 
 	free(vut->n_arg);
@@ -336,6 +337,7 @@ VUT_Fini(struct VUT **vutp)
 
 	memset(vut, 0, sizeof *vut);
 	FREE_OBJ(vut);
+	*vutp = NULL;
 }
 
 int
