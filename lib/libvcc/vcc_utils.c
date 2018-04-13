@@ -283,7 +283,7 @@ Emit_UDS_Path(struct vcc *tl, const struct token *t_path, const char *errid)
 		vcc_ErrWhere(tl, t_path);
 		return;
 	}
-	if (! S_ISSOCK(st.st_mode)) {
+	if (!S_ISSOCK(st.st_mode)) {
 		VSB_printf(tl->sb, "%s: Not a socket:\n", errid);
 		vcc_ErrWhere(tl, t_path);
 		return;

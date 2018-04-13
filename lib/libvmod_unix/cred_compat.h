@@ -95,7 +95,7 @@ get_ids(int fd, uid_t *uid, gid_t *gid)
 	priv_set_t *priv = NULL;
 
 	errno = 0;
-	if (! priv_ineffect(PRIV_PROC_INFO)) {
+	if (!priv_ineffect(PRIV_PROC_INFO)) {
 		priv = priv_proc_info;
 		if (setppriv(PRIV_ON, PRIV_EFFECTIVE, priv))
 			return (CREDS_FAIL);

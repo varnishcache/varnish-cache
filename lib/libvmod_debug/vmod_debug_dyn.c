@@ -200,7 +200,7 @@ dyn_uds_init(VRT_CTX, struct xyzzy_debug_dyn_uds *uds, VCL_STRING path)
 		VRT_fail(ctx, "Cannot stat path %s: %s", path, strerror(errno));
 		return (-1);
 	}
-	if (! S_ISSOCK(st.st_mode)) {
+	if (!S_ISSOCK(st.st_mode)) {
 		VRT_fail(ctx, "%s is not a socket", path);
 		return (-1);
 	}
