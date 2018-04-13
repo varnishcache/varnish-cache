@@ -730,9 +730,8 @@ process_kill(struct process *p, const char *sig)
 	if (kill(-pid, j) < 0)
 		vtc_fatal(p->vl, "Failed to send signal %d (%s)",
 		    j, strerror(errno));
-	else {
+	else
 		vtc_log(p->vl, 4, "Sent signal %d", j);
-	}
 }
 
 /**********************************************************************

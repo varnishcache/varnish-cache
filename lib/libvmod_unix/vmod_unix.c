@@ -94,7 +94,7 @@ vmod_##func(VRT_CTX)					\
 	}						\
 							\
 	sp = get_sp(ctx);				\
-	if (! sp->listen_sock->uds) {			\
+	if (!sp->listen_sock->uds) {			\
 		ERRNOTUDS(ctx);				\
 		return (-1);				\
 	}						\

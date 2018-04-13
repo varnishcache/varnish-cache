@@ -1901,8 +1901,7 @@ http_process(struct vtclog *vl, const char *spec, int sock, int *sfd,
 		VTCP_hisname(sock, hp->rem_ip, VTCP_ADDRBUFSIZE, hp->rem_port,
 			     VTCP_PORTBUFSIZE);
 		hp->rem_path = NULL;
-	}
-	else {
+	} else {
 		strcpy(hp->rem_ip, "0.0.0.0");
 		strcpy(hp->rem_port, "0");
 		hp->rem_path = strdup(addr);
