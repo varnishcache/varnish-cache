@@ -280,7 +280,11 @@ AC_ARG_ENABLE(msan,
 
 if test "x$UBSAN_FLAGS$TSAN_FLAGS$ASAN_FLAGS$MSAN_FLAGS" != "x"; then
 	SAN_CFLAGS="-D__SANITIZER=1 ${UBSAN_FLAGS} ${TSAN_FLAGS} ${ASAN_FLAGS} ${MSAN_FLAGS} -fPIC -fPIE -fno-omit-frame-pointer"
-	SAN_LDFLAGS="${UBSAN_FLAGS} ${TSAN_FLAGS} ${ASAN_FLAGS} ${MSAN_FLAGS} -pie"
+	SAN_LDFLAGS="${UBSAN_FLAGS} ${TSAN_FLAGS} ${ASAN_FLAGS} ${MSAN_FLAGS}"
+	save_CFLAGS="${CFLAGS}"
+	CFLAGS="${CFLAGS} -Werror=unused-command-line-argument"
+	AX_CHECK_LINK_FLAG([-pie], [SAN_LDFLAGS="${SAN_LDFLAGS} -pie"])
+	CFLAGS="${save_CFLAGS}"
 	case $CC in
 	gcc*)
 		SAN_CFLAGS="${SAN_CFLAGS} -fuse-ld=gold"
