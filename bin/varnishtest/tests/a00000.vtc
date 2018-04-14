@@ -41,15 +41,14 @@ shell -exit 77 -expect {TEST _.vtc skipped} {
 	exec varnishtest -v _.vtc || true
 }
 
-process p1 "ps -lw | grep '[p][s]' ; tty ; sleep 1" -run -screen_dump
+process p1 "ps -lw | grep '[p][s]' ; tty ; echo @" -start
+process p1 -expect-text 0 0 {@} -screen_dump -wait
 
-process p2 "stty -a ; sleep 1" -run -screen_dump
+process p2 "stty -a ; echo '*'" -start
+process p2 -expect-text 0 0 {*} -screen_dump -wait
 
-process p3 "stty raw -echo ; stty -a ; sleep 1" -run -screen_dump
-
-process p4 -hexdump {stty raw -echo; echo "*" ; sleep 2 ; cat} -start
-
-process p4 -expect-text 0 0 "*"
+process p4 -hexdump {stty raw -echo; stty -a ; echo "*" ; cat} -start
+process p4 -expect-text 0 0 "*" -screen_dump
 
 process p4 -write "\x1b[H\x1b[2Jzzzzzzz"
 process p4 -write "\x0c1\x1b[79C2\x08>\x1b[25;1H3\x1b[25;80H"
@@ -67,4 +66,28 @@ process p4 -need-bytes 310 -expect-text 3 1 "line3 <"
 process p4 -expect-cursor 4 1
 process p4 -expect-cursor 4 0
 process p4 -expect-cursor 0 1
-process p4 -screen-dump -stop
+process p4 -screen-dump 
+
+# Exercise CONS25 mode
+process p4 -write "\x1b[=1T"
+process p4 -write "\x1b[8z"
+process p4 -write "\x1b[0x"
+process p4 -write "\x1b[=1A"
+process p4 -write "\x1b[=1;2B"
+process p4 -write "\x1b[=1;2;3C"
+process p4 -write "\x1b[=1F"
+process p4 -write "\x1b[=1G"
+process p4 -write "\x1b[=1S"
+process p4 -writehex {0c 08 40 0d 0a 08}
+
+process p4 -expect-text 1 1 "@"
+process p4 -expect-cursor 1 80
+process p4 -writehex "0c 41 0e 42 0f"
+process p4 -expect-text 1 1 "A"
+process p4 -expect-text 0 0 "B"
+process p4 -write "\x1b[=0T"
+
+process p4 -writehex "0c 0a 0d 43 0a 08 08 0e 44 0f"
+
+process p4 -expect-text 3 1 "C"
+process p4 -expect-text 4 1 "D"
