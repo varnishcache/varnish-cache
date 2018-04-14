@@ -293,8 +293,7 @@ clean_frame(struct frame **f)
 	if ((*f)->type == TYPE_GOAWAY)
 		free((*f)->md.goaway.debug);
 	free((*f)->data);
-	free(*f);
-	*f = NULL;
+	FREE_OBJ(*f);
 }
 
 static void

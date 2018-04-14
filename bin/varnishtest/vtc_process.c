@@ -396,15 +396,15 @@ process_delete(struct process *p)
 	free(p->out);
 	free(p->err);
 
+	for (i = 0; i < p->nlin; i++)
+		free(p->vram[i]);
+	free(p->vram);
+
 	/*
 	 * We do not delete the directory, it may contain useful stdout
 	 * and stderr files. They will be deleted on account of belonging
 	 * to the test's tmpdir.
 	 */
-
-	for (i = 0; i < p->nlin; i++)
-		free(p->vram[i]);
-	free(p->vram);
 
 	/* XXX: MEMLEAK (?) */
 	FREE_OBJ(p);
