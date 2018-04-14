@@ -240,8 +240,10 @@ tst_cb(const struct vev *ve, int what)
 			    jp->tst->filename,
 			    ecode ? "skipped" : "passed", t);
 		}
-		if (jp->evt != NULL)
+		if (jp->evt != NULL) {
 			VEV_Stop(vb, jp->evt);
+			free(jp->evt);
+		}
 
 		FREE_OBJ(jp);
 		return (1);

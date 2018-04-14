@@ -232,6 +232,7 @@ server_thread(void *priv)
 	assert(s->sock >= 0);
 
 	vl = vtc_logopen(s->name);
+	pthread_cleanup_push(vtc_logclose, vl);
 
 	vtc_log(vl, 2, "Started on %s", s->listen);
 	for (i = 0; i < s->repeat; i++) {
@@ -255,6 +256,7 @@ server_thread(void *priv)
 		VTCP_close(&fd);
 	}
 	vtc_log(vl, 2, "Ending");
+	pthread_cleanup_pop(1);
 	return (NULL);
 }
 
@@ -288,6 +290,7 @@ server_dispatch_wrk(void *priv)
 	assert(s->sock < 0);
 
 	vl = vtc_logopen(s->name);
+	pthread_cleanup_push(vtc_logclose, vl);
 
 	fd = s->fd;
 
@@ -299,6 +302,7 @@ server_dispatch_wrk(void *priv)
 		vtc_fatal(vl, "Shutdown failed: %s", strerror(errno));
 	VTCP_close(&s->fd);
 	vtc_log(vl, 2, "Ending");
+	pthread_cleanup_pop(1);
 	return (NULL);
 }
 
@@ -317,7 +321,8 @@ server_dispatch_thread(void *priv)
 	assert(s->sock >= 0);
 
 	vl = vtc_logopen(s->name);
-	AN(vl);
+	pthread_cleanup_push(vtc_logclose, vl);
+
 	vtc_log(vl, 2, "Dispatch started on %s", s->listen);
 
 	while (1) {
@@ -335,6 +340,7 @@ server_dispatch_thread(void *priv)
 		s2->run = 1;
 		AZ(pthread_create(&s2->tp, NULL, server_dispatch_wrk, s2));
 	}
+	pthread_cleanup_pop(1);
 	NEEDLESS(return(NULL));
 }
 

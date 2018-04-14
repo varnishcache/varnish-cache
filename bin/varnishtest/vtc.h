@@ -96,7 +96,7 @@ void cmd_server_gen_haproxy_conf(struct vsb *vsb);
 
 void vtc_loginit(char *buf, unsigned buflen);
 struct vtclog *vtc_logopen(const char *id);
-void vtc_logclose(struct vtclog *vl);
+void vtc_logclose(void *arg);
 void vtc_log(struct vtclog *vl, int lvl, const char *fmt, ...)
     v_printflike_(3, 4);
 void vtc_fatal(struct vtclog *vl, const char *, ...)

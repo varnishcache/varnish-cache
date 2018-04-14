@@ -1865,6 +1865,21 @@ const struct cmds http_cmds[] = {
 	{ NULL, NULL }
 };
 
+static void
+http_process_cleanup(void *arg)
+{
+	struct http *hp = arg;
+
+	if (hp->h2)
+		stop_h2(hp);
+	VSB_destroy(&hp->vsb);
+	free(hp->rxbuf);
+	free(hp->rem_ip);
+	free(hp->rem_port);
+	free(hp->rem_path);
+	FREE_OBJ(hp);
+}
+
 int
 http_process(struct vtclog *vl, const char *spec, int sock, int *sfd,
 	     const char *addr)
@@ -1906,16 +1921,10 @@ http_process(struct vtclog *vl, const char *spec, int sock, int *sfd,
 		strcpy(hp->rem_port, "0");
 		hp->rem_path = strdup(addr);
 	}
+	pthread_cleanup_push(http_process_cleanup, hp);
 	parse_string(spec, http_cmds, hp, vl);
-	if (hp->h2)
-		stop_h2(hp);
 	retval = hp->fd;
-	VSB_destroy(&hp->vsb);
-	free(hp->rxbuf);
-	free(hp->rem_ip);
-	free(hp->rem_port);
-	free(hp->rem_path);
-	FREE_OBJ(hp);
+	pthread_cleanup_pop(1);
 	return (retval);
 }
 
