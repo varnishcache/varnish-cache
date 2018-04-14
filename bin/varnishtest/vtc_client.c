@@ -207,6 +207,7 @@ client_thread(void *priv)
 	AN(*c->connect);
 
 	vl = vtc_logopen(c->name);
+	pthread_cleanup_push(vtc_logclose, vl);
 
 	vsb = macro_expand(vl, c->connect);
 	AN(vsb);
@@ -236,6 +237,7 @@ client_thread(void *priv)
 	}
 	vtc_log(vl, 2, "Ending");
 	VSB_destroy(&vsb);
+	pthread_cleanup_pop(1);
 	return (NULL);
 }
 

@@ -90,8 +90,9 @@ vtc_logopen(const char *id)
 }
 
 void
-vtc_logclose(struct vtclog *vl)
+vtc_logclose(void *arg)
 {
+	struct vtclog *vl = arg;
 
 	CHECK_OBJ_NOTNULL(vl, VTCLOG_MAGIC);
 	if (pthread_getspecific(log_key) == vl)

@@ -2541,6 +2541,7 @@ static void
 stream_delete(struct stream *s)
 {
 	CHECK_OBJ_NOTNULL(s, STREAM_MAGIC);
+	free(s->body);
 	free(s->spec);
 	free(s->name);
 	FREE_OBJ(s);
