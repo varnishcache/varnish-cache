@@ -1,0 +1,16 @@
+varnishtest "Test undefined-behaviour: signed integer overflow"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+
+} -start
+
+client c1 {
+	txreq -hdr "Content-Length: 9223372036854775808"
+	rxresp
+	expect resp.status == 400
+} -run
