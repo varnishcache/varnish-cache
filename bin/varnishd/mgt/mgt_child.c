@@ -462,8 +462,8 @@ mgt_reap_child(void)
 	if (ev_poker != NULL) {
 		VEV_Stop(mgt_evb, ev_poker);
 		free(ev_poker);
+		ev_poker = NULL;
 	}
-	ev_poker = NULL;
 
 	/* Stop the listener */
 	if (ev_listen != NULL) {
