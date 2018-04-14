@@ -669,8 +669,9 @@ http_GetHdrField(const struct http *hp, const char *hdr,
 ssize_t
 http_GetContentLength(const struct http *hp)
 {
-	ssize_t cl, cll;
+	ssize_t cl;
 	const char *b;
+	unsigned n;
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 
@@ -680,11 +681,13 @@ http_GetContentLength(const struct http *hp)
 	if (!vct_isdigit(*b))
 		return (-2);
 	for (; vct_isdigit(*b); b++) {
-		cll = cl;
-		cl *= 10;
-		cl += *b - '0';
-		if (cll != cl / 10)
+		if (cl > (SSIZE_MAX / 10))
 			return (-2);
+		cl *= 10;
+		n = *b - '0';
+		if (cl > (SSIZE_MAX - n))
+			return (-2);
+		cl += n;
 	}
 	while (vct_islws(*b))
 		b++;
