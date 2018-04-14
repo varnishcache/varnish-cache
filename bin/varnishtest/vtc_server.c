@@ -321,7 +321,9 @@ server_dispatch_thread(void *priv)
 	assert(s->sock >= 0);
 
 	vl = vtc_logopen(s->name);
+#if !defined(__SUNPRO_C)
 	pthread_cleanup_push(vtc_logclose, vl);
+#endif
 
 	vtc_log(vl, 2, "Dispatch started on %s", s->listen);
 
@@ -340,7 +342,9 @@ server_dispatch_thread(void *priv)
 		s2->run = 1;
 		AZ(pthread_create(&s2->tp, NULL, server_dispatch_wrk, s2));
 	}
-	NEEDLESS(pthread_cleanup_pop(1));
+#if !defined(__SUNPRO_C)
+	pthread_cleanup_pop(1);
+#endif
 	NEEDLESS(return(NULL));
 }
 
