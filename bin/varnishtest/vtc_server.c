@@ -340,7 +340,7 @@ server_dispatch_thread(void *priv)
 		s2->run = 1;
 		AZ(pthread_create(&s2->tp, NULL, server_dispatch_wrk, s2));
 	}
-	pthread_cleanup_pop(1);
+	NEEDLESS(pthread_cleanup_pop(1));
 	NEEDLESS(return(NULL));
 }
 
