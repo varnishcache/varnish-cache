@@ -11,6 +11,7 @@ varnish v1 -vcl {
 
 	sub vcl_synth {
 		set resp.http.X-PATH = std.getenv("PATH");
+		set resp.http.X-unset = std.getenv(req.http.unset);
 	}
 } -start
 
@@ -18,4 +19,5 @@ client c1 {
 	txreq
 	rxresp
 	expect resp.http.X-PATH ~ "^/"
+	expect resp.http.X-unset == ""
 } -run

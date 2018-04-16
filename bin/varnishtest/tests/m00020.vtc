@@ -127,4 +127,7 @@ client c1 {
 	expect resp.http.x-date != "Wed, 29 Feb 2012 00:00:00 GMT"
 	delay .1
 
+	txreq
+	rxresp
+	expect resp.http.x-date != <undef>
 } -run
