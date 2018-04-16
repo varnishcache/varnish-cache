@@ -36,6 +36,7 @@
 #include "common/heritage.h"
 
 #include "vcl.h"
+#include "vct.h"
 
 #include "cache_director.h"
 #include "vrt_obj.h"
@@ -913,3 +914,26 @@ HTTP_VAR(req)
 HTTP_VAR(resp)
 HTTP_VAR(bereq)
 HTTP_VAR(beresp)
+
+/*--------------------------------------------------------------------*/
+
+VCL_STRING
+VRT_r_beresp_filters(VRT_CTX)
+{
+	const char *p;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	if (ctx->bo->filter_list != NULL)
+		return(ctx->bo->filter_list);
+#if 1
+	p = "Not Yet";
+#else
+	p = VBF_Get_Filter_List(ctx->bo);
+	WS_Release(ctx->bo->ws, strlen(p) + 1);
+#endif
+	while(vct_isspace(*p))
+		p++;
+	return (p);
+}
+

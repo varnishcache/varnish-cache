@@ -895,6 +895,14 @@ beresp.storage_hint	``VCL <= 4.0``
 	Hint to Varnish that you want to save this object to a
 	particular storage backend.
 
+beresp.filters
+
+	Type: STRING
+
+	Readable from: vcl_backend_response
+
+	List of VFP filters the beresp.body will be pulled through.
+	
 obj
 ~~~
 

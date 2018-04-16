@@ -72,7 +72,7 @@ process p4 -need-bytes 310 -expect-text 3 1 "line3 <"
 process p4 -expect-cursor 4 1
 process p4 -expect-cursor 4 0
 process p4 -expect-cursor 0 1
-process p4 -screen-dump 
+process p4 -screen-dump
 
 # Also exercise CONS25 mode
 process p4 -write "\x1b[=1T"

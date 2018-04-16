@@ -36,12 +36,14 @@ server s1 {
 
 varnish v1 -arg "-p feature=+esi_disable_xml_check" -vcl+backend {
 	sub vcl_backend_response {
+		set beresp.http.filters1 = beresp.filters;
 		set beresp.do_esi = true;
 		if (bereq.url ~ "/baz") {
 			set beresp.do_gzip = true;
 		} elif (bereq.url ~ "/foo(bar|baz|qux)") {
 			set beresp.do_gunzip = true;
 		}
+		set beresp.http.filters2 = beresp.filters;
 	}
 } -start
 

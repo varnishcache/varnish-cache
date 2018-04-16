@@ -37,7 +37,9 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	sub vcl_backend_response {
+		set beresp.http.filter1 = beresp.filters;
 		set beresp.do_esi = true;
+		set beresp.http.filter2 = beresp.filters;
 	}
 } -start
 

@@ -388,6 +388,7 @@ struct busyobj {
 	struct worker		*wrk;
 
 	struct vfp_ctx		*vfc;
+	char			*filter_list;
 
 	struct ws		ws[1];
 	uintptr_t		ws_bo;
