@@ -194,8 +194,6 @@ vmod_time(VRT_CTX, VCL_STRING p, VCL_TIME d)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
-	if (p == NULL)
-		return (d);
 	r = VTIM_parse(p);
 	if (r)
 		return (r);

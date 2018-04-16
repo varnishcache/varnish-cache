@@ -90,6 +90,9 @@ vmod_fileread(VRT_CTX, struct vmod_priv *priv,
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(priv);
 
+	if (file_name == NULL)
+		return (NULL);
+
 	if (priv->priv != NULL) {
 		CAST_OBJ_NOTNULL(frf, priv->priv, CACHED_FILE_MAGIC);
 		if (!strcmp(file_name, frf->file_name))
