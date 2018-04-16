@@ -346,6 +346,30 @@ term_expect_cursor(struct process *pp, const char *lin, const char *col)
 		VSB_destroy(&vsb);					\
 	} while (0)
 
+static void
+process_coverage(struct process *p)
+{
+	const teken_attr_t *a;
+	teken_pos_t pos;
+	int fg, bg;
+
+	// Code-Coverage of Teken
+
+	(void)teken_get_sequence(p->tek, TKEY_UP);
+	(void)teken_get_sequence(p->tek, TKEY_F1);
+	(void)teken_256to8(0);
+	(void)teken_256to16(0);
+	a = teken_get_defattr(p->tek);
+	teken_set_defattr(p->tek, a);
+	a = teken_get_curattr(p->tek);
+	teken_set_curattr(p->tek, a);
+	(void)teken_get_winsize(p->tek);
+	pos.tp_row = 0;
+	pos.tp_col = 8;
+	teken_set_cursor(p->tek, &pos);
+	teken_get_defattr_cons25(p->tek, &fg, &bg);
+}
+
 static struct process *
 process_new(const char *name)
 {
@@ -374,6 +398,7 @@ process_new(const char *name)
 	VTAILQ_INSERT_TAIL(&processes, p, list);
 	teken_init(p->tek, &process_teken_func, p);
 	term_resize(p, 24, 80);
+	process_coverage(p);
 	return (p);
 }
 
