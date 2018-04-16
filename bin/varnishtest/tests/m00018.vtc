@@ -1,6 +1,6 @@
 varnishtest "Test std.substr"
 
-server s1 -repeat 2 {
+server s1 {
 	rxreq
 	txresp
 } -start
@@ -9,16 +9,16 @@ varnish v1 -vcl+backend {
 	import std;
 
 	sub vcl_deliver {
-		set resp.http.sub = std.strstr(req.url, "b");
+		set resp.http.sub1 = std.strstr(req.http.one, "b");
+		set resp.http.sub2 = std.strstr(req.http.two, "b");
+		set resp.http.sub3 = std.strstr(req.http.unset, "b");
 	}
 } -start
 
 client c1 {
-	txreq -url "/foobar"
+	txreq -hdr "one: foobar" -hdr "two: quux"
 	rxresp
-	expect resp.http.sub == "bar"
-
-	txreq -url "/quux"
-	rxresp
-	expect resp.http.sub == ""
+	expect resp.http.sub1 == "bar"
+	expect resp.http.sub2 == ""
+	expect resp.http.sub3 == ""
 } -run
