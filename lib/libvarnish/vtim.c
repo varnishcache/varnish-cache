@@ -243,6 +243,9 @@ VTIM_parse(const char *p)
 	int hour = 0, min = 0, sec = 0;
 	int d, leap;
 
+	if (p == NULL || *p == '\0')
+		FAIL();
+
 	while (*p == ' ')
 		p++;
 
