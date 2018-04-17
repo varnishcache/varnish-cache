@@ -275,7 +275,7 @@ WS_Release(struct ws *ws, unsigned bytes)
 }
 
 void
-WS_ReleaseP(struct ws *ws, char *ptr)
+WS_ReleaseP(struct ws *ws, const char *ptr)
 {
 	WS_Assert(ws);
 	DSL(DBG_WORKSPACE, 0, "WS_ReleaseP(%p, %p (%zd))", ws, ptr, ptr - ws->f);
