@@ -814,14 +814,18 @@ h2_req_fail(struct req *req, enum sess_close reason)
 static enum htc_status_e v_matchproto_(htc_complete_f)
 h2_frame_complete(struct http_conn *htc)
 {
+	struct h2_sess *h2;
 	int l;
 	unsigned u;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+	CAST_OBJ_NOTNULL(h2, htc->priv, H2_SESS_MAGIC);
 	l = htc->rxbuf_e - htc->rxbuf_b;
 	if (l < 9)
 		return (HTC_S_MORE);
 	u = vbe32dec(htc->rxbuf_b) >> 8;
+	if (l > h2->local_settings.max_frame_size + 9)
+		return (HTC_S_OVERFLOW);
 	if (l < u + 9)	// XXX: Only for !DATA frames
 		return (HTC_S_MORE);
 	return (HTC_S_COMPLETE);
@@ -1032,6 +1036,7 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 
 		/* FALLTHROUGH */
 	default:
+		/* XXX: HTC_S_OVERFLOW / FRAME_SIZE_ERROR handling */
 		Lck_Lock(&h2->sess->mtx);
 		VSLb(h2->vsl, SLT_Debug, "H2: No frame (hs=%d)", hs);
 		h2->error = H2CE_NO_ERROR;
