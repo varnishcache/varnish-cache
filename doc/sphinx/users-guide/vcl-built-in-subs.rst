@@ -440,7 +440,7 @@ based on the response status and the response headers ``Age``,
 * If present and valid, the value of the ``Age`` header is effectively
   deduced from all ttl calculations.
 
-* For status codes 200, 203, 204, 300, 401, 304, 404, 410 and 414:
+* For status codes 200, 203, 204, 300, 301, 304, 404, 410 and 414:
 
   * If ``Cache-Control`` contains an ``s-maxage`` or ``max-age`` field
     (in that order of preference), the ttl is set to the respective
