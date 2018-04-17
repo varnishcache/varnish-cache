@@ -102,7 +102,7 @@ THR_SetName(const char *name)
 
 	AZ(pthread_setspecific(name_key, name));
 #if defined(HAVE_PTHREAD_SET_NAME_NP)
-	(void)pthread_set_name_np(pthread_self(), name);
+	pthread_set_name_np(pthread_self(), name);
 #elif defined(HAVE_PTHREAD_SETNAME_NP)
 #if defined(__APPLE__)
 	(void)pthread_setname_np(name);
