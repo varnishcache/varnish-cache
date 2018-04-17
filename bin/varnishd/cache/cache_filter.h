@@ -82,6 +82,7 @@ struct vfp_ctx {
 
 	struct vfp_entry_s	vfp;
 	struct vfp_entry	*vfp_nxt;
+	unsigned		obj_flags;
 };
 
 enum vfp_status VFP_Suck(struct vfp_ctx *, void *p, ssize_t *lp);
