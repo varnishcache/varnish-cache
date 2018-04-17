@@ -503,6 +503,7 @@ vbf_stp_fetchbody(struct worker *wrk, struct busyobj *bo)
 static int
 vbf_figure_out_vfp(struct busyobj *bo)
 {
+	int is_gzip, is_gunzip;
 
 	/*
 	 * The VCL variables beresp.do_g[un]zip tells us how we want the
@@ -543,26 +544,26 @@ vbf_figure_out_vfp(struct busyobj *bo)
 	if (!cache_param->http_gzip_support)
 		bo->do_gzip = bo->do_gunzip = 0;
 
-	bo->is_gzip = http_HdrIs(bo->beresp, H_Content_Encoding, "gzip");
-	bo->is_gunzip = !http_GetHdr(bo->beresp, H_Content_Encoding, NULL);
-	assert(bo->is_gzip == 0 || bo->is_gunzip == 0);
+	is_gzip = http_HdrIs(bo->beresp, H_Content_Encoding, "gzip");
+	is_gunzip = !http_GetHdr(bo->beresp, H_Content_Encoding, NULL);
+	assert(is_gzip == 0 || is_gunzip == 0);
 
 	/* We won't gunzip unless it is gzip'ed */
-	if (bo->do_gunzip && !bo->is_gzip)
+	if (bo->do_gunzip && !is_gzip)
 		bo->do_gunzip = 0;
 
 	/* We wont gzip unless if it already is gzip'ed */
-	if (bo->do_gzip && !bo->is_gunzip)
+	if (bo->do_gzip && !is_gunzip)
 		bo->do_gzip = 0;
 
 	/* But we can't do both at the same time */
 	assert(bo->do_gzip == 0 || bo->do_gunzip == 0);
 
-	if (bo->do_gunzip || (bo->is_gzip && bo->do_esi))
+	if (bo->do_gunzip || (is_gzip && bo->do_esi))
 		if (VFP_Push(bo->vfc, &VFP_gunzip) == NULL)
 			return (-1);
 
-	if (bo->do_esi && (bo->do_gzip || (bo->is_gzip && !bo->do_gunzip)))
+	if (bo->do_esi && (bo->do_gzip || (is_gzip && !bo->do_gunzip)))
 		return (VFP_Push(bo->vfc, &VFP_esi_gzip) == NULL ? -1 : 0);
 
 	if (bo->do_esi)
@@ -571,7 +572,7 @@ vbf_figure_out_vfp(struct busyobj *bo)
 	if (bo->do_gzip)
 		return (VFP_Push(bo->vfc, &VFP_gzip) == NULL ? -1 : 0);
 
-	if (bo->is_gzip && !bo->do_gunzip)
+	if (is_gzip && !bo->do_gunzip)
 		return (VFP_Push(bo->vfc, &VFP_testgunzip) == NULL ? -1 : 0);
 
 	return (0);
@@ -614,14 +615,10 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 		return (F_STP_ERROR);
 	}
 
-	if (bo->do_esi)
-		ObjSetFlag(bo->wrk, bo->fetch_objcore, OF_ESIPROC, 1);
-
-	if (bo->do_gzip || (bo->is_gzip && !bo->do_gunzip))
-		ObjSetFlag(bo->wrk, bo->fetch_objcore, OF_GZIPED, 1);
-
-	if (bo->do_gzip || bo->do_gunzip)
-		ObjSetFlag(bo->wrk, bo->fetch_objcore, OF_CHGGZIP, 1);
+#define OBJ_FLAG(U, l, v)						\
+	if (bo->vfc->obj_flags & OF_##U)				\
+		ObjSetFlag(bo->wrk, bo->fetch_objcore, OF_##U, 1);
+#include "tbl/obj_attr.h"
 
 	if (!(bo->fetch_objcore->flags & OC_F_PASS) &&
 	    http_IsStatus(bo->beresp, 200) && (
