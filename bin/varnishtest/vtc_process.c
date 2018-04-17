@@ -88,6 +88,7 @@ struct process {
 
 	int			nlin;
 	int			ncol;
+	int			ansi_response;
 	char			**vram;
 	teken_t			tek[1];
 };
@@ -174,10 +175,12 @@ term_respond(void *priv, const void *p, size_t l)
 	CAST_OBJ_NOTNULL(pp, priv, PROCESS_MAGIC);
 
 	vtc_dump(pp->vl, 4, "term_response", p, l);
-	r = write(pp->fd_term, p, l);
-	if (r != l)
-		vtc_fatal(pp->vl, "Could not write to process: %s",
-		    strerror(errno));
+	if (pp->ansi_response) {
+		r = write(pp->fd_term, p, l);
+		if (r != l)
+			vtc_fatal(pp->vl, "Could not write to process: %s",
+			    strerror(errno));
+	}
 }
 
 static void
@@ -1008,6 +1011,10 @@ cmd_process(CMD_ARGS)
 		if (!strcmp(*av, "-run")) {
 			process_start(p);
 			process_wait(p);
+			continue;
+		}
+		if (!strcmp(*av, "-ansi-response")) {
+			p->ansi_response = 1;
 			continue;
 		}
 		if (!strcmp(*av, "-expect-text")) {
