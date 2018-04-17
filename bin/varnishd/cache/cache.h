@@ -750,7 +750,7 @@ unsigned WS_Reserve(struct ws *ws, unsigned bytes);
 unsigned WS_ReserveLumps(struct ws *ws, size_t sz);
 void WS_MarkOverflow(struct ws *ws);
 void WS_Release(struct ws *ws, unsigned bytes);
-void WS_ReleaseP(struct ws *ws, char *ptr);
+void WS_ReleaseP(struct ws *ws, const char *ptr);
 void WS_Assert(const struct ws *ws);
 void WS_Reset(struct ws *ws, uintptr_t);
 void *WS_Alloc(struct ws *ws, unsigned bytes);
