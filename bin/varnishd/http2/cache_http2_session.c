@@ -349,6 +349,8 @@ h2_new_session(struct worker *wrk, void *arg)
 	h2 = h2_init_sess(wrk, sp, &h2s,
 	    req->err_code == H2_PU_MARKER ? req : NULL);
 	h2->req0 = h2_new_req(wrk, h2, 0, NULL);
+	AZ(h2->htc->priv);
+	h2->htc->priv = h2;
 
 	if (req->err_code == H2_OU_MARKER && !h2_ou_session(wrk, h2, req)) {
 		assert(h2->refcnt == 1);
