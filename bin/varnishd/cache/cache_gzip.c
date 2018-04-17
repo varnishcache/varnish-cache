@@ -442,6 +442,13 @@ vfp_gzip_init(struct vfp_ctx *vc, struct vfp_entry *vfe)
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
 
+	/*
+	 * G(un)zip makes no sence on partial responses, but since
+	 * it is an pure 1:1 transform, we can just ignore it.
+	 */
+	if (http_GetStatus(vc->resp) == 206)
+		return (VFP_NULL);
+
 	if (vfe->vfp == &VFP_gzip) {
 		if (http_GetHdr(vc->resp, H_Content_Encoding, NULL))
 			return (VFP_NULL);

@@ -516,21 +516,7 @@ vbf_figure_out_vfp(struct busyobj *bo)
 	 *	no Content-Encoding		--> object is not gzip'ed.
 	 *	anything else			--> do nothing wrt gzip
 	 *
-	 * On partial responses (206 on pass), we fail if do_esi is
-	 * requested because it could leak partial esi-directives, and
-	 * ignore gzipery, because it makes no sense.
-	 *
 	 */
-
-	if (http_GetStatus(bo->beresp) == 206) {
-		if (bo->do_esi) {
-			VSLb(bo->vsl, SLT_VCL_Error,
-			    "beresp.do_esi on partial response");
-			return (-1);
-		}
-		bo->do_gzip = bo->do_gunzip = 0;
-		return (0);
-	}
 
 	/* No body -> done */
 	if (bo->htc->body_status == BS_NONE ||
