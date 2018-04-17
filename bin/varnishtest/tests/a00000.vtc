@@ -64,6 +64,8 @@ process p4 -writehex {f0 9f 90 b0 20}
 process p4 -writehex {f0 a0 80 80 20}
 process p4 -writehex {f0 b0 80 80 20}
 process p4 -write "\x1b[22;24;25;27;30;47;49;97;107m"
+process p4 -write "\x1b[22;24;25;27;30m"
+process p4 -write "\x1b[47;49;97;107m"
 process p4 -write "\x0d\x0a111111112222222333333\x0d\x0a\x1b[12"
 process p4 -write ";12H\x1b[K\x1b[13;12H\x1b[0K\x1b[14;12H\x1b[1K\x1b"
 process p4 -write "[15;12H\x1b[2K\x1b[3;1Hline3 <\x0d\x0a"
