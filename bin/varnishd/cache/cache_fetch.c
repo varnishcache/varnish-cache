@@ -36,6 +36,7 @@
 #include "hash/hash_slinger.h"
 #include "storage/storage.h"
 #include "vcl.h"
+#include "vct.h"
 #include "vtim.h"
 
 /*--------------------------------------------------------------------
@@ -500,9 +501,12 @@ vbf_stp_fetchbody(struct worker *wrk, struct busyobj *bo)
 /*--------------------------------------------------------------------
  */
 
-static int
-vbf_figure_out_vfp(struct busyobj *bo)
+static void
+vbf_default_filter_list(const struct busyobj *bo, struct vsb *vsb)
 {
+
+	int do_gzip = bo->do_gzip;
+	int do_gunzip = bo->do_gunzip;
 	int is_gzip, is_gunzip;
 
 	/*
@@ -515,52 +519,125 @@ vbf_figure_out_vfp(struct busyobj *bo)
 	 *	"Content-Encoding: gzip"	--> object is gzip'ed.
 	 *	no Content-Encoding		--> object is not gzip'ed.
 	 *	anything else			--> do nothing wrt gzip
-	 *
 	 */
 
 	/* No body -> done */
-	if (bo->htc->body_status == BS_NONE ||
-	    bo->htc->content_length == 0) {
-		http_Unset(bo->beresp, H_Content_Encoding);
-		bo->do_gzip = bo->do_gunzip = 0;
-		bo->do_stream = 0;
-		return (0);
-	}
+	if (bo->htc->body_status == BS_NONE || bo->htc->content_length == 0)
+		return;
 
 	if (!cache_param->http_gzip_support)
-		bo->do_gzip = bo->do_gunzip = 0;
+		do_gzip = do_gunzip = 0;
 
 	is_gzip = http_HdrIs(bo->beresp, H_Content_Encoding, "gzip");
 	is_gunzip = !http_GetHdr(bo->beresp, H_Content_Encoding, NULL);
 	assert(is_gzip == 0 || is_gunzip == 0);
 
 	/* We won't gunzip unless it is gzip'ed */
-	if (bo->do_gunzip && !is_gzip)
-		bo->do_gunzip = 0;
+	if (do_gunzip && !is_gzip)
+		do_gunzip = 0;
 
 	/* We wont gzip unless if it already is gzip'ed */
-	if (bo->do_gzip && !is_gunzip)
-		bo->do_gzip = 0;
+	if (do_gzip && !is_gunzip)
+		do_gzip = 0;
 
 	/* But we can't do both at the same time */
-	assert(bo->do_gzip == 0 || bo->do_gunzip == 0);
+	assert(do_gzip == 0 || do_gunzip == 0);
 
-	if (bo->do_gunzip || (is_gzip && bo->do_esi))
-		if (VFP_Push(bo->vfc, &VFP_gunzip) == NULL)
+	if (do_gunzip || (is_gzip && bo->do_esi))
+		VSB_cat(vsb, " gunzip");
+
+	if (bo->do_esi && (do_gzip || (is_gzip && !do_gunzip))) {
+		VSB_cat(vsb, " esi_gzip");
+		return;
+	}
+
+	if (bo->do_esi) {
+		VSB_cat(vsb, " esi");
+		return;
+	}
+
+	if (do_gzip)
+		VSB_cat(vsb, " gzip");
+
+	if (is_gzip && !do_gunzip)
+		VSB_cat(vsb, " testgunzip");
+}
+
+
+const char *
+VBF_Get_Filter_List(struct busyobj *bo)
+{
+	unsigned u;
+	struct vsb vsb[1];
+
+	u = WS_Reserve(bo->ws, 0);
+	if (u == 0) {
+		WS_Release(bo->ws, 0);
+		WS_MarkOverflow(bo->ws);
+		return (NULL);
+	}
+	AN(VSB_new(vsb, bo->ws->f, u, VSB_FIXEDLEN));
+	vbf_default_filter_list(bo, vsb);
+	if (VSB_finish(vsb)) {
+		WS_Release(bo->ws, 0);
+		WS_MarkOverflow(bo->ws);
+		return (NULL);
+	}
+	WS_Release(bo->ws, VSB_len(vsb) + 1);
+	return (VSB_data(vsb) + 1);
+}
+
+static const struct vfp *vfplist[] = {
+	&VFP_testgunzip,
+	&VFP_gunzip,
+	&VFP_gzip,
+	&VFP_esi,
+	&VFP_esi_gzip,
+	NULL,
+};
+
+static int
+vbf_figure_out_vfp(struct busyobj *bo)
+{
+	const char *p, *q;
+	const struct vfp **vp;
+	int l;
+
+	/* No body -> done */
+	if (bo->htc->body_status == BS_NONE || bo->htc->content_length == 0) {
+		http_Unset(bo->beresp, H_Content_Encoding);
+		bo->do_gzip = bo->do_gunzip = 0;
+		bo->do_stream = 0;
+		bo->filter_list = "";
+		return (0);
+	}
+
+	if (bo->filter_list == NULL)
+		bo->filter_list = VBF_Get_Filter_List(bo);
+
+	VSLb(bo->vsl, SLT_Debug, "Filters <%s>", bo->filter_list);
+
+	for (p = bo->filter_list; *p; p = q) {
+		if (vct_isspace(*p)) {
+			q = p + 1;
+			continue;
+		}
+		for (q = p; *q; q++)
+			if (vct_isspace(*q))
+				break;
+		for(vp = vfplist; *vp != NULL; vp++) {
+			l = strlen((*vp)->name);
+			if (l != q - p)
+				continue;
+			if (!memcmp(p, (*vp)->name, l))
+				break;
+		}
+		if (*vp == NULL)
+			return (VFP_Error(bo->vfc,
+			    "Filter '%.*s' not found", (int)(q-p), p));
+		if (VFP_Push(bo->vfc, *vp) == NULL)
 			return (-1);
-
-	if (bo->do_esi && (bo->do_gzip || (is_gzip && !bo->do_gunzip)))
-		return (VFP_Push(bo->vfc, &VFP_esi_gzip) == NULL ? -1 : 0);
-
-	if (bo->do_esi)
-		return (VFP_Push(bo->vfc, &VFP_esi) == NULL ? -1 : 0);
-
-	if (bo->do_gzip)
-		return (VFP_Push(bo->vfc, &VFP_gzip) == NULL ? -1 : 0);
-
-	if (is_gzip && !bo->do_gunzip)
-		return (VFP_Push(bo->vfc, &VFP_testgunzip) == NULL ? -1 : 0);
-
+	}
 	return (0);
 }
 
