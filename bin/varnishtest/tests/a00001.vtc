@@ -2,7 +2,7 @@ varnishtest "Test Teken terminal emulator"
 
 feature cmd "vttest --version 2>&1 | grep -q Usage"
 
-process p4 {vttest} -start
+process p4 {vttest} -ansi-response -start
 
 process p4 -expect-text 21 11 "Enter choice number (0 - 12):"
 process p4 -screen_dump

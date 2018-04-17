@@ -121,25 +121,16 @@ process p4 -write "\x1b[8G\x1b[2X>"
 process p4 -expect-text 10 8 ">"
 process p4 -screen-dump
 
-# Safely test responses
-process p5 -hexdump "stty raw -echo; echo '*' ; tr '\x02\x1b' '\x1b@'" -start
-process p5 -expect-text 0 0 "*" 
-process p5 -write "\x02[3;1HA\x02[5n"
-process p5 -expect-text 3 0 "n"
-process p5 -write "\x02[4;1HB\x02[6n"
-process p5 -expect-text 4 0 "R"
-process p5 -write "\x02[5;1HC\x02[15n"
-process p5 -expect-text 5 0 "n"
-process p5 -write "\x02[6;1HD\x02[25n"
-process p5 -expect-text 6 0 "n"
-process p5 -write "\x02[7;1HE\x02[26n"
-process p5 -expect-text 7 0 "n"
-process p5 -write "\x02[8;1HF\x02[?26n"
-process p5 -expect-text 8 0 "n"
-process p5 -write "\x02[9;1HG\x02Pfutfutfut\x01"
-process p5 -write "\x02[10;1HH\x02]futfutfut\x01"
-process p5 -write "\x02[11;1HI\x02[>c"
-process p5 -expect-text 11 0 "c"
-process p5 -write "\x02[24;1HW"
-process p5 -expect-text 0 0 "W"
-process p5 -screen-dump
+# Test responses
+process p4 -write "\x1b[3;1HA\x1b[5n"
+process p4 -write "\x1b[4;1HB\x1b[6n"
+process p4 -write "\x1b[5;1HC\x1b[15n"
+process p4 -write "\x1b[6;1HD\x1b[25n"
+process p4 -write "\x1b[7;1HE\x1b[26n"
+process p4 -write "\x1b[8;1HF\x1b[?26n"
+process p4 -write "\x1b[9;1HG\x1bPfutfutfut\x01"
+process p4 -write "\x1b[10;1HH\x1b]futfutfut\x01"
+process p4 -write "\x1b[11;1HI\x1b[>c"
+process p4 -write "\x1b[24;1HW"
+process p4 -expect-text 24 1 "W"
+process p4 -screen-dump
