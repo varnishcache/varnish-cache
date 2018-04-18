@@ -540,9 +540,6 @@ vbf_default_filter_list(const struct busyobj *bo, struct vsb *vsb)
 	if (do_gzip && !is_gunzip)
 		do_gzip = 0;
 
-	/* But we can't do both at the same time */
-	assert(do_gzip == 0 || do_gunzip == 0);
-
 	if (do_gunzip || (is_gzip && bo->do_esi))
 		VSB_cat(vsb, " gunzip");
 

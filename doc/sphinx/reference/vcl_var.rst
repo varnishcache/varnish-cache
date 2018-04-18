@@ -901,6 +901,8 @@ beresp.filters
 
 	Readable from: vcl_backend_response
 
+	Writable from: vcl_backend_response
+
 	List of VFP filters the beresp.body will be pulled through.
 	
 obj

@@ -27,6 +27,12 @@ server s1 {
 	expect req.http.accept-encoding == <undef>
 	txresp -hdr "Vary: Accept-Encoding" \
 	       -body "keep plain real"
+
+	rxreq
+	expect req.url == "/filters"
+	expect req.http.accept-encoding == <undef>
+	txresp -bodylen 78
+
 } -start
 
 varnish v1 -cliok "param.set http_gzip_support true" -vcl+backend {
@@ -35,6 +41,9 @@ varnish v1 -cliok "param.set http_gzip_support true" -vcl+backend {
 		set beresp.do_gunzip = true;
 		if (bereq.url == "/foobar") {
 			set beresp.do_gzip = true;
+		}
+		if (bereq.url == "/filters") {
+			set beresp.filters = "gzip gunzip gzip gunzip gzip";
 		}
 	}
 } -start
@@ -62,6 +71,8 @@ client c1 {
 	expect resp.bodylen == 43
 } -run
 
+varnish v1 -vsl_catchup
+
 varnish v1 -expect n_gzip == 1
 varnish v1 -expect n_gunzip == 2
 varnish v1 -expect n_test_gunzip == 0
@@ -79,4 +90,14 @@ client c1 {
 	rxresp
 	expect resp.http.content-encoding == <undef>
 	expect resp.body == "keep plain real"
+} -run
+
+varnish v1 -vsl_catchup
+
+client c1 {
+	txreq -url /filters
+	rxresp
+	expect resp.http.content-encoding == "gzip"
+	gunzip
+	expect resp.bodylen == 78
 } -run
