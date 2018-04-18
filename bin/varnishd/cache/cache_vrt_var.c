@@ -927,4 +927,3 @@ VRT_r_beresp_filters(VRT_CTX)
 	/* We do not set bo->filter_list yet, things might still change */
 	return (VBF_Get_Filter_List(ctx->bo));
 }
-

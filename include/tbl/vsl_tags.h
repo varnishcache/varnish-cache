@@ -573,6 +573,10 @@ SLTM(HitMiss, 0, "Hit for miss object in cache.",
 	"\n"
 )
 
+SLTM(Filters, 0, "Body filters",
+	"List of filters applied to the body"
+)
+
 #undef NODEF_NOTICE
 #undef SLTM
 

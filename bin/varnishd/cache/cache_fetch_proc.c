@@ -35,6 +35,8 @@
 #include "cache_filter.h"
 #include "vcli_serve.h"
 
+#include "vct.h"
+
 static unsigned fetchfrag;
 
 /*--------------------------------------------------------------------
@@ -198,6 +200,7 @@ VFP_Suck(struct vfp_ctx *vc, void *p, ssize_t *lp)
 
 /*--------------------------------------------------------------------
  */
+
 struct vfp_entry *
 VFP_Push(struct vfp_ctx *vc, const struct vfp *vfp)
 {
@@ -219,6 +222,52 @@ VFP_Push(struct vfp_ctx *vc, const struct vfp *vfp)
 	vc->vfp_nxt = vfe;
 	return (vfe);
 }
+
+/*--------------------------------------------------------------------
+ */
+
+static const struct vfp *vfplist[] = {
+	&VFP_testgunzip,
+	&VFP_gunzip,
+	&VFP_gzip,
+	&VFP_esi,
+	&VFP_esi_gzip,
+	NULL,
+};
+
+int
+VFP_FilterList(struct vfp_ctx *vc, const char *fl)
+{
+	const char *p, *q;
+	const struct vfp **vp;
+	int l;
+
+	VSLb(vc->wrk->vsl, SLT_Filters, "%s", fl);
+
+	for (p = fl; *p; p = q) {
+		if (vct_isspace(*p)) {
+			q = p + 1;
+			continue;
+		}
+		for (q = p; *q; q++)
+			if (vct_isspace(*q))
+				break;
+		for(vp = vfplist; *vp != NULL; vp++) {
+			l = strlen((*vp)->name);
+			if (l != q - p)
+				continue;
+			if (!memcmp(p, (*vp)->name, l))
+				break;
+		}
+		if (*vp == NULL)
+			return (VFP_Error(vc,
+			    "Filter '%.*s' not found", (int)(q-p), p));
+		if (VFP_Push(vc, *vp) == NULL)
+			return (-1);
+	}
+	return (0);
+}
+
 
 /*--------------------------------------------------------------------
  * Debugging aids

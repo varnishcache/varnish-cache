@@ -36,7 +36,6 @@
 #include "hash/hash_slinger.h"
 #include "storage/storage.h"
 #include "vcl.h"
-#include "vct.h"
 #include "vtim.h"
 
 /*--------------------------------------------------------------------
@@ -504,10 +503,10 @@ vbf_stp_fetchbody(struct worker *wrk, struct busyobj *bo)
 static void
 vbf_default_filter_list(const struct busyobj *bo, struct vsb *vsb)
 {
-
+	const char *p;
 	int do_gzip = bo->do_gzip;
 	int do_gunzip = bo->do_gunzip;
-	int is_gzip, is_gunzip;
+	int is_gzip = 0, is_gunzip = 0;
 
 	/*
 	 * The VCL variables beresp.do_g[un]zip tells us how we want the
@@ -528,9 +527,10 @@ vbf_default_filter_list(const struct busyobj *bo, struct vsb *vsb)
 	if (!cache_param->http_gzip_support)
 		do_gzip = do_gunzip = 0;
 
-	is_gzip = http_HdrIs(bo->beresp, H_Content_Encoding, "gzip");
-	is_gunzip = !http_GetHdr(bo->beresp, H_Content_Encoding, NULL);
-	assert(is_gzip == 0 || is_gunzip == 0);
+	if (http_GetHdr(bo->beresp, H_Content_Encoding, &p))
+		is_gzip = !strcasecmp(p, "gzip");
+	else
+		is_gunzip = 1;
 
 	/* We won't gunzip unless it is gzip'ed */
 	if (do_gunzip && !is_gzip)
@@ -563,7 +563,6 @@ vbf_default_filter_list(const struct busyobj *bo, struct vsb *vsb)
 		VSB_cat(vsb, " testgunzip");
 }
 
-
 const char *
 VBF_Get_Filter_List(struct busyobj *bo)
 {
@@ -587,60 +586,6 @@ VBF_Get_Filter_List(struct busyobj *bo)
 	return (VSB_data(vsb) + 1);
 }
 
-static const struct vfp *vfplist[] = {
-	&VFP_testgunzip,
-	&VFP_gunzip,
-	&VFP_gzip,
-	&VFP_esi,
-	&VFP_esi_gzip,
-	NULL,
-};
-
-static int
-vbf_figure_out_vfp(struct busyobj *bo)
-{
-	const char *p, *q;
-	const struct vfp **vp;
-	int l;
-
-	/* No body -> done */
-	if (bo->htc->body_status == BS_NONE || bo->htc->content_length == 0) {
-		http_Unset(bo->beresp, H_Content_Encoding);
-		bo->do_gzip = bo->do_gunzip = 0;
-		bo->do_stream = 0;
-		bo->filter_list = "";
-		return (0);
-	}
-
-	if (bo->filter_list == NULL)
-		bo->filter_list = VBF_Get_Filter_List(bo);
-
-	VSLb(bo->vsl, SLT_Debug, "Filters <%s>", bo->filter_list);
-
-	for (p = bo->filter_list; *p; p = q) {
-		if (vct_isspace(*p)) {
-			q = p + 1;
-			continue;
-		}
-		for (q = p; *q; q++)
-			if (vct_isspace(*q))
-				break;
-		for(vp = vfplist; *vp != NULL; vp++) {
-			l = strlen((*vp)->name);
-			if (l != q - p)
-				continue;
-			if (!memcmp(p, (*vp)->name, l))
-				break;
-		}
-		if (*vp == NULL)
-			return (VFP_Error(bo->vfc,
-			    "Filter '%.*s' not found", (int)(q-p), p));
-		if (VFP_Push(bo->vfc, *vp) == NULL)
-			return (-1);
-	}
-	return (0);
-}
-
 static enum fetch_step
 vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 {
@@ -652,7 +597,17 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	assert(wrk->handling == VCL_RET_DELIVER);
 
-	if (vbf_figure_out_vfp(bo)) {
+	/* No body -> done */
+	if (bo->htc->body_status == BS_NONE || bo->htc->content_length == 0) {
+		http_Unset(bo->beresp, H_Content_Encoding);
+		bo->do_gzip = bo->do_gunzip = 0;
+		bo->do_stream = 0;
+		bo->filter_list = "";
+	} else if (bo->filter_list == NULL) {
+		bo->filter_list = VBF_Get_Filter_List(bo);
+	}
+
+	if (VFP_FilterList(bo->vfc, bo->filter_list)) {
 		(bo)->htc->doclose = SC_OVERLOAD;
 		VDI_Finish((bo)->wrk, bo);
 		return (F_STP_ERROR);
