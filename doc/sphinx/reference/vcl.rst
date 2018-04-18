@@ -467,8 +467,10 @@ hash_data(input)
 synthetic(STRING)
 ~~~~~~~~~~~~~~~~~
 
-  Prepare a synthetic response body containing the *STRING*. Available in
-  ``vcl_synth`` and ``vcl_backend_error``.
+  Prepare a synthetic response body containing the *STRING*. Available
+  in ``vcl_synth`` and ``vcl_backend_error``.
+
+  Identical to ``set resp.body`` /  ``set beresp.body``.
 
 .. list above comes from struct action_table[] in vcc_action.c.
 

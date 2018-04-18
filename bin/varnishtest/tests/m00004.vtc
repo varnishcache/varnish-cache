@@ -42,8 +42,8 @@ varnish v1 -vcl+backend {
 	}
 
 	sub vcl_synth {
-		synthetic("Response was served by "
-			  + std.fileread("${tmpdir}/m00004_file_four"));
+		set resp.body = "Response was served by "
+			+ std.fileread("${tmpdir}/m00004_file_four");
 		return(deliver);
 	}
 } -start
@@ -111,8 +111,8 @@ varnish v1 -vcl+backend {
 	}
 
 	sub vcl_synth {
-		synthetic("Response was served by "
-			  + std.fileread("${tmpdir}/m00004_file_four"));
+		set resp.body = "Response was served by "
+			+ std.fileread("${tmpdir}/m00004_file_four");
 		return(deliver);
 	}
 }
