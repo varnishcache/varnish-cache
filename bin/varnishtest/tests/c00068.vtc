@@ -37,7 +37,7 @@ varnish v1 -vcl+backend {
 				return (restart);
 			} else {
 				set resp.http.restarts = req.restarts;
-				synthetic(req.restarts);
+				set resp.body = req.restarts;
 			}
 		}
 		return (deliver);

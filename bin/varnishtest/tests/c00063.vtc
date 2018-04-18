@@ -8,7 +8,7 @@ varnish v1 -vcl {
 		set beresp.ttl = 1s;
 		set beresp.grace = 3s;
 		set beresp.http.foobar = "BLA" + bereq.xid;
-		synthetic(beresp.http.foobar);
+		set beresp.body = beresp.http.foobar;
 		return (deliver);
 	}
 } -start
@@ -24,9 +24,11 @@ client c1 {
 	txreq
 	rxresp
 	expect resp.http.foobar == "BLA1002"
+	expect resp.body == "BLA1002"
 
 	delay 3
 	txreq
 	rxresp
 	expect resp.http.foobar == "BLA1004"
+	expect resp.body == "BLA1004"
 } -run

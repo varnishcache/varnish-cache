@@ -9,7 +9,7 @@ varnish v1 -vcl {
 	}
 
 	sub vcl_synth {
-		synthetic("Custom vcl_synth's synth output");
+		set resp.body = "Custom vcl_synth's body";
 		return (deliver);
 	}
 } -start
@@ -18,8 +18,9 @@ client c1 {
 	txreq -url "/"
 	rxresp
 	expect resp.status == 888
-	expect resp.bodylen == 31
 	expect resp.http.connection != close
+	expect resp.bodylen == 23
+	expect resp.body == "Custom vcl_synth's body"
 } -run
 
 varnish v1 -expect s_synth == 1
