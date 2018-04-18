@@ -226,21 +226,52 @@ VFP_Push(struct vfp_ctx *vc, const struct vfp *vfp)
 /*--------------------------------------------------------------------
  */
 
-static const struct vfp *vfplist[] = {
-	&VFP_testgunzip,
-	&VFP_gunzip,
-	&VFP_gzip,
-	&VFP_esi,
-	&VFP_esi_gzip,
-	NULL,
+struct vfp_filter {
+	unsigned			magic;
+#define VFP_FILTER_MAGIC		0xd40894e9
+	const struct vfp		*filter;
+	int				nlen;
+	VTAILQ_ENTRY(vfp_filter)	list;
 };
+
+static VTAILQ_HEAD(,vfp_filter) vfp_filters =
+    VTAILQ_HEAD_INITIALIZER(vfp_filters);
+
+void
+VFP_AddFilter(const struct vfp *filter)
+{
+	struct vfp_filter *vp;
+
+	VTAILQ_FOREACH(vp, &vfp_filters, list) {
+		assert(vp->filter != filter);
+		assert(strcasecmp(vp->filter->name, filter->name));
+	}
+	ALLOC_OBJ(vp, VFP_FILTER_MAGIC);
+	AN(vp);
+	vp->filter = filter;
+	vp->nlen = strlen(filter->name);
+	VTAILQ_INSERT_TAIL(&vfp_filters, vp, list);
+}
+
+void
+VFP_RemoveFilter(const struct vfp *filter)
+{
+	struct vfp_filter *vp;
+
+	VTAILQ_FOREACH(vp, &vfp_filters, list) {
+		if (vp->filter == filter)
+			break;
+	}
+	AN(vp);
+	VTAILQ_REMOVE(&vfp_filters, vp, list);
+	FREE_OBJ(vp);
+}
 
 int
 VFP_FilterList(struct vfp_ctx *vc, const char *fl)
 {
 	const char *p, *q;
-	const struct vfp **vp;
-	int l;
+	const struct vfp_filter *vp;
 
 	VSLb(vc->wrk->vsl, SLT_Filters, "%s", fl);
 
@@ -252,22 +283,20 @@ VFP_FilterList(struct vfp_ctx *vc, const char *fl)
 		for (q = p; *q; q++)
 			if (vct_isspace(*q))
 				break;
-		for(vp = vfplist; *vp != NULL; vp++) {
-			l = strlen((*vp)->name);
-			if (l != q - p)
+		VTAILQ_FOREACH(vp, &vfp_filters, list) {
+			if (vp->nlen != q - p)
 				continue;
-			if (!memcmp(p, (*vp)->name, l))
+			if (!memcmp(p, vp->filter->name, vp->nlen))
 				break;
 		}
-		if (*vp == NULL)
+		if (vp == NULL)
 			return (VFP_Error(vc,
 			    "Filter '%.*s' not found", (int)(q-p), p));
-		if (VFP_Push(vc, *vp) == NULL)
+		if (VFP_Push(vc, vp->filter) == NULL)
 			return (-1);
 	}
 	return (0);
 }
-
 
 /*--------------------------------------------------------------------
  * Debugging aids
@@ -295,4 +324,9 @@ VFP_Init(void)
 {
 
 	CLI_AddFuncs(debug_cmds);
+	VFP_AddFilter(&VFP_testgunzip);
+	VFP_AddFilter(&VFP_gunzip);
+	VFP_AddFilter(&VFP_gzip);
+	VFP_AddFilter(&VFP_esi);
+	VFP_AddFilter(&VFP_esi_gzip);
 }

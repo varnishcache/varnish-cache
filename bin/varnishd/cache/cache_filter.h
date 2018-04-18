@@ -89,6 +89,8 @@ enum vfp_status VFP_Suck(struct vfp_ctx *, void *p, ssize_t *lp);
 enum vfp_status VFP_Error(struct vfp_ctx *, const char *fmt, ...)
     v_printflike_(2, 3);
 int VFP_FilterList(struct vfp_ctx *, const char *);
+void VFP_AddFilter(const struct vfp *);
+void VFP_RemoveFilter(const struct vfp *);
 
 /* Deliver processors ------------------------------------------------*/
 
