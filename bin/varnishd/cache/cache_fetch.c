@@ -240,6 +240,7 @@ vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 	bo->storage = NULL;
 	bo->do_esi = 0;
 	bo->do_stream = 1;
+	bo->filter_list = NULL;
 
 	// XXX: BereqEnd + BereqAcct ?
 	VSL_ChgId(bo->vsl, "bereq", "retry", VXID_Get(wrk, VSL_BACKENDMARKER));
