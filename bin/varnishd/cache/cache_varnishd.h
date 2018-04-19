@@ -407,6 +407,7 @@ int VCL_IterDirector(struct cli *, const char *, vcl_be_func *, void *);
 
 /* cache_vcl_vrt.c */
 void VCL_VRT_Init(void);
+int VCL_StackVFP(struct vfp_ctx *, const char *);
 
 /* cache_vrt.c */
 void VRTPRIV_init(struct vrt_privs *privs);

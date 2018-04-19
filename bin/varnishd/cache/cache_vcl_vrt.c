@@ -431,7 +431,7 @@ static struct vfp_filter_head vfp_filters =
     VTAILQ_HEAD_INITIALIZER(vfp_filters);
 
 void
-VFP_AddFilter(struct vcl *vcl, const struct vfp *filter)
+VRT_AddVFP(VRT_CTX, const struct vfp *filter)
 {
 	struct vfp_filter *vp;
 	struct vfp_filter_head *hd = &vfp_filters;
@@ -440,8 +440,8 @@ VFP_AddFilter(struct vcl *vcl, const struct vfp *filter)
 		xxxassert(vp->filter != filter);
 		xxxassert(strcasecmp(vp->filter->name, filter->name));
 	}
-	if (vcl != NULL) {
-		hd = &vcl->vfps;
+	if (ctx != NULL) {
+		hd = &ctx->vcl->vfps;
 		VTAILQ_FOREACH(vp, hd, list) {
 			xxxassert(vp->filter != filter);
 			xxxassert(strcasecmp(vp->filter->name, filter->name));
@@ -455,12 +455,11 @@ VFP_AddFilter(struct vcl *vcl, const struct vfp *filter)
 }
 
 void
-VFP_RemoveFilter(struct vcl *vcl, const struct vfp *filter)
+VRT_RemoveVFP(VRT_CTX, const struct vfp *filter)
 {
 	struct vfp_filter *vp;
-	struct vfp_filter_head *hd = &vcl->vfps;
+	struct vfp_filter_head *hd = &ctx->vcl->vfps;
 
-	AN(vcl);
 	VTAILQ_FOREACH(vp, hd, list) {
 		if (vp->filter == filter)
 			break;
@@ -471,7 +470,7 @@ VFP_RemoveFilter(struct vcl *vcl, const struct vfp *filter)
 }
 
 int
-VFP_FilterList(struct vfp_ctx *vc, const char *fl)
+VCL_StackVFP(struct vfp_ctx *vc, const char *fl)
 {
 	const char *p, *q;
 	const struct vfp_filter *vp;
@@ -504,9 +503,9 @@ VFP_FilterList(struct vfp_ctx *vc, const char *fl)
 void
 VCL_VRT_Init(void)
 {
-	VFP_AddFilter(NULL, &VFP_testgunzip);
-	VFP_AddFilter(NULL, &VFP_gunzip);
-	VFP_AddFilter(NULL, &VFP_gzip);
-	VFP_AddFilter(NULL, &VFP_esi);
-	VFP_AddFilter(NULL, &VFP_esi_gzip);
+	VRT_AddVFP(NULL, &VFP_testgunzip);
+	VRT_AddVFP(NULL, &VFP_gunzip);
+	VRT_AddVFP(NULL, &VFP_gzip);
+	VRT_AddVFP(NULL, &VFP_esi);
+	VRT_AddVFP(NULL, &VFP_esi_gzip);
 }
