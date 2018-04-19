@@ -470,7 +470,7 @@ VRT_RemoveVFP(VRT_CTX, const struct vfp *filter)
 }
 
 int
-VCL_StackVFP(struct vfp_ctx *vc, const char *fl)
+VCL_StackVFP(struct vfp_ctx *vc, const struct vcl *vcl, const char *fl)
 {
 	const char *p, *q;
 	const struct vfp_filter *vp;
@@ -490,6 +490,14 @@ VCL_StackVFP(struct vfp_ctx *vc, const char *fl)
 				continue;
 			if (!memcmp(p, vp->filter->name, vp->nlen))
 				break;
+		}
+		if (vp == NULL) {
+			VTAILQ_FOREACH(vp, &vcl->vfps, list) {
+				if (vp->nlen != q - p)
+					continue;
+				if (!memcmp(p, vp->filter->name, vp->nlen))
+					break;
+			}
 		}
 		if (vp == NULL)
 			return (VFP_Error(vc,

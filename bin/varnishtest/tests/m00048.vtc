@@ -1,0 +1,21 @@
+varnishtest "VMOD vfp"
+
+server s1 {
+	rxreq
+	txresp -body "Ponto Facto, Caesar Transit!"
+} -start
+
+varnish v1 -vcl+backend {
+	import debug;
+
+	sub vcl_backend_response {
+		set beresp.filters = "rot13";
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.body == "Cbagb Snpgb, Pnrfne Genafvg!"
+} -run
+

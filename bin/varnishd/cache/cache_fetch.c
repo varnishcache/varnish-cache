@@ -606,7 +606,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	}
 
 	if (bo->filter_list == NULL ||
-	    VCL_StackVFP(bo->vfc, bo->filter_list)) {
+	    VCL_StackVFP(bo->vfc, bo->vcl, bo->filter_list)) {
 		(bo)->htc->doclose = SC_OVERLOAD;
 		VDI_Finish((bo)->wrk, bo);
 		return (F_STP_ERROR);
