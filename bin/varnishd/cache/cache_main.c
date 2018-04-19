@@ -351,6 +351,7 @@ child_main(int sigmagic, size_t altstksz)
 	ObjInit();
 
 	VCL_Init();
+	VCL_VRT_Init();
 
 	HTTP_Init();
 

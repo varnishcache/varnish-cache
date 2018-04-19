@@ -405,6 +405,9 @@ typedef int vcl_be_func(struct cli *, struct director *, void *);
 
 int VCL_IterDirector(struct cli *, const char *, vcl_be_func *, void *);
 
+/* cache_vcl_vrt.c */
+void VCL_VRT_Init(void);
+
 /* cache_vrt.c */
 void VRTPRIV_init(struct vrt_privs *privs);
 void VRTPRIV_dynamic_kill(struct vrt_privs *privs, uintptr_t id);

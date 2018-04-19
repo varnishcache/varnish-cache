@@ -37,9 +37,11 @@
 #include "cache_varnishd.h"
 
 #include "vcl.h"
+#include "vct.h"
 
 #include "cache_director.h"
 #include "cache_vcl.h"
+#include "cache_filter.h"
 
 /*--------------------------------------------------------------------*/
 
@@ -413,3 +415,98 @@ VCL_##func##_method(struct vcl *vcl, struct worker *wrk,		\
 }
 
 #include "tbl/vcl_returns.h"
+
+/*--------------------------------------------------------------------
+ */
+
+struct vfp_filter {
+	unsigned			magic;
+#define VFP_FILTER_MAGIC		0xd40894e9
+	const struct vfp		*filter;
+	int				nlen;
+	VTAILQ_ENTRY(vfp_filter)	list;
+};
+
+static struct vfp_filter_head vfp_filters =
+    VTAILQ_HEAD_INITIALIZER(vfp_filters);
+
+void
+VFP_AddFilter(struct vcl *vcl, const struct vfp *filter)
+{
+	struct vfp_filter *vp;
+	struct vfp_filter_head *hd = &vfp_filters;
+
+	VTAILQ_FOREACH(vp, hd, list) {
+		xxxassert(vp->filter != filter);
+		xxxassert(strcasecmp(vp->filter->name, filter->name));
+	}
+	if (vcl != NULL) {
+		hd = &vcl->vfps;
+		VTAILQ_FOREACH(vp, hd, list) {
+			xxxassert(vp->filter != filter);
+			xxxassert(strcasecmp(vp->filter->name, filter->name));
+		}
+	}
+	ALLOC_OBJ(vp, VFP_FILTER_MAGIC);
+	AN(vp);
+	vp->filter = filter;
+	vp->nlen = strlen(filter->name);
+	VTAILQ_INSERT_TAIL(hd, vp, list);
+}
+
+void
+VFP_RemoveFilter(struct vcl *vcl, const struct vfp *filter)
+{
+	struct vfp_filter *vp;
+	struct vfp_filter_head *hd = &vcl->vfps;
+
+	AN(vcl);
+	VTAILQ_FOREACH(vp, hd, list) {
+		if (vp->filter == filter)
+			break;
+	}
+	XXXAN(vp);
+	VTAILQ_REMOVE(hd, vp, list);
+	FREE_OBJ(vp);
+}
+
+int
+VFP_FilterList(struct vfp_ctx *vc, const char *fl)
+{
+	const char *p, *q;
+	const struct vfp_filter *vp;
+
+	VSLb(vc->wrk->vsl, SLT_Filters, "%s", fl);
+
+	for (p = fl; *p; p = q) {
+		if (vct_isspace(*p)) {
+			q = p + 1;
+			continue;
+		}
+		for (q = p; *q; q++)
+			if (vct_isspace(*q))
+				break;
+		VTAILQ_FOREACH(vp, &vfp_filters, list) {
+			if (vp->nlen != q - p)
+				continue;
+			if (!memcmp(p, vp->filter->name, vp->nlen))
+				break;
+		}
+		if (vp == NULL)
+			return (VFP_Error(vc,
+			    "Filter '%.*s' not found", (int)(q-p), p));
+		if (VFP_Push(vc, vp->filter) == NULL)
+			return (-1);
+	}
+	return (0);
+}
+
+void
+VCL_VRT_Init(void)
+{
+	VFP_AddFilter(NULL, &VFP_testgunzip);
+	VFP_AddFilter(NULL, &VFP_gunzip);
+	VFP_AddFilter(NULL, &VFP_gzip);
+	VFP_AddFilter(NULL, &VFP_esi);
+	VFP_AddFilter(NULL, &VFP_esi_gzip);
+}

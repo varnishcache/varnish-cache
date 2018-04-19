@@ -26,7 +26,14 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
+ * NB: This is a private .h file for cache_vcl*.c
+ * NB: No other code should include this file.
+ *
  */
+
+struct vfp_filter;
+
+VTAILQ_HEAD(vfp_filter_head, vfp_filter);
 
 struct vcl {
 	unsigned		magic;
@@ -45,6 +52,7 @@ struct vcl {
 	int			nrefs;
 	struct vcl		*label;
 	int			nlabels;
+	struct vfp_filter_head	vfps;
 };
 
 struct vclref {

@@ -526,6 +526,7 @@ vcl_load(struct cli *cli, struct vrt_ctx *ctx,
 	XXXAN(vcl->loaded_name);
 	VTAILQ_INIT(&vcl->director_list);
 	VTAILQ_INIT(&vcl->ref_list);
+	VTAILQ_INIT(&vcl->vfps);
 
 	vcl->temp = VCL_TEMP_INIT;
 
