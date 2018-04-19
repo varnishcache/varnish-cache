@@ -1,0 +1,25 @@
+varnishtest "sweep through tight backend workspace conditions"
+
+server s1 -repeat 100 {
+	rxreq
+	send "HTTP/1.1 200 OK\r\nTransfer-encoding: chunked\r\n\r\n00000004\r\n1234\r\n00000000\r\n\r\n"
+} -start
+
+varnish v1 -vcl+backend {
+	import vtc;
+	import std;
+	sub vcl_recv {
+		return (pass);
+	}
+	sub vcl_backend_fetch {
+		vtc.workspace_alloc(backend, -4 *
+			(std.integer(bereq.xid, 1002) - 1000) / 2);
+	}
+} -start
+
+client c1 -repeat 100 {
+	txreq -url "/"
+	# some responses will fail (503), some won't. All we care
+	# about here is the fact that we don't panic
+	rxresp
+} -run
