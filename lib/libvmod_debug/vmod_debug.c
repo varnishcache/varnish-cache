@@ -36,6 +36,7 @@
 #include <unistd.h>
 
 #include "cache/cache_varnishd.h"
+#include "cache/cache_filter.h"
 
 #include "vsa.h"
 #include "vtim.h"
@@ -56,6 +57,37 @@ static VCL_DURATION vcl_release_delay = 0.0;
 static pthread_mutex_t vsc_mtx = PTHREAD_MUTEX_INITIALIZER;
 static struct vsc_seg *vsc_seg = NULL;
 static struct VSC_debug *vsc = NULL;
+
+/**********************************************************************/
+
+static enum vfp_status v_matchproto_(vfp_pull_f)
+xyzzy_rot13_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
+    ssize_t *lp)
+{
+	enum vfp_status vp;
+	char *q;
+	ssize_t l;
+
+	(void)vfe;
+	vp = VFP_Suck(vc, p, lp);
+	if (vp == VFP_ERROR)
+		return (vp);
+	q = p;
+	for (l = 0; l < *lp; l++, q++) {
+		if (*q >= 'A' && *q <= 'Z')
+			*q = (((*q - 'A') + 13) % 26) + 'A';
+		if (*q >= 'a' && *q <= 'z')
+			*q = (((*q - 'a') + 13) % 26) + 'a';
+	}
+	return (vp);
+}
+
+static const struct vfp xyzzy_rot13 = {
+	.name = "rot13",
+	.pull = xyzzy_rot13_pull,
+};
+
+/**********************************************************************/
 
 VCL_STRING v_matchproto_(td_debug_author)
 xyzzy_author(VRT_CTX, VCL_ENUM person, VCL_ENUM someone)
@@ -241,6 +273,12 @@ event_load(VRT_CTX, struct vmod_priv *priv)
 	AN(priv_vcl->foo);
 	priv->priv = priv_vcl;
 	priv->free = priv_vcl_free;
+
+	/*
+	 * NB: This is a proof of concept, until we decide what the real
+	 * API should look like, do NOT do this anywhere else.
+	 */
+	VRT_AddVFP(ctx, &xyzzy_rot13);
 	return (0);
 }
 
@@ -319,6 +357,7 @@ event_function(VRT_CTX, struct vmod_priv *priv, enum vcl_event_e e)
 	case VCL_EVENT_WARM: return (event_warm(ctx, priv));
 	case VCL_EVENT_COLD: return (event_cold(ctx, priv));
 	case VCL_EVENT_DISCARD:
+		VRT_RemoveVFP(ctx, &xyzzy_rot13);
 		if (vsc)
 			VSC_debug_Destroy(&vsc_seg);
 		return (0);
