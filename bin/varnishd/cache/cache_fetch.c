@@ -605,7 +605,8 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 		bo->filter_list = VBF_Get_Filter_List(bo);
 	}
 
-	if (VFP_FilterList(bo->vfc, bo->filter_list)) {
+	if (bo->filter_list == NULL ||
+	    VFP_FilterList(bo->vfc, bo->filter_list)) {
 		(bo)->htc->doclose = SC_OVERLOAD;
 		VDI_Finish((bo)->wrk, bo);
 		return (F_STP_ERROR);
