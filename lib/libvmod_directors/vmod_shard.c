@@ -68,10 +68,10 @@
  */
 enum vmod_directors_shard_param_scope {
 	_SCOPE_INVALID = 0,
-	VMOD,
-	VCL,
-	TASK,
-	STACK
+	SCOPE_VMOD,
+	SCOPE_VCL,
+	SCOPE_TASK,
+	SCOPE_STACK
 };
 
 struct vmod_directors_shard_param;
@@ -101,7 +101,7 @@ static const struct vmod_directors_shard_param shard_param_default = {
 	.key		= 0,
 	.vcl_name	= "builtin defaults",
 	.defaults	= NULL,
-	.scope		= VMOD,
+	.scope		= SCOPE_VMOD,
 
 	.mask		= _arg_mask_param,
 	.by		= BY_HASH,
@@ -747,7 +747,7 @@ vmod_shard_param__init(VRT_CTX,
 	ALLOC_OBJ(p, VMOD_SHARD_SHARD_PARAM_MAGIC);
 	AN(p);
 	p->vcl_name = vcl_name;
-	p->scope = VCL;
+	p->scope = SCOPE_VCL;
 	p->defaults = &shard_param_default;
 
 	*pp = p;
@@ -778,7 +778,7 @@ shard_param_stack(struct vmod_directors_shard_param *p,
 	AN(p);
 	INIT_OBJ(p, VMOD_SHARD_SHARD_PARAM_MAGIC);
 	p->vcl_name = who;
-	p->scope = STACK;
+	p->scope = SCOPE_STACK;
 	p->defaults = pa;
 
 	return (p);
@@ -808,7 +808,7 @@ shard_param_task(VRT_CTX, const void *id,
 	if (task->priv) {
 		p = task->priv;
 		CHECK_OBJ_NOTNULL(p, VMOD_SHARD_SHARD_PARAM_MAGIC);
-		assert(p->scope == TASK);
+		assert(p->scope = SCOPE_TASK);
 		/* XXX
 		VSL(SLT_Debug, 0,
 		    "shard_param_task(id %p, pa %p) = %p (found, ws=%p)",
@@ -825,9 +825,9 @@ shard_param_task(VRT_CTX, const void *id,
 	task->priv = p;
 	INIT_OBJ(p, VMOD_SHARD_SHARD_PARAM_MAGIC);
 	p->vcl_name = pa->vcl_name;
-	p->scope = TASK;
+	p->scope = SCOPE_TASK;
 
-	if (id == pa || pa->scope != VCL)
+	if (id == pa || pa->scope != SCOPE_VCL)
 		p->defaults = pa;
 	else
 		p->defaults = shard_param_task(ctx, pa, pa);
