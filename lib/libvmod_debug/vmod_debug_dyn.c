@@ -262,7 +262,7 @@ xyzzy_dyn_uds__fini(struct xyzzy_debug_dyn_uds **udsp)
 	free(uds->vcl_name);
 	AZ(pthread_mutex_destroy(&uds->mtx));
 	FREE_OBJ(uds);
-	udsp = NULL;
+	*udsp = NULL;
 }
 
 VCL_BACKEND v_matchproto_(td_debug_dyn_uds_backend)

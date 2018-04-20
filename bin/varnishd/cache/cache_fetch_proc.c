@@ -35,8 +35,6 @@
 #include "cache_filter.h"
 #include "vcli_serve.h"
 
-#include "vct.h"
-
 static unsigned fetchfrag;
 
 /*--------------------------------------------------------------------
