@@ -154,8 +154,8 @@ vmod_log(VRT_CTX, const char *fmt, ...)
 	va_end(ap);
 
 	if (p == NULL) {
-		WS_MarkOverflow(ctx->ws);
 		WS_Reset(ctx->ws, sn);
+		WS_MarkOverflow(ctx->ws);
 		return;
 	}
 
