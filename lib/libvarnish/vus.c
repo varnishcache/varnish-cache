@@ -121,7 +121,7 @@ VUS_connect(const char *path, int msec)
 	if (msec != 0)
 		(void)VTCP_nonblocking(s);
 
-	i = connect(s, (const struct sockaddr *)&uds, sl);
+	i = connect(s, (const void*)&uds, sl);
 	if (i == 0)
 		return (s);
 	if (errno != EINPROGRESS) {
