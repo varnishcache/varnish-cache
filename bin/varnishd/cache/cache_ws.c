@@ -31,7 +31,6 @@
 #include "config.h"
 
 #include "cache_varnishd.h"
-#include "vmb.h"
 
 #include <stdio.h>
 
@@ -116,7 +115,6 @@ WS_MarkOverflow(struct ws *ws)
 	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
 
 	ws->id[0] &= ~0x20;		// cheesy toupper()
-	VWMB();
 }
 
 static void
