@@ -580,8 +580,12 @@ VBF_Get_Filter_List(struct busyobj *bo)
 		WS_MarkOverflow(bo->ws);
 		return (NULL);
 	}
-	WS_Release(bo->ws, VSB_len(vsb) + 1);
-	return (VSB_data(vsb) + 1);
+	if (VSB_len(vsb)) {
+		WS_Release(bo->ws, VSB_len(vsb) + 1);
+		return (VSB_data(vsb) + 1);
+	}
+	WS_Release(bo->ws, 0);
+	return ("");
 }
 
 static enum fetch_step
