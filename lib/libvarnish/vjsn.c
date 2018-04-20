@@ -520,42 +520,41 @@ vjsn_dump(const struct vjsn *js, FILE *fo)
  *
  * And run this python in test_parsing:
 
-        import glob
+	import glob
 
-        skip = {}
+	skip = {}
 
-        def emit(fin):
-                if fin in skip:
-                        return
-                x = bytearray(open(fin).read())
-                if 0 in x:
-                        return
-                if len(x) > 1000:
-                        return
-                t = '\t"'
-                for i in x:
-                        t += "\\x%02x" % i
-                        if len(t) > 64:
-                                print(t + '"')
-                                t = '\t"'
-                print(t + '",')
+	def emit(fin):
+		if fin in skip:
+			return
+		x = bytearray(open(fin).read())
+		if 0 in x:
+			return
+		if len(x) > 1000:
+			return
+		t = '\t"'
+		for i in x:
+			t += "\\x%02x" % i
+			if len(t) > 64:
+				print(t + '"')
+				t = '\t"'
+		print(t + '",')
 
-        print("const char *good[] = {")
-        l = list(glob.glob("y_*"))
-        l.sort()
-        for f in l:
-                emit(f)
-        print("\tNULL")
-        print("};")
+	print("const char *good[] = {")
+	l = list(glob.glob("y_*"))
+	l.sort()
+	for f in l:
+		emit(f)
+	print("\tNULL")
+	print("};")
 
-        print("const char *bad[] = {")
-        l = list(glob.glob("n_*"))
-        l.sort()
-        for f in l:
-                emit(f)
-        print("\tNULL")
-        print("};")
-
+	print("const char *bad[] = {")
+	l = list(glob.glob("n_*"))
+	l.sort()
+	for f in l:
+		emit(f)
+	print("\tNULL")
+	print("};")
  */
 
 static const char *good[] = {
