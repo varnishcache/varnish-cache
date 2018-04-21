@@ -15,7 +15,7 @@ matrix:
     compiler: clang
     env: CLANG=6.0 SAN_FLAGS="--enable-asan --enable-ubsan"
   - os: osx
-    osx_image: xcode9.2
+    osx_image: xcode9.3
     compiler: clang
   allow_failures:
   - os: osx
