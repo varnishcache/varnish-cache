@@ -194,6 +194,16 @@ vhp_decode_test_CFLAGS = @SAN_CFLAGS@ \
 vhp_decode_test_LDADD = \
 	$(top_builddir)/lib/libvarnish/libvarnish.a
 
+noinst_PROGRAMS += esi_parse_fuzzer
+esi_parse_fuzzer_SOURCES = \
+	cache/cache_esi_parse.c \
+	fuzzers/esi_parse_fuzzer.c
+esi_parse_fuzzer_CFLAGS = \
+	@SAN_CFLAGS@ -DNOT_IN_A_VMOD -DTEST_DRIVER -include config.h
+esi_parse_fuzzer_LDADD = \
+	$(top_builddir)/lib/libvarnish/libvarnish.a \
+	$(top_builddir)/lib/libvgz/libvgz.a
+
 TESTS = vhp_table_test vhp_decode_test
 
 #
