@@ -107,14 +107,14 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 int
 main(int argc, char **argv)
 {
-	size_t len;
+	ssize_t len;
 	char *buf;
 	int i;
 
 	for (i = 1; i < argc; i++) {
 		buf = VFIL_readfile(NULL, argv[i], &len);
 		AN(buf);
-		LLVMFuzzerTestOneInput(buf, len);
+		LLVMFuzzerTestOneInput((uint8_t *)buf, len);
 		free(buf);
 	}
 }
