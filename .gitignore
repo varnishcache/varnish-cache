@@ -130,6 +130,9 @@ cscope.*out
 /tools/vt_key
 /tools/vt_key.pub
 
+# fuzzers
+/bin/varnishd/esi_parse_fuzzer
+
 # Coverity output
 /cov-int
 /myproject.tgz
