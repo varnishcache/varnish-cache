@@ -55,11 +55,23 @@ VSLb(struct vsl_log *vsl, enum VSL_tag_e tag, const char *fmt, ...)
 	(void)fmt;
 }
 
+
 void *
 WS_Alloc(struct ws *ws, unsigned bytes)
 {
 	(void)ws;
 	return (calloc(1, bytes));
+}
+
+void
+VSLb_ts(struct vsl_log *l, const char *event, double first, double *pprev,
+    double now)
+{
+	(void)l;
+	(void)event;
+	(void)first;
+	(void)pprev;
+	(void)now;
 }
 
 int
