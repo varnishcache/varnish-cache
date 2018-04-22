@@ -1,4 +1,6 @@
-leak:varnishtest
+# varnishtest
+leak:parse_string
+leak:receive_frame
 # pp->{def,min,max}
 leak:MCF_ParamConf
 # pp->{def,min,max}
