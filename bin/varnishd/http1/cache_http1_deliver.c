@@ -128,8 +128,11 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 	if (req->resp_len == 0)
 		sendbody = 0;
 
-	if (sendbody)
-		VDP_push(req, &v1d_vdp, NULL, 1);
+	if (sendbody && VDP_push(req, &v1d_vdp, NULL, 1)) {
+		v1d_error(req, "workspace_thread overflow");
+		AZ(req->wrk->v1l);
+		return;
+	}
 
 	AZ(req->wrk->v1l);
 	V1L_Open(req->wrk, req->wrk->aws,

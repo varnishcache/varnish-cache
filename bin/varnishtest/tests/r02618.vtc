@@ -1,0 +1,25 @@
+varnishtest "sweep through tight client workspace conditions in deliver"
+
+server s1 {
+	rxreq
+	txresp -hdr "Cache-Control: mag-age=3600" -bodylen 1024
+} -start
+
+varnish v1 -vcl+backend {
+	import vtc;
+	import std;
+	sub vcl_recv {
+		return (hash);
+	}
+	sub vcl_deliver {
+		vtc.workspace_alloc(client, -4 *
+			(std.integer(req.xid, 1001) - 1001) / 2);
+	}
+} -start
+
+client c1 -repeat 100 {
+	txreq -url "/"
+	# some responses will fail (503), some won't. All we care
+	# about here is the fact that we don't panic
+	rxresp
+} -run
