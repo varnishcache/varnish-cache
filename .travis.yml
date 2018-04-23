@@ -31,7 +31,6 @@ notifications:
       - "irc.linpro.no#varnish-hacking"
     on_success: change
     use_notice: true
-    skip_join: true
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
       brew update;
