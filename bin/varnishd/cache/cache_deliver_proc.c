@@ -73,7 +73,7 @@ VDP_bytes(struct req *req, enum vdp_action act, const void *ptr, ssize_t len)
 	return (vdc->retval);
 }
 
-void
+int
 VDP_push(struct req *req, const struct vdp *vdp, void *priv, int bottom)
 {
 	struct vdp_entry *vdpe;
@@ -85,12 +85,18 @@ VDP_push(struct req *req, const struct vdp *vdp, void *priv, int bottom)
 	AN(vdp->name);
 	AN(vdp->func);
 
+	if (vdc->retval)
+		return (vdc->retval);
+
 	if (DO_DEBUG(DBG_PROCESSORS))
 		VSLb(req->vsl, SLT_Debug, "VDP_push(%s)", vdp->name);
 
 	vdpe = WS_Alloc(req->ws, sizeof *vdpe);
-	if (vdpe == NULL)
-		return;
+	if (vdpe == NULL) {
+		AZ(vdc->retval);
+		vdc->retval = -1;
+		return (vdc->retval);
+	}
 	INIT_OBJ(vdpe, VDP_ENTRY_MAGIC);
 	vdpe->vdp = vdp;
 	vdpe->priv = priv;
@@ -100,7 +106,9 @@ VDP_push(struct req *req, const struct vdp *vdp, void *priv, int bottom)
 		VTAILQ_INSERT_HEAD(&vdc->vdp, vdpe, list);
 	vdc->nxt = VTAILQ_FIRST(&vdc->vdp);
 
-	AZ(vdpe->vdp->func(req, VDP_INIT, &vdpe->priv, NULL, 0));
+	AZ(vdc->retval);
+	vdc->retval = vdpe->vdp->func(req, VDP_INIT, &vdpe->priv, NULL, 0);
+	return (vdc->retval);
 }
 
 void
@@ -113,10 +121,15 @@ VDP_close(struct req *req)
 	vdc = req->vdc;
 	while (!VTAILQ_EMPTY(&vdc->vdp)) {
 		vdpe = VTAILQ_FIRST(&vdc->vdp);
-		CHECK_OBJ_NOTNULL(vdpe, VDP_ENTRY_MAGIC);
-		VTAILQ_REMOVE(&vdc->vdp, vdpe, list);
-		AZ(vdpe->vdp->func(req, VDP_FINI, &vdpe->priv, NULL, 0));
-		AZ(vdpe->priv);
+		if (vdc->retval >= 0)
+			AN(vdpe);
+		if (vdpe != NULL) {
+			CHECK_OBJ_NOTNULL(vdpe, VDP_ENTRY_MAGIC);
+			VTAILQ_REMOVE(&vdc->vdp, vdpe, list);
+			AZ(vdpe->vdp->func(req, VDP_FINI, &vdpe->priv,
+			    NULL, 0));
+			AZ(vdpe->priv);
+		}
 		vdc->nxt = VTAILQ_FIRST(&vdc->vdp);
 	}
 }

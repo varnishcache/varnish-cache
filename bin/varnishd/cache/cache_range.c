@@ -175,7 +175,8 @@ vrg_dorange(struct req *req, const char *r)
 	vrg_priv->range_off = 0;
 	vrg_priv->range_low = low;
 	vrg_priv->range_high = high + 1;
-	VDP_push(req, &vrg_vdp, vrg_priv, 1);
+	if (VDP_push(req, &vrg_vdp, vrg_priv, 1))
+		return ("WS too small");
 	http_PutResponse(req->resp, "HTTP/1.1", 206, NULL);
 	return (NULL);
 }

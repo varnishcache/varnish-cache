@@ -265,10 +265,13 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 
 	WS_Release(req->ws, 0);
 
-	if (sendbody) {
-		VDP_push(req, &h2_vdp, NULL, 1);
+	/* XXX someone into H2 please add appropriate error handling */
+	while (sendbody) {
+		err = VDP_push(req, &h2_vdp, NULL, 1);
+		if (err)
+			break;
 		err = VDP_DeliverObj(req);
-		/*XXX*/(void)err;
+		break;
 	}
 
 	AZ(req->wrk->v1l);
