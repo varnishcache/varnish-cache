@@ -244,6 +244,9 @@ VDI_Panic(const struct director *d, struct vsb *vsb, const char *nm)
 	VSB_printf(vsb, "%s = %p {\n", nm, d);
 	VSB_indent(vsb, 2);
 	VSB_printf(vsb, "vcl_name = %s,\n", d->vcl_name);
+	VSB_printf(vsb, "health = %s,\n", d->health ?  "healthy" : "sick");
+	VSB_printf(vsb, "admin_health = %s, changed = %f,\n",
+	    VDI_Ahealth(d), d->health_changed);
 	VSB_printf(vsb, "type = %s {\n", d->name);
 	VSB_indent(vsb, 2);
 	if (d->panic != NULL)
