@@ -126,13 +126,16 @@ VCL_Rel(struct vcl **vcc)
 /*--------------------------------------------------------------------*/
 
 int
-VCL_AddDirector(struct vcl *vcl, struct director *d, const char *vcl_name)
+VRT_AddDirector(VRT_CTX, struct director *d, const char *vcl_name)
 {
 	struct vsb *vsb;
+	struct vcl *vcl;
 
+	vcl = ctx->vcl;
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	AN(d->destroy);
+	d->admin_health = VDI_AH_PROBE;
 
 	vsb = VSB_new_auto();
 	AN(vsb);
@@ -163,10 +166,11 @@ VCL_AddDirector(struct vcl *vcl, struct director *d, const char *vcl_name)
 }
 
 void
-VCL_DelDirector(struct director *d)
+VRT_DelDirector(VRT_CTX, struct director *d)
 {
 	struct vcl *vcl;
 
+	(void)ctx;
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	vcl = d->vcl;
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);

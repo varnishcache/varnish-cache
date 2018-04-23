@@ -499,7 +499,7 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 	    "%s.%s", VCL_Name(ctx->vcl), vrt->vcl_name);
 	AN(be->vsc);
 
-	retval = VCL_AddDirector(ctx->vcl, d, vrt->vcl_name);
+	retval = VRT_AddDirector(ctx, d, vrt->vcl_name);
 
 	if (retval == 0)
 		return (d);
@@ -571,7 +571,7 @@ VBE_Poll(void)
 		if (be->n_conn > 0)
 			continue;
 		Lck_Unlock(&backends_mtx);
-		VCL_DelDirector(be->director);
+		VRT_DelDirector(NULL, be->director);
 		Lck_Lock(&backends_mtx);
 	}
 	Lck_Unlock(&backends_mtx);

@@ -92,8 +92,8 @@ struct director {
 unsigned VDI_Healthy(const struct director *, double *);
 
 /* cache_vcl.c */
-int VCL_AddDirector(struct vcl *, struct director *, const char *);
-void VCL_DelDirector(struct director *);
+int VRT_AddDirector(VRT_CTX, struct director *, const char *);
+void VRT_DelDirector(VRT_CTX, struct director *);
 
 /* cache_director.c */
 
