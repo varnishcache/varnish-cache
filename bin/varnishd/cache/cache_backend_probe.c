@@ -186,7 +186,7 @@ vbp_update_backend(struct vbp_target *vt)
 			vt->backend->director->health = 0;
 		}
 		VSL(SLT_Backend_health, 0, "%s %s %s %u %u %u %.6f %.6f %s",
-		    vt->backend->director->display_name, logmsg, bits,
+		    vt->backend->director->cli_name, logmsg, bits,
 		    vt->good, vt->threshold, vt->window,
 		    vt->last, vt->avg, vt->resp_buf);
 		VBE_SetHappy(vt->backend, vt->happy);

@@ -227,7 +227,7 @@ vcl_iterdir(struct cli *cli, const char *pat, const struct vcl *vcl,
 	struct director *d;
 
 	VTAILQ_FOREACH(d, &vcl->director_list, vcl_list) {
-		if (fnmatch(pat, d->display_name, 0))
+		if (fnmatch(pat, d->cli_name, 0))
 			continue;
 		found++;
 		i = func(cli, d, priv);
@@ -309,7 +309,7 @@ vcl_KillBackends(struct vcl *vcl)
 			break;
 		VTAILQ_REMOVE(&vcl->director_list, d, vcl_list);
 		AN(d->destroy);
-		REPLACE(d->display_name, NULL);
+		REPLACE(d->cli_name, NULL);
 		d->destroy(d);
 	}
 }

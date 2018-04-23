@@ -138,7 +138,7 @@ VCL_AddDirector(struct vcl *vcl, struct director *d, const char *vcl_name)
 	AN(vsb);
 	VSB_printf(vsb, "%s.%s", VCL_Name(vcl), vcl_name);
 	AZ(VSB_finish(vsb));
-	REPLACE((d->display_name), VSB_data(vsb));
+	REPLACE((d->cli_name), VSB_data(vsb));
 	VSB_destroy(&vsb);
 
 	AZ(errno=pthread_rwlock_rdlock(&vcl->temp_rwl));
@@ -179,7 +179,7 @@ VCL_DelDirector(struct director *d)
 		VDI_Event(d, VCL_EVENT_COLD);
 	AZ(errno=pthread_rwlock_unlock(&vcl->temp_rwl));
 	AN(d->destroy);
-	REPLACE(d->display_name, NULL);
+	REPLACE(d->cli_name, NULL);
 	d->destroy(d);
 }
 

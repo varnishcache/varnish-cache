@@ -293,7 +293,7 @@ do_list(struct cli *cli, struct director *d, void *priv)
 	if (d->admin_health == VDI_AH_DELETED)
 		return (0);
 
-	VCLI_Out(cli, "\n%-30s", d->display_name);
+	VCLI_Out(cli, "\n%-30s", d->cli_name);
 
 	VCLI_Out(cli, " %-10s", VDI_Ahealth(d));
 

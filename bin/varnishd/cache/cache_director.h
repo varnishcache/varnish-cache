@@ -80,7 +80,7 @@ struct director {
 
 	/* Internal Housekeeping fields */
 
-	char			*display_name;
+	char			*cli_name;
 	VTAILQ_ENTRY(director)	vcl_list;
 	struct vcl		*vcl;
 
