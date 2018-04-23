@@ -55,14 +55,6 @@ VSLb(struct vsl_log *vsl, enum VSL_tag_e tag, const char *fmt, ...)
 	(void)fmt;
 }
 
-
-void *
-WS_Alloc(struct ws *ws, unsigned bytes)
-{
-	(void)ws;
-	return (calloc(1, bytes));
-}
-
 void
 VSLb_ts(struct vsl_log *l, const char *event, double first, double *pprev,
     double now)
@@ -72,6 +64,13 @@ VSLb_ts(struct vsl_log *l, const char *event, double first, double *pprev,
 	(void)first;
 	(void)pprev;
 	(void)now;
+}
+
+void *
+WS_Alloc(struct ws *ws, unsigned bytes)
+{
+	(void)ws;
+	return (calloc(1, bytes));
 }
 
 int
@@ -89,6 +88,8 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 
 	if (size < 1)
 		return (0);
+
+	AN(data);
 
 	VSC_C_main = &__VSC_C_main;
 	cache_param = &__cache_param;
@@ -124,8 +125,8 @@ main(int argc, char **argv)
 	int i;
 
 	for (i = 1; i < argc; i++) {
+		len = 0;
 		buf = VFIL_readfile(NULL, argv[i], &len);
-		AN(buf);
 		LLVMFuzzerTestOneInput((uint8_t *)buf, len);
 		free(buf);
 	}
