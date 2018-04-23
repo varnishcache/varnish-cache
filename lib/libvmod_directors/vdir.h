@@ -41,7 +41,8 @@ struct vdir {
 	struct vbitmap				*vbm;
 };
 
-void vdir_new(struct vdir **vdp, const char *name, const char *vcl_name,
+void vdir_new(VRT_CTX, struct vdir **vdp, const char *name,
+    const char *vcl_name,
     vdi_healthy_f *healthy, vdi_resolve_f *resolve, void *priv);
 void vdir_delete(struct vdir **vdp);
 void vdir_rdlock(struct vdir *vd);
