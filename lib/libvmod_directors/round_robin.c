@@ -95,7 +95,7 @@ vmod_round_robin__init(VRT_CTX,
 	ALLOC_OBJ(rr, VMOD_DIRECTORS_ROUND_ROBIN_MAGIC);
 	AN(rr);
 	*rrp = rr;
-	vdir_new(&rr->vd, "round-robin", vcl_name, vmod_rr_healthy,
+	vdir_new(ctx, &rr->vd, "round-robin", vcl_name, vmod_rr_healthy,
 	    vmod_rr_resolve, rr);
 }
 

@@ -98,7 +98,7 @@ vmod_fallback__init(VRT_CTX,
 	ALLOC_OBJ(fb, VMOD_DIRECTORS_FALLBACK_MAGIC);
 	AN(fb);
 	*fbp = fb;
-	vdir_new(&fb->vd, "fallback", vcl_name, vmod_fallback_healthy,
+	vdir_new(ctx, &fb->vd, "fallback", vcl_name, vmod_fallback_healthy,
 	    vmod_fallback_resolve, fb);
 	fb->st = sticky;
 }

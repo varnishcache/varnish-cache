@@ -50,11 +50,12 @@ vdir_expand(struct vdir *vd, unsigned n)
 }
 
 void
-vdir_new(struct vdir **vdp, const char *name, const char *vcl_name,
+vdir_new(VRT_CTX, struct vdir **vdp, const char *name, const char *vcl_name,
     vdi_healthy_f *healthy, vdi_resolve_f *resolve, void *priv)
 {
 	struct vdir *vd;
 
+	AN(ctx);
 	AN(name);
 	AN(vcl_name);
 	AN(vdp);
