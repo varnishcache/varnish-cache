@@ -97,13 +97,13 @@ void VCL_DelDirector(struct director *);
 
 /* cache_director.c */
 
-#define VBE_AHEALTH_LIST			\
-	VBE_AHEALTH(healthy,	HEALTHY)	\
-	VBE_AHEALTH(sick,	SICK)		\
-	VBE_AHEALTH(probe,	PROBE)		\
-	VBE_AHEALTH(deleted,	DELETED)
+#define VBE_AHEALTH_LIST					\
+	VBE_AHEALTH(healthy,	HEALTHY,	1)		\
+	VBE_AHEALTH(sick,	SICK,		0)		\
+	VBE_AHEALTH(probe,	PROBE,		-1)		\
+	VBE_AHEALTH(deleted,	DELETED,	0)
 
-#define VBE_AHEALTH(l,u) extern const struct vdi_ahealth * const VDI_AH_##u;
+#define VBE_AHEALTH(l,u,h) extern const struct vdi_ahealth * const VDI_AH_##u;
 VBE_AHEALTH_LIST
 #undef VBE_AHEALTH
 

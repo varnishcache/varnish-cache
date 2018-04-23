@@ -47,10 +47,11 @@
 
 struct vdi_ahealth {
 	const char		*name;
+	int			health;
 };
 
-#define VBE_AHEALTH(l,u)						\
-	static const struct vdi_ahealth vdi_ah_##l[1] = {{#l}};		\
+#define VBE_AHEALTH(l,u,h)						\
+	static const struct vdi_ahealth vdi_ah_##l[1] = {{#l,h}};	\
 	const struct vdi_ahealth * const VDI_AH_##u = vdi_ah_##l;
 VBE_AHEALTH_LIST
 #undef VBE_AHEALTH
@@ -58,7 +59,7 @@ VBE_AHEALTH_LIST
 static const struct vdi_ahealth *
 vdi_str2ahealth(const char *t)
 {
-#define VBE_AHEALTH(l,u) if (!strcasecmp(t, #l)) return (VDI_AH_##u);
+#define VBE_AHEALTH(l,u,h) if (!strcasecmp(t, #l)) return (VDI_AH_##u);
 VBE_AHEALTH_LIST
 #undef VBE_AHEALTH
 	if (!strcasecmp(t, "auto")) return (VDI_AH_PROBE);
@@ -265,23 +266,15 @@ unsigned
 VDI_Healthy(const struct director *d, double *changed)
 {
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	AN(d->admin_health);
 
 	if (changed != NULL)
 		*changed = d->health_changed;
 
-	if (d->admin_health == VDI_AH_PROBE)
+	if (d->admin_health->health < 0)
 		return (d->health);
 
-	if (d->admin_health == VDI_AH_SICK)
-		return (0);
-
-	if (d->admin_health == VDI_AH_DELETED)
-		return (0);
-
-	if (d->admin_health == VDI_AH_HEALTHY)
-		return (1);
-
-	WRONG("Wrong admin health");
+	return (d->admin_health->health);
 }
 
 /*---------------------------------------------------------------------*/
