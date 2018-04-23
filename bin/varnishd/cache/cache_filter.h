@@ -121,8 +121,8 @@ struct vdp_ctx {
 #define VDP_CTX_MAGIC		0xee501df7
 	struct vdp_entry_s	vdp;
 	struct vdp_entry	*nxt;
-	unsigned		retval;
+	int			retval;
 };
 
 int VDP_bytes(struct req *, enum vdp_action act, const void *ptr, ssize_t len);
-void VDP_push(struct req *, const struct vdp *, void *priv, int bottom);
+int VDP_push(struct req *, const struct vdp *, void *priv, int bottom);
