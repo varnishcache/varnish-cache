@@ -61,32 +61,32 @@ typedef void vdi_destroy_f(const struct director *);
 typedef void vdi_panic_f(const struct director *, struct vsb *);
 
 struct director {
-	unsigned		magic;
-#define DIRECTOR_MAGIC		0x3336351d
-	const char		*name;
-	char			*vcl_name;
-	vdi_http1pipe_f		*http1pipe;
-	vdi_healthy_f		*healthy;
-	vdi_resolve_f		*resolve;
-	vdi_gethdrs_f		*gethdrs;
-	vdi_getbody_f		*getbody;
-	vdi_getip_f		*getip;
-	vdi_finish_f		*finish;
-	vdi_event_f		*event;
-	vdi_destroy_f		*destroy;
-	vdi_panic_f		*panic;
-	void			*priv;
-	const void		*priv2;
+	unsigned			magic;
+#define DIRECTOR_MAGIC			0x3336351d
+	const char			*name;
+	char				*vcl_name;
+	vdi_http1pipe_f			*http1pipe;
+	vdi_healthy_f			*healthy;
+	vdi_resolve_f			*resolve;
+	vdi_gethdrs_f			*gethdrs;
+	vdi_getbody_f			*getbody;
+	vdi_getip_f			*getip;
+	vdi_finish_f			*finish;
+	vdi_event_f			*event;
+	vdi_destroy_f			*destroy;
+	vdi_panic_f			*panic;
+	void				*priv;
+	const void			*priv2;
 
 	/* Internal Housekeeping fields */
 
-	char			*cli_name;
-	VTAILQ_ENTRY(director)	vcl_list;
-	struct vcl		*vcl;
+	char				*cli_name;
+	VTAILQ_ENTRY(director)		vcl_list;
+	struct vcl			*vcl;
 
-	unsigned		health;
-	const struct vdi_ahealth *admin_health;
-	double			health_changed;
+	unsigned			health;
+	const struct vdi_ahealth	*admin_health;
+	double				health_changed;
 };
 
 unsigned VDI_Healthy(const struct director *, double *);
