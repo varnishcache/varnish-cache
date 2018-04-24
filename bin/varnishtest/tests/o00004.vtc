@@ -49,5 +49,5 @@ varnish v2 -vcl {
 server s1 -wait
 
 delay 1
-varnish v2 -cliexpect "vcl1.bp1[ ]+probe[ ]+Healthy[ ]+1/1" backend.list
-varnish v2 -cliexpect "vcl1.bp2[ ]+probe[ ]+Healthy[ ]+1/1" backend.list
+varnish v2 -cliexpect "vcl1.bp1[ ]+probe[ ]+1/1[ ]+good" backend.list
+varnish v2 -cliexpect "vcl1.bp2[ ]+probe[ ]+1/1[ ]+good" backend.list

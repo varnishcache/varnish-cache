@@ -417,6 +417,23 @@ vbe_panic(const struct director *d, struct vsb *vsb)
 }
 
 /*--------------------------------------------------------------------
+ */
+
+static void
+vbe_list(const struct director *d, struct vsb *vsb, int vflag, int pflag)
+{
+	struct backend *bp;
+
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
+
+	if (bp->probe != NULL)
+		VBP_Status(vsb, bp, vflag | pflag);
+	else
+		VSB_printf(vsb, "%-10s", d->health ? "healthy" : "sick");
+}
+
+/*--------------------------------------------------------------------
  * Create a new static or dynamic director::backend instance.
  */
 
@@ -473,6 +490,7 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 	d->finish = vbe_dir_finish;
 	d->event = vbe_dir_event;
 	d->panic = vbe_panic;
+	d->list = vbe_list;
 	d->destroy = vbe_destroy;
 
 	d->health = 1;

@@ -60,6 +60,8 @@ typedef void vdi_destroy_f(const struct director *);
 
 typedef void vdi_panic_f(const struct director *, struct vsb *);
 
+typedef void vdi_list_f(const struct director *, struct vsb *, int, int);
+
 struct director {
 	unsigned			magic;
 #define DIRECTOR_MAGIC			0x3336351d
@@ -75,6 +77,8 @@ struct director {
 	vdi_event_f			*event;
 	vdi_destroy_f			*destroy;
 	vdi_panic_f			*panic;
+	vdi_list_f			*list;
+
 	void				*priv;
 	const void			*priv2;
 

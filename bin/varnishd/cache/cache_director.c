@@ -38,7 +38,6 @@
 #include "cache_varnishd.h"
 
 #include "cache_director.h"
-#include "cache_backend.h"
 
 #include "vcli_serve.h"
 #include "vtim.h"
@@ -279,62 +278,69 @@ VDI_Healthy(const struct director *d, double *changed)
 
 /*---------------------------------------------------------------------*/
 
+struct list_args {
+	unsigned	magic;
+#define LIST_ARGS_MAGIC	0x7e7cefeb
+	int		p;
+	int		v;
+};
+
 static int v_matchproto_(vcl_be_func)
 do_list(struct cli *cli, struct director *d, void *priv)
 {
-	int *probes;
 	char time_str[VTIM_FORMAT_SIZE];
-	struct backend *be;
+	struct list_args *la;
 
-	AN(priv);
-	probes = priv;
+	CAST_OBJ_NOTNULL(la, priv, LIST_ARGS_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	CAST_OBJ_NOTNULL(be, d->priv, BACKEND_MAGIC);
+
 	if (d->admin_health == VDI_AH_DELETED)
 		return (0);
 
-	VCLI_Out(cli, "\n%-30s", d->cli_name);
+	VCLI_Out(cli, "\n%-30s %-7s ", d->cli_name, VDI_Ahealth(d));
 
-	VCLI_Out(cli, " %-10s", VDI_Ahealth(d));
-
-	if (be->probe == NULL)
-		VCLI_Out(cli, " %-20s", "Healthy (no probe)");
-	else {
-		if (d->health)
-			VCLI_Out(cli, " %-20s", "Healthy ");
-		else
-			VCLI_Out(cli, " %-20s", "Sick ");
-		VBP_Status(cli, be, *probes);
-	}
+	if (d->list != NULL)
+		d->list(d, cli->sb, 0, 0);
+	else
+		VCLI_Out(cli, "%-10s", d->health ? "healthy" : "sick");
 
 	VTIM_format(d->health_changed, time_str);
 	VCLI_Out(cli, " %s", time_str);
-
+	if (la->p || la->v)
+		d->list(d, cli->sb, la->p, la->v);
 	return (0);
 }
 
 static void v_matchproto_(cli_func_t)
 cli_backend_list(struct cli *cli, const char * const *av, void *priv)
 {
-	int probes = 0;
+	const char *p;
+	struct list_args la[1];
 
 	(void)priv;
 	ASSERT_CLI();
-	if (av[2] != NULL && !strcmp(av[2], "-p")) {
+	INIT_OBJ(la, LIST_ARGS_MAGIC);
+	while (av[2] != NULL && av[2][0] == '-') {
+		for(p = av[2] + 1; *p; p++) {
+			switch(*p) {
+			case 'p': la->p = !la->p; break;
+			case 'v': la->p = !la->p; break;
+			default:
+				VCLI_Out(cli, "Invalid flag %c", *p);
+				VCLI_SetResult(cli, CLIS_PARAM);
+				return;
+			}
+		}
 		av++;
-		probes = 1;
-	} else if (av[2] != NULL && av[2][0] == '-') {
-		VCLI_Out(cli, "Invalid flags %s", av[2]);
-		VCLI_SetResult(cli, CLIS_PARAM);
-		return;
-	} else if (av[3] != NULL) {
+	}
+	if (av[3] != NULL) {
 		VCLI_Out(cli, "Too many arguments");
 		VCLI_SetResult(cli, CLIS_PARAM);
 		return;
 	}
-	VCLI_Out(cli, "%-30s %-10s %-20s %s", "Backend name", "Admin",
-	    "Probe", "Last updated");
-	(void)VCL_IterDirector(cli, av[2], do_list, &probes);
+	VCLI_Out(cli, "%-30s %-7s %-10s %s",
+	    "Backend name", "Admin", "Probe", "Last change");
+	(void)VCL_IterDirector(cli, av[2], do_list, la);
 }
 
 /*---------------------------------------------------------------------*/
