@@ -100,6 +100,10 @@ Recommended, in particular if you plan on building custom vmods::
 
     sudo apt-get install autoconf-archive
 
+Optionally, to pull from a repository::
+
+    sudo apt-get install git
+
 Build dependencies on Red Hat / CentOS
 --------------------------------------
 
@@ -124,6 +128,10 @@ install required packages (replace ``sudo yum install`` if needed)::
 Optionally, to rebuild the svg files::
 
     yum install graphviz
+
+Optionally, to pull from a repository::
+
+    yum install git
 
 .. XXX autoconf-archive ? is this any helpful on the notoriously
    outdated Redhats?
