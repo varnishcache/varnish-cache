@@ -25,6 +25,7 @@ Bugs fixed
 * 2502_ - objcore reference count leak
 * 2530_ - Varnish shouldn't test gunzip for range responses
 * 2582_ - Assert error in http1_minimal_response()
+* 2609_ - Fix memory leak of vary string on stevedore alloc fail
 
 .. _1772: https://github.com/varnishcache/varnish-cache/issues/1772
 .. _2135: https://github.com/varnishcache/varnish-cache/pull/2135
@@ -32,6 +33,7 @@ Bugs fixed
 .. _2502: https://github.com/varnishcache/varnish-cache/issues/2502
 .. _2530: https://github.com/varnishcache/varnish-cache/issues/2530
 .. _2582: https://github.com/varnishcache/varnish-cache/issues/2582
+.. _2609: https://github.com/varnishcache/varnish-cache/pull/2609
 
 ================================
 Varnish Cache 4.1.9 (2017-11-14)
