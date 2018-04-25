@@ -224,13 +224,13 @@ vcl_iterdir(struct cli *cli, const char *pat, const struct vcl *vcl,
     vcl_be_func *func, void *priv)
 {
 	int i, found = 0;
-	struct director *d;
+	struct vcldir *vdir;
 
-	VTAILQ_FOREACH(d, &vcl->director_list, vcl_list) {
-		if (fnmatch(pat, d->cli_name, 0))
+	VTAILQ_FOREACH(vdir, &vcl->director_list, list) {
+		if (fnmatch(pat, vdir->dir->cli_name, 0))
 			continue;
 		found++;
-		i = func(cli, d, priv);
+		i = func(cli, vdir->dir, priv);
 		if (i < 0)
 			return (i);
 		found += i;
@@ -285,32 +285,33 @@ VCL_IterDirector(struct cli *cli, const char *pat,
 static void
 vcl_BackendEvent(const struct vcl *vcl, enum vcl_event_e e)
 {
-	struct director *d;
+	struct vcldir *vdir;
 
 	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	AZ(vcl->busy);
 
-	VTAILQ_FOREACH(d, &vcl->director_list, vcl_list)
-		VDI_Event(d, e);
+	VTAILQ_FOREACH(vdir, &vcl->director_list, list)
+		VDI_Event(vdir->dir, e);
 }
 
 static void
 vcl_KillBackends(struct vcl *vcl)
 {
-	struct director *d;
+	struct vcldir *vdir;
 
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	AZ(vcl->busy);
 	assert(VTAILQ_EMPTY(&vcl->ref_list));
 	while (1) {
-		d = VTAILQ_FIRST(&vcl->director_list);
-		if (d == NULL)
+		vdir = VTAILQ_FIRST(&vcl->director_list);
+		if (vdir == NULL)
 			break;
-		VTAILQ_REMOVE(&vcl->director_list, d, vcl_list);
-		AN(d->destroy);
-		REPLACE(d->cli_name, NULL);
-		d->destroy(d);
+		VTAILQ_REMOVE(&vcl->director_list, vdir, list);
+		REPLACE(vdir->dir->cli_name, NULL);
+		AN(vdir->dir->destroy);
+		vdir->dir->destroy(vdir->dir);
+		FREE_OBJ(vdir);
 	}
 }
 

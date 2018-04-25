@@ -130,19 +130,12 @@ VRT_AddDirector(VRT_CTX, struct director *d, const char *vcl_name)
 {
 	struct vsb *vsb;
 	struct vcl *vcl;
+	struct vcldir *vdir;
 
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	vcl = ctx->vcl;
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
-	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	AN(d->destroy);
-	d->admin_health = VDI_AH_PROBE;
-
-	vsb = VSB_new_auto();
-	AN(vsb);
-	VSB_printf(vsb, "%s.%s", VCL_Name(vcl), vcl_name);
-	AZ(VSB_finish(vsb));
-	REPLACE((d->cli_name), VSB_data(vsb));
-	VSB_destroy(&vsb);
 
 	AZ(errno=pthread_rwlock_rdlock(&vcl->temp_rwl));
 	if (vcl->temp == VCL_TEMP_COOLING) {
@@ -150,9 +143,22 @@ VRT_AddDirector(VRT_CTX, struct director *d, const char *vcl_name)
 		return (1);
 	}
 
+	d->admin_health = VDI_AH_PROBE;
+	vsb = VSB_new_auto();
+	AN(vsb);
+	VSB_printf(vsb, "%s.%s", VCL_Name(vcl), vcl_name);
+	AZ(VSB_finish(vsb));
+	REPLACE((d->cli_name), VSB_data(vsb));
+	VSB_destroy(&vsb);
+
+	ALLOC_OBJ(vdir, VCLDIR_MAGIC);
+	AN(vdir);
+	vdir->dir = d;
+	vdir->vcl = vcl;
+	d->vdir = vdir;
+
 	Lck_Lock(&vcl_mtx);
-	VTAILQ_INSERT_TAIL(&vcl->director_list, d, vcl_list);
-	d->vcl = vcl;
+	VTAILQ_INSERT_TAIL(&vcl->director_list, vdir, list);
 	Lck_Unlock(&vcl_mtx);
 
 	if (VCL_WARM(vcl))
@@ -169,13 +175,16 @@ void
 VRT_DelDirector(VRT_CTX, struct director *d)
 {
 	struct vcl *vcl;
+	struct vcldir *vdir;
 
 	(void)ctx;
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	vcl = d->vcl;
+	vdir = d->vdir;
+	CHECK_OBJ_NOTNULL(vdir, VCLDIR_MAGIC);
+	vcl = vdir->vcl;
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	Lck_Lock(&vcl_mtx);
-	VTAILQ_REMOVE(&vcl->director_list, d, vcl_list);
+	VTAILQ_REMOVE(&vcl->director_list, vdir, list);
 	Lck_Unlock(&vcl_mtx);
 
 	AZ(errno=pthread_rwlock_rdlock(&vcl->temp_rwl));
@@ -185,6 +194,7 @@ VRT_DelDirector(VRT_CTX, struct director *d)
 	AN(d->destroy);
 	REPLACE(d->cli_name, NULL);
 	d->destroy(d);
+	FREE_OBJ(vdir);
 }
 
 /*--------------------------------------------------------------------*/

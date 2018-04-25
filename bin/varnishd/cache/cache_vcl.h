@@ -35,6 +35,14 @@ struct vfp_filter;
 
 VTAILQ_HEAD(vfp_filter_head, vfp_filter);
 
+struct vcldir {
+	unsigned		magic;
+#define VCLDIR_MAGIC		0xbf726c7d
+	struct director		*dir;
+	struct vcl		*vcl;
+	VTAILQ_ENTRY(vcldir)	list;
+};
+
 struct vcl {
 	unsigned		magic;
 #define VCL_MAGIC		0x214188f2
@@ -47,7 +55,7 @@ struct vcl {
 	unsigned		discard;
 	const char		*temp;
 	pthread_rwlock_t	temp_rwl;
-	VTAILQ_HEAD(,director)	director_list;
+	VTAILQ_HEAD(,vcldir)	director_list;
 	VTAILQ_HEAD(,vclref)	ref_list;
 	int			nrefs;
 	struct vcl		*label;

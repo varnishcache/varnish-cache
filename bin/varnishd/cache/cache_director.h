@@ -37,6 +37,8 @@
  *
  */
 
+struct vcldir;
+
 typedef unsigned vdi_healthy_f(const struct director *, const struct busyobj *,
     double *changed);
 /* XXX need a VRT_CTX argument */
@@ -84,9 +86,9 @@ struct director {
 
 	/* Internal Housekeeping fields */
 
+	struct vcldir			*vdir;
+
 	char				*cli_name;
-	VTAILQ_ENTRY(director)		vcl_list;
-	struct vcl			*vcl;
 
 	unsigned			health;
 	const struct vdi_ahealth	*admin_health;
