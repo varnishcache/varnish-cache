@@ -2,6 +2,13 @@
 Varnish Cache Trunk (ongoing)
 =============================
 
+varnishadm
+----------
+
+* The output format of the ``backend.list`` CLI command has been
+  changed.
+
+
 VCL and bundled VMODs
 ---------------------
 
