@@ -93,24 +93,64 @@ void VRT_RemoveVFP(VRT_CTX, const struct vfp *);
 
 /* Deliver processors ------------------------------------------------*/
 
-enum vdp_action {
-	VDP_INIT,		/* Happens on VDP_push() */
-	VDP_FINI,		/* Happens on VDP_pop() */
-	VDP_NULL,		/* Input buffer valid after call */
-	VDP_FLUSH,		/* Input buffer will be invalidated */
+enum vdp_status {
+	VDP_ERROR_FETCH	= -3,	/* Streaming fetch failure */
+	VDP_ERROR_IO	= -2,	/* Socket error (ie remote close) */
+	VDP_ERROR	= -1,	/* VDP error */
+	VDP_OK		= 0,
+	VDP_BREAK	= 1,	/* Stop processing (no error) */
 };
 
-typedef int vdp_bytes_f(struct req *, enum vdp_action, void **priv,
+enum vdp_flush {
+	VDP_NULL,		/* Input buffer valid after call */
+	VDP_FLUSH,		/* Input buffer will be invalidated */
+	VDP_LAST,		/* Implies flush, this is the last chunk */
+};
+
+typedef int vdp_init_f(struct req *, void **priv); /* Called on VDP_push() */
+/* The init callback is called at the time VDP_push is called.
+ *
+ * It should return VDP_OK on success. The fini function will be called if
+ * defined.
+ *
+ * It may return VDP_ERROR if it fails the initialization. This causes a
+ * canned 500 reply to be sent to the client. The fini function will not
+ * be called. */
+
+typedef void vdp_fini_f(struct req *, void **priv); /* Called on VDP_close() */
+
+typedef int vdp_bytes_f(struct req *, enum vdp_flush, void **priv,
     const void *ptr, ssize_t len);
+/* The bytes callback is called for each chunk of data to be processed. To
+ * pass data down to the next layer, call VDP_Bytes().
+ *
+ * The flush value determines how to treat the data being processed.
+ *
+ * If flush==VDP_NULL, the data will not be invalidated upon return from
+ * the callback function, and the pointers may be kept at any layer.
+ *
+ * If flush==VDP_FLUSH, the data will become invalid upon returning from
+ * the callback function. The layer needs to buffer it, or pass it down to
+ * the next layer, making sure to call VDP_bytes with flush>=VDP_FLUSH.
+ *
+ * If flush==VDP_LAST, this is the very last chunk being processed. This
+ * implies VDP_FLUSH. The function needs to call down **once and only
+ * once** to the next layer with flush==VDP_LAST. If the processing causes
+ * the need for multiple chunks to be passed on to the next layer, only
+ * the final chunk should have flush==VDP_LAST.
+ */
 
 struct vdp {
 	const char		*name;
-	vdp_bytes_f		*func;
+	vdp_init_f		*init;
+	vdp_fini_f		*fini;
+	vdp_bytes_f		*bytes;
 };
 
 struct vdp_entry {
 	unsigned		magic;
 #define VDP_ENTRY_MAGIC		0x353eb781
+	unsigned		f_seen_last:1;
 	const struct vdp	*vdp;
 	void			*priv;
 	VTAILQ_ENTRY(vdp_entry)	list;
@@ -123,8 +163,10 @@ struct vdp_ctx {
 #define VDP_CTX_MAGIC		0xee501df7
 	struct vdp_entry_s	vdp;
 	struct vdp_entry	*nxt;
-	int			retval;
+	int			status;
 };
 
-int VDP_bytes(struct req *, enum vdp_action act, const void *ptr, ssize_t len);
-int VDP_push(struct req *, const struct vdp *, void *priv, int bottom);
+int VDP_bytes(struct req *, enum vdp_flush flush, const void *ptr,
+    ssize_t len);
+int VDP_push(struct req *, const struct vdp *, void *priv,
+    int bottom);

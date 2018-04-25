@@ -341,7 +341,7 @@ cnt_transmit(struct worker *wrk, struct req *req)
 	struct boc *boc;
 	const char *r;
 	uint16_t status;
-	int err, sendbody;
+	int sendbody;
 	intmax_t clval;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -374,18 +374,15 @@ cnt_transmit(struct worker *wrk, struct req *req)
 	} else
 		sendbody = 1;
 
-	err = 0;
 	if (sendbody >= 0) {
 		if (!req->disable_esi && req->resp_len != 0 &&
-		    ObjHasAttr(wrk, req->objcore, OA_ESIDATA) &&
-		    VDP_push(req, &VDP_esi, NULL, 0) < 0)
-			err++;
+		    ObjHasAttr(wrk, req->objcore, OA_ESIDATA))
+			VDP_push(req, &VDP_esi, NULL, 0);
 
 		if (cache_param->http_gzip_support &&
 		    ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED) &&
-		    !RFC2616_Req_Gzip(req->http) &&
-		    VDP_push(req, &VDP_gunzip, NULL, 1) < 0)
-			err++;
+		    !RFC2616_Req_Gzip(req->http))
+			VDP_push(req, &VDP_gunzip, NULL, 1);
 
 		if (cache_param->http_range_support &&
 		    http_IsStatus(req->resp, 200)) {
@@ -407,12 +404,10 @@ cnt_transmit(struct worker *wrk, struct req *req)
 			    "Content-Length: %jd", req->resp_len);
 	}
 
-	if (err == 0)
-		req->transport->deliver(req, boc, sendbody);
-	else {
-		VSLb(req->vsl, SLT_Error, "Failure to push processors");
-		req->doclose = SC_OVERLOAD;
-	}
+	req->transport->deliver(req, boc, sendbody);
+
+	/* We are done with the VDPs */
+	VDP_close(req);
 
 	VSLb_ts_req(req, "Resp", W_TIM_real(wrk));
 
@@ -811,7 +806,7 @@ cnt_recv_prep(struct req *req, const char *ci)
 		req->storage = NULL;
 	}
 
-	req->vdc->retval = 0;
+	req->vdc->status = VDP_OK;
 	req->is_hit = 0;
 }
 /*--------------------------------------------------------------------

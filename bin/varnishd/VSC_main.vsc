@@ -505,6 +505,16 @@
 
 	Number of session closes with Error VCL_FAILURE (VCL failure)
 
+.. varnish_vsc:: sc_vdp_error
+	:level: diag
+	:oneliner:	Session Err VDP_FAILURE
+
+	Number of times an object delivery failed due to errors reported in the VDP layer
+
+.. varnish_vsc:: sc_stream_failure
+	:level: diag
+	:oneliner:	Session Err VDP_ERROR_FETCH
+
 .. varnish_vsc:: shm_records
 	:level:	diag
 	:oneliner:	SHM records

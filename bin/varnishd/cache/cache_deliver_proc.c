@@ -49,28 +49,34 @@
  * r > 0:  Stop, breaks out early without error condition
  */
 int
-VDP_bytes(struct req *req, enum vdp_action act, const void *ptr, ssize_t len)
+VDP_bytes(struct req *req, enum vdp_flush flush, const void *ptr, ssize_t len)
 {
-	int retval;
+	enum vdp_status status;
 	struct vdp_entry *vdpe;
 	struct vdp_ctx *vdc;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
 	vdc = req->vdc;
-	assert(act == VDP_NULL || act == VDP_FLUSH);
-	if (vdc->retval)
-		return (vdc->retval);
+	if (vdc->status != VDP_OK)
+		return (vdc->status);
 	vdpe = vdc->nxt;
 	CHECK_OBJ_NOTNULL(vdpe, VDP_ENTRY_MAGIC);
-	vdc->nxt = VTAILQ_NEXT(vdpe, list);
 
-	assert(act > VDP_NULL || len > 0);
+	/* We should be called only once with the VDP_LAST flag */
+	AZ(vdpe->f_seen_last);
+
 	/* Call the present layer, while pointing to the next layer down */
-	retval = vdpe->vdp->func(req, act, &vdpe->priv, ptr, len);
-	if (retval && (vdc->retval == 0 || retval < vdc->retval))
-		vdc->retval = retval; /* Latch error value */
+	vdc->nxt = VTAILQ_NEXT(vdpe, list);
+	CHECK_OBJ_ORNULL(vdc->nxt, VDP_ENTRY_MAGIC);
+	status = vdpe->vdp->bytes(req, flush, &vdpe->priv, ptr, len);
 	vdc->nxt = vdpe;
-	return (vdc->retval);
+	if (status != VDP_OK && (vdc->status == VDP_OK || status < vdc->status))
+		vdc->status = status; /* Latch error status */
+	if (flush == VDP_LAST)
+		vdpe->f_seen_last = 1;
+
+	return (vdc->status);
 }
 
 int
@@ -83,19 +89,20 @@ VDP_push(struct req *req, const struct vdp *vdp, void *priv, int bottom)
 	vdc = req->vdc;
 	AN(vdp);
 	AN(vdp->name);
-	AN(vdp->func);
+	AN(vdp->bytes);
 
-	if (vdc->retval)
-		return (vdc->retval);
+	if (vdc->status != VDP_OK)
+		return (vdc->status);
 
 	if (DO_DEBUG(DBG_PROCESSORS))
 		VSLb(req->vsl, SLT_Debug, "VDP_push(%s)", vdp->name);
 
 	vdpe = WS_Alloc(req->ws, sizeof *vdpe);
 	if (vdpe == NULL) {
-		AZ(vdc->retval);
-		vdc->retval = -1;
-		return (vdc->retval);
+		VSLb(req->vsl, SLT_Error,
+		    "VDP_push(%s) workspace_client overflow", vdp->name);
+		vdc->status = VDP_ERROR;
+		return (vdc->status);
 	}
 	INIT_OBJ(vdpe, VDP_ENTRY_MAGIC);
 	vdpe->vdp = vdp;
@@ -106,9 +113,9 @@ VDP_push(struct req *req, const struct vdp *vdp, void *priv, int bottom)
 		VTAILQ_INSERT_HEAD(&vdc->vdp, vdpe, list);
 	vdc->nxt = VTAILQ_FIRST(&vdc->vdp);
 
-	AZ(vdc->retval);
-	vdc->retval = vdpe->vdp->func(req, VDP_INIT, &vdpe->priv, NULL, 0);
-	return (vdc->retval);
+	if (vdpe->vdp->init)
+		vdc->status = vdpe->vdp->init(req, &vdpe->priv);
+	return (vdc->status);
 }
 
 void
@@ -121,13 +128,10 @@ VDP_close(struct req *req)
 	vdc = req->vdc;
 	while (!VTAILQ_EMPTY(&vdc->vdp)) {
 		vdpe = VTAILQ_FIRST(&vdc->vdp);
-		if (vdc->retval >= 0)
-			AN(vdpe);
-		if (vdpe != NULL) {
-			CHECK_OBJ_NOTNULL(vdpe, VDP_ENTRY_MAGIC);
-			VTAILQ_REMOVE(&vdc->vdp, vdpe, list);
-			AZ(vdpe->vdp->func(req, VDP_FINI, &vdpe->priv,
-			    NULL, 0));
+		CHECK_OBJ_NOTNULL(vdpe, VDP_ENTRY_MAGIC);
+		VTAILQ_REMOVE(&vdc->vdp, vdpe, list);
+		if (vdpe->vdp->fini) {
+			vdpe->vdp->fini(req, &vdpe->priv);
 			AZ(vdpe->priv);
 		}
 		vdc->nxt = VTAILQ_FIRST(&vdc->vdp);
@@ -139,9 +143,8 @@ VDP_close(struct req *req)
 static int v_matchproto_(objiterate_f)
 vdp_objiterator(void *priv, int flush, int last, const void *ptr, ssize_t len)
 {
-	if (last && len == 0)
-		return (0);	/* XXX: For now do not send empty last
-				 * events down the chain. */
+	if (last)
+		return (VDP_bytes(priv, VDP_LAST, ptr, len));
 	return (VDP_bytes(priv, flush ? VDP_FLUSH : VDP_NULL, ptr, len));
 }
 
@@ -152,9 +155,12 @@ VDP_DeliverObj(struct req *req)
 	int r;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	if (req->vdc->status != VDP_OK)
+		return (req->vdc->status);
 	r = ObjIterate(req->wrk, req->objcore, req, vdp_objiterator,
 	    req->objcore->flags & OC_F_PRIVATE ? 1 : 0);
-	if (r < 0)
-		return (r);
-	return (0);
+	if (r < 0 && req->vdc->status == VDP_OK)
+		/* Streaming fetch error */
+		req->vdc->status = VDP_ERROR_FETCH;
+	return (req->vdc->status);
 }
