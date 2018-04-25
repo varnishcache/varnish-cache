@@ -14,12 +14,22 @@ VCL and bundled VMODs
 
 * VMOD unix now supports the ``getpeerucred(3)`` case.
 
+* Fetch Processors (VFPs) can now be configured from VCL via
+  ``beresp.filters``
+
 bundled tools
 -------------
 
 * ``varnishhist``: The format of the ``-P`` argument has been changed
   for custom profile definitions to also contain a prefix to match the
   tag against.
+
+C APIs (for vmod and utility authors)
+-------------------------------------
+
+* XXX VFP
+
+* XXX backend add / del
 
 ================================
 Varnish Cache 6.0.0 (2018-03-15)
