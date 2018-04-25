@@ -64,11 +64,10 @@ typedef void vdi_panic_f(const struct director *, struct vsb *);
 
 typedef void vdi_list_f(const struct director *, struct vsb *, int, int);
 
-struct director {
+struct director_methods {
 	unsigned			magic;
-#define DIRECTOR_MAGIC			0x3336351d
-	const char			*name;
-	char				*vcl_name;
+#define DIRECTOR_METHODS_MAGIC		0x4ec0c4bb
+	const char			*type;
 	vdi_http1pipe_f			*http1pipe;
 	vdi_healthy_f			*healthy;
 	vdi_resolve_f			*resolve;
@@ -80,6 +79,13 @@ struct director {
 	vdi_destroy_f			*destroy;
 	vdi_panic_f			*panic;
 	vdi_list_f			*list;
+};
+
+struct director {
+	unsigned			magic;
+#define DIRECTOR_MAGIC			0x3336351d
+	const struct director_methods	*methods;
+	char				*vcl_name;
 
 	void				*priv;
 	const void			*priv2;

@@ -85,9 +85,10 @@ vdi_resolve(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-	for (d = bo->director_req; d != NULL && d->resolve != NULL; d = d2) {
+	for (d = bo->director_req; d != NULL &&
+	    d->methods->resolve != NULL; d = d2) {
 		CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-		d2 = d->resolve(d, wrk, bo);
+		d2 = d->methods->resolve(d, wrk, bo);
 		if (d2 == NULL)
 			VSLb(bo->vsl, SLT_FetchError,
 			    "Director %s returned no backend", d->vcl_name);
@@ -112,9 +113,9 @@ VDI_GetHdr(struct worker *wrk, struct busyobj *bo)
 
 	d = vdi_resolve(wrk, bo);
 	if (d != NULL) {
-		AN(d->gethdrs);
+		AN(d->methods->gethdrs);
 		bo->director_state = DIR_S_HDRS;
-		i = d->gethdrs(d, wrk, bo);
+		i = d->methods->gethdrs(d, wrk, bo);
 	}
 	if (i)
 		bo->director_state = DIR_S_NULL;
@@ -133,13 +134,13 @@ VDI_GetBody(struct worker *wrk, struct busyobj *bo)
 
 	d = bo->director_resp;
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	AZ(d->resolve);
+	AZ(d->methods->resolve);
 
 	assert(bo->director_state == DIR_S_HDRS);
 	bo->director_state = DIR_S_BODY;
-	if (d->getbody == NULL)
+	if (d->methods->getbody == NULL)
 		return (0);
-	return (d->getbody(d, wrk, bo));
+	return (d->methods->getbody(d, wrk, bo));
 }
 
 /* Get IP number (if any ) -------------------------------------------*/
@@ -156,10 +157,10 @@ VDI_GetIP(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	assert(bo->director_state == DIR_S_HDRS ||
 	   bo->director_state == DIR_S_BODY);
-	AZ(d->resolve);
-	if (d->getip == NULL)
+	AZ(d->methods->resolve);
+	if (d->methods->getip == NULL)
 		return (NULL);
-	return (d->getip(d, wrk, bo));
+	return (d->methods->getip(d, wrk, bo));
 }
 
 /* Finish fetch ------------------------------------------------------*/
@@ -175,11 +176,11 @@ VDI_Finish(struct worker *wrk, struct busyobj *bo)
 	d = bo->director_resp;
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 
-	AZ(d->resolve);
-	AN(d->finish);
+	AZ(d->methods->resolve);
+	AN(d->methods->finish);
 
 	assert(bo->director_state != DIR_S_NULL);
-	d->finish(d, wrk, bo);
+	d->methods->finish(d, wrk, bo);
 	bo->director_state = DIR_S_NULL;
 }
 
@@ -194,11 +195,11 @@ VDI_Http1Pipe(struct req *req, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
 	d = vdi_resolve(req->wrk, bo);
-	if (d == NULL || d->http1pipe == NULL) {
+	if (d == NULL || d->methods->http1pipe == NULL) {
 		VSLb(bo->vsl, SLT_VCL_Error, "Backend does not support pipe");
 		return (SC_TX_ERROR);
 	}
-	return (d->http1pipe(d, req, bo));
+	return (d->methods->http1pipe(d, req, bo));
 }
 
 /* Check health --------------------------------------------------------
@@ -216,9 +217,9 @@ VRT_Healthy(VRT_CTX, VCL_BACKEND d)
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	if (!VDI_Healthy(d, NULL))
 		return (0);
-	if (d->healthy == NULL)
+	if (d->methods->healthy == NULL)
 		return (1);
-	return (d->healthy(d, ctx->bo, NULL));
+	return (d->methods->healthy(d, ctx->bo, NULL));
 }
 
 /* Send Event ----------------------------------------------------------
@@ -229,8 +230,8 @@ VDI_Event(const struct director *d, enum vcl_event_e ev)
 {
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	if (d->event != NULL)
-		d->event(d, ev);
+	if (d->methods->event != NULL)
+		d->methods->event(d, ev);
 }
 
 /* Dump panic info -----------------------------------------------------
@@ -247,10 +248,10 @@ VDI_Panic(const struct director *d, struct vsb *vsb, const char *nm)
 	VSB_printf(vsb, "health = %s,\n", d->health ?  "healthy" : "sick");
 	VSB_printf(vsb, "admin_health = %s, changed = %f,\n",
 	    VDI_Ahealth(d), d->health_changed);
-	VSB_printf(vsb, "type = %s {\n", d->name);
+	VSB_printf(vsb, "type = %s {\n", d->methods->type);
 	VSB_indent(vsb, 2);
-	if (d->panic != NULL)
-		d->panic(d, vsb);
+	if (d->methods->panic != NULL)
+		d->methods->panic(d, vsb);
 	VSB_indent(vsb, -2);
 	VSB_printf(vsb, "},\n");
 	VSB_indent(vsb, -2);
@@ -299,15 +300,15 @@ do_list(struct cli *cli, struct director *d, void *priv)
 
 	VCLI_Out(cli, "\n%-30s %-7s ", d->cli_name, VDI_Ahealth(d));
 
-	if (d->list != NULL)
-		d->list(d, cli->sb, 0, 0);
+	if (d->methods->list != NULL)
+		d->methods->list(d, cli->sb, 0, 0);
 	else
 		VCLI_Out(cli, "%-10s", d->health ? "healthy" : "sick");
 
 	VTIM_format(d->health_changed, time_str);
 	VCLI_Out(cli, " %s", time_str);
-	if (la->p || la->v)
-		d->list(d, cli->sb, la->p, la->v);
+	if ((la->p || la->v) && d->methods->list != NULL)
+		d->methods->list(d, cli->sb, la->p, la->v);
 	return (0);
 }
 

@@ -47,6 +47,12 @@ struct vmod_directors_hash {
 	struct vdir				*vd;
 };
 
+static const struct director_methods vmod_hash_methods[1] = {{
+	.magic =		DIRECTOR_METHODS_MAGIC,
+	.type =			"hash",
+}};
+
+
 VCL_VOID v_matchproto_()
 vmod_hash__init(VRT_CTX, struct vmod_directors_hash **rrp,
     const char *vcl_name)
@@ -59,7 +65,7 @@ vmod_hash__init(VRT_CTX, struct vmod_directors_hash **rrp,
 	ALLOC_OBJ(rr, VMOD_DIRECTORS_HASH_MAGIC);
 	AN(rr);
 	*rrp = rr;
-	vdir_new(ctx, &rr->vd, "hash", vcl_name, NULL, NULL, rr);
+	vdir_new(ctx, &rr->vd, vcl_name, vmod_hash_methods, rr);
 }
 
 VCL_VOID v_matchproto_()

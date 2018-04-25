@@ -196,6 +196,14 @@ shard__assert(void)
 	assert(t2a == t2b);
 }
 
+static const struct director_methods vmod_shard_methods[1] = {{
+	.magic =	DIRECTOR_METHODS_MAGIC,
+	.type =		"shard",
+	.resolve =	vmod_shard_resolve,
+	.healthy =	vmod_shard_healthy,
+}};
+
+
 VCL_VOID v_matchproto_(td_directors_shard__init)
 vmod_shard__init(VRT_CTX, struct vmod_directors_shard **vshardp,
     const char *vcl_name)
@@ -217,8 +225,7 @@ vmod_shard__init(VRT_CTX, struct vmod_directors_shard **vshardp,
 	AN(vshard->dir);
 	REPLACE(vshard->dir->vcl_name, vcl_name);
 	vshard->dir->priv = vshard;
-	vshard->dir->resolve = vmod_shard_resolve;
-	vshard->dir->healthy = vmod_shard_healthy;
+	vshard->dir->methods = vmod_shard_methods;
 	vshard->dir->admin_health = VDI_AH_HEALTHY;
 }
 

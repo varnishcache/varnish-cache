@@ -75,7 +75,7 @@ vmod_fallback_resolve(const struct director *dir, struct worker *wrk,
 	for (u = 0; u < fb->vd->n_backend; u++) {
 		be = fb->vd->backend[fb->cur];
 		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
-		if (be->healthy(be, bo, NULL))
+		if (be->methods->healthy(be, bo, NULL))
 			break;
 		if (++fb->cur == fb->vd->n_backend)
 			fb->cur = 0;
@@ -85,6 +85,14 @@ vmod_fallback_resolve(const struct director *dir, struct worker *wrk,
 		be = NULL;
 	return (be);
 }
+
+static const struct director_methods vmod_fallback_methods[1] = {{
+	.magic =		DIRECTOR_METHODS_MAGIC,
+	.type =			"fallback",
+	.healthy =		vmod_fallback_healthy,
+	.resolve =		vmod_fallback_resolve,
+}};
+
 
 VCL_VOID v_matchproto_()
 vmod_fallback__init(VRT_CTX,
@@ -98,8 +106,7 @@ vmod_fallback__init(VRT_CTX,
 	ALLOC_OBJ(fb, VMOD_DIRECTORS_FALLBACK_MAGIC);
 	AN(fb);
 	*fbp = fb;
-	vdir_new(ctx, &fb->vd, "fallback", vcl_name, vmod_fallback_healthy,
-	    vmod_fallback_resolve, fb);
+	vdir_new(ctx, &fb->vd, vcl_name, vmod_fallback_methods, fb);
 	fb->st = sticky;
 }
 

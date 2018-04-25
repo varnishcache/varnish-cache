@@ -135,7 +135,8 @@ VRT_AddDirector(VRT_CTX, struct director *d, const char *vcl_name)
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	vcl = ctx->vcl;
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
-	AN(d->destroy);
+	CHECK_OBJ_NOTNULL(d->methods, DIRECTOR_METHODS_MAGIC);
+	AN(d->methods->destroy);
 
 	AZ(errno=pthread_rwlock_rdlock(&vcl->temp_rwl));
 	if (vcl->temp == VCL_TEMP_COOLING) {
@@ -191,9 +192,9 @@ VRT_DelDirector(VRT_CTX, struct director *d)
 	if (VCL_WARM(vcl))
 		VDI_Event(d, VCL_EVENT_COLD);
 	AZ(errno=pthread_rwlock_unlock(&vcl->temp_rwl));
-	AN(d->destroy);
+	AN(d->methods->destroy);
 	REPLACE(d->cli_name, NULL);
-	d->destroy(d);
+	d->methods->destroy(d);
 	FREE_OBJ(vdir);
 }
 

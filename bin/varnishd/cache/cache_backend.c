@@ -434,6 +434,23 @@ vbe_list(const struct director *d, struct vsb *vsb, int vflag, int pflag)
 }
 
 /*--------------------------------------------------------------------
+ */
+
+static const struct director_methods vbe_methods[1] = {{
+	.magic =		DIRECTOR_METHODS_MAGIC,
+	.type =			"backend",
+	.http1pipe =		vbe_dir_http1pipe,
+	.healthy =		vbe_dir_healthy,
+	.gethdrs =		vbe_dir_gethdrs,
+	.getip =		vbe_dir_getip,
+	.finish =		vbe_dir_finish,
+	.event =		vbe_dir_event,
+	.destroy =		vbe_destroy,
+	.panic =		vbe_panic,
+	.list =			vbe_list,
+}};
+
+/*--------------------------------------------------------------------
  * Create a new static or dynamic director::backend instance.
  */
 
@@ -481,17 +498,8 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 	d = be->director;
 	INIT_OBJ(d, DIRECTOR_MAGIC);
 	d->priv = be;
-	d->name = "backend";
 	d->vcl_name = be->vcl_name;
-	d->http1pipe = vbe_dir_http1pipe;
-	d->healthy = vbe_dir_healthy;
-	d->gethdrs = vbe_dir_gethdrs;
-	d->getip = vbe_dir_getip;
-	d->finish = vbe_dir_finish;
-	d->event = vbe_dir_event;
-	d->panic = vbe_panic;
-	d->list = vbe_list;
-	d->destroy = vbe_destroy;
+	d->methods = vbe_methods;
 
 	d->health = 1;
 	d->health_changed = VTIM_real();

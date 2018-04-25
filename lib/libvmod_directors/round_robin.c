@@ -74,7 +74,7 @@ vmod_rr_resolve(const struct director *dir, struct worker *wrk,
 		rr->nxt = nxt + 1;
 		be = rr->vd->backend[nxt];
 		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
-		if (be->healthy(be, bo, NULL))
+		if (be->methods->healthy(be, bo, NULL))
 			break;
 	}
 	vdir_unlock(rr->vd);
@@ -82,6 +82,13 @@ vmod_rr_resolve(const struct director *dir, struct worker *wrk,
 		be = NULL;
 	return (be);
 }
+
+static const struct director_methods vmod_rr_methods[1] = {{
+	.magic =		DIRECTOR_METHODS_MAGIC,
+	.type =			"round-robin",
+	.healthy =		vmod_rr_healthy,
+	.resolve =		vmod_rr_resolve,
+}};
 
 VCL_VOID v_matchproto_()
 vmod_round_robin__init(VRT_CTX,
@@ -95,8 +102,7 @@ vmod_round_robin__init(VRT_CTX,
 	ALLOC_OBJ(rr, VMOD_DIRECTORS_ROUND_ROBIN_MAGIC);
 	AN(rr);
 	*rrp = rr;
-	vdir_new(ctx, &rr->vd, "round-robin", vcl_name, vmod_rr_healthy,
-	    vmod_rr_resolve, rr);
+	vdir_new(ctx, &rr->vd, vcl_name, vmod_rr_methods, rr);
 }
 
 VCL_VOID v_matchproto_()

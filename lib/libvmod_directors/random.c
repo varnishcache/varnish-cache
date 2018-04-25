@@ -74,6 +74,14 @@ vmod_random_resolve(const struct director *dir, struct worker *wrk,
 	return (be);
 }
 
+static const struct director_methods vmod_random_methods[1] = {{
+	.magic =		DIRECTOR_METHODS_MAGIC,
+	.type =			"random",
+	.healthy =		vmod_random_healthy,
+	.resolve =		vmod_random_resolve,
+}};
+
+
 VCL_VOID v_matchproto_()
 vmod_random__init(VRT_CTX, struct vmod_directors_random **rrp,
     const char *vcl_name)
@@ -86,8 +94,7 @@ vmod_random__init(VRT_CTX, struct vmod_directors_random **rrp,
 	ALLOC_OBJ(rr, VMOD_DIRECTORS_RANDOM_MAGIC);
 	AN(rr);
 	*rrp = rr;
-	vdir_new(ctx, &rr->vd, "random", vcl_name, vmod_random_healthy,
-	    vmod_random_resolve, rr);
+	vdir_new(ctx, &rr->vd, vcl_name, vmod_random_methods, rr);
 }
 
 VCL_VOID v_matchproto_()

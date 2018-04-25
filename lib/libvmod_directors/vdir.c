@@ -50,13 +50,13 @@ vdir_expand(struct vdir *vd, unsigned n)
 }
 
 void
-vdir_new(VRT_CTX, struct vdir **vdp, const char *name, const char *vcl_name,
-    vdi_healthy_f *healthy, vdi_resolve_f *resolve, void *priv)
+vdir_new(VRT_CTX, struct vdir **vdp, const char *vcl_name,
+    const struct director_methods *m, void *priv)
 {
 	struct vdir *vd;
 
 	AN(ctx);
-	AN(name);
+	CHECK_OBJ_NOTNULL(m, DIRECTOR_METHODS_MAGIC);
 	AN(vcl_name);
 	AN(vdp);
 	AZ(*vdp);
@@ -67,11 +67,9 @@ vdir_new(VRT_CTX, struct vdir **vdp, const char *name, const char *vcl_name,
 
 	ALLOC_OBJ(vd->dir, DIRECTOR_MAGIC);
 	AN(vd->dir);
-	vd->dir->name = name;
+	vd->dir->methods = m;
 	REPLACE(vd->dir->vcl_name, vcl_name);
 	vd->dir->priv = priv;
-	vd->dir->healthy = healthy;
-	vd->dir->resolve = resolve;
 	vd->dir->admin_health = VDI_AH_HEALTHY;
 	vd->vbm = vbit_new(8);
 	AN(vd->vbm);
@@ -188,7 +186,7 @@ vdir_any_healthy(struct vdir *vd, const struct busyobj *bo, double *changed)
 	for (u = 0; u < vd->n_backend; u++) {
 		be = vd->backend[u];
 		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
-		retval = be->healthy(be, bo, &c);
+		retval = be->methods->healthy(be, bo, &c);
 		if (changed != NULL && c > *changed)
 			*changed = c;
 		if (retval)
@@ -228,7 +226,7 @@ vdir_pick_be(struct vdir *vd, double w, const struct busyobj *bo)
 
 	vdir_wrlock(vd);
 	for (u = 0; u < vd->n_backend; u++) {
-		if (vd->backend[u]->healthy(vd->backend[u], bo, NULL)) {
+		if (vd->backend[u]->methods->healthy(vd->backend[u], bo, NULL)) {
 			vbit_clr(vd->vbm, u);
 			tw += vd->weight[u];
 		} else
