@@ -73,8 +73,37 @@ V2D_Init(void)
 /**********************************************************************/
 
 static int v_matchproto_(vdp_bytes_f)
-h2_bytes(struct req *req, enum vdp_action act, void **priv,
+h2_bytes(struct req *req, enum vdp_flush flush, void **priv,
     const void *ptr, ssize_t len)
+{
+	struct h2_req *r2;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CAST_OBJ_NOTNULL(r2, req->transport_priv, H2_REQ_MAGIC);
+	(void)flush;
+	(void)priv;
+
+	/* XXX: Implement a framework like V1L that can buffer vectors as
+	 * they are added here, and send them in complete frames.  This
+	 * will make it possible to not always flush data. */
+
+	AZ(req->vdc->nxt);		/* always at the bottom of the pile */
+
+	if (r2->error)
+		return (VDP_ERROR);
+
+	if (len == 0)
+		return (VDP_OK);
+
+	H2_Send_Get(req->wrk, r2->h2sess, r2);
+	H2_Send(req->wrk, r2, H2_F_DATA, H2FF_NONE, len, ptr);
+	req->acct.resp_bodybytes += len;
+	H2_Send_Rel(r2->h2sess, r2);
+	return (VDP_OK);
+}
+
+static void v_matchproto_(vdp_fini_f)
+h2_fini(struct req *req, void **priv)
 {
 	struct h2_req *r2;
 
@@ -82,23 +111,27 @@ h2_bytes(struct req *req, enum vdp_action act, void **priv,
 	CAST_OBJ_NOTNULL(r2, req->transport_priv, H2_REQ_MAGIC);
 	(void)priv;
 
-	if (act == VDP_INIT)
-		return (0);
-	if (r2->error && act != VDP_FINI)
-		return (-1);
+	/* XXX: This callback should not be necessary, and the flag
+	 * H2FF_DATA_END_STREAM flag should have been set in h2_bytes when
+	 * flush==VDP_LAST instead. This would have saved having to do an
+	 * empty frame just to set the flag on every delivery (with extra
+	 * grabbing of the fetch mutexes and syscalls to write the frame).
+	 *
+	 * Because H2 does not yet implement transport->req_fail, we can't
+	 * make this optimization yet. Also, we fail to take advantage of
+	 * H2's ability to report errors at any point during a delivery
+	 * (e.g. unsatisfiable range requests). The H2 error reporting and
+	 * how it ties in with VDPs needs to be revisited. */
+
 	H2_Send_Get(req->wrk, r2->h2sess, r2);
-	H2_Send(req->wrk, r2,
-	    H2_F_DATA,
-	    act == VDP_FINI ? H2FF_DATA_END_STREAM : H2FF_NONE,
-	    len, ptr);
+	H2_Send(req->wrk, r2, H2_F_DATA, H2FF_DATA_END_STREAM, 0, NULL);
 	H2_Send_Rel(r2->h2sess, r2);
-	req->acct.resp_bodybytes += len;
-	return (0);
 }
 
 static const struct vdp h2_vdp = {
-	.name =		"H2B",
-	.func =		h2_bytes,
+	.name		= "H2B",
+	.fini		= h2_fini,
+	.bytes		= h2_bytes,
 };
 
 static inline size_t
@@ -273,5 +306,4 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 	}
 
 	AZ(req->wrk->v1l);
-	VDP_close(req);
 }
