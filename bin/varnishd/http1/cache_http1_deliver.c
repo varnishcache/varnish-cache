@@ -36,34 +36,32 @@
 /*--------------------------------------------------------------------*/
 
 static int v_matchproto_(vdp_bytes_f)
-v1d_bytes(struct req *req, enum vdp_action act, void **priv,
+v1d_bytes(struct req *req, enum vdp_flush flush, void **priv,
     const void *ptr, ssize_t len)
 {
 	ssize_t wl = 0;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	(void)priv;
-	if (act == VDP_INIT || act == VDP_FINI)
-		return (0);
 
 	AZ(req->vdc->nxt);		/* always at the bottom of the pile */
 
 	if (len > 0)
 		wl = V1L_Write(req->wrk, ptr, len);
-	if (act > VDP_NULL && V1L_Flush(req->wrk))
-		return (-1);
+	if (flush > VDP_NULL && V1L_Flush(req->wrk))
+		return (VDP_ERROR_IO);
 	if (len != wl)
-		return (-1);
-	return (0);
+		return (VDP_ERROR_IO);
+	return (VDP_OK);
 }
 
 static const struct vdp v1d_vdp = {
-	.name =		"V1B",
-	.func =		v1d_bytes,
+	.name		= "V1B",
+	.bytes		= v1d_bytes,
 };
 
 static void
-v1d_error(struct req *req, const char *msg)
+v1d_error(struct req *req, const char *msg, enum sess_close reason)
 {
 	static const char r_500[] =
 	    "HTTP/1.1 500 Internal Server Error\r\n"
@@ -76,7 +74,7 @@ v1d_error(struct req *req, const char *msg)
 	VSLb(req->vsl, SLT_RespReason, "Internal Server Error");
 
 	(void)write(req->sp->fd, r_500, sizeof r_500 - 1);
-	req->doclose = SC_TX_EOF;
+	req->doclose = reason;
 }
 
 /*--------------------------------------------------------------------
@@ -116,21 +114,25 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 		http_SetHeader(req->resp, "Connection: keep-alive");
 
 	if (WS_Overflowed(req->ws)) {
-		v1d_error(req, "workspace_client overflow");
+		v1d_error(req, "workspace_client overflow", SC_OVERLOAD);
 		return;
 	}
 
 	if (WS_Overflowed(req->sp->ws)) {
-		v1d_error(req, "workspace_session overflow");
+		v1d_error(req, "workspace_session overflow", SC_OVERLOAD);
 		return;
 	}
 
 	if (req->resp_len == 0)
 		sendbody = 0;
 
-	if (sendbody && VDP_push(req, &v1d_vdp, NULL, 1)) {
-		v1d_error(req, "workspace_thread overflow");
-		AZ(req->wrk->v1l);
+	if (sendbody)
+		VDP_push(req, &v1d_vdp, NULL, 1);
+
+	/* Check if any of the VDP initialization calls failed */
+	assert(req->vdc->status <= VDP_OK);
+	if (req->vdc->status < VDP_OK) {
+		v1d_error(req, "VDP initialization error", SC_VDP_ERROR);
 		return;
 	}
 
@@ -139,7 +141,7 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 		 &req->sp->fd, req->vsl, req->t_prev, 0);
 
 	if (WS_Overflowed(req->wrk->aws)) {
-		v1d_error(req, "workspace_thread overflow");
+		v1d_error(req, "workspace_thread overflow", SC_OVERLOAD);
 		AZ(req->wrk->v1l);
 		return;
 	}
@@ -163,11 +165,11 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 
 	if (!sendbody) {
 		AZ(req->wrk->v1l);
-		VDP_close(req);
 		return;
 	}
 
 	AN(sendbody);
+
 	if (req->res_mode & RES_ESI) {
 		AZ(req->wrk->v1l);
 
@@ -176,8 +178,8 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 			 cache_param->esi_iovs);
 
 		if (WS_Overflowed(req->wrk->aws)) {
-			v1d_error(req, "workspace_thread overflow");
 			AZ(req->wrk->v1l);
+			Req_Fail(req, SC_OVERLOAD);
 			return;
 		}
 	}
@@ -185,10 +187,19 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 	if (req->res_mode & RES_CHUNKED)
 		V1L_Chunked(req->wrk);
 	err = VDP_DeliverObj(req);
-	if (!err && (req->res_mode & RES_CHUNKED))
+	if (err == VDP_OK && (req->res_mode & RES_CHUNKED))
 		V1L_EndChunk(req->wrk);
 
 	u = V1L_Close(req->wrk, &bytes);
+
+	if (err == VDP_ERROR_IO)
+		Req_Fail(req, SC_REM_CLOSE);
+	else if (err == VDP_ERROR)
+		Req_Fail(req, SC_VDP_ERROR);
+	else if (err == VDP_ERROR_FETCH)
+		Req_Fail(req, SC_STREAM_FAILURE);
+	else
+		assert(err >= VDP_OK);
 
 	/* Bytes accounting */
 	if (bytes < hdrbytes)
@@ -198,8 +209,5 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 		req->acct.resp_bodybytes += bytes - hdrbytes;
 	}
 
-	if ((u || err) && req->sp->fd >= 0)
-		Req_Fail(req, SC_REM_CLOSE);
 	AZ(req->wrk->v1l);
-	VDP_close(req);
 }
