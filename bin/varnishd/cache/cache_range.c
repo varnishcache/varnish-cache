@@ -45,24 +45,17 @@ struct vrg_priv {
 };
 
 static int v_matchproto_(vdp_bytes_f)
-vrg_range_bytes(struct req *req, enum vdp_action act, void **priv,
+vrg_range_bytes(struct req *req, enum vdp_flush flush, void **priv,
     const void *ptr, ssize_t len)
 {
-	int retval = 0;
+	int status = 0;
 	ssize_t l;
 	const char *p = ptr;
 	struct vrg_priv *vrg_priv;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	if (act == VDP_INIT)
-		return (0);
+	AN(priv);
 	CAST_OBJ_NOTNULL(vrg_priv, *priv, VRG_PRIV_MAGIC);
-	if (act == VDP_FINI) {
-		if (vrg_priv->range_off < vrg_priv->range_high)
-			Req_Fail(req, SC_RANGE_SHORT);
-		*priv = NULL;	/* struct on ws, no need to free */
-		return (0);
-	}
 
 	l = vrg_priv->range_low - vrg_priv->range_off;
 	if (l > 0) {
@@ -75,18 +68,26 @@ vrg_range_bytes(struct req *req, enum vdp_action act, void **priv,
 	l = vrg_priv->range_high - vrg_priv->range_off;
 	if (l > len)
 		l = len;
+	if (vrg_priv->range_off + l == vrg_priv->range_high)
+		flush = VDP_LAST;
 	if (l > 0)
-		retval = VDP_bytes(req, act, p, l);
-	else if (act > VDP_NULL)
-		retval = VDP_bytes(req, act, p, 0);
+		status = VDP_bytes(req, flush, p, l);
+	else if (flush > VDP_NULL)
+		status = VDP_bytes(req, flush, p, 0);
 	vrg_priv->range_off += len;
-	return (retval ||
-	    vrg_priv->range_off >= vrg_priv->range_high ? 1 : 0);
+	if (vrg_priv->range_off >= vrg_priv->range_high)
+		return (VDP_BREAK);
+	if (flush == VDP_LAST &&
+	    vrg_priv->range_off < vrg_priv->range_high) {
+		VSLb(req->vsl, SLT_Error, "Range short");
+		return (VDP_ERROR);
+	}
+	return (status);
 }
 
 static const struct vdp vrg_vdp = {
-	.name =		"RNG",
-	.func =		vrg_range_bytes,
+	.name		= "RNG",
+	.bytes		= vrg_range_bytes,
 };
 
 /*--------------------------------------------------------------------*/
