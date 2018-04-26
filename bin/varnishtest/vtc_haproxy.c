@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h> /* for MUSL (mode_t) */
 #include <unistd.h>
 
 #include "vtc.h"
