@@ -70,7 +70,7 @@ while (getline > 0) {
 		l_prefix_parent[n] = prefix;
 		l_prefix_suffix[n] = sequence[i];
 		if (!l_prefix_name[n])
-			l_prefix_name[n] = "teken_state_" ++npr;
+			l_prefix_name[n] = "teken_state_" "" ++npr;
 		prefix = n;
 	}
 
