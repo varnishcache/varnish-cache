@@ -55,7 +55,7 @@ vdir_new(VRT_CTX, struct vdir **vdp, const char *vcl_name,
 {
 	struct vdir *vd;
 
-	AN(ctx);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(m, DIRECTOR_METHODS_MAGIC);
 	AN(vcl_name);
 	AN(vdp);
@@ -118,6 +118,7 @@ vdir_add_backend(VRT_CTX, struct vdir *vd, VCL_BACKEND be, double weight)
 {
 	unsigned u;
 
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vd, VDIR_MAGIC);
 	if (be == NULL) {
 		VRT_fail(ctx, "NULL backend cannot be added");
@@ -140,6 +141,7 @@ vdir_remove_backend(VRT_CTX, struct vdir *vd, VCL_BACKEND be, unsigned *cur)
 {
 	unsigned u, n;
 
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vd, VDIR_MAGIC);
 	if (be == NULL) {
 		VRT_fail(ctx, "NULL backend cannot be removed");
@@ -170,23 +172,23 @@ vdir_remove_backend(VRT_CTX, struct vdir *vd, VCL_BACKEND be, unsigned *cur)
 	vdir_unlock(vd);
 }
 
-unsigned
-vdir_any_healthy(struct vdir *vd, const struct busyobj *bo, double *changed)
+VCL_BOOL
+vdir_any_healthy(VRT_CTX, struct vdir *vd, VCL_TIME *changed)
 {
 	unsigned retval = 0;
 	VCL_BACKEND be;
 	unsigned u;
 	double c;
 
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vd, VDIR_MAGIC);
-	CHECK_OBJ_ORNULL(bo, BUSYOBJ_MAGIC);
 	vdir_rdlock(vd);
 	if (changed != NULL)
 		*changed = 0;
 	for (u = 0; u < vd->n_backend; u++) {
 		be = vd->backend[u];
 		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
-		retval = be->methods->healthy(be, bo, &c);
+		retval = be->methods->healthy(ctx, be, &c);
 		if (changed != NULL && c > *changed)
 			*changed = c;
 		if (retval)
@@ -218,15 +220,17 @@ vdir_pick_by_weight(const struct vdir *vd, double w,
 }
 
 VCL_BACKEND
-vdir_pick_be(struct vdir *vd, double w, const struct busyobj *bo)
+vdir_pick_be(VRT_CTX, struct vdir *vd, double w)
 {
 	unsigned u;
 	double tw = 0.0;
 	VCL_BACKEND be = NULL;
 
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vd, VDIR_MAGIC);
 	vdir_wrlock(vd);
 	for (u = 0; u < vd->n_backend; u++) {
-		if (vd->backend[u]->methods->healthy(vd->backend[u], bo, NULL)) {
+		if (vd->backend[u]->methods->healthy(ctx, vd->backend[u], NULL)) {
 			vbit_clr(vd->vbm, u);
 			tw += vd->weight[u];
 		} else

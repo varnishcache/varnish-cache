@@ -39,9 +39,9 @@
 
 struct vcldir;
 
-typedef unsigned vdi_healthy_f(const struct director *, const struct busyobj *,
-    double *changed);
+typedef VCL_BOOL vdi_healthy_f(VRT_CTX, VCL_BACKEND, VCL_TIME *);
 typedef VCL_BACKEND vdi_resolve_f(VRT_CTX, VCL_BACKEND);
+
 typedef int vdi_gethdrs_f(const struct director *, struct worker *,
     struct busyobj *);
 typedef int vdi_getbody_f(const struct director *, struct worker *,

@@ -46,14 +46,15 @@ struct vmod_directors_fallback {
 	unsigned				cur;
 };
 
-static unsigned v_matchproto_(vdi_healthy)
-vmod_fallback_healthy(const struct director *dir, const struct busyobj *bo,
-    double *changed)
+static VCL_BOOL v_matchproto_(vdi_healthy)
+vmod_fallback_healthy(VRT_CTX, VCL_BACKEND dir, VCL_TIME *changed)
 {
 	struct vmod_directors_fallback *fb;
 
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(dir, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(fb, dir->priv, VMOD_DIRECTORS_FALLBACK_MAGIC);
-	return (vdir_any_healthy(fb->vd, bo, changed));
+	return (vdir_any_healthy(ctx, fb->vd, changed));
 }
 
 static VCL_BACKEND v_matchproto_(vdi_resolve_f)
@@ -73,7 +74,7 @@ vmod_fallback_resolve(VRT_CTX, VCL_BACKEND dir)
 	for (u = 0; u < fb->vd->n_backend; u++) {
 		be = fb->vd->backend[fb->cur];
 		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
-		if (be->methods->healthy(be, ctx->bo, NULL))
+		if (be->methods->healthy(ctx, be, NULL))
 			break;
 		if (++fb->cur == fb->vd->n_backend)
 			fb->cur = 0;

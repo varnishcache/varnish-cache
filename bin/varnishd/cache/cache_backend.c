@@ -153,14 +153,13 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
 	return (pfd);
 }
 
-static unsigned v_matchproto_(vdi_healthy_f)
-vbe_dir_healthy(const struct director *d, const struct busyobj *bo,
-    double *changed)
+static VCL_BOOL v_matchproto_(vdi_healthy_f)
+vbe_dir_healthy(VRT_CTX, VCL_BACKEND d, VCL_TIME *changed)
 {
 	struct backend *be;
 
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	CHECK_OBJ_ORNULL(bo, BUSYOBJ_MAGIC);
 	CAST_OBJ_NOTNULL(be, d->priv, BACKEND_MAGIC);
 	return (VDI_Healthy(be->director, changed));
 }

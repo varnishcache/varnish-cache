@@ -130,10 +130,7 @@ vmod_shard_param_read(VRT_CTX, const void *id,
 /* -------------------------------------------------------------------------
  * shard vmod interface
  */
-static unsigned v_matchproto_(vdi_healthy)
-vmod_shard_healthy(const struct director *dir, const struct busyobj *bo,
-   double *changed);
-
+static vdi_healthy_f vmod_shard_healthy;
 static vdi_resolve_f vmod_shard_resolve;
 
 struct vmod_directors_shard {
@@ -680,14 +677,15 @@ vmod_shard_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 				 pp->rampup, pp->healthy));
 }
 
-static unsigned v_matchproto_(vdi_healthy)
-vmod_shard_healthy(const struct director *dir, const struct busyobj *bo,
-    double *changed)
+static VCL_BOOL v_matchproto_(vdi_healthy)
+vmod_shard_healthy(VRT_CTX, VCL_BACKEND dir, VCL_TIME *changed)
 {
 	struct vmod_directors_shard *vshard;
 
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(dir, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vshard, dir->priv, VMOD_SHARD_SHARD_MAGIC);
-	return (sharddir_any_healthy(vshard->shardd, bo, changed));
+	return (sharddir_any_healthy(ctx, vshard->shardd, changed));
 }
 
 static VCL_BACKEND v_matchproto_(vdi_resolve_f)

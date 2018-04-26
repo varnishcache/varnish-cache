@@ -46,14 +46,15 @@ struct vmod_directors_random {
 	struct vdir				*vd;
 };
 
-static unsigned v_matchproto_(vdi_healthy)
-vmod_random_healthy(const struct director *dir, const struct busyobj *bo,
-    double *changed)
+static VCL_BOOL v_matchproto_(vdi_healthy)
+vmod_random_healthy(VRT_CTX, VCL_BACKEND dir, VCL_TIME *changed)
 {
 	struct vmod_directors_random *rr;
 
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(dir, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(rr, dir->priv, VMOD_DIRECTORS_RANDOM_MAGIC);
-	return (vdir_any_healthy(rr->vd, bo, changed));
+	return (vdir_any_healthy(ctx, rr->vd, changed));
 }
 
 static VCL_BACKEND v_matchproto_(vdi_resolve_f)
@@ -68,7 +69,7 @@ vmod_random_resolve(VRT_CTX, VCL_BACKEND dir)
 	CAST_OBJ_NOTNULL(rr, dir->priv, VMOD_DIRECTORS_RANDOM_MAGIC);
 	r = scalbn(VRND_RandomTestable(), -31);
 	assert(r >= 0 && r < 1.0);
-	be = vdir_pick_be(rr->vd, r, ctx->bo);
+	be = vdir_pick_be(ctx, rr->vd, r);
 	return (be);
 }
 

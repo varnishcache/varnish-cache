@@ -45,14 +45,15 @@ struct vmod_directors_round_robin {
 	unsigned				nxt;
 };
 
-static unsigned v_matchproto_(vdi_healthy)
-vmod_rr_healthy(const struct director *dir, const struct busyobj *bo,
-    double *changed)
+static VCL_BOOL v_matchproto_(vdi_healthy)
+vmod_rr_healthy(VRT_CTX, VCL_BACKEND dir, VCL_TIME *changed)
 {
 	struct vmod_directors_round_robin *rr;
 
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(dir, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(rr, dir->priv, VMOD_DIRECTORS_ROUND_ROBIN_MAGIC);
-	return (vdir_any_healthy(rr->vd, bo, changed));
+	return (vdir_any_healthy(ctx, rr->vd, changed));
 }
 
 static VCL_BACKEND v_matchproto_(vdi_resolve_f)
@@ -72,7 +73,7 @@ vmod_rr_resolve(VRT_CTX, VCL_BACKEND dir)
 		rr->nxt = nxt + 1;
 		be = rr->vd->backend[nxt];
 		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
-		if (be->methods->healthy(be, ctx->bo, NULL))
+		if (be->methods->healthy(ctx, be, NULL))
 			break;
 	}
 	vdir_unlock(rr->vd);

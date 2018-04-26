@@ -231,7 +231,7 @@ VRT_Healthy(VRT_CTX, VCL_BACKEND d)
 		return (0);
 	if (d->methods->healthy == NULL)
 		return (1);
-	return (d->methods->healthy(d, ctx->bo, NULL));
+	return (d->methods->healthy(ctx, d, NULL));
 }
 
 /* Send Event ----------------------------------------------------------
