@@ -42,25 +42,22 @@ struct vcldir;
 typedef VCL_BOOL vdi_healthy_f(VRT_CTX, VCL_BACKEND, VCL_TIME *);
 typedef VCL_BACKEND vdi_resolve_f(VRT_CTX, VCL_BACKEND);
 
-typedef int vdi_gethdrs_f(const struct director *, struct worker *,
-    struct busyobj *);
-typedef int vdi_getbody_f(const struct director *, struct worker *,
-    struct busyobj *);
-typedef const struct suckaddr *vdi_getip_f(const struct director *,
+typedef int vdi_gethdrs_f(VCL_BACKEND, struct worker *, struct busyobj *);
+typedef int vdi_getbody_f(VCL_BACKEND, struct worker *, struct busyobj *);
+typedef const struct suckaddr *vdi_getip_f(VCL_BACKEND,
     struct worker *, struct busyobj *);
-typedef void vdi_finish_f(const struct director *, struct worker *,
+typedef void vdi_finish_f(VCL_BACKEND, struct worker *, struct busyobj *);
+
+typedef enum sess_close vdi_http1pipe_f(VCL_BACKEND, struct req *,
     struct busyobj *);
 
-typedef enum sess_close vdi_http1pipe_f(const struct director *, struct req *,
-    struct busyobj *);
+typedef void vdi_event_f(VCL_BACKEND, enum vcl_event_e);
 
-typedef void vdi_event_f(const struct director *, enum vcl_event_e);
+typedef void vdi_destroy_f(VCL_BACKEND);
 
-typedef void vdi_destroy_f(const struct director *);
+typedef void vdi_panic_f(VCL_BACKEND, struct vsb *);
 
-typedef void vdi_panic_f(const struct director *, struct vsb *);
-
-typedef void vdi_list_f(const struct director *, struct vsb *, int, int);
+typedef void vdi_list_f(VCL_BACKEND, struct vsb *, int, int);
 
 struct director_methods {
 	unsigned			magic;
