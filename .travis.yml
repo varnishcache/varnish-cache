@@ -58,6 +58,7 @@ before_install:
   - ./configure ${CONFIGURE_ARGS}
 script:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-      export PYTHONPATH=`brew --prefix`/lib/python2.7/site-packages; fi
+      export PYTHONPATH=`brew --prefix`/lib/python2.7/site-packages;
+      export PATH="/usr/local/opt/sphinx-doc/bin:$PATH"; fi
   - if [[ "$TRAVIS_PULL_REQUEST" != "false" ]]; then make -j3 distcheck; fi
   - if [[ "$TRAVIS_PULL_REQUEST" == "false" ]]; then make -j3 check VERBOSE=1; fi
