@@ -327,15 +327,16 @@ haproxy_wait(struct haproxy *h)
 	sig = SIGINT;
 	n = 0;
 	vtc_log(h->vl, 2, "Stop HAproxy pid=%ld", (long)h->pid);
-	while (!h->opt_check_mode && !h->its_dead_jim) {
+	while (h->opt_daemon || (!h->opt_check_mode && !h->its_dead_jim)) {
 		assert(h->pid > 0);
 		if (n == 0) {
-			i= kill(h->pid, sig);
-			vtc_log(h->vl, 4,
-			    "Kill(%d)=%d: %s", sig, i, strerror(errno));
-			h->expect_signal = -sig;
+			i = kill(h->pid, sig);
+			if (i == 0)
+				h->expect_signal = -sig;
 			if (i && errno == ESRCH)
 				break;
+			vtc_log(h->vl, 4,
+			    "Kill(%d)=%d: %s", sig, i, strerror(errno));
 		}
 		usleep(100000);
 		if (++n == 20) {
