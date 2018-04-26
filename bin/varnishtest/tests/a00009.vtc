@@ -13,7 +13,7 @@ shell -err -expect {Too many arguments for -x} "varnishd -x foo bar"
 shell -err -expect {Invalid -x argument} "varnishd -x foo "
 
 # This one is tricky, the getopt message on stderr is not standardized.
-shell -err -expect {option --} "varnishd -A "
+shell -err -expect {option} "varnishd -A "
 
 shell -err -expect {Usage: varnishd [options]} "varnishd -? "
 shell -err -expect {Too many arguments} "varnishd foo "
