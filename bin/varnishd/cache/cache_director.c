@@ -40,6 +40,7 @@
 #include "cache_director.h"
 
 #include "vcli_serve.h"
+#include "vcl.h"
 #include "vtim.h"
 
 /* -------------------------------------------------------------------*/
@@ -77,18 +78,29 @@ VDI_Ahealth(const struct director *d)
 /* Resolve director --------------------------------------------------*/
 
 static const struct director *
-vdi_resolve(struct worker *wrk, struct busyobj *bo)
+vdi_resolve(struct busyobj *bo)
 {
 	const struct director *d;
 	const struct director *d2;
+	struct vrt_ctx ctx;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+
+	INIT_OBJ(&ctx, VRT_CTX_MAGIC);
+	ctx.vcl = bo->vcl;
+	ctx.vsl = bo->vsl;
+	ctx.http_bereq = bo->bereq;
+	ctx.http_beresp = bo->beresp;
+	ctx.bo = bo;
+	ctx.sp = bo->sp;
+	ctx.now = bo->t_prev;
+	ctx.ws = bo->ws;
+	ctx.method = VCL_MET_BACKEND_FETCH;	// XXX: Not quite true
 
 	for (d = bo->director_req; d != NULL &&
 	    d->methods->resolve != NULL; d = d2) {
 		CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-		d2 = d->methods->resolve(d, wrk, bo);
+		d2 = d->methods->resolve(&ctx, d);
 		if (d2 == NULL)
 			VSLb(bo->vsl, SLT_FetchError,
 			    "Director %s returned no backend", d->vcl_name);
@@ -111,7 +123,7 @@ VDI_GetHdr(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-	d = vdi_resolve(wrk, bo);
+	d = vdi_resolve(bo);
 	if (d != NULL) {
 		AN(d->methods->gethdrs);
 		bo->director_state = DIR_S_HDRS;
@@ -194,7 +206,7 @@ VDI_Http1Pipe(struct req *req, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-	d = vdi_resolve(req->wrk, bo);
+	d = vdi_resolve(bo);
 	if (d == NULL || d->methods->http1pipe == NULL) {
 		VSLb(bo->vsl, SLT_VCL_Error, "Backend does not support pipe");
 		return (SC_TX_ERROR);

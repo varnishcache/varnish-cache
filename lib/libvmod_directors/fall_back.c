@@ -56,17 +56,15 @@ vmod_fallback_healthy(const struct director *dir, const struct busyobj *bo,
 	return (vdir_any_healthy(fb->vd, bo, changed));
 }
 
-static const struct director * v_matchproto_(vdi_resolve_f)
-vmod_fallback_resolve(const struct director *dir, struct worker *wrk,
-    struct busyobj *bo)
+static VCL_BACKEND v_matchproto_(vdi_resolve_f)
+vmod_fallback_resolve(VRT_CTX, VCL_BACKEND dir)
 {
 	struct vmod_directors_fallback *fb;
 	unsigned u;
 	VCL_BACKEND be = NULL;
 
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(dir, DIRECTOR_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CAST_OBJ_NOTNULL(fb, dir->priv, VMOD_DIRECTORS_FALLBACK_MAGIC);
 
 	vdir_wrlock(fb->vd);
@@ -75,7 +73,7 @@ vmod_fallback_resolve(const struct director *dir, struct worker *wrk,
 	for (u = 0; u < fb->vd->n_backend; u++) {
 		be = fb->vd->backend[fb->cur];
 		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
-		if (be->methods->healthy(be, bo, NULL))
+		if (be->methods->healthy(be, ctx->bo, NULL))
 			break;
 		if (++fb->cur == fb->vd->n_backend)
 			fb->cur = 0;

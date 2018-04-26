@@ -134,9 +134,7 @@ static unsigned v_matchproto_(vdi_healthy)
 vmod_shard_healthy(const struct director *dir, const struct busyobj *bo,
    double *changed);
 
-static const struct director * v_matchproto_(vdi_resolve_f)
-vmod_shard_resolve(const struct director *dir, struct worker *wrk,
-    struct busyobj *bo);
+static vdi_resolve_f vmod_shard_resolve;
 
 struct vmod_directors_shard {
 	unsigned				magic;
@@ -692,31 +690,16 @@ vmod_shard_healthy(const struct director *dir, const struct busyobj *bo,
 	return (sharddir_any_healthy(vshard->shardd, bo, changed));
 }
 
-static const struct director * v_matchproto_(vdi_resolve_f)
-vmod_shard_resolve(const struct director *dir, struct worker *wrk,
-    struct busyobj *bo)
+static VCL_BACKEND v_matchproto_(vdi_resolve_f)
+vmod_shard_resolve(VRT_CTX, VCL_BACKEND dir)
 {
 	struct vmod_directors_shard *vshard;
 	struct vmod_directors_shard_param pstk[1];
 	const struct vmod_directors_shard_param *pp;
-	struct vrt_ctx ctx[1];
 
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(dir, DIRECTOR_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CAST_OBJ_NOTNULL(vshard, dir->priv, VMOD_SHARD_SHARD_MAGIC);
-
-	// Ref: vcl_call_method()
-	INIT_OBJ(ctx, VRT_CTX_MAGIC);
-	ctx->vsl = bo->vsl;
-	ctx->vcl = bo->vcl;
-	ctx->http_bereq = bo->bereq;
-	ctx->http_beresp = bo->beresp;
-	ctx->bo = bo;
-	ctx->sp = bo->sp;
-	ctx->now = bo->t_prev;
-	ctx->ws = bo->ws;
-	ctx->method	= VCL_MET_BACKEND_FETCH;
 
 	pp = vmod_shard_param_read(ctx, vshard,
 				   vshard->param, pstk, "shard_resolve");
