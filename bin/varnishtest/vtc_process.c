@@ -485,7 +485,7 @@ process_stdout(const struct vev *ev, int what)
 		vtc_dump(p->vl, 4, "stdout", buf, i);
 	else if (p->log == 3)
 		vtc_hexdump(p->vl, 4, "stdout", buf, i);
-	(void)write(p->f_stdout, buf, i);
+	assert(write(p->f_stdout, buf, i) == i);
 	AZ(pthread_mutex_lock(&p->mtx));
 	teken_input(p->tek, buf, i);
 	AZ(pthread_mutex_unlock(&p->mtx));
@@ -510,7 +510,7 @@ process_stderr(const struct vev *ev, int what)
 	p->stderr_bytes += i;
 	AZ(pthread_mutex_unlock(&p->mtx));
 	vtc_dump(p->vl, 4, "stderr", buf, i);
-	(void)write(p->f_stderr, buf, i);
+	assert(write(p->f_stderr, buf, i) == i);
 	return (0);
 }
 
