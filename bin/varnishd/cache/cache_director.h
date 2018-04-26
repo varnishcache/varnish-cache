@@ -98,7 +98,9 @@ struct director {
 
 
 /* cache_vcl.c */
-int VRT_AddDirector(VRT_CTX, struct director *, const char *);
+int VRT_AddDirector(VRT_CTX, struct director *, const char *, ...)
+    v_printflike_(3, 4);
+
 void VRT_DelDirector(VRT_CTX, struct director *);
 
 /* cache_director.c */

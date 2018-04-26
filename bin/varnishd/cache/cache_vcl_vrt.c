@@ -38,6 +38,7 @@
 
 #include "vcl.h"
 #include "vct.h"
+#include "vtim.h"
 
 #include "cache_director.h"
 #include "cache_vcl.h"
@@ -126,11 +127,13 @@ VCL_Rel(struct vcl **vcc)
 /*--------------------------------------------------------------------*/
 
 int
-VRT_AddDirector(VRT_CTX, struct director *d, const char *vcl_name)
+VRT_AddDirector(VRT_CTX, struct director *d, const char *fmt, ...)
 {
 	struct vsb *vsb;
 	struct vcl *vcl;
 	struct vcldir *vdir;
+	va_list ap;
+	int i;
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	vcl = ctx->vcl;
@@ -147,16 +150,24 @@ VRT_AddDirector(VRT_CTX, struct director *d, const char *vcl_name)
 	d->admin_health = VDI_AH_PROBE;
 	vsb = VSB_new_auto();
 	AN(vsb);
-	VSB_printf(vsb, "%s.%s", VCL_Name(vcl), vcl_name);
+	VSB_printf(vsb, "%s.", VCL_Name(vcl));
+	i = VSB_len(vsb);
+	va_start(ap, fmt);
+	VSB_vprintf(vsb, fmt, ap);
+	va_end(ap);
 	AZ(VSB_finish(vsb));
 	REPLACE((d->cli_name), VSB_data(vsb));
 	VSB_destroy(&vsb);
+	d->vcl_name = d->cli_name + i;
 
 	ALLOC_OBJ(vdir, VCLDIR_MAGIC);
 	AN(vdir);
 	vdir->dir = d;
 	vdir->vcl = vcl;
 	d->vdir = vdir;
+	d->health = 1;
+	d->admin_health = VDI_AH_PROBE;
+	d->health_changed = VTIM_real();
 
 	Lck_Lock(&vcl_mtx);
 	VTAILQ_INSERT_TAIL(&vcl->director_list, vdir, list);

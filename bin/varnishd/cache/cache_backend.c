@@ -485,12 +485,17 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 	d = be->director;
 	INIT_OBJ(d, DIRECTOR_MAGIC);
 	d->priv = be;
-	d->vcl_name = be->vcl_name;
 	d->methods = vbe_methods;
 
-	d->health = 1;
-	d->health_changed = VTIM_real();
-	d->admin_health = VDI_AH_PROBE;
+	be->vsc = VSC_vbe_New(vc, &be->vsc_seg,
+	    "%s.%s", VCL_Name(ctx->vcl), vrt->vcl_name);
+	AN(be->vsc);
+
+	retval = VRT_AddDirector(ctx, d, "%s", vrt->vcl_name);
+	if (retval) {
+		VRT_delete_backend(ctx, &d);
+		return (NULL);
+	}
 
 	vbp = vrt->probe;
 	if (vbp == NULL)
@@ -508,18 +513,7 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 		VBP_Insert(be, vbp, be->tcp_pool);
 	}
 
-	be->vsc = VSC_vbe_New(vc, &be->vsc_seg,
-	    "%s.%s", VCL_Name(ctx->vcl), vrt->vcl_name);
-	AN(be->vsc);
-
-	retval = VRT_AddDirector(ctx, d, vrt->vcl_name);
-
-	if (retval == 0)
-		return (d);
-
-	VRT_delete_backend(ctx, &d);
-	AZ(d);
-	return (NULL);
+	return (d);
 }
 
 struct director * v_matchproto_()
