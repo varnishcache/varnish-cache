@@ -842,6 +842,7 @@ main(int argc, char * const *argv)
 	assert(!VPF_Write(pfh1));
 	assert(pfh2 == NULL || !VPF_Write(pfh2));
 
+	MGT_Complain(C_DEBUG, "Version: %s", VCS_version);
 	MGT_Complain(C_DEBUG, "Platform: %s", VSB_data(vident) + 1);
 
 	if (d_flag)
