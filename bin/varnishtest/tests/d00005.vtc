@@ -61,7 +61,10 @@ client c1 {
 	expect resp.body == "22"
 } -run
 
+varnish v1 -vsl_catchup
+
 varnish v1 -cliok "backend.set_health s1 sick"
+varnish v1 -cliok "backend.list"
 
 client c1 {
 	txreq
@@ -72,7 +75,10 @@ client c1 {
 	expect resp.body == "22"
 } -run
 
+varnish v1 -vsl_catchup
+
 varnish v1 -cliok "backend.set_health s2 sick"
+varnish v1 -cliok "backend.list"
 
 client c1 {
 	txreq

@@ -88,7 +88,7 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
 	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
 	AN(bp->vsc);
 
-	if (!VDI_Healthy(bp->director, NULL)) {
+	if (!bp->director->health) {
 		VSLb(bo->vsl, SLT_FetchError,
 		     "backend %s: unhealthy", bp->director->cli_name);
 		// XXX: per backend stats ?
@@ -151,17 +151,6 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
 	FIND_TMO(between_bytes_timeout,
 	    bo->htc->between_bytes_timeout, bo, bp);
 	return (pfd);
-}
-
-static VCL_BOOL v_matchproto_(vdi_healthy_f)
-vbe_dir_healthy(VRT_CTX, VCL_BACKEND d, VCL_TIME *changed)
-{
-	struct backend *be;
-
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	CAST_OBJ_NOTNULL(be, d->priv, BACKEND_MAGIC);
-	return (VDI_Healthy(be->director, changed));
 }
 
 static void v_matchproto_(vdi_finish_f)
@@ -439,7 +428,6 @@ static const struct director_methods vbe_methods[1] = {{
 	.magic =		DIRECTOR_METHODS_MAGIC,
 	.type =			"backend",
 	.http1pipe =		vbe_dir_http1pipe,
-	.healthy =		vbe_dir_healthy,
 	.gethdrs =		vbe_dir_gethdrs,
 	.getip =		vbe_dir_getip,
 	.finish =		vbe_dir_finish,

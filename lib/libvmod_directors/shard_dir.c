@@ -189,7 +189,7 @@ shard_next(struct shard_state *state, VCL_INT skip, VCL_BOOL healthy)
 			sbe = NULL;
 			be = state->shardd->backend[c].backend;
 			AN(be);
-			if (be->methods->healthy(state->ctx, be, &changed)) {
+			if (VRT_Healthy(state->ctx, be, &changed)) {
 				if (skip-- == 0) {
 					chosen = c;
 					sbe = &state->last;
@@ -324,7 +324,7 @@ sharddir_any_healthy(VRT_CTX, struct sharddir *shardd, VCL_TIME *changed)
 	for (u = 0; u < shardd->n_backend; u++) {
 		be = shardd->backend[u].backend;
 		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
-		retval = be->methods->healthy(ctx, be, &c);
+		retval = VRT_Healthy(ctx, be, &c);
 		if (changed != NULL && c > *changed)
 			*changed = c;
 		if (retval)

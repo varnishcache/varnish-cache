@@ -52,6 +52,8 @@
  * binary/load-time compatible, increment MAJOR version
  *
  *
+ * TRUNK (2018-09-15)
+ *	VRT_Healthy() changed prototype
  * 7.0 (2018-03-15)
  *	lots of stuff moved from cache.h to cache_varnishd.h
  *	   (ie: from "$Abi vrt" to "$Abi strict")
@@ -416,7 +418,7 @@ struct vsmw_cluster *VRT_VSM_Cluster_New(VRT_CTX, size_t);
 void VRT_VSM_Cluster_Destroy(VRT_CTX, struct vsmw_cluster **);
 
 /* cache_director.c */
-int VRT_Healthy(VRT_CTX, VCL_BACKEND);
+VCL_BOOL VRT_Healthy(VRT_CTX, VCL_BACKEND, VCL_TIME *);
 
 /* Suckaddr related */
 int VRT_VSA_GetPtr(const struct suckaddr *sua, const unsigned char ** dst);

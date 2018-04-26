@@ -23,7 +23,7 @@ varnish v1 -vcl {
 
 } -start
 
-delay 1
+varnish v1 -vsl_catchup
 
 varnish v1 -cliok "vcl.list"
 varnish v1 -cliok "backend.list -p"
@@ -36,6 +36,8 @@ client c1 {
 	expect resp.status == 200
 } -run
 
+varnish v1 -vsl_catchup
+
 varnish v1 -cliok "backend.list"
 varnish v1 -cliok "backend.set_health s1 sick"
 varnish v1 -cliok "backend.list"
@@ -46,6 +48,8 @@ client c1 {
 	expect resp.status == 503
 } -run
 
+varnish v1 -vsl_catchup
+
 varnish v1 -cliok "backend.list"
 varnish v1 -cliok "backend.set_health s1 healthy"
 varnish v1 -cliok "backend.list"
@@ -55,6 +59,8 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 } -run
+
+varnish v1 -vsl_catchup
 
 varnish v1 -clierr 106 "backend.set_health s1 foo"
 varnish v1 -clierr 106 "backend.set_health s2 foo"

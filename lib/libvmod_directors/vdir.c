@@ -70,7 +70,7 @@ vdir_new(VRT_CTX, struct vdir **vdp, const char *vcl_name,
 	vd->dir->methods = m;
 	REPLACE(vd->dir->vcl_name, vcl_name);
 	vd->dir->priv = priv;
-	vd->dir->admin_health = VDI_AH_HEALTHY;
+	vd->dir->admin_health = VDI_AH_PROBE;
 	vd->vbm = vbit_new(8);
 	AN(vd->vbm);
 }
@@ -188,7 +188,7 @@ vdir_any_healthy(VRT_CTX, struct vdir *vd, VCL_TIME *changed)
 	for (u = 0; u < vd->n_backend; u++) {
 		be = vd->backend[u];
 		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
-		retval = be->methods->healthy(ctx, be, &c);
+		retval = VRT_Healthy(ctx, be, &c);
 		if (changed != NULL && c > *changed)
 			*changed = c;
 		if (retval)
@@ -230,7 +230,7 @@ vdir_pick_be(VRT_CTX, struct vdir *vd, double w)
 	CHECK_OBJ_NOTNULL(vd, VDIR_MAGIC);
 	vdir_wrlock(vd);
 	for (u = 0; u < vd->n_backend; u++) {
-		if (vd->backend[u]->methods->healthy(ctx, vd->backend[u], NULL)) {
+		if (VRT_Healthy(ctx, vd->backend[u], NULL)) {
 			vbit_clr(vd->vbm, u);
 			tw += vd->weight[u];
 		} else

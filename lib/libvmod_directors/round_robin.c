@@ -73,7 +73,7 @@ vmod_rr_resolve(VRT_CTX, VCL_BACKEND dir)
 		rr->nxt = nxt + 1;
 		be = rr->vd->backend[nxt];
 		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
-		if (be->methods->healthy(ctx, be, NULL))
+		if (VRT_Healthy(ctx, be, NULL))
 			break;
 	}
 	vdir_unlock(rr->vd);

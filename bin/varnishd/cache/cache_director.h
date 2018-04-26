@@ -99,7 +99,6 @@ struct director {
 	double				health_changed;
 };
 
-unsigned VDI_Healthy(const struct director *, double *);
 
 /* cache_vcl.c */
 int VRT_AddDirector(VRT_CTX, struct director *, const char *);

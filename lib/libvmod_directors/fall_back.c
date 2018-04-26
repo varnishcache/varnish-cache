@@ -74,7 +74,7 @@ vmod_fallback_resolve(VRT_CTX, VCL_BACKEND dir)
 	for (u = 0; u < fb->vd->n_backend; u++) {
 		be = fb->vd->backend[fb->cur];
 		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
-		if (be->methods->healthy(ctx, be, NULL))
+		if (VRT_Healthy(ctx, be, NULL))
 			break;
 		if (++fb->cur == fb->vd->n_backend)
 			fb->cur = 0;

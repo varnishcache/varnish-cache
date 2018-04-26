@@ -219,19 +219,32 @@ VDI_Http1Pipe(struct req *req, struct busyobj *bo)
  * If director has no healthy method, we just assume it is healthy.
  */
 
-int
-VRT_Healthy(VRT_CTX, VCL_BACKEND d)
+/*--------------------------------------------------------------------
+ * Test if backend is healthy and report when that last changed
+ */
+
+VCL_BOOL
+VRT_Healthy(VRT_CTX, VCL_BACKEND d, VCL_TIME *changed)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	if (d == NULL)
 		return (0);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	if (!VDI_Healthy(d, NULL))
-		return (0);
-	if (d->methods->healthy == NULL)
-		return (1);
-	return (d->methods->healthy(ctx, d, NULL));
+
+	if (d->admin_health->health >= 0) {
+		if (changed != NULL)
+			*changed = d->health_changed;
+		return (d->admin_health->health);
+	}
+
+	if (d->methods->healthy == NULL) {
+		if (changed != NULL)
+			*changed = d->health_changed;
+		return (d->health);
+	}
+
+	return (d->methods->healthy(ctx, d, changed));
 }
 
 /* Send Event ----------------------------------------------------------
@@ -270,24 +283,6 @@ VDI_Panic(const struct director *d, struct vsb *vsb, const char *nm)
 	VSB_printf(vsb, "},\n");
 }
 
-/*--------------------------------------------------------------------
- * Test if backend is healthy and report when it last changed
- */
-
-unsigned
-VDI_Healthy(const struct director *d, double *changed)
-{
-	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	AN(d->admin_health);
-
-	if (changed != NULL)
-		*changed = d->health_changed;
-
-	if (d->admin_health->health < 0)
-		return (d->health);
-
-	return (d->admin_health->health);
-}
 
 /*---------------------------------------------------------------------*/
 
@@ -358,43 +353,49 @@ cli_backend_list(struct cli *cli, const char * const *av, void *priv)
 
 /*---------------------------------------------------------------------*/
 
+struct set_health {
+	unsigned			magic;
+#define SET_HEALTH_MAGIC		0x0c46b9fb
+	const struct vdi_ahealth	*ah;
+};
+
 static int v_matchproto_(vcl_be_func)
 do_set_health(struct cli *cli, struct director *d, void *priv)
 {
-	unsigned prev;
+	struct set_health *sh;
 
 	(void)cli;
-	AN(priv);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	CAST_OBJ_NOTNULL(sh, priv, SET_HEALTH_MAGIC);
 	if (d->admin_health == VDI_AH_DELETED)
 		return (0);
-	prev = VDI_Healthy(d, NULL);
-	d->admin_health = *(const struct vdi_ahealth **)priv;
-	(void)VDI_Ahealth(d);			// Acts like type-check
-	if (prev != VDI_Healthy(d, NULL))
+	if (d->admin_health != sh->ah) {
 		d->health_changed = VTIM_real();
-
+		d->admin_health = sh->ah;
+		d->health = sh->ah->health ? 1 : 0;
+	}
 	return (0);
 }
 
 static void v_matchproto_()
 cli_backend_set_health(struct cli *cli, const char * const *av, void *priv)
 {
-	const struct vdi_ahealth *ah;
 	int n;
+	struct set_health sh[1];
 
 	(void)av;
 	(void)priv;
 	ASSERT_CLI();
 	AN(av[2]);
 	AN(av[3]);
-	ah = vdi_str2ahealth(av[3]);
-	if (ah == NULL || ah == VDI_AH_DELETED) {
+	INIT_OBJ(sh, SET_HEALTH_MAGIC);
+	sh->ah = vdi_str2ahealth(av[3]);
+	if (sh->ah == NULL || sh->ah == VDI_AH_DELETED) {
 		VCLI_Out(cli, "Invalid state %s", av[3]);
 		VCLI_SetResult(cli, CLIS_PARAM);
 		return;
 	}
-	n = VCL_IterDirector(cli, av[2], do_set_health, &ah);
+	n = VCL_IterDirector(cli, av[2], do_set_health, sh);
 	if (n == 0) {
 		VCLI_Out(cli, "No Backends matches");
 		VCLI_SetResult(cli, CLIS_PARAM);

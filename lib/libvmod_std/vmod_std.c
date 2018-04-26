@@ -209,7 +209,7 @@ vmod_healthy(VRT_CTX, VCL_BACKEND be)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_ORNULL(be, DIRECTOR_MAGIC);
-	return (VRT_Healthy(ctx, be));
+	return (VRT_Healthy(ctx, be, NULL));
 }
 
 VCL_INT v_matchproto_(td_std_port)
