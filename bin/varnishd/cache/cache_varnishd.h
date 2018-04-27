@@ -385,7 +385,7 @@ enum vry_finish_flag { KEEP, DISCARD };
 void VRY_Finish(struct req *req, enum vry_finish_flag);
 
 /* cache_vcl.c */
-struct director *VCL_DefaultDirector(const struct vcl *);
+VCL_BACKEND VCL_DefaultDirector(const struct vcl *);
 const struct vrt_backend_probe *VCL_DefaultProbe(const struct vcl *);
 void VCL_Init(void);
 void VCL_Panic(struct vsb *, const struct vcl *);

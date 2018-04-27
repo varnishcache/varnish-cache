@@ -48,7 +48,7 @@ struct xyzzy_debug_dyn {
 #define VMOD_DEBUG_DYN_MAGIC	0x9b77ccbd
 	pthread_mutex_t		mtx;
 	char			*vcl_name;
-	struct director		*dir;
+	VCL_BACKEND		dir;
 };
 
 struct xyzzy_debug_dyn_uds {
@@ -56,7 +56,7 @@ struct xyzzy_debug_dyn_uds {
 #define VMOD_DEBUG_UDS_MAGIC	0x6c7370e6
 	pthread_mutex_t		mtx;
 	char			*vcl_name;
-	struct director		*dir;
+	VCL_BACKEND		dir;
 };
 
 static void
@@ -65,7 +65,7 @@ dyn_dir_init(VRT_CTX, struct xyzzy_debug_dyn *dyn,
 {
 	struct addrinfo hints, *res = NULL;
 	struct suckaddr *sa;
-	struct director *dir, *dir2;
+	VCL_BACKEND dir, dir2;
 	struct vrt_backend vrt;
 
 	CHECK_OBJ_NOTNULL(dyn, VMOD_DEBUG_DYN_MAGIC);
@@ -183,7 +183,7 @@ xyzzy_dyn_refresh(VRT_CTX, struct xyzzy_debug_dyn *dyn,
 static int
 dyn_uds_init(VRT_CTX, struct xyzzy_debug_dyn_uds *uds, VCL_STRING path)
 {
-	struct director *dir, *dir2;
+	VCL_BACKEND dir, dir2;
 	struct vrt_backend vrt;
 	struct stat st;
 

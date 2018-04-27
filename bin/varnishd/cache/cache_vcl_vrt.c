@@ -210,7 +210,7 @@ VRT_DelDirector(struct director *d)
 
 /*--------------------------------------------------------------------*/
 
-struct director *
+VCL_BACKEND
 VCL_DefaultDirector(const struct vcl *vcl)
 {
 

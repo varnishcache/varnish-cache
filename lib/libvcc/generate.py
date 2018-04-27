@@ -656,7 +656,7 @@ struct VCL_conf {
 #define VCL_CONF_MAGIC			0x7406c509	/* from /dev/random */
 
 	unsigned			syntax;
-	struct director			**default_director;
+	VCL_BACKEND			*default_director;
 	const struct vrt_backend_probe	*default_probe;
 	unsigned			nref;
 	const struct vrt_ref		*ref;

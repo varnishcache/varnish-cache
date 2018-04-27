@@ -547,7 +547,7 @@ vcc_ParseBackend(struct vcc *tl)
 			sym->noref = 1;
 		}
 	}
-	Fh(tl, 0, "\nstatic struct director *%s;\n", dn);
+	Fh(tl, 0, "\nstatic VCL_BACKEND %s;\n", dn);
 	vcc_ParseHostDef(tl, t_be, dn);
 	if (tl->err) {
 		VSB_printf(tl->sb,

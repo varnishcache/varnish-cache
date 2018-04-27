@@ -448,12 +448,13 @@ VRT_backend_vsm_need(VRT_CTX)
 	return (VRT_VSC_Overhead(VSC_vbe_size));
 }
 
-struct director * v_matchproto_()
+VCL_BACKEND v_matchproto_()
 VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
     const struct vrt_backend *vrt)
 {
 	struct backend *be;
 	struct director *d;
+	VCL_BACKEND bb;
 	struct vcl *vcl;
 	const struct vrt_backend_probe *vbp;
 	int retval;
@@ -493,7 +494,8 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 
 	retval = VRT_AddDirector(ctx, d, "%s", vrt->vcl_name);
 	if (retval) {
-		VRT_delete_backend(ctx, &d);
+		bb = d;
+		VRT_delete_backend(ctx, &bb);
 		return (NULL);
 	}
 
@@ -516,7 +518,7 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 	return (d);
 }
 
-struct director * v_matchproto_()
+VCL_BACKEND v_matchproto_()
 VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
 {
 	return (VRT_new_backend_clustered(ctx, NULL, vrt));
@@ -528,9 +530,9 @@ VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
  */
 
 void
-VRT_delete_backend(VRT_CTX, struct director **dp)
+VRT_delete_backend(VRT_CTX, VCL_BACKEND *dp)
 {
-	struct director *d;
+	VCL_BACKEND d;
 	struct backend *be;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
