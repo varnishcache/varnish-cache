@@ -218,10 +218,9 @@ vmod_shard__init(VRT_CTX, struct vmod_directors_shard **vshardp,
 	vshard->param = &shard_param_default;
 	ALLOC_OBJ(vshard->dir, DIRECTOR_MAGIC);
 	AN(vshard->dir);
-	REPLACE(vshard->dir->vcl_name, vcl_name);
 	vshard->dir->priv = vshard;
 	vshard->dir->methods = vmod_shard_methods;
-	vshard->dir->admin_health = VDI_AH_HEALTHY;
+	AZ(VRT_AddDirector(ctx, vshard->dir, "%s", vcl_name));
 }
 
 VCL_VOID v_matchproto_(td_directors_shard__fini)
@@ -232,7 +231,7 @@ vmod_shard__fini(struct vmod_directors_shard **vshardp)
 	*vshardp = NULL;
 	CHECK_OBJ_NOTNULL(vshard, VMOD_SHARD_SHARD_MAGIC);
 	sharddir_delete(&vshard->shardd);
-	free(vshard->dir->vcl_name);
+	VRT_DelDirector(vshard->dir);
 	FREE_OBJ(vshard->dir);
 	FREE_OBJ(vshard);
 }

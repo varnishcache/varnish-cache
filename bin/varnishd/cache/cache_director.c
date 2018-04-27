@@ -85,6 +85,7 @@ vdi_resolve(struct busyobj *bo)
 	struct vrt_ctx ctx;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_ORNULL(bo->director_req, DIRECTOR_MAGIC);
 
 	INIT_OBJ(&ctx, VRT_CTX_MAGIC);
 	ctx.vcl = bo->vcl;
@@ -100,6 +101,7 @@ vdi_resolve(struct busyobj *bo)
 	for (d = bo->director_req; d != NULL &&
 	    d->methods->resolve != NULL; d = d2) {
 		CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+		AN(d->vdir);
 		d2 = d->methods->resolve(&ctx, d);
 		if (d2 == NULL)
 			VSLb(bo->vsl, SLT_FetchError,
@@ -108,6 +110,8 @@ vdi_resolve(struct busyobj *bo)
 	CHECK_OBJ_ORNULL(d, DIRECTOR_MAGIC);
 	if (d == NULL)
 		VSLb(bo->vsl, SLT_FetchError, "No backend");
+	else
+		AN(d->vdir);
 	bo->director_resp = d;
 	return (d);
 }

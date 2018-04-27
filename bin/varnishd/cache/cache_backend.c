@@ -578,7 +578,7 @@ VBE_Poll(void)
 		if (be->n_conn > 0)
 			continue;
 		Lck_Unlock(&backends_mtx);
-		VRT_DelDirector(NULL, be->director);
+		VRT_DelDirector(be->director);
 		Lck_Lock(&backends_mtx);
 	}
 	Lck_Unlock(&backends_mtx);
