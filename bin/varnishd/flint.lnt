@@ -94,6 +94,7 @@
 
 +libh mgt_event.h
 
+-sem(VRT_AddDirector, custodial(3))
 -sem(VCP_New, custodial(3))
 -sem(vsmw_addseg, custodial(2))
 -sem(BAN_Free, custodial(1))

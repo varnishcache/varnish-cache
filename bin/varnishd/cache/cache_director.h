@@ -83,7 +83,6 @@ struct director {
 	char				*vcl_name;
 
 	void				*priv;
-	const void			*priv2;
 
 	/* Internal Housekeeping fields */
 
@@ -98,12 +97,12 @@ struct director {
 
 
 /* cache_vcl.c */
-int VRT_AddDirector(VRT_CTX, struct director *, const char *, ...)
-    v_printflike_(3, 4);
+VCL_BACKEND VRT_AddDirector(VRT_CTX, const struct director_methods *,
+    void *, const char *, ...) v_printflike_(4, 5);
 
 void VRT_SetHealth(VCL_BACKEND d, int health);
 void VRT_DisableDirector(VCL_BACKEND);
-void VRT_DelDirector(struct director *);
+void VRT_DelDirector(VCL_BACKEND *);
 
 /* cache_director.c */
 

@@ -64,7 +64,7 @@ struct backend {
 
 	struct tcp_pool		*tcp_pool;
 
-	struct director		director[1];
+	VCL_BACKEND		director;
 
 	double			cooled;
 };

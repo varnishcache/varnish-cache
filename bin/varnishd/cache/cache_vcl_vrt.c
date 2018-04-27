@@ -126,27 +126,32 @@ VCL_Rel(struct vcl **vcc)
 
 /*--------------------------------------------------------------------*/
 
-int
-VRT_AddDirector(VRT_CTX, struct director *d, const char *fmt, ...)
+VCL_BACKEND
+VRT_AddDirector(VRT_CTX, const struct director_methods *m, void *priv,
+    const char *fmt, ...)
 {
 	struct vsb *vsb;
 	struct vcl *vcl;
 	struct vcldir *vdir;
+	struct director *d;
 	va_list ap;
 	int i;
 
-	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(m, DIRECTOR_METHODS_MAGIC);
+	AN(fmt);
 	vcl = ctx->vcl;
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
-	CHECK_OBJ_NOTNULL(d->methods, DIRECTOR_METHODS_MAGIC);
-	// AN(d->methods->destroy);
-
 	AZ(errno=pthread_rwlock_rdlock(&vcl->temp_rwl));
 	if (vcl->temp == VCL_TEMP_COOLING) {
 		AZ(errno=pthread_rwlock_unlock(&vcl->temp_rwl));
-		return (1);
+		return (NULL);
 	}
 
+	ALLOC_OBJ(d, DIRECTOR_MAGIC);
+	AN(d);
+	d->methods = m;
+	d->priv = priv;
 	d->admin_health = VDI_AH_PROBE;
 	vsb = VSB_new_auto();
 	AN(vsb);
@@ -180,16 +185,17 @@ VRT_AddDirector(VRT_CTX, struct director *d, const char *fmt, ...)
 		WRONG("Dynamic Backends can only be added to warm VCLs");
 	AZ(errno=pthread_rwlock_unlock(&vcl->temp_rwl));
 
-	return (0);
+	return (d);
 }
 
 void
-VRT_DelDirector(struct director *d)
+VRT_DelDirector(VCL_BACKEND *bp)
 {
 	struct vcl *vcl;
 	struct vcldir *vdir;
+	VCL_BACKEND d;
 
-	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	TAKE_OBJ_NOTNULL(d, bp, DIRECTOR_MAGIC);
 	vdir = d->vdir;
 	CHECK_OBJ_NOTNULL(vdir, VCLDIR_MAGIC);
 	vcl = vdir->vcl;
@@ -202,9 +208,10 @@ VRT_DelDirector(struct director *d)
 	if (VCL_WARM(vcl))
 		VDI_Event(d, VCL_EVENT_COLD);
 	AZ(errno=pthread_rwlock_unlock(&vcl->temp_rwl));
-	REPLACE(d->cli_name, NULL);
 	if(d->methods->destroy != NULL)
 		d->methods->destroy(d);
+	free(d->cli_name);
+	FREE_OBJ(vdir->dir);
 	FREE_OBJ(vdir);
 }
 
@@ -218,6 +225,7 @@ VRT_SetHealth(VCL_BACKEND d, int health)
 	CHECK_OBJ_NOTNULL(vdir, VCLDIR_MAGIC);
 
 	vdir->dir->health = health;
+	vdir->dir->health_changed = VTIM_real();
 }
 
 void

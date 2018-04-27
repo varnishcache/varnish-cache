@@ -91,7 +91,7 @@ struct vmod_directors_shard_param {
 	enum healthy_e				healthy;
 	uint32_t				mask;
 	VCL_BOOL				rampup;
-	VCL_INT				alt;
+	VCL_INT					alt;
 	VCL_REAL				warmup;
 };
 
@@ -137,7 +137,7 @@ struct vmod_directors_shard {
 	unsigned				magic;
 #define VMOD_SHARD_SHARD_MAGIC			0x6e63e1bf
 	struct sharddir				*shardd;
-	struct director				*dir;
+	VCL_BACKEND				dir;
 	const struct vmod_directors_shard_param	*param;
 };
 
@@ -216,11 +216,8 @@ vmod_shard__init(VRT_CTX, struct vmod_directors_shard **vshardp,
 	sharddir_new(&vshard->shardd, vcl_name);
 
 	vshard->param = &shard_param_default;
-	ALLOC_OBJ(vshard->dir, DIRECTOR_MAGIC);
-	AN(vshard->dir);
-	vshard->dir->priv = vshard;
-	vshard->dir->methods = vmod_shard_methods;
-	AZ(VRT_AddDirector(ctx, vshard->dir, "%s", vcl_name));
+	vshard->dir =
+	    VRT_AddDirector(ctx, vmod_shard_methods, vshard, "%s", vcl_name);
 }
 
 VCL_VOID v_matchproto_(td_directors_shard__fini)
@@ -231,8 +228,7 @@ vmod_shard__fini(struct vmod_directors_shard **vshardp)
 	*vshardp = NULL;
 	CHECK_OBJ_NOTNULL(vshard, VMOD_SHARD_SHARD_MAGIC);
 	sharddir_delete(&vshard->shardd);
-	VRT_DelDirector(vshard->dir);
-	FREE_OBJ(vshard->dir);
+	VRT_DelDirector(&vshard->dir);
 	FREE_OBJ(vshard);
 }
 

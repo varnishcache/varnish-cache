@@ -172,19 +172,15 @@ vbp_update_backend(struct vbp_target *vt)
 				logmsg = "Still healthy";
 			} else {
 				logmsg = "Back healthy";
-				vt->backend->director->health_changed =
-				     VTIM_real();
+				VRT_SetHealth(vt->backend->director, 1);
 			}
-			VRT_SetHealth(vt->backend->director, 1);
 		} else {
 			if (vt->backend->director->health) {
 				logmsg = "Went sick";
-				vt->backend->director->health_changed =
-				     VTIM_real();
+				VRT_SetHealth(vt->backend->director, 0);
 			} else {
 				logmsg = "Still sick";
 			}
-			VRT_SetHealth(vt->backend->director, 0);
 		}
 		VSL(SLT_Backend_health, 0, "%s %s %s %u %u %u %.6f %.6f %s",
 		    vt->backend->director->cli_name, logmsg, bits,

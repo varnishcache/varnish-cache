@@ -37,7 +37,7 @@ struct vdir {
 	VCL_BACKEND				*backend;
 	double					*weight;
 	double					total_weight;
-	struct director				*dir;
+	VCL_BACKEND				dir;
 	struct vbitmap				*vbm;
 };
 

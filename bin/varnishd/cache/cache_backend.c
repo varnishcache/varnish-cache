@@ -453,11 +453,8 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
     const struct vrt_backend *vrt)
 {
 	struct backend *be;
-	struct director *d;
-	VCL_BACKEND bb;
 	struct vcl *vcl;
 	const struct vrt_backend_probe *vbp;
-	int retval;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vrt, VRT_BACKEND_MAGIC);
@@ -483,19 +480,15 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 #undef DA
 #undef DN
 
-	d = be->director;
-	INIT_OBJ(d, DIRECTOR_MAGIC);
-	d->priv = be;
-	d->methods = vbe_methods;
-
 	be->vsc = VSC_vbe_New(vc, &be->vsc_seg,
 	    "%s.%s", VCL_Name(ctx->vcl), vrt->vcl_name);
 	AN(be->vsc);
 
-	retval = VRT_AddDirector(ctx, d, "%s", vrt->vcl_name);
-	if (retval) {
-		bb = d;
-		VRT_delete_backend(ctx, &bb);
+	be->director = VRT_AddDirector(ctx, vbe_methods, be,
+	    "%s", vrt->vcl_name);
+	if (be->director == NULL) {
+		// XXX
+		VRT_delete_backend(ctx, &be->director);
 		return (NULL);
 	}
 
@@ -515,7 +508,7 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 		VBP_Insert(be, vbp, be->tcp_pool);
 	}
 
-	return (d);
+	return (be->director);
 }
 
 VCL_BACKEND v_matchproto_()
@@ -579,7 +572,7 @@ VBE_Poll(void)
 		if (be->n_conn > 0)
 			continue;
 		Lck_Unlock(&backends_mtx);
-		VRT_DelDirector(be->director);
+		VRT_DelDirector(&be->director);
 		Lck_Lock(&backends_mtx);
 	}
 	Lck_Unlock(&backends_mtx);

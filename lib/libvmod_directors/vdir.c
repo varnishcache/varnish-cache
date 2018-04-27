@@ -64,12 +64,7 @@ vdir_new(VRT_CTX, struct vdir **vdp, const char *vcl_name,
 	AN(vd);
 	*vdp = vd;
 	AZ(pthread_rwlock_init(&vd->mtx, NULL));
-
-	ALLOC_OBJ(vd->dir, DIRECTOR_MAGIC);
-	AN(vd->dir);
-	vd->dir->methods = m;
-	vd->dir->priv = priv;
-	AZ(VRT_AddDirector(ctx, vd->dir, "%s", vcl_name));
+	vd->dir = VRT_AddDirector(ctx, m, priv, "%s", vcl_name);
 	vd->vbm = vbit_new(8);
 	AN(vd->vbm);
 }
@@ -84,8 +79,7 @@ vdir_delete(struct vdir **vdp)
 	free(vd->backend);
 	free(vd->weight);
 	AZ(pthread_rwlock_destroy(&vd->mtx));
-	VRT_DelDirector(vd->dir);
-	FREE_OBJ(vd->dir);
+	VRT_DelDirector(&vd->dir);
 	vbit_destroy(vd->vbm);
 	FREE_OBJ(vd);
 }
