@@ -101,6 +101,8 @@ struct director {
 int VRT_AddDirector(VRT_CTX, struct director *, const char *, ...)
     v_printflike_(3, 4);
 
+void VRT_SetHealth(VCL_BACKEND d, int health);
+void VRT_DisableDirector(VCL_BACKEND);
 void VRT_DelDirector(struct director *);
 
 /* cache_director.c */

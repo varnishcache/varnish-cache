@@ -175,7 +175,7 @@ vbp_update_backend(struct vbp_target *vt)
 				vt->backend->director->health_changed =
 				     VTIM_real();
 			}
-			vt->backend->director->health = 1;
+			VRT_SetHealth(vt->backend->director, 1);
 		} else {
 			if (vt->backend->director->health) {
 				logmsg = "Went sick";
@@ -184,7 +184,7 @@ vbp_update_backend(struct vbp_target *vt)
 			} else {
 				logmsg = "Still sick";
 			}
-			vt->backend->director->health = 0;
+			VRT_SetHealth(vt->backend->director, 0);
 		}
 		VSL(SLT_Backend_health, 0, "%s %s %s %u %u %u %.6f %.6f %s",
 		    vt->backend->director->cli_name, logmsg, bits,
@@ -637,7 +637,7 @@ VBP_Remove(struct backend *be)
 	CHECK_OBJ_NOTNULL(vt, VBP_TARGET_MAGIC);
 
 	Lck_Lock(&vbp_mtx);
-	be->director->health = 1;
+	VRT_SetHealth(be->director, 1);
 	be->probe = NULL;
 	vt->backend = NULL;
 	if (vt->running) {

@@ -208,6 +208,32 @@ VRT_DelDirector(struct director *d)
 	FREE_OBJ(vdir);
 }
 
+void
+VRT_SetHealth(VCL_BACKEND d, int health)
+{
+	struct vcldir *vdir;
+
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	vdir = d->vdir;
+	CHECK_OBJ_NOTNULL(vdir, VCLDIR_MAGIC);
+
+	vdir->dir->health = health;
+}
+
+void
+VRT_DisableDirector(VCL_BACKEND d)
+{
+	struct vcldir *vdir;
+
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	vdir = d->vdir;
+	CHECK_OBJ_NOTNULL(vdir, VCLDIR_MAGIC);
+
+	vdir->dir->admin_health = VDI_AH_DELETED;
+	vdir->dir->health = 0;
+	vdir->dir->health_changed = VTIM_real();
+}
+
 /*--------------------------------------------------------------------*/
 
 VCL_BACKEND

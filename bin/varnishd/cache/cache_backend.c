@@ -539,8 +539,7 @@ VRT_delete_backend(VRT_CTX, VCL_BACKEND *dp)
 	TAKE_OBJ_NOTNULL(d, dp, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(be, d->priv, BACKEND_MAGIC);
 	Lck_Lock(&be->mtx);
-	be->director->admin_health = VDI_AH_DELETED;
-	be->director->health_changed = VTIM_real();
+	VRT_DisableDirector(be->director);
 	be->cooled = VTIM_real() + 60.;
 	Lck_Unlock(&be->mtx);
 	Lck_Lock(&backends_mtx);
