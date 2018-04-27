@@ -719,6 +719,7 @@ class s_object(stanza):
 
         self.fini = copy.copy(self.proto)
         self.fini.name += '__fini'
+        self.fini.argstruct = False
         self.fini.args = []
 
         self.rstlbl = "obj_" + self.proto.name
