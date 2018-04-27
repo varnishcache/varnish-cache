@@ -799,6 +799,9 @@ class s_method(stanza):
         assert type(p) == s_object
         self.pfx = p.proto.name
         self.proto = prototype(self, prefix=self.pfx)
+        if not self.proto.bname.startswith("."):
+            err("$Method %s: Method names need to start with . (dot)"
+                % self.proto.bname, warn=False)
         self.proto.obj = "x" + self.pfx
         self.rstlbl = "func_" + self.proto.name
         p.methods.append(self)
