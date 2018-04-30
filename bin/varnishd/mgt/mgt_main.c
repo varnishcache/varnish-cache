@@ -488,8 +488,7 @@ main(int argc, char * const *argv)
 	do {
 		switch (o) {
 		case '?':
-			if (optopt == '?')
-				usage();
+			usage();
 			exit(2);
 		case 'V':
 		case 'x':
