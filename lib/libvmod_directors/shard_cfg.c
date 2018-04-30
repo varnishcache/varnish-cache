@@ -255,8 +255,9 @@ shardcfg_hashcircle(struct sharddir *shardd, VCL_INT replicas)
 
 		ident = shardd->backend[i].ident
 		    ? shardd->backend[i].ident
-		    : shardd->backend[i].backend->vcl_name;
+		    : VRT_BACKEND_string(shardd->backend[i].backend);
 
+		AN(ident);
 		assert(ident[0] != '\0');
 
 		for (j = 0; j < replicas; j++) {
@@ -325,11 +326,13 @@ shardcfg_backend_cmp(const struct shard_backend *a,
 		return a->backend != b->backend;
 
 	if (ai == NULL)
-		ai = a->backend->vcl_name;
+		ai = VRT_BACKEND_string(a->backend);
 
 	if (bi == NULL)
-		bi = b->backend->vcl_name;
+		bi = VRT_BACKEND_string(b->backend);
 
+	AN(ai);
+	AN(bi);
 	return strcmp(ai, bi);
 }
 
@@ -549,7 +552,7 @@ shardcfg_apply_change(VRT_CTX, struct sharddir *shardd,
 
 			shard_err(ctx, shardd, "(notice) backend %s%s%s "
 			    "already exists - skipping",
-			    b->backend->vcl_name,
+			    VRT_BACKEND_string(b->backend),
 			    ident ? "/" : "",
 			    ident ? ident : "");
 			break;
