@@ -667,6 +667,10 @@ VTP_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6, const char *uds,
 	if (cp != NULL)
 		return (cp->priv);
 
+	/*
+	 * this is racy - we could end up with additional pools on the same id /
+	 * destination address with just a single connection
+	 */
 	ALLOC_OBJ(tp, TCP_POOL_MAGIC);
 	AN(tp);
 	if (uds != NULL) {
