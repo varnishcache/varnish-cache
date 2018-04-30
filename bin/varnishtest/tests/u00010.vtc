@@ -2,7 +2,7 @@ varnishtest	"trivial run of varnishtop in curses mode"
 
 server s1 {
 	rxreq
-	txresp
+	txresp -hdr "Connection: close"
 } -start
 
 varnish v1 -vcl+backend {} -start
