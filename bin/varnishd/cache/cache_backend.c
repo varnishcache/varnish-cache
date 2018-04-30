@@ -90,7 +90,7 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
 
 	if (!bp->director->health) {
 		VSLb(bo->vsl, SLT_FetchError,
-		     "backend %s: unhealthy", bp->director->cli_name);
+		     "backend %s: unhealthy", VRT_BACKEND_string(bp->director));
 		// XXX: per backend stats ?
 		VSC_C_main->backend_unhealthy++;
 		return (NULL);
@@ -98,7 +98,7 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
 
 	if (bp->max_connections > 0 && bp->n_conn >= bp->max_connections) {
 		VSLb(bo->vsl, SLT_FetchError,
-		     "backend %s: busy", bp->director->cli_name);
+		     "backend %s: busy", VRT_BACKEND_string(bp->director));
 		// XXX: per backend stats ?
 		VSC_C_main->backend_busy++;
 		return (NULL);
@@ -118,7 +118,7 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
 	if (pfd == NULL) {
 		VSLb(bo->vsl, SLT_FetchError,
 		     "backend %s: fail errno %d (%s)",
-		     bp->director->cli_name, errno, strerror(errno));
+		     VRT_BACKEND_string(bp->director), errno, strerror(errno));
 		// XXX: Per backend stats ?
 		VSC_C_main->backend_fail++;
 		bo->htc = NULL;
@@ -141,7 +141,7 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
 	PFD_LocalName(pfd, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
 	PFD_RemoteName(pfd, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
 	VSLb(bo->vsl, SLT_BackendOpen, "%d %s %s %s %s %s",
-	    *fdp, bp->director->cli_name, abuf2, pbuf2, abuf1, pbuf1);
+	    *fdp, VRT_BACKEND_string(bp->director), abuf2, pbuf2, abuf1, pbuf1);
 
 	INIT_OBJ(bo->htc, HTTP_CONN_MAGIC);
 	bo->htc->priv = pfd;
@@ -173,14 +173,14 @@ vbe_dir_finish(const struct director *d, struct worker *wrk,
 		    bo->htc->doclose == SC_RX_TIMEOUT);
 	if (bo->htc->doclose != SC_NULL || bp->proxy_header != 0) {
 		VSLb(bo->vsl, SLT_BackendClose, "%d %s", *PFD_Fd(pfd),
-		    bp->director->cli_name);
+		    VRT_BACKEND_string(bp->director));
 		VTP_Close(&pfd);
 		AZ(pfd);
 		Lck_Lock(&bp->mtx);
 	} else {
 		assert (PFD_State(pfd) == PFD_STATE_USED);
 		VSLb(bo->vsl, SLT_BackendReuse, "%d %s", *PFD_Fd(pfd),
-		    bp->director->cli_name);
+		    VRT_BACKEND_string(bp->director));
 		Lck_Lock(&bp->mtx);
 		VSC_C_main->backend_recycle++;
 		VTP_Recycle(wrk, &pfd);
@@ -394,7 +394,6 @@ vbe_panic(const struct director *d, struct vsb *vsb)
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
 
-	VSB_printf(vsb, "cli_name = %s,\n", bp->director->cli_name);
 	if (bp->ipv4_addr != NULL)
 		VSB_printf(vsb, "ipv4 = %s,\n", bp->ipv4_addr);
 	if (bp->ipv6_addr != NULL)
