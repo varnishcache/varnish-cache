@@ -31,6 +31,8 @@ C APIs (for vmod and utility authors)
 
 * XXX backend add / del
 
+* XXX director api, cache_backend.h off-limits, moved to VRT
+
 ================================
 Varnish Cache 6.0.0 (2018-03-15)
 ================================
