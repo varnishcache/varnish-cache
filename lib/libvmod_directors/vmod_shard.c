@@ -879,7 +879,7 @@ vmod_shard_param_read(VRT_CTX, const void *id,
 	CHECK_OBJ_NOTNULL(p, VMOD_SHARD_SHARD_PARAM_MAGIC);
 	(void) who; // XXX
 
-	if (ctx->method & VCL_MET_TASK_B)
+	if (ctx->method == 0 || (ctx->method & VCL_MET_TASK_B))
 		p = shard_param_task(ctx, id, p);
 
 	if (p == NULL)

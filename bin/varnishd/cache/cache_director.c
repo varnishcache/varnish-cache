@@ -96,7 +96,7 @@ vdi_resolve(struct busyobj *bo)
 	ctx.sp = bo->sp;
 	ctx.now = bo->t_prev;
 	ctx.ws = bo->ws;
-	ctx.method = VCL_MET_BACKEND_FETCH;	// XXX: Not quite true
+	ctx.method = 0;
 
 	for (d = bo->director_req; d != NULL &&
 	    d->methods->resolve != NULL; d = d2) {
