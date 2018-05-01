@@ -40,7 +40,6 @@
 #include "cache_director.h"
 
 #include "vcli_serve.h"
-#include "vcl.h"
 #include "vtim.h"
 
 /* -------------------------------------------------------------------*/
@@ -77,8 +76,8 @@ VDI_Ahealth(const struct director *d)
 
 /* Resolve director --------------------------------------------------*/
 
-static const struct director *
-vdi_resolve(struct busyobj *bo)
+static VCL_BACKEND
+VDI_Resolve(struct busyobj *bo)
 {
 	const struct director *d;
 	const struct director *d2;
@@ -104,7 +103,6 @@ vdi_resolve(struct busyobj *bo)
 		VSLb(bo->vsl, SLT_FetchError, "No backend");
 	else
 		AN(d->vdir);
-	bo->director_resp = d;
 	return (d);
 }
 
@@ -119,8 +117,9 @@ VDI_GetHdr(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-	d = vdi_resolve(bo);
+	d = VDI_Resolve(bo);
 	if (d != NULL) {
+		bo->director_resp = d;
 		AN(d->methods->gethdrs);
 		bo->director_state = DIR_S_HDRS;
 		i = d->methods->gethdrs(d, wrk, bo);
@@ -202,11 +201,12 @@ VDI_Http1Pipe(struct req *req, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-	d = vdi_resolve(bo);
+	d = VDI_Resolve(bo);
 	if (d == NULL || d->methods->http1pipe == NULL) {
 		VSLb(bo->vsl, SLT_VCL_Error, "Backend does not support pipe");
 		return (SC_TX_ERROR);
 	}
+	bo->director_resp = d;
 	return (d->methods->http1pipe(d, req, bo));
 }
 
