@@ -88,15 +88,7 @@ vdi_resolve(struct busyobj *bo)
 	CHECK_OBJ_ORNULL(bo->director_req, DIRECTOR_MAGIC);
 
 	INIT_OBJ(&ctx, VRT_CTX_MAGIC);
-	ctx.vcl = bo->vcl;
-	ctx.vsl = bo->vsl;
-	ctx.http_bereq = bo->bereq;
-	ctx.http_beresp = bo->beresp;
-	ctx.bo = bo;
-	ctx.sp = bo->sp;
-	ctx.now = bo->t_prev;
-	ctx.ws = bo->ws;
-	ctx.method = 0;
+	VCL_Bo2Ctx(&ctx, bo);
 
 	for (d = bo->director_req; d != NULL &&
 	    d->methods->resolve != NULL; d = d2) {

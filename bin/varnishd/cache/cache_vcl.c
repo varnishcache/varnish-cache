@@ -69,6 +69,42 @@ static uintptr_t ws_snapshot_cli;
 
 /*--------------------------------------------------------------------*/
 
+void
+VCL_Bo2Ctx(struct vrt_ctx *ctx, struct busyobj *bo)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	ctx->vcl = bo->vcl;
+	ctx->vsl = bo->vsl;
+	ctx->http_bereq = bo->bereq;
+	ctx->http_beresp = bo->beresp;
+	ctx->bo = bo;
+	ctx->sp = bo->sp;
+	ctx->now = bo->t_prev;
+	ctx->ws = bo->ws;
+}
+
+void
+VCL_Req2Ctx(struct vrt_ctx *ctx, struct req *req)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
+	ctx->vcl = req->vcl;
+	ctx->vsl = req->vsl;
+	ctx->http_req = req->http;
+	ctx->http_req_top = req->top->http;
+	ctx->http_resp = req->resp;
+	ctx->req = req;
+	ctx->sp = req->sp;
+	ctx->now = req->t_prev;
+	ctx->ws = req->ws;
+}
+
+/*--------------------------------------------------------------------*/
+
 static struct vrt_ctx *
 vcl_get_ctx(unsigned method, int msg)
 {
