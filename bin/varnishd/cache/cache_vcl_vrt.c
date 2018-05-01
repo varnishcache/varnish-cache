@@ -340,7 +340,6 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
     void *specific, unsigned method, vcl_func_f *func)
 {
 	uintptr_t aws;
-	struct vsl_log *vsl = NULL;
 	struct vrt_ctx ctx;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -349,33 +348,17 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 		CHECK_OBJ_NOTNULL(req->sp, SESS_MAGIC);
 		CHECK_OBJ_NOTNULL(req->vcl, VCL_MAGIC);
-		vsl = req->vsl;
-		ctx.vcl = req->vcl;
-		ctx.http_req = req->http;
-		ctx.http_req_top = req->top->http;
-		ctx.http_resp = req->resp;
-		ctx.req = req;
-		ctx.sp = req->sp;
-		ctx.now = req->t_prev;
-		ctx.ws = req->ws;
+		VCL_Req2Ctx(&ctx, req);
 	}
 	if (bo != NULL) {
 		if (req)
 			assert(method == VCL_MET_PIPE);
 		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 		CHECK_OBJ_NOTNULL(bo->vcl, VCL_MAGIC);
-		vsl = bo->vsl;
-		ctx.vcl = bo->vcl;
-		ctx.http_bereq = bo->bereq;
-		ctx.http_beresp = bo->beresp;
-		ctx.bo = bo;
-		ctx.sp = bo->sp;
-		ctx.now = bo->t_prev;
-		ctx.ws = bo->ws;
+		VCL_Bo2Ctx(&ctx, bo);
 	}
 	assert(ctx.now != 0);
 	ctx.syntax = ctx.vcl->conf->syntax;
-	ctx.vsl = vsl;
 	ctx.specific = specific;
 	ctx.method = method;
 	wrk->handling = 0;
@@ -383,10 +366,10 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 	aws = WS_Snapshot(wrk->aws);
 	wrk->cur_method = method;
 	wrk->seen_methods |= method;
-	AN(vsl);
-	VSLb(vsl, SLT_VCL_call, "%s", VCL_Method_Name(method));
+	AN(ctx.vsl);
+	VSLb(ctx.vsl, SLT_VCL_call, "%s", VCL_Method_Name(method));
 	func(&ctx);
-	VSLb(vsl, SLT_VCL_return, "%s", VCL_Return_Name(wrk->handling));
+	VSLb(ctx.vsl, SLT_VCL_return, "%s", VCL_Return_Name(wrk->handling));
 	wrk->cur_method |= 1;		// Magic marker
 	if (wrk->handling == VCL_RET_FAIL)
 		wrk->stats->vcl_fail++;

@@ -388,6 +388,9 @@ void VCL_Refresh(struct vcl **);
 void VCL_Rel(struct vcl **);
 const char *VCL_Return_Name(unsigned);
 const char *VCL_Method_Name(unsigned);
+void VCL_Bo2Ctx(struct vrt_ctx *, struct busyobj *);
+void VCL_Req2Ctx(struct vrt_ctx *, struct req *);
+
 #define VCL_MET_MAC(l,u,t,b) \
     void VCL_##l##_method(struct vcl *, struct worker *, struct req *, \
 	struct busyobj *bo, void *specific);
