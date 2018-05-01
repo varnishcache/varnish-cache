@@ -191,8 +191,8 @@ shard__assert(void)
 	assert(t2a == t2b);
 }
 
-static const struct director_methods vmod_shard_methods[1] = {{
-	.magic =	DIRECTOR_METHODS_MAGIC,
+static const struct vdi_methods vmod_shard_methods[1] = {{
+	.magic =	VDI_METHODS_MAGIC,
 	.type =		"shard",
 	.resolve =	vmod_shard_resolve,
 	.healthy =	vmod_shard_healthy,

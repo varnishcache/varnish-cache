@@ -49,7 +49,6 @@
 #include "vtcp.h"
 #include "vtim.h"
 
-#include "cache_director.h"
 #include "cache_backend.h"
 #include "cache_tcp_pool.h"
 
@@ -168,22 +167,22 @@ vbp_update_backend(struct vbp_target *vt)
 		assert(i < sizeof bits);
 
 		if (vt->good >= vt->threshold) {
-			if (vt->backend->director->health) {
-				logmsg = "Still healthy";
-			} else {
+			if (vt->backend->director->sick) {
 				logmsg = "Back healthy";
 				VRT_SetHealth(vt->backend->director, 1);
+			} else {
+				logmsg = "Still healthy";
 			}
 		} else {
-			if (vt->backend->director->health) {
+			if (vt->backend->director->sick) {
+				logmsg = "Still sick";
+			} else {
 				logmsg = "Went sick";
 				VRT_SetHealth(vt->backend->director, 0);
-			} else {
-				logmsg = "Still sick";
 			}
 		}
 		VSL(SLT_Backend_health, 0, "%s %s %s %u %u %u %.6f %.6f %s",
-		    vt->backend->director->cli_name, logmsg, bits,
+		    vt->backend->director->vcl_name, logmsg, bits,
 		    vt->good, vt->threshold, vt->window,
 		    vt->last, vt->avg, vt->resp_buf);
 		VBE_SetHappy(vt->backend, vt->happy);
@@ -485,7 +484,7 @@ VBP_Status(struct vsb *vsb, const struct backend *be, int details)
 
 	if (!details) {
 		bprintf(buf, "%d/%d %s", vt->good, vt->window,
-		    vt->backend->director->health ? "good" : "bad");
+		    vt->backend->director->sick ? "bad" : "good");
 		VSB_printf(vsb, "%-10s", buf);
 		return;
 	}

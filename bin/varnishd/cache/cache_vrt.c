@@ -33,7 +33,6 @@
 
 #include "cache_varnishd.h"
 
-#include "cache_director.h"
 #include "cache_objhead.h"
 #include "vav.h"
 #include "vcl.h"

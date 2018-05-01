@@ -411,14 +411,58 @@ VCL_BACKEND VRT_new_backend_clustered(VRT_CTX,
     struct vsmw_cluster *, const struct vrt_backend *);
 size_t VRT_backend_vsm_need(VRT_CTX);
 void VRT_delete_backend(VRT_CTX, VCL_BACKEND *);
-int VRT_backend_healthy(VRT_CTX, VCL_BACKEND);
 
 /* VSM related */
 struct vsmw_cluster *VRT_VSM_Cluster_New(VRT_CTX, size_t);
 void VRT_VSM_Cluster_Destroy(VRT_CTX, struct vsmw_cluster **);
 
-/* cache_director.c */
+/* VDI - Director API */
+typedef VCL_BOOL vdi_healthy_f(VRT_CTX, VCL_BACKEND, VCL_TIME *);
+typedef VCL_BACKEND vdi_resolve_f(VRT_CTX, VCL_BACKEND);
+typedef int vdi_gethdrs_f(VRT_CTX, VCL_BACKEND);
+typedef int vdi_getbody_f(VRT_CTX, VCL_BACKEND);
+typedef VCL_IP vdi_getip_f(VRT_CTX, VCL_BACKEND);
+typedef void vdi_finish_f(VRT_CTX, VCL_BACKEND);
+typedef enum sess_close vdi_http1pipe_f(VRT_CTX, VCL_BACKEND);
+typedef void vdi_event_f(VCL_BACKEND, enum vcl_event_e);
+typedef void vdi_destroy_f(VCL_BACKEND);
+typedef void vdi_panic_f(VCL_BACKEND, struct vsb *);
+typedef void vdi_list_f(VCL_BACKEND, struct vsb *, int, int);
+
+struct vdi_methods {
+	unsigned			magic;
+#define VDI_METHODS_MAGIC		0x4ec0c4bb
+	const char			*type;
+	vdi_http1pipe_f			*http1pipe;
+	vdi_healthy_f			*healthy;
+	vdi_resolve_f			*resolve;
+	vdi_gethdrs_f			*gethdrs;
+	vdi_getbody_f			*getbody;
+	vdi_getip_f			*getip;
+	vdi_finish_f			*finish;
+	vdi_event_f			*event;
+	vdi_destroy_f			*destroy;
+	vdi_panic_f			*panic;
+	vdi_list_f			*list;
+};
+
+struct vcldir;
+
+struct director {
+	unsigned			magic;
+#define DIRECTOR_MAGIC			0x3336351d
+	unsigned			sick;
+	void				*priv;
+	char				*vcl_name;
+	struct vcldir			*vdir;
+};
+
 VCL_BOOL VRT_Healthy(VRT_CTX, VCL_BACKEND, VCL_TIME *);
+VCL_BACKEND VRT_AddDirector(VRT_CTX, const struct vdi_methods *,
+    void *, const char *, ...) v_printflike_(4, 5);
+void VRT_SetHealth(VCL_BACKEND d, int health);
+void VRT_DisableDirector(VCL_BACKEND);
+void VRT_DelDirector(VCL_BACKEND *);
 
 /* Suckaddr related */
 int VRT_VSA_GetPtr(const struct suckaddr *sua, const unsigned char ** dst);

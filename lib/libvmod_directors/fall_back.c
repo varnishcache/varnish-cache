@@ -32,7 +32,6 @@
 #include <string.h>
 
 #include "cache/cache.h"
-#include "cache/cache_director.h"
 
 #include "vcc_if.h"
 
@@ -85,8 +84,8 @@ vmod_fallback_resolve(VRT_CTX, VCL_BACKEND dir)
 	return (be);
 }
 
-static const struct director_methods vmod_fallback_methods[1] = {{
-	.magic =		DIRECTOR_METHODS_MAGIC,
+static const struct vdi_methods vmod_fallback_methods[1] = {{
+	.magic =		VDI_METHODS_MAGIC,
 	.type =			"fallback",
 	.healthy =		vmod_fallback_healthy,
 	.resolve =		vmod_fallback_resolve,

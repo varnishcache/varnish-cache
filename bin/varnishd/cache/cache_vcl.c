@@ -263,7 +263,7 @@ vcl_iterdir(struct cli *cli, const char *pat, const struct vcl *vcl,
 	struct vcldir *vdir;
 
 	VTAILQ_FOREACH(vdir, &vcl->director_list, list) {
-		if (fnmatch(pat, vdir->dir->cli_name, 0))
+		if (fnmatch(pat, vdir->cli_name, 0))
 			continue;
 		found++;
 		i = func(cli, vdir->dir, priv);
@@ -344,9 +344,9 @@ vcl_KillBackends(struct vcl *vcl)
 		if (vdir == NULL)
 			break;
 		VTAILQ_REMOVE(&vcl->director_list, vdir, list);
-		REPLACE(vdir->dir->cli_name, NULL);
-		AN(vdir->dir->methods->destroy);
-		vdir->dir->methods->destroy(vdir->dir);
+		REPLACE(vdir->cli_name, NULL);
+		AN(vdir->methods->destroy);
+		vdir->methods->destroy(vdir->dir);
 		FREE_OBJ(vdir);
 	}
 }

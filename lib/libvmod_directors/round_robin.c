@@ -32,7 +32,6 @@
 #include <string.h>
 
 #include "cache/cache.h"
-#include "cache/cache_director.h"
 
 #include "vcc_if.h"
 
@@ -82,8 +81,8 @@ vmod_rr_resolve(VRT_CTX, VCL_BACKEND dir)
 	return (be);
 }
 
-static const struct director_methods vmod_rr_methods[1] = {{
-	.magic =		DIRECTOR_METHODS_MAGIC,
+static const struct vdi_methods vmod_rr_methods[1] = {{
+	.magic =		VDI_METHODS_MAGIC,
 	.type =			"round-robin",
 	.healthy =		vmod_rr_healthy,
 	.resolve =		vmod_rr_resolve,

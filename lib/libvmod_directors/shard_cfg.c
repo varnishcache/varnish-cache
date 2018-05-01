@@ -35,7 +35,6 @@
 #include <string.h>
 
 #include "cache/cache.h"
-#include "cache/cache_director.h"
 
 #include "shard_dir.h"
 #include "shard_cfg.h"

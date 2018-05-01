@@ -37,7 +37,6 @@
 
 #include "vcl.h"
 
-#include "cache_director.h"
 #include "vrt_obj.h"
 
 static char vrt_hostname[255] = "";

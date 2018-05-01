@@ -51,12 +51,12 @@ vdir_expand(struct vdir *vd, unsigned n)
 
 void
 vdir_new(VRT_CTX, struct vdir **vdp, const char *vcl_name,
-    const struct director_methods *m, void *priv)
+    const struct vdi_methods *m, void *priv)
 {
 	struct vdir *vd;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(m, DIRECTOR_METHODS_MAGIC);
+	CHECK_OBJ_NOTNULL(m, VDI_METHODS_MAGIC);
 	AN(vcl_name);
 	AN(vdp);
 	AZ(*vdp);

@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2015 Varnish Software AS
+ * Copyright (c) 2006-2018 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -26,75 +26,25 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Director APIs
- *
- * A director ("VDI") is an abstract entity which can either satisfy a
- * backend fetch request or select another director for the job.
- *
- * In theory a director does not have to talk HTTP over TCP, it can satisfy
- * the backend request using any means it wants, although this is presently
- * not implemented.
+ * This is the private implementation of directors.
+ * You are not supposed to need anything here.
  *
  */
 
-struct vcldir;
+struct vdi_methods;
 
-typedef VCL_BOOL vdi_healthy_f(VRT_CTX, VCL_BACKEND, VCL_TIME *);
-typedef VCL_BACKEND vdi_resolve_f(VRT_CTX, VCL_BACKEND);
-typedef int vdi_gethdrs_f(VRT_CTX, VCL_BACKEND);
-typedef int vdi_getbody_f(VRT_CTX, VCL_BACKEND);
-typedef VCL_IP vdi_getip_f(VRT_CTX, VCL_BACKEND);
-typedef void vdi_finish_f(VRT_CTX, VCL_BACKEND);
-typedef enum sess_close vdi_http1pipe_f(VRT_CTX, VCL_BACKEND);
-typedef void vdi_event_f(VCL_BACKEND, enum vcl_event_e);
-typedef void vdi_destroy_f(VCL_BACKEND);
-typedef void vdi_panic_f(VCL_BACKEND, struct vsb *);
-typedef void vdi_list_f(VCL_BACKEND, struct vsb *, int, int);
-
-struct director_methods {
+struct vcldir {
 	unsigned			magic;
-#define DIRECTOR_METHODS_MAGIC		0x4ec0c4bb
-	const char			*type;
-	vdi_http1pipe_f			*http1pipe;
-	vdi_healthy_f			*healthy;
-	vdi_resolve_f			*resolve;
-	vdi_gethdrs_f			*gethdrs;
-	vdi_getbody_f			*getbody;
-	vdi_getip_f			*getip;
-	vdi_finish_f			*finish;
-	vdi_event_f			*event;
-	vdi_destroy_f			*destroy;
-	vdi_panic_f			*panic;
-	vdi_list_f			*list;
-};
-
-struct director {
-	unsigned			magic;
-#define DIRECTOR_MAGIC			0x3336351d
-	const struct director_methods	*methods;
-	char				*vcl_name;
-
-	void				*priv;
-
-	/* Internal Housekeeping fields */
-
-	struct vcldir			*vdir;
-
-	char				*cli_name;
-
+#define VCLDIR_MAGIC			0xbf726c7d
+	struct director			*dir;
+	struct vcl			*vcl;
+	const struct vdi_methods	*methods;
+	VTAILQ_ENTRY(vcldir)		list;
 	unsigned			health;
 	const struct vdi_ahealth	*admin_health;
 	double				health_changed;
+	char				*cli_name;
 };
-
-
-/* cache_vcl.c */
-VCL_BACKEND VRT_AddDirector(VRT_CTX, const struct director_methods *,
-    void *, const char *, ...) v_printflike_(4, 5);
-
-void VRT_SetHealth(VCL_BACKEND d, int health);
-void VRT_DisableDirector(VCL_BACKEND);
-void VRT_DelDirector(VCL_BACKEND *);
 
 /* cache_director.c */
 
@@ -107,5 +57,3 @@ void VRT_DelDirector(VCL_BACKEND *);
 #define VBE_AHEALTH(l,u,h) extern const struct vdi_ahealth * const VDI_AH_##u;
 VBE_AHEALTH_LIST
 #undef VBE_AHEALTH
-
-const char *VDI_Ahealth(const struct director *d);

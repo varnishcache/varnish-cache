@@ -35,13 +35,6 @@ struct vfp_filter;
 
 VTAILQ_HEAD(vfp_filter_head, vfp_filter);
 
-struct vcldir {
-	unsigned		magic;
-#define VCLDIR_MAGIC		0xbf726c7d
-	struct director		*dir;
-	struct vcl		*vcl;
-	VTAILQ_ENTRY(vcldir)	list;
-};
 
 struct vcl {
 	unsigned		magic;

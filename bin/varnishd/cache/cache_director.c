@@ -65,13 +65,13 @@ VBE_AHEALTH_LIST
 	return (NULL);
 }
 
-const char *
+static const char *
 VDI_Ahealth(const struct director *d)
 {
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	AN(d->admin_health);
-	return (d->admin_health->name);
+	AN(d->vdir->admin_health);
+	return (d->vdir->admin_health->name);
 }
 
 /* Resolve director --------------------------------------------------*/
@@ -88,10 +88,10 @@ VDI_Resolve(VRT_CTX)
 	CHECK_OBJ_ORNULL(bo->director_req, DIRECTOR_MAGIC);
 
 	for (d = bo->director_req; d != NULL &&
-	    d->methods->resolve != NULL; d = d2) {
+	    d->vdir->methods->resolve != NULL; d = d2) {
 		CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 		AN(d->vdir);
-		d2 = d->methods->resolve(ctx, d);
+		d2 = d->vdir->methods->resolve(ctx, d);
 		if (d2 == NULL)
 			VSLb(bo->vsl, SLT_FetchError,
 			    "Director %s returned no backend", d->vcl_name);
@@ -120,9 +120,9 @@ VDI_GetHdr(struct busyobj *bo)
 	d = VDI_Resolve(ctx);
 	if (d != NULL) {
 		bo->director_resp = d;
-		AN(d->methods->gethdrs);
+		AN(d->vdir->methods->gethdrs);
 		bo->director_state = DIR_S_HDRS;
-		i = d->methods->gethdrs(ctx, d);
+		i = d->vdir->methods->gethdrs(ctx, d);
 	}
 	if (i)
 		bo->director_state = DIR_S_NULL;
@@ -143,13 +143,13 @@ VDI_GetBody(struct busyobj *bo)
 
 	d = bo->director_resp;
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	AZ(d->methods->resolve);
+	AZ(d->vdir->methods->resolve);
 
 	assert(bo->director_state == DIR_S_HDRS);
 	bo->director_state = DIR_S_BODY;
-	if (d->methods->getbody == NULL)
+	if (d->vdir->methods->getbody == NULL)
 		return (0);
-	return (d->methods->getbody(ctx, d));
+	return (d->vdir->methods->getbody(ctx, d));
 }
 
 /* Get IP number (if any ) -------------------------------------------*/
@@ -168,10 +168,10 @@ VDI_GetIP(struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	assert(bo->director_state == DIR_S_HDRS ||
 	   bo->director_state == DIR_S_BODY);
-	AZ(d->methods->resolve);
-	if (d->methods->getip == NULL)
+	AZ(d->vdir->methods->resolve);
+	if (d->vdir->methods->getip == NULL)
 		return (NULL);
-	return (d->methods->getip(ctx, d));
+	return (d->vdir->methods->getip(ctx, d));
 }
 
 /* Finish fetch ------------------------------------------------------*/
@@ -189,11 +189,11 @@ VDI_Finish(struct busyobj *bo)
 	d = bo->director_resp;
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 
-	AZ(d->methods->resolve);
-	AN(d->methods->finish);
+	AZ(d->vdir->methods->resolve);
+	AN(d->vdir->methods->finish);
 
 	assert(bo->director_state != DIR_S_NULL);
-	d->methods->finish(ctx, d);
+	d->vdir->methods->finish(ctx, d);
 	bo->director_state = DIR_S_NULL;
 }
 
@@ -212,12 +212,12 @@ VDI_Http1Pipe(struct req *req, struct busyobj *bo)
 	VCL_Bo2Ctx(ctx, bo);
 
 	d = VDI_Resolve(ctx);
-	if (d == NULL || d->methods->http1pipe == NULL) {
+	if (d == NULL || d->vdir->methods->http1pipe == NULL) {
 		VSLb(bo->vsl, SLT_VCL_Error, "Backend does not support pipe");
 		return (SC_TX_ERROR);
 	}
 	bo->director_resp = d;
-	return (d->methods->http1pipe(ctx, d));
+	return (d->vdir->methods->http1pipe(ctx, d));
 }
 
 /* Check health --------------------------------------------------------
@@ -238,19 +238,19 @@ VRT_Healthy(VRT_CTX, VCL_BACKEND d, VCL_TIME *changed)
 		return (0);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 
-	if (d->admin_health->health >= 0) {
+	if (d->vdir->admin_health->health >= 0) {
 		if (changed != NULL)
-			*changed = d->health_changed;
-		return (d->admin_health->health);
+			*changed = d->vdir->health_changed;
+		return (d->vdir->admin_health->health);
 	}
 
-	if (d->methods->healthy == NULL) {
+	if (d->vdir->methods->healthy == NULL) {
 		if (changed != NULL)
-			*changed = d->health_changed;
-		return (d->health);
+			*changed = d->vdir->health_changed;
+		return (!d->sick);
 	}
 
-	return (d->methods->healthy(ctx, d, changed));
+	return (d->vdir->methods->healthy(ctx, d, changed));
 }
 
 /* Send Event ----------------------------------------------------------
@@ -261,8 +261,8 @@ VDI_Event(const struct director *d, enum vcl_event_e ev)
 {
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	if (d->methods->event != NULL)
-		d->methods->event(d, ev);
+	if (d->vdir->methods->event != NULL)
+		d->vdir->methods->event(d, ev);
 }
 
 /* Dump panic info -----------------------------------------------------
@@ -275,14 +275,14 @@ VDI_Panic(const struct director *d, struct vsb *vsb, const char *nm)
 		return;
 	VSB_printf(vsb, "%s = %p {\n", nm, d);
 	VSB_indent(vsb, 2);
-	VSB_printf(vsb, "cli_name = %s,\n", d->cli_name);
-	VSB_printf(vsb, "health = %s,\n", d->health ?  "healthy" : "sick");
+	VSB_printf(vsb, "cli_name = %s,\n", d->vdir->cli_name);
+	VSB_printf(vsb, "health = %s,\n", d->sick ?  "sick" : "healthy");
 	VSB_printf(vsb, "admin_health = %s, changed = %f,\n",
-	    VDI_Ahealth(d), d->health_changed);
-	VSB_printf(vsb, "type = %s {\n", d->methods->type);
+	    VDI_Ahealth(d), d->vdir->health_changed);
+	VSB_printf(vsb, "type = %s {\n", d->vdir->methods->type);
 	VSB_indent(vsb, 2);
-	if (d->methods->panic != NULL)
-		d->methods->panic(d, vsb);
+	if (d->vdir->methods->panic != NULL)
+		d->vdir->methods->panic(d, vsb);
 	VSB_indent(vsb, -2);
 	VSB_printf(vsb, "},\n");
 	VSB_indent(vsb, -2);
@@ -308,20 +308,20 @@ do_list(struct cli *cli, struct director *d, void *priv)
 	CAST_OBJ_NOTNULL(la, priv, LIST_ARGS_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 
-	if (d->admin_health == VDI_AH_DELETED)
+	if (d->vdir->admin_health == VDI_AH_DELETED)
 		return (0);
 
-	VCLI_Out(cli, "\n%-30s %-7s ", d->cli_name, VDI_Ahealth(d));
+	VCLI_Out(cli, "\n%-30s %-7s ", d->vdir->cli_name, VDI_Ahealth(d));
 
-	if (d->methods->list != NULL)
-		d->methods->list(d, cli->sb, 0, 0);
+	if (d->vdir->methods->list != NULL)
+		d->vdir->methods->list(d, cli->sb, 0, 0);
 	else
-		VCLI_Out(cli, "%-10s", d->health ? "healthy" : "sick");
+		VCLI_Out(cli, "%-10s", d->sick ? "sick" : "halthy");
 
-	VTIM_format(d->health_changed, time_str);
+	VTIM_format(d->vdir->health_changed, time_str);
 	VCLI_Out(cli, " %s", time_str);
-	if ((la->p || la->v) && d->methods->list != NULL)
-		d->methods->list(d, cli->sb, la->p, la->v);
+	if ((la->p || la->v) && d->vdir->methods->list != NULL)
+		d->vdir->methods->list(d, cli->sb, la->p, la->v);
 	return (0);
 }
 
@@ -373,12 +373,13 @@ do_set_health(struct cli *cli, struct director *d, void *priv)
 	(void)cli;
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(sh, priv, SET_HEALTH_MAGIC);
-	if (d->admin_health == VDI_AH_DELETED)
+	if (d->vdir->admin_health == VDI_AH_DELETED)
 		return (0);
-	if (d->admin_health != sh->ah) {
-		d->health_changed = VTIM_real();
-		d->admin_health = sh->ah;
-		d->health = sh->ah->health ? 1 : 0;
+	if (d->vdir->admin_health != sh->ah) {
+		d->vdir->health_changed = VTIM_real();
+		d->vdir->admin_health = sh->ah;
+		d->sick &= ~0x02;
+		d->sick |= sh->ah->health ? 0 : 0x02;
 	}
 	return (0);
 }

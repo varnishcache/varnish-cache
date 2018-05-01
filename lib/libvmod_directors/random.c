@@ -31,7 +31,6 @@
 #include <stdlib.h>
 
 #include "cache/cache.h"
-#include "cache/cache_director.h"
 
 #include "vbm.h"
 #include "vrnd.h"
@@ -73,8 +72,8 @@ vmod_random_resolve(VRT_CTX, VCL_BACKEND dir)
 	return (be);
 }
 
-static const struct director_methods vmod_random_methods[1] = {{
-	.magic =		DIRECTOR_METHODS_MAGIC,
+static const struct vdi_methods vmod_random_methods[1] = {{
+	.magic =		VDI_METHODS_MAGIC,
 	.type =			"random",
 	.healthy =		vmod_random_healthy,
 	.resolve =		vmod_random_resolve,

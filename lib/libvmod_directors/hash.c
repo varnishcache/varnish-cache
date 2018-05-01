@@ -32,7 +32,6 @@
 #include <string.h>
 
 #include "cache/cache.h"
-#include "cache/cache_director.h"
 
 #include "vend.h"
 #include "vsha256.h"
@@ -47,8 +46,8 @@ struct vmod_directors_hash {
 	struct vdir				*vd;
 };
 
-static const struct director_methods vmod_hash_methods[1] = {{
-	.magic =		DIRECTOR_METHODS_MAGIC,
+static const struct vdi_methods vmod_hash_methods[1] = {{
+	.magic =		VDI_METHODS_MAGIC,
 	.type =			"hash",
 }};
 

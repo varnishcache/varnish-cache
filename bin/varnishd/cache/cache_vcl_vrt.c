@@ -127,7 +127,7 @@ VCL_Rel(struct vcl **vcc)
 /*--------------------------------------------------------------------*/
 
 VCL_BACKEND
-VRT_AddDirector(VRT_CTX, const struct director_methods *m, void *priv,
+VRT_AddDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
     const char *fmt, ...)
 {
 	struct vsb *vsb;
@@ -138,7 +138,7 @@ VRT_AddDirector(VRT_CTX, const struct director_methods *m, void *priv,
 	int i;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(m, DIRECTOR_METHODS_MAGIC);
+	CHECK_OBJ_NOTNULL(m, VDI_METHODS_MAGIC);
 	AN(fmt);
 	vcl = ctx->vcl;
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
@@ -150,9 +150,14 @@ VRT_AddDirector(VRT_CTX, const struct director_methods *m, void *priv,
 
 	ALLOC_OBJ(d, DIRECTOR_MAGIC);
 	AN(d);
-	d->methods = m;
+	ALLOC_OBJ(vdir, VCLDIR_MAGIC);
+	AN(vdir);
+	vdir->dir = d;
+	d->vdir = vdir;
+
+	vdir->methods = m;
 	d->priv = priv;
-	d->admin_health = VDI_AH_PROBE;
+	vdir->admin_health = VDI_AH_PROBE;
 	vsb = VSB_new_auto();
 	AN(vsb);
 	VSB_printf(vsb, "%s.", VCL_Name(vcl));
@@ -161,18 +166,14 @@ VRT_AddDirector(VRT_CTX, const struct director_methods *m, void *priv,
 	VSB_vprintf(vsb, fmt, ap);
 	va_end(ap);
 	AZ(VSB_finish(vsb));
-	REPLACE((d->cli_name), VSB_data(vsb));
+	REPLACE((vdir->cli_name), VSB_data(vsb));
 	VSB_destroy(&vsb);
-	d->vcl_name = d->cli_name + i;
+	d->vcl_name = vdir->cli_name + i;
 
-	ALLOC_OBJ(vdir, VCLDIR_MAGIC);
-	AN(vdir);
-	vdir->dir = d;
 	vdir->vcl = vcl;
-	d->vdir = vdir;
-	d->health = 1;
-	d->admin_health = VDI_AH_PROBE;
-	d->health_changed = VTIM_real();
+	d->sick = 0;
+	vdir->admin_health = VDI_AH_PROBE;
+	vdir->health_changed = VTIM_real();
 
 	Lck_Lock(&vcl_mtx);
 	VTAILQ_INSERT_TAIL(&vcl->director_list, vdir, list);
@@ -208,9 +209,9 @@ VRT_DelDirector(VCL_BACKEND *bp)
 	if (VCL_WARM(vcl))
 		VDI_Event(d, VCL_EVENT_COLD);
 	AZ(errno=pthread_rwlock_unlock(&vcl->temp_rwl));
-	if(d->methods->destroy != NULL)
-		d->methods->destroy(d);
-	free(d->cli_name);
+	if(vdir->methods->destroy != NULL)
+		vdir->methods->destroy(d);
+	free(vdir->cli_name);
 	FREE_OBJ(vdir->dir);
 	FREE_OBJ(vdir);
 }
@@ -224,8 +225,11 @@ VRT_SetHealth(VCL_BACKEND d, int health)
 	vdir = d->vdir;
 	CHECK_OBJ_NOTNULL(vdir, VCLDIR_MAGIC);
 
-	vdir->dir->health = health;
-	vdir->dir->health_changed = VTIM_real();
+	if (health)
+		vdir->dir->sick &= ~0x01;
+	else
+		vdir->dir->sick |= 0x01;
+	vdir->health_changed = VTIM_real();
 }
 
 void
@@ -237,9 +241,9 @@ VRT_DisableDirector(VCL_BACKEND d)
 	vdir = d->vdir;
 	CHECK_OBJ_NOTNULL(vdir, VCLDIR_MAGIC);
 
-	vdir->dir->admin_health = VDI_AH_DELETED;
-	vdir->dir->health = 0;
-	vdir->dir->health_changed = VTIM_real();
+	vdir->admin_health = VDI_AH_DELETED;
+	vdir->dir->sick |= 0x04;
+	vdir->health_changed = VTIM_real();
 }
 
 /*--------------------------------------------------------------------*/

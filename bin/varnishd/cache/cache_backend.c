@@ -40,7 +40,6 @@
 #include "vtcp.h"
 #include "vtim.h"
 
-#include "cache_director.h"
 #include "cache_backend.h"
 #include "cache_tcp_pool.h"
 #include "cache_transport.h"
@@ -88,7 +87,7 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
 	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
 	AN(bp->vsc);
 
-	if (!bp->director->health) {
+	if (bp->director->sick) {
 		VSLb(bo->vsl, SLT_FetchError,
 		     "backend %s: unhealthy", VRT_BACKEND_string(bp->director));
 		// XXX: per backend stats ?
@@ -422,14 +421,14 @@ vbe_list(const struct director *d, struct vsb *vsb, int vflag, int pflag)
 	if (bp->probe != NULL)
 		VBP_Status(vsb, bp, vflag | pflag);
 	else
-		VSB_printf(vsb, "%-10s", d->health ? "healthy" : "sick");
+		VSB_printf(vsb, "%-10s", d->sick ? "sick" : "healthy");
 }
 
 /*--------------------------------------------------------------------
  */
 
-static const struct director_methods vbe_methods[1] = {{
-	.magic =		DIRECTOR_METHODS_MAGIC,
+static const struct vdi_methods vbe_methods[1] = {{
+	.magic =		VDI_METHODS_MAGIC,
 	.type =			"backend",
 	.http1pipe =		vbe_dir_http1pipe,
 	.gethdrs =		vbe_dir_gethdrs,
