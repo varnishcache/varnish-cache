@@ -229,7 +229,7 @@ EXTRA_DIST = builtin.vcl
 
 vhp_hufdec.h: vhp_gen_hufdec
 	$(AM_V_GEN) ./vhp_gen_hufdec > vhp_hufdec.h_
-	mv vhp_hufdec.h_ vhp_hufdec.h
+	mv -f vhp_hufdec.h_ vhp_hufdec.h
 
 DISTCLEANFILES = builtin_vcl.c
 
