@@ -75,8 +75,12 @@ static void
 vut_vpf_remove(void)
 {
 	if (pfh != NULL) {
-		AZ(VPF_Remove(pfh));
-		pfh = NULL;
+		errno = 0;
+		if (VPF_Remove(pfh) != 0)
+			fprintf(stderr, "Cannot remove pid file: %s\n",
+				strerror(errno));
+		else
+			pfh = NULL;
 	}
 }
 
@@ -315,17 +319,21 @@ VUT_Fini(struct VUT **vutp)
 {
 	struct VUT *vut;
 
-	TAKE_OBJ_NOTNULL(vut, vutp, VUT_MAGIC);
+	vut = *vutp;
+	CHECK_OBJ_NOTNULL(vut, VUT_MAGIC);
 	AN(vut->progname);
+
+	errno = 0;
+	if (pfh != NULL && VPF_Remove(pfh) != 0)
+		VUT_Error(vut, 1, "Cannot remove pid file %s: %s", vut->P_arg,
+			  strerror(errno));
+	pfh = NULL;
 
 	free(vut->n_arg);
 	free(vut->P_arg);
 	free(vut->q_arg);
 	free(vut->r_arg);
 	free(vut->t_arg);
-
-	vut_vpf_remove();
-	AZ(pfh);
 
 	if (vut->vslq)
 		VSLQ_Delete(&vut->vslq);
@@ -336,6 +344,7 @@ VUT_Fini(struct VUT **vutp)
 
 	memset(vut, 0, sizeof *vut);
 	FREE_OBJ(vut);
+	*vutp = NULL;
 }
 
 int
