@@ -290,7 +290,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	bo->vfc->resp = bo->beresp;
 	bo->vfc->req = bo->bereq;
 
-	i = VDI_GetHdr(wrk, bo);
+	i = VDI_GetHdr(bo);
 
 	now = W_TIM_real(wrk);
 	VSLb_ts_busyobj(bo, "Beresp", now);
@@ -304,7 +304,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	if (bo->htc->body_status == BS_ERROR) {
 		bo->htc->doclose = SC_RX_BODY;
-		VDI_Finish(bo->wrk, bo);
+		VDI_Finish(bo);
 		VSLb(bo->vsl, SLT_Error, "Body cannot be fetched");
 		assert(bo->director_state == DIR_S_NULL);
 		return (F_STP_ERROR);
@@ -375,7 +375,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 			VSLb(bo->vsl, SLT_Error,
 			    "304 response but not conditional fetch");
 			bo->htc->doclose = SC_RX_BAD;
-			VDI_Finish(bo->wrk, bo);
+			VDI_Finish(bo);
 			return (F_STP_ERROR);
 		}
 	}
@@ -384,7 +384,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	if (wrk->handling == VCL_RET_ABANDON || wrk->handling == VCL_RET_FAIL) {
 		bo->htc->doclose = SC_RESP_CLOSE;
-		VDI_Finish(bo->wrk, bo);
+		VDI_Finish(bo);
 		return (F_STP_FAIL);
 	}
 
@@ -392,7 +392,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 		if (bo->htc->body_status != BS_NONE)
 			bo->htc->doclose = SC_RESP_CLOSE;
 		if (bo->director_state != DIR_S_NULL)
-			VDI_Finish(bo->wrk, bo);
+			VDI_Finish(bo);
 
 		if (bo->retries++ < cache_param->max_retries)
 			return (F_STP_RETRY);
@@ -483,7 +483,7 @@ vbf_stp_fetchbody(struct worker *wrk, struct busyobj *bo)
 		(void)VFP_Error(vfc, "Fetch pipeline failed to process");
 		bo->htc->doclose = SC_RX_BODY;
 		VFP_Close(vfc);
-		VDI_Finish(wrk, bo);
+		VDI_Finish(bo);
 		if (!bo->do_stream) {
 			assert(bo->fetch_objcore->boc->state < BOS_STREAM);
 			// XXX: doclose = ?
@@ -612,7 +612,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->filter_list == NULL ||
 	    VCL_StackVFP(bo->vfc, bo->vcl, bo->filter_list)) {
 		(bo)->htc->doclose = SC_OVERLOAD;
-		VDI_Finish((bo)->wrk, bo);
+		VDI_Finish(bo);
 		return (F_STP_ERROR);
 	}
 
@@ -624,7 +624,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (VFP_Open(bo->vfc)) {
 		(void)VFP_Error(bo->vfc, "Fetch pipeline failed to open");
 		bo->htc->doclose = SC_RX_BODY;
-		VDI_Finish(bo->wrk, bo);
+		VDI_Finish(bo);
 		return (F_STP_ERROR);
 	}
 
@@ -632,7 +632,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 		(void)VFP_Error(bo->vfc, "Could not get storage");
 		bo->htc->doclose = SC_RX_BODY;
 		VFP_Close(bo->vfc);
-		VDI_Finish(bo->wrk, bo);
+		VDI_Finish(bo);
 		return (F_STP_ERROR);
 	}
 
@@ -648,12 +648,12 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 		ObjSetFlag(bo->wrk, bo->fetch_objcore, OF_IMSCAND, 1);
 
 	if (bo->htc->body_status != BS_NONE &&
-	    VDI_GetBody(bo->wrk, bo) != 0) {
+	    VDI_GetBody(bo) != 0) {
 		(void)VFP_Error(bo->vfc,
 		    "GetBody failed - workspace_backend overflow?");
 		VFP_Close(bo->vfc);
 		bo->htc->doclose = SC_OVERLOAD;
-		VDI_Finish(bo->wrk, bo);
+		VDI_Finish(bo);
 		return (F_STP_ERROR);
 	}
 
@@ -698,7 +698,7 @@ vbf_stp_fetchend(struct worker *wrk, struct busyobj *bo)
 
 	/* Recycle the backend connection before setting BOS_FINISHED to
 	   give predictable backend reuse behavior for varnishtest */
-	VDI_Finish(bo->wrk, bo);
+	VDI_Finish(bo);
 
 	ObjSetState(wrk, bo->fetch_objcore, BOS_FINISHED);
 	VSLb_ts_busyobj(bo, "BerespBody", W_TIM_real(wrk));
@@ -763,7 +763,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->stale_oc->flags & OC_F_FAILED)
 		(void)VFP_Error(bo->vfc, "Template object failed");
 	if (bo->vfc->failed) {
-		VDI_Finish(bo->wrk, bo);
+		VDI_Finish(bo);
 		wrk->stats->fetch_failed++;
 		return (F_STP_FAIL);
 	}

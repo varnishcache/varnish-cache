@@ -337,7 +337,7 @@ VRT_r_beresp_backend_ip(VRT_CTX)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
-	return (VDI_GetIP(ctx->bo->wrk, ctx->bo));
+	return (VDI_GetIP(ctx->bo));
 }
 
 /*--------------------------------------------------------------------*/

@@ -116,10 +116,10 @@ struct busyobj *VBO_GetBusyObj(struct worker *, const struct req *);
 void VBO_ReleaseBusyObj(struct worker *wrk, struct busyobj **busyobj);
 
 /* cache_director.c */
-int VDI_GetHdr(struct worker *, struct busyobj *);
-int VDI_GetBody(struct worker *, struct busyobj *);
-const struct suckaddr *VDI_GetIP(struct worker *, struct busyobj *);
-void VDI_Finish(struct worker *wrk, struct busyobj *bo);
+int VDI_GetHdr(struct busyobj *);
+int VDI_GetBody(struct busyobj *);
+VCL_IP VDI_GetIP(struct busyobj *);
+void VDI_Finish(struct busyobj *bo);
 enum sess_close VDI_Http1Pipe(struct req *, struct busyobj *);
 void VDI_Panic(const struct director *, struct vsb *, const char *nm);
 void VDI_Event(const struct director *d, enum vcl_event_e ev);

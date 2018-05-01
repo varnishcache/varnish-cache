@@ -77,23 +77,21 @@ VDI_Ahealth(const struct director *d)
 /* Resolve director --------------------------------------------------*/
 
 static VCL_BACKEND
-VDI_Resolve(struct busyobj *bo)
+VDI_Resolve(VRT_CTX)
 {
 	const struct director *d;
 	const struct director *d2;
-	struct vrt_ctx ctx;
+	struct busyobj *bo;
 
+	bo = ctx->bo;
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_ORNULL(bo->director_req, DIRECTOR_MAGIC);
-
-	INIT_OBJ(&ctx, VRT_CTX_MAGIC);
-	VCL_Bo2Ctx(&ctx, bo);
 
 	for (d = bo->director_req; d != NULL &&
 	    d->methods->resolve != NULL; d = d2) {
 		CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 		AN(d->vdir);
-		d2 = d->methods->resolve(&ctx, d);
+		d2 = d->methods->resolve(ctx, d);
 		if (d2 == NULL)
 			VSLb(bo->vsl, SLT_FetchError,
 			    "Director %s returned no backend", d->vcl_name);
@@ -109,20 +107,22 @@ VDI_Resolve(struct busyobj *bo)
 /* Get a set of response headers -------------------------------------*/
 
 int
-VDI_GetHdr(struct worker *wrk, struct busyobj *bo)
+VDI_GetHdr(struct busyobj *bo)
 {
 	const struct director *d;
+	struct vrt_ctx ctx[1];
 	int i = -1;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	INIT_OBJ(ctx, VRT_CTX_MAGIC);
+	VCL_Bo2Ctx(ctx, bo);
 
-	d = VDI_Resolve(bo);
+	d = VDI_Resolve(ctx);
 	if (d != NULL) {
 		bo->director_resp = d;
 		AN(d->methods->gethdrs);
 		bo->director_state = DIR_S_HDRS;
-		i = d->methods->gethdrs(d, wrk, bo);
+		i = d->methods->gethdrs(ctx, d);
 	}
 	if (i)
 		bo->director_state = DIR_S_NULL;
@@ -132,12 +132,14 @@ VDI_GetHdr(struct worker *wrk, struct busyobj *bo)
 /* Setup body fetch --------------------------------------------------*/
 
 int
-VDI_GetBody(struct worker *wrk, struct busyobj *bo)
+VDI_GetBody(struct busyobj *bo)
 {
 	const struct director *d;
+	struct vrt_ctx ctx[1];
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	INIT_OBJ(ctx, VRT_CTX_MAGIC);
+	VCL_Bo2Ctx(ctx, bo);
 
 	d = bo->director_resp;
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
@@ -147,18 +149,20 @@ VDI_GetBody(struct worker *wrk, struct busyobj *bo)
 	bo->director_state = DIR_S_BODY;
 	if (d->methods->getbody == NULL)
 		return (0);
-	return (d->methods->getbody(d, wrk, bo));
+	return (d->methods->getbody(ctx, d));
 }
 
 /* Get IP number (if any ) -------------------------------------------*/
 
-const struct suckaddr *
-VDI_GetIP(struct worker *wrk, struct busyobj *bo)
+VCL_IP
+VDI_GetIP(struct busyobj *bo)
 {
 	const struct director *d;
+	struct vrt_ctx ctx[1];
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	INIT_OBJ(ctx, VRT_CTX_MAGIC);
+	VCL_Bo2Ctx(ctx, bo);
 
 	d = bo->director_resp;
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
@@ -167,18 +171,20 @@ VDI_GetIP(struct worker *wrk, struct busyobj *bo)
 	AZ(d->methods->resolve);
 	if (d->methods->getip == NULL)
 		return (NULL);
-	return (d->methods->getip(d, wrk, bo));
+	return (d->methods->getip(ctx, d));
 }
 
 /* Finish fetch ------------------------------------------------------*/
 
 void
-VDI_Finish(struct worker *wrk, struct busyobj *bo)
+VDI_Finish(struct busyobj *bo)
 {
 	const struct director *d;
+	struct vrt_ctx ctx[1];
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	INIT_OBJ(ctx, VRT_CTX_MAGIC);
+	VCL_Bo2Ctx(ctx, bo);
 
 	d = bo->director_resp;
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
@@ -187,7 +193,7 @@ VDI_Finish(struct worker *wrk, struct busyobj *bo)
 	AN(d->methods->finish);
 
 	assert(bo->director_state != DIR_S_NULL);
-	d->methods->finish(d, wrk, bo);
+	d->methods->finish(ctx, d);
 	bo->director_state = DIR_S_NULL;
 }
 
@@ -197,17 +203,21 @@ enum sess_close
 VDI_Http1Pipe(struct req *req, struct busyobj *bo)
 {
 	const struct director *d;
+	struct vrt_ctx ctx[1];
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	INIT_OBJ(ctx, VRT_CTX_MAGIC);
+	VCL_Req2Ctx(ctx, req);
+	VCL_Bo2Ctx(ctx, bo);
 
-	d = VDI_Resolve(bo);
+	d = VDI_Resolve(ctx);
 	if (d == NULL || d->methods->http1pipe == NULL) {
 		VSLb(bo->vsl, SLT_VCL_Error, "Backend does not support pipe");
 		return (SC_TX_ERROR);
 	}
 	bo->director_resp = d;
-	return (d->methods->http1pipe(d, req, bo));
+	return (d->methods->http1pipe(ctx, d));
 }
 
 /* Check health --------------------------------------------------------
