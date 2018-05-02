@@ -129,29 +129,6 @@ VDI_GetHdr(struct busyobj *bo)
 	return (i);
 }
 
-/* Setup body fetch --------------------------------------------------*/
-
-int
-VDI_GetBody(struct busyobj *bo)
-{
-	const struct director *d;
-	struct vrt_ctx ctx[1];
-
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	INIT_OBJ(ctx, VRT_CTX_MAGIC);
-	VCL_Bo2Ctx(ctx, bo);
-
-	d = bo->director_resp;
-	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	AZ(d->vdir->methods->resolve);
-
-	assert(bo->director_state == DIR_S_HDRS);
-	bo->director_state = DIR_S_BODY;
-	if (d->vdir->methods->getbody == NULL)
-		return (0);
-	return (d->vdir->methods->getbody(ctx, d));
-}
-
 /* Get IP number (if any ) -------------------------------------------*/
 
 VCL_IP
