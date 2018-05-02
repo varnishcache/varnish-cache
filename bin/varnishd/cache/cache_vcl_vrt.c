@@ -157,7 +157,6 @@ VRT_AddDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
 
 	vdir->methods = m;
 	d->priv = priv;
-	vdir->admin_health = VDI_AH_PROBE;
 	vsb = VSB_new_auto();
 	AN(vsb);
 	VSB_printf(vsb, "%s.", VCL_Name(vcl));
