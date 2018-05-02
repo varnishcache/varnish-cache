@@ -1,0 +1,21 @@
+varnishtest "#2646: VUT should fail gracefully when removing a pid file fails"
+
+varnish v1 -vcl {
+	backend be {
+		.host = "${bad_backend}";
+	}
+} -start
+
+process p1 {
+	exec varnishncsa -n ${v1_name} -P ${tmpdir}/ncsa.pid -w ${tmpdir}/ncsa.log
+} -start
+
+delay 1
+
+shell "rm -f ${tmpdir}/ncsa.pid"
+
+process p1 -expect-exit 1 -stop -wait
+
+shell -expect "Cannot remove pid file ${tmpdir}/ncsa.pid" {
+	cat ${tmpdir}/p1/stderr
+}
