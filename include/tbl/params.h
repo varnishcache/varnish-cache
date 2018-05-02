@@ -598,7 +598,11 @@ PARAM(
 	"\n"
 	"Clients that do not support gzip will have their Accept-Encoding "
 	"header removed. For more information on how gzip is implemented "
-	"please see the chapter on gzip in the Varnish reference.",
+	"please see the chapter on gzip in the Varnish reference.\n"
+	"\n"
+	"When gzip support is disabled the variables beresp.do_gzip and "
+	"beresp.do_gunzip have no effect in VCL.",
+	/* XXX: what about the effect on beresp.filters? */
 	/* l-text */	"",
 	/* func */	NULL
 )
