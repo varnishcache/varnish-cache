@@ -77,7 +77,7 @@ static void
 vut_vpf_remove(void)
 {
 
-	assert(VALID_OBJ(&pfh_vut, VUT_MAGIC));
+	assert(pfh_vut.magic == VUT_MAGIC);
 	AN(pfh);
 	AN(pfh_vut.P_arg);
 
