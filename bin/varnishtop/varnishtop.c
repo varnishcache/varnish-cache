@@ -195,8 +195,9 @@ sighup(struct VUT *v)
 static void
 vut_sighandler(int sig)
 {
-	CHECK_OBJ_NOTNULL(vut, VUT_MAGIC);
-	VUT_Signaled(vut, sig);
+
+	if (vut != NULL)
+		VUT_Signaled(vut, sig);
 }
 
 static void

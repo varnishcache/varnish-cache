@@ -494,7 +494,9 @@ profile_error(const char *s)
 static void
 vut_sighandler(int sig)
 {
-	VUT_Signaled(vut, sig);
+
+	if (vut != NULL)
+		VUT_Signaled(vut, sig);
 }
 
 int
