@@ -278,7 +278,7 @@ QUERY EXPRESSION EXAMPLES
 * Transaction group contains a request response status of 304, but
   where the request did not contain an if-modified-since header ::
 
-    ReqStatus == 304 and not ReqHeader:if-modified-since
+    RespStatus == 304 and not ReqHeader:if-modified-since
 
 * Transactions that have had backend failures or long delivery time on
   their ESI subrequests. (Assumes request grouping mode). ::
