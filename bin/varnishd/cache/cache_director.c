@@ -293,7 +293,7 @@ do_list(struct cli *cli, struct director *d, void *priv)
 	if (d->vdir->methods->list != NULL)
 		d->vdir->methods->list(d, cli->sb, 0, 0);
 	else
-		VCLI_Out(cli, "%-10s", d->sick ? "sick" : "halthy");
+		VCLI_Out(cli, "%-10s", d->sick ? "sick" : "healthy");
 
 	VTIM_format(d->vdir->health_changed, time_str);
 	VCLI_Out(cli, " %s", time_str);
