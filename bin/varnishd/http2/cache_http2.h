@@ -220,7 +220,7 @@ h2_error H2_Send_Frame(struct worker *, const struct h2_sess *,
     h2_frame type, uint8_t flags, uint32_t len, uint32_t stream,
     const void *);
 
-h2_error H2_Send(struct worker *, struct h2_req *,
+void H2_Send(struct worker *, struct h2_req *,
     h2_frame type, uint8_t flags, uint32_t len, const void *);
 
 /* cache_http2_proto.c */

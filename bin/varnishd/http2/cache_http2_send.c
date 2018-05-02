@@ -245,7 +245,7 @@ h2_do_window(struct worker *wrk, struct h2_req *r2,
  * XXX: priority
  */
 
-h2_error
+void
 H2_Send(struct worker *wrk, struct h2_req *r2,
     h2_frame ftyp, uint8_t flags, uint32_t len, const void *ptr)
 {
@@ -263,9 +263,8 @@ H2_Send(struct worker *wrk, struct h2_req *r2,
 
 	assert(VTAILQ_FIRST(&h2->txqueue) == r2);
 
-	retval = h2_errcheck(r2, h2);
-	if (retval)
-		return (retval);
+	if (h2_errcheck(r2, h2))
+		return;
 
 	AN(ftyp);
 	AZ(flags & ~(ftyp->flags));
@@ -281,15 +280,14 @@ H2_Send(struct worker *wrk, struct h2_req *r2,
 	if (ftyp->respect_window) {
 		tf = h2_do_window(wrk, r2, h2,
 				  (len > mfs) ? mfs : len);
-		retval = h2_errcheck(r2, h2);
-		if (retval)
-			return (retval);
+		if (h2_errcheck(r2, h2))
+			return;
 		assert(VTAILQ_FIRST(&h2->txqueue) == r2);
 	} else
 		tf = mfs;
 
 	if (len <= tf) {
-		retval = H2_Send_Frame(wrk, h2,
+		(void)H2_Send_Frame(wrk, h2,
 		    ftyp, flags, len, r2->stream, ptr);
 	} else {
 		AN(ptr);
@@ -303,9 +301,8 @@ H2_Send(struct worker *wrk, struct h2_req *r2,
 			if (ftyp->respect_window && p != ptr) {
 				tf = h2_do_window(wrk, r2, h2,
 						  (len > mfs) ? mfs : len);
-				retval = h2_errcheck(r2, h2);
-				if (retval)
-					return (retval);
+				if (h2_errcheck(r2, h2))
+					return;
 				assert(VTAILQ_FIRST(&h2->txqueue) == r2);
 			}
 			if (tf < len) {
@@ -324,5 +321,4 @@ H2_Send(struct worker *wrk, struct h2_req *r2,
 			ftyp = ftyp->continuation;
 		} while (len > 0 && retval == 0);
 	}
-	return (retval);
 }
