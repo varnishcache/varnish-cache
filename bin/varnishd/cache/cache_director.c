@@ -288,6 +288,7 @@ do_list(struct cli *cli, struct director *d, void *priv)
 	if (d->vdir->admin_health == VDI_AH_DELETED)
 		return (0);
 
+	// XXX admin health "probe" for the no-probe case is confusing
 	VCLI_Out(cli, "\n%-30s %-7s ", d->vdir->cli_name, VDI_Ahealth(d));
 
 	if (d->vdir->methods->list != NULL)
