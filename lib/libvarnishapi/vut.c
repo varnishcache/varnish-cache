@@ -62,6 +62,8 @@ static int vut_options(const struct vopt_spec *);
 static struct vpf_fh	*pfh;
 static unsigned		daemonized;
 
+static struct VUT pfh_vut;
+
 static int
 vut_daemon(struct VUT *vut)
 {
@@ -74,10 +76,18 @@ vut_daemon(struct VUT *vut)
 static void
 vut_vpf_remove(void)
 {
-	if (pfh != NULL) {
-		AZ(VPF_Remove(pfh));
-		pfh = NULL;
-	}
+
+	assert(VALID_OBJ(&pfh_vut, VUT_MAGIC));
+	AN(pfh);
+	AN(pfh_vut.P_arg);
+
+	if (VPF_Remove(pfh) != 0)
+		VUT_Error(&pfh_vut, 1, "Cannot remove pid file %s: %s",
+		    pfh_vut.P_arg, strerror(errno));
+
+	free(pfh_vut.P_arg);
+	ZERO_OBJ(&pfh_vut, sizeof pfh_vut);
+	pfh = NULL;
 }
 
 static int v_matchproto_(VSLQ_dispatch_f)
@@ -306,6 +316,13 @@ VUT_Setup(struct VUT *vut)
 	if (vut->P_arg) {
 		AN(pfh);
 		AZ(VPF_Write(pfh));
+
+		/* NB: move ownership to a global pseudo-VUT. */
+		INIT_OBJ(&pfh_vut, VUT_MAGIC);
+		pfh_vut.P_arg = vut->P_arg;
+		pfh_vut.error_f = vut->error_f;
+		vut->P_arg = NULL;
+
 		AZ(atexit(vut_vpf_remove));
 	}
 }
@@ -319,13 +336,10 @@ VUT_Fini(struct VUT **vutp)
 	AN(vut->progname);
 
 	free(vut->n_arg);
-	free(vut->P_arg);
 	free(vut->q_arg);
 	free(vut->r_arg);
 	free(vut->t_arg);
-
-	vut_vpf_remove();
-	AZ(pfh);
+	AZ(vut->P_arg);
 
 	if (vut->vslq)
 		VSLQ_Delete(&vut->vslq);
