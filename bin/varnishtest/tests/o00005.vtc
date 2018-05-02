@@ -9,25 +9,25 @@ varnish v1 -proto "PROXY" -vcl+backend {
 	import proxy;
 
 	sub vcl_deliver {
-	    if (proxy.is_ssl()) {
-	       set resp.http.is_ssl = "yes";
-	    }
-	    if (!proxy.client_has_cert_sess()) {
-	       set resp.http.client_has_cert_sess = "no";
-	    }
-	    if (!proxy.client_has_cert_conn()) {
-	       set resp.http.client_has_cert_conn = "no";
-	    }
-	    if (proxy.ssl_verify_result() == 0) {
-	       set resp.http.verify = "ok";
-	    }
-	    set resp.http.alpn = proxy.alpn();
-	    set resp.http.authority = proxy.authority();
-	    set resp.http.ssl-version = proxy.ssl_version();
-	    set resp.http.cipher = proxy.ssl_cipher();
-	    set resp.http.key = proxy.cert_key();
-	    set resp.http.sign = proxy.cert_sign();
-	    set resp.http.cn = proxy.client_cert_cn();
+		if (proxy.is_ssl()) {
+			set resp.http.is_ssl = "yes";
+		}
+		if (!proxy.client_has_cert_sess()) {
+			set resp.http.client_has_cert_sess = "no";
+		}
+		if (!proxy.client_has_cert_conn()) {
+			set resp.http.client_has_cert_conn = "no";
+		}
+		if (proxy.ssl_verify_result() == 0) {
+			set resp.http.verify = "ok";
+		}
+		set resp.http.alpn = proxy.alpn();
+		set resp.http.authority = proxy.authority();
+		set resp.http.ssl-version = proxy.ssl_version();
+		set resp.http.cipher = proxy.ssl_cipher();
+		set resp.http.key = proxy.cert_key();
+		set resp.http.sign = proxy.cert_sign();
+		set resp.http.cn = proxy.client_cert_cn();
 	}
 } -start
 
@@ -40,21 +40,22 @@ logexpect l1 -v v1 -g raw {
 client c1 {
 	# PROXY2 with CRC32C TLV
 	sendhex {
-	    0d 0a 0d 0a 00 0d 0a 51 55 49 54 0a
-	    21 11 00 65
-	    d9 46 b5 21
-	    5f 8e a8 22
-	    ed 96
-	    01 bb
-	    03 00 04  95 03 ee 75
-	    01 00 02  68 32
-	    02 00 0a  68 6f 63 64 65 74 2e 6e 65 74
-	    20 00 3d
+		0d 0a 0d 0a 00 0d 0a 51 55 49 54 0a
+		21 11 00 65
+		d9 46 b5 21
+		5f 8e a8 22
+		ed 96
+		01 bb
+		03 00 04  95 03 ee 75
+		01 00 02  68 32
+		02 00 0a  68 6f 63 64 65 74 2e 6e 65 74
+		20 00 3d
 		01 00 00 00 00
 		21 00 07  54 4c 53 76 31 2e 33
 		25 00 05  45 43 32 35 36
 		24 00 0a  52 53 41 2d 53 48 41 32 35 36
-		23 00 16  41 45 41 44 2d 41 45 53 31 32 38 2d 47 43 4d 2d 53 48 41 32 35 36
+		23 00 16  41 45 41 44 2d 41 45 53 31 32 38
+		          2d 47 43 4d 2d 53 48 41 32 35 36
 	}
 	txreq
 	rxresp
@@ -84,21 +85,22 @@ logexpect l1 -v v1 -g raw {
 client c1 {
 	# PROXY2 with CRC32C TLV and bad checksum
 	sendhex {
-	    0d 0a 0d 0a 00 0d 0a 51 55 49 54 0a
-	    21 11 00 65
-	    d9 46 b5 21
-	    5f 8e a8 22
-	    ed 96
-	    01 bb
-	    03 00 04  95 03 ee 74
-	    01 00 02  68 32
-	    02 00 0a  68 6f 63 64 65 74 2e 6e 65 74
-	    20 00 3d
+		0d 0a 0d 0a 00 0d 0a 51 55 49 54 0a
+		21 11 00 65
+		d9 46 b5 21
+		5f 8e a8 22
+		ed 96
+		01 bb
+		03 00 04  95 03 ee 74
+		01 00 02  68 32
+		02 00 0a  68 6f 63 64 65 74 2e 6e 65 74
+		20 00 3d
 		01 00 00 00 00
 		21 00 07  54 4c 53 76 31 2e 33
 		25 00 05  45 43 32 35 36
 		24 00 0a  52 53 41 2d 53 48 41 32 35 36
-		23 00 16  41 45 41 44 2d 41 45 53 31 32 38 2d 47 43 4d 2d 53 48 41 32 35 36
+		23 00 16  41 45 41 44 2d 41 45 53 31 32 38
+		          2d 47 43 4d 2d 53 48 41 32 35 36
 	}
 	txreq
 	expect_close
@@ -116,22 +118,23 @@ logexpect l1 -v v1 -g raw {
 client c1 {
 	# PROXY2 with CRC32C TLV and bad checksum
 	sendhex {
-	    0d 0a 0d 0a 00 0d 0a 51 55 49 54 0a
-	    21 11 00 67
-	    d9 46 b5 21
-	    5f 8e a8 22
-	    ed 96
-	    01 bb
-	    ff 00 04  95 03 ee 74
-	    01 00 02  68 32
-	    02 00 0a  68 6f 63 64 65 74 2e 6e 65 74
-	    20 00 3d
+		0d 0a 0d 0a 00 0d 0a 51 55 49 54 0a
+		21 11 00 67
+		d9 46 b5 21
+		5f 8e a8 22
+		ed 96
+		01 bb
+		ff 00 04  95 03 ee 74
+		01 00 02  68 32
+		02 00 0a  68 6f 63 64 65 74 2e 6e 65 74
+		20 00 3d
 		01 00 00 00 00
 		21 00 07  54 4c 53 76 31 2e 33
 		25 00 05  45 43 32 35 36
 		24 00 0a  52 53 41 2d 53 48 41 32 35 36
-		23 00 16  41 45 41 44 2d 41 45 53 31 32 38 2d 47 43 4d 2d 53 48 41 32 35 36
-	    ff ff
+		23 00 16  41 45 41 44 2d 41 45 53 31 32 38
+		          2d 47 43 4d 2d 53 48 41 32 35 36
+		ff ff
 	}
 	txreq
 	expect_close
@@ -149,21 +152,22 @@ logexpect l1 -v v1 -g raw {
 client c1 {
 	# PROXY2 with CRC32C TLV and bad checksum
 	sendhex {
-	    0d 0a 0d 0a 00 0d 0a 51 55 49 54 0a
-	    21 11 00 60
-	    d9 46 b5 21
-	    5f 8e a8 22
-	    ed 96
-	    01 bb
-	    ff 00 04  95 03 ee 74
-	    01 00 02  68 32
-	    02 00 0a  68 6f 63 64 65 74 2e 6e 65 74
-	    20 00 3d
+		0d 0a 0d 0a 00 0d 0a 51 55 49 54 0a
+		21 11 00 60
+		d9 46 b5 21
+		5f 8e a8 22
+		ed 96
+		01 bb
+		ff 00 04  95 03 ee 74
+		01 00 02  68 32
+		02 00 0a  68 6f 63 64 65 74 2e 6e 65 74
+		20 00 3d
 		01 00 00 00 00
 		21 00 07  54 4c 53 76 31 2e 33
 		25 00 05  45 43 32 35 36
 		24 00 0a  52 53 41 2d 53 48 41 32 35 36
-		23 00 16  41 45 41 44 2d 41 45 53 31 32 38 2d 47 43 4d 2d 53 48 41 32 35 36
+		23 00 16  41 45 41 44 2d 41 45 53 31 32 38
+		          2d 47 43 4d 2d 53 48 41 32 35 36
 	}
 	txreq
 	expect_close
@@ -181,21 +185,22 @@ logexpect l1 -v v1 -g raw {
 client c1 {
 	# PROXY2 with CRC32C TLV and bad checksum
 	sendhex {
-	    0d 0a 0d 0a 00 0d 0a 51 55 49 54 0a
-	    21 11 00 65
-	    d9 46 b5 21
-	    5f 8e a8 22
-	    ed 96
-	    01 bb
-	    ff 00 04  95 03 ee 74
-	    01 00 02  68 32
-	    02 00 0a  68 6f 63 64 65 74 2e 6e 65 74
-	    20 00 3c
+		0d 0a 0d 0a 00 0d 0a 51 55 49 54 0a
+		21 11 00 65
+		d9 46 b5 21
+		5f 8e a8 22
+		ed 96
+		01 bb
+		ff 00 04  95 03 ee 74
+		01 00 02  68 32
+		02 00 0a  68 6f 63 64 65 74 2e 6e 65 74
+		20 00 3c
 		01 00 00 00 00
 		21 00 07  54 4c 53 76 31 2e 33
 		25 00 05  45 43 32 35 36
 		24 00 0a  52 53 41 2d 53 48 41 32 35 36
-		23 00 16  41 45 41 44 2d 41 45 53 31 32 38 2d 47 43 4d 2d 53 48 41 32 35 36
+		23 00 16  41 45 41 44 2d 41 45 53 31 32 38
+		          2d 47 43 4d 2d 53 48 41 32 35 36
 	}
 	txreq
 	expect_close
@@ -204,4 +209,3 @@ client c1 {
 varnish v1 -vsl_catchup
 
 logexpect l1 -wait
-
