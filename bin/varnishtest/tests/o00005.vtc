@@ -9,18 +9,10 @@ varnish v1 -proto "PROXY" -vcl+backend {
 	import proxy;
 
 	sub vcl_deliver {
-		if (proxy.is_ssl()) {
-			set resp.http.is_ssl = "yes";
-		}
-		if (!proxy.client_has_cert_sess()) {
-			set resp.http.client_has_cert_sess = "no";
-		}
-		if (!proxy.client_has_cert_conn()) {
-			set resp.http.client_has_cert_conn = "no";
-		}
-		if (proxy.ssl_verify_result() == 0) {
-			set resp.http.verify = "ok";
-		}
+		set resp.http.is_ssl = proxy.is_ssl();
+		set resp.http.client_has_cert_sess = proxy.client_has_cert_sess();
+		set resp.http.client_has_cert_conn = proxy.client_has_cert_conn();
+		set resp.http.ssl_verify_result = proxy.ssl_verify_result() == 0;
 		set resp.http.alpn = proxy.alpn();
 		set resp.http.authority = proxy.authority();
 		set resp.http.ssl-version = proxy.ssl_version();
@@ -60,10 +52,10 @@ client c1 {
 	txreq
 	rxresp
 	expect resp.status == 200
-	expect resp.http.is_ssl == yes
-	expect resp.http.client_has_cert_sess == no
-	expect resp.http.client_has_cert_conn == no
-	expect resp.http.verify == ok
+	expect resp.http.is_ssl == true
+	expect resp.http.client_has_cert_sess == false
+	expect resp.http.client_has_cert_conn == false
+	expect resp.http.ssl_verify_result == true
 	expect resp.http.alpn == h2
 	expect resp.http.authority == hocdet.net
 	expect resp.http.ssl-version == TLSv1.3
