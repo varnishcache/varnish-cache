@@ -206,7 +206,7 @@ vmod_shard__init(VRT_CTX, struct vmod_directors_shard **vshardp,
 	struct vmod_directors_shard *vshard;
 
 	shard__assert();
-	(void)ctx;
+
 	AN(vshardp);
 	AZ(*vshardp);
 	ALLOC_OBJ(vshard, VMOD_SHARD_SHARD_MAGIC);
