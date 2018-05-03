@@ -92,24 +92,25 @@ VRTPRIV_init(struct vrt_privs *privs)
 }
 
 static struct vmod_priv *
-vrt_priv_dynamic(VRT_CTX, struct vrt_privs *vps, uintptr_t id,
-    uintptr_t vmod_id)
+vrt_priv_dynamic(const struct vcl *vcl, struct ws *ws,
+     struct vrt_privs *vps, uintptr_t id, uintptr_t vmod_id)
 {
 	struct vrt_priv *vp;
 
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vps, VRT_PRIVS_MAGIC);
 	AN(vmod_id);
 
 	VTAILQ_FOREACH(vp, &vps->privs, list) {
 		CHECK_OBJ_NOTNULL(vp, VRT_PRIV_MAGIC);
-		if (vp->vcl == ctx->vcl && vp->id == id &&
+		if (vp->vcl == vcl && vp->id == id &&
 		    vp->vmod_id == vmod_id)
 			return (vp->priv);
 	}
-	ALLOC_OBJ(vp, VRT_PRIV_MAGIC);
-	AN(vp);
-	vp->vcl = ctx->vcl;
+	vp = WS_Alloc(ws, sizeof *vp);
+	if (vp == NULL)
+		return NULL;
+	INIT_OBJ(vp, VRT_PRIV_MAGIC);
+	vp->vcl = vcl;
 	vp->id = id;
 	vp->vmod_id = vmod_id;
 	VTAILQ_INSERT_TAIL(&vps->privs, vp, list);
@@ -129,7 +130,6 @@ VRTPRIV_dynamic_kill(struct vrt_privs *privs, uintptr_t id)
 		if (id == vp->id) {
 			VTAILQ_REMOVE(&privs->privs, vp, list);
 			VRT_priv_fini(vp->priv);
-			FREE_OBJ(vp);
 		}
 	}
 }
@@ -154,7 +154,8 @@ VRT_priv_task(VRT_CTX, const void *vmod_id)
 		id = (uintptr_t)cli_task_privs;
 		CAST_OBJ_NOTNULL(vps, cli_task_privs, VRT_PRIVS_MAGIC);
 	}
-	return (vrt_priv_dynamic(ctx, vps, id, (uintptr_t)vmod_id));
+	return (vrt_priv_dynamic(ctx->vcl, ctx->ws,
+				 vps, id, (uintptr_t)vmod_id));
 }
 
 struct vmod_priv *
@@ -169,7 +170,8 @@ VRT_priv_top(VRT_CTX, const void *vmod_id)
 		CHECK_OBJ_NOTNULL(ctx->req->top, REQ_MAGIC);
 		id = (uintptr_t)&ctx->req->top->top;
 		CAST_OBJ_NOTNULL(vps, ctx->req->top->privs, VRT_PRIVS_MAGIC);
-		return (vrt_priv_dynamic(ctx, vps, id, (uintptr_t)vmod_id));
+		return (vrt_priv_dynamic(ctx->vcl, ctx->req->top->ws,
+					 vps, id, (uintptr_t)vmod_id));
 	} else
 		WRONG("PRIV_TOP is only accessible in client VCL context");
 	NEEDLESS(return NULL);
