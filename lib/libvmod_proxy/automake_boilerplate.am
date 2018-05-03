@@ -28,10 +28,10 @@ $(libvmod_proxy_la_OBJECTS): vcc_proxy_if.h
 
 vcc_proxy_if.h vmod_proxy.rst vmod_proxy.man.rst: vcc_proxy_if.c
 
-vcc_proxy_if.c: $(vmodtool) $(srcdir)/vmod.vcc
-	@PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/vmod.vcc
+vcc_proxy_if.c: $(vmodtool) $(srcdir)/vmod_proxy.vcc
+	@PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/vmod_proxy.vcc
 
-EXTRA_DIST = vmod.vcc automake_boilerplate.am
+EXTRA_DIST = vmod_proxy.vcc automake_boilerplate.am
 
 CLEANFILES = \
 	$(builddir)/vcc_proxy_if.c \

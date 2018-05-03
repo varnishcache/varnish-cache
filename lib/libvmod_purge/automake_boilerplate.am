@@ -28,10 +28,10 @@ $(libvmod_purge_la_OBJECTS): vcc_purge_if.h
 
 vcc_purge_if.h vmod_purge.rst vmod_purge.man.rst: vcc_purge_if.c
 
-vcc_purge_if.c: $(vmodtool) $(srcdir)/vmod.vcc
-	@PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/vmod.vcc
+vcc_purge_if.c: $(vmodtool) $(srcdir)/vmod_purge.vcc
+	@PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/vmod_purge.vcc
 
-EXTRA_DIST = vmod.vcc automake_boilerplate.am
+EXTRA_DIST = vmod_purge.vcc automake_boilerplate.am
 
 CLEANFILES = \
 	$(builddir)/vcc_purge_if.c \
