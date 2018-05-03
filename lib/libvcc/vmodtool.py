@@ -57,7 +57,7 @@ AM_CPPFLAGS = \\
 
 vmoddir = $(pkglibdir)/vmods
 vmodtool = $(top_srcdir)/lib/libvcc/vmodtool.py
-vmodtoolargs = %{STRICT} --boilerplate
+vmodtoolargs = %{STRICT} --boilerplate --output vcc_%{NAME}_if
 
 vmod_LTLIBRARIES = libvmod_%{NAME}.la
 
@@ -69,18 +69,20 @@ libvmod_%{NAME}_la_LDFLAGS = \\
 \t$(VMOD_LDFLAGS) \\
 \t@SAN_LDFLAGS@
 
-nodist_libvmod_%{NAME}_la_SOURCES = vcc_if.c vcc_if.h
+nodist_libvmod_%{NAME}_la_SOURCES = vcc_%{NAME}_if.c vcc_%{NAME}_if.h
 
-$(libvmod_%{NAME}_la_OBJECTS): vcc_if.h
+$(libvmod_%{NAME}_la_OBJECTS): vcc_%{NAME}_if.h
 
-vcc_if.h vmod_%{NAME}.rst vmod_%{NAME}.man.rst: vcc_if.c
+vcc_%{NAME}_if.h vmod_%{NAME}.rst vmod_%{NAME}.man.rst: vcc_%{NAME}_if.c
 
-vcc_if.c: $(vmodtool) $(srcdir)/vmod.vcc
+vcc_%{NAME}_if.c: $(vmodtool) $(srcdir)/vmod.vcc
 \t@PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/vmod.vcc
 
 EXTRA_DIST = vmod.vcc automake_boilerplate.am
 
-CLEANFILES = $(builddir)/vcc_if.c $(builddir)/vcc_if.h \\
+CLEANFILES = \\
+\t$(builddir)/vcc_%{NAME}_if.c \\
+\t$(builddir)/vcc_%{NAME}_if.h \\
 \t$(builddir)/vmod_%{NAME}.rst \\
 \t$(builddir)/vmod_%{NAME}.man.rst
 

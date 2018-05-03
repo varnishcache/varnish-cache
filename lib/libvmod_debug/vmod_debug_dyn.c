@@ -41,7 +41,7 @@
 #include "cache/cache_director.h"
 
 #include "vsa.h"
-#include "vcc_if.h"
+#include "vcc_debug_if.h"
 
 struct xyzzy_debug_dyn {
 	unsigned		magic;

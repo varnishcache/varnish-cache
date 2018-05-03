@@ -42,7 +42,7 @@
 #include "vnum.h"
 #include "vsa.h"
 #include "vtim.h"
-#include "vcc_if.h"
+#include "vcc_std_if.h"
 
 VCL_DURATION v_matchproto_(td_std_duration)
 vmod_duration(VRT_CTX, VCL_STRING p, VCL_DURATION d)

@@ -33,7 +33,7 @@
 
 #include "cache/cache.h"
 
-#include "vcc_if.h"
+#include "vcc_debug_if.h"
 
 struct xyzzy_debug_obj {
 	unsigned		magic;

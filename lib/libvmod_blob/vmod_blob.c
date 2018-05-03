@@ -32,7 +32,7 @@
 
 #include "cache/cache.h"
 
-#include "vcc_if.h"
+#include "vcc_blob_if.h"
 #include "vmod_blob.h"
 #include "wb.h"
 
