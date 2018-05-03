@@ -75,10 +75,10 @@ $(libvmod_%{NAME}_la_OBJECTS): vcc_%{NAME}_if.h
 
 vcc_%{NAME}_if.h vmod_%{NAME}.rst vmod_%{NAME}.man.rst: vcc_%{NAME}_if.c
 
-vcc_%{NAME}_if.c: $(vmodtool) $(srcdir)/vmod.vcc
-\t@PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/vmod.vcc
+vcc_%{NAME}_if.c: $(vmodtool) $(srcdir)/%{VCC}
+\t@PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/%{VCC}
 
-EXTRA_DIST = vmod.vcc automake_boilerplate.am
+EXTRA_DIST = %{VCC} automake_boilerplate.am
 
 CLEANFILES = \\
 \t$(builddir)/vcc_%{NAME}_if.c \\
@@ -123,20 +123,20 @@ ctypes.update(privs)
 #######################################################################
 
 
-def write_file_warning(fo, a, b, c):
+def write_file_warning(fo, a, b, c, inputvcc):
     fo.write(a + "\n")
     fo.write(b + " NB:  This file is machine generated, DO NOT EDIT!\n")
     fo.write(b + "\n")
-    fo.write(b + " Edit vmod.vcc and run make instead\n")
+    fo.write(b + " Edit " + inputvcc + " and run make instead\n")
     fo.write(c + "\n\n")
 
 
-def write_c_file_warning(fo):
-    write_file_warning(fo, "/*", " *", " */")
+def write_c_file_warning(fo, inputvcc):
+    write_file_warning(fo, "/*", " *", " */", inputvcc)
 
 
-def write_rst_file_warning(fo):
-    write_file_warning(fo, "..", "..", "..")
+def write_rst_file_warning(fo, inputvcc):
+    write_file_warning(fo, "..", "..", "..", inputvcc)
 
 
 def write_rst_hdr(fo, s, below="-", above=None):
@@ -837,6 +837,7 @@ dispatch = {
 class vcc(object):
     def __init__(self, inputvcc, rstdir, outputprefix):
         self.inputfile = inputvcc
+        self.vccfile = os.path.basename(inputvcc)
         self.rstdir = rstdir
         self.pfx = outputprefix
         self.sympfx = "vmod_"
@@ -887,7 +888,7 @@ class vcc(object):
             fn += ".man"
         fn += ".rst"
         fo = self.openfile(fn)
-        write_rst_file_warning(fo)
+        write_rst_file_warning(fo, self.vccfile)
         fo.write(".. role:: ref(emphasis)\n\n")
 
         for i in self.contents:
@@ -901,6 +902,7 @@ class vcc(object):
     def amboilerplate(self):
         strictopt = '--strict' if opts.strict else ''
         amboilerplate = AMBOILERPLATE.replace("%{NAME}", self.modname)
+        amboilerplate = amboilerplate.replace("%{VCC}", self.vccfile)
         amboilerplate = amboilerplate.replace("%{STRICT}", strictopt)
         fo = self.openfile("automake_boilerplate.am")
         fo.write(amboilerplate)
@@ -909,7 +911,7 @@ class vcc(object):
     def hfile(self):
         fn = self.pfx + ".h"
         fo = self.openfile(fn)
-        write_c_file_warning(fo)
+        write_c_file_warning(fo, self.vccfile)
         fo.write("#ifndef VDEF_H_INCLUDED\n")
         fo.write('#  error "Include vdef.h first"\n')
         fo.write("#endif\n")
@@ -1002,7 +1004,7 @@ class vcc(object):
         fnx = fno + ".tmp2"
         fx = open(fnx, "w")
 
-        write_c_file_warning(fo)
+        write_c_file_warning(fo, self.vccfile)
 
         fo.write('#include "config.h"\n')
         fo.write('#include <stdio.h>\n')
