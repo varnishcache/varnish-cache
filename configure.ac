@@ -644,15 +644,8 @@ AC_ARG_ENABLE(developer-warnings,
 	[enable_developer_warnings=no])
 
 if test "x$SUNCC" != "xyes" && test "x$enable_developer_warnings" != "xno"; then
-	# compiler flags not available on gcc3
-	AX_CHECK_COMPILE_FLAG([-Wno-pointer-sign],
-		[DEVELOPER_CFLAGS="${DEVELOPER_CFLAGS} -Wno-pointer-sign"], [], [])
-	# Not available in gcc 4.1.2
-	AX_CHECK_COMPILE_FLAG([-Wno-address],
-		[DEVELOPER_CFLAGS="${DEVELOPER_CFLAGS} -Wno-address"])
-
-	# no known way to specifically disabling missing-field-initializers warnings
-	# keeping the rest of Wextra
+	# no known way to specifically disabling missing-field-initializers
+	# warnings keeping the rest of Wextra
 	AX_CHECK_COMPILE_FLAG([-Wno-missing-field-initializers],
 		[DEVELOPER_CFLAGS="${DEVELOPER_CFLAGS} -Wno-missing-field-initializers"],
 		[DEVELOPER_CFLAGS="${DEVELOPER_CFLAGS} -Wno-extra"],
