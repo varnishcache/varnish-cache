@@ -57,7 +57,7 @@ AM_CPPFLAGS = \\
 
 vmoddir = $(pkglibdir)/vmods
 vmodtool = $(top_srcdir)/lib/libvcc/vmodtool.py
-vmodtoolargs = --strict --boilerplate
+vmodtoolargs = %{STRICT} --boilerplate
 
 vmod_LTLIBRARIES = libvmod_%{NAME}.la
 
@@ -897,7 +897,9 @@ class vcc(object):
         fo.close()
 
     def amboilerplate(self):
+        strictopt = '--strict' if opts.strict else ''
         amboilerplate = AMBOILERPLATE.replace("%{NAME}", self.modname)
+        amboilerplate = amboilerplate.replace("%{STRICT}", strictopt)
         fo = self.openfile("automake_boilerplate.am")
         fo.write(amboilerplate)
         fo.close()
