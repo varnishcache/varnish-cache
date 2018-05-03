@@ -789,8 +789,7 @@ shard_param_task(VRT_CTX, const void *id,
 	}
 
 	if (task->priv) {
-		p = task->priv;
-		CHECK_OBJ_NOTNULL(p, VMOD_SHARD_SHARD_PARAM_MAGIC);
+		CAST_OBJ_NOTNULL(p, task->priv, VMOD_SHARD_SHARD_PARAM_MAGIC);
 		assert(p->scope == SCOPE_TASK);
 		/* XXX
 		VSL(SLT_Debug, 0,
