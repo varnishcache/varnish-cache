@@ -78,7 +78,7 @@ vcc_%{NAME}_if.h vmod_%{NAME}.rst vmod_%{NAME}.man.rst: vcc_%{NAME}_if.c
 vcc_%{NAME}_if.c: $(vmodtool) $(srcdir)/%{VCC}
 \t@PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/%{VCC}
 
-EXTRA_DIST = %{VCC} automake_boilerplate.am
+EXTRA_DIST = %{VCC} vmod_%{NAME}.am
 
 CLEANFILES = \\
 \t$(builddir)/vcc_%{NAME}_if.c \\
@@ -904,7 +904,7 @@ class vcc(object):
         amboilerplate = AMBOILERPLATE.replace("%{NAME}", self.modname)
         amboilerplate = amboilerplate.replace("%{VCC}", self.vccfile)
         amboilerplate = amboilerplate.replace("%{STRICT}", strictopt)
-        fo = self.openfile("automake_boilerplate.am")
+        fo = self.openfile("vmod_" + self.modname + ".am")
         fo.write(amboilerplate)
         fo.close()
 

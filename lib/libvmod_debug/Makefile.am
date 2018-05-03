@@ -6,7 +6,7 @@ libvmod_debug_la_SOURCES = \
 	vmod_debug_dyn.c
 
 # Use vmodtool.py generated automake boilerplate
-include $(srcdir)/automake_boilerplate.am
+include $(srcdir)/vmod_debug.am
 
 .vsc.c:
 	$(PYTHON) $(top_srcdir)/lib/libvcc/vsctool.py -ch $<

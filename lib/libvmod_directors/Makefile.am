@@ -17,4 +17,4 @@ libvmod_directors_la_SOURCES = \
 	tbl_resolve.h
 
 # Use vmodtool.py generated automake boilerplate
-include $(srcdir)/automake_boilerplate.am
+include $(srcdir)/vmod_directors.am
