@@ -59,21 +59,21 @@ vmoddir = $(pkglibdir)/vmods
 vmodtool = $(top_srcdir)/lib/libvcc/vmodtool.py
 vmodtoolargs = --strict --boilerplate
 
-vmod_LTLIBRARIES = libvmod_XXX.la
+vmod_LTLIBRARIES = libvmod_%{NAME}.la
 
-libvmod_XXX_la_CFLAGS = \\
+libvmod_%{NAME}_la_CFLAGS = \\
 \t@SAN_CFLAGS@
 
-libvmod_XXX_la_LDFLAGS = \\
+libvmod_%{NAME}_la_LDFLAGS = \\
 \t$(AM_LDFLAGS) \\
 \t$(VMOD_LDFLAGS) \\
 \t@SAN_LDFLAGS@
 
-nodist_libvmod_XXX_la_SOURCES = vcc_if.c vcc_if.h
+nodist_libvmod_%{NAME}_la_SOURCES = vcc_if.c vcc_if.h
 
-$(libvmod_XXX_la_OBJECTS): vcc_if.h
+$(libvmod_%{NAME}_la_OBJECTS): vcc_if.h
 
-vcc_if.h vmod_XXX.rst vmod_XXX.man.rst: vcc_if.c
+vcc_if.h vmod_%{NAME}.rst vmod_%{NAME}.man.rst: vcc_if.c
 
 vcc_if.c: $(vmodtool) $(srcdir)/vmod.vcc
 \t@PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/vmod.vcc
@@ -81,8 +81,8 @@ vcc_if.c: $(vmodtool) $(srcdir)/vmod.vcc
 EXTRA_DIST = vmod.vcc automake_boilerplate.am
 
 CLEANFILES = $(builddir)/vcc_if.c $(builddir)/vcc_if.h \\
-\t$(builddir)/vmod_XXX.rst \\
-\t$(builddir)/vmod_XXX.man.rst
+\t$(builddir)/vmod_%{NAME}.rst \\
+\t$(builddir)/vmod_%{NAME}.man.rst
 
 '''
 
@@ -897,8 +897,9 @@ class vcc(object):
         fo.close()
 
     def amboilerplate(self):
+        amboilerplate = AMBOILERPLATE.replace("%{NAME}", self.modname)
         fo = self.openfile("automake_boilerplate.am")
-        fo.write(AMBOILERPLATE.replace("XXX", self.modname))
+        fo.write(amboilerplate)
         fo.close()
 
     def hfile(self):
