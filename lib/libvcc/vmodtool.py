@@ -40,7 +40,6 @@ import os
 import sys
 import re
 import optparse
-import unittest
 import random
 import copy
 import json
@@ -1083,15 +1082,7 @@ if __name__ == "__main__":
     oparser.add_option('-w', '--rstdir', metavar="directory", default='.',
                        help='Where to save the generated RST files ' +
                             '(default: ".")')
-    oparser.add_option('', '--runtests', action='store_true', default=False,
-                       dest="runtests", help=optparse.SUPPRESS_HELP)
     (opts, args) = oparser.parse_args()
-
-    if opts.runtests:
-        # Pop off --runtests, pass remaining to unittest.
-        del sys.argv[1]
-        unittest.main()
-        exit()
 
     i_vcc = None
     if len(args) == 1 and os.path.exists(args[0]):
