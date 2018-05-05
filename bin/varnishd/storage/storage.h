@@ -119,8 +119,8 @@ struct stevedore {
 	void			*priv;
 
 	VTAILQ_ENTRY(stevedore)	list;
-	char			*ident;
-	char			*vclname;
+	const char		*ident;
+	const char		*vclname;
 };
 
 extern struct stevedore *stv_transient;
