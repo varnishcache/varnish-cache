@@ -159,13 +159,13 @@ void
 STV_Config(const char *spec)
 {
 	char **av, buf[8];
-	const char *name;
+	const char *ident;
 	struct stevedore *stv;
 	const struct stevedore *stv2;
 	int ac;
 	static unsigned seq = 0;
 
-	av = MGT_NamedArg(spec, &name, "-s");
+	av = MGT_NamedArg(spec, &ident, "-s");
 	AN(av);
 
 	if (av[1] == NULL)
@@ -189,8 +189,8 @@ STV_Config(const char *spec)
 	*stv = *stv2;
 	AN(stv->name);
 
-	if (name) {
-		stv->ident = name;
+	if (ident) {
+		stv->ident = ident;
 	} else {
 		bprintf(buf, "s%u", seq++);
 		stv->ident = strdup(buf);
