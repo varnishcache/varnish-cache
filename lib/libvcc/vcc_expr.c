@@ -300,6 +300,7 @@ vcc_Eval_Regsub(struct vcc *tl, struct expr **e, struct token *t,
 	ExpectErr(tl, CSTR);
 	p = vcc_regexp(tl);
 	bprintf(buf, "VRT_regsub(ctx, %d,\v+\n\v1,\n%s", all, p);
+	free(TRUST_ME(p));
 	*e = vcc_expr_edit(tl, STRING, buf, e2, NULL);
 	SkipToken(tl, ',');
 	vcc_expr0(tl, &e2, STRING);
@@ -990,6 +991,7 @@ cmp_regexp(struct vcc *tl, struct expr **e, const struct cmps *cp)
 	re = vcc_regexp(tl);
 	ERRCHK(tl);
 	bprintf(buf, "%sVRT_re_match(ctx, \v1, %s)", cp->emit, re);
+	free(TRUST_ME(re));
 	*e = vcc_expr_edit(tl, BOOL, buf, *e, NULL);
 }
 

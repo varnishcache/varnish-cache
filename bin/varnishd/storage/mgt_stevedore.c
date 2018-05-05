@@ -189,12 +189,12 @@ STV_Config(const char *spec)
 	*stv = *stv2;
 	AN(stv->name);
 
-	if (name == NULL) {
+	if (name) {
+		stv->ident = name;
+	} else {
 		bprintf(buf, "s%u", seq++);
-		name = buf;
+		stv->ident = strdup(buf);
 	}
-
-	stv->ident = strdup(name);
 	AN(stv->ident);
 	stv_check_ident(spec, stv->ident);
 
