@@ -259,7 +259,7 @@ str_decode(struct hpk_iter *iter, struct txt *t)
 	if (num > iter->end - iter->buf)
 		return (hpk_err);
 	if (huff) { /*Huffman encoding */
-		t->ptr = malloc((num * 8) / 5L + 1L);
+		t->ptr = malloc((num * 8L) / 5L + 1L);
 		AN(t->ptr);
 		num = huff_decode(t->ptr, (num * 8) / 5, iter, num);
 		if (!num) {

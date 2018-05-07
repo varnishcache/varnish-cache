@@ -327,7 +327,7 @@ server_dispatch_thread(void *priv)
 
 	vtc_log(vl, 2, "Dispatch started on %s", s->listen);
 
-	while (1) {
+	while (!vtc_stop) {
 		addr = (void*)&addr_s;
 		l = sizeof addr_s;
 		fd = accept(s->sock, addr, &l);
