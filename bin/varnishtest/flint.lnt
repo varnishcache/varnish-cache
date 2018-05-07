@@ -10,6 +10,8 @@
 -emacro({779}, ENC)		// String constant in comparison operator '!='
 -emacro({506}, CHKFRAME)	// Constant value Boolean
 
+-sem(http_process_cleanup, custodial(1))
+
 -esym(522, teken_subr_*)
 
 -esym(850, av)

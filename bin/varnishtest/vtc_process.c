@@ -320,7 +320,7 @@ term_expect_text(struct process *pp,
 }
 
 static void
-term_expect_cursor(struct process *pp, const char *lin, const char *col)
+term_expect_cursor(const struct process *pp, const char *lin, const char *col)
 {
 	int x, y;
 	const teken_pos_t *pos;
