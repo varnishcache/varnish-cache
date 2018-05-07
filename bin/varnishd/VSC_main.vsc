@@ -11,6 +11,9 @@
 	:level:	debug
 	:oneliner:	stat summ operations
 
+	Numer of times per-thread statistics were added to the
+	global counters.
+
 .. varnish_vsc:: uptime
 	:oneliner:	Child process uptime
 	:format:	duration
