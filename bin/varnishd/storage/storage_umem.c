@@ -392,6 +392,7 @@ static void v_matchproto_(storage_open_f)
 smu_open(struct stevedore *st)
 {
 	struct smu_sc *smu_sc;
+	char ident[strlen(st->ident) + 1];
 
 	ASSERT_CLI();
 	st->lru = LRU_Alloc();
@@ -405,7 +406,8 @@ smu_open(struct stevedore *st)
 
 	smu_open_init();
 
-	smu_sc->smu_cache = umem_cache_createf(st->ident,
+	AN(strcpy(ident, st->ident));
+	smu_sc->smu_cache = umem_cache_createf(ident,
 					  sizeof(struct smu),
 					  0,		// align
 					  smu_smu_constructor,
