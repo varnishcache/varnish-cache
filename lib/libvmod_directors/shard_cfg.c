@@ -293,8 +293,8 @@ shardcfg_hashcircle(struct sharddir *shardd, VCL_INT replicas)
 static void
 shardcfg_backend_free(struct shard_backend *f)
 {
-	if (f->ident)
-		free (TRUST_ME(f->ident));
+	if (f->freeptr)
+		free (f->freeptr);
 	memset(f, 0, sizeof(*f));
 }
 
