@@ -108,7 +108,7 @@ vrt_priv_dynamic(const struct vcl *vcl, struct ws *ws,
 	}
 	vp = WS_Alloc(ws, sizeof *vp);
 	if (vp == NULL)
-		return NULL;
+		return (NULL);
 	INIT_OBJ(vp, VRT_PRIV_MAGIC);
 	vp->vcl = vcl;
 	vp->id = id;
