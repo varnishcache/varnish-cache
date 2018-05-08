@@ -57,7 +57,10 @@ struct shard_circlepoint {
 
 struct shard_backend {
 	VCL_BACKEND		backend;
-	const char		*ident;	// XXX COPY IN !
+	union {
+		const char	*ident;
+		void		*freeptr;
+	};
 	VCL_DURATION		rampup;
 	uint32_t		canon_point;
 };
