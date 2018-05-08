@@ -47,10 +47,10 @@
 
 /*--------------------------------------------------------------------*/
 
-const char *
-vcc_regexp(struct vcc *tl)
+void
+vcc_regexp(struct vcc *tl, struct vsb *vgc_name)
 {
-	char buf[BUFSIZ], *p;
+	char buf[BUFSIZ];
 	vre_t *t;
 	const char *error;
 	int erroroffset;
@@ -58,18 +58,18 @@ vcc_regexp(struct vcc *tl)
 
 	Expect(tl, CSTR);
 	if (tl->err)
-		return (NULL);
+		return;
 	t = VRE_compile(tl->t->dec, 0, &error, &erroroffset);
 	if (t == NULL) {
 		VSB_printf(tl->sb,
 		    "Regexp compilation error:\n\n%s\n\n", error);
 		vcc_ErrWhere(tl, tl->t);
-		return (NULL);
+		return;
 	}
 	VRE_free(&t);
 	bprintf(buf, "VGC_re_%u", tl->unique++);
-	p = TlAlloc(tl, strlen(buf) + 1);
-	strcpy(p, buf);
+	if (vgc_name)
+		VSB_cat(vgc_name, buf);
 
 	Fh(tl, 0, "static void *%s;\n", buf);
 	ifp = New_IniFin(tl);
@@ -78,7 +78,6 @@ vcc_regexp(struct vcc *tl)
 	VSB_printf(ifp->ini, ");");
 	VSB_printf(ifp->fin, "\t\tVRT_re_fini(%s);", buf);
 	vcc_NextToken(tl);
-	return (p);
 }
 
 /*
