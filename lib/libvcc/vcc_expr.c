@@ -288,8 +288,8 @@ vcc_Eval_Regsub(struct vcc *tl, struct expr **e, struct token *t,
 {
 	struct expr *e2;
 	int all = sym->eval_priv == NULL ? 0 : 1;
-	const char *p;
 	char buf[128];
+	struct vsb vsb;
 
 	(void)t;
 	(void)fmt;
@@ -298,10 +298,13 @@ vcc_Eval_Regsub(struct vcc *tl, struct expr **e, struct token *t,
 	ERRCHK(tl);
 	SkipToken(tl, ',');
 	ExpectErr(tl, CSTR);
-	p = vcc_regexp(tl);
-	bprintf(buf, "VRT_regsub(ctx, %d,\v+\n\v1,\n%s", all, p);
-	free(TRUST_ME(p));
-	*e = vcc_expr_edit(tl, STRING, buf, e2, NULL);
+
+	AN(VSB_new(&vsb, buf, sizeof buf, VSB_FIXEDLEN));
+	VSB_printf(&vsb, "VRT_regsub(ctx, %d,\v+\n\v1,\n", all);
+	vcc_regexp(tl, &vsb);
+	ERRCHK(tl);
+	AZ(VSB_finish(&vsb));
+	*e = vcc_expr_edit(tl, STRING, VSB_data(&vsb), e2, NULL);
 	SkipToken(tl, ',');
 	vcc_expr0(tl, &e2, STRING);
 	ERRCHK(tl);
@@ -983,16 +986,18 @@ static void v_matchproto_(cmp_f)
 cmp_regexp(struct vcc *tl, struct expr **e, const struct cmps *cp)
 {
 	char buf[128];
-	const char *re;
+	struct vsb vsb;
 
 	*e = vcc_expr_edit(tl, STRING, "\vS", *e, NULL);
 	vcc_NextToken(tl);
 	ExpectErr(tl, CSTR);
-	re = vcc_regexp(tl);
+	AN(VSB_new(&vsb, buf, sizeof buf, VSB_FIXEDLEN));
+	VSB_printf(&vsb, "%sVRT_re_match(ctx, \v1, ", cp->emit);
+	vcc_regexp(tl, &vsb);
 	ERRCHK(tl);
-	bprintf(buf, "%sVRT_re_match(ctx, \v1, %s)", cp->emit, re);
-	free(TRUST_ME(re));
-	*e = vcc_expr_edit(tl, BOOL, buf, *e, NULL);
+	VSB_cat(&vsb, ")");
+	AZ(VSB_finish(&vsb));
+	*e = vcc_expr_edit(tl, BOOL, VSB_data(&vsb), *e, NULL);
 }
 
 static void v_matchproto_(cmp_f)

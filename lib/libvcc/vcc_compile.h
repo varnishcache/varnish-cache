@@ -322,7 +322,7 @@ void vcc_Parse_Init(struct vcc *);
 sym_act_f vcc_Act_If;
 
 /* vcc_utils.c */
-const char *vcc_regexp(struct vcc *tl);
+void vcc_regexp(struct vcc *tl, struct vsb *vgc_name);
 void Resolve_Sockaddr(struct vcc *tl, const char *host, const char *defport,
     const char **ipv4, const char **ipv4_ascii, const char **ipv6,
     const char **ipv6_ascii, const char **p_ascii, int maxips,
