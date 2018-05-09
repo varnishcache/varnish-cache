@@ -79,6 +79,26 @@ VDP_bytes(struct req *req, enum vdp_flush flush, const void *ptr, ssize_t len)
 	return (vdc->status);
 }
 
+/* VDP_push
+ *
+ * Add a VDP filter to the stack of filters to be run on delivery. If
+ * bottom is true, it will be added last. If bottom is false it will be
+ * added as the first filter to be run.
+ *
+ * priv is a function private pointer that will be passed to the VDP
+ * callback pointers.
+ *
+ * The vdp_init_f function of the inserted VDP will be run immediately
+ * upon successful VDP insertion.
+ *
+ * If the return value != VDP_OK the initialization of the filter
+ * failed. The reason for failure may be the fitler's vdp_init_f returning
+ * a non-VDP_OK value, or the result of workspace exhaustion or a previous
+ * filter having returned a non-VDP_OK value and this error status is
+ * latched. Note that on failures the filter's vdp_fini_f finalization
+ * function will NOT be run, and the calling code needs to free any
+ * resources attempted passed through the priv pointer.
+ */
 int
 VDP_push(struct req *req, const struct vdp *vdp, void *priv, int bottom)
 {
