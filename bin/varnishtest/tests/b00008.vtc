@@ -26,7 +26,7 @@ varnish v1 -start
 
 varnish v1 -cliok "help"
 
-varnish v1 -cliok "help -j"
+varnish v1 -clijson "help -j"
 
 varnish v1 -clierr 106 "param.set waiter HASH(0x8839c4c)"
 

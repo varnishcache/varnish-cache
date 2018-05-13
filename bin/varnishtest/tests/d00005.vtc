@@ -96,4 +96,4 @@ client c1 {
 } -run
 
 varnish v1 -vsl_catchup
-varnish v1 -cliok "backend.list -j"
+varnish v1 -clijson "backend.list -j"

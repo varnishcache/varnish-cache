@@ -483,27 +483,27 @@ VBP_Status(struct vsb *vsb, const struct backend *be, int details, int json)
 	CHECK_OBJ_NOTNULL(vt, VBP_TARGET_MAGIC);
 
 	if (!details) {
-		if (json) {
-			VSB_printf(vsb, "[%u, %u, \"%s\"]",
-			    vt->good, vt->window, 
-			    vt->backend->director->sick ? "bad" : "good");
-		} else {
-			bprintf(buf, "%u/%u %s", vt->good, vt->window,
-			    vt->backend->director->sick ? "bad" : "good");
+		bprintf(buf, "%u/%u %s", vt->good, vt->window,
+		    vt->backend->director->sick ? "bad" : "good");
+		if (json)
+			VSB_printf(vsb, "\"%s\"", buf);
+		else
 			VSB_printf(vsb, "%-10s", buf);
-		}
 		return;
 	}
 
 	if (json) {
 		VSB_printf(vsb, "{\n");
+		VSB_indent(vsb, 2);
 #define BITMAP(nn, cc, tt, bb)					\
-		VSB_printf(vsb, "\t    \"bits_%c\": %ju,\n", cc, vt->nn);
+		VSB_printf(vsb, "\"bits_%c\": %ju,\n", cc, vt->nn);
 #include "tbl/backend_poll.h"
-		VSB_printf(vsb, "\t    \"good\": %u,\n", vt->good);
-		VSB_printf(vsb, "\t    \"threshold\": %u,\n", vt->threshold);
-		VSB_printf(vsb, "\t    \"window\": %u\n", vt->window);
-		VSB_printf(vsb, "\t    },\n");
+		VSB_printf(vsb, "\"good\": %u,\n", vt->good);
+		VSB_printf(vsb, "\"threshold\": %u,\n", vt->threshold);
+		VSB_printf(vsb, "\"window\": %u", vt->window);
+		VSB_indent(vsb, -2);
+		VSB_printf(vsb, "\n");
+		VSB_printf(vsb, "},\n");
 		return;
 	}
 

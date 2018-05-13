@@ -422,7 +422,7 @@ vbe_list(const struct director *d, struct vsb *vsb, int vflag, int pflag,
 	if (bp->probe != NULL)
 		VBP_Status(vsb, bp, vflag | pflag, jflag);
 	else if ((vflag | pflag) == 0 && jflag)
-		VSB_printf(vsb, "\"%s\",\n", d->sick ? "sick" : "healthy");
+		VSB_printf(vsb, "\"%s\"", d->sick ? "sick" : "healthy");
 	else
 		VSB_printf(vsb, "%-10s", d->sick ? "sick" : "healthy");
 }

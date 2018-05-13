@@ -316,12 +316,14 @@ do_list_json(struct cli *cli, struct director *d, void *priv)
 		return (0);
 
 	VCLI_Out(cli, "%s", la->jsep);
-	la->jsep = ",\n    ";
+	la->jsep = ",\n";
 	// XXX admin health "probe" for the no-probe case is confusing
-	VCLI_Out(cli, "\"%s\": {\n", d->vdir->cli_name);
-	VCLI_Out(cli, "\t\"type\": \"%s\",\n", d->vdir->methods->type);
-	VCLI_Out(cli, "\t\"admin_health\": \"%s\",\n", VDI_Ahealth(d));
-	VCLI_Out(cli, "\t\"probe_health\": ");
+	VCLI_JSON_str(cli, d->vdir->cli_name);
+	VCLI_Out(cli, ": {\n");
+	VSB_indent(cli->sb, 2);
+	VCLI_Out(cli, "\"type\": \"%s\",\n", d->vdir->methods->type);
+	VCLI_Out(cli, "\"admin_health\": \"%s\",\n", VDI_Ahealth(d));
+	VCLI_Out(cli, "\"probe_message\": ");
 	if (d->vdir->methods->list != NULL)
 		d->vdir->methods->list(d, cli->sb, 0, 0, 1);
 	else
@@ -329,11 +331,12 @@ do_list_json(struct cli *cli, struct director *d, void *priv)
 	VCLI_Out(cli, ",\n");
 
 	if ((la->p || la->v) && d->vdir->methods->list != NULL) {
-		VCLI_Out(cli, "\t\"probe_details\": ");
+		VCLI_Out(cli, "\"probe_details\": ");
 		d->vdir->methods->list(d, cli->sb, la->p, la->v, 1);
 	}
-	VCLI_Out(cli, "\t\"last_change\": %.3f\n    }",
-	    d->vdir->health_changed);
+	VCLI_Out(cli, "\"last_change\": %.3f\n", d->vdir->health_changed);
+	VSB_indent(cli->sb, -2);
+	VCLI_Out(cli, "}");
 	return (0);
 }
 
@@ -342,13 +345,14 @@ cli_backend_list(struct cli *cli, const char * const *av, void *priv)
 {
 	const char *p;
 	struct list_args la[1];
+	int i;
 
 	(void)priv;
 	ASSERT_CLI();
 	INIT_OBJ(la, LIST_ARGS_MAGIC);
-	la->jsep = "\n    ";
-	while (av[2] != NULL && av[2][0] == '-') {
-		for(p = av[2] + 1; *p; p++) {
+	la->jsep = "";
+	for (i = 2; av[i] != NULL && av[i][0] == '-'; i++) {
+		for(p = av[i] + 1; *p; p++) {
 			switch(*p) {
 			case 'j': la->j = 1; break;
 			case 'p': la->p = !la->p; break;
@@ -359,21 +363,26 @@ cli_backend_list(struct cli *cli, const char * const *av, void *priv)
 				return;
 			}
 		}
-		av++;
 	}
-	if (av[3] != NULL) {
+	if (av[i] != NULL && av[i+1] != NULL) {
 		VCLI_Out(cli, "Too many arguments");
 		VCLI_SetResult(cli, CLIS_PARAM);
 		return;
 	}
 	if (la->j) {
-		VCLI_Out(cli, "{");
-		(void)VCL_IterDirector(cli, av[2], do_list_json, la);
-		VCLI_Out(cli, "\n}\n");
+		VCLI_JSON_begin(cli, 1, av);
+		VCLI_Out(cli, ",\n");
+		VCLI_Out(cli, "{\n");
+		VSB_indent(cli->sb, 2);
+		(void)VCL_IterDirector(cli, av[i], do_list_json, la);
+		VSB_indent(cli->sb, -2);
+		VCLI_Out(cli, "\n");
+		VCLI_Out(cli, "}");
+		VCLI_JSON_end(cli);
 	} else {
 		VCLI_Out(cli, "%-30s %-7s %-10s %s",
 		    "Backend name", "Admin", "Probe", "Last change");
-		(void)VCL_IterDirector(cli, av[2], do_list, la);
+		(void)VCL_IterDirector(cli, av[i], do_list, la);
 	}
 }
 

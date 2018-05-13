@@ -159,26 +159,35 @@ VCLS_func_help_json(struct cli *cli, const char * const *av, void *priv)
 	cs = cli->cls;
 	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
 
-	VCLI_JSON_ver(cli, 1, av);
+	VCLI_JSON_begin(cli, 1, av);
 	VTAILQ_FOREACH(clp, &cs->funcs, list) {
 		if (clp->auth > cli->auth)
 			continue;
-		VCLI_Out(cli, ",\n  {");
-		VCLI_Out(cli, "\n  \"request\": ");
+		VCLI_Out(cli, ",\n  {\n");
+		VSB_indent(cli->sb, 2);
+		VCLI_Out(cli, "\"request\": ");
 		VCLI_JSON_str(cli, clp->desc->request);
-		VCLI_Out(cli, ",\n  \"syntax\": ");
+		VCLI_Out(cli, ",\n");
+		VCLI_Out(cli, "\"syntax\": ");
 		VCLI_JSON_str(cli, clp->desc->syntax);
-		VCLI_Out(cli, ",\n  \"help\": ");
+		VCLI_Out(cli, ",\n");
+		VCLI_Out(cli, "\"help\": ");
 		VCLI_JSON_str(cli, clp->desc->help);
-		VCLI_Out(cli, ",\n  \"minarg\": %d", clp->desc->minarg);
-		VCLI_Out(cli, ", \"maxarg\": %d", clp->desc->maxarg);
-		VCLI_Out(cli, ", \"flags\": ");
+		VCLI_Out(cli, ",\n");
+		VCLI_Out(cli, "\"minarg\": %d", clp->desc->minarg);
+		VCLI_Out(cli, ",\n");
+		VCLI_Out(cli, "\"maxarg\": %d", clp->desc->maxarg);
+		VCLI_Out(cli, ",\n");
+		VCLI_Out(cli, "\"flags\": ");
 		VCLI_JSON_str(cli, clp->flags);
-		VCLI_Out(cli, ", \"json\": %s",
+		VCLI_Out(cli, ",\n");
+		VCLI_Out(cli, "\"json\": %s",
 		    clp->jsonfunc == NULL ? "false" : "true");
-		VCLI_Out(cli, "\n  }");
+		VCLI_Out(cli, "\n");
+		VSB_indent(cli->sb, -2);
+		VCLI_Out(cli, "}");
 	}
-	VCLI_Out(cli, "\n]\n");
+	VCLI_JSON_end(cli);
 }
 
 /*--------------------------------------------------------------------
@@ -641,12 +650,14 @@ VCLI_JSON_str(struct cli *cli, const char *s)
 {
 
 	CHECK_OBJ_NOTNULL(cli, CLI_MAGIC);
+	VSB_putc(cli->sb, '"');
 	VSB_quote(cli->sb, s, -1, VSB_QUOTE_JSON);
+	VSB_putc(cli->sb, '"');
 }
 
 /*lint -e{818} cli could be const */
 void
-VCLI_JSON_ver(struct cli *cli, unsigned ver, const char * const * av)
+VCLI_JSON_begin(struct cli *cli, unsigned ver, const char * const * av)
 {
 	int i;
 
@@ -658,6 +669,15 @@ VCLI_JSON_ver(struct cli *cli, unsigned ver, const char * const * av)
 			VCLI_Out(cli, ", ");
 	}
 	VCLI_Out(cli, "]");
+	VSB_indent(cli->sb, 2);
+}
+
+void
+VCLI_JSON_end(struct cli *cli)
+{
+	VSB_indent(cli->sb, -2);
+	VCLI_Out(cli, "\n");
+	VCLI_Out(cli, "]\n");
 }
 
 /*lint -e{818} cli could be const */
