@@ -215,7 +215,7 @@ cls_dispatch(struct cli *cli, const struct cli_proto *cp,
 		return;
 	}
 
-	if (ac - 1> cp->desc->maxarg + json) {
+	if (ac - 1 > cp->desc->maxarg + json) {
 		VCLI_Out(cli, "Too many parameters\n");
 		VCLI_SetResult(cli, CLIS_TOOMANY);
 		return;
