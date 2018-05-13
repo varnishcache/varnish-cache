@@ -36,7 +36,6 @@
 #include "config.h"
 
 #include "cache_varnishd.h"
-
 #include "cache_director.h"
 
 #include "vcli_serve.h"
@@ -292,14 +291,14 @@ do_list(struct cli *cli, struct director *d, void *priv)
 	VCLI_Out(cli, "\n%-30s %-7s ", d->vdir->cli_name, VDI_Ahealth(d));
 
 	if (d->vdir->methods->list != NULL)
-		d->vdir->methods->list(d, cli->sb, 0, 0);
+		d->vdir->methods->list(d, cli->sb, 0, 0, 0);
 	else
 		VCLI_Out(cli, "%-10s", d->sick ? "sick" : "healthy");
 
 	VTIM_format(d->vdir->health_changed, time_str);
 	VCLI_Out(cli, " %s", time_str);
 	if ((la->p || la->v) && d->vdir->methods->list != NULL)
-		d->vdir->methods->list(d, cli->sb, la->p, la->v);
+		d->vdir->methods->list(d, cli->sb, la->p, la->v, 0);
 	return (0);
 }
 

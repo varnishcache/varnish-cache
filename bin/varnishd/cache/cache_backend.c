@@ -411,12 +411,14 @@ vbe_panic(const struct director *d, struct vsb *vsb)
  */
 
 static void
-vbe_list(const struct director *d, struct vsb *vsb, int vflag, int pflag)
+vbe_list(const struct director *d, struct vsb *vsb, int vflag, int pflag,
+    int jflag)
 {
 	struct backend *bp;
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
+	AZ(jflag);
 
 	if (bp->probe != NULL)
 		VBP_Status(vsb, bp, vflag | pflag);
