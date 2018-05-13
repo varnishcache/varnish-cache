@@ -15,4 +15,4 @@ delay 1
 process p1 -expect-exit 0 -stop -wait
 
 # Expect empty stderr output
-shell -match {^[ 	]*0\b} "wc -c ${tmpdir}/p1/stderr"
+shell -match {^[	 ]*0\b} "wc -c ${tmpdir}/p1/stderr"
