@@ -162,10 +162,10 @@ mcf_askchild(struct cli *cli, const char * const *av, void *priv)
 }
 
 static const struct cli_cmd_desc CLICMD_WILDCARD[1] =
-    {{ "*", "<wild-card-entry>", "<fall through to cacher>", "", 0, -1 }};
+    {{ "*", "<wild-card-entry>", "<fall through to cacher>", "", 0, 999 }};
 
 static struct cli_proto cli_askchild[] = {
-	{ CLICMD_WILDCARD, "h*", mcf_askchild },
+	{ CLICMD_WILDCARD, "h*", mcf_askchild, mcf_askchild },
 	{ NULL }
 };
 
