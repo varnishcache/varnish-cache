@@ -418,11 +418,12 @@ vbe_list(const struct director *d, struct vsb *vsb, int vflag, int pflag,
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
-	AZ(jflag);
 
 	if (bp->probe != NULL)
-		VBP_Status(vsb, bp, vflag | pflag);
-	else if ((vflag | pflag) == 0)
+		VBP_Status(vsb, bp, vflag | pflag, jflag);
+	else if ((vflag | pflag) == 0 && jflag)
+		VSB_printf(vsb, "\"%s\",\n", d->sick ? "sick" : "healthy");
+	else
 		VSB_printf(vsb, "%-10s", d->sick ? "sick" : "healthy");
 }
 

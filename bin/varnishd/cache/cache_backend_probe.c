@@ -473,7 +473,7 @@ vbp_bitmap(struct vsb *vsb, char c, uint64_t map, const char *lbl)
 /*lint -e{506} constant value boolean */
 /*lint -e{774} constant value boolean */
 void
-VBP_Status(struct vsb *vsb, const struct backend *be, int details)
+VBP_Status(struct vsb *vsb, const struct backend *be, int details, int json)
 {
 	struct vbp_target *vt;
 	char buf[12];
@@ -483,9 +483,27 @@ VBP_Status(struct vsb *vsb, const struct backend *be, int details)
 	CHECK_OBJ_NOTNULL(vt, VBP_TARGET_MAGIC);
 
 	if (!details) {
-		bprintf(buf, "%d/%d %s", vt->good, vt->window,
-		    vt->backend->director->sick ? "bad" : "good");
-		VSB_printf(vsb, "%-10s", buf);
+		if (json) {
+			VSB_printf(vsb, "[%u, %u, \"%s\"]",
+			    vt->good, vt->window, 
+			    vt->backend->director->sick ? "bad" : "good");
+		} else {
+			bprintf(buf, "%u/%u %s", vt->good, vt->window,
+			    vt->backend->director->sick ? "bad" : "good");
+			VSB_printf(vsb, "%-10s", buf);
+		}
+		return;
+	}
+
+	if (json) {
+		VSB_printf(vsb, "{\n");
+#define BITMAP(nn, cc, tt, bb)					\
+		VSB_printf(vsb, "\t    \"bits_%c\": %ju,\n", cc, vt->nn);
+#include "tbl/backend_poll.h"
+		VSB_printf(vsb, "\t    \"good\": %u,\n", vt->good);
+		VSB_printf(vsb, "\t    \"threshold\": %u,\n", vt->threshold);
+		VSB_printf(vsb, "\t    \"window\": %u\n", vt->window);
+		VSB_printf(vsb, "\t    },\n");
 		return;
 	}
 

@@ -273,6 +273,8 @@ struct list_args {
 #define LIST_ARGS_MAGIC	0x7e7cefeb
 	int		p;
 	int		v;
+	int		j;
+	const char	*jsep;
 };
 
 static int v_matchproto_(vcl_be_func)
@@ -302,6 +304,39 @@ do_list(struct cli *cli, struct director *d, void *priv)
 	return (0);
 }
 
+static int v_matchproto_(vcl_be_func)
+do_list_json(struct cli *cli, struct director *d, void *priv)
+{
+	struct list_args *la;
+
+	CAST_OBJ_NOTNULL(la, priv, LIST_ARGS_MAGIC);
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+
+	if (d->vdir->admin_health == VDI_AH_DELETED)
+		return (0);
+
+	VCLI_Out(cli, "%s", la->jsep);
+	la->jsep = ",\n    ";
+	// XXX admin health "probe" for the no-probe case is confusing
+	VCLI_Out(cli, "\"%s\": {\n", d->vdir->cli_name);
+	VCLI_Out(cli, "\t\"type\": \"%s\",\n", d->vdir->methods->type);
+	VCLI_Out(cli, "\t\"admin_health\": \"%s\",\n", VDI_Ahealth(d));
+	VCLI_Out(cli, "\t\"probe_health\": ");
+	if (d->vdir->methods->list != NULL)
+		d->vdir->methods->list(d, cli->sb, 0, 0, 1);
+	else
+		VCLI_Out(cli, "\"%s\"", d->sick ? "sick" : "healthy");
+	VCLI_Out(cli, ",\n");
+
+	if ((la->p || la->v) && d->vdir->methods->list != NULL) {
+		VCLI_Out(cli, "\t\"probe_details\": ");
+		d->vdir->methods->list(d, cli->sb, la->p, la->v, 1);
+	}
+	VCLI_Out(cli, "\t\"last_change\": %.3f\n    }",
+	    d->vdir->health_changed);
+	return (0);
+}
+
 static void v_matchproto_(cli_func_t)
 cli_backend_list(struct cli *cli, const char * const *av, void *priv)
 {
@@ -311,9 +346,11 @@ cli_backend_list(struct cli *cli, const char * const *av, void *priv)
 	(void)priv;
 	ASSERT_CLI();
 	INIT_OBJ(la, LIST_ARGS_MAGIC);
+	la->jsep = "\n    ";
 	while (av[2] != NULL && av[2][0] == '-') {
 		for(p = av[2] + 1; *p; p++) {
 			switch(*p) {
+			case 'j': la->j = 1; break;
 			case 'p': la->p = !la->p; break;
 			case 'v': la->p = !la->p; break;
 			default:
@@ -329,9 +366,15 @@ cli_backend_list(struct cli *cli, const char * const *av, void *priv)
 		VCLI_SetResult(cli, CLIS_PARAM);
 		return;
 	}
-	VCLI_Out(cli, "%-30s %-7s %-10s %s",
-	    "Backend name", "Admin", "Probe", "Last change");
-	(void)VCL_IterDirector(cli, av[2], do_list, la);
+	if (la->j) {
+		VCLI_Out(cli, "{");
+		(void)VCL_IterDirector(cli, av[2], do_list_json, la);
+		VCLI_Out(cli, "\n}\n");
+	} else {
+		VCLI_Out(cli, "%-30s %-7s %-10s %s",
+		    "Backend name", "Admin", "Probe", "Last change");
+		(void)VCL_IterDirector(cli, av[2], do_list, la);
+	}
 }
 
 /*---------------------------------------------------------------------*/
@@ -389,7 +432,8 @@ cli_backend_set_health(struct cli *cli, const char * const *av, void *priv)
 /*---------------------------------------------------------------------*/
 
 static struct cli_proto backend_cmds[] = {
-	{ CLICMD_BACKEND_LIST,		"", cli_backend_list },
+	{ CLICMD_BACKEND_LIST,		"",
+	     cli_backend_list, cli_backend_list },
 	{ CLICMD_BACKEND_SET_HEALTH,	"", cli_backend_set_health },
 	{ NULL }
 };

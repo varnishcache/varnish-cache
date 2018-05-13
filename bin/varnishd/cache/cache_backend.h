@@ -81,4 +81,4 @@ void VBP_Insert(struct backend *b, struct vrt_backend_probe const *p,
     struct tcp_pool *);
 void VBP_Remove(struct backend *b);
 void VBP_Control(const struct backend *b, int stop);
-void VBP_Status(struct vsb *, const struct backend *, int details);
+void VBP_Status(struct vsb *, const struct backend *, int details, int json);

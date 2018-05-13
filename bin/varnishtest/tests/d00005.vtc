@@ -94,3 +94,6 @@ client c1 {
 	rxresp
 	expect resp.body == "4444"
 } -run
+
+varnish v1 -vsl_catchup
+varnish v1 -cliok "backend.list -j"
