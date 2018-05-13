@@ -47,6 +47,7 @@
 #include "vapi/vsl.h"
 #include "vapi/vsm.h"
 #include "vcli.h"
+#include "vjsn.h"
 #include "vre.h"
 #include "vsub.h"
 #include "vtcp.h"
@@ -656,6 +657,34 @@ varnish_wait(struct varnish *v)
 
 
 /**********************************************************************
+ * Ask a CLI JSON question
+ */
+
+static void
+varnish_cli_json(struct varnish *v, const char *cli)
+{
+	enum VCLI_status_e u;
+	char *resp = NULL;
+	const char *errptr;
+	struct vjsn *vj;
+
+	if (v->cli_fd < 0)
+		varnish_launch(v);
+	if (vtc_error)
+		return;
+	u = varnish_ask_cli(v, cli, &resp);
+	vtc_log(v->vl, 2, "CLI %03u <%s>", u, cli);
+	if (u != CLIS_OK)
+		vtc_fatal(v->vl,
+		    "FAIL CLI response %u expected %u", u, CLIS_OK);
+	vj = vjsn_parse(resp, &errptr);
+	if (vj == NULL)
+		vtc_fatal(v->vl, "FAIL CLI, not good JSON: %s", errptr);
+	vjsn_delete(&vj);
+	free(resp);
+}
+
+/**********************************************************************
  * Ask a CLI question
  */
 
@@ -1005,13 +1034,17 @@ varnish_expect(const struct varnish *v, char * const *av)
  * ``varnishadm``) with these additional switches::
  *
  *         varnish vNAME [-cli STRING] [-cliok STRING] [-clierr STRING]
- *                       [-expect STRING OP NUMBER]
+ *                       [-clijson STRING] [-expect STRING OP NUMBER]
  *
  * \-cli STRING|-cliok STRING|-clierr STATUS STRING|-cliexpect REGEXP STRING
  *         All four of these will send STRING to the CLI, the only difference
  *         is what they expect the result to be. -cli doesn't expect
  *         anything, -cliok expects 200, -clierr expects STATUS, and
  *         -cliexpect expects the REGEXP to match the returned response.
+ *
+ * \-clijson STRING
+ *	   Send STRING to the CLI, expect success (CLIS_OK/200) and check
+ *	   that the response is parsable JSON.
  *
  * \-expect PATTERN OP NUMBER
  *         Look into the VSM and make sure the first VSC counter identified by
@@ -1097,6 +1130,12 @@ cmd_varnish(CMD_ARGS)
 			AN(av[2]);
 			varnish_cli(v, av[2], 0, av[1]);
 			av += 2;
+			continue;
+		}
+		if (!strcmp(*av, "-clijson")) {
+			AN(av[1]);
+			varnish_cli_json(v, av[1]);
+			av++;
 			continue;
 		}
 		if (!strcmp(*av, "-cliok")) {
