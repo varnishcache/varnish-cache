@@ -163,6 +163,7 @@ class vscset(object):
 		fo = open(fon, "w")
 		genhdr(fo, self.name)
 		fo.write('#include "config.h"\n')
+		fo.write('#include <stdio.h>\n')
 		fo.write('#include <stdarg.h>\n')
 		fo.write('#include "vdef.h"\n')
 		fo.write('#include "vas.h"\n')
