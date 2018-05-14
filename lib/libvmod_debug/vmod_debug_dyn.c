@@ -38,7 +38,6 @@
 #include <errno.h>
 
 #include "cache/cache.h"
-#include "cache/cache_director.h"
 
 #include "vsa.h"
 #include "vcc_if.h"
