@@ -107,10 +107,8 @@ Example
 $Function STRING fileread(PRIV_CALL, STRING)
 
 Description
-	Reads a file and returns a string with the content. Please
-	note that it is not recommended to send variables to this
-	function the caching in the function doesn't take this into
-	account. Also, files are not re-read.
+	Reads a file and returns a string with the content. The result
+	is cached indefinitely per filename.
 Example
 	synthetic("Response was served by " + std.fileread("/etc/hostname"));
 
