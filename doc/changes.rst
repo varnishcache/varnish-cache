@@ -1,3 +1,32 @@
+===================
+About this document
+===================
+
+.. keep this section at the top!
+
+This document contains notes from the Varnish developers about ongoing
+development and past versions:
+
+* Developers will note here changes which they consider particularly
+  relevant or otherwise noteworthy
+
+* This document is not necessarily up-to-date with the code
+
+* It serves as a basis for release managers and others involved in
+  release documentation
+
+* It is not rendered as part of the official documentation and thus
+  only available in ReStructuredText (rst) format in the source
+  repository and -distribution.
+
+Official information about changes in releases and advise on the
+upgrade process can be found in the ``doc/sphinx/whats-new/``
+directory, also available in HTML format at
+http://varnish-cache.org/docs/trunk/whats-new/index.html and via
+individual releases. These documents are updated as part of the
+release process.
+
+
 ================================
 Varnish Cache 6.0.1 (ongoing)
 ================================
