@@ -72,7 +72,7 @@ struct vbp_target {
 	unsigned			good;
 
 	/* Collected statistics */
-#define BITMAP(n, c, t, b)	uint64_t	n;
+#define BITMAP(n, c, t, b)	uintmax_t	n;
 #include "tbl/backend_poll.h"
 
 	double				last;
