@@ -103,6 +103,16 @@ VCLS_func_ping(struct cli *cli, const char * const *av, void *priv)
 	VCLI_Out(cli, "PONG %jd 1.0", (intmax_t)t);
 }
 
+void v_matchproto_(cli_func_t)
+VCLS_func_ping_json(struct cli *cli, const char * const *av, void *priv)
+{
+	(void)av;
+	(void)priv;
+	VCLI_JSON_begin(cli, 2, av);
+	VCLI_Out(cli, ", \"PONG\"\n");
+	VCLI_JSON_end(cli);
+}
+
 /*--------------------------------------------------------------------*/
 
 void v_matchproto_(cli_func_t)
