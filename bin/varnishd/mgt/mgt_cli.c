@@ -327,7 +327,7 @@ mcf_help_json(struct cli *cli, const char * const *av, void *priv)
 
 static struct cli_proto cli_auth[] = {
 	{ CLICMD_HELP,		"", mcf_help, mcf_help_json },
-	{ CLICMD_PING,		"", VCLS_func_ping },
+	{ CLICMD_PING,		"", VCLS_func_ping, VCLS_func_ping_json },
 	{ CLICMD_AUTH,		"", mcf_auth },
 	{ CLICMD_QUIT,		"", VCLS_func_close },
 	{ NULL }
