@@ -105,3 +105,4 @@ cli_func_t	VCLS_func_close;
 cli_func_t	VCLS_func_help;
 cli_func_t	VCLS_func_help_json;
 cli_func_t	VCLS_func_ping;
+cli_func_t	VCLS_func_ping_json;
