@@ -78,28 +78,25 @@ VDI_Ahealth(const struct director *d)
 static VCL_BACKEND
 VDI_Resolve(VRT_CTX)
 {
-	const struct director *d;
-	const struct director *d2;
+	VCL_BACKEND d;
 	struct busyobj *bo;
 
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	bo = ctx->bo;
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	CHECK_OBJ_ORNULL(bo->director_req, DIRECTOR_MAGIC);
 
-	for (d = bo->director_req; d != NULL &&
-	    d->vdir->methods->resolve != NULL; d = d2) {
-		CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-		AN(d->vdir);
-		d2 = d->vdir->methods->resolve(ctx, d);
-		if (d2 == NULL)
-			VSLb(bo->vsl, SLT_FetchError,
-			    "Director %s returned no backend", d->vcl_name);
-	}
-	CHECK_OBJ_ORNULL(d, DIRECTOR_MAGIC);
-	if (d == NULL)
+	if (bo->director_req == NULL) {
 		VSLb(bo->vsl, SLT_FetchError, "No backend");
-	else
-		AN(d->vdir);
+		return (NULL);
+	}
+
+	d = VRT_DirectorResolve(ctx, bo->director_req);
+	if (d == NULL) {
+		VSLb(bo->vsl, SLT_FetchError,
+		     "Director %s returned no backend",
+		     bo->director_req->vcl_name);
+		return (NULL);
+	}
 	return (d);
 }
 
