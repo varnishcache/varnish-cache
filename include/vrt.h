@@ -558,6 +558,7 @@ VCL_BACKEND VRT_AddDirector(VRT_CTX, const struct vdi_methods *,
 void VRT_DisableDirector(VCL_BACKEND);
 VCL_BACKEND VRT_LookupDirector(VRT_CTX, VCL_STRING);
 void VRT_DelDirector(VCL_BACKEND *);
+VCL_BACKEND VRT_DirectorResolve(VRT_CTX, VCL_BACKEND);
 
 /* Suckaddr related */
 int VRT_VSA_GetPtr(VRT_CTX, VCL_IP sua, const unsigned char ** dst);
