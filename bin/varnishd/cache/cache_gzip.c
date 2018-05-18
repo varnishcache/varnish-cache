@@ -620,7 +620,6 @@ vfp_testgunzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 	CAST_OBJ_NOTNULL(vg, vfe->priv1, VGZ_MAGIC);
 	AN(p);
 	AN(lp);
-	CAST_OBJ_NOTNULL(vg, vfe->priv1, VGZ_MAGIC);
 	vp = VFP_Suck(vc, p, lp);
 	if (vp == VFP_ERROR)
 		return (vp);
