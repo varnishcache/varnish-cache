@@ -387,7 +387,7 @@ pan_vfp(struct vsb *vsb, const struct vfp_ctx *vfc)
 	VSB_printf(vsb, "obj_flags = 0x%x,\n", vfc->obj_flags);
 	VSB_indent(vsb, -2);
 	VSB_printf(vsb, "},\n");
-};
+}
 
 
 static void
