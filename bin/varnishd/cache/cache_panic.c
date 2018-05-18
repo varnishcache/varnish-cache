@@ -355,9 +355,44 @@ pan_wrk(struct vsb *vsb, const struct worker *wrk)
 }
 
 static void
-pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
+pan_vfp(struct vsb *vsb, const struct vfp_ctx *vfc)
 {
 	struct vfp_entry *vfe;
+
+	VSB_printf(vsb, "vfc = %p {\n", vfc);
+	VSB_indent(vsb, 2);
+	VSB_printf(vsb, "failed = %d,\n", vfc->failed);
+	VSB_printf(vsb, "req = %p,\n", vfc->req);
+	VSB_printf(vsb, "resp = %p,\n", vfc->resp);
+	VSB_printf(vsb, "wrk = %p,\n", vfc->wrk);
+	VSB_printf(vsb, "oc = %p,\n", vfc->oc);
+
+	if (!VTAILQ_EMPTY(&vfc->vfp)) {
+		VSB_printf(vsb, "filters = {\n");
+		VSB_indent(vsb, 2);
+		VTAILQ_FOREACH(vfe, &vfc->vfp, list) {
+			VSB_printf(vsb, "%s = %p {\n",
+				   vfe->vfp->name, vfe);
+			VSB_indent(vsb, 2);
+			VSB_printf(vsb, "priv1 = %p,\n", vfe->priv1);
+			VSB_printf(vsb, "priv2 = %zd,\n", vfe->priv2);
+			VSB_printf(vsb, "closed = %d\n", vfe->closed);
+			VSB_indent(vsb, -2);
+			VSB_printf(vsb, "},\n");
+		}
+		VSB_indent(vsb, -2);
+		VSB_printf(vsb, "},\n");
+	}
+
+	VSB_printf(vsb, "obj_flags = 0x%x,\n", vfc->obj_flags);
+	VSB_indent(vsb, -2);
+	VSB_printf(vsb, "},\n");
+};
+
+
+static void
+pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
+{
 	const char *p;
 
 	VSB_printf(vsb, "busyobj = %p {\n", bo);
@@ -380,13 +415,8 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 	if (VALID_OBJ(bo->htc, HTTP_CONN_MAGIC))
 		pan_htc(vsb, bo->htc);
 
-	if (!VTAILQ_EMPTY(&bo->vfc->vfp)) {
-		VSB_printf(vsb, "filters =");
-		VTAILQ_FOREACH(vfe, &bo->vfc->vfp, list)
-			VSB_printf(vsb, " %s=%d",
-			    vfe->vfp->name, (int)vfe->closed);
-		VSB_printf(vsb, "\n");
-	}
+	if (bo->vfc)
+		pan_vfp(vsb, bo->vfc);
 
 	VDI_Panic(bo->director_req, vsb, "director_req");
 	if (bo->director_resp == bo->director_req)
