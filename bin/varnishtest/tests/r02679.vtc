@@ -1,0 +1,31 @@
+varnishtest "#2679: H/2 rxbody vfp drops data"
+
+server s1 {
+	rxreq
+	expect req.http.content-length == "31469"
+	expect req.bodylen == 31469
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import std;
+	sub vcl_recv {
+#		std.cache_req_body(100KB);
+	}
+} -start
+
+varnish v1 -cliok "param.set feature +http2"
+
+client c1 {
+	stream 1 {
+		txreq -req POST -hdr "content-length" "31469" -nostrend
+		txdata -datalen 1550 -nostrend
+		rxwinup
+		txdata -datalen 16000 -nostrend
+		rxwinup
+		txdata -datalen 13919
+		rxwinup
+		rxresp
+		expect resp.status == 200
+	} -run
+} -run

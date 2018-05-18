@@ -770,6 +770,12 @@ h2_vfp_body(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr, ssize_t *lp)
 			h2->rxf_len -= l;
 		}
 		*lp = l;
+		if (h2->rxf_len > 0) {
+			/* We ran out of storage: Have VFP call us
+			 * again with a fresh buffer */
+			Lck_Unlock(&h2->sess->mtx);
+			return (VFP_OK);
+		}
 		if (h2->rxf_len == 0) {
 			if (h2->rxf_flags & H2FF_DATA_END_STREAM)
 				retval = VFP_END;
