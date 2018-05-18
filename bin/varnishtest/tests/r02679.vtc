@@ -10,7 +10,7 @@ server s1 {
 varnish v1 -vcl+backend {
 	import std;
 	sub vcl_recv {
-#		std.cache_req_body(100KB);
+		std.cache_req_body(100KB);
 	}
 } -start
 
