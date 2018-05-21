@@ -63,7 +63,7 @@
 	VOPT("I:", "[-I <[taglist:]regex>]", "Include by regex",	\
 	    "Include by regex matching. Output only records matching"	\
 	    " taglist and regular expression. Applies to any tag if"	\
-	    " taglist is absent.\n"					\
+	    " taglist is absent. Multiple -I options may be given.\n"	\
 	    "\n"							\
 	    VSL_iI_PS							\
 	)
@@ -104,5 +104,5 @@
 	VOPT("X:", "[-X <[taglist:]regex>]", "Exclude by regex",	\
 	    "Exclude by regex matching. Do not output records matching"	\
 	    " taglist and regular expression. Applies to any tag if"	\
-	    " taglist is absent."					\
+	    " taglist is absent. Multiple -X options may be given.\n"	\
 	)
