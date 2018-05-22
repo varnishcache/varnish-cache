@@ -155,19 +155,26 @@ http1_dissect_hdrs(struct http *hp, char *p, struct http_conn *htc,
 				*q++ = ' ';
 		}
 
+		/* Empty header = end of headers */
+		if (p == q)
+			break;
+
 		if (q - p > maxhdr) {
 			VSLb(hp->vsl, SLT_BogoHeader, "Header too long: %.*s",
 			    (int)(q - p > 20 ? 20 : q - p), p);
 			return (400);
 		}
 
-		/* Empty header = end of headers */
-		if (p == q)
-			break;
-
 		if (vct_islws(*p)) {
 			VSLb(hp->vsl, SLT_BogoHeader,
 			    "1st header has white space: %.*s",
+			    (int)(q - p > 20 ? 20 : q - p), p);
+			return (400);
+		}
+
+		if (*p == ':') {
+			VSLb(hp->vsl, SLT_BogoHeader,
+			    "Missing header name: %.*s",
 			    (int)(q - p > 20 ? 20 : q - p), p);
 			return (400);
 		}
@@ -199,6 +206,8 @@ http1_dissect_hdrs(struct http *hp, char *p, struct http_conn *htc,
 		}
 
 		for (; p < q; p++) {
+			if (*p == ':')
+				break;
 			if (vct_islws(*p)) {
 				VSLb(hp->vsl, SLT_BogoHeader,
 				    "Space in header '%.*s'",
@@ -206,8 +215,13 @@ http1_dissect_hdrs(struct http *hp, char *p, struct http_conn *htc,
 				    hp->hd[hp->nhd - 1].b);
 				return (400);
 			}
-			if (*p == ':')
-				break;
+			if (vct_issep(*p)) {
+				VSLb(hp->vsl, SLT_BogoHeader,
+				    "Separator in header: %.*s",
+				    (int)Tlen(hp->hd[hp->nhd - 1]),
+				    hp->hd[hp->nhd - 1].b);
+				return (400);
+			}
 		}
 	}
 	if (p < htc->rxbuf_e)

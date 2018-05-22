@@ -2,7 +2,7 @@ varnishtest "test certain mailformed requests"
 
 server s1 {
 	rxreq
-	# expect req.url == /3
+	expect req.url == /4
 	txresp
 } -start
 
@@ -15,6 +15,8 @@ logexpect l1 -v v1 -g raw {
 	expect * 1010 BogoHeader {Header has ctrl char 0x01}
 	expect * 1012 BogoHeader {Header has ctrl char 0x0d}
 	expect * 1014 BogoHeader {Header has ctrl char 0x0d}
+	expect * 1016 BogoHeader {Missing header name:.*}
+	expect * 1018 BogoHeader {Separator in header:.*}
 } -start
 
 client c1 {
@@ -68,6 +70,20 @@ delay .1
 
 client c1 {
 	send "GET /7 HTTP/1.1\r\nHost: foo\r\nBogo: Header\rMore\r\n\r\n"
+	rxresp
+	expect resp.status == 400
+} -run
+delay .1
+
+client c1 {
+	send "GET /8 HTTP/1.1\r\nHost: foo\r\n: Header\r\n\r\n"
+	rxresp
+	expect resp.status == 400
+} -run
+delay .1
+
+client c1 {
+	send "GET /8 HTTP/1.1\r\nHost: foo\r\n;: Header\r\n\r\n"
 	rxresp
 	expect resp.status == 400
 } -run
