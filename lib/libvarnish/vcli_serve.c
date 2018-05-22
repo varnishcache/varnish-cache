@@ -278,6 +278,12 @@ cls_exec(struct VCLS_fd *cfd, char * const *av)
 			break;
 		}
 
+		if (av[1] == NULL) {
+			VCLI_Out(cli, "Empty CLI command.\n");
+			VCLI_SetResult(cli, CLIS_SYNTAX);
+			break;
+		}
+
 		if (isupper(av[1][0])) {
 			VCLI_Out(cli, "all commands are in lower-case.\n");
 			VCLI_SetResult(cli, CLIS_UNKNOWN);
