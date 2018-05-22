@@ -370,6 +370,20 @@ SLTM(Hash, SLT_F_UNSAFE, "Value added to hash",
 	NODEF_NOTICE
 )
 
+/*
+ * Probe window bits:
+ *
+ * the documentation below could get auto-generated like so:
+ *
+ * ( echo '#define PROBE_BITS_DOC \' ; \
+ *   $CC -D 'BITMAP(n, c, t, b)="\t" #c ": " t "\n" \' \
+ *       -E ./include/tbl/backend_poll.h | grep -E '^"' ; \
+ *  echo '""' ) >./include/tbl/backend_poll_doc.h
+ *
+ * as this has a hackish feel to it, the documentation is included here as text
+ * until we find a better solution or the above is accepted
+ */
+
 SLTM(Backend_health, 0, "Backend health check",
 	"The result of a backend health probe.\n\n"
 	"The format is::\n\n"
@@ -384,6 +398,17 @@ SLTM(Backend_health, 0, "Backend health check",
 	"\t|  |  +------------------- Probe window bits\n"
 	"\t|  +---------------------- Status message\n"
 	"\t+------------------------- Backend name\n"
+	"\n"
+
+	"Probe window bits are::\n\n"
+	"\t" "'4'" ": " "Good IPv4" "\n"
+	"\t" "'6'" ": " "Good IPv6" "\n"
+	"\t" "'U'" ": " "Good UNIX" "\n"
+	"\t" "'x'" ": " "Error Xmit" "\n"
+	"\t" "'X'" ": " "Good Xmit" "\n"
+	"\t" "'r'" ": " "Error Recv" "\n"
+	"\t" "'R'" ": " "Good Recv" "\n"
+	"\t" "'H'" ": " "Happy" "\n"
 	"\n"
 )
 
