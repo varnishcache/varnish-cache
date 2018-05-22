@@ -10,6 +10,8 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
+	import std;
+
 	sub vcl_backend_response {
 		if (bereq.url == "/333") {
 			set beresp.status = 333;
@@ -18,7 +20,7 @@ varnish v1 -vcl+backend {
 	}
 	sub vcl_deliver {
 		if (req.url == "/332") {
-			return (synth(332, "FOO"));
+			return (synth(332, "F" + "OO" + std.tolower("FOO")));
 		} else if (req.url == "/333") {
 			return (synth(resp.status + 1000,
 				resp.reason));
@@ -64,6 +66,7 @@ client c2 {
 	txreq -url /332
 	rxresp
 	expect resp.status == 332
+	expect resp.reason == "FOOfoo"
 	expect resp.http.restarts == 1
 	expect resp.bodylen == 1
 } -run
