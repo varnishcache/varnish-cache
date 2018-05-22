@@ -1,0 +1,15 @@
+varnishtest "empty cli command"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+varnish v1 -clierr 100 "-"
+
+client c1 {
+	txreq
+	rxresp
+} -run
