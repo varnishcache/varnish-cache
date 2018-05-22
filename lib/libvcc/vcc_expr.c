@@ -920,6 +920,7 @@ vcc_expr_add(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 				*e = vcc_expr_edit(tl, STRINGS,
 				    "\v1\n\v2", *e, e2);
 				(*e)->constant = EXPR_CONST;
+				(*e)->nstr = 1;
 				if (lit)
 					(*e)->constant |= EXPR_STR_CONST;
 			} else {
@@ -1297,6 +1298,8 @@ vcc_Expr(struct vcc *tl, vcc_type_t fmt)
 	assert(fmt != STRINGS);
 	vcc_expr0(tl, &e, fmt);
 	ERRCHK(tl);
+	assert(e->fmt == fmt);
+
 	vcc_expr_fmt(tl->fb, tl->indent, e);
 	VSB_printf(tl->fb, "\n");
 	vcc_delete_expr(e);
