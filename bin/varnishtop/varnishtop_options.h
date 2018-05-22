@@ -40,7 +40,9 @@
 #define TOP_OPT_f							\
 	VOPT("f", "[-f]", "First field only",				\
 	    "Sort and group only on the first field of each log entry."	\
-	    " This is useful when displaying e.g. stataddr entries,"	\
+	    " For log entries in the form ``prefix: value`` it is the"	\
+	    " prefix without the colon that is sorted and grouped."	\
+	    " This is useful when displaying e.g. ReqStart entries,"	\
 	    " where the first field is the client IP address."		\
 	)
 
