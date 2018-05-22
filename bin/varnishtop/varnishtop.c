@@ -322,8 +322,6 @@ dump(void)
 	struct top *tp, *tp2;
 	for (tp = VRB_MIN(t_order, &h_order); tp != NULL; tp = tp2) {
 		tp2 = VRB_NEXT(t_order, &h_order, tp);
-		if (tp->count <= 1.0)
-			break;
 		printf("%9.2f %s %*.*s\n",
 			tp->count, VSL_tags[tp->tag],
 			tp->clen, tp->clen, tp->rec_data);
