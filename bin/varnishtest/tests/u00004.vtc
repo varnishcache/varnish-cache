@@ -15,6 +15,16 @@ client c1 {
 shell -expect "fetch" "varnishtop -n ${v1_name} -1"
 shell -expect "fetch" "varnishtop -n ${v1_name} -d"
 
+# without -f
+shell -match "1\\.00 RespHeader Date: [^\\n]+\\n" {
+	varnishtop -n ${v1_name} -1 -i RespHeader
+}
+
+# with -f
+shell -match "1\\.00 RespHeader Date\\n" {
+	varnishtop -n ${v1_name} -1 -f -i RespHeader
+}
+
 shell -match "Usage: .*varnishtop <options>" \
 	"varnishtop -h"
 shell -expect "Copyright (c) 2006 Verdens Gang AS" \
