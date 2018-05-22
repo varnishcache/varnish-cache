@@ -12,7 +12,8 @@ client c1 {
 	rxresp
 } -run
 
-shell -expect "fetch" "varnishtop -n ${v1_name} -1 -d"
+shell -expect "fetch" "varnishtop -n ${v1_name} -1"
+shell -expect "fetch" "varnishtop -n ${v1_name} -d"
 
 shell -match "Usage: .*varnishtop <options>" \
 	"varnishtop -h"
