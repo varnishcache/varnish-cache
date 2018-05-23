@@ -1,6 +1,6 @@
 ---
-sudo: required
 language: c
+sudo: false
 matrix:
   fast_finish: true
   include:
@@ -14,6 +14,7 @@ matrix:
     dist: trusty
     compiler: clang
     env: CLANG=6.0 SAN_FLAGS="--enable-asan --enable-ubsan"
+    sudo: required
   - os: osx
     osx_image: xcode9.3
     compiler: clang
@@ -32,33 +33,38 @@ notifications:
     on_success: change
     use_notice: true
 before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-      brew update;
-      brew upgrade python;
-      brew install docutils sphinx-doc nghttp2;
-    fi
-  - if [[ -n "$CLANG" ]]; then
+  - |
+    if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      brew update
+      brew upgrade python
+      brew install docutils sphinx-doc nghttp2
+    elif [[ -n "$CLANG" ]]; then
       wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key |
-        sudo apt-key add -;
+        sudo apt-key add -
       sudo apt-add-repository -y
-        "deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-$CLANG main";
-      sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys BA9EF27F;
+        "deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-$CLANG main"
+      sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys BA9EF27F
       sudo apt-add-repository -y
-        "deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu trusty main";
-      sudo apt-get update;
-      sudo apt-get install -y clang-$CLANG llvm-$CLANG;
-      export CC=clang-$CLANG;
-      export CONFIGURE_ARGS="--enable-developer-warnings --enable-debugging-symbols --disable-stack-protector --with-persistent-storage ${SAN_FLAGS}";
-      export ASAN_OPTIONS=abort_on_error=1,detect_odr_violation=1,detect_leaks=1,detect_stack_use_after_return=1,detect_invalid_pointer_pairs=1,handle_segv=0,handle_sigbus=0,use_sigaltstack=0,disable_coredump=0;
-      export LSAN_OPTIONS=abort_on_error=1,use_sigaltstack=0,suppressions=$(pwd)/tools/lsan.suppr;
-      export TSAN_OPTIONS=abort_on_error=1,halt_on_error=1,use_sigaltstack=0,suppressions=$(pwd)/tools/tsan.suppr;
-      export UBSAN_OPTIONS=halt_on_error=1,print_stacktrace=1,use_sigaltstack=0,suppressions=$(pwd)/tools/ubsan.suppr;
+        "deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu trusty main"
+      sudo apt-get update
+      sudo apt-get install -y clang-$CLANG llvm-$CLANG
+      export CC=clang-$CLANG
+      export CONFIGURE_ARGS="--enable-developer-warnings --enable-debugging-symbols --disable-stack-protector --with-persistent-storage ${SAN_FLAGS}"
+      export ASAN_OPTIONS=abort_on_error=1,detect_odr_violation=1,detect_leaks=1,detect_stack_use_after_return=1,detect_invalid_pointer_pairs=1,handle_segv=0,handle_sigbus=0,use_sigaltstack=0,disable_coredump=0
+      export LSAN_OPTIONS=abort_on_error=1,use_sigaltstack=0,suppressions=$(pwd)/tools/lsan.suppr
+      export TSAN_OPTIONS=abort_on_error=1,halt_on_error=1,use_sigaltstack=0,suppressions=$(pwd)/tools/tsan.suppr
+      export UBSAN_OPTIONS=halt_on_error=1,print_stacktrace=1,use_sigaltstack=0,suppressions=$(pwd)/tools/ubsan.suppr
     fi
   - ./autogen.sh
   - ./configure ${CONFIGURE_ARGS}
 script:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-      export PYTHONPATH=`brew --prefix`/lib/python2.7/site-packages;
-      export PATH="/usr/local/opt/sphinx-doc/bin:$PATH"; fi
-  - if [[ "$TRAVIS_PULL_REQUEST" != "false" ]]; then make -j3 distcheck; fi
-  - if [[ "$TRAVIS_PULL_REQUEST" == "false" ]]; then make -j3 check VERBOSE=1; fi
+  - |
+    if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      export PYTHONPATH=`brew --prefix`/lib/python2.7/site-packages
+      export PATH="/usr/local/opt/sphinx-doc/bin:$PATH"
+    fi
+    if [[ "$TRAVIS_PULL_REQUEST" != "false" ]]; then
+      make -j3 distcheck
+    else
+      make -j3 check VERBOSE=1
+    fi
