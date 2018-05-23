@@ -39,12 +39,11 @@ before_install:
       brew upgrade python
       brew install docutils sphinx-doc nghttp2
     elif [[ -n "$CLANG" ]]; then
-      wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key |
-        sudo apt-key add -
-      sudo apt-add-repository -y
+      wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+      sudo apt-add-repository -y \
         "deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-$CLANG main"
       sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys BA9EF27F
-      sudo apt-add-repository -y
+      sudo apt-add-repository -y \
         "deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu trusty main"
       sudo apt-get update
       sudo apt-get install -y clang-$CLANG llvm-$CLANG
