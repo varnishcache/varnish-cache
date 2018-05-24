@@ -401,9 +401,7 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 	VSB_indent(vsb, 2);
 	PAN_CheckMagic(vsb, bo, BUSYOBJ_MAGIC);
 	pan_ws(vsb, bo->ws);
-	AN(bo->vfc);
 	VSB_printf(vsb, "retries = %d, ", bo->retries);
-	VSB_printf(vsb, "failed = %d, ", bo->vfc->failed);
 	VSB_printf(vsb, "flags = {");
 	p = "";
 /*lint -save -esym(438,p) -e539 */
@@ -416,7 +414,8 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 	if (VALID_OBJ(bo->htc, HTTP_CONN_MAGIC))
 		pan_htc(vsb, bo->htc);
 
-	pan_vfp(vsb, bo->vfc);
+	if (bo->vfc)
+		pan_vfp(vsb, bo->vfc);
 
 	VDI_Panic(bo->director_req, vsb, "director_req");
 	if (bo->director_resp == bo->director_req)
