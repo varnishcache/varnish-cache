@@ -127,6 +127,7 @@ VSUB_run(struct vsb *sb, vsub_func_f *func, void *priv, const char *name,
 	}
 	closefd(&p[1]);
 	(void)VLU_File(p[0], vsub_vlu, &sp, 0);
+	closefd(&p[0]);
 	if (sp.maxlines >= 0 && sp.lines > sp.maxlines)
 		VSB_printf(sb, "[%d lines truncated]\n",
 		    sp.lines - sp.maxlines);
