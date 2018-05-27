@@ -1,3 +1,4 @@
 -efile(451, "varnishhist_profiles.h")
 -efile(451, "varnishhist_options.h")
 -sem(usage, r_no)
+-sem(profile_error, r_no)

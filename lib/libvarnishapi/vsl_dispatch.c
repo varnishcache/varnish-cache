@@ -582,7 +582,6 @@ vtx_retire(struct VSLQ *vslq, struct vtx **pvtx)
 		vslq->n_cache++;
 	} else {
 		FREE_OBJ(vtx);
-		vtx = NULL;
 	}
 }
 
@@ -693,7 +692,7 @@ vtx_parse_link(const char *str, enum VSL_transaction_e *ptype,
 		return (0);
 
 	/* transaction type */
-	for (et = 0; et < VSL_t__MAX; et++)
+	for (et = VSL_t_unknown; et < VSL_t__MAX; et++)
 		if (!strcmp(type, vsl_t_names[et]))
 			break;
 	if (et >= VSL_t__MAX)
@@ -709,7 +708,7 @@ vtx_parse_link(const char *str, enum VSL_transaction_e *ptype,
 		return (2);
 
 	/* transaction reason */
-	for (er = 0; er < VSL_r__MAX; er++)
+	for (er = VSL_r_unknown; er < VSL_r__MAX; er++)
 		if (!strcmp(reason, vsl_r_names[er]))
 			break;
 	if (er >= VSL_r__MAX)

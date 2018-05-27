@@ -63,7 +63,7 @@ static struct VUT *vut;
 static int hist_low;
 static int hist_high;
 static int hist_range;
-static int hist_buckets;
+static unsigned hist_buckets;
 
 static pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
 
@@ -143,7 +143,7 @@ update(void)
 	unsigned bm[n], bh[n];
 	unsigned max;
 	unsigned i, j, scale;
-	int k, l;
+	unsigned k, l;
 
 	erase();
 
@@ -161,10 +161,11 @@ update(void)
 		mvprintw(0, 0, "%*s", COLS - 1, ident);
 
 	/* count our flock */
-	for (i = 0; i < n; ++i)
-		bm[i] = bh[i] = 0;
+	memset(bm, 0, sizeof bm);
+	memset(bh, 0, sizeof bh);
 	for (k = 0, max = 1; k < hist_buckets; ++k) {
 		l = k * n / hist_buckets;
+		assert(l < n);
 		bm[l] += bucket_miss[k];
 		bh[l] += bucket_hit[k];
 		if (bm[l] + bh[l] > max)
@@ -413,13 +414,13 @@ do_curses(void *arg)
 			break;
 		case '\032':	/* Ctrl-Z */
 			endwin();
-			raise(SIGTSTP);
+			AZ(raise(SIGTSTP));
 			break;
 		case '\003':	/* Ctrl-C */
 		case '\021':	/* Ctrl-Q */
 		case 'Q':
 		case 'q':
-			raise(SIGINT);
+			AZ(raise(SIGINT));
 			endwin();
 			return (NULL);
 		case '0':
@@ -432,7 +433,7 @@ do_curses(void *arg)
 		case '7':
 		case '8':
 		case '9':
-			delay = 1 << (ch - '0');
+			delay = 1U << (ch - '0');
 			break;
 		case '+':
 			delay /= 2;
@@ -483,7 +484,7 @@ usage(int status)
 	exit(status);
 }
 
-static void
+static void v_noreturn_
 profile_error(const char *s)
 {
 	fprintf(stderr, "-P: '%s' is not a valid"
@@ -506,7 +507,7 @@ main(int argc, char **argv)
 	char *colon;
 	const char *ptag, *profile = "responsetime";
 	pthread_t thr;
-	int fnum = -1;
+	int fnum;
 	struct profile cli_p = {0};
 
 	vut = VUT_InitProg(argc, argv, &vopt_spec);

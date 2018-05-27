@@ -1,1 +1,4 @@
 -efile(451, "tbl_*.h")		// No include guard
+
+-e784	// Nul character truncated from string
+
