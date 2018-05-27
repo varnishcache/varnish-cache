@@ -374,6 +374,7 @@ parse_data(struct stream *s, struct frame *f)
 	struct http *hp;
 	uint32_t size = f->size;
 	char *data = f->data;
+
 	CHECK_OBJ_NOTNULL(f, FRAME_MAGIC);
 	CHECK_OBJ_NOTNULL(s, STREAM_MAGIC);
 	CAST_OBJ_NOTNULL(hp, s->hp, HTTP_MAGIC);;
@@ -1366,7 +1367,7 @@ cmd_tx11obj(CMD_ARGS)
 	int scheme_done = 1;
 	uint32_t stid = 0, pstid;
 	uint32_t weight = 16;
-	int exclusive = 0;
+	uint32_t exclusive = 0;
 	char *buf;
 	struct hpk_iter *iter;
 	struct frame f;
@@ -2257,7 +2258,7 @@ cmd_rxmsg(CMD_ARGS)
 		CHKFRAME(f->type, TYPE_CONTINUATION, rcv, *av);
 	}
 
-	while (!end_stream && (f = rxstuff(s))) {
+	while (!end_stream && (f = rxstuff(s)) != NULL) {
 		rcv++;
 		CHKFRAME(f->type, TYPE_DATA, rcv, *av);
 		end_stream = f->flags & END_STREAM;
@@ -2695,25 +2696,27 @@ void
 b64_settings(const struct http *hp, const char *s)
 {
 	uint16_t i;
-	uint64_t v;
+	uint64_t v, vv;
 	const char *buf;
 	int shift;
+
 	while (*s) {
 		v = 0;
 		for (shift = 42; shift >= 0; shift -= 6) {
 			if (*s >= 'A' && *s <= 'Z')
-				v |= (uint64_t)(*s - 'A') << shift;
+				vv = (*s - 'A');
 			else if (*s >= 'a' && *s <= 'z')
-				v |= (uint64_t)((*s - 'a') + 26) << shift;
+				vv = (*s - 'a') + 26;
 			else if (*s >= '0' && *s <= '9')
-				v |= (uint64_t)((*s - '0') + 52) << shift;
+				vv = (*s - '0') + 52;
 			else if (*s == '-')
-				v |= (uint64_t)62 << shift;
+				vv = 62;
 			else if (*s == '_')
-				v |= (uint64_t)63 << shift;
+				vv = 63;
 			else
 				vtc_fatal(hp->vl,
 				    "Bad \"HTTP2-Settings\" header");
+			v |= vv << shift;
 			s++;
 		}
 		i = v >> 32;

@@ -33,7 +33,7 @@ struct hpk_iter;
 struct hpk_ctx * HPK_NewCtx(uint32_t tblsize);
 void HPK_FreeCtx(struct hpk_ctx *ctx);
 
-struct hpk_iter * HPK_NewIter(struct hpk_ctx *ctx, char *buf, int size);
+struct hpk_iter * HPK_NewIter(struct hpk_ctx *ctx, void *buf, int size);
 void HPK_FreeIter(struct hpk_iter *iter);
 
 enum hpk_result HPK_DecHdr(struct hpk_iter *iter, struct hpk_hdr *header);

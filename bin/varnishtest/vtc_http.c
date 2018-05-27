@@ -1924,7 +1924,8 @@ http_process(struct vtclog *vl, const char *spec, int sock, int *sfd,
 	pthread_cleanup_push(http_process_cleanup, hp);
 	parse_string(spec, http_cmds, hp, vl);
 	retval = hp->fd;
-	pthread_cleanup_pop(1);
+	pthread_cleanup_pop(0);
+	http_process_cleanup(hp);
 	return (retval);
 }
 

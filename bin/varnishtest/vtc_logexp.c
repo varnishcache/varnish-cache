@@ -153,7 +153,7 @@ struct logexp {
 	int				tag_last;
 
 	int				d_arg;
-	int				g_arg;
+	enum VSL_grouping_e		g_arg;
 	char				*query;
 
 	struct vsm			*vsm;
@@ -171,7 +171,8 @@ logexp_delete_tests(struct logexp *le)
 	struct logexp_test *test;
 
 	CHECK_OBJ_NOTNULL(le, LOGEXP_MAGIC);
-	while ((test = VTAILQ_FIRST(&le->tests))) {
+	while (!VTAILQ_EMPTY(&le->tests)) {
+		test = VTAILQ_FIRST(&le->tests);
 		CHECK_OBJ_NOTNULL(test, LOGEXP_TEST_MAGIC);
 		VTAILQ_REMOVE(&le->tests, test, list);
 		VSB_destroy(&test->str);
@@ -262,7 +263,7 @@ logexp_dispatch(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 
 	CAST_OBJ_NOTNULL(le, priv, LOGEXP_MAGIC);
 
-	for (i = 0; (t = pt[i]); i++) {
+	for (i = 0; (t = pt[i]) != NULL; i++) {
 		while (1 == VSL_Next(t->c)) {
 			if (!VSL_Match(vsl, t->c))
 				continue;
@@ -510,6 +511,7 @@ void
 cmd_logexpect(CMD_ARGS)
 {
 	struct logexp *le, *le2;
+	int i;
 
 	(void)priv;
 	(void)cmd;
@@ -579,10 +581,11 @@ cmd_logexpect(CMD_ARGS)
 		if (!strcmp(*av, "-g")) {
 			if (av[1] == NULL)
 				vtc_fatal(le->vl, "Missing -g argument");
-			le->g_arg = VSLQ_Name2Grouping(av[1], strlen(av[1]));
-			if (le->g_arg < 0)
+			i = VSLQ_Name2Grouping(av[1], strlen(av[1]));
+			if (i < 0)
 				vtc_fatal(le->vl, "Unknown grouping '%s'",
 				    av[1]);
+			le->g_arg = (enum VSL_grouping_e)i;
 			av++;
 			continue;
 		}
