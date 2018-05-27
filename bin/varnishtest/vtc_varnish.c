@@ -223,7 +223,7 @@ varnishlog_thread(void *priv)
 
 	c = NULL;
 	opt = 0;
-	while (v->fds[1] > 0 || c != NULL) {
+	while (v->fds[1] > 0 || c != NULL) {	//lint !e845 bug in flint
 		if (c == NULL) {
 			if (vtc_error)
 				break;

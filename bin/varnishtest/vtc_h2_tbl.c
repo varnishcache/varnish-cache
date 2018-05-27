@@ -26,14 +26,15 @@
  * SUCH DAMAGE.
  */
 
+#include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
-#include <stdint.h>
 
 #include "vdef.h"
 
 #include "vas.h"
+#include "vqueue.h"
 
 #include "hpack.h"
 #include "vtc_h2_priv.h"
@@ -77,7 +78,7 @@ struct hpk_ctx {
 
 
 struct hpk_iter *
-HPK_NewIter(struct hpk_ctx *ctx, char *buf, int size)
+HPK_NewIter(struct hpk_ctx *ctx, void *buf, int size)
 {
 	struct hpk_iter *iter = malloc(sizeof(*iter));
 	assert(iter);
@@ -87,7 +88,7 @@ HPK_NewIter(struct hpk_ctx *ctx, char *buf, int size)
 	iter->ctx = ctx;
 	iter->orig = buf;
 	iter->buf = buf;
-	iter->end = buf + size;
+	iter->end = iter->buf + size;
 	return (iter);
 }
 

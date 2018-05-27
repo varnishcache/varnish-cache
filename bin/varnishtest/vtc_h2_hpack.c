@@ -26,6 +26,7 @@
  * SUCH DAMAGE.
  */
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,6 +35,7 @@
 #include "vdef.h"
 
 #include "vas.h"
+#include "vqueue.h"
 
 #include "hpack.h"
 #include "vtc_h2_priv.h"

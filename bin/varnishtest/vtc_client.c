@@ -237,7 +237,8 @@ client_thread(void *priv)
 	}
 	vtc_log(vl, 2, "Ending");
 	VSB_destroy(&vsb);
-	pthread_cleanup_pop(1);
+	pthread_cleanup_pop(0);
+	vtc_logclose(vl);
 	return (NULL);
 }
 
