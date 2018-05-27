@@ -29,6 +29,7 @@
 #include "config.h"
 
 #include <errno.h>
+#include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -125,11 +126,10 @@ barrier_sock_thread(void *priv)
 {
 	struct barrier *b;
 	struct vtclog *vl;
-	struct timeval tmo;
 	const char *err;
 	char abuf[16], pbuf[6];
 	int i, sock, *conns;
-	fd_set rfds;
+	struct pollfd pfd[1];
 
 	CAST_OBJ_NOTNULL(b, priv, BARRIER_MAGIC);
 	assert(b->type == BARRIER_SOCK);
@@ -161,12 +161,10 @@ barrier_sock_thread(void *priv)
 	AN(conns);
 
 	while (b->active) {
-		FD_ZERO(&rfds);
-		FD_SET(sock, &rfds);
+		pfd[0].fd = sock;
+		pfd[0].events = POLLIN;
 
-		tmo.tv_sec = 1;
-		tmo.tv_usec = 0;
-		i = select(sock + 1, &rfds, NULL, NULL, &tmo);
+		i = poll(pfd, 1, 1000);
 		if (i == 0)
 			continue;
 		if (i < 0) {
@@ -219,7 +217,8 @@ barrier_sock_thread(void *priv)
 	macro_undef(vl, b->name, "sock");
 	closefd(&sock);
 	free(conns);
-	pthread_cleanup_pop(1);
+	pthread_cleanup_pop(0);
+	vtc_logclose(vl);
 	return (NULL);
 }
 
