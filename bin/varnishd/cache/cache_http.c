@@ -155,7 +155,7 @@ HTTP_create(void *p, uint16_t nhttp, unsigned len)
 	hp->hd = (void*)(hp + 1);
 	hp->shd = nhttp;
 	hp->hdf = (void*)(hp->hd + nhttp);
-	assert((unsigned char*)p + len == hp->hdf + nhttp);
+	assert((unsigned char*)p + len == hp->hdf + PRNDUP(nhttp));
 	return (hp);
 }
 
