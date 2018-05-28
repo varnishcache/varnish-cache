@@ -1,0 +1,129 @@
+varnishtest "Check http_max_hdr values"
+
+server s1 -repeat 17 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		return(pass);
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+varnish v1 -cliok {param.set http_max_hdr 33}
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+varnish v1 -cliok {param.set http_max_hdr 34}
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+varnish v1 -cliok {param.set http_max_hdr 35}
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+varnish v1 -cliok {param.set http_max_hdr 36}
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+varnish v1 -cliok {param.set http_max_hdr 37}
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+varnish v1 -cliok {param.set http_max_hdr 38}
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+varnish v1 -cliok {param.set http_max_hdr 39}
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+varnish v1 -cliok {param.set http_max_hdr 40}
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+varnish v1 -cliok {param.set http_max_hdr 41}
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+varnish v1 -cliok {param.set http_max_hdr 42}
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+varnish v1 -cliok {param.set http_max_hdr 43}
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+varnish v1 -cliok {param.set http_max_hdr 44}
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+varnish v1 -cliok {param.set http_max_hdr 45}
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+varnish v1 -cliok {param.set http_max_hdr 46}
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+varnish v1 -cliok {param.set http_max_hdr 47}
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+varnish v1 -cliok {param.set http_max_hdr 48}
+
+client c1 {
+	txreq
+	rxresp
+} -run
