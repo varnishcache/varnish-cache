@@ -31,6 +31,21 @@ release process.
 Varnish Cache 6.0.1 (ongoing)
 ================================
 
+varnishstat
+-----------
+
+* The counters
+
+  * ``sess_fail_econnaborted``
+  * ``sess_fail_eintr``
+  * ``sess_fail_emfile``
+  * ``sess_fail_ebadf``
+  * ``sess_fail_enomem``
+  * ``sess_fail_other``
+
+  now break down the detailled reason for session accept failures, the
+  sum of which continues to be counted in ``sess_fail``.
+
 VCL and bundled VMODs
 ---------------------
 

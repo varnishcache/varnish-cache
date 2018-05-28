@@ -33,9 +33,46 @@
 .. varnish_vsc:: sess_fail
 	:oneliner:	Session accept failures
 
-	Count of failures to accept TCP connection.  Either the client
-	changed its mind, or the kernel ran out of some resource like file
-	descriptors.
+	Count of failures to accept TCP connection.
+
+	This counter is the sum of the sess_fail_* counters, which
+	give more detailled information.
+
+.. varnish_vsc:: sess_fail_econnaborted
+	:oneliner:	Session accept failures: connection aborted
+
+	Detailled reason for sess_fail: Connection aborted by the
+	client, usually harmless.
+
+.. varnish_vsc:: sess_fail_eintr
+	:oneliner:	Session accept failures: interrupted system call
+
+	Detailled reason for sess_fail: The accept() call was
+	interrupted, usually harmless
+
+.. varnish_vsc:: sess_fail_emfile
+	:oneliner:	Session accept failures: too many open files
+
+	Detailled reason for sess_fail: No file descriptor was
+	available. Consider raising RLIMIT_NOFILE (see ulimit -n).
+
+.. varnish_vsc:: sess_fail_ebadf
+	:oneliner:	Session accept failures: bad file descriptor
+
+	Detailled reason for sess_fail: The listen socket file
+	descriptor was invalid. Should never happen.
+
+.. varnish_vsc:: sess_fail_enomem
+	:oneliner:	Session accept failures: not enough memory
+
+	Detailled reason for sess_fail: Most likely insufficient
+	socket buffer memory. Should never happen
+
+.. varnish_vsc:: sess_fail_other
+	:oneliner:	Session accept failures: other
+
+	Detailled reason for sess_fail: neither of the above, see
+	Debug log (varnishlog -g raw -I Debug:^Accept).
 
 .. varnish_vsc:: client_req_400
 	:oneliner:	Client requests received, subject to 400 errors
