@@ -82,7 +82,7 @@ VCL and bundled VMODs
 ---------------------
 
 * ``return (fetch)`` is no longer allowed in ``vcl_hit {}``, use
-  ``return (miss)`` instread. Note that ``return (fetch)`` has been
+  ``return (miss)`` instead. Note that ``return (fetch)`` has been
   deprecated since 4.0.
 
 * Fix behaviour of restarts to how it was originally intended:
@@ -113,11 +113,11 @@ VCL and bundled VMODs
 
 * ``beresp.backend.ip`` is retired as of VCL 4.1.
 
-* workspace overflows in ``std.log()`` now trigger a VCL failure
+* workspace overflows in ``std.log()`` now trigger a VCL failure.
 
-* workspace overflows in ``std.syslog()`` are ignored
+* workspace overflows in ``std.syslog()`` are ignored.
 
-* added ``return(restart)`` from ``vcl_recv{}``
+* added ``return(restart)`` from ``vcl_recv{}``.
 
 * The ``alg`` argument of the ``shard`` director ``.reconfigure()``
   method has been removed - the consistent hashing ring is now always
@@ -190,7 +190,7 @@ VCL and bundled VMODs
   now need to be named.
 
 * Integers in VCL are now 64 bits wide across all platforms
-  (implemented as ``int64_t`` C type) , but due to implementation
+  (implemented as ``int64_t`` C type), but due to implementation
   specifics of the VCL compiler (VCC), integer literals' precision is
   limited to that of a VCL real (``double`` C type, roughly 53 bits).
 
@@ -206,11 +206,11 @@ Logging / statistics
 --------------------
 
 * Turned off PROXY protocol debugging by default, can be enabled with
-  the ``protocol`` debug flag
+  the ``protocol`` debug flag.
 
-* added ``cache_hit_grace`` statistics counter
+* added ``cache_hit_grace`` statistics counter.
 
-* added ``n_lru_limited`` counter
+* added ``n_lru_limited`` counter.
 
 * The byte counters in ReqAcct now show the numbers reported from the
   operating system rather than what we anticipated to send. This will give
@@ -266,7 +266,7 @@ C APIs (for vmod and utility authors)
   ``manual``, the auto-SYNOPSIS is left out, for VMOD authors who
   prefer to write their own.
 
-* All varnish internal ``SHA256*`` symbols have been renamed to
+* All Varnish internal ``SHA256*`` symbols have been renamed to
   ``VSHA256*``
 
 * libvarnish now has ``VNUM_duration()`` to convert from a VCL
@@ -281,7 +281,7 @@ C APIs (for vmod and utility authors)
   * ``__unused`` -> ``v_unused_``
   * ``__attribute__((__noreturn__)`` -> ``v_noreturn_``
 
-    * ENUMs are now fixed pointers per vcl
+* ENUMs are now fixed pointers per vcl.
 
 * Added ``VRT_blob()`` utility function to create a blob as a copy
   of some chunk of data on the workspace.
@@ -294,13 +294,13 @@ Other changes relevant for VMODs
 --------------------------------
 
 * ``PRIV_*`` function/method arguments are not excluded from
-  auto-generated vmod documentation
+  auto-generated vmod documentation.
 
 Fixed bugs which may influence VCL behaviour
 --------------------------------------------
 
 * After reusing a backend connection fails once, a fresh connection
-  will be opened (2135)
+  will be opened (2135_).
 
 .. _2135: https://github.com/varnishcache/varnish-cache/pull/2135
 
