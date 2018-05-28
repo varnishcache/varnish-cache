@@ -489,23 +489,32 @@ vca_accept_task(struct worker *wrk, void *arg)
 		if (i < 0) {
 			switch (errno) {
 			case ECONNABORTED:
+				wrk->stats->sess_fail_econnaborted++;
+				break;
+			case EINTR:
+				wrk->stats->sess_fail_eintr++;
 				break;
 			case EMFILE:
-				VSL(SLT_Debug, ls->sock, "Too many open files");
+				wrk->stats->sess_fail_emfile++;
 				vca_pace_bad();
 				break;
 			case EBADF:
-				VSL(SLT_Debug, ls->sock, "Accept failed: %s",
-				    strerror(errno));
+				wrk->stats->sess_fail_ebadf++;
+				vca_pace_bad();
+				break;
+			case ENOBUFS:
+			case ENOMEM:
+				wrk->stats->sess_fail_enomem++;
 				vca_pace_bad();
 				break;
 			default:
-				VSL(SLT_Debug, ls->sock, "Accept failed: %s",
-				    strerror(errno));
+				wrk->stats->sess_fail_other++;
 				vca_pace_bad();
 				break;
 			}
 			wrk->stats->sess_fail++;
+			VSL(SLT_Debug, ls->sock, "Accept failed: %s",
+			    strerror(errno));
 			(void)Pool_TrySumstat(wrk);
 			continue;
 		}
