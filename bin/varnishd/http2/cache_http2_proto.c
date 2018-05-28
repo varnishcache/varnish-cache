@@ -830,11 +830,12 @@ h2_frame_complete(struct http_conn *htc)
 	if (l < 9)
 		return (HTC_S_MORE);
 	u = vbe32dec(htc->rxbuf_b) >> 8;
-	if (l > h2->local_settings.max_frame_size + 9)
+	if (l >= u + 9)
+		return (HTC_S_COMPLETE);
+	else if (l > h2->local_settings.max_frame_size + 9)
 		return (HTC_S_OVERFLOW);
-	if (l < u + 9)	// XXX: Only for !DATA frames
-		return (HTC_S_MORE);
-	return (HTC_S_COMPLETE);
+
+	return (HTC_S_MORE);
 }
 
 /**********************************************************************/
