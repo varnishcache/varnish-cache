@@ -40,6 +40,7 @@ CMD(process)
 CMD(server)
 CMD(setenv)
 CMD(shell)
+CMD(syslog)
 CMD(varnish)
 CMD(varnishtest)
 #undef CMD

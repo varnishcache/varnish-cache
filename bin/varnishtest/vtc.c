@@ -472,6 +472,7 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 
 	init_macro();
 	init_server();
+	init_syslog();
 
 	vsb = VSB_new_auto();
 	AN(vsb);
