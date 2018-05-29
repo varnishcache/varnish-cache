@@ -105,8 +105,8 @@ vss_parse(char *str, char **addr, char **port)
  */
 
 int
-VSS_resolver(const char *addr, const char *def_port, vss_resolved_f *func,
-    void *priv, const char **err)
+VSS_resolver_socktype(const char *addr, const char *def_port,
+    vss_resolved_f *func, void *priv, const char **err, int socktype)
 {
 	struct addrinfo hints, *res0, *res;
 	struct suckaddr *vsa;
@@ -126,7 +126,7 @@ VSS_resolver(const char *addr, const char *def_port, vss_resolved_f *func,
 		def_port = adp;
 
 	memset(&hints, 0, sizeof hints);
-	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_socktype = socktype;
 	hints.ai_flags = AI_PASSIVE;
 	ret = getaddrinfo(hop, def_port, &hints, &res0);
 	free(h);
@@ -145,4 +145,12 @@ VSS_resolver(const char *addr, const char *def_port, vss_resolved_f *func,
 	}
 	freeaddrinfo(res0);
 	return (ret);
+}
+
+int
+VSS_resolver(const char *addr, const char *def_port, vss_resolved_f *func,
+    void *priv, const char **err)
+{
+	return (VSS_resolver_socktype(
+	    addr, def_port, func, priv, err, SOCK_STREAM));
 }
