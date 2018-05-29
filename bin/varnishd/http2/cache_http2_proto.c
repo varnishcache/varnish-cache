@@ -964,6 +964,7 @@ static int
 h2_sweep(struct worker *wrk, struct h2_sess *h2)
 {
 	int tmo = 0;
+	int nprio = 0;
 	struct h2_req *r2, *r22;
 
 	ASSERT_RXTHR(h2);
@@ -994,13 +995,21 @@ h2_sweep(struct worker *wrk, struct h2_sess *h2)
 				continue;
 			}
 			break;
+		case H2_S_IDLE:
+			/* This stream was created from receiving a
+			 * PRIORITY frame, and should not be counted
+			 * as an active stream keeping the connection
+			 * open. */
+			AZ(r2->scheduled);
+			nprio++;
+			break;
 		default:
 			break;
 		}
 	}
 	if (tmo)
 		return (0);
-	return (h2->refcnt > 1);
+	return ((h2->refcnt - nprio) > 1);
 }
 
 
