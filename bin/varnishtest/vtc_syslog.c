@@ -247,7 +247,7 @@ syslog_new(const char *name, struct vtclog *vl)
 {
 	struct syslog_srv *s;
 
-	VTC_CHECK_NAME(vl, name, "Syslog", 's');
+	VTC_CHECK_NAME(vl, name, "Syslog", 'S');
 	ALLOC_OBJ(s, SYSLOG_SRV_MAGIC);
 	AN(s);
 	REPLACE(s->name, name);
@@ -511,16 +511,16 @@ syslog_wait(struct syslog_srv *s)
 
 /* SECTION: syslog syslog
  *
- * Define and interact with syslog instances.
+ * Define and interact with syslog instances (for use with haproxy)
  *
  * To define a syslog server, you'll use this syntax::
  *
- * syslog sNAME
+ *     syslog SNAME
  *
  * Arguments:
  *
- * sNAME
- *     Identify the syslog server with a string which must start with 's'.
+ * SNAME
+ *     Identify the syslog server with a string which must start with 'S'.
  *
  * \-level STRING
  *         Set the default syslog priority level used by any subsequent "recv"
