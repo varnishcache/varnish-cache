@@ -6,6 +6,7 @@ PROG_SRC += vtc_logexp.c
 PROG_SRC += vtc_main.c
 PROG_SRC += vtc_barrier.c
 PROG_SRC += vtc_server.c
+PROG_SRC += vtc_syslog.c
 PROG_SRC += vtc_varnish.c
 PROG_SRC += vtc_process.c
 
