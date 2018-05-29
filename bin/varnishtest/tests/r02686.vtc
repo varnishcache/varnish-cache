@@ -1,15 +1,15 @@
 varnishtest "varnishtop -1/-d"
 
 server s1 {
-        rxreq
-        txresp
+	rxreq
+	txresp
 } -start
 
 varnish v1 -vcl+backend { } -start
 
 client c1 {
-        txreq
-        rxresp
+	txreq
+	rxresp
 } -run
 
 process p1 -dump {varnishtop -n ${v1_name} -d -i ReqMethod} -start
