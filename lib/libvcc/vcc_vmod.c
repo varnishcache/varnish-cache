@@ -163,6 +163,7 @@ vcc_ParseImport(struct vcc *tl)
 	struct symbol *msym;
 	const struct vmod_data *vmd;
 	struct vjsn *vj;
+	int again = 0;
 
 	t1 = tl->t;
 	SkipToken(tl, ID);		/* "import" */
@@ -182,19 +183,15 @@ vcc_ParseImport(struct vcc *tl)
 		return;
 	}
 	if (msym != NULL) {
-		VSB_printf(tl->sb, "Module %.*s already imported.\n",
-		    PF(mod));
-		vcc_ErrWhere2(tl, t1, tl->t);
-		VSB_printf(tl->sb, "Previous import was here:\n");
-		vcc_ErrWhere2(tl, msym->def_b, msym->def_e);
-		return;
-	}
+		again = 1;
+	} else {
 
-	msym = VCC_SymbolGet(tl, SYM_VMOD, SYMTAB_CREATE, XREF_NONE);
-	ERRCHK(tl);
-	AN(msym);
-	msym->def_b = t1;
-	msym->def_e = tl->t;
+		msym = VCC_SymbolGet(tl, SYM_VMOD, SYMTAB_CREATE, XREF_NONE);
+		ERRCHK(tl);
+		AN(msym);
+		msym->def_b = t1;
+		msym->def_e = tl->t;
+	}
 
 	if (tl->t->tok == ID) {
 		if (!vcc_IdIs(tl->t, "from")) {
@@ -222,6 +219,10 @@ vcc_ParseImport(struct vcc *tl)
 	}
 
 	SkipToken(tl, ';');
+
+	if (!again)
+		msym->def_e = tl->t;
+
 
 	if (VFIL_searchpath(tl->vmod_path,
 	    vcc_path_dlopen, &hdl, fn, &fnpx)) {
@@ -287,6 +288,19 @@ vcc_ParseImport(struct vcc *tl)
 		return;
 	}
 
+	if (again && strcmp(vmd->file_id, msym->extra)) {
+		VSB_printf(tl->sb,
+		    "Different version of module %.*s already imported.\n",
+		    PF(mod));
+		vcc_ErrWhere2(tl, t1, tl->t);
+		VSB_printf(tl->sb, "Previous import was here:\n");
+		vcc_ErrWhere2(tl, msym->def_b, msym->def_e);
+	}
+	if (again) {
+		AZ(dlclose(hdl));
+		return;
+	}
+
 	ifp = New_IniFin(tl);
 
 	VSB_printf(ifp->ini, "\tif (VRT_Vmod_Init(ctx,\n");
@@ -317,6 +331,7 @@ vcc_ParseImport(struct vcc *tl)
 	AN(vj);
 	msym->eval_priv = vj;
 	msym->wildcard = vcc_json_wildcard;
+	msym->extra = TlDup(tl, vmd->file_id);
 
 	vcc_json_always(tl, msym);
 
