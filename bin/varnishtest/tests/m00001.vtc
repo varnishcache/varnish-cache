@@ -66,11 +66,6 @@ varnish v1 -cliok "vcl.discard vcl2"
 varnish v1 -cliok "vcl.list"
 varnish v1 -cliok "debug.vmod"
 
-varnish v1 -errvcl {Module std already imported.} {
-	import std;
-	import std;
-}
-
 varnish v1 -errvcl {Symbol type (vmod) can not be used in expression.} {
 	import std;
 
