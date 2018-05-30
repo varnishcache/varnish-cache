@@ -48,7 +48,6 @@
 
 #include "vdef.h"
 
-#include "miniobj.h"
 #include "vcurses.h"
 #include "vapi/vsl.h"
 #include "vapi/vsm.h"

@@ -46,8 +46,6 @@
 #include "vtim.h"
 #include "vcl.h"
 
-#include "cache/cache_director.h"
-
 #include "vcc_if.h"
 
 VCL_VOID v_matchproto_(td_std_set_ip_tos)
