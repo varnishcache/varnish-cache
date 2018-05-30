@@ -179,7 +179,7 @@ struct vrt_ctx {
 
 	unsigned			syntax;
 	unsigned			method;
-	unsigned			*handling;
+	unsigned			*handling;	// not in director context
 	unsigned			vclver;
 
 	struct vsb			*msg;	// Only in ...init()
