@@ -812,9 +812,34 @@ h2_vfp_body(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr, ssize_t *lp)
 	return (retval);
 }
 
+static void
+h2_vfp_body_fini(struct vfp_ctx *vc, struct vfp_entry *vfe)
+{
+	struct h2_req *r2;
+	struct h2_sess *h2;
+
+	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
+	CAST_OBJ_NOTNULL(r2, vfe->priv1, H2_REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(r2->req, REQ_MAGIC);
+	h2 = r2->h2sess;
+
+	if (vc->failed) {
+		CHECK_OBJ_NOTNULL(r2->req->wrk, WORKER_MAGIC);
+		h2_tx_rst(r2->req->wrk, h2, r2, r2->stream,
+		    H2SE_REFUSED_STREAM);
+		Lck_Lock(&h2->sess->mtx);
+		r2->error = H2SE_REFUSED_STREAM;
+		if (h2->mailcall == r2)
+			AZ(pthread_cond_signal(h2->cond));
+		Lck_Unlock(&h2->sess->mtx);
+	}
+}
+
 static const struct vfp h2_body = {
 	.name = "H2_BODY",
 	.pull = h2_vfp_body,
+	.fini = h2_vfp_body_fini
 };
 
 void v_matchproto_(vtr_req_body_t)
