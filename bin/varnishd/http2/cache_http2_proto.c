@@ -130,6 +130,31 @@ h2_connectionerror(uint32_t u)
 		return (H2NN_ERROR);
 }
 
+/**********************************************************************/
+
+static h2_error
+h2_tx_rst(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2,
+    uint32_t stream, h2_error h2e)
+{
+	h2_error ret;
+	char b[4];
+
+	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
+
+	Lck_Lock(&h2->sess->mtx);
+	VSLb(h2->vsl, SLT_Debug, "H2: stream %u: %s", stream, h2e->txt);
+	Lck_Unlock(&h2->sess->mtx);
+	vbe32enc(b, h2e->val);
+
+	H2_Send_Get(wrk, h2, r2);
+	ret = H2_Send_Frame(wrk, h2, H2_F_RST_STREAM,
+	    0, sizeof b, stream, b);
+	H2_Send_Rel(h2, r2);
+
+	return (ret);
+}
+
 /**********************************************************************
  */
 
@@ -841,30 +866,6 @@ h2_frame_complete(struct http_conn *htc)
 /**********************************************************************/
 
 static h2_error
-h2_tx_rst(struct worker *wrk, struct h2_sess *h2,
-    uint32_t stream, h2_error h2e)
-{
-	h2_error ret;
-	char b[4];
-
-	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
-
-	Lck_Lock(&h2->sess->mtx);
-	VSLb(h2->vsl, SLT_Debug, "H2: stream %u: %s", stream, h2e->txt);
-	Lck_Unlock(&h2->sess->mtx);
-	vbe32enc(b, h2e->val);
-
-	H2_Send_Get(wrk, h2, h2->req0);
-	ret = H2_Send_Frame(wrk, h2, H2_F_RST_STREAM,
-	    0, sizeof b, stream, b);
-	H2_Send_Rel(h2, h2->req0);
-
-	return (ret);
-}
-
-/**********************************************************************/
-
-static h2_error
 h2_procframe(struct worker *wrk, struct h2_sess *h2,
     h2_frame h2f)
 {
@@ -904,7 +905,7 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2,
 			     "H2: stream %u: Hit maximum number of "
 			     "concurrent streams", h2->rxf_stream);
 			// rfc7540,l,1200,1205
-			return (h2_tx_rst(wrk, h2, h2->rxf_stream,
+			return (h2_tx_rst(wrk, h2, h2->req0, h2->rxf_stream,
 				H2SE_REFUSED_STREAM));
 		}
 		h2->highest_stream = h2->rxf_stream;
@@ -922,7 +923,7 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2,
 	if (h2->rxf_stream == 0 || h2e->connection)
 		return (h2e);	// Connection errors one level up
 
-	return (h2_tx_rst(wrk, h2, h2->rxf_stream, h2e));
+	return (h2_tx_rst(wrk, h2, h2->req0, h2->rxf_stream, h2e));
 }
 
 static int
@@ -982,7 +983,7 @@ h2_sweep(struct worker *wrk, struct h2_sess *h2)
 			break;
 		case H2_S_CLOS_REM:
 			if (!r2->scheduled) {
-				h2_tx_rst(wrk, h2, r2->stream,
+				h2_tx_rst(wrk, h2, h2->req0, r2->stream,
 				    H2SE_REFUSED_STREAM);
 				h2_del_req(wrk, r2);
 				continue;
