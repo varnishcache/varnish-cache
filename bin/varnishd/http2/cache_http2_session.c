@@ -286,6 +286,7 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 	req->task.func = h2_do_req;
 	req->task.priv = req;
 	r2->scheduled = 1;
+	r2->state = H2_S_CLOS_REM; // rfc7540,l,489,491
 	req->err_code = 0;
 	http_SetH(req->http, HTTP_HDR_PROTO, "HTTP/2.0");
 
