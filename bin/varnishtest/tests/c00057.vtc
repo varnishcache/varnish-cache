@@ -76,7 +76,7 @@ client c2 -connect ${v2_sock} {
 	expect_close
 } -run
 
-varnish v2 -cliexpect "Segmentation [fF]ault" "panic.show"
+varnish v2 -cliexpect "[bB]us error|Segmentation [fF]ault" "panic.show"
 
 varnish v2 -cliok "panic.clear"
 
