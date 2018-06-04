@@ -243,9 +243,10 @@ child_signal_handler(int s, siginfo_t *si, void *c)
 	memset(&sa, 0, sizeof sa);
 	sa.sa_handler = SIG_DFL;
 	(void)sigaction(SIGSEGV, &sa, NULL);
+	(void)sigaction(SIGBUS, &sa, NULL);
 	(void)sigaction(SIGABRT, &sa, NULL);
 
-	while (s == SIGSEGV) {
+	while (s == SIGSEGV || s == SIGBUS) {
 		req = THR_GetRequest();
 		if (req == NULL || req->wrk == NULL)
 			break;
