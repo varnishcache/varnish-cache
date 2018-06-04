@@ -1,6 +1,0 @@
-SUBDIRS = libvcc libvarnish libvarnishapi libvcc
-SUBDIRS += libvgz
-SUBDIRS += libvmod_debug libvmod_directors libvmod_std
-
-TOPDIR	= $(CURDIR)/..
-include $(TOPDIR)/Makefile.inc.phk
