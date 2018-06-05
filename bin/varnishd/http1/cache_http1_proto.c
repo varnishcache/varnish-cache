@@ -73,10 +73,9 @@ HTTP1_Complete(struct http_conn *htc)
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 
 	assert(htc->rxbuf_e >= htc->rxbuf_b);
-	assert(htc->rxbuf_e <= htc->ws->r);
 
-	if (htc->rxbuf_e == htc->ws->r)
-		return (HTC_S_OVERFLOW);		// No space for NUL
+	/* HTC_RxStuff reserves space for NUL */
+	assert(htc->rxbuf_e < htc->ws->r);
 	*htc->rxbuf_e = '\0';
 
 	/* Skip any leading white space */
