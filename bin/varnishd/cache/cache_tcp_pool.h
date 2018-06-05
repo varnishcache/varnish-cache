@@ -50,6 +50,8 @@ void PFD_RemoteName(const struct pfd *, char *, unsigned, char *, unsigned);
  * Prototypes
  */
 
+struct VSC_vbe;
+
 struct tcp_pool *VTP_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6,
     const char *uds, const void *id);
 	/*
@@ -70,9 +72,11 @@ void VTP_Rel(struct tcp_pool **);
 	 * the pool is destroyed and all cached connections closed.
 	 */
 
-int VTP_Open(const struct tcp_pool *, double tmo, const void **);
+int VTP_Open(const struct tcp_pool *, double tmo, const void **,
+    struct VSC_vbe *);
 	/*
 	 * Open a new connection and return the adress used.
+	 * Errors will be accounted in the optional vsc
 	 */
 
 void VTP_Close(struct pfd **);
@@ -86,9 +90,10 @@ void VTP_Recycle(const struct worker *, struct pfd **);
 	 */
 
 struct pfd *VTP_Get(struct tcp_pool *, double tmo, struct worker *,
-    unsigned force_fresh);
+    unsigned force_fresh, struct VSC_vbe *);
 	/*
 	 * Get a (possibly) recycled connection.
+	 * Open errors will be accounted in the optional vsc
 	 */
 
 int VTP_Wait(struct worker *, struct pfd *, double tmo);
