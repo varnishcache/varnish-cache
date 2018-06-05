@@ -51,12 +51,13 @@ void PFD_RemoteName(const struct pfd *, char *, unsigned, char *, unsigned);
  */
 
 struct tcp_pool *VTP_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6,
-    const char *uds, const void *id);
+    const char *uds, const void *id, struct vsmw_cluster *vc);
 	/*
 	 * Get a reference to a TCP pool. Either one or both of ip4 or
 	 * ip6 arg must be non-NULL, or uds must be non-NULL. If recycling
 	 * is to be used, the id pointer distinguishes the pool per
 	 * protocol.
+	 * If vc is non-NULL, the VSC_vcp will be created in that cluster
 	 */
 
 void VTP_AddRef(struct tcp_pool *);
@@ -70,7 +71,7 @@ void VTP_Rel(struct tcp_pool **);
 	 * the pool is destroyed and all cached connections closed.
 	 */
 
-int VTP_Open(const struct tcp_pool *, double tmo, const void **);
+int VTP_Open(struct tcp_pool *, double tmo, const void **);
 	/*
 	 * Open a new connection and return the adress used.
 	 */

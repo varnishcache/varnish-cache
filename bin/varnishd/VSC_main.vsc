@@ -761,6 +761,16 @@
 	:oneliner:	ESI parse warnings (unlock)
 
 
+.. varnish_vsc:: vcp_create
+	:level:	diag
+	:oneliner:	Connection Pool creates
+
+
+.. varnish_vsc:: vcp_destroy
+	:level:	diag
+	:oneliner:	Connection Pool destroys
+
+
 .. varnish_vsc:: vmods
 	:type:	gauge
 	:oneliner:	Loaded VMODs
