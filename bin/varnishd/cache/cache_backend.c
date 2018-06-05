@@ -113,12 +113,11 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
 	bo->htc->doclose = SC_NULL;
 
 	FIND_TMO(connect_timeout, tmod, bo, bp);
-	pfd = VTP_Get(bp->tcp_pool, tmod, wrk, force_fresh);
+	pfd = VTP_Get(bp->tcp_pool, tmod, wrk, force_fresh, bp->vsc);
 	if (pfd == NULL) {
 		VSLb(bo->vsl, SLT_FetchError,
 		     "backend %s: fail errno %d (%s)",
 		     VRT_BACKEND_string(bp->director), errno, strerror(errno));
-		// XXX: Per backend stats ?
 		VSC_C_main->backend_fail++;
 		bo->htc = NULL;
 		return (NULL);

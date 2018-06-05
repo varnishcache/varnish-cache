@@ -78,5 +78,50 @@
 	:level:	info
 	:oneliner:	Backend requests sent
 
-.. varnish_vsc_end::	vbe
+..
+	=== Anything below is actually per VCP entry, but collected per
+	=== backend for simplicity
 
+.. varnish_vsc:: fail
+	:type:	counter
+	:level: info
+	:oneliner:	Connections failed
+
+	Counter of failed opens. Detailed reasons are given in the
+	fail_* counters (DIAG level) and in Debug VSL.
+
+	This counter is the sum of all detailed fail_* counters.
+
+	All fail_* counters may be slightly inaccurate for efficiency.
+
+.. varnish_vsc:: fail_eacces
+	:type:	counter
+	:level: diag
+	:oneliner:	Connections failed with EACCES or EPERM
+
+.. varnish_vsc:: fail_eaddrnotavail
+	:type:	counter
+	:level: diag
+	:oneliner:	Connections failed with EADDRNOTAVAIL
+
+.. varnish_vsc:: fail_econnrefused
+	:type:	counter
+	:level: diag
+	:oneliner:	Connections failed with ECONNREFUSED
+
+.. varnish_vsc:: fail_enetunreach
+	:type:	counter
+	:level: diag
+	:oneliner:	Connections failed with ENETUNREACH
+
+.. varnish_vsc:: fail_etimedout
+	:type:	counter
+	:level: diag
+	:oneliner:	Connections failed ETIMEDOUT
+
+.. varnish_vsc:: fail_other
+	:type:	counter
+	:level: diag
+	:oneliner:	Connections failed for other reason
+
+.. varnish_vsc_end::	vbe

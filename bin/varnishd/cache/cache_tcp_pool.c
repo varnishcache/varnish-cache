@@ -45,6 +45,8 @@
 #include "cache_tcp_pool.h"
 #include "cache_pool.h"
 
+#include "VSC_vbe.h"
+
 struct conn_pool;
 
 /*--------------------------------------------------------------------
@@ -373,13 +375,40 @@ VCP_Recycle(const struct worker *wrk, struct pfd **pfdp)
  */
 
 static int
-VCP_Open(const struct conn_pool *cp, double tmo, const void **privp)
+VCP_Open(const struct conn_pool *cp, double tmo, const void **privp,
+    struct VSC_vbe *vsc)
 {
 	int r;
 
 	CHECK_OBJ_NOTNULL(cp, CONN_POOL_MAGIC);
 
 	r = cp->methods->open(cp, tmo, privp);
+
+	if (r >= 0 || vsc == NULL)
+		return (r);
+
+	/* stats access unprotected */
+	switch (errno) {
+	case EACCES:
+	case EPERM:
+		vsc->fail_eacces++;
+		break;
+	case EADDRNOTAVAIL:
+		vsc->fail_eaddrnotavail++;
+		break;
+	case ECONNREFUSED:
+		vsc->fail_econnrefused++;
+		break;
+	case ENETUNREACH:
+		vsc->fail_enetunreach++;
+		break;
+	case ETIMEDOUT:
+		vsc->fail_etimedout++;
+		break;
+	default:
+		vsc->fail_other++;
+	}
+	vsc->fail++;
 
 	return (r);
 }
@@ -426,7 +455,7 @@ VCP_Close(struct pfd **pfdp)
 
 static struct pfd *
 VCP_Get(struct conn_pool *cp, double tmo, struct worker *wrk,
-    unsigned force_fresh)
+    unsigned force_fresh, struct VSC_vbe *vsc)
 {
 	struct pfd *pfd;
 
@@ -459,7 +488,7 @@ VCP_Get(struct conn_pool *cp, double tmo, struct worker *wrk,
 	INIT_OBJ(pfd->waited, WAITED_MAGIC);
 	pfd->state = PFD_STATE_USED;
 	pfd->conn_pool = cp;
-	pfd->fd = VCP_Open(cp, tmo, &pfd->priv);
+	pfd->fd = VCP_Open(cp, tmo, &pfd->priv, vsc);
 	if (pfd->fd < 0) {
 		FREE_OBJ(pfd);
 		Lck_Lock(&cp->mtx);
@@ -737,9 +766,10 @@ VTP_Rel(struct tcp_pool **tpp)
  */
 
 int
-VTP_Open(const struct tcp_pool *tp, double tmo, const void **privp)
+VTP_Open(const struct tcp_pool *tp, double tmo, const void **privp,
+    struct VSC_vbe *vsc)
 {
-	return (VCP_Open(tp->cp, tmo, privp));
+	return (VCP_Open(tp->cp, tmo, privp, vsc));
 }
 
 /*--------------------------------------------------------------------
@@ -770,10 +800,10 @@ VTP_Close(struct pfd **pfdp)
 
 struct pfd *
 VTP_Get(struct tcp_pool *tp, double tmo, struct worker *wrk,
-    unsigned force_fresh)
+	unsigned force_fresh, struct VSC_vbe *vsc)
 {
 
-	return VCP_Get(tp->cp, tmo, wrk, force_fresh);
+	return VCP_Get(tp->cp, tmo, wrk, force_fresh, vsc);
 }
 
 /*--------------------------------------------------------------------
