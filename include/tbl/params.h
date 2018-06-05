@@ -286,6 +286,45 @@ PARAM(
 )
 
 PARAM(
+	/* name */	backend_local_error_holddown,
+	/* typ */	timeout,
+	/* min */	"0.000",
+	/* max */	NULL,
+	/* default */	"10.000",
+	/* units */	"seconds",
+	/* flags */	EXPERIMENTAL,
+	/* s-text */
+	"When connecting to backends, certain error codes "
+	"(EADDRNOTAVAIL, EACCESS, EPERM) signal a local resource shortage "
+	"or configuration issue for which retrying connection attempts "
+	"may worsen the situation due to the complexity of the operations "
+	"involved in the kernel.\n"
+	"This parameter prevents repeated connection attempts for the "
+	"configured duration.",
+	/* l-text */	"",
+	/* func */	NULL
+)
+
+PARAM(
+	/* name */	backend_remote_error_holddown,
+	/* typ */	timeout,
+	/* min */	"0.000",
+	/* max */	NULL,
+	/* default */	"0.250",
+	/* units */	"seconds",
+	/* flags */	EXPERIMENTAL,
+	/* s-text */
+	"When connecting to backends, certain error codes (ECONNREFUSED, "
+	"ENETUNREACH) signal fundamental connection issues such as the backend "
+	"not accepting connections or routing problems for which repeated "
+	"connection attempts are considered useless\n"
+	"This parameter prevents repeated connection attempts for the "
+	"configured duration.",
+	/* l-text */	"",
+	/* func */	NULL
+)
+
+PARAM(
 	/* name */	cli_limit,
 	/* typ */	bytes_u,
 	/* min */	"128b",

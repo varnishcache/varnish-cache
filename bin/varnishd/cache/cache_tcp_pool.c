@@ -101,6 +101,9 @@ struct conn_pool {
 	int					n_kill;
 
 	int					n_used;
+
+	double					holddown;
+	int					holddown_errno;
 };
 
 struct tcp_pool {
@@ -238,6 +241,7 @@ VCP_New(struct conn_pool *cp, const void *id, void *priv,
 	cp->priv = priv;
 	cp->methods = cm;
 	cp->refcnt = 1;
+	cp->holddown = 0;
 	Lck_New(&cp->mtx, lck_tcp_pool);
 	VTAILQ_INIT(&cp->connlist);
 	VTAILQ_INIT(&cp->killlist);
@@ -375,32 +379,59 @@ VCP_Recycle(const struct worker *wrk, struct pfd **pfdp)
  */
 
 static int
-VCP_Open(const struct conn_pool *cp, double tmo, const void **privp,
+VCP_Open(struct conn_pool *cp, double tmo, const void **privp,
     struct VSC_vbe *vsc)
 {
 	int r;
+	double h;
 
 	CHECK_OBJ_NOTNULL(cp, CONN_POOL_MAGIC);
+
+	while (cp->holddown > 0) {
+		Lck_Lock(&cp->mtx);
+		if (cp->holddown == 0) {
+			Lck_Unlock(&cp->mtx);
+			break;
+		}
+
+		if (VTIM_mono() >= cp->holddown) {
+			cp->holddown = 0;
+			Lck_Unlock(&cp->mtx);
+			break;
+		}
+
+		if (vsc)
+			vsc->helddown++;
+		errno = cp->holddown_errno;
+		Lck_Unlock(&cp->mtx);
+		return (-1);
+	}
 
 	r = cp->methods->open(cp, tmo, privp);
 
 	if (r >= 0 || vsc == NULL)
 		return (r);
 
+	h = 0;
+
 	/* stats access unprotected */
 	switch (errno) {
 	case EACCES:
 	case EPERM:
 		vsc->fail_eacces++;
+		h = cache_param->backend_local_error_holddown;
 		break;
 	case EADDRNOTAVAIL:
 		vsc->fail_eaddrnotavail++;
+		h = cache_param->backend_local_error_holddown;
 		break;
 	case ECONNREFUSED:
 		vsc->fail_econnrefused++;
+		h = cache_param->backend_remote_error_holddown;
 		break;
 	case ENETUNREACH:
 		vsc->fail_enetunreach++;
+		h = cache_param->backend_remote_error_holddown;
 		break;
 	case ETIMEDOUT:
 		vsc->fail_etimedout++;
@@ -409,6 +440,18 @@ VCP_Open(const struct conn_pool *cp, double tmo, const void **privp,
 		vsc->fail_other++;
 	}
 	vsc->fail++;
+
+	if (h == 0)
+		return (r);
+
+	Lck_Lock(&cp->mtx);
+	h += VTIM_mono();
+	if (cp->holddown == 0 || h < cp->holddown) {
+		cp->holddown = h;
+		cp->holddown_errno = errno;
+	}
+
+	Lck_Unlock(&cp->mtx);
 
 	return (r);
 }
@@ -766,7 +809,7 @@ VTP_Rel(struct tcp_pool **tpp)
  */
 
 int
-VTP_Open(const struct tcp_pool *tp, double tmo, const void **privp,
+VTP_Open(struct tcp_pool *tp, double tmo, const void **privp,
     struct VSC_vbe *vsc)
 {
 	return (VCP_Open(tp->cp, tmo, privp, vsc));

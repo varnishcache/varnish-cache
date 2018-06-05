@@ -124,4 +124,13 @@
 	:level: diag
 	:oneliner:	Connections failed for other reason
 
+.. varnish_vsc:: helddown
+	:type:	counter
+	:level: diag
+	:oneliner:	Connection opens not attempted
+
+	Connections not attempted during the backend_local_error_holddown
+	or backend_remote_error_holddown interval after a fundamental
+	connection issue.
+
 .. varnish_vsc_end::	vbe
