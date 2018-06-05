@@ -368,6 +368,21 @@ VCP_Recycle(const struct worker *wrk, struct pfd **pfdp)
 	}
 }
 
+/*--------------------------------------------------------------------
+ * Open a new connection from pool.
+ */
+
+static int
+VCP_Open(const struct conn_pool *cp, double tmo, const void **privp)
+{
+	int r;
+
+	CHECK_OBJ_NOTNULL(cp, CONN_POOL_MAGIC);
+
+	r = cp->methods->open(cp, tmo, privp);
+
+	return (r);
+}
 
 /*--------------------------------------------------------------------
  * Close a connection.
@@ -406,7 +421,7 @@ VCP_Close(struct pfd **pfdp)
 }
 
 /*--------------------------------------------------------------------
- * Get a connection
+ * Get a connection, possibly recycled
  */
 
 static struct pfd *
@@ -444,7 +459,7 @@ VCP_Get(struct conn_pool *cp, double tmo, struct worker *wrk,
 	INIT_OBJ(pfd->waited, WAITED_MAGIC);
 	pfd->state = PFD_STATE_USED;
 	pfd->conn_pool = cp;
-	pfd->fd = cp->methods->open(cp, tmo, &pfd->priv);
+	pfd->fd = VCP_Open(cp, tmo, &pfd->priv);
 	if (pfd->fd < 0) {
 		FREE_OBJ(pfd);
 		Lck_Lock(&cp->mtx);
@@ -718,17 +733,13 @@ VTP_Rel(struct tcp_pool **tpp)
 }
 
 /*--------------------------------------------------------------------
- * Open a new connection from pool.  This is a distinct function since
- * probing cannot use a recycled connection.
+ * Open a new connection from pool.
  */
 
 int
 VTP_Open(const struct tcp_pool *tp, double tmo, const void **privp)
 {
-
-	if (tp->uds != NULL)
-		return (vus_open(tp->cp, tmo, privp));
-	return (vtp_open(tp->cp, tmo, privp));
+	return (VCP_Open(tp->cp, tmo, privp));
 }
 
 /*--------------------------------------------------------------------
