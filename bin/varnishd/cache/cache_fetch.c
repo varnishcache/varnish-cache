@@ -236,6 +236,7 @@ vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 	bo->storage_hint = NULL;
 	bo->do_esi = 0;
 	bo->do_stream = 1;
+	bo->was_304 = 0;
 
 	/* reset fetch processors */
 	VFP_Setup(vfc);
