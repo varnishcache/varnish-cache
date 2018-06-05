@@ -91,7 +91,7 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
 	if (!VDI_Healthy(bp->director, NULL)) {
 		VSLb(bo->vsl, SLT_FetchError,
 		     "backend %s: unhealthy", bp->director->display_name);
-		// XXX: per backend stats ?
+		bp->vsc->unhealthy++;
 		VSC_C_main->backend_unhealthy++;
 		return (NULL);
 	}
@@ -99,7 +99,7 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
 	if (bp->max_connections > 0 && bp->n_conn >= bp->max_connections) {
 		VSLb(bo->vsl, SLT_FetchError,
 		     "backend %s: busy", bp->director->display_name);
-		// XXX: per backend stats ?
+		bp->vsc->busy++;
 		VSC_C_main->backend_busy++;
 		return (NULL);
 	}
