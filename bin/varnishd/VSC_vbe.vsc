@@ -78,6 +78,18 @@
 	:level:	info
 	:oneliner:	Backend requests sent
 
+.. varnish_vsc:: unhealthy
+	:type:	counter
+	:level: info
+	:oneliner:	Fetches not attempted due to backend being unhealthy
+
+.. varnish_vsc:: busy
+	:type:	counter
+	:level: info
+	:oneliner:	Fetches not attempted due to backend being busy
+
+	Number of times the max_connections limit was reached
+
 ..
 	=== Anything below is actually per VCP entry, but collected per
 	=== backend for simplicity
