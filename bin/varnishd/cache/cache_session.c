@@ -239,6 +239,11 @@ HTC_RxPipeline(struct http_conn *htc, void *p)
 /*----------------------------------------------------------------------
  * Receive a request/packet/whatever, with timeouts
  *
+ * maxbytes is the maximum number of bytes the caller expects to need to
+ * reach a complete work unit. Note that due to pipelining the actual
+ * number of bytes passed to func in htc->rxbuf_b through htc->rxbuf_e may
+ * be larger.
+ *
  * t0 is when we start
  * *t1 becomes time of first non-idle rx
  * *t2 becomes time of complete rx
@@ -261,6 +266,7 @@ HTC_RxStuff(struct http_conn *htc, htc_complete_f *func,
 	AN(htc->ws->r);
 	AN(htc->rxbuf_b);
 	assert(htc->rxbuf_b <= htc->rxbuf_e);
+	assert(htc->rxbuf_e <= htc->ws->r);
 
 	AZ(isnan(tn));
 	if (t1 != NULL)
@@ -273,7 +279,7 @@ HTC_RxStuff(struct http_conn *htc, htc_complete_f *func,
 	}
 	z = (htc->ws->r - htc->rxbuf_b);
 	if (z < maxbytes)
-		maxbytes = z;
+		maxbytes = z;	/* Cap maxbytes at available WS */
 
 	while (1) {
 		now = VTIM_real();
@@ -308,8 +314,9 @@ HTC_RxStuff(struct http_conn *htc, htc_complete_f *func,
 		if (!isnan(ti) && ti < tn && hs == HTC_S_EMPTY)
 			tmo = ti - now;
 		z = maxbytes - (htc->rxbuf_e - htc->rxbuf_b);
-		assert(z >= 0);
-		if (z == 0) {
+		if (z <= 0) {
+			/* maxbytes reached but not HTC_S_COMPLETE. Return
+			 * overflow. */
 			WS_ReleaseP(htc->ws, htc->rxbuf_b);
 			return (HTC_S_OVERFLOW);
 		}
