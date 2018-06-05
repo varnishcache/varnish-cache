@@ -116,7 +116,7 @@ static uint16_t
 http1_dissect_hdrs(struct http *hp, char *p, struct http_conn *htc,
     unsigned maxhdr)
 {
-	char *q, *r;
+	char *q, *r, *s;
 
 	assert(p > htc->rxbuf_b);
 	assert(p <= htc->rxbuf_e);
@@ -188,7 +188,14 @@ http1_dissect_hdrs(struct http *hp, char *p, struct http_conn *htc,
 			q--;
 		*q = '\0';
 
-		if (strchr(p, ':') == NULL) {
+		for (s = p; *s != ':' && s < q; s++) {
+			if (!vct_istchar(*s)) {
+				VSLb(hp->vsl, SLT_BogoHeader,
+				    "Illegal char 0x%02x in header name", *s);
+				return (400);
+			}
+		}
+		if (*s != ':') {
 			VSLb(hp->vsl, SLT_BogoHeader, "Header without ':' %.*s",
 			    (int)(q - p > 20 ? 20 : q - p), p);
 			return (400);
@@ -203,18 +210,6 @@ http1_dissect_hdrs(struct http *hp, char *p, struct http_conn *htc,
 			VSLb(hp->vsl, SLT_BogoHeader, "Too many headers: %.*s",
 			    (int)(q - p > 20 ? 20 : q - p), p);
 			return (400);
-		}
-
-		for (; p < q; p++) {
-			if (vct_islws(*p)) {
-				VSLb(hp->vsl, SLT_BogoHeader,
-				    "Space in header '%.*s'",
-				    (int)Tlen(hp->hd[hp->nhd - 1]),
-				    hp->hd[hp->nhd - 1].b);
-				return (400);
-			}
-			if (*p == ':')
-				break;
 		}
 	}
 	if (p < htc->rxbuf_e)
