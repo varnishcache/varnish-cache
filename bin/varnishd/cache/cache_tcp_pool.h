@@ -72,7 +72,7 @@ void VTP_Rel(struct tcp_pool **);
 	 * the pool is destroyed and all cached connections closed.
 	 */
 
-int VTP_Open(const struct tcp_pool *, double tmo, const void **,
+int VTP_Open(struct tcp_pool *, double tmo, const void **,
     struct VSC_vbe *);
 	/*
 	 * Open a new connection and return the adress used.
