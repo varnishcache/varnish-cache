@@ -7,6 +7,11 @@ server s1 {
 
 varnish v1 -vcl+backend { } -start
 
+logexpect l1 -v v1 -g raw {
+	expect * 1004	BogoHeader	"Illegal char 0x20 in header name"
+	expect * 1006	BogoHeader	"Illegal char 0x2f in header name"
+} -start
+
 client c1 {
 	send "GET / HTTP/1.1\r\n"
 	send "Host: foo\r\n"
@@ -30,3 +35,14 @@ client c1 {
 	rxresp
 	expect resp.status == 400
 } -run
+
+client c1 {
+	send "GET / HTTP/1.1\r\n"
+	send "Host: foo\r\n"
+	send "Accept/Encoding: gzip\r\n"
+	send "\r\n"
+	rxresp
+	expect resp.status == 400
+} -run
+
+logexpect l1 -wait
