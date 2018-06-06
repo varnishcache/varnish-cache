@@ -39,6 +39,8 @@
 
 #include "cache_esi.h"
 
+#include "vrnd.h"
+
 /*---------------------------------------------------------------------
  */
 
@@ -198,7 +200,7 @@ vfp_esi_gzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 	*lp = 0;
 	l = vef->ibuf_sz - (vef->ibuf_i - vef->ibuf);
 	if (DO_DEBUG(DBG_ESI_CHOP)) {
-		d = (random() & 3) + 1;
+		d = (VRND_RandomTestable() & 3) + 1;
 		if (d < l)
 			l = d;
 	}
@@ -259,7 +261,7 @@ vfp_esi_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p, ssize_t *lp)
 	AN(p);
 	AN(lp);
 	if (DO_DEBUG(DBG_ESI_CHOP)) {
-		d = (random() & 3) + 1;
+		d = (VRND_RandomTestable() & 3) + 1;
 		if (d < *lp)
 			*lp = d;
 	}

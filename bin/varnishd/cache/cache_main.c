@@ -52,6 +52,19 @@
 
 
 volatile struct params		*cache_param;
+static pthread_mutex_t		cache_vrnd_mtx;
+
+static void
+cache_vrnd_lock(void)
+{
+	AZ(pthread_mutex_lock(&cache_vrnd_mtx));
+}
+
+static void
+cache_vrnd_unlock(void)
+{
+	AZ(pthread_mutex_unlock(&cache_vrnd_mtx));
+}
 
 /*--------------------------------------------------------------------
  * Per thread storage for the session currently being processed by
@@ -338,6 +351,10 @@ child_main(int sigmagic, size_t altstksz)
 	AZ(pthread_key_create(&name_key, NULL));
 
 	THR_SetName("cache-main");
+
+	AZ(pthread_mutex_init(&cache_vrnd_mtx, NULL));
+	VRND_Lock = cache_vrnd_lock;
+	VRND_Unlock = cache_vrnd_unlock;
 
 	VSM_Init();	/* First, LCK needs it. */
 

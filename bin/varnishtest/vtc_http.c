@@ -45,6 +45,7 @@
 #include "vfil.h"
 #include "vgz.h"
 #include "vnum.h"
+#include "vrnd.h"
 #include "vtcp.h"
 #include "hpack.h"
 
@@ -189,7 +190,7 @@ synth_body(const char *len, int rnd)
 				k = '!';
 			l = k;
 		} else if (rnd) {
-			b[j] = (random() % 95) + ' ';
+			b[j] = (VRND_RandomTestable() % 95) + ' ';
 		} else {
 			b[j] = (char)l;
 			if (++l == '~')
@@ -1970,7 +1971,7 @@ xxx(void)
 		*ibuf = 0;
 		for (j = 0; j < 7; j++) {
 			snprintf(strchr(ibuf, 0), 5, "%x",
-			    (unsigned)random() & 0xffff);
+			    (unsigned)VRND_RandomTestable() & 0xffff);
 			vz.next_in = TRUST_ME(ibuf);
 			vz.avail_in = strlen(ibuf);
 			vz.next_out = TRUST_ME(obuf);
