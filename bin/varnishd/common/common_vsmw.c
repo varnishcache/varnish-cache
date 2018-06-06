@@ -151,13 +151,14 @@ static void
 vsmw_mkent(const struct vsmw *vsmw, const char *pfx)
 {
 	int fd;
+	uint64_t rn;
 
 	AN(pfx);
 	while (1) {
 		VSB_clear(vsmw->vsb);
 		VSB_printf(vsmw->vsb, "_.%s", pfx);
-		VSB_printf(vsmw->vsb, ".%08lx", VRND_RandomTestable());
-		VSB_printf(vsmw->vsb, "%08lx", VRND_RandomTestable());
+		AZ(VRND_RandomCrypto(&rn, sizeof rn));
+		VSB_printf(vsmw->vsb, ".%016jx", (uintmax_t)rn);
 		AZ(VSB_finish(vsmw->vsb));
 		fd = openat(vsmw->vdirfd, VSB_data(vsmw->vsb), O_RDONLY);
 		if (fd < 0 && errno == ENOENT)
@@ -192,7 +193,7 @@ vsmw_delseg(struct vsmw *vsmw, struct vsmwseg *seg, int fixidx)
 	CHECK_OBJ_NOTNULL(vsmw, VSMW_MAGIC);
 	CHECK_OBJ_NOTNULL(seg, VSMWSEG_MAGIC);
 
-	VTAILQ_REMOVE(&vsmw->segs, seg, list);
+	TAILQ_REMOVE(&vsmw->segs, seg, list);
 	REPLACE(seg->class, NULL);
 	REPLACE(seg->id, NULL);
 	FREE_OBJ(seg);
