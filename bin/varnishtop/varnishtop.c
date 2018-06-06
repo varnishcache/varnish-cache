@@ -76,12 +76,12 @@ struct top {
 	double			count;
 };
 
-static float period = 60; /* seconds */
+static int period = 60; /* seconds */
 static unsigned ntop;
 static pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
 static int f_flag = 0;
 static unsigned maxfieldlen = 0;
-static char *ident;
+static const char *ident;
 
 static volatile sig_atomic_t end_of_file = 0;
 static volatile sig_atomic_t quit = 0;
@@ -207,7 +207,7 @@ update(int p)
 	int l, len, eof;
 	double t = 0;
 	static time_t last = 0;
-	static unsigned n;
+	static unsigned n = 0;
 	const char *q;
 	time_t now;
 
