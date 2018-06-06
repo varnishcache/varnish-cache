@@ -254,9 +254,9 @@ VUT_Signaled(struct VUT *vut, int sig)
 {
 
 	CHECK_OBJ_NOTNULL(vut, VUT_MAGIC);
-	vut->sighup |= (sig == SIGHUP);
-	vut->sigint |= (sig == SIGINT || sig == SIGTERM);
-	vut->sigusr1 |= (sig == SIGUSR1);
+	vut->sighup |= (int)(sig == SIGHUP);
+	vut->sigint |= (int)(sig == SIGINT || sig == SIGTERM);
+	vut->sigusr1 |= (int)(sig == SIGUSR1);
 }
 
 void
