@@ -370,7 +370,7 @@ cli_backend_list(struct cli *cli, const char * const *av, void *priv)
 		return;
 	}
 	if (la->j) {
-		VCLI_JSON_begin(cli, 1, av);
+		VCLI_JSON_begin(cli, 2, av);
 		VCLI_Out(cli, ",\n");
 		VCLI_Out(cli, "{\n");
 		VSB_indent(cli->sb, 2);

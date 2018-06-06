@@ -50,6 +50,7 @@
 #include "vav.h"
 #include "vcli_serve.h"
 #include "vsb.h"
+#include "vtim.h"
 
 struct VCLS_fd {
 	unsigned			magic;
@@ -159,7 +160,7 @@ VCLS_func_help_json(struct cli *cli, const char * const *av, void *priv)
 	cs = cli->cls;
 	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
 
-	VCLI_JSON_begin(cli, 1, av);
+	VCLI_JSON_begin(cli, 2, av);
 	VTAILQ_FOREACH(clp, &cs->funcs, list) {
 		if (clp->auth > cli->auth)
 			continue;
@@ -674,7 +675,7 @@ VCLI_JSON_begin(struct cli *cli, unsigned ver, const char * const * av)
 		if (av[i + 1] != NULL)
 			VCLI_Out(cli, ", ");
 	}
-	VCLI_Out(cli, "]");
+	VCLI_Out(cli, "], %.3f", VTIM_real());
 	VSB_indent(cli->sb, 2);
 }
 
