@@ -45,6 +45,7 @@
 
 #include "storage/storage.h"
 
+#include "vrnd.h"
 #include "vsha256.h"
 
 #include "storage/storage_persistent.h"
@@ -280,7 +281,7 @@ smp_newsilo(struct smp_sc *sc)
 	assert(strlen(SMP_IDENT_STRING) < sizeof si->ident);
 
 	/* Choose a new random number */
-	sc->unique = random();
+	AZ(VRND_RandomCrypto(&sc->unique, sizeof sc->unique));
 
 	smp_reset_sign(&sc->idn);
 	si = sc->ident;
