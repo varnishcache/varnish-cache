@@ -49,6 +49,8 @@
 
 -esym(818, argv)	// Pointer parameter '...' could be declared as pointing to const
 
+-e850		// loop variable modified in loop
+
 /*
  * va_list's are opaque for a reason, but we pretend to FlexeLint that it
  * is just a void*, so it proposes constification, which is not generally OK,
