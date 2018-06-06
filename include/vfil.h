@@ -34,7 +34,6 @@ struct vfil_path;
 
 void VFIL_null_fd(int);
 
-int seed_random(void);
 char *VFIL_readfile(const char *pfx, const char *fn, ssize_t *sz);
 int VFIL_writefile(const char *pfx, const char *fn, const char *buf, size_t sz);
 int VFIL_nonblocking(int fd);
