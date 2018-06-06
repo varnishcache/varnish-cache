@@ -77,6 +77,7 @@ enum h2_type {
 	TYPE_MAX
 };
 
+//lint -save -e849	Same enum value
 enum {
 	ACK = 0x1,
 	END_STREAM = 0x1,
@@ -84,6 +85,7 @@ enum {
 	END_HEADERS = 0x4,
 	PRIORITY = 0x20,
 };
+//lint -restore
 
 struct stream {
 	unsigned		magic;
@@ -103,7 +105,7 @@ struct stream {
 	VTAILQ_HEAD(, frame)   fq;
 
 	char			*body;
-	int			bodylen;
+	long			bodylen;
 	struct hpk_hdr		req[MAX_HDR];
 	struct hpk_hdr		resp[MAX_HDR];
 
@@ -868,7 +870,7 @@ do { \
 
 #define RETURN_BUFFED(val) \
 do { \
-	snprintf(buf, 20, "%d", val); \
+	snprintf(buf, 20, "%ld", (long)val); \
 	return (buf); \
 } while (0)
 

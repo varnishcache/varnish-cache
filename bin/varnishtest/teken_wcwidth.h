@@ -104,7 +104,7 @@ static int teken_wcwidth(teken_char_t ucs)
   /* if we arrive here, ucs is not a combining or C0/C1 control character */
 
   return 1 +
-    (ucs >= 0x1100 &&
+    (int)(ucs >= 0x1100 &&
      (ucs <= 0x115f ||                    /* Hangul Jamo init. consonants */
       ucs == 0x2329 || ucs == 0x232a ||
       (ucs >= 0x2e80 && ucs <= 0xa4cf &&
