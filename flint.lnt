@@ -5,6 +5,8 @@
 //d__flexelint_v9__=1
 +fan
 
+-emacro((835),*)	// A zero has been given as ___ argument to operator '___
+
 ///////////////////////////////////////////////////////////////////////
 // build/config related
 
