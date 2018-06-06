@@ -3,3 +3,5 @@
 
 -emacro(835, EXPR_VAR)	// Info 835: A zero has been given as right argument to operator '<<'
 -esym(755, VCL_40)	// Not used (right now)
+
+-esym(768, token)	// FLINTBUG: global struct member 'token' not ref
