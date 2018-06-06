@@ -275,7 +275,8 @@ VUT_Setup(struct VUT *vut)
 		VUT_Error(vut, 1, "Only one of -n and -r options may be used");
 
 	/* Create and validate the query expression */
-	vut->vslq = VSLQ_New(vut->vsl, NULL, vut->g_arg, vut->q_arg);
+	vut->vslq = VSLQ_New(vut->vsl, NULL,
+	    (enum VSL_grouping_e)vut->g_arg, vut->q_arg);
 	if (vut->vslq == NULL)
 		VUT_Error(vut, 1, "Query expression error:\n%s",
 		    VSL_Error(vut->vsl));

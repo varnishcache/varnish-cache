@@ -139,6 +139,8 @@
 // <vtree.h>
 
 -emacro(801, VRB_*)		// goto considered bad
+-esym(534, *_VRB_REMOVE)	// ignore retval
+-esym(534, *_VRB_INSERT)	// ignore retval
 
 ///////////////////////////////////////////////////////////////////////
 // <vqueue.h>
