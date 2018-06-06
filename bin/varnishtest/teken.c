@@ -457,8 +457,6 @@ teken_state_numbers(teken_t *t, teken_char_t c)
 	return (0);
 }
 
-//lint -save -emacro((835),k,K)		'|' has zero RHS
-
 #define	k	TC_BLACK
 #define	b	TC_BLUE
 #define	y	TC_BROWN
@@ -643,8 +641,6 @@ static const teken_color_t teken_256to16tab[] = {
 #undef	M
 #undef	R
 #undef	W
-
-//lint -restore
 
 teken_color_t
 teken_256to8(teken_color_t c)
