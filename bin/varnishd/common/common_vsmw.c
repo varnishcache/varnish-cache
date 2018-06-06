@@ -193,7 +193,7 @@ vsmw_delseg(struct vsmw *vsmw, struct vsmwseg *seg, int fixidx)
 	CHECK_OBJ_NOTNULL(vsmw, VSMW_MAGIC);
 	CHECK_OBJ_NOTNULL(seg, VSMWSEG_MAGIC);
 
-	TAILQ_REMOVE(&vsmw->segs, seg, list);
+	VTAILQ_REMOVE(&vsmw->segs, seg, list);
 	REPLACE(seg->class, NULL);
 	REPLACE(seg->id, NULL);
 	FREE_OBJ(seg);
