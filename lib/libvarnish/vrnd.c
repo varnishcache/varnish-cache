@@ -45,6 +45,10 @@
 #include "vas.h"
 #include "vrnd.h"
 
+
+vrnd_lock_f *VRND_Lock;
+vrnd_lock_f *VRND_Unlock;
+
 /**********************************************************************
  * Stripped down random(3) implementation from FreeBSD, to provide
  * predicatable "random" numbers of testing purposes.
@@ -96,23 +100,8 @@ good_rand(uint32_t ctx)
 	return (x - 1);
 }
 
-void
-VRND_SeedTestable(unsigned int x)
-{
-	int i, lim;
-
-	state[0] = (uint32_t)x;
-	for (i = 1; i < rand_deg; i++)
-		state[i] = good_rand(state[i - 1]);
-	fptr = &state[rand_sep];
-	rptr = &state[0];
-	lim = 10 * rand_deg;
-	for (i = 0; i < lim; i++)
-		(void)VRND_RandomTestable();
-}
-
-long
-VRND_RandomTestable(void)
+static long
+vrnd_RandomTestable(void)
 {
 	uint32_t i;
 	uint32_t *f, *r;
@@ -133,6 +122,35 @@ VRND_RandomTestable(void)
 
 	fptr = f; rptr = r;
 	return ((long)i);
+}
+
+
+void
+VRND_SeedTestable(unsigned int x)
+{
+	int i, lim;
+
+	state[0] = (uint32_t)x;
+	for (i = 1; i < rand_deg; i++)
+		state[i] = good_rand(state[i - 1]);
+	fptr = &state[rand_sep];
+	rptr = &state[0];
+	lim = 10 * rand_deg;
+	for (i = 0; i < lim; i++)
+		(void)vrnd_RandomTestable();
+}
+
+long
+VRND_RandomTestable(void)
+{
+	long l;
+
+	AN(VRND_Lock);
+	VRND_Lock();
+	l = vrnd_RandomTestable();
+	AN(VRND_Unlock);
+	VRND_Unlock();
+	return (l);
 }
 
 double

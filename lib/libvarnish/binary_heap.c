@@ -519,6 +519,11 @@ chk2(struct binheap *bh)
 }
 #endif
 
+static void
+vrnd_lock(void)
+{
+}
+
 int
 main(void)
 {
@@ -528,6 +533,9 @@ main(void)
 
 	VRND_SeedAll();
 	VRND_SeedTestable(1);
+	VRND_Lock = vrnd_lock;
+	VRND_Unlock = vrnd_lock;
+
 	bh = binheap_new(NULL, cmp, update);
 	for (n = 2; n; n += n) {
 		child(bh, n - 1, &u, &v);

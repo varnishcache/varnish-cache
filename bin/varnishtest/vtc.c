@@ -40,6 +40,7 @@
 #include "vtc.h"
 
 #include "vav.h"
+#include "vrnd.h"
 #include "vtim.h"
 
 #define		MAX_TOKENS		200
@@ -49,6 +50,20 @@ int			vtc_stop;	/* Stops current test without error */
 pthread_t		vtc_thread;
 int			ign_unknown_macro = 0;
 static struct vtclog	*vltop;
+
+static pthread_mutex_t	vtc_vrnd_mtx;
+
+static void
+vtc_vrnd_lock(void)
+{
+	AZ(pthread_mutex_lock(&vtc_vrnd_mtx));
+}
+
+static void
+vtc_vrnd_unlock(void)
+{
+	AZ(pthread_mutex_unlock(&vtc_vrnd_mtx));
+}
 
 /**********************************************************************
  * Macro facility
@@ -464,6 +479,11 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 	char *q;
 
 	(void)signal(SIGPIPE, SIG_IGN);
+
+	AZ(pthread_mutex_init(&vtc_vrnd_mtx, NULL));
+	VRND_Lock = vtc_vrnd_lock;
+	VRND_Unlock = vtc_vrnd_unlock;
+	VRND_SeedAll();
 
 	tfn = fn;
 	vtc_loginit(logbuf, loglen);
