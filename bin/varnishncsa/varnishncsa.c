@@ -692,13 +692,12 @@ parse_format(const char *format)
 	for (p = format; *p != '\0'; p++) {
 
 		/* Allow the most essential escape sequences in format */
-		if (*p == '\\') {
-			p++;
-			if (*p == 't')
+		if (*p == '\\' && p[1] != '\0') {
+			if (*++p == 't')
 				AZ(VSB_putc(vsb, '\t'));
 			else if (*p == 'n')
 				AZ(VSB_putc(vsb, '\n'));
-			else if (*p != '\0')
+			else
 				AZ(VSB_putc(vsb, *p));
 			continue;
 		}
