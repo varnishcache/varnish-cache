@@ -187,8 +187,8 @@ update(void)
 		mvprintw(0, 0, "1:%u, n = %u, d = %g",
 		    scale, nhist, 1e-3 * ms_delay);
 
-	for (j = 2; j < LINES - 3; j += 5)
-		mvprintw(j, 0, "%u_", ((LINES - 3) - j) * scale);
+	for (j = 5; j < LINES - 2; j += 5)
+		mvprintw((LINES - 2) - j, 0, "%u_", j * scale);
 
 	/* show them */
 	for (i = 0; i < n; ++i) {
