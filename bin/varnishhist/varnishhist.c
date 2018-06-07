@@ -434,7 +434,7 @@ do_curses(void *arg)
 		case '7':
 		case '8':
 		case '9':
-			ms_delay = 1U << (ch - '0');
+			ms_delay = 1000U << (ch - '0');
 			break;
 		case '+':
 			ms_delay /= 2;
