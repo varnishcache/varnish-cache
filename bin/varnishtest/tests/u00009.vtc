@@ -26,6 +26,10 @@ process p1 -screen_dump
 
 process p1 -winsz 23 80
 
+delay 5
+
+process p1 -write {0>+-<}
+
 delay 1.5
 
 process p1 -expect-text 2 1 {20_}
