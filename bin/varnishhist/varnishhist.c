@@ -68,7 +68,7 @@ static unsigned hist_buckets;
 static pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
 
 static int end_of_file = 0;
-static double delay = 1;
+static int ms_delay = 1000;
 static unsigned rr_hist[HIST_N];
 static unsigned nhist;
 static unsigned next_hist;
@@ -82,7 +82,7 @@ static pthread_cond_t timebend_cv;
 static double log_ten;
 static char *ident;
 
-static const int scales[] = {
+static const unsigned scales[] = {
 	1,
 	2,
 	3,
@@ -103,7 +103,7 @@ static const int scales[] = {
 	25000,
 	50000,
 	100000,
-	INT_MAX
+	UINT_MAX
 };
 
 struct profile {
@@ -182,10 +182,10 @@ update(void)
 		VTIM_format(vsl_ts, t);
 
 		mvprintw(0, 0, "1:%u, n = %u, d = %g @ %s x %g",
-		    scale, nhist, delay, t, timebend);
+		    scale, nhist, 1e-3 * ms_delay, t, timebend);
 	} else
 		mvprintw(0, 0, "1:%u, n = %u, d = %g",
-		    scale, nhist, delay);
+		    scale, nhist, 1e-3 * ms_delay);
 
 	for (j = 2; j < LINES - 3; j += 5)
 		mvprintw(j, 0, "%u_", ((LINES - 3) - j) * scale);
@@ -299,7 +299,7 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			continue;
 
 		/* select bucket */
-		i = HIST_RES * (log(value) / log_ten);
+		i = HIST_RES * lround(log(value) / log_ten);
 		if (i < hist_low * HIST_RES)
 			i = hist_low * HIST_RES;
 		if (i >= hist_high * HIST_RES)
@@ -398,7 +398,8 @@ do_curses(void *arg)
 		update();
 		AZ(pthread_mutex_unlock(&mtx));
 
-		timeout(delay * 1000);
+		assert(ms_delay > 0);
+		timeout(ms_delay);
 		switch ((ch = getch())) {
 		case ERR:
 			break;
@@ -433,15 +434,15 @@ do_curses(void *arg)
 		case '7':
 		case '8':
 		case '9':
-			delay = 1U << (ch - '0');
+			ms_delay = 1U << (ch - '0');
 			break;
 		case '+':
-			delay /= 2;
-			if (delay < 1e-3)
-				delay = 1e-3;
+			ms_delay /= 2;
+			if (ms_delay < 1)
+				ms_delay = 1;
 			break;
 		case '-':
-			delay *= 2;
+			ms_delay *= 2;
 			break;
 		case '>':
 		case '<':
@@ -520,8 +521,8 @@ main(int argc, char **argv)
 			/* Usage help */
 			usage(0);
 		case 'p':
-			delay = strtod(optarg, NULL);
-			if (delay <= 0)
+			ms_delay = lround(1e3 * strtod(optarg, NULL));
+			if (ms_delay <= 0)
 				VUT_Error(vut, 1, "-p: invalid '%s'", optarg);
 			break;
 		case 'P':
@@ -571,7 +572,7 @@ main(int argc, char **argv)
 				profile_error(optarg);
 
 			cli_p.name = "custom";
-			cli_p.tag = match_tag;
+			cli_p.tag = (enum VSL_tag_e)match_tag;
 			cli_p.hist_low = -6;
 			cli_p.hist_high = 3;
 			profile = NULL;
