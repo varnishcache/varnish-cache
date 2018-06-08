@@ -1,5 +1,7 @@
 varnishtest	"test sigsegv handler"
 
+feature cmd "test -z $(env | grep ASAN_OPTIONS)"
+
 server s1 {
 	rxreq
 	txresp
