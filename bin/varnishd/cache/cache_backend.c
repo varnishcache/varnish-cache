@@ -493,8 +493,14 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 	be->director = VRT_AddDirector(ctx, vbe_methods, be,
 	    "%s", vrt->vcl_name);
 	if (be->director == NULL) {
-		// XXX
-		VRT_delete_backend(ctx, &be->director);
+		VSC_vbe_Destroy(&be->vsc_seg);
+#define DA(x)	do { if (be->x != NULL) free(be->x); } while (0)
+#define DN(x)	/**/
+	VRT_BACKEND_HANDLE();
+#undef DA
+#undef DN
+		Lck_Delete(&be->mtx);
+		FREE_OBJ(be);
 		return (NULL);
 	}
 
