@@ -328,7 +328,7 @@ class vcltype(object):
 		self.c = ctype
 		self.internal = internal
 		vcltypes[name] = self
-		
+
 
 vcltype("STRINGS", "void", True)
 vcltype("STRING_LIST", "void*", True)
