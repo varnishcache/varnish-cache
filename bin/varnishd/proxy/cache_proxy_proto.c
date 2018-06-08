@@ -501,7 +501,10 @@ vpx_complete(struct http_conn *htc)
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 
 	assert(htc->rxbuf_e >= htc->rxbuf_b);
-	assert(htc->rxbuf_e <= htc->ws->r);
+
+	/* HTC_RxStuff reserves space for NUL */
+	assert(htc->rxbuf_e < htc->ws->r);
+	*htc->rxbuf_e = '\0';
 
 	l = htc->rxbuf_e - htc->rxbuf_b;
 	p = htc->rxbuf_b;
@@ -514,8 +517,6 @@ vpx_complete(struct http_conn *htc)
 		if (j == 0)
 			return (HTC_S_JUNK);
 		if (j == 1 && i == sizeof vpx1_sig) {
-			assert (htc->rxbuf_e < htc->ws->r);
-			*htc->rxbuf_e = '\0';
 			q = strchr(p + i, '\n');
 			if (q != NULL && (q - htc->rxbuf_b) > 107)
 				return (HTC_S_OVERFLOW);

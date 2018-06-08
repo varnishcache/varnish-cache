@@ -239,6 +239,10 @@ HTC_RxPipeline(struct http_conn *htc, void *p)
 /*----------------------------------------------------------------------
  * Receive a request/packet/whatever, with timeouts
  *
+ * maxbytes is the maximum number of bytes the caller will need for a
+ * complete work unit. Note that due to pipelining the actual number of
+ * bytes passed to func may be larger.
+ *
  * t0 is when we start
  * *t1 becomes time of first non-idle rx
  * *t2 becomes time of complete rx
@@ -261,25 +265,32 @@ HTC_RxStuff(struct http_conn *htc, htc_complete_f *func,
 	AN(htc->ws->r);
 	AN(htc->rxbuf_b);
 	assert(htc->rxbuf_b <= htc->rxbuf_e);
+	assert(htc->rxbuf_e <= htc->ws->r);
 
 	AZ(isnan(tn));
 	if (t1 != NULL)
 		assert(isnan(*t1));
 
-	if (htc->rxbuf_e == htc->ws->r) {
-		/* Can't work with a zero size buffer */
+	if (htc->rxbuf_b == htc->ws->r || htc->rxbuf_e == htc->ws->r) {
+		/* Can't work with zero or already completely full
+		 * workspace buffer. The latter may happen due to
+		 * pipelining and on-the-fly chaging of param
+		 * http_req_size. */
 		WS_ReleaseP(htc->ws, htc->rxbuf_b);
 		return (HTC_S_OVERFLOW);
 	}
 	z = (htc->ws->r - htc->rxbuf_b);
+	z -= 1; /* Reserve space for NUL as needed by HTTP/1 and
+		 * Proxy_V1 */
 	if (z < maxbytes)
+		/* Cap maxbytes at the available workspace */
 		maxbytes = z;
 
 	while (1) {
 		now = VTIM_real();
 		AZ(htc->pipeline_b);
 		AZ(htc->pipeline_e);
-		assert(htc->rxbuf_e <= htc->ws->r);
+		assert(htc->rxbuf_e < htc->ws->r);
 
 		hs = func(htc);
 		if (hs == HTC_S_OVERFLOW || hs == HTC_S_JUNK) {
@@ -308,8 +319,7 @@ HTC_RxStuff(struct http_conn *htc, htc_complete_f *func,
 		if (!isnan(ti) && ti < tn && hs == HTC_S_EMPTY)
 			tmo = ti - now;
 		z = maxbytes - (htc->rxbuf_e - htc->rxbuf_b);
-		assert(z >= 0);
-		if (z == 0) {
+		if (z <= 0) {
 			WS_ReleaseP(htc->ws, htc->rxbuf_b);
 			return (HTC_S_OVERFLOW);
 		}
