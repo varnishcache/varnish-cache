@@ -37,9 +37,6 @@
  * and stops when we see the magic marker (double [CR]NL), and if we overshoot,
  * it keeps track of the "pipelined" data.
  *
- * Until we see the magic marker, we have to keep the rxbuf NUL terminated
- * because we use strchr(3) on it.
- *
  * We use this both for client and backend connections.
  */
 
@@ -75,10 +72,6 @@ HTTP1_Complete(struct http_conn *htc)
 	assert(htc->rxbuf_e >= htc->rxbuf_b);
 	assert(htc->rxbuf_e <= htc->ws->r);
 
-	if (htc->rxbuf_e == htc->ws->r)
-		return (HTC_S_OVERFLOW);		// No space for NUL
-	*htc->rxbuf_e = '\0';
-
 	/* Skip any leading white space */
 	for (p = htc->rxbuf_b ; vct_islws(*p); p++)
 		continue;
@@ -95,12 +88,13 @@ HTTP1_Complete(struct http_conn *htc)
 	 * is completed.  More stringent validation happens later.
 	 */
 	while (1) {
-		p = strchr(p, '\n');
+		p = memchr(p, '\n', htc->rxbuf_e - p);
 		if (p == NULL)
 			return (HTC_S_MORE);
-		p++;
-		if (*p == '\r')
-			p++;
+		if (++p == htc->rxbuf_e)
+			return (HTC_S_MORE);
+		if (*p == '\r' && ++p == htc->rxbuf_e)
+			return (HTC_S_MORE);
 		if (*p == '\n')
 			break;
 	}
