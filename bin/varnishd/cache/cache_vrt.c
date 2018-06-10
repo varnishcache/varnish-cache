@@ -519,10 +519,11 @@ VRT_Rollback(VRT_CTX, VCL_HTTP hp)
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	if (hp == ctx->http_req) {
 		CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-		HTTP_Copy(ctx->req->http, ctx->req->http0);
-		WS_Reset(ctx->req->ws, ctx->req->ws_req);
+		Req_Rollback(ctx->req);
 	} else if (hp == ctx->http_bereq) {
 		CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+		// -> VBO_Rollback ?
+		VRTPRIV_dynamic_kill(ctx->bo->privs, (uintptr_t)ctx->bo);
 		HTTP_Copy(ctx->bo->bereq, ctx->bo->bereq0);
 		WS_Reset(ctx->bo->bereq->ws, ctx->bo->ws_bo);
 		WS_Reset(ctx->bo->ws, ctx->bo->ws_bo);

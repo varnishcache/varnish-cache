@@ -181,6 +181,28 @@ Req_Release(struct req *req)
 	MPL_Free(pp->mpl_req, req);
 }
 
+static void
+req_finalize(struct req *req)
+{
+	VRTPRIV_dynamic_kill(req->privs, (uintptr_t)req);
+	VRTPRIV_dynamic_kill(req->privs, (uintptr_t)&req->top);
+	assert(VTAILQ_EMPTY(&req->privs->privs));
+}
+
+/*----------------------------------------------------------------------
+ * TODO:
+ * - check for code duplication with cnt_recv_prep
+ * - re-check if complete
+ */
+
+void
+Req_Rollback(struct req *req)
+{
+	req_finalize(req);
+	HTTP_Copy(req->http, req->http0);
+	WS_Reset(req->ws, req->ws_req);
+}
+
 /*----------------------------------------------------------------------
  * TODO: remove code duplication with cnt_recv_prep
  */
@@ -207,9 +229,7 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 		req->vcl = NULL;
 	}
 
-	VRTPRIV_dynamic_kill(req->privs, (uintptr_t)req);
-	VRTPRIV_dynamic_kill(req->privs, (uintptr_t)&req->top);
-	assert(VTAILQ_EMPTY(&req->privs->privs));
+	req_finalize(req);
 
 	/* Charge and log byte counters */
 	if (req->vsl->wid) {
