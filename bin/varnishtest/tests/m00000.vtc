@@ -16,7 +16,15 @@ varnish v1 -vcl+backend {
 		debug.vsc_new();
 	}
 
+	sub vcl_synth {
+		set req.http.overwrite = "the workspace " +
+		    "to ensure we notice any unfinished privs";
+	}
 	sub vcl_recv {
+		if (req.url == "/fail") {
+			debug.test_priv_task("foo");
+			return (fail);
+		}
 		debug.rot52(req);
 		debug.vsc_count();
 	}
@@ -52,6 +60,9 @@ client c1 {
 	expect resp.http.encrypted == "ROT52"
 	expect resp.http.what >= 16
 	expect resp.http.not == -1
+	txreq -url "/fail"
+	rxresp
+	expect resp.status == 503
 } -run
 
 varnish v1 -expect DEBUG.count == 1

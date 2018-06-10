@@ -208,8 +208,8 @@ cnt_vclfail(const struct worker *wrk, struct req *req)
 	AZ(req->objcore);
 	AZ(req->stale_oc);
 
-	HTTP_Copy(req->http, req->http0);
-	WS_Reset(req->ws, req->ws_req);
+	Req_Rollback(req);
+
 	req->err_code = 503;
 	req->err_reason = "VCL failed";
 	req->req_step = R_STP_SYNTH;
@@ -856,8 +856,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 
 	VCL_recv_method(req->vcl, wrk, req, NULL, NULL);
 	if (wrk->handling == VCL_RET_VCL && req->restarts == 0) {
-		HTTP_Copy(req->http, req->http0);
-		WS_Reset(req->ws, req->ws_req);
+		Req_Rollback(req);
 		cnt_recv_prep(req, ci);
 		VCL_recv_method(req->vcl, wrk, req, NULL, NULL);
 	}
