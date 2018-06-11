@@ -39,6 +39,8 @@
 
 #include <poll.h>
 #include <stdio.h>
+#include <errno.h>
+#include <string.h>
 #include <stdlib.h>
 
 #include "cache_varnishd.h"
@@ -227,8 +229,15 @@ vbp_write(struct vbp_target *vt, int *sock, const void *buf, size_t len)
 
 	i = write(*sock, buf, len);
 	if (i != len) {
-		if (i < 0)
+		if (i < 0) {
 			vt->err_xmit |= 1;
+			bprintf(vt->resp_buf, "Write error %d (%s)",
+				errno, strerror(errno));
+		} else {
+			bprintf(vt->resp_buf,
+				"Short write (%d/%zu) error %d (%s)",
+				i, len, errno, strerror(errno));
+		}
 		VTCP_close(sock);
 		return (-1);
 	}
@@ -279,7 +288,8 @@ vbp_poke(struct vbp_target *vt)
 	s = VTP_Open(vt->tcp_pool, t_end - t_now, (const void **)&sa,
 		vt->backend->vsc);
 	if (s < 0) {
-		/* Got no connection: failed */
+		bprintf(vt->resp_buf, "Open error %d (%s)",
+			errno, strerror(errno));
 		return;
 	}
 
@@ -296,7 +306,9 @@ vbp_poke(struct vbp_target *vt)
 	t_now = VTIM_real();
 	tmo = (int)round((t_end - t_now) * 1e3);
 	if (tmo <= 0) {
-		/* Spent too long time getting it */
+		bprintf(vt->resp_buf,
+			"Open timeout %.3fs exceeded by %.3fs",
+			vt->timeout, t_now - t_end);
 		VTCP_close(&s);
 		return;
 	}
@@ -308,8 +320,10 @@ vbp_poke(struct vbp_target *vt)
 		proxy_header = -1;
 	Lck_Unlock(&vbp_mtx);
 
-	if (proxy_header < 0)
+	if (proxy_header < 0) {
+		bprintf(vt->resp_buf, "%s", "No backend");
 		return;
+	}
 
 	/* Send the PROXY header */
 	assert(proxy_header <= 2);
@@ -333,9 +347,17 @@ vbp_poke(struct vbp_target *vt)
 		tmo = (int)round((t_end - t_now) * 1e3);
 		if (tmo > 0)
 			i = poll(pfd, 1, tmo);
-		if (i == 0 || tmo <= 0) {
-			if (i == 0)
-				vt->err_recv |= 1;
+		if (i == 0) {
+			vt->err_recv |= 1;
+			bprintf(vt->resp_buf, "Poll error %d (%s)",
+				errno, strerror(errno));
+			VTCP_close(&s);
+			return;
+		}
+		if (tmo <= 0) {
+			bprintf(vt->resp_buf,
+				"Poll (read) timeout %.3fs exceeded by %.3fs",
+				vt->timeout, t_now - t_end);
 			VTCP_close(&s);
 			return;
 		}
@@ -344,20 +366,27 @@ vbp_poke(struct vbp_target *vt)
 			    sizeof vt->resp_buf - rlen);
 		else
 			i = read(s, buf, sizeof buf);
-		if (i <= 0)
+		if (i <= 0) {
+			if (i < 0)
+				bprintf(vt->resp_buf, "Read error %d (%s)",
+					errno, strerror(errno));
 			break;
+		}
 		rlen += i;
 	}
 
 	VTCP_close(&s);
 
 	if (i < 0) {
+		/* errno reported above */
 		vt->err_recv |= 1;
 		return;
 	}
 
-	if (rlen == 0)
+	if (rlen == 0) {
+		bprintf(vt->resp_buf, "%s", "Empty response");
 		return;
+	}
 
 	/* So we have a good receive ... */
 	t_now = VTIM_real();

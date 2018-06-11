@@ -389,7 +389,7 @@ SLTM(Backend_health, 0, "Backend health check",
 	"The format is::\n\n"
 	"\t%s %s %s %u %u %u %f %f %s\n"
 	"\t|  |  |  |  |  |  |  |  |\n"
-	"\t|  |  |  |  |  |  |  |  +- Probe HTTP response\n"
+	"\t|  |  |  |  |  |  |  |  +- Probe HTTP response / error information\n"
 	"\t|  |  |  |  |  |  |  +---- Average response time\n"
 	"\t|  |  |  |  |  |  +------- Response time\n"
 	"\t|  |  |  |  |  +---------- Probe window size\n"
