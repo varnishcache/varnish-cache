@@ -76,7 +76,7 @@ vpx_proto1(const struct worker *wrk, const struct req *req)
 
 	*q++ = '\0';
 	/* Nuke the CRLF */
-	if (*q != '\n' || q == req->htc->rxbuf_e)
+	if (q == req->htc->rxbuf_e || *q != '\n')
 		return (-1);
 	*q++ = '\0';
 
@@ -515,7 +515,6 @@ vpx_complete(struct http_conn *htc)
 		if (j == 0)
 			return (HTC_S_JUNK);
 		if (j == 1 && i == sizeof vpx1_sig) {
-			assert (htc->rxbuf_e < htc->ws->r);
 			q = memchr(p + i, '\n', htc->rxbuf_e - (p + i));
 			if (q != NULL && (q - htc->rxbuf_b) > 107)
 				return (HTC_S_OVERFLOW);
