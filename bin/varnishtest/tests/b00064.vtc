@@ -1,0 +1,126 @@
+varnishtest "Test that req.grace will hold a client when a miss is anticipated"
+
+barrier b1 cond 2
+
+server s1 {
+	rxreq
+	expect req.url == "/"
+	txresp -body "0"
+
+	rxreq
+	expect req.url == "/"
+	txresp -body "1"
+
+	# second time we get a request, we use some time to serve it
+	rxreq
+	expect req.url == "/"
+	barrier b1 sync
+	delay .1
+	txresp -body "2"
+
+	# Last request, to a different URL to catch it if varnish asks for "/" too many times
+	rxreq
+	expect req.url == "/2"
+	txresp -body "x"
+} -start
+
+varnish v1 -vcl+backend {
+	import std;
+
+	sub vcl_recv {
+		# When we know in vcl_recv that we will have no grace, it is now
+		# possible to signal this to the lookup function:
+		if (req.http.X-no-grace) {
+			set req.grace = 0s;
+		}
+	}
+	sub vcl_hit {
+		set req.http.X-grace = obj.grace;
+	}
+	sub vcl_backend_response {
+		set beresp.ttl = 0.1s;
+		set beresp.grace = 1m;
+	}
+	sub vcl_deliver {
+		if (req.http.X-grace) {
+			set resp.http.X-grace = req.http.X-grace;
+			set resp.http.X-req-grace = req.grace;
+		}
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "0"
+	expect resp.http.X-grace == <undef>
+	# let the object's ttl expire
+	delay .2
+	# get a genuinely fresh object by disabling grace
+	# we will not get to vcl_hit to see the grace
+	txreq -hdr "X-no-grace: true"
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "1"
+	expect resp.http.X-grace == <undef>
+	expect resp.http.X-req-grace == <undef>
+} -run
+
+# let the latest object's ttl expire.
+delay .2
+
+varnish v1 -expect n_object == 1
+
+# c2 asks for the object under grace
+client c2 {
+	txreq
+	rxresp
+	# we did not disable grace in the request, so we should get the graced object here
+	expect resp.status == 200
+	expect resp.body == "1"
+	expect resp.http.X-grace == "60.000"
+	expect resp.http.X-req-grace < 0.
+} -start
+
+delay .1
+
+# c3 asks for graced object, but now we disable grace.
+client c3 {
+	txreq -hdr "X-no-grace: true"
+	rxresp
+	expect resp.status == 200
+	# Here we have disable grace and should get the object from the background fetch,
+	# which will take us into vcl_hit
+	expect resp.body == "2"
+	expect resp.http.X-grace == "60.000"
+	expect resp.http.X-req-grace == "0.000"
+} -start
+
+delay .1
+
+# c4 does not disable grace, and should get the grace object even
+# though c3 is waiting on the background thread to deliver a new
+# version.
+
+client c4 {
+	txreq
+	rxresp
+	barrier b1 sync
+	expect resp.status == 200
+	# We should get what c1 got in the very beginning
+	expect resp.body == "1"
+	expect resp.http.X-grace == "60.000"
+	expect resp.http.X-req-grace < 0.
+} -start
+
+client c2 -wait
+client c3 -wait
+client c4 -wait
+
+client c5 {
+	txreq -url "/2"
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "x"
+} -run

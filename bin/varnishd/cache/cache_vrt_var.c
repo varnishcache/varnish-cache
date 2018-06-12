@@ -434,7 +434,7 @@ VRT_r_obj_storage(VRT_CTX)
 
 /*--------------------------------------------------------------------*/
 
-#define REQ_VAR_L(nm, elem, type,extra)					\
+#define REQ_VAR_L(nm, elem, type, extra)				\
 									\
 VCL_VOID								\
 VRT_l_req_##nm(VRT_CTX, type arg)					\
@@ -459,6 +459,8 @@ REQ_VAR_L(backend_hint, director_hint, VCL_BACKEND,)
 REQ_VAR_R(backend_hint, director_hint, VCL_BACKEND)
 REQ_VAR_L(ttl, d_ttl, VCL_DURATION, if (!(arg>0.0)) arg = 0;)
 REQ_VAR_R(ttl, d_ttl, VCL_DURATION)
+REQ_VAR_L(grace, d_grace, VCL_DURATION, if (!(arg>0.0)) arg = 0;)
+REQ_VAR_R(grace, d_grace, VCL_DURATION)
 
 /*--------------------------------------------------------------------*/
 
