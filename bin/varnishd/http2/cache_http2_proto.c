@@ -882,8 +882,6 @@ h2_frame_complete(struct http_conn *htc)
 	u = vbe32dec(htc->rxbuf_b) >> 8;
 	if (l >= u + 9)
 		return (HTC_S_COMPLETE);
-	else if (l > h2->local_settings.max_frame_size + 9)
-		return (HTC_S_OVERFLOW);
 
 	return (HTC_S_MORE);
 }
@@ -1068,7 +1066,7 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 	hs = HTC_RxStuff(h2->htc, h2_frame_complete,
 	    NULL, NULL, NAN,
 	    h2->sess->t_idle + cache_param->timeout_idle,
-	    16384 + 9);		// rfc7540,l,4228,4228
+	    h2->local_settings.max_frame_size + 9);
 	switch (hs) {
 	case HTC_S_COMPLETE:
 		break;
