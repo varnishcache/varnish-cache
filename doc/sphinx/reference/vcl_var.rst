@@ -304,6 +304,21 @@ req.ttl
 	Deprecated and scheduled for removal with varnish release 7.
 
 
+req.grace
+
+	Type: DURATION
+
+	Readable from: client
+
+	Writable from: client
+
+
+	Upper limit on the object grace.
+
+	During lookup the minimum of req.grace and the object's stored
+	grace value will be used as the object's grace.
+
+
 req.xid
 
 	Type: STRING
