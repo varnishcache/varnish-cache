@@ -400,11 +400,11 @@ cnt_lookup(struct worker *wrk, struct req *req)
 
 	AZ(req->objcore);
 	if (lr == HSH_MISS) {
-		/* Found nothing */
-		AZ(oc);
+		/* Found nothing or an object that was out of grace */
 		AN(boc);
 		AN(boc->flags & OC_F_BUSY);
 		req->objcore = boc;
+		req->stale_oc = oc;
 		req->req_step = R_STP_MISS;
 		return (REQ_FSM_MORE);
 	}
@@ -702,6 +702,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 
 	req->vdp_retval = 0;
 	req->d_ttl = -1;
+	req->d_grace = -1;
 	req->disable_esi = 0;
 	req->hash_always_miss = 0;
 	req->hash_ignore_busy = 0;

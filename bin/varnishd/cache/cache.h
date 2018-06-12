@@ -564,6 +564,7 @@ struct req {
 	uint8_t			digest[DIGEST_LEN];
 
 	double			d_ttl;
+	double			d_grace;
 
 	ssize_t			req_bodybytes;	/* Parsed req bodybytes */
 
@@ -697,6 +698,7 @@ void EXP_Clr(struct exp *e);
 
 double EXP_Ttl(const struct req *, const struct exp*);
 double EXP_When(const struct exp *exp);
+double EXP_Ttl_grace(const struct req *, const struct exp*);
 void EXP_Insert(struct worker *wrk, struct objcore *oc);
 void EXP_Inject(struct worker *wrk, struct objcore *oc, struct lru *lru);
 void EXP_Rearm(struct objcore *, double now, double ttl, double grace,
