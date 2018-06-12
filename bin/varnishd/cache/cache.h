@@ -471,6 +471,7 @@ struct req {
 	uint8_t			digest[DIGEST_LEN];
 
 	double			d_ttl;
+	double			d_grace;
 
 	ssize_t			req_bodybytes;	/* Parsed req bodybytes */
 	const struct stevedore	*storage;

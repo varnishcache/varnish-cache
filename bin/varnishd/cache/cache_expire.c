@@ -75,6 +75,24 @@ EXP_Ttl(const struct req *req, const struct objcore *oc)
 }
 
 /*--------------------------------------------------------------------
+ * Calculate an object's effective ttl+grace time, taking req.grace into
+ * account if it is available.
+ */
+
+double
+EXP_Ttl_grace(const struct req *req, const struct objcore *oc)
+{
+	double g;
+
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+
+	g = oc->grace;
+	if (req != NULL && req->d_grace >= 0. && req->d_grace < g)
+		g = req->d_grace;
+	return (EXP_Ttl(req, oc) + g);
+}
+
+/*--------------------------------------------------------------------
  * Post an objcore to the exp_thread's inbox.
  */
 

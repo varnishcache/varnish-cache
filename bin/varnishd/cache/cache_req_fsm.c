@@ -507,14 +507,23 @@ cnt_lookup(struct worker *wrk, struct req *req)
 
 	AZ(req->objcore);
 	if (lr == HSH_MISS) {
-		/* Found nothing */
-		AZ(oc);
-		if (busy != NULL) {
+		/* Found nothing or an object that was out of grace */
+		if (oc == NULL) {
+			/* Nothing */
+			if (busy != NULL) {
+				AN(busy->flags & OC_F_BUSY);
+				req->objcore = busy;
+				req->req_step = R_STP_MISS;
+			} else {
+				req->req_step = R_STP_PASS;
+			}
+		} else {
+			/* Object out of grace */
+			AN(busy); /* Else we should be on waiting list */
 			AN(busy->flags & OC_F_BUSY);
 			req->objcore = busy;
+			req->stale_oc = oc;
 			req->req_step = R_STP_MISS;
-		} else {
-			req->req_step = R_STP_PASS;
 		}
 		return (REQ_FSM_MORE);
 	}
@@ -804,6 +813,7 @@ cnt_recv_prep(struct req *req, const char *ci)
 		AN(req->director_hint);
 
 		req->d_ttl = -1;
+		req->d_grace = -1;
 		req->disable_esi = 0;
 		req->hash_always_miss = 0;
 		req->hash_ignore_busy = 0;
