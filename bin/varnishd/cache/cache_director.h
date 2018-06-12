@@ -31,8 +31,6 @@
  *
  */
 
-struct vdi_methods;
-
 struct vcldir {
 	unsigned			magic;
 #define VCLDIR_MAGIC			0xbf726c7d
@@ -40,13 +38,10 @@ struct vcldir {
 	struct vcl			*vcl;
 	const struct vdi_methods	*methods;
 	VTAILQ_ENTRY(vcldir)		list;
-	unsigned			health;
 	const struct vdi_ahealth	*admin_health;
 	double				health_changed;
 	char				*cli_name;
 };
-
-/* cache_director.c */
 
 #define VBE_AHEALTH_LIST					\
 	VBE_AHEALTH(healthy,	HEALTHY,	1)		\
