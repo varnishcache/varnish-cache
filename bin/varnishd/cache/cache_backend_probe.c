@@ -318,6 +318,7 @@ vbp_poke(struct vbp_target *vt)
 
 	if (proxy_header < 0) {
 		bprintf(vt->resp_buf, "%s", "No backend");
+		VTCP_close(&s);
 		return;
 	}
 
