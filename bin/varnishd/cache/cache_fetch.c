@@ -927,6 +927,10 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	while (stp != F_STP_DONE) {
 		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 		assert(bo->fetch_objcore->boc->refcount >= 1);
+		if (bo->fetch_objcore->boc->state < BOS_REQ_DONE)
+			AN(bo->req);
+		else
+			AZ(bo->req);
 		switch (stp) {
 #define FETCH_STEP(l, U, arg)						\
 		case F_STP_##U:						\
