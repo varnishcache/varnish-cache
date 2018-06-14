@@ -45,8 +45,6 @@
 #include "cache_tcp_pool.h"
 #include "cache_pool.h"
 
-#include "VSC_vbe.h"
-
 struct conn_pool;
 
 /*--------------------------------------------------------------------
@@ -379,13 +377,13 @@ VCP_Recycle(const struct worker *wrk, struct pfd **pfdp)
  */
 
 static int
-VCP_Open(struct conn_pool *cp, double tmo, const void **privp,
-    struct VSC_vbe *vsc)
+VCP_Open(struct conn_pool *cp, double tmo, const void **privp, int *err)
 {
 	int r;
 	double h;
 
 	CHECK_OBJ_NOTNULL(cp, CONN_POOL_MAGIC);
+	AN(err);
 
 	while (cp->holddown > 0) {
 		Lck_Lock(&cp->mtx);
@@ -400,8 +398,7 @@ VCP_Open(struct conn_pool *cp, double tmo, const void **privp,
 			break;
 		}
 
-		if (vsc)
-			vsc->helddown++;
+		*err = 0;
 		errno = cp->holddown_errno;
 		Lck_Unlock(&cp->mtx);
 		return (-1);
@@ -409,7 +406,9 @@ VCP_Open(struct conn_pool *cp, double tmo, const void **privp,
 
 	r = cp->methods->open(cp, tmo, privp);
 
-	if (r >= 0 || vsc == NULL)
+	*err = errno;
+
+	if (r >= 0)
 		return (r);
 
 	h = 0;
@@ -418,28 +417,20 @@ VCP_Open(struct conn_pool *cp, double tmo, const void **privp,
 	switch (errno) {
 	case EACCES:
 	case EPERM:
-		vsc->fail_eacces++;
 		h = cache_param->backend_local_error_holddown;
 		break;
 	case EADDRNOTAVAIL:
-		vsc->fail_eaddrnotavail++;
 		h = cache_param->backend_local_error_holddown;
 		break;
 	case ECONNREFUSED:
-		vsc->fail_econnrefused++;
 		h = cache_param->backend_remote_error_holddown;
 		break;
 	case ENETUNREACH:
-		vsc->fail_enetunreach++;
 		h = cache_param->backend_remote_error_holddown;
 		break;
-	case ETIMEDOUT:
-		vsc->fail_etimedout++;
-		break;
 	default:
-		vsc->fail_other++;
+		break;
 	}
-	vsc->fail++;
 
 	if (h == 0)
 		return (r);
@@ -498,13 +489,15 @@ VCP_Close(struct pfd **pfdp)
 
 static struct pfd *
 VCP_Get(struct conn_pool *cp, double tmo, struct worker *wrk,
-    unsigned force_fresh, struct VSC_vbe *vsc)
+    unsigned force_fresh, int *err)
 {
 	struct pfd *pfd;
 
 	CHECK_OBJ_NOTNULL(cp, CONN_POOL_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	AN(err);
 
+	*err = 0;
 	Lck_Lock(&cp->mtx);
 	pfd = VTAILQ_FIRST(&cp->connlist);
 	CHECK_OBJ_ORNULL(pfd, PFD_MAGIC);
@@ -531,7 +524,7 @@ VCP_Get(struct conn_pool *cp, double tmo, struct worker *wrk,
 	INIT_OBJ(pfd->waited, WAITED_MAGIC);
 	pfd->state = PFD_STATE_USED;
 	pfd->conn_pool = cp;
-	pfd->fd = VCP_Open(cp, tmo, &pfd->priv, vsc);
+	pfd->fd = VCP_Open(cp, tmo, &pfd->priv, err);
 	if (pfd->fd < 0) {
 		FREE_OBJ(pfd);
 		Lck_Lock(&cp->mtx);
@@ -809,10 +802,9 @@ VTP_Rel(struct tcp_pool **tpp)
  */
 
 int
-VTP_Open(struct tcp_pool *tp, double tmo, const void **privp,
-    struct VSC_vbe *vsc)
+VTP_Open(struct tcp_pool *tp, double tmo, const void **privp, int *err)
 {
-	return (VCP_Open(tp->cp, tmo, privp, vsc));
+	return (VCP_Open(tp->cp, tmo, privp, err));
 }
 
 /*--------------------------------------------------------------------
@@ -843,10 +835,10 @@ VTP_Close(struct pfd **pfdp)
 
 struct pfd *
 VTP_Get(struct tcp_pool *tp, double tmo, struct worker *wrk,
-	unsigned force_fresh, struct VSC_vbe *vsc)
+	unsigned force_fresh, int *err)
 {
 
-	return VCP_Get(tp->cp, tmo, wrk, force_fresh, vsc);
+	return VCP_Get(tp->cp, tmo, wrk, force_fresh, err);
 }
 
 /*--------------------------------------------------------------------

@@ -82,3 +82,4 @@ void VBP_Insert(struct backend *b, struct vrt_backend_probe const *p,
 void VBP_Remove(struct backend *b);
 void VBP_Control(const struct backend *b, int stop);
 void VBP_Status(struct cli *cli, const struct backend *, int details);
+void VBE_Connect_Error(struct VSC_vbe *, int err);
