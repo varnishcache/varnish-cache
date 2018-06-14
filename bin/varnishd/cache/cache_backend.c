@@ -58,6 +58,41 @@ static struct lock backends_mtx;
 
 /*--------------------------------------------------------------------*/
 
+void
+VBE_Connect_Error(struct VSC_vbe *vsc, int err)
+{
+
+	switch(err) {
+	case 0:
+		/*
+		 * This is kind of brittle, but zero is the only
+		 * value of errno we can trust to have no meaning.
+		 */
+		vsc->helddown++;
+		break;
+	case EACCES:
+	case EPERM:
+		vsc->fail_eacces++;
+		break;
+	case EADDRNOTAVAIL:
+		vsc->fail_eaddrnotavail++;
+		break;
+	case ECONNREFUSED:
+		vsc->fail_econnrefused++;
+		break;
+	case ENETUNREACH:
+		vsc->fail_enetunreach++;
+		break;
+	case ETIMEDOUT:
+		vsc->fail_etimedout++;
+		break;
+	default:
+		vsc->fail_other++;
+	}
+}
+
+/*--------------------------------------------------------------------*/
+
 #define FIND_TMO(tmx, dst, bo, be)					\
 	do {								\
 		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);			\
@@ -77,7 +112,7 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
     unsigned force_fresh)
 {
 	struct pfd *pfd;
-	int *fdp;
+	int *fdp, err;
 	double tmod;
 	char abuf1[VTCP_ADDRBUFSIZE], abuf2[VTCP_ADDRBUFSIZE];
 	char pbuf1[VTCP_PORTBUFSIZE], pbuf2[VTCP_PORTBUFSIZE];
@@ -113,11 +148,12 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
 	bo->htc->doclose = SC_NULL;
 
 	FIND_TMO(connect_timeout, tmod, bo, bp);
-	pfd = VTP_Get(bp->tcp_pool, tmod, wrk, force_fresh, bp->vsc);
+	pfd = VTP_Get(bp->tcp_pool, tmod, wrk, force_fresh, &err);
 	if (pfd == NULL) {
+		VBE_Connect_Error(bp->vsc, err);
 		VSLb(bo->vsl, SLT_FetchError,
 		     "backend %s: fail errno %d (%s)",
-		     VRT_BACKEND_string(bp->director), errno, strerror(errno));
+		     VRT_BACKEND_string(bp->director), err, strerror(err));
 		VSC_C_main->backend_fail++;
 		bo->htc = NULL;
 		return (NULL);

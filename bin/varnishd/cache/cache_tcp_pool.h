@@ -72,11 +72,10 @@ void VTP_Rel(struct tcp_pool **);
 	 * the pool is destroyed and all cached connections closed.
 	 */
 
-int VTP_Open(struct tcp_pool *, double tmo, const void **,
-    struct VSC_vbe *);
+int VTP_Open(struct tcp_pool *, double tmo, const void **, int*);
 	/*
 	 * Open a new connection and return the adress used.
-	 * Errors will be accounted in the optional vsc
+	 * errno will be returned in the last argument.
 	 */
 
 void VTP_Close(struct pfd **);
@@ -90,10 +89,10 @@ void VTP_Recycle(const struct worker *, struct pfd **);
 	 */
 
 struct pfd *VTP_Get(struct tcp_pool *, double tmo, struct worker *,
-    unsigned force_fresh, struct VSC_vbe *);
+    unsigned force_fresh, int *err);
 	/*
 	 * Get a (possibly) recycled connection.
-	 * Open errors will be accounted in the optional vsc
+	 * errno will be stored in err
 	 */
 
 int VTP_Wait(struct worker *, struct pfd *, double tmo);

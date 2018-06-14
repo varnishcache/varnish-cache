@@ -271,7 +271,7 @@ vbp_write_proxy_v1(struct vbp_target *vt, int *sock)
 static void
 vbp_poke(struct vbp_target *vt)
 {
-	int s, tmo, i, proxy_header;
+	int s, tmo, i, proxy_header, err;
 	double t_start, t_now, t_end;
 	unsigned rlen, resp;
 	char buf[8192], *p;
@@ -281,11 +281,13 @@ vbp_poke(struct vbp_target *vt)
 	t_start = t_now = VTIM_real();
 	t_end = t_start + vt->timeout;
 
-	s = VTP_Open(vt->tcp_pool, t_end - t_now, (const void **)&sa,
-		vt->backend->vsc);
+	s = VTP_Open(vt->tcp_pool, t_end - t_now, (const void **)&sa, &err);
 	if (s < 0) {
-		bprintf(vt->resp_buf, "Open error %d (%s)",
-			errno, strerror(errno));
+		bprintf(vt->resp_buf, "Open error %d (%s)", err, strerror(err));
+		Lck_Lock(&vbp_mtx);
+		if (vt->backend)
+			VBE_Connect_Error(vt->backend->vsc, err);
+		Lck_Unlock(&vbp_mtx);
 		return;
 	}
 
