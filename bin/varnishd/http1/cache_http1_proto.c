@@ -73,7 +73,7 @@ HTTP1_Complete(struct http_conn *htc)
 	assert(htc->rxbuf_e <= htc->ws->r);
 
 	/* Skip any leading white space */
-	for (p = htc->rxbuf_b ; vct_islws(*p); p++)
+	for (p = htc->rxbuf_b ; p < htc->rxbuf_e && vct_islws(*p); p++)
 		continue;
 	if (p == htc->rxbuf_e)
 		return (HTC_S_EMPTY);
