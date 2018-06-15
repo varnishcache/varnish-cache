@@ -603,6 +603,7 @@ h2_end_headers(struct worker *wrk, struct h2_sess *h2,
 	r2->scheduled = 1;
 	if (Pool_Task(wrk->pool, &req->task, TASK_QUEUE_STR) != 0) {
 		r2->scheduled = 0;
+		r2->state = H2_S_CLOSED;
 		return (H2SE_REFUSED_STREAM); //rfc7540,l,3326,3329
 	}
 	return (0);
