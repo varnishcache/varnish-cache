@@ -507,23 +507,16 @@ cnt_lookup(struct worker *wrk, struct req *req)
 
 	AZ(req->objcore);
 	if (lr == HSH_MISS) {
-		/* Found nothing or an object that was out of grace */
-		if (oc == NULL) {
-			/* Nothing */
-			if (busy != NULL) {
-				AN(busy->flags & OC_F_BUSY);
-				req->objcore = busy;
-				req->req_step = R_STP_MISS;
-			} else {
-				req->req_step = R_STP_PASS;
-			}
-		} else {
-			/* Object out of grace */
-			AN(busy); /* Else we should be on waiting list */
+		if (busy != NULL) {
+			/* hitmiss, out-of-grace or ordinary miss */
 			AN(busy->flags & OC_F_BUSY);
 			req->objcore = busy;
 			req->stale_oc = oc;
 			req->req_step = R_STP_MISS;
+		} else {
+			/* hitpass */
+			AZ(oc);
+			req->req_step = R_STP_PASS;
 		}
 		return (REQ_FSM_MORE);
 	}
