@@ -726,6 +726,12 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	ASSERT_RXTHR(h2);
 	if (r2 == NULL || !r2->scheduled)
 		return (0);
+	if (r2->req->req_body_status == REQ_BODY_NONE) {
+		/* state REQ_BODY_NONE implies we already received an
+		 * END_STREAM.  */
+		r2->error = H2SE_STREAM_CLOSED;
+		return (H2SE_STREAM_CLOSED); // rfc7540,l,1766,1769
+	}
 	Lck_Lock(&h2->sess->mtx);
 	AZ(h2->mailcall);
 	h2->mailcall = r2;
