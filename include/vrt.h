@@ -125,6 +125,7 @@ struct vsc_seg;
 struct vsmw_cluster;
 struct vsl_log;
 struct ws;
+struct VSC_main;
 
 struct strands {
 	int		n;

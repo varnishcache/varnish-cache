@@ -246,7 +246,7 @@ BAN_AddTest(struct ban_proto *bp,
  */
 
 const char *
-BAN_Commit(struct ban_proto *bp)
+BAN_Commit(struct ban_proto *bp, struct VSC_main *stats)
 {
 	struct ban  *b, *bi;
 	ssize_t ln;
@@ -294,15 +294,19 @@ BAN_Commit(struct ban_proto *bp)
 	VTAILQ_INSERT_HEAD(&ban_head, b, list);
 	ban_start = b;
 
-	VSC_C_main->bans++;
-	VSC_C_main->bans_added++;
+	stats->bans++;
+	stats->bans_added++;
 	bans_persisted_bytes += ln;
+	/*
+	 * XXX absolute update of gauges - may be inaccurate for Pool_Sumstat
+	 * race
+	 */
 	VSC_C_main->bans_persisted_bytes = bans_persisted_bytes;
 
 	if (b->flags & BANS_FLAG_OBJ)
-		VSC_C_main->bans_obj++;
+		stats->bans_obj++;
 	if (b->flags & BANS_FLAG_REQ)
-		VSC_C_main->bans_req++;
+		stats->bans_req++;
 
 	if (bi != NULL)
 		ban_info_new(b->spec, ln);	/* Notify stevedores */
@@ -313,8 +317,8 @@ BAN_Commit(struct ban_proto *bp)
 		    bi = VTAILQ_NEXT(bi, list)) {
 			if (!(bi->flags & BANS_FLAG_COMPLETED) &&
 			    ban_equal(b->spec, bi->spec)) {
-				ban_mark_completed(bi);
-				VSC_C_main->bans_dups++;
+				ban_mark_completed(bi, stats);
+				stats->bans_dups++;
 			}
 		}
 	}
