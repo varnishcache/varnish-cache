@@ -570,7 +570,7 @@ struct sess {
 struct ban_proto *BAN_Build(void);
 const char *BAN_AddTest(struct ban_proto *,
     const char *, const char *, const char *);
-const char *BAN_Commit(struct ban_proto *b);
+const char *BAN_Commit(struct ban_proto *b, struct VSC_main *stats);
 void BAN_Abandon(struct ban_proto *b);
 
 /* cache_cli.c [CLI] */

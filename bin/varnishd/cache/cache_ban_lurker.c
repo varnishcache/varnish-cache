@@ -62,7 +62,7 @@ ban_kick_lurker(void)
  */
 
 static int
-ban_cleantail(const struct ban *victim)
+ban_cleantail(const struct ban *victim, struct VSC_main *stats)
 {
 	struct ban *b, *bt;
 	struct banhead_s freelist = VTAILQ_HEAD_INITIALIZER(freelist);
@@ -78,17 +78,21 @@ ban_cleantail(const struct ban *victim)
 		if (b != VTAILQ_FIRST(&ban_head) && b->refcount == 0) {
 			assert(VTAILQ_EMPTY(&b->objcore));
 			if (b->flags & BANS_FLAG_COMPLETED)
-				VSC_C_main->bans_completed--;
+				stats->bans_completed--;
 			if (b->flags & BANS_FLAG_OBJ)
-				VSC_C_main->bans_obj--;
+				stats->bans_obj--;
 			if (b->flags & BANS_FLAG_REQ)
-				VSC_C_main->bans_req--;
-			VSC_C_main->bans--;
-			VSC_C_main->bans_deleted++;
+				stats->bans_req--;
+			stats->bans--;
+			stats->bans_deleted++;
 			VTAILQ_REMOVE(&ban_head, b, list);
 			VTAILQ_INSERT_TAIL(&freelist, b, list);
 			bans_persisted_fragmentation +=
 			    ban_len(b->spec);
+			/*
+			 * XXX absolute update of gauges - may be inaccurate for
+			 * Pool_Sumstat race
+			 */
 			VSC_C_main->bans_persisted_fragmentation =
 			    bans_persisted_fragmentation;
 			ban_info_drop(b->spec, ban_len(b->spec));
@@ -121,7 +125,7 @@ ban_cleantail(const struct ban *victim)
  */
 
 static struct objcore *
-ban_lurker_getfirst(struct vsl_log *vsl, struct ban *bt)
+ban_lurker_getfirst(struct vsl_log *vsl, struct ban *bt, struct VSC_main *stats)
 {
 	struct objhead *oh;
 	struct objcore *oc, *noc;
@@ -151,7 +155,7 @@ ban_lurker_getfirst(struct vsl_log *vsl, struct ban *bt)
 
 			/* hold off to give lookup a chance and reiterate */
 			Lck_Unlock(&ban_mtx);
-			VSC_C_main->bans_lurker_contention++;
+			stats->bans_lurker_contention++;
 			VSL_Flush(vsl, 0);
 			VTIM_sleep(cache_param->ban_lurker_holdoff);
 			Lck_Lock(&ban_mtx);
@@ -205,6 +209,10 @@ ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
 	struct objcore *oc;
 	unsigned tests;
 	int i;
+	struct VSC_main *stats;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	stats = wrk->stats;
 
 	/*
 	 * First see if there is anything to do, and if so, insert markers
@@ -224,7 +232,7 @@ ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
 			VTIM_sleep(cache_param->ban_lurker_sleep);
 			ban_batch = 0;
 		}
-		oc = ban_lurker_getfirst(vsl, bt);
+		oc = ban_lurker_getfirst(vsl, bt, stats);
 		if (oc == NULL)
 			return;
 		i = 0;
@@ -248,21 +256,21 @@ ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
 				tests = 0;
 				i = ban_evaluate(wrk, bl->spec, oc, NULL,
 				    &tests);
-				VSC_C_main->bans_lurker_tested++;
-				VSC_C_main->bans_lurker_tests_tested += tests;
+				stats->bans_lurker_tested++;
+				stats->bans_lurker_tests_tested += tests;
 			}
 			if (i) {
 				if (kill) {
 					VSLb(vsl, SLT_ExpBan,
 					    "%u killed for lurker cutoff",
 					    ObjGetXID(wrk, oc));
-					VSC_C_main->
+					stats->
 					    bans_lurker_obj_killed_cutoff++;
 				} else {
 					VSLb(vsl, SLT_ExpBan,
 					    "%u banned by lurker",
 					    ObjGetXID(wrk, oc));
-					VSC_C_main->bans_lurker_obj_killed++;
+					stats->bans_lurker_obj_killed++;
 				}
 				HSH_Kill(oc);
 				break;
@@ -303,10 +311,14 @@ ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 	struct banhead_s obans;
 	double d, dt, n;
 	unsigned count = 0, cutoff = UINT_MAX;
+	struct VSC_main *stats;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	stats = wrk->stats;
 
 	dt = 49.62;		// Random, non-magic
 	if (cache_param->ban_lurker_sleep == 0) {
-		(void)ban_cleantail(NULL);
+		(void)ban_cleantail(NULL, stats);
 		return (dt);
 	}
 	if (cache_param->ban_cutoff > 0)
@@ -346,7 +358,7 @@ ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 	 * containted the first oban, all obans were on the tail and we're
 	 * done.
 	 */
-	if (ban_cleantail(VTAILQ_FIRST(&obans)))
+	if (ban_cleantail(VTAILQ_FIRST(&obans), stats))
 		return (dt);
 
 	if (VTAILQ_FIRST(&obans) == NULL)
@@ -374,7 +386,7 @@ ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 
 	Lck_Lock(&ban_mtx);
 	VTAILQ_FOREACH(b, &obans, l_list) {
-		ban_mark_completed(b);
+		ban_mark_completed(b, stats);
 		if (b == bd)
 			break;
 	}
