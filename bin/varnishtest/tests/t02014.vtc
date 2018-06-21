@@ -1,6 +1,6 @@
 varnishtest "Exercise h/2 sender flow control code"
 
-barrier b1 sock 3 -cyclic
+barrier b1 sock 3
 
 server s1 {
 	rxreq
@@ -41,22 +41,6 @@ client c1 {
 		rxresp
 		expect resp.status == 200
 		expect resp.bodylen == 66300
-	} -run
-
-	stream 0 -wait
-} -run
-
-client c1 {
-	stream 0 {
-		barrier b1 sync
-	} -start
-
-	stream 1 {
-		txreq
-		txdata -data "fail"
-		rxrst
-		expect rst.err == STREAM_CLOSED
-		barrier b1 sync
 	} -run
 
 	stream 0 -wait
