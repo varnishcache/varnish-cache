@@ -559,9 +559,12 @@ h2_end_headers(struct worker *wrk, struct h2_sess *h2,
 	assert(r2->state == H2_S_OPEN);
 	h2e = h2h_decode_fini(h2, r2->decode);
 	FREE_OBJ(r2->decode);
-	if (h2->rxf_flags & H2FF_HEADERS_END_STREAM)
-		r2->state = H2_S_CLOS_REM;
 	h2->new_req = NULL;
+	if (r2->req->req_body_status == REQ_BODY_NONE) {
+		/* REQ_BODY_NONE implies one of the frames in the
+		 * header block contained END_STREAM */
+		r2->state = H2_S_CLOS_REM;
+	}
 	if (h2e != NULL) {
 		Lck_Lock(&h2->sess->mtx);
 		VSLb(h2->vsl, SLT_Debug, "HPACK/FINI %s", h2e->name);
