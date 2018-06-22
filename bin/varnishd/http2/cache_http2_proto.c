@@ -225,7 +225,7 @@ h2_kill_req(struct worker *wrk, const struct h2_sess *h2,
 			AZ(pthread_cond_signal(r2->cond));
 		r2 = NULL;
 	} else {
-		if (r2->state == H2_S_OPEN) {
+		if (r2->state == H2_S_OPEN && r2->decode != NULL) {
 			(void)h2h_decode_fini(h2, r2->decode);
 			FREE_OBJ(r2->decode);
 		}
@@ -559,7 +559,8 @@ h2_end_headers(struct worker *wrk, struct h2_sess *h2,
 	assert(r2->state == H2_S_OPEN);
 	h2e = h2h_decode_fini(h2, r2->decode);
 	FREE_OBJ(r2->decode);
-	r2->state = H2_S_CLOS_REM;
+	if (h2->rxf_flags & H2FF_HEADERS_END_STREAM)
+		r2->state = H2_S_CLOS_REM;
 	h2->new_req = NULL;
 	if (h2e != NULL) {
 		Lck_Lock(&h2->sess->mtx);
@@ -693,7 +694,7 @@ h2_rx_continuation(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	h2_error h2e;
 
 	ASSERT_RXTHR(h2);
-	if (r2 == NULL || r2->state != H2_S_OPEN)
+	if (r2 == NULL || r2->state != H2_S_OPEN || r2->req != h2->new_req)
 		return (H2CE_PROTOCOL_ERROR);	// XXX spec ?
 	req = r2->req;
 	h2e = h2h_decode_bytes(h2, r2->decode, h2->rxf_data, h2->rxf_len);
@@ -726,6 +727,10 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	ASSERT_RXTHR(h2);
 	if (r2 == NULL || !r2->scheduled)
 		return (0);
+	if (r2->state >= H2_S_CLOS_REM) {
+		r2->error = H2SE_STREAM_CLOSED;
+		return (H2SE_STREAM_CLOSED); // rfc7540,l,1766,1769
+	}
 	Lck_Lock(&h2->sess->mtx);
 	AZ(h2->mailcall);
 	h2->mailcall = r2;
@@ -780,6 +785,7 @@ h2_vfp_body(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr, ssize_t *lp)
 	*lp = 0;
 
 	Lck_Lock(&h2->sess->mtx);
+	assert (r2->state == H2_S_OPEN);
 	r2->cond = &vc->wrk->cond;
 	while (h2->mailcall != r2 && h2->error == 0 && r2->error == 0)
 		AZ(Lck_CondWait(r2->cond, &h2->sess->mtx, 0));
@@ -803,8 +809,10 @@ h2_vfp_body(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr, ssize_t *lp)
 			return (VFP_OK);
 		}
 		if (h2->rxf_len == 0) {
-			if (h2->rxf_flags & H2FF_DATA_END_STREAM)
+			if (h2->rxf_flags & H2FF_DATA_END_STREAM) {
 				retval = VFP_END;
+				r2->state = H2_S_CLOS_REM;
+			}
 		}
 		h2->mailcall = NULL;
 		AZ(pthread_cond_signal(h2->cond));
