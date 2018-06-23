@@ -492,6 +492,15 @@ ip_magic(void)
 	VTCP_myname(fd, abuf, sizeof abuf, pbuf, sizeof(pbuf));
 	extmacro_def("localhost", "%s", abuf);
 
+#if defined (__APPLE__)
+	/*
+	 * In MacOS a bound socket that is not listening will timeout
+	 * instead of refusing the connection so close it and hope
+	 * for the best.
+	 */
+	VTCP_close(&fd);
+#endif
+
 	/* Expose a backend that is forever down. */
 	extmacro_def("bad_backend", "%s %s", abuf, pbuf);
 
