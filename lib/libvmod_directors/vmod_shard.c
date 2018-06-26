@@ -42,6 +42,44 @@
 #include "shard_cfg.h"
 
 /* -------------------------------------------------------------------------
+ *  shard director: LAZY mode (vdi resolve function), parameter objects
+ *
+ *  By associating a parameter object with a shard director, we enable LAZY
+ *  lookups as with the other directors. Parameter objects are defined with VCL
+ *  scope (normal vmod objects), but can be overridden per backend request using
+ *  a task priv.
+ *
+ *  We use the same concept to carry shard.backend() parameters to vdi resolve
+ *  for LAZY mode: They get saved in a per-director task scope parameter object.
+ *
+ *  Each object points to another object providing defaults for values which are
+ *  not defined.
+ *
+ *  Actual resolution of the various parameter objects does not happen before
+ *  they are used, which enabled changing them independently (ie, shard
+ *  .backend() parameters have precedence over an associated parameter object,
+ *  which by itself can be overridden).
+ *
+ *  Overview of parameter objects (pointers are alternatives)
+ *
+ *  shard() director        shard_param() object    default praram
+ *
+ *               --------------------------------->   vmod static
+ *    VCL obj   /                                ->
+ *    .param  -+--------->    VCL obj           /  _
+ *                            .default  --------   /|
+ *                                                /
+ *                               ^               /
+ *                               |              /
+ *                                             /
+ *                            .default        /
+ *          ------------->    TASK priv      /
+ *         /                                /
+ *    .default -----------------------------
+ *    TASK priv
+ */
+
+/* -------------------------------------------------------------------------
  * method arguments and set parameters bitmask in vmod_directors_shard_param
  */
 
