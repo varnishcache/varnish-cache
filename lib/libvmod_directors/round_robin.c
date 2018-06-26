@@ -81,11 +81,22 @@ vmod_rr_resolve(VRT_CTX, VCL_BACKEND dir)
 	return (be);
 }
 
+static void v_matchproto_(vdi_destroy_f)
+vmod_rr_destroy(VCL_BACKEND dir)
+{
+	struct vmod_directors_round_robin *rr;
+
+	CAST_OBJ_NOTNULL(rr, dir->priv, VMOD_DIRECTORS_ROUND_ROBIN_MAGIC);
+	vdir_delete(&rr->vd);
+	FREE_OBJ(rr);
+}
+
 static const struct vdi_methods vmod_rr_methods[1] = {{
 	.magic =		VDI_METHODS_MAGIC,
 	.type =			"round-robin",
 	.healthy =		vmod_rr_healthy,
 	.resolve =		vmod_rr_resolve,
+	.destroy =		vmod_rr_destroy
 }};
 
 VCL_VOID v_matchproto_()
@@ -108,11 +119,8 @@ vmod_round_robin__fini(struct vmod_directors_round_robin **rrp)
 {
 	struct vmod_directors_round_robin *rr;
 
-	rr = *rrp;
-	*rrp = NULL;
-	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_ROUND_ROBIN_MAGIC);
-	vdir_delete(&rr->vd);
-	FREE_OBJ(rr);
+	TAKE_OBJ_NOTNULL(rr, rrp, VMOD_DIRECTORS_ROUND_ROBIN_MAGIC);
+	VRT_DelDirector(&rr->vd->dir);
 }
 
 VCL_VOID v_matchproto_()

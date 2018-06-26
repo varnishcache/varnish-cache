@@ -75,10 +75,10 @@ vdir_delete(struct vdir **vdp)
 
 	TAKE_OBJ_NOTNULL(vd, vdp, VDIR_MAGIC);
 
+	AZ(vd->dir);
 	free(vd->backend);
 	free(vd->weight);
 	AZ(pthread_rwlock_destroy(&vd->mtx));
-	VRT_DelDirector(&vd->dir);
 	vbit_destroy(vd->vbm);
 	FREE_OBJ(vd);
 }

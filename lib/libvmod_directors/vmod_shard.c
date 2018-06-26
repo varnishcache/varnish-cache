@@ -227,11 +227,21 @@ shard__assert(void)
 	assert(t2a == t2b);
 }
 
+static void v_matchproto_(vdi_destroy_f)
+vmod_shard_destroy(VCL_BACKEND dir)
+{
+	struct sharddir *shardd;
+
+	CAST_OBJ_NOTNULL(shardd, dir->priv, SHARDDIR_MAGIC);
+	sharddir_delete(&shardd);
+}
+
 static const struct vdi_methods vmod_shard_methods[1] = {{
 	.magic =	VDI_METHODS_MAGIC,
 	.type =		"shard",
 	.resolve =	vmod_shard_resolve,
 	.healthy =	vmod_shard_healthy,
+	.destroy =	vmod_shard_destroy
 }};
 
 
@@ -261,7 +271,6 @@ vmod_shard__fini(struct vmod_directors_shard **vshardp)
 	struct vmod_directors_shard *vshard;
 
 	TAKE_OBJ_NOTNULL(vshard, vshardp, VMOD_SHARD_SHARD_MAGIC);
-	sharddir_delete(&vshard->shardd);
 	VRT_DelDirector(&vshard->dir);
 	FREE_OBJ(vshard);
 }

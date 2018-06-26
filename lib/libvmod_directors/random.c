@@ -72,11 +72,22 @@ vmod_random_resolve(VRT_CTX, VCL_BACKEND dir)
 	return (be);
 }
 
+static void v_matchproto_(vdi_destroy_f)
+vmod_random_destroy(VCL_BACKEND dir)
+{
+	struct vmod_directors_random *random;
+
+	CAST_OBJ_NOTNULL(random, dir->priv, VMOD_DIRECTORS_RANDOM_MAGIC);
+	vdir_delete(&random->vd);
+	FREE_OBJ(random);
+}
+
 static const struct vdi_methods vmod_random_methods[1] = {{
 	.magic =		VDI_METHODS_MAGIC,
 	.type =			"random",
 	.healthy =		vmod_random_healthy,
 	.resolve =		vmod_random_resolve,
+	.destroy =		vmod_random_destroy
 }};
 
 
@@ -100,11 +111,8 @@ vmod_random__fini(struct vmod_directors_random **rrp)
 {
 	struct vmod_directors_random *rr;
 
-	rr = *rrp;
-	*rrp = NULL;
-	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_RANDOM_MAGIC);
-	vdir_delete(&rr->vd);
-	FREE_OBJ(rr);
+	TAKE_OBJ_NOTNULL(rr, rrp, VMOD_DIRECTORS_RANDOM_MAGIC);
+	VRT_DelDirector(&rr->vd->dir);
 }
 
 VCL_VOID v_matchproto_()

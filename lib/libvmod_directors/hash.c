@@ -46,9 +46,20 @@ struct vmod_directors_hash {
 	struct vdir				*vd;
 };
 
+static void v_matchproto_(vdi_destroy_f)
+vmod_hash_destroy(VCL_BACKEND dir)
+{
+	struct vmod_directors_hash *rr;
+
+	CAST_OBJ_NOTNULL(rr, dir->priv, VMOD_DIRECTORS_HASH_MAGIC);
+	vdir_delete(&rr->vd);
+	FREE_OBJ(rr);
+}
+
 static const struct vdi_methods vmod_hash_methods[1] = {{
 	.magic =		VDI_METHODS_MAGIC,
 	.type =			"hash",
+	.destroy =		vmod_hash_destroy
 }};
 
 
@@ -72,11 +83,8 @@ vmod_hash__fini(struct vmod_directors_hash **rrp)
 {
 	struct vmod_directors_hash *rr;
 
-	rr = *rrp;
-	*rrp = NULL;
-	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_HASH_MAGIC);
-	vdir_delete(&rr->vd);
-	FREE_OBJ(rr);
+	TAKE_OBJ_NOTNULL(rr, rrp, VMOD_DIRECTORS_HASH_MAGIC);
+	VRT_DelDirector(&rr->vd->dir);
 }
 
 VCL_VOID v_matchproto_()
