@@ -251,9 +251,8 @@ vmod_shard__init(VRT_CTX, struct vmod_directors_shard **vshardp,
 	*vshardp = vshard;
 	sharddir_new(&vshard->shardd, vcl_name, &shard_param_default);
 
-	vshard->dir =
-	    VRT_AddDirector(ctx, vmod_shard_methods, vshard->shardd,
-			    "%s", vcl_name);
+	vshard->dir = VRT_AddDirector(ctx, vmod_shard_methods, vshard->shardd,
+	    "%s", vcl_name);
 }
 
 VCL_VOID v_matchproto_(td_directors_shard__fini)
@@ -313,8 +312,7 @@ vmod_shard_associate(VRT_CTX,
 	CHECK_OBJ_NOTNULL(vshard, VMOD_SHARD_SHARD_MAGIC);
 
 	if (b == NULL) {
-		sharddir_set_param(vshard->shardd,
-				   &shard_param_default);
+		sharddir_set_param(vshard->shardd, &shard_param_default);
 		return;
 	}
 
@@ -325,8 +323,7 @@ vmod_shard_associate(VRT_CTX,
 		return;
 	}
 
-	sharddir_set_param(vshard->shardd,
-			   ppt);
+	sharddir_set_param(vshard->shardd, ppt);
 }
 
 VCL_BOOL v_matchproto_(td_directors_shard_add_backend)
