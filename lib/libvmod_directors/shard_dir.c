@@ -221,7 +221,8 @@ shard_next(struct shard_state *state, VCL_INT skip, VCL_BOOL healthy)
 }
 
 void
-sharddir_new(struct sharddir **sharddp, const char *vcl_name)
+sharddir_new(struct sharddir **sharddp, const char *vcl_name,
+    const struct vmod_directors_shard_param *param)
 {
 	struct sharddir *shardd;
 
@@ -232,7 +233,16 @@ sharddir_new(struct sharddir **sharddp, const char *vcl_name)
 	AN(shardd);
 	*sharddp = shardd;
 	shardd->name = vcl_name;
+	shardd->param = param;
 	AZ(pthread_rwlock_init(&shardd->mtx, NULL));
+}
+
+void
+sharddir_set_param(struct sharddir *shardd,
+    const struct vmod_directors_shard_param *param)
+{
+	CHECK_OBJ_NOTNULL(shardd, SHARDDIR_MAGIC);
+	shardd->param = param;
 }
 
 void

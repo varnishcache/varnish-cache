@@ -65,6 +65,8 @@ struct shard_backend {
 	uint32_t		canon_point;
 };
 
+struct vmod_directors_shard_param;
+
 #define	SHDBG_LOOKUP	 1
 #define	SHDBG_CIRCLE	(1<<1)
 #define	SHDBG_RAMPWARM	(1<<2)
@@ -76,13 +78,13 @@ struct sharddir {
 
 	pthread_rwlock_t			mtx;
 
-	const char				*name;
-
 	unsigned				n_backend;
 	unsigned				l_backend;
 	struct shard_backend			*backend;
 
+	const char				*name;
 	struct shard_circlepoint		*hashcircle;
+	const struct vmod_directors_shard_param	*param;
 
 	VCL_DURATION				rampup_duration;
 	VCL_REAL				warmup;
@@ -127,7 +129,10 @@ void sharddir_debug(struct sharddir *shardd, const uint32_t flags);
 void sharddir_err(VRT_CTX, enum VSL_tag_e tag,  const char *fmt, ...);
 uint32_t sharddir_sha256v(const char *s, va_list ap);
 uint32_t sharddir_sha256(const char *s, ...);
-void sharddir_new(struct sharddir **sharddp, const char *vcl_name);
+void sharddir_new(struct sharddir **sharddp, const char *vcl_name,
+    const struct vmod_directors_shard_param *param);
+void sharddir_set_param(struct sharddir *shardd,
+    const struct vmod_directors_shard_param *param);
 void sharddir_delete(struct sharddir **sharddp);
 void sharddir_wrlock(struct sharddir *shardd);
 void sharddir_unlock(struct sharddir *shardd);
