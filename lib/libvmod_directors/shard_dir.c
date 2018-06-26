@@ -241,11 +241,7 @@ sharddir_delete(struct sharddir **sharddp)
 {
 	struct sharddir *shardd;
 
-	AN(sharddp);
-	shardd = *sharddp;
-	*sharddp = NULL;
-
-	CHECK_OBJ_NOTNULL(shardd, SHARDDIR_MAGIC);
+	TAKE_OBJ_NOTNULL(shardd, sharddp, SHARDDIR_MAGIC);
 	shardcfg_delete(shardd);
 	AZ(pthread_rwlock_destroy(&shardd->mtx));
 	FREE_OBJ(shardd);
