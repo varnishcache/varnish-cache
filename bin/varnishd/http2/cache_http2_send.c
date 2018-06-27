@@ -213,7 +213,7 @@ h2_do_window(struct worker *wrk, struct h2_req *r2,
 			r2->cond = NULL;
 		}
 		while (h2->req0->t_window <= 0 && h2_errcheck(r2, h2) == 0) {
-			AZ(Lck_CondWait(h2->cond, &h2->sess->mtx, 0));
+			AZ(Lck_CondWait(h2->winupd_cond, &h2->sess->mtx, 0));
 		}
 
 		if (h2_errcheck(r2, h2) == 0) {
