@@ -430,3 +430,13 @@ xyzzy_vsc_destroy(VRT_CTX)
 	vsc = NULL;
 	AZ(pthread_mutex_unlock(&vsc_mtx));
 }
+
+/* filled by VRT_Vmod_Init */
+struct vmod *Vmod_debug_Handle = NULL;
+
+VCL_STRING v_matchproto_(td_debug_name)
+xyzzy_name(VRT_CTX)
+{
+	(void) ctx;
+	return (VRT_Vmod_Name(Vmod_debug_Handle));
+}

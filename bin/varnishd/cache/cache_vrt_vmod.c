@@ -85,7 +85,7 @@ int
 VRT_Vmod_Init(VRT_CTX, struct vmod **hdl, void *ptr, int len, const char *nm,
     const char *path, const char *file_id, const char *backup)
 {
-	struct vmod *v;
+	struct vmod *v, **vv;
 	const struct vmod_data *d;
 	char buf[256];
 
@@ -157,6 +157,11 @@ VRT_Vmod_Init(VRT_CTX, struct vmod **hdl, void *ptr, int len, const char *nm,
 
 		VSC_C_main->vmods++;
 		VTAILQ_INSERT_TAIL(&vmods, v, list);
+
+		bprintf(buf, "Vmod_%s_Handle", nm);
+		vv = dlsym(v->hdl, buf);
+		if (vv != NULL)
+			*vv = v;
 	}
 
 	assert(len == v->funclen);
@@ -226,6 +231,14 @@ VRT_Vmod_Unref(struct vmod **hdl)
 	FREE_OBJ(v);
 
 	return (ref);
+}
+
+/* for vmod_debug */
+const char *
+VRT_Vmod_Name(const struct vmod *v)
+{
+	CHECK_OBJ_NOTNULL(v, VMOD_MAGIC);
+	return (v->nm);
 }
 
 void

@@ -177,3 +177,7 @@ Update counter
 $Function VOID vsc_destroy()
 
 Remove a vsc
+
+$Function STRING name()
+
+Return the name of the vmod via the vmod handle
