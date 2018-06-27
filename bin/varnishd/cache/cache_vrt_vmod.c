@@ -64,7 +64,11 @@ struct vmod {
 	unsigned		vrt_minor;
 };
 
+/* the vmods list is owned by the cli thread */
 static VTAILQ_HEAD(,vmod)	vmods = VTAILQ_HEAD_INITIALIZER(vmods);
+
+/* protects all (struct vmod).ref */
+static pthread_mutex_t		vmod_ref_mtx = PTHREAD_MUTEX_INITIALIZER;
 
 static unsigned
 vmod_abi_mismatch(const struct vmod_data *d)
@@ -157,7 +161,9 @@ VRT_Vmod_Init(VRT_CTX, struct vmod **hdl, void *ptr, int len, const char *nm,
 
 	assert(len == v->funclen);
 	memcpy(ptr, v->funcs, v->funclen);
+	AZ(pthread_mutex_lock(&vmod_ref_mtx));
 	v->ref++;
+	AZ(pthread_mutex_unlock(&vmod_ref_mtx));
 
 	*hdl = v;
 	return (0);
@@ -166,14 +172,43 @@ VRT_Vmod_Init(VRT_CTX, struct vmod **hdl, void *ptr, int len, const char *nm,
 void
 VRT_Vmod_Fini(struct vmod **hdl)
 {
-	struct vmod *v;
-
 	ASSERT_CLI();
+
+	(void) VRT_Vmod_Unref(hdl);
+}
+
+/* ref a vmod via the handle, return previous number of references */
+int
+VRT_Vmod_Ref(struct vmod *v)
+{
+	int ref;
+
+	AZ(pthread_mutex_lock(&vmod_ref_mtx));
+	ref = v->ref++;
+	AZ(pthread_mutex_unlock(&vmod_ref_mtx));
+
+	/* initial ref only via _Init */
+	assert(ref > 0);
+	return (ref);
+}
+
+/* deref a vmod via the handle, return new number of references */
+int
+VRT_Vmod_Unref(struct vmod **hdl)
+{
+	struct vmod *v;
+	int ref;
 
 	TAKE_OBJ_NOTNULL(v, hdl, VMOD_MAGIC);
 
-	if (--v->ref != 0)
-		return;
+	AZ(pthread_mutex_lock(&vmod_ref_mtx));
+	ref = --v->ref;
+	AZ(pthread_mutex_unlock(&vmod_ref_mtx));
+	assert(ref >= 0);
+
+	if (ref != 0)
+		return (ref);
+
 #ifndef DONT_DLCLOSE_VMODS
 	/*
 	 * atexit(3) handlers are not called during dlclose(3).  We don't
@@ -189,6 +224,8 @@ VRT_Vmod_Fini(struct vmod **hdl)
 	VTAILQ_REMOVE(&vmods, v, list);
 	VSC_C_main->vmods--;
 	FREE_OBJ(v);
+
+	return (ref);
 }
 
 void
