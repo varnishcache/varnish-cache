@@ -55,6 +55,7 @@ struct vmod {
 	char			*nm;
 	char			*path;
 	char			*backup;
+	char			*file_id;
 	void			*hdl;
 	const void		*funcs;
 	int			funclen;
@@ -83,7 +84,6 @@ VRT_Vmod_Init(VRT_CTX, struct vmod **hdl, void *ptr, int len, const char *nm,
 	struct vmod *v;
 	const struct vmod_data *d;
 	char buf[256];
-	void *dlhdl;
 
 	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -91,23 +91,25 @@ VRT_Vmod_Init(VRT_CTX, struct vmod **hdl, void *ptr, int len, const char *nm,
 	AN(hdl);
 	AZ(*hdl);
 
-	dlhdl = dlopen(backup, RTLD_NOW | RTLD_LOCAL);
-	if (dlhdl == NULL) {
-		VSB_printf(ctx->msg, "Loading vmod %s from %s (%s):\n",
-		    nm, backup, path);
-		VSB_printf(ctx->msg, "dlopen() failed: %s\n", dlerror());
-		return (1);
-	}
-
 	VTAILQ_FOREACH(v, &vmods, list)
-		if (v->hdl == dlhdl)
+		if (strcmp(v->nm, nm) == 0 &&
+		    strcmp(v->path, path) == 0 &&
+		    strcmp(v->file_id, file_id) == 0)
 			break;
+
 	if (v == NULL) {
 		ALLOC_OBJ(v, VMOD_MAGIC);
 		AN(v);
-		REPLACE(v->backup, backup);
 
-		v->hdl = dlhdl;
+		v->hdl = dlopen(backup, RTLD_NOW | RTLD_LOCAL);
+		if (v->hdl == NULL) {
+			VSB_printf(ctx->msg, "Loading vmod %s from %s (%s):\n",
+			    nm, backup, path);
+			VSB_printf(ctx->msg, "dlopen() failed: %s\n",
+			    dlerror());
+			FREE_OBJ(v);
+			return (1);
+		}
 
 		bprintf(buf, "Vmod_%s_Data", nm);
 		d = dlsym(v->hdl, buf);
@@ -146,6 +148,8 @@ VRT_Vmod_Init(VRT_CTX, struct vmod **hdl, void *ptr, int len, const char *nm,
 
 		REPLACE(v->nm, nm);
 		REPLACE(v->path, path);
+		REPLACE(v->file_id, file_id);
+		REPLACE(v->backup, backup);
 
 		VSC_C_main->vmods++;
 		VTAILQ_INSERT_TAIL(&vmods, v, list);
@@ -168,6 +172,8 @@ VRT_Vmod_Fini(struct vmod **hdl)
 
 	TAKE_OBJ_NOTNULL(v, hdl, VMOD_MAGIC);
 
+	if (--v->ref != 0)
+		return;
 #ifndef DONT_DLCLOSE_VMODS
 	/*
 	 * atexit(3) handlers are not called during dlclose(3).  We don't
@@ -176,10 +182,9 @@ VRT_Vmod_Fini(struct vmod **hdl)
 	 */
 	AZ(dlclose(v->hdl));
 #endif
-	if (--v->ref != 0)
-		return;
 	free(v->nm);
 	free(v->path);
+	free(v->file_id);
 	free(v->backup);
 	VTAILQ_REMOVE(&vmods, v, list);
 	VSC_C_main->vmods--;
