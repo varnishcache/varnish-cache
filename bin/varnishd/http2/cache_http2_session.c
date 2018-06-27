@@ -123,6 +123,7 @@ h2_init_sess(const struct worker *wrk, struct sess *sp,
 		h2->htc->rfd = &sp->fd;
 		h2->sess = sp;
 		h2->rxthr = pthread_self();
+		AZ(pthread_cond_init(h2->winupd_cond, NULL));
 		VTAILQ_INIT(&h2->streams);
 		VTAILQ_INIT(&h2->txqueue);
 		h2_local_settings(&h2->local_settings);
@@ -150,6 +151,7 @@ h2_del_sess(struct worker *wrk, struct h2_sess *h2, enum sess_close reason)
 	assert(VTAILQ_EMPTY(&h2->streams));
 
 	VHT_Fini(h2->dectbl);
+	AZ(pthread_cond_destroy(h2->winupd_cond));
 	req = h2->srq;
 	AZ(req->ws->r);
 	sp = h2->sess;
@@ -404,7 +406,7 @@ h2_new_session(struct worker *wrk, void *arg)
 		if (r2->cond != NULL)
 			AZ(pthread_cond_signal(r2->cond));
 	}
-	AZ(pthread_cond_broadcast(h2->cond));
+	AZ(pthread_cond_broadcast(h2->winupd_cond));
 	Lck_Unlock(&h2->sess->mtx);
 	while (1) {
 		again = 0;

@@ -145,6 +145,7 @@ struct h2_sess {
 	pthread_t			rxthr;
 	struct h2_req			*mailcall;
 	pthread_cond_t			*cond;
+	pthread_cond_t			winupd_cond[1];
 
 	struct sess			*sess;
 	int				refcnt;

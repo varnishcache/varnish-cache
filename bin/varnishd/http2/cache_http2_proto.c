@@ -369,7 +369,7 @@ h2_rx_window_update(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	Lck_Lock(&h2->sess->mtx);
 	r2->t_window += wu;
 	if (r2 == h2->req0)
-		AZ(pthread_cond_broadcast(h2->cond));
+		AZ(pthread_cond_broadcast(h2->winupd_cond));
 	else if (r2->cond != NULL)
 		AZ(pthread_cond_signal(r2->cond));
 	Lck_Unlock(&h2->sess->mtx);
