@@ -150,8 +150,8 @@ vbp_has_poked(struct vbp_target *vt)
 	vt->good = j;
 }
 
-static void
-vbp_update_backend(struct vbp_target *vt)
+void
+VBP_Update_Backend(struct vbp_target *vt)
 {
 	unsigned i = 0;
 	char bits[10];
@@ -433,7 +433,7 @@ vbp_task(struct worker *wrk, void *priv)
 	vbp_start_poke(vt);
 	vbp_poke(vt);
 	vbp_has_poked(vt);
-	vbp_update_backend(vt);
+	VBP_Update_Backend(vt);
 
 	Lck_Lock(&vbp_mtx);
 	if (vt->running < 0) {
@@ -637,7 +637,7 @@ VBP_Control(const struct backend *be, int enable)
 	CHECK_OBJ_NOTNULL(vt, VBP_TARGET_MAGIC);
 
 	vbp_reset(vt);
-	vbp_update_backend(vt);
+	VBP_Update_Backend(vt);
 
 	Lck_Lock(&vbp_mtx);
 	if (enable) {
@@ -679,7 +679,7 @@ VBP_Insert(struct backend *b, const struct vrt_backend_probe *vp,
 	vbp_build_req(vt, vp, b);
 
 	vbp_reset(vt);
-	vbp_update_backend(vt);
+	VBP_Update_Backend(vt);
 }
 
 void

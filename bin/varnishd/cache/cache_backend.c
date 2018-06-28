@@ -43,6 +43,7 @@
 #include "cache_backend.h"
 #include "cache_tcp_pool.h"
 #include "cache_transport.h"
+#include "cache_vcl.h"
 #include "http1/cache_http1.h"
 
 #include "VSC_vbe.h"
@@ -525,25 +526,38 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 	    "%s.%s", VCL_Name(ctx->vcl), vrt->vcl_name);
 	AN(be->vsc);
 
+	be->tcp_pool = VTP_Ref(vrt->ipv4_suckaddr, vrt->ipv6_suckaddr,
+	    vrt->path, vbe_proto_ident);
+	AN(be->tcp_pool);
+
+	vbp = vrt->probe;
+	if (vbp == NULL)
+		vbp = VCL_DefaultProbe(vcl);
+
+	if (vbp != NULL)
+		VBP_Insert(be, vbp, be->tcp_pool);
+
 	be->director = VRT_AddDirector(ctx, vbe_methods, be,
 	    "%s", vrt->vcl_name);
+
 	if (be->director != NULL) {
-		vbp = vrt->probe;
-		if (vbp == NULL)
-			vbp = VCL_DefaultProbe(vcl);
+		/* for cold VCL, update initial director state */
+		if (be->probe != NULL && ! VCL_WARM(vcl))
+			VBP_Update_Backend(be->probe);
 
 		Lck_Lock(&backends_mtx);
 		VTAILQ_INSERT_TAIL(&backends, be, list);
 		VSC_C_main->n_backend++;
-		be->tcp_pool = VTP_Ref(vrt->ipv4_suckaddr, vrt->ipv6_suckaddr,
-				       vrt->path, vbe_proto_ident);
 		Lck_Unlock(&backends_mtx);
-
-		if (vbp != NULL)
-			VBP_Insert(be, vbp, be->tcp_pool);
-
 		return (be->director);
 	}
+
+	/* undo */
+	if (vbp != NULL)
+		VBP_Remove(be);
+
+	VTP_Rel(&be->tcp_pool);
+
 	VSC_vbe_Destroy(&be->vsc_seg);
 #define DA(x)	do { if (be->x != NULL) free(be->x); } while (0)
 #define DN(x)	/**/

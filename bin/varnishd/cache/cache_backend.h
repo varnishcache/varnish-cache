@@ -77,6 +77,7 @@ struct backend {
 void VBE_SetHappy(const struct backend *, uint64_t);
 
 /* cache_backend_probe.c */
+void VBP_Update_Backend(struct vbp_target *vt);
 void VBP_Insert(struct backend *b, struct vrt_backend_probe const *p,
     struct tcp_pool *);
 void VBP_Remove(struct backend *b);
