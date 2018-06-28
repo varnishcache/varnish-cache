@@ -72,8 +72,12 @@ void
 vdir_delete(struct vdir **vdp)
 {
 	struct vdir *vd;
+	unsigned u;
 
 	TAKE_OBJ_NOTNULL(vd, vdp, VDIR_MAGIC);
+
+	for (u = 0; u < vd->n_backend; u++)
+		VRT_UnrefDirector(NULL, vd->backend[u]);
 
 	AZ(vd->dir);
 	free(vd->backend);
@@ -118,6 +122,7 @@ vdir_add_backend(VRT_CTX, struct vdir *vd, VCL_BACKEND be, double weight)
 		return;
 	}
 	AN(be);
+	VRT_RefDirector(ctx, be);
 	vdir_wrlock(vd);
 	if (vd->n_backend >= vd->l_backend)
 		vdir_expand(vd, vd->l_backend + 16);
@@ -164,6 +169,7 @@ vdir_remove_backend(VRT_CTX, struct vdir *vd, VCL_BACKEND be, unsigned *cur)
 			*cur = 0;
 	}
 	vdir_unlock(vd);
+	VRT_UnrefDirector(ctx, be);
 }
 
 VCL_BOOL

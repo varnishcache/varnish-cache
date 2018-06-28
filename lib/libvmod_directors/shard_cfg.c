@@ -65,6 +65,7 @@ struct shard_change {
 };
 
 struct backend_reconfig {
+	VRT_CTX;
 	struct sharddir * const shardd;
 	unsigned		hint;	// on number of backends after reconfig
 	unsigned		hole_n; // number of holes in backends array
@@ -291,8 +292,9 @@ shardcfg_hashcircle(struct sharddir *shardd, VCL_INT replicas)
  */
 
 static void
-shardcfg_backend_free(struct shard_backend *f)
+shardcfg_backend_free(VRT_CTX, struct shard_backend *f)
 {
+	VRT_UnrefDirector(ctx, f->backend);
 	if (f->freeptr)
 		free (f->freeptr);
 	memset(f, 0, sizeof(*f));
@@ -394,6 +396,8 @@ shardcfg_backend_add(struct backend_reconfig *re,
 	unsigned i;
 	struct shard_backend *bb = re->shardd->backend;
 
+	VRT_RefDirector(re->ctx, b->backend);
+
 	if (re->hole_n == 0) {
 		if (re->shardd->n_backend >= re->shardd->l_backend) {
 			shardcfg_backend_expand(re);
@@ -417,11 +421,11 @@ shardcfg_backend_add(struct backend_reconfig *re,
 }
 
 static void
-shardcfg_backend_clear(struct sharddir *shardd)
+shardcfg_backend_clear(VRT_CTX, struct sharddir *shardd)
 {
 	int i;
 	for (i = 0; i < shardd->n_backend; i++)
-		shardcfg_backend_free(&shardd->backend[i]);
+		shardcfg_backend_free(ctx, &shardd->backend[i]);
 	shardd->n_backend = 0;
 }
 
@@ -437,7 +441,7 @@ shardcfg_backend_del(struct backend_reconfig *re,
 		if (shardcfg_backend_del_cmp(spec, &bb[i]))
 			continue;
 
-		shardcfg_backend_free(&bb[i]);
+		shardcfg_backend_free(re->ctx, &bb[i]);
 		re->shardd->n_backend--;
 		if (i < re->shardd->n_backend + re->hole_n) {
 			(re->hole_n)++;
@@ -498,6 +502,7 @@ shardcfg_apply_change(VRT_CTX, struct sharddir *shardd,
 	const struct shard_backend *b;
 
 	struct backend_reconfig re = {
+		.ctx = ctx,
 		.shardd = shardd,
 		.hint = shardd->n_backend,
 		.hole_n = 0,
@@ -526,7 +531,7 @@ shardcfg_apply_change(VRT_CTX, struct sharddir *shardd,
 	}
 
 	if (clear) {
-		shardcfg_backend_clear(shardd);
+		shardcfg_backend_clear(ctx, shardd);
 		clear = VSTAILQ_NEXT(clear, list);
 		if (clear == NULL)
 			return;
@@ -622,7 +627,7 @@ shardcfg_delete(const struct sharddir *shardd)
 	int i;
 
 	for (i = 0; i < shardd->n_backend; i++)
-		shardcfg_backend_free(&shardd->backend[i]);
+		shardcfg_backend_free(NULL, &shardd->backend[i]);
 	if (shardd->backend)
 		free(shardd->backend);
 	if (shardd->hashcircle)
