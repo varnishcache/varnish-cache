@@ -153,42 +153,50 @@ vbp_has_poked(struct vbp_target *vt)
 static void
 vbp_update_backend(struct vbp_target *vt)
 {
-	unsigned i;
+	unsigned i = 0;
 	char bits[10];
 	const char *logmsg;
 
 	CHECK_OBJ_NOTNULL(vt, VBP_TARGET_MAGIC);
 
 	Lck_Lock(&vbp_mtx);
-	if (vt->backend != NULL) {
-		i = 0;
-#define BITMAP(n, c, t, b) \
-		bits[i++] = (vt->n & 1) ? c : '-';
-#include "tbl/backend_poll.h"
-		bits[i] = '\0';
-		assert(i < sizeof bits);
-
-		if (vt->good >= vt->threshold) {
-			if (vt->backend->director->sick) {
-				logmsg = "Back healthy";
-				VRT_SetHealth(vt->backend->director, 1);
-			} else {
-				logmsg = "Still healthy";
-			}
-		} else {
-			if (vt->backend->director->sick) {
-				logmsg = "Still sick";
-			} else {
-				logmsg = "Went sick";
-				VRT_SetHealth(vt->backend->director, 0);
-			}
-		}
-		VSL(SLT_Backend_health, 0, "%s %s %s %u %u %u %.6f %.6f %s",
-		    vt->backend->director->vcl_name, logmsg, bits,
-		    vt->good, vt->threshold, vt->window,
-		    vt->last, vt->avg, vt->resp_buf);
-		VBE_SetHappy(vt->backend, vt->happy);
+	if (vt->backend == NULL) {
+		Lck_Unlock(&vbp_mtx);
+		return;
 	}
+
+#define BITMAP(n, c, t, b) \
+	bits[i++] = (vt->n & 1) ? c : '-';
+#include "tbl/backend_poll.h"
+	bits[i] = '\0';
+	assert(i < sizeof bits);
+
+	if (vt->backend->director == NULL) {
+		Lck_Unlock(&vbp_mtx);
+		return;
+	}
+
+	if (vt->good >= vt->threshold) {
+		if (vt->backend->director->sick) {
+			logmsg = "Back healthy";
+			VRT_SetHealth(vt->backend->director, 1);
+		} else {
+			logmsg = "Still healthy";
+		}
+	} else {
+		if (vt->backend->director->sick) {
+			logmsg = "Still sick";
+		} else {
+			logmsg = "Went sick";
+			VRT_SetHealth(vt->backend->director, 0);
+		}
+	}
+	VSL(SLT_Backend_health, 0, "%s %s %s %u %u %u %.6f %.6f %s",
+	    vt->backend->director->vcl_name, logmsg, bits,
+	    vt->good, vt->threshold, vt->window,
+	    vt->last, vt->avg, vt->resp_buf);
+	VBE_SetHappy(vt->backend, vt->happy);
+
 	Lck_Unlock(&vbp_mtx);
 }
 
