@@ -525,10 +525,8 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 	    vrt->path, vbe_proto_ident);
 	Lck_Unlock(&backends_mtx);
 
-	if (vbp != NULL) {
-		VTP_AddRef(be->tcp_pool);
+	if (vbp != NULL)
 		VBP_Insert(be, vbp, be->tcp_pool);
-	}
 
 	be->vsc = VSC_vbe_New(vc, &be->vsc_seg,
 	    "%s.%s", VCL_Name(ctx->vcl), vrt->vcl_name);
