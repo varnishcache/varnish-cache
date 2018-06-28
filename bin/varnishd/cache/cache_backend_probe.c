@@ -639,12 +639,12 @@ VBP_Control(const struct backend *be, int enable)
 
 	Lck_Lock(&vbp_mtx);
 	if (enable) {
-		assert(vt->heap_idx == BINHEAP_NOIDX);
-		vt->due = VTIM_real();
-		binheap_insert(vbp_heap, vt);
-		AZ(pthread_cond_signal(&vbp_cond));
-	} else {
-		assert(vt->heap_idx != BINHEAP_NOIDX);
+		if (vt->heap_idx == BINHEAP_NOIDX) {
+			vt->due = VTIM_real();
+			binheap_insert(vbp_heap, vt);
+			AZ(pthread_cond_signal(&vbp_cond));
+		}
+	} else if (vt->heap_idx != BINHEAP_NOIDX) {
 		binheap_delete(vbp_heap, vt->heap_idx);
 	}
 	Lck_Unlock(&vbp_mtx);
