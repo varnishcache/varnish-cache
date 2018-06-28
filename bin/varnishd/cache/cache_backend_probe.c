@@ -663,6 +663,7 @@ VBP_Insert(struct backend *b, const struct vrt_backend_probe *vp,
 	XXXAN(vt);
 
 	vt->tcp_pool = tp;
+	VTP_AddRef(vt->tcp_pool);
 	vt->backend = b;
 	b->probe = vt;
 
