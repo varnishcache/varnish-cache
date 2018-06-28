@@ -527,33 +527,32 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 
 	be->director = VRT_AddDirector(ctx, vbe_methods, be,
 	    "%s", vrt->vcl_name);
-	if (be->director == NULL) {
-		VSC_vbe_Destroy(&be->vsc_seg);
+	if (be->director != NULL) {
+		vbp = vrt->probe;
+		if (vbp == NULL)
+			vbp = VCL_DefaultProbe(vcl);
+
+		Lck_Lock(&backends_mtx);
+		VTAILQ_INSERT_TAIL(&backends, be, list);
+		VSC_C_main->n_backend++;
+		be->tcp_pool = VTP_Ref(vrt->ipv4_suckaddr, vrt->ipv6_suckaddr,
+				       vrt->path, vbe_proto_ident);
+		Lck_Unlock(&backends_mtx);
+
+		if (vbp != NULL)
+			VBP_Insert(be, vbp, be->tcp_pool);
+
+		return (be->director);
+	}
+	VSC_vbe_Destroy(&be->vsc_seg);
 #define DA(x)	do { if (be->x != NULL) free(be->x); } while (0)
 #define DN(x)	/**/
 	VRT_BACKEND_HANDLE();
 #undef DA
 #undef DN
-		Lck_Delete(&be->mtx);
-		FREE_OBJ(be);
-		return (NULL);
-	}
-
-	vbp = vrt->probe;
-	if (vbp == NULL)
-		vbp = VCL_DefaultProbe(vcl);
-
-	Lck_Lock(&backends_mtx);
-	VTAILQ_INSERT_TAIL(&backends, be, list);
-	VSC_C_main->n_backend++;
-	be->tcp_pool = VTP_Ref(vrt->ipv4_suckaddr, vrt->ipv6_suckaddr,
-	    vrt->path, vbe_proto_ident);
-	Lck_Unlock(&backends_mtx);
-
-	if (vbp != NULL)
-		VBP_Insert(be, vbp, be->tcp_pool);
-
-	return (be->director);
+	Lck_Delete(&be->mtx);
+	FREE_OBJ(be);
+	return (NULL);
 }
 
 VCL_BACKEND v_matchproto_()
