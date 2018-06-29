@@ -127,7 +127,6 @@ struct h2_req {
 	VTAILQ_ENTRY(h2_req)		list;
 	int64_t				t_window;
 	int64_t				r_window;
-	struct h2h_decode		*decode;
 
 	/* Where to wake this stream up */
 	struct worker			*wrk;
@@ -161,6 +160,7 @@ struct h2_sess {
 	struct ws			*ws;
 	struct http_conn		*htc;
 	struct vsl_log			*vsl;
+	struct h2h_decode		*decode;
 	struct vht_table		dectbl[1];
 
 	unsigned			rxf_len;
@@ -208,10 +208,10 @@ struct h2h_decode {
 	struct vhd_decode		vhd[1];
 };
 
-void h2h_decode_init(const struct h2_sess *h2, struct h2h_decode *d);
-h2_error h2h_decode_fini(const struct h2_sess *h2, struct h2h_decode *d);
-h2_error h2h_decode_bytes(struct h2_sess *h2, struct h2h_decode *d,
-    const uint8_t *ptr, size_t len);
+void h2h_decode_init(const struct h2_sess *h2);
+h2_error h2h_decode_fini(const struct h2_sess *h2);
+h2_error h2h_decode_bytes(struct h2_sess *h2, const uint8_t *ptr,
+    size_t len);
 
 /* cache_http2_send.c */
 void H2_Send_Get(struct worker *, struct h2_sess *, struct h2_req *);
