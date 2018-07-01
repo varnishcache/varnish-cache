@@ -265,8 +265,9 @@ vbp_write_proxy_v1(struct vbp_target *vt, int *sock)
 	else if (ss.ss_family == AF_INET)
 		VSB_printf(&vsb, " TCP4 ");
 	else
-		WRONG("Unknown family");
-	VSB_printf(&vsb, "%s %s %s %s\r\n", addr, addr, port, port);
+		VSB_printf(&vsb, " UNKNOWN\r\n");
+	if (ss.ss_family == AF_INET6 || ss.ss_family == AF_INET)
+		VSB_printf(&vsb, "%s %s %s %s\r\n", addr, addr, port, port);
 	AZ(VSB_finish(&vsb));
 
 	return (vbp_write(vt, sock, VSB_data(&vsb), VSB_len(&vsb)));
