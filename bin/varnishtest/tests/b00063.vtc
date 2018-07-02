@@ -45,6 +45,12 @@ varnish v1 -vcl+backend {
 	}
 } -start
 
+logexpect l1 -v v1 -g raw {
+	expect * *	ExpKill		EXP_expire
+	expect * *	ExpKill		EXP_When
+	expect * *	ExpKill		EXP_expire
+} -start
+
 client c1 {
 	txreq -url "/1"
 	rxresp
@@ -75,6 +81,9 @@ client c2 {
 
 client c1 -wait
 client c2 -wait
+
+# Make sure the expiry has happened
+logexpect l1 -wait
 
 client c3 {
 	delay .1
