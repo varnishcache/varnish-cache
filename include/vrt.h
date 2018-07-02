@@ -415,7 +415,6 @@ VCL_BACKEND VRT_new_backend(VRT_CTX, const struct vrt_backend *);
 VCL_BACKEND VRT_new_backend_clustered(VRT_CTX,
     struct vsmw_cluster *, const struct vrt_backend *);
 size_t VRT_backend_vsm_need(VRT_CTX);
-void VRT_delete_backend(VRT_CTX, VCL_BACKEND *);
 
 /* VSM related */
 struct vsmw_cluster *VRT_VSM_Cluster_New(VRT_CTX, size_t);
@@ -461,11 +460,15 @@ struct director {
 };
 
 VCL_BOOL VRT_Healthy(VRT_CTX, VCL_BACKEND, VCL_TIME *);
+VCL_BACKEND VRT_DynDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
+    const char *fmt, ...);
+void VRT_RefDirector(VRT_CTX, VCL_BACKEND d);
 VCL_BACKEND VRT_AddDirector(VRT_CTX, const struct vdi_methods *,
     void *, const char *, ...) v_printflike_(4, 5);
 void VRT_SetHealth(VCL_BACKEND d, int health);
-void VRT_DisableDirector(VCL_BACKEND);
-void VRT_DelDirector(VCL_BACKEND *);
+int VRT_UnrefDirector(VRT_CTX, VCL_BACKEND);
+int VRT_DelDirector(VRT_CTX, VCL_BACKEND *);
+void VRT_FlushDirectors(void);
 
 /* Suckaddr related */
 int VRT_VSA_GetPtr(const struct suckaddr *sua, const unsigned char ** dst);

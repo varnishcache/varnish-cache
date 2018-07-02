@@ -34,7 +34,7 @@
 struct vfp_filter;
 
 VTAILQ_HEAD(vfp_filter_head, vfp_filter);
-
+VTAILQ_HEAD(vcldir_list,vcldir);
 
 struct vcl {
 	unsigned		magic;
@@ -48,7 +48,7 @@ struct vcl {
 	unsigned		discard;
 	const char		*temp;
 	pthread_rwlock_t	temp_rwl;
-	VTAILQ_HEAD(,vcldir)	director_list;
+	struct vcldir_list	director_list;
 	VTAILQ_HEAD(,vclref)	ref_list;
 	int			nrefs;
 	struct vcl		*label;

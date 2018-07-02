@@ -84,7 +84,7 @@ vmod_hash__fini(struct vmod_directors_hash **rrp)
 	struct vmod_directors_hash *rr;
 
 	TAKE_OBJ_NOTNULL(rr, rrp, VMOD_DIRECTORS_HASH_MAGIC);
-	VRT_DelDirector(&rr->vd->dir);
+	VRT_DelDirector(NULL, &rr->vd->dir);
 }
 
 VCL_VOID v_matchproto_()

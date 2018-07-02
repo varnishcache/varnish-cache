@@ -31,16 +31,23 @@
  *
  */
 
+struct vdi_coollist;
+struct vcldir_list;
+
 struct vcldir {
 	unsigned			magic;
 #define VCLDIR_MAGIC			0xbf726c7d
 	struct director			*dir;
 	struct vcl			*vcl;
 	const struct vdi_methods	*methods;
+	// vcl->director list or vdi_coollist->director_list
 	VTAILQ_ENTRY(vcldir)		list;
 	const struct vdi_ahealth	*admin_health;
 	double				health_changed;
 	char				*cli_name;
+	/* protected by global vdi_cool_mtx */
+	unsigned			refcnt;
+	struct vdi_coollist		*coollist;
 };
 
 #define VBE_AHEALTH_LIST					\
@@ -52,3 +59,7 @@ struct vcldir {
 #define VBE_AHEALTH(l,u,h) extern const struct vdi_ahealth * const VDI_AH_##u;
 VBE_AHEALTH_LIST
 #undef VBE_AHEALTH
+
+int VDI_Ref(VRT_CTX, struct vcldir *vdir);
+void VDI_Dyn(VRT_CTX, struct vcldir *vdir);
+int VDI_Unref(VRT_CTX, struct vcldir *vdir, struct vcldir_list *oldlist);

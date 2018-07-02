@@ -93,7 +93,6 @@ void VCA_Shutdown(void);
 
 /* cache_backend_cfg.c */
 void VBE_InitCfg(void);
-void VBE_Poll(void);
 
 /* cache_backend_tcp.c */
 void VTP_Init(void);
@@ -123,6 +122,9 @@ enum sess_close VDI_Http1Pipe(struct req *, struct busyobj *);
 void VDI_Panic(const struct director *, struct vsb *, const char *nm);
 void VDI_Event(const struct director *d, enum vcl_event_e ev);
 void VDI_Init(void);
+void VDI_Cool_Flush(void);
+void VDI_Cool_Unref(struct vdi_coollist **coolp);
+struct vdi_coollist * VDI_Cool_Ref(double now);
 
 /* cache_exp.c */
 double EXP_Ttl(const struct req *, const struct objcore *);
@@ -313,7 +315,7 @@ int Pool_Task_Any(struct pool_task *task, enum task_prio prio);
 void VRG_dorange(struct req *req, const char *r);
 
 /* cache_req.c */
-struct req *Req_New(const struct worker *, struct sess *);
+struct req *Req_New(struct worker *, struct sess *);
 void Req_Release(struct req *);
 void Req_Rollback(struct req *req);
 void Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req);

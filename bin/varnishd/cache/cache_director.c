@@ -35,8 +35,11 @@
 
 #include "config.h"
 
+#include <stdlib.h>
+
 #include "cache_varnishd.h"
 #include "cache_director.h"
+#include "cache_vcl.h"
 
 #include "vcli_serve.h"
 #include "vtim.h"
@@ -194,6 +197,278 @@ VDI_Http1Pipe(struct req *req, struct busyobj *bo)
 	}
 	bo->director_resp = d;
 	return (d->vdir->methods->http1pipe(ctx, d));
+}
+
+/*--------------------------------------------------------------------
+ * Director refcounting:
+ *
+ * - Each VCL task holds an implicit reference to all VCL_BACKENDs by
+ *   referencing the current vdi_cool list, thus for any reference
+ *   with a scope smaller or equal to a TASK, no explicit reference
+ *   should be taken
+ *
+ * - VRT_VDI_Ref/Unref must be called whenever a reference to a VCL_BACKEND with
+ *   longer scope is kept, for example when adding/removing a VCL_BACKEND
+ *   to/from a director.
+ *
+ * To implement the implicit reference explicitly, we use a list of coollists:
+ *
+ * - each task references the current coollist
+ *
+ * - all VCL_BACKENDs with refcnt == 0 are put on the coollist ref'd by the
+ *   current task. VCL_BACKENDs with refcnt > 0 are not on any coollist
+ *
+ * - when a VCL_BACKEND is put on a coollist and the coollist has reached the
+ *   minimum age, we start a new coollist which is then referenced by all new
+ *   tasks. This way, the old coollist with the VCL_BACKEND(s) to be killed will
+ *   eventually get unref'd
+ *
+ * - We kill backends on unref'd coollists in the order of their creation
+ *
+ * VCL Backends get created with one initial reference (as the VCL references
+ * them symbolically).
+ *
+ * Dynamic backends get created on the coollist, so their initial scope is just
+ * the current task.
+ */
+
+
+static pthread_mutex_t vdi_cool_mtx = PTHREAD_MUTEX_INITIALIZER;
+
+struct vdi_coollist {
+	unsigned			magic;
+#define VDI_COOLLIST_MAGIC		0x0e494e9b
+	unsigned			refcnt;
+	struct vcldir_list		director_list;
+	VTAILQ_ENTRY(vdi_coollist)	list;
+	/*
+	 * conceptually, this should be mono time, but because the task timers
+	 * are real, we re-use them
+	 */
+	double				expires;
+};
+
+VTAILQ_HEAD(vdi_cool_s, vdi_coollist);
+static struct vdi_cool_s vdi_cool = VTAILQ_HEAD_INITIALIZER(vdi_cool);
+
+/* returns old refcnt */
+int
+VDI_Ref(VRT_CTX, struct vcldir *vdir)
+{
+	int r;
+
+	(void) ctx;
+	CHECK_OBJ_NOTNULL(vdir, VCLDIR_MAGIC);
+
+	AZ(pthread_mutex_lock(&vdi_cool_mtx));
+	r = vdir->refcnt++;
+	if (r == 0) {
+		AN(vdir->coollist);
+		VTAILQ_REMOVE(&vdir->coollist->director_list, vdir, list);
+	}
+	AZ(pthread_mutex_unlock(&vdi_cool_mtx));
+	return (r);
+}
+
+/*
+ * as Unref / Del functions are called from vcl object destructors which do not
+ * have a VRT_CTX at the moment, we tolerate a NULL ctx in which case we hang
+ * the director to the current coollist
+ */
+
+static struct vdi_coollist *
+vdi_task_coollist(VRT_CTX)
+{
+	struct vdi_coollist *coollist;
+
+	// called under vdi_cool_mtx
+	CHECK_OBJ_ORNULL(ctx, VRT_CTX_MAGIC);
+	if (ctx == NULL) {
+		coollist = VTAILQ_LAST(&vdi_cool, vdi_cool_s);
+	} else if (ctx->req) {
+		CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+		coollist = ctx->req->vdi_coollist;
+	} else if (ctx->bo) {
+		CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+		coollist = ctx->bo->vdi_coollist;
+	} else {
+		coollist = VTAILQ_LAST(&vdi_cool, vdi_cool_s);
+	}
+	CHECK_OBJ_NOTNULL(coollist, VDI_COOLLIST_MAGIC);
+	return (coollist);
+}
+
+/* for VRT_DynDirector */
+void
+VDI_Dyn(VRT_CTX, struct vcldir *vdir)
+{
+	struct vdi_coollist *coollist;
+
+	CHECK_OBJ_NOTNULL(vdir, VCLDIR_MAGIC);
+	AZ(vdir->refcnt);
+	AZ(vdir->coollist);
+
+	AZ(pthread_mutex_lock(&vdi_cool_mtx));
+	coollist = vdi_task_coollist(ctx);
+	AN(coollist->refcnt);
+	vdir->coollist = coollist;
+	VTAILQ_INSERT_TAIL(&coollist->director_list, vdir, list);
+	AZ(pthread_mutex_unlock(&vdi_cool_mtx));
+}
+
+/* XXX see vdi_task_coollist comment */
+
+/* returns new refcnt */
+int
+VDI_Unref(VRT_CTX, struct vcldir *vdir, struct vcldir_list *oldlist)
+{
+	struct vdi_coollist *coollist;
+	int r;
+
+	CHECK_OBJ_NOTNULL(vdir, VCLDIR_MAGIC);
+	AN(vdir->refcnt);
+	AZ(pthread_mutex_lock(&vdi_cool_mtx));
+	r = --vdir->refcnt;
+	if (r == 0) {
+		coollist = vdi_task_coollist(ctx);
+		AZ(vdir->coollist);
+		vdir->coollist = coollist;
+		if (oldlist)
+			VTAILQ_REMOVE(oldlist, vdir, list);
+		VTAILQ_INSERT_TAIL(&coollist->director_list, vdir, list);
+	}
+	AZ(pthread_mutex_unlock(&vdi_cool_mtx));
+	return (r);
+}
+
+static void
+vdi_del(struct vcldir *vdir)
+{
+	CHECK_OBJ_NOTNULL(vdir, VCLDIR_MAGIC);
+	AZ(vdir->refcnt);
+	if(vdir->methods->destroy != NULL)
+		vdir->methods->destroy(vdir->dir);
+	free(vdir->cli_name);
+	FREE_OBJ(vdir->dir);
+	FREE_OBJ(vdir);
+}
+
+/* -
+ * the current coollist keeps a reference, which is unref'd when a new current
+ * coollist is created
+ */
+static void
+vdi_cool_new(double now)
+{
+	struct vdi_coollist *cool;
+
+	ALLOC_OBJ(cool, VDI_COOLLIST_MAGIC);
+	AN(cool);
+	cool->expires = now + cache_param->director_gc_interval;
+	cool->refcnt = 1;
+	VTAILQ_INIT(&cool->director_list);
+
+	VTAILQ_INSERT_TAIL(&vdi_cool, cool, list);
+}
+
+/*
+ * for use with vcl unloading: Finish the current coollist to ensure unref'd
+ * backends cease to exist
+ */
+void
+VDI_Cool_Flush(void)
+{
+	double now;
+	struct vdi_coollist *old;
+
+	/* VCL ops before child started */
+	if (VTAILQ_EMPTY(&vdi_cool))
+		return;
+
+	do {
+		now = VTIM_real();
+		AZ(pthread_mutex_lock(&vdi_cool_mtx));
+
+		old = VTAILQ_LAST(&vdi_cool, vdi_cool_s);
+		CHECK_OBJ_NOTNULL(old, VDI_COOLLIST_MAGIC);
+
+		if (VTAILQ_EMPTY(&old->director_list))
+			old = NULL;
+		else
+			vdi_cool_new(now);
+		AZ(pthread_mutex_unlock(&vdi_cool_mtx));
+
+		if (old == NULL)
+			return;
+		VDI_Cool_Unref(&old);
+		AZ(old);
+	} while (1);
+}
+
+struct vdi_coollist *
+VDI_Cool_Ref(double now)
+{
+	struct vdi_coollist *cool, *old = NULL;
+
+	AZ(pthread_mutex_lock(&vdi_cool_mtx));
+	cool = VTAILQ_LAST(&vdi_cool, vdi_cool_s);
+	AN(cool);
+	if (cool->expires <= now) {
+		old = cool;
+		vdi_cool_new(now);
+		cool = VTAILQ_LAST(&vdi_cool, vdi_cool_s);
+	}
+	cool->refcnt++;
+	AZ(pthread_mutex_unlock(&vdi_cool_mtx));
+
+	if (old)
+		VDI_Cool_Unref(&old);
+	AZ(old);
+
+	CHECK_OBJ_NOTNULL(cool, VDI_COOLLIST_MAGIC);
+	return (cool);
+}
+
+void
+VDI_Cool_Unref(struct vdi_coollist **coolp)
+{
+	struct vdi_coollist *cool, *stop, *tcool;
+	struct vcldir *vdir, *tdir;
+	struct vdi_cool_s work = VTAILQ_HEAD_INITIALIZER(work);
+
+	TAKE_OBJ_NOTNULL(cool, coolp, VDI_COOLLIST_MAGIC);
+
+	AZ(pthread_mutex_lock(&vdi_cool_mtx));
+	if (--cool->refcnt > 0)
+		cool = NULL;
+	AZ(pthread_mutex_unlock(&vdi_cool_mtx));
+
+	if (cool == NULL)
+		return;
+
+	assert(cool->refcnt == 0);
+
+	/*
+	 * some coollist got unref'd. Collect all unref'd coollists at the head
+	 */
+	AZ(pthread_mutex_lock(&vdi_cool_mtx));
+	stop = VTAILQ_LAST(&vdi_cool, vdi_cool_s);
+	AN(stop);
+	do {
+		cool = VTAILQ_FIRST(&vdi_cool);
+		AN(cool);
+		if (cool == stop || cool->refcnt > 0)
+			break;
+		VTAILQ_REMOVE(&vdi_cool, cool, list);
+		VTAILQ_INSERT_TAIL(&work, cool, list);
+	} while (1);
+	AZ(pthread_mutex_unlock(&vdi_cool_mtx));
+
+	VTAILQ_FOREACH_SAFE(cool, &work, list, tcool) {
+		VTAILQ_FOREACH_SAFE(vdir, &cool->director_list, list, tdir)
+			vdi_del(vdir);
+		FREE_OBJ(cool);
+	}
 }
 
 /* Check health --------------------------------------------------------
@@ -452,6 +727,8 @@ static struct cli_proto backend_cmds[] = {
 void
 VDI_Init(void)
 {
-
 	CLI_AddFuncs(backend_cmds);
+	vdi_cool_new(VTIM_real());
 }
+
+/* XXX TODO FINI: Unref the current coollist */

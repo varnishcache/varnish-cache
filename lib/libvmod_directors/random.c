@@ -112,7 +112,7 @@ vmod_random__fini(struct vmod_directors_random **rrp)
 	struct vmod_directors_random *rr;
 
 	TAKE_OBJ_NOTNULL(rr, rrp, VMOD_DIRECTORS_RANDOM_MAGIC);
-	VRT_DelDirector(&rr->vd->dir);
+	VRT_DelDirector(NULL, &rr->vd->dir);
 }
 
 VCL_VOID v_matchproto_()

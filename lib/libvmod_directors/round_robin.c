@@ -120,7 +120,7 @@ vmod_round_robin__fini(struct vmod_directors_round_robin **rrp)
 	struct vmod_directors_round_robin *rr;
 
 	TAKE_OBJ_NOTNULL(rr, rrp, VMOD_DIRECTORS_ROUND_ROBIN_MAGIC);
-	VRT_DelDirector(&rr->vd->dir);
+	VRT_DelDirector(NULL, &rr->vd->dir);
 }
 
 VCL_VOID v_matchproto_()

@@ -271,7 +271,7 @@ vmod_shard__fini(struct vmod_directors_shard **vshardp)
 	struct vmod_directors_shard *vshard;
 
 	TAKE_OBJ_NOTNULL(vshard, vshardp, VMOD_SHARD_SHARD_MAGIC);
-	VRT_DelDirector(&vshard->dir);
+	VRT_DelDirector(NULL, &vshard->dir);
 	FREE_OBJ(vshard);
 }
 

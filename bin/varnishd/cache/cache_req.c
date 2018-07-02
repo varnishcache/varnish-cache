@@ -76,7 +76,7 @@ Req_AcctLogCharge(struct VSC_main *ds, struct req *req)
  */
 
 struct req *
-Req_New(const struct worker *wrk, struct sess *sp)
+Req_New(struct worker *wrk, struct sess *sp)
 {
 	struct pool *pp;
 	struct req *req;
@@ -151,6 +151,11 @@ Req_New(const struct worker *wrk, struct sess *sp)
 
 	VRTPRIV_init(req->privs);
 
+	if (isnan(wrk->lastused))
+		wrk->lastused = VTIM_real();
+
+	req->vdi_coollist = VDI_Cool_Ref(wrk->lastused);
+
 	return (req);
 }
 
@@ -161,6 +166,8 @@ Req_Release(struct req *req)
 	struct pool *pp;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
+	VDI_Cool_Unref(&req->vdi_coollist);
 
 	/* Make sure the request counters have all been zeroed */
 #define ACCT(foo) \

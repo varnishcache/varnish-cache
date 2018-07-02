@@ -96,7 +96,7 @@ h2_local_settings(struct h2_settings *h2s)
  */
 
 static struct h2_sess *
-h2_init_sess(const struct worker *wrk, struct sess *sp,
+h2_init_sess(struct worker *wrk, struct sess *sp,
     struct h2_sess *h2s, struct req *srq, struct h2h_decode *decode)
 {
 	uintptr_t *up;

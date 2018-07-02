@@ -126,27 +126,18 @@ VCL_Rel(struct vcl **vcc)
 
 /*--------------------------------------------------------------------*/
 
-VCL_BACKEND
-VRT_AddDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
-    const char *fmt, ...)
+static struct vcldir *
+vrt_newdirectorv(struct vcl *vcl, const struct vdi_methods *m, void *priv,
+		 const char *fmt, va_list va)
 {
 	struct vsb *vsb;
-	struct vcl *vcl;
 	struct vcldir *vdir;
 	struct director *d;
-	va_list ap;
 	int i;
 
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	CHECK_OBJ_NOTNULL(m, VDI_METHODS_MAGIC);
 	AN(fmt);
-	vcl = ctx->vcl;
-	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
-	AZ(errno=pthread_rwlock_rdlock(&vcl->temp_rwl));
-	if (vcl->temp == VCL_TEMP_COOLING) {
-		AZ(errno=pthread_rwlock_unlock(&vcl->temp_rwl));
-		return (NULL);
-	}
 
 	ALLOC_OBJ(d, DIRECTOR_MAGIC);
 	AN(d);
@@ -161,9 +152,7 @@ VRT_AddDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
 	AN(vsb);
 	VSB_printf(vsb, "%s.", VCL_Name(vcl));
 	i = VSB_len(vsb);
-	va_start(ap, fmt);
-	VSB_vprintf(vsb, fmt, ap);
-	va_end(ap);
+	VSB_vprintf(vsb, fmt, va);
 	AZ(VSB_finish(vsb));
 	REPLACE((vdir->cli_name), VSB_data(vsb));
 	VSB_destroy(&vsb);
@@ -174,45 +163,154 @@ VRT_AddDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
 	vdir->admin_health = VDI_AH_PROBE;
 	vdir->health_changed = VTIM_real();
 
+	return (vdir);
+}
+
+VCL_BACKEND
+VRT_DynDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
+		const char *fmt, ...)
+{
+	struct vcldir *vdir;
+	struct vcl *vcl;
+	va_list ap;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	vcl = ctx->vcl;
+
+	va_start(ap, fmt);
+	vdir = vrt_newdirectorv(vcl, m, priv, fmt, ap);
+	va_end(ap);
+
+	VDI_Dyn(ctx, vdir);
+
+	return (vdir->dir);
+}
+
+/* should director receive VCL_EVENT_WARM when going from 0 to 1 references ? */
+void
+VRT_RefDirector(VRT_CTX, VCL_BACKEND d)
+{
+	struct vcldir *vdir;
+	struct vcl *vcl;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	vcl = ctx->vcl;
+	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
+
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	vdir = d->vdir;
+
+	if (VDI_Ref(ctx, vdir) > 0)
+		return;
+
 	Lck_Lock(&vcl_mtx);
+	VTAILQ_INSERT_TAIL(&vcl->director_list, vdir, list);
+	Lck_Unlock(&vcl_mtx);
+}
+
+/*
+ * Add this director to the VCL, needs to be deleted later with VRT_DelDirector
+ */
+VCL_BACKEND
+VRT_AddDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
+    const char *fmt, ...)
+{
+	struct vcldir *vdir;
+	struct vcl *vcl;
+	va_list ap;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	vcl = ctx->vcl;
+
+	AZ(errno=pthread_rwlock_rdlock(&vcl->temp_rwl));
+	if (vcl->temp == VCL_TEMP_COOLING) {
+		AZ(errno=pthread_rwlock_unlock(&vcl->temp_rwl));
+		return (NULL);
+	}
+
+	va_start(ap, fmt);
+	vdir = vrt_newdirectorv(vcl, m, priv, fmt, ap);
+	va_end(ap);
+
+	AZ(vdir->refcnt);
+	Lck_Lock(&vcl_mtx);
+	/*
+	 * NOT calling VDI_Ref: A VRT-Referenced director skips getting
+	 * created on the coollist
+	 */
+	vdir->refcnt = 1;
 	VTAILQ_INSERT_TAIL(&vcl->director_list, vdir, list);
 	Lck_Unlock(&vcl_mtx);
 
 	if (VCL_WARM(vcl))
 		/* Only when adding backend to already warm VCL */
-		VDI_Event(d, VCL_EVENT_WARM);
+		VDI_Event(vdir->dir, VCL_EVENT_WARM);
 	else if (vcl->temp != VCL_TEMP_INIT)
-		WRONG("Dynamic Backends can only be added to warm VCLs");
+		WRONG("Non-dynamic Backends can only be added to warm VCLs");
 	AZ(errno=pthread_rwlock_unlock(&vcl->temp_rwl));
 
-	return (d);
+	return (vdir->dir);
 }
 
-void
-VRT_DelDirector(VCL_BACKEND *bp)
+/*
+ * XXX as Unref / Del functions are called from vcl object destructors which do
+ * not have a VRT_CTX at the moment, we tolerate a NULL ctx in which case we
+ * hang the director to the current coollist
+ */
+
+int
+VRT_UnrefDirector(VRT_CTX, VCL_BACKEND d)
+{
+	struct vcl *vcl;
+	struct vcldir *vdir;
+	int r;
+
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	vdir = d->vdir;
+	CHECK_OBJ_NOTNULL(vdir, VCLDIR_MAGIC);
+	vcl = vdir->vcl;
+	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
+
+	Lck_Lock(&vcl_mtx);
+	r = VDI_Unref(ctx, vdir, &vcl->director_list);
+	Lck_Unlock(&vcl_mtx);
+
+	return (r);
+}
+
+/* XXX see VRT_UnrefDirector comment */
+int
+VRT_DelDirector(VRT_CTX, VCL_BACKEND *bp)
 {
 	struct vcl *vcl;
 	struct vcldir *vdir;
 	VCL_BACKEND d;
+	int r;
 
 	TAKE_OBJ_NOTNULL(d, bp, DIRECTOR_MAGIC);
 	vdir = d->vdir;
 	CHECK_OBJ_NOTNULL(vdir, VCLDIR_MAGIC);
 	vcl = vdir->vcl;
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
-	Lck_Lock(&vcl_mtx);
-	VTAILQ_REMOVE(&vcl->director_list, vdir, list);
-	Lck_Unlock(&vcl_mtx);
+
+	r = VRT_UnrefDirector(ctx, d);
+
+	if (r > 0)
+		return (r);
 
 	AZ(errno=pthread_rwlock_rdlock(&vcl->temp_rwl));
 	if (VCL_WARM(vcl))
 		VDI_Event(d, VCL_EVENT_COLD);
 	AZ(errno=pthread_rwlock_unlock(&vcl->temp_rwl));
-	if(vdir->methods->destroy != NULL)
-		vdir->methods->destroy(d);
-	free(vdir->cli_name);
-	FREE_OBJ(vdir->dir);
-	FREE_OBJ(vdir);
+
+	return (r);
+}
+
+/* to be called from VGC_Discard */
+void
+VRT_FlushDirectors(void)
+{
+	VDI_Cool_Flush();
 }
 
 void
@@ -228,20 +326,6 @@ VRT_SetHealth(VCL_BACKEND d, int health)
 		vdir->dir->sick &= ~0x01;
 	else
 		vdir->dir->sick |= 0x01;
-	vdir->health_changed = VTIM_real();
-}
-
-void
-VRT_DisableDirector(VCL_BACKEND d)
-{
-	struct vcldir *vdir;
-
-	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	vdir = d->vdir;
-	CHECK_OBJ_NOTNULL(vdir, VCLDIR_MAGIC);
-
-	vdir->admin_health = VDI_AH_DELETED;
-	vdir->dir->sick |= 0x04;
 	vdir->health_changed = VTIM_real();
 }
 

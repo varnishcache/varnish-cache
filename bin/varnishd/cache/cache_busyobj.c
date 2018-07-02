@@ -37,6 +37,7 @@
 #include "cache_varnishd.h"
 #include "cache_filter.h"
 #include "cache_objhead.h"
+#include "vtim.h"
 
 static struct mempool		*vbopool;
 
@@ -140,6 +141,11 @@ VBO_GetBusyObj(struct worker *wrk, const struct req *req)
 
 	VRTPRIV_init(bo->privs);
 
+	if (isnan(wrk->lastused))
+		wrk->lastused = VTIM_real();
+
+	bo->vdi_coollist = VDI_Cool_Ref(wrk->lastused);
+
 	return (bo);
 }
 
@@ -154,6 +160,8 @@ VBO_ReleaseBusyObj(struct worker *wrk, struct busyobj **pbo)
 
 	AZ(bo->htc);
 	AZ(bo->stale_oc);
+
+	VDI_Cool_Unref(&bo->vdi_coollist);
 
 	VRTPRIV_dynamic_kill(bo->privs, (uintptr_t)bo);
 	assert(VTAILQ_EMPTY(&bo->privs->privs));
