@@ -41,7 +41,7 @@ server s2 {
 	txresp
 } -start
 
-varnish v2 -arg "-a ${tmpdir}/v2.sock,PROXY" -vcl {
+varnish v2 -arg "-a ${tmpdir}/v2.sock,PROXY,mode=0777" -vcl {
 	backend s2 { .host = "${s2_addr}"; .port = "${s2_port}"; }
 } -start
 
