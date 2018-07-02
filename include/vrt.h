@@ -470,6 +470,9 @@ int VRT_VSA_GetPtr(const struct suckaddr *sua, const unsigned char ** dst);
 int VRT_Vmod_Init(VRT_CTX, struct vmod **hdl, void *ptr, int len,
     const char *nm, const char *path, const char *file_id, const char *backup);
 void VRT_Vmod_Fini(struct vmod **hdl);
+int VRT_Vmod_Ref(struct vmod *v);
+int VRT_Vmod_Unref(struct vmod **v);
+const char *VRT_Vmod_Name(const struct vmod *v);
 
 /* VCL program related */
 VCL_VCL VRT_vcl_get(VRT_CTX, const char *);

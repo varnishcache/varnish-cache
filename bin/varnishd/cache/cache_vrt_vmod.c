@@ -55,6 +55,7 @@ struct vmod {
 	char			*nm;
 	char			*path;
 	char			*backup;
+	char			*file_id;
 	void			*hdl;
 	const void		*funcs;
 	int			funclen;
@@ -63,7 +64,11 @@ struct vmod {
 	unsigned		vrt_minor;
 };
 
+/* the vmods list is owned by the cli thread */
 static VTAILQ_HEAD(,vmod)	vmods = VTAILQ_HEAD_INITIALIZER(vmods);
+
+/* protects all (struct vmod).ref */
+static pthread_mutex_t		vmod_ref_mtx = PTHREAD_MUTEX_INITIALIZER;
 
 static unsigned
 vmod_abi_mismatch(const struct vmod_data *d)
@@ -80,10 +85,9 @@ int
 VRT_Vmod_Init(VRT_CTX, struct vmod **hdl, void *ptr, int len, const char *nm,
     const char *path, const char *file_id, const char *backup)
 {
-	struct vmod *v;
+	struct vmod *v, **vv;
 	const struct vmod_data *d;
 	char buf[256];
-	void *dlhdl;
 
 	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -91,23 +95,25 @@ VRT_Vmod_Init(VRT_CTX, struct vmod **hdl, void *ptr, int len, const char *nm,
 	AN(hdl);
 	AZ(*hdl);
 
-	dlhdl = dlopen(backup, RTLD_NOW | RTLD_LOCAL);
-	if (dlhdl == NULL) {
-		VSB_printf(ctx->msg, "Loading vmod %s from %s (%s):\n",
-		    nm, backup, path);
-		VSB_printf(ctx->msg, "dlopen() failed: %s\n", dlerror());
-		return (1);
-	}
-
 	VTAILQ_FOREACH(v, &vmods, list)
-		if (v->hdl == dlhdl)
+		if (strcmp(v->nm, nm) == 0 &&
+		    strcmp(v->path, path) == 0 &&
+		    strcmp(v->file_id, file_id) == 0)
 			break;
+
 	if (v == NULL) {
 		ALLOC_OBJ(v, VMOD_MAGIC);
 		AN(v);
-		REPLACE(v->backup, backup);
 
-		v->hdl = dlhdl;
+		v->hdl = dlopen(backup, RTLD_NOW | RTLD_LOCAL);
+		if (v->hdl == NULL) {
+			VSB_printf(ctx->msg, "Loading vmod %s from %s (%s):\n",
+			    nm, backup, path);
+			VSB_printf(ctx->msg, "dlopen() failed: %s\n",
+			    dlerror());
+			FREE_OBJ(v);
+			return (1);
+		}
 
 		bprintf(buf, "Vmod_%s_Data", nm);
 		d = dlsym(v->hdl, buf);
@@ -146,14 +152,23 @@ VRT_Vmod_Init(VRT_CTX, struct vmod **hdl, void *ptr, int len, const char *nm,
 
 		REPLACE(v->nm, nm);
 		REPLACE(v->path, path);
+		REPLACE(v->file_id, file_id);
+		REPLACE(v->backup, backup);
 
 		VSC_C_main->vmods++;
 		VTAILQ_INSERT_TAIL(&vmods, v, list);
+
+		bprintf(buf, "Vmod_%s_Handle", nm);
+		vv = dlsym(v->hdl, buf);
+		if (vv != NULL)
+			*vv = v;
 	}
 
 	assert(len == v->funclen);
 	memcpy(ptr, v->funcs, v->funclen);
+	AZ(pthread_mutex_lock(&vmod_ref_mtx));
 	v->ref++;
+	AZ(pthread_mutex_unlock(&vmod_ref_mtx));
 
 	*hdl = v;
 	return (0);
@@ -162,11 +177,42 @@ VRT_Vmod_Init(VRT_CTX, struct vmod **hdl, void *ptr, int len, const char *nm,
 void
 VRT_Vmod_Fini(struct vmod **hdl)
 {
-	struct vmod *v;
-
 	ASSERT_CLI();
 
+	(void) VRT_Vmod_Unref(hdl);
+}
+
+/* ref a vmod via the handle, return previous number of references */
+int
+VRT_Vmod_Ref(struct vmod *v)
+{
+	int ref;
+
+	AZ(pthread_mutex_lock(&vmod_ref_mtx));
+	ref = v->ref++;
+	AZ(pthread_mutex_unlock(&vmod_ref_mtx));
+
+	/* initial ref only via _Init */
+	assert(ref > 0);
+	return (ref);
+}
+
+/* deref a vmod via the handle, return new number of references */
+int
+VRT_Vmod_Unref(struct vmod **hdl)
+{
+	struct vmod *v;
+	int ref;
+
 	TAKE_OBJ_NOTNULL(v, hdl, VMOD_MAGIC);
+
+	AZ(pthread_mutex_lock(&vmod_ref_mtx));
+	ref = --v->ref;
+	AZ(pthread_mutex_unlock(&vmod_ref_mtx));
+	assert(ref >= 0);
+
+	if (ref != 0)
+		return (ref);
 
 #ifndef DONT_DLCLOSE_VMODS
 	/*
@@ -176,14 +222,23 @@ VRT_Vmod_Fini(struct vmod **hdl)
 	 */
 	AZ(dlclose(v->hdl));
 #endif
-	if (--v->ref != 0)
-		return;
 	free(v->nm);
 	free(v->path);
+	free(v->file_id);
 	free(v->backup);
 	VTAILQ_REMOVE(&vmods, v, list);
 	VSC_C_main->vmods--;
 	FREE_OBJ(v);
+
+	return (ref);
+}
+
+/* for vmod_debug */
+const char *
+VRT_Vmod_Name(const struct vmod *v)
+{
+	CHECK_OBJ_NOTNULL(v, VMOD_MAGIC);
+	return (v->nm);
 }
 
 void

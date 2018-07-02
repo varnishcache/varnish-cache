@@ -36,6 +36,7 @@ varnish v1 -vcl+backend {
 		set resp.http.really = debug.author();
 		set resp.http.what = vtc.typesize("dfijlopsz");
 		set resp.http.not = vtc.typesize("*");
+		set resp.http.vmod = debug.name();
 		debug.test_priv_call();
 		debug.test_priv_vcl();
 		objx.test_priv_call();
@@ -47,6 +48,7 @@ varnish v1 -vcl+backend {
 } -start
 
 varnish v1 -expect DEBUG.count == 0
+varnish v1 -cliok "debug.vmod"
 
 client c1 {
 	txreq -url "/bar"
@@ -60,6 +62,7 @@ client c1 {
 	expect resp.http.encrypted == "ROT52"
 	expect resp.http.what >= 16
 	expect resp.http.not == -1
+	expect resp.http.vmod == "debug"
 	txreq -url "/fail"
 	rxresp
 	expect resp.status == 503
@@ -77,6 +80,7 @@ logexpect l1 -v v1 -g raw -d 1 {
 	expect 0 =    RespHeader	{^really: Poul-Henning}
 	expect 0 =    RespHeader	{^what: [1-9][0-9]}
 	expect 0 =    RespHeader	{^not: -1}
+	expect 0 =    RespHeader	{^vmod: debug}
 	expect 0 =    VCL_Log		{^VCL initiated log}
 	expect 0 =    RespHeader	{^Encrypted: ROT52}
 	expect 0 =    VCL_return	{^deliver}
