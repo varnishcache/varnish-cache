@@ -130,10 +130,12 @@ AC_DEFUN([_VARNISH_CHECK_DEVEL], [
 # ---------------------
 AC_DEFUN([_VARNISH_CHECK_PYTHON], [
 
-	AM_PATH_PYTHON([2.7], [], [
+	AC_PATH_PROGS(PYTHON, [python3.7 python3.6 python3.5 python3.4 python2.7 python3 python2 python], [
+		AC_MSG_ERROR([no suitable Python interpreter found])
+	])
+	AM_PYTHON_CHECK_VERSION([$PYTHON], [2.7], [], [
 		AC_MSG_ERROR([Python >= 2.7 is required.])
 	])
-
 ])
 
 # _VARNISH_VMOD_LDFLAGS
