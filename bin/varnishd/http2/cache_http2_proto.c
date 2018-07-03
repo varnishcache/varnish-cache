@@ -835,8 +835,10 @@ h2_vfp_body_fini(struct vfp_ctx *vc, struct vfp_entry *vfe)
 		    H2SE_REFUSED_STREAM);
 		Lck_Lock(&h2->sess->mtx);
 		r2->error = H2SE_REFUSED_STREAM;
-		if (h2->mailcall == r2)
+		if (h2->mailcall == r2) {
+			h2->mailcall = NULL;
 			AZ(pthread_cond_signal(h2->cond));
+		}
 		Lck_Unlock(&h2->sess->mtx);
 	}
 }
