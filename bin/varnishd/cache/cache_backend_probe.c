@@ -256,18 +256,15 @@ vbp_write_proxy_v1(struct vbp_target *vt, int *sock)
 
 	VTCP_myname(*sock, addr, sizeof addr, port, sizeof port);
 	AN(VSB_new(&vsb, buf, sizeof buf, VSB_FIXEDLEN));
-	AZ(VSB_cat(&vsb, "PROXY"));
 
 	l = sizeof ss;
 	AZ(getsockname(*sock, (void *)&ss, &l));
-	if (ss.ss_family == AF_INET6)
-		VSB_printf(&vsb, " TCP6 ");
-	else if (ss.ss_family == AF_INET)
-		VSB_printf(&vsb, " TCP4 ");
-	else
-		VSB_printf(&vsb, " UNKNOWN\r\n");
-	if (ss.ss_family == AF_INET6 || ss.ss_family == AF_INET)
-		VSB_printf(&vsb, "%s %s %s %s\r\n", addr, addr, port, port);
+	if (ss.ss_family == AF_INET || ss.ss_family == AF_INET6) {
+		VSB_printf(&vsb, "PROXY %s %s %s %s %s\r\n",
+		    ss.ss_family == AF_INET ? "TCP4" : "TCP6",
+		    addr, addr, port, port);
+	} else
+		VSB_cat(&vsb, "PROXY UNKNOWN\r\n");
 	AZ(VSB_finish(&vsb));
 
 	return (vbp_write(vt, sock, VSB_data(&vsb), VSB_len(&vsb)));
