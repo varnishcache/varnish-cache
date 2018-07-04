@@ -18,7 +18,7 @@ delay 2
 process p1 -expect-text 1  1 "list length 1"
 process p1 -expect-text 1 75 "(EOF)"
 process p1 -expect-text 3  6 "1.00 ReqMethod      GET"
-process p1 -screen_dump -wait
+process p1 -screen_dump -write q -wait
 
 process p2 -dump {varnishtop -n ${v1_name} -1 -i ReqMethod} -start
 process p2 -winsz 30 80

@@ -76,13 +76,13 @@ struct top {
 };
 
 static int period = 60; /* seconds */
+static int end_of_file = 0;
 static unsigned ntop;
 static pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
 static int f_flag = 0;
 static unsigned maxfieldlen = 0;
 static const char *ident;
 
-static volatile sig_atomic_t end_of_file = 0;
 static volatile sig_atomic_t quit = 0;
 
 static VRB_HEAD(t_order, top) h_order = VRB_INITIALIZER(&h_order);
@@ -203,7 +203,7 @@ static void
 update(int p)
 {
 	struct top *tp, *tp2;
-	int l, len, eof;
+	int l, len;
 	double t = 0;
 	static time_t last = 0;
 	static unsigned n = 0;
@@ -221,8 +221,7 @@ update(int p)
 	AC(erase());
 	q = ident;
 	len = COLS - strlen(q);
-	eof = end_of_file;
-	if (eof)
+	if (end_of_file)
 		AC(mvprintw(0, len - (1 + 6), "%s (EOF)", q));
 	else
 		AC(mvprintw(0, len - 1, "%s", q));
@@ -240,7 +239,7 @@ update(int p)
 				len, len, tp->rec_data));
 			t = tp->count;
 		}
-		if (eof)
+		if (end_of_file)
 			continue;
 		tp->count += (1.0/3.0 - tp->count) / (double)n;
 		if (tp->count * 10 < t || l > LINES * 10) {
@@ -252,8 +251,6 @@ update(int p)
 		}
 	}
 	AC(refresh());
-	if (eof)
-		quit = 1;
 }
 
 static void *
