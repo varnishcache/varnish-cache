@@ -67,6 +67,12 @@ bundled tools
   for custom profile definitions to also contain a prefix to match the
   tag against.
 
+logging
+-------
+
+* The backend name logged under the ``Backend_health`` tag has been
+  changed back from `vcl name`.`backend name` to just `backend name`
+
 C APIs (for vmod and utility authors)
 -------------------------------------
 
