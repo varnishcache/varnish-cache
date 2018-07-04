@@ -37,6 +37,11 @@
 	    " statistics once and exit. Implies ``-d``."		\
 	)
 
+#define TOP_OPT_d							\
+	VOPT("d", "[-d]", "Process old log entries",			\
+	    "Process log records at the head of the log."		\
+	)
+
 #define TOP_OPT_f							\
 	VOPT("f", "[-f]", "First field only",				\
 	    "Sort and group only on the first field of each log entry."	\
@@ -59,7 +64,7 @@ TOP_OPT_1
 VSL_OPT_b
 VSL_OPT_c
 VSL_OPT_C
-VUT_OPT_d
+TOP_OPT_d
 TOP_OPT_f
 VUT_OPT_g
 VUT_OPT_h
