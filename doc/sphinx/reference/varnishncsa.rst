@@ -172,6 +172,10 @@ Supported formatters are:
   Varnish:vxid
     The VXID of the varnish transaction.
 
+  Varnish:date
+    The date header of a client request or backend response formatted as a
+    timestamp comparable to a VSL Timestamp tag-record field.
+
   VCL_Log:key
     The value set by std.log("key:value") in VCL.
 

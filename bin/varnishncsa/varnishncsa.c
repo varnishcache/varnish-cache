@@ -64,6 +64,7 @@
 #include "vapi/voptget.h"
 #include "vas.h"
 #include "vsb.h"
+#include "vtim.h"
 #include "vut.h"
 #include "vqueue.h"
 #include "miniobj.h"
@@ -371,6 +372,23 @@ format_time(const struct format *format)
 }
 
 static int v_matchproto_(format_f)
+format_date(const struct format *format)
+{
+	double ts = 0.;
+
+	(void)format;
+	if (CTX.frag[F_date].gen == CTX.gen)
+		ts = VTIM_parse(CTX.frag[F_date].b);
+
+	if (ts == 0.) {
+		AZ(VSB_cat(CTX.vsb, "-"));
+		return (0);
+	}
+	AZ(VSB_printf(CTX.vsb, "%.3f", ts));
+	return (1);
+}
+
+static int v_matchproto_(format_f)
 format_requestline(const struct format *format)
 {
 
@@ -509,6 +527,17 @@ addf_time(char type, const char *fmt)
 }
 
 static void
+addf_date(void)
+{
+	struct format *f;
+
+	ALLOC_OBJ(f, FORMAT_MAGIC);
+	AN(f);
+	f->func = format_date;
+	VTAILQ_INSERT_TAIL(&CTX.format, f, list);
+}
+
+static void
 addf_requestline(void)
 {
 	struct format *f;
@@ -624,6 +653,10 @@ parse_x_format(char *buf)
 	}
 	if (!strcmp(buf, "Varnish:vxid")) {
 		addf_int32(&CTX.vxid);
+		return;
+	}
+	if (!strcmp(buf, "Varnish:date")) {
+		addf_date();
 		return;
 	}
 	if (!strncmp(buf, "VCL_Log:", 8)) {

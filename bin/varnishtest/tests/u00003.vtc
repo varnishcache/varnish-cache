@@ -32,9 +32,11 @@ shell {
 delay 1
 
 client c1 {
-	txreq -url /1?foo=bar -hdr "authorization: basic dXNlcjpwYXNz"
+	txreq -url /1?foo=bar -hdr "authorization: basic dXNlcjpwYXNz" \
+	    -hdr "Date: Sun, 06 Nov 1994 08:49:37 GMT"
 	rxresp
-	txreq -url /1?foo=bar -hdr "baz: qux"
+	txreq -url /1?foo=bar -hdr "baz: qux" \
+	    -hdr "Date: Sunday, 06-Nov-94 08:49:37 GMT"
 	rxresp
 } -run
 
@@ -44,7 +46,7 @@ shell "mv ${tmpdir}/ncsa.log ${tmpdir}/ncsa.old.log"
 shell "kill -HUP `cat ${tmpdir}/ncsa.pid`"
 
 client c1 {
-	txreq -url /2
+	txreq -url /2 -hdr "Date: Sun Nov  6 08:49:37 1994"
 	rxresp
 } -run
 
@@ -132,12 +134,12 @@ shell -match {^100 \d+ HTTP/1.1 \d+.\d+.\d+.\d+ \d+ - - GET 0 \d+ (?#
 	{varnishncsa -n ${v1_name} -d -f ${tmpdir}/format}
 
 # extended variables
-shell -match {^\d+.\d{6} miss miss c 1001 quuz
-\d+.\d{6} miss synth c 1003\s
-\d+.\d{6} miss pipe c 1005\s$} \
+shell -match {^\d+.\d{6} miss miss c 1001 quuz 784111777.000
+\d+.\d{6} miss synth c 1003  784111777.000
+\d+.\d{6} miss pipe c 1005  784111777.000$} \
 	{varnishncsa -n ${v1_name} -d -F "%{Varnish:time_firstbyte}x \
 %{Varnish:hitmiss}x %{Varnish:handling}x %{Varnish:side}x \
-%{Varnish:vxid}x %{VCL_Log:quux}x"}
+%{Varnish:vxid}x %{VCL_Log:quux}x %{Varnish:date}x"}
 
 # %{VSL:..}x
 shell -match {^req (\d+) rxreq \1 \d{10}\.\d{6} (\d+\.\d{6}) \d+\.\d{6} \2 -
