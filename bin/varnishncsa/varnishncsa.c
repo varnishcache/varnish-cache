@@ -568,11 +568,12 @@ addf_vsl(enum VSL_tag_e tag, long i, const char *prefix)
 {
 	struct vsl_watch *w;
 
-	ALLOC_OBJ(w, VSL_WATCH_MAGIC);
-	AN(w);
 	if (VSL_tagflags[tag])
 		VUT_Error(vut, 1, "Tag %s can contain control characters",
 		    VSL_tags[tag]);
+
+	ALLOC_OBJ(w, VSL_WATCH_MAGIC);
+	AN(w);
 	w->tag = tag;
 	assert(i <= INT_MAX);
 	w->idx = i;
