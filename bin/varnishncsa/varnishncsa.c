@@ -89,6 +89,7 @@ enum e_frag {
 	F_tend,			/* Time end */
 	F_ttfb,			/* %{Varnish:time_firstbyte}x */
 	F_host,			/* Host header */
+	F_date,			/* Date header */
 	F_auth,			/* Authorization header */
 	F__MAX,
 };
@@ -934,6 +935,7 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 	unsigned tag;
 	const char *b, *e, *p;
 	struct watch *w;
+	enum e_frag f;
 	int i, skip, be_mark;
 
 	(void)vsl;
@@ -1043,13 +1045,19 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				break;
 			case (SLT_BereqHeader + BACKEND_MARKER):
 			case SLT_ReqHeader:
+				f = F__MAX;
 				if (ISPREFIX("Authorization:", b, e, &p) &&
 				    ISPREFIX("basic ", p, e, &p))
-					frag_line(0, p, e,
-					    &CTX.frag[F_auth]);
+					f = F_auth;
 				else if (ISPREFIX("Host:", b, e, &p))
-					frag_line(0, p, e,
-					    &CTX.frag[F_host]);
+					f = F_host;
+				else if (ISPREFIX("Date:", b, e, &p))
+					f = F_date;
+				if (f < F__MAX)
+					frag_line(0, p, e, &CTX.frag[f]);
+			case (SLT_BerespHeader + BACKEND_MARKER):
+				if (ISPREFIX("Date:", b, e, &p))
+					frag_line(0, p, e, &CTX.frag[F_date]);
 #undef ISPREFIX
 				break;
 			case SLT_VCL_call:
