@@ -64,6 +64,7 @@
 #include "vapi/voptget.h"
 #include "vas.h"
 #include "vsb.h"
+#include "vtim.h"
 #include "vut.h"
 #include "vqueue.h"
 #include "miniobj.h"
@@ -89,6 +90,7 @@ enum e_frag {
 	F_tend,			/* Time end */
 	F_ttfb,			/* %{Varnish:time_firstbyte}x */
 	F_host,			/* Host header */
+	F_date,			/* Date header */
 	F_auth,			/* Authorization header */
 	F__MAX,
 };
@@ -370,6 +372,23 @@ format_time(const struct format *format)
 }
 
 static int v_matchproto_(format_f)
+format_date(const struct format *format)
+{
+	double ts = 0.;
+
+	(void)format;
+	if (CTX.frag[F_date].gen == CTX.gen)
+		ts = VTIM_parse(CTX.frag[F_date].b);
+
+	if (ts == 0.) {
+		AZ(VSB_cat(CTX.vsb, "-"));
+		return (0);
+	}
+	AZ(VSB_printf(CTX.vsb, "%.3f", ts));
+	return (1);
+}
+
+static int v_matchproto_(format_f)
 format_requestline(const struct format *format)
 {
 
@@ -508,6 +527,17 @@ addf_time(char type, const char *fmt)
 }
 
 static void
+addf_date(void)
+{
+	struct format *f;
+
+	ALLOC_OBJ(f, FORMAT_MAGIC);
+	AN(f);
+	f->func = format_date;
+	VTAILQ_INSERT_TAIL(&CTX.format, f, list);
+}
+
+static void
 addf_requestline(void)
 {
 	struct format *f;
@@ -568,11 +598,12 @@ addf_vsl(enum VSL_tag_e tag, long i, const char *prefix)
 {
 	struct vsl_watch *w;
 
-	ALLOC_OBJ(w, VSL_WATCH_MAGIC);
-	AN(w);
 	if (VSL_tagflags[tag])
 		VUT_Error(vut, 1, "Tag %s can contain control characters",
 		    VSL_tags[tag]);
+
+	ALLOC_OBJ(w, VSL_WATCH_MAGIC);
+	AN(w);
 	w->tag = tag;
 	assert(i <= INT_MAX);
 	w->idx = i;
@@ -622,6 +653,10 @@ parse_x_format(char *buf)
 	}
 	if (!strcmp(buf, "Varnish:vxid")) {
 		addf_int32(&CTX.vxid);
+		return;
+	}
+	if (!strcmp(buf, "Varnish:date")) {
+		addf_date();
 		return;
 	}
 	if (!strncmp(buf, "VCL_Log:", 8)) {
@@ -933,6 +968,7 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 	unsigned tag;
 	const char *b, *e, *p;
 	struct watch *w;
+	enum e_frag f;
 	int i, skip, be_mark;
 
 	(void)vsl;
@@ -1042,13 +1078,19 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				break;
 			case (SLT_BereqHeader + BACKEND_MARKER):
 			case SLT_ReqHeader:
+				f = F__MAX;
 				if (ISPREFIX("Authorization:", b, e, &p) &&
 				    ISPREFIX("basic ", p, e, &p))
-					frag_line(0, p, e,
-					    &CTX.frag[F_auth]);
+					f = F_auth;
 				else if (ISPREFIX("Host:", b, e, &p))
-					frag_line(0, p, e,
-					    &CTX.frag[F_host]);
+					f = F_host;
+				else if (ISPREFIX("Date:", b, e, &p))
+					f = F_date;
+				if (f < F__MAX)
+					frag_line(0, p, e, &CTX.frag[f]);
+			case (SLT_BerespHeader + BACKEND_MARKER):
+				if (ISPREFIX("Date:", b, e, &p))
+					frag_line(0, p, e, &CTX.frag[F_date]);
 #undef ISPREFIX
 				break;
 			case SLT_VCL_call:
