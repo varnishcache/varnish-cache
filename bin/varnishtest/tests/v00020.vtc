@@ -277,10 +277,44 @@ varnish v1 -errvcl {Comparison of different types: BACKEND '==' STRING} {
 	}
 }
 
+varnish v1 -errvcl {'!' must be followed by BOOL, found REAL.} {
+	import std;
+	sub vcl_recv { if (!std.random(0,1)) { } }
+}
+
+varnish v1 -errvcl {'&&' must be followed by BOOL, found REAL.} {
+	import std;
+	sub vcl_recv { if (0 && std.random(0,1)) { } }
+}
+
+varnish v1 -errvcl {'||' must be followed by BOOL, found REAL.} {
+	import std;
+	sub vcl_recv { if (0 || std.random(0,1)) { } }
+}
+
+varnish v1 -errvcl {'&&' must be preceeded by BOOL, found REAL.} {
+	import std;
+	sub vcl_recv { if (std.random(0,1) && 0) { } }
+}
+
+varnish v1 -errvcl {'||' must be preceeded by BOOL, found REAL.} {
+	import std;
+	sub vcl_recv { if (std.random(0,1) || 0) { } }
+}
+
 server s1 {
 	rxreq
 	txresp -hdr "bar: X"
 } -start
+
+varnish v1 -vcl+backend {
+	// Ticket 2727
+	sub vcl_recv {
+		if ((2 - 1) > 0) {
+			# nothing
+		}
+	}
+}
 
 varnish v1 -vcl+backend {
 	sub vcl_deliver {

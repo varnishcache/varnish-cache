@@ -250,6 +250,28 @@ vcc_expr_fmt(struct vsb *d, int ind, const struct expr *e1)
  */
 
 static void
+vcc_expr_tobool(struct vcc *tl, struct expr **e)
+{
+
+	if ((*e)->fmt == BOOL)
+		return;
+	if ((*e)->fmt == BACKEND || (*e)->fmt == INT)
+		*e = vcc_expr_edit(tl, BOOL, "(\v1 != 0)", *e, NULL);
+	else if ((*e)->fmt == DURATION)
+		*e = vcc_expr_edit(tl, BOOL, "(\v1 > 0)", *e, NULL);
+	else if ((*e)->fmt == STRINGS)
+		*e = vcc_expr_edit(tl, BOOL, "(\vS != 0)", *e, NULL);
+	/*
+	 * We do not provide automatic folding from REAL to BOOL
+	 * because comparing to zero is seldom an exact science
+	 * and we want to force people to explicitly get it right.
+	 */
+}
+
+/*--------------------------------------------------------------------
+ */
+
+static void
 vcc_expr_tostring(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 {
 	const char *p;
@@ -1126,16 +1148,6 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	default:
 		break;
 	}
-	if (fmt != BOOL)
-		return;
-	if ((*e)->fmt == BACKEND || (*e)->fmt == INT)
-		*e = vcc_expr_edit(tl, BOOL, "(\v1 != 0)", *e, NULL);
-	else if ((*e)->fmt == DURATION)
-		*e = vcc_expr_edit(tl, BOOL, "(\v1 > 0)", *e, NULL);
-	else if ((*e)->fmt == STRINGS)
-		*e = vcc_expr_edit(tl, BOOL, "(\vS != 0)", *e, NULL);
-	else
-		INCOMPL();
 }
 
 /*--------------------------------------------------------------------
@@ -1147,26 +1159,77 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 static void
 vcc_expr_not(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 {
-	struct expr *e2;
 	struct token *tk;
 
 	*e = NULL;
-	if (fmt != BOOL || tl->t->tok != '!') {
-		vcc_expr_cmp(tl, e, fmt);
-		return;
-	}
-
-	vcc_NextToken(tl);
 	tk = tl->t;
-	vcc_expr_cmp(tl, &e2, fmt);
+	if (tl->t->tok == '!')
+		vcc_NextToken(tl);
+	vcc_expr_cmp(tl, e, fmt);
 	ERRCHK(tl);
-	if (e2->fmt != BOOL) {
+	if (tk->tok != '!')
+		return;
+	vcc_expr_tobool(tl, e);
+	ERRCHK(tl);
+	if ((*e)->fmt != BOOL) {
 		VSB_printf(tl->sb, "'!' must be followed by BOOL, found ");
-		VSB_printf(tl->sb, "%s.\n", vcc_utype(e2->fmt));
+		VSB_printf(tl->sb, "%s.\n", vcc_utype((*e)->fmt));
 		vcc_ErrWhere2(tl, tk, tl->t);
 	} else {
-		*e = vcc_expr_edit(tl, BOOL, "!(\v1)", e2, NULL);
+		*e = vcc_expr_edit(tl, BOOL, "!(\v1)", *e, NULL);
 	}
+}
+
+/*--------------------------------------------------------------------
+ * CAND and COR are identical save for a few details, but they are
+ * stacked so handling them in the same function is not simpler.
+ * Instead have them both call this helper function to do everything.
+ */
+
+typedef void upfunc(struct vcc *tl, struct expr **e, vcc_type_t fmt);
+
+static void
+vcc_expr_bin_bool(struct vcc *tl, struct expr **e, vcc_type_t fmt,
+    unsigned ourtok, upfunc *up, const char *tokstr)
+{
+	struct expr *e2;
+	struct token *tk;
+	char buf[32];
+
+	*e = NULL;
+	tk = tl->t;
+	up(tl, e, fmt);
+	ERRCHK(tl);
+	if (tl->t->tok != ourtok)
+		return;
+	vcc_expr_tobool(tl, e);
+	ERRCHK(tl);
+	if ((*e)->fmt != BOOL) {
+		VSB_printf(tl->sb,
+		    "'%s' must be preceeded by BOOL,"
+		    " found %s.\n", tokstr, vcc_utype((*e)->fmt));
+		vcc_ErrWhere2(tl, tk, tl->t);
+		return;
+	}
+	*e = vcc_expr_edit(tl, BOOL, "(\v+\n\v1", *e, NULL);
+	while (tl->t->tok == ourtok) {
+		vcc_NextToken(tl);
+		tk = tl->t;
+		vcc_expr_not(tl, &e2, fmt);
+		ERRCHK(tl);
+		vcc_expr_tobool(tl, &e2);
+		ERRCHK(tl);
+		if (e2->fmt != BOOL) {
+			VSB_printf(tl->sb,
+			    "'%s' must be followed by BOOL,"
+			    " found %s.\n", tokstr, vcc_utype(e2->fmt));
+			vcc_ErrWhere2(tl, tk, tl->t);
+			return;
+		}
+		bprintf(buf, "\v1\v-\n%s\v+\n\v2", tokstr);
+		*e = vcc_expr_edit(tl, BOOL, buf, *e, e2);
+	}
+	*e = vcc_expr_edit(tl, BOOL, "\v1\v-\n)", *e, NULL);
 }
 
 /*--------------------------------------------------------------------
@@ -1178,30 +1241,8 @@ vcc_expr_not(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 static void
 vcc_expr_cand(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 {
-	struct expr *e2;
-	struct token *tk;
 
-	*e = NULL;
-	vcc_expr_not(tl, e, fmt);
-	ERRCHK(tl);
-	if ((*e)->fmt != BOOL || tl->t->tok != T_CAND)
-		return;
-	*e = vcc_expr_edit(tl, BOOL, "(\v+\n\v1", *e, NULL);
-	while (tl->t->tok == T_CAND) {
-		vcc_NextToken(tl);
-		tk = tl->t;
-		vcc_expr_not(tl, &e2, fmt);
-		ERRCHK(tl);
-		if (e2->fmt != BOOL) {
-			VSB_printf(tl->sb,
-			    "'&&' must be followed by BOOL,"
-			    " found %s.\n", vcc_utype(e2->fmt));
-			vcc_ErrWhere2(tl, tk, tl->t);
-			return;
-		}
-		*e = vcc_expr_edit(tl, BOOL, "\v1\v-\n&&\v+\n\v2", *e, e2);
-	}
-	*e = vcc_expr_edit(tl, BOOL, "\v1\v-\n)", *e, NULL);
+	vcc_expr_bin_bool(tl, e, fmt, T_CAND, vcc_expr_not, "&&");
 }
 
 /*--------------------------------------------------------------------
@@ -1213,30 +1254,8 @@ vcc_expr_cand(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 static void
 vcc_expr_cor(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 {
-	struct expr *e2;
-	struct token *tk;
 
-	*e = NULL;
-	vcc_expr_cand(tl, e, fmt);
-	ERRCHK(tl);
-	if ((*e)->fmt != BOOL || tl->t->tok != T_COR)
-		return;
-	*e = vcc_expr_edit(tl, BOOL, "(\v+\n\v1", *e, NULL);
-	while (tl->t->tok == T_COR) {
-		vcc_NextToken(tl);
-		tk = tl->t;
-		vcc_expr_cand(tl, &e2, fmt);
-		ERRCHK(tl);
-		if (e2->fmt != BOOL) {
-			VSB_printf(tl->sb,
-			    "'||' must be followed by BOOL,"
-			    " found %s.\n", vcc_utype(e2->fmt));
-			vcc_ErrWhere2(tl, tk, tl->t);
-			return;
-		}
-		*e = vcc_expr_edit(tl, BOOL, "\v1\v-\n||\v+\n\v2", *e, e2);
-	}
-	*e = vcc_expr_edit(tl, BOOL, "\v1\v-\n)", *e, NULL);
+	vcc_expr_bin_bool(tl, e, fmt, T_COR, vcc_expr_cand, "||");
 }
 
 /*--------------------------------------------------------------------
@@ -1273,6 +1292,11 @@ vcc_expr0(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	if ((*e)->fmt == STRING_LIST)
 		*e = vcc_expr_edit(tl, STRING_LIST,
 		    "\v+\n\v1,\nvrt_magic_string_end\v-", *e, NULL);
+
+	if (fmt == BOOL) {
+		vcc_expr_tobool(tl, e);
+		ERRCHK(tl);
+	}
 
 	if (fmt != (*e)->fmt)  {
 		VSB_printf(tl->sb, "Expression has type %s, expected %s\n",
