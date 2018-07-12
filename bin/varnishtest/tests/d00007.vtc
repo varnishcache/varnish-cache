@@ -3,6 +3,10 @@ varnishtest "Test dynamic backends"
 server s1 {
 	rxreq
 	txresp
+	close
+	accept
+	rxreq
+	txresp
 } -start
 
 varnish v1 -vcl {
@@ -10,11 +14,18 @@ varnish v1 -vcl {
 
 	backend dummy { .host = "${bad_backend}"; }
 
+	probe pr {
+		.window = 1;
+		.threshold = 1;
+		.initial = 1;
+	}
+
 	sub vcl_init {
-		new s1 = debug.dyn("${s1_addr}", "${s1_port}");
+		new s1 = debug.dyn("${bad_backend}", "0");
 	}
 
 	sub vcl_recv {
+		s1.refresh("${s1_addr}", "${s1_port}", pr);
 		set req.backend_hint = s1.backend();
 	}
 } -start
@@ -26,3 +37,5 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 } -run
+
+server s1 -wait
