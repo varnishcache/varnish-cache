@@ -222,13 +222,12 @@ Pool_Task_Arg(struct worker *wrk, enum task_prio how, task_func_t *func,
 		wrk2 = wrk;
 		retval = 0;
 	}
-	Lck_Unlock(&pp->mtx);
 	AZ(wrk2->task.func);
-
 	assert(arg_len <= WS_Reserve(wrk2->aws, arg_len));
 	memcpy(wrk2->aws->f, arg, arg_len);
 	wrk2->task.func = func;
 	wrk2->task.priv = wrk2->aws->f;
+	Lck_Unlock(&pp->mtx);
 	if (retval)
 		AZ(pthread_cond_signal(&wrk2->cond));
 	return (retval);
