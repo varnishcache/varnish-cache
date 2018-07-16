@@ -221,17 +221,16 @@ vca_tcp_opt_init(void)
 }
 
 static void
-vca_tcp_opt_test(const struct listen_sock *ls)
+vca_tcp_opt_test(const int sock, const unsigned uds)
 {
-	int i, n, sock;
+	int i, n;
 	struct tcp_opt *to;
 	socklen_t l;
 	void *ptr;
 
-	sock = ls->sock;
 	for (n = 0; n < n_tcp_opts; n++) {
 		to = &tcp_opts[n];
-		if (to->iponly && ls->uds)
+		if (to->iponly && uds)
 			continue;
 		to->need = 1;
 		ptr = calloc(1, to->sz);
@@ -247,15 +246,14 @@ vca_tcp_opt_test(const struct listen_sock *ls)
 }
 
 static void
-vca_tcp_opt_set(const struct listen_sock *ls, int force)
+vca_tcp_opt_set(const int sock, const unsigned uds, const int force)
 {
-	int n, sock;
+	int n;
 	struct tcp_opt *to;
 
-	sock = ls->sock;
 	for (n = 0; n < n_tcp_opts; n++) {
 		to = &tcp_opts[n];
-		if (to->iponly && ls->uds)
+		if (to->iponly && uds)
 			continue;
 		if (to->need || force) {
 			VTCP_Assert(setsockopt(sock,
@@ -426,10 +424,10 @@ vca_make_session(struct worker *wrk, void *arg)
 	wrk->stats->sess_conn++;
 
 	if (need_test) {
-		vca_tcp_opt_test(wa->acceptlsock);
+		vca_tcp_opt_test(sp->fd, wa->acceptlsock->uds);
 		need_test = 0;
 	}
-	vca_tcp_opt_set(wa->acceptlsock, 0);
+	vca_tcp_opt_set(sp->fd, wa->acceptlsock->uds, 0);
 
 	req = Req_New(wrk, sp);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -607,7 +605,7 @@ vca_acct(void *arg)
 				if (ls->sock == -2)
 					continue;	// VCA_Shutdown
 				assert (ls->sock > 0);
-				vca_tcp_opt_set(ls, 1);
+				vca_tcp_opt_set(ls->sock, ls->uds, 1);
 			}
 			AZ(pthread_mutex_unlock(&shut_mtx));
 		}
@@ -646,7 +644,7 @@ ccf_start(struct cli *cli, const char * const *av, void *priv)
 			    ls->endpoint, strerror(errno));
 			return;
 		}
-		vca_tcp_opt_set(ls, 1);
+		vca_tcp_opt_set(ls->sock, ls->uds, 1);
 		if (cache_param->accept_filter) {
 			int i;
 			i = VTCP_filter_http(ls->sock);
