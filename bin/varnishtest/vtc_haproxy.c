@@ -389,7 +389,7 @@ haproxy_build_backends(const struct haproxy *h, const char *vsb_data)
 			break;
 
 		*q++ = '\0';
-		sock = VTCP_listen_on("localhost:0", NULL, 1, &err);
+		sock = VTCP_listen_on("localhost:0", NULL, 100, &err);
 		if (err != NULL)
 			vtc_fatal(h->vl,
 			    "Create listen socket failed: %s", err);
