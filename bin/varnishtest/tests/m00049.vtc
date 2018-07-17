@@ -1,0 +1,97 @@
+varnishtest "VMOD blob workspace overflow conditions"
+
+varnish v1 -vcl {
+	import blob;
+	import vtc;
+	backend b { .host = "${bad_ip}"; }
+
+	sub vcl_recv {
+		if (req.url == "/1") {
+			# Too small for the vmod_priv object.
+			vtc.workspace_alloc(client, -8);
+		}
+		elsif (req.url == "/2") {
+			# Likely large enough for the vmod_priv object,
+			# but not enough left over for the decode.
+			vtc.workspace_alloc(client, -33);
+		}
+		elsif (req.url == "/3") {
+			# Enough for the decode, but not enough left
+			# over for the encode.
+			vtc.workspace_alloc(client, -50);
+		}
+		set req.http.Decode
+			= blob.encode(blob=blob.decode(encoded="1234567890"));
+	}
+
+	sub vcl_miss {
+		if (req.url == "/4") {
+			# Enough for the req.hash BLOB (vmod_priv + 32
+			# bytes), but not enough left over for the
+			# encoding.
+			vtc.workspace_alloc(client, -65);
+			set req.http.Encode = blob.encode(blob=req.hash);
+		}
+		return( synth(200) );
+	}
+} -start
+
+logexpect l1 -v v1 -d 0 -g vxid -q "VCL_Error" {
+	expect 0 * Begin req
+	expect * = VCL_Error  {^vmod blob error: cannot decode, out of space$}
+	expect * = End
+} -start
+
+client c1 {
+	txreq -url "/1"
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+} -run
+
+logexpect l1 -wait
+
+logexpect l1 -v v1 -d 0 -g vxid -q "VCL_Error" {
+	expect 0 * Begin req
+	expect * = VCL_Error  {^vmod blob error: cannot decode, out of space$}
+	expect * = End
+} -start
+
+client c1 {
+	txreq -url "/2"
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+} -run
+
+logexpect l1 -wait
+
+logexpect l1 -v v1 -d 0 -g vxid -q "VCL_Error" {
+	expect 0 * Begin req
+	expect * = VCL_Error  {^vmod blob error: cannot encode, out of space$}
+	expect * = End
+} -start
+
+client c1 {
+	txreq -url "/3"
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+} -run
+
+logexpect l1 -wait
+
+logexpect l1 -v v1 -d 0 -g vxid -q "VCL_Error" {
+	expect 0 * Begin req
+	expect * = VCL_Error  {^vmod blob error: cannot encode, out of space$}
+	expect * = End
+} -start
+
+client c1 {
+	txreq -url "/4"
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+} -run
+
+logexpect l1 -wait
