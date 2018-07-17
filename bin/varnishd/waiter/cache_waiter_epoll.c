@@ -33,6 +33,8 @@
 //lint -e{766}
 #include "config.h"
 
+#include <stdlib.h>
+
 #if defined(HAVE_EPOLL_CTL)
 
 #include <sys/epoll.h>
@@ -69,7 +71,7 @@ struct vwe {
 static void *
 vwe_thread(void *priv)
 {
-	struct epoll_event ev[NEEV], *ep;
+	struct epoll_event *ev, *ep;
 	struct waited *wp;
 	struct waiter *w;
 	double now, then;
@@ -82,6 +84,8 @@ vwe_thread(void *priv)
 	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
 	THR_SetName("cache-epoll");
 	THR_Init();
+	ev = malloc(sizeof(struct epoll_event) * NEEV);
+	AN(ev);
 
 	now = VTIM_real();
 	while (1) {
@@ -146,6 +150,7 @@ vwe_thread(void *priv)
 		if (vwe->nwaited == 0 && vwe->die)
 			break;
 	}
+	free(ev);
 	closefd(&vwe->pipe[0]);
 	closefd(&vwe->pipe[1]);
 	closefd(&vwe->epfd);
