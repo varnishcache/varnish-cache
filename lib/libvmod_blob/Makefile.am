@@ -9,8 +9,6 @@ libvmod_blob_la_SOURCES = \
 	hex.h \
 	hex.c \
 	url.c \
-	wb.h \
-	wb.c \
 	tbl_encodings.h \
 	tbl_case.h
 
