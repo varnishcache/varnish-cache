@@ -431,6 +431,7 @@ encode(VRT_CTX, enum encoding enc, enum case_e kase, VCL_BLOB b)
 		WS_Reset(ctx->ws, snap);
 		return "";
 	}
+	buf[len] = '\0';
 	WS_Release(ctx->ws, len + 1);
 	return buf;
 }
