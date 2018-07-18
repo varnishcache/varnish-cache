@@ -36,26 +36,12 @@ varnish v1 -vcl {
 	}
 } -start
 
-logexpect l1 -v v1 -d 0 -g vxid -q "VCL_Error" {
-	expect 0 * Begin req
-	expect * = VCL_Error  {^vmod blob error: cannot decode, out of space$}
-	expect * = End
-} -start
-
 client c1 {
 	txreq -url "/1"
 	rxresp
 	expect resp.status == 503
 	expect resp.reason == "VCL failed"
 } -run
-
-logexpect l1 -wait
-
-logexpect l1 -v v1 -d 0 -g vxid -q "VCL_Error" {
-	expect 0 * Begin req
-	expect * = VCL_Error  {^vmod blob error: cannot decode, out of space$}
-	expect * = End
-} -start
 
 client c1 {
 	txreq -url "/2"
@@ -64,14 +50,6 @@ client c1 {
 	expect resp.reason == "VCL failed"
 } -run
 
-logexpect l1 -wait
-
-logexpect l1 -v v1 -d 0 -g vxid -q "VCL_Error" {
-	expect 0 * Begin req
-	expect * = VCL_Error  {^vmod blob error: cannot encode, out of space$}
-	expect * = End
-} -start
-
 client c1 {
 	txreq -url "/3"
 	rxresp
@@ -79,19 +57,9 @@ client c1 {
 	expect resp.reason == "VCL failed"
 } -run
 
-logexpect l1 -wait
-
-logexpect l1 -v v1 -d 0 -g vxid -q "VCL_Error" {
-	expect 0 * Begin req
-	expect * = VCL_Error  {^vmod blob error: cannot encode, out of space$}
-	expect * = End
-} -start
-
 client c1 {
 	txreq -url "/4"
 	rxresp
 	expect resp.status == 503
 	expect resp.reason == "VCL failed"
 } -run
-
-logexpect l1 -wait
