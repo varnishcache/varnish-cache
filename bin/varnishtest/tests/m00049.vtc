@@ -44,7 +44,7 @@ client c1 {
 	expect resp.reason ~ {(?i)^VCL Failed$|^Internal Server Error$}
 } -run
 
-client c1 {
+client c2 {
 	txreq -url "/2"
 	rxresp
 	expect resp.status >= 500
@@ -52,7 +52,7 @@ client c1 {
 	expect resp.reason ~ {(?i)^VCL Failed$|^Internal Server Error$}
 } -run
 
-client c1 {
+client c3 {
 	txreq -url "/3"
 	rxresp
 	expect resp.status >= 500
@@ -60,10 +60,104 @@ client c1 {
 	expect resp.reason ~ {(?i)^VCL Failed$|^Internal Server Error$}
 } -run
 
-client c1 {
+client c4 {
 	txreq -url "/4"
 	rxresp
 	expect resp.status >= 500
 	expect resp.status <= 503
 	expect resp.reason ~ {(?i)^VCL Failed$|^Internal Server Error$}
 } -run
+
+# Similar tests with BASE64 encoding
+varnish v1 -vcl {
+	import blob;
+	import vtc;
+	backend b { .host = "${bad_ip}"; }
+
+	sub vcl_recv {
+		if (req.url == "/1") {
+			vtc.workspace_alloc(client, -33);
+		}
+		elsif (req.url == "/2") {
+			vtc.workspace_alloc(client, -50);
+		}
+		set req.http.Decode
+			= blob.encode(blob=blob.decode(BASE64,
+						encoded="MTIzNDU2Nzg5MA=="));
+	}
+
+	sub vcl_miss {
+		if (req.url == "/3") {
+			vtc.workspace_alloc(client, -65);
+			set req.http.Encode
+				= blob.encode(BASE64, blob=req.hash);
+		}
+		return( synth(200) );
+	}
+}
+
+client c1 -run
+client c2 -run
+client c3 -run
+
+# URL encoding
+varnish v1 -vcl {
+	import blob;
+	import vtc;
+	backend b { .host = "${bad_ip}"; }
+
+	sub vcl_recv {
+		if (req.url == "/1") {
+			vtc.workspace_alloc(client, -33);
+		}
+		elsif (req.url == "/2") {
+			vtc.workspace_alloc(client, -50);
+		}
+		set req.http.Decode
+			= blob.encode(blob=blob.decode(URL,
+						encoded="1234567890"));
+	}
+
+	sub vcl_miss {
+		if (req.url == "/3") {
+			vtc.workspace_alloc(client, -65);
+			set req.http.Encode = blob.encode(URL, blob=req.hash);
+		}
+		return( synth(200) );
+	}
+}
+
+client c1 -run
+client c2 -run
+client c3 -run
+
+# HEX encoding
+varnish v1 -vcl {
+	import blob;
+	import vtc;
+	backend b { .host = "${bad_ip}"; }
+
+	sub vcl_recv {
+		if (req.url == "/1") {
+			vtc.workspace_alloc(client, -33);
+		}
+		elsif (req.url == "/2") {
+			vtc.workspace_alloc(client, -50);
+		}
+		set req.http.Decode
+			= blob.encode(blob=blob.decode(HEX,
+					encoded="31323334353637383930"));
+	}
+
+	sub vcl_miss {
+		if (req.url == "/3") {
+			vtc.workspace_alloc(client, -65);
+			set req.http.Encode = blob.encode(HEX, blob=req.hash);
+		}
+		return( synth(200) );
+	}
+}
+
+client c1 -run
+client c2 -run
+client c3 -run
