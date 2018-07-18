@@ -161,3 +161,26 @@ varnish v1 -vcl {
 client c1 -run
 client c2 -run
 client c3 -run
+
+# sub() function
+varnish v1 -vcl {
+	import blob;
+	import vtc;
+	backend b { .host = "${bad_ip}"; }
+
+	sub vcl_miss {
+		if (req.url == "/1") {
+			# Not enough for req.hash + vmod_priv
+			vtc.workspace_alloc(client, -65);
+		}
+		elsif (req.url == "/2") {
+			# Not enough for req.hash + vmod_priv + 30 bytes
+			vtc.workspace_alloc(client, -90);
+		}
+		set req.http.Encode = blob.encode(blob=blob.sub(req.hash, 30B));
+		return( synth(200) );
+	}
+}
+
+client c1 -run
+client c2 -run
