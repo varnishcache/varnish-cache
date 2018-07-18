@@ -39,27 +39,31 @@ varnish v1 -vcl {
 client c1 {
 	txreq -url "/1"
 	rxresp
-	expect resp.status == 503
-	expect resp.reason == "VCL failed"
+	expect resp.status >= 500
+	expect resp.status <= 503
+	expect resp.reason ~ {(?i)^VCL Failed$|^Internal Server Error$}
 } -run
 
 client c1 {
 	txreq -url "/2"
 	rxresp
-	expect resp.status == 503
-	expect resp.reason == "VCL failed"
+	expect resp.status >= 500
+	expect resp.status <= 503
+	expect resp.reason ~ {(?i)^VCL Failed$|^Internal Server Error$}
 } -run
 
 client c1 {
 	txreq -url "/3"
 	rxresp
-	expect resp.status == 503
-	expect resp.reason == "VCL failed"
+	expect resp.status >= 500
+	expect resp.status <= 503
+	expect resp.reason ~ {(?i)^VCL Failed$|^Internal Server Error$}
 } -run
 
 client c1 {
 	txreq -url "/4"
 	rxresp
-	expect resp.status == 503
-	expect resp.reason == "VCL failed"
+	expect resp.status >= 500
+	expect resp.status <= 503
+	expect resp.reason ~ {(?i)^VCL Failed$|^Internal Server Error$}
 } -run
