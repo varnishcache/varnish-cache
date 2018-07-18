@@ -34,7 +34,6 @@
 
 #include "vcc_if.h"
 #include "vmod_blob.h"
-#include "wb.h"
 
 struct vmod_blob_blob {
 	unsigned magic;
@@ -357,11 +356,11 @@ vmod_decode(VRT_CTX, VCL_ENUM decs, VCL_INT length, const char *p, ...)
 {
 	enum encoding dec = parse_encoding(decs);
 	va_list ap;
-	struct wb_s wb;
 	struct vmod_priv *b;
 	char *buf;
 	uintptr_t snap;
 	ssize_t len;
+	unsigned space;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AENC(dec);
@@ -373,33 +372,28 @@ vmod_decode(VRT_CTX, VCL_ENUM decs, VCL_INT length, const char *p, ...)
 		return NULL;
 	}
 
-	if (wb_create(ctx->ws, &wb) == NULL) {
-		WS_Reset(ctx->ws, snap);
-		ERRNOMEM(ctx, "cannot decode");
-		return NULL;
-	}
-	buf = wb_buf(&wb);
+	buf = WS_Front(ctx->ws);
+	space = WS_Reserve(ctx->ws, 0);
 
 	if (length <= 0)
 		length = -1;
 	va_start(ap, p);
 	errno = 0;
-	len = func[dec].decode(dec, buf, wb_space(&wb), length, p, ap);
+	len = func[dec].decode(dec, buf, space, length, p, ap);
 	va_end(ap);
 
 	if (len == -1) {
 		err_decode(ctx, p);
-		wb_reset(&wb);
+		WS_Release(ctx->ws, 0);
 		WS_Reset(ctx->ws, snap);
 		return NULL;
 	}
 	if (len == 0) {
-		wb_reset(&wb);
+		WS_Release(ctx->ws, 0);
 		WS_Reset(ctx->ws, snap);
 		return null_blob;
 	}
-	wb_advance(&wb, len);
-	WS_ReleaseP(ctx->ws, wb_buf(&wb));
+	WS_Release(ctx->ws, len);
 	b->priv = buf;
 	b->len = len;
 	b->free = NULL;
@@ -409,8 +403,10 @@ vmod_decode(VRT_CTX, VCL_ENUM decs, VCL_INT length, const char *p, ...)
 static VCL_STRING
 encode(VRT_CTX, enum encoding enc, enum case_e kase, VCL_BLOB b)
 {
-	struct wb_s wb;
 	ssize_t len;
+	char *buf;
+	uintptr_t snap;
+	unsigned space;
 
 	AENC(enc);
 
@@ -418,25 +414,25 @@ encode(VRT_CTX, enum encoding enc, enum case_e kase, VCL_BLOB b)
 		return NULL;
 
 	CHECK_OBJ_NOTNULL(ctx->ws, WS_MAGIC);
-	if (wb_create(ctx->ws, &wb) == NULL) {
-		ERRNOMEM(ctx, "cannot encode");
-		return NULL;
-	}
+	snap = WS_Snapshot(ctx->ws);
+	buf = WS_Front(ctx->ws);
+	space = WS_Reserve(ctx->ws, 0);
 
-	len = func[enc].encode(enc, kase,
-			       wb_buf(&wb), wb_space(&wb), b->priv, b->len);
+	len = func[enc].encode(enc, kase, buf, space, b->priv, b->len);
 
 	if (len == -1) {
 		ERRNOMEM(ctx, "cannot encode");
-		wb_reset(&wb);
+		WS_Release(ctx->ws, 0);
+		WS_Reset(ctx->ws, snap);
 		return NULL;
 	}
 	if (len == 0) {
-		wb_reset(&wb);
+		WS_Release(ctx->ws, 0);
+		WS_Reset(ctx->ws, snap);
 		return "";
 	}
-	wb_advance(&wb, len);
-	return wb_finish(&wb, NULL);
+	WS_Release(ctx->ws, len + 1);
+	return buf;
 }
 
 VCL_STRING v_matchproto_(td_blob_encode)
