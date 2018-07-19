@@ -177,3 +177,26 @@ Update counter
 $Function VOID vsc_destroy()
 
 Remove a vsc
+
+$Object concat(STRANDS)
+
+Create an object that returns the string formed by concatenating the
+given strings.
+
+$Method STRING .get()
+
+Return the string formed from the concatenation in the constructor.
+
+$Function STRING concatenate(STRANDS)
+
+Return the string formed by concatenating the given strings.
+(Uses VRT_StrandsWS().)
+
+$Function STRING collect(STRANDS)
+
+Return the string formed by concatenating the given strings.
+(Uses VRT_CollectStrands().)
+
+$Function VOID sethdr(HEADER, STRANDS)
+
+Set the given header with the concatenation of the given strings.

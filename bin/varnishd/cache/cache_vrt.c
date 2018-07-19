@@ -339,6 +339,117 @@ VRT_CollectString(VRT_CTX, const char *p, ...)
 	return (b);
 }
 
+/*--------------------------------------------------------------------
+ * Collapse STRANDS into the space provided, or return NULL
+ */
+
+char *
+VRT_Strands(char *d, size_t dl, VCL_STRANDS s)
+{
+	char *b;
+	const char *e;
+	unsigned x;
+
+	AN(d);
+	AN(s);
+	b = d;
+	e = b + dl;
+	for (int i = 0; i < s->n && b < e; i++)
+		if (s->p[i] != NULL && *s->p[i] != '\0') {
+			x = strlen(s->p[i]);
+			if (b + x < e)
+				memcpy(b, s->p[i], x);
+			b += x;
+		}
+	if (b >= e)
+		return (NULL);
+	*b++ = '\0';
+	return (b);
+}
+
+/*--------------------------------------------------------------------
+ * Copy and merge STRANDS into a workspace.
+ */
+
+VCL_STRING
+VRT_StrandsWS(struct ws *ws, const char *h, VCL_STRANDS s)
+{
+	char *b;
+	const char *q = NULL, *e;
+	VCL_STRING r;
+	unsigned u, x;
+	int i;
+
+	AN(s);
+	u = WS_Reserve(ws, 0);
+
+	for (i = 0; i < s->n; i++)
+		if (s->p[i] != NULL && *s->p[i] != '\0') {
+			q = s->p[i];
+			break;
+		}
+
+	if (h != NULL && q == NULL && WS_Inside(ws, h, NULL)) {
+		WS_Release(ws, 0);
+		return (h);
+	}
+
+	if (h == NULL) {
+		if (q == NULL) {
+			WS_Release(ws, 0);
+			return ("");
+		}
+		if (WS_Inside(ws, q, NULL)) {
+			for (i++; i < s->n; i++)
+				if (s->p[i] != NULL && *s->p[i] != '\0')
+					break;
+			if (i == s->n) {
+				WS_Release(ws, 0);
+				return (q);
+			}
+		}
+	}
+
+	b = WS_Front(ws);
+	e = b + u;
+
+	if (h != NULL) {
+		x = strlen(h);
+		if (b + x < e)
+			memcpy(b, h, x);
+		b += x;
+		if (b < e)
+			*b = ' ';
+		b++;
+	}
+	r = VRT_Strands(b, e > b ? e - b : 0, s);
+	if (r == NULL || r == e) {
+		WS_MarkOverflow(ws);
+		WS_Release(ws, 0);
+		return (NULL);
+	}
+	b = WS_Front(ws);
+	WS_Release(ws, r - b);
+	return (b);
+}
+
+/*--------------------------------------------------------------------
+ * Copy and merge STRANDS on the current workspace
+ */
+
+VCL_STRING
+VRT_CollectStrands(VRT_CTX, VCL_STRANDS s)
+{
+	const char *b;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->ws, WS_MAGIC);
+	b = VRT_StrandsWS(ctx->ws, NULL, s);
+	if (b == NULL)
+		VRT_fail(ctx, "Workspace overflow");
+	return (b);
+}
+
 /*--------------------------------------------------------------------*/
 
 VCL_VOID
