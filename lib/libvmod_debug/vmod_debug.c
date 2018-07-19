@@ -430,3 +430,110 @@ xyzzy_vsc_destroy(VRT_CTX)
 	vsc = NULL;
 	AZ(pthread_mutex_unlock(&vsc_mtx));
 }
+
+struct xyzzy_debug_concat {
+	unsigned	magic;
+#define CONCAT_MAGIC 0x6b746493
+	VCL_STRING	s;
+};
+
+VCL_VOID
+xyzzy_concat__init(VRT_CTX, struct xyzzy_debug_concat **concatp,
+		   const char *vcl_name, VCL_STRANDS s)
+{
+	struct xyzzy_debug_concat *concat;
+	size_t sz = 0;
+	char *p;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(concatp);
+	AZ(*concatp);
+	AN(vcl_name);
+
+	ALLOC_OBJ(concat, CONCAT_MAGIC);
+	AN(concat);
+	*concatp = concat;
+
+	for (int i = 0; i < s->n; i++)
+		if (s->p[i] != NULL)
+			sz += strlen(s->p[i]);
+	p = malloc(sz + 1);
+	AN(p);
+	(void)VRT_Strands(p, sz + 1, s);
+	concat->s = p;
+}
+
+VCL_VOID
+xyzzy_concat__fini(struct xyzzy_debug_concat **concatp)
+{
+	struct xyzzy_debug_concat *concat;
+	void *p;
+
+	if (concatp == NULL || *concatp == NULL)
+		return;
+	CHECK_OBJ(*concatp, CONCAT_MAGIC);
+	concat = *concatp;
+	*concatp = NULL;
+	p = TRUST_ME(concat->s);
+	free(p);
+	FREE_OBJ(concat);
+}
+
+VCL_STRING
+xyzzy_concat_get(VRT_CTX, struct xyzzy_debug_concat *concat)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(concat, CONCAT_MAGIC);
+	return (concat->s);
+}
+
+VCL_STRING
+xyzzy_concatenate(VRT_CTX, VCL_STRANDS s)
+{
+	VCL_STRING r;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	r = VRT_StrandsWS(ctx->ws, NULL, s);
+	if (r != NULL && *r != '\0')
+		WS_Assert_Allocated(ctx->ws, r, strlen(r) + 1);
+	return (r);
+}
+
+VCL_STRING
+xyzzy_collect(VRT_CTX, VCL_STRANDS s)
+{
+	VCL_STRING r;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	r = VRT_CollectStrands(ctx, s);
+	if (r != NULL && *r != '\0')
+		WS_Assert_Allocated(ctx->ws, r, strlen(r) + 1);
+	return (r);
+}
+
+/* cf. VRT_SetHdr() */
+VCL_VOID
+xyzzy_sethdr(VRT_CTX, VCL_HEADER hs, VCL_STRANDS s)
+{
+	struct http *hp;
+	const char *b;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(hs);
+	AN(hs->what);
+	hp = VRT_selecthttp(ctx, hs->where);
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+	if (s->n == 0) {
+		http_Unset(hp, hs->what);
+	} else {
+		b = VRT_StrandsWS(hp->ws, hs->what + 1, s);
+		if (b == NULL) {
+			VSLb(ctx->vsl, SLT_LostHeader, "%s", hs->what + 1);
+		} else {
+			if (*b != '\0')
+				WS_Assert_Allocated(hp->ws, b, strlen(b) + 1);
+			http_Unset(hp, hs->what);
+			http_SetHeader(hp, b);
+		}
+	}
+}
