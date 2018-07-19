@@ -52,6 +52,11 @@
  * binary/load-time compatible, increment MAJOR version
  *
  *
+ * 7.1 (unreleased)
+ *	VRT_Strands() added
+ *	VRT_StrandsWS() added
+ *	VRT_CollectStrands() added
+ *	VRT_STRANDS_string() removed from vrt.h (never implemented)
  * 7.0 (2018-03-15)
  *	lots of stuff moved from cache.h to cache_varnishd.h
  *	   (ie: from "$Abi vrt" to "$Abi strict")
@@ -100,7 +105,7 @@
 
 #define VRT_MAJOR_VERSION	7U
 
-#define VRT_MINOR_VERSION	0U
+#define VRT_MINOR_VERSION	1U
 
 /***********************************************************************/
 
@@ -458,6 +463,9 @@ VCL_STEVEDORE VRT_stevedore(const char *nm);
 VCL_STRANDS VRT_BundleStrands(int, struct strands *, char const **,
     const char *f, ...);
 int VRT_CompareStrands(VCL_STRANDS a, VCL_STRANDS b);
+char *VRT_Strands(char *, size_t, VCL_STRANDS);
+VCL_STRING VRT_StrandsWS(struct ws *, const char *, VCL_STRANDS);
+VCL_STRING VRT_CollectStrands(VRT_CTX, VCL_STRANDS);
 
 VCL_STRING VRT_BACKEND_string(VCL_BACKEND);
 VCL_STRING VRT_BOOL_string(VCL_BOOL);
@@ -466,7 +474,6 @@ VCL_STRING VRT_INT_string(VRT_CTX, VCL_INT);
 VCL_STRING VRT_IP_string(VRT_CTX, VCL_IP);
 VCL_STRING VRT_REAL_string(VRT_CTX, VCL_REAL);
 VCL_STRING VRT_STEVEDORE_string(VCL_STEVEDORE);
-VCL_STRING VRT_STRANDS_string(VCL_STRANDS);
 VCL_STRING VRT_TIME_string(VRT_CTX, VCL_TIME);
 
 #ifdef va_start	// XXX: hackish
