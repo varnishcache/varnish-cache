@@ -584,7 +584,7 @@ community support for those platforms.
 Services
 ~~~~~~~~
 
-As a result we ended up with ended up with systemd-only platforms for
+As a result we ended up with systemd-only platforms for
 the official packages. The old services are still available as we
 archived them in the ``pkg-varnish-cache`` source tree. This was the
 occasion to remove differences between Red Hat and Debian derivatives
