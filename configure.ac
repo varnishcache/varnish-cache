@@ -208,6 +208,7 @@ AC_CHECK_HEADERS([sys/vfs.h])
 AC_CHECK_HEADERS([endian.h])
 AC_CHECK_HEADERS([pthread_np.h], [], [], [#include <pthread.h>])
 AC_CHECK_HEADERS([priv.h])
+AC_CHECK_HEADERS([fnmatch.h], [], [AC_MSG_ERROR([fnmatch.h is required])])
 
 # Checks for library functions.
 _VARNISH_CHECK_EXPLICIT_BZERO
@@ -218,6 +219,7 @@ AC_CHECK_FUNCS([closefrom])
 AC_CHECK_FUNCS([sigaltstack])
 AC_CHECK_FUNCS([getpeereid])
 AC_CHECK_FUNCS([getpeerucred])
+AC_CHECK_FUNCS([fnmatch], [], [AC_MSG_ERROR([fnmatch(3) is required])])
 
 save_LIBS="${LIBS}"
 LIBS="${PTHREAD_LIBS}"
