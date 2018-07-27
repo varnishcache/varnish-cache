@@ -37,6 +37,7 @@
 #include <string.h>
 #include <syslog.h>
 #include <sys/socket.h>
+#include <fnmatch.h>
 
 #include "cache/cache.h"
 
@@ -303,4 +304,29 @@ vmod_syntax(VRT_CTX, VCL_REAL r)
 	 * By scaling up and rounding, this is taken care of.
 	 */
 	return (round(r * 10) <= ctx->syntax);
+}
+
+VCL_BOOL v_matchproto_(td_std_fnmatch)
+vmod_fnmatch(VRT_CTX, VCL_STRING pattern, VCL_STRING subject,
+	     VCL_BOOL pathname, VCL_BOOL noescape, VCL_BOOL period)
+{
+	int flags = 0;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	if (pattern == NULL) {
+		VRT_fail(ctx, "std.fnmatch(): pattern is NULL");
+		return (0);
+	}
+	if (subject == NULL) {
+		VRT_fail(ctx, "std.fnmatch(): subject is NULL");
+		return (0);
+	}
+
+	if (pathname)
+		flags |= FNM_PATHNAME;
+	if (noescape)
+		flags |= FNM_NOESCAPE;
+	if (period)
+		flags |= FNM_PERIOD;
+	return (fnmatch(pattern, subject, flags) != FNM_NOMATCH);
 }
