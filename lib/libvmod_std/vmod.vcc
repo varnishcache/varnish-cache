@@ -361,8 +361,70 @@ $Function BOOL syntax(REAL)
 Description
 	Returns the true if VCL version is at least REAL.
 
+$Function BOOL fnmatch(STRING pattern, STRING subject, BOOL pathname=1,
+		       BOOL noescape=0, BOOL period=0)
+
+Description
+	Shell-style pattern matching; returns `true` if *subject*
+	matches *pattern*, where *pattern* may contain wildcard
+	characters such as \* or ?.
+
+	The match is executed by the implementation of `fnmatch(3)` on
+	your system. The rules for pattern matching on most systems
+	include the following:
+
+	* \* matches any sequence of characters
+
+	* ? matches a single character
+
+	* a bracket expresion such as [abc] or [!0-9] is interpreted
+	  as a character class according to the rules of basic regular
+	  expressions (*not* PCRE regexen), except that ! is used for
+	  character class negation instead of ^.
+
+	If *pathname* is `true`, then the forward slash character / is
+	only matched literally, and never matches \*, ? or a bracket
+	expression. Otherwise, / may match one of those patterns.  By
+	default, *pathname* is `true`.
+
+	If *noescape* is `true`, then the backslash character \\ is
+	matched as an ordinary character. Otherwise, \\ is an escape
+	character, and matches the character that follows it in the
+	`pattern`. For example, \\\\ matches \\ when *noescape* is
+	`true`, and \\\\ when `false`. By default, *noescape* is
+	`false`.
+
+	If *period* is `true`, then a leading period character . only
+	matches literally, and never matches \*, ? or a bracket
+	expression. A period is leading if it is the first character
+	in `subject`; if *pathname* is also `true`, then a period that
+	immediately follows a / is also leading (as in "/.").  By
+	default, *period* is `false`.
+
+	`fnmatch()` invokes VCL failure and returns `false` if either
+	of *pattern* or *subject* is NULL -- for example, if an unset
+	header is specified.
+
+Examples
+	| # Matches URLs such as /foo/bar and /foo/bar/baz
+	| if (std.fnmatch("/foo/\*", req.url)) { ... }
+	|
+	| # Matches /foo/bar/quux, but not /foo/bar/baz/quux
+	| if (std.fnmatch("/foo/\*/quux", req.url)) { ... }
+	|
+	| # Matches /foo/bar/quux and /foo/bar/baz/quux
+	| if (std.fnmatch("/foo/\*/quux", req.url, pathname=false)) { ... }
+	|
+	| # Matches /foo/bar, /foo/car and /foo/far
+	| if (std.fnmatch("/foo/?ar", req.url)) { ... }
+	|
+	| # Matches /foo/ followed by a non-digit
+	| if (std.fnmatch("/foo/[!0-9]", req.url)) { ... }
+
+
 SEE ALSO
 ========
 
 * :ref:`varnishd(1)`
 * :ref:`vsl(7)`
+* `fnmatch(3)`
