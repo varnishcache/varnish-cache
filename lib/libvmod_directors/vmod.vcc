@@ -438,7 +438,7 @@ is _not_ the order given when backends are added.
     * when called in backend context: Use the varnish hash value as
       set by `vcl_hash`
 
-    * when called in client content: hash `req.url`
+    * when called in client context: hash `req.url`
 
   * `URL`: hash req.url / bereq.url
 
