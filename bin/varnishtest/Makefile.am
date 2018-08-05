@@ -76,12 +76,17 @@ EXTRA_DIST = $(top_srcdir)/bin/varnishtest/tests/*.vtc \
 	$(top_srcdir)/bin/varnishtest/tests/README \
 	$(top_srcdir)/bin/varnishtest/gensequences \
 	$(top_srcdir)/bin/varnishtest/sequences \
-	$(top_srcdir)/bin/varnishtest/teken.3
+	$(top_srcdir)/bin/varnishtest/teken.3 \
+	huffman_gen.py
 
 teken.c: teken_state.h
 
 teken_state.h:	$(srcdir)/sequences $(srcdir)/gensequences
 	awk -f $(srcdir)/gensequences $(srcdir)/sequences \
 	    > $(builddir)/teken_state.h
+
+vtc_h2_dectbl.h: huffman_gen.py $(top_srcdir)/include/tbl/vhp_huffman.h
+	$(srcdir)/huffman_gen.py $(top_srcdir)/include/tbl/vhp_huffman.h > $@_
+	mv $@_ $@
 
 CLEANFILES = $(builddir)/teken_state.h
