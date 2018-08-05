@@ -61,7 +61,7 @@ huff_decode(char *str, int nm, struct hpk_iter *iter, int ilen)
 	int l = 0;
 	uint64_t pack = 0;
 	unsigned pl = 0; /* pack length*/
-	struct stbl *tbl = &byte0;
+	struct stbl *tbl = &tbl_0;
 	struct ssym *sym;
 
 	(void)nm;
@@ -71,7 +71,7 @@ huff_decode(char *str, int nm, struct hpk_iter *iter, int ilen)
 			if (ilen == 0) {
 				if (pl == 0 || (MASK(pack, pl) ==
 						(unsigned)((1U << pl) - 1U))) {
-					assert(tbl == &byte0);
+					assert(tbl == &tbl_0);
 					return (l);
 				}
 			}
@@ -102,7 +102,7 @@ huff_decode(char *str, int nm, struct hpk_iter *iter, int ilen)
 			continue;
 		}
 		str[l++] = sym->chr;
-		tbl = &byte0;
+		tbl = &tbl_0;
 	}
 	return (l);
 }
