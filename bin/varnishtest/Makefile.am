@@ -87,7 +87,8 @@ teken_state.h:	$(srcdir)/sequences $(srcdir)/gensequences
 
 vtc_h2_hpack.c: vtc_h2_dectbl.h
 vtc_h2_dectbl.h: huffman_gen.py $(top_srcdir)/include/tbl/vhp_huffman.h
-	$(srcdir)/huffman_gen.py $(top_srcdir)/include/tbl/vhp_huffman.h > $@_
+	$(PYTHON) $(srcdir)/huffman_gen.py \
+	    $(top_srcdir)/include/tbl/vhp_huffman.h > $@_
 	mv $@_ $@
 
 CLEANFILES = $(builddir)/teken_state.h
