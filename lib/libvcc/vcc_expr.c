@@ -1224,6 +1224,7 @@ vcc_expr_bin_bool(struct vcc *tl, struct expr **e, vcc_type_t fmt,
 			    "'%s' must be followed by BOOL,"
 			    " found %s.\n", tokstr, vcc_utype(e2->fmt));
 			vcc_ErrWhere2(tl, tk, tl->t);
+			vcc_delete_expr(e2);
 			return;
 		}
 		bprintf(buf, "\v1\v-\n%s\v+\n\v2", tokstr);
