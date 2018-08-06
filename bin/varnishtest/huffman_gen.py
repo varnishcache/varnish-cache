@@ -85,7 +85,7 @@ for pfx in sorted(tbls.keys(), reverse=True):
 	for s in tbl:
 		for j in range(2 ** (msl - s.vall)):
 			print("	{} {{{}, {:3d}, {}}},".format(
-				" "*13 if j else "/* idx {:3d} */".format(s.val + j),
+				"\t     " if j else "/* idx {:3d} */".format(s.val + j),
 				s.vall, s.chr % 256,
 				s.esc if s.esc else "NULL"))
 	print('''}};
