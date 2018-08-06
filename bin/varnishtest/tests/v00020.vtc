@@ -137,6 +137,11 @@ varnish v1 -vcl {
 		elseif (3) { }
 		else if (4) { }
 		else { }
+
+		# regression test for #2729
+		if (req.grace < 0s || req.grace < 1s && req.grace < 2s) {
+			return (pass);
+		}
 	}
 }
 
