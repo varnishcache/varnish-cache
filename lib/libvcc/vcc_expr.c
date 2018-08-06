@@ -1215,7 +1215,7 @@ vcc_expr_bin_bool(struct vcc *tl, struct expr **e, vcc_type_t fmt,
 	while (tl->t->tok == ourtok) {
 		vcc_NextToken(tl);
 		tk = tl->t;
-		vcc_expr_not(tl, &e2, fmt);
+		up(tl, &e2, fmt);
 		ERRCHK(tl);
 		vcc_expr_tobool(tl, &e2);
 		ERRCHK(tl);
