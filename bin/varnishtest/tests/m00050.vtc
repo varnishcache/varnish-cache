@@ -1,0 +1,188 @@
+varnishtest "std.fnmatch()"
+
+varnish v1 -vcl {
+	import std;
+	backend b { .host = "${bad_ip}"; }
+
+	sub vcl_recv {
+		return (synth(200));
+	}
+
+	sub vcl_synth {
+		set resp.http.Match
+			= std.fnmatch(req.http.Pattern, req.http.Subject);
+		set resp.http.Match-Nopathname = std.fnmatch(req.http.Pattern,
+							     req.http.Subject,
+							     pathname=false);
+		set resp.http.Match-Noescape = std.fnmatch(req.http.Pattern,
+							   req.http.Subject,
+							   noescape=true);
+		set resp.http.Match-Period = std.fnmatch(req.http.Pattern,
+							 req.http.Subject,
+							 period=true);
+	}
+} -start
+
+client c1 {
+	txreq -hdr "Pattern: /foo/" -hdr "Subject: /foo/"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.Match == "true"
+	expect resp.http.Match-Nopathname == resp.http.Match
+	expect resp.http.Match-Noescape == resp.http.Match
+	expect resp.http.Match-Period == resp.http.Match
+
+	txreq -hdr "Pattern: /foo/" -hdr "Subject: /bar/"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.Match == "false"
+	expect resp.http.Match-Nopathname == resp.http.Match
+	expect resp.http.Match-Noescape == resp.http.Match
+	expect resp.http.Match-Period == resp.http.Match
+
+	txreq -hdr "Pattern: /foo/*" -hdr "Subject: /foo/bar"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.Match == "true"
+	expect resp.http.Match-Nopathname == resp.http.Match
+	expect resp.http.Match-Noescape == resp.http.Match
+	expect resp.http.Match-Period == resp.http.Match
+
+	txreq -hdr "Pattern: /foo/bar/*" -hdr "Subject: /foo/bar"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.Match == "false"
+	expect resp.http.Match-Nopathname == resp.http.Match
+	expect resp.http.Match-Noescape == resp.http.Match
+	expect resp.http.Match-Period == resp.http.Match
+
+	txreq -hdr "Pattern: /foo/?" -hdr "Subject: /foo/b"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.Match == "true"
+	expect resp.http.Match-Nopathname == resp.http.Match
+	expect resp.http.Match-Noescape == resp.http.Match
+	expect resp.http.Match-Period == resp.http.Match
+
+	txreq -hdr "Pattern: /foo/?" -hdr "Subject: /foo/bar"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.Match == "false"
+	expect resp.http.Match-Nopathname == resp.http.Match
+	expect resp.http.Match-Noescape == resp.http.Match
+	expect resp.http.Match-Period == resp.http.Match
+
+	txreq -hdr "Pattern: /foo/[a-z]" -hdr "Subject: /foo/b"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.Match == "true"
+	expect resp.http.Match-Nopathname == resp.http.Match
+	expect resp.http.Match-Noescape == resp.http.Match
+	expect resp.http.Match-Period == resp.http.Match
+
+	txreq -hdr "Pattern: /foo/[a-z]" -hdr "Subject: /foo/B"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.Match == "false"
+	expect resp.http.Match-Nopathname == resp.http.Match
+	expect resp.http.Match-Noescape == resp.http.Match
+	expect resp.http.Match-Period == resp.http.Match
+
+	txreq -hdr "Pattern: /foo/[!a-z]" -hdr "Subject: /foo/B"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.Match == "true"
+	expect resp.http.Match-Nopathname == resp.http.Match
+	expect resp.http.Match-Noescape == resp.http.Match
+	expect resp.http.Match-Period == resp.http.Match
+
+	txreq -hdr "Pattern: /foo/*/quux" -hdr "Subject: /foo/bar/baz/quux"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.Match == "false"
+	expect resp.http.Match-Nopathname == "true"
+	expect resp.http.Match-Noescape == resp.http.Match
+	expect resp.http.Match-Period == resp.http.Match
+
+	txreq -hdr "Pattern: /foo/?/bar" -hdr "Subject: /foo///bar"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.Match == "false"
+	expect resp.http.Match-Nopathname == "true"
+	expect resp.http.Match-Noescape == resp.http.Match
+	expect resp.http.Match-Period == resp.http.Match
+
+	txreq -hdr "Pattern: /foo/[a/b]/bar" -hdr "Subject: /foo///bar"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.Match == "false"
+	expect resp.http.Match-Nopathname == "true"
+	expect resp.http.Match-Noescape == resp.http.Match
+	expect resp.http.Match-Period == resp.http.Match
+
+	txreq -hdr {Pattern: \\foo} -hdr {Subject: \foo}
+	rxresp
+	expect resp.status == 200
+	expect resp.http.Match == "true"
+	expect resp.http.Match-Nopathname == resp.http.Match
+	expect resp.http.Match-Noescape == "false"
+	expect resp.http.Match-Period == resp.http.Match
+
+	txreq -hdr "Pattern: *foo" -hdr "Subject: .foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.Match == "true"
+	expect resp.http.Match-Nopathname == resp.http.Match
+	expect resp.http.Match-Noescape == resp.http.Match
+	expect resp.http.Match-Period == "false"
+
+	txreq -hdr "Pattern: /*foo" -hdr "Subject: /.foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.Match == "true"
+	expect resp.http.Match-Nopathname == resp.http.Match
+	expect resp.http.Match-Noescape == resp.http.Match
+	expect resp.http.Match-Period == "false"
+} -run
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import std;
+
+	sub vcl_deliver {
+		set resp.http.Match
+			= std.fnmatch(req.http.Pattern, req.http.Subject);
+	}
+}
+
+client c1 {
+	txreq -hdr "Pattern: /foo/"
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+} -run
+
+logexpect l1 -v v1 -d 1 -g vxid -q "VCL_Error" {
+	expect 0 * Begin
+	expect * = VCL_Error {^std\.fnmatch\(\): subject is NULL$}
+	expect * = End
+} -run
+
+logexpect l1 -v v1 -d 0 -g vxid -q "VCL_Error" {
+	expect 0 * Begin
+	expect * = VCL_Error {^std\.fnmatch\(\): pattern is NULL$}
+	expect * = End
+} -start
+
+client c1 {
+	txreq -hdr "Subject: /foo/"
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+} -run
+
+logexpect l1 -wait
