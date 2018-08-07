@@ -406,8 +406,11 @@ Description
 	header is specified.
 
 Examples
-	| # Matches URLs such as /foo/bar and /foo/bar/baz
+	| # Matches URLs such as /foo/bar and /foo/baz
 	| if (std.fnmatch("/foo/\*", req.url)) { ... }
+	|
+	| # Matches URLs such as /foo/bar/baz and /foo/baz/quux
+	| if (std.fnmatch("/foo/\*/\*", bereq.url)) { ... }
 	|
 	| # Matches /foo/bar/quux, but not /foo/bar/baz/quux
 	| if (std.fnmatch("/foo/\*/quux", req.url)) { ... }
