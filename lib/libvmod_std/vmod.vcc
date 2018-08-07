@@ -377,7 +377,7 @@ Description
 
 	* ? matches a single character
 
-	* a bracket expresion such as [abc] or [!0-9] is interpreted
+	* a bracket expression such as [abc] or [!0-9] is interpreted
 	  as a character class according to the rules of basic regular
 	  expressions (*not* PCRE regexen), except that ! is used for
 	  character class negation instead of ^.
