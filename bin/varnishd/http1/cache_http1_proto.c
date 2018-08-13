@@ -206,8 +206,11 @@ http1_dissect_hdrs(struct http *hp, char *p, struct http_conn *htc,
 			return (400);
 		}
 	}
-	if (p < htc->rxbuf_e)
-		p += vct_skipcrlf(p);
+	/* We cannot use vct_skipcrlf() we have to respect rxbuf_e */
+	if (p+2 <= htc->rxbuf_e && p[0] == '\r' && p[1] == '\n')
+		p += 2;
+	else if (p+1 <= htc->rxbuf_e && p[0] == '\n')
+		p += 1;
 	HTC_RxPipeline(htc, p);
 	htc->rxbuf_e = p;
 	return (0);
