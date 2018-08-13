@@ -91,4 +91,8 @@ vtc_h2_dectbl.h: huffman_gen.py $(top_srcdir)/include/tbl/vhp_huffman.h
 	    $(top_srcdir)/include/tbl/vhp_huffman.h > $@_
 	mv $@_ $@
 
-CLEANFILES = $(builddir)/teken_state.h
+BUILT_SOURCES = vtc_h2_dectbl.h
+
+CLEANFILES = \
+	$(builddir)/teken_state.h	\
+	$(BUILT_SOURCES)
