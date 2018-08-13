@@ -1,0 +1,167 @@
+varnishtest "Test VRT STRANDS functions"
+
+varnish v1 -arg "-i foobar" -vcl {
+	import debug;
+	backend b { .host = "${bad_ip}"; }
+
+	sub vcl_init {
+		# tests VRT_Strands()
+		new c = debug.concat(server.identity + server.hostname + now);
+		new e = debug.concat("" + server.identity + "");
+	}
+
+	sub vcl_recv {
+		return (synth(200));
+	}
+
+	sub vcl_synth {
+		set resp.http.C = c.get();
+		set resp.http.E = e.get();
+
+		set req.http.Foo = "foo";
+		set req.http.Bar = "bar";
+		set req.http.Baz = "baz";
+
+		# test VRT_StrandsWS()
+		set resp.http.Concat-1
+			= debug.concatenate(req.http.Foo + req.http.Bar
+						+ req.http.Baz);
+		set resp.http.Concat-2
+			= debug.concatenate("" + req.http.Unset + req.http.Foo
+						+ req.http.Unset + ""
+						+ req.http.Bar + ""
+						+ req.http.Unset + ""
+						+ req.http.Baz + ""
+						+ req.http.Unset);
+		set resp.http.Concat-3
+			= debug.concatenate(req.http.Foo + req.http.Unset + "");
+		set resp.http.Concat-4
+			= debug.concatenate(req.http.Unset + "" + req.http.Foo);
+		set resp.http.Concat-5
+			= debug.concatenate(req.http.Foo + req.http.Unset
+						+ req.http.Bar);
+		set resp.http.Concat-6 = debug.concatenate(req.http.Foo);
+		set resp.http.Concat-7 = debug.concatenate(req.http.Unset);
+
+		# test VRT_StrandsCollect()
+		set resp.http.Collect-1
+			= debug.collect(req.http.Foo + req.http.Bar
+					+ req.http.Baz);
+		set resp.http.Collect-2
+			= debug.collect("" + req.http.Unset + req.http.Foo
+					+ req.http.Unset + "" + req.http.Bar
+					+ "" + req.http.Unset + ""
+					+ req.http.Baz + "" + req.http.Unset);
+		set resp.http.Collect-3
+			= debug.collect(req.http.Foo + req.http.Unset + "");
+		set resp.http.Collect-4
+			= debug.collect(req.http.Unset + "" + req.http.Foo);
+		set resp.http.Collect-5
+			= debug.collect(req.http.Foo + req.http.Unset
+					+ req.http.Bar);
+		set resp.http.Collect-6 = debug.collect(req.http.Foo);
+		set resp.http.Collect-7 = debug.collect(req.http.Unset);
+
+		# test a STRANDS version of VRT_SetHdr()
+		debug.sethdr(resp.http.Hdr-1, req.http.Foo + req.http.Bar
+						+ req.http.Baz);
+		debug.sethdr(resp.http.Hdr-2,
+				"" + req.http.Unset + req.http.Foo
+				+ req.http.Unset + "" + req.http.Bar + ""
+				+ req.http.Unset + "" + req.http.Baz + ""
+				+ req.http.Unset);
+		debug.sethdr(resp.http.Hdr-3,
+				req.http.Foo + req.http.Unset + "");
+		debug.sethdr(resp.http.Hdr-4,
+				req.http.Unset + "" + req.http.Foo);
+		debug.sethdr(resp.http.Hdr-5,
+				req.http.Foo + req.http.Unset + req.http.Bar);
+		debug.sethdr(resp.http.Hdr-6, req.http.Foo);
+		debug.sethdr(resp.http.Hdr-7, req.http.Unset);
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.C ~ "^foobar"
+	expect resp.http.E == "foobar"
+	expect resp.http.Concat-1 == "foobarbaz"
+	expect resp.http.Concat-2 == "foobarbaz"
+	expect resp.http.Concat-3 == "foo"
+	expect resp.http.Concat-4 == "foo"
+	expect resp.http.Concat-5 == "foobar"
+	expect resp.http.Concat-6 == "foo"
+	expect resp.http.Concat-7 == ""
+	expect resp.http.Collect-1 == "foobarbaz"
+	expect resp.http.Collect-2 == "foobarbaz"
+	expect resp.http.Collect-3 == "foo"
+	expect resp.http.Collect-4 == "foo"
+	expect resp.http.Collect-5 == "foobar"
+	expect resp.http.Collect-6 == "foo"
+	expect resp.http.Collect-7 == ""
+	expect resp.http.Hdr-1 == "foobarbaz"
+	expect resp.http.Hdr-2 == "foobarbaz"
+	expect resp.http.Hdr-3 == "foo"
+	expect resp.http.Hdr-4 == "foo"
+	expect resp.http.Hdr-5 == "foobar"
+	expect resp.http.Hdr-6 == "foo"
+	expect resp.http.Hdr-7 == ""
+} -run
+
+# out of workspace
+server s1 {
+	rxreq
+	expect req.http.Foo == "foo"
+	expect req.http.Bar == "bar"
+	expect req.http.Baz == "baz"
+	expect req.http.Quux == "quux"
+	expect req.http.Result == <undef>
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import debug;
+	import vtc;
+
+	sub vcl_recv {
+		set req.http.Foo = "foo";
+		set req.http.Bar = "bar";
+		set req.http.Baz = "baz";
+		set req.http.Quux = "quux";
+
+		vtc.workspace_alloc(client, -12);
+
+		if (req.url == "/1") {
+			# VRT_StrandsWS() marks the WS as overflowed,
+			# returns NULL, but does not invoke VCL failure.
+			# Out-of-workspace doesn't happen until delivery.
+			set req.http.Result
+				= debug.concatenate(req.http.Foo + req.http.Bar
+							+ req.http.Baz
+							+ req.http.Quux);
+		}
+		elsif (req.url == "/2") {
+			# VRT_CollectStrands() invokes VCL failure.
+			set req.http.Result
+				= debug.collect(req.http.Foo + req.http.Bar
+						+ req.http.Baz
+						+ req.http.Quux);
+		}
+	}
+}
+
+client c1 {
+	txreq -url "/1"
+	rxresp
+	expect resp.status == 500
+	expect resp.reason == "Internal Server Error"
+} -run
+
+client c1 {
+	txreq -url "/2"
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+} -run
