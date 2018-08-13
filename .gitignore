@@ -51,6 +51,7 @@ cscope.*out
 # Various auto-generated code snippets
 /bin/varnishd/vhp_hufdec.h
 /bin/varnishd/vhp_gen_hufdec
+/bin/varnishtest/vtc_h2_dectbl.h
 /include/vcl.h
 /include/vrt_obj.h
 /include/vmod_abi.h
