@@ -160,34 +160,35 @@ h2_minimal_response(struct req *req, uint16_t status)
 	return (0);
 }
 
-static uint8_t *
-h2_enc_len(uint8_t *p, unsigned bits, unsigned val)
+static int
+h2_enc_len(struct vsb *vsb, unsigned bits, unsigned val, uint8_t b0)
 {
 	assert(bits < 8);
 	unsigned mask = (1U << bits) - 1U;
 
 	if (val >= mask) {
-		*p++ |= (uint8_t)mask;
+		AZ(VSB_putc(vsb, b0 | (uint8_t)mask));
 		val -= mask;
 		while (val >= 128) {
-			*p++ = 0x80 | ((uint8_t)val & 0x7f);
+			AZ(VSB_putc(vsb, 0x80 | ((uint8_t)val & 0x7f)));
 			val >>= 7;
 		}
 	}
-	*p++ = (uint8_t)val;
-	return (p);
+	AZ(VSB_putc(vsb, (uint8_t)val));
+	return (0);
 }
 
 void v_matchproto_(vtr_deliver_f)
 h2_deliver(struct req *req, struct boc *boc, int sendbody)
 {
 	ssize_t sz, sz1;
-	uint8_t *p;
-	unsigned u;
+	unsigned u, l;
+	uint8_t buf[6];
 	const char *r;
 	struct http *hp;
 	struct sess *sp;
 	struct h2_req *r2;
+	struct vsb resp;
 	int i, err;
 	const struct hpack_static *hps;
 
@@ -198,15 +199,14 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 	sp = req->sp;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
-	(void)WS_Reserve(req->ws, 0);
-	p = (void*)req->ws->f;
+	l = WS_Reserve(req->ws, 0);
+	AN(VSB_new(&resp, req->ws->f, l, VSB_FIXEDLEN));
 
-	p += h2_status(p, req->resp->status);
+	l = h2_status(buf, req->resp->status);
+	AZ(VSB_bcat(&resp, buf, l));
 
 	hp = req->resp;
 	for (u = HTTP_HDR_FIRST; u < hp->nhd; u++) {
-		assert(WS_Inside(req->ws, p, NULL));
-
 		r = strchr(hp->hd[u].b, ':');
 		AN(r);
 
@@ -227,27 +227,24 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 			VSLb(req->vsl, SLT_Debug,
 			    "HP {%d, \"%s\", \"%s\"} <%s>",
 			    hps->idx, hps->name, hps->val, hp->hd[u].b);
-			*p = 0x10;
-			p = h2_enc_len(p, 4, hps->idx);
+			AZ(h2_enc_len(&resp, 4, hps->idx, 0x10));
 		} else {
-
-			*p++ = 0x10;
+			AZ(VSB_putc(&resp, 0x10));
 			sz--;
-			p = h2_enc_len(p, 7, sz);
+			AZ(h2_enc_len(&resp, 7, sz, 0));
 			for (sz1 = 0; sz1 < sz; sz1++)
-				*p++ = (uint8_t)tolower(hp->hd[u].b[sz1]);
+				AZ(VSB_putc(&resp, tolower(hp->hd[u].b[sz1])));
 
 		}
 
 		while (vct_islws(*++r))
 			continue;
 		sz = hp->hd[u].e - r;
-		p = h2_enc_len(p, 7, sz);
-		memcpy(p, r, sz);
-		p += sz;
-		assert(WS_Inside(req->ws, p, NULL));
+		AZ(h2_enc_len(&resp, 7, sz, 0));
+		AZ(VSB_bcat(&resp, r, sz));
 	}
-	sz = (char*)p - req->ws->f;
+	VSB_finish(&resp);
+	sz = VSB_len(&resp);
 
 	AZ(req->wrk->v1l);
 
