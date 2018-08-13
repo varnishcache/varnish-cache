@@ -86,14 +86,14 @@ CLEANFILES = $(builddir)/vcc_if.c $(builddir)/vcc_if.h \\
 
 '''
 
-privs = {
+PRIVS = {
     'PRIV_CALL':   "struct vmod_priv *",
     'PRIV_VCL':    "struct vmod_priv *",
     'PRIV_TASK':   "struct vmod_priv *",
     'PRIV_TOP':    "struct vmod_priv *",
 }
 
-ctypes = {
+CTYPES = {
     'ACL':         "VCL_ACL",
     'BACKEND':     "VCL_BACKEND",
     'BLOB':        "VCL_BLOB",
@@ -116,7 +116,7 @@ ctypes = {
     'VOID':        "VCL_VOID",
 }
 
-ctypes.update(privs)
+CTYPES.update(PRIVS)
 
 #######################################################################
 
@@ -162,7 +162,7 @@ def lwrap(s, width=64):
         ll.append(p + s[:y + 1])
         s = s[y + 1:].lstrip()
         p = "    "
-    if len(s) > 0:
+    if s:
         ll.append(p + s)
     return "\n".join(ll) + "\n"
 
@@ -182,19 +182,19 @@ def fmt_cstruct(fo, mn, x):
 inputline = None
 
 
-def err(str, warn=True):
+def err(txt, warn=True):
     if inputline is not None:
         print("While parsing line:\n\t", inputline)
     if opts.strict or not warn:
-        print("ERROR: " + str, file=sys.stderr)
+        print("ERROR: " + txt, file=sys.stderr)
         exit(1)
     else:
-        print("WARNING: " + str, file=sys.stderr)
+        print("WARNING: " + txt, file=sys.stderr)
 
 #######################################################################
 
 
-class ctype(object):
+class CType(object):
     def __init__(self, wl, enums):
         self.nm = None
         self.defval = None
@@ -202,10 +202,10 @@ class ctype(object):
         self.opt = False
 
         self.vt = wl.pop(0)
-        self.ct = ctypes.get(self.vt)
+        self.ct = CTYPES.get(self.vt)
         if self.ct is None:
             err("Expected type got '%s'" % self.vt, warn=False)
-        if len(wl) > 0 and wl[0] == "{":
+        if wl and wl[0] == "{":
             if self.vt != "ENUM":
                 err("Only ENUMs take {...} specs", warn=False)
             self.add_spec(wl, enums)
@@ -230,7 +230,7 @@ class ctype(object):
                 x = x[1:-1]
             elif x[0] == "'" and x[-1] == "'":
                 x = x[1:-1]
-            assert len(x) > 0
+            assert x
             self.spec.append(x)
             enums[x] = True
             w = wl.pop(0)
@@ -239,14 +239,14 @@ class ctype(object):
             assert w == ","
 
     def vcl(self):
-        if self.vt == "STRING_LIST":
+        if self.vt in ("STRING_LIST", "STRAND"):
             return "STRING"
         if self.spec is None:
             return self.vt
         return self.vt + " {" + ", ".join(self.spec) + "}"
 
     def synopsis(self):
-        if self.vt == "STRING_LIST":
+        if self.vt in ("STRING_LIST", "STRAND"):
             return "STRING"
         return self.vt
 
@@ -258,7 +258,7 @@ class ctype(object):
 #######################################################################
 
 
-class arg(ctype):
+class arg(CType):
     def __init__(self, wl, argnames, enums, end):
         super(arg, self).__init__(wl, enums)
 
@@ -299,6 +299,7 @@ class arg(ctype):
 def lex(l):
     wl = []
     s = 0
+    assert l
     for i in range(len(l)):
         c = l[i]
 
@@ -342,7 +343,7 @@ def lex(l):
 #######################################################################
 
 
-class prototype(object):
+class ProtoType(object):
     def __init__(self, st, retval=True, prefix=""):
         self.st = st
         self.obj = None
@@ -351,9 +352,9 @@ class prototype(object):
         wl = lex(st.line[1])
 
         if retval:
-            self.retval = ctype(wl, st.vcc.enums)
+            self.retval = CType(wl, st.vcc.enums)
         else:
-            self.retval = ctype(['VOID'], st.vcc.enums)
+            self.retval = CType(['VOID'], st.vcc.enums)
 
         self.bname = wl.pop(0)
         if not re.match("^[a-zA-Z.][a-zA-Z0-9_]*$", self.bname):
@@ -376,12 +377,12 @@ class prototype(object):
 
         names = {}
         n = 0
-        while len(wl) > 0:
+        while wl:
             n += 1
             x = wl.pop(0)
             if x != ',':
                 err("Expected ',' found '%s'" % x, warn=False)
-            if len(wl) == 0:
+            if not wl:
                 break
             if wl[0] == '[':
                     wl.pop(0)
@@ -420,7 +421,7 @@ class prototype(object):
                 t = i.synopsis()
             else:
                 t = i.vcl()
-            if t in privs:
+            if t in PRIVS:
                 continue
             if i.nm is not None:
                 t += " " + i.nm
@@ -528,9 +529,9 @@ class prototype(object):
 class stanza(object):
     def __init__(self, l0, doc, vcc):
         self.line = l0
-        while len(doc) > 0 and doc[0] == '':
+        while doc and doc[0] == '':
             doc.pop(0)
-        while len(doc) > 0 and doc[-1] == '':
+        while doc and doc[-1] == '':
             doc.pop(-1)
         self.doc = doc
         self.vcc = vcc
@@ -668,7 +669,7 @@ class s_event(stanza):
         self.vcc.contents.append(self)
 
     def rstfile(self, fo, man):
-        if len(self.doc) != 0:
+        if self.doc:
             err("Not emitting .RST for $Event %s\n" %
                 self.event_func)
 
@@ -684,14 +685,14 @@ class s_event(stanza):
 
     def json(self, jl):
         jl.append([
-                "$EVENT",
-                "Vmod_%s_Func._event" % self.vcc.modname
+            "$EVENT",
+            "Vmod_%s_Func._event" % self.vcc.modname
         ])
 
 
 class s_function(stanza):
     def parse(self):
-        self.proto = prototype(self)
+        self.proto = ProtoType(self)
         self.rstlbl = "func_" + self.proto.name
         self.vcc.contents.append(self)
 
@@ -711,7 +712,7 @@ class s_function(stanza):
 
 class s_object(stanza):
     def parse(self):
-        self.proto = prototype(self, retval=False)
+        self.proto = ProtoType(self, retval=False)
         self.proto.obj = "x" + self.proto.name
 
         self.init = copy.copy(self.proto)
@@ -799,7 +800,7 @@ class s_method(stanza):
         p = self.vcc.contents[-1]
         assert type(p) == s_object
         self.pfx = p.proto.name
-        self.proto = prototype(self, prefix=self.pfx)
+        self.proto = ProtoType(self, prefix=self.pfx)
         if not self.proto.bname.startswith("."):
             err("$Method %s: Method names need to start with . (dot)"
                 % self.proto.bname, warn=False)
@@ -820,7 +821,7 @@ class s_method(stanza):
 
 #######################################################################
 
-dispatch = {
+DISPATCH = {
     "Module":   s_module,
     "Prefix":   s_prefix,
     "ABI":      s_abi,
@@ -844,6 +845,7 @@ class vcc(object):
         self.enums = {}
         self.strict_abi = True
         self.auto_synopsis = True
+        self.modname = None
 
     def openfile(self, fn):
         self.commit_files.append(fn)
@@ -858,11 +860,11 @@ class vcc(object):
         a = "\n" + open(self.inputfile, "r").read()
         s = a.split("\n$")
         self.copyright = s.pop(0).strip()
-        while len(s):
+        while s:
             ss = re.split('\n([^\t ])', s.pop(0), maxsplit=1)
             c = ss[0].split()
             d = "".join(ss[1:])
-            m = dispatch.get(c[0])
+            m = DISPATCH.get(c[0])
             if m is None:
                 err("Unknown stanze $%s" % ss[:i])
             m([c[0], " ".join(c[1:])], d.split('\n'), self)
@@ -891,7 +893,7 @@ class vcc(object):
         for i in self.contents:
             i.rstfile(fo, man)
 
-        if len(self.copyright):
+        if self.copyright:
             self.rst_copyright(fo)
 
         fo.close()
@@ -1075,7 +1077,7 @@ if __name__ == "__main__":
                        help='Output file prefix (default: "vcc_if")')
     oparser.add_option('-w', '--rstdir', metavar="directory", default='.',
                        help='Where to save the generated RST files ' +
-                            '(default: ".")')
+                       '(default: ".")')
     oparser.add_option('', '--runtests', action='store_true', default=False,
                        dest="runtests", help=optparse.SUPPRESS_HELP)
     (opts, args) = oparser.parse_args()
