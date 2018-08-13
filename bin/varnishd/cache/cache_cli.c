@@ -100,7 +100,7 @@ CLI_Run(void)
 	cli = VCLS_AddFd(cache_cls,
 	    heritage.cli_in, heritage.cli_out, NULL, NULL);
 	AN(cli);
-	cli->auth = 1;	// Non-zero to disable paranoia in vcli_serve
+	cli->auth = 255;	// Non-zero to disable paranoia in vcli_serve
 
 	do {
 		i = VCLS_Poll(cache_cls, cli, -1);
