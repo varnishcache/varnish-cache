@@ -264,6 +264,7 @@ main(int argc, char * const *argv)
 	int once = 0, xml = 0, json = 0, f_list = 0, curses = 0;
 	signed char opt;
 	int i;
+	int has_f = 0;
 	struct vsc *vsc;
 
 	vut = VUT_InitProg(argc, argv, &vopt_spec);
@@ -293,6 +294,7 @@ main(int argc, char * const *argv)
 			break;
 		case 'f':
 			AN(VSC_Arg(vsc, opt, optarg));
+			has_f = 1;
 			break;
 		case 'V':
 			AN(VUT_Arg(vut, opt, optarg));
@@ -315,8 +317,15 @@ main(int argc, char * const *argv)
 	if (VSM_Attach(vd, STDERR_FILENO))
 		VUT_Error(vut, 1, "%s", VSM_Error(vd));
 
-	if (curses)
+	if (curses) {
+		if (has_f) {
+			AZ(VSC_Arg(vsc, 'f', "MGT.uptime"));
+			AZ(VSC_Arg(vsc, 'f', "MAIN.uptime"));
+			AZ(VSC_Arg(vsc, 'f', "MAIN.cache_hit"));
+			AZ(VSC_Arg(vsc, 'f', "MAIN.cache_miss"));
+		}
 		do_curses(vd, vsc, 1.0);
+	}
 	else if (xml)
 		do_xml(vd, vsc);
 	else if (json)
