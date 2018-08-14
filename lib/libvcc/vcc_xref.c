@@ -39,6 +39,7 @@
 
 #include "config.h"
 
+#include <string.h>
 #include "vcc_compile.h"
 
 /*--------------------------------------------------------------------*/
@@ -57,6 +58,11 @@ struct procuse {
 	unsigned		mask;
 	const char		*use;
 	struct proc		*fm;
+};
+
+struct procpriv {
+	VTAILQ_ENTRY(procpriv)	list;
+	const char		*vmod;
 };
 
 /*--------------------------------------------------------------------*/
@@ -354,4 +360,29 @@ VCC_XrefTable(struct vcc *tl)
 	Fc(tl, 0, "\n/*\n * Symbol Table\n *\n");
 	VCC_WalkSymbols(tl, vcc_xreftable, SYM_NONE);
 	Fc(tl, 0, "*/\n\n");
+}
+
+/*---------------------------------------------------------------------
+ * mark vmod as referenced, return NULL if not yet marked, vmod if marked
+ */
+
+const char *
+vcc_MarkPriv(struct vcc *tl, struct procprivhead *head,
+    const char *vmod)
+{
+	struct procpriv *pp;
+
+	AN(vmod);
+
+	VTAILQ_FOREACH(pp, head, list) {
+		if (pp->vmod == vmod)
+			return (vmod);
+		AN(strcmp(pp->vmod, vmod));
+	}
+
+	pp = TlAlloc(tl, sizeof *pp);
+	assert(pp != NULL);
+	pp->vmod = vmod;
+	VTAILQ_INSERT_TAIL(head, pp, list);
+	return (NULL);
 }
