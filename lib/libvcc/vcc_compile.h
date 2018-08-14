@@ -174,6 +174,7 @@ struct symbol {
 };
 
 VTAILQ_HEAD(tokenhead, token);
+VTAILQ_HEAD(procprivhead, procpriv);
 
 struct proc {
 	unsigned		magic;
@@ -181,6 +182,8 @@ struct proc {
 	const struct method	*method;
 	VTAILQ_HEAD(,proccall)	calls;
 	VTAILQ_HEAD(,procuse)	uses;
+	struct procprivhead	priv_tasks;
+	struct procprivhead	priv_tops;
 	VTAILQ_ENTRY(proc)	list;
 	struct token		*name;
 	unsigned		ret_bitmap;
@@ -389,6 +392,8 @@ int vcc_CheckAction(struct vcc *tl);
 void vcc_AddUses(struct vcc *, const struct token *, const struct token *,
      unsigned mask, const char *use);
 int vcc_CheckUses(struct vcc *tl);
+const char *vcc_MarkPriv(struct vcc *, struct procprivhead *,
+    const char *);
 
 #define ERRCHK(tl)      do { if ((tl)->err) return; } while (0)
 #define ErrInternal(tl) vcc__ErrInternal(tl, __func__, __LINE__)

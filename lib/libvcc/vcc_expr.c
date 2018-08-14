@@ -399,31 +399,49 @@ vcc_Eval_Var(struct vcc *tl, struct expr **e, struct token *t,
  */
 
 static struct expr *
-vcc_priv_arg(struct vcc *tl, const char *p, const char *name, const char *vmod)
+vcc_priv_arg(struct vcc *tl, const char *p, const struct symbol *sym)
 {
-	struct expr *e2;
-	char buf[32];
+	char buf[64];
 	struct inifin *ifp;
+	const char *vmod, *f = NULL;
+	struct procprivhead *marklist = NULL;
 
-	(void)name;
+	AN(sym);
+	AN(sym->vmod);
+	vmod = sym->vmod;
+
 	if (!strcmp(p, "PRIV_VCL")) {
-		e2 = vcc_mk_expr(VOID, "&vmod_priv_%s", vmod);
+		return (vcc_mk_expr(VOID, "&vmod_priv_%s", vmod));
 	} else if (!strcmp(p, "PRIV_CALL")) {
 		bprintf(buf, "vmod_priv_%u", tl->unique++);
 		ifp = New_IniFin(tl);
 		Fh(tl, 0, "static struct vmod_priv %s;\n", buf);
 		VSB_printf(ifp->fin, "\tVRT_priv_fini(&%s);", buf);
-		e2 = vcc_mk_expr(VOID, "&%s", buf);
+		return (vcc_mk_expr(VOID, "&%s", buf));
 	} else if (!strcmp(p, "PRIV_TASK")) {
-		e2 = vcc_mk_expr(VOID,
-		    "VRT_priv_task(ctx, &VGC_vmod_%s)", vmod);
+		f = "task";
+		marklist = &tl->curproc->priv_tasks;
 	} else if (!strcmp(p, "PRIV_TOP")) {
-		e2 = vcc_mk_expr(VOID,
-		    "VRT_priv_top(ctx, &VGC_vmod_%s)", vmod);
+		f = "top";
+		marklist = &tl->curproc->priv_tops;
 	} else {
 		WRONG("Wrong PRIV_ type");
 	}
-	return (e2);
+	AN(f);
+	AN(marklist);
+	bprintf(buf, "ARG_priv_%s_%s", f, vmod);
+
+	if (vcc_MarkPriv(tl, marklist, vmod) == NULL)
+		VSB_printf(tl->curproc->prologue,
+			   "  struct vmod_priv *%s = "
+			   "VRT_priv_%s(ctx, &VGC_vmod_%s);\n"
+			   "  if (%s == NULL) {\n"
+			   "    VRT_fail(ctx, \"failed to get %s priv "
+			   "for vmod %s\");\n"
+			   "    return;\n"
+			   "  }\n",
+			   buf, f, vmod, buf, f, vmod);
+	return (vcc_mk_expr(VOID, "%s", buf));
 }
 
 struct func_arg {
@@ -522,8 +540,7 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 
 		vvp = VTAILQ_FIRST(&vv->children);
 		if (!memcmp(vvp->value, "PRIV_", 5)) {
-			fa->result = vcc_priv_arg(tl, vvp->value,
-			    sym->name, sym->vmod);
+			fa->result = vcc_priv_arg(tl, vvp->value, sym);
 			continue;
 		}
 		fa->type = VCC_Type(vvp->value);
