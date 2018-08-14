@@ -80,6 +80,7 @@ tokens = {
 	# These have handwritten recognizers
 	"ID":		None,
 	"CNUM":		None,
+	"FNUM":		None,
 	"CSTR":		None,
 	"EOI":		None,
 	"CSRC":		None,

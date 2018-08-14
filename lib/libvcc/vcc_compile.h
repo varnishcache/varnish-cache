@@ -331,7 +331,6 @@ void Emit_UDS_Path(struct vcc *tl, const struct token *t_path,
     const char *errid);
 double vcc_TimeUnit(struct vcc *);
 void vcc_ByteVal(struct vcc *, double *);
-void vcc_NumVal(struct vcc *, double *, int *);
 void vcc_Duration(struct vcc *tl, double *);
 unsigned vcc_UintVal(struct vcc *tl);
 
