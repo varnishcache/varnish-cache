@@ -326,10 +326,16 @@ varnish v1 -vcl+backend {
 		set resp.http.foo =
 		    (resp.http.foo + resp.http.bar) == ("X" + resp.http.foo);
 	}
+	sub vcl_deliver {
+		set resp.http.p = (0 + 9223372036854775807);
+		set resp.http.n = (0 - 9223372036854775807);
+	}
 } -start
 
 client c1 {
 	txreq
 	rxresp
 	expect resp.http.foo == "true"
+	expect resp.http.p == 9223372036854775807
+	expect resp.http.n == -9223372036854775807
 } -run

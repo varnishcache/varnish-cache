@@ -505,7 +505,15 @@ vcc_Lexer(struct vcc *tl, struct source *sp)
 			for (q = p; q < sp->e; q++)
 				if (!vct_isdigit(*q))
 					break;
-			vcc_AddToken(tl, CNUM, p, q);
+			if (*q != '.') {
+				vcc_AddToken(tl, CNUM, p, q);
+				p = q;
+				continue;
+			}
+			for (++q; q < sp->e; q++)
+				if (!vct_isdigit(*q))
+					break;
+			vcc_AddToken(tl, FNUM, p, q);
 			p = q;
 			continue;
 		}

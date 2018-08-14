@@ -348,50 +348,17 @@ vcc_UintVal(struct vcc *tl)
 	return (d);
 }
 
-/*--------------------------------------------------------------------
- * Recognize and convert { CNUM [ '.' [ CNUM ] ] } to double value
- * The tokenizer made sure we only get digits and a '.'
- */
-
-void
-vcc_NumVal(struct vcc *tl, double *d, int *frac)
-{
-	double e = 0.1;
-	const char *p;
-
-	*frac = 0;
-	*d = 0.0;
-	Expect(tl, CNUM);
-	if (tl->err) {
-		*d = NAN;
-		return;
-	}
-	for (p = tl->t->b; p < tl->t->e; p++) {
-		*d *= 10;
-		*d += *p - '0';
-	}
-	vcc_NextToken(tl);
-	if (tl->t->tok != '.')
-		return;
-	*frac = 1;
-	vcc_NextToken(tl);
-	if (tl->t->tok != CNUM)
-		return;
-	for (p = tl->t->b; p < tl->t->e; p++) {
-		*d += (*p - '0') * e;
-		e *= 0.1;
-	}
-	vcc_NextToken(tl);
-}
-
 static double
 vcc_DoubleVal(struct vcc *tl)
 {
-	double d;
-	int i;
+	const size_t l = tl->t->e - tl->t->b;
+	char buf[l + 1];
 
-	vcc_NumVal(tl, &d, &i);
-	return (d);
+	assert(tl->t->tok == CNUM || tl->t->tok == FNUM);
+	memcpy(buf, tl->t->b, l);
+	vcc_NextToken(tl);
+	buf[l] = '\0';
+	return (strtod(buf, NULL));
 }
 
 /*--------------------------------------------------------------------*/

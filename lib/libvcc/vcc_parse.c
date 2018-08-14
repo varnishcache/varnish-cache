@@ -275,31 +275,22 @@ vcc_ParseFunction(struct vcc *tl)
 static void
 vcc_ParseVcl(struct vcc *tl)
 {
-	struct token *tok0, *tok1, *tok2;
+	struct token *tok0;
 	int syntax;
 
 	assert(vcc_IdIs(tl->t, "vcl"));
 	tok0 = tl->t;
 	vcc_NextToken(tl);
 
-	tok1 = tl->t;
-	Expect(tl, CNUM);
-	syntax = (*tl->t->b - '0') * 10;
-	vcc_NextToken(tl);
-	Expect(tl, '.');
-	vcc_NextToken(tl);
-
-	Expect(tl, CNUM);
-	tok2 = tl->t;
-	syntax += (*tl->t->b - '0');
-	vcc_NextToken(tl);
-
-	if (tok1->e - tok1->b != 1 || tok2->e - tok2->b != 1) {
+	Expect(tl, FNUM);
+	if (tl->t->e - tl->t->b != 3 || tl->t->b[1] != '.') {
 		VSB_printf(tl->sb,
 		    "Don't play silly buggers with VCL version numbers\n");
-		vcc_ErrWhere2(tl, tok0, tl->t);
+		vcc_ErrWhere(tl, tl->t);
 		ERRCHK(tl);
 	}
+	syntax = (tl->t->b[0] - '0') * 10 + (tl->t->b[2] - '0');
+	vcc_NextToken(tl);
 
 	if (syntax < VCL_LOW || syntax > VCL_HIGH) {
 		VSB_printf(tl->sb, "VCL version %.1f not supported.\n",

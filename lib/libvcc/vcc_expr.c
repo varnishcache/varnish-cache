@@ -677,6 +677,7 @@ vcc_Eval_SymFunc(struct vcc *tl, struct expr **e, struct token *t,
  *	'(' ExprCor ')'
  *	symbol
  *	CNUM
+ *	FNUM
  *	CSTR
  */
 
@@ -688,7 +689,6 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	struct token *t;
 	struct symbol *sym;
 	double d;
-	int i;
 
 	sign = "";
 	*e = NULL;
@@ -782,34 +782,35 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		*e = e1;
 		return;
 	case '-':
-		if (fmt != INT && fmt != REAL && fmt != DURATION)
+		if (fmt != INT &&
+		    fmt != REAL &&
+		    fmt != DURATION &&
+		    fmt != STRINGS)
 			break;
 		vcc_NextToken(tl);
-		ExpectErr(tl, CNUM);
+		if (tl->t->tok != FNUM && tl->t->tok != CNUM)
+			break;
 		sign = "-";
 		/* FALLTHROUGH */
+	case FNUM:
 	case CNUM:
-		/*
-		 * XXX: %g may not have enough decimals by default
-		 * XXX: but %a is ugly, isn't it ?
-		 */
 		assert(fmt != VOID);
 		if (fmt == BYTES) {
 			vcc_ByteVal(tl, &d);
 			ERRCHK(tl);
 			e1 = vcc_mk_expr(BYTES, "%.1f", d);
 		} else {
-			vcc_NumVal(tl, &d, &i);
-			ERRCHK(tl);
+			t = tl->t;
+			vcc_NextToken(tl);
 			if (tl->t->tok == ID) {
-				e1 = vcc_mk_expr(DURATION, "%s%g",
-				    sign, d * vcc_TimeUnit(tl));
+				e1 = vcc_mk_expr(DURATION, "(%s%.*s) * %g",
+				    sign, PF(t), vcc_TimeUnit(tl));
 				ERRCHK(tl);
-			} else if (i || fmt == REAL)
-				e1 = vcc_mk_expr(REAL, "%s%f", sign, d);
-			else
-				e1 = vcc_mk_expr(INT, "%s%jd",
-				    sign, (intmax_t)d);
+			} else if (fmt == REAL || t->tok == FNUM) {
+				e1 = vcc_mk_expr(REAL, "%s%.*s", sign, PF(t));
+			} else {
+				e1 = vcc_mk_expr(INT, "%s%.*s", sign, PF(t));
+			}
 		}
 		e1->constant = EXPR_CONST;
 		*e = e1;
