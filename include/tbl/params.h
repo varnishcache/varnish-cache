@@ -1538,6 +1538,38 @@ PARAM(
 )
 
 PARAM(
+	/* name */	max_vcl_handling,
+	/* typ */	uint,
+	/* min */	"0",
+	/* max */	"2",
+	/* default */	"1",
+	/* units */	NULL,
+	/* flags */	0,
+	/* s-text */
+	"Behaviour when attempting to exceed max_vcl loaded VCL.\n"
+	"\n*  0 - Ignore max_vcl parameter.\n"
+	"\n*  1 - Issue warning.\n"
+	"\n*  2 - Refuse loading VCLs.",
+	/* l-text */	"",
+	/* func */	NULL
+)
+
+PARAM(
+	/* name */	max_vcl,
+	/* typ */	uint,
+	/* min */	"0",
+	/* max */	NULL,
+	/* default */	"100",
+	/* units */	NULL,
+	/* flags */	0,
+	/* s-text */
+	"Threshold of loaded VCL programs.  (VCL labels are not counted.)"
+	"  Parameter max_vcl_handling determines behaviour.",
+	/* l-text */	"",
+	/* func */	NULL
+)
+
+PARAM(
 	/* name */	vsm_free_cooldown,
 	/* typ */	timeout,
 	/* min */	"10.000",

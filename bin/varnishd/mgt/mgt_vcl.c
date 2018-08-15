@@ -53,6 +53,7 @@
 #include "tbl/vcl_states.h"
 
 static const char * const VCL_STATE_LABEL = "label";
+static int vcl_count;
 
 struct vclprog;
 struct vmodfile;
@@ -252,6 +253,8 @@ mgt_vcl_add(const char *name, const char *state)
 		vp->warm = 1;
 
 	VTAILQ_INSERT_TAIL(&vclhead, vp, list);
+	if (vp->state != VCL_STATE_LABEL)
+		vcl_count++;
 	return (vp);
 }
 
@@ -269,6 +272,8 @@ mgt_vcl_del(struct vclprog *vp)
 		mgt_vcl_dep_del(VTAILQ_FIRST(&vp->dfrom));
 
 	VTAILQ_REMOVE(&vclhead, vp, list);
+	if (vp->state != VCL_STATE_LABEL)
+		vcl_count--;
 	if (vp->fname != NULL) {
 		if (!MGT_DO_DEBUG(DBG_VCL_KEEP))
 			AZ(unlink(vp->fname));
@@ -566,6 +571,12 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 	if (C_flag) {
 		bprintf(buf, ".CflagTest.%d", (int)getpid());
 		vclname = buf;
+	} else if (vcl_count >= mgt_param.max_vcl &&
+	    mgt_param.max_vcl_handling == 2) {
+		VCLI_Out(cli, "Too many (%d) VCLs already loaded\n", vcl_count);
+		VCLI_Out(cli, "(See max_vcl and max_vcl_handling parameters)");
+		VCLI_SetResult(cli, CLIS_CANT);
+		return;
 	}
 
 	if (state == NULL)
@@ -591,6 +602,14 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 
 	if (active_vcl == NULL)
 		active_vcl = vp;
+
+	if (cli->result == CLIS_OK &&
+	    vcl_count > mgt_param.max_vcl &&
+	    mgt_param.max_vcl_handling == 1) {
+		VCLI_Out(cli, "%d VCLs loaded\n", vcl_count);
+		VCLI_Out(cli, "Remember to vcl.discard the old/unused VCLs.\n");
+		VCLI_Out(cli, "(See max_vcl and max_vcl_handling parameters)");
+	}
 
 	if (!MCH_Running())
 		return;
