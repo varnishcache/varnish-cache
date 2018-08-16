@@ -34,12 +34,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h> /* for MUSL (mode_t) */
+#include <sys/types.h>
+#include <sys/socket.h>
 #include <unistd.h>
 
 #include "vtc.h"
 
 #include "vfil.h"
 #include "vpf.h"
+#include "vre.h"
 #include "vtcp.h"
 #include "vtim.h"
 
@@ -49,6 +52,7 @@
 #define HAPROXY_SIGNAL		SIGINT
 #define HAPROXY_EXPECT_EXIT	(128 + HAPROXY_SIGNAL)
 #define HAPROXY_GOOD_CONF	"Configuration file is valid"
+
 
 struct haproxy {
 	unsigned		magic;
@@ -73,7 +77,10 @@ struct haproxy {
 	int			expect_signal;
 	int			its_dead_jim;
 
+	/* UNIX socket CLI. */
 	char			*cli_fn;
+	/* TCP socket CLI. */
+	struct haproxy_cli *cli;
 
 	char			*workdir;
 	struct vsb		*msgs;
@@ -81,6 +88,269 @@ struct haproxy {
 
 static VTAILQ_HEAD(, haproxy)	haproxies =
     VTAILQ_HEAD_INITIALIZER(haproxies);
+
+struct haproxy_cli {
+	unsigned		magic;
+#define HAPROXY_CLI_MAGIC	0xb09a4ed8
+	struct vtclog		*vl;
+	char			running;
+
+	char			*spec;
+
+	int			sock;
+	char			connect[256];
+
+	pthread_t		tp;
+	size_t			txbuf_sz;
+	char			*txbuf;
+	size_t			rxbuf_sz;
+	char			*rxbuf;
+
+	double			timeout;
+};
+
+/**********************************************************************
+ * Socket connect (same as client_tcp_connect()).
+ */
+
+static int
+haproxy_cli_tcp_connect(struct vtclog *vl, const char *addr, double tmo,
+    const char **errp)
+{
+	int fd;
+	char mabuf[32], mpbuf[32];
+
+	fd = VTCP_open(addr, NULL, tmo, errp);
+	if (fd < 0)
+		return fd;
+	VTCP_myname(fd, mabuf, sizeof mabuf, mpbuf, sizeof mpbuf);
+	vtc_log(vl, 3,
+	    "CLI connected fd %d from %s %s to %s", fd, mabuf, mpbuf, addr);
+	return fd;
+}
+
+/*
+ * SECTION: haproxy.cli haproxy CLI Specification
+ * SECTION: haproxy.cli.send
+ * send STRING
+ *         Push STRING on the CLI connection. STRING will be terminated by an
+ *         end of line character (\n).
+ */
+static void v_matchproto_(cmd_f)
+cmd_haproxy_cli_send(CMD_ARGS)
+{
+	struct vsb *vsb;
+	struct haproxy_cli *hc;
+	ssize_t wr;
+
+	(void)cmd;
+	(void)vl;
+	CAST_OBJ_NOTNULL(hc, priv, HAPROXY_CLI_MAGIC);
+	AZ(strcmp(av[0], "send"));
+	AN(av[1]);
+	AZ(av[2]);
+
+	vsb = VSB_new_auto();
+	AN(vsb);
+	AZ(VSB_cat(vsb, av[1]));
+	AZ(VSB_cat(vsb, "\n"));
+	AZ(VSB_finish(vsb));
+	if (hc->sock == -1) {
+		int fd;
+		const char *err;
+		struct vsb *vsb_connect;
+
+		vsb_connect = macro_expand(hc->vl, hc->connect);
+		AN(vsb_connect);
+		fd = haproxy_cli_tcp_connect(hc->vl,
+		    VSB_data(vsb_connect), 10., &err);
+		if (fd < 0)
+			vtc_fatal(hc->vl,
+			    "CLI failed to open %s: %s", VSB_data(vsb), err);
+		VSB_destroy(&vsb_connect);
+		hc->sock = fd;
+	}
+	vtc_dump(hc->vl, 4, "CLI send", VSB_data(vsb), -1);
+
+	wr = write(hc->sock, VSB_data(vsb), VSB_len(vsb));
+	if (wr != VSB_len(vsb))
+		vtc_fatal(hc->vl,
+		    "CLI fd %d send error %s", hc->sock, strerror(errno));
+
+	VSB_destroy(&vsb);
+}
+
+#define HAPROXY_CLI_RECV_LEN (1 << 14)
+static void
+haproxy_cli_recv(struct haproxy_cli *hc)
+{
+	ssize_t ret;
+	size_t rdz, left, off;
+
+	rdz = ret = off = 0;
+	/* We want to null terminate this buffer. */
+	left = hc->rxbuf_sz - 1;
+	while (!vtc_error && left > 0) {
+		VTCP_set_read_timeout(hc->sock, hc->timeout);
+
+		ret = recv(hc->sock, hc->rxbuf + off, HAPROXY_CLI_RECV_LEN, 0);
+		if (ret < 0) {
+			if (errno == EINTR || errno == EAGAIN)
+				continue;
+
+			vtc_fatal(hc->vl,
+			    "CLI fd %d recv() failed (%s)",
+			    hc->sock, strerror(errno));
+		}
+		/* Connection closed. */
+		if (ret == 0) {
+			if (hc->rxbuf[rdz - 1] != '\n')
+				vtc_fatal(hc->vl,
+				    "CLI rx timeout (fd: %d %.3fs ret: %zd)",
+				    hc->sock, hc->timeout, ret);
+
+			vtc_log(hc->vl, 4, "CLI connection normally closed");
+			vtc_log(hc->vl, 3, "CLI closing fd %d", hc->sock);
+			VTCP_close(&hc->sock);
+			break;
+		}
+
+		rdz += ret;
+		left -= ret;
+		off  += ret;
+	}
+	hc->rxbuf[rdz] = '\0';
+	vtc_dump(hc->vl, 4, "CLI recv", hc->rxbuf, rdz);
+}
+
+/*
+ * SECTION: haproxy.cli.expect
+ * expect OP STRING
+ *         Regex match the CLI reception buffer with STRING
+ *         if OP is ~ or, on the contraty, if OP is !~ check that there is
+ *         no regex match.
+ */
+static void v_matchproto_(cmd_f)
+cmd_haproxy_cli_expect(CMD_ARGS)
+{
+	struct haproxy_cli *hc;
+	vre_t *vre;
+	const char *error;
+	int erroroffset, i, ret;
+	char *cmp, *spec;
+
+	(void)cmd;
+	(void)vl;
+	CAST_OBJ_NOTNULL(hc, priv, HAPROXY_CLI_MAGIC);
+	AZ(strcmp(av[0], "expect"));
+	av++;
+
+	cmp = av[0];
+	spec = av[1];
+	AN(cmp);
+	AN(spec);
+	AZ(av[2]);
+
+	assert(!strcmp(cmp, "~") || !strcmp(cmp, "!~"));
+
+	haproxy_cli_recv(hc);
+
+	vre = VRE_compile(spec, 0, &error, &erroroffset);
+	if (!vre)
+		vtc_fatal(hc->vl, "CLI regexp error: '%s' (@%d) (%s)",
+		    error, erroroffset, spec);
+
+	i = VRE_exec(vre, hc->rxbuf, strlen(hc->rxbuf), 0, 0, NULL, 0, 0);
+
+	VRE_free(&vre);
+
+	ret = (i >= 0 && *cmp == '~') || (i < 0 && *cmp == '!');
+	if (!ret)
+		vtc_fatal(hc->vl, "CLI expect failed %s \"%s\"", cmp, spec);
+	else
+		vtc_log(hc->vl, 4, "CLI expect match %s \"%s\"", cmp, spec);
+}
+
+static const struct cmds haproxy_cli_cmds[] = {
+#define CMD_HAPROXY_CLI(n) { #n, cmd_haproxy_cli_##n },
+	CMD_HAPROXY_CLI(send)
+	CMD_HAPROXY_CLI(expect)
+#undef CMD_HAPROXY_CLI
+};
+
+/**********************************************************************
+ * HAProxy CLI client thread
+ */
+
+static void *
+haproxy_cli_thread(void *priv)
+{
+	struct haproxy_cli *hc;
+	struct vsb *vsb;
+	int fd;
+	const char *err;
+
+	CAST_OBJ_NOTNULL(hc, priv, HAPROXY_CLI_MAGIC);
+	AN(*hc->connect);
+
+	vsb = macro_expand(hc->vl, hc->connect);
+	AN(vsb);
+
+	fd = haproxy_cli_tcp_connect(hc->vl, VSB_data(vsb), 10., &err);
+	if (fd < 0)
+		vtc_fatal(hc->vl,
+		    "CLI failed to open %s: %s", VSB_data(vsb), err);
+	(void)VTCP_blocking(fd);
+	hc->sock = fd;
+	parse_string(hc->spec, haproxy_cli_cmds, hc, hc->vl);
+	vtc_log(hc->vl, 2, "CLI ending");
+	VSB_destroy(&vsb);
+	return (NULL);
+}
+
+/**********************************************************************
+ * Wait for the CLI client thread to stop
+ */
+
+static void
+haproxy_cli_wait(struct haproxy_cli *hc)
+{
+	void *res;
+
+	CHECK_OBJ_NOTNULL(hc, HAPROXY_CLI_MAGIC);
+	vtc_log(hc->vl, 2, "CLI waiting");
+	AZ(pthread_join(hc->tp, &res));
+	if (res != NULL)
+		vtc_fatal(hc->vl, "CLI returned \"%s\"", (char *)res);
+	REPLACE(hc->spec, NULL);
+	hc->tp = 0;
+	hc->running = 0;
+}
+
+/**********************************************************************
+ * Start the CLI client thread
+ */
+
+static void
+haproxy_cli_start(struct haproxy_cli *hc)
+{
+	CHECK_OBJ_NOTNULL(hc, HAPROXY_CLI_MAGIC);
+	vtc_log(hc->vl, 2, "CLI starting");
+	AZ(pthread_create(&hc->tp, NULL, haproxy_cli_thread, hc));
+	hc->running = 1;
+
+}
+
+/**********************************************************************
+ * Run the CLI client thread
+ */
+
+static void
+haproxy_cli_run(struct haproxy_cli *hc)
+{
+	haproxy_cli_start(hc);
+	haproxy_cli_wait(hc);
+}
 
 /**********************************************************************
  *
@@ -132,6 +402,41 @@ haproxy_wait_pidfile(struct haproxy *h)
 }
 
 /**********************************************************************
+ * Allocate and initialize a CLI client
+ */
+
+static struct haproxy_cli *
+haproxy_cli_new(struct haproxy *h)
+{
+	struct haproxy_cli *hc;
+
+	ALLOC_OBJ(hc, HAPROXY_CLI_MAGIC);
+	AN(hc);
+
+	hc->vl = h->vl;
+	hc->sock = -1;
+	bprintf(hc->connect, "${%s_cli_sock}", h->name);
+
+	hc->txbuf_sz = hc->rxbuf_sz = 2048 * 1024;
+	hc->txbuf = malloc(hc->txbuf_sz);
+	AN(hc->txbuf);
+	hc->rxbuf = malloc(hc->rxbuf_sz);
+	AN(hc->rxbuf);
+
+	return hc;
+}
+
+static void
+haproxy_cli_delete(struct haproxy_cli *hc)
+{
+	CHECK_OBJ_NOTNULL(hc, HAPROXY_CLI_MAGIC);
+	REPLACE(hc->spec, NULL);
+	REPLACE(hc->txbuf, NULL);
+	REPLACE(hc->rxbuf, NULL);
+	FREE_OBJ(hc);
+}
+
+/**********************************************************************
  * Allocate and initialize a haproxy
  */
 
@@ -170,6 +475,9 @@ haproxy_new(const char *name)
 	h->cfg_fn = strdup(buf);
 	AN(h->cfg_fn);
 
+	h->cli = haproxy_cli_new(h);
+	AN(h->cli);
+
 	bprintf(buf, "rm -rf %s ; mkdir -p %s", h->workdir, h->workdir);
 	AZ(system(buf));
 
@@ -201,6 +509,7 @@ haproxy_delete(struct haproxy *h)
 	free(h->cfg_fn);
 	free(h->pid_fn);
 	VSB_destroy(&h->args);
+	haproxy_cli_delete(h->cli);
 
 	/* XXX: MEMLEAK (?) */
 	FREE_OBJ(h);
@@ -322,6 +631,9 @@ haproxy_wait(struct haproxy *h)
 
 	if (h->pid < 0)
 		haproxy_start(h);
+
+	if (h->cli->spec)
+		haproxy_cli_run(h->cli);
 
 	closefd(&h->fds[1]);
 
@@ -445,6 +757,7 @@ haproxy_write_conf(const struct haproxy *h, const char *cfg, int auto_be)
 
 	VSB_printf(vsb, "    global\n\tstats socket %s "
 		   "level admin mode 600\n", h->cli_fn);
+	VSB_printf(vsb, "    stats socket \"fd@${cli}\" level admin\n");
 	AZ(VSB_cat(vsb, cfg));
 
 	if (auto_be)
@@ -507,6 +820,9 @@ haproxy_write_conf(const struct haproxy *h, const char *cfg, int auto_be)
  *
  * \-arg STRING
  *         Pass an argument to haproxy, for example "-h simple_list".
+ *
+ * \-cli STRING
+ *         Specify the spec to be run by the command line interface (CLI).
  *
  * \-conf STRING
  *         Specify the configuration to be loaded by this HAProxy instance.
@@ -598,6 +914,13 @@ cmd_haproxy(CMD_ARGS)
 			continue;
 		}
 
+		if (!strcmp(*av, "-cli")) {
+			REPLACE(h->cli->spec, av[1]);
+			if (h->tp)
+				haproxy_cli_run(h->cli);
+			av++;
+			continue;
+		}
 		if (!strcmp(*av, "-conf")) {
 			AN(av[1]);
 			haproxy_write_conf(h, av[1], 0);
