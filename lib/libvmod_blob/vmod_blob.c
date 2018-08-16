@@ -133,16 +133,15 @@ parse_case(VCL_ENUM e)
 
 
 static inline size_t
-decode_l_va(enum encoding dec, const char * const p, va_list ap)
+decode_l(enum encoding dec, VCL_STRANDS s)
 {
 	size_t len = 0;
 
 	AENC(dec);
 
-	for (const char *s = p; s != vrt_magic_string_end;
-	     s = va_arg(ap, const char *))
-		if (s != NULL && *s != '\0')
-			len += strlen(s);
+	for (int i = 0; i < s->n; i++)
+		if (s->p[i] != NULL && *s->p[i] != '\0')
+			len += strlen(s->p[i]);
 
 	return(func[dec].decode_l(len));
 }
@@ -185,11 +184,10 @@ check_enc_case(VRT_CTX, VCL_ENUM encs, VCL_ENUM case_s, enum encoding enc,
 
 VCL_VOID v_matchproto_(td_blob_blob__init)
 vmod_blob__init(VRT_CTX, struct vmod_blob_blob **blobp, const char *vcl_name,
-		VCL_ENUM decs, const char *p, ...)
+		VCL_ENUM decs, VCL_STRANDS strings)
 {
 	struct vmod_blob_blob *b;
 	enum encoding dec = parse_encoding(decs);
-	va_list ap;
 	ssize_t len;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -197,6 +195,7 @@ vmod_blob__init(VRT_CTX, struct vmod_blob_blob **blobp, const char *vcl_name,
 	AZ(*blobp);
 	AN(vcl_name);
 	AENC(dec);
+	AN(strings);
 
 	ALLOC_OBJ(b, VMOD_BLOB_MAGIC);
 	AN(b);
@@ -204,9 +203,7 @@ vmod_blob__init(VRT_CTX, struct vmod_blob_blob **blobp, const char *vcl_name,
 	b->blob.free = NULL;
 	AZ(pthread_mutex_init(&b->lock, NULL));
 
-	va_start(ap, p);
-	len = decode_l_va(dec, p, ap);
-	va_end(ap);
+	len = decode_l(dec, strings);
 	if (len == 0) {
 		b->blob.len = 0;
 		b->blob.priv = NULL;
@@ -220,17 +217,15 @@ vmod_blob__init(VRT_CTX, struct vmod_blob_blob **blobp, const char *vcl_name,
 		return;
 	}
 
-	va_start(ap, p);
 	errno = 0;
-	len = func[dec].decode(dec, b->blob.priv, len, -1, p, ap);
-	va_end(ap);
+	len = func[dec].decode(dec, b->blob.priv, len, -1, strings);
 
 	if (len == -1) {
 		assert(errno == EINVAL);
 		free(b->blob.priv);
 		b->blob.priv = NULL;
 		VERR(ctx, "cannot create blob %s, illegal encoding beginning "
-		    "with \"%s\"", vcl_name, p);
+		    "with \"%s\"", vcl_name, strings->p[0]);
 		return;
 	}
 	if (len == 0) {
@@ -331,31 +326,10 @@ vmod_blob__fini(struct vmod_blob_blob **blobp)
 
 /* Functions */
 
-static inline const char *
-find_nonempty_va(const char *restrict *p, va_list ap)
-{
-	const char *q;
-
-	/* find first non-empty vararg */
-	for (; *p == vrt_magic_string_end || *p == NULL || **p == '\0';
-	     *p = va_arg(ap, char *))
-		if (*p == vrt_magic_string_end)
-			return (vrt_magic_string_end);
-
-	/* find next non-empty vararg */
-	for (q = va_arg(ap, const char *);
-	     q != vrt_magic_string_end && (q == NULL || *q == '\0');
-	     q = va_arg(ap, const char *))
-		;
-
-	return (q);
-}
-
 VCL_BLOB v_matchproto_(td_blob_decode)
-vmod_decode(VRT_CTX, VCL_ENUM decs, VCL_INT length, const char *p, ...)
+vmod_decode(VRT_CTX, VCL_ENUM decs, VCL_INT length, VCL_STRANDS strings)
 {
 	enum encoding dec = parse_encoding(decs);
-	va_list ap;
 	struct vmod_priv *b;
 	char *buf;
 	uintptr_t snap;
@@ -364,6 +338,7 @@ vmod_decode(VRT_CTX, VCL_ENUM decs, VCL_INT length, const char *p, ...)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AENC(dec);
+	AN(strings);
 	CHECK_OBJ_NOTNULL(ctx->ws, WS_MAGIC);
 
 	snap = WS_Snapshot(ctx->ws);
@@ -377,13 +352,11 @@ vmod_decode(VRT_CTX, VCL_ENUM decs, VCL_INT length, const char *p, ...)
 
 	if (length <= 0)
 		length = -1;
-	va_start(ap, p);
 	errno = 0;
-	len = func[dec].decode(dec, buf, space, length, p, ap);
-	va_end(ap);
+	len = func[dec].decode(dec, buf, space, length, strings);
 
 	if (len == -1) {
-		err_decode(ctx, p);
+		err_decode(ctx, strings->p[0]);
 		WS_Release(ctx->ws, 0);
 		WS_Reset(ctx->ws, snap);
 		return NULL;
@@ -450,17 +423,17 @@ vmod_encode(VRT_CTX, VCL_ENUM encs, VCL_ENUM case_s, VCL_BLOB b)
 
 VCL_STRING v_matchproto_(td_blob_transcode)
 vmod_transcode(VRT_CTX, VCL_ENUM decs, VCL_ENUM encs, VCL_ENUM case_s,
-	       VCL_INT length, const char *p, ...)
+	       VCL_INT length, VCL_STRANDS strings)
 {
 	enum encoding dec = parse_encoding(decs);
 	enum encoding enc = parse_encoding(encs);
 	enum case_e kase = parse_case(case_s);
-	va_list ap;
 	struct vmod_priv b;
 	VCL_STRING r;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->ws, WS_MAGIC);
+	AN(strings);
 
 	AENC(dec);
 	AENC(enc);
@@ -472,9 +445,7 @@ vmod_transcode(VRT_CTX, VCL_ENUM decs, VCL_ENUM encs, VCL_ENUM case_s,
 	 * Allocate space for the decoded blob on the stack
 	 * ignoring the limitation imposed by n
 	 */
-	va_start(ap, p);
-	size_t l = decode_l_va(dec, p, ap);
-	va_end(ap);
+	size_t l = decode_l(dec, strings);
 	if (l == 0)
 		return "";
 	/* XXX: handle stack overflow? */
@@ -484,39 +455,28 @@ vmod_transcode(VRT_CTX, VCL_ENUM decs, VCL_ENUM encs, VCL_ENUM case_s,
 
 	if (length <= 0)
 		length = -1;
-	va_start(ap, p);
 	errno = 0;
-	b.len = func[dec].decode(dec, buf, l, length, p, ap);
-	va_end(ap);
+	b.len = func[dec].decode(dec, buf, l, length, strings);
 
 	if (b.len == -1) {
-		err_decode(ctx, p);
+		err_decode(ctx, strings->p[0]);
 		return NULL;
 	}
 
 	/*
 	 * If the encoding and decoding are the same, and the decoding was
-	 * legal, just return the string, if there was only one in the
-	 * STRING_LIST, or else the concatenated string.
+	 * legal, just return the concatenated string.
 	 * For encodings with hex digits, we cannot assume the same result.
 	 * since the call may specify upper- or lower-case that differs
 	 * from the encoded string.
 	 */
-	if (length == -1 && enc == dec && !encodes_hex(enc)) {
-		const char *q, *pp = p;
-		va_start(ap, p);
-		q = find_nonempty_va(&pp, ap);
-		va_end(ap);
-
-		if (pp == vrt_magic_string_end)
-			return "";
-
-		if (q == vrt_magic_string_end)
-			return pp;
-
-		r = VRT_String(ctx->ws, NULL, p, ap);
-		return r;
-	}
+	if (length == -1 && enc == dec && !encodes_hex(enc))
+		/*
+		 * Returns NULL and invokes VCL failure on workspace
+		 * overflow. If there is only one string already in the
+		 * workspace, then it is re-used.
+		 */
+		return (VRT_CollectStrands(ctx, strings));
 
 	r = encode(ctx, enc, kase, &b);
 	return (r);

@@ -29,11 +29,11 @@
 #include "config.h"
 #include <errno.h>
 
-#include "base64.h"
-
 #include "vdef.h"
 #include "vrt.h"
 #include "vas.h"
+
+#include "base64.h"
 
 #define base64_l(l)		(((l) << 2) / 3)
 
@@ -133,7 +133,7 @@ base64_encode(const enum encoding enc, const enum case_e kase,
 ssize_t
 base64_decode(const enum encoding dec, char *restrict const buf,
 	      const size_t buflen, ssize_t inlen,
-	      const char *const p, va_list ap)
+	      const struct strands *restrict const strings)
 {
 	const struct b64_alphabet *alpha = &b64_alphabet[dec];
 	char *dest = buf;
@@ -143,12 +143,14 @@ base64_decode(const enum encoding dec, char *restrict const buf,
 
 	AN(buf);
 	AN(alpha);
+	AN(strings);
 
 	if (inlen >= 0)
 		len = inlen;
 
-	for (const char *s = p; len > 0 && s != vrt_magic_string_end;
-	     s = va_arg(ap, const char *)) {
+	for (int i = 0; len > 0 && i < strings->n; i++) {
+		const char *s = strings->p[i];
+
 		if (s == NULL)
 			continue;
 		if (*s && term) {

@@ -26,8 +26,9 @@
  *
  */
 
+/* vrt.h must be included before this header (for struct strands). */
+
 #include <stdlib.h>
-#include <stdarg.h>
 #include <sys/types.h>
 
 enum encoding {
@@ -86,19 +87,18 @@ ssize_t encode_f(const enum encoding enc, const enum case_e kase,
 
 /*
  * General interface for a decoder: decode the concatenation of strings
- * in p and ap (obtained from a STRING_LIST) into buf, and return the
- * length of decoded data.
+ * (obtained from STRANDS) into buf, and return the length of decoded
+ * data.
  *
  * dec: decoding enum (from parse_encoding.h)
  * buf: destination of the decoded data
  * buflen: maximum length available at buf
  * inlen: maximum length to read or -1 to read up to \0
- * p, ap: strings obtained from a VCL STRING_LIST
+ * strings: strings obtained from VCL STRANDS
  *
- * The regions pointed to by buf and any of the strings in p or ap MUST
- * NOT overlap (per restrict).
- * Note that the p,ap list is terminated by vrt_magic_string_end, and
- * any member of the list may be NULL or empty.
+ * The regions pointed to by buf and strings MUST NOT overlap (per
+ * restrict).
+ * Note that any member of the strings list may be NULL or empty.
  *
  * Returns:
  * -1, if there is insufficient space at buf, or if the decoding is
@@ -110,7 +110,7 @@ ssize_t encode_f(const enum encoding enc, const enum case_e kase,
 typedef
 ssize_t decode_f(const enum encoding dec, char *restrict const buf,
 		 const size_t buflen, const ssize_t inlen,
-		 const char *restrict const p, va_list ap);
+		 const struct strands *restrict const strings);
 
 /* id.c */
 len_f	 id_encode_l;

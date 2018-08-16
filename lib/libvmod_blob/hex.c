@@ -30,12 +30,13 @@
 #include <ctype.h>
 #include <errno.h>
 
-#include "vmod_blob.h"
 #include "hex.h"
 
 #include "vdef.h"
 #include "vrt.h"
 #include "vas.h"
+
+#include "vmod_blob.h"
 
 const char hex_alphabet[][16] = {
 	"0123456789abcdef",
@@ -103,20 +104,20 @@ hex_encode(const enum encoding enc, const enum case_e kase,
 ssize_t
 hex_decode(const enum encoding dec, char *restrict const buf,
 	   const size_t buflen, ssize_t n,
-	   const char *restrict const p, va_list ap)
+	   const struct strands *restrict const strings)
 {
 	char *dest = buf;
 	const char *b;
 	unsigned char extranib = 0;
-	size_t len = 0;
-	va_list ap2;
+	ssize_t len = 0;
 
 	AN(buf);
+	AN(strings);
 	assert(dec == HEX);
 
-	va_copy(ap2, ap);
-	for (const char *s = p; s != vrt_magic_string_end;
-	     s = va_arg(ap2, const char *)) {
+	for (int i = 0; i < strings->n; i++) {
+		const char *s = strings->p[i];
+
 		if (s == NULL)
 			continue;
 		b = s;
@@ -128,7 +129,6 @@ hex_decode(const enum encoding dec, char *restrict const buf,
 		}
 		len += s - b;
 	}
-	va_end(ap2);
 
 	if (len == 0)
 		return 0;
@@ -144,8 +144,9 @@ hex_decode(const enum encoding dec, char *restrict const buf,
 		len++;
 	}
 
-	for (const char *s = p; len > 0 && s != vrt_magic_string_end;
-	     s = va_arg(ap, const char *)) {
+	for (int i = 0; len > 0 && i < strings->n; i++) {
+		const char *s = strings->p[i];
+
 		if (s == NULL || *s == '\0')
 			continue;
 		if (extranib) {

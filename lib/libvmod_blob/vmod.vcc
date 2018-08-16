@@ -176,7 +176,7 @@ affect alphabetic characters that are not percent-encoded.
 
 $Function BLOB decode(ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD,
 			    HEX, URL} decoding="IDENTITY", INT length=0,
-		      STRING_LIST encoded)
+		      STRANDS encoded)
 
 Returns the BLOB derived from the string ``encoded`` according to the
 scheme specified by ``decoding``.
@@ -231,7 +231,7 @@ $Function STRING transcode(ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD,
 			   ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD,
 				 HEX, URL} encoding="IDENTITY",
 			   ENUM {LOWER, UPPER, DEFAULT} case="DEFAULT",
-			   INT length=0, STRING_LIST encoded)
+			   INT length=0, STRANDS encoded)
 
 Translates from one encoding to another, by first decoding the string
 ``encoded`` according to the scheme ``decoding``, and then returning
@@ -300,7 +300,7 @@ BLOB.
 
 $Object blob(ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD, HEX,
 		   URL} decoding="IDENTITY",
-	     STRING_LIST encoded)
+	     STRANDS encoded)
 
 Creates an object that contains the BLOB derived from the string
 ``encoded`` according to the scheme ``decoding``.
