@@ -29,12 +29,13 @@
 #include "config.h"
 #include <errno.h>
 
-#include "vmod_blob.h"
 #include "hex.h"
 
 #include "vdef.h"
 #include "vrt.h"
 #include "vas.h"
+
+#include "vmod_blob.h"
 
 /* Decoder states */
 enum state_e {
@@ -115,8 +116,8 @@ url_encode(const enum encoding enc, const enum case_e kase,
 
 ssize_t
 url_decode(const enum encoding dec, char *restrict const buf,
-	   const size_t buflen, ssize_t n, const char *restrict const p,
-	   va_list ap)
+	   const size_t buflen, ssize_t n,
+	   const struct strands *restrict const strings)
 {
 	char *dest = buf;
 	const char * const end = buf + buflen;
@@ -125,13 +126,15 @@ url_decode(const enum encoding dec, char *restrict const buf,
 	enum state_e state = NORMAL;
 
 	AN(buf);
+	AN(strings);
 	assert(dec == URL);
 
 	if (n >= 0 && (size_t)n < len)
 		len = n;
 
-	for (const char *s = p; len > 0 && s != vrt_magic_string_end;
-	     s = va_arg(ap, const char *)) {
+	for (int i = 0; len > 0 && i < strings->n; i++) {
+		const char *s = strings->p[i];
+
 		if (s == NULL || *s == '\0')
 			continue;
 		while (*s && len) {

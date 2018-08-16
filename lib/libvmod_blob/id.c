@@ -30,11 +30,11 @@
 #include <string.h>
 #include <errno.h>
 
-#include "vmod_blob.h"
-
 #include "vdef.h"
 #include "vrt.h"
 #include "vas.h"
+
+#include "vmod_blob.h"
 
 size_t
 id_encode_l(size_t l)
@@ -69,20 +69,21 @@ id_encode(const enum encoding enc, const enum case_e kase,
 ssize_t
 id_decode(const enum encoding enc,
 	  char *restrict const buf, const size_t buflen,
-	  ssize_t n, const char *restrict const p, va_list ap)
+	  ssize_t n, const struct strands *restrict const strings)
 {
 	char *dest = buf;
 	size_t outlen = 0, c = SIZE_MAX;
 
 	(void) enc;
 	AN(buf);
+	AN(strings);
 
 	if (n >= 0)
 		c = n;
 
-	for (const char *s = p; c > 0 && s != vrt_magic_string_end;
-	     s = va_arg(ap, const char *)) {
+	for (int i = 0; c > 0 && i < strings->n; i++) {
 		size_t len;
+		const char *s = strings->p[i];
 
 		if (s == NULL || *s == '\0')
 			continue;
