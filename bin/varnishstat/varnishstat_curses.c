@@ -435,6 +435,8 @@ draw_status(void)
 	mvwprintw(w_status, 1, 0, "Uptime child: ");
 	running(w_status, up_chld, VSM_WRK_RUNNING);
 
+	mvwprintw(w_status, 0, 55, "Refresh interval: %.3fs", interval);
+
 	if (COLS > 70) {
 		mvwprintw(w_status, 0, getmaxx(w_status) - 37,
 		    "Hitrate n: %8u %8u %8u", hitrate.hr_10.n, hitrate.hr_100.n,
@@ -899,6 +901,14 @@ handle_keypress(int ch)
 		current = n_ptarray - 1;
 		page_start = (current - l_points) + 1;
 		break;
+	case '+':
+		interval += 0.1;
+		break;
+	case '-':
+		interval -= 0.1;
+		if (interval < 0.1)
+			interval = 0.1;
+		break;
 	case 'v':
 		verbosity = VSC_ChangeLevel(verbosity, 1);
 		rebuild = 1;
@@ -980,13 +990,11 @@ delpt(void *priv, const struct VSC_point *const vpt)
 }
 
 void
-do_curses(struct vsm *vsm, struct vsc *vsc, double delay)
+do_curses(struct vsm *vsm, struct vsc *vsc)
 {
 	long t;
 	int ch;
 	double now;
-
-	interval = delay;
 
 	verbosity = VSC_ChangeLevel(NULL, 0);
 

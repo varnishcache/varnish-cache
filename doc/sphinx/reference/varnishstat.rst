@@ -109,6 +109,13 @@ The following keys control the interactive display:
 <CTRL+T>
 	Sample now.
 
+<+>
+	Increase refresh interval.
+
+<->
+	Decrease refresh interval.
+
+
 OUTPUTS
 =======
 
