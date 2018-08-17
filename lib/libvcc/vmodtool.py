@@ -239,14 +239,14 @@ class CType(object):
             assert w == ","
 
     def vcl(self):
-        if self.vt in ("STRING_LIST", "STRAND"):
+        if self.vt in ("STRING_LIST", "STRANDS"):
             return "STRING"
         if self.spec is None:
             return self.vt
         return self.vt + " {" + ", ".join(self.spec) + "}"
 
     def synopsis(self):
-        if self.vt in ("STRING_LIST", "STRAND"):
+        if self.vt in ("STRING_LIST", "STRANDS"):
             return "STRING"
         return self.vt
 
