@@ -342,7 +342,7 @@ cnt_transmit(struct worker *wrk, struct req *req)
 	struct boc *boc;
 	const char *r;
 	uint16_t status;
-	int err, sendbody;
+	int err, sendbody, head;
 	intmax_t clval;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -364,7 +364,8 @@ cnt_transmit(struct worker *wrk, struct req *req)
 
 	/* RFC 7230, 3.3.3 */
 	status = http_GetStatus(req->resp);
-	if (!strcmp(req->http0->hd[HTTP_HDR_METHOD].b, "HEAD")) {
+	head = !strcmp(req->http0->hd[HTTP_HDR_METHOD].b, "HEAD");
+	if (head) {
 		if (req->objcore->flags & OC_F_PASS)
 			sendbody = -1;
 		else
@@ -396,8 +397,8 @@ cnt_transmit(struct worker *wrk, struct req *req)
 		}
 	}
 
-	if (sendbody < 0) {
-		/* Don't touch pass+HEAD C-L */
+	if (sendbody < 0 || head) {
+		/* Don't touch HEAD C-L */
 		sendbody = 0;
 	} else if (clval >= 0 && clval == req->resp_len) {
 		/* Reuse C-L header */

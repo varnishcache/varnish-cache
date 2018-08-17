@@ -1,0 +1,20 @@
+varnishtest "Test that C-L on HEAD request aren't nuked"
+
+server s1 {
+	rxreq
+	txresp -nolen -hdr "content-length: 17"
+	expect req.method == "HEAD"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_fetch {
+		set bereq.method = "HEAD";
+	}
+} -start
+
+client c1 {
+	txreq -req HEAD -hdr "connection: close"
+	rxresphdrs
+	expect resp.http.content-length == 17
+	expect_close
+} -run
