@@ -2,8 +2,8 @@ varnishtest "Test that C-L on HEAD request aren't nuked"
 
 server s1 {
 	rxreq
-	txresp -nolen -hdr "content-length: 17"
 	expect req.method == "HEAD"
+	txresp -nolen -hdr "content-length: 17"
 } -start
 
 varnish v1 -vcl+backend {
