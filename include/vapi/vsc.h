@@ -136,7 +136,7 @@ int VSC_Iter(struct vsc *, struct vsm *, VSC_iter_f *, void *priv);
 	 * The returned points are valid until the next call to VSC_Iter()
 	 *
 	 * Not safe for concurrent reads with the same vsc and vsm
-	 * handles.  For concurrency, initalize and attach separate
+	 * handles.  For concurrency, initialize and attach separate
 	 * structs vsc and vsm.
 	 *
 	 * Arguments:
