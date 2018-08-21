@@ -46,6 +46,15 @@ if test "x$RST2MAN" = "xno"; then
     [rst2man is needed to build Varnish, please install python-docutils.])
 fi
 
+AC_ARG_WITH([sphinx-build],
+  AS_HELP_STRING([--with-sphinx-build=PATH], [Location of sphinx-build (auto)]),
+  [SPHINX="$withval"],
+  AC_CHECK_PROGS(SPHINX, [sphinx-build], [no]))
+if test "x$SPHINX" = "xno"; then
+  AC_MSG_ERROR(
+    [sphinx-build is needed to build Varnish, please install python-sphinx.])
+fi
+
 AC_ARG_WITH([rst2html],
                AS_HELP_STRING([--with-rst2html=PATH],
                               [Location of rst2html (auto)]),
