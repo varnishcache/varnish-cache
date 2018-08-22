@@ -75,11 +75,11 @@ vmod_random_resolve(VRT_CTX, VCL_BACKEND dir)
 static void v_matchproto_(vdi_destroy_f)
 vmod_random_destroy(VCL_BACKEND dir)
 {
-	struct vmod_directors_random *random;
+	struct vmod_directors_random *rr;
 
-	CAST_OBJ_NOTNULL(random, dir->priv, VMOD_DIRECTORS_RANDOM_MAGIC);
-	vdir_delete(&random->vd);
-	FREE_OBJ(random);
+	CAST_OBJ_NOTNULL(rr, dir->priv, VMOD_DIRECTORS_RANDOM_MAGIC);
+	vdir_delete(&rr->vd);
+	FREE_OBJ(rr);
 }
 
 static const struct vdi_methods vmod_random_methods[1] = {{
