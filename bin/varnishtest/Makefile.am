@@ -5,7 +5,6 @@ TEST_EXTENSIONS = .vtc
 TESTS = @VTC_TESTS@
 
 # Make sure we run check-local first
-check: check-am check-local
 check-am: check-local
 # See if list of checks have changed, recheck
 check-local:
