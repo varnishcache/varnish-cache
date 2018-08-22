@@ -38,6 +38,7 @@ before_install:
       brew update
       brew upgrade python
       brew install docutils sphinx-doc nghttp2
+      export PATH="/usr/local/opt/sphinx-doc/bin:$PATH"
     elif [[ -n "$CLANG" ]]; then
       wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
       sudo apt-add-repository -y \
@@ -60,7 +61,6 @@ script:
   - |
     if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
       export PYTHONPATH=`brew --prefix`/lib/python2.7/site-packages
-      export PATH="/usr/local/opt/sphinx-doc/bin:$PATH"
     fi
     if [[ "$TRAVIS_PULL_REQUEST" != "false" ]]; then
       make -j3 distcheck
