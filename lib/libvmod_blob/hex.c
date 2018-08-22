@@ -108,7 +108,7 @@ hex_decode(const enum encoding dec, char *restrict const buf,
 	char *dest = buf;
 	const char *b;
 	unsigned char extranib = 0;
-	ssize_t len = 0;
+	size_t len = 0;
 	va_list ap2;
 
 	AN(buf);
@@ -122,26 +122,20 @@ hex_decode(const enum encoding dec, char *restrict const buf,
 		b = s;
 		while (*s) {
 			if (!isxdigit(*s++)) {
-				len = -1;
-				break;
+				errno = EINVAL;
+				return (-1);
 			}
 		}
-		if (len == -1)
-			break;
 		len += s - b;
 	}
 	va_end(ap2);
 
 	if (len == 0)
 		return 0;
-	if (len == -1) {
-		errno = EINVAL;
-		return -1;
-	}
 	if (n != -1 && len > n)
 		len = n;
 
-	if ((len+1) >> 1 > buflen) {
+	if (((len+1) >> 1) > buflen) {
 		errno = ENOMEM;
 		return -1;
 	}
