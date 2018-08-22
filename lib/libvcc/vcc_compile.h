@@ -103,6 +103,7 @@ struct type {
 	const char		*name;
 	const char		*tostring;
 	vcc_type_t		multype;
+	int			stringform;
 };
 
 #define VCC_TYPE(foo)		extern const struct type foo[1];
