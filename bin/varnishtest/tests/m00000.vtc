@@ -20,7 +20,17 @@ varnish v1 -vcl+backend {
 		set req.http.overwrite = "the workspace " +
 		    "to ensure we notice any unfinished privs";
 	}
+
+	sub priv_task {
+		debug.test_priv_task("foo");
+	}
+
 	sub vcl_recv {
+		if (req.url == "/priv-task-no-mem") {
+			vtc.workspace_alloc(client, -4);
+			call priv_task;
+			return (fail);
+		}
 		if (req.url == "/fail") {
 			debug.test_priv_task("foo");
 			return (fail);
@@ -61,6 +71,12 @@ client c1 {
 	expect resp.http.what >= 16
 	expect resp.http.not == -1
 	txreq -url "/fail"
+	rxresp
+	expect resp.status == 503
+} -run
+
+client c1 {
+	txreq -url "/priv-task-no-mem"
 	rxresp
 	expect resp.status == 503
 } -run
