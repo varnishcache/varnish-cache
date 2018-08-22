@@ -20,7 +20,7 @@ varnish v1 -errvcl {Found: '0' at} { 0; }
 # VCLs tokenstream.
 # XXX: A better error message would be desirable
 
-varnish v1 -errvcl {Expected an action, 'if', } " sub vcl_recv { { } { "
+varnish v1 -errvcl {Symbol not found} " sub vcl_recv { { } { "
 
 varnish v1 -errvcl {Comparison of different types: INT '!=' STRING} {
 	sub vcl_recv {

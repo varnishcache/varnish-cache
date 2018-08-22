@@ -160,7 +160,7 @@ vcc_Compound(struct vcc *tl)
 			vcc_NextToken(tl);
 			tl->indent -= INDENT;
 			Fb(tl, 1, "}\n");
-			return;
+			break;
 		case CSRC:
 			if (tl->allow_inline_c) {
 				Fb(tl, 1, "%.*s\n",
@@ -177,25 +177,31 @@ vcc_Compound(struct vcc *tl)
 			VSB_printf(tl->sb,
 			    "End of input while in compound statement\n");
 			tl->err = 1;
-			return;
+			break;
 		case ID:
 			sym = VCC_SymbolGet(tl, SYM_NONE, SYMTAB_NOERR,
 			    XREF_NONE);
-			if (sym != NULL && sym->action != NULL) {
+			if (sym == NULL) {
+				VSB_printf(tl->sb, "Symbol not found.\n");
+				vcc_ErrWhere(tl, tl->t);
+			} else if (sym->action == NULL) {
+				VSB_printf(tl->sb,
+				    "Symbol cannot be used here.\n");
+				vcc_ErrWhere(tl, tl->t);
+			} else {
 				if (sym->action_mask != 0)
 					vcc_AddUses(tl, t, NULL,
 					    sym->action_mask,
 					    "Not a valid action");
 				sym->action(tl, t, sym);
-				break;
 			}
-			/* FALLTHROUGH */
+			break;
 		default:
 			/* We deliberately do not mention inline C */
 			VSB_printf(tl->sb,
 			    "Expected an action, 'if', '{' or '}'\n");
 			vcc_ErrWhere(tl, tl->t);
-			return;
+			break;
 		}
 		Fb(tl, 1, "if (*ctx->handling) return;\n");
 	}

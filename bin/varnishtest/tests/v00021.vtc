@@ -12,13 +12,13 @@ varnish v1 -errvcl {Variable is read only.} {
 	sub vcl_recv { call foo ; }
 }
 
-varnish v1 -errvcl "Expected an action, 'if', '{' or '}'" {
+varnish v1 -errvcl "Symbol not found" {
 	backend b { .host = "127.0.0.1"; }
 
 	sub vcl_recv { discard; }
 }
 
-varnish v1 -errvcl "Expected an action, 'if', '{' or '}'" {
+varnish v1 -errvcl "Symbol not found" {
 	backend b { .host = "127.0.0.1"; }
 
 	sub foo { discard; }
