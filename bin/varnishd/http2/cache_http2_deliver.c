@@ -243,7 +243,7 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 		AZ(h2_enc_len(&resp, 7, sz, 0));
 		AZ(VSB_bcat(&resp, r, sz));
 	}
-	VSB_finish(&resp);
+	AZ(VSB_finish(&resp));
 	sz = VSB_len(&resp);
 
 	AZ(req->wrk->v1l);
