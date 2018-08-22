@@ -218,6 +218,22 @@ vcc_act_return_pass(struct vcc *tl)
 /*--------------------------------------------------------------------*/
 
 static void
+vcc_act_return_fail(struct vcc *tl)
+{
+	ExpectErr(tl, '(');
+	vcc_NextToken(tl);
+	Fb(tl, 1, "VRT_fail(ctx,\n");
+	tl->indent += INDENT;
+	vcc_Expr(tl, STRING);
+	tl->indent -= INDENT;
+	ERRCHK(tl);
+	SkipToken(tl, ')');
+	Fb(tl, 1, ");\n");
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
 vcc_act_return_synth(struct vcc *tl)
 {
 
@@ -321,6 +337,8 @@ vcc_act_return(struct vcc *tl, struct token *t, struct symbol *sym)
 			vcc_act_return_vcl(tl);
 		else if (hand == VCL_RET_PASS)
 			vcc_act_return_pass(tl);
+		else if (hand == VCL_RET_FAIL)
+			vcc_act_return_fail(tl);
 		else {
 			VSB_printf(tl->sb, "Arguments not allowed.\n");
 			vcc_ErrWhere(tl, tl->t);

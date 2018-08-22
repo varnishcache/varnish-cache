@@ -14,9 +14,15 @@ client c1 {
 
 varnish v1 -errvcl {VCL "vcl2" Failed initialization} {
 	sub vcl_init {
-		return (fail);
+		return(fail("Do Not Press This Button Again"));
 	}
+	backend b1 { .host = "${s1_addr}"; }
+}
 
+varnish v1 -errvcl {Do Not Press} {
+	sub vcl_init {
+		return(fail("Do Not Press This Button Again"));
+	}
 	backend b1 { .host = "${s1_addr}"; }
 }
 
