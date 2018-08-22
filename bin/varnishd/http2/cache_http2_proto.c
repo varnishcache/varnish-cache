@@ -437,6 +437,7 @@ h2_win_adjust(const struct h2_sess *h2, uint32_t oldval, uint32_t newval)
 			 * rfc7540,l,2676,2680
 			 */
 			r2->t_window += (int64_t)newval - oldval;
+			break;
 		default:
 			break;
 		}
