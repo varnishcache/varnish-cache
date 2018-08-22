@@ -73,7 +73,7 @@ vcc_islit(const struct expr *e)
 static const char *
 vcc_utype(vcc_type_t t)
 {
-	if (t == STRINGS || t == STRING_LIST)
+	if (t == STRINGS || t->stringform)
 		t = STRING;
 	return (t->name);
 }
@@ -278,7 +278,7 @@ vcc_expr_tostring(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	uint8_t	constant = EXPR_VAR;
 
 	CHECK_OBJ_NOTNULL(*e, EXPR_MAGIC);
-	assert(fmt == STRINGS || fmt == STRING_LIST || fmt == STRING);
+	assert(fmt == STRINGS || fmt->stringform);
 	assert(fmt != (*e)->fmt);
 
 	p = (*e)->fmt->tostring;
@@ -361,6 +361,7 @@ vcc_Eval_Handle(struct vcc *tl, struct expr **e, struct token *t,
 	(void)t;
 	(void)tl;
 	AN(sym->rname);
+	AZ(type->stringform);
 
 	if (sym->type != STRING && type == STRINGS) {
 		*e = vcc_mk_expr(STRINGS, "\"%s\"", sym->name);
@@ -1274,22 +1275,26 @@ vcc_expr0(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	assert(fmt != STRINGS);
 	*e = NULL;
 	t1 = tl->t;
-	if (fmt == STRING_LIST || fmt == STRING)
+	if (fmt->stringform)
 		vcc_expr_cor(tl, e, STRINGS);
 	else
 		vcc_expr_cor(tl, e, fmt);
 	ERRCHK(tl);
-	assert((*e)->fmt != STRING_LIST && (*e)->fmt != STRING);
+	assert(!(*e)->fmt->stringform);
 
-	if ((*e)->fmt == STRINGS && fmt == STRING_LIST)
-		(*e)->fmt = STRING_LIST;
-	else if ((*e)->fmt == STRINGS && fmt == STRING)
-		*e = vcc_expr_edit(tl, STRING, "\vS", *e, NULL);
-	else if ((*e)->fmt == STRINGS && fmt == STRANDS) {
-		*e = vcc_expr_edit(tl, STRANDS, "\vT", (*e), NULL);
-	} else if ((*e)->fmt != STRINGS &&
-	    (fmt == STRING || fmt == STRING_LIST))
-		vcc_expr_tostring(tl, e, fmt);
+	if ((*e)->fmt != STRINGS && fmt->stringform)
+		vcc_expr_tostring(tl, e, STRINGS);
+
+	if ((*e)->fmt == STRINGS && fmt->stringform) {
+		if (fmt == STRING_LIST)
+			(*e)->fmt = STRING_LIST;
+		else if (fmt == STRING)
+			*e = vcc_expr_edit(tl, STRING, "\vS", *e, NULL);
+		else if (fmt == STRANDS)
+			*e = vcc_expr_edit(tl, STRANDS, "\vT", (*e), NULL);
+		else
+			WRONG("Unhandled stringform");
+	}
 
 	if ((*e)->fmt == STRING_LIST)
 		*e = vcc_expr_edit(tl, STRING_LIST,

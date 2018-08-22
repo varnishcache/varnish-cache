@@ -322,7 +322,10 @@ varnish v1 -vcl+backend {
 }
 
 varnish v1 -vcl+backend {
+	import debug;
 	sub vcl_deliver {
+		// Ticket 2745
+		debug.sethdr(resp.http.rst, req.restarts);
 		set resp.http.foo =
 		    (resp.http.foo + resp.http.bar) == ("X" + resp.http.foo);
 	}
@@ -335,6 +338,7 @@ varnish v1 -vcl+backend {
 client c1 {
 	txreq
 	rxresp
+	expect resp.http.rst == "0"
 	expect resp.http.foo == "true"
 	expect resp.http.p == 9223372036854775807
 	expect resp.http.n == -9223372036854775807
