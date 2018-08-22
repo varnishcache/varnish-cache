@@ -33,9 +33,9 @@
 //lint -e{766}
 #include "config.h"
 
-#include <stdlib.h>
-
 #if defined(HAVE_EPOLL_CTL)
+
+#include <stdlib.h>
 
 #include <sys/epoll.h>
 
