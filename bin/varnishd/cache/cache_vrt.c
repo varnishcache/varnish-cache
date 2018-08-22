@@ -354,15 +354,15 @@ VRT_Strands(char *d, size_t dl, VCL_STRANDS s)
 	AN(s);
 	b = d;
 	e = b + dl;
-	for (int i = 0; i < s->n && b < e; i++)
+	for (int i = 0; i < s->n; i++)
 		if (s->p[i] != NULL && *s->p[i] != '\0') {
 			x = strlen(s->p[i]);
-			if (b + x < e)
-				memcpy(b, s->p[i], x);
+			if (b + x >= e)
+				return(NULL);
+			memcpy(b, s->p[i], x);
 			b += x;
 		}
-	if (b >= e)
-		return (NULL);
+	assert(b < e);
 	*b++ = '\0';
 	return (b);
 }
