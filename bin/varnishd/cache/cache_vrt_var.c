@@ -806,7 +806,7 @@ VRT_r_obj_hits(VRT_CTX)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req->objcore, OBJCORE_MAGIC);
-	return (ctx->req->is_hit ? ctx->req->objcore->hits : 0);
+	return (ctx->req->is_hit ? ctx->req->objcore->hits : 1);
 }
 
 VCL_BOOL

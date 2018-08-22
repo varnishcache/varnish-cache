@@ -10,4 +10,8 @@ Changes in Varnish 6.1
 
 **XXX**
 
+Varnish now won't rewrite the content-length header when responding to any HEAD
+request, making it possible to cache HEAD requests independently from the GET
+ones (peviously a HEAD request had to be a pass to avoid this rewriting).
+
 *eof*
