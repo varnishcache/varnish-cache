@@ -388,6 +388,7 @@ void VCL_Poll(void);
 void VCL_Ref(struct vcl *);
 void VCL_Refresh(struct vcl **);
 void VCL_Rel(struct vcl **);
+void VCL_Onboard(struct req *, struct busyobj *);
 const char *VCL_Return_Name(unsigned);
 const char *VCL_Method_Name(unsigned);
 void VCL_Bo2Ctx(struct vrt_ctx *, struct busyobj *);

@@ -74,6 +74,16 @@ VCL_Method_Name(unsigned m)
 /*--------------------------------------------------------------------*/
 
 void
+VCL_Onboard(struct req *req, struct busyobj *bo)
+{
+	
+	CHECK_OBJ_ORNULL(req, REQ_MAGIC);
+	CHECK_OBJ_ORNULL(bo, BUSYOBJ_MAGIC);
+	assert(req != NULL || bo != NULL);
+	assert(req == NULL || bo == NULL);
+}
+
+void
 VCL_Refresh(struct vcl **vcc)
 {
 	if (*vcc == vcl_active)
@@ -265,6 +275,7 @@ VRT_vcl_select(VRT_CTX, VCL_VCL vcl)
 	vcl_get(&req->vcl, vcl);
 	/* XXX: better logging */
 	VSLb(ctx->req->vsl, SLT_Debug, "Now using %s VCL", vcl->loaded_name);
+	VCL_Onboard(req, NULL);
 }
 
 struct vclref *

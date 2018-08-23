@@ -330,6 +330,7 @@ http1_dissect(struct worker *wrk, struct req *req)
 	VCL_Refresh(&wrk->vcl);
 	req->vcl = wrk->vcl;
 	wrk->vcl = NULL;
+	VCL_Onboard(req, NULL);
 
 	HTTP_Setup(req->http, req->ws, req->vsl, SLT_ReqMethod);
 	req->err_code = HTTP1_DissectRequest(req->htc, req->http);
