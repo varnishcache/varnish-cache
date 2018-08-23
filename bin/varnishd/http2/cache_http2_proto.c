@@ -643,6 +643,7 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	VCL_Refresh(&wrk->vcl);
 	req->vcl = wrk->vcl;
 	wrk->vcl = NULL;
+	VCL_Onboard(req, NULL);
 	req->acct.req_hdrbytes += h2->rxf_len;
 
 	HTTP_Setup(req->http, req->ws, req->vsl, SLT_ReqMethod);

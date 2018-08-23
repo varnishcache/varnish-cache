@@ -164,6 +164,7 @@ ved_include(struct req *preq, const char *src, const char *host,
 	AZ(req->vcl);
 	req->vcl = preq->vcl;
 	preq->vcl = NULL;
+	VCL_Onboard(req, NULL);
 
 	req->req_step = R_STP_RECV;
 	req->t_req = preq->t_req;
