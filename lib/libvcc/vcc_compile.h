@@ -252,7 +252,7 @@ struct vcc {
 	const char		*default_probe;
 
 	unsigned		unique;
-
+	unsigned		vmod_count;
 };
 
 struct method {

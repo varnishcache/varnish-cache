@@ -336,6 +336,7 @@ vcc_ParseImport(struct vcc *tl)
 	vcc_json_always(tl, msym);
 
 	Fh(tl, 0, "\n/* --- BEGIN VMOD %.*s --- */\n\n", PF(mod));
+	Fh(tl, 0, "#define VMOD_NUMBER_%.*s %u\n", PF(mod), tl->vmod_count++);
 	Fh(tl, 0, "static struct vmod *VGC_vmod_%.*s;\n", PF(mod));
 	Fh(tl, 0, "static struct vmod_priv vmod_priv_%.*s;\n", PF(mod));
 	Fh(tl, 0, "\n%s\n", vmd->proto);
