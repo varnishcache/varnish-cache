@@ -305,6 +305,7 @@ vcc_ParseImport(struct vcc *tl)
 
 	VSB_printf(ifp->ini, "\tif (VRT_Vmod_Init(ctx,\n");
 	VSB_printf(ifp->ini, "\t    &VGC_vmod_%.*s,\n", PF(mod));
+	VSB_printf(ifp->ini, "\t    %u,\n", tl->vmod_count++);
 	VSB_printf(ifp->ini, "\t    &Vmod_%.*s_Func,\n", PF(mod));
 	VSB_printf(ifp->ini, "\t    sizeof(Vmod_%.*s_Func),\n", PF(mod));
 	VSB_printf(ifp->ini, "\t    \"%.*s\",\n", PF(mod));
@@ -336,7 +337,6 @@ vcc_ParseImport(struct vcc *tl)
 	vcc_json_always(tl, msym);
 
 	Fh(tl, 0, "\n/* --- BEGIN VMOD %.*s --- */\n\n", PF(mod));
-	Fh(tl, 0, "#define VMOD_NUMBER_%.*s %u\n", PF(mod), tl->vmod_count++);
 	Fh(tl, 0, "static struct vmod *VGC_vmod_%.*s;\n", PF(mod));
 	Fh(tl, 0, "static struct vmod_priv vmod_priv_%.*s;\n", PF(mod));
 	Fh(tl, 0, "\n%s\n", vmd->proto);
