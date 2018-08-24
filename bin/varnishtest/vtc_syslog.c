@@ -306,7 +306,7 @@ syslog_rx(const struct syslog_srv *s, int lvl)
 
 		ret = recv(s->sock, s->rxbuf, s->rxbuf_sz - 1, 0);
 		if (ret < 0) {
-			if (errno == EINTR)
+			if (errno == EINTR || errno == EAGAIN)
 				continue;
 
 			vtc_fatal(s->vl,
