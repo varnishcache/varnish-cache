@@ -31,6 +31,14 @@ release process.
 Varnish Cache 6.0.1 (ongoing)
 ================================
 
+* Added std.fnmatch() (2737_)
+* The variable req.grace is back. (2705_)
+* Importing the same VMOD multiple times is now allowed, if the file_id
+  is identical.
+
+.. _2705: https://github.com/varnishcache/varnish-cache/pull/2705
+.. _2737: https://github.com/varnishcache/varnish-cache/pull/2737
+
 varnishstat
 -----------
 
@@ -43,7 +51,7 @@ varnishstat
   * ``sess_fail_enomem``
   * ``sess_fail_other``
 
-  now break down the detailled reason for session accept failures, the
+  now break down the detailed reason for session accept failures, the
   sum of which continues to be counted in ``sess_fail``.
 
 VCL and bundled VMODs
@@ -57,6 +65,81 @@ bundled tools
 * ``varnishhist``: The format of the ``-P`` argument has been changed
   for custom profile definitions to also contain a prefix to match the
   tag against.
+
+* ``varnishtest``: syslog instances now have to start with a capital S.
+
+Fixed bugs which may influence VCL behavior
+--------------------------------------------
+
+* When an object is out of grace but in keep, the client context goes
+  straight to vcl_miss instead of vcl_hit. The documentation has been
+  updated accordingly. (2705_)
+
+Fixed bugs
+----------
+
+* Several H2 bugs (2285_, 2572_, 2623_, 2624_, 2679_, 2690_, 2693_)
+* Make large integers work in VCL. (2603_)
+* Print usage on unknown or missing arguments (2608_)
+* Assert error in VPX_Send_Proxy() with proxy backends in pipe mode
+  (2613_)
+* Holddown times for certain backend connection errors (2622_)
+* Enforce Host requirement for HTTP/1.1 requests (2631_)
+* Introduction of '-' CLI prefix allowed empty commands to sneak
+  through. (2647_)
+* VUT apps can be stopped cleanly via vtc process -stop (2649_, 2650_)
+* VUT apps fail gracefully when removing a PID file fails
+* varnishd startup log should mention version (2661_)
+* In curses mode, always filter in the counters necessary for the
+  header lines. (2678_)
+* Assert error in ban_lurker_getfirst() (2681_)
+* Missing command entries in varnishadm help menu (2682_)
+* Handle string literal concatenation correctly (2685_)
+* varnishtop -1 does not work as documented (2686_)
+* Handle sigbus like sigsegv (2693_)
+* Panic on return (retry) of a conditional fetch (2700_)
+* Wrong turn at cache/cache_backend_probe.c:255: Unknown family
+  (2702_, 2726_)
+* VCL failure causes TASK_PRIV reference on reset workspace (2706_)
+* Accurate ban statistics except for a few remaining corner cases
+  (2716_)
+* Assert error in vca_make_session() (2719_)
+* Assert error in vca_tcp_opt_set() (2722_)
+* VCL compiling error on parenthesis (2727_)
+* Assert error in HTC_RxPipeline() (2731_)
+
+.. _2285: https://github.com/varnishcache/varnish-cache/issues/2285
+.. _2572: https://github.com/varnishcache/varnish-cache/issues/2572
+.. _2603: https://github.com/varnishcache/varnish-cache/issues/2603
+.. _2608: https://github.com/varnishcache/varnish-cache/issues/2608
+.. _2613: https://github.com/varnishcache/varnish-cache/issues/2613
+.. _2622: https://github.com/varnishcache/varnish-cache/issues/2622
+.. _2623: https://github.com/varnishcache/varnish-cache/issues/2623
+.. _2624: https://github.com/varnishcache/varnish-cache/issues/2624
+.. _2631: https://github.com/varnishcache/varnish-cache/issues/2631
+.. _2647: https://github.com/varnishcache/varnish-cache/issues/2647
+.. _2649: https://github.com/varnishcache/varnish-cache/issues/2649
+.. _2650: https://github.com/varnishcache/varnish-cache/pull/2650
+.. _2651: https://github.com/varnishcache/varnish-cache/pull/2651
+.. _2661: https://github.com/varnishcache/varnish-cache/issues/2661
+.. _2678: https://github.com/varnishcache/varnish-cache/issues/2678
+.. _2679: https://github.com/varnishcache/varnish-cache/issues/2679
+.. _2681: https://github.com/varnishcache/varnish-cache/issues/2681
+.. _2682: https://github.com/varnishcache/varnish-cache/issues/2682
+.. _2685: https://github.com/varnishcache/varnish-cache/issues/2685
+.. _2686: https://github.com/varnishcache/varnish-cache/issues/2686
+.. _2690: https://github.com/varnishcache/varnish-cache/issues/2690
+.. _2693: https://github.com/varnishcache/varnish-cache/issues/2693
+.. _2695: https://github.com/varnishcache/varnish-cache/issues/2695
+.. _2700: https://github.com/varnishcache/varnish-cache/issues/2700
+.. _2702: https://github.com/varnishcache/varnish-cache/issues/2702
+.. _2706: https://github.com/varnishcache/varnish-cache/issues/2706
+.. _2716: https://github.com/varnishcache/varnish-cache/issues/2716
+.. _2719: https://github.com/varnishcache/varnish-cache/issues/2719
+.. _2722: https://github.com/varnishcache/varnish-cache/issues/2722
+.. _2726: https://github.com/varnishcache/varnish-cache/pull/2726
+.. _2727: https://github.com/varnishcache/varnish-cache/issues/2727
+.. _2731: https://github.com/varnishcache/varnish-cache/issues/2731
 
 ================================
 Varnish Cache 6.0.0 (2018-03-15)
