@@ -77,7 +77,7 @@ VCL_Method_Name(unsigned m)
 /*--------------------------------------------------------------------*/
 
 void
-VCL_Onboard(struct req *req, struct busyobj *bo)
+VCL_Onboard(const struct req *req, const struct busyobj *bo)
 {
 	
 	CHECK_OBJ_ORNULL(req, REQ_MAGIC);
