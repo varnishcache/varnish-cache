@@ -18,8 +18,14 @@ varnish v1 -vcl+backend {
 			return (pass);
 		}
 	}
+	sub vcl_hit {
+		set req.http.hit-hits = obj.hits;
+	}
 	sub vcl_deliver {
-		set resp.http.foo = obj.hits;
+		set resp.http.deliver-hits = obj.hits;
+		if (req.http.hit-hits) {
+			set resp.http.hit-hits = req.http.hit-hits;
+		}
 	}
 } -start
 
@@ -27,26 +33,31 @@ client c1 {
 	txreq
 	rxresp
 	expect resp.status == 200
-	expect resp.http.foo == 0
+	expect resp.http.deliver-hits == 0
+	expect resp.http.hit-hits == <undef>
 
 	txreq
 	rxresp
 	expect resp.status == 200
-	expect resp.http.foo == 1
+	expect resp.http.deliver-hits == 1
+	expect resp.http.hit-hits == 1
 
 	txreq -url /foo
 	rxresp
 	expect resp.status == 200
-	expect resp.http.foo == 0
+	expect resp.http.deliver-hits == 0
+	expect resp.http.hit-hits == <undef>
 	delay .1
 
 	txreq
 	rxresp
 	expect resp.status == 200
-	expect resp.http.foo == 2
+	expect resp.http.deliver-hits == 2
+	expect resp.http.hit-hits == 2
 
 	txreq -url /pass
 	rxresp
 	expect resp.status == 200
-	expect resp.http.foo == 0
+	expect resp.http.deliver-hits == 0
+	expect resp.http.hit-hits == <undef>
 } -run
