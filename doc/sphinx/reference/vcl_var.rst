@@ -585,6 +585,12 @@ bereq.connect_timeout
 
 	Writable from: vcl_pipe, backend
 
+	Default:
+
+	* :ref:`ref_backend_def` ``.connect_timeout`` attribute, which
+	   defaults to
+	* :ref:`ref_param_connect_timeout` parameter.
+
 	The time in seconds to wait for a backend connection to be
 	established.
 
@@ -597,6 +603,12 @@ bereq.first_byte_timeout
 
 	Writable from: backend
 
+	Default:
+
+	* :ref:`ref_backend_def` ``.first_byte_timeout`` attribute,
+	   which defaults to
+	* :ref:`ref_param_first_byte_timeout` parameter.
+
 	The time in seconds to wait getting the first byte back
 	from the backend.  Not available in pipe mode.
 
@@ -608,6 +620,12 @@ bereq.between_bytes_timeout
 	Readable from: backend
 
 	Writable from: backend
+
+	Default:
+
+	* :ref:`ref_backend_def` ``.between_bytes_timeout`` backend
+	   attribute, which defaults to
+	* :ref:`ref_param_between_bytes_timeout` parameter.
 
 	The time in seconds to wait between each received byte from the
 	backend.  Not available in pipe mode.
