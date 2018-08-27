@@ -141,6 +141,7 @@ VRT_priv_task(VRT_CTX, const void *vmod_id)
 	struct vrt_privs *vps;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	assert(ctx->req == NULL || ctx->bo == NULL);
 	if (ctx->req) {
 		CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 		id = (uintptr_t)ctx->req;
