@@ -121,7 +121,6 @@ vcl_get_ctx(unsigned method, int msg)
 	}
 	ctx_cli.ws = &ws_cli;
 	WS_Assert(ctx_cli.ws);
-	VRTPRIV_init(cli_task_privs);
 	return (&ctx_cli);
 }
 
@@ -138,7 +137,6 @@ vcl_rel_ctx(struct vrt_ctx **ctx)
 	WS_Reset(&ws_cli, ws_snapshot_cli);
 	INIT_OBJ(*ctx, VRT_CTX_MAGIC);
 	*ctx = NULL;
-	VRTPRIV_dynamic_kill(cli_task_privs, (uintptr_t)cli_task_privs);
 }
 
 /*--------------------------------------------------------------------*/
@@ -163,7 +161,9 @@ vcl_send_event(VRT_CTX, enum vcl_event_e ev)
 	if (ev == VCL_EVENT_LOAD || ev == VCL_EVENT_WARM)
 		AN(ctx->msg);
 
+	VCL_TaskEnter(ctx->vcl, cli_task_privs);
 	r = ctx->vcl->conf->event_vcl(ctx, ev);
+	VCL_TaskLeave(ctx->vcl, cli_task_privs);
 
 	if (r && (ev == VCL_EVENT_COLD || ev == VCL_EVENT_DISCARD))
 		WRONG("A VMOD cannot fail COLD or DISCARD events");
