@@ -63,7 +63,6 @@ int HSH_Snipe(const struct worker *, struct objcore *);
 struct boc *HSH_RefBoc(const struct objcore *);
 void HSH_DerefBoc(struct worker *wrk, struct objcore *);
 void HSH_DeleteObjHead(const struct worker *, struct objhead *);
-int HSH_DerefObjHead(struct worker *, struct objhead **);
 
 int HSH_DerefObjCore(struct worker *, struct objcore **, int rushmax);
 #define HSH_RUSH_POLICY -1

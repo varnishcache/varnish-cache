@@ -76,6 +76,7 @@ static struct objhead *private_oh;
 static void hsh_rush1(const struct worker *, struct objhead *,
     struct rush *, int);
 static void hsh_rush2(struct worker *, struct rush *);
+static int HSH_DerefObjHead(struct worker *wrk, struct objhead **poh);
 
 /*---------------------------------------------------------------------*/
 
@@ -591,8 +592,18 @@ hsh_rush2(struct worker *wrk, struct rush *r)
 		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 		VTAILQ_REMOVE(&r->reqs, req, w_list);
 		DSL(DBG_WAITINGLIST, req->vsl->wid, "off waiting list");
-		AN(req->transport->reembark);
-		req->transport->reembark(wrk, req);
+		if (req->transport->reembark != NULL) {
+			// For ESI includes
+			req->transport->reembark(wrk, req);
+		} else {
+			/*
+			 * We ignore the queue limits which apply to new
+			 * requests because if we fail to reschedule there
+			 * may be vmod_privs to cleanup and we need a proper
+			 * workerthread for that.
+			 */
+			AZ(Pool_Task(req->sp->pool, &req->task, TASK_QUEUE_RUSH));
+		}
 	}
 }
 
@@ -939,7 +950,7 @@ HSH_DerefObjCore(struct worker *wrk, struct objcore **ocp, int rushmax)
 	return (0);
 }
 
-int
+static int
 HSH_DerefObjHead(struct worker *wrk, struct objhead **poh)
 {
 	struct objhead *oh;

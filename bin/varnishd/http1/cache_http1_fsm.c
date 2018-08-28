@@ -201,25 +201,6 @@ http1_req_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	return (0);
 }
 
-/*----------------------------------------------------------------------
- * Clean up a req from waiting list which cannot complete
- */
-
-static void v_matchproto_(vtr_reembark_f)
-http1_reembark(struct worker *wrk, struct req *req)
-{
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	assert(req->transport == &HTTP1_transport);
-
-	if (!CNT_Reembark(wrk, req))
-		return;
-
-	SES_Close(req->sp, SC_OVERLOAD);
-	AN(http1_req_cleanup(req->sp, wrk, req));
-}
-
 static int v_matchproto_(vtr_minimal_response_f)
 http1_minimal_response(struct req *req, uint16_t status)
 {
@@ -263,7 +244,6 @@ struct transport HTTP1_transport = {
 	.deliver =		V1D_Deliver,
 	.minimal_response =	http1_minimal_response,
 	.new_session =		http1_new_session,
-	.reembark =		http1_reembark,
 	.req_body =		http1_req_body,
 	.req_fail =		http1_req_fail,
 	.req_panic =		http1_req_panic,
