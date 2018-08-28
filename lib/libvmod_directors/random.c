@@ -111,6 +111,10 @@ vmod_random__fini(struct vmod_directors_random **rrp)
 {
 	struct vmod_directors_random *rr;
 
+	// XXX 2297
+	if (*rrp == NULL)
+		return;
+
 	TAKE_OBJ_NOTNULL(rr, rrp, VMOD_DIRECTORS_RANDOM_MAGIC);
 	VRT_DelDirector(&rr->vd->dir);
 }

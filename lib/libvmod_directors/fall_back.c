@@ -124,6 +124,10 @@ vmod_fallback__fini(struct vmod_directors_fallback **fbp)
 {
 	struct vmod_directors_fallback *fb;
 
+	// XXX 2297
+	if (*fbp == NULL)
+		return;
+
 	TAKE_OBJ_NOTNULL(fb, fbp, VMOD_DIRECTORS_FALLBACK_MAGIC);
 	VRT_DelDirector(&fb->vd->dir);
 }
