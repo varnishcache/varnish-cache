@@ -108,9 +108,11 @@ vmod_fallback__fini(struct vmod_directors_fallback **fbp)
 {
 	struct vmod_directors_fallback *fb;
 
-	fb = *fbp;
-	*fbp = NULL;
-	CHECK_OBJ_NOTNULL(fb, VMOD_DIRECTORS_FALLBACK_MAGIC);
+	// XXX 2297
+	if (*fbp == NULL)
+		return;
+
+	TAKE_OBJ_NOTNULL(fb, fbp, VMOD_DIRECTORS_FALLBACK_MAGIC);
 	vdir_delete(&fb->vd);
 	FREE_OBJ(fb);
 }

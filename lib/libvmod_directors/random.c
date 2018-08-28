@@ -95,9 +95,11 @@ vmod_random__fini(struct vmod_directors_random **rrp)
 {
 	struct vmod_directors_random *rr;
 
-	rr = *rrp;
-	*rrp = NULL;
-	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_RANDOM_MAGIC);
+	// XXX 2297
+	if (*rrp == NULL)
+		return;
+
+	TAKE_OBJ_NOTNULL(rr, rrp, VMOD_DIRECTORS_RANDOM_MAGIC);
 	vdir_delete(&rr->vd);
 	FREE_OBJ(rr);
 }

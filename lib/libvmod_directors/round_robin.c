@@ -104,9 +104,11 @@ vmod_round_robin__fini(struct vmod_directors_round_robin **rrp)
 {
 	struct vmod_directors_round_robin *rr;
 
-	rr = *rrp;
-	*rrp = NULL;
-	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_ROUND_ROBIN_MAGIC);
+	// XXX 2297
+	if (*rrp == NULL)
+		return;
+
+	TAKE_OBJ_NOTNULL(rr, rrp, VMOD_DIRECTORS_ROUND_ROBIN_MAGIC);
 	vdir_delete(&rr->vd);
 	FREE_OBJ(rr);
 }

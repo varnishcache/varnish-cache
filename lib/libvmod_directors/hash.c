@@ -67,9 +67,11 @@ vmod_hash__fini(struct vmod_directors_hash **rrp)
 {
 	struct vmod_directors_hash *rr;
 
-	rr = *rrp;
-	*rrp = NULL;
-	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_HASH_MAGIC);
+	// XXX 2297
+	if (*rrp == NULL)
+		return;
+
+	TAKE_OBJ_NOTNULL(rr, rrp, VMOD_DIRECTORS_HASH_MAGIC);
 	vdir_delete(&rr->vd);
 	FREE_OBJ(rr);
 }
