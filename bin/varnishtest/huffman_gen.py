@@ -12,7 +12,7 @@ if len(sys.argv) != 2:
 
 class sym:
 	def __init__(self, bigval, bigvall, chr = 0, esc = None):
-		self.vall = bigvall % 8 if bigvall % 8 else 8 
+		self.vall = bigvall % 8 if bigvall % 8 else 8
 		self.val = bigval & ((1 << self.vall) - 1)
 		self.pfx = (bigval >> self.vall)# & 0xff
 		self.chr = chr
