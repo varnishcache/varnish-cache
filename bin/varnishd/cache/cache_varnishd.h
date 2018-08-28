@@ -335,6 +335,7 @@ enum req_fsm_nxt {
 };
 
 enum req_fsm_nxt CNT_Request(struct worker *, struct req *);
+int CNT_Reembark(struct worker *, struct req *);
 
 /* cache_session.c */
 void SES_NewPool(struct pool *, unsigned pool_no);

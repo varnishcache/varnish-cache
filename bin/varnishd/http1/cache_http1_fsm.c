@@ -47,7 +47,6 @@
 
 static const char H1NEWREQ[] = "HTTP1::NewReq";
 static const char H1PROC[] = "HTTP1::Proc";
-static const char H1BUSY[] = "HTTP1::Busy";
 static const char H1CLEANUP[] = "HTTP1::Cleanup";
 
 static void HTTP1_Session(struct worker *, struct req *);
@@ -206,42 +205,19 @@ http1_req_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
  * Clean up a req from waiting list which cannot complete
  */
 
-static void
-http1_cleanup_waiting(struct worker *wrk, struct req *req,
-    enum sess_close reason)
-{
-	struct sess *sp;
-
-	sp = req->sp;
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	AN(req->ws->r);
-	WS_Release(req->ws, 0);
-	AN(req->hash_objhead);
-	(void)HSH_DerefObjHead(wrk, &req->hash_objhead);
-	AZ(req->hash_objhead);
-	SES_Close(sp, reason);
-	AN(http1_req_cleanup(sp, wrk, req));
-}
-
 static void v_matchproto_(vtr_reembark_f)
 http1_reembark(struct worker *wrk, struct req *req)
 {
-	struct sess *sp;
 
-	sp = req->sp;
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	assert(req->transport == &HTTP1_transport);
 
-	http1_setstate(sp, H1BUSY);
-
-	if (!DO_DEBUG(DBG_FAILRESCHED) &&
-	    !SES_Reschedule_Req(req, TASK_QUEUE_REQ))
+	if (!CNT_Reembark(wrk, req))
 		return;
 
-	/* Couldn't schedule, ditch */
-	wrk->stats->busy_wakeup--;
-	wrk->stats->busy_killed++;
-	VSLb(req->vsl, SLT_Error, "Fail to reschedule req from waiting list");
-	http1_cleanup_waiting(wrk, req, SC_OVERLOAD);
+	SES_Close(req->sp, SC_OVERLOAD);
+	AN(http1_req_cleanup(req->sp, wrk, req));
 }
 
 static int v_matchproto_(vtr_minimal_response_f)
@@ -488,17 +464,6 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 				}
 			}
 			req->req_step = R_STP_TRANSPORT;
-			http1_setstate(sp, H1PROC);
-		} else if (st == H1BUSY) {
-			CHECK_OBJ_NOTNULL(req->transport, TRANSPORT_MAGIC);
-			/*
-			 * Return from waitinglist.
-			 * Check to see if the remote has left.
-			 */
-			if (VTCP_check_hup(sp->fd)) {
-				http1_cleanup_waiting(wrk, req, SC_REM_CLOSE);
-				return;
-			}
 			http1_setstate(sp, H1PROC);
 		} else if (st == H1PROC) {
 			req->task.func = http1_req;

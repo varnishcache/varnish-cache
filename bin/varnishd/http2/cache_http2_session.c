@@ -437,25 +437,21 @@ h2_new_session(struct worker *wrk, void *arg)
 static void v_matchproto_(vtr_reembark_f)
 h2_reembark(struct worker *wrk, struct req *req)
 {
-	struct sess *sp;
 	struct h2_req *r2;
 
-	sp = req->sp;
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	assert(req->transport == &H2_transport);
 
-	if (!DO_DEBUG(DBG_FAILRESCHED) &&
-	    !SES_Reschedule_Req(req, TASK_QUEUE_STR))
+	if (!CNT_Reembark(wrk, req))
 		return;
 
-	/* Couldn't schedule, ditch */
-	wrk->stats->busy_wakeup--;
-	wrk->stats->busy_killed++;
 	CAST_OBJ_NOTNULL(r2, req->transport_priv, H2_REQ_MAGIC);
-	VSLb(req->vsl, SLT_Error, "Fail to reschedule req from waiting list");
-	h2_cleanup_waiting(wrk, r2);
+	assert(r2->state == H2_S_CLOS_REM);
+	AN(r2->scheduled);
+	r2->scheduled = 0;
+	r2->h2sess->do_sweep = 1;
 }
-
 
 struct transport H2_transport = {
 	.name =			"H2",

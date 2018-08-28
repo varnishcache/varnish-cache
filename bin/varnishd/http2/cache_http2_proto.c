@@ -1149,21 +1149,3 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 	}
 	return (h2e ? 0 : 1);
 }
-
-void
-h2_cleanup_waiting(struct worker *wrk, struct h2_req *r2)
-{
-	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(r2->req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(r2->h2sess, H2_SESS_MAGIC);
-
-	AN(r2->req->ws->r);
-	WS_Release(r2->req->ws, 0);
-	AN(r2->req->hash_objhead);
-	(void)HSH_DerefObjHead(wrk, &r2->req->hash_objhead);
-	AZ(r2->req->hash_objhead);
-	assert(r2->state == H2_S_CLOS_REM);
-	AN(r2->scheduled);
-	r2->scheduled = 0;
-	r2->h2sess->do_sweep = 1;
-}
