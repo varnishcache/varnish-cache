@@ -434,32 +434,12 @@ h2_new_session(struct worker *wrk, void *arg)
 	h2_del_sess(wrk, h2, SC_RX_JUNK);
 }
 
-static void v_matchproto_(vtr_reembark_f)
-h2_reembark(struct worker *wrk, struct req *req)
-{
-	struct h2_req *r2;
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	assert(req->transport == &H2_transport);
-
-	if (!CNT_Reembark(wrk, req))
-		return;
-
-	CAST_OBJ_NOTNULL(r2, req->transport_priv, H2_REQ_MAGIC);
-	assert(r2->state == H2_S_CLOS_REM);
-	AN(r2->scheduled);
-	r2->scheduled = 0;
-	r2->h2sess->do_sweep = 1;
-}
-
 struct transport H2_transport = {
 	.name =			"H2",
 	.magic =		TRANSPORT_MAGIC,
 	.deliver =		h2_deliver,
 	.minimal_response =	h2_minimal_response,
 	.new_session =		h2_new_session,
-	.reembark =		h2_reembark,
 	.req_body =		h2_req_body,
 	.req_fail =		h2_req_fail,
 	.sess_panic =		h2_sess_panic,

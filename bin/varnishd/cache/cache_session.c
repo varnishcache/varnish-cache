@@ -377,30 +377,6 @@ SES_New(struct pool *pp)
 }
 
 /*--------------------------------------------------------------------
- * Reschedule a request on a work-thread from its sessions pool
- *
- * This is used to reschedule requests waiting on busy objects
- */
-
-int
-SES_Reschedule_Req(struct req *req, enum task_prio prio)
-{
-	struct sess *sp;
-	struct pool *pp;
-
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	sp = req->sp;
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	pp = sp->pool;
-	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
-	AN(TASK_QUEUE_CLIENT(prio));
-
-	AN(req->task.func);
-
-	return (Pool_Task(pp, &req->task, prio));
-}
-
-/*--------------------------------------------------------------------
  * Handle a session (from waiter)
  */
 

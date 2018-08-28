@@ -52,34 +52,6 @@
 #include "vtim.h"
 
 /*--------------------------------------------------------------------
- * Reschedule a request from the waiting list
- */
-
-int
-CNT_Reembark(struct worker *wrk, struct req *req)
-{
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-
-	if (!DO_DEBUG(DBG_FAILRESCHED) &&
-	    !SES_Reschedule_Req(req, TASK_QUEUE_REQ))
-		return (0);
-
-	/* Couldn't schedule, ditch */
-	wrk->stats->busy_wakeup--;
-	wrk->stats->busy_killed++;
-	VSLb(req->vsl, SLT_Error, "Fail to reschedule req from waiting list");
-
-	AN(req->ws->r);
-	WS_Release(req->ws, 0);
-	AN(req->hash_objhead);
-	(void)HSH_DerefObjHead(wrk, &req->hash_objhead);
-	AZ(req->hash_objhead);
-	return(-1);
-}
-
-/*--------------------------------------------------------------------
  * Handle "Expect:" and "Connection:" on incoming request
  */
 

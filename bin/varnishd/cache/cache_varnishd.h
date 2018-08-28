@@ -335,7 +335,6 @@ enum req_fsm_nxt {
 };
 
 enum req_fsm_nxt CNT_Request(struct worker *, struct req *);
-int CNT_Reembark(struct worker *, struct req *);
 
 /* cache_session.c */
 void SES_NewPool(struct pool *, unsigned pool_no);
@@ -343,7 +342,6 @@ void SES_DestroyPool(struct pool *);
 void SES_Wait(struct sess *, const struct transport *);
 void SES_Ref(struct sess *sp);
 void SES_Rel(struct sess *sp);
-int SES_Reschedule_Req(struct req *, enum task_prio);
 
 const char * HTC_Status(enum htc_status_e);
 void HTC_RxInit(struct http_conn *htc, struct ws *ws);
