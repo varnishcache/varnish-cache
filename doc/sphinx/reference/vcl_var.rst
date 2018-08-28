@@ -587,9 +587,9 @@ bereq.connect_timeout
 
 	Default:
 
-	* :ref:`ref_backend_def` ``.connect_timeout`` attribute, which
-	   defaults to
-	* :ref:`ref_param_connect_timeout` parameter.
+	* ``.connect_timeout`` attribute from the
+	  :ref:`backend_definition`, which defaults to the
+	* ``connect_timeout`` parameter, see :ref:`varnishd(1)`
 
 	The time in seconds to wait for a backend connection to be
 	established.
@@ -605,9 +605,9 @@ bereq.first_byte_timeout
 
 	Default:
 
-	* :ref:`ref_backend_def` ``.first_byte_timeout`` attribute,
-	   which defaults to
-	* :ref:`ref_param_first_byte_timeout` parameter.
+	* ``.first_byte_timeout`` attribute from the
+	  :ref:`backend_definition`, which defaults to the
+	* ``first_byte_timeout`` parameter, see :ref:`varnishd(1)`
 
 	The time in seconds to wait getting the first byte back
 	from the backend.  Not available in pipe mode.
@@ -623,9 +623,9 @@ bereq.between_bytes_timeout
 
 	Default:
 
-	* :ref:`ref_backend_def` ``.between_bytes_timeout`` backend
-	   attribute, which defaults to
-	* :ref:`ref_param_between_bytes_timeout` parameter.
+	* ``.between_bytes_timeout`` attribute from the
+	  :ref:`backend_definition`, which defaults to the
+	* ``between_bytes_timeout`` parameter, see :ref:`varnishd(1)`
 
 	The time in seconds to wait between each received byte from the
 	backend.  Not available in pipe mode.

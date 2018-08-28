@@ -200,8 +200,7 @@ Example::
         */
     }
 
-
-.. _ref_backend_def:
+.. _backend_definition:
 
 Backend definition
 ------------------
@@ -241,17 +240,17 @@ parameters. The following attributes are available:
   ``.connect_timeout``
     Timeout for connections.
 
-    Default: :ref:`ref_param_connect_timeout` parameter.
+    Default: ``connect_timeout`` parameter, see :ref:`varnishd(1)`
 
   ``.first_byte_timeout``
     Timeout for first byte.
 
-    Default: :ref:`ref_param_first_byte_timeout` parameter.
+    Default: ``first_byte_timeout`` parameter, see :ref:`varnishd(1)`
 
   ``.between_bytes_timeout``
     Timeout between bytes.
 
-    Default: :ref:`ref_param_between_bytes_timeout` parameter.
+    Default: ``between_bytes_timeout`` parameter, see :ref:`varnishd(1)`
 
   ``.probe``
     Attach a probe to the backend. See `Probes`_
