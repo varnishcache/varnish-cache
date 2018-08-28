@@ -428,6 +428,7 @@ struct busyobj {
 	const struct director	*director_req;
 	const struct director	*director_resp;
 	enum director_state_e	director_state;
+	struct vdi_coollist	*vdi_coollist;
 	struct vcl		*vcl;
 
 	struct vsl_log		vsl[1];
@@ -484,6 +485,7 @@ struct req {
 	const struct stevedore	*storage;
 
 	const struct director	*director_hint;
+	struct vdi_coollist	*vdi_coollist;
 	struct vcl		*vcl;
 
 	uintptr_t		ws_req;		/* WS above request data */

@@ -53,8 +53,6 @@
 static const char * const vbe_proto_ident = "HTTP Backend";
 
 static VTAILQ_HEAD(, backend) backends = VTAILQ_HEAD_INITIALIZER(backends);
-static VTAILQ_HEAD(, backend) cool_backends =
-    VTAILQ_HEAD_INITIALIZER(cool_backends);
 static struct lock backends_mtx;
 
 /*--------------------------------------------------------------------*/
@@ -406,10 +404,7 @@ vbe_destroy(const struct director *d)
 
 	VSC_vbe_Destroy(&be->vsc_seg);
 	Lck_Lock(&backends_mtx);
-	if (be->cooled > 0)
-		VTAILQ_REMOVE(&cool_backends, be, list);
-	else
-		VTAILQ_REMOVE(&backends, be, list);
+	VTAILQ_REMOVE(&backends, be, list);
 	VSC_C_main->n_backend--;
 	VTP_Rel(&be->tcp_pool);
 	Lck_Unlock(&backends_mtx);
@@ -575,33 +570,6 @@ VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
 	return (VRT_new_backend_clustered(ctx, NULL, vrt));
 }
 
-/*--------------------------------------------------------------------
- * Delete a dynamic director::backend instance.  Undeleted dynamic and
- * static instances are GC'ed when the VCL is discarded (in cache_vcl.c)
- */
-
-void
-VRT_delete_backend(VRT_CTX, VCL_BACKEND *dp)
-{
-	VCL_BACKEND d;
-	struct backend *be;
-
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	TAKE_OBJ_NOTNULL(d, dp, DIRECTOR_MAGIC);
-	CAST_OBJ_NOTNULL(be, d->priv, BACKEND_MAGIC);
-	Lck_Lock(&be->mtx);
-	VRT_DisableDirector(be->director);
-	be->cooled = VTIM_real() + 60.;
-	Lck_Unlock(&be->mtx);
-	Lck_Lock(&backends_mtx);
-	VTAILQ_REMOVE(&backends, be, list);
-	VTAILQ_INSERT_TAIL(&cool_backends, be, list);
-	Lck_Unlock(&backends_mtx);
-
-	// NB. The backend is still usable for the ongoing transactions,
-	// this is why we don't bust the director's magic number.
-}
-
 void
 VBE_SetHappy(const struct backend *be, uint64_t happy)
 {
@@ -610,29 +578,6 @@ VBE_SetHappy(const struct backend *be, uint64_t happy)
 	Lck_Lock(&backends_mtx);
 	if (be->vsc != NULL)
 		be->vsc->happy = happy;
-	Lck_Unlock(&backends_mtx);
-}
-
-/*---------------------------------------------------------------------*/
-
-void
-VBE_Poll(void)
-{
-	struct backend *be, *be2;
-	double now = VTIM_real();
-
-	ASSERT_CLI();
-	Lck_Lock(&backends_mtx);
-	VTAILQ_FOREACH_SAFE(be, &cool_backends, list, be2) {
-		CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
-		if (be->cooled > now)
-			break;
-		if (be->n_conn > 0)
-			continue;
-		Lck_Unlock(&backends_mtx);
-		VRT_DelDirector(&be->director);
-		Lck_Lock(&backends_mtx);
-	}
 	Lck_Unlock(&backends_mtx);
 }
 

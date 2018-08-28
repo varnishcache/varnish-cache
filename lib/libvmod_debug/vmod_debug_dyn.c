@@ -96,6 +96,7 @@ dyn_dir_init(VRT_CTX, struct xyzzy_debug_dyn *dyn,
 
 	freeaddrinfo(res);
 
+	/* _new_backend grabs a VCL reference */
 	dir = VRT_new_backend(ctx, &vrt);
 	AN(dir);
 
@@ -110,8 +111,9 @@ dyn_dir_init(VRT_CTX, struct xyzzy_debug_dyn *dyn,
 	AZ(pthread_mutex_unlock(&dyn->mtx));
 
 	if (dir2 != NULL)
-		VRT_delete_backend(ctx, &dir2);
+		VRT_DelDirector(ctx, &dir2);
 
+	AZ(dir2);
 	free(sa);
 }
 
@@ -155,8 +157,8 @@ xyzzy_dyn__fini(struct xyzzy_debug_dyn **dynp)
 		return; /* failed initialization */
 
 	CAST_OBJ_NOTNULL(dyn, *dynp, VMOD_DEBUG_DYN_MAGIC);
-	/* at this point all backends will be deleted by the vcl */
-	free(dyn->vcl_name);
+	free(dyn->vcl_name);	// ?? XXX
+	VRT_DelDirector(NULL, &dyn->dir);
 	AZ(pthread_mutex_destroy(&dyn->mtx));
 	FREE_OBJ(dyn);
 	*dynp = NULL;
@@ -221,7 +223,9 @@ dyn_uds_init(VRT_CTX, struct xyzzy_debug_dyn_uds *uds, VCL_STRING path)
 	AZ(pthread_mutex_unlock(&uds->mtx));
 
 	if (dir2 != NULL)
-		VRT_delete_backend(ctx, &dir2);
+		VRT_DelDirector(ctx, &dir2);
+
+	AZ(dir2);
 	return (0);
 }
 
@@ -260,6 +264,7 @@ xyzzy_dyn_uds__fini(struct xyzzy_debug_dyn_uds **udsp)
 	CHECK_OBJ(*udsp, VMOD_DEBUG_UDS_MAGIC);
 	uds = *udsp;
 	free(uds->vcl_name);
+	VRT_DelDirector(NULL, &uds->dir);
 	AZ(pthread_mutex_destroy(&uds->mtx));
 	FREE_OBJ(uds);
 	*udsp = NULL;

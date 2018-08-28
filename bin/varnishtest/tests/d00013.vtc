@@ -29,11 +29,7 @@ varnish v1 -vcl {
 		set req.backend_hint = s1.backend();
 		# hot swap should happen while we sleep
 		vtc.sleep(2s);
-		if (std.healthy(req.backend_hint)) {
-			return(synth(800));
-		} else {
-			set req.backend_hint = s1.backend();
-		}
+		set req.backend_hint = s1.backend();
 	}
 } -start
 

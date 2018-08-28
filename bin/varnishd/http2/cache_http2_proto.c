@@ -159,7 +159,7 @@ h2_tx_rst(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2,
  */
 
 struct h2_req *
-h2_new_req(const struct worker *wrk, struct h2_sess *h2,
+h2_new_req(struct worker *wrk, struct h2_sess *h2,
     unsigned stream, struct req *req)
 {
 	struct h2_req *r2;

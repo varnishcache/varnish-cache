@@ -331,26 +331,6 @@ vcl_BackendEvent(const struct vcl *vcl, enum vcl_event_e e)
 		VDI_Event(vdir->dir, e);
 }
 
-static void
-vcl_KillBackends(struct vcl *vcl)
-{
-	struct vcldir *vdir;
-
-	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
-	AZ(vcl->busy);
-	assert(VTAILQ_EMPTY(&vcl->ref_list));
-	while (1) {
-		vdir = VTAILQ_FIRST(&vcl->director_list);
-		if (vdir == NULL)
-			break;
-		VTAILQ_REMOVE(&vcl->director_list, vdir, list);
-		REPLACE(vdir->cli_name, NULL);
-		AN(vdir->methods->destroy);
-		vdir->methods->destroy(vdir->dir);
-		FREE_OBJ(vdir);
-	}
-}
-
 /*--------------------------------------------------------------------*/
 
 static struct vcl *
@@ -404,9 +384,8 @@ VCL_Close(struct vcl **vclp)
 {
 	struct vcl *vcl;
 
-	CHECK_OBJ_NOTNULL(*vclp, VCL_MAGIC);
-	vcl = *vclp;
-	*vclp = NULL;
+	TAKE_OBJ_NOTNULL(vcl, vclp, VCL_MAGIC);
+	VDI_Cool_Flush();
 	AZ(dlclose(vcl->dlh));
 	AZ(errno=pthread_rwlock_destroy(&vcl->temp_rwl));
 	FREE_OBJ(vcl);
@@ -534,7 +513,6 @@ vcl_cancel_load(VRT_CTX, struct cli *cli, const char *name, const char *step)
 		VCLI_Out(cli, "\nMessage:\n\t%s", VSB_data(ctx->msg));
 	*ctx->handling = 0;
 	AZ(vcl->conf->event_vcl(ctx, VCL_EVENT_DISCARD));
-	vcl_KillBackends(vcl);
 	free(vcl->loaded_name);
 	VCL_Close(&vcl);
 }
@@ -621,7 +599,6 @@ VCL_Poll(void)
 			ctx->vcl = vcl;
 			ctx->syntax = ctx->vcl->conf->syntax;
 			AZ(vcl_send_event(ctx, VCL_EVENT_DISCARD));
-			vcl_KillBackends(vcl);
 			free(vcl->loaded_name);
 			VCL_Close(&vcl);
 			VSC_C_main->n_vcl--;

@@ -323,8 +323,12 @@ vcc_ParseImport(struct vcc *tl)
 	VSB_printf(tl->fi, "%s VMOD %s ./vmod_cache/_vmod_%.*s.%s */\n",
 	    VCC_INFO_PREFIX, fnp, PF(mod), vmd->file_id);
 
+	/* would only be needed once for the last import of a director vmod */
+	VSB_printf(ifp->fin, "\t\tVRT_FlushDirectors();\n");
+
 	/* XXX: zero the function pointer structure ?*/
-	VSB_printf(ifp->fin, "\t\tVRT_priv_fini(&vmod_priv_%.*s);\n", PF(mod));
+	VSB_printf(ifp->fin, "\t\t\tVRT_priv_fini(&vmod_priv_%.*s);\n",
+		   PF(mod));
 	VSB_printf(ifp->fin, "\t\t\tVRT_Vmod_Fini(&VGC_vmod_%.*s);", PF(mod));
 
 	vj = vjsn_parse(vmd->json, &p);

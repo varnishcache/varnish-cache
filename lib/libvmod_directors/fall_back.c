@@ -129,7 +129,7 @@ vmod_fallback__fini(struct vmod_directors_fallback **fbp)
 		return;
 
 	TAKE_OBJ_NOTNULL(fb, fbp, VMOD_DIRECTORS_FALLBACK_MAGIC);
-	VRT_DelDirector(&fb->vd->dir);
+	VRT_DelDirector(NULL, &fb->vd->dir);
 }
 
 VCL_VOID v_matchproto_()

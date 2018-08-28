@@ -1883,6 +1883,25 @@ PARAM(
 	/* func */      NULL
 )
 
+PARAM(
+	/* name */	director_gc_interval,
+	/* typ */	timeout,
+	/* min */	"0.1",
+	/* max */	NULL,
+	/* default */	"60",
+	/* units */	"seconds",
+	/* flags */	DELAYED_EFFECT| EXPERIMENTAL,
+	/* s-text */
+	"We collect unused directors on a cool list which, when all tasks "
+	"using it are finished, gets garbage collected.\n"
+	"This timeout specifies the lifespan of the cool list.\n"
+	"Setting it to shorter values will make unused backends to be cleaned "
+	"out sooner and cause somehow increased overhead, but probably not "
+	"significantly.",
+	/* l-text */	"",
+	/* func */	NULL
+)
+
 #undef PARAM
 
 /*lint -restore */
