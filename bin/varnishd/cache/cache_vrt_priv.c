@@ -197,7 +197,6 @@ void
 VCL_TaskEnter(struct vcl *vcl, struct vrt_privs *privs)
 {
 
-	VSL(SLT_Debug, 0, "%s %p %p %u", __func__, vcl, privs, privs->magic);
 	AN(vcl);
 	AZ(privs->magic);
 	VRTPRIV_init(privs);
@@ -209,7 +208,6 @@ VCL_TaskLeave(struct vcl *vcl, struct vrt_privs *privs)
 	struct vrt_priv *vp, *vp1;
 
 	AN(vcl);
-	VSL(SLT_Debug, 0, "%s %p %p %u", __func__, vcl, privs, privs->magic);
 	CHECK_OBJ_NOTNULL(privs, VRT_PRIVS_MAGIC);
 	VTAILQ_FOREACH_SAFE(vp, &privs->privs, list, vp1) {
 		VTAILQ_REMOVE(&privs->privs, vp, list);
