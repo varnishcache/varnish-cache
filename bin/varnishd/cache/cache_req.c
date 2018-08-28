@@ -149,8 +149,6 @@ Req_New(const struct worker *wrk, struct sess *sp)
 	req->t_prev = NAN;
 	req->t_req = NAN;
 
-	VRTPRIV_init(req->privs);
-
 	return (req);
 }
 
@@ -181,14 +179,6 @@ Req_Release(struct req *req)
 	MPL_Free(pp->mpl_req, req);
 }
 
-static void
-req_finalize(struct req *req)
-{
-	VRTPRIV_dynamic_kill(req->privs, (uintptr_t)req);
-	VRTPRIV_dynamic_kill(req->privs, (uintptr_t)&req->top);
-	assert(VTAILQ_EMPTY(&req->privs->privs));
-}
-
 /*----------------------------------------------------------------------
  * TODO:
  * - check for code duplication with cnt_recv_prep
@@ -198,7 +188,8 @@ req_finalize(struct req *req)
 void
 Req_Rollback(struct req *req)
 {
-	req_finalize(req);
+	VCL_TaskLeave(req->vcl, req->privs);
+	VCL_TaskEnter(req->vcl, req->privs);
 	HTTP_Copy(req->http, req->http0);
 	WS_Reset(req->ws, req->ws_req);
 }
@@ -220,6 +211,7 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	req->restarts = 0;
 
 	AZ(req->esi_level);
+	AZ(req->privs->magic);
 	assert(req->top == req);
 
 	if (req->vcl != NULL) {
@@ -228,8 +220,6 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 		wrk->vcl = req->vcl;
 		req->vcl = NULL;
 	}
-
-	req_finalize(req);
 
 	/* Charge and log byte counters */
 	if (req->vsl->wid) {

@@ -133,13 +133,10 @@ VBO_GetBusyObj(struct worker *wrk, const struct req *req)
 	bo->director_req = req->director_hint;
 	bo->vcl = req->vcl;
 	VCL_Ref(bo->vcl);
-	VCL_Onboard(NULL, bo);
 
 	bo->t_first = bo->t_prev = NAN;
 
 	memcpy(bo->digest, req->digest, sizeof bo->digest);
-
-	VRTPRIV_init(bo->privs);
 
 	return (bo);
 }
@@ -156,8 +153,7 @@ VBO_ReleaseBusyObj(struct worker *wrk, struct busyobj **pbo)
 	AZ(bo->htc);
 	AZ(bo->stale_oc);
 
-	VRTPRIV_dynamic_kill(bo->privs, (uintptr_t)bo);
-	assert(VTAILQ_EMPTY(&bo->privs->privs));
+	AZ(bo->privs->magic);
 
 	VSLb(bo->vsl, SLT_BereqAcct, "%ju %ju %ju %ju %ju %ju",
 	    (uintmax_t)bo->acct.bereq_hdrbytes,

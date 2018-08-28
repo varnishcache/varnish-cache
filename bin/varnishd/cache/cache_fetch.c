@@ -900,6 +900,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	}
 #endif
 
+	VCL_TaskEnter(bo->vcl, bo->privs);
 	while (stp != F_STP_DONE) {
 		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 		assert(bo->fetch_objcore->boc->refcount >= 1);
@@ -920,6 +921,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 
 	assert(bo->director_state == DIR_S_NULL);
 
+	VCL_TaskLeave(bo->vcl, bo->privs);
 	http_Teardown(bo->bereq);
 	http_Teardown(bo->beresp);
 
