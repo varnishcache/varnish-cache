@@ -1022,6 +1022,7 @@ CNT_Request(struct worker *wrk, struct req *req)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	AN(req->vcl);
 
 	/*
 	 * Possible entrance states
@@ -1036,6 +1037,8 @@ CNT_Request(struct worker *wrk, struct req *req)
 	/* wrk can have changed for restarts */
 	req->vfc->wrk = req->wrk = wrk;
 	wrk->vsl = req->vsl;
+	if (req->req_step != R_STP_LOOKUP)
+		VCL_TaskEnter(req->vcl, req->privs);
 	for (nxt = REQ_FSM_MORE; nxt == REQ_FSM_MORE; ) {
 		/*
 		 * This is a good place to be paranoid about the various
@@ -1060,6 +1063,7 @@ CNT_Request(struct worker *wrk, struct req *req)
 	}
 	wrk->vsl = NULL;
 	if (nxt == REQ_FSM_DONE) {
+		VCL_TaskLeave(req->vcl, req->privs);
 		AN(req->vsl->wid);
 		VRB_Free(req);
 		req->wrk = NULL;

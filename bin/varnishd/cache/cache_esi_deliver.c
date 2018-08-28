@@ -164,7 +164,6 @@ ved_include(struct req *preq, const char *src, const char *host,
 	AZ(req->vcl);
 	req->vcl = preq->vcl;
 	preq->vcl = NULL;
-	VCL_Onboard(req, NULL);
 
 	req->req_step = R_STP_RECV;
 	req->t_req = preq->t_req;
@@ -197,8 +196,6 @@ ved_include(struct req *preq, const char *src, const char *host,
 		ecx->woken = 0;
 		AZ(req->wrk);
 	}
-
-	VRTPRIV_dynamic_kill(req->privs, (uintptr_t)req);
 
 	AZ(preq->vcl);
 	preq->vcl = req->vcl;
