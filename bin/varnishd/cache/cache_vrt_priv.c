@@ -139,6 +139,7 @@ VRT_priv_task(VRT_CTX, const void *vmod_id)
 {
 	uintptr_t id;
 	struct vrt_privs *vps;
+	struct vmod_priv *vp;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	assert(ctx->req == NULL || ctx->bo == NULL);
@@ -155,8 +156,9 @@ VRT_priv_task(VRT_CTX, const void *vmod_id)
 		id = (uintptr_t)cli_task_privs;
 		CAST_OBJ_NOTNULL(vps, cli_task_privs, VRT_PRIVS_MAGIC);
 	}
-	return (vrt_priv_dynamic(ctx->vcl, ctx->ws,
-				 vps, id, (uintptr_t)vmod_id));
+
+	vp = vrt_priv_dynamic(ctx->vcl, ctx->ws, vps, id, (uintptr_t)vmod_id);
+	return (vp);
 }
 
 struct vmod_priv *
