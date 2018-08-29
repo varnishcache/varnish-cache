@@ -83,7 +83,7 @@ pan_privs(struct vsb *vsb, const struct vrt_privs *privs)
 /*--------------------------------------------------------------------
  */
 
-void
+static void
 VRTPRIV_init(struct vrt_privs *privs)
 {
 
@@ -115,23 +115,6 @@ vrt_priv_dynamic(const struct vcl *vcl, struct ws *ws,
 	vp->vmod_id = vmod_id;
 	VTAILQ_INSERT_TAIL(&vps->privs, vp, list);
 	return (vp->priv);
-}
-
-void
-VRTPRIV_dynamic_kill(struct vrt_privs *privs, uintptr_t id)
-{
-	struct vrt_priv *vp, *vp1;
-
-	CHECK_OBJ_NOTNULL(privs, VRT_PRIVS_MAGIC);
-	AN(id);
-
-	VTAILQ_FOREACH_SAFE(vp, &privs->privs, list, vp1) {
-		CHECK_OBJ_NOTNULL(vp, VRT_PRIV_MAGIC);
-		if (id == vp->id) {
-			VTAILQ_REMOVE(&privs->privs, vp, list);
-			VRT_priv_fini(vp->priv);
-		}
-	}
 }
 
 struct vmod_priv *
@@ -194,7 +177,7 @@ VRT_priv_fini(const struct vmod_priv *p)
 /*--------------------------------------------------------------------*/
 
 void
-VCL_TaskEnter(struct vcl *vcl, struct vrt_privs *privs)
+VCL_TaskEnter(const struct vcl *vcl, struct vrt_privs *privs)
 {
 
 	AN(vcl);
@@ -203,7 +186,7 @@ VCL_TaskEnter(struct vcl *vcl, struct vrt_privs *privs)
 }
 
 void
-VCL_TaskLeave(struct vcl *vcl, struct vrt_privs *privs)
+VCL_TaskLeave(const struct vcl *vcl, struct vrt_privs *privs)
 {
 	struct vrt_priv *vp, *vp1;
 

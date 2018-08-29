@@ -387,8 +387,8 @@ void VCL_Poll(void);
 void VCL_Ref(struct vcl *);
 void VCL_Refresh(struct vcl **);
 void VCL_Rel(struct vcl **);
-void VCL_TaskEnter(struct vcl *, struct vrt_privs *);
-void VCL_TaskLeave(struct vcl *, struct vrt_privs *);
+void VCL_TaskEnter(const struct vcl *, struct vrt_privs *);
+void VCL_TaskLeave(const struct vcl *, struct vrt_privs *);
 const char *VCL_Return_Name(unsigned);
 const char *VCL_Method_Name(unsigned);
 void VCL_Bo2Ctx(struct vrt_ctx *, struct busyobj *);
@@ -405,8 +405,6 @@ typedef int vcl_be_func(struct cli *, struct director *, void *);
 int VCL_IterDirector(struct cli *, const char *, vcl_be_func *, void *);
 
 /* cache_vrt.c */
-void VRTPRIV_init(struct vrt_privs *privs);
-void VRTPRIV_dynamic_kill(struct vrt_privs *privs, uintptr_t id);
 void pan_privs(struct vsb *, const struct vrt_privs *);
 
 /* cache_vrt_priv.c */
