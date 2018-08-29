@@ -28,7 +28,7 @@ release process.
 
 
 ================================
-Varnish Cache 6.0.1 (ongoing)
+Varnish Cache 6.0.1 (2018-08-29)
 ================================
 
 * Added std.fnmatch() (2737_)
