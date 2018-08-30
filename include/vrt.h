@@ -425,7 +425,7 @@ int VRT_VSA_GetPtr(const struct suckaddr *sua, const unsigned char ** dst);
 /* VMOD/Modules related */
 int VRT_Vmod_Init(VRT_CTX, struct vmod **hdl, unsigned nbr, void *ptr, int len,
     const char *nm, const char *path, const char *file_id, const char *backup);
-void VRT_Vmod_Fini(struct vmod **hdl);
+void VRT_Vmod_Unload(VRT_CTX, struct vmod **hdl);
 
 /* VCL program related */
 VCL_VCL VRT_vcl_get(VRT_CTX, const char *);

@@ -105,7 +105,7 @@ vcc_json_always(struct vcc *tl, const struct symbol *msym)
 			    vv2->value, msym->name);
 			VSB_printf(ifp->fin,
 			    "\t\t(void)%s(ctx, &vmod_priv_%s,\n"
-			    "\t\t\t    VCL_EVENT_DISCARD);\n",
+			    "\t\t\t    VCL_EVENT_DISCARD);",
 			    vv2->value, msym->name);
 			VSB_printf(ifp->event, "%s(ctx, &vmod_priv_%s, ev)",
 			    vv2->value, msym->name);
@@ -324,8 +324,9 @@ vcc_ParseImport(struct vcc *tl)
 	    VCC_INFO_PREFIX, fnp, PF(mod), vmd->file_id);
 
 	/* XXX: zero the function pointer structure ?*/
-	VSB_printf(ifp->fin, "\t\tVRT_priv_fini(&vmod_priv_%.*s);\n", PF(mod));
-	VSB_printf(ifp->fin, "\t\t\tVRT_Vmod_Fini(&VGC_vmod_%.*s);", PF(mod));
+	VSB_printf(ifp->fin, "\t\tVRT_priv_fini(&vmod_priv_%.*s);", PF(mod));
+	VSB_printf(ifp->final,
+	    "\t\tVRT_Vmod_Unload(ctx, &VGC_vmod_%.*s);", PF(mod));
 
 	vj = vjsn_parse(vmd->json, &p);
 	XXXAZ(p);

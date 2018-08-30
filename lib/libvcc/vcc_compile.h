@@ -201,6 +201,7 @@ struct inifin {
 	unsigned		n;
 	struct vsb		*ini;
 	struct vsb		*fin;
+	struct vsb		*final;
 	struct vsb		*event;
 	VTAILQ_ENTRY(inifin)	list;
 };

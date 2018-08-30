@@ -162,13 +162,16 @@ VRT_Vmod_Init(VRT_CTX, struct vmod **hdl, unsigned nbr, void *ptr, int len,
 }
 
 void
-VRT_Vmod_Fini(struct vmod **hdl)
+VRT_Vmod_Unload(VRT_CTX, struct vmod **hdl)
 {
 	struct vmod *v;
 
 	ASSERT_CLI();
 
 	TAKE_OBJ_NOTNULL(v, hdl, VMOD_MAGIC);
+
+	VCL_TaskLeave(ctx->vcl, cli_task_privs);
+	VCL_TaskEnter(ctx->vcl, cli_task_privs);
 
 #ifndef DONT_DLCLOSE_VMODS
 	/*
