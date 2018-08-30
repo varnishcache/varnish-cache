@@ -83,7 +83,7 @@ client c2 {
 	expect resp.http.X-req-grace < 0.
 } -start
 
-delay .1
+delay .2
 
 # c3 asks for graced object, but now we disable grace.
 client c3 {
