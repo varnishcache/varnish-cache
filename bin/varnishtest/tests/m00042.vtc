@@ -414,7 +414,7 @@ client c1 {
 
 # Decode failures
 
-server s1 -repeat 11 {
+server s1 -repeat 11 -keepalive {
 	rxreq
 	txresp
 } -start

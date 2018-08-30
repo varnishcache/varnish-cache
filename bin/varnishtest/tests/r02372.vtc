@@ -1,6 +1,6 @@
 varnishtest "Count purges when there are many variants"
 
-server s1 -repeat 72 {
+server s1 -repeat 72 -keepalive {
 	rxreq
 	txresp -hdr "Vary: foo"
 } -start
@@ -16,7 +16,7 @@ varnish v1 -arg "-p workspace_thread=512" -vcl+backend {
 	}
 } -start
 
-client c1 -repeat 72 {
+client c1 -repeat 72 -keepalive {
 	txreq
 	rxresp
 } -run

@@ -95,6 +95,10 @@ extern const struct cmds http_cmds[];
  * \-repeat NUMBER
  *        Instead of processing the specification only once, do it NUMBER times.
  *
+ * \-keepalive
+ *        For repeat, do not open new connections but rather run all
+ *        iterations in the same connection
+ *
  * \-break (server only)
  *        Stop the server.
  *
