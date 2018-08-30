@@ -44,8 +44,8 @@ varnish v1 -vcl+backend {
 
 logexpect l1 -v v1 -g raw -d 1 {
 	expect 0 0    CLI		{^Rd vcl.load}
-	expect 0 =    VCL_Log		{^func something to remember}
-	expect 0 =    VCL_Log		{^obj something to remember}
+	expect 4 =    VCL_Log		{^func something to remember}
+	expect 2 =    VCL_Log		{^obj something to remember}
 } -start
 
 client c1 {
