@@ -139,12 +139,16 @@ New_IniFin(struct vcc *tl)
 {
 	struct inifin *p;
 
-	p = TlAlloc(tl, sizeof *p);
+	ALLOC_OBJ(p, INIFIN_MAGIC);
 	AN(p);
-	p->magic = INIFIN_MAGIC;
 	p->ini = VSB_new_auto();
+	AN(p->ini);
 	p->fin = VSB_new_auto();
+	AN(p->fin);
+	p->final = VSB_new_auto();
+	AN(p->final);
 	p->event = VSB_new_auto();
+	AN(p->event);
 	p->n = ++tl->ninifin;
 	VTAILQ_INSERT_TAIL(&tl->inifin, p, list);
 	return (p);
@@ -324,20 +328,31 @@ EmitInitFini(const struct vcc *tl)
 	 */
 	Fc(tl, 0, "\nstatic int\nVGC_Discard(VRT_CTX)\n{\n\n");
 
-	Fc(tl, 0, "\tswitch (vgc_inistep) {\n\n");
+	Fc(tl, 0, "\tswitch (vgc_inistep) {\n");
 	VTAILQ_FOREACH_REVERSE(p, &tl->inifin, inifinhead, list) {
 		AZ(VSB_finish(p->fin));
 		if (q)
 			assert(q->n > p->n);
 		q = p;
-		if (VSB_len(p->fin)) {
-			Fc(tl, 0, "\t\tcase %u :\n", p->n);
+		Fc(tl, 0, "\t\tcase %u:\n", p->n);
+		if (VSB_len(p->fin))
 			Fc(tl, 0, "\t%s\n", VSB_data(p->fin));
-			Fc(tl, 0, "\t\t\t/* FALLTHROUGH */\n");
-		}
+		Fc(tl, 0, "\t\t\t/* FALLTHROUGH */\n");
 		VSB_destroy(&p->fin);
 	}
-	Fc(tl, 0, "\t}\n");
+	Fc(tl, 0, "\t\tdefault:\n\t\t\tbreak;\n");
+	Fc(tl, 0, "\t}\n\n");
+	Fc(tl, 0, "\tswitch (vgc_inistep) {\n");
+	VTAILQ_FOREACH_REVERSE(p, &tl->inifin, inifinhead, list) {
+		AZ(VSB_finish(p->final));
+		Fc(tl, 0, "\t\tcase %u:\n", p->n);
+		if (VSB_len(p->final))
+			Fc(tl, 0, "\t%s\n", VSB_data(p->final));
+		Fc(tl, 0, "\t\t\t/* FALLTHROUGH */\n");
+		VSB_destroy(&p->final);
+	}
+	Fc(tl, 0, "\t\tdefault:\n\t\t\tbreak;\n");
+	Fc(tl, 0, "\t}\n\n");
 
 	Fc(tl, 0, "\treturn (0);\n");
 	Fc(tl, 0, "}\n");

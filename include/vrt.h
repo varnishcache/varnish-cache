@@ -59,6 +59,7 @@
  *	VRT_STRANDS_string() removed from vrt.h (never implemented)
  *	VRT_Healthy() changed prototype
  *	VRT_Vmod_Init signature changed
+ * 	VRT_Vmod_Fini changed to VRT_Vmod_Unload
  * 7.0 (2018-03-15)
  *	lots of stuff moved from cache.h to cache_varnishd.h
  *	   (ie: from "$Abi vrt" to "$Abi strict")
@@ -474,7 +475,7 @@ int VRT_VSA_GetPtr(const struct suckaddr *sua, const unsigned char ** dst);
 /* VMOD/Modules related */
 int VRT_Vmod_Init(VRT_CTX, struct vmod **hdl, unsigned nbr, void *ptr, int len,
     const char *nm, const char *path, const char *file_id, const char *backup);
-void VRT_Vmod_Fini(struct vmod **hdl);
+void VRT_Vmod_Unload(VRT_CTX, struct vmod **hdl);
 
 /* VCL program related */
 VCL_VCL VRT_vcl_get(VRT_CTX, const char *);

@@ -533,7 +533,7 @@ vcl_cancel_load(VRT_CTX, struct cli *cli, const char *name, const char *step)
 	if (VSB_len(ctx->msg))
 		VCLI_Out(cli, "\nMessage:\n\t%s", VSB_data(ctx->msg));
 	*ctx->handling = 0;
-	AZ(vcl->conf->event_vcl(ctx, VCL_EVENT_DISCARD));
+	AZ(vcl_send_event(ctx, VCL_EVENT_DISCARD));
 	vcl_KillBackends(vcl);
 	free(vcl->loaded_name);
 	VCL_Close(&vcl);
