@@ -123,16 +123,27 @@ xyzzy_test_priv_call(VRT_CTX, struct vmod_priv *priv)
 	}
 }
 
+static void
+priv_task_free(void *ptr)
+{
+	AN(ptr);
+	VSL(SLT_Debug, 0, "priv_task_free(%p)", ptr);
+	free(ptr);
+}
+
 VCL_STRING v_matchproto_(td_debug_test_priv_task)
 xyzzy_test_priv_task(VRT_CTX, struct vmod_priv *priv, VCL_STRING s)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	if (s == NULL || *s == '\0') {
-		return priv->priv;
+		VSL(SLT_Debug, 0, "test_priv_task(%p) = %p (exists)",
+		    priv, priv->priv);
 	} else if (priv->priv == NULL) {
 		priv->priv = strdup(s);
-		priv->free = free;
+		priv->free = priv_task_free;
+		VSL(SLT_Debug, 0, "test_priv_task(%p) = %p (new)",
+		    priv, priv->priv);
 	} else {
 		char *n = realloc(priv->priv,
 		    strlen(priv->priv) + strlen(s) + 2);
@@ -141,7 +152,11 @@ xyzzy_test_priv_task(VRT_CTX, struct vmod_priv *priv, VCL_STRING s)
 		strcat(n, " ");
 		strcat(n, s);
 		priv->priv = n;
+		VSL(SLT_Debug, 0, "test_priv_task(%p) = %p (update)",
+		    priv, priv->priv);
 	}
+	if (priv->priv != NULL)
+		assert(priv->free == priv_task_free);
 	return (priv->priv);
 }
 

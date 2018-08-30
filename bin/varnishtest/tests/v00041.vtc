@@ -61,7 +61,11 @@ varnish v1 -arg "-p debug=+vclrel" -vcl+backend {
 
 logexpect l1 -v v1 -g raw -d 1 {
 	expect 0 0    CLI		{^Rd vcl.load}
+	expect 0 =    Debug		{^test_priv_task.*new.$}
+	expect 0 =    Debug		{^test_priv_task.*update.$}
+	expect 0 =    Debug		{^test_priv_task.*exists.$}
 	expect 0 =    VCL_Log		{^func something to remember}
+	expect 0 =    Debug		{^test_priv_task.*exists.$}
 	expect 0 =    VCL_Log		{^obj something to remember}
 
 	expect * 1002 Begin		fetch$
@@ -77,8 +81,14 @@ logexpect l1 -v v1 -g raw -d 1 {
 	expect 0 =    VCL_Log		^bar
 
 	expect * 0    Debug		{^vcl1: VCL_EVENT_COLD}
+	expect * 0    CLI		{^Rd vcl.discard}
+	expect 0 =    Debug		{^test_priv_task.*new.$}
+	expect 0 =    Debug		{^test_priv_task.*update.$}
+	expect 0 =    Debug		{^test_priv_task.*exists.$}
 	expect * =    VCL_Log		{^func cleaning up}
+	expect 0 =    Debug		{^test_priv_task.*exists.$}
 	expect 0 =    VCL_Log		{^obj cleaning up}
+	expect 0 =    Debug		{^priv_task_free}
 } -start
 
 client c1 {
