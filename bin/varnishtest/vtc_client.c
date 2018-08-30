@@ -60,6 +60,7 @@ struct client {
 	int			proxy_version;
 
 	unsigned		repeat;
+	unsigned		keepalive;
 
 	unsigned		running;
 	pthread_t		tp;
@@ -215,7 +216,8 @@ client_thread(void *priv)
 	if (c->repeat == 0)
 		c->repeat = 1;
 	if (c->repeat != 1)
-		vtc_log(vl, 2, "Started (%u iterations)", c->repeat);
+		vtc_log(vl, 2, "Started (%u iterations%s)", c->repeat,
+			c->keepalive ? " using keepalive" : "");
 	for (u = 0; u < c->repeat; u++) {
 		char *addr = VSB_data(vsb);
 
@@ -231,7 +233,11 @@ client_thread(void *priv)
 		(void)VTCP_blocking(fd);
 		if (c->proxy_spec != NULL)
 			client_proxy(vl, fd, c->proxy_version, c->proxy_spec);
-		fd = http_process(vl, c->spec, fd, NULL, addr);
+		if (! c->keepalive)
+			fd = http_process(vl, c->spec, fd, NULL, addr);
+		else
+			while (fd >= 0 && u++ < c->repeat)
+				fd = http_process(vl, c->spec, fd, NULL, addr);
 		vtc_log(vl, 3, "closing fd %d", fd);
 		VTCP_close(&fd);
 	}
@@ -391,6 +397,10 @@ cmd_client(CMD_ARGS)
 		if (!strcmp(*av, "-repeat")) {
 			c->repeat = atoi(av[1]);
 			av++;
+			continue;
+		}
+		if (!strcmp(*av, "-keepalive")) {
+			c->keepalive = 1;
 			continue;
 		}
 		if (!strcmp(*av, "-start")) {

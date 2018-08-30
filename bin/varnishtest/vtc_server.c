@@ -52,6 +52,7 @@ struct server {
 	char			run;
 
 	unsigned		repeat;
+	unsigned		keepalive;
 	char			*spec;
 
 	int			depth;
@@ -234,10 +235,9 @@ server_thread(void *priv)
 	vl = vtc_logopen(s->name);
 	pthread_cleanup_push(vtc_logclose, vl);
 
-	vtc_log(vl, 2, "Started on %s", s->listen);
+	vtc_log(vl, 2, "Started on %s (%u iterations%s)", s->listen,
+		s->repeat, s->keepalive ? " using keepalive" : "");
 	for (i = 0; i < s->repeat; i++) {
-		if (s->repeat > 1)
-			vtc_log(vl, 3, "Iteration %d", i);
 		addr = (void*)&addr_s;
 		l = sizeof addr_s;
 		fd = accept(s->sock, addr, &l);
@@ -248,7 +248,12 @@ server_thread(void *priv)
 			vtc_log(vl, 3, "accepted fd %d %s %s", fd, abuf, pbuf);
 		} else
 			vtc_log(vl, 3, "accepted fd %d 0.0.0.0 0", fd);
-		fd = http_process(vl, s->spec, fd, &s->sock, s->listen);
+		if (! s->keepalive)
+			fd = http_process(vl, s->spec, fd, &s->sock, s->listen);
+		else
+			while (fd >= 0 && i++ < s->repeat)
+				fd = http_process(vl, s->spec, fd,
+				    &s->sock, s->listen);
 		vtc_log(vl, 3, "shutting fd %d", fd);
 		j = shutdown(fd, SHUT_WR);
 		if (!VTCP_Check(j))
@@ -524,6 +529,10 @@ cmd_server(CMD_ARGS)
 		if (!strcmp(*av, "-repeat")) {
 			s->repeat = atoi(av[1]);
 			av++;
+			continue;
+		}
+		if (!strcmp(*av, "-keepalive")) {
+			s->keepalive = 1;
 			continue;
 		}
 		if (!strcmp(*av, "-listen")) {

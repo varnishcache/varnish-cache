@@ -4,6 +4,7 @@ varnishtest "#1834 - Buffer overflow in backend workspace"
 # workspace left. If failing it would be because we tripped the canary
 # at the end of the workspace.
 
+
 server s1 -repeat 64 {
 	rxreq
 	txresp
