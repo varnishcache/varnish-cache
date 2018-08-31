@@ -445,7 +445,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 				VSLb(req->vsl, SLT_HitPass, "%u %.6f",
 				    ObjGetXID(wrk, oc), EXP_Dttl(req, oc));
 				oc = NULL;
-			} else if (oc->flags & OC_F_PASS) {
+			} else if (oc->flags & OC_F_HFM) {
 				wrk->stats->cache_hitmiss++;
 				VSLb(req->vsl, SLT_HitMiss, "%u %.6f",
 				    ObjGetXID(wrk, oc), EXP_Dttl(req, oc));
@@ -471,7 +471,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 		}
 	}
 
-	if (exp_oc != NULL && exp_oc->flags & OC_F_PASS) {
+	if (exp_oc != NULL && exp_oc->flags & OC_F_HFM) {
 		wrk->stats->cache_hitmiss++;
 		VSLb(req->vsl, SLT_HitMiss, "%u %.6f", ObjGetXID(wrk, exp_oc),
 		    EXP_Dttl(req, exp_oc));

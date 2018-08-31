@@ -365,7 +365,7 @@ cnt_transmit(struct worker *wrk, struct req *req)
 	status = http_GetStatus(req->resp);
 	head = !strcmp(req->http0->hd[HTTP_HDR_METHOD].b, "HEAD");
 	if (head) {
-		if (req->objcore->flags & OC_F_PASS)
+		if (req->objcore->flags & OC_F_HFM)
 			sendbody = -1;
 		else
 			sendbody = 0;
@@ -417,7 +417,7 @@ cnt_transmit(struct worker *wrk, struct req *req)
 
 	VSLb_ts_req(req, "Resp", W_TIM_real(wrk));
 
-	if (req->objcore->flags & (OC_F_PRIVATE | OC_F_PASS)) {
+	if (req->objcore->flags & (OC_F_PRIVATE | OC_F_HFM)) {
 		if (boc != NULL) {
 			HSH_Abandon(req->objcore);
 			ObjWaitState(req->objcore, BOS_FINISHED);
@@ -525,7 +525,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AZ(oc->flags & OC_F_BUSY);
 	req->objcore = oc;
-	AZ(oc->flags & OC_F_PASS);
+	AZ(oc->flags & OC_F_HFM);
 
 	VSLb(req->vsl, SLT_Hit, "%u %.6f %.6f %.6f",
 	    ObjGetXID(wrk, req->objcore),
@@ -538,7 +538,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	switch (wrk->handling) {
 	case VCL_RET_DELIVER:
 		if (busy != NULL) {
-			AZ(oc->flags & OC_F_PASS);
+			AZ(oc->flags & OC_F_HFM);
 			CHECK_OBJ_NOTNULL(busy->boc, BOC_MAGIC);
 			// XXX: shouldn't we go to miss?
 			VBF_Fetch(wrk, req, busy, oc, VBF_BACKGROUND);
