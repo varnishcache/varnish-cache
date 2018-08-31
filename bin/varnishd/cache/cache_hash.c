@@ -475,11 +475,28 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 	}
 
 	if (exp_oc != NULL && exp_oc->flags & OC_F_HFM) {
+		/*
+		 * expired HFM ("grace/keep HFM"): counting as hitmiss
+		 *
+		 * XXX: should HFM objects actually have a grace time?
+		 *
+		 * it does not seem to make much sense:
+		 *
+		 * - The effect of a MISS vs. HITMISS is identical except
+		 *   that the MISS may trigger coalescing (waitinglist).
+		 *
+		 * - grace eats up cache and adds objects to the variants list
+		 *
+		 * XXX: similar thing with HFP: should we null grace/keep
+		 *      to begin with (we do return grace/keep HFP as MISS
+		 *      andway and rightly so)
+		 */
 		wrk->stats->cache_hitmiss++;
 		VSLb(req->vsl, SLT_HitMiss, "%u %.6f", ObjGetXID(wrk, exp_oc),
 		    EXP_Dttl(req, exp_oc));
-		exp_oc = NULL;
-		busy_found = 0;
+		*bocp = hsh_insert_busyobj(wrk, oh);
+		Lck_Unlock(&oh->mtx);
+		return (HSH_HITMISS);
 	}
 
 	if (!busy_found) {
