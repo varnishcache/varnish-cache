@@ -547,7 +547,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		}
 		wrk->stats->cache_hit++;
 		req->is_hit = 1;
-		if (lr == HSH_EXP || lr == HSH_EXPBUSY)
+		if (lr == HSH_GRACE)
 			wrk->stats->cache_hit_grace++;
 		req->req_step = R_STP_DELIVER;
 		return (REQ_FSM_MORE);
