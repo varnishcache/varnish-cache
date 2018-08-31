@@ -38,8 +38,11 @@ varnish v1 -vcl+backend {
 		set req.http.X-grace = obj.grace;
 	}
 	sub vcl_backend_response {
-		set beresp.ttl = 0.1s;
+		set beresp.ttl = 1ms;
 		set beresp.grace = 1m;
+		if (bereq.is_bgfetch) {
+			set beresp.http.X-was-bgfetch = "1";
+		}
 	}
 	sub vcl_deliver {
 		if (req.http.X-grace) {
@@ -65,6 +68,7 @@ client c1 {
 	expect resp.body == "1"
 	expect resp.http.X-grace == <undef>
 	expect resp.http.X-req-grace == <undef>
+	expect resp.http.X-was-bgfetch == <undef>
 } -run
 
 # let the latest object's ttl expire.
@@ -81,11 +85,13 @@ client c2 {
 	expect resp.body == "1"
 	expect resp.http.X-grace == "60.000"
 	expect resp.http.X-req-grace < 0.
-} -start
+	expect resp.http.X-was-bgfetch == <undef>
+} -run
 
-delay .2
+# c3 asks for graced object, but now we disable grace. The c2 client
+# started the background fetch, which will take a long time (until c4
+# has gotten its reply).
 
-# c3 asks for graced object, but now we disable grace.
 client c3 {
 	txreq -hdr "X-no-grace: true"
 	rxresp
@@ -95,6 +101,7 @@ client c3 {
 	expect resp.body == "2"
 	expect resp.http.X-grace == "60.000"
 	expect resp.http.X-req-grace == "0.000"
+	expect resp.http.X-was-bgfetch == "1"
 } -start
 
 delay .1
@@ -112,9 +119,9 @@ client c4 {
 	expect resp.body == "1"
 	expect resp.http.X-grace == "60.000"
 	expect resp.http.X-req-grace < 0.
+	expect resp.http.X-was-bgfetch == <undef>
 } -start
 
-client c2 -wait
 client c3 -wait
 client c4 -wait
 
