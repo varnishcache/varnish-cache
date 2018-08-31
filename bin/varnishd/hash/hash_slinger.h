@@ -53,6 +53,8 @@ enum lookup_e {
 	HSH_MISS,
 	HSH_BUSY,
 	HSH_HIT,
+	HSH_HITMISS,
+	HSH_HITPASS,
 	HSH_GRACE
 };
 

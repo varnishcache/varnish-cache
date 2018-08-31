@@ -445,23 +445,26 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 				VSLb(req->vsl, SLT_HitPass, "%u %.6f",
 				    ObjGetXID(wrk, oc), EXP_Dttl(req, oc));
 				oc = NULL;
+				retval = HSH_HITPASS;
 			} else if (oc->flags & OC_F_HFM) {
 				wrk->stats->cache_hitmiss++;
 				VSLb(req->vsl, SLT_HitMiss, "%u %.6f",
 				    ObjGetXID(wrk, oc), EXP_Dttl(req, oc));
 				oc = NULL;
 				*bocp = hsh_insert_busyobj(wrk, oh);
+				retval = HSH_HITMISS;
 			} else {
 				oc->refcnt++;
 				if (oc->hits < LONG_MAX)
 					oc->hits++;
+				retval = HSH_HIT;
 			}
 			Lck_Unlock(&oh->mtx);
-			if (oc == NULL)
-				return (HSH_MISS);
+			if (retval != HSH_HIT)
+				return (retval);
 			assert(HSH_DerefObjHead(wrk, &oh));
 			*ocp = oc;
-			return (HSH_HIT);
+			return (retval);
 		}
 		if (EXP_Ttl(NULL, oc) < req->t_req && /* ignore req.ttl */
 		    oc->t_origin > exp_t_origin) {
