@@ -36,6 +36,7 @@ Read the vmod.vcc file (inputvcc) and produce:
 # This script should work with both Python 2 and Python 3.
 from __future__ import print_function
 
+import hashlib
 import os
 import sys
 import re
@@ -988,8 +989,14 @@ class vcc(object):
         # VCC and VRT_Vmod_Init() dlopens the same file
         #
         fo.write("\t.file_id =\t\"")
-        for i in range(32):
-            fo.write("%c" % random.randint(0x40, 0x5a))
+        if os.getenv("SOURCE_DATE_EPOCH"):
+            m = hashlib.md5()
+            m.update(self.modname.encode('utf-8'))
+            m.update(os.getenv("SOURCE_DATE_EPOCH").encode('utf-8'))
+            fo.write(m.hexdigest())
+        else:
+            for i in range(32):
+                fo.write("%c" % random.randint(0x40, 0x5a))
         fo.write("\",\n")
         fo.write("};\n")
 
