@@ -59,7 +59,7 @@
  *	VRT_STRANDS_string() removed from vrt.h (never implemented)
  *	VRT_Healthy() changed prototype
  *	VRT_Vmod_Init signature changed
- * 	VRT_Vmod_Fini changed to VRT_Vmod_Unload
+ *	VRT_Vmod_Fini changed to VRT_Vmod_Unload
  * 7.0 (2018-03-15)
  *	lots of stuff moved from cache.h to cache_varnishd.h
  *	   (ie: from "$Abi vrt" to "$Abi strict")
