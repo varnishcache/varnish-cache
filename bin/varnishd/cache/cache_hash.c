@@ -381,6 +381,9 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 	Lck_AssertHeld(&oh->mtx);
 
+	if (DO_DEBUG(DBG_REFCNT))
+		VSLb(req->vsl, SLT_Debug, "oh %p refcnt %d", oh, oh->refcnt);
+
 	if (always_insert) {
 		/* XXX: should we do predictive Vary in this case ? */
 		/* Insert new objcore in objecthead and release mutex */
@@ -459,9 +462,11 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 					oc->hits++;
 			}
 			Lck_Unlock(&oh->mtx);
+			if (*bocp == NULL)
+				assert(HSH_DerefObjHead(wrk, &oh));
+
 			if (oc == NULL)
 				return (HSH_MISS);
-			assert(HSH_DerefObjHead(wrk, &oh));
 			*ocp = oc;
 			return (HSH_HIT);
 		}
