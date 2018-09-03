@@ -441,16 +441,8 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 			assert(oh->refcnt > 1);
 			assert(oc->objhead == oh);
 			if (oc->flags & OC_F_HFP) {
-				wrk->stats->cache_hitpass++;
-				VSLb(req->vsl, SLT_HitPass, "%u %.6f",
-				    ObjGetXID(wrk, oc), EXP_Dttl(req, oc));
-				oc = NULL;
 				retval = HSH_HITPASS;
 			} else if (oc->flags & OC_F_HFM) {
-				wrk->stats->cache_hitmiss++;
-				VSLb(req->vsl, SLT_HitMiss, "%u %.6f",
-				    ObjGetXID(wrk, oc), EXP_Dttl(req, oc));
-				oc = NULL;
 				*bocp = hsh_insert_busyobj(wrk, oh);
 				retval = HSH_HITMISS;
 			} else {
@@ -460,10 +452,25 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 				retval = HSH_HIT;
 			}
 			Lck_Unlock(&oh->mtx);
-			if (retval != HSH_HIT)
-				return (retval);
-			assert(HSH_DerefObjHead(wrk, &oh));
-			*ocp = oc;
+
+			switch (retval) {
+			case HSH_HITPASS:
+				wrk->stats->cache_hitpass++;
+				VSLb(req->vsl, SLT_HitPass, "%u %.6f",
+				    ObjGetXID(wrk, oc), EXP_Dttl(req, oc));
+				break;
+			case HSH_HITMISS:
+				wrk->stats->cache_hitmiss++;
+				VSLb(req->vsl, SLT_HitMiss, "%u %.6f",
+				    ObjGetXID(wrk, oc), EXP_Dttl(req, oc));
+				break;
+			case HSH_HIT:
+				assert(HSH_DerefObjHead(wrk, &oh));
+				*ocp = oc;
+				break;
+			default:
+				INCOMPL();
+			}
 			return (retval);
 		}
 		if (EXP_Ttl(NULL, oc) < req->t_req && /* ignore req.ttl */
@@ -491,11 +498,13 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 		 *      to begin with (we do return grace/keep HFP as MISS
 		 *      andway and rightly so)
 		 */
+		*bocp = hsh_insert_busyobj(wrk, oh);
+		Lck_Unlock(&oh->mtx);
+
 		wrk->stats->cache_hitmiss++;
 		VSLb(req->vsl, SLT_HitMiss, "%u %.6f", ObjGetXID(wrk, exp_oc),
 		    EXP_Dttl(req, exp_oc));
-		*bocp = hsh_insert_busyobj(wrk, oh);
-		Lck_Unlock(&oh->mtx);
+
 		return (HSH_HITMISS);
 	}
 
