@@ -818,7 +818,7 @@ VRT_r_obj_uncacheable(VRT_CTX)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req->objcore, OBJCORE_MAGIC);
-	return (ctx->req->objcore->flags & OC_F_PASS ? 1 : 0);
+	return (ctx->req->objcore->flags & OC_F_HFM ? 1 : 0);
 }
 
 /*--------------------------------------------------------------------*/

@@ -441,27 +441,37 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 			assert(oh->refcnt > 1);
 			assert(oc->objhead == oh);
 			if (oc->flags & OC_F_HFP) {
-				wrk->stats->cache_hitpass++;
-				VSLb(req->vsl, SLT_HitPass, "%u %.6f",
-				    ObjGetXID(wrk, oc), EXP_Dttl(req, oc));
-				oc = NULL;
-			} else if (oc->flags & OC_F_PASS) {
-				wrk->stats->cache_hitmiss++;
-				VSLb(req->vsl, SLT_HitMiss, "%u %.6f",
-				    ObjGetXID(wrk, oc), EXP_Dttl(req, oc));
-				oc = NULL;
+				retval = HSH_HITPASS;
+			} else if (oc->flags & OC_F_HFM) {
 				*bocp = hsh_insert_busyobj(wrk, oh);
+				retval = HSH_HITMISS;
 			} else {
 				oc->refcnt++;
 				if (oc->hits < LONG_MAX)
 					oc->hits++;
+				retval = HSH_HIT;
 			}
 			Lck_Unlock(&oh->mtx);
-			if (oc == NULL)
-				return (HSH_MISS);
-			assert(HSH_DerefObjHead(wrk, &oh));
-			*ocp = oc;
-			return (HSH_HIT);
+
+			switch (retval) {
+			case HSH_HITPASS:
+				wrk->stats->cache_hitpass++;
+				VSLb(req->vsl, SLT_HitPass, "%u %.6f",
+				    ObjGetXID(wrk, oc), EXP_Dttl(req, oc));
+				break;
+			case HSH_HITMISS:
+				wrk->stats->cache_hitmiss++;
+				VSLb(req->vsl, SLT_HitMiss, "%u %.6f",
+				    ObjGetXID(wrk, oc), EXP_Dttl(req, oc));
+				break;
+			case HSH_HIT:
+				assert(HSH_DerefObjHead(wrk, &oh));
+				*ocp = oc;
+				break;
+			default:
+				INCOMPL();
+			}
+			return (retval);
 		}
 		if (EXP_Ttl(NULL, oc) < req->t_req && /* ignore req.ttl */
 		    oc->t_origin > exp_t_origin) {
@@ -471,12 +481,31 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 		}
 	}
 
-	if (exp_oc != NULL && exp_oc->flags & OC_F_PASS) {
+	if (exp_oc != NULL && exp_oc->flags & OC_F_HFM) {
+		/*
+		 * expired HFM ("grace/keep HFM"): counting as hitmiss
+		 *
+		 * XXX: should HFM objects actually have a grace time?
+		 *
+		 * it does not seem to make much sense:
+		 *
+		 * - The effect of a MISS vs. HITMISS is identical except
+		 *   that the MISS may trigger coalescing (waitinglist).
+		 *
+		 * - grace eats up cache and adds objects to the variants list
+		 *
+		 * XXX: similar thing with HFP: should we null grace/keep
+		 *      to begin with (we do return grace/keep HFP as MISS
+		 *      andway and rightly so)
+		 */
+		*bocp = hsh_insert_busyobj(wrk, oh);
+		Lck_Unlock(&oh->mtx);
+
 		wrk->stats->cache_hitmiss++;
 		VSLb(req->vsl, SLT_HitMiss, "%u %.6f", ObjGetXID(wrk, exp_oc),
 		    EXP_Dttl(req, exp_oc));
-		exp_oc = NULL;
-		busy_found = 0;
+
+		return (HSH_HITMISS);
 	}
 
 	if (!busy_found) {
@@ -495,7 +524,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 			} else {
 				if (exp_oc->hits < LONG_MAX)
 					exp_oc->hits++;
-				retval = HSH_EXPBUSY;
+				retval = HSH_GRACE;
 			}
 		} else {
 			Lck_Unlock(&oh->mtx);
@@ -517,7 +546,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 		assert(HSH_DerefObjHead(wrk, &oh));
 		if (exp_oc->hits < LONG_MAX)
 			exp_oc->hits++;
-		return (HSH_EXP);
+		return (HSH_GRACE);
 	}
 
 	/* There are one or more busy objects, wait for them */

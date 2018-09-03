@@ -53,8 +53,9 @@ enum lookup_e {
 	HSH_MISS,
 	HSH_BUSY,
 	HSH_HIT,
-	HSH_EXP,
-	HSH_EXPBUSY
+	HSH_HITMISS,
+	HSH_HITPASS,
+	HSH_GRACE
 };
 
 /* mgt_hash.c */

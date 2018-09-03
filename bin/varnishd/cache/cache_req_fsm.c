@@ -365,7 +365,7 @@ cnt_transmit(struct worker *wrk, struct req *req)
 	status = http_GetStatus(req->resp);
 	head = !strcmp(req->http0->hd[HTTP_HDR_METHOD].b, "HEAD");
 	if (head) {
-		if (req->objcore->flags & OC_F_PASS)
+		if (req->objcore->flags & OC_F_HFM)
 			sendbody = -1;
 		else
 			sendbody = 0;
@@ -417,7 +417,7 @@ cnt_transmit(struct worker *wrk, struct req *req)
 
 	VSLb_ts_req(req, "Resp", W_TIM_real(wrk));
 
-	if (req->objcore->flags & (OC_F_PRIVATE | OC_F_PASS)) {
+	if (req->objcore->flags & (OC_F_PRIVATE | OC_F_HFM)) {
 		if (boc != NULL) {
 			HSH_Abandon(req->objcore);
 			ObjWaitState(req->objcore, BOS_FINISHED);
@@ -507,25 +507,27 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	}
 
 	AZ(req->objcore);
-	if (lr == HSH_MISS) {
-		if (busy != NULL) {
-			/* hitmiss, out-of-grace or ordinary miss */
-			AN(busy->flags & OC_F_BUSY);
-			req->objcore = busy;
-			req->stale_oc = oc;
-			req->req_step = R_STP_MISS;
-		} else {
-			/* hitpass */
-			AZ(oc);
-			req->req_step = R_STP_PASS;
-		}
+	if (lr == HSH_HITMISS || lr == HSH_MISS) {
+		AN(busy);
+		AN(busy->flags & OC_F_BUSY);
+		req->objcore = busy;
+		req->stale_oc = oc;
+		req->req_step = R_STP_MISS;
 		return (REQ_FSM_MORE);
 	}
+	if (lr == HSH_HITPASS) {
+		AZ(busy);
+		AZ(oc);
+		req->req_step = R_STP_PASS;
+		return (REQ_FSM_MORE);
+	}
+
+	assert (lr == HSH_HIT || lr == HSH_GRACE);
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AZ(oc->flags & OC_F_BUSY);
 	req->objcore = oc;
-	AZ(oc->flags & OC_F_PASS);
+	AZ(oc->flags & OC_F_HFM);
 
 	VSLb(req->vsl, SLT_Hit, "%u %.6f %.6f %.6f",
 	    ObjGetXID(wrk, req->objcore),
@@ -538,7 +540,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	switch (wrk->handling) {
 	case VCL_RET_DELIVER:
 		if (busy != NULL) {
-			AZ(oc->flags & OC_F_PASS);
+			AZ(oc->flags & OC_F_HFM);
 			CHECK_OBJ_NOTNULL(busy->boc, BOC_MAGIC);
 			// XXX: shouldn't we go to miss?
 			VBF_Fetch(wrk, req, busy, oc, VBF_BACKGROUND);
@@ -547,7 +549,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		}
 		wrk->stats->cache_hit++;
 		req->is_hit = 1;
-		if (lr == HSH_EXP || lr == HSH_EXPBUSY)
+		if (lr == HSH_GRACE)
 			wrk->stats->cache_hit_grace++;
 		req->req_step = R_STP_DELIVER;
 		return (REQ_FSM_MORE);
