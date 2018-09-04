@@ -39,4 +39,4 @@ shell -err -match "Usage: .*varnishtop <options>" \
 	"varnishtop extra"
 
 shell -err -match "is not a number" \
-	"varnishtop -p ABC"
+	"varnishtop -p 12ABC"
