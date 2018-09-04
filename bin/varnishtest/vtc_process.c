@@ -894,6 +894,10 @@ process_close(struct process *p)
  * \-writehex HEXSTRING
  *	Same as -write but interpreted as hexadecimal bytes.
  *
+ * \-need-bytes [+]NUMBER
+ *	Wait until at least NUMBER bytes have been received in total.
+ *	If '+' is prefixed, NUMBER new bytes must be received.
+ *
  * \-expect-text LIN COL PAT
  *	Wait for PAT to appear at LIN,COL on the virtual screen.
  *	Lines and columns are numbered 1...N
@@ -998,6 +1002,8 @@ cmd_process(CMD_ARGS)
 		}
 		if (!strcmp(*av, "-need-bytes")) {
 			u = strtoumax(av[1], NULL, 0);
+			if (av[1][0] == '+')
+				u += p->stdout_bytes;
 			av++;
 			do {
 				AZ(pthread_mutex_lock(&p->mtx));
