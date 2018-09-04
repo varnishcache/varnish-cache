@@ -32,6 +32,9 @@ shell -match "1\\.00 RespHeader Date\\n" {
 shell -match "Usage: .*varnishtop <options>" \
 	"varnishtop -h"
 
+shell -err -match "illegal option -- K" \
+	"varnishtop -K"
+
 shell -expect "Copyright (c) 2006 Verdens Gang AS" \
 	"varnishtop -V"
 
@@ -39,4 +42,4 @@ shell -err -match "Usage: .*varnishtop <options>" \
 	"varnishtop extra"
 
 shell -err -match "is not a number" \
-	"varnishtop -p 12ABC"
+	"varnishtop -p 60 -p 12ABC"
