@@ -850,11 +850,6 @@ shard_param_task(VRT_CTX, const void *id,
 	if (task->priv) {
 		CAST_OBJ_NOTNULL(p, task->priv, VMOD_SHARD_SHARD_PARAM_MAGIC);
 		assert(p->scope == SCOPE_TASK);
-		/* XXX
-		VSL(SLT_Debug, 0,
-		    "shard_param_task(id %p, pa %p) = %p (found, ws=%p)",
-		    id, pa, p, ctx->ws);
-		*/
 		return (p);
 	}
 
@@ -873,11 +868,6 @@ shard_param_task(VRT_CTX, const void *id,
 	else
 		p->defaults = shard_param_task(ctx, pa, pa);
 
-	/* XXX
-	VSL(SLT_Debug, 0,
-	    "shard_param_task(id %p, pa %p) = %p (new, defaults = %p, ws=%p)",
-	    id, pa, p, p->defaults, ctx->ws);
-	*/
 	return (p);
 }
 
