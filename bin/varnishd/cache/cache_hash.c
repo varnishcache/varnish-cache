@@ -460,7 +460,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 			}
 			Lck_Unlock(&oh->mtx);
 			*ocp = oc;
-			if (retval == HSH_HIT)
+			if (*bocp == NULL)
 				assert(HSH_DerefObjHead(wrk, &oh));
 			return (retval);
 		}
