@@ -4,7 +4,11 @@ server s1 {
 	rxreq
 	txresp -hdr "foo: 1"
 	rxreq
-	txresp -hdr "foo: 2"
+	txresp -hdr "foo: 2a"
+	rxreq
+	txresp -hdr "foo: 2b"
+	rxreq
+	txresp -hdr "foo: 2c"
 	rxreq
 	txresp -hdr "foo: 3"
 } -start
@@ -29,8 +33,31 @@ varnish v1 -vcl+backend {
 
 } -start
 
+varnish v1 -cliok "param.set debug +refcnt"
+
 logexpect l1 -v v1 -g vxid {
-	expect * 1003	HitPass "^1002 1"
+	expect * 1001	Debug		"^oh.*refcnt 1$"
+	expect 0 =	VCL_call	"^MISS"
+} -start
+
+logexpect l2 -v v1 -g vxid {
+	expect * 1003	Debug		"^oh.*refcnt 2$"
+	expect 0 =	HitPass	"^1002 1"
+} -start
+
+logexpect l3 -v v1 -g vxid {
+	expect * 1005	Debug		"^oh.*refcnt 2$"
+	expect 0 =	HitPass	"^1002 1"
+} -start
+
+logexpect l4 -v v1 -g vxid {
+	expect * 1007	Debug		"^oh.*refcnt 2$"
+	expect 0 =	HitPass	"^1002 1"
+} -start
+
+logexpect l5 -v v1 -g vxid {
+	expect * 1009	Debug		"^oh.*refcnt 1$"
+	expect 0 =	VCL_call	"^MISS"
 } -start
 
 client c1 {
@@ -38,6 +65,12 @@ client c1 {
 	rxresp
 	expect resp.http.miss == True
 
+	txreq
+	rxresp
+	expect resp.http.pass == True
+	txreq
+	rxresp
+	expect resp.http.pass == True
 	txreq
 	rxresp
 	expect resp.http.pass == True
@@ -50,7 +83,11 @@ client c1 {
 } -run
 
 logexpect l1 -wait
+logexpect l2 -wait
+logexpect l3 -wait
+logexpect l4 -wait
+logexpect l5 -wait
 
-varnish v1 -expect MAIN.cache_hitpass == 1
+varnish v1 -expect MAIN.cache_hitpass == 3
 varnish v1 -expect MAIN.cache_miss == 2
 varnish v1 -expect MAIN.cache_hitmiss == 0

@@ -2,4 +2,94 @@ varnishtest "Test varnishadm and the Telnet CLI"
 
 varnish v1 -vcl {backend foo { .host = "127.0.0.1"; } } -start
 
+shell -err -expect {Usage: varnishadm} \
+	"varnishadm -7"
+
+shell -err -expect {Could not get hold of varnishd, is it running?} \
+	"varnishadm -n ${v1_name}/nonexistent"
+
+shell -err -expect {Connection failed} \
+	"varnishadm -t 4 -T ${bad_ip}:1 -S ${v1_name}/_.secret"
+
+server s1 {
+	send "FOO\n"
+} -start
+
+shell -err -expect {Rejected 400} \
+	{varnishadm -T ${s1_addr}:${s1_port} -S /etc/group}
+
+server s1 {
+	send "107 59      \n"
+	send "qbvnnftpkgubadqpzznkkazoxlyqbcbj\n\n"
+	send "Authentication required.\n"
+	send "\n"
+} -start
+
+shell -err -expect {Authentication required} \
+	{varnishadm -T ${s1_addr}:${s1_port}}
+
+server s1 {
+	send "107 59      \n"
+	send "qbvnnftpkgubadqpzznkkazoxlyqbcbj\n\n"
+	send "Authentication required.\n"
+	send "\n"
+} -start
+
+shell -err -expect {Cannot open } \
+	{varnishadm -T ${s1_addr}:${s1_port} -S ${v1_name}/_.nonexistent}
+
+server s1 {
+	send "107 59      \n"
+	send "qbvnnftpkgubadqpzznkkazoxlyqbcbj\n\n"
+	send "Authentication required.\n"
+	send "\n"
+
+	recv 70
+	send "599 0       \n"
+	send "\n"
+} -start
+
+shell -err -expect {Rejected 599} \
+	{varnishadm -T ${s1_addr}:${s1_port} -S ${v1_name}/_.secret}
+
+server s1 {
+	send "107 59      \n"
+	send "qbvnnftpkgubadqpzznkkazoxlyqbcbj\n\n"
+	send "Authentication required.\n"
+	send "\n"
+
+	recv 70
+	send "200 0       \n"
+	send "\n"
+
+	recv 5
+} -start
+
+shell -err -expect {No pong received from server} \
+	{varnishadm -T ${s1_addr}:${s1_port} -S ${v1_name}/_.secret}
+
+server s1 {
+	send "107 59      \n"
+	send "qbvnnftpkgubadqpzznkkazoxlyqbcbj\n\n"
+	send "Authentication required.\n"
+	send "\n"
+
+	recv 70
+	send "200 0       \n"
+	send "\n"
+
+	recv 5
+	send "200 8       \n"
+	send "PONG 12\n"
+	send "\n"
+
+	recv 5
+	send "200 7       \n"
+	send "Tested\n"
+	send "\n"
+} -start
+
+shell -expect {Tested} \
+	{varnishadm -T ${s1_addr}:${s1_port} -S ${v1_name}/_.secret test}
+
 shell "varnishadm -n ${v1_name} help > /dev/null"
