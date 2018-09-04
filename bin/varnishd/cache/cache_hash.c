@@ -406,11 +406,8 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 		if (oc->flags & OC_F_FAILED)
 			continue;
 
+		CHECK_OBJ_ORNULL(oc->boc, BOC_MAGIC);
 		if (oc->boc != NULL && oc->boc->state < BOS_STREAM) {
-			// XXX does it make sense to have the CHECK_OBJ
-			//     if we access boc->state before it?
-			CHECK_OBJ_ORNULL(oc->boc, BOC_MAGIC);
-
 			if (req->hash_ignore_busy)
 				continue;
 
