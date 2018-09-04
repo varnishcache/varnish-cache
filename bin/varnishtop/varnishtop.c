@@ -301,8 +301,8 @@ do_curses(void *arg)
 		case 'Q':
 		case 'q':
 			AZ(raise(SIGINT));
-			AC(endwin());
-			return (NULL);
+			quit = 1;
+			break;
 		default:
 			AC(beep());
 			break;
@@ -388,18 +388,14 @@ main(int argc, char **argv)
 	vut->dispatch_priv = NULL;
 	vut->sighup_f = sighup;
 	if (once) {
-		VUT_Main(vut);
+		(void)VUT_Main(vut);
 		dump();
 	} else {
-		if (pthread_create(&thr, NULL, do_curses, NULL) != 0) {
-			fprintf(stderr, "pthread_create(): %s\n",
-			    strerror(errno));
-			exit(1);
-		}
-		VUT_Main(vut);
+		AZ(pthread_create(&thr, NULL, do_curses, NULL));
+		(void)VUT_Main(vut);
 		end_of_file = 1;
 		AZ(pthread_join(thr, NULL));
 	}
 	VUT_Fini(&vut);
-	exit(0);
+	return (0);
 }
