@@ -18,5 +18,20 @@ client c1 {
 	rxresp
 } -run
 
-process p1 -expect-text 0 0 {Fetch_Body}
+varnish v1 -vsl_catchup
+
+process p1 -expect-text 1 1 {list length 64}
+
+process p1 -writehex 0c
+
+process p1 -need-bytes +1
+
+process p1 -writehex 0b
+
+process p1 -need-bytes +1
+
+process p1 -winsz 30 80
+
+process p1 -need-bytes +1
+
 process p1 -screen_dump -write {q} -wait
