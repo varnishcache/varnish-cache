@@ -342,6 +342,7 @@ main(int argc, char **argv)
 {
 	int o, once = 0;
 	pthread_t thr;
+	char *e = NULL;
 
 	vut = VUT_InitProg(argc, argv, &vopt_spec);
 	AN(vut);
@@ -360,8 +361,9 @@ main(int argc, char **argv)
 			usage(0);
 		case 'p':
 			errno = 0;
-			period = strtol(optarg, NULL, 0);
-			if (errno != 0)  {
+			e = NULL;
+			period = strtoul(optarg, &e, 0);
+			if (errno != 0 || e == NULL || *e != '\0') {
 				fprintf(stderr,
 				    "Syntax error, %s is not a number", optarg);
 				exit(1);
