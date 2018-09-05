@@ -29,6 +29,8 @@
 
 #include "config.h"
 
+#include <sys/uio.h>
+
 #include "cache/cache_varnishd.h"
 
 #include "cache/cache_transport.h"
@@ -112,13 +114,14 @@ h2_mk_hdr(uint8_t *hdr, h2_frame ftyp, uint8_t flags,
  * the session mtx must be held.
  */
 
-h2_error
-H2_Send_Frame(struct worker *wrk, const struct h2_sess *h2,
+void
+H2_Send_Frame(struct worker *wrk, struct h2_sess *h2,
     h2_frame ftyp, uint8_t flags,
     uint32_t len, uint32_t stream, const void *ptr)
 {
 	uint8_t hdr[9];
 	ssize_t s;
+	struct iovec iov[2];
 
 	(void)wrk;
 
@@ -137,18 +140,24 @@ H2_Send_Frame(struct worker *wrk, const struct h2_sess *h2,
 		h2->srq->acct.resp_bodybytes += len;
 	Lck_Unlock(&h2->sess->mtx);
 
-	s = write(h2->sess->fd, hdr, sizeof hdr);
-	if (s != sizeof hdr)
-		return (H2CE_PROTOCOL_ERROR);		// XXX Need private ?
-	if (len > 0) {
-		s = write(h2->sess->fd, ptr, len);
-		if (s != len)
-			return (H2CE_PROTOCOL_ERROR);	// XXX Need private ?
+	memset(iov, 0, sizeof iov);
+	iov[0].iov_base = hdr;
+	iov[0].iov_len = sizeof hdr;
+	iov[1].iov_base = TRUST_ME(ptr);
+	iov[1].iov_len = len;
+	s = writev(h2->sess->fd, iov, len == 0 ? 1 : 2);
+	if (s != sizeof hdr + len) {
+		/*
+		 * There is no point in being nice here, we will be unable
+		 * to send a GOAWAY once the code unrolls, so go directly
+		 * to the finale and be done with it.
+		 */
+		h2->error = H2CE_PROTOCOL_ERROR;
+	} else if (len > 0) {
 		Lck_Lock(&h2->sess->mtx);
 		VSLb_bin(h2->vsl, SLT_H2TxBody, len, ptr);
 		Lck_Unlock(&h2->sess->mtx);
 	}
-	return (0);
 }
 
 static int64_t
@@ -251,7 +260,6 @@ void
 H2_Send(struct worker *wrk, struct h2_req *r2,
     h2_frame ftyp, uint8_t flags, uint32_t len, const void *ptr)
 {
-	h2_error retval;
 	struct h2_sess *h2;
 	uint32_t mfs, tf;
 	const char *p;
@@ -289,8 +297,7 @@ H2_Send(struct worker *wrk, struct h2_req *r2,
 		tf = mfs;
 
 	if (len <= tf) {
-		(void)H2_Send_Frame(wrk, h2,
-		    ftyp, flags, len, r2->stream, ptr);
+		H2_Send_Frame(wrk, h2, ftyp, flags, len, r2->stream, ptr);
 	} else {
 		AN(ptr);
 		p = ptr;
@@ -308,19 +315,19 @@ H2_Send(struct worker *wrk, struct h2_req *r2,
 				assert(VTAILQ_FIRST(&h2->txqueue) == r2);
 			}
 			if (tf < len) {
-				retval = H2_Send_Frame(wrk, h2, ftyp,
+				H2_Send_Frame(wrk, h2, ftyp,
 				    flags, tf, r2->stream, p);
 			} else {
 				if (ftyp->respect_window)
 					assert(tf == len);
 				tf = len;
-				retval = H2_Send_Frame(wrk, h2, ftyp,
+				H2_Send_Frame(wrk, h2, ftyp,
 				    final_flags, tf, r2->stream, p);
 				flags = 0;
 			}
 			p += tf;
 			len -= tf;
 			ftyp = ftyp->continuation;
-		} while (len > 0 && retval == 0);
+		} while (!h2->error && len > 0);
 	}
 }
