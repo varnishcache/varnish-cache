@@ -893,10 +893,9 @@ h2_frame_complete(struct http_conn *htc)
 /**********************************************************************/
 
 static h2_error
-h2_procframe(struct worker *wrk, struct h2_sess *h2,
-    h2_frame h2f)
+h2_procframe(struct worker *wrk, struct h2_sess *h2, h2_frame h2f)
 {
-	struct h2_req *r2 = NULL;
+	struct h2_req *r2;
 	h2_error h2e;
 
 	ASSERT_RXTHR(h2);

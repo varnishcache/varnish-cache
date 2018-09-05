@@ -55,18 +55,16 @@ static const char H2_prism[24] = {
 static size_t
 h2_enc_settings(const struct h2_settings *h2s, uint8_t *buf, size_t n)
 {
-	uint8_t *b;
 	size_t len = 0;
 
-	b = buf;
 #define H2_SETTING(U,l,v,d,...)				\
 	if (h2s->l != d) {				\
 		len += 6;				\
 		assert(len <= n);			\
-		vbe16enc(b, v);				\
-		b += 2;					\
-		vbe32enc(b, h2s->l);			\
-		b += 4;					\
+		vbe16enc(buf, v);			\
+		buf += 2;				\
+		vbe32enc(buf, h2s->l);			\
+		buf += 4;				\
 	}
 #include "tbl/h2_settings.h"
 	return (len);
