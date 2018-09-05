@@ -141,7 +141,7 @@ H2_Send_Frame(struct worker *wrk, struct h2_sess *h2,
 	Lck_Unlock(&h2->sess->mtx);
 
 	memset(iov, 0, sizeof iov);
-	iov[0].iov_base = hdr;
+	iov[0].iov_base = (void*)hdr;
 	iov[0].iov_len = sizeof hdr;
 	iov[1].iov_base = TRUST_ME(ptr);
 	iov[1].iov_len = len;
