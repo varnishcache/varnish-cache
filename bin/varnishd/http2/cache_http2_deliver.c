@@ -84,7 +84,7 @@ h2_bytes(struct req *req, enum vdp_action act, void **priv,
 
 	if (act == VDP_INIT)
 		return (0);
-	if (r2->error && act != VDP_FINI)
+	if ((r2->h2sess->error || r2->error) && act != VDP_FINI)
 		return (-1);
 	H2_Send_Get(req->wrk, r2->h2sess, r2);
 	H2_Send(req->wrk, r2,
@@ -189,7 +189,7 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 	struct sess *sp;
 	struct h2_req *r2;
 	struct vsb resp;
-	int i, err;
+	int i;
 	const struct hpack_static *hps;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -264,9 +264,8 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 
 	/* XXX someone into H2 please add appropriate error handling */
 	if (sendbody) {
-		err = VDP_push(req, &h2_vdp, NULL, 1);
-		if (!err)
-			err = VDP_DeliverObj(req);
+		if (!VDP_push(req, &h2_vdp, NULL, 1))
+			(void)VDP_DeliverObj(req);
 	}
 
 	AZ(req->wrk->v1l);
