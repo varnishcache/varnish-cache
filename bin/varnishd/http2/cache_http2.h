@@ -217,7 +217,7 @@ h2_error h2h_decode_bytes(struct h2_sess *h2, const uint8_t *ptr,
 void H2_Send_Get(struct worker *, struct h2_sess *, struct h2_req *);
 void H2_Send_Rel(struct h2_sess *, const struct h2_req *);
 
-h2_error H2_Send_Frame(struct worker *, const struct h2_sess *,
+void H2_Send_Frame(struct worker *, struct h2_sess *,
     h2_frame type, uint8_t flags, uint32_t len, uint32_t stream,
     const void *);
 
