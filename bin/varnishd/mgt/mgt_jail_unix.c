@@ -39,7 +39,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/stat.h>
-#include <sys/limits.h>
 
 #include "mgt/mgt.h"
 #include "common/heritage.h"
@@ -281,7 +280,7 @@ vju_make_workdir(const char *dname, const char *what, struct vsb *vsb)
 		    dname, strerror(errno));
 		return (1);
 	}
-	AZ(chown(dname, UID_MAX, vju_gid));
+	AZ(chown(dname, -1, vju_gid));
 	AZ(seteuid(vju_uid));
 	return (0);
 }
