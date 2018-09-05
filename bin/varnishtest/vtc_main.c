@@ -441,7 +441,7 @@ dns_cb(void *priv, const struct suckaddr *sa)
 	int *ret = priv;
 
 	VTCP_name(sa, abuf, sizeof abuf, pbuf, sizeof pbuf);
-	if (strcmp(abuf, "130.225.244.222")) {
+	if (strcmp(abuf, "192.0.2.255")) {
 		fprintf(stderr, "DNS-test: Wrong response: %s\n", abuf);
 		*ret = -1;
 	} else if (*ret == 0)
@@ -455,7 +455,7 @@ dns_works(void)
 	int ret = 0, error;
 	const char *msg;
 
-	error = VSS_resolver("phk.freebsd.dk", NULL, dns_cb, &ret, &msg);
+	error = VSS_resolver("dns-canary.freebsd.dk", NULL, dns_cb, &ret, &msg);
 	if (error || msg != NULL || ret != 1)
 		return (0);
 	return (1);
