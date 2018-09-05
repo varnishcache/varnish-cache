@@ -629,6 +629,8 @@ VRT_r_##which##_##fld(VRT_CTX)					\
 	return (d);						\
 }
 
+/*lint -save -e835 */	// Zero right hand arg to '-'
+
 VRT_DO_EXP_R(obj, ctx->req->objcore, ttl,
     ttl_now(ctx) - ctx->req->objcore->t_origin)
 VRT_DO_EXP_R(obj, ctx->req->objcore, grace, 0)
@@ -642,6 +644,8 @@ VRT_DO_EXP_L(beresp, ctx->bo->fetch_objcore, grace, 0)
 VRT_DO_EXP_R(beresp, ctx->bo->fetch_objcore, grace, 0)
 VRT_DO_EXP_L(beresp, ctx->bo->fetch_objcore, keep, 0)
 VRT_DO_EXP_R(beresp, ctx->bo->fetch_objcore, keep, 0)
+
+/*lint -restore */
 
 /*--------------------------------------------------------------------
  */
