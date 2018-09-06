@@ -1,0 +1,68 @@
+varnishtest "Cacheable IMS replaced by HFM object"
+
+server s1 {
+	rxreq
+	expect req.url == "/etag"
+	txresp -hdr "ETag: foo" -bodylen 7
+
+	rxreq
+	expect req.url == "/etag"
+	expect req.http.If-None-Match == "foo"
+	txresp -status 304 -hdr "ETag: foo"
+
+	rxreq
+	expect req.url == "/etag"
+	txresp -hdr "ETag: foo" -bodylen 7
+} -start
+
+varnish v1 -vcl+backend {
+
+	sub vcl_miss {
+		set req.http.X-Cache = "MISS";
+	}
+
+	sub vcl_pass {
+		set req.http.X-Cache = "PASS";
+	}
+
+	sub vcl_backend_response {
+		if (bereq.http.HFM) {
+			set beresp.uncacheable = true;
+		} else {
+			set beresp.ttl = 0.0001s;
+			set beresp.grace = 0s;
+			set beresp.keep = 1m;
+		}
+		return (deliver);
+	}
+
+	sub vcl_deliver {
+		set resp.http.X-Cache = req.http.X-Cache;
+	}
+
+} -start
+
+client c1 {
+	txreq -url "/etag"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 7
+	expect resp.http.ETag == "foo"
+	expect resp.http.X-Cache == "MISS"
+
+	delay 0.1
+
+	txreq -url "/etag" -hdr "HFM: true"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 7
+	expect resp.http.ETag == "foo"
+	expect resp.http.X-Cache == "MISS"
+
+	txreq -url "/etag"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 7
+	expect resp.http.ETag == "foo"
+	expect resp.http.X-Cache == "MISS"
+} -run
