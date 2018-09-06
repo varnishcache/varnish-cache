@@ -422,8 +422,8 @@ do_curses(void *arg)
 		case 'Q':
 		case 'q':
 			AZ(raise(SIGINT));
-			endwin();
-			return (NULL);
+			quit = 1;
+			break;
 		case '0':
 		case '1':
 		case '2':
