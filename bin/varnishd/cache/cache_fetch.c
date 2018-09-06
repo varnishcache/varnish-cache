@@ -451,7 +451,7 @@ vbf_stp_fetchbody(struct worker *wrk, struct busyobj *bo)
 		if (vfc->oc->flags & OC_F_ABANDON) {
 			/*
 			 * A pass object and delivery was terminated
-			 * We don't fail the fetch, in order for hit-for-pass
+			 * We don't fail the fetch, in order for HitMiss
 			 * objects to be created.
 			 */
 			AN(vfc->oc->flags & OC_F_PASS);
