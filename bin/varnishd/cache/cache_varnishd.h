@@ -268,6 +268,8 @@ void *ObjSetAttr(struct worker *, struct objcore *, enum obj_attr,
     ssize_t len, const void *);
 int ObjCopyAttr(struct worker *, struct objcore *, struct objcore *,
     enum obj_attr attr);
+void ObjFilterFlags(struct worker *, struct objcore *, struct objcore *,
+    uint8_t);
 void ObjBocDone(struct worker *, struct objcore *, struct boc **);
 
 int ObjSetDouble(struct worker *, struct objcore *, enum obj_attr, double);

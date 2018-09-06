@@ -739,7 +739,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 		AZ(ObjCopyAttr(bo->wrk, bo->fetch_objcore, bo->stale_oc,
 		    OA_ESIDATA));
 
-	AZ(ObjCopyAttr(bo->wrk, bo->fetch_objcore, bo->stale_oc, OA_FLAGS));
+	ObjFilterFlags(wrk, bo->fetch_objcore, bo->stale_oc, ~OF_IMSCAND);
 	AZ(ObjCopyAttr(bo->wrk, bo->fetch_objcore, bo->stale_oc, OA_GZIPBITS));
 
 	if (bo->do_stream) {

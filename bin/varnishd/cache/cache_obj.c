@@ -50,6 +50,7 @@
  * 2	ObjSetAttr()
  * 2	  ObjCopyAttr()
  * 2	  ObjSetFlag()
+ * 2	  ObjFilterFlags()
  * 2	  ObjSetDouble()
  * 2	  ObjSetU32()
  * 2	  ObjSetU64()
@@ -502,6 +503,7 @@ ObjCopyAttr(struct worker *wrk, struct objcore *oc, struct objcore *ocs,
 	void *vpd;
 	ssize_t l;
 
+	assert(attr != OA_FLAGS);	// -> ObjFilterFlags
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
@@ -515,6 +517,17 @@ ObjCopyAttr(struct worker *wrk, struct objcore *oc, struct objcore *ocs,
 	if (vpd == NULL)
 		return (-1);
 	return (0);
+}
+
+void
+ObjFilterFlags(struct worker *wrk, struct objcore *oc, struct objcore *ocs,
+    uint8_t mask)
+{
+	const uint8_t *fp;
+
+	fp = ObjGetAttr(wrk, ocs, OA_FLAGS, NULL);
+	AN(fp);
+	ObjSetFlag(wrk, oc, (*fp) & mask, 1);
 }
 
 unsigned
