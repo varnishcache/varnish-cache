@@ -916,7 +916,7 @@ void
 cmd_process(CMD_ARGS)
 {
 	struct process *p, *p2;
-	uintmax_t u, v;
+	uintmax_t u, v, bsnap;
 	unsigned lin,col;
 	int spec_set = 0;
 
@@ -951,6 +951,8 @@ cmd_process(CMD_ARGS)
 	if (p == NULL)
 		p = process_new(av[0]);
 	av++;
+
+	bsnap = p->stdout_bytes;
 
 	for (; *av != NULL; av++) {
 		if (vtc_error)
@@ -1003,7 +1005,7 @@ cmd_process(CMD_ARGS)
 		if (!strcmp(*av, "-need-bytes")) {
 			u = strtoumax(av[1], NULL, 0);
 			if (av[1][0] == '+')
-				u += p->stdout_bytes;
+				u += bsnap;
 			av++;
 			do {
 				AZ(pthread_mutex_lock(&p->mtx));
