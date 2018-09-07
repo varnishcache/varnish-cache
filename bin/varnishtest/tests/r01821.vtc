@@ -1,4 +1,6 @@
-varnishtest "Slim down hit-for-miss objects"
+varnishtest "Slim down hit-for-miss / hit-for-miss objects"
+
+# see also #2768
 
 server s1 -repeat 2 {
 	rxreq
@@ -7,20 +9,32 @@ server s1 -repeat 2 {
 
 varnish v1 -arg "-s Transient=default" -vcl+backend {
 	sub vcl_backend_response {
-		set beresp.uncacheable = true;
+		if (bereq.url == "/hfm") {
+			set beresp.uncacheable = true;
+		} else if (bereq.url == "/hfp") {
+			return (pass(1m));
+		}
 	}
 } -start
 
-logexpect l1 -v v1 {
+logexpect l1 -v v1 -g raw {
+	expect * *	Storage		"Transient"
 	expect * *	Storage		"Transient"
 } -start
 
 client c1 {
-	txreq
+	txreq -url "/hfm"
+	rxresp
+} -start
+
+client c2 {
+	txreq -url "/hfp"
 	rxresp
 } -run
 
+client c1 -wait
+
 logexpect l1 -wait
 
-varnish v1 -expect SM?.Transient.c_bytes != 0
+varnish v1 -expect SM?.Transient.c_bytes > 131072
 varnish v1 -expect SM?.Transient.g_bytes < 65536
