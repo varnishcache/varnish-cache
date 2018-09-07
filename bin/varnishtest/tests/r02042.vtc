@@ -206,7 +206,7 @@ server s1 {
 
 	rxreq
 	expect req.url == "/etag3"
-	expect req.http.If-None-Match == <undef>
+	expect req.http.If-None-Match == "foo"
 	txresp -hdr "ETag: foo" -bodylen 7
 
 	close
@@ -219,7 +219,7 @@ server s1 {
 
 	rxreq
 	expect req.url == "/lm3"
-	expect req.http.If-Modified-Since == <undef>
+	expect req.http.If-Modified-Since == "Thu, 26 Jun 2008 12:00:01 GMT"
 	txresp -hdr "Last-Modified: Thu, 26 Jun 2008 12:00:01 GMT" \
 	    -bodylen 8
 } -start

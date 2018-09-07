@@ -417,7 +417,7 @@ cnt_transmit(struct worker *wrk, struct req *req)
 
 	VSLb_ts_req(req, "Resp", W_TIM_real(wrk));
 
-	if (req->objcore->flags & (OC_F_PRIVATE | OC_F_PASS)) {
+	if (req->objcore->flags & (OC_F_PRIVATE | OC_F_HFP)) {
 		if (boc != NULL) {
 			HSH_Abandon(req->objcore);
 			ObjWaitState(req->objcore, BOS_FINISHED);
