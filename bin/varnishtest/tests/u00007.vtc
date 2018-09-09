@@ -12,11 +12,13 @@ shell -match "Usage: .*varnishhist <options>" \
 shell -expect "Copyright (c) 2006 Verdens Gang AS" \
 	"varnishhist -V"
 shell -err -match "Usage: .*varnishhist <options>" \
+	"varnishhist -K"
+shell -err -match "Usage: .*varnishhist <options>" \
 	"varnishhist extra"
 shell -err -expect "-p: invalid '0'" \
 	"varnishhist -p 0"
 shell -err -expect "-B: being able to bend time does not mean we can stop it" \
-	"varnishhist -B 0"
+	"varnishhist -p 2.0 -B 0"
 shell -err -expect "-B: being able to bend time does not mean we can make it go backwards" \
 	"varnishhist -B -1"
 shell -err -expect "Invalid grouping mode: raw" \
@@ -25,5 +27,13 @@ shell -err -expect "-P: No such profile 'foo'" \
 	"varnishhist -P foo"
 shell -err -expect "-P: 'Timestamp:' is not a valid profile name or definition" \
 	"varnishhist -P Timestamp::"
-shell -err -expect "-P: 'foo::0:0:0' is not a valid tag name" \
-	"varnishhist -P foo::0:0:0"
+shell -err -expect "-P: 'b:' is not a valid profile name or definition" \
+	"varnishhist -P b:"
+shell -err -expect "-P: 'foo:' is not a valid tag name" \
+	"varnishhist -P foo:"
+shell -err -expect "-P: 'b:Debug:' is an unsafe or binary record" \
+	"varnishhist -P b:Debug:"
+shell -err -expect "-P: 'b:BereqAcct:x' is not a valid profile name or definition" \
+	"varnishhist -P b:BereqAcct:x"
+shell -err -expect "-P: 'b:BereqAcct:x' is not a valid profile name or definition" \
+	"varnishhist -P b:BereqAcct:x:"
