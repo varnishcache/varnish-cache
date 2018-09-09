@@ -37,3 +37,7 @@ shell -err -expect "-P: 'b:BereqAcct:x' is not a valid profile name or definitio
 	"varnishhist -P b:BereqAcct:x"
 shell -err -expect "-P: 'b:BereqAcct:x' is not a valid profile name or definition" \
 	"varnishhist -P b:BereqAcct:x:"
+shell -err -expect "-P: 'b:BereqAcct:' is not a valid profile name or definition" \
+	"varnishhist -P b:BereqAcct::5:1:a"
+shell -err -expect "-p: invalid '0'" \
+	"varnishhist -P b:BereqAcct::5 -p 0"
