@@ -87,13 +87,35 @@ The documentation in :ref:`users-guide-handling_misbehaving_servers`
 has been expanded to discuss these matters in greater depth, look
 there for more details.
 
-``var2``
---------
+``beresp.filters`` and support for backend response processing with VMODs
+-------------------------------------------------------------------------
 
-**XXX**
+The ``beresp.filters`` variable is readable and writable in
+``vcl_backend_response``. This is a space-separated list of modules
+that we call VFPs, for "Varnish fetch processors", that may be applied
+to a backend response body as it is being fetched. In default Varnish,
+the list may include values such as ``gzip``, ``gunzip``, ``esi`` and
+``stream``, depending on how you have set the ``beresp.do_*``
+variables.
+
+This addition makes it possible for VMODs to define VFPs to filter or
+manipulate backend response bodies, which can be added by changing the
+list in ``beresp.filters``. VFPs are applied in the order given in
+``beresp.filters``, and you may have to ensure that a VFP is
+positioned correctly in the list, for example if it can only apply to
+uncompressed response bodies.
+
+This is a new capability, and at the time of release we only know of
+test VFPs implemented in VMODs. Over time we hope that an "ecology" of
+VFP code will develop that will enrich the features available to
+Varnish deployments.
 
 Other changes
 ~~~~~~~~~~~~~
+
+The ``Host`` header is mandatory for HTTP/1.1, as proscribed by the
+HTTP standard. If it is missing, then ``builtin.vcl`` causes a
+synthetic 400 "Bad request" response to be returned.
 
 You can now provide a string argument to ``return(fail("Foo!"))``,
 which can be used in ``vcl_init`` to emit an error message if the VCL
@@ -153,6 +175,10 @@ Other changes
 
     * ``ping -j``
 
+    * ``backend.list -j``
+
+    * ``help -j``
+
     * **XXX...**
 
     A JSON response in the CLI always includes a timestamp (epoch time in
@@ -190,6 +216,26 @@ Other changes
       :ref:`ref_param_backend_local_error_holddown` or
       :ref:`ref_param_backend_remote_error_holddown`
 
+  * Similarly, we have added a series of counters for better diagnostics
+    of session accept failures (failure to accept a connection from a
+    client). As before, the ``sess_fail`` counter gives the total number
+    of accept failures, and it is now augmented with the ``sess_fail_*``
+    counters. ``sess_fail`` is the sum of the values in ``sess_fail_*``.
+
+    * ``sess_fail_econnaborted``, ``sess_fail_eintr``,
+      ``sess_fail_emfile``, ``sess_fail_ebadf`` and
+      ``sess_fail_enomem``: the number of accept failures with the
+      indicated value of ``errno(3)``. The :ref:`varnish-counters(7)`
+      man page, and the "long descriptions" shown by ``varnishstat``,
+      give possible reasons why each of these may happen, and what
+      might be done to counter the problem.
+
+    * ``sess_fail_other``: number of accept failures for reasons
+      other than those given by the other ``sess_fail_*`` counters.
+      More details may appear in the ``Debug`` entry of the log
+      (:ref:`varnish-counters(7)` shows a ``varnishlog`` invocation
+      that may help).
+
   * In curses mode, the information in the header lines (uptimes and
     cache hit rates) is always reported, even if you have defined a
     filter that leaves them out of the stats table.
@@ -220,10 +266,33 @@ Other changes
 
   * **XXX**
 
+* For all of the utilities that access the Varnish log --
+  ``varnishlog(1)``, ``varnishncsa(1)``, ``varnishtop(1)`` and
+  ``varnishhist(1)`` -- it is now possible to set multiple ``-I`` and
+  ``-X`` command-line arguments.  So you can use multiple include and
+  exclude filters that apply regular expressions to selected log
+  messages.
+
 * Changes for developers:
+
+  * As mentioned above, VMODs can now implement VFPs that can be added
+    to backend response processing by changing ``beresp.filters``.
+    The interface for VFPs is defined in ``cache_filters.h``, and the
+    debug VMOD included in the distribution shows an example of a
+    VFP for rot13.
 
   * The Varnish API soname version (for libvarnishapi.so) has been
     bumped to 2.0.0.
+
+  * When ``PRIV_TASK`` and ``PRIV_TOP`` parameters are defined for a
+    VMOD method or function, space for the ``struct vrt_priv`` object
+    is allocated on the appropriate workspace before invocation -- the
+    task workspace (client or backend) for ``PRIV_TASK``, and the
+    client workspace for ``PRIV_TOP``. So it is no longer necessary
+    for the VMOD code to do the allocation. The address of the
+    allocated object is passed into the invocation. If the address is
+    NULL, then allocation failed due to workspace exhaustion (so your
+    VMOD should check for that).
 
   * We have improved support for the ``STRANDS`` data type, which you
     may find easier to use than the varargs-based ``STRING_LIST``. See
