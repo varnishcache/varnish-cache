@@ -2,17 +2,17 @@ varnishtest	"trivial run of varnishhist in curses mode"
 
 server s1 {
 	rxreq
-	txresp
+	txresp -bodylen 32
 } -start
 
 varnish v1 -vcl+backend {} -start
 
 process p1 -dump {varnishhist -n ${v1_name}} -start
-process p2 -dump {varnishhist -n ${v1_name} -P b:BereqAcct::5:1:8} -start
+process p2 -dump {varnishhist -n ${v1_name} -P b:BereqAcct::5:-1:1} -start
 process p3 -dump {varnishhist -n ${v1_name} -P BerespBodytime -B 2} -start
 
 process p1 -expect-text 24 0 {1e2}
-process p2 -expect-text 24 0 {1e2}
+process p2 -expect-text 24 0 {1e-1}
 process p3 -expect-text 24 0 {1e2}
 
 delay 1
@@ -22,12 +22,17 @@ client c1 {
 	rxresp
 } -run
 
+varnish v1 -vsl_catchup
+
 process p1 -expect-text 22 0 {#}
+process p2 -expect-text 22 80 {#}
 
 client c1 {
 	txreq
 	rxresp
 } -run
+
+varnish v1 -vsl_catchup
 
 process p1 -expect-text 22 0 { | }
 
@@ -39,12 +44,12 @@ process p1 -winsz 23 80 -need-bytes +10
 
 process p1 -write {0>+-<} -need-bytes +10
 
-process p3 -write {0>+-<x} -need-bytes +10
+process p3 -write {0++++++++++>+-<x} -need-bytes +10
 
 process p1 -expect-text 2 1 {20_}
 
 process p1 -writehex 0c -need-bytes +10
 
 process p1 -screen_dump -write {q} -wait
-process p2 -screen_dump -write {q} -wait
+process p2 -screen_dump -kill HUP -wait
 process p3 -screen_dump -write {q} -wait
