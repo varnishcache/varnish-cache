@@ -295,7 +295,7 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			}
 		}
 
-		if (skip || !match)
+		if (skip || !match || value <= 0)
 			continue;
 
 		/* select bucket */
