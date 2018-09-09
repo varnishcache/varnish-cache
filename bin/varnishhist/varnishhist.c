@@ -657,8 +657,7 @@ main(int argc, char **argv)
 		ident = VSM_Dup(vut->vsm, "Arg", "-i");
 	else
 		ident = strdup("");
-	if (pthread_create(&thr, NULL, do_curses, NULL) != 0)
-		VUT_Error(vut, 1, "pthread_create(): %s", strerror(errno));
+	AZ(pthread_create(&thr, NULL, do_curses, NULL));
 	vut->dispatch_f = accumulate;
 	vut->dispatch_priv = NULL;
 	vut->sighup_f = sighup;

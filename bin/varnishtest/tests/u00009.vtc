@@ -9,7 +9,7 @@ varnish v1 -vcl+backend {} -start
 
 process p1 -dump {varnishhist -n ${v1_name}} -start
 process p2 -dump {varnishhist -n ${v1_name} -P b:BereqAcct::5:1:8} -start
-process p3 -dump {varnishhist -n ${v1_name} -P BerespBodytime} -start
+process p3 -dump {varnishhist -n ${v1_name} -P BerespBodytime -B 2} -start
 
 process p1 -expect-text 24 0 {1e2}
 process p2 -expect-text 24 0 {1e2}
@@ -38,6 +38,8 @@ process p1 -screen_dump
 process p1 -winsz 23 80 -need-bytes +10
 
 process p1 -write {0>+-<} -need-bytes +10
+
+process p3 -write {0>+-<x} -need-bytes +10
 
 process p1 -expect-text 2 1 {20_}
 
