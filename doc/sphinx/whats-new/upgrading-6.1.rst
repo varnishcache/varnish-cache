@@ -78,7 +78,9 @@ to relieve load on the troubled backend::
 		set req.ttl = 60s;
 		set req.grace = 10s;
 	}
-	# ...
+
+	# If the backend is unhealthy, then permit cached responses
+	# that are older than 70s.
   }
 
 The evaluation of the ``beresp.keep`` timer has changed a
@@ -120,9 +122,10 @@ Varnish deployments.
 Other changes to VCL
 ~~~~~~~~~~~~~~~~~~~~
 
-* The ``Host`` header is mandatory for HTTP/1.1, as proscribed by the
-  HTTP standard. If it is missing, then ``builtin.vcl`` causes a
-  synthetic 400 "Bad request" response to be returned.
+* The ``Host`` header in client requests is mandatory for HTTP/1.1, as
+  proscribed by the HTTP standard. If it is missing, then
+  ``builtin.vcl`` causes a synthetic 400 "Bad request" response to be
+  returned.
 
 * You can now provide a string argument to ``return(fail("Foo!"))``,
   which can be used in ``vcl_init`` to emit an error message if the
@@ -176,7 +179,8 @@ Other changes
   * ``Debug`` log entries may also give more diagnostic information
     about session accept failures (failure to accept a client
     connection). These must be viewed in raw grouping, since accept
-    failures are not part of any request/response transaction.
+    failures are not part of any request/response transaction. The
+    ``Debug`` message begins with the phrase ``"Accept failed"``.
 
   * When a backend is unhealthy, ``Backend_health`` now reports some
     diagnostic information in addition to the HTTP response and timing
@@ -219,7 +223,7 @@ Other changes
     * ``VBE.*.unhealthy``: the number of fetches that were not
       attempted because the backend was unhealthy
 
-    * ``.busy`` number of fetches that were not attempted because the
+    * ``.busy``: number of fetches that were not attempted because the
       ``.max_connections`` limit was reached
 
     * ``.fail``: number of failed attempts to open a connection to the
@@ -325,9 +329,10 @@ Other changes
     task workspace (client or backend) for ``PRIV_TASK``, and the
     client workspace for ``PRIV_TOP``. So it is no longer necessary
     for the VMOD code to do the allocation. The address of the
-    allocated object is passed into the invocation. If the address is
-    NULL, then allocation failed due to workspace exhaustion (so your
-    VMOD should check for that).
+    allocated object is passed as the parameter to your implementation
+    of the method or function. If the address is NULL, then allocation
+    failed, probably due to workspace exhaustion (so your VMOD should
+    check for that).
 
   * We have improved support for the ``STRANDS`` data type, which you
     may find easier to use than the varargs-based ``STRING_LIST``. See
