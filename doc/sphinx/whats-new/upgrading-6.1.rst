@@ -117,6 +117,11 @@ The ``Host`` header is mandatory for HTTP/1.1, as proscribed by the
 HTTP standard. If it is missing, then ``builtin.vcl`` causes a
 synthetic 400 "Bad request" response to be returned.
 
+Varnish now won't rewrite the content-length header when responding to
+any HEAD request, making it possible to cache responses to HEAD
+requests independently from the GET responses (previously a HEAD
+request had to be a pass to avoid this rewriting).
+
 You can now provide a string argument to ``return(fail("Foo!"))``,
 which can be used in ``vcl_init`` to emit an error message if the VCL
 load fails due to the return.
