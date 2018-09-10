@@ -135,8 +135,11 @@ VMODs
 =====
 
 Added the :ref:`func_fnmatch` function to :ref:`vmod_std(3)`, which
-you can use for shell-style wildcard matching (if you prefer that to
-regular expressions).
+you can use for shell-style wildcard matching. :ref:`func_fnmatch` can
+be more efficient than regular expressions, in particular in cases
+where the pattern is dynamically defined.
+
+.. should we mention vmod_re for dynamic regexen?
 
 :ref:`vmod_unix(3)` is now supported for SunOS and descendants. This
 entails changing the privilege set of the child process while the VMOD
