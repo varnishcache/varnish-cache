@@ -22,11 +22,18 @@ varnishd parameters
 We have added the :ref:`ref_param_max_vcl` parameter to set a
 threshold for the number of loaded VCL programs, since it is a common
 error to let previous VCL instances accumulate without discarding
-them. The default threshold is 100, and VCL labels are not counted
-against the total. The :ref:`ref_param_max_vcl_handling` parameter
-controls what happens when you reach the limit. By default you just
-get a warning from the VCL compiler, but you can set it to refuse to
-load more VCLs, or to ignore the threshold.
+them. The remnants of undiscarded VCLs take the form of files in the
+working directory of the management process. Over time, too many of
+these may take up significant storage space, and administrative
+operations such as ``vcl.list`` may become noticeably slow, or even
+time out, when Varnish has to iterate over many files.
+
+The default threshold in :ref:`ref_param_max_vcl` is 100, and VCL
+labels are not counted against the total. The
+:ref:`ref_param_max_vcl_handling` parameter controls what happens when
+you reach the limit. By default you just get a warning from the VCL
+compiler, but you can set it to refuse to load more VCLs, or to ignore
+the threshold.
 
 Added the :ref:`ref_param_backend_local_error_holddown` and
 :ref:`ref_param_backend_remote_error_holddown` parameters. These define
