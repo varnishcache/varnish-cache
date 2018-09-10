@@ -117,29 +117,16 @@ test VFPs implemented in VMODs. Over time we hope that an "ecology" of
 VFP code will develop that will enrich the features available to
 Varnish deployments.
 
-Other changes
-~~~~~~~~~~~~~
+Other changes to VCL
+~~~~~~~~~~~~~~~~~~~~
 
-The ``Host`` header is mandatory for HTTP/1.1, as proscribed by the
-HTTP standard. If it is missing, then ``builtin.vcl`` causes a
-synthetic 400 "Bad request" response to be returned.
+* The ``Host`` header is mandatory for HTTP/1.1, as proscribed by the
+  HTTP standard. If it is missing, then ``builtin.vcl`` causes a
+  synthetic 400 "Bad request" response to be returned.
 
-Varnish now won't rewrite the content-length header when responding to
-any HEAD request, making it possible to cache responses to HEAD
-requests independently from the GET responses (previously a HEAD
-request had to be a pass to avoid this rewriting).
-
-You can now provide a string argument to ``return(fail("Foo!"))``,
-which can be used in ``vcl_init`` to emit an error message if the VCL
-load fails due to the return.
-
-If you have set ``.proxy_header=1`` (to use the PROXYv1 protocol) for
-a backend addressed as a Unix domain socket (with a ``.path`` setting
-for the socket file), and have also defined a probe for the backend,
-then then the address family ``UNKNOWN`` is sent in the proxy header
-for the probe request. If you have set ``.proxy_header=2`` (for
-PROXYv2) for a UDS backend with a probe, then ``PROXY LOCAL`` is sent
-for the probe request.
+* You can now provide a string argument to ``return(fail("Foo!"))``,
+  which can be used in ``vcl_init`` to emit an error message if the
+  VCL load fails due to the return.
 
 VMODs
 =====
@@ -166,7 +153,19 @@ Other changes
     example when a symbol is not found or arguments to VMOD calls are
     missing.
 
-  * **XXX**
+  * Varnish now won't rewrite the ``Content-Length`` header when
+    responding to any HEAD request, making it possible to cache
+    responses to HEAD requests independently from the GET responses
+    (previously a HEAD request had to be a pass to avoid this
+    rewriting).
+
+  * If you have set ``.proxy_header=1`` (to use the PROXYv1 protocol)
+    for a backend addressed as a Unix domain socket (with a ``.path``
+    setting for the socket file), and have also defined a probe for
+    the backend, then then the address family ``UNKNOWN`` is sent in
+    the proxy header for the probe request. If you have set
+    ``.proxy_header=2`` (for PROXYv2) for a UDS backend with a probe,
+    then ``PROXY LOCAL`` is sent for the probe request.
 
 * ``varnishlog(1)`` and ``vsl(7)``:
 
