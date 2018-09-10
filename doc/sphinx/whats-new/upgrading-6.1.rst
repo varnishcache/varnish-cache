@@ -179,6 +179,9 @@ Other changes
     give better human-readable diagnostics for certain classes of
     backend fetch failures.
 
+    In particular, http connection (HTC) errors are now reported
+    symbolically in addition to the previous numerical value.
+
   * ``Debug`` log entries may also give more diagnostic information
     about session accept failures (failure to accept a client
     connection). These must be viewed in raw grouping, since accept

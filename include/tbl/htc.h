@@ -35,11 +35,11 @@
 HTC_STATUS(JUNK,	-5,	"junk",		"Received unexpected data")
 HTC_STATUS(CLOSE,	-4,	"close",	"Connection closed") // unused?
 HTC_STATUS(TIMEOUT,	-3,	"timeout",	"Timed out")
-HTC_STATUS(OVERFLOW,	-2,	"overflow",	"Buffer too small")
-HTC_STATUS(EOF,	-1,	"eof",		"EOF received")
+HTC_STATUS(OVERFLOW,	-2,	"overflow",	"Buffer/workspace too small")
+HTC_STATUS(EOF,	-1,	"eof",		"Unexpected end of input")
 HTC_STATUS(EMPTY,	 0,	"empty",	"Empty response")
 HTC_STATUS(MORE,	 1,	"more",	"More data required")
-HTC_STATUS(COMPLETE,	 2,	"complete",	"Data complete")
-HTC_STATUS(IDLE,	 3,	"idle",	"Return to waiter")
+HTC_STATUS(COMPLETE,	 2,	"complete",	"Data complete (no error)")
+HTC_STATUS(IDLE,	 3,	"idle",	"Connection was closed while idle")
 #undef HTC_STATUS
 /*lint -restore */
