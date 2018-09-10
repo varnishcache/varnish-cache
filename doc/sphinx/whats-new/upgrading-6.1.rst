@@ -156,7 +156,15 @@ Other changes
 
   * **XXX**
 
-* ``varnishlog(1)``:
+* ``varnishlog(1)`` and ``vsl(7)``:
+
+  * The contents of ``FetchError`` log entries have been improved to
+    give better human-readable diagnostics for certain classes of
+    backend fetch failures.
+
+  * ``Debug`` log entries may also give more diagnostic information
+    about backend fetch failures and session accept failures (failure
+    to accept a client connection).
 
   * When a backend is unhealthy, ``Backend_health`` now reports some
     diagnostic information in addition to the HTTP response and timing
@@ -166,7 +174,9 @@ Other changes
     name without the VCL prefix (as appears otherwise for backend
     naming).
 
-  * **XXX**
+  * Added the log entry tag ``Filters``, which gives a list of the
+    filters applied to a response body (see ``beresp.filters``
+    discussed above).
 
 * ``varnishadm(1)`` and ``varnish-cli(7)``
 
@@ -183,6 +193,11 @@ Other changes
 
     A JSON response in the CLI always includes a timestamp (epoch time in
     seconds with millisecond precision).
+
+  * The ``backend.list`` command now lists both directors and
+    backends, with their health status. The command now has a ``-v``
+    option for verbose output, in which detailed health states for
+    each backend/director are displayed.
 
 * ``varnishstat(1)`` and ``varnish-counters(7)``:
 
@@ -264,7 +279,15 @@ Other changes
     connection each time. This makes the test run faster and use fewer
     ephemeral ports.
 
+  * Added the ``-need-bytes`` argument for the ``process`` command,
+    see :ref:`vtc(7)`.
+
   * **XXX**
+
+* ``varnishhist(1)``:
+
+  * The ``-P min:max`` command-line parameters are now optional,
+    see :ref:`varnishhist(1)`.
 
 * For all of the utilities that access the Varnish log --
   ``varnishlog(1)``, ``varnishncsa(1)``, ``varnishtop(1)`` and
@@ -301,6 +324,12 @@ Other changes
 
   * We have fixed a bug that had limited the precision available for
     the ``INT`` data type, so you now get the full 64 bits.
+
+  * Portions of what had previously been declared in
+    ``cache_director.h`` have been moved into ``vrt.h``, constituting
+    the public API for directors. The remainder in
+    ``cache_director.h`` is not public, and should not be used by a
+    VMOD intended for VRT ABI compatibility.
 
   * Python 3 is now preferred in builds, and will likely be required
     in future versions.
