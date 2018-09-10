@@ -56,15 +56,15 @@ VCL variables
 ``req.ttl``, ``req.grace`` and keep
 -----------------------------------
 
-``req.ttl`` had been previously listed as deprecated, but it is now
-fully supported, since there are use cases that cannot be solved
-without it.
+``req.grace`` had been previously removed, but was now reintroduced,
+since there are use cases that cannot be solved without it. Similarly,
+``req.ttl`` used to be deprecated and is now fully supported again.
 
 ``req.ttl`` and ``req.grace`` set upper bounds on the TTL and grace
 times that are permitted for the current request -- if these variables
 are set and the TTL/grace of a cache object is longer than their
 settings, then a new response is fetched from the backend, despite the
-presence of the response in the cache.
+presence of an otherwise fresh cache object.
 
 A common application is to set shorter TTLs when the backend is known
 to be healthy, so that responses are fresher when all is well. But if
