@@ -163,8 +163,9 @@ Other changes
     backend fetch failures.
 
   * ``Debug`` log entries may also give more diagnostic information
-    about backend fetch failures and session accept failures (failure
-    to accept a client connection).
+    about session accept failures (failure to accept a client
+    connection). These must be viewed in raw grouping, since accept
+    failures are not part of any request/response transaction.
 
   * When a backend is unhealthy, ``Backend_health`` now reports some
     diagnostic information in addition to the HTTP response and timing
@@ -213,8 +214,8 @@ Other changes
     * ``.fail``: number of failed attempts to open a connection to the
       backend. Detailed reasons for the failures are given in the
       ``.fail_*`` counters (shown at DIAG level), and in the log entry
-      ``Debug``. ``.fail`` is the sum of the values in the ``.fail_*``
-      counters.
+      ``FetchError``. ``.fail`` is the sum of the values in the
+      ``.fail_*`` counters.
 
     * ``.fail_eaccess``, ``.fail_eaddrnotavail``,
       ``.fail_econnrefused``, ``.fail_enetunreach`` and
