@@ -127,22 +127,17 @@ vsmw_idx_head(const struct vsmw *vsmw, int fd)
 }
 
 static void
-vsmw_write_index(const struct vsmw *vsmw, int fd, const struct vsmwseg *seg)
+vsmw_fmt_index(const struct vsmw *vsmw, const struct vsmwseg *seg)
 {
-	ssize_t s;
 
 	CHECK_OBJ_NOTNULL(vsmw, VSMW_MAGIC);
 	CHECK_OBJ_NOTNULL(seg, VSMWSEG_MAGIC);
-	VSB_clear(vsmw->vsb);
 	VSB_printf(vsmw->vsb, "%s %zu %zu %s %s\n",
 	    seg->cluster->fn,
 	    seg->off,
 	    seg->len,
 	    seg->class,
 	    seg->id);
-	AZ(VSB_finish(vsmw->vsb));
-	s = write(fd, VSB_data(vsmw->vsb), VSB_len(vsmw->vsb));
-	assert(s == VSB_len(vsmw->vsb));
 }
 
 /*--------------------------------------------------------------------*/
@@ -174,11 +169,16 @@ static void
 vsmw_addseg(struct vsmw *vsmw, struct vsmwseg *seg)
 {
 	int fd;
+	ssize_t s;
 
 	VTAILQ_INSERT_TAIL(&vsmw->segs, seg, list);
 	fd = openat(vsmw->vdirfd, vsmw->idx, O_APPEND | O_WRONLY);
 	assert(fd >= 0);
-	vsmw_write_index(vsmw, fd, seg);
+	VSB_clear(vsmw->vsb);
+	vsmw_fmt_index(vsmw, seg);
+	AZ(VSB_finish(vsmw->vsb));
+	s = write(fd, VSB_data(vsmw->vsb), VSB_len(vsmw->vsb));
+	assert(s == VSB_len(vsmw->vsb));
 	AZ(close(fd));
 }
 
@@ -188,6 +188,7 @@ static void
 vsmw_delseg(struct vsmw *vsmw, struct vsmwseg *seg, int fixidx)
 {
 	char *t = NULL;
+	ssize_t s;
 	int fd;
 
 	CHECK_OBJ_NOTNULL(vsmw, VSMW_MAGIC);
@@ -206,8 +207,12 @@ vsmw_delseg(struct vsmw *vsmw, struct vsmwseg *seg, int fixidx)
 		    t, O_WRONLY|O_CREAT|O_EXCL, vsmw->mode);
 		assert(fd >= 0);
 		vsmw_idx_head(vsmw, fd);
+		VSB_clear(vsmw->vsb);
 		VTAILQ_FOREACH(seg, &vsmw->segs, list)
-			vsmw_write_index(vsmw, fd, seg);
+			vsmw_fmt_index(vsmw, seg);
+		AZ(VSB_finish(vsmw->vsb));
+		s = write(fd, VSB_data(vsmw->vsb), VSB_len(vsmw->vsb));
+		assert(s == VSB_len(vsmw->vsb));
 		AZ(close(fd));
 		AZ(renameat(vsmw->vdirfd, t, vsmw->vdirfd, vsmw->idx));
 		REPLACE(t, NULL);
