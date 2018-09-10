@@ -25,7 +25,6 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 #
-# Test vmodtool.py's UTF-8 handling: Æbleflæsk med koldskål eller øl
 
 $Module debug 3 Development, test and debug
 $ABI strict

@@ -858,8 +858,9 @@ class vcc(object):
 
     def parse(self):
         global inputline
-        a = "\n" + open(self.inputfile, "r").read()
-        self.file_id = hashlib.sha256(bytearray(a)).hexdigest()
+        b = open(self.inputfile, "rb").read()
+        a = "\n" + b.decode("utf-8")
+        self.file_id = hashlib.sha256(b).hexdigest()
         s = a.split("\n$")
         self.copyright = s.pop(0).strip()
         while s:
