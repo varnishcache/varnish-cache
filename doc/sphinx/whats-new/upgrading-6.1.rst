@@ -246,7 +246,9 @@ Other changes
 
     * ``.fail_other``: number of connections to the backend that
       failed for reasons other than those given by the other
-      ``.fail_*`` counters.
+      ``.fail_*`` counters. For such cases, details on the failure
+      can be extracted from the varnish log as described above for
+      ``FetchError``.
 
     * ``.helddown``: the number of connections not attempted because
       the backend was in the period set by one of the parameters
