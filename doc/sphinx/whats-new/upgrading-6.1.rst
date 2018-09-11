@@ -313,10 +313,10 @@ Other changes
 
 * For all of the utilities that access the Varnish log --
   ``varnishlog(1)``, ``varnishncsa(1)``, ``varnishtop(1)`` and
-  ``varnishhist(1)`` -- it is now possible to set multiple ``-I`` and
-  ``-X`` command-line arguments.  So you can use multiple include and
-  exclude filters that apply regular expressions to selected log
-  messages.
+  ``varnishhist(1)`` -- it was already possible to set multiple ``-I``
+  and ``-X`` command-line arguments.  It is now properly documented
+  that you can use multiple include and exclude filters that apply
+  regular expressions to selected log records.
 
 * Changes for developers:
 
