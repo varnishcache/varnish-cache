@@ -331,16 +331,29 @@ Other changes
   * The Varnish API soname version (for libvarnishapi.so) has been
     bumped to 2.0.0.
 
-  * When ``PRIV_TASK`` and ``PRIV_TOP`` parameters are defined for a
-    VMOD method or function, space for the ``struct vrt_priv`` object
-    is allocated on the appropriate workspace before invocation -- the
-    task workspace (client or backend) for ``PRIV_TASK``, and the
-    client workspace for ``PRIV_TOP``. So it is no longer necessary
-    for the VMOD code to do the allocation. The address of the
-    allocated object is passed as the parameter to your implementation
-    of the method or function. If the address is NULL, then allocation
-    failed, probably due to workspace exhaustion (so your VMOD should
-    check for that).
+  * Space required by varnish for maintaining the ``PRIV_TASK`` and
+    ``PRIV_TOP`` parameters is now taken from the appropriate
+    workspace rather than from the heap as before. For a failing
+    allocation, a VCL failure is triggered.
+
+    The net effect of this change is that in cases of a workspace
+    shortage, the almost unavoidable failure will happen earlier. The
+    amount of workspace required is slightly increased and scales with
+    the number of vmods per ``PRIV_TASK`` and ``PRIV_TOP`` parameter.
+
+    The VCL compiler (VCC) guarantees that if a vmod function is
+    called with a ``PRIV_*`` argument, that argument value is set.
+
+    There is no change with respect to the API the ``PRIV_*`` vmod
+    function arguments provide.
+
+  * ``VRT_priv_task()``, the function implementing the allocation of
+    the ``PRIV_TASK`` and ``PRIV_TOP`` parameters as described above,
+    is now more likely to return ``NULL`` for allocation failures for
+    the same reason.
+
+    Notice that explicit use of this function from within VMODs is
+    considered experimental as this interface may change.
 
   * We have improved support for the ``STRANDS`` data type, which you
     may find easier to use than the varargs-based ``STRING_LIST``. See
