@@ -140,6 +140,44 @@ different to user specified values.
 `Note` that default values have to be given in the native C-type
 syntax, see below. As a special case, ``NULL`` has to be given as ``0``.
 
+Optional arguments
+------------------
+
+The vmod.vcc declaration also allows for optional arguments in square
+brackets like so::
+
+	$Function VOID opt(PRIV_TASK, INT four = 4, [ STRING opt])
+
+With any optional argument present, the C function prototype looks
+completely different:
+
+	* Only the ``VRT_CTX`` and object pointer arguments (only for
+	  methods) remain positional
+
+	* All other arguments get passed in a struct as the last
+	  argument of the C function.
+
+The argument struct is simple, vmod authors should check the
+`vmodtool`-generated ``vcc_if.c`` file for the function and struct
+declarations:
+
+	* for each optional argument, a ``valid_``\ `argument` member
+	  is used to signal the presence of the respective optional
+	  argument.
+
+	  ``valid_`` argstruct members should only be used as truth
+	  values, irrespective of their actual data type.
+
+	* named arguments are passed in argument struct members by the
+	  same name and with the same data type.
+
+	* unnamed (positional) arguments are passed as ``arg``\ `n`
+	  with `n` starting at 1 and incrementing with the argument's
+	  position.
+
+	  Note that in particular also ``PRIV_*`` arguments (which are
+	  unnamed by definition) are passed as ``arg``\ `n`
+
 .. _ref-vmod-vcl-c-types:
 
 VCL and C data types
