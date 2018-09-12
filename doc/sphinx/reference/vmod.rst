@@ -534,7 +534,7 @@ but still per vmod as for ordinary vmod functions. Thus, vmods
 requiring per-task / per top-request state for object instances need
 to implement other means to associate storage with object instances.
 
-Using ``VRT_priv_task()`` to maintin per object instance state is a
+Using ``VRT_priv_task()`` to maintain per object instance state is a
 convenient yet unofficial interface which was not originally intended
 for this purpose and will likely be replaced with a more suitable
 interface.
