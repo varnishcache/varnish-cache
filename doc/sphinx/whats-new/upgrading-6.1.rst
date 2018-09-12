@@ -131,6 +131,9 @@ Other changes to VCL
   which can be used in ``vcl_init`` to emit an error message if the
   VCL load fails due to the return.
 
+* Additional ``import`` statements of an already imported vmod are now
+  ignored.
+
 VMODs
 =====
 
@@ -370,6 +373,13 @@ Other changes
     the public API for directors. The remainder in
     ``cache_director.h`` is not public, and should not be used by a
     VMOD intended for VRT ABI compatibility.
+
+  * The director API in ``vrt.h`` differs from the previous
+    interface:
+
+    *WIP slink*
+
+    * The director API which has changed:
 
   * Python 3 is now preferred in builds, and will likely be required
     in future versions.
