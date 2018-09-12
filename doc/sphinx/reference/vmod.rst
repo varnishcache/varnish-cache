@@ -51,6 +51,7 @@ data structures that do all the hard work.
 The std VMODs vmod.vcc file looks somewhat like this::
 
 	$Module std 3
+	$ABI strict
 	$Event event_function
 	$Function STRING toupper(STRING_LIST)
 	$Function STRING tolower(STRING_LIST)
@@ -59,7 +60,17 @@ The std VMODs vmod.vcc file looks somewhat like this::
 The first line gives the name of the module and the manual section where
 the documentation will reside.
 
-The second line specifies an optional "Event" function, which will be
+The ``$ABI`` line is optional (possible values ``strict`` (default)
+and ``vrt``) and allows to specify that a vmod is integrating with the
+blessed ``vrt`` interface provided by ``varnishd`` or go deeper in the
+stack. As a general rule of thumb you are considered "on your own" if
+your VMOD uses more than the VRT (Varnish RunTime), in which case it
+needs to be built for the exact Varnish version.
+
+``$ABI vrt`` means that a module complies to the VRT and only needs to
+be rebuilt when breaking changes are introduced to the VRT API.
+
+The third line specifies an optional "Event" function, which will be
 called whenever a VCL program which imports this VMOD is loaded or
 transitions to any of the warm, active, cold or discarded states.
 More on this below.
