@@ -178,6 +178,73 @@ declarations:
 	  Note that in particular also ``PRIV_*`` arguments (which are
 	  unnamed by definition) are passed as ``arg``\ `n`
 
+.. _ref-vmod-vcl-c-objects:
+
+Objects and methods
+-------------------
+
+Varnish also supports a simple object model for vmods. Objects and
+methods are declared in the vcc file as::
+
+	$Object class(`constructor arguments`)
+	$Method .method(`method arguments`)
+
+
+For declared object classes of a vmod, object instances can then be
+created in ``vcl_init { }`` using the ``new`` statement::
+
+	sub vcl_init {
+		new foo = vmod.class(...);
+	}
+
+and have their methods called anywhere (including in ``vcl_init {}``
+after the instantiation)::
+
+	sub somewhere {
+		foo.method(...);
+	}
+
+Object instances are represented as pointers to vmod-implemented C
+structs. Varnish only provides space to store the address of object
+instances and ensures that the right object address gets passed to C
+functions implementing methods.
+
+	* Objects' scope and lifetime are the vcl
+
+	* Objects can only be created in ``vcl_init {}`` and have
+	  their destructors called by varnish after ``vcl_fini {}``
+	  has completed.
+
+vmod authors are advised to understand the prototypes in the
+`vmodtool`\ -generated ``vcc_if.c`` file:
+
+	* For ``$Object`` declarations, a constructor and destructor
+	  function must be implemented
+
+	* The constructor is named by the suffix ``__init``, always is
+	  of ``VOID`` return type and has the following arguments
+	  before the vcc-declared parameters:
+
+	  * ``VRT_CTX`` as usual
+	  * a pointer-pointer to return the address of the created
+	    oject
+	  * a string containing the vcl name of the object instance
+
+	* The destructor is named by the suffix ``__fini``, always is
+	  of ``VOID`` return type and has a single argument, the
+	  pointer-pointer to the address of the object. The destructor
+	  is expected clear the address of the object stored in that
+	  pointer-pointer.
+
+	* Methods gain the pointer to the object as an argument after
+	   the ``VRT_CTX``.
+
+As varnish is in no way involved in managing object instances other
+than passing their addresses, vmods need to implement all aspects of
+managing instances, in particular their memory management. As the
+lifetime of object instances is the vcl, they will usually be
+allocated from the heap.
+
 .. _ref-vmod-vcl-c-types:
 
 VCL and C data types
@@ -439,6 +506,20 @@ malloc would look like this::
 
 The per-call vmod_privs are freed before the per-vcl vmod_priv.
 
+Note on use with objects:
+
+``PRIV_TASK`` and ``PRIV_TOP`` arguments are not per object instance,
+but still per vmod as for ordinary vmod functions. Thus, vmods
+requiring per-task / per top-request state for object instances need
+to implement other means to associate storage with object instances.
+
+Using ``VRT_priv_task()`` to maintin per object instance state is a
+convenient yet inofficial interface which was not originally intended
+for this purpose and will likely be replaced with a more suitable
+interface.
+
+
+
 .. _ref-vmod-event-functions:
 
 Event functions
@@ -510,6 +591,7 @@ to the user if they try to warm up a cooling VCL::
 In the case where properly releasing resources may take some time, you can
 opt for an asynchronous worker, either by spawning a thread and tracking it, or
 by using Varnish's worker pools.
+
 
 When to lock, and when not to lock
 ==================================
