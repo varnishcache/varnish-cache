@@ -119,6 +119,12 @@ test VFPs implemented in VMODs. Over time we hope that an "ecology" of
 VFP code will develop that will enrich the features available to
 Varnish deployments.
 
+``obj.hits``
+------------
+
+Has been fixed to return the correct value in ``vcl_hit`` (it had been
+0 in ``vcl_hit``).
+
 Other changes to VCL
 ~~~~~~~~~~~~~~~~~~~~
 
