@@ -27,15 +27,93 @@ individual releases. These documents are updated as part of the
 release process.
 
 
-=============================
-Varnish Cache Trunk (ongoing)
-=============================
+================================
+Varnish Cache 6.1.0 (2018-09-17)
+================================
 
-varnishadm
+* Added -p max_vcl and -p max_vcl_handling for warnings/errors when
+  there are too many undiscarded VCL instances. (2713_)
+
+* ``Content-Length`` header is not rewritten in response to a HEAD
+  request, allows responses to HEAD requests to be cached
+  independently from GET responses.
+
+.. _2713: https://github.com/varnishcache/varnish-cache/issues/2713
+
+VCL
+---
+
+* ``return(fail("mumble"))`` can have a string argument that is
+  emitted by VCC as an error message if the VCL load fails due to the
+  return. (2694_)
+
+* Improved VCC error messages (2696_)
+
+* Fixed ``obj.hits`` in ``vcl_hit`` (had been always 0) (2746_)
+
+.. _2746: https://github.com/varnishcache/varnish-cache/issues/2746
+.. _2696: https://github.com/varnishcache/varnish-cache/issues/2696
+.. _2694: https://github.com/varnishcache/varnish-cache/issues/2694
+
+bundled tools
+-------------
+
+* ``varnishhist``: Improved test coverage
+* ``varnishtest``: Added haproxy CLI send/expect facility
+
+C APIs (for vmod and utility authors)
+-------------------------------------
+
+* libvarnishapi so version bumped to 2.0.0 (2718_)
+
+* For VMOD methods/functions with PRIV_TASK or PRIV_TOP arguments, the
+  struct vrt_priv is allocated on the appropriate workspace. In the
+  out-of-workspace condition, VCL failure is invoked, and the VMOD
+  method/function is not called. (2708_)
+
+* Improved support for the VCL STRANDS type, VMOD blob refactored to
+  use STRANDS (2745_)
+
+.. _2718: https://github.com/varnishcache/varnish-cache/pull/2718
+.. _2745: https://github.com/varnishcache/varnish-cache/issues/2745
+.. _2708: https://github.com/varnishcache/varnish-cache/issues/2708
+
+Fixed bugs
 ----------
 
-* The output format of the ``backend.list`` CLI command has been
-  changed.
+* A series of bug fixes related to excessive object accumulation and
+  Transient storage use in the hit-for-miss case (2760_, 2754_, 2654_,
+  2763_)
+* A series of fixes related to Python and the vmodtool (2761_, 2759_,
+  2742_)
+* UB in varnishhist (2773_)
+* Allow to not have randomness in file_id (2436_)
+* b64.vtc unstable (2753_)
+* VCL_Poll ctx scope (2749_)
+
+.. _2436: https://github.com/varnishcache/varnish-cache/issues/2436
+.. _2654: https://github.com/varnishcache/varnish-cache/issues/2654
+.. _2742: https://github.com/varnishcache/varnish-cache/issues/2742
+.. _2749: https://github.com/varnishcache/varnish-cache/issues/2749
+.. _2753: https://github.com/varnishcache/varnish-cache/issues/2753
+.. _2754: https://github.com/varnishcache/varnish-cache/issues/2754
+.. _2759: https://github.com/varnishcache/varnish-cache/pull/2759
+.. _2760: https://github.com/varnishcache/varnish-cache/pull/2760
+.. _2761: https://github.com/varnishcache/varnish-cache/issues/2761
+.. _2763: https://github.com/varnishcache/varnish-cache/issues/2763
+.. _2773: https://github.com/varnishcache/varnish-cache/issues/2773
+
+================================
+Varnish Cache 6.0.1 (2018-08-29)
+================================
+
+* Added std.fnmatch() (2737_)
+* The variable req.grace is back. (2705_)
+* Importing the same VMOD multiple times is now allowed, if the file_id
+  is identical.
+
+.. _2705: https://github.com/varnishcache/varnish-cache/pull/2705
+.. _2737: https://github.com/varnishcache/varnish-cache/pull/2737
 
 varnishstat
 -----------
@@ -49,16 +127,13 @@ varnishstat
   * ``sess_fail_enomem``
   * ``sess_fail_other``
 
-  now break down the detailled reason for session accept failures, the
+  now break down the detailed reason for session accept failures, the
   sum of which continues to be counted in ``sess_fail``.
 
 VCL and bundled VMODs
 ---------------------
 
 * VMOD unix now supports the ``getpeerucred(3)`` case.
-
-* Fetch Processors (VFPs) can now be configured from VCL via
-  ``beresp.filters``
 
 bundled tools
 -------------
@@ -67,20 +142,80 @@ bundled tools
   for custom profile definitions to also contain a prefix to match the
   tag against.
 
-logging
--------
+* ``varnishtest``: syslog instances now have to start with a capital S.
 
-* The backend name logged under the ``Backend_health`` tag has been
-  changed back from `vcl name`.`backend name` to just `backend name`
+Fixed bugs which may influence VCL behavior
+--------------------------------------------
 
-C APIs (for vmod and utility authors)
--------------------------------------
+* When an object is out of grace but in keep, the client context goes
+  straight to vcl_miss instead of vcl_hit. The documentation has been
+  updated accordingly. (2705_)
 
-* XXX VFP
+Fixed bugs
+----------
 
-* XXX backend add / del
+* Several H2 bugs (2285_, 2572_, 2623_, 2624_, 2679_, 2690_, 2693_)
+* Make large integers work in VCL. (2603_)
+* Print usage on unknown or missing arguments (2608_)
+* Assert error in VPX_Send_Proxy() with proxy backends in pipe mode
+  (2613_)
+* Holddown times for certain backend connection errors (2622_)
+* Enforce Host requirement for HTTP/1.1 requests (2631_)
+* Introduction of '-' CLI prefix allowed empty commands to sneak
+  through. (2647_)
+* VUT apps can be stopped cleanly via vtc process -stop (2649_, 2650_)
+* VUT apps fail gracefully when removing a PID file fails
+* varnishd startup log should mention version (2661_)
+* In curses mode, always filter in the counters necessary for the
+  header lines. (2678_)
+* Assert error in ban_lurker_getfirst() (2681_)
+* Missing command entries in varnishadm help menu (2682_)
+* Handle string literal concatenation correctly (2685_)
+* varnishtop -1 does not work as documented (2686_)
+* Handle sigbus like sigsegv (2693_)
+* Panic on return (retry) of a conditional fetch (2700_)
+* Wrong turn at cache/cache_backend_probe.c:255: Unknown family
+  (2702_, 2726_)
+* VCL failure causes TASK_PRIV reference on reset workspace (2706_)
+* Accurate ban statistics except for a few remaining corner cases
+  (2716_)
+* Assert error in vca_make_session() (2719_)
+* Assert error in vca_tcp_opt_set() (2722_)
+* VCL compiling error on parenthesis (2727_)
+* Assert error in HTC_RxPipeline() (2731_)
 
-* XXX director api, cache_backend.h off-limits, moved to VRT
+.. _2285: https://github.com/varnishcache/varnish-cache/issues/2285
+.. _2572: https://github.com/varnishcache/varnish-cache/issues/2572
+.. _2603: https://github.com/varnishcache/varnish-cache/issues/2603
+.. _2608: https://github.com/varnishcache/varnish-cache/issues/2608
+.. _2613: https://github.com/varnishcache/varnish-cache/issues/2613
+.. _2622: https://github.com/varnishcache/varnish-cache/issues/2622
+.. _2623: https://github.com/varnishcache/varnish-cache/issues/2623
+.. _2624: https://github.com/varnishcache/varnish-cache/issues/2624
+.. _2631: https://github.com/varnishcache/varnish-cache/issues/2631
+.. _2647: https://github.com/varnishcache/varnish-cache/issues/2647
+.. _2649: https://github.com/varnishcache/varnish-cache/issues/2649
+.. _2650: https://github.com/varnishcache/varnish-cache/pull/2650
+.. _2651: https://github.com/varnishcache/varnish-cache/pull/2651
+.. _2661: https://github.com/varnishcache/varnish-cache/issues/2661
+.. _2678: https://github.com/varnishcache/varnish-cache/issues/2678
+.. _2679: https://github.com/varnishcache/varnish-cache/issues/2679
+.. _2681: https://github.com/varnishcache/varnish-cache/issues/2681
+.. _2682: https://github.com/varnishcache/varnish-cache/issues/2682
+.. _2685: https://github.com/varnishcache/varnish-cache/issues/2685
+.. _2686: https://github.com/varnishcache/varnish-cache/issues/2686
+.. _2690: https://github.com/varnishcache/varnish-cache/issues/2690
+.. _2693: https://github.com/varnishcache/varnish-cache/issues/2693
+.. _2695: https://github.com/varnishcache/varnish-cache/issues/2695
+.. _2700: https://github.com/varnishcache/varnish-cache/issues/2700
+.. _2702: https://github.com/varnishcache/varnish-cache/issues/2702
+.. _2706: https://github.com/varnishcache/varnish-cache/issues/2706
+.. _2716: https://github.com/varnishcache/varnish-cache/issues/2716
+.. _2719: https://github.com/varnishcache/varnish-cache/issues/2719
+.. _2722: https://github.com/varnishcache/varnish-cache/issues/2722
+.. _2726: https://github.com/varnishcache/varnish-cache/pull/2726
+.. _2727: https://github.com/varnishcache/varnish-cache/issues/2727
+.. _2731: https://github.com/varnishcache/varnish-cache/issues/2731
 
 ================================
 Varnish Cache 6.0.0 (2018-03-15)
