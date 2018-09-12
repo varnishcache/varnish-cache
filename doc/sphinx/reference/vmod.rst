@@ -390,6 +390,10 @@ STEVEDORE
 STRING_LIST
 	C-type: ``const char *, ...``
 
+	`Notice: New vmod developments for 6.1 and higher should
+	consider STRANDS as a better alternative to STRING_LIST, which
+	will eventually be replaced entirely.`
+
 	A multi-component text-string.  We try very hard to avoid
 	doing text-processing in Varnish, and this is one way we
 	to avoid that, by not editing separate pieces of a string
@@ -415,12 +419,8 @@ STRING_LIST
 	NULL, as described under STRING, that is why we do not use NULL
 	as the terminator.
 
-	Right now we only support STRING_LIST being the last argument to
-	a function, we may relax that at a latter time.
-
-	If you don't want to bother with STRING_LIST, just use STRING
-	and make sure your workspace_client and workspace_backend params
-	are big enough.
+	STRING_LIST must be the last argument to a function and the
+	function must not contain optional arguments.
 
 STRANDS
 	C-Type: ``const struct strands *``
