@@ -381,11 +381,18 @@ Other changes
     VMOD intended for VRT ABI compatibility.
 
   * The director API in ``vrt.h`` differs from the previous
-    interface:
+    interface. :ref:`ref-writing-a-director` has been updated
+    accordingly. In short, the most important changes include:
 
-    *WIP slink*
-
-    * The director API which has changed:
+    * ``struct director_methods`` is replaced by ``struct vdi_methods``
+      * signatures of various callbacks have changed
+    * ``VRT_AddDirector()`` and ``VRT_DelDirector()`` are to be used
+      for initialization and destruction.
+    * ``vdi_methods`` callbacks are not to be called from vmods any more
+    * ``VRT_Healthy()`` replaces calls to the ``healthy`` function
+    * The admin health is not to be manipulated by vmods any more
+    * director private state destruction is recommended to be
+      implemented via a ``destroy`` callback.
 
   * Python 3 is now preferred in builds, and will likely be required
     in future versions.
