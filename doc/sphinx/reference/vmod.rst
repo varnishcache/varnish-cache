@@ -430,7 +430,7 @@ STRANDS
 	struct with the following members:
 
 	* ``int n``: the number of strings
-	* ``const char p[]``: the array of strings with `n` elements
+	* ``const char **p``: the array of strings with `n` elements
 
 TIME
 	C-type: ``double``
@@ -535,7 +535,7 @@ requiring per-task / per top-request state for object instances need
 to implement other means to associate storage with object instances.
 
 Using ``VRT_priv_task()`` to maintin per object instance state is a
-convenient yet inofficial interface which was not originally intended
+convenient yet unofficial interface which was not originally intended
 for this purpose and will likely be replaced with a more suitable
 interface.
 
