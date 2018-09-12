@@ -46,7 +46,7 @@ The vmod.vcc file
 The interface between your VMOD and the VCL compiler ("VCC") and the
 VCL runtime ("VRT") is defined in the vmod.vcc file which a python
 script called "vmodtool.py" turns into thaumaturgically challenged C
-data structures that does all the hard work.
+data structures that do all the hard work.
 
 The std VMODs vmod.vcc file looks somewhat like this::
 
