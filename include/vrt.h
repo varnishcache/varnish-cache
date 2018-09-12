@@ -57,9 +57,17 @@
  *	VRT_StrandsWS() added
  *	VRT_CollectStrands() added
  *	VRT_STRANDS_string() removed from vrt.h (never implemented)
- *	VRT_Healthy() changed prototype
  *	VRT_Vmod_Init signature changed
  *	VRT_Vmod_Fini changed to VRT_Vmod_Unload
+ *	// directors
+ *	VRT_backend_healthy() removed
+ *	VRT_Healthy() changed prototype
+ *	struct vdi_methods and callback prototypes added
+ *	struct director added;
+ *	VRT_AddDirector() added
+ *	VRT_SetHealth() added
+ *	VRT_DisableDirector() added
+ *	VRT_DelDirector() added
  * 7.0 (2018-03-15)
  *	lots of stuff moved from cache.h to cache_varnishd.h
  *	   (ie: from "$Abi vrt" to "$Abi strict")
