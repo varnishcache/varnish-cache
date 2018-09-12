@@ -186,8 +186,8 @@ Objects and methods
 Varnish also supports a simple object model for vmods. Objects and
 methods are declared in the vcc file as::
 
-	$Object class(`constructor arguments`)
-	$Method .method(`method arguments`)
+	$Object class(...)
+	$Method .method(...)
 
 
 For declared object classes of a vmod, object instances can then be
