@@ -422,6 +422,16 @@ STRING_LIST
 	and make sure your workspace_client and workspace_backend params
 	are big enough.
 
+STRANDS
+	C-Type: ``const struct strands *``
+
+	Strands are like STRING_LIST, but without the drawbacks of
+	variable arguments: The list of strings gets passed in a
+	struct with the following members:
+
+	* ``int n``: the number of strings
+	* ``const char p[]``: the array of strings with `n` elements
+
 TIME
 	C-type: ``double``
 
