@@ -103,9 +103,8 @@ The ``beresp.filters`` variable is readable and writable in
 ``vcl_backend_response``. This is a space-separated list of modules
 that we call VFPs, for "Varnish fetch processors", that may be applied
 to a backend response body as it is being fetched. In default Varnish,
-the list may include values such as ``gzip``, ``gunzip``, ``esi`` and
-``stream``, depending on how you have set the ``beresp.do_*``
-variables.
+the list may include values such as ``gzip``, ``gunzip``, and ``esi``,
+depending on how you have set the ``beresp.do_*`` variables.
 
 This addition makes it possible for VMODs to define VFPs to filter or
 manipulate backend response bodies, which can be added by changing the
