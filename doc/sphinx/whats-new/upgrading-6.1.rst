@@ -88,9 +88,14 @@ bit. ``keep`` sets a lifetime in the cache in addition to TTL for
 objects that can be validated by a 304 "Not Modified" response from
 the backend to a conditional request (with ``If-None-Match`` or
 ``If-Modified-Since``). If an expired object is also out of grace
-time, it is no longer possible to deliver a "keep" object from
-``vcl_hit``. It is possible to validate a 304 candidate from
-``vcl_miss``.
+time, then ``vcl_hit`` will no longer be called, so it is impossible
+to deliver the "keep" object in this case.
+
+Note that the headers ``If-None-Match`` and ``If-Modified-Since``,
+together with the 304 behavior, are handled automatically by Varnish.
+If you, for some reason, need to explicitly disable this for a backend
+request, then you need do this by removing the headers in
+``vcl_backend_fetch``.
 
 The documentation in :ref:`users-guide-handling_misbehaving_servers`
 has been expanded to discuss these matters in greater depth, look
