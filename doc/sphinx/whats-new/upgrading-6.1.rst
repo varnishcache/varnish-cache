@@ -388,7 +388,7 @@ Other changes
     accordingly. In short, the most important changes include:
 
     * ``struct director_methods`` is replaced by ``struct vdi_methods``
-      * signatures of various callbacks have changed
+    * signatures of various callbacks have changed
     * ``VRT_AddDirector()`` and ``VRT_DelDirector()`` are to be used
       for initialization and destruction.
     * ``vdi_methods`` callbacks are not to be called from vmods any more
