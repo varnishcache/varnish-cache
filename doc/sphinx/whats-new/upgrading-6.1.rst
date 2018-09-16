@@ -4,6 +4,12 @@
 Upgrading to Varnish 6.1
 %%%%%%%%%%%%%%%%%%%%%%%%
 
+A configuration for Varnish 6.0.x will run for version 6.1 without
+changes.  There has been a subtle change in the interpretation of the
+VCL variable ``beresp.keep`` under specific circumstances, as
+discussed below. Other than that, the changes in 6.1 are new features,
+described in the following.
+
 varnishd parameters
 ===================
 
