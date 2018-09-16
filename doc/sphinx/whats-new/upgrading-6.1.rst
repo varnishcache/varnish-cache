@@ -1,20 +1,8 @@
 .. _whatsnew_upgrading_6.1:
 
-**NOTE: The present document is work in progress for the September
-2018 release.** The version number 6.1.0 is provisional and may
-change. See :ref:`whatsnew_upgrading_6.0` for notes about the
-currently most recent Varnish release.
-
 %%%%%%%%%%%%%%%%%%%%%%%%
 Upgrading to Varnish 6.1
 %%%%%%%%%%%%%%%%%%%%%%%%
-
-.. _upd_6_1_headline:
-
-**Headline Changes**
-====================
-
-**XXX**
 
 varnishd parameters
 ===================
@@ -44,11 +32,6 @@ for details.
 
 Changes to VCL
 ==============
-
-**Headline VCL changes**
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-**XXX**
 
 VCL variables
 ~~~~~~~~~~~~~
@@ -159,11 +142,6 @@ you now have the option.
 :ref:`vmod_unix(3)` is now supported for SunOS and descendants. This
 entails changing the privilege set of the child process while the VMOD
 is loaded, see the documentation.
-
-**anything else**
-=================
-
-**XXX**
 
 Other changes
 =============
@@ -319,8 +297,6 @@ Other changes
 
   * Added the ``-need-bytes`` argument for the ``process`` command,
     see :ref:`vtc(7)`.
-
-  * **XXX**
 
 * ``varnishhist(1)``:
 
