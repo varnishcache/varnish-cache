@@ -72,7 +72,7 @@
 	:oneliner:	Session accept failures: other
 
 	Detailed reason for sess_fail: neither of the above, see
-	Debug log (varnishlog -g raw -I Debug:^Accept).
+	SessError log (varnishlog -g raw -i SessError).
 
 .. varnish_vsc:: client_req_400
 	:oneliner:	Client requests received, subject to 400 errors
