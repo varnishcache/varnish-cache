@@ -51,6 +51,8 @@ SLTM(Debug, SLT_F_UNSAFE, "Debug messages",
 	"Debug messages can normally be ignored, but are sometimes"
 	" helpful during trouble-shooting.  Most debug messages must"
 	" be explicitly enabled with parameters.\n\n"
+	"Debug messages may be added, changed or removed without"
+	" prior notice and shouldn't be considered stable.\n\n"
 )
 
 SLTM(Error, 0, "Error messages",
