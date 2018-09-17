@@ -218,6 +218,8 @@ cmd_shell(CMD_ARGS)
 
 /* SECTION: err_shell err_shell
  *
+ * NOTICE: err_shell is deprecated, use `shell -err -expect` instead.
+ *
  * This is very similar to the the ``shell`` command, except it takes a first
  * string as argument before the command::
  *
