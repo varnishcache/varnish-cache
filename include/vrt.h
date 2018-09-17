@@ -52,7 +52,7 @@
  * binary/load-time compatible, increment MAJOR version
  *
  *
- * TRUNK (2018-09-15)
+ * 8.0 (2018-09-15)
  *	VRT_Strands() added
  *	VRT_StrandsWS() added
  *	VRT_CollectStrands() added
@@ -114,7 +114,7 @@
  *	vrt_acl type added
  */
 
-#define VRT_MAJOR_VERSION	7U
+#define VRT_MAJOR_VERSION	8U
 
 #define VRT_MINOR_VERSION	0U
 
