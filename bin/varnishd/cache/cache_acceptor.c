@@ -451,6 +451,8 @@ vca_accept_task(struct worker *wrk, void *arg)
 	struct poolsock *ps;
 	struct listen_sock *ls;
 	int i;
+	char laddr[VTCP_ADDRBUFSIZE];
+	char lport[VTCP_PORTBUFSIZE];
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(ps, arg, POOLSOCK_MAGIC);
@@ -510,9 +512,21 @@ vca_accept_task(struct worker *wrk, void *arg)
 				vca_pace_bad();
 				break;
 			}
+
+			i = errno;
 			wrk->stats->sess_fail++;
-			VSL(SLT_Debug, ls->sock, "Accept failed: %s",
-			    strerror(errno));
+
+			if (wa.acceptlsock->uds) {
+				strcpy(laddr, "0.0.0.0");
+				strcpy(lport, "0");
+			} else {
+				VTCP_myname(ls->sock, laddr, VTCP_ADDRBUFSIZE,
+				    lport, VTCP_ADDRBUFSIZE);
+			}
+
+			VSL(SLT_SessError, 0, "%s %s %s %d %d %s",
+			    wa.acceptlsock->name, laddr, lport,
+			    ls->sock, i, strerror(i));
 			(void)Pool_TrySumstat(wrk);
 			continue;
 		}

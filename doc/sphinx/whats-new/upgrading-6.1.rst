@@ -183,6 +183,12 @@ Other changes
     In particular, http connection (HTC) errors are now reported
     symbolically in addition to the previous numerical value.
 
+  * Log entries under the new ``SessError`` tag now give more
+    diagnostic information about session accept failures (failure to
+    accept a client connection). These must be viewed in raw grouping,
+    since accept failures are not part of any request/response
+    transaction.
+
   * When a backend is unhealthy, ``Backend_health`` now reports some
     diagnostic information in addition to the HTTP response and timing
     information.
