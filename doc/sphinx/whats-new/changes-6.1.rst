@@ -18,6 +18,6 @@ exceeded (ignore/warn/error).
 We have made `req.http.Host` mandatory and handle requests without it
 on the fast DoS avoidance path.
 
-For all the details and new stuff, see :ref:`whatsnew_changes_6.1`
+For all the details and new stuff, see :ref:`whatsnew_upgrading_6.1`
 
 *eof*
