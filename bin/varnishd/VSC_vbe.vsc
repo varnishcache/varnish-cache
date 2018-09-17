@@ -100,7 +100,7 @@
 	:oneliner:	Connections failed
 
 	Counter of failed opens. Detailed reasons are given in the
-	fail_* counters (DIAG level) and in Debug VSL.
+	fail_* counters (DIAG level) and in the log under the FetchError tag.
 
 	This counter is the sum of all detailed fail_* counters.
 
