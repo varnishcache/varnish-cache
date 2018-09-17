@@ -278,7 +278,7 @@ Other changes
 
 * ``varnishtest(1)`` and ``vtc(7)``:
 
-  * ``varnishtest`` and the ``vtc`` test script language now supports
+  * ``varnishtest`` and the ``vtc`` test script language now support
     testing for haproxy as well as Varnish. The ``haproxy`` directive
     in a test can be used to define, configure, start and stop a
     haproxy instance, and you can also script messages to send on the
