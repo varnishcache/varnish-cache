@@ -176,7 +176,7 @@ where we kept thinking in the old frame of reference (ie: Squid)::
 	to ask are:
 
 		How long time after the expiry can we serve a cached copy
-		of this document while we have reason to belive the backend
+		of this document while we have reason to believe the backend
 		can supply us with an update ?
 
 		How long time after the expiry can we serve a cached copy
