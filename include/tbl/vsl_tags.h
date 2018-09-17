@@ -73,8 +73,8 @@ SLTM(SessError, 0, "Client connection accept failed",
 	"\t|  |  |  |  |  +- Detailed error message\n"
 	"\t|  |  |  |  +---- Error Number (errno) from accept(2)\n"
 	"\t|  |  |  +------- File descriptor number\n"
-	"\t|  |  +---------- Local TCP port\n"
-	"\t|  +------------- Local IPv4/6 address\n"
+	"\t|  |  +---------- Local TCP port / 0 for UDS\n"
+	"\t|  +------------- Local IPv4/6 address / 0.0.0.0 for UDS\n"
 	"\t+---------------- Socket name (from -a argument)\n"
 	"\n"
 )
@@ -86,11 +86,11 @@ SLTM(SessOpen, 0, "Client connection opened",
 	"\t%s %d %s %s %s %d\n"
 	"\t|  |  |  |  |  |\n"
 	"\t|  |  |  |  |  +- File descriptor number\n"
-	"\t|  |  |  |  +---- Local TCP port\n"
-	"\t|  |  |  +------- Local IPv4/6 address\n"
+	"\t|  |  |  |  +---- Local TCP port / 0 for UDS\n"
+	"\t|  |  |  +------- Local IPv4/6 address / 0.0.0.0 for UDS\n"
 	"\t|  |  +---------- Socket name (from -a argument)\n"
-	"\t|  +------------- Remote TCP port\n"
-	"\t+---------------- Remote IPv4/6 address\n"
+	"\t|  +------------- Remote TCP port / 0 for UDS\n"
+	"\t+---------------- Remote IPv4/6 address / 0.0.0.0 for UDS\n"
 	"\n"
 )
 
