@@ -103,7 +103,7 @@ variant symbols, presently symbols which are different in
 ``vcl 4.0`` and ``vcl 4.1``.
 
 The "prototype" information in the VMOD shared library has been
-changed to JSON, (look in your vcc_if.c file if you don't belive
+changed to JSON, (look in your vcc_if.c file if you don't believe
 me), and this can express more detailed information, presently
 the optional arguments.
 

@@ -376,7 +376,7 @@ Other changes
   * Python 3 is now preferred in builds, and will likely be required
     in future versions.
 
-  * We belive builds are now reproducible, and intend to keep them
+  * We believe builds are now reproducible, and intend to keep them
     that way.
 
 *eof*
