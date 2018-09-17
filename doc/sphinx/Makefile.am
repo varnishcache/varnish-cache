@@ -188,6 +188,7 @@ VTCSYN_SRC = $(top_srcdir)/bin/varnishtest/vtc.c \
 	     $(top_srcdir)/bin/varnishtest/vtc_http.c \
 	     $(top_srcdir)/bin/varnishtest/vtc_http2.c \
 	     $(top_srcdir)/bin/varnishtest/vtc_logexp.c \
+	     $(top_srcdir)/bin/varnishtest/vtc_misc.c \
 	     $(top_srcdir)/bin/varnishtest/vtc_process.c \
 	     $(top_srcdir)/bin/varnishtest/vtc_syslog.c \
 	     $(top_srcdir)/bin/varnishtest/vtc_varnish.c
