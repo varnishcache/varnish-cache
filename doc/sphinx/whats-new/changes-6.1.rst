@@ -1,13 +1,23 @@
 .. _whatsnew_changes_6.1:
 
-**NOTE: The present document is work in progress for the September
-2018 release.** The version number 6.1.0 is provisional and may
-change. See :ref:`whatsnew_changes_6.0` for notes about the currently
-most recent Varnish release.
-
 Changes in Varnish 6.1
 ======================
 
-**XXX**
+This is release is a maintenance release, so while there are many actual
+changes, and of course many bugfixes, they should not have little to no
+impact on running Varnish installations.
+
+Nothing to see here, really
+---------------------------
+
+Since new users often forget to `vcl.discard` their old VCLs, we have
+added a warning when you have more than 100 VCLs loaded.  There are
+parameters to set the threshold and decide what happens when it is
+exceeded (ignore/warn/error).
+
+We have made `req.http.Host` mandatory and handle requests without it
+on the fast DoS avoidance path.
+
+For all the details and new stuff, see :ref:`whatsnew_changes_6.1`
 
 *eof*
