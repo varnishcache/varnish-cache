@@ -329,6 +329,9 @@ Other changes
   * The Varnish API soname version (for libvarnishapi.so) has been
     bumped to 2.0.0.
 
+  * The VRT version has been bumped to 8.0. See ``vrt.h`` for details
+    on the changes since 7.0.
+
   * Space required by varnish for maintaining the ``PRIV_TASK`` and
     ``PRIV_TOP`` parameters is now taken from the appropriate
     workspace rather than from the heap as before. For a failing
