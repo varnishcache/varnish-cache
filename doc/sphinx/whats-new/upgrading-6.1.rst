@@ -271,7 +271,7 @@ Other changes
 
     * ``sess_fail_other``: number of accept failures for reasons
       other than those given by the other ``sess_fail_*`` counters.
-      More details may appear in the ``Debug`` entry of the log
+      More details may appear in the ``SessError`` entry of the log
       (:ref:`varnish-counters(7)` shows a ``varnishlog`` invocation
       that may help).
 
