@@ -181,12 +181,6 @@ Other changes
     In particular, http connection (HTC) errors are now reported
     symbolically in addition to the previous numerical value.
 
-  * ``Debug`` log entries may also give more diagnostic information
-    about session accept failures (failure to accept a client
-    connection). These must be viewed in raw grouping, since accept
-    failures are not part of any request/response transaction. The
-    ``Debug`` message begins with the phrase ``"Accept failed"``.
-
   * When a backend is unhealthy, ``Backend_health`` now reports some
     diagnostic information in addition to the HTTP response and timing
     information.
