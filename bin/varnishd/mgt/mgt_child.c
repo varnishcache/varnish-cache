@@ -679,8 +679,19 @@ mch_cli_server_status(struct cli *cli, const char * const *av, void *priv)
 	VCLI_Out(cli, "Child in state %s", ch_state[child_state]);
 }
 
+static void v_matchproto_(cli_func_t)
+mch_cli_server_status_json(struct cli *cli, const char * const *av, void *priv)
+{
+	(void)priv;
+	VCLI_JSON_begin(cli, 2, av);
+	VCLI_Out(cli, ", ");
+	VCLI_JSON_str(cli, ch_state[child_state]);
+	VCLI_JSON_end(cli);
+}
+
 static struct cli_proto cli_mch[] = {
-	{ CLICMD_SERVER_STATUS,		"", mch_cli_server_status },
+	{ CLICMD_SERVER_STATUS,		"", mch_cli_server_status,
+	  mch_cli_server_status_json },
 	{ CLICMD_SERVER_START,		"", mch_cli_server_start },
 	{ CLICMD_SERVER_STOP,		"", mch_cli_server_stop },
 	{ CLICMD_PANIC_SHOW,		"", mch_cli_panic_show },
