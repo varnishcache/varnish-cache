@@ -382,7 +382,7 @@ h2_rx_priority(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 
 	(void)wrk;
 	ASSERT_RXTHR(h2);
-	xxxassert(r2->stream & 1);
+	(void)r2;
 	return (0);
 }
 
@@ -616,7 +616,21 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	size_t l;
 
 	ASSERT_RXTHR(h2);
+
+	if (r2 == NULL) {
+		if (h2->rxf_stream <= h2->highest_stream)
+			return (H2CE_PROTOCOL_ERROR);	// rfc7540,l,1153,1158
+		if (h2->refcnt >= h2->local_settings.max_concurrent_streams) {
+			VSLb(h2->vsl, SLT_Debug,
+			     "H2: stream %u: Hit maximum number of "
+			     "concurrent streams", h2->rxf_stream);
+			return (H2SE_REFUSED_STREAM);	// rfc7540,l,1200,1205
+		}
+		h2->highest_stream = h2->rxf_stream;
+		r2 = h2_new_req(wrk, h2, h2->rxf_stream, NULL);
+	}
 	AN(r2);
+
 	if (r2->state != H2_S_IDLE)
 		return (H2CE_PROTOCOL_ERROR);	// XXX spec ?
 	r2->state = H2_S_OPEN;
@@ -927,23 +941,6 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2, h2_frame h2f)
 	    !(r2 && h2->new_req == r2->req && h2f == H2_F_CONTINUATION))
 		return (H2CE_PROTOCOL_ERROR);	// rfc7540,l,1859,1863
 
-	if (r2 == NULL && h2f->act_sidle == 0) {
-		if (h2->rxf_stream <= h2->highest_stream)
-			return (H2CE_PROTOCOL_ERROR);	// rfc7540,l,1153,1158
-		if (h2->refcnt >= h2->local_settings.max_concurrent_streams) {
-			VSLb(h2->vsl, SLT_Debug,
-			     "H2: stream %u: Hit maximum number of "
-			     "concurrent streams", h2->rxf_stream);
-			// rfc7540,l,1200,1205
-			h2_tx_rst(wrk, h2, h2->req0, h2->rxf_stream,
-				H2SE_REFUSED_STREAM);
-			return (0);
-		}
-		h2->highest_stream = h2->rxf_stream;
-		r2 = h2_new_req(wrk, h2, h2->rxf_stream, NULL);
-		AN(r2);
-	}
-
 	h2e = h2f->rxfunc(wrk, h2, r2);
 	if (h2e == 0)
 		return (0);
@@ -993,7 +990,6 @@ static int
 h2_sweep(struct worker *wrk, struct h2_sess *h2)
 {
 	int tmo = 0;
-	int nprio = 0;
 	struct h2_req *r2, *r22;
 
 	ASSERT_RXTHR(h2);
@@ -1025,20 +1021,18 @@ h2_sweep(struct worker *wrk, struct h2_sess *h2)
 			}
 			break;
 		case H2_S_IDLE:
-			/* This stream was created from receiving a
-			 * PRIORITY frame, and should not be counted
-			 * as an active stream keeping the connection
-			 * open. */
-			AZ(r2->scheduled);
-			nprio++;
-			break;
+			/* Current code make this unreachable: h2_new_req is
+			 * only called inside h2_rx_headers, which immediately
+			 * sets the new stream state to H2_S_OPEN */
+			/* FALLTHROUGH */
 		default:
+			WRONG("Wrong h2 stream state");
 			break;
 		}
 	}
 	if (tmo)
 		return (0);
-	return ((h2->refcnt - nprio) > 1);
+	return (h2->refcnt > 1);
 }
 
 
