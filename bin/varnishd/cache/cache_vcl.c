@@ -665,6 +665,52 @@ vcl_cli_list(struct cli *cli, const char * const *av, void *priv)
 }
 
 static void v_matchproto_(cli_func_t)
+vcl_cli_list_json(struct cli *cli, const char * const *av, void *priv)
+{
+	struct vcl *vcl;
+
+	(void)priv;
+	ASSERT_CLI();
+	VCLI_JSON_begin(cli, 2, av);
+	VCLI_Out(cli, ",\n");
+	VTAILQ_FOREACH(vcl, &vcl_head, list) {
+		VCLI_Out(cli, "{\n");
+		VSB_indent(cli->sb, 2);
+		VCLI_Out(cli, "\"status\": ");
+		if (vcl == vcl_active) {
+			VCLI_Out(cli, "\"active\",\n");
+		} else if (vcl->discard) {
+			VCLI_Out(cli, "\"discarded\",\n");
+		} else
+			VCLI_Out(cli, "\"available\",\n");
+		VCLI_Out(cli, "\"state\": \"%s\",\n", vcl->state);
+		VCLI_Out(cli, "\"temperature\": \"%s\",\n", vcl->temp);
+		VCLI_Out(cli, "\"busy\": %u,\n", vcl->busy);
+		VCLI_Out(cli, "\"name\": \"%s\"", vcl->loaded_name);
+		if (vcl->label != NULL) {
+			VCLI_Out(cli, ",\n");
+			VCLI_Out(cli, "\"label\": {\n");
+			VSB_indent(cli->sb, 2);
+				VCLI_Out(cli, "\"name\": \"%s\"",
+					 vcl->label->loaded_name);
+			if (vcl->nrefs)
+				VCLI_Out(cli, ",\n\"refs\": %d", vcl->nrefs);
+			VCLI_Out(cli, "\n");
+			VCLI_Out(cli, "}");
+			VSB_indent(cli->sb, -2);
+		} else if (vcl->nlabels > 0) {
+			VCLI_Out(cli, ",\n");
+			VCLI_Out(cli, "\"labels\": %d", vcl->nlabels);
+		}
+		VSB_indent(cli->sb, -2);
+		VCLI_Out(cli, "\n}");
+		if (VTAILQ_NEXT(vcl, list) != NULL)
+			VCLI_Out(cli, ",\n");
+	}
+	VCLI_JSON_end(cli);
+}
+
+static void v_matchproto_(cli_func_t)
 vcl_cli_load(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vrt_ctx *ctx;
@@ -823,7 +869,7 @@ vcl_cli_show(struct cli *cli, const char * const *av, void *priv)
 
 static struct cli_proto vcl_cmds[] = {
 	{ CLICMD_VCL_LOAD,		"", vcl_cli_load },
-	{ CLICMD_VCL_LIST,		"", vcl_cli_list },
+	{ CLICMD_VCL_LIST,		"", vcl_cli_list, vcl_cli_list_json },
 	{ CLICMD_VCL_STATE,		"", vcl_cli_state },
 	{ CLICMD_VCL_DISCARD,		"", vcl_cli_discard },
 	{ CLICMD_VCL_USE,		"", vcl_cli_use },

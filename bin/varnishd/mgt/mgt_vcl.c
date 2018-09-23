@@ -796,6 +796,61 @@ mcf_vcl_list(struct cli *cli, const char * const *av, void *priv)
 }
 
 static void v_matchproto_(cli_func_t)
+mcf_vcl_list_json(struct cli *cli, const char * const *av, void *priv)
+{
+	unsigned status;
+	char *p;
+	struct vclprog *vp;
+	struct vcldep *vd;
+
+	/* NB: Shall generate same output as vcl_cli_list() */
+
+	(void)priv;
+	if (MCH_Running()) {
+		if (!mgt_cli_askchild(&status, &p, "vcl.list -j\n")) {
+			VCLI_SetResult(cli, status);
+			VCLI_Out(cli, "%s", p);
+		}
+		free(p);
+	} else {
+		VCLI_JSON_begin(cli, 2, av);
+		VCLI_Out(cli, ",\n");
+		VTAILQ_FOREACH(vp, &vclhead, list) {
+			VCLI_Out(cli, "{\n");
+			VSB_indent(cli->sb, 2);
+			VCLI_Out(cli, "\"status\": \"%s\",\n",
+			    vp == active_vcl ? "active" : "available");
+			VCLI_Out(cli, "\"state\": \"%s\",\n", vp->state);
+			VCLI_Out(cli, "\"temperature\": \"%s\",\n",
+			    vp->warm ? VCL_STATE_WARM : VCL_STATE_COLD);
+			VCLI_Out(cli, "\"name\": \"%s\"", vp->name);
+			if (mcf_is_label(vp)) {
+				vd = VTAILQ_FIRST(&vp->dfrom);
+				AN(vd);
+				VCLI_Out(cli, ",\n");
+				VCLI_Out(cli, "\"label\": {\n");
+				VSB_indent(cli->sb, 2);
+				VCLI_Out(cli, "\"name\": \"%s\"", vd->to->name);
+				if (vp->nto > 0)
+					VCLI_Out(cli, ",\n\"refs\": %d",
+						 vp->nto);
+				VSB_indent(cli->sb, -2);
+				VCLI_Out(cli, "\n");
+				VCLI_Out(cli, "}");
+			} else if (vp->nto > 0) {
+				VCLI_Out(cli, ",\n");
+				VCLI_Out(cli, "\"labels\": %d", vp->nto);
+			}
+			VSB_indent(cli->sb, -2);
+			VCLI_Out(cli, "\n}");
+			if (VTAILQ_NEXT(vp, list) != NULL)
+				VCLI_Out(cli, ",\n");
+		}
+		VCLI_JSON_end(cli);
+	}
+}
+
+static void v_matchproto_(cli_func_t)
 mcf_vcl_label(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vclprog *vpl;
@@ -888,7 +943,7 @@ static struct cli_proto cli_vcl[] = {
 	{ CLICMD_VCL_USE,		"", mcf_vcl_use },
 	{ CLICMD_VCL_STATE,		"", mcf_vcl_state },
 	{ CLICMD_VCL_DISCARD,		"", mcf_vcl_discard },
-	{ CLICMD_VCL_LIST,		"", mcf_vcl_list },
+	{ CLICMD_VCL_LIST,		"", mcf_vcl_list, mcf_vcl_list_json },
 	{ CLICMD_VCL_LABEL,		"", mcf_vcl_label },
 	{ NULL }
 };
