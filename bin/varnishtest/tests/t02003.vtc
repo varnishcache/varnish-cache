@@ -43,10 +43,10 @@ client c1 {
 		expect goaway.err == PROTOCOL_ERROR
 	} -start
 	stream 3 {
-		txprio
+		txreq
 	} -run
 	stream 1 {
-		txprio
+		txreq
 	} -run
 	stream 0 -wait
 } -run
@@ -63,13 +63,13 @@ varnish v1 -expect MEMPOOL.sess1.live == 0
 
 client c1 {
 	stream 1 {
-		txprio
+		txreq -nostrend
 		txwinup -size 0
 		rxrst
 		expect rst.err == PROTOCOL_ERROR
 	} -run
 	stream 3 {
-		txprio
+		txreq -nostrend
 		txwinup -size 0x40000000
 		txwinup -size 0x40000000
 		rxrst
@@ -81,7 +81,7 @@ client c1 {
 		expect goaway.err == FRAME_SIZE_ERROR
 	} -start
 	stream 5 {
-		txprio
+		txreq -nostrend
 		sendhex "000003 08 00 00000005"
 		delay .1
 		sendhex 01
@@ -167,7 +167,7 @@ client c1 {
 		expect goaway.laststream == 1
 	} -start
 	stream 1 {
-		txprio
+		txreq -nostrend
 		sendhex "000008 05 00 00000001 0001020304050607"
 	} -run
 	stream 0 -wait
@@ -200,7 +200,7 @@ client c1 {
 		expect goaway.laststream == 1
 	} -start
 	stream 1 {
-		txprio
+		txreq -nostrend
 		# RST wrong length
 		sendhex "000005 03 00 00000001 0000000800"
 	} -run
