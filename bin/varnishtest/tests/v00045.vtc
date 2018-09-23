@@ -18,6 +18,7 @@ varnish v1 -cliok "vcl.state vcl1 cold"
 delay 1
 
 varnish v1 -cliexpect "cold/cooling.*vcl1" vcl.list
+varnish v1 -clijson "vcl.list -j"
 
 # It can't be warmed up yet
 delay 1
@@ -26,6 +27,7 @@ varnish v1 -cliexpect "vmod-debug ref on vcl1" "vcl.state vcl1 warm"
 # It will eventually cool down
 delay 2
 varnish v1 -cliexpect "cold/cold.*vcl1" vcl.list
+varnish v1 -clijson "vcl.list -j"
 
 # At this point it becomes possible to warm up again
 varnish v1 -cliok "vcl.state vcl1 warm"
