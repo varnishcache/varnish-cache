@@ -32,22 +32,21 @@
 from __future__ import print_function
 
 import subprocess
-import collections
 import os
 import sys
 
 srcroot = "../.."
 buildroot = "../.."
 if len(sys.argv) == 3:
-	srcroot = sys.argv[1]
-	buildroot = sys.argv[2]
+    srcroot = sys.argv[1]
+    buildroot = sys.argv[2]
 elif len(sys.argv) != 1:
-	print("Two arguments or none")
-	exit(2)
+    print("Two arguments or none")
+    exit(2)
 
 #######################################################################
 def file_header(fo):
-	fo.write("""/*
+    fo.write("""/*
  * NB:  This file is machine generated, DO NOT EDIT!
  *
  * Edit and run include/generate.py instead.
@@ -66,25 +65,25 @@ v = subprocess.check_output([
 vcsfn = os.path.join(srcroot, "include", "vcs_version.h")
 
 try:
-	i = open(vcsfn).readline()
+    i = open(vcsfn).readline()
 except IOError:
-	i = ""
+    i = ""
 
 ident = "/* " + v + " */\n"
 
 if i != ident:
-	fo = open(vcsfn, "w")
-	fo.write(ident)
-	file_header(fo)
-	fo.write('#define VCS_Version "%s"\n' % v)
-	fo.close()
+    fo = open(vcsfn, "w")
+    fo.write(ident)
+    file_header(fo)
+    fo.write('#define VCS_Version "%s"\n' % v)
+    fo.close()
 
-	for i in open(os.path.join(buildroot, "Makefile")):
-		if i[:14] == "PACKAGE_STRING":
-			break
-	i = i.split("=")[1].strip()
+    for i in open(os.path.join(buildroot, "Makefile")):
+        if i[:14] == "PACKAGE_STRING":
+            break
+    i = i.split("=")[1].strip()
 
-	fo = open(os.path.join(srcroot, "include", "vmod_abi.h"), "w")
-	file_header(fo)
-	fo.write('#define VMOD_ABI_Version "%s %s"\n' % (i, v))
-	fo.close()
+    fo = open(os.path.join(srcroot, "include", "vmod_abi.h"), "w")
+    file_header(fo)
+    fo.write('#define VMOD_ABI_Version "%s %s"\n' % (i, v))
+    fo.close()

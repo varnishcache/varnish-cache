@@ -35,50 +35,49 @@ import re
 
 
 def parse_file(fn, cl, tl, sl):
-	p = False
-	section = ""
-	resec = re.compile("[ /]\* SECTION: ")
+    p = False
+    section = ""
+    resec = re.compile("[ /]\* SECTION: ")
 
-	f = open(fn, "r")
+    f = open(fn, "r")
 
-	for l in f:
-		if "*/" in l:
-			p = 0
-		if resec.match(l):
-			a = l.split()
-			section = a[2]
-			sl.append(section)
-			cl[section] = []
-			if len(a) > 3:
-				tl[section] = re.sub(
-					r"^[\t ]*\/?\* SECTION: [^ ]+ +",
-					"", l)
-			else:
-				tl[section] = ""
-			p = 1
-		elif p:
-			cl[section].append(re.sub(r"^ \* ?", "", l))
-	f.close()
+    for l in f:
+        if "*/" in l:
+            p = 0
+        if resec.match(l):
+            a = l.split()
+            section = a[2]
+            sl.append(section)
+            cl[section] = []
+            if len(a) > 3:
+                tl[section] = re.sub(
+                    r"^[\t ]*\/?\* SECTION: [^ ]+ +",
+                    "", l)
+            else:
+                tl[section] = ""
+            p = 1
+        elif p:
+            cl[section].append(re.sub(r"^ \* ?", "", l))
+    f.close()
 
 if __name__ == "__main__":
-	cl = {}
-	tl = {}
-	sl = []
-	for fn in sys.argv[1:]:
-		parse_file(fn, cl, tl, sl)
-	sl.sort()
-	for section in sl:
-		print(tl[section], end="")
-		a = section
-		c = section.count(".")
-		if c == 0:
-			r = "-"
-		elif c == 1:
-			r = "~"
-		elif c == 2:
-			r = "."
-		else:
-			r = "*"
-		print(re.sub(r".", r, tl[section]), end="")
-		print("".join(cl[section]))
-
+    cl = {}
+    tl = {}
+    sl = []
+    for fn in sys.argv[1:]:
+        parse_file(fn, cl, tl, sl)
+    sl.sort()
+    for section in sl:
+        print(tl[section], end="")
+        a = section
+        c = section.count(".")
+        if c == 0:
+            r = "-"
+        elif c == 1:
+            r = "~"
+        elif c == 2:
+            r = "."
+        else:
+            r = "*"
+        print(re.sub(r".", r, tl[section]), end="")
+        print("".join(cl[section]))
