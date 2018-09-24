@@ -155,7 +155,7 @@ vtc_log_emit(const struct vtclog *vl)
 		return;
 	AZ(pthread_mutex_lock(&vtclog_mtx));
 	assert(vtclog_left > l);
-	memcpy(vtclog_buf,VSB_data(vl->vsb), l);
+	memcpy(vtclog_buf, VSB_data(vl->vsb), l);
 	vtclog_buf += l;
 	*vtclog_buf = '\0';
 	vtclog_left -= l;
