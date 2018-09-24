@@ -53,6 +53,7 @@ PARAMS = {
     "ctype": CTYPES,
     "level": LEVELS,
     "oneliner": None,
+    "group": None,
     "format": FORMATS,
 }
 
@@ -88,22 +89,30 @@ class CounterSet(object):
         self.name = name
         self.struct = "struct VSC_" + name
         self.mbrs = []
+        self.groups = {}
         self.head = m
         self.completed = False
         self.off = 0
 
-    def addmbr(self, m):
+    def addmbr(self, m, g):
         '''Add a counter'''
         assert not self.completed
         self.mbrs.append(m)
         retval = self.off
         self.off += 8
+        if g is not None:
+            if g not in self.groups:
+                self.groups[g] = []
+            self.groups[g].append(m)
         return retval
 
     def complete(self, arg):
         '''Mark set completed'''
         assert arg == self.name
         self.completed = True
+        self.gnames = list(self.groups.keys())
+        self.gnames.sort()
+
 
     def emit_json(self, fo):
         '''Emit JSON as compact C byte-array and as readable C-comments'''
@@ -152,14 +161,23 @@ class CounterSet(object):
     def emit_h(self):
         '''Emit .h file'''
         assert self.completed
+
         fon = "VSC_" + self.name + ".h"
         fo = open(fon, "w")
         genhdr(fo, self.name)
+
         fo.write(self.struct + " {\n")
         for i in self.mbrs:
             fo.write("\tuint64_t\t%s;\n" % i.arg)
         fo.write("};\n")
         fo.write("\n")
+
+        for i in self.gnames:
+            fo.write(self.struct + "_" + i + " {\n")
+            for j in self.groups[i]:
+                fo.write("\tuint64_t\t%s;\n" % j.arg)
+            fo.write("};\n")
+            fo.write("\n")
 
         fo.write("#define VSC_" + self.name +
                  "_size PRNDUP(sizeof(" + self.struct + "))\n\n")
@@ -175,6 +193,10 @@ class CounterSet(object):
             fo.write("void VSC_" + self.name + "_Summ")
             fo.write("(" + self.struct + " *, ")
             fo.write("const " + self.struct + " *);\n")
+            for i in self.gnames:
+                fo.write("void VSC_" + self.name + "_Summ_" + i)
+                fo.write("(" + self.struct + " *, ")
+                fo.write("const " + self.struct + "_" + i + " *);\n")
 
     def emit_c_paranoia(self, fo):
         '''Emit asserts to make sure compiler gets same byte index'''
@@ -189,18 +211,27 @@ class CounterSet(object):
 
         fo.write("#undef PARANOIA\n")
 
-    def emit_c_sumfunc(self, fo):
+    def emit_c_sumfunc(self, fo, g=None):
         '''Emit a function summ up countersets'''
         fo.write("\n")
         fo.write("void\n")
         fo.write("VSC_" + self.name + "_Summ")
+        if g is not None:
+            fo.write("_" + g)
         fo.write("(" + self.struct + " *dst, ")
-        fo.write("const " + self.struct + " *src)\n")
+        fo.write("const " + self.struct)
+        if g is not None:
+            fo.write("_" + g)
+        fo.write(" *src)\n")
         fo.write("{\n")
         fo.write("\n")
         fo.write("\tAN(dst);\n")
         fo.write("\tAN(src);\n")
-        for i in self.mbrs:
+        if g:
+            l = self.groups[g]
+        else:
+            l = self.mbrs
+        for i in l:
             s1 = "\tdst->" + i.arg + " +="
             s2 = "src->" + i.arg + ";"
             if len((s1 + " " + s2).expandtabs()) < 79:
@@ -271,6 +302,8 @@ class CounterSet(object):
         self.emit_c_destroyfunc(fo)
         if 'sumfunction' in self.head.param:
             self.emit_c_sumfunc(fo)
+            for i in self.gnames:
+                self.emit_c_sumfunc(fo, i)
 
 #######################################################################
 
@@ -359,7 +392,7 @@ class RstVscDirective(OurDirective):
             sys.stderr.write("'" + p + "'")
             sys.stderr.write(" on field '" + self.arg + "'\n")
             exit(2)
-        self.param["index"] = vsc_set[-1].addmbr(self)
+        self.param["index"] = vsc_set[-1].addmbr(self, self.param.get("group"))
         if fo:
             fo.write("\n``%s`` – " % self.arg)
             fo.write("`%s` - " % self.param["type"])
