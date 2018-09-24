@@ -335,6 +335,126 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 	VSB_destroy(&vsb);
 }
 
+static inline void
+mcf_json_key_valstr(struct cli *cli, const char *key, const char *val)
+{
+	VCLI_Out(cli, "\"%s\": ", key);
+	VCLI_JSON_str(cli, val);
+	VCLI_Out(cli, ",\n");
+}
+
+static void v_matchproto_(cli_func_t)
+mcf_param_show_json(struct cli *cli, const char * const *av, void *priv)
+{
+	int n, comma = 0;
+	struct plist *pl;
+	const struct parspec *pp;
+	int chg = 0, flags;
+	struct vsb *vsb, *def;
+	const char *show = NULL;
+
+	vsb = VSB_new_auto();
+	def = VSB_new_auto();
+	(void)priv;
+
+	for (int i = 2; av[i] != NULL; i++) {
+		if (strcmp(av[i], "-l") == 0) {
+			VCLI_SetResult(cli, CLIS_PARAM);
+			VCLI_Out(cli, "-l not permitted with param.show -j");
+			return;
+		}
+		if (strcmp(av[i], "changed") == 0) {
+			chg = 1;
+			continue;
+		}
+		if (strcmp(av[i], "-j") == 0)
+			continue;
+		show = av[i];
+	}
+
+	n = 0;
+	VCLI_JSON_begin(cli, 2, av);
+	VCLI_Out(cli, ",\n");
+	VTAILQ_FOREACH(pl, &phead, list) {
+		pp = pl->spec;
+		if (show != NULL && strcmp(pp->name, show) != 0)
+			continue;
+		n++;
+
+		VSB_clear(vsb);
+		if (pp->func(vsb, pp, JSON_FMT))
+			VCLI_SetResult(cli, CLIS_PARAM);
+		AZ(VSB_finish(vsb));
+		VSB_clear(def);
+		if (pp->func(def, pp, NULL))
+			VCLI_SetResult(cli, CLIS_PARAM);
+		AZ(VSB_finish(def));
+		if (chg && pp->def != NULL && !strcmp(pp->def, VSB_data(def)))
+			continue;
+
+		VCLI_Out(cli, "%s", comma ? ",\n" : "");
+		comma++;
+		VCLI_Out(cli, "{\n");
+		VSB_indent(cli->sb, 2);
+		mcf_json_key_valstr(cli, "name", pp->name);
+		if (pp->flags & NOT_IMPLEMENTED) {
+			VCLI_Out(cli, "\"implemented\": false\n");
+			VSB_indent(cli->sb, -2);
+			VCLI_Out(cli, "}");
+			continue;
+		}
+		VCLI_Out(cli, "\"implemented\": true,\n");
+		VCLI_Out(cli, "\"value\": %s,\n", VSB_data(vsb));
+		if (pp->units != NULL && *pp->units != '\0')
+			mcf_json_key_valstr(cli, "units", pp->units);
+
+		if (pp->def != NULL)
+			mcf_json_key_valstr(cli, "default", pp->def);
+		if (pp->min != NULL)
+			mcf_json_key_valstr(cli, "minimum", pp->min);
+		if (pp->max != NULL)
+			mcf_json_key_valstr(cli, "maximum", pp->max);
+		mcf_json_key_valstr(cli, "description", pp->descr);
+
+		flags = 0;
+		VCLI_Out(cli, "\"flags\": [\n");
+		VSB_indent(cli->sb, 2);
+
+#define flag_out(flag, string) do {					\
+			if (pp->flags & flag) {				\
+				if (flags)				\
+					VCLI_Out(cli, ",\n");		\
+				VCLI_Out(cli, "\"%s\"", #string);	\
+				flags++;				\
+			}						\
+		} while(0)
+
+		flag_out(OBJ_STICKY, obj_sticky);
+		flag_out(DELAYED_EFFECT, delayed_effect);
+		flag_out(EXPERIMENTAL, experimental);
+		flag_out(MUST_RELOAD, must_reload);
+		flag_out(MUST_RESTART, must_restart);
+		flag_out(WIZARD, wizard);
+		flag_out(PROTECTED, protected);
+		flag_out(ONLY_ROOT, only_root);
+
+#undef flag_out
+
+		VSB_indent(cli->sb, -2);
+		VCLI_Out(cli, "\n]");
+		VSB_indent(cli->sb, -2);
+		VCLI_Out(cli, "\n}");
+	}
+	VCLI_JSON_end(cli);
+	if (show != NULL && n == 0) {
+		VSB_clear(cli->sb);
+		VCLI_SetResult(cli, CLIS_PARAM);
+		VCLI_Out(cli, "Unknown parameter \"%s\".", show);
+	}
+	VSB_destroy(&vsb);
+	VSB_destroy(&def);
+}
+
 /*--------------------------------------------------------------------
  * Mark parameters as protected
  */
@@ -471,7 +591,8 @@ mcf_wash_param(struct cli *cli, const struct parspec *pp, const char **val,
 /*--------------------------------------------------------------------*/
 
 static struct cli_proto cli_params[] = {
-	{ CLICMD_PARAM_SHOW,		"", mcf_param_show },
+	{ CLICMD_PARAM_SHOW,		"", mcf_param_show,
+	  mcf_param_show_json },
 	{ CLICMD_PARAM_SET,		"", mcf_param_set },
 	{ NULL }
 };
