@@ -204,6 +204,27 @@ process p4 -writehex 0d
 process p4 -expect-text 21 11 "Enter choice number (0 - 12):"
 process p4 -screen_dump
 
+# 11. Test non-VT100 (e.g., VT220, XTERM) terminals
+process p4 -writehex "31 31 0d"
+process p4 -expect-text 0 0 "Menu 11: Non-VT100 Tests"
+
+process p4 -writehex "37 0d"
+process p4 -expect-text 0 0 "Menu 11.7: Miscellaneous ISO-6429 (ECMA-48) Tests"
+
+process p4 -writehex "32 0d"
+process p4 -expect-text 0 0 "Push <RETURN>"
+process p4 -screen_dump
+process p4 -expect-text 20 1 "Test Repeat (REP)"
+process p4 -expect-text 1 1 " ++ "
+process p4 -expect-text 2 2 " ++ "
+process p4 -expect-text 17 17 " ++ "
+process p4 -expect-text 18 18 "*++*"
+process p4 -writehex "0d"
+process p4 -expect-text 0 0 "Menu 11.7: Miscellaneous ISO-6429 (ECMA-48) Tests"
+process p4 -writehex "30 0d"
+process p4 -expect-text 0 0 "Menu 11: Non-VT100 Tests"
+process p4 -writehex "30 0d"
+
 # 0. Exit
 process p4 -writehex "30 0d"
 process p4 -expect-text 12 30 "That's all, folks!"
