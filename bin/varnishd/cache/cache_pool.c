@@ -50,20 +50,12 @@ static VTAILQ_HEAD(,pool)	pools = VTAILQ_HEAD_INITIALIZER(pools);
  * Summing of stats into global stats counters
  */
 
-static void
-pool_sumstat(const struct VSC_main *src)
-{
-
-	Lck_AssertHeld(&wstat_mtx);
-	VSC_main_Summ(VSC_C_main, src);
-}
-
 void
 Pool_Sumstat(const struct worker *wrk)
 {
 
 	Lck_Lock(&wstat_mtx);
-	pool_sumstat(wrk->stats);
+	VSC_main_Summ_wrk(VSC_C_main, wrk->stats);
 	Lck_Unlock(&wstat_mtx);
 	memset(wrk->stats, 0, sizeof *wrk->stats);
 }
@@ -73,7 +65,7 @@ Pool_TrySumstat(const struct worker *wrk)
 {
 	if (Lck_Trylock(&wstat_mtx))
 		return (0);
-	pool_sumstat(wrk->stats);
+	VSC_main_Summ_wrk(VSC_C_main, wrk->stats);
 	Lck_Unlock(&wstat_mtx);
 	memset(wrk->stats, 0, sizeof *wrk->stats);
 	return (1);
@@ -121,14 +113,14 @@ Pool_PurgeStat(unsigned nobj)
 void v_matchproto_(task_func_t)
 pool_stat_summ(struct worker *wrk, void *priv)
 {
-	struct VSC_main *src;
+	struct VSC_main_wrk *src;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk->pool, POOL_MAGIC);
 	AN(priv);
 	src = priv;
 	Lck_Lock(&wstat_mtx);
-	pool_sumstat(src);
+	VSC_main_Summ_wrk(VSC_C_main, src);
 	Lck_Unlock(&wstat_mtx);
 	memset(src, 0, sizeof *src);
 	AZ(wrk->pool->b_stat);
