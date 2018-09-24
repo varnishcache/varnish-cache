@@ -101,7 +101,7 @@ cmd_varnishtest(CMD_ARGS)
 /* SECTION: shell shell
  *
  * Pass the string given as argument to a shell. If you have multiple
- * commands to run, you can use curly barces to describe a multi-lines
+ * commands to run, you can use curly brackets to describe a multi-lines
  * script, eg::
  *
  *         shell {
