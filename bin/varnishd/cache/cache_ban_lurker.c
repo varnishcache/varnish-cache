@@ -62,7 +62,7 @@ ban_kick_lurker(void)
  */
 
 static int
-ban_cleantail(const struct ban *victim, struct VSC_main *stats)
+ban_cleantail(const struct ban *victim)
 {
 	struct ban *b, *bt;
 	struct banhead_s freelist = VTAILQ_HEAD_INITIALIZER(freelist);
@@ -78,13 +78,13 @@ ban_cleantail(const struct ban *victim, struct VSC_main *stats)
 		if (b != VTAILQ_FIRST(&ban_head) && b->refcount == 0) {
 			assert(VTAILQ_EMPTY(&b->objcore));
 			if (b->flags & BANS_FLAG_COMPLETED)
-				stats->bans_completed--;
+				VSC_C_main->bans_completed--;
 			if (b->flags & BANS_FLAG_OBJ)
-				stats->bans_obj--;
+				VSC_C_main->bans_obj--;
 			if (b->flags & BANS_FLAG_REQ)
-				stats->bans_req--;
-			stats->bans--;
-			stats->bans_deleted++;
+				VSC_C_main->bans_req--;
+			VSC_C_main->bans--;
+			VSC_C_main->bans_deleted++;
 			VTAILQ_REMOVE(&ban_head, b, list);
 			VTAILQ_INSERT_TAIL(&freelist, b, list);
 			bans_persisted_fragmentation +=
@@ -125,7 +125,7 @@ ban_cleantail(const struct ban *victim, struct VSC_main *stats)
  */
 
 static struct objcore *
-ban_lurker_getfirst(struct vsl_log *vsl, struct ban *bt, struct VSC_main *stats)
+ban_lurker_getfirst(struct vsl_log *vsl, struct ban *bt)
 {
 	struct objhead *oh;
 	struct objcore *oc, *noc;
@@ -154,8 +154,8 @@ ban_lurker_getfirst(struct vsl_log *vsl, struct ban *bt, struct VSC_main *stats)
 			assert(move_oc == 0);
 
 			/* hold off to give lookup a chance and reiterate */
+			VSC_C_main->bans_lurker_contention++;
 			Lck_Unlock(&ban_mtx);
-			stats->bans_lurker_contention++;
 			VSL_Flush(vsl, 0);
 			VTIM_sleep(cache_param->ban_lurker_holdoff);
 			Lck_Lock(&ban_mtx);
@@ -209,10 +209,9 @@ ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
 	struct objcore *oc;
 	unsigned tests;
 	int i;
-	struct VSC_main *stats;
+	uint64_t tested = 0, tested_tests = 0, lok = 0, lokc = 0;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	stats = wrk->stats;
 
 	/*
 	 * First see if there is anything to do, and if so, insert markers
@@ -232,9 +231,16 @@ ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
 			VTIM_sleep(cache_param->ban_lurker_sleep);
 			ban_batch = 0;
 		}
-		oc = ban_lurker_getfirst(vsl, bt, stats);
-		if (oc == NULL)
+		oc = ban_lurker_getfirst(vsl, bt);
+		if (oc == NULL) {
+			Lck_Lock(&ban_mtx);
+			VSC_C_main->bans_lurker_tested += tested;
+			VSC_C_main->bans_lurker_tests_tested += tested_tests;
+			VSC_C_main->bans_lurker_obj_killed += lok;
+			VSC_C_main->bans_lurker_obj_killed_cutoff += lokc;
+			Lck_Unlock(&ban_mtx);
 			return;
+		}
 		i = 0;
 		VTAILQ_FOREACH_REVERSE_SAFE(bl, obans, banhead_s, l_list, bln) {
 			if (oc->ban != bt) {
@@ -256,21 +262,20 @@ ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
 				tests = 0;
 				i = ban_evaluate(wrk, bl->spec, oc, NULL,
 				    &tests);
-				stats->bans_lurker_tested++;
-				stats->bans_lurker_tests_tested += tests;
+				tested++;
+				tested_tests += tests;
 			}
 			if (i) {
 				if (kill) {
 					VSLb(vsl, SLT_ExpBan,
 					    "%u killed for lurker cutoff",
 					    ObjGetXID(wrk, oc));
-					stats->
-					    bans_lurker_obj_killed_cutoff++;
+					lokc++;
 				} else {
 					VSLb(vsl, SLT_ExpBan,
 					    "%u banned by lurker",
 					    ObjGetXID(wrk, oc));
-					stats->bans_lurker_obj_killed++;
+					lok++;
 				}
 				HSH_Kill(oc);
 				break;
@@ -278,6 +283,11 @@ ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
 		}
 		if (i == 0 && oc->ban == bt) {
 			Lck_Lock(&ban_mtx);
+			VSC_C_main->bans_lurker_tested += tested;
+			VSC_C_main->bans_lurker_tests_tested += tested_tests;
+			VSC_C_main->bans_lurker_obj_killed += lok;
+			VSC_C_main->bans_lurker_obj_killed_cutoff += lokc;
+			tested = tested_tests = lok = lokc = 0;
 			if (oc->ban == bt) {
 				bt->refcount--;
 				VTAILQ_REMOVE(&bt->objcore, oc, ban_list);
@@ -311,14 +321,12 @@ ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 	struct banhead_s obans;
 	double d, dt, n;
 	unsigned count = 0, cutoff = UINT_MAX;
-	struct VSC_main *stats;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	stats = wrk->stats;
 
 	dt = 49.62;		// Random, non-magic
 	if (cache_param->ban_lurker_sleep == 0) {
-		(void)ban_cleantail(NULL, stats);
+		(void)ban_cleantail(NULL);
 		return (dt);
 	}
 	if (cache_param->ban_cutoff > 0)
@@ -358,7 +366,7 @@ ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 	 * containted the first oban, all obans were on the tail and we're
 	 * done.
 	 */
-	if (ban_cleantail(VTAILQ_FIRST(&obans), stats))
+	if (ban_cleantail(VTAILQ_FIRST(&obans)))
 		return (dt);
 
 	if (VTAILQ_FIRST(&obans) == NULL)
@@ -386,7 +394,7 @@ ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 
 	Lck_Lock(&ban_mtx);
 	VTAILQ_FOREACH(b, &obans, l_list) {
-		ban_mark_completed(b, stats);
+		ban_mark_completed(b);
 		if (b == bd)
 			break;
 	}

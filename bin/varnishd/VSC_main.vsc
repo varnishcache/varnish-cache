@@ -595,6 +595,7 @@
 
 .. varnish_vsc:: bans
 	:type:	gauge
+	:group: ban_mtx
 	:oneliner:	Count of bans
 
 	Number of all bans in system, including bans superseded by newer
@@ -603,6 +604,7 @@
 .. varnish_vsc:: bans_completed
 	:type:	gauge
 	:level:	diag
+	:group: ban_mtx
 	:oneliner:	Number of bans marked 'completed'
 
 	Number of bans which are no longer active, either because they got
@@ -611,6 +613,7 @@
 .. varnish_vsc:: bans_obj
 	:type:	gauge
 	:level:	diag
+	:group: ban_mtx
 	:oneliner:	Number of bans using obj.*
 
 	Number of bans which use obj.* variables.  These bans can possibly
@@ -619,6 +622,7 @@
 .. varnish_vsc:: bans_req
 	:type:	gauge
 	:level:	diag
+	:group: ban_mtx
 	:oneliner:	Number of bans using req.*
 
 	Number of bans which use req.* variables.  These bans can not be
@@ -626,18 +630,21 @@
 
 .. varnish_vsc:: bans_added
 	:level:	diag
+	:group: ban_mtx
 	:oneliner:	Bans added
 
 	Counter of bans added to ban list.
 
 .. varnish_vsc:: bans_deleted
 	:level:	diag
+	:group: ban_mtx
 	:oneliner:	Bans deleted
 
 	Counter of bans deleted from ban list.
 
 .. varnish_vsc:: bans_tested
 	:level:	diag
+	:group: ban_mtx
 	:oneliner:	Bans tested against objects (lookup)
 
 	Count of how many bans and objects have been tested against each
@@ -645,12 +652,14 @@
 
 .. varnish_vsc:: bans_obj_killed
 	:level:	diag
+	:group: ban_mtx
 	:oneliner:	Objects killed by bans (lookup)
 
 	Number of objects killed by bans during object lookup.
 
 .. varnish_vsc:: bans_lurker_tested
 	:level:	diag
+	:group: ban_mtx
 	:oneliner:	Bans tested against objects (lurker)
 
 	Count of how many bans and objects have been tested against each
@@ -658,6 +667,7 @@
 
 .. varnish_vsc:: bans_tests_tested
 	:level:	diag
+	:group: ban_mtx
 	:oneliner:	Ban tests tested against objects (lookup)
 
 	Count of how many tests and objects have been tested against each
@@ -666,6 +676,7 @@
 
 .. varnish_vsc:: bans_lurker_tests_tested
 	:level:	diag
+	:group: ban_mtx
 	:oneliner:	Ban tests tested against objects (lurker)
 
 	Count of how many tests and objects have been tested against each
@@ -674,12 +685,14 @@
 
 .. varnish_vsc:: bans_lurker_obj_killed
 	:level:	diag
+	:group: ban_mtx
 	:oneliner:	Objects killed by bans (lurker)
 
 	Number of objects killed by the ban-lurker.
 
 .. varnish_vsc:: bans_lurker_obj_killed_cutoff
 	:level:	diag
+	:group: ban_mtx
 	:oneliner:	Objects killed by bans for cutoff (lurker)
 
 	Number of objects killed by the ban-lurker to keep the number of
@@ -687,12 +700,14 @@
 
 .. varnish_vsc:: bans_dups
 	:level:	diag
+	:group: ban_mtx
 	:oneliner:	Bans superseded by other bans
 
 	Count of bans replaced by later identical bans.
 
 .. varnish_vsc:: bans_lurker_contention
 	:level:	diag
+	:group: ban_mtx
 	:oneliner:	Lurker gave way for lookup
 
 	Number of times the ban-lurker had to wait for lookups.
@@ -701,6 +716,7 @@
 	:type:	gauge
 	:format:	bytes
 	:level:	diag
+	:group: ban_mtx
 	:oneliner:	Bytes used by the persisted ban lists
 
 	Number of bytes used by the persisted ban lists.
@@ -709,6 +725,7 @@
 	:type:	gauge
 	:format:	bytes
 	:level:	diag
+	:group: ban_mtx
 	:oneliner:	Extra bytes in persisted ban lists due to fragmentation
 
 	Number of extra bytes accumulated through dropped and completed
