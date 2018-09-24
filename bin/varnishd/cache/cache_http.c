@@ -102,6 +102,7 @@ http_fail(const struct http *hp)
 {
 
 	VSC_C_main->losthdr++;
+	hp->ws->id[0] |= 0x20;		// cheesy tolower()
 	VSLb(hp->vsl, SLT_Error, "out of workspace (%s)", hp->ws->id);
 	WS_MarkOverflow(hp->ws);
 }

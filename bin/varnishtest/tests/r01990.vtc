@@ -26,9 +26,9 @@ logexpect l1 -v v1 -g raw {
 	expect * 1002 FetchError   {^out of workspace}
 	expect * =    BerespStatus {^503}
 	expect * =    BerespReason {^Backend fetch failed}
-	expect * =    Error        {^out of workspace [(]Bo[)]}
+	expect * =    Error        {^out of workspace [(]bo[)]}
 	expect * =    LostHeader   {^Date:}
-	expect * =    Error        {^out of workspace [(]Bo[)]}
+	expect * =    Error        {^out of workspace [(]bo[)]}
 	expect * =    LostHeader   {^299}
 } -start
 

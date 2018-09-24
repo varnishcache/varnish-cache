@@ -17,7 +17,7 @@ varnish v1 -vcl+backend {
 
 logexpect l1 -v v1 -g raw {
 	expect * 1002 FetchError {^Workspace overflow}
-	expect * =    Error      {^out of workspace [(]Bo[)]}
+	expect * =    Error      {^out of workspace [(]bo[)]}
 } -start
 
 client c1 {
