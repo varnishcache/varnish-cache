@@ -43,7 +43,6 @@
 #include "vdef.h"
 #include "vas.h"
 #include "vsa.h"
-#include "vrt.h"
 #include "miniobj.h"
 
 /*
@@ -204,7 +203,7 @@ VSA_Init()
  */
 
 int
-VRT_VSA_GetPtr(const struct suckaddr *sua, const unsigned char ** dst)
+VSA_GetPtr(const struct suckaddr *sua, const unsigned char ** dst)
 {
 
 	AN(dst);

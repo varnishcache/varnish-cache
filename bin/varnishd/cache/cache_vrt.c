@@ -872,3 +872,9 @@ VRT_blob(VRT_CTX, const char *err, const void *src, size_t len)
 	p->priv = d;
 	return (p);
 }
+
+int
+VRT_VSA_GetPtr(const struct suckaddr *sua, const unsigned char ** dst)
+{
+	return (VSA_GetPtr(sua, dst));
+}
