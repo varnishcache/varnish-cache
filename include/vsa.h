@@ -59,7 +59,7 @@ struct suckaddr *VSA_Build(void *d, const void *s, unsigned sal);
  * This VRT interface is for the VCC generated ACL code, which needs
  * to know the address family and a pointer to the actual address.
  */
-  
+
 int VSA_GetPtr(const struct suckaddr *sua, const unsigned char ** dst);
 
 #endif
