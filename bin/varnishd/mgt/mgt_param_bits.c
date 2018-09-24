@@ -119,7 +119,7 @@ tweak_vsl_mask(struct vsb *vsb, const struct parspec *par, const char *arg)
 	const char *s;
 	(void)par;
 
-	if (arg != NULL) {
+	if (arg != NULL && arg != JSON_FMT) {
 		if (!strcmp(arg, "default")) {
 			memset(mgt_param.vsl_mask,
 			    0, sizeof mgt_param.vsl_mask);
@@ -141,6 +141,8 @@ tweak_vsl_mask(struct vsb *vsb, const struct parspec *par, const char *arg)
 			    "VSL tag", "-"));
 		}
 	} else {
+		if (arg == JSON_FMT)
+			VSB_putc(vsb, '"');
 		s = "";
 		for (j = 0; j < (unsigned)SLT__Reserved; j++) {
 			if (bit(mgt_param.vsl_mask, j, BTST)) {
@@ -150,6 +152,8 @@ tweak_vsl_mask(struct vsb *vsb, const struct parspec *par, const char *arg)
 		}
 		if (*s == '\0')
 			VSB_printf(vsb, "(all enabled)");
+		if (arg == JSON_FMT)
+			VSB_putc(vsb, '"');
 	}
 	return (0);
 }
@@ -171,7 +175,7 @@ tweak_debug(struct vsb *vsb, const struct parspec *par, const char *arg)
 	unsigned j;
 	(void)par;
 
-	if (arg != NULL) {
+	if (arg != NULL && arg != JSON_FMT) {
 		if (!strcmp(arg, "none")) {
 			memset(mgt_param.debug_bits,
 			    0, sizeof mgt_param.debug_bits);
@@ -180,6 +184,8 @@ tweak_debug(struct vsb *vsb, const struct parspec *par, const char *arg)
 			    DBG_Reserved, arg, debug_tags, "debug bit", "+"));
 		}
 	} else {
+		if (arg == JSON_FMT)
+			VSB_putc(vsb, '"');
 		s = "";
 		for (j = 0; j < (unsigned)DBG_Reserved; j++) {
 			if (bit(mgt_param.debug_bits, j, BTST)) {
@@ -189,6 +195,8 @@ tweak_debug(struct vsb *vsb, const struct parspec *par, const char *arg)
 		}
 		if (*s == '\0')
 			VSB_printf(vsb, "none");
+		if (arg == JSON_FMT)
+			VSB_putc(vsb, '"');
 	}
 	return (0);
 }
@@ -210,7 +218,7 @@ tweak_feature(struct vsb *vsb, const struct parspec *par, const char *arg)
 	unsigned j;
 	(void)par;
 
-	if (arg != NULL) {
+	if (arg != NULL && arg != JSON_FMT) {
 		if (!strcmp(arg, "none")) {
 			memset(mgt_param.feature_bits,
 			    0, sizeof mgt_param.feature_bits);
@@ -220,6 +228,8 @@ tweak_feature(struct vsb *vsb, const struct parspec *par, const char *arg)
 			    "feature bit", "+"));
 		}
 	} else {
+		if (arg == JSON_FMT)
+			VSB_putc(vsb, '"');
 		s = "";
 		for (j = 0; j < (unsigned)FEATURE_Reserved; j++) {
 			if (bit(mgt_param.feature_bits, j, BTST)) {
@@ -229,6 +239,8 @@ tweak_feature(struct vsb *vsb, const struct parspec *par, const char *arg)
 		}
 		if (*s == '\0')
 			VSB_printf(vsb, "none");
+		if (arg == JSON_FMT)
+			VSB_putc(vsb, '"');
 	}
 	return (0);
 }
