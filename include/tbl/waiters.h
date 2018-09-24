@@ -44,3 +44,5 @@
 
 WAITER(poll)
 #undef WAITER
+
+/*lint -restore */

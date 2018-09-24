@@ -181,16 +181,17 @@ SLTM(Length, 0, "Size of object body",
 	"Logs the size of a fetch object body.\n\n"
 )
 
-/* XXX generate HTC info from tbl include */
-#if 0
-#include <stdio.h>
-int main(void) {
-#define HTC_STATUS(e, n, s, l) \
-	printf("\t\"\\t* %s (%d): %s\\n\"\n", s, n, l);
-#include "include/tbl/htc.h"
-	return (0);
-}
-#endif
+/*
+ * XXX generate HTC info below from tbl include
+ *
+ * #include <stdio.h>
+ * int main(void) {
+ * #define HTC_STATUS(e, n, s, l) \
+ *	printf("\t\"\\t* %s (%d): %s\\n\"\n", s, n, l);
+ * #include "include/tbl/htc.h"
+ *	return (0);
+ * }
+ */
 
 SLTM(FetchError, 0, "Error while fetching object",
 	"Logs the error message of a failed fetch operation.\n\n"
