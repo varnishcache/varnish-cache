@@ -261,6 +261,11 @@ if test "$ac_cv_have_viz" = no; then
 fi
 CFLAGS="${save_CFLAGS}"
 
+if test "x$GCC" = "xyes"; then
+	libvgz_extra_cflags="${libvgz_extra_cflags} -Wno-unknown-warning-option -Wno-implicit-fallthrough"
+	AC_SUBST(libvgz_extra_cflags)
+fi
+
 SAN_CFLAGS=
 SAN_LDFLAGS=
 UBSAN_CFLAGS=
