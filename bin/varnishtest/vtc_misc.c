@@ -129,9 +129,10 @@ cmd_varnishtest(CMD_ARGS)
  * \-match REGEXP
  *	Expect regexp to match the stdout+err output.
  */
-/* SECTION: client-server.spec.shell shell
+/* SECTION: client-server.spec.shell
  *
- * Same as for the top-level shell.
+ * shell
+ *	Same as for the top-level shell.
  */
 
 static void
