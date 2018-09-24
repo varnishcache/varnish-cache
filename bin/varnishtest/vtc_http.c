@@ -771,6 +771,7 @@ cmd_http_gunzip(CMD_ARGS)
 	vtc_log(hp->vl, 3, "new bodylen %u", hp->bodyl);
 	vtc_dump(hp->vl, 4, "body", hp->body, hp->bodyl);
 	bprintf(hp->bodylen, "%u", hp->bodyl);
+#ifdef VGZ_EXTENSIONS
 	vtc_log(hp->vl, 4, "startbit = %ju %ju/%ju",
 	    (uintmax_t)vz.start_bit,
 	    (uintmax_t)vz.start_bit >> 3, (uintmax_t)vz.start_bit & 7);
@@ -780,6 +781,7 @@ cmd_http_gunzip(CMD_ARGS)
 	vtc_log(hp->vl, 4, "stopbit = %ju %ju/%ju",
 	    (uintmax_t)vz.stop_bit,
 	    (uintmax_t)vz.stop_bit >> 3, (uintmax_t)vz.stop_bit & 7);
+#endif
 	if (i != Z_STREAM_END)
 		vtc_log(hp->vl, hp->fatal,
 		    "Gunzip error = %d (%s) in:%jd out:%jd",
@@ -813,12 +815,13 @@ gzip_body(const struct http *hp, const char *txt, char **body, int *bodylen)
 	assert(Z_OK == deflateInit2(&vz,
 	    hp->gziplevel, Z_DEFLATED, 31, 9, Z_DEFAULT_STRATEGY));
 	assert(Z_STREAM_END == deflate(&vz, Z_FINISH));
+	*bodylen = vz.total_out;
+#ifdef VGZ_EXTENSIONS
 	i = vz.stop_bit & 7;
 	if (hp->gzipresidual >= 0 && hp->gzipresidual != i)
 		vtc_log(hp->vl, hp->fatal,
 		    "Wrong gzip residual got %d wanted %d",
 		    i, hp->gzipresidual);
-	*bodylen = vz.total_out;
 	vtc_log(hp->vl, 4, "startbit = %ju %ju/%ju",
 	    (uintmax_t)vz.start_bit,
 	    (uintmax_t)vz.start_bit >> 3, (uintmax_t)vz.start_bit & 7);
@@ -829,6 +832,7 @@ gzip_body(const struct http *hp, const char *txt, char **body, int *bodylen)
 	    (uintmax_t)vz.stop_bit,
 	    (uintmax_t)vz.stop_bit >> 3, (uintmax_t)vz.stop_bit & 7);
 	assert(Z_OK == deflateEnd(&vz));
+#endif
 }
 
 /**********************************************************************

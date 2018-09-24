@@ -104,6 +104,7 @@ typedef struct z_stream_s {
     uLong   adler;      /* Adler-32 or CRC-32 value of the uncompressed data */
     uLong   reserved;   /* reserved for future use */
 
+#define VGZ_EXTENSIONS 1
     uLong   start_bit;	/* Bit pos of first deflate block */
     uLong   stop_bit;	/* Bit pos after last deflate block */
     uLong   last_bit;	/* Bit pos of 'last' bit */
