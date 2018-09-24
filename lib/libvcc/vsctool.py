@@ -93,6 +93,7 @@ class CounterSet(object):
         self.head = m
         self.completed = False
         self.off = 0
+        self.gnames = None
 
     def addmbr(self, m, g):
         '''Add a counter'''
@@ -168,7 +169,13 @@ class CounterSet(object):
 
         fo.write(self.struct + " {\n")
         for i in self.mbrs:
-            fo.write("\tuint64_t\t%s;\n" % i.arg)
+            s = "\tuint64_t\t%s;" % i.arg
+            g = i.param.get("group")
+            if g is not None:
+                while len(s.expandtabs()) < 64:
+                    s += "\t"
+                s += "/* %s */" % g
+            fo.write(s + "\n")
         fo.write("};\n")
         fo.write("\n")
 
@@ -189,14 +196,19 @@ class CounterSet(object):
         fo.write("void VSC_" + self.name + "_Destroy")
         fo.write("(struct vsc_seg **);\n")
 
-        if 'sumfunction' in self.head.param:
-            fo.write("void VSC_" + self.name + "_Summ")
-            fo.write("(" + self.struct + " *, ")
-            fo.write("const " + self.struct + " *);\n")
-            for i in self.gnames:
-                fo.write("void VSC_" + self.name + "_Summ_" + i)
-                fo.write("(" + self.struct + " *, ")
-                fo.write("const " + self.struct + "_" + i + " *);\n")
+        sf = self.head.param.get('sumfunction')
+        if sf is not None:
+            for i in sf.split():
+                j = i.split("_")
+                assert len(j) <= 2
+                if len(j) == 1:
+                    fo.write("void VSC_" + self.name + "_Summ_" + i)
+                    fo.write("(" + self.struct + " *, ")
+                    fo.write("const " + self.struct + "_" + i + " *);\n")
+                else:
+                    fo.write("void VSC_" + self.name + "_Summ_" + i)
+                    fo.write("(" + self.struct + "_" + j[0] + " *, ")
+                    fo.write("const " + self.struct + "_" + j[1] + " *);\n")
 
     def emit_c_paranoia(self, fo):
         '''Emit asserts to make sure compiler gets same byte index'''
@@ -211,27 +223,23 @@ class CounterSet(object):
 
         fo.write("#undef PARANOIA\n")
 
-    def emit_c_sumfunc(self, fo, g=None):
+    def emit_c_sumfunc(self, fo, tgt):
         '''Emit a function summ up countersets'''
         fo.write("\n")
         fo.write("void\n")
         fo.write("VSC_" + self.name + "_Summ")
-        if g is not None:
-            fo.write("_" + g)
-        fo.write("(" + self.struct + " *dst, ")
-        fo.write("const " + self.struct)
-        if g is not None:
-            fo.write("_" + g)
-        fo.write(" *src)\n")
+        fo.write("_" + tgt[0])
+        if len(tgt) > 1:
+            fo.write("_" + tgt[1])
+            fo.write("(" + self.struct + "_" + tgt[1])
+        else:
+            fo.write("(" + self.struct)
+        fo.write(" *dst, const " + self.struct + "_" + tgt[0] + " *src)\n")
         fo.write("{\n")
         fo.write("\n")
         fo.write("\tAN(dst);\n")
         fo.write("\tAN(src);\n")
-        if g:
-            l = self.groups[g]
-        else:
-            l = self.mbrs
-        for i in l:
+        for i in self.groups[tgt[0]]:
             s1 = "\tdst->" + i.arg + " +="
             s2 = "src->" + i.arg + ";"
             if len((s1 + " " + s2).expandtabs()) < 79:
@@ -300,10 +308,10 @@ class CounterSet(object):
         self.emit_json(fo)
         self.emit_c_newfunc(fo)
         self.emit_c_destroyfunc(fo)
-        if 'sumfunction' in self.head.param:
-            self.emit_c_sumfunc(fo)
-            for i in self.gnames:
-                self.emit_c_sumfunc(fo, i)
+        sf = self.head.param.get('sumfunction')
+        if sf is not None:
+            for i in sf.split():
+                self.emit_c_sumfunc(fo, i.split("_"))
 
 #######################################################################
 

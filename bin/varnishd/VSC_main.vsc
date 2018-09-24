@@ -5,10 +5,11 @@
 .. varnish_vsc_begin::	main
 	:oneliner:	Main counters
 	:order:		10
-	:sumfunction:
+	:sumfunction:	wrk_wrk wrk
 
 .. varnish_vsc:: summs
 	:level:	debug
+	:group: wrk
 	:oneliner:	stat summ operations
 
 	Number of times per-thread statistics were summed into the
@@ -21,16 +22,19 @@
 	How long the child process has been running.
 
 .. varnish_vsc:: sess_conn
+	:group: wrk
 	:oneliner:	Sessions accepted
 
 	Count of sessions successfully accepted
 
 .. varnish_vsc:: sess_drop
+	:group: wrk
 	:oneliner:	Sessions dropped
 
 	Count of sessions silently dropped due to lack of worker thread.
 
 .. varnish_vsc:: sess_fail
+	:group: wrk
 	:oneliner:	Session accept failures
 
 	Count of failures to accept TCP connection.
@@ -39,64 +43,75 @@
 	give more detailed information.
 
 .. varnish_vsc:: sess_fail_econnaborted
+	:group: wrk
 	:oneliner:	Session accept failures: connection aborted
 
 	Detailed reason for sess_fail: Connection aborted by the
 	client, usually harmless.
 
 .. varnish_vsc:: sess_fail_eintr
+	:group: wrk
 	:oneliner:	Session accept failures: interrupted system call
 
 	Detailed reason for sess_fail: The accept() call was
 	interrupted, usually harmless
 
 .. varnish_vsc:: sess_fail_emfile
+	:group: wrk
 	:oneliner:	Session accept failures: too many open files
 
 	Detailed reason for sess_fail: No file descriptor was
 	available. Consider raising RLIMIT_NOFILE (see ulimit -n).
 
 .. varnish_vsc:: sess_fail_ebadf
+	:group: wrk
 	:oneliner:	Session accept failures: bad file descriptor
 
 	Detailed reason for sess_fail: The listen socket file
 	descriptor was invalid. Should never happen.
 
 .. varnish_vsc:: sess_fail_enomem
+	:group: wrk
 	:oneliner:	Session accept failures: not enough memory
 
 	Detailed reason for sess_fail: Most likely insufficient
 	socket buffer memory. Should never happen
 
 .. varnish_vsc:: sess_fail_other
+	:group: wrk
 	:oneliner:	Session accept failures: other
 
 	Detailed reason for sess_fail: neither of the above, see
 	Debug log (varnishlog -g raw -I Debug:^Accept).
 
 .. varnish_vsc:: client_req_400
+	:group: wrk
 	:oneliner:	Client requests received, subject to 400 errors
 
 	400 means we couldn't make sense of the request, it was malformed
 	in some drastic way.
 
 .. varnish_vsc:: client_req_417
+	:group: wrk
 	:oneliner:	Client requests received, subject to 417 errors
 
 	417 means that something went wrong with an Expect: header.
 
 .. varnish_vsc:: client_req
+	:group: wrk
 	:oneliner:	Good client requests received
 
 	The count of parseable client requests seen.
 
 .. varnish_vsc:: cache_hit
+	:group: wrk
 	:oneliner:	Cache hits
 
 	Count of cache hits.  A cache hit indicates that an object has been
 	delivered to a client without fetching it from a backend server.
 
 .. varnish_vsc:: cache_hit_grace
+	:group: wrk
 	:oneliner:	Cache grace hits
 
 	Count of cache hits with grace. A cache hit with grace is a cache
@@ -104,6 +119,7 @@
 	included in the cache_hit counter.
 
 .. varnish_vsc:: cache_hitpass
+	:group: wrk
 	:oneliner:	Cache hits for pass.
 
 	Count of hits for pass. A cache hit for pass indicates that Varnish
@@ -112,6 +128,7 @@
 	decision is being used.
 
 .. varnish_vsc:: cache_hitmiss
+	:group: wrk
 	:oneliner:	Cache hits for miss.
 
 	Count of hits for miss. A cache hit for miss indicates that Varnish
@@ -120,6 +137,7 @@
 	cached decision is being used.
 
 .. varnish_vsc:: cache_miss
+	:group: wrk
 	:oneliner:	Cache misses
 
 	Count of misses. A cache miss indicates the object was fetched from
@@ -161,56 +179,67 @@
 
 
 .. varnish_vsc:: fetch_head
+	:group: wrk
 	:oneliner:	Fetch no body (HEAD)
 
 	beresp with no body because the request is HEAD.
 
 .. varnish_vsc:: fetch_length
+	:group: wrk
 	:oneliner:	Fetch with Length
 
 	beresp.body with Content-Length.
 
 .. varnish_vsc:: fetch_chunked
+	:group: wrk
 	:oneliner:	Fetch chunked
 
 	beresp.body with Chunked.
 
 .. varnish_vsc:: fetch_eof
+	:group: wrk
 	:oneliner:	Fetch EOF
 
 	beresp.body with EOF.
 
 .. varnish_vsc:: fetch_bad
+	:group: wrk
 	:oneliner:	Fetch bad T-E
 
 	beresp.body length/fetch could not be determined.
 
 .. varnish_vsc:: fetch_none
+	:group: wrk
 	:oneliner:	Fetch no body
 
 	beresp.body empty
 
 .. varnish_vsc:: fetch_1xx
+	:group: wrk
 	:oneliner:	Fetch no body (1xx)
 
 	beresp with no body because of 1XX response.
 
 .. varnish_vsc:: fetch_204
+	:group: wrk
 	:oneliner:	Fetch no body (204)
 
 	beresp with no body because of 204 response.
 
 .. varnish_vsc:: fetch_304
+	:group: wrk
 	:oneliner:	Fetch no body (304)
 
 	beresp with no body because of 304 response.
 
 .. varnish_vsc:: fetch_failed
+	:group: wrk
 	:oneliner:	Fetch failed (all causes)
 
 	beresp fetch failed.
 
 .. varnish_vsc:: fetch_no_thread
+	:group: wrk
 	:oneliner:	Fetch failed (no thread)
 
 	beresp fetch failed, no thread available.
@@ -259,12 +288,14 @@
 	per second. See also parameter thread_queue_limit.
 
 .. varnish_vsc:: busy_sleep
+	:group: wrk
 	:oneliner:	Number of requests sent to sleep on busy objhdr
 
 	Number of requests sent to sleep without a worker thread because
 	they found a busy object.
 
 .. varnish_vsc:: busy_wakeup
+	:group: wrk
 	:oneliner:	Number of requests woken after sleep on busy objhdr
 
 	Number of requests taken off the busy object sleep list and rescheduled.
@@ -295,6 +326,7 @@
 
 .. varnish_vsc:: n_object
 	:type:	gauge
+	:group: wrk
 	:oneliner:	object structs made
 
 	Approximate number of HTTP objects (headers + body, if present) in
@@ -303,12 +335,14 @@
 .. varnish_vsc:: n_vampireobject
 	:type:	gauge
 	:level:	diag
+	:group: wrk
 	:oneliner:	unresurrected objects
 
 	Number of unresurrected objects
 
 .. varnish_vsc:: n_objectcore
 	:type:	gauge
+	:group: wrk
 	:oneliner:	objectcore structs made
 
 	Approximate number of object metadata elements in the cache. Each
@@ -317,6 +351,7 @@
 
 .. varnish_vsc:: n_objecthead
 	:type:	gauge
+	:group: wrk
 	:oneliner:	objecthead structs made
 
 	Approximate number of different hash entries in the cache.
@@ -358,71 +393,82 @@
 
 
 .. varnish_vsc:: s_sess
+	:group: wrk
 	:oneliner:	Total sessions seen
 
 
 .. varnish_vsc:: s_pipe
+	:group: wrk
 	:oneliner:	Total pipe sessions seen
 
 
 .. varnish_vsc:: s_pass
+	:group: wrk
 	:oneliner:	Total pass-ed requests seen
 
 
 .. varnish_vsc:: s_fetch
+	:group: wrk
 	:oneliner:	Total backend fetches initiated
 
 
 .. varnish_vsc:: s_synth
+	:group: wrk
 	:oneliner:	Total synthetic responses made
 
 
 .. varnish_vsc:: s_req_hdrbytes
-	:oneliner:	Request header bytes
 	:format:	bytes
+	:group:		wrk
+	:oneliner:	Request header bytes
 
 	Total request header bytes received
 
 .. varnish_vsc:: s_req_bodybytes
-	:oneliner:	Request body bytes
 	:format:	bytes
+	:group:		wrk
+	:oneliner:	Request body bytes
 
 	Total request body bytes received
 
 .. varnish_vsc:: s_resp_hdrbytes
-	:oneliner:	Response header bytes
 	:format:	bytes
+	:group:		wrk
+	:oneliner:	Response header bytes
 
 	Total response header bytes transmitted
 
 .. varnish_vsc:: s_resp_bodybytes
-	:oneliner:	Response body bytes
 	:format:	bytes
+	:group:		wrk
+	:oneliner:	Response body bytes
 
 	Total response body bytes transmitted
-	:format:	bytes
 
 .. varnish_vsc:: s_pipe_hdrbytes
-	:oneliner:	Pipe request header bytes
 	:format:	bytes
+	:group:		wrk
+	:oneliner:	Pipe request header bytes
 
 	Total request bytes received for piped sessions
 
 .. varnish_vsc:: s_pipe_in
-	:oneliner:	Piped bytes from client
 	:format:	bytes
+	:group:		wrk
+	:oneliner:	Piped bytes from client
 
 	Total number of bytes forwarded from clients in pipe sessions
 
 .. varnish_vsc:: s_pipe_out
-	:oneliner:	Piped bytes to client
 	:format:	bytes
+	:group:		wrk
+	:oneliner:	Piped bytes to client
 
 	Total number of bytes forwarded to clients in pipe sessions
 
 .. varnish_vsc:: sess_closed
+	:group: wrk
 	:oneliner:	Session Closed
-
 
 .. varnish_vsc:: sess_closed_err
 	:oneliner:	Session Closed with error
@@ -431,11 +477,12 @@
 	for detailed breakdown
 
 .. varnish_vsc:: sess_readahead
+	:group: wrk
 	:oneliner:	Session Read Ahead
-
 
 .. varnish_vsc:: sess_herd
 	:level:	diag
+	:group: wrk
 	:oneliner:	Session herd
 
 	Number of times the timeout_linger triggered
@@ -589,6 +636,7 @@
 
 
 .. varnish_vsc:: vcl_fail
+	:group: wrk
 	:oneliner:	VCL failures
 
 	Count of failures which prevented VCL from completing.
@@ -754,6 +802,7 @@
 	Number of objects received by expiry thread for handling.
 
 .. varnish_vsc:: hcb_nolock
+	:group: wrk
 	:level:	debug
 	:oneliner:	HCB Lookups without lock
 

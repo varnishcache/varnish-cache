@@ -61,7 +61,7 @@ wrk_bgthread(void *arg)
 {
 	struct bgthread *bt;
 	struct worker wrk;
-	struct VSC_main ds;
+	struct VSC_main_wrk ds;
 
 	CAST_OBJ_NOTNULL(bt, arg, BGTHREAD_MAGIC);
 	THR_SetName(bt->name);
@@ -98,7 +98,7 @@ WRK_Thread(struct pool *qp, size_t stacksize, unsigned thread_workspace)
 {
 	// child_signal_handler stack overflow check uses struct worker addr
 	struct worker *w, ww;
-	struct VSC_main ds;
+	struct VSC_main_wrk ds;
 	unsigned char ws[thread_workspace];
 
 	AN(qp);
@@ -133,11 +133,11 @@ WRK_Thread(struct pool *qp, size_t stacksize, unsigned thread_workspace)
  */
 
 static void
-pool_addstat(struct VSC_main *dst, struct VSC_main *src)
+pool_addstat(struct VSC_main_wrk *dst, struct VSC_main_wrk *src)
 {
 
 	dst->summs++;
-	VSC_main_Summ(dst, src);
+	VSC_main_Summ_wrk_wrk(dst, src);
 	memset(src, 0, sizeof *src);
 }
 

@@ -86,6 +86,7 @@ enum {
 
 struct VSC_lck;
 struct VSC_main;
+struct VSC_main_wrk;
 struct backend;
 struct ban;
 struct ban_proto;
@@ -246,7 +247,7 @@ struct worker {
 	struct objhead		*nobjhead;
 	struct objcore		*nobjcore;
 	void			*nhashpriv;
-	struct VSC_main		*stats;
+	struct VSC_main_wrk	*stats;
 	struct vsl_log		*vsl;		// borrowed from req/bo
 
 	struct pool_task	task;
