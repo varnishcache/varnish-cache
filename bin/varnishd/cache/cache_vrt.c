@@ -669,26 +669,6 @@ VRT_synth_page(VRT_CTX, const char *str, ...)
 
 /*--------------------------------------------------------------------*/
 
-static struct VSC_main *
-vrt_stats(VRT_CTX)
-{
-	struct worker *wrk;
-
-	if (ctx->req) {
-		CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-		wrk = ctx->req->wrk;
-	} else if (ctx->bo) {
-		CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
-		wrk = ctx->bo->wrk;
-	} else {
-		// XXX
-		return (VSC_C_main);
-	}
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	return (wrk->stats);
-}
-
 VCL_VOID
 VRT_ban_string(VRT_CTX, VCL_STRING str)
 {
@@ -744,7 +724,7 @@ VRT_ban_string(VRT_CTX, VCL_STRING str)
 			break;
 		}
 		if (av[++i] == NULL) {
-			err = BAN_Commit(bp, vrt_stats(ctx));
+			err = BAN_Commit(bp);
 			if (err == NULL)
 				bp = NULL;
 			else

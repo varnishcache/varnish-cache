@@ -152,7 +152,7 @@ ban_equal(const uint8_t *bs1, const uint8_t *bs2)
 }
 
 void
-ban_mark_completed(struct ban *b, struct VSC_main *stats)
+ban_mark_completed(struct ban *b)
 {
 	unsigned ln;
 
@@ -166,7 +166,7 @@ ban_mark_completed(struct ban *b, struct VSC_main *stats)
 		b->spec[BANS_FLAGS] |= BANS_FLAG_COMPLETED;
 		VWMB();
 		vbe32enc(b->spec + BANS_LENGTH, BANS_HEAD_LEN);
-		stats->bans_completed++;
+		VSC_C_main->bans_completed++;
 		bans_persisted_fragmentation += ln - ban_len(b->spec);
 		/*
 		 * XXX absolute update of gauges - may be inaccurate for
@@ -367,7 +367,6 @@ ban_reload(const uint8_t *ban, unsigned len)
 	struct ban *b, *b2;
 	int duplicate = 0;
 	double t0, t1, t2 = 9e99;
-	struct VSC_main *stats = VSC_C_main;	// XXX accurate?
 	ASSERT_CLI();
 	Lck_AssertHeld(&ban_mtx);
 
@@ -386,8 +385,8 @@ ban_reload(const uint8_t *ban, unsigned len)
 			duplicate = 1;
 	}
 
-	stats->bans++;
-	stats->bans_added++;
+	VSC_C_main->bans++;
+	VSC_C_main->bans_added++;
 
 	b2 = ban_alloc();
 	AN(b2);
@@ -395,13 +394,13 @@ ban_reload(const uint8_t *ban, unsigned len)
 	AN(b2->spec);
 	memcpy(b2->spec, ban, len);
 	if (ban[BANS_FLAGS] & BANS_FLAG_REQ) {
-		stats->bans_req++;
+		VSC_C_main->bans_req++;
 		b2->flags |= BANS_FLAG_REQ;
 	}
 	if (duplicate)
-		stats->bans_dups++;
+		VSC_C_main->bans_dups++;
 	if (duplicate || (ban[BANS_FLAGS] & BANS_FLAG_COMPLETED))
-		ban_mark_completed(b2, stats);
+		ban_mark_completed(b2);
 	if (b == NULL)
 		VTAILQ_INSERT_TAIL(&ban_head, b2, list);
 	else
@@ -418,8 +417,8 @@ ban_reload(const uint8_t *ban, unsigned len)
 		if (b->flags & BANS_FLAG_COMPLETED)
 			continue;
 		if (ban_equal(b->spec, ban)) {
-			ban_mark_completed(b, stats);
-			stats->bans_dups++;
+			ban_mark_completed(b);
+			VSC_C_main->bans_dups++;
 		}
 	}
 }
@@ -548,7 +547,6 @@ BAN_CheckObject(struct worker *wrk, struct objcore *oc, struct req *req)
 	struct vsl_log *vsl;
 	struct ban *b0, *bn;
 	unsigned tests;
-	struct VSC_main *stats;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
@@ -557,7 +555,6 @@ BAN_CheckObject(struct worker *wrk, struct objcore *oc, struct req *req)
 	assert(oc->refcnt > 0);
 
 	vsl = req->vsl;
-	stats = wrk->stats;
 
 	CHECK_OBJ_NOTNULL(oc->ban, BAN_MAGIC);
 
@@ -600,8 +597,8 @@ BAN_CheckObject(struct worker *wrk, struct objcore *oc, struct req *req)
 
 	Lck_Lock(&ban_mtx);
 	bn->refcount--;
-	stats->bans_tested++;
-	stats->bans_tests_tested += tests;
+	VSC_C_main->bans_tested++;
+	VSC_C_main->bans_tests_tested += tests;
 
 	if (b == bn) {
 		/* not banned */
@@ -612,6 +609,8 @@ BAN_CheckObject(struct worker *wrk, struct objcore *oc, struct req *req)
 		oc->ban = b0;
 		b = NULL;
 	}
+	if (b != NULL)
+		VSC_C_main->bans_obj_killed++;
 
 	if (VTAILQ_LAST(&ban_head, banhead_s)->refcount == 0)
 		ban_kick_lurker();
@@ -624,7 +623,6 @@ BAN_CheckObject(struct worker *wrk, struct objcore *oc, struct req *req)
 		return (0);
 	} else {
 		VSLb(vsl, SLT_ExpBan, "%u banned lookup", ObjGetXID(wrk, oc));
-		stats->bans_obj_killed++;
 		return (1);
 	}
 }
@@ -672,7 +670,7 @@ ccf_ban(struct cli *cli, const char * const *av, void *priv)
 
 	if (err == NULL) {
 		// XXX racy - grab wstat lock?
-		err = BAN_Commit(bp, VSC_C_main);
+		err = BAN_Commit(bp);
 	}
 
 	if (err != NULL) {
@@ -821,9 +819,9 @@ BAN_Init(void)
 	bp = BAN_Build();
 	AN(bp);
 	AZ(pthread_cond_init(&ban_lurker_cond, NULL));
-	AZ(BAN_Commit(bp, VSC_C_main));
+	AZ(BAN_Commit(bp));
 	Lck_Lock(&ban_mtx);
-	ban_mark_completed(VTAILQ_FIRST(&ban_head), VSC_C_main);
+	ban_mark_completed(VTAILQ_FIRST(&ban_head));
 	Lck_Unlock(&ban_mtx);
 }
 
