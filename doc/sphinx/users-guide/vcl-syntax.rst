@@ -3,7 +3,7 @@ VCL Syntax
 
 VCL has inherited a lot from C and it reads much like simple C or Perl.
 
-Blocks are delimited by curly braces, statements end with semicolons,
+Blocks are delimited by curly brackets, statements end with semicolons,
 and comments may be written as in C, C++ or Perl according to your own
 preferences.
 
