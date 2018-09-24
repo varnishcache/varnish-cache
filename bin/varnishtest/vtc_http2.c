@@ -1213,7 +1213,7 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 /* SECTION: stream.spec.frame_sendhex sendhex
  *
  * Push bytes directly on the wire. sendhex takes exactly one argument: a string
- * describing the bytes, in hex notation, will possible whitespaces between
+ * describing the bytes, in hex notation, with possible whitespaces between
  * them. Here's an example::
  *
  *	sendhex "00 00 08 00 0900	8d"
