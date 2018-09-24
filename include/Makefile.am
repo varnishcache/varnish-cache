@@ -108,7 +108,7 @@ vcl.h: \
 	    $(top_srcdir)/include/vrt.h \
 	    $(top_srcdir)/doc/sphinx/reference/vcl_var.rst
 	mkdir -p $(top_builddir)/include/tbl
-	@PYTHON@ $(top_srcdir)/lib/libvcc/generate.py \
+	${PYTHON} $(top_srcdir)/lib/libvcc/generate.py \
 	    $(top_srcdir) $(top_builddir)
 
 GEN_H = \
@@ -128,7 +128,7 @@ vcs_version.h:
 	@if test -e $(top_srcdir)/.git || \
 	  ! test -f $(srcdir)/vmod_abi.h || \
 	  ! test -f $(srcdir)/vcs_version.h ; then \
-	    @PYTHON@ $(srcdir)/generate.py \
+	    ${PYTHON} $(srcdir)/generate.py \
 		$(top_srcdir) $(top_builddir) ; \
 	fi
 

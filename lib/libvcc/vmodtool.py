@@ -41,7 +41,6 @@ import sys
 import re
 import optparse
 import unittest
-import random
 import copy
 import json
 import hashlib
@@ -254,7 +253,7 @@ class CType(object):
     def json(self, jl):
         jl.append([self.vt])
         while jl[-1][-1] is None:
-                jl[-1].pop(-1)
+            jl[-1].pop(-1)
 
 #######################################################################
 
@@ -290,7 +289,7 @@ class arg(CType):
     def json(self, jl):
         jl.append([self.vt, self.nm, self.defval, self.spec])
         if self.opt:
-                jl[-1].append(True)
+            jl[-1].append(True)
         while jl[-1][-1] is None:
             jl[-1].pop(-1)
 
@@ -366,7 +365,7 @@ class ProtoType(object):
             err("%s(): Illegal C-name\n" % self.cname(), warn=False)
 
         if len(wl) == 2 and wl[0] == '(' and wl[1] == ')':
-                return
+            return
 
         if wl[0] != "(":
             err("Syntax error: Expected '(', got '%s'" % wl[0], warn=False)
@@ -386,17 +385,17 @@ class ProtoType(object):
             if not wl:
                 break
             if wl[0] == '[':
-                    wl.pop(0)
-                    t = arg(wl, names, st.vcc.enums, ']')
-                    if t.nm is None:
-                        err("Optional arguments must have names", warn=False)
-                    t.opt = True
-                    x = wl.pop(0)
-                    if x != ']':
-                        err("Expected ']' found '%s'" % x, warn=False)
-                    self.argstruct = True
+                wl.pop(0)
+                t = arg(wl, names, st.vcc.enums, ']')
+                if t.nm is None:
+                    err("Optional arguments must have names", warn=False)
+                t.opt = True
+                x = wl.pop(0)
+                if x != ']':
+                    err("Expected ']' found '%s'" % x, warn=False)
+                self.argstruct = True
             else:
-                    t = arg(wl, names, st.vcc.enums, ',')
+                t = arg(wl, names, st.vcc.enums, ',')
             if t.nm is None:
                 t.nm2 = "arg%d" % n
             else:
@@ -466,10 +465,10 @@ class ProtoType(object):
         s = self.retval.ct + " " + name + '('
         ll = args
         if self.argstruct:
-                ll.append(self.argstructname() + "*")
+            ll.append(self.argstructname() + "*")
         else:
-                for i in self.args:
-                    ll.append(i.ct)
+            for i in self.args:
+                ll.append(i.ct)
         s += ", ".join(ll)
         return s + ');'
 
@@ -483,31 +482,31 @@ class ProtoType(object):
     def argstructure(self):
         s = "\n" + self.argstructname() + " {\n"
         for i in self.args:
-                if i.opt:
-                        assert i.nm is not None
-                        s += "\tchar\t\t\tvalid_%s;\n" % i.nm
+            if i.opt:
+                assert i.nm is not None
+                s += "\tchar\t\t\tvalid_%s;\n" % i.nm
         for i in self.args:
-                s += "\t" + i.ct
-                if len(i.ct) < 8:
-                        s += "\t"
-                if len(i.ct) < 16:
-                        s += "\t"
-                s += "\t" + i.nm2 + ";\n"
+            s += "\t" + i.ct
+            if len(i.ct) < 8:
+                s += "\t"
+            if len(i.ct) < 16:
+                s += "\t"
+            s += "\t" + i.nm2 + ";\n"
         s += "};\n"
         return s
 
     def cstuff(self, args, where):
         s = ""
         if where == 'h':
-                if self.argstruct:
-                        s += self.argstructure()
-                s += lwrap(self.proto(args, self.cname(True)))
+            if self.argstruct:
+                s += self.argstructure()
+            s += lwrap(self.proto(args, self.cname(True)))
         elif where == 'c':
-                s += lwrap(self.typedef(args))
+            s += lwrap(self.typedef(args))
         elif where == 'o':
-                if self.argstruct:
-                        s += self.argstructure()
-                s += lwrap(self.typedef(args))
+            if self.argstruct:
+                s += self.argstructure()
+            s += lwrap(self.typedef(args))
         else:
             assert False
         return s
@@ -517,9 +516,9 @@ class ProtoType(object):
         self.retval.json(ll)
         ll.append('Vmod_%s_Func.%s' % (self.st.vcc.modname, cfunc))
         if self.argstruct:
-                ll.append(self.argstructname())
+            ll.append(self.argstructname())
         else:
-                ll.append("")
+            ll.append("")
         for i in self.args:
             i.json(ll)
         jl.append(ll)

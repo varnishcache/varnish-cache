@@ -47,6 +47,7 @@ H2_SETTING(					// rfc7540,l,2097,2103
 	0xffffffff,
 	0
 )
+
 #ifndef H2_SETTINGS_PARAM_ONLY
 H2_SETTING(					// rfc7540,l,2105,2114
 	ENABLE_PUSH,
@@ -58,6 +59,7 @@ H2_SETTING(					// rfc7540,l,2105,2114
 	H2CE_PROTOCOL_ERROR
 )
 #endif
+
 H2_SETTING(					// rfc7540,l,2116,2121
 	MAX_CONCURRENT_STREAMS,
 	max_concurrent_streams,
@@ -67,6 +69,7 @@ H2_SETTING(					// rfc7540,l,2116,2121
 	0xffffffff,
 	0
 )
+
 H2_SETTING(					// rfc7540,l,2139,2148
 	INITIAL_WINDOW_SIZE,
 	initial_window_size,
@@ -76,6 +79,7 @@ H2_SETTING(					// rfc7540,l,2139,2148
 	0x7fffffff,
 	H2CE_FLOW_CONTROL_ERROR
 )
+
 H2_SETTING(					// rfc7540,l,2150,2157
 	MAX_FRAME_SIZE,
 	max_frame_size,
@@ -85,6 +89,7 @@ H2_SETTING(					// rfc7540,l,2150,2157
 	0x00ffffff,
 	H2CE_PROTOCOL_ERROR
 )
+
 H2_SETTING(					// rfc7540,l,2159,2167
 	MAX_HEADER_LIST_SIZE,
 	max_header_list_size,

@@ -32,10 +32,6 @@
 
 from __future__ import print_function
 
-import subprocess
-import collections
-import os
-
 #######################################################################
 # These are our tokens
 
@@ -51,112 +47,112 @@ from os.path import join
 srcroot = "../.."
 buildroot = "../.."
 if len(sys.argv) == 3:
-	srcroot = sys.argv[1]
-	buildroot = sys.argv[2]
+    srcroot = sys.argv[1]
+    buildroot = sys.argv[2]
 elif len(sys.argv) != 1:
-	print("Two arguments or none")
-	exit(2)
+    print("Two arguments or none")
+    exit(2)
 
 tokens = {
-	"T_INC":	"++",
-	"T_DEC":	"--",
-	"T_CAND":	"&&",
-	"T_COR":	"||",
-	"T_LEQ":	"<=",
-	"T_EQ":		"==",
-	"T_NEQ":	"!=",
-	"T_GEQ":	">=",
-	"T_SHR":	">>",
-	"T_SHL":	"<<",
-	"T_INCR":	"+=",
-	"T_DECR":	"-=",
-	"T_MUL":	"*=",
-	"T_DIV":	"/=",
-	"T_NOMATCH":	"!~",
+    "T_INC":    "++",
+    "T_DEC":    "--",
+    "T_CAND":       "&&",
+    "T_COR":    "||",
+    "T_LEQ":    "<=",
+    "T_EQ":     "==",
+    "T_NEQ":    "!=",
+    "T_GEQ":    ">=",
+    "T_SHR":    ">>",
+    "T_SHL":    "<<",
+    "T_INCR":       "+=",
+    "T_DECR":       "-=",
+    "T_MUL":    "*=",
+    "T_DIV":    "/=",
+    "T_NOMATCH":    "!~",
 
-	# Single char tokens, for convenience on one line
-	None:		"{}()*+-/%><=;!&.|~,",
+    # Single char tokens, for convenience on one line
+    None:       "{}()*+-/%><=;!&.|~,",
 
-	# These have handwritten recognizers
-	"ID":		None,
-	"CNUM":		None,
-	"FNUM":		None,
-	"CSTR":		None,
-	"EOI":		None,
-	"CSRC":		None,
+    # These have handwritten recognizers
+    "ID":       None,
+    "CNUM":     None,
+    "FNUM":     None,
+    "CSTR":     None,
+    "EOI":      None,
+    "CSRC":     None,
 }
 
 #######################################################################
 # Our methods and actions
 
 returns = (
-	###############################################################
-	# Client side
+    ###############################################################
+    # Client side
 
-	('recv',
-		"C",
-		('fail', 'synth', 'restart', 'pass', 'pipe', 'hash', 'purge', 'vcl')
-	),
-	('pipe',
-		"C",
-		('fail', 'synth', 'pipe',)
-	),
-	('pass',
-		"C",
-		('fail', 'synth', 'restart', 'fetch',)
-	),
-	('hash',
-		"C",
-		('fail', 'lookup',)
-	),
-	('purge',
-		"C",
-		('fail', 'synth', 'restart',)
-	),
-	('miss',
-		"C",
-		('fail', 'synth', 'restart', 'pass', 'fetch',)
-	),
-	('hit',
-		"C",
-		('fail', 'synth', 'restart', 'pass', 'miss', 'deliver',)
-	),
-	('deliver',
-		"C",
-		('fail', 'synth', 'restart', 'deliver',)
-	),
-	('synth',
-		"C",
-		('fail', 'restart', 'deliver',)
-	),
+    ('recv',
+     "C",
+     ('fail', 'synth', 'restart', 'pass', 'pipe', 'hash', 'purge', 'vcl')
+    ),
+    ('pipe',
+     "C",
+     ('fail', 'synth', 'pipe',)
+    ),
+    ('pass',
+     "C",
+     ('fail', 'synth', 'restart', 'fetch',)
+    ),
+    ('hash',
+     "C",
+     ('fail', 'lookup',)
+    ),
+    ('purge',
+     "C",
+     ('fail', 'synth', 'restart',)
+    ),
+    ('miss',
+     "C",
+     ('fail', 'synth', 'restart', 'pass', 'fetch',)
+    ),
+    ('hit',
+     "C",
+     ('fail', 'synth', 'restart', 'pass', 'miss', 'deliver',)
+    ),
+    ('deliver',
+     "C",
+     ('fail', 'synth', 'restart', 'deliver',)
+    ),
+    ('synth',
+     "C",
+     ('fail', 'restart', 'deliver',)
+    ),
 
-	###############################################################
-	# Backend-fetch
+    ###############################################################
+    # Backend-fetch
 
-	('backend_fetch',
-		"B",
-		('fail', 'fetch', 'abandon')
-	),
-	('backend_response',
-		"B",
-		('fail', 'deliver', 'retry', 'abandon', 'pass')
-	),
-	('backend_error',
-		"B",
-		('fail', 'deliver', 'retry', 'abandon')
-	),
+    ('backend_fetch',
+     "B",
+     ('fail', 'fetch', 'abandon')
+    ),
+    ('backend_response',
+     "B",
+     ('fail', 'deliver', 'retry', 'abandon', 'pass')
+    ),
+    ('backend_error',
+     "B",
+     ('fail', 'deliver', 'retry', 'abandon')
+    ),
 
-	###############################################################
-	# Housekeeping
+    ###############################################################
+    # Housekeeping
 
-	('init',
-		"H",
-		('ok', 'fail')
-	),
-	('fini',
-		"H",
-		('ok',)
-	),
+    ('init',
+     "H",
+     ('ok', 'fail')
+    ),
+    ('fini',
+     "H",
+     ('ok',)
+    ),
 )
 
 #######################################################################
@@ -170,152 +166,151 @@ returns = (
 varprotos = {}
 
 def varproto(s):
-	if not s in varprotos:
-		fh.write(s + ";\n")
-		varprotos[s] = True
+    if not s in varprotos:
+        fh.write(s + ";\n")
+        varprotos[s] = True
 
 class vardef(object):
-	def __init__(self, nam, typ, rd, wr, wu, vlo, vhi):
-		self.nam = nam
-		self.typ = typ
-		self.rd = rd
-		self.wr = wr
-		self.uns = wu
-		self.vlo = vlo
-		self.vhi = vhi
+    def __init__(self, nam, typ, rd, wr, wu, vlo, vhi):
+        self.nam = nam
+        self.typ = typ
+        self.rd = rd
+        self.wr = wr
+        self.uns = wu
+        self.vlo = vlo
+        self.vhi = vhi
 
-		self.emit()
+        self.emit()
 
-	def emit(self):
-		fh.write("\n")
-		fo.write("\n")
-		cnam = self.nam.replace(".", "_")
-		ctyp = vcltypes[self.typ]
+    def emit(self):
+        fh.write("\n")
+        fo.write("\n")
+        cnam = self.nam.replace(".", "_")
+        ctyp = vcltypes[self.typ]
 
-		# fo.write("\t{ \"%s\", %s,\n" % (nm, self.typ))
-		fo.write("\tsym = VCC_MkSym(tl, \"%s\", " % self.nam)
-		if (self.typ == "HEADER"):
-			fo.write(" SYM_NONE, %d, %d);\n" % (self.vlo, self.vhi))
-			fo.write("\tAN(sym);\n");
-			fo.write("\tsym->wildcard = vcc_Var_Wildcard;\n")
-		else:
-			fo.write(" SYM_VAR, %d, %d);\n" % (self.vlo, self.vhi))
-		fo.write("\tAN(sym);\n")
-		fo.write("\tsym->type = %s;\n" % self.typ)
-		fo.write("\tsym->eval = vcc_Eval_Var;\n")
+        # fo.write("\t{ \"%s\", %s,\n" % (nm, self.typ))
+        fo.write("\tsym = VCC_MkSym(tl, \"%s\", " % self.nam)
+        if self.typ == "HEADER":
+            fo.write(" SYM_NONE, %d, %d);\n" % (self.vlo, self.vhi))
+            fo.write("\tAN(sym);\n")
+            fo.write("\tsym->wildcard = vcc_Var_Wildcard;\n")
+        else:
+            fo.write(" SYM_VAR, %d, %d);\n" % (self.vlo, self.vhi))
+        fo.write("\tAN(sym);\n")
+        fo.write("\tsym->type = %s;\n" % self.typ)
+        fo.write("\tsym->eval = vcc_Eval_Var;\n")
 
-		if self.typ == "HEADER":
-			fo.write('\tsym->rname = "HDR_')
-			fo.write(self.nam.split(".")[0].upper())
-			fo.write('";\n')
-		elif len(self.rd):
-			fo.write('\tsym->rname = "VRT_r_%s(ctx)";\n' % cnam)
-			varproto("VCL_" + self.typ + " VRT_r_%s(VRT_CTX)" % cnam)
-		fo.write("\tsym->r_methods =\n")
-		restrict(fo, self.rd)
-		fo.write(";\n")
+        if self.typ == "HEADER":
+            fo.write('\tsym->rname = "HDR_')
+            fo.write(self.nam.split(".")[0].upper())
+            fo.write('";\n')
+        elif self.rd:
+            fo.write('\tsym->rname = "VRT_r_%s(ctx)";\n' % cnam)
+            varproto("VCL_" + self.typ + " VRT_r_%s(VRT_CTX)" % cnam)
+        fo.write("\tsym->r_methods =\n")
+        restrict(fo, self.rd)
+        fo.write(";\n")
 
-		if self.typ == "HEADER":
-			fo.write('\tsym->lname = "HDR_')
-			fo.write(self.nam.split(".")[0].upper())
-			fo.write('";\n')
-		elif len(self.wr):
-			fo.write('\tsym->lname = "VRT_l_%s(ctx, ";\n' % cnam)
-			s = "void VRT_l_%s(VRT_CTX, " % cnam
-			if self.typ != "STRING" and self.typ != "BODY":
-				s += "VCL_" + self.typ + ")"
-			else:
-				s += ctyp.c + ", ...)"
-			varproto(s);
-		fo.write("\tsym->w_methods =\n")
-		restrict(fo, self.wr)
-		fo.write(";\n")
+        if self.typ == "HEADER":
+            fo.write('\tsym->lname = "HDR_')
+            fo.write(self.nam.split(".")[0].upper())
+            fo.write('";\n')
+        elif self.wr:
+            fo.write('\tsym->lname = "VRT_l_%s(ctx, ";\n' % cnam)
+            s = "void VRT_l_%s(VRT_CTX, " % cnam
+            if self.typ != "STRING" and self.typ != "BODY":
+                s += "VCL_" + self.typ + ")"
+            else:
+                s += ctyp.c + ", ...)"
+            varproto(s)
+        fo.write("\tsym->w_methods =\n")
+        restrict(fo, self.wr)
+        fo.write(";\n")
 
-		if len(self.uns):
-			varproto("void VRT_u_%s(VRT_CTX)" % cnam)
-			fo.write('\tsym->uname = "VRT_u_%s(ctx)";\n' % cnam)
-		fo.write('\tsym->u_methods =\n')
-		restrict(fo, self.uns)
-		fo.write(";\n")
+        if self.uns:
+            varproto("void VRT_u_%s(VRT_CTX)" % cnam)
+            fo.write('\tsym->uname = "VRT_u_%s(ctx)";\n' % cnam)
+        fo.write('\tsym->u_methods =\n')
+        restrict(fo, self.uns)
+        fo.write(";\n")
 
 def parse_vcl(x):
-	vlo,vhi = (0,99)
-	x = x.split()
-	if x[0] == "VCL" and x[1] == "<=":
-		vhi = int(float(x[2]) * 10)
-	elif x[0] == "VCL" and x[1] == ">=":
-		vlo = int(float(x[2]) * 10)
-	else:
-		print("Unknown variable version spec")
-		print("XXX", x, vlo, vhi)
-		exit(2)
-	return vlo,vhi
+    vlo, vhi = (0, 99)
+    x = x.split()
+    if x[0] == "VCL" and x[1] == "<=":
+        vhi = int(float(x[2]) * 10)
+    elif x[0] == "VCL" and x[1] == ">=":
+        vlo = int(float(x[2]) * 10)
+    else:
+        print("Unknown variable version spec")
+        print("XXX", x, vlo, vhi)
+        exit(2)
+    return vlo, vhi
 
 def parse_var(ln):
-	l1 = ln.pop(0).split("``")
-	assert len(l1) in (1,3)
-	vn = l1[0].strip()
-	if vn[-1] == '*':
-		vn = vn[:-1]
-	if len(l1) == 3:
-		vlo,vhi = parse_vcl(l1[1])
-	else:
-		vlo,vhi = 0,99
-	vr = []
-	vw = []
-	vu = []
-	while True:
-		l = ln.pop(0)
-		if l == "":
-			continue
-		j = l.split()
-		if j[0] == "Type:":
-			assert len(j) == 2
-			vt = j[1]
-			continue
-		if j[0] == "Readable" and j[1] == "from:":
-			for i in j[2:]:
-				vr.append(i.strip(",."))
-			continue
-		if j[0] == "Writable" and j[1] == "from:":
-			for i in j[2:]:
-				vw.append(i.strip(",."))
-			continue
-		if j[0] == "Unsetable" and j[1] == "from:":
-			for i in j[2:]:
-				vu.append(i.strip(",."))
-			continue
-		break
-	if vn[:8] != "storage.":
-		vardef(vn, vt, vr, vw, vu, vlo, vhi)
+    l1 = ln.pop(0).split("``")
+    assert len(l1) in (1, 3)
+    vn = l1[0].strip()
+    if vn[-1] == '*':
+        vn = vn[:-1]
+    if len(l1) == 3:
+        vlo, vhi = parse_vcl(l1[1])
+    else:
+        vlo, vhi = 0, 99
+    vr = []
+    vw = []
+    vu = []
+    while True:
+        l = ln.pop(0)
+        if l == "":
+            continue
+        j = l.split()
+        if j[0] == "Type:":
+            assert len(j) == 2
+            vt = j[1]
+            continue
+        if j[0] == "Readable" and j[1] == "from:":
+            for i in j[2:]:
+                vr.append(i.strip(",."))
+            continue
+        if j[0] == "Writable" and j[1] == "from:":
+            for i in j[2:]:
+                vw.append(i.strip(",."))
+            continue
+        if j[0] == "Unsetable" and j[1] == "from:":
+            for i in j[2:]:
+                vu.append(i.strip(",."))
+            continue
+        break
+    if vn[:8] != "storage.":
+        vardef(vn, vt, vr, vw, vu, vlo, vhi)
 
 def parse_var_doc(fn):
-	s = 0
-	l = []
-	for i in open(fn):
-		l.append(i.rstrip())
-	for n in range(0, len(l)):
-		j = l[n].split()
-		if len(j) != 2 or j[0] != "Type:" or not l[n][0].isspace():
-			continue
-		m = n
-		while m < len(l) and ( l[m] == "" or l[m][0].isspace() ):
-			m += 1
-		parse_var(l[n-2:m-1])
+    l = []
+    for i in open(fn):
+        l.append(i.rstrip())
+    for n in range(0, len(l)):
+        j = l[n].split()
+        if len(j) != 2 or j[0] != "Type:" or not l[n][0].isspace():
+            continue
+        m = n
+        while m < len(l) and (l[m] == "" or l[m][0].isspace()):
+            m += 1
+        parse_var(l[n-2:m-1])
 
 stv_variables = (
-	('free_space',	'BYTES',	"0.", 'storage.<name>.free_space', """
-	Free space available in the named stevedore. Only available for
-	the malloc stevedore.
-	"""),
-	('used_space',	'BYTES',	"0.", 'storage.<name>.used_space', """
-	Used space in the named stevedore. Only available for the malloc
-	stevedore.
-	"""),
-	('happy',	'BOOL',		"0", 'storage.<name>.happy', """
-	Health status for the named stevedore. Not available in any of the
-	current stevedores.
-	"""),
+    ('free_space', 'BYTES', "0.", 'storage.<name>.free_space', """
+    Free space available in the named stevedore. Only available for
+    the malloc stevedore.
+    """),
+    ('used_space', 'BYTES', "0.", 'storage.<name>.used_space', """
+    Used space in the named stevedore. Only available for the malloc
+    stevedore.
+    """),
+    ('happy', 'BOOL', "0", 'storage.<name>.happy', """
+    Health status for the named stevedore. Not available in any of the
+    current stevedores.
+    """),
 )
 
 #######################################################################
@@ -324,11 +319,11 @@ stv_variables = (
 vcltypes = {}
 
 class vcltype(object):
-	def __init__(self, name, ctype, internal=False):
-		self.name = name
-		self.c = ctype
-		self.internal = internal
-		vcltypes[name] = self
+    def __init__(self, name, ctype, internal=False):
+        self.name = name
+        self.c = ctype
+        self.internal = internal
+        vcltypes[name] = self
 
 
 vcltype("STRINGS", "void", True)
@@ -338,19 +333,19 @@ vcltype("SUB", "void*", True)
 fi = open(join(srcroot, "include/vrt.h"))
 
 for i in fi:
-	j = i.split()
-	if len(j) < 3:
-		continue
-	if j[0] != "typedef":
-		continue
-	if j[-1][-1] != ";":
-		continue
-	if j[-1][-2] == ")":
-		continue
-	if j[-1][:4] != "VCL_":
-		continue
-	d = " ".join(j[1:-1])
-	vcltype(j[-1][4:-1], d)
+    j = i.split()
+    if len(j) < 3:
+        continue
+    if j[0] != "typedef":
+        continue
+    if j[-1][-1] != ";":
+        continue
+    if j[-1][-2] == ")":
+        continue
+    if j[-1][:4] != "VCL_":
+        continue
+    d = " ".join(j[1:-1])
+    vcltype(j[-1][4:-1], d)
 fi.close()
 
 #######################################################################
@@ -360,20 +355,20 @@ fi.close()
 
 #######################################################################
 def emit_vcl_fixed_token(fo, tokens):
-	"Emit a function to recognize tokens in a string"
-	recog = list()
-	emit = dict()
-	for i in tokens:
-		j = tokens[i]
-		if j is not None:
-			recog.append(j)
-			emit[j] = i
+    "Emit a function to recognize tokens in a string"
+    recog = list()
+    emit = dict()
+    for i in tokens:
+        j = tokens[i]
+        if j is not None:
+            recog.append(j)
+            emit[j] = i
 
-	recog.sort()
-	rrecog = copy.copy(recog)
-	rrecog.sort(key=lambda x: -len(x))
+    recog.sort()
+    rrecog = copy.copy(recog)
+    rrecog.sort(key=lambda x: -len(x))
 
-	fo.write("""
+    fo.write("""
 #define M1()\tdo {*q = p + 1; return (p[0]); } while (0)
 #define M2(c,t)\tdo {if (p[1] == (c)) { *q = p + 2; return (t); }} while (0)
 
@@ -383,131 +378,130 @@ vcl_fixed_token(const char *p, const char **q)
 
 \tswitch (p[0]) {
 """)
-	last_initial = None
-	for i in recog:
-		if (i[0] == last_initial):
-			continue
-		last_initial = i[0]
-		fo.write("\tcase '%s':\n" % last_initial)
-		need_ret = True
-		for j in rrecog:
-			if (j[0] != last_initial):
-				continue
-			if len(j) == 2:
-				fo.write("\t\tM2('%s', %s);\n" %
-				    (j[1], emit[j]))
-			elif len(j) == 1:
-				fo.write("\t\tM1();\n")
-				need_ret = False
-			else:
-				fo.write("\t\tif (")
-				k = 1
-				l = len(j)
-				while (k < l):
-					fo.write("p[%d] == '%s'" % (k, j[k]))
-					fo.write(" &&")
-					if (k % 3) == 0:
-						fo.write("\n\t\t    ")
-					else:
-						fo.write(" ")
-					k += 1
-				fo.write("!isvar(p[%d])) {\n" % l)
-				fo.write("\t\t\t*q = p + %d;\n" % l)
-				fo.write("\t\t\treturn (%s);\n" % emit[j])
-				fo.write("\t\t}\n")
-		if need_ret:
-			fo.write("\t\treturn (0);\n")
-	fo.write("\tdefault:\n\t\treturn (0);\n\t}\n}\n")
+    last_initial = None
+    for i in recog:
+        if i[0] == last_initial:
+            continue
+        last_initial = i[0]
+        fo.write("\tcase '%s':\n" % last_initial)
+        need_ret = True
+        for j in rrecog:
+            if j[0] != last_initial:
+                continue
+            if len(j) == 2:
+                fo.write("\t\tM2('%s', %s);\n" % (j[1], emit[j]))
+            elif len(j) == 1:
+                fo.write("\t\tM1();\n")
+                need_ret = False
+            else:
+                fo.write("\t\tif (")
+                k = 1
+                l = len(j)
+                while k < l:
+                    fo.write("p[%d] == '%s'" % (k, j[k]))
+                    fo.write(" &&")
+                    if (k % 3) == 0:
+                        fo.write("\n\t\t    ")
+                    else:
+                        fo.write(" ")
+                    k += 1
+                fo.write("!isvar(p[%d])) {\n" % l)
+                fo.write("\t\t\t*q = p + %d;\n" % l)
+                fo.write("\t\t\treturn (%s);\n" % emit[j])
+                fo.write("\t\t}\n")
+        if need_ret:
+            fo.write("\t\treturn (0);\n")
+    fo.write("\tdefault:\n\t\treturn (0);\n\t}\n}\n")
 
 
 #######################################################################
 def emit_vcl_tnames(fo, tokens):
-	"Emit the vcl_tnames (token->string) conversion array"
-	fo.write("\nconst char * const vcl_tnames[256] = {\n")
-	l = list(tokens.keys())
-	l.sort()
-	for i in l:
-		j = tokens[i]
-		if j is None:
-			j = i
-		if i[0] == "'":
-			j = i
-		fo.write("\t[%s] = \"%s\",\n" % (i, j))
-	fo.write("};\n")
+    "Emit the vcl_tnames (token->string) conversion array"
+    fo.write("\nconst char * const vcl_tnames[256] = {\n")
+    l = list(tokens.keys())
+    l.sort()
+    for i in l:
+        j = tokens[i]
+        if j is None:
+            j = i
+        if i[0] == "'":
+            j = i
+        fo.write("\t[%s] = \"%s\",\n" % (i, j))
+    fo.write("};\n")
 
 
 #######################################################################
 def emit_file(fo, fd, bn):
-	"Read a C-source file and spit out code that outputs it with VSB_cat()"
-	fn = join(fd, bn)
+    "Read a C-source file and spit out code that outputs it with VSB_cat()"
+    fn = join(fd, bn)
 
-	fi = open(fn)
-	fc = fi.read()
-	fi.close()
+    fi = open(fn)
+    fc = fi.read()
+    fi.close()
 
-	w = 66		# Width of lines, after white space prefix
-	maxlen = 10240  # Max length of string literal
+    w = 66      # Width of lines, after white space prefix
+    maxlen = 10240  # Max length of string literal
 
-	x = 0
-	l = 0
-	fo.write("\n\t/* %s */\n\n" % fn)
-	fo.write('\tVSB_cat(sb, "/* ---===### %s ###===--- */\\n\\n");\n' % bn)
-	for c in fc:
-		if l == 0:
-			fo.write("\tVSB_cat(sb, \"")
-			l += 12
-			x += 12
-		if x == 0:
-			fo.write("\t    \"")
-		d = c
-		if c == '\n':
-			d = "\\n"
-		elif c == '\t':
-			d = "\\t"
-		elif c == '"':
-			d = "\\\""
-		elif c == '\\':
-			d = "\\\\"
+    x = 0
+    l = 0
+    fo.write("\n\t/* %s */\n\n" % fn)
+    fo.write('\tVSB_cat(sb, "/* ---===### %s ###===--- */\\n\\n");\n' % bn)
+    for c in fc:
+        if l == 0:
+            fo.write("\tVSB_cat(sb, \"")
+            l += 12
+            x += 12
+        if x == 0:
+            fo.write("\t    \"")
+        d = c
+        if c == '\n':
+            d = "\\n"
+        elif c == '\t':
+            d = "\\t"
+        elif c == '"':
+            d = "\\\""
+        elif c == '\\':
+            d = "\\\\"
 
-		if c == '\n' and x > w - 20:
-			fo.write(d + "\"\n")
-			x = 0
-			continue
-		if c.isspace() and x > w - 10:
-			fo.write(d + "\"\n")
-			x = 0
-			continue
+        if c == '\n' and x > w - 20:
+            fo.write(d + "\"\n")
+            x = 0
+            continue
+        if c.isspace() and x > w - 10:
+            fo.write(d + "\"\n")
+            x = 0
+            continue
 
-		fo.write(d)
-		x += len(d)
-		l += len(d)
-		if l > maxlen:
-			fo.write("\");\n")
-			l = 0
-			x = 0
-		if x > w - 3:
-			fo.write("\"\n")
-			x = 0
-	if x != 0:
-		fo.write("\"\n")
-	if l != 0:
-		fo.write("\t);\n")
-	fo.write('\tVSB_cat(sb, "\\n");\n')
+        fo.write(d)
+        x += len(d)
+        l += len(d)
+        if l > maxlen:
+            fo.write("\");\n")
+            l = 0
+            x = 0
+        if x > w - 3:
+            fo.write("\"\n")
+            x = 0
+    if x != 0:
+        fo.write("\"\n")
+    if l != 0:
+        fo.write("\t);\n")
+    fo.write('\tVSB_cat(sb, "\\n");\n')
 
 #######################################################################
 
 
 def polish_tokens(tokens):
-	"Expand single char tokens"
-	st = tokens[None]
-	del tokens[None]
-	for i in st:
-		tokens["'" + i + "'"] = i
+    "Expand single char tokens"
+    st = tokens[None]
+    del tokens[None]
+    for i in st:
+        tokens["'" + i + "'"] = i
 
 
 #######################################################################
 def file_header(fo):
-	fo.write("""/*
+    fo.write("""/*
  * NB:  This file is machine generated, DO NOT EDIT!
  *
  * Edit and run lib/libvcc/generate.py instead.
@@ -516,10 +510,10 @@ def file_header(fo):
 """)
 
 def lint_start(fo):
-	fo.write('/*lint -save -e525 -e539 */\n\n')
+    fo.write('/*lint -save -e525 -e539 */\n\n')
 
 def lint_end(fo):
-	fo.write('\n/*lint -restore */\n')
+    fo.write('\n/*lint -restore */\n')
 
 #######################################################################
 
@@ -531,11 +525,11 @@ file_header(fo)
 
 j = 128
 for i in sorted(tokens.keys()):
-	if i[0] == "'":
-		continue
-	fo.write("#define\t%s %d\n" % (i, j))
-	j += 1
-	assert j < 256
+    if i[0] == "'":
+        continue
+    fo.write("#define\t%s %d\n" % (i, j))
+    j += 1
+    assert j < 256
 
 fo.close()
 
@@ -546,14 +540,14 @@ vcls = list()
 vcls_client = list()
 vcls_backend = list()
 for i in returns:
-	vcls.append(i[0])
-	for j in i[1]:
-		if j == "B":
-			vcls_backend.append(i[0])
-		elif j == "C":
-			vcls_client.append(i[0])
-	for j in i[2]:
-		rets[j] = True
+    vcls.append(i[0])
+    for j in i[1]:
+        if j == "B":
+            vcls_backend.append(i[0])
+        elif j == "C":
+            vcls_client.append(i[0])
+    for j in i[2]:
+        rets[j] = True
 
 #######################################################################
 
@@ -566,25 +560,25 @@ lint_start(fo)
 fo.write("#ifdef VCL_RET_MAC\n")
 ll = sorted(returns)
 for i in sorted(rets.keys()):
-	fo.write("VCL_RET_MAC(%s, %s" % (i.lower(), i.upper()))
-	s = ",\n\t"
-	for j in ll:
-		if i in j[2]:
-			fo.write("%sVCL_MET_%s" % (s, j[0].upper()))
-			s = " |\n\t"
-	fo.write("\n)\n\n")
+    fo.write("VCL_RET_MAC(%s, %s" % (i.lower(), i.upper()))
+    s = ",\n\t"
+    for j in ll:
+        if i in j[2]:
+            fo.write("%sVCL_MET_%s" % (s, j[0].upper()))
+            s = " |\n\t"
+    fo.write("\n)\n\n")
 fo.write("#undef VCL_RET_MAC\n")
 fo.write("#endif\n")
 
 fo.write("\n#ifdef VCL_MET_MAC\n")
 for i in ll:
-	fo.write("VCL_MET_MAC(%s, %s, %s," %
-	    (i[0].lower(), i[0].upper(), i[1]))
-	p = " (\n\t"
-	for j in sorted(i[2]):
-		fo.write("%s(1U << VCL_RET_%s)" % (p, j.upper()))
-		p = " |\n\t"
-	fo.write(")\n)\n\n")
+    fo.write("VCL_MET_MAC(%s, %s, %s," %
+             (i[0].lower(), i[0].upper(), i[1]))
+    p = " (\n\t"
+    for j in sorted(i[2]):
+        fo.write("%s(1U << VCL_RET_%s)" % (p, j.upper()))
+        p = " |\n\t"
+    fo.write(")\n)\n\n")
 fo.write("#undef VCL_MET_MAC\n")
 fo.write("#endif\n")
 lint_end(fo)
@@ -609,40 +603,40 @@ fo.write("""
 
 
 def tbl40(a, b):
-	while len(a.expandtabs()) < 40:
-		a += "\t"
-	return a + b
+    while len(a.expandtabs()) < 40:
+        a += "\t"
+    return a + b
 
 fo.write("\n/* VCL Methods */\n")
 task = {}
 n = 1
 for i in returns:
-	fo.write(tbl40("#define VCL_MET_%s" % i[0].upper(), "(1U << %d)\n" % n))
-	if not i[1] in task:
-		task[i[1]] = []
-	task[i[1]].append("VCL_MET_" + i[0].upper())
-	n += 1
+    fo.write(tbl40("#define VCL_MET_%s" % i[0].upper(), "(1U << %d)\n" % n))
+    if not i[1] in task:
+        task[i[1]] = []
+    task[i[1]].append("VCL_MET_" + i[0].upper())
+    n += 1
 
 fo.write("\n" + tbl40("#define VCL_MET_MAX", "%d\n" % n))
 fo.write("\n" + tbl40("#define VCL_MET_MASK", "0x%x\n" % ((1 << n) - 1)))
 
 fo.write("\n")
 for i in sorted(task.keys()):
-	fo.write(tbl40("#define VCL_MET_TASK_%s" % i.upper(),
-		       "( " + (" | \\\n\t\t\t\t\t  ").join(task[i]) + " )\n"))
+    fo.write(tbl40("#define VCL_MET_TASK_%s" % i.upper(),
+                   "( " + (" | \\\n\t\t\t\t\t  ").join(task[i]) + " )\n"))
 
 
 fo.write("\n/* VCL Returns */\n")
 n = 1
 for i in sorted(rets.keys()):
-	fo.write(tbl40("#define VCL_RET_%s" % i.upper(), "%d\n" % n))
-	n += 1
+    fo.write(tbl40("#define VCL_RET_%s" % i.upper(), "%d\n" % n))
+    n += 1
 
 fo.write("\n" + tbl40("#define VCL_RET_MAX", "%d\n" % n))
 
 fo.write("\n/* VCL Types */\n")
 for vcltype in sorted(vcltypes.keys()):
-	fo.write("extern const struct vrt_type VCL_TYPE_%s[1];\n" % vcltype)
+    fo.write("extern const struct vrt_type VCL_TYPE_%s[1];\n" % vcltype)
 
 
 fo.write("""
@@ -653,26 +647,26 @@ typedef void vcl_fini_f(VRT_CTX);
 typedef void vcl_func_f(VRT_CTX);
 
 struct VCL_conf {
-	unsigned			magic;
-#define VCL_CONF_MAGIC			0x7406c509	/* from /dev/random */
+    unsigned            magic;
+#define VCL_CONF_MAGIC          0x7406c509      /* from /dev/random */
 
-	unsigned			syntax;
-	struct director			**default_director;
-	const struct vrt_backend_probe	*default_probe;
-	unsigned			nref;
-	const struct vrt_ref		*ref;
+    unsigned            syntax;
+    struct director         **default_director;
+    const struct vrt_backend_probe  *default_probe;
+    unsigned            nref;
+    const struct vrt_ref        *ref;
 
-	unsigned			nsrc;
-	const char			**srcname;
-	const char			**srcbody;
+    unsigned            nsrc;
+    const char              **srcname;
+    const char              **srcbody;
 
-	unsigned			nvmod;
+    unsigned            nvmod;
 
-	vcl_event_f			*event_vcl;
+    vcl_event_f             *event_vcl;
 """)
 
 for i in returns:
-	fo.write("\tvcl_func_f\t\t\t*" + i[0] + "_func;\n")
+    fo.write("\tvcl_func_f\t\t\t*" + i[0] + "_func;\n")
 
 fo.write("\n};\n")
 fo.close()
@@ -681,44 +675,44 @@ fo.close()
 
 
 def restrict(fo, spec):
-	d = dict()
-	for j in spec:
-		if j[:4] == "vcl_":
-			j = j[4:]
-		if j == 'all':
-			for i in vcls:
-				d[i] = True
-		elif j == 'backend':
-			for i in vcls_backend:
-				d[i] = True
-		elif j == 'client':
-			for i in vcls_client:
-				d[i] = True
-		elif j == 'both':
-			for i in vcls_client:
-				d[i] = True
-			for i in vcls_backend:
-				d[i] = True
-		else:
-			if not j in vcls:
-				print("JJ", j)
-			assert j in vcls
-			d[j] = True
-	p = ""
-	l = list(d.keys())
-	l.sort()
-	w = 0
-	fo.write("\t\t")
-	for j in l:
-		x = p + "VCL_MET_" + j.upper()
-		if w + len(x) > 60:
-			fo.write("\n\t\t")
-			w = 0
-		fo.write(x)
-		w += len(x)
-		p = " | "
-	if len(d) == 0:
-		fo.write("0")
+    d = dict()
+    for j in spec:
+        if j[:4] == "vcl_":
+            j = j[4:]
+        if j == 'all':
+            for i in vcls:
+                d[i] = True
+        elif j == 'backend':
+            for i in vcls_backend:
+                d[i] = True
+        elif j == 'client':
+            for i in vcls_client:
+                d[i] = True
+        elif j == 'both':
+            for i in vcls_client:
+                d[i] = True
+            for i in vcls_backend:
+                d[i] = True
+        else:
+            if not j in vcls:
+                print("JJ", j)
+            assert j in vcls
+            d[j] = True
+    p = ""
+    l = list(d.keys())
+    l.sort()
+    w = 0
+    fo.write("\t\t")
+    for j in l:
+        x = p + "VCL_MET_" + j.upper()
+        if w + len(x) > 60:
+            fo.write("\n\t\t")
+            w = 0
+        fo.write(x)
+        w += len(x)
+        p = " | "
+    if not d:
+        fo.write("0")
 
 #######################################################################
 
@@ -736,7 +730,7 @@ fo.write("""
 void
 vcc_Var_Init(struct vcc *tl)
 {
-	struct symbol *sym;
+    struct symbol *sym;
 """)
 
 
@@ -744,22 +738,22 @@ parse_var_doc(join(srcroot, "doc/sphinx/reference/vcl_var.rst"))
 fo.write("}\n")
 
 for i in stv_variables:
-	fh.write(vcltypes[i[1]].c + " VRT_Stv_" + i[0] + "(const char *);\n")
+    fh.write(vcltypes[i[1]].c + " VRT_Stv_" + i[0] + "(const char *);\n")
 
 fo.write("\n/* VCL type identifiers */\n")
 
 for vn in sorted(vcltypes.keys()):
-	v = vcltypes[vn]
-	if v.internal:
-		continue
-	fo.write("const struct vrt_type VCL_TYPE_%s[1] = { {\n" % v.name)
-	fo.write("\t.magic = VRT_TYPE_MAGIC,\n")
-	fo.write('\t.lname = "%s",\n' % v.name.lower())
-	fo.write('\t.uname = "%s",\n' % v.name)
-	fo.write('\t.ctype = "%s",\n' % v.c)
-	if v.c != "void":
-		fo.write('\t.szof = sizeof(VCL_%s),\n' % v.name)
-	fo.write("}};\n")
+    v = vcltypes[vn]
+    if v.internal:
+        continue
+    fo.write("const struct vrt_type VCL_TYPE_%s[1] = { {\n" % v.name)
+    fo.write("\t.magic = VRT_TYPE_MAGIC,\n")
+    fo.write('\t.lname = "%s",\n' % v.name.lower())
+    fo.write('\t.uname = "%s",\n' % v.name)
+    fo.write('\t.ctype = "%s",\n' % v.c)
+    if v.c != "void":
+        fo.write('\t.szof = sizeof(VCL_%s),\n' % v.name)
+    fo.write("}};\n")
 
 fo.close()
 fh.close()
@@ -800,7 +794,7 @@ file_header(ft)
 lint_start(ft)
 
 for vcltype in sorted(vcltypes.keys()):
-	ft.write("VCC_TYPE(" + vcltype + ")\n")
+    ft.write("VCC_TYPE(" + vcltype + ")\n")
 ft.write("#undef VCC_TYPE\n")
 lint_end(ft)
 ft.close()
@@ -813,10 +807,10 @@ file_header(fo)
 lint_start(fo)
 
 for i in stv_variables:
-	ct = vcltypes[i[1]]
-	fo.write("VRTSTVVAR(" + i[0] + ",\t" + i[1] + ",\t")
-	fo.write(ct.c + ",\t" + i[2] + ")")
-	fo.write("\n")
+    ct = vcltypes[i[1]]
+    fo.write("VRTSTVVAR(" + i[0] + ",\t" + i[1] + ",\t")
+    fo.write(ct.c + ",\t" + i[2] + ")")
+    fo.write("\n")
 
 fo.write("#undef VRTSTVVAR\n")
 lint_end(fo)
