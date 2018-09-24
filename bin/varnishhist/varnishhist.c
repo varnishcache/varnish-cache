@@ -299,7 +299,7 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			continue;
 
 		/* select bucket */
-		i = HIST_RES * lround(log(value) / log_ten);
+		i = lround(HIST_RES * log(value) / log_ten);
 		if (i < hist_low * HIST_RES)
 			i = hist_low * HIST_RES;
 		if (i >= hist_high * HIST_RES)
