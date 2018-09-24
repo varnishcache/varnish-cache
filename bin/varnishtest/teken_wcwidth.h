@@ -7,7 +7,7 @@
  *
  * Latest version: http://www.cl.cam.ac.uk/~mgk25/ucs/wcwidth.c
  *
- * $FreeBSD: head/sys/teken/teken_wcwidth.h 186681 2009-01-01 13:26:53Z ed $
+ * $FreeBSD: head/sys/teken/teken_wcwidth.h 332297 2018-04-08 19:23:50Z phk $
  */
 
 struct interval {

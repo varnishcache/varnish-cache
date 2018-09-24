@@ -25,7 +25,7 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 #
-# $FreeBSD: head/sys/teken/gensequences 223574 2011-06-26 18:25:10Z ed $
+# $FreeBSD: head/sys/teken/gensequences 333925 2018-05-20 14:21:20Z dumbbell $
 
 function die(msg) {
 	print msg;
@@ -35,6 +35,15 @@ function die(msg) {
 function cchar(str) {
 	if (str == "^[")
 		return "\\x1B";
+	if (str == "SP")
+		return " ";
+
+	return str;
+}
+
+function csequence(str) {
+	if (str == "SP")
+		return " ";
 
 	return str;
 }
@@ -57,11 +66,11 @@ while (getline > 0) {
 	prefix = "";
 	l_prefix_name[""] = "teken_state_init";
 	for (i = 1; i < nsequences; i++) {
-		n = prefix sequence[i];
+		n = prefix csequence(sequence[i]);
 		l_prefix_parent[n] = prefix;
 		l_prefix_suffix[n] = sequence[i];
 		if (!l_prefix_name[n])
-			l_prefix_name[n] = "teken_state_" "" ++npr;
+			l_prefix_name[n] = "teken_state_" ++npr;
 		prefix = n;
 	}
 

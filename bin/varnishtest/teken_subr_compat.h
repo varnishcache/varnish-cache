@@ -25,7 +25,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $FreeBSD: head/sys/teken/teken_subr_compat.h 326272 2017-11-27 15:23:17Z pfg $
+ * $FreeBSD: head/sys/teken/teken_subr_compat.h 332297 2018-04-08 19:23:50Z phk $
  */
 
 static void
