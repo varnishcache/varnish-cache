@@ -25,7 +25,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $FreeBSD: head/sys/teken/teken.c 326272 2017-11-27 15:23:17Z pfg $
+ * $FreeBSD: head/sys/teken/teken.c 333683 2018-05-16 18:12:49Z cem $
  */
 
 #include "config.h"
@@ -35,14 +35,13 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#define	teken_assert(x)		assert(x)
 
 #include "vdef.h"
 #include "vas.h"
 
-#define	teken_assert(x)		assert(x)
-
 /* debug messages */
-#define	teken_printf(...)
+#define	teken_printf(x,...)
 
 /* Private flags for t_stateflags. */
 #define	TS_FIRSTDIGIT	0x0001	/* First numeric digit in escape sequence. */
@@ -129,19 +128,35 @@ teken_funcs_copy(const teken_t *t, const teken_rect_t *r, const teken_pos_t *p)
 }
 
 static inline void
+teken_funcs_pre_input(const teken_t *t)
+{
+
+	if (t->t_funcs->tf_pre_input != NULL)
+		t->t_funcs->tf_pre_input(t->t_softc);
+}
+
+static inline void
+teken_funcs_post_input(const teken_t *t)
+{
+
+	if (t->t_funcs->tf_post_input != NULL)
+		t->t_funcs->tf_post_input(t->t_softc);
+}
+
+static inline void
 teken_funcs_param(const teken_t *t, int cmd, unsigned int value)
 {
 
-	if (t->t_funcs->tf_param != NULL)
-		t->t_funcs->tf_param(t->t_softc, cmd, value);
+	teken_assert(t->t_funcs->tf_param != NULL);
+	t->t_funcs->tf_param(t->t_softc, cmd, value);
 }
 
 static inline void
 teken_funcs_respond(const teken_t *t, const void *buf, size_t len)
 {
 
-	if (t->t_funcs->tf_respond != NULL)
-		t->t_funcs->tf_respond(t->t_softc, buf, len);
+	teken_assert(t->t_funcs->tf_respond != NULL);
+	t->t_funcs->tf_respond(t->t_softc, buf, len);
 }
 
 #include "teken_subr.h"
@@ -288,8 +303,10 @@ teken_input(teken_t *t, const void *buf, size_t len)
 {
 	const char *c = buf;
 
+	teken_funcs_pre_input(t);
 	while (len-- > 0)
 		teken_input_byte(t, *c++);
+	teken_funcs_post_input(t);
 }
 
 const teken_pos_t *
