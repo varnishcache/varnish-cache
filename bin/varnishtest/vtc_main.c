@@ -547,9 +547,11 @@ read_file(const char *fn, int ntest)
 		return (2);
 	}
 
-	if (strncmp(q, "varnishtest", 11) || !isspace(q[11])) {
+	if ((strncmp(q, "varnishtest", 11) || !isspace(q[11])) &&
+	    (strncmp(q, "vtest", 5) || !isspace(q[5]))) {
 		fprintf(stderr,
-		    "File \"%s\" doesn't start with 'varnishtest'\n", fn);
+		    "File \"%s\" doesn't start with"
+		    " 'vtest' or 'varnishtest'\n", fn);
 		free(p);
 		vtc_skip++;
 		return(2);

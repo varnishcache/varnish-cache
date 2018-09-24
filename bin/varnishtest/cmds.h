@@ -43,6 +43,7 @@ CMD(shell)
 CMD(syslog)
 CMD(varnish)
 CMD(varnishtest)
+CMD(vtest)
 #undef CMD
 
 /*lint -restore */
