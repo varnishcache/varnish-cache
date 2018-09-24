@@ -25,7 +25,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $FreeBSD: head/sys/teken/teken_subr.h 326272 2017-11-27 15:23:17Z pfg $
+ * $FreeBSD: head/sys/teken/teken_subr.h 333995 2018-05-21 20:35:16Z dumbbell $
  */
 
 static void teken_subr_cursor_up(teken_t *, unsigned int);
@@ -369,6 +369,27 @@ teken_subr_cursor_up(teken_t *t, unsigned int nrows)
 		t->t_cursor.tp_row -= nrows;
 	t->t_stateflags &= ~TS_WRAPPED;
 	teken_funcs_cursor(t);
+}
+
+static void
+teken_subr_set_cursor_style(teken_t *t, unsigned int style)
+{
+
+	/* TODO */
+	(void)t;
+	(void)style;
+
+	/*
+	 * CSI Ps SP q
+	 *   Set cursor style (DECSCUSR), VT520.
+	 *     Ps = 0  -> blinking block.
+	 *     Ps = 1  -> blinking block (default).
+	 *     Ps = 2  -> steady block.
+	 *     Ps = 3  -> blinking underline.
+	 *     Ps = 4  -> steady underline.
+	 *     Ps = 5  -> blinking bar (xterm).
+	 *     Ps = 6  -> steady bar (xterm).
+	 */
 }
 
 static void
