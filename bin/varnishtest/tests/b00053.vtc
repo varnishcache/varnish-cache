@@ -32,3 +32,37 @@ varnish v1 -expect cache_miss == 1
 varnish v1 -expect s_sess == 1
 varnish v1 -expect s_resp_bodybytes == 7
 varnish v1 -expect s_resp_hdrbytes == 178
+
+# varnishtest "vtc v_* macros when the listen address is UDS" (a00019)
+
+varnish v2 -arg "-a ${tmpdir}/v1.sock -b '${bad_backend}'" -start
+
+varnish v2 -syntax 4.0 -errvcl {Compiled VCL version (4.0) not supported.} {
+	backend default { .host = "${bad_ip}"; }
+}
+
+varnish v2 -syntax 4.0 -errvcl \
+	{Unix socket backends only supported in VCL4.1 and higher.} \
+	{backend default { .path = "${tmpdir}/v1.sock"; }}
+
+varnish v3 -vcl {
+	backend default { .host = "${bad_ip}"; }
+
+	sub vcl_recv {
+		return(synth(200));
+	}
+
+	sub vcl_synth {
+		set resp.http.addr = "${v1_addr}";
+		set resp.http.port = "${v1_port}";
+		set resp.http.sock = "${v1_sock}";
+	}
+} -start
+
+client c1 -connect ${v3_sock} {
+	txreq
+	rxresp
+	expect resp.http.addr == "${tmpdir}/v1.sock"
+	expect resp.http.port == "-"
+	expect resp.http.sock == "${tmpdir}/v1.sock -"
+} -run

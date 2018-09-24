@@ -1,32 +1,162 @@
-varnishtest "Simple process tests"
+varnishtest "Code coverage of mgt_main, (VCL compiler and RSTdump etc)"
 
-process p1 "cat" -start
-process p1 -writeln "foo"
-process p1 -expect-text 2 1 foo
-process p1 -stop
-process p1 -wait
-shell "grep -q foo ${p1_out}"
-shell "test -f ${p1_err} -a ! -s ${p1_err}"
+shell "varnishd -b 127.0.0.1:80 -C 2> ${tmpdir}/_.c"
+shell -err -expect {VCL version declaration missing} {
+	echo 'bad vcl' > ${tmpdir}/bad.vcl
+	varnishd -f ${tmpdir}/bad.vcl -n ${tmpdir}
+}
 
-process p2 -log "cat" -start
-process p2 -writeln "bar"
-process p2 -expect-text 2 1 bar
-process p2 -write "\x04"
-process p2 -wait
-shell "grep -q bar ${p2_out}"
-shell "test -f ${p2_err} -a ! -s ${p2_err}"
+shell -err -expect {-x must be the first argument} "varnishd -d -x foo "
+shell -err -expect {-V must be the first argument} "varnishd -d -V foo "
 
-process p3 -dump "cat" -start
-process p3 -writeln "baz"
-process p3 -expect-text 2 1 baz
-process p3 -kill KILL
-process p3 -wait
-shell "grep -q baz ${p3_out}"
-shell "test -f ${p3_err} -a ! -s ${p3_err}"
+shell -err -expect {Too many arguments for -x} "varnishd -x foo bar"
+shell -err -expect {Invalid -x argument} "varnishd -x foo "
 
-process p4 -hexdump "cat" -start
-process p4 -writeln "b\001z"
-process p4 -expect-text 2 1 "b"
-process p4 -kill TERM
-process p4 -wait -screen_dump
+# This one is tricky, the getopt message on stderr is not standardized.
+shell -err -expect {option} "varnishd -A "
 
+shell -err -expect {Usage: varnishd [options]} "varnishd -? "
+shell -err -expect {Too many arguments} "varnishd foo "
+
+shell "varnishd -x parameter > ${tmpdir}/_.param"
+shell "varnishd -x vsl > ${tmpdir}/_.vsl"
+shell "varnishd -x cli > ${tmpdir}/_.cli"
+shell "varnishd -x builtin > ${tmpdir}/_.builtin"
+
+shell -err -expect {-C needs either -b <backend> or -f <vcl_file>} {
+	varnishd -C
+}
+shell -err -expect {Cannot open -S file} {
+	varnishd -S ${tmpdir}/nonexistent -n ${tmpdir}/v0 -f ''
+}
+shell -err -expect {Unknown jail method "xyz"} "varnishd -jxyz -f '' "
+
+shell -err -expect {Invalid backslash sequence} {
+	varnishd -l 'xyz\kk,xyz\foo' -f ''
+}
+shell -err -expect {Invalid backslash sequence} {
+	varnishd -l 'ab\8cd' -f ''
+}
+shell -err -expect {Too many arguments for -V} "varnishd -V -V"
+shell -expect {Copyright (c) 2006} "varnishd -V"
+
+shell -err -expect {Only one of -d or -F can be specified} "varnishd -d -F "
+shell -err -expect {Only one of -b or -f can be specified} "varnishd -b a -f b "
+shell -err -expect {-d makes no sense with -C} "varnishd -C -b 127.0.0.1:80 -d "
+shell -err -expect {-F makes no sense with -C} "varnishd -C -b 127.0.0.1:80 -F "
+shell -err -expect {Neither -b nor -f given} { varnishd -n ${tmpdir}/v0  }
+
+# This check is kept last because it may be skipped
+
+feature persistent_storage
+
+shell -err -expect {-spersistent has been deprecated} {
+	varnishd -spersistent -f ''
+}
+
+# Test -I and -l arguments (former a00016)
+
+shell -err -expect {Only one -I allowed} {
+	touch foo bar
+	varnishd -f '' -I foo -I bar -n ${tmpdir}/v0 -a :0
+}
+
+shell -err -expect {Error: -I file CLI command failed (104)} {
+	echo "vcl.list" > foo
+	echo "-foobar" >> foo
+	echo "vcl.load" >> foo
+	varnishd -f '' -I foo -n ${tmpdir}/v0 -a :0 -l 2m
+}
+
+shell -err -expect {Error: -l ...: Missing '"'} {
+	varnishd -f '' -I foo -n ${tmpdir}/v0 -a :0 -l '2m,"'
+}
+
+shell -err -expect {Error: Too many sub arguments} {
+	varnishd -f '' -I foo -n ${tmpdir}/v0 -a :0 -l 2m,2m,2m
+}
+
+shell -err -expect {Warning: Ignoring deprecated second subargument} {
+	varnishd -f '' -I foo -n ${tmpdir}/v0 -a :0 -l 2m,2m
+}
+
+# Code coverage of mgt_main, (VCL compiler and RSTdump etc) (former a00017)
+
+# Test -F mode with no VCL loaded
+
+process p1 "exec varnishd -n ${tmpdir}/v1 -F -f '' -a :0 -l2m,1m" -log -start
+
+delay 2
+
+shell {
+	(
+	echo 'vcl 4.0;'
+	echo 'backend default {'
+	echo '  .host="${bad_backend}";'
+	echo '}'
+	) > ${tmpdir}/vcl
+}
+
+shell -expect {VCL compiled.} {
+	varnishadm -n ${tmpdir}/v1 vcl.load vcl1 ${tmpdir}/vcl
+}
+
+shell -expect {active      auto/warm          - vcl1} {
+	varnishadm -n ${tmpdir}/v1 vcl.list
+}
+
+shell {varnishadm -n ${tmpdir}/v1 start}
+
+shell {varnishadm -n ${tmpdir}/v1 debug.listen_address}
+
+shell -exit 1 -expect "Command failed with error code 500" {
+	varnishadm -n ${tmpdir}/v1 quit
+}
+
+shell -exit 1 -expect "Command failed with error code 102" {
+	varnishadm -n ${tmpdir}/v1 debug.panic.master -j
+}
+
+shell -exit 1 -expect "Command failed with error code 101" {
+	varnishadm -n ${tmpdir}/v1 123
+}
+
+shell "varnishadm -n ${tmpdir}/v1 param.set cli_limit 128"
+shell -expect "[response was truncated]" "varnishadm -n ${tmpdir}/v1 help"
+
+process p1 -expect-exit 64 -stop -wait
+
+# Test multiple -f options
+
+shell {
+	cat >${tmpdir}/ok1 <<-EOF
+	vcl 4.0;
+	backend ok1 {
+	  .host="${bad_backend}";
+	}
+	EOF
+
+	cat >${tmpdir}/ok2 <<-EOF
+	vcl 4.0;
+	backend ok2 {
+	  .host="${bad_backend}";
+	}
+	EOF
+}
+
+varnish v2 -arg "-f ${tmpdir}/ok1" -arg "-f ${tmpdir}/ok2" -start
+varnish v2 -cliexpect {available *auto/warm *0 boot0} "vcl.list"
+varnish v2 -cliexpect {active *auto/warm *0 boot} "vcl.list"
+varnish v2 -stop -wait
+
+# Test multiple -f options with a bad VCL
+
+shell -err -expect {Cannot read -f file} {
+	exec varnishd -n ${tmpdir}/v0 -F -a :0 -l2m,3m -f ${tmpdir}/ok1 \
+	    -f ${tmpdir}/ok2 -f ${tmpdir}/bad
+}
+
+shell -err -expect {Cannot read -f file} {
+	exec varnishd -n ${tmpdir}/v0 -F -a :0 -l2m,3m -f ${tmpdir}/ok1 \
+	    -f ${tmpdir}/bad -f ${tmpdir}/ok2
+}
