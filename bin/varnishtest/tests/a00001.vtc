@@ -1,4 +1,4 @@
-varnishtest "Test Teken terminal emulator"
+vtest "Test Teken terminal emulator"
 
 feature cmd "vttest --version 2>&1 | grep -q Usage"
 

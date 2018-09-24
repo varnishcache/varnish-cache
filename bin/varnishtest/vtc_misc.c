@@ -49,15 +49,37 @@
 #include "vre.h"
 #include "vtim.h"
 
-/* SECTION: varnishtest varnishtest
+/* SECTION: vtest vtest
  *
  * This should be the first command in your vtc as it will identify the test
  * case with a short yet descriptive sentence. It takes exactly one argument, a
  * string, eg::
  *
- *         varnishtest "Check that varnishtest is actually a valid command"
+ *         vtest "Check that vtest is actually a valid command"
  *
  * It will also print that string in the log.
+ */
+
+void v_matchproto_(cmd_f)
+cmd_vtest(CMD_ARGS)
+{
+
+	(void)priv;
+	(void)cmd;
+	(void)vl;
+
+	if (av == NULL)
+		return;
+	AZ(strcmp(av[0], "vtest"));
+
+	vtc_log(vl, 1, "TEST %s", av[1]);
+	AZ(av[2]);
+}
+
+/* SECTION: varnishtest varnishtest
+ *
+ * Alternate name for 'vtest', see above.
+ *
  */
 
 void v_matchproto_(cmd_f)
