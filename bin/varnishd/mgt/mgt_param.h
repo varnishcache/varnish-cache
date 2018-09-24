@@ -32,6 +32,9 @@ struct parspec;
 
 typedef int tweak_t(struct vsb *, const struct parspec *, const char *arg);
 
+/* Sentinel for the arg position of tweak_t to ask for JSON formatting. */
+extern const char * const JSON_FMT;
+
 struct parspec {
 	const char	*name;
 	tweak_t		*func;
