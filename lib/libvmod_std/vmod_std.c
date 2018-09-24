@@ -298,7 +298,7 @@ vmod_syntax(VRT_CTX, VCL_REAL r)
 	assert(ctx->syntax == 40 || ctx->syntax == 41);
 	/*
 	 * We need to be careful because non-integer numbers have imprecise
-	 * IEE754 represenation (4.1 is 0x1.0666666666666p+2 = 4.09999...)
+	 * IEE754 representation (4.1 is 0x1.0666666666666p+2 = 4.09999...)
 	 * By scaling up and rounding, this is taken care of.
 	 */
 	return (round(r * 10) <= ctx->syntax);
