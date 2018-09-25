@@ -669,7 +669,7 @@ ccf_ban(struct cli *cli, const char * const *av, void *priv)
 }
 
 static void
-ban_render(struct cli *cli, const uint8_t *bs)
+ban_render(struct cli *cli, const uint8_t *bs, int quote)
 {
 	struct ban_test bt;
 	const uint8_t *be;
@@ -704,26 +704,20 @@ ban_render(struct cli *cli, const uint8_t *bs)
 		default:
 			WRONG("Wrong BANS_OPER");
 		}
-		VCLI_Out(cli, "%s", bt.arg2);
+		if (quote)
+			VCLI_Quote(cli, bt.arg2);
+		else
+			VCLI_Out(cli, "%s", bt.arg2);
 		if (bs < be)
 			VCLI_Out(cli, " && ");
 	}
 }
 
-static void v_matchproto_(cli_func_t)
-ccf_ban_list(struct cli *cli, const char * const *av, void *priv)
+static void
+ban_list(struct cli *cli, struct ban *bl)
 {
-	struct ban *b, *bl;
+	struct ban *b;
 	int64_t o;
-
-	(void)av;
-	(void)priv;
-
-	/* Get a reference so we are safe to traverse the list */
-	Lck_Lock(&ban_mtx);
-	bl = VTAILQ_LAST(&ban_head, banhead_s);
-	bl->refcount++;
-	Lck_Unlock(&ban_mtx);
 
 	VCLI_Out(cli, "Present bans:\n");
 	VTAILQ_FOREACH(b, &ban_head, list) {
@@ -738,7 +732,7 @@ ccf_ban_list(struct cli *cli, const char * const *av, void *priv)
 			    b);
 		}
 		VCLI_Out(cli, "  ");
-		ban_render(cli, b->spec);
+		ban_render(cli, b->spec, 0);
 		VCLI_Out(cli, "\n");
 		if (VCLI_Overflow(cli))
 			break;
@@ -750,6 +744,80 @@ ccf_ban_list(struct cli *cli, const char * const *av, void *priv)
 			Lck_Unlock(&ban_mtx);
 		}
 	}
+}
+
+static void
+ban_list_json(struct cli *cli, const char * const *av, struct ban *bl)
+{
+	struct ban *b;
+	int64_t o;
+	int n = 0;
+	int ocs;
+
+	VCLI_JSON_begin(cli, 2, av);
+	VCLI_Out(cli, ",\n");
+	VTAILQ_FOREACH(b, &ban_head, list) {
+		o = bl == b ? 1 : 0;
+		VCLI_Out(cli, "%s", n ? ",\n" : "");
+		n++;
+		VCLI_Out(cli, "{\n");
+		VSB_indent(cli->sb, 2);
+		VCLI_Out(cli, "\"time\": %.6f,\n", ban_time(b->spec));
+		VCLI_Out(cli, "\"refs\": %ju,\n", (intmax_t)(b->refcount - o));
+		VCLI_Out(cli, "\"completed\": %s,\n",
+			 b->flags & BANS_FLAG_COMPLETED ? "true" : "false");
+		VCLI_Out(cli, "\"spec\": \"");
+		ban_render(cli, b->spec, 1);
+		VCLI_Out(cli, "\"");
+
+		if (DO_DEBUG(DBG_LURKER)) {
+			VCLI_Out(cli, ",\n");
+			VCLI_Out(cli, "\"req_tests\": %s,\n",
+				 b->flags & BANS_FLAG_REQ ? "true" : "false");
+			VCLI_Out(cli, "\"obj_tests\": %s,\n",
+				 b->flags & BANS_FLAG_OBJ ? "true" : "false");
+			VCLI_Out(cli, "\"pointer\": \"%p\",\n", b);
+			if (VCLI_Overflow(cli))
+				break;
+
+			ocs = 0;
+			VCLI_Out(cli, "\"objcores\": [\n");
+			VSB_indent(cli->sb, 2);
+			Lck_Lock(&ban_mtx);
+			struct objcore *oc;
+			VTAILQ_FOREACH(oc, &b->objcore, ban_list) {
+				if (ocs)
+					VCLI_Out(cli, ",\n");
+				VCLI_Out(cli, "%p", oc);
+				ocs++;
+			}
+			Lck_Unlock(&ban_mtx);
+			VSB_indent(cli->sb, -2);
+			VCLI_Out(cli, "\n]");
+		}
+		VSB_indent(cli->sb, -2);
+		VCLI_Out(cli, "\n}");
+	}
+	VCLI_JSON_end(cli);
+}
+
+static void v_matchproto_(cli_func_t)
+ccf_ban_list(struct cli *cli, const char * const *av, void *priv)
+{
+	struct ban *bl;
+
+	(void)priv;
+
+	/* Get a reference so we are safe to traverse the list */
+	Lck_Lock(&ban_mtx);
+	bl = VTAILQ_LAST(&ban_head, banhead_s);
+	bl->refcount++;
+	Lck_Unlock(&ban_mtx);
+
+	if (av[2] != NULL && strcmp(av[2], "-j") == 0)
+		ban_list_json(cli, av, bl);
+	else
+		ban_list(cli, bl);
 
 	Lck_Lock(&ban_mtx);
 	bl->refcount--;
@@ -759,7 +827,8 @@ ccf_ban_list(struct cli *cli, const char * const *av, void *priv)
 
 static struct cli_proto ban_cmds[] = {
 	{ CLICMD_BAN,				"", ccf_ban },
-	{ CLICMD_BAN_LIST,			"", ccf_ban_list },
+	{ CLICMD_BAN_LIST,			"", ccf_ban_list,
+	  ccf_ban_list },
 	{ NULL }
 };
 
