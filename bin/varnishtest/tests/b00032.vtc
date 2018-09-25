@@ -1,6 +1,7 @@
 varnishtest "CLI coverage test"
 
 varnish v1 -cliok storage.list
+varnish v1 -clijson "storage.list -j"
 
 server s1 {
 	rxreq

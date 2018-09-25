@@ -82,10 +82,36 @@ stv_cli_list(struct cli *cli, const char * const *av, void *priv)
 		VCLI_Out(cli, "\tstorage.%s = %s\n", stv->ident, stv->name);
 }
 
+static void v_matchproto_(cli_func_t)
+stv_cli_list_json(struct cli *cli, const char * const *av, void *priv)
+{
+	struct stevedore *stv;
+	int n = 0;
+
+	(void)priv;
+	ASSERT_MGT();
+	VCLI_JSON_begin(cli, 2, av);
+	VCLI_Out(cli, ",\n");
+	STV_Foreach(stv) {
+		VCLI_Out(cli, "%s", n ? ",\n" : "");
+		n++;
+		VCLI_Out(cli, "{\n");
+		VSB_indent(cli->sb, 2);
+		VCLI_Out(cli, "\"name\": ");
+		VCLI_JSON_str(cli, stv->ident);
+		VCLI_Out(cli, ",\n");
+		VCLI_Out(cli, "\"storage\": ");
+		VCLI_JSON_str(cli, stv->name);
+		VSB_indent(cli->sb, -2);
+		VCLI_Out(cli, "\n}");
+	}
+	VCLI_JSON_end(cli);
+}
+
 /*--------------------------------------------------------------------*/
 
 static struct cli_proto cli_stv[] = {
-	{ CLICMD_STORAGE_LIST,		"", stv_cli_list },
+	{ CLICMD_STORAGE_LIST,		"", stv_cli_list, stv_cli_list_json },
 	{ NULL}
 };
 
