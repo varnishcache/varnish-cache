@@ -49,10 +49,11 @@ CLI_CMD(BAN,
 
 CLI_CMD(BAN_LIST,
 	"ban.list",
-	"ban.list",
+	"ban.list [-j]",
 	"List the active bans.",
 
-	"  The output format is:\n\n"
+	" Unless ``-j`` is specified (for JSON output), "
+	" the output format is:\n\n"
 	"  * Time the ban was issued.\n\n"
 	"  * Objects referencing this ban.\n\n"
 	"  * ``C`` if ban is completed = no further testing against it.\n\n"
@@ -102,9 +103,9 @@ CLI_CMD(VCL_DISCARD,
 
 CLI_CMD(VCL_LIST,
 	"vcl.list",
-	"vcl.list",
+	"vcl.list [-j]",
 	"List all loaded configuration.",
-	"",
+	"``-j`` specifies JSON output.",
 	0, 0
 )
 
@@ -134,12 +135,14 @@ CLI_CMD(VCL_LABEL,
 
 CLI_CMD(PARAM_SHOW,
 	"param.show",
-	"param.show [-l] [<param>|changed]",
+	"param.show [-l|-j] [<param>|changed]",
 	"Show parameters and their values.",
 
 	"The long form with ``-l`` shows additional information, including"
 	" documentation and minimum, maximum and default values, if defined"
-	" for the parameter. If a parameter is specified with ``<param>``,"
+	" for the parameter. JSON output is specified with ``-j``, in which"
+	" the information for the long form is included; only one of ``-l`` or"
+	" ``-j`` is permitted. If a parameter is specified with ``<param>``,"
 	" show only that parameter. If ``changed`` is specified, show only"
 	" those parameters whose values differ from their defaults.",
 	0, 2
@@ -171,17 +174,17 @@ CLI_CMD(SERVER_START,
 
 CLI_CMD(PING,
 	"ping",
-	"ping [<timestamp>]",
+	"ping [-j] [<timestamp>]",
 	"Keep connection alive.",
-	"",
+	"The response is formatted as JSON if ``-j`` is specified.",
 	0, 1
 )
 
 CLI_CMD(HELP,
 	"help",
-	"help [<command>]",
+	"help [-j] [<command>]",
 	"Show command/protocol help.",
-	"",
+	"``-j`` specifies JSON output.",
 	0, 1
 )
 
@@ -195,9 +198,9 @@ CLI_CMD(QUIT,
 
 CLI_CMD(SERVER_STATUS,
 	"status",
-	"status",
+	"status [-j]",
 	"Check status of Varnish cache process.",
-	"",
+	"``-j`` specifies JSON output.",
 	0, 0
 )
 
@@ -219,9 +222,10 @@ CLI_CMD(AUTH,
 
 CLI_CMD(PANIC_SHOW,
 	"panic.show",
-	"panic.show",
+	"panic.show [-j]",
 	"Return the last panic, if any.",
-	"",
+	"``-j`` specifies JSON output -- the panic message is returned as an"
+	" unstructured JSON string.",
 	0, 0
 )
 
@@ -244,9 +248,9 @@ CLI_CMD(DEBUG_LISTEN_ADDRESS,
 
 CLI_CMD(BACKEND_LIST,
 	"backend.list",
-	"backend.list [-p] [<backend_pattern>]",
+	"backend.list [-j] [-p] [<backend_pattern>]",
 	"List backends.  -p also shows probe status.",
-	"",
+	"``-j`` specifies JSON output.",
 	0, 2
 )
 
@@ -320,9 +324,9 @@ CLI_CMD(DEBUG_PERSISTENT,
 
 CLI_CMD(STORAGE_LIST,
 	"storage.list",
-	"storage.list",
+	"storage.list [-j]",
 	"List storage devices.",
-	"",
+	"``-j`` specifies JSON output.",
 	0, 0
 )
 
