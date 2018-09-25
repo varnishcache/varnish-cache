@@ -1,6 +1,6 @@
 varnishtest "Test varnishtest itself"
 
-shell -exit 1 -expect {usage: varnishtest} {varnishtest -h}
+shell -exit 1 -expect {varnishtest [options]} {varnishtest -h}
 
 shell -exit 1 -match {-D.*Define macro} {varnishtest -h}
 
