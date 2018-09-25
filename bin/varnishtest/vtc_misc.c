@@ -112,8 +112,8 @@ cmd_varnishtest(CMD_ARGS)
  *
  * By default a zero exit code is expected, otherwise the vtc will fail.
  *
- * Notice that the commandstring is prefixed with "exec 2>&1;" to join
- * stderr and stdout back to the varnishtest process.
+ * Notice that the commandstring is prefixed with "exec 2>&1;" to combine
+ * stderr and stdout back to the test process.
  *
  * Optional arguments:
  *
@@ -352,9 +352,9 @@ cmd_delay(CMD_ARGS)
  * dns
  *        DNS lookups are working
  * topbuild
- *        varnishtest has been started with '-i'
+ *        The test has been started with '-i'
  * root
- *        varnishtest has been invoked by the root user
+ *        The test has been invoked by the root user
  * user_varnish
  *        The varnish user is present
  * user_vcache
