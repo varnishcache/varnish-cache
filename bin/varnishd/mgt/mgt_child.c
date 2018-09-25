@@ -117,12 +117,9 @@ mgt_panic_clear(void)
 	VSB_destroy(&child_panic);
 }
 
-static void v_matchproto_(cli_func_t)
-mch_cli_panic_show(struct cli *cli, const char * const *av, void *priv)
+static void
+cli_panic_show(struct cli *cli, const char * const *av, int json)
 {
-	(void)av;
-	(void)priv;
-
 	if (!child_panic) {
 		VCLI_SetResult(cli, CLIS_CANT);
 		VCLI_Out(cli,
@@ -130,7 +127,29 @@ mch_cli_panic_show(struct cli *cli, const char * const *av, void *priv)
 		return;
 	}
 
-	VCLI_Out(cli, "%s\n", VSB_data(child_panic));
+	if (!json) {
+		VCLI_Out(cli, "%s\n", VSB_data(child_panic));
+		return;
+	}
+
+	VCLI_JSON_begin(cli, 2, av);
+	VCLI_Out(cli, ",\n");
+	VCLI_JSON_str(cli, VSB_data(child_panic));
+	VCLI_JSON_end(cli);
+}
+
+static void v_matchproto_(cli_func_t)
+mch_cli_panic_show(struct cli *cli, const char * const *av, void *priv)
+{
+	(void)priv;
+	cli_panic_show(cli, av, 0);
+}
+
+static void v_matchproto_(cli_func_t)
+mch_cli_panic_show_json(struct cli *cli, const char * const *av, void *priv)
+{
+	(void)priv;
+	cli_panic_show(cli, av, 1);
 }
 
 static void v_matchproto_(cli_func_t)
@@ -694,7 +713,8 @@ static struct cli_proto cli_mch[] = {
 	  mch_cli_server_status_json },
 	{ CLICMD_SERVER_START,		"", mch_cli_server_start },
 	{ CLICMD_SERVER_STOP,		"", mch_cli_server_stop },
-	{ CLICMD_PANIC_SHOW,		"", mch_cli_panic_show },
+	{ CLICMD_PANIC_SHOW,		"", mch_cli_panic_show,
+	  mch_cli_panic_show_json },
 	{ CLICMD_PANIC_CLEAR,		"", mch_cli_panic_clear },
 	{ NULL }
 };

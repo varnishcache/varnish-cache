@@ -54,6 +54,7 @@ client c1 {
 
 varnish v1 -wait-stopped
 varnish v1 -cliok "panic.show"
+varnish v1 -clijson "panic.show -j"
 varnish v1 -cliok "panic.clear"
 varnish v1 -expect MGT.child_panic == 1
 varnish v1 -clierr 300 "panic.clear"
@@ -70,6 +71,7 @@ client c1 {
 
 varnish v1 -wait-stopped
 varnish v1 -cliok "panic.show"
+varnish v1 -clijson "panic.show -j"
 varnish v1 -cliok "panic.clear -z"
 varnish v1 -expect MGT.child_panic == 0
 varnish v1 -clierr 300 "panic.clear"
