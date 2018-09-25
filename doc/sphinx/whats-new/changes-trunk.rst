@@ -13,4 +13,57 @@ merged, may be found in the `change log`_.
 
 .. _change log: https://github.com/varnishcache/varnish-cache/blob/master/doc/changes.rst
 
+varnishd
+========
+
+Parameters
+~~~~~~~~~~
+
+**XXX changes in -p parameters**
+
+Other changes in varnishd
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Changes to VCL
+==============
+
+VCL variables
+~~~~~~~~~~~~~
+
+**XXX new, deprecated or removed variables, or changed semantics**
+
+Other changes to VCL
+~~~~~~~~~~~~~~~~~~~~
+
+VMODs
+=====
+
+**XXX changes in the bundled VMODs**
+
+varnishlog
+==========
+
+**XXX changes concerning varnishlog(1) and/or vsl(7)**
+
+varnishadm
+==========
+
+**XXX changes concerning varnishadm(1) and/or varnish-cli(7)**
+
+varnishstat
+===========
+
+**XXX changes concerning varnishstat(1) and/or varnish-counters(7)**
+
+varnishtest
+===========
+
+**XXX changes concerning varnishtest(1) and/or vtc(7)**
+
+Changes for developers and VMOD authors
+=======================================
+
+**XXX changes concerning VRT, the public APIs, source code organization,
+builds etc.**
+
 *eof*
