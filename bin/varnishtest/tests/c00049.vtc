@@ -205,6 +205,7 @@ varnish v1 -cliok "ban.list"
 varnish v1 -cliok "param.set ban_lurker_age .1"
 delay 3
 
+varnish v1 -clijson "ban.list -j"
 varnish v1 -cliok "ban.list"
 
 varnish v1 -expect bans == 1

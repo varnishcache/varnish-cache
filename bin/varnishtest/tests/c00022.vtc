@@ -149,6 +149,7 @@ client c1 {
 	expect resp.status == 410
 } -run
 varnish v1 -cliok "ban.list"
+varnish v1 -clijson "ban.list -j"
 
 client c1 {
 	txreq -url "/foo"
