@@ -1,3 +1,7 @@
+/*-
+ * For Copyright information see RFC7541 [BSD3]
+ */
+
 HPACK(0,    0x1ff8,      13)
 HPACK(1,    0x7fffd8,    23)
 HPACK(2,    0xfffffe2,   28)
