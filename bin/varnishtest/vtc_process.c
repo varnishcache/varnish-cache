@@ -856,7 +856,7 @@ process_close(struct process *p)
  *	Shorthand for -start -wait.
  *
  *	In most cases, if you just want to start a process and wait for it
- *	to finish, you can use the varnishtest ``shell`` command instead.
+ *	to finish, you can use the ``shell`` command instead.
  *	The following commands are equivalent::
  *
  *	    shell "do --something"

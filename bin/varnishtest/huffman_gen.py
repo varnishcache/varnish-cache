@@ -58,7 +58,7 @@ s = sym(63, 6, 0)
 tbls[0xffffff][63] = s
 
 print('''/* NB:  This file is machine generated, DO NOT EDIT!
- * edit bin/varnishtest/huffman_input instead
+ * edit 'huffman_input' instead
  */
 
 struct stbl;

@@ -76,9 +76,9 @@ extern const struct cmds http_cmds[];
  *
  * Be careful though, servers will by default listen to the 127.0.0.1 IP and
  * will pick a random port, and publish 3 macros: sNAME_addr, sNAME_port and
- * sNAME_sock, but only once they are started. For varnishtest to
- * create the vcl with the correct values, the server must be started when you
- * use -vcl+backend.
+ * sNAME_sock, but only once they are started.
+ * For 'varnish -vcl+backend' to create the vcl with the correct values, the
+ * server must be started first.
  *
  * SECTION: client-server.args Arguments
  *
@@ -1452,7 +1452,7 @@ cmd_http_chunked(CMD_ARGS)
 /* SECTION: client-server.spec.chunkedlen
  *
  * chunkedlen NUMBER
- *         Do as ``chunked`` except that varnishtest will generate the string
+ *         Do as ``chunked`` except that the string will be generated
  *         for you, with a length of NUMBER characters.
  */
 
