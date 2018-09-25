@@ -52,6 +52,8 @@
 #include "vtim.h"
 #include "vct.h"
 
+static const char *argv0;
+
 struct vtc_tst {
 	unsigned		magic;
 #define TST_MAGIC		0x618d8b88
@@ -124,7 +126,7 @@ parse_D_opt(char *arg)
 static void
 usage(void)
 {
-	fprintf(stderr, "usage: varnishtest [options] file ...\n");
+	fprintf(stderr, "usage: %s [options] file ...\n", argv0);
 #define FMT "    %-28s # %s\n"
 	fprintf(stderr, FMT, "-b size",
 	    "Set internal buffer size (default: 1M)");
@@ -576,6 +578,12 @@ main(int argc, char * const *argv)
 	int ntest = 1;			/* Run tests this many times */
 	uintmax_t bufsiz;
 	const char *p;
+
+	argv0 = strrchr(argv[0], '/');
+	if (argv0 == NULL)
+		argv0 = argv[0];
+	else
+		argv0++;
 
 	if (getenv("TMPDIR") != NULL)
 		tmppath = strdup(getenv("TMPDIR"));
