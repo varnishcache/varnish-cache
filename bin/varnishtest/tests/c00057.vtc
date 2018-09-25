@@ -44,6 +44,7 @@ client c1 {
 } -run
 
 varnish v1 -cliexpect "STACK OVERFLOW" "panic.show"
+varnish v1 -clijson "panic.show -j"
 
 varnish v1 -cliok "panic.clear"
 
@@ -81,6 +82,7 @@ client c2 -connect ${v2_sock} {
 } -run
 
 varnish v2 -cliexpect "[bB]us error|Segmentation [fF]ault" "panic.show"
+varnish v2 -clijson "panic.show -j"
 
 varnish v2 -cliok "panic.clear"
 
