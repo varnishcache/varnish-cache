@@ -134,9 +134,14 @@ CLI_CMD(VCL_LABEL,
 
 CLI_CMD(PARAM_SHOW,
 	"param.show",
-	"param.show [-l] [<param>]",
+	"param.show [-l] [<param>|changed]",
 	"Show parameters and their values.",
-	"",
+
+	"The long form with ``-l`` shows additional information, including"
+	" documentation and minimum, maximum and default values, if defined"
+	" for the parameter. If a parameter is specified with ``<param>``,"
+	" show only that parameter. If ``changed`` is specified, show only"
+	" those parameters whose values differ from their defaults.",
 	0, 2
 )
 
