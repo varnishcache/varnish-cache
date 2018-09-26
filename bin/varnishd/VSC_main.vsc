@@ -328,20 +328,17 @@
 	Number of backends known to us.
 
 .. varnish_vsc:: n_expired
-	:type:	gauge
 	:oneliner:	Number of expired objects
 
 	Number of objects that expired from cache because of old age.
 
 .. varnish_vsc:: n_lru_nuked
-	:type:	gauge
 	:oneliner:	Number of LRU nuked objects
 
 	How many objects have been forcefully evicted from storage to make
 	room for a new object.
 
 .. varnish_vsc:: n_lru_moved
-	:type:	gauge
 	:level:	diag
 	:oneliner:	Number of LRU moved objects
 
@@ -715,12 +712,10 @@
 	bans in the persistent ban lists.
 
 .. varnish_vsc:: n_purges
-	:type:	gauge
 	:oneliner:	Number of purge operations executed
 
 
 .. varnish_vsc:: n_obj_purged
-	:type:	gauge
 	:oneliner:	Number of purged objects
 
 
