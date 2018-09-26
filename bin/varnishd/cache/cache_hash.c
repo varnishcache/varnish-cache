@@ -495,7 +495,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 		if (exp_oc->hits < LONG_MAX)
 			exp_oc->hits++;
 		Lck_Unlock(&oh->mtx);
-		if (retval == HSH_EXP)
+		if (*bocp == NULL)
 			assert(HSH_DerefObjHead(wrk, &oh));
 		*ocp = exp_oc;
 		return (retval);
