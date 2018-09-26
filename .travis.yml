@@ -16,7 +16,7 @@ matrix:
     env: CLANG=6.0 SAN_FLAGS="--enable-asan --enable-ubsan"
     sudo: required
   - os: osx
-    osx_image: xcode9.3
+    osx_image: xcode10
     compiler: clang
   allow_failures:
   - os: osx
@@ -36,7 +36,6 @@ before_install:
   - |
     if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
       brew update
-      brew upgrade python
       brew install docutils sphinx-doc nghttp2
       export PATH="/usr/local/opt/sphinx-doc/bin:$PATH"
     elif [[ -n "$CLANG" ]]; then
@@ -59,9 +58,6 @@ before_install:
   - ./configure ${CONFIGURE_ARGS}
 script:
   - |
-    if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-      export PYTHONPATH=`brew --prefix`/lib/python2.7/site-packages
-    fi
     if [[ "$TRAVIS_PULL_REQUEST" != "false" ]]; then
       make -j3 distcheck
     else
