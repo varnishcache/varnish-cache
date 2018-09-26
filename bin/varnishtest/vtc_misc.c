@@ -100,6 +100,8 @@ cmd_varnishtest(CMD_ARGS)
 
 /* SECTION: shell shell
  *
+ * NOTE: This command is available everywhere commands are given.
+ *
  * Pass the string given as argument to a shell. If you have multiple
  * commands to run, you can use curly brackets to describe a multi-lines
  * script, eg::
@@ -312,12 +314,11 @@ cmd_setenv(CMD_ARGS)
 
 /* SECTION: delay delay
  *
+ * NOTE: This command is available everywhere commands are given.
+ *
  * Sleep for the number of seconds specified in the argument. The number
  * can include a fractional part, e.g. 1.5.
- */
-/* SECTION: stream.spec.delay delay
  *
- * Same as for the top-level delay.
  */
 void
 cmd_delay(CMD_ARGS)

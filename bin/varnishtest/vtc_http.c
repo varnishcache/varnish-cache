@@ -1659,17 +1659,6 @@ cmd_http_fatal(CMD_ARGS)
 
 #define cmd_http_non_fatal cmd_http_fatal
 
-/* SECTION: client-server.spec.delay
- *
- * delay
- *	Same as for the top-level delay.
- *
- * SECTION: client-server.spec.barrier
- *
- * barrier
- *	Same as for the top-level barrier
- */
-
 static const char PREFACE[24] = {
 	0x50, 0x52, 0x49, 0x20, 0x2a, 0x20, 0x48, 0x54,
 	0x54, 0x50, 0x2f, 0x32, 0x2e, 0x30, 0x0d, 0x0a,
@@ -1815,7 +1804,6 @@ cmd_http_write_body(CMD_ARGS)
  */
 
 const struct cmds http_cmds[] = {
-#define CMD(n) { #n, cmd_##n },
 #define CMD_HTTP(n) { #n, cmd_http_##n },
 	/* session */
 	CMD_HTTP(accept)
@@ -1864,13 +1852,7 @@ const struct cmds http_cmds[] = {
 	CMD_HTTP(expect)
 	CMD_HTTP(expect_close)
 	CMD_HTTP(expect_pattern)
-
-	/* general purpose */
-	CMD(barrier)
-	CMD(delay)
-	CMD(shell)
 #undef CMD_HTTP
-#undef CMD
 	{ NULL, NULL }
 };
 

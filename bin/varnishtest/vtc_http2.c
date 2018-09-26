@@ -2445,7 +2445,6 @@ cmd_write_body(CMD_ARGS)
  * client or a server.
  */
 static const struct cmds stream_cmds[] = {
-#define CMD(n) { #n, cmd_##n },
 #define CMD_STREAM(n) { #n, cmd_##n },
 	/* spec */
 	CMD_STREAM(expect)
@@ -2475,14 +2474,8 @@ static const struct cmds stream_cmds[] = {
 	CMD_STREAM(txsettings)
 	CMD_STREAM(txwinup)
 	CMD_STREAM(write_body)
-
-	/* general purpose */
-	CMD(barrier)
-	CMD(delay)
-	CMD(shell)
 	{ NULL, NULL }
 #undef CMD_STREAM
-#undef CMD
 };
 
 static void *
