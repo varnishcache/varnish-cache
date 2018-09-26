@@ -89,10 +89,6 @@ ban_cleantail(const struct ban *victim)
 			VTAILQ_INSERT_TAIL(&freelist, b, list);
 			bans_persisted_fragmentation +=
 			    ban_len(b->spec);
-			/*
-			 * XXX absolute update of gauges - may be inaccurate for
-			 * Pool_Sumstat race
-			 */
 			VSC_C_main->bans_persisted_fragmentation =
 			    bans_persisted_fragmentation;
 			ban_info_drop(b->spec, ban_len(b->spec));

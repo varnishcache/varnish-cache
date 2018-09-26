@@ -168,10 +168,6 @@ ban_mark_completed(struct ban *b)
 		vbe32enc(b->spec + BANS_LENGTH, BANS_HEAD_LEN);
 		VSC_C_main->bans_completed++;
 		bans_persisted_fragmentation += ln - ban_len(b->spec);
-		/*
-		 * XXX absolute update of gauges - may be inaccurate for
-		 * Pool_Sumstat race
-		 */
 		VSC_C_main->bans_persisted_fragmentation =
 		    bans_persisted_fragmentation;
 	}
@@ -319,10 +315,6 @@ ban_export(void)
 	assert(VSB_len(vsb) == ln);
 	STV_BanExport((const uint8_t *)VSB_data(vsb), VSB_len(vsb));
 	VSB_destroy(&vsb);
-	/*
-	 * XXX absolute update of gauges - may be inaccurate for Pool_Sumstat
-	 * race
-	 */
 	VSC_C_main->bans_persisted_bytes =
 	    bans_persisted_bytes = ln;
 	VSC_C_main->bans_persisted_fragmentation =
@@ -406,10 +398,6 @@ ban_reload(const uint8_t *ban, unsigned len)
 	else
 		VTAILQ_INSERT_BEFORE(b, b2, list);
 	bans_persisted_bytes += len;
-	/*
-	 * XXX absolute update of gauges - may be inaccurate for Pool_Sumstat
-	 * race
-	 */
 	VSC_C_main->bans_persisted_bytes = bans_persisted_bytes;
 
 	/* Hunt down older duplicates */
