@@ -278,6 +278,8 @@ mgt_launch_child(struct cli *cli)
 	/* Open pipe for mgt->child CLI */
 	AZ(pipe(cp));
 	heritage.cli_in = cp[0];
+	assert(cp[0] > STDERR_FILENO);	// See #2782
+	assert(cp[1] > STDERR_FILENO);
 	MCH_Fd_Inherit(heritage.cli_in, "cli_in");
 	child_cli_out = cp[1];
 
