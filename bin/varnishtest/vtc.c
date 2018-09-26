@@ -290,6 +290,13 @@ macro_expand(struct vtclog *vl, const char *text)
  * Static checkers like Coverity may bitch about this, but we don't care.
  */
 
+static const struct cmds global_cmds[] = {
+#define CMD_GLOBAL(n) { #n, cmd_##n },
+#include "cmds.h"
+	{ NULL, NULL }
+};
+
+
 void
 parse_string(const char *spec, const struct cmds *cmd, void *priv,
     struct vtclog *vl)
@@ -410,6 +417,12 @@ parse_string(const char *spec, const struct cmds *cmd, void *priv,
 			if (!strcmp(token_s[0], cp->name))
 				break;
 
+		if (cp->name == NULL) {
+			for (cp = global_cmds; cp->name != NULL; cp++)
+				if (!strcmp(token_s[0], cp->name))
+					break;
+		}
+
 		if (cp->name == NULL)
 			vtc_fatal(vl, "Unknown command: \"%s\"", token_s[0]);
 
@@ -435,7 +448,7 @@ reset_cmds(const struct cmds *cmd)
  */
 
 static const struct cmds cmds[] = {
-#define CMD(n) { #n, cmd_##n },
+#define CMD_TOP(n) { #n, cmd_##n },
 #include "cmds.h"
 	{ NULL, NULL }
 };

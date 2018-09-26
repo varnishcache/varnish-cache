@@ -29,21 +29,29 @@
 
 /*lint -save -e525 -e539 */
 
-CMD(barrier)
-CMD(client)
-CMD(delay)
-CMD(err_shell)
-CMD(feature)
-CMD(haproxy)
-CMD(logexpect)
-CMD(process)
-CMD(server)
-CMD(setenv)
-CMD(shell)
-CMD(syslog)
-CMD(varnish)
-CMD(varnishtest)
-CMD(vtest)
-#undef CMD
+#ifndef CMD_GLOBAL
+  #define CMD_GLOBAL(x)
+#endif
+CMD_GLOBAL(barrier)
+CMD_GLOBAL(delay)
+CMD_GLOBAL(shell)
+#undef CMD_GLOBAL
+
+#ifndef CMD_TOP
+  #define CMD_TOP(x)
+#endif
+CMD_TOP(client)
+CMD_TOP(err_shell)
+CMD_TOP(feature)
+CMD_TOP(haproxy)
+CMD_TOP(logexpect)
+CMD_TOP(process)
+CMD_TOP(server)
+CMD_TOP(setenv)
+CMD_TOP(syslog)
+CMD_TOP(varnish)
+CMD_TOP(varnishtest)
+CMD_TOP(vtest)
+#undef CMD_TOP
 
 /*lint -restore */

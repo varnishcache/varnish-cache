@@ -348,8 +348,7 @@ barrier_sync(struct barrier *b, struct vtclog *vl)
 
 /* SECTION: barrier barrier
  *
- * NOTE: this can be used from the top-level as well as from client and server
- * specifications.
+ * NOTE: This command is available everywhere commands are given.
  *
  * Barriers allows you to synchronize different threads to make sure events
  * occur in the right order. It's even possible to use them in VCL.

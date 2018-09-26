@@ -69,7 +69,8 @@ void parse_string(const char *spec, const struct cmds *cmd, void *priv,
     struct vtclog *vl);
 int fail_out(void);
 
-#define CMD(n) cmd_f cmd_##n;
+#define CMD_GLOBAL(n) cmd_f cmd_##n;
+#define CMD_TOP(n) cmd_f cmd_##n;
 #include "cmds.h"
 
 extern volatile sig_atomic_t vtc_error; /* Error, bail out */
