@@ -861,7 +861,8 @@ main(int argc, char * const *argv)
 
 	if (I_fd >= 0) {
 		fprintf(stderr, "BEGIN of -I file processing\n");
-		mgt_cli_setup(I_fd, 2, 1, "-I file", mgt_I_close, stderr);
+		/* We must dup stderr, because VCLS closes the output fd */
+		mgt_cli_setup(I_fd, dup(2), 1, "-I file", mgt_I_close, stderr);
 		while (I_fd >= 0) {
 			o = VEV_Once(mgt_evb);
 			if (o != 1)
