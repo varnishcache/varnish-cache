@@ -229,6 +229,11 @@ ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
 		}
 		oc = ban_lurker_getfirst(vsl, bt);
 		if (oc == NULL) {
+			if (tested == 0 && lokc == 0) {
+				AZ(tested_tests);
+				AZ(lok);
+				return;
+			}
 			Lck_Lock(&ban_mtx);
 			VSC_C_main->bans_lurker_tested += tested;
 			VSC_C_main->bans_lurker_tests_tested += tested_tests;
