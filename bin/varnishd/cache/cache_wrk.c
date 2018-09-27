@@ -27,6 +27,27 @@
  * SUCH DAMAGE.
  *
  * Worker thread stuff unrelated to the worker thread pools.
+ *
+ * --
+ * signaling_note:
+ *
+ * note on worker wakeup signaling through the wrk condition variable (cv)
+ *
+ * In the general case, a cv needs to be signaled while holding the
+ * corresponding mutex, otherwise the signal may be posted before the waiting
+ * thread could register itself on the cv and, consequently, the signal may be
+ * missed.
+ *
+ * In our case, any worker thread which we wake up comes from the idle queue,
+ * where it put itself under the mutex, releasing that mutex implicitly via
+ * Lck_CondWait() (which calls some variant of pthread_cond_wait). So we avoid
+ * additional mutex contention knowing that any worker thread on the idle queue
+ * is blocking on the cv.
+ *
+ * Except -- when it isn't, because it woke up for releasing its VCL
+ * Reference. To account for this case, we check if the task function has been
+ * set in the meantime, which in turn requires all of the task preparation to be
+ * done holding the pool mutex. (see also #2719)
  */
 
 #include "config.h"
@@ -220,6 +241,7 @@ Pool_Task_Arg(struct worker *wrk, enum task_prio prio, task_func_t *func,
 	wrk2->task.func = func;
 	wrk2->task.priv = wrk2->aws->f;
 	Lck_Unlock(&pp->mtx);
+	// see signaling_note at the top for explanation
 	if (retval)
 		AZ(pthread_cond_signal(&wrk2->cond));
 	return (retval);
@@ -252,6 +274,7 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum task_prio prio)
 		wrk->task.func = task->func;
 		wrk->task.priv = task->priv;
 		Lck_Unlock(&pp->mtx);
+		// see signaling_note at the top for explanation
 		AZ(pthread_cond_signal(&wrk->cond));
 		return (0);
 	}
@@ -346,6 +369,7 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 			VTAILQ_INSERT_HEAD(&pp->idle_queue, &wrk->task, list);
 			pp->nidle++;
 			do {
+				// see signaling_note at the top for explanation
 				i = Lck_CondWait(&wrk->cond, &pp->mtx,
 				    wrk->vcl == NULL ?  0 : wrk->lastused+60.);
 				if (i == ETIMEDOUT)
