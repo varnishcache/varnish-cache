@@ -7,12 +7,12 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	sub vcl_deliver {
-		set resp.http.foo = "æøå";
+		set resp.http.foo = "Ã¦Ã¸Ã¥";
 	}
 } -start
 
 client c1 {
 	txreq
 	rxresp
-	expect resp.http.foo == "æøå"
+	expect resp.http.foo == "Ã¦Ã¸Ã¥"
 } -run
