@@ -326,13 +326,12 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 	wrk->pool = pp;
 	while (1) {
-		Lck_Lock(&pp->mtx);
-
 		CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
 		WS_Reset(wrk->aws, 0);
 		AZ(wrk->vsl);
 
+		Lck_Lock(&pp->mtx);
 		if (pp->nidle < pool_reserve())
 			prio_lim = TASK_QUEUE_RESERVE + 1;
 		else
