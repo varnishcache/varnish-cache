@@ -347,6 +347,7 @@ vcl_KillBackends(struct vcl *vcl)
 		REPLACE(vdir->cli_name, NULL);
 		AN(vdir->methods->destroy);
 		vdir->methods->destroy(vdir->dir);
+		FREE_OBJ(vdir->dir);
 		FREE_OBJ(vdir);
 	}
 }
