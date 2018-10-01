@@ -47,6 +47,8 @@
 
 #include "vnum.h"
 #include "vre.h"
+#include "vtcp.h"
+#include "vss.h"
 #include "vtim.h"
 
 /* SECTION: vtest vtest
@@ -338,6 +340,39 @@ cmd_delay(CMD_ARGS)
 	VTIM_sleep(f);
 }
 
+/**********************************************************************
+ * Most test-cases use only numeric IP#'s but a few requires non-demented
+ * DNS services.  This is a basic sanity check for those.
+ */
+
+static int v_matchproto_(vss_resolved_f)
+dns_cb(void *priv, const struct suckaddr *sa)
+{
+	char abuf[VTCP_ADDRBUFSIZE];
+	char pbuf[VTCP_PORTBUFSIZE];
+	int *ret = priv;
+
+	VTCP_name(sa, abuf, sizeof abuf, pbuf, sizeof pbuf);
+	if (strcmp(abuf, "192.0.2.255")) {
+		fprintf(stderr, "DNS-test: Wrong response: %s\n", abuf);
+		*ret = -1;
+	} else if (*ret == 0)
+		*ret = 1;
+	return (0);
+}
+
+static int
+dns_works(void)
+{
+	int ret = 0, error;
+	const char *msg;
+
+	error = VSS_resolver("dns-canary.freebsd.dk", NULL, dns_cb, &ret, &msg);
+	if (error || msg != NULL || ret != 1)
+		return (0);
+	return (1);
+}
+
 /* SECTION: feature feature
  *
  * Test that the required feature(s) for a test are available, and skip
@@ -424,7 +459,7 @@ cmd_feature(CMD_ARGS)
 		}
 		FEATURE("pcre_jit", VRE_has_jit);
 		FEATURE("64bit", sizeof(void*) == 8);
-		FEATURE("dns", feature_dns);
+		FEATURE("dns", dns_works());
 		FEATURE("topbuild", iflg);
 		FEATURE("root", !geteuid());
 		FEATURE("user_varnish", getpwnam("varnish") != NULL);
