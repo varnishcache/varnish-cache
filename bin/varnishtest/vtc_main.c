@@ -97,7 +97,6 @@ char *vmod_path = NULL;
 struct vsb *params_vsb = NULL;
 int leave_temp;
 int vtc_witness = 0;
-int feature_dns;
 
 /**********************************************************************
  * Parse a -D option argument into a name/val pair, and insert
@@ -431,39 +430,6 @@ i_mode(void)
 }
 
 /**********************************************************************
- * Most test-cases use only numeric IP#'s but a few requires non-demented
- * DNS services.  This is a basic sanity check for those.
- */
-
-static int v_matchproto_(vss_resolved_f)
-dns_cb(void *priv, const struct suckaddr *sa)
-{
-	char abuf[VTCP_ADDRBUFSIZE];
-	char pbuf[VTCP_PORTBUFSIZE];
-	int *ret = priv;
-
-	VTCP_name(sa, abuf, sizeof abuf, pbuf, sizeof pbuf);
-	if (strcmp(abuf, "192.0.2.255")) {
-		fprintf(stderr, "DNS-test: Wrong response: %s\n", abuf);
-		*ret = -1;
-	} else if (*ret == 0)
-		*ret = 1;
-	return (0);
-}
-
-static int
-dns_works(void)
-{
-	int ret = 0, error;
-	const char *msg;
-
-	error = VSS_resolver("dns-canary.freebsd.dk", NULL, dns_cb, &ret, &msg);
-	if (error || msg != NULL || ret != 1)
-		return (0);
-	return (1);
-}
-
-/**********************************************************************
  * Figure out what IP related magic
  */
 
@@ -682,7 +648,6 @@ main(int argc, char * const *argv)
 
 	AZ(VSB_finish(params_vsb));
 
-	feature_dns = dns_works();
 	ip_magic();
 
 	if (iflg)

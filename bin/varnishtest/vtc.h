@@ -82,7 +82,6 @@ extern char *vmod_path;
 extern struct vsb *params_vsb;
 extern int leave_temp;
 extern int vtc_witness;
-extern int feature_dns;
 extern int ign_unknown_macro;
 
 void init_server(void);
