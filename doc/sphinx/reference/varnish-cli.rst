@@ -170,6 +170,38 @@ Other pitfalls include variable expansion of the shell invoking ``varnishadm``
 but this is not directly related to the Varnish CLI. If you get the quoting
 right you should be fine even with complex commands.
 
+JSON
+----
+
+A number of commands with informational responses support a ``-j`` parameter
+for JSON output, as specified below. The top-level structure of the JSON
+response is an array with these first three elements:
+
+* A version number for the JSON format (integer)
+
+* An array of strings that comprise the CLI command just received
+
+* The time at which the response was generated, as a Unix epoch time
+  in seconds with millisecond precision (floating point)
+
+The remaining elements of the array form the data that are specific to
+the CLI command, and their structure and content depend on the
+command.
+
+For example, the response to ``status -j`` just contains a string in
+the top-level array indicating the state of the child process
+(``"running"``, ``"stopped"`` and so forth)::
+
+  [ 2, ["status", "-j"], 1538031732.632, "running"
+  ]
+
+The JSON responses to other commands may have longer lists of
+elements, which may have simple data types or form structured objects.
+
+JSON output is only returned if command execution was successful. The
+output for an error response is always the same as it would have been
+for the command without the ``-j`` parameter.
+
 Commands
 --------
 
