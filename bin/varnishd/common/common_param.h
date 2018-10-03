@@ -105,6 +105,7 @@ struct params {
 	double			wthread_add_delay;
 	double			wthread_fail_delay;
 	double			wthread_destroy_delay;
+	double			wthread_watchdog;
 	unsigned		wthread_stats_rate;
 	ssize_t			wthread_stacksize;
 	unsigned		wthread_queue_limit;
