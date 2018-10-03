@@ -490,7 +490,7 @@ pool_herder(void *priv)
 	double delay;
 	int wthread_min;
 	uintmax_t dq = (1ULL << 31);
-	double dqt;
+	double dqt = 0;
 
 	CAST_OBJ_NOTNULL(pp, priv, POOL_MAGIC);
 
