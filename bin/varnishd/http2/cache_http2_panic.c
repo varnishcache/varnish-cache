@@ -50,13 +50,11 @@ h2_sess_panic(struct vsb *vsb, const struct sess *sp)
 	VTAILQ_FOREACH(r2, &h2->streams, list) {
 		PAN_CheckMagic(vsb, r2, H2_REQ_MAGIC);
 		VSB_printf(vsb, "0x%08x", r2->stream);
-		switch (r2->state) {
-#define H2_STREAM(U,sd,d) case H2_S_##U: VSB_printf(vsb, " %-6s", sd); break;
-#include <tbl/h2_stream.h>
-		default:
-			VSB_printf(vsb, " State %d", r2->state);
-			break;
-		}
+		if (r2->state == NULL)
+			VSB_printf(vsb, " State NULL");
+		else
+			VSB_printf(vsb, " State %s (%s)",
+			    r2->state->name, r2->state->desc);
 		VSB_printf(vsb, "\n");
 	}
 	VSB_indent(vsb, -2);
