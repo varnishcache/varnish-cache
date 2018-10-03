@@ -167,16 +167,34 @@ h2_enc_len(struct vsb *vsb, unsigned bits, unsigned val, uint8_t b0)
 	unsigned mask = (1U << bits) - 1U;
 
 	if (val >= mask) {
-		AZ(VSB_putc(vsb, b0 | (uint8_t)mask));
+		VSB_putc(vsb, b0 | (uint8_t)mask);
 		val -= mask;
 		while (val >= 128) {
-			AZ(VSB_putc(vsb, 0x80 | ((uint8_t)val & 0x7f)));
+			VSB_putc(vsb, 0x80 | ((uint8_t)val & 0x7f));
 			val >>= 7;
 		}
 	}
-	AZ(VSB_putc(vsb, (uint8_t)val));
+	VSB_putc(vsb, (uint8_t)val);
 	return (0);
 }
+
+/*
+ * Hand-crafted-H2-HEADERS-R-Us:
+ *
+ * This is a handbuilt HEADERS frame for when we run out of workspace
+ * during delivery.
+ */
+
+static const uint8_t h2_500_resp[] = {
+	// :status 500
+	0x8e,
+
+	// content-length 0
+	0x1f, 0x0d, 0x01, 0x30,
+
+	// server Varnish
+	0x1f, 0x27, 0x07, 'V', 'a', 'r', 'n', 'i', 's', 'h',
+};
 
 void v_matchproto_(vtr_deliver_f)
 h2_deliver(struct req *req, struct boc *boc, int sendbody)
@@ -203,10 +221,10 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 	AN(VSB_new(&resp, req->ws->f, l, VSB_FIXEDLEN));
 
 	l = h2_status(buf, req->resp->status);
-	AZ(VSB_bcat(&resp, buf, l));
+	VSB_bcat(&resp, buf, l);
 
 	hp = req->resp;
-	for (u = HTTP_HDR_FIRST; u < hp->nhd; u++) {
+	for (u = HTTP_HDR_FIRST; u < hp->nhd && !VSB_error(&resp); u++) {
 		r = strchr(hp->hd[u].b, ':');
 		AN(r);
 
@@ -227,24 +245,32 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 			VSLb(req->vsl, SLT_Debug,
 			    "HP {%d, \"%s\", \"%s\"} <%s>",
 			    hps->idx, hps->name, hps->val, hp->hd[u].b);
-			AZ(h2_enc_len(&resp, 4, hps->idx, 0x10));
+			h2_enc_len(&resp, 4, hps->idx, 0x10);
 		} else {
-			AZ(VSB_putc(&resp, 0x10));
+			VSB_putc(&resp, 0x10);
 			sz--;
-			AZ(h2_enc_len(&resp, 7, sz, 0));
+			h2_enc_len(&resp, 7, sz, 0);
 			for (sz1 = 0; sz1 < sz; sz1++)
-				AZ(VSB_putc(&resp, tolower(hp->hd[u].b[sz1])));
+				VSB_putc(&resp, tolower(hp->hd[u].b[sz1]));
 
 		}
 
 		while (vct_islws(*++r))
 			continue;
 		sz = hp->hd[u].e - r;
-		AZ(h2_enc_len(&resp, 7, sz, 0));
-		AZ(VSB_bcat(&resp, r, sz));
+		h2_enc_len(&resp, 7, sz, 0);
+		VSB_bcat(&resp, r, sz);
 	}
-	AZ(VSB_finish(&resp));
-	sz = VSB_len(&resp);
+	if (VSB_finish(&resp)) {
+		// We ran out of workspace, return minimal 500
+		// XXX: VSC counter ?
+		r = (const char*)h2_500_resp;
+		sz = sizeof h2_500_resp;
+		sendbody = 0;
+	} else {
+		sz = VSB_len(&resp);
+		r = req->ws->f;
+	}
 
 	AZ(req->wrk->v1l);
 
@@ -256,7 +282,7 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 	H2_Send_Get(req->wrk, r2->h2sess, r2);
 	H2_Send(req->wrk, r2, H2_F_HEADERS,
 	    (sendbody ? 0 : H2FF_HEADERS_END_STREAM) | H2FF_HEADERS_END_HEADERS,
-	    sz, req->ws->f);
+	    sz, r);
 	H2_Send_Rel(r2->h2sess, r2);
 	req->acct.resp_hdrbytes += sz;
 
