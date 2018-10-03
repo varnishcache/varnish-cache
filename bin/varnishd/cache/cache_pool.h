@@ -53,9 +53,9 @@ struct pool {
 	uintmax_t			sdropped;
 	uintmax_t			rdropped;
 	uintmax_t			nqueued;
+	uintmax_t			ndequeued;
 	struct VSC_main			*a_stat;
 	struct VSC_main			*b_stat;
-
 	struct mempool			*mpl_req;
 	struct mempool			*mpl_sess;
 	struct waiter			*waiter;
