@@ -60,10 +60,6 @@ static const struct h2_error_s H2NN_ERROR[1] = {{
 	1
 }};
 
-#define H2_STREAM(u,s,d) const struct h2_stream_s H2_S_##u[1] = {{ s, d }};
-#include "tbl/h2_stream.h"
-
-
 enum h2frame {
 #define H2_FRAME(l,u,t,f,...)	H2F_##u = t,
 #include "tbl/h2_frames.h"
@@ -217,8 +213,7 @@ h2_kill_req(struct worker *wrk, const struct h2_sess *h2,
 	ASSERT_RXTHR(h2);
 	AN(h2e);
 	Lck_Lock(&h2->sess->mtx);
-	VSLb(h2->vsl, SLT_Debug, "KILL st=%u state=%s",
-	    r2->stream, r2->state ? r2->state->name : "NULL");
+	VSLb(h2->vsl, SLT_Debug, "KILL st=%u state=%d", r2->stream, r2->state);
 	if (r2->error == NULL)
 		r2->error = h2e;
 	if (r2->scheduled) {
@@ -429,14 +424,18 @@ h2_win_adjust(const struct h2_sess *h2, uint32_t oldval, uint32_t newval)
 		CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 		if (r2 == h2->req0)
 			continue; // rfc7540,l,2699,2699
-		if (r2->state == H2_S_IDLE ||
-		    r2->state == H2_S_OPEN ||
-		    r2->state == H2_S_CLOS_REM) {
+		switch (r2->state) {
+		case H2_S_IDLE:
+		case H2_S_OPEN:
+		case H2_S_CLOS_REM:
 			/*
 			 * We allow a window to go negative, as per
 			 * rfc7540,l,2676,2680
 			 */
 			r2->t_window += (int64_t)newval - oldval;
+			break;
+		default:
+			break;
 		}
 	}
 }
@@ -1003,28 +1002,38 @@ h2_sweep(struct worker *wrk, struct h2_sess *h2)
 	VTAILQ_FOREACH_SAFE(r2, &h2->streams, list, r22) {
 		if (r2 == h2->req0) {
 			assert (r2->state == H2_S_IDLE);
-		} else if (r2->state == H2_S_CLOSED) {
+			continue;
+		}
+		switch (r2->state) {
+		case H2_S_CLOSED:
 			if (!r2->scheduled)
 				h2_del_req(wrk, r2);
-		} else if (r2->state == H2_S_CLOS_REM) {
+			break;
+		case H2_S_CLOS_REM:
 			if (!r2->scheduled) {
 				h2_tx_rst(wrk, h2, h2->req0, r2->stream,
 				    H2SE_REFUSED_STREAM);
 				h2_del_req(wrk, r2);
-			} else if (h2_stream_tmo(h2, r2)) {
-				tmo = 1;
+				continue;
 			}
-		} else if (r2->state == H2_S_CLOS_LOC ||
-			   r2->state == H2_S_OPEN) {
-			if (h2_stream_tmo(h2, r2))
+			/* FALLTHROUGH */
+		case H2_S_CLOS_LOC:
+		case H2_S_OPEN:
+			if (h2_stream_tmo(h2, r2)) {
 				tmo = 1;
-		} else if(r2->state == H2_S_IDLE) {
+				continue;
+			}
+			break;
+		case H2_S_IDLE:
 			/* This stream was created from receiving a
 			 * PRIORITY frame, and should not be counted
 			 * as an active stream keeping the connection
 			 * open. */
 			AZ(r2->scheduled);
 			nprio++;
+			break;
+		default:
+			break;
 		}
 	}
 	if (tmo)

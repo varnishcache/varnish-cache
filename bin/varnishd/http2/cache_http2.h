@@ -104,13 +104,11 @@ struct h2_setting_s {
 
 /**********************************************************************/
 
-struct h2_stream_s {
-	const char	*name;
-	const char	*desc;
-};
-
-#define H2_STREAM(u,s,d) extern const struct h2_stream_s H2_S_##u[1];
+enum h2_stream_e {
+	H2_STREAM__DUMMY = -1,
+#define H2_STREAM(U,s,d) H2_S_##U,
 #include "tbl/h2_stream.h"
+};
 
 #define H2_FRAME_FLAGS(l,u,v)   extern const uint8_t H2FF_##u;
 #include "tbl/h2_frames.h"
@@ -120,7 +118,7 @@ struct h2_req {
 #define H2_REQ_MAGIC			0x03411584
 	uint32_t			stream;
 	int				scheduled;
-	const struct h2_stream_s	*state;
+	enum h2_stream_e		state;
 	struct h2_sess			*h2sess;
 	struct req			*req;
 	double				t_send;
