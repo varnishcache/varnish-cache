@@ -342,6 +342,7 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 			tp = VTAILQ_FIRST(&pp->queues[i]);
 			if (tp != NULL) {
 				pp->lqueue--;
+				pp->ndequeued--;
 				VTAILQ_REMOVE(&pp->queues[i], tp, list);
 				break;
 			}
@@ -488,6 +489,8 @@ pool_herder(void *priv)
 	struct worker *wrk;
 	double delay;
 	int wthread_min;
+	uintmax_t dq = (1ULL << 31);
+	double dqt;
 
 	CAST_OBJ_NOTNULL(pp, priv, POOL_MAGIC);
 
@@ -495,6 +498,29 @@ pool_herder(void *priv)
 	THR_Init();
 
 	while (!pp->die || pp->nthr > 0) {
+		/*
+		 * If the worker pool is configured too small, we can
+		 * end up deadlocking it (see #2418 for details).
+		 *
+		 * Recovering from this would require a lot of complicated
+		 * code, and fundamentally, either people configured their
+		 * pools wrong, in which case we want them to notice, or
+		 * they are under DoS, in which case recovering gracefully
+		 * is unlikely be a major improvement.
+		 *
+		 * Instead we implement a watchdog and kill the worker if
+		 * nothing has been dequeued for that long.
+		 */
+		if (dq != pp->ndequeued) {
+			dq = pp->ndequeued;
+			dqt = VTIM_real();
+		} else if (pp->lqueue &&
+		    VTIM_real() - dqt > cache_param->wthread_watchdog) {
+			VSL(SLT_Error, 0,
+			   "Pool Herder: Queue does not move ql=%u dt=%f",
+			   pp->lqueue, VTIM_real() - dqt);
+			WRONG("Worker Pool Queue does not move");
+		}
 		wthread_min = cache_param->wthread_min;
 		if (pp->die)
 			wthread_min = 0;
