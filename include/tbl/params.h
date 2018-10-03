@@ -1197,6 +1197,24 @@ PARAM(
 
 /* actual location mgt_pool.c */
 PARAM(
+	/* name */	thread_pool_watchdog,
+	/* typ */	timeout,
+	/* min */	"0.1",
+	/* max */	NULL,
+	/* default */	"10.000",
+	/* units */	"seconds",
+	/* flags */	EXPERIMENTAL,
+	/* s-text */
+	"Thread queue stuck watchdog.\n"
+	"\n"
+	"If no queued work have been released for this long,"
+	" the worker process panics itself.",
+	/* l-text */	"",
+	/* func */	NULL
+)
+
+/* actual location mgt_pool.c */
+PARAM(
 	/* name */	thread_pool_destroy_delay,
 	/* typ */	timeout,
 	/* min */	"0.010",

@@ -148,6 +148,15 @@ struct parspec WRK_parspec[] = {
 		"for at least this long, will be destroyed.",
 		EXPERIMENTAL | DELAYED_EFFECT,
 		"300", "seconds" },
+	{ "thread_pool_watchdog",
+		tweak_timeout, &mgt_param.wthread_watchdog,
+		"0.1", NULL,
+		"Thread queue stuck watchdog.\n"
+		"\n"
+		"If no queued work have been released for this long,"
+		" the worker process panics itself.",
+		EXPERIMENTAL,
+		"10", "seconds" },
 	{ "thread_pool_destroy_delay",
 		tweak_timeout, &mgt_param.wthread_destroy_delay,
 		"0.01", NULL,
