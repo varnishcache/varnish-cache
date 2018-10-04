@@ -65,20 +65,6 @@ SLTM(CLI, 0, "CLI communication",
 
 /*---------------------------------------------------------------------*/
 
-SLTM(SessError, 0, "Client connection accept failed",
-	"Accepting a client connection has failed.\n\n"
-	"The format is::\n\n"
-	"\t%s %s %s %d %d %s\n"
-	"\t|  |  |  |  |  |\n"
-	"\t|  |  |  |  |  +- Detailed error message\n"
-	"\t|  |  |  |  +---- Error Number (errno) from accept(2)\n"
-	"\t|  |  |  +------- File descriptor number\n"
-	"\t|  |  +---------- Local TCP port / 0 for UDS\n"
-	"\t|  +------------- Local IPv4/6 address / 0.0.0.0 for UDS\n"
-	"\t+---------------- Socket name (from -a argument)\n"
-	"\n"
-)
-
 SLTM(SessOpen, 0, "Client connection opened",
 	"The first record for a client connection, with the socket-endpoints"
 	" of the connection.\n\n"
@@ -640,6 +626,20 @@ SLTM(HitMiss, 0, "Hit for miss object in cache.",
 
 SLTM(Filters, 0, "Body filters",
 	"List of filters applied to the body"
+)
+
+SLTM(SessError, 0, "Client connection accept failed",
+	"Accepting a client connection has failed.\n\n"
+	"The format is::\n\n"
+	"\t%s %s %s %d %d %s\n"
+	"\t|  |  |  |  |  |\n"
+	"\t|  |  |  |  |  +- Detailed error message\n"
+	"\t|  |  |  |  +---- Error Number (errno) from accept(2)\n"
+	"\t|  |  |  +------- File descriptor number\n"
+	"\t|  |  +---------- Local TCP port / 0 for UDS\n"
+	"\t|  +------------- Local IPv4/6 address / 0.0.0.0 for UDS\n"
+	"\t+---------------- Socket name (from -a argument)\n"
+	"\n"
 )
 
 #undef NODEF_NOTICE
