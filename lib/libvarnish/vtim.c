@@ -529,12 +529,26 @@ bench()
 	    e - s, i, 1e9 * (e - s) / i, t);
 }
 
+void
+parse_check(time_t t, const char *s)
+{
+	double tt;
+	char buf[BUFSIZ];
+
+	tt = VTIM_parse(s);
+	if (tt != t) {
+		VTIM_format(tt, buf);
+		printf("  fm: %12jd <%s>\n", (intmax_t)t, s);
+		printf("  to: %12.0f <%s>\n", tt, buf);
+		exit(2);
+	}
+}
+
 int
 main(int argc, char **argv)
 {
 	time_t t;
 	struct tm tm;
-	double tt;
 	char buf[BUFSIZ];
 	char buf1[BUFSIZ];
 
@@ -553,41 +567,17 @@ main(int argc, char **argv)
 			    buf1, buf, (intmax_t)t);
 			exit(2);
 		}
-		tt = VTIM_parse(buf1);
-		if (tt != t) {
-			VTIM_format(tt, buf);
-			printf("  fm: %12jd <%s>\n", (intmax_t)t, buf1);
-			printf("  to: %12.0f <%s>\n", tt, buf);
-			exit(2);
-		}
+		parse_check(t, buf1);
 
 		strftime(buf1, sizeof buf1, "%a %b %e %T %Y", &tm);
-		tt = VTIM_parse(buf1);
-		if (tt != t) {
-			VTIM_format(tt, buf);
-			printf("  fm: %12jd <%s>\n", (intmax_t)t, buf1);
-			printf("  to: %12.0f <%s>\n", tt, buf);
-			exit(2);
-		}
+		parse_check(t, buf1);
 
 		strftime(buf1, sizeof buf1, "%Y-%m-%dT%T", &tm);
-		tt = VTIM_parse(buf1);
-		if (tt != t) {
-			VTIM_format(tt, buf);
-			printf("  fm: %12jd <%s>\n", (intmax_t)t, buf1);
-			printf("  to: %12.0f <%s>\n", tt, buf);
-			exit(2);
-		}
+		parse_check(t, buf1);
 
 		if (tm.tm_year >= 69 && tm.tm_year < 169) {
 			strftime(buf1, sizeof buf1, "%A, %d-%b-%y %T GMT", &tm);
-			tt = VTIM_parse(buf1);
-			if (tt != t) {
-				VTIM_format(tt, buf);
-				printf("  fm: %12jd <%s>\n", (intmax_t)t, buf1);
-				printf("  to: %12.0f <%s>\n", tt, buf);
-				exit(2);
-			}
+			parse_check(t, buf1);
 		}
 	}
 
