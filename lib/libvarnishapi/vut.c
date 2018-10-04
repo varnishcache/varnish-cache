@@ -420,7 +420,10 @@ VUT_Main(struct VUT *vut)
 			AZ(c);
 		}
 
-		i = VSLQ_Dispatch(vut->vslq, vut_dispatch, vut);
+		do
+			i = VSLQ_Dispatch(vut->vslq, vut_dispatch, vut);
+		while (i == vsl_more && !vut->sighup && !vut->sigusr1);
+
 		if (i == vsl_more)
 			continue;
 		else if (i == vsl_end) {
