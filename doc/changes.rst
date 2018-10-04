@@ -30,6 +30,46 @@ release process.
 Varnish Cache trunk (ongoing)
 =============================
 
+* fixed ``varnishhist`` display error (2780_)
+
+* ``libvarnish``: ``VRT_VSA_GetPtr`` renamed to ``VSA_GetPtr``
+
+* Improve accuracy of statistics (VSC)
+
+* In ``Error: out of workspace`` log entries, the workspace name is
+  now reported in lowercase
+
+* Adjust code generator python tools to python 3 and prefer python 3
+  over python 2 where available
+
+* fix some stats metrics (vsc) which were wrongly marked as _gauge_
+
+* fix ``varnishd -I`` (2782_)
+
+* fix ``varnishstat -f`` in curses mode (interactively, without
+  ``-1``, 2787_)
+
+* Handle an out-of-workspace condition in HTTP/2 delivery more
+  gracefully (2589_)
+
+* added a thread pool watchdog which will restart the worker process
+  if scheduling tasks onto worker threads appears stuck. The new
+  parameter ``thread_pool_watchdog`` configures it. (2418_)
+
+* Improved varnish log client performance (2788_)
+
+* Fixed regression introduced just before 6.1.0 release which caused
+  an unnecessary incompatibility with VSL files written by previous
+  versions. (2790_)
+
+.. _2780: https://github.com/varnishcache/varnish-cache/issues/2780
+.. _2782: https://github.com/varnishcache/varnish-cache/issues/2782
+.. _2787: https://github.com/varnishcache/varnish-cache/issues/2787
+.. _2589: https://github.com/varnishcache/varnish-cache/issues/2589
+.. _2418: https://github.com/varnishcache/varnish-cache/issues/2418
+.. _2788: https://github.com/varnishcache/varnish-cache/issues/2788
+.. _2790: https://github.com/varnishcache/varnish-cache/issues/2790
+
 ================================
 Varnish Cache 6.1.0 (2018-09-17)
 ================================
