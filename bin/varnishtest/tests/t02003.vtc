@@ -173,6 +173,21 @@ client c1 {
 	stream 0 -wait
 } -run
 
+client c1 {
+	stream 0 {
+		rxgoaway
+		expect goaway.err == PROTOCOL_ERROR
+		expect goaway.laststream == 1
+	} -start
+	stream 1 {
+		txreq
+		rxresp
+		delay .1
+		# send a PUSH_PROMISE after a request
+		sendhex "000008 05 00 00000001 0001020304050607"
+	} -start
+} -run
+
 varnish v1 -vsl_catchup
 
 varnish v1 -expect MEMPOOL.req0.live == 0
