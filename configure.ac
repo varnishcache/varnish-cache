@@ -355,6 +355,63 @@ AC_CHECK_FUNCS([clock_gettime])
 AC_CHECK_FUNCS([gethrtime])
 LIBS="${save_LIBS}"
 
+if test "x$ac_cv_func_gethrtime" = xyes && \
+   test "x$ac_cv_func_clock_gettime" = xyes ; then
+  AC_MSG_CHECKING(if clock_gettime is faster than gethrtime)
+  AC_RUN_IFELSE(
+    [AC_LANG_PROGRAM([[
+#include <sys/time.h>
+#include <time.h>
+#include <stdio.h>
+
+static hrtime_t cl()
+{
+	struct timespec ts;
+
+	(void) clock_gettime(CLOCK_MONOTONIC, &ts);
+	return (ts.tv_sec * 1e9 + ts.tv_nsec);
+}
+    ]],[[
+	hrtime_t s, c, e, t_hr, t_cl;
+	int i, r, wins;
+
+	wins = 0;
+	for (r = 0; r < 10; r++) {
+		c = 0;
+		s = gethrtime();
+		for (i=0; i<100000; i++)
+			c += gethrtime();
+		e = gethrtime();
+		t_hr = e - s;
+		fprintf(stderr, "hrtime\t\t%12lu check %lu\n",
+		    (unsigned long)t_hr, (unsigned long)c);
+
+		c = 0;
+		s = gethrtime();
+		for (i=0; i<100000; i++)
+			c += cl();
+		e = gethrtime();
+		t_cl = e - s;
+		fprintf(stderr, "clock_gettime\t%12lu check %lu\n",
+		    (unsigned long)t_cl, (unsigned long)c);
+
+		if (t_cl * 2 < t_hr)
+			wins++;
+	}
+	fprintf(stderr, "clock_gettime wins %d/%d\n", wins, r);
+	if (2 * wins >= r)
+		return (0);
+	return (1);
+    ]])],
+    [AC_MSG_RESULT(yes)
+     AC_DEFINE([USE_GETHRTIME], [0], [whether to use gethrtime])
+    ],
+    [AC_MSG_RESULT(no)
+     AC_DEFINE([USE_GETHRTIME], [1], [whether to use gethrtime])
+    ]
+  )
+fi
+
 # --enable-kqueue
 AC_ARG_ENABLE(kqueue,
     AS_HELP_STRING([--enable-kqueue],
