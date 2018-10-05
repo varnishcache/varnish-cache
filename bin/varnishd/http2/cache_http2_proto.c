@@ -305,7 +305,7 @@ h2_rx_push_promise(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	ASSERT_RXTHR(h2);
-	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC); /* XXX: wasteful allocation? */
+	CHECK_OBJ_ORNULL(r2, H2_REQ_MAGIC);
 	// rfc7540,l,2262,2267
 	return (H2CE_PROTOCOL_ERROR);
 }
