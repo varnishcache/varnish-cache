@@ -355,6 +355,7 @@ AC_CHECK_FUNCS([clock_gettime])
 AC_CHECK_FUNCS([gethrtime])
 LIBS="${save_LIBS}"
 
+AC_DEFINE([USE_GETHRTIME], [1], [whether to use gethrtime])
 if test "x$ac_cv_func_gethrtime" = xyes && \
    test "x$ac_cv_func_clock_gettime" = xyes ; then
   AC_MSG_CHECKING(if clock_gettime is faster than gethrtime)
@@ -407,7 +408,6 @@ static hrtime_t cl()
      AC_DEFINE([USE_GETHRTIME], [0], [whether to use gethrtime])
     ],
     [AC_MSG_RESULT(no)
-     AC_DEFINE([USE_GETHRTIME], [1], [whether to use gethrtime])
     ]
   )
 fi
