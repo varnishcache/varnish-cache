@@ -511,6 +511,7 @@ bench()
 {
 	double s, e, t;
 	int i;
+	char buf[64];
 
 	t = 0;
 	s = VTIM_real();
@@ -526,6 +527,17 @@ bench()
 		t += VTIM_mono();
 	e = VTIM_real();
 	printf("mono: %fs / %d = %fns - tst val %f\n",
+	    e - s, i, 1e9 * (e - s) / i, t);
+
+	t = 0;
+	s = VTIM_mono();
+	for (i=0; i<100000; i++) {
+		snprintf(buf, sizeof(buf), "%.6f", s);
+		t += buf[4];
+	}
+	e = VTIM_mono();
+	printf("%s\n", buf);
+	printf("printf: %fs / %d = %fns - tst val %f\n",
 	    e - s, i, 1e9 * (e - s) / i, t);
 }
 
