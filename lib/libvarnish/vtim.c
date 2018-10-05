@@ -127,14 +127,14 @@ init(void)
 double
 VTIM_mono(void)
 {
-#if defined(HAVE_GETHRTIME) && USE_GETHRTIME
-	return (gethrtime() * 1e-9);
-#elif  HAVE_CLOCK_GETTIME
+#if defined(HAVE_CLOCK_GETTIME) && !defined(USE_GETHRTIME)
 	struct timespec ts;
 
 	AZ(clock_gettime(CLOCK_MONOTONIC, &ts));
 	return (ts.tv_sec + 1e-9 * ts.tv_nsec);
-#elif  defined(__MACH__)
+#elif defined(HAVE_GETHRTIME)
+	return (gethrtime() * 1e-9);
+#elif defined(__MACH__)
 	uint64_t mt = mach_absolute_time() - mt_base;
 
 	return (mt * mt_scale);
