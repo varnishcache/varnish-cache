@@ -118,15 +118,16 @@ init(void)
 #endif
 
 /*
- * Note on Solaris: for some reason, clock_gettime(CLOCK_MONOTONIC, &ts) is not
- * implemented in assembly, but falls into a syscall, while gethrtime() doesn't,
- * so we save a syscall by using gethrtime() if it is defined.
+ * On older Solaris-incarnations, gethrtime() was faster than
+ * clock_gettime(CLOCK_MONOTONIC). Our configure script prefers
+ * clock_gettime if it is consistently at least twice as fast as
+ * gethrtime(), which is the case on modern Solaris descendents.
  */
 
 double
 VTIM_mono(void)
 {
-#ifdef HAVE_GETHRTIME
+#if defined(HAVE_GETHRTIME) && USE_GETHRTIME
 	return (gethrtime() * 1e-9);
 #elif  HAVE_CLOCK_GETTIME
 	struct timespec ts;
