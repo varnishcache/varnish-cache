@@ -54,6 +54,16 @@ varnishadm
 
 **XXX changes concerning varnishadm(1) and/or varnish-cli(7)**
 
+JSON responses, requested with the ``-j`` option, are now possible for
+the following commands (see :ref:`varnish-cli(7)`):
+
+* ``status -j``
+* ``vcl.list -j``
+* ``param.show -j``
+* ``ban.list -j``
+* ``storage.list -j``
+* ``panic.show -j``
+
 varnishstat
 ===========
 
