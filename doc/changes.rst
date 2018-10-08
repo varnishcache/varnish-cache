@@ -30,6 +30,8 @@ release process.
 Varnish Cache trunk (ongoing)
 =============================
 
+* Extend JSON support in the CLI (2783_)
+
 * fixed ``varnishhist`` display error (2780_)
 
 * ``libvarnish``: ``VRT_VSA_GetPtr`` renamed to ``VSA_GetPtr``
@@ -62,6 +64,7 @@ Varnish Cache trunk (ongoing)
   an unnecessary incompatibility with VSL files written by previous
   versions. (2790_)
 
+.. _2783: https://github.com/varnishcache/varnish-cache/pull/2783
 .. _2780: https://github.com/varnishcache/varnish-cache/issues/2780
 .. _2782: https://github.com/varnishcache/varnish-cache/issues/2782
 .. _2787: https://github.com/varnishcache/varnish-cache/issues/2787
