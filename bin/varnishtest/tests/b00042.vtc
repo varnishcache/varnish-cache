@@ -33,3 +33,10 @@ varnish v1 -clierr "106" {param.show fofofofo}
 varnish v1 -cliok "param.show changed"
 varnish v1 -cliok "param.show "
 varnish v1 -cliok "param.show -l"
+
+varnish v1 -clijson "param.show -j pool_req"
+varnish v1 -clijson "param.show -j pool_sess"
+varnish v1 -clijson "param.show -j changed"
+varnish v1 -clijson "param.show -j"
+varnish v1 -clierr "106" "param.show -j -l"
+varnish v1 -clierr "106" "param.show -j fofofofo"

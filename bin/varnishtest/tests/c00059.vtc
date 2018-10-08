@@ -18,6 +18,7 @@ client c1 {
 varnish v1 -cliok "ban obj.status == 201"
 varnish v1 -cliok "ban obj.status == 200"
 varnish v1 -cliok "ban.list"
+varnish v1 -clijson "ban.list -j"
 
 client c1 {
 	txreq
