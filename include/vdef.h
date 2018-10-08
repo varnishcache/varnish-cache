@@ -165,3 +165,8 @@
 #   define ___Static_assert(x, y) \
 		typedef char __assert_## y[(x) ? 1 : -1] v_unused_
 #endif
+
+/* VTIM API overhaul WIP */
+typedef double vtim_mono;
+typedef double vtim_real;
+typedef double vtim_dur;

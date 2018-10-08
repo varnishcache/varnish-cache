@@ -88,14 +88,14 @@ void VTP_Recycle(const struct worker *, struct pfd **);
 	 * Recycle an open connection.
 	 */
 
-struct pfd *VTP_Get(struct tcp_pool *, double tmo, struct worker *,
+struct pfd *VTP_Get(struct tcp_pool *, vtim_dur tmo, struct worker *,
     unsigned force_fresh, int *err);
 	/*
 	 * Get a (possibly) recycled connection.
 	 * errno will be stored in err
 	 */
 
-int VTP_Wait(struct worker *, struct pfd *, double tmo);
+int VTP_Wait(struct worker *, struct pfd *, vtim_real tmo);
 	/*
 	 * If the connection was recycled (state != VTP_STATE_USED) call this
 	 * function before attempting to receive on the connection.

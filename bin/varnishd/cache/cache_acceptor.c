@@ -52,7 +52,7 @@
 #include "vtim.h"
 
 static pthread_t	VCA_thread;
-static double vca_pace = 0.0;
+static vtim_dur vca_pace = 0.0;
 static struct lock pace_mtx;
 static unsigned pool_accepting;
 static pthread_mutex_t shut_mtx = PTHREAD_MUTEX_INITIALIZER;
@@ -137,9 +137,9 @@ static unsigned		need_test;
  * into the vca_acct() loop which we are running anyway
  */
 static void
-vca_periodic(double t0)
+vca_periodic(vtim_real t0)
 {
-	double now;
+	vtim_real now;
 
 	now = VTIM_real();
 	VSC_C_main->uptime = (uint64_t)(now - t0);
@@ -270,7 +270,7 @@ vca_tcp_opt_set(const int sock, const unsigned uds, const int force)
 static void
 vca_pace_check(void)
 {
-	double p;
+	vtim_dur p;
 
 	if (vca_pace == 0.0)
 		return;
@@ -584,7 +584,7 @@ static void * v_matchproto_()
 vca_acct(void *arg)
 {
 	struct listen_sock *ls;
-	double t0;
+	vtim_real t0;
 
 	// XXX Actually a mis-nomer now because the accept happens in a pool
 	// thread. Rename to accept-nanny or so?

@@ -66,7 +66,7 @@ struct backend {
 
 	struct director		director[1];
 
-	double			cooled;
+	vtim_real		cooled;
 };
 
 /*---------------------------------------------------------------------

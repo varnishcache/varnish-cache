@@ -77,11 +77,11 @@ struct vbp_target {
 #define BITMAP(n, c, t, b)	uintmax_t	n;
 #include "tbl/backend_poll.h"
 
-	double				last;
-	double				avg;
+	vtim_dur			last;
+	vtim_dur			avg;
 	double				rate;
 
-	double				due;
+	vtim_real			due;
 	int				running;
 	int				heap_idx;
 	struct pool_task		task;
@@ -274,7 +274,7 @@ static void
 vbp_poke(struct vbp_target *vt)
 {
 	int s, tmo, i, proxy_header, err;
-	double t_start, t_now, t_end;
+	vtim_real t_start, t_now, t_end;
 	unsigned rlen, resp;
 	char buf[8192], *p;
 	struct pollfd pfda[1], *pfd = pfda;
@@ -450,7 +450,7 @@ vbp_task(struct worker *wrk, void *priv)
 static void * v_matchproto_(bgthread_t)
 vbp_thread(struct worker *wrk, void *priv)
 {
-	double now, nxt;
+	vtim_real now, nxt;
 	struct vbp_target *vt;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
