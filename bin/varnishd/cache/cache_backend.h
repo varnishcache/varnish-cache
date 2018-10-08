@@ -66,7 +66,7 @@ struct backend {
 
 	VCL_BACKEND		director;
 
-	double			cooled;
+	vtim_real		cooled;
 };
 
 /*---------------------------------------------------------------------
