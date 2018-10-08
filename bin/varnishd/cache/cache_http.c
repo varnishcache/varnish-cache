@@ -1233,6 +1233,11 @@ http_TimeHeader(struct http *to, const char *fmt, double now)
 	char *p;
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
+	if (to->nhd >= to->shd) {
+		VSLb(to->vsl, SLT_LostHeader, "%s", fmt);
+		http_fail(to);
+		return;
+	}
 	p = WS_Alloc(to->ws, strlen(fmt) + VTIM_FORMAT_SIZE);
 	if (p == NULL) {
 		http_fail(to);
