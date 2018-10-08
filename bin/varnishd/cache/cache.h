@@ -252,7 +252,7 @@ struct worker {
 
 	struct pool_task	task;
 
-	double			lastused;
+	vtim_real		lastused;
 	int			strangelove;
 
 	struct v1l		*v1l;
@@ -414,9 +414,9 @@ struct busyobj {
 #include "tbl/bo_flags.h"
 
 	/* Timeouts */
-	double			connect_timeout;
-	double			first_byte_timeout;
-	double			between_bytes_timeout;
+	vtim_dur		connect_timeout;
+	vtim_dur		first_byte_timeout;
+	vtim_dur		between_bytes_timeout;
 
 	/* Timers */
 	double			t_first;	/* First timestamp logged */
@@ -565,9 +565,8 @@ struct sess {
 
 	struct ws		ws[1];
 
-	/* Timestamps, all on TIM_real() timescale */
-	double			t_open;		/* fd accepted */
-	double			t_idle;		/* fd accepted or resp sent */
+	vtim_real		t_open;		/* fd accepted */
+	vtim_real		t_idle;		/* fd accepted or resp sent */
 
 };
 
@@ -663,7 +662,7 @@ int Lck__Owned(const struct lock *lck);
 
 /* public interface: */
 void Lck_Delete(struct lock *lck);
-int Lck_CondWait(pthread_cond_t *cond, struct lock *lck, double);
+int Lck_CondWait(pthread_cond_t *cond, struct lock *lck, vtim_real);
 
 #define Lck_New(a, b) Lck__New(a, b, #b)
 #define Lck_Lock(a) Lck__Lock(a, __func__, __LINE__)

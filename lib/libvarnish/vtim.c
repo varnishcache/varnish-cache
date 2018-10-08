@@ -124,7 +124,7 @@ init(void)
  * gethrtime(), which is the case on modern Solaris descendents.
  */
 
-double
+vtim_mono
 VTIM_mono(void)
 {
 #if defined(HAVE_CLOCK_GETTIME) && !defined(USE_GETHRTIME)
@@ -143,7 +143,7 @@ VTIM_mono(void)
 #endif
 }
 
-double
+vtim_real
 VTIM_real(void)
 {
 #ifdef HAVE_CLOCK_GETTIME
@@ -160,7 +160,7 @@ VTIM_real(void)
 }
 
 void
-VTIM_format(double t, char *p)
+VTIM_format(vtim_real t, char *p)
 {
 	struct tm tm;
 	time_t tt;
@@ -236,10 +236,10 @@ VTIM_format(double t, char *p)
 		DIGIT(1, sec);					\
 	} while(0)
 
-double
+vtim_real
 VTIM_parse(const char *p)
 {
-	double t;
+	vtim_real t;
 	int month = 0, year = 0, weekday = -1, mday = 0;
 	int hour = 0, min = 0, sec = 0;
 	int d, leap;
@@ -394,7 +394,7 @@ VTIM_parse(const char *p)
 }
 
 void
-VTIM_sleep(double t)
+VTIM_sleep(vtim_dur t)
 {
 #ifdef HAVE_NANOSLEEP
 	struct timespec ts;
@@ -415,7 +415,7 @@ VTIM_sleep(double t)
 }
 
 struct timeval
-VTIM_timeval(double t)
+VTIM_timeval(vtim_real t)
 {
 	struct timeval tv;
 
@@ -426,7 +426,7 @@ VTIM_timeval(double t)
 }
 
 struct timespec
-VTIM_timespec(double t)
+VTIM_timespec(vtim_real t)
 {
 	struct timespec tv;
 
@@ -464,8 +464,9 @@ tst(const char *s, time_t good)
 	}
 }
 
+/* XXX keep as double for the time being */
 static int
-tst_delta_check(const char *name, double begin, double end, double ref)
+tst_delta_check(const char *name, double begin, double end, vtim_dur ref)
 {
 	const double tol_max = 1.1;
 	const double tol_min = 1;
@@ -487,9 +488,9 @@ tst_delta_check(const char *name, double begin, double end, double ref)
 static void
 tst_delta()
 {
-	double m_begin, m_end;
-	double r_begin, r_end;
-	const double ref = 1;
+	vtim_mono m_begin, m_end;
+	vtim_real r_begin, r_end;
+	const vtim_dur ref = 1;
 	int err = 0;
 
 	r_begin = VTIM_real();
@@ -510,53 +511,56 @@ tst_delta()
 static void
 bench()
 {
-	double s, e, t;
+	vtim_mono s, e;
+	vtim_mono t_m;
+	vtim_real t_r;
+	unsigned long t_i;
 	int i;
 	char buf[64];
 
-	t = 0;
-	s = VTIM_real();
+	t_r = 0;
+	s = VTIM_mono();
 	for (i=0; i<100000; i++)
-		t += VTIM_real();
-	e = VTIM_real();
+		t_r += VTIM_real();
+	e = VTIM_mono();
 	printf("real: %fs / %d = %fns - tst val %f\n",
-	    e - s, i, 1e9 * (e - s) / i, t);
+	    e - s, i, 1e9 * (e - s) / i, t_r);
 
-	t = 0;
-	s = VTIM_real();
+	t_i = 0;
+	s = VTIM_mono();
 	for (i=0; i<100000; i++)
-		t += VTIM_mono();
-	e = VTIM_real();
+		t_m += VTIM_mono();
+	e = VTIM_mono();
 	printf("mono: %fs / %d = %fns - tst val %f\n",
-	    e - s, i, 1e9 * (e - s) / i, t);
+	    e - s, i, 1e9 * (e - s) / i, t_m);
 
-	t = 0;
+	t_i = 0;
 	s = VTIM_mono();
 	for (i=0; i<100000; i++) {
 		snprintf(buf, sizeof(buf), "%.6f", s);
-		t += buf[4];
+		t_i += buf[4];
 	}
 	e = VTIM_mono();
-	printf("printf %%.6f: %fs / %d = %fns - tst val %f %s\n",
-	    e - s, i, 1e9 * (e - s) / i, t, buf);
+	printf("printf %%.6f: %fs / %d = %fns - tst val %lu %s\n",
+	    e - s, i, 1e9 * (e - s) / i, t_i, buf);
 
-	t = 0;
+	t_i = 0;
 	s = VTIM_mono();
 	for (i=0; i<100000; i++) {
 		snprintf(buf, sizeof(buf), "%ju.%06ju",
 		    (uint64_t)floor(s),
 		    (uint64_t)floor((s * 1e6)) % 1000000UL);
-		t += buf[4];
+		t_i += buf[4];
 	}
 	e = VTIM_mono();
-	printf("printf %%ju.%%06ju: %fs / %d = %fns - tst val %f %s\n",
-	    e - s, i, 1e9 * (e - s) / i, t, buf);
+	printf("printf %%ju.%%06ju: %fs / %d = %fns - tst val %lu %s\n",
+	    e - s, i, 1e9 * (e - s) / i, t_i, buf);
 }
 
 void
 parse_check(time_t t, const char *s)
 {
-	double tt;
+	vtim_real tt;
 	char buf[BUFSIZ];
 
 	tt = VTIM_parse(s);
