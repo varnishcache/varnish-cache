@@ -540,7 +540,7 @@ VCP_Get(struct conn_pool *cp, double tmo, struct worker *wrk,
  */
 
 static int
-VCP_Wait(struct worker *wrk, struct pfd *pfd, double tmo)
+VCP_Wait(struct worker *wrk, struct pfd *pfd, vtim_real tmo)
 {
 	struct conn_pool *cp;
 	int r;
@@ -834,7 +834,7 @@ VTP_Close(struct pfd **pfdp)
  */
 
 struct pfd *
-VTP_Get(struct tcp_pool *tp, double tmo, struct worker *wrk,
+VTP_Get(struct tcp_pool *tp, vtim_dur tmo, struct worker *wrk,
 	unsigned force_fresh, int *err)
 {
 
@@ -845,7 +845,7 @@ VTP_Get(struct tcp_pool *tp, double tmo, struct worker *wrk,
  */
 
 int
-VTP_Wait(struct worker *wrk, struct pfd *pfd, double tmo)
+VTP_Wait(struct worker *wrk, struct pfd *pfd, vtim_real tmo)
 {
 	return (VCP_Wait(wrk, pfd, tmo));
 }

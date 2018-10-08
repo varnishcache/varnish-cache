@@ -114,7 +114,7 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
 {
 	struct pfd *pfd;
 	int *fdp, err;
-	double tmod;
+	vtim_dur tmod;
 	char abuf1[VTCP_ADDRBUFSIZE], abuf2[VTCP_ADDRBUFSIZE];
 	char pbuf1[VTCP_PORTBUFSIZE], pbuf2[VTCP_PORTBUFSIZE];
 
@@ -619,7 +619,7 @@ void
 VBE_Poll(void)
 {
 	struct backend *be, *be2;
-	double now = VTIM_real();
+	vtim_real now = VTIM_real();
 
 	ASSERT_CLI();
 	Lck_Lock(&backends_mtx);
