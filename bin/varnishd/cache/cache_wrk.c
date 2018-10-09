@@ -510,14 +510,15 @@ pool_herder(void *priv)
 		 * Instead we implement a watchdog and kill the worker if
 		 * nothing has been dequeued for that long.
 		 */
-		if (dq != pp->ndequeued) {
+		if (pp->lqueue == 0) {
+			dq = pp->ndequeued + 1;
+		} else if (dq != pp->ndequeued) {
 			dq = pp->ndequeued;
 			dqt = VTIM_real();
-		} else if (pp->lqueue &&
-		    VTIM_real() - dqt > cache_param->wthread_watchdog) {
+		} else if (VTIM_real() - dqt > cache_param->wthread_watchdog) {
 			VSL(SLT_Error, 0,
-			   "Pool Herder: Queue does not move ql=%u dt=%f",
-			   pp->lqueue, VTIM_real() - dqt);
+			    "Pool Herder: Queue does not move ql=%u dt=%f",
+			    pp->lqueue, VTIM_real() - dqt);
 			WRONG("Worker Pool Queue does not move");
 		}
 		wthread_min = cache_param->wthread_min;
