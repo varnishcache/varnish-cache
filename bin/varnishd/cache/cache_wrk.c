@@ -172,12 +172,16 @@ pool_reserve(void)
 {
 	unsigned lim;
 
-	if (cache_param->wthread_reserve == 0)
-		return (cache_param->wthread_min / 20 + 1);
-	lim = cache_param->wthread_min * 950 / 1000;
-	if (cache_param->wthread_reserve > lim)
-		return (lim);
-	return (cache_param->wthread_reserve);
+	if (cache_param->wthread_reserve == 0) {
+		lim = cache_param->wthread_min / 20 + 1;
+	} else {
+		lim = cache_param->wthread_min * 950 / 1000;
+		if (cache_param->wthread_reserve < lim)
+			lim = cache_param->wthread_reserve;
+	}
+	if (lim < TASK_QUEUE__END)
+		return (TASK_QUEUE__END);
+	return (lim);
 }
 
 /*--------------------------------------------------------------------*/
@@ -190,7 +194,7 @@ pool_getidleworker(struct pool *pp, enum task_prio prio)
 
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 	Lck_AssertHeld(&pp->mtx);
-	if (prio <= TASK_QUEUE_RESERVE || pp->nidle > pool_reserve()) {
+	if (pp->nidle > (pool_reserve() * prio / TASK_QUEUE__END)) {
 		pt = VTAILQ_FIRST(&pp->idle_queue);
 		if (pt == NULL)
 			AZ(pp->nidle);
@@ -262,7 +266,7 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum task_prio prio)
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 	AN(task);
 	AN(task->func);
-	assert(prio < TASK_QUEUE_END);
+	assert(prio < TASK_QUEUE__END);
 
 	if (prio == TASK_QUEUE_REQ && reqpoolfail) {
 		retval = reqpoolfail & 1;
@@ -334,7 +338,7 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 	struct pool_task *tp = NULL;
 	struct pool_task tpx, tps;
 	vtim_real tmo;
-	int i, prio_lim;
+	int i, reserve;
 
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 	wrk->pool = pp;
@@ -345,12 +349,11 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 		AZ(wrk->vsl);
 
 		Lck_Lock(&pp->mtx);
-		if (pp->nidle < pool_reserve())
-			prio_lim = TASK_QUEUE_RESERVE + 1;
-		else
-			prio_lim = TASK_QUEUE_END;
+		reserve = pool_reserve();
 
-		for (i = 0; i < prio_lim; i++) {
+		for (i = 0; i < TASK_QUEUE__END; i++) {
+			if (pp->nidle < (reserve * i / TASK_QUEUE__END))
+				break;
 			tp = VTAILQ_FIRST(&pp->queues[i]);
 			if (tp != NULL) {
 				pp->lqueue--;
@@ -656,7 +659,6 @@ static struct cli_proto debug_cmds[] = {
 void
 WRK_Init(void)
 {
-
+	assert(cache_param->wthread_min >= TASK_QUEUE__END);
 	CLI_AddFuncs(debug_cmds);
 }
-
