@@ -489,7 +489,7 @@ pool_herder(void *priv)
 	double delay;
 	int wthread_min;
 	uintmax_t dq = (1ULL << 31);
-	double dqt = 0;
+	vtim_mono dqt = 0;
 
 	CAST_OBJ_NOTNULL(pp, priv, POOL_MAGIC);
 
@@ -514,11 +514,11 @@ pool_herder(void *priv)
 			dq = pp->ndequeued + 1;
 		} else if (dq != pp->ndequeued) {
 			dq = pp->ndequeued;
-			dqt = VTIM_real();
-		} else if (VTIM_real() - dqt > cache_param->wthread_watchdog) {
+			dqt = VTIM_mono();
+		} else if (VTIM_mono() - dqt > cache_param->wthread_watchdog) {
 			VSL(SLT_Error, 0,
 			    "Pool Herder: Queue does not move ql=%u dt=%f",
-			    pp->lqueue, VTIM_real() - dqt);
+			    pp->lqueue, VTIM_mono() - dqt);
 			WRONG("Worker Pool Queue does not move");
 		}
 		wthread_min = cache_param->wthread_min;
