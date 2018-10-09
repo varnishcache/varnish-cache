@@ -353,8 +353,6 @@ mcf_param_show_json(struct cli *cli, const char * const *av, void *priv)
 	struct vsb *vsb, *def;
 	const char *show = NULL;
 
-	vsb = VSB_new_auto();
-	def = VSB_new_auto();
 	(void)priv;
 
 	for (int i = 2; av[i] != NULL; i++) {
@@ -371,6 +369,9 @@ mcf_param_show_json(struct cli *cli, const char * const *av, void *priv)
 			continue;
 		show = av[i];
 	}
+
+	vsb = VSB_new_auto();
+	def = VSB_new_auto();
 
 	n = 0;
 	VCLI_JSON_begin(cli, 2, av);
