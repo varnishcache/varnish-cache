@@ -25,7 +25,7 @@ help:
 	@echo "  doctest   to run all doctests embedded in the documentation (if enabled)"
 
 clean:
-	-rm -rf $(BUILDDIR)/*
+	-rm -rf $(BUILDDIR)/* $(CLEANFILES)
 
 # work around for make html called within doc/sphinx
 .PHONY: graphviz
@@ -101,6 +101,7 @@ EXTRA_DIST = \
 	installation \
 	phk \
 	tutorial \
+	reference \
 	users-guide \
 	vtc-syntax.py \
 	whats-new
@@ -116,11 +117,13 @@ distclean-local:
 	rm -rf $(BUILDDIR)
 
 include/cli.rst: $(top_builddir)/bin/varnishd/varnishd
-	$(top_builddir)/bin/varnishd/varnishd -x cli > $@
+	$(top_builddir)/bin/varnishd/varnishd -x cli > ${@}_
+	mv ${@}_ ${@}
 BUILT_SOURCES = include/cli.rst
 
 include/params.rst: $(top_builddir)/bin/varnishd/varnishd
-	$(top_builddir)/bin/varnishd/varnishd -x parameter > $@
+	$(top_builddir)/bin/varnishd/varnishd -x parameter > ${@}_
+	mv ${@}_ ${@}
 BUILT_SOURCES += include/params.rst
 
 COUNTERS = \
@@ -134,52 +137,64 @@ COUNTERS = \
 	$(top_srcdir)/bin/varnishd/VSC_lck.vsc
 
 include/counters.rst: $(top_srcdir)/lib/libvcc/vsctool.py $(COUNTERS)
-	echo -n '' > $@
+	echo -n '' > ${@}_
 	for i in $(COUNTERS); do \
-		$(PYTHON) $(top_srcdir)/lib/libvcc/vsctool.py -r $$i >> $@ ; \
+		$(PYTHON) $(top_srcdir)/lib/libvcc/vsctool.py -r $$i >> ${@}_ ; \
 	done
+	mv ${@}_ ${@}
 
 BUILT_SOURCES += include/counters.rst
 
 # XXX add varnishstat here when it's been _opt2rst'ed
 
 include/varnishncsa_options.rst: $(top_builddir)/bin/varnishncsa/varnishncsa
-	$(top_builddir)/bin/varnishncsa/varnishncsa --options > $@
+	$(top_builddir)/bin/varnishncsa/varnishncsa --options > ${@}_
+	mv ${@}_ ${@}
 include/varnishncsa_synopsis.rst: $(top_builddir)/bin/varnishncsa/varnishncsa
-	$(top_builddir)/bin/varnishncsa/varnishncsa --synopsis > $@
+	$(top_builddir)/bin/varnishncsa/varnishncsa --synopsis > ${@}_
+	mv ${@}_ ${@}
 BUILT_SOURCES += include/varnishncsa_options.rst \
 	include/varnishncsa_synopsis.rst
 
 include/varnishlog_options.rst: $(top_builddir)/bin/varnishlog/varnishlog
-	$(top_builddir)/bin/varnishlog/varnishlog --options > $@
+	$(top_builddir)/bin/varnishlog/varnishlog --options > ${@}_
+	mv ${@}_ ${@}
 include/varnishlog_synopsis.rst: $(top_builddir)/bin/varnishlog/varnishlog
-	$(top_builddir)/bin/varnishlog/varnishlog --synopsis > $@
+	$(top_builddir)/bin/varnishlog/varnishlog --synopsis > ${@}_
+	mv ${@}_ ${@}
 BUILT_SOURCES += include/varnishlog_options.rst \
 	include/varnishlog_synopsis.rst
 
 include/varnishtop_options.rst: $(top_builddir)/bin/varnishtop/varnishtop
-	$(top_builddir)/bin/varnishtop/varnishtop --options > $@
+	$(top_builddir)/bin/varnishtop/varnishtop --options > ${@}_
+	mv ${@}_ ${@}
 include/varnishtop_synopsis.rst: $(top_builddir)/bin/varnishtop/varnishtop
-	$(top_builddir)/bin/varnishtop/varnishtop --synopsis > $@
+	$(top_builddir)/bin/varnishtop/varnishtop --synopsis > ${@}_
+	mv ${@}_ ${@}
 BUILT_SOURCES += include/varnishtop_options.rst \
 	 include/varnishtop_synopsis.rst
 
 include/varnishhist_options.rst: $(top_builddir)/bin/varnishhist/varnishhist
-	$(top_builddir)/bin/varnishhist/varnishhist --options > $@
+	$(top_builddir)/bin/varnishhist/varnishhist --options > ${@}_
+	mv ${@}_ ${@}
 include/varnishhist_synopsis.rst: $(top_builddir)/bin/varnishhist/varnishhist
-	$(top_builddir)/bin/varnishhist/varnishhist --synopsis > $@
+	$(top_builddir)/bin/varnishhist/varnishhist --synopsis > ${@}_
+	mv ${@}_ ${@}
 BUILT_SOURCES += include/varnishhist_options.rst \
 	 include/varnishhist_synopsis.rst
 
 include/varnishstat_options.rst: $(top_builddir)/bin/varnishstat/varnishstat
-	$(top_builddir)/bin/varnishstat/varnishstat --options > $@
+	$(top_builddir)/bin/varnishstat/varnishstat --options > ${@}_
+	mv ${@}_ ${@}
 include/varnishstat_synopsis.rst: $(top_builddir)/bin/varnishstat/varnishstat
-	$(top_builddir)/bin/varnishstat/varnishstat --synopsis > $@
+	$(top_builddir)/bin/varnishstat/varnishstat --synopsis > ${@}_
+	mv ${@}_ ${@}
 BUILT_SOURCES += include/varnishstat_options.rst \
 	 include/varnishstat_synopsis.rst
 
 include/vsl-tags.rst: $(top_builddir)/lib/libvarnishapi/vsl2rst
-	$(top_builddir)/lib/libvarnishapi/vsl2rst > $@
+	$(top_builddir)/lib/libvarnishapi/vsl2rst > ${@}_
+	mv ${@}_ ${@}
 BUILT_SOURCES += include/vsl-tags.rst
 
 VTCSYN_SRC = $(top_srcdir)/bin/varnishtest/vtc.c \
@@ -193,13 +208,9 @@ VTCSYN_SRC = $(top_srcdir)/bin/varnishtest/vtc.c \
 	     $(top_srcdir)/bin/varnishtest/vtc_syslog.c \
 	     $(top_srcdir)/bin/varnishtest/vtc_varnish.c
 include/vtc-syntax.rst: vtc-syntax.py $(VTCSYN_SRC)
-	$(PYTHON) $(top_srcdir)/doc/sphinx/vtc-syntax.py $(VTCSYN_SRC) > $@
+	$(PYTHON) $(top_srcdir)/doc/sphinx/vtc-syntax.py $(VTCSYN_SRC) > ${@}_
+	mv ${@}_ ${@}
 BUILT_SOURCES += include/vtc-syntax.rst
-
-.PHONY: reference
-reference:
-	test -d $@ || mkdir $@
-BUILT_SOURCES += reference
 
 reference/vmod_std.generated.rst: reference $(top_builddir)/lib/libvmod_std/vmod_std.rst
 	cp $(top_builddir)/lib/libvmod_std/vmod_std.rst $@ || true
@@ -231,5 +242,6 @@ BUILT_SOURCES += reference/vmod_proxy.generated.rst
 
 EXTRA_DIST += $(BUILT_SOURCES)
 MAINTAINERCLEANFILES = $(EXTRA_DIST)
+CLEANFILES = $(BUILT_SOURCES)
 
 .NOPATH: $(BUILT_SOURCES)
