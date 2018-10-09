@@ -41,6 +41,7 @@ import getopt
 import json
 import sys
 import collections
+import codecs
 
 # Parameters of 'varnish_vsc_begin', first element is default
 TYPES = ["counter", "gauge", "bitmap"]
@@ -164,7 +165,12 @@ class CounterSet(object):
         assert self.completed
 
         fon = "VSC_" + self.name + ".h"
-        fo = open(fon, "w")
+        try:
+            # Python3
+            fo = open(fon, "w", encoding="UTF-8")
+        except TypeError:
+            # Python2
+            fo = open(fon, "w")
         genhdr(fo, self.name)
 
         fo.write(self.struct + " {\n")
@@ -288,7 +294,12 @@ class CounterSet(object):
         '''Emit .c file'''
         assert self.completed
         fon = "VSC_" + self.name + ".c"
-        fo = open(fon, "w")
+        try:
+            # Python3
+            fo = open(fon, "w", encoding="UTF-8")
+        except TypeError:
+            # Python2
+            fo = open(fon, "w")
         genhdr(fo, self.name)
         fo.write('#include "config.h"\n')
         fo.write('#include <stdio.h>\n')
@@ -437,10 +448,22 @@ def mainfunc(argv):
     rstfile = None
     for f, v in optlist:
         if f == '-r':
+            try:
+                # Python3
+                sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
+            except AttributeError:
+                # Python2
+                pass
             rstfile = sys.stdout
 
     vscset = []
-    scs = open(args[0]).read().split("\n.. ")
+    try:
+        # Python3
+        f = open(args[0], encoding="UTF-8")
+    except TypeError:
+        # Python2
+        f = open(args[0])
+    scs = f.read().split("\n.. ")
     if rstfile:
         rstfile.write(scs[0])
     for i in scs[1:]:
