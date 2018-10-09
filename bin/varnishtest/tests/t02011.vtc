@@ -16,15 +16,12 @@ server s1 {
 # - one for stream 1
 # - one for the backend request
 #
-# To work around the reserve's default logic, an additional thread can be
-# created, but won't be consumed for stream 3 because the pool will reserve
-# it for a backend transaction. Otherwise it could starve the pool and dead
-# lock v1.
+# thread priorities ensure that there is exactly one thread per class
+# at this point, so when we try to get a second stream, we fail.
 
 varnish v1 -cliok "param.set thread_pools 1"
-varnish v1 -cliok "param.set thread_pool_min 4"
-varnish v1 -cliok "param.set thread_pool_max 4"
-varnish v1 -cliok "param.set thread_pool_reserve 1"
+varnish v1 -cliok "param.set thread_pool_min 5"
+varnish v1 -cliok "param.set thread_pool_max 5"
 varnish v1 -cliok "param.set thread_queue_limit 0"
 varnish v1 -cliok "param.set thread_stats_rate 1"
 varnish v1 -cliok "param.set feature +http2"
@@ -69,7 +66,10 @@ client c1 {
 } -run
 
 # trigger an update of the stats
-varnish v1 -cliok "param.set thread_pool_min 3"
+varnish v1 -cliok "param.set thread_pool_max 6"
+varnish v1 -cliok "param.set thread_pool_min 6"
+delay 1
+varnish v1 -cliok "param.set thread_pool_min 5"
 delay 1
 varnish v1 -vsl_catchup
 varnish v1 -expect sess_drop == 0
