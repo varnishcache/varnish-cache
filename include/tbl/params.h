@@ -1202,7 +1202,7 @@ PARAM(
 	/* typ */	timeout,
 	/* min */	"0.1",
 	/* max */	NULL,
-	/* default */	"10.000",
+	/* default */	"60.000",
 	/* units */	"seconds",
 	/* flags */	EXPERIMENTAL,
 	/* s-text */

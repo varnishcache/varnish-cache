@@ -156,7 +156,7 @@ struct parspec WRK_parspec[] = {
 		"If no queued work have been released for this long,"
 		" the worker process panics itself.",
 		EXPERIMENTAL,
-		"10", "seconds" },
+		"60", "seconds" },
 	{ "thread_pool_destroy_delay",
 		tweak_timeout, &mgt_param.wthread_destroy_delay,
 		"0.01", NULL,
