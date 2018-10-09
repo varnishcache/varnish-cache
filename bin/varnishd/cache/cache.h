@@ -217,22 +217,20 @@ struct pool_task {
 /*
  * tasks are taken off the queues in this order
  *
- * prios up to TASK_QUEUE_RESERVE are run from the reserve
- *
  * TASK_QUEUE_{REQ|STR} are new req's (H1/H2), and subject to queue limit.
  *
- * TASK_QUEUE_RUSH is req's returning from waiting list, they are
- * not subject to TASK_QUEUE_CLIENT because we cannot safely clean
- * them up if scheduling them fails.
+ * TASK_QUEUE_RUSH is req's returning from waiting list
+ *
+ * NOTE: When changing the number of classes, update places marked with
+ * TASK_QUEUE__END in mgt_pool.c
  */
 enum task_prio {
 	TASK_QUEUE_BO,
-#define TASK_QUEUE_RESERVE	TASK_QUEUE_BO
 	TASK_QUEUE_RUSH,
 	TASK_QUEUE_REQ,
 	TASK_QUEUE_STR,
 	TASK_QUEUE_VCA,
-	TASK_QUEUE_END
+	TASK_QUEUE__END
 };
 
 #define TASK_QUEUE_CLIENT(prio) \
