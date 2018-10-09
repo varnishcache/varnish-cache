@@ -57,7 +57,6 @@ static int
 tweak_thread_pool_min(struct vsb *vsb, const struct parspec *par,
     const char *arg)
 {
-
 	if (tweak_generic_uint(vsb, par->priv, arg, par->min, par->max))
 		return (-1);
 	MCF_ParamConf(MCF_MINIMUM, "thread_pool_max",
@@ -110,14 +109,17 @@ struct parspec WRK_parspec[] = {
 		DELAYED_EFFECT,
 		"5000", "threads" },
 	{ "thread_pool_min", tweak_thread_pool_min, &mgt_param.wthread_min,
-		NULL, NULL,
+		"5", // TASK_QUEUE__END
+		NULL,
 		"The minimum number of worker threads in each pool. The "
 		"maximum value depends on thread_pool_max.\n"
 		"\n"
 		"Increasing this may help ramp up faster from low load "
 		"situations or when threads have expired.\n"
 		"\n"
-		"Minimum is 10 threads.",
+		"Technical minimum is 5 threads, " // TASK_QUEUE__END
+		"but this parameter is strongly recommended to be "
+		"at least 10", // 2 * TASK_QUEUE__END
 		DELAYED_EFFECT,
 		"100", "threads" },
 	{ "thread_pool_reserve", tweak_uint, &mgt_param.wthread_reserve,
@@ -126,16 +128,15 @@ struct parspec WRK_parspec[] = {
 		"in each pool.\n"
 		"\n"
 		"Tasks may require other tasks to complete (for example, "
-		"client requests may require backend requests). This reserve "
-		"is to ensure that such tasks still get to run even under high "
-		"load.\n"
+		"client requests may require backend requests, http2 sessions "
+		"require streams, which require requests). This reserve is to "
+		"ensure that lower priority tasks do not prevent higher "
+		"priority tasks from running even under high load.\n"
 		"\n"
-		"Increasing the reserve may help setups with a high number of "
-		"backend requests at the expense of client performance. "
-		"Setting it too high will waste resources by keeping threads "
-		"unused.\n"
-		"\n"
-		"Default is 0 to auto-tune (currently 5% of thread_pool_min).\n"
+		"The effective value is at least 5 (the number of internal "
+		//				 ^ TASK_QUEUE__END
+		"priority classes), irrespective of this parameter.\n"
+		"Default is 0 to auto-tune (5% of thread_pool_min).\n"
 		"Minimum is 1 otherwise, maximum is 95% of thread_pool_min.",
 		DELAYED_EFFECT,
 		"0", "threads" },
