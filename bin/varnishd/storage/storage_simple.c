@@ -246,6 +246,7 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 	ssize_t sl;
 	void *p;
 	ssize_t l;
+	unsigned u;
 
 	obj = sml_getobj(wrk, oc);
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
@@ -256,8 +257,13 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 
 	if (boc == NULL) {
 		VTAILQ_FOREACH_SAFE(st, &obj->list, list, checkpoint) {
+			u = 0;
+			if (VTAILQ_NEXT(st, list) == NULL)
+				u |= OBJ_ITER_FINAL;
+			if (final)
+				u |= OBJ_ITER_FLUSH;
 			if (ret == 0 && st->len > 0)
-				ret = func(priv, 1, st->ptr, st->len);
+				ret = func(priv, u, st->ptr, st->len);
 			if (final) {
 				VTAILQ_REMOVE(&obj->list, st, list);
 				sml_stv_free(stv, st);
@@ -322,7 +328,10 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 			st = NULL;
 		Lck_Unlock(&boc->mtx);
 		assert(l > 0 || boc->state == BOS_FINISHED);
-		ret = func(priv, st != NULL ? final : 1, p, l);
+		u = 0;
+		if (st == NULL || final)
+			u |= OBJ_ITER_FLUSH;
+		ret = func(priv, u, p, l);
 		if (ret)
 			break;
 	}

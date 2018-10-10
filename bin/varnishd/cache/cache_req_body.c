@@ -226,7 +226,7 @@ VRB_Iterate(struct req *req, objiterate_f *func, void *priv)
  */
 
 static int v_matchproto_(objiterate_f)
-httpq_req_body_discard(void *priv, int flush, const void *ptr, ssize_t len)
+httpq_req_body_discard(void *priv, unsigned flush, const void *ptr, ssize_t len)
 {
 
 	(void)priv;

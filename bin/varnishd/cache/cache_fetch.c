@@ -702,15 +702,15 @@ vbf_stp_fetchend(struct worker *wrk, struct busyobj *bo)
  */
 
 static int v_matchproto_(objiterate_f)
-vbf_objiterator(void *priv, int flush, const void *ptr, ssize_t len)
+vbf_objiterator(void *priv, unsigned flush, const void *ptr, ssize_t len)
 {
 	struct busyobj *bo;
 	ssize_t l;
 	const uint8_t *ps = ptr;
 	uint8_t *pd;
 
-	(void)flush;
 	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
+	(void)flush;
 
 	while (len > 0) {
 		l = len;

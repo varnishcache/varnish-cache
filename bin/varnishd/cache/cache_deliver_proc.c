@@ -138,8 +138,9 @@ VDP_close(struct req *req)
 /*--------------------------------------------------------------------*/
 
 static int v_matchproto_(objiterate_f)
-vdp_objiterator(void *priv, int flush, const void *ptr, ssize_t len)
+vdp_objiterator(void *priv, unsigned flush, const void *ptr, ssize_t len)
 {
+
 	return (VDP_bytes(priv, flush ? VDP_FLUSH : VDP_NULL, ptr, len));
 }
 
