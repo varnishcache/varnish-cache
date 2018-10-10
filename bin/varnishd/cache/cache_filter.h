@@ -94,18 +94,20 @@ void VRT_RemoveVFP(VRT_CTX, const struct vfp *);
 /* Deliver processors ------------------------------------------------*/
 
 enum vdp_action {
-	VDP_INIT,		/* Happens on VDP_push() */
-	VDP_FINI,		/* Happens on VDP_pop() */
 	VDP_NULL,		/* Input buffer valid after call */
 	VDP_FLUSH,		/* Input buffer will be invalidated */
 };
 
-typedef int vdp_bytes(struct req *, enum vdp_action, void **priv,
+typedef int vdp_init_f(struct req *, void **priv);
+typedef int vdp_fini_f(struct req *, void **priv);
+typedef int vdp_bytes_f(struct req *, enum vdp_action, void **priv,
     const void *ptr, ssize_t len);
 
 struct vdp {
 	const char		*name;
-	vdp_bytes		*func;
+	vdp_init_f		*init;
+	vdp_bytes_f		*bytes;
+	vdp_fini_f		*fini;
 };
 
 struct vdp_entry {

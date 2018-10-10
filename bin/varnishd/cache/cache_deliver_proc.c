@@ -66,7 +66,7 @@ VDP_bytes(struct req *req, enum vdp_action act, const void *ptr, ssize_t len)
 
 	assert(act > VDP_NULL || len > 0);
 	/* Call the present layer, while pointing to the next layer down */
-	retval = vdpe->vdp->func(req, act, &vdpe->priv, ptr, len);
+	retval = vdpe->vdp->bytes(req, act, &vdpe->priv, ptr, len);
 	if (retval && (vdc->retval == 0 || retval < vdc->retval))
 		vdc->retval = retval; /* Latch error value */
 	vdc->nxt = vdpe;
@@ -83,7 +83,7 @@ VDP_push(struct req *req, const struct vdp *vdp, void *priv, int bottom)
 	vdc = req->vdc;
 	AN(vdp);
 	AN(vdp->name);
-	AN(vdp->func);
+	AN(vdp->bytes);
 
 	if (vdc->retval)
 		return (vdc->retval);
@@ -107,7 +107,8 @@ VDP_push(struct req *req, const struct vdp *vdp, void *priv, int bottom)
 	vdc->nxt = VTAILQ_FIRST(&vdc->vdp);
 
 	AZ(vdc->retval);
-	vdc->retval = vdpe->vdp->func(req, VDP_INIT, &vdpe->priv, NULL, 0);
+	if (vdpe->vdp->init != NULL)
+		vdc->retval = vdpe->vdp->init(req, &vdpe->priv);
 	return (vdc->retval);
 }
 
@@ -126,8 +127,8 @@ VDP_close(struct req *req)
 		if (vdpe != NULL) {
 			CHECK_OBJ_NOTNULL(vdpe, VDP_ENTRY_MAGIC);
 			VTAILQ_REMOVE(&vdc->vdp, vdpe, list);
-			AZ(vdpe->vdp->func(req, VDP_FINI, &vdpe->priv,
-			    NULL, 0));
+			if (vdpe->vdp->fini != NULL)
+				AZ(vdpe->vdp->fini(req, &vdpe->priv));
 			AZ(vdpe->priv);
 		}
 		vdc->nxt = VTAILQ_FIRST(&vdc->vdp);

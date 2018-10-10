@@ -247,8 +247,38 @@ ved_decode_len(struct req *req, const uint8_t **pp)
 /*---------------------------------------------------------------------
  */
 
-static int v_matchproto_(vdp_bytes)
-ved_vdp(struct req *req, enum vdp_action act, void **priv,
+static int v_matchproto_(vdp_init_f)
+ved_vdp_esi_init(struct req *req, void **priv)
+{
+	struct ecx *ecx;
+
+	AZ(*priv);
+	ALLOC_OBJ(ecx, ECX_MAGIC);
+	AN(ecx);
+	assert(sizeof gzip_hdr == 10);
+	ecx->preq = req;
+	*priv = ecx;
+	RFC2616_Weaken_Etag(req->resp);
+	req->res_mode |= RES_ESI;
+	if (req->resp_len != 0)
+		req->resp_len = -1;
+	return (0);
+}
+
+static int v_matchproto_(vdp_fini_f)
+ved_vdp_esi_fini(struct req *req, void **priv)
+{
+	struct ecx *ecx;
+
+	(void)req;
+	CAST_OBJ_NOTNULL(ecx, *priv, ECX_MAGIC);
+	FREE_OBJ(ecx);
+	*priv = NULL;
+	return (0);
+}
+
+static int v_matchproto_(vdp_bytes_f)
+ved_vdp_esi_bytes(struct req *req, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
 	uint8_t *q, *r;
@@ -259,25 +289,7 @@ ved_vdp(struct req *req, enum vdp_action act, void **priv,
 	struct ecx *ecx, *pecx = NULL;
 	int retval = 0;
 
-	if (act == VDP_INIT) {
-		AZ(*priv);
-		ALLOC_OBJ(ecx, ECX_MAGIC);
-		AN(ecx);
-		assert(sizeof gzip_hdr == 10);
-		ecx->preq = req;
-		*priv = ecx;
-		RFC2616_Weaken_Etag(req->resp);
-		req->res_mode |= RES_ESI;
-		if (req->resp_len != 0)
-			req->resp_len = -1;
-		return (0);
-	}
 	CAST_OBJ_NOTNULL(ecx, *priv, ECX_MAGIC);
-	if (act == VDP_FINI) {
-		FREE_OBJ(ecx);
-		*priv = NULL;
-		return (0);
-	}
 	pp = ptr;
 
 	if (req->esi_level > 0) {
@@ -431,7 +443,9 @@ ved_vdp(struct req *req, enum vdp_action act, void **priv,
 
 const struct vdp VDP_esi = {
 	.name =		"esi",
-	.func =		ved_vdp,
+	.init =		ved_vdp_esi_init,
+	.bytes =	ved_vdp_esi_bytes,
+	.fini =		ved_vdp_esi_fini,
 };
 
 /*
@@ -464,8 +478,16 @@ ved_bytes(struct req *req, struct req *preq, enum vdp_action act,
  * the stream with a bit more overhead.
  */
 
-static int v_matchproto_(vdp_bytes)
-ved_pretend_gzip(struct req *req, enum vdp_action act, void **priv,
+static int v_matchproto_(vdp_fini_f)
+ved_pretend_gzip_fini(struct req *req, void **priv)
+{
+	(void)req;
+	*priv = NULL;
+	return (0);
+}
+
+static int v_matchproto_(vdp_bytes_f)
+ved_pretend_gzip_bytes(struct req *req, enum vdp_action act, void **priv,
     const void *pv, ssize_t l)
 {
 	uint8_t buf1[5], buf2[5];
@@ -479,12 +501,6 @@ ved_pretend_gzip(struct req *req, enum vdp_action act, void **priv,
 	preq = ecx->preq;
 
 	(void)priv;
-	if (act == VDP_INIT)
-		return (0);
-	if (act == VDP_FINI) {
-		*priv = NULL;
-		return (0);
-	}
 	if (l == 0)
 		return (ved_bytes(req, ecx->preq, act, pv, l));
 
@@ -523,7 +539,8 @@ ved_pretend_gzip(struct req *req, enum vdp_action act, void **priv,
 
 static const struct vdp ved_vdp_pgz = {
 	.name =		"PGZ",
-	.func =		ved_pretend_gzip,
+	.bytes =	ved_pretend_gzip_bytes,
+	.fini =		ved_pretend_gzip_fini,
 };
 
 /*---------------------------------------------------------------------
@@ -765,26 +782,29 @@ ved_stripgzip(struct req *req, const struct boc *boc)
 
 /*--------------------------------------------------------------------*/
 
-static int v_matchproto_(vdp_bytes)
+static int v_matchproto_(vdp_fini_f)
+ved_vdp_fini(struct req *req, void **priv)
+{
+	(void)req;
+	*priv = NULL;
+	return (0);
+}
+
+static int v_matchproto_(vdp_bytes_f)
 ved_vdp_bytes(struct req *req, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
 	struct req *preq;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	if (act == VDP_INIT)
-		return (0);
-	if (act == VDP_FINI) {
-		*priv = NULL;
-		return (0);
-	}
 	CAST_OBJ_NOTNULL(preq, *priv, REQ_MAGIC);
 	return (ved_bytes(req, preq, act, ptr, len));
 }
 
 static const struct vdp ved_ved = {
 	.name =		"VED",
-	.func =		ved_vdp_bytes,
+	.bytes =	ved_vdp_bytes,
+	.fini =		ved_vdp_fini,
 };
 
 /*--------------------------------------------------------------------*/
