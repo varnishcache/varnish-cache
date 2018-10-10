@@ -574,7 +574,7 @@ struct ved_foo {
 	uint8_t tailbuf[8];
 };
 
-static int
+static int v_matchproto_(objiterate_f)
 ved_objiterate(void *priv, int flush, const void *ptr, ssize_t len)
 {
 	struct ved_foo *foo;

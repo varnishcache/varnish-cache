@@ -701,7 +701,7 @@ vbf_stp_fetchend(struct worker *wrk, struct busyobj *bo)
 /*--------------------------------------------------------------------
  */
 
-static int
+static int v_matchproto_(objiterate_f)
 vbf_objiterator(void *priv, int flush, const void *ptr, ssize_t len)
 {
 	struct busyobj *bo;
