@@ -167,6 +167,9 @@ VBO_ReleaseBusyObj(struct worker *wrk, struct busyobj **pbo)
 
 	AZ(bo->htc);
 
+	if (WS_Overflowed(bo->ws))
+		wrk->stats->ws_backend_overflow++;
+
 	if (bo->fetch_objcore != NULL) {
 		AN(wrk);
 		(void)HSH_DerefObjCore(wrk, &bo->fetch_objcore,
