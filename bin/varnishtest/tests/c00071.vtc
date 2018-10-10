@@ -46,3 +46,5 @@ client c2 {
 	expect resp.http.x-of == <undef>
 } -run
 
+
+varnish v1 -expect client_resp_500 == 2

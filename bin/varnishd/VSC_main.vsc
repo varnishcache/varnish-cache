@@ -586,6 +586,14 @@
 
 	Number of session closes with Error VCL_FAILURE (VCL failure)
 
+.. varnish_vsc:: client_resp_500
+	:level: diag
+	:group: wrk
+	:oneliner:	Delivery failed due to insufficient workspace.
+
+	Number of times we failed a response due to running out of
+	workspace memory during delivery.
+
 .. varnish_vsc:: shm_records
 	:level:	diag
 	:oneliner:	SHM records
