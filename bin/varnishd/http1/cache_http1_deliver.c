@@ -35,7 +35,7 @@
 
 /*--------------------------------------------------------------------*/
 
-static int v_matchproto_(vdp_bytes)
+static int v_matchproto_(vdp_bytes_f)
 v1d_bytes(struct req *req, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
@@ -43,8 +43,6 @@ v1d_bytes(struct req *req, enum vdp_action act, void **priv,
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	(void)priv;
-	if (act == VDP_INIT || act == VDP_FINI)
-		return (0);
 
 	AZ(req->vdc->nxt);		/* always at the bottom of the pile */
 
@@ -59,7 +57,7 @@ v1d_bytes(struct req *req, enum vdp_action act, void **priv,
 
 static const struct vdp v1d_vdp = {
 	.name =		"V1B",
-	.func =		v1d_bytes,
+	.bytes =	v1d_bytes,
 };
 
 static void

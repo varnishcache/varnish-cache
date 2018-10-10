@@ -44,7 +44,20 @@ struct vrg_priv {
 	ssize_t			range_off;
 };
 
-static int v_matchproto_(vdp_bytes)
+static int v_matchproto_(vdp_fini_f)
+vrg_range_fini(struct req *req, void **priv)
+{
+	struct vrg_priv *vrg_priv;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CAST_OBJ_NOTNULL(vrg_priv, *priv, VRG_PRIV_MAGIC);
+	if (vrg_priv->range_off < vrg_priv->range_high)
+		Req_Fail(req, SC_RANGE_SHORT);
+	*priv = NULL;	/* struct on ws, no need to free */
+	return (0);
+}
+
+static int v_matchproto_(vdp_bytes_f)
 vrg_range_bytes(struct req *req, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
@@ -54,15 +67,7 @@ vrg_range_bytes(struct req *req, enum vdp_action act, void **priv,
 	struct vrg_priv *vrg_priv;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	if (act == VDP_INIT)
-		return (0);
 	CAST_OBJ_NOTNULL(vrg_priv, *priv, VRG_PRIV_MAGIC);
-	if (act == VDP_FINI) {
-		if (vrg_priv->range_off < vrg_priv->range_high)
-			Req_Fail(req, SC_RANGE_SHORT);
-		*priv = NULL;	/* struct on ws, no need to free */
-		return (0);
-	}
 
 	l = vrg_priv->range_low - vrg_priv->range_off;
 	if (l > 0) {
@@ -86,7 +91,8 @@ vrg_range_bytes(struct req *req, enum vdp_action act, void **priv,
 
 static const struct vdp vrg_vdp = {
 	.name =		"RNG",
-	.func =		vrg_range_bytes,
+	.bytes =	vrg_range_bytes,
+	.fini =		vrg_range_fini,
 };
 
 /*--------------------------------------------------------------------*/
