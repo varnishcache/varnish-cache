@@ -274,7 +274,11 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 	}
 	if (VSB_finish(&resp)) {
 		// We ran out of workspace, return minimal 500
-		// XXX: VSC counter ?
+		VSLb(req->vsl, SLT_Error, "workspace_client overflow");
+		VSLb(req->vsl, SLT_RespStatus, "500");
+		VSLb(req->vsl, SLT_RespReason, "Internal Server Error");
+		req->wrk->stats->client_resp_500++;
+
 		r = (const char*)h2_500_resp;
 		sz = sizeof h2_500_resp;
 		sendbody = 0;

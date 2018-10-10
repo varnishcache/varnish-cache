@@ -27,3 +27,5 @@ client c1 {
 		expect resp.http.server == "Varnish"
 	} -run
 } -run
+
+varnish v1 -expect client_resp_500 == 1
