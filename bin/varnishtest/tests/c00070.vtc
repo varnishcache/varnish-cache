@@ -67,3 +67,5 @@ client c1 {
 } -run
 
 logexpect l2 -wait
+
+varnish v1 -expect client_resp_500 == 1
