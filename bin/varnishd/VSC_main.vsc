@@ -615,6 +615,12 @@
 
 	Number of times we ran out of space in workspace_thread.
 
+.. varnish_vsc:: ws_session_overflow
+	:level: diag
+	:oneliner: workspace_session overflows
+
+	Number of times we ran out of space in workspace_session.
+
 .. varnish_vsc:: shm_records
 	:level:	diag
 	:oneliner:	SHM records
