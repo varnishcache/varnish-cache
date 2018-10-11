@@ -262,6 +262,7 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 		VSB_bcat(&resp, r, sz);
 	}
 	if (VSB_finish(&resp)) {
+		WS_MarkOverflow(req->ws);
 		// We ran out of workspace, return minimal 500
 		VSLb(req->vsl, SLT_Error, "workspace_client overflow");
 		VSLb(req->vsl, SLT_RespStatus, "500");

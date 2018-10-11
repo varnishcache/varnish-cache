@@ -48,3 +48,4 @@ client c2 {
 
 
 varnish v1 -expect client_resp_500 == 2
+varnish v1 -expect ws_client_overflow == 2
