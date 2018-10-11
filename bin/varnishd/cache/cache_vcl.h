@@ -28,6 +28,11 @@
  *
  */
 
+struct vfilter;
+
+VTAILQ_HEAD(vfilter_head, vfilter);
+
+
 struct vcl {
 	unsigned		magic;
 #define VCL_MAGIC		0x214188f2
@@ -45,6 +50,8 @@ struct vcl {
 	int			nrefs;
 	struct vcl		*label;
 	int			nlabels;
+	struct vfilter_head	vfps;
+	struct vfilter_head	vdps;
 };
 
 struct vclref {
