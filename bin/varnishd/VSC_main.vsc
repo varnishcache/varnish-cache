@@ -608,6 +608,13 @@
 
 	Number of times we ran out of space in workspace_client.
 
+.. varnish_vsc:: ws_thread_overflow
+	:level: diag
+	:group: wrk
+	:oneliner: workspace_thread overflows
+
+	Number of times we ran out of space in workspace_thread.
+
 .. varnish_vsc:: shm_records
 	:level:	diag
 	:oneliner:	SHM records

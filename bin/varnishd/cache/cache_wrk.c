@@ -394,6 +394,8 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 			tp = &tpx;
 		} while (tp->func != NULL);
 
+		if (WS_Overflowed(wrk->aws))
+			wrk->stats->ws_thread_overflow++;
 		/* cleanup for next task */
 		wrk->seen_methods = 0;
 	}
