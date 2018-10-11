@@ -40,7 +40,9 @@ AC_PROG_INSTALL
 AC_ARG_WITH([rst2man],
   AS_HELP_STRING([--with-rst2man=PATH], [Location of rst2man (auto)]),
   [RST2MAN="$withval"],
-  AC_CHECK_PROGS(RST2MAN, [rst2man rst2man.py], [no]))
+  AC_CHECK_PROGS(RST2MAN,
+    [rst2man rst2man.py rst2man-3.6 rst2man-2.7],
+    [no]))
 if test "x$RST2MAN" = "xno"; then
   AC_MSG_ERROR(
     [rst2man is needed to build Varnish, please install python-docutils.])
