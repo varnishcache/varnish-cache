@@ -49,7 +49,9 @@ fi
 AC_ARG_WITH([sphinx-build],
   AS_HELP_STRING([--with-sphinx-build=PATH], [Location of sphinx-build (auto)]),
   [SPHINX="$withval"],
-  AC_CHECK_PROGS(SPHINX, [sphinx-build], [no]))
+  AC_CHECK_PROGS(SPHINX,
+    [sphinx-build sphinx-build-3.6 sphinx-build-2.7],
+    [no]))
 if test "x$SPHINX" = "xno"; then
   AC_MSG_ERROR(
     [sphinx-build is needed to build Varnish, please install python-sphinx.])
