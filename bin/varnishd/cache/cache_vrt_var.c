@@ -922,35 +922,3 @@ HTTP_VAR(req)
 HTTP_VAR(resp)
 HTTP_VAR(bereq)
 HTTP_VAR(beresp)
-
-/*--------------------------------------------------------------------*/
-
-VCL_STRING
-VRT_r_beresp_filters(VRT_CTX)
-{
-
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
-	if (ctx->bo->filter_list != NULL)
-		return(ctx->bo->filter_list);
-	/* We do not set bo->filter_list yet, things might still change */
-	return (VBF_Get_Filter_List(ctx->bo));
-}
-
-VCL_VOID
-VRT_l_beresp_filters(VRT_CTX, const char *str, ...)
-{
-	va_list ap;
-	const char *b;
-
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
-	va_start(ap, str);
-	b = VRT_String(ctx->bo->ws, NULL, str, ap);
-	va_end(ap);
-	if (b == NULL) {
-		WS_MarkOverflow(ctx->bo->ws);
-		return;
-	}
-	ctx->bo->filter_list = b;
-}
