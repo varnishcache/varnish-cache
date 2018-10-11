@@ -29,3 +29,4 @@ client c1 {
 
 logexpect l1 -wait
 varnish v1 -expect client_resp_500 == 1
+varnish v1 -expect ws_client_overflow == 1
