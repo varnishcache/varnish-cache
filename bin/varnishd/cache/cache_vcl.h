@@ -31,9 +31,9 @@
  *
  */
 
-struct vfp_filter;
+struct vfilter;
 
-VTAILQ_HEAD(vfp_filter_head, vfp_filter);
+VTAILQ_HEAD(vfilter_head, vfilter);
 
 
 struct vcl {
@@ -53,7 +53,8 @@ struct vcl {
 	int			nrefs;
 	struct vcl		*label;
 	int			nlabels;
-	struct vfp_filter_head	vfps;
+	struct vfilter_head	vfps;
+	struct vfilter_head	vdps;
 };
 
 struct vclref {

@@ -46,49 +46,103 @@
 /*--------------------------------------------------------------------
  */
 
-struct vfp_filter {
+struct vfilter {
 	unsigned			magic;
-#define VFP_FILTER_MAGIC		0xd40894e9
-	const struct vfp		*filter;
+#define VFILTER_MAGIC			0xd40894e9
+	const struct vfp		*vfp;
+	const struct vdp		*vdp;
+	const char			*name;
 	int				nlen;
-	VTAILQ_ENTRY(vfp_filter)	list;
+	VTAILQ_ENTRY(vfilter)		list;
 };
 
-static struct vfp_filter_head vfp_filters =
+static struct vfilter_head vfp_filters =
     VTAILQ_HEAD_INITIALIZER(vfp_filters);
+
+static struct vfilter_head vdp_filters =
+    VTAILQ_HEAD_INITIALIZER(vdp_filters);
 
 void
 VRT_AddVFP(VRT_CTX, const struct vfp *filter)
 {
-	struct vfp_filter *vp;
-	struct vfp_filter_head *hd = &vfp_filters;
+	struct vfilter *vp;
+	struct vfilter_head *hd = &vfp_filters;
 
+	CHECK_OBJ_ORNULL(ctx, VRT_CTX_MAGIC);
 	VTAILQ_FOREACH(vp, hd, list) {
-		xxxassert(vp->filter != filter);
-		xxxassert(strcasecmp(vp->filter->name, filter->name));
+		xxxassert(vp->vfp != filter);
+		xxxassert(strcasecmp(vp->name, filter->name));
 	}
 	if (ctx != NULL) {
+		ASSERT_CLI();
 		hd = &ctx->vcl->vfps;
 		VTAILQ_FOREACH(vp, hd, list) {
-			xxxassert(vp->filter != filter);
-			xxxassert(strcasecmp(vp->filter->name, filter->name));
+			xxxassert(vp->vfp != filter);
+			xxxassert(strcasecmp(vp->name, filter->name));
 		}
 	}
-	ALLOC_OBJ(vp, VFP_FILTER_MAGIC);
+	ALLOC_OBJ(vp, VFILTER_MAGIC);
 	AN(vp);
-	vp->filter = filter;
-	vp->nlen = strlen(filter->name);
+	vp->vfp = filter;
+	vp->name = filter->name;
+	vp->nlen = strlen(vp->name);
+	VTAILQ_INSERT_TAIL(hd, vp, list);
+}
+
+void
+VRT_AddVDP(VRT_CTX, const struct vdp *filter)
+{
+	struct vfilter *vp;
+	struct vfilter_head *hd = &vdp_filters;
+
+	CHECK_OBJ_ORNULL(ctx, VRT_CTX_MAGIC);
+	VTAILQ_FOREACH(vp, hd, list) {
+		xxxassert(vp->vdp != filter);
+		xxxassert(strcasecmp(vp->name, filter->name));
+	}
+	if (ctx != NULL) {
+		ASSERT_CLI();
+		hd = &ctx->vcl->vdps;
+		VTAILQ_FOREACH(vp, hd, list) {
+			xxxassert(vp->vdp != filter);
+			xxxassert(strcasecmp(vp->name, filter->name));
+		}
+	}
+	ALLOC_OBJ(vp, VFILTER_MAGIC);
+	AN(vp);
+	vp->vdp = filter;
+	vp->name = filter->name;
+	vp->nlen = strlen(vp->name);
 	VTAILQ_INSERT_TAIL(hd, vp, list);
 }
 
 void
 VRT_RemoveVFP(VRT_CTX, const struct vfp *filter)
 {
-	struct vfp_filter *vp;
-	struct vfp_filter_head *hd = &ctx->vcl->vfps;
+	struct vfilter *vp;
+	struct vfilter_head *hd = &ctx->vcl->vfps;
 
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	ASSERT_CLI();
 	VTAILQ_FOREACH(vp, hd, list) {
-		if (vp->filter == filter)
+		if (vp->vfp == filter)
+			break;
+	}
+	XXXAN(vp);
+	VTAILQ_REMOVE(hd, vp, list);
+	FREE_OBJ(vp);
+}
+
+void
+VRT_RemoveVDP(VRT_CTX, const struct vdp *filter)
+{
+	struct vfilter *vp;
+	struct vfilter_head *hd = &ctx->vcl->vdps;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	ASSERT_CLI();
+	VTAILQ_FOREACH(vp, hd, list) {
+		if (vp->vdp == filter)
 			break;
 	}
 	XXXAN(vp);
@@ -100,7 +154,7 @@ int
 VCL_StackVFP(struct vfp_ctx *vc, const struct vcl *vcl, const char *fl)
 {
 	const char *p, *q;
-	const struct vfp_filter *vp;
+	const struct vfilter *vp;
 
 	VSLb(vc->wrk->vsl, SLT_Filters, "%s", fl);
 
@@ -115,21 +169,21 @@ VCL_StackVFP(struct vfp_ctx *vc, const struct vcl *vcl, const char *fl)
 		VTAILQ_FOREACH(vp, &vfp_filters, list) {
 			if (vp->nlen != q - p)
 				continue;
-			if (!memcmp(p, vp->filter->name, vp->nlen))
+			if (!memcmp(p, vp->name, vp->nlen))
 				break;
 		}
 		if (vp == NULL) {
 			VTAILQ_FOREACH(vp, &vcl->vfps, list) {
 				if (vp->nlen != q - p)
 					continue;
-				if (!memcmp(p, vp->filter->name, vp->nlen))
+				if (!memcmp(p, vp->name, vp->nlen))
 					break;
 			}
 		}
 		if (vp == NULL)
 			return (VFP_Error(vc,
 			    "Filter '%.*s' not found", (int)(q-p), p));
-		if (VFP_Push(vc, vp->filter) == NULL)
+		if (VFP_Push(vc, vp->vfp) == NULL)
 			return (-1);
 	}
 	return (0);
@@ -143,6 +197,8 @@ VCL_VRT_Init(void)
 	VRT_AddVFP(NULL, &VFP_gzip);
 	VRT_AddVFP(NULL, &VFP_esi);
 	VRT_AddVFP(NULL, &VFP_esi_gzip);
+	VRT_AddVDP(NULL, &VDP_esi);
+	VRT_AddVDP(NULL, &VDP_gunzip);
 }
 
 /*--------------------------------------------------------------------

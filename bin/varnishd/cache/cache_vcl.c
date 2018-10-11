@@ -408,6 +408,8 @@ VCL_Close(struct vcl **vclp)
 	CHECK_OBJ_NOTNULL(*vclp, VCL_MAGIC);
 	vcl = *vclp;
 	*vclp = NULL;
+	assert(VTAILQ_EMPTY(&vcl->vfps));
+	assert(VTAILQ_EMPTY(&vcl->vdps));
 	AZ(dlclose(vcl->dlh));
 	AZ(errno=pthread_rwlock_destroy(&vcl->temp_rwl));
 	FREE_OBJ(vcl);
@@ -565,6 +567,7 @@ vcl_load(struct cli *cli, struct vrt_ctx *ctx,
 	VTAILQ_INIT(&vcl->director_list);
 	VTAILQ_INIT(&vcl->ref_list);
 	VTAILQ_INIT(&vcl->vfps);
+	VTAILQ_INIT(&vcl->vdps);
 
 	vcl->temp = VCL_TEMP_INIT;
 
