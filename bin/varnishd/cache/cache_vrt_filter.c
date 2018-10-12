@@ -150,43 +150,57 @@ VRT_RemoveVDP(VRT_CTX, const struct vdp *filter)
 	FREE_OBJ(vp);
 }
 
+static const struct vfilter vfilter_error[1];
+
+static const struct vfilter *
+vcl_filter_list_iter(const struct vfilter_head *h1,
+    const struct vfilter_head *h2, const char **flp)
+{
+	const char *fl, *q;
+	const struct vfilter *vp;
+
+	AN(h1);
+	AN(h2);
+	AN(flp);
+
+	fl = *flp;
+	AN(fl);
+
+	while (vct_isspace(*fl))
+		fl++;
+	if (*fl == '\0') {
+		*flp = NULL;
+		return (NULL);
+	}
+	for (q = fl; *q && !vct_isspace(*q); q++)
+		continue;
+	*flp = q;
+	VTAILQ_FOREACH(vp, h1, list)
+		if (vp->nlen == q - fl && !memcmp(fl, vp->name, vp->nlen))
+			return (vp);
+	VTAILQ_FOREACH(vp, h2, list)
+		if (vp->nlen == q - fl && !memcmp(fl, vp->name, vp->nlen))
+			return (vp);
+	*flp = fl;
+	return (vfilter_error);
+}
+
 int
 VCL_StackVFP(struct vfp_ctx *vc, const struct vcl *vcl, const char *fl)
 {
-	const char *p, *q;
 	const struct vfilter *vp;
 
 	VSLb(vc->wrk->vsl, SLT_Filters, "%s", fl);
 
-	for (p = fl; *p; p = q) {
-		if (vct_isspace(*p)) {
-			q = p + 1;
-			continue;
-		}
-		for (q = p; *q; q++)
-			if (vct_isspace(*q))
-				break;
-		VTAILQ_FOREACH(vp, &vfp_filters, list) {
-			if (vp->nlen != q - p)
-				continue;
-			if (!memcmp(p, vp->name, vp->nlen))
-				break;
-		}
-		if (vp == NULL) {
-			VTAILQ_FOREACH(vp, &vcl->vfps, list) {
-				if (vp->nlen != q - p)
-					continue;
-				if (!memcmp(p, vp->name, vp->nlen))
-					break;
-			}
-		}
+	while (1) {
+		vp = vcl_filter_list_iter(&vfp_filters, &vcl->vfps, &fl);
 		if (vp == NULL)
-			return (VFP_Error(vc,
-			    "Filter '%.*s' not found", (int)(q-p), p));
+			return (0);
+		if (vp == vfilter_error)
+			return (VFP_Error(vc, "Filter '...%s' not found", fl));
 		if (VFP_Push(vc, vp->vfp) == NULL)
 			return (-1);
 	}
-	return (0);
 }
 
 void

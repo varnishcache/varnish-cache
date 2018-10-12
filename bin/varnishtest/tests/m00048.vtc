@@ -3,6 +3,11 @@ varnishtest "VMOD vfp"
 server s1 {
 	rxreq
 	txresp -body "Ponto Facto, Caesar Transit!"
+	rxreq
+	txresp -body "Ponto Facto, Caesar Transit!"
+	accept
+	rxreq
+	txresp -body "Ponto Facto, Caesar Transit!"
 } -start
 
 varnish v1 -vcl+backend {
@@ -14,8 +19,39 @@ varnish v1 -vcl+backend {
 } -start
 
 client c1 {
-	txreq
+	txreq -hdr "Cookie: a"
 	rxresp
 	expect resp.body == "Cbagb Snpgb, Pnrfne Genafvg!"
+} -run
+
+varnish v1 -vsl_catchup
+
+varnish v1 -vcl+backend {
+	import debug;
+
+	sub vcl_backend_response {
+		set beresp.filters = "rot13 rot13a";
+	}
+} 
+
+client c1 {
+	txreq -hdr "Cookie: a"
+	rxresp
+	expect resp.status == 503
+} -run
+
+
+varnish v1 -vcl+backend {
+	import debug;
+
+	sub vcl_backend_response {
+		set beresp.filters = "rot13 rot14";
+	}
+} 
+
+client c1 {
+	txreq -hdr "Cookie: a"
+	rxresp
+	expect resp.status == 503
 } -run
 
