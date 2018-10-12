@@ -91,18 +91,6 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 	CHECK_OBJ_ORNULL(boc, BOC_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 
-	if (sendbody) {
-		if (http_GetHdr(req->resp, H_Content_Length, NULL))
-			req->res_mode |= RES_LEN;
-		else if (req->http->protover == 11) {
-			req->res_mode |= RES_CHUNKED;
-			http_SetHeader(req->resp, "Transfer-Encoding: chunked");
-		} else {
-			req->res_mode |= RES_EOF;
-			req->doclose = SC_TX_EOF;
-		}
-	}
-
 	if (!req->doclose && http_HdrIs(req->resp, H_Connection, "close")) {
 		req->doclose = SC_RESP_CLOSE;
 	} else if (req->doclose) {
@@ -113,6 +101,23 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 	} else if (!http_GetHdr(req->resp, H_Connection, NULL))
 		http_SetHeader(req->resp, "Connection: keep-alive");
 
+	if (sendbody) {
+		if (http_GetHdr(req->resp, H_Content_Length, NULL))
+			req->res_mode |= RES_LEN;
+		else if (req->http->protover == 11) {
+			req->res_mode |= RES_CHUNKED;
+			http_SetHeader(req->resp, "Transfer-Encoding: chunked");
+		} else {
+			req->res_mode |= RES_EOF;
+			req->doclose = SC_TX_EOF;
+		}
+		if (VDP_Push(req, &v1d_vdp, NULL)) {
+			v1d_error(req, "workspace_thread overflow");
+			AZ(req->wrk->v1l);
+			return;
+		}
+	}
+
 	if (WS_Overflowed(req->ws)) {
 		v1d_error(req, "workspace_client overflow");
 		return;
@@ -120,15 +125,6 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 
 	if (WS_Overflowed(req->sp->ws)) {
 		v1d_error(req, "workspace_session overflow");
-		return;
-	}
-
-	if (req->resp_len == 0)
-		sendbody = 0;
-
-	if (sendbody && VDP_Push(req, &v1d_vdp, NULL)) {
-		v1d_error(req, "workspace_thread overflow");
-		AZ(req->wrk->v1l);
 		return;
 	}
 
@@ -144,9 +140,6 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 
 	hdrbytes = HTTP1_Write(req->wrk, req->resp, HTTP1_Resp);
 
-	if (DO_DEBUG(DBG_FLUSH_HEAD))
-		(void)V1L_Flush(req->wrk);
-
 	if (!sendbody || req->res_mode & RES_ESI) {
 		if (V1L_Close(req->wrk, &bytes) && req->sp->fd >= 0) {
 			Req_Fail(req, SC_REM_CLOSE);
@@ -157,7 +150,8 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 		 * header-bytes have been attempted sent. */
 		req->acct.resp_hdrbytes += bytes;
 		hdrbytes = 0;
-	}
+	} else if (DO_DEBUG(DBG_FLUSH_HEAD))
+		(void)V1L_Flush(req->wrk);
 
 	if (!sendbody) {
 		AZ(req->wrk->v1l);

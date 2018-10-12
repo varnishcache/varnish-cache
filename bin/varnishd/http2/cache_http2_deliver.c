@@ -285,9 +285,6 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 
 	AZ(req->wrk->v1l);
 
-	if (sendbody && req->resp_len == 0)
-		sendbody = 0;
-
 	r2->t_send = req->t_prev;
 
 	H2_Send_Get(req->wrk, r2->h2sess, r2);

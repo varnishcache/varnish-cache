@@ -372,8 +372,9 @@ cnt_transmit(struct worker *wrk, struct req *req)
 	} else if (status < 200 || status == 204 || status == 304) {
 		req->resp_len = -1;
 		sendbody = 0;
-	} else
+	} else {
 		sendbody = 1;
+	}
 
 	err = 0;
 	if (sendbody >= 0) {
@@ -408,9 +409,11 @@ cnt_transmit(struct worker *wrk, struct req *req)
 			    "Content-Length: %jd", req->resp_len);
 	}
 
-	if (err == 0)
+	if (err == 0) {
+		if (req->resp_len == 0)
+			sendbody = 0;
 		req->transport->deliver(req, boc, sendbody);
-	else {
+	} else {
 		VSLb(req->vsl, SLT_Error, "Failure to push processors");
 		req->doclose = SC_OVERLOAD;
 	}
