@@ -74,7 +74,7 @@ VDP_bytes(struct req *req, enum vdp_action act, const void *ptr, ssize_t len)
 }
 
 int
-VDP_push(struct req *req, const struct vdp *vdp, void *priv, int bottom)
+VDP_Push(struct req *req, const struct vdp *vdp, void *priv)
 {
 	struct vdp_entry *vdpe;
 	struct vdp_ctx *vdc;
@@ -102,10 +102,7 @@ VDP_push(struct req *req, const struct vdp *vdp, void *priv, int bottom)
 	INIT_OBJ(vdpe, VDP_ENTRY_MAGIC);
 	vdpe->vdp = vdp;
 	vdpe->priv = priv;
-	if (bottom)
-		VTAILQ_INSERT_TAIL(&vdc->vdp, vdpe, list);
-	else
-		VTAILQ_INSERT_HEAD(&vdc->vdp, vdpe, list);
+	VTAILQ_INSERT_TAIL(&vdc->vdp, vdpe, list);
 	vdc->nxt = VTAILQ_FIRST(&vdc->vdp);
 
 	AZ(vdc->retval);

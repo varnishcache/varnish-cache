@@ -374,13 +374,13 @@ cnt_transmit(struct worker *wrk, struct req *req)
 
 	if (!req->disable_esi && req->resp_len != 0 &&
 	    ObjHasAttr(wrk, req->objcore, OA_ESIDATA) &&
-	    VDP_push(req, &VDP_esi, NULL, 0) < 0)
+	    VDP_Push(req, &VDP_esi, NULL) < 0)
 		err++;
 
 	if (cache_param->http_gzip_support &&
 	    ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED) &&
 	    !RFC2616_Req_Gzip(req->http) &&
-	    VDP_push(req, &VDP_gunzip, NULL, 1) < 0)
+	    VDP_Push(req, &VDP_gunzip, NULL) < 0)
 		err++;
 
 	if (cache_param->http_range_support && status == 200) {
