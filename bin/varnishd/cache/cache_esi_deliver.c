@@ -833,9 +833,9 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 		ved_stripgzip(req, boc);
 	} else {
 		if (ecx->isgzip && !i)
-			(void)VDP_push(req, &ved_vdp_pgz, ecx, 1);
+			(void)VDP_Push(req, &ved_vdp_pgz, ecx);
 		else
-			(void)VDP_push(req, &ved_ved, ecx->preq, 1);
+			(void)VDP_Push(req, &ved_ved, ecx->preq);
 		(void)VDP_DeliverObj(req);
 		(void)VDP_bytes(req, VDP_FLUSH, NULL, 0);
 	}

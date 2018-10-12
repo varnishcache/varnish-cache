@@ -129,6 +129,6 @@ struct vdp_ctx {
 };
 
 int VDP_bytes(struct req *, enum vdp_action act, const void *ptr, ssize_t len);
-int VDP_push(struct req *, const struct vdp *, void *priv, int bottom);
+int VDP_Push(struct req *, const struct vdp *, void *priv);
 void VRT_AddVDP(VRT_CTX, const struct vdp *);
 void VRT_RemoveVDP(VRT_CTX, const struct vdp *);
