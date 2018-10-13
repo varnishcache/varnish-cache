@@ -108,8 +108,12 @@ ved_include(struct req *preq, const char *src, const char *host,
 	CHECK_OBJ_NOTNULL(ecx, ECX_MAGIC);
 	wrk = preq->wrk;
 
-	if (preq->esi_level >= cache_param->max_esi_depth)
+	if (preq->esi_level >= cache_param->max_esi_depth) {
+		VSLb(preq->vsl, SLT_VCL_Error,
+		    "ESI depth limit reach (param max_esi_depth = %u",
+		    cache_param->max_esi_depth);
 		return;
+	}
 
 	req = Req_New(wrk, sp);
 	SES_Ref(sp);
