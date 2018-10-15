@@ -64,6 +64,10 @@ Varnish Cache trunk (ongoing)
   an unnecessary incompatibility with VSL files written by previous
   versions. (2790_)
 
+* Changed ``ExpKill`` log tags to emit microsecond-precision
+  timestamps instead of nanoseconds (2792_)
+
+.. _2792: https://github.com/varnishcache/varnish-cache/pull/2792
 .. _2783: https://github.com/varnishcache/varnish-cache/pull/2783
 .. _2780: https://github.com/varnishcache/varnish-cache/issues/2780
 .. _2782: https://github.com/varnishcache/varnish-cache/issues/2782

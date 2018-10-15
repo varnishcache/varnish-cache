@@ -312,7 +312,7 @@ mgt_VccCompile(struct cli *cli, struct vclprog *vcl, const char *vclname,
 	 *
 	 * The Best way to reproduce this is to have regexps in the VCL.
 	 */
-	VSB_printf(sb, "vcl_%s.%.9f", vclname, VTIM_real());
+	VSB_printf(sb, "vcl_%s.%.6f", vclname, VTIM_real());
 	AZ(VSB_finish(sb));
 	vp.dir = strdup(VSB_data(sb));
 	AN(vp.dir);

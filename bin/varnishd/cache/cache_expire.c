@@ -179,7 +179,7 @@ EXP_Rearm(struct objcore *oc, double now, double ttl, double grace, double keep)
 
 	when = EXP_WHEN(oc);
 
-	VSL(SLT_ExpKill, 0, "EXP_Rearm p=%p E=%.9f e=%.9f f=0x%x", oc,
+	VSL(SLT_ExpKill, 0, "EXP_Rearm p=%p E=%.6f e=%.6f f=0x%x", oc,
 	    oc->timer_when, when, oc->flags);
 
 	if (when < oc->t_origin || when < oc->timer_when)
@@ -198,7 +198,7 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, unsigned flags)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	assert(oc->refcnt > 0);
 
-	VSLb(&ep->vsl, SLT_ExpKill, "EXP_Inbox flg=%x p=%p e=%.9f f=0x%x",
+	VSLb(&ep->vsl, SLT_ExpKill, "EXP_Inbox flg=%x p=%p e=%.6f f=0x%x",
 	    flags, oc, oc->timer_when, oc->flags);
 
 	if (flags & OC_EF_REMOVE) {
@@ -219,7 +219,7 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, unsigned flags)
 		ObjSendEvent(ep->wrk, oc, OEV_TTLCHG);
 	}
 
-	VSLb(&ep->vsl, SLT_ExpKill, "EXP_When p=%p e=%.9f f=0x%x", oc,
+	VSLb(&ep->vsl, SLT_ExpKill, "EXP_When p=%p e=%.6f f=0x%x", oc,
 	    oc->timer_when, flags);
 
 	/*
@@ -255,7 +255,7 @@ exp_expire(struct exp_priv *ep, double now)
 	oc = binheap_root(ep->heap);
 	if (oc == NULL)
 		return (now + 355./113.);
-	VSLb(&ep->vsl, SLT_ExpKill, "EXP_expire p=%p e=%.9f f=0x%x", oc,
+	VSLb(&ep->vsl, SLT_ExpKill, "EXP_expire p=%p e=%.6f f=0x%x", oc,
 	    oc->timer_when - now, oc->flags);
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
