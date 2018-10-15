@@ -146,7 +146,7 @@ VBO_ReleaseBusyObj(struct worker *wrk, struct busyobj **pbo)
 {
 	struct busyobj *bo;
 
-	CHECK_OBJ_ORNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	TAKE_OBJ_NOTNULL(bo, pbo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_ORNULL(bo->fetch_objcore, OBJCORE_MAGIC);
 
@@ -171,7 +171,6 @@ VBO_ReleaseBusyObj(struct worker *wrk, struct busyobj **pbo)
 		wrk->stats->ws_backend_overflow++;
 
 	if (bo->fetch_objcore != NULL) {
-		AN(wrk);
 		(void)HSH_DerefObjCore(wrk, &bo->fetch_objcore,
 		    HSH_RUSH_POLICY);
 	}
