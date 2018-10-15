@@ -498,16 +498,17 @@ PARAM(
 )
 
 PARAM(
-	/* name */	esi_iovs,
+	/* name */	http1_iovs,
 	/* typ */	uint,
-	/* min */	"3",
-	/* max */	"1024",	// XXX stringify IOV_MAX
-	/* default */	"10",		// 5 should suffice, add headroom
-	/* units */	"struct iovec",
+	/* min */	"5",
+	/* max */	"1024",		// XXX stringify IOV_MAX
+	/* default */	"64",
+	/* units */	"struct iovec (=16 bytes)",
 	/* flags */	WIZARD,
 	/* s-text */
-	"Number of io vectors to allocate on the thread workspace for "
-	"ESI requests.",
+	"Number of io vectors to allocate for HTTP1 protocol transmission."
+	"  A HTTP1 header needs 7 + 2 per HTTP header field."
+	"  Allocated from workspace_thread.",
 	/* l-text */	"",
 	/* func */	NULL
 )

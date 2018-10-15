@@ -84,7 +84,7 @@ v1d_error(struct req *req, const char *msg)
 void v_matchproto_(vtr_deliver_f)
 V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 {
-	int err;
+	int err = 0;
 	unsigned u;
 	uint64_t hdrbytes, bytes;
 
@@ -131,7 +131,7 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 
 	AZ(req->wrk->v1l);
 	V1L_Open(req->wrk, req->wrk->aws,
-		 &req->sp->fd, req->vsl, req->t_prev, 0);
+		 &req->sp->fd, req->vsl, req->t_prev, cache_param->http1_iovs);
 
 	if (WS_Overflowed(req->wrk->aws)) {
 		v1d_error(req, "workspace_thread overflow");
@@ -141,47 +141,18 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 
 	hdrbytes = HTTP1_Write(req->wrk, req->resp, HTTP1_Resp);
 
-	if (!sendbody || req->res_mode & RES_ESI) {
-		if (V1L_Close(req->wrk, &bytes) && req->sp->fd >= 0) {
-			Req_Fail(req, SC_REM_CLOSE);
-			sendbody = 0;
-		}
-
-		/* Charge bytes sent as reported from V1L_Close. Only
-		 * header-bytes have been attempted sent. */
-		req->acct.resp_hdrbytes += bytes;
-		hdrbytes = 0;
-	} else if (DO_DEBUG(DBG_FLUSH_HEAD))
-		(void)V1L_Flush(req->wrk);
-
-	if (!sendbody) {
-		AZ(req->wrk->v1l);
-		VDP_close(req);
-		return;
+	if (sendbody) {
+		if (DO_DEBUG(DBG_FLUSH_HEAD))
+			(void)V1L_Flush(req->wrk);
+		if (req->res_mode & RES_CHUNKED)
+			V1L_Chunked(req->wrk);
+		err = VDP_DeliverObj(req);
+		if (!err && (req->res_mode & RES_CHUNKED))
+			V1L_EndChunk(req->wrk);
 	}
-
-	AN(sendbody);
-	if (req->res_mode & RES_ESI) {
-		AZ(req->wrk->v1l);
-
-		V1L_Open(req->wrk, req->wrk->aws,
-			 &req->sp->fd, req->vsl, req->t_prev,
-			 cache_param->esi_iovs);
-
-		if (WS_Overflowed(req->wrk->aws)) {
-			v1d_error(req, "workspace_thread overflow");
-			AZ(req->wrk->v1l);
-			return;
-		}
-	}
-
-	if (req->res_mode & RES_CHUNKED)
-		V1L_Chunked(req->wrk);
-	err = VDP_DeliverObj(req);
-	if (!err && (req->res_mode & RES_CHUNKED))
-		V1L_EndChunk(req->wrk);
 
 	u = V1L_Close(req->wrk, &bytes);
+	AZ(req->wrk->v1l);
 
 	/* Bytes accounting */
 	if (bytes < hdrbytes)
@@ -193,6 +164,5 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 
 	if ((u || err) && req->sp->fd >= 0)
 		Req_Fail(req, SC_REM_CLOSE);
-	AZ(req->wrk->v1l);
 	VDP_close(req);
 }

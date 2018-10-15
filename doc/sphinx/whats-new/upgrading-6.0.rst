@@ -123,7 +123,7 @@ taken from :ref:`ref_param_workspace_client`. If you need to reduce
 memory footprint, consider reducing ``workspace_client`` by the amount
 in ``workspace_thread``.
 
-Added :ref:`ref_param_esi_iovs`. tl;dr: Don't touch it, unless advised
+Added `ref_param_esi_iovs`. tl;dr: Don't touch it, unless advised
 to do so by someone familiar with the innards of Varnish.
 
 Changes to VCL
