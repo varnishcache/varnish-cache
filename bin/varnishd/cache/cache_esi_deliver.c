@@ -831,7 +831,6 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 	if (boc == NULL && ObjGetLen(req->wrk, req->objcore) == 0)
 		return;
 
-	req->res_mode |= RES_ESI_CHILD;
 	i = ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED);
 	if (ecx->isgzip && i && !(req->res_mode & RES_ESI)) {
 		ved_stripgzip(req, boc);

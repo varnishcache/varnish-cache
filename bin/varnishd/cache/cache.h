@@ -515,12 +515,7 @@ struct req {
 
 	/* Delivery mode */
 	unsigned		res_mode;
-#define RES_LEN			(1<<1)
-#define RES_EOF			(1<<2)
-#define RES_CHUNKED		(1<<3)
 #define RES_ESI			(1<<4)
-#define RES_ESI_CHILD		(1<<5)
-#define RES_GUNZIP		(1<<6)
 #define RES_PIPE		(1<<7)
 
 	/* Transaction VSL buffer */

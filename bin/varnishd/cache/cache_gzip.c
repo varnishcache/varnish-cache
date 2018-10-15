@@ -299,7 +299,6 @@ vdp_gunzip_init(struct req *req, void **priv)
 		return (-1);
 	}
 
-	req->res_mode |= RES_GUNZIP;
 	VGZ_Obuf(vg, vg->m_buf, vg->m_sz);
 	*priv = vg;
 

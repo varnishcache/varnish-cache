@@ -84,7 +84,7 @@ v1d_error(struct req *req, const char *msg)
 void v_matchproto_(vtr_deliver_f)
 V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 {
-	int err = 0;
+	int err = 0, chunked = 0;
 	unsigned u;
 	uint64_t hdrbytes, bytes;
 
@@ -103,14 +103,14 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 		http_SetHeader(req->resp, "Connection: keep-alive");
 
 	if (sendbody) {
-		if (http_GetHdr(req->resp, H_Content_Length, NULL))
-			req->res_mode |= RES_LEN;
-		else if (req->http->protover == 11) {
-			req->res_mode |= RES_CHUNKED;
-			http_SetHeader(req->resp, "Transfer-Encoding: chunked");
-		} else {
-			req->res_mode |= RES_EOF;
-			req->doclose = SC_TX_EOF;
+		if (!http_GetHdr(req->resp, H_Content_Length, NULL)) {
+			if (req->http->protover == 11) {
+				chunked = 1;
+				http_SetHeader(req->resp,
+				    "Transfer-Encoding: chunked");
+			} else {
+				req->doclose = SC_TX_EOF;
+			}
 		}
 		if (VDP_Push(req, &v1d_vdp, NULL)) {
 			v1d_error(req, "workspace_thread overflow");
@@ -144,10 +144,10 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 	if (sendbody) {
 		if (DO_DEBUG(DBG_FLUSH_HEAD))
 			(void)V1L_Flush(req->wrk);
-		if (req->res_mode & RES_CHUNKED)
+		if (chunked)
 			V1L_Chunked(req->wrk);
 		err = VDP_DeliverObj(req);
-		if (!err && (req->res_mode & RES_CHUNKED))
+		if (!err && chunked)
 			V1L_EndChunk(req->wrk);
 	}
 
