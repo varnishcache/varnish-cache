@@ -20,13 +20,7 @@ The Varnish Reference Manual
 	varnishtop.rst
 	vsm.rst
 	vmod.rst
-	vmod_std.generated.rst
-	vmod_directors.generated.rst
-	vmod_vtc.generated.rst
-	vmod_purge.generated.rst
-	vmod_blob.generated.rst
-	vmod_unix.generated.rst
-	vmod_proxy.generated.rst
+	vmod_generated.rst
 	directors.rst
 	varnish-counters.rst
 	vsl.rst
