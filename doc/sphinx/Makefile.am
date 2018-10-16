@@ -212,33 +212,33 @@ include/vtc-syntax.rst: vtc-syntax.py $(VTCSYN_SRC)
 	mv ${@}_ ${@}
 BUILT_SOURCES += include/vtc-syntax.rst
 
-reference/vmod_std.generated.rst: reference $(top_builddir)/lib/libvmod_std/vmod_std.rst
-	cp $(top_builddir)/lib/libvmod_std/vmod_std.rst $@ || true
-BUILT_SOURCES += reference/vmod_std.generated.rst
+include/vmod_std.generated.rst: $(top_builddir)/lib/libvmod_std/vmod_std.rst
+	cp $(top_builddir)/lib/libvmod_std/vmod_std.rst $@
+BUILT_SOURCES += include/vmod_std.generated.rst
 
-reference/vmod_directors.generated.rst: reference $(top_builddir)/lib/libvmod_directors/vmod_directors.rst
-	cp $(top_builddir)/lib/libvmod_directors/vmod_directors.rst $@ || true
-BUILT_SOURCES += reference/vmod_directors.generated.rst
+include/vmod_directors.generated.rst: $(top_builddir)/lib/libvmod_directors/vmod_directors.rst
+	cp $(top_builddir)/lib/libvmod_directors/vmod_directors.rst $@
+BUILT_SOURCES += include/vmod_directors.generated.rst
 
-reference/vmod_purge.generated.rst: reference $(top_builddir)/lib/libvmod_purge/vmod_purge.rst
-	cp $(top_builddir)/lib/libvmod_purge/vmod_purge.rst $@ || true
-BUILT_SOURCES += reference/vmod_purge.generated.rst
+include/vmod_purge.generated.rst: $(top_builddir)/lib/libvmod_purge/vmod_purge.rst
+	cp $(top_builddir)/lib/libvmod_purge/vmod_purge.rst $@
+BUILT_SOURCES += include/vmod_purge.generated.rst
 
-reference/vmod_vtc.generated.rst: reference $(top_builddir)/lib/libvmod_vtc/vmod_vtc.rst
-	cp $(top_builddir)/lib/libvmod_vtc/vmod_vtc.rst $@ || true
-BUILT_SOURCES += reference/vmod_vtc.generated.rst
+include/vmod_vtc.generated.rst: $(top_builddir)/lib/libvmod_vtc/vmod_vtc.rst
+	cp $(top_builddir)/lib/libvmod_vtc/vmod_vtc.rst $@
+BUILT_SOURCES += include/vmod_vtc.generated.rst
 
-reference/vmod_blob.generated.rst: reference $(top_builddir)/lib/libvmod_blob/vmod_blob.rst
-	cp $(top_builddir)/lib/libvmod_blob/vmod_blob.rst $@ || true
-BUILT_SOURCES += reference/vmod_blob.generated.rst
+include/vmod_blob.generated.rst: $(top_builddir)/lib/libvmod_blob/vmod_blob.rst
+	cp $(top_builddir)/lib/libvmod_blob/vmod_blob.rst $@
+BUILT_SOURCES += include/vmod_blob.generated.rst
 
-reference/vmod_unix.generated.rst: reference $(top_builddir)/lib/libvmod_unix/vmod_unix.rst
-	cp $(top_builddir)/lib/libvmod_unix/vmod_unix.rst $@ || true
-BUILT_SOURCES += reference/vmod_unix.generated.rst
+include/vmod_unix.generated.rst: $(top_builddir)/lib/libvmod_unix/vmod_unix.rst
+	cp $(top_builddir)/lib/libvmod_unix/vmod_unix.rst $@
+BUILT_SOURCES += include/vmod_unix.generated.rst
 
-reference/vmod_proxy.generated.rst: reference $(top_builddir)/lib/libvmod_proxy/vmod_proxy.rst
-	cp $(top_builddir)/lib/libvmod_proxy/vmod_proxy.rst $@ || true
-BUILT_SOURCES += reference/vmod_proxy.generated.rst
+include/vmod_proxy.generated.rst: $(top_builddir)/lib/libvmod_proxy/vmod_proxy.rst
+	cp $(top_builddir)/lib/libvmod_proxy/vmod_proxy.rst $@
+BUILT_SOURCES += include/vmod_proxy.generated.rst
 
 EXTRA_DIST += $(BUILT_SOURCES)
 MAINTAINERCLEANFILES = $(EXTRA_DIST)
