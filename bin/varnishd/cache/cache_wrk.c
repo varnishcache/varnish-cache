@@ -321,6 +321,7 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 {
 	struct pool_task *tp = NULL;
 	struct pool_task tpx, tps;
+	vtim_real tmo;
 	int i, prio_lim;
 
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
@@ -370,8 +371,13 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 			pp->nidle++;
 			do {
 				// see signaling_note at the top for explanation
-				i = Lck_CondWait(&wrk->cond, &pp->mtx,
-				    wrk->vcl == NULL ?  0 : wrk->lastused+60.);
+				if (wrk->vcl == NULL)
+					tmo = 0;
+				else if (DO_DEBUG(DBG_VTC_MODE))
+					tmo =  wrk->lastused+1.;
+				else
+					tmo =  wrk->lastused+60.;
+				i = Lck_CondWait(&wrk->cond, &pp->mtx, tmo);
 				if (i == ETIMEDOUT)
 					VCL_Rel(&wrk->vcl);
 			} while (wrk->task.func == NULL);
