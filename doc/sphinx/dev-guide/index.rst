@@ -41,18 +41,17 @@ Technical stuff
 
 * Our license is BSD 2-clause or looser, no GPL or LGPL.
 
-* We havn't had a major security issue in 10 years, and we're not going
-  to start having them now.
+* It took 11 years for the first major security issue, and that was too soon.
 
 Bugs, issues, feature requests & VIPs
 -------------------------------------
 
 Bugs, issues and feature requests start out as github issues.
 
-We do a "bug-wash" every monday at 13:00 EU time, where new and otherwise
-worthy of discussion issues are pow-wowed.
+Monday at 13:00-14:00 (EU time) we "bug-wash" on IRC to
+decide who and how issues are dealt with.
 
-Tickets we cannot do anything about are closed.
+Issues we cannot do anything about are closed.
 
 If feature-requests make sense, they get moved to a wiki/VIP page until
 somebody implements them.
