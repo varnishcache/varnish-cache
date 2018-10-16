@@ -28,6 +28,7 @@
 
 #include "config.h"
 
+#include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -273,17 +274,19 @@ vtc_log_VAS_Fail(const char *func, const char *file, int line,
     const char *cond, enum vas_e why)
 {
 	struct vtclog *vl;
+	int e = errno;
 
 	(void)why;
 	vl = pthread_getspecific(log_key);
 	if (vl == NULL || vl->act) {
 		fprintf(stderr,
 		    "Assert error in %s(), %s line %d:\n"
-		    "  Condition(%s) not true.\n",
-		    func, file, line, cond);
+		    "  Condition(%s) not true. (errno=%d %s)\n",
+		    func, file, line, cond, e, strerror(e));
 	} else
 		vtc_fatal(vl, "Assert error in %s(), %s line %d:"
-		    "  Condition(%s) not true.\n", func, file, line, cond);
+		    "  Condition(%s) not true."
+		    "  Errno=%d %s", func, file, line, cond, e, strerror(e));
 	abort();
 }
 
