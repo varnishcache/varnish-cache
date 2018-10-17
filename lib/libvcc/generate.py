@@ -647,26 +647,26 @@ typedef void vcl_fini_f(VRT_CTX);
 typedef void vcl_func_f(VRT_CTX);
 
 struct VCL_conf {
-    unsigned            magic;
-#define VCL_CONF_MAGIC          0x7406c509      /* from /dev/random */
+	unsigned		magic;
+#define VCL_CONF_MAGIC		0x7406c509      /* from /dev/random */
 
-    unsigned            syntax;
-    VCL_BACKEND             *default_director;
-    VCL_PROBE               default_probe;
-    unsigned            nref;
-    const struct vrt_ref        *ref;
+	unsigned		syntax;
+	VCL_BACKEND		*default_director;
+	VCL_PROBE		default_probe;
+	unsigned		nref;
+	const struct vrt_ref	*ref;
 
-    unsigned            nsrc;
-    const char              **srcname;
-    const char              **srcbody;
+	unsigned		nsrc;
+	const char		**srcname;
+	const char		**srcbody;
 
-    unsigned            nvmod;
+	unsigned		nvmod;
 
-    vcl_event_f             *event_vcl;
+	vcl_event_f		*event_vcl;
 """)
 
 for i in returns:
-    fo.write("\tvcl_func_f\t\t\t*" + i[0] + "_func;\n")
+    fo.write("\tvcl_func_f\t\t*" + i[0] + "_func;\n")
 
 fo.write("\n};\n")
 fo.close()
