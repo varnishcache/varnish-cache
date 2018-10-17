@@ -199,19 +199,19 @@ struct vrt_ctx {
 
 	struct vsb			*msg;	// Only in ...init()
 	struct vsl_log			*vsl;
-	struct vcl			*vcl;
+	VCL_VCL				vcl;
 	struct ws			*ws;
 
 	struct sess			*sp;
 
 	struct req			*req;
-	struct http			*http_req;
-	struct http			*http_req_top;
-	struct http			*http_resp;
+	VCL_HTTP			http_req;
+	VCL_HTTP			http_req_top;
+	VCL_HTTP			http_resp;
 
 	struct busyobj			*bo;
-	struct http			*http_bereq;
-	struct http			*http_beresp;
+	VCL_HTTP			http_bereq;
+	VCL_HTTP			http_beresp;
 
 	double				now;
 
@@ -301,8 +301,8 @@ struct vrt_backend {
 	unsigned			magic;
 #define VRT_BACKEND_MAGIC		0x4799ce6b
 	VRT_BACKEND_FIELDS(const)
-	const struct suckaddr		*ipv4_suckaddr;
-	const struct suckaddr		*ipv6_suckaddr;
+	VCL_IP				ipv4_suckaddr;
+	VCL_IP				ipv6_suckaddr;
 	VCL_PROBE			probe;
 };
 
@@ -388,7 +388,7 @@ struct gethdr_s {
 };
 
 VCL_HTTP VRT_selecthttp(VRT_CTX, enum gethdr_e);
-VCL_STRING VRT_GetHdr(VRT_CTX, const struct gethdr_s *);
+VCL_STRING VRT_GetHdr(VRT_CTX, VCL_HEADER);
 
 /***********************************************************************
  * req related
@@ -404,7 +404,7 @@ VCL_INT VRT_purge(VRT_CTX, VCL_DURATION, VCL_DURATION, VCL_DURATION);
 VCL_VOID VRT_synth(VRT_CTX, VCL_INT, VCL_STRING);
 VCL_VOID VRT_hit_for_pass(VRT_CTX, VCL_DURATION);
 
-VCL_VOID VRT_SetHdr(VRT_CTX, const struct gethdr_s *, const char *, ...);
+VCL_VOID VRT_SetHdr(VRT_CTX, VCL_HEADER, const char *, ...);
 VCL_VOID VRT_handling(VRT_CTX, unsigned hand);
 VCL_VOID VRT_fail(VRT_CTX, const char *fmt, ...) v_printflike_(2,3);
 VCL_VOID VRT_hashdata(VRT_CTX, const char *str, ...);
@@ -478,7 +478,7 @@ void VRT_DisableDirector(VCL_BACKEND);
 void VRT_DelDirector(VCL_BACKEND *);
 
 /* Suckaddr related */
-int VRT_VSA_GetPtr(const struct suckaddr *sua, const unsigned char ** dst);
+int VRT_VSA_GetPtr(VCL_IP sua, const unsigned char ** dst);
 
 /* VMOD/Modules related */
 int VRT_Vmod_Init(VRT_CTX, struct vmod **hdl, unsigned nbr, void *ptr, int len,
