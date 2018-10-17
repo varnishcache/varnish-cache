@@ -262,7 +262,7 @@ VCL_Name(const struct vcl *vcl)
 	return (vcl->loaded_name);
 }
 
-const struct vrt_backend_probe *
+VCL_PROBE
 VCL_DefaultProbe(const struct vcl *vcl)
 {
 

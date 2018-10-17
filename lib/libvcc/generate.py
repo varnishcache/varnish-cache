@@ -652,7 +652,7 @@ struct VCL_conf {
 
     unsigned            syntax;
     VCL_BACKEND             *default_director;
-    const struct vrt_backend_probe  *default_probe;
+    VCL_PROBE               default_probe;
     unsigned            nref;
     const struct vrt_ref        *ref;
 

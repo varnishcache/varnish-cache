@@ -303,7 +303,7 @@ struct vrt_backend {
 	VRT_BACKEND_FIELDS(const)
 	const struct suckaddr		*ipv4_suckaddr;
 	const struct suckaddr		*ipv6_suckaddr;
-	const struct vrt_backend_probe	*probe;
+	VCL_PROBE			probe;
 };
 
 #define VRT_BACKEND_PROBE_FIELDS(rigid)				\
