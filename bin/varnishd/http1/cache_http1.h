@@ -60,4 +60,5 @@ void V1L_Open(struct worker *, struct ws *, int *fd, struct vsl_log *,
     double t0, unsigned niov);
 unsigned V1L_Flush(const struct worker *w);
 unsigned V1L_Close(struct worker *w, uint64_t *cnt);
+unsigned V1L_Reopen(struct worker *wrk, uint64_t *cnt, unsigned niov);
 size_t V1L_Write(const struct worker *w, const void *ptr, ssize_t len);

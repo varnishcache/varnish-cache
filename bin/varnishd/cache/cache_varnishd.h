@@ -226,6 +226,7 @@ htc_complete_f HTTP1_Complete;
 uint16_t HTTP1_DissectRequest(struct http_conn *, struct http *);
 uint16_t HTTP1_DissectResponse(struct http_conn *, struct http *resp,
     const struct http *req);
+unsigned HTTP1_Estimate(const struct http *hp);
 unsigned HTTP1_Write(const struct worker *w, const struct http *hp, const int*);
 
 /* cache_main.c */

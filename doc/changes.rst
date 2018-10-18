@@ -67,6 +67,11 @@ Varnish Cache trunk (ongoing)
 * Changed ``ExpKill`` log tags to emit microsecond-precision
   timestamps instead of nanoseconds (2792_)
 
+* Changed ``V1L_Close()`` to add written bytes to the ``cnt`` argument
+  (instead of assigning)
+
+* Added ``V1L_Reopen()``
+
 .. _2792: https://github.com/varnishcache/varnish-cache/pull/2792
 .. _2783: https://github.com/varnishcache/varnish-cache/pull/2783
 .. _2780: https://github.com/varnishcache/varnish-cache/issues/2780

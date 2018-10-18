@@ -134,12 +134,39 @@ V1L_Close(struct worker *wrk, uint64_t *cnt)
 	v1l = wrk->v1l;
 	wrk->v1l = NULL;
 	CHECK_OBJ_NOTNULL(v1l, V1L_MAGIC);
-	*cnt = v1l->cnt;
+	*cnt += v1l->cnt;
 	if (v1l->ws->r)
 		WS_Release(v1l->ws, 0);
 	WS_Reset(v1l->ws, v1l->res);
 	return (u);
 }
+
+/* change the number of iovs */
+unsigned
+V1L_Reopen(struct worker *wrk, uint64_t *cnt, unsigned niov)
+{
+	struct v1l *v1l = wrk->v1l;
+
+	unsigned u;
+	struct ws *ws;
+	int *fd;
+	struct vsl_log *vsl;
+	double t0;
+
+	ws = v1l->ws;
+	fd = v1l->wfd;
+	vsl = v1l->vsl;
+	t0 = v1l->t0;
+	v1l = NULL;
+
+	u = V1L_Close(wrk, cnt);
+	if (u)
+		return (u);
+
+	V1L_Open(wrk, ws, fd, vsl, t0, niov);
+	return (0);
+}
+
 
 static void
 v1l_prune(struct v1l *v1l, ssize_t bytes)

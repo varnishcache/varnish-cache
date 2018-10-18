@@ -481,6 +481,13 @@ http1_WrTxt(const struct worker *wrk, const txt *hh, const char *suf)
 	return (u);
 }
 
+/* estimate the number of IOVs required by HTTP1_Write */
+unsigned
+HTTP1_Estimate(const struct http *hp)
+{
+	return (2 * hp->nhd + 1);
+}
+
 unsigned
 HTTP1_Write(const struct worker *w, const struct http *hp, const int *hf)
 {
