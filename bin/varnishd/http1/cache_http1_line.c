@@ -114,9 +114,6 @@ V1L_Open(struct worker *wrk, struct ws *ws, int *fd, struct vsl_log *vsl,
 	v1l->iov = (void*)ws->f;
 	v1l->siov = u;
 	v1l->ciov = u;
-	v1l->werr = 0;
-	v1l->liov = 0;
-	v1l->niov = 0;
 	v1l->wfd = fd;
 	v1l->t0 = t0;
 	v1l->vsl = vsl;
