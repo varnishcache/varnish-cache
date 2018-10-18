@@ -408,7 +408,7 @@ void * v_matchproto_(bgthread_t)
 ban_lurker(struct worker *wrk, void *priv)
 {
 	struct vsl_log vsl;
-	volatile vtim_real d;
+	vtim_real d;
 	vtim_dur dt;
 	unsigned gen = ban_generation + 1;
 
