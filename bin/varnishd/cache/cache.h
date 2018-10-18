@@ -342,10 +342,10 @@ struct objcore {
 	struct storeobj		stobj[1];
 	struct objhead		*objhead;
 	struct boc		*boc;
-	double			timer_when;
+	vtim_real		timer_when;
 	long			hits;
 
-	double			t_origin;
+	vtim_real		t_origin;
 	float			ttl;
 	float			grace;
 	float			keep;
@@ -357,7 +357,7 @@ struct objcore {
 	uint16_t		oa_present;
 
 	unsigned		timer_idx;	// XXX 4Gobj limit
-	double			last_lru;
+	vtim_real		last_lru;
 	VTAILQ_ENTRY(objcore)	hsh_list;
 	VTAILQ_ENTRY(objcore)	lru_list;
 	VTAILQ_ENTRY(objcore)	ban_list;
@@ -419,8 +419,8 @@ struct busyobj {
 	vtim_dur		between_bytes_timeout;
 
 	/* Timers */
-	double			t_first;	/* First timestamp logged */
-	double			t_prev;		/* Previous timestamp logged */
+	vtim_real		t_first;	/* First timestamp logged */
+	vtim_real		t_prev;		/* Previous timestamp logged */
 
 	/* Acct */
 	struct acct_bereq	acct;
@@ -478,8 +478,8 @@ struct req {
 
 	uint8_t			digest[DIGEST_LEN];
 
-	double			d_ttl;
-	double			d_grace;
+	vtim_dur		d_ttl;
+	vtim_dur		d_grace;
 
 	ssize_t			req_bodybytes;	/* Parsed req bodybytes */
 	const struct stevedore	*storage;
@@ -490,9 +490,9 @@ struct req {
 	uintptr_t		ws_req;		/* WS above request data */
 
 	/* Timestamps */
-	double			t_first;	/* First timestamp logged */
-	double			t_prev;		/* Previous timestamp logged */
-	double			t_req;		/* Headers complete */
+	vtim_real		t_first;	/* First timestamp logged */
+	vtim_real		t_prev;		/* Previous timestamp logged */
+	vtim_real		t_req;		/* Headers complete */
 
 	struct http_conn	*htc;
 	struct vfp_ctx		*vfc;
@@ -595,7 +595,7 @@ int HTTP_Decode(struct http *to, const uint8_t *fm);
 void http_ForceHeader(struct http *to, const char *hdr, const char *val);
 void http_PrintfHeader(struct http *to, const char *fmt, ...)
     v_printflike_(2, 3);
-void http_TimeHeader(struct http *to, const char *fmt, double now);
+void http_TimeHeader(struct http *to, const char *fmt, vtim_real now);
 void http_Proto(struct http *to);
 void http_SetHeader(struct http *to, const char *hdr);
 void http_SetH(struct http *to, unsigned n, const char *fm);
@@ -710,12 +710,12 @@ void VSLbv(struct vsl_log *, enum VSL_tag_e tag, const char *fmt, va_list va);
 void VSLb(struct vsl_log *, enum VSL_tag_e tag, const char *fmt, ...)
     v_printflike_(3, 4);
 void VSLbt(struct vsl_log *, enum VSL_tag_e tag, txt t);
-void VSLb_ts(struct vsl_log *, const char *event, double first, double *pprev,
-    double now);
+void VSLb_ts(struct vsl_log *, const char *event, vtim_real first,
+    vtim_real *pprev, vtim_real now);
 void VSLb_bin(struct vsl_log *, enum VSL_tag_e, ssize_t, const void*);
 
 static inline void
-VSLb_ts_req(struct req *req, const char *event, double now)
+VSLb_ts_req(struct req *req, const char *event, vtim_real now)
 {
 
 	if (isnan(req->t_first) || req->t_first == 0.)
@@ -724,7 +724,7 @@ VSLb_ts_req(struct req *req, const char *event, double now)
 }
 
 static inline void
-VSLb_ts_busyobj(struct busyobj *bo, const char *event, double now)
+VSLb_ts_busyobj(struct busyobj *bo, const char *event, vtim_real now)
 {
 
 	if (isnan(bo->t_first) || bo->t_first == 0.)
@@ -775,7 +775,7 @@ WS_Front(const struct ws *ws)
 }
 
 /* cache_rfc2616.c */
-void RFC2616_Ttl(struct busyobj *, double now, double *t_origin,
+void RFC2616_Ttl(struct busyobj *, vtim_real now, vtim_real *t_origin,
     float *ttl, float *grace, float *keep);
 unsigned RFC2616_Req_Gzip(const struct http *);
 int RFC2616_Do_Cond(const struct req *sp);

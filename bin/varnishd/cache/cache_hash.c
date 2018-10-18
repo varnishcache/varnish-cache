@@ -344,7 +344,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 	struct objhead *oh;
 	struct objcore *oc;
 	struct objcore *exp_oc;
-	double exp_t_origin;
+	vtim_real exp_t_origin;
 	int busy_found;
 	enum lookup_e retval;
 	const uint8_t *vary;
@@ -613,8 +613,8 @@ hsh_rush2(struct worker *wrk, struct rush *r)
  */
 
 unsigned
-HSH_Purge(struct worker *wrk, struct objhead *oh, double ttl_now, double ttl,
-double grace, double keep)
+HSH_Purge(struct worker *wrk, struct objhead *oh, vtim_real ttl_now,
+    vtim_dur ttl, vtim_dur grace, vtim_dur keep)
 {
 	struct objcore *oc, **ocp;
 	unsigned spc, ospc, nobj, n, n_tot = 0;

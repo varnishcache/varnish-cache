@@ -48,7 +48,7 @@ vbf_allocobj(struct busyobj *bo, unsigned l)
 {
 	struct objcore *oc;
 	const struct stevedore *stv;
-	double lifetime;
+	vtim_dur lifetime;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	oc = bo->fetch_objcore;
@@ -258,7 +258,7 @@ static enum fetch_step
 vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 {
 	int i;
-	double now;
+	vtim_real now;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -679,7 +679,7 @@ static enum fetch_step
 vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 {
 	ssize_t l, ll, o;
-	double now;
+	vtim_real now;
 	uint8_t *ptr;
 	struct vsb *synth_body;
 

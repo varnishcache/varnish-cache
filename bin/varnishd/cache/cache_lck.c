@@ -191,7 +191,7 @@ Lck_CondWait(pthread_cond_t *cond, struct lock *lck, vtim_real when)
 {
 	struct ilck *ilck;
 	struct timespec ts;
-	double t;
+	vtim_real t;
 
 	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC);
 	AN(ilck->held);

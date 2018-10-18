@@ -39,7 +39,7 @@ struct vcldir {
 	const struct vdi_methods	*methods;
 	VTAILQ_ENTRY(vcldir)		list;
 	const struct vdi_ahealth	*admin_health;
-	double				health_changed;
+	vtim_real			health_changed;
 	char				*cli_name;
 };
 

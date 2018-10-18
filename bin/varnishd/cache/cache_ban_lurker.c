@@ -315,12 +315,13 @@ ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
  * completed.
  */
 
-static double
+static vtim_dur
 ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 {
 	struct ban *b, *bd;
 	struct banhead_s obans;
-	double d, dt, n;
+	vtim_real d;
+	vtim_dur dt, n;
 	unsigned count = 0, cutoff = UINT_MAX;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -407,7 +408,8 @@ void * v_matchproto_(bgthread_t)
 ban_lurker(struct worker *wrk, void *priv)
 {
 	struct vsl_log vsl;
-	volatile double d;
+	volatile vtim_real d;
+	vtim_dur dt;
 	unsigned gen = ban_generation + 1;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -416,10 +418,10 @@ ban_lurker(struct worker *wrk, void *priv)
 	VSL_Setup(&vsl, NULL, 0);
 
 	while (!ban_shutdown) {
-		d = ban_lurker_work(wrk, &vsl);
+		dt = ban_lurker_work(wrk, &vsl);
 		if (DO_DEBUG(DBG_LURKER))
-			VSLb(&vsl, SLT_Debug, "lurker: sleep = %lf", d);
-		d += VTIM_real();
+			VSLb(&vsl, SLT_Debug, "lurker: sleep = %lf", dt);
+		d = VTIM_real() + dt;
 		Lck_Lock(&ban_mtx);
 		if (gen == ban_generation) {
 			Pool_Sumstat(wrk);

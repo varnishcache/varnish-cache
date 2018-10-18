@@ -107,9 +107,9 @@ void VBP_Init(void);
 void BAN_Hold(void);
 void BAN_Release(void);
 void BAN_Reload(const uint8_t *ban, unsigned len);
-struct ban *BAN_FindBan(double t0);
+struct ban *BAN_FindBan(vtim_real t0);
 void BAN_RefBan(struct objcore *oc, struct ban *);
-double BAN_Time(const struct ban *ban);
+vtim_real BAN_Time(const struct ban *ban);
 
 /* cache_busyobj.c */
 struct busyobj *VBO_GetBusyObj(struct worker *, const struct req *);
@@ -125,8 +125,8 @@ void VDI_Event(const struct director *d, enum vcl_event_e ev);
 void VDI_Init(void);
 
 /* cache_exp.c */
-double EXP_Ttl(const struct req *, const struct objcore *);
-double EXP_Ttl_grace(const struct req *, const struct objcore *oc);
+vtim_real EXP_Ttl(const struct req *, const struct objcore *);
+vtim_real EXP_Ttl_grace(const struct req *, const struct objcore *oc);
 void EXP_Insert(struct worker *wrk, struct objcore *oc);
 void EXP_Remove(struct objcore *);
 
@@ -161,9 +161,8 @@ void EXP_Remove(struct objcore *);
 	((to)->t_origin + (to)->ttl + (to)->grace + (to)->keep)
 
 /* cache_exp.c */
-void EXP_Rearm(struct objcore *, double now, double ttl, double grace,
-    double keep);
-
+void EXP_Rearm(struct objcore *oc, vtim_real now,
+    vtim_dur ttl, vtim_dur grace, vtim_dur keep);
 
 /* From cache_main.c */
 void BAN_Init(void);

@@ -44,7 +44,7 @@ struct memitem {
 #define MEMITEM_MAGIC			0x42e55401
 	unsigned			size;
 	VTAILQ_ENTRY(memitem)		list;
-	double				touched;
+	vtim_real			touched;	// XXX -> mono?
 };
 
 VTAILQ_HEAD(memhead_s, memitem);
@@ -63,7 +63,7 @@ struct mempool {
 	struct VSC_mempool		*vsc;
 	unsigned			n_pool;
 	pthread_t			thread;
-	double				t_now;
+	vtim_real			t_now;	// XXX -> mono?
 	int				self_destruct;
 };
 
@@ -99,8 +99,8 @@ mpl_guard(void *priv)
 {
 	struct mempool *mpl;
 	struct memitem *mi = NULL;
-	double v_statevariable_(mpl_slp);
-	double last = 0;
+	vtim_dur v_statevariable_(mpl_slp);
+	vtim_real last = 0;
 
 	CAST_OBJ_NOTNULL(mpl, priv, MEMPOOL_MAGIC);
 	THR_SetName(mpl->name);

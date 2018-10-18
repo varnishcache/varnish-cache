@@ -72,7 +72,7 @@ enum lookup_e HSH_Lookup(struct req *, struct objcore **, struct objcore **,
     int always_insert);
 void HSH_Ref(struct objcore *o);
 void HSH_AddString(struct req *, void *ctx, const char *str);
-unsigned HSH_Purge(struct worker *, struct objhead *, double ttl_now,
-    double ttl, double grace, double keep);
+unsigned HSH_Purge(struct worker *, struct objhead *, vtim_dur ttl_now,
+    vtim_dur ttl, vtim_dur grace, vtim_dur keep);
 struct objcore *HSH_Private(const struct worker *wrk);
 void HSH_Abandon(struct objcore *oc);
