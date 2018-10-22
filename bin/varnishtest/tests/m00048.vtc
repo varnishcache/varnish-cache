@@ -32,7 +32,7 @@ varnish v1 -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.filters = "rot13 rot13a";
 	}
-} 
+}
 
 client c1 {
 	txreq -hdr "Cookie: a"
@@ -47,7 +47,7 @@ varnish v1 -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.filters = "rot13 rot14";
 	}
-} 
+}
 
 client c1 {
 	txreq -hdr "Cookie: a"
