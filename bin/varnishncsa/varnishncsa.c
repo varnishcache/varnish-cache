@@ -197,62 +197,17 @@ flushout(struct VUT *v)
 	return (0);
 }
 
-static int
-vsb_esc_cat(struct vsb *sb, const char *b, const char *e)
-{
-	AN(b);
-
-	for (; b < e; b++) {
-		if (isspace(*b)) {
-			switch (*b) {
-			case '\n':
-				VSB_cat(sb, "\\n");
-				break;
-			case '\t':
-				VSB_cat(sb, "\\t");
-				break;
-			case '\f':
-				VSB_cat(sb, "\\f");
-				break;
-			case '\r':
-				VSB_cat(sb, "\\r");
-				break;
-			case '\v':
-				VSB_cat(sb, "\\v");
-				break;
-			default:
-				VSB_putc(sb, *b);
-				break;
-			}
-		} else if (isprint(*b)) {
-			switch (*b) {
-			case '"':
-				VSB_cat(sb, "\\\"");
-				break;
-			case '\\':
-				VSB_cat(sb, "\\\\");
-				break;
-			default:
-				VSB_putc(sb, *b);
-				break;
-			}
-		} else
-			VSB_printf(sb, "\\x%02hhx", *b);
-	}
-
-	return (VSB_error(sb));
-}
-
 static inline int
 vsb_fcat(struct vsb *vsb, const struct fragment *f, const char *dflt)
 {
 	if (f->gen == CTX.gen) {
 		assert(f->b <= f->e);
-		return (vsb_esc_cat(vsb, f->b, f->e));
-	}
-	if (dflt)
-		return (vsb_esc_cat(vsb, dflt, dflt + strlen(dflt)));
-	return (-1);
+		VSB_quote(vsb, f->b, f->e - f->b, VSB_QUOTE_ESCHEX);
+	} else if (dflt)
+		VSB_quote(vsb, dflt, -1, VSB_QUOTE_ESCHEX);
+	else
+		return (-1);
+	return (0);
 }
 
 static int v_matchproto_(format_f)
@@ -295,8 +250,7 @@ format_fragment(const struct format *format)
 	if (format->frag->gen != CTX.gen) {
 		if (format->string == NULL)
 			return (-1);
-		AZ(vsb_esc_cat(CTX.vsb, format->string,
-		    format->string + strlen(format->string)));
+		VSB_quote(CTX.vsb, format->string, -1, VSB_QUOTE_ESCHEX);
 		return (0);
 	}
 	AZ(vsb_fcat(CTX.vsb, format->frag, NULL));
@@ -388,14 +342,13 @@ format_auth(const struct format *format)
 	    CTX.frag[F_auth].e)) {
 		if (format->string == NULL)
 			return (-1);
-		AZ(vsb_esc_cat(CTX.vsb, format->string,
-		    format->string + strlen(format->string)));
+		VSB_quote(CTX.vsb, format->string, -1, VSB_QUOTE_ESCHEX);
 		return (0);
 	}
 	q = strchr(buf, ':');
 	if (q != NULL)
 		*q = '\0';
-	AZ(vsb_esc_cat(CTX.vsb, buf, buf + strlen(buf)));
+	VSB_quote(CTX.vsb, buf, -1, VSB_QUOTE_ESCHEX);
 	return (1);
 }
 
@@ -409,6 +362,7 @@ print(void)
 	VTAILQ_FOREACH(f, &CTX.format, list) {
 		CHECK_OBJ_NOTNULL(f, FORMAT_MAGIC);
 		i = (f->func)(f);
+		AZ(VSB_error(CTX.vsb));
 		if (r > i)
 			r = i;
 	}
