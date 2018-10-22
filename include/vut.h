@@ -73,6 +73,10 @@ void VUT_Error(struct VUT *, int status, const char *fmt, ...)
 
 int VUT_Arg(struct VUT *, int opt, const char *arg);
 
+//lint -sem(VUT_Usage, r_no)
+void VUT_Usage(const struct VUT *, const struct vopt_spec *,
+    int status) v_noreturn_;
+
 #define VUT_InitProg(argc, argv, spec) VUT_Init(argv[0], argc, argv, spec)
 
 struct VUT * VUT_Init(const char *progname, int argc, char * const *argv,

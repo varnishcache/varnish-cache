@@ -452,6 +452,20 @@ VUT_Main(struct VUT *vut)
 
 /**********************************************************************/
 
+void v_noreturn_
+VUT_Usage(const struct VUT *vut, const struct vopt_spec *voc, int status)
+{
+	const char **opt;
+
+	fprintf(stderr, "Usage: %s <options>\n\n", vut->progname);
+	fprintf(stderr, "Options:\n");
+	for (opt = voc->vopt_usage; *opt != NULL; opt += 2)
+		fprintf(stderr, " %-25s %s\n", *opt, *(opt + 1));
+	exit(status);
+}
+
+/**********************************************************************/
+
 
 static void
 print_nobrackets(const char *s)

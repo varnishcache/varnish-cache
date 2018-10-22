@@ -140,3 +140,11 @@ LIBVARNISHAPI_2.0 {
     local:
 	*;
 };
+
+LIBVARNISHAPI_2.1 {
+    global:
+	# vut.c
+	VUT_Usage;
+    local:
+	*;
+};
