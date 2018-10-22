@@ -1173,6 +1173,8 @@ main(int argc, char * const *argv)
 	AN(CTX.vsb);
 	VB64_init();
 
+	tzset();		// We use localtime_r(3)
+
 	while ((opt = getopt(argc, argv, vopt_spec.vopt_optstring)) != -1) {
 		switch (opt) {
 		case 'a':
