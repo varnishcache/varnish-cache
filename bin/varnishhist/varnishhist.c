@@ -474,18 +474,6 @@ do_curses(void *arg)
 /*--------------------------------------------------------------------*/
 
 static void v_noreturn_
-usage(int status)
-{
-	const char **opt;
-
-	fprintf(stderr, "Usage: %s <options>\n\n", vut->progname);
-	fprintf(stderr, "Options:\n");
-	for (opt = vopt_spec.vopt_usage; *opt != NULL; opt += 2)
-		fprintf(stderr, " %-25s %s\n", *opt, *(opt + 1));
-	exit(status);
-}
-
-static void v_noreturn_
 profile_error(const char *s)
 {
 	fprintf(stderr, "-P: '%s' is not a valid"
@@ -519,7 +507,7 @@ main(int argc, char **argv)
 		switch (i) {
 		case 'h':
 			/* Usage help */
-			usage(0);
+			VUT_Usage(vut, &vopt_spec, 0);
 		case 'p':
 			ms_delay = lround(1e3 * strtod(optarg, NULL));
 			if (ms_delay <= 0)
@@ -602,12 +590,12 @@ main(int argc, char **argv)
 			break;
 		default:
 			if (!VUT_Arg(vut, i, optarg))
-				usage(1);
+				VUT_Usage(vut, &vopt_spec, 1);
 		}
 	}
 
 	if (optind != argc)
-		usage(1);
+		VUT_Usage(vut, &vopt_spec, 1);
 
 	/* Check for valid grouping mode */
 	assert(vut->g_arg < VSL_g__MAX);
@@ -661,7 +649,7 @@ main(int argc, char **argv)
 	vut->dispatch_f = accumulate;
 	vut->dispatch_priv = NULL;
 	vut->sighup_f = sighup;
-	VUT_Main(vut);
+	(void)VUT_Main(vut);
 	end_of_file = 1;
 	AZ(pthread_join(thr, NULL));
 	VUT_Fini(&vut);

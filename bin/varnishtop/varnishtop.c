@@ -324,19 +324,6 @@ dump(void)
 	}
 }
 
-//lint -sem(usage, r_no)
-static void v_noreturn_
-usage(int status)
-{
-	const char **opt;
-
-	fprintf(stderr, "Usage: %s <options>\n\n", vut->progname);
-	fprintf(stderr, "Options:\n");
-	for (opt = vopt_spec.vopt_usage; *opt != NULL; opt +=2)
-		fprintf(stderr, " %-25s %s\n", *opt, *(opt + 1));
-	exit(status);
-}
-
 int
 main(int argc, char **argv)
 {
@@ -358,7 +345,7 @@ main(int argc, char **argv)
 			break;
 		case 'h':
 			/* Usage help */
-			usage(0);
+			VUT_Usage(vut, &vopt_spec, 0);
 		case 'p':
 			errno = 0;
 			e = NULL;
@@ -371,12 +358,12 @@ main(int argc, char **argv)
 			break;
 		default:
 			if (!VUT_Arg(vut, o, optarg))
-				usage(1);
+				VUT_Usage(vut, &vopt_spec, 1);
 		}
 	}
 
 	if (optind != argc)
-		usage(1);
+		VUT_Usage(vut, &vopt_spec, 1);
 
 	VUT_Signal(vut_sighandler);
 	VUT_Setup(vut);

@@ -10,4 +10,3 @@
 
 -e788	// enum constant '___' not used within defaulted switch
 -e641	// Converting enum '___' to '___'
--sem(usage,r_no)

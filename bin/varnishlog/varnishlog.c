@@ -64,17 +64,6 @@ static struct log {
 	FILE		*fo;
 } LOG;
 
-static void v_noreturn_
-usage(int status)
-{
-	const char **opt;
-	fprintf(stderr, "Usage: %s <options>\n\n", vut->progname);
-	fprintf(stderr, "Options:\n");
-	for (opt = vopt_spec.vopt_usage; *opt != NULL; opt += 2)
-		fprintf(stderr, " %-25s %s\n", *opt, *(opt + 1));
-	exit(status);
-}
-
 static void
 openout(int append)
 {
@@ -97,7 +86,7 @@ rotateout(struct VUT *v)
 	assert(v == vut);
 	AN(LOG.w_arg);
 	AN(LOG.fo);
-	fclose(LOG.fo);
+	(void)fclose(LOG.fo);
 	openout(1);
 	AN(LOG.fo);
 	return (0);
@@ -150,19 +139,19 @@ main(int argc, char * const *argv)
 			break;
 		case 'h':
 			/* Usage help */
-			usage(0);
+			VUT_Usage(vut, &vopt_spec, 0);
 		case 'w':
 			/* Write to file */
 			REPLACE(LOG.w_arg, optarg);
 			break;
 		default:
 			if (!VUT_Arg(vut, opt, optarg))
-				usage(1);
+				VUT_Usage(vut, &vopt_spec, 1);
 		}
 	}
 
 	if (optind != argc)
-		usage(1);
+		VUT_Usage(vut, &vopt_spec, 1);
 
 	if (vut->D_opt && !LOG.w_arg)
 		VUT_Error(vut, 1, "Missing -w option");
@@ -184,7 +173,7 @@ main(int argc, char * const *argv)
 
 	VUT_Signal(vut_sighandler);
 	VUT_Setup(vut);
-	VUT_Main(vut);
+	(void)VUT_Main(vut);
 	VUT_Fini(&vut);
 
 	(void)flushout(NULL);
