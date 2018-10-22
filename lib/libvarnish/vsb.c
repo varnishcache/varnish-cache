@@ -588,12 +588,17 @@ VSB_quote_pfx(struct vsb *s, const char *pfx, const void *v, int len, int how)
 		case '\t':
 			(void)VSB_cat(s, "\\t");
 			break;
+		case '\v':
+			(void)VSB_cat(s, "\\v");
+			break;
 		default:
 			/* XXX: Implement VSB_QUOTE_JSON */
 			if (isgraph(*q))
 				(void)VSB_putc(s, *q);
+			else if (how & VSB_QUOTE_ESCHEX)
+				(void)VSB_printf(s, "\\x%02x", *q & 0xff);
 			else
-				(void)VSB_printf(s, "\\%o", *q & 0xff);
+				(void)VSB_printf(s, "\\%03o", *q & 0xff);
 			break;
 		}
 	}
