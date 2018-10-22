@@ -162,18 +162,6 @@ static struct ctx {
 	int32_t			vxid;
 } CTX;
 
-static void v_noreturn_
-usage(int status)
-{
-	const char **opt;
-
-	fprintf(stderr, "Usage: %s <options>\n\n", vut->progname);
-	fprintf(stderr, "Options:\n");
-	for (opt = vopt_spec.vopt_usage; *opt != NULL; opt += 2)
-		fprintf(stderr, " %-25s %s\n", *opt, *(opt + 1));
-	exit(status);
-}
-
 static void
 openout(int append)
 {
@@ -192,7 +180,7 @@ rotateout(struct VUT *v)
 	assert(v == vut);
 	AN(CTX.w_arg);
 	AN(CTX.fo);
-	fclose(CTX.fo);
+	(void)fclose(CTX.fo);
 	openout(1);
 	AN(CTX.fo);
 	return (0);
@@ -354,9 +342,9 @@ format_time(const struct format *format)
 		break;
 	case 't':
 		AN(format->time_fmt);
-		t = t_start;
-		localtime_r(&t, &tm);
-		strftime(buf, sizeof buf, format->time_fmt, &tm);
+		t = (long)floor(t_start);
+		(void)localtime_r(&t, &tm);
+		AN(strftime(buf, sizeof buf, format->time_fmt, &tm));
 		AZ(VSB_cat(CTX.vsb, buf));
 		break;
 	case 'T':
@@ -1149,7 +1137,7 @@ read_format(const char *formatfile)
 		VUT_Error(vut, 1, "Can't read format from file (%s)",
 		    strerror(errno));
 	}
-	fclose(fmtfile);
+	AZ(fclose(fmtfile));
 	if (fmt[fmtlen - 1] == '\n')
 		fmt[fmtlen - 1] = '\0';
 	return (fmt);
@@ -1190,22 +1178,21 @@ main(int argc, char * const *argv)
 			CTX.c_opt = 1;
 			break;
 		case 'F':
-			/* Format string */
 			if (format != NULL)
-				free(format);
-			format = strdup(optarg);
+				VUT_Error(vut, 1, "Format already set");
+			REPLACE(format, optarg);
 			AN(format);
 			break;
 		case 'f':
-			/* Format string from file */
 			if (format != NULL)
-				free(format);
+				VUT_Error(vut, 1, "Format already set");
+			/* Format string from file */
 			format = read_format(optarg);
 			AN(format);
 			break;
 		case 'h':
 			/* Usage help */
-			usage(0);
+			VUT_Usage(vut, &vopt_spec, 0);
 			break;
 		case 'w':
 			/* Write to file */
@@ -1213,7 +1200,7 @@ main(int argc, char * const *argv)
 			break;
 		default:
 			if (!VUT_Arg(vut, opt, optarg))
-				usage(1);
+				VUT_Usage(vut, &vopt_spec, 1);
 		}
 	}
 	/* default is client mode: */
@@ -1221,7 +1208,7 @@ main(int argc, char * const *argv)
 		CTX.c_opt = 1;
 
 	if (optind != argc)
-		usage(1);
+		VUT_Usage(vut, &vopt_spec, 1);
 
 	if (vut->D_opt && !CTX.w_arg)
 		VUT_Error(vut, 1, "Missing -w option");
@@ -1234,8 +1221,7 @@ main(int argc, char * const *argv)
 
 	/* Prepare output format */
 	parse_format(format);
-	free(format);
-	format = NULL;
+	REPLACE(format, NULL);
 
 	/* Setup output */
 	vut->dispatch_f = dispatch_f;
@@ -1252,7 +1238,7 @@ main(int argc, char * const *argv)
 
 	VUT_Signal(vut_sighandler);
 	VUT_Setup(vut);
-	VUT_Main(vut);
+	(void)VUT_Main(vut);
 	VUT_Fini(&vut);
 
 	exit(0);
