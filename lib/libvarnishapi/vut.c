@@ -110,32 +110,23 @@ vut_dispatch(struct VSL_data *vsl, struct VSL_transaction * const trans[],
 	return (i);
 }
 
-//lint -sem(vut_error, r_no)
-static void v_noreturn_ v_matchproto_(VUT_error_f)
-vut_error(struct VUT *vut, int status, const char *fmt, va_list ap)
-{
-
-	CHECK_OBJ_NOTNULL(vut, VUT_MAGIC);
-	AN(fmt);
-	vfprintf(stderr, fmt, ap);
-	fprintf(stderr, "\n");
-
-	exit(status);
-}
-
 void
 VUT_Error(struct VUT *vut, int status, const char *fmt, ...)
 {
 	va_list ap;
 
 	CHECK_OBJ_NOTNULL(vut, VUT_MAGIC);
-	AN(vut->error_f);
 	AN(status);
 
 	va_start(ap, fmt);
-	vut->error_f(vut, status, fmt, ap);
+	if (vut->error_f != NULL) {
+		vut->error_f(vut, status, fmt, ap);
+	} else {
+		vfprintf(stderr, fmt, ap);
+		fprintf(stderr, "\n");
+	}
 	va_end(ap);
-	exit(2);
+	exit(status);
 }
 
 int
@@ -231,7 +222,6 @@ VUT_Init(const char *progname, int argc, char * const *argv,
 	vut->progname = progname;
 	vut->g_arg = VSL_g_vxid;
 	vut->k_arg = -1;
-	vut->error_f = vut_error;
 	AZ(vut->vsl);
 	vut->vsl = VSL_New();
 	AN(vut->vsl);
@@ -306,7 +296,8 @@ VUT_Setup(struct VUT *vut)
 			VUT_Error(vut, 1, "PID file already created");
 		pfh = VPF_Open(vut->P_arg, 0644, NULL);
 		if (pfh == NULL)
-			VUT_Error(vut, 1, "%s: %s", vut->P_arg, strerror(errno));
+			VUT_Error(vut, 1,
+			    "%s: %s", vut->P_arg, strerror(errno));
 	}
 
 	/* Daemon mode */
