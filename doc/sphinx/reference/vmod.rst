@@ -268,8 +268,8 @@ language representation.  Here is a description of them.
 All but the PRIV and STRING_LIST types have typedefs: VCL_INT, VCL_REAL,
 etc.
 
-Notice that all the non-native (C pointer) types are ``const``, so
-anything returned by a vmod function/method is assumed to be
+Notice that most of the non-native (C pointer) types are ``const``,
+which, if returned by a vmod function/method, are assumed to be
 immutable. In other words, a vmod `must not` modify any data which was
 previously returned.
 
@@ -339,7 +339,7 @@ HEADER
 HTTP
 	C-type: ``struct http *``
 
-	TODO
+	A reference to a header object as ``req.http`` or ``bereq.http``.
 
 INT
 	C-type: ``long``
