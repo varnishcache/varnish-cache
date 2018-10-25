@@ -841,9 +841,18 @@ VRT_blob(VRT_CTX, const char *err, const void *src, size_t len)
 	struct vmod_priv *p;
 	void *d;
 
+	if (src == NULL)
+		assert (len == 0);
+
 	p = (void *)WS_Alloc(ctx->ws, sizeof *p);
-	d = WS_Copy(ctx->ws, src, len);
-	if (p == NULL || d == NULL) {
+
+	/* XXX struct vmod_blob with const priv pointer */
+	if (src == NULL || WS_Inside(ctx->ws, src, NULL))
+		d = TRUST_ME(src);
+	else
+		d = WS_Copy(ctx->ws, src, len);
+
+	if (p == NULL || (d == NULL && src != NULL)) {
 		VRT_fail(ctx, "Workspace overflow (%s)", err);
 		return (NULL);
 	}
