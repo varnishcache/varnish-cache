@@ -106,9 +106,9 @@ In string context they return a formatted string in RFC1123 format,
 e.g. ``Sun, 06 Nov 1994 08:49:37 GMT``.
 
 The keyword ``now`` returns a notion of the current time, which is
-kept cosistent during vcl subroutine invocations, so during the
+kept consistent during vcl subroutine invocations, so during the
 execution of a vcl subroutine callback (``vcl_* {}``), including all
-user-defined subroutines beging called, ``now`` always returns the
+user-defined subroutines being called, ``now`` always returns the
 same value.
 
 Durations
