@@ -268,6 +268,16 @@ language representation.  Here is a description of them.
 All but the PRIV and STRING_LIST types have typedefs: VCL_INT, VCL_REAL,
 etc.
 
+Notice that all the non-native (C pointer) types are ``const``, so
+anything returned by a vmod function/method is assumed to be
+immutable. In other words, a vmod `must not` modify any data which was
+previously returned.
+
+When returning non-native values, the producing function is
+responsible for arranging memory management.  Either by freeing the
+structure later by whatever means available or by using storage
+allocated from the client or backend workspaces.
+
 ACL
 	C-type: ``const struct vrt_acl *``
 
@@ -375,12 +385,6 @@ STRING
 
 	If there were no "foobar" HTTP header, the vmod_foo()
 	function would be passed a NULL pointer as argument.
-
-	When used as a return value, the producing function is
-	responsible for arranging memory management.  Either by
-	freeing the string later by whatever means available or
-	by using storage allocated from the client or backend
-	workspaces.
 
 STEVEDORE
 	C-type: ``const struct stevedore *``
