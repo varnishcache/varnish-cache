@@ -1,7 +1,8 @@
-varnishtest "Test formatting of timestamps"
+varnishtest "Test timestamps"
 
-# We can't test the value of x-timestamp, but this should fail
+# We can't test the value of a timestamp, but this should fail
 # if we can't set the header at all.
+# We also test that `now` remains unchanged during a vcl sub
 
 server s1 {
 	rxreq
@@ -9,16 +10,65 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
+	import vtc;
+
+	sub recv_sub {
+		set req.http.recv_sub = now;
+	}
 	sub vcl_recv {
-		return (synth(200));
+		set req.http.recv = now;
+		vtc.sleep(1s);
+		call recv_sub;
+		if (req.http.recv != req.http.recv_sub) {
+			return (fail);
+		}
 	}
 	sub vcl_synth {
-		set resp.http.x-timestamp = now;
+		set resp.http.synth = now;
 	}
+
+	sub vcl_deliver {
+		set resp.http.deliver = now;
+		if (req.http.recv == req.http.deliver) {
+			return (fail);
+		}
+
+		vtc.sleep(1s);
+		return (synth(200));
+	}
+
+	sub bf_sub {
+		set bereq.http.bf_sub = now;
+	}
+	sub vcl_backend_fetch {
+		set bereq.http.bf = now;
+		vtc.sleep(1s);
+		call bf_sub;
+		if (bereq.http.bf != bereq.http.bf_sub) {
+			return (fail);
+		}
+	}
+	sub br_sub {
+		set beresp.http.br_sub = now;
+	}
+	sub vcl_backend_response {
+		set beresp.http.br = now;
+		vtc.sleep(1s);
+		call br_sub;
+		if (beresp.http.br != beresp.http.br_sub) {
+			return (fail);
+		}
+		if (bereq.http.bf == beresp.http.br) {
+			return (fail);
+		}
+	}
+
+
 } -start
 
 client c1 {
 	txreq
 	rxresp
-	expect resp.http.x-timestamp ~ "..., .. ... .... ..:..:.. GMT"
+	expect resp.status == 200
+	expect resp.http.synth ~ "^..., .. ... .... ..:..:.. GMT"
 } -run
