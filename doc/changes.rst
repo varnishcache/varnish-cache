@@ -26,6 +26,9 @@ http://varnish-cache.org/docs/trunk/whats-new/index.html and via
 individual releases. These documents are updated as part of the
 release process.
 
+================================
+Varnish Cache 6.1.1 (unreleased)
+================================
 
 * fixed ``varnishhist`` display error (2780_)
 
@@ -39,6 +42,9 @@ release process.
 * Adjust code generator python tools to python 3 and prefer python 3
   over python 2 where available
 
+* Implement and test ECMA-48 "REP" sequence to fix test case
+  u00008.vtc on some newer platforms. (2668_)
+
 * fix some stats metrics (vsc) which were wrongly marked as _gauge_
 
 * fix ``varnishd -I`` (2782_)
@@ -51,7 +57,13 @@ release process.
 
 * added a thread pool watchdog which will restart the worker process
   if scheduling tasks onto worker threads appears stuck. The new
-  parameter ``thread_pool_watchdog`` configures it. (2418_)
+  parameter ``thread_pool_watchdog`` configures it. (2418_, 2794_)
+
+* Clarify and test object slimming for hfp+hfm. (2768_)
+
+* Allow PRIORITY frames on closed streams (2775_)
+
+* Hardening of the h2_frame_f callbacks (2781_)
 
 * Improved varnish log client performance (2788_)
 
@@ -59,13 +71,18 @@ release process.
   an unnecessary incompatibility with VSL files written by previous
   versions. (2790_)
 
+.. _2418: https://github.com/varnishcache/varnish-cache/issues/2418
+.. _2589: https://github.com/varnishcache/varnish-cache/issues/2589
+.. _2668: https://github.com/varnishcache/varnish-cache/issues/2668
+.. _2768: https://github.com/varnishcache/varnish-cache/issues/2768
+.. _2780: https://github.com/varnishcache/varnish-cache/issues/2775
 .. _2780: https://github.com/varnishcache/varnish-cache/issues/2780
+.. _2780: https://github.com/varnishcache/varnish-cache/issues/2781
 .. _2782: https://github.com/varnishcache/varnish-cache/issues/2782
 .. _2787: https://github.com/varnishcache/varnish-cache/issues/2787
-.. _2589: https://github.com/varnishcache/varnish-cache/issues/2589
-.. _2418: https://github.com/varnishcache/varnish-cache/issues/2418
 .. _2788: https://github.com/varnishcache/varnish-cache/issues/2788
 .. _2790: https://github.com/varnishcache/varnish-cache/issues/2790
+.. _2794: https://github.com/varnishcache/varnish-cache/issues/2794
 
 ================================
 Varnish Cache 6.1.0 (2018-09-17)
