@@ -525,7 +525,6 @@ vmod_length(VRT_CTX, VCL_BLOB b)
 VCL_BLOB v_matchproto_(td_blob_sub)
 vmod_sub(VRT_CTX, VCL_BLOB b, VCL_BYTES n, VCL_BYTES off)
 {
-	uintptr_t snap;
 	struct vmod_priv *sub;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -547,17 +546,12 @@ vmod_sub(VRT_CTX, VCL_BLOB b, VCL_BYTES n, VCL_BYTES off)
 	if (n == 0)
 		return null_blob;
 
-	snap = WS_Snapshot(ctx->ws);
 	if ((sub = WS_Alloc(ctx->ws, sizeof(*sub))) == NULL) {
 		ERRNOMEM(ctx, "Allocating BLOB result in blob.sub()");
 		return NULL;
 	}
-	if ((sub->priv = WS_Alloc(ctx->ws, n)) == NULL) {
-		VERRNOMEM(ctx, "Allocating %jd bytes in blob.sub()", (intmax_t)n);
-		WS_Reset(ctx->ws, snap);
-		return NULL;
-	}
-	memcpy(sub->priv, (char *)b->priv + off, n);
+
+	sub->priv = (char *)b->priv + off;
 	sub->len = n;
 	return sub;
 }
