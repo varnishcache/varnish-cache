@@ -75,9 +75,9 @@ Varnish Cache 6.1.1 (unreleased)
 .. _2589: https://github.com/varnishcache/varnish-cache/issues/2589
 .. _2668: https://github.com/varnishcache/varnish-cache/issues/2668
 .. _2768: https://github.com/varnishcache/varnish-cache/issues/2768
-.. _2780: https://github.com/varnishcache/varnish-cache/issues/2775
+.. _2775: https://github.com/varnishcache/varnish-cache/issues/2775
 .. _2780: https://github.com/varnishcache/varnish-cache/issues/2780
-.. _2780: https://github.com/varnishcache/varnish-cache/issues/2781
+.. _2781: https://github.com/varnishcache/varnish-cache/issues/2781
 .. _2782: https://github.com/varnishcache/varnish-cache/issues/2782
 .. _2787: https://github.com/varnishcache/varnish-cache/issues/2787
 .. _2788: https://github.com/varnishcache/varnish-cache/issues/2788
