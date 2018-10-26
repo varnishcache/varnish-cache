@@ -368,11 +368,13 @@ class ProtoType(object):
             pfx += pfx
         s = pfx
         if type(self.st) == s_object:
-            s += "new x" + self.bname + " = "
+            s += "new " + self.obj + " = "
         elif self.retval is not None:
             s += self.retval.vcl() + " "
 
-        if type(self.st) == s_method:
+        if type(self.st) == s_object:
+            s += self.st.vcc.modname + "." + self.name + "("
+        elif type(self.st) == s_method:
             s += self.obj + self.bname + "("
         else:
             s += self.name + "("
