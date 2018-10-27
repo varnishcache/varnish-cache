@@ -552,9 +552,7 @@ bench()
 	t_i = 0;
 	s = VTIM_mono();
 	for (i=0; i<100000; i++) {
-		snprintf(buf, sizeof(buf), "%ju.%06ju",
-		    (uint64_t)floor(s),
-		    (uint64_t)floor((s * 1e6)) % 1000000UL);
+		snprintf(buf, sizeof(buf), Tf6, Ta6(s));
 		t_i += buf[4];
 	}
 	e = VTIM_mono();

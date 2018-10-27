@@ -375,6 +375,7 @@ void
 VSLb_ts(struct vsl_log *vsl, const char *event, vtim_real first,
     vtim_real *pprev, vtim_real now)
 {
+	double d_first, d_prev;
 
 	/* XXX: Make an option to turn off some unnecessary timestamp
 	   logging. This must be done carefully because some functions
@@ -382,8 +383,11 @@ VSLb_ts(struct vsl_log *vsl, const char *event, vtim_real first,
 	   value for timeout calculation. */
 	vsl_sanity(vsl);
 	assert(!isnan(now) && now != 0.);
-	VSLb(vsl, SLT_Timestamp, "%s: %.6f %.6f %.6f",
-	    event, now, now - first, now - *pprev);
+
+	d_first = now - first;
+	d_prev = now - *pprev;
+	VSLb(vsl, SLT_Timestamp, "%s: " Tf6 " " Tf6 " " Tf6,
+	     event, Ta6(now), Ta6(d_first), Ta6(d_prev));
 	*pprev = now;
 }
 

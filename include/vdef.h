@@ -147,3 +147,7 @@
 typedef double vtim_mono;
 typedef double vtim_real;
 typedef double vtim_dur;
+#define Tf3 "%ju.%03ju"
+#define Tf6 "%ju.%06ju"
+#define Ta3(t) (uint64_t)floor(t), (uint64_t)floor(t * 1e3) % UINT64_C(1000)
+#define Ta6(t) (uint64_t)floor(t), (uint64_t)floor(t * 1e6) % UINT64_C(1000000)
