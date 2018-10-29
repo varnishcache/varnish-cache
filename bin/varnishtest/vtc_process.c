@@ -227,7 +227,7 @@ term_resize(struct process *pp, int lin, int col)
 	vram = calloc(lin, sizeof *pp->vram);
 	AN(vram);
 	for (i = 0; i < lin; i++) {
-		vram[i] = malloc(col + 1L);
+		vram[i] = calloc(col + 1L, 1);
 		AN(vram[i]);
 		memset(vram[i], ' ', col);
 		vram[i][col] = '\0';
