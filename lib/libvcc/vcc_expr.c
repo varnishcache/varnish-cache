@@ -1111,6 +1111,8 @@ static const struct cmps vcc_cmps[] = {
 	IDENT_REL(SUB),
 	IDENT_REL(INSTANCE),
 
+	{BOOL,		T_EQ,		cmp_simple, "((!(\v1)) == (!(\v2)))" },
+	{BOOL,		T_NEQ,		cmp_simple, "((!(\v1)) != (!(\v2)))" },
 	{IP,		T_EQ,		cmp_simple, "!VRT_ipcmp(\v1, \v2)" },
 	{IP,		T_NEQ,		cmp_simple, "VRT_ipcmp(\v1, \v2)" },
 
@@ -1143,9 +1145,6 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	vcc_expr_add(tl, e, fmt);
 	ERRCHK(tl);
 	tk = tl->t;
-
-	if ((*e)->fmt == BOOL)
-		return;
 
 	for (cp = vcc_cmps; cp->fmt != VOID; cp++) {
 		if ((*e)->fmt == cp->fmt && tl->t->tok == cp->token) {
