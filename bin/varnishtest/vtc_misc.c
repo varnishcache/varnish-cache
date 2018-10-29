@@ -74,7 +74,7 @@ cmd_vtest(CMD_ARGS)
 		return;
 	AZ(strcmp(av[0], "vtest"));
 
-	vtc_log(vl, 1, "TEST %s", av[1]);
+	vtc_log(vl, 1, "VTEST %s", av[1]);
 	AZ(av[2]);
 }
 
@@ -96,7 +96,7 @@ cmd_varnishtest(CMD_ARGS)
 		return;
 	AZ(strcmp(av[0], "varnishtest"));
 
-	vtc_log(vl, 1, "TEST %s", av[1]);
+	vtc_log(vl, 1, "VTEST %s", av[1]);
 	AZ(av[2]);
 }
 

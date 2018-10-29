@@ -503,6 +503,8 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 	vltop = vtc_logopen("top");
 	AN(vltop);
 
+	vtc_log(vltop, 1, "TEST %s starting", fn);
+
 	init_macro();
 	init_server();
 	init_syslog();
@@ -537,7 +539,6 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 	AZ(fclose(f));
 
 	vtc_stop = 0;
-	vtc_log(vltop, 1, "TEST %s starting", fn);
 
 	vtc_thread = pthread_self();
 	parse_string(script, cmds, NULL, vltop);
