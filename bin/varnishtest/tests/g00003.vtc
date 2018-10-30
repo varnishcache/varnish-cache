@@ -46,6 +46,10 @@ varnish v1 -cliok "param.set http_gzip_support true" -vcl+backend {
 			set beresp.filters = "gzip gunzip gzip gunzip gzip";
 		}
 	}
+	sub vcl_deliver {
+		set resp.http.filters = resp.filters;
+		set resp.filters = "";
+	}
 } -start
 
 client c1 {

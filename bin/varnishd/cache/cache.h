@@ -512,6 +512,7 @@ struct req {
 
 	/* Deliver pipeline */
 	struct vdp_ctx		*vdc;
+	const char		*filter_list;
 
 	/* Delivery mode */
 	unsigned		res_mode;

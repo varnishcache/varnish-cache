@@ -1147,6 +1147,15 @@ resp.is_streaming
 	Returns true when the response will be streamed
 	while being fetched from the backend.
 
+resp.filters
+
+	Type: STRING
+
+	Readable from: vcl_deliver, vcl_synth
+
+	Writable from: vcl_deliver, vcl_synth
+
+	List of VFP filters the resp.body will be pulled through.
 
 Special variables
 ~~~~~~~~~~~~~~~~~

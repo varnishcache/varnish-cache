@@ -285,6 +285,7 @@ VBF_Get_Filter_List(struct busyobj *bo)
 	unsigned u;
 	struct vsb vsb[1];
 
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	u = WS_Reserve(bo->ws, 0);
 	if (u == 0) {
 		WS_Release(bo->ws, 0);
@@ -306,34 +307,41 @@ VBF_Get_Filter_List(struct busyobj *bo)
 	return ("");
 }
 
+static const char *
+resp_Get_Filter_List(struct req *req)
+{
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	return ("");
+}
+
 /*--------------------------------------------------------------------*/
 
-VCL_STRING
-VRT_r_beresp_filters(VRT_CTX)
-{
-
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
-	if (ctx->bo->filter_list != NULL)
-		return(ctx->bo->filter_list);
-	/* We do not set bo->filter_list yet, things might still change */
-	return (VBF_Get_Filter_List(ctx->bo));
-}
-
-VCL_VOID
-VRT_l_beresp_filters(VRT_CTX, const char *str, ...)
-{
-	va_list ap;
-	const char *b;
-
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
-	va_start(ap, str);
-	b = VRT_String(ctx->bo->ws, NULL, str, ap);
-	va_end(ap);
-	if (b == NULL) {
-		WS_MarkOverflow(ctx->bo->ws);
-		return;
+#define FILTER_VAR(vcl, in, func)					\
+	VCL_STRING							\
+	VRT_r_##vcl##_filters(VRT_CTX)					\
+	{								\
+									\
+		CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
+		if (ctx->in->filter_list != NULL)			\
+			return(ctx->in->filter_list);			\
+		return (func(ctx->in));					\
+	}								\
+									\
+	VCL_VOID							\
+	VRT_l_##vcl##_filters(VRT_CTX, const char *str, ...)		\
+	{								\
+		va_list ap;						\
+		const char *b;						\
+									\
+		CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
+		va_start(ap, str);					\
+		b = VRT_String(ctx->in->ws, NULL, str, ap);		\
+		va_end(ap);						\
+		if (b == NULL)						\
+			WS_MarkOverflow(ctx->in->ws);			\
+		else							\
+			ctx->in->filter_list = b;			\
 	}
-	ctx->bo->filter_list = b;
-}
+
+FILTER_VAR(beresp, bo, VBF_Get_Filter_List)
+FILTER_VAR(resp, req, resp_Get_Filter_List)
