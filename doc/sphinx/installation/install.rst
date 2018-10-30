@@ -161,8 +161,8 @@ requirements are installed.
 By convention, consider installing Varnish under `/opt/local` using::
 
 	./configure \
-	--prefix=/opt/local \
-	--mandir=/opt/local/man
+	        --prefix=/opt/local \
+	        --mandir=/opt/local/man
 
 Alternatively, building with Solaris Studio 12.4 should work
 considering the following recommendations:
@@ -172,11 +172,11 @@ considering the following recommendations:
   dependencies are installed. Example for `/opt/local`::
 
 	./configure \
-	--prefix=/opt/local \
-	--mandir=/opt/local/man \
-	CPPFLAGS="-I/opt/local/include" \
-	CFLAGS="-m64" \
-	LDFLAGS="-L/opt/local/lib -R/opt/local/lib"
+	        --prefix=/opt/local \
+	        --mandir=/opt/local/man \
+	        CPPFLAGS="-I/opt/local/include" \
+	        CFLAGS="-m64" \
+	        LDFLAGS="-L/opt/local/lib -R/opt/local/lib"
 
 Compiling Varnish
 -----------------
