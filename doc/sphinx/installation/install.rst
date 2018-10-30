@@ -173,7 +173,7 @@ considering the following recommendations:
 
 	./configure \
 	--prefix=/opt/local \
-	--mandir=/opt/local/man
+	--mandir=/opt/local/man \
 	CPPFLAGS="-I/opt/local/include" \
 	CFLAGS="-m64" \
 	LDFLAGS="-L/opt/local/lib -R/opt/local/lib"
