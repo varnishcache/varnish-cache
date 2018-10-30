@@ -207,7 +207,7 @@ V1L_Flush(const struct worker *wrk)
 			 * was sent.
 			 *
 			 * XXX: Add a "minimum sent data per timeout
-			 * counter to prevent slowlaris attacks
+			 * counter to prevent slowloris attacks
 			*/
 
 			if (VTIM_real() - v1l->t0 > cache_param->send_timeout) {
