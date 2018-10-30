@@ -219,13 +219,51 @@ VCL_VRT_Init(void)
 /*--------------------------------------------------------------------
  */
 
-static void
-vbf_default_filter_list(const struct busyobj *bo, struct vsb *vsb)
+typedef void filter_list_t(const void *, struct vsb *vsb);
+
+static const char *
+filter_on_ws(struct ws *ws, filter_list_t *func, const void *arg)
 {
+	unsigned u;
+	struct vsb vsb[1];
+
+	AN(func);
+	AN(arg);
+	u = WS_Reserve(ws, 0);
+	if (u == 0) {
+		WS_Release(ws, 0);
+		WS_MarkOverflow(ws);
+		return (NULL);
+	}
+	AN(VSB_new(vsb, ws->f, u, VSB_FIXEDLEN));
+	func(arg, vsb);
+	if (VSB_finish(vsb)) {
+		WS_Release(ws, 0);
+		WS_MarkOverflow(ws);
+		return (NULL);
+	}
+	if (VSB_len(vsb)) {
+		WS_Release(ws, VSB_len(vsb) + 1);
+		return (VSB_data(vsb) + 1);
+	}
+	WS_Release(ws, 0);
+	return ("");
+}
+
+/*--------------------------------------------------------------------
+ */
+
+static void v_matchproto_(filter_list_t)
+vbf_default_filter_list(const void *arg, struct vsb *vsb)
+{
+	const struct busyobj *bo;
 	const char *p;
-	int do_gzip = bo->do_gzip;
-	int do_gunzip = bo->do_gunzip;
-	int is_gzip = 0, is_gunzip = 0;
+	int do_gzip, do_gunzip, is_gzip = 0, is_gunzip = 0;
+
+	CAST_OBJ_NOTNULL(bo, arg, BUSYOBJ_MAGIC);
+
+	do_gzip = bo->do_gzip;
+	do_gunzip = bo->do_gunzip;
 
 	/*
 	 * The VCL variables beresp.do_g[un]zip tells us how we want the
@@ -282,36 +320,28 @@ vbf_default_filter_list(const struct busyobj *bo, struct vsb *vsb)
 const char *
 VBF_Get_Filter_List(struct busyobj *bo)
 {
-	unsigned u;
-	struct vsb vsb[1];
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	u = WS_Reserve(bo->ws, 0);
-	if (u == 0) {
-		WS_Release(bo->ws, 0);
-		WS_MarkOverflow(bo->ws);
-		return (NULL);
-	}
-	AN(VSB_new(vsb, bo->ws->f, u, VSB_FIXEDLEN));
-	vbf_default_filter_list(bo, vsb);
-	if (VSB_finish(vsb)) {
-		WS_Release(bo->ws, 0);
-		WS_MarkOverflow(bo->ws);
-		return (NULL);
-	}
-	if (VSB_len(vsb)) {
-		WS_Release(bo->ws, VSB_len(vsb) + 1);
-		return (VSB_data(vsb) + 1);
-	}
-	WS_Release(bo->ws, 0);
-	return ("");
+	return (filter_on_ws(bo->ws, vbf_default_filter_list, bo));
+}
+
+/*--------------------------------------------------------------------
+ */
+
+static void v_matchproto_(filter_list_t)
+resp_default_filter_list(const void *arg, struct vsb *vsb)
+{
+	const struct req *req;
+
+	CAST_OBJ_NOTNULL(req, arg, REQ_MAGIC);
+	(void)vsb;
 }
 
 static const char *
 resp_Get_Filter_List(struct req *req)
 {
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	return ("");
+	return (filter_on_ws(req->ws, resp_default_filter_list, req));
 }
 
 /*--------------------------------------------------------------------*/
