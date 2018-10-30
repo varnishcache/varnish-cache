@@ -40,7 +40,7 @@
 struct vrt_priv {
 	unsigned			magic;
 #define VRT_PRIV_MAGIC			0x24157a52
-	VTAILQ_ENTRY(vrt_priv)		list;
+	VRBT_ENTRY(vrt_priv)		entry;
 	struct vmod_priv		priv[1];
 	const struct vcl		*vcl;
 	uintptr_t			id;	// = scope / vrt_privs
@@ -48,6 +48,10 @@ struct vrt_priv {
 };
 
 struct vrt_privs cli_task_privs[1];
+
+static inline int vrt_priv_dyncmp(const struct vrt_priv *,
+    const struct vrt_priv *);
+VRBT_PROTOTYPE(vrt_priv_tree, vrt_priv, entry, vrt_priv_dyncmp);
 
 /*--------------------------------------------------------------------
  */
@@ -63,7 +67,7 @@ pan_privs(struct vsb *vsb, const struct vrt_privs *privs)
 	VSB_indent(vsb, 2);
 	PAN_CheckMagic(vsb, privs, VRT_PRIVS_MAGIC);
 	if (privs->magic == VRT_PRIVS_MAGIC) {
-		VTAILQ_FOREACH(vp, &privs->privs, list) {
+		VRBT_FOREACH(vp, vrt_priv_tree, &privs->privs) {
 			PAN_CheckMagic(vsb, vp, VRT_PRIV_MAGIC);
 			VSB_printf(vsb,
 			    "priv {p %p l %d f %p} vcl %p id %jx vmod %jx\n",
@@ -89,26 +93,40 @@ VRTPRIV_init(struct vrt_privs *privs)
 {
 
 	INIT_OBJ(privs, VRT_PRIVS_MAGIC);
-	VTAILQ_INIT(&privs->privs);
+	VRBT_INIT(&privs->privs);
 }
+
+static inline int
+vrt_priv_dyncmp(const struct vrt_priv *vp1, const struct vrt_priv *vp2)
+{
+	if (vp1->vmod_id < vp2->vmod_id)
+		return (-1);
+	if (vp1->vmod_id > vp2->vmod_id)
+		return (1);
+	return (0);
+}
+
+VRBT_GENERATE(vrt_priv_tree, vrt_priv, entry, vrt_priv_dyncmp);
 
 static struct vmod_priv *
 vrt_priv_dynamic(const struct vcl *vcl, struct ws *ws,
      struct vrt_privs *vps, uintptr_t id, uintptr_t vmod_id)
 {
 	struct vrt_priv *vp;
+	const struct vrt_priv needle = {.vmod_id = vmod_id};
 
 	CHECK_OBJ_NOTNULL(vps, VRT_PRIVS_MAGIC);
 	AN(vmod_id);
 
-	VTAILQ_FOREACH(vp, &vps->privs, list) {
-		CHECK_OBJ_NOTNULL(vp, VRT_PRIV_MAGIC);
-		if (vp->vmod_id == vmod_id) {
-			assert(vp->vcl == vcl);
-			assert(vp->id == id);
-			return (vp->priv);
-		}
+	vp = VRBT_FIND(vrt_priv_tree, &vps->privs, &needle);
+	if (vp) {
+		CHECK_OBJ(vp, VRT_PRIV_MAGIC);
+		assert(vp->vmod_id == vmod_id);
+		assert(vp->vcl == vcl);
+		assert(vp->id == id);
+		return (vp->priv);
 	}
+
 	vp = WS_Alloc(ws, sizeof *vp);
 	if (vp == NULL)
 		return (NULL);
@@ -116,7 +134,7 @@ vrt_priv_dynamic(const struct vcl *vcl, struct ws *ws,
 	vp->vcl = vcl;
 	vp->id = id;
 	vp->vmod_id = vmod_id;
-	VTAILQ_INSERT_TAIL(&vps->privs, vp, list);
+	VRBT_INSERT(vrt_priv_tree, &vps->privs, vp);
 	return (vp->priv);
 }
 
@@ -197,10 +215,8 @@ VCL_TaskLeave(const struct vcl *vcl, struct vrt_privs *privs)
 
 	AN(vcl);
 	CHECK_OBJ_NOTNULL(privs, VRT_PRIVS_MAGIC);
-	VTAILQ_FOREACH_SAFE(vp, &privs->privs, list, vp1) {
-		VTAILQ_REMOVE(&privs->privs, vp, list);
+	VRBT_FOREACH_SAFE(vp, vrt_priv_tree, &privs->privs, vp1) {
 		VRT_priv_fini(vp->priv);
 	}
 	INIT_OBJ(privs, 0);
 }
-

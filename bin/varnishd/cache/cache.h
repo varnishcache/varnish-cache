@@ -49,6 +49,7 @@
 #include "miniobj.h"
 #include "vas.h"
 #include "vqueue.h"
+#include "vtree.h"
 
 #include "vapi/vsl_int.h"
 
@@ -198,10 +199,12 @@ struct vxid_pool {
 
 /*--------------------------------------------------------------------*/
 
+VRBT_HEAD(vrt_priv_tree,vrt_priv);
+
 struct vrt_privs {
 	unsigned		magic;
-#define VRT_PRIVS_MAGIC		0x03ba7501
-	VTAILQ_HEAD(,vrt_priv)	privs;
+#define VRT_PRIVS_MAGIC		0x03ba7502
+	struct vrt_priv_tree	privs;
 };
 
 /* Worker pool stuff -------------------------------------------------*/
