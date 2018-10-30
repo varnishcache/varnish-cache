@@ -102,9 +102,10 @@ vrt_priv_dynamic(const struct vcl *vcl, struct ws *ws,
 
 	VTAILQ_FOREACH(vp, &vps->privs, list) {
 		CHECK_OBJ_NOTNULL(vp, VRT_PRIV_MAGIC);
-		if (vp->vcl == vcl && vp->id == id &&
-		    vp->vmod_id == vmod_id)
+		if (vp->id == id && vp->vmod_id == vmod_id) {
+			assert(vp->vcl == vcl);
 			return (vp->priv);
+		}
 	}
 	vp = WS_Alloc(ws, sizeof *vp);
 	if (vp == NULL)
