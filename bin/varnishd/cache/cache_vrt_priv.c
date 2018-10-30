@@ -42,7 +42,7 @@ struct vrt_priv {
 	VTAILQ_ENTRY(vrt_priv)		list;
 	struct vmod_priv		priv[1];
 	const struct vcl		*vcl;
-	uintptr_t			id;
+	uintptr_t			id;	// = scope / vrt_privs
 	uintptr_t			vmod_id;
 };
 
@@ -102,8 +102,9 @@ vrt_priv_dynamic(const struct vcl *vcl, struct ws *ws,
 
 	VTAILQ_FOREACH(vp, &vps->privs, list) {
 		CHECK_OBJ_NOTNULL(vp, VRT_PRIV_MAGIC);
-		if (vp->id == id && vp->vmod_id == vmod_id) {
+		if (vp->vmod_id == vmod_id) {
 			assert(vp->vcl == vcl);
+			assert(vp->id == id);
 			return (vp->priv);
 		}
 	}
