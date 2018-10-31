@@ -552,3 +552,42 @@ xyzzy_sethdr(VRT_CTX, VCL_HEADER hs, VCL_STRANDS s)
 		}
 	}
 }
+
+VCL_DURATION
+xyzzy_priv_perf(VRT_CTX, VCL_INT size, VCL_INT rounds)
+{
+	vtim_mono t0, t1;
+	vtim_dur d;
+	struct vmod_priv *p;
+	VCL_INT s, r;
+	uintptr_t check = 0;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	for (s = 1; s <= size; s++) {
+		p = VRT_priv_task(ctx, (void *)s);
+		if (p == NULL) {
+			VRT_fail(ctx, "no priv task - out of ws?");
+			return (-1.0);
+		}
+		p->priv = NULL;
+	}
+
+	t0 = VTIM_mono();
+	for (r = 0; r < rounds; r++) {
+		for (s = 1; s <= size; s++) {
+			p = VRT_priv_task(ctx, (void *)s);
+			check += (uintptr_t)p->priv;
+			p->priv = (void *)(uintptr_t)(s * rounds + r);
+		}
+	}
+	t1 = VTIM_mono();
+
+	d = (t1 - t0) * 1e9 / size / rounds;
+
+	VSLb(ctx->vsl, SLT_Debug,
+	     "perf size %ld rounds %ld time %.9fns check %ld",
+	     size, rounds, d, check);
+
+	return (d);
+}

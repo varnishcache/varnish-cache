@@ -10,7 +10,7 @@ server s1 {
 	txresp
 } -start
 
-varnish v1 -arg "-p debug=+vclrel" -vcl+backend {
+varnish v1 -arg "-p debug=+vclrel -p workspace_client=1m" -vcl+backend {
 	import debug;
 	import std;
 
@@ -26,9 +26,22 @@ varnish v1 -arg "-p debug=+vclrel" -vcl+backend {
 	}
 
 	sub vcl_recv {
+		if (req.url == "/perf") {
+			return (synth(200));
+		}
 		debug.test_priv_task(req.url);
 		set req.http.x0 = debug.test_priv_task();
 		debug.test_priv_task("bazz");
+	}
+
+	sub vcl_synth {
+		std.log("discard 100 " + debug.priv_perf(100));
+		std.log("perf    1 " + debug.priv_perf(1));
+		std.log("perf   10 " + debug.priv_perf(10));
+		std.log("perf  100 " + debug.priv_perf(100));
+		## unbearable with the list implementation - ok with rb tree
+		# std.log("perf 1000 " + debug.priv_perf(1000));
+		return (deliver);
 	}
 
 	sub vcl_deliver {
@@ -109,6 +122,9 @@ client c1 {
 	expect resp.http.bx0 == "b /snafu"
 	expect resp.http.bx1 == "b /snafu"
 	expect resp.http.bo1 == "b /snafu"
+
+	txreq -url /perf
+	rxresp
 } -run
 
 shell "echo 'vcl 4.0; backend foo { .host = \"${s1_addr}\"; .port = \"${s1_port}\"; }' > ${tmpdir}/_b00014.vcl"
