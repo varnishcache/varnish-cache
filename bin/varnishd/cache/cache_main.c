@@ -379,6 +379,20 @@ cli_quit(int sig)
  * Run the child process
  */
 
+static void v_matchproto_(cli_func_t)
+ccf_child_start(struct cli *cli, const char * const *av, void *priv)
+{
+	(void)av;
+	(void)priv;
+
+	VCA_Start(cli);
+}
+
+static struct cli_proto child_cmds[] = {
+	{ CLICMD_SERVER_START,		"", ccf_child_start },
+	{ NULL }
+};
+
 void
 child_main(int sigmagic, size_t altstksz)
 {
@@ -455,6 +469,7 @@ child_main(int sigmagic, size_t altstksz)
 
 
 	CLI_AddFuncs(debug_cmds);
+	CLI_AddFuncs(child_cmds);
 
 #if WITH_PERSISTENT_STORAGE
 	/* Wait for persistent storage to load if asked to */
