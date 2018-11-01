@@ -437,8 +437,6 @@ pool_breed(struct pool *qp)
 	pthread_t tp;
 	pthread_attr_t tp_attr;
 	struct pool_info *pi;
-	const char *strerr;
-	int err;
 
 	AZ(pthread_attr_init(&tp_attr));
 	AZ(pthread_attr_setdetachstate(&tp_attr, PTHREAD_CREATE_DETACHED));
@@ -454,12 +452,8 @@ pool_breed(struct pool *qp)
 	pi->qp = qp;
 
 	if (pthread_create(&tp, &tp_attr, pool_thread, pi)) {
-		err = errno;
-		strerr = strerror(errno);
-		if (strerr == NULL)
-			strerr = "(strerror failed)";
 		VSL(SLT_Debug, 0, "Create worker thread failed %d %s",
-		    err, strerr);
+		    errno, strerror(errno));
 		Lck_Lock(&pool_mtx);
 		VSC_C_main->threads_failed++;
 		Lck_Unlock(&pool_mtx);
