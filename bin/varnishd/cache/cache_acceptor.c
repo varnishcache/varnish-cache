@@ -676,14 +676,10 @@ vca_acct(void *arg)
 
 /*--------------------------------------------------------------------*/
 
-static void v_matchproto_(cli_func_t)
-ccf_start(struct cli *cli, const char * const *av, void *priv)
+void
+VCA_Start(struct cli *cli)
 {
 	struct listen_sock *ls;
-
-	(void)cli;
-	(void)av;
-	(void)priv;
 
 	(void)vca_sock_opt_init();
 
@@ -752,7 +748,6 @@ ccf_listen_address(struct cli *cli, const char * const *av, void *priv)
 /*--------------------------------------------------------------------*/
 
 static struct cli_proto vca_cmds[] = {
-	{ CLICMD_SERVER_START,		"", ccf_start },
 	{ CLICMD_DEBUG_LISTEN_ADDRESS,	"d", ccf_listen_address },
 	{ NULL }
 };
