@@ -565,7 +565,7 @@ xyzzy_priv_perf(VRT_CTX, VCL_INT size, VCL_INT rounds)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
 	for (s = 1; s <= size; s++) {
-		p = VRT_priv_task(ctx, (void *)s);
+		p = VRT_priv_task(ctx, (void *)(uintptr_t)s);
 		if (p == NULL) {
 			VRT_fail(ctx, "no priv task - out of ws?");
 			return (-1.0);
@@ -576,7 +576,7 @@ xyzzy_priv_perf(VRT_CTX, VCL_INT size, VCL_INT rounds)
 	t0 = VTIM_mono();
 	for (r = 0; r < rounds; r++) {
 		for (s = 1; s <= size; s++) {
-			p = VRT_priv_task(ctx, (void *)s);
+			p = VRT_priv_task(ctx, (void *)(uintptr_t)s);
 			check += (uintptr_t)p->priv;
 			p->priv = (void *)(uintptr_t)(s * rounds + r);
 		}
