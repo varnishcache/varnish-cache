@@ -666,8 +666,12 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 
 	pan_backtrace(pan_vsb);
 
-	if (err)
-		VSB_printf(pan_vsb, "errno = %d (%s)\n", err, strerror(err));
+	if (err) {
+		q = strerror(err);
+		if (q == NULL)
+			q = "(strerror failed)";
+		VSB_printf(pan_vsb, "errno = %d (%s)\n", err, q);
+	}
 
 	q = THR_GetName();
 	if (q != NULL)
