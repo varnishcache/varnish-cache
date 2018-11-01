@@ -586,8 +586,8 @@ xyzzy_priv_perf(VRT_CTX, VCL_INT size, VCL_INT rounds)
 	d = (t1 - t0) * 1e9 / size / rounds;
 
 	VSLb(ctx->vsl, SLT_Debug,
-	     "perf size %ld rounds %ld time %.9fns check %ld",
-	     size, rounds, d, check);
+	     "perf size %jd rounds %jd time %.9fns check %jd",
+	     (intmax_t)size, (intmax_t)rounds, d, (uintmax_t)check);
 
 	return (d);
 }
