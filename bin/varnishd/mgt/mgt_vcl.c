@@ -257,7 +257,8 @@ mgt_vcl_del(struct vclprog *vp)
 	if (vp->state != VCL_STATE_LABEL)
 		vcl_count--;
 	if (vp->fname != NULL) {
-		AZ(unlink(vp->fname));
+		if (!MGT_DO_DEBUG(DBG_VCL_KEEP))
+			AZ(unlink(vp->fname));
 		p = strrchr(vp->fname, '/');
 		AN(p);
 		*p = '\0';

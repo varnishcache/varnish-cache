@@ -413,8 +413,9 @@ varnish_launch(struct varnish *v)
 	if (vtc_witness)
 		VSB_cat(vsb, " -p debug=+witness");
 	if (leave_temp) {
-		VSB_cat(vsb, " -p debug=+vsm_keep");
+		VSB_cat(vsb, " -p debug=+vcl_keep");
 		VSB_cat(vsb, " -p debug=+vmod_so_keep");
+		VSB_cat(vsb, " -p debug=+vsm_keep");
 	}
 	VSB_printf(vsb, " -l 2m");
 	VSB_printf(vsb, " -p auto_restart=off");
