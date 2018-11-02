@@ -380,7 +380,8 @@ mgt_VccCompile(struct cli *cli, struct vclprog *vcl, const char *vclname,
 	}
 	AZ(fclose(fcs));
 
-	(void)unlink(vp.csrcfile);
+	if (!MGT_DO_DEBUG(DBG_VCL_KEEP))
+		(void)unlink(vp.csrcfile);
 	free(vp.csrcfile);
 
 	free(vp.dir);
