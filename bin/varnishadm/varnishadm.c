@@ -73,6 +73,7 @@
 
 
 static double timeout = 5;
+static struct vsm *vsm;
 
 static void
 cli_write(int sock, const char *s)
@@ -388,17 +389,24 @@ usage(int status)
 	exit(status);
 }
 
+static void
+vsm_sighandler(int sig)
+{
+	if (vsm != NULL)
+		VSM_Signaled(vsm, sig);
+}
+
 static int
 n_arg_sock(const char *n_arg, const char *t_arg)
 {
 	char *T_arg = NULL, *T_start = NULL;
 	char *S_arg = NULL;
-	struct vsm *vsm;
 	char *p;
 	int sock;
 
 	vsm = VSM_New();
 	AN(vsm);
+	VSM_Signal(vsm_sighandler);
 	if (VSM_Arg(vsm, 'n', n_arg) < 0 ||
 	    VSM_Arg(vsm, 't', t_arg) < 0 ||
 	    VSM_Attach(vsm, STDERR_FILENO) < 0) {

@@ -247,6 +247,8 @@ VUT_Signaled(struct VUT *vut, int sig)
 	vut->sighup |= (int)(sig == SIGHUP);
 	vut->sigint |= (int)(sig == SIGINT || sig == SIGTERM);
 	vut->sigusr1 |= (int)(sig == SIGUSR1);
+	if (vut->vsm)
+		VSM_Signaled(vut->vsm, sig);
 }
 
 void

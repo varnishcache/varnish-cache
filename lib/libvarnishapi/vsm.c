@@ -127,6 +127,8 @@ struct vsm {
 	double			patience;
 
 	int			couldkill;
+
+	int			sigint;
 };
 
 /*--------------------------------------------------------------------*/
@@ -654,6 +656,27 @@ VSM_Status(struct vsm *vd)
 
 /*--------------------------------------------------------------------*/
 
+void
+VSM_Signal(VSM_sighandler_f sig_cb)
+{
+
+	AN(sig_cb);
+	(void)signal(SIGINT, sig_cb);
+	(void)signal(SIGTERM, sig_cb);
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+VSM_Signaled(struct vsm *vd, int sig)
+{
+
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	vd->sigint |= (int)(sig == SIGINT || sig == SIGTERM);
+}
+
+/*--------------------------------------------------------------------*/
+
 int
 VSM_Attach(struct vsm *vd, int progress)
 {
@@ -677,7 +700,7 @@ VSM_Attach(struct vsm *vd, int progress)
 	}
 
 	AZ(vd->attached);
-	while (1) {
+	while (!vd->sigint) {
 		u = VSM_Status(vd);
 		VSM_ResetError(vd);
 		if (u & VSM_MGT_RUNNING) {
@@ -696,6 +719,8 @@ VSM_Attach(struct vsm *vd, int progress)
 			(void)write(progress, ".", 1);
 		VTIM_sleep(.25);
 	}
+
+	return (vsm_diag(vd, "Attach interrupted"));
 }
 
 /*--------------------------------------------------------------------*/

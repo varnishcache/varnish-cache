@@ -38,6 +38,8 @@
 
 struct vsm;
 
+typedef void VSM_sighandler_f(int);
+
 /*
  * This structure is used to reference a VSM chunk
  */
@@ -185,6 +187,16 @@ char *VSM_Dup(struct vsm*, const char *class, const char *ident);
 	 * Return:
 	 *   NULL = Failure
 	 *   !NULL = malloc'ed pointer
+	 */
+
+void VSM_Signal(VSM_sighandler_f);
+	/*
+	 *
+	 */
+
+void VSM_Signaled(struct vsm *, int);
+	/*
+	 *
 	 */
 
 #endif /* VAPI_VSM_H_INCLUDED */

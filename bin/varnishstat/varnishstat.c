@@ -52,6 +52,7 @@
 #include "varnishstat.h"
 
 static struct VUT *vut;
+static struct vsm *vd;
 
 /*--------------------------------------------------------------------*/
 
@@ -245,6 +246,15 @@ list_fields(struct vsm *vsm, struct vsc *vsc)
 
 /*--------------------------------------------------------------------*/
 
+static void
+vsm_sighandler(int sig)
+{
+	if (vd != NULL)
+		VSM_Signaled(vd, sig);
+}
+
+/*--------------------------------------------------------------------*/
+
 static void v_noreturn_
 usage(int status)
 {
@@ -260,7 +270,6 @@ usage(int status)
 int
 main(int argc, char * const *argv)
 {
-	struct vsm *vd;
 	int once = 0, xml = 0, json = 0, f_list = 0, curses = 0;
 	signed char opt;
 	int i;
@@ -314,6 +323,7 @@ main(int argc, char * const *argv)
 	if (!(xml || json || once || f_list))
 		curses = 1;
 
+	VSM_Signal(vsm_sighandler);
 	if (VSM_Attach(vd, STDERR_FILENO))
 		VUT_Error(vut, 1, "%s", VSM_Error(vd));
 
