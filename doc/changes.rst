@@ -26,6 +26,100 @@ http://varnish-cache.org/docs/trunk/whats-new/index.html and via
 individual releases. These documents are updated as part of the
 release process.
 
+================================
+Varnish Cache 6.0.2 (unreleased)
+================================
+
+* Fix and test objhead refcount for hit-for-pass (2654_, 2754_, 2760_)
+
+* Allow a string argument to return(fail("Because!")); (2694_)
+
+* Improve VCC error messages (2696_)
+
+* Fix obj.hits in vcl_hit (2746_)
+
+* Improvements to how PRIV_TASK and PRIV_TOP are initialized (2708_,
+  2749_)
+
+* fixed ``varnishhist`` display error (2780_)
+
+* In ``Error: out of workspace`` log entries, the workspace name is
+  now reported in lowercase
+
+* Adjust code generator python tools to python 3 and prefer python 3
+  over python 2 where available
+
+* Clear the IMS object attribute when copying from a stale object
+  (2763_)
+
+* Implement and test ECMA-48 "REP" sequence to fix test case
+  u00008.vtc on some newer platforms. (2668_)
+
+* Don't mess with C-L when responding to HEAD (2744_)
+
+* Align handling of STRINGS derived types (2745_)
+
+* Fix some stats metrics (vsc) which were wrongly marked as _gauge_
+
+* Varnishhist: Ignore non-positive values when accumulating (2773_)
+
+* Fix production of VTC documentation (2777_)
+
+* Fix ``varnishd -I`` (2782_)
+
+* Fix ``varnishstat -f`` in curses mode (interactively, without
+  ``-1``, 2787_)
+
+* Handle an out-of-workspace condition in HTTP/2 delivery more
+  gracefully (2589_)
+
+* Added a thread pool watchdog which will restart the worker process
+  if scheduling tasks onto worker threads appears stuck. The new
+  parameter ``thread_pool_watchdog`` configures it. (2418_, 2794_)
+
+* Clarify and test object slimming for hfp+hfm. (2768_)
+
+* Allow PRIORITY frames on closed streams (2775_)
+
+* Hardening of the h2_frame_f callbacks (2781_)
+
+* Added a JSON section to varnish-cli(7) (2783_)
+
+* Improved varnish log client performance (2788_)
+
+* Change nanosecond precision timestamps into microseconds (2792_)
+
+* Only dlclose() Vmods after all "fini" processing (2800_)
+
+.. _2418: https://github.com/varnishcache/varnish-cache/issues/2418
+.. _2589: https://github.com/varnishcache/varnish-cache/issues/2589
+.. _2654: https://github.com/varnishcache/varnish-cache/issues/2654
+.. _2663: https://github.com/varnishcache/varnish-cache/pull/2663
+.. _2668: https://github.com/varnishcache/varnish-cache/issues/2668
+.. _2694: https://github.com/varnishcache/varnish-cache/issues/2694
+.. _2696: https://github.com/varnishcache/varnish-cache/issues/2696
+.. _2708: https://github.com/varnishcache/varnish-cache/issues/2708
+.. _2744: https://github.com/varnishcache/varnish-cache/pull/2744
+.. _2745: https://github.com/varnishcache/varnish-cache/issues/2745
+.. _2746: https://github.com/varnishcache/varnish-cache/issues/2746
+.. _2749: https://github.com/varnishcache/varnish-cache/issues/2749
+.. _2754: https://github.com/varnishcache/varnish-cache/issues/2754
+.. _2760: https://github.com/varnishcache/varnish-cache/pull/2760
+.. _2763: https://github.com/varnishcache/varnish-cache/issues/2763
+.. _2768: https://github.com/varnishcache/varnish-cache/issues/2768
+.. _2773: https://github.com/varnishcache/varnish-cache/issues/2773
+.. _2775: https://github.com/varnishcache/varnish-cache/issues/2775
+.. _2777: https://github.com/varnishcache/varnish-cache/issues/2777
+.. _2780: https://github.com/varnishcache/varnish-cache/issues/2780
+.. _2781: https://github.com/varnishcache/varnish-cache/pull/2781
+.. _2782: https://github.com/varnishcache/varnish-cache/issues/2782
+.. _2783: https://github.com/varnishcache/varnish-cache/issues/2783
+.. _2787: https://github.com/varnishcache/varnish-cache/issues/2787
+.. _2788: https://github.com/varnishcache/varnish-cache/issues/2788
+.. _2792: https://github.com/varnishcache/varnish-cache/pull/2792
+.. _2794: https://github.com/varnishcache/varnish-cache/issues/2794
+.. _2800: https://github.com/varnishcache/varnish-cache/issues/2800
+
 
 ================================
 Varnish Cache 6.0.1 (2018-08-29)
