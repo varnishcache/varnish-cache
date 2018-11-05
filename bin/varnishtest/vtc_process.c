@@ -1068,6 +1068,7 @@ cmd_process(CMD_ARGS)
 			term_resize(p, lin, col);
 			AZ(pthread_mutex_unlock(&p->mtx));
 			process_winsz(p, p->fd_term);
+			continue;
 		}
 		if (!strcmp(*av, "-write")) {
 			process_write(p, av[1]);
@@ -1086,8 +1087,7 @@ cmd_process(CMD_ARGS)
 			continue;
 		}
 		if (**av == '-' || spec_set)
-			vtc_fatal(p->vl, "Unknown process argument: %s",
-			    *av);
+			vtc_fatal(p->vl, "Unknown process argument: %s", *av);
 		REPLACE(p->spec, *av);
 		spec_set = 1;
 	}
