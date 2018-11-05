@@ -9,14 +9,23 @@ varnish v1 -vcl+backend {
 	import std;
 
 	sub vcl_deliver {
+		std.timestamp("t0");
 		set resp.http.foo0 = std.ip("8.8.8.*", client.ip);
+		std.timestamp("8.8.8.*, client.ip");
 		set resp.http.foo1 = std.ip("9.9.9.*", server.ip);
+		std.timestamp("9.9.9.*, server.ip");
 		set resp.http.foo2 = std.ip("1.2.3.*", "127.0.0.2");
+		std.timestamp("1.2.3.*");
 		set resp.http.foo3 = std.ip("1.2.3.5", "127.0.0.3");
+		std.timestamp("1.2.3.5");
 		set resp.http.foo4 = std.ip("2001:db8::", "[::1]");
+		std.timestamp("2001:db8::");
 		set resp.http.foo5 = std.ip("2001::db8::", "[::1]");
+		std.timestamp("2001::db8::");
 		set resp.http.foo6 = std.ip("localhost", "0.0.0.0", resolve = false);
+		std.timestamp("localhost, resolve = false");
 		set resp.http.foo7 = std.ip("1.2.3.4", "0.0.0.0", resolve = false);
+		std.timestamp("1.2.3.4, resolve = false");
 	}
 } -start
 
