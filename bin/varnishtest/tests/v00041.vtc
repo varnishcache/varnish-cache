@@ -8,6 +8,11 @@ server s1 {
 
 	rxreq
 	txresp
+	expect_close
+	accept
+
+	rxreq
+	txresp
 } -start
 
 varnish v1 -arg "-p debug=+vclrel -p workspace_client=1m" -vcl+backend {
@@ -29,6 +34,15 @@ varnish v1 -arg "-p debug=+vclrel -p workspace_client=1m" -vcl+backend {
 		if (req.url == "/perf") {
 			return (synth(200));
 		}
+		if (req.url == "/pipe") {
+			return (pipe);
+		}
+		debug.test_priv_task(req.url);
+		set req.http.x0 = debug.test_priv_task();
+		debug.test_priv_task("bazz");
+	}
+
+	sub vcl_pipe {
 		debug.test_priv_task(req.url);
 		set req.http.x0 = debug.test_priv_task();
 		debug.test_priv_task("bazz");
@@ -124,6 +138,9 @@ client c1 {
 	expect resp.http.bo1 == "b /snafu"
 
 	txreq -url /perf
+	rxresp
+
+	txreq -url /pipe
 	rxresp
 } -run
 
