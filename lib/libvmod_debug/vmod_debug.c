@@ -577,16 +577,17 @@ xyzzy_priv_perf(VRT_CTX, VCL_INT size, VCL_INT rounds)
 	for (r = 0; r < rounds; r++) {
 		for (s = 1; s <= size; s++) {
 			p = VRT_priv_task(ctx, (void *)(uintptr_t)s);
+			AN(p);
 			check += (uintptr_t)p->priv;
 			p->priv = (void *)(uintptr_t)(s * rounds + r);
 		}
 	}
 	t1 = VTIM_mono();
 
-	d = (t1 - t0) * 1e9 / size / rounds;
+	d = (t1 - t0) * 1e9 / ((double)size * (double)rounds);
 
 	VSLb(ctx->vsl, SLT_Debug,
-	     "perf size %jd rounds %jd time %.9fns check %jd",
+	     "perf size %jd rounds %jd time %.1fns check %jd",
 	     (intmax_t)size, (intmax_t)rounds, d, (uintmax_t)check);
 
 	return (d);
