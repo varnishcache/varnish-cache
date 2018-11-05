@@ -150,7 +150,7 @@ req (\d+) rxreq \5 - - -$} \
 %{VSL:Timestamp:Resp[2]}x %{VSL:Timestamp:foo}x"}
 
 process p1 -stop -screen-dump
-process p1 -expect-text 1 0 {"GET http://127.0.0.1/1?foo=bar HTTP/1.1" 200 100 "-" "-"}
+process p1 -expect-text 1 0 {/1?foo=bar HTTP/1.1" 200 100 "-" "-"}
 process p1 -expect-text 1 0 { - user [}
-process p1 -expect-text 2 0 {"GET http://127.0.0.1/1?foo=bar HTTP/1.1" 404 248 "-" "-"}
-process p1 -expect-text 3 0 {"GET http://127.0.0.1/2 HTTP/1.1" - - "-" "-"}
+process p1 -expect-text 2 0 {/1?foo=bar HTTP/1.1" 404 248 "-" "-"}
+process p1 -expect-text 3 0 {/2 HTTP/1.1" - - "-" "-"}
