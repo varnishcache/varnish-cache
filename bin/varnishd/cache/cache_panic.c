@@ -30,7 +30,6 @@
 #include "config.h"
 
 #include <execinfo.h>
-#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -667,7 +666,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 	pan_backtrace(pan_vsb);
 
 	if (err)
-		VSB_printf(pan_vsb, "errno = %d (%s)\n", err, strerror(err));
+		VSB_printf(pan_vsb, "errno = %d (%s)\n", err, vstrerror(err));
 
 	q = THR_GetName();
 	if (q != NULL)

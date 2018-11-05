@@ -30,7 +30,6 @@
 #include "config.h"
 
 #include <time.h>
-#include <errno.h>
 #include <poll.h>
 #include <pthread.h>
 #include <signal.h>

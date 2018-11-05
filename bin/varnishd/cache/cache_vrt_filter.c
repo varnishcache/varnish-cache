@@ -30,7 +30,6 @@
 
 #include "config.h"
 
-#include <errno.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>

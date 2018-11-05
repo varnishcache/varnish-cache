@@ -31,7 +31,6 @@
 
 #include "config.h"
 
-#include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -212,13 +211,13 @@ mgt_vcc_touchfile(const char *fn, struct vsb *sb)
 
 	i = open(fn, O_WRONLY|O_CREAT|O_TRUNC, 0640);
 	if (i < 0) {
-		VSB_printf(sb, "Failed to create %s: %s", fn, strerror(errno));
+		VSB_printf(sb, "Failed to create %s: %s", fn, vstrerror(errno));
 		return (2);
 	}
 	if (fchown(i, mgt_param.uid, mgt_param.gid) != 0)
 		if (geteuid() == 0)
 			VSB_printf(sb, "Failed to change owner on %s: %s\n",
-			    fn, strerror(errno));
+			    fn, vstrerror(errno));
 	closefd(&i);
 	return (0);
 }

@@ -36,7 +36,6 @@
 
 #include <sys/mman.h>
 
-#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -162,7 +161,7 @@ smf_init(struct stevedore *parent, int ac, char * const *av)
 	MCH_Fd_Inherit(sc->fd, "storage_file");
 	sc->filesize = STV_FileSize(sc->fd, size, &sc->pagesize, "-sfile");
 	if (VFIL_allocate(sc->fd, (off_t)sc->filesize, 0))
-		ARGV_ERR("(-sfile) allocation error: %s\n", strerror(errno));
+		ARGV_ERR("(-sfile) allocation error: %s\n", vstrerror(errno));
 }
 
 /*--------------------------------------------------------------------

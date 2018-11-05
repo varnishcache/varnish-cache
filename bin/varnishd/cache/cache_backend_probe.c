@@ -39,7 +39,6 @@
 
 #include <poll.h>
 #include <stdio.h>
-#include <errno.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -236,11 +235,11 @@ vbp_write(struct vbp_target *vt, int *sock, const void *buf, size_t len)
 		if (i < 0) {
 			vt->err_xmit |= 1;
 			bprintf(vt->resp_buf, "Write error %d (%s)",
-				errno, strerror(errno));
+				errno, vstrerror(errno));
 		} else {
 			bprintf(vt->resp_buf,
 				"Short write (%d/%zu) error %d (%s)",
-				i, len, errno, strerror(errno));
+				i, len, errno, vstrerror(errno));
 		}
 		VTCP_close(sock);
 		return (-1);
@@ -289,7 +288,7 @@ vbp_poke(struct vbp_target *vt)
 
 	s = VTP_Open(vt->tcp_pool, t_end - t_now, (const void **)&sa, &err);
 	if (s < 0) {
-		bprintf(vt->resp_buf, "Open error %d (%s)", err, strerror(err));
+		bprintf(vt->resp_buf, "Open error %d (%s)", err, vstrerror(err));
 		Lck_Lock(&vbp_mtx);
 		if (vt->backend)
 			VBE_Connect_Error(vt->backend->vsc, err);
@@ -355,7 +354,7 @@ vbp_poke(struct vbp_target *vt)
 		if (i == 0) {
 			vt->err_recv |= 1;
 			bprintf(vt->resp_buf, "Poll error %d (%s)",
-				errno, strerror(errno));
+				errno, vstrerror(errno));
 			VTCP_close(&s);
 			return;
 		}
@@ -374,7 +373,7 @@ vbp_poke(struct vbp_target *vt)
 		if (i <= 0) {
 			if (i < 0)
 				bprintf(vt->resp_buf, "Read error %d (%s)",
-					errno, strerror(errno));
+					errno, vstrerror(errno));
 			break;
 		}
 		rlen += i;

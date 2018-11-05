@@ -20,6 +20,7 @@ libvarnish_a_SOURCES = \
 	vcli_proto.c \
 	vcli_serve.c \
 	vct.c \
+	verrno.c \
 	version.c \
 	vev.c \
 	vfil.c \

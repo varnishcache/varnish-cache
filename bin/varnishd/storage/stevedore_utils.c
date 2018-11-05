@@ -33,7 +33,6 @@
 
 #include <sys/stat.h>
 
-#include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -102,7 +101,7 @@ STV_GetFile(const char *fn, int *fdp, const char **fnp, const char *ctx)
 		fd = mkstemp(buf);
 		if (fd < 0)
 			ARGV_ERR("(%s) \"%s\" mkstemp(%s) failed (%s)\n",
-			    ctx, fn, buf, strerror(errno));
+			    ctx, fn, buf, vstrerror(errno));
 		AZ(unlink(buf));
 		*fnp = strdup(buf);
 		AN(*fnp);
@@ -111,7 +110,7 @@ STV_GetFile(const char *fn, int *fdp, const char **fnp, const char *ctx)
 		fd = open(fn, O_RDWR | O_LARGEFILE);
 		if (fd < 0)
 			ARGV_ERR("(%s) \"%s\" could not open (%s)\n",
-			    ctx, fn, strerror(errno));
+			    ctx, fn, vstrerror(errno));
 		*fnp = fn;
 		retval = 0;
 	} else

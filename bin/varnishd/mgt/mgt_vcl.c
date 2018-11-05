@@ -31,7 +31,6 @@
 
 #include "config.h"
 
-#include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -319,13 +318,13 @@ mgt_vcl_cache_vmod(const char *nm, const char *fm, const char *to)
 		return (0);
 	if (fo < 0) {
 		fprintf(stderr, "Creating copy of vmod %s: %s\n",
-		    nm, strerror(errno));
+		    nm, vstrerror(errno));
 		return (1);
 	}
 	fi = open(fm, O_RDONLY);
 	if (fi < 0) {
 		fprintf(stderr, "Opening vmod %s from %s: %s\n",
-		    nm, fm, strerror(errno));
+		    nm, fm, vstrerror(errno));
 		AZ(unlink(to));
 		closefd(&fo);
 		return (1);
@@ -336,7 +335,7 @@ mgt_vcl_cache_vmod(const char *nm, const char *fm, const char *to)
 			break;
 		if (sz < 0 || sz != write(fo, buf, sz)) {
 			fprintf(stderr, "Copying vmod %s: %s\n",
-			    nm, strerror(errno));
+			    nm, vstrerror(errno));
 			AZ(unlink(to));
 			ret = 1;
 			break;

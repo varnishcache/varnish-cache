@@ -659,7 +659,7 @@ VRT_synth_page(VRT_CTX, const char *str, ...)
 			p = "(null)";
 		if (VSB_cat(vsb, p)) {
 			VRT_fail(ctx, "synthetic(): %s",
-				 strerror(VSB_error(vsb)));
+				 vstrerror(VSB_error(vsb)));
 			break;
 		}
 		p = va_arg(ap, const char *);

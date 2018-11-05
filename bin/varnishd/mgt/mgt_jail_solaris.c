@@ -207,7 +207,6 @@
 
 #ifdef HAVE_SETPPRIV
 
-#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -395,7 +394,7 @@ vjs_setup(enum jail_gen_e jge)
 		MGT_Complain(C_SECURITY,
 		    "Solaris Jail warning: "
 		    " vjs_setup - priv_allocset failed: errno=%d (%s)",
-		    errno, strerror(errno));
+		    errno, vstrerror(errno));
 		return;
 	}
 
@@ -459,7 +458,7 @@ vjs_waive(enum jail_gen_e jge)
 		MGT_Complain(C_SECURITY,
 		    "Solaris Jail warning: "
 		    " vjs_waive - priv_allocset failed: errno=%d (%s)",
-		    errno, strerror(errno));
+		    errno, vstrerror(errno));
 		return;
 	}
 

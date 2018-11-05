@@ -39,7 +39,6 @@
 
 #include <sys/epoll.h>
 
-#include <errno.h>
 
 #include "cache/cache_varnishd.h"
 

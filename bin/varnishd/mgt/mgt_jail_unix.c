@@ -30,7 +30,6 @@
 
 #include "config.h"
 
-#include <errno.h>
 #include <fcntl.h>
 #include <grp.h>
 #include <pwd.h>
@@ -253,11 +252,11 @@ vju_make_subdir(const char *dname, const char *what, struct vsb *vsb)
 		if (vsb != NULL) {
 			VSB_printf(vsb,
 			    "Cannot create %s directory '%s': %s\n",
-			    what, dname, strerror(e));
+			    what, dname, vstrerror(e));
 		} else {
 			MGT_Complain(C_ERR,
 			    "Cannot create %s directory '%s': %s",
-			    what, dname, strerror(e));
+			    what, dname, vstrerror(e));
 		}
 		return (1);
 	}
@@ -277,7 +276,7 @@ vju_make_workdir(const char *dname, const char *what, struct vsb *vsb)
 
 	if (mkdir(dname, 0755) < 0 && errno != EEXIST) {
 		MGT_Complain(C_ERR, "Cannot create working directory '%s': %s",
-		    dname, strerror(errno));
+		    dname, vstrerror(errno));
 		return (1);
 	}
 	AZ(chown(dname, -1, vju_gid));

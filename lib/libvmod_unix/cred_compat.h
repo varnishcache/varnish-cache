@@ -27,7 +27,6 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <errno.h>
 
 #if defined(HAVE_GETPEEREID)
 #include <unistd.h>

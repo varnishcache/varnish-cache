@@ -35,7 +35,6 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/stat.h>
-#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -133,7 +132,7 @@ MAC_reopen_sockets(void)
 			fail = err;
 		MGT_Complain(C_ERR,
 		    "Could not reopen listen socket %s: %s",
-		    ls->endpoint, strerror(err));
+		    ls->endpoint, vstrerror(err));
 	}
 	return fail;
 }
@@ -167,7 +166,7 @@ mk_listen_sock(const struct listen_arg *la, const struct suckaddr *sa)
 		FREE_OBJ(ls);
 		if (fail != EAFNOSUPPORT)
 			ARGV_ERR("Could not get socket %s: %s\n",
-			    la->endpoint, strerror(fail));
+			    la->endpoint, vstrerror(fail));
 		return(NULL);
 	}
 	return(ls);
@@ -330,7 +329,7 @@ MAC_Arg(const char *spec)
 					 val);
 			if (errno)
 				ARGV_ERR("Cannot parse mode sub-arg %s in -a: "
-					 "%s\n", val, strerror(errno));
+					 "%s\n", val, vstrerror(errno));
 			if (m <= 0 || m > 0777)
 				ARGV_ERR("Mode sub-arg %s out of range in -a\n",
 					 val);

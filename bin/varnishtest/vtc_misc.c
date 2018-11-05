@@ -30,7 +30,6 @@
 
 #include <sys/wait.h>
 
-#include <errno.h>
 #include <grp.h>
 #include <math.h>
 #include <pwd.h>

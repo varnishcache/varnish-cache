@@ -42,7 +42,6 @@
 #include <sys/uio.h>
 #include "cache/cache_varnishd.h"
 
-#include <errno.h>
 #include <stdio.h>
 
 #include "cache_http1.h"
@@ -232,7 +231,7 @@ V1L_Flush(const struct worker *wrk)
 			v1l->werr++;
 			VSLb(v1l->vsl, SLT_Debug,
 			    "Write error, retval = %zd, len = %zd, errno = %s",
-			    i, v1l->liov, strerror(errno));
+			    i, v1l->liov, vstrerror(errno));
 		}
 	}
 	v1l->liov = 0;

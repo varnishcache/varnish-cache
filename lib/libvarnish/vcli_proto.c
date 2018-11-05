@@ -31,7 +31,6 @@
 #include <sys/types.h>
 #include <sys/uio.h>
 
-#include <errno.h>
 #include <poll.h>
 #include <stdint.h>
 #include <stdio.h>

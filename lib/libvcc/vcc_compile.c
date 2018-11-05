@@ -52,7 +52,6 @@
 
 #include "config.h"
 
-#include <errno.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>

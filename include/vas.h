@@ -38,6 +38,8 @@
 #ifndef VAS_H_INCLUDED
 #define VAS_H_INCLUDED
 
+#include "verrno.h"
+
 enum vas_e {
 	VAS_WRONG,
 	VAS_MISSING,

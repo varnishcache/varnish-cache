@@ -29,7 +29,6 @@
 #include "config.h"
 
 #include <sys/types.h>
-#include <errno.h>
 #include <math.h>
 #include <poll.h>
 #include <string.h>

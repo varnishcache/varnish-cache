@@ -34,7 +34,6 @@
 #include <sys/ioctl.h>		// Linux: struct winsize
 
 #include <ctype.h>
-#include <errno.h>
 #include <fcntl.h>
 #include <inttypes.h>
 #include <poll.h>

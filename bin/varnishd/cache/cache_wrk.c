@@ -52,7 +52,6 @@
 
 #include "config.h"
 
-#include <errno.h>
 #include <stdlib.h>
 
 #include "cache_varnishd.h"
@@ -453,7 +452,7 @@ pool_breed(struct pool *qp)
 
 	if (pthread_create(&tp, &tp_attr, pool_thread, pi)) {
 		VSL(SLT_Debug, 0, "Create worker thread failed %d %s",
-		    errno, strerror(errno));
+		    errno, vstrerror(errno));
 		Lck_Lock(&pool_mtx);
 		VSC_C_main->threads_failed++;
 		Lck_Unlock(&pool_mtx);

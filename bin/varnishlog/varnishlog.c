@@ -37,7 +37,6 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
-#include <errno.h>
 #include <stdint.h>
 
 #define VOPT_DEFINITION

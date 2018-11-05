@@ -28,7 +28,6 @@
 
 #include "config.h"
 
-#include <errno.h>
 #include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>

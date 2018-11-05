@@ -32,7 +32,6 @@
 #include "cache/cache_varnishd.h"
 #include "cache/cache_filter.h"
 
-#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -115,7 +114,7 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 			assert(i < 0);
 			VSLb(bo->vsl, SLT_FetchError,
 			    "req.body read error: %d (%s)",
-			    errno, strerror(errno));
+			    errno, vstrerror(errno));
 			bo->req->doclose = SC_RX_BODY;
 		}
 		if (do_chunked)
@@ -134,7 +133,7 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 
 	if (j != 0 || i < 0) {
 		VSLb(bo->vsl, SLT_FetchError, "backend write error: %d (%s)",
-		    errno, strerror(errno));
+		    errno, vstrerror(errno));
 		VSLb_ts_busyobj(bo, "Bereq", W_TIM_real(wrk));
 		htc->doclose = SC_TX_ERROR;
 		return (-1);

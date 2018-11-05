@@ -34,7 +34,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-#include <errno.h>
 #include <fcntl.h>
 #include <poll.h>
 #include <stdarg.h>
@@ -284,7 +283,7 @@ mcf_auth(struct cli *cli, const char *const *av, void *priv)
 	fd = open(secret_file, O_RDONLY);
 	if (fd < 0) {
 		VCLI_Out(cli, "Cannot open secret file (%s)\n",
-		    strerror(errno));
+		    vstrerror(errno));
 		VCLI_SetResult(cli, CLIS_CANT);
 		VJ_master(JAIL_MASTER_LOW);
 		return;
@@ -593,7 +592,7 @@ Marg_connect(const struct vev *e, int what)
 	M_fd = VTCP_connected(M_fd);
 	if (M_fd < 0) {
 		MGT_Complain(C_INFO, "Could not connect to CLI-master: %s",
-			strerror(errno));
+			vstrerror(errno));
 		ma = VTAILQ_FIRST(&m_addr_list);
 		AN(ma);
 		VTAILQ_REMOVE(&m_addr_list, ma, list);

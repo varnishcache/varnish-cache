@@ -49,7 +49,6 @@
 #  error missing readline.h - this should have got caught in configure
 #endif
 
-#include <errno.h>
 #include <math.h>
 #include <fcntl.h>
 #include <poll.h>

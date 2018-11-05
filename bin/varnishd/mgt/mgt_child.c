@@ -34,7 +34,6 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#include <errno.h>
 #include <fcntl.h>
 #include <poll.h>
 #include <signal.h>
@@ -607,7 +606,7 @@ MCH_Cli_Fail(void)
 		    " killed it.", (intmax_t)child_pid);
 	else
 		MGT_Complain(C_ERR, "Failed to kill child with PID %jd: %s",
-		    (intmax_t)child_pid, strerror(errno));
+		    (intmax_t)child_pid, vstrerror(errno));
 }
 
 /*=====================================================================

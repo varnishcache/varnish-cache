@@ -33,7 +33,6 @@
 #include "config.h"
 
 #include <stdlib.h>
-#include <errno.h>
 
 #include "cache_varnishd.h"
 
@@ -154,7 +153,7 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
 		VBE_Connect_Error(bp->vsc, err);
 		VSLb(bo->vsl, SLT_FetchError,
 		     "backend %s: fail errno %d (%s)",
-		     VRT_BACKEND_string(bp->director), err, strerror(err));
+		     VRT_BACKEND_string(bp->director), err, vstrerror(err));
 		VSC_C_main->backend_fail++;
 		bo->htc = NULL;
 		return (NULL);

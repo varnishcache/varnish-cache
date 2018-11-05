@@ -31,7 +31,6 @@
 
 #include "cache/cache_varnishd.h"
 
-#include <errno.h>
 #include <stdio.h>
 
 #include "cache/cache_transport.h"
@@ -263,7 +262,7 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 	sz = write(h2->sess->fd, h2_resp_101, strlen(h2_resp_101));
 	if (sz != strlen(h2_resp_101)) {
 		VSLb(h2->vsl, SLT_Debug, "H2: Upgrade: Error writing 101"
-		    " response: %s\n", strerror(errno));
+		    " response: %s\n", vstrerror(errno));
 		return (h2_ou_rel(wrk, req));
 	}
 

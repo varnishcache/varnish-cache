@@ -35,7 +35,6 @@
 
 #include "config.h"
 
-#include <errno.h>
 #include <inttypes.h>
 
 #include "cache/cache_varnishd.h"
@@ -77,7 +76,7 @@ v1f_read(const struct vfp_ctx *vc, struct http_conn *htc, void *d, ssize_t len)
 		if (i < 0) {
 			// XXX: VTCP_Assert(i); // but also: EAGAIN
 			VSLb(vc->wrk->vsl, SLT_FetchError,
-			    "%s", strerror(errno));
+			    "%s", vstrerror(errno));
 			return (i);
 		}
 	}

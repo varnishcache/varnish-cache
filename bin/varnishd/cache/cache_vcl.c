@@ -30,7 +30,6 @@
 
 #include "config.h"
 
-#include <errno.h>
 #include <dlfcn.h>
 #include <fnmatch.h>
 #include <stdio.h>

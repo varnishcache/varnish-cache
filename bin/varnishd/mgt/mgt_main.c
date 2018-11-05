@@ -32,7 +32,6 @@
 #include "config.h"
 
 #include <ctype.h>
-#include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
 #include <stdio.h>
@@ -226,7 +225,7 @@ make_secret(const char *dirname)
 	fdo = open(fn, O_RDWR|O_CREAT|O_TRUNC, 0640);
 	if (fdo < 0)
 		ARGV_ERR("Cannot create secret-file in %s (%s)\n",
-		    dirname, strerror(errno));
+		    dirname, vstrerror(errno));
 
 	for (i = 0; i < 256; i++) {
 		AZ(VRND_RandomCrypto(&b, 1));
@@ -319,7 +318,7 @@ mgt_eric(void)
 
 	switch (fork()) {
 	case -1:
-		fprintf(stderr, "Fork() failed: %s\n", strerror(errno));
+		fprintf(stderr, "Fork() failed: %s\n", vstrerror(errno));
 		exit(-1);
 	case 0:
 		closefd(&eric_pipes[0]);
@@ -419,7 +418,7 @@ mgt_f_read(const char *fn)
 	VFIL_setpath(&vcl_path, mgt_vcl_path);
 	if (VFIL_searchpath(vcl_path, NULL, &f, fn, &fnp) || f == NULL) {
 		ARGV_ERR("Cannot read -f file '%s' (%s)\n",
-		    fnp != NULL ? fnp : fn, strerror(errno));
+		    fnp != NULL ? fnp : fn, vstrerror(errno));
 	}
 	free(fa->farg);
 	fa->farg = fnp;
@@ -626,7 +625,7 @@ main(int argc, char * const *argv)
 			I_fd = open(optarg, O_RDONLY);
 			if (I_fd < 0)
 				ARGV_ERR("\tCant open %s: %s\n",
-				    optarg, strerror(errno));
+				    optarg, vstrerror(errno));
 			VJ_master(JAIL_MASTER_LOW);
 			break;
 		case 'l':
@@ -732,13 +731,13 @@ main(int argc, char * const *argv)
 		o = open(S_arg, O_RDONLY, 0);
 		if (o < 0)
 			ARGV_ERR("Cannot open -S file (%s): %s\n",
-			    S_arg, strerror(errno));
+			    S_arg, vstrerror(errno));
 		closefd(&o);
 		VJ_master(JAIL_MASTER_LOW);
 	}
 
 	if (VIN_n_Arg(n_arg, &dirname) != 0)
-		ARGV_ERR("Invalid instance (-n) name: %s\n", strerror(errno));
+		ARGV_ERR("Invalid instance (-n) name: %s\n", vstrerror(errno));
 
 	if (i_arg == NULL || *i_arg == '\0')
 		i_arg = mgt_HostName();
@@ -750,12 +749,12 @@ main(int argc, char * const *argv)
 
 	if (VJ_make_workdir(dirname))
 		ARGV_ERR("Cannot create working directory (%s): %s\n",
-		    dirname, strerror(errno));
+		    dirname, vstrerror(errno));
 
 	if (VJ_make_subdir("vmod_cache", "VMOD cache", NULL)) {
 		ARGV_ERR(
 		    "Cannot create vmod directory (%s/vmod_cache): %s\n",
-		    dirname, strerror(errno));
+		    dirname, vstrerror(errno));
 	}
 
 	vsb = VSB_new_auto();
@@ -769,7 +768,7 @@ main(int argc, char * const *argv)
 		    (intmax_t)pid);
 	if (pfh1 == NULL)
 		ARGV_ERR("Could not open pid-file (%s): %s\n",
-		    VSB_data(vsb), strerror(errno));
+		    VSB_data(vsb), vstrerror(errno));
 	VSB_destroy(&vsb);
 	if (P_arg) {
 		pfh2 = VPF_Open(P_arg, 0644, &pid);
@@ -778,7 +777,7 @@ main(int argc, char * const *argv)
 			    (intmax_t)pid);
 		if (pfh2 == NULL)
 			ARGV_ERR("Could not open pid-file (%s): %s\n",
-			    P_arg, strerror(errno));
+			    P_arg, vstrerror(errno));
 	}
 	VJ_master(JAIL_MASTER_LOW);
 
