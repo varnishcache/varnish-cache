@@ -49,7 +49,7 @@ struct vrt_privs cli_task_privs[1];
 
 static inline int vrt_priv_dyncmp(const struct vrt_priv *,
     const struct vrt_priv *);
-VRBT_PROTOTYPE(vrt_priv_tree, vrt_priv, entry, vrt_priv_dyncmp)
+VRBT_PROTOTYPE_STATIC(vrt_priv_tree, vrt_priv, entry, vrt_priv_dyncmp)
 
 /*--------------------------------------------------------------------
  */
@@ -102,7 +102,7 @@ vrt_priv_dyncmp(const struct vrt_priv *vp1, const struct vrt_priv *vp2)
 	return (0);
 }
 
-VRBT_GENERATE(vrt_priv_tree, vrt_priv, entry, vrt_priv_dyncmp)
+VRBT_GENERATE_STATIC(vrt_priv_tree, vrt_priv, entry, vrt_priv_dyncmp)
 
 static struct vmod_priv *
 vrt_priv_dynamic(struct ws *ws, struct vrt_privs *vps, uintptr_t vmod_id)
