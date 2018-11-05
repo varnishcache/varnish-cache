@@ -39,8 +39,6 @@
 
 #include "config.h"
 
-#define _WITH_GETLINE
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -612,7 +610,7 @@ parse_x_format(char *buf)
 			VUT_Error(vut, 1, "Unknown log tag: %s", buf);
 		assert(slt >= 0);
 
-		addf_vsl(slt, lval, r);
+		addf_vsl((enum VSL_tag_e)slt, lval, r);
 		return;
 	}
 	VUT_Error(vut, 1, "Unknown formatting extension: %s", buf);
@@ -872,7 +870,7 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
     void *priv)
 {
 	struct VSL_transaction *t;
-	unsigned tag;
+	enum VSL_tag_e tag;
 	const char *b, *e, *p;
 	struct watch *w;
 	int i, skip, be_mark;
