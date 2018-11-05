@@ -7,6 +7,5 @@
  */
 
 #include <errno.h>
-#include <string.h>
 
 const char * vstrerror(int e);

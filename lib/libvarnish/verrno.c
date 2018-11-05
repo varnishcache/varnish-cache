@@ -8,6 +8,8 @@
 
 #include "config.h"
 
+#include <string.h>
+
 #include "verrno.h"
 
 const char *
