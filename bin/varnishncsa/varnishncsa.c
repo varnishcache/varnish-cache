@@ -776,33 +776,31 @@ frag_fields(int force, const char *b, const char *e, ...)
 	AN(e);
 	va_start(ap, e);
 
-	field = va_arg(ap, int);
-	frag = va_arg(ap, struct fragment *);
-	for (n = 1, q = b; q < e; n++) {
-		/* caller must sort the fields, or this loop will not work: */
-		assert(field >= n);
-		AN(frag);
-
-		p = q;
-		/* Skip WS */
-		while (p < e && isspace(*p))
-			p++;
-		q = p;
-		/* Skip non-WS */
-		while (q < e && !isspace(*q))
-			q++;
-
-		if (field == n) {
-			if (frag->gen != CTX.gen || force) {
-				/* We only grab the same matching field once */
-				frag->gen = CTX.gen;
-				frag->b = p;
-				frag->e = q;
-			}
-			field = va_arg(ap, int);
-			if (field == 0)
-				break;
-			frag = va_arg(ap, struct fragment *);
+	n = 0;
+	while (1) {
+		field = va_arg(ap, int);
+		frag = va_arg(ap, struct fragment *);
+		if (field == 0) {
+			AZ(frag);
+			break;
+		}
+		p = q = NULL;
+		while (n < field) {
+			while (b < e && isspace(*b))
+				b++;
+			p = b;
+			while (b < e && !isspace(*b))
+				b++;
+			q = b;
+			n++;
+		}
+		assert(p != NULL && q != NULL);
+		assert(p < e && q > p);
+		if (frag->gen != CTX.gen || force) {
+			/* We only grab the same matching field once */
+			frag->gen = CTX.gen;
+			frag->b = p;
+			frag->e = q;
 		}
 	}
 	va_end(ap);
