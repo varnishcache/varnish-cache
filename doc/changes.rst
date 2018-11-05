@@ -91,6 +91,8 @@ Varnish Cache 6.0.2 (unreleased)
 
 * Only dlclose() Vmods after all "fini" processing (2800_)
 
+* Fix VRT_priv_task for calls from vcl_pipe {} and test for it (2820_)
+
 .. _2418: https://github.com/varnishcache/varnish-cache/issues/2418
 .. _2589: https://github.com/varnishcache/varnish-cache/issues/2589
 .. _2654: https://github.com/varnishcache/varnish-cache/issues/2654
@@ -119,6 +121,7 @@ Varnish Cache 6.0.2 (unreleased)
 .. _2792: https://github.com/varnishcache/varnish-cache/pull/2792
 .. _2794: https://github.com/varnishcache/varnish-cache/issues/2794
 .. _2800: https://github.com/varnishcache/varnish-cache/issues/2800
+.. _2820: https://github.com/varnishcache/varnish-cache/issues/2820
 
 
 ================================

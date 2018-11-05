@@ -35,6 +35,7 @@
 #include <stdlib.h>
 
 #include "cache_varnishd.h"
+#include "vcl.h"
 
 struct vrt_priv {
 	unsigned			magic;
@@ -125,7 +126,9 @@ VRT_priv_task(VRT_CTX, const void *vmod_id)
 	struct vmod_priv *vp;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	assert(ctx->req == NULL || ctx->bo == NULL);
+	assert(ctx->req == NULL || ctx->bo == NULL ||
+	    ctx->method == VCL_MET_PIPE);
+
 	if (ctx->req) {
 		CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 		id = (uintptr_t)ctx->req;

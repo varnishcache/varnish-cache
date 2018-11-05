@@ -8,6 +8,11 @@ server s1 {
 
 	rxreq
 	txresp
+	expect_close
+	accept
+
+	rxreq
+	txresp
 } -start
 
 varnish v1 -arg "-p debug=+vclrel" -vcl+backend {
@@ -26,6 +31,18 @@ varnish v1 -arg "-p debug=+vclrel" -vcl+backend {
 	}
 
 	sub vcl_recv {
+		if (req.url == "/perf") {
+			return (synth(200));
+		}
+		if (req.url == "/pipe") {
+			return (pipe);
+		}
+		debug.test_priv_task(req.url);
+		set req.http.x0 = debug.test_priv_task();
+		debug.test_priv_task("bazz");
+	}
+
+	sub vcl_pipe {
 		debug.test_priv_task(req.url);
 		set req.http.x0 = debug.test_priv_task();
 		debug.test_priv_task("bazz");
@@ -109,6 +126,12 @@ client c1 {
 	expect resp.http.bx0 == "b /snafu"
 	expect resp.http.bx1 == "b /snafu"
 	expect resp.http.bo1 == "b /snafu"
+
+	txreq -url /perf
+	rxresp
+
+	txreq -url /pipe
+	rxresp
 } -run
 
 shell "echo 'vcl 4.0; backend foo { .host = \"${s1_addr}\"; .port = \"${s1_port}\"; }' > ${tmpdir}/_b00014.vcl"
