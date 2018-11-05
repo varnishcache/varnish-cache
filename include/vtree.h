@@ -305,7 +305,7 @@ struct name {								\
 
 #define VRBT_BLACK	0
 #define VRBT_RED		1
-#define VRBT_ENTRY(type)							\
+#define VRBT_ENTRY(type)						\
 struct {								\
 	struct type *rbe_left;		/* left element */		\
 	struct type *rbe_right;		/* right element */		\
@@ -318,7 +318,7 @@ struct {								\
 #define VRBT_PARENT(elm, field)		(elm)->field.rbe_parent
 #define VRBT_COLOR(elm, field)		(elm)->field.rbe_color
 #define VRBT_ROOT(head)			(head)->rbh_root
-#define VRBT_EMPTY(head)			(VRBT_ROOT(head) == NULL)
+#define VRBT_EMPTY(head)		(VRBT_ROOT(head) == NULL)
 
 #define VRBT_SET(elm, parent, field) do {				\
 	VRBT_PARENT(elm, field) = parent;				\
@@ -349,7 +349,7 @@ struct {								\
 	} else								\
 		(head)->rbh_root = (tmp);				\
 	VRBT_LEFT(tmp, field) = (elm);					\
-	VRBT_PARENT(elm, field) = (tmp);					\
+	VRBT_PARENT(elm, field) = (tmp);				\
 	VRBT_AUGMENT(tmp);						\
 	if ((VRBT_PARENT(tmp, field)))					\
 		VRBT_AUGMENT(VRBT_PARENT(tmp, field));			\
@@ -369,16 +369,16 @@ struct {								\
 	} else								\
 		(head)->rbh_root = (tmp);				\
 	VRBT_RIGHT(tmp, field) = (elm);					\
-	VRBT_PARENT(elm, field) = (tmp);					\
+	VRBT_PARENT(elm, field) = (tmp);				\
 	VRBT_AUGMENT(tmp);						\
 	if ((VRBT_PARENT(tmp, field)))					\
 		VRBT_AUGMENT(VRBT_PARENT(tmp, field));			\
 } while (/*CONSTCOND*/ 0)
 
 /* Generates prototypes and inline functions */
-#define	VRBT_PROTOTYPE(name, type, field, cmp)				\
+#define	VRBT_PROTOTYPE(name, type, field, cmp)			\
 	VRBT_PROTOTYPE_INTERNAL(name, type, field, cmp,)
-#define	VRBT_PROTOTYPE_STATIC(name, type, field, cmp)			\
+#define	VRBT_PROTOTYPE_STATIC(name, type, field, cmp)		\
 	VRBT_PROTOTYPE_INTERNAL(name, type, field, cmp, v_unused_ static)
 #define VRBT_PROTOTYPE_INTERNAL(name, type, field, cmp, attr)		\
 /*lint -esym(528, name##_VRBT_*) */					\
@@ -396,9 +396,9 @@ attr struct type *name##_VRBT_MINMAX(const struct name *, int);		\
 /* Main rb operation.
  * Moves node close to the key of elm to top
  */
-#define	VRBT_GENERATE(name, type, field, cmp)				\
+#define	VRBT_GENERATE(name, type, field, cmp)			\
 	VRBT_GENERATE_INTERNAL(name, type, field, cmp,)
-#define	VRBT_GENERATE_STATIC(name, type, field, cmp)			\
+#define	VRBT_GENERATE_STATIC(name, type, field, cmp)		\
 	VRBT_GENERATE_INTERNAL(name, type, field, cmp, v_unused_ static)
 #define VRBT_GENERATE_INTERNAL(name, type, field, cmp, attr)		\
 attr void								\
@@ -410,13 +410,13 @@ name##_VRBT_INSERT_COLOR(struct name *head, struct type *elm)		\
 		gparent = VRBT_PARENT(parent, field);			\
 		if (parent == VRBT_LEFT(gparent, field)) {		\
 			tmp = VRBT_RIGHT(gparent, field);		\
-			if (tmp && VRBT_COLOR(tmp, field) == VRBT_RED) {	\
+			if (tmp && VRBT_COLOR(tmp, field) == VRBT_RED) {\
 				VRBT_COLOR(tmp, field) = VRBT_BLACK;	\
 				VRBT_SET_BLACKRED(parent, gparent, field);\
 				elm = gparent;				\
 				continue;				\
 			}						\
-			if (VRBT_RIGHT(parent, field) == elm) {		\
+			if (VRBT_RIGHT(parent, field) == elm) {	\
 				VRBT_ROTATE_LEFT(head, parent, tmp, field);\
 				tmp = parent;				\
 				parent = elm;				\
@@ -425,8 +425,8 @@ name##_VRBT_INSERT_COLOR(struct name *head, struct type *elm)		\
 			VRBT_SET_BLACKRED(parent, gparent, field);	\
 			VRBT_ROTATE_RIGHT(head, gparent, tmp, field);	\
 		} else {						\
-			tmp = VRBT_LEFT(gparent, field);			\
-			if (tmp && VRBT_COLOR(tmp, field) == VRBT_RED) {	\
+			tmp = VRBT_LEFT(gparent, field);		\
+			if (tmp && VRBT_COLOR(tmp, field) == VRBT_RED) {\
 				VRBT_COLOR(tmp, field) = VRBT_BLACK;	\
 				VRBT_SET_BLACKRED(parent, gparent, field);\
 				elm = gparent;				\
@@ -453,11 +453,11 @@ name##_VRBT_REMOVE_COLOR(struct name *head, struct type *parent, struct type *el
 	    elm != VRBT_ROOT(head)) {					\
 		AN(parent);						\
 		if (VRBT_LEFT(parent, field) == elm) {			\
-			tmp = VRBT_RIGHT(parent, field);			\
-			if (VRBT_COLOR(tmp, field) == VRBT_RED) {		\
+			tmp = VRBT_RIGHT(parent, field);		\
+			if (VRBT_COLOR(tmp, field) == VRBT_RED) {	\
 				VRBT_SET_BLACKRED(tmp, parent, field);	\
 				VRBT_ROTATE_LEFT(head, parent, tmp, field);\
-				tmp = VRBT_RIGHT(parent, field);		\
+				tmp = VRBT_RIGHT(parent, field);	\
 			}						\
 			if ((VRBT_LEFT(tmp, field) == NULL ||		\
 			    VRBT_COLOR(VRBT_LEFT(tmp, field), field) == VRBT_BLACK) &&\
@@ -475,7 +475,7 @@ name##_VRBT_REMOVE_COLOR(struct name *head, struct type *parent, struct type *el
 						VRBT_COLOR(oleft, field) = VRBT_BLACK;\
 					VRBT_COLOR(tmp, field) = VRBT_RED;\
 					VRBT_ROTATE_RIGHT(head, tmp, oleft, field);\
-					tmp = VRBT_RIGHT(parent, field);	\
+					tmp = VRBT_RIGHT(parent, field);\
 				}					\
 				VRBT_COLOR(tmp, field) = VRBT_COLOR(parent, field);\
 				VRBT_COLOR(parent, field) = VRBT_BLACK;	\
@@ -487,7 +487,7 @@ name##_VRBT_REMOVE_COLOR(struct name *head, struct type *parent, struct type *el
 			}						\
 		} else {						\
 			tmp = VRBT_LEFT(parent, field);			\
-			if (VRBT_COLOR(tmp, field) == VRBT_RED) {		\
+			if (VRBT_COLOR(tmp, field) == VRBT_RED) {	\
 				VRBT_SET_BLACKRED(tmp, parent, field);	\
 				VRBT_ROTATE_RIGHT(head, parent, tmp, field);\
 				tmp = VRBT_LEFT(parent, field);		\
@@ -531,7 +531,7 @@ name##_VRBT_REMOVE(struct name *head, struct type *elm)			\
 	int color;							\
 	if (VRBT_LEFT(elm, field) == NULL)				\
 		child = VRBT_RIGHT(elm, field);				\
-	else if (VRBT_RIGHT(elm, field) == NULL)				\
+	else if (VRBT_RIGHT(elm, field) == NULL)			\
 		child = VRBT_LEFT(elm, field);				\
 	else {								\
 		struct type *left;					\
@@ -550,7 +550,7 @@ name##_VRBT_REMOVE(struct name *head, struct type *elm)			\
 				VRBT_RIGHT(parent, field) = child;	\
 			VRBT_AUGMENT(parent);				\
 		} else							\
-			VRBT_ROOT(head) = child;				\
+			VRBT_ROOT(head) = child;			\
 		if (VRBT_PARENT(elm, field) == old)			\
 			parent = elm;					\
 		(elm)->field = (old)->field;				\
@@ -562,14 +562,14 @@ name##_VRBT_REMOVE(struct name *head, struct type *elm)			\
 			VRBT_AUGMENT(VRBT_PARENT(old, field));		\
 		} else							\
 			VRBT_ROOT(head) = elm;				\
-		VRBT_PARENT(VRBT_LEFT(old, field), field) = elm;		\
+		VRBT_PARENT(VRBT_LEFT(old, field), field) = elm;	\
 		if (VRBT_RIGHT(old, field))				\
-			VRBT_PARENT(VRBT_RIGHT(old, field), field) = elm;	\
+			VRBT_PARENT(VRBT_RIGHT(old, field), field) = elm;\
 		if (parent) {						\
 			left = parent;					\
 			do {						\
 				VRBT_AUGMENT(left);			\
-			} while ((left = VRBT_PARENT(left, field)) != NULL); \
+			} while ((left = VRBT_PARENT(left, field)) != NULL);\
 		}							\
 		goto color;						\
 	}								\
@@ -584,7 +584,7 @@ name##_VRBT_REMOVE(struct name *head, struct type *elm)			\
 			VRBT_RIGHT(parent, field) = child;		\
 		VRBT_AUGMENT(parent);					\
 	} else								\
-		VRBT_ROOT(head) = child;					\
+		VRBT_ROOT(head) = child;				\
 color:									\
 	if (color == VRBT_BLACK) {					\
 		name##_VRBT_REMOVE_COLOR(head, parent, child);		\
@@ -615,7 +615,7 @@ name##_VRBT_INSERT(struct name *head, struct type *elm)			\
 		if (comp < 0)						\
 			VRBT_LEFT(parent, field) = elm;			\
 		else							\
-			VRBT_RIGHT(parent, field) = elm;			\
+			VRBT_RIGHT(parent, field) = elm;		\
 		VRBT_AUGMENT(parent);					\
 	} else								\
 		VRBT_ROOT(head) = elm;					\
@@ -694,7 +694,7 @@ name##_VRBT_PREV(struct type *elm)					\
 			elm = VRBT_RIGHT(elm, field);			\
 	} else {							\
 		if (VRBT_PARENT(elm, field) &&				\
-		    (elm == VRBT_RIGHT(VRBT_PARENT(elm, field), field)))	\
+		    (elm == VRBT_RIGHT(VRBT_PARENT(elm, field), field)))\
 			elm = VRBT_PARENT(elm, field);			\
 		else {							\
 			while (VRBT_PARENT(elm, field) &&		\
@@ -730,11 +730,11 @@ name##_VRBT_MINMAX(const struct name *head, int val)			\
 #define VRBT_NFIND(name, x, y)	name##_VRBT_NFIND(x, y)
 #define VRBT_NEXT(name, x, y)	name##_VRBT_NEXT(y)
 #define VRBT_PREV(name, x, y)	name##_VRBT_PREV(y)
-#define VRBT_MIN(name, x)		name##_VRBT_MINMAX(x, VRBT_NEGINF)
-#define VRBT_MAX(name, x)		name##_VRBT_MINMAX(x, VRBT_INF)
+#define VRBT_MIN(name, x)	name##_VRBT_MINMAX(x, VRBT_NEGINF)
+#define VRBT_MAX(name, x)	name##_VRBT_MINMAX(x, VRBT_INF)
 
 #define VRBT_FOREACH(x, name, head)					\
-	for ((x) = VRBT_MIN(name, head);					\
+	for ((x) = VRBT_MIN(name, head);				\
 	     (x) != NULL;						\
 	     (x) = name##_VRBT_NEXT(x))
 
@@ -744,12 +744,12 @@ name##_VRBT_MINMAX(const struct name *head, int val)			\
 	     (x) = (y))
 
 #define VRBT_FOREACH_SAFE(x, name, head, y)				\
-	for ((x) = VRBT_MIN(name, head);					\
+	for ((x) = VRBT_MIN(name, head);				\
 	    ((x) != NULL) && ((y) = name##_VRBT_NEXT(x), (x) != NULL);	\
 	     (x) = (y))
 
 #define VRBT_FOREACH_REVERSE(x, name, head)				\
-	for ((x) = VRBT_MAX(name, head);					\
+	for ((x) = VRBT_MAX(name, head);				\
 	     (x) != NULL;						\
 	     (x) = name##_VRBT_PREV(x))
 
@@ -759,7 +759,7 @@ name##_VRBT_MINMAX(const struct name *head, int val)			\
 	     (x) = (y))
 
 #define VRBT_FOREACH_REVERSE_SAFE(x, name, head, y)			\
-	for ((x) = VRBT_MAX(name, head);					\
+	for ((x) = VRBT_MAX(name, head);				\
 	    ((x) != NULL) && ((y) = name##_VRBT_PREV(x), (x) != NULL);	\
 	     (x) = (y))
 
