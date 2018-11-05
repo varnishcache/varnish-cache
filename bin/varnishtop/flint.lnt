@@ -8,8 +8,8 @@
 -e732   // Loss of sign (arg. no. 2) (int to unsigned
 -e713	// Loss of precision (assignment) (unsigned long long to long long)
 
--sem(t_order_VRB_INSERT, custodial(2))
--sem(t_key_VRB_INSERT, custodial(2))
+-sem(t_order_VRBT_INSERT, custodial(2))
+-sem(t_key_VRBT_INSERT, custodial(2))
 
 ///////////////////////////////////////////////////////////////////////
 // Varnishstat specific

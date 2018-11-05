@@ -70,8 +70,8 @@ struct top {
 	char			*rec_buf;
 	int			clen;
 	unsigned		hash;
-	VRB_ENTRY(top)		e_order;
-	VRB_ENTRY(top)		e_key;
+	VRBT_ENTRY(top)		e_order;
+	VRBT_ENTRY(top)		e_key;
 	double			count;
 };
 
@@ -85,8 +85,8 @@ static const char *ident;
 
 static volatile sig_atomic_t quit = 0;
 
-static VRB_HEAD(t_order, top) h_order = VRB_INITIALIZER(&h_order);
-static VRB_HEAD(t_key, top) h_key = VRB_INITIALIZER(&h_key);
+static VRBT_HEAD(t_order, top) h_order = VRBT_INITIALIZER(&h_order);
+static VRBT_HEAD(t_key, top) h_key = VRBT_INITIALIZER(&h_key);
 
 static inline int
 cmp_key(const struct top *a, const struct top *b)
@@ -110,10 +110,10 @@ cmp_order(const struct top *a, const struct top *b)
 	return (cmp_key(a, b));
 }
 
-VRB_PROTOTYPE_STATIC(t_order, top, e_order, cmp_order)
-VRB_GENERATE_STATIC(t_order, top, e_order, cmp_order)
-VRB_PROTOTYPE_STATIC(t_key, top, e_key, cmp_key)
-VRB_GENERATE_STATIC(t_key, top, e_key, cmp_key)
+VRBT_PROTOTYPE_STATIC(t_order, top, e_order, cmp_order)
+VRBT_GENERATE_STATIC(t_order, top, e_order, cmp_order)
+VRBT_PROTOTYPE_STATIC(t_key, top, e_key, cmp_key)
+VRBT_GENERATE_STATIC(t_key, top, e_key, cmp_key)
 
 static int v_matchproto_(VSLQ_dispatch_f)
 accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
@@ -155,12 +155,12 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			t.rec_data = VSL_CDATA(tr->c->rec.ptr);
 
 			AZ(pthread_mutex_lock(&mtx));
-			tp = VRB_FIND(t_key, &h_key, &t);
+			tp = VRBT_FIND(t_key, &h_key, &t);
 			if (tp) {
-				VRB_REMOVE(t_order, &h_order, tp);
+				VRBT_REMOVE(t_order, &h_order, tp);
 				tp->count += 1.0;
 				/* Reinsert to rebalance */
-				VRB_INSERT(t_order, &h_order, tp);
+				VRBT_INSERT(t_order, &h_order, tp);
 			} else {
 				ntop++;
 				tp = calloc(1, sizeof *tp);
@@ -172,8 +172,8 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				tp->rec_buf = strdup(t.rec_data);
 				tp->rec_data = tp->rec_buf;
 				AN(tp->rec_data);
-				VRB_INSERT(t_key, &h_key, tp);
-				VRB_INSERT(t_order, &h_order, tp);
+				VRBT_INSERT(t_key, &h_key, tp);
+				VRBT_INSERT(t_order, &h_order, tp);
 			}
 			AZ(pthread_mutex_unlock(&mtx));
 
@@ -226,8 +226,8 @@ update(int p)
 	else
 		AC(mvprintw(0, len - 1, "%s", q));
 	AC(mvprintw(0, 0, "list length %u", ntop));
-	for (tp = VRB_MIN(t_order, &h_order); tp != NULL; tp = tp2) {
-		tp2 = VRB_NEXT(t_order, &h_order, tp);
+	for (tp = VRBT_MIN(t_order, &h_order); tp != NULL; tp = tp2) {
+		tp2 = VRBT_NEXT(t_order, &h_order, tp);
 
 		if (++l < LINES) {
 			len = tp->clen;
@@ -243,8 +243,8 @@ update(int p)
 			continue;
 		tp->count += (1.0/3.0 - tp->count) / (double)n;
 		if (tp->count * 10 < t || l > LINES * 10) {
-			VRB_REMOVE(t_key, &h_key, tp);
-			VRB_REMOVE(t_order, &h_order, tp);
+			VRBT_REMOVE(t_key, &h_key, tp);
+			VRBT_REMOVE(t_order, &h_order, tp);
 			free(tp->rec_buf);
 			free(tp);
 			ntop--;
@@ -316,8 +316,8 @@ static void
 dump(void)
 {
 	struct top *tp, *tp2;
-	for (tp = VRB_MIN(t_order, &h_order); tp != NULL; tp = tp2) {
-		tp2 = VRB_NEXT(t_order, &h_order, tp);
+	for (tp = VRBT_MIN(t_order, &h_order); tp != NULL; tp = tp2) {
+		tp2 = VRBT_NEXT(t_order, &h_order, tp);
 		printf("%9.2f %s %*.*s\n",
 			tp->count, VSL_tags[tp->tag],
 			tp->clen, tp->clen, tp->rec_data);

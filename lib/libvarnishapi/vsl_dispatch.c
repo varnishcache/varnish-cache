@@ -135,9 +135,9 @@ struct vslc_vtx {
 
 struct vtx_key {
 	unsigned		vxid;
-	VRB_ENTRY(vtx_key)	entry;
+	VRBT_ENTRY(vtx_key)	entry;
 };
-VRB_HEAD(vtx_tree, vtx_key);
+VRBT_HEAD(vtx_tree, vtx_key);
 
 struct vtx {
 	struct vtx_key		key;
@@ -222,8 +222,8 @@ vtx_keycmp(const struct vtx_key *a, const struct vtx_key *b)
 	return (0);
 }
 
-VRB_PROTOTYPE_STATIC(vtx_tree, vtx_key, entry, vtx_keycmp)
-VRB_GENERATE_STATIC(vtx_tree, vtx_key, entry, vtx_keycmp)
+VRBT_PROTOTYPE_STATIC(vtx_tree, vtx_key, entry, vtx_keycmp)
+VRBT_GENERATE_STATIC(vtx_tree, vtx_key, entry, vtx_keycmp)
 
 static enum vsl_status v_matchproto_(vslc_next_f)
 vslc_raw_next(const struct VSL_cursor *cursor)
@@ -549,7 +549,7 @@ vtx_retire(struct VSLQ *vslq, struct vtx **pvtx)
 	AZ(vtx->n_child);
 	AZ(vtx->n_descend);
 	vtx->n_childready = 0;
-	AN(VRB_REMOVE(vtx_tree, &vslq->tree, &vtx->key));
+	AN(VRBT_REMOVE(vtx_tree, &vslq->tree, &vtx->key));
 	vtx->key.vxid = 0;
 	vtx->flags = 0;
 
@@ -594,7 +594,7 @@ vtx_lookup(const struct VSLQ *vslq, unsigned vxid)
 
 	AN(vslq);
 	lkey.vxid = vxid;
-	key = VRB_FIND(vtx_tree, &vslq->tree, &lkey);
+	key = VRBT_FIND(vtx_tree, &vslq->tree, &lkey);
 	if (key == NULL)
 		return (NULL);
 	CAST_OBJ_NOTNULL(vtx, (void *)key, VTX_MAGIC);
@@ -611,7 +611,7 @@ vtx_add(struct VSLQ *vslq, unsigned vxid)
 	vtx = vtx_new(vslq);
 	AN(vtx);
 	vtx->key.vxid = vxid;
-	AZ(VRB_INSERT(vtx_tree, &vslq->tree, &vtx->key));
+	AZ(VRBT_INSERT(vtx_tree, &vslq->tree, &vtx->key));
 	VTAILQ_INSERT_TAIL(&vslq->incomplete, vtx, list_vtx);
 	vslq->n_outstanding++;
 	return (vtx);
@@ -1080,7 +1080,7 @@ VSLQ_New(struct VSL_data *vsl, struct VSL_cursor **cp,
 	vslq->query = query;
 
 	/* Setup normal mode */
-	VRB_INIT(&vslq->tree);
+	VRBT_INIT(&vslq->tree);
 	VTAILQ_INIT(&vslq->ready);
 	VTAILQ_INIT(&vslq->incomplete);
 	VTAILQ_INIT(&vslq->shmrefs);

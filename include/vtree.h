@@ -291,21 +291,21 @@ void name##_VSPLAY_MINMAX(struct name *head, int __comp) \
 	     (x) = VSPLAY_NEXT(name, head, x))
 
 /* Macros that define a red-black tree */
-#define VRB_HEAD(name, type)						\
+#define VRBT_HEAD(name, type)						\
 struct name {								\
 	struct type *rbh_root; /* root of the tree */			\
 }
 
-#define VRB_INITIALIZER(root)						\
+#define VRBT_INITIALIZER(root)						\
 	{ NULL }
 
-#define VRB_INIT(root) do {						\
+#define VRBT_INIT(root) do {						\
 	(root)->rbh_root = NULL;					\
 } while (/*CONSTCOND*/ 0)
 
-#define VRB_BLACK	0
-#define VRB_RED		1
-#define VRB_ENTRY(type)							\
+#define VRBT_BLACK	0
+#define VRBT_RED		1
+#define VRBT_ENTRY(type)							\
 struct {								\
 	struct type *rbe_left;		/* left element */		\
 	struct type *rbe_right;		/* right element */		\
@@ -313,328 +313,328 @@ struct {								\
 	int rbe_color;			/* node color */		\
 }
 
-#define VRB_LEFT(elm, field)		(elm)->field.rbe_left
-#define VRB_RIGHT(elm, field)		(elm)->field.rbe_right
-#define VRB_PARENT(elm, field)		(elm)->field.rbe_parent
-#define VRB_COLOR(elm, field)		(elm)->field.rbe_color
-#define VRB_ROOT(head)			(head)->rbh_root
-#define VRB_EMPTY(head)			(VRB_ROOT(head) == NULL)
+#define VRBT_LEFT(elm, field)		(elm)->field.rbe_left
+#define VRBT_RIGHT(elm, field)		(elm)->field.rbe_right
+#define VRBT_PARENT(elm, field)		(elm)->field.rbe_parent
+#define VRBT_COLOR(elm, field)		(elm)->field.rbe_color
+#define VRBT_ROOT(head)			(head)->rbh_root
+#define VRBT_EMPTY(head)			(VRBT_ROOT(head) == NULL)
 
-#define VRB_SET(elm, parent, field) do {				\
-	VRB_PARENT(elm, field) = parent;				\
-	VRB_LEFT(elm, field) = VRB_RIGHT(elm, field) = NULL;		\
-	VRB_COLOR(elm, field) = VRB_RED;				\
+#define VRBT_SET(elm, parent, field) do {				\
+	VRBT_PARENT(elm, field) = parent;				\
+	VRBT_LEFT(elm, field) = VRBT_RIGHT(elm, field) = NULL;		\
+	VRBT_COLOR(elm, field) = VRBT_RED;				\
 } while (/*CONSTCOND*/ 0)
 
-#define VRB_SET_BLACKRED(black, red, field) do {			\
-	VRB_COLOR(black, field) = VRB_BLACK;				\
-	VRB_COLOR(red, field) = VRB_RED;				\
+#define VRBT_SET_BLACKRED(black, red, field) do {			\
+	VRBT_COLOR(black, field) = VRBT_BLACK;				\
+	VRBT_COLOR(red, field) = VRBT_RED;				\
 } while (/*CONSTCOND*/ 0)
 
-#ifndef VRB_AUGMENT
-#define VRB_AUGMENT(x)	do {} while (0)
+#ifndef VRBT_AUGMENT
+#define VRBT_AUGMENT(x)	do {} while (0)
 #endif
 
-#define VRB_ROTATE_LEFT(head, elm, tmp, field) do {			\
-	(tmp) = VRB_RIGHT(elm, field);					\
-	if ((VRB_RIGHT(elm, field) = VRB_LEFT(tmp, field)) != NULL) {	\
-		VRB_PARENT(VRB_LEFT(tmp, field), field) = (elm);	\
+#define VRBT_ROTATE_LEFT(head, elm, tmp, field) do {			\
+	(tmp) = VRBT_RIGHT(elm, field);					\
+	if ((VRBT_RIGHT(elm, field) = VRBT_LEFT(tmp, field)) != NULL) {	\
+		VRBT_PARENT(VRBT_LEFT(tmp, field), field) = (elm);	\
 	}								\
-	VRB_AUGMENT(elm);						\
-	if ((VRB_PARENT(tmp, field) = VRB_PARENT(elm, field)) != NULL) {\
-		if ((elm) == VRB_LEFT(VRB_PARENT(elm, field), field))	\
-			VRB_LEFT(VRB_PARENT(elm, field), field) = (tmp);\
+	VRBT_AUGMENT(elm);						\
+	if ((VRBT_PARENT(tmp, field) = VRBT_PARENT(elm, field)) != NULL) {\
+		if ((elm) == VRBT_LEFT(VRBT_PARENT(elm, field), field))	\
+			VRBT_LEFT(VRBT_PARENT(elm, field), field) = (tmp);\
 		else							\
-			VRB_RIGHT(VRB_PARENT(elm, field), field) = (tmp);\
+			VRBT_RIGHT(VRBT_PARENT(elm, field), field) = (tmp);\
 	} else								\
 		(head)->rbh_root = (tmp);				\
-	VRB_LEFT(tmp, field) = (elm);					\
-	VRB_PARENT(elm, field) = (tmp);					\
-	VRB_AUGMENT(tmp);						\
-	if ((VRB_PARENT(tmp, field)))					\
-		VRB_AUGMENT(VRB_PARENT(tmp, field));			\
+	VRBT_LEFT(tmp, field) = (elm);					\
+	VRBT_PARENT(elm, field) = (tmp);					\
+	VRBT_AUGMENT(tmp);						\
+	if ((VRBT_PARENT(tmp, field)))					\
+		VRBT_AUGMENT(VRBT_PARENT(tmp, field));			\
 } while (/*CONSTCOND*/ 0)
 
-#define VRB_ROTATE_RIGHT(head, elm, tmp, field) do {			\
-	(tmp) = VRB_LEFT(elm, field);					\
-	if ((VRB_LEFT(elm, field) = VRB_RIGHT(tmp, field)) != NULL) {	\
-		VRB_PARENT(VRB_RIGHT(tmp, field), field) = (elm);	\
+#define VRBT_ROTATE_RIGHT(head, elm, tmp, field) do {			\
+	(tmp) = VRBT_LEFT(elm, field);					\
+	if ((VRBT_LEFT(elm, field) = VRBT_RIGHT(tmp, field)) != NULL) {	\
+		VRBT_PARENT(VRBT_RIGHT(tmp, field), field) = (elm);	\
 	}								\
-	VRB_AUGMENT(elm);						\
-	if ((VRB_PARENT(tmp, field) = VRB_PARENT(elm, field)) != NULL) {\
-		if ((elm) == VRB_LEFT(VRB_PARENT(elm, field), field))	\
-			VRB_LEFT(VRB_PARENT(elm, field), field) = (tmp);\
+	VRBT_AUGMENT(elm);						\
+	if ((VRBT_PARENT(tmp, field) = VRBT_PARENT(elm, field)) != NULL) {\
+		if ((elm) == VRBT_LEFT(VRBT_PARENT(elm, field), field))	\
+			VRBT_LEFT(VRBT_PARENT(elm, field), field) = (tmp);\
 		else							\
-			VRB_RIGHT(VRB_PARENT(elm, field), field) = (tmp);\
+			VRBT_RIGHT(VRBT_PARENT(elm, field), field) = (tmp);\
 	} else								\
 		(head)->rbh_root = (tmp);				\
-	VRB_RIGHT(tmp, field) = (elm);					\
-	VRB_PARENT(elm, field) = (tmp);					\
-	VRB_AUGMENT(tmp);						\
-	if ((VRB_PARENT(tmp, field)))					\
-		VRB_AUGMENT(VRB_PARENT(tmp, field));			\
+	VRBT_RIGHT(tmp, field) = (elm);					\
+	VRBT_PARENT(elm, field) = (tmp);					\
+	VRBT_AUGMENT(tmp);						\
+	if ((VRBT_PARENT(tmp, field)))					\
+		VRBT_AUGMENT(VRBT_PARENT(tmp, field));			\
 } while (/*CONSTCOND*/ 0)
 
 /* Generates prototypes and inline functions */
-#define	VRB_PROTOTYPE(name, type, field, cmp)				\
-	VRB_PROTOTYPE_INTERNAL(name, type, field, cmp,)
-#define	VRB_PROTOTYPE_STATIC(name, type, field, cmp)			\
-	VRB_PROTOTYPE_INTERNAL(name, type, field, cmp, v_unused_ static)
-#define VRB_PROTOTYPE_INTERNAL(name, type, field, cmp, attr)		\
-/*lint -esym(528, name##_VRB_*) */					\
-attr void name##_VRB_INSERT_COLOR(struct name *, struct type *);	\
-attr void name##_VRB_REMOVE_COLOR(struct name *, struct type *, struct type *);\
-attr struct type *name##_VRB_REMOVE(struct name *, struct type *);	\
-attr struct type *name##_VRB_INSERT(struct name *, struct type *);	\
-attr struct type *name##_VRB_FIND(const struct name *, const struct type *);	\
-attr struct type *name##_VRB_NFIND(const struct name *, const struct type *);	\
-attr struct type *name##_VRB_NEXT(struct type *);			\
-attr struct type *name##_VRB_PREV(struct type *);			\
-attr struct type *name##_VRB_MINMAX(const struct name *, int);		\
+#define	VRBT_PROTOTYPE(name, type, field, cmp)				\
+	VRBT_PROTOTYPE_INTERNAL(name, type, field, cmp,)
+#define	VRBT_PROTOTYPE_STATIC(name, type, field, cmp)			\
+	VRBT_PROTOTYPE_INTERNAL(name, type, field, cmp, v_unused_ static)
+#define VRBT_PROTOTYPE_INTERNAL(name, type, field, cmp, attr)		\
+/*lint -esym(528, name##_VRBT_*) */					\
+attr void name##_VRBT_INSERT_COLOR(struct name *, struct type *);	\
+attr void name##_VRBT_REMOVE_COLOR(struct name *, struct type *, struct type *);\
+attr struct type *name##_VRBT_REMOVE(struct name *, struct type *);	\
+attr struct type *name##_VRBT_INSERT(struct name *, struct type *);	\
+attr struct type *name##_VRBT_FIND(const struct name *, const struct type *);	\
+attr struct type *name##_VRBT_NFIND(const struct name *, const struct type *);	\
+attr struct type *name##_VRBT_NEXT(struct type *);			\
+attr struct type *name##_VRBT_PREV(struct type *);			\
+attr struct type *name##_VRBT_MINMAX(const struct name *, int);		\
 									\
 
 /* Main rb operation.
  * Moves node close to the key of elm to top
  */
-#define	VRB_GENERATE(name, type, field, cmp)				\
-	VRB_GENERATE_INTERNAL(name, type, field, cmp,)
-#define	VRB_GENERATE_STATIC(name, type, field, cmp)			\
-	VRB_GENERATE_INTERNAL(name, type, field, cmp, v_unused_ static)
-#define VRB_GENERATE_INTERNAL(name, type, field, cmp, attr)		\
+#define	VRBT_GENERATE(name, type, field, cmp)				\
+	VRBT_GENERATE_INTERNAL(name, type, field, cmp,)
+#define	VRBT_GENERATE_STATIC(name, type, field, cmp)			\
+	VRBT_GENERATE_INTERNAL(name, type, field, cmp, v_unused_ static)
+#define VRBT_GENERATE_INTERNAL(name, type, field, cmp, attr)		\
 attr void								\
-name##_VRB_INSERT_COLOR(struct name *head, struct type *elm)		\
+name##_VRBT_INSERT_COLOR(struct name *head, struct type *elm)		\
 {									\
 	struct type *parent, *gparent, *tmp;				\
-	while ((parent = VRB_PARENT(elm, field)) != NULL &&		\
-	    VRB_COLOR(parent, field) == VRB_RED) {			\
-		gparent = VRB_PARENT(parent, field);			\
-		if (parent == VRB_LEFT(gparent, field)) {		\
-			tmp = VRB_RIGHT(gparent, field);		\
-			if (tmp && VRB_COLOR(tmp, field) == VRB_RED) {	\
-				VRB_COLOR(tmp, field) = VRB_BLACK;	\
-				VRB_SET_BLACKRED(parent, gparent, field);\
+	while ((parent = VRBT_PARENT(elm, field)) != NULL &&		\
+	    VRBT_COLOR(parent, field) == VRBT_RED) {			\
+		gparent = VRBT_PARENT(parent, field);			\
+		if (parent == VRBT_LEFT(gparent, field)) {		\
+			tmp = VRBT_RIGHT(gparent, field);		\
+			if (tmp && VRBT_COLOR(tmp, field) == VRBT_RED) {	\
+				VRBT_COLOR(tmp, field) = VRBT_BLACK;	\
+				VRBT_SET_BLACKRED(parent, gparent, field);\
 				elm = gparent;				\
 				continue;				\
 			}						\
-			if (VRB_RIGHT(parent, field) == elm) {		\
-				VRB_ROTATE_LEFT(head, parent, tmp, field);\
+			if (VRBT_RIGHT(parent, field) == elm) {		\
+				VRBT_ROTATE_LEFT(head, parent, tmp, field);\
 				tmp = parent;				\
 				parent = elm;				\
 				elm = tmp;				\
 			}						\
-			VRB_SET_BLACKRED(parent, gparent, field);	\
-			VRB_ROTATE_RIGHT(head, gparent, tmp, field);	\
+			VRBT_SET_BLACKRED(parent, gparent, field);	\
+			VRBT_ROTATE_RIGHT(head, gparent, tmp, field);	\
 		} else {						\
-			tmp = VRB_LEFT(gparent, field);			\
-			if (tmp && VRB_COLOR(tmp, field) == VRB_RED) {	\
-				VRB_COLOR(tmp, field) = VRB_BLACK;	\
-				VRB_SET_BLACKRED(parent, gparent, field);\
+			tmp = VRBT_LEFT(gparent, field);			\
+			if (tmp && VRBT_COLOR(tmp, field) == VRBT_RED) {	\
+				VRBT_COLOR(tmp, field) = VRBT_BLACK;	\
+				VRBT_SET_BLACKRED(parent, gparent, field);\
 				elm = gparent;				\
 				continue;				\
 			}						\
-			if (VRB_LEFT(parent, field) == elm) {		\
-				VRB_ROTATE_RIGHT(head, parent, tmp, field);\
+			if (VRBT_LEFT(parent, field) == elm) {		\
+				VRBT_ROTATE_RIGHT(head, parent, tmp, field);\
 				tmp = parent;				\
 				parent = elm;				\
 				elm = tmp;				\
 			}						\
-			VRB_SET_BLACKRED(parent, gparent, field);	\
-			VRB_ROTATE_LEFT(head, gparent, tmp, field);	\
+			VRBT_SET_BLACKRED(parent, gparent, field);	\
+			VRBT_ROTATE_LEFT(head, gparent, tmp, field);	\
 		}							\
 	}								\
-	VRB_COLOR(head->rbh_root, field) = VRB_BLACK;			\
+	VRBT_COLOR(head->rbh_root, field) = VRBT_BLACK;			\
 }									\
 									\
 attr void								\
-name##_VRB_REMOVE_COLOR(struct name *head, struct type *parent, struct type *elm) \
+name##_VRBT_REMOVE_COLOR(struct name *head, struct type *parent, struct type *elm) \
 {									\
 	struct type *tmp;						\
-	while ((elm == NULL || VRB_COLOR(elm, field) == VRB_BLACK) &&	\
-	    elm != VRB_ROOT(head)) {					\
+	while ((elm == NULL || VRBT_COLOR(elm, field) == VRBT_BLACK) &&	\
+	    elm != VRBT_ROOT(head)) {					\
 		AN(parent);						\
-		if (VRB_LEFT(parent, field) == elm) {			\
-			tmp = VRB_RIGHT(parent, field);			\
-			if (VRB_COLOR(tmp, field) == VRB_RED) {		\
-				VRB_SET_BLACKRED(tmp, parent, field);	\
-				VRB_ROTATE_LEFT(head, parent, tmp, field);\
-				tmp = VRB_RIGHT(parent, field);		\
+		if (VRBT_LEFT(parent, field) == elm) {			\
+			tmp = VRBT_RIGHT(parent, field);			\
+			if (VRBT_COLOR(tmp, field) == VRBT_RED) {		\
+				VRBT_SET_BLACKRED(tmp, parent, field);	\
+				VRBT_ROTATE_LEFT(head, parent, tmp, field);\
+				tmp = VRBT_RIGHT(parent, field);		\
 			}						\
-			if ((VRB_LEFT(tmp, field) == NULL ||		\
-			    VRB_COLOR(VRB_LEFT(tmp, field), field) == VRB_BLACK) &&\
-			    (VRB_RIGHT(tmp, field) == NULL ||		\
-			    VRB_COLOR(VRB_RIGHT(tmp, field), field) == VRB_BLACK)) {\
-				VRB_COLOR(tmp, field) = VRB_RED;	\
+			if ((VRBT_LEFT(tmp, field) == NULL ||		\
+			    VRBT_COLOR(VRBT_LEFT(tmp, field), field) == VRBT_BLACK) &&\
+			    (VRBT_RIGHT(tmp, field) == NULL ||		\
+			    VRBT_COLOR(VRBT_RIGHT(tmp, field), field) == VRBT_BLACK)) {\
+				VRBT_COLOR(tmp, field) = VRBT_RED;	\
 				elm = parent;				\
-				parent = VRB_PARENT(elm, field);	\
+				parent = VRBT_PARENT(elm, field);	\
 			} else {					\
-				if (VRB_RIGHT(tmp, field) == NULL ||	\
-				    VRB_COLOR(VRB_RIGHT(tmp, field), field) == VRB_BLACK) {\
+				if (VRBT_RIGHT(tmp, field) == NULL ||	\
+				    VRBT_COLOR(VRBT_RIGHT(tmp, field), field) == VRBT_BLACK) {\
 					struct type *oleft;		\
-					if ((oleft = VRB_LEFT(tmp, field)) \
+					if ((oleft = VRBT_LEFT(tmp, field)) \
 					    != NULL)			\
-						VRB_COLOR(oleft, field) = VRB_BLACK;\
-					VRB_COLOR(tmp, field) = VRB_RED;\
-					VRB_ROTATE_RIGHT(head, tmp, oleft, field);\
-					tmp = VRB_RIGHT(parent, field);	\
+						VRBT_COLOR(oleft, field) = VRBT_BLACK;\
+					VRBT_COLOR(tmp, field) = VRBT_RED;\
+					VRBT_ROTATE_RIGHT(head, tmp, oleft, field);\
+					tmp = VRBT_RIGHT(parent, field);	\
 				}					\
-				VRB_COLOR(tmp, field) = VRB_COLOR(parent, field);\
-				VRB_COLOR(parent, field) = VRB_BLACK;	\
-				if (VRB_RIGHT(tmp, field))		\
-					VRB_COLOR(VRB_RIGHT(tmp, field), field) = VRB_BLACK;\
-				VRB_ROTATE_LEFT(head, parent, tmp, field);\
-				elm = VRB_ROOT(head);			\
+				VRBT_COLOR(tmp, field) = VRBT_COLOR(parent, field);\
+				VRBT_COLOR(parent, field) = VRBT_BLACK;	\
+				if (VRBT_RIGHT(tmp, field))		\
+					VRBT_COLOR(VRBT_RIGHT(tmp, field), field) = VRBT_BLACK;\
+				VRBT_ROTATE_LEFT(head, parent, tmp, field);\
+				elm = VRBT_ROOT(head);			\
 				break;					\
 			}						\
 		} else {						\
-			tmp = VRB_LEFT(parent, field);			\
-			if (VRB_COLOR(tmp, field) == VRB_RED) {		\
-				VRB_SET_BLACKRED(tmp, parent, field);	\
-				VRB_ROTATE_RIGHT(head, parent, tmp, field);\
-				tmp = VRB_LEFT(parent, field);		\
+			tmp = VRBT_LEFT(parent, field);			\
+			if (VRBT_COLOR(tmp, field) == VRBT_RED) {		\
+				VRBT_SET_BLACKRED(tmp, parent, field);	\
+				VRBT_ROTATE_RIGHT(head, parent, tmp, field);\
+				tmp = VRBT_LEFT(parent, field);		\
 			}						\
-			if ((VRB_LEFT(tmp, field) == NULL ||		\
-			    VRB_COLOR(VRB_LEFT(tmp, field), field) == VRB_BLACK) &&\
-			    (VRB_RIGHT(tmp, field) == NULL ||		\
-			    VRB_COLOR(VRB_RIGHT(tmp, field), field) == VRB_BLACK)) {\
-				VRB_COLOR(tmp, field) = VRB_RED;	\
+			if ((VRBT_LEFT(tmp, field) == NULL ||		\
+			    VRBT_COLOR(VRBT_LEFT(tmp, field), field) == VRBT_BLACK) &&\
+			    (VRBT_RIGHT(tmp, field) == NULL ||		\
+			    VRBT_COLOR(VRBT_RIGHT(tmp, field), field) == VRBT_BLACK)) {\
+				VRBT_COLOR(tmp, field) = VRBT_RED;	\
 				elm = parent;				\
-				parent = VRB_PARENT(elm, field);	\
+				parent = VRBT_PARENT(elm, field);	\
 			} else {					\
-				if (VRB_LEFT(tmp, field) == NULL ||	\
-				    VRB_COLOR(VRB_LEFT(tmp, field), field) == VRB_BLACK) {\
+				if (VRBT_LEFT(tmp, field) == NULL ||	\
+				    VRBT_COLOR(VRBT_LEFT(tmp, field), field) == VRBT_BLACK) {\
 					struct type *oright;		\
-					if ((oright = VRB_RIGHT(tmp, field)) \
+					if ((oright = VRBT_RIGHT(tmp, field)) \
 					    != NULL)			\
-						VRB_COLOR(oright, field) = VRB_BLACK;\
-					VRB_COLOR(tmp, field) = VRB_RED;\
-					VRB_ROTATE_LEFT(head, tmp, oright, field);\
-					tmp = VRB_LEFT(parent, field);	\
+						VRBT_COLOR(oright, field) = VRBT_BLACK;\
+					VRBT_COLOR(tmp, field) = VRBT_RED;\
+					VRBT_ROTATE_LEFT(head, tmp, oright, field);\
+					tmp = VRBT_LEFT(parent, field);	\
 				}					\
-				VRB_COLOR(tmp, field) = VRB_COLOR(parent, field);\
-				VRB_COLOR(parent, field) = VRB_BLACK;	\
-				if (VRB_LEFT(tmp, field))		\
-					VRB_COLOR(VRB_LEFT(tmp, field), field) = VRB_BLACK;\
-				VRB_ROTATE_RIGHT(head, parent, tmp, field);\
-				elm = VRB_ROOT(head);			\
+				VRBT_COLOR(tmp, field) = VRBT_COLOR(parent, field);\
+				VRBT_COLOR(parent, field) = VRBT_BLACK;	\
+				if (VRBT_LEFT(tmp, field))		\
+					VRBT_COLOR(VRBT_LEFT(tmp, field), field) = VRBT_BLACK;\
+				VRBT_ROTATE_RIGHT(head, parent, tmp, field);\
+				elm = VRBT_ROOT(head);			\
 				break;					\
 			}						\
 		}							\
 	}								\
 	if (elm)							\
-		VRB_COLOR(elm, field) = VRB_BLACK;			\
+		VRBT_COLOR(elm, field) = VRBT_BLACK;			\
 }									\
 									\
 attr struct type *							\
-name##_VRB_REMOVE(struct name *head, struct type *elm)			\
+name##_VRBT_REMOVE(struct name *head, struct type *elm)			\
 {									\
 	struct type *child, *parent, *old = elm;			\
 	int color;							\
-	if (VRB_LEFT(elm, field) == NULL)				\
-		child = VRB_RIGHT(elm, field);				\
-	else if (VRB_RIGHT(elm, field) == NULL)				\
-		child = VRB_LEFT(elm, field);				\
+	if (VRBT_LEFT(elm, field) == NULL)				\
+		child = VRBT_RIGHT(elm, field);				\
+	else if (VRBT_RIGHT(elm, field) == NULL)				\
+		child = VRBT_LEFT(elm, field);				\
 	else {								\
 		struct type *left;					\
-		elm = VRB_RIGHT(elm, field);				\
-		while ((left = VRB_LEFT(elm, field)) != NULL)		\
+		elm = VRBT_RIGHT(elm, field);				\
+		while ((left = VRBT_LEFT(elm, field)) != NULL)		\
 			elm = left;					\
-		child = VRB_RIGHT(elm, field);				\
-		parent = VRB_PARENT(elm, field);			\
-		color = VRB_COLOR(elm, field);				\
+		child = VRBT_RIGHT(elm, field);				\
+		parent = VRBT_PARENT(elm, field);			\
+		color = VRBT_COLOR(elm, field);				\
 		if (child)						\
-			VRB_PARENT(child, field) = parent;		\
+			VRBT_PARENT(child, field) = parent;		\
 		if (parent) {						\
-			if (VRB_LEFT(parent, field) == elm)		\
-				VRB_LEFT(parent, field) = child;	\
+			if (VRBT_LEFT(parent, field) == elm)		\
+				VRBT_LEFT(parent, field) = child;	\
 			else						\
-				VRB_RIGHT(parent, field) = child;	\
-			VRB_AUGMENT(parent);				\
+				VRBT_RIGHT(parent, field) = child;	\
+			VRBT_AUGMENT(parent);				\
 		} else							\
-			VRB_ROOT(head) = child;				\
-		if (VRB_PARENT(elm, field) == old)			\
+			VRBT_ROOT(head) = child;				\
+		if (VRBT_PARENT(elm, field) == old)			\
 			parent = elm;					\
 		(elm)->field = (old)->field;				\
-		if (VRB_PARENT(old, field)) {				\
-			if (VRB_LEFT(VRB_PARENT(old, field), field) == old)\
-				VRB_LEFT(VRB_PARENT(old, field), field) = elm;\
+		if (VRBT_PARENT(old, field)) {				\
+			if (VRBT_LEFT(VRBT_PARENT(old, field), field) == old)\
+				VRBT_LEFT(VRBT_PARENT(old, field), field) = elm;\
 			else						\
-				VRB_RIGHT(VRB_PARENT(old, field), field) = elm;\
-			VRB_AUGMENT(VRB_PARENT(old, field));		\
+				VRBT_RIGHT(VRBT_PARENT(old, field), field) = elm;\
+			VRBT_AUGMENT(VRBT_PARENT(old, field));		\
 		} else							\
-			VRB_ROOT(head) = elm;				\
-		VRB_PARENT(VRB_LEFT(old, field), field) = elm;		\
-		if (VRB_RIGHT(old, field))				\
-			VRB_PARENT(VRB_RIGHT(old, field), field) = elm;	\
+			VRBT_ROOT(head) = elm;				\
+		VRBT_PARENT(VRBT_LEFT(old, field), field) = elm;		\
+		if (VRBT_RIGHT(old, field))				\
+			VRBT_PARENT(VRBT_RIGHT(old, field), field) = elm;	\
 		if (parent) {						\
 			left = parent;					\
 			do {						\
-				VRB_AUGMENT(left);			\
-			} while ((left = VRB_PARENT(left, field)) != NULL); \
+				VRBT_AUGMENT(left);			\
+			} while ((left = VRBT_PARENT(left, field)) != NULL); \
 		}							\
 		goto color;						\
 	}								\
-	parent = VRB_PARENT(elm, field);				\
-	color = VRB_COLOR(elm, field);					\
+	parent = VRBT_PARENT(elm, field);				\
+	color = VRBT_COLOR(elm, field);					\
 	if (child)							\
-		VRB_PARENT(child, field) = parent;			\
+		VRBT_PARENT(child, field) = parent;			\
 	if (parent) {							\
-		if (VRB_LEFT(parent, field) == elm)			\
-			VRB_LEFT(parent, field) = child;		\
+		if (VRBT_LEFT(parent, field) == elm)			\
+			VRBT_LEFT(parent, field) = child;		\
 		else							\
-			VRB_RIGHT(parent, field) = child;		\
-		VRB_AUGMENT(parent);					\
+			VRBT_RIGHT(parent, field) = child;		\
+		VRBT_AUGMENT(parent);					\
 	} else								\
-		VRB_ROOT(head) = child;					\
+		VRBT_ROOT(head) = child;					\
 color:									\
-	if (color == VRB_BLACK) {					\
-		name##_VRB_REMOVE_COLOR(head, parent, child);		\
+	if (color == VRBT_BLACK) {					\
+		name##_VRBT_REMOVE_COLOR(head, parent, child);		\
 	}								\
 	return (old);							\
 }									\
 									\
 /* Inserts a node into the RB tree */					\
 attr struct type *							\
-name##_VRB_INSERT(struct name *head, struct type *elm)			\
+name##_VRBT_INSERT(struct name *head, struct type *elm)			\
 {									\
 	struct type *tmp;						\
 	struct type *parent = NULL;					\
 	int comp = 0;							\
-	tmp = VRB_ROOT(head);						\
+	tmp = VRBT_ROOT(head);						\
 	while (tmp) {							\
 		parent = tmp;						\
 		comp = (cmp)(elm, parent);				\
 		if (comp < 0)						\
-			tmp = VRB_LEFT(tmp, field);			\
+			tmp = VRBT_LEFT(tmp, field);			\
 		else if (comp > 0)					\
-			tmp = VRB_RIGHT(tmp, field);			\
+			tmp = VRBT_RIGHT(tmp, field);			\
 		else							\
 			return (tmp);					\
 	}								\
-	VRB_SET(elm, parent, field);					\
+	VRBT_SET(elm, parent, field);					\
 	if (parent != NULL) {						\
 		if (comp < 0)						\
-			VRB_LEFT(parent, field) = elm;			\
+			VRBT_LEFT(parent, field) = elm;			\
 		else							\
-			VRB_RIGHT(parent, field) = elm;			\
-		VRB_AUGMENT(parent);					\
+			VRBT_RIGHT(parent, field) = elm;			\
+		VRBT_AUGMENT(parent);					\
 	} else								\
-		VRB_ROOT(head) = elm;					\
-	name##_VRB_INSERT_COLOR(head, elm);				\
+		VRBT_ROOT(head) = elm;					\
+	name##_VRBT_INSERT_COLOR(head, elm);				\
 	return (NULL);							\
 }									\
 									\
 /* Finds the node with the same key as elm */				\
 attr struct type *							\
-name##_VRB_FIND(const struct name *head, const struct type *elm)	\
+name##_VRBT_FIND(const struct name *head, const struct type *elm)	\
 {									\
-	struct type *tmp = VRB_ROOT(head);				\
+	struct type *tmp = VRBT_ROOT(head);				\
 	int comp;							\
 	while (tmp) {							\
 		comp = cmp(elm, tmp);					\
 		if (comp < 0)						\
-			tmp = VRB_LEFT(tmp, field);			\
+			tmp = VRBT_LEFT(tmp, field);			\
 		else if (comp > 0)					\
-			tmp = VRB_RIGHT(tmp, field);			\
+			tmp = VRBT_RIGHT(tmp, field);			\
 		else							\
 			return (tmp);					\
 	}								\
@@ -643,19 +643,19 @@ name##_VRB_FIND(const struct name *head, const struct type *elm)	\
 									\
 /* Finds the first node greater than or equal to the search key */	\
 attr struct type *							\
-name##_VRB_NFIND(const struct name *head, const struct type *elm)	\
+name##_VRBT_NFIND(const struct name *head, const struct type *elm)	\
 {									\
-	struct type *tmp = VRB_ROOT(head);				\
+	struct type *tmp = VRBT_ROOT(head);				\
 	struct type *res = NULL;					\
 	int comp;							\
 	while (tmp) {							\
 		comp = cmp(elm, tmp);					\
 		if (comp < 0) {						\
 			res = tmp;					\
-			tmp = VRB_LEFT(tmp, field);			\
+			tmp = VRBT_LEFT(tmp, field);			\
 		}							\
 		else if (comp > 0)					\
-			tmp = VRB_RIGHT(tmp, field);			\
+			tmp = VRBT_RIGHT(tmp, field);			\
 		else							\
 			return (tmp);					\
 	}								\
@@ -664,21 +664,21 @@ name##_VRB_NFIND(const struct name *head, const struct type *elm)	\
 									\
 /* ARGSUSED */								\
 attr struct type *							\
-name##_VRB_NEXT(struct type *elm)					\
+name##_VRBT_NEXT(struct type *elm)					\
 {									\
-	if (VRB_RIGHT(elm, field)) {					\
-		elm = VRB_RIGHT(elm, field);				\
-		while (VRB_LEFT(elm, field))				\
-			elm = VRB_LEFT(elm, field);			\
+	if (VRBT_RIGHT(elm, field)) {					\
+		elm = VRBT_RIGHT(elm, field);				\
+		while (VRBT_LEFT(elm, field))				\
+			elm = VRBT_LEFT(elm, field);			\
 	} else {							\
-		if (VRB_PARENT(elm, field) &&				\
-		    (elm == VRB_LEFT(VRB_PARENT(elm, field), field)))	\
-			elm = VRB_PARENT(elm, field);			\
+		if (VRBT_PARENT(elm, field) &&				\
+		    (elm == VRBT_LEFT(VRBT_PARENT(elm, field), field)))	\
+			elm = VRBT_PARENT(elm, field);			\
 		else {							\
-			while (VRB_PARENT(elm, field) &&		\
-			    (elm == VRB_RIGHT(VRB_PARENT(elm, field), field)))\
-				elm = VRB_PARENT(elm, field);		\
-			elm = VRB_PARENT(elm, field);			\
+			while (VRBT_PARENT(elm, field) &&		\
+			    (elm == VRBT_RIGHT(VRBT_PARENT(elm, field), field)))\
+				elm = VRBT_PARENT(elm, field);		\
+			elm = VRBT_PARENT(elm, field);			\
 		}							\
 	}								\
 	return (elm);							\
@@ -686,81 +686,81 @@ name##_VRB_NEXT(struct type *elm)					\
 									\
 /* ARGSUSED */								\
 attr struct type *							\
-name##_VRB_PREV(struct type *elm)					\
+name##_VRBT_PREV(struct type *elm)					\
 {									\
-	if (VRB_LEFT(elm, field)) {					\
-		elm = VRB_LEFT(elm, field);				\
-		while (VRB_RIGHT(elm, field))				\
-			elm = VRB_RIGHT(elm, field);			\
+	if (VRBT_LEFT(elm, field)) {					\
+		elm = VRBT_LEFT(elm, field);				\
+		while (VRBT_RIGHT(elm, field))				\
+			elm = VRBT_RIGHT(elm, field);			\
 	} else {							\
-		if (VRB_PARENT(elm, field) &&				\
-		    (elm == VRB_RIGHT(VRB_PARENT(elm, field), field)))	\
-			elm = VRB_PARENT(elm, field);			\
+		if (VRBT_PARENT(elm, field) &&				\
+		    (elm == VRBT_RIGHT(VRBT_PARENT(elm, field), field)))	\
+			elm = VRBT_PARENT(elm, field);			\
 		else {							\
-			while (VRB_PARENT(elm, field) &&		\
-			    (elm == VRB_LEFT(VRB_PARENT(elm, field), field)))\
-				elm = VRB_PARENT(elm, field);		\
-			elm = VRB_PARENT(elm, field);			\
+			while (VRBT_PARENT(elm, field) &&		\
+			    (elm == VRBT_LEFT(VRBT_PARENT(elm, field), field)))\
+				elm = VRBT_PARENT(elm, field);		\
+			elm = VRBT_PARENT(elm, field);			\
 		}							\
 	}								\
 	return (elm);							\
 }									\
 									\
 attr struct type *							\
-name##_VRB_MINMAX(const struct name *head, int val)			\
+name##_VRBT_MINMAX(const struct name *head, int val)			\
 {									\
-	struct type *tmp = VRB_ROOT(head);				\
+	struct type *tmp = VRBT_ROOT(head);				\
 	struct type *parent = NULL;					\
 	while (tmp) {							\
 		parent = tmp;						\
 		if (val < 0)						\
-			tmp = VRB_LEFT(tmp, field);			\
+			tmp = VRBT_LEFT(tmp, field);			\
 		else							\
-			tmp = VRB_RIGHT(tmp, field);			\
+			tmp = VRBT_RIGHT(tmp, field);			\
 	}								\
 	return (parent);						\
 }
 
-#define VRB_NEGINF	-1
-#define VRB_INF	1
+#define VRBT_NEGINF	-1
+#define VRBT_INF	1
 
-#define VRB_INSERT(name, x, y)	name##_VRB_INSERT(x, y)
-#define VRB_REMOVE(name, x, y)	name##_VRB_REMOVE(x, y)
-#define VRB_FIND(name, x, y)	name##_VRB_FIND(x, y)
-#define VRB_NFIND(name, x, y)	name##_VRB_NFIND(x, y)
-#define VRB_NEXT(name, x, y)	name##_VRB_NEXT(y)
-#define VRB_PREV(name, x, y)	name##_VRB_PREV(y)
-#define VRB_MIN(name, x)		name##_VRB_MINMAX(x, VRB_NEGINF)
-#define VRB_MAX(name, x)		name##_VRB_MINMAX(x, VRB_INF)
+#define VRBT_INSERT(name, x, y)	name##_VRBT_INSERT(x, y)
+#define VRBT_REMOVE(name, x, y)	name##_VRBT_REMOVE(x, y)
+#define VRBT_FIND(name, x, y)	name##_VRBT_FIND(x, y)
+#define VRBT_NFIND(name, x, y)	name##_VRBT_NFIND(x, y)
+#define VRBT_NEXT(name, x, y)	name##_VRBT_NEXT(y)
+#define VRBT_PREV(name, x, y)	name##_VRBT_PREV(y)
+#define VRBT_MIN(name, x)		name##_VRBT_MINMAX(x, VRBT_NEGINF)
+#define VRBT_MAX(name, x)		name##_VRBT_MINMAX(x, VRBT_INF)
 
-#define VRB_FOREACH(x, name, head)					\
-	for ((x) = VRB_MIN(name, head);					\
+#define VRBT_FOREACH(x, name, head)					\
+	for ((x) = VRBT_MIN(name, head);					\
 	     (x) != NULL;						\
-	     (x) = name##_VRB_NEXT(x))
+	     (x) = name##_VRBT_NEXT(x))
 
-#define VRB_FOREACH_FROM(x, name, y)					\
+#define VRBT_FOREACH_FROM(x, name, y)					\
 	for ((x) = (y);							\
-	    ((x) != NULL) && ((y) = name##_VRB_NEXT(x), (x) != NULL);	\
+	    ((x) != NULL) && ((y) = name##_VRBT_NEXT(x), (x) != NULL);	\
 	     (x) = (y))
 
-#define VRB_FOREACH_SAFE(x, name, head, y)				\
-	for ((x) = VRB_MIN(name, head);					\
-	    ((x) != NULL) && ((y) = name##_VRB_NEXT(x), (x) != NULL);	\
+#define VRBT_FOREACH_SAFE(x, name, head, y)				\
+	for ((x) = VRBT_MIN(name, head);					\
+	    ((x) != NULL) && ((y) = name##_VRBT_NEXT(x), (x) != NULL);	\
 	     (x) = (y))
 
-#define VRB_FOREACH_REVERSE(x, name, head)				\
-	for ((x) = VRB_MAX(name, head);					\
+#define VRBT_FOREACH_REVERSE(x, name, head)				\
+	for ((x) = VRBT_MAX(name, head);					\
 	     (x) != NULL;						\
-	     (x) = name##_VRB_PREV(x))
+	     (x) = name##_VRBT_PREV(x))
 
-#define VRB_FOREACH_REVERSE_FROM(x, name, y)				\
+#define VRBT_FOREACH_REVERSE_FROM(x, name, y)				\
 	for ((x) = (y);							\
-	    ((x) != NULL) && ((y) = name##_VRB_PREV(x), (x) != NULL);	\
+	    ((x) != NULL) && ((y) = name##_VRBT_PREV(x), (x) != NULL);	\
 	     (x) = (y))
 
-#define VRB_FOREACH_REVERSE_SAFE(x, name, head, y)			\
-	for ((x) = VRB_MAX(name, head);					\
-	    ((x) != NULL) && ((y) = name##_VRB_PREV(x), (x) != NULL);	\
+#define VRBT_FOREACH_REVERSE_SAFE(x, name, head, y)			\
+	for ((x) = VRBT_MAX(name, head);					\
+	    ((x) != NULL) && ((y) = name##_VRBT_PREV(x), (x) != NULL);	\
 	     (x) = (y))
 
 #endif	/* _VTREE_H_ */
