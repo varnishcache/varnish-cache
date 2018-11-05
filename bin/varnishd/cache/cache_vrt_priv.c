@@ -42,8 +42,6 @@ struct vrt_priv {
 #define VRT_PRIV_MAGIC			0x24157a52
 	VRBT_ENTRY(vrt_priv)		entry;
 	struct vmod_priv		priv[1];
-	const struct vcl		*vcl;
-	uintptr_t			id;	// = scope / vrt_privs
 	uintptr_t			vmod_id;
 };
 
@@ -70,12 +68,10 @@ pan_privs(struct vsb *vsb, const struct vrt_privs *privs)
 		VRBT_FOREACH(vp, vrt_priv_tree, &privs->privs) {
 			PAN_CheckMagic(vsb, vp, VRT_PRIV_MAGIC);
 			VSB_printf(vsb,
-			    "priv {p %p l %d f %p} vcl %p id %jx vmod %jx\n",
+			    "priv {p %p l %d f %p} vmod %jx\n",
 			    vp->priv->priv,
 			    vp->priv->len,
 			    vp->priv->free,
-			    vp->vcl,
-			    (uintmax_t)vp->id,
 			    (uintmax_t)vp->vmod_id
 			);
 		}
@@ -109,8 +105,7 @@ vrt_priv_dyncmp(const struct vrt_priv *vp1, const struct vrt_priv *vp2)
 VRBT_GENERATE(vrt_priv_tree, vrt_priv, entry, vrt_priv_dyncmp);
 
 static struct vmod_priv *
-vrt_priv_dynamic(const struct vcl *vcl, struct ws *ws,
-     struct vrt_privs *vps, uintptr_t id, uintptr_t vmod_id)
+vrt_priv_dynamic(struct ws *ws, struct vrt_privs *vps, uintptr_t vmod_id)
 {
 	struct vrt_priv *vp;
 	const struct vrt_priv needle = {.vmod_id = vmod_id};
@@ -122,8 +117,6 @@ vrt_priv_dynamic(const struct vcl *vcl, struct ws *ws,
 	if (vp) {
 		CHECK_OBJ(vp, VRT_PRIV_MAGIC);
 		assert(vp->vmod_id == vmod_id);
-		assert(vp->vcl == vcl);
-		assert(vp->id == id);
 		return (vp->priv);
 	}
 
@@ -131,8 +124,6 @@ vrt_priv_dynamic(const struct vcl *vcl, struct ws *ws,
 	if (vp == NULL)
 		return (NULL);
 	INIT_OBJ(vp, VRT_PRIV_MAGIC);
-	vp->vcl = vcl;
-	vp->id = id;
 	vp->vmod_id = vmod_id;
 	VRBT_INSERT(vrt_priv_tree, &vps->privs, vp);
 	return (vp->priv);
@@ -141,7 +132,6 @@ vrt_priv_dynamic(const struct vcl *vcl, struct ws *ws,
 struct vmod_priv *
 VRT_priv_task(VRT_CTX, const void *vmod_id)
 {
-	uintptr_t id;
 	struct vrt_privs *vps;
 	struct vmod_priv *vp;
 
@@ -151,36 +141,31 @@ VRT_priv_task(VRT_CTX, const void *vmod_id)
 
 	if (ctx->req) {
 		CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-		id = (uintptr_t)ctx->req;
 		CAST_OBJ_NOTNULL(vps, ctx->req->privs, VRT_PRIVS_MAGIC);
 	} else if (ctx->bo) {
 		CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
-		id = (uintptr_t)ctx->bo;
 		CAST_OBJ_NOTNULL(vps, ctx->bo->privs, VRT_PRIVS_MAGIC);
 	} else {
 		ASSERT_CLI();
-		id = (uintptr_t)cli_task_privs;
 		CAST_OBJ_NOTNULL(vps, cli_task_privs, VRT_PRIVS_MAGIC);
 	}
 
-	vp = vrt_priv_dynamic(ctx->vcl, ctx->ws, vps, id, (uintptr_t)vmod_id);
+	vp = vrt_priv_dynamic(ctx->ws, vps, (uintptr_t)vmod_id);
 	return (vp);
 }
 
 struct vmod_priv *
 VRT_priv_top(VRT_CTX, const void *vmod_id)
 {
-	uintptr_t id;
 	struct vrt_privs *vps;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	if (ctx->req) {
 		CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 		CHECK_OBJ_NOTNULL(ctx->req->top, REQ_MAGIC);
-		id = (uintptr_t)&ctx->req->top->top;
 		CAST_OBJ_NOTNULL(vps, ctx->req->top->privs, VRT_PRIVS_MAGIC);
-		return (vrt_priv_dynamic(ctx->vcl, ctx->req->top->ws,
-					 vps, id, (uintptr_t)vmod_id));
+		return (vrt_priv_dynamic(ctx->req->top->ws, vps,
+		    (uintptr_t)vmod_id));
 	} else
 		WRONG("PRIV_TOP is only accessible in client VCL context");
 	NEEDLESS(return NULL);
