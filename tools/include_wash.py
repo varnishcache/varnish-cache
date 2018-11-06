@@ -33,7 +33,7 @@ def check(fn):
         if i in l:
             for i in ("stddef.h", "stdint.h", "vrt.h",
                       "math.h", "pthread.h", "stdarg.h", "sys/types.h",
-                      "vdef.h", "miniobj.h", "vas.h", "vqueue.h"):
+                      "vdef.h", "miniobj.h", "vas.h", "vqueue.h", "vtree.h"):
                 if i in l:
                     print(fn, i + " included with cache.h")
 
