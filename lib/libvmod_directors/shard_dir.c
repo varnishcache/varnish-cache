@@ -394,7 +394,7 @@ sharddir_pick_be(VRT_CTX, struct sharddir *shardd,
 
 	/* short path for cases we dont want ramup/warmup or can't */
 	if (alt > 0 || healthy == IGNORE || (!rampup && warmup == 0) ||
-	    shard_next(&state, 0, 0) == -1)
+	    shard_next(&state, 0, 1) == -1)
 		goto ok;
 
 	assert(alt == 0);

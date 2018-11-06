@@ -13,6 +13,9 @@ server s3 {
 	rxreq
 	expect req.http.healthy == "true"
 	txresp -body "xiuFi3Pe"
+	rxreq
+	expect req.http.healthy == "true"
+	txresp -body "xiuFi3Pe"
 } -start
 
 varnish v1 -vcl+backend {
@@ -29,8 +32,16 @@ varnish v1 -vcl+backend {
 	}
 
 	sub vcl_recv {
-		set req.backend_hint = vd.backend(by=KEY,
-		    key=1756955383);
+		if (req.url == "/warmup") {
+			# key for which the order is s3->s1->s2
+			# we do not want to hit s1/s2 because they are down
+			set req.backend_hint = vd.backend(by=KEY,
+			    key=192192123, warmup=1.0);
+		} else {
+			# key for which the order is s1->s2->s3
+			set req.backend_hint = vd.backend(by=KEY,
+			    key=1756955383);
+		}
 		set req.http.healthy = std.healthy(req.backend_hint);
 		return(pass);
 	}
@@ -48,6 +59,9 @@ varnish v1 -cliok "backend.set_health s2 sick"
 
 client c1 {
 	txreq
+	rxresp
+	expect resp.body == "xiuFi3Pe"
+	txreq -url "/warmup"
 	rxresp
 	expect resp.body == "xiuFi3Pe"
 } -run
