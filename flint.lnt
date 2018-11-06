@@ -112,6 +112,9 @@
 -emacro(527, WRONG)		// unreachable code
 -emacro(774, VALID_OBJ)		// boolean always true
 
+-emacro(506, v_static_assert)	// Constant value Boolean
+-esym(751, __vassert_*)		// local typedef '___' (___) not referenced
+
 ///////////////////////////////////////////////////////////////////////
 // Places where we use x<<0 for reasons of symmetry
 

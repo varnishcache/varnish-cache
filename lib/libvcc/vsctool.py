@@ -219,7 +219,7 @@ class CounterSet(object):
     def emit_c_paranoia(self, fo):
         '''Emit asserts to make sure compiler gets same byte index'''
         fo.write("#define PARANOIA(a,n)\t\t\t\t\\\n")
-        fo.write("    _Static_assert(\t\t\t\t\\\n")
+        fo.write("    v_static_assert(\t\t\t\t\\\n")
         fo.write("\toffsetof(" + self.struct + ", a) == n,\t\\\n")
         fo.write("\t\"VSC element '\" #a \"' at wrong offset\")\n\n")
 

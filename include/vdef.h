@@ -73,9 +73,7 @@
 # endif
 #endif
 
-#ifdef __printflike
-#  define v_printflike_(f,a) __printflike(f,a)
-#elif __GNUC_PREREQ__(2, 95) || defined(__INTEL_COMPILER)
+#if __GNUC_PREREQ__(2, 95) || defined(__INTEL_COMPILER)
 #  define v_printflike_(f,a) __attribute__((format(printf, f, a)))
 #else
 #  define v_printflike_(f,a)
@@ -137,33 +135,6 @@
 #  define v_unused_ __attribute__((__unused__))
 #else
 #  define v_unused_
-#endif
-
-/*
- * Most of this nightmare is stolen from FreeBSD's <cdefs.h>
- */
-#ifndef __has_extension
-#  define __has_extension(x)	0
-#endif
-
-#if defined(_Static_assert)
-    /* Nothing, somebody already did this for us */
-#elif __has_extension(c_static_assert)
-    /* Nothing, we should be fine */
-#elif (defined(__cplusplus) && __cplusplus >= 201103L) || \
-       __has_extension(cxx_static_assert)
-#   define _Static_assert(x, y)	static_assert(x, y)
-#elif __GNUC_PREREQ__(4,6) && !defined(__cplusplus)
-    /* Nothing, gcc 4.6 and higher has _Static_assert built-in */
-#else
-#   if defined(__COUNTER__)
-#	define _Static_assert(x, y)	__Static_assert(x, __COUNTER__)
-#   else
-#	define _Static_assert(x, y)	__Static_assert(x, __LINE__)
-#   endif
-#   define __Static_assert(x, y)	___Static_assert(x, y)
-#   define ___Static_assert(x, y) \
-		typedef char __assert_## y[(x) ? 1 : -1] v_unused_
 #endif
 
 /* VTIM API overhaul WIP */
