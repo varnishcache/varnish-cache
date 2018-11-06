@@ -27,7 +27,7 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
-Varnish Cache 6.0.2 (unreleased)
+Varnish Cache 6.0.2 (2018-11-07)
 ================================
 
 * Fix and test objhead refcount for hit-for-pass (2654_, 2754_, 2760_)
