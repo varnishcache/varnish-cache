@@ -53,7 +53,7 @@ varnish v1 -arg "-p debug=+vclrel -p workspace_client=1m" -vcl+backend {
 		std.log("perf    1 " + debug.priv_perf(1));
 		std.log("perf   10 " + debug.priv_perf(10));
 		std.log("perf  100 " + debug.priv_perf(100));
-		std.log("perf 1000 " + debug.priv_perf(1000));
+		// std.log("perf 1000 " + debug.priv_perf(1000));
 		return (deliver);
 	}
 
