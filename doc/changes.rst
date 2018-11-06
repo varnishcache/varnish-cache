@@ -67,6 +67,47 @@ Varnish Cache trunk (ongoing)
 * Changed ``ExpKill`` log tags to emit microsecond-precision
   timestamps instead of nanoseconds (2792_)
 
+* Included ``vtree.h`` in the distribution for vmods and
+  renamed the red/black tree macros from ``VRB_*`` to ``VRBT_*``
+  to disambiguate from the acronym for Varnish Request Body.
+
+  Changed the internal organisation of dynamic PRIVs (``PRIV_TASK``,
+  ``PRIV_TOP`` from a list to a red/black tree) for performance.
+  (2813_)
+
+* Changed the default of the ``thread_pool_watchdog`` parameter
+  to 60 seconds to match the ``cli_timeout`` default
+
+* Fix warmup/rampup of the shard director (2823_)
+
+* Added ``vstrerror()`` as a safe wrapper for ``strerror()`` to avoid
+  a NULL pointer dereference under rare conditions where the latter
+  could return NULL. (2815_)
+
+* Fix VRT_priv_task for calls from vcl_pipe {} (2820_)
+
+* For ``varnishtest -L``, also keep VCL C source files
+
+* Fix assinging <bool> == <bool> (2809_)
+
+* Fix vmod object constructor documentation in the ``vmodtool.py`` -
+  generated RST files
+
+* Vmod developers are advised that anything returned by a vmod
+  function/method is assumed to be immutable. In other words, a vmod
+  `must not` modify any data which was previously returned.
+
+* VSB quoted output has been unified to three-digit octal,
+  VSB_QUOTE_ESCHEX has been added to prefer hex over octal quoting
+
+* Varnish-based tools using the VUT interface should now consider
+  using the ``VUT_Usage()`` function for consistency
+
+.. _2809: https://github.com/varnishcache/varnish-cache/issues/2809
+.. _2820: https://github.com/varnishcache/varnish-cache/issues/2820
+.. _2815: https://github.com/varnishcache/varnish-cache/issues/2815
+.. _2823: https://github.com/varnishcache/varnish-cache/issues/2823
+.. _2813: https://github.com/varnishcache/varnish-cache/pull/2813
 .. _2792: https://github.com/varnishcache/varnish-cache/pull/2792
 .. _2783: https://github.com/varnishcache/varnish-cache/pull/2783
 .. _2780: https://github.com/varnishcache/varnish-cache/issues/2780
