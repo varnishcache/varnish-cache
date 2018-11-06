@@ -171,7 +171,7 @@ h2_minimal_response(struct req *req, uint16_t status)
 	return (0);
 }
 
-static int
+static void
 h2_enc_len(struct vsb *vsb, unsigned bits, unsigned val, uint8_t b0)
 {
 	assert(bits < 8);
@@ -186,7 +186,6 @@ h2_enc_len(struct vsb *vsb, unsigned bits, unsigned val, uint8_t b0)
 		}
 	}
 	VSB_putc(vsb, (uint8_t)val);
-	return (0);
 }
 
 /*
