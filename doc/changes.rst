@@ -27,6 +27,14 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
+Varnish Cache 6.0.3 (unreleased)
+================================
+
+* Included ``vtree.h`` in the distribution for vmods and
+  renamed the red/black tree macros from ``VRB_*`` to ``VRBT_*``
+  to disambiguate from the acronym for Varnish Request Body.
+
+================================
 Varnish Cache 6.0.2 (2018-11-07)
 ================================
 
@@ -70,6 +78,28 @@ Varnish Cache 6.0.2 (2018-11-07)
 * Fix ``varnishstat -f`` in curses mode (interactively, without
   ``-1``, 2787_)
 
+* Changed the default of the ``thread_pool_watchdog`` parameter
+  to 60 seconds to match the ``cli_timeout`` default
+
+* Fix warmup/rampup of the shard director (2823_)
+
+* Fix VRT_priv_task for calls from vcl_pipe {} (2820_)
+
+* Fix vmod object constructor documentation in the ``vmodtool.py`` -
+  generated RST files
+
+* Vmod developers are advised that anything returned by a vmod
+  function/method is assumed to be immutable. In other words, a vmod
+  `must not` modify any data which was previously returned.
+
+* ``Content-Length`` header is not rewritten in response to a HEAD
+  request, allows responses to HEAD requests to be cached
+  independently from GET responses.
+
+* ``return(fail("mumble"))`` can have a string argument that is
+  emitted by VCC as an error message if the VCL load fails due to the
+  return. (2694_)
+
 * Handle an out-of-workspace condition in HTTP/2 delivery more
   gracefully (2589_)
 
@@ -104,6 +134,7 @@ Varnish Cache 6.0.2 (2018-11-07)
 .. _2694: https://github.com/varnishcache/varnish-cache/issues/2694
 .. _2696: https://github.com/varnishcache/varnish-cache/issues/2696
 .. _2708: https://github.com/varnishcache/varnish-cache/issues/2708
+.. _2713: https://github.com/varnishcache/varnish-cache/issues/2713
 .. _2744: https://github.com/varnishcache/varnish-cache/pull/2744
 .. _2745: https://github.com/varnishcache/varnish-cache/issues/2745
 .. _2746: https://github.com/varnishcache/varnish-cache/issues/2746
