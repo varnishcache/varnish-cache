@@ -71,6 +71,7 @@ nobase_pkginclude_HEADERS += \
 	vsha256.h \
 	vtcp.h \
 	vtim.h \
+	vtree.h \
 	vrnd.h
 
 # Private headers
@@ -98,7 +99,6 @@ nobase_noinst_HEADERS = \
 	vsub.h \
 	vss.h \
 	vtcp.h \
-	vtree.h \
 	vus.h
 
 ## keep in sync with lib/libvcc/Makefile.am
