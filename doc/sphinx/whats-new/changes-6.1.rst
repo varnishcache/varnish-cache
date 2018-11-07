@@ -3,7 +3,7 @@
 Changes in Varnish 6.1
 ======================
 
-This is release is a maintenance release, so while there are many actual
+This release is a maintenance release, so while there are many actual
 changes, and of course many bugfixes, they should not have little to no
 impact on running Varnish installations.
 
