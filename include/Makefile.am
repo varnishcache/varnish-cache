@@ -39,13 +39,15 @@ nobase_pkginclude_HEADERS = \
 	tbl/vhp_static.h \
 	tbl/vrt_stv_var.h \
 	tbl/vsc_levels.h \
+	tbl/vsig_list.h \
 	tbl/vsl_tags.h \
 	tbl/vsl_tags_http.h \
 	tbl/waiters.h \
-	vapi/vsm.h \
 	vapi/vsc.h \
+	vapi/vsig.h \
 	vapi/vsl.h \
 	vapi/vsl_int.h \
+	vapi/vsm.h \
 	vapi/voptget.h \
 	vapi/vapi_options.h \
 	vcli.h \

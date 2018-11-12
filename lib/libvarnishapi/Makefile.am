@@ -31,18 +31,19 @@ libvarnishapi_la_SOURCES = \
 	../libvarnish/vtim.c \
 	../libvarnish/vnum.c \
 	../libvarnish/vsha256.c \
-	vsm.c \
+	vsc.c \
+	vsig.c \
+	vsl.c \
 	vsl_arg.c \
 	vsl_cursor.c \
 	vsl_dispatch.c \
 	vsl_query.c \
-	vsl.c \
-	vsc.c \
+	vsm.c \
 	vut.c \
 	vxp.c \
-	vxp_parse.c \
-	vxp_lexer.c \
 	vxp_fixed_token.c \
+	vxp_lexer.c \
+	vxp_parse.c \
 	libvarnishapi.map
 
 if ! HAVE_DAEMON

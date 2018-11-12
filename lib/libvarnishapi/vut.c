@@ -54,6 +54,7 @@
 #include "vut.h"
 
 #include "vapi/voptget.h"
+#include "vapi/vsig.h"
 
 static int vut_synopsis(const struct vopt_spec *);
 static int vut_options(const struct vopt_spec *);
@@ -206,6 +207,11 @@ VUT_Init(const char *progname, int argc, char * const *argv,
 	AN(argv);
 	AN(voc);
 
+	VSIG_Arm_hup();
+	VSIG_Arm_int();
+	VSIG_Arm_term();
+	VSIG_Arm_usr1();
+
 	ALLOC_OBJ(vut, VUT_MAGIC);
 	AN(vut);
 
@@ -243,9 +249,9 @@ VUT_Signaled(struct VUT *vut, int sig)
 {
 
 	CHECK_OBJ_NOTNULL(vut, VUT_MAGIC);
-	vut->sighup |= (int)(sig == SIGHUP);
-	vut->sigint |= (int)(sig == SIGINT || sig == SIGTERM);
-	vut->sigusr1 |= (int)(sig == SIGUSR1);
+#define VSIG_SIGNAL(UPPER, lower) \
+	VSIG_##lower += (int)(sig == SIG##UPPER);
+#include "tbl/vsig_list.h"
 }
 
 void
@@ -353,18 +359,21 @@ VUT_Main(struct VUT *vut)
 	CHECK_OBJ_NOTNULL(vut, VUT_MAGIC);
 	AN(vut->vslq);
 
-	while (!vut->sigint) {
-		if (vut->sighup && vut->sighup_f) {
+	while (!VSIG_int && !VSIG_term) {
+		if (VSIG_hup != vut->last_sighup) {
 			/* sighup callback */
-			vut->sighup = 0;
-			i = vut->sighup_f(vut);
+			vut->last_sighup = VSIG_hup;
+			if (vut->sighup_f != NULL)
+				i = vut->sighup_f(vut);
+			else
+				i = 1;
 			if (i)
 				break;
 		}
 
-		if (vut->sigusr1) {
+		if (VSIG_usr1 != vut->last_sigusr1) {
 			/* Flush and report any incomplete records */
-			vut->sigusr1 = 0;
+			vut->last_sigusr1 = VSIG_usr1;
 			(void)VSLQ_Flush(vut->vslq, vut_dispatch, vut);
 		}
 
@@ -412,7 +421,7 @@ VUT_Main(struct VUT *vut)
 
 		do
 			i = VSLQ_Dispatch(vut->vslq, vut_dispatch, vut);
-		while (i == vsl_more && !vut->sighup && !vut->sigusr1);
+		while (i == vsl_more && !VSIG_hup && !VSIG_usr1);
 
 		if (i == vsl_more)
 			continue;

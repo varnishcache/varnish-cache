@@ -56,9 +56,9 @@ struct VUT {
 	struct VSL_data	*vsl;
 	struct vsm	*vsm;
 	struct VSLQ	*vslq;
-	int		sighup;
-	int		sigint;
-	int		sigusr1;
+
+	sig_atomic_t	last_sighup;
+	sig_atomic_t	last_sigusr1;
 
 	/* Callback functions */
 	VUT_cb_f	*idle_f;

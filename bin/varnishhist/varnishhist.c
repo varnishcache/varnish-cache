@@ -371,14 +371,6 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 	return (0);
 }
 
-static int v_matchproto_(VUT_cb_f)
-sighup(struct VUT *v)
-{
-	assert(v == vut);
-	quit = 1;
-	return (1);
-}
-
 static void * v_matchproto_(pthread_t)
 do_curses(void *arg)
 {
@@ -392,7 +384,7 @@ do_curses(void *arg)
 	intrflush(stdscr, FALSE);
 	curs_set(0);
 	erase();
-	while (!quit) {
+	while (!quit && !vut->last_sighup) {
 		AZ(pthread_mutex_lock(&mtx));
 		update();
 		AZ(pthread_mutex_unlock(&mtx));
@@ -478,14 +470,6 @@ profile_error(const char *s)
 	fprintf(stderr, "-P: '%s' is not a valid"
 	    " profile name or definition\n", s);
 	exit(1);
-}
-
-static void
-vut_sighandler(int sig)
-{
-
-	if (vut != NULL)
-		VUT_Signaled(vut, sig);
 }
 
 int
@@ -638,7 +622,6 @@ main(int argc, char **argv)
 
 	log_ten = log(10.0);
 
-	VUT_Signal(vut_sighandler);
 	VUT_Setup(vut);
 	if (vut->vsm)
 		ident = VSM_Dup(vut->vsm, "Arg", "-i");
@@ -647,7 +630,6 @@ main(int argc, char **argv)
 	AZ(pthread_create(&thr, NULL, do_curses, NULL));
 	vut->dispatch_f = accumulate;
 	vut->dispatch_priv = NULL;
-	vut->sighup_f = sighup;
 	(void)VUT_Main(vut);
 	end_of_file = 1;
 	AZ(pthread_join(thr, NULL));

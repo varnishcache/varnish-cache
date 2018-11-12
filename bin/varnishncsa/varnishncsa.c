@@ -1050,21 +1050,6 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 	return (0);
 }
 
-static int v_matchproto_(VUT_cb_f)
-sighup(struct VUT *v)
-{
-	assert(v == vut);
-	return (1);
-}
-
-static void
-vut_sighandler(int sig)
-{
-
-	if (vut != NULL)
-		VUT_Signaled(vut, sig);
-}
-
 static char *
 read_format(const char *formatfile)
 {
@@ -1175,7 +1160,6 @@ main(int argc, char * const *argv)
 	/* Setup output */
 	vut->dispatch_f = dispatch_f;
 	vut->dispatch_priv = NULL;
-	vut->sighup_f = sighup;
 	if (CTX.w_arg) {
 		openout(CTX.a_opt);
 		AN(CTX.fo);
@@ -1185,7 +1169,6 @@ main(int argc, char * const *argv)
 		CTX.fo = stdout;
 	vut->idle_f = flushout;
 
-	VUT_Signal(vut_sighandler);
 	VUT_Setup(vut);
 	(void)VUT_Main(vut);
 	VUT_Fini(&vut);

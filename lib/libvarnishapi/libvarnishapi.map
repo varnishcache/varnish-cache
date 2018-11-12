@@ -148,3 +148,22 @@ LIBVARNISHAPI_2.1 {
     local:
 	*;
 };
+
+LIBVARNISHAPI_2.2 {
+    global:
+	# vsig.c
+	VSIG_int;
+	VSIG_Got_int;
+	VSIG_Arm_int;
+	VSIG_hup;
+	VSIG_Got_hup;
+	VSIG_Arm_hup;
+	VSIG_term;
+	VSIG_Got_term;
+	VSIG_Arm_term;
+	VSIG_usr1;
+	VSIG_Got_usr1;
+	VSIG_Arm_usr1;
+    local:
+	*;
+};

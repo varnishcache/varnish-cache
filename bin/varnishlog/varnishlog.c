@@ -32,6 +32,7 @@
 
 #include "config.h"
 
+#include <signal.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -102,21 +103,6 @@ flushout(struct VUT *v)
 	return (0);
 }
 
-static int v_matchproto_(VUT_cb_f)
-sighup(struct VUT *v)
-{
-	assert(v == vut);
-	return (1);
-}
-
-static void
-vut_sighandler(int sig)
-{
-
-	if (vut != NULL)
-		VUT_Signaled(vut, sig);
-}
-
 int
 main(int argc, char * const *argv)
 {
@@ -160,7 +146,6 @@ main(int argc, char * const *argv)
 		vut->dispatch_f = VSL_PrintTransactions;
 	else
 		vut->dispatch_f = VSL_WriteTransactions;
-	vut->sighup_f = sighup;
 	if (LOG.w_arg) {
 		openout(LOG.a_opt);
 		AN(LOG.fo);
@@ -170,7 +155,6 @@ main(int argc, char * const *argv)
 		LOG.fo = stdout;
 	vut->idle_f = flushout;
 
-	VUT_Signal(vut_sighandler);
 	VUT_Setup(vut);
 	(void)VUT_Main(vut);
 	VUT_Fini(&vut);
