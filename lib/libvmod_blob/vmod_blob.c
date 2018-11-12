@@ -527,7 +527,7 @@ vmod_same(VRT_CTX, VCL_BLOB b1, VCL_BLOB b2)
 {
 	(void) ctx;
 
-	if (b1 == NULL && b2 == NULL)
+	if (b1 == b2)
 		return 1;
 	if (b1 == NULL || b2 == NULL)
 		return 0;
@@ -539,7 +539,7 @@ vmod_equal(VRT_CTX, VCL_BLOB b1, VCL_BLOB b2)
 {
 	(void) ctx;
 
-	if (b1 == NULL && b2 == NULL)
+	if (b1 == b2)
 		return 1;
 	if (b1 == NULL || b2 == NULL)
 		return 0;
