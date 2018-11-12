@@ -199,15 +199,12 @@ vmod_blob__init(VRT_CTX, struct vmod_blob_blob **blobp, const char *vcl_name,
 	ALLOC_OBJ(b, VMOD_BLOB_MAGIC);
 	AN(b);
 	*blobp = b;
-	b->blob.free = NULL;
 	AZ(pthread_mutex_init(&b->lock, NULL));
 
 	len = decode_l(dec, strings);
-	if (len == 0) {
-		b->blob.len = 0;
-		b->blob.priv = NULL;
+	if (len == 0)
 		return;
-	}
+
 	assert(len > 0);
 
 	b->blob.priv = malloc(len);
