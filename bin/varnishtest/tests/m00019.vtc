@@ -15,6 +15,10 @@ varnish v1 -vcl+backend {
 		new obj3 = debug.obj(string="s_two", number=two);
 		new obj4 = debug.obj(number=three, string="s_three");
 		new obj5 = debug.obj(number=three);
+
+		new oo0 = debug.obj_opt();
+		new oo1 = debug.obj_opt(s="string");
+		new oo2 = debug.obj_opt(b=true);
 	}
 
 	sub vcl_deliver {
@@ -32,6 +36,10 @@ varnish v1 -vcl+backend {
 		set resp.http.obj3 = obj3.string() + ", " + obj3.number();
 		set resp.http.obj4 = obj4.string() + ", " + obj4.number();
 		set resp.http.obj5 = obj5.string() + ", " + obj5.number();
+
+		set resp.http.oo0 = oo0.meth_opt(s="s1");
+		set resp.http.oo1 = oo1.meth_opt(b=false);
+		set resp.http.oo2 = oo2.meth_opt();
 	}
 } -start
 
@@ -53,6 +61,11 @@ client c1 {
 	expect resp.http.obj3 == "s_two, two"
 	expect resp.http.obj4 == "s_three, three"
 	expect resp.http.obj5 == "default, three"
+
+	expect resp.http.oo0 == "obj oo0 obj_s *undef* obj_b *undef* met_s s1 met_b *undef*"
+	expect resp.http.oo1 == "obj oo1 obj_s string obj_b *undef* met_s *undef* met_b false"
+	expect resp.http.oo2 == "obj oo2 obj_s *undef* obj_b true met_s *undef* met_b *undef*"
+
 } -run
 
 delay .1

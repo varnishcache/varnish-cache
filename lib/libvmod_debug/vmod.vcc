@@ -212,3 +212,13 @@ to seconds - iow the value given as seconds is actually the duration
 in nanoseconds.
 
 For comparable results, a higher size run should called first and discarded.
+
+$Object obj_opt(PRIV_CALL, PRIV_VCL, PRIV_TASK,
+		[STRING s], [BOOL b])
+
+Test object constructor with all the fancy stuff.
+
+$Method STRING .meth_opt(PRIV_CALL, PRIV_VCL, PRIV_TASK,
+			 [STRING s], [BOOL b])
+
+Test object method with all the fancy stuff.
