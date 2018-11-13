@@ -60,6 +60,7 @@ static struct vsb pan_vsb_storage, *pan_vsb;
 static pthread_mutex_t panicstr_mtx;
 
 static void pan_sess(struct vsb *, const struct sess *);
+static void pan_req(struct vsb *, const struct req *);
 
 /*--------------------------------------------------------------------*/
 
@@ -399,8 +400,39 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 		return;
 	VSB_indent(vsb, 2);
 	PAN_CheckMagic(vsb, bo, BUSYOBJ_MAGIC);
+	VSB_printf(vsb, "end = %p,\n", bo->end);
+	VSB_printf(vsb, "retries = %d,\n", bo->retries);
+
+	if (bo->req != NULL)
+		pan_req(vsb, bo->req);
+	if (bo->sp != NULL)
+		pan_sess(vsb, bo->sp);
+	if (bo->wrk != NULL)
+		pan_wrk(vsb, bo->wrk);
+
+	if (bo->vfc != NULL)
+		pan_vfp(vsb, bo->vfc);
+	if (bo->filter_list != NULL)
+		VSB_printf(vsb, "filter_list = \"%s\",\n", bo->filter_list);
+
 	pan_ws(vsb, bo->ws);
-	VSB_printf(vsb, "retries = %d, ", bo->retries);
+	VSB_printf(vsb, "ws_bo = %p,\n", (void *)bo->ws_bo);
+
+	// bereq0 left out
+	if (bo->bereq != NULL && bo->bereq->ws != NULL)
+		pan_http(vsb, "bereq", bo->bereq);
+	if (bo->beresp != NULL && bo->beresp->ws != NULL)
+		pan_http(vsb, "beresp", bo->beresp);
+	if (bo->stale_oc)
+		pan_objcore(vsb, "stale_oc", bo->stale_oc);
+	if (bo->fetch_objcore)
+		pan_objcore(vsb, "fetch", bo->fetch_objcore);
+
+	if (VALID_OBJ(bo->htc, HTTP_CONN_MAGIC))
+		pan_htc(vsb, bo->htc);
+
+	// fetch_task left out
+
 	VSB_printf(vsb, "flags = {");
 	p = "";
 /*lint -save -esym(438,p) -e539 */
@@ -410,27 +442,14 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 /*lint -restore */
 	VSB_printf(vsb, "},\n");
 
-	if (VALID_OBJ(bo->htc, HTTP_CONN_MAGIC))
-		pan_htc(vsb, bo->htc);
-
-	if (bo->vfc)
-		pan_vfp(vsb, bo->vfc);
+	// timeouts/timers/acct/storage left out
 
 	VDI_Panic(bo->director_req, vsb, "director_req");
 	if (bo->director_resp == bo->director_req)
 		VSB_printf(vsb, "director_resp = director_req,\n");
 	else
 		VDI_Panic(bo->director_resp, vsb, "director_resp");
-	if (bo->bereq != NULL && bo->bereq->ws != NULL)
-		pan_http(vsb, "bereq", bo->bereq);
-	if (bo->beresp != NULL && bo->beresp->ws != NULL)
-		pan_http(vsb, "beresp", bo->beresp);
-	if (bo->fetch_objcore)
-		pan_objcore(vsb, "fetch", bo->fetch_objcore);
-	if (bo->stale_oc)
-		pan_objcore(vsb, "ims", bo->stale_oc);
 	VCL_Panic(vsb, bo->vcl);
-	VMOD_Panic(vsb);
 	VSB_indent(vsb, -2);
 	VSB_printf(vsb, "},\n");
 }
@@ -495,7 +514,6 @@ pan_req(struct vsb *vsb, const struct req *req)
 		pan_http(vsb, "resp", req->resp);
 
 	VCL_Panic(vsb, req->vcl);
-	VMOD_Panic(vsb);
 
 	if (req->body_oc != NULL)
 		pan_objcore(vsb, "BODY", req->body_oc);
@@ -683,6 +701,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 		pan_busyobj(pan_vsb, bo);
 		if (bo != NULL)
 			VSL_Flush(bo->vsl, 0);
+		VMOD_Panic(pan_vsb);
 	} else {
 		VSB_printf(pan_vsb,
 		    "Feature short panic supressed details.\n");
