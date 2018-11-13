@@ -178,3 +178,13 @@ Update counter
 $Function VOID vsc_destroy()
 
 Remove a vsc
+
+$Object obj_opt(PRIV_CALL, PRIV_VCL, PRIV_TASK,
+		[STRING s], [BOOL b])
+
+Test object constructor with all the fancy stuff.
+
+$Method STRING .meth_opt(PRIV_CALL, PRIV_VCL, PRIV_TASK,
+			 [STRING s], [BOOL b])
+
+Test object method with all the fancy stuff.
