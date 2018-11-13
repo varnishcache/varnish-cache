@@ -59,6 +59,7 @@
 
 #include "vdef.h"
 
+#include "vapi/vsig.h"
 #include "vapi/vsm.h"
 #include "vas.h"
 #include "vcli.h"
@@ -471,6 +472,9 @@ main(int argc, char * const *argv)
 
 	argc -= optind;
 	argv += optind;
+
+	VSIG_Arm_int();
+	VSIG_Arm_term();
 
 	if (T_arg != NULL) {
 		if (n_arg != NULL)

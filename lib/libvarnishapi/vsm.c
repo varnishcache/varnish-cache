@@ -55,6 +55,7 @@
 #include "vqueue.h"
 #include "vtim.h"
 
+#include "vapi/vsig.h"
 #include "vapi/vsm.h"
 
 #ifndef MAP_HASSEMAPHORE
@@ -676,7 +677,7 @@ VSM_Attach(struct vsm *vd, int progress)
 	}
 
 	AZ(vd->attached);
-	while (1) {
+	while (!VSIG_int && !VSIG_term) {
 		u = VSM_Status(vd);
 		VSM_ResetError(vd);
 		if (u & VSM_MGT_RUNNING) {
@@ -695,6 +696,7 @@ VSM_Attach(struct vsm *vd, int progress)
 			(void)write(progress, ".", 1);
 		VTIM_sleep(.25);
 	}
+	return (vsm_diag(vd, "Attach interrupted"));
 }
 
 /*--------------------------------------------------------------------*/

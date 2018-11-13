@@ -154,3 +154,8 @@ process p1 -expect-text 1 0 {/1?foo=bar HTTP/1.1" 200 100 "-" "-"}
 process p1 -expect-text 1 0 { - user [}
 process p1 -expect-text 2 0 {/1?foo=bar HTTP/1.1" 404 248 "-" "-"}
 process p1 -expect-text 3 0 {/2 HTTP/1.1" - - "-" "-"}
+
+process p2 {varnishncsa -t 5 -n nonexistent} -start
+delay 1
+process p2 -expect-exit 1 -kill INT -wait
+shell {grep -q "VSM: Attach interrupted" ${p2_err}}
