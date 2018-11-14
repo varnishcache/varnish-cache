@@ -183,6 +183,9 @@ xyzzy_obj_opt__init(VRT_CTX,
 	if (args->valid_s)
 		AN(args->s);
 
+	if (args->valid_b)
+		AN(args->b);
+
 	AN(op);
 	AZ(*op);
 	ALLOC_OBJ(o, VMOD_DEBUG_OBJ_OPT_MAGIC);
