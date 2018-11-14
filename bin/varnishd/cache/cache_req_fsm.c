@@ -364,10 +364,12 @@ cnt_transmit(struct worker *wrk, struct req *req)
 	else
 		req->resp_len = ObjGetLen(req->wrk, req->objcore);
 
-	if (head || status < 200 || status == 204 || status == 304)
-		sendbody = 0;	/* rfc7230,l,1748,1752 */
-	else
+	if (head || status < 200 || status == 204 || status == 304) {
+		// rfc7230,l,1748,1752
+		sendbody = 0;	
+	} else {
 		sendbody = 1;
+	}
 
 	if (!req->disable_esi && req->resp_len != 0 &&
 	    ObjHasAttr(wrk, req->objcore, OA_ESIDATA) &&
