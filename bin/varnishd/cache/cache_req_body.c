@@ -73,7 +73,14 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 
 	req->storage = NULL;
 
-	XXXAN(STV_NewObject(req->wrk, req->body_oc, stv, 8));
+	if (STV_NewObject(req->wrk, req->body_oc, stv, 8) == 0) {
+		req->req_body_status = REQ_BODY_FAIL;
+		HSH_DerefBoc(req->wrk, req->body_oc);
+		AZ(HSH_DerefObjCore(req->wrk, &req->body_oc, 0));
+		(void)VFP_Error(vfc, "Object allocation failed:"
+		    " Ran out of space in %s", stv->vclname);
+		return (-1);
+	}
 
 	vfc->oc = req->body_oc;
 
