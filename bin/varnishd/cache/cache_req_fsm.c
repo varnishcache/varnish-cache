@@ -349,73 +349,66 @@ cnt_transmit(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req->transport, TRANSPORT_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 	AZ(req->stale_oc);
+	AZ(req->res_mode);
 
-	/* Grab a ref to the bo if there is one */
+	/* Grab a ref to the bo if there is one (=streaming) */
 	boc = HSH_RefBoc(req->objcore);
-
 	clval = http_GetContentLength(req->resp);
+	/* RFC 7230, 3.3.3 */
+	status = http_GetStatus(req->resp);
+	head = !strcmp(req->http0->hd[HTTP_HDR_METHOD].b, "HEAD");
+	err = 0;
+
 	if (boc != NULL)
 		req->resp_len = clval;
 	else
 		req->resp_len = ObjGetLen(req->wrk, req->objcore);
 
-	req->res_mode = 0;
-
-	/* RFC 7230, 3.3.3 */
-	status = http_GetStatus(req->resp);
-	head = !strcmp(req->http0->hd[HTTP_HDR_METHOD].b, "HEAD");
-	if (head) {
-		if (req->objcore->flags & OC_F_PASS)
-			sendbody = -1;
-		else
-			sendbody = 0;
-	} else if (status < 200 || status == 204 || status == 304) {
-		req->resp_len = -1;
-		sendbody = 0;
-	} else {
+	if (head || status < 200 || status == 204 || status == 304)
+		sendbody = 0;	/* rfc7230,l,1748,1752 */
+	else
 		sendbody = 1;
+
+	if (!req->disable_esi && req->resp_len != 0 &&
+	    ObjHasAttr(wrk, req->objcore, OA_ESIDATA) &&
+	    VDP_Push(req, &VDP_esi, NULL) < 0)
+		err++;
+
+	if (cache_param->http_gzip_support &&
+	    ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED) &&
+	    !RFC2616_Req_Gzip(req->http) &&
+	    VDP_Push(req, &VDP_gunzip, NULL) < 0)
+		err++;
+
+	if (cache_param->http_range_support && status == 200) {
+		http_ForceHeader(req->resp, H_Accept_Ranges, "bytes");
+		if (http_GetHdr(req->http, H_Range, &r))
+			VRG_dorange(req, r);
 	}
 
-	err = 0;
-	if (sendbody >= 0) {
-		if (!req->disable_esi && req->resp_len != 0 &&
-		    ObjHasAttr(wrk, req->objcore, OA_ESIDATA) &&
-		    VDP_Push(req, &VDP_esi, NULL) < 0)
-			err++;
-
-		if (cache_param->http_gzip_support &&
-		    ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED) &&
-		    !RFC2616_Req_Gzip(req->http) &&
-		    VDP_Push(req, &VDP_gunzip, NULL) < 0)
-			err++;
-
-		if (cache_param->http_range_support &&
-		    http_IsStatus(req->resp, 200)) {
-			http_ForceHeader(req->resp, H_Accept_Ranges, "bytes");
-			if (sendbody && http_GetHdr(req->http, H_Range, &r))
-				VRG_dorange(req, r);
-		}
-	}
-
-	if (sendbody < 0 || head) {
-		/* Don't touch HEAD C-L */
-		sendbody = 0;
-	} else if (clval >= 0 && clval == req->resp_len) {
-		/* Reuse C-L header */
+	if (err) {
+		VSLb(req->vsl, SLT_Error, "Failure to push processors");
+		req->doclose = SC_OVERLOAD;
 	} else {
-		http_Unset(req->resp, H_Content_Length);
-		if (req->resp_len >= 0 && sendbody)
-			http_PrintfHeader(req->resp,
-			    "Content-Length: %jd", req->resp_len);
-	}
-
-	if (err == 0) {
+		if (status < 200 || status == 204) {
+			// rfc7230,l,1691,1695
+			http_Unset(req->resp, H_Content_Length);
+		} else if (status == 304) {
+			// rfc7230,l,1675,1677
+			http_Unset(req->resp, H_Content_Length);
+		} else if (clval >= 0 && clval == req->resp_len) {
+			/* Reuse C-L header */
+		} else if (head && req->objcore->flags & OC_F_PASS) {
+			/* Don't touch C-L header */
+		} else {
+			http_Unset(req->resp, H_Content_Length);
+			if (req->resp_len >= 0)
+				http_PrintfHeader(req->resp,
+				    "Content-Length: %jd", req->resp_len);
+		}
 		if (req->resp_len == 0)
 			sendbody = 0;
 		req->transport->deliver(req, boc, sendbody);
-	} else {
-		VSLb(req->vsl, SLT_Error, "Failure to push processors");
-		req->doclose = SC_OVERLOAD;
 	}
 
 	VSLb_ts_req(req, "Resp", W_TIM_real(wrk));
@@ -436,6 +429,7 @@ cnt_transmit(struct worker *wrk, struct req *req)
 	(void)HSH_DerefObjCore(wrk, &req->objcore, HSH_RUSH_POLICY);
 	http_Teardown(req->resp);
 
+	req->res_mode = 0;
 	return (REQ_FSM_DONE);
 }
 
