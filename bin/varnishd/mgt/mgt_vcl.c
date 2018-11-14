@@ -47,10 +47,12 @@
 #include "vev.h"
 #include "vtim.h"
 
-static const char * const VCL_STATE_COLD = "cold";
-static const char * const VCL_STATE_WARM = "warm";
-static const char * const VCL_STATE_AUTO = "auto";
+#define VCL_STATE(sym, str)					\
+	static const char * const VCL_STATE_ ## sym = str;
+#include "tbl/vcl_states.h"
+
 static const char * const VCL_STATE_LABEL = "label";
+
 static int vcl_count;
 
 struct vclprog;
@@ -105,6 +107,18 @@ static struct vev *e_poker;
 static int mgt_vcl_setstate(struct cli *, struct vclprog *, const char *);
 
 /*--------------------------------------------------------------------*/
+
+static const char *
+mcf_vcl_parse_state(const char *s)
+{
+	if (s == NULL || *s == '\0')
+		return (NULL);
+#define VCL_STATE(sym, str)					\
+	if (!strcmp(s, VCL_STATE_ ## sym))			\
+		return (VCL_STATE_ ## sym);
+#include "tbl/vcl_states.h"
+	return (NULL);
+}
 
 static struct vclprog *
 mcf_vcl_byname(const char *name)
@@ -171,7 +185,7 @@ mcf_find_no_vcl(struct cli *cli, const char *name)
 static int
 mcf_is_label(const struct vclprog *vp)
 {
-	return (!strcmp(vp->state, VCL_STATE_LABEL));
+	return (vp->state == VCL_STATE_LABEL);
 }
 
 /*--------------------------------------------------------------------*/
@@ -480,13 +494,10 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 
 	if (state == NULL)
 		state = VCL_STATE_AUTO;
-	else if (!strcmp(state, VCL_STATE_AUTO))
-		state = VCL_STATE_AUTO;
-	else if (!strcmp(state, VCL_STATE_COLD))
-		state = VCL_STATE_COLD;
-	else if (!strcmp(state, VCL_STATE_WARM))
-		state = VCL_STATE_WARM;
-	else {
+	else
+		state = mcf_vcl_parse_state(state);
+
+	if (state == NULL) {
 		VCLI_Out(cli, "State must be one of auto, cold or warm.");
 		VCLI_SetResult(cli, CLIS_PARAM);
 		return;
@@ -526,7 +537,7 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 	}
 	free(p);
 
-	if (vp->warm && !strcmp(vp->state, "auto"))
+	if (vp->warm && vp->state == VCL_STATE_AUTO)
 		vp->go_cold = VTIM_mono();
 }
 
@@ -645,6 +656,7 @@ mcf_vcl_load(struct cli *cli, const char * const *av, void *priv)
 static void v_matchproto_(cli_func_t)
 mcf_vcl_state(struct cli *cli, const char * const *av, void *priv)
 {
+	const char *state;
 	struct vclprog *vp;
 
 	(void)priv;
@@ -657,22 +669,30 @@ mcf_vcl_state(struct cli *cli, const char * const *av, void *priv)
 		VCLI_SetResult(cli, CLIS_PARAM);
 		return;
 	}
+
+	state = mcf_vcl_parse_state(av[3]);
+	if (state == NULL) {
+		VCLI_Out(cli, "State must be one of auto, cold or warm.");
+		VCLI_SetResult(cli, CLIS_PARAM);
+		return;
+	}
+
 	if (!VTAILQ_EMPTY(&vp->dto)) {
-		AN(strcmp(vp->state, "cold"));
-		if (!strcmp(av[3], "cold")) {
+		assert(vp->state != VCL_STATE_COLD);
+		if (state == VCL_STATE_COLD) {
 			VCLI_Out(cli, "A labeled VCL cannot be set cold");
 			VCLI_SetResult(cli, CLIS_CANT);
 			return;
 		}
 	}
 
-	if (!strcmp(vp->state, av[3]))
+	if (vp->state == state)
 		return;
 
-	if (!strcmp(av[3], VCL_STATE_AUTO)) {
+	if (state == VCL_STATE_AUTO) {
 		vp->state = VCL_STATE_AUTO;
 		(void)mgt_vcl_setstate(cli, vp, VCL_STATE_AUTO);
-	} else if (!strcmp(av[3], VCL_STATE_COLD)) {
+	} else if (state == VCL_STATE_COLD) {
 		if (vp == active_vcl) {
 			VCLI_Out(cli, "Cannot set the active VCL cold.");
 			VCLI_SetResult(cli, CLIS_CANT);
@@ -680,7 +700,7 @@ mcf_vcl_state(struct cli *cli, const char * const *av, void *priv)
 		}
 		vp->state = VCL_STATE_AUTO;
 		(void)mgt_vcl_setstate(cli, vp, VCL_STATE_COLD);
-	} else if (!strcmp(av[3], VCL_STATE_WARM)) {
+	} else if (state == VCL_STATE_WARM) {
 		if (mgt_vcl_setstate(cli, vp, VCL_STATE_WARM) == 0)
 			vp->state = VCL_STATE_WARM;
 	} else {
