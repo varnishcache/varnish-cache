@@ -339,6 +339,8 @@ parse_string(const char *spec, const struct cmds *cmd, void *priv,
 			vtc_log(vl, 2, "=== %.*s", (int)(q - p), p);
 
 		/* First content on line, collect tokens */
+		memset(token_s, 0, sizeof token_s);
+		memset(token_e, 0, sizeof token_e);
 		tn = 0;
 		f = p;
 		while (p < e) {
