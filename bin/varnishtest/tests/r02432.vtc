@@ -11,6 +11,7 @@ varnish v1 -vcl+backend {
 } -start
 
 varnish v1 -cliok "vcl.label label1 vcl1"
+varnish v1 -cliok "vcl.list"
 
 varnish v1 -vcl+backend {
 	sub vcl_recv {
