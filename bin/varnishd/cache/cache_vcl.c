@@ -504,10 +504,12 @@ vcl_set_state(VRT_CTX, const char *state)
 		else {
 			vcl->temp = VCL_TEMP_WARM;
 			i = vcl_send_event(ctx, VCL_EVENT_WARM);
-			if (i == 0)
+			if (i == 0) {
 				vcl_BackendEvent(vcl, VCL_EVENT_WARM);
-			else
-				AZ(vcl->conf->event_vcl(ctx, VCL_EVENT_COLD));
+				break;
+			}
+			AZ(vcl->conf->event_vcl(ctx, VCL_EVENT_COLD));
+			vcl->temp = VCL_TEMP_COLD;
 		}
 		break;
 	default:
