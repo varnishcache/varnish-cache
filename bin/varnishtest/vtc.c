@@ -302,7 +302,7 @@ parse_string(const char *spec, const struct cmds *cmd, void *priv,
     struct vtclog *vl)
 {
 	char *token_s[MAX_TOKENS], *token_e[MAX_TOKENS];
-	struct vsb *token_exp[MAX_TOKENS];
+	struct vsb *token_exp;
 	char *e, *p, *q, *f, *buf;
 	int nest_brace;
 	int tn;
@@ -401,14 +401,13 @@ parse_string(const char *spec, const struct cmds *cmd, void *priv,
 		assert(tn < MAX_TOKENS);
 		token_s[tn] = NULL;
 		for (tn = 0; token_s[tn] != NULL; tn++) {
-			token_exp[tn] = NULL;
 			AN(token_e[tn]);	/*lint !e771 */
 			*token_e[tn] = '\0';	/*lint !e771 */
 			if (NULL != strstr(token_s[tn], "${")) {
-				token_exp[tn] = macro_expand(vl, token_s[tn]);
+				token_exp = macro_expand(vl, token_s[tn]);
 				if (vtc_error)
 					return;
-				token_s[tn] = VSB_data(token_exp[tn]);
+				token_s[tn] = VSB_data(token_exp);
 				token_e[tn] = strchr(token_s[tn], '\0');
 			}
 		}
