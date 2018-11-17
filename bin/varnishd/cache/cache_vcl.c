@@ -479,9 +479,9 @@ vcl_set_state(VRT_CTX, const char *state)
 
 	switch (state[0]) {
 	case '0':
-		assert(vcl->temp != VCL_TEMP_COLD);
+		if (vcl->temp == VCL_TEMP_COLD)
+			break;
 		if (vcl->busy == 0 && VCL_WARM(vcl)) {
-
 			vcl->temp = VTAILQ_EMPTY(&vcl->ref_list) ?
 			    VCL_TEMP_COLD : VCL_TEMP_COOLING;
 			AZ(vcl_send_event(ctx, VCL_EVENT_COLD));
@@ -495,7 +495,8 @@ vcl_set_state(VRT_CTX, const char *state)
 			vcl->temp = VCL_TEMP_COOLING;
 		break;
 	case '1':
-		assert(vcl->temp != VCL_TEMP_WARM);
+		if (vcl->temp == VCL_TEMP_WARM)
+			break;
 		/* The warm VCL hasn't seen a cold event yet */
 		if (vcl->temp == VCL_TEMP_BUSY)
 			vcl->temp = VCL_TEMP_WARM;
@@ -518,6 +519,8 @@ vcl_set_state(VRT_CTX, const char *state)
 	default:
 		WRONG("Wrong enum state");
 	}
+	if (i == 0 && state[1])
+		bprintf(vcl->state, "%s", state + 1);
 	AZ(errno=pthread_rwlock_unlock(&vcl->temp_rwl));
 
 	return (i);
@@ -588,7 +591,6 @@ vcl_load(struct cli *cli, struct vrt_ctx *ctx,
 		vcl_cancel_load(ctx, cli, name, "warmup");
 		return;
 	}
-	bprintf(vcl->state, "%s", state + 1);
 	VCLI_Out(cli, "Loaded \"%s\" as \"%s\"", fn , name);
 	VTAILQ_INSERT_TAIL(&vcl_head, vcl, list);
 	Lck_Lock(&vcl_mtx);
@@ -741,9 +743,7 @@ vcl_cli_state(struct cli *cli, const char * const *av, void *priv)
 	ctx = vcl_get_ctx(0, 1);
 	ctx->vcl = vcl_find(av[2]);
 	AN(ctx->vcl);			// MGT ensures this
-	if (vcl_set_state(ctx, av[3]) == 0) {
-		bprintf(ctx->vcl->state, "%s", av[3] + 1);
-	} else {
+	if (vcl_set_state(ctx, av[3])) {
 		AZ(VSB_finish(ctx->msg));
 		VCLI_SetResult(cli, CLIS_CANT);
 		VCLI_Out(cli, "Failed <vcl.state %s %s>", ctx->vcl->loaded_name,
