@@ -89,16 +89,10 @@ vrg_range_bytes(struct req *req, enum vdp_action act, void **priv,
 	    vrg_priv->range_off >= vrg_priv->range_high ? 1 : 0);
 }
 
-static const struct vdp vrg_vdp = {
-	.name =		"RNG",
-	.bytes =	vrg_range_bytes,
-	.fini =		vrg_range_fini,
-};
-
 /*--------------------------------------------------------------------*/
 
 static const char *
-vrg_dorange(struct req *req, const char *r)
+vrg_dorange(struct req *req, const char *r, void **priv)
 {
 	ssize_t low, high, has_low, has_high, t;
 	struct vrg_priv *vrg_priv;
@@ -181,35 +175,47 @@ vrg_dorange(struct req *req, const char *r)
 	vrg_priv->range_off = 0;
 	vrg_priv->range_low = low;
 	vrg_priv->range_high = high + 1;
-	if (VDP_Push(req, &vrg_vdp, vrg_priv))
-		return ("WS too small");
+	*priv = vrg_priv;
 	http_PutResponse(req->resp, "HTTP/1.1", 206, NULL);
 	return (NULL);
 }
 
+static int v_matchproto_(vdp_init_f)
+vrg_range_init(struct req *req, void **priv)
+{
+	const char *r;
+	const char *err;
+
+	assert(http_GetHdr(req->http, H_Range, &r));
+	err = vrg_dorange(req, r, priv);
+	if (err == NULL)
+		return (*priv == NULL ? 1 : 0);
+
+	VSLb(req->vsl, SLT_Debug, "RANGE_FAIL %s", err);
+	if (req->resp_len >= 0)
+		http_PrintfHeader(req->resp,
+		    "Content-Range: bytes */%jd",
+		    (intmax_t)req->resp_len);
+	http_PutResponse(req->resp, "HTTP/1.1", 416, NULL);
+	/*
+	 * XXX: We ought to produce a body explaining things.
+	 * XXX: That really calls for us to hit vcl_synth{}
+	 */
+	req->resp_len = 0;
+	return (1);
+}
+
+static const struct vdp vrg_vdp = {
+	.name =		"range",
+	.init =		vrg_range_init,
+	.bytes =	vrg_range_bytes,
+	.fini =		vrg_range_fini,
+};
+
 void
 VRG_dorange(struct req *req, const char *r)
 {
-	const char *err;
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
-	assert(http_IsStatus(req->resp, 200));
-
-	/* We must snapshot the length if we're streaming from the backend */
-
-	err = vrg_dorange(req, r);
-	if (err != NULL) {
-		VSLb(req->vsl, SLT_Debug, "RANGE_FAIL %s", err);
-		if (req->resp_len >= 0)
-			http_PrintfHeader(req->resp,
-			    "Content-Range: bytes */%jd",
-			    (intmax_t)req->resp_len);
-		http_PutResponse(req->resp, "HTTP/1.1", 416, NULL);
-		/*
-		 * XXX: We ought to produce a body explaining things.
-		 * XXX: That really calls for us to hit vcl_synth{}
-		 */
-		req->resp_len = 0;
-	}
+	(void)r;
+	AZ(VDP_Push(req, &vrg_vdp, NULL));
 }
