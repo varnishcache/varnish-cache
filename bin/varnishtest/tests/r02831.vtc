@@ -47,7 +47,7 @@ client c1 {
 	delay 1
 } -run
 
-varnish v1 -expect SMA.Transient.c_fail == 1
+varnish v1 -expect SM?.Transient.c_fail == 1
 
 client c1 {
 	# Check that Varnish is still alive
