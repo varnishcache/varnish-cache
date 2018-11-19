@@ -78,7 +78,6 @@ VDP_Push(struct req *req, const struct vdp *vdp, void *priv)
 {
 	struct vdp_entry *vdpe;
 	struct vdp_ctx *vdc;
-	uintptr_t sn;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	vdc = req->vdc;
@@ -92,7 +91,6 @@ VDP_Push(struct req *req, const struct vdp *vdp, void *priv)
 	if (DO_DEBUG(DBG_PROCESSORS))
 		VSLb(req->vsl, SLT_Debug, "VDP_push(%s)", vdp->name);
 
-	sn = WS_Snapshot(req->ws);
 	vdpe = WS_Alloc(req->ws, sizeof *vdpe);
 	if (vdpe == NULL) {
 		AZ(vdc->retval);
@@ -111,7 +109,6 @@ VDP_Push(struct req *req, const struct vdp *vdp, void *priv)
 	if (vdc->retval > 0) {
 		VTAILQ_REMOVE(&vdc->vdp, vdpe, list);
 		vdc->nxt = VTAILQ_FIRST(&vdc->vdp);
-		WS_Reset(req->ws, sn);
 		vdc->retval = 0;
 	}
 	return (vdc->retval);
