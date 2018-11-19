@@ -48,7 +48,10 @@ varnish v1 -cliexpect "available *cold *cold *[0-9]+ *vcl1\\s+active *auto *warm
 delay .4
 varnish v1 -expect !VBE.vcl1.default.happy
 
-# Use it, and it should come warm (but not auto)
+# Manual temperature control needs to be explicit before use
+varnish v1 -clierr 300 "vcl.use vcl1"
+
+varnish v1 -cliok "vcl.state vcl1 warm"
 varnish v1 -cliok "vcl.use vcl1"
 varnish v1 -cliexpect "active *warm *warm *[0-9]+ *vcl1\\s+available *auto *warm *[0-9]+ *vcl2" "vcl.list"
 delay .4
