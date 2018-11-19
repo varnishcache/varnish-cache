@@ -367,7 +367,7 @@ cnt_transmit(struct worker *wrk, struct req *req)
 
 	if (head || status < 200 || status == 204 || status == 304) {
 		// rfc7230,l,1748,1752
-		sendbody = 0;	
+		sendbody = 0;
 	} else {
 		sendbody = 1;
 	}
@@ -402,7 +402,14 @@ cnt_transmit(struct worker *wrk, struct req *req)
 		} else if (clval >= 0 && clval == req->resp_len) {
 			/* Reuse C-L header */
 		} else if (head && req->objcore->flags & OC_F_PASS) {
-			/* Don't touch C-L header */
+			/*
+			 * Don't touch C-L header (debatable)
+			 *
+			 * The only way to do it correctly would be to GET
+			 * to the backend, and discard the body once the
+			 * filters have had a chance to chew on it, but that
+			 * would negate the "pass for huge objects" use case.
+			 */
 		} else {
 			http_Unset(req->resp, H_Content_Length);
 			if (req->resp_len >= 0)
