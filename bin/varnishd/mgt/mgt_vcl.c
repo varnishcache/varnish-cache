@@ -469,6 +469,18 @@ mgt_vcl_settemp(struct cli *cli, struct vclprog *vp, unsigned warm)
 }
 
 static int
+mgt_vcl_requirewarm(struct cli *cli, struct vclprog *vp)
+{
+	if (vp->state == VCL_STATE_COLD) {
+		VCLI_SetResult(cli, CLIS_CANT);
+		VCLI_Out(cli, "VCL '%s' is cold - set to auto or warm first",
+		    vp->name);
+		return (1);
+	}
+	return (mgt_vcl_settemp(cli, vp, 1));
+}
+
+static int
 mgt_vcl_tellchild(struct cli *cli, struct vclprog *vp, unsigned warm)
 {
 	unsigned status;
@@ -783,7 +795,7 @@ mcf_vcl_use(struct cli *cli, const char * const *av, void *priv)
 	if (vp == active_vcl)
 		return;
 
-	if (mgt_vcl_settemp(cli, vp, 1))
+	if (mgt_vcl_requirewarm(cli, vp))
 		return;
 
 	if (MCH_Running() &&
@@ -999,10 +1011,13 @@ mcf_vcl_label(struct cli *cli, const char * const *av, void *priv)
 		}
 	}
 
-	if (mgt_vcl_settemp(cli, vpt, 1))
+	if (mgt_vcl_requirewarm(cli, vpt))
 		return;
 
 	if (vpl != NULL) {
+		/* potentially fail before we delete the dependency */
+		if (mgt_vcl_requirewarm(cli, vpl))
+			return;
 		mgt_vcl_dep_del(VTAILQ_FIRST(&vpl->dfrom));
 		AN(VTAILQ_EMPTY(&vpl->dfrom));
 	} else {
@@ -1010,7 +1025,7 @@ mcf_vcl_label(struct cli *cli, const char * const *av, void *priv)
 	}
 
 	AN(vpl);
-	if (mgt_vcl_settemp(cli, vpl, 1))
+	if (mgt_vcl_requirewarm(cli, vpl))
 		return;
 	mgt_vcl_dep_add(vpl, vpt);
 
