@@ -97,6 +97,13 @@ enum vdp_action {
 };
 
 typedef int vdp_init_f(struct req *, void **priv);
+/*
+ * Return value:
+ *	negative:	Error - abandon delivery
+ *	zero:		OK
+ *	positive:	Don't push this VDP anyway
+ */
+
 typedef int vdp_fini_f(struct req *, void **priv);
 typedef int vdp_bytes_f(struct req *, enum vdp_action, void **priv,
     const void *ptr, ssize_t len);
