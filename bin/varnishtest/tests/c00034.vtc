@@ -22,6 +22,8 @@ client c1 {
 
 varnish v1 -expect s_resp_bodybytes == 100
 
+varnish v1 -vsl_catchup
+
 varnish v1 -cliok "param.set http_range_support on"
 
 client c1 {
@@ -72,7 +74,8 @@ client c1 {
 } -run
 
 varnish v1 -expect s_resp_bodybytes == 100
-delay .1
+
+varnish v1 -vsl_catchup
 
 client c1 {
 	# Valid range requests
@@ -121,6 +124,8 @@ client c1 {
 } -run
 
 varnish v1 -expect s_resp_bodybytes == 501
+
+varnish v1 -vsl_catchup
 
 # Test Range streaming with streaming objects with C-L
 
@@ -174,7 +179,7 @@ client c1 {
 	expect_close
 } -run
 
-delay .1
+varnish v1 -vsl_catchup
 
 client c1 {
 	# Closed C-L because we cannot use C-L
