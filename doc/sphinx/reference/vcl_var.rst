@@ -1155,7 +1155,7 @@ resp.filters
 
 	Writable from: vcl_deliver, vcl_synth
 
-	List of VFP filters the resp.body will be pulled through.
+	List of VDP filters the resp.body will be pushed through.
 
 Special variables
 ~~~~~~~~~~~~~~~~~
