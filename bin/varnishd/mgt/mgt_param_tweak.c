@@ -340,7 +340,6 @@ tweak_vsl_buffer(struct vsb *vsb, const struct parspec *par, const char *arg)
 		return (-1);
 	*d1 = dest;
 	MCF_ParamConf(MCF_MAXIMUM, "vsl_reclen", "%u", *d1 - 12);
-	MCF_ParamConf(MCF_MAXIMUM, "shm_reclen", "%u", *d1 - 12);
 	return (0);
 }
 

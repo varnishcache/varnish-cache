@@ -103,6 +103,11 @@ Varnish Cache trunk (ongoing)
 * Varnish-based tools using the VUT interface should now consider
   using the ``VUT_Usage()`` function for consistency
 
+* retired long deprecated parameters (VIP16_). Replacement mapping is:
+  ``shm_reclen`` -> ``vsl_reclen``
+  ``vcl_dir`` -> ``vcl_path``
+  ``vmod_dir`` -> ``vmod_path``
+
 .. _2809: https://github.com/varnishcache/varnish-cache/issues/2809
 .. _2820: https://github.com/varnishcache/varnish-cache/issues/2820
 .. _2815: https://github.com/varnishcache/varnish-cache/issues/2815
@@ -117,6 +122,7 @@ Varnish Cache trunk (ongoing)
 .. _2418: https://github.com/varnishcache/varnish-cache/issues/2418
 .. _2788: https://github.com/varnishcache/varnish-cache/issues/2788
 .. _2790: https://github.com/varnishcache/varnish-cache/issues/2790
+.. _VIP16: https://github.com/varnishcache/varnish-cache/wiki/VIP16%3A-Retire-parameters-aliases
 
 ================================
 Varnish Cache 6.1.0 (2018-09-17)

@@ -55,12 +55,6 @@ struct parspec mgt_parspec[] = {
 		"and %o will be replaced with the output file name.",
 		MUST_RELOAD,
 		VCC_CC , NULL },
-	{ "vcl_dir", tweak_string, &mgt_vcl_path,
-		NULL, NULL,
-		"Old name for vcl_path, use that instead.",
-		0,
-		VARNISH_VCL_DIR,
-		NULL },
 	{ "vcl_path", tweak_string, &mgt_vcl_path,
 		NULL, NULL,
 		"Directory (or colon separated list of directories) "
@@ -72,12 +66,6 @@ struct parspec mgt_parspec[] = {
 		"would work.",
 		0,
 		VARNISH_VCL_DIR,
-		NULL },
-	{ "vmod_dir", tweak_string, &mgt_vmod_path,
-		NULL, NULL,
-		"Old name for vmod_path, use that instead.",
-		0,
-		VARNISH_VMOD_DIR,
 		NULL },
 	{ "vmod_path", tweak_string, &mgt_vmod_path,
 		NULL, NULL,
@@ -146,12 +134,6 @@ struct parspec mgt_parspec[] = {
 		MEMPOOL_TEXT,
 		0,
 		"10,100,10", ""},
-	{ "shm_reclen", tweak_vsl_reclen, &mgt_param.vsl_reclen,
-		"16b", NULL,
-		"Old name for vsl_reclen, use that instead.",
-		0,
-		"255b",
-		"bytes" },
 
 	{ NULL, NULL, NULL }
 };

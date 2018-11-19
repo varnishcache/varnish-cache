@@ -1040,23 +1040,6 @@ PARAM(
 )
 #undef XYZZY
 
-#if 0
-/* actual location mgt_param_tbl.c */
-PARAM(
-	/* name */	shm_reclen,
-	/* typ */	vsl_reclen,
-	/* min */	"16b",
-	/* max */	NULL,
-	/* default */	"255b",
-	/* units */	"bytes",
-	/* flags */	0,
-	/* s-text */
-	"Old name for vsl_reclen, use that instead.",
-	/* l-text */	"",
-	/* func */	NULL
-)
-#endif
-
 PARAM(
 	/* name */	shortlived,
 	/* typ */	timeout,
@@ -1584,39 +1567,6 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
-
-#if 0
-/* actual location mgt_param_tbl.c */
-PARAM(
-	/* name */	vcl_dir,
-	/* typ */	string,
-	/* min */	NULL,
-	/* max */	NULL,
-	/* default */	"/opt/varnish/etc/varnish",
-	/* units */	NULL,
-	/* flags */	0,
-	/* s-text */
-	"Directory from which relative VCL filenames (vcl.load and "
-	"include) are opened.",
-	/* l-text */	"",
-	/* func */	NULL
-)
-
-/* actual location mgt_param_tbl.c */
-PARAM(
-	/* name */	vmod_dir,
-	/* typ */	string,
-	/* min */	NULL,
-	/* max */	NULL,
-	/* default */	"/opt/varnish/lib/varnish/vmods",
-	/* units */	NULL,
-	/* flags */	0,
-	/* s-text */
-	"Directory where Varnish modules are to be found.",
-	/* l-text */	"",
-	/* func */	NULL
-)
-#endif
 
 PARAM(
 	/* name */	vsl_buffer,
