@@ -339,9 +339,8 @@ static enum req_fsm_nxt
 cnt_transmit(struct worker *wrk, struct req *req)
 {
 	struct boc *boc;
-	const char *r;
 	uint16_t status;
-	int err, sendbody, head;
+	int sendbody, head;
 	intmax_t clval;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -357,7 +356,6 @@ cnt_transmit(struct worker *wrk, struct req *req)
 	/* RFC 7230, 3.3.3 */
 	status = http_GetStatus(req->resp);
 	head = !strcmp(req->http0->hd[HTTP_HDR_METHOD].b, "HEAD");
-	err = 0;
 
 	if (boc != NULL)
 		req->resp_len = clval;
@@ -371,27 +369,16 @@ cnt_transmit(struct worker *wrk, struct req *req)
 		sendbody = 1;
 	}
 
-	if (!req->disable_esi && req->resp_len != 0 &&
-	    ObjHasAttr(wrk, req->objcore, OA_ESIDATA) &&
-	    VDP_Push(req, &VDP_esi, NULL) < 0)
-		err++;
-
-	if (cache_param->http_gzip_support &&
-	    ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED) &&
-	    !RFC2616_Req_Gzip(req->http) &&
-	    VDP_Push(req, &VDP_gunzip, NULL) < 0)
-		err++;
-
-	if (cache_param->http_range_support && status == 200) {
-		http_ForceHeader(req->resp, H_Accept_Ranges, "bytes");
-		if (http_GetHdr(req->http, H_Range, &r))
-			VRG_dorange(req, r);
-	}
-
-	if (err) {
+	if (req->filter_list == NULL)
+		req->filter_list = resp_Get_Filter_List(req);
+	if (req->filter_list == NULL ||
+	    VCL_StackVDP(req, req->vcl, req->filter_list)) {
 		VSLb(req->vsl, SLT_Error, "Failure to push processors");
 		req->doclose = SC_OVERLOAD;
 	} else {
+		if (cache_param->http_range_support && status == 200)
+			http_ForceHeader(req->resp, H_Accept_Ranges, "bytes");
+
 		if (status < 200 || status == 204) {
 			// rfc7230,l,1691,1695
 			http_Unset(req->resp, H_Content_Length);
@@ -417,8 +404,8 @@ cnt_transmit(struct worker *wrk, struct req *req)
 		}
 		if (req->resp_len == 0)
 			sendbody = 0;
-		req->transport->deliver(req, boc, sendbody);
 	}
+	req->transport->deliver(req, boc, sendbody);
 
 	VSLb_ts_req(req, "Resp", W_TIM_real(wrk));
 
@@ -438,6 +425,7 @@ cnt_transmit(struct worker *wrk, struct req *req)
 	(void)HSH_DerefObjCore(wrk, &req->objcore, HSH_RUSH_POLICY);
 	http_Teardown(req->resp);
 
+	req->filter_list = NULL;
 	req->res_mode = 0;
 	return (REQ_FSM_DONE);
 }

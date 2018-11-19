@@ -39,6 +39,8 @@ client c1 {
 	expect resp.http.x-of == <undef>
 } -run
 
+varnish v1 -vsl_catchup
+
 client c2 {
 	txreq -url /baz
 	rxresp

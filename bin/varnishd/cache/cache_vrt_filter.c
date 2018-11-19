@@ -190,6 +190,7 @@ VCL_StackVFP(struct vfp_ctx *vc, const struct vcl *vcl, const char *fl)
 {
 	const struct vfilter *vp;
 
+	AN(fl);
 	VSLb(vc->wrk->vsl, SLT_Filters, "%s", fl);
 
 	while (1) {
@@ -199,6 +200,27 @@ VCL_StackVFP(struct vfp_ctx *vc, const struct vcl *vcl, const char *fl)
 		if (vp == vfilter_error)
 			return (VFP_Error(vc, "Filter '...%s' not found", fl));
 		if (VFP_Push(vc, vp->vfp) == NULL)
+			return (-1);
+	}
+}
+
+int
+VCL_StackVDP(struct req *req, const struct vcl *vcl, const char *fl)
+{
+	const struct vfilter *vp;
+
+	AN(fl);
+	VSLb(req->vsl, SLT_Filters, "%s", fl);
+	while (1) {
+		vp = vcl_filter_list_iter(&vdp_filters, &vcl->vfps, &fl);
+		if (vp == NULL)
+			return (0);
+		if (vp == vfilter_error) {
+			VSLb(req->vsl, SLT_Error,
+			    "Filter '...%s' not found", fl);
+			return (-1);
+		}
+		if (VDP_Push(req, vp->vdp, NULL))
 			return (-1);
 	}
 }
@@ -213,15 +235,16 @@ VCL_VRT_Init(void)
 	VRT_AddVFP(NULL, &VFP_esi_gzip);
 	VRT_AddVDP(NULL, &VDP_esi);
 	VRT_AddVDP(NULL, &VDP_gunzip);
+	VRT_AddVDP(NULL, &VDP_range);
 }
 
 /*--------------------------------------------------------------------
  */
 
-typedef void filter_list_t(const void *, struct vsb *vsb);
+typedef void filter_list_t(void *, struct vsb *vsb);
 
 static const char *
-filter_on_ws(struct ws *ws, filter_list_t *func, const void *arg)
+filter_on_ws(struct ws *ws, filter_list_t *func, void *arg)
 {
 	unsigned u;
 	struct vsb vsb[1];
@@ -253,7 +276,7 @@ filter_on_ws(struct ws *ws, filter_list_t *func, const void *arg)
  */
 
 static void v_matchproto_(filter_list_t)
-vbf_default_filter_list(const void *arg, struct vsb *vsb)
+vbf_default_filter_list(void *arg, struct vsb *vsb)
 {
 	const struct busyobj *bo;
 	const char *p;
@@ -328,15 +351,29 @@ VBF_Get_Filter_List(struct busyobj *bo)
  */
 
 static void v_matchproto_(filter_list_t)
-resp_default_filter_list(const void *arg, struct vsb *vsb)
+resp_default_filter_list(void *arg, struct vsb *vsb)
 {
-	const struct req *req;
+	struct req *req;
+	const char *r;
 
 	CAST_OBJ_NOTNULL(req, arg, REQ_MAGIC);
-	(void)vsb;
+
+	if (!req->disable_esi && req->resp_len != 0 &&
+	    ObjHasAttr(req->wrk, req->objcore, OA_ESIDATA))
+		VSB_cat(vsb, " esi");
+
+	if (cache_param->http_gzip_support &&
+	    ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED) &&
+	    !RFC2616_Req_Gzip(req->http))
+		VSB_cat(vsb, " gunzip");
+
+	if (cache_param->http_range_support &&
+	    http_GetStatus(req->resp) == 200 &&
+	    http_GetHdr(req->http, H_Range, &r))
+		VSB_cat(vsb, " range");
 }
 
-static const char *
+const char *
 resp_Get_Filter_List(struct req *req)
 {
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);

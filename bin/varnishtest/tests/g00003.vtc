@@ -48,7 +48,6 @@ varnish v1 -cliok "param.set http_gzip_support true" -vcl+backend {
 	}
 	sub vcl_deliver {
 		set resp.http.filters = resp.filters;
-		set resp.filters = "";
 	}
 } -start
 
@@ -57,18 +56,30 @@ client c1 {
 	rxresp
 	expect resp.http.content-encoding == <undef>
 	expect resp.bodylen == 41
+} -run
 
+varnish v1 -vsl_catchup
+
+client c1 {
 	txreq -url /bar -hdr "Accept-Encoding: gzip"
 	rxresp
 	expect resp.http.content-encoding == <undef>
 	expect resp.bodylen == 42
+} -run
 
+varnish v1 -vsl_catchup
+
+client c1 {
 	txreq -url /foobar -hdr "Accept-Encoding: gzip"
 	rxresp
 	expect resp.http.content-encoding == "gzip"
 	gunzip
 	expect resp.bodylen == 43
+} -run
 
+varnish v1 -vsl_catchup
+
+client c1 {
 	txreq -url /foobar
 	rxresp
 	expect resp.http.content-encoding == <undef>

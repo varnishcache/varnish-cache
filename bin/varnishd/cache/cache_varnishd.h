@@ -188,6 +188,7 @@ int VDP_DeliverObj(struct req *req);
 
 extern const struct vdp VDP_gunzip;
 extern const struct vdp VDP_esi;
+extern const struct vdp VDP_range;
 
 /* cache_expire.c */
 void EXP_Init(void);
@@ -290,8 +291,6 @@ typedef void obj_event_f(struct worker *, void *priv, struct objcore *,
 uintptr_t ObjSubscribeEvents(obj_event_f *, void *, unsigned mask);
 void ObjUnsubscribeEvents(uintptr_t *);
 
-
-
 /* cache_panic.c */
 void PAN_Init(void);
 int PAN_already(struct vsb *, const void *);
@@ -307,9 +306,6 @@ void Pool_Sumstat(const struct worker *w);
 int Pool_TrySumstat(const struct worker *wrk);
 void Pool_PurgeStat(unsigned nobj);
 int Pool_Task_Any(struct pool_task *task, enum task_prio prio);
-
-/* cache_range.c [VRG] */
-void VRG_dorange(struct req *req, const char *r);
 
 /* cache_req.c */
 struct req *Req_New(const struct worker *, struct sess *);
@@ -405,10 +401,14 @@ int VCL_IterDirector(struct cli *, const char *, vcl_be_func *, void *);
 
 /* cache_vcl_vrt.c */
 void VCL_VRT_Init(void);
-int VCL_StackVFP(struct vfp_ctx *, const struct vcl *, const char *);
 
 /* cache_vrt.c */
 void pan_privs(struct vsb *, const struct vrt_privs *);
+
+/* cache_vrt_filter.c */
+int VCL_StackVFP(struct vfp_ctx *, const struct vcl *, const char *);
+int VCL_StackVDP(struct req *, const struct vcl *, const char *);
+const char *resp_Get_Filter_List(struct req *req);
 
 /* cache_vrt_priv.c */
 extern struct vrt_privs cli_task_privs[1];

@@ -205,17 +205,9 @@ vrg_range_init(struct req *req, void **priv)
 	return (1);
 }
 
-static const struct vdp vrg_vdp = {
+const struct vdp VDP_range = {
 	.name =		"range",
 	.init =		vrg_range_init,
 	.bytes =	vrg_range_bytes,
 	.fini =		vrg_range_fini,
 };
-
-void
-VRG_dorange(struct req *req, const char *r)
-{
-
-	(void)r;
-	AZ(VDP_Push(req, &vrg_vdp, NULL));
-}
