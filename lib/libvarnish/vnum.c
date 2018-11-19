@@ -110,11 +110,12 @@ VNUM(const char *p)
 
 /**********************************************************************/
 
-double
+vtim_dur
 VNUM_duration(const char *p)
 {
 	const char *t;
-	double r, sc = 1.0;
+	vtim_dur r;
+	double sc = 1.0;
 
 	if (p == NULL)
 		return (nan(""));
