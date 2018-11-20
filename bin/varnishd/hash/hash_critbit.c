@@ -353,7 +353,7 @@ hcb_deref(struct worker *wrk, struct objhead *oh)
 
 	(void)wrk;
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
-	Lck_Lock(&oh->mtx);
+	Lck_AssertHeld(&oh->mtx);
 	assert(oh->refcnt > 0);
 	r = --oh->refcnt;
 	if (oh->refcnt == 0) {

@@ -1012,7 +1012,6 @@ HSH_DerefObjHead(struct worker *wrk, struct objhead **poh)
 		hsh_rush2(wrk, &rush);
 		Lck_Lock(&oh->mtx);
 	}
-	Lck_Unlock(&oh->mtx);
 
 	assert(oh->refcnt > 0);
 	return (hash->deref(wrk, oh));

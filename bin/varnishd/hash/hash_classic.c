@@ -178,6 +178,9 @@ hcl_deref(struct worker *wrk, struct objhead *oh)
 	int ret;
 
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+	Lck_AssertHeld(&oh->mtx);
+	Lck_Unlock(&oh->mtx);
+
 	CAST_OBJ_NOTNULL(hp, oh->hoh_head, HCL_HEAD_MAGIC);
 	assert(oh->refcnt > 0);
 	Lck_Lock(&hp->mtx);
