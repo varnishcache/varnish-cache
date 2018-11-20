@@ -112,6 +112,10 @@ hsl_deref(struct worker *wrk, struct objhead *oh)
 {
 	int ret;
 
+	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+	Lck_AssertHeld(&oh->mtx);
+	Lck_Unlock(&oh->mtx);
+
 	Lck_Lock(&hsl_mtx);
 	if (--oh->refcnt == 0) {
 		VTAILQ_REMOVE(&hsl_head, oh, hoh_list);
