@@ -84,6 +84,8 @@ struct VSL_data {
 	int				c_opt;
 	int				C_opt;
 	int				L_opt;
+	int				R_opt_l;
+	vtim_dur			R_opt_p;
 	double				T_opt;
 	int				v_opt;
 };
