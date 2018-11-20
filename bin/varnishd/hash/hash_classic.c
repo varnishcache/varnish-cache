@@ -172,7 +172,7 @@ hcl_lookup(struct worker *wrk, const void *digest, struct objhead **noh)
  */
 
 static int v_matchproto_(hash_deref_f)
-hcl_deref(struct objhead *oh)
+hcl_deref(struct worker *wrk, struct objhead *oh)
 {
 	struct hcl_hd *hp;
 	int ret;
@@ -187,6 +187,8 @@ hcl_deref(struct objhead *oh)
 	} else
 		ret = 1;
 	Lck_Unlock(&hp->mtx);
+	if (!ret)
+		HSH_DeleteObjHead(wrk, oh);
 	return (ret);
 }
 

@@ -347,13 +347,15 @@ hcb_start(void)
 }
 
 static int v_matchproto_(hash_deref_f)
-hcb_deref(struct objhead *oh)
+hcb_deref(struct worker *wrk, struct objhead *oh)
 {
+	int r;
 
+	(void)wrk;
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 	Lck_Lock(&oh->mtx);
 	assert(oh->refcnt > 0);
-	oh->refcnt--;
+	r = --oh->refcnt;
 	if (oh->refcnt == 0) {
 		Lck_Lock(&hcb_mtx);
 		hcb_delete(&hcb_root, oh);
@@ -364,7 +366,7 @@ hcb_deref(struct objhead *oh)
 #ifdef PHK
 	fprintf(stderr, "hcb_defef %d %d <%s>\n", __LINE__, r, oh->hash);
 #endif
-	return (1);
+	return (r);
 }
 
 static struct objhead * v_matchproto_(hash_lookup_f)

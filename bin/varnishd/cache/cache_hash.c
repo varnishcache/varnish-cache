@@ -983,7 +983,6 @@ HSH_DerefObjHead(struct worker *wrk, struct objhead **poh)
 {
 	struct objhead *oh;
 	struct rush rush;
-	int r;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	TAKE_OBJ_NOTNULL(oh, poh, OBJHEAD_MAGIC);
@@ -1016,10 +1015,7 @@ HSH_DerefObjHead(struct worker *wrk, struct objhead **poh)
 	Lck_Unlock(&oh->mtx);
 
 	assert(oh->refcnt > 0);
-	r = hash->deref(oh);
-	if (!r)
-		HSH_DeleteObjHead(wrk, oh);
-	return (r);
+	return (hash->deref(wrk, oh));
 }
 
 void

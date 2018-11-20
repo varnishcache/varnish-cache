@@ -108,7 +108,7 @@ hsl_lookup(struct worker *wrk, const void *digest, struct objhead **noh)
  */
 
 static int v_matchproto_(hash_deref_f)
-hsl_deref(struct objhead *oh)
+hsl_deref(struct worker *wrk, struct objhead *oh)
 {
 	int ret;
 
@@ -119,6 +119,8 @@ hsl_deref(struct objhead *oh)
 	} else
 		ret = 1;
 	Lck_Unlock(&hsl_mtx);
+	if (!ret)
+		HSH_DeleteObjHead(wrk, oh);
 	return (ret);
 }
 
