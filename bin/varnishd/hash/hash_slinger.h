@@ -36,7 +36,7 @@ typedef void hash_start_f(void);
 typedef void hash_prep_f(struct worker *);
 typedef struct objhead *hash_lookup_f(struct worker *, const void *digest,
     struct objhead **);
-typedef int hash_deref_f(struct objhead *);
+typedef int hash_deref_f(struct worker *, struct objhead *);
 
 struct hash_slinger {
 	unsigned		magic;
