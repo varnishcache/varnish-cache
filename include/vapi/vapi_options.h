@@ -77,6 +77,22 @@
 	    " running queries. Defaults to 1000 transactions."		\
 	)
 
+#define VSL_OPT_R							\
+	VOPT("R:", "[-R <limit[/duration]>]", "Output rate limit",	\
+	    "Restrict the output to the specified limit."		\
+	    " Transactions exceeding the limit will be suppressed."	\
+	    " The limit is specified as the maximum number of"		\
+	    " transactions (with respect to the chosen grouping"	\
+	    " method) and an optional time period. If no duration"	\
+	    " is specified, a default of ``s`` is used. The duration"	\
+	    " field can be formatted as in VCL (e.g. ``-R 10/2m``) or"	\
+	    " as a simple time period without the prefix (e.g."		\
+	    " ``-R 5/m``)."						\
+	    " When in ``-g raw`` grouping mode, this setting can"	\
+	    " not be used alongside ``-i``, ``-I``, ``-x`` or "		\
+	    "``-X``, and we advise using ``-q`` instead."		\
+	)
+
 #define VSL_OPT_T							\
 	VOPT("T:", "[-T <seconds>]", "Transaction end timeout",		\
 	    "Sets the transaction timeout in seconds. This defines the"	\
