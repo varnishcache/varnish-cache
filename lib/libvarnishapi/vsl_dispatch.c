@@ -194,6 +194,10 @@ struct VSLQ {
 	VTAILQ_HEAD(,vtx)	cache;
 	unsigned		n_cache;
 
+	/* Rate limiting */
+	double			credits;
+	vtim_mono		last_use;
+
 	/* Raw mode */
 	struct {
 		struct vslc_raw		c;
@@ -908,10 +912,33 @@ vtx_force(struct VSLQ *vslq, struct vtx *vtx, const char *reason)
 	AN(vtx->flags & VTX_F_COMPLETE);
 }
 
+static int
+vslq_ratelimit(struct VSLQ *vslq)
+{
+	vtim_mono now;
+	vtim_dur delta;
+
+	CHECK_OBJ_NOTNULL(vslq, VSLQ_MAGIC);
+	CHECK_OBJ_NOTNULL(vslq->vsl, VSL_MAGIC);
+
+	now = VTIM_mono();
+	delta = now - vslq->last_use;
+	vslq->credits += (delta / vslq->vsl->R_opt_p) * vslq->vsl->R_opt_l;
+	if (vslq->credits > vslq->vsl->R_opt_l)
+		vslq->credits = vslq->vsl->R_opt_l;
+	vslq->last_use = now;
+
+	if (vslq->credits < 1.0)
+		return (0);
+
+	vslq->credits -= 1.0;
+	return (1);
+}
+
 /* Build transaction array, do the query and callback. Returns 0 or the
    return value from func */
 static int
-vslq_callback(const struct VSLQ *vslq, struct vtx *vtx, VSLQ_dispatch_f *func,
+vslq_callback(struct VSLQ *vslq, struct vtx *vtx, VSLQ_dispatch_f *func,
     void *priv)
 {
 	unsigned n = vtx->n_descend + 1;
@@ -971,6 +998,9 @@ vslq_callback(const struct VSLQ *vslq, struct vtx *vtx, VSLQ_dispatch_f *func,
 
 	/* Query test goes here */
 	if (vslq->query != NULL && !vslq_runquery(vslq->query, ptrans))
+		return (0);
+
+	if (vslq->vsl->R_opt_l != 0 && !vslq_ratelimit(vslq))
 		return (0);
 
 	/* Callback */
@@ -1078,6 +1108,10 @@ VSLQ_New(struct VSL_data *vsl, struct VSL_cursor **cp,
 	}
 	vslq->grouping = grouping;
 	vslq->query = query;
+	if (vslq->vsl->R_opt_l != 0) {
+		vslq->last_use = VTIM_mono();
+		vslq->credits = 1;
+	}
 
 	/* Setup normal mode */
 	VRB_INIT(&vslq->tree);
@@ -1193,6 +1227,9 @@ vslq_raw(struct VSLQ *vslq, VSLQ_dispatch_f *func, void *priv)
 
 	if (vslq->query != NULL &&
 	    !vslq_runquery(vslq->query, vslq->raw.ptrans))
+		return (r);
+
+	if (vslq->vsl->R_opt_l != 0 && !vslq_ratelimit(vslq))
 		return (r);
 
 	i = (func)(vslq->vsl, vslq->raw.ptrans, priv);

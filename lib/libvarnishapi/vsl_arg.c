@@ -300,6 +300,41 @@ vsl_IX_arg(struct VSL_data *vsl, int opt, const char *arg)
 	return (1);
 }
 
+static int
+vsl_R_arg(struct VSL_data *vsl, const char *arg)
+{
+	char buf[32] = "";
+	char *p;
+	long l;
+
+	AN(arg);
+	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
+
+	l = strtol(arg, &p, 0);
+	if (l <= 0 || l > INT_MAX)
+		return (vsl_diag(vsl, "-R: Range error"));
+	vsl->R_opt_l = l;
+	assert(p != arg);
+	AN(p);
+	if (*p == '\0') {
+		vsl->R_opt_p = 1.0;
+		return (1);
+	}
+	if (*p != '/' || p[1] == '\0')
+		return (vsl_diag(vsl, "-R: Syntax error"));
+	p++;
+	if (strlen(p) > sizeof(buf) - 2)
+		return (vsl_diag(vsl, "-R: Syntax error"));
+	if (!isdigit(*p))
+		strcat(buf, "1");
+	strcat(buf, p);
+	vsl->R_opt_p = VNUM_duration(buf);
+	if (isnan(vsl->R_opt_p) || vsl->R_opt_p <= 0.0)
+		return (vsl_diag(vsl,
+			"-R: Syntax error: Invalid duration"));
+	return (1);
+}
+
 int
 VSL_Arg(struct VSL_data *vsl, int opt, const char *arg)
 {
@@ -334,6 +369,8 @@ VSL_Arg(struct VSL_data *vsl, int opt, const char *arg)
 			return (vsl_diag(vsl, "-L: Range error"));
 		vsl->L_opt = (int)l;
 		return (1);
+	case 'R':
+		return (vsl_R_arg(vsl, arg));
 	case 'T':
 		AN(arg);
 		d = VNUM(arg);
