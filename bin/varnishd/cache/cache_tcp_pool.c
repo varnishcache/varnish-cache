@@ -413,7 +413,6 @@ VCP_Open(struct conn_pool *cp, double tmo, const void **privp, int *err)
 
 	h = 0;
 
-	/* stats access unprotected */
 	switch (errno) {
 	case EACCES:
 	case EPERM:
