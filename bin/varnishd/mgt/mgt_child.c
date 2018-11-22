@@ -215,7 +215,9 @@ MCH_Fd_Inherit(int fd, const char *what)
 {
 
 	assert(fd >= 0);
-	MCH_TrackHighFd(fd);
+	// XXX why?
+	if (fd > 0)
+		MCH_TrackHighFd(fd);
 	if (fd_map == NULL)
 		fd_map = vbit_new(128);
 	AN(fd_map);
