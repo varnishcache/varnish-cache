@@ -871,6 +871,7 @@ main(int argc, char * const *argv)
 				    "VEV_Once() = %d", o);
 		}
 	}
+	assert(I_fd == -1);
 
 	if (!d_flag && !mgt_has_vcl() && !novcl)
 		MGT_Complain(C_ERR, "No VCL loaded yet");
