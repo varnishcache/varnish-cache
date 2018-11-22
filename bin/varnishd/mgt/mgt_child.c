@@ -344,7 +344,7 @@ mgt_launch_child(struct cli *cli)
 		 */
 		closelog();
 
-		for (i = STDERR_FILENO + 1; i < CLOSE_FD_UP_TO; i++) {
+		for (i = STDERR_FILENO + 1; i <= CLOSE_FD_UP_TO; i++) {
 			if (vbit_test(fd_map, i))
 				continue;
 			if (close(i) == 0)
