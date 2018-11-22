@@ -85,7 +85,7 @@ vsub_vlu(void *priv, const char *str)
 /* returns an exit code */
 unsigned
 VSUB_run(struct vsb *sb, vsub_func_f *func, void *priv, const char *name,
-    int maxlines)
+    int maxlines, vsub_closefrom_f *closefrom_f)
 {
 	int rv, p[2], status;
 	pid_t pid;
@@ -101,6 +101,10 @@ VSUB_run(struct vsb *sb, vsub_func_f *func, void *priv, const char *name,
 		    name, strerror(errno));
 		return (1);
 	}
+
+	if (closefrom_f == NULL)
+		closefrom_f = VSUB_closefrom;
+
 	assert(p[0] > STDERR_FILENO);
 	assert(p[1] > STDERR_FILENO);
 	if ((pid = fork()) < 0) {
@@ -115,7 +119,7 @@ VSUB_run(struct vsb *sb, vsub_func_f *func, void *priv, const char *name,
 		assert(dup2(p[1], STDOUT_FILENO) == STDOUT_FILENO);
 		assert(dup2(p[1], STDERR_FILENO) == STDERR_FILENO);
 		/* Close all other fds */
-		VSUB_closefrom(STDERR_FILENO + 1);
+		closefrom_f(STDERR_FILENO + 1);
 		func(priv);
 		/*
 		 * func should either exec or exit, so getting here should be

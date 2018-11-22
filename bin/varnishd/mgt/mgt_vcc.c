@@ -237,7 +237,7 @@ mgt_vcc_compile(struct vcc_priv *vp, struct vsb *sb, int C_flag)
 	if (mgt_vcc_touchfile(vp->libfile, sb))
 		return (2);
 
-	subs = VSUB_run(sb, run_vcc, vp, "VCC-compiler", -1);
+	subs = VSUB_run(sb, run_vcc, vp, "VCC-compiler", -1, MCH_Fd_closefrom);
 	if (subs)
 		return (subs);
 
@@ -248,11 +248,11 @@ mgt_vcc_compile(struct vcc_priv *vp, struct vsb *sb, int C_flag)
 		free(csrc);
 	}
 
-	subs = VSUB_run(sb, run_cc, vp, "C-compiler", 10);
+	subs = VSUB_run(sb, run_cc, vp, "C-compiler", 10, MCH_Fd_closefrom);
 	if (subs)
 		return (subs);
 
-	subs = VSUB_run(sb, run_dlopen, vp, "dlopen", 10);
+	subs = VSUB_run(sb, run_dlopen, vp, "dlopen", 10, MCH_Fd_closefrom);
 	return (subs);
 }
 

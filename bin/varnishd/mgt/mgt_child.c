@@ -184,6 +184,8 @@ mch_cli_panic_clear(struct cli *cli, const char * const *av, void *priv)
  *
  * For added safety, we check that we see no file descriptor open for
  * another margin above the limit for which we close by design
+ *
+ * XXX as this also applies to VSUB, move to a more generic source file?
  */
 
 static int		mgt_max_fd;
@@ -223,6 +225,44 @@ MCH_Fd_Inherit(int fd, const char *what)
 		vbit_set(fd_map, fd);
 	else
 		vbit_clr(fd_map, fd);
+}
+
+/*--------------------------------------------------------------------
+ * sanity check on our assumptions
+ */
+static void
+mch_fd_closecheck(void)
+{
+	int i;
+
+	for (i = CLOSE_FD_UP_TO + 1; i <= CHECK_FD_UP_TO; i++) {
+		assert(close(i) == -1);
+		assert(errno == EBADF);
+	}
+}
+
+/*--------------------------------------------------------------------
+ * Close all file descriptors up to our tracked high watermark
+ * (for use with VSUB / not for child - see mgt_launch_child)
+ *
+ * in contrast to mgt_launch_child() where we keep the file descriptors to be
+ * inherited to the child, here we use the fd_map to avoid unnecessary /dev/null
+ * replacement
+ */
+void
+MCH_Fd_closefrom(int from)
+{
+	int i;
+
+	closelog();
+
+	AN(mgt_max_fd);
+	for (i = from; i <= CLOSE_FD_UP_TO; i++) {
+		if (fd_map && vbit_test(fd_map, i))
+			(void)(close(i));
+		else if (close(i) == 0)
+			VFIL_null_fd(i);
+	}
 }
 
 /*=====================================================================
@@ -355,10 +395,7 @@ mgt_launch_child(struct cli *cli)
 			if (close(i) == 0)
 				VFIL_null_fd(i);
 		}
-		for (i = CLOSE_FD_UP_TO + 1; i <= CHECK_FD_UP_TO; i++) {
-			assert(close(i) == -1);
-			assert(errno == EBADF);
-		}
+		mch_fd_closecheck();
 
 		mgt_ProcTitle("Child");
 

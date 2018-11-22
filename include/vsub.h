@@ -28,10 +28,11 @@
  *
  */
 
-/* from libvarnish/subproc.c */
+/* from lib/libvarnish/vsub.c */
 typedef void vsub_func_f(void*);
+typedef void vsub_closefrom_f(int);
 
-unsigned VSUB_run(struct vsb *, vsub_func_f *, void *priv, const char *name,
-    int maxlines);
+unsigned VSUB_run(struct vsb *, vsub_func_f *, void *, const char *, int,
+    vsub_closefrom_f);
 
 void VSUB_closefrom(int fd);

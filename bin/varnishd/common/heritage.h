@@ -95,6 +95,7 @@ extern struct heritage heritage;
 
 /* Really belongs in mgt.h, but storage_file chokes on both */
 void MCH_Fd_Inherit(int fd, const char *what);
+void MCH_Fd_closefrom(int);
 
 #define ARGV_ERR(...)						\
 	do {							\
