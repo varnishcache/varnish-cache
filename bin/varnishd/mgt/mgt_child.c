@@ -183,11 +183,15 @@ mch_cli_panic_clear(struct cli *cli, const char * const *av, void *priv)
  * This is likely to a bit on the low side, as libc and other libraries
  * has a tendency to cache file descriptors (syslog, resolver, etc.)
  * so we add a margin of 100 fds.
+ *
+ * for added safety, we check that we see no file descriptor open for
+ * another margin above the limit for which we close by design
  */
 
 static int		mgt_max_fd;
 
 #define CLOSE_FD_UP_TO	(mgt_max_fd + 100)
+#define CHECK_FD_UP_TO	(CLOSE_FD_UP_TO + 100)
 
 void
 MCH_TrackHighFd(int fd)
@@ -349,6 +353,10 @@ mgt_launch_child(struct cli *cli)
 				continue;
 			if (close(i) == 0)
 				VFIL_null_fd(i);
+		}
+		for (i = CLOSE_FD_UP_TO + 1; i <= CHECK_FD_UP_TO; i++) {
+			assert(close(i) == -1);
+			assert(errno == EBADF);
 		}
 
 		mgt_ProcTitle("Child");
