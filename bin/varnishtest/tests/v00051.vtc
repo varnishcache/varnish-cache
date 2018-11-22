@@ -425,3 +425,32 @@ varnish v1 -expect sc_vcl_failure == 10
 
 logexpect l1 -wait
 
+#######################################################################
+# Fail in vmod call used in an if test
+
+varnish v1 -vcl+backend {
+	import debug;
+	sub vcl_recv {
+		if (debug.fail2()) {
+			return (hash);
+		}
+	}
+}
+
+logexpect l1 -v v1 -g raw {
+	expect * 1033	VCL_call	"RECV"
+	expect 0 1033	VCL_Error	"Forced failure"
+	expect 0 1033	VCL_return	"fail"
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+} -run
+
+varnish v1 -expect vcl_fail == 14
+varnish v1 -expect sc_vcl_failure == 11
+
+logexpect l1 -wait

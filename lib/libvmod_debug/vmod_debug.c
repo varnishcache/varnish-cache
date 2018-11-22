@@ -252,6 +252,14 @@ xyzzy_fail(VRT_CTX)
 	VRT_fail(ctx, "Forced failure");
 }
 
+VCL_BOOL v_matchproto_(td_debug_fail2)
+xyzzy_fail2(VRT_CTX)
+{
+
+	VRT_fail(ctx, "Forced failure");
+	return (1);
+}
+
 static void v_matchproto_(vmod_priv_free_f)
 priv_vcl_free(void *priv)
 {
