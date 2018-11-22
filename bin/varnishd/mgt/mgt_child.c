@@ -191,6 +191,8 @@ mch_cli_panic_clear(struct cli *cli, const char * const *av, void *priv)
 static int		mgt_max_fd;
 
 #define CLOSE_FD_UP_TO	(mgt_max_fd + 100)
+// XXX should work now - engage?
+//#define CLOSE_FD_UP_TO	mgt_max_fd
 #define CHECK_FD_UP_TO	(CLOSE_FD_UP_TO + 100)
 
 void
@@ -215,6 +217,7 @@ MCH_Fd_Inherit(int fd, const char *what)
 {
 
 	assert(fd >= 0);
+	MCH_TrackHighFd(fd);
 	if (fd_map == NULL)
 		fd_map = vbit_new(128);
 	AN(fd_map);
