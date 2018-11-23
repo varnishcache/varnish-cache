@@ -669,6 +669,35 @@ vpx_format_proxy_v2(struct vsb *vsb, int proto,
 }
 
 void
+VPX_Format_Proxy(struct vsb *vsb, int version,
+    const struct suckaddr *sac, const struct suckaddr *sas)
+{
+	int proto;
+	char hac[VTCP_ADDRBUFSIZE];
+	char pac[VTCP_PORTBUFSIZE];
+	char has[VTCP_ADDRBUFSIZE];
+	char pas[VTCP_PORTBUFSIZE];
+
+	AN(vsb);
+	AN(sac);
+	AN(sas);
+
+	assert(version == 1 || version == 2);
+
+	proto = VSA_Get_Proto(sas);
+	assert(proto == VSA_Get_Proto(sac));
+
+	if (version == 1) {
+		VTCP_name(sac, hac, sizeof hac, pac, sizeof pac);
+		VTCP_name(sas, has, sizeof has, pas, sizeof pas);
+		vpx_format_proxy_v1(vsb, proto, hac, pac, has, pas);
+	} else if (version == 2) {
+		vpx_format_proxy_v2(vsb, proto, sac, sas);
+	} else
+		WRONG("Wrong proxy version");
+}
+
+void
 VPX_Send_Proxy(int fd, int version, const struct sess *sp)
 {
 	struct vsb *vsb, *vsb2;
