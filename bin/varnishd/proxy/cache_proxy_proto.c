@@ -614,11 +614,36 @@ vpx_enc_port(struct vsb *vsb, const struct suckaddr *s)
 	VSB_bcat(vsb, b, sizeof(b));
 }
 
+/* short path for stringified addresses from session attributes */
+static void
+vpx_format_proxy_v1(struct vsb *vsb, int proto,
+    const char *cip,  const char *cport,
+    const char *sip,  const char *sport)
+{
+	AN(vsb);
+	AN(cip);
+	AN(cport);
+	AN(sip);
+	AN(sport);
+
+	VSB_bcat(vsb, vpx1_sig, sizeof(vpx1_sig));
+
+	if (proto == PF_INET6)
+		VSB_printf(vsb, " TCP6 ");
+	else if (proto == PF_INET)
+		VSB_printf(vsb, " TCP4 ");
+	else
+		WRONG("Wrong proxy v1 proto");
+
+	VSB_printf(vsb, "%s %s %s %s\r\n", cip, sip, cport, sport);
+
+	AZ(VSB_finish(vsb));
+}
+
 void
 VPX_Send_Proxy(int fd, int version, const struct sess *sp)
 {
 	struct vsb *vsb, *vsb2;
-	const char *p1, *p2;
 	struct suckaddr *sac, *sas;
 	char ha[VTCP_ADDRBUFSIZE];
 	char pa[VTCP_PORTBUFSIZE];
@@ -635,17 +660,11 @@ VPX_Send_Proxy(int fd, int version, const struct sess *sp)
 	assert(proto == PF_INET6 || proto == PF_INET);
 
 	if (version == 1) {
-		VSB_bcat(vsb, vpx1_sig, sizeof(vpx1_sig));
-		p1 = SES_Get_String_Attr(sp, SA_CLIENT_IP);
-		AN(p1);
-		p2 = SES_Get_String_Attr(sp, SA_CLIENT_PORT);
-		AN(p2);
 		VTCP_name(sas, ha, sizeof ha, pa, sizeof pa);
-		if (proto == PF_INET6)
-			VSB_printf(vsb, " TCP6 ");
-		else if (proto == PF_INET)
-			VSB_printf(vsb, " TCP4 ");
-		VSB_printf(vsb, "%s %s %s %s\r\n", p1, ha, p2, pa);
+		vpx_format_proxy_v1(vsb, proto,
+		    SES_Get_String_Attr(sp, SA_CLIENT_IP),
+		    SES_Get_String_Attr(sp, SA_CLIENT_PORT),
+		    ha, pa);
 	} else if (version == 2) {
 		AZ(SES_Get_client_addr(sp, &sac));
 		AN(sac);
@@ -665,10 +684,10 @@ VPX_Send_Proxy(int fd, int version, const struct sess *sp)
 		vpx_enc_addr(vsb, proto, sas);
 		vpx_enc_port(vsb, sac);
 		vpx_enc_port(vsb, sas);
+		AZ(VSB_finish(vsb));
 	} else
 		WRONG("Wrong proxy version");
 
-	AZ(VSB_finish(vsb));
 	(void)write(fd, VSB_data(vsb), VSB_len(vsb));
 	if (!DO_DEBUG(DBG_PROTOCOL)) {
 		VSB_delete(vsb);
