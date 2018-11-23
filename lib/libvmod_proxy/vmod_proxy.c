@@ -1,8 +1,10 @@
 /*-
  * Copyright (c) 2018 GANDI SAS
+ * Copyright 2018 UPLEX - Nils Goroll Systemoptimierung
  * All rights reserved.
  *
- * Author: Emmanuel Hocdet <manu@gandi.net>
+ * Authors: Emmanuel Hocdet <manu@gandi.net>
+ *	    Nils Goroll <nils.goroll@uplex.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -35,6 +37,7 @@
 #include "cache/cache.h"
 
 #include "vend.h"
+#include "vsb.h"
 
 #include "proxy/cache_proxy.h"
 
@@ -154,4 +157,27 @@ VCL_STRING v_matchproto_(td_proxy_client_cert_cn)
 vmod_client_cert_cn(VRT_CTX)
 {
 	return tlv_string(ctx, PP2_SUBTYPE_SSL_CN);
+}
+
+/*--------------------------------------------------------------------*/
+
+VCL_BLOB v_matchproto_(td_proxy_header)
+vmod_header(VRT_CTX, VCL_INT version, VCL_IP client, VCL_IP server)
+{
+	VCL_BLOB r;
+	struct vsb *vsb;
+
+	CHECK_OBJ_ORNULL(ctx, VRT_CTX_MAGIC);
+
+	if (version != 1 && version != 2) {
+		VRT_fail(ctx, "proxy.header: invalid version %ld", version);
+		return (NULL);
+	}
+
+	vsb = VSB_new_auto();
+	AN(vsb);
+	VRT_Format_Proxy(vsb, version, client, server);
+	r = VRT_blob(ctx, "proxy.header", VSB_data(vsb), VSB_len(vsb));
+	VSB_delete(vsb);
+	return (r);
 }
