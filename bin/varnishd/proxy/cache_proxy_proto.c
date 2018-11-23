@@ -640,6 +640,34 @@ vpx_format_proxy_v1(struct vsb *vsb, int proto,
 	AZ(VSB_finish(vsb));
 }
 
+static void
+vpx_format_proxy_v2(struct vsb *vsb, int proto,
+    const struct suckaddr *sac, const struct suckaddr *sas)
+{
+	AN(vsb);
+	AN(sac);
+	AN(sas);
+
+	VSB_bcat(vsb, vpx2_sig, sizeof(vpx2_sig));
+	VSB_putc(vsb, 0x21);
+	if (proto == PF_INET6) {
+		VSB_putc(vsb, 0x21);
+		VSB_putc(vsb, 0x00);
+		VSB_putc(vsb, 0x24);
+	} else if (proto == PF_INET) {
+		VSB_putc(vsb, 0x11);
+		VSB_putc(vsb, 0x00);
+		VSB_putc(vsb, 0x0c);
+	} else {
+		WRONG("Wrong proxy v2 proto");
+	}
+	vpx_enc_addr(vsb, proto, sac);
+	vpx_enc_addr(vsb, proto, sas);
+	vpx_enc_port(vsb, sac);
+	vpx_enc_port(vsb, sas);
+	AZ(VSB_finish(vsb));
+}
+
 void
 VPX_Send_Proxy(int fd, int version, const struct sess *sp)
 {
@@ -657,7 +685,6 @@ VPX_Send_Proxy(int fd, int version, const struct sess *sp)
 	AZ(SES_Get_server_addr(sp, &sas));
 	AN(sas);
 	proto = VSA_Get_Proto(sas);
-	assert(proto == PF_INET6 || proto == PF_INET);
 
 	if (version == 1) {
 		VTCP_name(sas, ha, sizeof ha, pa, sizeof pa);
@@ -668,23 +695,7 @@ VPX_Send_Proxy(int fd, int version, const struct sess *sp)
 	} else if (version == 2) {
 		AZ(SES_Get_client_addr(sp, &sac));
 		AN(sac);
-
-		VSB_bcat(vsb, vpx2_sig, sizeof(vpx2_sig));
-		VSB_putc(vsb, 0x21);
-		if (proto == PF_INET6) {
-			VSB_putc(vsb, 0x21);
-			VSB_putc(vsb, 0x00);
-			VSB_putc(vsb, 0x24);
-		} else if (proto == PF_INET) {
-			VSB_putc(vsb, 0x11);
-			VSB_putc(vsb, 0x00);
-			VSB_putc(vsb, 0x0c);
-		}
-		vpx_enc_addr(vsb, proto, sac);
-		vpx_enc_addr(vsb, proto, sas);
-		vpx_enc_port(vsb, sac);
-		vpx_enc_port(vsb, sas);
-		AZ(VSB_finish(vsb));
+		vpx_format_proxy_v2(vsb, proto, sac, sas);
 	} else
 		WRONG("Wrong proxy version");
 
