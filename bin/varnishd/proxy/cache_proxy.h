@@ -39,3 +39,5 @@
 #define PP2_SUBTYPE_SSL_MAX     0x25
 
 int VPX_tlv(const struct req *req, int tlv, void **dst, int *len);
+void VPX_Format_Proxy(struct vsb *, int, const struct suckaddr *,
+    const struct suckaddr *);
