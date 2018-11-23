@@ -43,6 +43,7 @@
 
 #include "common/heritage.h"
 #include "common/vsmw.h"
+#include "proxy/cache_proxy.h"
 
 const void * const vrt_magic_string_end = &vrt_magic_string_end;
 const void * const vrt_magic_string_unset = &vrt_magic_string_unset;
@@ -864,4 +865,10 @@ int
 VRT_VSA_GetPtr(const struct suckaddr *sua, const unsigned char ** dst)
 {
 	return (VSA_GetPtr(sua, dst));
+}
+
+void
+VRT_Format_Proxy(struct vsb *vsb, VCL_INT version, VCL_IP sac, VCL_IP sas)
+{
+	VPX_Format_Proxy(vsb, (int)version, sac, sas);
 }
