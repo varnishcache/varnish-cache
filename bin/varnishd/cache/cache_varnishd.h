@@ -75,8 +75,8 @@ struct http_conn {
 	void			*priv;
 
 	/* Timeouts */
-	double			first_byte_timeout;
-	double			between_bytes_timeout;
+	vtim_dur		first_byte_timeout;
+	vtim_dur		between_bytes_timeout;
 };
 
 typedef enum htc_status_e htc_complete_f(struct http_conn *);

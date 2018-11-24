@@ -105,7 +105,7 @@ struct haproxy_cli {
 	size_t			rxbuf_sz;
 	char			*rxbuf;
 
-	double			timeout;
+	vtim_dur		timeout;
 };
 
 /**********************************************************************
@@ -113,7 +113,7 @@ struct haproxy_cli {
  */
 
 static int
-haproxy_cli_tcp_connect(struct vtclog *vl, const char *addr, double tmo,
+haproxy_cli_tcp_connect(struct vtclog *vl, const char *addr, vtim_dur tmo,
     const char **errp)
 {
 	int fd;

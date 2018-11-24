@@ -51,6 +51,7 @@
 #include "vsa.h"
 #include "vss.h"
 #include "vtcp.h"
+#include "vtim.h"
 
 /*--------------------------------------------------------------------*/
 static void
@@ -345,12 +346,10 @@ VTCP_close(int *s)
 }
 
 void
-VTCP_set_read_timeout(int s, double seconds)
+VTCP_set_read_timeout(int s, vtim_dur seconds)
 {
 #ifdef SO_RCVTIMEO_WORKS
-	struct timeval timeout;
-	timeout.tv_sec = (int)floor(seconds);
-	timeout.tv_usec = (int)(1e6 * (seconds - timeout.tv_sec));
+	struct timeval timeout = VTIM_timeval(seconds);
 	/*
 	 * Solaris bug (present at least in snv_151 and older): If this fails
 	 * with EINVAL, the socket is half-closed (SS_CANTSENDMORE) and the
@@ -371,13 +370,14 @@ VTCP_set_read_timeout(int s, double seconds)
 static int v_matchproto_(vss_resolved_f)
 vtcp_open_callback(void *priv, const struct suckaddr *sa)
 {
+	/* XXX: vtim_dur? */
 	double *p = priv;
 
 	return (VTCP_connect(sa, (int)floor(*p * 1e3)));
 }
 
 int
-VTCP_open(const char *addr, const char *def_port, double timeout,
+VTCP_open(const char *addr, const char *def_port, vtim_dur timeout,
     const char **errp)
 {
 	int error;
@@ -592,7 +592,7 @@ VTCP_Check(int a)
  */
 
 int
-VTCP_read(int fd, void *ptr, size_t len, double tmo)
+VTCP_read(int fd, void *ptr, size_t len, vtim_dur tmo)
 {
 	struct pollfd pfd[1];
 	int i, j;

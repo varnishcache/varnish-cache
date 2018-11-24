@@ -353,7 +353,7 @@ VEV_Loop(struct vev_root *evb)
 /*--------------------------------------------------------------------*/
 
 static int
-vev_sched_timeout(struct vev_root *evb, struct vev *e, double t)
+vev_sched_timeout(struct vev_root *evb, struct vev *e, vtim_mono t)
 {
 	int i;
 

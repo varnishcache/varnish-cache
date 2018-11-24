@@ -36,12 +36,12 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "vtc.h"
+
 #include "vsa.h"
 #include "vss.h"
 #include "vtcp.h"
 #include "vre.h"
-
-#include "vtc.h"
 
 struct syslog_srv {
 	unsigned			magic;
@@ -62,7 +62,7 @@ struct syslog_srv {
 	ssize_t				rxbuf_left;
 	size_t				rxbuf_sz;
 	char				*rxbuf;
-	double				timeout;
+	vtim_dur			timeout;
 };
 
 static pthread_mutex_t			syslog_mtx;

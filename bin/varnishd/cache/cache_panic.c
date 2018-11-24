@@ -34,9 +34,6 @@
 #include <stdlib.h>
 #include <signal.h>
 
-#include "vtim.h"
-#include "vcs.h"
-
 #include "cache_varnishd.h"
 #include "cache_transport.h"
 
@@ -46,6 +43,8 @@
 
 #include "storage/storage.h"
 #include "vcli_serve.h"
+#include "vtim.h"
+#include "vcs.h"
 
 /*
  * The panic string is constructed in memory, then copied to the

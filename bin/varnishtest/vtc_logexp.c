@@ -116,10 +116,11 @@
 
 #include "vapi/vsm.h"
 #include "vapi/vsl.h"
-#include "vtim.h"
-#include "vre.h"
 
 #include "vtc.h"
+
+#include "vtim.h"
+#include "vre.h"
 
 #define LE_ANY  (-1)
 #define LE_LAST (-2)
