@@ -142,7 +142,7 @@ typedef const struct vmod_priv *		VCL_BLOB;
 typedef const char *				VCL_BODY;
 typedef unsigned				VCL_BOOL;
 typedef int64_t					VCL_BYTES;
-typedef double					VCL_DURATION;
+typedef vtim_dur				VCL_DURATION;
 typedef const char *				VCL_ENUM;
 typedef const struct gethdr_s *			VCL_HEADER;
 typedef struct http *				VCL_HTTP;
@@ -154,7 +154,7 @@ typedef double					VCL_REAL;
 typedef const struct stevedore *		VCL_STEVEDORE;
 typedef const struct strands *			VCL_STRANDS;
 typedef const char *				VCL_STRING;
-typedef double					VCL_TIME;
+typedef vtim_real				VCL_TIME;
 typedef struct vcl *				VCL_VCL;
 typedef void					VCL_VOID;
 
@@ -197,7 +197,7 @@ struct vrt_ctx {
 	struct http			*http_bereq;
 	struct http			*http_beresp;
 
-	double				now;
+	vtim_real			now;
 
 	/*
 	 * method specific argument:
@@ -260,9 +260,9 @@ extern const void * const vrt_magic_string_unset;
 	rigid char			*port;			\
 	rigid char			*path;			\
 	rigid char			*hosthdr;		\
-	double				connect_timeout;	\
-	double				first_byte_timeout;	\
-	double				between_bytes_timeout;	\
+	vtim_dur			connect_timeout;	\
+	vtim_dur			first_byte_timeout;	\
+	vtim_dur			between_bytes_timeout;	\
 	unsigned			max_connections;	\
 	unsigned			proxy_header;
 
@@ -291,8 +291,8 @@ struct vrt_backend {
 };
 
 #define VRT_BACKEND_PROBE_FIELDS(rigid)				\
-	double				timeout;		\
-	double				interval;		\
+	vtim_dur			timeout;		\
+	vtim_dur			interval;		\
 	unsigned			exp_status;		\
 	unsigned			window;			\
 	unsigned			threshold;		\
