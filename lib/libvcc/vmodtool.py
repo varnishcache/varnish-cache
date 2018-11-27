@@ -693,7 +693,7 @@ class s_synopsis(stanza):
             'auto': True,
             'manual': False,
         }
-        self.vcc.auto_synopsis = vald.get(self.toks[1])
+        self.vcc.auto_synopsis = valid.get(self.toks[1])
         if self.vcc.auto_synopsis is None:
             err("Valid Synopsis values are 'auto' or 'manual', got '%s'\n" %
                 self.toks[1])
