@@ -6,7 +6,7 @@
 #          Geoffrey Simmons <geoffrey.simmons@uplex.de>
 #
 
-$Module blob 3 utilities for the VCL blob type
+$Module blob 3 "Utilities for the VCL blob type"
 
 $ABI strict
 
