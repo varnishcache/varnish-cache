@@ -527,7 +527,8 @@ class ProtoType(object):
 
 
 class stanza(object):
-    def __init__(self, l0, doc, vcc):
+    def __init__(self, toks, l0, doc, vcc):
+        self.toks = toks
         self.line = l0
         while doc and doc[0] == '':
             doc.pop(0)
@@ -542,6 +543,12 @@ class stanza(object):
 
     def dump(self):
         print(type(self), self.line)
+
+    def syntax(self):
+        err("Syntax error.\n" +
+            "\tShould be: " + self.__doc__.strip() + "\n" +
+            "\tIs: " + " ".join(self.toks) + "\n",
+            warn=False)
 
     def rstfile(self, fo, man):
         if self.rstlbl is not None:
@@ -640,17 +647,31 @@ class s_module(stanza):
 
 
 class s_abi(stanza):
+
+    ''' $ABI [strict|vrt] '''
+
     def parse(self):
-        if self.line[1] not in ('strict', 'vrt'):
+        if len(self.toks) != 2:
+            self.syntax()
+        valid = {
+            'strict': True,
+            'vrt': False,
+        }
+        self.vcc.strict_abi = valid.get(self.toks[1])
+        if self.vcc.strict_abi is None:
             err("Valid ABI types are 'strict' or 'vrt', got '%s'\n" %
-                self.line[1])
-        self.vcc.strict_abi = self.line[1] == 'strict'
+                self.toks[1])
         self.vcc.contents.append(self)
 
 
 class s_prefix(stanza):
+
+    ''' $Prefix symbol '''
+
     def parse(self):
-        self.vcc.sympfx = self.line[1] + "_"
+        if len(self.toks) != 2:
+            self.syntax()
+        self.vcc.sympfx = self.toks[1] + "_"
         self.vcc.contents.append(self)
 
 
@@ -832,6 +853,43 @@ DISPATCH = {
     "Synopsis": s_synopsis,
 }
 
+def tokenize(str, seps=None, quotes=None):
+    if seps is None:
+        seps = "[](){},="
+    if quotes is None:
+        quotes = '"' + "'"
+    quote = None
+    out = []
+    i = 0
+    inside = False
+    while i < len(str):
+        c = str[i]
+        # print("T", [c], quote, inside, i)
+        i += 1
+        if quote is not None and c == quote:
+            inside = False
+            quote = None
+            out[-1] += c
+        elif quote is not None:
+            out[-1] += c
+        elif c.isspace():
+            inside = False
+        elif seps.find(c) >= 0:
+            inside = False
+            out.append(c)
+        elif quotes.find(c) >= 0:
+            quote = c
+            out.append(c)
+        elif inside:
+            out[-1] += c
+        else:
+            out.append(c)
+            inside = True
+    #print("TOK", [str])
+    #for i in out:
+    #    print("\t", [i])
+    return out
+
 
 class vcc(object):
     def __init__(self, inputvcc, rstdir, outputprefix):
@@ -864,12 +922,13 @@ class vcc(object):
         self.copyright = s.pop(0).strip()
         while s:
             ss = re.split('\n([^\t ])', s.pop(0), maxsplit=1)
+            toks = tokenize(ss[0])
             c = ss[0].split()
             d = "".join(ss[1:])
-            m = DISPATCH.get(c[0])
+            m = DISPATCH.get(toks[0])
             if m is None:
                 err("Unknown stanze $%s" % ss[:i])
-            m([c[0], " ".join(c[1:])], d.split('\n'), self)
+            m(toks, [c[0], " ".join(c[1:])], d.split('\n'), self)
             inputline = None
 
     def rst_copyright(self, fo):
