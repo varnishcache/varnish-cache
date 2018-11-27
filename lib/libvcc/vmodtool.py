@@ -591,10 +591,17 @@ class stanza(object):
 
 
 class s_module(stanza):
+
+    ''' $Module modname man_section description ... '''
+
     def parse(self):
+        if len(self.toks) < 4:
+            self.syntax()
         a = self.line[1].split(None, 2)
-        self.vcc.modname = a[0]
-        self.vcc.mansection = a[1]
+        self.vcc.modname = self.toks[1]
+        self.vcc.mansection = self.toks[2]
+        # XXX: Find better solution for moddesc
+        self.vcc.moddesc = " ".join(self.toks[2:])
         self.vcc.moddesc = a[2]
         self.rstlbl = "vmod_%s(%s)" % (
             self.vcc.modname,
@@ -678,17 +685,31 @@ class s_prefix(stanza):
 
 
 class s_synopsis(stanza):
+
+    ''' $Synopsis [auto|manual] '''
+
     def parse(self):
-        if self.line[1] not in ('auto', 'manual'):
+        if len(self.toks) != 2:
+            self.syntax()
+        valid = {
+            'auto': True,
+            'manual': False,
+        }
+        self.vcc.auto_synopsis = vald.get(self.toks[1])
+        if self.vcc.auto_synopsis is None:
             err("Valid Synopsis values are 'auto' or 'manual', got '%s'\n" %
-                self.line[1])
-        self.vcc.auto_synopsis = self.line[1] == 'auto'
+                self.toks[1])
         self.vcc.contents.append(self)
 
 
 class s_event(stanza):
+
+    ''' $Event function_name '''
+
     def parse(self):
-        self.event_func = self.line[1]
+        if len(self.toks) != 2:
+            self.syntax()
+        self.event_func = self.toks[1]
         self.vcc.contents.append(self)
 
     def rstfile(self, fo, man):
