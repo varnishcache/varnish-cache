@@ -235,10 +235,8 @@ class CType(object):
         self.spec = []
         while True:
             x = wl.pop(0)
-            if x[0] == '"' and x[-1] == '"':
-                x = x[1:-1]
-            elif x[0] == "'" and x[-1] == "'":
-                x = x[1:-1]
+            if is_quoted(x):
+                x = unquote(x)
             assert x
             self.spec.append(x)
             enums[x] = True
@@ -268,6 +266,9 @@ class CType(object):
 
 
 class arg(CType):
+
+    ''' Parse front of word list into argument '''
+
     def __init__(self, wl, argnames, enums, end):
         super(arg, self).__init__(wl, enums)
 
@@ -289,10 +290,8 @@ class arg(CType):
 
         x = wl.pop(0)
         if self.vt == "ENUM":
-            if x[0] == '"' and x[-1] == '"':
-                x = x[1:-1]
-            elif x[0] == "'" and x[-1] == "'":
-                x = x[1:-1]
+            if is_quoted(x):
+                x = unquote(x)
         self.defval = x
 
     def json(self, jl):
@@ -305,60 +304,13 @@ class arg(CType):
 #######################################################################
 
 
-def lex(l):
-    wl = []
-    s = 0
-    assert l
-    for i in range(len(l)):
-        c = l[i]
-
-        if s == 0 and re.match('[0-9a-zA-Z_.-]', c):
-            wl.append(c)
-            s = 3
-            continue
-
-        if s == 3:
-            if re.match('[0-9a-zA-Z_.-]', c):
-                wl[-1] += c
-                continue
-            s = 0
-
-        if s == 0 and c in (' ', '\t', '\n', '\r'):
-            continue
-
-        if s == 0 and c in ('[', '(', '{', '}', ')', ']', ',', '='):
-            wl.append(c)
-        elif s == 0 and c in ('"', "'"):
-            sep = c
-            s = 1
-            wl.append(c)
-        elif s == 1:
-            if c == '\\':
-                s = 2
-            else:
-                wl[-1] += c
-            if c == sep:
-                s = 0
-        elif s == 2:
-            wl[-1] += c
-            s = 1
-        else:
-            err("Syntax error at char %d '%s'" % (i, c), warn=False)
-
-    if s != 0:
-        err("Syntax error at char %d '%s'" % (i, c), warn=False)
-    return wl
-
-#######################################################################
-
-
 class ProtoType(object):
     def __init__(self, st, retval=True, prefix=""):
         self.st = st
         self.obj = None
         self.args = []
         self.argstruct = False
-        wl = lex(st.line[1])
+        wl = self.st.toks[1:]
 
         if retval:
             self.retval = CType(wl, st.vcc.enums)
@@ -606,7 +558,6 @@ class s_module(stanza):
     def parse(self):
         if len(self.toks) < 4:
             self.syntax()
-        a = self.line[1].split(None, 2)
         self.vcc.modname = self.toks[1]
         self.vcc.mansection = self.toks[2]
         if len(self.toks) == 4 and is_quoted(self.toks[3]):
@@ -887,43 +838,6 @@ DISPATCH = {
     "Synopsis": s_synopsis,
 }
 
-def tokenize(str, seps=None, quotes=None):
-    if seps is None:
-        seps = "[](){},="
-    if quotes is None:
-        quotes = '"' + "'"
-    quote = None
-    out = []
-    i = 0
-    inside = False
-    while i < len(str):
-        c = str[i]
-        # print("T", [c], quote, inside, i)
-        i += 1
-        if quote is not None and c == quote:
-            inside = False
-            quote = None
-            out[-1] += c
-        elif quote is not None:
-            out[-1] += c
-        elif c.isspace():
-            inside = False
-        elif seps.find(c) >= 0:
-            inside = False
-            out.append(c)
-        elif quotes.find(c) >= 0:
-            quote = c
-            out.append(c)
-        elif inside:
-            out[-1] += c
-        else:
-            out.append(c)
-            inside = True
-    #print("TOK", [str])
-    #for i in out:
-    #    print("\t", [i])
-    return out
-
 
 class vcc(object):
     def __init__(self, inputvcc, rstdir, outputprefix):
@@ -956,7 +870,8 @@ class vcc(object):
         self.copyright = s.pop(0).strip()
         while s:
             ss = re.split('\n([^\t ])', s.pop(0), maxsplit=1)
-            toks = tokenize(ss[0])
+            toks = self.tokenize(ss[0])
+            inputline = '$' + ' '.join(toks)
             c = ss[0].split()
             d = "".join(ss[1:])
             m = DISPATCH.get(toks[0])
@@ -964,6 +879,44 @@ class vcc(object):
                 err("Unknown stanze $%s" % ss[:i])
             m(toks, [c[0], " ".join(c[1:])], d.split('\n'), self)
             inputline = None
+
+    def tokenize(self, str, seps=None, quotes=None):
+        if seps is None:
+            seps = "[](){},="
+        if quotes is None:
+            quotes = '"' + "'"
+        quote = None
+        out = []
+        i = 0
+        inside = False
+        while i < len(str):
+            c = str[i]
+            # print("T", [c], quote, inside, i)
+            i += 1
+            if quote is not None and c == quote:
+                inside = False
+                quote = None
+                out[-1] += c
+            elif quote is not None:
+                out[-1] += c
+            elif c.isspace():
+                inside = False
+            elif seps.find(c) >= 0:
+                inside = False
+                out.append(c)
+            elif quotes.find(c) >= 0:
+                quote = c
+                out.append(c)
+            elif inside:
+                out[-1] += c
+            else:
+                out.append(c)
+                inside = True
+        #print("TOK", [str])
+        #for i in out:
+        #    print("\t", [i])
+        return out
+
 
     def rst_copyright(self, fo):
         write_rst_hdr(fo, "COPYRIGHT", "=")
