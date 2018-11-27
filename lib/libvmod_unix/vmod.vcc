@@ -5,7 +5,7 @@
 # Authors: Geoffrey Simmons <geoffrey.simmons@uplex.de>
 #
 
-$Module unix 3 utilities for Unix domain sockets
+$Module unix 3 "Utilities for Unix domain sockets"
 
 $ABI strict
 

@@ -120,6 +120,15 @@ CTYPES.update(PRIVS)
 
 #######################################################################
 
+def is_quoted(str):
+    return len(str) > 2 and str[0] == str[-1] and str[0] in ('"', "'")
+
+def unquote(str):
+    assert is_quoted(str)
+    return str[1:-1]
+
+#######################################################################
+
 
 def write_file_warning(fo, a, b, c):
     fo.write(a + "\n")
@@ -598,9 +607,11 @@ class s_module(stanza):
         a = self.line[1].split(None, 2)
         self.vcc.modname = self.toks[1]
         self.vcc.mansection = self.toks[2]
-        # XXX: Find better solution for moddesc
-        self.vcc.moddesc = " ".join(self.toks[2:])
-        self.vcc.moddesc = a[2]
+        if len(self.toks) == 4 and is_quoted(self.toks[3]):
+            self.vcc.moddesc = unquote(self.toks[3])
+        else:
+            print("\nNOTICE: Please put $Module description in quotes.\n")
+            self.vcc.moddesc = " ".join(self.toks[3:])
         self.rstlbl = "vmod_%s(%s)" % (
             self.vcc.modname,
             self.vcc.mansection
