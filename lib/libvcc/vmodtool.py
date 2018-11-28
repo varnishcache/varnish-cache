@@ -874,7 +874,7 @@ class vcc(object):
             d = "".join(ss[1:])
             m = DISPATCH.get(toks[0])
             if m is None:
-                err("Unknown stanze $%s" % ss[:i])
+                err("Unknown stanza $%s" % toks[0], warn=False)
             m(toks, [c[0], " ".join(c[1:])], d.split('\n'), self)
             inputline = None
 
