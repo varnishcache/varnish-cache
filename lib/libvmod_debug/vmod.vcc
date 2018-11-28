@@ -29,6 +29,7 @@
 $Module debug 3 "Development, test and debug"
 $ABI strict
 $Prefix xyzzy
+$Synopsis auto
 DESCRIPTION
 ===========
 
