@@ -1,10 +1,26 @@
-varnishtest "unreferenced acls"
+varnishtest "unreferenced or null acls"
 
 varnish v1 -arg "-p vcc_err_unref=off" -vcl {
+	import vtc;
 	backend s1 {
-		.host = "127.0.0.1";
+		.host = "${bad_backend}";
 	}
 	acl foo {
 		"127.0.0.1";
 	}
-}
+	acl bar {
+		"127.0.0.1";
+	}
+	sub vcl_recv {
+		if (vtc.no_ip() ~ bar) {
+			return (synth(200));
+		}
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 503
+	expect resp.body ~ "VCL failed"
+} -run
