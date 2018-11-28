@@ -89,6 +89,14 @@ vmod_no_stevedore(VRT_CTX)
 	return (NULL);
 }
 
+VCL_IP v_matchproto_(td_vtc_no_ip)
+vmod_no_ip(VRT_CTX)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	return (NULL);
+}
+
 /*--------------------------------------------------------------------*/
 
 VCL_VOID v_matchproto_(td_vtc_panic)

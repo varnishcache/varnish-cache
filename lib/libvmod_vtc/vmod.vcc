@@ -66,6 +66,10 @@ $Function STEVEDORE no_stevedore()
 
 Fails at storage selection.
 
+$Function IP no_ip()
+
+Returns a null IP address, not even a bogo_ip.
+
 $Function VOID panic(STRING_LIST)
 
 It can be useful to crash the child process in order to test the robustness
