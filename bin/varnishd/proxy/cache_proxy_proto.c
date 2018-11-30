@@ -697,14 +697,14 @@ VPX_Format_Proxy(struct vsb *vsb, int version,
 		WRONG("Wrong proxy version");
 }
 
-void
+int
 VPX_Send_Proxy(int fd, int version, const struct sess *sp)
 {
 	struct vsb *vsb, *vsb2;
 	struct suckaddr *sac, *sas;
 	char ha[VTCP_ADDRBUFSIZE];
 	char pa[VTCP_PORTBUFSIZE];
-	int proto;
+	int proto, r;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	assert(version == 1 || version == 2);
@@ -728,10 +728,10 @@ VPX_Send_Proxy(int fd, int version, const struct sess *sp)
 	} else
 		WRONG("Wrong proxy version");
 
-	(void)write(fd, VSB_data(vsb), VSB_len(vsb));
+	r = write(fd, VSB_data(vsb), VSB_len(vsb));
 	if (!DO_DEBUG(DBG_PROTOCOL)) {
 		VSB_delete(vsb);
-		return;
+		return (r);
 	}
 
 	vsb2 = VSB_new_auto();
@@ -742,4 +742,5 @@ VPX_Send_Proxy(int fd, int version, const struct sess *sp)
 	VSL(SLT_Debug, 999, "PROXY_HDR %s", VSB_data(vsb2));
 	VSB_delete(vsb);
 	VSB_delete(vsb2);
+	return (r);
 }
