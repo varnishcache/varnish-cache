@@ -1,0 +1,84 @@
+varnishtest "vcl_keep and vmod_so_keep debug bits"
+
+feature topbuild
+
+server s1 {
+} -start
+
+varnish v1 -vcl+backend {
+} -start
+
+# Test valid and invalid VCL with vcl_keep unset
+
+varnish v1 -cliok "param.set debug -vcl_keep"
+
+varnish v1 -vcl+backend {
+}
+
+shell -err "test -f ./v1/vcl_vcl2.*/vgc.c"
+
+varnish v1 -errvcl {No backends or directors found} {
+}
+
+shell -err "test -f ./v1/vcl_vcl3.*/vgc.c"
+
+# Same but with vcl_keep set
+
+varnish v1 -cliok "param.set debug +vcl_keep"
+
+varnish v1 -vcl+backend {
+}
+
+shell {
+	test -f ./v1/vcl_vcl4.*/vgc.c &&
+	  test -f ./v1/vcl_vcl4.*/vgc.so
+}
+
+varnish v1 -errvcl {No backends or directors found} {
+}
+
+shell {
+	test -f ./v1/vcl_vcl5.*/vgc.c &&
+	  test -f ./v1/vcl_vcl5.*/vgc.so
+}
+
+# Test vmod with vmod_so_keep set
+
+varnish v1 -cliok "param.set debug +vmod_so_keep"
+
+varnish v1 -vcl+backend {
+	import std;
+}
+
+shell "test -f ./v1/vmod_cache/_vmod_std.*"
+
+varnish v1 -stop
+varnish v1 -cleanup
+
+# Ensure these are not deleted on exit
+
+shell {
+	test -f ./v1/vcl_vcl4.*/vgc.c &&
+	  test -f ./v1/vcl_vcl4.*/vgc.so &&
+	  test -f ./v1/vcl_vcl5.*/vgc.c &&
+	  test -f ./v1/vcl_vcl5.*/vgc.so &&
+	  test -f ./v1/vmod_cache/_vmod_std.*
+}
+
+varnish v2 -vcl+backend {
+} -start
+
+# And test vmod with vmod_so_keep unset
+
+varnish v2 -cliok "param.set debug -vmod_so_keep"
+
+varnish v2 -vcl+backend {
+	import std;
+}
+
+shell "test -f ./v2/vmod_cache/_vmod_std.*"
+
+varnish v2 -stop
+varnish v2 -cleanup
+
+shell -err "test -f ./v2/vmod_cache/_vmod_std.*"

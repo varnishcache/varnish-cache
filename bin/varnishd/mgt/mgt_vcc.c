@@ -345,11 +345,13 @@ mgt_VccCompile(struct cli *cli, struct vclprog *vcl, const char *vclname,
 	VSB_destroy(&sb);
 
 	if (status || C_flag) {
-		(void)unlink(vp.csrcfile);
+		if (!MGT_DO_DEBUG(DBG_VCL_KEEP)) {
+			(void)unlink(vp.csrcfile);
+			(void)unlink(vp.libfile);
+			(void)rmdir(vp.dir);
+		}
 		free(vp.csrcfile);
-		(void)unlink(vp.libfile);
 		free(vp.libfile);
-		(void)rmdir(vp.dir);
 		free(vp.dir);
 		if (status) {
 			VCLI_Out(cli, "VCL compilation failed");
