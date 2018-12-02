@@ -29,7 +29,6 @@ addons:
       - docutils
       - nghttp2
       - sphinx-doc
-    update: true
 notifications:
   irc:
     channels:
