@@ -120,6 +120,10 @@ static double t_sample = 0.;
 static double interval = 1.;
 static unsigned vsm_status = 0;
 
+#define NOTIF_MAXLEN 256
+static char notification_message[NOTIF_MAXLEN] = "";
+static double notification_eol = 0.0;
+
 static void
 init_hitrate(void)
 {
@@ -435,7 +439,8 @@ draw_status(void)
 	mvwprintw(w_status, 1, 0, "Uptime child: ");
 	running(w_status, up_chld, VSM_WRK_RUNNING);
 
-	mvwprintw(w_status, 0, 55, "Refresh interval: %.3fs", interval);
+	if (VTIM_mono() < notification_eol)
+		mvwaddstr(w_status, 2, 0, notification_message);
 
 	if (COLS > 70) {
 		mvwprintw(w_status, 0, getmaxx(w_status) - 37,
@@ -903,11 +908,19 @@ handle_keypress(int ch)
 		break;
 	case '+':
 		interval += 0.1;
+		(void)snprintf(notification_message, NOTIF_MAXLEN,
+		    "Refresh interval set to %.1f seconds.", interval);
+
+		notification_eol = VTIM_mono() + 1.25;
 		break;
 	case '-':
 		interval -= 0.1;
 		if (interval < 0.1)
 			interval = 0.1;
+		(void)snprintf(notification_message, NOTIF_MAXLEN,
+		    "Refresh interval set to %.1f seconds.", interval);
+
+		notification_eol = VTIM_mono() + 1.25;
 		break;
 	case 'v':
 		verbosity = VSC_ChangeLevel(verbosity, 1);
