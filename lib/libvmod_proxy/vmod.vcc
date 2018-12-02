@@ -38,14 +38,14 @@ as described in https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt.
 $Function STRING alpn()
 
 Description
-	Extract alpn attribute.
+	Extract ALPN attribute.
 Example
 	set req.http.alpn = proxy.alpn();
 
 $Function STRING authority()
 
 Description
-	Extract authority attribute. This corresponds to sni from a tls
+	Extract authority attribute. This corresponds to SNI from a TLS
 	connection.
 Example
 	set req.http.authority = proxy.authority();
@@ -53,7 +53,7 @@ Example
 $Function BOOL is_ssl()
 
 Description
-	Report if proxy-protocol-v2 has ssl tlv.
+	Report if proxy-protocol-v2 has SSL TLV.
 
 Example
 	| if (proxy.is_ssl()) {
@@ -86,7 +86,7 @@ Example
 $Function STRING ssl_version()
 
 Description
-	Extract ssl version attribute.
+	Extract SSL version attribute.
 Example
 	set req.http.ssl-version = proxy.ssl_version();
 
@@ -100,7 +100,7 @@ Example
 $Function STRING ssl_cipher()
 
 Description
-	Extract the ssl cipher attribute.
+	Extract the SSL cipher attribute.
 Example
 	set req.http.ssl-cipher = proxy.ssl_cipher();
 
