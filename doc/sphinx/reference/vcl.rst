@@ -93,7 +93,7 @@ Booleans can be either ``true`` or ``false``.  In addition, in a boolean
 context some data types will evaluate to ``true`` or ``false`` depending on
 their value.
 
-String types will evaluate to ``false`` if they are empty; backend types
+String types will evaluate to ``false`` if they are not set; backend types
 will evaluate to ``false`` if they don't have a backend assigned; integer
 types will evaluate to ``false`` if their value is zero; duration types
 will evaluate to ``false`` if their value is equal or less than zero.
@@ -135,18 +135,20 @@ include a fractional part, e.g. ``1.5s``. The supported units are:
   ``y``
     years
 
+In string context they return a string with their value rounded to
+3 decimal places and excluding the unit, e.g.  ``1.500``.
+
 Integers
 ~~~~~~~~
 
 Certain fields are integers, used as expected. In string context they
-return a string.
+return a string, e.g. ``1234``.
 
 Real numbers
 ~~~~~~~~~~~~
 
-VCL understands real numbers. As with integers, when used in a string
-context they will return a string.
-
+VCL understands real numbers. In string context they return a string
+with their value rounded to 3 decimal places, e.g. ``3.142``.
 
 Regular Expressions
 -------------------
