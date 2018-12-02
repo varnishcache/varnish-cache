@@ -12,14 +12,13 @@ matrix:
   - os: linux
     dist: xenial
     compiler: clang
-    env: CLANG=7 SAN_FLAGS="--enable-asan --enable-ubsan"
-    sudo: required
+    env: SAN_FLAGS="--enable-asan --enable-ubsan"
   - os: osx
     osx_image: xcode10.1
     compiler: clang
   allow_failures:
   - os: osx
-  - env: CLANG=7 SAN_FLAGS="--enable-asan --enable-ubsan"
+  - env: SAN_FLAGS="--enable-asan --enable-ubsan"
 addons:
   apt:
     packages:
@@ -41,14 +40,7 @@ before_install:
   - |
     if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
       export PATH="/usr/local/opt/sphinx-doc/bin:$PATH"
-    elif [[ -n "$CLANG" ]]; then
-      wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-      sudo apt-add-repository -y \
-        "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-$CLANG main"
-      sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys BA9EF27F
-      sudo apt-get update
-      sudo apt-get install -y clang-$CLANG llvm-$CLANG
-      export CC=clang-$CLANG
+    elif [[ -n "$SAN_FLAGS" ]]; then
       export CONFIGURE_ARGS="--enable-developer-warnings --enable-debugging-symbols --disable-stack-protector --with-persistent-storage ${SAN_FLAGS}"
       export ASAN_OPTIONS=abort_on_error=1,detect_odr_violation=1,detect_leaks=1,detect_stack_use_after_return=1,detect_invalid_pointer_pairs=1,handle_segv=0,handle_sigbus=0,use_sigaltstack=0,disable_coredump=0
       export LSAN_OPTIONS=abort_on_error=1,use_sigaltstack=0,suppressions=$(pwd)/tools/lsan.suppr
