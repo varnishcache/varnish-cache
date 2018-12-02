@@ -4,13 +4,13 @@ matrix:
   fast_finish: true
   include:
   - os: linux
-    dist: trusty
+    dist: xenial
     compiler: gcc
   - os: linux
-    dist: trusty
+    dist: xenial
     compiler: clang
   - os: linux
-    dist: trusty
+    dist: xenial
     compiler: clang
     env: CLANG=7 SAN_FLAGS="--enable-asan --enable-ubsan"
     sudo: required
@@ -25,6 +25,12 @@ addons:
     packages:
       - python-docutils
       - python-sphinx
+  homebrew:
+    packages:
+      - docutils
+      - nghttp2
+      - sphinx-doc
+    update: true
 notifications:
   irc:
     channels:
@@ -34,16 +40,12 @@ notifications:
 before_install:
   - |
     if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-      brew update
-      brew install docutils sphinx-doc nghttp2
       export PATH="/usr/local/opt/sphinx-doc/bin:$PATH"
     elif [[ -n "$CLANG" ]]; then
       wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
       sudo apt-add-repository -y \
-        "deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-$CLANG main"
+        "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-$CLANG main"
       sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys BA9EF27F
-      sudo apt-add-repository -y \
-        "deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu trusty main"
       sudo apt-get update
       sudo apt-get install -y clang-$CLANG llvm-$CLANG
       export CC=clang-$CLANG
