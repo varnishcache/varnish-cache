@@ -66,18 +66,18 @@ shell -err -expect "Expected positive integer" \
 	"varnishlog -q {-1}"
 shell -err -expect "Syntax error in level limit" \
 	"varnishlog -q {1a}"
-shell -err -expect "Expected VSL tag name got ''" \
-	"varnishlog -q ''"
+shell -err -expect "Expected VSL tag name got '['" \
+	{varnishlog -q "[]"}
 shell -err -expect "Tag name matches zero tags" \
 	"varnishlog -q foo"
 shell -err -expect "Tag name is ambiguous" \
 	"varnishlog -q Resp"
-shell -err -expect "Expected string got ''" \
-	"varnishlog -q ReqHeader:"
+shell -err -expect "Expected string got '['" \
+	{varnishlog -q "ReqHeader:[]"}
 shell -err -expect "Expected integer got ']'" \
-	"varnishlog -q ReqHeader:foo[]"
+	{varnishlog -q "ReqHeader:foo[]"}
 shell -err -expect "Expected positive integer" \
-	"varnishlog -q ReqHeader:foo[a]"
+	{varnishlog -q "ReqHeader:foo[a]"}
 
 process p1 -wait
 shell {grep -q "0 CLI" ${tmpdir}/vlog}
