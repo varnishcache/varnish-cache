@@ -348,6 +348,8 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 	int busy_found;
 	enum lookup_e retval;
 	const uint8_t *vary;
+	unsigned xid = 0;
+	float dttl = 0.0;
 
 	AN(ocp);
 	*ocp = NULL;
@@ -440,15 +442,13 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 			assert(oh->refcnt > 1);
 			assert(oc->objhead == oh);
 			if (oc->flags & OC_F_HFP) {
-				wrk->stats->cache_hitpass++;
-				VSLb(req->vsl, SLT_HitPass, "%u %.6f",
-				    ObjGetXID(wrk, oc), EXP_Dttl(req, oc));
+				xid = ObjGetXID(wrk, oc);
+				dttl = EXP_Dttl(req, oc);
 				oc = NULL;
 				retval = HSH_HITPASS;
 			} else if (oc->flags & OC_F_HFM) {
-				wrk->stats->cache_hitmiss++;
-				VSLb(req->vsl, SLT_HitMiss, "%u %.6f",
-				    ObjGetXID(wrk, oc), EXP_Dttl(req, oc));
+				xid = ObjGetXID(wrk, oc);
+				dttl = EXP_Dttl(req, oc);
 				*bocp = hsh_insert_busyobj(wrk, oh);
 				oc->refcnt++;
 				retval = HSH_HITMISS;
@@ -462,6 +462,24 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 			*ocp = oc;
 			if (*bocp == NULL)
 				assert(HSH_DerefObjHead(wrk, &oh));
+
+			switch (retval) {
+			case HSH_HITPASS:
+				wrk->stats->cache_hitpass++;
+				VSLb(req->vsl, SLT_HitPass, "%u %.6f",
+				     xid, dttl);
+				break;
+			case HSH_HITMISS:
+				wrk->stats->cache_hitmiss++;
+				VSLb(req->vsl, SLT_HitMiss, "%u %.6f",
+				     xid, dttl);
+				break;
+			case HSH_HIT:
+				break;
+			default:
+				INCOMPL();
+			}
+
 			return (retval);
 		}
 		if (EXP_Ttl(NULL, oc) < req->t_req && /* ignore req.ttl */
@@ -478,11 +496,13 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 		 *
 		 * XXX should HFM objects actually have grace/keep ?
 		 */
-		wrk->stats->cache_hitmiss++;
-		VSLb(req->vsl, SLT_HitMiss, "%u %.6f", ObjGetXID(wrk, exp_oc),
-		    EXP_Dttl(req, exp_oc));
+		xid = ObjGetXID(wrk, exp_oc);
+		dttl = EXP_Dttl(req, exp_oc);
 		*bocp = hsh_insert_busyobj(wrk, oh);
 		Lck_Unlock(&oh->mtx);
+
+		wrk->stats->cache_hitmiss++;
+		VSLb(req->vsl, SLT_HitMiss, "%u %.6f", xid, dttl);
 		return (HSH_HITMISS);
 	}
 
@@ -528,12 +548,10 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 	}
 
 	/* There are one or more busy objects, wait for them */
+	VTAILQ_INSERT_TAIL(&oh->waitinglist, req, w_list);
+	Lck_Unlock(&oh->mtx);
 
 	AZ(req->hash_ignore_busy);
-
-	VTAILQ_INSERT_TAIL(&oh->waitinglist, req, w_list);
-	if (DO_DEBUG(DBG_WAITINGLIST))
-		VSLb(req->vsl, SLT_Debug, "on waiting list <%p>", oh);
 
 	wrk->stats->busy_sleep++;
 	/*
@@ -544,7 +562,10 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 	req->hash_objhead = oh;
 	req->wrk = NULL;
 	req->waitinglist = 1;
-	Lck_Unlock(&oh->mtx);
+
+	if (DO_DEBUG(DBG_WAITINGLIST))
+		VSLb(req->vsl, SLT_Debug, "on waiting list <%p>", oh);
+
 	return (HSH_BUSY);
 }
 
