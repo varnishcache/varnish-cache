@@ -34,6 +34,10 @@ Varnish Cache 6.0.3 (unreleased)
   renamed the red/black tree macros from ``VRB_*`` to ``VRBT_*``
   to disambiguate from the acronym for Varnish Request Body.
 
+* added ``req.is_hitmiss`` and ``req.is_hitpass`` (2743_)
+
+.. _2743: https://github.com/varnishcache/varnish-cache/issues/2743
+
 ================================
 Varnish Cache 6.0.2 (2018-11-07)
 ================================

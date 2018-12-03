@@ -12,10 +12,10 @@ server s1 {
 varnish v1 -vcl+backend {
 
 	sub vcl_miss {
-		set req.http.miss = "True";
+		set req.http.miss = true;
 	}
 	sub vcl_pass {
-		set req.http.pass = "True";
+		set req.http.hitpass = req.is_hitpass;
 	}
 
 	sub vcl_backend_response {
@@ -24,7 +24,7 @@ varnish v1 -vcl+backend {
 
 	sub vcl_deliver {
 		set resp.http.miss = req.http.miss;
-		set resp.http.pass = req.http.pass;
+		set resp.http.hitpass = req.http.hitpass;
 	}
 
 } -start
@@ -36,17 +36,17 @@ logexpect l1 -v v1 -g vxid {
 client c1 {
 	txreq
 	rxresp
-	expect resp.http.miss == True
+	expect resp.http.miss == true
 
 	txreq
 	rxresp
-	expect resp.http.pass == True
+	expect resp.http.hitpass == true
 
 	delay 3
 
 	txreq
 	rxresp
-	expect resp.http.miss == True
+	expect resp.http.miss == true
 } -run
 
 logexpect l1 -wait

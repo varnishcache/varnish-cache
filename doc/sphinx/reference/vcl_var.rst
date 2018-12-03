@@ -391,6 +391,21 @@ req.hash_always_miss
 	This is useful to force-update the cache without invalidating
 	existing entries in case the fetch fails.
 
+req.is_hitmiss
+
+	Type: BOOL
+
+	Readable from: client
+
+	If this request resulted in a hitmiss
+
+req.is_hitpass
+
+	Type: BOOL
+
+	Readable from: client
+
+	If this request resulted in a hitpass
 
 req_top.method
 
