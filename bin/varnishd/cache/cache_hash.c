@@ -496,7 +496,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 			} else {
 				if (exp_oc->hits < LONG_MAX)
 					exp_oc->hits++;
-				retval = HSH_EXPBUSY;
+				retval = HSH_GRACE;
 			}
 		} else {
 			Lck_Unlock(&oh->mtx);
@@ -518,7 +518,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 		assert(HSH_DerefObjHead(wrk, &oh));
 		if (exp_oc->hits < LONG_MAX)
 			exp_oc->hits++;
-		return (HSH_EXP);
+		return (HSH_GRACE);
 	}
 
 	/* There are one or more busy objects, wait for them */
