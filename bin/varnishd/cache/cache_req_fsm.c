@@ -503,20 +503,22 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	}
 
 	AZ(req->objcore);
-	if (lr == HSH_MISS) {
-		if (busy != NULL) {
-			/* hitmiss, out-of-grace or ordinary miss */
-			AN(busy->flags & OC_F_BUSY);
-			req->objcore = busy;
-			req->stale_oc = oc;
-			req->req_step = R_STP_MISS;
-		} else {
-			/* hitpass */
-			AZ(oc);
-			req->req_step = R_STP_PASS;
-		}
+	if (lr == HSH_MISS || lr == HSH_HITMISS) {
+		AN(busy);
+		AN(busy->flags & OC_F_BUSY);
+		req->objcore = busy;
+		req->stale_oc = oc;
+		req->req_step = R_STP_MISS;
 		return (REQ_FSM_MORE);
 	}
+	if (lr == HSH_HITPASS) {
+		AZ(busy);
+		AZ(oc);
+		req->req_step = R_STP_PASS;
+		return (REQ_FSM_MORE);
+	}
+
+	assert(lr == HSH_HIT || lr == HSH_GRACE);
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AZ(oc->flags & OC_F_BUSY);
