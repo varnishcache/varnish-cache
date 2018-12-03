@@ -252,7 +252,7 @@ HTC_RxPipeline(struct http_conn *htc, void *p)
 
 enum htc_status_e
 HTC_RxStuff(struct http_conn *htc, htc_complete_f *func,
-    double *t1, double *t2, double ti, double tn, int maxbytes)
+    vtim_real *t1, vtim_real *t2, vtim_real ti, vtim_real tn, int maxbytes)
 {
 	vtim_dur tmo;
 	vtim_real now;

@@ -122,7 +122,7 @@ static unsigned vsm_status = 0;
 
 #define NOTIF_MAXLEN 256
 static char notification_message[NOTIF_MAXLEN] = "";
-static double notification_eol = 0.0;
+static vtim_mono notification_eol = 0.0;
 
 static void
 init_hitrate(void)

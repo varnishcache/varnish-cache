@@ -65,7 +65,8 @@ struct pfd {
 /*--------------------------------------------------------------------
  */
 
-typedef int cp_open_f(const struct conn_pool *, double tmo, const void **privp);
+typedef int cp_open_f(const struct conn_pool *, vtim_dur tmo,
+    const void **privp);
 typedef void cp_close_f(struct pfd *);
 typedef int cp_cmp_f(const struct conn_pool *, const void *priv);
 typedef void cp_name_f(const struct pfd *, char *, unsigned, char *, unsigned);
@@ -99,7 +100,7 @@ struct conn_pool {
 
 	int					n_used;
 
-	double					holddown;
+	vtim_mono				holddown;
 	int					holddown_errno;
 };
 
@@ -157,7 +158,7 @@ PFD_RemoteName(const struct pfd *p, char *abuf, unsigned alen, char *pbuf,
  */
 
 static void  v_matchproto_(waiter_handle_f)
-vcp_handle(struct waited *w, enum wait_event ev, double now)
+vcp_handle(struct waited *w, enum wait_event ev, vtim_real now)
 {
 	struct pfd *pfd;
 	struct conn_pool *cp;
@@ -376,10 +377,10 @@ VCP_Recycle(const struct worker *wrk, struct pfd **pfdp)
  */
 
 static int
-VCP_Open(struct conn_pool *cp, double tmo, const void **privp, int *err)
+VCP_Open(struct conn_pool *cp, vtim_dur tmo, const void **privp, int *err)
 {
 	int r;
-	double h;
+	vtim_mono h;
 
 	CHECK_OBJ_NOTNULL(cp, CONN_POOL_MAGIC);
 	AN(err);
@@ -486,7 +487,7 @@ VCP_Close(struct pfd **pfdp)
  */
 
 static struct pfd *
-VCP_Get(struct conn_pool *cp, double tmo, struct worker *wrk,
+VCP_Get(struct conn_pool *cp, vtim_dur tmo, struct worker *wrk,
     unsigned force_fresh, int *err)
 {
 	struct pfd *pfd;
@@ -578,13 +579,13 @@ struct vtp_cs {
 };
 
 static inline int
-tmo2msec(double tmo)
+tmo2msec(vtim_dur tmo)
 {
 	return ( (int)floor(tmo * 1000.0) );
 }
 
 static int v_matchproto_(cp_open_f)
-vtp_open(const struct conn_pool *cp, double tmo, const void **privp)
+vtp_open(const struct conn_pool *cp, vtim_dur tmo, const void **privp)
 {
 	int s;
 	int msec;
@@ -672,7 +673,7 @@ static const struct cp_methods vtp_methods = {
  */
 
 static int v_matchproto_(cp_open_f)
-vus_open(const struct conn_pool *cp, double tmo, const void **privp)
+vus_open(const struct conn_pool *cp, vtim_dur tmo, const void **privp)
 {
 	int s;
 	int msec;
@@ -800,7 +801,7 @@ VTP_Rel(struct tcp_pool **tpp)
  */
 
 int
-VTP_Open(struct tcp_pool *tp, double tmo, const void **privp, int *err)
+VTP_Open(struct tcp_pool *tp, vtim_dur tmo, const void **privp, int *err)
 {
 	return (VCP_Open(tp->cp, tmo, privp, err));
 }

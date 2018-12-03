@@ -172,7 +172,7 @@ vdir_any_healthy(VRT_CTX, struct vdir *vd, VCL_TIME *changed)
 	unsigned retval = 0;
 	VCL_BACKEND be;
 	unsigned u;
-	double c;
+	vtim_real c;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vd, VDIR_MAGIC);
