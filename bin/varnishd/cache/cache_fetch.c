@@ -127,7 +127,7 @@ vbf_beresp2obj(struct busyobj *bo)
 	l += l2;
 
 	if (bo->uncacheable)
-		bo->fetch_objcore->flags |= OC_F_PASS;
+		bo->fetch_objcore->flags |= OC_F_HFM;
 
 	if (!vbf_allocobj(bo, l)) {
 		if (vary != NULL)
@@ -196,7 +196,7 @@ vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo)
 	if (bo->stale_oc != NULL &&
 	    ObjCheckFlag(bo->wrk, bo->stale_oc, OF_IMSCAND) &&
 	    (bo->stale_oc->boc != NULL || ObjGetLen(wrk, bo->stale_oc) != 0)) {
-		AZ(bo->stale_oc->flags & (OC_F_PASS|OC_F_PRIVATE));
+		AZ(bo->stale_oc->flags & (OC_F_HFM|OC_F_PRIVATE));
 		q = HTTP_GetHdrPack(bo->wrk, bo->stale_oc, H_Last_Modified);
 		if (q != NULL)
 			http_PrintfHeader(bo->bereq0,
@@ -355,7 +355,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	if (http_IsStatus(bo->beresp, 304)) {
 		if (bo->stale_oc != NULL &&
 		    ObjCheckFlag(bo->wrk, bo->stale_oc, OF_IMSCAND)) {
-			AZ(bo->stale_oc->flags & (OC_F_PASS|OC_F_PRIVATE));
+			AZ(bo->stale_oc->flags & (OC_F_HFM|OC_F_PRIVATE));
 			if (ObjCheckFlag(bo->wrk, bo->stale_oc, OF_CHGGZIP)) {
 				/*
 				 * If we changed the gzip status of the object
@@ -418,7 +418,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 		wrk->handling = VCL_RET_DELIVER;
 	}
 	if (bo->do_pass || bo->uncacheable)
-		bo->fetch_objcore->flags |= OC_F_PASS;
+		bo->fetch_objcore->flags |= OC_F_HFM;
 
 	assert(wrk->handling == VCL_RET_DELIVER);
 
@@ -454,7 +454,7 @@ vbf_stp_fetchbody(struct worker *wrk, struct busyobj *bo)
 			 * We don't fail the fetch, in order for HitMiss
 			 * objects to be created.
 			 */
-			AN(vfc->oc->flags & OC_F_PASS);
+			AN(vfc->oc->flags & OC_F_HFM);
 			VSLb(wrk->vsl, SLT_Debug,
 			    "Fetch: Pass delivery abandoned");
 			bo->htc->doclose = SC_RX_BODY;
@@ -608,7 +608,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 		ObjSetFlag(bo->wrk, bo->fetch_objcore, OF_##U, 1);
 #include "tbl/obj_attr.h"
 
-	if (!(bo->fetch_objcore->flags & OC_F_PASS) &&
+	if (!(bo->fetch_objcore->flags & OC_F_HFM) &&
 	    http_IsStatus(bo->beresp, 200) && (
 	      http_GetHdr(bo->beresp, H_Last_Modified, &p) ||
 	      http_GetHdr(bo->beresp, H_ETag, &p)))

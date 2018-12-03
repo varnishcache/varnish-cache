@@ -401,7 +401,7 @@ cnt_transmit(struct worker *wrk, struct req *req)
 			http_Unset(req->resp, H_Content_Length);
 		} else if (clval >= 0 && clval == req->resp_len) {
 			/* Reuse C-L header */
-		} else if (head && req->objcore->flags & OC_F_PASS) {
+		} else if (head && req->objcore->flags & OC_F_HFM) {
 			/*
 			 * Don't touch C-L header (debatable)
 			 *
@@ -423,9 +423,9 @@ cnt_transmit(struct worker *wrk, struct req *req)
 
 	VSLb_ts_req(req, "Resp", W_TIM_real(wrk));
 
-	if (req->objcore->flags & (OC_F_PRIVATE | OC_F_PASS | OC_F_HFP)) {
+	if (req->objcore->flags & (OC_F_PRIVATE | OC_F_HFM | OC_F_HFP)) {
 		if (req->objcore->flags & OC_F_HFP)
-			AN(req->objcore->flags & OC_F_PASS);
+			AN(req->objcore->flags & OC_F_HFM);
 		if (boc != NULL) {
 			HSH_Abandon(req->objcore);
 			ObjWaitState(req->objcore, BOS_FINISHED);
@@ -534,7 +534,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AZ(oc->flags & OC_F_BUSY);
 	req->objcore = oc;
-	AZ(oc->flags & OC_F_PASS);
+	AZ(oc->flags & OC_F_HFM);
 
 	VSLb(req->vsl, SLT_Hit, "%u %.6f %.6f %.6f",
 	    ObjGetXID(wrk, req->objcore),
@@ -547,7 +547,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	switch (wrk->handling) {
 	case VCL_RET_DELIVER:
 		if (busy != NULL) {
-			AZ(oc->flags & OC_F_PASS);
+			AZ(oc->flags & OC_F_HFM);
 			CHECK_OBJ_NOTNULL(busy->boc, BOC_MAGIC);
 			// XXX: shouldn't we go to miss?
 			VBF_Fetch(wrk, req, busy, oc, VBF_BACKGROUND);
