@@ -444,14 +444,14 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 				VSLb(req->vsl, SLT_HitPass, "%u %.6f",
 				    ObjGetXID(wrk, oc), EXP_Dttl(req, oc));
 				oc = NULL;
-				retval = HSH_MISS;
+				retval = HSH_HITPASS;
 			} else if (oc->flags & OC_F_HFM) {
 				wrk->stats->cache_hitmiss++;
 				VSLb(req->vsl, SLT_HitMiss, "%u %.6f",
 				    ObjGetXID(wrk, oc), EXP_Dttl(req, oc));
 				*bocp = hsh_insert_busyobj(wrk, oh);
 				oc->refcnt++;
-				retval = HSH_MISS;
+				retval = HSH_HITMISS;
 			} else {
 				oc->refcnt++;
 				if (oc->hits < LONG_MAX)
@@ -473,11 +473,17 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 	}
 
 	if (exp_oc != NULL && exp_oc->flags & OC_F_HFM) {
+		/*
+		 * expired HFM ("grace/keep HFM")
+		 *
+		 * XXX should HFM objects actually have grace/keep ?
+		 */
 		wrk->stats->cache_hitmiss++;
 		VSLb(req->vsl, SLT_HitMiss, "%u %.6f", ObjGetXID(wrk, exp_oc),
 		    EXP_Dttl(req, exp_oc));
-		exp_oc = NULL;
-		busy_found = 0;
+		*bocp = hsh_insert_busyobj(wrk, oh);
+		Lck_Unlock(&oh->mtx);
+		return (HSH_HITMISS);
 	}
 
 	if (!busy_found) {
