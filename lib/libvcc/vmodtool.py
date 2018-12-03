@@ -120,12 +120,12 @@ CTYPES.update(PRIVS)
 
 #######################################################################
 
-def is_quoted(str):
-    return len(str) > 2 and str[0] == str[-1] and str[0] in ('"', "'")
+def is_quoted(txt):
+    return len(txt) > 2 and txt[0] == txt[-1] and txt[0] in ('"', "'")
 
-def unquote(str):
-    assert is_quoted(str)
-    return str[1:-1]
+def unquote(txt):
+    assert is_quoted(txt)
+    return txt[1:-1]
 
 #######################################################################
 
@@ -364,17 +364,17 @@ class ProtoType(object):
             self.args.append(t)
 
     def vcl_proto(self, short, pfx=""):
-        if type(self.st) == s_method:
+        if isinstance(self.st, MethodStanza):
             pfx += pfx
         s = pfx
-        if type(self.st) == s_object:
+        if isinstance(self.st, ObjectStanza):
             s += "new " + self.obj + " = "
         elif self.retval is not None:
             s += self.retval.vcl() + " "
 
-        if type(self.st) == s_object:
+        if isinstance(self.st, ObjectStanza):
             s += self.st.vcc.modname + "." + self.name + "("
-        elif type(self.st) == s_method:
+        elif isinstance(self.st, MethodStanza):
             s += self.obj + self.bname + "("
         else:
             s += self.name + "("
@@ -414,7 +414,7 @@ class ProtoType(object):
             write_rst_hdr(fo, s, '-')
             fo.write("\n::\n\n" + self.vcl_proto(False, pfx="   ") + "\n")
 
-    def synopsis(self, fo, man):
+    def synopsis(self, fo, unused_man):
         fo.write(self.vcl_proto(True, pfx="   ") + "\n")
         fo.write("  \n")
 
@@ -489,7 +489,7 @@ class ProtoType(object):
 #######################################################################
 
 
-class stanza(object):
+class Stanza(object):
     def __init__(self, toks, l0, doc, vcc):
         self.toks = toks
         self.line = l0
@@ -503,6 +503,9 @@ class stanza(object):
         self.methods = None
         self.proto = None
         self.parse()
+
+    def parse(self):
+        assert "subclass should have defined" == "parse method"
 
     def dump(self):
         print(type(self), self.line)
@@ -524,34 +527,33 @@ class stanza(object):
         self.rsttail(fo, man)
         fo.write("\n")
 
-    def rsthead(self, fo, man):
-        if self.proto is None:
-            return
-        self.proto.rsthead(fo)
+    def rsthead(self, fo, unused_man):
+        if self.proto is not None:
+            self.proto.rsthead(fo)
 
-    def rstmid(self, fo, man):
+    def rstmid(self, fo, unused_man):
         fo.write("\n".join(self.doc) + "\n")
 
-    def rsttail(self, fo, man):
+    def rsttail(self, unused_fo, unused_man):
         return
 
     def synopsis(self, fo, man):
         if self.proto is not None:
             self.proto.synopsis(fo, man)
 
-    def cstuff(self, fo, where):
+    def cstuff(self, unused_fo, unused_where):
         return
 
-    def cstruct(self, fo, define):
+    def cstruct(self, unused_fo, unused_define):
         return
 
-    def json(self, jl):
+    def json(self, unused_jl):
         return
 
 #######################################################################
 
 
-class s_module(stanza):
+class ModuleStanza(Stanza):
 
     ''' $Module modname man_section description ... '''
 
@@ -617,7 +619,7 @@ class s_module(stanza):
         fo.write("\n")
 
 
-class s_abi(stanza):
+class ABIStanza(Stanza):
 
     ''' $ABI [strict|vrt] '''
 
@@ -635,7 +637,7 @@ class s_abi(stanza):
         self.vcc.contents.append(self)
 
 
-class s_prefix(stanza):
+class PrefixStanza(Stanza):
 
     ''' $Prefix symbol '''
 
@@ -646,7 +648,7 @@ class s_prefix(stanza):
         self.vcc.contents.append(self)
 
 
-class s_synopsis(stanza):
+class SynopsisStanza(Stanza):
 
     ''' $Synopsis [auto|manual] '''
 
@@ -664,7 +666,7 @@ class s_synopsis(stanza):
         self.vcc.contents.append(self)
 
 
-class s_event(stanza):
+class EventStanza(Stanza):
 
     ''' $Event function_name '''
 
@@ -696,7 +698,7 @@ class s_event(stanza):
         ])
 
 
-class s_function(stanza):
+class FunctionStanza(Stanza):
     def parse(self):
         self.proto = ProtoType(self)
         self.rstlbl = "func_" + self.proto.name
@@ -716,7 +718,7 @@ class s_function(stanza):
         self.proto.json(jl[-1], self.proto.cname())
 
 
-class s_object(stanza):
+class ObjectStanza(Stanza):
     def parse(self):
         self.proto = ProtoType(self, retval=False)
         self.proto.obj = "x" + self.proto.name
@@ -741,7 +743,7 @@ class s_object(stanza):
         for i in self.methods:
             i.rstfile(fo, man)
 
-    def rstmid(self, fo, man):
+    def rstmid(self, unused_fo, unused_man):
         return
 
     def synopsis(self, fo, man):
@@ -794,17 +796,17 @@ class s_object(stanza):
         jl.append(ll)
 
     def dump(self):
-        super(s_object, self).dump()
+        super(ObjectStanza, self).dump()
         for i in self.methods:
             i.dump()
 
 #######################################################################
 
 
-class s_method(stanza):
+class MethodStanza(Stanza):
     def parse(self):
         p = self.vcc.contents[-1]
-        assert type(p) == s_object
+        assert isinstance(p, ObjectStanza)
         self.pfx = p.proto.name
         self.proto = ProtoType(self, prefix=self.pfx)
         if not self.proto.bname.startswith("."):
@@ -828,18 +830,21 @@ class s_method(stanza):
 #######################################################################
 
 DISPATCH = {
-    "Module":   s_module,
-    "Prefix":   s_prefix,
-    "ABI":      s_abi,
-    "Event":    s_event,
-    "Function": s_function,
-    "Object":   s_object,
-    "Method":   s_method,
-    "Synopsis": s_synopsis,
+    "Module":   ModuleStanza,
+    "Prefix":   PrefixStanza,
+    "ABI":      ABIStanza,
+    "Event":    EventStanza,
+    "Function": FunctionStanza,
+    "Object":   ObjectStanza,
+    "Method":   MethodStanza,
+    "Synopsis": SynopsisStanza,
 }
 
 
 class vcc(object):
+
+    ''' Processing context for a single .vcc file '''
+
     def __init__(self, inputvcc, rstdir, outputprefix):
         self.inputfile = inputvcc
         self.rstdir = rstdir
@@ -880,7 +885,7 @@ class vcc(object):
             m(toks, [c[0], " ".join(c[1:])], d.split('\n'), self)
             inputline = None
 
-    def tokenize(self, str, seps=None, quotes=None):
+    def tokenize(self, txt, seps=None, quotes=None):
         if seps is None:
             seps = "[](){},="
         if quotes is None:
@@ -889,8 +894,8 @@ class vcc(object):
         out = []
         i = 0
         inside = False
-        while i < len(str):
-            c = str[i]
+        while i < len(txt):
+            c = txt[i]
             # print("T", [c], quote, inside, i)
             i += 1
             if quote is not None and c == quote:
@@ -1053,13 +1058,13 @@ class vcc(object):
         fo.write("\n")
 
         for i in self.contents:
-            if type(i) == s_object:
+            if isinstance(i, ObjectStanza):
                 i.cstuff(fo, 'c')
                 i.cstuff(fx, 'o')
 
         fx.write("/* Functions */\n")
         for i in self.contents:
-            if type(i) == s_function:
+            if isinstance(i, FunctionStanza):
                 i.cstuff(fo, 'c')
                 i.cstuff(fx, 'o')
 
