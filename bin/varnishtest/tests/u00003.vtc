@@ -26,7 +26,7 @@ varnish v1 -vcl+backend {
 
 shell {
 	varnishncsa -n ${v1_name} -D -P ${tmpdir}/ncsa.pid \
-		-w ${tmpdir}/ncsa.log
+		-w ${tmpdir}/ncsa.log -R 100/s
 }
 
 delay 1
