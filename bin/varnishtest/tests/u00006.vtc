@@ -12,7 +12,7 @@ process p1 {
 } -start
 shell {
 	exec varnishlog -n ${v1_name} -D -P ${tmpdir}/vlog.pid \
-	    -w ${tmpdir}/vlog.bin
+	    -w ${tmpdir}/vlog.bin -R 10/s
 }
 
 shell -match "Usage: .*varnishlog <options>" \
@@ -78,6 +78,25 @@ shell -err -expect "Expected integer got ']'" \
 	{varnishlog -q "ReqHeader:foo[]"}
 shell -err -expect "Expected positive integer" \
 	{varnishlog -q "ReqHeader:foo[a]"}
+
+shell -err -expect "-R: Syntax error" \
+	"varnishlog -R 1foo"
+shell -err -expect "-R: Range error" \
+	"varnishlog -R 0"
+shell -err -expect "-R: Range error" \
+	"varnishlog -R -1"
+shell -err -expect "-R: Range error" \
+	"varnishlog -R 3000000000"
+shell -err -expect "-R: Syntax error: Invalid duration" \
+	"varnishlog -R 10/0s"
+shell -err -expect "-R: Syntax error: Invalid duration" \
+	"varnishlog -R 10/-10s"
+shell -err -expect "-R: Syntax error: Invalid duration" \
+	"varnishlog -R 10/1q"
+shell -err -expect "-R: Syntax error: Invalid duration" \
+	"varnishlog -R 10/11f09s"
+shell -err -expect "-R: Syntax error" \
+	"varnishlog -R 1000000000/1000000000000000000000000000000s"
 
 process p1 -wait
 shell {grep -q "0 CLI" ${tmpdir}/vlog}
