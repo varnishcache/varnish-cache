@@ -509,12 +509,15 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		req->objcore = busy;
 		req->stale_oc = oc;
 		req->req_step = R_STP_MISS;
+		if (lr == HSH_HITMISS)
+			req->is_hitmiss = 1;
 		return (REQ_FSM_MORE);
 	}
 	if (lr == HSH_HITPASS) {
 		AZ(busy);
 		AZ(oc);
 		req->req_step = R_STP_PASS;
+		req->is_hitpass = 1;
 		return (REQ_FSM_MORE);
 	}
 
@@ -815,6 +818,8 @@ cnt_recv_prep(struct req *req, const char *ci)
 
 	req->vdc->retval = 0;
 	req->is_hit = 0;
+	req->is_hitmiss = 0;
+	req->is_hitpass = 0;
 }
 /*--------------------------------------------------------------------
  * We have a complete request, set everything up and start it.

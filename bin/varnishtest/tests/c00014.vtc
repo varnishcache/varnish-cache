@@ -16,6 +16,12 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
+	sub vcl_miss {
+		set req.http.hitmiss = req.is_hitmiss;
+	}
+	sub vcl_deliver {
+		set resp.http.hitmiss = req.http.hitmiss;
+	}
 	sub vcl_backend_response {
 		set beresp.do_stream = false;
 		set beresp.uncacheable = true;
@@ -28,6 +34,7 @@ client c1 {
 	expect resp.status == 200
 	expect resp.bodylen == 12
 	expect resp.http.x-varnish == "1001"
+	expect resp.http.hitmiss == "false"
 } -start
 
 barrier b1 sync
@@ -39,6 +46,7 @@ client c2 {
 	expect resp.status == 200
 	expect resp.bodylen == 6
 	expect resp.http.x-varnish == "1004"
+	expect resp.http.hitmiss == "true"
 } -run
 
 client c1 -wait
