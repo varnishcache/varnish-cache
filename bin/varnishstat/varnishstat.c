@@ -324,7 +324,7 @@ main(int argc, char * const *argv)
 			AN(VSC_Arg(vsc, 'f', "MAIN.cache_hit"));
 			AN(VSC_Arg(vsc, 'f', "MAIN.cache_miss"));
 		}
-		do_curses(vd, vsc, 1.0);
+		do_curses(vd, vsc);
 	}
 	else if (xml)
 		do_xml(vd, vsc);

@@ -35,4 +35,4 @@
 #include "vas.h"
 #include "vcs.h"
 
-void do_curses(struct vsm *,  struct vsc *, double);
+void do_curses(struct vsm *,  struct vsc *);

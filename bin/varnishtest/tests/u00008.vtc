@@ -1,4 +1,4 @@
-varnishtest	"trivial run of varnistat in curses mode"
+varnishtest    "trivial run of varnishstat in curses mode"
 
 server s1 -repeat 4 {
 	rxreq
@@ -23,6 +23,14 @@ client c1 {
 
 process p1 -expect-text 0 0 "MAIN.s_sess"
 process p1 -screen_dump
+
+process p1 -write {+}
+process p1 -screen_dump
+process p1 -expect-text 0 0 "Refresh interval set to 1.1 seconds."
+
+process p1 -write {-}
+process p1 -screen_dump
+process p1 -expect-text 0 0 "Refresh interval set to 1.0 seconds."
 
 process p1 -write {vG}
 process p1 -expect-text 0 0 "VBE.vcl1.s1.req"
