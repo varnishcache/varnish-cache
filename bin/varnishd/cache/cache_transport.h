@@ -79,7 +79,7 @@ void VPX_Send_Proxy(int fd, int version, const struct sess *);
 
 /* cache_session.c */
 struct sess *SES_New(struct pool *);
-void SES_Delete(struct sess *, enum sess_close reason, double now);
+void SES_Delete(struct sess *, enum sess_close reason, vtim_real now);
 void SES_Close(struct sess *, enum sess_close reason);
 void SES_SetTransport(struct worker *, struct sess *, struct req *,
     const struct transport *);

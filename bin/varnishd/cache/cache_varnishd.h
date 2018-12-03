@@ -261,7 +261,7 @@ void ObjSetState(struct worker *, const struct objcore *,
     enum boc_state_e next);
 void ObjWaitState(const struct objcore *, enum boc_state_e want);
 void ObjTrimStore(struct worker *, struct objcore *);
-void ObjTouch(struct worker *, struct objcore *, double now);
+void ObjTouch(struct worker *, struct objcore *, vtim_real now);
 void ObjFreeObj(struct worker *, struct objcore *);
 void ObjSlim(struct worker *, struct objcore *);
 void *ObjSetAttr(struct worker *, struct objcore *, enum obj_attr,
@@ -347,7 +347,7 @@ const char * HTC_Status(enum htc_status_e);
 void HTC_RxInit(struct http_conn *htc, struct ws *ws);
 void HTC_RxPipeline(struct http_conn *htc, void *);
 enum htc_status_e HTC_RxStuff(struct http_conn *, htc_complete_f *,
-    double *t1, double *t2, double ti, double tn, int maxbytes);
+    vtim_real *t1, vtim_real *t2, vtim_real ti, vtim_real tn, int maxbytes);
 
 #define SESS_ATTR(UP, low, typ, len)					\
 	int SES_Set_##low(const struct sess *sp, const typ *src);	\

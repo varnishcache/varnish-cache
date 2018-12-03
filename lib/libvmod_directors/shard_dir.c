@@ -165,7 +165,7 @@ shard_next(struct shard_state *state, VCL_INT skip, VCL_BOOL healthy)
 	int c, chosen = -1;
 	uint32_t ringsz;
 	VCL_BACKEND be;
-	double changed;
+	vtim_real changed;
 	struct shard_be_info *sbe;
 
 	AN(state);
@@ -312,7 +312,7 @@ sharddir_any_healthy(struct sharddir *shardd, const struct busyobj *bo,
 	unsigned retval = 0;
 	VCL_BACKEND be;
 	unsigned u;
-	double c;
+	vtim_real c;
 
 	CHECK_OBJ_NOTNULL(shardd, SHARDDIR_MAGIC);
 	CHECK_OBJ_ORNULL(bo, BUSYOBJ_MAGIC);
