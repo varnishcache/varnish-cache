@@ -310,7 +310,10 @@ vsl_R_arg(struct VSL_data *vsl, const char *arg)
 	AN(arg);
 	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
 
+	errno = 0;
 	l = strtol(arg, &p, 0);
+	if ((l == LONG_MIN || l == LONG_MAX) && errno == ERANGE)
+		return (vsl_diag(vsl, "-R: Range error"));
 	if (l <= 0 || l > INT_MAX)
 		return (vsl_diag(vsl, "-R: Range error"));
 	vsl->R_opt_l = l;
