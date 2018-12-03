@@ -50,6 +50,7 @@ struct hash_slinger {
 };
 
 enum lookup_e {
+	HSH_CONTINUE,
 	HSH_MISS,
 	HSH_BUSY,
 	HSH_HIT,
