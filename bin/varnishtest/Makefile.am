@@ -4,6 +4,8 @@ VTC_LOG_COMPILER = ./varnishtest -v -i
 TEST_EXTENSIONS = .vtc
 TESTS = @VTC_TESTS@
 
+vtest = $(srcdir)/vtest/src
+
 # Make sure we run check-local first
 check-am: check-local
 # See if list of checks have changed, recheck
@@ -24,40 +26,41 @@ AM_CPPFLAGS = \
 bin_PROGRAMS =	varnishtest
 
 varnishtest_SOURCES = \
-		hpack.h \
-		programs.h \
-		cmds.h \
-		vmods.h \
-		vtc.h \
-		teken.c \
-		teken.h \
-		teken_scs.h \
-		teken_subr.h \
-		teken_subr_compat.h \
-		teken_wcwidth.h \
-		vtc.c \
-		vtc_barrier.c \
-		vtc_client.c \
-		vtc_haproxy.c \
-		vtc_h2_dectbl.h \
-		vtc_h2_enctbl.h \
-		vtc_h2_hpack.c \
-		vtc_h2_priv.h \
-		vtc_h2_stattbl.h \
-		vtc_h2_tbl.c \
-		vtc_http.c \
-		vtc_http.h \
-		vtc_http2.c \
-		vtc_log.c \
-		vtc_logexp.c \
-		vtc_misc.c \
-		vtc_main.c \
-		vtc_process.c \
-		vtc_proxy.c \
-		vtc_server.c \
-		vtc_subr.c \
-		vtc_syslog.c \
-		vtc_varnish.c
+		$(vtest)/hpack.h \
+		$(vtest)/programs.h \
+		$(vtest)/cmds.h \
+		$(vtest)/vtc.h \
+		$(vtest)/teken.c \
+		$(vtest)/teken.h \
+		$(vtest)/teken_scs.h \
+		$(vtest)/teken_subr.h \
+		$(vtest)/teken_subr_compat.h \
+		$(vtest)/teken_wcwidth.h \
+		$(vtest)/vtc.c \
+		$(vtest)/vtc_barrier.c \
+		$(vtest)/vtc_client.c \
+		$(vtest)/vtc_haproxy.c \
+		$(vtest)/vtc_h2_enctbl.h \
+		$(vtest)/vtc_h2_hpack.c \
+		$(vtest)/vtc_h2_priv.h \
+		$(vtest)/vtc_h2_stattbl.h \
+		$(vtest)/vtc_h2_tbl.c \
+		$(vtest)/vtc_http.c \
+		$(vtest)/vtc_http.h \
+		$(vtest)/vtc_http2.c \
+		$(vtest)/vtc_log.c \
+		$(vtest)/vtc_logexp.c \
+		$(vtest)/vtc_misc.c \
+		$(vtest)/vtc_main.c \
+		$(vtest)/vtc_process.c \
+		$(vtest)/vtc_proxy.c \
+		$(vtest)/vtc_server.c \
+		$(vtest)/vtc_subr.c \
+		$(vtest)/vtc_syslog.c \
+		$(vtest)/vtc_varnish.c
+
+# XXX does not belong to vtest
+varnishtest_SOURCES += $(vtest)/vmods.h
 
 varnishtest_LDADD = \
 		$(top_builddir)/lib/libvarnish/libvarnish.a \
@@ -73,20 +76,21 @@ varnishtest_CFLAGS = \
 
 EXTRA_DIST = $(top_srcdir)/bin/varnishtest/tests/*.vtc \
 	$(top_srcdir)/bin/varnishtest/tests/README \
-	$(top_srcdir)/bin/varnishtest/gensequences \
-	$(top_srcdir)/bin/varnishtest/sequences \
 	$(top_srcdir)/bin/varnishtest/teken.3 \
-	huffman_gen.py
+	$(vtest)/gensequences \
+	$(vtest)/sequences \
+	$(vtest)/huffman_gen.py
 
-teken.c: teken_state.h
+$(vtest)/teken.c: teken_state.h
 
-teken_state.h:	$(srcdir)/sequences $(srcdir)/gensequences
-	awk -f $(srcdir)/gensequences $(srcdir)/sequences \
-	    > $(builddir)/teken_state.h
+teken_state.h:	$(vtest)/sequences $(vtest)/gensequences
+	awk -f $(vtest)/gensequences $(vtest)/sequences \
+	    >teken_state.h
 
+varnishtest_SOURCES += vtc_h2_dectbl.h
 vtc_h2_hpack.c: vtc_h2_dectbl.h
-vtc_h2_dectbl.h: huffman_gen.py $(top_srcdir)/include/tbl/vhp_huffman.h
-	$(PYTHON) $(srcdir)/huffman_gen.py \
+vtc_h2_dectbl.h: $(vtest)/huffman_gen.py $(top_srcdir)/include/tbl/vhp_huffman.h
+	$(PYTHON) $(vtest)/huffman_gen.py \
 	    $(top_srcdir)/include/tbl/vhp_huffman.h > $@_
 	mv $@_ $@
 

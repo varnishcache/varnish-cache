@@ -197,16 +197,18 @@ include/vsl-tags.rst: $(top_builddir)/lib/libvarnishapi/vsl2rst
 	mv ${@}_ ${@}
 BUILT_SOURCES += include/vsl-tags.rst
 
-VTCSYN_SRC = $(top_srcdir)/bin/varnishtest/vtc.c \
-	     $(top_srcdir)/bin/varnishtest/vtc_barrier.c \
-	     $(top_srcdir)/bin/varnishtest/vtc_haproxy.c \
-	     $(top_srcdir)/bin/varnishtest/vtc_http.c \
-	     $(top_srcdir)/bin/varnishtest/vtc_http2.c \
-	     $(top_srcdir)/bin/varnishtest/vtc_logexp.c \
-	     $(top_srcdir)/bin/varnishtest/vtc_misc.c \
-	     $(top_srcdir)/bin/varnishtest/vtc_process.c \
-	     $(top_srcdir)/bin/varnishtest/vtc_syslog.c \
-	     $(top_srcdir)/bin/varnishtest/vtc_varnish.c
+vtest = $(top_srcdir)/bin/varnishtest/vtest/src
+
+VTCSYN_SRC = $(vtest)/vtc.c \
+	     $(vtest)/vtc_barrier.c \
+	     $(vtest)/vtc_haproxy.c \
+	     $(vtest)/vtc_http.c \
+	     $(vtest)/vtc_http2.c \
+	     $(vtest)/vtc_logexp.c \
+	     $(vtest)/vtc_misc.c \
+	     $(vtest)/vtc_process.c \
+	     $(vtest)/vtc_syslog.c \
+	     $(vtest)/vtc_varnish.c
 include/vtc-syntax.rst: vtc-syntax.py $(VTCSYN_SRC)
 	$(PYTHON) $(top_srcdir)/doc/sphinx/vtc-syntax.py $(VTCSYN_SRC) > ${@}_
 	mv ${@}_ ${@}

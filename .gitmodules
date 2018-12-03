@@ -1,0 +1,3 @@
+[submodule "bin/varnishtest/vtest"]
+	path = bin/varnishtest/vtest
+	url = https://github.com/nigoroll/VTest.git
