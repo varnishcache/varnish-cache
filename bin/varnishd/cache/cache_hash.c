@@ -459,10 +459,11 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 					oc->hits++;
 				retval = HSH_HIT;
 			}
-			Lck_Unlock(&oh->mtx);
 			*ocp = oc;
 			if (*bocp == NULL)
-				assert(hsh_deref_objhead(wrk, &oh));
+				AN(hsh_deref_objhead_unlock(wrk, &oh));
+			else
+				Lck_Unlock(&oh->mtx);
 
 			switch (retval) {
 			case HSH_HITPASS:
@@ -539,12 +540,10 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 		assert(oh->refcnt > 1);
 		assert(exp_oc->objhead == oh);
 		exp_oc->refcnt++;
-		Lck_Unlock(&oh->mtx);
 		*ocp = exp_oc;
-
-		assert(hsh_deref_objhead(wrk, &oh));
 		if (exp_oc->hits < LONG_MAX)
 			exp_oc->hits++;
+		AN(hsh_deref_objhead_unlock(wrk, &oh));
 		return (HSH_GRACE);
 	}
 
