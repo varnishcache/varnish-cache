@@ -337,100 +337,152 @@ hsh_insert_busyobj(struct worker *wrk, struct objhead *oh)
 /*---------------------------------------------------------------------
  */
 static enum lookup_e
-hsh_lookup_return(struct worker *wrk, struct req *req,
-    struct objhead *oh, struct objcore *oc, int busy_found,
-    enum lookup_e retval, struct objcore **ocp, struct objcore **bocp)
+hsh_lookup_hitpass(struct worker *wrk, struct req *req,
+    struct objhead *oh, struct objcore *oc,
+    struct objcore **ocp, struct objcore **bocp)
 {
 	unsigned xid = 0;
 	float dttl = 0.0;
 
-	if (oc)
-		assert(oc->objhead == oh);
+	AN(oc);
+	assert(oc->objhead == oh);
+	assert(oh->refcnt > 1);
+	xid = ObjGetXID(wrk, oc);
+	dttl = EXP_Dttl(req, oc);
 
-	switch (retval) {
-	case HSH_HITPASS:
-		AN(oc);
-		assert(oh->refcnt > 1);
-		xid = ObjGetXID(wrk, oc);
-		dttl = EXP_Dttl(req, oc);
-		oc = NULL;
-		break;
-	case HSH_HITMISS:
-		AN(oc);
-		assert(oh->refcnt > 1);
-		xid = ObjGetXID(wrk, oc);
-		dttl = EXP_Dttl(req, oc);
-		*bocp = hsh_insert_busyobj(wrk, oh);
-		oc->refcnt++;
-		break;
-	case HSH_HIT:
-		AN(oc);
+	AN(hsh_deref_objhead_unlock(wrk, &oh));
+
+	AZ(*ocp);
+	AZ(*bocp);
+
+	wrk->stats->cache_hitpass++;
+	VSLb(req->vsl, SLT_HitPass, "%u %.6f",
+	     xid, dttl);
+
+	return (HSH_HITPASS);
+}
+
+static enum lookup_e
+hsh_lookup_hitmiss(struct worker *wrk, struct req *req,
+    struct objhead *oh, struct objcore *oc,
+    struct objcore **ocp, struct objcore **bocp)
+{
+	unsigned xid = 0;
+	float dttl = 0.0;
+
+	AN(oc);
+	assert(oc->objhead == oh);
+	assert(oh->refcnt > 1);
+	xid = ObjGetXID(wrk, oc);
+	dttl = EXP_Dttl(req, oc);
+
+	AZ(*bocp);
+	*bocp = hsh_insert_busyobj(wrk, oh);
+	oc->refcnt++;
+
+	Lck_Unlock(&oh->mtx);
+
+	*ocp = oc;
+
+	wrk->stats->cache_hitmiss++;
+	VSLb(req->vsl, SLT_HitMiss, "%u %.6f",
+	     xid, dttl);
+
+	return (HSH_HITMISS);
+}
+
+static enum lookup_e
+hsh_lookup_hit(struct worker *wrk,
+    struct objhead *oh, struct objcore *oc,
+    struct objcore **ocp, struct objcore **bocp)
+{
+	AN(oc);
+	assert(oc->objhead == oh);
+	assert(oh->refcnt > 1);
+	oc->refcnt++;
+	if (oc->hits < LONG_MAX)
+		oc->hits++;
+
+	AN(hsh_deref_objhead_unlock(wrk, &oh));
+
+	*ocp = oc;
+	AZ(*bocp);
+	return (HSH_HIT);;
+}
+
+static enum lookup_e
+hsh_lookup_missgrace(struct worker *wrk,
+    struct objhead *oh, struct objcore *oc, int busy_found,
+    enum lookup_e retval, struct objcore **ocp, struct objcore **bocp)
+{
+	if (oc) {
+		assert(oc->objhead == oh);
 		assert(oh->refcnt > 1);
 		oc->refcnt++;
 		if (oc->hits < LONG_MAX)
 			oc->hits++;
-		break;
-	case HSH_MISS:
-	case HSH_GRACE:
-		if (! busy_found)
-			*bocp = hsh_insert_busyobj(wrk, oh);
-		if (oc) {
-			assert(oh->refcnt > 1);
-			oc->refcnt++;
-			if (oc->hits < LONG_MAX)
-				oc->hits++;
-		}
-		break;
-	case HSH_BUSY:
-		/* There are one or more busy objects, wait for them */
-		VTAILQ_INSERT_TAIL(&oh->waitinglist, req, w_list);
-		break;
-	default:
-		INCOMPL();
 	}
 
-	if (retval != HSH_BUSY && *bocp == NULL)
-		AN(hsh_deref_objhead_unlock(wrk, &oh));
-	else
+	if (! busy_found) {
+		*bocp = hsh_insert_busyobj(wrk, oh);
 		Lck_Unlock(&oh->mtx);
+	} else {
+		AN(hsh_deref_objhead_unlock(wrk, &oh));
+	}
 
 	*ocp = oc;
 
-	switch (retval) {
+	return (retval);;
+}
+
+static enum lookup_e
+hsh_lookup_busy(struct worker *wrk, struct req *req,
+    struct objhead *oh,
+    struct objcore **ocp, struct objcore **bocp)
+{
+	/* There are one or more busy objects, wait for them */
+	VTAILQ_INSERT_TAIL(&oh->waitinglist, req, w_list);
+
+	Lck_Unlock(&oh->mtx);
+
+	AZ(*ocp);
+	AZ(*bocp);
+	AZ(req->hash_ignore_busy);
+	wrk->stats->busy_sleep++;
+	/*
+	 * The objhead reference transfers to the sess, we get it back when the
+	 * sess comes off the waiting list and calls us again
+	 */
+	req->hash_objhead = oh;
+	req->wrk = NULL;
+	req->waitinglist = 1;
+
+	if (DO_DEBUG(DBG_WAITINGLIST))
+		VSLb(req->vsl, SLT_Debug, "on waiting list <%p>", oh);
+
+	return (HSH_BUSY);
+}
+
+static enum lookup_e
+hsh_lookup_return(struct worker *wrk, struct req *req,
+    struct objhead *oh, struct objcore *oc, int bf,
+    enum lookup_e r, struct objcore **ocp, struct objcore **bocp)
+{
+	switch (r) {
 	case HSH_HITPASS:
-		wrk->stats->cache_hitpass++;
-		VSLb(req->vsl, SLT_HitPass, "%u %.6f",
-		     xid, dttl);
-		break;
+		return (hsh_lookup_hitpass(wrk, req, oh, oc, ocp, bocp));
 	case HSH_HITMISS:
-		wrk->stats->cache_hitmiss++;
-		VSLb(req->vsl, SLT_HitMiss, "%u %.6f",
-		     xid, dttl);
-		break;
+		return (hsh_lookup_hitmiss(wrk, req, oh, oc, ocp, bocp));
 	case HSH_HIT:
+		return (hsh_lookup_hit(wrk, oh, oc, ocp, bocp));
 	case HSH_MISS:
 	case HSH_GRACE:
-		break;
+		return (hsh_lookup_missgrace(wrk, oh, oc, bf, r, ocp, bocp));
 	case HSH_BUSY:
-		AN(busy_found);
-		AZ(req->hash_ignore_busy);
-		wrk->stats->busy_sleep++;
-		/*
-		 * The objhead reference transfers to the sess, we get it back
-		 * when the sess comes off the waiting list and calls us again
-		 */
-		req->hash_objhead = oh;
-		req->wrk = NULL;
-		req->waitinglist = 1;
-
-		if (DO_DEBUG(DBG_WAITINGLIST))
-			VSLb(req->vsl, SLT_Debug, "on waiting list <%p>", oh);
-		break;
+		return (hsh_lookup_busy(wrk, req, oh, ocp, bocp));
 	default:
 		INCOMPL();
 	}
-
-	return (retval);;
 }
 
 enum lookup_e
