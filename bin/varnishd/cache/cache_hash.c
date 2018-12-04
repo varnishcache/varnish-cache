@@ -452,46 +452,31 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 		}
 	}
 
+	if (oc != NULL && oc->flags & OC_F_HFP) {
+		xid = ObjGetXID(wrk, oc);
+		dttl = EXP_Dttl(req, oc);
+		AN(hsh_deref_objhead_unlock(wrk, &oh));
+		wrk->stats->cache_hitpass++;
+		VSLb(req->vsl, SLT_HitPass, "%u %.6f", xid, dttl);
+		return (HSH_HITPASS);
+	}
+
 	if (oc != NULL) {
-		if (oc->flags & OC_F_HFP) {
-			xid = ObjGetXID(wrk, oc);
-			dttl = EXP_Dttl(req, oc);
-			oc = NULL;
-			retval = HSH_HITPASS;
-		} else if (oc->flags & OC_F_HFM) {
+		*ocp = oc;
+		oc->refcnt++;
+		if (oc->flags & OC_F_HFM) {
 			xid = ObjGetXID(wrk, oc);
 			dttl = EXP_Dttl(req, oc);
 			*bocp = hsh_insert_busyobj(wrk, oh);
-			oc->refcnt++;
-			retval = HSH_HITMISS;
-		} else {
-			oc->refcnt++;
-			if (oc->hits < LONG_MAX)
-				oc->hits++;
-			retval = HSH_HIT;
-		}
-		*ocp = oc;
-		if (*bocp == NULL)
-			AN(hsh_deref_objhead_unlock(wrk, &oh));
-		else
 			Lck_Unlock(&oh->mtx);
-
-		switch (retval) {
-		case HSH_HITPASS:
-			wrk->stats->cache_hitpass++;
-			VSLb(req->vsl, SLT_HitPass, "%u %.6f", xid, dttl);
-			break;
-		case HSH_HITMISS:
 			wrk->stats->cache_hitmiss++;
 			VSLb(req->vsl, SLT_HitMiss, "%u %.6f", xid, dttl);
-			break;
-		case HSH_HIT:
-			break;
-		default:
-			INCOMPL();
-		}
-
-		return (retval);
+			return (HSH_HITMISS);
+		} 
+		if (oc->hits < LONG_MAX)
+			oc->hits++;
+		AN(hsh_deref_objhead_unlock(wrk, &oh));
+		return (HSH_HIT);
 	}
 
 	if (exp_oc != NULL && exp_oc->flags & OC_F_HFM) {
@@ -499,6 +484,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 		 * expired HFM ("grace/keep HFM")
 		 *
 		 * XXX should HFM objects actually have grace/keep ?
+		 * XXX also:  why isn't *ocp = exp_oc ?
 		 */
 		xid = ObjGetXID(wrk, exp_oc);
 		dttl = EXP_Dttl(req, exp_oc);
