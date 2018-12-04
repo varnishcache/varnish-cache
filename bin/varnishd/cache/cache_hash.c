@@ -338,8 +338,7 @@ hsh_insert_busyobj(struct worker *wrk, struct objhead *oh)
  */
 
 enum lookup_e
-HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
-    int always_insert)
+HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 {
 	struct worker *wrk;
 	struct objhead *oh;
@@ -384,7 +383,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 	Lck_AssertHeld(&oh->mtx);
 
-	if (always_insert) {
+	if (req->hash_always_miss) {
 		/* XXX: should we do predictive Vary in this case ? */
 		/* Insert new objcore in objecthead and release mutex */
 		*bocp = hsh_insert_busyobj(wrk, oh);
@@ -472,7 +471,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 			wrk->stats->cache_hitmiss++;
 			VSLb(req->vsl, SLT_HitMiss, "%u %.6f", xid, dttl);
 			return (HSH_HITMISS);
-		} 
+		}
 		if (oc->hits < LONG_MAX)
 			oc->hits++;
 		AN(hsh_deref_objhead_unlock(wrk, &oh));

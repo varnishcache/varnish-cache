@@ -495,7 +495,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	AZ(req->objcore);
 	if (req->hash_objhead)
 		had_objhead = 1;
-	lr = HSH_Lookup(req, &oc, &busy, req->hash_always_miss ? 1 : 0);
+	lr = HSH_Lookup(req, &oc, &busy);
 	if (lr == HSH_BUSY) {
 		/*
 		 * We lost the session to a busy object, disembark the
@@ -986,7 +986,8 @@ cnt_purge(struct worker *wrk, struct req *req)
 	VRY_Prep(req);
 
 	AZ(req->objcore);
-	lr = HSH_Lookup(req, &oc, &boc, 1);
+	req->hash_always_miss = 1;
+	lr = HSH_Lookup(req, &oc, &boc);
 	assert (lr == HSH_MISS);
 	AZ(oc);
 	CHECK_OBJ_NOTNULL(boc, OBJCORE_MAGIC);

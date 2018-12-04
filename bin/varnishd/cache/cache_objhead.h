@@ -68,8 +68,7 @@ int HSH_DerefObjCore(struct worker *, struct objcore **, int rushmax);
 #define HSH_RUSH_POLICY -1
 #define HSH_RUSH_ALL	INT_MAX
 
-enum lookup_e HSH_Lookup(struct req *, struct objcore **, struct objcore **,
-    int always_insert);
+enum lookup_e HSH_Lookup(struct req *, struct objcore **, struct objcore **);
 void HSH_Ref(struct objcore *o);
 void HSH_AddString(struct req *, void *ctx, const char *str);
 unsigned HSH_Purge(struct worker *, struct objhead *, vtim_real ttl_now,
