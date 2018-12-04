@@ -439,57 +439,59 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 		}
 
 		if (EXP_Ttl(req, oc) > req->t_req) {
-			/* If still valid, use it */
 			assert(oh->refcnt > 1);
 			assert(oc->objhead == oh);
-			if (oc->flags & OC_F_HFP) {
-				xid = ObjGetXID(wrk, oc);
-				dttl = EXP_Dttl(req, oc);
-				oc = NULL;
-				retval = HSH_HITPASS;
-			} else if (oc->flags & OC_F_HFM) {
-				xid = ObjGetXID(wrk, oc);
-				dttl = EXP_Dttl(req, oc);
-				*bocp = hsh_insert_busyobj(wrk, oh);
-				oc->refcnt++;
-				retval = HSH_HITMISS;
-			} else {
-				oc->refcnt++;
-				if (oc->hits < LONG_MAX)
-					oc->hits++;
-				retval = HSH_HIT;
-			}
-			*ocp = oc;
-			if (*bocp == NULL)
-				AN(hsh_deref_objhead_unlock(wrk, &oh));
-			else
-				Lck_Unlock(&oh->mtx);
-
-			switch (retval) {
-			case HSH_HITPASS:
-				wrk->stats->cache_hitpass++;
-				VSLb(req->vsl, SLT_HitPass, "%u %.6f",
-				     xid, dttl);
-				break;
-			case HSH_HITMISS:
-				wrk->stats->cache_hitmiss++;
-				VSLb(req->vsl, SLT_HitMiss, "%u %.6f",
-				     xid, dttl);
-				break;
-			case HSH_HIT:
-				break;
-			default:
-				INCOMPL();
-			}
-
-			return (retval);
+			break;
 		}
+
 		if (EXP_Ttl(NULL, oc) < req->t_req && /* ignore req.ttl */
 		    oc->t_origin > exp_t_origin) {
 			/* record the newest object */
 			exp_oc = oc;
 			exp_t_origin = oc->t_origin;
 		}
+	}
+
+	if (oc != NULL) {
+		if (oc->flags & OC_F_HFP) {
+			xid = ObjGetXID(wrk, oc);
+			dttl = EXP_Dttl(req, oc);
+			oc = NULL;
+			retval = HSH_HITPASS;
+		} else if (oc->flags & OC_F_HFM) {
+			xid = ObjGetXID(wrk, oc);
+			dttl = EXP_Dttl(req, oc);
+			*bocp = hsh_insert_busyobj(wrk, oh);
+			oc->refcnt++;
+			retval = HSH_HITMISS;
+		} else {
+			oc->refcnt++;
+			if (oc->hits < LONG_MAX)
+				oc->hits++;
+			retval = HSH_HIT;
+		}
+		*ocp = oc;
+		if (*bocp == NULL)
+			AN(hsh_deref_objhead_unlock(wrk, &oh));
+		else
+			Lck_Unlock(&oh->mtx);
+
+		switch (retval) {
+		case HSH_HITPASS:
+			wrk->stats->cache_hitpass++;
+			VSLb(req->vsl, SLT_HitPass, "%u %.6f", xid, dttl);
+			break;
+		case HSH_HITMISS:
+			wrk->stats->cache_hitmiss++;
+			VSLb(req->vsl, SLT_HitMiss, "%u %.6f", xid, dttl);
+			break;
+		case HSH_HIT:
+			break;
+		default:
+			INCOMPL();
+		}
+
+		return (retval);
 	}
 
 	if (exp_oc != NULL && exp_oc->flags & OC_F_HFM) {
