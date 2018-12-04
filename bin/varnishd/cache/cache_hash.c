@@ -77,6 +77,7 @@ static void hsh_rush1(const struct worker *, struct objhead *,
     struct rush *, int);
 static void hsh_rush2(struct worker *, struct rush *);
 static int hsh_deref_objhead(struct worker *wrk, struct objhead **poh);
+static int hsh_deref_objhead_unlock(struct worker *wrk, struct objhead **poh);
 
 /*---------------------------------------------------------------------*/
 
@@ -979,7 +980,7 @@ HSH_DerefObjCore(struct worker *wrk, struct objcore **ocp, int rushmax)
 }
 
 static int
-hsh_deref_objhead(struct worker *wrk, struct objhead **poh)
+hsh_deref_objhead_unlock(struct worker *wrk, struct objhead **poh)
 {
 	struct objhead *oh;
 	struct rush rush;
@@ -988,9 +989,10 @@ hsh_deref_objhead(struct worker *wrk, struct objhead **poh)
 	TAKE_OBJ_NOTNULL(oh, poh, OBJHEAD_MAGIC);
 	INIT_OBJ(&rush, RUSH_MAGIC);
 
+	Lck_AssertHeld(&oh->mtx);
+
 	if (oh == private_oh) {
 		assert(VTAILQ_EMPTY(&oh->waitinglist));
-		Lck_Lock(&oh->mtx);
 		assert(oh->refcnt > 1);
 		oh->refcnt--;
 		Lck_Unlock(&oh->mtx);
@@ -1005,7 +1007,6 @@ hsh_deref_objhead(struct worker *wrk, struct objhead **poh)
 	 * just make the hold the same ref's as objcore, that would
 	 * confuse hashers.
 	 */
-	Lck_Lock(&oh->mtx);
 	while (oh->refcnt == 1 && !VTAILQ_EMPTY(&oh->waitinglist)) {
 		hsh_rush1(wrk, oh, &rush, HSH_RUSH_ALL);
 		Lck_Unlock(&oh->mtx);
@@ -1015,6 +1016,18 @@ hsh_deref_objhead(struct worker *wrk, struct objhead **poh)
 
 	assert(oh->refcnt > 0);
 	return (hash->deref(wrk, oh));
+}
+
+static int
+hsh_deref_objhead(struct worker *wrk, struct objhead **poh)
+{
+	struct objhead *oh;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	TAKE_OBJ_NOTNULL(oh, poh, OBJHEAD_MAGIC);
+
+	Lck_Lock(&oh->mtx);
+	return (hsh_deref_objhead_unlock(wrk, &oh));
 }
 
 void
