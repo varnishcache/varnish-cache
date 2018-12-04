@@ -76,7 +76,7 @@ static struct objhead *private_oh;
 static void hsh_rush1(const struct worker *, struct objhead *,
     struct rush *, int);
 static void hsh_rush2(struct worker *, struct rush *);
-static int HSH_DerefObjHead(struct worker *wrk, struct objhead **poh);
+static int hsh_deref_objhead(struct worker *wrk, struct objhead **poh);
 
 /*---------------------------------------------------------------------*/
 
@@ -461,7 +461,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 			Lck_Unlock(&oh->mtx);
 			*ocp = oc;
 			if (*bocp == NULL)
-				assert(HSH_DerefObjHead(wrk, &oh));
+				assert(hsh_deref_objhead(wrk, &oh));
 
 			switch (retval) {
 			case HSH_HITPASS:
@@ -541,7 +541,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 		Lck_Unlock(&oh->mtx);
 		*ocp = exp_oc;
 
-		assert(HSH_DerefObjHead(wrk, &oh));
+		assert(hsh_deref_objhead(wrk, &oh));
 		if (exp_oc->hits < LONG_MAX)
 			exp_oc->hits++;
 		return (HSH_GRACE);
@@ -974,12 +974,12 @@ HSH_DerefObjCore(struct worker *wrk, struct objcore **ocp, int rushmax)
 
 	/* Drop our ref on the objhead */
 	assert(oh->refcnt > 0);
-	(void)HSH_DerefObjHead(wrk, &oh);
+	(void)hsh_deref_objhead(wrk, &oh);
 	return (0);
 }
 
 static int
-HSH_DerefObjHead(struct worker *wrk, struct objhead **poh)
+hsh_deref_objhead(struct worker *wrk, struct objhead **poh)
 {
 	struct objhead *oh;
 	struct rush rush;
