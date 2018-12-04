@@ -346,7 +346,6 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 	struct objcore *exp_oc;
 	double exp_t_origin;
 	int busy_found;
-	enum lookup_e retval;
 	const uint8_t *vary;
 	unsigned xid = 0;
 	float dttl = 0.0;
@@ -448,6 +447,8 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 			/* record the newest object */
 			exp_oc = oc;
 			exp_t_origin = oc->t_origin;
+			assert(oh->refcnt > 1);
+			assert(exp_oc->objhead == oh);
 		}
 	}
 
@@ -489,43 +490,31 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 		dttl = EXP_Dttl(req, exp_oc);
 		*bocp = hsh_insert_busyobj(wrk, oh);
 		Lck_Unlock(&oh->mtx);
-
 		wrk->stats->cache_hitmiss++;
 		VSLb(req->vsl, SLT_HitMiss, "%u %.6f", xid, dttl);
 		return (HSH_HITMISS);
 	}
 
 	if (!busy_found) {
-		/* Insert objcore in objecthead */
 		*bocp = hsh_insert_busyobj(wrk, oh);
 
 		if (exp_oc != NULL) {
-			assert(oh->refcnt > 1);
-			assert(exp_oc->objhead == oh);
 			exp_oc->refcnt++;
-			Lck_Unlock(&oh->mtx);
 			*ocp = exp_oc;
-
-			if (EXP_Ttl_grace(req, exp_oc) < req->t_req) {
-				retval = HSH_MISS;
-			} else {
+			if (EXP_Ttl_grace(req, exp_oc) > req->t_req) {
 				if (exp_oc->hits < LONG_MAX)
 					exp_oc->hits++;
-				retval = HSH_GRACE;
+				Lck_Unlock(&oh->mtx);
+				return (HSH_GRACE);
 			}
-		} else {
-			Lck_Unlock(&oh->mtx);
-			retval = HSH_MISS;
 		}
-
-		return (retval);
+		Lck_Unlock(&oh->mtx);
+		return (HSH_MISS);
 	}
 
 	AN(busy_found);
 	if (exp_oc != NULL && EXP_Ttl_grace(req, exp_oc) >= req->t_req) {
 		/* we do not wait on the busy object if in grace */
-		assert(oh->refcnt > 1);
-		assert(exp_oc->objhead == oh);
 		exp_oc->refcnt++;
 		*ocp = exp_oc;
 		if (exp_oc->hits < LONG_MAX)
