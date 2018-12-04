@@ -211,7 +211,7 @@ VCL_Panic(struct vsb *vsb, const struct vcl *vcl)
 		VSB_printf(vsb, "conf = NULL\n");
 	} else {
 		PAN_CheckMagic(vsb, vcl->conf, VCL_CONF_MAGIC);
-		VSB_printf(vsb, "syntax = \"%d\",\n", vcl->conf->syntax);
+		VSB_printf(vsb, "syntax = \"%u\",\n", vcl->conf->syntax);
 		VSB_printf(vsb, "srcname = {\n");
 		VSB_indent(vsb, 2);
 		for (i = 0; i < vcl->conf->nsrc; ++i)
