@@ -773,8 +773,10 @@ HSH_Unbusy(struct worker *wrk, struct objcore *oc)
 	VTAILQ_REMOVE(&oh->objcs, oc, hsh_list);
 	VTAILQ_INSERT_HEAD(&oh->objcs, oc, hsh_list);
 	oc->flags &= ~OC_F_BUSY;
-	if (!VTAILQ_EMPTY(&oh->waitinglist))
+	if (!VTAILQ_EMPTY(&oh->waitinglist)) {
+		assert(oh->refcnt > 1);
 		hsh_rush1(wrk, oh, &rush, HSH_RUSH_POLICY);
+	}
 	Lck_Unlock(&oh->mtx);
 	if (!(oc->flags & OC_F_PRIVATE))
 		EXP_Insert(wrk, oc);
@@ -929,8 +931,10 @@ HSH_DerefObjCore(struct worker *wrk, struct objcore **ocp, int rushmax)
 	r = --oc->refcnt;
 	if (!r)
 		VTAILQ_REMOVE(&oh->objcs, oc, hsh_list);
-	if (!VTAILQ_EMPTY(&oh->waitinglist))
+	if (!VTAILQ_EMPTY(&oh->waitinglist)) {
+		assert(oh->refcnt > 1);
 		hsh_rush1(wrk, oh, &rush, rushmax);
+	}
 	Lck_Unlock(&oh->mtx);
 	hsh_rush2(wrk, &rush);
 	if (r != 0)
@@ -955,11 +959,9 @@ static int
 hsh_deref_objhead_unlock(struct worker *wrk, struct objhead **poh)
 {
 	struct objhead *oh;
-	struct rush rush;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	TAKE_OBJ_NOTNULL(oh, poh, OBJHEAD_MAGIC);
-	INIT_OBJ(&rush, RUSH_MAGIC);
 
 	Lck_AssertHeld(&oh->mtx);
 
@@ -971,20 +973,8 @@ hsh_deref_objhead_unlock(struct worker *wrk, struct objhead **poh)
 		return(1);
 	}
 
-	/*
-	 * Make absolutely certain that we do not let the final ref
-	 * disappear until the waitinglist is empty.
-	 * This is necessary because the req's on the waiting list do
-	 * not hold any ref on the objhead of their own, and we cannot
-	 * just make the hold the same ref's as objcore, that would
-	 * confuse hashers.
-	 */
-	while (oh->refcnt == 1 && !VTAILQ_EMPTY(&oh->waitinglist)) {
-		hsh_rush1(wrk, oh, &rush, HSH_RUSH_ALL);
-		Lck_Unlock(&oh->mtx);
-		hsh_rush2(wrk, &rush);
-		Lck_Lock(&oh->mtx);
-	}
+	if (oh->refcnt == 1)
+		assert(VTAILQ_EMPTY(&oh->waitinglist));
 
 	assert(oh->refcnt > 0);
 	return (hash->deref(wrk, oh));
