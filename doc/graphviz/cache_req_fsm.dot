@@ -124,7 +124,7 @@ digraph cache_req_fsm {
 			 label="{<top>cnt_lookup:|{vcl_hit\{\}|{req.*|obj.*}}|{fail|<deliver>deliver|<miss>miss|restart|synth|<pass>pass}}"
 		]
 	}
-	lookup:busy:e -> lookup:top:e [label="(waitinglist)",
+	lookup:busy:s -> lookup:top:ne [label=" waitinglist",
 				       color=grey,
 				       fontcolor=grey]
 	lookup:miss:s -> miss [style=bold,color=blue]
