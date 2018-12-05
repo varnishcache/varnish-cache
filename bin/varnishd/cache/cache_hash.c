@@ -473,8 +473,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 			VSLb(req->vsl, SLT_HitMiss, "%u %.6f", xid, dttl);
 			return (HSH_HITMISS);
 		}
-		if (oc->hits < LONG_MAX)
-			oc->hits++;
+		oc->hits++;
 		AN(hsh_deref_objhead_unlock(wrk, &oh));
 		return (HSH_HIT);
 	}
@@ -502,8 +501,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 			exp_oc->refcnt++;
 			*ocp = exp_oc;
 			if (EXP_Ttl_grace(req, exp_oc) > req->t_req) {
-				if (exp_oc->hits < LONG_MAX)
-					exp_oc->hits++;
+				exp_oc->hits++;
 				Lck_Unlock(&oh->mtx);
 				return (HSH_GRACE);
 			}
@@ -517,8 +515,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 		/* we do not wait on the busy object if in grace */
 		exp_oc->refcnt++;
 		*ocp = exp_oc;
-		if (exp_oc->hits < LONG_MAX)
-			exp_oc->hits++;
+		exp_oc->hits++;
 		AN(hsh_deref_objhead_unlock(wrk, &oh));
 		return (HSH_GRACE);
 	}

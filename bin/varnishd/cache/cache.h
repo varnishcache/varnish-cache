@@ -346,7 +346,8 @@ struct objcore {
 	struct objhead		*objhead;
 	struct boc		*boc;
 	vtim_real		timer_when;
-	long			hits;
+	VCL_INT			hits;
+
 
 	vtim_real		t_origin;
 	float			ttl;
