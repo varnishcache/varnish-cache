@@ -522,11 +522,9 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 
 	/* There are one or more busy objects, wait for them */
 	VTAILQ_INSERT_TAIL(&oh->waitinglist, req, w_list);
-	Lck_Unlock(&oh->mtx);
 
 	AZ(req->hash_ignore_busy);
 
-	wrk->stats->busy_sleep++;
 	/*
 	 * The objhead reference transfers to the sess, we get it
 	 * back when the sess comes off the waiting list and
@@ -539,6 +537,9 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 	if (DO_DEBUG(DBG_WAITINGLIST))
 		VSLb(req->vsl, SLT_Debug, "on waiting list <%p>", oh);
 
+	Lck_Unlock(&oh->mtx);
+
+	wrk->stats->busy_sleep++;
 	return (HSH_BUSY);
 }
 
