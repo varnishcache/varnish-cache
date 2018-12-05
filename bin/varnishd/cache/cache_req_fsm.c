@@ -552,24 +552,6 @@ cnt_lookup(struct worker *wrk, struct req *req)
 			wrk->stats->cache_hit_grace++;
 		req->req_step = R_STP_DELIVER;
 		return (REQ_FSM_MORE);
-	case VCL_RET_MISS:
-		if (busy != NULL) {
-			req->objcore = busy;
-			req->stale_oc = oc;
-			req->req_step = R_STP_MISS;
-		} else {
-			(void)HSH_DerefObjCore(wrk, &req->objcore,
-			    HSH_RUSH_POLICY);
-			/*
-			 * We don't have a busy object, so treat this
-			 * like a pass
-			 */
-			VSLb(req->vsl, SLT_VCL_Error,
-			    "vcl_hit{} returns miss without busy object."
-			    "  Doing pass.");
-			req->req_step = R_STP_PASS;
-		}
-		return (REQ_FSM_MORE);
 	case VCL_RET_RESTART:
 		req->req_step = R_STP_RESTART;
 		break;

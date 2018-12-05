@@ -115,7 +115,7 @@ returns = (
     ),
     ('hit',
      "C",
-     ('fail', 'synth', 'restart', 'pass', 'miss', 'deliver',)
+     ('fail', 'synth', 'restart', 'pass', 'deliver',)
     ),
     ('deliver',
      "C",

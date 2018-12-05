@@ -133,7 +133,6 @@ digraph cache_req_fsm {
 	lookup:h:s -> lookup2 [style=bold,color=green]
 
 	lookup2:deliver:s -> deliver:n [style=bold,color=green]
-	lookup2:miss:s -> miss [color=blue,label=" #1799 \n EOL"]
 	lookup2:pass:s -> pass [style=bold,color=red]
 
 	/* cnt_miss */
