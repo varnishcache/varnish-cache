@@ -128,8 +128,8 @@ digraph cache_req_fsm {
 				       color=grey,
 				       fontcolor=grey]
 	lookup:miss:s -> miss [style=bold,color=blue]
-	lookup:hfm:s -> miss [style=bold,color=blue]
-	lookup:hfp:s -> pass [style=bold,color=red]
+	lookup:hfm:s -> miss [style=bold,color=blue,label=" req.\n is_hitmiss"]
+	lookup:hfp:s -> pass [style=bold,color=red,label=" req.\n is_hitpass"]
 	lookup:h:s -> lookup2 [style=bold,color=green]
 
 	lookup2:deliver:s -> deliver:n [style=bold,color=green]
