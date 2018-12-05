@@ -501,9 +501,8 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 		if (exp_oc != NULL) {
 			exp_oc->refcnt++;
 			*ocp = exp_oc;
-			if (EXP_Ttl_grace(req, exp_oc) > req->t_req) {
-				if (exp_oc->hits < LONG_MAX)
-					exp_oc->hits++;
+			if (EXP_Ttl_grace(req, exp_oc) >= req->t_req) {
+				exp_oc->hits++;
 				Lck_Unlock(&oh->mtx);
 				return (HSH_GRACE);
 			}
