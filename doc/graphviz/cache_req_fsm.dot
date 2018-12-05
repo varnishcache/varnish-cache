@@ -117,7 +117,7 @@ digraph cache_req_fsm {
 			shape=record
 			color=grey
 			fontcolor=grey
-			label="{<top>cnt_lookup:|hash lookup|{<h>hit?|<miss>miss?|<hfp>hit-for-pass?|<busy>busy?}}"
+			label="{<top>cnt_lookup:|hash lookup|{<h>hit?|<miss>miss?|<hfm>hit-for-miss?|<hfp>hit-for-pass?|<busy>busy?}}"
 		]
 		lookup2 [
 			 shape=record
@@ -128,6 +128,7 @@ digraph cache_req_fsm {
 				       color=grey,
 				       fontcolor=grey]
 	lookup:miss:s -> miss [style=bold,color=blue]
+	lookup:hfm:s -> miss [style=bold,color=blue]
 	lookup:hfp:s -> pass [style=bold,color=red]
 	lookup:h:s -> lookup2 [style=bold,color=green]
 
