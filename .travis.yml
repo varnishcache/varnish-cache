@@ -24,7 +24,6 @@ addons:
     packages:
       - python-docutils
       - python-sphinx
-      - graphviz
   homebrew:
     packages:
       - docutils
