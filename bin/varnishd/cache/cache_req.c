@@ -93,7 +93,6 @@ Req_New(const struct worker *wrk, struct sess *sp)
 	AN(req);
 	req->magic = REQ_MAGIC;
 	req->sp = sp;
-	req->top = req;	// esi overrides
 
 	e = (char*)req + sz;
 	p = (char*)(req + 1);
@@ -176,6 +175,7 @@ Req_Release(struct req *req)
 	MPL_AssertSane(req);
 	VSL_Flush(req->vsl, 0);
 	req->sp = NULL;
+	req->top = NULL;
 	MPL_Free(pp->mpl_req, req);
 }
 
@@ -194,6 +194,7 @@ Req_Rollback(struct req *req)
 	if (WS_Overflowed(req->ws))
 		req->wrk->stats->ws_client_overflow++;
 	WS_Reset(req->ws, req->ws_req);
+	req->top = NULL;
 }
 
 /*----------------------------------------------------------------------
@@ -211,10 +212,10 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 
 	req->director_hint = NULL;
 	req->restarts = 0;
+	req->top = 0;
 
 	AZ(req->esi_level);
 	AZ(req->privs->magic);
-	assert(req->top == req);
 
 	if (req->vcl != NULL) {
 		if (wrk->vcl != NULL)
@@ -260,4 +261,21 @@ Req_Fail(struct req *req, enum sess_close reason)
 
 	AN(req->transport->req_fail);
 	req->transport->req_fail(req, reason);
+}
+
+/*----------------------------------------------------------------------
+ */
+
+void
+Req_MakeTop(struct req *req)
+{
+
+	CHECK_OBJ_ORNULL(req->top, REQTOP_MAGIC);
+	if (req->top != NULL)
+		return;
+	req->top = WS_Alloc(req->ws, sizeof *req->top);
+	if (req->top != NULL) {
+		INIT_OBJ(req->top, REQTOP_MAGIC);
+		req->top->topreq = req;
+	}
 }

@@ -103,6 +103,7 @@ ved_include(struct req *preq, const char *src, const char *host,
 	enum req_fsm_nxt s;
 
 	CHECK_OBJ_NOTNULL(preq, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(preq->top, REQTOP_MAGIC);
 	sp = preq->sp;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(ecx, ECX_MAGIC);
@@ -123,11 +124,6 @@ ved_include(struct req *preq, const char *src, const char *host,
 	VSLb(req->vsl, SLT_Begin, "req %u esi", VXID(preq->vsl->wid));
 	VSLb(preq->vsl, SLT_Link, "req %u esi", VXID(req->vsl->wid));
 	req->esi_level = preq->esi_level + 1;
-
-	if (preq->esi_level == 0)
-		assert(preq->top == preq);
-	else
-		CHECK_OBJ_NOTNULL(preq->top, REQ_MAGIC);
 
 	req->top = preq->top;
 
@@ -263,6 +259,17 @@ ved_vdp_esi_init(struct req *req, void **priv)
 	ecx->preq = req;
 	*priv = ecx;
 	RFC2616_Weaken_Etag(req->resp);
+
+	if (req->esi_level == 0) {
+		Req_MakeTop(req);
+		if (req->top == NULL) {
+			VSLb(req->vsl, SLT_Error,
+			    "(top)request workspace overflow");
+			Req_Fail(req, SC_OVERLOAD);
+			return (-1);
+		}
+	}
+
 	req->res_mode |= RES_ESI;
 	if (req->resp_len != 0)
 		req->resp_len = -1;

@@ -158,17 +158,23 @@ struct vmod_priv *
 VRT_priv_top(VRT_CTX, const void *vmod_id)
 {
 	struct vrt_privs *vps;
+	struct req *req;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	if (ctx->req) {
-		CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-		CHECK_OBJ_NOTNULL(ctx->req->top, REQ_MAGIC);
-		CAST_OBJ_NOTNULL(vps, ctx->req->top->privs, VRT_PRIVS_MAGIC);
-		return (vrt_priv_dynamic(ctx->req->top->ws, vps,
-		    (uintptr_t)vmod_id));
-	} else
+	if (ctx->req == NULL) {
 		WRONG("PRIV_TOP is only accessible in client VCL context");
-	NEEDLESS(return NULL);
+		NEEDLESS(return NULL);
+	}
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	if (ctx->req->top != NULL) {
+		CHECK_OBJ_NOTNULL(ctx->req->top, REQTOP_MAGIC);
+		CHECK_OBJ_NOTNULL(ctx->req->top->topreq, REQ_MAGIC);
+		req = ctx->req->top->topreq;
+	} else {
+		req = ctx->req;
+	}
+	CAST_OBJ_NOTNULL(vps, req->privs, VRT_PRIVS_MAGIC);
+	return (vrt_priv_dynamic(req->ws, vps, (uintptr_t)vmod_id));
 }
 
 /*--------------------------------------------------------------------

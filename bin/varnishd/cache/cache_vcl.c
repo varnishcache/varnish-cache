@@ -94,7 +94,11 @@ VCL_Req2Ctx(struct vrt_ctx *ctx, struct req *req)
 	ctx->vcl = req->vcl;
 	ctx->vsl = req->vsl;
 	ctx->http_req = req->http;
-	ctx->http_req_top = req->top->http;
+	CHECK_OBJ_ORNULL(req->top, REQTOP_MAGIC);
+	if (req->top != NULL)
+		ctx->http_req_top = req->top->topreq->http;
+	else
+		ctx->http_req_top = req->http;
 	ctx->http_resp = req->resp;
 	ctx->req = req;
 	ctx->sp = req->sp;

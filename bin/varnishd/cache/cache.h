@@ -444,6 +444,12 @@ struct busyobj {
 
 /*--------------------------------------------------------------------*/
 
+struct reqtop {
+	unsigned		magic;
+#define REQTOP_MAGIC		0x57fbda52
+	struct req		*topreq;
+};
+
 struct req {
 	unsigned		magic;
 #define REQ_MAGIC		0x2751aaa1
@@ -453,7 +459,7 @@ struct req {
 	enum sess_close		doclose;
 	int			restarts;
 	int			esi_level;
-	struct req		*top;	/* esi_level == 0 request */
+	struct reqtop		*top;	/* esi_level == 0 request */
 
 #define REQ_FLAG(l, r, w, d) unsigned	l:1;
 #include "tbl/req_flags.h"
