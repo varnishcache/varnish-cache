@@ -44,6 +44,7 @@
 #include "cache_director.h"
 #include "cache_vcl.h"
 #include "vcli_serve.h"
+#include "vtim.h"
 
 const char * const VCL_TEMP_INIT = "init";
 const char * const VCL_TEMP_COLD = "cold";
@@ -115,6 +116,7 @@ vcl_get_ctx(unsigned method, int msg)
 	handling_cli = 0;
 	ctx_cli.handling = &handling_cli;
 	ctx_cli.method = method;
+	ctx_cli.now = VTIM_real();
 	if (msg) {
 		ctx_cli.msg = VSB_new_auto();
 		AN(ctx_cli.msg);
