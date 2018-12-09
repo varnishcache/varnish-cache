@@ -14,13 +14,17 @@ varnish v1 -vcl+backend {
 } -start
 
 client c1 {
+	txreq -hdr "ttl: 0.010s"
+	rxresp
+	expect resp.http.ttl == 1000000.010
+
 	txreq -hdr "ttl: 10ms"
 	rxresp
 	expect resp.http.ttl == 1000000.010
 
-	txreq -hdr "ttl: 10s"
+	txreq -hdr "ttl: 10.1s"
 	rxresp
-	expect resp.http.ttl == 1000010.000
+	expect resp.http.ttl == 1000010.100
 
 	txreq -hdr "ttl: 10m"
 	rxresp
