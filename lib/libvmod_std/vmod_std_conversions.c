@@ -44,6 +44,80 @@
 #include "vtim.h"
 #include "vcc_if.h"
 
+VCL_BYTES v_matchproto_(td_std_bytes)
+vmod_bytes(VRT_CTX, VCL_STRING b, VCL_BYTES d)
+{
+	uintmax_t ret;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	if (VNUM_2bytes(b, &ret, 0)) {
+		return (d);
+	}
+
+	return (ret);
+}
+
+VCL_STRING v_matchproto_(td_std_bytes2string)
+vmod_bytes2string(VRT_CTX, VCL_BYTES b, VCL_ENUM unit)
+{
+	int i;
+	char *ret;
+	double value;
+	size_t len;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	if (!strcmp(unit, "B")) {
+		value = b;
+	} else if (!strcmp(unit, "KB")) {
+		value = b / 1024.;
+	} else if (!strcmp(unit, "MB")) {
+		value = b / (1024. * 1024.);
+	} else if (!strcmp(unit, "GB")) {
+		value = b / (1024. * 1024. * 1024.);
+	} else if (!strcmp(unit, "TB")) {
+		value = b / (1024. * 1024. * 1024. * 1024.);
+	} else if (!strcmp(unit, "PB")) {
+		value = b / (1024. * 1024. * 1024. * 1024. * 1024.);
+	} else {
+		VRT_fail(ctx, "vmod std.bytes2string(): bad unit");
+		return (NULL);
+	}
+
+	/* Minimum number of decimal places needed to get 1B in PB.
+	 * Also include 2 spaces to reserve space for units
+	 */
+	ret = WS_Printf(ctx->ws, "%.28f  ", value);
+	if (!ret) {
+		VRT_fail(ctx, "vmod std.bytes2string(): "
+		    "insufficient workspace");
+		return (NULL);
+	}
+
+	len = strlen(ret);
+
+	/* Null + 2 spaces */
+	i = 3;
+	while (ret[len - i] == '0') {
+		i++;
+	}
+
+	/* If the number is an integer, remove decimal point */
+	if (ret[len - i] != '.') {
+		i--;
+	}
+
+	strncpy(&ret[len - i], unit, 2);
+	if (value == b) {
+		ret[len - i + 1] = '\0';
+	} else {
+		ret[len - i + 2] = '\0';
+	}
+
+	return (ret);
+}
+
 VCL_DURATION v_matchproto_(td_std_duration)
 vmod_duration(VRT_CTX, VCL_STRING p, VCL_DURATION d)
 {

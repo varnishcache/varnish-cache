@@ -144,6 +144,24 @@ Examples
 	| std.collect(req.http.accept);
 	| std.collect(req.http.cookie, "; ");
 
+$Function BYTES bytes(STRING b, BYTES fallback)
+
+	Description
+		Converts the string *b* to bytes. *b* must be quantified
+		with B (bytes), MB (megabytes), KB (kilobytes), GB (gigabytes) or
+		TB (terabytes), PB (petabytes) units. If conversion fails, *fallback*
+		will be returned.
+	Example
+		| std.cache_req_body(std.bytes(req.http.stored_size, 1MB));
+
+$Function STRING bytes2string(BYTES b, ENUM {B, KB, MB, GB, TB, PB} unit = "B")
+
+	Description
+		Converts the bytes *b* to string. *unit* determines the unit the
+		converted string should be.
+	Example
+		| set req.http.size = std.bytes2string(10000KB, GB);
+
 $Function DURATION duration(STRING s, DURATION fallback)
 
 Description

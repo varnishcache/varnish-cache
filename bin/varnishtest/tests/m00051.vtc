@@ -1,0 +1,140 @@
+varnishtest "Test std.bytes"
+
+server s1 -repeat 30 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import std;
+
+	sub vcl_deliver {
+		set resp.http.converted = std.bytes(req.http.bytes, 11B);
+	}
+
+} -start
+
+client c1 {
+
+	txreq
+	rxresp
+	expect resp.http.converted == "11.000"
+
+	txreq -hdr "bytes: "
+	rxresp
+	expect resp.http.converted == "11.000"
+
+	txreq -hdr "bytes: 1"
+	rxresp
+	expect resp.http.converted == "1.000"
+
+	txreq -hdr "bytes: 0MB"
+	rxresp
+	expect resp.http.converted == "0.000"
+
+	txreq -hdr "bytes: 0.MB"
+	rxresp
+	expect resp.http.converted == "0.000"
+
+	txreq -hdr "bytes: 0.0MB"
+	rxresp
+	expect resp.http.converted == "0.000"
+
+	txreq -hdr "bytes: 1MB"
+	rxresp
+	expect resp.http.converted == "1048576.000"
+
+	txreq -hdr "bytes: 123456"
+	rxresp
+	expect resp.http.converted == "123456.000"
+
+	txreq -hdr "bytes: 666B"
+	rxresp
+	expect resp.http.converted == "666.000"
+
+	txreq -hdr "bytes: TB"
+	rxresp
+	expect resp.http.converted == "11.000"
+
+	txreq -hdr "bytes: 1234"
+	rxresp
+	expect resp.http.converted == "1234.000"
+
+	txreq -hdr "bytes: abcd"
+	rxresp
+	expect resp.http.converted == "11.000"
+
+	txreq -hdr "bytes: 10.B"
+	rxresp
+	expect resp.http.converted == "10.000"
+
+	txreq -hdr "bytes: 10."
+	rxresp
+	expect resp.http.converted == "10.000"
+
+	txreq -hdr "bytes: .1GB"
+	rxresp
+	expect resp.http.converted == "107374182.000"
+
+	txreq -hdr "bytes: 0.1GB"
+	rxresp
+	expect resp.http.converted == "107374182.000"
+
+	txreq -hdr "bytes: 0.1GB0"
+	rxresp
+	expect resp.http.converted == "11.000"
+
+	txreq -hdr "bytes: 0.1GBB"
+	rxresp
+	expect resp.http.converted == "11.000"
+
+	txreq -hdr "bytes: 0.1gb"
+	rxresp
+	expect resp.http.converted == "107374182.000"
+
+	txreq -hdr "bytes: 0.1 GB"
+	rxresp
+	expect resp.http.converted == "107374182.000"
+
+	txreq -hdr "bytes: 0.1PB"
+	rxresp
+	expect resp.http.converted == "112589990684262.000"
+
+	txreq -hdr "bytes: 1.1111GB"
+	rxresp
+	expect resp.http.converted == "1193034541.000"
+
+	txreq -hdr "bytes: 1.1.1GB"
+	rxresp
+	expect resp.http.converted == "11.000"
+
+	txreq -hdr "bytes: .1GBa"
+	rxresp
+	expect resp.http.converted == "11.000"
+
+	txreq -hdr "bytes: .1GB1"
+	rxresp
+	expect resp.http.converted == "11.000"
+
+	txreq -hdr "bytes: a.1GB"
+	rxresp
+	expect resp.http.converted == "11.000"
+
+	txreq -hdr "bytes: 1E10B"
+	rxresp
+	expect resp.http.converted == "10000000000.000"
+
+	txreq -hdr "bytes: ##"
+	rxresp
+	expect resp.http.converted == "11.000"
+
+	txreq -hdr "bytes: 00000001KB"
+	rxresp
+	expect resp.http.converted == "1024.000"
+
+	txreq -hdr "bytes: 100.00%"
+	rxresp
+	expect resp.http.converted == "11.000"
+
+} -run
+

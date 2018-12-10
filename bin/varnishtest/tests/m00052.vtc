@@ -1,0 +1,84 @@
+varnishtest "Test std.bytes2string"
+
+server s1 -repeat 13 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import std;
+	
+	sub vcl_deliver {
+		if (req.http.unit == "PB") {
+			set resp.http.out = std.bytes2string(std.bytes(req.http.in, 0B), unit = PB);
+		} else if (req.http.unit == "TB") {
+			set resp.http.out = std.bytes2string(std.bytes(req.http.in, 0B), unit = TB);
+		} else if (req.http.unit == "GB") {
+			set resp.http.out = std.bytes2string(std.bytes(req.http.in, 0B), unit = GB);
+		} else if (req.http.unit == "MB") {
+			set resp.http.out = std.bytes2string(std.bytes(req.http.in, 0B), unit = MB);
+		} else if (req.http.unit == "KB") {
+			set resp.http.out = std.bytes2string(std.bytes(req.http.in, 0B), unit = KB);
+		} else {
+			set resp.http.out = std.bytes2string(std.bytes(req.http.in, 0B), unit = B);
+		}
+	}
+
+} -start
+
+client c1 {
+
+	txreq -hdr "in: 1B" -hdr "unit: PB"
+	rxresp
+	expect resp.http.out == "0.0000000000000008881784197001PB"
+
+	txreq -hdr "in: 0.0000000000000008881784197001PB" -hdr "unit: B"
+	rxresp
+	expect resp.http.out == "1B"
+
+	txreq -hdr "in: 1B" -hdr "unit: TB"
+	rxresp
+	expect resp.http.out == "0.0000000000009094947017729282TB"
+
+	txreq -hdr "in: 0.0000000000009094947017729282TB" -hdr "unit: B"
+	rxresp
+	expect resp.http.out == "1B"
+
+	txreq -hdr "in: 1B" -hdr "unit: GB"
+	rxresp
+	expect resp.http.out == "0.0000000009313225746154785156GB"
+
+	txreq -hdr "in: 0.0000000009313225746154785156GB" -hdr "unit: B"
+	rxresp
+	expect resp.http.out == "1B"
+
+	txreq -hdr "in: 1KB" -hdr "unit: B"
+	rxresp
+	expect resp.http.out == "1024B"
+
+	txreq -hdr "in: 1024B" -hdr "unit: KB"
+	rxresp
+	expect resp.http.out == "1KB"
+
+	txreq -hdr "in: 5KB" -hdr "unit: GB"
+	rxresp
+	expect resp.http.out == "0.00000476837158203125GB"
+
+	txreq -hdr "in: 0.00000476837158203125GB" -hdr "unit: KB"
+	rxresp
+	expect resp.http.out == "5KB"
+
+	txreq -hdr "in: 4000GB" -hdr "unit: TB"
+	rxresp
+	expect resp.http.out == "3.90625TB" 
+
+	txreq -hdr "in: 3.90625TB" -hdr "unit: KB"
+	rxresp
+	expect resp.http.out == "4194304000KB"
+
+	txreq -hdr "in: 12345678910B" -hdr "unit: KB"
+	rxresp
+	expect resp.http.out == "12056327.060546875KB"
+
+} -run
+
