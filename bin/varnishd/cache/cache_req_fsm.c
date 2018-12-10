@@ -821,6 +821,7 @@ cnt_recv_prep(struct req *req, const char *ci)
 	req->is_hitmiss = 0;
 	req->is_hitpass = 0;
 }
+
 /*--------------------------------------------------------------------
  * We have a complete request, set everything up and start it.
  * We can come here both with a request from the client and with
@@ -1026,7 +1027,6 @@ CNT_Request(struct worker *wrk, struct req *req)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	AN(req->vcl);
 
 	/*
 	 * Possible entrance states
@@ -1041,6 +1041,13 @@ CNT_Request(struct worker *wrk, struct req *req)
 	/* wrk can have changed for restarts */
 	req->vfc->wrk = req->wrk = wrk;
 	wrk->vsl = req->vsl;
+	if (req->req_step == R_STP_TRANSPORT) {
+		AZ(req->vcl);
+		VCL_Refresh(&wrk->vcl);
+		req->vcl = wrk->vcl;
+		wrk->vcl = NULL;
+	}
+	AN(req->vcl);
 	if (req->req_step != R_STP_LOOKUP)
 		VCL_TaskEnter(req->vcl, req->privs);
 	for (nxt = REQ_FSM_MORE; nxt == REQ_FSM_MORE; ) {

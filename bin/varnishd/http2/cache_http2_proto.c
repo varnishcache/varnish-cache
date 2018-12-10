@@ -661,9 +661,6 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	req->t_req = VTIM_real();
 	req->t_prev = req->t_first;
 	VSLb_ts_req(req, "Start", req->t_first);
-	VCL_Refresh(&wrk->vcl);
-	req->vcl = wrk->vcl;
-	wrk->vcl = NULL;
 	req->acct.req_hdrbytes += h2->rxf_len;
 
 	HTTP_Setup(req->http, req->ws, req->vsl, SLT_ReqMethod);

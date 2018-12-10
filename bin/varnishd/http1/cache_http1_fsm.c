@@ -281,11 +281,6 @@ http1_dissect(struct worker *wrk, struct req *req)
 	VSLb_ts_req(req, "Start", req->t_first);
 	VSLb_ts_req(req, "Req", req->t_req);
 
-	/* Borrow VCL reference from worker thread */
-	VCL_Refresh(&wrk->vcl);
-	req->vcl = wrk->vcl;
-	wrk->vcl = NULL;
-
 	HTTP_Setup(req->http, req->ws, req->vsl, SLT_ReqMethod);
 	req->err_code = HTTP1_DissectRequest(req->htc, req->http);
 

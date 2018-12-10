@@ -239,8 +239,7 @@ h2_ou_rel(struct worker *wrk, struct req *req)
 {
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	AN (req->vcl);
-	VCL_Rel(&req->vcl);
+	AZ(req->vcl);
 	Req_AcctLogCharge(wrk->stats, req);
 	Req_Release(req);
 	return (0);
