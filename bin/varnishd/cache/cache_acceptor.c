@@ -460,6 +460,10 @@ vca_accept_task(struct worker *wrk, void *arg)
 	while (!pool_accepting)
 		VTIM_sleep(.1);
 
+	/* Dont hold on to (possibly) discarded VCLs */
+	if (wrk->vcl != NULL)
+		VCL_Rel(&wrk->vcl);
+
 	while (!ps->pool->die) {
 		INIT_OBJ(&wa, WRK_ACCEPT_MAGIC);
 		wa.acceptlsock = ls;
@@ -547,12 +551,6 @@ vca_accept_task(struct worker *wrk, void *arg)
 		if (!ps->pool->die && DO_DEBUG(DBG_SLOW_ACCEPTOR))
 			VTIM_sleep(2.0);
 
-		/*
-		 * We were able to hand off, so release this threads VCL
-		 * reference (if any) so we don't hold on to discarded VCLs.
-		 */
-		if (wrk->vcl != NULL)
-			VCL_Rel(&wrk->vcl);
 	}
 }
 
