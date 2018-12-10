@@ -345,6 +345,9 @@ h2_new_session(struct worker *wrk, void *arg)
 	sp = req->sp;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
+	if (wrk->vcl)
+		VCL_Rel(&wrk->vcl);
+
 	assert(req->transport == &H2_transport);
 
 	assert (req->err_code == H2_PU_MARKER || req->err_code == H2_OU_MARKER);
