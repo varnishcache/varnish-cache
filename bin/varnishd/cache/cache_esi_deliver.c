@@ -126,67 +126,58 @@ ved_include(struct req *preq, const char *src, const char *host,
 	}
 
 	req = Req_New(wrk, sp);
-	SES_Ref(sp);
-	req->req_body_status = REQ_BODY_NONE;
+	AN(req);
+	THR_SetRequest(req);
 	AZ(req->vsl->wid);
 	req->vsl->wid = VXID_Get(wrk, VSL_CLIENTMARKER);
+
 	VSLb(req->vsl, SLT_Begin, "req %u esi", VXID(preq->vsl->wid));
 	VSLb(preq->vsl, SLT_Link, "req %u esi", VXID(req->vsl->wid));
+
+	VSLb_ts_req(req, "Start", W_TIM_real(wrk));
+
 	req->esi_level = preq->esi_level + 1;
 
 	req->top = preq->top;
 
-	HTTP_Copy(req->http0, preq->http0);
+	HTTP_Setup(req->http, req->ws, req->vsl, SLT_ReqMethod);
+	HTTP_Copy(req->http, preq->http);
+	req->http->conds = 0;
 
-	req->http0->ws = req->ws;
-	req->http0->vsl = req->vsl;
-	req->http0->logtag = SLT_ReqMethod;
-	req->http0->conds = 0;
-
-	http_SetH(req->http0, HTTP_HDR_URL, src);
+	http_SetH(req->http, HTTP_HDR_URL, src);
 	if (host != NULL && *host != '\0')  {
-		http_Unset(req->http0, H_Host);
-		http_SetHeader(req->http0, host);
+		http_Unset(req->http, H_Host);
+		http_SetHeader(req->http, host);
 	}
 
-	http_ForceField(req->http0, HTTP_HDR_METHOD, "GET");
-	http_ForceField(req->http0, HTTP_HDR_PROTO, "HTTP/1.1");
+	http_ForceField(req->http, HTTP_HDR_METHOD, "GET");
+	http_ForceField(req->http, HTTP_HDR_PROTO, "HTTP/1.1");
 
 	/* Don't allow conditionals, we can't use a 304 */
-	http_Unset(req->http0, H_If_Modified_Since);
-	http_Unset(req->http0, H_If_None_Match);
+	http_Unset(req->http, H_If_Modified_Since);
+	http_Unset(req->http, H_If_None_Match);
 
 	/* Don't allow Range */
-	http_Unset(req->http0, H_Range);
+	http_Unset(req->http, H_Range);
 
 	/* Set Accept-Encoding according to what we want */
-	http_Unset(req->http0, H_Accept_Encoding);
+	http_Unset(req->http, H_Accept_Encoding);
 	if (ecx->isgzip)
-		http_ForceHeader(req->http0, H_Accept_Encoding, "gzip");
+		http_ForceHeader(req->http, H_Accept_Encoding, "gzip");
 
 	/* Client content already taken care of */
-	http_Unset(req->http0, H_Content_Length);
-
-	/* Reset request to status before we started messing with it */
-	HTTP_Copy(req->http, req->http0);
+	http_Unset(req->http, H_Content_Length);
+	req->req_body_status = REQ_BODY_NONE;
 
 	AZ(req->vcl);
 	req->vcl = preq->vcl;
 	VCL_Ref(req->vcl);
 
-	req->req_step = R_STP_RECV;
+	req->req_step = R_STP_TRANSPORT;
 	req->t_req = preq->t_req;
-	assert(isnan(req->t_first));
-	assert(isnan(req->t_prev));
 
 	req->transport = &VED_transport;
 	req->transport_priv = ecx;
-
-	THR_SetRequest(req);
-
-	VSLb_ts_req(req, "Start", W_TIM_real(wrk));
-
-	req->ws_req = WS_Snapshot(req->ws);
 
 	while (1) {
 		req->wrk = wrk;
@@ -202,7 +193,6 @@ ved_include(struct req *preq, const char *src, const char *host,
 			(void)Lck_CondWait(
 			    &ecx->preq->wrk->cond, &sp->mtx, 0);
 		Lck_Unlock(&sp->mtx);
-		ecx->woken = 0;
 		AZ(req->wrk);
 	}
 
@@ -213,7 +203,6 @@ ved_include(struct req *preq, const char *src, const char *host,
 
 	Req_AcctLogCharge(wrk->stats, req);
 	Req_Release(req);
-	SES_Rel(sp);
 }
 
 /*--------------------------------------------------------------------*/

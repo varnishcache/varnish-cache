@@ -1034,15 +1034,14 @@ CNT_Request(struct worker *wrk, struct req *req)
 	 */
 	assert(
 	    req->req_step == R_STP_LOOKUP ||
-	    req->req_step == R_STP_TRANSPORT ||
-	    req->req_step == R_STP_RECV);
+	    req->req_step == R_STP_TRANSPORT);
 
 	AN(req->vsl->wid & VSL_CLIENTMARKER);
 
 	/* wrk can have changed for restarts */
 	req->vfc->wrk = req->wrk = wrk;
 	wrk->vsl = req->vsl;
-	if (req->req_step == R_STP_TRANSPORT) {
+	if (req->req_step == R_STP_TRANSPORT && req->vcl == NULL) {
 		AZ(req->vcl);
 		VCL_Refresh(&wrk->vcl);
 		req->vcl = wrk->vcl;
