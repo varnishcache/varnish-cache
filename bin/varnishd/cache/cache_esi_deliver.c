@@ -163,7 +163,7 @@ ved_include(struct req *preq, const char *src, const char *host,
 
 	AZ(req->vcl);
 	req->vcl = preq->vcl;
-	preq->vcl = NULL;
+	VCL_Ref(req->vcl);
 
 	req->req_step = R_STP_RECV;
 	req->t_req = preq->t_req;
@@ -197,9 +197,7 @@ ved_include(struct req *preq, const char *src, const char *host,
 		AZ(req->wrk);
 	}
 
-	AZ(preq->vcl);
-	preq->vcl = req->vcl;
-	req->vcl = NULL;
+	VCL_Rel(&req->vcl);
 
 	req->wrk = NULL;
 	THR_SetRequest(preq);
