@@ -76,15 +76,34 @@ VCL_Method_Name(unsigned m)
 void
 VCL_Refresh(struct vcl **vcc)
 {
+
+	while (vcl_active == NULL)
+		(void)usleep(100000);
+
 	if (*vcc == vcl_active)
 		return;
 	if (*vcc != NULL)
 		VCL_Rel(vcc);	/* XXX: optimize locking */
 
-	while (vcl_active == NULL)
-		(void)usleep(100000);
-
 	vcl_get(vcc, NULL);
+}
+
+void
+VCL_Recache(struct worker *wrk, struct vcl **vclp)
+{
+
+	AN(wrk);
+	AN(vclp);
+	CHECK_OBJ_NOTNULL(*vclp, VCL_MAGIC);
+
+	if (*vclp != vcl_active || wrk->vcl == vcl_active) {
+		VCL_Rel(vclp);
+		return;
+	}
+	if (wrk->vcl != NULL)
+		VCL_Rel(&wrk->vcl);
+	wrk->vcl = *vclp;
+	*vclp = NULL;
 }
 
 void

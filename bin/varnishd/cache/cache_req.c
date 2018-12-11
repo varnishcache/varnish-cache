@@ -217,12 +217,8 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	AZ(req->esi_level);
 	AZ(req->privs->magic);
 
-	if (req->vcl != NULL) {
-		if (wrk->vcl != NULL)
-			VCL_Rel(&wrk->vcl);
-		wrk->vcl = req->vcl;
-		req->vcl = NULL;
-	}
+	if (req->vcl != NULL)
+		VCL_Recache(wrk, &req->vcl);
 
 	/* Charge and log byte counters */
 	if (req->vsl->wid) {

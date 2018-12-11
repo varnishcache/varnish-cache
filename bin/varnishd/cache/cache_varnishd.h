@@ -382,6 +382,7 @@ void VCL_Panic(struct vsb *, const struct vcl *);
 void VCL_Poll(void);
 void VCL_Ref(struct vcl *);
 void VCL_Refresh(struct vcl **);
+void VCL_Recache(struct worker *, struct vcl **);
 void VCL_Rel(struct vcl **);
 void VCL_TaskEnter(const struct vcl *, struct vrt_privs *);
 void VCL_TaskLeave(const struct vcl *, struct vrt_privs *);
