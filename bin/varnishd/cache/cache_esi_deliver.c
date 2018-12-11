@@ -68,11 +68,20 @@ struct ecx {
 	uint32_t	crc;
 };
 
+static int v_matchproto_(vtr_minimal_response_f)
+ved_minimal_response(struct req *req, uint16_t status)
+{
+	(void)req;
+	(void)status;
+	WRONG("esi:includes should not try minimal responses");
+}
+
 static const struct transport VED_transport = {
-	.magic =	TRANSPORT_MAGIC,
-	.name =		"ESI_INCLUDE",
-	.deliver =	ved_deliver,
-	.reembark =	ved_reembark,
+	.magic =		TRANSPORT_MAGIC,
+	.name =			"ESI_INCLUDE",
+	.deliver =		ved_deliver,
+	.reembark =		ved_reembark,
+	.minimal_response =	ved_minimal_response,
 };
 
 /*--------------------------------------------------------------------*/

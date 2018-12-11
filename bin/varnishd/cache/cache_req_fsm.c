@@ -64,7 +64,6 @@ cnt_transport(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req->http, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(req->transport, TRANSPORT_MAGIC);
 	assert(req->req_body_status != REQ_BODY_INIT);
-	AN(req->transport->minimal_response);
 
 	if (http_GetHdr(req->http, H_Expect, &p)) {
 		if (strcasecmp(p, "100-continue")) {
@@ -1027,6 +1026,10 @@ CNT_Request(struct worker *wrk, struct req *req)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
+	CHECK_OBJ_NOTNULL(req->transport, TRANSPORT_MAGIC);
+	AN(req->transport->deliver);
+	AN(req->transport->minimal_response);
 
 	/*
 	 * Possible entrance states
