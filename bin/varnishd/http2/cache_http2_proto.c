@@ -536,6 +536,7 @@ h2_do_req(struct worker *wrk, void *priv)
 	THR_SetRequest(req);
 
 	req->http->conds = 1;
+	wrk->stats->client_req++;
 	if (CNT_Request(wrk, req) != REQ_FSM_DISEMBARK) {
 		AZ(req->ws->r);
 		h2 = r2->h2sess;

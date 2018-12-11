@@ -78,8 +78,6 @@ cnt_transport(struct worker *wrk, struct req *req)
 		http_Unset(req->http, H_Expect);
 	}
 
-	wrk->stats->client_req++;
-
 	AZ(req->err_code);
 
 	req->doclose = http_DoConnection(req->http);
