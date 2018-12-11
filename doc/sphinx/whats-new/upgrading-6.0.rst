@@ -592,6 +592,17 @@ since there's no more reasons to have them diverge: we initially
 inherited packaging support from downstream package maintainers, and
 they deserve many thanks for that.
 
+The biggest change that resulted in unifying our systemd setup across
+all official packages is that the ``varnish.params`` file available on
+Red Hat derivatives is gone. We noticed that using an environment file
+to hide the fact that ``varnishd`` is configured via command line
+arguments misled some people into thinking that what was proposed in
+the file was your only set of configuration options. For example, you
+can specify multiple listen addresses using multiple ``-a`` options
+but you only get variables for one address and a catch-all variable
+``DAEMON_OPTS`` for anything not fitting in the template. In addition
+using an environment file pollutes the process's environment.
+
 Another big difference between Red Hat and Debian derivatives was the
 way we handled VCL reloads via the service manager. We introduced a
 new ``varnishreload`` script that operates on top of ``varnishadm``
