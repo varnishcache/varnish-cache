@@ -57,7 +57,7 @@ Basic options
 
   Name is referenced in logs. If name is not specified, "a0", "a1",
   etc. is used. An additional protocol type can be set for the
-  listening socket with PROTO. Valid protocol types are: HTTP/1
+  listening socket with PROTO. Valid protocol types are: HTTP
   (default), and PROXY.
 
   Multiple listening addresses can be specified by using different
