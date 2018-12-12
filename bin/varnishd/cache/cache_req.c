@@ -63,7 +63,11 @@ Req_AcctLogCharge(struct VSC_main_wrk *ds, struct req *req)
 		    (uintmax_t)(a->resp_hdrbytes + a->resp_bodybytes));
 	}
 
-	/* Charge to main byte counters (except for ESI subrequests) */
+	/*
+	 * Charge to main byte counters, except for ESI subrequests
+	 * which are charged as they pass through the topreq.
+	 * XXX: make this test req->top instead
+	 */
 #define ACCT(foo)			\
 	if (req->esi_level == 0)	\
 		ds->s_##foo += a->foo;	\
@@ -214,7 +218,6 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	req->restarts = 0;
 	req->top = 0;
 
-	AZ(req->esi_level);
 	AZ(req->privs->magic);
 
 	if (req->vcl != NULL)
@@ -239,6 +242,7 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 
 	req->hash_always_miss = 0;
 	req->hash_ignore_busy = 0;
+	req->esi_level = 0;
 	req->is_hit = 0;
 
 	if (WS_Overflowed(req->ws))
