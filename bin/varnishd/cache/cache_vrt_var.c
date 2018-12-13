@@ -520,7 +520,7 @@ VRT_l_req_esi(VRT_CTX, VCL_BOOL process_esi)
 	 * Only allow you to turn of esi in the main request
 	 * else everything gets confused
 	 */
-	if (ctx->req->esi_level == 0)
+	if (IS_TOPREQ(ctx->req))
 		ctx->req->disable_esi = !process_esi;
 }
 

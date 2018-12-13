@@ -538,6 +538,8 @@ struct req {
 	struct vrt_privs	privs[1];
 };
 
+#define IS_TOPREQ(req) ((req)->top == NULL || (req)->top->topreq == (req))
+
 /*--------------------------------------------------------------------
  * Struct sess is a high memory-load structure because sessions typically
  * hang around the waiter for relatively long time.

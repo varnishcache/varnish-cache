@@ -256,7 +256,7 @@ ved_vdp_esi_init(struct req *req, void **priv)
 	*priv = ecx;
 	RFC2616_Weaken_Etag(req->resp);
 
-	if (req->esi_level == 0) {
+	if (IS_TOPREQ(req)) {
 		Req_MakeTop(req);
 		if (req->top == NULL) {
 			VSLb(req->vsl, SLT_Error,

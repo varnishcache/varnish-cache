@@ -63,16 +63,11 @@ Req_AcctLogCharge(struct VSC_main_wrk *ds, struct req *req)
 		    (uintmax_t)(a->resp_hdrbytes + a->resp_bodybytes));
 	}
 
-	/*
-	 * Charge to main byte counters, except for ESI subrequests
-	 * which are charged as they pass through the topreq.
-	 * XXX: make this test req->top instead
-	 */
-#define ACCT(foo)			\
-	if (req->esi_level == 0)	\
-		ds->s_##foo += a->foo;	\
-	a->foo = 0;
+	if (IS_TOPREQ(req)) {
+#define ACCT(foo) ds->s_##foo += a->foo;
 #include "tbl/acct_fields_req.h"
+	}
+	memset(a, 0, sizeof *a);
 }
 
 /*--------------------------------------------------------------------
@@ -216,7 +211,6 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 
 	req->director_hint = NULL;
 	req->restarts = 0;
-	req->top = 0;
 
 	AZ(req->privs->magic);
 
@@ -244,6 +238,7 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	req->hash_ignore_busy = 0;
 	req->esi_level = 0;
 	req->is_hit = 0;
+	req->top = 0;
 
 	if (WS_Overflowed(req->ws))
 		wrk->stats->ws_client_overflow++;
