@@ -260,6 +260,9 @@ RFC2616_Do_Cond(const struct req *req)
 	const char *p, *e;
 	vtim_real ims, lm;
 
+	if (!http_IsStatus(req->resp, 200))
+		return (0);
+
 	/*
 	 * We MUST ignore If-Modified-Since if we have an If-None-Match
 	 * header [RFC7232 3.3 p16].

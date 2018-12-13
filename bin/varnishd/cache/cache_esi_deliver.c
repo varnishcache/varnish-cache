@@ -142,7 +142,6 @@ ved_include(struct req *preq, const char *src, const char *host,
 
 	HTTP_Setup(req->http, req->ws, req->vsl, SLT_ReqMethod);
 	HTTP_Copy(req->http, preq->http);
-	req->http->conds = 0;
 
 	http_SetH(req->http, HTTP_HDR_URL, src);
 	if (host != NULL && *host != '\0')  {

@@ -115,7 +115,6 @@ http1_dissect_hdrs(struct http *hp, char *p, struct http_conn *htc,
 	assert(p > htc->rxbuf_b);
 	assert(p <= htc->rxbuf_e);
 	hp->nhd = HTTP_HDR_FIRST;
-	hp->conds = 0;
 	r = NULL;		/* For FlexeLint */
 	for (; p < htc->rxbuf_e; p = r) {
 
@@ -172,11 +171,6 @@ http1_dissect_hdrs(struct http *hp, char *p, struct http_conn *htc,
 			    (int)(q - p > 20 ? 20 : q - p), p);
 			return (400);
 		}
-
-		if ((p[0] == 'i' || p[0] == 'I') &&
-		    (p[1] == 'f' || p[1] == 'F') &&
-		    p[2] == '-')
-			hp->conds = 1;
 
 		while (q > p && vct_issp(q[-1]))
 			q--;

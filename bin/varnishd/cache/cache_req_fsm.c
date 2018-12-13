@@ -182,9 +182,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 	assert(wrk->handling == VCL_RET_DELIVER);
 
-	if (IS_TOPREQ(req) &&
-	    http_IsStatus(req->resp, 200) &&
-	    req->http->conds && RFC2616_Do_Cond(req))
+	if (IS_TOPREQ(req) && RFC2616_Do_Cond(req))
 		http_PutResponse(req->resp, "HTTP/1.1", 304, NULL);
 
 	req->req_step = R_STP_TRANSMIT;

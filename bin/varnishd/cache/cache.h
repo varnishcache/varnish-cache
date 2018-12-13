@@ -165,7 +165,6 @@ struct http {
 	struct ws		*ws;
 	uint16_t		status;
 	uint8_t			protover;
-	uint8_t			conds;		/* If-* headers present */
 };
 
 /*--------------------------------------------------------------------*/

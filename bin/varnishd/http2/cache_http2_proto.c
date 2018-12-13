@@ -535,7 +535,6 @@ h2_do_req(struct worker *wrk, void *priv)
 	CAST_OBJ_NOTNULL(r2, req->transport_priv, H2_REQ_MAGIC);
 	THR_SetRequest(req);
 
-	req->http->conds = 1;
 	wrk->stats->client_req++;
 	if (CNT_Request(wrk, req) != REQ_FSM_DISEMBARK) {
 		AZ(req->ws->r);
