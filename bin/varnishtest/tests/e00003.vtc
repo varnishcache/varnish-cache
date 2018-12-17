@@ -3,6 +3,7 @@ varnishtest "ESI include"
 
 server s1 {
 	rxreq
+	expect req.http.esi0 == "foo"
 	txresp -body {
 		<html>
 		Before include
@@ -12,6 +13,7 @@ server s1 {
 	}
 	rxreq
 	expect req.url == "/body1"
+	expect req.http.esi0 != "foo"
 	txresp -body {
 		Included file
 	}
@@ -21,6 +23,8 @@ varnish v1 -vcl+backend {
 	sub vcl_recv {
 		if (req.esi_level > 0) {
 			set req.url = req.url + req.esi_level;
+		} else {
+			set req.http.esi0 = "foo";
 		}
 	}
 	sub vcl_backend_response {
