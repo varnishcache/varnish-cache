@@ -429,6 +429,7 @@ static const struct cmds syslog_cmds[] = {
 	CMD_SYSLOG(expect)
 	CMD_SYSLOG(recv)
 #undef CMD_SYSLOG
+	{ NULL, NULL }
 };
 
 /**********************************************************************

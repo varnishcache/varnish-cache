@@ -275,6 +275,7 @@ static const struct cmds haproxy_cli_cmds[] = {
 	CMD_HAPROXY_CLI(send)
 	CMD_HAPROXY_CLI(expect)
 #undef CMD_HAPROXY_CLI
+	{ NULL, NULL }
 };
 
 /**********************************************************************
