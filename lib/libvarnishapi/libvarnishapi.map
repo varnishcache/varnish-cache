@@ -89,6 +89,7 @@ LIBVARNISHAPI_2.0 {
 		VSL_Next;
 		VSL_Print;
 		VSL_PrintAll;
+		VSL_PrintJSONTransactions;
 		VSL_PrintTerse;
 		VSL_PrintTransactions;
 		VSL_ResetCursor;

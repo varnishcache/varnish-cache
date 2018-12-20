@@ -58,6 +58,7 @@ static struct log {
 	/* Options */
 	int		a_opt;
 	int		A_opt;
+	int		j_opt;
 	char		*w_arg;
 
 	/* State */
@@ -125,6 +126,10 @@ main(int argc, char * const *argv)
 		case 'h':
 			/* Usage help */
 			VUT_Usage(vut, &vopt_spec, 0);
+		case 'j':
+			/* JSON output */
+			LOG.j_opt = 1;
+			break;
 		case 'w':
 			/* Write to file */
 			REPLACE(LOG.w_arg, optarg);
@@ -142,7 +147,9 @@ main(int argc, char * const *argv)
 		VUT_Error(vut, 1, "Missing -w option");
 
 	/* Setup output */
-	if (LOG.A_opt || !LOG.w_arg)
+	if (LOG.j_opt)
+		vut->dispatch_f = VSL_PrintJSONTransactions;
+	else if (LOG.A_opt || !LOG.w_arg)
 		vut->dispatch_f = VSL_PrintTransactions;
 	else
 		vut->dispatch_f = VSL_WriteTransactions;

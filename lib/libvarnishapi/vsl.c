@@ -216,6 +216,16 @@ static const char * const VSL_transactions[VSL_t__MAX] = {
 	[VSL_t_raw]	= "<< Record   >>",
 };
 
+static const char * const VSL_transactionsTerse[VSL_t__MAX] = {
+	/*                 12345678901234 */
+	[VSL_t_unknown] = "Unknown",
+	[VSL_t_sess]	= "Session",
+	[VSL_t_req]	= "Request",
+	[VSL_t_bereq]	= "BeReq",
+	[VSL_t_raw]	= "Record",
+};
+
+
 #define VSL_PRINT(...)					\
 	do {						\
 		if (0 > fprintf(__VA_ARGS__))		\
@@ -317,10 +327,190 @@ VSL_PrintAll(struct VSL_data *vsl, const struct VSL_cursor *c, void *fo)
 			return (i);
 		if (!VSL_Match(vsl, c))
 			continue;
-		i = VSL_Print(vsl, c, fo);
+	i = VSL_Print(vsl, c, fo);
 		if (i != 0)
 			return (i);
 	}
+}
+
+static int
+vsl_print_json(FILE *fo, unsigned len, const char *data, unsigned unsafe)
+{
+	unsigned i;
+
+	for (i = 0; i < len && (unsafe || data[i]) ; i++) {
+		switch (data[i]) {
+#define ESCAPE(c, ec)					\
+			case c:				\
+				VSL_PRINT(fo, ec);	\
+				i++;			\
+				break;
+			ESCAPE('\\', "\\\\");
+			ESCAPE('\"', "\\\"");
+			ESCAPE('\b', "\\b");
+			ESCAPE('\f', "\\f");
+			ESCAPE('\n', "\\n");
+			ESCAPE('\r', "\\r");
+			ESCAPE('\t', "\\t");
+#undef ESCAPE
+			default:
+				if (!unsafe || (data[i] >= ' ' && data[i] <= '~'))
+					VSL_PRINT(fo, "%c", data[i]);
+				else
+					VSL_PRINT(fo, "%%%02x", (unsigned char)data[i]);
+		}
+	}
+	return (0);
+}
+
+static int
+VSL_PrintJSON(const struct VSL_data *vsl, const struct VSL_cursor *c, void *fo)
+{
+	enum VSL_tag_e tag;
+	unsigned len;
+	const char *data;
+
+	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
+	if (c == NULL || c->rec.ptr == NULL)
+		return (0);
+	if (fo == NULL)
+		fo = stdout;
+	tag = VSL_TAG(c->rec.ptr);
+	len = VSL_LEN(c->rec.ptr);
+	data = VSL_CDATA(c->rec.ptr);
+
+	VSL_PRINT(fo, "{ \"tag\": \"%s\", \"value\": \"", VSL_tags[tag]);
+
+	if (VSL_tagflags[tag] & SLT_F_UNSAFE)
+		(void)vsl_print_json(fo, len, data, 1);
+	else if (VSL_tagflags[tag] & SLT_F_BINARY)
+		(void)vsl_print_binary(fo, len, data);
+	else
+		vsl_print_json(fo, (int)len, data, 0);
+	VSL_PRINT(fo, "\" }");
+
+	return (0);
+}
+
+int v_matchproto_(VSLQ_dispatch_f)
+VSL_PrintJSONTransactions(struct VSL_data *vsl,
+    struct VSL_transaction * const ptu[], void *fo)
+{
+	struct VSL_transaction *t, *swap, **pt, **pto;
+	int i, stop, next_slot, current_root;
+	int delim, level;
+
+	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
+	if (fo == NULL)
+		fo = stdout;
+	if (ptu[0] == NULL)
+		return (0);
+
+	/* assume the first item is our root */
+	next_slot = 1;
+	current_root = 0;
+
+	/* first, we need to reorder the transaction array to
+	 * be depth first, so we make a copy */
+	for (stop = 0; ptu[stop]; stop++) {}
+	pto = pt = malloc((stop + 1) * sizeof(t));
+	pto = pt;
+	AN(pt);
+	memcpy(pt, ptu, (stop + 1) * sizeof(t));
+
+	/* then reorder */
+	while (next_slot < stop) {
+		// find a node connected to the current root
+		for (i = next_slot; i < stop; i++) {
+			if (pt[i]->vxid_parent !=
+			    pt[current_root]->vxid)
+				continue;
+			swap = pt[next_slot];
+			pt[next_slot] = pt[i];
+			pt[i] = swap;
+			current_root = next_slot;
+			next_slot++;
+			i = next_slot;
+		}
+
+		/* if we could not find a child for the current root,
+		 * back up a little bit, or if the root is already at index 0,
+		 * we are done
+		 * note: we may back up to siblings or nephews (nieces?), and
+		 * do superfluous work, but I'm not sure it's worth refinding
+		 * the parent of current_root by retraversing the array again
+		 */
+		if (current_root == 0)
+			break;
+		else
+			current_root--;
+	}
+
+	for (t = pt[0]; t != NULL; t = *++pt) {
+		delim = 0;
+		if (vsl->c_opt || vsl->b_opt) {
+			switch (t->type) {
+			case VSL_t_req:
+				if (!vsl->c_opt)
+					continue;
+				break;
+			case VSL_t_bereq:
+				if (!vsl->b_opt)
+					continue;
+				break;
+			case VSL_t_raw:
+				break;
+			default:
+				continue;
+			}
+		}
+
+		VSL_PRINT(fo, "{ \"id\": %u, \"type\": \"%s\",",
+			t->vxid, VSL_transactionsTerse[t->type]);
+
+		VSL_PRINT(fo, " \"records\": [ ");
+		while (1) {
+			/* Print records */
+			i = VSL_Next(t->c);
+			if (i < 0) {
+				free(pt);
+				return (i);
+			}
+			if (i == 0)
+				break;
+			if (!VSL_Match(vsl, t->c))
+				continue;
+			if (delim)
+				VSL_PRINT(fo, ", ");
+			i = VSL_PrintJSON(vsl, t->c, fo);
+			if (i != 0) {
+				free(pt);
+				return (i);
+			}
+			delim = 1;
+		}
+		VSL_PRINT(fo, " ]");
+
+		/* peek ahead and use the level differences to join
+		 * transactions */
+		(void)level;
+		(void)pto;
+		if (!pt[1]) {
+			VSL_PRINT(fo, " }");
+			for (level = pto[0]->level; level < t->level; level++)
+				VSL_PRINT(fo, " ] }");
+			VSL_PRINT(fo, "\n");
+		} else if (pt[1]->level <= t->level) {
+			VSL_PRINT(fo, " }");
+			for (level = t->level; level > pt[1]->level; level--)
+				VSL_PRINT(fo, " ] }");
+			VSL_PRINT(fo, ", ");
+		} else if (pt[1]->level > t->level) {
+			assert(pt[1]->level == t->level + 1);
+			VSL_PRINT(fo, ", \"links\": [ ");
+		}
+	}
+	return (0);
 }
 
 int v_matchproto_(VSLQ_dispatch_f)

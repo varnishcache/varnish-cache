@@ -439,6 +439,19 @@ VSLQ_dispatch_f VSL_PrintTransactions;
 	 *    !=0:	Return value from either VSL_Next or VSL_Print
 	 */
 
+VSLQ_dispatch_f VSL_PrintJSONTransactions;
+	/* Prints the array ptrans as one JSON object, on one line.
+	 *
+	 * Arguments:
+	 *   vsl: The VSL_data context
+	 *    cp: A NULL-terminated array of VSL_cursor pointers
+	 *    fo: A FILE* pointer, stdout if NULL
+	 *
+	 * Return values:
+	 *	0:	OK
+	 *    !=0:	Return value from either VSL_Next or VSL_Print
+	 */
+
 FILE *VSL_WriteOpen(struct VSL_data *vsl, const char *name, int append,
 		    int unbuffered);
 	/*

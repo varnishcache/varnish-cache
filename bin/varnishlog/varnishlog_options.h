@@ -42,6 +42,11 @@
 	    " data in ascii format."					\
 	)
 
+#define LOG_OPT_j							\
+	VOPT("j", "[-j]", "LDJSON output",				\
+	    "Print each record block as a JSON object"			\
+	)
+
 #define LOG_OPT_w							\
 	VOPT("w:", "[-w <filename>]", "Output filename",		\
 	    "Redirect output to file. The file will be overwritten"	\
@@ -63,6 +68,7 @@ VUT_GLOBAL_OPT_D
 VUT_OPT_g
 VUT_OPT_h
 VSL_OPT_i
+LOG_OPT_j
 VSL_OPT_I
 VUT_OPT_k
 VSL_OPT_L
