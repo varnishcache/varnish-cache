@@ -1,0 +1,26 @@
+varnishtest "VSL quoted fields"
+
+varnish v1 -vcl {
+	import std;
+        backend be none;
+	sub vcl_recv {
+		# a series of 3-fields log records
+		std.log({"  custom   log     "ok" "});
+		std.log({" "valid"  "fields"  ok "});
+		std.log({" "missing""blank"   ko "});
+		std.log({"  missing  dquote  "ko "});
+		# "
+		return (synth(200));
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run
+
+# records with malformed fields don't show up
+shell -expect "2" {
+        varnishlog -d -n ${v1_name} -g raw -q 'VCL_Log[3]' | wc -l
+}
