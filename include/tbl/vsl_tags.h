@@ -191,7 +191,7 @@ SLTM(Length, 0, "Size of object body",
 
 SLTM(FetchError, 0, "Error while fetching object",
 	"Logs the error message of a failed fetch operation.\n\n"
-	"Error messages should be self-explanatory, yet the http connection"
+	"Error messages should be self-explanatory, yet the http connection\n"
 	"(HTC) class of errors is reported with these symbols:\n\n"
 	"\t* junk (-5): Received unexpected data\n"
 	"\t* close (-4): Connection closed\n"
@@ -272,11 +272,11 @@ SLTM(TTL, 0, "TTL set on object",
 SLTM(Fetch_Body, 0, "Body fetched from backend",
 	"Ready to fetch body from backend.\n\n"
 	"The format is::\n\n"
-	"\t%d (%s) %s\n"
-	"\t|   |    |\n"
-	"\t|   |    +---- 'stream' or '-'\n"
-	"\t|   +--------- Text description of body fetch mode\n"
-	"\t+------------- Body fetch mode\n"
+	"\t%d %s %s\n"
+	"\t|  |  |\n"
+	"\t|  |  +---- 'stream' or '-'\n"
+	"\t|  +------- Text description of body fetch mode\n"
+	"\t+---------- Body fetch mode\n"
 	"\n"
 )
 

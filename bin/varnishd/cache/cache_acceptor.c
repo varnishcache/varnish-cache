@@ -508,7 +508,7 @@ vca_accept_task(struct worker *wrk, void *arg)
 				    lport, VTCP_PORTBUFSIZE);
 			}
 
-			VSL(SLT_SessError, 0, "%s %s %s %d %d %s",
+			VSL(SLT_SessError, 0, "%s %s %s %d %d \"%s\"",
 			    wa.acceptlsock->name, laddr, lport,
 			    ls->sock, i, vstrerror(i));
 			(void)Pool_TrySumstat(wrk);
