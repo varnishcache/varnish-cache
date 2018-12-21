@@ -1,8 +1,16 @@
 varnishtest "VSL quoted fields"
 
+server s1 {
+        rxreq
+        txresp
+} -start
+
 varnish v1 -vcl {
 	import std;
-        backend be none;
+        backend be {
+                .host = "${s1_sock}";
+                .probe = { .interval = 1m; }
+        }
 	sub vcl_recv {
 		# a series of 3-fields log records
 		std.log({"  custom   log     "ok" "});
@@ -23,4 +31,11 @@ client c1 {
 # records with malformed fields don't show up
 shell -expect "2" {
         varnishlog -d -n ${v1_name} -g raw -q 'VCL_Log[3]' | wc -l
+}
+
+server s1 -wait
+
+shell -expect "Went healthy" {
+        varnishlog -d -n ${v1_name} -g raw \
+		-q 'Backend_health[10] eq "HTTP/1.1 200 OK"'
 }
