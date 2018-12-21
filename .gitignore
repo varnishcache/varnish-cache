@@ -97,6 +97,8 @@ cscope.*out
 /doc/*.html
 /doc/sphinx/build/
 /doc/sphinx/conf.py
+/doc/sphinx/reference/vmod_*.generated.rst
+
 
 # graphviz-generated
 /doc/graphviz/*.pdf
