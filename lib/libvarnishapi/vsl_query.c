@@ -122,7 +122,7 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 	double lhs_float = 0.;
 	const char *b, *e, *q;
 	char *p;
-	int i;
+	int i, dq;
 
 	AN(vex);
 	AN(rec);
@@ -144,15 +144,40 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 
 	/* Field */
 	if (vex->lhs->field > 0) {
-		for (e = b, i = 0; *e && i < vex->lhs->field; i++) {
+		for (e = b, i = 0, dq = 0; *e && i < vex->lhs->field; i++) {
+			/* Skip end of previous field */
+			if (dq) {
+				assert(e > b);
+				assert(*e == '"');
+				dq = 0;
+				e++;
+				if (*e == '\0')
+					break;
+				if (!isspace(*e))
+					return (0);
+			}
+
 			b = e;
 			/* Skip ws */
 			while (*b && isspace(*b))
 				b++;
+
+			dq = (*b == '"');
+			if (dq)
+				b++;
 			e = b;
-			/* Skip non-ws */
-			while (*e && !isspace(*e))
-				e++;
+
+			if (dq) {
+				/* Find end of string */
+				while (*e && *e != '"')
+					e++;
+				if (*e != '"')
+					return (0);
+			} else {
+				/* Skip non-ws */
+				while (*e && !isspace(*e))
+					e++;
+			}
 		}
 		assert(b <= e);
 		if (*b == '\0' || i < vex->lhs->field)
