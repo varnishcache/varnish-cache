@@ -569,8 +569,6 @@ vbf_figure_out_vfp(struct busyobj *bo)
 static enum fetch_step
 vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 {
-	const char *p;
-
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(bo->fetch_objcore, OBJCORE_MAGIC);
@@ -610,8 +608,8 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	if (!(bo->fetch_objcore->flags & OC_F_HFM) &&
 	    http_IsStatus(bo->beresp, 200) && (
-	      http_GetHdr(bo->beresp, H_Last_Modified, &p) ||
-	      http_GetHdr(bo->beresp, H_ETag, &p)))
+	      http_GetHdr(bo->beresp, H_Last_Modified, NULL) ||
+	      http_GetHdr(bo->beresp, H_ETag, NULL)))
 		ObjSetFlag(bo->wrk, bo->fetch_objcore, OF_IMSCAND, 1);
 
 	if (bo->htc->body_status != BS_NONE &&
