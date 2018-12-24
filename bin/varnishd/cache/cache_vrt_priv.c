@@ -209,5 +209,5 @@ VCL_TaskLeave(const struct vcl *vcl, struct vrt_privs *privs)
 	VRBT_FOREACH_SAFE(vp, vrt_priv_tree, &privs->privs, vp1) {
 		VRT_priv_fini(vp->priv);
 	}
-	INIT_OBJ(privs, 0);
+	ZERO_OBJ(privs, sizeof *privs);
 }
