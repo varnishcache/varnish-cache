@@ -199,6 +199,6 @@ VCL_TaskLeave(const struct vcl *vcl, struct vrt_privs *privs)
 		VTAILQ_REMOVE(&privs->privs, vp, list);
 		VRT_priv_fini(vp->priv);
 	}
-	INIT_OBJ(privs, 0);
+	ZERO_OBJ(privs, sizeof *privs);
 }
 
