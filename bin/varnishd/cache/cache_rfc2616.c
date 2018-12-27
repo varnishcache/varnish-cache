@@ -34,6 +34,7 @@
 #include "cache_varnishd.h"
 
 #include "vtim.h"
+#include "vct.h"
 
 /*--------------------------------------------------------------------
  * TTL and Age calculation in Varnish
@@ -60,6 +61,21 @@
  * and more or less uses the inverse logic for the opposite relationship.
  *
  */
+
+static inline int
+rfc2616_time(const char *p)
+{
+	char *ep;
+	int val;
+	if (*p == '-')
+		return (0);
+	val = strtoul(p, &ep, 10);
+	for (; *ep != '\0' && vct_issp(*ep); ep++)
+		continue;
+	if (*ep == '\0' || *ep == ',')
+		return (val);
+	return (0);
+}
 
 void
 RFC2616_Ttl(struct busyobj *bo, vtim_real now, vtim_real *t_origin,
@@ -140,12 +156,7 @@ RFC2616_Ttl(struct busyobj *bo, vtim_real now, vtim_real *t_origin,
 		if ((http_GetHdrField(hp, H_Cache_Control, "s-maxage", &p) ||
 		    http_GetHdrField(hp, H_Cache_Control, "max-age", &p)) &&
 		    p != NULL) {
-
-			if (*p == '-')
-				max_age = 0;
-			else
-				max_age = strtoul(p, NULL, 0);
-
+			max_age = rfc2616_time(p);
 			*ttl = max_age;
 			break;
 		}
@@ -190,11 +201,7 @@ RFC2616_Ttl(struct busyobj *bo, vtim_real now, vtim_real *t_origin,
 	 */
 	if (*ttl >= 0 && http_GetHdrField(hp, H_Cache_Control,
 	    "stale-while-revalidate", &p) && p != NULL) {
-
-		if (*p == '-')
-			*grace = 0;
-		else
-			*grace = strtoul(p, NULL, 0);
+		*grace = rfc2616_time(p);
 	}
 
 	VSLb(bo->vsl, SLT_TTL,
