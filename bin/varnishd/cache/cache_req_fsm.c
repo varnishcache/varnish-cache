@@ -1015,13 +1015,34 @@ cnt_diag(struct req *req, const char *state)
 	VSL_Flush(req->vsl, 0);
 }
 
-enum req_fsm_nxt
-CNT_Request(struct worker *wrk, struct req *req)
+void
+CNT_Embark(struct worker *wrk, struct req *req)
 {
-	enum req_fsm_nxt nxt;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
+	/* wrk can have changed for restarts */
+	req->vfc->wrk = req->wrk = wrk;
+	wrk->vsl = req->vsl;
+	if (req->req_step == R_STP_TRANSPORT && req->vcl == NULL) {
+		VCL_Refresh(&wrk->vcl);
+		req->vcl = wrk->vcl;
+		wrk->vcl = NULL;
+	}
+
+	AN(req->vcl);
+}
+
+enum req_fsm_nxt
+CNT_Request(struct req *req)
+{
+	struct worker *wrk;
+	enum req_fsm_nxt nxt;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	wrk = req->wrk;
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
 	CHECK_OBJ_NOTNULL(req->transport, TRANSPORT_MAGIC);
 	AN(req->transport->deliver);
@@ -1035,19 +1056,9 @@ CNT_Request(struct worker *wrk, struct req *req)
 	    req->req_step == R_STP_TRANSPORT);
 
 	AN(req->vsl->wid & VSL_CLIENTMARKER);
-
-	/* wrk can have changed for restarts */
-	req->vfc->wrk = req->wrk = wrk;
-	wrk->vsl = req->vsl;
-	if (req->req_step == R_STP_TRANSPORT && req->vcl == NULL) {
-		AZ(req->vcl);
-		VCL_Refresh(&wrk->vcl);
-		req->vcl = wrk->vcl;
-		wrk->vcl = NULL;
-	}
 	AN(req->vcl);
-	if (req->req_step != R_STP_LOOKUP)
-		VCL_TaskEnter(req->vcl, req->privs);
+	CHECK_OBJ(req->privs, VRT_PRIVS_MAGIC);
+
 	for (nxt = REQ_FSM_MORE; nxt == REQ_FSM_MORE; ) {
 		/*
 		 * This is a good place to be paranoid about the various

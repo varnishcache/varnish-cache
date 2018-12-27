@@ -442,7 +442,10 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			req->task.func = http1_req;
 			req->task.priv = req;
 			wrk->stats->client_req++;
-			if (CNT_Request(wrk, req) == REQ_FSM_DISEMBARK)
+			CNT_Embark(wrk, req);
+			if (req->req_step == R_STP_TRANSPORT)
+				VCL_TaskEnter(req->vcl, req->privs);
+			if (CNT_Request(req) == REQ_FSM_DISEMBARK)
 				return;
 			req->task.func = NULL;
 			req->task.priv = NULL;

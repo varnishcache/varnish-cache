@@ -534,9 +534,12 @@ h2_do_req(struct worker *wrk, void *priv)
 	CAST_OBJ_NOTNULL(req, priv, REQ_MAGIC);
 	CAST_OBJ_NOTNULL(r2, req->transport_priv, H2_REQ_MAGIC);
 	THR_SetRequest(req);
+	CNT_Embark(wrk, req);
+	if (req->req_step == R_STP_TRANSPORT)
+		VCL_TaskEnter(req->vcl, req->privs);
 
 	wrk->stats->client_req++;
-	if (CNT_Request(wrk, req) != REQ_FSM_DISEMBARK) {
+	if (CNT_Request(req) != REQ_FSM_DISEMBARK) {
 		AZ(req->ws->r);
 		h2 = r2->h2sess;
 		CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
