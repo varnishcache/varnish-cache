@@ -6,6 +6,9 @@ server s1 {
 	rxreq
 	expect req.http.if-modified-since == "Wed, 11 Sep 2013 13:36:55 GMT"
 	txresp -status 304
+	rxreq
+	expect req.http.if-modified-since == "Wed, 11 Sep 2013 13:36:55 GMT"
+	txresp -status 304
 } -start
 
 varnish v1 -vcl+backend {
@@ -33,6 +36,16 @@ client c1 {
 	expect resp.status == 200
 	expect resp.body == "Geoff Rules"
 	expect resp.http.was-304 == "false"
+} -run
+
+delay 1
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "Geoff Rules"
+	expect resp.http.was-304 == "true"
 } -run
 
 delay 1
