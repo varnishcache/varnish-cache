@@ -341,6 +341,7 @@ vbp_poke(struct vbp_target *vt)
 	/* Send the request */
 	if (vbp_write(vt, &s, vt->req, vt->req_len) != 0)
 		return;
+
 	vt->good_xmit |= 1;
 
 	pfd->fd = s;
@@ -349,21 +350,21 @@ vbp_poke(struct vbp_target *vt)
 		pfd->events = POLLIN;
 		pfd->revents = 0;
 		tmo = (int)round((t_end - t_now) * 1e3);
-		if (tmo > 0)
-			i = poll(pfd, 1, tmo);
-		if (i == 0) {
-			vt->err_recv |= 1;
-			bprintf(vt->resp_buf, "Poll error %d (%s)",
-				errno, vstrerror(errno));
-			VTCP_close(&s);
-			return;
-		}
 		if (tmo <= 0) {
 			bprintf(vt->resp_buf,
-				"Poll (read) timeout %.3fs exceeded by %.3fs",
-				vt->timeout, t_now - t_end);
-			VTCP_close(&s);
-			return;
+			    "Poll timeout %.3fs exceeded by %.3fs",
+			    vt->timeout, t_now - t_end);
+			i = -1;
+			break;
+		}
+		i = poll(pfd, 1, tmo);
+		if (i <= 0) {
+			if (!i)
+				errno = ETIMEDOUT;
+			bprintf(vt->resp_buf, "Poll error %d (%s)",
+			    errno, vstrerror(errno));
+			i = -1;
+			break;
 		}
 		if (rlen < sizeof vt->resp_buf)
 			i = read(s, vt->resp_buf + rlen,
