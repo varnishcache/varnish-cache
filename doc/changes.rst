@@ -4,8 +4,28 @@ Varnish Cache 4.1.11 (unreleased)
 
 Changes since 4.1.10:
 
+* Reintroduce the req.grace variable, change keep behavior. The use of
+  req.grace is documented on the same page as grace_ is documented.
+
+.. _grace: http://varnish-cache.org/docs/4.1/users-guide/vcl-grace.html
+
+Bugs fixed
+----------
+
+* On startup, tell what Varnish version this is (2661_)
+* Ban lurker should back off on seeing a busy object (2681_)
+* Fix http_resp_size documentation (2684_)
+* Panic on return (retry) of a conditional fetch (2700_)
+* Set the task arguments under the lock (2719_)
+* Stabilize the test case b000064.vtc for real (2751_)
 * New counter added: cache_hit_grace (2831_)
 
+.. _2661: https://github.com/varnishcache/varnish-cache/issues/2661
+.. _2681: https://github.com/varnishcache/varnish-cache/issues/2681
+.. _2684: https://github.com/varnishcache/varnish-cache/issues/2684
+.. _2700: https://github.com/varnishcache/varnish-cache/issues/2700
+.. _2719: https://github.com/varnishcache/varnish-cache/issues/2719
+.. _2751: https://github.com/varnishcache/varnish-cache/issues/2751
 .. _2831: https://github.com/varnishcache/varnish-cache/issues/2831
 
 =================================
