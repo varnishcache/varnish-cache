@@ -239,7 +239,12 @@ VRB_Cache(struct req *req, ssize_t maxsize)
 
 	req->body_oc = HSH_Private(req->wrk);
 	AN(req->body_oc);
-	XXXAN(STV_NewObject(req->body_oc, req->wrk, TRANSIENT_STORAGE, 8));
+	if (STV_NewObject(req->body_oc, req->wrk, TRANSIENT_STORAGE, 8) == 0) {
+		(void)VFP_Error(vfc, "Object allocation failed -"
+			" ran out of space in Transient");
+		req->req_body_status = REQ_BODY_FAIL;
+		return (-1);
+	}
 
 	vfc->http = req->http;
 	vfc->oc = req->body_oc;

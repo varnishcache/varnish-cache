@@ -1,0 +1,56 @@
+varnishtest "#2831: Out of storage in cache_req_body"
+
+server s1 {
+	rxreq
+	expect req.url == "/obj1"
+	txresp -bodylen 1048400
+} -start
+
+varnish v1 \
+	-arg "-p nuke_limit=0" \
+	-arg "-sTransient=malloc,1m" \
+	-vcl+backend {
+	import ${vmod_std};
+	sub vcl_recv {
+		if (req.method == "POST") {
+			std.cache_req_body(1KB);
+		}
+	}
+	sub vcl_backend_response {
+		set beresp.do_stream = false;
+		set beresp.storage_hint = "Transient";
+		# Unset Date header to not change the object sizes
+		unset beresp.http.Date;
+	}
+} -start
+
+varnish v1 -cliok "param.set debug +syncvsl"
+
+delay .1
+
+client c1 {
+	# Fill transient
+	txreq -url "/obj1"
+	rxresp
+	expect resp.status == 200
+} -run
+
+delay .1
+
+varnish v1 -expect SMA.Transient.g_bytes > 1048400
+varnish v1 -expect SMA.Transient.g_space < 100
+
+client c1 {
+	# No space for caching this req.body
+	txreq -req "POST" -body "foobar"
+	delay 1
+} -run
+
+varnish v1 -expect SMA.Transient.c_fail == 1
+
+client c1 {
+	# Check that Varnish is still alive
+	txreq -url "/obj1"
+	rxresp
+	expect resp.status == 200
+} -run

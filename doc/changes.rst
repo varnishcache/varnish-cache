@@ -1,4 +1,14 @@
 =================================
+Varnish Cache 4.1.11 (unreleased)
+=================================
+
+Changes since 4.1.10:
+
+* New counter added: cache_hit_grace (2831_)
+
+.. _2831: https://github.com/varnishcache/varnish-cache/issues/2831
+
+=================================
 Varnish Cache 4.1.10 (2018-04-25)
 =================================
 
