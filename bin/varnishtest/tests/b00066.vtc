@@ -1,0 +1,102 @@
+varnishtest "Test CC:max-age, CC:s-maxage and Expires handling"
+
+server s1 {
+	rxreq
+	txresp -hdr "Cache-Control: max-age=-2"
+	rxreq
+	txresp -hdr "Cache-Control: max-age=a2"
+	rxreq
+	txresp -hdr "Cache-Control: max-age=2a"
+	rxreq
+	txresp -hdr "Cache-Control: s-maxage=-2"
+	rxreq
+	txresp -hdr "Cache-Control: s-maxage=a2"
+	rxreq
+	txresp -hdr "Cache-Control: s-maxage=2a"
+	rxreq
+	txresp -hdr "Expires: THU, 18 Aug 2050 02:01:18 GMT"
+	rxreq
+	txresp -hdr "Expires: Thu, 18 AUG 2050 02:01:18 GMT"
+	rxreq
+	txresp -hdr "Expires: Thu, 18 Aug 2050 02:01:18 gMT"
+	rxreq
+	txresp -hdr "Cache-Control: max-age=5, s-maxage=1"
+	rxreq
+	txresp -hdr "Cache-Control: s-maxage=2, max-age=5"
+	rxreq
+	txresp \
+		-hdr "Cache-Control: max-age=5" \
+		-hdr "Cache-Control: s-maxage=3"
+} -start
+
+varnish v1 -arg "-pdefault_ttl=0" -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.http.ttl = beresp.ttl;
+		set beresp.uncacheable = true;
+	}
+} -start
+
+client c1 {
+	# negative max-age
+	txreq
+	rxresp
+	expect resp.http.ttl == 0.000
+
+	# invalid max-age - leading alpha
+	txreq
+	rxresp
+	expect resp.http.ttl == 0.000
+
+	# invalid max-age - trailing alpha
+	txreq
+	rxresp
+	expect resp.http.ttl == 0.000
+
+	# negative s-maxage
+	txreq
+	rxresp
+	expect resp.http.ttl == 0.000
+
+	# invalid s-maxage - leading alpha
+	txreq
+	rxresp
+	expect resp.http.ttl == 0.000
+
+	# invalid s-maxage - trailing alpha
+	txreq
+	rxresp
+	expect resp.http.ttl == 0.000
+
+	# Expires using wrong case (weekday)
+	txreq
+	rxresp
+	expect resp.http.ttl == 0.000
+
+	# Expires using wrong case (month)
+	txreq
+	rxresp
+	expect resp.http.ttl == 0.000
+
+	# Expires using wrong case (tz)
+	txreq
+	rxresp
+	expect resp.http.ttl == 0.000
+
+	# s-maxage wins over longer max-age
+	txreq
+	rxresp
+	expect resp.http.ttl == 1.000
+
+	# s-maxage wins over longer max-age - reversed
+	txreq
+	rxresp
+	expect resp.http.ttl == 2.000
+
+	# s-maxage wins over longer max-age - multiple headers
+	txreq
+	rxresp
+	expect resp.http.ttl == 3.000
+} -run
+
+
+varnish v1 -expect *.s1.req == 12
