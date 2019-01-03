@@ -94,8 +94,17 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 	VSC_C_main = &__VSC_C_main;
 	cache_param = &__cache_param;
 
-	/* Zero out the esi feature bits for now */
 	memset(&__cache_param, 0, sizeof(__cache_param));
+#define BSET(b, no) (b)[(no) >> 3] |= (0x80 >> ((no) & 7))
+	if (data[0] & 0x8f)
+		BSET(__cache_param.feature_bits, FEATURE_ESI_IGNORE_HTTPS);
+	if (size > 1 && data[1] & 0x8f)
+		BSET(__cache_param.feature_bits, FEATURE_ESI_DISABLE_XML_CHECK);
+	if (size > 2 && data[2] & 0x8f)
+		BSET(__cache_param.feature_bits, FEATURE_ESI_IGNORE_OTHER_ELEMENTS);
+	if (size > 3 && data[3] & 0x8f)
+		BSET(__cache_param.feature_bits, FEATURE_ESI_REMOVE_BOM);
+#undef BSET
 
 	/* Setup req */
 	req.hd = hd;
