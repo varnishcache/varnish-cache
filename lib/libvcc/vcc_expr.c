@@ -576,6 +576,10 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 				break;
 		}
 		vcc_do_arg(tl, fa);
+		if (tl->err)
+			VSB_printf(tl->sb, "Expected argument: %s %s\n\n",
+			    fa->type->name,
+			    fa->name ? fa->name : "(unnamed argument)");
 		ERRCHK(tl);
 		if (tl->t->tok == ')')
 			break;
@@ -666,6 +670,8 @@ vcc_Eval_Func(struct vcc *tl, const struct vjsn_val *spec,
 	struct expr *e = NULL;
 
 	vcc_func(tl, &e, spec, extra, sym);
+	if (tl->err)
+		VSB_printf(tl->sb, "While compiling function call:\n");
 	ERRCHK(tl);
 	vcc_expr_fmt(tl->fb, tl->indent, e);
 	VSB_cat(tl->fb, ";\n");
@@ -752,6 +758,11 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 			AN(sym->eval);
 			AZ(*e);
 			sym->eval(tl, e, t, sym, fmt);
+			if (tl->err) {
+				VSB_printf(tl->sb,
+				    "While compiling function call:\n\n");
+				vcc_ErrWhere2(tl, t, tl->t);
+			}
 			ERRCHK(tl);
 			/* Unless asked for a HEADER, fold to string here */
 			if (*e && fmt != HEADER && (*e)->fmt == HEADER) {
@@ -1372,6 +1383,7 @@ vcc_Act_Call(struct vcc *tl, struct token *t, struct symbol *sym)
 		SkipToken(tl, ';');
 		VSB_cat(tl->fb, ";\n");
 	} else if (t != tl->t) {
+		VSB_printf(tl->sb, "While compiling function call:\n\n");
 		vcc_ErrWhere2(tl, t, tl->t);
 	}
 	vcc_delete_expr(e);
