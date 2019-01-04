@@ -561,7 +561,6 @@ h2_end_headers(struct worker *wrk, struct h2_sess *h2,
     struct req *req, struct h2_req *r2)
 {
 	h2_error h2e;
-	const char *b;
 
 	ASSERT_RXTHR(h2);
 	assert(r2->state == H2_S_OPEN);
@@ -588,7 +587,7 @@ h2_end_headers(struct worker *wrk, struct h2_sess *h2,
 	http_CollectHdrSep(req->http, H_Cookie, "; ");	// rfc7540,l,3114,3120
 
 	if (req->req_body_status == REQ_BODY_INIT) {
-		if (!http_GetHdr(req->http, H_Content_Length, &b))
+		if (!http_GetHdr(req->http, H_Content_Length, NULL))
 			req->req_body_status = REQ_BODY_WITHOUT_LEN;
 		else
 			req->req_body_status = REQ_BODY_WITH_LEN;

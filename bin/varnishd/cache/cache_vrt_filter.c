@@ -354,7 +354,6 @@ static void v_matchproto_(filter_list_t)
 resp_default_filter_list(void *arg, struct vsb *vsb)
 {
 	struct req *req;
-	const char *r;
 
 	CAST_OBJ_NOTNULL(req, arg, REQ_MAGIC);
 
@@ -369,7 +368,7 @@ resp_default_filter_list(void *arg, struct vsb *vsb)
 
 	if (cache_param->http_range_support &&
 	    http_GetStatus(req->resp) == 200 &&
-	    http_GetHdr(req->http, H_Range, &r))
+	    http_GetHdr(req->http, H_Range, NULL))
 		VSB_cat(vsb, " range");
 }
 
