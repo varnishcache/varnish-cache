@@ -548,3 +548,11 @@ xyzzy_get_ip(VRT_CTX, struct vmod_priv *priv)
 
 	return (ip);
 }
+
+VCL_STRANDS
+xyzzy_return_strands(VRT_CTX, VCL_STRANDS strand)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	return (strand);
+}

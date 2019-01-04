@@ -217,6 +217,8 @@ $Method STRING .meth_opt(PRIV_CALL, PRIV_VCL, PRIV_TASK,
 
 Test object method with all the fancy stuff.
 
+$Function STRANDS return_strands(STRANDS strand)
+
 $Function VOID store_ip(PRIV_TASK, IP)
 
 Store an IP address to be later found by ``debug.get_ip()`` in the same

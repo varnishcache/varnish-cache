@@ -120,3 +120,10 @@ varnish v1 -errvcl {Expression has type STRING, expected REAL} {
 		set resp.http.who = std.random("foo", "bar");
 	}
 }
+
+varnish v1 -errvcl {Cannot convert type STRING(STRANDS) to STRING(STRING_LIST)} {
+	import debug;
+	sub vcl_deliver {
+		set resp.http.who = debug.return_strands(req.url + "bar");
+	}
+}
