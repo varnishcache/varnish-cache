@@ -227,3 +227,5 @@ $Method STRING .meth_opt(PRIV_CALL, PRIV_VCL, PRIV_TASK,
 			 [STRING s], [BOOL b])
 
 Test object method with all the fancy stuff.
+
+$Function STRANDS return_strands(STRANDS strand)

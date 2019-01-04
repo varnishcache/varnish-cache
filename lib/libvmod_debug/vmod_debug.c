@@ -599,3 +599,11 @@ xyzzy_priv_perf(VRT_CTX, VCL_INT size, VCL_INT rounds)
 
 	return (d);
 }
+
+VCL_STRANDS
+xyzzy_return_strands(VRT_CTX, VCL_STRANDS strand)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	return (strand);
+}

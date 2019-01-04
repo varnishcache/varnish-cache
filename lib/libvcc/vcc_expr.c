@@ -1311,7 +1311,14 @@ vcc_expr0(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	else
 		vcc_expr_cor(tl, e, fmt);
 	ERRCHK(tl);
-	assert(!(*e)->fmt->stringform);
+
+	if ((*e)->fmt->stringform) {
+		VSB_printf(tl->sb, "Cannot convert type %s(%s) to %s(%s)\n",
+		    vcc_utype((*e)->fmt), (*e)->fmt->name,
+		    vcc_utype(fmt), fmt->name);
+		vcc_ErrWhere2(tl, t1, tl->t);
+		return;
+	}
 
 	if ((*e)->fmt != STRINGS && fmt->stringform)
 		vcc_expr_tostring(tl, e, STRINGS);

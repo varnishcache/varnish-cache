@@ -394,9 +394,8 @@ STEVEDORE
 STRING_LIST
 	C-type: ``const char *, ...``
 
-	`Notice: New vmod developments for 6.1 and higher should
-	consider STRANDS as a better alternative to STRING_LIST, which
-	will eventually be replaced entirely.`
+	`Notice: New vmod developments for 6.1 and later must
+	use STRANDS instead of STRING_LIST, which is going away.`
 
 	A multi-component text-string.  We try very hard to avoid
 	doing text-processing in Varnish, and this is one way we
