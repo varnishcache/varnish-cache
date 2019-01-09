@@ -78,6 +78,13 @@ varnish v1 -arg "-i foobar" -vcl {
 				req.http.Foo + req.http.Unset + req.http.Bar);
 		debug.sethdr(resp.http.Hdr-6, req.http.Foo);
 		debug.sethdr(resp.http.Hdr-7, req.http.Unset);
+
+		set resp.http.Hdr-8 =
+		    debug.return_strands(
+			debug.return_strands(
+			    req.url + "<-->" + req.url
+			)
+		    );
 	}
 } -start
 
@@ -108,6 +115,7 @@ client c1 {
 	expect resp.http.Hdr-5 == "foobar"
 	expect resp.http.Hdr-6 == "foo"
 	expect resp.http.Hdr-7 == ""
+	expect resp.http.Hdr-8 == "/<-->/"
 } -run
 
 # out of workspace
@@ -140,8 +148,7 @@ varnish v1 -vcl+backend {
 				= debug.concatenate(req.http.Foo + req.http.Bar
 							+ req.http.Baz
 							+ req.http.Quux);
-		}
-		elsif (req.url == "/2") {
+		} elsif (req.url == "/2") {
 			# VRT_CollectStrands() invokes VCL failure.
 			set req.http.Result
 				= debug.collect(req.http.Foo + req.http.Bar

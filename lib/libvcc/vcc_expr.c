@@ -186,8 +186,8 @@ vcc_expr_edit(struct vcc *tl, vcc_type_t fmt, const char *p, struct expr *e1,
 			    "  const char * strs_%u_s[%d];\n",
 			    tl->unique, tl->unique, e3->nstr);
 			VSB_printf(e->vsb,
-			    "\v+\nVRT_BundleStrands(%d, &strs_%u_a, strs_%u_s,"
-			    "\v+\n%s,\nvrt_magic_string_end)\v-\v-",
+			    "VRT_BundleStrands(%d, &strs_%u_a, strs_%u_s,"
+			    "\v+\n%s,\nvrt_magic_string_end\v-\n)",
 			    e3->nstr, tl->unique, tl->unique,
 			VSB_data(e3->vsb));
 			tl->unique++;
@@ -1313,6 +1313,12 @@ vcc_expr0(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		vcc_expr_cor(tl, e, fmt);
 	ERRCHK(tl);
 
+	if ((*e)->fmt == fmt)
+		return;
+
+	if ((*e)->fmt != STRINGS && fmt->stringform)
+		vcc_expr_tostring(tl, e, STRINGS);
+
 	if ((*e)->fmt->stringform) {
 		VSB_printf(tl->sb, "Cannot convert type %s(%s) to %s(%s)\n",
 		    vcc_utype((*e)->fmt), (*e)->fmt->name,
@@ -1320,9 +1326,6 @@ vcc_expr0(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		vcc_ErrWhere2(tl, t1, tl->t);
 		return;
 	}
-
-	if ((*e)->fmt != STRINGS && fmt->stringform)
-		vcc_expr_tostring(tl, e, STRINGS);
 
 	if ((*e)->fmt == STRINGS && fmt->stringform) {
 		if (fmt == STRING_LIST)
