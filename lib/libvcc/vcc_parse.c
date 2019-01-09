@@ -149,7 +149,7 @@ vcc_Compound(struct vcc *tl)
 	Fb(tl, 1, "{\n");
 	tl->indent += INDENT;
 	C(tl, ";");
-	Fb(tl, 1, "if (*ctx->handling) return;\n");
+	Fb(tl, 1, "END_;\n");
 	while (1) {
 		ERRCHK(tl);
 		t = tl->t;
@@ -206,7 +206,7 @@ vcc_Compound(struct vcc *tl)
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
-		Fb(tl, 1, "if (*ctx->handling) return;\n");
+		Fb(tl, 1, "END_;\n");
 	}
 }
 
