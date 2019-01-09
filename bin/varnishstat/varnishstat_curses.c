@@ -890,6 +890,12 @@ handle_keypress(int ch)
 		if (page_start + l_points < n_ptarray - 1)
 			page_start += l_points;
 		break;
+	case KEY_HOME:
+		current = 0;
+		break;
+	case KEY_END:
+		current = n_ptarray - 1;
+		break;
 	case 'd':
 		hide_unseen = 1 - hide_unseen;
 		rebuild = 1;

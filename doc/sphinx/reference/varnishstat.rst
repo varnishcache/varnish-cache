@@ -85,6 +85,12 @@ The following keys control the interactive display:
 <PAGEDOWN> or <SPACE>
 	Navigate the counter list one page down.
 
+<HOME>
+	Navigate the counter list to the top.
+
+<END>
+	Navigate the counter list to the bottom.
+
 <d>
 	Toggle between showing and hiding unseen counters. Unseen
 	counters are those that has been zero for the entire runtime
