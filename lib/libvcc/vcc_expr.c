@@ -130,8 +130,9 @@ vcc_delete_expr(struct expr *e)
  *	\v1  insert subexpression 1
  *	\v2  insert subexpression 2
  *	\vS  insert subexpression 1(STRINGS) as STRING
+ *	\vs  insert subexpression 2(STRINGS) as STRING
  *	\vT  insert subexpression 1(STRINGS) as STRANDS
- *	\vt  insert subexpression 1(STRINGS) as STRANDS
+ *	\vt  insert subexpression 2(STRINGS) as STRANDS
  *	\v+  increase indentation
  *	\v-  decrease indentation
  *	anything else is literal
@@ -161,8 +162,8 @@ vcc_expr_edit(struct vcc *tl, vcc_type_t fmt, const char *p, struct expr *e1,
 		}
 		assert(*p == '\v');
 		switch (*++p) {
-		case '+': VSB_cat(e->vsb, "\v+"); break;
-		case '-': VSB_cat(e->vsb, "\v-"); break;
+		case '+': VSB_cat(e->vsb, "\v+"); nl = 0; break;
+		case '-': VSB_cat(e->vsb, "\v-"); nl = 0; break;
 		case 'S':
 		case 's':
 			e3 = (*p == 'S' ? e1 : e2);
@@ -654,7 +655,7 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 	if (sa != NULL) {
 		*e = vcc_expr_edit(tl, e1->fmt, "\v1\n})\v-", e1, NULL);
 	} else {
-		*e = vcc_expr_edit(tl, e1->fmt, "\v1\n)\v-", e1, NULL);
+		*e = vcc_expr_edit(tl, e1->fmt, "\v1\v-\n)", e1, NULL);
 	}
 	SkipToken(tl, ')');
 }
@@ -1329,7 +1330,7 @@ vcc_expr0(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 
 	if ((*e)->fmt == STRING_LIST)
 		*e = vcc_expr_edit(tl, STRING_LIST,
-		    "\v+\n\v1,\nvrt_magic_string_end\v-", *e, NULL);
+		    "\n\v1,\nvrt_magic_string_end", *e, NULL);
 
 	if (fmt == BOOL) {
 		vcc_expr_tobool(tl, e);
