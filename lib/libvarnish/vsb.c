@@ -573,7 +573,7 @@ VSB_quote_pfx(struct vsb *s, const char *pfx, const void *v, int len, int how)
 			break;
 		case '\n':
 			if (how & VSB_QUOTE_CSTR) {
-				(void)VSB_printf(s, "\\n\"\n%s\t\"", pfx);
+				(void)VSB_printf(s, "\\n\"\n%s\"", pfx);
 			} else if (how & (VSB_QUOTE_NONL|VSB_QUOTE_UNSAFE)) {
 				(void)VSB_printf(s, "\n");
 				nl = 1;

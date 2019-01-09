@@ -233,9 +233,8 @@ EmitCoordinates(const struct vcc *tl, struct vsb *vsb)
 	VTAILQ_FOREACH(sp, &tl->sources, list) {
 		VSB_printf(vsb, "    /* ");
 		VSB_quote(vsb, sp->name, -1, VSB_QUOTE_CSTR);
-		VSB_printf(vsb, "*/\n");
-		VSB_printf(vsb, "\t");
-		VSB_quote(vsb, sp->b, sp->e - sp->b, VSB_QUOTE_CSTR);
+		VSB_printf(vsb, " */\n");
+		VSB_quote_pfx(vsb, "\t", sp->b, sp->e - sp->b, VSB_QUOTE_CSTR);
 		VSB_printf(vsb, ",\n");
 	}
 	VSB_printf(vsb, "};\n\n");
