@@ -32,13 +32,13 @@
 #include <sys/file.h>
 #include <sys/stat.h>
 
+#include <errno.h>
 #include <fcntl.h>
 #include <stdarg.h>
 #include <string.h>
 #include <unistd.h>
 
 #include "vfl.h"
-#include "verrno.h"
 
 /*
  * Reliably open and lock a file.
