@@ -349,15 +349,17 @@ main(int argc, char *argv[])
 
 	for (tc = test_cases; tc->str; ++tc) {
 		e = VNUM_2bytes(tc->str, &val, tc->rel);
-		if (e != tc->err) {
-			printf("%s: VNUM_2bytes(\"%s\", %ju) (%s) != (%s)\n",
-			    *argv, tc->str, tc->rel, tc->err, e);
-			++ec;
-		} else if (e == NULL && val != tc->val) {
-			printf("%s: VNUM_2bytes(\"%s\", %ju) %ju != %ju (%s)\n",
-			    *argv, tc->str, tc->rel, val, tc->val, e);
-			++ec;
-		}
+		if (e != NULL)
+			val = 0;
+		if (e == tc->err && val == tc->val)
+			continue;
+		++ec;
+		printf("%s: VNUM_2bytes(\"%s\", %ju)\n",
+		   *argv, tc->str, tc->rel);
+		printf("\tExpected:\tstatus %s - value %ju\n",
+		    tc->err ? tc->err : "Success", tc->val);
+		printf("\tGot:\t\tstatus %s - value %ju\n",
+		    e ? e : "Success", val);
 	}
 	if (!isnan(VNUM_duration(NULL))) {
 		printf("%s: VNUM_Duration(NULL) fail\n", *argv);
