@@ -38,6 +38,7 @@
 #include "vfil.h"
 #include "vjsn.h"
 #include "vmod_abi.h"
+#include "vsb.h"
 
 static int
 vcc_path_dlopen(void *priv, const char *fn)
@@ -349,8 +350,7 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 {
 	struct symbol *sy1, *sy2, *sy3;
 	struct inifin *ifp;
-	char buf1[128];
-	char buf2[128];
+	struct vsb *buf;
 	const struct vjsn_val *vv, *vf;
 	const char *p;
 
@@ -393,8 +393,10 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 
 	vf = VTAILQ_NEXT(vf, list);
 
-	bprintf(buf1, ", &%s, \"%s\"", sy1->rname, sy1->name);
-	vcc_Eval_Func(tl, vf, buf1, sy2);
+	buf = VSB_new_auto();
+	VSB_printf(buf, ", &%s, \"%s\"", sy1->rname, sy1->name);
+	VSB_finish(buf);
+	vcc_Eval_Func(tl, vf, VSB_data(buf), sy2);
 	ERRCHK(tl);
 	SkipToken(tl, ';');
 	sy1->def_e = tl->t;
@@ -411,8 +413,10 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 	VSB_printf(ifp->fin, "\t\t%s(&%s);", vf->value, sy1->rname);
 
 	/* Instantiate symbols for the methods */
-	bprintf(buf1, ", %s", sy1->rname);
-	p = TlDup(tl, buf1);
+	VSB_clear(buf);
+	VSB_printf(buf, ", %s", sy1->rname);
+	VSB_finish(buf);
+	p = TlDup(tl, VSB_data(buf));
 	while (vv != NULL) {
 		vf = VTAILQ_FIRST(&vv->children);
 		assert(vf->type == VJSN_STRING);
@@ -420,11 +424,14 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 		vf = VTAILQ_NEXT(vf, list);
 		assert(vf->type == VJSN_STRING);
 
-		bprintf(buf2, "%s.%s", sy1->name, vf->value);
-		sy3 = VCC_MkSym(tl, buf2, SYM_FUNC, VCL_LOW, VCL_HIGH);
+		VSB_clear(buf);
+		VSB_printf(buf, "%s.%s", sy1->name, vf->value);
+		VSB_finish(buf);
+		sy3 = VCC_MkSym(tl, VSB_data(buf), SYM_FUNC, VCL_LOW, VCL_HIGH);
 		AN(sy3);
 		func_sym(sy3, sy2->vmod, VTAILQ_NEXT(vf, list));
 		sy3->extra = p;
 		vv = VTAILQ_NEXT(vv, list);
 	}
+	VSB_destroy(&buf);
 }
