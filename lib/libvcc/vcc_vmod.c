@@ -395,7 +395,7 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 
 	buf = VSB_new_auto();
 	VSB_printf(buf, ", &%s, \"%s\"", sy1->rname, sy1->name);
-	VSB_finish(buf);
+	AZ(VSB_finish(buf));
 	vcc_Eval_Func(tl, vf, VSB_data(buf), sy2);
 	ERRCHK(tl);
 	SkipToken(tl, ';');
@@ -415,7 +415,7 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 	/* Instantiate symbols for the methods */
 	VSB_clear(buf);
 	VSB_printf(buf, ", %s", sy1->rname);
-	VSB_finish(buf);
+	AZ(VSB_finish(buf));
 	p = TlDup(tl, VSB_data(buf));
 	while (vv != NULL) {
 		vf = VTAILQ_FIRST(&vv->children);
@@ -426,7 +426,7 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 
 		VSB_clear(buf);
 		VSB_printf(buf, "%s.%s", sy1->name, vf->value);
-		VSB_finish(buf);
+		AZ(VSB_finish(buf));
 		sy3 = VCC_MkSym(tl, VSB_data(buf), SYM_FUNC, VCL_LOW, VCL_HIGH);
 		AN(sy3);
 		func_sym(sy3, sy2->vmod, VTAILQ_NEXT(vf, list));
