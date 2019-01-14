@@ -93,7 +93,12 @@ Booleans can be either ``true`` or ``false``.  In addition, in a boolean
 context some data types will evaluate to ``true`` or ``false`` depending on
 their value.
 
-String types will evaluate to ``false`` if they are not set; backend types
+String types will evaluate to ``false`` if they are unset.  This allows
+checks of the type ``if (req.http.opthdr) {}`` to test if a header
+exists, even if it is empty, whereas ``if (req.http.opthdr == "") {}``
+does not distinguish if the header does not exist or if it is empty.
+
+Backend types
 will evaluate to ``false`` if they don't have a backend assigned; integer
 types will evaluate to ``false`` if their value is zero; duration types
 will evaluate to ``false`` if their value is equal or less than zero.
