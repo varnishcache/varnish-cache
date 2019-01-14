@@ -63,6 +63,7 @@ Req_AcctLogCharge(struct VSC_main_wrk *ds, struct req *req)
 		    (uintmax_t)(a->resp_hdrbytes + a->resp_bodybytes));
 	}
 
+	AN(req->topreq);
 	if (IS_TOPREQ(req)) {
 #define ACCT(foo) ds->s_##foo += a->foo;
 #include "tbl/acct_fields_req.h"
@@ -147,6 +148,8 @@ Req_New(const struct worker *wrk, struct sess *sp)
 	req->t_prev = NAN;
 	req->t_req = NAN;
 
+	req->topreq = req;
+
 	return (req);
 }
 
@@ -174,7 +177,7 @@ Req_Release(struct req *req)
 	MPL_AssertSane(req);
 	VSL_Flush(req->vsl, 0);
 	req->sp = NULL;
-	req->top = NULL;
+	req->topreq = NULL;
 	MPL_Free(pp->mpl_req, req);
 }
 
@@ -193,7 +196,6 @@ Req_Rollback(struct req *req)
 	if (WS_Overflowed(req->ws))
 		req->wrk->stats->ws_client_overflow++;
 	WS_Reset(req->ws, req->ws_req);
-	req->top = NULL;
 }
 
 /*----------------------------------------------------------------------
@@ -207,6 +209,7 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(req->topreq, REQ_MAGIC);
 	assert(sp == req->sp);
 
 	req->director_hint = NULL;
@@ -238,7 +241,6 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	req->hash_ignore_busy = 0;
 	req->esi_level = 0;
 	req->is_hit = 0;
-	req->top = 0;
 
 	if (WS_Overflowed(req->ws))
 		wrk->stats->ws_client_overflow++;
@@ -256,21 +258,4 @@ Req_Fail(struct req *req, enum sess_close reason)
 
 	AN(req->transport->req_fail);
 	req->transport->req_fail(req, reason);
-}
-
-/*----------------------------------------------------------------------
- */
-
-void
-Req_MakeTop(struct req *req)
-{
-
-	CHECK_OBJ_ORNULL(req->top, REQTOP_MAGIC);
-	if (req->top != NULL)
-		return;
-	req->top = WS_Alloc(req->ws, sizeof *req->top);
-	if (req->top != NULL) {
-		INIT_OBJ(req->top, REQTOP_MAGIC);
-		req->top->topreq = req;
-	}
 }

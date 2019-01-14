@@ -430,7 +430,6 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 		CHECK_OBJ_NOTNULL(req->sp, SESS_MAGIC);
 		CHECK_OBJ_NOTNULL(req->vcl, VCL_MAGIC);
-		CHECK_OBJ_ORNULL(req->top, REQTOP_MAGIC);
 		VCL_Req2Ctx(&ctx, req);
 	}
 	if (bo != NULL) {

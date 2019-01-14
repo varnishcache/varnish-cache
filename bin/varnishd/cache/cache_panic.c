@@ -456,20 +456,6 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 /*--------------------------------------------------------------------*/
 
 static void
-pan_top(struct vsb *vsb, const struct reqtop *top)
-{
-	VSB_printf(vsb, "top = %p {\n", top);
-	if (PAN_already(vsb, top))
-		return;
-	VSB_indent(vsb, 2);
-	pan_req(vsb, top->topreq);
-	VSB_indent(vsb, -2);
-	VSB_printf(vsb, "},\n");
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
 pan_req(struct vsb *vsb, const struct req *req)
 {
 	const char *stp;
@@ -542,8 +528,11 @@ pan_req(struct vsb *vsb, const struct req *req)
 
 	pan_privs(vsb, req->privs);
 
-	if (req->top != NULL)
-		pan_top(vsb, req->top);
+	VSB_printf(vsb, "topreq = {\n");
+	VSB_indent(vsb, 2);
+	pan_req(vsb, req->topreq);
+	VSB_indent(vsb, -2);
+	VSB_printf(vsb, "},\n");
 
 	VSB_indent(vsb, -2);
 	VSB_printf(vsb, "},\n");

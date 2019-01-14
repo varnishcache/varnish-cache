@@ -91,15 +91,12 @@ VCL_Req2Ctx(struct vrt_ctx *ctx, struct req *req)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_ORNULL(req->topreq, REQ_MAGIC);
 
 	ctx->vcl = req->vcl;
 	ctx->vsl = req->vsl;
 	ctx->http_req = req->http;
-	CHECK_OBJ_ORNULL(req->top, REQTOP_MAGIC);
-	if (req->top != NULL)
-		ctx->http_req_top = req->top->topreq->http;
-	else
-		ctx->http_req_top = req->http;
+	ctx->http_req_top = req->topreq->http;
 	ctx->http_resp = req->resp;
 	ctx->req = req;
 	ctx->sp = req->sp;
