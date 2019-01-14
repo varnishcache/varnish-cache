@@ -94,7 +94,7 @@ cnt_transport(struct worker *wrk, struct req *req)
 	}
 
 	req->ws_req = WS_Snapshot(req->ws);
-	HTTP_Copy(req->http0, req->http);	// For ESI & restart
+	HTTP_Clone(req->http0, req->http);	// For ESI & restart
 	req->req_step = R_STP_RECV;
 	return (REQ_FSM_MORE);
 }

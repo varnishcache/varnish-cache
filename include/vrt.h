@@ -52,6 +52,10 @@
  * binary/load-time compatible, increment MAJOR version
  *
  *
+ * 9.0 (scheduled for 2019-03-15)
+ *	HTTP_Copy() removed
+ *	HTTP_Dup() added
+ *	HTTP_Clone() added
  * 8.0 (2018-09-15)
  *	VRT_Strands() added
  *	VRT_StrandsWS() added

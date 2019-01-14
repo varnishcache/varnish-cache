@@ -595,7 +595,8 @@ extern pthread_t cli_thread;
 
 /* cache_http.c */
 unsigned HTTP_estimate(unsigned nhttp);
-void HTTP_Copy(struct http *to, const struct http * const fm);
+void HTTP_Clone(struct http *to, const struct http * const fm);
+void HTTP_Dup(struct http *to, const struct http * const fm);
 struct http *HTTP_create(void *p, uint16_t nhttp, unsigned);
 const char *http_Status2Reason(unsigned, const char **);
 unsigned http_EstimateWS(const struct http *fm, unsigned how);

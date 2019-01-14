@@ -208,7 +208,7 @@ vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo)
 
 	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, SLT_BereqMethod);
 	bo->ws_bo = WS_Snapshot(bo->ws);
-	HTTP_Copy(bo->bereq, bo->bereq0);
+	HTTP_Clone(bo->bereq, bo->bereq0);
 
 	if (bo->req->req_body_status == REQ_BODY_NONE) {
 		bo->req = NULL;

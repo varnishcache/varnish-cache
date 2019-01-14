@@ -190,17 +190,37 @@ http_Teardown(struct http *hp)
 	memset(hp->hdf, 0, sizeof *hp->hdf * hp->shd);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Duplicate the http content into another http
+ * We cannot just memcpy the struct because the hd & hdf are private
+ * storage to the struct http.
+ */
 
 void
-HTTP_Copy(struct http *to, const struct http * const fm)
+HTTP_Dup(struct http *to, const struct http * const fm)
 {
 
 	assert(fm->nhd <= to->shd);
-	memcpy(&to->nhd, &fm->nhd, sizeof *to - offsetof(struct http, nhd));
 	memcpy(to->hd, fm->hd, fm->nhd * sizeof *to->hd);
 	memcpy(to->hdf, fm->hdf, fm->nhd * sizeof *to->hdf);
+	to->nhd = fm->nhd;
+	to->logtag = fm->logtag;
+	to->status = fm->status;
 	to->protover = fm->protover;
+}
+
+
+/*--------------------------------------------------------------------
+ * Clone the entire http structure, including vsl & ws
+ */
+
+void
+HTTP_Clone(struct http *to, const struct http * const fm)
+{
+
+	HTTP_Dup(to, fm);
+	to->vsl = fm->vsl;
+	to->ws = fm->ws;
 }
 
 /*--------------------------------------------------------------------*/
