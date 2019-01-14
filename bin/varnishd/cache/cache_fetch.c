@@ -896,6 +896,7 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 
 	bo = VBO_GetBusyObj(wrk, req);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	AN(bo->vcl);
 
 	boc = HSH_RefBoc(oc);
 	CHECK_OBJ_NOTNULL(boc, BOC_MAGIC);
@@ -917,14 +918,13 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	}
 
 	VSLb(bo->vsl, SLT_Begin, "bereq %u %s", VXID(req->vsl->wid), how);
+	VSLb(bo->vsl, SLT_VCL_use, "%s", VCL_Name(bo->vcl));
 	VSLb(req->vsl, SLT_Link, "bereq %u %s", VXID(bo->vsl->wid), how);
 
 	THR_SetBusyobj(bo);
 
 	bo->sp = req->sp;
 	SES_Ref(bo->sp);
-
-	AN(bo->vcl);
 
 	oc->boc->vary = req->vary_b;
 	req->vary_b = NULL;

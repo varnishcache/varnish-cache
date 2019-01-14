@@ -642,6 +642,15 @@ SLTM(SessError, 0, "Client connection accept failed",
 	"\n"
 )
 
+SLTM(VCL_use, 0, "VCL in use",
+	"Records the name of the VCL being used.\n\n"
+	"The format is::\n\n"
+	"\t%s [via %s]\n"
+	"\t|       |\n"
+	"\t|       +- Name of label used to find it (optional)\n"
+	"\t+--------- Name of VCL put in use\n"
+)
+
 #undef NODEF_NOTICE
 #undef SLTM
 

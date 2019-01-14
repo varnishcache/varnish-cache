@@ -1029,6 +1029,7 @@ CNT_Embark(struct worker *wrk, struct req *req)
 		VCL_Refresh(&wrk->vcl);
 		req->vcl = wrk->vcl;
 		wrk->vcl = NULL;
+		VSLb(req->vsl, SLT_VCL_use, "%s", VCL_Name(req->vcl));
 	}
 
 	AN(req->vcl);

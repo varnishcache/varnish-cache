@@ -344,8 +344,8 @@ VRT_vcl_select(VRT_CTX, VCL_VCL vcl)
 	VCL_TaskLeave(req->vcl, req->privs);
 	VCL_Rel(&req->vcl);
 	vcl_get(&req->vcl, vcl);
-	/* XXX: better logging */
-	VSLb(ctx->req->vsl, SLT_Debug, "Now using %s VCL", vcl->loaded_name);
+	VSLb(ctx->req->vsl, SLT_VCL_use, "%s via %s",
+	    req->vcl->loaded_name, vcl->loaded_name);
 	VCL_TaskEnter(req->vcl, req->privs);
 }
 
