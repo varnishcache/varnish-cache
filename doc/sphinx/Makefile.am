@@ -192,7 +192,7 @@ include/varnishstat_synopsis.rst: $(top_builddir)/bin/varnishstat/varnishstat
 BUILT_SOURCES += include/varnishstat_options.rst \
 	 include/varnishstat_synopsis.rst
 
-include/vsl-tags.rst: $(top_builddir)/lib/libvarnishapi/vsl2rst
+include/vsl-tags.rst: $(top_builddir)/lib/libvarnishapi/vsl2rst 
 	$(top_builddir)/lib/libvarnishapi/vsl2rst > ${@}_
 	mv ${@}_ ${@}
 BUILT_SOURCES += include/vsl-tags.rst

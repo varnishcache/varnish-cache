@@ -628,6 +628,35 @@ SLTM(HitMiss, 0, "Hit for miss object in cache.",
 	"\n"
 )
 
+SLTM(Filters, 0, "Body filters",
+	"List of filters applied to the body.\n\n"
+	NOSUP_NOTICE
+)
+
+SLTM(SessError, 0, "Client connection accept failed",
+	"Accepting a client connection has failed.\n\n"
+	"The format is::\n\n"
+	"\t%s %s %s %d %d %s\n"
+	"\t|  |  |  |  |  |\n"
+	"\t|  |  |  |  |  +- Detailed error message\n"
+	"\t|  |  |  |  +---- Error Number (errno) from accept(2)\n"
+	"\t|  |  |  +------- File descriptor number\n"
+	"\t|  |  +---------- Local TCP port / 0 for UDS\n"
+	"\t|  +------------- Local IPv4/6 address / 0.0.0.0 for UDS\n"
+	"\t+---------------- Socket name (from -a argument)\n"
+	"\n"
+	NOSUP_NOTICE
+)
+
+SLTM(VCL_use, 0, "VCL in use",
+	"Records the name of the VCL being used.\n\n"
+	"The format is::\n\n"
+	"\t%s [via %s]\n"
+	"\t|       |\n"
+	"\t|       +- Name of label used to find it (optional)\n"
+	"\t+--------- Name of VCL put in use\n"
+)
+
 #undef NODEF_NOTICE
 #undef SLTM
 
