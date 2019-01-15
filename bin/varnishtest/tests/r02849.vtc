@@ -1,0 +1,123 @@
+varnishtest "ESI included req's start in the same VCL the top started."
+
+server s1 {
+	rxreq
+	expect req.url == /l3a
+	txresp -body "_Correct_"
+
+	rxreq
+	expect req.url == /l3b
+	txresp -body "_Wrong1_"
+
+	rxreq
+	expect req.url == /l3c
+	txresp -body "_Wrong2_"
+
+	rxreq
+	expect req.url == /l1
+	txresp -body {<P1/><esi:include src="/l2"/><P1/>}
+
+	rxreq
+	expect req.url == /l2
+	txresp -body {<P2/><esi:include src="/l3"/><P2/>}
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		if (req.url == "/l3") {
+			set req.url = "/l3b";
+		}
+	}
+	sub vcl_backend_response {
+		set beresp.do_esi = True;
+	}
+	sub vcl_deliver {
+		set resp.http.vcl = "lab1";
+	}
+} -start
+
+varnish v1 -cliok "vcl.label lab1 vcl1"
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		if (req.url == "/l3") {
+			set req.url = "/l3a";
+		}
+	}
+	sub vcl_backend_response {
+		set beresp.do_esi = True;
+	}
+	sub vcl_deliver {
+		set resp.http.vcl = "lab2";
+	}
+}
+
+varnish v1 -cliok "vcl.label lab2 vcl2"
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		if (req.url == "/l1") {
+			return (vcl(lab1));
+		}
+		if (req.url == "/l3") {
+			return (vcl(lab2));
+		}
+		if (req.url == "/l3") {
+			set req.url = "/l3c";
+		}
+	}
+	sub vcl_backend_response {
+		set beresp.do_esi = True;
+	}
+	sub vcl_deliver {
+		set resp.http.vcl = "vcl3";
+	}
+}
+
+# First cache the two possible inclusions
+
+client c1 {
+	txreq -url /l3a
+	rxresp
+	expect resp.http.vcl == vcl3
+	txreq -url /l3b
+	rxresp
+	expect resp.http.vcl == vcl3
+	txreq -url /l3c
+	rxresp
+	expect resp.http.vcl == vcl3
+} -run
+
+varnish v1 -vsl_catchup
+
+logexpect l1 -v v1 -g raw {
+
+	expect * 1009 VCL_use	"vcl1"
+	expect * 1009 BeReqURL	"/l1"
+
+	expect * 1011 VCL_use	"vcl3"
+	expect * 1011 BeReqURL	"/l2"
+
+	expect * 1012 ReqURL	"/l3"
+	expect * 1012 ReqURL	"/l3"
+	expect * 1012 VCL_use	"vcl2 via lab2"
+	expect * 1012 ReqURL	"/l3a"
+
+	expect * 1010 ReqURL	"/l2"
+	expect * 1010 ReqURL	"/l2"
+
+	expect * 1008 VCL_use	"vcl3"
+	expect * 1008 ReqURL	"/l1"
+	expect * 1008 VCL_use	"vcl1 via lab1"
+} -start
+
+# The test which one is picked
+
+client c1 {
+	txreq -url /l1
+	rxresp
+	expect resp.http.vcl == lab1
+	expect resp.body == {<P1/><P2/>_Correct_<P2/><P1/>}
+} -run
+
+logexpect l1 -wait

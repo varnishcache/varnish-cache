@@ -541,6 +541,7 @@ h2_do_req(struct worker *wrk, void *priv)
 	wrk->stats->client_req++;
 	if (CNT_Request(req) != REQ_FSM_DISEMBARK) {
 		AZ(req->ws->r);
+		AZ(req->vcl0);
 		h2 = r2->h2sess;
 		CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
 		Lck_Lock(&h2->sess->mtx);

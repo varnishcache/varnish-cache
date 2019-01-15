@@ -169,7 +169,10 @@ ved_include(struct req *preq, const char *src, const char *host,
 	req->req_body_status = REQ_BODY_NONE;
 
 	AZ(req->vcl);
-	req->vcl = preq->vcl;
+	if (req->topreq->vcl0)
+		req->vcl = req->topreq->vcl0;
+	else
+		req->vcl = preq->vcl;
 	VCL_Ref(req->vcl);
 
 	req->req_step = R_STP_TRANSPORT;

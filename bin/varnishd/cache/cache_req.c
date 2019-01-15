@@ -211,6 +211,7 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->topreq, REQ_MAGIC);
 	assert(sp == req->sp);
+	AZ(req->vcl0);
 
 	req->director_hint = NULL;
 	req->restarts = 0;

@@ -89,8 +89,8 @@ Doing ESI on JSON and other non-XML'ish content
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Varnish will peek at the first byte of an object and if it is not
-a "<" Varnish assumes you didn't really mean to ESI process.
-You can alter this behaviour by::
+a "<" Varnish assumes you didn't really mean to ESI process it.
+You can disable this check by::
 
    param.set feature +esi_disable_xml_check
 
@@ -134,3 +134,11 @@ If you really know what you are doing, you can use this workaround::
            set beresp.status = 1206;
        }
    }
+
+ESI and return(vcl(...))
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+If the original client request switched to a different VCL using
+``return(vcl(...))`` in ``vcl_recv``, any esi:include-requests
+will still start out in the same VCL as the original did, *not*
+in the one it switched to.

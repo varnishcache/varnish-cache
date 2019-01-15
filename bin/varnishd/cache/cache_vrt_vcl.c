@@ -341,8 +341,17 @@ VRT_vcl_select(VRT_CTX, VCL_VCL vcl)
 	struct req *req = ctx->req;
 
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
+
+	if (IS_TOPREQ(req) && req->vcl0 != NULL)
+		return;		// Illega, req-FSM will fail this later.
+
 	VCL_TaskLeave(req->vcl, req->privs);
-	VCL_Rel(&req->vcl);
+	if (IS_TOPREQ(req)) {
+		req->vcl0 = req->vcl;
+		req->vcl = NULL;
+	} else {
+		VCL_Rel(&req->vcl);
+	}
 	vcl_get(&req->vcl, vcl);
 	VSLb(ctx->req->vsl, SLT_VCL_use, "%s via %s",
 	    req->vcl->loaded_name, vcl->loaded_name);

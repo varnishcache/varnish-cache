@@ -193,14 +193,14 @@ vcl_find(const char *name)
 /*--------------------------------------------------------------------*/
 
 void
-VCL_Panic(struct vsb *vsb, const struct vcl *vcl)
+VCL_Panic(struct vsb *vsb, const char *nm, const struct vcl *vcl)
 {
 	int i;
 
 	AN(vsb);
 	if (vcl == NULL)
 		return;
-	VSB_printf(vsb, "vcl = {\n");
+	VSB_printf(vsb, "%s = {\n", nm);
 	VSB_indent(vsb, 2);
 	PAN_CheckMagic(vsb, vcl, VCL_MAGIC);
 	VSB_printf(vsb, "name = \"%s\",\n", vcl->loaded_name);

@@ -448,7 +448,7 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 		VSB_printf(vsb, "director_resp = director_req,\n");
 	else
 		VDI_Panic(bo->director_resp, vsb, "director_resp");
-	VCL_Panic(vsb, bo->vcl);
+	VCL_Panic(vsb, "vcl", bo->vcl);
 	VSB_indent(vsb, -2);
 	VSB_printf(vsb, "},\n");
 }
@@ -512,7 +512,8 @@ pan_req(struct vsb *vsb, const struct req *req)
 	if (req->resp->ws != NULL)
 		pan_http(vsb, "resp", req->resp);
 
-	VCL_Panic(vsb, req->vcl);
+	VCL_Panic(vsb, "vcl", req->vcl);
+	VCL_Panic(vsb, "vcl0", req->vcl0);
 
 	if (req->body_oc != NULL)
 		pan_objcore(vsb, "BODY", req->body_oc);

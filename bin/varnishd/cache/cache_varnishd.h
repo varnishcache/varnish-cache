@@ -378,7 +378,7 @@ void VRY_Finish(struct req *req, enum vry_finish_flag);
 VCL_BACKEND VCL_DefaultDirector(const struct vcl *);
 const struct vrt_backend_probe *VCL_DefaultProbe(const struct vcl *);
 void VCL_Init(void);
-void VCL_Panic(struct vsb *, const struct vcl *);
+void VCL_Panic(struct vsb *, const char *nm, const struct vcl *);
 void VCL_Poll(void);
 void VCL_Ref(struct vcl *);
 void VCL_Refresh(struct vcl **);
