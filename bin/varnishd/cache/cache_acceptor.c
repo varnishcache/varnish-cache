@@ -368,12 +368,7 @@ vca_make_session(struct worker *wrk, void *arg)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(wa, arg, WRK_ACCEPT_MAGIC);
 
-	if (VTCP_blocking(wa->acceptsock)) {
-		closefd(&wa->acceptsock);
-		wrk->stats->sess_drop++;	// XXX Better counter ?
-		WS_Release(wrk->aws, 0);
-		return;
-	}
+	VTCP_blocking(wa->acceptsock);
 
 	/* Turn accepted socket into a session */
 	AN(wrk->aws->r);

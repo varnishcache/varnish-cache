@@ -176,30 +176,6 @@ http1_req_fail(struct req *req, enum sess_close reason)
 		SES_Close(req->sp, reason);
 }
 
-/*----------------------------------------------------------------------
- */
-
-static int
-http1_req_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
-{
-	AZ(wrk->aws->r);
-	AZ(req->ws->r);
-	Req_Cleanup(sp, wrk, req);
-
-	if (sp->fd >= 0 && req->doclose != SC_NULL)
-		SES_Close(sp, req->doclose);
-
-	if (sp->fd < 0) {
-		wrk->stats->sess_closed++;
-		AZ(req->vcl);
-		Req_Release(req);
-		SES_Delete(sp, SC_NULL, NAN);
-		return (1);
-	}
-
-	return (0);
-}
-
 static int v_matchproto_(vtr_minimal_response_f)
 http1_minimal_response(struct req *req, uint16_t status)
 {
@@ -336,18 +312,9 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 	 * Whenever we come in from the acceptor or waiter, we need to set
 	 * blocking mode.  It would be simpler to do this in the acceptor
 	 * or waiter, but we'd rather do the syscall in the worker thread.
-	 * On systems which return errors for ioctl, we close early
 	 */
-	if (http1_getstate(sp) == H1NEWREQ && VTCP_blocking(sp->fd)) {
-		AN(req->htc->ws->r);
-		if (errno == ECONNRESET)
-			SES_Close(sp, SC_REM_CLOSE);
-		else
-			SES_Close(sp, SC_TX_ERROR);
-		WS_Release(req->htc->ws, 0);
-		AN(http1_req_cleanup(sp, wrk, req));
-		return;
-	}
+	if (http1_getstate(sp) == H1NEWREQ)
+		VTCP_blocking(sp->fd);
 
 	req->transport = &HTTP1_transport;
 
@@ -454,8 +421,22 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			AZ(wrk->aws->r);
 			http1_setstate(sp, H1CLEANUP);
 		} else if (st == H1CLEANUP) {
-			if (http1_req_cleanup(sp, wrk, req))
+
+			AZ(wrk->aws->r);
+			AZ(req->ws->r);
+
+			if (sp->fd >= 0 && req->doclose != SC_NULL)
+				SES_Close(sp, req->doclose);
+
+			if (sp->fd < 0) {
+				wrk->stats->sess_closed++;
+				Req_Cleanup(sp, wrk, req);
+				Req_Release(req);
+				SES_Delete(sp, SC_NULL, NAN);
 				return;
+			}
+
+			Req_Cleanup(sp, wrk, req);
 			HTC_RxInit(req->htc, req->ws);
 			if (req->htc->rxbuf_e != req->htc->rxbuf_b)
 				wrk->stats->sess_readahead++;
