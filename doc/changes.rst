@@ -110,6 +110,8 @@ Varnish Cache trunk (ongoing)
 
 * added ``req.is_hitmiss`` and ``req.is_hitpass`` (2743_)
 
+* Add ``param.reset`` command to ``varnishadm``
+
 .. _2809: https://github.com/varnishcache/varnish-cache/issues/2809
 .. _2820: https://github.com/varnishcache/varnish-cache/issues/2820
 .. _2815: https://github.com/varnishcache/varnish-cache/issues/2815
