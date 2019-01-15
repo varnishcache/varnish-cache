@@ -213,9 +213,11 @@ VTCP_fastopen(int sock, int depth)
  * us to do two syscalls, one to get and one to set, the latter of
  * which mucks about a bit before it ends up calling ioctl(FIONBIO),
  * at least on FreeBSD.
+ * On Solaris ioctl(FIONBIO) can fail with connection related errnos,
+ * but as long as that is how they fail, we're fine.
  */
 
-int
+void
 VTCP_blocking(int sock)
 {
 	int i, j;
@@ -223,10 +225,9 @@ VTCP_blocking(int sock)
 	i = 0;
 	j = ioctl(sock, FIONBIO, &i);
 	VTCP_Assert(j);
-	return (j);
 }
 
-int
+void
 VTCP_nonblocking(int sock)
 {
 	int i, j;
@@ -234,7 +235,6 @@ VTCP_nonblocking(int sock)
 	i = 1;
 	j = ioctl(sock, FIONBIO, &i);
 	VTCP_Assert(j);
-	return (j);
 }
 
 /*--------------------------------------------------------------------
