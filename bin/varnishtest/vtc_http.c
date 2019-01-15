@@ -796,8 +796,11 @@ cmd_http_gunzip(CMD_ARGS)
 static void
 gzip_body(const struct http *hp, const char *txt, char **body, int *bodylen)
 {
-	int l, i;
+	int l;
 	z_stream vz;
+#ifdef VGZ_EXTENSIONS
+	int i;
+#endif
 
 	memset(&vz, 0, sizeof vz);
 

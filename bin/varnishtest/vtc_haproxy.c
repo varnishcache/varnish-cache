@@ -478,7 +478,7 @@ haproxy_new(const char *name)
 	h->cli = haproxy_cli_new(h);
 	AN(h->cli);
 
-	bprintf(buf, "rm -rf %s ; mkdir -p %s", h->workdir, h->workdir);
+	bprintf(buf, "rm -rf \"%s\" ; mkdir -p \"%s\"", h->workdir, h->workdir);
 	AZ(system(buf));
 
 	VTAILQ_INSERT_TAIL(&haproxies, h, list);
@@ -499,7 +499,7 @@ haproxy_delete(struct haproxy *h)
 	vtc_logclose(h->vl);
 
 	if (!leave_temp) {
-		bprintf(buf, "rm -rf %s", h->workdir);
+		bprintf(buf, "rm -rf \"%s\"", h->workdir);
 		AZ(system(buf));
 	}
 
@@ -549,7 +549,7 @@ haproxy_start(struct haproxy *h)
 	vsb = VSB_new_auto();
 	AN(vsb);
 
-	VSB_printf(vsb, "exec %s", h->filename);
+	VSB_printf(vsb, "exec \"%s\"", h->filename);
 	if (h->opt_check_mode)
 		VSB_printf(vsb, " -c");
 	else if (h->opt_daemon)
@@ -562,13 +562,13 @@ haproxy_start(struct haproxy *h)
 
 	VSB_printf(vsb, " %s", VSB_data(h->args));
 
-	VSB_printf(vsb, " -f %s ", h->cfg_fn);
+	VSB_printf(vsb, " -f \"%s\" ", h->cfg_fn);
 
 	if (h->opt_worker || h->opt_daemon) {
 		bprintf(buf, "%s/pid", h->workdir);
 		h->pid_fn = strdup(buf);
 		AN(h->pid_fn);
-		VSB_printf(vsb, " -p %s", h->pid_fn);
+		VSB_printf(vsb, " -p \"%s\"", h->pid_fn);
 	}
 
 	AZ(VSB_finish(vsb));
@@ -755,7 +755,7 @@ haproxy_write_conf(const struct haproxy *h, const char *cfg, int auto_be)
 	vsb2 = VSB_new_auto();
 	AN(vsb2);
 
-	VSB_printf(vsb, "    global\n\tstats socket %s "
+	VSB_printf(vsb, "    global\n\tstats socket \"%s\" "
 		   "level admin mode 600\n", h->cli_fn);
 	VSB_printf(vsb, "    stats socket \"fd@${cli}\" level admin\n");
 	AZ(VSB_cat(vsb, cfg));
