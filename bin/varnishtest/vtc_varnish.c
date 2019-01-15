@@ -26,6 +26,8 @@
  * SUCH DAMAGE.
  */
 
+#ifdef VTEST_WITH_VTC_VARNISH
+
 #include "config.h"
 
 #include <sys/types.h>
@@ -1237,3 +1239,5 @@ cmd_varnish(CMD_ARGS)
 		vtc_fatal(v->vl, "Unknown varnish argument: %s", *av);
 	}
 }
+
+#endif /* VTEST_WITH_VTC_VARNISH */
