@@ -133,6 +133,14 @@ CLI_CMD(VCL_LABEL,
 	2, 2
 )
 
+CLI_CMD(PARAM_RESET,
+	"param.reset",
+	"param.reset <param>",
+	"Reset parameter to default value.",
+	"",
+	1,1
+)
+
 CLI_CMD(PARAM_SHOW,
 	"param.show",
 	"param.show [-l|-j] [<param>|changed]",
