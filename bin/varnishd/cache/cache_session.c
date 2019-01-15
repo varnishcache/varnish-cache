@@ -441,10 +441,7 @@ SES_Wait(struct sess *sp, const struct transport *xp)
 	 * XXX: waiter_epoll prevents us from zeroing the struct because
 	 * XXX: it keeps state across calls.
 	 */
-	if (VTCP_nonblocking(sp->fd)) {
-		SES_Delete(sp, SC_REM_CLOSE, NAN);
-		return;
-	}
+	VTCP_nonblocking(sp->fd);
 
 	/*
 	 * put struct waited on the workspace
