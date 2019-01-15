@@ -49,7 +49,7 @@
 #ifdef HAVE_SYS_VFS_H
 #  include <sys/vfs.h>
 #endif
-#if defined(__linux__) && defined(HAVE_FALLOCATE)
+#ifdef HAVE_FALLOCATE
 #  include <linux/magic.h>
 #endif
 
