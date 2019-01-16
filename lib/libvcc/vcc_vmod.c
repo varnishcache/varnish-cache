@@ -394,9 +394,11 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 	vf = VTAILQ_NEXT(vf, list);
 
 	buf = VSB_new_auto();
+	AN(buf);
 	VSB_printf(buf, ", &%s, \"%s\"", sy1->rname, sy1->name);
 	AZ(VSB_finish(buf));
 	vcc_Eval_Func(tl, vf, VSB_data(buf), sy2);
+	VSB_destroy(&buf);
 	ERRCHK(tl);
 	SkipToken(tl, ';');
 	sy1->def_e = tl->t;
@@ -413,7 +415,8 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 	VSB_printf(ifp->fin, "\t\t%s(&%s);", vf->value, sy1->rname);
 
 	/* Instantiate symbols for the methods */
-	VSB_clear(buf);
+	buf = VSB_new_auto();
+	AN(buf);
 	VSB_printf(buf, ", %s", sy1->rname);
 	AZ(VSB_finish(buf));
 	p = TlDup(tl, VSB_data(buf));
