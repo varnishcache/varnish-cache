@@ -64,6 +64,7 @@ struct ecx {
 	int		woken;
 
 	struct req	*preq;
+	struct ecx	*pecx;
 	ssize_t		l_crc;
 	uint32_t	crc;
 };
@@ -264,6 +265,13 @@ ved_vdp_esi_init(struct req *req, void **priv)
 	req->res_mode |= RES_ESI;
 	if (req->resp_len != 0)
 		req->resp_len = -1;
+	if (req->esi_level > 0) {
+		assert(req->transport == &VED_transport);
+		CAST_OBJ_NOTNULL(ecx->pecx, req->transport_priv, ECX_MAGIC);
+		if (!ecx->pecx->isgzip)
+			ecx->pecx = NULL;
+	}
+
 	return (0);
 }
 
@@ -292,14 +300,8 @@ ved_vdp_esi_bytes(struct req *req, enum vdp_action act, void **priv,
 	int retval = 0;
 
 	CAST_OBJ_NOTNULL(ecx, *priv, ECX_MAGIC);
+	pecx = ecx->pecx;
 	pp = ptr;
-
-	if (req->esi_level > 0) {
-		assert(req->transport == &VED_transport);
-		CAST_OBJ_NOTNULL(pecx, req->transport_priv, ECX_MAGIC);
-		if (!pecx->isgzip)
-			pecx = NULL;
-	}
 
 	while (1) {
 		switch (ecx->state) {
@@ -455,11 +457,11 @@ const struct vdp VDP_esi = {
  * Push bytes to preq
  */
 static inline int
-ved_bytes(struct req *req, struct req *preq, enum vdp_action act,
+ved_bytes(struct req *req, struct ecx *ecx, enum vdp_action act,
     const void *ptr, ssize_t len)
 {
 	req->acct.resp_bodybytes += len;
-	return (VDP_bytes(preq, act, ptr, len));
+	return (VDP_bytes(ecx->preq, act, ptr, len));
 }
 
 /*---------------------------------------------------------------------
@@ -496,15 +498,13 @@ ved_pretend_gzip_bytes(struct req *req, enum vdp_action act, void **priv,
 	const uint8_t *p;
 	uint16_t lx;
 	struct ecx *ecx;
-	struct req *preq;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CAST_OBJ_NOTNULL(ecx, *priv, ECX_MAGIC);
-	preq = ecx->preq;
 
 	(void)priv;
 	if (l == 0)
-		return (ved_bytes(req, ecx->preq, act, pv, l));
+		return (ved_bytes(req, ecx, act, pv, l));
 
 	p = pv;
 
@@ -520,23 +520,23 @@ ved_pretend_gzip_bytes(struct req *req, enum vdp_action act, void **priv,
 	while (l > 0) {
 		if (l >= 65535) {
 			lx = 65535;
-			if (ved_bytes(req, preq, VDP_NULL, buf1, sizeof buf1))
+			if (ved_bytes(req, ecx, VDP_NULL, buf1, sizeof buf1))
 				return (-1);
 		} else {
 			lx = (uint16_t)l;
 			buf2[0] = 0;
 			vle16enc(buf2 + 1, lx);
 			vle16enc(buf2 + 3, ~lx);
-			if (ved_bytes(req, preq, VDP_NULL, buf2, sizeof buf2))
+			if (ved_bytes(req, ecx, VDP_NULL, buf2, sizeof buf2))
 				return (-1);
 		}
-		if (ved_bytes(req, preq, VDP_NULL, p, lx))
+		if (ved_bytes(req, ecx, VDP_NULL, p, lx))
 			return (-1);
 		l -= lx;
 		p += lx;
 	}
 	/* buf2 is local, have to flush */
-	return (ved_bytes(req, preq, VDP_FLUSH, NULL, 0));
+	return (ved_bytes(req, ecx, VDP_FLUSH, NULL, 0));
 }
 
 static const struct vdp ved_vdp_pgz = {
@@ -567,8 +567,8 @@ static const struct vdp ved_vdp_pgz = {
 struct ved_foo {
 	unsigned		magic;
 #define VED_FOO_MAGIC		0x6a5a262d
+	struct ecx		*ecx;
 	struct req		*req;
-	struct req		*preq;
 	ssize_t start, last, stop, lpad;
 	ssize_t ll;
 	uint64_t olen;
@@ -605,7 +605,7 @@ ved_objiterate(void *priv, unsigned flush, const void *ptr, ssize_t len)
 		if (dl > 0) {
 			if (dl > len)
 				dl = len;
-			if (ved_bytes(foo->req, foo->preq, VDP_NULL, pp, dl))
+			if (ved_bytes(foo->req, foo->ecx, VDP_NULL, pp, dl))
 				return(-1);
 			foo->ll += dl;
 			len -= dl;
@@ -616,7 +616,7 @@ ved_objiterate(void *priv, unsigned flush, const void *ptr, ssize_t len)
 		/* Remove the "LAST" bit */
 		foo->dbits[0] = *pp;
 		foo->dbits[0] &= ~(1U << (foo->last & 7));
-		if (ved_bytes(foo->req, foo->preq, VDP_NULL, foo->dbits, 1))
+		if (ved_bytes(foo->req, foo->ecx, VDP_NULL, foo->dbits, 1))
 			return (-1);
 		foo->ll++;
 		len--;
@@ -628,7 +628,7 @@ ved_objiterate(void *priv, unsigned flush, const void *ptr, ssize_t len)
 		if (dl > 0) {
 			if (dl > len)
 				dl = len;
-			if (ved_bytes(foo->req, foo->preq, VDP_NULL, pp, dl))
+			if (ved_bytes(foo->req, foo->ecx, VDP_NULL, pp, dl))
 				return (-1);
 			foo->ll += dl;
 			len -= dl;
@@ -690,7 +690,7 @@ ved_objiterate(void *priv, unsigned flush, const void *ptr, ssize_t len)
 		default:
 			WRONG("compiler must be broken");
 		}
-		if (ved_bytes(foo->req, foo->preq,
+		if (ved_bytes(foo->req, foo->ecx,
 		    VDP_NULL, foo->dbits + 1, foo->lpad))
 			return (-1);
 	}
@@ -731,8 +731,8 @@ ved_stripgzip(struct req *req, const struct boc *boc)
 	CAST_OBJ_NOTNULL(ecx, req->transport_priv, ECX_MAGIC);
 
 	INIT_OBJ(&foo, VED_FOO_MAGIC);
+	foo.ecx = ecx;
 	foo.req = req;
-	foo.preq = ecx->preq;
 	memset(foo.tailbuf, 0xdd, sizeof foo.tailbuf);
 
 	/* OA_GZIPBITS is not valid until BOS_FINISHED */
@@ -773,7 +773,7 @@ ved_stripgzip(struct req *req, const struct boc *boc)
 	foo.dbits = dbits;
 	(void)ObjIterate(req->wrk, req->objcore, &foo, ved_objiterate, 0);
 	/* XXX: error check ?? */
-	(void)ved_bytes(req, foo.preq, VDP_FLUSH, NULL, 0);
+	(void)ved_bytes(req, ecx, VDP_FLUSH, NULL, 0);
 
 	icrc = vle32dec(foo.tailbuf);
 	ilen = vle32dec(foo.tailbuf + 4);
@@ -796,11 +796,11 @@ static int v_matchproto_(vdp_bytes_f)
 ved_vdp_bytes(struct req *req, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
-	struct req *preq;
+	struct ecx *ecx;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CAST_OBJ_NOTNULL(preq, *priv, REQ_MAGIC);
-	return (ved_bytes(req, preq, act, ptr, len));
+	CAST_OBJ_NOTNULL(ecx, *priv, ECX_MAGIC);
+	return (ved_bytes(req, ecx, act, ptr, len));
 }
 
 static const struct vdp ved_ved = {
@@ -836,7 +836,7 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 		if (ecx->isgzip && !i)
 			(void)VDP_Push(req, &ved_vdp_pgz, ecx);
 		else
-			(void)VDP_Push(req, &ved_ved, ecx->preq);
+			(void)VDP_Push(req, &ved_ved, ecx);
 		(void)VDP_DeliverObj(req);
 		(void)VDP_bytes(req, VDP_FLUSH, NULL, 0);
 	}
