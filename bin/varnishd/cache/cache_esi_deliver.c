@@ -296,11 +296,10 @@ ved_vdp_esi_bytes(struct req *req, enum vdp_action act, void **priv,
 	uint32_t icrc = 0;
 	uint8_t tailbuf[8 + 5];
 	const uint8_t *pp;
-	struct ecx *ecx, *pecx = NULL;
+	struct ecx *ecx;
 	int retval = 0;
 
 	CAST_OBJ_NOTNULL(ecx, *priv, ECX_MAGIC);
-	pecx = ecx->pecx;
 	pp = ptr;
 
 	while (1) {
@@ -313,7 +312,7 @@ ved_vdp_esi_bytes(struct req *req, enum vdp_action act, void **priv,
 			ecx->e = ecx->p + l;
 
 			if (*ecx->p == VEC_GZ) {
-				if (pecx == NULL)
+				if (ecx->pecx == NULL)
 					retval = VDP_bytes(req, VDP_NULL,
 					    gzip_hdr, 10);
 				ecx->l_crc = 0;
@@ -384,7 +383,7 @@ ved_vdp_esi_bytes(struct req *req, enum vdp_action act, void **priv,
 			}
 			break;
 		case 2:
-			if (ecx->isgzip && pecx == NULL) {
+			if (ecx->isgzip && ecx->pecx == NULL) {
 				/*
 				 * We are bytealigned here, so simply emit
 				 * a gzip literal block with finish bit set.
@@ -402,10 +401,10 @@ ved_vdp_esi_bytes(struct req *req, enum vdp_action act, void **priv,
 				vle32enc(tailbuf + 9, ecx->l_crc);
 
 				(void)VDP_bytes(req, VDP_NULL, tailbuf, 13);
-			} else if (pecx != NULL) {
-				pecx->crc = crc32_combine(pecx->crc,
+			} else if (ecx->pecx != NULL) {
+				ecx->pecx->crc = crc32_combine(ecx->pecx->crc,
 				    ecx->crc, ecx->l_crc);
-				pecx->l_crc += ecx->l_crc;
+				ecx->pecx->l_crc += ecx->l_crc;
 			}
 			retval = VDP_bytes(req, VDP_FLUSH, NULL, 0);
 			ecx->state = 99;
