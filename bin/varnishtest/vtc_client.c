@@ -148,7 +148,7 @@ uds_open(void *priv, const struct sockaddr_un *uds)
 	if (s < 0)
 		return (s);
 
-	(void) VTCP_nonblocking(s);
+	VTCP_nonblocking(s);
 	i = connect(s, (const void*)uds, sl);
 	if (i == 0)
 		return(s);
@@ -229,7 +229,7 @@ client_thread(void *priv)
 			vtc_fatal(c->vl, "Failed to open %s: %s",
 			    VSB_data(vsb), err);
 		/* VTCP_blocking does its own checks, trust it */
-		(void)VTCP_blocking(fd);
+		VTCP_blocking(fd);
 		if (c->proxy_spec != NULL)
 			client_proxy(vl, fd, c->proxy_version, c->proxy_spec);
 		if (! c->keepalive)

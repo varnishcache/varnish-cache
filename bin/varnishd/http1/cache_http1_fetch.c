@@ -97,7 +97,7 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 
 	VSLb(bo->vsl, SLT_BackendStart, "%s %s", abuf, pbuf);
 
-	(void)VTCP_blocking(*htc->rfd);	/* XXX: we should timeout instead */
+	VTCP_blocking(*htc->rfd);	/* XXX: we should timeout instead */
 	V1L_Open(wrk, wrk->aws, htc->rfd, bo->vsl, bo->t_prev, 0);
 	hdrbytes = HTTP1_Write(wrk, hp, HTTP1_Req);
 

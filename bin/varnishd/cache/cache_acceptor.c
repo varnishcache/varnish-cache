@@ -380,7 +380,7 @@ vca_make_session(struct worker *wrk, void *arg)
 		 * to send an intelligent message back.
 		 */
 		vca_pace_bad();
-		(void)VTCP_nonblocking(wa->acceptsock);
+		VTCP_nonblocking(wa->acceptsock);
 		closefd(&wa->acceptsock);
 		wrk->stats->sess_drop++;
 		WS_Release(wrk->aws, 0);

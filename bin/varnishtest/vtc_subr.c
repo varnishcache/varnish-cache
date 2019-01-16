@@ -192,7 +192,7 @@ vtc_record(struct vtclog *vl, int fd, struct vsb *vsb)
 	struct pollfd fds[1];
 	int i;
 
-	(void)VTCP_nonblocking(fd);
+	VTCP_nonblocking(fd);
 	while (1) {
 		memset(fds, 0, sizeof fds);
 		fds->fd = fd;

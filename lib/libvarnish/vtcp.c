@@ -264,7 +264,7 @@ VTCP_connected(int s)
 		return (-1);
 	}
 
-	(void)VTCP_blocking(s);
+	VTCP_blocking(s);
 	return (s);
 }
 
@@ -291,7 +291,7 @@ VTCP_connect(const struct suckaddr *name, int msec)
 
 	/* Set the socket non-blocking */
 	if (msec != 0)
-		(void)VTCP_nonblocking(s);
+		VTCP_nonblocking(s);
 
 	val = 1;
 	AZ(setsockopt(s, IPPROTO_TCP, TCP_NODELAY, &val, sizeof val));

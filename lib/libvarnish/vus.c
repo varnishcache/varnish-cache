@@ -118,7 +118,7 @@ VUS_connect(const char *path, int msec)
 
 	/* Set the socket non-blocking */
 	if (msec != 0)
-		(void)VTCP_nonblocking(s);
+		VTCP_nonblocking(s);
 
 	i = connect(s, (const void*)&uds, sl);
 	if (i == 0)

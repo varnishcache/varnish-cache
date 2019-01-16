@@ -146,7 +146,7 @@ barrier_sock_thread(void *priv)
 		    b->name, err, strerror(errno), errno);
 	}
 	assert(sock > 0);
-	(void)VTCP_nonblocking(sock);
+	VTCP_nonblocking(sock);
 	VTCP_myname(sock, abuf, sizeof abuf, pbuf, sizeof pbuf);
 
 	macro_def(vl, b->name, "addr", "%s", abuf);
