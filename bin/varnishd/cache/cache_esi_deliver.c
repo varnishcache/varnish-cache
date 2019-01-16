@@ -547,44 +547,35 @@ static const struct vdp ved_vdp_pgz = {
 /*---------------------------------------------------------------------
  * Include an object in a gzip'ed ESI object delivery
  *
- * This is not written as a VDP (yet) because it relies on the
- * OA_GZIPBITS which only becomes available when the input side
- * has fully digested the object and located the magic bit positions.
+ * This is the interesting case: Deliver all the deflate blocks, stripping
+ * the "LAST" bit of the last one and padding it, as necessary, to a byte
+ * boundary.
  *
- * We can improve this two ways.
- *
- * One is to run a gunzip instance here, to find the stopbit ourselves,
- * but that would be double work, in particular when passing a gziped
- * object, where we would have two null-gunzips.
- *
- * The other is to have the input side guarantee that OA_GZIPBITS::stopbit
- * always is committed before the chunk of data containing it.  We would
- * be required to poll OA_GZIPBITS on every chunk presented, but that is
- * much cheaper than running a gunzip instance.
  */
 
 struct ved_foo {
 	unsigned		magic;
 #define VED_FOO_MAGIC		0x6a5a262d
 	struct ecx		*ecx;
-	struct req		*req;
-	ssize_t start, last, stop, lpad;
-	ssize_t ll;
-	uint64_t olen;
-	uint8_t dbits[8];
-	uint8_t tailbuf[8];
+	ssize_t			start, last, stop, lpad;
+	ssize_t			ll;
+	uint64_t		olen;
+	uint8_t			dbits[8];
+	uint8_t			tailbuf[8];
 };
 
-static int v_matchproto_(objiterate_f)
-ved_objiterate(void *priv, unsigned flush, const void *ptr, ssize_t len)
+static int v_matchproto_(vdp_bytes_f)
+ved_zap_bytes(struct req *req, enum vdp_action act, void **priv,
+    const void *ptr, ssize_t len)
 {
 	struct ved_foo *foo;
 	const uint8_t *pp;
 	ssize_t dl;
 	ssize_t l;
 
-	CAST_OBJ_NOTNULL(foo, priv, VED_FOO_MAGIC);
-	(void)flush;
+	CAST_OBJ_NOTNULL(foo, *priv, VED_FOO_MAGIC);
+	(void)req;
+	(void)act;
 	pp = ptr;
 	if (len > 0) {
 		/* Skip over the GZIP header */
@@ -604,7 +595,7 @@ ved_objiterate(void *priv, unsigned flush, const void *ptr, ssize_t len)
 		if (dl > 0) {
 			if (dl > len)
 				dl = len;
-			if (ved_bytes(foo->req, foo->ecx, VDP_NULL, pp, dl))
+			if (ved_bytes(req, foo->ecx, VDP_NULL, pp, dl))
 				return(-1);
 			foo->ll += dl;
 			len -= dl;
@@ -615,7 +606,7 @@ ved_objiterate(void *priv, unsigned flush, const void *ptr, ssize_t len)
 		/* Remove the "LAST" bit */
 		foo->dbits[0] = *pp;
 		foo->dbits[0] &= ~(1U << (foo->last & 7));
-		if (ved_bytes(foo->req, foo->ecx, VDP_NULL, foo->dbits, 1))
+		if (ved_bytes(req, foo->ecx, VDP_NULL, foo->dbits, 1))
 			return (-1);
 		foo->ll++;
 		len--;
@@ -627,7 +618,7 @@ ved_objiterate(void *priv, unsigned flush, const void *ptr, ssize_t len)
 		if (dl > 0) {
 			if (dl > len)
 				dl = len;
-			if (ved_bytes(foo->req, foo->ecx, VDP_NULL, pp, dl))
+			if (ved_bytes(req, foo->ecx, VDP_NULL, pp, dl))
 				return (-1);
 			foo->ll += dl;
 			len -= dl;
@@ -689,7 +680,7 @@ ved_objiterate(void *priv, unsigned flush, const void *ptr, ssize_t len)
 		default:
 			WRONG("compiler must be broken");
 		}
-		if (ved_bytes(foo->req, foo->ecx,
+		if (ved_bytes(req, foo->ecx,
 		    VDP_NULL, foo->dbits + 1, foo->lpad))
 			return (-1);
 	}
@@ -714,41 +705,19 @@ ved_objiterate(void *priv, unsigned flush, const void *ptr, ssize_t len)
 	return (0);
 }
 
-static void
-ved_stripgzip(struct req *req, const struct boc *boc)
+static int v_matchproto_(vdp_fini_f)
+ved_zap_init(struct req *req, void **priv)
 {
 	ssize_t l;
 	const char *p;
-	uint32_t icrc;
-	uint32_t ilen;
-	struct ecx *ecx;
-	struct ved_foo foo[1];
+	struct ved_foo *foo;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
-	CAST_OBJ_NOTNULL(ecx, req->transport_priv, ECX_MAGIC);
+	CAST_OBJ_NOTNULL(foo, *priv, VED_FOO_MAGIC);
 
-	INIT_OBJ(foo, VED_FOO_MAGIC);
-	foo->ecx = ecx;
-	foo->req = req;
 	memset(foo->tailbuf, 0xdd, sizeof foo->tailbuf);
 
-	/* OA_GZIPBITS is not valid until BOS_FINISHED */
-	if (boc != NULL)
-		ObjWaitState(req->objcore, BOS_FINISHED);
-	if (req->objcore->flags & OC_F_FAILED) {
-		/* No way of signalling errors in the middle of
-		   the ESI body. Omit this ESI fragment. */
-		return;
-	}
-
 	AN(ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED));
-
-	/*
-	 * This is the interesting case: Deliver all the deflate
-	 * blocks, stripping the "LAST" bit of the last one and
-	 * padding it, as necessary, to a byte boundary.
-	 */
 
 	p = ObjGetAttr(req->wrk, req->objcore, OA_GZIPBITS, &l);
 	AN(p);
@@ -765,17 +734,35 @@ ved_stripgzip(struct req *req, const struct boc *boc)
 
 	/* The start bit must be byte aligned. */
 	AZ(foo->start & 7);
+	return (0);
+}
 
-	(void)ObjIterate(req->wrk, req->objcore, &foo, ved_objiterate, 0);
-	/* XXX: error check ?? */
-	(void)ved_bytes(req, ecx, VDP_FLUSH, NULL, 0);
+static int v_matchproto_(vdp_fini_f)
+ved_zap_fini(struct req *req, void **priv)
+{
+	uint32_t icrc;
+	uint32_t ilen;
+	struct ved_foo *foo;
+
+	CAST_OBJ_NOTNULL(foo, *priv, VED_FOO_MAGIC);
+	*priv = NULL;
+
+	(void)ved_bytes(req, foo->ecx, VDP_FLUSH, NULL, 0);
 
 	icrc = vle32dec(foo->tailbuf);
 	ilen = vle32dec(foo->tailbuf + 4);
+	foo->ecx->crc = crc32_combine(foo->ecx->crc, icrc, ilen);
+	foo->ecx->l_crc += ilen;
 
-	ecx->crc = crc32_combine(ecx->crc, icrc, ilen);
-	ecx->l_crc += ilen;
+	return (0);
 }
+
+static const struct vdp ved_zap = {
+	.name =         "VZP",
+	.init =         ved_zap_init,
+	.bytes =        ved_zap_bytes,
+	.fini =         ved_zap_fini,
+};
 
 /*--------------------------------------------------------------------*/
 
@@ -811,6 +798,7 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 {
 	int i;
 	struct ecx *ecx;
+	struct ved_foo foo[1];
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_ORNULL(boc, BOC_MAGIC);
@@ -826,14 +814,24 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 
 	i = ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED);
 	if (ecx->isgzip && i && !(req->res_mode & RES_ESI)) {
-		ved_stripgzip(req, boc);
+		/* OA_GZIPBITS is not valid until BOS_FINISHED */
+		if (boc != NULL)
+			ObjWaitState(req->objcore, BOS_FINISHED);
+		if (req->objcore->flags & OC_F_FAILED) {
+			/* No way of signalling errors in the middle of
+			   the ESI body. Omit this ESI fragment. */
+			return;
+		}
+		INIT_OBJ(foo, VED_FOO_MAGIC);
+		foo->ecx = ecx;
+		(void)VDP_Push(req, &ved_zap, foo);
 	} else {
 		if (ecx->isgzip && !i)
 			(void)VDP_Push(req, &ved_vdp_pgz, ecx);
 		else
 			(void)VDP_Push(req, &ved_ved, ecx);
-		(void)VDP_DeliverObj(req);
-		(void)VDP_bytes(req, VDP_FLUSH, NULL, 0);
 	}
+	(void)VDP_DeliverObj(req);
+	(void)VDP_bytes(req, VDP_FLUSH, NULL, 0);
 	VDP_close(req);
 }
