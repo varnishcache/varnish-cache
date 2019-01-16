@@ -538,14 +538,14 @@ ved_pretend_gzip_bytes(struct req *req, enum vdp_action act, void **priv,
 	return (ved_bytes(req, ecx, VDP_FLUSH, NULL, 0));
 }
 
-static const struct vdp ved_vdp_pgz = {
+static const struct vdp ved_pretend_gz = {
 	.name =		"PGZ",
 	.bytes =	ved_pretend_gzip_bytes,
 	.fini =		ved_pretend_gzip_fini,
 };
 
 /*---------------------------------------------------------------------
- * Include an object in a gzip'ed ESI object delivery
+ * Include a gzip'ed object in a gzip'ed ESI object delivery
  *
  * This is the interesting case: Deliver all the deflate blocks, stripping
  * the "LAST" bit of the last one and padding it, as necessary, to a byte
@@ -564,8 +564,40 @@ struct ved_foo {
 	uint8_t			tailbuf[8];
 };
 
+static int v_matchproto_(vdp_fini_f)
+ved_gzgz_init(struct req *req, void **priv)
+{
+	ssize_t l;
+	const char *p;
+	struct ved_foo *foo;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CAST_OBJ_NOTNULL(foo, *priv, VED_FOO_MAGIC);
+
+	memset(foo->tailbuf, 0xdd, sizeof foo->tailbuf);
+
+	AN(ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED));
+
+	p = ObjGetAttr(req->wrk, req->objcore, OA_GZIPBITS, &l);
+	AN(p);
+	assert(l == 32);
+	foo->start = vbe64dec(p);
+	foo->last = vbe64dec(p + 8);
+	foo->stop = vbe64dec(p + 16);
+	foo->olen = ObjGetLen(req->wrk, req->objcore);
+	assert(foo->start > 0 && foo->start < foo->olen * 8);
+	assert(foo->last > 0 && foo->last < foo->olen * 8);
+	assert(foo->stop > 0 && foo->stop < foo->olen * 8);
+	assert(foo->last >= foo->start);
+	assert(foo->last < foo->stop);
+
+	/* The start bit must be byte aligned. */
+	AZ(foo->start & 7);
+	return (0);
+}
+
 static int v_matchproto_(vdp_bytes_f)
-ved_zap_bytes(struct req *req, enum vdp_action act, void **priv,
+ved_gzgz_bytes(struct req *req, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
 	struct ved_foo *foo;
@@ -706,39 +738,7 @@ ved_zap_bytes(struct req *req, enum vdp_action act, void **priv,
 }
 
 static int v_matchproto_(vdp_fini_f)
-ved_zap_init(struct req *req, void **priv)
-{
-	ssize_t l;
-	const char *p;
-	struct ved_foo *foo;
-
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CAST_OBJ_NOTNULL(foo, *priv, VED_FOO_MAGIC);
-
-	memset(foo->tailbuf, 0xdd, sizeof foo->tailbuf);
-
-	AN(ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED));
-
-	p = ObjGetAttr(req->wrk, req->objcore, OA_GZIPBITS, &l);
-	AN(p);
-	assert(l == 32);
-	foo->start = vbe64dec(p);
-	foo->last = vbe64dec(p + 8);
-	foo->stop = vbe64dec(p + 16);
-	foo->olen = ObjGetLen(req->wrk, req->objcore);
-	assert(foo->start > 0 && foo->start < foo->olen * 8);
-	assert(foo->last > 0 && foo->last < foo->olen * 8);
-	assert(foo->stop > 0 && foo->stop < foo->olen * 8);
-	assert(foo->last >= foo->start);
-	assert(foo->last < foo->stop);
-
-	/* The start bit must be byte aligned. */
-	AZ(foo->start & 7);
-	return (0);
-}
-
-static int v_matchproto_(vdp_fini_f)
-ved_zap_fini(struct req *req, void **priv)
+ved_gzgz_fini(struct req *req, void **priv)
 {
 	uint32_t icrc;
 	uint32_t ilen;
@@ -757,11 +757,11 @@ ved_zap_fini(struct req *req, void **priv)
 	return (0);
 }
 
-static const struct vdp ved_zap = {
-	.name =         "VZP",
-	.init =         ved_zap_init,
-	.bytes =        ved_zap_bytes,
-	.fini =         ved_zap_fini,
+static const struct vdp ved_gzgz = {
+	.name =         "VZZ",
+	.init =         ved_gzgz_init,
+	.bytes =        ved_gzgz_bytes,
+	.fini =         ved_gzgz_fini,
 };
 
 /*--------------------------------------------------------------------*/
@@ -814,22 +814,28 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 
 	i = ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED);
 	if (ecx->isgzip && i && !(req->res_mode & RES_ESI)) {
-		/* OA_GZIPBITS is not valid until BOS_FINISHED */
+		/* A gzip'ed include which is not ESI processed */
+
+		/* OA_GZIPBITS are not valid until BOS_FINISHED */
 		if (boc != NULL)
 			ObjWaitState(req->objcore, BOS_FINISHED);
+
 		if (req->objcore->flags & OC_F_FAILED) {
 			/* No way of signalling errors in the middle of
 			   the ESI body. Omit this ESI fragment. */
 			return;
 		}
+
 		INIT_OBJ(foo, VED_FOO_MAGIC);
 		foo->ecx = ecx;
-		(void)VDP_Push(req, &ved_zap, foo);
+		(void)VDP_Push(req, &ved_gzgz, foo);
+
+	} else if (ecx->isgzip && !i) {
+		/* Non-Gzip'ed include in gzip'ed parent */
+		(void)VDP_Push(req, &ved_pretend_gz, ecx);
 	} else {
-		if (ecx->isgzip && !i)
-			(void)VDP_Push(req, &ved_vdp_pgz, ecx);
-		else
-			(void)VDP_Push(req, &ved_ved, ecx);
+		/* Anything else goes straight through */
+		(void)VDP_Push(req, &ved_ved, ecx);
 	}
 	(void)VDP_DeliverObj(req);
 	(void)VDP_bytes(req, VDP_FLUSH, NULL, 0);
