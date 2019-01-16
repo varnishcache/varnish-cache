@@ -576,7 +576,7 @@ struct ved_foo {
 	ssize_t start, last, stop, lpad;
 	ssize_t ll;
 	uint64_t olen;
-	uint8_t *dbits;
+	uint8_t dbits[8];
 	uint8_t tailbuf[8];
 };
 
@@ -726,18 +726,17 @@ ved_stripgzip(struct req *req, const struct boc *boc)
 	const char *p;
 	uint32_t icrc;
 	uint32_t ilen;
-	uint8_t *dbits;
 	struct ecx *ecx;
-	struct ved_foo foo;
+	struct ved_foo foo[1];
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 	CAST_OBJ_NOTNULL(ecx, req->transport_priv, ECX_MAGIC);
 
-	INIT_OBJ(&foo, VED_FOO_MAGIC);
-	foo.req = req;
-	foo.preq = ecx->preq;
-	memset(foo.tailbuf, 0xdd, sizeof foo.tailbuf);
+	INIT_OBJ(foo, VED_FOO_MAGIC);
+	foo->req = req;
+	foo->preq = ecx->preq;
+	memset(foo->tailbuf, 0xdd, sizeof foo->tailbuf);
 
 	/* OA_GZIPBITS is not valid until BOS_FINISHED */
 	if (boc != NULL)
@@ -759,28 +758,25 @@ ved_stripgzip(struct req *req, const struct boc *boc)
 	p = ObjGetAttr(req->wrk, req->objcore, OA_GZIPBITS, &l);
 	AN(p);
 	assert(l == 32);
-	foo.start = vbe64dec(p);
-	foo.last = vbe64dec(p + 8);
-	foo.stop = vbe64dec(p + 16);
-	foo.olen = ObjGetLen(req->wrk, req->objcore);
-	assert(foo.start > 0 && foo.start < foo.olen * 8);
-	assert(foo.last > 0 && foo.last < foo.olen * 8);
-	assert(foo.stop > 0 && foo.stop < foo.olen * 8);
-	assert(foo.last >= foo.start);
-	assert(foo.last < foo.stop);
+	foo->start = vbe64dec(p);
+	foo->last = vbe64dec(p + 8);
+	foo->stop = vbe64dec(p + 16);
+	foo->olen = ObjGetLen(req->wrk, req->objcore);
+	assert(foo->start > 0 && foo->start < foo->olen * 8);
+	assert(foo->last > 0 && foo->last < foo->olen * 8);
+	assert(foo->stop > 0 && foo->stop < foo->olen * 8);
+	assert(foo->last >= foo->start);
+	assert(foo->last < foo->stop);
 
 	/* The start bit must be byte aligned. */
-	AZ(foo.start & 7);
+	AZ(foo->start & 7);
 
-	dbits = WS_Alloc(req->ws, 8);
-	AN(dbits);
-	foo.dbits = dbits;
 	(void)ObjIterate(req->wrk, req->objcore, &foo, ved_objiterate, 0);
 	/* XXX: error check ?? */
-	(void)ved_bytes(req, foo.preq, VDP_FLUSH, NULL, 0);
+	(void)ved_bytes(req, foo->preq, VDP_FLUSH, NULL, 0);
 
-	icrc = vle32dec(foo.tailbuf);
-	ilen = vle32dec(foo.tailbuf + 4);
+	icrc = vle32dec(foo->tailbuf);
+	ilen = vle32dec(foo->tailbuf + 4);
 
 	ecx->crc = crc32_combine(ecx->crc, icrc, ilen);
 	ecx->l_crc += ilen;
