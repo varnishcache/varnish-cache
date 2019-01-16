@@ -1076,7 +1076,7 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 	char b[8];
 
 	ASSERT_RXTHR(h2);
-	(void)VTCP_blocking(*h2->htc->rfd);
+	VTCP_blocking(*h2->htc->rfd);
 	h2->sess->t_idle = VTIM_real();
 	hs = HTC_RxStuff(h2->htc, h2_frame_complete,
 	    NULL, NULL, NAN,
