@@ -72,17 +72,25 @@ V2D_Init(void)
 
 /**********************************************************************/
 
+static int v_matchproto_(vdp_init_f)
+h2_init(struct req *req, void **priv)
+{
+
+	*priv = req->transport_priv;
+	return (0);
+}
+
 static int v_matchproto_(vdp_fini_f)
 h2_fini(struct req *req, void **priv)
 {
 	struct h2_req *r2;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	(void)priv;
-	CAST_OBJ_NOTNULL(r2, req->transport_priv, H2_REQ_MAGIC);
+	CAST_OBJ_NOTNULL(r2, *priv, H2_REQ_MAGIC);
 	H2_Send_Get(req->wrk, r2->h2sess, r2);
 	H2_Send(req->wrk, r2, H2_F_DATA, H2FF_DATA_END_STREAM, 0, "");
 	H2_Send_Rel(r2->h2sess, r2);
+	*priv = NULL;
 	return (0);
 }
 
@@ -93,9 +101,8 @@ h2_bytes(struct req *req, enum vdp_action act, void **priv,
 	struct h2_req *r2;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CAST_OBJ_NOTNULL(r2, req->transport_priv, H2_REQ_MAGIC);
+	CAST_OBJ_NOTNULL(r2, *priv, H2_REQ_MAGIC);
 	(void)act;
-	(void)priv;
 
 	if ((r2->h2sess->error || r2->error))
 		return (-1);
@@ -108,6 +115,7 @@ h2_bytes(struct req *req, enum vdp_action act, void **priv,
 
 static const struct vdp h2_vdp = {
 	.name =		"H2B",
+	.init =		h2_init,
 	.bytes =	h2_bytes,
 	.fini =		h2_fini,
 };
