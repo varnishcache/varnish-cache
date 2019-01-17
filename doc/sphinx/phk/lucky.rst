@@ -96,7 +96,7 @@ Varnish Moral License
 ---------------------
 
 I want to thank the companies who have paid for a `Varnish
-Moral License <http://phk.freebsd.dk/VML/index.html>`_: 
+Moral License <http://phk.freebsd.dk/VML/index.html>`_:
 
 * Fastly
 
@@ -176,4 +176,4 @@ Good luck!
 .. [#f2] And it does not feel any less awful if the loved ones
    left behind tries to fill the blanks by asking you how you knew
    each other and if you have any memories you could share with them.
- 
+
