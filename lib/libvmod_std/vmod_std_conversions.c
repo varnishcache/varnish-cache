@@ -61,34 +61,47 @@ vmod_bytes(VRT_CTX, VCL_STRING b, VCL_BYTES d)
 VCL_STRING v_matchproto_(td_std_bytes2string)
 vmod_bytes2string(VRT_CTX, VCL_BYTES b, VCL_ENUM unit)
 {
-	int i;
+	int i, unit_len;
 	char *ret;
 	double value;
 	size_t len;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
-	if (!strcmp(unit, "B")) {
-		value = b;
-	} else if (!strcmp(unit, "KB")) {
-		value = b / 1024.;
-	} else if (!strcmp(unit, "MB")) {
-		value = b / (1024. * 1024.);
-	} else if (!strcmp(unit, "GB")) {
-		value = b / (1024. * 1024. * 1024.);
-	} else if (!strcmp(unit, "TB")) {
-		value = b / (1024. * 1024. * 1024. * 1024.);
-	} else if (!strcmp(unit, "PB")) {
-		value = b / (1024. * 1024. * 1024. * 1024. * 1024.);
-	} else {
-		VRT_fail(ctx, "vmod std.bytes2string(): bad unit");
-		return (NULL);
+	switch (*unit) {
+		case 'B':
+			value = b;
+			unit_len = 1;
+			break;
+		case 'K':
+			value = b / 1024.;
+			unit_len = 2;
+			break;
+		case 'M':
+			value = b / (1024. * 1024.);
+			unit_len = 2;
+			break;
+		case 'G':
+			value = b / (1024. * 1024. * 1024.);
+			unit_len = 2;
+			break;
+		case 'T':
+			value = b / (1024. * 1024. * 1024. * 1024.);
+			unit_len = 2;
+			break;
+		case 'P':
+			value = b / (1024. * 1024. * 1024. * 1024. * 1024.);
+			unit_len = 2;
+			break;
+		default:
+			VRT_fail(ctx, "vmod std.bytes2string(): bad unit");
+			return (NULL);
 	}
 
 	/* Minimum number of decimal places needed to get 1B in PB.
-	 * Also include 2 spaces to reserve space for units
+	 * Add unit_len spaces to reserve space for adding unit
 	 */
-	ret = WS_Printf(ctx->ws, "%.28f  ", value);
+	ret = WS_Printf(ctx->ws, "%.28f%*s", value, unit_len, "");
 	if (!ret) {
 		VRT_fail(ctx, "vmod std.bytes2string(): "
 		    "insufficient workspace");
@@ -97,8 +110,8 @@ vmod_bytes2string(VRT_CTX, VCL_BYTES b, VCL_ENUM unit)
 
 	len = strlen(ret);
 
-	/* Null + 2 spaces */
-	i = 3;
+	/* extra space for unit + NULL */
+	i = unit_len + 1;
 	while (ret[len - i] == '0') {
 		i++;
 	}
@@ -108,12 +121,8 @@ vmod_bytes2string(VRT_CTX, VCL_BYTES b, VCL_ENUM unit)
 		i--;
 	}
 
-	strncpy(&ret[len - i], unit, 2);
-	if (value == b) {
-		ret[len - i + 1] = '\0';
-	} else {
-		ret[len - i + 2] = '\0';
-	}
+	strncpy(&ret[len - i], unit, unit_len);
+	ret[len - i + unit_len] = '\0';
 
 	return (ret);
 }
