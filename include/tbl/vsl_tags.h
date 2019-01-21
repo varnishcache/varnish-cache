@@ -165,6 +165,7 @@ SLTM(Backend, 0, "Backend selected",
 	"\t|  +---- VCL name\n"
 	"\t+------- Connection file descriptor\n"
 	"\n"
+	NOSUP_NOTICE
 )
 
 SLTM(Length, 0, "Size of object body",
