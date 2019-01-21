@@ -212,6 +212,7 @@
 -esym(534, intrflush)
 -esym(534, keypad)
 -esym(534, mvprintw)
+-esym(534, waddnstr)
 -esym(534, mvwprintw)
 -esym(534, nodelay)
 -esym(534, noecho)
