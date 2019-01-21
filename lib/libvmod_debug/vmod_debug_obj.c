@@ -182,6 +182,8 @@ xyzzy_obj_opt__init(VRT_CTX,
 
 	if (args->valid_s)
 		AN(args->s);
+	(void)args->valid_b;
+	(void)args->b;
 
 	AN(op);
 	AZ(*op);

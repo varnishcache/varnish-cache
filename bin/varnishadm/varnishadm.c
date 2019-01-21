@@ -73,7 +73,7 @@
 	} while (0)
 
 
-static double timeout = 5;
+static double timeout = 5;	// XXX should be settable by arg ?
 
 static void
 cli_write(int sock, const char *s)
@@ -192,7 +192,7 @@ send_line(char *l)
 		cli_write(_line_sock, l);
 		cli_write(_line_sock, "\n");
 		if (*l)
-			add_history(l);
+			AZ(add_history(l));
 		rl_callback_handler_install("varnish> ", send_line);
 	} else {
 		RL_EXIT(0);
@@ -234,6 +234,29 @@ varnishadm_completion (const char *text, int start, int end)
 	return (matches);
 }
 
+static void
+pass_answer(int fd)
+{
+	unsigned u, status;
+	char *answer = NULL;
+
+	u = VCLI_ReadResult(fd, &status, &answer, timeout);
+	if (u) {
+		if (status == CLIS_COMMS)
+			RL_EXIT(0);
+		if (answer)
+			fprintf(stderr, "%s\n", answer);
+		RL_EXIT(1);
+	}
+
+	printf("%u\n", status);
+	if (answer) {
+		printf("%s\n", answer);
+		free(answer);
+	}
+	(void)fflush(stdout);
+}
+
 /*
  * No arguments given, simply pass bytes on stdin/stdout and CLI socket
  * Send a "banner" to varnish, to provoke a welcome message.
@@ -242,7 +265,6 @@ static void
 interactive(int sock)
 {
 	struct pollfd fds[2];
-	char buf[1024];
 	int i;
 	char *answer = NULL;
 	unsigned u, status;
@@ -293,25 +315,8 @@ interactive(int sock)
 		assert(i > 0);
 		if (fds[0].revents & POLLIN) {
 			/* Get rid of the prompt, kinda hackish */
-			u = write(1, "\r           \r", 13);
-			u = VCLI_ReadResult(fds[0].fd, &status, &answer,
-			    timeout);
-			if (u) {
-				if (status == CLIS_COMMS)
-					RL_EXIT(0);
-				if (answer)
-					fprintf(stderr, "%s\n", answer);
-				RL_EXIT(1);
-			}
-
-			bprintf(buf, "%u\n", status);
-			u = write(1, buf, strlen(buf));
-			if (answer) {
-				u = write(1, answer, strlen(answer));
-				u = write(1, "\n", 1);
-				free(answer);
-				answer = NULL;
-			}
+			printf("\r           \r");
+			pass_answer(fds[0].fd);
 			rl_forced_update_display();
 		}
 		if (fds[1].revents & POLLIN) {
@@ -329,8 +334,6 @@ pass(int sock)
 	struct pollfd fds[2];
 	char buf[1024];
 	int i;
-	char *answer = NULL;
-	unsigned u, status;
 	ssize_t n;
 
 	fds[0].fd = sock;
@@ -343,26 +346,8 @@ pass(int sock)
 			continue;
 		}
 		assert(i > 0);
-		if (fds[0].revents & POLLIN) {
-			u = VCLI_ReadResult(fds[0].fd, &status, &answer,
-			    timeout);
-			if (u) {
-				if (status == CLIS_COMMS)
-					RL_EXIT(0);
-				if (answer)
-					fprintf(stderr, "%s\n", answer);
-				RL_EXIT(1);
-			}
-
-			bprintf(buf, "%u\n", status);
-			u = write(1, buf, strlen(buf));
-			if (answer) {
-				u = write(1, answer, strlen(answer));
-				u = write(1, "\n", 1);
-				free(answer);
-				answer = NULL;
-			}
-		}
+		if (fds[0].revents & POLLIN)
+			pass_answer(fds[0].fd);
 		if (fds[1].revents & POLLIN || fds[1].revents & POLLHUP) {
 			n = read(fds[1].fd, buf, sizeof buf - 1);
 			if (n == 0) {
@@ -392,8 +377,8 @@ usage(int status)
 static int
 n_arg_sock(const char *n_arg, const char *t_arg)
 {
-	char *T_arg = NULL, *T_start = NULL;
-	char *S_arg = NULL;
+	char *T_arg, *T_start;
+	char *S_arg;
 	struct vsm *vsm;
 	char *p;
 	int sock;

@@ -764,7 +764,9 @@ static const struct vdp ved_gzgz = {
 	.fini =         ved_gzgz_fini,
 };
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Straight through without processing.
+ */
 
 static int v_matchproto_(vdp_fini_f)
 ved_vdp_fini(struct req *req, void **priv)

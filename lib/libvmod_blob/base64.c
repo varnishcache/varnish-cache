@@ -139,6 +139,7 @@ base64_decode(const enum encoding dec, char *restrict const buf,
 	unsigned u = 0, term = 0;
 	int n = 0;
 	size_t len = SIZE_MAX;
+	const char *s;
 
 	AN(buf);
 	AN(alpha);
@@ -148,7 +149,7 @@ base64_decode(const enum encoding dec, char *restrict const buf,
 		len = inlen;
 
 	for (int i = 0; len > 0 && i < strings->n; i++) {
-		const char *s = strings->p[i];
+		s = strings->p[i];
 
 		if (s == NULL)
 			continue;
@@ -158,7 +159,7 @@ base64_decode(const enum encoding dec, char *restrict const buf,
 		}
 		while (*s && len) {
 			while (n < 4) {
-				char b = alpha->i64[(unsigned) *s++];
+				char b = alpha->i64[(uint8_t) *s++];
 				u <<= 6;
 				if (b == ILL) {
 					errno = EINVAL;
@@ -169,7 +170,7 @@ base64_decode(const enum encoding dec, char *restrict const buf,
 					term++;
 					continue;
 				}
-				u |= (unsigned) b;
+				u |= (uint8_t) b;
 				if (--len == 0)
 					break;
 				if (!*s)
