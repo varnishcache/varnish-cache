@@ -160,6 +160,10 @@ SLTM(Backend, 0, "Backend selected",
 	"\t|  |  +- Backend display name\n"
 	"\t|  +---- VCL name\n"
 	"\t+------- Connection file descriptor\n"
+	"\t\n"
+	"\tNOTE: This tag is currently not in use in the Varnish log.\n"
+	"\tIt is mentioned here to document legacy versions of the log,\n"
+	"\tand reserved for possible use in future versions.\n"
 	"\n"
 )
 
