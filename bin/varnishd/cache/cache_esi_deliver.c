@@ -784,7 +784,9 @@ ved_stripgzip(struct req *req, const struct boc *boc)
 	ecx->l_crc += ilen;
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Straight through without processing.
+ */
 
 static int v_matchproto_(vdp_fini_f)
 ved_vdp_fini(struct req *req, void **priv)

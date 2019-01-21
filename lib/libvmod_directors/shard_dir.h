@@ -42,10 +42,8 @@ enum healthy_e {
 };
 
 enum resolve_e {
-	_RESOLVE_E_INVALID = 0,
 #define VMODENUM(x) x,
 #include "tbl_resolve.h"
-	_RESOLVE_E_MAX
 };
 
 struct vbitmap;
