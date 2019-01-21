@@ -192,7 +192,7 @@ send_line(char *l)
 		cli_write(_line_sock, l);
 		cli_write(_line_sock, "\n");
 		if (*l)
-			AZ(add_history(l));
+			add_history(l);
 		rl_callback_handler_install("varnish> ", send_line);
 	} else {
 		RL_EXIT(0);
