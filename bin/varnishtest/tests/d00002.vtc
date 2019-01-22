@@ -9,6 +9,7 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	import directors;
+	import std;
 
 	sub vcl_init {
 		new foo = directors.random();
@@ -22,6 +23,7 @@ varnish v1 -vcl+backend {
 
 	sub vcl_backend_response {
 		set beresp.http.where = bereq.backend + "-->" + beresp.backend;
+		set beresp.http.health = std.healthy(foo.backend());
 	}
 } -start
 
