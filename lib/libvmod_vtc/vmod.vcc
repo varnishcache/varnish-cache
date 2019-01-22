@@ -25,8 +25,8 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
-$Module vtc 3 "Utility module for varnishtest"
 $ABI strict
+$Module vtc 3 "Utility module for varnishtest"
 
 DESCRIPTION
 ===========

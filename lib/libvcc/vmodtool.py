@@ -147,10 +147,11 @@ def write_rst_file_warning(fo):
 
 
 def write_rst_hdr(fo, s, below="-", above=None):
-    if above is not None:
+    fo.write('\n')
+    if above:
         fo.write(above * len(s) + "\n")
     fo.write(s + "\n")
-    if below is not None:
+    if below:
         fo.write(below * len(s) + "\n")
 
 #######################################################################
@@ -245,19 +246,16 @@ class CType(object):
                 break
             assert w == ","
 
-    def vcl(self):
+    def vcl(self, terse=False):
         if self.vt in ("STRING_LIST", "STRANDS"):
             return "STRING"
+        if terse:
+            return self.vt
         if self.spec is None:
             return self.vt
         return self.vt + " {" + ", ".join(self.spec) + "}"
 
-    def synopsis(self):
-        if self.vt in ("STRING_LIST", "STRANDS"):
-            return "STRING"
-        return self.vt
-
-    def json(self, jl):
+    def jsonproto(self, jl):
         jl.append([self.vt])
         while jl[-1][-1] is None:
             jl[-1].pop(-1)
@@ -294,7 +292,7 @@ class arg(CType):
                 x = unquote(x)
         self.defval = x
 
-    def json(self, jl):
+    def jsonproto(self, jl):
         jl.append([self.vt, self.nm, self.defval, self.spec])
         if self.opt:
             jl[-1].append(True)
@@ -363,7 +361,7 @@ class ProtoType(object):
                 t.nm2 = t.nm
             self.args.append(t)
 
-    def vcl_proto(self, short, pfx=""):
+    def vcl_proto(self, terse, pfx=""):
         if isinstance(self.st, MethodStanza):
             pfx += pfx
         s = pfx
@@ -380,22 +378,19 @@ class ProtoType(object):
             s += self.name + "("
         ll = []
         for i in self.args:
-            if short:
-                t = i.synopsis()
-            else:
-                t = i.vcl()
+            t = i.vcl(terse)
             if t in PRIVS:
                 continue
             if i.nm is not None:
                 t += " " + i.nm
-            if not short:
+            if not terse:
                 if i.defval is not None:
                     t += "=" + i.defval
             if i.opt:
                 t = "[" + t + "]"
             ll.append(t)
         t = ",@".join(ll)
-        if len(s + t) > 68 and not short:
+        if len(s + t) > 68 and not terse:
             s += "\n" + pfx + pfx
             s += t.replace("@", "\n" + pfx + pfx)
             s += "\n" + pfx + ")"
@@ -409,14 +404,8 @@ class ProtoType(object):
             write_rst_hdr(fo, s, '-')
         else:
             s = self.vcl_proto(True)
-            if len(s) > 60:
-                s = self.name + "(...)"
             write_rst_hdr(fo, s, '-')
             fo.write("\n::\n\n" + self.vcl_proto(False, pfx="   ") + "\n")
-
-    def synopsis(self, fo, unused_man):
-        fo.write(self.vcl_proto(True, pfx="   ") + "\n")
-        fo.write("  \n")
 
     def cname(self, pfx=False):
         r = self.name.replace(".", "_")
@@ -458,44 +447,49 @@ class ProtoType(object):
         s += "};\n"
         return s
 
-    def cstuff(self, args, where):
+    def cproto(self, eargs, where):
+        ''' Produce C language prototype '''
         s = ""
         if where == 'h':
             if self.argstruct:
                 s += self.argstructure()
-            s += lwrap(self.proto(args, self.cname(True)))
+            s += lwrap(self.proto(eargs, self.cname(True)))
         elif where == 'c':
-            s += lwrap(self.typedef(args))
+            s += lwrap(self.typedef(eargs))
         elif where == 'o':
             if self.argstruct:
                 s += self.argstructure()
-            s += lwrap(self.typedef(args))
+            s += lwrap(self.typedef(eargs))
         else:
             assert False
         return s
 
-    def json(self, jl, cfunc):
+    def jsonproto(self, jl, cfunc):
+        ''' Produce VCL prototype as JSON '''
         ll = []
-        self.retval.json(ll)
+        self.retval.jsonproto(ll)
         ll.append('Vmod_%s_Func.%s' % (self.st.vcc.modname, cfunc))
         if self.argstruct:
             ll.append(self.argstructname())
         else:
             ll.append("")
         for i in self.args:
-            i.json(ll)
+            i.jsonproto(ll)
         jl.append(ll)
 
 #######################################################################
 
 
 class Stanza(object):
-    def __init__(self, toks, l0, doc, vcc):
+
+    ''' Base class for all $-Stanzas '''
+
+    def __init__(self, vcc, toks, doc):
         self.toks = toks
-        self.line = l0
-        while doc and doc[0] == '':
+        doc = doc.split('\n')
+        while doc and not doc[0].strip():
             doc.pop(0)
-        while doc and doc[-1] == '':
+        while doc and not doc[-1].strip():
             doc.pop(-1)
         self.doc = doc
         self.vcc = vcc
@@ -507,9 +501,6 @@ class Stanza(object):
     def parse(self):
         assert "subclass should have defined" == "parse method"
 
-    def dump(self):
-        print(type(self), self.line)
-
     def syntax(self):
         err("Syntax error.\n" +
             "\tShould be: " + self.__doc__.strip() + "\n" +
@@ -517,29 +508,26 @@ class Stanza(object):
             warn=False)
 
     def rstfile(self, fo, man):
-        if self.rstlbl is not None:
-            fo.write(".. _" + self.rstlbl + ":\n\n")
-
+        if self.rstlbl:
+            fo.write("\n.. _" + self.rstlbl + ":\n")
         self.rsthead(fo, man)
-        fo.write("\n")
-        self.rstmid(fo, man)
-        fo.write("\n")
-        self.rsttail(fo, man)
-        fo.write("\n")
+        self.rstdoc(fo, man)
 
     def rsthead(self, fo, unused_man):
-        if self.proto is not None:
+        ''' Emit the systematic part of the documentation '''
+        if self.proto:
             self.proto.rsthead(fo)
+            fo.write("\n")
 
-    def rstmid(self, fo, unused_man):
+    def rstdoc(self, fo, unused_man):
+        ''' Emit the explanatory part of the documentation '''
         fo.write("\n".join(self.doc) + "\n")
 
-    def rsttail(self, unused_fo, unused_man):
-        return
-
     def synopsis(self, fo, man):
-        if self.proto is not None:
-            self.proto.synopsis(fo, man)
+        if man and self.proto:
+            fo.write(self.proto.vcl_proto(True, pfx="  ") + '\n  \n')
+        elif self.proto and self.rstlbl:
+            fo.write('   :ref:`%s`\n   \n' % self.rstlbl)
 
     def cstuff(self, unused_fo, unused_where):
         return
@@ -548,6 +536,7 @@ class Stanza(object):
         return
 
     def json(self, unused_jl):
+        ''' Add to the json we hand VCC '''
         return
 
 #######################################################################
@@ -575,49 +564,25 @@ class ModuleStanza(Stanza):
 
     def rsthead(self, fo, man):
 
-        write_rst_hdr(fo, self.vcc.sympfx + self.vcc.modname, "=", "=")
-        fo.write("\n")
-
-        write_rst_hdr(fo, self.vcc.moddesc, "-", "-")
-
-        fo.write("\n")
-        fo.write(":Manual section: " + self.vcc.mansection + "\n")
+        if man:
+            write_rst_hdr(fo, self.vcc.sympfx + self.vcc.modname, "=", "=")
+            write_rst_hdr(fo, self.vcc.moddesc, "-", "-")
+            fo.write("\n")
+            fo.write(":Manual section: " + self.vcc.mansection + "\n")
+        else:
+            write_rst_hdr(fo,
+                          self.vcc.sympfx + self.vcc.modname +
+                          ' - ' + self.vcc.moddesc,
+                          "=", "=")
 
         if self.vcc.auto_synopsis:
-            fo.write("\n")
             write_rst_hdr(fo, "SYNOPSIS", "=")
             fo.write("\n")
-            fo.write("\n::\n\n")
-            fo.write('   import %s [from "path"] ;\n' % self.vcc.modname)
-            fo.write("   \n")
+            fo.write(".. parsed-literal::\n\n")
+            fo.write('  import %s [from "path"]\n' % self.vcc.modname)
+            fo.write("  \n")
             for c in self.vcc.contents:
                 c.synopsis(fo, man)
-            fo.write("\n")
-
-    def rsttail(self, fo, man):
-
-        if man:
-            return
-
-        write_rst_hdr(fo, "CONTENTS", "=")
-        fo.write("\n")
-
-        ll = []
-        for i in self.vcc.contents[1:]:
-            j = i.rstlbl
-            if j is not None:
-                ll.append([j.split("_", 1)[1], j])
-            if i.methods is None:
-                continue
-            for x in i.methods:
-                j = x.rstlbl
-                ll.append([j.split("_", 1)[1], j])
-
-        ll.sort()
-        for i in ll:
-            fo.write("* :ref:`%s`\n" % i[1])
-        fo.write("\n")
-
 
 class ABIStanza(Stanza):
 
@@ -699,13 +664,16 @@ class EventStanza(Stanza):
 
 
 class FunctionStanza(Stanza):
+
+    ''' $Function TYPE name ( ARGUMENSTS ) '''
+
     def parse(self):
         self.proto = ProtoType(self)
         self.rstlbl = "func_" + self.proto.name
         self.vcc.contents.append(self)
 
     def cstuff(self, fo, where):
-        fo.write(self.proto.cstuff(['VRT_CTX'], where))
+        fo.write(self.proto.cproto(['VRT_CTX'], where))
 
     def cstruct(self, fo, define):
         if define:
@@ -715,10 +683,13 @@ class FunctionStanza(Stanza):
 
     def json(self, jl):
         jl.append(["$FUNC", "%s" % self.proto.name])
-        self.proto.json(jl[-1], self.proto.cname())
+        self.proto.jsonproto(jl[-1], self.proto.cname())
 
 
 class ObjectStanza(Stanza):
+
+    ''' $Object TYPE class ( ARGUMENSTS ) '''
+
     def parse(self):
         self.proto = ProtoType(self, retval=False)
         self.proto.obj = "x" + self.proto.name
@@ -737,29 +708,34 @@ class ObjectStanza(Stanza):
 
     def rsthead(self, fo, man):
         self.proto.rsthead(fo)
-
-        fo.write("\n" + "\n".join(self.doc) + "\n\n")
-
+        fo.write("\n" + "\n".join(self.doc) + "\n")
         for i in self.methods:
             i.rstfile(fo, man)
 
-    def rstmid(self, unused_fo, unused_man):
+    def rstdoc(self, unused_fo, unused_man):
         return
 
     def synopsis(self, fo, man):
-        self.proto.synopsis(fo, man)
-        for i in self.methods:
-            i.proto.synopsis(fo, man)
+        if man and self.proto:
+            fo.write(self.proto.vcl_proto(True, pfx="  ") + '\n  \n')
+            for i in self.methods:
+                if i.proto:
+                    fo.write(i.proto.vcl_proto(True, pfx="   ") + '\n   \n')
+        elif self.proto and self.rstlbl:
+            fo.write('  :ref:`%s`\n  \n' % self.rstlbl)
+            for i in self.methods:
+                if i.proto and i.rstlbl:
+                    fo.write('    :ref:`%s`\n  \n' % i.rstlbl)
 
     def cstuff(self, fo, w):
         sn = self.vcc.sympfx + self.vcc.modname + "_" + self.proto.name
         fo.write("struct %s;\n" % sn)
 
-        fo.write(self.init.cstuff(
+        fo.write(self.init.cproto(
             ['VRT_CTX', 'struct %s **' % sn, 'const char *'], w))
-        fo.write(self.fini.cstuff(['struct %s **' % sn], w))
+        fo.write(self.fini.cproto(['struct %s **' % sn], w))
         for i in self.methods:
-            fo.write(i.proto.cstuff(['VRT_CTX', 'struct %s *' % sn], w))
+            fo.write(i.proto.cproto(['VRT_CTX', 'struct %s *' % sn], w))
         fo.write("\n")
 
     def cstruct(self, fo, define):
@@ -784,26 +760,24 @@ class ObjectStanza(Stanza):
 
         l2 = ["$INIT"]
         ll.append(l2)
-        self.init.json(l2, self.init.name)
+        self.init.jsonproto(l2, self.init.name)
 
         l2 = ["$FINI"]
         ll.append(l2)
-        self.fini.json(l2, self.fini.name)
+        self.fini.jsonproto(l2, self.fini.name)
 
         for i in self.methods:
             i.json(ll)
 
         jl.append(ll)
 
-    def dump(self):
-        super(ObjectStanza, self).dump()
-        for i in self.methods:
-            i.dump()
-
 #######################################################################
 
 
 class MethodStanza(Stanza):
+
+    ''' $Method TYPE . method ( ARGUMENSTS ) '''
+
     def parse(self):
         p = self.vcc.contents[-1]
         assert isinstance(p, ObjectStanza)
@@ -824,7 +798,7 @@ class MethodStanza(Stanza):
 
     def json(self, jl):
         jl.append(["$METHOD", self.proto.name[len(self.pfx)+1:]])
-        self.proto.json(jl[-1], self.proto.cname())
+        self.proto.jsonproto(jl[-1], self.proto.cname())
 
 
 #######################################################################
@@ -877,12 +851,11 @@ class vcc(object):
             ss = re.split('\n([^\t ])', s.pop(0), maxsplit=1)
             toks = self.tokenize(ss[0])
             inputline = '$' + ' '.join(toks)
-            c = ss[0].split()
-            d = "".join(ss[1:])
-            m = DISPATCH.get(toks[0])
-            if m is None:
+            docstr = "".join(ss[1:])
+            stanzaclass = DISPATCH.get(toks[0])
+            if stanzaclass is None:
                 err("Unknown stanza $%s" % toks[0], warn=False)
-            m(toks, [c[0], " ".join(c[1:])], d.split('\n'), self)
+            stanzaclass(self, toks, docstr)
             inputline = None
 
     def tokenize(self, txt, seps=None, quotes=None):
@@ -922,41 +895,43 @@ class vcc(object):
         #    print("\t", [i])
         return out
 
-
-    def rst_copyright(self, fo):
-        write_rst_hdr(fo, "COPYRIGHT", "=")
-        fo.write("\n::\n\n")
-        a = self.copyright
-        a = a.replace("\n#", "\n ")
-        if a[:2] == "#\n":
-            a = a[2:]
-        if a[:3] == "#-\n":
-            a = a[3:]
-        fo.write(a + "\n")
-
     def rstfile(self, man=False):
+        ''' Produce rst documentation '''
         fn = os.path.join(self.rstdir, "vmod_" + self.modname)
         if man:
             fn += ".man"
         fn += ".rst"
         fo = self.openfile(fn)
         write_rst_file_warning(fo)
-        fo.write(".. role:: ref(emphasis)\n\n")
+        if man:
+            fo.write(".. role:: ref(emphasis)\n")
+        else:
+            fo.write('\n:tocdepth: 1\n')
 
         for i in self.contents:
             i.rstfile(fo, man)
 
         if self.copyright:
-            self.rst_copyright(fo)
+            write_rst_hdr(fo, "COPYRIGHT", "=")
+            fo.write("\n::\n\n")
+            a = self.copyright
+            a = a.replace("\n#", "\n ")
+            if a[:2] == "#\n":
+                a = a[2:]
+            if a[:3] == "#-\n":
+                a = a[3:]
+            fo.write(a + "\n")
 
         fo.close()
 
     def amboilerplate(self):
+        ''' Produce boilplate for autocrap tools '''
         fo = self.openfile("automake_boilerplate.am")
         fo.write(AMBOILERPLATE.replace("XXX", self.modname))
         fo.close()
 
-    def hfile(self):
+    def mkhfile(self):
+        ''' Produce vcc_if.h file '''
         fn = self.pfx + ".h"
         fo = self.openfile(fn)
         write_c_file_warning(fo)
@@ -998,30 +973,23 @@ class vcc(object):
         for j in self.contents:
             j.json(jl)
 
-        bz = bytearray(json.dumps(jl, separators=(",", ":")),
-                       encoding="ascii") + b"\0"
-        fo.write("\nstatic const char Vmod_Json[%d] = {\n" % len(bz))
-        t = "\t"
-        for i in bz:
-            t += "%d," % i
-            if len(t) >= 69:
-                fo.write(t + "\n")
-                t = "\t"
-        if len(t) > 1:
-            fo.write(t[:-1])
-        fo.write("\n};\n\n")
-        for i in json.dumps(jl, indent=2, separators=(',', ': ')).split("\n"):
-            j = "// " + i
-            if len(j) > 72:
-                fo.write(j[:72] + "[...]\n")
+        fo.write("\nstatic const char Vmod_Json[] = {\n")
+        t = '\t"'
+        for i in json.dumps(jl, indent=2, separators=(",", ": ")):
+            if i == '\n':
+                fo.write(t + '\\n"\n')
+                t = '\t"'
             else:
-                fo.write(j + "\n")
-        fo.write("\n")
+                if i in '"\\':
+                    t += '\\'
+                t += i
+        fo.write(t + '\\n"\n};\n')
 
     def vmod_data(self, fo):
         vmd = "Vmod_%s_Data" % self.modname
+        fo.write('\n')
         for i in (714, 759, 765):
-            fo.write("\n/*lint -esym(%d, %s) */\n" % (i, vmd))
+            fo.write("/*lint -esym(%d, %s) */\n" % (i, vmd))
         fo.write("\nextern const struct vmod_data %s;\n" % vmd)
         fo.write("\nconst struct vmod_data %s = {\n" % vmd)
         if self.strict_abi:
@@ -1039,7 +1007,8 @@ class vcc(object):
         fo.write("\t.file_id =\t\"%s\",\n" % self.file_id)
         fo.write("};\n")
 
-    def cfile(self):
+    def mkcfile(self):
+        ''' Produce vcc_if.c file '''
         fno = self.pfx + ".c"
         fo = self.openfile(fno)
         fnx = fno + ".tmp2"
@@ -1102,8 +1071,8 @@ def runmain(inputvcc, rstdir, outputprefix):
 
     v.rstfile(man=False)
     v.rstfile(man=True)
-    v.hfile()
-    v.cfile()
+    v.mkhfile()
+    v.mkcfile()
     if opts.boilerplate:
         v.amboilerplate()
 

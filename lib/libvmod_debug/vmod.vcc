@@ -26,9 +26,9 @@
 # SUCH DAMAGE.
 #
 
-$Module debug 3 "Development, test and debug"
 $ABI strict
 $Prefix xyzzy
+$Module debug 3 "Development, test and debug"
 $Synopsis auto
 DESCRIPTION
 ===========
