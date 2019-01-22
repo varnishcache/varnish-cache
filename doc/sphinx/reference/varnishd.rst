@@ -207,9 +207,9 @@ Tuning options
 
 -l <vsl>
 
-  Specifies size of the space for the VSL records.
-  Scaling suffixes like 'K' and 'M' can be used up to (G)igabytes.
-  Default is 80 Megabytes.
+  Specifies size of the space for the VSL records, shorthand for
+  ``-p vsl_space=<vsl>``. Scaling suffixes like 'K' and 'M' can be
+  used up to (G)igabytes. See `vsl_space`_ for more information.
 
 Security options
 ----------------
