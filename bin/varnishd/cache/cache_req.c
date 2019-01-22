@@ -142,8 +142,6 @@ Req_New(const struct worker *wrk, struct sess *sp)
 
 	WS_Init(req->ws, "req", p, e - p);
 
-	req->req_bodybytes = 0;
-
 	req->t_first = NAN;
 	req->t_prev = NAN;
 	req->t_req = NAN;
@@ -224,7 +222,6 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	req_AcctLogCharge(wrk->stats, req);
 	if (req->vsl->wid)
 		VSL_End(req->vsl);
-	req->req_bodybytes = 0;
 
 	if (!isnan(req->t_prev) && req->t_prev > 0. && req->t_prev > sp->t_idle)
 		sp->t_idle = req->t_prev;

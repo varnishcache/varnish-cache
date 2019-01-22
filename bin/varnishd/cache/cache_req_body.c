@@ -56,6 +56,7 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 	uint8_t *ptr;
 	enum vfp_status vfps = VFP_ERROR;
 	const struct stevedore *stv;
+	ssize_t req_bodybytes = 0;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
@@ -91,7 +92,6 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 		return (-1);
 	}
 
-	AZ(req->req_bodybytes);
 	AN(req->htc);
 	yet = req->htc->content_length;
 	if (yet != 0 && req->want100cont) {
@@ -102,7 +102,7 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 		yet = 0;
 	do {
 		AZ(vfc->failed);
-		if (maxsize >= 0 && req->req_bodybytes > maxsize) {
+		if (maxsize >= 0 && req_bodybytes > maxsize) {
 			(void)VFP_Error(vfc, "Request body too big to cache");
 			break;
 		}
@@ -114,7 +114,7 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 		AN(l);
 		vfps = VFP_Suck(vfc, ptr, &l);
 		if (l > 0 && vfps != VFP_ERROR) {
-			req->req_bodybytes += l;
+			req_bodybytes += l;
 			req->acct.req_bodybytes += l;
 			if (yet >= l)
 				yet -= l;
@@ -142,7 +142,7 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 	}
 
 	ObjTrimStore(req->wrk, req->body_oc);
-	AZ(ObjSetU64(req->wrk, req->body_oc, OA_LEN, req->req_bodybytes));
+	AZ(ObjSetU64(req->wrk, req->body_oc, OA_LEN, req_bodybytes));
 	HSH_DerefBoc(req->wrk, req->body_oc);
 
 	if (vfps != VFP_END) {
@@ -151,22 +151,22 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 		return (-1);
 	}
 
-	assert(req->req_bodybytes >= 0);
-	if (req->req_bodybytes != req->htc->content_length) {
+	assert(req_bodybytes >= 0);
+	if (req_bodybytes != req->htc->content_length) {
 		/* We must update also the "pristine" req.* copy */
 		http_Unset(req->http0, H_Content_Length);
 		http_Unset(req->http0, H_Transfer_Encoding);
 		http_PrintfHeader(req->http0, "Content-Length: %ju",
-		    (uintmax_t)req->req_bodybytes);
+		    (uintmax_t)req_bodybytes);
 
 		http_Unset(req->http, H_Content_Length);
 		http_Unset(req->http, H_Transfer_Encoding);
 		http_PrintfHeader(req->http, "Content-Length: %ju",
-		    (uintmax_t)req->req_bodybytes);
+		    (uintmax_t)req_bodybytes);
 	}
 
 	req->req_body_status = REQ_BODY_CACHED;
-	return (req->req_bodybytes);
+	return (req_bodybytes);
 }
 
 /*----------------------------------------------------------------------
@@ -188,8 +188,8 @@ VRB_Iterate(struct req *req, objiterate_f *func, void *priv)
 
 	switch (req->req_body_status) {
 	case REQ_BODY_CACHED:
-		if (req->req_bodybytes > 0 &&
-		    ObjIterate(req->wrk, req->body_oc, priv, func, 0))
+		AN(req->body_oc);
+		if (ObjIterate(req->wrk, req->body_oc, priv, func, 0))
 			return (-1);
 		return (0);
 	case REQ_BODY_NONE:
@@ -280,6 +280,7 @@ VRB_Free(struct req *req)
 ssize_t
 VRB_Cache(struct req *req, ssize_t maxsize)
 {
+	uint64_t u;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	assert(maxsize >= 0);
@@ -295,7 +296,8 @@ VRB_Cache(struct req *req, ssize_t maxsize)
 	assert (req->req_step == R_STP_RECV);
 	switch (req->req_body_status) {
 	case REQ_BODY_CACHED:
-		return (req->req_bodybytes);
+		AZ(ObjGetU64(req->wrk, req->body_oc, OA_LEN, &u));
+		return (u);
 	case REQ_BODY_FAIL:
 		return (-1);
 	case REQ_BODY_NONE:

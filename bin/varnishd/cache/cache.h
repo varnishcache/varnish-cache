@@ -486,7 +486,6 @@ struct req {
 	vtim_dur		d_ttl;
 	vtim_dur		d_grace;
 
-	ssize_t			req_bodybytes;	/* Parsed req bodybytes */
 	const struct stevedore	*storage;
 
 	const struct director	*director_hint;
