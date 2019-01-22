@@ -337,7 +337,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			if (hs < HTC_S_EMPTY) {
 				req->acct.req_hdrbytes +=
 				    req->htc->rxbuf_e - req->htc->rxbuf_b;
-				Req_AcctLogCharge(wrk->stats, req);
+				Req_Cleanup(sp, wrk, req);
 				Req_Release(req);
 				switch (hs) {
 				case HTC_S_CLOSE:
@@ -358,6 +358,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			}
 			if (hs == HTC_S_IDLE) {
 				wrk->stats->sess_herd++;
+				Req_Cleanup(sp, wrk, req);
 				Req_Release(req);
 				SES_Wait(sp, &HTTP1_transport);
 				return;

@@ -43,8 +43,8 @@
 
 #include "vtim.h"
 
-void
-Req_AcctLogCharge(struct VSC_main_wrk *ds, struct req *req)
+static void
+req_AcctLogCharge(struct VSC_main_wrk *ds, struct req *req)
 {
 	struct acct_req *a;
 
@@ -167,8 +167,7 @@ Req_Release(struct req *req)
 #include "tbl/acct_fields_req.h"
 
 	AZ(req->vcl);
-	if (req->vsl->wid)
-		VSL_End(req->vsl);
+	AZ(req->vsl->wid);
 	sp = req->sp;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	pp = sp->pool;
@@ -222,10 +221,9 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 		VCL_Recache(wrk, &req->vcl);
 
 	/* Charge and log byte counters */
-	if (req->vsl->wid) {
-		Req_AcctLogCharge(wrk->stats, req);
+	req_AcctLogCharge(wrk->stats, req);
+	if (req->vsl->wid)
 		VSL_End(req->vsl);
-	}
 	req->req_bodybytes = 0;
 
 	if (!isnan(req->t_prev) && req->t_prev > 0. && req->t_prev > sp->t_idle)
