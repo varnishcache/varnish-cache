@@ -34,10 +34,13 @@
 #include "vcc_if.h"
 #include "vmod_blob.h"
 
+#define VMOD_BLOB_TYPE 0xfade4faa
+
 struct vmod_blob_blob {
 	unsigned magic;
 #define VMOD_BLOB_MAGIC 0xfade4fa9
-	struct vmod_priv blob;
+	struct vrt_blob blob;
+	void *freeptr;
 	char *encoding[__MAX_ENCODING][2];
 	pthread_mutex_t lock;
 };
@@ -105,14 +108,12 @@ static const struct vmod_blob_fptr {
 
 static char empty[1] = { '\0' };
 
-static const struct vmod_priv null_blob[1] =
-{
-	{
-		.priv = empty,
-		.len = 0,
-		.free = NULL
-	}
-};
+static const struct vrt_blob null_blob[1] = {{
+#define VMOD_BLOB_NULL_TYPE 0xfade4fa0
+	.type = VMOD_BLOB_NULL_TYPE,
+	.len = 0,
+	.blob = empty,
+}};
 
 static enum encoding
 parse_encoding(VCL_ENUM e)
@@ -187,6 +188,7 @@ vmod_blob__init(VRT_CTX, struct vmod_blob_blob **blobp, const char *vcl_name,
 {
 	struct vmod_blob_blob *b;
 	enum encoding dec = parse_encoding(decs);
+	void *buf;
 	ssize_t len;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -201,36 +203,37 @@ vmod_blob__init(VRT_CTX, struct vmod_blob_blob **blobp, const char *vcl_name,
 	*blobp = b;
 	AZ(pthread_mutex_init(&b->lock, NULL));
 
+	b->blob.type = VMOD_BLOB_TYPE;
+
 	len = decode_l(dec, strings);
 	if (len == 0)
 		return;
 
 	assert(len > 0);
 
-	b->blob.priv = malloc(len);
-	if (b->blob.priv == NULL) {
+	buf = malloc(len);
+	if (buf == NULL) {
 		VERRNOMEM(ctx, "cannot create blob %s", vcl_name);
 		return;
 	}
 
 	errno = 0;
-	len = func[dec].decode(dec, b->blob.priv, len, -1, strings);
+	len = func[dec].decode(dec, buf, len, -1, strings);
 
 	if (len == -1) {
 		assert(errno == EINVAL);
-		free(b->blob.priv);
-		b->blob.priv = NULL;
+		free(buf);
 		VERR(ctx, "cannot create blob %s, illegal encoding beginning "
 		    "with \"%s\"", vcl_name, strings->p[0]);
 		return;
 	}
 	if (len == 0) {
-		b->blob.len = 0;
-		free(b->blob.priv);
-		b->blob.priv = NULL;
+		free(buf);
+		memcpy(&b->blob, null_blob, sizeof b->blob);
 		return;
 	}
 	b->blob.len = len;
+	b->blob.blob = b->freeptr = buf;
 }
 
 VCL_BLOB v_matchproto_(td_blob_blob_get)
@@ -238,7 +241,7 @@ vmod_blob_get(VRT_CTX, struct vmod_blob_blob *b)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(b, VMOD_BLOB_MAGIC);
-	return &b->blob;
+	return (&b->blob);
 }
 
 VCL_STRING v_matchproto_(td_blob_blob_encode)
@@ -276,7 +279,7 @@ vmod_blob_encode(VRT_CTX, struct vmod_blob_blob *b, VCL_ENUM encs,
 					len =
 						func[enc].encode(
 							enc, kase, s, len,
-							b->blob.priv,
+							b->blob.blob,
 							b->blob.len);
 					assert(len >= 0);
 					if (len == 0) {
@@ -304,9 +307,9 @@ vmod_blob__fini(struct vmod_blob_blob **blobp)
 	b = *blobp;
 	*blobp = NULL;
 	CHECK_OBJ(b, VMOD_BLOB_MAGIC);
-	if (b->blob.priv != NULL) {
-		free(b->blob.priv);
-		b->blob.priv = NULL;
+	if (b->freeptr != NULL) {
+		free(b->freeptr);
+		b->blob.blob = NULL;
 	}
 	for (int i = 0; i < __MAX_ENCODING; i++)
 		for (int j = 0; j < 2; j++) {
@@ -326,9 +329,7 @@ VCL_BLOB v_matchproto_(td_blob_decode)
 vmod_decode(VRT_CTX, VCL_ENUM decs, VCL_INT length, VCL_STRANDS strings)
 {
 	enum encoding dec = parse_encoding(decs);
-	struct vmod_priv *b;
 	char *buf;
-	uintptr_t snap;
 	ssize_t len;
 	unsigned space;
 
@@ -336,12 +337,6 @@ vmod_decode(VRT_CTX, VCL_ENUM decs, VCL_INT length, VCL_STRANDS strings)
 	AENC(dec);
 	AN(strings);
 	CHECK_OBJ_NOTNULL(ctx->ws, WS_MAGIC);
-
-	snap = WS_Snapshot(ctx->ws);
-	if ((b = WS_Alloc(ctx->ws, sizeof(struct vmod_priv))) == NULL) {
-		ERRNOMEM(ctx, "cannot decode");
-		return NULL;
-	}
 
 	buf = WS_Front(ctx->ws);
 	space = WS_Reserve(ctx->ws, 0);
@@ -354,19 +349,17 @@ vmod_decode(VRT_CTX, VCL_ENUM decs, VCL_INT length, VCL_STRANDS strings)
 	if (len == -1) {
 		err_decode(ctx, strings->p[0]);
 		WS_Release(ctx->ws, 0);
-		WS_Reset(ctx->ws, snap);
 		return NULL;
 	}
 	if (len == 0) {
 		WS_Release(ctx->ws, 0);
-		WS_Reset(ctx->ws, snap);
 		return null_blob;
 	}
 	WS_Release(ctx->ws, len);
-	b->priv = buf;
-	b->len = len;
-	b->free = NULL;
-	return (b);
+
+	assert(len > 0);
+
+	return (VRT_blob(ctx, "blob.decode", buf, len, VMOD_BLOB_TYPE));
 }
 
 static VCL_STRING
@@ -387,7 +380,7 @@ encode(VRT_CTX, enum encoding enc, enum case_e kase, VCL_BLOB b)
 	buf = WS_Front(ctx->ws);
 	space = WS_Reserve(ctx->ws, 0);
 
-	len = func[enc].encode(enc, kase, buf, space, b->priv, b->len);
+	len = func[enc].encode(enc, kase, buf, space, b->blob, b->len);
 
 	if (len == -1) {
 		ERRNOMEM(ctx, "cannot encode");
@@ -424,7 +417,7 @@ vmod_transcode(VRT_CTX, VCL_ENUM decs, VCL_ENUM encs, VCL_ENUM case_s,
 	enum encoding dec = parse_encoding(decs);
 	enum encoding enc = parse_encoding(encs);
 	enum case_e kase = parse_case(case_s);
-	struct vmod_priv b;
+	struct vrt_blob b;
 	VCL_STRING r;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -444,15 +437,15 @@ vmod_transcode(VRT_CTX, VCL_ENUM decs, VCL_ENUM encs, VCL_ENUM case_s,
 	size_t l = decode_l(dec, strings);
 	if (l == 0)
 		return "";
+
 	/* XXX: handle stack overflow? */
 	char buf[l];
-	b.free = NULL;
-	b.priv = buf;
 
 	if (length <= 0)
 		length = -1;
 	errno = 0;
 	b.len = func[dec].decode(dec, buf, l, length, strings);
+	b.blob = buf;
 
 	if (b.len == -1) {
 		err_decode(ctx, strings->p[0]);
@@ -487,7 +480,7 @@ vmod_same(VRT_CTX, VCL_BLOB b1, VCL_BLOB b2)
 		return 1;
 	if (b1 == NULL || b2 == NULL)
 		return 0;
-	return (b1->len == b2->len && b1->priv == b2->priv);
+	return (b1->len == b2->len && b1->blob == b2->blob);
 }
 
 VCL_BOOL v_matchproto_(td_blob_equal)
@@ -501,11 +494,11 @@ vmod_equal(VRT_CTX, VCL_BLOB b1, VCL_BLOB b2)
 		return 0;
 	if (b1->len != b2->len)
 		return 0;
-	if (b1->priv == b2->priv)
+	if (b1->blob == b2->blob)
 		return 1;
-	if (b1->priv == NULL || b2->priv == NULL)
+	if (b1->blob == NULL || b2->blob == NULL)
 		return 0;
-	return (memcmp(b1->priv, b2->priv, b1->len) == 0);
+	return (memcmp(b1->blob, b2->blob, b1->len) == 0);
 }
 
 VCL_INT v_matchproto_(td_blob_length)
@@ -521,21 +514,20 @@ vmod_length(VRT_CTX, VCL_BLOB b)
 VCL_BLOB v_matchproto_(td_blob_sub)
 vmod_sub(VRT_CTX, VCL_BLOB b, VCL_BYTES n, VCL_BYTES off)
 {
-	uintptr_t snap;
-	struct vmod_priv *sub;
-
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	assert(n >= 0);
 	assert(off >= 0);
 
-	if (b == NULL || b->len == 0 || b->priv == NULL) {
+	if (b == NULL || b->len == 0 || b->blob == NULL) {
 		ERR(ctx, "blob is empty in blob.sub()");
 		return NULL;
 	}
-	assert(b->len >= 0);
+
+	assert(b->len > 0);
+
 	if (off + n > b->len) {
 		VERR(ctx, "size %jd from offset %jd requires more bytes than "
-		     "blob length %d in blob.sub()",
+		     "blob length %zd in blob.sub()",
 		     (intmax_t)n, (intmax_t)off, b->len);
 		return NULL;
 	}
@@ -543,17 +535,7 @@ vmod_sub(VRT_CTX, VCL_BLOB b, VCL_BYTES n, VCL_BYTES off)
 	if (n == 0)
 		return null_blob;
 
-	snap = WS_Snapshot(ctx->ws);
-	if ((sub = WS_Alloc(ctx->ws, sizeof(*sub))) == NULL) {
-		ERRNOMEM(ctx, "Allocating BLOB result in blob.sub()");
-		return NULL;
-	}
-	if ((sub->priv = WS_Alloc(ctx->ws, n)) == NULL) {
-		VERRNOMEM(ctx, "Allocating %jd bytes in blob.sub()", (intmax_t)n);
-		WS_Reset(ctx->ws, snap);
-		return NULL;
-	}
-	memcpy(sub->priv, (char *)b->priv + off, n);
-	sub->len = n;
-	return sub;
+
+	return (VRT_blob(ctx, "blob.sub()",
+	    (const char *)b->blob + off, n, b->type));
 }

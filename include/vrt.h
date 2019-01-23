@@ -56,6 +56,8 @@
  *	HTTP_Copy() removed
  *	HTTP_Dup() added
  *	HTTP_Clone() added
+ *	changed type of VCL_BLOB to newly introduced struct vrt_blob *
+ *	changed VRT_blob()
  * 8.0 (2018-09-15)
  *	VRT_Strands() added
  *	VRT_StrandsWS() added
@@ -118,7 +120,7 @@
  *	vrt_acl type added
  */
 
-#define VRT_MAJOR_VERSION	8U
+#define VRT_MAJOR_VERSION	9U
 
 #define VRT_MINOR_VERSION	0U
 
@@ -150,6 +152,32 @@ struct strands {
 	const char	**p;
 };
 
+/*
+ * VCL_BLOB:
+ *
+ * opaque, immutable data (pointer + length), minimum lifetime is the VCL task.
+ *
+ * type (optional) is owned by the creator of the blob. blob consumers may use
+ * it for checks, but should not assert on it.
+ *
+ * The data behind the blob pointer is assumed to be immutable for the blob's
+ * lifetime.
+ *
+ * Memory management is either implicit or up to the vmod:
+ *
+ * - memory for shortlived blobs should come from the respective workspace
+ *
+ * - management of memory for longer lived blobs is up to the vmod
+ *   (in which case the blob will probably be embedded in an object or
+ *    referenced by other state with vcl lifetime)
+ */
+
+struct vrt_blob {
+	unsigned	type;
+	size_t		len;
+	const void	*blob;
+};
+
 /***********************************************************************
  * This is the central definition of the mapping from VCL types to
  * C-types.  The python scripts read these from here.
@@ -158,7 +186,7 @@ struct strands {
 
 typedef const struct vrt_acl *			VCL_ACL;
 typedef const struct director *			VCL_BACKEND;
-typedef const struct vmod_priv *		VCL_BLOB;
+typedef const struct vrt_blob *			VCL_BLOB;
 typedef const char *				VCL_BODY;
 typedef unsigned				VCL_BOOL;
 typedef int64_t					VCL_BYTES;
@@ -417,7 +445,7 @@ VCL_VOID VRT_hashdata(VRT_CTX, const char *str, ...);
 int VRT_strcmp(const char *s1, const char *s2);
 void VRT_memmove(void *dst, const void *src, unsigned len);
 VCL_BOOL VRT_ipcmp(VCL_IP, VCL_IP);
-VCL_BLOB VRT_blob(VRT_CTX, const char *, const void *, size_t);
+VCL_BLOB VRT_blob(VRT_CTX, const char *, const void *, size_t, unsigned);
 
 VCL_VOID VRT_Rollback(VRT_CTX, VCL_HTTP);
 

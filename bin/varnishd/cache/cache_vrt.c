@@ -839,21 +839,24 @@ VRT_ipcmp(VCL_IP sua1, VCL_IP sua2)
 	return (VSA_Compare_IP(sua1, sua2));
 }
 
+/*
+ * the pointer passed as src must have at least VCL_TASK lifetime
+ */
 VCL_BLOB
-VRT_blob(VRT_CTX, const char *err, const void *src, size_t len)
+VRT_blob(VRT_CTX, const char *err, const void *src, size_t len, unsigned type)
 {
-	struct vmod_priv *p;
-	void *d;
+	struct vrt_blob *p;
 
 	p = (void *)WS_Alloc(ctx->ws, sizeof *p);
-	d = WS_Copy(ctx->ws, src, len);
-	if (p == NULL || d == NULL) {
+	if (p == NULL) {
 		VRT_fail(ctx, "Workspace overflow (%s)", err);
 		return (NULL);
 	}
-	memset(p, 0, sizeof *p);
+
+	p->type = type;
 	p->len = len;
-	p->priv = d;
+	p->blob = src;
+
 	return (p);
 }
 

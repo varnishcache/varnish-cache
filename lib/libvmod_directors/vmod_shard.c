@@ -113,6 +113,8 @@ enum vmod_directors_shard_param_scope {
 
 struct vmod_directors_shard_param;
 
+#define VMOD_SHARD_SHARD_PARAM_BLOB		0xdf5ca116
+
 struct vmod_directors_shard_param {
 	unsigned				magic;
 #define VMOD_SHARD_SHARD_PARAM_MAGIC		0xdf5ca117
@@ -157,7 +159,7 @@ shard_param_task(VRT_CTX, const void *id,
     const struct vmod_directors_shard_param *pa);
 
 static const struct vmod_directors_shard_param *
-shard_param_blob(const VCL_BLOB blob);
+shard_param_blob(VCL_BLOB blob);
 
 static const struct vmod_directors_shard_param *
 vmod_shard_param_read(VRT_CTX, const void *id,
@@ -469,19 +471,19 @@ static uint32_t
 shard_blob_key(VCL_BLOB key_blob)
 {
 	uint8_t k[4] = { 0 };
-	uint8_t *b;
+	const uint8_t *b;
 	int i, ki;
 
-	assert(key_blob);
+	AN(key_blob);
+	AN(key_blob->blob);
 	assert(key_blob->len > 0);
-	assert(key_blob->priv != NULL);
 
 	if (key_blob->len >= 4)
 		ki = 0;
 	else
 		ki = 4 - key_blob->len;
 
-	b = key_blob->priv;
+	b = key_blob->blob;
 	for (i = 0; ki < 4; i++, ki++)
 		k[ki] = b[i];
 	assert(i <= key_blob->len);
@@ -570,7 +572,7 @@ shard_param_args(VRT_CTX,
 				return (NULL);
 			}
 			if (key_blob == NULL || key_blob->len <= 0 ||
-			    key_blob->priv == NULL) {
+			    key_blob->blob == NULL) {
 				sharddir_err(ctx, SLT_Error, "%s %s: "
 					     "by=BLOB but no or empty key_blob "
 					     "- using key 0",
@@ -1014,12 +1016,17 @@ vmod_shard_param_get_healthy(VRT_CTX,
 }
 
 static const struct vmod_directors_shard_param *
-shard_param_blob(const VCL_BLOB blob)
+shard_param_blob(VCL_BLOB blob)
 {
-	if (blob && blob->priv &&
-	    blob->len == sizeof(struct vmod_directors_shard_param) &&
-	    *(unsigned *)blob->priv == VMOD_SHARD_SHARD_PARAM_MAGIC)
-		return (blob->priv);
+	const struct vmod_directors_shard_param *p;
+
+	if (blob && blob->type == VMOD_SHARD_SHARD_PARAM_BLOB &&
+	    blob->blob != NULL &&
+	    blob->len == sizeof(struct vmod_directors_shard_param)) {
+		CAST_OBJ_NOTNULL(p, blob->blob, VMOD_SHARD_SHARD_PARAM_MAGIC);
+		return (p);
+	}
+
 	return (NULL);
 }
 
@@ -1027,20 +1034,9 @@ VCL_BLOB v_matchproto_(td_directors_shard_param_use)
 vmod_shard_param_use(VRT_CTX,
     struct vmod_directors_shard_param *p)
 {
-	struct vmod_priv *blob;
-
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(p, VMOD_SHARD_SHARD_PARAM_MAGIC);
 
-	blob = (void *)WS_Alloc(ctx->ws, sizeof *blob);
-	if (blob == NULL) {
-		VRT_fail(ctx, "Workspace overflow (param.use())");
-		return (NULL);
-	}
-
-	memset(blob, 0, sizeof *blob);
-	blob->len = sizeof *p;
-	blob->priv = p;
-
-	return (blob);
+	return (VRT_blob(ctx, "xshard_param.use()", p, sizeof *p,
+	    VMOD_SHARD_SHARD_PARAM_BLOB));
 }

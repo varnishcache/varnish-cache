@@ -891,12 +891,16 @@ VRT_BODY_L(resp)
 
 /*--------------------------------------------------------------------*/
 
+			/* digest */
+#define BLOB_HASH_TYPE 0x00d16357
+
 VCL_BLOB
 VRT_r_req_hash(VRT_CTX)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	return (VRT_blob(ctx, "req.hash", ctx->req->digest, DIGEST_LEN));
+	return (VRT_blob(ctx, "req.hash", ctx->req->digest, DIGEST_LEN,
+	    BLOB_HASH_TYPE));
 }
 
 VCL_BLOB
@@ -904,7 +908,8 @@ VRT_r_bereq_hash(VRT_CTX)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
-	return (VRT_blob(ctx, "bereq.hash", ctx->bo->digest, DIGEST_LEN));
+	return (VRT_blob(ctx, "bereq.hash", ctx->bo->digest, DIGEST_LEN,
+	    BLOB_HASH_TYPE));
 }
 
 /*--------------------------------------------------------------------*/
