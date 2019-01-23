@@ -161,11 +161,14 @@ vmod_client_cert_cn(VRT_CTX)
 
 /*--------------------------------------------------------------------*/
 
+#define BLOB_VMOD_PROXY_HEADER_TYPE	0xc8f34f78
+
 VCL_BLOB v_matchproto_(td_proxy_header)
 vmod_header(VRT_CTX, VCL_INT version, VCL_IP client, VCL_IP server)
 {
-	VCL_BLOB r;
 	struct vsb *vsb;
+	const void *h;
+	size_t l;
 
 	CHECK_OBJ_ORNULL(ctx, VRT_CTX_MAGIC);
 
@@ -177,7 +180,15 @@ vmod_header(VRT_CTX, VCL_INT version, VCL_IP client, VCL_IP server)
 	vsb = VSB_new_auto();
 	AN(vsb);
 	VRT_Format_Proxy(vsb, version, client, server);
-	r = VRT_blob(ctx, "proxy.header", VSB_data(vsb), VSB_len(vsb));
+	l = VSB_len(vsb);
+	h = WS_Copy(ctx->ws, VSB_data(vsb), l);
 	VSB_delete(vsb);
-	return (r);
+
+	if (h == NULL) {
+		VRT_fail(ctx, "proxy.header: out of workspace");
+		return (NULL);
+	}
+
+	return (VRT_blob(ctx, "proxy.header", h, l,
+	    BLOB_VMOD_PROXY_HEADER_TYPE));
 }
