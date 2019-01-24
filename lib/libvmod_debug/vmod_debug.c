@@ -630,3 +630,125 @@ xyzzy_return_strands(VRT_CTX, VCL_STRANDS strand)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	return (strand);
 }
+
+/**********************************************************************
+ * catflap
+ */
+
+static enum catflap_e v_matchproto_(catflap_f)
+catflap_miss(const struct req *req, struct objcore *oc, void **catp)
+{
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	AN(catp);
+	AZ(*catp);
+
+	return (FLP_MISS);
+}
+
+static enum catflap_e v_matchproto_(catflap_f)
+catflap_hit(const struct req *req, struct objcore *oc, void **catp)
+{
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	AN(catp);
+	AZ(*catp);
+
+	return (FLP_HIT);
+}
+
+static enum catflap_e v_matchproto_(catflap_f)
+catflap_save(const struct req *req, struct objcore *oc, void **catp)
+{
+	struct objcore **cat;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	AN(catp);
+	AN(*catp);
+	cat = *catp;
+	*cat = oc;
+
+	return (FLP_CONTINUE);
+}
+
+static struct objcore * v_matchproto_(catflap_fini_f)
+catflap_recall(struct objcore *oc, void **catp)
+{
+	struct objcore **cat;
+
+	AZ(oc);
+	AN(catp);
+	AN(*catp);
+
+	cat = *catp;
+	CAST_OBJ(oc, *cat, OBJCORE_MAGIC);
+	*catp = NULL;
+	return (oc);
+}
+
+static void v_matchproto_(catflap_init_f)
+catflap_init_miss(struct req *req,
+    catflap_f **flap, catflap_fini_f **fini, void **catp)
+{
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	AN(flap);
+	AN(fini);
+	AN(catp);
+
+	*flap = catflap_miss;
+	AZ(*fini);
+	AZ(*catp);
+}
+
+static void v_matchproto_(catflap_init_f)
+catflap_init_first(struct req *req,
+    catflap_f **flap, catflap_fini_f **fini, void **catp)
+{
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	AN(flap);
+	AN(fini);
+	AN(catp);
+
+	*flap = catflap_hit;
+	AZ(*fini);
+	AZ(*catp);
+}
+
+static void v_matchproto_(catflap_init_f)
+catflap_init_last(struct req *req,
+    catflap_f **flap, catflap_fini_f **fini, void **catp)
+{
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	AN(flap);
+	AN(fini);
+	AN(catp);
+
+	// intentionally overly complicated to demo ws alloc
+	// XXX in the real world, this might be reserve + release
+	*catp = WS_Alloc(req->wrk->aws, sizeof(struct objcore *));
+	AN(*catp);
+	*flap = catflap_save;
+	*fini = catflap_recall;
+}
+
+VCL_VOID
+xyzzy_catflap(VRT_CTX, VCL_ENUM type)
+{
+	struct req *req;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	req = ctx->req;
+	if (req == NULL)
+		return;
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
+	if (type == VENUM(miss))
+		req->catflap_init = catflap_init_miss;
+	else if (type == VENUM(first))
+		req->catflap_init = catflap_init_first;
+	else if (type == VENUM(last))
+		req->catflap_init = catflap_init_last;
+	else
+		INCOMPL();
+}

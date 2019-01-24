@@ -349,6 +349,10 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 	const uint8_t *vary;
 	unsigned xid = 0;
 	float dttl = 0.0;
+	enum catflap_e flap;
+	catflap_fini_f *catflap_fini;
+	catflap_f *catflap;
+	void *cat;
 
 	AN(ocp);
 	*ocp = NULL;
@@ -390,6 +394,12 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 		Lck_Unlock(&oh->mtx);
 		return (HSH_MISS);
 	}
+
+	catflap = NULL;
+	catflap_fini = NULL;
+	cat = NULL;
+	if (req->catflap_init)
+		req->catflap_init(req, &catflap, &catflap_fini, &cat);
 
 	assert(oh->refcnt > 0);
 	busy_found = 0;
@@ -436,6 +446,19 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 				continue;
 		}
 
+		if (catflap) {
+			flap = catflap(req, oc, &cat);
+			if (flap == FLP_CONTINUE)
+				continue;
+			if (flap == FLP_MISS) {
+				oc = NULL;
+				break;
+			}
+			if (flap == FLP_HIT)
+				break;
+			assert (flap == FLP_DEFAULT);
+		}
+
 		if (EXP_Ttl(req, oc) > req->t_req) {
 			assert(oh->refcnt > 1);
 			assert(oc->objhead == oh);
@@ -450,6 +473,11 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 			assert(oh->refcnt > 1);
 			assert(exp_oc->objhead == oh);
 		}
+	}
+
+	if (catflap_fini) {
+		oc = catflap_fini(oc, &cat);
+		AZ(cat);
 	}
 
 	if (oc != NULL && oc->flags & OC_F_HFP) {

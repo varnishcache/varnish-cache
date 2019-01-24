@@ -229,3 +229,14 @@ $Method STRING .meth_opt(PRIV_CALL, PRIV_VCL, PRIV_TASK,
 Test object method with all the fancy stuff.
 
 $Function STRANDS return_strands(STRANDS strand)
+
+$Function VOID catflap(ENUM {miss, first, last} type)
+
+Test the hash lookup catflap:
+
+* miss = provoke a miss (just like hash_always_miss, but in the
+  catflap
+
+* first = return the first object as a hit (if any), irrespective of the ttl
+
+* last = return the last object as a hit (if any)

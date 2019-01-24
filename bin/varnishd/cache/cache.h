@@ -272,6 +272,25 @@ struct worker {
 	unsigned		handling;
 };
 
+/*--------------------------------------------------------------------
+ * catflap: control over HSH_Lookup
+ */
+
+enum catflap_e {
+	FLP_CONTINUE,
+	FLP_DEFAULT,
+	FLP_MISS,
+	FLP_HIT
+};
+
+typedef enum catflap_e catflap_f(const struct req *req,
+    struct objcore *oc, void **privp);
+
+typedef struct objcore * catflap_fini_f(struct objcore *oc, void **privp);
+
+typedef void catflap_init_f(struct req *req,
+    catflap_f **flap, catflap_fini_f **fini, void **privp);
+
 /* Stored object -----------------------------------------------------
  * This is just to encapsulate the fields owned by the stevedore
  */
@@ -530,6 +549,7 @@ struct req {
 	struct acct_req		acct;
 
 	struct vrt_privs	privs[1];
+	catflap_init_f		*catflap_init;
 };
 
 #define IS_TOPREQ(req) ((req)->topreq == (req))

@@ -1,0 +1,54 @@
+varnishtest "catflap"
+
+varnish v1 -vcl {
+	import debug;
+
+	backend dummy { .host = "${bad_backend}"; }
+
+	sub vcl_recv {
+		if (req.http.id) {
+			debug.catflap(miss);
+		} else if (req.http.get == "first") {
+			debug.catflap(first);
+		} else if (req.http.get == "last") {
+			debug.catflap(last);
+		} else {
+			return (fail);
+		}
+		return (hash);
+	}
+
+	sub vcl_backend_error {
+		if (! bereq.http.id) {
+			return (deliver);
+		}
+		set beresp.status = 200;
+		set beresp.ttl = 1s;
+		set beresp.grace = 1m;
+		set beresp.http.id = bereq.http.id;
+	}
+} -start
+
+client c1 {
+	txreq -hdr "id: 1"
+	rxresp
+	expect resp.status == 200
+	txreq -hdr "id: 2"
+	rxresp
+	expect resp.status == 200
+	txreq -hdr "id: 3"
+	rxresp
+	expect resp.status == 200
+
+	# the first object is the one which went into cache last
+
+	txreq -hdr "get: first"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.id == "3"
+
+	txreq -hdr "get: last"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.id == "1"
+} -run
