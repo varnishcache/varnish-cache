@@ -51,13 +51,13 @@
  * Whenever something is deleted or changed in a way which is not
  * binary/load-time compatible, increment MAJOR version
  *
- *
  * 9.0 (scheduled for 2019-03-15)
  *	HTTP_Copy() removed
  *	HTTP_Dup() added
  *	HTTP_Clone() added
  *	changed type of VCL_BLOB to newly introduced struct vrt_blob *
  *	changed VRT_blob()
+ *	VRT_Fortmat_Proxy() added
  * 8.0 (2018-09-15)
  *	VRT_Strands() added
  *	VRT_StrandsWS() added
@@ -512,6 +512,7 @@ VCL_BACKEND VRT_DirectorResolve(VRT_CTX, VCL_BACKEND);
 
 /* Suckaddr related */
 int VRT_VSA_GetPtr(VCL_IP sua, const unsigned char ** dst);
+void VRT_Format_Proxy(struct vsb *, VCL_INT, VCL_IP, VCL_IP);
 
 /* VMOD/Modules related */
 int VRT_Vmod_Init(VRT_CTX, struct vmod **hdl, unsigned nbr, void *ptr, int len,
