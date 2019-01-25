@@ -277,6 +277,20 @@ struct list_args {
 	const char	*jsep;
 };
 
+static const char *
+cli_health(struct director *d)
+{
+	struct vrt_ctx *ctx;
+	VCL_BOOL healthy;
+
+	ctx = VCL_Get_CliCtx(0,0);
+	healthy = VRT_Healthy(ctx, d, NULL);
+	VCL_Rel_CliCtx(&ctx);
+	AZ(ctx);
+
+	return (healthy ? "healthy" : "sick");
+}
+
 static int v_matchproto_(vcl_be_func)
 do_list(struct cli *cli, struct director *d, void *priv)
 {
@@ -295,7 +309,7 @@ do_list(struct cli *cli, struct director *d, void *priv)
 	if (d->vdir->methods->list != NULL)
 		d->vdir->methods->list(d, cli->sb, 0, 0, 0);
 	else
-		VCLI_Out(cli, "%-10s", d->sick ? "sick" : "healthy");
+		VCLI_Out(cli, "%-10s", cli_health(d));
 
 	VTIM_format(d->vdir->health_changed, time_str);
 	VCLI_Out(cli, " %s", time_str);
@@ -327,7 +341,7 @@ do_list_json(struct cli *cli, struct director *d, void *priv)
 	if (d->vdir->methods->list != NULL)
 		d->vdir->methods->list(d, cli->sb, 0, 0, 1);
 	else
-		VCLI_Out(cli, "\"%s\"", d->sick ? "sick" : "healthy");
+		VCLI_Out(cli, "\"%s\"", cli_health(d));
 	VCLI_Out(cli, ",\n");
 
 	if ((la->p || la->v) && d->vdir->methods->list != NULL) {

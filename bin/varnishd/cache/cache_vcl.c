@@ -106,8 +106,8 @@ VCL_Req2Ctx(struct vrt_ctx *ctx, struct req *req)
 
 /*--------------------------------------------------------------------*/
 
-static struct vrt_ctx *
-vcl_get_ctx(unsigned method, int msg)
+struct vrt_ctx *
+VCL_Get_CliCtx(unsigned method, int msg)
 {
 
 	ASSERT_CLI();
@@ -126,8 +126,8 @@ vcl_get_ctx(unsigned method, int msg)
 	return (&ctx_cli);
 }
 
-static void
-vcl_rel_ctx(struct vrt_ctx **ctx)
+void
+VCL_Rel_CliCtx(struct vrt_ctx **ctx)
 {
 
 	ASSERT_CLI();
@@ -614,7 +614,7 @@ VCL_Poll(void)
 	struct vcl *vcl, *vcl2;
 
 	ASSERT_CLI();
-	ctx = vcl_get_ctx(0, 0);
+	ctx = VCL_Get_CliCtx(0, 0);
 	VTAILQ_FOREACH_SAFE(vcl, &vcl_head, list, vcl2) {
 		if (vcl->temp == VCL_TEMP_BUSY ||
 		    vcl->temp == VCL_TEMP_COOLING) {
@@ -639,7 +639,7 @@ VCL_Poll(void)
 			VSC_C_main->n_vcl_discard--;
 		}
 	}
-	vcl_rel_ctx(&ctx);
+	VCL_Rel_CliCtx(&ctx);
 }
 
 /*--------------------------------------------------------------------*/
@@ -730,9 +730,9 @@ vcl_cli_load(struct cli *cli, const char * const *av, void *priv)
 
 	AZ(priv);
 	ASSERT_CLI();
-	ctx = vcl_get_ctx(VCL_MET_INIT, 1);
+	ctx = VCL_Get_CliCtx(VCL_MET_INIT, 1);
 	vcl_load(cli, ctx, av[2], av[3], av[4]);
-	vcl_rel_ctx(&ctx);
+	VCL_Rel_CliCtx(&ctx);
 }
 
 static void v_matchproto_(cli_func_t)
@@ -744,7 +744,7 @@ vcl_cli_state(struct cli *cli, const char * const *av, void *priv)
 	ASSERT_CLI();
 	AN(av[2]);
 	AN(av[3]);
-	ctx = vcl_get_ctx(0, 1);
+	ctx = VCL_Get_CliCtx(0, 1);
 	ctx->vcl = vcl_find(av[2]);
 	AN(ctx->vcl);			// MGT ensures this
 	if (vcl_set_state(ctx, av[3])) {
@@ -755,7 +755,7 @@ vcl_cli_state(struct cli *cli, const char * const *av, void *priv)
 		if (VSB_len(ctx->msg))
 			VCLI_Out(cli, "\nMessage:\n\t%s", VSB_data(ctx->msg));
 	}
-	vcl_rel_ctx(&ctx);
+	VCL_Rel_CliCtx(&ctx);
 }
 
 static void v_matchproto_(cli_func_t)
