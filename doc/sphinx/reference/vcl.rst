@@ -233,9 +233,17 @@ parameters. The following attributes are available:
     is declared.
 
   ``.path``	(``VCL >= 4.1``)
+
     The absolute path of a Unix domain socket at which a backend is
-    listening. The file at that path must exist and must be accessible
-    to Varnish at VCL load time, and it must be a socket. One of
+    listening. If the file at that path does not exist or is not
+    accessible to Varnish at VCL load time, then the VCL compiler
+    issues a warning, but does not fail. This makes it possible to
+    start the UDS-listening peer, or set the socket file's
+    permissions, after starting Varnish or loading VCL with a UDS
+    backend.  But the socket file must exist and have necessary
+    permissions before the first connection is attempted, otherwise
+    fetches will fail. If the file does exist and is accessible, then
+    it must be a socket; otherwise the VCL load fails. One of
     ``.path`` or ``.host`` must be declared (but not both). ``.path``
     may only be used in VCL since version 4.1.
 
