@@ -123,16 +123,39 @@ varnish v1 -errvcl "Must be an absolute path:" {
 	}
 }
 
-shell { rm -f ${tmpdir}/foo }
-
-varnish v1 -errvcl "Cannot stat:" {
-	backend b1 {
-		.path = "${tmpdir}/foo";
-	}
-}
-
 varnish v1 -errvcl "Not a socket:" {
 	backend b1 {
 		.path = "${tmpdir}";
 	}
 }
+
+# VCC warns, but does not fail, if stat(UDS) fails with ENOENT.
+shell { rm -f ${tmpdir}/foo }
+
+varnish v1 -vcl { backend b {.host="${bad_ip}";} }
+
+varnish v1 -cliexpect "(?s)Cannot stat:.+That was just a warning" \
+	{vcl.inline test "vcl 4.1; backend b {.path=\"${tmpdir}/foo\";}"}
+
+# VCC also warns but doesn't fail for EACCES. Tested in c00086.vtc.
+
+# The following test verifies that Varnish continues connecting to a
+# socket file, even if the listener at that location changes.
+
+server s1 -listen "${tmpdir}/server.sock" {
+	rxreq
+	txresp -hdr "Connection: close" -hdr "Cache-Control: max-age=0"
+} -start
+
+varnish v1 -vcl {
+	backend b {.path = "${s1_sock}"; }
+} -start
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+server s1 -start
+
+client c1 -run

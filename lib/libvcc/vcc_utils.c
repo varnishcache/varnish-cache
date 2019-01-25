@@ -276,12 +276,16 @@ Emit_UDS_Path(struct vcc *tl, const struct token *t_path, const char *errid)
 	}
 	errno = 0;
 	if (stat(t_path->dec, &st) != 0) {
+		int err = errno;
 		VSB_printf(tl->sb, "%s: Cannot stat: %s\n", errid,
 			   strerror(errno));
 		vcc_ErrWhere(tl, t_path);
-		return;
-	}
-	if (!S_ISSOCK(st.st_mode)) {
+		if (err == ENOENT || err == EACCES) {
+			VSB_printf(tl->sb, "(That was just a warning)\n");
+			tl->err = 0;
+		} else
+			return;
+	} else if (!S_ISSOCK(st.st_mode)) {
 		VSB_printf(tl->sb, "%s: Not a socket:\n", errid);
 		vcc_ErrWhere(tl, t_path);
 		return;

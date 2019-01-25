@@ -1,4 +1,4 @@
-varnishtest "-a sub-args user, group and mode"
+varnishtest "-a sub-args user, group and mode; and warn if stat(EACCES) fails for UDS"
 
 feature user_vcache
 feature group_varnish
@@ -51,3 +51,14 @@ shell -match "vcache" { ls -l ${tmpdir}/v6.sock }
 varnish v7 -arg "-a ${tmpdir}/v7.sock,group=varnish" -vcl+backend {}
 
 shell -match "root.+varnish" { ls -l ${tmpdir}/v7.sock }
+
+# VCC warns, but does not fail, if stat(UDS) fails with EACCES.
+shell { mkdir ${tmpdir}/dir }
+server s2 -listen ${tmpdir}/dir/s1.sock {} -start
+
+shell { chmod go-rx ${tmpdir}/dir }
+
+varnish v8 -arg "-j unix,user=vcache" -vcl { backend b {.host="${bad_ip}";} }
+
+varnish v8 -cliexpect "(?s)Cannot stat:.+That was just a warning" \
+	{vcl.inline test "vcl 4.1; backend b {.path=\"${tmpdir}/dir/s1.sock\";}"}
