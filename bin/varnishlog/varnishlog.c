@@ -142,10 +142,19 @@ main(int argc, char * const *argv)
 		VUT_Error(vut, 1, "Missing -w option");
 
 	/* Setup output */
-	if (LOG.A_opt || !LOG.w_arg)
+	if (LOG.A_opt || !LOG.w_arg) {
 		vut->dispatch_f = VSL_PrintTransactions;
-	else
+	} else {
 		vut->dispatch_f = VSL_WriteTransactions;
+		/*
+		 * inefficient but not crossing API layers
+		 * first x argument avoids initial suppression of all tags
+		 */
+		AN(VUT_Arg(vut, 'x', "Link"));
+		AN(VUT_Arg(vut, 'i', "Link"));
+		AN(VUT_Arg(vut, 'i', "Begin"));
+		AN(VUT_Arg(vut, 'i', "End"));
+	}
 	if (LOG.w_arg) {
 		openout(LOG.a_opt);
 		AN(LOG.fo);
