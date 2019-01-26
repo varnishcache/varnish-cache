@@ -665,7 +665,7 @@ class EventStanza(Stanza):
 
 class FunctionStanza(Stanza):
 
-    ''' $Function TYPE name ( ARGUMENSTS ) '''
+    ''' $Function TYPE name ( ARGUMENTS ) '''
 
     def parse(self):
         self.proto = ProtoType(self)
@@ -688,7 +688,7 @@ class FunctionStanza(Stanza):
 
 class ObjectStanza(Stanza):
 
-    ''' $Object TYPE class ( ARGUMENSTS ) '''
+    ''' $Object TYPE class ( ARGUMENTS ) '''
 
     def parse(self):
         self.proto = ProtoType(self, retval=False)
@@ -776,7 +776,7 @@ class ObjectStanza(Stanza):
 
 class MethodStanza(Stanza):
 
-    ''' $Method TYPE . method ( ARGUMENSTS ) '''
+    ''' $Method TYPE . method ( ARGUMENTS ) '''
 
     def parse(self):
         p = self.vcc.contents[-1]
