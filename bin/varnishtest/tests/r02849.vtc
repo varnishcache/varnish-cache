@@ -36,6 +36,8 @@ varnish v1 -vcl+backend {
 	}
 } -start
 
+varnish v1 -cliok "param.set debug +syncvsl"
+
 varnish v1 -cliok "vcl.label lab1 vcl1"
 
 varnish v1 -vcl+backend {
@@ -92,23 +94,25 @@ varnish v1 -vsl_catchup
 
 logexpect l1 -v v1 -g raw {
 
+	expect * 1008 VCL_use	"vcl3"
+	expect * 1008 ReqURL	"/l1"
+	expect * 1008 VCL_use	"vcl1 via lab1"
+
 	expect * 1009 VCL_use	"vcl1"
 	expect * 1009 BeReqURL	"/l1"
+
+	# yes, twice!
+	expect * 1010 ReqURL	"/l2"
+	expect * 1010 ReqURL	"/l2"
 
 	expect * 1011 VCL_use	"vcl3"
 	expect * 1011 BeReqURL	"/l2"
 
+	# yes, twice!
 	expect * 1012 ReqURL	"/l3"
 	expect * 1012 ReqURL	"/l3"
 	expect * 1012 VCL_use	"vcl2 via lab2"
 	expect * 1012 ReqURL	"/l3a"
-
-	expect * 1010 ReqURL	"/l2"
-	expect * 1010 ReqURL	"/l2"
-
-	expect * 1008 VCL_use	"vcl3"
-	expect * 1008 ReqURL	"/l1"
-	expect * 1008 VCL_use	"vcl1 via lab1"
 } -start
 
 # The test which one is picked
