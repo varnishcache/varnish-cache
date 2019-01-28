@@ -58,6 +58,8 @@
  *	HTTP_Clone() added
  *	changed type of VCL_BLOB to newly introduced struct vrt_blob *
  *	changed VRT_blob()
+ *	req->req_bodybytes removed
+ *	    use: AZ(ObjGetU64(req->wrk, req->body_oc, OA_LEN, &u));
  * 8.0 (2018-09-15)
  *	VRT_Strands() added
  *	VRT_StrandsWS() added
