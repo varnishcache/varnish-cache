@@ -323,7 +323,7 @@ logexp_dispatch(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			    VSL_BACKEND(t->c->rec.ptr) ? 'b' : '-';
 
 			if (legend != NULL)
-				vtc_log(le->vl, 4, "%3s| %10u %-15s %c %.*s",
+				vtc_log(le->vl, 4, "%-5s| %10u %-15s %c %.*s",
 				    legend, vxid, VSL_tags[tag], type, len,
 				    data);
 
