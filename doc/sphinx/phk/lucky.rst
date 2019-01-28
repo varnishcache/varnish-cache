@@ -89,7 +89,7 @@ and then we will know and be ready to say something more detailed.
 I don't think it is realistic to roll out any kind of H3 support
 in the september release, that release will probably only contain
 a some of the necessary prepatory reorganization, so expect to
-run production on 6.1 for a while.
+run production on 6.0 LTS for a while.
 
 ---------------------
 Varnish Moral License
