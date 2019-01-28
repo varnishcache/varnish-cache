@@ -157,12 +157,6 @@ client c1 {
 	expect resp.status == 200
 } -run
 
-shell {
-	# for good measure
-	test -S "${s1_sock}" && rm -vf "${s1_sock}"
-	test ! -S "${s1_sock}"
-}
-
 server s1 -start
 
 client c1 -run
