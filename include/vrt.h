@@ -56,8 +56,10 @@
  *	HTTP_Copy() removed
  *	HTTP_Dup() added
  *	HTTP_Clone() added
- *	changed type of VCL_BLOB to newly introduced struct vrt_blob *
- *	changed VRT_blob()
+ *	VCL_BLOB changed to newly introduced struct vrt_blob *
+ *	VRT_blob() changed
+ *	VRT_VSA_GetPtr() changed
+ *	VRT_ipcmp() changed
  *	req->req_bodybytes removed
  *	    use: AZ(ObjGetU64(req->wrk, req->body_oc, OA_LEN, &u));
  * 8.0 (2018-09-15)
@@ -446,7 +448,7 @@ VCL_VOID VRT_hashdata(VRT_CTX, const char *str, ...);
 /* Simple stuff */
 int VRT_strcmp(const char *s1, const char *s2);
 void VRT_memmove(void *dst, const void *src, unsigned len);
-VCL_BOOL VRT_ipcmp(VCL_IP, VCL_IP);
+VCL_BOOL VRT_ipcmp(VRT_CTX, VCL_IP, VCL_IP);
 VCL_BLOB VRT_blob(VRT_CTX, const char *, const void *, size_t, unsigned);
 
 VCL_VOID VRT_Rollback(VRT_CTX, VCL_HTTP);
@@ -512,7 +514,7 @@ void VRT_DisableDirector(VCL_BACKEND);
 void VRT_DelDirector(VCL_BACKEND *);
 
 /* Suckaddr related */
-int VRT_VSA_GetPtr(VCL_IP sua, const unsigned char ** dst);
+int VRT_VSA_GetPtr(VRT_CTX, VCL_IP sua, const unsigned char ** dst);
 
 /* VMOD/Modules related */
 int VRT_Vmod_Init(VRT_CTX, struct vmod **hdl, unsigned nbr, void *ptr, int len,

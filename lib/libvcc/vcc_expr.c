@@ -1125,8 +1125,8 @@ static const struct cmps vcc_cmps[] = {
 
 	{BOOL,		T_EQ,		cmp_simple, "((!(\v1)) == (!(\v2)))" },
 	{BOOL,		T_NEQ,		cmp_simple, "((!(\v1)) != (!(\v2)))" },
-	{IP,		T_EQ,		cmp_simple, "!VRT_ipcmp(\v1, \v2)" },
-	{IP,		T_NEQ,		cmp_simple, "VRT_ipcmp(\v1, \v2)" },
+	{IP,		T_EQ,		cmp_simple, "!VRT_ipcmp(ctx, \v1, \v2)" },
+	{IP,		T_NEQ,		cmp_simple, "VRT_ipcmp(ctx, \v1, \v2)" },
 
 	{IP,		'~',		cmp_acl, "" },
 	{IP,		T_NOMATCH,	cmp_acl, "!" },
