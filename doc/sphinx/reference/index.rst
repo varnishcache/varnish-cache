@@ -32,6 +32,7 @@ The Varnish Reference Manual
 	vsl.rst
 	vsl-query.rst
 	vtc.rst
+	vtla.rst
 
 .. todo::
 	The programs:
