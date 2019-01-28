@@ -60,6 +60,8 @@
  *	VRT_vcl_get moved to vcc_interface.h
  *	VRT_vcl_rel emoved to vcc_interface.h
  *	VRT_vcl_select emoved to vcc_interface.h
+ *	VRT_VSA_GetPtr() changed
+ *	VRT_ipcmp() changed
  *	[cache.h] WS_ReserveAll() added
  *	[cache.h] WS_Reserve(ws, 0) deprecated
  * 9.0 (2019-03-15)
@@ -67,8 +69,8 @@
  *	HTTP_Copy() removed
  *	HTTP_Dup() added
  *	HTTP_Clone() added
- *	changed type of VCL_BLOB to newly introduced struct vrt_blob *
- *	changed VRT_blob()
+ *	VCL_BLOB changed to newly introduced struct vrt_blob *
+ *	VRT_blob() changed
  *	req->req_bodybytes removed
  *	    use: AZ(ObjGetU64(req->wrk, req->body_oc, OA_LEN, &u));
  *	struct vdi_methods .list callback signature changed
@@ -447,7 +449,7 @@ VCL_VOID VRT_hashdata(VRT_CTX, const char *str, ...);
 /* Simple stuff */
 int VRT_strcmp(const char *s1, const char *s2);
 void VRT_memmove(void *dst, const void *src, unsigned len);
-VCL_BOOL VRT_ipcmp(VCL_IP, VCL_IP);
+VCL_BOOL VRT_ipcmp(VRT_CTX, VCL_IP, VCL_IP);
 VCL_BLOB VRT_blob(VRT_CTX, const char *, const void *, size_t, unsigned);
 
 VCL_VOID VRT_Rollback(VRT_CTX, VCL_HTTP);
@@ -513,7 +515,7 @@ VCL_BACKEND VRT_LookupDirector(VRT_CTX, VCL_STRING);
 void VRT_DelDirector(VCL_BACKEND *);
 
 /* Suckaddr related */
-int VRT_VSA_GetPtr(VCL_IP sua, const unsigned char ** dst);
+int VRT_VSA_GetPtr(VRT_CTX, VCL_IP sua, const unsigned char ** dst);
 
 typedef int vmod_event_f(VRT_CTX, struct vmod_priv *, enum vcl_event_e);
 

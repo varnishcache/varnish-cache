@@ -534,10 +534,12 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vrt, VRT_BACKEND_MAGIC);
-	if (vrt->path == NULL)
-		assert(vrt->ipv4_suckaddr != NULL ||
-		    vrt->ipv6_suckaddr != NULL);
-	else
+	if (vrt->path == NULL) {
+		if (vrt->ipv4_suckaddr == NULL && vrt->ipv6_suckaddr == NULL) {
+			VRT_fail(ctx, "%s: Illegal IP", __func__);
+			return (NULL);
+		}
+	} else
 		assert(vrt->ipv4_suckaddr == NULL &&
 		    vrt->ipv6_suckaddr == NULL);
 

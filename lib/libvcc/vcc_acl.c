@@ -364,7 +364,7 @@ vcc_acl_emit(struct vcc *tl, const char *name, const char *rname, int anon)
 	Fh(tl, 0, "\tconst unsigned char *a;\n");
 	Fh(tl, 0, "\tint fam;\n");
 	Fh(tl, 0, "\n");
-	Fh(tl, 0, "\tfam = VRT_VSA_GetPtr(p, &a);\n");
+	Fh(tl, 0, "\tfam = VRT_VSA_GetPtr(ctx, p, &a);\n");
 	Fh(tl, 0, "\tif (fam < 0) {\n");
 	Fh(tl, 0, "\t\tVRT_acl_log(ctx, \"NO_FAM %s\");\n", name);
 	Fh(tl, 0, "\t\treturn(0);\n");

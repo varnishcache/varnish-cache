@@ -571,8 +571,10 @@ VRT_IP_string(VRT_CTX, VCL_IP ip)
 	unsigned len;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	if (ip == NULL)
+	if (ip == NULL) {
+		VRT_fail(ctx, "%s: Illegal IP", __func__);
 		return (NULL);
+	}
 	len = WS_ReserveAll(ctx->ws);
 	if (len == 0) {
 		WS_Release(ctx->ws, 0);
@@ -836,10 +838,15 @@ VRT_memmove(void *dst, const void *src, unsigned len)
 }
 
 VCL_BOOL
-VRT_ipcmp(VCL_IP sua1, VCL_IP sua2)
+VRT_ipcmp(VRT_CTX, VCL_IP sua1, VCL_IP sua2)
 {
-	if (sua1 == NULL || sua2 == NULL)
-		return (1);
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	if (sua1 == NULL || sua2 == NULL) {
+		VRT_fail(ctx, "%s: Illegal IP", __func__);
+		return(1);
+	}
 	return (VSA_Compare_IP(sua1, sua2));
 }
 
@@ -850,6 +857,9 @@ VCL_BLOB
 VRT_blob(VRT_CTX, const char *err, const void *src, size_t len, unsigned type)
 {
 	struct vrt_blob *p;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->ws, WS_MAGIC);
 
 	p = (void *)WS_Alloc(ctx->ws, sizeof *p);
 	if (p == NULL) {
@@ -865,7 +875,16 @@ VRT_blob(VRT_CTX, const char *err, const void *src, size_t len, unsigned type)
 }
 
 int
-VRT_VSA_GetPtr(const struct suckaddr *sua, const unsigned char ** dst)
+VRT_VSA_GetPtr(VRT_CTX, const struct suckaddr *sua, const unsigned char ** dst)
 {
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(dst);
+
+	if (sua == NULL) {
+		VRT_fail(ctx, "%s: Illegal IP", __func__);
+		*dst = NULL;
+		return (-1);
+	}
 	return (VSA_GetPtr(sua, dst));
 }
