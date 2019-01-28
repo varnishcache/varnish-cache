@@ -58,7 +58,10 @@ server s2 -listen ${tmpdir}/dir/s1.sock {} -start
 
 shell { chmod go-rx ${tmpdir}/dir }
 
-varnish v8 -arg "-j unix,user=vcache" -vcl { backend b {.host="${bad_ip}";} }
+varnish v8 \
+	-jail "-junix,user=vcache,ccgroup=varnish,workuser=vcache" \
+	-vcl { backend b {.host="${bad_ip}";}
+}
 
 varnish v8 -cliexpect "(?s)Cannot stat:.+That was just a warning" \
 	{vcl.inline test "vcl 4.1; backend b {.path=\"${tmpdir}/dir/s1.sock\";}"}
