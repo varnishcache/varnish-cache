@@ -154,6 +154,15 @@ Description
 Example
 	set beresp.ttl = std.duration("1w", 3600s);
 
+$Function BYTES bytes(STRING s, BYTES fallback)
+
+Description
+	Converts the string *s* to bytes. *s* can be quantified
+	with a multiplier (k, m, g, t, p).  If conversion fails,
+	*fallback* will be returned.
+Example
+	std.cache_req_body(std.bytes(something.somewhere, 10K));
+
 $Function INT integer(STRING s, INT fallback)
 
 Description

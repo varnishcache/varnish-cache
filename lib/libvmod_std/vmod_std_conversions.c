@@ -54,6 +54,17 @@ vmod_duration(VRT_CTX, VCL_STRING p, VCL_DURATION d)
 	return (isnan(r) ? d : r);
 }
 
+VCL_BYTES v_matchproto_(td_std_bytes)
+vmod_bytes(VRT_CTX, VCL_STRING p, VCL_BYTES d)
+{
+	uintmax_t r;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	if (VNUM_2bytes(p, &r, 0) != NULL)
+		return (d);
+	return (r);
+}
+
 VCL_INT v_matchproto_(td_std_integer)
 vmod_integer(VRT_CTX, VCL_STRING p, VCL_INT i)
 {
