@@ -1,0 +1,30 @@
+varnishtest "Test uncommon GZIP header fields"
+
+# With a a handcrafted GZIP file with all optional header fields
+
+server s1 {
+	rxreq
+	txresp -hdr "content-encoding: gzip" -nolen
+	sendhex "1f 8b"
+	sendhex "08"
+	sendhex "1f"
+	sendhex "12 34 56 78"
+	sendhex "00"
+	sendhex "03"
+	sendhex "08 00 50 48 04 00 4b 61 6d 70"
+	sendhex "46 4e 41 4d 45 00"
+	sendhex "46 43 4f 4d 4d 45 4e 54 00"
+	sendhex "96 cc"
+	sendhex "f3 48 cd c9 c9 57 70 8f 52 08 cf 2f ca 49 e1 02 00"
+	sendhex "3a 0b 41 35"
+	sendhex "0f 00 00 00"
+} -start
+
+varnish v1 -vcl+backend { } -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "Hello GZ World\n"
+} -run
