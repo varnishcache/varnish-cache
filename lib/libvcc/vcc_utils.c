@@ -381,25 +381,14 @@ vcc_ByteVal(struct vcc *tl, double *d)
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}
-	if (vcc_IdIs(tl->t, "B"))
-		sc = 1.;
-	else if (vcc_IdIs(tl->t, "KB"))
-		sc = 1024.;
-	else if (vcc_IdIs(tl->t, "MB"))
-		sc = 1024. * 1024.;
-	else if (vcc_IdIs(tl->t, "GB"))
-		sc = 1024. * 1024. * 1024.;
-	else if (vcc_IdIs(tl->t, "TB"))
-		sc = 1024. * 1024. * 1024. * 1024.;
-	else {
+	sc = VNUM_bytes_unit(1.0, tl->t->b, tl->t->e, 0);
+	if (isnan(sc)) {
 		VSB_printf(tl->sb, "Unknown BYTES unit ");
 		vcc_ErrToken(tl, tl->t);
-		VSB_printf(tl->sb,
-		    ".  Legal are 'B', 'KB', 'MB', 'GB' and 'TB'\n");
+		VSB_printf(tl->sb, "\n%s\n", VNUM_LEGAL_BYTES);
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}
 	vcc_NextToken(tl);
 	*d = v * sc;
 }
-

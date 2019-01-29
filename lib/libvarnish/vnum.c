@@ -44,7 +44,6 @@
 
 static const char err_miss_num[] = "Missing number";
 static const char err_invalid_num[] = "Invalid number";
-static const char err_abs_req[] = "Absolute number required";
 static const char err_invalid_suff[] = "Invalid suffix";
 
 /**********************************************************************
@@ -114,7 +113,7 @@ VNUM(const char *p)
 vtim_dur
 VNUM_duration_unit(vtim_dur r, const char *b, const char *e)
 {
-	double sc = 1.0;
+	double sc;
 
 	if (e == NULL)
 		e = strchr(b, '\0');
@@ -126,6 +125,7 @@ VNUM_duration_unit(vtim_dur r, const char *b, const char *e)
 
 	switch (*b++) {
 	case 's':
+		sc = 1.0;
 		break;
 	case 'm':
 		if (b < e && *b == 's') {
@@ -178,6 +178,44 @@ VNUM_duration(const char *p)
 
 /**********************************************************************/
 
+double
+VNUM_bytes_unit(double r, const char *b, const char *e, uintmax_t rel)
+{
+	double sc = 1.0;
+
+	if (e == NULL)
+		e = strchr(b, '\0');
+
+	while (b < e && vct_issp(*b))
+		b++;
+	if (b == e)
+		return (nan(""));
+
+	if (rel != 0 && *b == '%') {
+		r *= rel * 0.01;
+		b++;
+	} else {
+		switch (*b) {
+		case 'k': case 'K': sc = exp2(10); b++; break;
+		case 'm': case 'M': sc = exp2(20); b++; break;
+		case 'g': case 'G': sc = exp2(30); b++; break;
+		case 't': case 'T': sc = exp2(40); b++; break;
+		case 'p': case 'P': sc = exp2(50); b++; break;
+		case 'b': case 'B':
+			break;
+		default:
+			return (nan(""));
+		}
+		if (b < e && (*b == 'b' || *b == 'B'))
+			b++;
+	}
+	while (b < e && vct_issp(*b))
+		b++;
+	if (b < e)
+		return (nan(""));
+	return (sc * r);
+}
+
 const char *
 VNUM_2bytes(const char *p, uintmax_t *r, uintmax_t rel)
 {
@@ -196,48 +234,9 @@ VNUM_2bytes(const char *p, uintmax_t *r, uintmax_t rel)
 		return (NULL);
 	}
 
-	if (end[0] == '%' && end[1] == '\0') {
-		if (rel == 0)
-			return (err_abs_req);
-		fval *= rel / 100.0;
-	} else {
-		/* accept a space before the multiplier */
-		if (end[0] == ' ' && end[1] != '\0')
-			++end;
-
-		switch (end[0]) {
-		case 'k': case 'K':
-			fval *= (uintmax_t)1 << 10;
-			++end;
-			break;
-		case 'm': case 'M':
-			fval *= (uintmax_t)1 << 20;
-			++end;
-			break;
-		case 'g': case 'G':
-			fval *= (uintmax_t)1 << 30;
-			++end;
-			break;
-		case 't': case 'T':
-			fval *= (uintmax_t)1 << 40;
-			++end;
-			break;
-		case 'p': case 'P':
-			fval *= (uintmax_t)1 << 50;
-			++end;
-			break;
-		default:
-			break;
-		}
-
-		/* [bB] is a generic suffix of no effect */
-		if (end[0] == 'b' || end[0] == 'B')
-			end++;
-
-		if (end[0] != '\0')
-			return (err_invalid_suff);
-	}
-
+	fval = VNUM_bytes_unit(fval, end, NULL, rel);
+	if (isnan(fval))
+		return (err_invalid_suff);
 	*r = (uintmax_t)round(fval);
 	return (NULL);
 }
@@ -279,11 +278,11 @@ static struct test_case {
 	{ "1T",			(uintmax_t)0,	(uintmax_t)1<<40 },
 	{ "1TB",		(uintmax_t)0,	(uintmax_t)1<<40 },
 	{ "1.3TB",		(uintmax_t)0,	(uintmax_t)1429365116109ULL },
-	{ "1.7TB",		(uintmax_t)0,	(uintmax_t)1869169767219ULL },
+	{ "1.7\tTB",		(uintmax_t)0,	(uintmax_t)1869169767219ULL },
 
 	{ "1125899906842624",	(uintmax_t)0,	(uintmax_t)1125899906842624ULL},
-	{ "1P",			(uintmax_t)0,	(uintmax_t)1125899906842624ULL},
-	{ "1PB",		(uintmax_t)0,	(uintmax_t)1125899906842624ULL},
+	{ "1P\t",		(uintmax_t)0,	(uintmax_t)1125899906842624ULL},
+	{ "1PB ",		(uintmax_t)0,	(uintmax_t)1125899906842624ULL},
 	{ "1.3 PB",		(uintmax_t)0,	(uintmax_t)1463669878895411ULL},
 
 	{ "1%",			(uintmax_t)1024,	(uintmax_t)10 },
@@ -293,7 +292,7 @@ static struct test_case {
 	/* Check the error checks */
 	{ "",			0,	0,	err_miss_num },
 	{ "m",			0,	0,	err_invalid_num },
-	{ "4%",			0,	0,	err_abs_req },
+	{ "4%",			0,	0,	err_invalid_suff },
 	{ "3*",			0,	0,	err_invalid_suff },
 
 	/* TODO: add more */

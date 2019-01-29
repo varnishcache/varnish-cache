@@ -33,7 +33,11 @@ double VNUM(const char *p);
 double VNUMpfx(const char *p, const char **e);
 vtim_dur VNUM_duration_unit(vtim_dur r, const char *b, const char *e);
 vtim_dur VNUM_duration(const char *p);
+double VNUM_bytes_unit(double r, const char *b, const char *e, uintmax_t rel);
 const char *VNUM_2bytes(const char *p, uintmax_t *r, uintmax_t rel);
 
 #define VNUM_LEGAL_DURATION \
 	"Legal duration units are 'ms', 's', 'm', 'h', 'd', 'w' and 'y'"
+
+#define VNUM_LEGAL_BYTES \
+	"Legal byte units are 'B', 'KB', 'MB', 'GB', 'TB' and 'PB'"
