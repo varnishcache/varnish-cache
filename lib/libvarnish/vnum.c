@@ -30,14 +30,15 @@
 
 #include "config.h"
 
-#include <ctype.h>
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "vdef.h"
 
+#include "vct.h"
 #include "vnum.h"
 #include "vas.h"
 
@@ -61,14 +62,14 @@ VNUMpfx(const char *p, const char **t)
 	AN(p);
 	AN(t);
 	*t = NULL;
-	while (isspace(*p))
+	while (vct_issp(*p))
 		p++;
 
 	if (*p == '-' || *p == '+')
 		ms = (*p++ == '-' ? -1.0 : 1.0);
 
 	for (; *p != '\0'; p++) {
-		if (isdigit(*p)) {
+		if (vct_isdigit(*p)) {
 			m = m * 10. + *p - '0';
 			e = ne;
 			if (e)
@@ -84,12 +85,12 @@ VNUMpfx(const char *p, const char **t)
 		p++;
 		if (*p == '-' || *p == '+')
 			es = (*p++ == '-' ? -1.0 : 1.0);
-		if (!isdigit(*p))
+		if (!vct_isdigit(*p))
 			return (nan(""));
-		for (; isdigit(*p); p++)
+		for (; vct_isdigit(*p); p++)
 			ee = ee * 10. + *p - '0';
 	}
-	while (isspace(*p))
+	while (vct_issp(*p))
 		p++;
 	if (*p != '\0')
 		*t = p;
@@ -111,31 +112,25 @@ VNUM(const char *p)
 /**********************************************************************/
 
 vtim_dur
-VNUM_duration(const char *p)
+VNUM_duration_unit(vtim_dur r, const char *b, const char *e)
 {
-	const char *t;
-	vtim_dur r;
 	double sc = 1.0;
 
-	if (p == NULL)
+	if (e == NULL)
+		e = strchr(b, '\0');
+
+	while (b < e && vct_issp(*b))
+		b++;
+	if (b == e)
 		return (nan(""));
 
-	r = VNUMpfx(p, &t);
-
-	if (isnan(r) || t == NULL)
-		return (nan(""));
-
-	while (isspace(*t))
-		t++;
-
-	// keep in sync with vcc_expr.c vcc_TimeUnit()
-	switch (*t++) {
+	switch (*b++) {
 	case 's':
 		break;
 	case 'm':
-		if (*t == 's') {
+		if (b < e && *b == 's') {
 			sc = 1e-3;
-			t++;
+			b++;
 		} else
 			sc = 60.0;
 		break;
@@ -155,13 +150,30 @@ VNUM_duration(const char *p)
 		return (nan(""));
 	}
 
-	while (isspace(*t))
-		t++;
+	while (b < e && vct_issp(*b))
+		b++;
 
-	if (*t != '\0')
+	if (b < e)
 		return (nan(""));
 
 	return (r * sc);
+}
+
+vtim_dur
+VNUM_duration(const char *p)
+{
+	const char *t;
+	vtim_dur r;
+
+	if (p == NULL)
+		return (nan(""));
+
+	r = VNUMpfx(p, &t);
+
+	if (isnan(r) || t == NULL)
+		return (nan(""));
+
+	return (VNUM_duration_unit(r, t, NULL));
 }
 
 /**********************************************************************/

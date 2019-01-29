@@ -47,10 +47,10 @@
 VCL_DURATION v_matchproto_(td_std_duration)
 vmod_duration(VRT_CTX, VCL_STRING p, VCL_DURATION d)
 {
-	double r = VNUM_duration(p);
+	double r;
 
-	(void) ctx;
-
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	r = VNUM_duration(p);
 	return (isnan(r) ? d : r);
 }
 

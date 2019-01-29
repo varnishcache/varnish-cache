@@ -838,7 +838,7 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 			vcc_NextToken(tl);
 			if (tl->t->tok == ID) {
 				e1 = vcc_mk_expr(DURATION, "(%s%.*s) * %g",
-				    sign, PF(t), vcc_TimeUnit(tl));
+				    sign, PF(t), vcc_DurationUnit(tl));
 				ERRCHK(tl);
 			} else if (fmt == REAL || t->tok == FNUM) {
 				e1 = vcc_mk_expr(REAL, "%s%.*s", sign, PF(t));

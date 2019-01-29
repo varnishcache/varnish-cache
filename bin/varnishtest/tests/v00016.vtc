@@ -30,7 +30,7 @@ varnish v1 -errvcl {include not followed by string constant.} {
 	{ } ( ) * + - / % > < = ; ! & . | ~ ,
 }
 
-varnish v1 -errvcl {Unknown time unit 'k'.  Legal are 'ms', 's', 'm', 'h', 'd', 'w' and 'y'} {
+varnish v1 -errvcl {Unknown duration unit 'k'} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_backend_response { set beresp.ttl = 1. k; }
 }

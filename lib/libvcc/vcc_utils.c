@@ -40,6 +40,7 @@
 #include "vcc_compile.h"
 
 #include "vre.h"
+#include "vnum.h"
 #include "vsa.h"
 #include "vss.h"
 #include "vtcp.h"
@@ -296,39 +297,25 @@ Emit_UDS_Path(struct vcc *tl, const struct token *t_path, const char *errid)
 }
 
 /*--------------------------------------------------------------------
- * Recognize and convert units of time, return seconds.
+ * Recognize and convert units of duration, return seconds.
  */
 
 double
-vcc_TimeUnit(struct vcc *tl)
+vcc_DurationUnit(struct vcc *tl)
 {
-	double sc = 1.0;
+	double sc;
 
 	assert(tl->t->tok == ID);
-	if (vcc_IdIs(tl->t, "ms"))
-		sc = 1e-3;
-	else if (vcc_IdIs(tl->t, "s"))
-		sc = 1.0;
-	else if (vcc_IdIs(tl->t, "m"))
-		sc = 60.0;
-	else if (vcc_IdIs(tl->t, "h"))
-		sc = 60.0 * 60.0;
-	else if (vcc_IdIs(tl->t, "d"))
-		sc = 60.0 * 60.0 * 24.0;
-	else if (vcc_IdIs(tl->t, "w"))
-		sc = 60.0 * 60.0 * 24.0 * 7.0;
-	else if (vcc_IdIs(tl->t, "y"))
-		sc = 60.0 * 60.0 * 24.0 * 365.0;
-	else {
-		VSB_printf(tl->sb, "Unknown time unit ");
-		vcc_ErrToken(tl, tl->t);
-		VSB_printf(tl->sb,
-		    ".  Legal are 'ms', 's', 'm', 'h', 'd', 'w' and 'y'\n");
-		vcc_ErrWhere(tl, tl->t);
-		return (1.0);
+	sc = VNUM_duration_unit(1.0, tl->t->b, tl->t->e);
+	if (!isnan(sc)) {
+		vcc_NextToken(tl);
+		return (sc);
 	}
-	vcc_NextToken(tl);
-	return (sc);
+	VSB_printf(tl->sb, "Unknown duration unit ");
+	vcc_ErrToken(tl, tl->t);
+	VSB_printf(tl->sb, "\n%s\n", VNUM_LEGAL_DURATION);
+	vcc_ErrWhere(tl, tl->t);
+	return (1.0);
 }
 
 /*--------------------------------------------------------------------
@@ -374,7 +361,7 @@ vcc_Duration(struct vcc *tl, double *d)
 	v = vcc_DoubleVal(tl);
 	ERRCHK(tl);
 	ExpectErr(tl, ID);
-	sc = vcc_TimeUnit(tl);
+	sc = vcc_DurationUnit(tl);
 	*d = v * sc;
 }
 

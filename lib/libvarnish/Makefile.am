@@ -51,7 +51,7 @@ binheap_CFLAGS = -DTEST_DRIVER
 
 vnum_c_test_SOURCES = vnum.c vas.c
 vnum_c_test_CFLAGS = -DNUM_C_TEST -include config.h
-vnum_c_test_LDADD = ${LIBM}
+vnum_c_test_LDADD = ${LIBM} libvarnish.a
 
 vjsn_test_SOURCES = vjsn.c
 vjsn_test_CFLAGS = -DVJSN_TEST @SAN_CFLAGS@

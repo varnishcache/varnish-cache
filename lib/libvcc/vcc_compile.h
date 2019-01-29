@@ -334,7 +334,7 @@ void Resolve_Sockaddr(struct vcc *tl, const char *host, const char *defport,
     const struct token *t_err, const char *errid);
 void Emit_UDS_Path(struct vcc *tl, const struct token *t_path,
     const char *errid);
-double vcc_TimeUnit(struct vcc *);
+double vcc_DurationUnit(struct vcc *);
 void vcc_ByteVal(struct vcc *, double *);
 void vcc_Duration(struct vcc *tl, double *);
 unsigned vcc_UintVal(struct vcc *tl);
