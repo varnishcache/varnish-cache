@@ -50,8 +50,8 @@ binheap_SOURCES = binary_heap.c vas.c vrnd.c
 binheap_CFLAGS = -DTEST_DRIVER
 
 vnum_c_test_SOURCES = vnum.c vas.c
-vnum_c_test_CFLAGS = -DNUM_C_TEST -include config.h
-vnum_c_test_LDADD = ${LIBM} libvarnish.a
+vnum_c_test_CFLAGS = -DNUM_C_TEST -include config.h @SAN_CFLAGS@
+vnum_c_test_LDADD = ${LIBM} libvarnish.a @SAN_LDFLAGS@
 
 vjsn_test_SOURCES = vjsn.c
 vjsn_test_CFLAGS = -DVJSN_TEST @SAN_CFLAGS@
