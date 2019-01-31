@@ -127,6 +127,13 @@ def unquote(txt):
     assert is_quoted(txt)
     return txt[1:-1]
 
+def fmt_cstruct(fo, a, b):
+    ''' Output line in vmod struct '''
+    t = "\t%s\t" % a
+    while len(t.expandtabs()) < 40:
+        t += "\t"
+    fo.write("%s%s\n" % (t, b))
+
 #######################################################################
 
 
@@ -176,15 +183,6 @@ def lwrap(s, width=64):
         ll.append(p + s)
     return "\n".join(ll) + "\n"
 
-
-def fmt_cstruct(fo, mn, x):
-    """
-    Align fields in C struct
-    """
-    a = "\ttd_" + mn + "_" + x
-    while len(a.expandtabs()) < 40:
-        a += "\t"
-    fo.write("%s*%s;\n" % (a, x))
 
 #######################################################################
 
@@ -424,9 +422,12 @@ class ProtoType(object):
         s += ", ".join(ll)
         return s + ');'
 
+    def typedef_name(self):
+        return 'td_' + self.st.vcc.sympfx + \
+            self.st.vcc.modname + '_' + self.cname()
+
     def typedef(self, args):
-        tn = 'td_' + self.st.vcc.modname + '_' + self.cname()
-        return "typedef " + self.proto(args, name=tn)
+        return "typedef " + self.proto(args, name=self.typedef_name())
 
     def argstructname(self):
         return "struct %s_arg" % self.cname(True)
@@ -531,6 +532,20 @@ class Stanza(object):
 
     def cstuff(self, unused_fo, unused_where):
         return
+
+    def fmt_cstruct_proto(self, fo, proto, define):
+        if define:
+            fmt_cstruct(
+                fo,
+                proto.typedef_name(),
+                '*' + proto.cname() + ';'
+            )
+        else:
+            fmt_cstruct(
+                fo,
+                '.' + proto.cname() + ' =',
+                '*' + self.vcc.sympfx + proto.cname() + ','
+            )
 
     def cstruct(self, unused_fo, unused_define):
         return
@@ -647,13 +662,16 @@ class EventStanza(Stanza):
 
     def cstuff(self, fo, where):
         if where == 'h':
-            fo.write("vmod_event_f %s;\n" % self.event_func)
+            fo.write("vmod_event_f %s%s;\n" %
+                     (self.vcc.sympfx, self.event_func))
 
     def cstruct(self, fo, define):
         if define:
-            fo.write("\tvmod_event_f\t\t\t*_event;\n")
+            fmt_cstruct(fo, "vmod_event_f", "*_event;")
         else:
-            fo.write("\t%s,\n" % self.event_func)
+            fmt_cstruct(fo,
+                        "._event =",
+                        '*' + self.vcc.sympfx + self.event_func + ',')
 
     def json(self, jl):
         jl.append(["$EVENT", "%s._event" % self.vcc.csn])
@@ -672,10 +690,7 @@ class FunctionStanza(Stanza):
         fo.write(self.proto.cproto(['VRT_CTX'], where))
 
     def cstruct(self, fo, define):
-        if define:
-            fmt_cstruct(fo, self.vcc.modname, self.proto.cname())
-        else:
-            fo.write("\t" + self.proto.cname(pfx=True) + ",\n")
+        self.fmt_cstruct_proto(fo, self.proto, define)
 
     def json(self, jl):
         jl.append(["$FUNC", "%s" % self.proto.name])
@@ -737,13 +752,8 @@ class ObjectStanza(Stanza):
         fo.write("\n")
 
     def cstruct(self, fo, define):
-        if define:
-            fmt_cstruct(fo, self.vcc.modname, self.init.name)
-            fmt_cstruct(fo, self.vcc.modname, self.fini.name)
-        else:
-            p = "\t" + self.vcc.sympfx
-            fo.write(p + self.init.name + ",\n")
-            fo.write(p + self.fini.name + ",\n")
+        self.fmt_cstruct_proto(fo, self.init, define)
+        self.fmt_cstruct_proto(fo, self.fini, define)
         for i in self.methods:
             i.cstruct(fo, define)
         fo.write("\n")
@@ -789,10 +799,7 @@ class MethodStanza(Stanza):
         p.methods.append(self)
 
     def cstruct(self, fo, define):
-        if define:
-            fmt_cstruct(fo, self.vcc.modname, self.proto.cname())
-        else:
-            fo.write('\t' + self.proto.cname(pfx=True) + ",\n")
+        self.fmt_cstruct_proto(fo, self.proto, define)
 
     def json(self, jl):
         jl.append(["$METHOD", self.proto.name[len(self.pfx)+1:]])
@@ -956,7 +963,7 @@ class vcc(object):
         for j in self.contents:
             j.cstruct(fo, True)
         for j in sorted(self.enums):
-            fo.write("\tVCL_ENUM\t\t\t*enum_%s;\n" % j)
+            fmt_cstruct(fo, 'VCL_ENUM', '*enum_%s;' % j)
         fo.write("};\n")
 
     def cstruct_init(self, fo):

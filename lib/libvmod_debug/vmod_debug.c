@@ -371,7 +371,7 @@ event_cold(VRT_CTX, const struct vmod_priv *priv)
 }
 
 int v_matchproto_(vmod_event_f)
-event_function(VRT_CTX, struct vmod_priv *priv, enum vcl_event_e e)
+xyzzy_event_function(VRT_CTX, struct vmod_priv *priv, enum vcl_event_e e)
 {
 
 	switch (e) {
