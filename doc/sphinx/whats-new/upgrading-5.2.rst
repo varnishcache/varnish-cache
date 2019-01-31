@@ -121,7 +121,7 @@ situation.
 vmod_std
 ~~~~~~~~
 
-Added :ref:`func_file_exists`.
+Added :ref:`vmod_std.file_exists`.
 
 New VMODs in the standard distribution
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

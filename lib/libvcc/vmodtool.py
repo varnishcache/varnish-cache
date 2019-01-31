@@ -398,13 +398,13 @@ class ProtoType(object):
             s += t.replace("@", " ") + ")"
         return s
 
-    def rsthead(self, fo):
+    def rst_proto(self, fo, sep='-'):
         s = self.vcl_proto(False)
         if len(s) < 60:
-            write_rst_hdr(fo, s, '-')
+            write_rst_hdr(fo, s, sep)
         else:
             s = self.vcl_proto(True)
-            write_rst_hdr(fo, s, '-')
+            write_rst_hdr(fo, s, sep)
             fo.write("\n::\n\n" + self.vcl_proto(False, pfx="   ") + "\n")
 
     def cname(self, pfx=False):
@@ -508,15 +508,15 @@ class Stanza(object):
             warn=False)
 
     def rstfile(self, fo, man):
-        if self.rstlbl:
-            fo.write("\n.. _" + self.rstlbl + ":\n")
         self.rsthead(fo, man)
         self.rstdoc(fo, man)
 
     def rsthead(self, fo, unused_man):
         ''' Emit the systematic part of the documentation '''
+        if self.rstlbl:
+            fo.write('\n.. _' + self.rstlbl + ':\n')
         if self.proto:
-            self.proto.rsthead(fo)
+            self.proto.rst_proto(fo)
             fo.write("\n")
 
     def rstdoc(self, fo, unused_man):
@@ -527,7 +527,7 @@ class Stanza(object):
         if man and self.proto:
             fo.write(self.proto.vcl_proto(True, pfx="  ") + '\n  \n')
         elif self.proto and self.rstlbl:
-            fo.write('   :ref:`%s`\n   \n' % self.rstlbl)
+            fo.write('  :ref:`%s`\n   \n' % self.rstlbl)
 
     def cstuff(self, unused_fo, unused_where):
         return
@@ -556,10 +556,7 @@ class ModuleStanza(Stanza):
         else:
             print("\nNOTICE: Please put $Module description in quotes.\n")
             self.vcc.moddesc = " ".join(self.toks[3:])
-        self.rstlbl = "vmod_%s(%s)" % (
-            self.vcc.modname,
-            self.vcc.mansection
-        )
+        self.rstlbl = "vmod_%s(%d)" % (self.vcc.modname, 3)
         self.vcc.contents.append(self)
 
     def rsthead(self, fo, man):
@@ -570,6 +567,8 @@ class ModuleStanza(Stanza):
             fo.write("\n")
             fo.write(":Manual section: " + self.vcc.mansection + "\n")
         else:
+            if self.rstlbl:
+                fo.write('\n.. _' + self.rstlbl + ':\n')
             write_rst_hdr(fo,
                           self.vcc.sympfx + self.vcc.modname +
                           ' - ' + self.vcc.moddesc,
@@ -669,7 +668,7 @@ class FunctionStanza(Stanza):
 
     def parse(self):
         self.proto = ProtoType(self)
-        self.rstlbl = "func_" + self.proto.name
+        self.rstlbl = 'vmod_%s.%s' % (self.vcc.modname, self.proto.name)
         self.vcc.contents.append(self)
 
     def cstuff(self, fo, where):
@@ -702,12 +701,14 @@ class ObjectStanza(Stanza):
         self.fini.argstruct = False
         self.fini.args = []
 
-        self.rstlbl = "obj_" + self.proto.name
+        self.rstlbl = 'vmod_%s.%s' % (self.vcc.modname, self.proto.name)
         self.vcc.contents.append(self)
         self.methods = []
 
     def rsthead(self, fo, man):
-        self.proto.rsthead(fo)
+        if self.rstlbl:
+            fo.write('\n.. _' + self.rstlbl + ':\n')
+        self.proto.rst_proto(fo)
         fo.write("\n" + "\n".join(self.doc) + "\n")
         for i in self.methods:
             i.rstfile(fo, man)
@@ -725,7 +726,7 @@ class ObjectStanza(Stanza):
             fo.write('  :ref:`%s`\n  \n' % self.rstlbl)
             for i in self.methods:
                 if i.proto and i.rstlbl:
-                    fo.write('    :ref:`%s`\n  \n' % i.rstlbl)
+                    fo.write('      :ref:`%s`\n  \n' % i.rstlbl)
 
     def cstuff(self, fo, w):
         sn = self.vcc.sympfx + self.vcc.modname + "_" + self.proto.name
@@ -787,7 +788,7 @@ class MethodStanza(Stanza):
             err("$Method %s: Method names need to start with . (dot)"
                 % self.proto.bname, warn=False)
         self.proto.obj = "x" + self.pfx
-        self.rstlbl = "func_" + self.proto.name
+        self.rstlbl = 'vmod_%s.%s' % ( self.vcc.modname, self.proto.name)
         p.methods.append(self)
 
     def cstruct(self, fo, define):

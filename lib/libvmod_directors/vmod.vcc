@@ -349,13 +349,13 @@ Set the default rampup duration. See `rampup` parameter of
 
 $Method VOID .associate(BLOB param=0)
 
-Associate a default `obj_shard_param`_ object or clear an association.
+Associate a default `vmod_directors.shard_param`_ object or clear an association.
 
 The value of the `param` argument must be a call to the
-`func_shard_param.use`_ method. No argument clears the association.
+`vmod_directors.shard_param.use`_ method. No argument clears the association.
 
 The association can be changed per backend request using the `param`
-argument of `func_shard.backend`_.
+argument of `vmod_directors.shard.backend`_.
 
 $Method BOOL .add_backend(PRIV_TASK, BACKEND backend,
 	[STRING ident], [DURATION rampup])
@@ -371,7 +371,7 @@ backend name.
 
 `rampup`: Optionally specify a specific rampup time for this
 backend. Otherwise, the per-director rampup time is used (see
-:ref:`func_shard.set_rampup`).
+:ref:`vmod_directors.shard.set_rampup`).
 
 NOTE: Backend changes need to be finalized with `shard.reconfigure()`
 and are only supported on one shard director at a time.
@@ -536,14 +536,14 @@ is _not_ the order given when backends are added.
 * `param`
 
   Use or associate a parameter set. The value of the `param` argument
-  must be a call to the `func_shard_param.use`_ method.
+  must be a call to the `vmod_directors.shard_param.use`_ method.
 
-  default: as set by `func_shard.associate`_ or unset.
+  default: as set by `vmod_directors.shard.associate`_ or unset.
 
   * for ``resolve=NOW`` take parameter defaults from the
-    `obj_shard_param`_ parameter set
+    `vmod_directors.shard_param`_ parameter set
 
-  * for ``resolve=LAZY`` associate the `obj_shard_param`_ parameter
+  * for ``resolve=LAZY`` associate the `vmod_directors.shard_param`_ parameter
     set for this backend request
 
     Implementation notes for use of parameter sets with
@@ -557,7 +557,7 @@ is _not_ the order given when backends are added.
       and are kept even if the parameter set given by the `param`
       argument is subsequently changed within the same backend request.
 
-    * Each call to `func_shard.backend`_ overrides any previous call.
+    * Each call to `vmod_directors.shard.backend`_ overrides any previous call.
 
 $Method VOID .debug(INT)
 
@@ -567,7 +567,7 @@ $Object shard_param()
 
 Create a shard parameter set.
 
-A parameter set allows for re-use of `func_shard.backend`_ arguments
+A parameter set allows for re-use of `vmod_directors.shard.backend`_ arguments
 across many shard director instances and simplifies advanced use cases
 (e.g. shard director with custom parameters layered below other
 directors).
@@ -586,7 +586,7 @@ Parameter sets can not be used in client context.
 $Method VOID .clear()
 
 Reset the parameter set to default values as documented for
-`func_shard.backend`_.
+`vmod_directors.shard.backend`_.
 
 * in ``vcl_init{}``, resets the parameter set default for this VCL
 * in backend context, resets the parameter set for this backend
@@ -604,7 +604,7 @@ $Method VOID .set(
 	[ ENUM {CHOSEN, IGNORE, ALL} healthy ])
 
 Change the given parameters of a parameter set as documented for
-`func_shard.backend`_.
+`vmod_directors.shard.backend`_.
 
 * in ``vcl_init{}``, changes the parameter set default for this VCL
 
@@ -618,39 +618,39 @@ $Method STRING .get_by()
 
 Get a string representation of the `by` enum argument which denotes
 how a shard director using this parameter object would derive the
-shard key. See `func_shard.backend`_.
+shard key. See `vmod_directors.shard.backend`_.
 
 $Method INT .get_key()
 
 Get the key which a shard director using this parameter object would
-use. See `func_shard.backend`_.
+use. See `vmod_directors.shard.backend`_.
 
 $Method INT .get_alt()
 
 Get the `alt` parameter which a shard director using this parameter
-object would use. See `func_shard.backend`_.
+object would use. See `vmod_directors.shard.backend`_.
 
 $Method REAL .get_warmup()
 
 Get the `warmup` parameter which a shard director using this parameter
-object would use. See `func_shard.backend`_.
+object would use. See `vmod_directors.shard.backend`_.
 
 $Method BOOL .get_rampup()
 
 Get the `rampup` parameter which a shard director using this parameter
-object would use. See `func_shard.backend`_.
+object would use. See `vmod_directors.shard.backend`_.
 
 $Method STRING .get_healthy()
 
 Get a string representation of the `healthy` enum argument which a
 shard director using this parameter object would use. See
-`func_shard.backend`_.
+`vmod_directors.shard.backend`_.
 
 $Method BLOB .use()
 
 This method may only be used in backend context.
 
-For use with the `param` argument of `func_shard.backend`_ to associate
+For use with the `param` argument of `vmod_directors.shard.backend`_ to associate
 this shard parameter set with a shard director.
 
 ACKNOWLEDGEMENTS

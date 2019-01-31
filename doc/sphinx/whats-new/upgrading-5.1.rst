@@ -197,7 +197,7 @@ vcl_recv
 
 * Added ``req.storage``, which tells Varnish which storage backend to
   use if you choose to save the request body (see
-  :ref:`func_cache_req_body`).
+  :ref:`vmod_std.cache_req_body`).
 
 * ``return(vcl(LABEL))`` may not be called after a restart. It can
   only be called from the active VCL instance.
@@ -232,9 +232,9 @@ nuke limit is used in all cases.
 vmod_std
 ~~~~~~~~
 
-* Added ``std.getenv()``, see :ref:`func_getenv`.
+* Added ``std.getenv()``, see :ref:`vmod_std.getenv`.
 
-* Added ``std.late_100_continue()``, see :ref:`func_late_100_continue`.
+* Added ``std.late_100_continue()``, see :ref:`vmod_std.late_100_continue`.
 
 Other changes
 =============

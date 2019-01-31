@@ -55,7 +55,7 @@ Examples::
   }
 
 ENCODING SCHEMES
-================
+----------------
 
 Binary-to-text encoding schemes are specified by ENUMs in the VMOD's
 constructor, methods and functions. Decodings convert a (possibly
@@ -91,7 +91,7 @@ case of a string, use the ``toupper`` or ``tolower`` functions from
 :ref:`vmod_std(3)`.
 
 IDENTITY
---------
+~~~~~~~~
 
 The simplest encoding converts between the BLOB and STRING data types,
 leaving the contents byte-identical.
@@ -120,7 +120,7 @@ be written as::
 The ``case`` ENUM MUST be set to ``DEFAULT`` for ``IDENTITY`` encodings.
 
 BASE64*
--------
+~~~~~~~
 
 The base64 encoding schemes use 4 characters to encode 3 bytes. There
 are no newlines or maximal line lengths -- whitespace is not
@@ -143,7 +143,7 @@ The ``case`` ENUM MUST be set to ``DEFAULT`` for for all of the
 ``BASE64*`` encodings.
 
 HEX
----
+~~~
 
 The ``HEX`` encoding scheme converts hex strings into blobs and vice
 versa. For encodings, you may use the ``case`` ENUM to specify upper-
@@ -164,7 +164,7 @@ byte. For example::
 			 encoded=resp.http.First + resp.http.Second));
 
 URL
----
+~~~
 
 The ``URL`` decoding replaces any ``%<2-hex-digits>`` substrings with
 the binary value of the hexadecimal number after the % sign.
@@ -196,6 +196,7 @@ Example::
 
 	# convert string to blob
 	blob.decode(encoded="foo");
+
 
 $Function STRING encode(ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD,
 			      HEX, URL} encoding="IDENTITY",

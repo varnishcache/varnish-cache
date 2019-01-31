@@ -214,7 +214,7 @@ $Function TIME real2time(REAL r, TIME fallback)
 
 Description
 	Rounds the real *r* to the nearest integer (see
-	`func_real2integer`_) and returns the corresponding time when
+	`vmod_std.real2integer`_) and returns the corresponding time when
 	interpreted as a unix epoch. If conversion fails, *fallback*
 	will be returned.
 Example
