@@ -67,9 +67,12 @@ get_sp(VRT_CTX)
 {
 	struct sess *sp;
 
-	if (VALID_OBJ(ctx->req, REQ_MAGIC))
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	if (ctx->req) {
+		CHECK_OBJ(ctx->req, REQ_MAGIC);
 		sp = ctx->req->sp;
-	else {
+	} else {
 		CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
 		sp = ctx->bo->sp;
 	}
