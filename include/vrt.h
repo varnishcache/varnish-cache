@@ -270,6 +270,7 @@ struct vmod_data {
 	const char			*file_id;
 
 	const char			*name;
+	const char			*func_name;
 	const void			*func;
 	int				func_len;
 	const char			*proto;

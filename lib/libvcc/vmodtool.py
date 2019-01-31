@@ -468,7 +468,7 @@ class ProtoType(object):
         ''' Produce VCL prototype as JSON '''
         ll = []
         self.retval.jsonproto(ll)
-        ll.append('Vmod_%s_Func.%s' % (self.st.vcc.modname, cfunc))
+        ll.append('%s.%s' % (self.st.vcc.csn, cfunc))
         if self.argstruct:
             ll.append(self.argstructname())
         else:
@@ -656,10 +656,7 @@ class EventStanza(Stanza):
             fo.write("\t%s,\n" % self.event_func)
 
     def json(self, jl):
-        jl.append([
-            "$EVENT",
-            "Vmod_%s_Func._event" % self.vcc.modname
-        ])
+        jl.append(["$EVENT", "%s._event" % self.vcc.csn])
 
 
 class FunctionStanza(Stanza):
@@ -832,6 +829,7 @@ class vcc(object):
         self.strict_abi = True
         self.auto_synopsis = True
         self.modname = None
+        self.csn = None
 
     def openfile(self, fn):
         self.commit_files.append(fn)
@@ -858,6 +856,7 @@ class vcc(object):
                 err("Unknown stanza $%s" % toks[0], warn=False)
             stanzaclass(self, toks, docstr)
             inputline = None
+        self.csn = "Vmod_%s%s_Func" % (self.sympfx, self.modname)
 
     def tokenize(self, txt, seps=None, quotes=None):
         if seps is None:
@@ -952,16 +951,16 @@ class vcc(object):
             j.cstuff(fo, 'h')
         fo.close()
 
-    def cstruct(self, fo, csn):
-        fo.write("\n%s {\n" % csn)
+    def cstruct(self, fo):
+        fo.write("\nstruct %s {\n" % self.csn)
         for j in self.contents:
             j.cstruct(fo, True)
         for j in sorted(self.enums):
             fo.write("\tVCL_ENUM\t\t\t*enum_%s;\n" % j)
         fo.write("};\n")
 
-    def cstruct_init(self, fo, csn):
-        fo.write("\nstatic const %s Vmod_Func = {\n" % csn)
+    def cstruct_init(self, fo):
+        fo.write("\nstatic const struct %s %s = {\n" % (self.csn, self.csn))
         for j in self.contents:
             j.cstruct(fo, False)
         fo.write("\n")
@@ -1000,8 +999,9 @@ class vcc(object):
             fo.write("\t.vrt_major =\tVRT_MAJOR_VERSION,\n")
             fo.write("\t.vrt_minor =\tVRT_MINOR_VERSION,\n")
         fo.write('\t.name =\t\t"%s",\n' % self.modname)
-        fo.write('\t.func =\t\t&Vmod_Func,\n')
-        fo.write('\t.func_len =\tsizeof(Vmod_Func),\n')
+        fo.write('\t.func =\t\t&%s,\n' % self.csn)
+        fo.write('\t.func_len =\tsizeof(%s),\n' % self.csn)
+        fo.write('\t.func_name =\t"%s",\n' % self.csn)
         fo.write('\t.proto =\tVmod_Proto,\n')
         fo.write('\t.json =\t\tVmod_Json,\n')
         fo.write('\t.abi =\t\tVMOD_ABI_Version,\n')
@@ -1038,21 +1038,18 @@ class vcc(object):
                 i.cstuff(fo, 'c')
                 i.cstuff(fx, 'o')
 
-        csn = "Vmod_%s_Func" % self.modname
-        scsn = "struct " + csn
+        self.cstruct(fo)
+        self.cstruct(fx)
 
-        self.cstruct(fo, scsn)
-        self.cstruct(fx, scsn)
-
-        fo.write("\n/*lint -esym(754, " + csn + "::*) */\n")
-        self.cstruct_init(fo, scsn)
+        fo.write("\n/*lint -esym(754, " + self.csn + "::*) */\n")
+        self.cstruct_init(fo)
 
         fx.close()
 
         fo.write("\nstatic const char Vmod_Proto[] =\n")
         for i in open(fnx):
             fo.write('\t"%s\\n"\n' % i.rstrip())
-        fo.write('\t"static struct %s %s;";\n' % (csn, csn))
+        fo.write('\t"static struct %s %s;";\n' % (self.csn, self.csn))
 
         os.remove(fnx)
 

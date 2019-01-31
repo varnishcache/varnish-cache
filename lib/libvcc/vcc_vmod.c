@@ -307,8 +307,8 @@ vcc_ParseImport(struct vcc *tl)
 	VSB_printf(ifp->ini, "\tif (VRT_Vmod_Init(ctx,\n");
 	VSB_printf(ifp->ini, "\t    &VGC_vmod_%.*s,\n", PF(mod));
 	VSB_printf(ifp->ini, "\t    %u,\n", tl->vmod_count++);
-	VSB_printf(ifp->ini, "\t    &Vmod_%.*s_Func,\n", PF(mod));
-	VSB_printf(ifp->ini, "\t    sizeof(Vmod_%.*s_Func),\n", PF(mod));
+	VSB_printf(ifp->ini, "\t    &%s,\n", vmd->func_name);
+	VSB_printf(ifp->ini, "\t    sizeof(%s),\n", vmd->func_name);
 	VSB_printf(ifp->ini, "\t    \"%.*s\",\n", PF(mod));
 	VSB_printf(ifp->ini, "\t    ");
 	VSB_quote(ifp->ini, fnp, -1, VSB_QUOTE_CSTR);
