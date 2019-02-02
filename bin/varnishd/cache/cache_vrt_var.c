@@ -690,10 +690,9 @@ VRT_r_bereq_xid(VRT_CTX)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->bo->bereq, HTTP_MAGIC);
 	AN(ctx->bo->vsl);
 
-	return (WS_Printf(ctx->bo->bereq->ws, "%u",
+	return (WS_Printf(ctx->ws, "%u",
 	    VXID(ctx->bo->vsl->wid)));
 }
 
@@ -701,25 +700,19 @@ VCL_STRING
 VRT_r_sess_xid(VRT_CTX)
 {
 	struct sess *sp;
-	struct http *http;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
 	if (ctx->req) {
 		CHECK_OBJ(ctx->req, REQ_MAGIC);
-		CHECK_OBJ_NOTNULL(ctx->req->http, HTTP_MAGIC);
 		sp = ctx->req->sp;
-		http = ctx->req->http;
 	} else {
 		CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
-		CHECK_OBJ_NOTNULL(ctx->bo->bereq, HTTP_MAGIC);
 		sp = ctx->bo->sp;
-		http = ctx->bo->bereq;
 	}
 
-	CHECK_OBJ_NOTNULL(http, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	return (WS_Printf(http->ws, "%u", VXID(sp->vxid)));
+	return (WS_Printf(ctx->ws, "%u", VXID(sp->vxid)));
 }
 
 /*--------------------------------------------------------------------
