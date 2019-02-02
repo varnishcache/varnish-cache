@@ -109,6 +109,18 @@ C APIs (for vmod and utility authors)
   function will be called ``vmod_foo`` and with ``$Prefix bar`` it
   will be called ``bar_foo``.
 
+* in the `vmodtool`\ -generated ReStructuredText documentation,
+  anchors have been renamed
+
+  * from ``obj_``\ `class` to `vmodname`\ ``.``\ `class` for
+    constructors and
+  * from ``func_``\ `class` to `vmodname`\ ``.``\ `function` for functions and
+  * from ``func_``\ `class` to `vmodname`\ ``.``\ `class`\ ``.``\
+    `method` for methods,
+
+  repsectively. In short, the anchor is now named equal to VCL syntax
+  for constructors and functions and similarly to VCL syntax for methods.
+
 Fixed bugs
 ----------
 
