@@ -101,6 +101,10 @@ C APIs (for vmod and utility authors)
 * Varnish-based tools using the VUT interface should now consider
   using the ``VUT_Usage()`` function for consistency
 
+* The `event_function` callback for VCL events in vmods used to have
+  the fixed name ``event_function`` and has now been renamed to
+  `$Prefix`\ ``event_function`` if `$Prefix` is defined in the
+  ``.vcc`` files or ``vmod_event_function`` by default
 
 Fixed bugs
 ----------
