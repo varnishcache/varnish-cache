@@ -32,10 +32,6 @@ Varnish Cache trunk (ongoing)
 
 * Extend JSON support in the CLI (2783_)
 
-* fixed ``varnishhist`` display error (2780_)
-
-* ``libvarnish``: ``VRT_VSA_GetPtr`` renamed to ``VSA_GetPtr``
-
 * Improve accuracy of statistics (VSC)
 
 * In ``Error: out of workspace`` log entries, the workspace name is
@@ -48,24 +44,43 @@ Varnish Cache trunk (ongoing)
 
 * fix ``varnishd -I`` (2782_)
 
-* fix ``varnishstat -f`` in curses mode (interactively, without
-  ``-1``, 2787_)
-
-* Handle an out-of-workspace condition in HTTP/2 delivery more
-  gracefully (2589_)
-
 * added a thread pool watchdog which will restart the worker process
   if scheduling tasks onto worker threads appears stuck. The new
   parameter ``thread_pool_watchdog`` configures it. (2418_)
 
-* Improved varnish log client performance (2788_)
-
-* Fixed regression introduced just before 6.1.0 release which caused
-  an unnecessary incompatibility with VSL files written by previous
-  versions. (2790_)
-
 * Changed ``ExpKill`` log tags to emit microsecond-precision
   timestamps instead of nanoseconds (2792_)
+
+* Changed the default of the ``thread_pool_watchdog`` parameter
+  to 60 seconds to match the ``cli_timeout`` default
+
+* VSB quoted output has been unified to three-digit octal,
+  VSB_QUOTE_ESCHEX has been added to prefer hex over octal quoting
+
+* retired long deprecated parameters (VIP16_). Replacement mapping is:
+  ``shm_reclen`` -> ``vsl_reclen``
+  ``vcl_dir`` -> ``vcl_path``
+  ``vmod_dir`` -> ``vmod_path``
+
+VCL
+---
+
+* added ``req.is_hitmiss`` and ``req.is_hitpass`` (2743_)
+
+
+bundled tools
+-------------
+
+* Improved varnish log client performance (2788_)
+
+* For ``varnishtest -L``, also keep VCL C source files
+
+* Add ``param.reset`` command to ``varnishadm``
+
+C APIs (for vmod and utility authors)
+-------------------------------------
+
+* ``libvarnish``: ``VRT_VSA_GetPtr`` renamed to ``VSA_GetPtr``
 
 * Included ``vtree.h`` in the distribution for vmods and
   renamed the red/black tree macros from ``VRB_*`` to ``VRBT_*``
@@ -75,42 +90,42 @@ Varnish Cache trunk (ongoing)
   ``PRIV_TOP`` from a list to a red/black tree) for performance.
   (2813_)
 
-* Changed the default of the ``thread_pool_watchdog`` parameter
-  to 60 seconds to match the ``cli_timeout`` default
-
-* Fix warmup/rampup of the shard director (2823_)
+* Vmod developers are advised that anything returned by a vmod
+  function/method is assumed to be immutable. In other words, a vmod
+  `must not` modify any data which was previously returned.
 
 * Added ``vstrerror()`` as a safe wrapper for ``strerror()`` to avoid
   a NULL pointer dereference under rare conditions where the latter
   could return NULL. (2815_)
 
-* Fix VRT_priv_task for calls from vcl_pipe {} (2820_)
+* Varnish-based tools using the VUT interface should now consider
+  using the ``VUT_Usage()`` function for consistency
 
-* For ``varnishtest -L``, also keep VCL C source files
+
+Fixed bugs
+----------
+
+* fixed ``varnishhist`` display error (2780_)
+
+* fix ``varnishstat -f`` in curses mode (interactively, without
+  ``-1``, 2787_)
+
+* Handle an out-of-workspace condition in HTTP/2 delivery more
+  gracefully (2589_)
+
+* Fixed regression introduced just before 6.1.0 release which caused
+  an unnecessary incompatibility with VSL files written by previous
+  versions. (2790_)
+
+* Fix warmup/rampup of the shard director (2823_)
+
+* Fix VRT_priv_task for calls from vcl_pipe {} (2820_)
 
 * Fix assinging <bool> == <bool> (2809_)
 
 * Fix vmod object constructor documentation in the ``vmodtool.py`` -
   generated RST files
 
-* Vmod developers are advised that anything returned by a vmod
-  function/method is assumed to be immutable. In other words, a vmod
-  `must not` modify any data which was previously returned.
-
-* VSB quoted output has been unified to three-digit octal,
-  VSB_QUOTE_ESCHEX has been added to prefer hex over octal quoting
-
-* Varnish-based tools using the VUT interface should now consider
-  using the ``VUT_Usage()`` function for consistency
-
-* retired long deprecated parameters (VIP16_). Replacement mapping is:
-  ``shm_reclen`` -> ``vsl_reclen``
-  ``vcl_dir`` -> ``vcl_path``
-  ``vmod_dir`` -> ``vmod_path``
-
-* added ``req.is_hitmiss`` and ``req.is_hitpass`` (2743_)
-
-* Add ``param.reset`` command to ``varnishadm``
 
 .. _2809: https://github.com/varnishcache/varnish-cache/issues/2809
 .. _2820: https://github.com/varnishcache/varnish-cache/issues/2820
