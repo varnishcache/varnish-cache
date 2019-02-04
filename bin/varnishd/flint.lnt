@@ -67,6 +67,12 @@
 
 -emacro(845, HTTPH)	// Info 845: The left argument to operator '&&' is certain to be 0
 -esym(773, PCRE_DATE)	// Expression-like macro '___' not parenthesized
+
+//////////////
+// Macros defined differently in each VMOD
+-esym(767, VPFX)	// macro '___' was defined differently in another module
+-esym(767, VARGS)	// macro '___' was defined differently in another module
+-esym(767, VENUM)	// macro '___' was defined differently in another module 
 //////////////
 -efunc(1791, pdiff)	// return last on line
 //////////////

@@ -182,7 +182,7 @@ struct vmod_directors_shard {
 static enum by_e
 parse_by_e(VCL_ENUM e)
 {
-#define VMODENUM(n) if (e == vmod_enum_ ## n) return(BY_ ## n);
+#define VMODENUM(n) if (e == VENUM(n)) return(BY_ ## n);
 #include "tbl_by.h"
        WRONG("illegal by enum");
 }
@@ -190,7 +190,7 @@ parse_by_e(VCL_ENUM e)
 static enum healthy_e
 parse_healthy_e(VCL_ENUM e)
 {
-#define VMODENUM(n) if (e == vmod_enum_ ## n) return(n);
+#define VMODENUM(n) if (e == VENUM(n)) return(n);
 #include "tbl_healthy.h"
        WRONG("illegal healthy enum");
 }
@@ -198,7 +198,7 @@ parse_healthy_e(VCL_ENUM e)
 static enum resolve_e
 parse_resolve_e(VCL_ENUM e)
 {
-#define VMODENUM(n) if (e == vmod_enum_ ## n) return(n);
+#define VMODENUM(n) if (e == VENUM(n)) return(n);
 #include "tbl_resolve.h"
        WRONG("illegal resolve enum");
 }
@@ -343,7 +343,7 @@ vmod_shard_associate(VRT_CTX,
 
 VCL_BOOL v_matchproto_(td_directors_shard_add_backend)
 vmod_shard_add_backend(VRT_CTX, struct vmod_directors_shard *vshard,
-    struct vmod_shard_add_backend_arg *args)
+    struct VARGS(shard_add_backend) *args)
 {
 	CHECK_OBJ_NOTNULL(vshard, VMOD_SHARD_SHARD_MAGIC);
 
@@ -361,7 +361,7 @@ vmod_shard_add_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 
 VCL_BOOL v_matchproto_(td_directors_shard_remove_backend)
 vmod_shard_remove_backend(VRT_CTX, struct vmod_directors_shard *vshard,
-    struct vmod_shard_remove_backend_arg *args)
+    struct VARGS(shard_remove_backend) *args)
 {
 	VCL_BACKEND be = args->valid_backend ? args->backend : NULL;
 	VCL_STRING ident = args->valid_ident ? args->ident : NULL;
@@ -498,7 +498,7 @@ shard_blob_key(VCL_BLOB key_blob)
 #define tobit(args, name) ((args)->valid_##name ? arg_##name : 0)
 
 static uint32_t
-shard_backend_arg_mask(const struct vmod_shard_backend_arg * const a)
+shard_backend_arg_mask(const struct VARGS(shard_backend) * const a)
 {
 	return (tobit(a, by)		|
 		tobit(a, key)		|
@@ -511,7 +511,7 @@ shard_backend_arg_mask(const struct vmod_shard_backend_arg * const a)
 		tobit(a, resolve));
 }
 static uint32_t
-shard_param_set_mask(const struct vmod_shard_param_set_arg * const a)
+shard_param_set_mask(const struct VARGS(shard_param_set) * const a)
 {
 	return (tobit(a, by)		|
 		tobit(a, key)		|
@@ -640,7 +640,7 @@ shard_param_args(VRT_CTX,
 
 VCL_BACKEND v_matchproto_(td_directors_shard_backend)
 vmod_shard_backend(VRT_CTX, struct vmod_directors_shard *vshard,
-		   struct vmod_shard_backend_arg *a)
+		   struct VARGS(shard_backend) *a)
 {
 	struct vmod_directors_shard_param pstk;
 	struct vmod_directors_shard_param *pp = NULL;
@@ -884,7 +884,7 @@ shard_param_prep(VRT_CTX, struct vmod_directors_shard_param *p,
 
 VCL_VOID v_matchproto_(td_directors_shard_param_set)
 vmod_shard_param_set(VRT_CTX, struct vmod_directors_shard_param *p,
-		     struct vmod_shard_param_set_arg *a)
+		     struct VARGS(shard_param_set) *a)
 {
 	uint32_t args = shard_param_set_mask(a);
 

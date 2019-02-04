@@ -118,7 +118,7 @@ static const struct vrt_blob null_blob[1] = {{
 static enum encoding
 parse_encoding(VCL_ENUM e)
 {
-#define VMODENUM(n) if (e == vmod_enum_ ## n) return(n);
+#define VMODENUM(n) if (e == VENUM(n)) return(n);
 #include "tbl_encodings.h"
 	WRONG("illegal encoding enum");
 }
@@ -126,7 +126,7 @@ parse_encoding(VCL_ENUM e)
 static enum case_e
 parse_case(VCL_ENUM e)
 {
-#define VMODENUM(n) if (e == vmod_enum_ ## n) return(n);
+#define VMODENUM(n) if (e == VENUM(n)) return(n);
 #include "tbl_case.h"
 	WRONG("illegal case enum");
 }

@@ -94,16 +94,16 @@ xyzzy_author(VRT_CTX, VCL_ENUM person, VCL_ENUM someone)
 	(void)someone;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	if (person == xyzzy_enum_phk)
+	if (person == VENUM(phk))
 		return ("Poul-Henning");
 	assert(strcmp(person, "phk"));
-	if (person == xyzzy_enum_des)
+	if (person == VENUM(des))
 		return ("Dag-Erling");
 	assert(strcmp(person, "des"));
-	if (person == xyzzy_enum_kristian)
+	if (person == VENUM(kristian))
 		return ("Kristian");
 	assert(strcmp(person, "kristian"));
-	if (person == xyzzy_enum_mithrandir)
+	if (person == VENUM(mithrandir))
 		return ("Tollef");
 	assert(strcmp(person, "mithrandir"));
 	WRONG("Illegal VMOD enum");
@@ -194,7 +194,7 @@ xyzzy_rot52(VRT_CTX, VCL_HTTP hp)
 }
 
 VCL_STRING v_matchproto_(td_debug_argtest)
-xyzzy_argtest(VRT_CTX, struct xyzzy_argtest_arg *arg)
+xyzzy_argtest(VRT_CTX, struct VARGS(argtest) *arg)
 {
 	char buf[100];
 

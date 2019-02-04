@@ -157,17 +157,17 @@ xyzzy_obj_test_priv_top(VRT_CTX,
  * obj_opt (optional arguments and privs)
  */
 struct xyzzy_debug_obj_opt {
-	unsigned			  magic;
-#define VMOD_DEBUG_OBJ_OPT_MAGIC	  0xccbd9b78
-	char				  *name;
-	struct xyzzy_obj_opt_meth_opt_arg args;
-	void				  *freeptr;
+	unsigned			magic;
+#define VMOD_DEBUG_OBJ_OPT_MAGIC	0xccbd9b78
+	char				*name;
+	struct VARGS(obj_opt_meth_opt)	args;
+	void				*freeptr;
 };
 
 VCL_VOID v_matchproto_()
 xyzzy_obj_opt__init(VRT_CTX,
     struct xyzzy_debug_obj_opt **op, const char *vcl_name,
-    struct xyzzy_obj_opt__init_arg *args)
+    struct VARGS(obj_opt__init) *args)
 {
 	struct xyzzy_debug_obj_opt *o;
 
@@ -221,7 +221,7 @@ xyzzy_obj_opt__fini(struct xyzzy_debug_obj_opt **op)
 VCL_STRING v_matchproto_()
 xyzzy_obj_opt_meth_opt(VRT_CTX,
     struct xyzzy_debug_obj_opt *o,
-    struct xyzzy_obj_opt_meth_opt_arg *args)
+    struct VARGS(obj_opt_meth_opt) *args)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(o, VMOD_DEBUG_OBJ_OPT_MAGIC);

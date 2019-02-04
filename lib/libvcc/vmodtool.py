@@ -31,6 +31,7 @@ Read the vmod.vcc file (inputvcc) and produce:
     vmod_if.h -- Prototypes for the implementation
     vmod_if.c -- Magic glue & datastructures to make things a VMOD.
     vmod_${name}.rst -- Extracted documentation
+    vmod_${name}.man.rst -- Extracted documentation (rst2man input)
 """
 
 # This script should work with both Python 2 and Python 3.
@@ -129,10 +130,14 @@ def unquote(txt):
 
 def fmt_cstruct(fo, a, b):
     ''' Output line in vmod struct '''
-    t = "\t%s\t" % a
+    t = '\t%s' % a
+    if len(t.expandtabs()) > 40:
+        t += '\n\t\t\t\t\t'
+    else:
+        t += '\t'
     while len(t.expandtabs()) < 40:
-        t += "\t"
-    fo.write("%s%s\n" % (t, b))
+        t += '\t'
+    fo.write('%s%s\n' % (t, b))
 
 #######################################################################
 
@@ -430,7 +435,7 @@ class ProtoType(object):
         return "typedef " + self.proto(args, name=self.typedef_name())
 
     def argstructname(self):
-        return "struct %s_arg" % self.cname(True)
+        return "struct VARGS(%s)" % self.cname(False)
 
     def argstructure(self):
         s = "\n" + self.argstructname() + " {\n"
@@ -471,7 +476,8 @@ class ProtoType(object):
         self.retval.jsonproto(ll)
         ll.append('%s.%s' % (self.st.vcc.csn, cfunc))
         if self.argstruct:
-            ll.append(self.argstructname())
+            # We cannot use VARGS() here, we are after the #undef
+            ll.append('struct arg_%s' % self.cname(True))
         else:
             ll.append("")
         for i in self.args:
@@ -662,8 +668,7 @@ class EventStanza(Stanza):
 
     def cstuff(self, fo, where):
         if where == 'h':
-            fo.write("vmod_event_f %s%s;\n" %
-                     (self.vcc.sympfx, self.event_func))
+            fo.write("vmod_event_f VPFX(%s);\n" % self.event_func)
 
     def cstruct(self, fo, define):
         if define:
@@ -741,7 +746,7 @@ class ObjectStanza(Stanza):
                     fo.write('      :ref:`%s`\n  \n' % i.rstlbl)
 
     def cstuff(self, fo, w):
-        sn = self.vcc.sympfx + self.vcc.modname + "_" + self.proto.name
+        sn = 'VPFX(' + self.vcc.modname + '_' + self.proto.name + ')'
         fo.write("struct %s;\n" % sn)
 
         fo.write(self.init.cproto(
@@ -952,8 +957,17 @@ class vcc(object):
         fo.write("#endif\n")
         fo.write("\n")
 
+        fo.write('#define VPFX(a) %s##a\n' % self.sympfx)
+        fo.write('#define VARGS(a) arg_%s##a\n' % self.sympfx)
+        fo.write('#define VENUM(a) enum_%s##a\n' % self.sympfx)
+        fo.write('\n')
+
         for j in sorted(self.enums):
-            fo.write("extern VCL_ENUM %senum_%s;\n" % (self.sympfx, j))
+            fo.write("extern VCL_ENUM VENUM(%s);\n" % j)
+        fo.write("\n")
+        for j in sorted(self.enums):
+            fo.write("//lint -esym(759, enum_%s%s)\n" % (self.sympfx, j))
+            fo.write("//lint -esym(765, enum_%s%s)\n" % (self.sympfx, j))
         fo.write("\n")
 
         for j in self.contents:
@@ -974,7 +988,7 @@ class vcc(object):
             j.cstruct(fo, False)
         fo.write("\n")
         for j in sorted(self.enums):
-            fo.write("\t&%senum_%s,\n" % (self.sympfx, j))
+            fmt_cstruct(fo, '.enum_%s =' % j, '&VENUM(%s),' % j)
         fo.write("};\n")
 
     def json(self, fo):
@@ -1026,6 +1040,11 @@ class vcc(object):
 
         write_c_file_warning(fo)
 
+        fx.write('#define VPFX(a) %s##a\n' % self.sympfx)
+        fx.write('#define VARGS(a) arg_%s##a\n' % self.sympfx)
+        fx.write('#define VENUM(a) enum_%s##a\n' % self.sympfx)
+        fx.write('\n')
+
         fo.write('#include "config.h"\n')
         fo.write('#include <stdio.h>\n')
         for i in ["vdef", "vrt", self.pfx, "vmod_abi"]:
@@ -1033,7 +1052,7 @@ class vcc(object):
         fo.write("\n")
 
         for j in sorted(self.enums):
-            fo.write('VCL_ENUM %senum_%s = "%s";\n' % (self.sympfx, j, j))
+            fo.write('VCL_ENUM VENUM(%s) = "%s";\n' % (j, j))
         fo.write("\n")
 
         for i in self.contents:
@@ -1052,6 +1071,10 @@ class vcc(object):
 
         fo.write("\n/*lint -esym(754, " + self.csn + "::*) */\n")
         self.cstruct_init(fo)
+
+        fx.write('#undef VPFX\n')
+        fx.write('#undef VARGS\n')
+        fx.write('#undef VENUM\n')
 
         fx.close()
 
