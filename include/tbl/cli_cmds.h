@@ -257,8 +257,13 @@ CLI_CMD(DEBUG_LISTEN_ADDRESS,
 CLI_CMD(BACKEND_LIST,
 	"backend.list",
 	"backend.list [-j] [-p] [<backend_pattern>]",
-	"List backends.  -p also shows probe status.",
-	"``-j`` specifies JSON output.",
+	"List backends.\n",
+	"  ``-p`` also shows probe status.\n\n"
+	"  ``-j`` specifies JSON output.\n\n"
+	"  The health state reported here is generic. A backend's health "
+	"may also depend on the context it is being used in (e.g. "
+	"the object's hash), so the actual health state as visible "
+	"from VCL (e.g. using std.healthy()) may differ.",
 	0, 2
 )
 
