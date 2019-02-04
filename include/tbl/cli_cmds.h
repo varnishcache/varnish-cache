@@ -43,7 +43,7 @@ CLI_CMD(BAN,
 	"ban",
 	"ban <field> <operator> <arg> [&& <field> <oper> <arg> ...]",
 	"Mark obsolete all objects where all the conditions match.",
-	"See :ref:`vcl(7)_ban` for details",
+	"  See :ref:`vcl(7)_ban` for details",
 	3, -1
 )
 
@@ -52,7 +52,7 @@ CLI_CMD(BAN_LIST,
 	"ban.list [-j]",
 	"List the active bans.",
 
-	" Unless ``-j`` is specified (for JSON output), "
+	"  Unless ``-j`` is specified (for JSON output), "
 	" the output format is:\n\n"
 	"  * Time the ban was issued.\n\n"
 	"  * Objects referencing this ban.\n\n"
@@ -105,7 +105,7 @@ CLI_CMD(VCL_LIST,
 	"vcl.list",
 	"vcl.list [-j]",
 	"List all loaded configuration.",
-	"``-j`` specifies JSON output.",
+	"  ``-j`` specifies JSON output.",
 	0, 0
 )
 
@@ -146,7 +146,7 @@ CLI_CMD(PARAM_SHOW,
 	"param.show [-l|-j] [<param>|changed]",
 	"Show parameters and their values.",
 
-	"The long form with ``-l`` shows additional information, including"
+	"  The long form with ``-l`` shows additional information, including"
 	" documentation and minimum, maximum and default values, if defined"
 	" for the parameter. JSON output is specified with ``-j``, in which"
 	" the information for the long form is included; only one of ``-l`` or"
@@ -184,7 +184,7 @@ CLI_CMD(PING,
 	"ping",
 	"ping [-j] [<timestamp>]",
 	"Keep connection alive.",
-	"The response is formatted as JSON if ``-j`` is specified.",
+	"  The response is formatted as JSON if ``-j`` is specified.",
 	0, 1
 )
 
@@ -192,7 +192,7 @@ CLI_CMD(HELP,
 	"help",
 	"help [-j] [<command>]",
 	"Show command/protocol help.",
-	"``-j`` specifies JSON output.",
+	"  ``-j`` specifies JSON output.",
 	0, 1
 )
 
@@ -208,7 +208,7 @@ CLI_CMD(SERVER_STATUS,
 	"status",
 	"status [-j]",
 	"Check status of Varnish cache process.",
-	"``-j`` specifies JSON output.",
+	"  ``-j`` specifies JSON output.",
 	0, 0
 )
 
@@ -232,7 +232,7 @@ CLI_CMD(PANIC_SHOW,
 	"panic.show",
 	"panic.show [-j]",
 	"Return the last panic, if any.",
-	"``-j`` specifies JSON output -- the panic message is returned as an"
+	"  ``-j`` specifies JSON output -- the panic message is returned as an"
 	" unstructured JSON string.",
 	0, 0
 )
@@ -339,7 +339,7 @@ CLI_CMD(STORAGE_LIST,
 	"storage.list",
 	"storage.list [-j]",
 	"List storage devices.",
-	"``-j`` specifies JSON output.",
+	"  ``-j`` specifies JSON output.",
 	0, 0
 )
 
