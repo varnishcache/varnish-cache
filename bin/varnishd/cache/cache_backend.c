@@ -445,11 +445,13 @@ vbe_panic(const struct director *d, struct vsb *vsb)
 /*--------------------------------------------------------------------
  */
 
-static void
-vbe_list(const struct director *d, struct vsb *vsb, int vflag, int pflag,
-    int jflag)
+static void v_matchproto_(vdi_list_f)
+vbe_list(VRT_CTX, const struct director *d, struct vsb *vsb, int vflag,
+    int pflag, int jflag)
 {
 	struct backend *bp;
+
+	(void)ctx;
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);

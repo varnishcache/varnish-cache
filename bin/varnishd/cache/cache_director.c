@@ -278,15 +278,9 @@ struct list_args {
 };
 
 static const char *
-cli_health(struct director *d)
+cli_health(VRT_CTX, struct director *d)
 {
-	struct vrt_ctx *ctx;
-	VCL_BOOL healthy;
-
-	ctx = VCL_Get_CliCtx(0,0);
-	healthy = VRT_Healthy(ctx, d, NULL);
-	VCL_Rel_CliCtx(&ctx);
-	AZ(ctx);
+	VCL_BOOL healthy = VRT_Healthy(ctx, d, NULL);
 
 	return (healthy ? "healthy" : "sick");
 }
@@ -296,6 +290,7 @@ do_list(struct cli *cli, struct director *d, void *priv)
 {
 	char time_str[VTIM_FORMAT_SIZE];
 	struct list_args *la;
+	struct vrt_ctx *ctx;
 
 	CAST_OBJ_NOTNULL(la, priv, LIST_ARGS_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
@@ -303,18 +298,24 @@ do_list(struct cli *cli, struct director *d, void *priv)
 	if (d->vdir->admin_health == VDI_AH_DELETED)
 		return (0);
 
+	ctx = VCL_Get_CliCtx(0,0);
+
 	// XXX admin health "probe" for the no-probe case is confusing
 	VCLI_Out(cli, "\n%-30s %-7s ", d->vdir->cli_name, VDI_Ahealth(d));
 
 	if (d->vdir->methods->list != NULL)
-		d->vdir->methods->list(d, cli->sb, 0, 0, 0);
+		d->vdir->methods->list(ctx, d, cli->sb, 0, 0, 0);
 	else
-		VCLI_Out(cli, "%-10s", cli_health(d));
+		VCLI_Out(cli, "%-10s", cli_health(ctx, d));
 
 	VTIM_format(d->vdir->health_changed, time_str);
 	VCLI_Out(cli, " %s", time_str);
 	if ((la->p || la->v) && d->vdir->methods->list != NULL)
-		d->vdir->methods->list(d, cli->sb, la->p, la->v, 0);
+		d->vdir->methods->list(ctx, d, cli->sb, la->p, la->v, 0);
+
+	VCL_Rel_CliCtx(&ctx);
+	AZ(ctx);
+
 	return (0);
 }
 
@@ -322,12 +323,15 @@ static int v_matchproto_(vcl_be_func)
 do_list_json(struct cli *cli, struct director *d, void *priv)
 {
 	struct list_args *la;
+	struct vrt_ctx *ctx;
 
 	CAST_OBJ_NOTNULL(la, priv, LIST_ARGS_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 
 	if (d->vdir->admin_health == VDI_AH_DELETED)
 		return (0);
+
+	ctx = VCL_Get_CliCtx(0,0);
 
 	VCLI_Out(cli, "%s", la->jsep);
 	la->jsep = ",\n";
@@ -339,18 +343,22 @@ do_list_json(struct cli *cli, struct director *d, void *priv)
 	VCLI_Out(cli, "\"admin_health\": \"%s\",\n", VDI_Ahealth(d));
 	VCLI_Out(cli, "\"probe_message\": ");
 	if (d->vdir->methods->list != NULL)
-		d->vdir->methods->list(d, cli->sb, 0, 0, 1);
+		d->vdir->methods->list(ctx, d, cli->sb, 0, 0, 1);
 	else
-		VCLI_Out(cli, "\"%s\"", cli_health(d));
+		VCLI_Out(cli, "\"%s\"", cli_health(ctx, d));
 	VCLI_Out(cli, ",\n");
 
 	if ((la->p || la->v) && d->vdir->methods->list != NULL) {
 		VCLI_Out(cli, "\"probe_details\": ");
-		d->vdir->methods->list(d, cli->sb, la->p, la->v, 1);
+		d->vdir->methods->list(ctx, d, cli->sb, la->p, la->v, 1);
 	}
 	VCLI_Out(cli, "\"last_change\": %.3f\n", d->vdir->health_changed);
 	VSB_indent(cli->sb, -2);
 	VCLI_Out(cli, "}");
+
+	VCL_Rel_CliCtx(&ctx);
+	AZ(ctx);
+
 	return (0);
 }
 

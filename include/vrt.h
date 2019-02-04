@@ -60,6 +60,7 @@
  *	changed VRT_blob()
  *	req->req_bodybytes removed
  *	    use: AZ(ObjGetU64(req->wrk, req->body_oc, OA_LEN, &u));
+ *	struct vdi_methods .list callback signature changed
  * 8.0 (2018-09-15)
  *	VRT_Strands() added
  *	VRT_StrandsWS() added
@@ -476,7 +477,7 @@ typedef enum sess_close vdi_http1pipe_f(VRT_CTX, VCL_BACKEND);
 typedef void vdi_event_f(VCL_BACKEND, enum vcl_event_e);
 typedef void vdi_destroy_f(VCL_BACKEND);
 typedef void vdi_panic_f(VCL_BACKEND, struct vsb *);
-typedef void vdi_list_f(VCL_BACKEND, struct vsb *, int, int, int);
+typedef void vdi_list_f(VRT_CTX, VCL_BACKEND, struct vsb *, int, int, int);
 
 struct vdi_methods {
 	unsigned			magic;
