@@ -850,13 +850,14 @@ class vcc(object):
         global inputline
         b = open(self.inputfile, "rb").read()
         a = "\n" + b.decode("utf-8")
-        self.file_id = hashlib.sha256(b).hexdigest()
+        h = hashlib.sha256()
         s = a.split("\n$")
         self.copyright = s.pop(0).strip()
         while s:
             ss = re.split('\n([^\t ])', s.pop(0), maxsplit=1)
             toks = self.tokenize(ss[0])
             inputline = '$' + ' '.join(toks)
+            h.update((inputline + '\n').encode('utf-8'))
             docstr = "".join(ss[1:])
             stanzaclass = DISPATCH.get(toks[0])
             if stanzaclass is None:
@@ -864,6 +865,7 @@ class vcc(object):
             stanzaclass(self, toks, docstr)
             inputline = None
         self.csn = "Vmod_%s%s_Func" % (self.sympfx, self.modname)
+        self.file_id = h.hexdigest()
 
     def tokenize(self, txt, seps=None, quotes=None):
         if seps is None:
