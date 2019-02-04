@@ -960,6 +960,9 @@ class vcc(object):
         fo.write('#define VPFX(a) %s##a\n' % self.sympfx)
         fo.write('#define VARGS(a) arg_%s##a\n' % self.sympfx)
         fo.write('#define VENUM(a) enum_%s##a\n' % self.sympfx)
+        fo.write('//lint -esym(755, VPFX)\n')
+        fo.write('//lint -esym(755, VARGS)\n')
+        fo.write('//lint -esym(755, VENUM)\n')
         fo.write('\n')
 
         for j in sorted(self.enums):
