@@ -121,6 +121,33 @@ C APIs (for vmod and utility authors)
   repsectively. In short, the anchor is now named equal to VCL syntax
   for constructors and functions and similarly to VCL syntax for methods.
 
+* VRT API has been updated to 9.0
+
+  * ``HTTP_Copy()`` was removed, ``HTTP_Dup()`` and ``HTTP_Clone()`` were added
+
+  * Previously, ``VCL_BLOB`` was implemented as ``struct vmod_priv``,
+    which had the following shortcomings:
+
+    * blobs are immutable, but that was not reflected by the ``priv``
+      pointer
+
+    * the existence of a free pointer suggested automatic memory
+      management, which did never and will not exist for blobs.
+
+    The ``VCL_BLOB`` type is now implemented as ``struct vrt_blob``,
+    with the ``blob`` member replacing the former ``priv`` pointer and
+    the ``free`` pointer removed.
+
+    A ``type`` member was added for lightweight type checking similar
+    to the miniobject ``magic`` member, but in contrast to it,
+    ``type`` should never be asserted upon.
+
+    ``VRT_blob()`` was updated accordingly.
+
+  * ``req->req_bodybytes`` was removed. Replacement code snippet::
+
+      AZ(ObjGetU64(req->wrk, req->body_oc, OA_LEN, &u));
+
 Fixed bugs
 ----------
 
