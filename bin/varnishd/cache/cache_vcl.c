@@ -165,9 +165,9 @@ vcl_send_event(VRT_CTX, enum vcl_event_e ev)
 	if (ev == VCL_EVENT_LOAD || ev == VCL_EVENT_WARM)
 		AN(ctx->msg);
 
-	VCL_TaskEnter(ctx->vcl, cli_task_privs);
+	VCL_TaskEnter(cli_task_privs);
 	r = ctx->vcl->conf->event_vcl(ctx, ev);
-	VCL_TaskLeave(ctx->vcl, cli_task_privs);
+	VCL_TaskLeave(cli_task_privs);
 
 	if (r && (ev == VCL_EVENT_COLD || ev == VCL_EVENT_DISCARD))
 		WRONG("A VMOD cannot fail COLD or DISCARD events");

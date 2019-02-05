@@ -299,6 +299,7 @@ do_list(struct cli *cli, struct director *d, void *priv)
 		return (0);
 
 	ctx = VCL_Get_CliCtx(0,0);
+	VCL_TaskEnter(cli_task_privs);
 
 	// XXX admin health "probe" for the no-probe case is confusing
 	VCLI_Out(cli, "\n%-*s %-*s ",
@@ -315,6 +316,7 @@ do_list(struct cli *cli, struct director *d, void *priv)
 	if ((la->p || la->v) && d->vdir->methods->list != NULL)
 		d->vdir->methods->list(ctx, d, cli->sb, la->p, la->v, 0);
 
+	VCL_TaskLeave(cli_task_privs);
 	VCL_Rel_CliCtx(&ctx);
 	AZ(ctx);
 
@@ -334,6 +336,7 @@ do_list_json(struct cli *cli, struct director *d, void *priv)
 		return (0);
 
 	ctx = VCL_Get_CliCtx(0,0);
+	VCL_TaskEnter(cli_task_privs);
 
 	VCLI_Out(cli, "%s", la->jsep);
 	la->jsep = ",\n";
@@ -358,6 +361,7 @@ do_list_json(struct cli *cli, struct director *d, void *priv)
 	VSB_indent(cli->sb, -2);
 	VCLI_Out(cli, "}");
 
+	VCL_TaskLeave(cli_task_privs);
 	VCL_Rel_CliCtx(&ctx);
 	AZ(ctx);
 

@@ -637,8 +637,8 @@ VRT_Rollback(VRT_CTX, VCL_HTTP hp)
 	} else if (hp == ctx->http_bereq) {
 		CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
 		// -> VBO_Rollback ?
-		VCL_TaskLeave(ctx->bo->vcl, ctx->bo->privs);
-		VCL_TaskEnter(ctx->bo->vcl, ctx->bo->privs);
+		VCL_TaskLeave(ctx->bo->privs);
+		VCL_TaskEnter(ctx->bo->privs);
 		HTTP_Clone(ctx->bo->bereq, ctx->bo->bereq0);
 		WS_Reset(ctx->bo->bereq->ws, ctx->bo->ws_bo);
 		WS_Reset(ctx->bo->ws, ctx->bo->ws_bo);

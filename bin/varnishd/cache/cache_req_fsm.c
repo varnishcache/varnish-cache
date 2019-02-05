@@ -1090,7 +1090,7 @@ CNT_Request(struct req *req)
 	if (nxt == REQ_FSM_DONE) {
 		if (IS_TOPREQ(req) && req->vcl0 != NULL)
 			VCL_Rel(&req->vcl0);
-		VCL_TaskLeave(req->vcl, req->privs);
+		VCL_TaskLeave(req->privs);
 		AN(req->vsl->wid);
 		VRB_Free(req);
 		req->wrk = NULL;

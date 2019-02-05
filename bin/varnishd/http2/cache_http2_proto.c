@@ -536,7 +536,7 @@ h2_do_req(struct worker *wrk, void *priv)
 	THR_SetRequest(req);
 	CNT_Embark(wrk, req);
 	if (req->req_step == R_STP_TRANSPORT)
-		VCL_TaskEnter(req->vcl, req->privs);
+		VCL_TaskEnter(req->privs);
 
 	wrk->stats->client_req++;
 	if (CNT_Request(req) != REQ_FSM_DISEMBARK) {

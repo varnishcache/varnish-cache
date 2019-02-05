@@ -170,8 +170,8 @@ VRT_Vmod_Unload(VRT_CTX, struct vmod **hdl)
 
 	TAKE_OBJ_NOTNULL(v, hdl, VMOD_MAGIC);
 
-	VCL_TaskLeave(ctx->vcl, cli_task_privs);
-	VCL_TaskEnter(ctx->vcl, cli_task_privs);
+	VCL_TaskLeave(cli_task_privs);
+	VCL_TaskEnter(cli_task_privs);
 
 #ifndef DONT_DLCLOSE_VMODS
 	/*

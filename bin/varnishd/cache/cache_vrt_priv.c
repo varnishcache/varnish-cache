@@ -185,20 +185,17 @@ VRT_priv_fini(const struct vmod_priv *p)
 /*--------------------------------------------------------------------*/
 
 void
-VCL_TaskEnter(const struct vcl *vcl, struct vrt_privs *privs)
+VCL_TaskEnter(struct vrt_privs *privs)
 {
-
-	AN(vcl);
 	AZ(privs->magic);
 	VRTPRIV_init(privs);
 }
 
 void
-VCL_TaskLeave(const struct vcl *vcl, struct vrt_privs *privs)
+VCL_TaskLeave(struct vrt_privs *privs)
 {
 	struct vrt_priv *vp, *vp1;
 
-	AN(vcl);
 	CHECK_OBJ_NOTNULL(privs, VRT_PRIVS_MAGIC);
 	/* NB: We don't bother removing entries as we finish them because it's
 	 * a costly operation. Instead we safely walk the whole tree and clear

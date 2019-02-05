@@ -345,7 +345,7 @@ VRT_vcl_select(VRT_CTX, VCL_VCL vcl)
 	if (IS_TOPREQ(req) && req->vcl0 != NULL)
 		return;		// Illega, req-FSM will fail this later.
 
-	VCL_TaskLeave(req->vcl, req->privs);
+	VCL_TaskLeave(req->privs);
 	if (IS_TOPREQ(req)) {
 		req->vcl0 = req->vcl;
 		req->vcl = NULL;
@@ -355,7 +355,7 @@ VRT_vcl_select(VRT_CTX, VCL_VCL vcl)
 	vcl_get(&req->vcl, vcl);
 	VSLb(ctx->req->vsl, SLT_VCL_use, "%s via %s",
 	    req->vcl->loaded_name, vcl->loaded_name);
-	VCL_TaskEnter(req->vcl, req->privs);
+	VCL_TaskEnter(req->privs);
 }
 
 struct vclref *
