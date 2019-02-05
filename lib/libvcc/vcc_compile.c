@@ -321,7 +321,7 @@ EmitInitFini(const struct vcc *tl)
 	VTAILQ_FOREACH(sy, &tl->sym_objects, sideways) {
 		Fc(tl, 0, "\tif (!%s) {\n", sy->rname);
 		Fc(tl, 0, "\t\tVRT_fail(ctx, "
-		    "\"Object %s not initialized\");\n" , sy->rname);
+		    "\"Object %s not initialized\");\n" , sy->name);
 		Fc(tl, 0, "\t\treturn(1);\n");
 		Fc(tl, 0, "\t}\n");
 	}
