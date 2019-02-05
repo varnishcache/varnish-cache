@@ -371,6 +371,10 @@ cli_backend_list(struct cli *cli, const char * const *av, void *priv)
 	struct list_args la[1];
 	int i;
 
+	/*
+	 * XXX for all cases in varnish-cache, -v is synonymous to
+	 * -p and -v is not documented. Retire?
+	 */
 	(void)priv;
 	ASSERT_CLI();
 	INIT_OBJ(la, LIST_ARGS_MAGIC);
