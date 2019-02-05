@@ -154,6 +154,20 @@ C APIs (for vmod and utility authors)
 
       AZ(ObjGetU64(req->wrk, req->body_oc, OA_LEN, &u));
 
+* vmodtool has been changed significantly to avoid various name
+  clashes. Rather than using literal prefixes/suffixes, vmod authors
+  should now (and might have to for making existing code continue to
+  compile) use the following macros
+
+  * ``VPFX(name)`` to prepend the vmod prefix (``vmod_`` by default)
+
+  * ``VARGS(name)`` as the name of a function/method's argument
+    struct, e.g.::
+
+	VCL_VOID vmod_test(VRT_CTX, struct VARGS(test) *args) { ...
+
+  * ``VENUM(name)`` to access the enum by the name `name`
+
 Fixed bugs
 ----------
 

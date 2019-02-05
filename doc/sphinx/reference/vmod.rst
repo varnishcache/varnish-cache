@@ -324,6 +324,10 @@ ENUM
 	Allows values from a set of constant strings. `Note` that the
 	C-type is a string, not a C enum.
 
+	Enums will be passed as fixed pointers, so instead of string
+	comparisons, also pointer comparisons with ``VENUM(name)`` are
+	possible.
+
 HEADER
 	C-type: ``const struct gethdr_s *``
 
