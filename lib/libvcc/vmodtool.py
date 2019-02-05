@@ -585,7 +585,7 @@ class ModuleStanza(Stanza):
     def rsthead(self, fo, man):
 
         if man:
-            write_rst_hdr(fo, self.vcc.sympfx + self.vcc.modname, "=", "=")
+            write_rst_hdr(fo, "VMOD " + self.vcc.modname, "=", "=")
             write_rst_hdr(fo, self.vcc.moddesc, "-", "-")
             fo.write("\n")
             fo.write(":Manual section: " + self.vcc.mansection + "\n")
@@ -593,7 +593,7 @@ class ModuleStanza(Stanza):
             if self.rstlbl:
                 fo.write('\n.. _' + self.rstlbl + ':\n')
             write_rst_hdr(fo,
-                          self.vcc.sympfx + self.vcc.modname +
+                          "VMOD " + self.vcc.modname +
                           ' - ' + self.vcc.moddesc,
                           "=", "=")
 
