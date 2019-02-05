@@ -294,6 +294,7 @@ EmitInitFini(const struct vcc *tl)
 {
 	struct inifin *p, *q = NULL;
 	unsigned has_event = 0;
+	struct symbol *sy;
 
 	Fh(tl, 0, "\n");
 	Fh(tl, 0, "static unsigned vgc_inistep;\n");
@@ -317,6 +318,13 @@ EmitInitFini(const struct vcc *tl)
 		AZ(VSB_finish(p->event));
 		if (VSB_len(p->event))
 			has_event = 1;
+	}
+	VTAILQ_FOREACH(sy, &tl->sym_objects, sideways) {
+		Fc(tl, 0, "\tif (!%s) {\n", sy->rname);
+		Fc(tl, 0, "\t\tVRT_fail(ctx, "
+		    "\"Object %s not initialized\");\n" , sy->rname);
+		Fc(tl, 0, "\t\treturn(1);\n");
+		Fc(tl, 0, "\t}\n");
 	}
 
 	Fc(tl, 0, "\treturn(0);\n");
@@ -745,6 +753,7 @@ VCC_New(void)
 	VTAILQ_INIT(&tl->tokens);
 	VTAILQ_INIT(&tl->sources);
 	VTAILQ_INIT(&tl->procs);
+	VTAILQ_INIT(&tl->sym_objects);
 
 	tl->nsources = 0;
 

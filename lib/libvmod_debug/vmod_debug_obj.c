@@ -68,7 +68,6 @@ xyzzy_obj__fini(struct xyzzy_debug_obj **op)
 	AN(op);
 	AN(*op);
 	FREE_OBJ(*op);
-	*op = NULL;
 }
 
 VCL_VOID v_matchproto_()
@@ -202,8 +201,7 @@ xyzzy_obj_opt__fini(struct xyzzy_debug_obj_opt **op)
 	struct xyzzy_debug_obj_opt *o;
 
 	AN(op);
-	if (*op == NULL)
-		return;	/* init has failed */
+	AN(*op);
 
 	TAKE_OBJ_NOTNULL(o, op, VMOD_DEBUG_OBJ_OPT_MAGIC);
 

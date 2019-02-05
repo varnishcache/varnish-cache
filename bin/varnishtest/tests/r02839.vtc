@@ -1,0 +1,32 @@
+varnishtest "Test uninitialized vmod objects"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend "" -start
+
+varnish v1 -errvcl "Object vo_null not initialized" {
+	import debug;
+
+	backend default { .host = "127.0.0.1"; }
+
+	sub vcl_init {
+		if (false) {
+			new null = debug.obj();
+		}
+	}
+}
+
+varnish v1 -vcl {
+	import debug;
+
+	backend default { .host = "127.0.0.1"; }
+
+	sub vcl_init {
+		if (false) {
+			new null = debug.obj_opt();
+		}
+	}
+}

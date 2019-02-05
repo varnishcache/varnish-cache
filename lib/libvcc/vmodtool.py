@@ -500,6 +500,7 @@ class Stanza(object):
         self.doc = doc
         self.vcc = vcc
         self.rstlbl = None
+        self.null_ok = False
         self.methods = None
         self.proto = None
         self.parse()
@@ -720,6 +721,9 @@ class FunctionStanza(Stanza):
 
 class ObjectStanza(Stanza):
     def parse(self):
+        if self.toks[1] == "NULL_OK":
+            self.toks.pop(1)
+            self.null_ok = True
         self.proto = ProtoType(self, retval=False)
         self.proto.obj = "x" + self.proto.name
 
@@ -778,6 +782,7 @@ class ObjectStanza(Stanza):
         ll = [
             "$OBJ",
             self.proto.name,
+	    { "NULL_OK": self.null_ok },
             "struct %s%s_%s" %
             (self.vcc.sympfx, self.vcc.modname, self.proto.name),
         ]
