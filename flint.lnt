@@ -91,9 +91,9 @@
 ///////////////////////////////////////////////////////////////////////
 // Vmod/vmodtool.py
 
--esym(14, vmod_enum_*)		// Symbol '___' previously defined (___)
--esym(759, vmod_enum_*)		// header declaration for symbol '___' defined at (___)
--esym(765, vmod_enum_*)		// external '___' (___) could be made static
+//-esym(14, vmod_enum_*)		// Symbol '___' previously defined (___)
+//-esym(759, vmod_enum_*)		// header declaration for symbol '___' defined at (___)
+//-esym(765, vmod_enum_*)		// external '___' (___) could be made static
 
 ///////////////////////////////////////////////////////////////////////
 // <vut.h>

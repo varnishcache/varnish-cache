@@ -957,7 +957,9 @@ class vcc(object):
             (self.sympfx, self.modname))
         fo.write('#define VENUM(a) enum_%s%s_##a\n' %
             (self.sympfx, self.modname))
-        fo.write('//lint -esym(755, VPFX)\n')
+        for a in ('VPFX', 'VARGS', 'VENUM'):
+            for b in (755, 767):
+                fo.write('//lint -esym(%d, %s)\n' % (b, a))
         fo.write('//lint -esym(755, VARGS)\n')
         fo.write('//lint -esym(755, VENUM)\n')
         fo.write('\n')
@@ -981,8 +983,12 @@ class vcc(object):
             fo.write("extern VCL_ENUM VENUM(%s);\n" % j)
         fo.write("\n")
         for j in sorted(self.enums):
-            fo.write("//lint -esym(759, enum_%s%s)\n" % (self.sympfx, j))
-            fo.write("//lint -esym(765, enum_%s%s)\n" % (self.sympfx, j))
+            fo.write("//lint -esym(14, enum_%s%s_%s)\n" %
+                (self.sympfx, self.modname, j))
+            fo.write("//lint -esym(759, enum_%s%s_%s)\n" %
+                (self.sympfx, self.modname, j))
+            fo.write("//lint -esym(765, enum_%s%s_%s)\n" %
+                (self.sympfx, self.modname, j))
         fo.write("\n")
 
         for j in self.contents:
