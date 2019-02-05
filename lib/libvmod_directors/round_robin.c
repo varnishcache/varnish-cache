@@ -44,7 +44,7 @@ struct vmod_directors_round_robin {
 	unsigned				nxt;
 };
 
-static VCL_BOOL v_matchproto_(vdi_healthy)
+static VCL_BOOL v_matchproto_(vdi_healthy_f)
 vmod_rr_healthy(VRT_CTX, VCL_BACKEND dir, VCL_TIME *changed)
 {
 	struct vmod_directors_round_robin *rr;
@@ -53,6 +53,17 @@ vmod_rr_healthy(VRT_CTX, VCL_BACKEND dir, VCL_TIME *changed)
 	CHECK_OBJ_NOTNULL(dir, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(rr, dir->priv, VMOD_DIRECTORS_ROUND_ROBIN_MAGIC);
 	return (vdir_any_healthy(ctx, rr->vd, changed));
+}
+
+static void v_matchproto_(vdi_list_f)
+vmod_rr_list(VRT_CTX, VCL_BACKEND dir, struct vsb *vsb, int pflag, int jflag)
+{
+	struct vmod_directors_round_robin *rr;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(dir, DIRECTOR_MAGIC);
+	CAST_OBJ_NOTNULL(rr, dir->priv, VMOD_DIRECTORS_ROUND_ROBIN_MAGIC);
+	return (vdir_list(ctx, rr->vd, vsb, pflag, jflag));
 }
 
 static VCL_BACKEND v_matchproto_(vdi_resolve_f)
@@ -96,7 +107,8 @@ static const struct vdi_methods vmod_rr_methods[1] = {{
 	.type =			"round-robin",
 	.healthy =		vmod_rr_healthy,
 	.resolve =		vmod_rr_resolve,
-	.destroy =		vmod_rr_destroy
+	.destroy =		vmod_rr_destroy,
+	.list =			vmod_rr_list
 }};
 
 VCL_VOID v_matchproto_()

@@ -29,10 +29,12 @@
 #include "config.h"
 
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "cache/cache.h"
 
 #include "vbm.h"
+#include "vsb.h"
 
 #include "vdir.h"
 
@@ -190,6 +192,74 @@ vdir_any_healthy(VRT_CTX, struct vdir *vd, VCL_TIME *changed)
 	}
 	vdir_unlock(vd);
 	return (retval);
+}
+
+void
+vdir_list(VRT_CTX, struct vdir *vd, struct vsb *vsb, int pflag, int jflag)
+{
+	VCL_TIME c, changed = 0;
+	VCL_BACKEND be;
+	VCL_BOOL h;
+	unsigned u, nh = 0;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vd, VDIR_MAGIC);
+
+	if (pflag) {
+		if (jflag) {
+			VSB_printf(vsb, "{\n");
+			VSB_indent(vsb, 2);
+		} else {
+			VSB_printf(vsb, "\n");
+		}
+	}
+
+	vdir_rdlock(vd);
+	for (u = 0; u < vd->n_backend; u++) {
+		be = vd->backend[u];
+		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
+		c = 0;
+		h = VRT_Healthy(ctx, be, &c);
+		if (h)
+			nh++;
+		if (c > changed)
+			changed = c;
+		if ((pflag) == 0)
+			continue;
+		if (jflag) {
+			if (u)
+				VSB_printf(vsb, ",\n");
+			VSB_printf(vsb, "\"%s\": \"%s\"",
+			    be->vcl_name, h ? "healthy" : "sick");
+		} else {
+			VSB_printf(vsb, "\t%s: %s\n",
+			    be->vcl_name, h ? "healthy" : "sick");
+		}
+	}
+	vdir_unlock(vd);
+
+	VRT_SetChanged(ctx, vd->dir, changed);
+
+	if (jflag && (pflag)) {
+		VSB_printf(vsb, "\n");
+		VSB_indent(vsb, -2);
+		VSB_printf(vsb, "},\n");
+	}
+
+	if (pflag)
+		return;
+
+	/*
+	 * for health state, the api-correct thing would be to call our own
+	 * healthy function, but that would just re-iterate the backends for no
+	 * real benefit
+	 */
+
+	if (jflag)
+		VSB_printf(vsb, "[%u, %u, \"%s\"]", nh, u,
+		    nh ? "healthy" : "sick");
+	else
+		VSB_printf(vsb, "%u/%u %s", nh, u, nh ? "healthy" : "sick");
 }
 
 static unsigned

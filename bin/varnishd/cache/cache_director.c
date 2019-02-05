@@ -229,6 +229,26 @@ VRT_Healthy(VRT_CTX, VCL_BACKEND d, VCL_TIME *changed)
 	return (d->vdir->methods->healthy(ctx, d, changed));
 }
 
+/*--------------------------------------------------------------------
+ * Update health_changed. This is for load balancing directors
+ * to update their health_changed time based on their backends.
+ */
+VCL_VOID
+VRT_SetChanged(VRT_CTX, VCL_BACKEND d, VCL_TIME changed)
+{
+	(void)ctx;
+
+	if (d == NULL)
+		return;
+
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+
+	if (changed <= d->vdir->health_changed)
+		return;
+
+	d->vdir->health_changed = changed;
+}
+
 /* Send Event ----------------------------------------------------------
  */
 

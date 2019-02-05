@@ -63,6 +63,7 @@
  *	    use: AZ(ObjGetU64(req->wrk, req->body_oc, OA_LEN, &u));
  *	struct vdi_methods .list callback signature changed
  *	VRT_LookupDirector() added
+ *	VRT_SetChanged() added
  * 8.0 (2018-09-15)
  *	VRT_Strands() added
  *	VRT_StrandsWS() added
@@ -524,6 +525,7 @@ struct director {
 };
 
 VCL_BOOL VRT_Healthy(VRT_CTX, VCL_BACKEND, VCL_TIME *);
+VCL_VOID VRT_SetChanged(VRT_CTX, VCL_BACKEND, VCL_TIME);
 VCL_BACKEND VRT_AddDirector(VRT_CTX, const struct vdi_methods *,
     void *, const char *, ...) v_printflike_(4, 5);
 void VRT_SetHealth(VCL_BACKEND d, int health);
