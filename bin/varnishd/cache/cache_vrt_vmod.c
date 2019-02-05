@@ -166,6 +166,8 @@ VRT_Vmod_Unload(VRT_CTX, struct vmod **hdl)
 {
 	struct vmod *v;
 
+	(void)ctx;
+
 	ASSERT_CLI();
 
 	TAKE_OBJ_NOTNULL(v, hdl, VMOD_MAGIC);
