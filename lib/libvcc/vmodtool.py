@@ -478,7 +478,8 @@ class ProtoType(object):
         ll.append('%s.%s' % (self.st.vcc.csn, cfunc))
         if self.argstruct:
             # We cannot use VARGS() here, we are after the #undef
-            ll.append('struct arg_%s' % self.cname(True))
+            ll.append('struct arg_%s%s_%s' %
+                (self.st.vcc.sympfx, self.st.vcc.modname, self.cname(False)))
         else:
             ll.append("")
         for i in self.args:
@@ -950,6 +951,17 @@ class vcc(object):
         fo.write(AMBOILERPLATE.replace("XXX", self.modname))
         fo.close()
 
+    def mkdefs(self, fo):
+        fo.write('#define VPFX(a) %s##a\n' % self.sympfx)
+        fo.write('#define VARGS(a) arg_%s%s_##a\n' %
+            (self.sympfx, self.modname))
+        fo.write('#define VENUM(a) enum_%s%s_##a\n' %
+            (self.sympfx, self.modname))
+        fo.write('//lint -esym(755, VPFX)\n')
+        fo.write('//lint -esym(755, VARGS)\n')
+        fo.write('//lint -esym(755, VENUM)\n')
+        fo.write('\n')
+
     def mkhfile(self):
         ''' Produce vcc_if.h file '''
         fn = self.pfx + ".h"
@@ -963,13 +975,7 @@ class vcc(object):
         fo.write("#endif\n")
         fo.write("\n")
 
-        fo.write('#define VPFX(a) %s##a\n' % self.sympfx)
-        fo.write('#define VARGS(a) arg_%s##a\n' % self.sympfx)
-        fo.write('#define VENUM(a) enum_%s##a\n' % self.sympfx)
-        fo.write('//lint -esym(755, VPFX)\n')
-        fo.write('//lint -esym(755, VARGS)\n')
-        fo.write('//lint -esym(755, VENUM)\n')
-        fo.write('\n')
+        self.mkdefs(fo);
 
         for j in sorted(self.enums):
             fo.write("extern VCL_ENUM VENUM(%s);\n" % j)
@@ -1049,10 +1055,7 @@ class vcc(object):
 
         write_c_file_warning(fo)
 
-        fx.write('#define VPFX(a) %s##a\n' % self.sympfx)
-        fx.write('#define VARGS(a) arg_%s##a\n' % self.sympfx)
-        fx.write('#define VENUM(a) enum_%s##a\n' % self.sympfx)
-        fx.write('\n')
+        self.mkdefs(fx);
 
         fo.write('#include "config.h"\n')
         fo.write('#include <stdio.h>\n')
