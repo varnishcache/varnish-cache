@@ -178,7 +178,7 @@ struct strands {
 
 struct vrt_blob {
 	unsigned	type;
-	long		len;
+	size_t		len;
 	const void	*blob;
 };
 

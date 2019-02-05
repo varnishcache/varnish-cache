@@ -571,7 +571,7 @@ shard_param_args(VRT_CTX,
 					 who, p->vcl_name, by_s);
 				return (NULL);
 			}
-			if (key_blob == NULL || key_blob->len <= 0 ||
+			if (key_blob == NULL || key_blob->len == 0 ||
 			    key_blob->blob == NULL) {
 				sharddir_err(ctx, SLT_Error, "%s %s: "
 					     "by=BLOB but no or empty key_blob "
