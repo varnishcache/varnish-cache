@@ -1,0 +1,20 @@
+varnishtest "Test that director with sick backends only is shown as sick"
+
+varnish v1 -vcl {
+
+	import directors;
+
+	probe p { .url = "/foo"; }
+	backend b1 { .host = "${bad_backend}"; .probe = p;}
+	backend b2 { .host = "${bad_backend}"; .probe = p;}
+	backend b3 { .host = "${bad_backend}"; .probe = p;}
+
+	sub vcl_init {
+		new foo = directors.random();
+		foo.add_backend(b1, 1);
+		foo.add_backend(b2, 1);
+		foo.add_backend(b3, 1);
+	}
+} -start
+
+varnish v1 -cliexpect "foo.*sick" "backend.list"
