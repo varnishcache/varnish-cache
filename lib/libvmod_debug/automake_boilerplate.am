@@ -12,22 +12,22 @@ vmoddir = $(pkglibdir)/vmods
 vmodtool = $(top_srcdir)/lib/libvcc/vmodtool.py
 vmodtoolargs = --strict --boilerplate
 
-vmod_LTLIBRARIES = libvmod_vtc.la
+vmod_LTLIBRARIES = libvmod_debug.la
 
-libvmod_vtc_la_CFLAGS = \
+libvmod_debug_la_CFLAGS = \
 	@SAN_CFLAGS@
 
-libvmod_vtc_la_LDFLAGS = \
-	-export-symbols-regex 'Vmod_vtc_Data' \
+libvmod_debug_la_LDFLAGS = \
+	-export-symbols-regex 'Vmod_debug_Data' \
 	$(AM_LDFLAGS) \
 	$(VMOD_LDFLAGS) \
 	@SAN_LDFLAGS@
 
-nodist_libvmod_vtc_la_SOURCES = vcc_if.c vcc_if.h
+nodist_libvmod_debug_la_SOURCES = vcc_if.c vcc_if.h
 
-$(libvmod_vtc_la_OBJECTS): vcc_if.h
+$(libvmod_debug_la_OBJECTS): vcc_if.h
 
-vcc_if.h vmod_vtc.rst vmod_vtc.man.rst: vcc_if.c
+vcc_if.h vmod_debug.rst vmod_debug.man.rst: vcc_if.c
 
 vcc_if.c: $(vmodtool) $(srcdir)/vmod.vcc
 	@PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/vmod.vcc
@@ -35,6 +35,6 @@ vcc_if.c: $(vmodtool) $(srcdir)/vmod.vcc
 EXTRA_DIST = vmod.vcc automake_boilerplate.am
 
 CLEANFILES = $(builddir)/vcc_if.c $(builddir)/vcc_if.h \
-	$(builddir)/vmod_vtc.rst \
-	$(builddir)/vmod_vtc.man.rst
+	$(builddir)/vmod_debug.rst \
+	$(builddir)/vmod_debug.man.rst
 

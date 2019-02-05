@@ -66,6 +66,7 @@ libvmod_XXX_la_CFLAGS = \\
 \t@SAN_CFLAGS@
 
 libvmod_XXX_la_LDFLAGS = \\
+\t-export-symbols-regex 'Vmod_XXX_Data' \\
 \t$(AM_LDFLAGS) \\
 \t$(VMOD_LDFLAGS) \\
 \t@SAN_LDFLAGS@

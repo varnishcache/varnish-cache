@@ -18,6 +18,7 @@ libvmod_std_la_CFLAGS = \
 	@SAN_CFLAGS@
 
 libvmod_std_la_LDFLAGS = \
+	-export-symbols-regex 'Vmod_std_Data' \
 	$(AM_LDFLAGS) \
 	$(VMOD_LDFLAGS) \
 	@SAN_LDFLAGS@

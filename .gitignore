@@ -3,6 +3,7 @@ Makefile
 Makefile.in
 
 # ...
+_*
 .deps/
 .libs/
 *.o
