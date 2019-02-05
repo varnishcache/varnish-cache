@@ -53,6 +53,7 @@
  *
  *
  * 9.0 (scheduled for 2019-03-15)
+ *	Make 'len' in vmod_priv and vrt_blob a 'long'
  *	HTTP_Copy() removed
  *	HTTP_Dup() added
  *	HTTP_Clone() added
@@ -177,7 +178,7 @@ struct strands {
 
 struct vrt_blob {
 	unsigned	type;
-	size_t		len;
+	long		len;
 	const void	*blob;
 };
 
@@ -531,7 +532,7 @@ typedef int vmod_event_f(VRT_CTX, struct vmod_priv *, enum vcl_event_e);
 typedef void vmod_priv_free_f(void *);
 struct vmod_priv {
 	void			*priv;
-	int			len;
+	long			len;
 	vmod_priv_free_f	*free;
 };
 

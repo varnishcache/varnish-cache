@@ -68,7 +68,7 @@ pan_privs(struct vsb *vsb, const struct vrt_privs *privs)
 		VRBT_FOREACH(vp, vrt_priv_tree, &privs->privs) {
 			PAN_CheckMagic(vsb, vp, VRT_PRIV_MAGIC);
 			VSB_printf(vsb,
-			    "priv {p %p l %d f %p} vmod %jx\n",
+			    "priv {p %p l %ld f %p} vmod %jx\n",
 			    vp->priv->priv,
 			    vp->priv->len,
 			    vp->priv->free,
