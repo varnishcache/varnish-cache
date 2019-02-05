@@ -527,7 +527,7 @@ vmod_sub(VRT_CTX, VCL_BLOB b, VCL_BYTES n, VCL_BYTES off)
 
 	if (off + n > b->len) {
 		VERR(ctx, "size %jd from offset %jd requires more bytes than "
-		     "blob length %zd in blob.sub()",
+		     "blob length %ld in blob.sub()",
 		     (intmax_t)n, (intmax_t)off, b->len);
 		return NULL;
 	}
