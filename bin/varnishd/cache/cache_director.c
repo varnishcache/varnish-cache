@@ -278,7 +278,7 @@ struct list_args {
 };
 
 static const char *
-cli_health(VRT_CTX, struct director *d)
+cli_health(VRT_CTX, const struct director *d)
 {
 	VCL_BOOL healthy = VRT_Healthy(ctx, d, NULL);
 
