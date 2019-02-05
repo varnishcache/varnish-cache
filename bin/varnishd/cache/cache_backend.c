@@ -458,8 +458,12 @@ vbe_list(VRT_CTX, const struct director *d, struct vsb *vsb, int vflag,
 
 	if (bp->probe != NULL)
 		VBP_Status(vsb, bp, vflag | pflag, jflag);
-	else if ((vflag | pflag) == 0 && jflag)
+	else if (jflag && (vflag | pflag))
+		VSB_printf(vsb, "{},\n");
+	else if (jflag)
 		VSB_printf(vsb, "\"%s\"", d->sick ? "sick" : "healthy");
+	else if (vflag | pflag)
+		return;
 	else
 		VSB_printf(vsb, "%-10s", d->sick ? "sick" : "healthy");
 }
