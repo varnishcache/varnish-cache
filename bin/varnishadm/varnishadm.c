@@ -73,7 +73,7 @@
 	} while (0)
 
 
-static double timeout = 5;	// XXX should be settable by arg ?
+static const double timeout = 5;	// XXX should be settable by arg ?
 
 static void
 cli_write(int sock, const char *s)

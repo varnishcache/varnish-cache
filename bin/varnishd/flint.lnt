@@ -72,7 +72,8 @@
 // Macros defined differently in each VMOD
 -esym(767, VPFX)	// macro '___' was defined differently in another module
 -esym(767, VARGS)	// macro '___' was defined differently in another module
--esym(767, VENUM)	// macro '___' was defined differently in another module 
+-esym(767, VENUM)	// macro '___' was defined differently in another module
+-esym(14, enum_vmod*)	// Symbol '___' previously defined (___)
 //////////////
 -efunc(1791, pdiff)	// return last on line
 //////////////

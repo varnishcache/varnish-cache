@@ -75,7 +75,6 @@ extern const char * const VCL_TEMP_COLD;
 extern const char * const VCL_TEMP_WARM;
 extern const char * const VCL_TEMP_BUSY;
 extern const char * const VCL_TEMP_COOLING;
-extern const char * const VCL_TEMP_LABEL;
 
 /*
  * NB: The COOLING temperature is neither COLD nor WARM.

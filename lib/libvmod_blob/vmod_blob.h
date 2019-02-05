@@ -32,13 +32,13 @@
 #include <sys/types.h>
 
 enum encoding {
-	_INVALID = 0,
+	__INVALID_ENCODING = 0,
 #define VMODENUM(x) x,
 #include "tbl_encodings.h"
 	__MAX_ENCODING
 };
 
-#define AENC(enc) assert((enc) > _INVALID && (enc) < __MAX_ENCODING)
+#define AENC(enc) assert((enc) > __INVALID_ENCODING && (enc) < __MAX_ENCODING)
 
 /*
  * The enums MUST appear in this order, since LOWER and UPPER are used to

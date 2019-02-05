@@ -50,7 +50,9 @@ const char * const VCL_TEMP_COLD = "cold";
 const char * const VCL_TEMP_WARM = "warm";
 const char * const VCL_TEMP_BUSY = "busy";
 const char * const VCL_TEMP_COOLING = "cooling";
-const char * const VCL_TEMP_LABEL = "label";
+
+// not really a state
+static const char * const VCL_TEMP_LABEL = "label";
 
 /*
  * XXX: Presently all modifications to this list happen from the
