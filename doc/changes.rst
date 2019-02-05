@@ -62,6 +62,12 @@ Varnish Cache trunk (ongoing)
   ``vcl_dir`` -> ``vcl_path``
   ``vmod_dir`` -> ``vmod_path``
 
+* Changed the width of the `Probe` column of the ``backend.list``
+  cli command from 10 to 14 characters
+
+  For best forward compatibility, we recommend that scripts parse JSON
+  output as obtained using the ``-j`` option.
+
 VCL
 ---
 
