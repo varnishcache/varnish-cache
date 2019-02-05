@@ -12,7 +12,8 @@ process p1 {
 } -start
 shell {
 	exec varnishlog -n ${v1_name} -D -P ${tmpdir}/vlog.pid \
-	    -w ${tmpdir}/vlog.bin -R 10/s
+	    -w ${tmpdir}/vlog.bin -R 10/s \
+	    -i RespStatus -i ReqURL -i BereqURL
 }
 
 shell -match "Usage: .*varnishlog <options>" \
