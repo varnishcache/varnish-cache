@@ -218,7 +218,7 @@ in nanoseconds.
 
 For comparable results, a higher size run should called first and discarded.
 
-$Object obj_opt(PRIV_CALL, PRIV_VCL, PRIV_TASK,
+$Object NULL_OK obj_opt(PRIV_CALL, PRIV_VCL, PRIV_TASK,
 		[STRING s], [BOOL b])
 
 Test object constructor with all the fancy stuff.

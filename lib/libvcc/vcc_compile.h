@@ -134,6 +134,7 @@ struct symbol {
 	unsigned			magic;
 #define SYMBOL_MAGIC			0x3368c9fb
 	VTAILQ_ENTRY(symbol)		list;
+	VTAILQ_ENTRY(symbol)		sideways;
 	VTAILQ_HEAD(,symbol)		children;
 
 	char				*name;
@@ -254,6 +255,8 @@ struct vcc {
 	struct symbol		*first_director;
 	const char		*default_director;
 	const char		*default_probe;
+
+	VTAILQ_HEAD(, symbol)	sym_objects;
 
 	unsigned		unique;
 	unsigned		vmod_count;

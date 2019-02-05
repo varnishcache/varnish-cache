@@ -353,6 +353,7 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 	struct vsb *buf;
 	const struct vjsn_val *vv, *vf;
 	const char *p;
+	int null_ok = 0;
 
 	(void)sym;
 	ExpectErr(tl, ID);
@@ -380,8 +381,19 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 	}
 
 	CAST_OBJ_NOTNULL(vv, sy2->eval_priv, VJSN_VAL_MAGIC);
+	// vv = object name
 
 	vv = VTAILQ_NEXT(vv, list);
+	// vv = flags
+	assert(vv->type == VJSN_OBJECT);
+	VTAILQ_FOREACH(vf, &vv->children, list)
+		if (!strcmp(vf->name, "NULL_OK") && vf->type == VJSN_TRUE)
+			null_ok = 1;
+	if (!null_ok)
+		VTAILQ_INSERT_TAIL(&tl->sym_objects, sy1, sideways);
+
+	vv = VTAILQ_NEXT(vv, list);
+	// vv = struct name
 
 	Fh(tl, 0, "static %s *%s;\n\n", vv->value, sy1->rname);
 	vv = VTAILQ_NEXT(vv, list);
@@ -412,7 +424,8 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 	vf = VTAILQ_FIRST(&vf->children);
 	vf = VTAILQ_NEXT(vf, list);
 	ifp = New_IniFin(tl);
-	VSB_printf(ifp->fin, "\t\t%s(&%s);", vf->value, sy1->rname);
+	VSB_printf(ifp->fin, "\t\tif (%s)\n", sy1->rname);
+	VSB_printf(ifp->fin, "\t\t\t\t%s(&%s);", vf->value, sy1->rname);
 
 	/* Instantiate symbols for the methods */
 	buf = VSB_new_auto();
