@@ -515,7 +515,7 @@ void
 VBP_Status(struct vsb *vsb, const struct backend *be, int details, int json)
 {
 	struct vbp_target *vt;
-	char buf[12];
+	char buf[VDI_LIST_W_PROBE + 2];
 
 	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
 	vt = be->probe;
@@ -527,7 +527,7 @@ VBP_Status(struct vsb *vsb, const struct backend *be, int details, int json)
 		if (json)
 			VSB_printf(vsb, "\"%s\"", buf);
 		else
-			VSB_printf(vsb, "%-10s", buf);
+			VSB_printf(vsb, "%-*s", VDI_LIST_W_PROBE, buf);
 		return;
 	}
 

@@ -301,12 +301,14 @@ do_list(struct cli *cli, struct director *d, void *priv)
 	ctx = VCL_Get_CliCtx(0,0);
 
 	// XXX admin health "probe" for the no-probe case is confusing
-	VCLI_Out(cli, "\n%-30s %-7s ", d->vdir->cli_name, VDI_Ahealth(d));
+	VCLI_Out(cli, "\n%-*s %-*s ",
+	     VDI_LIST_W_NAME, d->vdir->cli_name,
+	     VDI_LIST_W_ADMIN, VDI_Ahealth(d));
 
 	if (d->vdir->methods->list != NULL)
 		d->vdir->methods->list(ctx, d, cli->sb, 0, 0, 0);
 	else
-		VCLI_Out(cli, "%-10s", cli_health(ctx, d));
+		VCLI_Out(cli, "%-*s", VDI_LIST_W_PROBE, cli_health(ctx, d));
 
 	VTIM_format(d->vdir->health_changed, time_str);
 	VCLI_Out(cli, " %s", time_str);
@@ -402,8 +404,11 @@ cli_backend_list(struct cli *cli, const char * const *av, void *priv)
 		VCLI_Out(cli, "}");
 		VCLI_JSON_end(cli);
 	} else {
-		VCLI_Out(cli, "%-30s %-7s %-10s %s",
-		    "Backend name", "Admin", "Probe", "Last change");
+		VCLI_Out(cli, "%-*s %-*s %-*s %s",
+		    VDI_LIST_W_NAME, "Backend name",
+		    VDI_LIST_W_ADMIN, "Admin",
+		    VDI_LIST_W_PROBE, "Probe",
+		    "Last change");
 		(void)VCL_IterDirector(cli, av[i], do_list, la);
 	}
 }

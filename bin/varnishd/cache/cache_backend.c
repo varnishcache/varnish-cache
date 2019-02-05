@@ -465,7 +465,8 @@ vbe_list(VRT_CTX, const struct director *d, struct vsb *vsb, int vflag,
 	else if (vflag | pflag)
 		return;
 	else
-		VSB_printf(vsb, "%-10s", d->sick ? "sick" : "healthy");
+		VSB_printf(vsb, "%-*s", VDI_LIST_W_PROBE,
+		    d->sick ? "sick" : "healthy");
 }
 
 /*--------------------------------------------------------------------
