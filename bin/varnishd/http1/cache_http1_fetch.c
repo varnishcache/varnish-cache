@@ -111,6 +111,15 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 		i = VRB_Iterate(bo->req, vbf_iter_req_body, bo);
 
 		if (bo->req->req_body_status == REQ_BODY_FAIL) {
+			/*
+			 * XXX: (#2332) We should test to see if the backend
+			 * XXX: sent us some headers explaining why.
+			 * XXX: This is hard because of the mistaken API split
+			 * XXX: between cache_backend.c and V1F, and therefore
+			 * XXX: Parked in this comment, pending renovation of
+			 * XXX: the VDI/backend-protocol API to allow non-H1
+			 * XXX: backends.
+			 */
 			assert(i < 0);
 			VSLb(bo->vsl, SLT_FetchError,
 			    "req.body read error: %d (%s)",
