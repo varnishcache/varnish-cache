@@ -1,8 +1,13 @@
 varnishtest "Dropping polling of a backend that listens at UDS"
 
-server s1 -listen "${tmpdir}/s1.sock" -repeat 40 {
-	rxreq
-	txresp
+server s1 -listen "${tmpdir}/s1.sock" {
+	non_fatal
+	timeout 3
+	loop 40 {
+		rxreq
+		txresp
+		accept
+	}
 } -start
 
 varnish v1 -vcl {
