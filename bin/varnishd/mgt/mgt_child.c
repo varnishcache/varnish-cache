@@ -180,18 +180,16 @@ mch_cli_panic_clear(struct cli *cli, const char * const *av, void *priv)
  *
  * This is likely to a bit on the low side, as libc and other libraries
  * has a tendency to cache file descriptors (syslog, resolver, etc.)
- * so we add a margin of 100 fds.
+ * so we add a margin of 10 fds.
  *
- * for added safety, we check that we see no file descriptor open for
+ * For added safety, we check that we see no file descriptor open for
  * another margin above the limit for which we close by design
  */
 
 static int		mgt_max_fd;
 
-#define CLOSE_FD_UP_TO	(mgt_max_fd + 100)
-// XXX should work now - engage?
-//#define CLOSE_FD_UP_TO	mgt_max_fd
-#define CHECK_FD_UP_TO	(CLOSE_FD_UP_TO + 100)
+#define CLOSE_FD_UP_TO	(mgt_max_fd + 10)
+#define CHECK_FD_UP_TO	(CLOSE_FD_UP_TO + 10)
 
 void
 MCH_TrackHighFd(int fd)
