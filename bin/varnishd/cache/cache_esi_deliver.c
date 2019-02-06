@@ -301,6 +301,7 @@ ved_vdp_esi_bytes(struct req *req, enum vdp_action act, void **priv,
 	struct ecx *ecx;
 	int retval = 0;
 
+	AN(priv);
 	CAST_OBJ_NOTNULL(ecx, *priv, ECX_MAGIC);
 	pp = ptr;
 
