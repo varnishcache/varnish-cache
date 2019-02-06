@@ -633,7 +633,7 @@ http_swallow_body(struct http *hp, char * const *hh, int body)
 static void
 http_rxhdr(struct http *hp)
 {
-	int i;
+	int i, j;
 	char *p;
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
@@ -641,7 +641,7 @@ http_rxhdr(struct http *hp)
 	hp->body = NULL;
 	bprintf(hp->bodylen, "%s", "<undef>");
 	while (1) {
-		(void)http_rxchar(hp, 1, 0);
+		j = http_rxchar(hp, 1, 1);
 		p = hp->rxbuf + hp->prxbuf - 1;
 		for (i = 0; p > hp->rxbuf; p--) {
 			if (*p != '\n')
@@ -651,12 +651,14 @@ http_rxhdr(struct http *hp)
 			if (++i == 2)
 				break;
 		}
-		if (i == 2)
+		if (i == 2 || !j)
 			break;
 	}
 	vtc_dump(hp->vl, 4, "rxhdr", hp->rxbuf, -1);
 	vtc_log(hp->vl, 4, "rxhdrlen = %zd", strlen(hp->rxbuf));
 	hp->body = hp->rxbuf + hp->prxbuf;
+	if (!j)
+		vtc_fatal(hp->vl, "EOF timeout=%d", hp->timeout);
 }
 
 /* SECTION: client-server.spec.rxresp
