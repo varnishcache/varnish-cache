@@ -3,7 +3,11 @@ varnishtest "Test Backend Polling with a backend listening at a UDS"
 barrier b1 cond 2
 
 server s1 -listen "${tmpdir}/s1.sock" {
+	timeout 3
+	fatal
+
 	# Probes
+
 	loop 8 {
 		rxreq
 		expect req.url == "/"
@@ -39,7 +43,7 @@ varnish v1 -vcl {
 		.path = "${s1_sock}";
 		.probe = {
 			.timeout = 1 s;
-			.interval = 0.1 s;
+			.interval = 0.5 s;
 		}
 	}
 
@@ -47,5 +51,5 @@ varnish v1 -vcl {
 
 barrier b1 sync
 
-varnish v1 -cliexpect "^CLI RX|  -+U+ Good UNIX" "backend.list -p"
+varnish v1 -cliexpect "^CLI RX|  -+U+-{0,5} Good UNIX" "backend.list -p"
 varnish v1 -cliexpect "^CLI RX|  -+H{10}-{5}H{2}-{0,5} Happy" "backend.list -p"
