@@ -67,6 +67,7 @@ vrg_range_bytes(struct req *req, enum vdp_action act, void **priv,
 	struct vrg_priv *vrg_priv;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	AN(priv);
 	CAST_OBJ_NOTNULL(vrg_priv, *priv, VRG_PRIV_MAGIC);
 
 	l = vrg_priv->range_low - vrg_priv->range_off;
