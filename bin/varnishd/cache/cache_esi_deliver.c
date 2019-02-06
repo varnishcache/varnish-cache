@@ -282,6 +282,7 @@ ved_vdp_esi_fini(struct req *req, void **priv)
 	struct ecx *ecx;
 
 	(void)req;
+	AN(priv);
 	CAST_OBJ_NOTNULL(ecx, *priv, ECX_MAGIC);
 	FREE_OBJ(ecx);
 	*priv = NULL;
