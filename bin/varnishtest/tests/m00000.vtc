@@ -120,3 +120,12 @@ varnish v1 -errvcl {Expression has type STRING, expected REAL} {
 		set resp.http.who = std.random("foo", "bar");
 	}
 }
+
+varnish v1 -errvcl {Failed initialization} {
+	import debug;
+	backend default { .host = "127.0.0.1"; }
+	sub vcl_init {
+		return (fail);
+		new xyz = debug.obj();
+	}
+}
