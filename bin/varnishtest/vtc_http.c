@@ -420,6 +420,10 @@ http_splitheader(struct http *hp, int req)
 
 	n = 0;
 	p = hp->rxbuf;
+	if (*p == '\0') {
+		vtc_log(hp->vl, 4, "No headers");
+		return;
+	}
 
 	/* REQ/PROTO */
 	while (vct_islws(*p))
@@ -638,6 +642,7 @@ http_rxhdr(struct http *hp)
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	hp->prxbuf = 0;
+	hp->rxbuf[0] = '\0';
 	hp->body = NULL;
 	bprintf(hp->bodylen, "%s", "<undef>");
 	while (1) {
@@ -654,11 +659,11 @@ http_rxhdr(struct http *hp)
 		if (i == 2 || !j)
 			break;
 	}
-	vtc_dump(hp->vl, 4, "rxhdr", hp->rxbuf, -1);
-	vtc_log(hp->vl, 4, "rxhdrlen = %zd", strlen(hp->rxbuf));
-	hp->body = hp->rxbuf + hp->prxbuf;
+	vtc_dump(hp->vl, 4, "rxhdr", hp->rxbuf, hp->prxbuf);
+	vtc_log(hp->vl, 4, "rxhdrlen = %d", hp->prxbuf);
 	if (!j)
-		vtc_fatal(hp->vl, "EOF timeout=%d", hp->timeout);
+		vtc_log(hp->vl, hp->fatal, "EOF timeout=%d", hp->timeout);
+	hp->body = hp->rxbuf + hp->prxbuf;
 }
 
 /* SECTION: client-server.spec.rxresp
