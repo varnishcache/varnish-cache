@@ -254,6 +254,7 @@ ved_vdp_esi_init(struct req *req, void **priv)
 {
 	struct ecx *ecx;
 
+	AN(priv);
 	AZ(*priv);
 	ALLOC_OBJ(ecx, ECX_MAGIC);
 	AN(ecx);
