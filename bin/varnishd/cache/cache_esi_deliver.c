@@ -833,14 +833,14 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 
 		INIT_OBJ(foo, VED_FOO_MAGIC);
 		foo->ecx = ecx;
-		(void)VDP_Push(req, &ved_gzgz, foo);
+		AZ(VDP_Push(req, &ved_gzgz, foo));
 
 	} else if (ecx->isgzip && !i) {
 		/* Non-Gzip'ed include in gzip'ed parent */
-		(void)VDP_Push(req, &ved_pretend_gz, ecx);
+		AZ(VDP_Push(req, &ved_pretend_gz, ecx));
 	} else {
 		/* Anything else goes straight through */
-		(void)VDP_Push(req, &ved_ved, ecx);
+		AZ(VDP_Push(req, &ved_ved, ecx));
 	}
 	(void)VDP_DeliverObj(req);
 	(void)VDP_bytes(req, VDP_FLUSH, NULL, 0);
