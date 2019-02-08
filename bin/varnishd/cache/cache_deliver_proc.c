@@ -128,10 +128,10 @@ VDP_close(struct req *req)
 			AN(vdpe);
 		if (vdpe != NULL) {
 			CHECK_OBJ(vdpe, VDP_ENTRY_MAGIC);
-			VTAILQ_REMOVE(&vdc->vdp, vdpe, list);
 			if (vdpe->vdp->fini != NULL)
 				AZ(vdpe->vdp->fini(req, &vdpe->priv));
 			AZ(vdpe->priv);
+			VTAILQ_REMOVE(&vdc->vdp, vdpe, list);
 		}
 		vdc->nxt = VTAILQ_FIRST(&vdc->vdp);
 	}

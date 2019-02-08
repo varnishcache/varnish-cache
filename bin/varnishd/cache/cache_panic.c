@@ -360,6 +360,7 @@ pan_vfp(struct vsb *vsb, const struct vfp_ctx *vfc)
 
 	VSB_printf(vsb, "vfc = %p {\n", vfc);
 	VSB_indent(vsb, 2);
+	PAN_CheckMagic(vsb, vfc, VFP_CTX_MAGIC);
 	VSB_printf(vsb, "failed = %d,\n", vfc->failed);
 	VSB_printf(vsb, "req = %p,\n", vfc->req);
 	VSB_printf(vsb, "resp = %p,\n", vfc->resp);
@@ -370,8 +371,7 @@ pan_vfp(struct vsb *vsb, const struct vfp_ctx *vfc)
 		VSB_printf(vsb, "filters = {\n");
 		VSB_indent(vsb, 2);
 		VTAILQ_FOREACH(vfe, &vfc->vfp, list) {
-			VSB_printf(vsb, "%s = %p {\n",
-				   vfe->vfp->name, vfe);
+			VSB_printf(vsb, "%s = %p {\n", vfe->vfp->name, vfe);
 			VSB_indent(vsb, 2);
 			VSB_printf(vsb, "priv1 = %p,\n", vfe->priv1);
 			VSB_printf(vsb, "priv2 = %zd,\n", vfe->priv2);
@@ -388,6 +388,30 @@ pan_vfp(struct vsb *vsb, const struct vfp_ctx *vfc)
 	VSB_printf(vsb, "},\n");
 }
 
+static void
+pan_vdp(struct vsb *vsb, const struct vdp_ctx *vdc)
+{
+	struct vdp_entry *vde;
+
+	VSB_printf(vsb, "vdc = %p {\n", vdc);
+	VSB_indent(vsb, 2);
+	PAN_CheckMagic(vsb, vdc, VDP_CTX_MAGIC);
+	VSB_printf(vsb, "nxt = %p,\n", vdc->nxt);
+	VSB_printf(vsb, "retval = %d,\n", vdc->retval);
+
+	if (!VTAILQ_EMPTY(&vdc->vdp)) {
+		VSB_printf(vsb, "filters = {\n");
+		VSB_indent(vsb, 2);
+		VTAILQ_FOREACH(vde, &vdc->vdp, list)
+			VSB_printf(vsb, "%s = %p { priv = %p }\n",
+			    vde->vdp->name, vde, vde->priv);
+		VSB_indent(vsb, -2);
+		VSB_printf(vsb, "},\n");
+	}
+
+	VSB_indent(vsb, -2);
+	VSB_printf(vsb, "},\n");
+}
 
 static void
 pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
@@ -511,6 +535,8 @@ pan_req(struct vsb *vsb, const struct req *req)
 	pan_http(vsb, "req", req->http);
 	if (req->resp->ws != NULL)
 		pan_http(vsb, "resp", req->resp);
+	if (req->vdc != NULL)
+		pan_vdp(vsb, req->vdc);
 
 	VCL_Panic(vsb, "vcl", req->vcl);
 	VCL_Panic(vsb, "vcl0", req->vcl0);
