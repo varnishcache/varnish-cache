@@ -277,7 +277,6 @@ start_test(void)
 	assert(jp->buf != MAP_FAILED);
 	memset(jp->buf, 0, jp->bufsiz);
 
-	VRND_SeedAll();
 	bprintf(tmpdir, "%s/vtc.%d.%08x", tmppath, (int)getpid(),
 		(unsigned)random());
 	AZ(mkdir(tmpdir, 0711));
@@ -538,6 +537,7 @@ main(int argc, char * const *argv)
 {
 	int ch, i;
 	int ntest = 1;			/* Run tests this many times */
+	int nstart = 0;
 	uintmax_t bufsiz;
 	const char *p;
 	char buf[PATH_MAX];
@@ -566,6 +566,7 @@ main(int argc, char * const *argv)
 	if (p != NULL)
 		vtc_maxdur = atoi(p);
 
+	VRND_SeedAll();
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
 	while ((ch = getopt(argc, argv, "b:D:hij:kLln:p:qt:vW")) != -1) {
@@ -658,7 +659,7 @@ main(int argc, char * const *argv)
 			start_test();
 			njob++;
 			/* Stagger ramp-up */
-			if (njob < npar)
+			if (nstart++ < npar)
 				(void)usleep(random() % 100000L);
 			i = 1;
 			continue;
