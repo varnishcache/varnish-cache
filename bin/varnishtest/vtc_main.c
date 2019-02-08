@@ -110,6 +110,9 @@ int leave_temp;
 int vtc_witness = 0;
 static struct vsb *cbvsb;
 
+static int cleaner_fd = -1;
+static pid_t cleaner_pid;
+
 static struct buf *
 get_buf(void)
 {
@@ -174,6 +177,7 @@ usage(void)
 #define FMT "    %-28s # %s\n"
 	fprintf(stderr, FMT, "-b size",
 	    "Set internal buffer size (default: 1M)");
+	fprintf(stderr, FMT, "-C", "Use cleaner subprocess");
 	fprintf(stderr, FMT, "-D name=val", "Define macro");
 	fprintf(stderr, FMT, "-i", "Find varnish binaries in build tree");
 	fprintf(stderr, FMT, "-j jobs", "Run this many tests in parallel");
@@ -187,6 +191,86 @@ usage(void)
 	fprintf(stderr, FMT, "-v", "Verbose mode: always report test log");
 	fprintf(stderr, FMT, "-W", "Enable the witness facility for locking");
 	exit(1);
+}
+
+/**********************************************************************
+ * When running many tests, cleaning the tmpdir with "rm -rf" becomes
+ * chore which limits our performance.
+ * When the number of tests are above 100, we spawn a child-process
+ * to do that for us.
+ */
+
+static void
+cleaner_do(const char *dirname)
+{
+	char buf[BUFSIZ];
+
+	AZ(memcmp(dirname, tmppath, strlen(tmppath)));
+	if (cleaner_pid > 0) {
+		bprintf(buf, "%s\n", dirname);
+		assert(write(cleaner_fd, buf, strlen(buf)) == strlen(buf));
+		return;
+	}
+	bprintf(buf, "exec /bin/rm -rf %s\n", dirname);
+	AZ(system(buf));
+}
+
+static void
+cleaner_setup(void)
+{
+	int p[2], st;
+	char buf[BUFSIZ];
+	char *q;
+	pid_t pp;
+
+	AZ(pipe(p));
+	assert(p[0] > STDERR_FILENO);
+	assert(p[1] > STDERR_FILENO);
+	cleaner_pid = fork();
+	assert(cleaner_pid >= 0);
+	if (cleaner_pid == 0) {
+		closefd(&p[1]);
+		AZ(nice(1));
+		setbuf(stdin, NULL);
+		AZ(dup2(p[0], STDIN_FILENO));
+		while (fgets(buf, sizeof buf, stdin)) {
+			AZ(memcmp(buf, tmppath, strlen(tmppath)));
+			q = buf + strlen(buf);
+			assert(q > buf);
+			assert(q[-1] == '\n');
+			q[-1] = '\0';
+
+			/* Dont expend a shell on running /bin/rm */
+			pp = fork();
+			assert(pp >= 0);
+			if (pp == 0)
+				exit(execl("/bin/rm", "rm", "-rf", buf, NULL));
+			assert(waitpid(pp, &st, 0) == pp);
+			AZ(st);
+		}
+		exit(0);
+	}
+	closefd(&p[0]);
+	cleaner_fd = p[1];
+}
+
+static void
+cleaner_neuter(void)
+{
+	if (cleaner_pid > 0)
+		closefd(&cleaner_fd);
+}
+
+static void
+cleaner_finish(void)
+{
+	int st;
+
+	if (cleaner_pid > 0) {
+		closefd(&cleaner_fd);
+		assert(waitpid(cleaner_pid, &st, 0) == cleaner_pid);
+		AZ(st);
+	}
 }
 
 /**********************************************************************
@@ -254,8 +338,7 @@ tst_cb(const struct vev *ve, int what)
 			vtc_fail++;
 
 		if (leave_temp == 0 || (leave_temp == 1 && ecode <= 1)) {
-			bprintf(buf, "rm -rf %s", jp->tmpdir);
-			AZ(system(buf));
+			cleaner_do(jp->tmpdir);
 		} else {
 			bprintf(buf, "%s/LOG", jp->tmpdir);
 			f = fopen(buf, "w");
@@ -334,6 +417,7 @@ start_test(void)
 	jp->child = fork();
 	assert(jp->child >= 0);
 	if (jp->child == 0) {
+		cleaner_neuter();	// Too dangerous to have around
 		AZ(setpgid(getpid(), 0));
 		VFIL_null_fd(STDIN_FILENO);
 		assert(dup2(p[1], STDOUT_FILENO) == STDOUT_FILENO);
@@ -572,6 +656,7 @@ main(int argc, char * const *argv)
 	int ch, i;
 	int ntest = 1;			/* Run tests this many times */
 	int nstart = 0;
+	int use_cleaner = 0;
 	uintmax_t bufsiz;
 	const char *p;
 	char buf[PATH_MAX];
@@ -605,7 +690,7 @@ main(int argc, char * const *argv)
 	AN(cbvsb);
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
-	while ((ch = getopt(argc, argv, "b:D:hij:kLln:p:qt:vW")) != -1) {
+	while ((ch = getopt(argc, argv, "b:CD:hij:kLln:p:qt:vW")) != -1) {
 		switch (ch) {
 		case 'b':
 			if (VNUM_2bytes(optarg, &bufsiz, 0)) {
@@ -619,6 +704,9 @@ main(int argc, char * const *argv)
 				exit(2);
 			}
 			vtc_bufsiz = (unsigned)bufsiz;
+			break;
+		case 'C':
+			use_cleaner = !use_cleaner;
 			break;
 		case 'D':
 			if (!parse_D_opt(optarg)) {
@@ -689,6 +777,9 @@ main(int argc, char * const *argv)
 
 	vb = VEV_New();
 
+	if (use_cleaner)
+		cleaner_setup();
+
 	i = 0;
 	while (!VTAILQ_EMPTY(&tst_head) || i) {
 		if (!VTAILQ_EMPTY(&tst_head) && njob < npar) {
@@ -702,6 +793,7 @@ main(int argc, char * const *argv)
 		}
 		i = VEV_Once(vb);
 	}
+	cleaner_finish();
 	if (vtc_continue)
 		fprintf(stderr,
 		    "%d tests failed, %d tests skipped, %d tests passed\n",
