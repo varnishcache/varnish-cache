@@ -55,6 +55,17 @@
 
 static const char *argv0;
 
+struct buf {
+	unsigned		magic;
+#define BUF_MAGIC		0x39d1258a
+	VTAILQ_ENTRY(buf)	list;
+	char			*buf;
+	struct vsb		*diag;
+	size_t			bufsiz;
+};
+
+static VTAILQ_HEAD(, buf) free_bufs = VTAILQ_HEAD_INITIALIZER(free_bufs);
+
 struct vtc_tst {
 	unsigned		magic;
 #define TST_MAGIC		0x618d8b88
@@ -71,13 +82,12 @@ struct vtc_job {
 	pid_t			child;
 	struct vev		*ev;
 	struct vev		*evt;
-	char			*buf;
+	struct buf		*bp;
 	char			*tmpdir;
-	unsigned		bufsiz;
 	double			t0;
-	struct vsb		*diag;
 	int			killed;
 };
+
 
 int iflg = 0;
 unsigned vtc_maxdur = 60;
@@ -98,6 +108,40 @@ char *vmod_path = NULL;
 struct vsb *params_vsb = NULL;
 int leave_temp;
 int vtc_witness = 0;
+static struct vsb *cbvsb;
+
+static struct buf *
+get_buf(void)
+{
+	struct buf *bp;
+
+	bp = VTAILQ_FIRST(&free_bufs);
+	CHECK_OBJ_ORNULL(bp, BUF_MAGIC);
+	if (bp != NULL) {
+		VTAILQ_REMOVE(&free_bufs, bp, list);
+		VSB_clear(bp->diag);
+	} else {
+		ALLOC_OBJ(bp, BUF_MAGIC);
+		AN(bp);
+		bp->bufsiz = vtc_bufsiz;
+		bp->buf = mmap(NULL, bp->bufsiz, PROT_READ|PROT_WRITE,
+		    MAP_ANON | MAP_SHARED, -1, 0);
+		assert(bp->buf != MAP_FAILED);
+		bp->diag = VSB_new_auto();
+		AN(bp->diag);
+	}
+	memset(bp->buf, 0, bp->bufsiz);
+	return (bp);
+}
+
+static void
+rel_buf(struct buf **bp)
+{
+	CHECK_OBJ_NOTNULL(*bp, BUF_MAGIC);
+
+	VTAILQ_INSERT_HEAD(&free_bufs, (*bp), list);
+	*bp = NULL;
+}
 
 /**********************************************************************
  * Parse a -D option argument into a name/val pair, and insert
@@ -160,7 +204,6 @@ tst_cb(const struct vev *ve, int what)
 	double t;
 	FILE *f;
 	char *p;
-	struct vsb *v;
 
 	CAST_OBJ_NOTNULL(jp, ve->priv, JOB_MAGIC);
 
@@ -175,8 +218,9 @@ tst_cb(const struct vev *ve, int what)
 	*buf = '\0';
 	i = read(ve->fd, buf, sizeof buf);
 	if (i > 0)
-		VSB_bcat(jp->diag, buf, i);
+		VSB_bcat(jp->bp->diag, buf, i);
 	if (i == 0) {
+
 		njob--;
 		px = wait4(jp->child, &stx, 0, NULL);
 		assert(px == jp->child);
@@ -187,21 +231,20 @@ tst_cb(const struct vev *ve, int what)
 		if (ecode == 0)
 			ecode = WEXITSTATUS(stx);
 
-		AZ(VSB_finish(jp->diag));
-		v = VSB_new_auto();
-		AN(v);
-		VSB_cat(v, jp->buf);
-		p = strchr(jp->buf, '\0');
-		if (p > jp->buf && p[-1] != '\n')
-			VSB_putc(v, '\n');
-		VSB_quote_pfx(v, "*    diag  0.0 ",
-		    VSB_data(jp->diag), -1, VSB_QUOTE_NONL);
-		AZ(VSB_finish(v));
-		VSB_destroy(&jp->diag);
-		AZ(munmap(jp->buf, jp->bufsiz));
+		AZ(VSB_finish(jp->bp->diag));
+
+		VSB_clear(cbvsb);
+		VSB_cat(cbvsb, jp->bp->buf);
+		p = strchr(jp->bp->buf, '\0');
+		if (p > jp->bp->buf && p[-1] != '\n')
+			VSB_putc(cbvsb, '\n');
+		VSB_quote_pfx(cbvsb, "*    diag  0.0 ",
+		    VSB_data(jp->bp->diag), -1, VSB_QUOTE_NONL);
+		AZ(VSB_finish(cbvsb));
+		rel_buf(&jp->bp);
 
 		if ((ecode > 1 && vtc_verbosity) || vtc_verbosity > 1)
-			printf("%s", VSB_data(v));
+			printf("%s", VSB_data(cbvsb));
 
 		if (!ecode)
 			vtc_good++;
@@ -217,11 +260,10 @@ tst_cb(const struct vev *ve, int what)
 			bprintf(buf, "%s/LOG", jp->tmpdir);
 			f = fopen(buf, "w");
 			AN(f);
-			(void)fprintf(f, "%s\n", VSB_data(v));
+			(void)fprintf(f, "%s\n", VSB_data(cbvsb));
 			AZ(fclose(f));
 		}
 		free(jp->tmpdir);
-		VSB_destroy(&v);
 
 		if (jp->killed)
 			printf("#    top  TEST %s TIMED OUT (kill -9)\n",
@@ -267,15 +309,7 @@ start_test(void)
 	ALLOC_OBJ(jp, JOB_MAGIC);
 	AN(jp);
 
-	jp->diag = VSB_new_auto();
-	AN(jp->diag);
-
-	jp->bufsiz = vtc_bufsiz;
-
-	jp->buf = mmap(NULL, jp->bufsiz, PROT_READ|PROT_WRITE,
-	    MAP_ANON | MAP_SHARED, -1, 0);
-	assert(jp->buf != MAP_FAILED);
-	memset(jp->buf, 0, jp->bufsiz);
+	jp->bp = get_buf();
 
 	bprintf(tmpdir, "%s/vtc.%d.%08x", tmppath, (int)getpid(),
 		(unsigned)random());
@@ -286,7 +320,7 @@ start_test(void)
 	AN(tp->ntodo);
 	tp->ntodo--;
 	VTAILQ_REMOVE(&tst_head, tp, list);
-	if (tp->ntodo >0)
+	if (tp->ntodo > 0)
 		VTAILQ_INSERT_TAIL(&tst_head, tp, list);
 
 	jp->tst = tp;
@@ -306,7 +340,7 @@ start_test(void)
 		assert(dup2(p[1], STDERR_FILENO) == STDERR_FILENO);
 		VSUB_closefrom(STDERR_FILENO + 1);
 		retval = exec_file(jp->tst->filename, jp->tst->script,
-		    jp->tmpdir, jp->buf, jp->bufsiz);
+		    jp->tmpdir, jp->bp->buf, jp->bp->bufsiz);
 		exit(retval);
 	}
 	closefd(&p[1]);
@@ -567,6 +601,8 @@ main(int argc, char * const *argv)
 		vtc_maxdur = atoi(p);
 
 	VRND_SeedAll();
+	cbvsb = VSB_new_auto();
+	AN(cbvsb);
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
 	while ((ch = getopt(argc, argv, "b:D:hij:kLln:p:qt:vW")) != -1) {
