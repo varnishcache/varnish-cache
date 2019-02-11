@@ -114,14 +114,13 @@ Lck__Lock(struct lock *lck, const char *p, int l)
 		Lck_Witness_Lock(ilck, p, l, "");
 	if (DO_DEBUG(DBG_LCK)) {
 		r = pthread_mutex_trylock(&ilck->mtx);
-		if (r == EBUSY)
-			ilck->stat->dbg_busy++;
-		else
-			AZ(r);
+		assert(r == 0 || r == EBUSY);
 	}
 	if (r)
 		AZ(pthread_mutex_lock(&ilck->mtx));
 	AZ(ilck->held);
+	if (r == EBUSY)
+		ilck->stat->dbg_busy++;
 	ilck->stat->locks++;
 	ilck->owner = pthread_self();
 	ilck->held = 1;
