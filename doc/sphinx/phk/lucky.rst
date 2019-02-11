@@ -4,7 +4,7 @@
 Do you feel lucky ?
 ===================
 
-Whenever a corporate cotton-mouth says anything, their lawers
+Whenever a corporate cotton-mouth says anything, their lawyers
 always make them add a footnote to the effect that *"Past performance
 is not predictive of future results."* so they do not get sued for
 being insufficiently clairvoyant.
