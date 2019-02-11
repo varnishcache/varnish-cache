@@ -112,7 +112,7 @@ Lck__Lock(struct lock *lck, const char *p, int l)
 	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC);
 	if (DO_DEBUG(DBG_WITNESS))
 		Lck_Witness_Lock(ilck, p, l, "");
-	else if (DO_DEBUG(DBG_LCK)) {
+	if (DO_DEBUG(DBG_LCK)) {
 		r = pthread_mutex_trylock(&ilck->mtx);
 		if (r == EBUSY)
 			ilck->stat->dbg_busy++;
