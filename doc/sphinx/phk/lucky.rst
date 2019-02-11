@@ -4,7 +4,7 @@
 Do you feel lucky ?
 ===================
 
-Whenever a corporate cotton-mouth says anything, their laywers
+Whenever a corporate cotton-mouth says anything, their lawers
 always make them add a footnote to the effect that *"Past performance
 is not predictive of future results."* so they do not get sued for
 being insufficiently clairvoyant.
@@ -87,8 +87,8 @@ Around the time of the 2019-03-15 release we will gather for a VDD
 and then we will know and be ready to say something more detailed.
 
 I don't think it is realistic to roll out any kind of H3 support
-in the september release, that release will probably only contain
-a some of the necessary prepatory reorganization, so expect to
+in the September release, that release will probably only contain
+a some of the necessary preparatory reorganization, so expect to
 run production on 6.0 LTS for a while.
 
 ---------------------
@@ -138,7 +138,7 @@ to receive the reply from their heartbroken spouse, that you are
 many months too late [#f2]_.
 
 Jacob was not a major persona on the Internet, but between doing a
-lot of interesting stuff as a multi-disicpline phd. in physics,
+lot of interesting stuff as a multi-discipline phd. in physics,
 being a really good Ada programmer, a huge Lego enthusiast, an
 incredibly helpful person *and* really *good* at helping, he had a
 lot of friends in many corners of the Internet.
