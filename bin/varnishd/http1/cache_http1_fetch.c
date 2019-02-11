@@ -199,6 +199,10 @@ V1F_FetchRespHdr(struct busyobj *bo)
 			VSLb(bo->vsl, SLT_FetchError, "overflow");
 			htc->doclose = SC_RX_OVERFLOW;
 			break;
+		case HTC_S_IDLE:
+			VSLb(bo->vsl, SLT_FetchError, "first byte timeout");
+			htc->doclose = SC_RX_TIMEOUT;
+			break;
 		default:
 			VSLb(bo->vsl, SLT_FetchError, "HTC %s (%d)",
 			     HTC_Status(hs), hs);

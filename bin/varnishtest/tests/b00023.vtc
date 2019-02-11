@@ -19,11 +19,17 @@ varnish v1 -vcl+backend {
 	}
 } -start
 
+logexpect l1 -v v1 {
+	expect * 1002   FetchError      "first byte timeout"
+} -start
+
 client c1 {
 	txreq
 	rxresp
 	expect resp.status == 503
 } -run
+
+logexpect l1 -wait
 
 server s1 {
 	rxreq
