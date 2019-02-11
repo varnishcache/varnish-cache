@@ -107,11 +107,20 @@ void v_matchproto_()
 Lck__Lock(struct lock *lck, const char *p, int l)
 {
 	struct ilck *ilck;
+	int r = EINVAL;
 
 	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC);
 	if (DO_DEBUG(DBG_WITNESS))
 		Lck_Witness_Lock(ilck, p, l, "");
-	AZ(pthread_mutex_lock(&ilck->mtx));
+	else if (DO_DEBUG(DBG_LCK)) {
+		r = pthread_mutex_trylock(&ilck->mtx);
+		if (r == EBUSY)
+			ilck->stat->dbg_busy++;
+		else
+			AZ(r);
+	}
+	if (r)
+		AZ(pthread_mutex_lock(&ilck->mtx));
 	AZ(ilck->held);
 	ilck->stat->locks++;
 	ilck->owner = pthread_self();
@@ -162,7 +171,8 @@ Lck__Trylock(struct lock *lck, const char *p, int l)
 		ilck->held = 1;
 		ilck->stat->locks++;
 		ilck->owner = pthread_self();
-	}
+	} else if (DO_DEBUG(DBG_LCK))
+		ilck->stat->dbg_try_fail++;
 	return (r);
 }
 

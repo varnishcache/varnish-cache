@@ -30,5 +30,27 @@
 	:oneliner:	Lock Operations
 
 
+.. varnish_vsc:: dbg_busy
+	:type:	counter
+	:level:	debug
+	:oneliner:	Contended lock operations
+
+	If the ``lck`` debug bit is set: Lock operations which
+	returned EBUSY on the first locking attempt.
+
+	If the ``lck`` debug bit is unset, this counter will never be
+	incremented even if lock operations are contended.
+
+.. varnish_vsc:: dbg_try_fail
+	:type:	counter
+	:level:	debug
+	:oneliner:	Contended trylock operations
+
+	If the ``lck`` debug bit is set: Trylock operations which
+	returned EBUSY.
+
+	If the ``lck`` debug bit is unset, this counter will never be
+	incremented even if lock operations are contended.
+
 .. varnish_vsc_end::	lck
 
