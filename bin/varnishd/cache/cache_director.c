@@ -298,7 +298,7 @@ do_list(struct cli *cli, struct director *d, void *priv)
 	if (d->vdir->admin_health == VDI_AH_DELETED)
 		return (0);
 
-	ctx = VCL_Get_CliCtx(0,0);
+	ctx = VCL_Get_CliCtx(0);
 
 	// XXX admin health "probe" for the no-probe case is confusing
 	VCLI_Out(cli, "\n%-*s %-*s ",
@@ -333,7 +333,7 @@ do_list_json(struct cli *cli, struct director *d, void *priv)
 	if (d->vdir->admin_health == VDI_AH_DELETED)
 		return (0);
 
-	ctx = VCL_Get_CliCtx(0,0);
+	ctx = VCL_Get_CliCtx(0);
 
 	VCLI_Out(cli, "%s", la->jsep);
 	la->jsep = ",\n";

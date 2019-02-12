@@ -109,7 +109,7 @@ VCL_Req2Ctx(struct vrt_ctx *ctx, struct req *req)
 /*--------------------------------------------------------------------*/
 
 struct vrt_ctx *
-VCL_Get_CliCtx(unsigned method, int msg)
+VCL_Get_CliCtx(int msg)
 {
 
 	ASSERT_CLI();
@@ -117,7 +117,6 @@ VCL_Get_CliCtx(unsigned method, int msg)
 	INIT_OBJ(&ctx_cli, VRT_CTX_MAGIC);
 	handling_cli = 0;
 	ctx_cli.handling = &handling_cli;
-	ctx_cli.method = method;
 	ctx_cli.now = VTIM_real();
 	if (msg) {
 		ctx_cli.msg = VSB_new_auto();
@@ -158,6 +157,8 @@ vcl_send_event(VRT_CTX, enum vcl_event_e ev)
 	       ev == VCL_EVENT_WARM ||
 	       ev == VCL_EVENT_COLD ||
 	       ev == VCL_EVENT_DISCARD);
+	assert(ev != VCL_EVENT_LOAD || ctx->method == VCL_MET_INIT);
+	assert(ev != VCL_EVENT_DISCARD || ctx->method == VCL_MET_FINI);
 	AN(ctx->handling);
 	*ctx->handling = 0;
 	AN(ctx->ws);
@@ -533,7 +534,8 @@ vcl_set_state(VRT_CTX, const char *state)
 }
 
 static void
-vcl_cancel_load(VRT_CTX, struct cli *cli, const char *name, const char *step)
+vcl_cancel_load(struct vrt_ctx *ctx, struct cli *cli,
+    const char *name, const char *step)
 {
 	struct vcl *vcl = ctx->vcl;
 
@@ -545,8 +547,9 @@ vcl_cancel_load(VRT_CTX, struct cli *cli, const char *name, const char *step)
 	VCLI_Out(cli, "VCL \"%s\" Failed %s", name, step);
 	if (VSB_len(ctx->msg))
 		VCLI_Out(cli, "\nMessage:\n\t%s", VSB_data(ctx->msg));
-	*ctx->handling = 0;
+	ctx->method = VCL_MET_FINI;
 	AZ(vcl_send_event(ctx, VCL_EVENT_DISCARD));
+	ctx->method = 0;
 	vcl_KillBackends(vcl);
 	free(vcl->loaded_name);
 	VCL_Close(&vcl);
@@ -584,7 +587,9 @@ vcl_load(struct cli *cli, struct vrt_ctx *ctx,
 	ctx->vcl = vcl;
 
 	VSB_clear(ctx->msg);
+	ctx->method = VCL_MET_INIT;
 	i = vcl_send_event(ctx, VCL_EVENT_LOAD);
+	ctx->method = 0;
 	if (i || *ctx->handling != VCL_RET_OK) {
 		vcl_cancel_load(ctx, cli, name, "initialization");
 		return;
@@ -616,7 +621,7 @@ VCL_Poll(void)
 	struct vcl *vcl, *vcl2;
 
 	ASSERT_CLI();
-	ctx = VCL_Get_CliCtx(0, 0);
+	ctx = VCL_Get_CliCtx(0);
 	VTAILQ_FOREACH_SAFE(vcl, &vcl_head, list, vcl2) {
 		if (vcl->temp == VCL_TEMP_BUSY ||
 		    vcl->temp == VCL_TEMP_COOLING) {
@@ -630,10 +635,11 @@ VCL_Poll(void)
 			assert(vcl != vcl_active);
 			assert(VTAILQ_EMPTY(&vcl->ref_list));
 			VTAILQ_REMOVE(&vcl_head, vcl, list);
-			ctx->method = VCL_MET_FINI;
 			ctx->vcl = vcl;
 			ctx->syntax = ctx->vcl->conf->syntax;
+			ctx->method = VCL_MET_FINI;
 			AZ(vcl_send_event(ctx, VCL_EVENT_DISCARD));
+			ctx->method = 0;
 			vcl_KillBackends(vcl);
 			free(vcl->loaded_name);
 			VCL_Close(&vcl);
@@ -732,7 +738,7 @@ vcl_cli_load(struct cli *cli, const char * const *av, void *priv)
 
 	AZ(priv);
 	ASSERT_CLI();
-	ctx = VCL_Get_CliCtx(VCL_MET_INIT, 1);
+	ctx = VCL_Get_CliCtx(1);
 	vcl_load(cli, ctx, av[2], av[3], av[4]);
 	VCL_Rel_CliCtx(&ctx);
 }
@@ -746,7 +752,7 @@ vcl_cli_state(struct cli *cli, const char * const *av, void *priv)
 	ASSERT_CLI();
 	AN(av[2]);
 	AN(av[3]);
-	ctx = VCL_Get_CliCtx(0, 1);
+	ctx = VCL_Get_CliCtx(1);
 	ctx->vcl = vcl_find(av[2]);
 	AN(ctx->vcl);			// MGT ensures this
 	if (vcl_set_state(ctx, av[3])) {
