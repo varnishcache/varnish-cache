@@ -318,8 +318,15 @@ EmitInitFini(const struct vcc *tl)
 		if (VSB_len(p->event))
 			has_event = 1;
 	}
+
+	/* Handle failures from vcl_init */
+	Fc(tl, 0, "\n");
+	Fc(tl, 0, "\tif (*ctx->handling != VCL_RET_OK)\n");
+	Fc(tl, 0, "\t\treturn(1);\n");
+
 	VTAILQ_FOREACH(sy, &tl->sym_objects, sideways) {
 		Fc(tl, 0, "\tif (!%s) {\n", sy->rname);
+		Fc(tl, 0, "\t\t*ctx->handling = 0;\n");
 		Fc(tl, 0, "\t\tVRT_fail(ctx, "
 		    "\"Object %s not initialized\");\n" , sy->name);
 		Fc(tl, 0, "\t\treturn(1);\n");
@@ -655,7 +662,12 @@ vcc_CompileSource(struct vcc *tl, struct source *sp)
 
 	/* Tie vcl_init/fini in */
 	ifp = New_IniFin(tl);
-	VSB_printf(ifp->ini, "\tVGC_function_vcl_init(ctx);");
+	VSB_printf(ifp->ini, "\tVGC_function_vcl_init(ctx);\n");
+	/*
+	 * We do not return(1) if this fails, because the failure
+	 * could be half way into vcl_init{} so vcl_fini{} must
+	 * always be called, also on failure.
+	 */
 	VSB_printf(ifp->fin, "\t\tVGC_function_vcl_fini(ctx);");
 
 	/* Emit method functions */

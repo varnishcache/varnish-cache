@@ -491,11 +491,11 @@ VRT_handling(VRT_CTX, unsigned hand)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	if (ctx->handling == NULL)
-		return;
+	assert(hand != VCL_RET_FAIL);
+	AN(ctx->handling);
+	AZ(*ctx->handling);
 	assert(hand > 0);
 	assert(hand < VCL_RET_MAX);
-	// XXX:NOTYET assert(*ctx->handling == 0);
 	*ctx->handling = hand;
 }
 
@@ -507,16 +507,21 @@ VRT_fail(VRT_CTX, const char *fmt, ...)
 	va_list ap;
 
 	assert(ctx->vsl != NULL || ctx->msg != NULL);
+	AN(ctx->handling);
+	if (*ctx->handling == VCL_RET_FAIL)
+		return;
+	AZ(*ctx->handling);
+	AN(fmt);
 	AZ(strchr(fmt, '\n'));
 	va_start(ap, fmt);
-	if (ctx->vsl != NULL)
+	if (ctx->vsl != NULL) {
 		VSLbv(ctx->vsl, SLT_VCL_Error, fmt, ap);
-	else {
+	} else {
 		VSB_vprintf(ctx->msg, fmt, ap);
 		VSB_putc(ctx->msg, '\n');
 	}
 	va_end(ap);
-	VRT_handling(ctx, VCL_RET_FAIL);
+	*ctx->handling = VCL_RET_FAIL;
 }
 
 /*--------------------------------------------------------------------
@@ -772,9 +777,8 @@ VRT_purge(VRT_CTX, VCL_DURATION ttl, VCL_DURATION grace, VCL_DURATION keep)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
 	if ((ctx->method & (VCL_MET_HIT|VCL_MET_MISS)) == 0) {
-		VSLb(ctx->vsl, SLT_VCL_Error,
+		VRT_fail(ctx,
 		    "purge can only happen in vcl_hit{} or vcl_miss{}");
-		VRT_handling(ctx, VCL_RET_FAIL);
 		return (0);
 	}
 
