@@ -20,11 +20,11 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	sub vcl_recv {
-		if (req.method == "PURGE") {
+		if (req.method == "BAN") {
 			ban ("req.url == " + req.url);
 			return (synth(410));
 		}
-		if (req.method == "PURGESTR") {
+		if (req.method == "BANSTR") {
 			ban ("" + req.http.ban);
 			return (synth(410));
 		}
@@ -42,7 +42,7 @@ client c1 {
 
 # Ban: something else
 client c1 {
-	txreq -req PURGE -url /foox
+	txreq -req BAN -url /foox
 	rxresp
 	expect resp.status == 410
 } -run
@@ -59,7 +59,7 @@ client c1 {
 
 # Ban: it
 client c1 {
-	txreq -req PURGE -url /foo
+	txreq -req BAN -url /foo
 	rxresp
 	expect resp.status == 410
 } -run
@@ -76,7 +76,7 @@ client c1 {
 
 # Ban: everything else
 client c1 {
-	txreq -req PURGESTR -hdr "ban: req.url != /foo"
+	txreq -req BANSTR -hdr "ban: req.url != /foo"
 	rxresp
 	expect resp.status == 410
 } -run
@@ -93,7 +93,7 @@ client c1 {
 
 # Ban: it
 client c1 {
-	txreq -req PURGESTR -hdr "Ban: obj.http.foo == bar6"
+	txreq -req BANSTR -hdr "Ban: obj.http.foo == bar6"
 	rxresp
 	expect resp.status == 410
 } -run
@@ -110,7 +110,7 @@ client c1 {
 
 # Ban: something else
 client c1 {
-	txreq -req PURGESTR -hdr "Ban: obj.http.foo == bar6"
+	txreq -req BANSTR -hdr "Ban: obj.http.foo == bar6"
 	rxresp
 	expect resp.status == 410
 } -run
@@ -128,7 +128,7 @@ client c1 {
 
 # Header match
 client c1 {
-	txreq -req PURGESTR -hdr "Ban: req.http.foo == barcheck"
+	txreq -req BANSTR -hdr "Ban: req.http.foo == barcheck"
 	rxresp
 	expect resp.status == 410
 } -run
@@ -144,7 +144,7 @@ client c1 {
 
 # Header match
 client c1 {
-	txreq -req PURGESTR -hdr "Ban: obj.http.foo == barcheck"
+	txreq -req BANSTR -hdr "Ban: obj.http.foo == barcheck"
 	rxresp
 	expect resp.status == 410
 } -run
