@@ -292,6 +292,10 @@ vdp_gunzip_init(struct req *req, void **priv)
 	ssize_t dl;
 	uint64_t u;
 
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
+	CHECK_OBJ_ORNULL(req->objcore->boc, BOC_MAGIC);
+
 	vg = VGZ_NewGunzip(req->vsl, "U D -");
 	AN(vg);
 	if (vgz_getmbuf(vg)) {
@@ -306,6 +310,10 @@ vdp_gunzip_init(struct req *req, void **priv)
 	http_Unset(req->resp, H_Content_Encoding);
 
 	req->resp_len = -1;
+
+	/* OA_GZIPBITS is not stable yet */
+	if (req->objcore->boc)
+		return (0);
 
 	p = ObjGetAttr(req->wrk, req->objcore, OA_GZIPBITS, &dl);
 	if (p != NULL && dl == 32) {
