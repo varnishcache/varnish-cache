@@ -938,7 +938,48 @@ beresp.filters
 
 	Writable from: vcl_backend_response
 
-	List of VFP filters the beresp.body will be pulled through.
+	List of Varnish Fetch Processor (VFP) filters the beresp.body
+	will be pulled through.
+
+	VFP Filters change the body before going into the cache and/or
+	being handed to the client side, where it may get processed
+	again by resp.filters.
+
+	The following VFP filters exist in varnish-cache:
+
+	* ``testgunzip``: Test if a body is valid gzip and refuse it
+	  otherwise
+
+	* ``gunzip``: Uncompress gzip content
+
+	* ``esi``: ESI-process plain text content
+
+	* ``esi_gzip``: Save gzipped snippets for efficient
+	  ESI-processing
+
+	  This filter enables stitching together ESI from individually
+	  gzipped fragments, saving processing power for
+	  re-compression on the client side at the expense of some
+	  compression efficiency.
+
+	Additional VFP filters are available from VMODs.
+
+	By default, beresp.filters is constructed as follows:
+
+	* ``gunzip`` gets added for gzipped content if
+	  ``beresp.do_gunzip`` or ``beresp.do_esi`` are true.
+
+	* ``esi_gzip`` gets added if ``beresp.do_esi`` is true
+	  together with ``beresp.do_gzip`` or content is already
+	  compressed.
+
+	* ``esi`` gets added if ``beresp.do_esi`` is true
+
+	* ``gzip`` gets added for uncompressed content if
+	  ``beresp.do_gzip`` is true
+
+	* ``testgunzip`` gets added for compressed content if
+	  ``beresp.do_gunzip`` is false.
 
 obj
 ~~~
