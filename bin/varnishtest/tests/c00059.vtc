@@ -1,10 +1,20 @@
-varnishtest "test ban obj.status"
+varnishtest "test ban obj.* except obj.http.*"
+
+# see c00021.vtc for obj.http.* tests
 
 server s1 {
 	rxreq
-	txresp -bodylen 5
+	txresp -bodylen 1
+	rxreq
+	txresp -bodylen 2
 	rxreq
 	txresp -bodylen 3
+	rxreq
+	txresp -bodylen 4
+	rxreq
+	txresp -bodylen 5
+	rxreq
+	txresp -bodylen 6
 } -start
 
 varnish v1 -vcl+backend {} -start
@@ -12,10 +22,17 @@ varnish v1 -vcl+backend {} -start
 client c1 {
 	txreq
 	rxresp
-	expect resp.bodylen == 5
+	expect resp.bodylen == 1
 } -run
 
 varnish v1 -cliok "ban obj.status == 201"
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.bodylen == 1
+} -run
+
 varnish v1 -cliok "ban obj.status == 200"
 varnish v1 -cliok "ban.list"
 varnish v1 -clijson "ban.list -j"
@@ -23,5 +40,113 @@ varnish v1 -clijson "ban.list -j"
 client c1 {
 	txreq
 	rxresp
+	expect resp.bodylen == 2
+} -run
+
+varnish v1 -cliok "ban obj.keep == 0s && obj.ttl > 1d"
+varnish v1 -cliok "ban obj.keep == 0s && obj.ttl > 1d"
+
+# BANS_FLAG_NODEDUP
+varnish v1 -cliexpect {(?s) obj\.ttl > 1d\b.*obj\.ttl > 1d\b} "ban.list"
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.bodylen == 2
+} -run
+
+varnish v1 -cliok "ban obj.ttl <= 2m"
+
+client c1 {
+	txreq
+	rxresp
 	expect resp.bodylen == 3
 } -run
+
+varnish v1 -cliok "ban obj.age > 1d"
+varnish v1 -cliok "ban obj.age > 1d"
+
+# BANS_FLAG_NODEDUP
+varnish v1 -cliexpect {(?s) obj\.age > 1d\b.*obj\.age > 1d\b} "ban.list"
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.bodylen == 3
+} -run
+
+varnish v1 -cliok "ban obj.age < 1m"
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.bodylen == 4
+} -run
+
+varnish v1 -cliok "ban obj.grace != 10s"
+varnish v1 -cliok "ban obj.grace != 10s"
+
+# ! BANS_FLAG_NODEDUP
+varnish v1 -cliexpect {(?s) obj\.grace != 10s\b.* \d C\b} "ban.list"
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.bodylen == 4
+} -run
+
+varnish v1 -cliok "ban obj.grace == 10s"
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.bodylen == 5
+} -run
+
+varnish v1 -cliok "ban obj.keep != 0s"
+varnish v1 -cliok "ban obj.keep != 0s"
+
+# ! BANS_FLAG_NODEDUP
+varnish v1 -cliexpect {(?s) obj\.keep != 0s\b.* \d C\b} "ban.list"
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.bodylen == 5
+} -run
+
+varnish v1 -cliok "ban obj.keep == 0s"
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.bodylen == 6
+} -run
+
+# duration formatting - 0s is being tested above
+varnish v1 -cliok "ban obj.keep == 123ms"
+varnish v1 -cliexpect {(?s) obj\.keep == 123ms\b} "ban.list"
+varnish v1 -cliok "ban obj.keep == 0.456s"
+varnish v1 -cliexpect {(?s) obj\.keep == 456ms\b} "ban.list"
+varnish v1 -cliok "ban obj.keep == 6.789s"
+varnish v1 -cliexpect {(?s) obj\.keep == 6.789s\b} "ban.list"
+varnish v1 -cliok "ban obj.keep == 42y"
+varnish v1 -cliexpect {(?s) obj\.keep == 42y\b} "ban.list"
+varnish v1 -cliok "ban obj.keep == 365d"
+varnish v1 -cliexpect {(?s) obj\.keep == 1y\b} "ban.list"
+varnish v1 -cliok "ban obj.keep == 9w"
+varnish v1 -cliexpect {(?s) obj\.keep == 9w\b} "ban.list"
+varnish v1 -cliok "ban obj.keep == 7d"
+varnish v1 -cliexpect {(?s) obj\.keep == 1w\b} "ban.list"
+varnish v1 -cliok "ban obj.keep == 3d"
+varnish v1 -cliexpect {(?s) obj\.keep == 3d\b} "ban.list"
+varnish v1 -cliok "ban obj.keep == 24h"
+varnish v1 -cliexpect {(?s) obj\.keep == 1d\b} "ban.list"
+varnish v1 -cliok "ban obj.keep == 18h"
+varnish v1 -cliexpect {(?s) obj\.keep == 18h\b} "ban.list"
+varnish v1 -cliok "ban obj.keep == 1.5h"
+varnish v1 -cliexpect {(?s) obj\.keep == 90m\b} "ban.list"
+varnish v1 -cliok "ban obj.keep == 10m"
+varnish v1 -cliexpect {(?s) obj\.keep == 10m\b} "ban.list"
+varnish v1 -cliok "ban obj.keep == 0.5m"
+varnish v1 -cliexpect {(?s) obj\.keep == 30s\b} "ban.list"

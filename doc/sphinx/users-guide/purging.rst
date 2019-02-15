@@ -149,9 +149,12 @@ will produce a status of all current bans::
 The ban list contains the ID of the ban, the timestamp when the ban
 entered the ban list. A count of the objects that has reached this point
 in the ban list, optionally postfixed with a 'G' for "Gone", if the ban
-is no longer valid.  Finally, the ban expression is listed. The ban can
-be marked as "Gone" if it is a duplicate ban, but is still kept in the list
-for optimization purposes.
+is no longer valid.  Finally, the ban expression is listed. Notice
+that durations are not necessarily expressed in the originally given
+unit, for instance ``7d`` will get turned into ``1w``.
+
+The ban can be marked as "Gone" if it is a duplicate ban, but is still
+kept in the list for optimization purposes.
 
 Forcing a cache miss
 ~~~~~~~~~~~~~~~~~~~~

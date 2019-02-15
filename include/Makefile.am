@@ -5,6 +5,8 @@ nobase_pkginclude_HEADERS = \
 	tbl/acct_fields_bereq.h \
 	tbl/acct_fields_req.h \
 	tbl/backend_poll.h \
+	tbl/ban_arg_oper.h \
+	tbl/ban_oper.h \
 	tbl/ban_vars.h \
 	tbl/bo_flags.h \
 	tbl/boc_state.h \

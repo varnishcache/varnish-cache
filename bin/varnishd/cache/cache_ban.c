@@ -31,6 +31,7 @@
 #include "config.h"
 
 #include <pcre.h>
+#include <stdio.h>
 
 #include "cache_varnishd.h"
 #include "cache_ban.h"
@@ -39,6 +40,10 @@
 #include "vcli_serve.h"
 #include "vend.h"
 #include "vmb.h"
+
+/* cache_ban_build.c */
+void BAN_Build_Init(void);
+void BAN_Build_Fini(void);
 
 struct lock ban_mtx;
 int ban_shutdown;
@@ -55,8 +60,17 @@ struct ban_test {
 	uint8_t			arg1;
 	const char		*arg1_spec;
 	const char		*arg2;
+	double			arg2_double;
 	const void		*arg2_spec;
 };
+
+static const char * const arg_name[BAN_ARGARRSZ + 1] = {
+#define PVAR(a, b, c) [BAN_ARGIDX(c)] = (a),
+#include "tbl/ban_vars.h"
+	[BAN_ARGARRSZ] = NULL
+};
+
+extern const char * const oper[BAN_OPERARRSZ + 1];
 
 /*--------------------------------------------------------------------
  * Storage handling of bans
@@ -148,6 +162,9 @@ ban_equal(const uint8_t *bs1, const uint8_t *bs2)
 	u = vbe32dec(bs1 + BANS_LENGTH);
 	if (u != vbe32dec(bs2 + BANS_LENGTH))
 		return (0);
+	if (bs1[BANS_FLAGS] & BANS_FLAG_NODEDUP)
+		return (0);
+
 	return (!memcmp(bs1 + BANS_LENGTH, bs2 + BANS_LENGTH, u - BANS_LENGTH));
 }
 
@@ -200,16 +217,25 @@ ban_get_lump(const uint8_t **bs)
 static void
 ban_iter(const uint8_t **bs, struct ban_test *bt)
 {
+	uint64_t dtmp;
 
 	memset(bt, 0, sizeof *bt);
+	bt->arg2_double = nan("");
 	bt->arg1 = *(*bs)++;
-	if (bt->arg1 == BANS_ARG_REQHTTP || bt->arg1 == BANS_ARG_OBJHTTP) {
+	if (BANS_HAS_ARG1_SPEC(bt->arg1)) {
 		bt->arg1_spec = (const char *)*bs;
 		(*bs) += (*bs)[0] + 2;
 	}
+	if (BANS_HAS_ARG2_DOUBLE(bt->arg1)) {
+		dtmp = vbe64dec(ban_get_lump(bs));
+		bt->oper = *(*bs)++;
+
+		memcpy(&bt->arg2_double, &dtmp, sizeof dtmp);
+		return;
+	}
 	bt->arg2 = ban_get_lump(bs);
 	bt->oper = *(*bs)++;
-	if (bt->oper == BANS_OPER_MATCH || bt->oper == BANS_OPER_NMATCH)
+	if (BANS_HAS_ARG2_SPEC(bt->oper))
 		bt->arg2_spec = ban_get_lump(bs);
 }
 
@@ -456,20 +482,32 @@ BAN_Time(const struct ban *b)
  */
 
 int
-ban_evaluate(struct worker *wrk, const uint8_t *bs, struct objcore *oc,
+ban_evaluate(struct worker *wrk, const uint8_t *bsarg, struct objcore *oc,
     const struct http *reqhttp, unsigned *tests)
 {
 	struct ban_test bt;
-	const uint8_t *be;
+	const uint8_t *bs, *be;
 	const char *p;
 	const char *arg1;
+	double darg1, darg2;
 
+	/*
+	 * for ttl and age, fix the point in time such that banning refers to
+	 * the same point in time when the ban is evaluated
+	 *
+	 * for grace/keep, we assume that the absolute values are pola and that
+	 * users will most likely also specify a ttl criterion if they want to
+	 * fix a point in time (such as "obj.ttl > 5h && obj.keep > 3h")
+	 */
+
+	bs = bsarg;
 	be = bs + ban_len(bs);
 	bs += BANS_HEAD_LEN;
 	while (bs < be) {
 		(*tests)++;
 		ban_iter(&bs, &bt);
 		arg1 = NULL;
+		darg1 = darg2 = nan("");
 		switch (bt.arg1) {
 		case BANS_ARG_URL:
 			AN(reqhttp);
@@ -486,18 +524,42 @@ ban_evaluate(struct worker *wrk, const uint8_t *bs, struct objcore *oc,
 		case BANS_ARG_OBJSTATUS:
 			arg1 = HTTP_GetHdrPack(wrk, oc, H__Status);
 			break;
+		case BANS_ARG_OBJTTL:
+			darg1 = oc->ttl + oc->t_origin;
+			darg2 = bt.arg2_double + ban_time(bsarg);
+			break;
+		case BANS_ARG_OBJAGE:
+			darg1 = 0.0 - oc->t_origin;
+			darg2 = 0.0 - (ban_time(bsarg) - bt.arg2_double);
+			break;
+		case BANS_ARG_OBJGRACE:
+			darg1 = oc->grace;
+			darg2 = bt.arg2_double;
+			break;
+		case BANS_ARG_OBJKEEP:
+			darg1 = oc->keep;
+			darg2 = bt.arg2_double;
+			break;
 		default:
 			WRONG("Wrong BAN_ARG code");
 		}
 
 		switch (bt.oper) {
 		case BANS_OPER_EQ:
-			if (arg1 == NULL || strcmp(arg1, bt.arg2))
+			if (arg1 == NULL) {
+				if (isnan(darg1) || darg1 != darg2)
+					return (0);
+			} else if (strcmp(arg1, bt.arg2)) {
 				return (0);
+			}
 			break;
 		case BANS_OPER_NEQ:
-			if (arg1 != NULL && !strcmp(arg1, bt.arg2))
+			if (arg1 == NULL) {
+				if (! isnan(darg1) && darg1 == darg2)
+					return (0);
+			} else if (!strcmp(arg1, bt.arg2)) {
 				return (0);
+			}
 			break;
 		case BANS_OPER_MATCH:
 			if (arg1 == NULL ||
@@ -509,6 +571,30 @@ ban_evaluate(struct worker *wrk, const uint8_t *bs, struct objcore *oc,
 			if (arg1 != NULL &&
 			    pcre_exec(bt.arg2_spec, NULL, arg1, strlen(arg1),
 			    0, 0, NULL, 0) >= 0)
+				return (0);
+			break;
+		case BANS_OPER_GT:
+			AZ(arg1);
+			assert(! isnan(darg1));
+			if (!(darg1 > darg2))
+				return (0);
+			break;
+		case BANS_OPER_GTE:
+			AZ(arg1);
+			assert(! isnan(darg1));
+			if (!(darg1 >= darg2))
+				return (0);
+			break;
+		case BANS_OPER_LT:
+			AZ(arg1);
+			assert(! isnan(darg1));
+			if (!(darg1 < darg2))
+				return (0);
+			break;
+		case BANS_OPER_LTE:
+			AZ(arg1);
+			assert(! isnan(darg1));
+			if (!(darg1 <= darg2))
 				return (0);
 			break;
 		default:
@@ -668,46 +754,67 @@ ccf_ban(struct cli *cli, const char * const *av, void *priv)
 	}
 }
 
+#define Ms 60
+#define Hs (Ms * 60)
+#define Ds (Hs * 24)
+#define Ws (Ds * 7)
+#define Ys (Ds * 365)
+
+#define Xfmt(buf, var, s, unit)						\
+	((var) >= s && (var) % s == 0)					\
+		bprintf((buf), "%ju" unit, (var) / s)
+
+// XXX move to VTIM?
+#define vdur_render(buf, dur) do {					\
+	uint64_t dec = (uint64_t)floor(dur);				\
+	uint64_t frac = (uint64_t)floor((dur) * 1e3) % UINT64_C(1000);	\
+	if (dec == 0 && frac == 0)					\
+		(void) strncpy(buf, "0s", sizeof(buf));			\
+	else if (dec == 0)						\
+		bprintf((buf), "%jums", frac);				\
+	else if (frac != 0)						\
+		bprintf((buf), "%ju.%03jus", dec, frac);		\
+	else if Xfmt(buf, dec, Ys, "y");				\
+	else if Xfmt(buf, dec, Ws, "w");				\
+	else if Xfmt(buf, dec, Ds, "d");				\
+	else if Xfmt(buf, dec, Hs, "h");				\
+	else if Xfmt(buf, dec, Ms, "m");				\
+	else								\
+		bprintf((buf), "%jus", dec);				\
+	} while (0)
+
 static void
 ban_render(struct cli *cli, const uint8_t *bs, int quote)
 {
 	struct ban_test bt;
 	const uint8_t *be;
+	char buf[64];
 
 	be = bs + ban_len(bs);
 	bs += BANS_HEAD_LEN;
 	while (bs < be) {
 		ban_iter(&bs, &bt);
-		switch (bt.arg1) {
-		case BANS_ARG_URL:
-			VCLI_Out(cli, "req.url");
-			break;
-		case BANS_ARG_REQHTTP:
-			VCLI_Out(cli, "req.http.%.*s",
+		ASSERT_BAN_ARG(bt.arg1);
+		ASSERT_BAN_OPER(bt.oper);
+
+		if (BANS_HAS_ARG1_SPEC(bt.arg1))
+			VCLI_Out(cli, "%s.%.*s",
+			    arg_name[BAN_ARGIDX(bt.arg1)],
 			    bt.arg1_spec[0] - 1, bt.arg1_spec + 1);
-			break;
-		case BANS_ARG_OBJHTTP:
-			VCLI_Out(cli, "obj.http.%.*s",
-			    bt.arg1_spec[0] - 1, bt.arg1_spec + 1);
-			break;
-		case BANS_ARG_OBJSTATUS:
-			VCLI_Out(cli, "obj.status");
-			break;
-		default:
-			WRONG("Wrong BANS_ARG");
-		}
-		switch (bt.oper) {
-		case BANS_OPER_EQ:	VCLI_Out(cli, " == "); break;
-		case BANS_OPER_NEQ:	VCLI_Out(cli, " != "); break;
-		case BANS_OPER_MATCH:	VCLI_Out(cli, " ~ "); break;
-		case BANS_OPER_NMATCH:	VCLI_Out(cli, " !~ "); break;
-		default:
-			WRONG("Wrong BANS_OPER");
-		}
-		if (quote)
-			VCLI_Quote(cli, bt.arg2);
 		else
+			VCLI_Out(cli, "%s", arg_name[BAN_ARGIDX(bt.arg1)]);
+
+		VCLI_Out(cli, " %s ", oper[BAN_OPERIDX(bt.oper)]);
+
+		if (BANS_HAS_ARG2_DOUBLE(bt.arg1)) {
+			vdur_render(buf, bt.arg2_double);
+			VCLI_Out(cli, "%s", buf);
+		} else if (quote) {
+			VCLI_Quote(cli, bt.arg2);
+		} else {
 			VCLI_Out(cli, "%s", bt.arg2);
+		}
+
 		if (bs < be)
 			VCLI_Out(cli, " && ");
 	}
@@ -867,6 +974,7 @@ BAN_Init(void)
 {
 	struct ban_proto *bp;
 
+	BAN_Build_Init();
 	Lck_New(&ban_mtx, lck_ban);
 	CLI_AddFuncs(ban_cmds);
 
@@ -907,4 +1015,6 @@ BAN_Shutdown(void)
 	/* Export the ban list to compact it */
 	ban_export();
 	Lck_Unlock(&ban_mtx);
+
+	BAN_Build_Fini();
 }

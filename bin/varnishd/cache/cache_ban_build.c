@@ -37,6 +37,10 @@
 
 #include "vend.h"
 #include "vtim.h"
+#include "vnum.h"
+
+void BAN_Build_Init(void);
+void BAN_Build_Fini(void);
 
 struct ban_proto {
 	unsigned		magic;
@@ -60,6 +64,24 @@ static const struct pvar {
 #include "tbl/ban_vars.h"
 	{ 0, 0, 0}
 };
+
+/* operators allowed per argument (pvar.tag) */
+static const unsigned arg_opervalid[BAN_ARGARRSZ + 1] = {
+#define ARGOPER(arg, mask) [BAN_ARGIDX(arg)] = (mask),
+#include "tbl/ban_arg_oper.h"
+	[BAN_ARGARRSZ] = 0
+};
+
+// init'ed in _Init
+static const char *arg_operhelp[BAN_ARGARRSZ + 1];
+
+// operators
+const char * const oper[BAN_OPERARRSZ + 1] = {
+#define OPER(op, str) [BAN_OPERIDX(op)] = (str),
+#include "tbl/ban_oper.h"
+	[BAN_OPERARRSZ] = NULL
+};
+
 
 /*--------------------------------------------------------------------
  */
@@ -177,6 +199,18 @@ ban_parse_regexp(struct ban_proto *bp, const char *a3)
 	return (0);
 }
 
+static int
+ban_parse_oper(const char *p)
+{
+	int i;
+
+	for (i = 0; i < BAN_OPERARRSZ; i++) {
+		if (!strcmp(p, oper[i]))
+			return _BANS_OPER_OFF + i;
+	}
+	return -1;
+}
+
 /*--------------------------------------------------------------------
  * Add a (and'ed) test-condition to a ban
  */
@@ -186,7 +220,10 @@ BAN_AddTest(struct ban_proto *bp,
     const char *a1, const char *a2, const char *a3)
 {
 	const struct pvar *pv;
-	const char *err;
+	double darg;
+	uint64_t dtmp;
+	uint8_t denc[sizeof darg];
+	int op;
 
 	CHECK_OBJ_NOTNULL(bp, BAN_PROTO_MAGIC);
 	AN(bp->vsb);
@@ -208,28 +245,46 @@ BAN_AddTest(struct ban_proto *bp,
 	bp->flags |= pv->flag;
 
 	VSB_putc(bp->vsb, pv->tag);
-	if (pv->flag & BANS_FLAG_HTTP)
+	if (pv->flag & BANS_FLAG_HTTP) {
+		assert(BANS_HAS_ARG1_SPEC(pv->tag));
 		ban_parse_http(bp, a1 + strlen(pv->name));
-
-	ban_add_lump(bp, a3, strlen(a3) + 1);
-	if (!strcmp(a2, "~")) {
-		VSB_putc(bp->vsb, BANS_OPER_MATCH);
-		err = ban_parse_regexp(bp, a3);
-		if (err)
-			return (err);
-	} else if (!strcmp(a2, "!~")) {
-		VSB_putc(bp->vsb, BANS_OPER_NMATCH);
-		err = ban_parse_regexp(bp, a3);
-		if (err)
-			return (err);
-	} else if (!strcmp(a2, "==")) {
-		VSB_putc(bp->vsb, BANS_OPER_EQ);
-	} else if (!strcmp(a2, "!=")) {
-		VSB_putc(bp->vsb, BANS_OPER_NEQ);
-	} else {
-		return (ban_error(bp,
-		    "expected conditional (~, !~, == or !=) got \"%s\"", a2));
 	}
+
+	op = ban_parse_oper(a2);
+	if (op < 0 ||
+	    ((1<<BAN_OPERIDX(op)) & arg_opervalid[BAN_ARGIDX(pv->tag)]) == 0)
+		return (ban_error(bp,
+				  "expected conditional (%s) got \"%s\"",
+				  arg_operhelp[BAN_ARGIDX(pv->tag)],
+				  a2));
+
+	if ((pv->flag & BANS_FLAG_DURATION) == 0) {
+		assert(! BANS_HAS_ARG2_DOUBLE(pv->tag));
+
+		ban_add_lump(bp, a3, strlen(a3) + 1);
+		VSB_putc(bp->vsb, op);
+
+		if (! BANS_HAS_ARG2_SPEC(op))
+			return (NULL);
+
+		return (ban_parse_regexp(bp, a3));
+	}
+
+	assert(pv->flag & BANS_FLAG_DURATION);
+	assert(BANS_HAS_ARG2_DOUBLE(pv->tag));
+	darg = VNUM_duration(a3);
+	if (isnan(darg)) {
+		return (ban_error(bp,
+		    "expected duration <n.nn>[ms|s|m|h|d|w|y] got \"%s\"", a3));
+	}
+
+	assert(sizeof darg == sizeof dtmp);
+	assert(sizeof dtmp == sizeof denc);
+	memcpy(&dtmp, &darg, sizeof dtmp);
+	vbe64enc(denc, dtmp);
+
+	ban_add_lump(bp, denc, sizeof denc);
+	VSB_putc(bp->vsb, op);
 	return (NULL);
 }
 
@@ -275,6 +330,7 @@ BAN_Commit(struct ban_proto *bp)
 
 	b->flags = bp->flags;
 
+	// XXX why don't we vbe*enc timestamp and flags?
 	memset(b->spec, 0, BANS_HEAD_LEN);
 	t0 = VTIM_real();
 	memcpy(b->spec + BANS_TIMESTAMP, &t0, sizeof t0);
@@ -328,4 +384,67 @@ BAN_Commit(struct ban_proto *bp)
 
 	BAN_Abandon(bp);
 	return (NULL);
+}
+
+static void
+ban_build_arg_operhelp(struct vsb *vsb, int arg)
+{
+	unsigned mask;
+	const char *p = NULL, *n = NULL;
+	int i;
+
+	ASSERT_BAN_ARG(arg);
+	mask = arg_opervalid[BAN_ARGIDX(arg)];
+
+	for (i = 0; i < BAN_OPERARRSZ; i++) {
+		if ((mask & (1<<i)) == 0)
+			continue;
+		if (p == NULL)
+			p = oper[i];
+		else if (n == NULL)
+			n = oper[i];
+		else {
+			VSB_cat(vsb, p);
+			VSB_cat(vsb, ", ");
+			p = n;
+			n = oper[i];
+		}
+	}
+
+	if (n) {
+		AN(p);
+		VSB_cat(vsb, p);
+		VSB_cat(vsb, " or ");
+		VSB_cat(vsb, n);
+		return;
+	}
+
+	AN(p);
+	VSB_cat(vsb, p);
+}
+
+void
+BAN_Build_Init(void) {
+	struct vsb *vsb = VSB_new_auto();
+	int i;
+
+	for (i = _BANS_ARG_OFF; i < _BANS_ARG_LIM; i ++) {
+		VSB_clear(vsb);
+		ban_build_arg_operhelp(vsb, i);
+		AZ(VSB_finish(vsb));
+
+		arg_operhelp[BAN_ARGIDX(i)] = strdup(VSB_data(vsb));
+		AN(arg_operhelp[BAN_ARGIDX(i)]);
+	}
+	arg_operhelp[BAN_ARGIDX(i)] = NULL;
+	VSB_destroy(&vsb);
+	AZ(vsb);
+}
+
+void
+BAN_Build_Fini(void) {
+	int i;
+
+	for (i = 0; i < BAN_ARGARRSZ; i++)
+		free(TRUST_ME(arg_operhelp[i]));
 }

@@ -61,7 +61,9 @@ CLI_CMD(BAN_LIST,
 	"    * ``R`` for req.* tests\n\n"
 	"    * ``O`` for obj.* tests\n\n"
 	"    * Pointer to ban object\n\n"
-	"  * Ban specification",
+	"  * Ban specification\n\n"
+	"  Durations of ban specifications get normalized, for example \"7d\""
+	" gets changed into \"1w\".",
 
 	0, 0
 )
