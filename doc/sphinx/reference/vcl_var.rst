@@ -947,6 +947,8 @@ beresp.filters
 
 	The following VFP filters exist in varnish-cache:
 
+	* ``gzip``: compress a body using gzip
+
 	* ``testgunzip``: Test if a body is valid gzip and refuse it
 	  otherwise
 
