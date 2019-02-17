@@ -98,12 +98,17 @@ vbe16enc(void *pp, uint16_t u)
 static __inline void
 vbe32enc(void *pp, uint32_t u)
 {
-	uint8_t *p = (uint8_t *)pp;
+	union {
+		uint8_t p[4];
+		uint32_t i;
+	} d;
 
-	p[0] = (u >> 24) & 0xff;
-	p[1] = (u >> 16) & 0xff;
-	p[2] = (u >> 8) & 0xff;
-	p[3] = u & 0xff;
+	d.p[0] = (u >> 24) & 0xff;
+	d.p[1] = (u >> 16) & 0xff;
+	d.p[2] = (u >> 8) & 0xff;
+	d.p[3] = u & 0xff;
+
+	*(uint32_t *)pp = d.i;
 }
 
 static __inline void
