@@ -1,14 +1,17 @@
 varnishtest "Check naming of backends"
 
-server s1 {
+server s1 -repeat 2 -keepalive {
 	rxreq
 	txresp
 } -start
 
 varnish v1 -vcl+backend {
+	sub vcl_recv {
+		return (pass);
+	}
 
 	sub vcl_backend_response {
-	    set beresp.http.X-Backend-Name = bereq.backend;
+		set beresp.http.X-Backend-Name = bereq.backend;
 	}
 } -start
 
@@ -28,15 +31,18 @@ varnish v1 -vcl+backend {
 
 	sub vcl_recv {
 		set req.backend_hint = bar.backend();
+		return (pass);
 	}
 
 	sub vcl_backend_response {
-		set beresp.http.X-Backend-Name = bereq.backend;
+		set beresp.http.X-Director-Name = bereq.backend;
+		set beresp.http.X-Backend-Name = beresp.backend;
 	}
 }
 
 client c1 {
 	txreq -url "/"
 	rxresp
+	expect resp.http.X-Director-Name == "bar"
 	expect resp.http.X-Backend-Name == "s1"
 } -run
