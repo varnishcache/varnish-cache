@@ -272,7 +272,6 @@ struct list_args {
 	unsigned	magic;
 #define LIST_ARGS_MAGIC	0x7e7cefeb
 	int		p;
-	int		v;
 	int		j;
 	const char	*jsep;
 };
@@ -306,14 +305,14 @@ do_list(struct cli *cli, struct director *d, void *priv)
 	     VDI_LIST_W_ADMIN, VDI_Ahealth(d));
 
 	if (d->vdir->methods->list != NULL)
-		d->vdir->methods->list(ctx, d, cli->sb, 0, 0, 0);
+		d->vdir->methods->list(ctx, d, cli->sb, 0, 0);
 	else
 		VCLI_Out(cli, "%-*s", VDI_LIST_W_PROBE, cli_health(ctx, d));
 
 	VTIM_format(d->vdir->health_changed, time_str);
 	VCLI_Out(cli, " %s", time_str);
-	if ((la->p || la->v) && d->vdir->methods->list != NULL)
-		d->vdir->methods->list(ctx, d, cli->sb, la->p, la->v, 0);
+	if (la->p && d->vdir->methods->list != NULL)
+		d->vdir->methods->list(ctx, d, cli->sb, la->p, 0);
 
 	VCL_Rel_CliCtx(&ctx);
 	AZ(ctx);
@@ -345,14 +344,14 @@ do_list_json(struct cli *cli, struct director *d, void *priv)
 	VCLI_Out(cli, "\"admin_health\": \"%s\",\n", VDI_Ahealth(d));
 	VCLI_Out(cli, "\"probe_message\": ");
 	if (d->vdir->methods->list != NULL)
-		d->vdir->methods->list(ctx, d, cli->sb, 0, 0, 1);
+		d->vdir->methods->list(ctx, d, cli->sb, 0, 1);
 	else
 		VCLI_Out(cli, "\"%s\"", cli_health(ctx, d));
 	VCLI_Out(cli, ",\n");
 
-	if ((la->p || la->v) && d->vdir->methods->list != NULL) {
+	if (la->p && d->vdir->methods->list != NULL) {
 		VCLI_Out(cli, "\"probe_details\": ");
-		d->vdir->methods->list(ctx, d, cli->sb, la->p, la->v, 1);
+		d->vdir->methods->list(ctx, d, cli->sb, la->p, 1);
 	}
 	VCLI_Out(cli, "\"last_change\": %.3f\n", d->vdir->health_changed);
 	VSB_indent(cli->sb, -2);
@@ -371,10 +370,6 @@ cli_backend_list(struct cli *cli, const char * const *av, void *priv)
 	struct list_args la[1];
 	int i;
 
-	/*
-	 * XXX for all cases in varnish-cache, -v is synonymous to
-	 * -p and -v is not documented. Retire?
-	 */
 	(void)priv;
 	ASSERT_CLI();
 	INIT_OBJ(la, LIST_ARGS_MAGIC);
@@ -384,7 +379,6 @@ cli_backend_list(struct cli *cli, const char * const *av, void *priv)
 			switch(*p) {
 			case 'j': la->j = 1; break;
 			case 'p': la->p = !la->p; break;
-			case 'v': la->p = !la->p; break;
 			default:
 				VCLI_Out(cli, "Invalid flag %c", *p);
 				VCLI_SetResult(cli, CLIS_PARAM);

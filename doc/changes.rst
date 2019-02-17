@@ -68,6 +68,9 @@ Varnish Cache trunk (ongoing)
   For best forward compatibility, we recommend that scripts parse JSON
   output as obtained using the ``-j`` option.
 
+* The undocumented ``-v`` option to the ``backend.list`` cli command
+  has been removed
+
 VCL
 ---
 

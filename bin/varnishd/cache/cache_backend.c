@@ -446,8 +446,8 @@ vbe_panic(const struct director *d, struct vsb *vsb)
  */
 
 static void v_matchproto_(vdi_list_f)
-vbe_list(VRT_CTX, const struct director *d, struct vsb *vsb, int vflag,
-    int pflag, int jflag)
+vbe_list(VRT_CTX, const struct director *d, struct vsb *vsb, int pflag,
+    int jflag)
 {
 	struct backend *bp;
 
@@ -457,12 +457,12 @@ vbe_list(VRT_CTX, const struct director *d, struct vsb *vsb, int vflag,
 	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
 
 	if (bp->probe != NULL)
-		VBP_Status(vsb, bp, vflag | pflag, jflag);
-	else if (jflag && (vflag | pflag))
+		VBP_Status(vsb, bp, pflag, jflag);
+	else if (jflag && pflag)
 		VSB_printf(vsb, "{},\n");
 	else if (jflag)
 		VSB_printf(vsb, "\"%s\"", d->sick ? "sick" : "healthy");
-	else if (vflag | pflag)
+	else if (pflag)
 		return;
 	else
 		VSB_printf(vsb, "%-*s", VDI_LIST_W_PROBE,
