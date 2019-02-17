@@ -261,6 +261,35 @@ VRT_DisableDirector(VCL_BACKEND d)
 	vdir->health_changed = VTIM_real();
 }
 
+VCL_BACKEND
+VRT_LookupDirector(VRT_CTX, VCL_STRING name)
+{
+	struct vcl *vcl;
+	struct vcldir *vdir;
+	VCL_BACKEND dd, d = NULL;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(name);
+
+	assert(ctx->method & VCL_MET_TASK_H);
+	ASSERT_CLI();
+
+	vcl = ctx->vcl;
+	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
+
+	Lck_Lock(&vcl_mtx);
+	VTAILQ_FOREACH(vdir, &vcl->director_list, list) {
+		dd = vdir->dir;
+		if (strcmp(dd->vcl_name, name))
+			continue;
+		d = dd;
+		break;
+	}
+	Lck_Unlock(&vcl_mtx);
+
+	return (d);
+}
+
 /*--------------------------------------------------------------------*/
 
 VCL_BACKEND
