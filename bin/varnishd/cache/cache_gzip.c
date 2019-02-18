@@ -466,14 +466,14 @@ vfp_gzip_init(struct vfp_ctx *vc, struct vfp_entry *vfe)
 		if (http_GetHdr(vc->resp, H_Content_Encoding, NULL))
 			return (VFP_NULL);
 		vg = VGZ_NewGzip(vc->wrk->vsl, vfe->vfp->priv1);
-		vc->obj_flags |= OF_GZIPED | OF_CHGGZIP;
+		vc->obj_flags |= OF_GZIPED | OF_CHGCE;
 	} else {
 		if (!http_HdrIs(vc->resp, H_Content_Encoding, "gzip"))
 			return (VFP_NULL);
 		if (vfe->vfp == &VFP_gunzip) {
 			vg = VGZ_NewGunzip(vc->wrk->vsl, vfe->vfp->priv1);
 			vc->obj_flags &= ~OF_GZIPED;
-			vc->obj_flags |= OF_CHGGZIP;
+			vc->obj_flags |= OF_CHGCE;
 		} else {
 			vg = VGZ_NewTestGunzip(vc->wrk->vsl, vfe->vfp->priv1);
 			vc->obj_flags |= OF_GZIPED;
