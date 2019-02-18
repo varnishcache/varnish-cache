@@ -50,6 +50,7 @@
 #include "vfil.h"
 #include "vlu.h"
 #include "vtim.h"
+#include "vsub.h"
 
 #include "common/heritage.h"
 #include "common/vsmw.h"
@@ -201,6 +202,14 @@ MCH_TrackHighFd(int fd)
 	assert(fd > 0);
 	if (fd > mgt_max_fd)
 		mgt_max_fd = fd;
+}
+
+void
+MCH_FdInfo(int *nullto, int *closeto, const struct vbitmap **map)
+{
+	*nullto = CLOSE_FD_UP_TO;
+	*closeto = CLOSE_FD_UP_TO;
+	*map = fd_map;
 }
 
 /*--------------------------------------------------------------------

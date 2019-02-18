@@ -421,7 +421,8 @@ start_test(void)
 		VFIL_null_fd(STDIN_FILENO);
 		assert(dup2(p[1], STDOUT_FILENO) == STDOUT_FILENO);
 		assert(dup2(p[1], STDERR_FILENO) == STDERR_FILENO);
-		VSUB_closefrom(STDERR_FILENO + 1);
+		// XXX high fd tracking would be nice
+		VSUB_closefrom(STDERR_FILENO + 1, -1, NULL, -1);
 		retval = exec_file(jp->tst->filename, jp->tst->script,
 		    jp->tmpdir, jp->bp->buf, jp->bp->bufsiz);
 		exit(retval);

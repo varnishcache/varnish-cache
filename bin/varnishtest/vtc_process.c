@@ -677,7 +677,8 @@ process_start(struct process *p)
 #endif
 		AZ(close(STDOUT_FILENO));
 		assert(dup2(slave, STDOUT_FILENO) == STDOUT_FILENO);
-		VSUB_closefrom(STDERR_FILENO + 1);
+		// XXX high fd tracking would be nice
+		VSUB_closefrom(STDERR_FILENO + 1, -1, NULL, -1);
 		process_init_term(p, slave);
 
 		AZ(setenv("TERM", "xterm", 1));

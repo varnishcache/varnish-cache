@@ -28,10 +28,11 @@
  *
  */
 
-/* from libvarnish/subproc.c */
+struct vbitmap;
+
+/* from lib/libvarnish/vsub.c */
 typedef void vsub_func_f(void*);
 
-unsigned VSUB_run(struct vsb *, vsub_func_f *, void *priv, const char *name,
-    int maxlines);
-
-void VSUB_closefrom(int fd);
+unsigned VSUB_run(struct vsb *, vsub_func_f *, void *, const char *, int,
+    int, const struct vbitmap *, int);
+void VSUB_closefrom(int, int, const struct vbitmap *, int);

@@ -71,11 +71,13 @@ void MAC_Arg(const char *);
 int MAC_reopen_sockets(void);
 
 /* mgt_child.c */
+struct vbitmap;
 void MCH_Init(void);
 int MCH_Running(void);
 void MCH_Stop_Child(void);
 int MCH_Start_Child(void);
 void MCH_TrackHighFd(int fd);
+void MCH_FdInfo(int *, int *, const struct vbitmap **);
 void MCH_Cli_Fail(void);
 
 /* mgt_cli.c */

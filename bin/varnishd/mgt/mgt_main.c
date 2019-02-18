@@ -542,7 +542,7 @@ main(int argc, char * const *argv)
 	 * Start out by closing all unwanted file descriptors we might
 	 * have inherited from sloppy process control daemons.
 	 */
-	VSUB_closefrom(STDERR_FILENO + 1);
+	VSUB_closefrom(STDERR_FILENO + 1, -1, NULL, -1);
 	MCH_TrackHighFd(STDERR_FILENO);
 
 	/*

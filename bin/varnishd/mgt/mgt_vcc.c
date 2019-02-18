@@ -231,13 +231,19 @@ mgt_vcc_compile(struct vcc_priv *vp, struct vsb *sb, int C_flag)
 {
 	char *csrc;
 	unsigned subs;
+	int nullto, closeto;
+	const struct vbitmap *fd_map;
 
 	if (mgt_vcc_touchfile(vp->csrcfile, sb))
 		return (2);
 	if (mgt_vcc_touchfile(vp->libfile, sb))
 		return (2);
 
-	subs = VSUB_run(sb, run_vcc, vp, "VCC-compiler", -1);
+	MCH_FdInfo(&nullto, &closeto, &fd_map);
+
+	subs = VSUB_run(sb, run_vcc, vp, "VCC-compiler", -1,
+	    closeto, fd_map, -1);
+
 	if (subs)
 		return (subs);
 
@@ -248,11 +254,13 @@ mgt_vcc_compile(struct vcc_priv *vp, struct vsb *sb, int C_flag)
 		free(csrc);
 	}
 
-	subs = VSUB_run(sb, run_cc, vp, "C-compiler", 10);
+	subs = VSUB_run(sb, run_cc, vp, "C-compiler", 10,
+	    closeto, fd_map, -1);
 	if (subs)
 		return (subs);
 
-	subs = VSUB_run(sb, run_dlopen, vp, "dlopen", 10);
+	subs = VSUB_run(sb, run_dlopen, vp, "dlopen", 10,
+	    closeto, fd_map, -1);
 	return (subs);
 }
 

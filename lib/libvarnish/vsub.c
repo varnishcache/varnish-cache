@@ -32,6 +32,9 @@
 #include "config.h"
 
 #include <sys/wait.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include <stdint.h>
 #include <stdlib.h>		// Solaris closefrom(3c)
@@ -45,6 +48,7 @@
 #include "vlu.h"
 #include "vsb.h"
 #include "vsub.h"
+#include "vbm.h"
 
 struct vsub_priv {
 	const char	*name;
@@ -53,19 +57,63 @@ struct vsub_priv {
 	int		maxlines;
 };
 
-void
-VSUB_closefrom(int fd)
-{
+/*
+ * close file descriptors above the from argument.
+ *
+ * if nullto >= 0:
+ *
+ *   reconnect filedescriptors up to nullto to /dev/null, unless an an fd_map is
+ *   provided and the respective bit is set.
+ *
+ * if to >= 0:
+ *
+ *   close filedescriptors up to the given limit on systems without
+ *   closefrom(). On systems with closefrom(), file descriptors will be closed
+ *   without any limit as for to == -1
+ *
+ * to < 0:
+ *
+ *   close filedescriptors up to the system limit
+ */
 
-	assert(fd >= 0);
+void
+VSUB_closefrom(int from, int to, const struct vbitmap *fd_map,
+    int nullto)
+{
+	int lim = sysconf(_SC_OPEN_MAX) - 1;
+	int null = -1;
+
+	assert(from >= 0);
+
+	if (nullto > lim)
+		nullto = lim;
+
+	if (nullto >= 0) {
+		for (; from <= nullto; from++) {
+			if (fd_map && vbit_test(fd_map, from)) {
+				(void)close(from);
+				continue;
+			}
+			if (null < 0)
+				null = open("/dev/null", O_RDWR);
+			assert(null >= 0);
+			assert(dup2(null, from) == from);
+		}
+	}
+
+	if (null >= 0)
+		(void)close(null);
 
 #ifdef HAVE_CLOSEFROM
-	closefrom(fd);
+	(void) to;
+
+	closefrom(from);
 #else
-	int i = sysconf(_SC_OPEN_MAX);
-	assert(i > 0);
-	for (; i > fd; i--)
-		(void)close(i);
+	if (to < 0 || lim < to)
+		to = lim;
+	assert(to > 0);
+	for (; from <= to; from++)
+		(void)close(from);
 #endif
 }
 
@@ -85,7 +133,7 @@ vsub_vlu(void *priv, const char *str)
 /* returns an exit code */
 unsigned
 VSUB_run(struct vsb *sb, vsub_func_f *func, void *priv, const char *name,
-    int maxlines)
+    int maxlines, int closeto, const struct vbitmap *fd_map, int nullto)
 {
 	int rv, p[2], status;
 	pid_t pid;
@@ -101,6 +149,7 @@ VSUB_run(struct vsb *sb, vsub_func_f *func, void *priv, const char *name,
 		    name, strerror(errno));
 		return (1);
 	}
+
 	assert(p[0] > STDERR_FILENO);
 	assert(p[1] > STDERR_FILENO);
 	if ((pid = fork()) < 0) {
@@ -115,7 +164,7 @@ VSUB_run(struct vsb *sb, vsub_func_f *func, void *priv, const char *name,
 		assert(dup2(p[1], STDOUT_FILENO) == STDOUT_FILENO);
 		assert(dup2(p[1], STDERR_FILENO) == STDERR_FILENO);
 		/* Close all other fds */
-		VSUB_closefrom(STDERR_FILENO + 1);
+		VSUB_closefrom(STDERR_FILENO + 1, closeto, fd_map, nullto);
 		func(priv);
 		/*
 		 * func should either exec or exit, so getting here should be

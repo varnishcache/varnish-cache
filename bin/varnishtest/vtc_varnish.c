@@ -453,7 +453,9 @@ varnish_launch(struct varnish *v)
 		closefd(&v->fds[1]);
 		closefd(&v->fds[2]);
 		closefd(&v->fds[3]);
-		VSUB_closefrom(STDERR_FILENO + 1);
+		// + 100 is just a guesstimate, varnishd will close again
+		VSUB_closefrom(STDERR_FILENO + 1,
+		    STDERR_FILENO + 100, NULL, -1);
 		AZ(execl("/bin/sh", "/bin/sh", "-c", VSB_data(vsb), (char*)0));
 		exit(1);
 	} else {
