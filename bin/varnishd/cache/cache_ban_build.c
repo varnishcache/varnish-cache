@@ -252,7 +252,7 @@ BAN_AddTest(struct ban_proto *bp,
 
 	op = ban_parse_oper(a2);
 	if (op < 0 ||
-	    ((1<<BAN_OPERIDX(op)) & arg_opervalid[BAN_ARGIDX(pv->tag)]) == 0)
+	    ((1U << BAN_OPERIDX(op)) & arg_opervalid[BAN_ARGIDX(pv->tag)]) == 0)
 		return (ban_error(bp,
 				  "expected conditional (%s) got \"%s\"",
 				  arg_operhelp[BAN_ARGIDX(pv->tag)],
@@ -397,7 +397,7 @@ ban_build_arg_operhelp(struct vsb *vsb, int arg)
 	mask = arg_opervalid[BAN_ARGIDX(arg)];
 
 	for (i = 0; i < BAN_OPERARRSZ; i++) {
-		if ((mask & (1<<i)) == 0)
+		if ((mask & (1U << i)) == 0)
 			continue;
 		if (p == NULL)
 			p = oper[i];
