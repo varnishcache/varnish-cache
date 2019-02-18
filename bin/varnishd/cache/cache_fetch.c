@@ -350,11 +350,12 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 		if (bo->stale_oc != NULL &&
 		    ObjCheckFlag(bo->wrk, bo->stale_oc, OF_IMSCAND)) {
 			AZ(bo->stale_oc->flags & (OC_F_HFM|OC_F_PRIVATE));
-			if (ObjCheckFlag(bo->wrk, bo->stale_oc, OF_CHGGZIP)) {
+			if (ObjCheckFlag(bo->wrk, bo->stale_oc, OF_CHGCE)) {
 				/*
-				 * If we changed the gzip status of the object
-				 * the stored Content_Encoding controls we
-				 * must weaken any new ETag we get.
+				 * If a VFP changed C-E in the stored
+				 * object, then don't overwrite C-E from
+				 * the IMS fetch, and we must weaken any
+				 * new ETag we get.
 				 */
 				http_Unset(bo->beresp, H_Content_Encoding);
 				RFC2616_Weaken_Etag(bo->beresp);
