@@ -923,13 +923,6 @@ mcf_vcl_label(struct cli *cli, const char * const *av, void *priv)
 			VCLI_Out(cli, "%s is not a label", vpl->name);
 			return;
 		}
-		if (!VTAILQ_EMPTY(&vpl->dfrom) &&
-		    VTAILQ_FIRST(&vpl->dfrom)->to == vpt) {
-			VCLI_SetResult(cli, CLIS_PARAM);
-			VCLI_Out(cli, "VCL '%s' already has label '%s'",
-			    vpt->name, vpl->name);
-			return;
-		}
 		if (!VTAILQ_EMPTY(&vpt->dfrom) &&
 		    !VTAILQ_EMPTY(&vpl->dto)) {
 			VCLI_SetResult(cli, CLIS_PARAM);
