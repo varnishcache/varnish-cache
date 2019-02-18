@@ -163,7 +163,7 @@ vfp_esi_gzip_init(struct vfp_ctx *vc, struct vfp_entry *vfe)
 	ALLOC_OBJ(vef, VEF_MAGIC);
 	if (vef == NULL)
 		return (VFP_ERROR);
-	vc->obj_flags |= OF_GZIPED | OF_CHGGZIP | OF_ESIPROC;
+	vc->obj_flags |= OF_GZIPED | OF_CHGCE | OF_ESIPROC;
 	vef->vgz = VGZ_NewGzip(vc->wrk->vsl, "G F E");
 	vef->vep = VEP_Init(vc, vc->req, vfp_vep_callback, vef);
 	vef->ibuf_sz = cache_param->gzip_buffer;
