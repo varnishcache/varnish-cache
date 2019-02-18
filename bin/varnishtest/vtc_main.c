@@ -228,7 +228,7 @@ cleaner_setup(void)
 	assert(cleaner_pid >= 0);
 	if (cleaner_pid == 0) {
 		closefd(&p[1]);
-		AZ(nice(1));
+		(void)nice(1);		/* Not important */
 		setbuf(stdin, NULL);
 		AZ(dup2(p[0], STDIN_FILENO));
 		while (fgets(buf, sizeof buf, stdin)) {
