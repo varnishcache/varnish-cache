@@ -225,8 +225,7 @@ vcc_ParseImport(struct vcc *tl)
 		msym->def_e = tl->t;
 
 
-	if (VFIL_searchpath(tl->vmod_path,
-	    vcc_path_dlopen, &hdl, fn, &fnpx)) {
+	if (VFIL_searchpath(tl->vmod_path, vcc_path_dlopen, &hdl, fn, &fnpx)) {
 		VSB_printf(tl->sb, "Could not load VMOD %.*s\n", PF(mod));
 		VSB_printf(tl->sb, "\tFile name: %s\n",
 		    fnpx != NULL ? fnpx : fn);
