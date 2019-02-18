@@ -766,8 +766,8 @@ ccf_ban(struct cli *cli, const char * const *av, void *priv)
 
 // XXX move to VTIM?
 #define vdur_render(buf, dur) do {					\
-	uint64_t dec = (uint64_t)floor(dur);				\
-	uint64_t frac = (uint64_t)floor((dur) * 1e3) % UINT64_C(1000);	\
+	uintmax_t dec = (uintmax_t)floor(dur);				\
+	uintmax_t frac = (uintmax_t)floor((dur) * 1e3) % UINTMAX_C(1000); \
 	if (dec == 0 && frac == 0)					\
 		(void) strncpy(buf, "0s", sizeof(buf));			\
 	else if (dec == 0)						\
