@@ -71,6 +71,9 @@ Varnish Cache trunk (ongoing)
 * The undocumented ``-v`` option to the ``backend.list`` cli command
   has been removed
 
+* The ban facility has been extended by bans access to obj.ttl,
+  obj.age, obj.grace and obj.keep and additional inequality operators.
+
 VCL
 ---
 
