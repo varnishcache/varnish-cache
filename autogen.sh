@@ -1,5 +1,6 @@
 #!/bin/sh
 #
+set -e   # Stop on errors.
 
 warn() {
 	echo "WARNING: $@" 1>&2
@@ -47,5 +48,9 @@ set -ex
 $LIBTOOLIZE --copy --force
 aclocal -I m4 -I .
 autoheader
-automake --add-missing --copy --foreign
+AM_OUTPUT=$(automake --add-missing --copy --foreign 2>&1 | egrep -v "(subdir-objects|is in a subdirectory)")
+if [ -n "$AM_OUTPUT" ]; then
+	printf "$AM_OUTPUT";
+	exit 1;
+fi
 autoconf
