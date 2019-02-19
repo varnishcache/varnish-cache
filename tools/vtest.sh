@@ -212,6 +212,7 @@ while [ $MAXRUNS -eq 0 ] || [ $i -lt $MAXRUNS ]
 do
 	i=$((i + 1))
 
+	(cd "${SRCDIR}" && git reset --hard > /dev/null 2>&1 || true)
 	(cd "${SRCDIR}" && git pull > /dev/null 2>&1 || true)
 	rev=`cd "${SRCDIR}" && git show -s --pretty=format:%H`
 	if [ "${waitnext}" -gt 0 -a "x${rev}" = "x${orev}" ] ; then
