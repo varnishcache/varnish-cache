@@ -34,9 +34,36 @@ Varnish Cache 6.0.3 (unreleased)
   renamed the red/black tree macros from ``VRB_*`` to ``VRBT_*``
   to disambiguate from the acronym for Varnish Request Body.
 
-* added ``req.is_hitmiss`` and ``req.is_hitpass`` (2743_)
+* Added ``req.is_hitmiss`` and ``req.is_hitpass`` (2743_)
 
+* Fix assinging <bool> == <bool> (2809_)
+
+* Add error handling for STV_NewObject() (2831_)
+
+* Fix VRT_fail for 'if'/'elseif' conditional expressions (2840_)
+
+* Add VSL rate limiting (2837_)
+
+  This adds rate limiting to varnishncsa and varnishlog.
+
+* For ``varnishtest -L``, also keep VCL C source files.
+
+* Make it possible to change ``varnishncsa`` update rate. (2741_)
+
+* Tolerate null IP addresses for ACL matches.
+
+* Many cache lookup optimizations.
+
+* Display the VCL syntax during a panic.
+
+* Update to the VCL diagrams to include hit-for-miss.
+
+.. _2741: https://github.com/varnishcache/varnish-cache/pull/2741
 .. _2743: https://github.com/varnishcache/varnish-cache/issues/2743
+.. _2809: https://github.com/varnishcache/varnish-cache/issues/2809
+.. _2831: https://github.com/varnishcache/varnish-cache/issues/2831
+.. _2837: https://github.com/varnishcache/varnish-cache/pull/2837
+.. _2840: https://github.com/varnishcache/varnish-cache/issues/2840
 
 ================================
 Varnish Cache 6.0.2 (2018-11-07)
