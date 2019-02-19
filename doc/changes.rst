@@ -40,11 +40,7 @@ Varnish Cache trunk (ongoing)
 * Adjust code generator python tools to python 3 and prefer python 3
   over python 2 where available
 
-* fix some stats metrics (vsc) which were wrongly marked as _gauge_
-
-* fix ``varnishd -I`` (2782_)
-
-* added a thread pool watchdog which will restart the worker process
+* Added a thread pool watchdog which will restart the worker process
   if scheduling tasks onto worker threads appears stuck. The new
   parameter ``thread_pool_watchdog`` configures it. (2418_)
 
@@ -57,7 +53,7 @@ Varnish Cache trunk (ongoing)
 * VSB quoted output has been unified to three-digit octal,
   VSB_QUOTE_ESCHEX has been added to prefer hex over octal quoting
 
-* retired long deprecated parameters (VIP16_). Replacement mapping is:
+* Retired long deprecated parameters (VIP16_). Replacement mapping is:
   ``shm_reclen`` -> ``vsl_reclen``
   ``vcl_dir`` -> ``vcl_path``
   ``vmod_dir`` -> ``vmod_path``
@@ -74,10 +70,16 @@ Varnish Cache trunk (ongoing)
 * The ban facility has been extended by bans access to obj.ttl,
   obj.age, obj.grace and obj.keep and additional inequality operators.
 
+* Many cache lookup optimizations.
+
+* Display the VCL syntax during a panic.
+
+* Update to the VCL diagrams to include hit-for-miss.
+
 VCL
 ---
 
-* added ``req.is_hitmiss`` and ``req.is_hitpass`` (2743_)
+* Added ``req.is_hitmiss`` and ``req.is_hitpass`` (2743_)
 
 
 bundled tools
@@ -88,6 +90,12 @@ bundled tools
 * For ``varnishtest -L``, also keep VCL C source files
 
 * Add ``param.reset`` command to ``varnishadm``
+
+* Add VSL rate limiting (2837_)
+
+  This adds rate limiting to varnishncsa and varnishlog.
+
+* Make it possible to change ``varnishncsa`` update rate. (2741_)
 
 C APIs (for vmod and utility authors)
 -------------------------------------
@@ -106,6 +114,8 @@ C APIs (for vmod and utility authors)
   function/method is assumed to be immutable. In other words, a vmod
   `must not` modify any data which was previously returned.
 
+* Tolerate null IP addresses for ACL matches.
+
 * Added ``vstrerror()`` as a safe wrapper for ``strerror()`` to avoid
   a NULL pointer dereference under rare conditions where the latter
   could return NULL. (2815_)
@@ -121,7 +131,7 @@ C APIs (for vmod and utility authors)
   function will be called ``vmod_foo`` and with ``$Prefix bar`` it
   will be called ``bar_foo``.
 
-* in the `vmodtool`\ -generated ReStructuredText documentation,
+* In the `vmodtool`\ -generated ReStructuredText documentation,
   anchors have been renamed
 
   * from ``obj_``\ `class` to `vmodname`\ ``.``\ `class` for
@@ -177,9 +187,9 @@ C APIs (for vmod and utility authors)
 Fixed bugs
 ----------
 
-* fixed ``varnishhist`` display error (2780_)
+* Fixed ``varnishhist`` display error (2780_)
 
-* fix ``varnishstat -f`` in curses mode (interactively, without
+* Fix ``varnishstat -f`` in curses mode (interactively, without
   ``-1``, 2787_)
 
 * Handle an out-of-workspace condition in HTTP/2 delivery more
@@ -198,23 +208,34 @@ Fixed bugs
 * Fix vmod object constructor documentation in the ``vmodtool.py`` -
   generated RST files
 
+* Fix some stats metrics (vsc) which were wrongly marked as _gauge_
 
-.. _2809: https://github.com/varnishcache/varnish-cache/issues/2809
-.. _2820: https://github.com/varnishcache/varnish-cache/issues/2820
-.. _2815: https://github.com/varnishcache/varnish-cache/issues/2815
-.. _2823: https://github.com/varnishcache/varnish-cache/issues/2823
-.. _2813: https://github.com/varnishcache/varnish-cache/pull/2813
-.. _2792: https://github.com/varnishcache/varnish-cache/pull/2792
-.. _2783: https://github.com/varnishcache/varnish-cache/pull/2783
+* Fix ``varnishd -I`` (2782_)
+
+* Add error handling for STV_NewObject() (2831_)
+
+* Fix VRT_fail for 'if'/'elseif' conditional expressions (2840_)
+
+.. _2418: https://github.com/varnishcache/varnish-cache/issues/2418
+.. _2589: https://github.com/varnishcache/varnish-cache/issues/2589
+.. _2741: https://github.com/varnishcache/varnish-cache/pull/2741
+.. _2743: https://github.com/varnishcache/varnish-cache/issues/2743
 .. _2780: https://github.com/varnishcache/varnish-cache/issues/2780
 .. _2782: https://github.com/varnishcache/varnish-cache/issues/2782
+.. _2783: https://github.com/varnishcache/varnish-cache/pull/2783
 .. _2787: https://github.com/varnishcache/varnish-cache/issues/2787
-.. _2589: https://github.com/varnishcache/varnish-cache/issues/2589
-.. _2418: https://github.com/varnishcache/varnish-cache/issues/2418
 .. _2788: https://github.com/varnishcache/varnish-cache/issues/2788
 .. _2790: https://github.com/varnishcache/varnish-cache/issues/2790
+.. _2792: https://github.com/varnishcache/varnish-cache/pull/2792
+.. _2809: https://github.com/varnishcache/varnish-cache/issues/2809
+.. _2813: https://github.com/varnishcache/varnish-cache/pull/2813
+.. _2815: https://github.com/varnishcache/varnish-cache/issues/2815
+.. _2820: https://github.com/varnishcache/varnish-cache/issues/2820
+.. _2823: https://github.com/varnishcache/varnish-cache/issues/2823
+.. _2831: https://github.com/varnishcache/varnish-cache/issues/2831
+.. _2837: https://github.com/varnishcache/varnish-cache/pull/2837  
+.. _2840: https://github.com/varnishcache/varnish-cache/issues/2840
 .. _VIP16: https://github.com/varnishcache/varnish-cache/wiki/VIP16%3A-Retire-parameters-aliases
-.. _2743: https://github.com/varnishcache/varnish-cache/issues/2743
 
 ================================
 Varnish Cache 6.1.0 (2018-09-17)
