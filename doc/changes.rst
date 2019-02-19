@@ -27,7 +27,7 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
-Varnish Cache 6.0.3 (unreleased)
+Varnish Cache 6.0.3 (2019-02-19)
 ================================
 
 * Included ``vtree.h`` in the distribution for vmods and
