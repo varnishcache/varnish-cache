@@ -105,7 +105,7 @@ varnish v1 -clijson "vcl.list -j"
 
 varnish v1 -start
 varnish v1 -cliok "vcl.list"
-varnish v1 -cliok "vcl.label snarf vcl1"
+varnish v1 -cliok "vcl.label slartibartfast vcl1"
 server s1 -start
 client c1 -run
 

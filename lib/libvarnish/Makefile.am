@@ -39,6 +39,7 @@ libvarnish_a_SOURCES = \
 	vss.c \
 	vsub.c \
 	vtcp.c \
+	vte.c \
 	vtim.c \
 	vus.c
 

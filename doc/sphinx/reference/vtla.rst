@@ -90,6 +90,9 @@ VSS
 VTC
     Varnish Test Code -- a test-specification for the varnishtest program. 
 
+VTE
+    Varnish Turbo Encabulator
+
 VTLA
     Varnish Three Letter Acronym -- No rule without an exception. 
 

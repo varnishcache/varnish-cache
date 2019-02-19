@@ -657,12 +657,15 @@ vcl_cli_list(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vcl *vcl;
 	const char *flg;
+	struct vsb *vsb;
 
 	/* NB: Shall generate same output as mcf_vcl_list() */
 
 	(void)av;
 	(void)priv;
 	ASSERT_CLI();
+	vsb = VSB_new_auto();
+	AN(vsb);
 	VTAILQ_FOREACH(vcl, &vcl_head, list) {
 		if (vcl == vcl_active) {
 			flg = "active";
@@ -670,19 +673,20 @@ vcl_cli_list(struct cli *cli, const char * const *av, void *priv)
 			flg = "discarded";
 		} else
 			flg = "available";
-		VCLI_Out(cli, "%-10s %5s/%-8s %6u %s",
+		VSB_printf(vsb, "%s\t%s\t%s\t%6u\t%s",
 		    flg, vcl->state, vcl->temp, vcl->busy, vcl->loaded_name);
 		if (vcl->label != NULL) {
-			VCLI_Out(cli, " -> %s", vcl->label->loaded_name);
+			VSB_printf(vsb, "\t->\t%s", vcl->label->loaded_name);
 			if (vcl->nrefs)
-				VCLI_Out(cli, " (%d return(vcl)%s)",
+				VSB_printf(vsb, " (%d return(vcl)%s)",
 				    vcl->nrefs, vcl->nrefs > 1 ? "'s" : "");
 		} else if (vcl->nlabels > 0) {
-			VCLI_Out(cli, " (%d label%s)",
+			VSB_printf(vsb, "\t<-\t(%d label%s)",
 			    vcl->nlabels, vcl->nlabels > 1 ? "s" : "");
 		}
-		VCLI_Out(cli, "\n");
+		VSB_printf(vsb, "\n");
 	}
+	VCLI_VTE(cli, &vsb, 80);
 }
 
 static void v_matchproto_(cli_func_t)

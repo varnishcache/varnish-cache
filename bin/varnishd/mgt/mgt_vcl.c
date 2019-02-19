@@ -799,11 +799,13 @@ mcf_vcl_list(struct cli *cli, const char * const *av, void *priv)
 	char *p;
 	struct vclprog *vp;
 	struct vcldep *vd;
+	struct vsb *vsb;
 
 	/* NB: Shall generate same output as vcl_cli_list() */
 
 	(void)av;
 	(void)priv;
+
 	if (MCH_Running()) {
 		if (!mgt_cli_askchild(&status, &p, "vcl.list\n")) {
 			VCLI_SetResult(cli, status);
@@ -811,26 +813,29 @@ mcf_vcl_list(struct cli *cli, const char * const *av, void *priv)
 		}
 		free(p);
 	} else {
+		vsb = VSB_new_auto();
+		AN(vsb);
+
 		VTAILQ_FOREACH(vp, &vclhead, list) {
-			VCLI_Out(cli, "%-10s %5s",
-			    vp == active_vcl ? "active" : "available",
-			    vp->state);
-			VCLI_Out(cli, "/%-8s", vp->warm ?
+			VSB_printf(vsb, "%s",
+			    vp == active_vcl ? "active" : "available");
+			VSB_printf(vsb, "\t%s\t%s", vp->state, vp->warm ?
 			    VCL_STATE_WARM : VCL_STATE_COLD);
-			VCLI_Out(cli, " %6s %s", "-", vp->name);
+			VSB_printf(vsb, "\t%6s\t%s", "-", vp->name);
 			if (mcf_is_label(vp)) {
 				vd = VTAILQ_FIRST(&vp->dfrom);
 				AN(vd);
-				VCLI_Out(cli, " -> %s", vd->to->name);
+				VSB_printf(vsb, "\t->\t%s", vd->to->name);
 				if (vp->nto > 0)
-					VCLI_Out(cli, " (%d return(vcl)%s)",
+					VSB_printf(vsb, " (%d return(vcl)%s)",
 					    vp->nto, vp->nto > 1 ? "'s" : "");
 			} else if (vp->nto > 0) {
-				VCLI_Out(cli, " (%d label%s)",
+				VSB_printf(vsb, "\t<-\t(%d label%s)",
 				    vp->nto, vp->nto > 1 ? "s" : "");
 			}
-			VCLI_Out(cli, "\n");
+			VSB_printf(vsb, "\n");
 		}
+		VCLI_VTE(cli, &vsb, 80);
 	}
 }
 
