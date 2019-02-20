@@ -66,6 +66,11 @@ VCLI_VTE(struct cli *cli, struct vsb **src, int width)
 	AN(s);
 	memset(w_col, 0, sizeof w_col);
 	for (p = s; *p ; p++) {
+		if (wl == 0 && *p == ' ') {
+			while (p[1] != '\0' && *p != '\n')
+				p++;
+			continue;
+		}
 		if (*p == '\t' || *p == '\n') {
 			if (wc > w_col[cc])
 				w_col[cc] = wc;
@@ -81,9 +86,10 @@ VCLI_VTE(struct cli *cli, struct vsb **src, int width)
 			if (wl > w_ln)
 				w_ln = wl;
 			wl = 0;
+		} else {
+			wc++;
+			wl++;
 		}
-		wc++;
-		wl++;
 	}
 
 	if (n_col == 0)
@@ -97,6 +103,15 @@ VCLI_VTE(struct cli *cli, struct vsb **src, int width)
 	cc = 0;
 	wc = 0;
 	for (p = s; *p ; p++) {
+		if (wc == 0 && cc == 0 && *p == ' ') {
+			while (p[1] != '\0') {
+				VCLI_Out(cli, "%c", *p);
+				if (*p == '\n')
+					break;
+				p++;
+			}
+			continue;
+		}
 		if (*p == '\t') {
 			while (wc++ < w_col[cc] + nsp)
 				VCLI_Out(cli, " ");

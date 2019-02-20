@@ -496,11 +496,6 @@ struct vdi_methods {
 	vdi_list_f			*list;
 };
 
-/* width of fields in "backend.list" */
-#define VDI_LIST_W_NAME	30
-#define VDI_LIST_W_ADMIN	 7
-#define VDI_LIST_W_PROBE	14
-
 struct vcldir;
 
 struct director {

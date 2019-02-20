@@ -515,19 +515,19 @@ void
 VBP_Status(struct vsb *vsb, const struct backend *be, int details, int json)
 {
 	struct vbp_target *vt;
-	char buf[VDI_LIST_W_PROBE + 2];
 
 	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
 	vt = be->probe;
 	CHECK_OBJ_NOTNULL(vt, VBP_TARGET_MAGIC);
 
 	if (!details) {
-		bprintf(buf, "%u/%u %s", vt->good, vt->window,
-		    vt->backend->director->sick ? "bad" : "good");
 		if (json)
-			VSB_printf(vsb, "\"%s\"", buf);
+			VSB_printf(vsb, "[%u, %u, \"%s\"]",
+			    vt->good, vt->window,
+			    vt->backend->director->sick ? "bad" : "good");
 		else
-			VSB_printf(vsb, "%-*s", VDI_LIST_W_PROBE, buf);
+			VSB_printf(vsb, "%u/%u %s", vt->good, vt->window,
+			    vt->backend->director->sick ? "bad" : "good");
 		return;
 	}
 
@@ -547,7 +547,7 @@ VBP_Status(struct vsb *vsb, const struct backend *be, int details, int json)
 	}
 
 	VSB_printf(vsb,
-	    "\nCurrent states  good: %2u threshold: %2u window: %2u\n",
+	    "\n Current states  good: %2u threshold: %2u window: %2u\n",
 	    vt->good, vt->threshold, vt->window);
 	VSB_printf(vsb,
 	    "  Average response time of good probes: %.6f\n", vt->avg);
