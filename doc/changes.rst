@@ -67,6 +67,18 @@ Varnish Cache trunk (ongoing)
 * The undocumented ``-v`` option to the ``backend.list`` cli command
   has been removed
 
+* Changed the formatting of the ``vcl.list`` command from::
+
+    status	state/temperature	busy	name	[labelinfo]
+
+  to::
+
+    status	state	temperature	busy	name	[<-|->]	[info]
+
+  Column width is now dynamic.
+
+  See varnish-cli(7) for details on the field values (which remain unchanged).
+
 * The ban facility has been extended by bans access to obj.ttl,
   obj.age, obj.grace and obj.keep and additional inequality operators.
 

@@ -107,7 +107,17 @@ CLI_CMD(VCL_LIST,
 	"vcl.list",
 	"vcl.list [-j]",
 	"List all loaded configuration.",
-	"  ``-j`` specifies JSON output.",
+	"  Unless ``-j`` is specified for JSON output, "
+	" the output format is five or seven columns of dynamic width, "
+	" separated by white space with the fields:\n\n"
+	"  * status: active, available or discarded\n\n"
+	"  * state: label, cold, warm, or auto\n\n"
+	"  * temperature: init, cold, warm, busy or cooling\n\n"
+	"  * busy: number of references to this vcl (integer)\n\n"
+	"  * name: the name given to this vcl or label\n\n"
+	"  * [ ``<-`` | ``->`` ] and label info last two fields)\n\n"
+	"    * ``->`` <vcl> : label \"points to\" the named <vcl>\n\n"
+	"    * ``<-`` (<n> label[s]): the vcl has <n> label(s)\n\n",
 	0, 0
 )
 
