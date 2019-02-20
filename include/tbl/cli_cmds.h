@@ -52,7 +52,7 @@ CLI_CMD(BAN_LIST,
 	"ban.list [-j]",
 	"List the active bans.",
 
-	"  Unless ``-j`` is specified (for JSON output), "
+	"  Unless ``-j`` is specified for JSON output, "
 	" the output format is:\n\n"
 	"  * Time the ban was issued.\n\n"
 	"  * Objects referencing this ban.\n\n"
