@@ -77,7 +77,8 @@ Varnish Cache trunk (ongoing)
 
   Column width is now dynamic.
 
-  See varnish-cli(7) for details on the field values (which remain unchanged).
+  Field values remain unchanged except for the label information, see
+  varnish-cli(7) for details.
 
 * The ban facility has been extended by bans access to obj.ttl,
   obj.age, obj.grace and obj.keep and additional inequality operators.
