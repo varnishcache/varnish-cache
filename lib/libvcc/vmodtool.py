@@ -361,6 +361,8 @@ class ProtoType(object):
                 t = arg(wl, names, st.vcc.enums, ',')
             if t.vt == 'VOID':
                 err("arguments can not be of type '%s'" % t.vt, warn=False)
+            if t.vt == 'STRING_LIST' and len(wl) > 1:
+                err("'%s' must be the last argument" % t.vt, warn=False)
             if t.nm is None:
                 t.nm2 = "arg%d" % n
             else:
