@@ -345,7 +345,7 @@ The `vcl_backend_fetch` subroutine may terminate with calling
     background fetch, control is passed to :ref:`vcl_synth` on the
     client side with ``resp.status`` preset to 503.
 
-Before calling `vcl_backend_fetch`, varnish core prepares the `bereq`
+Before calling `vcl_backend_fetch`, Varnish core prepares the `bereq`
 backend request as follows:
 
 * Unless the request is a `pass`,
@@ -411,7 +411,7 @@ The `vcl_backend_response` subroutine may terminate with calling
 304 handling
 ~~~~~~~~~~~~
 
-For a 304 response, varnish core code amends ``beresp`` before calling
+For a 304 response, Varnish core code amends ``beresp`` before calling
 `vcl_backend_response`:
 
 * If the gzip status changed, ``Content-Encoding`` is unset and any

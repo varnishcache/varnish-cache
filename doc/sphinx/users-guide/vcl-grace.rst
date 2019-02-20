@@ -61,7 +61,7 @@ The effect of grace and keep
 For most users setting the default grace and/or a suitable grace for
 each object is enough. The default VCL will do the right thing and
 behave as described above. However, if you want to customize how
-varnish behaves, then you should know some of the details on how this
+Varnish behaves, then you should know some of the details on how this
 works.
 
 When ``sub vcl_recv`` ends with ``return (lookup)`` (which is the

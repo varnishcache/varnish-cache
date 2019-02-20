@@ -45,7 +45,7 @@ following VCL in place::
 
 As you can see we have used a new action - return(purge). This ends
 execution of vcl_recv and jumps to vcl_hash. This is just like we
-handle a regular request. When vcl_hash calls return(lookup) varnish
+handle a regular request. When vcl_hash calls return(lookup) Varnish
 will purge the object and then call vcl_purge. Here you have the
 option of adding any particular actions you want Varnish to take once
 it has purge the object.
@@ -78,7 +78,7 @@ the following command from the shell::
 See :ref:`vcl(7)_ban` for details on the syntax of ban expressions. In
 particular, note that in the example given above, the quotes are
 required for execution from the shell and escaping the backslash in
-the regular expression is required by the varnish cli interface.
+the regular expression is required by the Varnish cli interface.
 
 Bans are checked when we hit an object in the cache, but before we
 deliver it. *An object is only checked against newer bans*.

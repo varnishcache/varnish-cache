@@ -17,7 +17,7 @@ First load the two VCL files::
     vcl.load vc_1 /somewhere/vc.vcl
 
 These are 100% normal VCL files, as they would look if you ran
-only that single domain on your varnish instance.
+only that single domain on your Varnish instance.
 
 Next we need to point VCL labels to them::
 
