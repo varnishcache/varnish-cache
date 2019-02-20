@@ -108,7 +108,7 @@ bundled tools
 
   This adds rate limiting to varnishncsa and varnishlog.
 
-* Make it possible to change ``varnishncsa`` update rate. (2741_)
+* Make it possible to change ``varnishstat`` update rate. (2741_)
 
 C APIs (for vmod and utility authors)
 -------------------------------------
