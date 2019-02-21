@@ -71,18 +71,18 @@ libvmod_XXX_la_LDFLAGS = \\
 \t$(VMOD_LDFLAGS) \\
 \t@SAN_LDFLAGS@
 
-nodist_libvmod_XXX_la_SOURCES = vcc_if.c vcc_if.h
+nodist_libvmod_XXX_la_SOURCES = PFX.c PFX.h
 
-$(libvmod_XXX_la_OBJECTS): vcc_if.h
+$(libvmod_XXX_la_OBJECTS): PFX.h
 
-vcc_if.h vmod_XXX.rst vmod_XXX.man.rst: vcc_if.c
+PFX.h vmod_XXX.rst vmod_XXX.man.rst: PFX.c
 
-vcc_if.c: $(vmodtool) $(srcdir)/vmod.vcc
+PFX.c: $(vmodtool) $(srcdir)/vmod.vcc
 \t@PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/vmod.vcc
 
 EXTRA_DIST = vmod.vcc automake_boilerplate.am
 
-CLEANFILES = $(builddir)/vcc_if.c $(builddir)/vcc_if.h \\
+CLEANFILES = $(builddir)/PFX.c $(builddir)/PFX.h \\
 \t$(builddir)/vmod_XXX.rst \\
 \t$(builddir)/vmod_XXX.man.rst
 
@@ -952,7 +952,8 @@ class vcc(object):
     def amboilerplate(self):
         ''' Produce boilplate for autocrap tools '''
         fo = self.openfile("automake_boilerplate.am")
-        fo.write(AMBOILERPLATE.replace("XXX", self.modname))
+        fo.write(AMBOILERPLATE.replace("XXX", self.modname)
+                 .replace("PFX", self.pfx))
         fo.close()
 
     def mkdefs(self, fo):
