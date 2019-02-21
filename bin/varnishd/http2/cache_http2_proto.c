@@ -634,7 +634,7 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	if (r2 == NULL) {
 		if (h2->rxf_stream <= h2->highest_stream)
 			return (H2CE_PROTOCOL_ERROR);	// rfc7540,l,1153,1158
-		if (h2->refcnt >= h2->local_settings.max_concurrent_streams) {
+		if (h2->refcnt > h2->local_settings.max_concurrent_streams) {
 			VSLb(h2->vsl, SLT_Debug,
 			     "H2: stream %u: Hit maximum number of "
 			     "concurrent streams", h2->rxf_stream);
