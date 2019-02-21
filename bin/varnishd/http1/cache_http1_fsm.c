@@ -332,6 +332,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			    &req->t_first, &req->t_req,
 			    sp->t_idle + cache_param->timeout_linger,
 			    sp->t_idle + cache_param->timeout_idle,
+			    NAN,
 			    cache_param->http_req_size);
 			AZ(req->htc->ws->r);
 			if (hs < HTC_S_EMPTY) {

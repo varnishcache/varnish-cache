@@ -247,12 +247,14 @@ HTC_RxPipeline(struct http_conn *htc, void *p)
  * *t1 becomes time of first non-idle rx
  * *t2 becomes time of complete rx
  * ti is when we return IDLE if nothing has arrived
- * tn is when we timeout on non-complete
+ * tn is when we timeout on non-complete (total timeout)
+ * td is max timeout between reads
  */
 
 enum htc_status_e
 HTC_RxStuff(struct http_conn *htc, htc_complete_f *func,
-    vtim_real *t1, vtim_real *t2, vtim_real ti, vtim_real tn, int maxbytes)
+    vtim_real *t1, vtim_real *t2, vtim_real ti, vtim_real tn, vtim_dur td,
+    int maxbytes)
 {
 	vtim_dur tmo;
 	vtim_real now;
@@ -267,7 +269,7 @@ HTC_RxStuff(struct http_conn *htc, htc_complete_f *func,
 	assert(htc->rxbuf_b <= htc->rxbuf_e);
 	assert(htc->rxbuf_e <= htc->ws->r);
 
-	AZ(isnan(tn));
+	AZ(isnan(tn) && isnan(td));
 	if (t1 != NULL)
 		assert(isnan(*t1));
 
@@ -309,9 +311,18 @@ HTC_RxStuff(struct http_conn *htc, htc_complete_f *func,
 		else
 			WRONG("htc_status_e");
 
-		tmo = tn - now;
-		if (!isnan(ti) && ti < tn && hs == HTC_S_EMPTY)
+		if (hs == HTC_S_EMPTY && !isnan(ti) && (isnan(tn) || ti < tn))
 			tmo = ti - now;
+		else if (isnan(tn))
+			tmo = td;
+		else if (isnan(td))
+			tmo = tn - now;
+		else if (td < tn - now)
+			tmo = td;
+		else
+			tmo = tn - now;
+
+		AZ(isnan(tmo));
 		z = maxbytes - (htc->rxbuf_e - htc->rxbuf_b);
 		if (z <= 0) {
 			/* maxbytes reached but not HTC_S_COMPLETE. Return
@@ -328,14 +339,11 @@ HTC_RxStuff(struct http_conn *htc, htc_complete_f *func,
 		} else if (z > 0)
 			htc->rxbuf_e += z;
 		else if (z == -2) {
-			if (hs == HTC_S_EMPTY && ti <= now) {
-				WS_ReleaseP(htc->ws, htc->rxbuf_b);
+			WS_ReleaseP(htc->ws, htc->rxbuf_b);
+			if (hs == HTC_S_EMPTY)
 				return (HTC_S_IDLE);
-			}
-			if (tn <= now) {
-				WS_ReleaseP(htc->ws, htc->rxbuf_b);
+			else
 				return (HTC_S_TIMEOUT);
-			}
 		}
 	}
 }

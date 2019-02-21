@@ -178,7 +178,7 @@ V1F_FetchRespHdr(struct busyobj *bo)
 
 	t = VTIM_real() + htc->first_byte_timeout;
 	hs = HTC_RxStuff(htc, HTTP1_Complete, NULL, NULL,
-	    t, t + htc->between_bytes_timeout, cache_param->http_resp_size);
+	    t, NAN, htc->between_bytes_timeout, cache_param->http_resp_size);
 	if (hs != HTC_S_COMPLETE) {
 		bo->acct.beresp_hdrbytes +=
 		    htc->rxbuf_e - htc->rxbuf_b;
