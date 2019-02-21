@@ -58,11 +58,20 @@ Varnish Cache trunk (ongoing)
   ``vcl_dir`` -> ``vcl_path``
   ``vmod_dir`` -> ``vmod_path``
 
-* Changed the width of the `Probe` column of the ``backend.list``
-  cli command from 10 to 14 characters
+* The width of the columns of the ``backend.list`` cli command output
+  is now dynamic.
 
   For best forward compatibility, we recommend that scripts parse JSON
   output as obtained using the ``-j`` option.
+
+* The format of the ``backend.list -j`` (JSON) cli command output has
+  changed:
+
+  * the ``probe_message`` field of a backend can now also have the
+    format ``[X, Y, state]``, X and Y being integers signifying X out
+    of Y probes/backends/...
+
+.. expecting more changes here #2896
 
 * The undocumented ``-v`` option to the ``backend.list`` cli command
   has been removed
