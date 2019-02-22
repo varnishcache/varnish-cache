@@ -755,6 +755,8 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		return (H2SE_STREAM_CLOSED); // rfc7540,l,1766,1769
 	}
 	Lck_Lock(&h2->sess->mtx);
+	while (h2->mailcall != NULL && h2->error == 0 && r2->error == 0)
+		AZ(Lck_CondWait(h2->cond, &h2->sess->mtx, 0));
 	AZ(h2->mailcall);
 	h2->mailcall = r2;
 	h2->req0->r_window -= h2->rxf_len;
