@@ -1,20 +1,148 @@
 varnishtest "Test large pass deleted during streaming"
 
+barrier ba1 cond 3
+barrier ba2 cond 2
+
+barrier bb1 cond 3
+barrier bb2 cond 2
+
+barrier bc1 cond 3
+barrier bc2 cond 2
+
+barrier bd1 cond 3
+barrier bd2 cond 2
+
 server s1 {
 	rxreq
-	txresp -nolen -hdr "Transfer-Encoding: chunked"
-	chunkedlen 65536
+	expect req.url == "/hfm"
+	txresp -nolen -hdr "Transfer-Encoding: chunked" \
+	    -hdr "Cache-Control: no-cache"
+	chunkedlen 32768
+	barrier ba1 sync
+	chunkedlen 32768
+	chunkedlen 0
+
+	rxreq
+	expect req.url == "/hfm"
+	txresp -nolen -hdr "Transfer-Encoding: chunked" \
+	    -hdr "Cache-Control: no-cache"
+	chunkedlen 32768
+	barrier bb1 sync
+	chunkedlen 32768
+	chunkedlen 0
+
+	rxreq
+	expect req.url == "/hfp"
+	txresp -nolen -hdr "Transfer-Encoding: chunked" \
+	    -hdr "Cache-Control: no-cache"
+	chunkedlen 32768
+	barrier bc1 sync
+	chunkedlen 32768
+	chunkedlen 0
+
+	rxreq
+	expect req.url == "/hfp"
+	txresp -nolen -hdr "Transfer-Encoding: chunked" \
+	    -hdr "Cache-Control: no-cache"
+	chunkedlen 32768
+	barrier bd1 sync
+	chunkedlen 32768
 	chunkedlen 0
 } -start
 
 varnish v1 \
-	-arg "-s default,1m" -vcl+backend { } -start
+	-arg "-s default,1m" -vcl+backend {
+	sub vcl_backend_response {
+		if (bereq.url == "/hfp") {
+			return (pass(10m));
+		}
+	}
+	sub vcl_deliver {
+		set resp.http.is-hitmiss = req.is_hitmiss;
+		set resp.http.is-hitpass = req.is_hitpass;
+	}
+} -start
 
-varnish v1 -cliok "debug.fragfetch 1024"
+varnish v1 -cliok "debug.fragfetch 8192"
 
 client c1 {
-	txreq -hdr "Cookie: bar"
-	rxresp
+	txreq -url "/hfm"
+	rxresphdrs
+	rxrespbody -max 8192
+	barrier ba1 sync
+	barrier ba2 sync
+	rxrespbody
 	expect resp.bodylen == 65536
+	expect resp.http.is-hitmiss == false
+	expect resp.http.is-hitpass == false
 	expect_pattern
-} -run
+} -start
+
+barrier ba1 sync
+varnish v1 -expect SM?.Transient.g_bytes < 24576
+barrier ba2 sync
+
+# HFM object
+varnish v1 -expect SM?.Transient.g_bytes < 500
+
+# pass on the HFM
+client c1 {
+	txreq -url "/hfm"
+	rxresphdrs
+	rxrespbody -max 8192
+	barrier bb1 sync
+	barrier bb2 sync
+	rxrespbody
+	expect resp.bodylen == 65536
+	expect resp.http.is-hitmiss == true
+	expect resp.http.is-hitpass == false
+	expect_pattern
+} -start
+
+barrier bb1 sync
+varnish v1 -expect SM?.Transient.g_bytes < 24576
+barrier bb2 sync
+
+client c1 -wait
+
+## hfp
+
+client c1 {
+	txreq -url "/hfp"
+	rxresphdrs
+	rxrespbody -max 8192
+	barrier bc1 sync
+	barrier bc2 sync
+	rxrespbody
+	expect resp.bodylen == 65536
+	expect resp.http.is-hitmiss == false
+	expect resp.http.is-hitpass == false
+	expect_pattern
+} -start
+
+barrier bc1 sync
+varnish v1 -expect SM?.Transient.g_bytes < 24576
+barrier bc2 sync
+
+# HFM object
+varnish v1 -expect SM?.Transient.g_bytes < 500
+
+# pass on the HFM
+client c1 {
+	txreq -url "/hfp"
+	rxresphdrs
+	rxrespbody -max 8192
+	barrier bd1 sync
+	barrier bd2 sync
+	rxrespbody
+	expect resp.bodylen == 65536
+	expect resp.http.is-hitmiss == false
+	expect resp.http.is-hitpass == true
+	expect_pattern
+} -start
+
+barrier bd1 sync
+varnish v1 -expect SM?.Transient.g_bytes < 24576
+barrier bd2 sync
+
+client c1 -wait

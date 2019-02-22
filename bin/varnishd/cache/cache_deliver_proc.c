@@ -150,11 +150,12 @@ vdp_objiterator(void *priv, unsigned flush, const void *ptr, ssize_t len)
 int
 VDP_DeliverObj(struct req *req)
 {
-	int r;
+	int r, final;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	r = ObjIterate(req->wrk, req->objcore, req, vdp_objiterator,
-	    req->objcore->flags & OC_F_PRIVATE ? 1 : 0);
+	final = req->objcore->flags & (OC_F_PRIVATE | OC_F_HFM | OC_F_HFP)
+	    ? 1 : 0;
+	r = ObjIterate(req->wrk, req->objcore, req, vdp_objiterator, final);
 	if (r < 0)
 		return (r);
 	return (0);
