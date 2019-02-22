@@ -56,6 +56,7 @@ static VCL_DURATION vcl_release_delay = 0.0;
 static pthread_mutex_t vsc_mtx = PTHREAD_MUTEX_INITIALIZER;
 static struct vsc_seg *vsc_seg = NULL;
 static struct VSC_debug *vsc = NULL;
+static int loads;
 
 /**********************************************************************/
 
@@ -284,6 +285,9 @@ event_load(VRT_CTX, struct vmod_priv *priv)
 	struct priv_vcl *priv_vcl;
 
 	AN(ctx->msg);
+
+	loads++;
+
 	if (cache_param->nuke_limit == 42) {
 		VSB_printf(ctx->msg, "nuke_limit is not the answer.");
 		return (-1);
@@ -370,19 +374,38 @@ event_cold(VRT_CTX, const struct vmod_priv *priv)
 	return (0);
 }
 
+static int
+event_discard(VRT_CTX, void *priv)
+{
+
+	(void)priv;
+
+	VRT_RemoveVFP(ctx, &xyzzy_rot13);
+
+	if (--loads)
+		return(0);
+
+	/*
+	 * The vsc and vsc_seg variables are not per-VCL, they are
+	 * the same in all VCL's which import the same binary version
+	 * of this VMOD, so we should only carry out cleanup on the
+	 * last discard event.
+	 */
+	if (vsc)
+		VSC_debug_Destroy(&vsc_seg);
+
+	return(0);
+}
+
 int v_matchproto_(vmod_event_f)
 xyzzy_event_function(VRT_CTX, struct vmod_priv *priv, enum vcl_event_e e)
 {
 
 	switch (e) {
-	case VCL_EVENT_LOAD: return (event_load(ctx, priv));
-	case VCL_EVENT_WARM: return (event_warm(ctx, priv));
-	case VCL_EVENT_COLD: return (event_cold(ctx, priv));
-	case VCL_EVENT_DISCARD:
-		VRT_RemoveVFP(ctx, &xyzzy_rot13);
-		if (vsc)
-			VSC_debug_Destroy(&vsc_seg);
-		return (0);
+	case VCL_EVENT_LOAD:	return (event_load(ctx, priv));
+	case VCL_EVENT_WARM:	return (event_warm(ctx, priv));
+	case VCL_EVENT_COLD:	return (event_cold(ctx, priv));
+	case VCL_EVENT_DISCARD:	return (event_discard(ctx, priv));
 	default: return (0);
 	}
 }
