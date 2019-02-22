@@ -18,6 +18,7 @@ Bugs fixed
 * Panic on return (retry) of a conditional fetch (2700_)
 * Set the task arguments under the lock (2719_)
 * Stabilize the test case b000064.vtc for real (2751_)
+* cache_req_body panics when Transient is full (2831_)
 
 .. _2661: https://github.com/varnishcache/varnish-cache/issues/2661
 .. _2681: https://github.com/varnishcache/varnish-cache/issues/2681
@@ -25,6 +26,7 @@ Bugs fixed
 .. _2700: https://github.com/varnishcache/varnish-cache/issues/2700
 .. _2719: https://github.com/varnishcache/varnish-cache/issues/2719
 .. _2751: https://github.com/varnishcache/varnish-cache/issues/2751
+.. _2831: https://github.com/varnishcache/varnish-cache/issues/2831
 
 =================================
 Varnish Cache 4.1.10 (2018-04-25)
