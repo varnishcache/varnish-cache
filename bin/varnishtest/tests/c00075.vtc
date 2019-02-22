@@ -82,6 +82,8 @@ barrier ba1 sync
 varnish v1 -expect SM?.Transient.g_bytes < 24576
 barrier ba2 sync
 
+client c1 -wait
+
 # HFM object
 varnish v1 -expect SM?.Transient.g_bytes < 500
 
@@ -105,7 +107,10 @@ barrier bb2 sync
 
 client c1 -wait
 
-## hfp
+# HFM object
+varnish v1 -expect SM?.Transient.g_bytes < 500
+
+##### hfp
 
 client c1 {
 	txreq -url "/hfp"
@@ -124,10 +129,12 @@ barrier bc1 sync
 varnish v1 -expect SM?.Transient.g_bytes < 24576
 barrier bc2 sync
 
-# HFM object
-varnish v1 -expect SM?.Transient.g_bytes < 500
+client c1 -wait
 
-# pass on the HFM
+# HFM + HFP object
+varnish v1 -expect SM?.Transient.g_bytes < 1000
+
+# pass on the HFP
 client c1 {
 	txreq -url "/hfp"
 	rxresphdrs
@@ -146,3 +153,6 @@ varnish v1 -expect SM?.Transient.g_bytes < 24576
 barrier bd2 sync
 
 client c1 -wait
+
+# HFM + HFP object
+varnish v1 -expect SM?.Transient.g_bytes < 1000
