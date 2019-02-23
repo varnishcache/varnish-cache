@@ -154,3 +154,13 @@ shell -match {^\*[ ]+<< BeReq\s+>>[ ]+1005[ ]+
 -[ ]+BereqURL[ ]+/bar
 $} \
 	"varnishlog -r ${tmpdir}/vlog.bin -b -C -I BAR"
+
+shell -match {^\*[ ]+<< BeReq\s+>>[ ]+1005[ ]+} \
+	"cat ${tmpdir}/vlog.bin | varnishlog -r - -b -C -I BAR"
+
+shell "rm -f ${tmpdir}/foo"
+shell -err -expect "Cannot open ${tmpdir}/foo: " \
+	"varnishlog -r ${tmpdir}/foo"
+shell "echo foobar > ${tmpdir}/foo"
+shell -err -expect "Not a VSL file: ${tmpdir}/foo" \
+	"varnishlog -r ${tmpdir}/foo"
