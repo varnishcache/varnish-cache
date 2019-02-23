@@ -349,10 +349,12 @@ Set the default rampup duration. See `rampup` parameter of
 
 $Method VOID .associate(BLOB param=0)
 
-Associate a default `vmod_directors.shard_param`_ object or clear an association.
+Associate a default `vmod_directors.shard_param`_ object or clear an
+association.
 
 The value of the `param` argument must be a call to the
-`vmod_directors.shard_param.use`_ method. No argument clears the association.
+`vmod_directors.shard_param.use`_ method. No argument clears the
+association.
 
 The association can be changed per backend request using the `param`
 argument of `vmod_directors.shard.backend`_.
@@ -567,10 +569,10 @@ $Object shard_param()
 
 Create a shard parameter set.
 
-A parameter set allows for re-use of `vmod_directors.shard.backend`_ arguments
-across many shard director instances and simplifies advanced use cases
-(e.g. shard director with custom parameters layered below other
-directors).
+A parameter set allows for re-use of `vmod_directors.shard.backend`_
+arguments across many shard director instances and simplifies advanced
+use cases (e.g. shard director with custom parameters layered below
+other directors).
 
 Parameter sets have two scopes:
 
@@ -582,6 +584,38 @@ changes to a parameter set in backend context only affect the
 respective backend request.
 
 Parameter sets can not be used in client context.
+
+The following example is a typical use case: A parameter set is
+associated with several directors. Director choice happens on the
+client side and parameters are changed on the backend side to
+implement retries on alternative backends::
+
+  sub vcl_init {
+    new shard_param = directors.shard_param();
+    
+    new dir_A = directors.shard();
+    dir_A.add_backend(...);
+    dir_A.reconfigure(shard_param);
+    dir_A.associate(shard_param.use());	# <-- !
+    
+    new dir_B = directors.shard();
+    dir_B.add_backend(...);
+    dir_B.reconfigure(shard_param);
+    dir_B.associate(shard_param.use());	# <-- !
+  }
+  
+  sub vcl_recv {
+    if (...) {
+      set req.backend_hint = dir_A.backend(resolve=LAZY);
+    } else {
+      set req.backend_hint = dir_B.backend(resolve=LAZY);
+    }
+  }
+  
+  sub vcl_backend_fetch {
+    # changes dir_A and dir_B behaviour
+    shard_param.set(alt=bereq.retries);
+  }
 
 $Method VOID .clear()
 
