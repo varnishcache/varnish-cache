@@ -83,6 +83,22 @@ shell -err -expect "Expected integer got ']'" \
 	{varnishlog -q "ReqHeader:foo[]"}
 shell -err -expect "Expected positive integer" \
 	{varnishlog -q "ReqHeader:foo[a]"}
+shell -err -expect "Syntax error in tag name" \
+	{varnishlog -q '*x* eq "foo"'}
+shell -err -expect "Expected number got '>'" \
+	{varnishlog -q "RespStatus > >"}
+shell -err -expect "Floating point parse error" \
+	{varnishlog -q "Timestamp:Start[1] > 0.foo"}
+shell -err -expect "Integer parse error" \
+	{varnishlog -q "RespStatus > foo"}
+shell -err -expect "Expected string got '>'" \
+	{varnishlog -q "ReqMethod eq >"}
+shell -err -expect "Expected regular expression got '>'" \
+	{varnishlog -q "ReqMethod ~ >"}
+shell -err -expect "Regular expression error: " \
+	{varnishlog -q 'ReqMethod ~ "("'}
+shell -err -expect "Expected operator got 'ReqMethod'" \
+	{varnishlog -q "RespStatus ReqMethod 200"}
 
 shell -err -expect "-R: Syntax error" \
 	"varnishlog -R 1foo"
