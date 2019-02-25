@@ -347,11 +347,7 @@ sharddir_pick_be_locked(VRT_CTX, struct sharddir *shardd,
 	CHECK_OBJ_NOTNULL(shardd, SHARDDIR_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(ctx->vsl);
-
-	if (shardd->n_backend == 0) {
-		shard_err0(ctx, shardd, "no backends");
-		return (NULL);
-	}
+	assert(shardd->n_backend > 0);
 
 	assert(shardd->hashcircle);
 
@@ -444,18 +440,20 @@ sharddir_pick_be(VRT_CTX, struct sharddir *shardd,
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(shardd, SHARDDIR_MAGIC);
 
-	/* NB: Allocate bitmap on the stack
-	 *
-	 * XXX: Should we read n_backend under the lock and check whether
-	 * n_backend is zero before allocating the state?
-	 */
+	sharddir_rdlock(shardd);
+
+	if (shardd->n_backend == 0) {
+		shard_err0(ctx, shardd, "no backends");
+		sharddir_unlock(shardd);
+		return (NULL);
+	}
+
 	picklist_sz = VBITMAP_SZ(shardd->n_backend);
 	char picklist_spc[picklist_sz];
 
 	memset(state, 0, sizeof(state));
 	init_state(state, ctx, shardd, vbit_init(picklist_spc, picklist_sz));
 
-	sharddir_rdlock(shardd);
 	be = sharddir_pick_be_locked(ctx, shardd, key, alt, warmup, rampup,
 	    healthy, state);
 	sharddir_unlock(shardd);
