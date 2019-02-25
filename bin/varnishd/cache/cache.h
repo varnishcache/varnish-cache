@@ -286,7 +286,7 @@ struct worker {
  * the init setter
  *
  * multiple flaps need to be handled by the flaps: Any flap allowing additional
- * flap must leave the callbacks and cat as if the next flap was the only one.
+ * flap must prepare the cat for the next flap and call it
  */
 
 union cat {
