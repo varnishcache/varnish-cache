@@ -39,11 +39,12 @@ struct http {
 	struct vsb		*vsb;
 
 	int			nrxbuf;
-	char			*rxbuf;
+	char			*rx_b;
+	char			*rx_p;
+	char			*rx_e;
 	char			*rem_ip;
 	char			*rem_port;
 	char			*rem_path;
-	int			prxbuf;
 	char			*body;
 	unsigned		bodyl;
 	char			bodylen[20];
