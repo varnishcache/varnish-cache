@@ -331,114 +331,135 @@ sharddir_any_healthy(struct sharddir *shardd, const struct busyobj *bo,
 	sharddir_unlock(shardd);
 	return (retval);
 }
+
 /*
  * core function for the director backend/resolve method
  */
-VCL_BACKEND
-sharddir_pick_be(VRT_CTX, struct sharddir *shardd,
+
+static VCL_BACKEND
+sharddir_pick_be_locked(VRT_CTX, struct sharddir *shardd,
     uint32_t key, VCL_INT alt, VCL_REAL warmup, VCL_BOOL rampup,
-    enum healthy_e healthy)
+    enum healthy_e healthy, struct shard_state *state)
 {
 	VCL_BACKEND be;
-	struct shard_state state;
-	unsigned picklist_sz = VBITMAP_SZ(shardd->n_backend);
-	char picklist_spc[picklist_sz];
 	VCL_DURATION chosen_r, alt_r;
 
 	CHECK_OBJ_NOTNULL(shardd, SHARDDIR_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(ctx->vsl);
 
-	memset(&state, 0, sizeof(state));
-	init_state(&state, ctx, shardd, vbit_init(picklist_spc, picklist_sz));
-
-	sharddir_rdlock(shardd);
 	if (shardd->n_backend == 0) {
 		shard_err0(ctx, shardd, "no backends");
-		goto err;
+		return (NULL);
 	}
 
 	assert(shardd->hashcircle);
 
 	validate_alt(ctx, shardd, &alt);
 
-	state.idx = shard_lookup(shardd, key);
-	assert(state.idx >= 0);
+	state->idx = shard_lookup(shardd, key);
+	assert(state->idx >= 0);
 
 	SHDBG(SHDBG_LOOKUP, shardd, "lookup key %x idx %d host %u",
-	    key, state.idx, shardd->hashcircle[state.idx].host);
+	    key, state->idx, shardd->hashcircle[state->idx].host);
 
 	if (alt > 0) {
-		if (shard_next(&state, alt - 1, healthy == ALL ? 1 : 0) == -1) {
-			if (state.previous.hostid != -1) {
+		if (shard_next(state, alt - 1, healthy == ALL ? 1 : 0) == -1) {
+			if (state->previous.hostid != -1) {
 				be = sharddir_backend(shardd,
-				    state.previous.hostid);
-				goto ok;
+				    state->previous.hostid);
+				AN(be);
+				return (be);
 			}
-			goto err;
+			return (NULL);
 		}
 	}
 
-	if (shard_next(&state, 0, healthy == IGNORE ? 0 : 1) == -1) {
-		if (state.previous.hostid != -1) {
-			be = sharddir_backend(shardd, state.previous.hostid);
-			goto ok;
+	if (shard_next(state, 0, healthy == IGNORE ? 0 : 1) == -1) {
+		if (state->previous.hostid != -1) {
+			be = sharddir_backend(shardd, state->previous.hostid);
+			AN(be);
+			return (be);
 		}
-		goto err;
+		return (NULL);
 	}
 
-	be = sharddir_backend(shardd, state.last.hostid);
+	be = sharddir_backend(shardd, state->last.hostid);
+	AN(be);
 
 	if (warmup == -1)
 		warmup = shardd->warmup;
 
 	/* short path for cases we dont want ramup/warmup or can't */
 	if (alt > 0 || healthy == IGNORE || (!rampup && warmup == 0) ||
-	    shard_next(&state, 0, 1) == -1)
-		goto ok;
+	    shard_next(state, 0, 1) == -1)
+		return (be);
 
 	assert(alt == 0);
-	assert(state.previous.hostid >= 0);
-	assert(state.last.hostid >= 0);
-	assert(state.previous.hostid != state.last.hostid);
-	assert(be == sharddir_backend(shardd, state.previous.hostid));
+	assert(state->previous.hostid >= 0);
+	assert(state->last.hostid >= 0);
+	assert(state->previous.hostid != state->last.hostid);
+	assert(be == sharddir_backend(shardd, state->previous.hostid));
 
-	chosen_r = shardcfg_get_rampup(shardd, state.previous.hostid);
-	alt_r = shardcfg_get_rampup(shardd, state.last.hostid);
+	chosen_r = shardcfg_get_rampup(shardd, state->previous.hostid);
+	alt_r = shardcfg_get_rampup(shardd, state->last.hostid);
 
 	SHDBG(SHDBG_RAMPWARM, shardd, "chosen host %d rampup %f changed %f",
-	    state.previous.hostid, chosen_r,
-	    ctx->now - state.previous.changed);
+	    state->previous.hostid, chosen_r,
+	    ctx->now - state->previous.changed);
 	SHDBG(SHDBG_RAMPWARM, shardd, "alt host %d rampup %f changed %f",
-	    state.last.hostid, alt_r,
-	    ctx->now - state.last.changed);
+	    state->last.hostid, alt_r,
+	    ctx->now - state->last.changed);
 
-	if (ctx->now - state.previous.changed < chosen_r) {
+	if (ctx->now - state->previous.changed < chosen_r) {
 		/*
 		 * chosen host is in rampup
 		 * - no change if alternative host is also in rampup or the dice
 		 *   has rolled in favour of the chosen host
 		 */
 		if (!rampup ||
-		    ctx->now - state.last.changed < alt_r ||
+		    ctx->now - state->last.changed < alt_r ||
 		    VRND_RandomTestableDouble() * chosen_r <
-		     (ctx->now - state.previous.changed))
-			goto ok;
+		    (ctx->now - state->previous.changed))
+			return (be);
 	} else {
 		/* chosen host not in rampup - warmup ? */
 		if (warmup == 0 || VRND_RandomTestableDouble() > warmup)
-			goto ok;
+			return (be);
 	}
 
-	be = sharddir_backend(shardd, state.last.hostid);
-
-  ok:
-	AN(be);
-	sharddir_unlock(shardd);
-	vbit_destroy(state.picklist);
+	be = sharddir_backend(shardd, state->last.hostid);
 	return (be);
-  err:
+}
+
+VCL_BACKEND
+sharddir_pick_be(VRT_CTX, struct sharddir *shardd,
+    uint32_t key, VCL_INT alt, VCL_REAL warmup, VCL_BOOL rampup,
+    enum healthy_e healthy)
+{
+	VCL_BACKEND be;
+	struct shard_state state[1];
+	unsigned picklist_sz;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(shardd, SHARDDIR_MAGIC);
+
+	/* NB: Allocate bitmap on the stack
+	 *
+	 * XXX: Should we read n_backend under the lock and check whether
+	 * n_backend is zero before allocating the state?
+	 */
+	picklist_sz = VBITMAP_SZ(shardd->n_backend);
+	char picklist_spc[picklist_sz];
+
+	memset(state, 0, sizeof(state));
+	init_state(state, ctx, shardd, vbit_init(picklist_spc, picklist_sz));
+
+	sharddir_rdlock(shardd);
+	be = sharddir_pick_be_locked(ctx, shardd, key, alt, warmup, rampup,
+	    healthy, state);
 	sharddir_unlock(shardd);
-	vbit_destroy(state.picklist);
-	return NULL;
+
+	vbit_destroy(state->picklist);
+	return (be);
 }
