@@ -337,7 +337,7 @@ sharddir_any_healthy(struct sharddir *shardd, const struct busyobj *bo,
  */
 
 static VCL_BACKEND
-sharddir_pick_be_locked(VRT_CTX, struct sharddir *shardd,
+sharddir_pick_be_locked(VRT_CTX, const struct sharddir *shardd,
     uint32_t key, VCL_INT alt, VCL_REAL warmup, VCL_BOOL rampup,
     enum healthy_e healthy, struct shard_state *state)
 {
