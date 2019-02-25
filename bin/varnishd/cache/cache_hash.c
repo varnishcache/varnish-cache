@@ -350,9 +350,9 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 	unsigned xid = 0;
 	float dttl = 0.0;
 	enum catflap_e flap;
-	catflap_fini_f *catflap_fini;
-	catflap_f *catflap;
-	void *cat;
+	catflap_fini_f *catflap_fini = NULL;
+	catflap_f *catflap = NULL;
+	union cat cat[1] = {{0}};
 
 	AN(ocp);
 	*ocp = NULL;
@@ -395,11 +395,8 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 		return (HSH_MISS);
 	}
 
-	catflap = NULL;
-	catflap_fini = NULL;
-	cat = NULL;
 	if (req->catflap_init)
-		req->catflap_init(req, &catflap, &catflap_fini, &cat);
+		req->catflap_init(req, &catflap, &catflap_fini, cat);
 
 	assert(oh->refcnt > 0);
 	busy_found = 0;
@@ -447,7 +444,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 		}
 
 		if (catflap) {
-			flap = catflap(req, oc, &cat);
+			flap = catflap(req, oc, &exp_oc, cat);
 			if (flap == FLP_CONTINUE)
 				continue;
 			if (flap == FLP_MISS) {
@@ -476,8 +473,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 	}
 
 	if (catflap_fini) {
-		oc = catflap_fini(oc, &cat);
-		AZ(cat);
+		oc = catflap_fini(oc, &exp_oc, cat);
 	}
 
 	if (oc != NULL && oc->flags & OC_F_HFP) {

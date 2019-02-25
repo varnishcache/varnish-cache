@@ -636,98 +636,104 @@ xyzzy_return_strands(VRT_CTX, VCL_STRANDS strand)
  */
 
 static enum catflap_e v_matchproto_(catflap_f)
-catflap_miss(const struct req *req, struct objcore *oc, void **catp)
+catflap_miss(const struct req *req, struct objcore *oc,
+    struct objcore **exp_oc, union cat *cat)
 {
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	AN(catp);
-	AZ(*catp);
+	(void) exp_oc;
+	AN(cat);
+	AZ(cat->ptr);
 
 	return (FLP_MISS);
 }
 
 static enum catflap_e v_matchproto_(catflap_f)
-catflap_hit(const struct req *req, struct objcore *oc, void **catp)
+catflap_hit(const struct req *req, struct objcore *oc,
+    struct objcore **exp_oc, union cat *cat)
 {
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	AN(catp);
-	AZ(*catp);
+	(void) exp_oc;
+	AN(cat);
+	AZ(cat->ptr);
 
 	return (FLP_HIT);
 }
 
 static enum catflap_e v_matchproto_(catflap_f)
-catflap_save(const struct req *req, struct objcore *oc, void **catp)
+catflap_save(const struct req *req, struct objcore *oc,
+    struct objcore **exp_oc, union cat *cat)
 {
-	struct objcore **cat;
+	struct objcore **ocp;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	AN(catp);
-	AN(*catp);
-	cat = *catp;
-	*cat = oc;
+	(void) exp_oc;
+	AN(cat);
+	AN(cat->ptr);
+	ocp = cat->ptr;
+	*ocp = oc;
 
 	return (FLP_CONTINUE);
 }
 
 static struct objcore * v_matchproto_(catflap_fini_f)
-catflap_recall(struct objcore *oc, void **catp)
+catflap_recall(struct objcore *oc, struct objcore **exp_oc, union cat *cat)
 {
-	struct objcore **cat;
+	struct objcore **ocp;
 
 	AZ(oc);
-	AN(catp);
-	AN(*catp);
+	(void) exp_oc;
+	AN(cat);
+	AN(cat->ptr);
 
-	cat = *catp;
-	CAST_OBJ(oc, *cat, OBJCORE_MAGIC);
-	*catp = NULL;
+	ocp = cat->ptr;
+	CAST_OBJ(oc, *ocp, OBJCORE_MAGIC);
 	return (oc);
 }
 
 static void v_matchproto_(catflap_init_f)
 catflap_init_miss(struct req *req,
-    catflap_f **flap, catflap_fini_f **fini, void **catp)
+    catflap_f **flap, catflap_fini_f **fini, union cat *cat)
 {
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	AN(flap);
 	AN(fini);
-	AN(catp);
+	AN(cat);
 
 	*flap = catflap_miss;
 	AZ(*fini);
-	AZ(*catp);
+	AZ(cat->ptr);
 }
 
 static void v_matchproto_(catflap_init_f)
 catflap_init_first(struct req *req,
-    catflap_f **flap, catflap_fini_f **fini, void **catp)
+    catflap_f **flap, catflap_fini_f **fini, union cat *cat)
 {
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	AN(flap);
 	AN(fini);
-	AN(catp);
+	AN(cat);
 
 	*flap = catflap_hit;
 	AZ(*fini);
-	AZ(*catp);
+	AZ(cat->ptr);
 }
 
 static void v_matchproto_(catflap_init_f)
 catflap_init_last(struct req *req,
-    catflap_f **flap, catflap_fini_f **fini, void **catp)
+    catflap_f **flap, catflap_fini_f **fini, union cat *cat)
 {
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	AN(flap);
 	AN(fini);
-	AN(catp);
+	AN(cat);
 
 	// intentionally overly complicated to demo ws alloc
 	// XXX in the real world, this might be reserve + release
-	*catp = WS_Alloc(req->wrk->aws, sizeof(struct objcore *));
-	AN(*catp);
+	cat->ptr = WS_Alloc(req->wrk->aws, sizeof(struct objcore *));
+	AN(cat->ptr);
 	*flap = catflap_save;
 	*fini = catflap_recall;
 }

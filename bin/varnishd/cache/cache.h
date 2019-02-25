@@ -274,7 +274,30 @@ struct worker {
 
 /*--------------------------------------------------------------------
  * catflap: control over HSH_Lookup
+ *
+ * Cats can be all native VCL types or multicolor cats on the void * leash.
+ *
+ * arguments: the vmod_function setting the init function can leave arguments in
+ * a PRIV_TASK
+ *
+ * memory management: req->ws is reserved by VRY_Create while the catflap
+ * operates. The catflap can use wrk->aws between _init and _fini, but any
+ * additional data to survive HSH_Lookup() must be stored in memory allocated by
+ * the init setter
+ *
+ * multiple flaps need to be handled by the flaps: Any flap allowing additional
+ * flap must leave the callbacks and cat as if the next flap was the only one.
  */
+
+union cat {
+	VCL_BOOL	bool;
+	VCL_BYTES	bytes;
+	VCL_DURATION	duration;
+	VCL_INT		i;
+	VCL_REAL	real;
+	VCL_TIME	time;
+	void		*ptr;
+};
 
 enum catflap_e {
 	FLP_CONTINUE,
@@ -284,12 +307,13 @@ enum catflap_e {
 };
 
 typedef enum catflap_e catflap_f(const struct req *req,
-    struct objcore *oc, void **privp);
+    struct objcore *oc, struct objcore **exp_oc, union cat *cat);
 
-typedef struct objcore * catflap_fini_f(struct objcore *oc, void **privp);
+typedef struct objcore * catflap_fini_f(struct objcore *oc,
+    struct objcore **exp_oc, union cat *cat);
 
 typedef void catflap_init_f(struct req *req,
-    catflap_f **flap, catflap_fini_f **fini, void **privp);
+    catflap_f **flap, catflap_fini_f **fini, union cat *cat);
 
 /* Stored object -----------------------------------------------------
  * This is just to encapsulate the fields owned by the stevedore
