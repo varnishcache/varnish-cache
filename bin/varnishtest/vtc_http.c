@@ -654,7 +654,7 @@ http_rxhdr(struct http *hp)
 	while (1) {
 		p = hp->rx_p;
 		i = http_rxchar(hp, 1, 1);
-		if (i < 1) 
+		if (i < 1)
 			break;
 		if (s == 0 && *p == '\r')
 			s = 1;
