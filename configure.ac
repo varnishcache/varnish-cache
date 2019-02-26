@@ -671,24 +671,20 @@ AX_CHECK_COMPILE_FLAG([-Werror=unused-result],
 
 # This corresponds to FreeBSD's WARNS level 6
 DEVELOPER_CFLAGS=" \
-	-Werror \
-	-Wall \
-	-Wno-format-y2k \
-	-W \
-	-Wstrict-prototypes \
-	-Wmissing-prototypes \
-	-Wpointer-arith \
-	-Wreturn-type \
-	-Wcast-qual \
-	-Wwrite-strings \
-	-Wswitch \
-	-Wshadow \
-	-Wunused-parameter \
-	-Wcast-align \
-	-Wchar-subscripts \
-	-Wnested-externs \
-	-Wextra \
-	-Wno-sign-compare \
+ -Werror \
+ -Wno-format-y2k \
+ -Wstrict-prototypes \
+ -Wmissing-prototypes \
+ -Wpointer-arith \
+ -Wcast-qual \
+ -Wwrite-strings \
+ -Wshadow \
+ -Wunused-parameter \
+ -Wcast-align \
+ -Wchar-subscripts \
+ -Wnested-externs \
+ -Wextra \
+ -Wno-sign-compare \
 "
 
 # These are not compliable yet
