@@ -15,6 +15,14 @@ not follow the style:
 
 .. _Reference: http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#character-level-inline-markup
 
+  * exception: Links to manpages outside varnish as `man(section)`
+
+* use code blocks for::
+
+  Examples and
+
+  other code
+
 References are tricky
 ---------------------
 
