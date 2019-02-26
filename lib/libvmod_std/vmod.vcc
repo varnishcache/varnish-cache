@@ -299,11 +299,9 @@ $Function BOOL cache_req_body(BYTES size)
 Caches the request body if it is smaller than *size*.  Returns
 ``true`` if the body was cached, ``false`` otherwise.
 
-.. XXX fix wording: not the pass but rather the req body matters
-
-Normally the request body is not available after sending it to the
-backend.  By caching it is possible to retry pass operations,
-e.g. ``POST`` and ``PUT``.
+Normally the request body can only be sent once. Caching it enables
+retrying backend requests with a request body, as usually the case
+with ``POST`` and ``PUT``.
 
 Example::
 
