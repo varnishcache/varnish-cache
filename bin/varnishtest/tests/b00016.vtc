@@ -6,7 +6,12 @@ server s1 -repeat 2 -keepalive {
 } -start
 
 varnish v1 -vcl+backend {
+	import directors;
+
 	sub vcl_recv {
+		if (req.url == "/lookup") {
+			set req.http.foo = directors.lookup("s1");
+		}
 		return (pass);
 	}
 
@@ -19,6 +24,10 @@ client c1 {
 	txreq -url "/"
 	rxresp
 	expect resp.http.X-Backend-Name == "s1"
+	txreq -url "/lookup"
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
 } -run
 
 varnish v1 -vcl+backend {
@@ -26,7 +35,7 @@ varnish v1 -vcl+backend {
 
 	sub vcl_init {
 		new bar = directors.random();
-		bar.add_backend(s1, 1);
+		bar.add_backend(directors.lookup("s1"), 1);
 	}
 
 	sub vcl_recv {

@@ -687,6 +687,12 @@ This method may only be used in backend context.
 For use with the `param` argument of `vmod_directors.shard.backend`_ to associate
 this shard parameter set with a shard director.
 
+$Function BACKEND lookup(STRING)
+
+Lookup a backend by its name.
+
+This function can only be used from ``vcl_init{}`` and  ``vcl_fini{}``.
+
 ACKNOWLEDGEMENTS
 ================
 

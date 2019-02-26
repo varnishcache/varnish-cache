@@ -104,6 +104,11 @@ VCL
 * Added ``req.is_hitmiss`` and ``req.is_hitpass`` (2743_)
 
 
+bundled vmods
+-------------
+
+* Added ``directors.lookup()``
+
 bundled tools
 -------------
 
