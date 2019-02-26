@@ -344,9 +344,9 @@ sharddir_any_healthy(VRT_CTX, struct sharddir *shardd, VCL_TIME *changed)
  */
 
 static VCL_BACKEND
-sharddir_pick_be_locked(VRT_CTX, const struct sharddir *shardd,
-    uint32_t key, VCL_INT alt, VCL_REAL warmup, VCL_BOOL rampup,
-    enum healthy_e healthy, struct shard_state *state)
+sharddir_pick_be_locked(VRT_CTX, const struct sharddir *shardd, uint32_t key,
+    VCL_INT alt, VCL_REAL warmup, VCL_BOOL rampup, enum healthy_e healthy,
+    struct shard_state *state)
 {
 	VCL_BACKEND be;
 	VCL_DURATION chosen_r, alt_r;
@@ -436,9 +436,8 @@ sharddir_pick_be_locked(VRT_CTX, const struct sharddir *shardd,
 }
 
 VCL_BACKEND
-sharddir_pick_be(VRT_CTX, struct sharddir *shardd,
-    uint32_t key, VCL_INT alt, VCL_REAL warmup, VCL_BOOL rampup,
-    enum healthy_e healthy)
+sharddir_pick_be(VRT_CTX, struct sharddir *shardd, uint32_t key, VCL_INT alt,
+    VCL_REAL warmup, VCL_BOOL rampup, enum healthy_e healthy)
 {
 	VCL_BACKEND be;
 	struct shard_state state[1];
