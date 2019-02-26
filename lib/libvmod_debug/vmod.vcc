@@ -92,22 +92,22 @@ $Method VOID .test_priv_call(PRIV_CALL)
 
 Test method for call private pointers
 
-Objects share the PRIV_* state with other objects and methods from the
-same vmod - IOW the PRIV_* state is per vmod, not per object.
+Objects share the ``PRIV_*`` state with other objects and methods from
+the same vmod - IOW the ``PRIV_*`` state is per vmod, not per object.
 
 $Method VOID .test_priv_vcl(PRIV_VCL)
 
 Test method for VCL private pointers
 
-Objects share the PRIV_* state with other objects and methods from the
-same vmod - IOW the PRIV_* state is per vmod, not per object.
+Objects share the ``PRIV_*`` state with other objects and methods from
+the same vmod - IOW the ``PRIV_*`` state is per vmod, not per object.
 
 $Method STRING .test_priv_task(PRIV_TASK, STRING s="")
 
 Test method for TASK private pointers
 
-Objects share the PRIV_* state with other objects and methods from the
-same vmod - IOW the PRIV_* state is per vmod, not per object.
+Objects share the ``PRIV_*`` state with other objects and methods from
+the same vmod - IOW the ``PRIV_*`` state is per vmod, not per object.
 
 $Method STRING .test_priv_top(PRIV_TOP, STRING)
 
@@ -196,12 +196,12 @@ Return the string formed from the concatenation in the constructor.
 $Function STRING concatenate(STRANDS)
 
 Return the string formed by concatenating the given strings.
-(Uses VRT_StrandsWS().)
+(Uses ``VRT_StrandsWS()``.)
 
 $Function STRING collect(STRANDS)
 
 Return the string formed by concatenating the given strings.
-(Uses VRT_CollectStrands().)
+(Uses ``VRT_CollectStrands()``.)
 
 $Function VOID sethdr(HEADER, STRANDS)
 
@@ -209,14 +209,15 @@ Set the given header with the concatenation of the given strings.
 
 $Function DURATION priv_perf(INT size, INT rounds=10000)
 
-Benchmark VRT_priv_task() with `size` elements, iterating `rounds`
+Benchmark ``VRT_priv_task()`` with `size` elements, iterating `rounds`
 times.
 
-Returns the average time taken for each call scaled up from nanoseconds
-to seconds - iow the value given as seconds is actually the duration
-in nanoseconds.
+Returns the average time taken for each call scaled up from
+nanoseconds to seconds - iow the value given as seconds is actually
+the duration in nanoseconds.
 
-For comparable results, a higher size run should called first and discarded.
+For comparable results, a higher size run should called first and
+discarded.
 
 $Object NULL_OK obj_opt(PRIV_CALL, PRIV_VCL, PRIV_TASK,
 		[STRING s], [BOOL b])

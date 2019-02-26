@@ -38,7 +38,7 @@ $Module directors 3 "Varnish Directors Module"
 DESCRIPTION
 ===========
 
-`vmod_directors` enables backend load balancing in Varnish.
+*vmod_directors* enables backend load balancing in Varnish.
 
 The module implements load balancing techniques, and also serves as an
 example on how one could extend the load balancing capabilities of
@@ -49,7 +49,7 @@ To enable load balancing you must import this vmod (directors).
 Then you define your backends. Once you have the backends declared you
 can add them to a director. This happens in executed VCL code. If you
 want to emulate the previous behavior of Varnish 3.0 you can just
-initialize the directors in vcl_init, like this::
+initialize the directors in ``vcl_init{}``, like this::
 
     sub vcl_init {
 	new vdir = directors.round_robin();
@@ -58,173 +58,183 @@ initialize the directors in vcl_init, like this::
     }
 
 As you can see there is nothing keeping you from manipulating the
-directors elsewhere in VCL. So, you could have VCL code that would
-add more backends to a director when a certain URL is called.
+directors elsewhere in VCL. So, you could have VCL code that would add
+more backends to a director when a certain URL is called.
 
 Note that directors can use other directors as backends.
 
 $Object round_robin()
 
-Description
-	Create a round robin director.
+Create a round robin director.
 
-	This director will pick backends in a round robin fashion.
-Example
+This director will pick backends in a round robin fashion.
+
+Example::
+
 	new vdir = directors.round_robin();
 
 $Method VOID .add_backend(BACKEND)
 
-Description
-	Add a backend to the round-robin director.
-Example
+Add a backend to the round-robin director.
+
+Example::
+
 	vdir.add_backend(backend1);
 
 $Method VOID .remove_backend(BACKEND)
 
-Description
-	Remove a backend from the round-robin director.
-Example
+Remove a backend from the round-robin director.
+
+Example::
+
 	vdir.remove_backend(backend1);
 
 $Method BACKEND .backend()
 
-Description
-	Pick a backend from the director.
-Example
+Pick a backend from the director.
+
+Example::
+
 	set req.backend_hint = vdir.backend();
 
 
 $Object fallback(BOOL sticky = 0)
 
-Description
-	Create a fallback director.
+Create a fallback director.
 
-	A fallback director will try each of the added backends in turn,
-	and return the first one that is healthy.
+A fallback director will try each of the added backends in turn, and
+return the first one that is healthy.
 
-	If ``sticky`` is set to true, the director will keep using the healthy
-	backend, even if a higher-priority backend becomes available. Once the
-	whole backend list is exhausted, it'll start over at the beginning.
+If *sticky* is set to ``true``, the director will keep using the
+healthy backend, even if a higher-priority backend becomes
+available. Once the whole backend list is exhausted, it'll start over
+at the beginning.
 
-Example
+Example::
+
 	new vdir = directors.fallback();
 
 $Method VOID .add_backend(BACKEND)
 
-Description
-	Add a backend to the director.
+Add a backend to the director.
 
-	Note that the order in which this is done matters for the fallback
-	director.
+Note that the order in which this is done matters for the fallback
+director.
 
-Example
+Example::
+
 	vdir.add_backend(backend1);
 
 $Method VOID .remove_backend(BACKEND)
 
-Description
-	Remove a backend from the director.
-Example
+Remove a backend from the director.
+
+Example::
+
 	vdir.remove_backend(backend1);
 
 $Method BACKEND .backend()
 
-Description
-	Pick a backend from the director.
-Example
-	set req.backend_hint = vdir.backend();
+Pick a backend from the director.
 
+Example::
+
+	set req.backend_hint = vdir.backend();
 
 $Object random()
 
-Description
-	Create a random backend director.
+Create a random backend director.
 
-	The random director distributes load over the backends using
-	a weighted random probability distribution.
-	The "testable" random generator in varnishd is used, which
-	enables deterministic tests to be run (See: d00004.vtc).
+The random director distributes load over the backends using a
+weighted random probability distribution.
 
-Example
+The "testable" random generator in varnishd is used, which enables
+deterministic tests to be run (See: ``d00004.vtc``).
+
+Example::
+
 	new vdir = directors.random();
 
 $Method VOID .add_backend(BACKEND, REAL)
 
-Description
-	Add a backend to the director with a given weight.
+Add a backend to the director with a given weight.
 
-	Each backend will receive approximately 100 * (weight /
-	(sum(all_added_weights))) per cent of the traffic sent to this
-	director.
+Each backend will receive approximately 100 * (weight /
+(sum(all_added_weights))) per cent of the traffic sent to this
+director.
 
-Example
-	| # 2/3 to backend1, 1/3 to backend2.
-	| vdir.add_backend(backend1, 10.0);
-	| vdir.add_backend(backend2, 5.0);
+Example::
+
+	# 2/3 to backend1, 1/3 to backend2.
+	vdir.add_backend(backend1, 10.0);
+	vdir.add_backend(backend2, 5.0);
 
 $Method VOID .remove_backend(BACKEND)
 
-Description
-	Remove a backend from the director.
-Example
+Remove a backend from the director.
+
+Example::
+
 	vdir.remove_backend(backend1);
 
 $Method BACKEND .backend()
 
-Description
-	Pick a backend from the director.
-Example
+Pick a backend from the director.
+
+Example::
+
 	set req.backend_hint = vdir.backend();
 
 $Object hash()
 
-Description
-	Create a hashing backend director.
+Create a hashing backend director.
 
-	The director chooses the backend server by computing a hash/digest
-	of the string given to .backend().
+The director chooses the backend server by computing a hash/digest of
+the string given to `vmod_directors.hash.backend`_.
 
-	Commonly used with ``client.ip`` or a session cookie to get
-	sticky sessions.
+Commonly used with ``client.ip`` or a session cookie to get sticky
+sessions.
 
-Example
+Example::
+
 	new vdir = directors.hash();
 
 $Method VOID .add_backend(BACKEND, REAL)
 
-Description
-	Add a backend to the director with a certain weight.
+Add a backend to the director with a certain weight.
 
-	Weight is used as in the random director. Recommended value is
-	1.0 unless you have special needs.
+Weight is used as in the random director. Recommended value is 1.0
+unless you have special needs.
 
-Example
+Example::
+
 	vdir.add_backend(backend1, 1.0);
 
 $Method VOID .remove_backend(BACKEND)
 
-Description
-	Remove a backend from the director.
-Example
+Remove a backend from the director.
+
+Example::
 	vdir.remove_backend(backend1);
 
 $Method BACKEND .backend(STRING_LIST)
 
-Description
-	Pick a backend from the backend director.
+Pick a backend from the backend director.
 
-	Use the string or list of strings provided to pick the backend.
-Example
-	| # pick a backend based on the cookie header from the client
-	| set req.backend_hint = vdir.backend(req.http.cookie);
+Use the string or list of strings provided to pick the backend.
+
+Example::
+	# pick a backend based on the cookie header from the client
+	set req.backend_hint = vdir.backend(req.http.cookie);
 
 $Object shard()
 
 Create a shard director.
 
 Note that the shard director needs to be configured using at least one
-``shard.add_backend()`` call(s) **followed by a**
-``shard.reconfigure()`` **call** before it can hand out backends.
+`vmod_directors.shard.add_backend`_ call(s) **followed by a**
+`vmod_directors.shard.reconfigure`_ **call** before it can hand out
+backends.
 
 _Note_ that due to various restrictions (documented below), it is
 recommended to use the shard director on the backend side.
@@ -259,7 +269,7 @@ Varnish servers:
   application servers, requesting similar objects from the same server
   may help to optimize efficiency of such caches.
 
-  For example, sharding by URL or some `id` component of the url has
+  For example, sharding by URL or some *id* component of the url has
   been shown to drastically improve the efficiency of many content
   management systems.
 
@@ -302,24 +312,24 @@ The drawbacks are:
 Method
 ``````
 
-When ``.reconfigure()`` is called, a consistent hashing circular data
-structure gets built from the last 32 bits of SHA256 hash values of
-`<ident>`\ `<n>` (default `ident` being the backend name) for each
-backend and for a running number `n` from 1 to `replicas`. Hashing
-creates the seemingly random order for placement of backends on the
-consistent hashing ring.
+When `vmod_directors.shard.reconfigure`_ is called, a consistent
+hashing circular data structure gets built from the last 32 bits of
+SHA256 hash values of *<ident>*\ *<n>* (default *ident* being the
+backend name) for each backend and for a running number *n* from 1 to
+*replicas*. Hashing creates the seemingly random order for placement
+of backends on the consistent hashing ring.
 
-When ``.backend()`` is called, a load balancing key gets generated
-unless provided. The smallest hash value in the circle is looked up
-that is larger than the key (searching clockwise and wrapping around
-as necessary). The backend for this hash value is the preferred
-backend for the given key.
+When `vmod_directors.shard.backend`_ is called, a load balancing key
+gets generated unless provided. The smallest hash value in the circle
+is looked up that is larger than the key (searching clockwise and
+wrapping around as necessary). The backend for this hash value is the
+preferred backend for the given key.
 
 If a healthy backend is requested, the search is continued linearly on
 the ring as long as backends found are unhealthy or all backends have
-been checked. The order of these "alternative backends" on the ring
-is likely to differ for different keys. Alternative backends can also
-be selected explicitly.
+been checked. The order of these "alternative backends" on the ring is
+likely to differ for different keys. Alternative backends can also be
+selected explicitly.
 
 On consistent hashing see:
 
@@ -338,61 +348,65 @@ when configuring the shard director, you are advised to check::
 
 $Method VOID .set_warmup(REAL probability=0.0)
 
-Set the default warmup probability. See the `warmup` parameter of
-``shard.backend()``. If probability is 0.0 (default), warmup is
-disabled.
+Set the default warmup probability. See the *warmup* parameter of
+`vmod_directors.shard.backend`_. If *probability* is 0.0 (default),
+warmup is disabled.
 
 $Method VOID .set_rampup(DURATION duration=0)
 
-Set the default rampup duration. See `rampup` parameter of
-`shard.backend()`. If duration is 0 (default), rampup is disabled.
+Set the default rampup duration. See *rampup* parameter of
+`vmod_directors.shard.backend`_. If *duration* is 0 (default), rampup
+is disabled.
 
 $Method VOID .associate(BLOB param=0)
 
 Associate a default `vmod_directors.shard_param`_ object or clear an
 association.
 
-The value of the `param` argument must be a call to the
+The value of the *param* argument must be a call to the
 `vmod_directors.shard_param.use`_ method. No argument clears the
 association.
 
-The association can be changed per backend request using the `param`
+The association can be changed per backend request using the *param*
 argument of `vmod_directors.shard.backend`_.
 
 $Method BOOL .add_backend(PRIV_TASK, BACKEND backend,
 	[STRING ident], [DURATION rampup])
 
-Add a backend `backend` to the director.
+Add a backend *backend* to the director.
 
-`ident`: Optionally specify an identification string for this backend,
-which will be hashed by `shard.reconfigure()` to construct the
-consistent hashing ring. The identification string defaults to the
-backend name.
+*ident*: Optionally specify an identification string for this backend,
+which will be hashed by `vmod_directors.shard.reconfigure`_ to
+construct the consistent hashing ring. The identification string
+defaults to the backend name.
 
-`ident` allows to add multiple instances of the same backend.
+*ident* allows to add multiple instances of the same backend.
 
-`rampup`: Optionally specify a specific rampup time for this
+*rampup*: Optionally specify a specific rampup time for this
 backend. Otherwise, the per-director rampup time is used (see
-:ref:`vmod_directors.shard.set_rampup`).
+`vmod_directors.shard.set_rampup`_).
 
-NOTE: Backend changes need to be finalized with `shard.reconfigure()`
-and are only supported on one shard director at a time.
+NOTE: Backend changes need to be finalized with
+`vmod_directors.shard.reconfigure`_ and are only supported on one
+shard director at a time.
 
 $Method BOOL .remove_backend(PRIV_TASK, [BACKEND backend=0], [STRING ident=0])
 
-Remove backend(s) from the director. Either `backend` or `ident` must
-be specified. `ident` removes a specific instance. If `backend` is
-given without `ident`, all instances of this backend are removed.
+Remove backend(s) from the director. Either *backend* or *ident* must
+be specified. *ident* removes a specific instance. If *backend* is
+given without *ident*, all instances of this backend are removed.
 
-NOTE: Backend changes need to be finalized with `shard.reconfigure()`
-and are only supported on one shard director at a time.
+NOTE: Backend changes need to be finalized with
+`vmod_directors.shard.reconfigure`_ and are only supported on one
+shard director at a time.
 
 $Method BOOL .clear(PRIV_TASK)
 
 Remove all backends from the director.
 
-NOTE: Backend changes need to be finalized with `shard.reconfigure()`
-and are only supported on one shard director at a time.
+NOTE: Backend changes need to be finalized with
+`vmod_directors.shard.reconfigure`_ and are only supported on one
+shard director at a time.
 
 $Method BOOL .reconfigure(PRIV_TASK, INT replicas=67)
 
@@ -403,13 +417,13 @@ used.
 
 $Method INT .key(STRING_LIST)
 
-Convenience method to generate a sharding key for use with the `key`
-argument to the ``shard.backend()`` method by hashing the given string
-with SHA256.
+Convenience method to generate a sharding key for use with the *key*
+argument to the `vmod_directors.shard.backend`_ method by hashing the
+given string with SHA256.
 
 To generate sharding keys using other hashes, use a custom vmod like
-`vmod blobdigest`_ with the `key_blob` argument of the
-``shard.backend()`` method.
+`vmod blobdigest`_ with the *key_blob* argument of the
+`vmod_directors.shard.backend`_ method.
 
 .. _vmod blobdigest: https://code.uplex.de/uplex-varnish/libvmod-blobdigest/blob/master/README.rst
 
@@ -433,91 +447,91 @@ differ for different keys, depending on the number of backends and the
 number of replicas. In particular, the backend order referred to here
 is _not_ the order given when backends are added.
 
-* `by` how to determine the sharding key
+* *by* how to determine the sharding key
 
-  * `HASH`:
+  * ``HASH``:
 
     * when called in backend context: Use the varnish hash value as
-      set by `vcl_hash`
+      set by ``vcl_hash{}``
 
-    * when called in client context: hash `req.url`
+    * when called in client context: hash ``req.url``
 
-  * `URL`: hash req.url / bereq.url
+  * ``URL``: hash req.url / bereq.url
 
-  * `KEY`: use the `key` argument
+  * ``KEY``: use the *key* argument
 
-  * `BLOB`: use the `key_blob` argument
+  * ``BLOB``: use the *key_blob* argument
 
-* `key` lookup key with `by=KEY`
+* *key* lookup key with ``by=KEY``
 
-  the `shard.key()` function may come handy to generate a sharding
-  key from custom strings.
+  the `vmod_directors.shard.key`_ method may come handy to generate a
+  sharding key from custom strings.
 
-* `key_blob` lookup key with `by=BLOB`
+* *key_blob* lookup key with ``by=BLOB``
 
   Currently, this uses the first 4 bytes from the given blob in
   network byte order (big endian), left-padded with zeros for blobs
   smaller than 4 bytes.
 
-* `alt` alternative backend selection
+* *alt* alternative backend selection
 
-  Select the `alt`-th alternative backend for the given `key`.
+  Select the *alt*-th alternative backend for the given *key*.
 
   This is particularly useful for retries / restarts due to backend
-  errors: By setting `alt=req.restarts` or `alt=bereq.retries` with
+  errors: By setting ``alt=req.restarts`` or ``alt=bereq.retries`` with
   healthy=ALL, another server gets selected.
 
-  The rampup and warmup features are only active for `alt==0`
+  The rampup and warmup features are only active for ``alt==0``
 
-* `rampup` slow start for servers which just went healthy
+* *rampup* slow start for servers which just went healthy
 
-  If `alt==0` and the chosen backend is in its rampup period, with a
+  If ``alt==0`` and the chosen backend is in its rampup period, with a
   probability proportional to the fraction of time since the backup
   became healthy to the rampup period, return the next alternative
   backend, unless this is also in its rampup period.
 
   The default rampup interval can be set per shard director using the
-  `set_rampup()` method or specifically per backend with the
-  `set_backend()` method.
+  `vmod_directors.shard.set_rampup`_ method or specifically per
+  backend with the `vmod_directors.shard.add_backend`_ method.
 
-* `warmup` probabilistic alternative server selection
+* *warmup* probabilistic alternative server selection
 
   possible values: -1, 0..1
 
-  `-1`: use the warmup probability from the director definition
+  ``-1``: use the warmup probability from the director definition
 
-  Only used for `alt==0`: Sets the ratio of requests (0.0 to 1.0) that
-  goes to the next alternate backend to warm it up when the preferred
-  backend is healthy. Not active if any of the preferred or
+  Only used for ``alt==0``: Sets the ratio of requests (0.0 to 1.0)
+  that goes to the next alternate backend to warm it up when the
+  preferred backend is healthy. Not active if any of the preferred or
   alternative backend are in rampup.
 
-  `warmup=0.5` is a convenient way to spread the load for each key
+  ``warmup=0.5`` is a convenient way to spread the load for each key
   over two backends under normal operating conditions.
 
-* `healthy`
+* *healthy*
 
   * CHOSEN: Return a healthy backend if possible.
 
-    For `alt==0`, return the first healthy backend or none.
+    For ``alt==0``, return the first healthy backend or none.
 
-    For `alt > 0`, ignore the health state of backends skipped for
+    For ``alt > 0``, ignore the health state of backends skipped for
     alternative backend selection, then return the next healthy
     backend. If this does not exist, return the last healthy backend
     of those skipped or none.
 
   * IGNORE: Completely ignore backend health state
 
-    Just return the first or `alt`-th alternative backend, ignoring
-    health state. Ignore `rampup` and `warmup`.
+    Just return the first or *alt*-th alternative backend, ignoring
+    health state, *rampup* and *warmup*.
 
   * ALL: Check health state also for alternative backend selection
 
-    For `alt > 0`, return the `alt`-th alternative backend of all
+    For ``alt > 0``, return the *alt*-th alternative backend of all
     those healthy, the last healthy backend found or none.
 
-* `resolve`
+* *resolve*
 
-  default: `LAZY` in ``vcl_init{}``, `NOW` otherwise
+  default: ``LAZY`` in ``vcl_init{}``, ``NOW`` otherwise
 
   * ``NOW``: look up a backend and return it.
 
@@ -535,9 +549,9 @@ is _not_ the order given when backends are added.
     parameter set affect the shard director instance for the backend
     request irrespective of where it is referenced.
 
-* `param`
+* *param*
 
-  Use or associate a parameter set. The value of the `param` argument
+  Use or associate a parameter set. The value of the *param* argument
   must be a call to the `vmod_directors.shard_param.use`_ method.
 
   default: as set by `vmod_directors.shard.associate`_ or unset.
@@ -545,25 +559,27 @@ is _not_ the order given when backends are added.
   * for ``resolve=NOW`` take parameter defaults from the
     `vmod_directors.shard_param`_ parameter set
 
-  * for ``resolve=LAZY`` associate the `vmod_directors.shard_param`_ parameter
-    set for this backend request
+  * for ``resolve=LAZY`` associate the `vmod_directors.shard_param`_
+    parameter set for this backend request
 
     Implementation notes for use of parameter sets with
     ``resolve=LAZY``:
 
-    * A `param` argument remains associated and any changes to the
+    * A *param* argument remains associated and any changes to the
       associated parameter set affect the sharding decision once the
       director resolves to an actual backend.
 
-    * If other parameter arguments are also given, they have preference
-      and are kept even if the parameter set given by the `param`
-      argument is subsequently changed within the same backend request.
+    * If other parameter arguments are also given, they have
+      preference and are kept even if the parameter set given by the
+      *param* argument is subsequently changed within the same backend
+      request.
 
-    * Each call to `vmod_directors.shard.backend`_ overrides any previous call.
+    * Each call to `vmod_directors.shard.backend`_ overrides any
+      previous call.
 
 $Method VOID .debug(INT)
 
-`intentionally undocumented`
+*intentionally undocumented*
 
 $Object shard_param()
 
@@ -592,18 +608,18 @@ implement retries on alternative backends::
 
   sub vcl_init {
     new shard_param = directors.shard_param();
-    
+
     new dir_A = directors.shard();
     dir_A.add_backend(...);
     dir_A.reconfigure(shard_param);
     dir_A.associate(shard_param.use());	# <-- !
-    
+
     new dir_B = directors.shard();
     dir_B.add_backend(...);
     dir_B.reconfigure(shard_param);
     dir_B.associate(shard_param.use());	# <-- !
   }
-  
+
   sub vcl_recv {
     if (...) {
       set req.backend_hint = dir_A.backend(resolve=LAZY);
@@ -611,7 +627,7 @@ implement retries on alternative backends::
       set req.backend_hint = dir_B.backend(resolve=LAZY);
     }
   }
-  
+
   sub vcl_backend_fetch {
     # changes dir_A and dir_B behaviour
     shard_param.set(alt=bereq.retries);
@@ -650,7 +666,7 @@ This method may not be used in client context
 
 $Method STRING .get_by()
 
-Get a string representation of the `by` enum argument which denotes
+Get a string representation of the *by* enum argument which denotes
 how a shard director using this parameter object would derive the
 shard key. See `vmod_directors.shard.backend`_.
 
@@ -661,22 +677,22 @@ use. See `vmod_directors.shard.backend`_.
 
 $Method INT .get_alt()
 
-Get the `alt` parameter which a shard director using this parameter
+Get the *alt* parameter which a shard director using this parameter
 object would use. See `vmod_directors.shard.backend`_.
 
 $Method REAL .get_warmup()
 
-Get the `warmup` parameter which a shard director using this parameter
+Get the *warmup* parameter which a shard director using this parameter
 object would use. See `vmod_directors.shard.backend`_.
 
 $Method BOOL .get_rampup()
 
-Get the `rampup` parameter which a shard director using this parameter
+Get the *rampup* parameter which a shard director using this parameter
 object would use. See `vmod_directors.shard.backend`_.
 
 $Method STRING .get_healthy()
 
-Get a string representation of the `healthy` enum argument which a
+Get a string representation of the *healthy* enum argument which a
 shard director using this parameter object would use. See
 `vmod_directors.shard.backend`_.
 
@@ -684,8 +700,8 @@ $Method BLOB .use()
 
 This method may only be used in backend context.
 
-For use with the `param` argument of `vmod_directors.shard.backend`_ to associate
-this shard parameter set with a shard director.
+For use with the *param* argument of `vmod_directors.shard.backend`_
+to associate this shard parameter set with a shard director.
 
 $Function BACKEND lookup(STRING)
 

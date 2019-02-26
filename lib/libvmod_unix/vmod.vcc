@@ -48,15 +48,15 @@ Examples::
 Obtaining the peer credentials is possible on a platform that supports
 one of the following:
 
-* ``getpeereid(3)`` (such as FreeBSD and other BSD-derived systems)
+* `getpeereid(3)` (such as FreeBSD and other BSD-derived systems)
 
-* the socket option ``SO_PEERCRED`` for ``getsockopt(2)`` (Linux)
+* the socket option ``SO_PEERCRED`` for `getsockopt(2)` (Linux)
 
-* ``getpeerucred(3C)`` (SunOS and descendants)
+* `getpeerucred(3C)` (SunOS and descendants)
 
 On SunOS and friends, the ``PRIV_PROC_INFO`` privilege set is added to
 the Varnish child process while the VMOD is loaded, see
-``setppriv(2)``.
+`setppriv(2)`.
 
 On most platforms, the value returned is the effective user or group
 that was valid when the peer process initiated the connection.
@@ -82,32 +82,32 @@ ERRORS
 
 All functions in this VMOD are subject to the following constraints:
 
-* None of them may be called in ``vcl_init`` or ``vcl_fini``. If one
-  of them is called in ``vcl_init``, then the VCL program will fail to
-  load, with an error message from the VMOD.
+* None of them may be called in ``vcl_init{}`` or ``vcl_fini{}``. If
+  one of them is called in ``vcl_init{}``, then the VCL program will
+  fail to load, with an error message from the VMOD.
 
 * If called on a platform that is not supported, then VCL failure is
   invoked. An error message is written to the log (with the
   ``VCL_Error`` tag), and for all VCL subroutines except for
-  ``vcl_synth``, control is directed immediately to ``vcl_synth``,
+  ``vcl_synth{}``, control is directed immediately to ``vcl_synth{}``,
   with the response status set to 503 and the reason string set to
   "VCL failed".
 
-  If the failure occurs during ``vcl_synth``, then ``vcl_synth`` is
-  aborted, and the the response line "503 VCL failed" is sent.
+  If the failure occurs during ``vcl_synth{}``, then ``vcl_synth{}``
+  is aborted, and the the response line "503 VCL failed" is sent.
 
 * If the current listener is not a Unix domain socket, or if the
   attempt to read credentials fails, then a ``VCL_Error`` message is
-  written to the log. The STRING functions (``vmod_user`` and
-  ``vmod_group``) return NULL, while the INT functions (``vmod_uid``
-  and ``vmod_gid``) return -1.
+  written to the log. The STRING functions (`vmod_unix.user`_ and
+  `vmod_unix.group`_) return ``NULL``, while the INT functions
+  (`vmod_unix.uid`_ and `vmod_unix.gid`_) return -1.
 
 SEE ALSO
 ========
 
 * :ref:`varnishd(1)`
 * :ref:`vcl(7)`
-* ``getpeereid(3)``
-* ``getsockopt(2)``
-* ``getpeerucred(3C)``
-* ``setppriv(2)``
+* `getpeereid(3)`
+* `getsockopt(2)`
+* `getpeerucred(3C)`
+* `setppriv(2)`

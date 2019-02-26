@@ -31,91 +31,96 @@ $Module proxy 3 "Varnish Module to extract TLV attributes from PROXYv2"
 DESCRIPTION
 ===========
 
-`vmod_proxy` contains functions to extract proxy-protocol-v2 TLV attributes
-as described in https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt.
-
+*vmod_proxy* contains functions to extract proxy-protocol-v2 TLV
+attributes as described in
+https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt.
 
 $Function STRING alpn()
 
-Description
-	Extract ALPN attribute.
-Example
+Extract ALPN attribute.
+
+Example::
+
 	set req.http.alpn = proxy.alpn();
 
 $Function STRING authority()
 
-Description
-	Extract authority attribute. This corresponds to SNI from a TLS
-	connection.
-Example
+Extract authority attribute. This corresponds to SNI from a TLS
+connection.
+
+Example::
+
 	set req.http.authority = proxy.authority();
 
 $Function BOOL is_ssl()
 
-Description
-	Report if proxy-protocol-v2 has SSL TLV.
+Report if proxy-protocol-v2 has SSL TLV.
 
-Example
-	| if (proxy.is_ssl()) {
-	|     set req.http.ssl-version = proxy.ssl_version();
-	| }
+Example::
+
+	if (proxy.is_ssl()) {
+		set req.http.ssl-version = proxy.ssl_version();
+	}
 
 $Function BOOL client_has_cert_sess()
 
-Description
-	Report if the client provided a certificate at least once over the TLS
-	session this connection belongs to.
+Report if the client provided a certificate at least once over the TLS
+session this connection belongs to.
 
 $Function BOOL client_has_cert_conn()
 
-Description
-	Report if the client provided a certificate over the current connection.
+Report if the client provided a certificate over the current
+connection.
 
 $Function INT ssl_verify_result()
 
-Description
-	Report the SSL_get_verify_result from a TLS session. It only matters
-	if client_has_cert_sess() is true. Per default, value is set to 0
-	(X509_V_OK).
+Report the SSL_get_verify_result from a TLS session. It only matters
+if client_has_cert_sess() is true. Per default, value is set to 0
+(X509_V_OK).
 
-Example
-	| if (proxy.client_has_cert_sess() && proxy.ssl_verify_result() == 0) {
-	|     set req.http.ssl-verify = "ok";
-	| }
+Example::
+
+	if (proxy.client_has_cert_sess() && proxy.ssl_verify_result() == 0) {
+		set req.http.ssl-verify = "ok";
+	}
 
 $Function STRING ssl_version()
 
-Description
-	Extract SSL version attribute.
-Example
+Extract SSL version attribute.
+
+Example::
+
 	set req.http.ssl-version = proxy.ssl_version();
 
 $Function STRING client_cert_cn()
 
-Description
-	Extract the common name attribute of the client certificate's.
-Example
+Extract the common name attribute of the client certificate's.
+
+Example::
 	set req.http.cert-cn = proxy.client_cert_cn();
 
 $Function STRING ssl_cipher()
 
-Description
-	Extract the SSL cipher attribute.
-Example
+Extract the SSL cipher attribute.
+
+Example::
+
 	set req.http.ssl-cipher = proxy.ssl_cipher();
 
 $Function STRING cert_sign()
 
-Description
-	Extract the certificate signature algorithm attribute.
-Example
+Extract the certificate signature algorithm attribute.
+
+Example::
+
 	set req.http.cert-sign = proxy.cert_sign();
 
 $Function STRING cert_key()
 
-Description
-	Extract the certificate key algorithm attribute.
-Example
+Extract the certificate key algorithm attribute.
+
+Example::
+
 	set req.http.cert-key = proxy.cert_key();
 
 SEE ALSO
