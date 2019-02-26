@@ -241,15 +241,21 @@ AC_CHECK_FUNCS([pthread_setname_np])
 AC_CHECK_FUNCS([pthread_mutex_isowned_np])
 LIBS="${save_LIBS}"
 
+AC_CHECK_DECL([__SUNPRO_C], [SUNCC="yes"], [SUNCC="no"])
+
 # Support for visibility attribute
 save_CFLAGS="${CFLAGS}"
-CFLAGS="${CFLAGS} -Werror"
+if test "$SUNCC" = "yes" ; then
+	CFLAGS="${CFLAGS} -errwarn=%all,no%E_EMPTY_TRANSLATION_UNIT"
+else
+	CFLAGS="${CFLAGS} -Werror"
+fi
 
 AC_CACHE_CHECK([whether we have support for visibility attributes],
 	[ac_cv_have_viz],
 	[AC_RUN_IFELSE(
 		[AC_LANG_PROGRAM([[
-			#if ((__GNUC__-0) * 10 + __GNUC_MINOR__-0 >= 33)
+			#if ((__GNUC__-0) * 10 + __GNUC_MINOR__-0 >= 33 || defined(__SUNPRO_C))
 			#  define ZLIB_INTERNAL __attribute__((visibility ("hidden")))
 			#else
 			#  define ZLIB_INTERNAL
@@ -645,8 +651,6 @@ gl_LD_VERSION_SCRIPT
 AX_CHECK_COMPILE_FLAG([-Wall],
      [CFLAGS="${CFLAGS} -Wall"
       OCFLAGS="${OCFLAGS} -Wall"])
-
-AC_CHECK_DECL([__SUNPRO_C], [SUNCC="yes"], [SUNCC="no"])
 
 if test "$SUNCC" = "yes" ; then
     SUNCC_CFLAGS=" \
