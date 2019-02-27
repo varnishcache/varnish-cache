@@ -157,37 +157,95 @@ Examples::
 	std.collect(req.http.accept);
 	std.collect(req.http.cookie, "; ");
 
-$Function DURATION duration(STRING s, DURATION fallback)
+$Function DURATION duration([STRING s], [DURATION fallback],
+    [REAL real], [INT integer])
 
-Converts the string *s* to seconds. *s* must be quantified with ``ms``
-(milliseconds), ``s`` (seconds), ``m`` (minutes), ``h`` (hours), ``d``
-(days), ``w`` (weeks) or ``y`` (years) units. If conversion fails,
-*fallback* will be returned.
+Returns a DURATION from a STRING, REAL or INT argument.
 
-Example::
+For a STRING *s* argument, *s* must be quantified by ``ms``
+(milliseconds), ``s`` (seconds), ``m`` (minutes), ``h`` (hours),``d``
+(days), ``w`` (weeks) or ``y`` (years) units.
 
+*real* and *integer* arguments are taken as seconds.
+
+If the conversion of an *s* argument fails, *fallback* will be
+returned if provided, or a VCL failure will be triggered.
+
+Conversions from *real* and *integer* arguments never fail.
+
+Only one of the *s*, *real* or *integer* arguments may be given or a VCL
+failure will be triggered.
+
+Examples::
 	set beresp.ttl = std.duration("1w", 3600s);
+	set beresp.ttl = std.duration(real=1.5);
+	set beresp.ttl = std.duration(integer=10);
 
-$Function BYTES bytes(STRING s, BYTES fallback)
+$Function BYTES bytes([STRING s], [BYTES fallback], [REAL real], [INT integer])
 
-Converts the string *s* to bytes. *s* can be quantified with a
-multiplier (``k``, ``m``, ``g``, ``t``, ``p``).  If conversion fails,
-*fallback* will be returned.
+Returns BYTES from a STRING, REAL or INT argument.
+
+A STRING *s* argument can be quantified with a multiplier (``k``
+(kilo), ``m`` (mega), ``g`` (giga), ``t`` (tera) or ``p`` (peta)).
+
+*real* and *integer* arguments are taken as bytes.
+
+If the conversion of an *s* argument fails, *fallback* will be
+returned if provided, or a VCL failure will be triggered.
+
+Other conversions may fail if the argument can not be represented,
+because it is negative, too small or too large. Again, *fallback* will
+be returned if provided, or a VCL failure will be triggered.
+
+*real* arguments will be rounded down.
+
+Only one of the *s*, *real* or *integer* arguments may be given or a VCL
+failure will be triggered.
 
 Example::
-
 	std.cache_req_body(std.bytes(something.somewhere, 10K));
+	std.cache_req_body(std.bytes(integer=10*1024));
+	std.cache_req_body(std.bytes(real=10.0*1024));
 
-$Function INT integer(STRING s, INT fallback)
+$Function INT integer([STRING s], [INT fallback],
+    [BOOL bool], [BYTES bytes], [DURATION duration], [REAL real],
+    [TIME time])
 
-Converts the string *s* to an integer. If conversion fails, *fallback*
-will be returned.
+Returns an INT from a STRING, BOOL or other quantity.
 
-Example::
+If the conversion of an *s* argument fails, *fallback* will be
+returned if provided, or a VCL failure will be triggered.
+
+A *bool* argument will be returned as 0 for ``false`` and 1 for
+``true``. This conversion will never fail.
+
+For a *bytes* argument, the number of bytes will be returned.  This
+conversion will never fail.
+
+A *duration* argument will be rounded down to the number of seconds
+and returned.
+
+A *real* argument will be rounded down and returned.
+
+For a *time* argument, the number of seconds since the UNIX epoch
+(1970-01-01 00:00:00 UTC) will be returned.
+
+*duration*, *real* and *time* conversions may fail if the argument can
+not be represented because it is too small or too large. If so,
+*fallback* will be returned if provided, or a VCL failure will be
+triggered.
+
+Only one of the *s*, *bool*, *bytes*, *duration*, *real* or *time*
+arguments may be given or a VCL failure will be triggered.
+
+Examples::
 
 	if (std.integer(req.http.foo, 0) > 5) {
 		...
 	}
+
+	set resp.http.answer = std.integer(real=126.42/3);
+
 
 $Function IP ip(STRING s, IP fallback, BOOL resolve = 1)
 
@@ -205,10 +263,31 @@ Example::
 		...
 	}
 
-$Function REAL real(STRING s, REAL fallback)
+$Function REAL real([STRING s], [REAL fallback], [INT integer],
+    [BOOL bool], [BYTES bytes], [DURATION duration],
+    [TIME time])
 
-Converts the string *s* to a real. If conversion fails, *fallback*
-will be returned.
+Returns a REAL from a STRING, BOOL or other quantity.
+
+If the conversion of an *s* argument fails, *fallback* will be
+returned if provided, or a VCL failure will be triggered.
+
+A *bool* argument will be returned as 0.0 for ``false`` and 1.0 for
+``true``.
+
+For a *bytes* argument, the number of bytes will be returned.
+
+For a *duration* argument, the number of seconds will be returned.
+
+An *integer* argument will be returned as a REAL.
+
+For a *time* argument, the number of seconds since the UNIX epoch
+(1970-01-01 00:00:00 UTC) will be returned.
+
+None of these conversions other than *s* will fail.
+
+Only one of the *s*, *integer*, *bool*, *bytes*, *duration* or *time*
+arguments may be given or a VCL failure will be triggered.
 
 Example::
 
@@ -216,7 +295,18 @@ Example::
 		...
 	}
 
+$Function REAL round(REAL r)
+
+Rounds the real *r* to the nearest integer, but round halfway cases
+away from zero (see `round(3)`).
+
 $Function INT real2integer(REAL r, INT fallback)
+
+**DEPRECATED**: This function will be removed in a future version of
+varnish, use `vmod_std.integer`_ with a *real* argument and the
+`vmod_std.round`_ function instead, for example::
+
+	std.integer(real=std.round(...), fallback=...)
 
 Rounds the real *r* to the nearest integer, but round halfway cases
 away from zero (see `round(3)`). If conversion fails, *fallback* will
@@ -230,6 +320,12 @@ Examples::
 
 $Function TIME real2time(REAL r, TIME fallback)
 
+**DEPRECATED**: This function will be removed in a future version of
+varnish, use `vmod_std.time`_ with a *real* argument and the
+`vmod_std.round`_ function instead, for example::
+
+	std.time(real=std.round(...), fallback=...)
+
 Rounds the real *r* to the nearest integer (see
 `vmod_std.real2integer`_) and returns the corresponding time when
 interpreted as a unix epoch. If conversion fails, *fallback* will be
@@ -241,6 +337,12 @@ Example::
 
 $Function INT time2integer(TIME t, INT fallback)
 
+**DEPRECATED**: This function will be removed in a future version of
+varnish, use `vmod_std.integer`_ with a *time* argument instead, for
+example::
+
+	std.integer(time=..., fallback=...)
+
 Converts the time *t* to a integer. If conversion fails,
 *fallback* will be returned.
 
@@ -249,6 +351,12 @@ Example::
 	set req.http.int = std.time2integer(now, 0);
 
 $Function REAL time2real(TIME t, REAL fallback)
+
+**DEPRECATED**: This function will be removed in a future version of
+varnish, use `vmod_std.real`_ with a *time* argument instead, for
+example::
+
+	std.real(time=..., fallback=...)
 
 Converts the time *t* to a real. If conversion fails, *fallback* will
 be returned.
@@ -325,12 +433,11 @@ Example::
 This will check if the content of ``req.http.restrict`` occurs
 anywhere in ``req.url``.
 
-$Function TIME time(STRING s, TIME fallback)
+$Function TIME time([STRING s], [TIME fallback], [REAL real], [INT integer])
 
-Converts the string *s* to a time. If conversion fails, *fallback*
-will be returned.
+Returns a TIME from a STRING, REAL or INT argument.
 
-Supported formats::
+For a STRING *s* argument, the following formats are supported::
 
 	"Sun, 06 Nov 1994 08:49:37 GMT"
 	"Sunday, 06-Nov-94 08:49:37 GMT"
@@ -339,9 +446,19 @@ Supported formats::
 	"784111777.00"
 	"784111777"
 
-Example::
+*real* and *integer* arguments are taken as seconds since the epoch.
+
+If the conversion of an *s* argument fails or a negative *real* or
+*integer* argument is given, *fallback* will be returned if provided,
+or a VCL failure will be triggered.
+
+Examples::
 
 	if (std.time(resp.http.last-modified, now) < now - 1w) {
+		...
+	}
+
+	if (std.time(int=2147483647) < now - 1w) {
 		...
 	}
 

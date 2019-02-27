@@ -44,47 +44,139 @@
 #include "vtim.h"
 #include "vcc_if.h"
 
+static inline int onearg(VRT_CTX, const char *f, int nargs)
+{
+	if (nargs == 1)
+		return (1);
+	VRT_fail(ctx, "std.%s: %s arguments", f,
+	    nargs > 1 ? "too many" : "not enough");
+	return (0);
+}
+
+/*
+ * not handling real arg isfinite() / nan() : caller error
+ * always trunc, never round
+ */
+
 VCL_DURATION v_matchproto_(td_std_duration)
-vmod_duration(VRT_CTX, VCL_STRING p, VCL_DURATION d)
+vmod_duration(VRT_CTX, struct VARGS(duration) *a)
 {
 	double r;
+	int nargs;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	r = VNUM_duration(p);
-	return (isnan(r) ? d : r);
+
+	nargs = a->valid_s + a->valid_real + a->valid_integer;
+
+	if (! onearg(ctx, "duration", nargs))
+		return (0);
+
+	if (a->valid_real)
+		return ((VCL_DURATION)a->real);
+	if (a->valid_integer)
+		return ((VCL_DURATION)a->integer);
+
+	assert(a->valid_s);
+
+	r = VNUM_duration(a->s);
+
+	if (! isnan(r))
+		return (r);
+
+	if (a->valid_fallback)
+		return (a->fallback);
+
+	VRT_fail(ctx, "std.duration: conversion failed");
+	return (0);
 }
 
 VCL_BYTES v_matchproto_(td_std_bytes)
-vmod_bytes(VRT_CTX, VCL_STRING p, VCL_BYTES d)
+vmod_bytes(VRT_CTX, struct VARGS(bytes) *a)
 {
 	uintmax_t r;
+	VCL_BYTES b;
+	VCL_REAL rr;
+	int nargs;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	if (VNUM_2bytes(p, &r, 0) != NULL)
-		return (d);
-	return (r);
+
+	nargs = a->valid_s + a->valid_real + a->valid_integer;
+
+	if (! onearg(ctx, "bytes", nargs))
+		return (0);
+
+	b = -1;
+	if (a->valid_s) {
+		if (VNUM_2bytes(a->s, &r, 0) == NULL &&
+		    r <= VCL_BYTES_MAX)
+			b = (VCL_BYTES)r;
+	} else if (a->valid_real) {
+		rr = trunc(a->real);
+		if (rr <= (VCL_REAL)VCL_BYTES_MAX)
+			b = (VCL_BYTES)rr;
+	} else if (a->valid_integer) {
+		b = (VCL_BYTES)a->integer;
+	} else {
+		INCOMPL();
+	}
+
+	if (b >= 0)
+		return (b);
+
+	if (a->valid_fallback)
+		return (a->fallback);
+
+	VRT_fail(ctx, "std.bytes: conversion failed");
+	return (0);
 }
 
 VCL_INT v_matchproto_(td_std_integer)
-vmod_integer(VRT_CTX, VCL_STRING p, VCL_INT i)
+vmod_integer(VRT_CTX, struct VARGS(integer) *a)
 {
 	const char *e;
 	double r;
+	int nargs;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
-	if (p == NULL)
-		return (i);
+	nargs = a->valid_s + a->valid_bool + a->valid_bytes +
+	    a->valid_duration + a->valid_real + a->valid_time;
 
-	r = VNUMpfx(p, &e);
-	if (isnan(r) || e != NULL)
-		return (i);
+	if (! onearg(ctx, "integer", nargs))
+		return (0);
 
-	r = trunc(r);
-	if (r > VCL_INT_MAX || r < VCL_INT_MIN)
-		return (i);
+	r = NAN;
+	if (a->valid_bool) {
+		return (!! a->bool);
+	} else if (a->valid_bytes) {
+		return (a->bytes);
+	} else if (a->valid_s) {
+		if (a->s) {
+			r = VNUMpfx(a->s, &e);
+			if (e != NULL)
+				r = NAN;
+		}
+	} else if (a->valid_duration) {
+		r = a->duration;
+	} else if (a->valid_real) {
+		r = a->real;
+	} else if (a->valid_time) {
+		r = a->time;
+	} else {
+		INCOMPL();
+	}
 
-	return ((VCL_INT)r);
+	if (! isnan(r)) {
+		r = trunc(r);
+		if (r >= VCL_INT_MIN && r <= VCL_INT_MAX)
+			return ((VCL_INT)r);
+	}
+
+	if (a->valid_fallback)
+		return (a->fallback);
+
+	VRT_fail(ctx, "std.integer: conversion failed");
+	return (0);
 }
 
 VCL_IP
@@ -133,22 +225,53 @@ vmod_ip(VRT_CTX, VCL_STRING s, VCL_IP d, VCL_BOOL n)
 }
 
 VCL_REAL v_matchproto_(td_std_real)
-vmod_real(VRT_CTX, VCL_STRING p, VCL_REAL d)
+vmod_real(VRT_CTX, struct VARGS(real) *a)
 {
-	double r;
+	VCL_REAL r;
+	int nargs;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
-	if (p == NULL)
-		return (d);
+	nargs = a->valid_s + a->valid_integer + a->valid_bool + a->valid_bytes +
+	    a->valid_duration + a->valid_time;
 
-	r = VNUM(p);
+	if (! onearg(ctx, "real", nargs))
+		return (0);
 
-	if (isnan(r))
-		return (d);
+	if (a->valid_integer)
+		return ((VCL_REAL)a->integer);
+	else if (a->valid_bool)
+		return ((VCL_REAL)(!! a->bool));
+	else if (a->valid_bytes)
+		return ((VCL_REAL)a->bytes);
+	else if (a->valid_duration)
+		return ((VCL_REAL)a->duration);
+	else if (a->valid_time)
+		return ((VCL_REAL)a->time);
 
-	return (r);
+	assert(a->valid_s);
+
+	r = NAN;
+	if (a->s != NULL)
+		r = VNUM(a->s);
+
+	if (!isnan(r))
+		return (r);
+
+	if (a->valid_fallback)
+		return (a->fallback);
+
+	VRT_fail(ctx, "std.real: conversion failed");
+	return (0);
 }
+
+VCL_REAL v_matchproto_(td_std_round)
+vmod_round(VRT_CTX, VCL_REAL r)
+{
+	(void) ctx;
+	return (round(r));
+}
+
 
 VCL_INT v_matchproto_(td_std_real2integer)
 vmod_real2integer(VRT_CTX, VCL_REAL r, VCL_INT i)
@@ -199,14 +322,39 @@ vmod_time2real(VRT_CTX, VCL_TIME t, VCL_REAL r)
 }
 
 VCL_TIME v_matchproto_(td_std_time)
-vmod_time(VRT_CTX, VCL_STRING p, VCL_TIME d)
+vmod_time(VRT_CTX, struct VARGS(time)* a)
 {
 	double r;
+	int nargs;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
-	r = VTIM_parse(p);
-	if (r)
-		return (r);
-	return (vmod_real(ctx, p, d));
+	nargs = a->valid_s + a->valid_real + a->valid_integer;
+
+	if (! onearg(ctx, "time", nargs))
+		return (0);
+
+	if (a->valid_integer)
+		return ((VCL_REAL)a->integer);
+	else if (a->valid_real)
+		return ((VCL_REAL)a->real);
+
+	assert(a->valid_s);
+
+	if (a->s) {
+		r = VTIM_parse(a->s);
+		if (r)
+			return (r);
+
+		r = VNUM(a->s);
+
+		if (!isnan(r) && r > 0)
+			return (r);
+	}
+
+	if (a->valid_fallback)
+		return (a->fallback);
+
+	VRT_fail(ctx, "std.time: conversion failed");
+	return (0);
 }

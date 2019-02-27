@@ -13,16 +13,57 @@ varnish v1 -vcl+backend {
 		set resp.http.ltzero = (std.integer(req.http.foo, 0) < 0);
 		set resp.http.iszero = (std.integer(req.http.foo, 0) == 0);
 		set resp.http.converted = std.integer(req.http.foo, 0);
+
+		if (req.http.nofb) {
+			set resp.http.nofb = std.integer(req.http.foo);
+		}
+
+		if (req.http.bool) {
+			set resp.http.bool =
+			    std.integer(bool=req.http.bool != "");
+		}
+		if (req.http.bytes) {
+			set resp.http.bytes =
+			    std.integer(bytes=std.bytes(req.http.bytes));
+		}
+		if (req.http.duration) {
+			set resp.http.duration =
+			    std.integer(duration=std.duration(req.http.duration));
+		}
+		if (req.http.real) {
+			set resp.http.real =
+			    std.integer(real=std.real(req.http.real));
+		}
+		if (req.http.time) {
+			set resp.http.time =
+			    std.integer(time=std.time(req.http.time));
+		}
+		if (req.http.err1) {
+			set resp.http.time = std.integer();
+		}
+		if (req.http.err2) {
+			set resp.http.time = std.integer(real=1.0, bool=true);
+		}
 	}
 } -start
 
 client c1 {
-	txreq -hdr "foo: 1"
+	txreq -hdr "foo: 1" \
+	      -hdr "bool: whatever" \
+	      -hdr "bytes: 1b" \
+	      -hdr "duration: 1s" \
+	      -hdr "real: 1.9" \
+	      -hdr "time: Thu, 01 Jan 1970 00:00:01 GMT"
 	rxresp
 	expect resp.http.gtzero == true
 	expect resp.http.ltzero == false
 	expect resp.http.iszero == false
 	expect resp.http.converted == 1
+	expect resp.http.bool == 1
+	expect resp.http.duration == 1
+	expect resp.http.bytes == 1
+	expect resp.http.real == 1
+	expect resp.http.time == 1
 
 	txreq -hdr "foo: -1"
 	rxresp
@@ -38,10 +79,71 @@ client c1 {
 	expect resp.http.iszero == true
 	expect resp.http.converted == 0
 
+	# VCL_INT_MAX
+	txreq -hdr "foo: 9007199254740991" \
+	      -hdr "bytes: 9007199254740991b" \
+	      -hdr "duration: 9007199254740991s" \
+	      -hdr "real: 9007199254740991" \
+	      -hdr "time: 9007199254740991"
+	rxresp
+	expect resp.http.gtzero == true
+	expect resp.http.ltzero == false
+	expect resp.http.iszero == false
+	expect resp.http.converted == 9007199254740991
+	expect resp.http.bytes == 9007199254740991
+	expect resp.http.duration == 9007199254740991
+	expect resp.http.real == 9007199254740991
+	expect resp.http.time == 9007199254740991
+
+	# VCL_INT_MIN
+	txreq -hdr "foo: -9007199254740991" \
+	      -hdr "duration: -9007199254740991s" \
+	      -hdr "real: -9007199254740991"
+	rxresp
+	expect resp.http.gtzero == false
+	expect resp.http.ltzero == true
+	expect resp.http.iszero == false
+	expect resp.http.converted == -9007199254740991
+	expect resp.http.duration == -9007199254740991
+	expect resp.http.real == -9007199254740991
+
 	txreq -hdr "foo: bar"
 	rxresp
 	expect resp.http.gtzero == false
 	expect resp.http.ltzero == false
 	expect resp.http.iszero == true
 	expect resp.http.converted == 0
+
+	txreq -hdr "foo: 9007199254740992"
+	rxresp
+	expect resp.http.converted == 0
+
+	txreq -hdr "foo: -9007199254740992"
+	rxresp
+	expect resp.http.converted == 0
+} -run
+client c1 {
+	txreq -hdr "nofb: 9007199254740992"
+	rxresp
+	expect resp.status == 503
+} -run
+client c1 {
+	txreq -hdr "nofb: -9007199254740992"
+	rxresp
+	expect resp.status == 503
+} -run
+client c1 {
+	txreq -hdr "nofb: x"
+	rxresp
+	expect resp.status == 503
+} -run
+client c1 {
+	txreq -hdr "err1: 1"
+	rxresp
+	expect resp.status == 503
+} -run
+client c1 {
+	txreq -hdr "err2: 1"
+	rxresp
+	expect resp.status == 503
 } -run

@@ -9,8 +9,36 @@ varnish v1 -vcl+backend {
 	import std;
 
 	sub vcl_deliver {
-		set resp.http.duration = std.duration(req.http.duration, 1s) + 1000000s;
-		set resp.http.bytes = std.bytes(req.http.bytes, 10K) + 512B;
+		if (req.http.d-real) {
+			set resp.http.duration =
+			    std.duration(real=std.real(req.http.d-real))
+			    + 1000000s;
+		} else if (req.http.d-int) {
+			set resp.http.duration =
+			    std.duration(integer=std.integer(req.http.d-int))
+			    + 1000000s;
+		} else if (req.http.duration-nf) {
+			set resp.http.duration =
+			    std.duration(req.http.duration) + 1000000s;
+		} else {
+			set resp.http.duration =
+			    std.duration(req.http.duration, 1s) + 1000000s;
+		}
+		if (req.http.b-real) {
+			set resp.http.bytes =
+			    std.bytes(real=std.real(req.http.b-real))
+			    + 512B;
+		} else if (req.http.b-int) {
+			set resp.http.bytes =
+			    std.bytes(integer=std.integer(req.http.b-int))
+			    + 512B;
+		} else if (req.http.bytes-nf) {
+			set resp.http.bytes = std.bytes(req.http.bytes-nf)
+			    + 512B;
+		} else {
+			set resp.http.bytes = std.bytes(req.http.bytes, 10K)
+			    + 512B;
+		}
 	}
 } -start
 
@@ -82,4 +110,100 @@ client c1 {
 	txreq -hdr "duration: 100"
 	rxresp
 	expect resp.http.duration == 1000001.000
+
+	# ---
+
+	txreq -hdr "d-real: 0.010" -hdr "b-real: 2048.99999"
+	rxresp
+	expect resp.http.duration == 1000000.010
+	expect resp.http.bytes == 2560.000
+
+	txreq -hdr "d-real: 10.1" -hdr "b-real: 3145728.9"
+	rxresp
+	expect resp.http.duration == 1000010.100
+	expect resp.http.bytes == 3146240.000
+
+	txreq -hdr "d-real: 600" -hdr "b-real: 4831838208.123"
+	rxresp
+	expect resp.http.duration == 1000600.000
+	expect resp.http.bytes == 4831838720.000
+
+	txreq -hdr "d-real: 36000" -hdr "b-real: 131941395333.12"
+	rxresp
+	expect resp.http.duration == 1036000.000
+	expect resp.http.bytes == 131941395845.000
+
+	txreq -hdr "d-real: -100"
+	rxresp
+	expect resp.http.duration ==  999900.000
+
+	txreq -hdr "d-real: -inf"
+	rxresp
+	expect resp.status == 503
+} -run
+
+client c1 {
+	txreq -hdr "d-int: 600" -hdr "b-int: 4831838208"
+	rxresp
+	expect resp.http.duration == 1000600.000
+	expect resp.http.bytes == 4831838720.000
+
+	txreq -hdr "d-int: 36000" -hdr "b-int: 131941395333"
+	rxresp
+	expect resp.http.duration == 1036000.000
+	expect resp.http.bytes == 131941395845.000
+
+	txreq -hdr "d-int: -100"
+	rxresp
+	expect resp.http.duration ==  999900.000
+
+	txreq -hdr "d-int: x"
+	rxresp
+	expect resp.status == 503
+} -run
+
+client c1 {
+	txreq -hdr "duration-nf: s"
+	rxresp
+	expect resp.status == 503
+} -run
+client c1 {
+	txreq -hdr "duration-nf: 3wx"
+	rxresp
+	expect resp.status == 503
+} -run
+client c1 {
+	txreq -hdr "duration-nf: -inf"
+	rxresp
+	expect resp.status == 503
+} -run
+client c1 {
+	txreq -hdr "duration-nf: 2x"
+	rxresp
+	expect resp.status == 503
+} -run
+client c1 {
+	txreq -hdr "duration-nf: 2h x"
+	rxresp
+	expect resp.status == 503
+} -run
+client c1 {
+	txreq -hdr "duration-nf: 100"
+	rxresp
+	expect resp.status == 503
+} -run
+client c1 {
+	txreq -hdr "bytes-nf: x"
+	rxresp
+	expect resp.status == 503
+} -run
+client c1 {
+	txreq -hdr "b-real: x"
+	rxresp
+	expect resp.status == 503
+} -run
+client c1 {
+	txreq -hdr "b-int: x"
+	rxresp
+	expect resp.status == 503
 } -run
