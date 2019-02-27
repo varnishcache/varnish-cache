@@ -211,6 +211,21 @@ typedef vtim_real				VCL_TIME;
 typedef struct vcl *				VCL_VCL;
 typedef void					VCL_VOID;
 
+/*
+ * technically, as our VCL_INT is int64_t, its limits are INT64_MIN/INT64_MAX.
+ *
+ * Yet, for conversions, we use VNUMpfx with a double intermediate, so above
+ * 2^53 we see rounding errors. In order to catch a potential floor rounding
+ * error, we make our limit 2^53-1
+ *
+ * Ref: https://stackoverflow.com/a/1848762
+ */
+#define VCL_INT_MAX ((INT64_C(1)<<53)-1)
+#define VCL_INT_MIN (-VCL_INT_MAX)
+
+#define VCL_BYTES_MAX VCL_INT_MAX
+#define VCL_BYTES_MIN 0
+
 struct vrt_type {
 	unsigned			magic;
 #define VRT_TYPE_MAGIC			0xa943bc32
