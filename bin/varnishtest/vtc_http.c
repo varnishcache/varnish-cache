@@ -706,6 +706,8 @@ cmd_http_rxresp(CMD_ARGS)
 		    "Multiple Content-Length headers.\n");
 	if (!has_obj)
 		return;
+	if (!hp->resp[0] || !hp->resp[1])
+		return;
 	else if (!strcmp(hp->resp[1], "200"))
 		http_swallow_body(hp, hp->resp, 1, 0);
 	else
