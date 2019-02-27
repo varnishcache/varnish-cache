@@ -69,7 +69,8 @@ VNUMpfx(const char *p, const char **t)
 
 	for (; *p != '\0'; p++) {
 		if (vct_isdigit(*p)) {
-			m = m * 10. + *p - '0';
+			m *= 10.;
+			m += *p - '0';
 			e = ne;
 			if (e)
 				ne = e - 1.0;
@@ -284,6 +285,12 @@ static struct test_case {
 	{ "1P\t",		(uintmax_t)0,	(uintmax_t)1125899906842624ULL},
 	{ "1PB ",		(uintmax_t)0,	(uintmax_t)1125899906842624ULL},
 	{ "1.3 PB",		(uintmax_t)0,	(uintmax_t)1463669878895411ULL},
+
+	// highest integers not rounded for double conversion
+	{ "9007199254740988",	(uintmax_t)0,	(uintmax_t)9007199254740988ULL},
+	{ "9007199254740989",	(uintmax_t)0,	(uintmax_t)9007199254740989ULL},
+	{ "9007199254740990",	(uintmax_t)0,	(uintmax_t)9007199254740990ULL},
+	{ "9007199254740991",	(uintmax_t)0,	(uintmax_t)9007199254740991ULL},
 
 	{ "1%",			(uintmax_t)1024,	(uintmax_t)10 },
 	{ "2%",			(uintmax_t)1024,	(uintmax_t)20 },
