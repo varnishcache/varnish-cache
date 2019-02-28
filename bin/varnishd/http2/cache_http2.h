@@ -127,6 +127,7 @@ struct h2_req {
 	VTAILQ_ENTRY(h2_req)		list;
 	int64_t				t_window;
 	int64_t				r_window;
+	int				got_rst_stream;
 
 	/* Where to wake this stream up */
 	struct worker			*wrk;
@@ -148,6 +149,7 @@ struct h2_sess {
 
 	struct sess			*sess;
 	int				refcnt;
+	int				max_concurrent_streams_offset;
 	uint32_t			highest_stream;
 	int				bogosity;
 	int				do_sweep;
