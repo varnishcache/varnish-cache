@@ -1,0 +1,56 @@
+varnishtest "race cond in max_concurrent_streams when request after receiving RST_STREAM"
+
+barrier b1 sock 4
+barrier b2 sock 4
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -cliok "param.set feature +http2"
+varnish v1 -cliok "param.set debug +syncvsl"
+varnish v1 -cliok "param.set h2_max_concurrent_streams 2"
+
+varnish v1 -vcl+backend {
+	import vtc;
+
+	sub vcl_recv {
+	}
+
+	sub vcl_backend_fetch {
+		vtc.barrier_sync("${b1_sock}");
+		vtc.barrier_sync("${b2_sock}");
+	}
+} -start
+
+client c1 {
+	txpri
+	stream 0 rxsettings -run
+
+	stream 1 {
+		txreq
+		barrier b1 sync
+		barrier b2 sync
+		rxresp
+		expect resp.status == 200
+	} -start
+
+	stream 3 {
+		txreq
+		barrier b1 sync
+		txrst -err 0x8
+		barrier b2 sync
+	} -start
+
+	barrier b1 sync
+
+	stream 5 {
+		txreq
+		rxresp
+		expect resp.status == 200
+	} -start
+
+	barrier b2 sync
+} -run
+
