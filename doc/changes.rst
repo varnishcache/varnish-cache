@@ -260,7 +260,7 @@ Fixed bugs
 .. _2820: https://github.com/varnishcache/varnish-cache/issues/2820
 .. _2823: https://github.com/varnishcache/varnish-cache/issues/2823
 .. _2831: https://github.com/varnishcache/varnish-cache/issues/2831
-.. _2837: https://github.com/varnishcache/varnish-cache/pull/2837  
+.. _2837: https://github.com/varnishcache/varnish-cache/pull/2837
 .. _2840: https://github.com/varnishcache/varnish-cache/issues/2840
 .. _VIP16: https://github.com/varnishcache/varnish-cache/wiki/VIP16%3A-Retire-parameters-aliases
 

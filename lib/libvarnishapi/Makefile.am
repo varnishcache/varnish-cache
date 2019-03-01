@@ -99,7 +99,7 @@ vxp_test_CFLAGS = \
 vxp_test_LDADD = @PCRE_LIBS@ \
 	${RT_LIBS} ${LIBM} ${PTHREAD_LIBS}
 
-TESTS = vsl_glob_test 
+TESTS = vsl_glob_test
 
 noinst_PROGRAMS += vsl_glob_test
 
