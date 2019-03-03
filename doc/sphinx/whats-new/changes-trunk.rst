@@ -47,6 +47,11 @@ you must use these parameters:
 
 Added :ref:`ref_param_thread_pool_watchdog`, see above.
 
+The :ref:`ref_param_debug` parameter now has a flag ``vcl_keep``. When
+the flag is turned on, C sources and shared object libraries that were
+generated from VCL sources are retained in the Varnish working
+directory (see the notes about ``varnishtest`` below).
+
 Other changes in varnishd
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -195,7 +200,12 @@ diagnose workspace overflow issues, see :ref:`varnish-counters(7)`.
 varnishtest
 ===========
 
-**XXX changes concerning varnishtest(1) and/or vtc(7)**
+When :ref:`varnishtest(1)` is invoked with either of the ``-L`` or
+``-l`` options to retain the temporary directory after tests, the
+``vcl_keep`` flag for the :ref:`ref_param_debug` is switched on (see
+`Parameters`_ above). This means that C sources and shared objects
+generated from VCL can also be inspected after a test. By default, the
+temporary directory is deleted after each test.
 
 Changes for developers and VMOD authors
 =======================================
