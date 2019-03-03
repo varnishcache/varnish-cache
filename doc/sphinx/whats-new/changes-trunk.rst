@@ -70,12 +70,25 @@ VMODs
 Added the function :ref:`vmod_directors.lookup`, only for use in
 ``vcl_init`` or ``vcl_fini``.
 
-varnishlog(1) and vsl(7)
-========================
+varnishlog(1), varnishncsa(1) and vsl(7)
+========================================
 
-Timing information is now uniformly reported with microsecond
-precision.  This affects the tags ``ExpKill`` and ``ExpRearm``
-(previously with nanosecond precision).
+The performance of bundled log readers, including ``varnishlog`` and
+``varnishncsa`` (and any tool using the internal VUT interface for
+Varnish utilities) has been improved. They continue reading log
+contents in bulk as long as more contents are known to be available,
+not stopping as frequently (and unnecessarily) to check the status of
+the shared memory mapping.
+
+``varnishlog`` and ``varnishncsa`` now have the ``-R`` command-line
+option for rate-limiting, to limit the number of log transactions read
+per unit time.  This can make it less likely for log reads to fall
+behind and fail with overrun errors under heavy loads. See
+:ref:`varnishlog(1)` and :ref:`varnishncsa(1)` for details.
+
+Timing information is now uniformly reported in the log with
+microsecond precision.  This affects the tags ``ExpKill`` and
+``ExpRearm`` (previously with nanosecond precision).
 
 varnishadm(1) and varnish-cli(7)
 ================================
