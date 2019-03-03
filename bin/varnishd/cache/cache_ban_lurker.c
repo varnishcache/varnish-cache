@@ -126,6 +126,7 @@ ban_lurker_getfirst(struct vsl_log *vsl, struct ban *bt)
 	struct objhead *oh;
 	struct objcore *oc, *noc;
 	int move_oc = 1;
+	int contested = 0;
 
 	Lck_Lock(&ban_mtx);
 
@@ -149,13 +150,15 @@ ban_lurker_getfirst(struct vsl_log *vsl, struct ban *bt)
 		} else if (oc == &oc_mark_end) {
 			assert(move_oc == 0);
 
-			/* hold off to give lookup a chance and reiterate */
-			VSC_C_main->bans_lurker_contention++;
-			Lck_Unlock(&ban_mtx);
-			VSL_Flush(vsl, 0);
-			VTIM_sleep(cache_param->ban_lurker_holdoff);
-			Lck_Lock(&ban_mtx);
-
+			if (contested) {
+				/* hold off to give lookup a chance and reiterate */
+				VSC_C_main->bans_lurker_contention++;
+				Lck_Unlock(&ban_mtx);
+				VSL_Flush(vsl, 0);
+				VTIM_sleep(cache_param->ban_lurker_holdoff);
+				Lck_Lock(&ban_mtx);
+				contested = 0;
+			}
 			oc = VTAILQ_FIRST(&bt->objcore);
 			assert(oc == &oc_mark_cnt);
 			continue;
@@ -197,7 +200,7 @@ ban_lurker_getfirst(struct vsl_log *vsl, struct ban *bt)
 				break;
 			}
 		}
-
+		contested = 1;
 		noc = VTAILQ_NEXT(oc, ban_list);
 
 		if (move_oc) {
