@@ -115,6 +115,9 @@ the following commands (see :ref:`varnish-cli(7)`):
 * ``storage.list -j``
 * ``panic.show -j``
 
+The ``-j`` option was already available for ``backend.list``, ``ping``
+and ``help`` in previous versions.
+
 For automated parsing of CLI responses (``varnishadm`` output), we
 recommend the use of JSON format.
 
