@@ -107,6 +107,8 @@ microsecond precision.  This affects the tags ``ExpKill`` and
 varnishadm(1) and varnish-cli(7)
 ================================
 
+.. _whatsnew_changes_cli_json:
+
 JSON output
 ~~~~~~~~~~~
 
@@ -131,6 +133,8 @@ recommend the use of JSON format.
 
 Added the command ``param.reset`` to reset a parameter's value to its
 default, see :ref:`varnish-cli(7)`.
+
+.. _whatsnew_changes_vcl_list_backend_list:
 
 Listing backends and VCLs
 ~~~~~~~~~~~~~~~~~~~~~~~~~
