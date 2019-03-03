@@ -169,6 +169,21 @@ ban_lurker_getfirst(struct vsl_log *vsl, struct ban *bt)
 		if (!Lck_Trylock(&oh->mtx)) {
 			if (oc->refcnt == 0 || oc->flags & OC_F_BUSY) {
 				Lck_Unlock(&oh->mtx);
+			} else if (oc->flags & (OC_F_DYING | OC_F_FAILED)) {
+				/*
+				 * For a dying object we seize the opportunity
+				 * to remove it completely off the ban list,
+				 * now that we have both the oh and ban
+				 * mutexes.
+				 */
+				AZ(oc->flags & OC_F_BUSY);
+				noc = VTAILQ_NEXT(oc, ban_list);
+				VTAILQ_REMOVE(&bt->objcore, oc, ban_list);
+				oc->ban = NULL;
+				bt->refcount--;
+				Lck_Unlock(&oh->mtx);
+				oc = noc;
+				continue;
 			} else {
 				/*
 				 * We got the lock, and the oc is not being
