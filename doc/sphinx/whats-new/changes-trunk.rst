@@ -197,6 +197,10 @@ varnishstat(1) and varnish-counters(7)
 Added the ``ws_*_overflow`` and ``client_resp_500`` counters to better
 diagnose workspace overflow issues, see :ref:`varnish-counters(7)`.
 
+In curses mode, :ref:`varnishstat(1)` now allows use of the ``+`` and
+``-`` keys to increase or decrease the refresh rate of the curses
+window.
+
 varnishtest
 ===========
 
