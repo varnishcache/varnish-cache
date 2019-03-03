@@ -20,13 +20,38 @@ merged, may be found in the `change log`_.
 varnishd
 ========
 
+Cache lookups have undergone a number of optimizations, among them to
+reduce lock contention, and to shorten and simplify the critical
+section of lookup code.
+
+We have added a "watchdog" for thread pools that will panic the worker
+process, causing it to restart, if scheduling tasks onto worker
+threads appears to be deadlocking. The length of time until the panic
+is set by the :ref:`ref_param_thread_pool_watchdog` parameter. If this
+happens, it probably means that thread pools are too small, and you
+should consider increasing the parameters
+:ref:`ref_param_thread_pool_min`, :ref:`ref_param_thread_pool_max`
+and/or :ref:`ref_param_thread_pools`.
+
 Parameters
 ~~~~~~~~~~
 
-**XXX changes in -p parameters**
+Some parameters that have been long deprecated are now retired. Now
+you must use these parameters:
+
+* :ref:`ref_param_vsl_reclen` (in place of ``shm_reclen``)
+
+* :ref:`ref_param_vcl_path` (in place of ``vcl_dir``)
+
+* :ref:`ref_param_vmod_path` (in place of ``vmod_dir``)
+
+Added :ref:`ref_param_thread_pool_watchdog`, see above.
 
 Other changes in varnishd
 ~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The VCL syntax version is now displayed in a panic message, as 41 for
+VCL 4.1 and 40 for VCL 4.0.
 
 Changes to VCL
 ==============
@@ -34,7 +59,7 @@ Changes to VCL
 VCL variables
 ~~~~~~~~~~~~~
 
-**XXX new, deprecated or removed variables, or changed semantics**
+Added ``req.is_hitmiss`` and ``req.is_hitpass``, see :ref:`vcl(7)`.
 
 Other changes to VCL
 ~~~~~~~~~~~~~~~~~~~~
@@ -42,17 +67,18 @@ Other changes to VCL
 VMODs
 =====
 
-**XXX changes in the bundled VMODs**
+Added the function :ref:`vmod_directors.lookup`, only for use in
+``vcl_init`` or ``vcl_fini``.
 
-varnishlog
-==========
+varnishlog(1) and vsl(7)
+========================
 
-**XXX changes concerning varnishlog(1) and/or vsl(7)**
+Timing information is now uniformly reported with microsecond
+precision.  This affects the tags ``ExpKill`` and ``ExpRearm``
+(previously with nanosecond precision).
 
-varnishadm
-==========
-
-**XXX changes concerning varnishadm(1) and/or varnish-cli(7)**
+varnishadm(1) and varnish-cli(7)
+================================
 
 JSON responses, requested with the ``-j`` option, are now possible for
 the following commands (see :ref:`varnish-cli(7)`):
@@ -63,6 +89,62 @@ the following commands (see :ref:`varnish-cli(7)`):
 * ``ban.list -j``
 * ``storage.list -j``
 * ``panic.show -j``
+
+For automated parsing of CLI responses (``varnishadm`` output), we
+recommend the use of JSON format.
+
+The "probe message" field in the output of ``backend.list`` (in the
+``probe_message`` field of JSON format, or the ``Probe`` column of
+non-JSON output) has been changed to display ``X/Y state``, where:
+
+* Integer ``X`` is the number of good probes in the most recent
+  window; or if the backend in question is a director, the number of
+  healthy backends accessed via the director.
+
+* Integer ``Y`` is the window in which the threshold for overall
+  health of the backend is defined (from the ``.window`` field of a
+  probe, see :ref:`vcl(7)`); or in the case of a director, the total
+  number of backends accessed via the director.
+
+* ``state`` is one of the strings ``"good"`` or ``"bad"``, for the
+  overall health of the backend or director.
+
+In the ``probe_message`` field of ``backend.list -j`` output, this
+appears as the array ``[X, Y, state]``.
+
+The non-JSON output of ``vcl.list`` has been changed:
+
+* The ``state`` and ``temperature`` fields appear in separate columns
+  (previously combined in one column).
+
+* The optional column showing the relationships between labels and VCL
+  configurations (when labels are in use) has been separated into two
+  columns.
+
+See :ref:`varnish-cli(7)` for details. In the JSON output for
+``vcl.list -j``, this information appears in separate fields.
+
+The width of columns in ``backend.list`` and ``vcl.list`` output
+(non-JSON) is now dynamic, to fit the width of the terminal window.
+
+Bans may now be defined with respect to ``obj.ttl``, ``obj.age``,
+``obj.grace`` and ``obj.keep``, referring to the expiration and age
+properties of the cached object. A ban expression may also be defined
+with one of the comparison operators ``<``, ``<=``, ``>`` and ``>=``;
+these may only be used with one of the new duration variables for
+bans. Duration constants (such as ``5m`` for five minutes of ``3h``
+for three hours) may be used in the ``<arg>`` position against which
+these objects are compared in a ban expression.
+
+``obj.ttl`` and ``obj.age`` are evaluated with respect to the time at
+which the ban was defined, while ``obj.grace`` and ``obj.keep`` are
+evaluated as the grace or keep time assigned to the object. So to issue
+a ban for objects whose TTL expires more than 5 hours from now and
+whose keep parameter is greater than 3 hours, use this expression::
+
+  obj.ttl > 5h && obj.keep > 3h
+
+See :ref:`vcl(7)` and :ref:`users-guide-purging` for details.
 
 varnishstat
 ===========
@@ -77,7 +159,7 @@ varnishtest
 Changes for developers and VMOD authors
 =======================================
 
-**XXX changes concerning VRT, the public APIs, source code organization,
-builds etc.**
+Python tools that generate code now prefer python 3 over python 2,
+when availabale.
 
 *eof*
