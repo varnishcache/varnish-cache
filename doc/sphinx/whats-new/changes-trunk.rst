@@ -186,10 +186,11 @@ whose keep parameter is greater than 3 hours, use this expression::
 
 See :ref:`vcl(7)` and :ref:`users-guide-purging` for details.
 
-varnishstat
-===========
+varnishstat(1) and varnish-counters(7)
+======================================
 
-**XXX changes concerning varnishstat(1) and/or varnish-counters(7)**
+Added the ``ws_*_overflow`` and ``client_resp_500`` counters to better
+diagnose workspace overflow issues, see :ref:`varnish-counters(7)`.
 
 varnishtest
 ===========
