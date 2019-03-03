@@ -64,6 +64,15 @@ Added ``req.is_hitmiss`` and ``req.is_hitpass``, see :ref:`vcl(7)`.
 Other changes to VCL
 ~~~~~~~~~~~~~~~~~~~~
 
+When the ``.path`` field of a backend declaration is used to define a
+Unix domain socket as the backend address, and the socket file does
+not exist or is not accessible at VCL load time, then a warning is
+issued, but the VCL load is allowed to continue. Previously, the load
+would fail in that case. This makes it easier to start the peer
+component listening at the socket, or set the socket's permissions,
+after starting Varnish or loading VCL. If the socket still cannot be
+accessed when a fetch is attempted, then the fetch fails.
+
 VMODs
 =====
 
