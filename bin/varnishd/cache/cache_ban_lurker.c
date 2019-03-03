@@ -365,7 +365,7 @@ ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 
 	/*
 	 * conceptually, all obans are now completed. Remove the tail. If it
-	 * containted the first oban, all obans were on the tail and we're
+	 * contained the first oban, all obans were on the tail and we're
 	 * done.
 	 */
 	if (ban_cleantail(VTAILQ_FIRST(&obans)))
