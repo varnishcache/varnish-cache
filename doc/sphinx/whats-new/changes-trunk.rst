@@ -80,6 +80,9 @@ precision.  This affects the tags ``ExpKill`` and ``ExpRearm``
 varnishadm(1) and varnish-cli(7)
 ================================
 
+JSON output
+~~~~~~~~~~~
+
 JSON responses, requested with the ``-j`` option, are now possible for
 the following commands (see :ref:`varnish-cli(7)`):
 
@@ -92,6 +95,15 @@ the following commands (see :ref:`varnish-cli(7)`):
 
 For automated parsing of CLI responses (``varnishadm`` output), we
 recommend the use of JSON format.
+
+``param.reset <param>``
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Added the command ``param.reset`` to reset a parameter's value to its
+default, see :ref:`varnish-cli(7)`.
+
+Listing backends and VCLs
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The "probe message" field in the output of ``backend.list`` (in the
 ``probe_message`` field of JSON format, or the ``Probe`` column of
@@ -126,6 +138,9 @@ See :ref:`varnish-cli(7)` for details. In the JSON output for
 
 The width of columns in ``backend.list`` and ``vcl.list`` output
 (non-JSON) is now dynamic, to fit the width of the terminal window.
+
+Banning by expiration parameters
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Bans may now be defined with respect to ``obj.ttl``, ``obj.age``,
 ``obj.grace`` and ``obj.keep``, referring to the expiration and age
