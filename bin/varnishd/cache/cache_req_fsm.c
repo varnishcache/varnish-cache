@@ -490,6 +490,11 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	if (had_objhead)
 		VSLb_ts_req(req, "Waitinglist", W_TIM_real(wrk));
 
+	if (req->vcf != NULL) {
+		(void)req->vcf->func(req, NULL, NULL, 2);
+		req->vcf = NULL;
+	}
+
 	if (busy == NULL) {
 		VRY_Finish(req, DISCARD);
 	} else {

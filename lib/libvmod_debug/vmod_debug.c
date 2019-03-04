@@ -630,3 +630,72 @@ xyzzy_return_strands(VRT_CTX, VCL_STRANDS strand)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	return (strand);
 }
+
+/*---------------------------------------------------------------------*/
+
+static const struct vcf_return * v_matchproto_(vcf_func_f)
+xyzzy_catflap_simple(struct req *req, struct objcore **oc,
+    struct objcore **oc_exp, int state)
+{
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(req->vcf, VCF_MAGIC);
+	assert(req->vcf->func == xyzzy_catflap_simple);
+
+	(void)oc;
+	(void)oc_exp;
+	if (state == 0) {
+		if (req->vcf->priv == VENUM(first))
+			return (VCF_HIT);
+		if (req->vcf->priv == VENUM(miss))
+			return (VCF_MISS);
+		WRONG("Shouldn't get here");
+	}
+	return (VCF_DEFAULT);
+}
+
+static const struct vcf_return * v_matchproto_(vcf_func_f)
+xyzzy_catflap_last(struct req *req, struct objcore **oc,
+    struct objcore **oc_exp, int state)
+{
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(req->vcf, VCF_MAGIC);
+	assert(req->vcf->func == xyzzy_catflap_last);
+
+	(void)oc_exp;
+	if (state == 0) {
+		AN(oc);
+		CHECK_OBJ_NOTNULL(*oc, OBJCORE_MAGIC);
+		req->vcf->priv = *oc;
+		return (VCF_CONTINUE);
+	}
+	if (state == 1) {
+		AN(oc);
+		if (req->vcf->priv != NULL)
+			CAST_OBJ_NOTNULL(*oc, req->vcf->priv, OBJCORE_MAGIC);
+		return (VCF_CONTINUE);
+	}
+	return (VCF_DEFAULT);
+}
+
+VCL_VOID
+xyzzy_catflap(VRT_CTX, VCL_ENUM type)
+{
+	struct req *req;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	req = ctx->req;
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	XXXAZ(req->vcf);
+	req->vcf = WS_Alloc(req->ws, sizeof *req->vcf);
+	INIT_OBJ(req->vcf, VCF_MAGIC);
+	if (type == VENUM(first) || type == VENUM(miss)) {
+		req->vcf->func = xyzzy_catflap_simple;
+		req->vcf->priv = TRUST_ME(type);
+	} else if (type == VENUM(last)) {
+		req->vcf->func = xyzzy_catflap_last;
+	} else {
+		WRONG("Wrong VENUM");
+	}
+}

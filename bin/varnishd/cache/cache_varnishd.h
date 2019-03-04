@@ -85,6 +85,37 @@ typedef enum htc_status_e htc_complete_f(struct http_conn *);
 
 extern volatile struct params * cache_param;
 
+/* -------------------------------------------------------------------
+ * The VCF facility is deliberately undocumented, use at your peril.
+ */
+
+struct vcf_return {
+	const char		*name;
+};
+
+#define VCF_RETURNS()	\
+		VCF_RETURN(CONTINUE) \
+		VCF_RETURN(DEFAULT) \
+		VCF_RETURN(MISS) \
+		VCF_RETURN(HIT)
+
+#define VCF_RETURN(x) extern const struct vcf_return VCF_##x[1];
+VCF_RETURNS()
+#undef VCF_RETURN
+
+typedef const struct vcf_return *vcf_func_f(
+	struct req *req,
+	struct objcore **oc,
+	struct objcore **oc_exp,
+	int state);
+
+struct vcf {
+	unsigned		magic;
+#define VCF_MAGIC		0x183285d1
+	vcf_func_f		*func;
+	void			*priv;
+};
+
 /* Prototypes etc ----------------------------------------------------*/
 
 /* cache_acceptor.c */

@@ -101,6 +101,7 @@ struct sess;
 struct transport;
 struct worker;
 struct listen_sock;
+struct vcf;
 
 #define DIGEST_LEN		32
 
@@ -530,6 +531,8 @@ struct req {
 	struct acct_req		acct;
 
 	struct vrt_privs	privs[1];
+
+	struct vcf		*vcf;
 };
 
 #define IS_TOPREQ(req) ((req)->topreq == (req))

@@ -31,6 +31,9 @@ VCA
 VCC
     VCL to C Compiler -- The code that compiles VCL to C code. (lib/libvcl)
 
+VCF
+    Varnish CatFlap
+
 VCL
     Varnish Configuration Language -- The domain-specific programming
     language used for configuring a varnishd.

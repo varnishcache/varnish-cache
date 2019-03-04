@@ -81,6 +81,15 @@ static int hsh_deref_objhead_unlock(struct worker *wrk, struct objhead **poh);
 
 /*---------------------------------------------------------------------*/
 
+#define VCF_RETURN(x) const struct vcf_return VCF_##x[1] = { \
+	{ .name = #x, } \
+};
+
+VCF_RETURNS()
+#undef VCF_RETURN
+
+/*---------------------------------------------------------------------*/
+
 static struct objhead *
 hsh_newobjhead(void)
 {
@@ -344,6 +353,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 	struct objhead *oh;
 	struct objcore *oc;
 	struct objcore *exp_oc;
+	const struct vcf_return *vr;
 	vtim_real exp_t_origin;
 	int busy_found;
 	const uint8_t *vary;
@@ -359,6 +369,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 	wrk = req->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req->http, HTTP_MAGIC);
+	CHECK_OBJ_ORNULL(req->vcf, VCF_MAGIC);
 	AN(hash);
 
 	hsh_prealloc(wrk);
@@ -436,6 +447,19 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 				continue;
 		}
 
+		if (req->vcf != NULL) {
+			vr = req->vcf->func(req, &oc, &exp_oc, 0);
+			if (vr == VCF_CONTINUE)
+				continue;
+			if (vr == VCF_MISS) {
+				oc = NULL;
+				break;
+			}
+			if (vr == VCF_HIT)
+				break;
+			assert(vr == VCF_DEFAULT);
+		}
+
 		if (EXP_Ttl(req, oc) > req->t_req) {
 			assert(oh->refcnt > 1);
 			assert(oc->objhead == oh);
@@ -451,6 +475,9 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 			assert(exp_oc->objhead == oh);
 		}
 	}
+
+	if (req->vcf != NULL)
+		(void)req->vcf->func(req, &oc, &exp_oc, 1);
 
 	if (oc != NULL && oc->flags & OC_F_HFP) {
 		xid = ObjGetXID(wrk, oc);
