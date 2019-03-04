@@ -88,6 +88,32 @@ VMODs
 Added the function :ref:`vmod_directors.lookup`, only for use in
 ``vcl_init`` or ``vcl_fini``.
 
+The type-conversion functions in :ref:`vmod_std(3)` have been reworked
+to make them more flexible and easier to use:
+:ref:`vmod_std.duration`, :ref:`vmod_std.bytes`,
+:ref:`vmod_std.integer`, :ref:`vmod_std.real` and :ref:`vmod_std.time`
+now also accept suitable numeral or quantitative arguments.
+
+These type-conversion functions should be fully backwards compatible,
+but the following differences should be noted:
+
+* The *fallback* is not required and more. A conversion failure in the
+  absense of a *fallback* argument will now trigger a VCL failure.
+
+* A VCL failure will also be triggered if no or more than one argument
+  (plus optional *fallback*) is given.
+
+* Conversion functions now only ever truncate if necessary (instead of
+  rounding).
+
+* :ref:`vmod_std.round` has been added for explicit rounding.
+
+The functions :ref:`vmod_std.real2integer`, :ref:`vmod_std.real2time`,
+:ref:`vmod_std.time2integer` and :ref:`vmod_std.time2real` are
+superseded by these changed and should thus be replaced by the above
+mentioned conversion functions. They will be removed in a future
+version of Varnish.
+
 varnishlog(1), varnishncsa(1) and vsl(7)
 ========================================
 
