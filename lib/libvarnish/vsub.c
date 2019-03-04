@@ -91,9 +91,9 @@ VSUB_closefrom(int fd)
 
 	if (maxfd == 0)
 		maxfd = sysconf(_SC_OPEN_MAX);
-	assert(i > 0);
-	for (; i > fd; i--)
-		(void)close(i);
+	assert(maxfd > 0);
+	for (; maxfd > fd; maxfd--)
+		(void)close(maxfd);
 #endif
 }
 
