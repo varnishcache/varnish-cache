@@ -519,7 +519,7 @@ VBP_Status(struct vsb *vsb, const struct backend *be, int details, int json)
 			    vt->good, vt->window,
 			    vt->backend->sick ? "sick" : "healthy");
 		else
-			VSB_printf(vsb, "%u/%u %s", vt->good, vt->window,
+			VSB_printf(vsb, "%u/%u\t%s", vt->good, vt->window,
 			    vt->backend->sick ? "sick" : "healthy");
 		return;
 	}

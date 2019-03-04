@@ -259,7 +259,7 @@ vdir_list(VRT_CTX, struct vdir *vd, struct vsb *vsb, int pflag, int jflag)
 		VSB_printf(vsb, "[%u, %u, \"%s\"]", nh, u,
 		    nh ? "healthy" : "sick");
 	else
-		VSB_printf(vsb, "%u/%u %s", nh, u, nh ? "healthy" : "sick");
+		VSB_printf(vsb, "%u/%u\t%s", nh, u, nh ? "healthy" : "sick");
 }
 
 static unsigned

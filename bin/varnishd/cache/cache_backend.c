@@ -461,12 +461,11 @@ vbe_list(VRT_CTX, const struct director *d, struct vsb *vsb, int pflag,
 	else if (jflag && pflag)
 		VSB_printf(vsb, "{},\n");
 	else if (jflag)
-		VSB_printf(vsb, "\"%s\"", bp->sick ? "sick" : "healthy");
+		VSB_printf(vsb, "[0, 0, \"healthy\"]");
 	else if (pflag)
 		return;
 	else
-		VSB_printf(vsb, "%s",
-		    bp->sick ? "sick" : "healthy");
+		VSB_cat(vsb, "0/0\thealthy");
 }
 
 /*--------------------------------------------------------------------

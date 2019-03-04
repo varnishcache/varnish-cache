@@ -327,13 +327,14 @@ do_list(struct cli *cli, struct director *d, void *priv)
 
 	ctx = VCL_Get_CliCtx(0);
 
-	// XXX admin health "probe" for the no-probe case is confusing
 	VSB_printf(la->vsb, "%s\t%s\t", d->vdir->cli_name, VDI_Ahealth(d));
 
 	if (d->vdir->methods->list != NULL)
 		d->vdir->methods->list(ctx, d, la->vsb, 0, 0);
+	else if (d->vdir->methods->healthy != NULL)
+		VSB_printf(la->vsb, "0/0\t%s", cli_health(ctx, d));
 	else
-		VSB_printf(la->vsb, "%s", cli_health(ctx, d));
+		VSB_cat(la->vsb, "0/0\thealthy");
 
 	VTIM_format(d->vdir->health_changed, time_str);
 	VSB_printf(la->vsb, "\t%s", time_str);
@@ -372,8 +373,11 @@ do_list_json(struct cli *cli, struct director *d, void *priv)
 	VCLI_Out(cli, "\"probe_message\": ");
 	if (d->vdir->methods->list != NULL)
 		d->vdir->methods->list(ctx, d, cli->sb, 0, 1);
+	else if (d->vdir->methods->healthy != NULL)
+		VCLI_Out(cli, "[0, 0, \"%s\"]", cli_health(ctx, d));
 	else
-		VCLI_Out(cli, "\"%s\"", cli_health(ctx, d));
+		VCLI_Out(cli, "[0, 0, \"healthy\"]");
+
 	VCLI_Out(cli, ",\n");
 
 	if (la->p && d->vdir->methods->list != NULL) {
@@ -431,8 +435,8 @@ cli_backend_list(struct cli *cli, const char * const *av, void *priv)
 	} else {
 		la->vsb = VSB_new_auto();
 		AN(la->vsb);
-		VSB_printf(la->vsb, "%s\t%s\t%s\t%s\n",
-		    "Backend name", "Admin", "Probe", "Last change");
+		VSB_printf(la->vsb, "%s\t%s\t%s\t%s\t%s\n",
+		    "Backend name", "Admin", "Probe", "Health", "Last change");
 		(void)VCL_IterDirector(cli, av[i], do_list, la);
 		VCLI_VTE(cli, &la->vsb, 80);
 	}
