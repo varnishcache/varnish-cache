@@ -197,6 +197,8 @@ h2_del_req(struct worker *wrk, const struct h2_req *r2)
 	Lck_Lock(&sp->mtx);
 	assert(h2->refcnt > 0);
 	--h2->refcnt;
+	if (h2->pending_kills > 0)
+		h2->pending_kills--;
 	/* XXX: PRIORITY reshuffle */
 	VTAILQ_REMOVE(&h2->streams, r2, list);
 	Lck_Unlock(&sp->mtx);
@@ -206,14 +208,16 @@ h2_del_req(struct worker *wrk, const struct h2_req *r2)
 }
 
 void
-h2_kill_req(struct worker *wrk, const struct h2_sess *h2,
+h2_kill_req(struct worker *wrk, struct h2_sess *h2,
     struct h2_req *r2, h2_error h2e)
 {
 
 	ASSERT_RXTHR(h2);
 	AN(h2e);
 	Lck_Lock(&h2->sess->mtx);
-	VSLb(h2->vsl, SLT_Debug, "KILL st=%u state=%d", r2->stream, r2->state);
+	VSLb(h2->vsl, SLT_Debug, "KILL st=%u state=%d sched=%d",
+	    r2->stream, r2->state, r2->scheduled);
+	h2->pending_kills++;
 	if (r2->error == NULL)
 		r2->error = h2e;
 	if (r2->scheduled) {
@@ -634,7 +638,8 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	if (r2 == NULL) {
 		if (h2->rxf_stream <= h2->highest_stream)
 			return (H2CE_PROTOCOL_ERROR);	// rfc7540,l,1153,1158
-		if (h2->refcnt > h2->local_settings.max_concurrent_streams) {
+		if (h2->refcnt - h2->pending_kills >
+		    h2->local_settings.max_concurrent_streams) {
 			VSLb(h2->vsl, SLT_Debug,
 			     "H2: stream %u: Hit maximum number of "
 			     "concurrent streams", h2->rxf_stream);
