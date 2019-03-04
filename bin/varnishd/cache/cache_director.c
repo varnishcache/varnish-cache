@@ -95,11 +95,17 @@ VDI_Resolve(VRT_CTX)
 			VSLb(bo->vsl, SLT_FetchError,
 			    "Director %s returned no backend", d->vcl_name);
 	}
+
 	CHECK_OBJ_ORNULL(d, DIRECTOR_MAGIC);
-	if (d == NULL)
+	if (d == NULL) {
 		VSLb(bo->vsl, SLT_FetchError, "No backend");
-	else
+	} else {
 		AN(d->vdir);
+
+		if (d->vdir->admin_health->health == 0)
+			d = NULL;
+	}
+
 	return (d);
 }
 
