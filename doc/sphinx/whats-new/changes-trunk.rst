@@ -78,6 +78,10 @@ component listening at the socket, or set the socket's permissions,
 after starting Varnish or loading VCL. If the socket still cannot be
 accessed when a fetch is attempted, then the fetch fails.
 
+``return(miss)`` from ``vcl_hit{}`` did never work as intended for the
+common case (it actually turned into a pass), so we now removed it and
+changed the ``builtin.vcl``.
+
 VMODs
 =====
 
