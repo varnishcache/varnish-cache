@@ -33,10 +33,14 @@
 
 #include <sys/wait.h>
 
+#include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>		// Solaris closefrom(3c)
 #include <string.h>
 #include <unistd.h>
+#ifndef HAVE_CLOSEFROM
+#  include <dirent.h>
+#endif
 
 #include "vdef.h"
 
@@ -61,8 +65,32 @@ VSUB_closefrom(int fd)
 
 #ifdef HAVE_CLOSEFROM
 	closefrom(fd);
+	return;
 #else
-	int i = sysconf(_SC_OPEN_MAX);
+	char buf[128];
+	int i, maxfd = 0;
+	DIR *d;
+	struct dirent *de;
+	char *p;
+
+	bprintf(buf, "/proc/%d/fd/", getpid());
+	d = opendir(buf);
+	if (d != NULL) {
+		while (1) {
+			de = readdir(d);
+			if (de == NULL)
+				break;
+			i = strtoul(de->d_name, &p, 10);
+			if (*p != '\0')
+				continue;
+			if (i > maxfd)
+				maxfd = i;
+		}
+		AZ(closedir(d));
+	}
+
+	if (maxfd == 0)
+		maxfd = sysconf(_SC_OPEN_MAX);
 	assert(i > 0);
 	for (; i > fd; i--)
 		(void)close(i);
