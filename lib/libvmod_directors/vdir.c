@@ -238,7 +238,7 @@ vdir_list(VRT_CTX, struct vdir *vd, struct vsb *vsb, int pflag, int jflag)
 	}
 	vdir_unlock(vd);
 
-	VRT_SetChanged(ctx, vd->dir, changed);
+	VRT_SetChanged(vd->dir, changed);
 
 	if (jflag && (pflag)) {
 		VSB_printf(vsb, "\n");

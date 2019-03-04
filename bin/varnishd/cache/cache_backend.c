@@ -122,7 +122,7 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
 	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
 	AN(bp->vsc);
 
-	if (bp->director->sick) {
+	if (bp->sick) {
 		VSLb(bo->vsl, SLT_FetchError,
 		     "backend %s: unhealthy", VRT_BACKEND_string(bp->director));
 		bp->vsc->unhealthy++;
@@ -461,13 +461,32 @@ vbe_list(VRT_CTX, const struct director *d, struct vsb *vsb, int pflag,
 	else if (jflag && pflag)
 		VSB_printf(vsb, "{},\n");
 	else if (jflag)
-		VSB_printf(vsb, "\"%s\"", d->sick ? "sick" : "healthy");
+		VSB_printf(vsb, "\"%s\"", bp->sick ? "sick" : "healthy");
 	else if (pflag)
 		return;
 	else
 		VSB_printf(vsb, "%s",
-		    d->sick ? "sick" : "healthy");
+		    bp->sick ? "sick" : "healthy");
 }
+
+/*--------------------------------------------------------------------
+ */
+
+static VCL_BOOL v_matchproto_(vdi_healthy_f)
+vbe_healthy(VRT_CTX, VCL_BACKEND d, VCL_TIME *t)
+{
+	struct backend *bp;
+
+	(void)ctx;
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
+
+	if (t != NULL)
+		*t = bp->changed;
+
+	return (! bp->sick);
+}
+
 
 /*--------------------------------------------------------------------
  */
@@ -483,6 +502,20 @@ static const struct vdi_methods vbe_methods[1] = {{
 	.destroy =		vbe_destroy,
 	.panic =		vbe_panic,
 	.list =			vbe_list,
+	.healthy =		vbe_healthy
+}};
+
+static const struct vdi_methods vbe_methods_noprobe[1] = {{
+	.magic =		VDI_METHODS_MAGIC,
+	.type =			"backend",
+	.http1pipe =		vbe_dir_http1pipe,
+	.gethdrs =		vbe_dir_gethdrs,
+	.getip =		vbe_dir_getip,
+	.finish =		vbe_dir_finish,
+	.event =		vbe_dir_event,
+	.destroy =		vbe_destroy,
+	.panic =		vbe_panic,
+	.list =			vbe_list
 }};
 
 /*--------------------------------------------------------------------
@@ -542,8 +575,11 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 
 	if (vbp != NULL)
 		VBP_Insert(be, vbp, be->tcp_pool);
+	else
+		be->sick = 0;
 
-	be->director = VRT_AddDirector(ctx, vbe_methods, be,
+	be->director = VRT_AddDirector(ctx,
+	    vbp != NULL ? vbe_methods : vbe_methods_noprobe, be,
 	    "%s", vrt->vcl_name);
 
 	if (be->director != NULL) {

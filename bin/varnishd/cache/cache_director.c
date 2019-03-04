@@ -229,21 +229,18 @@ VRT_Healthy(VRT_CTX, VCL_BACKEND d, VCL_TIME *changed)
 	if (d->vdir->methods->healthy == NULL) {
 		if (changed != NULL)
 			*changed = d->vdir->health_changed;
-		return (!d->sick);
+		return (1);
 	}
 
 	return (d->vdir->methods->healthy(ctx, d, changed));
 }
 
 /*--------------------------------------------------------------------
- * Update health_changed. This is for load balancing directors
- * to update their health_changed time based on their backends.
+ * Update health_changed.
  */
 VCL_VOID
-VRT_SetChanged(VRT_CTX, VCL_BACKEND d, VCL_TIME changed)
+VRT_SetChanged(VCL_BACKEND d, VCL_TIME changed)
 {
-	(void)ctx;
-
 	if (d == NULL)
 		return;
 
@@ -278,7 +275,6 @@ VDI_Panic(const struct director *d, struct vsb *vsb, const char *nm)
 	VSB_printf(vsb, "%s = %p {\n", nm, d);
 	VSB_indent(vsb, 2);
 	VSB_printf(vsb, "cli_name = %s,\n", d->vdir->cli_name);
-	VSB_printf(vsb, "health = %s,\n", d->sick ?  "sick" : "healthy");
 	VSB_printf(vsb, "admin_health = %s, changed = %f,\n",
 	    VDI_Ahealth(d), d->vdir->health_changed);
 	VSB_printf(vsb, "type = %s {\n", d->vdir->methods->type);
@@ -460,8 +456,6 @@ do_set_health(struct cli *cli, struct director *d, void *priv)
 	if (d->vdir->admin_health != sh->ah) {
 		d->vdir->health_changed = VTIM_real();
 		d->vdir->admin_health = sh->ah;
-		d->sick &= ~0x02;
-		d->sick |= sh->ah->health ? 0 : 0x02;
 	}
 	return (0);
 }

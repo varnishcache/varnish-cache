@@ -57,6 +57,9 @@ struct backend {
 
 	VRT_BACKEND_FIELDS()
 
+	unsigned		sick;
+	vtim_real		changed;
+
 	struct vbp_target	*probe;
 
 	struct vsc_seg		*vsc_seg;

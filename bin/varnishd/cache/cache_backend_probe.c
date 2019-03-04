@@ -152,9 +152,8 @@ vbp_has_poked(struct vbp_target *vt)
 void
 VBP_Update_Backend(struct vbp_target *vt)
 {
-	unsigned i = 0;
+	unsigned i = 0, chg;
 	char bits[10];
-	const char *logmsg;
 
 	CHECK_OBJ_NOTNULL(vt, VBP_TARGET_MAGIC);
 
@@ -175,27 +174,21 @@ VBP_Update_Backend(struct vbp_target *vt)
 		return;
 	}
 
-	if (vt->good >= vt->threshold) {
-		if (vt->backend->director->sick) {
-			logmsg = "Back healthy";
-			VRT_SetHealth(vt->backend->director, 1);
-		} else {
-			logmsg = "Still healthy";
-		}
-	} else {
-		if (vt->backend->director->sick) {
-			logmsg = "Still sick";
-		} else {
-			logmsg = "Went sick";
-			VRT_SetHealth(vt->backend->director, 0);
-		}
-	}
-	VSL(SLT_Backend_health, 0, "%s %s %s %u %u %u %.6f %.6f %s",
-	    vt->backend->director->vcl_name, logmsg, bits,
+	i = (vt->good < vt->threshold);
+	chg = (i != vt->backend->sick);
+	vt->backend->sick = i;
+
+	VSL(SLT_Backend_health, 0, "%s %s %s %s %u %u %u %.6f %.6f %s",
+	    vt->backend->director->vcl_name, chg ? "Went" : "Still",
+	    i ? "sick" : "healthy", bits,
 	    vt->good, vt->threshold, vt->window,
 	    vt->last, vt->avg, vt->resp_buf);
 	VBE_SetHappy(vt->backend, vt->happy);
 
+	if (chg) {
+		vt->backend->changed = VTIM_real();
+		VRT_SetChanged(vt->backend->director, vt->backend->changed);
+	}
 	Lck_Unlock(&vbp_mtx);
 }
 
@@ -524,10 +517,10 @@ VBP_Status(struct vsb *vsb, const struct backend *be, int details, int json)
 		if (json)
 			VSB_printf(vsb, "[%u, %u, \"%s\"]",
 			    vt->good, vt->window,
-			    vt->backend->director->sick ? "sick" : "healthy");
+			    vt->backend->sick ? "sick" : "healthy");
 		else
 			VSB_printf(vsb, "%u/%u %s", vt->good, vt->window,
-			    vt->backend->director->sick ? "sick" : "healthy");
+			    vt->backend->sick ? "sick" : "healthy");
 		return;
 	}
 
@@ -690,7 +683,7 @@ VBP_Remove(struct backend *be)
 	CHECK_OBJ_NOTNULL(vt, VBP_TARGET_MAGIC);
 
 	Lck_Lock(&vbp_mtx);
-	VRT_SetHealth(be->director, 1);
+	be->sick = 1;
 	be->probe = NULL;
 	vt->backend = NULL;
 	if (vt->running) {

@@ -64,6 +64,7 @@
  *	struct vdi_methods .list callback signature changed
  *	VRT_LookupDirector() added
  *	VRT_SetChanged() added
+ *	VRT_SetHealth() removed
  * 8.0 (2018-09-15)
  *	VRT_Strands() added
  *	VRT_StrandsWS() added
@@ -518,17 +519,15 @@ struct vcldir;
 struct director {
 	unsigned			magic;
 #define DIRECTOR_MAGIC			0x3336351d
-	unsigned			sick;
 	void				*priv;
 	char				*vcl_name;
 	struct vcldir			*vdir;
 };
 
 VCL_BOOL VRT_Healthy(VRT_CTX, VCL_BACKEND, VCL_TIME *);
-VCL_VOID VRT_SetChanged(VRT_CTX, VCL_BACKEND, VCL_TIME);
+VCL_VOID VRT_SetChanged(VCL_BACKEND, VCL_TIME);
 VCL_BACKEND VRT_AddDirector(VRT_CTX, const struct vdi_methods *,
     void *, const char *, ...) v_printflike_(4, 5);
-void VRT_SetHealth(VCL_BACKEND d, int health);
 void VRT_DisableDirector(VCL_BACKEND);
 VCL_BACKEND VRT_LookupDirector(VRT_CTX, VCL_STRING);
 void VRT_DelDirector(VCL_BACKEND *);

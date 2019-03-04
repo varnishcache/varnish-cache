@@ -186,7 +186,6 @@ VRT_AddDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
 	d->vcl_name = vdir->cli_name + i;
 
 	vdir->vcl = vcl;
-	d->sick = 0;
 	vdir->admin_health = VDI_AH_PROBE;
 	vdir->health_changed = VTIM_real();
 
@@ -232,22 +231,6 @@ VRT_DelDirector(VCL_BACKEND *bp)
 }
 
 void
-VRT_SetHealth(VCL_BACKEND d, int health)
-{
-	struct vcldir *vdir;
-
-	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	vdir = d->vdir;
-	CHECK_OBJ_NOTNULL(vdir, VCLDIR_MAGIC);
-
-	if (health)
-		vdir->dir->sick &= ~0x01;
-	else
-		vdir->dir->sick |= 0x01;
-	vdir->health_changed = VTIM_real();
-}
-
-void
 VRT_DisableDirector(VCL_BACKEND d)
 {
 	struct vcldir *vdir;
@@ -257,7 +240,6 @@ VRT_DisableDirector(VCL_BACKEND d)
 	CHECK_OBJ_NOTNULL(vdir, VCLDIR_MAGIC);
 
 	vdir->admin_health = VDI_AH_DELETED;
-	vdir->dir->sick |= 0x04;
 	vdir->health_changed = VTIM_real();
 }
 
