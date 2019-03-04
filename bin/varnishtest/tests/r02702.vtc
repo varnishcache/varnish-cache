@@ -29,7 +29,7 @@ varnish v1 -vcl {
 
 delay 1
 
-varnish v1 -cliexpect "vcl1.s1[ ]+probe[ ]+1/1[ ]+good" backend.list
+varnish v1 -cliexpect "vcl1.s1[ ]+probe[ ]+1/1[ ]+healthy" backend.list
 
 # For PROXYv2, we apply a trick similar to o0000[24].vtc, since
 # Varnish accepts (and ignores) PROXY LOCAL.
@@ -63,7 +63,7 @@ server s1 -wait
 
 delay 1
 
-varnish v3 -cliexpect "vcl1.bp[ ]+probe[ ]+1/1[ ]+good" backend.list
+varnish v3 -cliexpect "vcl1.bp[ ]+probe[ ]+1/1[ ]+healthy" backend.list
 
 # Verify in the v2 log that PROXY LOCAL was sent.
 
