@@ -60,7 +60,6 @@ vdi_str2ahealth(const char *t)
 #define VBE_AHEALTH(l,u,h) if (!strcasecmp(t, #l)) return (VDI_AH_##u);
 VBE_AHEALTH_LIST
 #undef VBE_AHEALTH
-	if (!strcasecmp(t, "auto")) return (VDI_AH_PROBE);
 	return (NULL);
 }
 
@@ -70,7 +69,11 @@ VDI_Ahealth(const struct director *d)
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	AN(d->vdir->admin_health);
-	return (d->vdir->admin_health->name);
+	if (d->vdir->admin_health != VDI_AH_AUTO)
+		return (d->vdir->admin_health->name);
+	if (d->vdir->methods->healthy != NULL)
+		return ("probe");
+	return ("healthy");
 }
 
 /* Resolve director --------------------------------------------------*/

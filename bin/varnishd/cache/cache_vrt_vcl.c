@@ -186,7 +186,7 @@ VRT_AddDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
 	d->vcl_name = vdir->cli_name + i;
 
 	vdir->vcl = vcl;
-	vdir->admin_health = VDI_AH_PROBE;
+	vdir->admin_health = VDI_AH_AUTO;
 	vdir->health_changed = VTIM_real();
 
 	Lck_Lock(&vcl_mtx);
