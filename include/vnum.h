@@ -33,6 +33,7 @@
 /* from libvarnish/vnum.c */
 double VNUM(const char *p);
 double VNUMpfx(const char *p, const char **e);
+int64_t VNUMpfxint(const char *p, const char **e, int *sc);
 vtim_dur VNUM_duration_unit(vtim_dur r, const char *b, const char *e);
 vtim_dur VNUM_duration(const char *p);
 double VNUM_bytes_unit(double r, const char *b, const char *e, uintmax_t rel);

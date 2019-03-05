@@ -99,6 +99,80 @@ VNUMpfx(const char *p, const char **t)
 	return (ms * m * pow(10., e + es * ee));
 }
 
+int64_t
+VNUMpfxint(const char *p, const char **t, int *scp)
+{
+	int sc, oflow = 0, neg = 0;
+	int64_t d, r;
+	int8_t m, c;
+
+	AN(p);
+	AN(t);
+	*t = NULL;
+
+	if (scp != NULL)
+		sc = -1;
+	else
+		sc = -2;
+
+	while (vct_issp(*p))
+		p++;
+
+	if (*p == '-') {
+		neg = 1;
+		p++;
+	} else if (*p == '+') {
+		p++;
+	}
+
+	d = neg ? - (INT64_MIN / 10) : INT64_MAX / 10;
+	m = neg ? - (INT64_MIN % 10) : INT64_MAX % 10;
+
+	for (r = 0, c = -1; *p != '\0'; p++) {
+		if (*p == '.') {
+			if (sc != -1)
+				break;
+			sc = 0;
+			continue;
+		}
+		if (! vct_isdigit(*p))
+			break;
+		c = *p - '0';
+		if (r > d || (r == d && c > m)) {
+			oflow = 1;
+			break;
+		}
+		r *= 10;
+		r += c;
+
+		if (sc >= 0)
+			sc++;
+	}
+
+	while (vct_issp(*p))
+		p++;
+	if (*p != '\0')
+		*t = p;
+
+	if (c == -1) {
+		errno = EINVAL;	// no digits
+		return (0);
+	}
+
+	if (oflow) {
+		errno = ERANGE;
+		return (neg ? INT64_MIN : INT64_MAX);
+	}
+
+	if (scp) {
+		assert(sc >= -1);
+		if (sc == -1)
+			sc = 0;
+		*scp = sc;
+	}
+	return (neg ? -r : r);
+}
+
 double
 VNUM(const char *p)
 {
@@ -334,6 +408,44 @@ static const char *vec[] = {
 	NULL
 };
 
+/*
+ * add one to a numerical string. First digit must be < 9
+ * returns pointer to last digit;
+ */
+static const char *
+strint_inc(char *buf)
+{
+	char *b;
+	const char *e;
+
+	assert(strlen(buf) >= 1);
+	e = b = buf + strlen(buf) - 1;
+	while (*b == '9' && b >= buf) {
+		if (*b == '.')
+			b--;
+		else
+			*b-- = '0';
+	}
+	assert(b >= buf);
+	if (*b < '9')
+		(*b)++;
+	return (e);
+}
+
+/*
+ * insert a period at n digits from the right
+ */
+static void
+strint_sc(char *buf, int n, size_t sz)
+{
+	int l = strlen(buf);
+
+	assert(sz > l + 1);
+	assert(n < l);
+	memmove(buf + l - n + 1, buf + l - n, n + 1);
+	buf[l - n] = '.';
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -341,8 +453,11 @@ main(int argc, char *argv[])
 	struct test_case *tc;
 	uintmax_t val;
 	const char **p;
-	const char *e;
+	const char *e, *ee;
 	double d1, d2;
+	char buf[64];
+	int64_t r;
+	int sc;
 
 	(void)argc;
 
@@ -388,6 +503,90 @@ main(int argc, char *argv[])
 	d1 = VNUM_duration(" 365.24219d ");
 	if (d1 < 31556925.2159 || d1 > 31556925.2161) {
 		printf("%s: VNUM_Duration() wrong: %g\n", *argv, d1);
+		++ec;
+	}
+
+	/* pos in range */
+	snprintf(buf, sizeof(buf), "%jd", (intmax_t) INT64_MAX);
+	errno = 0;
+	e = NULL;
+	r = VNUMpfxint(buf, &e, NULL);
+	if (errno != 0 || r != INT64_MAX || (e != NULL && *e != '\0')) {
+		printf("VNUMpfxint(%s) -> %jd errno %d e \"%s\"\n",
+		    buf, (intmax_t)r, errno, e ? e : "(null)");
+		++ec;
+	}
+
+	/* pos scale */
+	strint_sc(buf, 3, sizeof(buf));
+	errno = 0;
+	e = NULL;
+	r = VNUMpfxint(buf, &e, &sc);
+	if (errno != 0 || r != INT64_MAX || (e != NULL && *e != '\0') ||
+	    sc != 3) {
+		printf("VNUMpfxint(%s) -> %jd errno %d e \"%s\" sc %d\n",
+		       buf, (intmax_t)r, errno, e ? e : "(null)", sc);
+		++ec;
+	}
+
+	/* pos scale ERANGE */
+	ee = strint_inc(buf);
+	sc = 0;
+	errno = 0;
+	e = NULL;
+	r = VNUMpfxint(buf, &e, &sc);
+	if (errno != ERANGE || r != INT64_MAX || e == NULL || e != ee) {
+		printf("VNUMpfxint(%s) -> %jd errno %d e \"%s\" sc %d\n",
+		       buf, (intmax_t)r, errno, e ? e : "(null)", sc);
+		++ec;
+	}
+
+	/* pos ERANGE */
+	snprintf(buf, sizeof(buf), "%jd", (intmax_t) INT64_MAX);
+	ee = strint_inc(buf);
+	errno = 0;
+	e = NULL;
+	r = VNUMpfxint(buf, &e, NULL);
+	if (errno != ERANGE || r != INT64_MAX || e == NULL || e != ee) {
+		printf("VNUMpfxint(%s) -> %jd errno %d e \"%s\"\n",
+		    buf, (intmax_t)r, errno, e ? e : "(null)");
+		++ec;
+	}
+
+	/* neg in range */
+	snprintf(buf, sizeof(buf), "%jd", (intmax_t) INT64_MIN);
+	errno = 0;
+	e = NULL;
+	r = VNUMpfxint(buf, &e, NULL);
+	if (errno != 0 || r != INT64_MIN || (e != NULL && *e != '\0')) {
+		printf("VNUMpfxint(%s) -> %jd errno %d e \"%s\"\n",
+		    buf, (intmax_t)r, errno, e ? e : "(null)");
+		++ec;
+	}
+
+	/* neg ERANGE */
+	errno = 0;
+	e = NULL;
+	assert(*buf == '-');
+	ee = strint_inc(buf + 1);
+	r = VNUMpfxint(buf, &e, NULL);
+	if (errno != ERANGE || r != INT64_MIN || e == NULL || e != ee) {
+		printf("VNUMpfxint(%s) -> %jd errno %d e \"%s\"\n",
+		    buf, (intmax_t)r, errno, e ? e : "(null)");
+		++ec;
+	}
+
+	/* two dots */
+	errno = 0;
+	e = NULL;
+	assert(*buf == '-');
+	strint_sc(buf, 5, sizeof(buf));
+	strint_sc(buf, 3, sizeof(buf));
+	r = VNUMpfxint(buf, &e, &sc);
+	if (errno != 0 || r != INT64_MIN / 1000 || e == NULL ||
+	    e != buf + strlen(buf) - 4) {
+		printf("VNUMpfxint(%s) -> %jd errno %d e \"%s\" sc %d\n",
+		       buf, (intmax_t)r, errno, e ? e : "(null)", sc);
 		++ec;
 	}
 	/* TODO: test invalid strings */
