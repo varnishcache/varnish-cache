@@ -459,9 +459,9 @@ vbe_list(VRT_CTX, const struct director *d, struct vsb *vsb, int pflag,
 	if (bp->probe != NULL)
 		VBP_Status(vsb, bp, pflag, jflag);
 	else if (jflag && pflag)
-		VSB_printf(vsb, "{},\n");
+		VSB_cat(vsb, "{},\n");
 	else if (jflag)
-		VSB_printf(vsb, "[0, 0, \"healthy\"]");
+		VSB_cat(vsb, "[0, 0, \"healthy\"]");
 	else if (pflag)
 		return;
 	else

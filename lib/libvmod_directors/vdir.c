@@ -207,10 +207,10 @@ vdir_list(VRT_CTX, struct vdir *vd, struct vsb *vsb, int pflag, int jflag)
 
 	if (pflag) {
 		if (jflag) {
-			VSB_printf(vsb, "{\n");
+			VSB_cat(vsb, "{\n");
 			VSB_indent(vsb, 2);
 		} else {
-			VSB_printf(vsb, "\n");
+			VSB_cat(vsb, "\n");
 		}
 	}
 
@@ -228,7 +228,7 @@ vdir_list(VRT_CTX, struct vdir *vd, struct vsb *vsb, int pflag, int jflag)
 			continue;
 		if (jflag) {
 			if (u)
-				VSB_printf(vsb, ",\n");
+				VSB_cat(vsb, ",\n");
 			VSB_printf(vsb, "\"%s\": \"%s\"",
 			    be->vcl_name, h ? "healthy" : "sick");
 		} else {
@@ -241,9 +241,9 @@ vdir_list(VRT_CTX, struct vdir *vd, struct vsb *vsb, int pflag, int jflag)
 	VRT_SetChanged(vd->dir, changed);
 
 	if (jflag && (pflag)) {
-		VSB_printf(vsb, "\n");
+		VSB_cat(vsb, "\n");
 		VSB_indent(vsb, -2);
-		VSB_printf(vsb, "},\n");
+		VSB_cat(vsb, "},\n");
 	}
 
 	if (pflag)
