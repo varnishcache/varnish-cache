@@ -510,7 +510,7 @@ bereq.body
 
 	Unsetable from: vcl_backend_fetch
 
-	The request body, only present on `pass` requests.
+	The request body.
 
 	Unset will also remove `bereq.http.Content-Length`.
 
