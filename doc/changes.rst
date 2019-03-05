@@ -64,14 +64,12 @@ Varnish Cache trunk (ongoing)
   For best forward compatibility, we recommend that scripts parse JSON
   output as obtained using the ``-j`` option.
 
+  See release notes for details.
+
 * The format of the ``backend.list -j`` (JSON) cli command output has
-  changed:
+  changed.
 
-  * the ``probe_message`` field of a backend can now also have the
-    format ``[X, Y, state]``, X and Y being integers signifying X out
-    of Y probes/backends/...
-
-.. expecting more changes here #2896
+  See release notes for details.
 
 * The undocumented ``-v`` option to the ``backend.list`` cli command
   has been removed
@@ -196,6 +194,12 @@ C APIs (for vmod and utility authors)
   * ``req->req_bodybytes`` was removed. Replacement code snippet::
 
       AZ(ObjGetU64(req->wrk, req->body_oc, OA_LEN, &u));
+
+  * ``VRT_SetHealth()`` has been removed and ``VRT_SetChanged()``
+    added. ``VRT_LookupDirector()`` (only to be called from CLI
+    contexts) as been added.
+
+    See release notes for details
 
 * vmodtool has been changed significantly to avoid various name
   clashes. Rather than using literal prefixes/suffixes, vmod authors

@@ -166,27 +166,47 @@ default, see :ref:`varnish-cli(7)`.
 
 .. _whatsnew_changes_vcl_list_backend_list:
 
-Listing backends and VCLs
-~~~~~~~~~~~~~~~~~~~~~~~~~
+Listing backends
+~~~~~~~~~~~~~~~~
 
-The "probe message" field in the output of ``backend.list`` (in the
-``probe_message`` field of JSON format, or the ``Probe`` column of
-non-JSON output) has been changed to display ``X/Y state``, where:
+``backend.list`` has grown an additional column, the output has
+changed and fields are now of dynamic width:
 
-* Integer ``X`` is the number of good probes in the most recent
-  window; or if the backend in question is a director, the number of
-  healthy backends accessed via the director.
+* The ``Admin`` column now accurately states ``probe`` only if a
+  backend has some means of dynamically determining health state.
 
-* Integer ``Y`` is the window in which the threshold for overall
-  health of the backend is defined (from the ``.window`` field of a
-  probe, see :ref:`vcl(7)`); or in the case of a director, the total
-  number of backends accessed via the director.
+* The ``Probe`` column has been changed to display ``X/Y``, where:
 
-* ``state`` is one of the strings ``"good"`` or ``"bad"``, for the
-  overall health of the backend or director.
+  * Integer ``X`` is the number of good probes in the most recent
+    window; or if the backend in question is a director, the number of
+    healthy backends accessed via the director or any other
+    director-specific metric.
 
-In the ``probe_message`` field of ``backend.list -j`` output, this
-appears as the array ``[X, Y, state]``.
+  * Integer ``Y`` is the window in which the threshold for overall
+    health of the backend is defined (from the ``.window`` field of a
+    probe, see :ref:`vcl(7)`); or in the case of a director, the total
+    number of backends accessed via the director or any other
+    director-specific metric.
+
+  If there is no probe or the director does not provide details,
+  ``0/0`` is output.
+
+* The ``Health`` column has been added to contain the dynamic (probe)
+  health state and the format has been unified to just ``healthy`` or
+  ``sick``.
+
+  If there is no probe, ``Health`` is always given as
+  ``healthy``. Notice that the administrative health as shown in the
+  ``Admin`` column has precedence.
+
+In the ``probe_message`` field of ``backend.list -j`` output, the
+``Probe`` and ``Health`` columns appears as the array ``[X, Y,
+health]``.
+
+See :ref:`varnish-cli(7)` for details.
+
+Listing VCLs
+~~~~~~~~~~~~
 
 The non-JSON output of ``vcl.list`` has been changed:
 
@@ -250,5 +270,22 @@ Changes for developers and VMOD authors
 
 Python tools that generate code now prefer python 3 over python 2,
 when availabale.
+
+Directors
+~~~~~~~~~
+
+The director API has been changed slightly: The most relevant design
+change is that the ``healthy`` callback now is the only means to
+determine a director's health state dynamically, the ``sick`` member
+of ``struct director`` has been removed. Consequently,
+``VRT_SetHealth()`` has been removed and ``VRT_SetChanged()`` added to
+update the last health state change time.
+
+Presence of the ``healthy`` callback now also signifies if the
+director is considered to have a *probe* with respect to the CLI.
+
+The signature of the ``list`` callback has been changed to reflect the
+retirement of the undocumented ``backend.list -v`` parameter and to
+add a ``VRT_CTX``.
 
 *eof*
