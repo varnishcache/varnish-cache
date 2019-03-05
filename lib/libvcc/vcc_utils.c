@@ -333,11 +333,24 @@ vcc_Duration(struct vcc *tl, double *d)
 /*--------------------------------------------------------------------*/
 
 void
-vcc_ByteVal(struct vcc *tl, double *d)
+vcc_ByteVal(struct vcc *tl, int64_t *r)
 {
-	double v, sc;
+	int64_t rr;
+	int sc;
+	const char *end;
 
-	v = vcc_DoubleVal(tl);
+	errno = 0;
+	assert(tl->t->tok == CNUM || tl->t->tok == FNUM);
+	rr = VNUMpfxint(tl->t->b, &end, &sc);
+	if (errno || rr < 0) {
+		VSB_printf(tl->sb, "BYTES parsing error at ");
+		vcc_ErrToken(tl, tl->t);
+		VSB_printf(tl->sb, "\n");
+		vcc_ErrWhere(tl, tl->t);
+		return;
+	}
+
+	vcc_NextToken(tl);
 	ERRCHK(tl);
 	if (tl->t->tok != ID) {
 		VSB_cat(tl->sb, "Expected BYTES unit (B, KB, MB...) got ");
@@ -346,16 +359,21 @@ vcc_ByteVal(struct vcc *tl, double *d)
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}
-	sc = VNUM_bytes_unit(1, 0, tl->t->b, tl->t->e);
-	if (sc < 0) {
-		VSB_cat(tl->sb, "Unknown BYTES unit ");
+	assert(tl->t->b == end);
+	rr = VNUM_bytes_unit(rr, sc, tl->t->b, tl->t->e);
+	if (rr < 0) {
+		if (errno == EOVERFLOW)
+			VSB_cat(tl->sb, "BYTES can not be represented with "
+			    "adequate precision");
+		else
+			VSB_cat(tl->sb, "Unknown BYTES unit ");
 		vcc_ErrToken(tl, tl->t);
 		VSB_printf(tl->sb, "\n%s\n", VNUM_LEGAL_BYTES);
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}
 	vcc_NextToken(tl);
-	*d = v * sc;
+	*r = rr;
 }
 
 /*--------------------------------------------------------------------*/

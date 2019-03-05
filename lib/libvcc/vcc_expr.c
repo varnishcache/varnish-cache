@@ -689,7 +689,7 @@ vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	const char *ip, *sign;
 	struct token *t;
 	struct symbol *sym;
-	double d;
+	int64_t r;
 
 	sign = "";
 	*e = NULL;
@@ -805,9 +805,9 @@ vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	case CNUM:
 		assert(fmt != VOID);
 		if (fmt == BYTES) {
-			vcc_ByteVal(tl, &d);
+			vcc_ByteVal(tl, &r);
 			ERRCHK(tl);
-			e1 = vcc_mk_expr(BYTES, "%.1f", d);
+			e1 = vcc_mk_expr(BYTES, "%ju", (uintmax_t)r);
 		} else {
 			t = tl->t;
 			vcc_NextToken(tl);
