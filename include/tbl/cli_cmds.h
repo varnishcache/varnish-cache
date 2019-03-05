@@ -284,7 +284,7 @@ CLI_CMD(BACKEND_LIST,
 	"    * ``deleted``: Backend has been deleted, but not yet cleaned\n"
 	"      up.\n\n"
 	"    Admin has precedence over Health\n\n"
-	"  * Probe *X*\\ /\\ *Y*: *X* out of *Y* checks have succeeded\n\n"
+	"  * Probe ``X/Y``: *X* out of *Y* checks have succeeded\n\n"
 	"    *X* and *Y* are backend specific and may represent probe checks,\n"
 	"    other backends or any other metric.\n\n"
 	"    If there is no probe or the director does not provide details on\n"
