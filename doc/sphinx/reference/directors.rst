@@ -52,7 +52,6 @@ code instead::
     struct director {
         unsigned                        magic;
     #define DIRECTOR_MAGIC              0x3336351d
-        unsigned                        sick;
         void                            *priv;
         char                            *vcl_name;
         struct vcldir                   *vdir;
@@ -62,8 +61,9 @@ A director can be summed up as:
 
 - being of a specific ``type`` with a set of operations which is
   identical for all instances of that particular type
-- some instance specific attributes such as a ``vcl_name``, health
-  state and ``type``\ -specific private data
+
+- some instance specific attributes such as a ``vcl_name``
+  and ``type``\ -specific private data
 
 The difference between a *load balancing* director and a *backend*
 director is mainly the functions they will implement.
@@ -71,14 +71,21 @@ director is mainly the functions they will implement.
 The fundamental steps towards a director implementation are:
 
 - implement the required functions
+
 - fill a ``struct vdi_methods`` with the name of your director type
   and your function pointers
+
+  Existence of a ``healthy`` callback signifies that the director has
+  some means of dynamically determining its health state.
+
 - in your constructor or other initialization routine, allocate and
   initialize your director-specific configuration state (aka private
   data) and call ``VRT_AddDirector()`` with your ``struct
   vdi_methods``, the pointer to your state and a printf format for the
   name of your director instance
+
 - implement methods or functions returning ``VCL_BACKEND``
+
 - in your destructor or other finalizer, call ``VRT_DelDirector()``
 
 For forwards compatibility, it is strongly recommended for the last
