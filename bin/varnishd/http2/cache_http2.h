@@ -119,6 +119,7 @@ struct h2_req {
 	uint32_t			stream;
 	int				scheduled;
 	enum h2_stream_e		state;
+	int				counted;
 	struct h2_sess			*h2sess;
 	struct req			*req;
 	double				t_send;
@@ -148,7 +149,7 @@ struct h2_sess {
 
 	struct sess			*sess;
 	int				refcnt;
-	int				pending_kills;
+	int				open_streams;
 	uint32_t			highest_stream;
 	int				bogosity;
 	int				do_sweep;

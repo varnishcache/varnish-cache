@@ -285,6 +285,15 @@ H2_Send(struct worker *wrk, struct h2_req *r2,
 
 	Lck_Lock(&h2->sess->mtx);
 	mfs = h2->remote_settings.max_frame_size;
+	if (r2->counted && (
+	    (ftyp == H2_F_HEADERS && (flags & H2FF_HEADERS_END_STREAM)) ||
+	    (ftyp == H2_F_DATA && (flags & H2FF_DATA_END_STREAM)) ||
+	    ftyp == H2_F_RST_STREAM
+	    )) {
+		assert(h2->open_streams > 0);
+		h2->open_streams--;
+		r2->counted = 0;
+	}
 	Lck_Unlock(&h2->sess->mtx);
 
 	if (ftyp->respect_window) {
