@@ -287,13 +287,10 @@ vdir_pick_by_weight(const struct vdir *vd, double w,
     const struct vbitmap *healthy)
 {
 	double a = 0.0;
-	VCL_BACKEND be = NULL;
 	unsigned u;
 
 	AN(healthy);
 	for (u = 0; u < vd->n_backend; u++) {
-		be = vd->backend[u];
-		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
 		if (! vbit_test(healthy, u))
 			continue;
 		a += vd->weight[u];
