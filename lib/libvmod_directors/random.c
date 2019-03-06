@@ -56,6 +56,18 @@ vmod_random_healthy(VRT_CTX, VCL_BACKEND dir, VCL_TIME *changed)
 	return (vdir_any_healthy(ctx, rr->vd, changed));
 }
 
+static void v_matchproto_(vdi_list_f)
+vmod_random_list(VRT_CTX, VCL_BACKEND dir, struct vsb *vsb, int pflag,
+    int jflag)
+{
+	struct vmod_directors_random *rr;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(dir, DIRECTOR_MAGIC);
+	CAST_OBJ_NOTNULL(rr, dir->priv, VMOD_DIRECTORS_RANDOM_MAGIC);
+	vdir_list(ctx, rr->vd, vsb, pflag, jflag, 1);
+}
+
 static VCL_BACKEND v_matchproto_(vdi_resolve_f)
 vmod_random_resolve(VRT_CTX, VCL_BACKEND dir)
 {
@@ -87,7 +99,8 @@ static const struct vdi_methods vmod_random_methods[1] = {{
 	.type =			"random",
 	.healthy =		vmod_random_healthy,
 	.resolve =		vmod_random_resolve,
-	.destroy =		vmod_random_destroy
+	.destroy =		vmod_random_destroy,
+	.list =			vmod_random_list
 }};
 
 

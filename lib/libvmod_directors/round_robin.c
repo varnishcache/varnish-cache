@@ -63,7 +63,7 @@ vmod_rr_list(VRT_CTX, VCL_BACKEND dir, struct vsb *vsb, int pflag, int jflag)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(dir, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(rr, dir->priv, VMOD_DIRECTORS_ROUND_ROBIN_MAGIC);
-	vdir_list(ctx, rr->vd, vsb, pflag, jflag);
+	vdir_list(ctx, rr->vd, vsb, pflag, jflag, 0);
 }
 
 static VCL_BACKEND v_matchproto_(vdi_resolve_f)

@@ -195,7 +195,8 @@ vdir_any_healthy(VRT_CTX, struct vdir *vd, VCL_TIME *changed)
 }
 
 void
-vdir_list(VRT_CTX, struct vdir *vd, struct vsb *vsb, int pflag, int jflag)
+vdir_list(VRT_CTX, struct vdir *vd, struct vsb *vsb, int pflag, int jflag,
+    int weight)
 {
 	VCL_TIME c, changed = 0;
 	VCL_BACKEND be;
@@ -209,8 +210,13 @@ vdir_list(VRT_CTX, struct vdir *vd, struct vsb *vsb, int pflag, int jflag)
 		if (jflag) {
 			VSB_cat(vsb, "{\n");
 			VSB_indent(vsb, 2);
+			if (weight)
+				VSB_printf(vsb, "\"total_weight\": %f,\n",
+				    vd->total_weight);
+			VSB_cat(vsb, "\"backends\": {\n");
+			VSB_indent(vsb, 2);
 		} else {
-			VSB_cat(vsb, "\n");
+			VSB_cat(vsb, "\n\n\tBackend\tWeight\tHealth\n");
 		}
 	}
 
@@ -229,11 +235,23 @@ vdir_list(VRT_CTX, struct vdir *vd, struct vsb *vsb, int pflag, int jflag)
 		if (jflag) {
 			if (u)
 				VSB_cat(vsb, ",\n");
-			VSB_printf(vsb, "\"%s\": \"%s\"",
-			    be->vcl_name, h ? "healthy" : "sick");
+			if (weight)
+				VSB_printf(vsb, "\"%s\": [%f, \"%s\"]",
+				    be->vcl_name, vd->weight[u],
+				    h ? "healthy" : "sick");
+			else
+				VSB_printf(vsb, "\"%s\": \"%s\"",
+				    be->vcl_name, h ? "healthy" : "sick");
 		} else {
-			VSB_printf(vsb, "\t%s: %s\n",
-			    be->vcl_name, h ? "healthy" : "sick");
+			VSB_cat(vsb, "\t");
+			VSB_cat(vsb, be->vcl_name);
+			if (weight)
+				VSB_printf(vsb, "\t%.2f%%\t",
+				    100 * vd->weight[u] / vd->total_weight);
+			else
+				VSB_cat(vsb, "\t-\t");
+			VSB_cat(vsb, h ? "healthy" : "sick");
+			VSB_cat(vsb, "\n");
 		}
 	}
 	vdir_unlock(vd);
@@ -242,6 +260,8 @@ vdir_list(VRT_CTX, struct vdir *vd, struct vsb *vsb, int pflag, int jflag)
 
 	if (jflag && (pflag)) {
 		VSB_cat(vsb, "\n");
+		VSB_indent(vsb, -2);
+		VSB_cat(vsb, "},\n");
 		VSB_indent(vsb, -2);
 		VSB_cat(vsb, "},\n");
 	}

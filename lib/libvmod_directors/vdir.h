@@ -50,5 +50,5 @@ void vdir_unlock(struct vdir *vd);
 void vdir_add_backend(VRT_CTX, struct vdir *, VCL_BACKEND, double weight);
 void vdir_remove_backend(VRT_CTX, struct vdir *, VCL_BACKEND, unsigned *cur);
 VCL_BOOL vdir_any_healthy(VRT_CTX, struct vdir *, VCL_TIME *);
-void vdir_list(VRT_CTX, struct vdir *, struct vsb *, int, int);
+void vdir_list(VRT_CTX, struct vdir *, struct vsb *, int, int, int);
 VCL_BACKEND vdir_pick_be(VRT_CTX, struct vdir *, double w);
