@@ -66,8 +66,8 @@ vdir_new(VRT_CTX, struct vdir **vdp, const char *vcl_name,
 	*vdp = vd;
 	AZ(pthread_rwlock_init(&vd->mtx, NULL));
 	vd->dir = VRT_AddDirector(ctx, m, priv, "%s", vcl_name);
-	vd->vbm = vbit_new(8);
-	AN(vd->vbm);
+	vd->healthy = vbit_new(8);
+	AN(vd->healthy);
 }
 
 void
@@ -81,7 +81,7 @@ vdir_delete(struct vdir **vdp)
 	free(vd->backend);
 	free(vd->weight);
 	AZ(pthread_rwlock_destroy(&vd->mtx));
-	vbit_destroy(vd->vbm);
+	vbit_destroy(vd->healthy);
 	FREE_OBJ(vd);
 }
 
@@ -284,17 +284,17 @@ vdir_list(VRT_CTX, struct vdir *vd, struct vsb *vsb, int pflag, int jflag,
 
 static unsigned
 vdir_pick_by_weight(const struct vdir *vd, double w,
-    const struct vbitmap *blacklist)
+    const struct vbitmap *healthy)
 {
 	double a = 0.0;
 	VCL_BACKEND be = NULL;
 	unsigned u;
 
-	AN(blacklist);
+	AN(healthy);
 	for (u = 0; u < vd->n_backend; u++) {
 		be = vd->backend[u];
 		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
-		if (vbit_test(blacklist, u))
+		if (! vbit_test(healthy, u))
 			continue;
 		a += vd->weight[u];
 		if (w < a)
@@ -315,13 +315,14 @@ vdir_pick_be(VRT_CTX, struct vdir *vd, double w)
 	vdir_wrlock(vd);
 	for (u = 0; u < vd->n_backend; u++) {
 		if (VRT_Healthy(ctx, vd->backend[u], NULL)) {
-			vbit_clr(vd->vbm, u);
+			vbit_set(vd->healthy, u);
 			tw += vd->weight[u];
-		} else
-			vbit_set(vd->vbm, u);
+		} else {
+			vbit_clr(vd->healthy, u);
+		}
 	}
 	if (tw > 0.0) {
-		u = vdir_pick_by_weight(vd, w * tw, vd->vbm);
+		u = vdir_pick_by_weight(vd, w * tw, vd->healthy);
 		assert(u < vd->n_backend);
 		be = vd->backend[u];
 		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);

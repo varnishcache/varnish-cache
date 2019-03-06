@@ -38,7 +38,7 @@ struct vdir {
 	double					*weight;
 	double					total_weight;
 	VCL_BACKEND				dir;
-	struct vbitmap				*vbm;
+	struct vbitmap				*healthy;
 };
 
 void vdir_new(VRT_CTX, struct vdir **vdp, const char *vcl_name,
