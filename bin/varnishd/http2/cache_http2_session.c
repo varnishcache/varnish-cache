@@ -299,7 +299,12 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 		h2_del_req(wrk, r2);
 		return (0);
 	}
-	XXXAZ(Pool_Task(wrk->pool, &req->task, TASK_QUEUE_REQ));
+	if (Pool_Task(wrk->pool, &req->task, TASK_QUEUE_REQ)) {
+		r2->scheduled = 0;
+		h2_del_req(wrk, r2);
+		VSLb(h2->vsl, SLT_Debug, "H2: No Worker-threads");
+		return (h2_ou_rel(wrk, req));
+	}
 	return (1);
 }
 
