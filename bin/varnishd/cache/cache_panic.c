@@ -650,6 +650,33 @@ pan_backtrace(struct vsb *vsb)
 	VSB_indent(vsb, -2);
 }
 
+#ifdef HAVE_PTHREAD_GETATTR_NP
+static void
+pan_threadattr(struct vsb *vsb)
+{
+	pthread_attr_t attr[1];
+	size_t sz;
+	void *addr;
+
+	if (pthread_getattr_np(pthread_self(), attr) != 0)
+		return;
+
+	VSB_cat(vsb, "pthread.attr = {\n");
+	VSB_indent(vsb, 2);
+
+	if (pthread_attr_getguardsize(attr, &sz) == 0)
+		VSB_printf(vsb, "guard = %zu,\n", sz);
+	if (pthread_attr_getstack(attr, &addr, &sz) == 0) {
+		VSB_printf(vsb, "stack_bottom = %p,\n", addr);
+		VSB_printf(vsb, "stack_top = %p,\n", (char *)addr + sz);
+		VSB_printf(vsb, "stack_size = %zu,\n", sz);
+	}
+	VSB_indent(vsb, -2);
+	VSB_cat(vsb, "}\n");
+	(void) pthread_attr_destroy(attr);
+}
+#endif
+
 /*--------------------------------------------------------------------*/
 
 static void __attribute__((__noreturn__))
@@ -721,6 +748,10 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 	q = THR_GetName();
 	if (q != NULL)
 		VSB_printf(pan_vsb, "thread = (%s)\n", q);
+
+#ifdef HAVE_PTHREAD_GETATTR_NP
+	pan_threadattr(pan_vsb);
+#endif
 
 	if (!FEATURE(FEATURE_SHORT_PANIC)) {
 		req = THR_GetRequest();
