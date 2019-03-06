@@ -835,7 +835,7 @@ vmod_shard_list(VRT_CTX, VCL_BACKEND dir, struct vsb *vsb, int pflag, int jflag)
 			VSB_indent(vsb, -2);
 			VSB_cat(vsb, "}");
 		} else {
-			VSB_printf(vsb, "\t%s\t\%s\t%s\t%6.2f%% %8.3fs\n",
+			VSB_printf(vsb, "\t%s\t%s\t%s\t%6.2f%% %8.3fs\n",
 			    be->vcl_name,
 			    sbe->ident ? sbe->ident : be->vcl_name,
 			    h ? "healthy" : "sick",
