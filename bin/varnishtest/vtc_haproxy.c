@@ -52,6 +52,11 @@
 #define HAPROXY_EXPECT_EXIT	(128 + HAPROXY_SIGNAL)
 #define HAPROXY_GOOD_CONF	"Configuration file is valid"
 
+struct envar {
+	VTAILQ_ENTRY(envar) list;
+	char *name;
+	char *value;
+};
 
 struct haproxy {
 	unsigned		magic;
@@ -70,6 +75,7 @@ struct haproxy {
 	pid_t			ppid;
 	int			fds[4];
 	char			*cfg_fn;
+	struct vsb		*cfg_vsb;
 
 	pthread_t		tp;
 	int			expect_exit;
@@ -83,6 +89,7 @@ struct haproxy {
 
 	char			*workdir;
 	struct vsb		*msgs;
+	VTAILQ_HEAD(,envar) envars;
 };
 
 static VTAILQ_HEAD(, haproxy)	haproxies =
@@ -105,15 +112,56 @@ struct haproxy_cli {
 	size_t			rxbuf_sz;
 	char			*rxbuf;
 
-	vtim_dur		timeout;
+	double			timeout;
 };
+
+static void haproxy_write_conf(struct haproxy *h);
+
+static void
+haproxy_add_envar(struct haproxy *h,
+		  const char *name, const char *value)
+{
+	struct envar *e;
+
+	e = malloc(sizeof *e);
+	AN(e);
+	e->name = strdup(name);
+	e->value = strdup(value);
+	AN(e->name);
+	AN(e->value);
+	VTAILQ_INSERT_TAIL(&h->envars, e, list);
+}
+
+static void
+haproxy_delete_envars(struct haproxy *h)
+{
+	struct envar *e, *e2;
+	VTAILQ_FOREACH_SAFE(e, &h->envars, list, e2) {
+		VTAILQ_REMOVE(&h->envars, e, list);
+		free(e->name);
+		free(e->value);
+		free(e);
+	}
+}
+
+static void
+haproxy_build_env(const struct haproxy *h)
+{
+	struct envar *e;
+
+	VTAILQ_FOREACH(e, &h->envars, list) {
+		if (setenv(e->name, e->value, 0) == -1)
+			vtc_fatal(h->vl, "setenv() failed: %s (%d)",
+				  strerror(errno), errno);
+	}
+}
 
 /**********************************************************************
  * Socket connect (same as client_tcp_connect()).
  */
 
 static int
-haproxy_cli_tcp_connect(struct vtclog *vl, const char *addr, vtim_dur tmo,
+haproxy_cli_tcp_connect(struct vtclog *vl, const char *addr, double tmo,
     const char **errp)
 {
 	int fd;
@@ -481,6 +529,7 @@ haproxy_new(const char *name)
 	bprintf(buf, "rm -rf \"%s\" ; mkdir -p \"%s\"", h->workdir, h->workdir);
 	AZ(system(buf));
 
+	VTAILQ_INIT(&h->envars);
 	VTAILQ_INSERT_TAIL(&haproxies, h, list);
 
 	return (h);
@@ -582,12 +631,16 @@ haproxy_start(struct haproxy *h)
 		h->expect_exit = HAPROXY_EXPECT_EXIT;
 	}
 
+	haproxy_write_conf(h);
+
 	AZ(pipe(&h->fds[0]));
 	vtc_log(h->vl, 4, "XXX %d @%d", h->fds[1], __LINE__);
 	AZ(pipe(&h->fds[2]));
 	h->pid = h->ppid = fork();
 	assert(h->pid >= 0);
 	if (h->pid == 0) {
+		haproxy_build_env(h);
+		haproxy_delete_envars(h);
 		AZ(chdir(h->name));
 		AZ(dup2(h->fds[0], 0));
 		assert(dup2(h->fds[3], 1) == 1);
@@ -676,7 +729,7 @@ haproxy_wait(struct haproxy *h)
 #define HAPROXY_BE_FD_STRLEN  strlen(HAPROXY_BE_FD_STR)
 
 static int
-haproxy_build_backends(const struct haproxy *h, const char *vsb_data)
+haproxy_build_backends(struct haproxy *h, const char *vsb_data)
 {
 	char *s, *p, *q;
 
@@ -715,9 +768,7 @@ haproxy_build_backends(const struct haproxy *h, const char *vsb_data)
 
 		bprintf(buf, "%d", sock);
 		vtc_log(h->vl, 4, "setenv(%s, %s)", p, buf);
-		if (setenv(p, buf, 0) == -1)
-			vtc_fatal(h->vl, "setenv() failed: %s (%d)",
-				  strerror(errno), errno);
+		haproxy_add_envar(h, p, buf);
 		p = q;
 	}
 	free(s);
@@ -745,9 +796,9 @@ haproxy_check_conf(struct haproxy *h, const char *expect)
  */
 
 static void
-haproxy_write_conf(const struct haproxy *h, const char *cfg, int auto_be)
+haproxy_store_conf(struct haproxy *h, const char *cfg, int auto_be)
 {
-	struct vsb *vsb, *vsb2, *vsb3;
+	struct vsb *vsb, *vsb2;
 
 	vsb = VSB_new_auto();
 	AN(vsb);
@@ -767,19 +818,28 @@ haproxy_write_conf(const struct haproxy *h, const char *cfg, int auto_be)
 
 	AZ(haproxy_build_backends(h, VSB_data(vsb)));
 
-	vsb3 = macro_expand(h->vl, VSB_data(vsb));
-	AN(vsb3);
+	h->cfg_vsb = macro_expand(h->vl, VSB_data(vsb));
+	AN(h->cfg_vsb);
 
+	VSB_destroy(&vsb2);
+	VSB_destroy(&vsb);
+}
+
+static void
+haproxy_write_conf(struct haproxy *h)
+{
+	struct vsb *vsb;
+
+	vsb = macro_expand(h->vl, VSB_data(h->cfg_vsb));
+	AN(vsb);
+
+	vtc_dump(h->vl, 4, "conf", VSB_data(vsb), VSB_len(vsb));
 	if (VFIL_writefile(h->workdir, h->cfg_fn,
-	    VSB_data(vsb3), VSB_len(vsb3)) != 0)
+	    VSB_data(vsb), VSB_len(vsb)) != 0)
 		vtc_fatal(h->vl,
 		    "failed to write haproxy configuration file: %s (%d)",
 		    strerror(errno), errno);
 
-	vtc_dump(h->vl, 4, "conf", VSB_data(vsb3), VSB_len(vsb3));
-
-	VSB_destroy(&vsb3);
-	VSB_destroy(&vsb2);
 	VSB_destroy(&vsb);
 }
 
@@ -881,7 +941,7 @@ cmd_haproxy(CMD_ARGS)
 
 		if (!strcmp(*av, "-conf-OK")) {
 			AN(av[1]);
-			haproxy_write_conf(h, av[1], 0);
+			haproxy_store_conf(h, av[1], 0);
 			av++;
 			haproxy_check_conf(h, HAPROXY_GOOD_CONF);
 			continue;
@@ -889,7 +949,7 @@ cmd_haproxy(CMD_ARGS)
 		if (!strcmp(*av, "-conf-BAD")) {
 			AN(av[1]);
 			AN(av[2]);
-			haproxy_write_conf(h, av[2], 0);
+			haproxy_store_conf(h, av[2], 0);
 			h->expect_exit = 1;
 			haproxy_check_conf(h, av[1]);
 			av += 2;
@@ -923,13 +983,13 @@ cmd_haproxy(CMD_ARGS)
 		}
 		if (!strcmp(*av, "-conf")) {
 			AN(av[1]);
-			haproxy_write_conf(h, av[1], 0);
+			haproxy_store_conf(h, av[1], 0);
 			av++;
 			continue;
 		}
 		if (!strcmp(*av, "-conf+backend")) {
 			AN(av[1]);
-			haproxy_write_conf(h, av[1], 1);
+			haproxy_store_conf(h, av[1], 1);
 			av++;
 			continue;
 		}
