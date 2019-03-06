@@ -1,4 +1,6 @@
-varnishtest "canary to tell us if our default stacksize is too tight"
+varnishtest "canary to tell us if our default stacksize is too tight..."
+
+# ... for the default esi level 5 and a stack of 10 VCL subs
 
 server s1 {
 	rxreq
