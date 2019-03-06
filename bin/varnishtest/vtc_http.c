@@ -708,7 +708,9 @@ cmd_http_rxresp(CMD_ARGS)
 		return;
 	if (!hp->resp[0] || !hp->resp[1])
 		return;
-	else if (!strcmp(hp->resp[1], "200"))
+	if (hp->head_method)
+		return;
+	if (!strcmp(hp->resp[1], "200"))
 		http_swallow_body(hp, hp->resp, 1, 0);
 	else
 		http_swallow_body(hp, hp->resp, 0, 0);
@@ -1282,6 +1284,7 @@ cmd_http_txreq(CMD_ARGS)
 			av++;
 		} else if (!strcmp(*av, "-req")) {
 			req = av[1];
+			hp->head_method = !strcasecmp(av[1], "HEAD") ;
 			av++;
 		} else if (!hp->sfd && !strcmp(*av, "-up")) {
 			up = av[1];
