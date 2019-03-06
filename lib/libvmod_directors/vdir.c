@@ -283,9 +283,9 @@ vdir_list(VRT_CTX, struct vdir *vd, struct vsb *vsb, int pflag, int jflag,
 }
 
 static unsigned
-vdir_pick_by_weight(const struct vdir *vd, double w,
-    const struct vbitmap *healthy)
+vdir_pick_by_weight(const struct vdir *vd, double w)
 {
+	const struct vbitmap *healthy = vd->healthy;
 	double a = 0.0;
 	unsigned u;
 
@@ -319,7 +319,7 @@ vdir_pick_be(VRT_CTX, struct vdir *vd, double w)
 		}
 	}
 	if (tw > 0.0) {
-		u = vdir_pick_by_weight(vd, w * tw, vd->healthy);
+		u = vdir_pick_by_weight(vd, w * tw);
 		assert(u < vd->n_backend);
 		be = vd->backend[u];
 		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
