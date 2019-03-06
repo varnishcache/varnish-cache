@@ -106,6 +106,8 @@ varnish v1 -vcl+backend {
 	}
 } -start
 
+varnish v1 -cliok "param.set debug +syncvsl"
+
 client c1 {
 	txreq -hdr "Host: foo"
 	rxresp
