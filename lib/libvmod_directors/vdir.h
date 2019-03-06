@@ -31,15 +31,15 @@ struct vbitmap;
 struct vdir {
 	unsigned				magic;
 #define VDIR_MAGIC				0x99f4b726
-	pthread_rwlock_t			mtx;
 	unsigned				n_backend;
 	unsigned				l_backend;
+	unsigned				n_healthy;
+	pthread_rwlock_t			mtx;
 	VCL_BACKEND				*backend;
 	double					*weight;
 	double					total_weight;
 	VCL_BACKEND				dir;
 	struct vbitmap				*healthy;
-	unsigned				n_healthy;
 };
 
 void vdir_new(VRT_CTX, struct vdir **vdp, const char *vcl_name,
