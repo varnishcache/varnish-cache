@@ -234,13 +234,19 @@ vdir_list(VRT_CTX, struct vdir *vd, struct vsb *vsb, int pflag, int jflag,
 		if (jflag) {
 			if (u)
 				VSB_cat(vsb, ",\n");
+			VSB_printf(vsb, "\"%s\": {\n", be->vcl_name);
+			VSB_indent(vsb, 2);
+
 			if (weight)
-				VSB_printf(vsb, "\"%s\": [%f, \"%s\"]",
-				    be->vcl_name, w,
-				    h ? "healthy" : "sick");
+				VSB_printf(vsb, "\"weight\": %f,\n", w);
+
+			if (h)
+				VSB_cat(vsb, "\"health\": \"healthy\"\n");
 			else
-				VSB_printf(vsb, "\"%s\": \"%s\"",
-				    be->vcl_name, h ? "healthy" : "sick");
+				VSB_cat(vsb, "\"health\": \"sick\"\n");
+
+			VSB_indent(vsb, -2);
+			VSB_cat(vsb, "}");
 		} else {
 			VSB_cat(vsb, "\t");
 			VSB_cat(vsb, be->vcl_name);

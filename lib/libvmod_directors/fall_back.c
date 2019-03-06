@@ -97,10 +97,21 @@ vmod_fallback_list(VRT_CTX, VCL_BACKEND dir, struct vsb *vsb, int pflag,
 		if (jflag) {
 			if (u)
 				VSB_cat(vsb, ",\n");
-			VSB_printf(vsb, "\"%s\": [%s, \"%s\"]",
-			    be->vcl_name,
-			    fb->cur == u ? "true" : "false",
-			    h ? "healthy" : "sick");
+			VSB_printf(vsb, "\"%s\": {\n", be->vcl_name);
+			VSB_indent(vsb, 2);
+
+			if (fb->cur == u)
+				VSB_cat(vsb, "\"current\": true,\n");
+			else
+				VSB_cat(vsb, "\"current\": false,\n");
+
+			if (h)
+				VSB_cat(vsb, "\"health\": \"healthy\"\n");
+			else
+				VSB_cat(vsb, "\"health\": \"sick\"\n");
+
+			VSB_indent(vsb, -2);
+			VSB_cat(vsb, "}");
 		} else {
 			VSB_cat(vsb, "\t");
 			VSB_cat(vsb, be->vcl_name);
