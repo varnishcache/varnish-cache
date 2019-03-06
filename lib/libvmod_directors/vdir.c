@@ -202,6 +202,7 @@ vdir_list(VRT_CTX, struct vdir *vd, struct vsb *vsb, int pflag, int jflag,
 	VCL_BACKEND be;
 	VCL_BOOL h;
 	unsigned u, nh;
+	double w;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vd, VDIR_MAGIC);
@@ -228,12 +229,14 @@ vdir_list(VRT_CTX, struct vdir *vd, struct vsb *vsb, int pflag, int jflag,
 
 		h = vbit_test(vd->healthy, u);
 
+		w = h ? vd->weight[u] : 0.0;
+
 		if (jflag) {
 			if (u)
 				VSB_cat(vsb, ",\n");
 			if (weight)
 				VSB_printf(vsb, "\"%s\": [%f, \"%s\"]",
-				    be->vcl_name, h ? vd->weight[u] : 0.0,
+				    be->vcl_name, w,
 				    h ? "healthy" : "sick");
 			else
 				VSB_printf(vsb, "\"%s\": \"%s\"",
@@ -241,9 +244,9 @@ vdir_list(VRT_CTX, struct vdir *vd, struct vsb *vsb, int pflag, int jflag,
 		} else {
 			VSB_cat(vsb, "\t");
 			VSB_cat(vsb, be->vcl_name);
-			if (h && weight)
-				VSB_printf(vsb, "\t%.2f%%\t",
-				    100 * vd->weight[u] / vd->total_weight);
+			if (weight)
+				VSB_printf(vsb, "\t%6.2f%%\t",
+				    100 * w / vd->total_weight);
 			else
 				VSB_cat(vsb, "\t-\t");
 			VSB_cat(vsb, h ? "healthy" : "sick");
