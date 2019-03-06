@@ -36,6 +36,7 @@
 #include "vcc_if.h"
 
 #include "vdir.h"
+#include "vsb.h"
 
 struct vmod_directors_fallback {
 	unsigned				magic;
@@ -54,6 +55,94 @@ vmod_fallback_healthy(VRT_CTX, VCL_BACKEND dir, VCL_TIME *changed)
 	CHECK_OBJ_NOTNULL(dir, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(fb, dir->priv, VMOD_DIRECTORS_FALLBACK_MAGIC);
 	return (vdir_any_healthy(ctx, fb->vd, changed));
+}
+
+static void v_matchproto_(vdi_list_f)
+vmod_fallback_list(VRT_CTX, VCL_BACKEND dir, struct vsb *vsb, int pflag,
+    int jflag)
+{
+	struct vmod_directors_fallback *fb;
+	struct vdir *vd;
+	VCL_TIME c, changed = 0;
+	VCL_BACKEND be;
+	VCL_BOOL h;
+	unsigned u, nh = 0;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(dir, DIRECTOR_MAGIC);
+	CAST_OBJ_NOTNULL(fb, dir->priv, VMOD_DIRECTORS_FALLBACK_MAGIC);
+	CAST_OBJ_NOTNULL(vd, fb->vd, VDIR_MAGIC);
+
+	if (pflag) {
+		if (jflag) {
+			VSB_cat(vsb, "{\n");
+			VSB_indent(vsb, 2);
+			VSB_printf(vsb, "\"sticky\": %s,\n",
+			    fb->st ? "true" : "false");
+			VSB_cat(vsb, "\"backends\": {\n");
+			VSB_indent(vsb, 2);
+		} else {
+			VSB_cat(vsb, "\n\n\tBackend\tCurrent\tHealth\n");
+		}
+	}
+
+	vdir_rdlock(vd);
+	for (u = 0; u < vd->n_backend; u++) {
+		be = vd->backend[u];
+		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
+		c = 0;
+		h = VRT_Healthy(ctx, be, &c);
+		if (h)
+			nh++;
+		if (c > changed)
+			changed = c;
+		if ((pflag) == 0)
+			continue;
+		if (jflag) {
+			if (u)
+				VSB_cat(vsb, ",\n");
+			VSB_printf(vsb, "\"%s\": [%s, \"%s\"]",
+			    be->vcl_name,
+			    fb->cur == u ? "true" : "false",
+			    h ? "healthy" : "sick");
+		} else {
+			VSB_cat(vsb, "\t");
+			VSB_cat(vsb, be->vcl_name);
+			if (fb->cur == u)
+				VSB_cat(vsb, "\t*\t");
+			else
+				VSB_cat(vsb, "\t\t");
+			VSB_cat(vsb, h ? "healthy" : "sick");
+			VSB_cat(vsb, "\n");
+		}
+	}
+	vdir_unlock(vd);
+
+	VRT_SetChanged(vd->dir, changed);
+
+	if (jflag && (pflag)) {
+		VSB_cat(vsb, "\n");
+		VSB_indent(vsb, -2);
+		VSB_cat(vsb, "},\n");
+		VSB_indent(vsb, -2);
+		VSB_cat(vsb, "},\n");
+	}
+
+	if (pflag)
+		return;
+
+	/*
+	 * for health state, the api-correct thing would be to call our own
+	 * healthy function, but that would just re-iterate the backends for no
+	 * real benefit
+	 */
+
+	if (jflag)
+		VSB_printf(vsb, "[%u, %u, \"%s\"]", nh, u,
+		    nh ? "healthy" : "sick");
+	else
+		VSB_printf(vsb, "%u/%u\t%s", nh, u, nh ? "healthy" : "sick");
+
 }
 
 static VCL_BACKEND v_matchproto_(vdi_resolve_f)
@@ -99,7 +188,8 @@ static const struct vdi_methods vmod_fallback_methods[1] = {{
 	.type =			"fallback",
 	.healthy =		vmod_fallback_healthy,
 	.resolve =		vmod_fallback_resolve,
-	.destroy =		vmod_fallback_destroy
+	.destroy =		vmod_fallback_destroy,
+	.list =			vmod_fallback_list
 }};
 
 
