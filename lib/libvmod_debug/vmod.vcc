@@ -234,3 +234,12 @@ $Function STRANDS return_strands(STRANDS strand)
 $Function VOID catflap(ENUM {miss, first, last} type)
 
 Test the HSH_Lookup catflap
+
+$Function BYTES stk()
+
+Return an approximation of the amount of stack used.
+
+This function is by no means guaranteed to work cross platform and
+should now only be used for diagnostic purposes.
+
+0B is returned if no sensible value can be determined.

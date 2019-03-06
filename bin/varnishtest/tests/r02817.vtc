@@ -1,0 +1,117 @@
+varnishtest "canary to tell us if our default stacksize is too tight"
+
+server s1 {
+	rxreq
+	expect req.http.esi0 == "foo"
+	txresp -gzipbody {
+		<html>
+		Before include
+		<esi:include src="/a" sr="foo"/>
+		After include
+		</html>
+	}
+
+	rxreq
+	expect req.url == "/a1"
+	expect req.http.esi0 != "foo"
+	txresp -gzipbody {
+		<html>
+		Before include
+		<esi:include src="/b" sr="foo"/>
+		After include
+		</html>
+	}
+
+	rxreq
+	expect req.url == "/b2"
+	expect req.http.esi0 != "foo"
+	txresp -gzipbody {
+		<html>
+		Before include
+		<esi:include src="/c" sr="foo"/>
+		After include
+		</html>
+	}
+
+	rxreq
+	expect req.url == "/c3"
+	expect req.http.esi0 != "foo"
+	txresp -gzipbody {
+		<html>
+		Before include
+		<esi:include src="/d" sr="foo"/>
+		After include
+		</html>
+	}
+
+	rxreq
+	expect req.url == "/d4"
+	expect req.http.esi0 != "foo"
+	txresp -gzipbody {
+		<html>
+		Before include
+		<esi:include src="/e" sr="foo"/>
+		After include
+		</html>
+	}
+
+	rxreq
+	expect req.url == "/e5"
+	expect req.http.esi0 != "foo"
+	txresp -gzipbody {
+		<html>
+		LAST
+		</html>
+	}
+} -start
+
+varnish v1 -vcl+backend {
+	import std;
+	import debug;
+
+	sub recv0 { call recv1; std.log("STK recv0 " + debug.stk()); }
+	sub recv1 { call recv2; std.log("STK recv1 " + debug.stk()); }
+	sub recv2 { call recv3; std.log("STK recv2 " + debug.stk()); }
+	sub recv3 { call recv4; std.log("STK recv3 " + debug.stk()); }
+	sub recv4 { call recv5; std.log("STK recv4 " + debug.stk()); }
+	sub recv5 { call recv6; std.log("STK recv5 " + debug.stk()); }
+	sub recv6 { call recv7; std.log("STK recv6 " + debug.stk()); }
+	sub recv7 { call recv8; std.log("STK recv7 " + debug.stk()); }
+	sub recv8 { call recv9; std.log("STK recv8 " + debug.stk()); }
+	sub recv9 {
+		std.log("STK recv9 " + debug.stk());
+		set req.http.regex = regsub(req.url, "(.*)", "\1\1\1\1\1\1\1\1");
+		set req.http.regex = regsub(req.http.regex, "(.*)",
+		  "\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1");
+		# hey geoff, this is deliberate
+		set req.http.regex = regsub(req.http.regex,
+		  "(.*)(.{5})(.{6})(.{7})(.{8})", "/\5\4\3\2\1");
+		std.log("REGEX recv9 " + req.http.regex);
+	}
+
+	sub vcl_recv {
+		if (req.esi_level > 0) {
+			set req.url = req.url + req.esi_level;
+		} else {
+			set req.http.esi0 = "foo";
+		}
+		std.log("STK recv " + debug.stk());
+		call recv0;
+	}
+	sub vcl_backend_response {
+		set beresp.do_esi = true;
+	}
+	sub vcl_deliver {
+		std.log("STK deliver " + debug.stk());
+	}
+} -start
+
+client c1 {
+	txreq -hdr "Host: foo"
+	rxresp
+	expect resp.status == 200
+
+}
+
+client c1 -run
+varnish v1 -expect esi_errors == 0

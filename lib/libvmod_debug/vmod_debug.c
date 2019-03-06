@@ -699,3 +699,22 @@ xyzzy_catflap(VRT_CTX, VCL_ENUM type)
 		WRONG("Wrong VENUM");
 	}
 }
+
+VCL_BYTES
+xyzzy_stk(VRT_CTX)
+{
+	const VCL_BYTES max = 100 * 1024 * 1024;
+	const char *a, *b;
+	VCL_BYTES r;
+
+	a = TRUST_ME(&b);
+	b = TRUST_ME(ctx->req->wrk);
+	b += sizeof(*ctx->req->wrk);
+
+	if (b > a && (r = b - a) < max)
+		return (r);
+	if (a > b && (r = a - b) < max)
+		return (r);
+
+	return (0);
+}
