@@ -37,6 +37,7 @@
 
 #include "vdir.h"
 #include "vsb.h"
+#include "vbm.h"
 
 struct vmod_directors_fallback {
 	unsigned				magic;
@@ -63,10 +64,9 @@ vmod_fallback_list(VRT_CTX, VCL_BACKEND dir, struct vsb *vsb, int pflag,
 {
 	struct vmod_directors_fallback *fb;
 	struct vdir *vd;
-	VCL_TIME c, changed = 0;
 	VCL_BACKEND be;
 	VCL_BOOL h;
-	unsigned u, nh = 0;
+	unsigned u, nh;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(dir, DIRECTOR_MAGIC);
@@ -87,17 +87,13 @@ vmod_fallback_list(VRT_CTX, VCL_BACKEND dir, struct vsb *vsb, int pflag,
 	}
 
 	vdir_rdlock(vd);
-	for (u = 0; u < vd->n_backend; u++) {
+	vdir_update_health(ctx, vd);
+	for (u = 0; pflag && u < vd->n_backend; u++) {
 		be = vd->backend[u];
 		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
-		c = 0;
-		h = VRT_Healthy(ctx, be, &c);
-		if (h)
-			nh++;
-		if (c > changed)
-			changed = c;
-		if ((pflag) == 0)
-			continue;
+
+		h = vbit_test(vd->healthy, u);
+
 		if (jflag) {
 			if (u)
 				VSB_cat(vsb, ",\n");
@@ -116,9 +112,8 @@ vmod_fallback_list(VRT_CTX, VCL_BACKEND dir, struct vsb *vsb, int pflag,
 			VSB_cat(vsb, "\n");
 		}
 	}
+	nh = vd->n_healthy;
 	vdir_unlock(vd);
-
-	VRT_SetChanged(vd->dir, changed);
 
 	if (jflag && (pflag)) {
 		VSB_cat(vsb, "\n");
@@ -131,18 +126,11 @@ vmod_fallback_list(VRT_CTX, VCL_BACKEND dir, struct vsb *vsb, int pflag,
 	if (pflag)
 		return;
 
-	/*
-	 * for health state, the api-correct thing would be to call our own
-	 * healthy function, but that would just re-iterate the backends for no
-	 * real benefit
-	 */
-
 	if (jflag)
 		VSB_printf(vsb, "[%u, %u, \"%s\"]", nh, u,
 		    nh ? "healthy" : "sick");
 	else
 		VSB_printf(vsb, "%u/%u\t%s", nh, u, nh ? "healthy" : "sick");
-
 }
 
 static VCL_BACKEND v_matchproto_(vdi_resolve_f)

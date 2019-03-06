@@ -47,6 +47,9 @@ vdir_expand(struct vdir *vd, unsigned n)
 	AN(vd->backend);
 	vd->weight = realloc(vd->weight, n * sizeof *vd->weight);
 	AN(vd->weight);
+	if (n > vd->healthy->nbits)
+		vbit_expand(vd->healthy, n);
+	AN(vd->healthy);
 	vd->l_backend = n;
 }
 
@@ -127,7 +130,6 @@ vdir_add_backend(VRT_CTX, struct vdir *vd, VCL_BACKEND be, double weight)
 	u = vd->n_backend++;
 	vd->backend[u] = be;
 	vd->weight[u] = weight;
-	vd->total_weight += weight;
 	vdir_unlock(vd);
 }
 
@@ -152,7 +154,6 @@ vdir_remove_backend(VRT_CTX, struct vdir *vd, VCL_BACKEND be, unsigned *cur)
 		vdir_unlock(vd);
 		return;
 	}
-	vd->total_weight -= vd->weight[u];
 	n = (vd->n_backend - u) - 1;
 	memmove(&vd->backend[u], &vd->backend[u+1], n * sizeof(vd->backend[0]));
 	memmove(&vd->weight[u], &vd->weight[u+1], n * sizeof(vd->weight[0]));
@@ -198,10 +199,9 @@ void
 vdir_list(VRT_CTX, struct vdir *vd, struct vsb *vsb, int pflag, int jflag,
     int weight)
 {
-	VCL_TIME c, changed = 0;
 	VCL_BACKEND be;
 	VCL_BOOL h;
-	unsigned u, nh = 0;
+	unsigned u, nh;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vd, VDIR_MAGIC);
@@ -221,23 +221,19 @@ vdir_list(VRT_CTX, struct vdir *vd, struct vsb *vsb, int pflag, int jflag,
 	}
 
 	vdir_rdlock(vd);
-	for (u = 0; u < vd->n_backend; u++) {
+	vdir_update_health(ctx, vd);
+	for (u = 0; pflag && u < vd->n_backend; u++) {
 		be = vd->backend[u];
 		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
-		c = 0;
-		h = VRT_Healthy(ctx, be, &c);
-		if (h)
-			nh++;
-		if (c > changed)
-			changed = c;
-		if ((pflag) == 0)
-			continue;
+
+		h = vbit_test(vd->healthy, u);
+
 		if (jflag) {
 			if (u)
 				VSB_cat(vsb, ",\n");
 			if (weight)
 				VSB_printf(vsb, "\"%s\": [%f, \"%s\"]",
-				    be->vcl_name, vd->weight[u],
+				    be->vcl_name, h ? vd->weight[u] : 0.0,
 				    h ? "healthy" : "sick");
 			else
 				VSB_printf(vsb, "\"%s\": \"%s\"",
@@ -245,7 +241,7 @@ vdir_list(VRT_CTX, struct vdir *vd, struct vsb *vsb, int pflag, int jflag,
 		} else {
 			VSB_cat(vsb, "\t");
 			VSB_cat(vsb, be->vcl_name);
-			if (weight)
+			if (h && weight)
 				VSB_printf(vsb, "\t%.2f%%\t",
 				    100 * vd->weight[u] / vd->total_weight);
 			else
@@ -254,9 +250,8 @@ vdir_list(VRT_CTX, struct vdir *vd, struct vsb *vsb, int pflag, int jflag,
 			VSB_cat(vsb, "\n");
 		}
 	}
+	nh = vd->n_healthy;
 	vdir_unlock(vd);
-
-	VRT_SetChanged(vd->dir, changed);
 
 	if (jflag && (pflag)) {
 		VSB_cat(vsb, "\n");
@@ -269,17 +264,60 @@ vdir_list(VRT_CTX, struct vdir *vd, struct vsb *vsb, int pflag, int jflag,
 	if (pflag)
 		return;
 
-	/*
-	 * for health state, the api-correct thing would be to call our own
-	 * healthy function, but that would just re-iterate the backends for no
-	 * real benefit
-	 */
-
 	if (jflag)
 		VSB_printf(vsb, "[%u, %u, \"%s\"]", nh, u,
 		    nh ? "healthy" : "sick");
 	else
 		VSB_printf(vsb, "%u/%u\t%s", nh, u, nh ? "healthy" : "sick");
+}
+
+/*
+ * iterate backends and update
+ * - healthy bitmap
+ * - number of healthy backends
+ * - total_weight
+ * - last change time of the VCL_BACKEND
+ *
+ * must be called under the vdir lock (read or write).
+ *
+ * A write lock is required if consistency between the individual attributes is
+ * a must, e.g. when total_weight is required to be the exact sum of the weights
+ *
+ * The read lock is safe because add_backend expands the healthy bitmap and all
+ * other members are atomic and may be used if consistency is not required.
+ */
+void
+vdir_update_health(VRT_CTX, struct vdir *vd)
+{
+	VCL_TIME c, changed = 0;
+	VCL_BOOL h;
+	VCL_BACKEND be;
+	unsigned u, nh = 0;
+	double tw = 0.0;
+	struct vbitmap *healthy = vd->healthy;
+
+	healthy = vd->healthy;
+	for (u = 0; u < vd->n_backend; u++) {
+		be = vd->backend[u];
+		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
+		c = 0;
+		h = VRT_Healthy(ctx, vd->backend[u], &c);
+		if (h) {
+			nh++;
+			tw += vd->weight[u];
+		}
+		if (c > changed)
+			changed = c;
+		if (h != vbit_test(healthy, u)) {
+			if (h)
+				vbit_set(healthy, u);
+			else
+				vbit_clr(healthy, u);
+		}
+	}
+	VRT_SetChanged(vd->dir, changed);
+	vd->total_weight = tw;
+	vd->n_healthy = nh;
 }
 
 static unsigned
@@ -304,22 +342,14 @@ VCL_BACKEND
 vdir_pick_be(VRT_CTX, struct vdir *vd, double w)
 {
 	unsigned u;
-	double tw = 0.0;
 	VCL_BACKEND be = NULL;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vd, VDIR_MAGIC);
 	vdir_wrlock(vd);
-	for (u = 0; u < vd->n_backend; u++) {
-		if (VRT_Healthy(ctx, vd->backend[u], NULL)) {
-			vbit_set(vd->healthy, u);
-			tw += vd->weight[u];
-		} else {
-			vbit_clr(vd->healthy, u);
-		}
-	}
-	if (tw > 0.0) {
-		u = vdir_pick_by_weight(vd, w * tw);
+	vdir_update_health(ctx, vd);
+	if (vd->total_weight > 0.0) {
+		u = vdir_pick_by_weight(vd, w * vd->total_weight);
 		assert(u < vd->n_backend);
 		be = vd->backend[u];
 		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
