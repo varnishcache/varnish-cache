@@ -757,7 +757,7 @@ vmod_shard_resolve(VRT_CTX, VCL_BACKEND dir)
 				 pp->rampup, pp->healthy));
 }
 
-void v_matchproto_(vdi_list_f)
+static void v_matchproto_(vdi_list_f)
 vmod_shard_list(VRT_CTX, VCL_BACKEND dir, struct vsb *vsb, int pflag, int jflag)
 {
 	struct sharddir *shardd;

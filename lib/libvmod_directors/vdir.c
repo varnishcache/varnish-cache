@@ -304,8 +304,9 @@ vdir_update_health(VRT_CTX, struct vdir *vd)
 	VCL_BACKEND be;
 	unsigned u, nh = 0;
 	double tw = 0.0;
-	struct vbitmap *healthy = vd->healthy;
+	struct vbitmap *healthy;
 
+	CHECK_OBJ_NOTNULL(vd, VDIR_MAGIC);
 	healthy = vd->healthy;
 	for (u = 0; u < vd->n_backend; u++) {
 		be = vd->backend[u];
