@@ -55,3 +55,12 @@ script:
     else
       make -j3 check VERBOSE=1
     fi
+    if [[ !? -ne 0 ]]
+      for f in $(find . -name test-suite.log); do
+        if ! grep -E '(ERROR|FAIL):.*[1-9]' $f >/dev/null ; then continue ; fi
+        echo ----------------------------------------------------------------------------
+        echo $f
+        echo ----------------------------------------------------------------------------
+        cat $f
+      done
+    fi
