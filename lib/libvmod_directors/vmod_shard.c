@@ -40,6 +40,7 @@
 #include "vcc_if.h"
 #include "shard_dir.h"
 #include "shard_cfg.h"
+#include "vsb.h"
 
 /* -------------------------------------------------------------------------
  *  shard director: LAZY mode (vdi resolve function), parameter objects
@@ -171,6 +172,7 @@ vmod_shard_param_read(VRT_CTX, const void *id,
  */
 static vdi_healthy_f vmod_shard_healthy;
 static vdi_resolve_f vmod_shard_resolve;
+static vdi_list_f vmod_shard_list;
 
 struct vmod_directors_shard {
 	unsigned				magic;
@@ -243,7 +245,8 @@ static const struct vdi_methods vmod_shard_methods[1] = {{
 	.type =		"shard",
 	.resolve =	vmod_shard_resolve,
 	.healthy =	vmod_shard_healthy,
-	.destroy =	vmod_shard_destroy
+	.destroy =	vmod_shard_destroy,
+	.list =		vmod_shard_list
 }};
 
 
@@ -752,6 +755,111 @@ vmod_shard_resolve(VRT_CTX, VCL_BACKEND dir)
 	return (sharddir_pick_be(ctx, shardd,
 				 shard_get_key(ctx, pp), pp->alt, pp->warmup,
 				 pp->rampup, pp->healthy));
+}
+
+void v_matchproto_(vdi_list_f)
+vmod_shard_list(VRT_CTX, VCL_BACKEND dir, struct vsb *vsb, int pflag, int jflag)
+{
+	struct sharddir *shardd;
+	struct shard_backend *sbe;
+	VCL_TIME c, changed = 0;
+	VCL_DURATION rampup_d, d;
+	VCL_BACKEND be;
+	VCL_BOOL h;
+	unsigned u, nh = 0;
+	double rampup_p;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(dir, DIRECTOR_MAGIC);
+	CAST_OBJ_NOTNULL(shardd, dir->priv, SHARDDIR_MAGIC);
+
+	if (pflag) {
+		if (jflag) {
+			VSB_cat(vsb, "{\n");
+			VSB_indent(vsb, 2);
+			VSB_printf(vsb, "\"warmup\": %f,\n", shardd->warmup);
+			VSB_printf(vsb, "\"rampup_duration\": %f,\n",
+			    shardd->rampup_duration);
+			VSB_cat(vsb, "\"backends\": {\n");
+			VSB_indent(vsb, 2);
+		} else {
+			VSB_cat(vsb, "\n\n\tBackend\tIdent\tHealth\t"
+			    "Rampup  Remaining\n");
+		}
+	}
+
+	sharddir_rdlock(shardd);
+	for (u = 0; u < shardd->n_backend; u++) {
+		sbe = &shardd->backend[u];
+		AN(sbe);
+		be = sbe->backend;
+		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
+
+		c = 0;
+		h = VRT_Healthy(ctx, be, &c);
+		if (h)
+			nh++;
+		if (c > changed)
+			changed = c;
+		if ((pflag) == 0)
+			continue;
+
+		d = ctx->now - c;
+		rampup_d = shardcfg_get_rampup(shardd, u);
+		if (! h) {
+			rampup_p = 0.0;
+			rampup_d = 0.0;
+		} else if (d < rampup_d) {
+			rampup_p = d / rampup_d;
+			rampup_d -= d;
+		} else {
+			rampup_p = 1.0;
+			rampup_d = 0.0;
+		}
+
+		if (jflag) {
+			if (u)
+				VSB_cat(vsb, ",\n");
+			VSB_printf(vsb, "\"%s\": {\n",
+			    be->vcl_name);
+			VSB_indent(vsb, 2);
+			VSB_printf(vsb, "\"ident\": \"%s\",\n",
+			    sbe->ident ? sbe->ident : be->vcl_name);
+			VSB_printf(vsb, "\"health\": \"%s\",\n",
+			    h ? "healthy" : "sick");
+			VSB_printf(vsb, "\"canon_point\": %u,\n",
+			    sbe->canon_point);
+			VSB_printf(vsb, "\"rampup\": %f,\n", rampup_p);
+			VSB_printf(vsb, "\"rampup_remaining\": %.3f\n",
+			    rampup_d);
+			VSB_indent(vsb, -2);
+			VSB_cat(vsb, "}");
+		} else {
+			VSB_printf(vsb, "\t%s\t\%s\t%s\t%6.2f%% %8.3fs\n",
+			    be->vcl_name,
+			    sbe->ident ? sbe->ident : be->vcl_name,
+			    h ? "healthy" : "sick",
+			    rampup_p * 100, rampup_d);
+		}
+	}
+	sharddir_unlock(shardd);
+
+	if (jflag && (pflag)) {
+		VSB_cat(vsb, "\n");
+		VSB_indent(vsb, -2);
+		VSB_cat(vsb, "}\n");
+		VSB_indent(vsb, -2);
+		VSB_cat(vsb, "},\n");
+	}
+
+	if (pflag)
+		return;
+
+	if (jflag)
+		VSB_printf(vsb, "[%u, %u, \"%s\"]", nh, u,
+		    nh ? "healthy" : "sick");
+	else
+		VSB_printf(vsb, "%u/%u\t%s", nh, u, nh ? "healthy" : "sick");
 }
 
 VCL_VOID v_matchproto_(td_directors_shard_backend)

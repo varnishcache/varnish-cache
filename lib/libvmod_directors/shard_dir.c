@@ -256,7 +256,7 @@ sharddir_delete(struct sharddir **sharddp)
 	FREE_OBJ(shardd);
 }
 
-static void
+void
 sharddir_rdlock(struct sharddir *shardd)
 {
 	CHECK_OBJ_NOTNULL(shardd, SHARDDIR_MAGIC);

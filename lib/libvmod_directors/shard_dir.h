@@ -132,6 +132,7 @@ void sharddir_new(struct sharddir **sharddp, const char *vcl_name,
 void sharddir_set_param(struct sharddir *shardd,
     const struct vmod_directors_shard_param *param);
 void sharddir_delete(struct sharddir **sharddp);
+void sharddir_rdlock(struct sharddir *shardd);
 void sharddir_wrlock(struct sharddir *shardd);
 void sharddir_unlock(struct sharddir *shardd);
 VCL_BOOL sharddir_any_healthy(VRT_CTX, struct sharddir *, VCL_TIME *);
