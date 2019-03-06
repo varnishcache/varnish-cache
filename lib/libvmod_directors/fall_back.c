@@ -118,7 +118,7 @@ vmod_fallback_list(VRT_CTX, VCL_BACKEND dir, struct vsb *vsb, int pflag,
 	if (jflag && (pflag)) {
 		VSB_cat(vsb, "\n");
 		VSB_indent(vsb, -2);
-		VSB_cat(vsb, "},\n");
+		VSB_cat(vsb, "}\n");
 		VSB_indent(vsb, -2);
 		VSB_cat(vsb, "},\n");
 	}

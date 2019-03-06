@@ -256,7 +256,7 @@ vdir_list(VRT_CTX, struct vdir *vd, struct vsb *vsb, int pflag, int jflag,
 	if (jflag && (pflag)) {
 		VSB_cat(vsb, "\n");
 		VSB_indent(vsb, -2);
-		VSB_cat(vsb, "},\n");
+		VSB_cat(vsb, "}\n");
 		VSB_indent(vsb, -2);
 		VSB_cat(vsb, "},\n");
 	}
