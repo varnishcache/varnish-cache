@@ -260,6 +260,7 @@ vdir_list(VRT_CTX, struct vdir *vd, struct vsb *vsb, int pflag, int jflag,
 		}
 	}
 	nh = vd->n_healthy;
+	u = vd->n_backend;
 	vdir_unlock(vd);
 
 	if (jflag && (pflag)) {

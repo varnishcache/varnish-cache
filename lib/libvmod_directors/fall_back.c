@@ -124,6 +124,7 @@ vmod_fallback_list(VRT_CTX, VCL_BACKEND dir, struct vsb *vsb, int pflag,
 		}
 	}
 	nh = vd->n_healthy;
+	u = vd->n_backend;
 	vdir_unlock(vd);
 
 	if (jflag && (pflag)) {
