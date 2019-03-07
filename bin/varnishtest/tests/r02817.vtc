@@ -67,7 +67,8 @@ server s1 {
 	}
 } -start
 
-varnish v1 -vcl+backend {
+# XXX THIS TEST SHOULD USE THE DEFAULT STACK SIZE - WIP
+varnish v1 -arg "-p thread_pool_stack=52k" -vcl+backend {
 	import std;
 	import debug;
 
