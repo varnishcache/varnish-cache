@@ -1,0 +1,52 @@
+varnishtest "execute backend.list -p[j] on builtin directors"
+
+varnish v1 -vcl {
+	import directors;
+	import std;
+
+	probe p {.url = "/foo"; }
+	backend a1 { .host = "${bad_ip}"; }
+	backend a2 { .host = "${bad_ip}"; }
+	backend a3 { .host = "${bad_ip}"; }
+	backend a4 { .host = "${bad_ip}"; .probe = p; }
+
+	sub vcl_init {
+		new rr1 = directors.round_robin();
+		rr1.add_backend(a1);
+		rr1.add_backend(a2);
+		rr1.add_backend(a3);
+		rr1.add_backend(a4);
+		new rr2 = directors.round_robin();
+		rr2.add_backend(a1);
+		rr2.add_backend(a2);
+		new rr3 = directors.round_robin();
+		rr3.add_backend(a4);
+		new shard = directors.shard();
+		shard.set_rampup(1m);
+		shard.add_backend(a1);
+		shard.add_backend(a2, ident="A2", rampup=1h);
+		shard.add_backend(a3);
+		shard.add_backend(a4, rampup=10m);
+		shard.reconfigure();
+		new rand = directors.random();
+		rand.add_backend(a1, 1);
+		rand.add_backend(a2, 2);
+		rand.add_backend(a3, 3);
+		rand.add_backend(a4, 4);
+		new hash = directors.hash();
+		hash.add_backend(a1, 1);
+		hash.add_backend(a2, 2);
+		hash.add_backend(a3, 3);
+		hash.add_backend(a4, 4);
+		new fallback = directors.fallback();
+		fallback.add_backend(a1);
+		fallback.add_backend(a2);
+		fallback.add_backend(a3);
+		fallback.add_backend(a4);
+	}
+} -start
+
+varnish v1 -cli "backend.list"
+varnish v1 -cli "backend.list -p"
+varnish v1 -clijson "backend.list -j"
+varnish v1 -clijson "backend.list -pj"
