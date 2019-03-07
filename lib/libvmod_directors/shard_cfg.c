@@ -355,10 +355,15 @@ shardcfg_backend_lookup(const struct backend_reconfig *re,
 	unsigned i, max = re->shardd->n_backend + re->hole_n;
 	const struct shard_backend *bb = re->shardd->backend;
 
-	for (i = 0; i < max; i++)
+	if (max > 0)
+		AN(bb);
+
+	for (i = 0; i < max; i++) {
+		if (bb[i].backend == NULL)
+			continue;	// hole
 		if (!shardcfg_backend_cmp(b, &bb[i]))
 			return &bb[i];
-
+	}
 	return NULL;
 }
 
@@ -434,6 +439,8 @@ shardcfg_backend_del(struct backend_reconfig *re,
 	struct shard_backend * const bb = re->shardd->backend;
 
 	for (i = 0; i < max; i++) {
+		if (bb[i].backend == NULL)
+			continue;	// hole
 		if (shardcfg_backend_del_cmp(spec, &bb[i]))
 			continue;
 
