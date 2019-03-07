@@ -32,6 +32,5 @@
 #define VFL_H_INCLUDED
 
 int VFL_Open(const char *, int, ...);
-int VFL_Test(int fd, pid_t *pid);
 
 #endif

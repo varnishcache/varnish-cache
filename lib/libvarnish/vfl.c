@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ *
  * Copyright (c) 2007-2009 Dag-Erling Coïdan Smørgrav
  * All rights reserved.
  *
@@ -24,7 +26,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  * Derived from:
- * $FreeBSD: head/lib/libutil/flopen.c 309344 2016-12-01 02:21:36Z cem $
+ * $FreeBSD: head/lib/libutil/flopen.c 326219 2017-11-26 02:00:33Z pfg $
  */
 
 #include "config.h"
@@ -48,8 +50,8 @@
  * code's apparent simplicity; there would be no need for this function if it
  * was easy to get right.
  */
-int
-VFL_Open(const char *path, int flags, ...)
+static int
+vflopenat(int dirfd, const char *path, int flags, va_list ap)
 {
 	int fd, operation, serrno, trunc;
 	struct stat sb, fsb;
@@ -61,11 +63,7 @@ VFL_Open(const char *path, int flags, ...)
 
 	mode = 0;
 	if (flags & O_CREAT) {
-		va_list ap;
-
-		va_start(ap, flags);
 		mode = (mode_t)va_arg(ap, int); /* mode_t promoted to int */
-		va_end(ap);
 	}
 
 	operation = LOCK_EX;
@@ -76,7 +74,7 @@ VFL_Open(const char *path, int flags, ...)
 	flags &= ~O_TRUNC;
 
 	for (;;) {
-		if ((fd = open(path, flags, mode)) == -1)
+		if ((fd = openat(dirfd, path, flags, mode)) == -1)
 			/* non-existent or no access */
 			return (-1);
 		if (flock(fd, operation) == -1) {
@@ -86,7 +84,7 @@ VFL_Open(const char *path, int flags, ...)
 			errno = serrno;
 			return (-1);
 		}
-		if (stat(path, &sb) == -1) {
+		if (fstatat(dirfd, path, &sb, 0) == -1) {
 			/* disappeared from under our feet */
 			(void)close(fd);
 			continue;
@@ -127,26 +125,14 @@ VFL_Open(const char *path, int flags, ...)
 	}
 }
 
-/* Tests if the given fd is locked through flopen
- * If pid is non-NULL, stores the pid of the process holding the lock there
- * Returns 1 if the file is locked
- * Returns 0 if the file is unlocked
- * Returns -1 on error (and errno)
- */
 int
-VFL_Test(int fd, pid_t *pid)
+VFL_Open(const char *path, int flags, ...)
 {
-	struct flock lock;
+	va_list ap;
+	int ret;
 
-	memset(&lock, 0, sizeof lock);
-	lock.l_type = F_WRLCK;
-	lock.l_whence = SEEK_SET;
-
-	if (fcntl(fd, F_GETLK, &lock) == -1)
-		return (-1);
-	if (lock.l_type == F_UNLCK)
-		return (0);
-	if (pid != NULL)
-		*pid = lock.l_pid;
-	return (1);
+	va_start(ap, flags);
+	ret = vflopenat(AT_FDCWD, path, flags, ap);
+	va_end(ap);
+	return (ret);
 }
