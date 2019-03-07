@@ -642,10 +642,6 @@ MCF_InitParams(struct cli *cli)
 		MCF_ParamConf(MCF_MAXIMUM, "vsl_space", "1G");
 	}
 
-#if !defined(HAVE_ACCEPT_FILTERS) || defined(__linux)
-	MCF_ParamConf(MCF_DEFAULT, "accept_filter", "off");
-#endif
-
 	low = sysconf(_SC_THREAD_STACK_MIN);
 	MCF_ParamConf(MCF_MINIMUM, "thread_pool_stack", "%jdb", (intmax_t)low);
 
@@ -663,6 +659,10 @@ MCF_InitParams(struct cli *cli)
 #endif
 
 	MCF_ParamConf(MCF_MAXIMUM, "thread_pools", "%d", MAX_THREAD_POOLS);
+
+#if !defined(HAVE_ACCEPT_FILTERS) || defined(__linux)
+	MCF_ParamConf(MCF_DEFAULT, "accept_filter", "off");
+#endif
 
 	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_params);
 
