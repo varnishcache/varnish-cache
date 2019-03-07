@@ -51,18 +51,7 @@ before_install:
 script:
   - |
     if [[ "$TRAVIS_PULL_REQUEST" != "false" ]]; then
-      make -j3 distcheck
+      make -j3 distcheck VERBOSE=1
     else
       make -j3 check VERBOSE=1
     fi
-    err=$?
-    if [[ $err -ne 0 ]] ; then
-      for f in $(find . -name test-suite.log); do
-        if ! grep -E '(ERROR|FAIL):.*[1-9]' $f >/dev/null ; then continue ; fi
-        echo ----------------------------------------------------------------------------
-        echo $f
-        echo ----------------------------------------------------------------------------
-        cat $f
-      done
-    fi
-    exit $err
