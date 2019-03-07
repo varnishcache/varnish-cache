@@ -59,8 +59,7 @@ About the Varnish development process
 
 Varnish is a community driven project. The development is overseen by
 the Varnish Governing Board which currently consists of Poul-Henning Kamp
-(Architect), Rogier Mulhuijzen (Fastly) and Lasse Karstensen (Varnish
-Software).
+(Architect), Rogier Mulhuijzen (Fastly) and Lasse Karstensen (Independent).
 
 Please see https://www.varnish-cache.org/trac/wiki/Contributing as a
 starting point if you would like to contribute to Varnish.
