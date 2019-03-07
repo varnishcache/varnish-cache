@@ -47,12 +47,10 @@
 
 struct vpf_fh {
 	int	pf_fd;
-	char	pf_path[MAXPATHLEN + 1];
+	char	*pf_path;
 	dev_t	pf_dev;
 	ino_t	pf_ino;
 };
-
-static int _VPF_Remove(struct vpf_fh *pfh, int freeit);
 
 static int
 vpf_verify(const struct vpf_fh *pfh)
@@ -72,7 +70,7 @@ vpf_verify(const struct vpf_fh *pfh)
 }
 
 int
-VPF_read(const char *path, pid_t *pidptr)
+VPF_Read(const char *path, pid_t *pidptr)
 {
 	char buf[16], *endptr;
 	int error, fd, i;
@@ -82,8 +80,8 @@ VPF_read(const char *path, pid_t *pidptr)
 		return (errno);
 
 	i = read(fd, buf, sizeof(buf) - 1);
-	error = errno;	/* Remember errno in case close() wants to change it. */
-	(void)close(fd);
+	error = errno;
+	closefd(&fd);
 	if (i == -1)
 		return (error);
 	else if (i == 0)
@@ -104,21 +102,7 @@ VPF_Open(const char *path, mode_t mode, pid_t *pidptr)
 {
 	struct vpf_fh *pfh;
 	struct stat sb;
-	int error, fd, len;
-
-	pfh = malloc(sizeof(*pfh));
-	if (pfh == NULL)
-		return (NULL);
-
-	assert(path != NULL);
-	len = snprintf(pfh->pf_path, sizeof(pfh->pf_path),
-	    "%s", path);
-
-	if (len >= (int)sizeof(pfh->pf_path)) {
-		free(pfh);
-		errno = ENAMETOOLONG;
-		return (NULL);
-	}
+	int fd;
 
 	/*
 	 * Open the PID file and obtain exclusive lock.
@@ -126,15 +110,14 @@ VPF_Open(const char *path, mode_t mode, pid_t *pidptr)
 	 * PID file will be truncated again in VPF_Write(), so
 	 * VPF_Write() can be called multiple times.
 	 */
-	fd = VFL_Open(pfh->pf_path,
+	fd = VFL_Open(path,
 	    O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC | O_NONBLOCK, mode);
 	if (fd == -1) {
 		if (errno == EWOULDBLOCK && pidptr != NULL) {
-			errno = VPF_read(pfh->pf_path, pidptr);
+			errno = VPF_Read(path, pidptr);
 			if (errno == 0)
 				errno = EEXIST;
 		}
-		free(pfh);
 		return (NULL);
 	}
 
@@ -142,14 +125,12 @@ VPF_Open(const char *path, mode_t mode, pid_t *pidptr)
 	 * Remember file information, so in VPF_Write() we are sure we write
 	 * to the proper descriptor.
 	 */
-	if (fstat(fd, &sb) == -1) {
-		error = errno;
-		(void)unlink(pfh->pf_path);
-		(void)close(fd);
-		free(pfh);
-		errno = error;
-		return (NULL);
-	}
+	AZ(fstat(fd, &sb));
+
+	pfh = malloc(sizeof(*pfh));
+	AN(pfh);
+	pfh->pf_path = strdup(path);
+	AN(pfh->pf_path);
 
 	pfh->pf_fd = fd;
 	pfh->pf_dev = sb.st_dev;
@@ -158,99 +139,35 @@ VPF_Open(const char *path, mode_t mode, pid_t *pidptr)
 	return (pfh);
 }
 
-int
-VPF_Write(struct vpf_fh *pfh)
+void
+VPF_Write(const struct vpf_fh *pfh)
 {
 	char pidstr[16];
-	int error, fd;
 
 	/*
 	 * Check remembered descriptor, so we don't overwrite some other
 	 * file if pidfile was closed and descriptor reused.
 	 */
-	errno = vpf_verify(pfh);
-	if (errno != 0) {
-		/*
-		 * Don't close descriptor, because we are not sure if it's ours.
-		 */
-		return (-1);
-	}
-	fd = pfh->pf_fd;
+	if (vpf_verify(pfh) != 0)
+		return;
 
 	/*
 	 * Truncate PID file, so multiple calls of VPF_Write() are allowed.
 	 */
-	if (ftruncate(fd, 0) == -1) {
-		error = errno;
-		(void)_VPF_Remove(pfh, 0);
-		errno = error;
-		return (-1);
-	}
+	AZ(ftruncate(pfh->pf_fd, 0));
 
-	error = snprintf(pidstr, sizeof(pidstr), "%jd", (intmax_t)getpid());
-	assert(error < sizeof pidstr);
-	if (pwrite(fd, pidstr, strlen(pidstr), 0) != (ssize_t)strlen(pidstr)) {
-		error = errno;
-		(void)_VPF_Remove(pfh, 0);
-		errno = error;
-		return (-1);
-	}
-
-	return (0);
+	bprintf(pidstr, "%jd", (intmax_t)getpid());
+	assert(pwrite(pfh->pf_fd, pidstr, strlen(pidstr), 0) ==
+	    (ssize_t)strlen(pidstr));
 }
 
-int
-VPF_Close(struct vpf_fh *pfh)
-{
-	int error;
-
-	error = vpf_verify(pfh);
-	if (error != 0) {
-		errno = error;
-		return (-1);
-	}
-
-	if (close(pfh->pf_fd) == -1)
-		error = errno;
-	free(pfh);
-	if (error != 0) {
-		errno = error;
-		return (-1);
-	}
-	return (0);
-}
-
-static int
-_VPF_Remove(struct vpf_fh *pfh, int freeit)
-{
-	int error;
-
-	error = vpf_verify(pfh);
-	if (error != 0) {
-		errno = error;
-		return (-1);
-	}
-
-	if (unlink(pfh->pf_path) == -1)
-		error = errno;
-	if (close(pfh->pf_fd) == -1) {
-		if (error == 0)
-			error = errno;
-	}
-	if (freeit)
-		free(pfh);
-	else
-		pfh->pf_fd = -1;
-	if (error != 0) {
-		errno = error;
-		return (-1);
-	}
-	return (0);
-}
-
-int
+void
 VPF_Remove(struct vpf_fh *pfh)
 {
-
-	return (_VPF_Remove(pfh, 1));
+	if (vpf_verify(pfh) == 0) {
+		(void)unlink(pfh->pf_path);
+		closefd(&pfh->pf_fd);
+	}
+	free(pfh->pf_path);
+	free(pfh);
 }

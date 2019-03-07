@@ -417,7 +417,7 @@ haproxy_wait_pidfile(struct haproxy *h)
 		if (vtc_error)
 			return;
 
-		if (VPF_read(h->pid_fn, &pid) != 0) {
+		if (VPF_Read(h->pid_fn, &pid) != 0) {
 			bprintf(buf_err,
 			    "Could not read PID file '%s'", h->pid_fn);
 			usleep(usleep_time);

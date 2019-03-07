@@ -14,8 +14,4 @@ delay 1
 
 shell "rm -f ${tmpdir}/ncsa.pid"
 
-process p1 -expect-exit 1 -stop -wait
-
-shell -expect "Cannot remove pid file ${tmpdir}/ncsa.pid" {
-	cat ${tmpdir}/p1/stderr
-}
+process p1 -stop -wait

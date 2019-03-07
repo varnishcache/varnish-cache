@@ -81,10 +81,7 @@ vut_vpf_remove(void)
 	AN(pfh);
 	AN(pfh_vut.P_arg);
 
-	if (VPF_Remove(pfh) != 0)
-		VUT_Error(&pfh_vut, 1, "Cannot remove pid file %s: %s",
-		    pfh_vut.P_arg, strerror(errno));
-
+	VPF_Remove(pfh);
 	free(pfh_vut.P_arg);
 	ZERO_OBJ(&pfh_vut, sizeof pfh_vut);
 	pfh = NULL;
@@ -312,7 +309,7 @@ VUT_Setup(struct VUT *vut)
 	/* Write PID and setup exit handler */
 	if (vut->P_arg) {
 		AN(pfh);
-		AZ(VPF_Write(pfh));
+		VPF_Write(pfh);
 
 		/* NB: move ownership to a global pseudo-VUT. */
 		INIT_OBJ(&pfh_vut, VUT_MAGIC);

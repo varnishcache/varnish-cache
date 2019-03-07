@@ -839,8 +839,9 @@ main(int argc, char * const *argv)
 		S_arg = make_secret(dirname);
 	AN(S_arg);
 
-	assert(!VPF_Write(pfh1));
-	assert(pfh2 == NULL || !VPF_Write(pfh2));
+	VPF_Write(pfh1);
+	if (pfh2 != NULL)
+		VPF_Write(pfh2);
 
 	MGT_Complain(C_DEBUG, "Version: %s", VCS_version);
 	MGT_Complain(C_DEBUG, "Platform: %s", VSB_data(vident) + 1);
@@ -922,8 +923,8 @@ main(int argc, char * const *argv)
 	MGT_Complain(C_INFO, "manager dies");
 	mgt_cli_close_all();
 	VEV_Destroy(&mgt_evb);
-	(void)VPF_Remove(pfh1);
+	VPF_Remove(pfh1);
 	if (pfh2 != NULL)
-		(void)VPF_Remove(pfh2);
+		VPF_Remove(pfh2);
 	exit(exit_status);
 }
