@@ -126,6 +126,63 @@ varnish v1 -vcl+backend {
 		}
 
 		std.log("-- END");
+
+		## gcov - semantic testing via the client request & .list
+		# expand
+		vd.add_backend(s1, "0x00");
+		vd.add_backend(s1, "0x01");
+		vd.add_backend(s1, "0x02");
+		vd.add_backend(s1, "0x03");
+		vd.add_backend(s1, "0x04");
+		vd.add_backend(s1, "0x05");
+		vd.add_backend(s1, "0x06");
+		vd.add_backend(s1, "0x07");
+		vd.add_backend(s1, "0x08");
+		vd.add_backend(s1, "0x09");
+		vd.add_backend(s1, "0x0a");
+		vd.add_backend(s1, "0x0b");
+		vd.add_backend(s1, "0x0c");
+		vd.add_backend(s1, "0x0d");
+		vd.add_backend(s1, "0x0e");
+		vd.add_backend(s1, "0x0f");
+		if (!vd.reconfigure(replicas=1)) {
+			std.log("reconfigure failed");
+		}
+		vd.remove_backend(s1, "0x00");
+		vd.remove_backend(s1, "0x01");
+		vd.remove_backend(s1, "0x02");
+		vd.remove_backend(s1, "0x03");
+		vd.remove_backend(s1, "0x04");
+		vd.remove_backend(s1, "0x05");
+		vd.remove_backend(s1, "0x06");
+		vd.remove_backend(s1, "0x07");
+		vd.remove_backend(s1, "0x08");
+		vd.remove_backend(s1, "0x09");
+		vd.remove_backend(s1, "0x0a");
+		vd.remove_backend(s1, "0x0b");
+		vd.remove_backend(s1, "0x0c");
+		vd.remove_backend(s1, "0x0d");
+		vd.remove_backend(s1, "0x0e");
+		vd.remove_backend(s1, "0x0f");
+		if (!vd.reconfigure(replicas=1)) {
+			std.log("reconfigure failed");
+		}
+		vd.set_warmup(0.5);
+
+
+		# hole handling
+		vd.remove_backend(s3, "4");
+		vd.remove_backend(s3, "5");
+		vd.add_backend(s1, "4");
+		vd.add_backend(s2, "5");
+		vd.remove_backend(s1, "5");
+		vd.remove_backend(s1, "4");
+		vd.add_backend(s3, "4");
+		vd.add_backend(s3, "5");
+		if (!vd.reconfigure(replicas=1)) {
+			std.log("reconfigure failed");
+		}
+		vd.set_warmup(0);
 	}
 
 	sub vcl_recv {
@@ -220,3 +277,5 @@ client c1 {
 } -run
 
 logexpect l1 -wait
+
+varnish v1 -cliexpect {(?s)Ident.*s3 +1 +h.*s3 +2 +h.*s3 +4 +h.*s3 +5 +h.*s3 +6 +h.*s3 +7 +h} "backend.list -p"
