@@ -61,25 +61,23 @@ vxp_add_token(struct vxp *vxp, unsigned tok, const char *b, const char *e)
 	vxp->t = t;
 }
 
-static int
-vxp_decstr(struct vxp *vxp, int quoted)
+/* Unquote and unescape string */
+static void
+vxp_decstr(struct vxp *vxp)
 {
 	const char *b, *e, *p;
 	char *s;
-	unsigned l;
 	int esc = 0;
 
 	assert(vxp->t->tok == VAL);
 
 	b = vxp->t->b;
 	e = vxp->t->e;
-	if (quoted) {
-		assert(e - b >= 2);
-		b++;
-		e--;
-	}
-	l = e - b;
-	s = vxp->t->dec = vxp_Alloc(vxp, l + 1);
+	assert(e - b >= 2);
+	b++;
+	e--;
+
+	s = vxp->t->dec = vxp_Alloc(vxp, e - b + 1);
 	AN(vxp->t->dec);
 	for (p = b; p < e; p++) {
 		if (!esc && *p == '\\') {
@@ -90,12 +88,6 @@ vxp_decstr(struct vxp *vxp, int quoted)
 		*s++ = *p;
 	}
 	*s = '\0';
-	if (esc || p != e) {
-		VSB_printf(vxp->sb, "Syntax error ");
-		vxp_ErrWhere(vxp, vxp->t, -1);
-		return (1);
-	}
-	return (0);
 }
 
 /*
@@ -130,9 +122,11 @@ vxp_Lexer(struct vxp *vxp)
 		if (*p == '"' || *p == '\'') {
 			quote = *p;
 			for (q = p + 1; q < vxp->e; q++) {
-				if (q[-1] == '\\')
-					continue;
-				if (*q == quote) {
+				if (*q == '\\') {
+					q++;
+					if (q == vxp->e)
+						break;
+				} else if (*q == quote) {
 					q++;
 					quote = '\0';
 					break;
@@ -144,8 +138,7 @@ vxp_Lexer(struct vxp *vxp)
 				vxp_ErrWhere(vxp, vxp->t, q - p);
 				return;
 			}
-			if (vxp_decstr(vxp, 1))
-				return;
+			vxp_decstr(vxp);
 			p = q;
 			continue;
 		}
@@ -156,8 +149,10 @@ vxp_Lexer(struct vxp *vxp)
 				if (!isword(*q))
 					break;
 			vxp_add_token(vxp, VAL, p, q);
-			if (vxp_decstr(vxp, 0))
-				return;
+			vxp->t->dec = vxp_Alloc(vxp, q - p + 1);
+			AN(vxp->t->dec);
+			memcpy(vxp->t->dec, p, q - p);
+			vxp->t->dec[q - p] = '\0';
 			p = q;
 			continue;
 		}
