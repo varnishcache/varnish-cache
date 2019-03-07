@@ -629,6 +629,8 @@ MCF_InitParams(struct cli *cli)
 
 	MCF_TcpParams();
 
+	def = 56 * 1024;
+
 	if (sizeof(void *) < 8) {		/*lint !e506 !e774  */
 		/*
 		 * Adjust default parameters for 32 bit systems to conserve
@@ -640,6 +642,7 @@ MCF_InitParams(struct cli *cli)
 		MCF_ParamConf(MCF_DEFAULT, "http_req_size", "12k");
 		MCF_ParamConf(MCF_DEFAULT, "gzip_buffer", "4k");
 		MCF_ParamConf(MCF_MAXIMUM, "vsl_space", "1G");
+		def = 48 * 1024;
 	}
 
 	low = sysconf(_SC_THREAD_STACK_MIN);
@@ -647,9 +650,8 @@ MCF_InitParams(struct cli *cli)
 
 #if defined(__SANITIZER) || __has_feature(address_sanitizer)
 	def = 92 * 1024;
-#else
-	def = 48 * 1024;
 #endif
+
 	if (def < low)
 		def = low;
 	MCF_ParamConf(MCF_DEFAULT, "thread_pool_stack", "%jdb", (intmax_t)def);
