@@ -337,6 +337,8 @@ H2_Send(struct worker *wrk, struct h2_req *r2,
 			p += tf;
 			len -= tf;
 			ftyp = ftyp->continuation;
+			flags &= ftyp->flags;
+			final_flags &= ftyp->flags;
 		} while (!h2->error && len > 0);
 	}
 }
