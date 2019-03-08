@@ -33,9 +33,11 @@ set -e
 
 export MAKEFLAGS="${MAKEFLAGS:--j2}"
 
+export BASEDIR=${BASEDIR:-`pwd`}
+
 # This tempdirectory must not be used by anything else.
 # Do *NOT* set this to /tmp
-export TMPDIR="${TMPDIR:-`pwd`/_vtest_tmp}"
+export TMPDIR="${TMPDIR:-$BASEDIR/_vtest_tmp}"
 
 # Message to be shown in result pages
 # Max 10 char of [A-Za-z0-9/. _-]
@@ -55,7 +57,7 @@ enable_gcov=false
 
 SSH_DST="-p 203 vtest@varnish-cache.org"
 
-export REPORTDIR=`pwd`/_report
+export REPORTDIR=$BASEDIR/_report
 export VTEST_REPORT="${REPORTDIR}/_log"
 
 #######################################################################
@@ -70,13 +72,14 @@ chown varnish ${TMPDIR} > /dev/null 2>&1 || true
 #######################################################################
 # Establish the SRCDIR we build/run/test
 
-if ! (cd varnish-cache 2>/dev/null) ; then
+if ! (cd $BASEDIR/varnish-cache 2>/dev/null) ; then
 	git clone \
 		https://github.com/varnishcache/varnish-cache.git \
-		varnish-cache
+		$BASEDIR/varnish-cache
 fi
 
-export SRCDIR=`pwd`/varnish-cache
+export SRCDIR=$BASEDIR/varnish-cache
+
 
 #######################################################################
 # Submission of results
