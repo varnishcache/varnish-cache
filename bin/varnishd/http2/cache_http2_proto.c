@@ -644,8 +644,9 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	if (r2 == NULL) {
 		if (h2->rxf_stream <= h2->highest_stream)
 			return (H2CE_PROTOCOL_ERROR);	// rfc7540,l,1153,1158
-		/* XXX: is it safe to load h2->open_streams without the h2
-		 * session lock held?
+		/* NB: we don't need to guard the read of h2->open_streams
+		 * because headers are handled sequentially so it cannot
+		 * increase under our feet.
 		 */
 		if (h2->open_streams >=
 		    h2->local_settings.max_concurrent_streams) {
