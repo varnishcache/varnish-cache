@@ -81,8 +81,10 @@ export SRCDIR=`pwd`/varnish-cache
 #######################################################################
 # Submission of results
 
-if [ ! -f vt_key.pub ] ; then
-	ssh-keygen -t ed25519 -N "" -f vt_key
+if [ ! -f $HOME/.ssh/vt_key.pub ] ; then
+	mkdir -p $HOME/.ssh/
+	chmod 0750 $HOME/.ssh/
+	ssh-keygen -t ed25519 -N "" -f $HOME/.ssh/vt_key
 fi
 
 pack () (
@@ -98,7 +100,7 @@ submit () (
 		-o PasswordAuthentication=no \
 		-o NumberOfPasswordPrompts=0 \
 		-o RequestTTY=no \
-		-i vt_key \
+		-i $HOME/.ssh/vt_key \
 		${SSH_DST} \
 		true \
 		< ${1}
@@ -113,7 +115,7 @@ if ! submit ${TMPDIR}/_report.tgz; then
 	echo "You probably need to email this VTEST specific ssh-key"
 	echo "to phk@varnish-cache.org"
 	echo
-	sed 's/^/  /' vt_key.pub
+	sed 's/^/  /' $HOME/.ssh/vt_key.pub
 	echo
 	exit 2
 fi
