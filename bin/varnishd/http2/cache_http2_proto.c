@@ -172,10 +172,14 @@ h2_new_req(const struct worker *wrk, struct h2_sess *h2,
 	r2->h2sess = h2;
 	r2->stream = stream;
 	r2->req = req;
+	if (stream)
+		r2->counted = 1;
 	r2->r_window = h2->local_settings.initial_window_size;
 	r2->t_window = h2->remote_settings.initial_window_size;
 	req->transport_priv = r2;
 	Lck_Lock(&h2->sess->mtx);
+	if (stream)
+		h2->open_streams++;
 	VTAILQ_INSERT_TAIL(&h2->streams, r2, list);
 	Lck_Unlock(&h2->sess->mtx);
 	h2->refcnt++;
@@ -649,8 +653,6 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		}
 		h2->highest_stream = h2->rxf_stream;
 		r2 = h2_new_req(wrk, h2, h2->rxf_stream, NULL);
-		r2->counted = 1;
-		h2->open_streams++;
 	}
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 
