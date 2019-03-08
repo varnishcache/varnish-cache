@@ -77,7 +77,7 @@ vxp_decstr(struct vxp *vxp)
 	b++;
 	e--;
 
-	s = vxp->t->dec = vxp_Alloc(vxp, e - b + 1);
+	s = vxp->t->dec = vxp_Alloc(vxp, (e - b) + 1);
 	AN(vxp->t->dec);
 	for (p = b; p < e; p++) {
 		if (!esc && *p == '\\') {
@@ -149,7 +149,7 @@ vxp_Lexer(struct vxp *vxp)
 				if (!isword(*q))
 					break;
 			vxp_add_token(vxp, VAL, p, q);
-			vxp->t->dec = vxp_Alloc(vxp, q - p + 1);
+			vxp->t->dec = vxp_Alloc(vxp, (q - p) + 1);
 			AN(vxp->t->dec);
 			memcpy(vxp->t->dec, p, q - p);
 			vxp->t->dec[q - p] = '\0';
