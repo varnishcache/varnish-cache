@@ -2,14 +2,14 @@
 updates for changes in the development branch. For changes in the
 released versions of Varnish, see:** :ref:`whats-new-index`
 
-.. _whatsnew_changes_CURRENT:
+.. _whatsnew_changes_2019_03:
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Changes in Varnish **$NEXT_RELEASE**
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 For information about updating your current Varnish deployment to the
-new version, see :ref:`whatsnew_upgrading_CURRENT`.
+new version, see :ref:`whatsnew_upgrading_2019_03`.
 
 A more detailed and technical account of changes in Varnish, with
 links to issues that have been fixed and pull requests that have been
@@ -36,14 +36,9 @@ and/or :ref:`ref_param_thread_pools`.
 Parameters
 ~~~~~~~~~~
 
-Some parameters that have been long deprecated are now retired. Now
-you must use these parameters:
-
-* :ref:`ref_param_vsl_reclen` (in place of ``shm_reclen``)
-
-* :ref:`ref_param_vcl_path` (in place of ``vcl_dir``)
-
-* :ref:`ref_param_vmod_path` (in place of ``vmod_dir``)
+Some parameters that have been long deprecated are now retired. See
+:ref:`whatsnew_upgrading_params_2019_03` in
+:ref:`whatsnew_upgrading_2019_03`.
 
 Added :ref:`ref_param_thread_pool_watchdog`, see above.
 
@@ -69,18 +64,14 @@ Added ``req.is_hitmiss`` and ``req.is_hitpass``, see :ref:`vcl(7)`.
 Other changes to VCL
 ~~~~~~~~~~~~~~~~~~~~
 
-When the ``.path`` field of a backend declaration is used to define a
-Unix domain socket as the backend address, and the socket file does
-not exist or is not accessible at VCL load time, then a warning is
-issued, but the VCL load is allowed to continue. Previously, the load
-would fail in that case. This makes it easier to start the peer
-component listening at the socket, or set the socket's permissions,
-after starting Varnish or loading VCL. If the socket still cannot be
-accessed when a fetch is attempted, then the fetch fails.
+Runtime restrictions concerning the accessibility of Unix domain
+sockets have been relaxed, see :ref:`whatsnew_upgrading_vcl_2019_03`
+in :ref:`whatsnew_upgrading_2019_03`.
 
 ``return(miss)`` from ``vcl_hit{}`` did never work as intended for the
 common case (it actually turned into a pass), so we now removed it and
-changed the ``builtin.vcl``.
+changed the ``builtin.vcl``. See
+:ref:`whatsnew_upgrading_vcl_2019_03`.
 
 VMODs
 =====
@@ -116,6 +107,12 @@ microsecond precision.  This affects the tags ``ExpKill`` and
 varnishadm(1) and varnish-cli(7)
 ================================
 
+The output formats of the ``vcl.list`` and ``backend.list`` commands
+have changed, see :ref:`whatsnew_upgrading_backend_list_2019_03` and
+:ref:`whatsnew_upgrading_vcl_list_2019_03` in
+:ref:`whatsnew_upgrading_2019_03`, as well as :ref:`varnish-cli(7)`
+for details.
+
 .. _whatsnew_changes_cli_json:
 
 JSON output
@@ -134,73 +131,14 @@ the following commands (see :ref:`varnish-cli(7)`):
 The ``-j`` option was already available for ``backend.list``, ``ping``
 and ``help`` in previous versions.
 
-For automated parsing of CLI responses (``varnishadm`` output), we
-recommend the use of JSON format.
+For automated parsing of CLI responses (:ref:`varnishadm(1)` output),
+we recommend the use of JSON format.
 
 ``param.reset <param>``
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Added the command ``param.reset`` to reset a parameter's value to its
 default, see :ref:`varnish-cli(7)`.
-
-.. _whatsnew_changes_vcl_list_backend_list:
-
-Listing backends
-~~~~~~~~~~~~~~~~
-
-``backend.list`` has grown an additional column, the output has
-changed and fields are now of dynamic width:
-
-* The ``Admin`` column now accurately states ``probe`` only if a
-  backend has some means of dynamically determining health state.
-
-* The ``Probe`` column has been changed to display ``X/Y``, where:
-
-  * Integer ``X`` is the number of good probes in the most recent
-    window; or if the backend in question is a director, the number of
-    healthy backends accessed via the director or any other
-    director-specific metric.
-
-  * Integer ``Y`` is the window in which the threshold for overall
-    health of the backend is defined (from the ``.window`` field of a
-    probe, see :ref:`vcl(7)`); or in the case of a director, the total
-    number of backends accessed via the director or any other
-    director-specific metric.
-
-  If there is no probe or the director does not provide details,
-  ``0/0`` is output.
-
-* The ``Health`` column has been added to contain the dynamic (probe)
-  health state and the format has been unified to just ``healthy`` or
-  ``sick``.
-
-  If there is no probe, ``Health`` is always given as
-  ``healthy``. Notice that the administrative health as shown in the
-  ``Admin`` column has precedence.
-
-In the ``probe_message`` field of ``backend.list -j`` output, the
-``Probe`` and ``Health`` columns appears as the array ``[X, Y,
-health]``.
-
-See :ref:`varnish-cli(7)` for details.
-
-Listing VCLs
-~~~~~~~~~~~~
-
-The non-JSON output of ``vcl.list`` has been changed:
-
-* The ``state`` and ``temperature`` fields appear in separate columns
-  (previously combined in one column).
-
-* The optional column showing the relationships between labels and VCL
-  configurations (when labels are in use) has been separated into two
-  columns.
-
-See :ref:`varnish-cli(7)` for details. In the JSON output for
-``vcl.list -j``, this information appears in separate fields.
-
-The width of columns in ``backend.list`` and ``vcl.list`` output
-(non-JSON) is now dynamic, to fit the width of the terminal window.
 
 Banning by expiration parameters
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

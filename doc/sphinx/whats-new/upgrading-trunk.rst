@@ -2,7 +2,7 @@
 updates for changes in the development branch. For changes in the
 released versions of Varnish, see:** :ref:`whats-new-index`
 
-.. _whatsnew_upgrading_CURRENT:
+.. _whatsnew_upgrading_2019_03:
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Upgrading to Varnish **$NEXT_RELEASE**
@@ -30,6 +30,8 @@ to:**
 * Changes in public APIs that may require changes in VMODs or VAPI/VUT
   clients.
 
+.. _whatsnew_upgrading_vcl_2019_03:
+
 VCL
 ===
 
@@ -44,7 +46,6 @@ listening at the socket, or set its permissions, after Varnish starts
 or the VCL is loaded. Backend fetches fail if the socket is not
 accessible by the time the fetch is attempted.
 
-
 ``return(miss)`` from ``vcl_hit{}`` is now removed. Options to
 implement similar functionality are:
 
@@ -52,6 +53,8 @@ implement similar functionality are:
 
 * ``return (restart)`` from ``vcl_hit{}`` and ``set
   req.hash_always_miss = true;`` in ``vcl_recv{}`` for the restart.
+
+.. _whatsnew_upgrading_params_2019_03:
 
 Runtime parameters
 ==================
@@ -108,15 +111,71 @@ They will be removed in a future version of Varnish.
 varnishadm and the CLI
 ======================
 
-The output formats of the ``vcl.list`` and ``backend.list`` commands
-have changed, see :ref:`whatsnew_changes_vcl_list_backend_list` and
-:ref:`varnish-cli(7)` for details. In non-JSON mode, the width of
-columns in ``backend.list`` and ``vcl.list`` output is now dynamic, to
-fit the width of the terminal window.
-
 The ``-j`` option for JSON output has been added to a number of
-commands, see :ref:`whatsnew_changes_cli_json` and
-:ref:`varnish-cli(7)`. We recommend the use of JSON format for
-automated parsing of CLI responses (:ref:`varnishadm(1)` output).
+commands, see :ref:`whatsnew_changes_cli_json` in
+:ref:`whatsnew_changes_2019_03` and :ref:`varnish-cli(7)`. We
+recommend the use of JSON format for automated parsing of CLI
+responses (:ref:`varnishadm(1)` output).
+
+.. _whatsnew_upgrading_backend_list_2019_03:
+
+Listing backends
+~~~~~~~~~~~~~~~~
+
+``backend.list`` has grown an additional column, the output has
+changed and fields are now of dynamic width:
+
+* The ``Admin`` column now accurately states ``probe`` only if a
+  backend has some means of dynamically determining health state.
+
+* The ``Probe`` column has been changed to display ``X/Y``, where:
+
+  * Integer ``X`` is the number of good probes in the most recent
+    window; or if the backend in question is a director, the number of
+    healthy backends accessed via the director or any other
+    director-specific metric.
+
+  * Integer ``Y`` is the window in which the threshold for overall
+    health of the backend is defined (from the ``.window`` field of a
+    probe, see :ref:`vcl(7)`); or in the case of a director, the total
+    number of backends accessed via the director or any other
+    director-specific metric.
+
+  If there is no probe or the director does not provide details,
+  ``0/0`` is output.
+
+* The ``Health`` column has been added to contain the dynamic (probe)
+  health state and the format has been unified to just ``healthy`` or
+  ``sick``.
+
+  If there is no probe, ``Health`` is always given as
+  ``healthy``. Notice that the administrative health as shown in the
+  ``Admin`` column has precedence.
+
+In the ``probe_message`` field of ``backend.list -j`` output, the
+``Probe`` and ``Health`` columns appears as the array ``[X, Y,
+health]``.
+
+See :ref:`varnish-cli(7)` for details.
+
+.. _whatsnew_upgrading_vcl_list_2019_03:
+
+Listing VCLs
+~~~~~~~~~~~~
+
+The non-JSON output of ``vcl.list`` has been changed:
+
+* The ``state`` and ``temperature`` fields appear in separate columns
+  (previously combined in one column).
+
+* The optional column showing the relationships between labels and VCL
+  configurations (when labels are in use) has been separated into two
+  columns.
+
+See :ref:`varnish-cli(7)` for details. In the JSON output for
+``vcl.list -j``, this information appears in separate fields.
+
+The width of columns in ``backend.list`` and ``vcl.list`` output
+(non-JSON) is now dynamic, to fit the width of the terminal window.
 
 *eof*
