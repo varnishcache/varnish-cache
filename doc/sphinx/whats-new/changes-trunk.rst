@@ -77,8 +77,9 @@ changed the ``builtin.vcl``. See
 VMODs
 =====
 
-New type-conversion functions have been added to :ref:`vmod_std(3)`,
-and the previous conversion functions are now deprecated. See
+The type-conversion functions in :ref:`vmod_std(3)` have been reworked
+to make them more flexible and easier to use. The ``std.``\ *x2y*
+conversion functions are now deprecated. See
 :ref:`whatsnew_upgrading_std_conversion_2019_03`.
 
 The function :ref:`vmod_directors.lookup` has been added to
