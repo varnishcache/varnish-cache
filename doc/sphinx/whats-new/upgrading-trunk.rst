@@ -178,4 +178,22 @@ See :ref:`varnish-cli(7)` for details. In the JSON output for
 The width of columns in ``backend.list`` and ``vcl.list`` output
 (non-JSON) is now dynamic, to fit the width of the terminal window.
 
+For developers and authors of VMODs and API clients
+===================================================
+
+The VRT API has been bumped to version 9.0. Changes include:
+
+* Functions in the API have been added, and others removed.
+
+* The ``VCL_BLOB`` type is now implemented as ``struct vrt_blob``.
+
+* The ``req_bodybytes`` field of ``struct req`` has been removed, and
+  should now be accessed as an object core attribute.
+
+See ``vrt.h``, the `change log`_ and
+:ref:`whatsnew_changes_director_api_2019_03` in
+:ref:`whatsnew_changes_2019_03` for details.
+
+.. _change log: https://github.com/varnishcache/varnish-cache/blob/master/doc/changes.rst
+
 *eof*

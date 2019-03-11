@@ -188,6 +188,8 @@ Changes for developers and VMOD authors
 Python tools that generate code now prefer python 3 over python 2,
 when availabale.
 
+.. _whatsnew_changes_director_api_2019_03:
+
 Directors
 ~~~~~~~~~
 
