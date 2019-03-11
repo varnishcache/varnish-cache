@@ -66,6 +66,45 @@ now.  These are:
 
 * ``vmod_dir`` -- use :ref:`ref_param_vmod_path` instead
 
+.. _whatsnew_upgrading_std_conversion_2019_03:
+
+Type conversion functions in VMOD std
+=====================================
+
+The type-conversion functions in :ref:`vmod_std(3)` have been reworked
+to make them more flexible and easier to use. These new functions now
+also accept suitable numeral or quantitative arguments.
+
+* :ref:`vmod_std.duration`
+* :ref:`vmod_std.bytes`
+* :ref:`vmod_std.integer`
+* :ref:`vmod_std.real`
+* :ref:`vmod_std.time`
+
+These type-conversion functions should be fully backwards compatible,
+but the following differences should be noted:
+
+* The *fallback* is not required any more. A conversion failure in the
+  absence of a *fallback* argument will now trigger a VCL failure.
+
+* A VCL failure will also be triggered if no or more than one argument
+  (plus optional *fallback*) is given.
+
+* Conversion functions now only ever truncate if necessary (instead of
+  rounding).
+
+* :ref:`vmod_std.round` has been added for explicit rounding.
+
+These functions are deprecated and should be replaced by the new
+conversion functions:
+
+* :ref:`vmod_std.real2integer`
+* :ref:`vmod_std.real2time`
+* :ref:`vmod_std.time2integer`
+* :ref:`vmod_std.time2real`
+
+They will be removed in a future version of Varnish.
+
 varnishadm and the CLI
 ======================
 
