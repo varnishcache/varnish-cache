@@ -1,6 +1,10 @@
-varnishtest "canary to tell us if our default stacksize is too tight..."
+varnishtest "test if our default paramers make sense ..."
 
-# ... for the default esi level 5 and a stack of 10 VCL subs
+# ... for our definition of a standard use case:
+# - 2019 header madness
+# - 5 ESI levels down
+# - 10 VCL subs down
+# - PCRE regsub
 
 server s1 {
 	rxreq
