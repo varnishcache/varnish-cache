@@ -74,9 +74,9 @@ now.  These are:
 Type conversion functions in VMOD std
 =====================================
 
-There are new type-conversion functions in :ref:`vmod_std(3)`,
-reworked to make them more flexible and easier to use. These new
-functions now also accept suitable numeral or quantitative arguments.
+The existing type-conversion functions in :ref:`vmod_std(3)` have been
+reworked to make them more flexible and easier to use. These functions
+now also accept suitable numeral or quantitative arguments.
 
 * :ref:`vmod_std.duration`
 * :ref:`vmod_std.bytes`
