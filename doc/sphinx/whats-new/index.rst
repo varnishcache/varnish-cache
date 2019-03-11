@@ -8,8 +8,8 @@ This section describes the changes and improvements between different
 versions of Varnish, and what upgrading between the different versions
 entail.
 
-Varnish **$NEXT_RELEASE**
--------------------------
+Varnish 6.2
+-----------
 
 **Note: These are working documents for a future release, with running
 updates for changes in the development branch. For changes in the

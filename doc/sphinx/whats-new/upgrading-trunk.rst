@@ -4,9 +4,9 @@ released versions of Varnish, see:** :ref:`whats-new-index`
 
 .. _whatsnew_upgrading_2019_03:
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Upgrading to Varnish **$NEXT_RELEASE**
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%
+Upgrading to Varnish 6.2
+%%%%%%%%%%%%%%%%%%%%%%%%
 
 **XXX: how to upgrade from previous deployments to this
 version. Limited to work that has to be done for an upgrade, new

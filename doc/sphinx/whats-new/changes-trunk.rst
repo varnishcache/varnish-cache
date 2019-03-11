@@ -4,9 +4,9 @@ released versions of Varnish, see:** :ref:`whats-new-index`
 
 .. _whatsnew_changes_2019_03:
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Changes in Varnish **$NEXT_RELEASE**
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%
+Changes in Varnish 6.2
+%%%%%%%%%%%%%%%%%%%%%%
 
 For information about updating your current Varnish deployment to the
 new version, see :ref:`whatsnew_upgrading_2019_03`.
