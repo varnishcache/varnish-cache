@@ -103,14 +103,17 @@ VDI_Resolve(VRT_CTX)
 		return (NULL);
 	}
 
-	CHECK_OBJ_ORNULL(d, DIRECTOR_MAGIC);
 	if (d == NULL) {
 		VSLb(bo->vsl, SLT_FetchError, "No backend");
-	} else {
-		AN(d->vdir);
+		return (NULL);
+	}
 
-		if (d->vdir->admin_health->health == 0)
-			d = NULL;
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	AN(d->vdir);
+	if (d->vdir->admin_health->health == 0) {
+		VSLb(bo->vsl, SLT_FetchError,
+		     "Director %s is administratively unhealthy", d->vcl_name);
+		return (NULL);
 	}
 
 	return (d);
