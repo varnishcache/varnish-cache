@@ -34,8 +34,37 @@ should consider increasing the parameters
 :ref:`ref_param_thread_pool_min`, :ref:`ref_param_thread_pool_max`
 and/or :ref:`ref_param_thread_pools`.
 
+.. _whatsnew_changes_params_2019_03:
+
 Parameters
 ~~~~~~~~~~
+
+The default value for :ref:`ref_param_thread_pool_stack` on 64-bit
+platforms has been increased to 56k (from 48k). Recently we had
+occasional reports of stack overflow, apparently related to changes in
+external libraries that are not under control of the Varnish project
+(such as glibc). This may also have been related to stack overflow
+issues on some platforms when recent versions of `jemalloc`_, the
+recommended memory allocator for Varnish, have been used together with
+`pcre`_ with JIT compilation enabled.
+
+Tests have shown that Varnish runs stably with the new default stack
+size on a number of platforms, under conditions that previously may
+have led to stack overflow -- such as ESI includes up to the default
+limit of :ref:`ref_param_max_esi_depth`, relatively deep VCL
+subroutine call depth, and recent jemalloc together with pcre-jit.
+
+Different sites have different requirements regarding the stack size.
+For example, if your site uses a high depth of ESI includes, you are
+probably already using an increased value of
+:ref:`ref_param_thread_pool_stack`.  If you don't have such
+requirements, and you want to reduce memory footprint, you can
+consider lowering :ref:`ref_param_thread_pool_stack`, but make sure to
+test the result.
+
+.. _jemalloc: http://jemalloc.net/
+
+.. _pcre: https://www.pcre.org/
 
 Some parameters that have been long deprecated are now retired. See
 :ref:`whatsnew_upgrading_params_2019_03` in
