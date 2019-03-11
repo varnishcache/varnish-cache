@@ -5,7 +5,18 @@ varnishtest "canary to tell us if our default stacksize is too tight..."
 server s1 {
 	rxreq
 	expect req.http.esi0 == "foo"
-	txresp -gzipbody {
+	txresp \
+	    -hdr "Content-Type: text/html;charset=utf-8" \
+	    -hdr "Content-Language: en-US" \
+	    -hdr "X-UA-Compatible: IE=Edge" \
+	    -hdr "X-Content-Type-Options: nosniff" \
+	    -hdr "Content-Security-Policy-Report-Only: script-src 'unsafe-inline' 'unsafe-eval' 'self' blob: data: https:; style-src 'self' 'unsafe-inline' blob: data: https:; default-src 'self' https:; img-src https: blob: data: android-webview-video-poster:; frame-src blob: data: https:; worker-src blob: data: https:; child-src blob: data: https:; object-src 'self'; font-src 'self' https: blob: data: safari-extension://*; media-src 'self' blob: data: https:; connect-src wss: blob: data: https:; report-uri /csp_ep" \
+	    -hdr "Content-Security-Policy: upgrade-insecure-requests" \
+	    -hdr "Server: MySecretServerSauce" \
+	    -hdr "Cache-Control: public, max-age=90" \
+	    -hdr "Connection: keep-alive" \
+	    -hdr "Vary: Accept-Encoding, Origin" \
+	    -gzipbody {
 		<html>
 		Before include
 		<esi:include src="/a" sr="foo"/>
@@ -16,7 +27,18 @@ server s1 {
 	rxreq
 	expect req.url == "/a1"
 	expect req.http.esi0 != "foo"
-	txresp -gzipbody {
+	txresp \
+	    -hdr "Content-Type: text/html;charset=utf-8" \
+	    -hdr "Content-Language: en-US" \
+	    -hdr "X-UA-Compatible: IE=Edge" \
+	    -hdr "X-Content-Type-Options: nosniff" \
+	    -hdr "Content-Security-Policy-Report-Only: script-src 'unsafe-inline' 'unsafe-eval' 'self' blob: data: https:; style-src 'self' 'unsafe-inline' blob: data: https:; default-src 'self' https:; img-src https: blob: data: android-webview-video-poster:; frame-src blob: data: https:; worker-src blob: data: https:; child-src blob: data: https:; object-src 'self'; font-src 'self' https: blob: data: safari-extension://*; media-src 'self' blob: data: https:; connect-src wss: blob: data: https:; report-uri /csp_ep" \
+	    -hdr "Content-Security-Policy: upgrade-insecure-requests" \
+	    -hdr "Server: MySecretServerSauce" \
+	    -hdr "Cache-Control: public, max-age=90" \
+	    -hdr "Connection: keep-alive" \
+	    -hdr "Vary: Accept-Encoding, Origin" \
+	    -gzipbody {
 		<html>
 		Before include
 		<esi:include src="/b" sr="foo"/>
@@ -27,7 +49,18 @@ server s1 {
 	rxreq
 	expect req.url == "/b2"
 	expect req.http.esi0 != "foo"
-	txresp -gzipbody {
+	txresp \
+	    -hdr "Content-Type: text/html;charset=utf-8" \
+	    -hdr "Content-Language: en-US" \
+	    -hdr "X-UA-Compatible: IE=Edge" \
+	    -hdr "X-Content-Type-Options: nosniff" \
+	    -hdr "Content-Security-Policy-Report-Only: script-src 'unsafe-inline' 'unsafe-eval' 'self' blob: data: https:; style-src 'self' 'unsafe-inline' blob: data: https:; default-src 'self' https:; img-src https: blob: data: android-webview-video-poster:; frame-src blob: data: https:; worker-src blob: data: https:; child-src blob: data: https:; object-src 'self'; font-src 'self' https: blob: data: safari-extension://*; media-src 'self' blob: data: https:; connect-src wss: blob: data: https:; report-uri /csp_ep" \
+	    -hdr "Content-Security-Policy: upgrade-insecure-requests" \
+	    -hdr "Server: MySecretServerSauce" \
+	    -hdr "Cache-Control: public, max-age=90" \
+	    -hdr "Connection: keep-alive" \
+	    -hdr "Vary: Accept-Encoding, Origin" \
+	    -gzipbody {
 		<html>
 		Before include
 		<esi:include src="/c" sr="foo"/>
@@ -38,7 +71,18 @@ server s1 {
 	rxreq
 	expect req.url == "/c3"
 	expect req.http.esi0 != "foo"
-	txresp -gzipbody {
+	txresp \
+	    -hdr "Content-Type: text/html;charset=utf-8" \
+	    -hdr "Content-Language: en-US" \
+	    -hdr "X-UA-Compatible: IE=Edge" \
+	    -hdr "X-Content-Type-Options: nosniff" \
+	    -hdr "Content-Security-Policy-Report-Only: script-src 'unsafe-inline' 'unsafe-eval' 'self' blob: data: https:; style-src 'self' 'unsafe-inline' blob: data: https:; default-src 'self' https:; img-src https: blob: data: android-webview-video-poster:; frame-src blob: data: https:; worker-src blob: data: https:; child-src blob: data: https:; object-src 'self'; font-src 'self' https: blob: data: safari-extension://*; media-src 'self' blob: data: https:; connect-src wss: blob: data: https:; report-uri /csp_ep" \
+	    -hdr "Content-Security-Policy: upgrade-insecure-requests" \
+	    -hdr "Server: MySecretServerSauce" \
+	    -hdr "Cache-Control: public, max-age=90" \
+	    -hdr "Connection: keep-alive" \
+	    -hdr "Vary: Accept-Encoding, Origin" \
+	    -gzipbody {
 		<html>
 		Before include
 		<esi:include src="/d" sr="foo"/>
@@ -49,7 +93,18 @@ server s1 {
 	rxreq
 	expect req.url == "/d4"
 	expect req.http.esi0 != "foo"
-	txresp -gzipbody {
+	txresp \
+	    -hdr "Content-Type: text/html;charset=utf-8" \
+	    -hdr "Content-Language: en-US" \
+	    -hdr "X-UA-Compatible: IE=Edge" \
+	    -hdr "X-Content-Type-Options: nosniff" \
+	    -hdr "Content-Security-Policy-Report-Only: script-src 'unsafe-inline' 'unsafe-eval' 'self' blob: data: https:; style-src 'self' 'unsafe-inline' blob: data: https:; default-src 'self' https:; img-src https: blob: data: android-webview-video-poster:; frame-src blob: data: https:; worker-src blob: data: https:; child-src blob: data: https:; object-src 'self'; font-src 'self' https: blob: data: safari-extension://*; media-src 'self' blob: data: https:; connect-src wss: blob: data: https:; report-uri /csp_ep" \
+	    -hdr "Content-Security-Policy: upgrade-insecure-requests" \
+	    -hdr "Server: MySecretServerSauce" \
+	    -hdr "Cache-Control: public, max-age=90" \
+	    -hdr "Connection: keep-alive" \
+	    -hdr "Vary: Accept-Encoding, Origin" \
+	    -gzipbody {
 		<html>
 		Before include
 		<esi:include src="/e" sr="foo"/>
@@ -60,7 +115,18 @@ server s1 {
 	rxreq
 	expect req.url == "/e5"
 	expect req.http.esi0 != "foo"
-	txresp -gzipbody {
+	txresp \
+	    -hdr "Content-Type: text/html;charset=utf-8" \
+	    -hdr "Content-Language: en-US" \
+	    -hdr "X-UA-Compatible: IE=Edge" \
+	    -hdr "X-Content-Type-Options: nosniff" \
+	    -hdr "Content-Security-Policy-Report-Only: script-src 'unsafe-inline' 'unsafe-eval' 'self' blob: data: https:; style-src 'self' 'unsafe-inline' blob: data: https:; default-src 'self' https:; img-src https: blob: data: android-webview-video-poster:; frame-src blob: data: https:; worker-src blob: data: https:; child-src blob: data: https:; object-src 'self'; font-src 'self' https: blob: data: safari-extension://*; media-src 'self' blob: data: https:; connect-src wss: blob: data: https:; report-uri /csp_ep" \
+	    -hdr "Content-Security-Policy: upgrade-insecure-requests" \
+	    -hdr "Server: MySecretServerSauce" \
+	    -hdr "Cache-Control: public, max-age=90" \
+	    -hdr "Connection: keep-alive" \
+	    -hdr "Vary: Accept-Encoding, Origin" \
+	    -gzipbody {
 		<html>
 		LAST
 		</html>
@@ -82,7 +148,7 @@ varnish v1 -vcl+backend {
 	sub recv8 { call recv9; std.log("STK recv8 " + debug.stk()); }
 	sub recv9 {
 		std.log("STK recv9 " + debug.stk());
-		set req.http.regex = regsub(req.url, "(.*)", "\1\1\1\1\1\1\1\1");
+		set req.http.regex = regsub(req.http.cookie, "(.*)", "\1\1\1\1\1\1\1\1");
 		set req.http.regex = regsub(req.http.regex, "(.*)",
 		  "\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1");
 		# hey geoff, this is deliberate
@@ -111,7 +177,17 @@ varnish v1 -vcl+backend {
 varnish v1 -cliok "param.set debug +syncvsl"
 
 client c1 {
-	txreq -hdr "Host: foo"
+	txreq \
+	    -hdr "Host: foo" \
+	    -hdr "User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/60.0" \
+	    -hdr "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" \
+	    -hdr "Accept-Language: en-US,en;q=0.5" \
+	    -hdr "Accept-Encoding: gzip, deflate, br" \
+	    -hdr "Cookie: logged_in=yes; sess=vXgKJaOHR1I78w1WeTyH51EZSu1rhrC1aAINn+a4sVk/IMouksSSP0Mg4jzqhTMtdLilDo3t04fxRJP1ywB/loN9674CLOu2yzT996hUbzM8oza68yNzhSkkL4afQYOwLMJbtFvtY+lLHk3TJRHSS243HcYluLoo7qjmpiiUfx6JyIbRtl5xPPgVGkLgSA1Fu/yCXwfVCNhnLWHMSm1zd15CoroUCFDkuO0OponjseGPBzJ7NdFk2Fi5SJFZmhzHcBH/Ri/Uu5UeJwVAcJe9oPNuaWUR/Oy/D3nU81lOels8ypYJRmAAzO5r7RJ7KmIvjZhqxLG7cMViH/roegSgqxHsjXb/kSec2dmq1wQqSPYjxN/pIp8PefyM/IAho2h3WVKRDhYmAokhDIA8/UgMxaIyrWh1Ep6D16IU1uRMgx5Gjr6VJJ42GV23+OhfvlpdYoZxy7b9bwf7T3ABniF+VJOdMO5PTWfuG2Xt515FZ/byNpMYnMvWNGh4Ior8QyV2W0Nz4p0NJ5RWsnHYAoD3ySRC5E/cpu9RQsXdE1sVNDa7uMzgt0Bbnpk1ALeNN9JJ/l6zLATCKcvixty0Aonyi1nyG9LNL6+rtzsDOh7S5uDul67P2lXFUta1eY2Ma0e/JAHJcKgTqgFGCZJvsoFydnyu23AanhaPT4c3w3ZpGs0; evil_tracker=JcDDfXw14Efx4iLycPEDQaF8+Csci+cRHz0pwTm1JW9kvXyKlUcGVlpCw7qYZtORuNnVb3m6HOwJneFhAdDlw5FQbQh1YmX8ZBgKD51Fo8T0R/0a8W0suJ/mJrQ6H6MFjgZc8YE7vx8zt+nUPT0qfZ9TCSndA0EXLerIc6Cdu06wBPF0m2ydkMKIPn/R6pU+mVrn58RZrLdcbsrwm5mhSCM9RjDYqEMye9n7jhTbdyna+X+7S8XubJRXqWa9Zft2UuprU0wnUVUA6eFdqvaiAGoepQFjJjh13g0fp6+GJiNwfSJbjTi3GK2o9E9t8qfLr0Avzjj9rqPG2G5MBxZMjg" \
+	    -hdr "DNT: 1" \
+	    -hdr "Connection: keep-alive" \
+	    -hdr "Upgrade-Insecure-Requests: 1" \
+	    -hdr {If-None-Match: W/"9060a5e7924af13779c0437265ad2f1c}
 	rxresp
 	expect resp.status == 200
 
