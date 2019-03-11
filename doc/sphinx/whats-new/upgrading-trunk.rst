@@ -74,9 +74,9 @@ now.  These are:
 Type conversion functions in VMOD std
 =====================================
 
-The type-conversion functions in :ref:`vmod_std(3)` have been reworked
-to make them more flexible and easier to use. These new functions now
-also accept suitable numeral or quantitative arguments.
+There are new type-conversion functions in :ref:`vmod_std(3)`,
+reworked to make them more flexible and easier to use. These new
+functions now also accept suitable numeral or quantitative arguments.
 
 * :ref:`vmod_std.duration`
 * :ref:`vmod_std.bytes`
@@ -98,8 +98,8 @@ but the following differences should be noted:
 
 * :ref:`vmod_std.round` has been added for explicit rounding.
 
-These functions are deprecated and should be replaced by the new
-conversion functions:
+The following functions are deprecated and should be replaced by the
+new conversion functions:
 
 * :ref:`vmod_std.real2integer`
 * :ref:`vmod_std.real2time`
