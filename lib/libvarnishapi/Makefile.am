@@ -17,6 +17,7 @@ libvarnishapi_la_SOURCES = \
 	vxp_tokens.h \
 	../libvarnish/vas.c \
 	../libvarnish/vav.c \
+	../../include/vcs.h \
 	../../include/vcs_version.h \
 	../libvarnish/version.c \
 	../libvarnish/vcli_proto.c \

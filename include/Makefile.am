@@ -88,6 +88,7 @@ nobase_noinst_HEADERS = \
 	libvcc.h \
 	vcli_serve.h \
 	vcs_version.h \
+	vcs_int.h \
 	vct.h \
 	vcurses.h \
 	vend.h \

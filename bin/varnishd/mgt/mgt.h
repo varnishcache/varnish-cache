@@ -42,7 +42,7 @@
 
 #include "miniobj.h"
 #include "vas.h"
-#include "vcs.h"
+#include "vcs_int.h"
 #include "vqueue.h"
 #include "vsb.h"
 

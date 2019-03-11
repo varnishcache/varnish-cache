@@ -167,3 +167,12 @@ LIBVARNISHAPI_2.2 {
     local:
 	*;
 };
+
+LIBVARNISHAPI_2.3 {
+    global:
+	# version.c
+	VCS_VersionStr;
+	VCS_RevisionStr;
+    local:
+	*;
+};

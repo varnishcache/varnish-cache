@@ -1,5 +1,6 @@
 /*-
- * Copyright (c) 2010-2014 Varnish Software AS
+ * Copyright (c) 2006 Verdens Gang AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -27,11 +28,5 @@
  *
  */
 
-#include <stdint.h>
-
-#include "vapi/vsm.h"
-#include "vapi/vsc.h"
-
-#include "vas.h"
-
-void do_curses(struct vsm *,  struct vsc *);
+/* from libvarnish/version.c */
+extern const char *VCS_version;

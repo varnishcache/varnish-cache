@@ -34,10 +34,23 @@
 #include <stdio.h>
 
 #include "vcs.h"
+#include "vcs_int.h"
 #include "vcs_version.h"
 
 const char *VCS_version =
     PACKAGE_TARNAME "-" PACKAGE_VERSION " revision " VCS_Version;
+
+const char *
+VCS_VersionStr(void)
+{
+	return (PACKAGE_VERSION);
+}
+
+const char *
+VCS_RevisionStr(void)
+{
+	return (VCS_Version);
+}
 
 void
 VCS_Message(const char *progname)

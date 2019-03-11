@@ -60,6 +60,7 @@
 #include "vtim.h"
 #include "waiter/mgt_waiter.h"
 #include "vsa.h"
+#include "vcs.h"
 
 struct heritage		heritage;
 unsigned		d_flag = 0;

@@ -29,5 +29,6 @@
  */
 
 /* from libvarnish/version.c */
-extern const char *VCS_version;
 void VCS_Message(const char *);
+const char *VCS_VersionStr(void);
+const char *VCS_RevisionStr(void);
