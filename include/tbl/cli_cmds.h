@@ -321,6 +321,15 @@ CLI_CMD(DEBUG_FRAGFETCH,
 	1, 1
 )
 
+CLI_CMD(DEBUG_REQPOOLFAIL,
+	"debug.reqpool.fail",
+	"debug.reqpool.fail",
+	"Schedule req-pool failures.",
+	"The argument is read L-R and 'f' means fail:\n\n"
+	"\tparam.set debug.reqpoolfail F__F\n\n"
+	"Means that the frist and the third attempted allocation will fail",
+	1, 1
+)
 CLI_CMD(DEBUG_XID,
 	"debug.xid",
 	"debug.xid",
