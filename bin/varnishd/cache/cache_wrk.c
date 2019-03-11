@@ -634,8 +634,8 @@ debug_reqpoolfail(struct cli *cli, const char * const *av, void *priv)
 	uintmax_t u = 1;
 	const char *p;
 
-        (void)priv;
-        (void)cli;
+	(void)priv;
+	(void)cli;
 	reqpoolfail = 0;
 	for (p = av[2]; *p != '\0'; p++) {
 		if (*p == 'F' || *p == 'f')
@@ -657,6 +657,6 @@ void
 WRK_Init(void)
 {
 
-        CLI_AddFuncs(debug_cmds);
+	CLI_AddFuncs(debug_cmds);
 }
 

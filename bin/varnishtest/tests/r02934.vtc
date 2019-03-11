@@ -3,7 +3,7 @@ varnishtest "Bug in CONTINUATION flags when no sendbody"
 server s1 {
 	rxreq
 	expect req.proto == HTTP/1.1
-	txresp -hdr "Content-Type: text/plain" -hdrlen Foo 100 
+	txresp -hdr "Content-Type: text/plain" -hdrlen Foo 100
 
 } -start
 
@@ -19,7 +19,7 @@ client c1 {
 		rxsettings
 	} -run
 	stream 1 {
-		txreq -req HEAD 
+		txreq -req HEAD
 		rxresp
 		expect resp.status == 200
 		expect resp.http.content-Type == "text/plain"
