@@ -635,6 +635,8 @@ MCF_InitParams(struct cli *cli)
 		/*
 		 * Adjust default parameters for 32 bit systems to conserve
 		 * VM space.
+		 *
+		 * Reflect changes in doc/sphinx/reference/varnishd.rst !
 		 */
 		MCF_ParamConf(MCF_DEFAULT, "workspace_client", "24k");
 		MCF_ParamConf(MCF_DEFAULT, "workspace_backend", "20k");

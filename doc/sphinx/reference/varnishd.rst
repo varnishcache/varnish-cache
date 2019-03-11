@@ -492,11 +492,13 @@ Default Value Exceptions on 32 bit Systems
 Be aware that on 32 bit systems, certain default values are reduced
 relative to the values listed below, in order to conserve VM space:
 
-* workspace_client: 16k
+* workspace_client: 24k
+* workspace_backend: 20k
 * http_resp_size: 8k
 * http_req_size: 12k
-* gzip_stack_buffer: 4k
-* thread_pool_stack: 64k
+* gzip_buffer: 4k
+* vsl_space: 1G
+* thread_pool_stack: 48k
 
 .. _List of Parameters:
 
