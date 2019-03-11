@@ -20,9 +20,10 @@ merged, may be found in the `change log`_.
 varnishd
 ========
 
-Cache lookups have undergone a number of optimizations, among them to
-reduce lock contention, and to shorten and simplify the critical
-section of lookup code.
+Cache lookups have undergone a number of optimizations, among them
+reduction in lock contention, and to shorten and simplify the critical
+section of lookup code. We expect that this will improve performance
+and scalability.
 
 We have added a "watchdog" for thread pools that will panic the worker
 process, causing it to restart, if scheduling tasks onto worker
