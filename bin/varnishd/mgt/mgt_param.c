@@ -637,7 +637,7 @@ MCF_InitParams(struct cli *cli)
 		 * VM space.
 		 */
 		MCF_ParamConf(MCF_DEFAULT, "workspace_client", "24k");
-		MCF_ParamConf(MCF_DEFAULT, "workspace_backend", "16k");
+		MCF_ParamConf(MCF_DEFAULT, "workspace_backend", "20k");
 		MCF_ParamConf(MCF_DEFAULT, "http_resp_size", "8k");
 		MCF_ParamConf(MCF_DEFAULT, "http_req_size", "12k");
 		MCF_ParamConf(MCF_DEFAULT, "gzip_buffer", "4k");
