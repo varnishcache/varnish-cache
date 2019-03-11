@@ -46,6 +46,7 @@
 #include "vsa.h"
 #include "vtim.h"
 #include "vcl.h"
+#include "vcs.h"
 
 #include "vcc_if.h"
 
@@ -327,4 +328,18 @@ vmod_fnmatch(VRT_CTX, VCL_STRING pattern, VCL_STRING subject,
 	if (period)
 		flags |= FNM_PERIOD;
 	return (fnmatch(pattern, subject, flags) != FNM_NOMATCH);
+}
+
+VCL_STRING
+vmod_version(VRT_CTX)
+{
+	(void)ctx;
+	return (VCS_VersionStr());
+}
+
+VCL_STRING
+vmod_revision(VRT_CTX)
+{
+	(void)ctx;
+	return (VCS_RevisionStr());
 }

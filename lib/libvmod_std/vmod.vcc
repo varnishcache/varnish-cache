@@ -571,6 +571,13 @@ Examples::
 	# Matches /foo/ followed by a non-digit
 	if (std.fnmatch("/foo/[!0-9]", req.url)) { ... }
 
+$Function STRING version()
+
+Returns the Varnish version string.
+
+$Function STRING revision()
+
+Returns the Varnish revision string (the source repository commit ID).
 
 SEE ALSO
 ========
