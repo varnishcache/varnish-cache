@@ -46,7 +46,11 @@ external libraries that are not under control of the Varnish project
 (such as glibc). This may also have been related to stack overflow
 issues on some platforms when recent versions of `jemalloc`_, the
 recommended memory allocator for Varnish, have been used together with
-`pcre`_ with JIT compilation enabled.
+`pcre`_ with JIT compilation enabled. Compiler hardening flags may
+also increase stack usage and on some systems such stack protector
+flags may be enabled by default. With the addition of new mitigations
+to new compiler releases, stack consumption may also increase on that
+front.
 
 Tests have shown that Varnish runs stably with the new default stack
 size on a number of platforms, under conditions that previously may
