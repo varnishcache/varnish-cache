@@ -303,7 +303,7 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 		r2->scheduled = 0;
 		h2_del_req(wrk, r2);
 		VSLb(h2->vsl, SLT_Debug, "H2: No Worker-threads");
-		return (h2_ou_rel(wrk, req));
+		return (0);
 	}
 	return (1);
 }
