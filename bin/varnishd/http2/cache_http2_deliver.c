@@ -214,36 +214,28 @@ static const uint8_t h2_500_resp[] = {
 	0x1f, 0x27, 0x07, 'V', 'a', 'r', 'n', 'i', 's', 'h',
 };
 
-void v_matchproto_(vtr_deliver_f)
-h2_deliver(struct req *req, struct boc *boc, int sendbody)
+static int
+h2_build_headers(struct vsb *resp, struct req *req)
 {
-	ssize_t sz, sz1;
 	unsigned u, l;
-	uint8_t buf[6];
-	const char *r;
-	struct http *hp;
-	struct sess *sp;
-	struct h2_req *r2;
-	struct vsb resp;
 	int i;
+	struct http *hp;
+	const char *r;
 	const struct hpack_static *hps;
+	uint8_t buf[6];
+	ssize_t sz, sz1;
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CHECK_OBJ_ORNULL(boc, BOC_MAGIC);
-	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
-	CAST_OBJ_NOTNULL(r2, req->transport_priv, H2_REQ_MAGIC);
-	sp = req->sp;
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-
-	VSLb(req->vsl, SLT_RespProtocol, "HTTP/2.0");
 	l = WS_Reserve(req->ws, 0);
-	AN(VSB_new(&resp, req->ws->f, l, VSB_FIXEDLEN));
+	if (l < 10)
+		return (-1);
+
+	AN(VSB_new(resp, req->ws->f, l, VSB_FIXEDLEN));
 
 	l = h2_status(buf, req->resp->status);
-	VSB_bcat(&resp, buf, l);
+	VSB_bcat(resp, buf, l);
 
 	hp = req->resp;
-	for (u = HTTP_HDR_FIRST; u < hp->nhd && !VSB_error(&resp); u++) {
+	for (u = HTTP_HDR_FIRST; u < hp->nhd && !VSB_error(resp); u++) {
 		r = strchr(hp->hd[u].b, ':');
 		AN(r);
 
@@ -264,25 +256,46 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 			VSLb(req->vsl, SLT_Debug,
 			    "HP {%d, \"%s\", \"%s\"} <%s>",
 			    hps->idx, hps->name, hps->val, hp->hd[u].b);
-			h2_enc_len(&resp, 4, hps->idx, 0x10);
+			h2_enc_len(resp, 4, hps->idx, 0x10);
 		} else {
-			VSB_putc(&resp, 0x10);
+			VSB_putc(resp, 0x10);
 			sz--;
-			h2_enc_len(&resp, 7, sz, 0);
+			h2_enc_len(resp, 7, sz, 0);
 			for (sz1 = 0; sz1 < sz; sz1++)
-				VSB_putc(&resp, tolower(hp->hd[u].b[sz1]));
+				VSB_putc(resp, tolower(hp->hd[u].b[sz1]));
 
 		}
 
 		while (vct_islws(*++r))
 			continue;
 		sz = hp->hd[u].e - r;
-		h2_enc_len(&resp, 7, sz, 0);
-		VSB_bcat(&resp, r, sz);
+		h2_enc_len(resp, 7, sz, 0);
+		VSB_bcat(resp, r, sz);
 	}
-	if (VSB_finish(&resp)) {
-		WS_MarkOverflow(req->ws);
+	return (VSB_finish(resp));
+}
+
+void v_matchproto_(vtr_deliver_f)
+h2_deliver(struct req *req, struct boc *boc, int sendbody)
+{
+	ssize_t sz;
+	const char *r;
+	struct sess *sp;
+	struct h2_req *r2;
+	struct vsb resp;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_ORNULL(boc, BOC_MAGIC);
+	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
+	CAST_OBJ_NOTNULL(r2, req->transport_priv, H2_REQ_MAGIC);
+	sp = req->sp;
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+
+	VSLb(req->vsl, SLT_RespProtocol, "HTTP/2.0");
+
+	if (h2_build_headers(&resp, req)) {
 		// We ran out of workspace, return minimal 500
+		WS_MarkOverflow(req->ws);
 		VSLb(req->vsl, SLT_Error, "workspace_client overflow");
 		VSLb(req->vsl, SLT_RespStatus, "500");
 		VSLb(req->vsl, SLT_RespReason, "Internal Server Error");
