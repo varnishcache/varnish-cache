@@ -30,7 +30,6 @@
 #include "config.h"
 
 #include <ctype.h>
-#include <limits.h>
 #include <string.h>
 #include <stdlib.h>
 #include <sys/socket.h>
@@ -44,7 +43,22 @@
 #include "vtim.h"
 #include "vcc_if.h"
 
-static inline int onearg(VRT_CTX, const char *f, int nargs)
+/*
+ * technically, as our VCL_INT is int64_t, its limits are INT64_MIN/INT64_MAX.
+ *
+ * Yet, for conversions, we use VNUMpfx with a double intermediate, so above
+ * 2^53 we see rounding errors. In order to catch a potential floor rounding
+ * error, we make our limit 2^53-1
+ *
+ * Ref: https://stackoverflow.com/a/1848762
+ */
+#define VCL_INT_MAX ((INT64_C(1)<<53)-1)
+#define VCL_INT_MIN (-VCL_INT_MAX)
+
+#define VCL_BYTES_MAX VCL_INT_MAX
+
+static
+int onearg(VRT_CTX, const char *f, int nargs)
 {
 	if (nargs == 1)
 		return (1);
@@ -68,20 +82,20 @@ vmod_duration(VRT_CTX, struct VARGS(duration) *a)
 
 	nargs = a->valid_s + a->valid_real + a->valid_integer;
 
-	if (! onearg(ctx, "duration", nargs))
+	if (!onearg(ctx, "duration", nargs))
 		return (0);
 
 	if (a->valid_real)
 		return ((VCL_DURATION)a->real);
+
 	if (a->valid_integer)
 		return ((VCL_DURATION)a->integer);
 
-	assert(a->valid_s);
-
-	r = VNUM_duration(a->s);
-
-	if (! isnan(r))
-		return (r);
+	if (a->valid_s) {
+		r = VNUM_duration(a->s);
+		if (!isnan(r))
+			return (r);
+	}
 
 	if (a->valid_fallback)
 		return (a->fallback);
@@ -94,7 +108,6 @@ VCL_BYTES v_matchproto_(td_std_bytes)
 vmod_bytes(VRT_CTX, struct VARGS(bytes) *a)
 {
 	uintmax_t r;
-	VCL_BYTES b;
 	VCL_REAL rr;
 	int nargs;
 
@@ -102,26 +115,22 @@ vmod_bytes(VRT_CTX, struct VARGS(bytes) *a)
 
 	nargs = a->valid_s + a->valid_real + a->valid_integer;
 
-	if (! onearg(ctx, "bytes", nargs))
+	if (!onearg(ctx, "bytes", nargs))
 		return (0);
 
-	b = -1;
-	if (a->valid_s) {
-		if (VNUM_2bytes(a->s, &r, 0) == NULL &&
-		    r <= VCL_BYTES_MAX)
-			b = (VCL_BYTES)r;
-	} else if (a->valid_real) {
+	if (a->valid_s &&
+	    VNUM_2bytes(a->s, &r, 0) == NULL &&
+	    r <= VCL_BYTES_MAX)
+		return((VCL_BYTES)r);
+
+	if (a->valid_real) {
 		rr = trunc(a->real);
 		if (rr <= (VCL_REAL)VCL_BYTES_MAX)
-			b = (VCL_BYTES)rr;
-	} else if (a->valid_integer) {
-		b = (VCL_BYTES)a->integer;
-	} else {
-		INCOMPL();
+			return((VCL_BYTES)rr);
 	}
 
-	if (b >= 0)
-		return (b);
+	if (a->valid_integer)
+		return((VCL_BYTES)a->integer);
 
 	if (a->valid_fallback)
 		return (a->fallback);
@@ -142,31 +151,32 @@ vmod_integer(VRT_CTX, struct VARGS(integer) *a)
 	nargs = a->valid_s + a->valid_bool + a->valid_bytes +
 	    a->valid_duration + a->valid_real + a->valid_time;
 
-	if (! onearg(ctx, "integer", nargs))
+	if (!onearg(ctx, "integer", nargs))
 		return (0);
 
 	r = NAN;
-	if (a->valid_bool) {
-		return (!! a->bool);
-	} else if (a->valid_bytes) {
+	if (a->valid_bool)
+		return (a->bool ? 1 : 0);
+
+	if (a->valid_bytes)
 		return (a->bytes);
-	} else if (a->valid_s) {
-		if (a->s) {
-			r = VNUMpfx(a->s, &e);
-			if (e != NULL)
-				r = NAN;
-		}
-	} else if (a->valid_duration) {
-		r = a->duration;
-	} else if (a->valid_real) {
-		r = a->real;
-	} else if (a->valid_time) {
-		r = a->time;
-	} else {
-		INCOMPL();
+
+	if (a->valid_s && a->s != NULL) {
+		r = VNUMpfx(a->s, &e);
+		if (e != NULL)
+			r = NAN;
 	}
 
-	if (! isnan(r)) {
+	if (a->valid_duration)
+		r = a->duration;
+
+	if (a->valid_real)
+		r = a->real;
+
+	if (a->valid_time)
+		r = a->time;
+
+	if (!isnan(r)) {
 		r = trunc(r);
 		if (r >= VCL_INT_MIN && r <= VCL_INT_MAX)
 			return ((VCL_INT)r);
@@ -180,7 +190,7 @@ vmod_integer(VRT_CTX, struct VARGS(integer) *a)
 }
 
 VCL_IP
-vmod_ip(VRT_CTX, VCL_STRING s, VCL_IP d, VCL_BOOL n)
+vmod_ip(VRT_CTX, VCL_STRING s, VCL_IP d, VCL_BOOL resolve)
 {
 	struct addrinfo hints, *res0 = NULL;
 	const struct addrinfo *res;
@@ -204,7 +214,7 @@ vmod_ip(VRT_CTX, VCL_STRING s, VCL_IP d, VCL_BOOL n)
 		memset(&hints, 0, sizeof(hints));
 		hints.ai_family = PF_UNSPEC;
 		hints.ai_socktype = SOCK_STREAM;
-		if (!n)
+		if (!resolve)
 			hints.ai_flags |= AI_NUMERICHOST;
 		error = getaddrinfo(s, "80", &hints, &res0);
 		if (!error) {
@@ -235,28 +245,29 @@ vmod_real(VRT_CTX, struct VARGS(real) *a)
 	nargs = a->valid_s + a->valid_integer + a->valid_bool + a->valid_bytes +
 	    a->valid_duration + a->valid_time;
 
-	if (! onearg(ctx, "real", nargs))
+	if (!onearg(ctx, "real", nargs))
 		return (0);
 
 	if (a->valid_integer)
 		return ((VCL_REAL)a->integer);
-	else if (a->valid_bool)
-		return ((VCL_REAL)(!! a->bool));
-	else if (a->valid_bytes)
+
+	if (a->valid_bool)
+		return ((VCL_REAL)(a->bool ? 1 : 0));
+
+	if (a->valid_bytes)
 		return ((VCL_REAL)a->bytes);
-	else if (a->valid_duration)
+
+	if (a->valid_duration)
 		return ((VCL_REAL)a->duration);
-	else if (a->valid_time)
+
+	if (a->valid_time)
 		return ((VCL_REAL)a->time);
 
-	assert(a->valid_s);
-
-	r = NAN;
-	if (a->s != NULL)
+	if (a->valid_s && a->s != NULL) {
 		r = VNUM(a->s);
-
-	if (!isnan(r))
-		return (r);
+		if (!isnan(r))
+			return (r);
+	}
 
 	if (a->valid_fallback)
 		return (a->fallback);
@@ -272,6 +283,44 @@ vmod_round(VRT_CTX, VCL_REAL r)
 	return (round(r));
 }
 
+VCL_TIME v_matchproto_(td_std_time)
+vmod_time(VRT_CTX, struct VARGS(time)* a)
+{
+	double r;
+	int nargs;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	nargs = a->valid_s + a->valid_real + a->valid_integer;
+
+	if (!onearg(ctx, "time", nargs))
+		return (0);
+
+	if (a->valid_integer)
+		return ((VCL_REAL)a->integer);
+
+	if (a->valid_real)
+		return ((VCL_REAL)a->real);
+
+	if (a->valid_s && a->s != NULL) {
+		r = VTIM_parse(a->s);
+		if (r)
+			return (r);
+
+		r = VNUM(a->s);
+
+		if (!isnan(r) && r > 0)
+			return (r);
+	}
+
+	if (a->valid_fallback)
+		return (a->fallback);
+
+	VRT_fail(ctx, "std.time: conversion failed");
+	return (0);
+}
+
+/* These functions are deprecated as of 2019-03-15 release */
 
 VCL_INT v_matchproto_(td_std_real2integer)
 vmod_real2integer(VRT_CTX, VCL_REAL r, VCL_INT i)
@@ -321,40 +370,3 @@ vmod_time2real(VRT_CTX, VCL_TIME t, VCL_REAL r)
 	return (t);
 }
 
-VCL_TIME v_matchproto_(td_std_time)
-vmod_time(VRT_CTX, struct VARGS(time)* a)
-{
-	double r;
-	int nargs;
-
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-
-	nargs = a->valid_s + a->valid_real + a->valid_integer;
-
-	if (! onearg(ctx, "time", nargs))
-		return (0);
-
-	if (a->valid_integer)
-		return ((VCL_REAL)a->integer);
-	else if (a->valid_real)
-		return ((VCL_REAL)a->real);
-
-	assert(a->valid_s);
-
-	if (a->s) {
-		r = VTIM_parse(a->s);
-		if (r)
-			return (r);
-
-		r = VNUM(a->s);
-
-		if (!isnan(r) && r > 0)
-			return (r);
-	}
-
-	if (a->valid_fallback)
-		return (a->fallback);
-
-	VRT_fail(ctx, "std.time: conversion failed");
-	return (0);
-}
