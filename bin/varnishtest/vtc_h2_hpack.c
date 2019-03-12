@@ -160,7 +160,7 @@ huff_simulate(const char *str, int ilen, int huff)
 		olen += coding_table[(unsigned char)*str].size;
 		str++;
 	}
-	return ((olen+7)/8);
+	return ((olen + 7) / 8);
 }
 
 static enum hpk_result
@@ -360,7 +360,7 @@ HPK_DecHdr(struct hpk_iter *iter, struct hpk_hdr *header)
 	else if (*iter->buf >> 5 == 1) {
 		if (hpk_done != num_decode(&num, iter, 5))
 			return (hpk_err);
-		return HPK_ResizeTbl(iter->ctx, num);
+		return (HPK_ResizeTbl(iter->ctx, num));
 	} else {
 		return (hpk_err);
 	}

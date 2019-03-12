@@ -122,11 +122,11 @@ client_tcp_connect(struct vtclog *vl, const char *addr, double tmo,
 
 	fd = VTCP_open(addr, NULL, tmo, errp);
 	if (fd < 0)
-		return fd;
+		return (fd);
 	VTCP_myname(fd, mabuf, sizeof mabuf, mpbuf, sizeof mpbuf);
 	vtc_log(vl, 3, "connected fd %d from %s %s to %s", fd, mabuf, mpbuf,
 		addr);
-	return fd;
+	return (fd);
 }
 
 /* cf. VTCP_Open() */
@@ -183,10 +183,10 @@ client_uds_connect(struct vtclog *vl, const char *path, double tmo,
 	fd = VUS_resolver(path, uds_open, &tmo, errp);
 	if (fd < 0) {
 		*errp = strerror(errno);
-		return fd;
+		return (fd);
 	}
 	vtc_log(vl, 3, "connected fd %d to %s", fd, path);
-	return fd;
+	return (fd);
 }
 
 /**********************************************************************

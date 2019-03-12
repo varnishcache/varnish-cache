@@ -305,33 +305,33 @@ cmd_var_resolve(struct http *hp, char *spec)
 {
 	char **hh, *hdr;
 	if (!strcmp(spec, "remote.ip"))
-		return(hp->rem_ip);
+		return (hp->rem_ip);
 	if (!strcmp(spec, "remote.port"))
-		return(hp->rem_port);
+		return (hp->rem_port);
 	if (!strcmp(spec, "remote.path"))
-		return(hp->rem_path);
+		return (hp->rem_path);
 	if (!strcmp(spec, "req.method"))
-		return(hp->req[0]);
+		return (hp->req[0]);
 	if (!strcmp(spec, "req.url"))
-		return(hp->req[1]);
+		return (hp->req[1]);
 	if (!strcmp(spec, "req.proto"))
-		return(hp->req[2]);
+		return (hp->req[2]);
 	if (!strcmp(spec, "resp.proto"))
-		return(hp->resp[0]);
+		return (hp->resp[0]);
 	if (!strcmp(spec, "resp.status"))
-		return(hp->resp[1]);
+		return (hp->resp[1]);
 	if (!strcmp(spec, "resp.reason"))
-		return(hp->resp[2]);
+		return (hp->resp[2]);
 	if (!strcmp(spec, "resp.chunklen"))
-		return(hp->chunklen);
+		return (hp->chunklen);
 	if (!strcmp(spec, "req.bodylen"))
-		return(hp->bodylen);
+		return (hp->bodylen);
 	if (!strcmp(spec, "req.body"))
-		return(hp->body != NULL ? hp->body : spec);
+		return (hp->body != NULL ? hp->body : spec);
 	if (!strcmp(spec, "resp.bodylen"))
-		return(hp->bodylen);
+		return (hp->bodylen);
 	if (!strcmp(spec, "resp.body"))
-		return(hp->body != NULL ? hp->body : spec);
+		return (hp->body != NULL ? hp->body : spec);
 	if (!strncmp(spec, "req.http.", 9)) {
 		hh = hp->req;
 		hdr = spec + 9;

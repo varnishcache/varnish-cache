@@ -639,7 +639,7 @@ read_file(const char *fn, int ntest)
 		    " 'vtest' or 'varnishtest'\n", fn);
 		free(p);
 		vtc_skip++;
-		return(2);
+		return (2);
 	}
 	ALLOC_OBJ(tp, TST_MAGIC);
 	AN(tp);
@@ -647,7 +647,7 @@ read_file(const char *fn, int ntest)
 	tp->script = p;
 	tp->ntodo = ntest;
 	VTAILQ_INSERT_TAIL(&tst_head, tp, list);
-	return(0);
+	return (0);
 }
 
 /**********************************************************************

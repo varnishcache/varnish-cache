@@ -869,10 +869,10 @@ do_expect_cb(void *priv, const struct VSC_point * const pt)
 	struct stat_priv *sp = priv;
 
 	if (pt == NULL)
-		return(0);
+		return (0);
 
 	if (fnmatch(sp->target_pattern, pt->name, 0))
-		return(0);
+		return (0);
 
 	AZ(strcmp(pt->ctype, "uint64_t"));
 	AN(pt->ptr);

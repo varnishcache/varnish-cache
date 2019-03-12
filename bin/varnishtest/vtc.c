@@ -464,7 +464,7 @@ fail_out(void)
 
 	if (once++) {
 		vtc_log(vltop, 1, "failure during reset");
-		return(vtc_error);
+		return (vtc_error);
 	}
 	old_err = vtc_error;
 	if (!vtc_stop)
@@ -543,5 +543,5 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 
 	vtc_thread = pthread_self();
 	parse_string(script, cmds, NULL, vltop);
-	return(fail_out());
+	return (fail_out());
 }
