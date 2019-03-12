@@ -126,9 +126,9 @@
 #define v_statevariable_(varname)	varname /*lint -esym(838,varname) */
 
 #ifdef __SUNPRO_C
-#define NEEDLESS(s)		{}
+#  define NEEDLESS(s)		{}
 #else
-#define NEEDLESS(s)		s
+#  define NEEDLESS(s)		s
 #endif
 
 #if __GNUC_PREREQ__(2, 7)
