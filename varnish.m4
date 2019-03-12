@@ -130,10 +130,10 @@ AC_DEFUN([_VARNISH_CHECK_DEVEL], [
 # ---------------------
 AC_DEFUN([_VARNISH_CHECK_PYTHON], [
 	m4_define_default([_AM_PYTHON_INTERPRETER_LIST],
-[python3.9 python3.8 python3.7 python3.6 python3.5 python3.4 python2.7 dnl
-python python2 python3])
-	AM_PATH_PYTHON([2.7], [], [
-		AC_MSG_ERROR([Python >= 2.7 is required.])
+		[python3.9 python3.8 python3.7 python3.6 python3.5 dnl
+		python3.4 python3 python])
+	AM_PATH_PYTHON([3.4], [], [
+		AC_MSG_ERROR([Python >= 3.4 is required.])
 	])
 
 ])
