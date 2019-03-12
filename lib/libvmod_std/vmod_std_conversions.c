@@ -91,11 +91,11 @@ vmod_duration(VRT_CTX, struct VARGS(duration) *a)
 	if (a->valid_integer)
 		return ((VCL_DURATION)a->integer);
 
-	if (a->valid_s) {
-		r = VNUM_duration(a->s);
-		if (!isnan(r))
-			return (r);
-	}
+	assert(a->valid_s);
+
+	r = VNUM_duration(a->s);
+	if (!isnan(r))
+		return (r);
 
 	if (a->valid_fallback)
 		return (a->fallback);
@@ -118,19 +118,22 @@ vmod_bytes(VRT_CTX, struct VARGS(bytes) *a)
 	if (!onearg(ctx, "bytes", nargs))
 		return (0);
 
-	if (a->valid_s &&
-	    VNUM_2bytes(a->s, &r, 0) == NULL &&
-	    r <= VCL_BYTES_MAX)
-		return((VCL_BYTES)r);
-
-	if (a->valid_real && !isnan(a->real) && a->real >= 0) {
-		rr = trunc(a->real);
-		if (rr <= (VCL_REAL)VCL_BYTES_MAX)
-			return((VCL_BYTES)rr);
+	if (a->valid_s) {
+		if (VNUM_2bytes(a->s, &r, 0) == NULL &&
+		    r <= VCL_BYTES_MAX)
+			return((VCL_BYTES)r);
+	} else if (a->valid_real) {
+		if (!isnan(a->real) && a->real >= 0) {
+			rr = trunc(a->real);
+			if (rr <= (VCL_REAL)VCL_BYTES_MAX)
+				return((VCL_BYTES)rr);
+		}
+	} else if (a->valid_integer) {
+		if (a->integer >= 0)
+			return((VCL_BYTES)a->integer);
+	} else {
+		INCOMPL();
 	}
-
-	if (a->valid_integer && a->integer >= 0)
-		return((VCL_BYTES)a->integer);
 
 	if (a->valid_fallback)
 		return (a->fallback);
@@ -161,20 +164,21 @@ vmod_integer(VRT_CTX, struct VARGS(integer) *a)
 	if (a->valid_bytes)
 		return (a->bytes);
 
-	if (a->valid_s && a->s != NULL) {
-		r = VNUMpfx(a->s, &e);
-		if (e != NULL)
-			r = NAN;
-	}
-
-	if (a->valid_duration)
+	if (a->valid_s) {
+		if (a->s != NULL) {
+			r = VNUMpfx(a->s, &e);
+			if (e != NULL)
+				r = NAN;
+		}
+	} else if (a->valid_duration) {
 		r = a->duration;
-
-	if (a->valid_real)
+	} else if (a->valid_real) {
 		r = a->real;
-
-	if (a->valid_time)
+	} else if (a->valid_time) {
 		r = a->time;
+	} else {
+		INCOMPL();
+	}
 
 	if (!isnan(r)) {
 		r = trunc(r);
@@ -276,7 +280,9 @@ vmod_real(VRT_CTX, struct VARGS(real) *a)
 	if (a->valid_time)
 		return ((VCL_REAL)a->time);
 
-	if (a->valid_s && a->s != NULL) {
+	assert(a->valid_s);
+
+	if (a->s != NULL) {
 		r = VNUM(a->s);
 		if (!isnan(r))
 			return (r);
@@ -315,7 +321,9 @@ vmod_time(VRT_CTX, struct VARGS(time)* a)
 	if (a->valid_real)
 		return ((VCL_REAL)a->real);
 
-	if (a->valid_s && a->s != NULL) {
+	assert(a->valid_s);
+
+	if (a->s != NULL) {
 		r = VTIM_parse(a->s);
 		if (r)
 			return (r);
