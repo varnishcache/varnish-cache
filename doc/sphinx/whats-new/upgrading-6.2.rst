@@ -184,4 +184,11 @@ See ``vrt.h``, the `change log`_ and
 
 .. _change log: https://github.com/varnishcache/varnish-cache/blob/master/doc/changes.rst
 
+The vmodtool has been changed significantly to avoid name clashes in
+the C identifiers declared in ``vcc_if.h``. This may necessitate
+changing names in your VMOD code. To facilitate renaming, ``vcc_if.h``
+defines macros for prepending the vmod prefix, and for naming enums
+and argument structs. For details, see the `change log`_, and examine
+the contents of ``vcc_if.h`` after generation.
+
 *eof*
