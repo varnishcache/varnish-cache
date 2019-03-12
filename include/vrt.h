@@ -53,7 +53,6 @@
  *
  *
  * 9.0 (scheduled for 2019-03-15)
- *	Remove VCL_{INT|BYTES}_{MIN|MAX} macros
  *	Make 'len' in vmod_priv 'long'
  *	HTTP_Copy() removed
  *	HTTP_Dup() added
