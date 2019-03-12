@@ -63,7 +63,7 @@ def process_gcov(fn, sn):
     dd = counts.get(sn)
     if dd is None:
         dd = {}
-    for ln in open(fn):
+    for ln in open(fn, encoding="UTF-8"):
         d = ln.split(":")
         cnt = d[0].strip()
         ll = d[1]
