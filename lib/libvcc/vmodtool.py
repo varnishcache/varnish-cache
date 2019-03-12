@@ -34,9 +34,6 @@ Read the vmod.vcc file (inputvcc) and produce:
     vmod_${name}.man.rst -- Extracted documentation (rst2man input)
 """
 
-# This script should work with both Python 2 and Python 3.
-from __future__ import print_function
-
 import os
 import sys
 import re

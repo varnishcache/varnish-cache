@@ -29,7 +29,6 @@
 # Process various varnishtest C files and output reStructuredText to be
 # included in vtc(7).
 
-from __future__ import print_function
 import sys
 import re
 

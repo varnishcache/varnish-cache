@@ -35,8 +35,6 @@ the same general syntax as a `.rst` file, but for now we process
 it with this program to get a *real* `.rst` file.
 '''
 
-from __future__ import print_function
-
 import getopt
 import json
 import sys

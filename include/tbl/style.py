@@ -2,8 +2,6 @@
 #
 # Very basic style-checker for include/tbl files.
 
-from __future__ import print_function
-
 import glob
 
 def check_file(fn):

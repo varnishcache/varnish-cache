@@ -7,8 +7,6 @@
 #       python witness.py
 #       dot -Tpng /tmp/_.dot > /tmp/_.png
 
-from __future__ import print_function
-
 d = dict()
 a = dict()
 

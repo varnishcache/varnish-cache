@@ -30,8 +30,6 @@
 # Generate various .c and .h files for the VCL compiler and the interfaces
 # for it.
 
-from __future__ import print_function
-
 #######################################################################
 # These are our tokens
 

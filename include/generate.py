@@ -29,8 +29,6 @@
 #
 # Generate vcs_version.h vmod_abi.h
 
-from __future__ import print_function
-
 import subprocess
 import os
 import sys
