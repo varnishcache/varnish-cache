@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #-
 # Copyright (c) 2006 Verdens Gang AS
 # Copyright (c) 2006-2015 Varnish Software AS
