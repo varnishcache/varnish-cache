@@ -232,8 +232,8 @@ These functions all have the same form::
 
 	TYPE type([arguments], [fallback TYPE])
 
-Precisely one of the arguments must be provided, and it will be
-converted to *TYPE*.
+Precisely one of the *arguments* must be provided (besides the
+optional *fallback*), and it will be converted to *TYPE*.
 
 If conversion fails, *fallback* will be returned and if no
 fallback was specified, the VCL will be failed.
