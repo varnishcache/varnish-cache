@@ -38,14 +38,51 @@ DESCRIPTION
 *vmod_std* contains basic functions which are part and parcel of
 Varnish, but which for reasons of architecture fit better in a VMOD.
 
-One particular class of functions in *vmod_std* is the conversions
-functions which all have the form::
+Numeric functions
+=================
 
-	TYPE type(STRING, TYPE)
+$Function REAL random(REAL lo, REAL hi)
 
-These functions attempt to convert *STRING* to the *TYPE*, and if that
-fails, they return the second argument, which must have the given
-*TYPE*.
+Returns a random real number between *lo* and *hi*.
+
+This function uses the "testable" random generator in varnishd which
+enables determinstic tests to be run (See ``m00002.vtc``).  This
+function should not be used for cryptographic applications.
+
+Example::
+
+	set beresp.http.random-number = std.random(1, 100);
+
+$Function REAL round(REAL r)
+
+Rounds the real *r* to the nearest integer, but round halfway cases
+away from zero (see `round(3)`).
+
+
+String functions
+================
+
+$Function VOID collect(HEADER hdr, STRING sep=", ")
+
+Collapses multiple *hdr* headers into one long header. The default
+separator *sep* is the standard comma separator to use when collapsing
+headers, with an additional whitespace for pretty printing.
+
+Care should be taken when collapsing headers. In particular collapsing
+``Set-Cookie`` will lead to unexpected results on the browser side.
+
+Examples::
+
+	std.collect(req.http.accept);
+	std.collect(req.http.cookie, "; ");
+
+$Function STRING querysort(STRING)
+
+Sorts the query string for cache normalization purposes.
+
+Example::
+
+	set req.url = std.querysort(req.url);
 
 $Function STRING toupper(STRING_LIST s)
 
@@ -63,57 +100,88 @@ Example::
 
 	set beresp.http.nice = std.tolower("VerY");
 
-$Function VOID set_ip_tos(INT tos)
+$Function STRING strstr(STRING s1, STRING s2)
 
-Sets the IP type-of-service (TOS) field for the current session to
-*tos*. Silently ignored if the listen address is a Unix domain socket.
+Returns a string beginning at the first occurrence of the string *s2*
+in the string *s1*, or an empty string if *s2* is not found.
 
-Please note that the TOS field is not removed by the end of the
-request so probably want to set it on every request should you utilize
-it.
+Note that the comparison is case sensitive.
 
 Example::
 
-	if (req.url ~ "^/slow/") {
-		std.set_ip_tos(0);
+	if (std.strstr(req.url, req.http.restrict)) {
+		...
 	}
 
-$Function REAL random(REAL lo, REAL hi)
+This will check if the content of ``req.http.restrict`` occurs
+anywhere in ``req.url``.
 
-Returns a random real number between *lo* and *hi*.
+$Function BOOL fnmatch(STRING pattern, STRING subject, BOOL pathname=1,
+		       BOOL noescape=0, BOOL period=0)
 
-This function uses the "testable" random generator in varnishd which
-enables determinstic tests to be run (See ``m00002.vtc``).  This
-function should not be used for cryptographic applications.
+Shell-style pattern matching; returns ``true`` if *subject* matches
+*pattern*, where *pattern* may contain wildcard characters such as ``*``
+or ``?``.
 
-Example::
+The match is executed by the implementation of `fnmatch(3)` on your
+system. The rules for pattern matching on most systems include the
+following:
 
-	set beresp.http.random-number = std.random(1, 100);
+* ``*`` matches any sequence of characters
 
-$Function VOID log(STRING_LIST s)
+* ``?`` matches a single character
 
-Logs the string *s* to the shared memory log, using :ref:`vsl(7)` tag
-``SLT_VCL_Log``.
+* a bracket expression such as ``[abc]`` or ``[!0-9]`` is interpreted
+  as a character class according to the rules of basic regular
+  expressions (*not* `pcre(3)` regexen), except that ``!`` is used for
+  character class negation instead of ``^``.
 
-Example::
+If *pathname* is ``true``, then the forward slash character ``/`` is
+only matched literally, and never matches ``*``, ``?`` or a bracket
+expression. Otherwise, ``/`` may match one of those patterns.  By
+default, *pathname* is ``true``.
 
-	std.log("Something fishy is going on with the vhost " + req.http.host);
+If *noescape* is ``true``, then the backslash character ``\`` is
+matched as an ordinary character. Otherwise, ``\`` is an escape
+character, and matches the character that follows it in the
+*pattern*. For example, ``\\`` matches ``\`` when *noescape* is
+``true``, and ``\\`` when ``false``. By default, *noescape* is
+``false``.
 
-$Function VOID syslog(INT priority, STRING_LIST s)
+If *period* is ``true``, then a leading period character ``.`` only
+matches literally, and never matches ``*``, ``?`` or a bracket
+expression. A period is leading if it is the first character in
+*subject*; if *pathname* is also ``true``, then a period that
+immediately follows a ``/`` is also leading (as in ``/.``).  By
+default, *period* is ``false``.
 
-Logs the string *s* to syslog tagged with *priority*. *priority* is
-formed by ORing the facility and level values. See your system's
-``syslog.h`` file for possible values.
+`vmod_std.fnmatch`_ invokes VCL failure and returns ``false`` if
+either of *pattern* or *subject* is ``NULL`` -- for example, if an
+unset header is specified.
 
-Notice: Unlike VCL and other functions in the std vmod, this function
-will not fail VCL processing for workspace overflows: For an out of
-workspace condition, the `vmod_std.syslog`_ function has no effect.
+Examples::
 
-Example::
+	# Matches URLs such as /foo/bar and /foo/baz
+	if (std.fnmatch("/foo/\*", req.url)) { ... }
 
-	std.syslog(9, "Something is wrong");
+	# Matches URLs such as /foo/bar/baz and /foo/baz/quux
+	if (std.fnmatch("/foo/\*/\*", bereq.url)) { ... }
 
-This will send a message to syslog using ``LOG_USER | LOG_ALERT``.
+	# Matches /foo/bar/quux, but not /foo/bar/baz/quux
+	if (std.fnmatch("/foo/\*/quux", req.url)) { ... }
+
+	# Matches /foo/bar/quux and /foo/bar/baz/quux
+	if (std.fnmatch("/foo/\*/quux", req.url, pathname=false)) { ... }
+
+	# Matches /foo/bar, /foo/car and /foo/far
+	if (std.fnmatch("/foo/?ar", req.url)) { ... }
+
+	# Matches /foo/ followed by a non-digit
+	if (std.fnmatch("/foo/[!0-9]", req.url)) { ... }
+
+
+File(system) functions
+======================
 
 $Function STRING fileread(PRIV_CALL, STRING)
 
@@ -143,19 +211,32 @@ Example::
 		return (synth(503, "Varnish is in maintenance"));
 	}
 
-$Function VOID collect(HEADER hdr, STRING sep=", ")
 
-Collapses multiple *hdr* headers into one long header. The default
-separator *sep* is the standard comma separator to use when collapsing
-headers, with an additional whitespace for pretty printing.
+Type Inspection functions
+=========================
 
-Care should be taken when collapsing headers. In particular collapsing
-``Set-Cookie`` will lead to unexpected results on the browser side.
+$Function BOOL healthy(BACKEND be)
 
-Examples::
+Returns ``true`` if the backend *be* is healthy.
 
-	std.collect(req.http.accept);
-	std.collect(req.http.cookie, "; ");
+$Function INT port(IP ip)
+
+Returns the port number of the IP address *ip*. Always returns ``0``
+for a ``*.ip`` variable whose value is ``0.0.0.0`` because the listen
+address is a Unix domain socket.
+
+Type Conversion functions
+=========================
+
+These functions all have the same form::
+
+	TYPE type([arguments], [fallback TYPE])
+
+Precisely one of the arguments must be provided, and it will be
+converted to *TYPE*.
+
+If conversion fails, *fallback* will be returned and if no
+fallback was specified, the VCL will be failed.
 
 $Function DURATION duration([STRING s], [DURATION fallback],
     [REAL real], [INT integer])
@@ -295,10 +376,166 @@ Example::
 		...
 	}
 
-$Function REAL round(REAL r)
+$Function TIME time([STRING s], [TIME fallback], [REAL real], [INT integer])
 
-Rounds the real *r* to the nearest integer, but round halfway cases
-away from zero (see `round(3)`).
+Returns a TIME from a STRING, REAL or INT argument.
+
+For a STRING *s* argument, the following formats are supported::
+
+	"Sun, 06 Nov 1994 08:49:37 GMT"
+	"Sunday, 06-Nov-94 08:49:37 GMT"
+	"Sun Nov  6 08:49:37 1994"
+	"1994-11-06T08:49:37"
+	"784111777.00"
+	"784111777"
+
+*real* and *integer* arguments are taken as seconds since the epoch.
+
+If the conversion of an *s* argument fails or a negative *real* or
+*integer* argument is given, *fallback* will be returned if provided,
+or a VCL failure will be triggered.
+
+Examples::
+
+	if (std.time(resp.http.last-modified, now) < now - 1w) {
+		...
+	}
+
+	if (std.time(int=2147483647) < now - 1w) {
+		...
+	}
+
+LOGGING functions
+=================
+
+$Function VOID log(STRING_LIST s)
+
+Logs the string *s* to the shared memory log, using :ref:`vsl(7)` tag
+``SLT_VCL_Log``.
+
+Example::
+
+	std.log("Something fishy is going on with the vhost " + req.http.host);
+
+$Function VOID syslog(INT priority, STRING_LIST s)
+
+Logs the string *s* to syslog tagged with *priority*. *priority* is
+formed by ORing the facility and level values. See your system's
+``syslog.h`` file for possible values.
+
+Notice: Unlike VCL and other functions in the std vmod, this function
+will not fail VCL processing for workspace overflows: For an out of
+workspace condition, the `vmod_std.syslog`_ function has no effect.
+
+Example::
+
+	std.syslog(9, "Something is wrong");
+
+This will send a message to syslog using ``LOG_USER | LOG_ALERT``.
+
+$Function VOID timestamp(STRING s)
+
+Introduces a timestamp in the log with the current time, using the
+string *s* as the label. This is useful to time the execution of
+lengthy VCL procedures, and makes the timestamps inserted
+automatically by Varnish more accurate.
+
+Example::
+
+	std.timestamp("curl-request");
+
+
+CONTROL and INFORMATION functions
+=================================
+
+$Function BOOL syntax(REAL)
+
+Returns ``true`` if VCL version is at least *REAL*.
+
+$Function STRING getenv(STRING name)
+
+Return environment variable *name* or the empty string. See `getenv(3)`.
+
+Example::
+
+	set req.http.My-Env = std.getenv("MY_ENV");
+
+
+$Function BOOL cache_req_body(BYTES size)
+
+Caches the request body if it is smaller than *size*.  Returns
+``true`` if the body was cached, ``false`` otherwise.
+
+Normally the request body can only be sent once. Caching it enables
+retrying backend requests with a request body, as usually the case
+with ``POST`` and ``PUT``.
+
+Example::
+
+	if (std.cache_req_body(1KB)) {
+		...
+	}
+
+$Function VOID late_100_continue(BOOL late)
+
+Controls when varnish reacts to an ``Expect: 100-continue`` client
+request header.
+
+Varnish always generates a ``100 Continue`` response if requested by
+the client trough the ``Expect: 100-continue`` header when waiting for
+request body data.
+
+But, by default, the ``100 Continue`` response is already generated
+immediately after ``vcl_recv`` returns to reduce latencies under the
+assumption that the request body will be read eventually.
+
+Calling ``std.late_100_continue(true)`` in ``vcl_recv`` will cause the
+``100 Continue`` response to only be sent when needed. This may cause
+additional latencies for processing request bodies, but is the correct
+behavior by strict interpretation of RFC7231.
+
+This function has no effect outside ``vcl_recv`` and after calling
+``std.cache_req_body()`` or any other function consuming the request
+body.
+
+Example::
+
+	vcl_recv {
+		std.late_100_continue(true);
+
+		if (req.method == "POST") {
+			std.late_100_continue(false);
+			return (pass);
+		}
+		...
+	 }
+
+$Function VOID set_ip_tos(INT tos)
+
+Sets the IP type-of-service (TOS) field for the current session to
+*tos*. Silently ignored if the listen address is a Unix domain socket.
+
+Please note that the TOS field is not removed by the end of the
+request so probably want to set it on every request should you utilize
+it.
+
+Example::
+
+	if (req.url ~ "^/slow/") {
+		std.set_ip_tos(0);
+	}
+
+$Function VOID rollback(HTTP h)
+
+Restores the *h* HTTP headers to their original state.
+
+Example::
+
+	std.rollback(bereq);
+
+
+DEPRECATED functions
+====================
 
 $Function INT real2integer(REAL r, INT fallback)
 
@@ -365,211 +602,6 @@ Example::
 
 	set req.http.real = std.time2real(now, 1.0);
 
-$Function BOOL healthy(BACKEND be)
-
-Returns ``true`` if the backend *be* is healthy.
-
-$Function INT port(IP ip)
-
-Returns the port number of the IP address *ip*. Always returns ``0``
-for a ``*.ip`` variable whose value is ``0.0.0.0`` because the listen
-address is a Unix domain socket.
-
-$Function VOID rollback(HTTP h)
-
-Restores the *h* HTTP headers to their original state.
-
-Example::
-
-	std.rollback(bereq);
-
-$Function VOID timestamp(STRING s)
-
-Introduces a timestamp in the log with the current time, using the
-string *s* as the label. This is useful to time the execution of
-lengthy VCL procedures, and makes the timestamps inserted
-automatically by Varnish more accurate.
-
-Example::
-
-	std.timestamp("curl-request");
-
-$Function STRING querysort(STRING)
-
-Sorts the query string for cache normalization purposes.
-
-Example::
-
-	set req.url = std.querysort(req.url);
-
-$Function BOOL cache_req_body(BYTES size)
-
-Caches the request body if it is smaller than *size*.  Returns
-``true`` if the body was cached, ``false`` otherwise.
-
-Normally the request body can only be sent once. Caching it enables
-retrying backend requests with a request body, as usually the case
-with ``POST`` and ``PUT``.
-
-Example::
-
-	if (std.cache_req_body(1KB)) {
-		...
-	}
-
-$Function STRING strstr(STRING s1, STRING s2)
-
-Returns a string beginning at the first occurrence of the string *s2*
-in the string *s1*, or an empty string if *s2* is not found.
-
-Note that the comparison is case sensitive.
-
-Example::
-
-	if (std.strstr(req.url, req.http.restrict)) {
-		...
-	}
-
-This will check if the content of ``req.http.restrict`` occurs
-anywhere in ``req.url``.
-
-$Function TIME time([STRING s], [TIME fallback], [REAL real], [INT integer])
-
-Returns a TIME from a STRING, REAL or INT argument.
-
-For a STRING *s* argument, the following formats are supported::
-
-	"Sun, 06 Nov 1994 08:49:37 GMT"
-	"Sunday, 06-Nov-94 08:49:37 GMT"
-	"Sun Nov  6 08:49:37 1994"
-	"1994-11-06T08:49:37"
-	"784111777.00"
-	"784111777"
-
-*real* and *integer* arguments are taken as seconds since the epoch.
-
-If the conversion of an *s* argument fails or a negative *real* or
-*integer* argument is given, *fallback* will be returned if provided,
-or a VCL failure will be triggered.
-
-Examples::
-
-	if (std.time(resp.http.last-modified, now) < now - 1w) {
-		...
-	}
-
-	if (std.time(int=2147483647) < now - 1w) {
-		...
-	}
-
-$Function STRING getenv(STRING name)
-
-Return environment variable *name* or the empty string. See `getenv(3)`.
-
-Example::
-
-	set req.http.My-Env = std.getenv("MY_ENV");
-
-$Function VOID late_100_continue(BOOL late)
-
-Controls when varnish reacts to an ``Expect: 100-continue`` client
-request header.
-
-Varnish always generates a ``100 Continue`` response if requested by
-the client trough the ``Expect: 100-continue`` header when waiting for
-request body data.
-
-But, by default, the ``100 Continue`` response is already generated
-immediately after ``vcl_recv`` returns to reduce latencies under the
-assumption that the request body will be read eventually.
-
-Calling ``std.late_100_continue(true)`` in ``vcl_recv`` will cause the
-``100 Continue`` response to only be sent when needed. This may cause
-additional latencies for processing request bodies, but is the correct
-behavior by strict interpretation of RFC7231.
-
-This function has no effect outside ``vcl_recv`` and after calling
-``std.cache_req_body()`` or any other function consuming the request
-body.
-
-Example::
-
-	vcl_recv {
-		std.late_100_continue(true);
-
-		if (req.method == "POST") {
-			std.late_100_continue(false);
-			return (pass);
-		}
-		...
-	 }
-
-$Function BOOL syntax(REAL)
-
-Returns ``true`` if VCL version is at least *REAL*.
-
-$Function BOOL fnmatch(STRING pattern, STRING subject, BOOL pathname=1,
-		       BOOL noescape=0, BOOL period=0)
-
-Shell-style pattern matching; returns ``true`` if *subject* matches
-*pattern*, where *pattern* may contain wildcard characters such as ``*``
-or ``?``.
-
-The match is executed by the implementation of `fnmatch(3)` on your
-system. The rules for pattern matching on most systems include the
-following:
-
-* ``*`` matches any sequence of characters
-
-* ``?`` matches a single character
-
-* a bracket expression such as ``[abc]`` or ``[!0-9]`` is interpreted
-  as a character class according to the rules of basic regular
-  expressions (*not* `pcre(3)` regexen), except that ``!`` is used for
-  character class negation instead of ``^``.
-
-If *pathname* is ``true``, then the forward slash character ``/`` is
-only matched literally, and never matches ``*``, ``?`` or a bracket
-expression. Otherwise, ``/`` may match one of those patterns.  By
-default, *pathname* is ``true``.
-
-If *noescape* is ``true``, then the backslash character ``\`` is
-matched as an ordinary character. Otherwise, ``\`` is an escape
-character, and matches the character that follows it in the
-*pattern*. For example, ``\\`` matches ``\`` when *noescape* is
-``true``, and ``\\`` when ``false``. By default, *noescape* is
-``false``.
-
-If *period* is ``true``, then a leading period character ``.`` only
-matches literally, and never matches ``*``, ``?`` or a bracket
-expression. A period is leading if it is the first character in
-*subject*; if *pathname* is also ``true``, then a period that
-immediately follows a ``/`` is also leading (as in ``/.``).  By
-default, *period* is ``false``.
-
-`vmod_std.fnmatch`_ invokes VCL failure and returns ``false`` if
-either of *pattern* or *subject* is ``NULL`` -- for example, if an
-unset header is specified.
-
-Examples::
-
-	# Matches URLs such as /foo/bar and /foo/baz
-	if (std.fnmatch("/foo/\*", req.url)) { ... }
-
-	# Matches URLs such as /foo/bar/baz and /foo/baz/quux
-	if (std.fnmatch("/foo/\*/\*", bereq.url)) { ... }
-
-	# Matches /foo/bar/quux, but not /foo/bar/baz/quux
-	if (std.fnmatch("/foo/\*/quux", req.url)) { ... }
-
-	# Matches /foo/bar/quux and /foo/bar/baz/quux
-	if (std.fnmatch("/foo/\*/quux", req.url, pathname=false)) { ... }
-
-	# Matches /foo/bar, /foo/car and /foo/far
-	if (std.fnmatch("/foo/?ar", req.url)) { ... }
-
-	# Matches /foo/ followed by a non-digit
-	if (std.fnmatch("/foo/[!0-9]", req.url)) { ... }
 
 
 SEE ALSO
