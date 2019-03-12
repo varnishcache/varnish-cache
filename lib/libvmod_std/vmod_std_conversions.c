@@ -123,13 +123,13 @@ vmod_bytes(VRT_CTX, struct VARGS(bytes) *a)
 	    r <= VCL_BYTES_MAX)
 		return((VCL_BYTES)r);
 
-	if (a->valid_real) {
+	if (a->valid_real && !isnan(a->real) && a->real >= 0) {
 		rr = trunc(a->real);
 		if (rr <= (VCL_REAL)VCL_BYTES_MAX)
 			return((VCL_BYTES)rr);
 	}
 
-	if (a->valid_integer)
+	if (a->valid_integer && a->integer >= 0)
 		return((VCL_BYTES)a->integer);
 
 	if (a->valid_fallback)
