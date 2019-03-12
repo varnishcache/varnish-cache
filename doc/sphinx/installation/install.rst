@@ -89,8 +89,8 @@ them (replace ``sudo apt-get install`` if needed)::
 	libpcre3-dev \
 	libtool \
 	pkg-config \
-	python-docutils \
-	python-sphinx
+	python3-docutils \
+	python3-sphinx
 
 Optionally, to rebuild the svg files::
 
@@ -122,8 +122,8 @@ install required packages (replace ``sudo yum install`` if needed)::
 	ncurses-devel \
 	pcre-devel \
 	pkgconfig \
-	python-docutils \
-	python-sphinx
+	python3-docutils \
+	python3-sphinx
 
 Optionally, to rebuild the svg files::
 

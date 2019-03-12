@@ -22,8 +22,8 @@ matrix:
 addons:
   apt:
     packages:
-      - python-docutils
-      - python-sphinx
+      - python3-docutils
+      - python3-sphinx
   homebrew:
     packages:
       - docutils
