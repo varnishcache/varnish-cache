@@ -270,7 +270,7 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum task_prio prio)
 			VSL(SLT_Debug, 0,
 			    "Failing due to reqpoolfail (next= 0x%jx)",
 			    reqpoolfail);
-			return(retval);
+			return (retval);
 		}
 	}
 

@@ -148,7 +148,7 @@ xyzzy_test_priv_task(VRT_CTX, struct vmod_priv *priv, VCL_STRING s)
 		char *n = realloc(priv->priv,
 		    strlen(priv->priv) + strlen(s) + 2);
 		if (n == NULL)
-			return NULL;
+			return (NULL);
 		strcat(n, " ");
 		strcat(n, s);
 		priv->priv = n;
@@ -383,7 +383,7 @@ event_discard(VRT_CTX, void *priv)
 	VRT_RemoveVFP(ctx, &xyzzy_rot13);
 
 	if (--loads)
-		return(0);
+		return (0);
 
 	/*
 	 * The vsc and vsc_seg variables are not per-VCL, they are
@@ -394,7 +394,7 @@ event_discard(VRT_CTX, void *priv)
 	if (vsc)
 		VSC_debug_Destroy(&vsc_seg);
 
-	return(0);
+	return (0);
 }
 
 int v_matchproto_(vmod_event_f)

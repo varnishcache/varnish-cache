@@ -255,7 +255,7 @@ Lck_Delete(struct lock *lck)
 struct VSC_lck *
 Lck_CreateClass(struct vsc_seg **sg, const char *name)
 {
-	return(VSC_lck_New(NULL, sg, name));
+	return (VSC_lck_New(NULL, sg, name));
 }
 
 void

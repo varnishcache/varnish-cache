@@ -358,7 +358,7 @@ mgt_vcl_cache_vmod(const char *nm, const char *fm, const char *to)
 	closefd(&fi);
 	AZ(fchmod(fo, 0444));
 	closefd(&fo);
-	return(ret);
+	return (ret);
 }
 
 void

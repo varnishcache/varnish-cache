@@ -65,7 +65,7 @@ http1_getstate(const struct sess *sp)
 	uintptr_t *p;
 
 	AZ(SES_Get_proto_priv(sp, &p));
-	return (const char *)*p;
+	return ((const char *)*p);
 }
 
 /*--------------------------------------------------------------------

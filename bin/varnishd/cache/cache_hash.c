@@ -998,7 +998,7 @@ hsh_deref_objhead_unlock(struct worker *wrk, struct objhead **poh)
 		assert(oh->refcnt > 1);
 		oh->refcnt--;
 		Lck_Unlock(&oh->mtx);
-		return(1);
+		return (1);
 	}
 
 	if (oh->refcnt == 1)

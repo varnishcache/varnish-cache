@@ -39,19 +39,19 @@
 size_t
 base64nopad_encode_l(size_t l)
 {
-	return base64_l(l) + 4;
+	return (base64_l(l) + 4);
 }
 
 size_t
 base64_encode_l(size_t l)
 {
-	return (((base64_l(l)) + 3) & ~3) + 1;
+	return ((((base64_l(l)) + 3) & ~3) + 1);
 }
 
 size_t
 base64_decode_l(size_t l)
 {
-	return ((l) * 3) >> 2;
+	return (((l) * 3) >> 2);
 }
 
 static inline int
@@ -62,19 +62,19 @@ decode(char *restrict *restrict dest, const char *restrict const buf,
 
 	if (n <= 1) {
 		errno = EINVAL;
-		return -1;
+		return (-1);
 	}
 	d = *dest;
 	for (int i = 0; i < n - 1; i++) {
 		if (d == buf + buflen) {
 			errno = ENOMEM;
-			return -1;
+			return (-1);
 		}
 		*d++ = (u >> 16) & 0xff;
 		u <<= 8;
 	}
 	*dest += d - *dest;
-	return 1;
+	return (1);
 }
 
 ssize_t
@@ -91,14 +91,14 @@ base64_encode(const enum encoding enc, const enum case_e kase,
 	AN(buf);
 	AN(alpha);
 	if (in == NULL || inlength == 0)
-		return 0;
+		return (0);
 
 	if ((enc == BASE64URLNOPAD &&
 	     buflen < base64nopad_encode_l(inlength)) ||
 	    (enc != BASE64URLNOPAD &&
 	     buflen < base64_encode_l(inlength))) {
 		errno = ENOMEM;
-		return -1;
+		return (-1);
 	}
 
 	while (end - in >= 3) {
@@ -126,7 +126,7 @@ base64_encode(const enum encoding enc, const enum case_e kase,
 		}
 	}
 	assert(p >= buf && p - buf <= buflen);
-	return p - buf;
+	return (p - buf);
 }
 
 ssize_t
@@ -155,7 +155,7 @@ base64_decode(const enum encoding dec, char *restrict const buf,
 			continue;
 		if (*s && term) {
 			errno = EINVAL;
-			return -1;
+			return (-1);
 		}
 		while (*s && len) {
 			while (n < 4) {
@@ -163,7 +163,7 @@ base64_decode(const enum encoding dec, char *restrict const buf,
 				u <<= 6;
 				if (b == ILL) {
 					errno = EINVAL;
-					return -1;
+					return (-1);
 				}
 				n++;
 				if (b == PAD) {
@@ -178,7 +178,7 @@ base64_decode(const enum encoding dec, char *restrict const buf,
 			}
 			if (n == 4) {
 				if (decode(&dest, buf, buflen, u, n-term) < 0)
-					return -1;
+					return (-1);
 				n = 0;
 			}
 		}
@@ -187,8 +187,8 @@ base64_decode(const enum encoding dec, char *restrict const buf,
 		if (!alpha->padding)
 			u <<= (6 * (4 - n));
 		if (decode(&dest, buf, buflen, u, n-term) < 0)
-			return -1;
+			return (-1);
 	}
 
-	return dest - buf;
+	return (dest - buf);
 }

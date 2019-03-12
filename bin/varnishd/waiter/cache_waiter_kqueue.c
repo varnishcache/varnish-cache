@@ -131,7 +131,7 @@ vwk_thread(void *priv)
 	closefd(&vwk->pipe[0]);
 	closefd(&vwk->pipe[1]);
 	closefd(&vwk->kq);
-	return(NULL);
+	return (NULL);
 }
 
 /*--------------------------------------------------------------------*/

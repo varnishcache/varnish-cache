@@ -83,7 +83,7 @@ reqbody_status_2str(enum req_body_state_e e)
 #define REQ_BODY(U) case REQ_BODY_##U: return("R_BODY_" #U);
 #include "tbl/req_body.h"
 	default:
-		return("?");
+		return ("?");
 	}
 }
 
@@ -106,12 +106,12 @@ const char *
 sess_close_2str(enum sess_close sc, int want_desc)
 {
 	switch (sc) {
-	case SC_NULL:		return(want_desc ? "(null)": "NULL");
+	case SC_NULL:		return (want_desc ? "(null)" : "NULL");
 #define SESS_CLOSE(nm, s, err, desc)			\
 	case SC_##nm: return(want_desc ? desc : #nm);
 #include "tbl/sess_close.h"
 
-	default:		return(want_desc ? "(invalid)" : "INVALID");
+	default:		return (want_desc ? "(invalid)" : "INVALID");
 	}
 }
 

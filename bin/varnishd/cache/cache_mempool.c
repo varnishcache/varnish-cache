@@ -305,7 +305,7 @@ MPL_Get(struct mempool *mpl, unsigned *size)
 
 	CHECK_OBJ_NOTNULL(mi, MEMITEM_MAGIC);
 	/* Throw away sizeof info for FlexeLint: */
-	return ((void*)(uintptr_t)(mi+1));
+	return ((void *)(uintptr_t)(mi + 1));
 }
 
 void

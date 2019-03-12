@@ -318,7 +318,7 @@ ObjGetLen(struct worker *wrk, struct objcore *oc)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
 	AZ(ObjGetU64(wrk, oc, OA_LEN, &len));
-	return(len);
+	return (len);
 }
 
 /*====================================================================

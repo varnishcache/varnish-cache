@@ -242,13 +242,13 @@ static inline enum jail_gen_e
 jail_subproc_gen(enum jail_subproc_e e)
 {
 	assert(e < (1 << JAILG_SHIFT));
-	return (enum jail_gen_e)e;
+	return ((enum jail_gen_e)e);
 }
 
 static inline enum jail_gen_e
 jail_master_gen(enum jail_master_e e)
 {
-	return (enum jail_gen_e)(e << JAILG_SHIFT);
+	return ((enum jail_gen_e)(e << JAILG_SHIFT));
 }
 
 static int v_matchproto_(jail_init_f)

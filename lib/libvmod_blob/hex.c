@@ -59,19 +59,19 @@ const uint8_t nibble[] = {
 size_t
 hex_encode_l(size_t l)
 {
-	return ((l) << 1) + 1;
+	return (((l) << 1) + 1);
 }
 
 size_t
 hex_decode_l(size_t l)
 {
-	return ((l) + 1) >> 1;
+	return (((l) + 1) >> 1);
 }
 
 static inline char
 hex2byte(const unsigned char hi, const unsigned char lo)
 {
-	return (nibble[hi - '0'] << 4) | nibble[lo - '0'];
+	return ((nibble[hi - '0'] << 4) | nibble[lo - '0']);
 }
 
 ssize_t
@@ -85,9 +85,9 @@ hex_encode(const enum encoding enc, const enum case_e kase,
 	AN(buf);
 	assert(enc == HEX);
 	if (in == NULL || inlen == 0)
-		return 0;
+		return (0);
 	if (buflen < hex_encode_l(inlen))
-		return -1;
+		return (-1);
 
 	if (kase == UPPER)
 		alphabet = hex_alphabet[1];
@@ -97,7 +97,7 @@ hex_encode(const enum encoding enc, const enum case_e kase,
 		*p++ = alphabet[in[i] & 0x0f];
 	}
 
-	return p - buf;
+	return (p - buf);
 }
 
 ssize_t
@@ -130,13 +130,13 @@ hex_decode(const enum encoding dec, char *restrict const buf,
 	}
 
 	if (len == 0)
-		return 0;
+		return (0);
 	if (n != -1 && len > n)
 		len = n;
 
 	if (((len+1) >> 1) > buflen) {
 		errno = ENOMEM;
-		return -1;
+		return (-1);
 	}
 	if (len & 1) {
 		extranib = '0';
@@ -160,5 +160,5 @@ hex_decode(const enum encoding dec, char *restrict const buf,
 		extranib = *s;
 	}
 	assert(dest <= buf + buflen);
-	return dest - buf;
+	return (dest - buf);
 }

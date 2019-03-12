@@ -857,7 +857,7 @@ VSM_Unmap(struct vsm *vd, struct vsm_fantom *vf)
 	vf->b = NULL;
 	vf->e = NULL;
 	if (vg->refs > 0)
-		return(0);
+		return (0);
 
 	if (vg->cluster) {
 		assert(vg->s == NULL);

@@ -103,9 +103,9 @@ mac_opensocket(struct listen_sock *ls)
 		errno = 0;
 		if (ls->perms->mode != 0 &&
 		    chmod(ls->endpoint, ls->perms->mode) != 0)
-			return errno;
+			return (errno);
 		if (chown(ls->endpoint, ls->perms->uid, ls->perms->gid) != 0)
-			return errno;
+			return (errno);
 	}
 	MCH_Fd_Inherit(ls->sock, "sock");
 	return (0);
@@ -134,7 +134,7 @@ MAC_reopen_sockets(void)
 		    "Could not reopen listen socket %s: %s",
 		    ls->endpoint, vstrerror(err));
 	}
-	return fail;
+	return (fail);
 }
 
 /*--------------------------------------------------------------------*/
@@ -167,9 +167,9 @@ mk_listen_sock(const struct listen_arg *la, const struct suckaddr *sa)
 		if (fail != EAFNOSUPPORT)
 			ARGV_ERR("Could not get socket %s: %s\n",
 			    la->endpoint, vstrerror(fail));
-		return(NULL);
+		return (NULL);
 	}
-	return(ls);
+	return (ls);
 }
 
 static int v_matchproto_(vss_resolved_f)

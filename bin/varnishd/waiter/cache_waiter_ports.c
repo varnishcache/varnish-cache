@@ -211,7 +211,7 @@ vws_thread(void *priv)
 		for (ei = 0; ei < nevents; ei++)
 			vws_port_ev(vws, w, &ev[ei], now);
 	}
-	return NULL;
+	return (NULL);
 }
 
 /*--------------------------------------------------------------------*/

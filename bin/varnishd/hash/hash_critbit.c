@@ -268,7 +268,7 @@ hcb_insert(struct worker *wrk, struct hcb_root *root, const uint8_t *digest,
 	y2->leaf[s2] = *p;
 	VWMB();
 	*p = hcb_r_y(y2);
-	return(oh2);
+	return (oh2);
 }
 
 /*--------------------------------------------------------------------*/

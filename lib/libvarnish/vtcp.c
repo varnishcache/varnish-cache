@@ -518,7 +518,7 @@ VTCP_listen_on(const char *addr, const char *def_port, int depth,
 	sock = VSS_resolver(addr, def_port, vtcp_lo_cb, &h, errp);
 	if (*errp != NULL)
 		return (-1);
-	return(sock);
+	return (sock);
 }
 
 /*--------------------------------------------------------------------

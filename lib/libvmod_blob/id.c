@@ -38,13 +38,13 @@
 size_t
 id_encode_l(size_t l)
 {
-	return l + 1;
+	return (l + 1);
 }
 
 size_t
 id_decode_l(size_t l)
 {
-	return l;
+	return (l);
 }
 
 ssize_t
@@ -57,12 +57,12 @@ id_encode(const enum encoding enc, const enum case_e kase,
 	AN(buf);
 
 	if (buflen < inlen + 1)
-		return -1;
+		return (-1);
 	if (in == NULL || inlen == 0)
-		return 0;
+		return (0);
 
 	memcpy(buf, in, inlen);
-	return inlen;
+	return (inlen);
 }
 
 ssize_t
@@ -92,11 +92,11 @@ id_decode(const enum encoding enc,
 		c -= len;
 		if ((outlen += len) > buflen) {
 			errno = ENOMEM;
-			return -1;
+			return (-1);
 		}
 		memcpy(dest, s, len);
 		dest += len;
 	}
 
-	return outlen;
+	return (outlen);
 }

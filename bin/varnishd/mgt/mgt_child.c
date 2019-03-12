@@ -648,7 +648,7 @@ MCH_Start_Child(void)
 	mgt_launch_child(NULL);
 	if (child_state != CH_RUNNING)
 		return (2);
-	return(0);
+	return (0);
 }
 
 /*====================================================================

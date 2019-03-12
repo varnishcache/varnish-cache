@@ -45,13 +45,13 @@
 static vcc_kind_t
 VCC_HandleKind(vcc_type_t fmt)
 {
-	if (fmt == ACL)		return(SYM_ACL);
-	if (fmt == BACKEND)	return(SYM_BACKEND);
-	if (fmt == PROBE)	return(SYM_PROBE);
-	if (fmt == STEVEDORE)	return(SYM_STEVEDORE);
-	if (fmt == SUB)		return(SYM_SUB);
-	if (fmt == INSTANCE)	return(SYM_INSTANCE);
-	return(SYM_NONE);
+	if (fmt == ACL)		return (SYM_ACL);
+	if (fmt == BACKEND)	return (SYM_BACKEND);
+	if (fmt == PROBE)	return (SYM_PROBE);
+	if (fmt == STEVEDORE)	return (SYM_STEVEDORE);
+	if (fmt == SUB)		return (SYM_SUB);
+	if (fmt == INSTANCE)	return (SYM_INSTANCE);
+	return (SYM_NONE);
 }
 
 void

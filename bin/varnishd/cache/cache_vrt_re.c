@@ -121,10 +121,10 @@ VRT_regsub(VRT_CTX, int all, const char *str, void *re,
 
 	/* If it didn't match, we can return the original string */
 	if (i == VRE_ERROR_NOMATCH)
-		return(str);
+		return (str);
 	if (i < VRE_ERROR_NOMATCH ) {
 		VSLb(ctx->vsl, SLT_VCL_Error, "Regexp matching returned %d", i);
-		return(str);
+		return (str);
 	}
 
 	u = WS_Reserve(ctx->ws, 0);
@@ -162,7 +162,7 @@ VRT_regsub(VRT_CTX, int all, const char *str, void *re,
 			WS_Release(ctx->ws, 0);
 			VSLb(ctx->vsl, SLT_VCL_Error,
 			    "Regexp matching returned %d", i);
-			return(str);
+			return (str);
 		}
 	} while (i != VRE_ERROR_NOMATCH);
 

@@ -254,7 +254,7 @@ VRB_Ignore(struct req *req)
 	if (req->req_body_status == REQ_BODY_WITH_LEN ||
 	    req->req_body_status == REQ_BODY_WITHOUT_LEN)
 		(void)VRB_Iterate(req, httpq_req_body_discard, NULL);
-	return(0);
+	return (0);
 }
 
 /*----------------------------------------------------------------------

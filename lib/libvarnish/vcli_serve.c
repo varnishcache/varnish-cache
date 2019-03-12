@@ -410,7 +410,7 @@ cls_feed(struct VCLS_fd *cfd, const char *p, const char *e)
 				VAV_Free(av);
 				VSB_destroy(&cli->cmd);
 				if (i)
-					return(i);
+					return (i);
 			}
 		} else {
 			/* "<< nonce" mode */

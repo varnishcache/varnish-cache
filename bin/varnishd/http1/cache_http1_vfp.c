@@ -290,5 +290,5 @@ V1F_Setup_Fetch(struct vfp_ctx *vfc, struct http_conn *htc)
 		break;
 	}
 	vfe->priv1 = htc;
-	return 0;
+	return (0);
 }

@@ -143,7 +143,7 @@ decode_l(enum encoding dec, VCL_STRANDS s)
 		if (s->p[i] != NULL && *s->p[i] != '\0')
 			len += strlen(s->p[i]);
 
-	return(func[dec].decode_l(len));
+	return (func[dec].decode_l(len));
 }
 
 static void
@@ -175,9 +175,9 @@ check_enc_case(VRT_CTX, VCL_ENUM encs, VCL_ENUM case_s, enum encoding enc,
 {
 	if (!encodes_hex(enc) && kase != DEFAULT) {
 		VERR(ctx, "case %s is illegal with encoding %s", case_s, encs);
-		return 0;
+		return (0);
 	}
-	return 1;
+	return (1);
 }
 
 /* Objects */
@@ -373,7 +373,7 @@ encode(VRT_CTX, enum encoding enc, enum case_e kase, VCL_BLOB b)
 	AENC(enc);
 
 	if (b == NULL)
-		return NULL;
+		return (NULL);
 
 	CHECK_OBJ_NOTNULL(ctx->ws, WS_MAGIC);
 	snap = WS_Snapshot(ctx->ws);
@@ -386,16 +386,16 @@ encode(VRT_CTX, enum encoding enc, enum case_e kase, VCL_BLOB b)
 		ERRNOMEM(ctx, "cannot encode");
 		WS_Release(ctx->ws, 0);
 		WS_Reset(ctx->ws, snap);
-		return NULL;
+		return (NULL);
 	}
 	if (len == 0) {
 		WS_Release(ctx->ws, 0);
 		WS_Reset(ctx->ws, snap);
-		return "";
+		return ("");
 	}
 	buf[len] = '\0';
 	WS_Release(ctx->ws, len + 1);
-	return buf;
+	return (buf);
 }
 
 VCL_STRING v_matchproto_(td_blob_encode)

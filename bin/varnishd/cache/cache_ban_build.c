@@ -206,9 +206,9 @@ ban_parse_oper(const char *p)
 
 	for (i = 0; i < BAN_OPERARRSZ; i++) {
 		if (!strcmp(p, oper[i]))
-			return _BANS_OPER_OFF + i;
+			return (_BANS_OPER_OFF + i);
 	}
-	return -1;
+	return (-1);
 }
 
 /*--------------------------------------------------------------------
@@ -254,9 +254,9 @@ BAN_AddTest(struct ban_proto *bp,
 	if (op < 0 ||
 	    ((1U << BAN_OPERIDX(op)) & arg_opervalid[BAN_ARGIDX(pv->tag)]) == 0)
 		return (ban_error(bp,
-				  "expected conditional (%s) got \"%s\"",
-				  arg_operhelp[BAN_ARGIDX(pv->tag)],
-				  a2));
+		    "expected conditional (%s) got \"%s\"",
+		    arg_operhelp[BAN_ARGIDX(pv->tag)],
+		    a2));
 
 	if ((pv->flag & BANS_FLAG_DURATION) == 0) {
 		assert(! BANS_HAS_ARG2_DOUBLE(pv->tag));

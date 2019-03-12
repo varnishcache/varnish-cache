@@ -46,13 +46,13 @@ enum state_e {
 size_t
 url_encode_l(size_t l)
 {
-	return (l * 3) + 1;
+	return ((l * 3) + 1);
 }
 
 size_t
 url_decode_l(size_t l)
 {
-	return l;
+	return (l);
 }
 
 /*
@@ -90,7 +90,7 @@ url_encode(const enum encoding enc, const enum case_e kase,
 	AN(buf);
 	assert(enc == URL);
 	if (in == NULL || inlen == 0)
-		return 0;
+		return (0);
 
 	if (kase == UPPER)
 		alphabet = hex_alphabet[1];
@@ -98,19 +98,19 @@ url_encode(const enum encoding enc, const enum case_e kase,
 	for (int i = 0; i < inlen; i++) {
 		if (isunreserved(in[i])) {
 			if (p == end)
-				return -1;
+				return (-1);
 			*p++ = in[i];
 		}
 		else {
 			if (p + 3 > end)
-				return -1;
+				return (-1);
 			*p++ = '%';
 			*p++ = alphabet[(in[i] & 0xf0) >> 4];
 			*p++ = alphabet[in[i] & 0x0f];
 		}
 	}
 
-	return p - buf;
+	return (p - buf);
 }
 
 ssize_t
@@ -146,7 +146,7 @@ url_decode(const enum encoding dec, char *restrict const buf,
 				else {
 					if (dest == end) {
 						errno = ENOMEM;
-						return -1;
+						return (-1);
 					}
 					*dest++ = *s;
 				}
@@ -155,19 +155,19 @@ url_decode(const enum encoding dec, char *restrict const buf,
 				if (isoutofrange(*s) ||
 				    (nib = nibble[*s - '0']) == ILL) {
 					errno = EINVAL;
-					return -1;
+					return (-1);
 				}
 				state = FIRSTNIB;
 				break;
 			case FIRSTNIB:
 				if (dest == end) {
 					errno = ENOMEM;
-					return -1;
+					return (-1);
 				}
 				if (isoutofrange(*s) ||
 				    (nib2 = nibble[*s - '0']) == ILL) {
 					errno = EINVAL;
-					return -1;
+					return (-1);
 				}
 				*dest++ = (nib << 4) | nib2;
 				nib = 0;
@@ -182,8 +182,8 @@ url_decode(const enum encoding dec, char *restrict const buf,
 	}
 	if (state != NORMAL) {
 		errno = EINVAL;
-		return -1;
+		return (-1);
 	}
 	assert(dest <= end);
-	return dest - buf;
+	return (dest - buf);
 }

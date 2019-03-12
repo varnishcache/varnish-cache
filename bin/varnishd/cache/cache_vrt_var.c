@@ -692,8 +692,7 @@ VRT_r_bereq_xid(VRT_CTX)
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
 	AN(ctx->bo->vsl);
 
-	return (WS_Printf(ctx->ws, "%u",
-	    VXID(ctx->bo->vsl->wid)));
+	return (WS_Printf(ctx->ws, "%u", VXID(ctx->bo->vsl->wid)));
 }
 
 VCL_STRING

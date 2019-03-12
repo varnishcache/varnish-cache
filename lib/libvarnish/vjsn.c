@@ -234,7 +234,7 @@ vjsn_string(struct vjsn *js)
 		case 'u':
 			vjsn_unicode(js, &p);
 			if (js->err != NULL)
-				return(NULL);
+				return (NULL);
 			break;
 		default:
 			js->err = "Bad string escape";

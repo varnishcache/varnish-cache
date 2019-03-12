@@ -53,13 +53,13 @@ VUS_resolver(const char *path, vus_resolved_f *func, void *priv,
 	*err = NULL;
 	if (strlen(path) + 1 > sizeof(uds.sun_path)) {
 		*err = "Path too long for a Unix domain socket";
-		return(-1);
+		return (-1);
 	}
 	bprintf(uds.sun_path, "%s", path);
 	uds.sun_family = PF_UNIX;
 	if (func != NULL)
 		ret = func(priv, &uds);
-	return(ret);
+	return (ret);
 }
 
 int

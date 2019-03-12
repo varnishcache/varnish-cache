@@ -581,7 +581,7 @@ struct vtp_cs {
 static inline int
 tmo2msec(vtim_dur tmo)
 {
-	return ( (int)floor(tmo * 1000.0) );
+	return ((int)floor(tmo * 1000.0));
 }
 
 static int v_matchproto_(cp_open_f)
@@ -763,7 +763,7 @@ VTP_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6, const char *uds,
 		if (ip6 != NULL)
 			tp->ip6 = VSA_Clone(ip6);
 	}
-	return(VCP_New(tp->cp, id, tp, methods));
+	return (VCP_New(tp->cp, id, tp, methods));
 }
 
 /*--------------------------------------------------------------------
@@ -837,7 +837,7 @@ VTP_Get(struct tcp_pool *tp, vtim_dur tmo, struct worker *wrk,
 	unsigned force_fresh, int *err)
 {
 
-	return VCP_Get(tp->cp, tmo, wrk, force_fresh, err);
+	return (VCP_Get(tp->cp, tmo, wrk, force_fresh, err));
 }
 
 /*--------------------------------------------------------------------

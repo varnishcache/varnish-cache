@@ -143,7 +143,7 @@ HTTP_estimate(unsigned nhttp)
 {
 
 	/* XXX: We trust the structs to size-aligned as necessary */
-	return (PRNDUP(sizeof (struct http) + sizeof(txt) * nhttp + nhttp));
+	return (PRNDUP(sizeof(struct http) + sizeof(txt) * nhttp + nhttp));
 }
 
 struct http *
@@ -989,7 +989,7 @@ HTTP_GetStatusPack(struct worker *wrk, struct objcore *oc)
 	ptr = ObjGetAttr(wrk, oc, OA_HEADERS, NULL);
 	AN(ptr);
 
-	return(vbe16dec(ptr + 2));
+	return (vbe16dec(ptr + 2));
 }
 
 /*--------------------------------------------------------------------*/

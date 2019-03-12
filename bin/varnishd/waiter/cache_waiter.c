@@ -120,7 +120,7 @@ Wait_HeapDue(const struct waiter *w, struct waited **wpp)
 	}
 	if (wpp != NULL)
 		*wpp = wp;
-	return(Wait_When(wp));
+	return (Wait_When(wp));
 }
 
 /**********************************************************************/

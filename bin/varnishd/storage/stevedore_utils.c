@@ -210,5 +210,5 @@ STV_FileSize(int fd, const char *size, unsigned *granularity, const char *ctx)
 	/* Round down */
 	l -= (l % *granularity);
 
-	return(l);
+	return (l);
 }

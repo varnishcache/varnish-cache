@@ -80,7 +80,7 @@ VNUMpfx(const char *p, const char **t)
 			break;
 	}
 	if (e > 0.0)
-		return(nan(""));		// No digits
+		return (nan(""));		// No digits
 	if (*p == 'e' || *p == 'E') {
 		p++;
 		if (*p == '-' || *p == '+')

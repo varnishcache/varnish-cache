@@ -69,7 +69,7 @@ static const char *
 vgz_msg(const struct vgz *vg)
 {
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
-	return vg->vz.msg ? vg->vz.msg : "(null)";
+	return (vg->vz.msg ? vg->vz.msg : "(null)");
 }
 
 /*--------------------------------------------------------------------

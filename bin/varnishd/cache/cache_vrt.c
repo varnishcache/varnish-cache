@@ -154,7 +154,7 @@ VRT_GetHdr(VRT_CTX, const struct gethdr_s *hs)
 	if (hs->where == HDR_OBJ) {
 		CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 		CHECK_OBJ_NOTNULL(ctx->req->objcore, OBJCORE_MAGIC);
-		return(HTTP_GetHdrPack(ctx->req->wrk, ctx->req->objcore,
+		return (HTTP_GetHdrPack(ctx->req->wrk, ctx->req->objcore,
 		    hs->what));
 	}
 	hp = VRT_selecthttp(ctx, hs->where);
@@ -362,7 +362,7 @@ VRT_Strands(char *d, size_t dl, VCL_STRANDS s)
 		if (s->p[i] != NULL && *s->p[i] != '\0') {
 			x = strlen(s->p[i]);
 			if (b + x >= e)
-				return(NULL);
+				return (NULL);
 			memcpy(b, s->p[i], x);
 			b += x;
 		}
@@ -824,7 +824,7 @@ int
 VRT_strcmp(const char *s1, const char *s2)
 {
 	if (s1 == NULL || s2 == NULL)
-		return(1);
+		return (1);
 	return (strcmp(s1, s2));
 }
 
@@ -839,7 +839,7 @@ VCL_BOOL
 VRT_ipcmp(VCL_IP sua1, VCL_IP sua2)
 {
 	if (sua1 == NULL || sua2 == NULL)
-		return(1);
+		return (1);
 	return (VSA_Compare_IP(sua1, sua2));
 }
 
