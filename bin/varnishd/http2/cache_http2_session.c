@@ -52,21 +52,21 @@ static const char H2_prism[24] = {
 };
 
 static size_t
-h2_enc_settings(const struct h2_settings *h2s, uint8_t *buf, size_t n)
+h2_enc_settings(const struct h2_settings *h2s, uint8_t *buf, ssize_t n)
 {
-	size_t len = 0;
+	uint8_t *p = buf;
 
 #define H2_SETTING(U,l,v,d,...)				\
 	if (h2s->l != d) {				\
-		len += 6;				\
-		assert(len <= n);			\
-		vbe16enc(buf, v);			\
-		buf += 2;				\
-		vbe32enc(buf, h2s->l);			\
-		buf += 4;				\
+		n -= 6;					\
+		assert(n >= 0);				\
+		vbe16enc(p, v);				\
+		p += 2;					\
+		vbe32enc(p, h2s->l);			\
+		p += 4;					\
 	}
 #include "tbl/h2_settings.h"
-	return (len);
+	return (p - buf);
 }
 
 static const struct h2_settings H2_proto_settings = {
