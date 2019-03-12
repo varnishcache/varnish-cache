@@ -328,15 +328,15 @@ Examples::
 	set resp.http.answer = std.integer(real=126.42/3);
 
 
-$Function IP ip(STRING s, IP fallback, BOOL resolve = 1)
+$Function IP ip(STRING s, [IP fallback], BOOL resolve = 1)
 
 Converts the string *s* to the first IP number returned by
 the system library function `getaddrinfo(3)`. If conversion
-fails, *fallback* will be returned.
+fails, *fallback* will be returned or VCL failure will happen.
 
-If *resolve* is false, `getaddrinfo(3)` is called using
-``AI_NUMERICHOST`` to avoid network lookups. This makes "pure" IP
-strings cheaper to convert.
+If *resolve* is false, `getaddrinfo(3)` is called using ``AI_NUMERICHOST``
+to avoid network lookups. This makes "numerical" IP strings cheaper
+to convert.
 
 Example::
 

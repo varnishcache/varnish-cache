@@ -189,49 +189,62 @@ vmod_integer(VRT_CTX, struct VARGS(integer) *a)
 	return (0);
 }
 
-VCL_IP
-vmod_ip(VRT_CTX, VCL_STRING s, VCL_IP d, VCL_BOOL resolve)
+static VCL_IP
+lookup(VCL_IP *p, const char *s, int resolve)
 {
 	struct addrinfo hints, *res0 = NULL;
 	const struct addrinfo *res;
 	int error;
+	VCL_IP retval = NULL;
+
+	if (s == NULL)
+		return (retval);
+
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = PF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+	if (!resolve)
+		hints.ai_flags |= AI_NUMERICHOST;
+	error = getaddrinfo(s, "80", &hints, &res0);
+	if (!error) {
+		for (res = res0; res != NULL; res = res->ai_next) {
+			retval = VSA_Build(p, res->ai_addr, res->ai_addrlen);
+			if (retval != NULL)
+				break;
+		}
+		freeaddrinfo(res0);
+	}
+	return (retval);
+}
+
+VCL_IP
+vmod_ip(VRT_CTX, struct VARGS(ip) *a)
+{
 	void *p;
-	const struct suckaddr *r;
+	VCL_IP retval;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	AN(d);
-	assert(VSA_Sane(d));
+	if (a->valid_fallback)
+		assert(VSA_Sane(a->fallback));
 
 	p = WS_Alloc(ctx->ws, vsa_suckaddr_len);
 	if (p == NULL) {
 		VSLb(ctx->vsl, SLT_VCL_Error,
 		    "vmod std.ip(): insufficient workspace");
-		return (d);
+		return (NULL);
 	}
-	r = NULL;
 
-	if (s != NULL) {
-		memset(&hints, 0, sizeof(hints));
-		hints.ai_family = PF_UNSPEC;
-		hints.ai_socktype = SOCK_STREAM;
-		if (!resolve)
-			hints.ai_flags |= AI_NUMERICHOST;
-		error = getaddrinfo(s, "80", &hints, &res0);
-		if (!error) {
-			for (res = res0; res != NULL; res = res->ai_next) {
-				r = VSA_Build(p, res->ai_addr, res->ai_addrlen);
-				if (r != NULL)
-					break;
-			}
-		}
-	}
-	if (r == NULL) {
-		WS_Reset(ctx->ws, (uintptr_t)p);
-		r = d;
-	}
-	if (res0 != NULL)
-		freeaddrinfo(res0);
-	return (r);
+	retval = lookup(p, a->s, a->resolve);
+	if (retval != NULL)
+		return (retval);
+
+	WS_Reset(ctx->ws, (uintptr_t)p);
+
+	if (a->valid_fallback)
+		return (a->fallback);
+
+	VRT_fail(ctx, "std.integer: conversion failed");
+	return (NULL);
 }
 
 VCL_REAL v_matchproto_(td_std_real)
