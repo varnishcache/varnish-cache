@@ -24,13 +24,13 @@ listening at the socket, or set its permissions, after Varnish starts
 or the VCL is loaded. Backend fetches fail if the socket is not
 accessible by the time the fetch is attempted.
 
-``return(miss)`` from ``vcl_hit{}`` is now removed. Options to
-implement similar functionality are:
+``return(miss)`` from ``vcl_hit{}`` is now removed. An option for
+implementing similar functionality is:
 
-* a vmod using the new *catflap* mechanism
+* ``return (restart)`` from ``vcl_hit{}``
 
-* ``return (restart)`` from ``vcl_hit{}`` and ``set
-  req.hash_always_miss = true;`` in ``vcl_recv{}`` for the restart.
+* in ``vcl_recv{}`` for the restart (when ``req.restarts`` has
+  increased), ``set req.hash_always_miss = true;``.
 
 .. _whatsnew_upgrading_params_2019_03:
 
