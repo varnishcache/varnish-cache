@@ -1,0 +1,106 @@
+varnishtest "Test thread creation on acceptor thread queuing"
+
+# This tests that we are able to spawn new threads in the event that the
+# cache acceptor has been queued. It does this by starting 6 long lasting
+# fetches, which will consume 12 threads. That exceeds the initial
+# allotment of 10 threads, giving some probability that the acceptor
+# thread is queued. Then a single quick fetch is done, which should be
+# served since we are well below the maximum number of threads allowed.
+
+# Barrier b1 blocks the slow servers from finishing until the quick fetch
+# is done.
+barrier b1 cond 7
+
+# Barrier b2 blocks the start of the quick fetch until all slow fetches
+# are known to hold captive two threads each.
+barrier b2 cond 7
+
+server s0 {
+	rxreq
+	txresp -nolen -hdr "Content-Length: 10" -hdr "Connection: close"
+	send "123"
+	barrier b1 sync
+	send "4567890"
+	expect_close
+} -dispatch
+
+server stest {
+	rxreq
+	txresp -body "All good"
+} -start
+
+varnish v1 -arg "-p debug=+syncvsl -p debug=+flush_head"
+varnish v1 -arg "-p thread_pools=1 -p thread_pool_min=10"
+varnish v1 -vcl+backend {
+	sub vcl_backend_fetch {
+		if (bereq.url == "/test") {
+			set bereq.backend = stest;
+		} else {
+			set bereq.backend = s0;
+		}
+	}
+} -start
+
+# NB: we might go above 10 threads when early tasks are submitted to
+# the pool since at least one idle thread must be kept in the pool
+# reserve.
+varnish v1 -expect MAIN.threads >= 10
+
+client c1 {
+	txreq -url /1
+	rxresphdrs
+	barrier b2 sync
+	rxrespbody
+} -start
+
+client c2 {
+	txreq -url /2
+	rxresphdrs
+	barrier b2 sync
+	rxrespbody
+} -start
+
+client c3 {
+	txreq -url /3
+	rxresphdrs
+	barrier b2 sync
+	rxrespbody
+} -start
+
+client c4 {
+	txreq -url /4
+	rxresphdrs
+	barrier b2 sync
+	rxrespbody
+} -start
+
+client c5 {
+	txreq -url /5
+	rxresphdrs
+	barrier b2 sync
+	rxrespbody
+} -start
+
+client c6 {
+	txreq -url /6
+	rxresphdrs
+	barrier b2 sync
+	rxrespbody
+} -start
+
+client ctest {
+	barrier b2 sync
+	txreq -url "/test"
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "All good"
+} -run
+
+barrier b1 sync
+
+client c1 -wait
+client c2 -wait
+client c3 -wait
+client c4 -wait
+client c5 -wait
+client c6 -wait

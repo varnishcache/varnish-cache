@@ -48,7 +48,6 @@ struct pool {
 	struct taskhead			idle_queue;
 	struct taskhead			queues[TASK_QUEUE_END];
 	unsigned			nthr;
-	unsigned			dry;
 	unsigned			lqueue;
 	uintmax_t			sdropped;
 	uintmax_t			rdropped;
