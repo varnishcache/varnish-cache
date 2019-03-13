@@ -537,7 +537,7 @@ ved_pretend_gzip_bytes(struct req *req, enum vdp_action act, void **priv,
 		l -= lx;
 		p += lx;
 	}
-	/* buf2 is local, have to flush */
+	/* buf1 & buf2 is local, have to flush */
 	return (ved_bytes(req, ecx, VDP_FLUSH, NULL, 0));
 }
 
@@ -609,8 +609,6 @@ ved_gzgz_bytes(struct req *req, enum vdp_action act, void **priv,
 	ssize_t l;
 
 	CAST_OBJ_NOTNULL(foo, *priv, VED_FOO_MAGIC);
-	(void)req;
-	(void)act;
 	pp = ptr;
 	if (len > 0) {
 		/* Skip over the GZIP header */
@@ -630,7 +628,7 @@ ved_gzgz_bytes(struct req *req, enum vdp_action act, void **priv,
 		if (dl > 0) {
 			if (dl > len)
 				dl = len;
-			if (ved_bytes(req, foo->ecx, VDP_NULL, pp, dl))
+			if (ved_bytes(req, foo->ecx, act, pp, dl))
 				return(-1);
 			foo->ll += dl;
 			len -= dl;
@@ -641,7 +639,7 @@ ved_gzgz_bytes(struct req *req, enum vdp_action act, void **priv,
 		/* Remove the "LAST" bit */
 		foo->dbits[0] = *pp;
 		foo->dbits[0] &= ~(1U << (foo->last & 7));
-		if (ved_bytes(req, foo->ecx, VDP_NULL, foo->dbits, 1))
+		if (ved_bytes(req, foo->ecx, act, foo->dbits, 1))
 			return (-1);
 		foo->ll++;
 		len--;
@@ -653,7 +651,7 @@ ved_gzgz_bytes(struct req *req, enum vdp_action act, void **priv,
 		if (dl > 0) {
 			if (dl > len)
 				dl = len;
-			if (ved_bytes(req, foo->ecx, VDP_NULL, pp, dl))
+			if (ved_bytes(req, foo->ecx, act, pp, dl))
 				return (-1);
 			foo->ll += dl;
 			len -= dl;
@@ -715,8 +713,7 @@ ved_gzgz_bytes(struct req *req, enum vdp_action act, void **priv,
 		default:
 			WRONG("compiler must be broken");
 		}
-		if (ved_bytes(req, foo->ecx,
-		    VDP_NULL, foo->dbits + 1, foo->lpad))
+		if (ved_bytes(req, foo->ecx, act, foo->dbits + 1, foo->lpad))
 			return (-1);
 	}
 	if (len > 0) {
