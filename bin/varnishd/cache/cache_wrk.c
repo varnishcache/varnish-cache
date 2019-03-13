@@ -462,6 +462,7 @@ pool_breed(struct pool *qp)
 	pi->qp = qp;
 
 	if (pthread_create(&tp, &tp_attr, pool_thread, pi)) {
+		FREE_OBJ(pi);
 		VSL(SLT_Debug, 0, "Create worker thread failed %d %s",
 		    errno, strerror(errno));
 		Lck_Lock(&pool_mtx);
