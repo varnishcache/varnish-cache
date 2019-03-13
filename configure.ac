@@ -41,7 +41,7 @@ AC_ARG_WITH([rst2man],
   AS_HELP_STRING([--with-rst2man=PATH], [Location of rst2man (auto)]),
   [RST2MAN="$withval"],
   AC_CHECK_PROGS(RST2MAN,
-    [rst2man rst2man.py rst2man-3.6 rst2man-2.7],
+    [rst2man rst2man.py rst2man-3.6 rst2man-3],
     [no]))
 if test "x$RST2MAN" = "xno"; then
   AC_MSG_ERROR(
@@ -52,7 +52,7 @@ AC_ARG_WITH([sphinx-build],
   AS_HELP_STRING([--with-sphinx-build=PATH], [Location of sphinx-build (auto)]),
   [SPHINX="$withval"],
   AC_CHECK_PROGS(SPHINX,
-    [sphinx-build sphinx-build-3.6 sphinx-build-2.7],
+    [sphinx-build sphinx-build-3.6 sphinx-build-3],
     [no]))
 if test "x$SPHINX" = "xno"; then
   AC_MSG_ERROR(
