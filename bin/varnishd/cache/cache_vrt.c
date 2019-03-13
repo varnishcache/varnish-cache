@@ -508,9 +508,7 @@ VRT_fail(VRT_CTX, const char *fmt, ...)
 
 	assert(ctx->vsl != NULL || ctx->msg != NULL);
 	AN(ctx->handling);
-	if (*ctx->handling == VCL_RET_FAIL)
-		return;
-	AZ(*ctx->handling);
+	assert(*ctx->handling == 0 || *ctx->handling == VCL_RET_FAIL);
 	AN(fmt);
 	AZ(strchr(fmt, '\n'));
 	va_start(ap, fmt);
