@@ -194,13 +194,8 @@ pool_getidleworker(struct pool *pp, enum task_prio prio)
 			AZ(pp->nidle);
 	}
 
-	if (pt == NULL) {
-		if (pp->nthr < cache_param->wthread_max) {
-			pp->dry++;
-			AZ(pthread_cond_signal(&pp->herder_cond));
-		}
+	if (pt == NULL)
 		return (NULL);
-	}
 	AZ(pt->func);
 	CAST_OBJ_NOTNULL(wrk, pt->priv, WORKER_MAGIC);
 	return (wrk);
@@ -303,6 +298,7 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum task_prio prio)
 		pp->nqueued++;
 		pp->lqueue++;
 		VTAILQ_INSERT_TAIL(&pp->queues[prio], task, list);
+		AZ(pthread_cond_signal(&pp->herder_cond));
 	} else {
 		if (prio == TASK_QUEUE_REQ)
 			pp->sdropped++;
@@ -473,7 +469,6 @@ pool_breed(struct pool *qp)
 		Lck_Unlock(&pool_mtx);
 		VTIM_sleep(cache_param->wthread_fail_delay);
 	} else {
-		qp->dry = 0;
 		qp->nthr++;
 		Lck_Lock(&pool_mtx);
 		VSC_C_main->threads++;
@@ -549,7 +544,7 @@ pool_herder(void *priv)
 
 		/* Make more threads if needed and allowed */
 		if (pp->nthr < wthread_min ||
-		    (pp->dry && pp->nthr < cache_param->wthread_max)) {
+		    (pp->lqueue > 0 && pp->nthr < cache_param->wthread_max)) {
 			pool_breed(pp);
 			continue;
 		}
@@ -610,16 +605,14 @@ pool_herder(void *priv)
 			continue;
 		}
 		Lck_Lock(&pp->mtx);
-		if (!pp->dry) {
+		if (pp->lqueue == 0) {
 			if (DO_DEBUG(DBG_VTC_MODE))
 				delay = 0.5;
 			(void)Lck_CondWait(&pp->herder_cond, &pp->mtx,
 				VTIM_real() + delay);
-		} else {
+		} else
 			/* XXX: unsafe counters */
 			VSC_C_main->threads_limited++;
-			pp->dry = 0;
-		}
 		Lck_Unlock(&pp->mtx);
 	}
 	return (NULL);
