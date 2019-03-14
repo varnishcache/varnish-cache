@@ -99,6 +99,8 @@ VCLI_VTE(struct cli *cli, struct vsb **src, int width)
 	nsp = (width - (w_ln)) / n_col;
 	if (nsp > 3)
 		nsp = 3;
+	if (nsp < 1)
+		nsp = 1;
 
 	cc = 0;
 	wc = 0;
