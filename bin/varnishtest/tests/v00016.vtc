@@ -2,8 +2,6 @@ varnishtest "Various VCL compiler coverage tests"
 
 shell "true > ${tmpdir}/_varnishtest_empty_file"
 
-feature dns
-
 varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
 	include "${tmpdir}/_varnishtest_empty_file" ;
