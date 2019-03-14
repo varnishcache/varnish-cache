@@ -163,7 +163,7 @@ For developers and authors of VMODs and API clients
 Python 3.4 or later is now required to build Varnish, or use scripts
 installed along with Varnish, such as ``vmodtool.py`` to build VMODs
 or other Varnish artifacts. Python 2 is no longer supported, and this
-support will likely be dropped from stable branches too.
+support will likely be dropped in a future 6.0 LTS release too.
 
 The VRT API has been bumped to version 9.0. Changes include:
 
