@@ -187,4 +187,10 @@ defines macros for prepending the vmod prefix, and for naming enums
 and argument structs. For details, see the `change log`_, and examine
 the contents of ``vcc_if.h`` after generation.
 
+Going forward, we will adhere to the principle that data returned by
+VMOD methods and functions are immutable. This is now enforced in some
+places by use of the ``const`` modifier. A VMOD is free to do as it
+sees fit within its own implementation, but if you attempt to change
+something returned by another VMOD, the results are undefined.
+
 *eof*
