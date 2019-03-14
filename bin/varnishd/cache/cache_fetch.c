@@ -776,6 +776,8 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	VSB_destroy(&synth_body);
 	HSH_Unbusy(wrk, bo->fetch_objcore);
 	ObjSetState(wrk, bo->fetch_objcore, BOS_FINISHED);
+	if (bo->stale_oc != NULL)
+		HSH_Kill(bo->stale_oc);
 	return (F_STP_DONE);
 }
 
