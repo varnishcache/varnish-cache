@@ -1,57 +1,15 @@
 ---
 language: c
 
-matrix:
-  fast_finish: true
-  include:
-  - os: linux
-    dist: xenial
-    compiler: gcc
-  - os: linux
-    dist: xenial
-    compiler: clang
-  - os: linux
-    dist: xenial
-    compiler: clang
-    env: SAN_FLAGS="--enable-asan --enable-ubsan"
-  - os: osx
-    osx_image: xcode10.1
-    compiler: clang
-  allow_failures:
-  - os: osx
-  - env: SAN_FLAGS="--enable-asan --enable-ubsan"
-
 addons:
   apt:
     packages:
       - python3-docutils
       - python3-sphinx
-  homebrew:
-    packages:
-      - docutils
-      - nghttp2
-      - sphinx-doc
-
-notifications:
-  irc:
-    channels:
-      - "irc.linpro.no#varnish-hacking"
-    on_success: change
-    use_notice: true
 
 before_script:
-  - |
-    if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-      export PATH="/usr/local/opt/sphinx-doc/bin:$PATH"
-    elif [[ -n "$SAN_FLAGS" ]]; then
-      export CONFIGURE_ARGS="--enable-developer-warnings --enable-debugging-symbols --disable-stack-protector --with-persistent-storage ${SAN_FLAGS}"
-      export ASAN_OPTIONS=abort_on_error=1,detect_odr_violation=1,detect_leaks=1,detect_stack_use_after_return=1,detect_invalid_pointer_pairs=1,handle_segv=0,handle_sigbus=0,use_sigaltstack=0,disable_coredump=0
-      export LSAN_OPTIONS=abort_on_error=1,use_sigaltstack=0,suppressions=$(pwd)/tools/lsan.suppr
-      export TSAN_OPTIONS=abort_on_error=1,halt_on_error=1,use_sigaltstack=0,suppressions=$(pwd)/tools/tsan.suppr
-      export UBSAN_OPTIONS=halt_on_error=1,print_stacktrace=1,use_sigaltstack=0,suppressions=$(pwd)/tools/ubsan.suppr
-    fi
   - ./autogen.sh
-  - ./configure ${CONFIGURE_ARGS}
+  - ./configure
 
 script:
   - |
@@ -63,6 +21,41 @@ script:
 
 jobs:
   include:
+    - stage: test
+      os: linux
+      dist: xenial
+      compiler: gcc
+    - stage: test
+      os: linux
+      dist: xenial
+      compiler: clang
+    - stage: test
+      os: linux
+      dist: xenial
+      compiler: clang
+      env: SAN_BUILD=1
+      before_script:
+        - |
+          export ASAN_OPTIONS=abort_on_error=1,detect_odr_violation=1,detect_leaks=1,detect_stack_use_after_return=1,detect_invalid_pointer_pairs=1,handle_segv=0,handle_sigbus=0,use_sigaltstack=0,disable_coredump=0
+          export LSAN_OPTIONS=abort_on_error=1,use_sigaltstack=0,suppressions=$(pwd)/tools/lsan.suppr
+          export TSAN_OPTIONS=abort_on_error=1,halt_on_error=1,use_sigaltstack=0,suppressions=$(pwd)/tools/tsan.suppr
+          export UBSAN_OPTIONS=halt_on_error=1,print_stacktrace=1,use_sigaltstack=0,suppressions=$(pwd)/tools/ubsan.suppr
+        - ./autogen.sh
+        - ./configure --enable-developer-warnings --enable-debugging-symbols --disable-stack-protector --with-persistent-storage --enable-asan --enable-ubsan
+    - stage: test
+      os: osx
+      osx_image: xcode10.1
+      compiler: clang
+      addons:
+        homebrew:
+          packages:
+            - docutils
+            - nghttp2
+            - sphinx-doc
+      before_script:
+        - export PATH="/usr/local/opt/sphinx-doc/bin:$PATH"
+        - ./autogen.sh
+        - ./configure
     - stage: coverity
       if: type = cron
       env:
@@ -82,3 +75,15 @@ jobs:
             --form version="$TRAVIS_COMMIT" \
             --form description="$TRAVIS_BRANCH" \
             'https://scan.coverity.com/builds?project=varnish'
+  fast_finish: true
+  allow_failures:
+  - os: osx
+  - env: SAN_BUILD=1
+
+notifications:
+  irc:
+    channels:
+      - "irc.linpro.no#varnish-hacking"
+    on_success: change
+    use_notice: true
+
