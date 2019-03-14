@@ -221,6 +221,14 @@ When :ref:`varnishtest(1)` is invoked with either of the ``-L`` or
 generated from VCL can also be inspected after a test. By default, the
 temporary directory is deleted after each test.
 
+Since around the time of the last release, we have begun the project
+`VTest`_, which is adapted from :ref:`varnishtest(1)`, but is made
+available as a stand-alone program useful for testing various HTTP
+clients, servers and proxies (not just Varnish). But for the time
+being, we still use :ref:`varnishtest(1)` for our own testing.
+
+.. _VTest: https://github.com/vtest/VTest
+
 Changes for developers and VMOD authors
 =======================================
 
