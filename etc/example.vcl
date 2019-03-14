@@ -10,6 +10,8 @@
 
 # Marker to tell the VCL compiler that this VCL has been adapted to the
 # new 4.0 format.
+# When varnishd listens to Unix-Domain Sockets (UDS),
+# VCL >= 4.1 will be required for all VCL programs loaded by Varnish.
 vcl 4.0;
 
 # Default backend definition. Set this to point to your content server.
