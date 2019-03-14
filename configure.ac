@@ -45,7 +45,7 @@ AC_ARG_WITH([rst2man],
     [no]))
 if test "x$RST2MAN" = "xno"; then
   AC_MSG_ERROR(
-    [rst2man is needed to build Varnish, please install python-docutils.])
+    [rst2man is needed to build Varnish, please install python3-docutils.])
 fi
 
 AC_ARG_WITH([sphinx-build],
@@ -56,7 +56,7 @@ AC_ARG_WITH([sphinx-build],
     [no]))
 if test "x$SPHINX" = "xno"; then
   AC_MSG_ERROR(
-    [sphinx-build is needed to build Varnish, please install python-sphinx.])
+    [sphinx-build is needed to build Varnish, please install python3-sphinx.])
 fi
 
 AC_ARG_WITH([rst2html],
