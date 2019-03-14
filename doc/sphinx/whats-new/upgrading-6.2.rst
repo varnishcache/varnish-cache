@@ -1,7 +1,3 @@
-**Note: This is a working document for a future release, with running
-updates for changes in the development branch. For changes in the
-released versions of Varnish, see:** :ref:`whats-new-index`
-
 .. _whatsnew_upgrading_2019_03:
 
 %%%%%%%%%%%%%%%%%%%%%%%%
