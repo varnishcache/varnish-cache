@@ -689,6 +689,7 @@ xyzzy_catflap(VRT_CTX, VCL_ENUM type)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	XXXAZ(req->vcf);
 	req->vcf = WS_Alloc(req->ws, sizeof *req->vcf);
+	AN(req->vcf);
 	INIT_OBJ(req->vcf, VCF_MAGIC);
 	if (type == VENUM(first) || type == VENUM(miss)) {
 		req->vcf->func = xyzzy_catflap_simple;
