@@ -832,6 +832,7 @@ haproxy_write_conf(struct haproxy *h)
 
 	vsb = macro_expand(h->vl, VSB_data(h->cfg_vsb));
 	AN(vsb);
+	assert(VSB_len(vsb) >= 0);
 
 	vtc_dump(h->vl, 4, "conf", VSB_data(vsb), VSB_len(vsb));
 	if (VFIL_writefile(h->workdir, h->cfg_fn,
