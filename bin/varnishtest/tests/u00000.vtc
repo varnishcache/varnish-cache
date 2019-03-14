@@ -46,14 +46,6 @@ shell -err -expect {-d makes no sense with -C} "varnishd -C -b 127.0.0.1:80 -d "
 shell -err -expect {-F makes no sense with -C} "varnishd -C -b 127.0.0.1:80 -F "
 shell -err -expect {Neither -b nor -f given} { varnishd -n ${tmpdir}/v0  }
 
-# This check is kept last because it may be skipped
-
-feature persistent_storage
-
-shell -err -expect {-spersistent has been deprecated} {
-	varnishd -spersistent -f ''
-}
-
 # Test -I and -l arguments (former a00016)
 
 shell -err -expect {Only one -I allowed} {
@@ -160,3 +152,5 @@ shell -err -expect {Cannot read -f file} {
 	exec varnishd -n ${tmpdir}/v0 -F -a :0 -l2m,3m -f ${tmpdir}/ok1 \
 	    -f ${tmpdir}/bad -f ${tmpdir}/ok2
 }
+
+# varnishd -spersistent is tested in p00000.vtc

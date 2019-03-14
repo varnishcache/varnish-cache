@@ -2,6 +2,10 @@ varnishtest "Test Basic persistence"
 
 feature persistent_storage
 
+shell -err -expect {-spersistent has been deprecated} {
+	varnishd -spersistent -f ''
+}
+
 server s1 {
 	rxreq
 	txresp
