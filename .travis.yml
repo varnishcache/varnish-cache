@@ -22,14 +22,17 @@ script:
 jobs:
   include:
     - stage: test
+      if: type != cron
       os: linux
       dist: xenial
       compiler: gcc
     - stage: test
+      if: type != cron
       os: linux
       dist: xenial
       compiler: clang
     - stage: test
+      if: type != cron
       os: linux
       dist: xenial
       compiler: clang
@@ -43,6 +46,7 @@ jobs:
         - ./autogen.sh
         - ./configure --enable-developer-warnings --enable-debugging-symbols --disable-stack-protector --with-persistent-storage --enable-asan --enable-ubsan
     - stage: test
+      if: type != cron
       os: osx
       osx_image: xcode10.1
       compiler: clang
@@ -77,8 +81,8 @@ jobs:
             'https://scan.coverity.com/builds?project=varnish'
   fast_finish: true
   allow_failures:
-  - os: osx
-  - env: SAN_BUILD=1
+    - os: osx
+    - env: SAN_BUILD=1
 
 notifications:
   irc:
