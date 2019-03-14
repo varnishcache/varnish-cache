@@ -518,7 +518,7 @@ vca_accept_task(struct worker *wrk, void *arg)
 				strcpy(lport, "0");
 			} else {
 				VTCP_myname(ls->sock, laddr, VTCP_ADDRBUFSIZE,
-				    lport, VTCP_ADDRBUFSIZE);
+				    lport, VTCP_PORTBUFSIZE);
 			}
 
 			VSL(SLT_SessError, 0, "%s %s %s %d %d %s",
