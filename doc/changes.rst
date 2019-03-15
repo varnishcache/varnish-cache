@@ -4,16 +4,14 @@ About this document
 
 .. keep this section at the top!
 
-This document contains notes from the Varnish developers about ongoing
-development and past versions:
+This document contains notes from the Varnish developers about the 6.2
+branch of Varnish Cache.
 
 * Developers will note here changes which they consider particularly
   relevant or otherwise noteworthy
 
-* This document is not necessarily up-to-date with the code
-
-* It serves as a basis for release managers and others involved in
-  release documentation
+* This document is updated before releases and partly during
+  develoment. Between releases the document can be out of sync.
 
 * It is not rendered as part of the official documentation and thus
   only available in ReStructuredText (rst) format in the source
