@@ -1,5 +1,7 @@
 varnishtest "Various VCL compiler coverage tests"
 
+feature dns
+
 shell "true > ${tmpdir}/_varnishtest_empty_file"
 
 varnish v1 -vcl {
