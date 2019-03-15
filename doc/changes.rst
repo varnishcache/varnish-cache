@@ -26,9 +26,9 @@ http://varnish-cache.org/docs/trunk/whats-new/index.html and via
 individual releases. These documents are updated as part of the
 release process.
 
-=============================
-Varnish Cache trunk (ongoing)
-=============================
+================================
+Varnish Cache 6.2.0 (2019-03-15)
+================================
 
 * Extend JSON support in the CLI (2783_)
 
