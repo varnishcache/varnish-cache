@@ -1,41 +1,37 @@
 ---
 language: c
 
-addons:
-  apt:
-    packages:
-      - python3-docutils
-      - python3-sphinx
-
-before_script:
-  - ./autogen.sh
-  - ./configure
-
-script:
-  - |
-    if [[ "$TRAVIS_PULL_REQUEST" != "false" ]]; then
-      make -j3 distcheck VERBOSE=1
-    else
-      make -j3 check VERBOSE=1
-    fi
-
 jobs:
+  allow_failures:
+    - os: osx
+    - env: SAN_BUILD=1
+  fast_finish: true
   include:
-    - stage: test
+    - &test-linux
+      stage: test
       if: type != cron
       os: linux
       dist: xenial
+      compiler: clang
+      addons:
+        apt:
+          packages:
+            - nghttp2
+            - python3-docutils
+            - python3-sphinx
+      before_script:
+        - ./autogen.sh
+        - ./configure
+      script: &script-common
+        - |
+          if [[ "$TRAVIS_PULL_REQUEST" != "false" ]]; then
+            make -j3 distcheck VERBOSE=1
+          else
+            make -j3 check VERBOSE=1
+          fi
+    - <<: *test-linux
       compiler: gcc
-    - stage: test
-      if: type != cron
-      os: linux
-      dist: xenial
-      compiler: clang
-    - stage: test
-      if: type != cron
-      os: linux
-      dist: xenial
-      compiler: clang
+    - <<: *test-linux
       env: SAN_BUILD=1
       before_script:
         - |
@@ -60,14 +56,16 @@ jobs:
         - export PATH="/usr/local/opt/sphinx-doc/bin:$PATH"
         - ./autogen.sh
         - ./configure
-    - stage: coverity
+      script: *script-common
+    - <<: *test-linux
+      stage: coverity
       if: type = cron
       env:
         - secure: "TndnHrwJk9FRSuVQWUk+ZrRc0jcNc0PW3TnvbRicIIwvYSLkMV5Y1tCQ5Jq/P98DA48/N/gf9DCAiFkxrNSKVeOY70FKgHYWlS130GhTv7r0c8zd+CdEXNORclcbBNV5F3Pli/LxZ+RUImjOfwcIcWV4eYv54Xv7aNFDAaDt4G9QlkSwXykLlZkoWLJQXFbhDBFioT1F1mucD9q9izEEeE+kqO1QH/IfobAq9v7/WrcS38sYI+0WvB1S0ajWuZJgRYqy1bocDNcQd05Vbr9NfAdJ9y+4VTuluZtTUyLxu3/0Tw8mAjHkcpOeNU26r3LnpdRk+5JuOFej/MrCmYRRawVfyvNGtu9RwcMkv8jl48TTs5kTf6UwFqJhe85QSlSi7IszfrE8HfB7B6u8eRr67rqjTr9k/BwEQyoBdK4JElQDj4A1GYHClomxgzmMZnVLvStnAm+IjdNlee4SfY0jj2KfPBd/v6Ms+LGVqNV9NDDKRQdOQD+H52MkIWs5Xu9fU5VaWP+xjFomA9aXex3r5FCssgyQ2P+HtWPdjNEtrkNezzfZ5b+VBVP87RdxfSqkZaRxi6gof0AgeTHWoi7GN1scseiKLxxCI7C0dfQgKrXTN7mZdcED1MMYdiaSI9mlSYQDDUHMQGeY1n3a9D6bUcC/TcmYo524PoTFBZgbbYM="
       before_script:
-        - curl -s --data token=$COVTOKEN -O coverity_tool.tgz https://scan.coverity.com/download/linux64
+        - curl --data "token=$COVTOKEN&project=varnish" -o coverity_tool.tgz https://scan.coverity.com/download/linux64
         - tar -xf coverity_tool.tgz
-        - export PATH=$PATH:$(pwd)/cov-analysis-*/bin
+        - export PATH=$PATH:$(echo $(pwd)/cov-analysis-*/bin)
       script:
         - ./autogen.sh
         - ./configure
@@ -79,10 +77,6 @@ jobs:
             --form version="$TRAVIS_COMMIT" \
             --form description="$TRAVIS_BRANCH" \
             'https://scan.coverity.com/builds?project=varnish'
-  fast_finish: true
-  allow_failures:
-    - os: osx
-    - env: SAN_BUILD=1
 
 notifications:
   irc:
