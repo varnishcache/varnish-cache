@@ -132,7 +132,7 @@ changed and fields are now of dynamic width:
   ``Admin`` column has precedence.
 
 In the ``probe_message`` field of ``backend.list -j`` output, the
-``Probe`` and ``Health`` columns appears as the array ``[X, Y,
+``Probe`` and ``Health`` columns appear as the array ``[X, Y,
 health]``.
 
 See :ref:`varnish-cli(7)` for details.

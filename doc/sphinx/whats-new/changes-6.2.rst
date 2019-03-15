@@ -77,7 +77,7 @@ the flag is turned on, C sources and shared object libraries that were
 generated from VCL sources are retained in the Varnish working
 directory (see the notes about ``varnishtest`` below).
 
-For 32bit Platforms, we have increased the default
+For 32-bit platforms, we have increased the default
 :ref:`ref_param_workspace_backend` from 16k to 20k accommodate larger
 response headers which have become common.
 
@@ -212,10 +212,10 @@ varnishtest
 
 When :ref:`varnishtest(1)` is invoked with either of the ``-L`` or
 ``-l`` options to retain the temporary directory after tests, the
-``vcl_keep`` flag for the :ref:`ref_param_debug` is switched on (see
-`Parameters`_ above). This means that C sources and shared objects
-generated from VCL can also be inspected after a test. By default, the
-temporary directory is deleted after each test.
+``vcl_keep`` flag for the :ref:`ref_param_debug` parameter is switched
+on (see `Parameters`_ above). This means that C sources and shared
+objects generated from VCL can also be inspected after a test. By
+default, the temporary directory is deleted after each test.
 
 Since around the time of the last release, we have begun the project
 `VTest`_, which is adapted from :ref:`varnishtest(1)`, but is made
