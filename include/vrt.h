@@ -52,7 +52,7 @@
  * binary/load-time compatible, increment MAJOR version
  *
  *
- * 9.0 (scheduled for 2019-03-15)
+ * 9.0 (2019-03-15)
  *	Make 'len' in vmod_priv 'long'
  *	HTTP_Copy() removed
  *	HTTP_Dup() added
