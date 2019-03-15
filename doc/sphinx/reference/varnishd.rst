@@ -498,7 +498,7 @@ relative to the values listed below, in order to conserve VM space:
 * http_req_size: 12k
 * gzip_buffer: 4k
 * vsl_space: 1G
-* thread_pool_stack: 48k
+* thread_pool_stack: 52k
 
 .. _List of Parameters:
 

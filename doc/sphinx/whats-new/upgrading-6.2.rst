@@ -43,9 +43,10 @@ now.  These are:
 
 * ``vmod_dir`` -- use :ref:`ref_param_vmod_path` instead
 
-The default value of :ref:`ref_param_thread_pool_stack` on 64-bit
-platforms has been increased to 56k (from 48k). See the discussion
-under :ref:`whatsnew_changes_params_2019_03` in
+The default value of :ref:`ref_param_thread_pool_stack` has been
+increased from 48k to 56k on 64-bit platforms and to 52k on 32-bit
+platforms. See the discussion under
+:ref:`whatsnew_changes_params_2019_03` in
 :ref:`whatsnew_changes_2019_03` for details.
 
 .. _whatsnew_upgrading_std_conversion_2019_03:
