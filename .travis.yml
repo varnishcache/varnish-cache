@@ -9,7 +9,6 @@ jobs:
   include:
     - &test-linux
       stage: test
-      if: type != cron
       os: linux
       dist: xenial
       compiler: clang
@@ -32,6 +31,16 @@ jobs:
     - <<: *test-linux
       compiler: gcc
     - <<: *test-linux
+      stage: asan
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-xenial-8
+          packages:
+            - clang-8
+            - nghttp2
+            - python3-docutils
+            - python3-sphinx
       env: SAN_BUILD=1
       before_script:
         - |
@@ -39,10 +48,10 @@ jobs:
           export LSAN_OPTIONS=abort_on_error=1,use_sigaltstack=0,suppressions=$(pwd)/tools/lsan.suppr
           export TSAN_OPTIONS=abort_on_error=1,halt_on_error=1,use_sigaltstack=0,suppressions=$(pwd)/tools/tsan.suppr
           export UBSAN_OPTIONS=halt_on_error=1,print_stacktrace=1,use_sigaltstack=0,suppressions=$(pwd)/tools/ubsan.suppr
+          export CC=clang-8
         - ./autogen.sh
         - ./configure --enable-developer-warnings --enable-debugging-symbols --disable-stack-protector --with-persistent-storage --enable-asan --enable-ubsan
     - stage: test
-      if: type != cron
       os: osx
       osx_image: xcode10.1
       compiler: clang
@@ -59,24 +68,32 @@ jobs:
       script: *script-common
     - <<: *test-linux
       stage: coverity
-      if: type = cron
       env:
         - secure: "TndnHrwJk9FRSuVQWUk+ZrRc0jcNc0PW3TnvbRicIIwvYSLkMV5Y1tCQ5Jq/P98DA48/N/gf9DCAiFkxrNSKVeOY70FKgHYWlS130GhTv7r0c8zd+CdEXNORclcbBNV5F3Pli/LxZ+RUImjOfwcIcWV4eYv54Xv7aNFDAaDt4G9QlkSwXykLlZkoWLJQXFbhDBFioT1F1mucD9q9izEEeE+kqO1QH/IfobAq9v7/WrcS38sYI+0WvB1S0ajWuZJgRYqy1bocDNcQd05Vbr9NfAdJ9y+4VTuluZtTUyLxu3/0Tw8mAjHkcpOeNU26r3LnpdRk+5JuOFej/MrCmYRRawVfyvNGtu9RwcMkv8jl48TTs5kTf6UwFqJhe85QSlSi7IszfrE8HfB7B6u8eRr67rqjTr9k/BwEQyoBdK4JElQDj4A1GYHClomxgzmMZnVLvStnAm+IjdNlee4SfY0jj2KfPBd/v6Ms+LGVqNV9NDDKRQdOQD+H52MkIWs5Xu9fU5VaWP+xjFomA9aXex3r5FCssgyQ2P+HtWPdjNEtrkNezzfZ5b+VBVP87RdxfSqkZaRxi6gof0AgeTHWoi7GN1scseiKLxxCI7C0dfQgKrXTN7mZdcED1MMYdiaSI9mlSYQDDUHMQGeY1n3a9D6bUcC/TcmYo524PoTFBZgbbYM="
       before_script:
         - curl --data "token=$COVTOKEN&project=varnish" -o coverity_tool.tgz https://scan.coverity.com/download/linux64
-        - tar -xf coverity_tool.tgz
+        - tar xfz coverity_tool.tgz
         - export PATH=$PATH:$(echo $(pwd)/cov-analysis-*/bin)
       script:
         - ./autogen.sh
         - ./configure
         - cov-build --dir cov-int make
-        - tar -cfz varnish.tgz cov-int
-        - curl --form token=$COVTOKEN \
-            --form email=varnish-dev@varnish-cache.org \
-            --form file=@varnish.tgz \
-            --form version="$TRAVIS_COMMIT" \
-            --form description="$TRAVIS_BRANCH" \
+        - tar cfz varnish.tgz cov-int
+        - curl --form token="$COVTOKEN"
+            --form email=varnish-dev@varnish-cache.org
+            --form file=@varnish.tgz
+            --form version="$TRAVIS_COMMIT"
+            --form description="$TRAVIS_BRANCH"
             'https://scan.coverity.com/builds?project=varnish'
+
+stages:
+  - name: test
+    if: type != cron
+  - name: asan
+    if: type != cron AND \
+        type != pull_request
+  - name: coverity
+    if: type = cron
 
 notifications:
   irc:
