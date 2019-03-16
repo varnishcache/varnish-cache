@@ -90,7 +90,7 @@ stages:
   - name: test
     if: type != cron
   - name: asan
-    if: type != cron AND \
+    if: type != cron AND
         type != pull_request
   - name: coverity
     if: type = cron
