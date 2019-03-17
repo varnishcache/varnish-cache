@@ -495,8 +495,12 @@ vcl_backend_error
 This subroutine is called if we fail the backend fetch or if
 *max_retries* has been exceeded.
 
-A synthetic object is generated in VCL, whose body may be constructed
-using the ``synthetic()`` function.
+Returning with `abandon`_ does not leave a cache object.
+
+If returning with ``deliver`` and a ``beresp.ttl > 0s``, a synthetic
+cache object is generated in VCL, whose body may be constructed using
+the ``synthetic()`` function. This may be useful to increase the
+efficiency of failing backend requests.
 
 The `vcl_backend_error` subroutine may terminate with calling ``return()``
 with one of the following keywords:

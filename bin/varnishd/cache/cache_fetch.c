@@ -683,6 +683,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	vtim_real now;
 	uint8_t *ptr;
 	struct vsb *synth_body;
+	struct objcore *stale = NULL;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -708,6 +709,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	http_TimeHeader(bo->beresp, "Date: ", now);
 	http_SetHeader(bo->beresp, "Server: Varnish");
 
+	stale = bo->stale_oc;
 	bo->fetch_objcore->t_origin = now;
 	if (!VTAILQ_EMPTY(&bo->fetch_objcore->objhead->waitinglist)) {
 		/*
@@ -720,6 +722,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 		bo->fetch_objcore->ttl = 1;
 		bo->fetch_objcore->grace = 5;
 		bo->fetch_objcore->keep = 5;
+		stale = NULL;
 	} else {
 		bo->fetch_objcore->ttl = 0;
 		bo->fetch_objcore->grace = 0;
@@ -775,6 +778,8 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	AZ(ObjSetU64(wrk, bo->fetch_objcore, OA_LEN, o));
 	VSB_destroy(&synth_body);
 	HSH_Unbusy(wrk, bo->fetch_objcore);
+	if (stale != NULL && bo->fetch_objcore->ttl > 0)
+		HSH_Kill(stale);
 	ObjSetState(wrk, bo->fetch_objcore, BOS_FINISHED);
 	return (F_STP_DONE);
 }

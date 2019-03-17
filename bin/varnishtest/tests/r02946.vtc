@@ -1,0 +1,45 @@
+varnishtest "#2946 - objcore leak for backend_synth"
+
+varnish v1 -vcl {
+	backend bad { .host = "${bad_backend}"; }
+
+	sub vcl_backend_error {
+		if (bereq.http.abandon) {
+			return (abandon);
+		}
+		if (bereq.http.ttl0) {
+			set beresp.ttl = 0s;
+			return (deliver);
+		}
+		set beresp.status = 200;
+		set beresp.ttl = 0.0001s;
+		set beresp.grace = 1h;
+		return (deliver);
+	}
+} -start
+
+client c1 -repeat 20 -keepalive {
+	txreq
+	rxresp
+	expect resp.status == 200
+
+	delay 0.001
+} -run
+
+delay 2
+
+client c1 {
+	txreq -hdr "abandon: true"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.age > 1
+} -run
+
+client c1 {
+	txreq -hdr "ttl0: true"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.age > 1
+} -run
+
+varnish v1 -expect n_objectcore == 1
