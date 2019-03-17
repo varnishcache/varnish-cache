@@ -272,6 +272,10 @@ cnt_synth(struct worker *wrk, struct req *req)
 		return (REQ_FSM_DONE);
 	}
 
+	if (wrk->handling == VCL_RET_RESTART &&
+	    req->restarts > cache_param->max_restarts)
+		wrk->handling = VCL_RET_DELIVER;
+
 	if (wrk->handling == VCL_RET_RESTART) {
 		/*
 		 * XXX: Should we reset req->doclose = SC_VCL_FAILURE
