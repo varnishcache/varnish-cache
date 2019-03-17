@@ -504,6 +504,9 @@ with one of the following keywords:
   ``fail``
     see  `fail`_
 
+  ``abandon``
+    see  `abandon`_
+
   ``deliver``
     Deliver and possibly cache the object defined in
     `vcl_backend_error` **as if it was fetched from the backend**, also
