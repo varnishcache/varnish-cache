@@ -17,8 +17,8 @@ The behaviour for ``return()`` keywords is identical or at least
 similar across subroutines, so differences are only documented where
 relevant.
 
-common return keywords
-----------------------
+common return keywords for the client and backend side
+------------------------------------------------------
 
 .. _fail:
 
@@ -31,6 +31,11 @@ common return keywords
     Intended for fatal errors, for which only minimal error handling is
     possible.
 
+client side
+-----------
+
+common return keywords for the client side
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. _synth:
 
   ``synth(status code, reason)``
@@ -61,9 +66,6 @@ common return keywords
     For a restart, all modifications to ``req`` attributes are
     preserved except for ``req.restarts`` and ``req.xid``, which need
     to change by design.
-
-client side
------------
 
 .. _vcl_recv:
 
@@ -323,6 +325,17 @@ following keywords:
 Backend Side
 ------------
 
+
+common return keywords for the backend side
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. _abandon:
+
+  ``abandon``
+    Abandon the backend request. Unless the backend request was a
+    background fetch, control is passed to :ref:`vcl_synth` on the
+    client side with ``resp.status`` preset to 503.
+
 .. _vcl_backend_fetch:
 
 vcl_backend_fetch
@@ -337,13 +350,11 @@ The `vcl_backend_fetch` subroutine may terminate with calling
   ``fail``
     see  `fail`_
 
+  ``abandon``
+    see  `abandon`_
+
   ``fetch``
     Fetch the object from the backend.
-
-  ``abandon``
-    Abandon the backend request. Unless the backend request was a
-    background fetch, control is passed to :ref:`vcl_synth` on the
-    client side with ``resp.status`` preset to 503.
 
 Before calling `vcl_backend_fetch`, Varnish core prepares the `bereq`
 backend request as follows:
@@ -387,6 +398,9 @@ The `vcl_backend_response` subroutine may terminate with calling
   ``fail``
     see  `fail`_
 
+  ``abandon``
+    see  `abandon`_
+
   ``deliver``
     For a 304 response, create an updated cache object.
     Otherwise, fetch the object body from the backend and initiate
@@ -397,11 +411,6 @@ The `vcl_backend_response` subroutine may terminate with calling
     Retry the backend transaction. Increases the `retries` counter.
     If the number of retries is higher than *max_retries*,
     control will be passed to :ref:`vcl_backend_error`.
-
-  ``abandon``
-    Abandon the backend request. Unless the backend request was a
-    background fetch, control is passed to :ref:`vcl_synth` on the
-    client side with ``resp.status`` preset to 503.
 
   ``pass(duration)``
     Mark the object as a hit-for-pass for the given duration. Subsequent
