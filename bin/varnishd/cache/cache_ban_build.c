@@ -251,7 +251,7 @@ BAN_AddTest(struct ban_proto *bp,
 	}
 
 	op = ban_parse_oper(a2);
-	if (op < 0 ||
+	if (op < _BANS_OPER_OFF ||
 	    ((1U << BAN_OPERIDX(op)) & arg_opervalid[BAN_ARGIDX(pv->tag)]) == 0)
 		return (ban_error(bp,
 		    "expected conditional (%s) got \"%s\"",
