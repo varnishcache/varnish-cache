@@ -275,10 +275,6 @@ vmod_shard__fini(struct vmod_directors_shard **vshardp)
 {
 	struct vmod_directors_shard *vshard;
 
-	// XXX 2297
-	if (*vshardp == NULL)
-		return;
-
 	TAKE_OBJ_NOTNULL(vshard, vshardp, VMOD_SHARD_SHARD_MAGIC);
 	VRT_DelDirector(&vshard->dir);
 	FREE_OBJ(vshard);
@@ -898,10 +894,6 @@ VCL_VOID v_matchproto_(td_directors_shard_param__fini)
 vmod_shard_param__fini(struct vmod_directors_shard_param **pp)
 {
 	struct vmod_directors_shard_param *p;
-
-	// XXX 2297
-	if (*pp == NULL)
-		return;
 
 	TAKE_OBJ_NOTNULL(p, pp, VMOD_SHARD_SHARD_PARAM_MAGIC);
 	FREE_OBJ(p);

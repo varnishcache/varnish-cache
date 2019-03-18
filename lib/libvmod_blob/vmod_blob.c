@@ -301,16 +301,13 @@ vmod_blob__fini(struct vmod_blob_blob **blobp)
 {
 	struct vmod_blob_blob *b;
 
-	if (blobp == NULL || *blobp == NULL)
-		return;
+	TAKE_OBJ_NOTNULL(b, blobp, VMOD_BLOB_MAGIC);
 
-	b = *blobp;
-	*blobp = NULL;
-	CHECK_OBJ(b, VMOD_BLOB_MAGIC);
 	if (b->freeptr != NULL) {
 		free(b->freeptr);
 		b->blob.blob = NULL;
 	}
+
 	for (int i = 0; i < __MAX_ENCODING; i++)
 		for (int j = 0; j < 2; j++) {
 			char *s = b->encoding[i][j];
@@ -319,6 +316,7 @@ vmod_blob__fini(struct vmod_blob_blob **blobp)
 				b->encoding[i][j] = NULL;
 			}
 		}
+
 	AZ(pthread_mutex_destroy(&b->lock));
 	FREE_OBJ(b);
 }

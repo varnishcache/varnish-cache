@@ -144,21 +144,16 @@ xyzzy_dyn__init(VRT_CTX, struct xyzzy_debug_dyn **dynp,
 	*dynp = dyn;
 }
 
-VCL_VOID
+VCL_VOID v_matchproto_(td_xyzzy_debug_dyn__fini)
 xyzzy_dyn__fini(struct xyzzy_debug_dyn **dynp)
 {
 	struct xyzzy_debug_dyn *dyn;
 
-	AN(dynp);
-	if (*dynp == NULL)
-		return; /* failed initialization */
-
-	CAST_OBJ_NOTNULL(dyn, *dynp, VMOD_DEBUG_DYN_MAGIC);
+	TAKE_OBJ_NOTNULL(dyn, dynp, VMOD_DEBUG_DYN_MAGIC);
 	/* at this point all backends will be deleted by the vcl */
 	free(dyn->vcl_name);
 	AZ(pthread_mutex_destroy(&dyn->mtx));
 	FREE_OBJ(dyn);
-	*dynp = NULL;
 }
 
 VCL_BACKEND v_matchproto_()
@@ -194,6 +189,11 @@ dyn_uds_init(VRT_CTX, struct xyzzy_debug_dyn_uds *uds, VCL_STRING path)
 		VRT_fail(ctx, "path must be an absolute path: %s", path);
 		return (-1);
 	}
+
+	/* XXX: now that we accept that sockets may come after vcl.load
+	 * and change during the life of a VCL, do we still need to check
+	 * this? It looks like both if blocks can be retired.
+	 */
 	errno = 0;
 	if (stat(path, &st) != 0) {
 		VRT_fail(ctx, "Cannot stat path %s: %s", path, strerror(errno));
@@ -224,9 +224,9 @@ dyn_uds_init(VRT_CTX, struct xyzzy_debug_dyn_uds *uds, VCL_STRING path)
 	return (0);
 }
 
-VCL_VOID v_matchproto_(td_debug_dyn_uds__init)
+VCL_VOID v_matchproto_(td_xyzzy_debug_dyn_uds__init)
 xyzzy_dyn_uds__init(VRT_CTX, struct xyzzy_debug_dyn_uds **udsp,
-		    const char *vcl_name, VCL_STRING path)
+    const char *vcl_name, VCL_STRING path)
 {
 	struct xyzzy_debug_dyn_uds *uds;
 
@@ -246,6 +246,7 @@ xyzzy_dyn_uds__init(VRT_CTX, struct xyzzy_debug_dyn_uds **udsp,
 		FREE_OBJ(uds);
 		return;
 	}
+
 	*udsp = uds;
 }
 
@@ -254,14 +255,10 @@ xyzzy_dyn_uds__fini(struct xyzzy_debug_dyn_uds **udsp)
 {
 	struct xyzzy_debug_dyn_uds *uds;
 
-	if (udsp == NULL || *udsp == NULL)
-		return;
-	CHECK_OBJ(*udsp, VMOD_DEBUG_UDS_MAGIC);
-	uds = *udsp;
+	TAKE_OBJ_NOTNULL(uds, udsp, VMOD_DEBUG_UDS_MAGIC);
 	free(uds->vcl_name);
 	AZ(pthread_mutex_destroy(&uds->mtx));
 	FREE_OBJ(uds);
-	*udsp = NULL;
 }
 
 VCL_BACKEND v_matchproto_(td_debug_dyn_uds_backend)

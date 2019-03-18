@@ -123,9 +123,17 @@ varnish v1 -errvcl {Expression has type STRING, expected REAL} {
 
 varnish v1 -errvcl {Failed initialization} {
 	import debug;
+	import directors;
 	backend default { .host = "127.0.0.1"; }
 	sub vcl_init {
 		return (fail);
+		# uninitialized objects coverage
 		new xyz = debug.obj();
+		new fb = directors.fallback();
+		new hsh = directors.hash();
+		new rnd = directors.random();
+		new rr = directors.round_robin();
+		new shd = directors.shard();
+		new shp = directors.shard_param();
 	}
 }

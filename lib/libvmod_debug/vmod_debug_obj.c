@@ -38,8 +38,9 @@
 struct xyzzy_debug_obj {
 	unsigned		magic;
 #define VMOD_DEBUG_OBJ_MAGIC	0xccbd9b77
-	int foobar;
-	const char *string, *number;
+	int			foobar;
+	const char		*string;
+	const char		*number;
 };
 
 VCL_VOID
@@ -61,16 +62,16 @@ xyzzy_obj__init(VRT_CTX, struct xyzzy_debug_obj **op,
 	AN(*op);
 }
 
-VCL_VOID
+VCL_VOID v_matchproto_(td_xyzzy_obj__fini)
 xyzzy_obj__fini(struct xyzzy_debug_obj **op)
 {
+	struct xyzzy_debug_obj *o;
 
-	AN(op);
-	AN(*op);
-	FREE_OBJ(*op);
+	TAKE_OBJ_NOTNULL(o, op, VMOD_DEBUG_OBJ_MAGIC);
+	FREE_OBJ(o);
 }
 
-VCL_VOID v_matchproto_()
+VCL_VOID v_matchproto_(td_xyzzy_obj_enum)
 xyzzy_obj_enum(VRT_CTX, struct xyzzy_debug_obj *o, VCL_ENUM e)
 {
 
