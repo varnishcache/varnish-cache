@@ -12,7 +12,7 @@ server s1 {
 varnish v1 \
 	-arg "-p feature=+no_coredump" \
 	-arg "-p vcc_allow_inline_c=true" \
-	-arg "-p thread_pool_stack=48k" \
+	-arg "-p thread_pool_stack=128k" \
 	-vcl+backend {
 	C{
 #include <signal.h>
@@ -27,11 +27,12 @@ void (*accessor)(volatile char *p) = _accessor;
 
 }C
 	sub vcl_recv { C{
+	    const int stkkb = 128;
 	    int i;
-	    volatile char overflow[48*1024];
+	    volatile char overflow[stkkb * 1024];
 
 	    /* for downwards stack, take care to hit a single guard page */
-	    for (i = 47*1024; i >= 0; i -= 1024)
+	    for (i = (stkkb - 1) * 1024; i >= 0; i -= 1024)
 		accessor(overflow + i);
 	    /* NOTREACHED */
 	    sleep(2);
