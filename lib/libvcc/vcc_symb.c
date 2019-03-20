@@ -206,7 +206,8 @@ VCC_SymbolGet(struct vcc *tl, vcc_kind_t kind, const char *e, const char *x)
 	if (tl->syntax >= VCL_41 && e == SYMTAB_CREATE && kind != SYM_SUB &&
 	    (tl->t->b[0] == 'v'|| tl->t->b[0] == 'V') &&
 	    (tl->t->b[1] == 'c'|| tl->t->b[1] == 'C') &&
-	    (tl->t->b[2] == 'l'|| tl->t->b[2] == 'L')) {
+	    (tl->t->b[2] == 'l'|| tl->t->b[2] == 'L') &&
+	    (tl->t->b[3] == '_')) {
 		VSB_printf(tl->sb,
 		    "Symbols named 'vcl_*' are reserved.\nAt:");
 		vcc_ErrWhere(tl, tl->t);
