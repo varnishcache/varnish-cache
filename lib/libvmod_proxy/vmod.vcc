@@ -1,8 +1,10 @@
 #-
 # Copyright (c) 2018 GANDI SAS
+# Copyright 2018 UPLEX - Nils Goroll Systemoptimierung
 # All rights reserved.
 #
-# Author: Emmanuel Hocdet <manu@gandi.net>
+# Authors: Emmanuel Hocdet <manu@gandi.net>
+#	   Nils Goroll <nils.goroll@uplex.de>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -34,6 +36,9 @@ DESCRIPTION
 *vmod_proxy* contains functions to extract proxy-protocol-v2 TLV
 attributes as described in
 https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt.
+
+It also allows for generating a proxy header (without the option to
+add TLV attributes for the time being).
 
 $Function STRING alpn()
 
@@ -122,6 +127,12 @@ Extract the certificate key algorithm attribute.
 Example::
 
 	set req.http.cert-key = proxy.cert_key();
+
+$Function BLOB header(INT version, IP client, IP server)
+
+Format a proxy header of the given version (must be 1 or 2) and
+addresses (The VCL IP type also conatins the port number).
+
 
 SEE ALSO
 ========
