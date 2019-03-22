@@ -588,7 +588,7 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 	struct vcl *vcl;
 	const struct vrt_backend_probe *vbp;
 	const struct backend *viabe = NULL;
-	const struct suckaddr *bogo, *sa = NULL;
+	const struct suckaddr *bogo = NULL, *sa = NULL;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vrt, VRT_BACKEND_MAGIC);
@@ -672,6 +672,8 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 
 	if (viabe) {
 		AN(viabe->tcp_pool);
+		AN(bogo);
+		AN(sa);
 		be->tcp_pool = VTP_Clone(viabe->tcp_pool, vrt_hash_be(vrt));
 		// XXX proxy v2 - using 1 for easy vtc ?
 		be->preamble = VSB_new_auto();
