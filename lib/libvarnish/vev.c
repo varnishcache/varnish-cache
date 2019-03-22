@@ -222,9 +222,8 @@ VEV_Destroy(struct vev_root **evbp)
 	assert(evb->thread == pthread_self());
 	free(evb->pfd);
 	free(evb->pev);
-	/* destroy evb->binheap */
-	evb->magic = 0;
-	free(evb);
+	/* XXX: destroy evb->binheap */
+	FREE_OBJ(evb);
 }
 
 /*--------------------------------------------------------------------*/
