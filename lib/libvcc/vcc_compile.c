@@ -311,6 +311,10 @@ EmitInitFini(const struct vcc *tl)
 		assert(p->n > 0);
 		if (VSB_len(p->ini))
 			Fc(tl, 0, "\t/* %u */\n%s\n", p->n, VSB_data(p->ini));
+		if (p->ignore_errors == 0) {
+			Fc(tl, 0, "\tif (*ctx->handling == VCL_RET_FAIL)\n");
+			Fc(tl, 0, "\t\treturn(1);\n");
+		}
 		Fc(tl, 0, "\tvgc_inistep = %u;\n\n", p->n);
 		VSB_destroy(&p->ini);
 
@@ -664,10 +668,10 @@ vcc_CompileSource(struct vcc *tl, struct source *sp)
 	ifp = New_IniFin(tl);
 	VSB_printf(ifp->ini, "\tVGC_function_vcl_init(ctx);\n");
 	/*
-	 * We do not return(1) if this fails, because the failure
-	 * could be half way into vcl_init{} so vcl_fini{} must
-	 * always be called, also on failure.
+	 * Because the failure could be half way into vcl_init{} so vcl_fini{}
+	 * must always be called, also on failure.
 	 */
+	ifp->ignore_errors = 1;
 	VSB_printf(ifp->fin, "\t\tVGC_function_vcl_fini(ctx);");
 
 	/* Emit method functions */

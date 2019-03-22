@@ -200,6 +200,7 @@ struct inifin {
 	unsigned		magic;
 #define INIFIN_MAGIC		0x583c274c
 	unsigned		n;
+	unsigned		ignore_errors;
 	struct vsb		*ini;
 	struct vsb		*fin;
 	struct vsb		*final;
