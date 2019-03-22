@@ -7,29 +7,80 @@ server s1 {
 	accept
 	rxreq
 	txresp
+	close
+	accept
+	rxreq
+	txresp
+	close
+	accept
+	rxreq
+	txresp
 } -start
 
-varnish v1 -vcl {
+# the use case for via-proxy is to have a(n ha)proxy make a(n ssl)
+# connection on our behalf. For the purpose of testing, we use another
+# varnish in place - but we are behaving realistically in that we do
+# not use any prior information for the actual backend connection -
+# just the information from the proxy protocol
+
+varnish v2 -proto PROXY -vcl {
 	import debug;
+	import std;
 
 	backend dummy { .host = "${bad_backend}"; }
-
-	probe pr {}
 
 	sub vcl_init {
 		new s1 = debug.dyn("0.0.0.0", "0");
 	}
 
 	sub vcl_recv {
-		s1.refresh("${s1_addr}", "${s1_port}", pr);
+		s1.refresh(server.ip, std.port(server.ip));
+		set req.backend_hint = s1.backend();
+		return (pass);
+	}
+} -start
+
+#
+# we vtc.sleep to make sure that the health check is done and server
+# s1 has accepted again. We would rather want to use barriers, but
+# there is a (yet not understood) bug in varnishtest which prevents
+# the bX_sock marcros from being available in the second varnish
+# instance
+
+varnish v1 -vcl {
+	import debug;
+	import vtc;
+
+	backend dummy { .host = "${bad_backend}"; }
+
+	backend v2 { .host = "${v2_addr}"; .port = "${v2_port}"; }
+
+	probe pr { .interval = 1m; }
+
+	sub vcl_init {
+		new s1 = debug.dyn("0.0.0.0", "0");
+	}
+
+	sub vcl_recv {
+		if (req.url == "/1") {
+			s1.refresh("${s1_addr}", "${s1_port}", pr);
+			vtc.sleep(1s);
+		} else if (req.url == "/2") {
+			s1.refresh("${s1_addr}", "${s1_port}", pr,
+			    via=v2);
+			vtc.sleep(1s);
+		}
 		set req.backend_hint = s1.backend();
 	}
 } -start
 
-varnish v1 -expect MAIN.n_backend == 2
+varnish v1 -expect MAIN.n_backend == 3
 
 client c1 {
-	txreq
+	txreq -url /1
+	rxresp
+	expect resp.status == 200
+	txreq -url /2
 	rxresp
 	expect resp.status == 200
 } -run
