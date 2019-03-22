@@ -261,20 +261,20 @@ tweak_generic_bytes(struct vsb *vsb, volatile ssize_t *dest, const char *arg,
 
 	if (arg != NULL && arg != JSON_FMT) {
 		if (min != NULL) {
-			p = VNUM_2bytes(min, &rmin, 0);
+			p = VNUM_2bytes(min, &rmin);
 			if (p != NULL) {
 				VSB_printf(vsb, "Invalid min-val: %s\n", min);
 				return (-1);
 			}
 		}
 		if (max != NULL) {
-			p = VNUM_2bytes(max, &rmax, 0);
+			p = VNUM_2bytes(max, &rmax);
 			if (p != NULL) {
 				VSB_printf(vsb, "Invalid max-val: %s\n", max);
 				return (-1);
 			}
 		}
-		p = VNUM_2bytes(arg, &r, 0);
+		p = VNUM_2bytes(arg, &r);
 		if (p != NULL) {
 			VSB_cat(vsb, "Could not convert to bytes.\n");
 			VSB_printf(vsb, "%s\n", p);

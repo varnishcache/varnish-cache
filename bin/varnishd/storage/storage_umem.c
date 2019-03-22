@@ -309,7 +309,7 @@ smu_init(struct stevedore *parent, int ac, char * const *av)
 		ARGV_ERR("(-sumem) too many arguments\n");
 
 	if (ac == 1 && *av[0] != '\0') {
-		e = VNUM_2bytes(av[0], &u, 0);
+		e = VNUM_2bytes(av[0], &u);
 		if (e != NULL)
 			ARGV_ERR("(-sumem) size \"%s\": %s\n", av[0], e);
 		if ((u != (uintmax_t)(size_t)u))

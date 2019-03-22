@@ -256,7 +256,7 @@ VNUM_duration(const char *p)
 /**********************************************************************/
 
 double
-VNUM_bytes_unit(double r, const char *b, const char *e, uintmax_t rel)
+VNUM_bytes_unit(double r, const char *b, const char *e)
 {
 	double sc = 1.0;
 
@@ -268,24 +268,20 @@ VNUM_bytes_unit(double r, const char *b, const char *e, uintmax_t rel)
 	if (b == e)
 		return (nan(""));
 
-	if (rel != 0 && *b == '%') {
-		r *= rel * 0.01;
-		b++;
-	} else {
-		switch (*b) {
-		case 'k': case 'K': sc = exp2(10); b++; break;
-		case 'm': case 'M': sc = exp2(20); b++; break;
-		case 'g': case 'G': sc = exp2(30); b++; break;
-		case 't': case 'T': sc = exp2(40); b++; break;
-		case 'p': case 'P': sc = exp2(50); b++; break;
-		case 'b': case 'B':
-			break;
-		default:
-			return (nan(""));
-		}
-		if (b < e && (*b == 'b' || *b == 'B'))
-			b++;
+	switch (*b) {
+	case 'k': case 'K': sc = exp2(10); b++; break;
+	case 'm': case 'M': sc = exp2(20); b++; break;
+	case 'g': case 'G': sc = exp2(30); b++; break;
+	case 't': case 'T': sc = exp2(40); b++; break;
+	case 'p': case 'P': sc = exp2(50); b++; break;
+	case 'b': case 'B':
+		break;
+	default:
+		return (nan(""));
 	}
+	if (b < e && (*b == 'b' || *b == 'B'))
+		b++;
+
 	while (b < e && vct_issp(*b))
 		b++;
 	if (b < e)
@@ -294,7 +290,7 @@ VNUM_bytes_unit(double r, const char *b, const char *e, uintmax_t rel)
 }
 
 const char *
-VNUM_2bytes(const char *p, uintmax_t *r, uintmax_t rel)
+VNUM_2bytes(const char *p, uintmax_t *r)
 {
 	double fval;
 	const char *end;
@@ -311,7 +307,7 @@ VNUM_2bytes(const char *p, uintmax_t *r, uintmax_t rel)
 		return (NULL);
 	}
 
-	fval = VNUM_bytes_unit(fval, end, NULL, rel);
+	fval = VNUM_bytes_unit(fval, end, NULL);
 	if (isnan(fval))
 		return (err_invalid_suff);
 	*r = (uintmax_t)round(fval);
@@ -323,60 +319,55 @@ VNUM_2bytes(const char *p, uintmax_t *r, uintmax_t rel)
 
 static struct test_case {
 	const char *str;
-	uintmax_t rel;
 	uintmax_t val;
 	const char *err;
 } test_cases[] = {
-	{ "1",			(uintmax_t)0,	(uintmax_t)1 },
-	{ "1B",			(uintmax_t)0,	(uintmax_t)1<<0 },
-	{ "1 B",		(uintmax_t)0,	(uintmax_t)1<<0 },
-	{ "1.3B",		(uintmax_t)0,	(uintmax_t)1 },
-	{ "1.7B",		(uintmax_t)0,	(uintmax_t)2 },
+	{ "1",			(uintmax_t)1 },
+	{ "1B",			(uintmax_t)1<<0 },
+	{ "1 B",		(uintmax_t)1<<0 },
+	{ "1.3B",		(uintmax_t)1 },
+	{ "1.7B",		(uintmax_t)2 },
 
-	{ "1024",		(uintmax_t)0,	(uintmax_t)1024 },
-	{ "1k",			(uintmax_t)0,	(uintmax_t)1<<10 },
-	{ "1kB",		(uintmax_t)0,	(uintmax_t)1<<10 },
-	{ "1.3kB",		(uintmax_t)0,	(uintmax_t)1331 },
-	{ "1.7kB",		(uintmax_t)0,	(uintmax_t)1741 },
+	{ "1024",		(uintmax_t)1024 },
+	{ "1k",			(uintmax_t)1<<10 },
+	{ "1kB",		(uintmax_t)1<<10 },
+	{ "1.3kB",		(uintmax_t)1331 },
+	{ "1.7kB",		(uintmax_t)1741 },
 
-	{ "1048576",		(uintmax_t)0,	(uintmax_t)1048576 },
-	{ "1M",			(uintmax_t)0,	(uintmax_t)1<<20 },
-	{ "1MB",		(uintmax_t)0,	(uintmax_t)1<<20 },
-	{ "1.3MB",		(uintmax_t)0,	(uintmax_t)1363149 },
-	{ "1.7MB",		(uintmax_t)0,	(uintmax_t)1782579 },
+	{ "1048576",		(uintmax_t)1048576 },
+	{ "1M",			(uintmax_t)1<<20 },
+	{ "1MB",		(uintmax_t)1<<20 },
+	{ "1.3MB",		(uintmax_t)1363149 },
+	{ "1.7MB",		(uintmax_t)1782579 },
 
-	{ "1073741824",		(uintmax_t)0,	(uintmax_t)1073741824 },
-	{ "1G",			(uintmax_t)0,	(uintmax_t)1<<30 },
-	{ "1GB",		(uintmax_t)0,	(uintmax_t)1<<30 },
-	{ "1.3GB",		(uintmax_t)0,	(uintmax_t)1395864371 },
-	{ "1.7GB",		(uintmax_t)0,	(uintmax_t)1825361101 },
+	{ "1073741824",		(uintmax_t)1073741824 },
+	{ "1G",			(uintmax_t)1<<30 },
+	{ "1GB",		(uintmax_t)1<<30 },
+	{ "1.3GB",		(uintmax_t)1395864371 },
+	{ "1.7GB",		(uintmax_t)1825361101 },
 
-	{ "1099511627776",	(uintmax_t)0,	(uintmax_t)1099511627776ULL },
-	{ "1T",			(uintmax_t)0,	(uintmax_t)1<<40 },
-	{ "1TB",		(uintmax_t)0,	(uintmax_t)1<<40 },
-	{ "1.3TB",		(uintmax_t)0,	(uintmax_t)1429365116109ULL },
-	{ "1.7\tTB",		(uintmax_t)0,	(uintmax_t)1869169767219ULL },
+	{ "1099511627776",	(uintmax_t)1099511627776ULL },
+	{ "1T",			(uintmax_t)1<<40 },
+	{ "1TB",		(uintmax_t)1<<40 },
+	{ "1.3TB",		(uintmax_t)1429365116109ULL },
+	{ "1.7\tTB",		(uintmax_t)1869169767219ULL },
 
-	{ "1125899906842624",	(uintmax_t)0,	(uintmax_t)1125899906842624ULL},
-	{ "1P\t",		(uintmax_t)0,	(uintmax_t)1125899906842624ULL},
-	{ "1PB ",		(uintmax_t)0,	(uintmax_t)1125899906842624ULL},
-	{ "1.3 PB",		(uintmax_t)0,	(uintmax_t)1463669878895411ULL},
+	{ "1125899906842624",	(uintmax_t)1125899906842624ULL},
+	{ "1P\t",		(uintmax_t)1125899906842624ULL},
+	{ "1PB ",		(uintmax_t)1125899906842624ULL},
+	{ "1.3 PB",		(uintmax_t)1463669878895411ULL},
 
 	// highest integers not rounded for double conversion
-	{ "9007199254740988",	(uintmax_t)0,	(uintmax_t)9007199254740988ULL},
-	{ "9007199254740989",	(uintmax_t)0,	(uintmax_t)9007199254740989ULL},
-	{ "9007199254740990",	(uintmax_t)0,	(uintmax_t)9007199254740990ULL},
-	{ "9007199254740991",	(uintmax_t)0,	(uintmax_t)9007199254740991ULL},
-
-	{ "1%",			(uintmax_t)1024,	(uintmax_t)10 },
-	{ "2%",			(uintmax_t)1024,	(uintmax_t)20 },
-	{ "3%",			(uintmax_t)1024,	(uintmax_t)31 },
+	{ "9007199254740988",	(uintmax_t)9007199254740988ULL},
+	{ "9007199254740989",	(uintmax_t)9007199254740989ULL},
+	{ "9007199254740990",	(uintmax_t)9007199254740990ULL},
+	{ "9007199254740991",	(uintmax_t)9007199254740991ULL},
 
 	/* Check the error checks */
-	{ "",			0,	0,	err_miss_num },
-	{ "m",			0,	0,	err_invalid_num },
-	{ "4%",			0,	0,	err_invalid_suff },
-	{ "3*",			0,	0,	err_invalid_suff },
+	{ "",			0,	err_miss_num },
+	{ "m",			0,	err_invalid_num },
+	{ "4%",			0,	err_invalid_suff },
+	{ "3*",			0,	err_invalid_suff },
 
 	/* TODO: add more */
 
@@ -483,14 +474,14 @@ main(int argc, char *argv[])
 	}
 
 	for (tc = test_cases; tc->str; ++tc) {
-		e = VNUM_2bytes(tc->str, &val, tc->rel);
+		e = VNUM_2bytes(tc->str, &val);
 		if (e != NULL)
 			val = 0;
 		if (e == tc->err && val == tc->val)
 			continue;
 		++ec;
-		printf("%s: VNUM_2bytes(\"%s\", %ju)\n",
-		   *argv, tc->str, tc->rel);
+		printf("%s: VNUM_2bytes(\"%s\")\n",
+		   *argv, tc->str);
 		printf("\tExpected:\tstatus %s - value %ju\n",
 		    tc->err ? tc->err : "Success", tc->val);
 		printf("\tGot:\t\tstatus %s - value %ju\n",

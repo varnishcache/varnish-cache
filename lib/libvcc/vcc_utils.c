@@ -346,7 +346,7 @@ vcc_ByteVal(struct vcc *tl, double *d)
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}
-	sc = VNUM_bytes_unit(1.0, tl->t->b, tl->t->e, 0);
+	sc = VNUM_bytes_unit(1.0, tl->t->b, tl->t->e);
 	if (isnan(sc)) {
 		VSB_cat(tl->sb, "Unknown BYTES unit ");
 		vcc_ErrToken(tl, tl->t);
