@@ -722,6 +722,17 @@ static const struct cp_methods vus_methods = {
 };
 
 /*--------------------------------------------------------------------
+ * Reference a (potentially new) clone of a pool with a different id
+ */
+struct tcp_pool *
+VTP_Clone(struct tcp_pool *tp, const void *id)
+{
+	AN(tp);
+	return (VTP_Ref(tp->ip4, tp->ip6, tp->uds, id));
+}
+
+
+/*--------------------------------------------------------------------
  * Reference a TCP pool given by {ip4, ip6} pair or a UDS.  Create if
  * it doesn't exist already.
  */
