@@ -170,11 +170,19 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
 	Lck_Unlock(&bp->mtx);
 
 	err = 0;
-	if (bp->proxy_header != 0)
-		err += VPX_Send_Proxy(*fdp, bp->proxy_header, bo->sp);
+	if (PFD_State(pfd) == PFD_STATE_USED) {
+		if (bp->preamble) {
+			VSLb(bo->vsl, SLT_Debug, "preamble %s",
+			     VSB_data(bp->preamble));
+			err = write(*fdp, VSB_data(bp->preamble),
+				    VSB_len(bp->preamble));
+		}
+		if (err >= 0 && bp->proxy_header != 0)
+			err += VPX_Send_Proxy(*fdp, bp->proxy_header, bo->sp);
+	}
 	if (err < 0) {
 		VSLb(bo->vsl, SLT_FetchError,
-		     "backend %s: proxy write errno %d (%s)",
+		     "backend %s: preamble/proxy write errno %d (%s)",
 		     VRT_BACKEND_string(bp->director),
 		     errno, vstrerror(errno));
 		// account as if connect failed - good idea?
@@ -417,6 +425,9 @@ vbe_destroy(const struct director *d)
 
 	if (be->probe != NULL)
 		VBP_Remove(be);
+
+	if (be->preamble)
+		VSB_destroy(&be->preamble);
 
 	VSC_vbe_Destroy(&be->vsc_seg);
 	Lck_Lock(&backends_mtx);

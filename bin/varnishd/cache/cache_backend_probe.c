@@ -272,12 +272,13 @@ vbp_write_proxy_v1(struct vbp_target *vt, int *sock)
 static void
 vbp_poke(struct vbp_target *vt)
 {
-	int s, tmo, i, proxy_header, err;
+	int s, tmo, i, err, proxy_header = -1;
 	vtim_real t_start, t_now, t_end;
 	unsigned rlen, resp;
 	char buf[8192], *p;
 	struct pollfd pfda[1], *pfd = pfda;
 	const struct suckaddr *sa;
+	const struct vsb *preamble = NULL;
 
 	t_start = t_now = VTIM_real();
 	t_end = t_start + vt->timeout;
@@ -313,10 +314,10 @@ vbp_poke(struct vbp_target *vt)
 	}
 
 	Lck_Lock(&vbp_mtx);
-	if (vt->backend != NULL)
+	if (vt->backend != NULL) {
 		proxy_header = vt->backend->proxy_header;
-	else
-		proxy_header = -1;
+		preamble = vt->backend->preamble;
+	}
 	Lck_Unlock(&vbp_mtx);
 
 	if (proxy_header < 0) {
@@ -324,6 +325,10 @@ vbp_poke(struct vbp_target *vt)
 		VTCP_close(&s);
 		return;
 	}
+
+	if (preamble && vbp_write(vt, &s, VSB_data(preamble),
+	    VSB_len(preamble)) != 0)
+		return;
 
 	/* Send the PROXY header */
 	assert(proxy_header <= 2);

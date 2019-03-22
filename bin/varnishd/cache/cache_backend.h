@@ -41,6 +41,7 @@ struct vbp_target;
 struct vrt_ctx;
 struct vrt_backend_probe;
 struct tcp_pool;
+struct vsb;
 
 /*--------------------------------------------------------------------
  * An instance of a backend from a VCL program.
@@ -70,6 +71,8 @@ struct backend {
 	VCL_BACKEND		director;
 
 	vtim_real		cooled;
+
+	struct vsb		*preamble;
 };
 
 /*---------------------------------------------------------------------
