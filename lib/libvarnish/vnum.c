@@ -44,9 +44,39 @@
 #include "vas.h"
 #include "vct.h"
 
+#if ! defined(HAVE_UINT128_T) && defined(HAVE___UINT128_T)
+#define uint128_t __uint128_t
+#define HAVE_UINT128_T 1
+#endif
+
+#define P10_LIM 19
+const int64_t p10[P10_LIM] = {
+	1,
+	10,
+	100,
+	1000,
+	10000,
+	100000,
+	1000000,
+	10000000,
+	100000000,
+	1000000000,
+	10000000000,
+	100000000000,
+	1000000000000,
+	10000000000000,
+	100000000000000,
+	1000000000000000,
+	10000000000000000,
+	100000000000000000,
+	1000000000000000000
+};
+
 static const char err_miss_num[] = "Missing number";
 static const char err_invalid_num[] = "Invalid number";
 static const char err_invalid_suff[] = "Invalid suffix";
+static const char err_precision[] = "Number/Unit can not be converted with"
+	" adequate precision";
 
 /**********************************************************************
  * Convert (all of!) a string to a floating point number, and if we can
@@ -255,10 +285,20 @@ VNUM_duration(const char *p)
 
 /**********************************************************************/
 
-double
-VNUM_bytes_unit(double r, const char *b, const char *e)
+/*
+ * take quantity i and scale sc, return bytes by unit
+ *
+ * return -1 on error
+ */
+int64_t
+VNUM_bytes_unit(int64_t i, int sc, const char *b, const char *e)
 {
-	double sc = 1.0;
+	int shift = 0;
+	uint64_t r, rr, t;
+
+	assert(sc >= 0);
+	assert(sc < P10_LIM);
+	assert(i >= 0);
 
 	if (e == NULL)
 		e = strchr(b, '\0');
@@ -266,18 +306,18 @@ VNUM_bytes_unit(double r, const char *b, const char *e)
 	while (b < e && vct_issp(*b))
 		b++;
 	if (b == e)
-		return (nan(""));
+		return (-1);
 
 	switch (*b) {
-	case 'k': case 'K': sc = exp2(10); b++; break;
-	case 'm': case 'M': sc = exp2(20); b++; break;
-	case 'g': case 'G': sc = exp2(30); b++; break;
-	case 't': case 'T': sc = exp2(40); b++; break;
-	case 'p': case 'P': sc = exp2(50); b++; break;
+	case 'k': case 'K': shift = 10; b++; break;
+	case 'm': case 'M': shift = 20; b++; break;
+	case 'g': case 'G': shift = 30; b++; break;
+	case 't': case 'T': shift = 40; b++; break;
+	case 'p': case 'P': shift = 50; b++; break;
 	case 'b': case 'B':
 		break;
 	default:
-		return (nan(""));
+		return (-1);
 	}
 	if (b < e && (*b == 'b' || *b == 'B'))
 		b++;
@@ -285,32 +325,86 @@ VNUM_bytes_unit(double r, const char *b, const char *e)
 	while (b < e && vct_issp(*b))
 		b++;
 	if (b < e)
-		return (nan(""));
-	return (sc * r);
+		return (-1);
+
+	rr = p10[sc];
+
+	if (shift == 0) {
+		return (i / rr);
+	}
+
+	r = i << shift;
+
+	/* simple case */
+	if (r >> shift == i && r <= INT64_MAX)
+		return (r / rr);
+
+	/* lossless */
+	while (shift > 0 && (rr & 1) == 0) {
+		rr >>= 1;
+		shift--;
+	}
+	r = i << shift;
+	if (r >> shift == i && r <= INT64_MAX)
+		return (r / rr);
+
+	// i << shift / rr = ((i / rr) << shift) + (((i % rr) << shift) / rr)
+
+	t = (i / rr);
+	r = t << shift;
+	if (r >> shift != t || t > INT64_MAX) {
+		errno = EOVERFLOW;
+		return (-1);
+	}
+
+	r += (((i % rr) << shift) / rr);
+
+#if defined(NUM_C_TEST) && defined(HAVE_UINT128_T)
+	// if we can, check that the above is correct
+	uint128_t tr = ((uint128_t)i << shift) / rr;
+
+	if ((uint128_t)r != tr) {
+		fprintf(stderr, "r = %lu, tr = %lu\n", r,
+			(uint64_t)(tr & (uint128_t)UINT64_MAX));
+		assert (0);
+	}
+#endif
+
+	if (r > INT64_MAX) {
+		errno = EOVERFLOW;
+		return (-1);
+	}
+
+	return (r);
 }
 
 const char *
 VNUM_2bytes(const char *p, uintmax_t *r)
 {
-	double fval;
+	int64_t rr;
+	int sc;
 	const char *end;
 
 	if (p == NULL || *p == '\0')
 		return (err_miss_num);
 
-	fval = VNUMpfx(p, &end);
-	if (isnan(fval))
+	errno = 0;
+	rr = VNUMpfxint(p, &end, &sc);
+	if (errno || rr < 0)
 		return (err_invalid_num);
 
 	if (end == NULL) {
-		*r = (uintmax_t)fval;
+		*r = (uintmax_t)rr;
 		return (NULL);
 	}
 
-	fval = VNUM_bytes_unit(fval, end, NULL);
-	if (isnan(fval))
+	rr = VNUM_bytes_unit(rr, sc, end, NULL);
+	if (rr < 0) {
+		if (errno == EOVERFLOW)
+			return (err_precision);
 		return (err_invalid_suff);
-	*r = (uintmax_t)round(fval);
+	}
+	*r = (uintmax_t)rr;
 	return (NULL);
 }
 
@@ -326,30 +420,30 @@ static struct test_case {
 	{ "1B",			(uintmax_t)1<<0 },
 	{ "1 B",		(uintmax_t)1<<0 },
 	{ "1.3B",		(uintmax_t)1 },
-	{ "1.7B",		(uintmax_t)2 },
+	{ "1.7B",		(uintmax_t)1 },
 
 	{ "1024",		(uintmax_t)1024 },
 	{ "1k",			(uintmax_t)1<<10 },
 	{ "1kB",		(uintmax_t)1<<10 },
 	{ "1.3kB",		(uintmax_t)1331 },
-	{ "1.7kB",		(uintmax_t)1741 },
+	{ "1.7kB",		(uintmax_t)1740 },
 
 	{ "1048576",		(uintmax_t)1048576 },
 	{ "1M",			(uintmax_t)1<<20 },
 	{ "1MB",		(uintmax_t)1<<20 },
-	{ "1.3MB",		(uintmax_t)1363149 },
+	{ "1.3MB",		(uintmax_t)1363148 },
 	{ "1.7MB",		(uintmax_t)1782579 },
 
 	{ "1073741824",		(uintmax_t)1073741824 },
 	{ "1G",			(uintmax_t)1<<30 },
 	{ "1GB",		(uintmax_t)1<<30 },
 	{ "1.3GB",		(uintmax_t)1395864371 },
-	{ "1.7GB",		(uintmax_t)1825361101 },
+	{ "1.7GB",		(uintmax_t)1825361100 },
 
 	{ "1099511627776",	(uintmax_t)1099511627776ULL },
 	{ "1T",			(uintmax_t)1<<40 },
 	{ "1TB",		(uintmax_t)1<<40 },
-	{ "1.3TB",		(uintmax_t)1429365116109ULL },
+	{ "1.3TB",		(uintmax_t)1429365116108ULL },
 	{ "1.7\tTB",		(uintmax_t)1869169767219ULL },
 
 	{ "1125899906842624",	(uintmax_t)1125899906842624ULL},
@@ -363,15 +457,30 @@ static struct test_case {
 	{ "9007199254740990",	(uintmax_t)9007199254740990ULL},
 	{ "9007199254740991",	(uintmax_t)9007199254740991ULL},
 
+	// near INT64_MAX
+	{ "9223372036854775807B", (uintmax_t)9223372036854775807ULL},
+	{ "9223372036854775808B", 0, err_invalid_num },
+	{ "9.223372036854775807B", (uintmax_t)9ULL},
+	{ "922337203685.4775807B", (uintmax_t)922337203685ULL},
+	{ "922337203685.477KB", (uintmax_t)944473296573928ULL},
+	{ "337203685.4775807KB", (uintmax_t)345296573929ULL},
+
+	{ "9007199254740991.99KB", (uintmax_t)9223372036854775797ULL},
+	{ "8796093022207.9999MB", (uintmax_t)9223372036854775703ULL},
+
+	{ "8796093022208.0001MB", 0, err_precision },
+	{ "8796093022207.9999GB", 0, err_precision },
+
 	/* Check the error checks */
 	{ "",			0,	err_miss_num },
 	{ "m",			0,	err_invalid_num },
+	{ "-5B",			0,	err_invalid_num },
 	{ "4%",			0,	err_invalid_suff },
 	{ "3*",			0,	err_invalid_suff },
 
 	/* TODO: add more */
 
-	{ 0, 0, 0 },
+	{ 0, 0, 0},
 };
 
 static const char *vec[] = {

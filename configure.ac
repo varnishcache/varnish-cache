@@ -260,6 +260,8 @@ LIBS="${save_LIBS}"
 
 AC_CHECK_DECL([__SUNPRO_C], [SUNCC="yes"], [SUNCC="no"])
 
+AC_CHECK_TYPES([__uint128_t, uint128_t])
+
 # Support for visibility attribute
 save_CFLAGS="${CFLAGS}"
 if test "$SUNCC" = "yes" ; then
