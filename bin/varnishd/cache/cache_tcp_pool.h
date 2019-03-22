@@ -52,6 +52,8 @@ void PFD_RemoteName(const struct pfd *, char *, unsigned, char *, unsigned);
 
 struct VSC_vbe;
 
+struct tcp_pool *VTP_Clone(struct tcp_pool *tp, uintmax_t id);
+
 struct tcp_pool *VTP_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6,
     const char *uds, uintmax_t id);
 	/*
