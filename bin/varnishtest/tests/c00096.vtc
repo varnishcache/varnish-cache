@@ -1,0 +1,54 @@
+varnishtest "Test vcl defined via backends"
+
+server s1 {
+	rxreq
+	txresp
+	rxreq
+	txresp
+} -start
+
+# the use case for via-proxy is to have a(n ha)proxy make a(n ssl)
+# connection on our behalf. For the purpose of testing, we use another
+# varnish in place - but we are behaving realistically in that we do
+# not use any prior information for the actual backend connection -
+# just the information from the proxy protocol
+
+varnish v2 -proto PROXY -vcl {
+	import debug;
+	import std;
+
+	backend dummy { .host = "${bad_backend}"; }
+
+	sub vcl_init {
+		new s1 = debug.dyn("0.0.0.0", "0");
+	}
+
+	sub vcl_recv {
+		s1.refresh(server.ip, std.port(server.ip));
+		set req.backend_hint = s1.backend();
+		return (pass);
+	}
+} -start
+
+varnish v1 -vcl {
+	import debug;
+	import vtc;
+
+	backend dummy { .host = "${bad_backend}"; }
+
+	backend v2 { .host = "${v2_addr}"; .port = "${v2_port}"; }
+	backend s1 { .via = v2; .host = "${s1_addr}"; .port = "${s1_port}"; }
+
+	sub vcl_recv {
+		set req.backend_hint = s1;
+	}
+} -start
+
+client c1 {
+	txreq -url /1
+	rxresp
+	expect resp.status == 200
+	txreq -url /2
+	rxresp
+	expect resp.status == 200
+} -run
