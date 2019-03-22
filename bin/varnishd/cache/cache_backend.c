@@ -37,16 +37,19 @@
 #include <stdlib.h>
 
 #include "cache_varnishd.h"
+#include "cache_director.h"
 
 #include "vsa.h"
 #include "vtcp.h"
 #include "vtim.h"
+#include "vsa.h"
 
 #include "cache_backend.h"
 #include "cache_conn_pool.h"
 #include "cache_transport.h"
 #include "cache_vcl.h"
 #include "http1/cache_http1.h"
+#include "proxy/cache_proxy.h"
 
 #include "VSC_vbe.h"
 
@@ -560,17 +563,87 @@ VRT_backend_vsm_need(VRT_CTX)
 	return (VRT_VSC_Overhead(VSC_vbe_size));
 }
 
+/*
+ * The new_backend via parameter is a VCL_BACKEND, but we need a (struct
+ * backend)
+ *
+ * For now, we resolve it when creating the backend, which imples no redundancy
+ * / load balancing across the via director if it is more than a simple backend.
+ */
+
+static const struct backend *
+via_resolve(VRT_CTX, const struct vrt_endpoint *vep, VCL_BACKEND via)
+{
+	const struct backend *viabe = NULL;
+
+	AN(vep);
+	AN(via);
+
+	if (vep->uds_path) {
+		VRT_fail(ctx, "Via is only supported for IP addresses");
+		return (NULL);
+	}
+
+	via = VRT_DirectorResolve(ctx, via);
+
+	if (via != NULL &&
+	    (via->vdir->methods == vbe_methods ||
+	     via->vdir->methods == vbe_methods_noprobe))
+		CAST_OBJ_NOTNULL(viabe, via->priv, BACKEND_MAGIC);
+
+	if (viabe == NULL)
+		VRT_fail(ctx, "Via does not resolve to a backend");
+
+	return (viabe);
+}
+
+/*
+ * construct a new endpoint identical to vep with sa in a proxy header
+ */
+static struct vrt_endpoint *
+via_endpoint(const struct vrt_endpoint *vep, const struct suckaddr *sa)
+{
+	struct vsb *preamble;
+	struct vrt_blob blob[1];
+	struct vrt_endpoint *nvep, *ret;
+	const struct suckaddr *client_bogo;
+
+	AN(vep);
+	AN(sa);
+
+	nvep = VRT_Endpoint_Clone(vep);
+	AN(nvep);
+
+	if (VSA_Get_Proto(sa) == AF_INET6)
+		client_bogo = bogo_ip6;
+	else
+		client_bogo = bogo_ip;
+
+	preamble = VSB_new_auto();
+	AN(preamble);
+	VPX_Format_Proxy(preamble, 2, client_bogo, sa, NULL);
+	blob->blob = VSB_data(preamble);
+	blob->len = VSB_len(preamble);
+	nvep->preamble = blob;
+	ret = VRT_Endpoint_Clone(nvep);
+	VSB_destroy(&preamble);
+	free(nvep);
+
+	return (ret);
+}
+
 VCL_BACKEND
 VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
-    const struct vrt_backend *vrt)
+    const struct vrt_backend *vrt, VCL_BACKEND via)
 {
 	struct backend *be;
 	struct vcl *vcl;
 	const struct vrt_backend_probe *vbp;
 	const struct vrt_endpoint *vep;
 	const struct vdi_methods *m;
-	const struct suckaddr *sa;
+	const struct suckaddr *sa = NULL;
 	char abuf[VTCP_ADDRBUFSIZE];
+	const struct backend *viabe = NULL;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vrt, VRT_BACKEND_MAGIC);
@@ -585,6 +658,12 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 		assert(vep->ipv4== NULL && vep->ipv6== NULL);
 	}
 
+	if (via) {
+		viabe = via_resolve(ctx, vep, via);
+		if (viabe == NULL)
+			return (NULL);
+	}
+
 	vcl = ctx->vcl;
 	AN(vcl);
 	AN(vrt->vcl_name);
@@ -594,14 +673,13 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 	if (be == NULL)
 		return (NULL);
 
-	vep = be->endpoint = VRT_Endpoint_Clone(vep);
 #define DA(x)	do { if (vrt->x != NULL) REPLACE((be->x), (vrt->x)); } while (0)
 #define DN(x)	do { be->x = vrt->x; } while (0)
 	VRT_BACKEND_HANDLE();
 #undef DA
 #undef DN
 
-	if (be->hosthdr == NULL) {
+	if (viabe || be->hosthdr == NULL) {
 		if (vrt->endpoint->uds_path != NULL)
 			sa = bogo_ip;
 		else if (cache_param->prefer_ipv6 && vep->ipv6 != NULL)
@@ -610,8 +688,10 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 			sa = vep->ipv4;
 		else
 			sa = vep->ipv6;
-		VTCP_name(sa, abuf, sizeof abuf, NULL, 0);
-		REPLACE(be->hosthdr, abuf);
+		if (be->hosthdr == NULL) {
+			VTCP_name(sa, abuf, sizeof abuf, NULL, 0);
+			REPLACE(be->hosthdr, abuf);
+		}
 	}
 
 	be->vsc = VSC_vbe_New(vc, &be->vsc_seg,
@@ -620,6 +700,12 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 	if (! vcl->temp->is_warm)
 		VRT_VSC_Hide(be->vsc_seg);
 
+	if (viabe)
+		vep = be->endpoint = via_endpoint(viabe->endpoint, sa);
+	else
+		vep = be->endpoint = VRT_Endpoint_Clone(vep);
+
+	AN(vep);
 	be->conn_pool = VCP_Ref(vep, vbe_proto_ident);
 	AN(be->conn_pool);
 
@@ -652,12 +738,12 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 }
 
 VCL_BACKEND
-VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
+VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt, VCL_BACKEND via)
 {
 
 	CHECK_OBJ_NOTNULL(vrt, VRT_BACKEND_MAGIC);
 	CHECK_OBJ_NOTNULL(vrt->endpoint, VRT_ENDPOINT_MAGIC);
-	return (VRT_new_backend_clustered(ctx, NULL, vrt));
+	return (VRT_new_backend_clustered(ctx, NULL, vrt, via));
 }
 
 /*--------------------------------------------------------------------

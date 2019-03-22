@@ -606,7 +606,7 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 	ifp = New_IniFin(tl);
 	VSB_printf(ifp->ini,
 	    "\t%s =\n\t    VRT_new_backend_clustered(ctx, vsc_cluster,\n"
-	    "\t\t&vgc_dir_priv_%s);\n",
+	    "\t\t&vgc_dir_priv_%s, NULL);\n",
 	    vgcname, vgcname);
 	VSB_printf(ifp->ini,
 	    "\tif (%s)\n\t\tVRT_StaticDirector(%s);", vgcname, vgcname);

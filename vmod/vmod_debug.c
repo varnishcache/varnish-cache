@@ -577,7 +577,7 @@ create_cold_backend(VRT_CTX)
 	INIT_OBJ(be, VRT_BACKEND_MAGIC);
 	be->endpoint = vep;
 	be->vcl_name = "doomed";
-	return (VRT_new_backend(ctx, be));
+	return (VRT_new_backend(ctx, be, NULL));
 }
 
 static int

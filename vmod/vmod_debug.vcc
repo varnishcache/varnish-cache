@@ -152,7 +152,7 @@ $Function BOOL fail2()
 
 Function to fail vcl code. Always returns true.
 
-$Object dyn(STRING addr, STRING port, PROBE probe=0)
+$Object dyn(STRING addr, STRING port, PROBE probe=0, BACKEND via=0)
 
 Dynamically create a single-backend director, addr and port must not be empty.
 
@@ -160,7 +160,7 @@ $Method BACKEND .backend()
 
 Return the dynamic backend.
 
-$Method VOID .refresh(STRING addr, STRING port, PROBE probe=0)
+$Method VOID .refresh(STRING addr, STRING port, PROBE probe=0, BACKEND via=0)
 
 Dynamically refresh & (always!) replace the backend by a new one.
 
