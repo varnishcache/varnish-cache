@@ -457,9 +457,9 @@ VCL_VOID VRT_Rollback(VRT_CTX, VCL_HTTP);
 VCL_VOID VRT_synth_page(VRT_CTX, VCL_STRANDS);
 
 /* Backend related */
-VCL_BACKEND VRT_new_backend(VRT_CTX, const struct vrt_backend *);
+VCL_BACKEND VRT_new_backend(VRT_CTX, const struct vrt_backend *, VCL_BACKEND);
 VCL_BACKEND VRT_new_backend_clustered(VRT_CTX,
-    struct vsmw_cluster *, const struct vrt_backend *);
+    struct vsmw_cluster *, const struct vrt_backend *, VCL_BACKEND);
 size_t VRT_backend_vsm_need(VRT_CTX);
 void VRT_delete_backend(VRT_CTX, VCL_BACKEND *);
 

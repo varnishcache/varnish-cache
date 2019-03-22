@@ -59,7 +59,7 @@ struct xyzzy_debug_dyn_uds {
 
 static void
 dyn_dir_init(VRT_CTX, struct xyzzy_debug_dyn *dyn,
-     VCL_STRING addr, VCL_STRING port, VCL_PROBE probe)
+    VCL_STRING addr, VCL_STRING port, VCL_PROBE probe, VCL_BACKEND via)
 {
 	struct suckaddr *sa;
 	VCL_BACKEND dir, dir2;
@@ -68,6 +68,7 @@ dyn_dir_init(VRT_CTX, struct xyzzy_debug_dyn *dyn,
 	CHECK_OBJ_NOTNULL(dyn, VMOD_DEBUG_DYN_MAGIC);
 	XXXAN(addr);
 	XXXAN(port);
+	CHECK_OBJ_ORNULL(via, DIRECTOR_MAGIC);
 
 	INIT_OBJ(&vrt, VRT_BACKEND_MAGIC);
 	vrt.port = port;
@@ -86,7 +87,7 @@ dyn_dir_init(VRT_CTX, struct xyzzy_debug_dyn *dyn,
 	} else
 		WRONG("Wrong proto family");
 
-	dir = VRT_new_backend(ctx, &vrt);
+	dir = VRT_new_backend(ctx, &vrt, via);
 	AN(dir);
 
 	/*
@@ -107,7 +108,8 @@ dyn_dir_init(VRT_CTX, struct xyzzy_debug_dyn *dyn,
 
 VCL_VOID
 xyzzy_dyn__init(VRT_CTX, struct xyzzy_debug_dyn **dynp,
-    const char *vcl_name, VCL_STRING addr, VCL_STRING port, VCL_PROBE probe)
+    const char *vcl_name, VCL_STRING addr, VCL_STRING port, VCL_PROBE probe,
+    VCL_BACKEND via)
 {
 	struct xyzzy_debug_dyn *dyn;
 
@@ -130,7 +132,7 @@ xyzzy_dyn__init(VRT_CTX, struct xyzzy_debug_dyn **dynp,
 
 	AZ(pthread_mutex_init(&dyn->mtx, NULL));
 
-	dyn_dir_init(ctx, dyn, addr, port, probe);
+	dyn_dir_init(ctx, dyn, addr, port, probe, via);
 	XXXAN(dyn->dir);
 	*dynp = dyn;
 }
@@ -158,11 +160,11 @@ xyzzy_dyn_backend(VRT_CTX, struct xyzzy_debug_dyn *dyn)
 
 VCL_VOID
 xyzzy_dyn_refresh(VRT_CTX, struct xyzzy_debug_dyn *dyn,
-    VCL_STRING addr, VCL_STRING port, VCL_PROBE probe)
+    VCL_STRING addr, VCL_STRING port, VCL_PROBE probe, VCL_BACKEND via)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(dyn, VMOD_DEBUG_DYN_MAGIC);
-	dyn_dir_init(ctx, dyn, addr, port, probe);
+	dyn_dir_init(ctx, dyn, addr, port, probe, via);
 }
 
 static int
@@ -202,7 +204,8 @@ dyn_uds_init(VRT_CTX, struct xyzzy_debug_dyn_uds *uds, VCL_STRING path)
 	vrt.ipv4_suckaddr = NULL;
 	vrt.ipv6_suckaddr = NULL;
 
-	if ((dir = VRT_new_backend(ctx, &vrt)) == NULL)
+	// we support via: uds -> ip, but not via: ip -> uds
+	if ((dir = VRT_new_backend(ctx, &vrt, NULL)) == NULL)
 		return (-1);
 
 	AZ(pthread_mutex_lock(&uds->mtx));
