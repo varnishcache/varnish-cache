@@ -183,11 +183,15 @@ const size_t vsa_suckaddr_len = sizeof(struct suckaddr);
  */
 static struct suckaddr bogo_ip_vsa;
 const struct suckaddr *bogo_ip = &bogo_ip_vsa;
+/* same in IPv6 */
+static struct suckaddr bogo_ip6_vsa;
+const struct suckaddr *bogo_ip6 = &bogo_ip6_vsa;
 
 void
 VSA_Init()
 {
 	AN(VSA_BuildFAP(&bogo_ip_vsa, PF_INET, NULL, 0, NULL, 0));
+	AN(VSA_BuildFAP(&bogo_ip6_vsa, PF_INET6, NULL, 0, NULL, 0));
 }
 
 /*

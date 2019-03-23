@@ -35,6 +35,7 @@
 struct suckaddr;
 extern const size_t vsa_suckaddr_len;
 extern const struct suckaddr *bogo_ip;
+extern const struct suckaddr *bogo_ip6;
 
 void VSA_Init(void);
 int VSA_Sane(const struct suckaddr *);
