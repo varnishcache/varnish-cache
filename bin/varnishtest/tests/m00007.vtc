@@ -15,7 +15,7 @@ varnish v1 -vcl+backend {
 		set resp.http.converted = std.integer(req.http.foo, 0);
 
 		if (req.http.nofb) {
-			set resp.http.nofb = std.integer(req.http.foo);
+			set resp.http.nofb = std.integer(req.http.nofb);
 		}
 
 		if (req.http.bool) {
@@ -80,30 +80,36 @@ client c1 {
 	expect resp.http.converted == 0
 
 	# VCL_INT_MAX
-	txreq -hdr "foo: 9007199254740991" \
-	      -hdr "bytes: 9007199254740991b" \
-	      -hdr "duration: 9007199254740991s" \
-	      -hdr "real: 9007199254740991" \
-	      -hdr "time: 9007199254740991"
+	txreq -hdr "foo: 9223372036854775807" \
+	      -hdr "bytes: 9223372036854775807b"
 	rxresp
 	expect resp.http.gtzero == true
 	expect resp.http.ltzero == false
 	expect resp.http.iszero == false
-	expect resp.http.converted == 9007199254740991
-	expect resp.http.bytes == 9007199254740991
+	expect resp.http.converted == 9223372036854775807
+	expect resp.http.bytes == 9223372036854775807
+
+	# duration/real/time max
+	txreq -hdr "duration: 9007199254740991s" \
+	      -hdr "real: 9007199254740991" \
+	      -hdr "time: 9007199254740991"
+	rxresp
 	expect resp.http.duration == 9007199254740991
 	expect resp.http.real == 9007199254740991
 	expect resp.http.time == 9007199254740991
 
 	# VCL_INT_MIN
-	txreq -hdr "foo: -9007199254740991" \
-	      -hdr "duration: -9007199254740991s" \
-	      -hdr "real: -9007199254740991"
+	txreq -hdr "foo: -9223372036854775808"
 	rxresp
 	expect resp.http.gtzero == false
 	expect resp.http.ltzero == true
 	expect resp.http.iszero == false
-	expect resp.http.converted == -9007199254740991
+	expect resp.http.converted == -9223372036854775808
+
+	# duration/real min
+	txreq -hdr "duration: -9007199254740991s" \
+	      -hdr "real: -9007199254740991"
+	rxresp
 	expect resp.http.duration == -9007199254740991
 	expect resp.http.real == -9007199254740991
 
@@ -114,21 +120,23 @@ client c1 {
 	expect resp.http.iszero == true
 	expect resp.http.converted == 0
 
-	txreq -hdr "foo: 9007199254740992"
+	# VCL_INT_MAX + 1
+	txreq -hdr "foo: 9223372036854775808"
 	rxresp
 	expect resp.http.converted == 0
 
-	txreq -hdr "foo: -9007199254740992"
+	# VCL_INT_MIN - 1
+	txreq -hdr "foo: -9223372036854775809"
 	rxresp
 	expect resp.http.converted == 0
 } -run
 client c1 {
-	txreq -hdr "nofb: 9007199254740992"
+	txreq -hdr "nofb: 9223372036854775808"
 	rxresp
 	expect resp.status == 503
 } -run
 client c1 {
-	txreq -hdr "nofb: -9007199254740992"
+	txreq -hdr "nofb: -9223372036854775809"
 	rxresp
 	expect resp.status == 503
 } -run
