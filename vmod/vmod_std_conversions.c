@@ -315,7 +315,7 @@ vmod_real2integer(VRT_CTX, VCL_REAL r, VCL_INT i)
 	if (!isfinite(r))
 		return (i);
 	r = round(r);
-	if (r > VCL_INT_MAX || r < VCL_INT_MIN)
+	if (! VCL_INT_VALID(r))
 		return (i);
 	return ((VCL_INT)r);
 }
@@ -339,7 +339,7 @@ vmod_time2integer(VRT_CTX, VCL_TIME t, VCL_INT i)
 	if (!isfinite(t))
 		return (i);
 	t = round(t);
-	if (t > VCL_INT_MAX || t < VCL_INT_MIN)
+	if (! VCL_INT_VALID(t))
 		return (i);
 	return ((VCL_INT)t);
 }
