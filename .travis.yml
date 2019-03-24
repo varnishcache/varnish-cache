@@ -4,7 +4,7 @@ language: c
 jobs:
   allow_failures:
     - os: osx
-    - env: SAN_BUILD=1
+    - env: ASAN=1 UBSAN=1
   fast_finish: true
   include:
     - &test-linux
@@ -31,7 +31,7 @@ jobs:
     - <<: *test-linux
       compiler: gcc
     - <<: *test-linux
-      stage: san
+      stage: sanitizers
       addons:
         apt:
           sources:
@@ -42,7 +42,7 @@ jobs:
             - nghttp2
             - python3-docutils
             - python3-sphinx
-      env: SAN_BUILD=1
+      env: ASAN=1 UBSAN=1
       before_script:
         - |
           export ASAN_OPTIONS=abort_on_error=1,detect_odr_violation=1,detect_leaks=1,detect_stack_use_after_return=1,detect_invalid_pointer_pairs=1,handle_segv=0,handle_sigbus=0,use_sigaltstack=0,disable_coredump=0
@@ -90,7 +90,7 @@ jobs:
 stages:
   - name: test
     if: type != cron
-  - name: san
+  - name: sanitizers
     if: type != cron AND
         type != pull_request
   - name: coverity
