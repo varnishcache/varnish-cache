@@ -1,0 +1,44 @@
+varnishtest "Test globbing includes in VCL"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -errvcl "Globbing pattern matched no file (${tmpdir}/*.vcl)" {
+	vcl 4.0;
+
+	include "${tmpdir}/*.vcl";
+}
+
+shell {
+	echo 'sub vcl_deliver { set resp.http.foo = "foo"; }' > ${tmpdir}/sub_foo.vcl
+	echo 'sub vcl_deliver { set resp.http.bar = "bar"; }' > ${tmpdir}/sub_bar.vcl
+	echo 'vcl 4.0; backend default { .host = "0:0"; } include "./sub_*.vcl";' > ${tmpdir}/top.vcl
+	cat ${tmpdir}/top.vcl
+}
+
+varnish v1 -vcl+backend {
+include "${tmpdir}/sub_*.vcl";
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.foo == foo
+	expect resp.http.bar == bar
+} -run
+
+varnish v1 -errvcl {needs absolute filename of including file.} {
+	include "./sub_.vcl";
+}
+
+varnish v1 -cliok "vcl.load foo ${tmpdir}/top.vcl"
+varnish v1 -cliok "vcl.use foo"
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.foo == foo
+	expect resp.http.bar == bar
+} -run

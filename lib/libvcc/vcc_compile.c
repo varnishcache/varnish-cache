@@ -52,7 +52,9 @@
 
 #include "config.h"
 
+#include <errno.h>
 #include <fcntl.h>
+#include <glob.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
@@ -540,10 +542,12 @@ vcc_file_source(const struct vcc *tl, const char *fn)
 static void
 vcc_resolve_includes(struct vcc *tl)
 {
-	struct token *t, *t1, *t2;
+	struct token *t, *t1, *t2, *tt;
 	struct source *sp;
 	struct vsb *vsb;
 	const char *p;
+	glob_t glb;
+	char **s;
 
 	VTAILQ_FOREACH(t, &tl->tokens, list) {
 		if (t->tok != ID || !vcc_IdIs(t, "include"))
@@ -567,6 +571,8 @@ vcc_resolve_includes(struct vcc *tl)
 			return;
 		}
 
+		vsb = VSB_new_auto();
+		AN(vsb);
 		if (t1->dec[0] == '.' && t1->dec[1] == '/') {
 			/*
 			 * Nested include filenames, starting with "./" are
@@ -580,26 +586,53 @@ vcc_resolve_includes(struct vcc *tl)
 				vcc_ErrWhere(tl, t1);
 				return;
 			}
-			vsb = VSB_new_auto();
-			AN(vsb);
 			p = strrchr(t1->src->name, '/');
 			AN(p);
 			VSB_bcat(vsb, t1->src->name, p - t1->src->name);
 			VSB_cat(vsb, t1->dec + 1);
-			AZ(VSB_finish(vsb));
-			sp = vcc_file_source(tl, VSB_data(vsb));
-			VSB_destroy(&vsb);
+		} else
+			VSB_cat(vsb, t1->dec);
+
+		AZ(VSB_finish(vsb));
+
+		/* only try to glob if the path starts with "./" or "/", and if 
+		 * it contains a "*"
+		 */
+		if (((t1->dec[0] == '.' && t1->dec[1] == '/') ||
+		    t1->dec[0] == '/') && strchr(VSB_data(vsb), '*')) {
+			if (glob(VSB_data(vsb), 0, NULL, &glb)) {
+				VSB_printf(tl->sb,
+				    "Globbing pattern matched no file (%s)\n",
+				    VSB_data(vsb));
+				vcc_ErrWhere(tl, t1);
+				return;
+			}
+			tt = tl->t;
+			for (s = glb.gl_pathv; *s; s++) {
+				tl->t = tt;
+				sp = vcc_file_source(tl, *s);
+				if (sp == NULL) {
+					vcc_ErrWhere(tl, t1);
+					return;
+				}
+				VTAILQ_INSERT_TAIL(&tl->sources, sp, list);
+				sp->idx = tl->nsources++;
+				tl->t = t2;
+				vcc_Lexer(tl, sp);
+			}
+			globfree(&glb);
 		} else {
-			sp = vcc_file_source(tl, t1->dec);
+			sp = vcc_file_source(tl, VSB_data(vsb));
+			if (sp == NULL) {
+				vcc_ErrWhere(tl, t1);
+				return;
+			}
+			VTAILQ_INSERT_TAIL(&tl->sources, sp, list);
+			sp->idx = tl->nsources++;
+			tl->t = t2;
+			vcc_Lexer(tl, sp);
 		}
-		if (sp == NULL) {
-			vcc_ErrWhere(tl, t1);
-			return;
-		}
-		VTAILQ_INSERT_TAIL(&tl->sources, sp, list);
-		sp->idx = tl->nsources++;
-		tl->t = t2;
-		vcc_Lexer(tl, sp);
+		VSB_destroy(&vsb);
 
 		VTAILQ_REMOVE(&tl->tokens, t, list);
 		VTAILQ_REMOVE(&tl->tokens, t1, list);

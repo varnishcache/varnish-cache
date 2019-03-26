@@ -52,6 +52,9 @@ NEXT (2020-03-15)
 * The ``if-range`` header is now handled, allowing clients to conditionally
   request a range based on a date or an ETag.
 
+* The `include` VCL statement now resolves globbing patterns if the include
+  path starts with "/" or "./".
+
 ================================
 Varnish Cache 6.3.0 (2019-09-15)
 ================================
