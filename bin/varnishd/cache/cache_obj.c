@@ -116,13 +116,10 @@ obj_deleteboc(struct boc **p)
 {
 	struct boc *boc;
 
-	AN(p);
-	boc = *p;
-	*p = NULL;
+	TAKE_OBJ_NOTNULL(boc, p, BOC_MAGIC);
 	Lck_Delete(&boc->mtx);
 	AZ(pthread_cond_destroy(&boc->cond));
-	if (boc->vary != NULL)
-		free(boc->vary);
+	free(boc->vary);
 	FREE_OBJ(boc);
 }
 
