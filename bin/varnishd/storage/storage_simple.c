@@ -497,8 +497,7 @@ sml_bocdone(struct worker *wrk, struct objcore *oc, struct boc *boc)
 	if (boc->stevedore_priv != NULL) {
 		/* Free any leftovers from Trim */
 		CAST_OBJ_NOTNULL(st, boc->stevedore_priv, STORAGE_MAGIC);
-		boc->stevedore_priv = 0;
-		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
+		boc->stevedore_priv = NULL;
 		sml_stv_free(stv, st);
 	}
 
