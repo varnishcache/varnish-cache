@@ -367,6 +367,7 @@ ObjBocDone(struct worker *wrk, struct objcore *oc, struct boc **boc)
 	const struct obj_methods *m;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AN(boc);
 	CHECK_OBJ_NOTNULL(*boc, BOC_MAGIC);
 	if (oc->stobj->stevedore != NULL) {
