@@ -67,6 +67,7 @@ nobase_pkginclude_HEADERS += \
 	vcs.h \
 	verrno.h \
 	vmod_abi.h \
+	vnum.h \
 	vqueue.h \
 	vre.h \
 	vdef.h \
@@ -97,7 +98,6 @@ nobase_noinst_HEADERS = \
 	vjsn.h \
 	vlu.h \
 	vmb.h \
-	vnum.h \
 	vpf.h \
 	vsc_priv.h \
 	vsl_priv.h \
