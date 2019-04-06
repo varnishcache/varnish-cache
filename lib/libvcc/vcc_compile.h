@@ -398,6 +398,7 @@ sym_act_f vcc_Act_New;
 
 /* vcc_xref.c */
 int vcc_CheckReferences(struct vcc *tl);
+void VCC_InstanceInfo(struct vcc *tl);
 void VCC_XrefTable(struct vcc *);
 
 void vcc_AddCall(struct vcc *, struct token *, struct symbol *);

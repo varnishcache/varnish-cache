@@ -26,6 +26,12 @@ server s1 {
 
 varnish v1 -arg "-sdefault,1m" -vcl+backend {
 	import vtc;
+	import debug;
+
+	sub vcl_init {
+		new foo = debug.obj("foo");
+		new bar = debug.concat("bar");
+	}
 
 	sub vcl_backend_response {
 		if (beresp.http.panic == "fetch") {

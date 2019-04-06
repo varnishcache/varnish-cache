@@ -488,6 +488,7 @@ EmitStruct(const struct vcc *tl)
 #define VCL_MET_MAC(l,u,t,b) \
 	Fc(tl, 0, "\t." #l "_func = VGC_function_vcl_" #l ",\n");
 #include "tbl/vcl_returns.h"
+	Fc(tl, 0, "\t.instance_info = VGC_instance_info\n");
 	Fc(tl, 0, "};\n");
 }
 
@@ -710,6 +711,8 @@ vcc_CompileSource(struct vcc *tl, struct source *sp, const char *jfile)
 			vcc_EmitProc(tl, p);
 
 	EmitInitFini(tl);
+
+	VCC_InstanceInfo(tl);
 
 	EmitStruct(tl);
 

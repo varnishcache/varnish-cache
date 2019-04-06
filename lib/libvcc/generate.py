@@ -656,6 +656,7 @@ struct VCL_conf {
 	const char		**srcbody;
 
 	int			nvmod;
+	const struct vpi_ii	*instance_info;
 
 	vcl_event_f		*event_vcl;
 """)

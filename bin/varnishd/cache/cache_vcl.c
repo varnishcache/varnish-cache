@@ -44,6 +44,7 @@
 #include "cache_vcl.h"
 #include "vcli_serve.h"
 #include "vtim.h"
+#include "vcc_interface.h"
 
 const struct vcltemp VCL_TEMP_INIT[1] = {{ .name = "init", .is_cold = 1 }};
 const struct vcltemp VCL_TEMP_COLD[1] = {{ .name = "cold", .is_cold = 1 }};
@@ -208,6 +209,7 @@ vcl_find(const char *name)
 void
 VCL_Panic(struct vsb *vsb, const char *nm, const struct vcl *vcl)
 {
+	const struct vpi_ii *ii;
 	int i;
 
 	AN(vsb);
@@ -232,6 +234,15 @@ VCL_Panic(struct vsb *vsb, const char *nm, const struct vcl *vcl)
 		VSB_indent(vsb, 2);
 		for (i = 0; i < vcl->conf->nsrc; ++i)
 			VSB_printf(vsb, "\"%s\",\n", vcl->conf->srcname[i]);
+		VSB_indent(vsb, -2);
+		VSB_cat(vsb, "instances = {\n");
+		VSB_indent(vsb, 2);
+		ii = vcl->conf->instance_info;
+		while (ii != NULL && ii->p != NULL) {
+			VSB_printf(vsb, "\"%s\" = %p,\n", ii->name,
+			    (const void *)*(const uintptr_t *)ii->p);
+			ii++;
+		}
 		VSB_indent(vsb, -2);
 		VSB_cat(vsb, "},\n");
 	}

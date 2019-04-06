@@ -64,5 +64,11 @@ struct vrt_acl {
 	const char	*name;
 };
 
+/* vmod object instance info */
+struct vpi_ii {
+	const void *			p;
+	const char * const		name;
+};
+
 VCL_STRANDS VPI_BundleStrands(int, struct strands *, char const **,
     const char *f, ...);
