@@ -199,8 +199,8 @@ VMOD_Panic(struct vsb *vsb)
 	VSB_printf(vsb, "vmods = {\n");
 	VSB_indent(vsb, 2);
 	VTAILQ_FOREACH(v, &vmods, list)
-		VSB_printf(vsb, "%s = {%s, %u.%u},\n",
-		    v->nm, v->abi, v->vrt_major, v->vrt_minor);
+		VSB_printf(vsb, "%s = {%p, %s, %u.%u},\n",
+		    v->nm, v, v->abi, v->vrt_major, v->vrt_minor);
 	VSB_indent(vsb, -2);
 	VSB_printf(vsb, "},\n");
 }
