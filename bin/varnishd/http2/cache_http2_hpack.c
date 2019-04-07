@@ -176,8 +176,11 @@ h2h_decode_init(const struct h2_sess *h2)
 	INIT_OBJ(d, H2H_DECODE_MAGIC);
 	VHD_Init(d->vhd);
 	d->out_l = WS_Reserve(h2->new_req->http->ws, 0);
-	assert(d->out_l > 0);	/* Can't do any work without any buffer
-				   space. Require non-zero size. */
+	/*
+	 * Can't do any work without any buffer
+	 * space. Require non-zero size.
+	 */
+	XXXAN(d->out_l);
 	d->out = h2->new_req->http->ws->f;
 	d->reset = d->out;
 }
