@@ -160,6 +160,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	assert(req->restarts <= cache_param->max_restarts);
 
 	if (wrk->handling != VCL_RET_DELIVER) {
+		HSH_Cancel(wrk, req->objcore, NULL);
 		(void)HSH_DerefObjCore(wrk, &req->objcore, HSH_RUSH_POLICY);
 		http_Teardown(req->resp);
 

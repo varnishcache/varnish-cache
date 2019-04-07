@@ -1,0 +1,49 @@
+varnishtest "Cancel private busy obj from vcl_deliver"
+
+server s1 {
+	rxreq
+	expect req.url == "/hfm"
+	txresp -hdr "HFM: True" -bodylen 65530
+	rxreq
+	expect req.url == "/hfp"
+	txresp -hdr "HFP: True" -bodylen 65550
+} -start
+
+varnish v1 -arg "-s Transient=default" -vcl+backend {
+	sub vcl_recv {
+		if (req.restarts > 0) {
+			return (synth(200));
+		}
+	}
+	sub vcl_backend_response {
+		if (bereq.url == "/hfm") {
+			set beresp.uncacheable = true;
+		} else if (bereq.url == "/hfp") {
+			return (pass(1m));
+		}
+	}
+	sub vcl_deliver {
+		if (req.restarts == 0) {
+			return (restart);
+		}
+	}
+} -start
+
+logexpect l1 -v v1 -g raw {
+	expect * *	Storage		"Transient"
+	expect * *	Storage		"Transient"
+} -start
+
+client c1 {
+	txreq -url "/hfm"
+	rxresp
+	expect resp.status == 200
+	txreq -url "/hfp"
+	rxresp
+	expect resp.status == 200
+} -run
+
+logexpect l1 -wait
+
+varnish v1 -expect SM?.Transient.c_bytes > 131072
+varnish v1 -expect SM?.Transient.g_bytes < 2000
