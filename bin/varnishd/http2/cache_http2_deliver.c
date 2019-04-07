@@ -226,8 +226,10 @@ h2_build_headers(struct vsb *resp, struct req *req)
 	ssize_t sz, sz1;
 
 	l = WS_Reserve(req->ws, 0);
-	if (l < 10)
+	if (l < 10) {
+		WS_Release(req->ws, 0);
 		return (-1);
+	}
 
 	AN(VSB_new(resp, req->ws->f, l, VSB_FIXEDLEN));
 
