@@ -766,6 +766,35 @@ HSH_Abandon(struct objcore *oc)
 }
 
 /*---------------------------------------------------------------------
+ * Cancel a fetch when the client does not need it any more
+ */
+
+void
+HSH_Cancel(struct worker *wrk, struct objcore *oc, struct boc *boc)
+{
+	struct boc *bocref = NULL;
+
+	if ((oc->flags & (OC_F_PRIVATE | OC_F_HFM | OC_F_HFP)) == 0)
+		return;
+
+	if (boc == NULL)
+		bocref = boc = HSH_RefBoc(oc);
+
+	if (oc->flags & OC_F_HFP)
+		AN(oc->flags & OC_F_HFM);
+
+	if (boc != NULL) {
+		HSH_Abandon(oc);
+		ObjWaitState(oc, BOS_FINISHED);
+	}
+
+	if (bocref != NULL)
+		HSH_DerefBoc(wrk, oc);
+
+	ObjSlim(wrk, oc);
+}
+
+/*---------------------------------------------------------------------
  * Unbusy an objcore when the object is completely fetched.
  */
 
