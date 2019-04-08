@@ -261,7 +261,7 @@ VRT_String(struct ws *ws, const char *h, const char *p, va_list ap)
 	unsigned u, x;
 	va_list aq;
 
-	u = WS_Reserve(ws, 0);
+	u = WS_ReserveAll(ws);
 	e = b = ws->f;
 	e += u;
 
@@ -385,7 +385,7 @@ VRT_StrandsWS(struct ws *ws, const char *h, VCL_STRANDS s)
 	int i;
 
 	AN(s);
-	u = WS_Reserve(ws, 0);
+	u = WS_ReserveAll(ws);
 
 	for (i = 0; i < s->n; i++)
 		if (s->p[i] != NULL && *s->p[i] != '\0') {
@@ -573,7 +573,7 @@ VRT_IP_string(VRT_CTX, VCL_IP ip)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	if (ip == NULL)
 		return (NULL);
-	len = WS_Reserve(ctx->ws, 0);
+	len = WS_ReserveAll(ctx->ws);
 	if (len == 0) {
 		WS_Release(ctx->ws, 0);
 		return (NULL);

@@ -155,7 +155,7 @@ vmod_workspace_alloc(VRT_CTX, VCL_ENUM which, VCL_INT size)
 	WS_Assert(ws);
 
 	if (size < 0) {
-		size += WS_Reserve(ws, 0);
+		size += WS_ReserveAll(ws);
 		WS_Release(ws, 0);
 	}
 	if (size <= 0) {
@@ -182,7 +182,7 @@ vmod_workspace_free(VRT_CTX, VCL_ENUM which)
 		return(-1);
 	WS_Assert(ws);
 
-	u = WS_Reserve(ws, 0);
+	u = WS_ReserveAll(ws);
 	WS_Release(ws, 0);
 	return (u);
 }

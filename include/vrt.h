@@ -51,7 +51,9 @@
  * Whenever something is deleted or changed in a way which is not
  * binary/load-time compatible, increment MAJOR version
  *
- *
+ * unreleased (planned for 2019-09-15)
+ *	[cache.h] WS_ReserveAll() added
+ *	[cache.h] WS_Reserve(ws, 0) deprecated
  * 9.0 (2019-03-15)
  *	Make 'len' in vmod_priv 'long'
  *	HTTP_Copy() removed

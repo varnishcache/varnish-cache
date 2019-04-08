@@ -230,7 +230,7 @@ VRY_Prep(struct req *req)
 		AZ(req->vary_b);
 		AZ(req->vary_l);
 		AZ(req->vary_e);
-		(void)WS_Reserve(req->ws, 0);
+		(void)WS_ReserveAll(req->ws);
 	} else {
 		AN(req->ws->r);
 	}
