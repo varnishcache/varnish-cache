@@ -626,7 +626,7 @@ double grace, double keep)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
-	ospc = WS_Reserve(wrk->aws, 0);
+	ospc = WS_ReserveAll(wrk->aws);
 	assert(ospc >= sizeof *ocp);
 	/*
 	 * Because of "soft" purges, there might be oc's in the list that has

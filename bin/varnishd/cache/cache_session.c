@@ -204,7 +204,7 @@ HTC_RxInit(struct http_conn *htc, struct ws *ws)
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	htc->ws = ws;
-	(void)WS_Reserve(htc->ws, 0);
+	(void)WS_ReserveAll(htc->ws);
 	htc->rxbuf_b = ws->f;
 	htc->rxbuf_e = ws->f;
 	if (htc->pipeline_b != NULL) {

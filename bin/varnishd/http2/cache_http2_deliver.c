@@ -229,7 +229,7 @@ h2_build_headers(struct vsb *resp, struct req *req)
 	uint8_t buf[6];
 	ssize_t sz, sz1;
 
-	l = WS_Reserve(req->ws, 0);
+	l = WS_ReserveAll(req->ws);
 	AN(VSB_new(resp, req->ws->f, l, VSB_FIXEDLEN));
 	if (l < 10) {
 		WS_Release(req->ws, 0);
