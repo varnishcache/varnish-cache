@@ -175,7 +175,7 @@ h2h_decode_init(const struct h2_sess *h2)
 	d = h2->decode;
 	INIT_OBJ(d, H2H_DECODE_MAGIC);
 	VHD_Init(d->vhd);
-	d->out_l = WS_Reserve(h2->new_req->http->ws, 0);
+	d->out_l = WS_ReserveAll(h2->new_req->http->ws);
 	assert(d->out_l > 0);	/* Can't do any work without any buffer
 				   space. Require non-zero size. */
 	d->out = h2->new_req->http->ws->f;

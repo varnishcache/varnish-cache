@@ -72,7 +72,7 @@ vmod_updown(VRT_CTX, int up, const char *s, va_list ap)
 	const char *p;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	u = WS_Reserve(ctx->ws, 0);
+	u = WS_ReserveAll(ctx->ws);
 	e = b = ctx->ws->f;
 	e += u;
 	p = s;

@@ -251,7 +251,7 @@ filter_on_ws(struct ws *ws, filter_list_t *func, void *arg)
 
 	AN(func);
 	AN(arg);
-	u = WS_Reserve(ws, 0);
+	u = WS_ReserveAll(ws);
 	if (u == 0) {
 		WS_Release(ws, 0);
 		WS_MarkOverflow(ws);

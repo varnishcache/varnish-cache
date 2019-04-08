@@ -394,7 +394,7 @@ http_CollectHdrSep(struct http *hp, const char *hdr, const char *sep)
 		}
 		if (b == NULL) {
 			/* Found second header, start our collection */
-			ml = WS_Reserve(hp->ws, 0);
+			ml = WS_ReserveAll(hp->ws);
 			b = hp->ws->f;
 			e = b + ml;
 			x = Tlen(hp->hd[f]);
@@ -1228,7 +1228,7 @@ http_PrintfHeader(struct http *to, const char *fmt, ...)
 	unsigned l, n;
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
-	l = WS_Reserve(to->ws, 0);
+	l = WS_ReserveAll(to->ws);
 	va_start(ap, fmt);
 	n = vsnprintf(to->ws->f, l, fmt, ap);
 	va_end(ap);

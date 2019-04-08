@@ -202,7 +202,7 @@ WS_Printf(struct ws *ws, const char *fmt, ...)
 	va_list ap;
 	char *p;
 
-	u = WS_Reserve(ws, 0);
+	u = WS_ReserveAll(ws);
 	p = ws->f;
 	va_start(ap, fmt);
 	v = vsnprintf(p, u, fmt, ap);
@@ -227,6 +227,30 @@ WS_Snapshot(struct ws *ws)
 	return (ws->f == ws->s ? 0 : (uintptr_t)ws->f);
 }
 
+/*
+ * WS_Release() must be called in all cases
+ */
+unsigned
+WS_ReserveAll(struct ws *ws)
+{
+	unsigned b;
+
+	assert(ws->r == NULL);
+
+	ws->r = ws->e;
+	b = pdiff(ws->f, ws->r);
+
+	WS_Assert(ws);
+	DSL(DBG_WORKSPACE, 0, "WS_ReserveAll(%p) = %u", ws, b);
+
+	return (b);
+}
+
+/*
+ * bytes == 0 argument is deprecated - use WS_ReserveAll
+ *
+ * XXX rename to WS_ReserveSize and macro-wrap WS_Reserve to emit #warn ?
+ */
 unsigned
 WS_Reserve(struct ws *ws, unsigned bytes)
 {
@@ -253,11 +277,7 @@ WS_Reserve(struct ws *ws, unsigned bytes)
 unsigned
 WS_ReserveLumps(struct ws *ws, size_t sz)
 {
-	unsigned u;
-
-	u = WS_Reserve(ws, 0);
-	u /= sz;
-	return (u);
+	return (WS_ReserveAll(ws) / sz);
 }
 
 void
