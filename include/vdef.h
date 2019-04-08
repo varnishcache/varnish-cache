@@ -81,6 +81,12 @@
 
 #define v_noreturn_ __attribute__((__noreturn__))
 
+#ifdef __GNUC__
+#  define v_deprecated_ __attribute__((deprecated))
+#else
+#  define v_deprecated_
+#endif
+
 /*********************************************************************
  * Pointer alignment magic
  */
