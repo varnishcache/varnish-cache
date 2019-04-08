@@ -113,7 +113,7 @@ ses_reserve_attr(struct sess *sp, enum sess_attr a, void **dst, int sz)
 	assert(a < SA_LAST);
 	assert(sz >= 0);
 	AN(dst);
-	o = WS_Reserve(sp->ws, sz);
+	o = WS_ReserveSize(sp->ws, sz);
 	assert(o >= sz);
 	*dst = sp->ws->f;
 	o = sp->ws->f - sp->ws->s;
@@ -417,7 +417,7 @@ ses_handle(struct waited *wp, enum wait_event ev, vtim_real now)
 	case WAITER_ACTION:
 		pp = sp->pool;
 		CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
-		assert(sizeof *tp <= WS_Reserve(sp->ws, sizeof *tp));
+		assert(sizeof *tp <= WS_ReserveSize(sp->ws, sizeof *tp));
 		tp = (void*)sp->ws->f;
 		tp->func = xp->unwait;
 		tp->priv = sp;
@@ -455,7 +455,7 @@ SES_Wait(struct sess *sp, const struct transport *xp)
 	/*
 	 * put struct waited on the workspace
 	 */
-	if (WS_Reserve(sp->ws, sizeof(struct waited))
+	if (WS_ReserveSize(sp->ws, sizeof(struct waited))
 	    < sizeof(struct waited)) {
 		SES_Delete(sp, SC_OVERLOAD, NAN);
 		return;

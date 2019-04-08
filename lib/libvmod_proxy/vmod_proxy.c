@@ -105,7 +105,7 @@ tlv_string(VRT_CTX, int tlv)
 
 	if (VPX_tlv(ctx->req, tlv, (void **)&dst, &len))
 		return (NULL);
-	if (!WS_Reserve(ctx->ws, len+1))
+	if (!WS_ReserveSize(ctx->ws, len+1))
 		return (NULL);
 	d = ctx->ws->f;
 	memcpy(d, dst, len);
