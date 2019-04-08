@@ -238,7 +238,7 @@ Pool_Task_Arg(struct worker *wrk, enum task_prio prio, task_func_t *func,
 		retval = 0;
 	}
 	AZ(wrk2->task.func);
-	assert(arg_len <= WS_Reserve(wrk2->aws, arg_len));
+	assert(arg_len <= WS_ReserveSize(wrk2->aws, arg_len));
 	memcpy(wrk2->aws->f, arg, arg_len);
 	wrk2->task.func = func;
 	wrk2->task.priv = wrk2->aws->f;
