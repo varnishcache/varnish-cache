@@ -111,11 +111,11 @@
  *	VRT_vcl_get added
  *	VRT_vcl_rel added
  *	VRT_fail added
- *	WS_Reset and WS_Snapshot signatures changed
- *	WS_Front added
- *	WS_ReserveLumps added
- *	WS_Inside added
- *	WS_Assert_Allocated added
+ *	[cache.h] WS_Reset and WS_Snapshot signatures changed
+ *	[cache.h] WS_Front added
+ *	[cache.h] WS_ReserveLumps added
+ *	[cache.h] WS_Inside added
+ *	[cache.h] WS_Assert_Allocated added
  * 5.0:
  *	Varnish 5.0 release "better safe than sorry" bump
  * 4.0:
