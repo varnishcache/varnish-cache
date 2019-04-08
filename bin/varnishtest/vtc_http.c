@@ -1275,6 +1275,7 @@ cmd_http_txreq(CMD_ARGS)
 
 	VSB_clear(hp->vsb);
 
+	hp->head_method = 0;
 	for (; *av != NULL; av++) {
 		if (!strcmp(*av, "-url")) {
 			url = av[1];
