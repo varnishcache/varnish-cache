@@ -247,9 +247,34 @@ WS_ReserveAll(struct ws *ws)
 }
 
 /*
- * bytes == 0 argument is deprecated - use WS_ReserveAll
- *
- * XXX rename to WS_ReserveSize and macro-wrap WS_Reserve to emit #warn ?
+ * WS_Release() must be called for retval > 0 only
+ */
+unsigned
+WS_ReserveSize(struct ws *ws, unsigned bytes)
+{
+	unsigned b2;
+
+	WS_Assert(ws);
+	assert(ws->r == NULL);
+	assert(bytes > 0);
+
+	b2 = PRNDDN(ws->e - ws->f);
+	if (bytes < b2)
+		b2 = PRNDUP(bytes);
+
+	if (ws->f + b2 > ws->e) {
+		WS_MarkOverflow(ws);
+		return (0);
+	}
+	ws->r = ws->f + b2;
+	DSL(DBG_WORKSPACE, 0, "WS_ReserveSize(%p, %u/%u) = %u",
+	    ws, b2, bytes, pdiff(ws->f, ws->r));
+	WS_Assert(ws);
+	return (pdiff(ws->f, ws->r));
+}
+
+/*
+ * XXX remove for 2020-03-15 release
  */
 unsigned
 WS_Reserve(struct ws *ws, unsigned bytes)
