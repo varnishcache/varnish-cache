@@ -60,14 +60,16 @@ if test "x$SPHINX" = "xno"; then
 fi
 
 AC_ARG_WITH([rst2html],
-               AS_HELP_STRING([--with-rst2html=PATH],
-                              [Location of rst2html (auto)]),
-               [RST2HTML="$withval"],
-               [AC_CHECK_PROGS(RST2HTML, [rst2html rst2html.py], "no")
-	        if test "x$RST2HTML" = "xno"; then
-		   AC_MSG_WARN([rst2html not found - not building changelog])
-		fi])
-AM_CONDITIONAL(HAVE_RST2HTML,[test "x$RST2HTML" != "xno"])
+  AS_HELP_STRING([--with-rst2html=PATH], [Location of rst2html (auto)]),
+  [RST2HTML="$withval"],
+  AC_CHECK_PROGS(RST2HTML,
+     [rst2html rst2html.py rst2html-3.6 rst2html-3],
+     "no"))
+
+if test "x$RST2HTML" = "xno"; then
+   AC_MSG_ERROR(
+     [rst2html not found - (Weird, we found rst2man?!)])
+fi
 
 AC_ARG_WITH([dot],
   AS_HELP_STRING([--with-dot=PATH],
