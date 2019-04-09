@@ -53,28 +53,3 @@ Varnish is written to run on modern versions of Linux and FreeBSD and the
 best experience is had on those platforms. Thanks to our contributors
 it also runs on NetBSD, OpenBSD, OS X and various Solaris-descendants
 like Oracle Solaris, OmniOS and SmartOS.
-
-About the Varnish development process
--------------------------------------
-
-Varnish is a community driven project. The development is overseen by
-the Varnish Governing Board which currently consists of Poul-Henning Kamp
-(Architect), Rogier Mulhuijzen (Fastly) and Lasse Karstensen (Independent).
-
-Please see https://www.varnish-cache.org/trac/wiki/Contributing as a
-starting point if you would like to contribute to Varnish.
-
-Getting in touch
-----------------
-
-You can get in touch with us through many channels. For real time chat
-you can reach us on IRC through the server irc.linpro.net on the #varnish
-and #varnish-hacking channels.
-There are two mailing lists available: one for user questions and one
-for development discussions. See https://www.varnish-cache.org/lists
-for information and signup.  There is also a web forum on the same site.
-
-Now that you have a vague idea on what Varnish Cache is, let's see if we
-can get it up and running.
-
-.. XXX:The above three paragraphs are repetitive this is already handled in previous chapters. The only new information is Governing Board which could be moved to the introduction and the paragraphs scrapped. benc

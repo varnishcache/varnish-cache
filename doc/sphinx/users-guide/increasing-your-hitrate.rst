@@ -41,9 +41,6 @@ requests coming from the client matching `/foo/bar`.
 For more information on how :ref:`varnishlog(1)` works please see
 :ref:`users-guide-logging` or then man page.
 
-For extended diagnostics headers, see
-https://www.varnish-cache.org/trac/wiki/VCLExampleHitMissHeader
-
 
 Tool: lwp-request
 ~~~~~~~~~~~~~~~~~
