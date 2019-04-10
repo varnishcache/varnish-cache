@@ -778,8 +778,8 @@ HSH_Cancel(struct worker *wrk, struct objcore *oc, struct boc *boc)
 		return;
 
 	/*
-	 * the caller-provided boc is optional, if they do not have one, we grab
-	 * a ref
+	 * NB: we use two distinct variables to only release the reference if
+	 * we had to acquire one. The caller-provided boc is optional.
 	 */
 	if (boc == NULL)
 		bocref = boc = HSH_RefBoc(oc);
