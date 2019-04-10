@@ -3,8 +3,10 @@ varnishtest "shard director Restarts"
 server s1 {
 	rxreq
 	txresp -body "ech3Ooj"
+	accept
 	rxreq
 	txresp -body "ech3Ooj"
+	accept
 	rxreq
 	txresp -body "ech3Ooj"
 } -start
@@ -12,8 +14,10 @@ server s1 {
 server s2 {
 	rxreq
 	txresp -body "ieQu2qua"
+	accept
 	rxreq
 	txresp -body "ieQu2qua"
+	accept
 	rxreq
 	txresp -body "ieQu2qua"
 } -start
@@ -21,8 +25,10 @@ server s2 {
 server s3 {
 	rxreq
 	txresp -body "xiuFi3Pe"
+	accept
 	rxreq
 	txresp -body "xiuFi3Pe"
+	accept
 	rxreq
 	txresp -body "xiuFi3Pe"
 } -start
@@ -36,6 +42,10 @@ varnish v1 -vcl+backend {
 		vd.add_backend(s2);
 		vd.add_backend(s3);
 		vd.reconfigure(25);
+	}
+
+	sub vcl_backend_fetch {
+		set bereq.http.Connection = "close";
 	}
 
 	sub vcl_recv {
