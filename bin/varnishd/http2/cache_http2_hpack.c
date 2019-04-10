@@ -141,7 +141,7 @@ h2h_addhdr(struct http *hp, char *b, size_t namelen, size_t len)
 
 	if (n < HTTP_HDR_FIRST) {
 		/* Check for duplicate pseudo-header */
-		if (n < HTTP_HDR_FIRST && hp->hd[n].b != NULL) {
+		if (hp->hd[n].b != NULL) {
 			VSLb(hp->vsl, SLT_BogoHeader,
 			    "Duplicate pseudo-header: %.*s",
 			    (int)(len > 20 ? 20 : len), b);
