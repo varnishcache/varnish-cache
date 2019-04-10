@@ -777,6 +777,10 @@ HSH_Cancel(struct worker *wrk, struct objcore *oc, struct boc *boc)
 	if ((oc->flags & (OC_F_PRIVATE | OC_F_HFM | OC_F_HFP)) == 0)
 		return;
 
+	/*
+	 * the caller-provided boc is optional, if they do not have one, we grab
+	 * a ref
+	 */
 	if (boc == NULL)
 		bocref = boc = HSH_RefBoc(oc);
 
