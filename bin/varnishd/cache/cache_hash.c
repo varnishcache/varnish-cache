@@ -774,6 +774,8 @@ HSH_Cancel(struct worker *wrk, struct objcore *oc, struct boc *boc)
 {
 	struct boc *bocref = NULL;
 
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+
 	if ((oc->flags & (OC_F_PRIVATE | OC_F_HFM | OC_F_HFP)) == 0)
 		return;
 
@@ -783,6 +785,8 @@ HSH_Cancel(struct worker *wrk, struct objcore *oc, struct boc *boc)
 	 */
 	if (boc == NULL)
 		bocref = boc = HSH_RefBoc(oc);
+
+	CHECK_OBJ_ORNULL(boc, BOC_MAGIC);
 
 	if (oc->flags & OC_F_HFP)
 		AN(oc->flags & OC_F_HFM);
