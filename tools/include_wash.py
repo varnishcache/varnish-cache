@@ -29,11 +29,11 @@ def check(fn):
 
     for i in ("cache/cache.h", "cache.h"):
         if i in l:
-            for i in ("stddef.h", "stdint.h", "vrt.h",
+            for j in ("stddef.h", "stdint.h", "vrt.h",
                       "math.h", "pthread.h", "stdarg.h", "sys/types.h",
                       "vdef.h", "miniobj.h", "vas.h", "vqueue.h", "vtree.h"):
-                if i in l:
-                    print(fn, i + " included with cache.h")
+                if j in l:
+                    print(fn, j + " included with cache.h")
 
 for (dir, dns, fns) in os.walk("."):
     for f in fns:
