@@ -4,7 +4,7 @@ language: c
 jobs:
   allow_failures:
     - os: osx
-    - env: ASAN=1 UBSAN=1
+    - stage: sanitizers
   fast_finish: true
   include:
     - &test-linux
