@@ -4,6 +4,7 @@ server s1 {
 	rxreq
 	expect req.url == "/hfm"
 	txresp -hdr "HFM: True" -bodylen 65530
+	accept
 	rxreq
 	expect req.url == "/hfp"
 	txresp -hdr "HFP: True" -bodylen 65550
@@ -14,6 +15,9 @@ varnish v1 -arg "-s Transient=default" -vcl+backend {
 		if (req.restarts > 0) {
 			return (synth(200));
 		}
+	}
+	sub vcl_backend_fetch {
+		set bereq.http.Connection = "close";
 	}
 	sub vcl_backend_response {
 		if (bereq.url == "/hfm") {
