@@ -65,11 +65,16 @@ rdf(int fd0, int fd1, uint64_t *pcnt)
 int
 V1P_Enter(void)
 {
+	int retval = 0;
 
 	Lck_Lock(&pipestat_mtx);
-	VSC_C_main->n_pipe++;
+	if (cache_param->pipe_sess_max == 0 ||
+	    VSC_C_main->n_pipe < cache_param->pipe_sess_max)
+		VSC_C_main->n_pipe++;
+	else
+		retval = -1;
 	Lck_Unlock(&pipestat_mtx);
-	return (0);
+	return (retval);
 }
 
 void
