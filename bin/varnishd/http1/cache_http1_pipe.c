@@ -62,6 +62,26 @@ rdf(int fd0, int fd1, uint64_t *pcnt)
 	return (0);
 }
 
+int
+V1P_Enter(void)
+{
+
+	Lck_Lock(&pipestat_mtx);
+	VSC_C_main->n_pipe++;
+	Lck_Unlock(&pipestat_mtx);
+	return (0);
+}
+
+void
+V1P_Leave(void)
+{
+
+	Lck_Lock(&pipestat_mtx);
+	assert(VSC_C_main->n_pipe > 0);
+	VSC_C_main->n_pipe--;
+	Lck_Unlock(&pipestat_mtx);
+}
+
 void
 V1P_Charge(struct req *req, const struct v1p_acct *a, struct VSC_vbe *b)
 {

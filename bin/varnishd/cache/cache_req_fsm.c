@@ -44,6 +44,7 @@
 #include "cache_transport.h"
 
 #include "hash/hash_slinger.h"
+#include "http1/cache_http1.h"
 #include "storage/storage.h"
 #include "common/heritage.h"
 #include "vcl.h"
@@ -704,11 +705,13 @@ cnt_pipe(struct worker *wrk, struct req *req)
 		nxt = REQ_FSM_MORE;
 		break;
 	case VCL_RET_PIPE:
+		XXXAZ(V1P_Enter());
 		AZ(bo->req);
 		bo->req = req;
 		bo->wrk = wrk;
 		SES_Close(req->sp, VDI_Http1Pipe(req, bo));
 		nxt = REQ_FSM_DONE;
+		V1P_Leave();
 		break;
 	default:
 		WRONG("Illegal return from vcl_pipe{}");

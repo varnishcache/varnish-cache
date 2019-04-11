@@ -394,6 +394,11 @@
 	:oneliner:	Total sessions seen
 
 
+.. varnish_vsc:: n_pipe
+	:type:	gauge
+	:oneliner:	Number of ongoing pipe sessions
+
+
 .. varnish_vsc:: s_pipe
 	:group: wrk
 	:oneliner:	Total pipe sessions seen
