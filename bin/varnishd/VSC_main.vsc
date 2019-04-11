@@ -399,6 +399,14 @@
 	:oneliner:	Number of ongoing pipe sessions
 
 
+.. varnish_vsc:: pipe_limited
+	:group: wrk
+	:oneliner:	Pipes hit pipe_sess_max
+
+	Number of times more pipes were needed, but the limit was reached. See
+	also parameter pipe_sess_max.
+
+
 .. varnish_vsc:: s_pipe
 	:group: wrk
 	:oneliner:	Total pipe sessions seen

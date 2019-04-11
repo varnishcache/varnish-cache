@@ -710,6 +710,7 @@ cnt_pipe(struct worker *wrk, struct req *req)
 			V1P_Leave();
 			break;
 		}
+		wrk->stats->pipe_limited++;
 		/* fall through */
 	case VCL_RET_FAIL:
 		req->req_step = R_STP_VCLFAIL;

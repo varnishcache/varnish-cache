@@ -64,3 +64,4 @@ barrier b2 sync
 varnish v1 -expect MAIN.n_pipe == 1
 barrier b4 sync
 varnish v1 -expect MAIN.n_pipe == 0
+varnish v1 -expect MAIN.pipe_limited == 1
