@@ -1,4 +1,4 @@
-varnishtest "n_pipe gauge"
+varnishtest "concurrent pipe limit"
 
 barrier b1 cond 2
 barrier b2 cond 2
@@ -36,6 +36,7 @@ varnish v1 -expect MAIN.n_pipe == 0
 client c1 {
 	txreq -url "/c1"
 	rxresp
+	expect resp.status == 200
 } -start
 
 barrier b1 sync
@@ -45,10 +46,20 @@ varnish v1 -expect MAIN.n_pipe == 1
 client c2 {
 	txreq -url "/c2"
 	rxresp
+	expect resp.status == 200
 } -start
 
 barrier b3 sync
 varnish v1 -expect MAIN.n_pipe == 2
+
+varnish v1 -cliok "param.set pipe_sess_max 2"
+
+client c3 {
+	txreq
+	rxresp
+	expect resp.status == 503
+} -run
+
 barrier b2 sync
 varnish v1 -expect MAIN.n_pipe == 1
 barrier b4 sync

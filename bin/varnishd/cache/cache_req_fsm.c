@@ -696,22 +696,24 @@ cnt_pipe(struct worker *wrk, struct req *req)
 	VCL_pipe_method(req->vcl, wrk, req, bo, NULL);
 
 	switch (wrk->handling) {
-	case VCL_RET_FAIL:
-		req->req_step = R_STP_VCLFAIL;
-		nxt = REQ_FSM_MORE;
-		break;
 	case VCL_RET_SYNTH:
 		req->req_step = R_STP_SYNTH;
 		nxt = REQ_FSM_MORE;
 		break;
 	case VCL_RET_PIPE:
-		XXXAZ(V1P_Enter());
-		AZ(bo->req);
-		bo->req = req;
-		bo->wrk = wrk;
-		SES_Close(req->sp, VDI_Http1Pipe(req, bo));
-		nxt = REQ_FSM_DONE;
-		V1P_Leave();
+		if (V1P_Enter() == 0) {
+			AZ(bo->req);
+			bo->req = req;
+			bo->wrk = wrk;
+			SES_Close(req->sp, VDI_Http1Pipe(req, bo));
+			nxt = REQ_FSM_DONE;
+			V1P_Leave();
+			break;
+		}
+		/* fall through */
+	case VCL_RET_FAIL:
+		req->req_step = R_STP_VCLFAIL;
+		nxt = REQ_FSM_MORE;
 		break;
 	default:
 		WRONG("Illegal return from vcl_pipe{}");

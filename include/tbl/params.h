@@ -915,6 +915,20 @@ PARAM(
 )
 
 PARAM(
+	/* name */	pipe_sess_max,
+	/* typ */	uint,
+	/* min */	"0",
+	/* max */	NULL,
+	/* default */	"0",
+	/* units */	"connections",
+	/* flags */	0,
+	/* s-text */
+	"Maximum number of sessions dedicated to pipe transactions.",
+	/* l-text */	"",
+	/* func */	NULL
+)
+
+PARAM(
 	/* name */	pipe_timeout,
 	/* typ */	timeout,
 	/* min */	"0.000",
