@@ -171,7 +171,6 @@ vrg_dorange(struct req *req, const char *r, void **priv)
 	if (vrg_priv == NULL)
 		return ("WS too small");
 
-	XXXAN(vrg_priv);
 	INIT_OBJ(vrg_priv, VRG_PRIV_MAGIC);
 	vrg_priv->range_off = 0;
 	vrg_priv->range_low = low;
