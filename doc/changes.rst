@@ -43,6 +43,25 @@ NEXT (2019-09-15)
     / ``keep = 5s`` avoid hammering on failing backends
     (note this is existing behavior).
 
+C APIs (for vmod and utility authors)
+-------------------------------------
+
+* ``WS_Reserve()`` is now deprecated and any use should trigger a
+  compiler warning. It is to be replaced by
+
+  - ``WS_ReserveAll()`` to reserve all of the remaining workspace
+
+    It will always leave the workspace reserved even if 0 bytes are
+    available, so it must always be followed by a call to
+    ``WS_Release()``
+
+  - ``WS_ReserveSize()`` to reserve a fixed amount.
+
+    It will only leave the workspace reserved if the reservation
+    request could be fulfilled.
+
+
+
 ================================
 Varnish Cache 6.2.0 (2019-03-15)
 ================================
