@@ -238,7 +238,6 @@ vbe_dir_gethdrs(VRT_CTX, VCL_BACKEND d)
 	struct pfd *pfd;
 	struct busyobj *bo;
 	struct worker *wrk;
-	char abuf[VTCP_ADDRBUFSIZE], pbuf[VTCP_PORTBUFSIZE];
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
@@ -264,9 +263,8 @@ vbe_dir_gethdrs(VRT_CTX, VCL_BACKEND d)
 		if (PFD_State(pfd) != PFD_STATE_STOLEN)
 			extrachance = 0;
 
-		PFD_RemoteName(pfd, abuf, sizeof abuf, pbuf, sizeof pbuf);
 		i = V1F_SendReq(wrk, bo, &bo->acct.bereq_hdrbytes,
-				&bo->acct.bereq_bodybytes, 0, abuf, pbuf);
+				&bo->acct.bereq_bodybytes, 0);
 
 		if (PFD_State(pfd) != PFD_STATE_USED) {
 			if (VTP_Wait(wrk, pfd, VTIM_real() +
@@ -330,7 +328,6 @@ vbe_dir_http1pipe(VRT_CTX, VCL_BACKEND d)
 	struct backend *bp;
 	struct v1p_acct v1a;
 	struct pfd *pfd;
-	char abuf[VTCP_ADDRBUFSIZE], pbuf[VTCP_PORTBUFSIZE];
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
@@ -352,9 +349,8 @@ vbe_dir_http1pipe(VRT_CTX, VCL_BACKEND d)
 		retval = SC_TX_ERROR;
 	} else {
 		CHECK_OBJ_NOTNULL(ctx->bo->htc, HTTP_CONN_MAGIC);
-		PFD_RemoteName(pfd, abuf, sizeof abuf, pbuf, sizeof pbuf);
 		i = V1F_SendReq(ctx->req->wrk, ctx->bo,
-		    &v1a.bereq, &v1a.out, 1, abuf, pbuf);
+		    &v1a.bereq, &v1a.out, 1);
 		VSLb_ts_req(ctx->req, "Pipe", W_TIM_real(ctx->req->wrk));
 		if (i == 0)
 			V1P_Process(ctx->req, *PFD_Fd(pfd), &v1a);

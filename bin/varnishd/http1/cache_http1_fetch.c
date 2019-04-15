@@ -69,7 +69,7 @@ vbf_iter_req_body(void *priv, unsigned flush, const void *ptr, ssize_t l)
 
 int
 V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
-    uint64_t *ctr_bodybytes, int onlycached, char *abuf, char *pbuf)
+    uint64_t *ctr_bodybytes, int onlycached)
 {
 	struct http *hp;
 	int j;
@@ -94,8 +94,6 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 		http_PrintfHeader(hp, "Transfer-Encoding: chunked");
 		do_chunked = 1;
 	}
-
-	VSLb(bo->vsl, SLT_BackendStart, "%s %s", abuf, pbuf);
 
 	VTCP_blocking(*htc->rfd);	/* XXX: we should timeout instead */
 	V1L_Open(wrk, wrk->aws, htc->rfd, bo->vsl, bo->t_prev, 0);

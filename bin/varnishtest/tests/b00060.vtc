@@ -25,5 +25,4 @@ logexpect l2 -v v1 -d 1 -g vxid {
 logexpect l3 -v v1 -d 1 -g vxid {
 	expect * *	Begin		^bereq
 	expect * =	BackendOpen	"0.0.0.0 0 0.0.0.0 0$"
-	expect * =	BackendStart	"^0.0.0.0 0$"
 } -run

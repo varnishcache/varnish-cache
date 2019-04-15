@@ -919,9 +919,9 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				    4, &CTX.frag[F_O],
 				    0, NULL);
 				break;
-			case (SLT_BackendStart + BACKEND_MARKER):
+			case (SLT_BackendOpen + BACKEND_MARKER):
 				frag_fields(1, b, e,
-				    1, &CTX.frag[F_h],
+				    3, &CTX.frag[F_h],
 				    0, NULL);
 				break;
 			case SLT_ReqStart:

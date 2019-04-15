@@ -1,6 +1,6 @@
 varnishtest "varnishncsa outputs when UDS addresses are in use"
 
-# The %h formatter gets its value from ReqStart or BackendStart,
+# The %h formatter gets its value from ReqStart or BackendOpen,
 # which now may be a UDS address.
 
 # For UDS backends without a .host_header spec, the Host header is

@@ -43,6 +43,9 @@ NEXT (2019-09-15)
     / ``keep = 5s`` avoid hammering on failing backends
     (note this is existing behavior).
 
+* Retired the ``BackendStart`` log tag - ``BackendOpen`` contains all
+  the information from it
+
 C APIs (for vmod and utility authors)
 -------------------------------------
 
