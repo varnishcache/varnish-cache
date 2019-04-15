@@ -6,18 +6,18 @@ server s1 {
 	rxreq
 	upgrade
 
-	stream 3 { rxprio } -run
-	stream 5 { rxprio } -run
-	stream 7 { rxprio } -run
-	stream 9 { rxprio } -run
-	stream 11 { rxprio } -run
+	stream 1 { rxprio } -start
+	stream 3 { rxprio } -start
+	stream 5 { rxprio } -start
+	stream 7 { rxprio } -start
+	stream 9 { rxprio } -start
+	stream 11 { rxprio } -start
 
-	stream 1 {
-		rxprio
-		txresp
-	} -start
+	stream 0 -wait
+	stream 1 -wait { txresp } -run
+
+	stream 0 { rxgoaway } -run
 
 } -start
-
 
 shell { nghttp http://${s1_addr}:${s1_port} -nu }
