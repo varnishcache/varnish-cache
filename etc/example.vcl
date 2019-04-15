@@ -5,10 +5,10 @@
 # builtin VCL. The builtin VCL is called when there is no explicit
 # return statement.
 #
-# See the VCL chapters in the Users Guide at https://www.varnish-cache.org/docs/
-# and https://www.varnish-cache.org/trac/wiki/VCLExamples for more examples.
+# See the VCL chapters in the Users Guide for a comprehensive documentation
+# at https://www.varnish-cache.org/docs/.
 
-# Marker to tell the VCL compiler that this VCL has been adapted to the
+# Marker to tell the VCL compiler that this VCL has been written with the
 # 4.0 or 4.1 syntax.
 vcl 4.1;
 
