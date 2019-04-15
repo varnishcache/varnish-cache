@@ -27,6 +27,23 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
+NEXT (2019-09-15)
+================================
+
+* Synthetic objects created from ``vcl_backend_error {}`` now replace
+  existing stale objects as ordinary backend fetches would, unless:
+
+  - abandoning the bereq or
+
+  - leaving ``vcl_backend_error {}`` with ``return (deliver) and
+    ``beresp.ttl == 0s`` or
+
+  - there is a waitinglist on the object, in which case, by default,
+    the synthetic object is created with ``ttl = 1s`` / ``grace = 5s``
+    / ``keep = 5s`` avoid hammering on failing backends
+    (note this is existing behavior).
+
+================================
 Varnish Cache 6.2.0 (2019-03-15)
 ================================
 
