@@ -674,6 +674,19 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 
 /*--------------------------------------------------------------------
  * Create synth object
+ *
+ * replaces a stale object unless
+ * - abandoning the bereq or
+ * - leaving vcl_backend_error with return (deliver) and beresp.ttl == 0s or
+ * - there is a waitinglist on this object because in this case the default ttl
+ *   would be 1s, so we might be looking at the same case as the previous
+ *
+ * We do want the stale replacement to avoid an object pileup with short ttl and
+ * long grace/keep, yet there could exist cases where a cache object is
+ * deliberately created to momentarily override a stale object.
+ *
+ * If this case exists, we should add a vcl veto (e.g. beresp.replace_stale with
+ * default true)
  */
 
 static enum fetch_step
