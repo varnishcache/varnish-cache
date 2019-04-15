@@ -21,7 +21,7 @@ client c1 {
 	expect resp.status == 200
 	expect resp.http.Age == 0
 
-	delay 1.0
+	delay 0.2
 
 	txreq -url "/"
 	rxresp
