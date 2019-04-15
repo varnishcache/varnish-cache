@@ -273,9 +273,7 @@ WS_ReserveSize(struct ws *ws, unsigned bytes)
 	return (pdiff(ws->f, ws->r));
 }
 
-/*
- * XXX remove for 2020-03-15 release
- */
+/* REL_20200315 remove */
 unsigned
 WS_Reserve(struct ws *ws, unsigned bytes)
 {
