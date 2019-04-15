@@ -146,7 +146,7 @@ VCC_Symbol(struct vcc *tl, struct symbol *parent,
 			break;
 		if ((kind == SYM_NONE && kind == sym->kind))
 			continue;
-		if (tl->syntax < VCL_41 &&
+		if (tl->syntax < VCL_41 && strcmp(sym->name, "default") &&
 		     (kind != SYM_NONE && kind != sym->kind))
 			continue;
 		break;

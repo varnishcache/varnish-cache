@@ -357,7 +357,7 @@ static struct toplev {
 	{ "probe",		vcc_ParseProbe,		VCL_41,	VCL_HIGH },
 	{ "import",		vcc_ParseImport,	VCL_41,	VCL_HIGH },
 	{ "vcl",		vcc_ParseVcl,		VCL_41,	VCL_HIGH },
-	{ "default",		NULL,			VCL_41, VCL_HIGH },
+	{ "default",		NULL,			VCL_40, VCL_HIGH },
 	{ NULL, NULL }
 };
 
