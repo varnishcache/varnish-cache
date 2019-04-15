@@ -353,10 +353,6 @@ BAN_Commit(struct ban_proto *bp)
 	VSC_C_main->bans++;
 	VSC_C_main->bans_added++;
 	bans_persisted_bytes += ln;
-	/*
-	 * XXX absolute update of gauges - may be inaccurate for Pool_Sumstat
-	 * race
-	 */
 	VSC_C_main->bans_persisted_bytes = bans_persisted_bytes;
 
 	if (b->flags & BANS_FLAG_OBJ)

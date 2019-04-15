@@ -364,7 +364,6 @@ do_list_json(struct cli *cli, struct director *d, void *priv)
 
 	VCLI_Out(cli, "%s", la->jsep);
 	la->jsep = ",\n";
-	// XXX admin health "probe" for the no-probe case is confusing
 	VCLI_JSON_str(cli, d->vdir->cli_name);
 	VCLI_Out(cli, ": {\n");
 	VSB_indent(cli->sb, 2);
