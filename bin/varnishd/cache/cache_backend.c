@@ -575,7 +575,7 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 
 	be->director = VRT_AddDirector(ctx,
 	    vbp != NULL ? vbe_methods : vbe_methods_noprobe, be,
-	    "%s", vrt->vcl_name);
+	    "%s.%s", VCL_Name(ctx->vcl), vrt->vcl_name);
 
 	if (be->director != NULL) {
 		/* for cold VCL, update initial director state */
