@@ -673,18 +673,24 @@ VPX_Format_Proxy(struct vsb *vsb, int version,
 		WRONG("Wrong proxy version");
 }
 
+#define PXY_BUFSZ						\
+	sizeof(vpx1_sig) + 4 /* TCPx */ +			\
+	2 * VTCP_ADDRBUFSIZE + 2 * VTCP_PORTBUFSIZE +		\
+	6 /* spaces, CRLF */ + 16 /* safety */
+
 int
 VPX_Send_Proxy(int fd, int version, const struct sess *sp)
 {
-	struct vsb *vsb, *vsb2;
+	struct vsb vsb[1], *vsb2;
 	struct suckaddr *sac, *sas;
 	char ha[VTCP_ADDRBUFSIZE];
 	char pa[VTCP_PORTBUFSIZE];
+	char buf[PXY_BUFSZ];
 	int proto, r;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	assert(version == 1 || version == 2);
-	vsb = VSB_new_auto();
+	AN(VSB_new(vsb, buf, sizeof buf, VSB_FIXEDLEN));
 	AN(vsb);
 
 	AZ(SES_Get_server_addr(sp, &sas));
@@ -721,3 +727,5 @@ VPX_Send_Proxy(int fd, int version, const struct sess *sp)
 	VSB_delete(vsb2);
 	return (r);
 }
+
+#undef PXY_BUFSZ
