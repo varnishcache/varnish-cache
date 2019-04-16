@@ -138,6 +138,7 @@ V1L_Close(struct worker *wrk, uint64_t *cnt)
 	if (v1l->ws->r)
 		WS_Release(v1l->ws, 0);
 	WS_Reset(v1l->ws, v1l->res);
+	ZERO_OBJ(v1l, sizeof *v1l);
 	return (u);
 }
 
@@ -278,7 +279,7 @@ V1L_Chunked(const struct worker *wrk)
 	assert(v1l->ciov == v1l->siov);
 	assert(v1l->siov >= 3);
 	/*
-	 * If there are not space for chunked header, a chunk of data and
+	 * If there is no space for chunked header, a chunk of data and
 	 * a chunk tail, we might as well flush right away.
 	 */
 	if (v1l->niov + 3 >= v1l->siov)
