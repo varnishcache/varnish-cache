@@ -152,6 +152,7 @@ vbp_has_poked(struct vbp_target *vt)
 void
 VBP_Update_Backend(struct vbp_target *vt)
 {
+	const struct director *dir;
 	unsigned i = 0, chg;
 	char bits[10];
 
@@ -169,7 +170,8 @@ VBP_Update_Backend(struct vbp_target *vt)
 	bits[i] = '\0';
 	assert(i < sizeof bits);
 
-	if (vt->backend->director == NULL) {
+	dir = vt->backend->director;
+	if (dir == NULL) {
 		Lck_Unlock(&vbp_mtx);
 		return;
 	}
@@ -178,8 +180,9 @@ VBP_Update_Backend(struct vbp_target *vt)
 	chg = (i != vt->backend->sick);
 	vt->backend->sick = i;
 
+	AN(dir->vcl_name);
 	VSL(SLT_Backend_health, 0, "%s %s %s %s %u %u %u %.6f %.6f %s",
-	    vt->backend->director->vcl_name, chg ? "Went" : "Still",
+	    dir->vcl_name, chg ? "Went" : "Still",
 	    i ? "sick" : "healthy", bits,
 	    vt->good, vt->threshold, vt->window,
 	    vt->last, vt->avg, vt->resp_buf);
@@ -187,7 +190,7 @@ VBP_Update_Backend(struct vbp_target *vt)
 
 	if (chg) {
 		vt->backend->changed = VTIM_real();
-		VRT_SetChanged(vt->backend->director, vt->backend->changed);
+		VRT_SetChanged(dir, vt->backend->changed);
 	}
 	Lck_Unlock(&vbp_mtx);
 }
