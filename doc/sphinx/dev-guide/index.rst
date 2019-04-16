@@ -98,3 +98,11 @@ The varnish-cache.org homepage
 
 	homepage_dogfood
 	homepage_contrib
+
+Project metadata
+----------------
+
+.. toctree::
+	:maxdepth: 1
+
+	who
