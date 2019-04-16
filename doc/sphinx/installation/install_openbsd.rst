@@ -8,7 +8,7 @@ From package
 
 Varnish is distributed in the OpenBSD ports collection as 'www/varnish'::
 
-	pkg_dd varnish
+	pkg_add varnish
 
 From ports
 ----------
