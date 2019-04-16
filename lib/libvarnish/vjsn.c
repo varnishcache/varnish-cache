@@ -95,10 +95,7 @@ vjsn_delete(struct vjsn **jp)
 {
 	struct vjsn *js;
 
-	AN(jp);
-	js = *jp;
-	*jp = NULL;
-	CHECK_OBJ_NOTNULL(js, VJSN_MAGIC);
+	TAKE_OBJ_NOTNULL(js, jp, VJSN_MAGIC);
 	if (js->value != NULL)
 		vjsn_val_delete(js->value);
 	free(js->raw);

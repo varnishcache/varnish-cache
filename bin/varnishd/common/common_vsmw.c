@@ -158,7 +158,7 @@ vsmw_mkent(const struct vsmw *vsmw, const char *pfx)
 		if (fd < 0 && errno == ENOENT)
 			return;
 		if (fd >= 0)
-			AZ(close(fd));
+			closefd(&fd);
 	}
 }
 
@@ -178,7 +178,7 @@ vsmw_addseg(struct vsmw *vsmw, struct vsmwseg *seg)
 	AZ(VSB_finish(vsmw->vsb));
 	s = write(fd, VSB_data(vsmw->vsb), VSB_len(vsmw->vsb));
 	assert(s == VSB_len(vsmw->vsb));
-	AZ(close(fd));
+	closefd(&fd);
 }
 
 /*--------------------------------------------------------------------*/
@@ -212,7 +212,7 @@ vsmw_delseg(struct vsmw *vsmw, struct vsmwseg *seg, int fixidx)
 		AZ(VSB_finish(vsmw->vsb));
 		s = write(fd, VSB_data(vsmw->vsb), VSB_len(vsmw->vsb));
 		assert(s == VSB_len(vsmw->vsb));
-		AZ(close(fd));
+		closefd(&fd);
 		AZ(renameat(vsmw->vdirfd, t, vsmw->vdirfd, vsmw->idx));
 		REPLACE(t, NULL);
 	}
@@ -250,7 +250,7 @@ vsmw_newcluster(struct vsmw *vsmw, size_t len, const char *pfx)
 	    MAP_HASSEMAPHORE | MAP_NOSYNC | MAP_SHARED,
 	    fd, 0);
 
-	AZ(close(fd));
+	closefd(&fd);
 	assert(vc->ptr != MAP_FAILED);
 	(void)mlock(vc->ptr, len);
 
@@ -286,10 +286,7 @@ VSMW_DestroyCluster(struct vsmw *vsmw, struct vsmw_cluster **vsmcp)
 
 	vsmw_lock();
 	CHECK_OBJ_NOTNULL(vsmw, VSMW_MAGIC);
-	AN(vsmcp);
-	vc = *vsmcp;
-	*vsmcp = NULL;
-	CHECK_OBJ_NOTNULL(vc, VSMW_CLUSTER_MAGIC);
+	TAKE_OBJ_NOTNULL(vc, vsmcp, VSMW_CLUSTER_MAGIC);
 
 	if (vc->cseg != NULL) {
 		/*
@@ -430,7 +427,7 @@ VSMW_New(int vdirfd, int mode, const char *idxname)
 	    vsmw->idx, O_APPEND | O_WRONLY | O_CREAT, vsmw->mode);
 	assert(fd >= 0);
 	vsmw_idx_head(vsmw, fd);
-	AZ(close(fd));
+	closefd(&fd);
 
 	vsmw_unlock();
 	return (vsmw);
@@ -450,7 +447,7 @@ VSMW_Destroy(struct vsmw **pp)
 		assert (errno == ENOENT);
 	REPLACE(vsmw->idx, NULL);
 	VSB_destroy(&vsmw->vsb);
-	AZ(close(vsmw->vdirfd));
+	closefd(&vsmw->vdirfd);
 	FREE_OBJ(vsmw);
 	vsmw_unlock();
 }

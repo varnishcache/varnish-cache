@@ -77,10 +77,7 @@ VLU_Destroy(struct vlu **lp)
 {
 	struct vlu *l;
 
-	AN(lp);
-	l = *lp;
-	*lp = NULL;
-	CHECK_OBJ_NOTNULL(l, LINEUP_MAGIC);
+	TAKE_OBJ_NOTNULL(l, lp, LINEUP_MAGIC);
 	free(l->buf);
 	FREE_OBJ(l);
 }
