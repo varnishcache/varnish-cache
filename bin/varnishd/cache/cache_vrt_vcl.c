@@ -181,7 +181,7 @@ VRT_AddDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
 	VSB_vprintf(vsb, fmt, ap);
 	va_end(ap);
 	AZ(VSB_finish(vsb));
-	REPLACE((vdir->cli_name), VSB_data(vsb));
+	REPLACE(vdir->cli_name, VSB_data(vsb));
 	VSB_destroy(&vsb);
 	d->vcl_name = vdir->cli_name + i;
 
