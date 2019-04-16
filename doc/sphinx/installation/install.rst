@@ -44,13 +44,17 @@ want to compile Varnish from source for other reasons:
 
 	install_source
 
-Next steps
-==========
+Other pre-built Varnish packages
+================================
 
-After successful installation you are ready to proceed to the :ref:`tutorial-index`.
+Here is a list of the ones we know about:
 
-This tutorial is written for installations from binary packages.
-In practice, it means that some configurations are not in place for installations from source code.
-For example, instead of calling ``service varnish start``, you start the varnish daemon manually by typing::
+* `ArchLinux package`_ and `ArchLinux wiki`_
+* `Alpine Linux`_
+* `UPLEX Packages`_ with various vmods for Debian, Ubuntu and RHEL/CentOS
 
-        varnishd -a :6081 -T localhost:6082 -b localhost:8080
+.. _`ArchLinux package`: https://www.archlinux.org/packages/extra/x86_64/varnish/
+.. _`ArchLinux wiki`: https://wiki.archlinux.org/index.php/Varnish
+.. _`Alpine Linux`: https://pkgs.alpinelinux.org/package/edge/main/x86_64/varnish
+.. _`UPLEX Packages`: https://pkg.uplex.de/
+
