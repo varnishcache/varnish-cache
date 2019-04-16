@@ -208,8 +208,8 @@ VTCSYN_SRC = $(top_srcdir)/bin/varnishtest/vtc.c \
 	     $(top_srcdir)/bin/varnishtest/vtc_syslog.c \
 	     $(top_srcdir)/bin/varnishtest/vtc_varnish.c
 include/vtc-syntax.rst: vtc-syntax.py $(VTCSYN_SRC)
-	$(PYTHON) $(top_srcdir)/doc/sphinx/vtc-syntax.py $(VTCSYN_SRC) > ${@}_
-	mv ${@}_ ${@}
+	$(AM_V_GEN) $(PYTHON) $(top_srcdir)/doc/sphinx/vtc-syntax.py $(VTCSYN_SRC) > ${@}_
+	@mv ${@}_ ${@}
 BUILT_SOURCES += include/vtc-syntax.rst
 
 include/vmod_std.generated.rst: $(top_builddir)/lib/libvmod_std/vmod_std.rst
