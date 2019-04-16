@@ -19,6 +19,7 @@ is highly operating system specific:
 
 	install_debian
 	install_freebsd
+	install_openbsd
 	install_redhat
 
 Cloud images of Varnish
