@@ -5,6 +5,11 @@
  * holding the file descriptor has a const qualifier. It also make sures that
  * fd looks like a valid file descriptor before even calling close().
  *
+ * It might be worth revisiting regularly cases that don't apply to this
+ * patch:
+ *
+ *     git grep '(void)close'
+ *
  * The second part of the patch undoes the change when fd is a constant such
  * as STDIN_FILENO where it becomes nonsensical.
  */
