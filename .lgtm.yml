@@ -1,3 +1,6 @@
+queries:
+  - exclude: cpp/missing-header-guard
+  - exclude: cpp/short-global-name
 extraction:
   cpp:
     prepare:
