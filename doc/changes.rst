@@ -63,8 +63,8 @@ C APIs (for vmod and utility authors)
     It will only leave the workspace reserved if the reservation
     request could be fulfilled.
 
-  We provide a script to automate this change in the ``coccinelle``
-  subdirectory of the source tree.
+  We provide a script to help automate this change in the
+  ``tools/coccinelle`` subdirectory of the source tree.
 
 ================================
 Varnish Cache 6.2.0 (2019-03-15)

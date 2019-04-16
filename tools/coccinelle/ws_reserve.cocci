@@ -1,5 +1,5 @@
 /*
- * patch to change code with respect to #2969: Replacement of
+ * Patch to change code with respect to #2969: Replacement of
  * WS_Reserve(ws, sz) by WS_ReserveAll(ws) / WS_ReserveSize(ws, sz)
  *
  * NOTE this patch does not check/fix error handling:
