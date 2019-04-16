@@ -1146,7 +1146,7 @@ cmd_http_rxreq(CMD_ARGS)
 
 /* SECTION: client-server.spec.rxreqhdrs
  *
- * rxreqhdrs
+ * rxreqhdrs (server only)
  *         Receive and parse a request's headers (but not the body).
  */
 
