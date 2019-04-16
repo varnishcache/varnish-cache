@@ -46,7 +46,7 @@ Jails
 -----
 
 You have probably heard about Docker and Containers, but FreeBSD
-have had jails 
+have had jails
 `since I wrote them in 1998 <http://phk.freebsd.dk/sagas/jails/>`_
 and they're a wonderful way to keep your server installation
 sane.

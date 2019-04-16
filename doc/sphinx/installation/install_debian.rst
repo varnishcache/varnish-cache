@@ -21,7 +21,7 @@ The official Varnish Cache repository is now hosted at Packagecloud.io.
 Note that while Packagecloud.io provides Bash Script installs, we recommend
 using the manual installation procedures.
 
-Instructions for installing the official repository which contains the newest 
+Instructions for installing the official repository which contains the newest
 Varnish Cache 6 release are available at:
 
 * https://packagecloud.io/varnishcache/varnish60lts/install#manual-deb

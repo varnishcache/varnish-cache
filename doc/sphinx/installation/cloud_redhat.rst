@@ -3,14 +3,14 @@
 RedHat Cloud images
 ===================
 
-Varnish Cache is also made available by Varnish Software in the following 
+Varnish Cache is also made available by Varnish Software in the following
 clouds providers:
 
 
 Amazon Web Services (AWS EC2)
 .............................
 
-Here is a list of the currently available images for RHEL7 on 
+Here is a list of the currently available images for RHEL7 on
 Amazon Web Services (AWS) Elastic Compute Cloud (EC2):
 
 * `Varnish Cache 4 on Red Hat Enterprise Linux 7 on AWS`_
@@ -23,7 +23,7 @@ Amazon Web Services (AWS) Elastic Compute Cloud (EC2):
 Microsoft Azure
 ...............
 
-Here is a list of the currently available images for RHEL7 on 
+Here is a list of the currently available images for RHEL7 on
 Microsoft's Azure cloud:
 
 * `Varnish Cache 4 and 5 on Red Hat Enterprise Linux 7 on Azure`_
@@ -34,7 +34,7 @@ Microsoft's Azure cloud:
 Google Cloud Platform (GCP)
 ...........................
 
-Here is a list of the currently available images for RHEL7 on 
+Here is a list of the currently available images for RHEL7 on
 Google Cloud Platform (GCP):
 
 * `Varnish Cache 4 on Red Hat Enterprise Linux 7 on GCP`_

@@ -89,7 +89,7 @@ Various policies
 
 	policy_governance
 	policy_vmods
-	
+
 The varnish-cache.org homepage
 ------------------------------
 
