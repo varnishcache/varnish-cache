@@ -439,6 +439,7 @@ vbp_task(struct worker *wrk, void *priv)
 			vt->due = VTIM_real() + vt->interval;
 			binheap_delete(vbp_heap, vt->heap_idx);
 			binheap_insert(vbp_heap, vt);
+			AZ(pthread_cond_signal(&vbp_cond));
 		}
 	}
 	Lck_Unlock(&vbp_mtx);
