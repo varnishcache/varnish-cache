@@ -158,17 +158,17 @@ VBP_Update_Backend(struct vbp_target *vt)
 
 	CHECK_OBJ_NOTNULL(vt, VBP_TARGET_MAGIC);
 
+#define BITMAP(n, c, t, b)			\
+	bits[i++] = (vt->n & 1) ? c : '-';
+#include "tbl/backend_poll.h"
+	bits[i] = '\0';
+	assert(i < sizeof bits);
+
 	Lck_Lock(&vbp_mtx);
 	if (vt->backend == NULL) {
 		Lck_Unlock(&vbp_mtx);
 		return;
 	}
-
-#define BITMAP(n, c, t, b) \
-	bits[i++] = (vt->n & 1) ? c : '-';
-#include "tbl/backend_poll.h"
-	bits[i] = '\0';
-	assert(i < sizeof bits);
 
 	dir = vt->backend->director;
 	if (dir == NULL) {
