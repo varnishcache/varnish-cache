@@ -1,0 +1,123 @@
+varnishtest "Hit-for-miss and waitinglist rushing"
+
+barrier b3 cond 6
+
+server s1 {
+	rxreq
+	txresp -nolen -hdr "Transfer-Encoding: chunked"
+	chunkedlen 10
+	barrier b3 sync
+	chunkedlen 10
+	chunkedlen 0
+} -start
+
+server s2 {
+	rxreq
+	txresp -nolen -hdr "Transfer-Encoding: chunked"
+	chunkedlen 10
+	barrier b3 sync
+	chunkedlen 10
+	chunkedlen 0
+} -start
+
+server s3 {
+	rxreq
+	txresp -nolen -hdr "Transfer-Encoding: chunked"
+	chunkedlen 10
+	barrier b3 sync
+	chunkedlen 10
+	chunkedlen 0
+} -start
+
+server s4 {
+	rxreq
+	txresp -nolen -hdr "Transfer-Encoding: chunked"
+	chunkedlen 10
+	barrier b3 sync
+	chunkedlen 10
+	chunkedlen 0
+} -start
+
+server s5 {
+	rxreq
+	txresp -nolen -hdr "Transfer-Encoding: chunked"
+	chunkedlen 10
+	barrier b3 sync
+	chunkedlen 10
+	chunkedlen 0
+} -start
+
+server s6 {
+	rxreq
+	txresp -nolen -hdr "Transfer-Encoding: chunked"
+	chunkedlen 10
+	barrier b3 sync
+	chunkedlen 10
+	chunkedlen 0
+} -start
+
+varnish v1 -arg "-p rush_exponent=2" -arg "-p debug=+syncvsl" -vcl+backend {
+	import vtc;
+	sub vcl_backend_fetch {
+		if (bereq.http.client == "1") {
+			set bereq.backend = s1;
+		} else if (bereq.http.client == "2") {
+			set bereq.backend = s2;
+		} else if (bereq.http.client == "3") {
+			set bereq.backend = s3;
+		} else if (bereq.http.client == "4") {
+			set bereq.backend = s4;
+		} else if (bereq.http.client == "5") {
+			set bereq.backend = s5;
+		} else if (bereq.http.client == "6") {
+			set bereq.backend = s6;
+		}
+	}
+	sub vcl_backend_response {
+		set beresp.uncacheable = true;
+	}
+} -start
+
+client c1 {
+	txreq -url /hfm -hdr "Client: 1"
+	rxresp
+} -start
+
+client c2 {
+	txreq -url /hfm -hdr "Client: 2"
+	rxresp
+} -start
+
+client c3 {
+	txreq -url /hfm -hdr "Client: 3"
+	rxresp
+} -start
+
+client c4 {
+	txreq -url /hfm -hdr "Client: 4"
+	rxresp
+} -start
+
+client c5 {
+	txreq -url /hfm -hdr "Client: 5"
+	rxresp
+} -start
+
+client c6 {
+	txreq -url /hfm -hdr "Client: 6"
+	rxresp
+} -start
+
+client c1 -wait
+client c2 -wait
+client c3 -wait
+client c4 -wait
+client c5 -wait
+client c6 -wait
+
+server s1 -wait
+server s2 -wait
+server s3 -wait
+server s4 -wait
+server s5 -wait
+server s6 -wait

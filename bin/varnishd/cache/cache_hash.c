@@ -483,7 +483,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 	if (oc != NULL && oc->flags & OC_F_HFP) {
 		xid = ObjGetXID(wrk, oc);
 		dttl = EXP_Dttl(req, oc);
-		AN(hsh_deref_objhead_unlock(wrk, &oh, 0));
+		AN(hsh_deref_objhead_unlock(wrk, &oh, HSH_RUSH_POLICY));
 		wrk->stats->cache_hitpass++;
 		VSLb(req->vsl, SLT_HitPass, "%u %.6f", xid, dttl);
 		return (HSH_HITPASS);
