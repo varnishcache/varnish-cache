@@ -191,7 +191,7 @@ client c1 {
 	    -hdr "DNT: 1" \
 	    -hdr "Connection: keep-alive" \
 	    -hdr "Upgrade-Insecure-Requests: 1" \
-	    -hdr {If-None-Match: W/"9060a5e7924af13779c0437265ad2f1c}
+	    -hdr {If-None-Match: W/"9060a5e7924af13779c0437265ad2f1c"}
 	rxresp
 	expect resp.status == 200
 
