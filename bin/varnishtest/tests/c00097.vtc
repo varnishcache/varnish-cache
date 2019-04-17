@@ -1,0 +1,44 @@
+varnishtest "Streaming delivery and waitinglist rushing"
+
+barrier b1 sock 4
+
+server s1 {
+	rxreq
+	txresp -nolen -hdr "Transfer-Encoding: chunked"
+	chunkedlen 10
+	barrier b1 sync
+	chunkedlen 10
+	chunkedlen 0
+} -start
+
+varnish v1 -arg "-p rush_exponent=2" -arg "-p debug=+syncvsl" -vcl+backend {
+	import vtc;
+	sub vcl_hit {
+		vtc.barrier_sync("${b1_sock}");
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+} -start
+
+client c2 {
+	txreq
+	rxresp
+} -start
+
+client c3 {
+	txreq
+	rxresp
+} -start
+
+client c4 {
+	txreq
+	rxresp
+} -start
+
+client c1 -wait
+client c2 -wait
+client c3 -wait
+client c4 -wait

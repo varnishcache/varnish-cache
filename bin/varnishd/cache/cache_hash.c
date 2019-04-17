@@ -77,7 +77,8 @@ static void hsh_rush1(const struct worker *, struct objhead *,
     struct rush *, int);
 static void hsh_rush2(struct worker *, struct rush *);
 static int hsh_deref_objhead(struct worker *wrk, struct objhead **poh);
-static int hsh_deref_objhead_unlock(struct worker *wrk, struct objhead **poh);
+static int hsh_deref_objhead_unlock(struct worker *wrk, struct objhead **poh,
+    int);
 
 /*---------------------------------------------------------------------*/
 
@@ -482,7 +483,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 	if (oc != NULL && oc->flags & OC_F_HFP) {
 		xid = ObjGetXID(wrk, oc);
 		dttl = EXP_Dttl(req, oc);
-		AN(hsh_deref_objhead_unlock(wrk, &oh));
+		AN(hsh_deref_objhead_unlock(wrk, &oh, 0));
 		wrk->stats->cache_hitpass++;
 		VSLb(req->vsl, SLT_HitPass, "%u %.6f", xid, dttl);
 		return (HSH_HITPASS);
@@ -501,7 +502,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 			return (HSH_HITMISS);
 		}
 		oc->hits++;
-		AN(hsh_deref_objhead_unlock(wrk, &oh));
+		AN(hsh_deref_objhead_unlock(wrk, &oh, HSH_RUSH_POLICY));
 		return (HSH_HIT);
 	}
 
@@ -543,7 +544,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 		exp_oc->refcnt++;
 		*ocp = exp_oc;
 		exp_oc->hits++;
-		AN(hsh_deref_objhead_unlock(wrk, &oh));
+		AN(hsh_deref_objhead_unlock(wrk, &oh, 0));
 		return (HSH_GRACE);
 	}
 
@@ -1021,9 +1022,11 @@ HSH_DerefObjCore(struct worker *wrk, struct objcore **ocp, int rushmax)
 }
 
 static int
-hsh_deref_objhead_unlock(struct worker *wrk, struct objhead **poh)
+hsh_deref_objhead_unlock(struct worker *wrk, struct objhead **poh, int max)
 {
 	struct objhead *oh;
+	struct rush rush;
+	int r;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	TAKE_OBJ_NOTNULL(oh, poh, OBJHEAD_MAGIC);
@@ -1038,11 +1041,19 @@ hsh_deref_objhead_unlock(struct worker *wrk, struct objhead **poh)
 		return (1);
 	}
 
+	INIT_OBJ(&rush, RUSH_MAGIC);
+	if (!VTAILQ_EMPTY(&oh->waitinglist)) {
+		assert(oh->refcnt > 1);
+		hsh_rush1(wrk, oh, &rush, max);
+	}
+
 	if (oh->refcnt == 1)
 		assert(VTAILQ_EMPTY(&oh->waitinglist));
 
 	assert(oh->refcnt > 0);
-	return (hash->deref(wrk, oh));
+	r = hash->deref(wrk, oh); /* Unlocks oh->mtx */
+	hsh_rush2(wrk, &rush);
+	return (r);
 }
 
 static int
@@ -1054,7 +1065,7 @@ hsh_deref_objhead(struct worker *wrk, struct objhead **poh)
 	TAKE_OBJ_NOTNULL(oh, poh, OBJHEAD_MAGIC);
 
 	Lck_Lock(&oh->mtx);
-	return (hsh_deref_objhead_unlock(wrk, &oh));
+	return (hsh_deref_objhead_unlock(wrk, &oh, 0));
 }
 
 void
