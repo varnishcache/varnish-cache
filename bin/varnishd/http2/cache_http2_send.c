@@ -40,7 +40,7 @@
 #include "vtim.h"
 
 static void
-h2_send_get(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
+h2_send_get_locked(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
@@ -64,12 +64,12 @@ H2_Send_Get(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
 	Lck_Lock(&h2->sess->mtx);
-	h2_send_get(wrk, h2, r2);
+	h2_send_get_locked(wrk, h2, r2);
 	Lck_Unlock(&h2->sess->mtx);
 }
 
 static void
-h2_send_rel(struct h2_sess *h2, const struct h2_req *r2)
+h2_send_rel_locked(struct h2_sess *h2, const struct h2_req *r2)
 {
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
@@ -91,7 +91,7 @@ H2_Send_Rel(struct h2_sess *h2, const struct h2_req *r2)
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 
 	Lck_Lock(&h2->sess->mtx);
-	h2_send_rel(h2, r2);
+	h2_send_rel_locked(h2, r2);
 	Lck_Unlock(&h2->sess->mtx);
 }
 
@@ -217,7 +217,7 @@ h2_do_window(struct worker *wrk, struct h2_req *r2,
 	Lck_Lock(&h2->sess->mtx);
 	if (r2->t_window <= 0 || h2->req0->t_window <= 0) {
 		r2->t_winupd = VTIM_real();
-		h2_send_rel(h2, r2);
+		h2_send_rel_locked(h2, r2);
 		while (r2->t_window <= 0 && h2_errcheck(r2, h2) == 0) {
 			r2->cond = &wrk->cond;
 			AZ(Lck_CondWait(r2->cond, &h2->sess->mtx, 0));
@@ -234,7 +234,7 @@ h2_do_window(struct worker *wrk, struct h2_req *r2,
 			h2_win_charge(r2, h2, w);
 			assert (w > 0);
 		}
-		h2_send_get(wrk, h2, r2);
+		h2_send_get_locked(wrk, h2, r2);
 	}
 
 	if (w == 0 && h2_errcheck(r2, h2) == 0) {
