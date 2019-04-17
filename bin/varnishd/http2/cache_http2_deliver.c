@@ -88,7 +88,7 @@ h2_fini(struct req *req, void **priv)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	TAKE_OBJ_NOTNULL(r2, priv, H2_REQ_MAGIC);
 	H2_Send_Get(req->wrk, r2->h2sess, r2);
-	H2_Send(req->wrk, r2, H2_F_DATA, H2FF_DATA_END_STREAM, 0, "");
+	H2_Send(req->wrk, r2, H2_F_DATA, H2FF_DATA_END_STREAM, 0, "", NULL);
 	H2_Send_Rel(r2->h2sess, r2);
 	return (0);
 }
@@ -106,9 +106,9 @@ h2_bytes(struct req *req, enum vdp_action act, void **priv,
 	if ((r2->h2sess->error || r2->error))
 		return (-1);
 	H2_Send_Get(req->wrk, r2->h2sess, r2);
-	H2_Send(req->wrk, r2, H2_F_DATA, H2FF_NONE, len, ptr);
+	H2_Send(req->wrk, r2, H2_F_DATA, H2FF_NONE, len, ptr,
+	    &req->acct.resp_bodybytes);
 	H2_Send_Rel(r2->h2sess, r2);
-	req->acct.resp_bodybytes += len;
 	return (0);
 }
 
@@ -173,7 +173,7 @@ h2_minimal_response(struct req *req, uint16_t status)
 	    H2_F_HEADERS,
 	    H2FF_HEADERS_END_HEADERS |
 		(status < 200 ? 0 : H2FF_HEADERS_END_STREAM),
-	    l, buf);
+	    l, buf, NULL);
 	H2_Send_Rel(r2->h2sess, r2);
 	return (0);
 }
@@ -317,9 +317,8 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 	H2_Send_Get(req->wrk, r2->h2sess, r2);
 	H2_Send(req->wrk, r2, H2_F_HEADERS,
 	    (sendbody ? 0 : H2FF_HEADERS_END_STREAM) | H2FF_HEADERS_END_HEADERS,
-	    sz, r);
+	    sz, r, &req->acct.resp_hdrbytes);
 	H2_Send_Rel(r2->h2sess, r2);
-	req->acct.resp_hdrbytes += sz;
 
 	WS_Release(req->ws, 0);
 

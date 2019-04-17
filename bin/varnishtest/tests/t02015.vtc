@@ -1,0 +1,49 @@
+varnishtest "h2 ReqAcct"
+
+server s1 {
+	rxreq
+	txresp -bodylen 12345
+} -start
+
+varnish v1 -cliok "param.set feature +http2"
+varnish v1 -vcl+backend "" -start
+
+client c1 {
+	txpri
+
+	stream 0 {
+		rxsettings
+		expect settings.ack == false
+		txsettings -ack
+		txsettings -winsize 1000
+		rxsettings
+		expect settings.ack == true
+	} -run
+
+	stream 1 {
+		txreq -hdr stream 1
+		rxhdrs
+		rxdata
+		txwinup -size 11345
+		rxdata
+	} -run
+
+	stream 3 {
+		txreq -hdr stream 3
+		rxhdrs
+		rxdata
+		txrst
+	} -run
+} -run
+
+shell {
+	varnishncsa -n ${v1_name} -F '%{VSL:ReqAcct[5]}x' -d \
+		-q 'ReqHeader:stream == 1' |
+	grep 12345
+}
+
+shell {
+	varnishncsa -n ${v1_name} -F '%{VSL:ReqAcct[5]}x' -d \
+		-q 'ReqHeader:stream == 3' |
+	grep 1000
+}

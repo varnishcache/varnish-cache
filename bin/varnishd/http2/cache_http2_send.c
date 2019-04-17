@@ -256,9 +256,9 @@ h2_do_window(struct worker *wrk, struct h2_req *r2,
  * XXX: priority
  */
 
-void
-H2_Send(struct worker *wrk, struct h2_req *r2,
-    h2_frame ftyp, uint8_t flags, uint32_t len, const void *ptr)
+static void
+h2_send(struct worker *wrk, struct h2_req *r2, h2_frame ftyp, uint8_t flags,
+    uint32_t len, const void *ptr, uint64_t *acct)
 {
 	struct h2_sess *h2;
 	uint32_t mfs, tf;
@@ -270,6 +270,7 @@ H2_Send(struct worker *wrk, struct h2_req *r2,
 	h2 = r2->h2sess;
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
 	assert(len == 0 || ptr != NULL);
+	AN(acct);
 
 	assert(VTAILQ_FIRST(&h2->txqueue) == r2);
 
@@ -297,8 +298,7 @@ H2_Send(struct worker *wrk, struct h2_req *r2,
 	Lck_Unlock(&h2->sess->mtx);
 
 	if (ftyp->respect_window) {
-		tf = h2_do_window(wrk, r2, h2,
-				  (len > mfs) ? mfs : len);
+		tf = h2_do_window(wrk, r2, h2, (len > mfs) ? mfs : len);
 		if (h2_errcheck(r2, h2))
 			return;
 		assert(VTAILQ_FIRST(&h2->txqueue) == r2);
@@ -307,6 +307,7 @@ H2_Send(struct worker *wrk, struct h2_req *r2,
 
 	if (len <= tf) {
 		H2_Send_Frame(wrk, h2, ftyp, flags, len, r2->stream, ptr);
+		*acct += len;
 	} else {
 		AN(ptr);
 		p = ptr;
@@ -318,7 +319,7 @@ H2_Send(struct worker *wrk, struct h2_req *r2,
 				tf = mfs;
 			if (ftyp->respect_window && p != ptr) {
 				tf = h2_do_window(wrk, r2, h2,
-						  (len > mfs) ? mfs : len);
+				    (len > mfs) ? mfs : len);
 				if (h2_errcheck(r2, h2))
 					return;
 				assert(VTAILQ_FIRST(&h2->txqueue) == r2);
@@ -330,15 +331,28 @@ H2_Send(struct worker *wrk, struct h2_req *r2,
 				if (ftyp->respect_window)
 					assert(tf == len);
 				tf = len;
-				H2_Send_Frame(wrk, h2, ftyp,
-				    final_flags, tf, r2->stream, p);
+				H2_Send_Frame(wrk, h2, ftyp, final_flags, tf,
+				    r2->stream, p);
 				flags = 0;
 			}
 			p += tf;
 			len -= tf;
+			*acct += tf;
 			ftyp = ftyp->continuation;
 			flags &= ftyp->flags;
 			final_flags &= ftyp->flags;
 		} while (!h2->error && len > 0);
 	}
+}
+
+void
+H2_Send(struct worker *wrk, struct h2_req *r2, h2_frame ftyp, uint8_t flags,
+    uint32_t len, const void *ptr, uint64_t *acct)
+{
+	uint64_t dummy_acct;
+
+	if (acct == NULL)
+		acct = &dummy_acct;
+
+	h2_send(wrk, r2, ftyp, flags, len, ptr, acct);
 }
