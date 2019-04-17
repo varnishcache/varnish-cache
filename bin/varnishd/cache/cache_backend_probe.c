@@ -411,6 +411,17 @@ vbp_poke(struct vbp_target *vt)
 
 /*--------------------------------------------------------------------
  */
+static void
+vbp_heap_insert(struct vbp_target *vt)
+{
+	// Lck_AssertHeld(&vbp_mtx);
+	binheap_insert(vbp_heap, vt);
+	if (binheap_root(vbp_heap) == vt)
+		AZ(pthread_cond_signal(&vbp_cond));
+}
+
+/*--------------------------------------------------------------------
+ */
 
 static void v_matchproto_(task_func_t)
 vbp_task(struct worker *wrk, void *priv)
@@ -438,8 +449,7 @@ vbp_task(struct worker *wrk, void *priv)
 		if (vt->heap_idx != BINHEAP_NOIDX) {
 			vt->due = VTIM_real() + vt->interval;
 			binheap_delete(vbp_heap, vt->heap_idx);
-			binheap_insert(vbp_heap, vt);
-			AZ(pthread_cond_signal(&vbp_cond));
+			vbp_heap_insert(vt);
 		}
 	}
 	Lck_Unlock(&vbp_mtx);
@@ -638,8 +648,7 @@ VBP_Control(const struct backend *be, int enable)
 	if (enable) {
 		assert(vt->heap_idx == BINHEAP_NOIDX);
 		vt->due = VTIM_real();
-		binheap_insert(vbp_heap, vt);
-		AZ(pthread_cond_signal(&vbp_cond));
+		vbp_heap_insert(vt);
 	} else {
 		assert(vt->heap_idx != BINHEAP_NOIDX);
 		binheap_delete(vbp_heap, vt->heap_idx);
