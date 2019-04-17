@@ -939,7 +939,10 @@ beresp.filters
 	Writable from: vcl_backend_response
 
 	List of Varnish Fetch Processor (VFP) filters the beresp.body
-	will be pulled through.
+	will be pulled through. The order left to right signifies
+	processing from backend to cache, iow the leftmost filter is
+	run first on the body as received from the backend after
+	decoding of any transfer encodings.
 
 	VFP Filters change the body before going into the cache and/or
 	being handed to the client side, where it may get processed
