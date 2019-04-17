@@ -88,7 +88,7 @@ void init_server(void);
 void init_syslog(void);
 
 int http_process(struct vtclog *vl, const char *spec, int sock, int *sfd,
-		 const char *addr);
+    const char *addr, int rcvbuf);
 
 char * synth_body(const char *len, int rnd);
 

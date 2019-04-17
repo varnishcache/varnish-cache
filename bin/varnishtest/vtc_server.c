@@ -57,6 +57,7 @@ struct server {
 	int			depth;
 	int			sock;
 	int			fd;
+	int			rcvbuf;
 	char			listen[256];
 	char			aaddr[32];
 	char			aport[32];
@@ -248,11 +249,12 @@ server_thread(void *priv)
 		} else
 			vtc_log(vl, 3, "accepted fd %d 0.0.0.0 0", fd);
 		if (! s->keepalive)
-			fd = http_process(vl, s->spec, fd, &s->sock, s->listen);
+			fd = http_process(vl, s->spec, fd, &s->sock, s->listen,
+			    s->rcvbuf);
 		else
 			while (fd >= 0 && i++ < s->repeat)
 				fd = http_process(vl, s->spec, fd,
-				    &s->sock, s->listen);
+				    &s->sock, s->listen, s->rcvbuf);
 		vtc_log(vl, 3, "shutting fd %d", fd);
 		j = shutdown(fd, SHUT_WR);
 		if (!VTCP_Check(j))
@@ -300,7 +302,7 @@ server_dispatch_wrk(void *priv)
 	fd = s->fd;
 
 	vtc_log(vl, 3, "start with fd %d", fd);
-	fd = http_process(vl, s->spec, fd, &s->sock, s->listen);
+	fd = http_process(vl, s->spec, fd, &s->sock, s->listen, s->rcvbuf);
 	vtc_log(vl, 3, "shutting fd %d", fd);
 	j = shutdown(fd, SHUT_WR);
 	if (!VTCP_Check(j))
@@ -538,6 +540,11 @@ cmd_server(CMD_ARGS)
 			if (s->sock >= 0)
 				VTCP_close(&s->sock);
 			bprintf(s->listen, "%s", av[1]);
+			av++;
+			continue;
+		}
+		if (!strcmp(*av, "-rcvbuf")) {
+			s->rcvbuf = atoi(av[1]);
 			av++;
 			continue;
 		}

@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2012-2015 Varnish Software AS
+ * Copyright (c) 2012-2019 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@FreeBSD.org>
@@ -806,4 +806,40 @@ xyzzy_release_vcl_busy(VRT_CTX)
 {
 
 	VRT_VCL_Unbusy(ctx);
+}
+
+VCL_VOID
+xyzzy_sndbuf(VRT_CTX, VCL_BYTES buflen)
+{
+	int fd = -1, oldbuf, newbuf;
+	socklen_t intlen = sizeof(int);
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	if (ctx->bo) {
+		CHECK_OBJ(ctx->bo, BUSYOBJ_MAGIC);
+		INCOMPL();
+	}
+	else if (ctx->req) {
+		CHECK_OBJ(ctx->req, REQ_MAGIC);
+		CHECK_OBJ(ctx->req->sp, SESS_MAGIC);
+		fd = ctx->req->sp->fd;
+	}
+	else {
+		VRT_fail(ctx, "debug.sndbuf() called outside a transaction.");
+		return;
+	}
+
+	xxxassert(fd >= 0);
+
+	oldbuf = 0;
+	AZ(getsockopt(fd, SOL_SOCKET, SO_SNDBUF, &oldbuf, &intlen));
+
+	newbuf = buflen;
+	AZ(setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &newbuf, intlen));
+	AZ(getsockopt(fd, SOL_SOCKET, SO_SNDBUF, &newbuf, &intlen));
+
+	AN(ctx->vsl);
+	VSLb(ctx->vsl, SLT_Debug, "SO_SNDBUF fd=%d old=%d new=%ld actual=%d",
+	    fd, oldbuf, buflen, newbuf);
 }

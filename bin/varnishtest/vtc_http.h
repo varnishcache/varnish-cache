@@ -38,6 +38,7 @@ struct http {
 
 	struct vsb		*vsb;
 
+	int			rcvbuf;
 	int			nrxbuf;
 	char			*rx_b;
 	char			*rx_p;

@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2008-2015 Varnish Software AS
+ * Copyright (c) 2008-2019 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -1905,16 +1905,29 @@ http_process_cleanup(void *arg)
 
 int
 http_process(struct vtclog *vl, const char *spec, int sock, int *sfd,
-	     const char *addr)
+    const char *addr, int rcvbuf)
 {
 	struct http *hp;
-	int retval;
+	int retval, oldbuf;
+	socklen_t intlen = sizeof(int);
 
 	(void)sfd;
 	ALLOC_OBJ(hp, HTTP_MAGIC);
 	AN(hp);
 	hp->fd = sock;
 	hp->timeout = vtc_maxdur * 1000 / 2;
+
+	if (rcvbuf) {
+		hp->rcvbuf = rcvbuf;
+
+		oldbuf = 0;
+		AZ(getsockopt(hp->fd, SOL_SOCKET, SO_RCVBUF, &oldbuf, &intlen));
+		AZ(setsockopt(hp->fd, SOL_SOCKET, SO_RCVBUF, &rcvbuf, intlen));
+		AZ(getsockopt(hp->fd, SOL_SOCKET, SO_RCVBUF, &rcvbuf, &intlen));
+
+		vtc_log(vl, 3, "-rcvbuf fd=%d old=%d new=%d actual=%d",
+		    hp->fd, oldbuf, hp->rcvbuf, rcvbuf);
+	}
 
 	hp->nrxbuf = 2048*1024;
 	hp->rx_b = malloc(hp->nrxbuf);

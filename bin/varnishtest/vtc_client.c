@@ -54,6 +54,7 @@ struct client {
 	char			*spec;
 
 	char			connect[256];
+	int			rcvbuf;
 
 	char			*proxy_spec;
 	int			proxy_version;
@@ -233,10 +234,12 @@ client_thread(void *priv)
 		if (c->proxy_spec != NULL)
 			client_proxy(vl, fd, c->proxy_version, c->proxy_spec);
 		if (! c->keepalive)
-			fd = http_process(vl, c->spec, fd, NULL, addr);
+			fd = http_process(vl, c->spec, fd, NULL, addr,
+			    c->rcvbuf);
 		else
 			while (fd >= 0 && u++ < c->repeat)
-				fd = http_process(vl, c->spec, fd, NULL, addr);
+				fd = http_process(vl, c->spec, fd, NULL, addr,
+				    c->rcvbuf);
 		vtc_log(vl, 3, "closing fd %d", fd);
 		VTCP_close(&fd);
 	}
@@ -400,6 +403,11 @@ cmd_client(CMD_ARGS)
 		}
 		if (!strcmp(*av, "-keepalive")) {
 			c->keepalive = 1;
+			continue;
+		}
+		if (!strcmp(*av, "-rcvbuf")) {
+			c->rcvbuf = atoi(av[1]);
+			av++;
 			continue;
 		}
 		if (!strcmp(*av, "-start")) {
