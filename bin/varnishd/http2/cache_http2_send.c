@@ -39,9 +39,12 @@
 #include "vend.h"
 #include "vtim.h"
 
+#define H2_SEND_HELD(h2, r2) (VTAILQ_FIRST(&(h2)->txqueue) == (r2))
+
 static void
 h2_send_get_locked(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
+
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -51,7 +54,7 @@ h2_send_get_locked(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		ASSERT_RXTHR(h2);
 	r2->wrk = wrk;
 	VTAILQ_INSERT_TAIL(&h2->txqueue, r2, tx_list);
-	while (VTAILQ_FIRST(&h2->txqueue) != r2)
+	while (!H2_SEND_HELD(h2, r2))
 		AZ(Lck_CondWait(&wrk->cond, &h2->sess->mtx, 0));
 	r2->wrk = NULL;
 }
@@ -59,6 +62,7 @@ h2_send_get_locked(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 void
 H2_Send_Get(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
+
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -75,7 +79,7 @@ h2_send_rel_locked(struct h2_sess *h2, const struct h2_req *r2)
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
 
 	Lck_AssertHeld(&h2->sess->mtx);
-	assert(VTAILQ_FIRST(&h2->txqueue) == r2);
+	AN(H2_SEND_HELD(h2, r2));
 	VTAILQ_REMOVE(&h2->txqueue, r2, tx_list);
 	r2 = VTAILQ_FIRST(&h2->txqueue);
 	if (r2 != NULL) {
@@ -272,7 +276,7 @@ h2_send(struct worker *wrk, struct h2_req *r2, h2_frame ftyp, uint8_t flags,
 	assert(len == 0 || ptr != NULL);
 	AN(acct);
 
-	assert(VTAILQ_FIRST(&h2->txqueue) == r2);
+	AN(H2_SEND_HELD(h2, r2));
 
 	if (h2_errcheck(r2, h2))
 		return;
@@ -301,7 +305,7 @@ h2_send(struct worker *wrk, struct h2_req *r2, h2_frame ftyp, uint8_t flags,
 		tf = h2_do_window(wrk, r2, h2, (len > mfs) ? mfs : len);
 		if (h2_errcheck(r2, h2))
 			return;
-		assert(VTAILQ_FIRST(&h2->txqueue) == r2);
+		AN(H2_SEND_HELD(h2, r2));
 	} else
 		tf = mfs;
 
@@ -322,7 +326,7 @@ h2_send(struct worker *wrk, struct h2_req *r2, h2_frame ftyp, uint8_t flags,
 				    (len > mfs) ? mfs : len);
 				if (h2_errcheck(r2, h2))
 					return;
-				assert(VTAILQ_FIRST(&h2->txqueue) == r2);
+				AN(H2_SEND_HELD(h2, r2));
 			}
 			if (tf < len) {
 				H2_Send_Frame(wrk, h2, ftyp,
