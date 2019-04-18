@@ -206,11 +206,12 @@ VCLS_func_help_json(struct cli *cli, const char * const *av, void *priv)
 
 static void
 cls_dispatch(struct cli *cli, const struct cli_proto *cp,
-    char * const * av, unsigned ac)
+    char * const * av, int ac)
 {
 	int json = 0;
 
 	AN(av);
+	assert(ac >= 0);
 
 	VSB_clear(cli->sb);
 
@@ -234,7 +235,7 @@ cls_dispatch(struct cli *cli, const struct cli_proto *cp,
 		return;
 	}
 
-	if (ac - 1 > cp->desc->maxarg + json) {
+	if (cp->desc->maxarg >= 0 && ac - 1 > cp->desc->maxarg + json) {
 		VCLI_Out(cli, "Too many parameters\n");
 		VCLI_SetResult(cli, CLIS_TOOMANY);
 		return;
@@ -257,7 +258,7 @@ cls_exec(struct VCLS_fd *cfd, char * const *av)
 	struct VCLS *cs;
 	struct cli_proto *clp;
 	struct cli *cli;
-	unsigned na;
+	int na;
 	ssize_t len;
 	char *s;
 	unsigned lim;
