@@ -189,7 +189,7 @@ struct VSLQ {
 	struct vtx_tree		tree;
 	VTAILQ_HEAD(,vtx)	ready;
 	VTAILQ_HEAD(,vtx)	incomplete;
-	unsigned		n_outstanding;
+	int			n_outstanding;
 	struct chunkhead	shmrefs;
 	VTAILQ_HEAD(,vtx)	cache;
 	unsigned		n_cache;
@@ -205,7 +205,7 @@ struct VSLQ {
 		struct VSL_transaction	*ptrans[2];
 		struct VSLC_ptr		start;
 		ssize_t			len;
-		size_t			offset;
+		ssize_t			offset;
 	} raw;
 };
 

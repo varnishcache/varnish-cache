@@ -44,7 +44,7 @@ struct vopt_list {
 
 struct vopt_spec {
 	const struct vopt_list	*vopt_list;
-	unsigned		vopt_list_n;
+	int			vopt_list_n;
 	const char		*vopt_optstring;
 	const char		*vopt_synopsis;
 	const char		**vopt_usage;

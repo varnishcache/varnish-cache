@@ -363,7 +363,7 @@ VSL_PrintTransactions(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 		if (t->level) {
 			/* Print header */
 			if (t->level > 3)
-				VSL_PRINT(fo, "*%1.1u* ", t->level);
+				VSL_PRINT(fo, "*%1.1d* ", t->level);
 			else
 				VSL_PRINT(fo, "%-3.*s ",
 				    (int)(t->level), "***");
@@ -385,7 +385,7 @@ VSL_PrintTransactions(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			if (!VSL_Match(vsl, t->c))
 				continue;
 			if (t->level > 3)
-				VSL_PRINT(fo, "-%1.1u- ", t->level);
+				VSL_PRINT(fo, "-%1.1d- ", t->level);
 			else if (t->level)
 				VSL_PRINT(fo, "%-3.*s ",
 				    (int)(t->level), "---");

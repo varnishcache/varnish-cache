@@ -323,7 +323,7 @@ vslc_file_delete(const struct VSL_cursor *cursor)
 
 /* Read n bytes from fd into buf */
 static ssize_t
-vslc_file_readn(int fd, void *buf, size_t n)
+vslc_file_readn(int fd, void *buf, ssize_t n)
 {
 	ssize_t t = 0;
 	ssize_t l;
