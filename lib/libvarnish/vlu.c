@@ -144,19 +144,20 @@ VLU_File(int fd, vlu_f *func, void *priv, unsigned bufsize)
 int
 VLU_Feed(struct vlu *l, const char *ptr, int len)
 {
-	int i = 0, ll;
+	int i = 0;
+	unsigned u;
 
 	CHECK_OBJ_NOTNULL(l, LINEUP_MAGIC);
 	AN(ptr);
 	assert(len > 0);
 	while (len > 0) {
-		ll = len;
-		if (ll > l->bufl - l->bufp)
-			ll = l->bufl - l->bufp;
-		memcpy(l->buf + l->bufp, ptr, ll);
-		len -= ll;
-		ptr += ll;
-		l->bufp += ll;
+		u = len;
+		if (u > l->bufl - l->bufp)
+			u = l->bufl - l->bufp;
+		memcpy(l->buf + l->bufp, ptr, u);
+		len -= u;
+		ptr += u;
+		l->bufp += u;
 		i = LineUpProcess(l);
 		if (i)
 			return (i);

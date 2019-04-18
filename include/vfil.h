@@ -38,7 +38,7 @@ char *VFIL_readfile(const char *pfx, const char *fn, ssize_t *sz);
 int VFIL_writefile(const char *pfx, const char *fn, const char *buf, size_t sz);
 int VFIL_nonblocking(int fd);
 int VFIL_fsinfo(int fd, unsigned *pbs, uintmax_t *size, uintmax_t *space);
-int VFIL_allocate(int fd, off_t size, int insist);
+int VFIL_allocate(int fd, uintmax_t size, int insist);
 void VFIL_setpath(struct vfil_path**, const char *path);
 typedef int vfil_path_func_f(void *priv, const char *fn);
 int VFIL_searchpath(const struct vfil_path *, vfil_path_func_f *func,

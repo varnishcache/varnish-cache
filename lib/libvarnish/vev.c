@@ -400,7 +400,8 @@ VEV_Once(struct vev_root *evb)
 {
 	double t;
 	struct vev *e;
-	int i, j, k, tmo, retval = 1;
+	int i, k, tmo, retval = 1;
+	unsigned u;
 
 	CHECK_OBJ_NOTNULL(evb, VEV_BASE_MAGIC);
 	assert(evb->thread == pthread_self());
@@ -440,21 +441,21 @@ VEV_Once(struct vev_root *evb)
 	}
 
 	k = 0;
-	for (j = 1; j < evb->lpfd; j++) {
-		evb->pev[j]->fd_events = evb->pfd[j].revents;
-		if (evb->pev[j]->fd_events)
+	for (u = 1; u < evb->lpfd; u++) {
+		evb->pev[u]->fd_events = evb->pfd[u].revents;
+		if (evb->pev[u]->fd_events)
 			k++;
 	}
 	assert(k == i);
 
 	DBG(evb, "EVENTS %d\n", i);
 	while (i > 0) {
-		for (j = BINHEAP_NOIDX + 1; j < evb->lpfd; j++) {
-			e = evb->pev[j];
+		for (u = BINHEAP_NOIDX + 1; u < evb->lpfd; u++) {
+			e = evb->pev[u];
 			if (e->fd_events == 0)
 				continue;
-			DBG(evb, "EVENT %p j=%d fd=%d ev=0x%x %d\n",
-			    e, j, e->fd, e->fd_events, i);
+			DBG(evb, "EVENT %p u=%u fd=%d ev=0x%x %d\n",
+			    e, u, e->fd, e->fd_events, i);
 			k = e->callback(e, e->fd_events);
 			e->fd_events = 0;
 			i--;

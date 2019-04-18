@@ -224,7 +224,7 @@ VFIL_fsinfo(int fd, unsigned *pbs, uintmax_t *psize, uintmax_t *pspace)
  */
 
 int
-VFIL_allocate(int fd, off_t size, int insist)
+VFIL_allocate(int fd, uintmax_t size, int insist)
 {
 	struct stat st;
 	uintmax_t fsspace;
