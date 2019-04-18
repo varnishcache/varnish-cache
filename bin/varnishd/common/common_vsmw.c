@@ -122,6 +122,7 @@ vsmw_idx_head(const struct vsmw *vsmw, int fd)
 	char buf[64];
 
 	bprintf(buf, "# %jd %jd\n", (intmax_t)vsmw->pid, (intmax_t)vsmw->birth);
+	// XXX handle ENOSPC? #2764
 	assert(write(fd, buf, strlen(buf)) == strlen(buf));
 }
 
@@ -177,6 +178,7 @@ vsmw_addseg(struct vsmw *vsmw, struct vsmwseg *seg)
 	vsmw_fmt_index(vsmw, seg);
 	AZ(VSB_finish(vsmw->vsb));
 	s = write(fd, VSB_data(vsmw->vsb), VSB_len(vsmw->vsb));
+	// XXX handle ENOSPC? #2764
 	assert(s == VSB_len(vsmw->vsb));
 	closefd(&fd);
 }
@@ -211,6 +213,7 @@ vsmw_delseg(struct vsmw *vsmw, struct vsmwseg *seg, int fixidx)
 			vsmw_fmt_index(vsmw, seg);
 		AZ(VSB_finish(vsmw->vsb));
 		s = write(fd, VSB_data(vsmw->vsb), VSB_len(vsmw->vsb));
+		// XXX handle ENOSPC? #2764
 		assert(s == VSB_len(vsmw->vsb));
 		closefd(&fd);
 		AZ(renameat(vsmw->vdirfd, t, vsmw->vdirfd, vsmw->idx));
