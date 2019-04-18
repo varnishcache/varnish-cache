@@ -380,12 +380,8 @@ shardcfg_backend_expand(const struct backend_reconfig *re)
 	else
 		re->shardd->l_backend <<= 1;
 
-	if (re->shardd->backend)
-		re->shardd->backend = realloc(re->shardd->backend,
-		    re->shardd->l_backend * sizeof *re->shardd->backend);
-	else
-		re->shardd->backend = malloc(
-		    re->shardd->l_backend * sizeof *re->shardd->backend);
+	re->shardd->backend = realloc(re->shardd->backend,
+	    re->shardd->l_backend * sizeof *re->shardd->backend);
 
 	AN(re->shardd->backend);
 }
