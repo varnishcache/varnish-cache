@@ -696,7 +696,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	vtim_real now;
 	uint8_t *ptr;
 	struct vsb *synth_body;
-	struct objcore *stale = NULL;
+	struct objcore *stale;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);

@@ -751,8 +751,8 @@ HSH_Fail(struct objcore *oc)
  * Abandon a fetch we will not need
  */
 
-void
-HSH_Abandon(struct objcore *oc)
+static void
+hsh_abandon(struct objcore *oc)
 {
 	struct objhead *oh;
 
@@ -792,7 +792,7 @@ HSH_Cancel(struct worker *wrk, struct objcore *oc, struct boc *boc)
 		AN(oc->flags & OC_F_HFM);
 
 	if (boc != NULL) {
-		HSH_Abandon(oc);
+		hsh_abandon(oc);
 		ObjWaitState(oc, BOS_FINISHED);
 	}
 
