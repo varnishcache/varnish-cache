@@ -1,12 +1,12 @@
 varnishtest "VCL compiler coverage test: vcc_acl.c"
 
-varnish v1 -errvcl {Too wide mask (33) for IPv4 address} {
+varnish v1 -errvcl {Too wide mask (/33) for IPv4 address} {
 	backend b { .host = "127.0.0.1"; }
 	acl a { "10.1.2.3"/33; }
 	sub vcl_recv { if (client.ip ~ a) { return(pass); } }
 }
 
-varnish v1 -errvcl {Too wide mask (129) for IPv6 address} {
+varnish v1 -errvcl {Too wide mask (/129) for IPv6 address} {
 	backend b { .host = "127.0.0.1"; }
 	acl a { "1::2"/129; }
 	sub vcl_recv { if (client.ip ~ a) { return(pass); } }
