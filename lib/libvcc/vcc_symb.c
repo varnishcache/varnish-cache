@@ -101,7 +101,7 @@ vcc_new_symbol(struct vcc *tl, const char *b, const char *e)
 static struct symbol *
 VCC_Symbol(struct vcc *tl, struct symbol *parent,
     const char *b, const char *e, vcc_kind_t kind,
-    int create, unsigned vlo, unsigned vhi)
+    int create, int vlo, int vhi)
 {
 	const char *q;
 	struct symbol *sym, *sym2 = NULL;
@@ -275,7 +275,7 @@ VCC_SymbolGet(struct vcc *tl, vcc_kind_t kind, const char *e, const char *x)
 
 struct symbol *
 VCC_MkSym(struct vcc *tl, const char *b, vcc_kind_t kind,
-    unsigned vlo, unsigned vhi)
+    int vlo, int vhi)
 {
 	struct symbol *sym;
 

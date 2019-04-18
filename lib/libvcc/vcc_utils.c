@@ -105,7 +105,7 @@ vcc_suckaddr(struct vcc *tl, const char *host, const struct suckaddr *vsa,
 	const int sz = sizeof(unsigned long long);
 	const unsigned n = (vsa_suckaddr_len + sz - 1) / sz;
 	unsigned long long b[n];
-	int len;
+	unsigned len;
 	char *q;
 
 	VTCP_name(vsa, a, sizeof a, p, sizeof p);

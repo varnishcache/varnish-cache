@@ -44,7 +44,7 @@
 struct acl_e {
 	VTAILQ_ENTRY(acl_e)	list;
 	unsigned char		data[ACL_MAXADDR];
-	unsigned		mask;
+	int			mask;
 	unsigned		not;
 	unsigned		para;
 	char			*addr;
@@ -66,7 +66,7 @@ static int
 vcl_acl_cmp(struct acl_e *ae1, struct acl_e *ae2)
 {
 	unsigned char *p1, *p2;
-	unsigned m;
+	int m;
 
 	p1 = ae1->data;
 	p2 = ae2->data;
@@ -123,7 +123,7 @@ vcc_acl_add_entry(struct vcc *tl, const struct acl_e *ae, int l,
 	aen->data[0] = fam & 0xff;
 	aen->mask += 8;
 
-	assert(l + 1L <= sizeof aen->data);
+	assert(l + 1UL <= sizeof aen->data);
 	memcpy(aen->data + 1L, u, l);
 
 	VTAILQ_FOREACH(ae2, &tl->acl, list) {
