@@ -79,6 +79,11 @@ struct http_conn {
 	vtim_dur		between_bytes_timeout;
 };
 
+enum htc_status_e {
+#define HTC_STATUS(e, n, s, l) HTC_S_ ## e = n,
+#include "tbl/htc.h"
+};
+
 typedef enum htc_status_e htc_complete_f(struct http_conn *);
 
 /* -------------------------------------------------------------------*/
@@ -381,12 +386,6 @@ enum htc_status_e HTC_RxStuff(struct http_conn *, htc_complete_f *,
 	void SES_Reserve_##low(struct sess *sp, typ **dst);
 #include "tbl/sess_attr.h"
 void SES_Set_String_Attr(struct sess *sp, enum sess_attr a, const char *src);
-
-
-enum htc_status_e {
-#define HTC_STATUS(e, n, s, l) HTC_S_ ## e = n,
-#include "tbl/htc.h"
-};
 
 /* cache_shmlog.c */
 extern struct VSC_main *VSC_C_main;
