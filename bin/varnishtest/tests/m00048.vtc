@@ -1,4 +1,4 @@
-varnishtest "VMOD vfp"
+varnishtest "VMOD vfp & vdp"
 
 server s1 {
 	rxreq
@@ -55,3 +55,27 @@ client c1 {
 	expect resp.status == 503
 } -run
 
+server s1 -wait
+server s1 {
+	rxreq
+	txresp -body "Ponto Facto, Caesar Transit!"
+} -start
+
+varnish v1 -vcl+backend {
+	import debug;
+
+	sub vcl_deliver {
+		if (req.http.Rot13) {
+			set resp.filters = "rot13";
+		}
+	}
+}
+
+client c1 -repeat 2 {
+	txreq
+	rxresp
+	expect resp.body == "Ponto Facto, Caesar Transit!"
+	txreq -hdr "Rot13: please"
+	rxresp
+	expect resp.body == "Cbagb Snpgb, Pnrfne Genafvg!"
+} -run

@@ -212,7 +212,7 @@ VCL_StackVDP(struct req *req, const struct vcl *vcl, const char *fl)
 	AN(fl);
 	VSLb(req->vsl, SLT_Filters, "%s", fl);
 	while (1) {
-		vp = vcl_filter_list_iter(&vdp_filters, &vcl->vfps, &fl);
+		vp = vcl_filter_list_iter(&vdp_filters, &vcl->vdps, &fl);
 		if (vp == NULL)
 			return (0);
 		if (vp == vfilter_error) {

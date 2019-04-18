@@ -89,6 +89,74 @@ static const struct vfp xyzzy_rot13 = {
 
 /**********************************************************************/
 
+#define ROT13_BUFSZ (1 << 13)
+
+static int v_matchproto_(vdp_init_f)
+xyzzy_rot13_init(struct req *req, void **priv)
+{
+	(void)req;
+	AN(priv);
+	*priv = malloc(ROT13_BUFSZ);
+	if (*priv == NULL)
+		return (-1);
+	return (0);
+}
+
+static int v_matchproto_(vdp_bytes_f)
+xyzzy_rot13_bytes(struct req *req, enum vdp_action act, void **priv,
+    const void *ptr, ssize_t len)
+{
+	char *q;
+	const char *pp;
+	int i, j, retval = 0;
+
+	(void)act;
+	AN(priv);
+	AN(*priv);
+	AN(ptr);
+	if (len <= 0)
+		return (0);
+	q = *priv;
+	pp = ptr;
+
+	for (i = 0, j = 0; j < len; i++, j++) {
+		if (pp[j] >= 'A' && pp[j] <= 'Z')
+			q[i] = (((pp[j] - 'A') + 13) % 26) + 'A';
+		else if (pp[j] >= 'a' && pp[j] <= 'z')
+			q[i] = (((pp[j] - 'a') + 13) % 26) + 'a';
+		else
+			q[i] = pp[j];
+		if (i == ROT13_BUFSZ - 1) {
+			retval = VDP_bytes(req, VDP_FLUSH, q, ROT13_BUFSZ);
+			if (retval != 0)
+				return (retval);
+			i = -1;
+		}
+	}
+	if (j > 0 && i >= 0)
+		retval = VDP_bytes(req, VDP_FLUSH, q, i + 1);
+	return (retval);
+}
+
+static int v_matchproto_(vdp_fini_f)
+xyzzy_rot13_fini(struct req *req, void **priv)
+{
+	(void)req;
+	AN(priv);
+	free(*priv);
+	*priv = NULL;
+	return (0);
+}
+
+static const struct vdp xyzzy_vdp_rot13 = {
+	.name  = "rot13",
+	.init  = xyzzy_rot13_init,
+	.bytes = xyzzy_rot13_bytes,
+	.fini  = xyzzy_rot13_fini,
+};
+
+/**********************************************************************/
+
 VCL_STRING v_matchproto_(td_debug_author)
 xyzzy_author(VRT_CTX, VCL_ENUM person, VCL_ENUM someone)
 {
@@ -305,6 +373,8 @@ event_load(VRT_CTX, struct vmod_priv *priv)
 	 * API should look like, do NOT do this anywhere else.
 	 */
 	VRT_AddVFP(ctx, &xyzzy_rot13);
+
+	VRT_AddVDP(ctx, &xyzzy_vdp_rot13);
 	return (0);
 }
 
@@ -381,6 +451,7 @@ event_discard(VRT_CTX, void *priv)
 	(void)priv;
 
 	VRT_RemoveVFP(ctx, &xyzzy_rot13);
+	VRT_RemoveVDP(ctx, &xyzzy_vdp_rot13);
 
 	if (--loads)
 		return (0);
