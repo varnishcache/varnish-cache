@@ -150,7 +150,7 @@ h2_del_sess(struct worker *wrk, struct h2_sess *h2, enum sess_close reason)
 
 	VHT_Fini(h2->dectbl);
 	AZ(pthread_cond_destroy(h2->winupd_cond));
-	req = h2->srq;
+	TAKE_OBJ_NOTNULL(req, &h2->srq, REQ_MAGIC);
 	AZ(req->ws->r);
 	sp = h2->sess;
 	Req_Cleanup(sp, wrk, req);
