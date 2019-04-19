@@ -992,25 +992,26 @@ h2_stream_tmo(struct h2_sess *h2, const struct h2_req *r2)
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 
-	if (r2->t_winupd != 0 || r2->t_send != 0) {
-		Lck_Lock(&h2->sess->mtx);
-		if (r2->t_winupd != 0 &&
-		    h2->sess->t_idle - r2->t_winupd >
-		    cache_param->idle_send_timeout) {
-			VSLb(h2->vsl, SLT_Debug,
-			     "H2: stream %u: Hit idle_send_timeout waiting "
-			     "for WINDOW_UPDATE", r2->stream);
-			r = 1;
-		}
+	if (r2->t_winupd == 0 && r2->t_send == 0)
+		return (0);
 
-		if (r == 0 && r2->t_send != 0 &&
-		    h2->sess->t_idle - r2->t_send > cache_param->send_timeout) {
-			VSLb(h2->vsl, SLT_Debug,
-			     "H2: stream %u: Hit send_timeout", r2->stream);
-			r = 1;
-		}
-		Lck_Unlock(&h2->sess->mtx);
+	Lck_Lock(&h2->sess->mtx);
+	if (r2->t_winupd != 0 &&
+	    h2->sess->t_idle - r2->t_winupd >
+	    cache_param->idle_send_timeout) {
+		VSLb(h2->vsl, SLT_Debug,
+		     "H2: stream %u: Hit idle_send_timeout waiting for"
+		     " WINDOW_UPDATE", r2->stream);
+		r = 1;
 	}
+
+	if (r == 0 && r2->t_send != 0 &&
+	    h2->sess->t_idle - r2->t_send > cache_param->send_timeout) {
+		VSLb(h2->vsl, SLT_Debug,
+		     "H2: stream %u: Hit send_timeout", r2->stream);
+		r = 1;
+	}
+	Lck_Unlock(&h2->sess->mtx);
 
 	return (r);
 }
