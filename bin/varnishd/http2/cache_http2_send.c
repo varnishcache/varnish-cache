@@ -113,7 +113,7 @@ h2_mk_hdr(uint8_t *hdr, h2_frame ftyp, uint8_t flags,
 }
 
 /*
- * This is the "raw" frame sender, all per stream accounting and
+ * This is the "raw" frame sender, all per-stream accounting and
  * prioritization must have happened before this is called, and
  * the session mtx must be held.
  */
@@ -347,6 +347,24 @@ h2_send(struct worker *wrk, struct h2_req *r2, h2_frame ftyp, uint8_t flags,
 			final_flags &= ftyp->flags;
 		} while (!h2->error && len > 0);
 	}
+}
+
+void
+H2_Send_RST(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2,
+    uint32_t stream, h2_error h2e)
+{
+	char b[4];
+
+	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
+	AN(H2_SEND_HELD(h2, r2));
+
+	Lck_Lock(&h2->sess->mtx);
+	VSLb(h2->vsl, SLT_Debug, "H2: stream %u: %s", stream, h2e->txt);
+	Lck_Unlock(&h2->sess->mtx);
+	vbe32enc(b, h2e->val);
+
+	H2_Send_Frame(wrk, h2, H2_F_RST_STREAM, 0, sizeof b, stream, b);
 }
 
 void

@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2016 Varnish Software AS
+ * Copyright (c) 2016-2019 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -131,28 +131,6 @@ h2_connectionerror(uint32_t u)
 }
 
 /**********************************************************************/
-
-static void
-h2_tx_rst(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2,
-    uint32_t stream, h2_error h2e)
-{
-	char b[4];
-
-	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
-
-	Lck_Lock(&h2->sess->mtx);
-	VSLb(h2->vsl, SLT_Debug, "H2: stream %u: %s", stream, h2e->txt);
-	Lck_Unlock(&h2->sess->mtx);
-	vbe32enc(b, h2e->val);
-
-	H2_Send_Get(wrk, h2, r2);
-	H2_Send_Frame(wrk, h2, H2_F_RST_STREAM, 0, sizeof b, stream, b);
-	H2_Send_Rel(h2, r2);
-}
-
-/**********************************************************************
- */
 
 struct h2_req *
 h2_new_req(const struct worker *wrk, struct h2_sess *h2,
@@ -875,8 +853,10 @@ h2_vfp_body_fini(struct vfp_ctx *vc, struct vfp_entry *vfe)
 
 	if (vc->failed) {
 		CHECK_OBJ_NOTNULL(r2->req->wrk, WORKER_MAGIC);
-		h2_tx_rst(r2->req->wrk, h2, r2, r2->stream,
+		H2_Send_Get(r2->req->wrk, h2, r2);
+		H2_Send_RST(r2->req->wrk, h2, r2, r2->stream,
 		    H2SE_REFUSED_STREAM);
+		H2_Send_Rel(h2, r2);
 		Lck_Lock(&h2->sess->mtx);
 		r2->error = H2SE_REFUSED_STREAM;
 		if (h2->mailcall == r2) {
@@ -980,7 +960,9 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2, h2_frame h2f)
 	if (h2->rxf_stream == 0 || h2e->connection)
 		return (h2e);	// Connection errors one level up
 
-	h2_tx_rst(wrk, h2, h2->req0, h2->rxf_stream, h2e);
+	H2_Send_Get(wrk, h2, h2->req0);
+	H2_Send_RST(wrk, h2, h2->req0, h2->rxf_stream, h2e);
+	H2_Send_Rel(h2, h2->req0);
 	return (0);
 }
 
@@ -1041,8 +1023,10 @@ h2_sweep(struct worker *wrk, struct h2_sess *h2)
 			break;
 		case H2_S_CLOS_REM:
 			if (!r2->scheduled) {
-				h2_tx_rst(wrk, h2, h2->req0, r2->stream,
+				H2_Send_Get(wrk, h2, h2->req0);
+				H2_Send_RST(wrk, h2, h2->req0, r2->stream,
 				    H2SE_REFUSED_STREAM);
+				H2_Send_Rel(h2, h2->req0);
 				h2_del_req(wrk, r2);
 				continue;
 			}

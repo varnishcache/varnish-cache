@@ -223,6 +223,9 @@ void H2_Send_Frame(struct worker *, struct h2_sess *,
     h2_frame type, uint8_t flags, uint32_t len, uint32_t stream,
     const void *);
 
+void H2_Send_RST(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2,
+    uint32_t stream, h2_error h2e);
+
 void H2_Send(struct worker *, struct h2_req *, h2_frame type, uint8_t flags,
     uint32_t len, const void *, uint64_t *acct);
 
