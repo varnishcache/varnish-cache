@@ -220,8 +220,12 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 
 	/* Charge and log byte counters */
 	req_AcctLogCharge(wrk->stats, req);
-	if (req->vsl->wid)
-		VSL_End(req->vsl);
+	if (req->vsl->wid) {
+		if (req->vsl->wid != sp->vxid)
+			VSL_End(req->vsl);
+		else
+			req->vsl->wid = 0; /* ending an h2 stream 0 */
+	}
 
 	if (!isnan(req->t_prev) && req->t_prev > 0. && req->t_prev > sp->t_idle)
 		sp->t_idle = req->t_prev;
