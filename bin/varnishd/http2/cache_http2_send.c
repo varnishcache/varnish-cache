@@ -41,6 +41,41 @@
 
 #define H2_SEND_HELD(h2, r2) (VTAILQ_FIRST(&(h2)->txqueue) == (r2))
 
+static int
+h2_cond_wait(pthread_cond_t *cond, struct h2_sess *h2, struct h2_req *r2)
+{
+	vtim_real now, when = 0.;
+	int r;
+
+	AN(cond);
+	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
+
+	Lck_AssertHeld(&h2->sess->mtx);
+
+	now = VTIM_real();
+	if (cache_param->idle_send_timeout > 0.)
+		when = now + cache_param->idle_send_timeout;
+
+	r = Lck_CondWait(cond, &h2->sess->mtx, when);
+
+	now = VTIM_real();
+	/* NB: when we grab idle_send_timeout before acquiring the session
+	 * lock we may time out, but once we wake up both send_timeout and
+	 * idle_send_timeout may have changed meanwhile. For this reason
+	 * h2_stream_tmo() may not log what timed out and we need to check
+	 * both conditions to decide whether we cancel the stream or not.
+	 */
+	if (h2_stream_tmo(h2, r2, now) || r == ETIMEDOUT) {
+		if (r2->error == NULL)
+			r2->error = H2SE_CANCEL;
+		return (-1);
+	}
+
+	AZ(r);
+	return (0);
+}
+
 static void
 h2_send_get_locked(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
@@ -224,12 +259,11 @@ h2_do_window(struct worker *wrk, struct h2_req *r2,
 		h2_send_rel_locked(h2, r2);
 		while (r2->t_window <= 0 && h2_errcheck(r2, h2) == 0) {
 			r2->cond = &wrk->cond;
-			AZ(Lck_CondWait(r2->cond, &h2->sess->mtx, 0));
+			(void)h2_cond_wait(r2->cond, h2, r2);
 			r2->cond = NULL;
 		}
-		while (h2->req0->t_window <= 0 && h2_errcheck(r2, h2) == 0) {
-			AZ(Lck_CondWait(h2->winupd_cond, &h2->sess->mtx, 0));
-		}
+		while (h2->req0->t_window <= 0 && h2_errcheck(r2, h2) == 0)
+			(void)h2_cond_wait(h2->winupd_cond, h2, r2);
 
 		if (h2_errcheck(r2, h2) == 0) {
 			w = h2_win_limit(r2, h2);
@@ -377,4 +411,7 @@ H2_Send(struct worker *wrk, struct h2_req *r2, h2_frame ftyp, uint8_t flags,
 		counter = &dummy_counter;
 
 	h2_send(wrk, r2, ftyp, flags, len, ptr, counter);
+
+	if (h2_errcheck(r2, r2->h2sess) == H2SE_CANCEL)
+		H2_Send_RST(wrk, r2->h2sess, r2, r2->stream, H2SE_CANCEL);
 }
