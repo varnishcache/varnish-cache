@@ -62,7 +62,7 @@ struct waited {
 	void			*priv1;
 	uintptr_t		priv2;
 	waiter_handle_f		*func;
-	volatile vtim_real	*tmo;
+	vtim_dur		tmo;
 	vtim_real		idle;
 };
 
