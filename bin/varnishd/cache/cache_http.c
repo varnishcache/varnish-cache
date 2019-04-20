@@ -519,7 +519,7 @@ http_split(const char **src, const char *stop, const char *sep,
  * Comparison rule for tokens:
  *	if target string starts with '"', we use memcmp() and expect closing
  *	double quote as well
- *	otherwise we use strncascmp()
+ *	otherwise we use strncasecmp()
  *
  * On match we increment *bp past the token name.
  */
