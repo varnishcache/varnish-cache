@@ -331,7 +331,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			hs = HTC_RxStuff(req->htc, HTTP1_Complete,
 			    &req->t_first, &req->t_req,
 			    sp->t_idle + cache_param->timeout_linger,
-			    sp->t_idle + cache_param->timeout_idle,
+			    sp->t_idle + SESS_TMO(sp, timeout_idle),
 			    NAN,
 			    cache_param->http_req_size);
 			AZ(req->htc->ws->r);

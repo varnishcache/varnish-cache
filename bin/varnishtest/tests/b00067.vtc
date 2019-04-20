@@ -3,6 +3,11 @@ varnishtest "Check timeout_idle"
 varnish v1 -arg "-p timeout_idle=1" -vcl {
 	backend dummy { .host = "${bad_ip}"; }
 
+	sub vcl_deliver {
+		if (req.url == "/sess") {
+			set sess.timeout_idle = 2s;
+		}
+	}
 	sub vcl_backend_error {
 		set beresp.status = 200;
 		set beresp.ttl = 1h;
@@ -12,9 +17,19 @@ varnish v1 -arg "-p timeout_idle=1" -vcl {
 client c1 {
 	txreq
 	rxresp
-	delay .2
+	delay 0.2
 	txreq
 	rxresp
-	delay 2
+	delay 1.2
+	expect_close
+} -run
+
+client c1 {
+	txreq -url "/sess"
+	rxresp
+	delay 1.2
+	txreq
+	rxresp
+	delay 2.2
 	expect_close
 } -run

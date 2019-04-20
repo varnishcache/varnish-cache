@@ -1250,6 +1250,17 @@ sess.xid	``VCL >= 4.1``
 
 	Unique ID of this session.
 
+sess.timeout_idle
+
+	Type: DURATION
+
+	Readable from: client
+
+	Writable from: client
+
+	Idle timeout for this session, defaults to the
+	``timeout_idle`` parameter, see :ref:`varnishd(1)`
+
 storage
 ~~~~~~~
 

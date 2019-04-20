@@ -572,8 +572,11 @@ struct sess {
 
 	vtim_real		t_open;		/* fd accepted */
 	vtim_real		t_idle;		/* fd accepted or resp sent */
-
+	vtim_dur		timeout_idle;
 };
+
+#define SESS_TMO(sp, tmo)					\
+	(isnan((sp)->tmo) ? cache_param->tmo : (sp)->tmo)
 
 /* Prototypes etc ----------------------------------------------------*/
 

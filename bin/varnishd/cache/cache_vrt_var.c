@@ -939,3 +939,27 @@ HTTP_VAR(req)
 HTTP_VAR(resp)
 HTTP_VAR(bereq)
 HTTP_VAR(beresp)
+
+/*--------------------------------------------------------------------*/
+
+VCL_VOID
+VRT_l_sess_timeout_idle(VRT_CTX, VCL_DURATION d)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->sp, SESS_MAGIC);
+	ctx->sp->timeout_idle = d > 0.0 ? d : 0.0;
+}
+
+VCL_DURATION
+VRT_r_sess_timeout_idle(VRT_CTX)
+{
+	VCL_DURATION d;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->sp, SESS_MAGIC);
+
+	d = ctx->sp->timeout_idle;
+	if (isnan(d))
+		return (cache_param->timeout_idle);
+	return (d);
+}

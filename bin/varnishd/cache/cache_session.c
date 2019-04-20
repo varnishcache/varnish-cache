@@ -378,6 +378,7 @@ SES_New(struct pool *pp)
 
 	sp->t_open = NAN;
 	sp->t_idle = NAN;
+	sp->timeout_idle = NAN;
 	Lck_New(&sp->mtx, lck_sess);
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	return (sp);
@@ -465,7 +466,7 @@ SES_Wait(struct sess *sp, const struct transport *xp)
 	wp->priv2 = (uintptr_t)xp;
 	wp->idle = sp->t_idle;
 	wp->func = ses_handle;
-	wp->tmo = cache_param->timeout_idle;
+	wp->tmo = SESS_TMO(sp, timeout_idle);
 	if (Wait_Enter(pp->waiter, wp))
 		SES_Delete(sp, SC_PIPE_OVERFLOW, NAN);
 }
