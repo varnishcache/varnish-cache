@@ -95,14 +95,6 @@ sharddir_backend(const struct sharddir *shardd, int id)
 	return (shardd->backend[id].backend);
 }
 
-static inline const char *
-sharddir_backend_ident(const struct sharddir *shardd, int host)
-{
-	assert(host >= 0);
-	assert(host < shardd->n_backend);
-	return (shardd->backend[host].ident);
-}
-
 #define SHDBG(flag, shardd, ...)					\
 	do {								\
 		if ((shardd)->debug_flags & (flag))			\
