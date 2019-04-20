@@ -59,14 +59,6 @@ struct waiter_impl {
 };
 
 static inline double
-Wait_Tmo(const struct waited *wp)
-{
-	CHECK_OBJ_ORNULL(wp, WAITED_MAGIC);
-	AN(wp->tmo);
-	return (*wp->tmo);
-}
-
-static inline double
 Wait_When(const struct waited *wp)
 {
 	CHECK_OBJ_ORNULL(wp, WAITED_MAGIC);
