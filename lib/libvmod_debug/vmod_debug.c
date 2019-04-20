@@ -133,7 +133,7 @@ xyzzy_rot13_bytes(struct req *req, enum vdp_action act, void **priv,
 			i = -1;
 		}
 	}
-	if (j > 0 && i >= 0)
+	if (i >= 0)
 		retval = VDP_bytes(req, VDP_FLUSH, q, i + 1);
 	return (retval);
 }
