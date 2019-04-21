@@ -69,16 +69,13 @@ jobs:
       script: *script-common
     - <<: *test-linux
       stage: coverity
-      addons:
-        apt:
-          packages:
-            - ca-certificates
-            - python3-docutils
-            - python3-sphinx
       env:
         - secure: "TndnHrwJk9FRSuVQWUk+ZrRc0jcNc0PW3TnvbRicIIwvYSLkMV5Y1tCQ5Jq/P98DA48/N/gf9DCAiFkxrNSKVeOY70FKgHYWlS130GhTv7r0c8zd+CdEXNORclcbBNV5F3Pli/LxZ+RUImjOfwcIcWV4eYv54Xv7aNFDAaDt4G9QlkSwXykLlZkoWLJQXFbhDBFioT1F1mucD9q9izEEeE+kqO1QH/IfobAq9v7/WrcS38sYI+0WvB1S0ajWuZJgRYqy1bocDNcQd05Vbr9NfAdJ9y+4VTuluZtTUyLxu3/0Tw8mAjHkcpOeNU26r3LnpdRk+5JuOFej/MrCmYRRawVfyvNGtu9RwcMkv8jl48TTs5kTf6UwFqJhe85QSlSi7IszfrE8HfB7B6u8eRr67rqjTr9k/BwEQyoBdK4JElQDj4A1GYHClomxgzmMZnVLvStnAm+IjdNlee4SfY0jj2KfPBd/v6Ms+LGVqNV9NDDKRQdOQD+H52MkIWs5Xu9fU5VaWP+xjFomA9aXex3r5FCssgyQ2P+HtWPdjNEtrkNezzfZ5b+VBVP87RdxfSqkZaRxi6gof0AgeTHWoi7GN1scseiKLxxCI7C0dfQgKrXTN7mZdcED1MMYdiaSI9mlSYQDDUHMQGeY1n3a9D6bUcC/TcmYo524PoTFBZgbbYM="
       before_script:
-        - curl --data "token=$COVTOKEN&project=varnish" -o coverity_tool.tgz https://scan.coverity.com/download/linux64
+        - curl
+            --data "token=$COVTOKEN&project=varnish"
+            --insecure
+            -o coverity_tool.tgz https://scan.coverity.com/download/linux64
         - tar xfz coverity_tool.tgz
         - export PATH=$PATH:$(echo $(pwd)/cov-analysis-*/bin)
       script:
@@ -91,6 +88,7 @@ jobs:
             --form file=@varnish.tgz
             --form version="$TRAVIS_COMMIT"
             --form description="$TRAVIS_BRANCH"
+            --insecure
             'https://scan.coverity.com/builds?project=varnish'
 
 stages:
