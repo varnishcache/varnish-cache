@@ -37,7 +37,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 #include <unistd.h>
+
+#include <fcntl.h>
 
 #include "vtc.h"
 
@@ -76,6 +79,7 @@ struct vtc_tst {
 struct vtc_job {
 	unsigned		magic;
 #define JOB_MAGIC		0x1b5fc419
+	VTAILQ_ENTRY(vtc_job)	list;
 	struct vtc_tst		*tst;
 	pid_t			child;
 	struct vev		*ev;
@@ -86,6 +90,7 @@ struct vtc_job {
 	int			killed;
 };
 
+static VTAILQ_HEAD(, vtc_job) job_head = VTAILQ_HEAD_INITIALIZER(job_head);
 
 int iflg = 0;
 unsigned vtc_maxdur = 60;
@@ -359,6 +364,15 @@ tst_cb(const struct vev *ve, int what)
 				printf(" exit=%d\n", WEXITSTATUS(stx));
 			if (!vtc_continue) {
 				/* XXX kill -9 other jobs ? */
+				struct vtc_job *jlp;
+				ALLOC_OBJ(jlp, JOB_MAGIC);
+				
+				VTAILQ_FOREACH(jlp, &job_head, list) {
+					CHECK_OBJ_NOTNULL(jlp, JOB_MAGIC);
+					if (!jlp->killed && jlp->child > 0)
+						AZ(kill(jlp->child, SIGKILL));
+				}
+
 				exit(2);
 			}
 		} else if (vtc_verbosity) {
@@ -370,6 +384,7 @@ tst_cb(const struct vev *ve, int what)
 			VEV_Stop(vb, jp->evt);
 			free(jp->evt);
 		}
+		VTAILQ_REMOVE(&job_head, jp, list);
 		FREE_OBJ(jp);
 		return (1);
 	}
@@ -390,6 +405,8 @@ start_test(void)
 
 	ALLOC_OBJ(jp, JOB_MAGIC);
 	AN(jp);
+
+	VTAILQ_INSERT_TAIL(&job_head, jp, list);
 
 	jp->bp = get_buf();
 
@@ -415,6 +432,7 @@ start_test(void)
 	jp->t0 = VTIM_mono();
 	jp->child = fork();
 	assert(jp->child >= 0);
+
 	if (jp->child == 0) {
 		cleaner_neuter();	// Too dangerous to have around
 		AZ(setpgid(getpid(), 0));
@@ -654,6 +672,26 @@ read_file(const char *fn, int ntest)
  * Main
  */
 
+static void sig_handler(int signo)
+{
+	struct vtc_job *jp;
+	ALLOC_OBJ(jp, JOB_MAGIC);
+	
+	VTAILQ_FOREACH(jp, &job_head, list) {
+		CHECK_OBJ_NOTNULL(jp, JOB_MAGIC);
+		if (jp->child > 0) {
+			AZ(kill(jp->child, signo));
+		}
+	}
+
+	exit (signo);
+}
+
+
+/**********************************************************************
+ * Main
+ */
+
 int
 main(int argc, char * const *argv)
 {
@@ -663,6 +701,9 @@ main(int argc, char * const *argv)
 	int use_cleaner = 0;
 	uintmax_t bufsiz;
 	const char *p;
+
+	struct sigaction act;
+    act.sa_handler = &sig_handler;
 
 	argv0 = strrchr(argv[0], '/');
 	if (argv0 == NULL)
@@ -782,6 +823,11 @@ main(int argc, char * const *argv)
 
 	if (use_cleaner)
 		cleaner_setup();
+
+	/* Catch Kill Signals and kill child processes */
+	sigaction(SIGINT, &act, NULL);
+	sigaction(SIGTERM, &act, NULL);
+	sigaction(SIGKILL, &act, NULL);
 
 	i = 0;
 	while (!VTAILQ_EMPTY(&tst_head) || i) {
