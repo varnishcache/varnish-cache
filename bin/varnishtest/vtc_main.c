@@ -40,8 +40,6 @@
 #include <signal.h>
 #include <unistd.h>
 
-#include <fcntl.h>
-
 #include "vtc.h"
 
 #include "vev.h"
@@ -679,7 +677,7 @@ static void sig_handler(int signo)
 	
 	VTAILQ_FOREACH(jp, &job_head, list) {
 		CHECK_OBJ_NOTNULL(jp, JOB_MAGIC);
-		if (jp->child > 0) {
+		if (jp->child > 0 && !jp->killed) {
 			AZ(kill(jp->child, signo));
 		}
 	}
