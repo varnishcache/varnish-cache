@@ -367,7 +367,7 @@ tst_cb(const struct vev *ve, int what)
 				
 				VTAILQ_FOREACH(jlp, &job_head, list) {
 					CHECK_OBJ_NOTNULL(jlp, JOB_MAGIC);
-					if (!jlp->killed && jlp->child > 0)
+					if (!jlp->killed && jlp->child > 0 && (getpgid(jp->child) >= 0))
 						AZ(kill(jlp->child, SIGKILL));
 				}
 
@@ -674,10 +674,10 @@ static void sig_handler(int signo)
 {
 	struct vtc_job *jp;
 	ALLOC_OBJ(jp, JOB_MAGIC);
-	
+
 	VTAILQ_FOREACH(jp, &job_head, list) {
 		CHECK_OBJ_NOTNULL(jp, JOB_MAGIC);
-		if (jp->child > 0 && !jp->killed) {
+		if (jp->child > 0 && !jp->killed && (getpgid(jp->child) >= 0)) {
 			AZ(kill(jp->child, signo));
 		}
 	}
@@ -822,12 +822,15 @@ main(int argc, char * const *argv)
 	if (use_cleaner)
 		cleaner_setup();
 
-	/* Catch Kill Signals and kill child processes */
-	sigaction(SIGINT, &act, NULL);
-	sigaction(SIGTERM, &act, NULL);
-	sigaction(SIGKILL, &act, NULL);
-
 	i = 0;
+
+	if (!VTAILQ_EMPTY(&tst_head)) {
+		/* Catch Kill Signals and kill child processes */
+		sigaction(SIGINT, &act, NULL);
+		sigaction(SIGTERM, &act, NULL);
+		sigaction(SIGKILL, &act, NULL);
+	}
+
 	while (!VTAILQ_EMPTY(&tst_head) || i) {
 		if (!VTAILQ_EMPTY(&tst_head) && njob < npar) {
 			start_test();
