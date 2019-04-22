@@ -1,0 +1,20 @@
+varnishtest "Check timeout_idle"
+
+varnish v1 -arg "-p timeout_idle=1" -vcl {
+	backend dummy { .host = "${bad_ip}"; }
+
+	sub vcl_backend_error {
+		set beresp.status = 200;
+		set beresp.ttl = 1h;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	delay .2
+	txreq
+	rxresp
+	delay 2
+	expect_close
+} -run
