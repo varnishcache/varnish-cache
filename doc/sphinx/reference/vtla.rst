@@ -62,6 +62,10 @@ VLU
     Varnish Line Up -- library functions to collect stream of bytes
     into lines for processing. (lib/libvarnish/vlu.c)
 
+VPI
+    VCC Private Interface -- functions in varnishd which only VCC is
+    allowed to call.
+
 VRE
     Varnish Regular Expression -- library functions for regular expression
     based matching and substring replacement. (lib/libvarnish/vre.c)

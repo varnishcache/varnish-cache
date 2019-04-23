@@ -325,7 +325,7 @@ VRT_count(VRT_CTX, unsigned u)
 }
 
 VCL_VCL
-VRT_vcl_get(VRT_CTX, const char *name)
+VPI_vcl_get(VRT_CTX, const char *name)
 {
 	VCL_VCL vcl;
 
@@ -339,7 +339,7 @@ VRT_vcl_get(VRT_CTX, const char *name)
 }
 
 void
-VRT_vcl_rel(VRT_CTX, VCL_VCL vcl)
+VPI_vcl_rel(VRT_CTX, VCL_VCL vcl)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(vcl);
@@ -349,7 +349,7 @@ VRT_vcl_rel(VRT_CTX, VCL_VCL vcl)
 }
 
 void
-VRT_vcl_select(VRT_CTX, VCL_VCL vcl)
+VPI_vcl_select(VRT_CTX, VCL_VCL vcl)
 {
 	struct req *req = ctx->req;
 

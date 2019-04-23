@@ -33,6 +33,6 @@
  * NB: When this file is changed, lib/libvcc/generate.py *MUST* be rerun.
  */
 
-VCL_VCL VRT_vcl_get(VRT_CTX, const char *);
-void VRT_vcl_rel(VRT_CTX, VCL_VCL);
-void VRT_vcl_select(VRT_CTX, VCL_VCL);
+VCL_VCL VPI_vcl_get(VRT_CTX, const char *);
+void VPI_vcl_rel(VRT_CTX, VCL_VCL);
+void VPI_vcl_select(VRT_CTX, VCL_VCL);

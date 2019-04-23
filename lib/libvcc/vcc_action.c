@@ -284,12 +284,12 @@ vcc_act_return_vcl(struct vcc *tl)
 
 		p = New_IniFin(tl);
 		AN(p);
-		VSB_printf(p->ini, "\t%s = VRT_vcl_get(ctx, \"%s\");",
+		VSB_printf(p->ini, "\t%s = VPI_vcl_get(ctx, \"%s\");",
 		    buf, sym->name);
-		VSB_printf(p->fin, "\tVRT_vcl_rel(ctx, %s);",
+		VSB_printf(p->fin, "\tVPI_vcl_rel(ctx, %s);",
 		    buf);
 	}
-	Fb(tl, 1, "VRT_vcl_select(ctx, %s);\t/* %s */\n",
+	Fb(tl, 1, "VPI_vcl_select(ctx, %s);\t/* %s */\n",
 	    (const char*)sym->eval_priv, sym->name);
 	SkipToken(tl, ')');
 }
