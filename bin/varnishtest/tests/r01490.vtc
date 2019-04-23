@@ -6,8 +6,8 @@ server s1 {
 varnish v1 \
 	-arg "-p debug=+syncvsl" \
 	-arg "-p vsl_mask=+WorkThread" \
-	-arg "-p thread_pool_min=2" \
-	-arg "-p thread_pool_max=3" \
+	-arg "-p thread_pool_min=3" \
+	-arg "-p thread_pool_max=4" \
 	-arg "-p thread_pools=1" \
 	-arg "-p thread_pool_timeout=10" \
 	-vcl+backend {}
@@ -15,19 +15,19 @@ varnish v1 -start
 
 delay 2
 
-varnish v1 -expect threads == 2
+varnish v1 -expect threads == 3
 
 logexpect l1 -v v1 -g raw {
 	expect * 0 WorkThread {^\S+ start$}
 	expect * 0 WorkThread {^\S+ end$}
 } -start
 
-varnish v1 -cliok "param.set thread_pool_min 3"
+varnish v1 -cliok "param.set thread_pool_min 4"
 
 # Have to wait longer than thread_pool_timeout
 delay 11
 
-varnish v1 -expect threads == 3
+varnish v1 -expect threads == 4
 
 varnish v1 -cliok "param.set thread_pool_min 2"
 varnish v1 -cliok "param.set thread_pool_max 2"
