@@ -52,6 +52,9 @@
  * binary/load-time compatible, increment MAJOR version
  *
  * unreleased (planned for 2019-09-15)
+ *	VRT_vcl_get moved to vcc_interface.h
+ *	VRT_vcl_rel emoved to vcc_interface.h
+ *	VRT_vcl_select emoved to vcc_interface.h
  *	[cache.h] WS_ReserveAll() added
  *	[cache.h] WS_Reserve(ws, 0) deprecated
  * 9.0 (2019-03-15)
@@ -110,8 +113,6 @@
  *	VRT_ipcmp added
  *	VRT_Vmod_Init signature changed
  *	VRT_vcl_lookup removed
- *	VRT_vcl_get added
- *	VRT_vcl_rel added
  *	VRT_fail added
  *	[cache.h] WS_Reset and WS_Snapshot signatures changed
  *	[cache.h] WS_Front added
@@ -526,11 +527,6 @@ int VRT_VSA_GetPtr(VCL_IP sua, const unsigned char ** dst);
 int VRT_Vmod_Init(VRT_CTX, struct vmod **hdl, unsigned nbr, void *ptr, int len,
     const char *nm, const char *path, const char *file_id, const char *backup);
 void VRT_Vmod_Unload(VRT_CTX, struct vmod **hdl);
-
-/* VCL program related */
-VCL_VCL VRT_vcl_get(VRT_CTX, const char *);
-void VRT_vcl_rel(VRT_CTX, VCL_VCL);
-void VRT_vcl_select(VRT_CTX, VCL_VCL);
 
 typedef int vmod_event_f(VRT_CTX, struct vmod_priv *, enum vcl_event_e);
 

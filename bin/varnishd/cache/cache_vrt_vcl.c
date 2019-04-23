@@ -38,6 +38,8 @@
 #include "vcl.h"
 #include "vtim.h"
 
+#include "vcc_interface.h"
+
 #include "cache_director.h"
 #include "cache_vcl.h"
 

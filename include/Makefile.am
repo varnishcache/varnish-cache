@@ -86,6 +86,7 @@ nobase_noinst_HEADERS = \
 	compat/daemon.h \
 	vfl.h \
 	libvcc.h \
+	vcc_interface.h \
 	vcli_serve.h \
 	vcs_version.h \
 	vct.h \
