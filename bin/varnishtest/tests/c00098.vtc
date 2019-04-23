@@ -1,6 +1,7 @@
 varnishtest "Hit-for-pass and waitinglist rushing"
 
 barrier b2 cond 6
+barrier b3 cond 6
 
 server s1 {
 	rxreq
@@ -80,30 +81,36 @@ varnish v1 -arg "-p thread_pool_min=20" -arg "-p rush_exponent=2" -arg "-p debug
 
 client c1 {
 	txreq -url /hfp -hdr "Client: 1"
-	rxresp
+	rxresp -no_obj
+	barrier b3 sync
 } -start
 
 client c2 {
+	barrier b3 sync
 	txreq -url /hfp -hdr "Client: 2"
 	rxresp
 } -start
 
 client c3 {
+	barrier b3 sync
 	txreq -url /hfp -hdr "Client: 3"
 	rxresp
 } -start
 
 client c4 {
+	barrier b3 sync
 	txreq -url /hfp -hdr "Client: 4"
 	rxresp
 } -start
 
 client c5 {
+	barrier b3 sync
 	txreq -url /hfp -hdr "Client: 5"
 	rxresp
 } -start
 
 client c6 {
+	barrier b3 sync
 	txreq -url /hfp -hdr "Client: 6"
 	rxresp
 } -start
