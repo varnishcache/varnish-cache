@@ -1,0 +1,63 @@
+varnishtest "test VRT_VCL_(Un)Busy()"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import debug;
+
+	sub vcl_recv {
+		if (req.url == "/hold") {
+			debug.hold_vcl_busy();
+		} else if (req.url == "/release") {
+			debug.release_vcl_busy();
+		}
+		return (synth(200));
+	}
+} -start
+
+varnish v1 -vcl+backend {}
+
+varnish v1 -cliok "vcl.state vcl1 cold"
+
+# Nothing holds vcl1, so it should go gold.
+varnish v1 -cliexpect "cold    cold         0    vcl1" "vcl.list"
+
+
+# Grab hold of vcl1
+varnish v1 -cliok "vcl.use vcl1"
+client c1 {
+	txreq -url "/hold"
+	rxresp
+} -run
+
+# Flush worker threads hold
+varnish v1 -cliok "vcl.use vcl2"
+client c1 {
+	txreq
+	rxresp
+} -run
+
+# There should still be a single busy hold on vcl1
+varnish v1 -cliok "vcl.state vcl1 cold"
+varnish v1 -cliexpect "cold    busy         1    vcl1" "vcl.list"
+
+# Release hold on vcl1
+varnish v1 -cliok "vcl.use vcl1"
+client c1 {
+	txreq -url "/release"
+	rxresp
+} -run
+
+# Flush worker threads hold
+varnish v1 -cliok "vcl.use vcl2"
+client c1 {
+	txreq
+	rxresp
+} -run
+
+# Nothing holds vcl1, so it should go gold.
+varnish v1 -cliok "vcl.state vcl1 cold"
+varnish v1 -cliexpect "cold    cold         0    vcl1" "vcl.list"

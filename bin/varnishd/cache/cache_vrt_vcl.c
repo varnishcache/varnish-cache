@@ -144,6 +144,28 @@ VCL_Rel(struct vcl **vcc)
 
 /*--------------------------------------------------------------------*/
 
+void
+VRT_VCL_Busy(VRT_CTX)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	CHECK_OBJ_NOTNULL(ctx->vcl, VCL_MAGIC);
+	VCL_Ref(ctx->vcl);
+}
+
+void
+VRT_VCL_Unbusy(VRT_CTX)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	struct vcl *vcl;
+
+	CHECK_OBJ_NOTNULL(ctx->vcl, VCL_MAGIC);
+	vcl = ctx->vcl;
+	VCL_Rel(&vcl);
+}
+
+/*--------------------------------------------------------------------*/
+
 VCL_BACKEND
 VRT_AddDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
     const char *fmt, ...)

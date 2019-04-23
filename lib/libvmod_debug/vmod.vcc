@@ -243,3 +243,11 @@ This function is by no means guaranteed to work cross platform and
 should now only be used for diagnostic purposes.
 
 0B is returned if no sensible value can be determined.
+
+$Function VOID hold_vcl_busy()
+
+Prevent VCL from going cold
+
+$Function VOID release_vcl_busy()
+
+Allow VCL to go cold

@@ -52,6 +52,7 @@
  * binary/load-time compatible, increment MAJOR version
  *
  * unreleased (planned for 2019-09-15)
+ *	VRT_VCL_Busy() and VRT_VCL_Unbusy() added.
  *	VRT_vcl_get moved to vcc_interface.h
  *	VRT_vcl_rel emoved to vcc_interface.h
  *	VRT_vcl_select emoved to vcc_interface.h
@@ -575,3 +576,10 @@ void VRT_VSC_Destroy(const char *, struct vsc_seg *);
 void VRT_VSC_Hide(const struct vsc_seg *);
 void VRT_VSC_Reveal(const struct vsc_seg *);
 size_t VRT_VSC_Overhead(size_t);
+
+/*
+ * API to prevent VCL from going cold
+ */
+
+void VRT_VCL_Busy(VRT_CTX);
+void VRT_VCL_Unbusy(VRT_CTX);

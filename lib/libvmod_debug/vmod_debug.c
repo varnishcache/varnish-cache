@@ -793,3 +793,17 @@ xyzzy_stk(VRT_CTX)
 
 	return (0);
 }
+
+VCL_VOID
+xyzzy_hold_vcl_busy(VRT_CTX)
+{
+
+	VRT_VCL_Busy(ctx);
+}
+
+VCL_VOID
+xyzzy_release_vcl_busy(VRT_CTX)
+{
+
+	VRT_VCL_Unbusy(ctx);
+}
