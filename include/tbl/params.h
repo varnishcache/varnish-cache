@@ -1793,77 +1793,77 @@ PARAM(
 )
 
 PARAM(
-	/* name */      h2_header_table_size,
-	/* typ */       bytes_u,
-	/* min */       "0b",
-	/* max */       NULL,
-	/* default */   "4k",
-	/* units */     "bytes",
-	/* flags */     0,
+	/* name */	h2_header_table_size,
+	/* typ */	bytes_u,
+	/* min */	"0b",
+	/* max */	NULL,
+	/* default */	"4k",
+	/* units */	"bytes",
+	/* flags */	0,
 	/* s-text */
 	"HTTP2 header table size.\n"
 	"This is the size that will be used for the HPACK dynamic\n"
 	"decoding table.",
-	/* l-text */    "",
-	/* func */      NULL
+	/* l-text */	"",
+	/* func */	NULL
 )
 
 PARAM(
-       /* name */      h2_max_concurrent_streams,
-       /* typ */       uint,
-       /* min */       "0",
-       /* max */       NULL,
-       /* default */   "100",
-       /* units */     "streams",
-       /* flags */     0,
-       /* s-text */
-       "HTTP2 Maximum number of concurrent streams.\n"
-       "This is the number of requests that can be active\n"
-       "at the same time for a single HTTP2 connection.",
-       /* l-text */    "",
-       /* func */      NULL
+	/* name */	h2_max_concurrent_streams,
+	/* typ */	uint,
+	/* min */	"0",
+	/* max */	NULL,
+	/* default */	"100",
+	/* units */	"streams",
+	/* flags */	0,
+	/* s-text */
+	"HTTP2 Maximum number of concurrent streams.\n"
+	"This is the number of requests that can be active\n"
+	"at the same time for a single HTTP2 connection.",
+	/* l-text */	"",
+	/* func */	NULL
 )
 
 PARAM(
-	/* name */      h2_initial_window_size,
-	/* typ */       bytes_u,
-	/* min */       "0",
-	/* max */       "2147483647b",
-	/* default */   "65535b",
-	/* units */     "bytes",
-	/* flags */     0,
+	/* name */	h2_initial_window_size,
+	/* typ */	bytes_u,
+	/* min */	"0",
+	/* max */	"2147483647b",
+	/* default */	"65535b",
+	/* units */	"bytes",
+	/* flags */	0,
 	/* s-text */
 	"HTTP2 initial flow control window size.",
-	/* l-text */    "",
-	/* func */      NULL
+	/* l-text */	"",
+	/* func */	NULL
 )
 
 PARAM(
-	/* name */      h2_max_frame_size,
-	/* typ */       bytes_u,
-	/* min */       "16k",
-	/* max */       "16777215b",
-	/* default */   "16k",
-	/* units */     "bytes",
-	/* flags */     0,
+	/* name */	h2_max_frame_size,
+	/* typ */	bytes_u,
+	/* min */	"16k",
+	/* max */	"16777215b",
+	/* default */	"16k",
+	/* units */	"bytes",
+	/* flags */	0,
 	/* s-text */
 	"HTTP2 maximum per frame payload size we are willing to accept.",
-	/* l-text */    "",
-	/* func */      NULL
+	/* l-text */	"",
+	/* func */	NULL
 )
 
 PARAM(
-	/* name */      h2_max_header_list_size,
-	/* typ */       bytes_u,
-	/* min */       "0b",
-	/* max */       NULL,
-	/* default */   "2147483647b",
-	/* units */     "bytes",
-	/* flags */     0,
+	/* name */	h2_max_header_list_size,
+	/* typ */	bytes_u,
+	/* min */	"0b",
+	/* max */	NULL,
+	/* default */	"2147483647b",
+	/* units */	"bytes",
+	/* flags */	0,
 	/* s-text */
 	"HTTP2 maximum size of an uncompressed header list.",
-	/* l-text */    "",
-	/* func */      NULL
+	/* l-text */	"",
+	/* func */	NULL
 )
 
 #undef PARAM
