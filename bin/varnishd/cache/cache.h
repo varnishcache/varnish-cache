@@ -453,7 +453,7 @@ struct req {
 	volatile enum req_body_state_e	req_body_status;
 	enum sess_close		doclose;
 	int			restarts;
-	int			esi_level;
+	unsigned		esi_level;
 	struct req		*topreq;	/* esi_level == 0 request */
 	struct vcl		*vcl0;
 

@@ -560,7 +560,7 @@ struct ved_foo {
 	unsigned		magic;
 #define VED_FOO_MAGIC		0x6a5a262d
 	struct ecx		*ecx;
-	ssize_t			start, last, stop, lpad;
+	uint64_t		start, last, stop, lpad;
 	ssize_t			ll;
 	uint64_t		olen;
 	uint8_t			dbits[8];
