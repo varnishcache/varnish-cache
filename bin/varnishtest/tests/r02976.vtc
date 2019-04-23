@@ -1,0 +1,53 @@
+varnishtest "Detect probe interval inversion"
+
+barrier bprobe cond 2
+
+server s1 {
+	# 5 probe requests
+	rxreq
+	txresp
+	close
+	accept
+	rxreq
+	txresp
+	close
+	accept
+	rxreq
+	txresp
+	close
+	accept
+	rxreq
+	txresp
+	close
+	accept
+	rxreq
+	txresp
+	close
+	accept
+	barrier bprobe sync
+} -start
+
+varnish v1 -vcl {
+	backend b1 {
+		.host = "${s1_addr}";
+		.port = "${s1_port}";
+		.probe = {
+			.interval = 1s;
+		}
+	}
+
+	backend b2 {
+		.host = "${bad_ip}";
+		.probe = {
+			.interval = 24h;
+		}
+	}
+
+	sub vcl_recv {
+		if (!req.url) {
+			set req.backend_hint = b2;
+		}
+	}
+} -start
+
+barrier bprobe sync
