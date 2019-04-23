@@ -56,7 +56,7 @@ server s6 {
 	chunkedlen 0
 } -start
 
-varnish v1 -arg "-p rush_exponent=2" -arg "-p debug=+syncvsl" -vcl+backend {
+varnish v1 -arg "-p thread_pool_min=20" -arg "-p rush_exponent=2" -arg "-p debug=+syncvsl" -vcl+backend {
 	import vtc;
 	sub vcl_backend_fetch {
 		if (bereq.http.client == "1") {
