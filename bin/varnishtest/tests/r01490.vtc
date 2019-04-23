@@ -13,7 +13,8 @@ varnish v1 \
 	-vcl+backend {}
 varnish v1 -start
 
-delay 2
+# we might have over-bred
+delay 11
 
 varnish v1 -expect threads == 2
 
