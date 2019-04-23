@@ -1,6 +1,7 @@
 varnishtest "Streaming delivery and waitinglist rushing"
 
 barrier b1 sock 4
+barrier b2 sock 4
 
 server s1 {
 	rxreq
@@ -20,20 +21,25 @@ varnish v1 -arg "-p rush_exponent=2" -arg "-p debug=+syncvsl" -vcl+backend {
 
 client c1 {
 	txreq
-	rxresp
+	rxresp -no_obj
+	barrier b2 sync
+	rxrespbody
 } -start
 
 client c2 {
+	barrier b2 sync
 	txreq
 	rxresp
 } -start
 
 client c3 {
+	barrier b2 sync
 	txreq
 	rxresp
 } -start
 
 client c4 {
+	barrier b2 sync
 	txreq
 	rxresp
 } -start
