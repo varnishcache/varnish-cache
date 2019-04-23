@@ -200,8 +200,14 @@ pool_getidleworker(struct pool *pp, enum task_prio prio)
 		}
 		return (NULL);
 	}
+
 	AZ(pt->func);
 	CAST_OBJ_NOTNULL(wrk, pt->priv, WORKER_MAGIC);
+
+	AN(pp->nidle);
+	VTAILQ_REMOVE(&pp->idle_queue, &wrk->task, list);
+	pp->nidle--;
+
 	return (wrk);
 }
 
@@ -228,12 +234,9 @@ Pool_Task_Arg(struct worker *wrk, enum task_prio prio, task_func_t *func,
 
 	Lck_Lock(&pp->mtx);
 	wrk2 = pool_getidleworker(pp, prio);
-	if (wrk2 != NULL) {
-		AN(pp->nidle);
-		VTAILQ_REMOVE(&pp->idle_queue, &wrk2->task, list);
-		pp->nidle--;
+	if (wrk2 != NULL)
 		retval = 1;
-	} else {
+	else {
 		wrk2 = wrk;
 		retval = 0;
 	}
@@ -280,9 +283,6 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum task_prio prio)
 
 	wrk = pool_getidleworker(pp, prio);
 	if (wrk != NULL) {
-		AN(pp->nidle);
-		VTAILQ_REMOVE(&pp->idle_queue, &wrk->task, list);
-		pp->nidle--;
 		AZ(wrk->task.func);
 		wrk->task.func = task->func;
 		wrk->task.priv = task->priv;
