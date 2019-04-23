@@ -779,9 +779,9 @@ vcl_output_lang_h(struct vsb *sb)
 
 emit_file(fo, srcroot, "include/vdef.h")
 emit_file(fo, srcroot, "include/vrt.h")
-emit_file(fo, srcroot, "include/vcc_interface.h")
 emit_file(fo, buildroot, "include/vcl.h")
 emit_file(fo, buildroot, "include/vrt_obj.h")
+emit_file(fo, srcroot, "include/vcc_interface.h")
 
 fo.write("\n}\n")
 fo.close()
