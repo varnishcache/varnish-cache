@@ -1918,6 +1918,8 @@ http_process(struct vtclog *vl, const char *spec, int sock, int *sfd,
 	hp->timeout = vtc_maxdur * 1000 / 2;
 
 	if (rcvbuf) {
+		// XXX setsockopt() too late on SunOS
+		// https://github.com/varnishcache/varnish-cache/pull/2980#issuecomment-486214661
 		hp->rcvbuf = rcvbuf;
 
 		oldbuf = 0;
