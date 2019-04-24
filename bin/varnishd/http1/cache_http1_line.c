@@ -60,7 +60,7 @@ struct v1l {
 	ssize_t			liov;
 	ssize_t			cliov;
 	unsigned		ciov;	/* Chunked header marker */
-	double			t0;
+	vtim_real		deadline;
 	struct vsl_log		*vsl;
 	ssize_t			cnt;	/* Flushed byte count */
 	struct ws		*ws;
@@ -74,7 +74,7 @@ struct v1l {
 
 void
 V1L_Open(struct worker *wrk, struct ws *ws, int *fd, struct vsl_log *vsl,
-    double t0, unsigned niov)
+    vtim_real deadline, unsigned niov)
 {
 	struct v1l *v1l;
 	unsigned u;
@@ -114,7 +114,7 @@ V1L_Open(struct worker *wrk, struct ws *ws, int *fd, struct vsl_log *vsl,
 	v1l->siov = u;
 	v1l->ciov = u;
 	v1l->wfd = fd;
-	v1l->t0 = t0;
+	v1l->deadline = deadline;
 	v1l->vsl = vsl;
 	wrk->v1l = v1l;
 
@@ -209,7 +209,7 @@ V1L_Flush(const struct worker *wrk)
 			 * counter to prevent slowloris attacks
 			*/
 
-			if (VTIM_real() - v1l->t0 > cache_param->send_timeout) {
+			if (VTIM_real() > v1l->deadline) {
 				VSLb(v1l->vsl, SLT_Debug,
 				    "Hit total send timeout, "
 				    "wrote = %zd/%zd; not retrying",

@@ -96,7 +96,9 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 	}
 
 	VTCP_blocking(*htc->rfd);	/* XXX: we should timeout instead */
-	V1L_Open(wrk, wrk->aws, htc->rfd, bo->vsl, bo->t_prev, 0);
+	/* XXX: what is the right timeout ? Isn't send_timeout client side? */
+	V1L_Open(wrk, wrk->aws, htc->rfd, bo->vsl,
+	    bo->t_prev + cache_param->send_timeout, 0);
 	hdrbytes = HTTP1_Write(wrk, hp, HTTP1_Req);
 
 	/* Deal with any message-body the request might (still) have */
