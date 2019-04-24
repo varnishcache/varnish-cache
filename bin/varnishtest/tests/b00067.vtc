@@ -1,6 +1,9 @@
 varnishtest "Check timeout_idle"
 
-varnish v1 -arg "-p timeout_idle=1" -vcl {
+varnish v1 -arg "-p timeout_idle=1"	\
+	   -arg "-a 127.0.0.1:0"	\
+	   -arg "-a ${tmpdir}/v1.sock"	\
+	   -vcl {
 	backend dummy { .host = "${bad_ip}"; }
 
 	sub vcl_deliver {
@@ -22,9 +25,9 @@ client c1 {
 	rxresp
 	delay 1.2
 	expect_close
-} -run
+} -start
 
-client c1 {
+client c2 {
 	txreq -url "/sess"
 	rxresp
 	delay 1.2
@@ -32,4 +35,29 @@ client c1 {
 	rxresp
 	delay 2.2
 	expect_close
-} -run
+} -start
+
+client c1u -connect "${tmpdir}/v1.sock" {
+	txreq
+	rxresp
+	delay 0.2
+	txreq
+	rxresp
+	delay 1.2
+	expect_close
+} -start
+
+client c2u -connect "${tmpdir}/v1.sock" {
+	txreq -url "/sess"
+	rxresp
+	delay 1.2
+	txreq
+	rxresp
+	delay 2.2
+	expect_close
+} -start
+
+client c1 -wait
+client c2 -wait
+client c1u -wait
+client c2u -wait
