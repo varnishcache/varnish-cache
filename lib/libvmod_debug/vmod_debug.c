@@ -809,9 +809,9 @@ xyzzy_release_vcl_busy(VRT_CTX)
 }
 
 VCL_VOID
-xyzzy_sndbuf(VRT_CTX, VCL_BYTES buflen)
+xyzzy_sndbuf(VRT_CTX, VCL_BYTES arg)
 {
-	int fd = -1, oldbuf, newbuf;
+	int fd = -1, oldbuf, newbuf, buflen;
 	socklen_t intlen = sizeof(int);
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -832,6 +832,13 @@ xyzzy_sndbuf(VRT_CTX, VCL_BYTES buflen)
 
 	xxxassert(fd >= 0);
 
+	if (arg > INT_MAX)
+		buflen = INT_MAX;
+	else if (arg <= 0)
+		buflen = 0;
+	else
+		buflen = (int)arg;
+
 	oldbuf = 0;
 	AZ(getsockopt(fd, SOL_SOCKET, SO_SNDBUF, &oldbuf, &intlen));
 
@@ -840,6 +847,6 @@ xyzzy_sndbuf(VRT_CTX, VCL_BYTES buflen)
 	AZ(getsockopt(fd, SOL_SOCKET, SO_SNDBUF, &newbuf, &intlen));
 
 	AN(ctx->vsl);
-	VSLb(ctx->vsl, SLT_Debug, "SO_SNDBUF fd=%d old=%d new=%ld actual=%d",
+	VSLb(ctx->vsl, SLT_Debug, "SO_SNDBUF fd=%d old=%d new=%d actual=%d",
 	    fd, oldbuf, buflen, newbuf);
 }
