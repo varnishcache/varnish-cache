@@ -14,11 +14,17 @@ server s1 {
 } -start
 
 # Only one pool, to avoid getting more than one work thread
-varnish v1 -arg "-p thread_pools=1" -vcl+backend { } -start
+varnish v1 \
+	-arg "-p thread_pools=1" \
+	-arg "-p thread_pool_timeout=10" \
+	-vcl+backend { } -start
 
-# Give the varnishd a chance to start and create workers etc.
+# Give the varnishd a chance to start and create workers, delaying for
+# >thread_pool_timeout to allow for any over-bred workers to be kissed
+# to death.
 # NB: This is important for to avoid mis-ordering of the workers.
-# delay 1
+
+delay 11
 
 varnish v1 -expect MAIN.threads == 10
 
