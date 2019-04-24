@@ -27,36 +27,22 @@ varnish v1 -arg "-p timeout_linger=1"	\
 	}
 } -start
 
-logexpect l1 -v v1 -q "vxid == 1001" {
-	expect * 1001 VCL_call {^RECV}
-	expect 0 1001 VCL_Log  "^0{128}$"
+logexpect l1 -v v1 -g session -q "SessOpen ~ a0" {
+	expect * * VCL_call {^RECV}
+	expect 0 = VCL_Log  "^0{128}$"
+	expect * * VCL_call {^RECV}
+	expect 0 = VCL_Log  "^0{128}$"
+	expect * * VCL_call {^RECV}
+	expect 0 = VCL_Log  "[1-9a-f]"
 } -start
 
-logexpect l2 -v v1 -q "vxid == 1004" {
-	expect * 1004 VCL_call {^RECV}
-	expect 0 1004 VCL_Log  "^0{128}$"
-} -start
-
-logexpect l3 -v v1 -q "vxid == 1005" {
-	expect * 1005 VCL_call {^RECV}
-	expect 0 1005 VCL_Log  "^0{128}$"
-} -start
-
-logexpect l4 -v v1 -q "vxid == 1006" {
-	expect * 1006 VCL_call {^RECV}
-	expect 0 1006 VCL_Log  "^0{128}$"
-} -start
-
-# requests which made a de-tour over the waiter
-
-logexpect l5 -v v1 -q "vxid == 1007" {
-	expect * 1007 VCL_call {^RECV}
-	expect 0 1007 VCL_Log  "[1-9a-f]"
-} -start
-
-logexpect l6 -v v1 -q "vxid == 1008" {
-	expect * 1008 VCL_call {^RECV}
-	expect 0 1008 VCL_Log  "[1-9a-f]"
+logexpect l2 -v v1 -g session -q "SessOpen ~ a1" {
+	expect * * VCL_call {^RECV}
+	expect 0 = VCL_Log  "^0{128}$"
+	expect * * VCL_call {^RECV}
+	expect 0 = VCL_Log  "^0{128}$"
+	expect * * VCL_call {^RECV}
+	expect 0 = VCL_Log  "[1-9a-f]"
 } -start
 
 client c1 {
@@ -86,7 +72,3 @@ client c1u -wait
 
 logexpect l1 -wait
 logexpect l2 -wait
-logexpect l3 -wait
-logexpect l4 -wait
-logexpect l5 -wait
-logexpect l6 -wait
