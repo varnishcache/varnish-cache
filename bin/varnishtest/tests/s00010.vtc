@@ -1,7 +1,7 @@
 varnishtest "client h1 send timeouts"
 
 # XXX See https://github.com/varnishcache/varnish-cache/pull/2980#issuecomment-486214661
-feature cmd {test $(uname) != "SunOS"}
+feature cmd {test $(uname) == "Linux"}
 
 server s1 {
 	rxreq
