@@ -131,13 +131,13 @@ static struct ws *
 vtc_ws_find(VRT_CTX, VCL_ENUM which)
 {
 
-	if (!strcmp(which, "client"))
+	if (which == VENUM(client))
 		return (ctx->ws);
-	if (!strcmp(which, "backend"))
+	if (which == VENUM(backend))
 		return (ctx->bo->ws);
-	if (!strcmp(which, "session"))
+	if (which == VENUM(session))
 		return (ctx->req->sp->ws);
-	if (!strcmp(which, "thread"))
+	if (which == VENUM(thread))
 		return (ctx->req->wrk->aws);
 	WRONG("vtc_ws_find Illegal enum");
 }
