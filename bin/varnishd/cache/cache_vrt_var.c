@@ -953,13 +953,7 @@ VRT_l_sess_timeout_idle(VRT_CTX, VCL_DURATION d)
 VCL_DURATION
 VRT_r_sess_timeout_idle(VRT_CTX)
 {
-	VCL_DURATION d;
-
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->sp, SESS_MAGIC);
-
-	d = ctx->sp->timeout_idle;
-	if (isnan(d))
-		return (cache_param->timeout_idle);
-	return (d);
+	return (SESS_TMO(ctx->sp, timeout_idle));
 }
