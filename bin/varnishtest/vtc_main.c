@@ -37,6 +37,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 #include <unistd.h>
 
 #include "vtc.h"
@@ -85,7 +86,6 @@ struct vtc_job {
 	double			t0;
 	int			killed;
 };
-
 
 int iflg = 0;
 unsigned vtc_maxdur = 60;
@@ -359,6 +359,7 @@ tst_cb(const struct vev *ve, int what)
 				printf(" exit=%d\n", WEXITSTATUS(stx));
 			if (!vtc_continue) {
 				/* XXX kill -9 other jobs ? */
+				AZ(kill(-getpgrp(), WEXITSTATUS(stx)));
 				exit(2);
 			}
 		} else if (vtc_verbosity) {
@@ -415,17 +416,20 @@ start_test(void)
 	jp->t0 = VTIM_mono();
 	jp->child = fork();
 	assert(jp->child >= 0);
+
 	if (jp->child == 0) {
 		cleaner_neuter();	// Too dangerous to have around
-		AZ(setpgid(getpid(), 0));
+		AZ(setpgid(getpid(), getppid()));
 		VFIL_null_fd(STDIN_FILENO);
 		assert(dup2(p[1], STDOUT_FILENO) == STDOUT_FILENO);
 		assert(dup2(p[1], STDERR_FILENO) == STDERR_FILENO);
 		VSUB_closefrom(STDERR_FILENO + 1);
 		retval = exec_file(jp->tst->filename, jp->tst->script,
 		    jp->tmpdir, jp->bp->buf, jp->bp->bufsiz);
+
 		exit(retval);
 	}
+
 	closefd(&p[1]);
 
 	jp->ev = VEV_Alloc();
@@ -654,6 +658,19 @@ read_file(const char *fn, int ntest)
  * Main
  */
 
+static void sig_handler(int signo)
+{
+	if (getpgid(getpgrp())) {
+		AZ(kill(-getpgrp(), signo));
+	}
+	exit (signo);
+}
+
+
+/**********************************************************************
+ * Main
+ */
+
 int
 main(int argc, char * const *argv)
 {
@@ -663,6 +680,9 @@ main(int argc, char * const *argv)
 	int use_cleaner = 0;
 	uintmax_t bufsiz;
 	const char *p;
+
+	struct sigaction act;
+    act.sa_handler = &sig_handler;
 
 	argv0 = strrchr(argv[0], '/');
 	if (argv0 == NULL)
@@ -784,6 +804,15 @@ main(int argc, char * const *argv)
 		cleaner_setup();
 
 	i = 0;
+
+	if (!VTAILQ_EMPTY(&tst_head)) {
+		/* Catch Kill Signals and kill child processes */
+		sigaction(SIGINT, &act, NULL);
+		sigaction(SIGTERM, &act, NULL);
+		sigaction(SIGKILL, &act, NULL);
+		setsid();
+	}
+
 	while (!VTAILQ_EMPTY(&tst_head) || i) {
 		if (!VTAILQ_EMPTY(&tst_head) && njob < npar) {
 			start_test();
