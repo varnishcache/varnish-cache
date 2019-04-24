@@ -124,6 +124,7 @@ vmod_sleep(VRT_CTX, VCL_DURATION t)
 
 /*--------------------------------------------------------------------*/
 
+// XXX this really should be PRIV_TASK state
 static uintptr_t vtc_ws_snapshot;
 
 static struct ws *
