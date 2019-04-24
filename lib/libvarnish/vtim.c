@@ -414,8 +414,13 @@ VTIM_sleep(vtim_dur t)
 #endif
 }
 
+/*
+ * VTIM_timeval and VTIM_timespec may need variants with different signatures
+ * when vtim_real / vtim_mono typedefs are changed
+ */
+
 struct timeval
-VTIM_timeval(vtim_real t)
+VTIM_timeval(vtim_dur t)
 {
 	struct timeval tv;
 
@@ -426,7 +431,7 @@ VTIM_timeval(vtim_real t)
 }
 
 struct timespec
-VTIM_timespec(vtim_real t)
+VTIM_timespec(vtim_dur t)
 {
 	struct timespec tv;
 
