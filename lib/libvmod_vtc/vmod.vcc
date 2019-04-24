@@ -119,6 +119,18 @@ $Function VOID workspace_overflow(ENUM { client, backend, session, thread })
 
 Mark a workspace as overflowed.
 
+$Function BLOB workspace_dump(
+	ENUM { client, backend, session, thread },
+	ENUM { s, f, r },
+	BYTES off=0,
+	BYTES len=64)
+
+Return data from a workspace's ``s``, ``f``, or ``r`` pointer as a
+blob. Data is copied onto the primary workspace to avoid it being
+subsequently overwritten.
+
+The maximum *len* is 1KB.
+
 $Function INT typesize(STRING)
 
 Returns the size in bytes of a collection of C-datatypes:

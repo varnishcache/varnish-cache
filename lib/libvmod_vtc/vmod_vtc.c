@@ -209,6 +209,62 @@ VTC_WS_OP(VOID, , overflow, WS_MarkOverflow(ws))
 VTC_WS_OP(BOOL, (0), overflowed, return (WS_Overflowed(ws)))
 #undef VTC_WS_OP
 
+VCL_BLOB v_matchproto_(td_vtc_workspace_dump)
+vmod_workspace_dump(VRT_CTX, VCL_ENUM which, VCL_ENUM where,
+    VCL_BYTES off, VCL_BYTES len)
+{
+	struct ws *ws;
+	const size_t maxlen = 1024;
+	unsigned char buf[maxlen];
+	const char *p;
+	unsigned l;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	ws = vtc_ws_find(ctx, which);
+	if (ws == NULL)
+		return (NULL);
+	WS_Assert(ws);
+
+	if (len > maxlen) {
+		VRT_fail(ctx, "workspace_dump: max length is %zd", maxlen);
+		return (NULL);
+	}
+
+	if (where == VENUM(s))
+		p = ws->s;
+	else if (where == VENUM(f))
+		p = ws->f;
+	else if (where == VENUM(r))
+		p = ws->r;
+	else
+		INCOMPL();
+
+	if (p == NULL) {
+		VSLb(ctx->vsl, SLT_Error, "workspace_dump: NULL");
+		return (NULL);
+	}
+
+	p += off;
+	if (p >= ws->e) {
+		VSLb(ctx->vsl, SLT_Error, "workspace_dump: off limit");
+		return (NULL);
+	}
+
+	l = pdiff(p, ws->e);
+	if (len < l)
+		l = len;
+
+	assert(l < maxlen);
+	memcpy(buf, p, l);
+	p = WS_Copy(ctx->ws, buf, l);
+	if (p == NULL) {
+		VRT_fail(ctx, "workspace_dump: copy failed");
+		return (NULL);
+	}
+	return (VRT_blob(ctx, "workspace_dump", p, l, 0xd000d000));
+}
+
 /*--------------------------------------------------------------------*/
 
 VCL_INT v_matchproto_(td_vtc_typesize)
