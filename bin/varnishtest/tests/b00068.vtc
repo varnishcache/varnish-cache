@@ -20,6 +20,9 @@ varnish v1 -arg "-p timeout_linger=1"	\
 	sub vcl_recv {
 		std.log(blob.encode(encoding=HEX,
 		    blob=vtc.workspace_dump(session, f)));
+		if (req.url == "/longer") {
+			set sess.timeout_linger = 2s;
+		}
 	}
 	sub vcl_backend_error {
 		set beresp.status = 200;
@@ -27,7 +30,7 @@ varnish v1 -arg "-p timeout_linger=1"	\
 	}
 } -start
 
-logexpect l1 -v v1 -g session -q "SessOpen ~ a0" {
+logexpect l1 -v v1 -g session -q "SessOpen ~ a0 and ReqURL ~ \"^/$\"" {
 	expect * * VCL_call {^RECV}
 	expect 0 = VCL_Log  "^0{128}$"
 	expect * * VCL_call {^RECV}
@@ -36,7 +39,25 @@ logexpect l1 -v v1 -g session -q "SessOpen ~ a0" {
 	expect 0 = VCL_Log  "[1-9a-f]"
 } -start
 
-logexpect l2 -v v1 -g session -q "SessOpen ~ a1" {
+logexpect l2 -v v1 -g session -q "SessOpen ~ a1 and ReqURL ~ \"^/$\"" {
+	expect * * VCL_call {^RECV}
+	expect 0 = VCL_Log  "^0{128}$"
+	expect * * VCL_call {^RECV}
+	expect 0 = VCL_Log  "^0{128}$"
+	expect * * VCL_call {^RECV}
+	expect 0 = VCL_Log  "[1-9a-f]"
+} -start
+
+logexpect l3 -v v1 -g session -q "SessOpen ~ a0 and ReqURL ~ \"^/longer\"" {
+	expect * * VCL_call {^RECV}
+	expect 0 = VCL_Log  "^0{128}$"
+	expect * * VCL_call {^RECV}
+	expect 0 = VCL_Log  "^0{128}$"
+	expect * * VCL_call {^RECV}
+	expect 0 = VCL_Log  "[1-9a-f]"
+} -start
+
+logexpect l4 -v v1 -g session -q "SessOpen ~ a1 and ReqURL ~ \"^/longer\"" {
 	expect * * VCL_call {^RECV}
 	expect 0 = VCL_Log  "^0{128}$"
 	expect * * VCL_call {^RECV}
@@ -67,8 +88,34 @@ client c1u -connect "${tmpdir}/v1.sock" {
 	rxresp
 } -start
 
+client c2 {
+	txreq -url /longer
+	rxresp
+	delay 1.2
+	txreq -url /longer
+	rxresp
+	delay 2.2
+	txreq -url /longer
+	rxresp
+} -start
+
+client c2u -connect "${tmpdir}/v1.sock" {
+	txreq -url /longer
+	rxresp
+	delay 1.2
+	txreq -url /longer
+	rxresp
+	delay 2.2
+	txreq -url /longer
+	rxresp
+} -start
+
 client c1 -wait
 client c1u -wait
+client c2 -wait
+client c2u -wait
 
 logexpect l1 -wait
 logexpect l2 -wait
+logexpect l3 -wait
+logexpect l4 -wait

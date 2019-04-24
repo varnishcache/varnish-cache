@@ -1272,6 +1272,40 @@ sess.timeout_idle
 	Idle timeout for this session, defaults to the
 	``timeout_idle`` parameter, see :ref:`varnishd(1)`
 
+sess.timeout_linger
+
+	Type: DURATION
+
+	Readable from: client
+
+	Writable from: client
+
+	Linger timeout for this session, defaults to the
+	``timeout_linger`` parameter, see :ref:`varnishd(1)`
+
+sess.send_timeout
+
+	Type: DURATION
+
+	Readable from: client
+
+	Writable from: client
+
+	Total timeout for ordinary HTTP1 responses, defaults to the
+	``send_timeout`` parameter, see :ref:`varnishd(1)`
+
+sess.idle_send_timeout
+
+	Type: DURATION
+
+	Readable from: client
+
+	Writable from: client
+
+	Send timeout for individual pieces of data on client
+	connections, defaults to the ``idle_send_timeout`` parameter,
+	see :ref:`varnishd(1)`
+
 storage
 ~~~~~~~
 

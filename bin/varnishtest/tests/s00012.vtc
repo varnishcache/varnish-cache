@@ -17,12 +17,28 @@ varnish v1				\
 	-vcl+backend {
 	import debug;
 
+	sub vcl_recv {
+		if (req.url == "/longsend") {
+			# client -rcvbuf 128 is super inefficient, so
+			# we need a very long timeout
+			set sess.send_timeout = 20s;
+		} else
+		if (req.url == "/longidlesend") {
+			set sess.idle_send_timeout = 2s;
+		}
+	}
+
+	sub vcl_hash {
+		hash_data("/");
+		return (lookup);
+	}
+
 	sub vcl_deliver {
 		debug.sndbuf(128b);
 	}
 } -start
 
-logexpect l1 -v v1 {
+logexpect l1 -v v1 -q "ReqURL ~ \"^/$\"" {
 	expect * * Debug "Hit total send timeout"
 } -start
 
@@ -34,22 +50,41 @@ client c1 -connect "${tmpdir}/v1.sock" -rcvbuf 128 {
 	delay 2
 } -start
 
+client c2 -connect "${tmpdir}/v1.sock" -rcvbuf 128 {
+	txreq -url /longsend
+	rxresphdrs
+	delay 0.8
+	rxrespbody
+	expect resp.bodylen == 100000
+} -start
+
+
 client c1 -wait
-logexpect l1 -wait
+client c2 -wait
 
 varnish v1 -cliok "param.set idle_send_timeout 1"
 varnish v1 -cliok "param.reset send_timeout"
 
-logexpect l2 -v v1 {
+logexpect l2 -v v1 -q "ReqURL ~ \"^/$\"" {
 	expect * * Debug "Hit idle send timeout"
 } -start
 
-client c2 -connect "${tmpdir}/v1.sock" -rcvbuf 128 {
+client c3 -connect "${tmpdir}/v1.sock" -rcvbuf 128 {
 	txreq
 	rxresphdrs
 	# keep the session open for 2 seconds
 	delay 2
 } -start
 
-client c2 -wait
+client c4 -connect "${tmpdir}/v1.sock" -rcvbuf 128 {
+	txreq -url /longidlesend
+	rxresphdrs
+	delay 1.8
+	rxrespbody
+	expect resp.bodylen == 100000
+} -start
+
+client c3 -wait
+client c4 -wait
+logexpect l1 -wait
 logexpect l2 -wait

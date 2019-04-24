@@ -36,6 +36,8 @@
 #include "common/heritage.h"
 
 #include "vcl.h"
+#include "vtim.h"
+#include "vtcp.h"
 
 #include "vrt_obj.h"
 
@@ -946,18 +948,41 @@ HTTP_VAR(beresp)
 
 /*--------------------------------------------------------------------*/
 
-VCL_VOID
-VRT_l_sess_timeout_idle(VRT_CTX, VCL_DURATION d)
+#define set_noop(sp, d) (void)0
+
+#ifdef SO_SNDTIMEO_WORKS
+static inline void
+set_idle_send_timeout(struct sess *sp, VCL_DURATION d)
 {
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->sp, SESS_MAGIC);
-	ctx->sp->timeout_idle = d > 0.0 ? d : 0.0;
+	struct timeval tv = VTIM_timeval(d);
+	VTCP_Assert(setsockopt(sp->fd, SOL_SOCKET, SO_SNDTIMEO,
+	    &tv, sizeof tv));
+}
+#else
+#define set_idle_send_timeout(sp, d) set_noop(sp, d)
+#endif
+
+#define SESS_VAR_DUR(x, setter)				\
+VCL_VOID						\
+VRT_l_sess_##x(VRT_CTX, VCL_DURATION d)		\
+{							\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);		\
+	CHECK_OBJ_NOTNULL(ctx->sp, SESS_MAGIC);		\
+	if (d < 0.0)					\
+		d = 0.0;				\
+	setter(ctx->sp, d);				\
+	ctx->sp->x = d;					\
+}							\
+							\
+VCL_DURATION						\
+VRT_r_sess_##x(VRT_CTX)				\
+{							\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);		\
+	CHECK_OBJ_NOTNULL(ctx->sp, SESS_MAGIC);		\
+	return (SESS_TMO(ctx->sp, x));			\
 }
 
-VCL_DURATION
-VRT_r_sess_timeout_idle(VRT_CTX)
-{
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->sp, SESS_MAGIC);
-	return (SESS_TMO(ctx->sp, timeout_idle));
-}
+SESS_VAR_DUR(timeout_idle, set_noop)
+SESS_VAR_DUR(timeout_linger, set_noop)
+SESS_VAR_DUR(send_timeout, set_noop)
+SESS_VAR_DUR(idle_send_timeout, set_idle_send_timeout)

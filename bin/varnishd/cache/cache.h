@@ -575,6 +575,9 @@ struct sess {
 	vtim_real		t_open;		/* fd accepted */
 	vtim_real		t_idle;		/* fd accepted or resp sent */
 	vtim_dur		timeout_idle;
+	vtim_dur		timeout_linger;
+	vtim_dur		send_timeout;
+	vtim_dur		idle_send_timeout;
 };
 
 #define SESS_TMO(sp, tmo)					\
