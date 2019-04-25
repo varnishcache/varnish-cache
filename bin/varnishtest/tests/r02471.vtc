@@ -27,6 +27,7 @@ varnish v1 -cliexpect "cold    cold         0    vcl1" "vcl.list"
 
 
 # Grab hold of vcl1
+varnish v1 -cliok "vcl.state vcl1 auto"
 varnish v1 -cliok "vcl.use vcl1"
 client c1 {
 	txreq -url "/hold"
@@ -45,6 +46,7 @@ varnish v1 -cliok "vcl.state vcl1 cold"
 varnish v1 -cliexpect "cold    busy         [12]    vcl1" "vcl.list"
 
 # Release hold on vcl1
+varnish v1 -cliok "vcl.state vcl1 auto"
 varnish v1 -cliok "vcl.use vcl1"
 client c1 {
 	txreq -url "/release"
