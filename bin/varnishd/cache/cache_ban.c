@@ -798,7 +798,7 @@ ban_render(struct cli *cli, const uint8_t *bs, int quote)
 		ASSERT_BAN_OPER(bt.oper);
 
 		if (BANS_HAS_ARG1_SPEC(bt.arg1))
-			VCLI_Out(cli, "%s.%.*s",
+			VCLI_Out(cli, "%s%.*s",
 			    arg_name[BAN_ARGIDX(bt.arg1)],
 			    bt.arg1_spec[0] - 1, bt.arg1_spec + 1);
 		else
