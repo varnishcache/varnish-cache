@@ -682,7 +682,7 @@ main(int argc, char * const *argv)
 	const char *p;
 
 	struct sigaction act;
-    act.sa_handler = &sig_handler;
+    	act.sa_handler = sig_handler;
 
 	argv0 = strrchr(argv[0], '/');
 	if (argv0 == NULL)
@@ -811,6 +811,9 @@ main(int argc, char * const *argv)
 		sigaction(SIGTERM, &act, NULL);
 		sigaction(SIGKILL, &act, NULL);
 		setsid();
+		sigaction(SIGINT, &act, NULL);
+		sigaction(SIGTERM, &act, NULL);
+		sigaction(SIGKILL, &act, NULL);
 	}
 
 	while (!VTAILQ_EMPTY(&tst_head) || i) {
