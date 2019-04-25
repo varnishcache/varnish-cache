@@ -1,10 +1,21 @@
 varnishtest "Hit-for-miss and waitinglist rushing"
 
+# Barrier to make sure that s1 is run first
+barrier b1 cond 2
+
+# Barrier to make sure that all requests are on waitinglist before
+# HSH_Unbusy is called
+barrier b2 cond 2
+
+# Barrier to control that all backends are reached before any request
+# finishes. This tests that waitinglists are rushed before
+# HSH_DerefObjCore().
 barrier b3 cond 6
-barrier b4 cond 6
 
 server s1 {
 	rxreq
+	barrier b1 sync
+	barrier b2 sync
 	txresp -nolen -hdr "Transfer-Encoding: chunked"
 	chunkedlen 10
 	barrier b3 sync
@@ -57,8 +68,7 @@ server s6 {
 	chunkedlen 0
 } -start
 
-varnish v1 -arg "-p thread_pool_min=20" -arg "-p rush_exponent=2" -arg "-p debug=+syncvsl" -vcl+backend {
-	import vtc;
+varnish v1 -arg "-p thread_pools=1" -arg "-p thread_pool_min=30" -arg "-p rush_exponent=2" -arg "-p debug=+syncvsl" -arg "-p debug=+waitinglist" -vcl+backend {
 	sub vcl_backend_fetch {
 		if (bereq.http.client == "1") {
 			set bereq.backend = s1;
@@ -81,39 +91,43 @@ varnish v1 -arg "-p thread_pool_min=20" -arg "-p rush_exponent=2" -arg "-p debug
 
 client c1 {
 	txreq -url /hfm -hdr "Client: 1"
-	rxresp -no_obj
-	barrier b4 sync
+	rxresp
 } -start
 
+# This makes sure that c1->s1 is done first
+barrier b1 sync
+
 client c2 {
-	barrier b4 sync
 	txreq -url /hfm -hdr "Client: 2"
 	rxresp
 } -start
 
 client c3 {
-	barrier b4 sync
 	txreq -url /hfm -hdr "Client: 3"
 	rxresp
 } -start
 
 client c4 {
-	barrier b4 sync
 	txreq -url /hfm -hdr "Client: 4"
 	rxresp
 } -start
 
 client c5 {
-	barrier b4 sync
 	txreq -url /hfm -hdr "Client: 5"
 	rxresp
 } -start
 
 client c6 {
-	barrier b4 sync
 	txreq -url /hfm -hdr "Client: 6"
 	rxresp
 } -start
+
+# Wait until c2-c6 are on the waitinglist
+delay 1
+varnish v1 -expect busy_sleep == 5
+
+# Open up the response headers from s1, and as a result HSH_Unbusy
+barrier b2 sync
 
 client c1 -wait
 client c2 -wait
@@ -121,10 +135,3 @@ client c3 -wait
 client c4 -wait
 client c5 -wait
 client c6 -wait
-
-server s1 -wait
-server s2 -wait
-server s3 -wait
-server s4 -wait
-server s5 -wait
-server s6 -wait
