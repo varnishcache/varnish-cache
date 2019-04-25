@@ -151,6 +151,10 @@ SLTM(ProxyGarbage, 0, "Unparseable PROXY request",
 	"A PROXY protocol header was unparseable.\n\n"
 )
 
+/*
+ * REL_20190915 remove after VSLng
+ * kept for now for VSL binary compatibility
+ */
 SLTM(Backend, 0, "Backend selected",
 	"Logged when a connection is selected for handling a backend"
 	" request.\n\n"
