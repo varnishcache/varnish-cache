@@ -562,9 +562,8 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	assert(bo->fetch_objcore->boc->state == BOS_REQ_DONE);
 
 	if (bo->do_stream) {
-		ObjSetState(wrk, bo->fetch_objcore, BOS_PREP_STREAM);
-		HSH_Unbusy(wrk, bo->fetch_objcore);
 		ObjSetState(wrk, bo->fetch_objcore, BOS_STREAM);
+		HSH_Unbusy(wrk, bo->fetch_objcore);
 	}
 
 	VSLb(bo->vsl, SLT_Fetch_Body, "%u %s %s",
@@ -589,18 +588,20 @@ vbf_stp_fetchend(struct worker *wrk, struct busyobj *bo)
 	AZ(ObjSetU64(wrk, bo->fetch_objcore, OA_LEN,
 	    bo->fetch_objcore->boc->len_so_far));
 
-	if (bo->do_stream)
-		assert(bo->fetch_objcore->boc->state == BOS_STREAM);
-	else {
-		assert(bo->fetch_objcore->boc->state == BOS_REQ_DONE);
-		HSH_Unbusy(wrk, bo->fetch_objcore);
-	}
-
 	/* Recycle the backend connection before setting BOS_FINISHED to
 	   give predictable backend reuse behavior for varnishtest */
 	VDI_Finish(bo);
 
+	if (bo->do_stream)
+		assert(bo->fetch_objcore->boc->state == BOS_STREAM);
+	else
+		assert(bo->fetch_objcore->boc->state == BOS_REQ_DONE);
 	ObjSetState(wrk, bo->fetch_objcore, BOS_FINISHED);
+
+	if (!bo->do_stream)
+		HSH_Unbusy(wrk, bo->fetch_objcore);
+	AZ(bo->fetch_objcore->flags & OC_F_BUSY);
+
 	VSLb_ts_busyobj(bo, "BerespBody", W_TIM_real(wrk));
 	if (bo->stale_oc != NULL)
 		HSH_Kill(bo->stale_oc);
@@ -654,9 +655,8 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	AZ(ObjCopyAttr(bo->wrk, bo->fetch_objcore, bo->stale_oc, OA_GZIPBITS));
 
 	if (bo->do_stream) {
-		ObjSetState(wrk, bo->fetch_objcore, BOS_PREP_STREAM);
-		HSH_Unbusy(wrk, bo->fetch_objcore);
 		ObjSetState(wrk, bo->fetch_objcore, BOS_STREAM);
+		HSH_Unbusy(wrk, bo->fetch_objcore);
 	}
 
 	if (ObjIterate(wrk, bo->stale_oc, bo, vbf_objiterator, 0))
@@ -790,10 +790,10 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	}
 	AZ(ObjSetU64(wrk, bo->fetch_objcore, OA_LEN, o));
 	VSB_destroy(&synth_body);
+	ObjSetState(wrk, bo->fetch_objcore, BOS_FINISHED);
 	HSH_Unbusy(wrk, bo->fetch_objcore);
 	if (stale != NULL && bo->fetch_objcore->ttl > 0)
 		HSH_Kill(stale);
-	ObjSetState(wrk, bo->fetch_objcore, BOS_FINISHED);
 	return (F_STP_DONE);
 }
 
@@ -808,10 +808,10 @@ vbf_stp_fail(struct worker *wrk, const struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(bo->fetch_objcore, OBJCORE_MAGIC);
 
 	assert(bo->fetch_objcore->boc->state < BOS_FINISHED);
+	ObjSetState(wrk, bo->fetch_objcore, BOS_FAILED);
 	HSH_Fail(bo->fetch_objcore);
 	if (!(bo->fetch_objcore->flags & OC_F_BUSY))
 		HSH_Kill(bo->fetch_objcore);
-	ObjSetState(wrk, bo->fetch_objcore, BOS_FAILED);
 	return (F_STP_DONE);
 }
 
@@ -982,8 +982,6 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 			ObjWaitState(oc, BOS_STREAM);
 			if (oc->boc->state == BOS_FAILED) {
 				AN((oc->flags & OC_F_FAILED));
-			} else {
-				AZ(oc->flags & OC_F_BUSY);
 			}
 		}
 	}
