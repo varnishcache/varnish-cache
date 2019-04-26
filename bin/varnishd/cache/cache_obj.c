@@ -84,7 +84,6 @@
 #include <stdlib.h>
 
 #include "cache_varnishd.h"
-#include "cache_objhead.h"
 #include "cache_obj.h"
 #include "vend.h"
 #include "storage/storage.h"
@@ -258,7 +257,8 @@ ObjWaitExtend(const struct worker *wrk, const struct objcore *oc, uint64_t l)
  */
 
 void
-ObjSetState(struct worker *wrk, struct objcore *oc, enum boc_state_e next)
+ObjSetState(struct worker *wrk, const struct objcore *oc,
+    enum boc_state_e next)
 {
 	const struct obj_methods *om;
 
@@ -273,13 +273,6 @@ ObjSetState(struct worker *wrk, struct objcore *oc, enum boc_state_e next)
 		om = oc->stobj->stevedore->methods;
 		if (om->objsetstate != NULL)
 			om->objsetstate(wrk, oc, next);
-	}
-
-	if (next == BOS_FAILED) {
-		/* Signal to cache_hash.c that this object is failed. This
-		 * needs to happen before we signal the boc so that code
-		 * will see the OC_F_FAILED flag after ObjWaitState() */
-		HSH_Fail(oc);
 	}
 
 	Lck_Lock(&oc->boc->mtx);

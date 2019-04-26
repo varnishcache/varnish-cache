@@ -809,6 +809,7 @@ vbf_stp_fail(struct worker *wrk, const struct busyobj *bo)
 
 	assert(bo->fetch_objcore->boc->state < BOS_FINISHED);
 	ObjSetState(wrk, bo->fetch_objcore, BOS_FAILED);
+	HSH_Fail(bo->fetch_objcore);
 	if (!(bo->fetch_objcore->flags & OC_F_BUSY))
 		HSH_Kill(bo->fetch_objcore);
 	return (F_STP_DONE);

@@ -293,7 +293,8 @@ int ObjGetSpace(struct worker *, struct objcore *, ssize_t *sz, uint8_t **ptr);
 void ObjExtend(struct worker *, struct objcore *, ssize_t l);
 uint64_t ObjWaitExtend(const struct worker *, const struct objcore *,
     uint64_t l);
-void ObjSetState(struct worker *, struct objcore *, enum boc_state_e next);
+void ObjSetState(struct worker *, const struct objcore *,
+    enum boc_state_e next);
 void ObjWaitState(const struct objcore *, enum boc_state_e want);
 void ObjTrimStore(struct worker *, struct objcore *);
 void ObjTouch(struct worker *, struct objcore *, vtim_real now);
