@@ -980,6 +980,9 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 			(void)VRB_Ignore(req);
 		} else {
 			ObjWaitState(oc, BOS_STREAM);
+			if (oc->boc->state == BOS_FAILED) {
+				AN((oc->flags & OC_F_FAILED));
+			}
 		}
 	}
 	AZ(bo);
