@@ -868,6 +868,7 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
 	char *b, *c;
 	char *nullbody;
 	char *m;
+	ssize_t len;
 	int nolen = 0;
 	int l;
 
@@ -912,6 +913,14 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
 					bodylen--;
 				}
 			}
+		} else if (!strcmp(*av, "-bodyfrom")) {
+			assert(body == nullbody);
+			free(body);
+			body = VFIL_readfile(NULL, av[1], &len);
+			AN(body);
+			assert(len < INT_MAX);
+			bodylen = len;
+			av++;
 		} else if (!strcmp(*av, "-bodylen")) {
 			assert(body == nullbody);
 			free(body);
@@ -1006,6 +1015,9 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
  *
  *         \-body STRING
  *                 Input STRING as body.
+ *
+ *         \-bodyfrom FILE
+ *                 Same as -body but content is read from FILE.
  *
  *         \-bodylen NUMBER
  *                 Generate and input a body that is NUMBER bytes-long.

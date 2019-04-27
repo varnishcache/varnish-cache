@@ -1322,6 +1322,9 @@ cmd_sendhex(CMD_ARGS)
  *	Specify a body, effectively putting STRING into a DATA frame after
  *	the HEADER frame is sent.
  *
+ * \-bodyfrom FILE (txreq, txresp)
+ *	Same as ``-body`` but content is read from FILE.
+ *
  * \-bodylen INT (txreq, txresp)
  *	Do the same thing as ``-body`` but generate an string of INT length
  *	for you.
@@ -1366,6 +1369,8 @@ cmd_tx11obj(CMD_ARGS)
 	int method_done = 1;
 	int path_done = 1;
 	int scheme_done = 1;
+	int bodylen = 0;
+	ssize_t len;
 	uint32_t stid = 0, pstid;
 	uint32_t weight = 16;
 	uint32_t exclusive = 0;
@@ -1510,12 +1515,23 @@ cmd_tx11obj(CMD_ARGS)
 			if (AV_IS("-body")) {
 				AZ(body);
 				REPLACE(body, av[1]);
+				bodylen = strlen(body);
+				f.flags &= ~END_STREAM;
+				av++;
+			}
+			else if (AV_IS("-bodyfrom")) {
+				AZ(body);
+				body = VFIL_readfile(NULL, av[1], &len);
+				AN(body);
+				assert(len < INT_MAX);
+				bodylen = len;
 				f.flags &= ~END_STREAM;
 				av++;
 			}
 			else if (AV_IS("-bodylen")) {
 				AZ(body);
 				body = synth_body(av[1], 0);
+				bodylen = strlen(body);
 				f.flags &= ~END_STREAM;
 				av++;
 			}else if (AV_IS("-dep")) {
@@ -1585,7 +1601,7 @@ cmd_tx11obj(CMD_ARGS)
 	if (!body)
 		return;
 
-	INIT_FRAME(f, DATA, strlen(body), s->id, END_STREAM);
+	INIT_FRAME(f, DATA, bodylen, s->id, END_STREAM);
 	f.data = body;
 
 	write_frame(s->hp, &f, 1);

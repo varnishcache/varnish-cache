@@ -1,0 +1,14 @@
+varnishtest "Test -bodyfrom"
+
+server s1 {
+	rxreq
+	expect req.bodylen == 241
+	txresp -bodyfrom ${testdir}/a00020.vtc
+} -start
+
+client c1 -connect ${s1_sock} {
+	txreq -bodyfrom ${testdir}/a00020.vtc
+	rxresp
+	expect resp.bodylen == 241
+} -run
+
