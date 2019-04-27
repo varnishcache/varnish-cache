@@ -22,7 +22,7 @@ server s1 {
 } -start
 client c1 -connect ${s1_sock} {
 	stream 1 {
-		txreq -req GET -url /1 \
+		txreq -method GET -url /1 \
 			-hdr :scheme http -hdr :authority localhost
 		rxresp
 		expect stream.weight == 16

@@ -1286,8 +1286,11 @@ cmd_sendhex(CMD_ARGS)
  * \-url STRING (txreq, txpush)
  *	Set the :path pseudo-header.
  *
- * \-req STRING (txreq, txpush)
+ * \-method STRING (txreq, txpush)
  *	Set the :method pseudo-header.
+ *
+ * \-req STRING (txreq, txpush)
+ *	Alias for -method.
  *
  * \-scheme STRING (txreq, txpush)
  *	Set the :scheme pseudo-header.
@@ -1437,7 +1440,7 @@ cmd_tx11obj(CMD_ARGS)
 			av++;
 			path_done = 1;
 		}
-		else if (AV_IS("-req") &&
+		else if ((AV_IS("-method") || AV_IS("-req")) &&
 				(CMD_IS("txreq") || CMD_IS("txpush"))) {
 			ENC(hdr, ":method", av[1]);
 			av++;

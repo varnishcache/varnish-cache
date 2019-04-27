@@ -979,8 +979,11 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
  *         from who can send them is that the first line (request line vs
  *         status line), so all the options are prety much the same.
  *
- *         \-req STRING (txreq only)
+ *         \-method STRING (txreq only)
  *                 What method to use (default: "GET").
+ *
+ *         \-req STRING (txreq only)
+ *                 Alias for -method.
  *
  *         \-url STRING (txreq only)
  *                 What location to use (default "/").
@@ -1295,7 +1298,8 @@ cmd_http_txreq(CMD_ARGS)
 		} else if (!strcmp(*av, "-proto")) {
 			proto = av[1];
 			av++;
-		} else if (!strcmp(*av, "-req")) {
+		} else if (!strcmp(*av, "-method") ||
+		    !strcmp(*av, "-req")) {
 			req = av[1];
 			hp->head_method = !strcasecmp(av[1], "HEAD") ;
 			av++;
