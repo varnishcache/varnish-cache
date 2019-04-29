@@ -29,6 +29,7 @@ logexpect l1 -v v1 {
 
 client c1 -rcvbuf 128 {
 	txreq
+	non_fatal
 	rxresphdrs
 	# keep the session open for 2 seconds
 	delay 2
@@ -36,6 +37,7 @@ client c1 -rcvbuf 128 {
 
 client c1u -connect "${tmpdir}/v1.sock" -rcvbuf 128 {
 	txreq
+	non_fatal
 	rxresphdrs
 	# keep the session open for 2 seconds
 	delay 2
