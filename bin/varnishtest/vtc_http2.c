@@ -1518,6 +1518,7 @@ cmd_tx11obj(CMD_ARGS)
 			if (AV_IS("-body")) {
 				AZ(body);
 				REPLACE(body, av[1]);
+				AN(body);
 				bodylen = strlen(body);
 				f.flags &= ~END_STREAM;
 				av++;
