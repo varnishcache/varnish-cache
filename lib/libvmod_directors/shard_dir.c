@@ -311,7 +311,7 @@ sharddir_any_healthy(struct sharddir *shardd, const struct busyobj *bo,
 {
 	unsigned retval = 0;
 	VCL_BACKEND be;
-	unsigned u;
+	int i;
 	vtim_real c;
 
 	CHECK_OBJ_NOTNULL(shardd, SHARDDIR_MAGIC);
@@ -319,8 +319,8 @@ sharddir_any_healthy(struct sharddir *shardd, const struct busyobj *bo,
 	sharddir_rdlock(shardd);
 	if (changed != NULL)
 		*changed = 0;
-	for (u = 0; u < shardd->n_backend; u++) {
-		be = shardd->backend[u].backend;
+	for (i = 0; i < shardd->n_backend; i++) {
+		be = shardd->backend[i].backend;
 		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
 		retval = be->healthy(be, bo, &c);
 		if (changed != NULL && c > *changed)
