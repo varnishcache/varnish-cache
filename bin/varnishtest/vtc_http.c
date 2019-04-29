@@ -467,11 +467,15 @@ http_splitheader(struct http *hp, int req)
 		hh[n++] = p++;
 		while (*p != '\0' && !vct_iscrlf(p))
 			p++;
+		if (*p == '\0') {
+			break;
+		}
 		q = p;
 		p += vct_skipcrlf(p);
 		*q = '\0';
 	}
-	p += vct_skipcrlf(p);
+	if (*p != '\0')
+		p += vct_skipcrlf(p);
 	assert(*p == '\0');
 
 	for (n = 0; n < 3 || hh[n] != NULL; n++) {
@@ -670,6 +674,9 @@ http_rxhdr(struct http *hp)
 	l = hp->rx_p - hp->rx_b;
 	vtc_dump(hp->vl, 4, "rxhdr", hp->rx_b, l);
 	vtc_log(hp->vl, 4, "rxhdrlen = %zd", l);
+	if (i < 1)
+		vtc_log(hp->vl, hp->fatal, "HTTP header is incomplete");
+	*hp->rx_p = '\0';
 	hp->body = hp->rx_p;
 }
 
