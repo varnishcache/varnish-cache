@@ -319,15 +319,15 @@ sharddir_any_healthy(VRT_CTX, struct sharddir *shardd, VCL_TIME *changed)
 {
 	unsigned retval = 0;
 	VCL_BACKEND be;
-	unsigned u;
+	int i;
 	vtim_real c;
 
 	CHECK_OBJ_NOTNULL(shardd, SHARDDIR_MAGIC);
 	sharddir_rdlock(shardd);
 	if (changed != NULL)
 		*changed = 0;
-	for (u = 0; u < shardd->n_backend; u++) {
-		be = shardd->backend[u].backend;
+	for (i = 0; i < shardd->n_backend; i++) {
+		be = shardd->backend[i].backend;
 		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
 		retval = VRT_Healthy(ctx, be, &c);
 		if (changed != NULL && c > *changed)

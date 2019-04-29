@@ -471,7 +471,7 @@ shard_blob_key(VCL_BLOB key_blob)
 {
 	uint8_t k[4] = { 0 };
 	const uint8_t *b;
-	int i, ki;
+	size_t i, ki;
 
 	AN(key_blob);
 	AN(key_blob->blob);
@@ -762,8 +762,9 @@ vmod_shard_list(VRT_CTX, VCL_BACKEND dir, struct vsb *vsb, int pflag, int jflag)
 	VCL_DURATION rampup_d, d;
 	VCL_BACKEND be;
 	VCL_BOOL h;
-	unsigned u, nh = 0;
+	unsigned nh = 0;
 	double rampup_p;
+	int i;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(dir, DIRECTOR_MAGIC);
@@ -785,8 +786,8 @@ vmod_shard_list(VRT_CTX, VCL_BACKEND dir, struct vsb *vsb, int pflag, int jflag)
 	}
 
 	sharddir_rdlock(shardd);
-	for (u = 0; u < shardd->n_backend; u++) {
-		sbe = &shardd->backend[u];
+	for (i = 0; i < shardd->n_backend; i++) {
+		sbe = &shardd->backend[i];
 		AN(sbe);
 		be = sbe->backend;
 		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
@@ -801,7 +802,7 @@ vmod_shard_list(VRT_CTX, VCL_BACKEND dir, struct vsb *vsb, int pflag, int jflag)
 			continue;
 
 		d = ctx->now - c;
-		rampup_d = shardcfg_get_rampup(shardd, u);
+		rampup_d = shardcfg_get_rampup(shardd, i);
 		if (! h) {
 			rampup_p = 0.0;
 			rampup_d = 0.0;
@@ -814,7 +815,7 @@ vmod_shard_list(VRT_CTX, VCL_BACKEND dir, struct vsb *vsb, int pflag, int jflag)
 		}
 
 		if (jflag) {
-			if (u)
+			if (i)
 				VSB_cat(vsb, ",\n");
 			VSB_printf(vsb, "\"%s\": {\n",
 			    be->vcl_name);
@@ -852,10 +853,10 @@ vmod_shard_list(VRT_CTX, VCL_BACKEND dir, struct vsb *vsb, int pflag, int jflag)
 		return;
 
 	if (jflag)
-		VSB_printf(vsb, "[%u, %u, \"%s\"]", nh, u,
+		VSB_printf(vsb, "[%u, %d, \"%s\"]", nh, i,
 		    nh ? "healthy" : "sick");
 	else
-		VSB_printf(vsb, "%u/%u\t%s", nh, u, nh ? "healthy" : "sick");
+		VSB_printf(vsb, "%u/%d\t%s", nh, i, nh ? "healthy" : "sick");
 }
 
 VCL_VOID v_matchproto_(td_directors_shard_backend)

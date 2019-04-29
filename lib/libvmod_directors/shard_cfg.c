@@ -370,7 +370,7 @@ shardcfg_backend_lookup(const struct backend_reconfig *re,
 static void
 shardcfg_backend_expand(const struct backend_reconfig *re)
 {
-	unsigned min = re->hint;
+	int min = re->hint;
 
 	CHECK_OBJ_NOTNULL(re->shardd, SHARDDIR_MAGIC);
 
@@ -380,7 +380,7 @@ shardcfg_backend_expand(const struct backend_reconfig *re)
 	if (re->shardd->l_backend < min)
 		re->shardd->l_backend = min;
 	else
-		re->shardd->l_backend <<= 1;
+		re->shardd->l_backend *= 2;
 
 	re->shardd->backend = realloc(re->shardd->backend,
 	    re->shardd->l_backend * sizeof *re->shardd->backend);
