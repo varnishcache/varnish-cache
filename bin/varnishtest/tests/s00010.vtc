@@ -1,25 +1,26 @@
 varnishtest "client h1 send timeouts"
 
 # XXX See https://github.com/varnishcache/varnish-cache/pull/2980#issuecomment-486214661
-feature cmd {test $(uname) = "Linux"}
+feature cmd {test $(uname) != "SunOS"}
 
 server s1 {
 	rxreq
 	txresp -bodylen 100000
 } -start
 
-varnish v1 -arg "-p timeout_idle=1"    \
-	   -arg "-a 127.0.0.1:0"	\
-	   -arg "-a ${tmpdir}/v1.sock"	\
-	   -vcl+backend {
+varnish v1 				\
+	-arg "-p timeout_idle=1"	\
+	-arg "-p idle_send_timeout=.1"	\
+	-arg "-p send_timeout=.1"	\
+	-arg "-a 127.0.0.1:0"		\
+	-arg "-a ${tmpdir}/v1.sock"	\
+	-vcl+backend {
 	import debug;
 
 	sub vcl_deliver {
 		debug.sndbuf(128b);
 	}
 } -start
-
-varnish v1 -cliok "param.set send_timeout 1"
 
 logexpect l1 -v v1 {
 	expect * * Debug "Hit total send timeout"
