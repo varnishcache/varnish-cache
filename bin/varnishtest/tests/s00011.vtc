@@ -1,0 +1,25 @@
+varnishtest "backend send timeouts"
+
+server s1 {
+	rxreq
+	expect req.method == POST
+	expect req.body == helloworld
+	txresp
+} -start
+
+varnish v1 -vcl+backend "" -start
+
+# Despite shared code, these parameters are only for client responses.
+# See 43bbe97b38a86d706c0d9f4838bbfbd305342775.
+
+varnish v1 -cliok "param.set idle_send_timeout 1"
+varnish v1 -cliok "param.set send_timeout 1"
+
+client c1 {
+	txreq -method POST -hdr "Content-Length: 10"
+	send hello
+	delay 2
+	send world
+	rxresp
+	expect resp.status == 200
+} -run
