@@ -42,8 +42,10 @@ dist_pkgdata_SCRIPTS = \
 ## keep in sync with include/Makefile.am
 vcc_obj.c: \
 	    $(top_srcdir)/lib/libvcc/generate.py \
+	    $(top_srcdir)/include/vcc_interface.h \
 	    $(top_srcdir)/include/vdef.h \
-	    $(top_srcdir)/include/vrt.h
+	    $(top_srcdir)/include/vrt.h \
+	    $(top_srcdir)/include/vrt_obj.h
 	mkdir -p $(top_builddir)/include/tbl
 	@PYTHON@ $(top_srcdir)/lib/libvcc/generate.py \
 	    $(top_srcdir) $(top_builddir)

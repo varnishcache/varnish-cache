@@ -651,8 +651,8 @@ struct VCL_conf {
 	unsigned		syntax;
 	VCL_BACKEND		*default_director;
 	VCL_PROBE		default_probe;
-	int			nref;
-	const struct vrt_ref	*ref;
+	unsigned		nref;
+	const struct vpi_ref	*ref;
 
 	int			nsrc;
 	const char		**srcname;

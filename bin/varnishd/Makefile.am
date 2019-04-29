@@ -44,6 +44,7 @@ varnishd_SOURCES = \
 	cache/cache_tcp_pool.c \
 	cache/cache_vary.c \
 	cache/cache_vcl.c \
+	cache/cache_vpi.c \
 	cache/cache_vrt.c \
 	cache/cache_vrt_filter.c \
 	cache/cache_vrt_priv.c \

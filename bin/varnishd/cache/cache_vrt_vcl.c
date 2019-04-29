@@ -38,8 +38,6 @@
 #include "vcl.h"
 #include "vtim.h"
 
-#include "vcc_interface.h"
-
 #include "cache_director.h"
 #include "cache_vcl.h"
 
@@ -322,75 +320,6 @@ VCL_DefaultProbe(const struct vcl *vcl)
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	CHECK_OBJ_NOTNULL(vcl->conf, VCL_CONF_MAGIC);
 	return (vcl->conf->default_probe);
-}
-
-/*--------------------------------------------------------------------
- * VRT apis relating to VCL's as VCLS.
- */
-
-void
-VRT_count(VRT_CTX, unsigned u)
-{
-
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->vcl, VCL_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->vcl->conf, VCL_CONF_MAGIC);
-	assert(u < ctx->vcl->conf->nref);
-	if (ctx->vsl != NULL)
-		VSLb(ctx->vsl, SLT_VCL_trace, "%s %u %u.%u.%u",
-		    ctx->vcl->loaded_name, u, ctx->vcl->conf->ref[u].source,
-		    ctx->vcl->conf->ref[u].line, ctx->vcl->conf->ref[u].pos);
-	else
-		VSL(SLT_VCL_trace, 0, "%s %u %u.%u.%u",
-		    ctx->vcl->loaded_name, u, ctx->vcl->conf->ref[u].source,
-		    ctx->vcl->conf->ref[u].line, ctx->vcl->conf->ref[u].pos);
-}
-
-VCL_VCL
-VPI_vcl_get(VRT_CTX, const char *name)
-{
-	VCL_VCL vcl;
-
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	vcl = vcl_find(name);
-	AN(vcl);
-	Lck_Lock(&vcl_mtx);
-	vcl->nrefs++;
-	Lck_Unlock(&vcl_mtx);
-	return (vcl);
-}
-
-void
-VPI_vcl_rel(VRT_CTX, VCL_VCL vcl)
-{
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	AN(vcl);
-	Lck_Lock(&vcl_mtx);
-	vcl->nrefs--;
-	Lck_Unlock(&vcl_mtx);
-}
-
-void
-VPI_vcl_select(VRT_CTX, VCL_VCL vcl)
-{
-	struct req *req = ctx->req;
-
-	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
-
-	if (IS_TOPREQ(req) && req->vcl0 != NULL)
-		return;		// Illega, req-FSM will fail this later.
-
-	VCL_TaskLeave(req->vcl, req->privs);
-	if (IS_TOPREQ(req)) {
-		req->vcl0 = req->vcl;
-		req->vcl = NULL;
-	} else {
-		VCL_Rel(&req->vcl);
-	}
-	vcl_get(&req->vcl, vcl);
-	VSLb(ctx->req->vsl, SLT_VCL_use, "%s via %s",
-	    req->vcl->loaded_name, vcl->loaded_name);
-	VCL_TaskEnter(req->vcl, req->privs);
 }
 
 struct vclref *

@@ -376,19 +376,6 @@ struct vrt_backend_probe {
 	VRT_BACKEND_PROBE_FIELDS(const)
 };
 
-/***********************************************************************
- * VRT_count() refers to this structure for coordinates into the VCL source.
- */
-
-struct vrt_ref {
-	unsigned	source;
-	unsigned	offset;
-	unsigned	line;
-	unsigned	pos;
-	const char	*token;
-};
-
-void VRT_count(VRT_CTX, unsigned);
 
 /***********************************************************************
  * Implementation details of ACLs

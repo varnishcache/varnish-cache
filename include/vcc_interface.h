@@ -36,3 +36,17 @@
 VCL_VCL VPI_vcl_get(VRT_CTX, const char *);
 void VPI_vcl_rel(VRT_CTX, VCL_VCL);
 void VPI_vcl_select(VRT_CTX, VCL_VCL);
+
+/***********************************************************************
+ * VPI_count() refers to this structure for coordinates into the VCL source.
+ */
+
+struct vpi_ref {
+	unsigned	source;
+	unsigned	offset;
+	unsigned	line;
+	unsigned	pos;
+	const char	*token;
+};
+
+void VPI_count(VRT_CTX, unsigned);

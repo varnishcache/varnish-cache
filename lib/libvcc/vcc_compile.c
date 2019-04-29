@@ -243,7 +243,7 @@ EmitCoordinates(const struct vcc *tl, struct vsb *vsb)
 
 	VSB_printf(vsb, "\n#define VGC_NREFS %u\n\n", tl->cnt + 1);
 
-	VSB_printf(vsb, "static const struct vrt_ref VGC_ref[VGC_NREFS] = {\n");
+	VSB_printf(vsb, "static const struct vpi_ref VGC_ref[VGC_NREFS] = {\n");
 	lin = 1;
 	pos = 0;
 	sp = 0;
