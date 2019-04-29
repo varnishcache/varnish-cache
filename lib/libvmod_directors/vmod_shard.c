@@ -466,8 +466,8 @@ static uint32_t
 shard_blob_key(VCL_BLOB key_blob)
 {
 	uint8_t k[4] = { 0 };
-	uint8_t *b;
-	int i, ki;
+	const uint8_t *b;
+	size_t i, ki;
 
 	assert(key_blob);
 	assert(key_blob->len > 0);
