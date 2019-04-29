@@ -24,6 +24,8 @@ client c1 {
 	expect_close
 } -run
 
+delay 2
+
 varnish v1 -cliok "panic.clear"
 
 varnish v1 -expectexit 0x20
