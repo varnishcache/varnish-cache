@@ -262,7 +262,7 @@ h2_do_window(struct worker *wrk, struct h2_req *r2,
 
 static void
 h2_send(struct worker *wrk, struct h2_req *r2, h2_frame ftyp, uint8_t flags,
-    uint32_t len, const void *ptr, uint64_t *acct)
+    uint32_t len, const void *ptr, uint64_t *counter)
 {
 	struct h2_sess *h2;
 	uint32_t mfs, tf;
@@ -274,7 +274,7 @@ h2_send(struct worker *wrk, struct h2_req *r2, h2_frame ftyp, uint8_t flags,
 	h2 = r2->h2sess;
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
 	assert(len == 0 || ptr != NULL);
-	AN(acct);
+	AN(counter);
 
 	AN(H2_SEND_HELD(h2, r2));
 
@@ -311,7 +311,7 @@ h2_send(struct worker *wrk, struct h2_req *r2, h2_frame ftyp, uint8_t flags,
 
 	if (len <= tf) {
 		H2_Send_Frame(wrk, h2, ftyp, flags, len, r2->stream, ptr);
-		*acct += len;
+		*counter += len;
 	} else {
 		AN(ptr);
 		p = ptr;
@@ -341,7 +341,7 @@ h2_send(struct worker *wrk, struct h2_req *r2, h2_frame ftyp, uint8_t flags,
 			}
 			p += tf;
 			len -= tf;
-			*acct += tf;
+			*counter += tf;
 			ftyp = ftyp->continuation;
 			flags &= ftyp->flags;
 			final_flags &= ftyp->flags;
@@ -351,12 +351,12 @@ h2_send(struct worker *wrk, struct h2_req *r2, h2_frame ftyp, uint8_t flags,
 
 void
 H2_Send(struct worker *wrk, struct h2_req *r2, h2_frame ftyp, uint8_t flags,
-    uint32_t len, const void *ptr, uint64_t *acct)
+    uint32_t len, const void *ptr, uint64_t *counter)
 {
-	uint64_t dummy_acct;
+	uint64_t dummy_counter;
 
-	if (acct == NULL)
-		acct = &dummy_acct;
+	if (counter == NULL)
+		counter = &dummy_counter;
 
-	h2_send(wrk, r2, ftyp, flags, len, ptr, acct);
+	h2_send(wrk, r2, ftyp, flags, len, ptr, counter);
 }
