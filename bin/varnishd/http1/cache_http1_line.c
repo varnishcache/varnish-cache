@@ -204,7 +204,7 @@ V1L_Flush(const struct worker *wrk)
 		i = writev(*v1l->wfd, v1l->iov, v1l->niov);
 		if (i > 0)
 			v1l->cnt += i;
-		while (i != v1l->liov && i > 0) {
+		while (i != v1l->liov && (i > 0 || errno == EWOULDBLOCK)) {
 			/* Remove sent data from start of I/O vector,
 			 * then retry; we hit a timeout, but some data
 			 * was sent.
@@ -226,7 +226,8 @@ V1L_Flush(const struct worker *wrk)
 			    "Hit idle send timeout, wrote = %zd/%zd; retrying",
 			    i, v1l->liov);
 
-			v1l_prune(v1l, i);
+			if (i > 0)
+				v1l_prune(v1l, i);
 			i = writev(*v1l->wfd, v1l->iov, v1l->niov);
 			if (i > 0)
 				v1l->cnt += i;
