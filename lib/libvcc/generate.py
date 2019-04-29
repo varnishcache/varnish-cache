@@ -651,14 +651,14 @@ struct VCL_conf {
 	unsigned		syntax;
 	VCL_BACKEND		*default_director;
 	VCL_PROBE		default_probe;
-	unsigned		nref;
+	int			nref;
 	const struct vrt_ref	*ref;
 
-	unsigned		nsrc;
+	int			nsrc;
 	const char		**srcname;
 	const char		**srcbody;
 
-	unsigned		nvmod;
+	int			nvmod;
 
 	vcl_event_f		*event_vcl;
 """)
