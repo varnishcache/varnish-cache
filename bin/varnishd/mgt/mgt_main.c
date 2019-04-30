@@ -91,7 +91,7 @@ usage(void)
 
 	printf("\nBasic options:\n");
 
-	printf(FMT, "-a address[:port][,proto]",
+	printf(FMT, "-a [<name>=]address[:port][,proto]",
 	    "HTTP listen address and port");
 	printf(FMT, "   [,user=<u>][,group=<g>]",
 	    "Can be specified multiple times.");
