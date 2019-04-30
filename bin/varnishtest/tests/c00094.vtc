@@ -37,6 +37,8 @@ server s1 -listen "${tmpdir}/s1.sock" {
 	barrier b1 sync
 } -start
 
+varnish v1 -cliok "param.set debug +syncvsl"
+
 varnish v1 -vcl {
 
 	backend foo {

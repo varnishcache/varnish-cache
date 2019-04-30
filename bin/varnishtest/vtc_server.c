@@ -50,7 +50,7 @@ struct server {
 	VTAILQ_ENTRY(server)	list;
 	char			run;
 
-	unsigned		repeat;
+	int			repeat;
 	unsigned		keepalive;
 	char			*spec;
 

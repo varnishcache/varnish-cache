@@ -51,7 +51,7 @@ struct syslog_srv {
 	VTAILQ_ENTRY(syslog_srv)	list;
 	char				run;
 
-	unsigned			repeat;
+	int				repeat;
 	char				*spec;
 
 	int				sock;

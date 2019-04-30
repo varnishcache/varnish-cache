@@ -59,7 +59,7 @@ struct client {
 	char			*proxy_spec;
 	int			proxy_version;
 
-	unsigned		repeat;
+	int			repeat;
 	unsigned		keepalive;
 
 	unsigned		running;
@@ -200,7 +200,7 @@ client_thread(void *priv)
 	struct client *c;
 	struct vtclog *vl;
 	int fd;
-	unsigned u;
+	int i;
 	struct vsb *vsb;
 	const char *err;
 
@@ -218,7 +218,7 @@ client_thread(void *priv)
 	if (c->repeat != 1)
 		vtc_log(vl, 2, "Started (%u iterations%s)", c->repeat,
 			c->keepalive ? " using keepalive" : "");
-	for (u = 0; u < c->repeat; u++) {
+	for (i = 0; i < c->repeat; i++) {
 		char *addr = VSB_data(vsb);
 
 		vtc_log(vl, 3, "Connect to %s", addr);
@@ -237,7 +237,7 @@ client_thread(void *priv)
 			fd = http_process(vl, c->spec, fd, NULL, addr,
 			    c->rcvbuf);
 		else
-			while (fd >= 0 && u++ < c->repeat)
+			while (fd >= 0 && i++ < c->repeat)
 				fd = http_process(vl, c->spec, fd, NULL, addr,
 				    c->rcvbuf);
 		vtc_log(vl, 3, "closing fd %d", fd);

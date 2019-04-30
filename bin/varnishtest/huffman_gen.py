@@ -70,7 +70,7 @@ struct ssym {
 };
 
 struct stbl {
-    int msk;
+    unsigned msk;
     struct ssym *syms;
 };
 ''')

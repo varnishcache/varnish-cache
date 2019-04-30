@@ -54,9 +54,9 @@ struct barrier {
 	pthread_mutex_t		mtx;
 	pthread_cond_t		cond;
 
-	unsigned		waiters;
-	unsigned		expected;
-	unsigned		cyclic;
+	int			waiters;
+	int			expected;
+	int			cyclic;
 
 	enum barrier_e		type;
 	/* fields below are only for BARRIER_SOCK */

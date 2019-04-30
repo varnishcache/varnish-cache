@@ -52,7 +52,7 @@ struct hpk_hdr {
 	struct txt key;
 	struct txt value;
 	enum hpk_indexed t;
-	int i;
+	unsigned i;
 };
 
 struct hpk_ctx;

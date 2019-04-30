@@ -148,7 +148,7 @@ vtc_leadin(const struct vtclog *vl, int lvl, const char *fmt, ...)
 static void
 vtc_log_emit(const struct vtclog *vl)
 {
-	int l;
+	unsigned l;
 
 	l = VSB_len(vl->vsb);
 	if (l == 0)
@@ -232,7 +232,7 @@ vtc_dump(struct vtclog *vl, int lvl, const char *pfx, const char *str, int len)
 
 void
 vtc_hexdump(struct vtclog *vl, int lvl, const char *pfx,
-    const void *ptr, int len)
+    const void *ptr, unsigned len)
 {
 	int nl = 1;
 	unsigned l;

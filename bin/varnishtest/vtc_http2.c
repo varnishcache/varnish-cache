@@ -569,7 +569,8 @@ static void
 parse_settings(const struct stream *s, struct frame *f)
 {
 	struct http *hp;
-	int i, t, v;
+	int t, v;
+	unsigned u;
 	const char *buf;
 	enum hpk_result r;
 	CHECK_OBJ_NOTNULL(f, FRAME_MAGIC);
@@ -580,19 +581,19 @@ parse_settings(const struct stream *s, struct frame *f)
 		vtc_fatal(hp->vl,
 		    "Size should be a multiple of 6, but isn't (%d)", f->size);
 
-	for (i = 0; i <= SETTINGS_MAX; i++)
-		f->md.settings[i] = NAN;
+	for (u = 0; u <= SETTINGS_MAX; u++)
+		f->md.settings[u] = NAN;
 
-	for (i = 0; i < f->size;) {
-		t = vbe16dec(f->data + i);
-		i += 2;
-		v = vbe32dec(f->data + i);
+	for (u = 0; u < f->size;) {
+		t = vbe16dec(f->data + u);
+		u += 2;
+		v = vbe32dec(f->data + u);
 		if (t <= SETTINGS_MAX) {
 			buf = h2_settings[t];
 			f->md.settings[t] = v;
 		} else
 			buf = "unknown";
-		i += 4;
+		u += 4;
 
 		if (t == 1) {
 			r = HPK_ResizeTbl(s->hp->encctx, v);
@@ -2116,7 +2117,7 @@ cmd_rxhdrs(CMD_ARGS)
 	char *p;
 	int loop = 0;
 	unsigned long int times = 1;
-	int rcv = 0;
+	unsigned rcv = 0;
 	enum h2_type expect = TYPE_HEADERS;
 
 	(void)cmd;
@@ -2155,7 +2156,7 @@ cmd_rxcont(CMD_ARGS)
 	char *p;
 	int loop = 0;
 	unsigned long int times = 1;
-	int rcv = 0;
+	unsigned rcv = 0;
 
 	(void)cmd;
 	(void)av;
@@ -2206,7 +2207,7 @@ cmd_rxdata(CMD_ARGS)
 	char *p;
 	int loop = 0;
 	unsigned long int times = 1;
-	int rcv = 0;
+	unsigned rcv = 0;
 
 	(void)cmd;
 	(void)av;
@@ -2307,7 +2308,7 @@ cmd_rxpush(CMD_ARGS)
 	char *p;
 	int loop = 0;
 	unsigned long int times = 1;
-	int rcv = 0;
+	unsigned rcv = 0;
 	enum h2_type expect = TYPE_PUSH_PROMISE;
 
 	(void)cmd;
