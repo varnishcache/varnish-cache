@@ -106,14 +106,14 @@ def run_gcov(prog, subdir):
             if root[-6:] == "/.libs":
                 x = subprocess.check_output(
                     ["cd " + root + "/.. && " +
-                     "exec " + prog + " -r .libs/" + fn],
+                     "exec " + prog + " .libs/" + fn],
                     stderr=subprocess.STDOUT, shell=True,
                     universal_newlines=True)
                 pf = ".."
             else:
                 x = subprocess.check_output(
                     ["cd " + root + " && " +
-                     "exec " + prog + " -r " + fn],
+                     "exec " + prog + " " + fn],
                     stderr=subprocess.STDOUT, shell=True,
                     universal_newlines=True)
                 pf = ""
@@ -122,7 +122,7 @@ def run_gcov(prog, subdir):
                 ln = ln.split()
                 if not ln:
                     continue
-                if ln[0] == "Creating":
+                if ln[0].find("reating") != -1:
                     gn = ln[1].strip("'")
                     assert gn[-5:] == ".gcov"
                     sn = gn[:-5]
@@ -178,7 +178,7 @@ if __name__ == "__main__":
     optlist, args = getopt.getopt(sys.argv[1:], "g:o:x:")
 
     fo = sys.stdout
-    gcovprog = "gcov6"
+    gcovprog = "gcov6 -r"
 
     for f, v in optlist:
         if f == '-o' and v == '-':
