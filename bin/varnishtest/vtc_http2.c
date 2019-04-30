@@ -1518,7 +1518,6 @@ cmd_tx11obj(CMD_ARGS)
 		else if (CMD_IS("txreq") || CMD_IS("txresp")) {
 			if (AV_IS("-body")) {
 				AZ(body);
-				AN(av[1]);
 				REPLACE(body, av[1]);
 				AN(body);
 				bodylen = strlen(body);
