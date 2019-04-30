@@ -282,14 +282,15 @@ vsc_fill_point(const struct vsc *vsc, const struct vsc_seg *seg,
 }
 
 static void
-vsc_del_seg(const struct vsc *vsc, struct vsm *vsm, struct vsc_seg *sp)
+vsc_del_seg(const struct vsc *vsc, struct vsm *vsm, struct vsc_seg **spp)
 {
 	unsigned u;
 	struct vsc_pt *pp;
+	struct vsc_seg *sp;
 
 	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
 	AN(vsm);
-	CHECK_OBJ_NOTNULL(sp, VSC_SEG_MAGIC);
+	TAKE_OBJ_NOTNULL(sp, spp, VSC_SEG_MAGIC);
 	AZ(VSM_Unmap(vsm, sp->fantom));
 	if (sp->vj != NULL) {
 		vjsn_delete(&sp->vj);
@@ -425,7 +426,6 @@ VSC_Iter(struct vsc *vsc, struct vsm *vsm, VSC_iter_f *fiter, void *priv)
 		if (strcmp(ifantom.class, VSC_CLASS) &&
 		    strcmp(ifantom.class, VSC_DOC_CLASS))
 			continue;
-		sp2 = sp;
 		while (sp != NULL &&
 		    (strcmp(ifantom.ident, sp->fantom->ident) ||
 		    VSM_StillValid(vsm, sp->fantom) != VSM_valid)) {
@@ -433,22 +433,21 @@ VSC_Iter(struct vsc *vsc, struct vsm *vsm, VSC_iter_f *fiter, void *priv)
 			sp = VTAILQ_NEXT(sp, list);
 			VTAILQ_REMOVE(&vsc->segs, sp2, list);
 			vsc_expose(vsc, sp2, 1);
-			vsc_del_seg(vsc, vsm, sp2);
+			vsc_del_seg(vsc, vsm, &sp2);
 		}
 		if (sp == NULL) {
 			sp = vsc_add_seg(vsc, vsm, &ifantom);
 			if (sp != NULL) {
 				VTAILQ_INSERT_TAIL(&vsc->segs, sp, list);
-				sp2 = NULL;
 				vsc_expose(vsc, sp, 0);
 			}
 		} else {
 			vsc_expose(vsc, sp, 0);
-			sp2 = VTAILQ_NEXT(sp, list);
 		}
-		if (sp != NULL && fiter != NULL && sp->head->ready < 2)
+		if (sp != NULL && fiter != NULL && sp->head->ready < 2) {
 			i = vsc_iter_seg(vsc, sp, fiter, priv);
-		sp = sp2;
+			sp = VTAILQ_NEXT(sp, list);
+		}
 		if (i)
 			break;
 	}
@@ -457,7 +456,7 @@ VSC_Iter(struct vsc *vsc, struct vsm *vsm, VSC_iter_f *fiter, void *priv)
 		sp = VTAILQ_NEXT(sp, list);
 		VTAILQ_REMOVE(&vsc->segs, sp2, list);
 		vsc_expose(vsc, sp2, 1);
-		vsc_del_seg(vsc, vsm, sp2);
+		vsc_del_seg(vsc, vsm, &sp2);
 	}
 	return (i);
 }
@@ -533,7 +532,7 @@ VSC_Destroy(struct vsc **vscp, struct vsm *vsm)
 	VTAILQ_FOREACH_SAFE(sp, &vsc->segs, list, sp2) {
 		VTAILQ_REMOVE(&vsc->segs, sp, list);
 		vsc_expose(vsc, sp, 1);
-		vsc_del_seg(vsc, vsm, sp);
+		vsc_del_seg(vsc, vsm, &sp);
 	}
 	FREE_OBJ(vsc);
 }
