@@ -444,10 +444,12 @@ VSC_Iter(struct vsc *vsc, struct vsm *vsm, VSC_iter_f *fiter, void *priv)
 		} else {
 			vsc_expose(vsc, sp, 0);
 		}
-		if (sp != NULL && fiter != NULL && sp->head->ready < 2) {
-			i = vsc_iter_seg(vsc, sp, fiter, priv);
+		if (sp != NULL) {
+			if (fiter != NULL && sp->head->ready < 2)
+				i = vsc_iter_seg(vsc, sp, fiter, priv);
 			sp = VTAILQ_NEXT(sp, list);
 		}
+		
 		if (i)
 			break;
 	}
