@@ -593,6 +593,7 @@ vbf_stp_fetchend(struct worker *wrk, struct busyobj *bo)
 		assert(bo->fetch_objcore->boc->state == BOS_STREAM);
 	else {
 		assert(bo->fetch_objcore->boc->state == BOS_REQ_DONE);
+		ObjSetState(wrk, bo->fetch_objcore, BOS_PREP_STREAM);
 		HSH_Unbusy(wrk, bo->fetch_objcore);
 	}
 
@@ -790,6 +791,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	}
 	AZ(ObjSetU64(wrk, bo->fetch_objcore, OA_LEN, o));
 	VSB_destroy(&synth_body);
+	ObjSetState(wrk, bo->fetch_objcore, BOS_PREP_STREAM);
 	HSH_Unbusy(wrk, bo->fetch_objcore);
 	if (stale != NULL && bo->fetch_objcore->ttl > 0)
 		HSH_Kill(stale);
