@@ -106,20 +106,22 @@ static struct vev *e_poker;
 
 static int mgt_vcl_setstate(struct cli *, struct vclprog *, const char *);
 static int mgt_vcl_settemp(struct cli *, struct vclprog *, unsigned);
-static int mgt_vcl_tellchild(struct cli *, struct vclprog *, unsigned);
+static int mgt_vcl_askchild(struct cli *, struct vclprog *, unsigned);
 static void mgt_vcl_set_cooldown(struct vclprog *, vtim_mono);
 
 /*--------------------------------------------------------------------*/
 
 static const char *
-mcf_vcl_parse_state(const char *s)
+mcf_vcl_parse_state(struct cli *cli, const char *s)
 {
-	if (s == NULL || *s == '\0')
-		return (NULL);
-#define VCL_STATE(sym, str)					\
-	if (!strcmp(s, VCL_STATE_ ## sym))			\
-		return (VCL_STATE_ ## sym);
+	if (s != NULL) {
+#define VCL_STATE(sym, str)						\
+		if (!strcmp(s, VCL_STATE_ ## sym))			\
+			return (VCL_STATE_ ## sym);
 #include "tbl/vcl_states.h"
+	}
+	VCLI_Out(cli, "State must be one of auto, cold or warm.");
+	VCLI_SetResult(cli, CLIS_PARAM);
 	return (NULL);
 }
 
@@ -200,21 +202,19 @@ mgt_vcl_dep_add(struct vclprog *vp_from, struct vclprog *vp_to)
 
 	CHECK_OBJ_NOTNULL(vp_from, VCLPROG_MAGIC);
 	CHECK_OBJ_NOTNULL(vp_to, VCLPROG_MAGIC);
+	assert(vp_to->state != VCL_STATE_COLD); 
+
 	ALLOC_OBJ(vd, VCLDEP_MAGIC);
+	AN(vd);
 
 	mgt_vcl_set_cooldown(vp_from, -1);
 	mgt_vcl_set_cooldown(vp_to, -1);
 
-	XXXAN(vd);
 	vd->from = vp_from;
 	VTAILQ_INSERT_TAIL(&vp_from->dfrom, vd, lfrom);
 	vd->to = vp_to;
 	VTAILQ_INSERT_TAIL(&vp_to->dto, vd, lto);
 	vp_to->nto++;
-
-	assert(vp_to->state == VCL_STATE_WARM ||	/* vcl.label ... */
-	       vp_to->state == VCL_STATE_AUTO ||	/* vcl.label ... */
-	    vp_to->state == VCL_STATE_LABEL);		/* return(vcl(...)) */
 }
 
 static void
@@ -425,27 +425,6 @@ mgt_vcl_set_cooldown(struct vclprog *vp, vtim_mono now)
 		vp->go_cold = now;
 }
 
-static unsigned
-mgt_vcl_cooldown(struct vclprog *vp, vtim_mono now)
-{
-	CHECK_OBJ_NOTNULL(vp, VCLPROG_MAGIC);
-
-	if (vp->go_cold < 0)
-		return (0);
-
-	if (vp->go_cold == 0) {
-		mgt_vcl_set_cooldown(vp, now);
-		return (0);
-	}
-
-	assert(vp->go_cold > 0);
-
-	if (vp->go_cold + mgt_param.vcl_cooldown < now)
-		return (1);
-
-	return (0);
-}
-
 static int
 mgt_vcl_settemp(struct cli *cli, struct vclprog *vp, unsigned warm)
 {
@@ -458,7 +437,7 @@ mgt_vcl_settemp(struct cli *cli, struct vclprog *vp, unsigned warm)
 
 	if (vp->state == VCL_STATE_AUTO || vp->state == VCL_STATE_LABEL) {
 		mgt_vcl_set_cooldown(vp, -1);
-		i = mgt_vcl_tellchild(cli, vp, warm);
+		i = mgt_vcl_askchild(cli, vp, warm);
 		mgt_vcl_set_cooldown(vp, VTIM_mono());
 	} else {
 		i = mgt_vcl_setstate(cli, vp,
@@ -481,7 +460,7 @@ mgt_vcl_requirewarm(struct cli *cli, struct vclprog *vp)
 }
 
 static int
-mgt_vcl_tellchild(struct cli *cli, struct vclprog *vp, unsigned warm)
+mgt_vcl_askchild(struct cli *cli, struct vclprog *vp, unsigned warm)
 {
 	unsigned status;
 	char *p;
@@ -547,7 +526,7 @@ mgt_vcl_setstate(struct cli *cli, struct vclprog *vp, const char *vs)
 		warm = (vs == VCL_STATE_WARM ? 1 : 0);
 	}
 
-	i = mgt_vcl_tellchild(cli, vp, warm);
+	i = mgt_vcl_askchild(cli, vp, warm);
 	if (i == 0)
 		mgt_vcl_set_cooldown(vp, VTIM_mono());
 	else
@@ -582,13 +561,10 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 	if (state == NULL)
 		state = VCL_STATE_AUTO;
 	else
-		state = mcf_vcl_parse_state(state);
+		state = mcf_vcl_parse_state(cli, state);
 
-	if (state == NULL) {
-		VCLI_Out(cli, "State must be one of auto, cold or warm.");
-		VCLI_SetResult(cli, CLIS_PARAM);
+	if (state == NULL)
 		return;
-	}
 
 	vp = mgt_vcl_add(vclname, state);
 	lib = mgt_VccCompile(cli, vp, vclname, vclsrc, vclsrcfile, C_flag);
@@ -756,12 +732,9 @@ mcf_vcl_state(struct cli *cli, const char * const *av, void *priv)
 		return;
 	}
 
-	state = mcf_vcl_parse_state(av[3]);
-	if (state == NULL) {
-		VCLI_Out(cli, "State must be one of auto, cold or warm.");
-		VCLI_SetResult(cli, CLIS_PARAM);
+	state = mcf_vcl_parse_state(cli, av[3]);
+	if (state == NULL)
 		return;
-	}
 
 	if (state == VCL_STATE_COLD) {
 		if (!VTAILQ_EMPTY(&vp->dto)) {
@@ -1053,7 +1026,10 @@ mgt_vcl_poker(const struct vev *e, int what)
 	e_poker->timeout = mgt_param.vcl_cooldown * .45;
 	now = VTIM_mono();
 	VTAILQ_FOREACH(vp, &vclhead, list) {
-		if (mgt_vcl_cooldown(vp, now))
+		if (vp->go_cold == 0)
+			mgt_vcl_set_cooldown(vp, now);
+		else if (vp->go_cold > 0 &&
+		    vp->go_cold + mgt_param.vcl_cooldown < now)
 			(void)mgt_vcl_settemp(NULL, vp, 0);
 	}
 	return (0);
