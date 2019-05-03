@@ -6,6 +6,6 @@ for both the in-tree code style or out-of-tree VMOD and VUT development.
 
 Unless noted otherwise, all patches should work when invoked as::
 
-	spatch --dir . --in-place --sp-file $COCCI
+	spatch -I include/ -I bin/varnishd/ --dir . --in-place --sp-file $COCCI
 
 .. _coccinelle: http://coccinelle.lip6.fr/
