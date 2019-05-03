@@ -106,8 +106,12 @@ The following keys control the interactive display:
 	Go to the bottom of the counter list.
 
 <v>
-	Cycle through the verbosity levels. Defaults to only showing
-	informational counters.
+	Increase verbosity. Defaults to only showing informational
+	counters.
+
+<V>
+	Decrease verbosity. Defaults to only showing informational
+	counters.
 
 <q>
 	Quit.
