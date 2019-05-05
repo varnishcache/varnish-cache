@@ -449,7 +449,7 @@ VSC_Iter(struct vsc *vsc, struct vsm *vsm, VSC_iter_f *fiter, void *priv)
 				i = vsc_iter_seg(vsc, sp, fiter, priv);
 			sp = VTAILQ_NEXT(sp, list);
 		}
-		
+
 		if (i)
 			break;
 	}

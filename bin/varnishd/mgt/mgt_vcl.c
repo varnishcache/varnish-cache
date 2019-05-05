@@ -202,7 +202,7 @@ mgt_vcl_dep_add(struct vclprog *vp_from, struct vclprog *vp_to)
 
 	CHECK_OBJ_NOTNULL(vp_from, VCLPROG_MAGIC);
 	CHECK_OBJ_NOTNULL(vp_to, VCLPROG_MAGIC);
-	assert(vp_to->state != VCL_STATE_COLD); 
+	assert(vp_to->state != VCL_STATE_COLD);
 
 	ALLOC_OBJ(vd, VCLDEP_MAGIC);
 	AN(vd);
