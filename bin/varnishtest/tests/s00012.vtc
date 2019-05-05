@@ -1,7 +1,4 @@
-varnishtest "client h1 send timeouts - tcp"
-
-# XXX See https://github.com/varnishcache/varnish-cache/pull/2980#issuecomment-486214661
-feature cmd {test $(uname) != "SunOS" && test $(uname) != "Darwin"}
+varnishtest "client h1 send timeouts - uds"
 
 feature SO_RCVTIMEO_WORKS
 
@@ -14,7 +11,7 @@ varnish v1 				\
 	-arg "-p timeout_idle=1"	\
 	-arg "-p idle_send_timeout=.1"	\
 	-arg "-p send_timeout=.1"	\
-	-arg "-a 127.0.0.1:0"		\
+	-arg "-a ${tmpdir}/v1.sock"	\
 	-vcl+backend {
 	import debug;
 
@@ -27,7 +24,7 @@ logexpect l1 -v v1 {
 	expect * * Debug "Hit total send timeout"
 } -start
 
-client c1 -rcvbuf 128 {
+client c1 -connect "${tmpdir}/v1.sock" -rcvbuf 128 {
 	txreq
 	non_fatal
 	rxresphdrs
@@ -45,7 +42,7 @@ logexpect l2 -v v1 {
 	expect * * Debug "Hit idle send timeout"
 } -start
 
-client c2 -rcvbuf 128 {
+client c2 -connect "${tmpdir}/v1.sock" -rcvbuf 128 {
 	txreq
 	rxresphdrs
 	# keep the session open for 2 seconds
