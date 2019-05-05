@@ -5,7 +5,7 @@ feature persistent_storage
 feature disable_aslr
 
 # VM-remapping is too random on OSX
-feature	!OSX
+feature cmd {test $(uname) != "Darwin"}
 # Same on some hardened Linux
 feature cmd "test ! -c /dev/grsec"
 

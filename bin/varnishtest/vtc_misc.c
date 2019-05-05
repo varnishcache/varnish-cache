@@ -382,8 +382,6 @@ dns_works(void)
  *        The SO_RCVTIMEO socket option is working
  * 64bit
  *        The environment is 64 bits
- * !OSX
- *        The environment is not OSX
  * dns
  *        DNS lookups are working
  * topbuild
@@ -449,13 +447,6 @@ cmd_feature(CMD_ARGS)
 #endif
 		}
 
-		if (!strcmp(*av, "!OSX")) {
-#if !defined(__APPLE__) || !defined(__MACH__)
-			good = 1;
-#else
-			vtc_stop = 2;
-#endif
-		}
 		FEATURE("pcre_jit", VRE_has_jit);
 		FEATURE("64bit", sizeof(void*) == 8);
 		FEATURE("dns", dns_works());
