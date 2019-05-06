@@ -344,30 +344,19 @@ cmd_delay(CMD_ARGS)
  * DNS services.  This is a basic sanity check for those.
  */
 
-static int v_matchproto_(vss_resolved_f)
-dns_cb(void *priv, const struct suckaddr *sa)
-{
-	char abuf[VTCP_ADDRBUFSIZE];
-	char pbuf[VTCP_PORTBUFSIZE];
-	int *ret = priv;
-
-	VTCP_name(sa, abuf, sizeof abuf, pbuf, sizeof pbuf);
-	if (strcmp(abuf, "192.0.2.255")) {
-		fprintf(stderr, "DNS-test: Wrong response: %s\n", abuf);
-		*ret = -1;
-	} else if (*ret == 0)
-		*ret = 1;
-	return (0);
-}
-
 static int
 dns_works(void)
 {
-	int ret = 0, error;
-	const char *msg;
+	struct suckaddr *sa;
+	char abuf[VTCP_ADDRBUFSIZE];
+	char pbuf[VTCP_PORTBUFSIZE];
 
-	error = VSS_resolver("dns-canary.freebsd.dk", NULL, dns_cb, &ret, &msg);
-	if (error || msg != NULL || ret != 1)
+	sa = VSS_ResolveOne(NULL, "dns-canary.freebsd.dk", NULL, 0, 0, 0);
+	if (sa == NULL)
+		return (0);
+	VTCP_name(sa, abuf, sizeof abuf, pbuf, sizeof pbuf);
+	free(sa);
+	if (strcmp(abuf, "192.0.2.255"))
 		return (0);
 	return (1);
 }

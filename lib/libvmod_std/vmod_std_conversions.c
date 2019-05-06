@@ -40,6 +40,7 @@
 
 #include "vnum.h"
 #include "vsa.h"
+#include "vss.h"
 #include "vtim.h"
 #include "vcc_if.h"
 
@@ -189,34 +190,6 @@ vmod_integer(VRT_CTX, struct VARGS(integer) *a)
 	return (0);
 }
 
-static VCL_IP
-lookup(VCL_IP *p, const char *s, int resolve)
-{
-	struct addrinfo hints, *res0 = NULL;
-	const struct addrinfo *res;
-	int error;
-	VCL_IP retval = NULL;
-
-	if (s == NULL)
-		return (retval);
-
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = PF_UNSPEC;
-	hints.ai_socktype = SOCK_STREAM;
-	if (!resolve)
-		hints.ai_flags |= AI_NUMERICHOST;
-	error = getaddrinfo(s, "80", &hints, &res0);
-	if (!error) {
-		for (res = res0; res != NULL; res = res->ai_next) {
-			retval = VSA_Build(p, res->ai_addr, res->ai_addrlen);
-			if (retval != NULL)
-				break;
-		}
-		freeaddrinfo(res0);
-	}
-	return (retval);
-}
-
 VCL_IP
 vmod_ip(VRT_CTX, struct VARGS(ip) *a)
 {
@@ -234,7 +207,8 @@ vmod_ip(VRT_CTX, struct VARGS(ip) *a)
 		return (NULL);
 	}
 
-	retval = lookup(p, a->s, a->resolve);
+	retval = VSS_ResolveOne(p, a->s, "80", PF_UNSPEC, SOCK_STREAM,
+	    a->resolve ? 0 : AI_NUMERICHOST);
 	if (retval != NULL)
 		return (retval);
 

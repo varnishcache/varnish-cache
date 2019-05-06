@@ -31,6 +31,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
+#include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -73,21 +74,11 @@ static VTAILQ_HEAD(, client)	clients =
  * Send the proxy header
  */
 
-static int v_matchproto_(vss_resolved_f)
-proxy_cb(void *priv, const struct suckaddr *sa)
-{
-	struct suckaddr **addr = priv;
-	*addr = VSA_Clone(sa);
-	return (1);
-}
-
 static void
 client_proxy(struct vtclog *vl, int fd, int version, const char *spec)
 {
 	struct suckaddr *sac, *sas;
-	const char *err;
 	char *p, *p2;
-	int error;
 
 	p = strdup(spec);
 	AN(p);
@@ -95,14 +86,12 @@ client_proxy(struct vtclog *vl, int fd, int version, const char *spec)
 	AN(p2);
 	*p2++ = '\0';
 
-	error = VSS_resolver(p, NULL, proxy_cb, &sac, &err);
-	if (err != NULL)
-		vtc_fatal(vl, "Could not resolve client address: %s", err);
-	assert(error == 1);
-	error = VSS_resolver(p2, NULL, proxy_cb, &sas, &err);
-	if (err != NULL)
-		vtc_fatal(vl, "Could not resolve server address: %s", err);
-	assert(error == 1);
+	sac = VSS_ResolveOne(NULL, p, NULL, 0, SOCK_STREAM, AI_PASSIVE);
+	if (sac == NULL)
+		vtc_fatal(vl, "Could not resolve client address");
+	sas = VSS_ResolveOne(NULL, p2, NULL, 0, SOCK_STREAM, AI_PASSIVE);
+	if (sas == NULL)
+		vtc_fatal(vl, "Could not resolve server address");
 	if (vtc_send_proxy(fd, version, sac, sas))
 		vtc_fatal(vl, "Write failed: %s", strerror(errno));
 	free(p);

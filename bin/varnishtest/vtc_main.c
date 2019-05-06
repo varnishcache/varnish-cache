@@ -38,6 +38,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/socket.h>
 
 #include "vtc.h"
 
@@ -550,18 +551,11 @@ i_mode(void)
  * Figure out what IP related magic
  */
 
-static int v_matchproto_(vss_resolved_f)
-bind_cb(void *priv, const struct suckaddr *sa)
-{
-	(void)priv;
-	return (VTCP_bind(sa, NULL));
-}
-
 static void
 ip_magic(void)
 {
-	const char *p;
 	int fd;
+	struct suckaddr *sa;
 	char abuf[VTCP_ADDRBUFSIZE];
 	char pbuf[VTCP_PORTBUFSIZE];
 
@@ -572,7 +566,9 @@ ip_magic(void)
 	 * XXX: "localhost", but that doesn't work out of the box.
 	 * XXX: Things like "prefer_ipv6" parameter complicates things.
 	 */
-	fd = VSS_resolver("127.0.0.1", NULL, bind_cb, NULL, &p);
+	sa = VSS_ResolveOne(NULL, "127.0.0.1", "0", 0, SOCK_STREAM, 0);
+	AN(sa);
+	fd = VTCP_bind(sa, NULL);
 	assert(fd >= 0);
 	VTCP_myname(fd, abuf, sizeof abuf, pbuf, sizeof(pbuf));
 	extmacro_def("localhost", "%s", abuf);

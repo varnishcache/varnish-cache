@@ -34,10 +34,10 @@ logexpect l1 -v v1 {
 	expect * 1002	ProxyGarbage	"PROXY1: Too few fields"
 	expect * 1003	ProxyGarbage	"PROXY1: Too many fields"
 	expect * 1004	ProxyGarbage	"PROXY1: Wrong TCP\\[46\\] field"
-	expect * 1005	ProxyGarbage	"PROXY1: Cannot resolve source address \\(.*\\)"
-	expect * 1007	ProxyGarbage	"PROXY1: Cannot resolve destination address \\(.*\\)"
-	expect * 1013	ProxyGarbage	"PROXY1: TCP4 got wrong protocol \\([0-9]*\\)"
-	expect * 1014	ProxyGarbage	"PROXY1: TCP6 got wrong protocol \\([0-9]*\\)"
+	expect * 1005	ProxyGarbage	"PROXY1: Cannot resolve source address"
+	expect * 1007	ProxyGarbage	"PROXY1: Cannot resolve destination address"
+	expect * 1009	ProxyGarbage	"PROXY1: Cannot resolve source address"
+	expect * 1011	ProxyGarbage	"PROXY1: Cannot resolve source address"
 	expect * 1015	Proxy		"1 1.2.3.4 1234 5.6.7.8 5678"
 	expect * 1018	Proxy		"1 1:f::2 1234 5:a::8 5678"
 	expect * 1021	Proxy		"1 1:f::3 1234 5:a::8 5678"
@@ -50,7 +50,7 @@ client c1 {
 	expect_close
 } -run
 
-delay .1
+varnish v1 -vsl_catchup
 
 client c1 {
 	send "PROXY "
@@ -58,7 +58,7 @@ client c1 {
 	expect_close
 } -run
 
-delay .1
+varnish v1 -vsl_catchup
 
 client c1 {
 	send "PROXY A B C D\r\n"
@@ -66,7 +66,7 @@ client c1 {
 	expect_close
 } -run
 
-delay .1
+varnish v1 -vsl_catchup
 
 client c1 {
 	send "PROXY A B C D E F\r\n"
@@ -74,7 +74,7 @@ client c1 {
 	expect_close
 } -run
 
-delay .1
+varnish v1 -vsl_catchup
 
 client c1 {
 	send "PROXY A B C D E\r\n"
@@ -82,7 +82,7 @@ client c1 {
 	expect_close
 } -run
 
-delay .1
+varnish v1 -vsl_catchup
 
 client c1 {
 	send "PROXY TCP4 B C D E\r\n"
@@ -90,7 +90,7 @@ client c1 {
 	expect_close
 } -run
 
-delay .1
+varnish v1 -vsl_catchup
 
 client c1 {
 	send "PROXY TCP4 1.2.3.4 C D E\r\n"
@@ -98,7 +98,7 @@ client c1 {
 	expect_close
 } -run
 
-delay .1
+varnish v1 -vsl_catchup
 
 client c1 {
 	send "PROXY TCP4 1.2.3.4 D 1234 E\r\n"
@@ -106,7 +106,7 @@ client c1 {
 	expect_close
 } -run
 
-delay .1
+varnish v1 -vsl_catchup
 
 client c1 {
 	send "PROXY TCP4 1.2.3.4 5.6.7.8 1234 E\r\n"
@@ -114,7 +114,7 @@ client c1 {
 	expect_close
 } -run
 
-delay .1
+varnish v1 -vsl_catchup
 
 client c1 {
 	send "PROXY TCP6 B C D E\r\n"
@@ -122,7 +122,7 @@ client c1 {
 	expect_close
 } -run
 
-delay .1
+varnish v1 -vsl_catchup
 
 client c1 {
 	send "PROXY TCP6 1:f::2 C D E\r\n"
@@ -130,7 +130,7 @@ client c1 {
 	expect_close
 } -run
 
-delay .1
+varnish v1 -vsl_catchup
 
 client c1 {
 	send "PROXY TCP6 1:f::2 1234 D E\r\n"
@@ -138,7 +138,7 @@ client c1 {
 	expect_close
 } -run
 
-delay .1
+varnish v1 -vsl_catchup
 
 client c1 {
 	send "PROXY TCP6 1:f::2 5:a::8 1234 E\r\n"
@@ -146,7 +146,7 @@ client c1 {
 	expect_close
 } -run
 
-delay .1
+varnish v1 -vsl_catchup
 
 client c1 {
 	send "PROXY TCP4 1:f::2 5:a::8 1234 5678\r\n"
@@ -154,7 +154,7 @@ client c1 {
 	expect_close
 } -run
 
-delay .1
+varnish v1 -vsl_catchup
 
 client c1 {
 	send "PROXY TCP6 1.2.3.4 5.6.7.8 1234 5678\r\n"
@@ -162,7 +162,7 @@ client c1 {
 	expect_close
 } -run
 
-delay .1
+varnish v1 -vsl_catchup
 
 # Finally try something which works...
 client c1 -proxy1 "1.2.3.4:1234 5.6.7.8:5678" {
@@ -179,7 +179,7 @@ client c1 -proxy1 "1.2.3.4:1234 5.6.7.8:5678" {
 	expect resp.http.rp != "1234"
 } -run
 
-delay .1
+varnish v1 -vsl_catchup
 
 client c1 -proxy1 "[1:f::2]:1234 [5:a::8]:5678" {
 	txreq -url /2
@@ -195,7 +195,7 @@ client c1 -proxy1 "[1:f::2]:1234 [5:a::8]:5678" {
 	expect resp.http.rp != "1234"
 } -run
 
-delay .1
+varnish v1 -vsl_catchup
 
 # Try with appended request (See also: #1728)
 client c2 {
@@ -204,13 +204,15 @@ client c2 {
 	expect resp.http.url == "/3"
 } -run
 
+varnish v1 -vsl_catchup
+
 # Malformed (missing \r)
 client c2 {
 	send "PROXY TCP4 1.2.3.4 5.6.7.8 1234 5678\n"
 	expect_close
 } -run
 
-delay .1
+varnish v1 -vsl_catchup
 
 # Malformed, too long (106)
 # NB: Should check VSL for proper disposal
@@ -219,7 +221,7 @@ client c2 {
 	expect_close
 } -run
 
-delay .1
+varnish v1 -vsl_catchup
 
 # Malformed, too long (107)
 # NB: Should check VSL for proper disposal
@@ -228,7 +230,7 @@ client c2 {
 	expect_close
 } -run
 
-delay .1
+varnish v1 -vsl_catchup
 
 # Malformed, too long (108)
 # NB: Should check VSL for proper disposal
@@ -237,6 +239,6 @@ client c2 {
 	expect_close
 } -run
 
-delay .1
+varnish v1 -vsl_catchup
 
 logexpect l1 -wait
