@@ -151,7 +151,10 @@ VUDP_close(int *s)
 static int
 VUDP_bind(const struct suckaddr *sa, const char **errp)
 {
-	int sd, val, e;
+#ifdef IPV6_V6ONLY
+	int val;
+#endif
+	int sd, e;
 	socklen_t sl;
 	const struct sockaddr *so;
 	int proto;
@@ -164,15 +167,6 @@ VUDP_bind(const struct suckaddr *sa, const char **errp)
 	if (sd < 0) {
 		if (errp != NULL)
 			*errp = "socket(2)";
-		return (-1);
-	}
-	val = 1;
-	if (setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof val) != 0) {
-		if (errp != NULL)
-			*errp = "setsockopt(SO_REUSEADDR, 1)";
-		e = errno;
-		closefd(&sd);
-		errno = e;
 		return (-1);
 	}
 
