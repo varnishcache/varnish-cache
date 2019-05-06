@@ -1036,8 +1036,8 @@ class vcc(object):
         fo.write('\n')
         for i in (714, 759, 765):
             fo.write("/*lint -esym(%d, %s) */\n" % (i, vmd))
-        fo.write("\nextern const struct vmod_data %s;\n" % vmd)
-        fo.write("\nconst struct vmod_data %s = {\n" % vmd)
+        fo.write("\nextern const struct vpi_vmod_data %s;\n" % vmd)
+        fo.write("\nconst struct vpi_vmod_data %s = {\n" % vmd)
         if self.strict_abi:
             fo.write("\t.vrt_major =\t0,\n")
             fo.write("\t.vrt_minor =\t0,\n")
@@ -1067,7 +1067,7 @@ class vcc(object):
 
         fo.write('#include "config.h"\n')
         fo.write('#include <stdio.h>\n')
-        for i in ["vdef", "vrt", self.pfx, "vmod_abi"]:
+        for i in ["vdef", "vrt", self.pfx, "vmod_abi", "vcc_interface"]:
             fo.write('#include "%s.h"\n' % i)
         fo.write("\n")
 
