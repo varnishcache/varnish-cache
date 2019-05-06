@@ -266,6 +266,8 @@ BAN_DestroyObj(struct objcore *oc)
 {
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	if (oc->ban == NULL)
+		return;
 	Lck_Lock(&ban_mtx);
 	CHECK_OBJ_ORNULL(oc->ban, BAN_MAGIC);
 	if (oc->ban != NULL) {
