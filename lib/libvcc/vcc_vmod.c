@@ -38,7 +38,6 @@
 #include "vfil.h"
 #include "vjsn.h"
 #include "vmod_abi.h"
-#include "vcc_interface.h"
 #include "vsb.h"
 
 static int
@@ -163,7 +162,7 @@ vcc_ParseImport(struct vcc *tl)
 	struct token *mod, *t1;
 	struct inifin *ifp;
 	struct symbol *msym;
-	const struct vpi_vmod_data *vmd;
+	const struct vmod_data *vmd;
 	struct vjsn *vj;
 	int again = 0;
 

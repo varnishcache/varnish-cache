@@ -52,7 +52,6 @@
  * binary/load-time compatible, increment MAJOR version
  *
  * unreleased (planned for 2019-09-15)
- *	struct vmod_data moved to vcc_interface.h
  *	VRT_Vmod_{Init|Unload} moved to vcc_interface.h
  *	VRT_count moved to vcc_interface.h
  *	VRT_VCL_Busy() and VRT_VCL_Unbusy() added.
@@ -270,6 +269,25 @@ struct vrt_ctx {
 };
 
 #define VRT_CTX		const struct vrt_ctx *ctx
+
+/***********************************************************************
+ * This is the interface structure to a compiled VMOD
+ */
+
+struct vmod_data {
+	/* The version/id fields must be first, they protect the rest */
+	unsigned			vrt_major;
+	unsigned			vrt_minor;
+	const char			*file_id;
+
+	const char			*name;
+	const char			*func_name;
+	const void			*func;
+	int				func_len;
+	const char			*proto;
+	const char			*json;
+	const char			*abi;
+};
 
 /***********************************************************************
  * Enum for events sent to compiled VCL and from there to Vmods

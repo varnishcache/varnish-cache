@@ -68,7 +68,7 @@ struct vmod {
 static VTAILQ_HEAD(,vmod)	vmods = VTAILQ_HEAD_INITIALIZER(vmods);
 
 static unsigned
-vmod_abi_mismatch(const struct vpi_vmod_data *d)
+vmod_abi_mismatch(const struct vmod_data *d)
 {
 
 	if (d->vrt_major == 0 && d->vrt_minor == 0)
@@ -83,7 +83,7 @@ VPI_Vmod_Init(VRT_CTX, struct vmod **hdl, unsigned nbr, void *ptr, int len,
     const char *nm, const char *path, const char *file_id, const char *backup)
 {
 	struct vmod *v;
-	const struct vpi_vmod_data *d;
+	const struct vmod_data *d;
 	char buf[256];
 	void *dlhdl;
 
