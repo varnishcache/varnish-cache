@@ -40,6 +40,7 @@
 
 #include "vend.h"
 #include "vsa.h"
+#include "vss.h"
 #include "vtcp.h"
 
 struct vpx_tlv {
@@ -61,7 +62,6 @@ vpx_proto1(const struct worker *wrk, const struct req *req)
 	const char *fld[5];
 	int i;
 	char *p, *q;
-	struct addrinfo hints, *res;
 	struct suckaddr *sa;
 	int pfam = -1;
 
@@ -100,58 +100,34 @@ vpx_proto1(const struct worker *wrk, const struct req *req)
 	}
 
 	if (!strcmp(fld[0], "TCP4"))
-		pfam = AF_INET;
+		pfam = PF_INET;
 	else if (!strcmp(fld[0], "TCP6"))
-		pfam = AF_INET6;
+		pfam = PF_INET6;
 	else {
 		VSL(SLT_ProxyGarbage, req->sp->vxid,
 		    "PROXY1: Wrong TCP[46] field");
 		return (-1);
 	}
 
-	memset(&hints, 0, sizeof hints);
-	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_flags = AI_NUMERICHOST | AI_NUMERICSERV;
-
-	i = getaddrinfo(fld[1], fld[3], &hints, &res);
-	if (i != 0) {
-		VSL(SLT_ProxyGarbage, req->sp->vxid,
-		    "PROXY1: Cannot resolve source address (%s)",
-		    gai_strerror(i));
-		return (-1);
-	}
-	AZ(res->ai_next);
-	if (res->ai_family != pfam) {
-		VSL(SLT_ProxyGarbage, req->sp->vxid,
-		    "PROXY1: %s got wrong protocol (%d)",
-		    fld[0], res->ai_family);
-		freeaddrinfo(res);
-		return (-1);
-	}
 	SES_Reserve_client_addr(req->sp, &sa);
-	AN(VSA_Build(sa, res->ai_addr, res->ai_addrlen));
+	if (VSS_ResolveOne(sa, fld[1], fld[3],
+	    pfam, SOCK_STREAM, AI_NUMERICHOST | AI_NUMERICSERV) == NULL) {
+		VSL(SLT_ProxyGarbage, req->sp->vxid,
+		    "PROXY1: Cannot resolve source address");
+		return (-1);
+	}
 	SES_Set_String_Attr(req->sp, SA_CLIENT_IP, fld[1]);
 	SES_Set_String_Attr(req->sp, SA_CLIENT_PORT, fld[3]);
-	freeaddrinfo(res);
 
-	i = getaddrinfo(fld[2], fld[4], &hints, &res);
-	if (i != 0) {
-		VSL(SLT_ProxyGarbage, req->sp->vxid,
-		    "PROXY1: Cannot resolve destination address (%s)",
-		    gai_strerror(i));
-		return (-1);
-	}
-	AZ(res->ai_next);
-	if (res->ai_family != pfam) {
-		VSL(SLT_ProxyGarbage, req->sp->vxid,
-		    "PROXY1: %s got wrong protocol (%d)",
-		    fld[0], res->ai_family);
-		freeaddrinfo(res);
-		return (-1);
-	}
 	SES_Reserve_server_addr(req->sp, &sa);
-	AN(VSA_Build(sa, res->ai_addr, res->ai_addrlen));
-	freeaddrinfo(res);
+	if (VSS_ResolveOne(sa, fld[2], fld[4],
+	    pfam, SOCK_STREAM, AI_NUMERICHOST | AI_NUMERICSERV) == NULL) {
+		VSL(SLT_ProxyGarbage, req->sp->vxid,
+		    "PROXY1: Cannot resolve destination address");
+		return (-1);
+	}
+	SES_Set_String_Attr(req->sp, SA_CLIENT_IP, fld[1]);
+	SES_Set_String_Attr(req->sp, SA_CLIENT_PORT, fld[3]);
 
 	VSL(SLT_Proxy, req->sp->vxid, "1 %s %s %s %s",
 	    fld[1], fld[3], fld[2], fld[4]);

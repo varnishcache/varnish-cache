@@ -41,6 +41,7 @@
 
 #include "vnum.h"
 #include "vsa.h"
+#include "vss.h"
 #include "vtim.h"
 #include "vcc_if.h"
 
@@ -79,13 +80,11 @@ vmod_integer(VRT_CTX, VCL_STRING p, VCL_INT i)
 VCL_IP
 vmod_ip(VRT_CTX, VCL_STRING s, VCL_IP d, VCL_BOOL n)
 {
-	struct addrinfo hints, *res0 = NULL;
-	const struct addrinfo *res;
-	int error;
 	void *p;
-	const struct suckaddr *r;
+	VCL_IP retval;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(s);
 	AN(d);
 	assert(VSA_Sane(d));
 
@@ -95,30 +94,14 @@ vmod_ip(VRT_CTX, VCL_STRING s, VCL_IP d, VCL_BOOL n)
 		    "vmod std.ip(): insufficient workspace");
 		return (d);
 	}
-	r = NULL;
 
-	if (s != NULL) {
-		memset(&hints, 0, sizeof(hints));
-		hints.ai_family = PF_UNSPEC;
-		hints.ai_socktype = SOCK_STREAM;
-		if (!n)
-			hints.ai_flags |= AI_NUMERICHOST;
-		error = getaddrinfo(s, "80", &hints, &res0);
-		if (!error) {
-			for (res = res0; res != NULL; res = res->ai_next) {
-				r = VSA_Build(p, res->ai_addr, res->ai_addrlen);
-				if (r != NULL)
-					break;
-			}
-		}
-	}
-	if (r == NULL) {
-		WS_Reset(ctx->ws, (uintptr_t)p);
-		r = d;
-	}
-	if (res0 != NULL)
-		freeaddrinfo(res0);
-	return (r);
+	retval = VSS_ResolveOne(p, s, "80", PF_UNSPEC, SOCK_STREAM,
+	    n ? 0 : AI_NUMERICHOST);
+	if (retval != NULL)
+		return (retval);
+
+	WS_Reset(ctx->ws, (uintptr_t)p);
+	return (d);
 }
 
 VCL_REAL v_matchproto_(td_std_real)

@@ -40,6 +40,7 @@
 #include "cache/cache.h"
 
 #include "vsa.h"
+#include "vss.h"
 #include "vcc_if.h"
 
 struct xyzzy_debug_dyn {
@@ -62,7 +63,6 @@ static void
 dyn_dir_init(VRT_CTX, struct xyzzy_debug_dyn *dyn,
      VCL_STRING addr, VCL_STRING port, VCL_PROBE probe)
 {
-	struct addrinfo hints, *res = NULL;
 	struct suckaddr *sa;
 	struct director *dir, *dir2;
 	struct vrt_backend vrt;
@@ -77,13 +77,7 @@ dyn_dir_init(VRT_CTX, struct xyzzy_debug_dyn *dyn,
 	vrt.hosthdr = addr;
 	vrt.probe = probe;
 
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = SOCK_STREAM;
-	AZ(getaddrinfo(addr, port, &hints, &res));
-	XXXAZ(res->ai_next);
-
-	sa = VSA_Malloc(res->ai_addr, res->ai_addrlen);
+	sa = VSS_ResolveOne(NULL, addr, port, AF_UNSPEC, SOCK_STREAM, 0);
 	AN(sa);
 	if (VSA_Get_Proto(sa) == AF_INET) {
 		vrt.ipv4_addr = addr;
@@ -93,8 +87,6 @@ dyn_dir_init(VRT_CTX, struct xyzzy_debug_dyn *dyn,
 		vrt.ipv6_suckaddr = sa;
 	} else
 		WRONG("Wrong proto family");
-
-	freeaddrinfo(res);
 
 	dir = VRT_new_backend(ctx, &vrt);
 	AN(dir);
