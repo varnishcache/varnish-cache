@@ -9,7 +9,7 @@ server s1 {
 	txresp -bodylen 100000
 } -start
 
-varnish v1 				\
+varnish v1				\
 	-arg "-p timeout_idle=1"	\
 	-arg "-p idle_send_timeout=.1"	\
 	-arg "-p send_timeout=.1"	\
