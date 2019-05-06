@@ -52,6 +52,8 @@
  * binary/load-time compatible, increment MAJOR version
  *
  * unreleased (planned for 2019-09-15)
+ *	VRT_Vmod_{Init|Unload} moved to vcc_interface.h
+ *	VRT_count moved to vcc_interface.h
  *	VRT_VCL_Busy() and VRT_VCL_Unbusy() added.
  *	VRT_vcl_get moved to vcc_interface.h
  *	VRT_vcl_rel emoved to vcc_interface.h
@@ -510,11 +512,6 @@ void VRT_DelDirector(VCL_BACKEND *);
 
 /* Suckaddr related */
 int VRT_VSA_GetPtr(VCL_IP sua, const unsigned char ** dst);
-
-/* VMOD/Modules related */
-int VRT_Vmod_Init(VRT_CTX, struct vmod **hdl, unsigned nbr, void *ptr, int len,
-    const char *nm, const char *path, const char *file_id, const char *backup);
-void VRT_Vmod_Unload(VRT_CTX, struct vmod **hdl);
 
 typedef int vmod_event_f(VRT_CTX, struct vmod_priv *, enum vcl_event_e);
 

@@ -38,6 +38,7 @@
 #include <stdlib.h>
 
 #include "vcli_serve.h"
+#include "vcc_interface.h"
 #include "vmod_abi.h"
 
 /*--------------------------------------------------------------------
@@ -78,7 +79,7 @@ vmod_abi_mismatch(const struct vmod_data *d)
 }
 
 int
-VRT_Vmod_Init(VRT_CTX, struct vmod **hdl, unsigned nbr, void *ptr, int len,
+VPI_Vmod_Init(VRT_CTX, struct vmod **hdl, unsigned nbr, void *ptr, int len,
     const char *nm, const char *path, const char *file_id, const char *backup)
 {
 	struct vmod *v;
@@ -162,7 +163,7 @@ VRT_Vmod_Init(VRT_CTX, struct vmod **hdl, unsigned nbr, void *ptr, int len,
 }
 
 void
-VRT_Vmod_Unload(VRT_CTX, struct vmod **hdl)
+VPI_Vmod_Unload(VRT_CTX, struct vmod **hdl)
 {
 	struct vmod *v;
 

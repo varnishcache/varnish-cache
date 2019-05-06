@@ -303,7 +303,7 @@ vcc_ParseImport(struct vcc *tl)
 
 	ifp = New_IniFin(tl);
 
-	VSB_printf(ifp->ini, "\tif (VRT_Vmod_Init(ctx,\n");
+	VSB_printf(ifp->ini, "\tif (VPI_Vmod_Init(ctx,\n");
 	VSB_printf(ifp->ini, "\t    &VGC_vmod_%.*s,\n", PF(mod));
 	VSB_printf(ifp->ini, "\t    %u,\n", tl->vmod_count++);
 	VSB_printf(ifp->ini, "\t    &%s,\n", vmd->func_name);
@@ -326,7 +326,7 @@ vcc_ParseImport(struct vcc *tl)
 	/* XXX: zero the function pointer structure ?*/
 	VSB_printf(ifp->fin, "\t\tVRT_priv_fini(&vmod_priv_%.*s);", PF(mod));
 	VSB_printf(ifp->final,
-	    "\t\tVRT_Vmod_Unload(ctx, &VGC_vmod_%.*s);", PF(mod));
+	    "\t\tVPI_Vmod_Unload(ctx, &VGC_vmod_%.*s);", PF(mod));
 
 	vj = vjsn_parse(vmd->json, &p);
 	XXXAZ(p);
