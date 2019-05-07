@@ -323,7 +323,7 @@ VCL_DefaultProbe(const struct vcl *vcl)
 }
 
 struct vclref *
-VRT_ref_vcl(VRT_CTX, const char *desc)
+VRT_VCL_Prevent_Discard(VRT_CTX, const char *desc)
 {
 	struct vcl *vcl;
 	struct vclref* ref;
@@ -351,7 +351,7 @@ VRT_ref_vcl(VRT_CTX, const char *desc)
 }
 
 void
-VRT_rel_vcl(VRT_CTX, struct vclref **refp)
+VRT_VCL_Allow_Discard(struct vclref **refp)
 {
 	struct vcl *vcl;
 	struct vclref *ref;
@@ -360,12 +360,9 @@ VRT_rel_vcl(VRT_CTX, struct vclref **refp)
 	ref = *refp;
 	*refp = NULL;
 
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ref, VCLREF_MAGIC);
-
-	vcl = ctx->vcl;
+	vcl = ref->vcl;
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
-	assert(vcl == ref->vcl);
 
 	/* NB: A VCL may be released by a VMOD at any time, but it must happen
 	 * after a warmup and before the end of a cooldown. The release may or

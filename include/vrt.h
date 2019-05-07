@@ -52,6 +52,7 @@
  * binary/load-time compatible, increment MAJOR version
  *
  * unreleased (planned for 2019-09-15)
+ *	VRT_re[fl]_vcl changed to VRT_VCL_{Prevent|Allow}_Discard
  *	VRT_Vmod_{Init|Unload} moved to vcc_interface.h
  *	VRT_count moved to vcc_interface.h
  *	VRT_VCL_Busy() and VRT_VCL_Unbusy() added.
@@ -523,8 +524,8 @@ struct vmod_priv {
 };
 
 struct vclref;
-struct vclref * VRT_ref_vcl(VRT_CTX, const char *);
-void VRT_rel_vcl(VRT_CTX, struct vclref **);
+struct vclref * VRT_VCL_Prevent_Discard(VRT_CTX, const char *);
+void VRT_VCL_Allow_Discard(struct vclref **);
 
 void VRT_priv_fini(const struct vmod_priv *p);
 struct vmod_priv *VRT_priv_task(VRT_CTX, const void *vmod_id);

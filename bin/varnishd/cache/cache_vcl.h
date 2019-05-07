@@ -60,7 +60,7 @@ struct vcl {
 struct vclref {
 	unsigned		magic;
 #define VCLREF_MAGIC		0x47fb6848
-	const struct vcl	*vcl;
+	struct vcl		*vcl;
 	VTAILQ_ENTRY(vclref)	list;
 	char			desc[32];
 };
