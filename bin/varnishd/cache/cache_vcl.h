@@ -62,7 +62,7 @@ struct vclref {
 #define VCLREF_MAGIC		0x47fb6848
 	struct vcl		*vcl;
 	VTAILQ_ENTRY(vclref)	list;
-	char			desc[32];
+	char			*desc;
 };
 
 extern struct lock		vcl_mtx;

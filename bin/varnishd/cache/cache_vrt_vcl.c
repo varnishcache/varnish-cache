@@ -142,28 +142,6 @@ VCL_Rel(struct vcl **vcc)
 
 /*--------------------------------------------------------------------*/
 
-void
-VRT_VCL_Busy(VRT_CTX)
-{
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-
-	CHECK_OBJ_NOTNULL(ctx->vcl, VCL_MAGIC);
-	VCL_Ref(ctx->vcl);
-}
-
-void
-VRT_VCL_Unbusy(VRT_CTX)
-{
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	struct vcl *vcl;
-
-	CHECK_OBJ_NOTNULL(ctx->vcl, VCL_MAGIC);
-	vcl = ctx->vcl;
-	VCL_Rel(&vcl);
-}
-
-/*--------------------------------------------------------------------*/
-
 VCL_BACKEND
 VRT_AddDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
     const char *fmt, ...)
@@ -322,6 +300,55 @@ VCL_DefaultProbe(const struct vcl *vcl)
 	return (vcl->conf->default_probe);
 }
 
+/*--------------------------------------------------------------------*/
+
+struct vclref *
+VRT_VCL_Prevent_Cold(VRT_CTX, const char *desc)
+{
+	struct vclref* ref;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->vcl, VCL_MAGIC);
+
+	ALLOC_OBJ(ref, VCLREF_MAGIC);
+	AN(ref);
+	ref->vcl = ctx->vcl;
+	REPLACE(ref->desc, desc);
+
+	VCL_Ref(ctx->vcl);
+
+	Lck_Lock(&vcl_mtx);
+	VTAILQ_INSERT_TAIL(&ctx->vcl->ref_list, ref, list);
+	Lck_Unlock(&vcl_mtx);
+
+	return(ref);
+}
+
+void
+VRT_VCL_Allow_Cold(struct vclref **refp)
+{
+	struct vcl *vcl;
+	struct vclref *ref;
+
+	AN(refp);
+	ref = *refp;
+	*refp = NULL;
+
+	CHECK_OBJ_NOTNULL(ref, VCLREF_MAGIC);
+	vcl = ref->vcl;
+	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
+
+	Lck_Lock(&vcl_mtx);
+	assert(!VTAILQ_EMPTY(&vcl->ref_list));
+	VTAILQ_REMOVE(&vcl->ref_list, ref, list);
+	Lck_Unlock(&vcl_mtx);
+
+	VCL_Rel(&vcl);
+
+	REPLACE(ref->desc, NULL);
+	FREE_OBJ(ref);
+}
+
 struct vclref *
 VRT_VCL_Prevent_Discard(VRT_CTX, const char *desc)
 {
@@ -340,7 +367,7 @@ VRT_VCL_Prevent_Discard(VRT_CTX, const char *desc)
 	ALLOC_OBJ(ref, VCLREF_MAGIC);
 	AN(ref);
 	ref->vcl = vcl;
-	bprintf(ref->desc, "%s", desc);
+	REPLACE(ref->desc, desc);
 
 	Lck_Lock(&vcl_mtx);
 	VTAILQ_INSERT_TAIL(&vcl->ref_list, ref, list);
@@ -377,6 +404,7 @@ VRT_VCL_Allow_Discard(struct vclref **refp)
 	/* No garbage collection here, for the same reasons as in VCL_Rel. */
 	Lck_Unlock(&vcl_mtx);
 
+	REPLACE(ref->desc, NULL);
 	FREE_OBJ(ref);
 }
 
