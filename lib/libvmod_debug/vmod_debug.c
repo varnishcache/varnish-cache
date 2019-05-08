@@ -47,10 +47,11 @@ struct priv_vcl {
 #define PRIV_VCL_MAGIC		0x8E62FA9D
 	char			*foo;
 	uintptr_t		obj_cb;
-	struct vclref		*vclref;
+	struct vclref		*vclref_discard;
+	struct vclref		*vclref_cold;
+	VCL_DURATION		vcl_discard_delay;
 };
 
-static VCL_DURATION vcl_release_delay = 0.0;
 
 static pthread_mutex_t vsc_mtx = PTHREAD_MUTEX_INITIALIZER;
 static struct vsc_seg *vsc_seg = NULL;
@@ -340,7 +341,8 @@ priv_vcl_free(void *priv)
 		ObjUnsubscribeEvents(&priv_vcl->obj_cb);
 		VSL(SLT_Debug, 0, "Unsubscribed from Object Events");
 	}
-	AZ(priv_vcl->vclref);
+	AZ(priv_vcl->vclref_discard);
+	AZ(priv_vcl->vclref_cold);
 	FREE_OBJ(priv_vcl);
 	AZ(priv_vcl);
 }
@@ -376,6 +378,32 @@ event_load(VRT_CTX, struct vmod_priv *priv)
 	return (0);
 }
 
+VCL_VOID
+xyzzy_vcl_prevent_cold(VRT_CTX, struct vmod_priv *priv)
+{
+	struct priv_vcl *priv_vcl;
+	char buf[32];
+
+	CAST_OBJ_NOTNULL(priv_vcl, priv->priv, PRIV_VCL_MAGIC);
+	AZ(priv_vcl->vclref_cold);
+
+	bprintf(buf, "vmod-debug ref on %s", VCL_Name(ctx->vcl));
+	priv_vcl->vclref_cold = VRT_VCL_Prevent_Cold(ctx, buf);
+}
+
+VCL_VOID
+xyzzy_vcl_allow_cold(VRT_CTX, struct vmod_priv *priv)
+{
+	struct priv_vcl *priv_vcl;
+
+	(void)ctx;
+
+	CAST_OBJ_NOTNULL(priv_vcl, priv->priv, PRIV_VCL_MAGIC);
+	AN(priv_vcl->vclref_cold);
+	VRT_VCL_Allow_Cold(&priv_vcl->vclref_cold);
+}
+
+
 static int
 event_warm(VRT_CTX, const struct vmod_priv *priv)
 {
@@ -391,10 +419,10 @@ event_warm(VRT_CTX, const struct vmod_priv *priv)
 	}
 
 	CAST_OBJ_NOTNULL(priv_vcl, priv->priv, PRIV_VCL_MAGIC);
-	AZ(priv_vcl->vclref);
+	AZ(priv_vcl->vclref_discard);
 
 	bprintf(buf, "vmod-debug ref on %s", VCL_Name(ctx->vcl));
-	priv_vcl->vclref = VRT_VCL_Prevent_Discard(ctx, buf);
+	priv_vcl->vclref_discard = VRT_VCL_Prevent_Discard(ctx, buf);
 	return (0);
 }
 
@@ -404,10 +432,10 @@ cooldown_thread(void *priv)
 	struct priv_vcl *priv_vcl;
 
 	CAST_OBJ_NOTNULL(priv_vcl, priv, PRIV_VCL_MAGIC);
-	AN(priv_vcl->vclref);
+	AN(priv_vcl->vclref_discard);
 
-	VTIM_sleep(vcl_release_delay);
-	VRT_VCL_Allow_Discard(&priv_vcl->vclref);
+	VTIM_sleep(priv_vcl->vcl_discard_delay);
+	VRT_VCL_Allow_Discard(&priv_vcl->vclref_discard);
 	return (NULL);
 }
 
@@ -418,12 +446,12 @@ event_cold(VRT_CTX, const struct vmod_priv *priv)
 	struct priv_vcl *priv_vcl;
 
 	CAST_OBJ_NOTNULL(priv_vcl, priv->priv, PRIV_VCL_MAGIC);
-	AN(priv_vcl->vclref);
+	AN(priv_vcl->vclref_discard);
 
 	VSL(SLT_Debug, 0, "%s: VCL_EVENT_COLD", VCL_Name(ctx->vcl));
 
-	if (vcl_release_delay == 0.0) {
-		VRT_VCL_Allow_Discard(&priv_vcl->vclref);
+	if (priv_vcl->vcl_discard_delay == 0.0) {
+		VRT_VCL_Allow_Discard(&priv_vcl->vclref_discard);
 		return (0);
 	}
 
@@ -469,13 +497,15 @@ xyzzy_event_function(VRT_CTX, struct vmod_priv *priv, enum vcl_event_e e)
 	}
 }
 
-VCL_VOID v_matchproto_(td_debug_vcl_release_delay)
-xyzzy_vcl_release_delay(VRT_CTX, VCL_DURATION delay)
+VCL_VOID v_matchproto_(td_debug_vcl_discard_delay)
+xyzzy_vcl_discard_delay(VRT_CTX, struct vmod_priv *priv, VCL_DURATION delay)
 {
+	struct priv_vcl *priv_vcl;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CAST_OBJ_NOTNULL(priv_vcl, priv->priv, PRIV_VCL_MAGIC);
 	assert(delay > 0.0);
-	vcl_release_delay = delay;
+	priv_vcl->vcl_discard_delay = delay;
 }
 
 VCL_BOOL v_matchproto_(td_debug_match_acl)
@@ -780,20 +810,6 @@ xyzzy_stk(VRT_CTX)
 		return (r);
 
 	return (0);
-}
-
-VCL_VOID
-xyzzy_hold_vcl_busy(VRT_CTX)
-{
-
-	VRT_VCL_Busy(ctx);
-}
-
-VCL_VOID
-xyzzy_release_vcl_busy(VRT_CTX)
-{
-
-	VRT_VCL_Unbusy(ctx);
 }
 
 VCL_VOID

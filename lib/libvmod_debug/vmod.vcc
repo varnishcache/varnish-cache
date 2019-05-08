@@ -160,9 +160,10 @@ $Method VOID .refresh(STRING path)
 
 Dynamically refresh & (always!) replace the backend by a new UDS backend.
 
-$Function VOID vcl_release_delay(DURATION)
+$Function VOID vcl_discard_delay(PRIV_VCL, DURATION)
 
-Hold a reference to the VCL when it goes cold for the given delay.
+Hold a reference to the VCL when it goes cold preventing
+discard for the given delay.
 
 $Function BOOL match_acl(ACL acl, IP ip)
 
@@ -244,11 +245,11 @@ should now only be used for diagnostic purposes.
 
 0B is returned if no sensible value can be determined.
 
-$Function VOID hold_vcl_busy()
+$Function VOID vcl_prevent_cold(PRIV_VCL)
 
 Prevent VCL from going cold
 
-$Function VOID release_vcl_busy()
+$Function VOID vcl_allow_cold(PRIV_VCL)
 
 Allow VCL to go cold
 

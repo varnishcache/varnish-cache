@@ -6,7 +6,7 @@ server s1 -start
 varnish v1 -vcl+backend {
 	import debug;
 	sub vcl_init {
-		debug.vcl_release_delay(3s);
+		debug.vcl_discard_delay(3s);
 	}
 } -start
 

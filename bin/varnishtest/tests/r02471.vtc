@@ -10,9 +10,9 @@ varnish v1 -vcl+backend {
 
 	sub vcl_recv {
 		if (req.url == "/hold") {
-			debug.hold_vcl_busy();
+			debug.vcl_prevent_cold();
 		} else if (req.url == "/release") {
-			debug.release_vcl_busy();
+			debug.vcl_allow_cold();
 		}
 		return (synth(200));
 	}

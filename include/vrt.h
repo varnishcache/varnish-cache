@@ -52,10 +52,11 @@
  * binary/load-time compatible, increment MAJOR version
  *
  * unreleased (planned for 2019-09-15)
+ *	VRT_VCL_{Busy|Unbusy} changed to VRT_VCL_{Prevent|Allow}_Cold
  *	VRT_re[fl]_vcl changed to VRT_VCL_{Prevent|Allow}_Discard
  *	VRT_Vmod_{Init|Unload} moved to vcc_interface.h
  *	VRT_count moved to vcc_interface.h
- *	VRT_VCL_Busy() and VRT_VCL_Unbusy() added.
+ *	VRT_VCL_Prevent_Cold() and VRT_VCL_Allow_Cold() added.
  *	VRT_vcl_get moved to vcc_interface.h
  *	VRT_vcl_rel emoved to vcc_interface.h
  *	VRT_vcl_select emoved to vcc_interface.h
@@ -523,10 +524,6 @@ struct vmod_priv {
 	vmod_priv_free_f	*free;
 };
 
-struct vclref;
-struct vclref * VRT_VCL_Prevent_Discard(VRT_CTX, const char *);
-void VRT_VCL_Allow_Discard(struct vclref **);
-
 void VRT_priv_fini(const struct vmod_priv *p);
 struct vmod_priv *VRT_priv_task(VRT_CTX, const void *vmod_id);
 struct vmod_priv *VRT_priv_top(VRT_CTX, const void *vmod_id);
@@ -563,8 +560,12 @@ void VRT_VSC_Reveal(const struct vsc_seg *);
 size_t VRT_VSC_Overhead(size_t);
 
 /*
- * API to prevent VCL from going cold
+ * API to restrict the VCL in various ways
  */
 
-void VRT_VCL_Busy(VRT_CTX);
-void VRT_VCL_Unbusy(VRT_CTX);
+struct vclref;
+struct vclref * VRT_VCL_Prevent_Cold(VRT_CTX, const char *);
+void VRT_VCL_Allow_Cold(struct vclref **);
+
+struct vclref * VRT_VCL_Prevent_Discard(VRT_CTX, const char *);
+void VRT_VCL_Allow_Discard(struct vclref **);
