@@ -108,7 +108,7 @@ int
 VSS_resolver_socktype(const char *addr, const char *def_port,
     vss_resolved_f *func, void *priv, const char **err, int socktype)
 {
-	struct addrinfo hints, *res0 = NULL, *res;
+	struct addrinfo hints, *res0, *res;
 	struct suckaddr *vsa;
 	char *h;
 	char *adp, *hop;
@@ -143,8 +143,7 @@ VSS_resolver_socktype(const char *addr, const char *def_port,
 				break;
 		}
 	}
-	if (res0 != NULL)
-		freeaddrinfo(res0);
+	freeaddrinfo(res0);
 	return (ret);
 }
 
@@ -191,6 +190,7 @@ VSS_ResolveOne(void *dst, const char *addr, const char *port,
 		else
 			retval = VSA_Build(dst, res->ai_addr, res->ai_addrlen);
 	}
-	freeaddrinfo(res);
+	if (res != NULL)
+		freeaddrinfo(res);
 	return (retval);
 }
