@@ -90,9 +90,8 @@ vmod_ip(VRT_CTX, VCL_STRING s, VCL_IP d, VCL_BOOL n)
 
 	p = WS_Alloc(ctx->ws, vsa_suckaddr_len);
 	if (p == NULL) {
-		VSLb(ctx->vsl, SLT_VCL_Error,
-		    "vmod std.ip(): insufficient workspace");
-		return (d);
+		VRT_fail(ctx, "std.ip: insufficient workspace");
+		return (NULL);
 	}
 
 	retval = VSS_ResolveOne(p, s, "80", PF_UNSPEC, SOCK_STREAM,
