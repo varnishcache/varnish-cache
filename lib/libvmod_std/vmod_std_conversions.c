@@ -202,8 +202,7 @@ vmod_ip(VRT_CTX, struct VARGS(ip) *a)
 
 	p = WS_Alloc(ctx->ws, vsa_suckaddr_len);
 	if (p == NULL) {
-		VSLb(ctx->vsl, SLT_VCL_Error,
-		    "vmod std.ip(): insufficient workspace");
+		VRT_fail(ctx, "std.ip: insufficient workspace");
 		return (NULL);
 	}
 
@@ -217,7 +216,7 @@ vmod_ip(VRT_CTX, struct VARGS(ip) *a)
 	if (a->valid_fallback)
 		return (a->fallback);
 
-	VRT_fail(ctx, "std.integer: conversion failed");
+	VRT_fail(ctx, "std.ip: conversion failed");
 	return (NULL);
 }
 
