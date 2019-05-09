@@ -94,7 +94,7 @@ vmod_ip(VRT_CTX, VCL_STRING s, VCL_IP d, VCL_BOOL n)
 		return (NULL);
 	}
 
-	retval = VSS_ResolveOne(p, s, "80", PF_UNSPEC, SOCK_STREAM,
+	retval = VSS_ResolveFirst(p, s, "80", PF_UNSPEC, SOCK_STREAM,
 	    n ? 0 : AI_NUMERICHOST);
 	if (retval != NULL)
 		return (retval);

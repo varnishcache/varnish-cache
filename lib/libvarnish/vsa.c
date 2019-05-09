@@ -252,6 +252,10 @@ VSA_Malloc(const void *s, unsigned  sal)
 	}
 	if (l != 0) {
 		ALLOC_OBJ(sua, SUCKADDR_MAGIC);
+		/* XXX: shouldn't we AN(sua) instead of mixing up failed
+		 * allocations with unsupported address family or bogus
+		 * sockaddr?
+		 */
 		if (sua != NULL)
 			memcpy(&sua->sa, s, l);
 	}
