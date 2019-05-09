@@ -110,6 +110,8 @@ client_tcp_connect(struct vtclog *vl, const char *addr, double tmo,
 	int fd;
 	char mabuf[32], mpbuf[32];
 
+	AN(addr);
+	AN(errp);
 	fd = VTCP_open(addr, NULL, tmo, errp);
 	if (fd < 0)
 		return fd;
