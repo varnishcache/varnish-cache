@@ -46,14 +46,15 @@
 
 /*
  * Take a string provided by the user and break it up into address and
- * port parts.  Examples of acceptable input include:
+ * port parts. The address and port separator may be either a colon or
+ * a whitespace. Examples of acceptable input include:
  *
- * "localhost" - "localhost:80"
- * "127.0.0.1" - "127.0.0.1:80"
- * "0.0.0.0" - "0.0.0.0:80"
- * "[::1]" - "[::1]:80"
- * "[::]" - "[::]:80"
- * "::1" - "[::1]:80"
+ * "localhost" - "localhost:80" - "localhost 80"
+ * "127.0.0.1" - "127.0.0.1:80" - "127.0.0.1 80"
+ * "0.0.0.0"   - "0.0.0.0:80"   - "0.0.0.0 80"
+ * "[::1]"     - "[::1]:80"     - "[::1] 80"
+ * "[::]"      - "[::]:80"      - "[::] 80"
+ * "::1"       - "[::1]:80"     - "::1 80"
  *
  * See also RFC5952
  */
