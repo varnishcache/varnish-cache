@@ -189,7 +189,7 @@ VSS_ResolveOne(void *dst, const char *addr, const char *port,
 			retval = VSA_Malloc(res->ai_addr, res->ai_addrlen);
 		else
 			retval = VSA_Build(dst, res->ai_addr, res->ai_addrlen);
-		freeaddrinfo(res);
 	}
+	freeaddrinfo(res);
 	return (retval);
 }
