@@ -155,8 +155,6 @@ VSS_resolver(const char *addr, const char *def_port, vss_resolved_f *func,
 	    addr, def_port, func, priv, err, SOCK_STREAM));
 }
 
-#include <stdio.h>
-
 struct suckaddr *
 VSS_ResolveOne(void *dst, const char *addr, const char *port,
     int family, int socktype, int flags)
