@@ -135,6 +135,17 @@ vss_resolve(const char *addr, const char *def_port, int family, int socktype,
 	return (ret);
 }
 
+static struct suckaddr *
+vss_alloc_suckaddr(void *dst, const struct addrinfo *ai)
+{
+
+	AN(ai);
+	if (dst == NULL)
+		return (VSA_Malloc(ai->ai_addr, ai->ai_addrlen));
+
+	return (VSA_Build(dst, ai->ai_addr, ai->ai_addrlen));
+}
+
 /*
  * Look up an address, using a default port if provided, and call
  * the callback function with the suckaddrs we find.
@@ -193,12 +204,33 @@ VSS_ResolveOne(void *dst, const char *addr, const char *def_port,
 	ret = vss_resolve(addr, def_port, family, socktype, flags, &res, &err);
 	if (ret == 0 && res != NULL && res->ai_next == NULL) {
 		AZ(err);
-		if (dst == NULL)
-			retval = VSA_Malloc(res->ai_addr, res->ai_addrlen);
-		else
-			retval = VSA_Build(dst, res->ai_addr, res->ai_addrlen);
+		retval = vss_alloc_suckaddr(dst, res);
 	}
 	if (res != NULL)
 		freeaddrinfo(res);
+	return (retval);
+}
+
+struct suckaddr *
+VSS_ResolveFirst(void *dst, const char *addr, const char *def_port,
+    int family, int socktype, int flags)
+{
+	struct addrinfo *res0 = NULL, *res;
+	struct suckaddr *retval = NULL;
+	const char *err;
+	int ret;
+
+	AN(addr);
+	ret = vss_resolve(addr, def_port, family, socktype, flags, &res0, &err);
+	if (ret == 0)
+		AZ(err);
+
+	for (res = res0; res != NULL; res = res->ai_next) {
+		retval = vss_alloc_suckaddr(dst, res);
+		if (retval != NULL)
+			break;
+	}
+	if (res0 != NULL)
+		freeaddrinfo(res0);
 	return (retval);
 }

@@ -37,3 +37,6 @@ int VSS_resolver_socktype(const char *addr, const char *def_port,
 struct suckaddr *VSS_ResolveOne(void *dst,
     const char *addr, const char *port,
     int family, int socktype, int flags);
+struct suckaddr *VSS_ResolveFirst(void *dst,
+    const char *addr, const char *port,
+    int family, int socktype, int flags);

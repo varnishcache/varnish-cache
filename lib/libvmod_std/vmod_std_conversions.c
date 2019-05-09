@@ -206,7 +206,7 @@ vmod_ip(VRT_CTX, struct VARGS(ip) *a)
 		return (NULL);
 	}
 
-	retval = VSS_ResolveOne(p, a->s, "80", PF_UNSPEC, SOCK_STREAM,
+	retval = VSS_ResolveFirst(p, a->s, "80", PF_UNSPEC, SOCK_STREAM,
 	    a->resolve ? 0 : AI_NUMERICHOST);
 	if (retval != NULL)
 		return (retval);
