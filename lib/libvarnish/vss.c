@@ -98,6 +98,43 @@ vss_parse(char *str, char **addr, char **port)
 	return (NULL);
 }
 
+static int
+vss_resolve(const char *addr, const char *def_port, int family, int socktype,
+    int flags, struct addrinfo **res, const char **errp)
+{
+	struct addrinfo hints;
+	char *p = NULL, *hp, *pp;
+	int ret;
+
+	AN(addr);
+	AN(res);
+	AZ(*res);
+	AN(errp);
+	*errp = NULL;
+
+	memset(&hints, 0, sizeof hints);
+	hints.ai_family = family;
+	hints.ai_socktype = socktype;
+	hints.ai_flags = flags;
+
+	p = strdup(addr);
+	AN(p);
+	*errp = vss_parse(p, &hp, &pp);
+	if (*errp != NULL) {
+		free(p);
+		return (-1);
+	}
+	if (pp != NULL)
+		def_port = pp;
+	ret = getaddrinfo(hp, def_port, &hints, res);
+	free(p);
+
+	if (ret != 0)
+		*errp = gai_strerror(ret);
+
+	return (ret);
+}
+
 /*
  * Look up an address, using a default port if provided, and call
  * the callback function with the suckaddrs we find.
@@ -107,34 +144,21 @@ vss_parse(char *str, char **addr, char **port)
 
 int
 VSS_resolver_socktype(const char *addr, const char *def_port,
-    vss_resolved_f *func, void *priv, const char **err, int socktype)
+    vss_resolved_f *func, void *priv, const char **errp, int socktype)
 {
-	struct addrinfo hints, *res0, *res;
+	struct addrinfo *res0 = NULL, *res;
 	struct suckaddr *vsa;
-	char *h;
-	char *adp, *hop;
 	int ret;
 
-	*err = NULL;
-	h = strdup(addr);
-	AN(h);
-	*err = vss_parse(h, &hop, &adp);
-	if (*err != NULL) {
-		free(h);
-		return (-1);
-	}
-	if (adp != NULL)
-		def_port = adp;
+	AN(addr);
+	AN(func);
+	AN(errp);
 
-	memset(&hints, 0, sizeof hints);
-	hints.ai_socktype = socktype;
-	hints.ai_flags = AI_PASSIVE;
-	ret = getaddrinfo(hop, def_port, &hints, &res0);
-	free(h);
-	if (ret != 0) {
-		*err = gai_strerror(ret);
+	ret = vss_resolve(addr, def_port, AF_UNSPEC, socktype, AI_PASSIVE,
+	    &res0, errp);
+	if (ret != 0)
 		return (-1);
-	}
+
 	for (res = res0; res != NULL; res = res->ai_next) {
 		vsa = VSA_Malloc(res->ai_addr, res->ai_addrlen);
 		if (vsa != NULL) {
@@ -150,40 +174,25 @@ VSS_resolver_socktype(const char *addr, const char *def_port,
 
 int
 VSS_resolver(const char *addr, const char *def_port, vss_resolved_f *func,
-    void *priv, const char **err)
+    void *priv, const char **errp)
 {
 	return (VSS_resolver_socktype(
-	    addr, def_port, func, priv, err, SOCK_STREAM));
+	    addr, def_port, func, priv, errp, SOCK_STREAM));
 }
 
 struct suckaddr *
-VSS_ResolveOne(void *dst, const char *addr, const char *port,
+VSS_ResolveOne(void *dst, const char *addr, const char *def_port,
     int family, int socktype, int flags)
 {
-	struct addrinfo hints, *res = NULL;
+	struct addrinfo *res = NULL;
 	struct suckaddr *retval = NULL;
-	char *p = NULL, *hp, *pp;
-	int error;
-
-	memset(&hints, 0, sizeof hints);
-	hints.ai_family = family;
-	hints.ai_socktype = socktype;
-	hints.ai_flags = flags;
+	const char *err;
+	int ret;
 
 	AN(addr);
-	if (port != NULL) {
-		error = getaddrinfo(addr, port, &hints, &res);
-	} else {
-		p = strdup(addr);
-		AN(p);
-		if (vss_parse(p, &hp, &pp) != NULL || pp == NULL) {
-			free(p);
-			return (NULL);
-		}
-		error = getaddrinfo(hp, pp, &hints, &res);
-		free(p);
-	}
-	if (!error && res != NULL && res->ai_next == NULL) {
+	ret = vss_resolve(addr, def_port, family, socktype, flags, &res, &err);
+	if (ret == 0 && res != NULL && res->ai_next == NULL) {
+		AZ(err);
 		if (dst == NULL)
 			retval = VSA_Malloc(res->ai_addr, res->ai_addrlen);
 		else
