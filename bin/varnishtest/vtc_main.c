@@ -108,6 +108,7 @@ struct vsb *params_vsb = NULL;
 int leave_temp;
 int vtc_witness = 0;
 static struct vsb *cbvsb;
+static int bad_backend_fd;
 
 static int cleaner_fd = -1;
 static pid_t cleaner_pid;
@@ -554,7 +555,6 @@ i_mode(void)
 static void
 ip_magic(void)
 {
-	int fd;
 	struct suckaddr *sa;
 	char abuf[VTCP_ADDRBUFSIZE];
 	char pbuf[VTCP_PORTBUFSIZE];
@@ -568,9 +568,9 @@ ip_magic(void)
 	 */
 	sa = VSS_ResolveOne(NULL, "127.0.0.1", "0", 0, SOCK_STREAM, 0);
 	AN(sa);
-	fd = VTCP_bind(sa, NULL);
-	assert(fd >= 0);
-	VTCP_myname(fd, abuf, sizeof abuf, pbuf, sizeof(pbuf));
+	bad_backend_fd = VTCP_bind(sa, NULL);
+	assert(bad_backend_fd >= 0);
+	VTCP_myname(bad_backend_fd, abuf, sizeof abuf, pbuf, sizeof(pbuf));
 	extmacro_def("localhost", "%s", abuf);
 
 #if defined (__APPLE__)
@@ -579,7 +579,7 @@ ip_magic(void)
 	 * instead of refusing the connection so close it and hope
 	 * for the best.
 	 */
-	VTCP_close(&fd);
+	VTCP_close(&bad_backend_fd);
 #endif
 
 	/* Expose a backend that is forever down. */
@@ -793,6 +793,7 @@ main(int argc, char * const *argv)
 		i = VEV_Once(vb);
 	}
 	cleaner_finish();
+	(void)close(bad_backend_fd);
 	if (vtc_continue)
 		fprintf(stderr,
 		    "%d tests failed, %d tests skipped, %d tests passed\n",
