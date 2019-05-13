@@ -199,7 +199,9 @@ failedtests () (
 )
 
 if $enable_gcov ; then
-	export CC=gcc6
+	#export CC=gcc6
+	export CC=clang80
+	export GCOVPROG='llvm-cov80 gcov'
 	export CFLAGS="-fprofile-arcs -ftest-coverage -fstack-protector -DDONT_DLCLOSE_VMODS"
 	export MAKEFLAGS=-j1
 fi
