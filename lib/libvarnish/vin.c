@@ -39,15 +39,19 @@
 
 #include "vdef.h"
 
-#include "vas.h"	// XXX Flexelint "not used" - but req'ed for assert()
+#include "vas.h"
 #include "vin.h"
+#include "vsb.h"
 
 int
 VIN_n_Arg(const char *n_arg, char **dir)
 {
 	char nm[PATH_MAX];
 	char dn[PATH_MAX];
+	struct vsb vsb[1];
+	int i;
 
+	AN(dir);
 
 	/* First: determine the name */
 
@@ -61,25 +65,26 @@ VIN_n_Arg(const char *n_arg, char **dir)
 	} else
 		bprintf(nm, "%s", n_arg);
 
-
 	/* Second: find the directory name */
 
+	AN(VSB_new(vsb, dn, sizeof dn, VSB_FIXEDLEN));
+
 	if (*nm == '/')
-		strcpy(dn, nm);
-	else if (strlen(VARNISH_STATE_DIR) + 1 + strlen(nm) >= sizeof dn){
-		/* preliminary length check to avoid overflowing dm */
+		i = VSB_printf(vsb, "%s/", nm);
+	else
+		i = VSB_printf(vsb, "%s/%s/", VARNISH_STATE_DIR, nm);
+
+	if (i != 0) {
 		errno = ENAMETOOLONG;
 		return (-1);
-	} else {
-		bprintf(dn, "%s/%s", VARNISH_STATE_DIR, nm);
 	}
 
-	strcat(dn, "/");
+	AZ(VSB_finish(vsb));
+	VSB_clear(vsb);
 
-	if (dir != NULL) {
-		*dir = strdup(dn);
-		if (*dir == NULL)
-			return (-1);
-	}
+	*dir = strdup(dn);
+	if (*dir == NULL)
+		return (-1);
+
 	return (0);
 }
