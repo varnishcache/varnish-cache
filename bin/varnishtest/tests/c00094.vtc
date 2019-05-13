@@ -3,7 +3,7 @@ varnishtest "Test Backend Polling with a backend listening at a UDS"
 barrier b1 cond 2
 
 server s1 -listen "${tmpdir}/s1.sock" {
-	timeout 3
+	timeout 8
 	fatal
 
 	# Probes
@@ -44,7 +44,7 @@ varnish v1 -vcl {
 	backend foo {
 		.path = "${s1_sock}";
 		.probe = {
-			.timeout = 1 s;
+			.timeout = 7 s;
 			.interval = 0.5 s;
 		}
 	}
