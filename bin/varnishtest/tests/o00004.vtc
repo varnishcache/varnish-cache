@@ -12,8 +12,6 @@ server s1 {
 } -start
 
 varnish v1 -proto PROXY -vcl+backend {
-	import debug;
-
 	sub vcl_recv {
 		if (client.ip != remote.ip || server.ip != local.ip) {
 			return (synth(400));

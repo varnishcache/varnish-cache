@@ -44,6 +44,7 @@ varnish v1 -vcl+backend {
 		set resp.http.bar = std.tolower(resp.http.bar);
 		set resp.http.who = debug.author(mithrandir);
 		set resp.http.really = debug.author();
+		set resp.http.when = objx.date();
 		set resp.http.what = vtc.typesize("dfijlopsz");
 		set resp.http.not = vtc.typesize("*");
 		debug.test_priv_call();
@@ -67,6 +68,7 @@ client c1 {
 	expect resp.http.bar == "foo"
 	expect resp.http.who == "Tollef"
 	expect resp.http.really == "Poul-Henning"
+	expect resp.http.when == "Thu, 01 Jan 1970 00:00:21 GMT"
 	expect resp.http.encrypted == "ROT52"
 	expect resp.http.what >= 16
 	expect resp.http.not == -1
@@ -91,6 +93,7 @@ logexpect l1 -v v1 -g raw -d 1 {
 	expect 0 =    RespHeader	{^bar: foo}
 	expect 0 =    RespHeader	{^who: Tollef}
 	expect 0 =    RespHeader	{^really: Poul-Henning}
+	expect 0 =    RespHeader	{^when: Thu, 01 Jan 1970 00:00:21 GMT}
 	expect 0 =    RespHeader	{^what: [1-9][0-9]}
 	expect 0 =    RespHeader	{^not: -1}
 	expect 0 =    VCL_Log		{^VCL initiated log}
