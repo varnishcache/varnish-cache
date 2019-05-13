@@ -178,7 +178,9 @@ if __name__ == "__main__":
     optlist, args = getopt.getopt(sys.argv[1:], "g:o:x:")
 
     fo = sys.stdout
-    gcovprog = "gcov6 -r"
+    gcovprog = os.environ.get('GCOVPROG')
+    if gcovprog is None:
+        gcovprog = "gcov6 -r"
 
     for f, v in optlist:
         if f == '-o' and v == '-':
