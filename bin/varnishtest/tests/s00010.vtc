@@ -31,8 +31,8 @@ client c1 -rcvbuf 128 {
 	txreq
 	non_fatal
 	rxresphdrs
-	# keep the session open for 2 seconds
-	delay 2
+	# keep the session open for 4 seconds
+	delay 4
 } -start
 
 client c1 -wait
@@ -48,8 +48,8 @@ logexpect l2 -v v1 {
 client c2 -rcvbuf 128 {
 	txreq
 	rxresphdrs
-	# keep the session open for 2 seconds
-	delay 2
+	# keep the session open for 4 seconds
+	delay 4
 } -start
 
 client c2 -wait
