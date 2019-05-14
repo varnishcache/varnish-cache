@@ -294,7 +294,6 @@ vdp_gunzip_init(struct req *req, void **priv)
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
-	CHECK_OBJ_ORNULL(req->objcore->boc, BOC_MAGIC);
 
 	vg = VGZ_NewGunzip(req->vsl, "U D -");
 	AN(vg);
