@@ -466,8 +466,9 @@ The VCL compiler supports the following private pointers:
 
 * ``PRIV_CALL`` "per call" private pointers are useful to cache/store
   state relative to the specific call or its arguments, for instance a
-  compiled regular expression specific to a regsub() statement or a
-  simply caching the last output of some expensive lookup.
+  compiled regular expression specific to a regsub() statement or
+  simply caching the most recent output of some expensive operation.
+  These private pointers live for the duration of the loaded VCL.
 
 * ``PRIV_TASK`` "per task" private pointers are useful for state that
   applies to calls for either a specific request or a backend
@@ -476,17 +477,21 @@ The VCL compiler supports the following private pointers:
   for the client side and the backend side, so use in
   ``vcl_backend_*`` will yield a different private pointer from the
   one used on the client side.
+  These private pointers live only for the duration of their task.
 
 * ``PRIV_TOP`` "per top-request" private pointers live for the
   duration of one request and all its ESI-includes. They are only
   defined for the client side. When used from backend VCL subs, a NULL
   pointer will be passed.
+  These private pointers live only for the duration of their top
+  level request
 
 * ``PRIV_VCL`` "per vcl" private pointers are useful for such global
   state that applies to all calls in this VCL, for instance flags that
   determine if regular expressions are case-sensitive in this vmod or
   similar. The ``PRIV_VCL`` object is the same object that is passed
   to the VMOD's event function.
+  This private pointer lives for the duration of the loaded VCL.
 
 The way it works in the vmod code, is that a ``struct vmod_priv *`` is
 passed to the functions where one of the ``PRIV_*`` argument types is
@@ -501,22 +506,16 @@ This structure contains three members::
 		vmod_priv_free_f        *free;
 	};
 
-The "priv" element can be used for whatever the vmod code wants to
-use it for, it defaults to a NULL pointer.
+The "priv" and "len" elements can be used for whatever the vmod
+code wants to use them for, and the "free" element provides a
+callback to clean them up.
 
-The "len" element is used primarily for BLOBs to indicate its size.
-
-The "free" element defaults to NULL, and it is the modules responsibility
-to set it to a suitable function, which can clean up whatever the "priv"
-pointer points to.
-
-When a VCL program is discarded, all private pointers are checked
-to see if both the "priv" and "free" elements are non-NULL, and if
-they are, the "free" function will be called with the "priv" pointer
-as the only argument.
+If both the "priv" and "free" pointers are non-NULL when the scope
+ends, the "free" function will be called with the "priv" pointer
+as its only argument.
 
 In the common case where a private data structure is allocated with
-malloc would look like this::
+malloc(3) would look like this::
 
 	if (priv->priv == NULL) {
 		priv->priv = calloc(1, sizeof(struct myfoo));
@@ -532,9 +531,9 @@ malloc would look like this::
 		...
 	}
 
-The per-call vmod_privs are freed before the per-vcl vmod_priv.
-
 Note on use with objects:
+
+The per-call vmod_privs are freed before the per-vcl vmod_priv.
 
 ``PRIV_TASK`` and ``PRIV_TOP`` arguments are not per object instance,
 but still per vmod as for ordinary vmod functions. Thus, vmods
