@@ -115,7 +115,7 @@ varnish v1 -errvcl {Symbol 'true' has wrong type (func):} {
 	}
 }
 
-varnish v1 -errvcl {Symbol 'default' is a reserved word.} {
+varnish v1 -errvcl {Symbol 'default' has wrong type} {
 	sub vcl_recv {
 		if (client.ip ~ default) { }
 	}
