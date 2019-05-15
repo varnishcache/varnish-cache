@@ -7,25 +7,76 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	import std;
+	import debug;
 
 	sub vcl_deliver {
 		std.timestamp("t0");
-		set resp.http.foo0 = std.ip("8.8.8.*", client.ip);
+
+		debug.store_ip(std.ip("8.8.8.*", client.ip));
+		set resp.http.ip0 = debug.get_ip();
+		set resp.http.port0 = std.port(debug.get_ip());
 		std.timestamp("8.8.8.*, client.ip");
-		set resp.http.foo1 = std.ip("9.9.9.*", server.ip);
+
+		debug.store_ip(std.ip("9.9.9.*", server.ip));
+		set resp.http.ip1 = debug.get_ip();
+		set resp.http.port1 = std.port(debug.get_ip());
 		std.timestamp("9.9.9.*, server.ip");
-		set resp.http.foo2 = std.ip("1.2.3.*", "127.0.0.2");
+
+		debug.store_ip(std.ip("1.2.3.*", "127.0.0.2"));
+		set resp.http.ip2 = debug.get_ip();
+		set resp.http.port2 = std.port(debug.get_ip());
 		std.timestamp("1.2.3.*");
-		set resp.http.foo3 = std.ip("1.2.3.5", "127.0.0.3");
+
+		debug.store_ip(std.ip("1.2.3.5", "127.0.0.3"));
+		set resp.http.ip3 = debug.get_ip();
+		set resp.http.port3 = std.port(debug.get_ip());
 		std.timestamp("1.2.3.5");
-		set resp.http.foo4 = std.ip("2001:db8::", "[::1]");
+
+		debug.store_ip(std.ip("2001:db8::", "[::1]"));
+		set resp.http.ip4 = debug.get_ip();
+		set resp.http.port4 = std.port(debug.get_ip());
 		std.timestamp("2001:db8::");
-		set resp.http.foo5 = std.ip("2001::db8::", "[::1]");
+
+		debug.store_ip(std.ip("2001::db8::", "[::1]"));
+		set resp.http.ip5 = debug.get_ip();
+		set resp.http.port5 = std.port(debug.get_ip());
 		std.timestamp("2001::db8::");
-		set resp.http.foo6 = std.ip("localhost", "0.0.0.0", resolve = false);
+
+		debug.store_ip(std.ip("localhost", "0.0.0.0", resolve = false));
+		set resp.http.ip6 = debug.get_ip();
+		set resp.http.port6 = std.port(debug.get_ip());
 		std.timestamp("localhost, resolve = false");
-		set resp.http.foo7 = std.ip("1.2.3.4", "0.0.0.0", resolve = false);
+
+		debug.store_ip(std.ip("1.2.3.4", "0.0.0.0", resolve = false));
+		set resp.http.ip7 = debug.get_ip();
+		set resp.http.port7 = std.port(debug.get_ip());
 		std.timestamp("1.2.3.4, resolve = false");
+
+		debug.store_ip(std.ip("1.2.3.4 8080", "0.0.0.0"));
+		set resp.http.ip8 = debug.get_ip();
+		set resp.http.port8 = std.port(debug.get_ip());
+		std.timestamp("1.2.3.4 8080");
+
+		debug.store_ip(std.ip("1.2.3.4:443", "0.0.0.0"));
+		set resp.http.ip9 = debug.get_ip();
+		set resp.http.port9 = std.port(debug.get_ip());
+		std.timestamp("1.2.3.4:443");
+
+		debug.store_ip(std.ip("1.2.3.4", "0.0.0.0", resolve = false));
+		set resp.http.ip10 = debug.get_ip();
+		set resp.http.port10 = std.port(debug.get_ip());
+		std.timestamp("1.2.3.4, resolve = false");
+
+		debug.store_ip(std.ip("9.9.9.*", "${s1_sock}"));
+		set resp.http.ip10 = debug.get_ip();
+		set resp.http.port10 = std.port(debug.get_ip());
+		std.timestamp("9.9.9.*, ${s1_sock}");
+
+		debug.store_ip(std.ip("1.2.3.4 80", "0.0.0.0", p = "443"));
+		set resp.http.ip11 = debug.get_ip();
+		set resp.http.port11 = std.port(debug.get_ip());
+		std.timestamp("1.2.3.4 80, p = 443");
+
 	}
 } -start
 
@@ -34,12 +85,29 @@ client c1 {
 	timeout 60
 	txreq
 	rxresp
-	expect resp.http.foo0 == "${localhost}"
-	expect resp.http.foo1 == "${localhost}"
-	expect resp.http.foo2 == "127.0.0.2"
-	expect resp.http.foo3 == "1.2.3.5"
-	expect resp.http.foo4 == "2001:db8::"
-	expect resp.http.foo5 == "::1"
-	expect resp.http.foo6 == "0.0.0.0"
-	expect resp.http.foo7 == "1.2.3.4"
+	expect resp.http.ip0 == ${localhost}
+	expect resp.http.port0 != 0
+	expect resp.http.port0 != 80
+	expect resp.http.ip1 == ${v1_addr}
+	expect resp.http.port1 == ${v1_port}
+	expect resp.http.ip2 == 127.0.0.2
+	expect resp.http.port2 == 80
+	expect resp.http.ip3 == 1.2.3.5
+	expect resp.http.port3 == 80
+	expect resp.http.ip4 == 2001:db8::
+	expect resp.http.port4 == 80
+	expect resp.http.ip5 == ::1
+	expect resp.http.port5 == 80
+	expect resp.http.ip6 == 0.0.0.0
+	expect resp.http.port6 == 80
+	expect resp.http.ip7 == 1.2.3.4
+	expect resp.http.port7 == 80
+	expect resp.http.ip8 == 1.2.3.4
+	expect resp.http.port8 == 8080
+	expect resp.http.ip9 == 1.2.3.4
+	expect resp.http.port9 == 443
+	expect resp.http.ip10 == ${s1_addr}
+	expect resp.http.port10 == ${s1_port}
+	expect resp.http.ip11 == 1.2.3.4
+	expect resp.http.port11 == 80
 } -run
