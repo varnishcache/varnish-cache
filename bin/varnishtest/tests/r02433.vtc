@@ -2,22 +2,34 @@ varnishtest "label a cold vcl"
 
 server s1 { } -start
 
+varnish v1 -cliok "param.set vcl_cooldown 0.1"
 varnish v1 -vcl+backend {
 	import debug; # can fail a VCL warmup
-
-	sub vcl_recv {
-		return (synth(200));
-	}
 } -start
 
-# a dummy vcl to freely use vcl1
+# a dummy vcl2 to freely use vcl1
 varnish v1 -vcl+backend { }
 
-# the magic parameter that fails a VCL warmup
+# cool vcl1 down
+delay 4
+varnish v1 -cliok ping
+
+shell -match "auto +cold" { varnishadm -n ${v1_name} vcl.list | grep vcl1 }
+
+# first we try to label a cold VCL in auto state
+
+# the magic parameter that fails a VCL warmup in vmod-debug
 varnish v1 -cliok "param.set max_esi_depth 42"
 
-varnish v1 -cliok "vcl.state vcl1 cold"
-varnish v1 -clierr 300 "vcl.label label1 vcl1"
+varnish v1 -cliexpect "max_esi_depth is not the answer" "vcl.label label1 vcl1"
 
-# check that creating the label actually failed
-varnish v1 -clierr 106 "vcl.discard label1"
+shell -err { varnishadm -n ${v1_name} vcl.list | grep label1 }
+
+# second we try to label VCL in cold state
+varnish v1 -cliok "vcl.state vcl1 cold"
+
+shell -match "cold +cold" { varnishadm -n ${v1_name} vcl.list | grep vcl1 }
+
+varnish v1 -cliexpect "set to auto or warm first" "vcl.label label1 vcl1"
+
+shell -err { varnishadm -n ${v1_name} vcl.list | grep label1 }
