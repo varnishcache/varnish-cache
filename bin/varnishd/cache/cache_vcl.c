@@ -68,6 +68,7 @@ static struct vrt_ctx ctx_cli;
 static unsigned handling_cli;
 static struct ws ws_cli;
 static uintptr_t ws_snapshot_cli;
+static struct vsl_log vsl_cli;
 
 /*--------------------------------------------------------------------*/
 
@@ -127,6 +128,8 @@ VCL_Get_CliCtx(int msg)
 	if (msg) {
 		ctx_cli.msg = VSB_new_auto();
 		AN(ctx_cli.msg);
+	} else {
+		ctx_cli.vsl = &vsl_cli;
 	}
 	ctx_cli.ws = &ws_cli;
 	WS_Assert(ctx_cli.ws);
@@ -142,6 +145,8 @@ VCL_Rel_CliCtx(struct vrt_ctx **ctx)
 	AN((*ctx)->handling);
 	if (ctx_cli.msg)
 		VSB_destroy(&ctx_cli.msg);
+	if (ctx_cli.vsl)
+		VSL_Flush(ctx_cli.vsl, 0);
 	WS_Assert(ctx_cli.ws);
 	WS_Reset(&ws_cli, ws_snapshot_cli);
 	INIT_OBJ(*ctx, VRT_CTX_MAGIC);
@@ -915,6 +920,8 @@ static struct cli_proto vcl_cmds[] = {
 void
 VCL_Init(void)
 {
+	unsigned sz;
+	char *vslbuf;
 
 	assert(cache_param->workspace_client > 0);
 	WS_Init(&ws_cli, "cli", malloc(cache_param->workspace_client),
@@ -922,4 +929,8 @@ VCL_Init(void)
 	ws_snapshot_cli = WS_Snapshot(&ws_cli);
 	CLI_AddFuncs(vcl_cmds);
 	Lck_New(&vcl_mtx, lck_vcl);
+	sz = cache_param->vsl_buffer;
+	vslbuf = malloc(sz);
+	AN(vslbuf);
+	VSL_Setup(&vsl_cli, vslbuf, sz);
 }
