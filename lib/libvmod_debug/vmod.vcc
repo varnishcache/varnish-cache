@@ -254,3 +254,7 @@ $Function VOID vcl_allow_cold(PRIV_VCL)
 Allow VCL to go cold
 
 $Function VOID sndbuf(BYTES sndbuf)
+
+Set the client socket' send buffer size to *sndbuf*. The previous, desired
+and actual values appear in the logs. Not currently implemented for backend
+transactions.
