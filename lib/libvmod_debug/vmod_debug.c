@@ -855,6 +855,33 @@ xyzzy_sndbuf(VRT_CTX, VCL_BYTES arg)
 	    fd, oldbuf, buflen, newbuf);
 }
 
+VCL_VOID
+xyzzy_store_ip(VRT_CTX, struct vmod_priv *priv, VCL_IP ip)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(priv);
+	AZ(priv->free);
+	assert(VSA_Sane(ip));
+
+	priv->priv = TRUST_ME(ip);
+}
+
+VCL_IP
+xyzzy_get_ip(VRT_CTX, struct vmod_priv *priv)
+{
+	VCL_IP ip;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(priv);
+	AZ(priv->free);
+
+	ip = priv->priv;
+	assert(VSA_Sane(ip));
+
+	return (ip);
+}
+
 /**********************************************************************
  * For testing import code on bad vmod files (m00003.vtc)
  */
