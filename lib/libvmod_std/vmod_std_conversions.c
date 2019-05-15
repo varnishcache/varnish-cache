@@ -78,7 +78,7 @@ vmod_integer(VRT_CTX, VCL_STRING p, VCL_INT i)
 }
 
 VCL_IP
-vmod_ip(VRT_CTX, VCL_STRING s, VCL_IP d, VCL_BOOL n)
+vmod_ip(VRT_CTX, VCL_STRING s, VCL_IP d, VCL_BOOL n, VCL_STRING default_port)
 {
 	void *p;
 	VCL_IP retval;
@@ -94,8 +94,9 @@ vmod_ip(VRT_CTX, VCL_STRING s, VCL_IP d, VCL_BOOL n)
 		return (NULL);
 	}
 
-	retval = VSS_ResolveFirst(p, s, "80", AF_UNSPEC, SOCK_STREAM,
-	    n ? 0 : AI_NUMERICHOST);
+	retval = VSS_ResolveFirst(p, s, default_port, AF_UNSPEC, SOCK_STREAM,
+	    n ? 0 : AI_NUMERICHOST|AI_NUMERICSERV);
+
 	if (retval != NULL)
 		return (retval);
 
