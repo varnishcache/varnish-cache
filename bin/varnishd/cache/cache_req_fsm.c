@@ -725,6 +725,7 @@ cnt_pipe(struct worker *wrk, struct req *req)
 		req->want100cont = 0;
 	}
 
+	bo->wrk = wrk;
 	VCL_pipe_method(req->vcl, wrk, req, bo, NULL);
 
 	switch (wrk->handling) {
