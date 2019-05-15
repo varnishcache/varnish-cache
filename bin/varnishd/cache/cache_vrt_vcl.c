@@ -441,8 +441,6 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 	ctx.syntax = ctx.vcl->conf->syntax;
 	ctx.specific = specific;
 	ctx.method = method;
-	wrk->handling = 0;
-	ctx.handling = &wrk->handling;
 	aws = WS_Snapshot(wrk->aws);
 	wrk->cur_method = method;
 	wrk->seen_methods |= method;
