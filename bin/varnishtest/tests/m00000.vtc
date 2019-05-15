@@ -10,6 +10,7 @@ varnish v1 -vcl+backend {
 	import std;
 	import debug;
 	import vtc;
+	import debug;		// again
 
 	sub vcl_init {
 		new objx = debug.obj();
