@@ -922,3 +922,80 @@ const struct vmod_data Vmod_wrong3_Data = {
 };
 
 //lint -restore
+
+/*---------------------------------------------------------------------*/
+
+struct VPFX(debug_director) {
+	unsigned			magic;
+#define VMOD_DEBUG_DIRECTOR_MAGIC	0x66b9ff3d
+	VCL_BACKEND			dir;
+};
+
+/* XXX more callbacks ? */
+static vdi_healthy_f vmod_debug_director_healthy;
+static vdi_resolve_f vmod_debug_director_resolve;
+
+static const struct vdi_methods vmod_debug_director_methods[1] = {{
+	.magic =	VDI_METHODS_MAGIC,
+	.type =		"debug.director",
+	.resolve =	vmod_debug_director_resolve,
+	.healthy =	vmod_debug_director_healthy
+}};
+
+VCL_VOID v_matchproto_(td_xyzzy_debug_director__init)
+xyzzy_director__init(VRT_CTX, struct VPFX(debug_director) **dp,
+    const char *vcl_name)
+{
+	struct VPFX(debug_director) *d;
+
+	AN(dp);
+	AZ(*dp);
+	ALLOC_OBJ(d, VMOD_DEBUG_DIRECTOR_MAGIC);
+	AN(d);
+
+	*dp = d;
+	d->dir = VRT_AddDirector(ctx, vmod_debug_director_methods, d,
+	    "%s", vcl_name);
+}
+
+VCL_VOID v_matchproto_(td_xyzzy_debug_director__fini)
+xyzzy_director__fini(struct VPFX(debug_director) **dp)
+{
+	struct VPFX(debug_director) *d;
+
+	TAKE_OBJ_NOTNULL(d, dp, VMOD_DEBUG_DIRECTOR_MAGIC);
+	VRT_DelDirector(&d->dir);
+	FREE_OBJ(d);
+}
+
+VCL_BACKEND v_matchproto_(td_xyzzy_debug_director_fail)
+xyzzy_director_fail(VRT_CTX, struct VPFX(debug_director) *d)
+{
+	CHECK_OBJ_NOTNULL(d, VMOD_DEBUG_DIRECTOR_MAGIC);
+	(void) ctx;
+
+	return (d->dir);
+}
+
+static VCL_BOOL v_matchproto_(vdi_healthy_f)
+vmod_debug_director_healthy(VRT_CTX, VCL_BACKEND dir, VCL_TIME *changed)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	(void) dir;
+	(void) changed;
+
+	VRT_fail(ctx, "fail");
+	return (1);
+}
+
+static VCL_BACKEND v_matchproto_(vdi_resolve_f)
+vmod_debug_director_resolve(VRT_CTX, VCL_BACKEND dir)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	(void) dir;
+
+	VRT_fail(ctx, "fail");
+	return (NULL);
+}

@@ -1,0 +1,33 @@
+varnishtest "Test failing in director callbacks"
+
+varnish v1 -vcl {
+	import debug;
+	import std;
+
+	backend dummy { .host = "${bad_ip}"; }
+
+	sub vcl_init {
+		new d = debug.director();
+	}
+
+	sub vcl_recv {
+		if (req.url == "/healthy") {
+			if (std.healthy(d.fail())) {
+				return (synth(200));
+			} else {
+				return (synth(404));
+			}
+		}
+		set req.backend_hint = d.fail();
+	}
+} -start
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 503
+
+	txreq -url "/healthy"
+	rxresp
+	expect resp.status == 503
+} -run
