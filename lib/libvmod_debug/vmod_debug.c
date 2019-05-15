@@ -414,3 +414,30 @@ xyzzy_vsc_destroy(VRT_CTX)
 	vsc = NULL;
 	AZ(pthread_mutex_unlock(&vsc_mtx));
 }
+
+VCL_VOID
+xyzzy_store_ip(VRT_CTX, struct vmod_priv *priv, VCL_IP ip)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(priv);
+	AZ(priv->free);
+	assert(VSA_Sane(ip));
+
+	priv->priv = TRUST_ME(ip);
+}
+
+VCL_IP
+xyzzy_get_ip(VRT_CTX, struct vmod_priv *priv)
+{
+	VCL_IP ip;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(priv);
+	AZ(priv->free);
+
+	ip = priv->priv;
+	assert(VSA_Sane(ip));
+
+	return (ip);
+}
