@@ -222,8 +222,7 @@ Returns ``true`` if the backend *be* is healthy.
 $Function INT port(IP ip)
 
 Returns the port number of the IP address *ip*. Always returns ``0``
-for a ``*.ip`` variable whose value is ``0.0.0.0`` because the listen
-address is a Unix domain socket.
+for a ``*.ip`` variable when the address is a Unix domain socket.
 
 Type Conversion functions
 =========================
@@ -328,15 +327,26 @@ Examples::
 	set resp.http.answer = std.integer(real=126.42/3);
 
 
-$Function IP ip(STRING s, [IP fallback], BOOL resolve = 1)
+$Function IP ip(STRING s, [IP fallback], BOOL resolve = 1, [STRING p])
 
-Converts the string *s* to the first IP number returned by
-the system library function `getaddrinfo(3)`. If conversion
-fails, *fallback* will be returned or VCL failure will happen.
+Converts the string *s* to the first IP number returned by the system
+library function `getaddrinfo(3)`. If conversion fails, *fallback* will
+be returned or VCL failure will happen.
+
+The IP address includes a port number that can be found with ``std.port()``
+that defaults to 80. The default port can be set to a different value with
+the *p* argument. It will be overriden if *s* contains both an IP address
+and a port number or service name.
+
+When *s* contains both, the syntax is either ``address:port`` or
+``address port``. If the address is a numerical IPv6 address it must be
+enclosed between brackets, for example ``[::1] 80`` or ``[::1]:http``.
+The *fallback* may also contain both an address and a port.
 
 If *resolve* is false, `getaddrinfo(3)` is called using ``AI_NUMERICHOST``
-to avoid network lookups. This makes "numerical" IP strings cheaper
-to convert.
+and ``AI_NUMERICSERV`` to avoid network lookups depending on the system's
+`getaddrinfo(3)` or nsswitch configuration. This makes "numerical" IP
+strings and services cheaper to convert.
 
 Example::
 
