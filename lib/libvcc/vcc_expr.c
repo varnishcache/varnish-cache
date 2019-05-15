@@ -305,55 +305,6 @@ vcc_expr_tostring(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 /*--------------------------------------------------------------------
  */
 
-static void v_matchproto_(sym_expr_t)
-vcc_Eval_Regsub(struct vcc *tl, struct expr **e, struct token *t,
-    struct symbol *sym, vcc_type_t fmt)
-{
-	struct expr *e2;
-	int all = sym->eval_priv == NULL ? 0 : 1;
-	char buf[128];
-	struct vsb vsb;
-
-	(void)t;
-	(void)fmt;
-	SkipToken(tl, '(');
-	vcc_expr0(tl, &e2, STRING);
-	ERRCHK(tl);
-	SkipToken(tl, ',');
-	ExpectErr(tl, CSTR);
-
-	AN(VSB_new(&vsb, buf, sizeof buf, VSB_FIXEDLEN));
-	VSB_printf(&vsb, "VRT_regsub(ctx, %d,\v+\n\v1,\n", all);
-	vcc_regexp(tl, &vsb);
-	ERRCHK(tl);
-	AZ(VSB_finish(&vsb));
-	*e = vcc_expr_edit(tl, STRING, VSB_data(&vsb), e2, NULL);
-	SkipToken(tl, ',');
-	vcc_expr0(tl, &e2, STRING);
-	ERRCHK(tl);
-	*e = vcc_expr_edit(tl, STRINGS, "\v1,\n\v2)\v-", *e, e2);
-	(*e)->nstr = 1;
-	SkipToken(tl, ')');
-}
-
-/*--------------------------------------------------------------------
- */
-
-static void v_matchproto_(sym_expr_t)
-vcc_Eval_BoolConst(struct vcc *tl, struct expr **e, struct token *t,
-    struct symbol *sym, vcc_type_t fmt)
-{
-
-	(void)t;
-	(void)tl;
-	(void)fmt;
-	*e = vcc_mk_expr(BOOL, "(0==%d)", sym->eval_priv == NULL ? 1 : 0);
-	(*e)->constant = EXPR_CONST;
-}
-
-/*--------------------------------------------------------------------
- */
-
 void v_matchproto_(sym_expr_t)
 vcc_Eval_Handle(struct vcc *tl, struct expr **e, struct token *t,
     struct symbol *sym, vcc_type_t type)
@@ -734,17 +685,6 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	}
 	switch (tl->t->tok) {
 	case ID:
-		if (vcc_IdIs(tl->t, "default") && fmt == PROBE) {
-			vcc_NextToken(tl);
-			*e = vcc_mk_expr(PROBE, "%s", vcc_default_probe(tl));
-			return;
-		}
-		if (vcc_IdIs(tl->t, "default") && fmt == BACKEND) {
-			vcc_NextToken(tl);
-			*e = vcc_mk_expr(BACKEND,
-			    "*(VCL_conf.default_director)");
-			return;
-		}
 		t = tl->t;
 		sym = VCC_SymbolGet(tl, SYM_NONE, "Symbol not found",
 		    XREF_REF);
@@ -1399,6 +1339,77 @@ vcc_Act_Call(struct vcc *tl, struct token *t, struct symbol *sym)
 	}
 	vcc_delete_expr(e);
 }
+/*--------------------------------------------------------------------
+ */
+
+static void v_matchproto_(sym_expr_t)
+vcc_Eval_Regsub(struct vcc *tl, struct expr **e, struct token *t,
+    struct symbol *sym, vcc_type_t fmt)
+{
+	struct expr *e2;
+	int all = sym->eval_priv == NULL ? 0 : 1;
+	char buf[128];
+	struct vsb vsb;
+
+	(void)t;
+	(void)fmt;
+	SkipToken(tl, '(');
+	vcc_expr0(tl, &e2, STRING);
+	ERRCHK(tl);
+	SkipToken(tl, ',');
+	ExpectErr(tl, CSTR);
+
+	AN(VSB_new(&vsb, buf, sizeof buf, VSB_FIXEDLEN));
+	VSB_printf(&vsb, "VRT_regsub(ctx, %d,\v+\n\v1,\n", all);
+	vcc_regexp(tl, &vsb);
+	ERRCHK(tl);
+	AZ(VSB_finish(&vsb));
+	*e = vcc_expr_edit(tl, STRING, VSB_data(&vsb), e2, NULL);
+	SkipToken(tl, ',');
+	vcc_expr0(tl, &e2, STRING);
+	ERRCHK(tl);
+	*e = vcc_expr_edit(tl, STRINGS, "\v1,\n\v2)\v-", *e, e2);
+	(*e)->nstr = 1;
+	SkipToken(tl, ')');
+}
+
+/*--------------------------------------------------------------------
+ */
+
+static void v_matchproto_(sym_expr_t)
+vcc_Eval_BoolConst(struct vcc *tl, struct expr **e, struct token *t,
+    struct symbol *sym, vcc_type_t fmt)
+{
+
+	(void)t;
+	(void)tl;
+	(void)fmt;
+	*e = vcc_mk_expr(BOOL, "(0==%d)", sym->eval_priv == NULL ? 1 : 0);
+	(*e)->constant = EXPR_CONST;
+}
+
+/*--------------------------------------------------------------------
+ */
+
+static void v_matchproto_(sym_expr_t)
+vcc_Eval_Default(struct vcc *tl, struct expr **e, struct token *t,
+    struct symbol *sym, vcc_type_t fmt)
+{
+	(void)e;
+	(void)fmt;
+	(void)sym;
+	(void)t;
+
+	if (fmt == PROBE)
+		*e = vcc_mk_expr(PROBE, "%s", vcc_default_probe(tl));
+	else if (fmt == BACKEND)
+		*e = vcc_mk_expr(BACKEND, "*(VCL_conf.default_director)");
+	else {
+		VSB_printf(tl->sb,
+		    "Symbol 'default' is a reserved word.\n");
+		vcc_ErrWhere(tl, t);
+	}
+}
 
 /*--------------------------------------------------------------------
  */
@@ -1431,4 +1442,9 @@ vcc_Expr_Init(struct vcc *tl)
 	sym->type = BOOL;
 	sym->eval = vcc_Eval_BoolConst;
 	sym->eval_priv = NULL;
+
+	sym = VCC_MkSym(tl, "default", SYM_FUNC, VCL_LOW, VCL_HIGH);
+	AN(sym);
+	sym->type = BACKEND;	// ... can also (sometimes) deliver PROBE
+	sym->eval = vcc_Eval_Default;
 }

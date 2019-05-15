@@ -240,11 +240,7 @@ VCC_SymbolGet(struct vcc *tl, vcc_kind_t kind, const char *e, const char *x)
 	if (kind != SYM_NONE && kind != sym->kind) {
 		VSB_printf(tl->sb, "Symbol ");
 		vcc_ErrToken(tl, tl->t);
-		if (sym->kind == SYM_NONE)
-			VSB_printf(tl->sb, " is a reserved word.");
-		else
-			VSB_printf(tl->sb, " has wrong type (%s): ",
-				sym->kind->name);
+		VSB_printf(tl->sb, " has wrong type (%s): ", sym->kind->name);
 		VSB_cat(tl->sb, "\nAt: ");
 		vcc_ErrWhere(tl, tl->t);
 		if (sym->def_b != NULL) {
