@@ -181,7 +181,7 @@ Description
 	``address port``. If the address is a numerical IPv6 address it
 	must be enclosed between brackets, for example ``[::1] 80`` or
 	``[::1]:http``. The *fallback* may also contain both an address
-	and a port.
+	and a port, but its default port is always 80.
 
 	If *resolve* is false, `getaddrinfo(3)` is called using
 	``AI_NUMERICHOST`` and ``AI_NUMERICSERV`` to avoid network lookups
