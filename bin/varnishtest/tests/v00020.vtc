@@ -20,7 +20,7 @@ varnish v1 -errvcl {Found: '0' at} { 0; }
 # VCLs tokenstream.
 # XXX: A better error message would be desirable
 
-varnish v1 -errvcl {Symbol not found} " sub vcl_recv { { } { "
+varnish v1 -errvcl {Symbol cannot be used here} " sub vcl_recv { { } { "
 
 varnish v1 -errvcl {Comparison of different types: INT '!=' STRING} {
 	sub vcl_recv {
@@ -31,7 +31,7 @@ varnish v1 -errvcl {Comparison of different types: INT '!=' STRING} {
 	}
 }
 
-varnish v1 -errvcl {Symbol type (sub) can not be used in expression.} {
+varnish v1 -errvcl {Symbol 'vcl_recv' type (sub) can not be used in expression.} {
 	sub vcl_recv {
 		set req.http.foo = vcl_recv;
 	}
@@ -305,6 +305,11 @@ varnish v1 -errvcl {'&&' must be preceeded by BOOL, found REAL.} {
 varnish v1 -errvcl {'||' must be preceeded by BOOL, found REAL.} {
 	import std;
 	sub vcl_recv { if (std.random(0,1) || 0) { } }
+}
+
+varnish v1 -errvcl {Symbol 'acl' has wrong type (reserved):} {
+	import std;
+	sub vcl_recv { call acl; }
 }
 
 server s1 {

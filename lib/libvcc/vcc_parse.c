@@ -434,5 +434,5 @@ vcc_Parse_Init(struct vcc *tl)
 	struct toplev *tp;
 
 	for (tp = toplev; tp->name != NULL; tp++)
-		AN(VCC_MkSym(tl, tp->name, SYM_NONE, tp->vcllo, tp->vclhi));
+		AN(VCC_MkSym(tl, tp->name, SYM_RESERVED, tp->vcllo, tp->vclhi));
 }

@@ -30,6 +30,7 @@
 /*lint -save -e525 -e539 */
 
 VCC_KIND(NONE,		none)
+VCC_KIND(RESERVED,	reserved)
 VCC_KIND(ACL,		acl)
 VCC_KIND(ACTION,	action)
 VCC_KIND(BACKEND,	backend)

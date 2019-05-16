@@ -46,11 +46,12 @@ vcc_act_call(struct vcc *tl, struct token *t, struct symbol *sym)
 	(void)t;
 	ExpectErr(tl, ID);
 	sym = VCC_SymbolGet(tl, SYM_SUB, SYMTAB_CREATE, XREF_REF);
-	AN(sym);
-	vcc_AddCall(tl, sym);
-	VCC_GlobalSymbol(sym, SUB, "VGC_function");
-	Fb(tl, 1, "%s(ctx);\n", sym->rname);
-	SkipToken(tl, ';');
+	if (sym != NULL) {
+		vcc_AddCall(tl, sym);
+		VCC_GlobalSymbol(sym, SUB, "VGC_function");
+		Fb(tl, 1, "%s(ctx);\n", sym->rname);
+		SkipToken(tl, ';');
+	}
 }
 
 /*--------------------------------------------------------------------*/
