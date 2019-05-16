@@ -135,6 +135,7 @@ tweak_vsl_mask(struct vsb *vsb, const struct parspec *par, const char *arg)
 			(void)bit(mgt_param.vsl_mask, SLT_ObjProtocol, BSET);
 			(void)bit(mgt_param.vsl_mask, SLT_ObjReason, BSET);
 			(void)bit(mgt_param.vsl_mask, SLT_ObjStatus, BSET);
+			(void)bit(mgt_param.vsl_mask, SLT_Debug, BSET);
 		} else {
 			return (bit_tweak(vsb, mgt_param.vsl_mask,
 			    SLT__Reserved, arg, VSL_tags,
