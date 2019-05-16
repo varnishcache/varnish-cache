@@ -106,7 +106,7 @@ struct type {
 	int			stringform;
 };
 
-#define VCC_TYPE(foo)		extern const struct type foo[1];
+#define VCC_TYPE(UC, lc)	extern const struct type UC[1];
 #include "tbl/vcc_types.h"
 
 /*---------------------------------------------------------------------*/

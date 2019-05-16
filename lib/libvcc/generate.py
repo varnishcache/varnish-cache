@@ -793,7 +793,7 @@ file_header(ft)
 lint_start(ft)
 
 for vcltype in sorted(vcltypes.keys()):
-    ft.write("VCC_TYPE(" + vcltype + ")\n")
+    ft.write("VCC_TYPE(" + vcltype + ", " + vcltype.lower() +")\n")
 ft.write("#undef VCC_TYPE\n")
 lint_end(ft)
 ft.close()
