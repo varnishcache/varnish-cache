@@ -45,33 +45,33 @@ if len(sys.argv) == 3:
 
 tokens = {
     # Numerical comparisons
-    "T_EQ":     "==",
-    "T_NEQ":    "!=",
-    "T_LEQ":    "<=",
-    "T_GEQ":    ">=",
+    "T_EQ":         "==",
+    "T_NEQ":        "!=",
+    "T_LEQ":        "<=",
+    "T_GEQ":        ">=",
 
     # String comparisons
-    "T_SEQ":    "eq",
+    "T_SEQ":        "eq",
     "T_SNEQ":       "ne",
 
     # Regular expression matching
     "T_NOMATCH":    "!~",
 
     # Boolean operators
-    "T_AND":    "and",
-    "T_OR":     "or",
-    "T_NOT":    "not",
+    "T_AND":        "and",
+    "T_OR":         "or",
+    "T_NOT":        "not",
 
     # Miscellaneous
-    None:       "<>~[]{}():,",
+    None:           "<>~[]{}():,",
 
     # These have handwritten recognizers
-    "VAL":      None,
-    "EOI":      None,
+    "VAL":          None,
+    "EOI":          None,
 
     # Special
     "T_TRUE":       None,
-    "VXID":     "vxid",
+    "VXID":         "vxid",
 }
 
 #######################################################################
