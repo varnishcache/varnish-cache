@@ -1088,7 +1088,7 @@ VSLQ_New(struct VSL_data *vsl, struct VSL_cursor **cp,
 	struct VSLQ *vslq;
 
 	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
-	if (grouping > VSL_g_session) {
+	if (grouping < 0 || grouping >= VSL_g__MAX) {
 		(void)vsl_diag(vsl, "Illegal query grouping");
 		return (NULL);
 	}
