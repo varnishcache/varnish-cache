@@ -103,8 +103,8 @@ vxp_Lexer(struct vxp *vxp)
 
 	for (p = vxp->b; p < vxp->e; ) {
 
-		/* Skip any whitespace */
-		if (isspace(*p)) {
+		/* Skip any space or tab */
+		if (isblank(*p)) {
 			p++;
 			continue;
 		}
@@ -126,6 +126,8 @@ vxp_Lexer(struct vxp *vxp)
 					q++;
 					if (q == vxp->e)
 						break;
+				} else if (*q == '\n') {
+					break;
 				} else if (*q == quote) {
 					q++;
 					quote = '\0';
@@ -154,6 +156,13 @@ vxp_Lexer(struct vxp *vxp)
 			memcpy(vxp->t->dec, p, q - p);
 			vxp->t->dec[q - p] = '\0';
 			p = q;
+			continue;
+		}
+
+		/* On to the next query */
+		if (*p == '\n') {
+			vxp_add_token(vxp, EOI, p, p + 1);
+			p++;
 			continue;
 		}
 
