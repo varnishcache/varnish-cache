@@ -425,6 +425,7 @@ varnish_launch(struct varnish *v)
 	VSB_printf(vsb, " -p sigsegv_handler=on");
 	VSB_printf(vsb, " -p thread_pool_min=10");
 	VSB_printf(vsb, " -p debug=+vtc_mode");
+	VSB_printf(vsb, " -p vsl_mask=+Debug");
 	if (!v->has_a_arg) {
 		VSB_printf(vsb, " -a '%s'", "127.0.0.1:0");
 		if (v->proto != NULL)
