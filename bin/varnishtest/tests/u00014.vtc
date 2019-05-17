@@ -58,6 +58,15 @@ shell -err -expect "Query expression error" {
 	'
 }
 
+shell -err -expect "Query expression error" {
+	echo '# empty query file' >empty.vslq
+	varnishncsa -d -n ${v1_name} -Q empty.vslq
+}
+
+shell -err -expect "-Q missing.vslq: No such file or directory" {
+	varnishncsa -d -n ${v1_name} -Q missing.vslq
+}
+
 shell -match "^500 $" {
 	# single query 1
 	./ncsa.sh -q 'RespStatus == 500'
@@ -91,6 +100,39 @@ shell -match "^500 503 $" {
 }
 
 shell -match "^500 503 $" {
+	cat >query.vslq <<-EOF
+	# query 1
+	RespStatus == 500
+
+	# query 2
+	RespStatus == 503
+	EOF
+	./ncsa.sh -Q query.vslq
+}
+
+shell -match "^500 503 $" {
 	# multiple -q options
 	./ncsa.sh -q 'RespStatus == 500' -q 'RespStatus == 503'
+}
+
+shell -match "^500 503 $" {
+	# multiple -Q options
+
+	cat >query1.vslq <<-EOF
+	# query 1
+	RespStatus == 500
+	EOF
+
+	cat >query2.vslq <<-EOF
+	# query 2
+	RespStatus == 503
+	EOF
+
+	./ncsa.sh -Q query1.vslq -Q query2.vslq
+}
+
+shell -match "^500 503 $" {
+	# mix -Q and -q options
+
+	./ncsa.sh -Q query1.vslq -q 'RespStatus == 503'
 }

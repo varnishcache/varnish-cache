@@ -149,7 +149,7 @@ is identical to this query::
   (*Error) or (BerespStatus >= 500)
 
 Comments can be used and will be ignored, they start with the ``'#'``
-character.
+character, which may be more useful when the query is read from a file.
 
 Record selection criteria
 -------------------------

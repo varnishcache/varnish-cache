@@ -51,6 +51,7 @@
 #include "miniobj.h"
 #include "vcs.h"
 #include "vsb.h"
+#include "vfil.h"
 
 #include "vut.h"
 
@@ -195,8 +196,19 @@ VUT_Arg(struct VUT *vut, int opt, const char *arg)
 		AN(arg);
 		REPLACE(vut->P_arg, arg);
 		return (1);
+	case 'Q':
+		AN(arg);
+		p = VFIL_readfile(NULL, arg, NULL);
+		if (p == NULL) {
+			VUT_Error(vut, 1, "-Q %s: %s", arg, strerror(errno));
+			return (-1);
+		}
+		vut_arg_q(vut, p);
+		free(p);
+		return (1);
 	case 'q':
 		/* Query to use */
+		AN(arg);
 		vut_arg_q(vut, arg);
 		return (1);
 	case 'r':
