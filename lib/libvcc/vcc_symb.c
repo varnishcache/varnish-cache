@@ -198,30 +198,31 @@ const char SYMTAB_NOERR[] = "sym_noerror";
 const char SYMTAB_CREATE[] = "sym_create";
 
 struct symbol *
-VCC_SymbolGet(struct vcc *tl, vcc_kind_t kind, const char *e, const char *x)
+VCC_SymbolGetTok(struct vcc *tl, vcc_kind_t kind, const char *e, const char *x,
+    struct token *t)
 {
 	struct symbol *sym;
 
 	AN(e);
 	if (tl->syntax >= VCL_41 && e == SYMTAB_CREATE && kind != SYM_SUB &&
-	    (tl->t->b[0] == 'v'|| tl->t->b[0] == 'V') &&
-	    (tl->t->b[1] == 'c'|| tl->t->b[1] == 'C') &&
-	    (tl->t->b[2] == 'l'|| tl->t->b[2] == 'L') &&
-	    (tl->t->b[3] == '_')) {
+	    (t->b[0] == 'v'|| t->b[0] == 'V') &&
+	    (t->b[1] == 'c'|| t->b[1] == 'C') &&
+	    (t->b[2] == 'l'|| t->b[2] == 'L') &&
+	    (t->b[3] == '_')) {
 		VSB_printf(tl->sb,
 		    "Symbols named 'vcl_*' are reserved.\nAt:");
-		vcc_ErrWhere(tl, tl->t);
+		vcc_ErrWhere(tl, t);
 		return (NULL);
 	}
 
-	sym = VCC_Symbol(tl, NULL, tl->t->b, tl->t->e, kind,
+	sym = VCC_Symbol(tl, NULL, t->b, t->e, kind,
 	    e == SYMTAB_CREATE ? 1 : 0, tl->syntax, tl->syntax);
 	if (sym == NULL && e == SYMTAB_NOERR)
 		return (sym);
 	if (sym == NULL) {
 		VSB_printf(tl->sb, "%s: ", e);
-		vcc_ErrToken(tl, tl->t);
-		sym = VCC_Symbol(tl, NULL, tl->t->b, tl->t->e, kind, 0,
+		vcc_ErrToken(tl, t);
+		sym = VCC_Symbol(tl, NULL, t->b, t->e, kind, 0,
 			VCL_LOW, VCL_HIGH);
 		if (sym != NULL) {
 			VSB_printf(tl->sb, " (Only available when");
@@ -233,16 +234,16 @@ VCC_SymbolGet(struct vcc *tl, vcc_kind_t kind, const char *e, const char *x)
 			VSB_printf(tl->sb, ")");
 		}
 		VSB_cat(tl->sb, "\nAt: ");
-		vcc_ErrWhere(tl, tl->t);
+		vcc_ErrWhere(tl, t);
 		return (NULL);
 	}
 	assert (sym->lorev <= tl->syntax && sym->hirev >= tl->syntax);
 	if (kind != SYM_NONE && kind != sym->kind) {
 		VSB_printf(tl->sb, "Symbol ");
-		vcc_ErrToken(tl, tl->t);
+		vcc_ErrToken(tl, t);
 		VSB_printf(tl->sb, " has wrong type (%s): ", sym->kind->name);
 		VSB_cat(tl->sb, "\nAt: ");
-		vcc_ErrWhere(tl, tl->t);
+		vcc_ErrWhere(tl, t);
 		if (sym->def_b != NULL) {
 			VSB_printf(tl->sb, "Symbol was defined here: ");
 			vcc_ErrWhere(tl, sym->def_b);
@@ -256,22 +257,30 @@ VCC_SymbolGet(struct vcc *tl, vcc_kind_t kind, const char *e, const char *x)
 	}
 	if (x == XREF_DEF) {
 		if (sym->def_b == NULL)
-			sym->def_b = tl->t;
+			sym->def_b = t;
 		sym->ndef++;
 	} else if (x == XREF_REF) {
 		if (sym->ref_b == NULL)
-			sym->ref_b = tl->t;
+			sym->ref_b = t;
 		sym->nref++;
 	} else {
 		assert (x == XREF_NONE);
 	}
-	vcc_NextToken(tl);
 	return (sym);
 }
 
 struct symbol *
-VCC_MkSym(struct vcc *tl, const char *b, vcc_kind_t kind,
-    int vlo, int vhi)
+VCC_SymbolGet(struct vcc *tl, vcc_kind_t kind, const char *e, const char *x)
+{
+	struct symbol *sym;
+	sym = VCC_SymbolGetTok(tl, kind, e, x, tl->t);
+	if (sym != NULL)
+		vcc_NextToken(tl);
+	return (sym);
+}
+
+struct symbol *
+VCC_MkSym(struct vcc *tl, const char *b, vcc_kind_t kind, int vlo, int vhi)
 {
 	struct symbol *sym;
 
