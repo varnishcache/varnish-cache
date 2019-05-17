@@ -36,7 +36,7 @@
 
 #define VUT_GLOBAL_OPT_P						\
 	VOPT("P:", "[-P <file>]", "PID file",				\
-		"Write the process' PID to the specified file."		\
+	    "Write the process' PID to the specified file."		\
 	)
 
 #define VUT_GLOBAL_OPT_V						\
