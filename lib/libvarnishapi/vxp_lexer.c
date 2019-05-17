@@ -45,7 +45,7 @@
 #include "vxp.h"
 
 static void
-vxp_add_token(struct vxp *vxp, unsigned tok, const char *b, const char *e)
+vxp_append_token(struct vxp *vxp, unsigned tok, const char *b, const char *e)
 {
 	struct token *t;
 
@@ -54,10 +54,7 @@ vxp_add_token(struct vxp *vxp, unsigned tok, const char *b, const char *e)
 	t->tok = tok;
 	t->b = b;
 	t->e = e;
-	if (vxp->t != NULL)
-		VTAILQ_INSERT_AFTER(&vxp->tokens, vxp->t, t, list);
-	else
-		VTAILQ_INSERT_TAIL(&vxp->tokens, t, list);
+	VTAILQ_INSERT_TAIL(&vxp->tokens, t, list);
 	vxp->t = t;
 }
 
@@ -120,7 +117,7 @@ vxp_Lexer(struct vxp *vxp)
 		u = vxp_fixed_token(p, &q);
 		if (u != 0) {
 			AN(q);
-			vxp_add_token(vxp, u, p, q);
+			vxp_append_token(vxp, u, p, q);
 			p = q;
 			continue;
 		}
@@ -141,7 +138,7 @@ vxp_Lexer(struct vxp *vxp)
 					break;
 				}
 			}
-			vxp_add_token(vxp, VAL, p, q);
+			vxp_append_token(vxp, VAL, p, q);
 			if (quote != '\0') {
 				VSB_printf(vxp->sb, "Unterminated string ");
 				vxp_ErrWhere(vxp, vxp->t, q - p);
@@ -157,7 +154,7 @@ vxp_Lexer(struct vxp *vxp)
 			for (q = p; q < vxp->e; q++)
 				if (!isword(*q))
 					break;
-			vxp_add_token(vxp, VAL, p, q);
+			vxp_append_token(vxp, VAL, p, q);
 			vxp->t->dec = vxp_Alloc(vxp, (q - p) + 1);
 			AN(vxp->t->dec);
 			memcpy(vxp->t->dec, p, q - p);
@@ -168,20 +165,20 @@ vxp_Lexer(struct vxp *vxp)
 
 		/* On to the next query */
 		if (*p == '\n') {
-			vxp_add_token(vxp, EOI, p, p + 1);
+			vxp_append_token(vxp, EOI, p, p + 1);
 			p++;
 			continue;
 		}
 
 		/* Error */
-		vxp_add_token(vxp, EOI, p, p + 1);
+		vxp_append_token(vxp, EOI, p, p + 1);
 		VSB_printf(vxp->sb, "Syntax error ");
 		vxp_ErrWhere(vxp, vxp->t, q - p);
 		return;
 	}
 
 	/* Finished */
-	vxp_add_token(vxp, EOI, vxp->e, vxp->e);
+	vxp_append_token(vxp, EOI, vxp->e, vxp->e);
 }
 
 #ifdef VXP_DEBUG
