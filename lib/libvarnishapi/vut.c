@@ -50,6 +50,7 @@
 #include "vas.h"
 #include "miniobj.h"
 #include "vcs.h"
+#include "vsb.h"
 
 #include "vut.h"
 
@@ -126,6 +127,30 @@ VUT_Error(struct VUT *vut, int status, const char *fmt, ...)
 	exit(status);
 }
 
+static void
+vut_arg_q(struct VUT *vut, const char *arg)
+{
+	struct vsb *vsb;
+	char *s;
+
+	AN(arg);
+	if (vut->q_arg == NULL) {
+		REPLACE(vut->q_arg, arg);
+		return;
+	}
+
+	vsb = VSB_new_auto();
+	AN(vsb);
+	AZ(VSB_printf(vsb, "%s\n%s", vut->q_arg, arg));
+	AZ(VSB_finish(vsb));
+
+	s = strdup(VSB_data(vsb));
+	REPLACE(vut->q_arg, s);
+
+	VSB_clear(vsb);
+	VSB_destroy(&vsb);
+}
+
 int
 VUT_Arg(struct VUT *vut, int opt, const char *arg)
 {
@@ -169,8 +194,7 @@ VUT_Arg(struct VUT *vut, int opt, const char *arg)
 		return (1);
 	case 'q':
 		/* Query to use */
-		AN(arg);
-		REPLACE(vut->q_arg, arg);
+		vut_arg_q(vut, arg);
 		return (1);
 	case 'r':
 		/* Binary file input */
