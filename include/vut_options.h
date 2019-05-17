@@ -73,10 +73,18 @@
 	    " the host name is used."					\
 	)
 
+#define VUT_OPT_Q							\
+	VOPT("Q:", "[-Q <file>]", "VSL query file",			\
+	    "Specifies the file containing the VSL query to use."	\
+	    " When multiple -Q or -q options are specified, all"	\
+	    " queries are considered as if the 'or' operator was"	\
+	    " used to combine them."				\
+	)
+
 #define VUT_OPT_q							\
 	VOPT("q:", "[-q <query>]", "VSL query",				\
-	    "Specifies the VSL query to use. When multiple -q"		\
-	    " options are specified, all queries are considered"	\
+	    "Specifies the VSL query to use. When multiple -q or"	\
+	    " -Q options are specified, all queries are considered"	\
 	    " as if the 'or' operator was used to combine them."	\
 	)
 
