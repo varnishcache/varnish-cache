@@ -89,3 +89,8 @@ shell -match "^500 503 $" {
 		RespStatus == 503 # query 2
 	'
 }
+
+shell -match "^500 503 $" {
+	# multiple -q options
+	./ncsa.sh -q 'RespStatus == 500' -q 'RespStatus == 503'
+}

@@ -75,7 +75,9 @@
 
 #define VUT_OPT_q							\
 	VOPT("q:", "[-q <query>]", "VSL query",				\
-		"Specifies the VSL query to use."			\
+	    "Specifies the VSL query to use. When multiple -q"		\
+	    " options are specified, all queries are considered"	\
+	    " as if the 'or' operator was used to combine them."	\
 	)
 
 #define VUT_OPT_r							\
