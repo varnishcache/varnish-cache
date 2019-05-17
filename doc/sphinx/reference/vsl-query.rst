@@ -131,6 +131,26 @@ whose id can be obtained from an ``X-Varnish`` HTTP header, the
 default "guru meditation" error page, or ``Begin`` and ``Link`` log
 records.
 
+A query must fit on a single line, but it is possible to pass multiple
+queries at once, one query per line. Empty lines are ignored, and the
+list of queries is treated as if the 'or' operator was used to combine
+them.
+
+For example this list of queries::
+
+  # catch varnish errors
+  *Error
+
+  # catch backend errors
+  BerespStatus >= 500
+
+is identical to this query::
+
+  (*Error) or (BerespStatus >= 500)
+
+Comments can be used and will be ignored, they start with the ``'#'``
+character.
+
 Record selection criteria
 -------------------------
 
