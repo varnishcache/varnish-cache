@@ -40,19 +40,26 @@
 #include "vmod_abi.h"
 #include "vsb.h"
 
+struct vmod_open {
+	unsigned		magic;
+#define VMOD_OPEN_MAGIC		0x9995b1f3
+	void			*hdl;
+	const char		*err;
+};
+
 static int
 vcc_path_dlopen(void *priv, const char *fn)
 {
-	void *hdl, **pp;
+	struct vmod_open *vop;
 
-	AN(priv);
+	CAST_OBJ_NOTNULL(vop, priv, VMOD_OPEN_MAGIC);
 	AN(fn);
 
-	hdl = dlopen(fn, RTLD_NOW | RTLD_LOCAL);
-	if (hdl == NULL)
+	vop->hdl = dlopen(fn, RTLD_NOW | RTLD_LOCAL);
+	if (vop->hdl == NULL) {
+		vop->err = dlerror();
 		return (-1);
-	pp = priv;
-	*pp = hdl;
+	}
 	return (0);
 }
 
@@ -156,7 +163,6 @@ vcc_json_wildcard(struct vcc *tl, struct symbol *msym, struct symbol *tsym)
 void
 vcc_ParseImport(struct vcc *tl)
 {
-	void *hdl;
 	char fn[1024], *fnp, *fnpx;
 	char buf[256];
 	const char *p;
@@ -166,14 +172,17 @@ vcc_ParseImport(struct vcc *tl)
 	const struct vmod_data *vmd;
 	struct vjsn *vj;
 	int again = 0;
+	struct vmod_open vop[1];
 
+	INIT_OBJ(vop, VMOD_OPEN_MAGIC);
 	t1 = tl->t;
 	SkipToken(tl, ID);		/* "import" */
 
 
 	ExpectErr(tl, ID);
 	mod = tl->t;
-	msym = VCC_SymbolGet(tl, SYM_NONE, SYMTAB_NOERR, XREF_NONE);
+	vcc_NextToken(tl);
+	msym = VCC_SymbolGetTok(tl, SYM_NONE, SYMTAB_NOERR, XREF_NONE, mod);
 
 	if (msym != NULL && msym->kind != SYM_VMOD) {
 		/*
@@ -188,12 +197,15 @@ vcc_ParseImport(struct vcc *tl)
 		again = 1;
 	} else {
 
-		msym = VCC_SymbolGet(tl, SYM_VMOD, SYMTAB_CREATE, XREF_NONE);
+		msym = VCC_SymbolGetTok(tl, SYM_VMOD,
+		    SYMTAB_CREATE, XREF_NONE, mod);
 		ERRCHK(tl);
 		AN(msym);
 		msym->def_b = t1;
 		msym->def_e = tl->t;
 	}
+
+	VTAILQ_INSERT_TAIL(&tl->sym_vmods, msym, sideways);
 
 	if (tl->t->tok == ID) {
 		if (!vcc_IdIs(tl->t, "from")) {
@@ -225,12 +237,17 @@ vcc_ParseImport(struct vcc *tl)
 	if (!again)
 		msym->def_e = tl->t;
 
-
-	if (VFIL_searchpath(tl->vmod_path, vcc_path_dlopen, &hdl, fn, &fnpx)) {
-		VSB_printf(tl->sb, "Could not load VMOD %.*s\n", PF(mod));
-		VSB_printf(tl->sb, "\tFile name: %s\n",
-		    fnpx != NULL ? fnpx : fn);
-		VSB_printf(tl->sb, "\tdlerror: %s\n", dlerror());
+	if (VFIL_searchpath(tl->vmod_path, vcc_path_dlopen, vop, fn, &fnpx)) {
+		if (vop->err == NULL) {
+			VSB_printf(tl->sb,
+			    "Could not find VMOD %.*s\n", PF(mod));
+		} else {
+			VSB_printf(tl->sb,
+			    "Could not open VMOD %.*s\n", PF(mod));
+			VSB_printf(tl->sb, "\tFile name: %s\n",
+			    fnpx != NULL ? fnpx : fn);
+			VSB_printf(tl->sb, "\tdlerror: %s\n", vop->err);
+		}
 		vcc_ErrWhere(tl, mod);
 		free(fnpx);
 		return;
@@ -241,7 +258,7 @@ vcc_ParseImport(struct vcc *tl)
 	free(fnpx);
 
 	bprintf(buf, "Vmod_%.*s_Data", PF(mod));
-	vmd = dlsym(hdl, buf);
+	vmd = dlsym(vop->hdl, buf);
 	if (vmd == NULL) {
 		VSB_printf(tl->sb, "Malformed VMOD %.*s\n", PF(mod));
 		VSB_printf(tl->sb, "\tFile name: %s\n", fnp);
@@ -250,7 +267,7 @@ vcc_ParseImport(struct vcc *tl)
 		return;
 	}
 	if (vmd->vrt_major == 0 && vmd->vrt_minor == 0 &&
-	    strcmp(vmd->abi, VMOD_ABI_Version) != 0) {
+	    (vmd->abi == NULL || strcmp(vmd->abi, VMOD_ABI_Version) != 0)) {
 		VSB_printf(tl->sb, "Incompatible VMOD %.*s\n", PF(mod));
 		VSB_printf(tl->sb, "\tFile name: %s\n", fnp);
 		VSB_printf(tl->sb, "\tABI mismatch, expected <%s>, got <%s>\n",
@@ -282,7 +299,7 @@ vcc_ParseImport(struct vcc *tl)
 	}
 
 	if (!vcc_IdIs(mod, vmd->name)) {
-		VSB_printf(tl->sb, "Wrong VMOD file %.*s\n", PF(mod));
+		VSB_printf(tl->sb, "Wrong file for VMOD %.*s\n", PF(mod));
 		VSB_printf(tl->sb, "\tFile name: %s\n", fnp);
 		VSB_printf(tl->sb, "\tContains vmod \"%s\"\n", vmd->name);
 		vcc_ErrWhere(tl, mod);
@@ -298,7 +315,7 @@ vcc_ParseImport(struct vcc *tl)
 		vcc_ErrWhere2(tl, msym->def_b, msym->def_e);
 	}
 	if (again) {
-		AZ(dlclose(hdl));
+		AZ(dlclose(vop->hdl));
 		return;
 	}
 

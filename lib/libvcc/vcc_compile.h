@@ -258,6 +258,7 @@ struct vcc {
 	const char		*default_probe;
 
 	VTAILQ_HEAD(, symbol)	sym_objects;
+	VTAILQ_HEAD(, symbol)	sym_vmods;
 
 	unsigned		unique;
 	unsigned		vmod_count;

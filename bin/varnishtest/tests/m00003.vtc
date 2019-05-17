@@ -14,7 +14,7 @@ varnish v1 -arg "-pvmod_path=${topbuild}/lib/libvmod_std/.libs/" \
 
 varnish v1 -cliok "param.set vmod_path /nonexistent"
 
-varnish v1 -errvcl {Could not load VMOD std} {
+varnish v1 -errvcl {Could not find VMOD std} {
 	import std;
 }
 
@@ -23,3 +23,35 @@ varnish v1 -cliok "param.set vmod_path ${topbuild}/lib/libvmod_std/.libs/"
 varnish v1 -vcl+backend {
 	import std;
 }
+
+varnish v1 -cliok "param.set vmod_path ${tmpdir}"
+
+shell "true > ${tmpdir}/libvmod_wrong.so"
+
+varnish v1 -errvcl {Could not open VMOD wrong} {
+	import wrong;
+}
+
+shell "cp ${topbuild}/lib/libvmod_debug/.libs/libvmod_debug.so ${tmpdir}/libvmod_wrong.so"
+
+varnish v1 -errvcl {Malformed VMOD wrong} {
+	import wrong;
+}
+
+varnish v1 -errvcl {Incompatible VMOD wrong0} {
+	import wrong0 from "${tmpdir}/libvmod_wrong.so";
+}
+
+varnish v1 -errvcl {Incompatible VMOD wrong1} {
+	import wrong1 from "${tmpdir}/libvmod_wrong.so";
+}
+
+varnish v1 -errvcl {Mangled VMOD wrong2} {
+	import wrong2 from "${tmpdir}/libvmod_wrong.so";
+}
+
+varnish v1 -errvcl {Wrong file for VMOD wrong3} {
+	import wrong3 from "${tmpdir}/libvmod_wrong.so";
+}
+
+shell "rm -f ${tmpdir}/libvmod_wrong.so"

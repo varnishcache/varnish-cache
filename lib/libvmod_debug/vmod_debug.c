@@ -134,7 +134,7 @@ xyzzy_rot13_bytes(struct req *req, enum vdp_action act, void **priv,
 		}
 	}
 	if (i >= 0)
-		retval = VDP_bytes(req, VDP_FLUSH, q, i + 1);
+		retval = VDP_bytes(req, VDP_FLUSH, q, i + 1L);
 	return (retval);
 }
 
@@ -854,3 +854,44 @@ xyzzy_sndbuf(VRT_CTX, VCL_BYTES arg)
 	VSLb(ctx->vsl, SLT_Debug, "SO_SNDBUF fd=%d old=%d new=%d actual=%d",
 	    fd, oldbuf, buflen, newbuf);
 }
+
+/**********************************************************************
+ * For testing import code on bad vmod files (m00003.vtc)
+ */
+
+const struct vmod_data Vmod_wrong0_Data = {
+	.vrt_major =    0,
+	.vrt_minor =    0,
+};
+
+//lint -save -e835 A zero has been given as left argument to operatorp'+'
+const struct vmod_data Vmod_wrong1_Data = {
+	.vrt_major =    VRT_MAJOR_VERSION,
+	.vrt_minor =    VRT_MINOR_VERSION + 1,
+};
+//lint -restore
+
+static const struct foo {
+	int bar;
+} foo_struct[1];
+
+const struct vmod_data Vmod_wrong2_Data = {
+	.vrt_major =    VRT_MAJOR_VERSION,
+	.vrt_minor =    VRT_MINOR_VERSION,
+	.name =		"wrongN",
+	.func =		foo_struct,
+	.func_len =	sizeof foo_struct,
+	.func_name =	"foo_struct",
+	.proto =	"blablabla",
+};
+
+const struct vmod_data Vmod_wrong3_Data = {
+	.vrt_major =    VRT_MAJOR_VERSION,
+	.vrt_minor =    VRT_MINOR_VERSION,
+	.name =		"wrongN",
+	.func =		foo_struct,
+	.func_len =	sizeof foo_struct,
+	.func_name =	"foo_struct",
+	.proto =	"blablabla",
+	.abi =		"abiblabla",
+};
