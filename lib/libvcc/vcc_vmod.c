@@ -57,7 +57,8 @@ vcc_path_dlopen(void *priv, const char *fn)
 }
 
 static void
-func_sym(struct symbol *sym, const char *vmod, const struct vjsn_val *v)
+func_sym(struct symbol *sym, const struct symbol *vmod,
+    const struct vjsn_val *v)
 {
 
 	assert(v->type == VJSN_ARRAY);
@@ -139,13 +140,13 @@ vcc_json_wildcard(struct vcc *tl, struct symbol *msym, struct symbol *tsym)
 		    !strcmp(vv2->value, tsym->name)) {
 			tsym->kind = SYM_FUNC;
 			tsym->noref = 1;
-			func_sym(tsym, msym->name, VTAILQ_NEXT(vv2, list));
+			func_sym(tsym, msym, VTAILQ_NEXT(vv2, list));
 			return;
 		} else if (!strcmp(vv1->value, "$OBJ") &&
 			   !strcmp(vv2->value, tsym->name)) {
 			tsym->kind = SYM_OBJECT;
 			tsym->eval_priv = vv2;
-			tsym->vmod = msym->name;
+			tsym->vmod = msym;
 			return;
 		}
 	}

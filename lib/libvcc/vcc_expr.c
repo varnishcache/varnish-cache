@@ -355,22 +355,24 @@ vcc_priv_arg(struct vcc *tl, const char *p, const struct symbol *sym)
 {
 	char buf[64];
 	struct inifin *ifp;
-	const char *vmod, *f = NULL;
+	const char *f = NULL;
 	struct procprivhead *marklist = NULL;
 
 	AN(sym);
 	AN(sym->vmod);
-	vmod = sym->vmod;
 
-	if (!strcmp(p, "PRIV_VCL")) {
-		return (vcc_mk_expr(VOID, "&vmod_priv_%s", vmod));
-	} else if (!strcmp(p, "PRIV_CALL")) {
+	if (!strcmp(p, "PRIV_VCL"))
+		return (vcc_mk_expr(VOID, "&vmod_priv_%s", sym->vmod->name));
+
+	if (!strcmp(p, "PRIV_CALL")) {
 		bprintf(buf, "vmod_priv_%u", tl->unique++);
 		ifp = New_IniFin(tl);
 		Fh(tl, 0, "static struct vmod_priv %s;\n", buf);
 		VSB_printf(ifp->fin, "\tVRT_priv_fini(&%s);", buf);
 		return (vcc_mk_expr(VOID, "&%s", buf));
-	} else if (!strcmp(p, "PRIV_TASK")) {
+	}
+
+	if (!strcmp(p, "PRIV_TASK")) {
 		f = "task";
 		marklist = &tl->curproc->priv_tasks;
 	} else if (!strcmp(p, "PRIV_TOP")) {
@@ -381,9 +383,9 @@ vcc_priv_arg(struct vcc *tl, const char *p, const struct symbol *sym)
 	}
 	AN(f);
 	AN(marklist);
-	bprintf(buf, "ARG_priv_%s_%s", f, vmod);
+	bprintf(buf, "ARG_priv_%s_%s", f, sym->vmod->name);
 
-	if (vcc_MarkPriv(tl, marklist, vmod) == NULL)
+	if (vcc_MarkPriv(tl, marklist, sym->vmod->name) == NULL)
 		VSB_printf(tl->curproc->prologue,
 			   "  struct vmod_priv *%s = "
 			   "VRT_priv_%s(ctx, &VGC_vmod_%s);\n"
@@ -392,7 +394,7 @@ vcc_priv_arg(struct vcc *tl, const char *p, const struct symbol *sym)
 			   "for vmod %s\");\n"
 			   "    return;\n"
 			   "  }\n",
-			   buf, f, vmod, buf, f, vmod);
+			   buf, f, sym->vmod->name, buf, f, sym->vmod->name);
 	return (vcc_mk_expr(VOID, "%s", buf));
 }
 

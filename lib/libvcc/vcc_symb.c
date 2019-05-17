@@ -199,7 +199,7 @@ const char SYMTAB_CREATE[] = "sym_create";
 
 struct symbol *
 VCC_SymbolGetTok(struct vcc *tl, vcc_kind_t kind, const char *e, const char *x,
-    struct token *t)
+    const struct token *t)
 {
 	struct symbol *sym;
 
