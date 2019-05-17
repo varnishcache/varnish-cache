@@ -109,6 +109,13 @@ vxp_Lexer(struct vxp *vxp)
 			continue;
 		}
 
+		/* Skip comments */
+		if (*p == '#') {
+			while (p < vxp->e && *p != '\n')
+				p++;
+			continue;
+		}
+
 		/* Match for the fixed tokens */
 		u = vxp_fixed_token(p, &q);
 		if (u != 0) {
