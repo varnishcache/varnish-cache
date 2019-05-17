@@ -157,6 +157,9 @@ VUT_Arg(struct VUT *vut, int opt, const char *arg)
 	int i;
 	char *p;
 
+	CHECK_OBJ_NOTNULL(vut, VUT_MAGIC);
+	AN(opt);
+
 	switch (opt) {
 	case 'd':
 		/* Head */
