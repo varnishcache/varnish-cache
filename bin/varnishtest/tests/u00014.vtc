@@ -1,0 +1,91 @@
+varnishtest "VSL compound queries"
+
+# This test case compares individual query scenarios to their
+# compounded queries counterparts.
+
+server s1 {
+	rxreq
+	txresp -status 500
+
+	rxreq
+	txresp -status 503
+} -start
+
+varnish v1 -vcl+backend "" -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 500
+
+	txreq
+	rxresp
+	expect resp.status == 503
+} -run
+
+# Let's fist create a script to reduce in all the variants below.
+
+shell {
+	cat >ncsa.sh <<-EOF
+	#!/bin/sh
+
+	varnishncsa -d -n ${v1_name} -F '%s' "\$@" |
+	tr '\n' ' '
+	# '
+	EOF
+	chmod +x ncsa.sh
+}
+
+shell -match "^500 503 $" {
+	# no query
+	./ncsa.sh
+}
+
+shell -err -expect "Query expression error" {
+	# empty query
+	varnishncsa -d -n ${v1_name} -q ''
+}
+
+shell -err -expect "Query expression error" {
+	varnishncsa -d -n ${v1_name} -q '
+		# empty multiline query
+	'
+}
+
+shell -err -expect "Query expression error" {
+	varnishncsa -d -n ${v1_name} -q '
+		* ~ "Incomplete quoted string
+	'
+}
+
+shell -match "^500 $" {
+	# single query 1
+	./ncsa.sh -q 'RespStatus == 500'
+}
+
+shell -match "^503 $" {
+	# single query 2
+	./ncsa.sh -q 'RespStatus == 503'
+}
+
+shell -match "^500 503 $" {
+	# query 1 OR query 2
+	./ncsa.sh -q '(RespStatus == 500) or (RespStatus == 503)'
+}
+
+shell -match "^500 503 $" {
+	./ncsa.sh -q '
+		# query 1
+		RespStatus == 500
+
+		# query 2
+		RespStatus == 503
+	'
+}
+
+shell -match "^500 503 $" {
+	./ncsa.sh -q '
+		RespStatus == 500 # query 1
+		RespStatus == 503 # query 2
+	'
+}

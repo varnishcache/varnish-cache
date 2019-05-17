@@ -503,15 +503,30 @@ vxp_expr_or(struct vxp *vxp, struct vex **pvex)
 /*
  * SYNTAX:
  *   expr:
- *     expr_or EOI
+ *     expr_or EOI { 'or' expr_or EOI }?
  */
 
 static void
 vxp_expr(struct vxp *vxp, struct vex **pvex)
 {
-	vxp_expr_or(vxp, pvex);
+	struct vex *a = NULL, *or;
+
+	if (*pvex == NULL) {
+		vxp_expr_or(vxp, pvex);
+		ERRCHK(vxp);
+		ExpectErr(vxp, EOI);
+		return;
+	}
+
+	vxp_expr(vxp, &a);
 	ERRCHK(vxp);
-	ExpectErr(vxp, EOI);
+
+	or = vex_alloc(vxp);
+	AN(or);
+	or->tok = T_OR;
+	or->b = *pvex;
+	or->a = a;
+	*pvex = or;
 }
 
 /*
@@ -523,17 +538,27 @@ vxp_Parse(struct vxp *vxp)
 {
 	struct vex *vex = NULL;
 
+	AZ(vxp->err);
 	vxp->t = VTAILQ_FIRST(&vxp->tokens);
-	if (vxp->t == NULL)
-		return (NULL);
 
-	vxp_expr(vxp, &vex);
+	while (vxp->t != NULL) {
+		/* Ignore empty queries */
+		while (vxp->t != NULL && vxp->t->tok == EOI)
+			vxp->t = VTAILQ_NEXT(vxp->t, list);
 
-	if (vxp->err) {
-		if (vex)
-			vex_Free(&vex);
-		AZ(vex);
-		return (NULL);
+		if (vxp->t == NULL)
+			break;
+
+		vxp_expr(vxp, &vex);
+
+		if (vxp->err) {
+			if (vex)
+				vex_Free(&vex);
+			AZ(vex);
+			return (NULL);
+		}
+
+		vxp->t = VTAILQ_NEXT(vxp->t, list);
 	}
 
 	return (vex);
