@@ -11,10 +11,12 @@ varnish v1 -vcl+backend {
 	import debug;
 	import vtc;
 	import debug;		// again
+	import debug as dbg;
+	import debug as dbg;	// again
 
 	sub vcl_init {
-		new objx = debug.obj();
-		debug.vsc_new();
+		new objx = dbg.obj();
+		dbg.vsc_new();
 	}
 
 	sub vcl_synth {

@@ -64,13 +64,12 @@ vcc_path_dlopen(void *priv, const char *fn)
 }
 
 static void
-func_sym(struct symbol *sym, const struct symbol *vmod,
-    const struct vjsn_val *v)
+func_sym(struct symbol *sym, const char *vmod_name, const struct vjsn_val *v)
 {
 
 	assert(v->type == VJSN_ARRAY);
 	sym->action = vcc_Act_Call;
-	sym->vmod = vmod;
+	sym->vmod_name = vmod_name;
 	sym->eval = vcc_Eval_SymFunc;
 	sym->eval_priv = v;
 	v = VTAILQ_FIRST(&v->children);
@@ -82,16 +81,15 @@ func_sym(struct symbol *sym, const struct symbol *vmod,
 }
 
 static void
-vcc_json_always(struct vcc *tl, const struct symbol *msym)
+vcc_json_always(struct vcc *tl, const struct vjsn *vj, const char *vmod_name)
 {
 	struct inifin *ifp;
-	const struct vjsn *vj;
 	const struct vjsn_val *vv, *vv2;
 	double vmod_syntax = 0.0;
 
+	AN(vj);
+	AN(vmod_name);
 	ifp = NULL;
-
-	CAST_OBJ_NOTNULL(vj, msym->eval_priv, VJSN_MAGIC);
 
 	VTAILQ_FOREACH(vv, &vj->value->children, list) {
 		assert(vv->type == VJSN_ARRAY);
@@ -111,13 +109,13 @@ vcc_json_always(struct vcc *tl, const struct symbol *msym)
 			VSB_printf(ifp->ini,
 			    "\tif (%s(ctx, &vmod_priv_%s, VCL_EVENT_LOAD))\n"
 			    "\t\treturn(1);",
-			    vv2->value, msym->name);
+			    vv2->value, vmod_name);
 			VSB_printf(ifp->fin,
 			    "\t\t(void)%s(ctx, &vmod_priv_%s,\n"
 			    "\t\t\t    VCL_EVENT_DISCARD);",
-			    vv2->value, msym->name);
+			    vv2->value, vmod_name);
 			VSB_printf(ifp->event, "%s(ctx, &vmod_priv_%s, ev)",
-			    vv2->value, msym->name);
+			    vv2->value, vmod_name);
 		} else if (!strcmp(vv2->value, "$FUNC")) {
 		} else if (!strcmp(vv2->value, "$OBJ")) {
 		} else {
@@ -147,65 +145,103 @@ vcc_json_wildcard(struct vcc *tl, struct symbol *msym, struct symbol *tsym)
 		    !strcmp(vv2->value, tsym->name)) {
 			tsym->kind = SYM_FUNC;
 			tsym->noref = 1;
-			func_sym(tsym, msym, VTAILQ_NEXT(vv2, list));
+			func_sym(tsym, msym->vmod_name, VTAILQ_NEXT(vv2, list));
 			return;
 		} else if (!strcmp(vv1->value, "$OBJ") &&
 			   !strcmp(vv2->value, tsym->name)) {
 			tsym->kind = SYM_OBJECT;
 			tsym->eval_priv = vv2;
-			tsym->vmod = msym;
+			tsym->vmod_name = msym->vmod_name;
 			return;
 		}
 	}
 	tl->err = 1;
 }
 
+static const struct vmod_data *
+vcc_VmodSanity(struct vcc *tl, void *hdl, struct token *mod, char *fnp)
+{
+	char buf[256];
+	const struct vmod_data *vmd;
+
+	bprintf(buf, "Vmod_%.*s_Data", PF(mod));
+	vmd = dlsym(hdl, buf);
+	if (vmd == NULL) {
+		VSB_printf(tl->sb, "Malformed VMOD %.*s\n", PF(mod));
+		VSB_printf(tl->sb, "\tFile name: %s\n", fnp);
+		VSB_printf(tl->sb, "\t(no Vmod_Data symbol)\n");
+		vcc_ErrWhere(tl, mod);
+		return (NULL);
+	}
+	if (vmd->vrt_major == 0 && vmd->vrt_minor == 0 &&
+	    (vmd->abi == NULL || strcmp(vmd->abi, VMOD_ABI_Version) != 0)) {
+		VSB_printf(tl->sb, "Incompatible VMOD %.*s\n", PF(mod));
+		VSB_printf(tl->sb, "\tFile name: %s\n", fnp);
+		VSB_printf(tl->sb, "\tABI mismatch, expected <%s>, got <%s>\n",
+			   VMOD_ABI_Version, vmd->abi);
+		vcc_ErrWhere(tl, mod);
+		return (NULL);
+	}
+	if (vmd->vrt_major != 0 && (vmd->vrt_major != VRT_MAJOR_VERSION ||
+	    vmd->vrt_minor > VRT_MINOR_VERSION)) {
+		VSB_printf(tl->sb, "Incompatible VMOD %.*s\n", PF(mod));
+		VSB_printf(tl->sb, "\tFile name: %s\n", fnp);
+		VSB_printf(tl->sb, "\tVMOD wants ABI version %u.%u\n",
+		    vmd->vrt_major, vmd->vrt_minor);
+		VSB_printf(tl->sb, "\tvarnishd provides ABI version %u.%u\n",
+		    VRT_MAJOR_VERSION, VRT_MINOR_VERSION);
+		vcc_ErrWhere(tl, mod);
+		return (NULL);
+	}
+	if (vmd->name == NULL ||
+	    vmd->func == NULL ||
+	    vmd->func_len <= 0 ||
+	    vmd->proto == NULL ||
+	    vmd->abi == NULL) {
+		VSB_printf(tl->sb, "Mangled VMOD %.*s\n", PF(mod));
+		VSB_printf(tl->sb, "\tFile name: %s\n", fnp);
+		VSB_printf(tl->sb, "\tInconsistent metadata\n");
+		vcc_ErrWhere(tl, mod);
+		return (NULL);
+	}
+	if (!vcc_IdIs(mod, vmd->name)) {
+		VSB_printf(tl->sb, "Wrong file for VMOD %.*s\n", PF(mod));
+		VSB_printf(tl->sb, "\tFile name: %s\n", fnp);
+		VSB_printf(tl->sb, "\tContains vmod \"%s\"\n", vmd->name);
+		vcc_ErrWhere(tl, mod);
+		return (NULL);
+	}
+	return (vmd);
+}
+
 void
 vcc_ParseImport(struct vcc *tl)
 {
-	char fn[1024], *fnp, *fnpx;
-	char buf[256];
+	char fn[1024], *fnpx;
 	const char *p;
-	struct token *mod, *t1;
+	struct token *mod, *tmod, *t1;
 	struct inifin *ifp;
-	struct symbol *msym;
+	struct symbol *msym, *vsym;
 	const struct vmod_data *vmd;
 	struct vjsn *vj;
-	int again = 0;
 	struct vmod_open vop[1];
 
 	INIT_OBJ(vop, VMOD_OPEN_MAGIC);
 	t1 = tl->t;
 	SkipToken(tl, ID);		/* "import" */
 
-
-	ExpectErr(tl, ID);
+	ExpectErr(tl, ID);		/* "vmod_name" */
 	mod = tl->t;
 	vcc_NextToken(tl);
-	msym = VCC_SymbolGetTok(tl, SYM_NONE, SYMTAB_NOERR, XREF_NONE, mod);
 
-	if (msym != NULL && msym->kind != SYM_VMOD) {
-		/*
-		 * We need to make sure the entire std.* namespace is empty
-		 */
-		VSB_printf(tl->sb, "Module %.*s conflicts with other symbol.\n",
-		    PF(mod));
-		vcc_ErrWhere2(tl, t1, tl->t);
-		return;
-	}
-	if (msym != NULL) {
-		again = 1;
+	if (tl->t->tok == ID && vcc_IdIs(tl->t, "as")) {
+		SkipToken(tl, ID);		/* "as" */
+		ExpectErr(tl, ID);		/* "vcl_name" */
+		tmod = tl->t;
+		vcc_NextToken(tl);
 	} else {
-
-		msym = VCC_SymbolGetTok(tl, SYM_VMOD,
-		    SYMTAB_CREATE, XREF_NONE, mod);
-		ERRCHK(tl);
-		AN(msym);
-		msym->def_b = t1;
-		msym->def_e = tl->t;
+		tmod = mod;
 	}
-
-	VTAILQ_INSERT_TAIL(&tl->sym_vmods, msym, sideways);
 
 	if (tl->t->tok == ID) {
 		if (!vcc_IdIs(tl->t, "from")) {
@@ -234,9 +270,6 @@ vcc_ParseImport(struct vcc *tl)
 
 	SkipToken(tl, ';');
 
-	if (!again)
-		msym->def_e = tl->t;
-
 	if (VFIL_searchpath(tl->vmod_path, vcc_path_dlopen, vop, fn, &fnpx)) {
 		if (vop->err == NULL) {
 			VSB_printf(tl->sb,
@@ -253,71 +286,57 @@ vcc_ParseImport(struct vcc *tl)
 		return;
 	}
 
-	AN(fnpx);
-	fnp = TlDup(tl, fnpx);
-	free(fnpx);
-
-	bprintf(buf, "Vmod_%.*s_Data", PF(mod));
-	vmd = dlsym(vop->hdl, buf);
-	if (vmd == NULL) {
-		VSB_printf(tl->sb, "Malformed VMOD %.*s\n", PF(mod));
-		VSB_printf(tl->sb, "\tFile name: %s\n", fnp);
-		VSB_printf(tl->sb, "\t(no Vmod_Data symbol)\n");
-		vcc_ErrWhere(tl, mod);
-		return;
-	}
-	if (vmd->vrt_major == 0 && vmd->vrt_minor == 0 &&
-	    (vmd->abi == NULL || strcmp(vmd->abi, VMOD_ABI_Version) != 0)) {
-		VSB_printf(tl->sb, "Incompatible VMOD %.*s\n", PF(mod));
-		VSB_printf(tl->sb, "\tFile name: %s\n", fnp);
-		VSB_printf(tl->sb, "\tABI mismatch, expected <%s>, got <%s>\n",
-			   VMOD_ABI_Version, vmd->abi);
-		vcc_ErrWhere(tl, mod);
-		return;
-	}
-	if (vmd->vrt_major != 0 && (vmd->vrt_major != VRT_MAJOR_VERSION ||
-	    vmd->vrt_minor > VRT_MINOR_VERSION)) {
-		VSB_printf(tl->sb, "Incompatible VMOD %.*s\n", PF(mod));
-		VSB_printf(tl->sb, "\tFile name: %s\n", fnp);
-		VSB_printf(tl->sb, "\tVMOD wants ABI version %u.%u\n",
-		    vmd->vrt_major, vmd->vrt_minor);
-		VSB_printf(tl->sb, "\tvarnishd provides ABI version %u.%u\n",
-		    VRT_MAJOR_VERSION, VRT_MINOR_VERSION);
-		vcc_ErrWhere(tl, mod);
-		return;
-	}
-	if (vmd->name == NULL ||
-	    vmd->func == NULL ||
-	    vmd->func_len <= 0 ||
-	    vmd->proto == NULL ||
-	    vmd->abi == NULL) {
-		VSB_printf(tl->sb, "Mangled VMOD %.*s\n", PF(mod));
-		VSB_printf(tl->sb, "\tFile name: %s\n", fnp);
-		VSB_printf(tl->sb, "\tInconsistent metadata\n");
-		vcc_ErrWhere(tl, mod);
-		return;
-	}
-
-	if (!vcc_IdIs(mod, vmd->name)) {
-		VSB_printf(tl->sb, "Wrong file for VMOD %.*s\n", PF(mod));
-		VSB_printf(tl->sb, "\tFile name: %s\n", fnp);
-		VSB_printf(tl->sb, "\tContains vmod \"%s\"\n", vmd->name);
-		vcc_ErrWhere(tl, mod);
-		return;
-	}
-
-	if (again && strcmp(vmd->file_id, msym->extra)) {
-		VSB_printf(tl->sb,
-		    "Different version of module %.*s already imported.\n",
-		    PF(mod));
-		vcc_ErrWhere2(tl, t1, tl->t);
-		VSB_printf(tl->sb, "Previous import was here:\n");
-		vcc_ErrWhere2(tl, msym->def_b, msym->def_e);
-	}
-	if (again) {
+	vmd = vcc_VmodSanity(tl, vop->hdl, mod, fnpx);
+	if (vmd == NULL || tl->err) {
 		AZ(dlclose(vop->hdl));
+		free(fnpx);
 		return;
 	}
+
+	msym = VCC_SymbolGetTok(tl, SYM_NONE, SYMTAB_NOERR, XREF_NONE, tmod);
+
+	if (msym != NULL && msym->kind == SYM_VMOD &&
+	    !strcmp(msym->extra, vmd->file_id)) {
+		/* Identical import is OK */
+		AZ(dlclose(vop->hdl));
+		free(fnpx);
+		return;
+	} else if (msym != NULL && msym->kind == SYM_VMOD) {
+		VSB_printf(tl->sb,
+		    "Another module already imported as %.*s.\n", PF(tmod));
+		vcc_ErrWhere2(tl, t1, tl->t);
+		AZ(dlclose(vop->hdl));
+		free(fnpx);
+		return;
+	} else if (msym != NULL) {
+		VSB_printf(tl->sb,
+		    "Module %.*s conflicts with other symbol.\n", PF(tmod));
+		vcc_ErrWhere2(tl, t1, tl->t);
+		AZ(dlclose(vop->hdl));
+		free(fnpx);
+		return;
+	}
+
+	msym = VCC_SymbolGetTok(tl, SYM_VMOD, SYMTAB_CREATE, XREF_NONE, tmod);
+	ERRCHK(tl);
+	AN(msym);
+	msym->def_b = t1;
+	msym->def_e = tl->t;
+
+	VTAILQ_FOREACH(vsym, &tl->sym_vmods, sideways) {
+		assert(vsym->kind == SYM_VMOD);
+		if (!strcmp(vsym->extra, vmd->file_id)) {
+			/* Already loaded under different name */
+			msym->eval_priv = vsym->eval_priv;
+			msym->wildcard = vsym->wildcard;
+			msym->extra = vsym->extra;
+			msym->vmod_name = vsym->vmod_name;
+			AZ(dlclose(vop->hdl));
+			return;
+		}
+	}
+
+	VTAILQ_INSERT_TAIL(&tl->sym_vmods, msym, sideways);
 
 	ifp = New_IniFin(tl);
 
@@ -328,7 +347,7 @@ vcc_ParseImport(struct vcc *tl)
 	VSB_printf(ifp->ini, "\t    sizeof(%s),\n", vmd->func_name);
 	VSB_printf(ifp->ini, "\t    \"%.*s\",\n", PF(mod));
 	VSB_printf(ifp->ini, "\t    ");
-	VSB_quote(ifp->ini, fnp, -1, VSB_QUOTE_CSTR);
+	VSB_quote(ifp->ini, fnpx, -1, VSB_QUOTE_CSTR);
 	VSB_printf(ifp->ini, ",\n");
 	AN(vmd);
 	AN(vmd->file_id);
@@ -339,7 +358,7 @@ vcc_ParseImport(struct vcc *tl)
 	VSB_printf(ifp->ini, "\t\treturn(1);");
 
 	VSB_printf(tl->fi, "%s VMOD %s ./vmod_cache/_vmod_%.*s.%s */\n",
-	    VCC_INFO_PREFIX, fnp, PF(mod), vmd->file_id);
+	    VCC_INFO_PREFIX, fnpx, PF(mod), vmd->file_id);
 
 	/* XXX: zero the function pointer structure ?*/
 	VSB_printf(ifp->fin, "\t\tVRT_priv_fini(&vmod_priv_%.*s);", PF(mod));
@@ -352,14 +371,16 @@ vcc_ParseImport(struct vcc *tl)
 	msym->eval_priv = vj;
 	msym->wildcard = vcc_json_wildcard;
 	msym->extra = TlDup(tl, vmd->file_id);
+	msym->vmod_name = TlDup(tl, vmd->name);
 
-	vcc_json_always(tl, msym);
+	vcc_json_always(tl, vj, msym->vmod_name);
 
 	Fh(tl, 0, "\n/* --- BEGIN VMOD %.*s --- */\n\n", PF(mod));
 	Fh(tl, 0, "static struct vmod *VGC_vmod_%.*s;\n", PF(mod));
 	Fh(tl, 0, "static struct vmod_priv vmod_priv_%.*s;\n", PF(mod));
 	Fh(tl, 0, "\n%s\n", vmd->proto);
 	Fh(tl, 0, "\n/* --- END VMOD %.*s --- */\n\n", PF(mod));
+	free(fnpx);
 }
 
 void v_matchproto_(sym_act_f)
@@ -462,7 +483,7 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 		AZ(VSB_finish(buf));
 		sy3 = VCC_MkSym(tl, VSB_data(buf), SYM_FUNC, VCL_LOW, VCL_HIGH);
 		AN(sy3);
-		func_sym(sy3, sy2->vmod, VTAILQ_NEXT(vf, list));
+		func_sym(sy3, sy2->vmod_name, VTAILQ_NEXT(vf, list));
 		sy3->extra = p;
 		vv = VTAILQ_NEXT(vv, list);
 	}

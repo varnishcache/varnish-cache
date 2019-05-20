@@ -12,6 +12,11 @@ varnish v1 -errvcl {Module debug conflicts with other symbol.} {
 	}
 }
 
+varnish v1 -errvcl {Another module already imported as foo} {
+	import debug as foo;
+	import directors as foo;
+}
+
 server s1 {
 	rxreq
 	txresp

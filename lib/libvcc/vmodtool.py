@@ -603,7 +603,7 @@ class ModuleStanza(Stanza):
             write_rst_hdr(fo, "SYNOPSIS", "=")
             fo.write("\n")
             fo.write(".. parsed-literal::\n\n")
-            fo.write('  import %s [from "path"]\n' % self.vcc.modname)
+            fo.write('  import %s [as name] [from "path"]\n' % self.vcc.modname)
             fo.write("  \n")
             for c in self.vcc.contents:
                 c.synopsis(fo, man)

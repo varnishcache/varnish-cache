@@ -144,7 +144,7 @@ struct symbol {
 	int				hirev;
 
 	struct symbol			*parent;
-	const struct symbol		*vmod;
+	const char			*vmod_name;
 
 	sym_wildcard_t			*wildcard;
 	vcc_kind_t			kind;

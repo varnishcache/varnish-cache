@@ -359,10 +359,10 @@ vcc_priv_arg(struct vcc *tl, const char *p, const struct symbol *sym)
 	struct procprivhead *marklist = NULL;
 
 	AN(sym);
-	AN(sym->vmod);
+	AN(sym->vmod_name);
 
 	if (!strcmp(p, "PRIV_VCL"))
-		return (vcc_mk_expr(VOID, "&vmod_priv_%s", sym->vmod->name));
+		return (vcc_mk_expr(VOID, "&vmod_priv_%s", sym->vmod_name));
 
 	if (!strcmp(p, "PRIV_CALL")) {
 		bprintf(buf, "vmod_priv_%u", tl->unique++);
@@ -383,9 +383,9 @@ vcc_priv_arg(struct vcc *tl, const char *p, const struct symbol *sym)
 	}
 	AN(f);
 	AN(marklist);
-	bprintf(buf, "ARG_priv_%s_%s", f, sym->vmod->name);
+	bprintf(buf, "ARG_priv_%s_%s", f, sym->vmod_name);
 
-	if (vcc_MarkPriv(tl, marklist, sym->vmod->name) == NULL)
+	if (vcc_MarkPriv(tl, marklist, sym->vmod_name) == NULL)
 		VSB_printf(tl->curproc->prologue,
 			   "  struct vmod_priv *%s = "
 			   "VRT_priv_%s(ctx, &VGC_vmod_%s);\n"
@@ -394,7 +394,7 @@ vcc_priv_arg(struct vcc *tl, const char *p, const struct symbol *sym)
 			   "for vmod %s\");\n"
 			   "    return;\n"
 			   "  }\n",
-			   buf, f, sym->vmod->name, buf, f, sym->vmod->name);
+			   buf, f, sym->vmod_name, buf, f, sym->vmod_name);
 	return (vcc_mk_expr(VOID, "%s", buf));
 }
 
