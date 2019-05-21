@@ -33,16 +33,49 @@
 
 #include <stdio.h>
 
+#include "vdef.h"
+#include "vas.h"
 #include "vcs.h"
 #include "vcs_version.h"
-
-const char *VCS_version =
-    PACKAGE_TARNAME "-" PACKAGE_VERSION " revision " VCS_Version;
 
 void
 VCS_Message(const char *progname)
 {
-	fprintf(stderr, "%s (%s)\n", progname, VCS_version);
-	fprintf(stderr, "Copyright (c) 2006 Verdens Gang AS\n");
-	fprintf(stderr, "Copyright (c) 2006-2019 Varnish Software AS\n");
+	fprintf(stderr, "%s %s", progname, VCS_String("M"));
+}
+
+const char *
+VCS_String(const char *which)
+{
+	AN(which);
+	assert(which[1] == '\0');
+
+	switch(*which) {
+	case 'T':
+		return (PACKAGE_TARNAME);
+	case 'P':
+		return (PACKAGE_VERSION);
+	case 'R':
+		return (VCS_Version);
+	case 'V':
+		return (
+		    PACKAGE_TARNAME
+		    "-" PACKAGE_VERSION
+		    " revision " VCS_Version
+		);
+	case 'M':
+		return (
+		    "("
+		    PACKAGE_TARNAME
+		    "-" PACKAGE_VERSION
+		    " revision " VCS_Version
+		    ")"
+		    "\n"
+		    "Copyright (c) 2006 Verdens Gang AS\n"
+		    "Copyright (c) 2006-2019 Varnish Software AS\n"
+		);
+	default:
+		WRONG("Wrong argument to VCS_String");
+	}
+	NEEDLESS(return (0));
 }

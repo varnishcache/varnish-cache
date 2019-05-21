@@ -167,3 +167,10 @@ LIBVARNISHAPI_2.2 {
     local:
 	*;
 };
+
+LIBVARNISHAPI_2.3 {	/* 2019-09-15 release */
+    global:
+	VCS_String;
+    local:
+	*;
+};

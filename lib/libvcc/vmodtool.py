@@ -1023,7 +1023,7 @@ class vcc(object):
         t = '\t"'
         for i in json.dumps(jl, indent=2, separators=(",", ": ")):
             if i == '\n':
-                fo.write(t + '\\n"\n')
+                fo.write(t + ' "\n')
                 t = '\t"'
             else:
                 if i in '"\\':
