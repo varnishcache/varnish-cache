@@ -97,7 +97,7 @@ wrk_bgthread(void *arg)
 
 	WRONG("BgThread terminated");
 
-	NEEDLESS(return NULL);
+	NEEDLESS(return (NULL));
 }
 
 void

@@ -491,7 +491,7 @@ vbp_thread(struct worker *wrk, void *priv)
 		}
 	}
 	NEEDLESS(Lck_Unlock(&vbp_mtx));
-	NEEDLESS(return NULL);
+	NEEDLESS(return (NULL));
 }
 
 

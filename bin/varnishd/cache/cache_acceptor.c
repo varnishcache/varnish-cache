@@ -616,7 +616,7 @@ vca_acct(void *arg)
 		}
 		vca_periodic(t0);
 	}
-	NEEDLESS(return NULL);
+	NEEDLESS(return (NULL));
 }
 
 /*--------------------------------------------------------------------*/

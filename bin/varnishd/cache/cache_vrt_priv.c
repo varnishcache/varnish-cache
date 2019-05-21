@@ -163,7 +163,7 @@ VRT_priv_top(VRT_CTX, const void *vmod_id)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	if (ctx->req == NULL) {
 		WRONG("PRIV_TOP is only accessible in client VCL context");
-		NEEDLESS(return NULL);
+		NEEDLESS(return (NULL));
 	}
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	req = ctx->req->topreq;

@@ -350,7 +350,7 @@ server_dispatch_thread(void *priv)
 	}
 	pthread_cleanup_pop(0);
 	vtc_logclose(vl);
-	NEEDLESS(return(NULL));
+	NEEDLESS(return (NULL));
 }
 
 static void

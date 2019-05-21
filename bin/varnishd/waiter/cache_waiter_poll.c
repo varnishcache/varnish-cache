@@ -206,7 +206,7 @@ vwp_main(void *priv)
 		if (vwp->pollfd[0].revents)
 			vwp_dopipe(vwp);
 	}
-	NEEDLESS(return NULL);
+	NEEDLESS(return (NULL));
 }
 
 /*--------------------------------------------------------------------*/

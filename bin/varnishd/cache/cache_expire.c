@@ -361,7 +361,7 @@ exp_thread(struct worker *wrk, void *priv)
 		else
 			tnext = exp_expire(ep, t);
 	}
-	NEEDLESS(return NULL);
+	NEEDLESS(return (NULL));
 }
 
 /*--------------------------------------------------------------------*/
