@@ -58,8 +58,8 @@
  *	VRT_count moved to vcc_interface.h
  *	VRT_VCL_Prevent_Cold() and VRT_VCL_Allow_Cold() added.
  *	VRT_vcl_get moved to vcc_interface.h
- *	VRT_vcl_rel emoved to vcc_interface.h
- *	VRT_vcl_select emoved to vcc_interface.h
+ *	VRT_vcl_rel moved to vcc_interface.h
+ *	VRT_vcl_select moved to vcc_interface.h
  *	VRT_VSA_GetPtr() changed
  *	VRT_ipcmp() changed
  *	[cache.h] WS_ReserveAll() added
