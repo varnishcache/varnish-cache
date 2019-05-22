@@ -143,7 +143,6 @@ cmd_haproxy_cli_send(CMD_ARGS)
 {
 	struct vsb *vsb;
 	struct haproxy_cli *hc;
-	ssize_t wr;
 
 	(void)cmd;
 	(void)vl;
@@ -174,8 +173,7 @@ cmd_haproxy_cli_send(CMD_ARGS)
 	}
 	vtc_dump(hc->vl, 4, "CLI send", VSB_data(vsb), -1);
 
-	wr = write(hc->sock, VSB_data(vsb), VSB_len(vsb));
-	if (wr != VSB_len(vsb))
+	if (VSB_tofile(hc->sock, vsb))
 		vtc_fatal(hc->vl,
 		    "CLI fd %d send error %s", hc->sock, strerror(errno));
 
