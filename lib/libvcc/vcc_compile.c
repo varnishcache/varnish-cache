@@ -94,6 +94,30 @@ TlDup(struct vcc *tl, const char *s)
 	return (p);
 }
 
+static int
+TLWriteVSB(struct vcc *tl, const char *fn, const struct vsb *vsb,
+    const char *what)
+{
+	int fo;
+	int i;
+
+	fo = open(fn, O_WRONLY|O_TRUNC|O_CREAT, 0600);
+	if (fo < 0) {
+		VSB_printf(tl->sb,
+		    "Could not open %s file %s: %s\n",
+		    what, fn, strerror(errno));
+		return (-1);
+	}
+	i = VSB_tofile(fo, vsb);
+	if (i) {
+		VSB_printf(tl->sb,
+		    "Could not write %s to %s: %s\n",
+		    what, fn, strerror(errno));
+	}
+	closefd(&fo);
+	return (i);
+}
+
 /*--------------------------------------------------------------------*/
 
 struct proc *
@@ -590,7 +614,7 @@ vcc_resolve_includes(struct vcc *tl)
  */
 
 static struct vsb *
-vcc_CompileSource(struct vcc *tl, struct source *sp)
+vcc_CompileSource(struct vcc *tl, struct source *sp, const char *jfile)
 {
 	struct proc *p;
 	struct vsb *vsb;
@@ -691,13 +715,15 @@ vcc_CompileSource(struct vcc *tl, struct source *sp)
 
 	VCC_XrefTable(tl);
 
+	VSB_printf(tl->symtab, "\n]\n");
+	AZ(VSB_finish(tl->symtab));
+	if (TLWriteVSB(tl, jfile, tl->symtab, "Symbol table"))
+		return (NULL);
+
 	/* Combine it all */
 
 	vsb = VSB_new_auto();
 	AN(vsb);
-
-	AZ(VSB_finish(tl->fi));
-	VSB_cat(vsb, VSB_data(tl->fi));
 
 	vcl_output_lang_h(vsb);
 
@@ -734,38 +760,27 @@ VCC_VCL_Range(unsigned *lo, unsigned *hi)
 int
 VCC_Compile(struct vcc *tl, struct vsb **sb,
     const char *vclsrc, const char *vclsrcfile,
-    const char *ofile)
+    const char *ofile, const char *jfile)
 {
 	struct source *sp;
 	struct vsb *r = NULL;
-	int fo, retval = 0;
+	int retval = 0;
 
 	CHECK_OBJ_NOTNULL(tl, VCC_MAGIC);
 	AN(sb);
 	AN(vclsrcfile);
 	AN(ofile);
+	AN(jfile);
 	if (vclsrc != NULL)
 		sp = vcc_new_source(vclsrc, NULL, vclsrcfile);
 	else
 		sp = vcc_file_source(tl, vclsrcfile);
 
 	if (sp != NULL)
-		r = vcc_CompileSource(tl, sp);
+		r = vcc_CompileSource(tl, sp, jfile);
 
 	if (r != NULL) {
-		fo = open(ofile, O_WRONLY|O_TRUNC|O_CREAT, 0600);
-		if (fo < 0) {
-			VSB_printf(tl->sb,
-			    "Could not open C-source file %s: %s\n",
-			    ofile, strerror(errno));
-		} else {
-			if (VSB_tofile(fo, r)) {
-				VSB_printf(tl->sb,
-				    "Could not write C-source to %s: %s\n",
-				    ofile, strerror(errno));
-			}
-			closefd(&fo);
-		}
+		retval = TLWriteVSB(tl, ofile, r, "C-source");
 		VSB_destroy(&r);
 	} else {
 		retval = -1;
@@ -798,8 +813,9 @@ VCC_New(void)
 
 	tl->nsources = 0;
 
-	tl->fi = VSB_new_auto();
-	assert(tl->fi != NULL);
+	tl->symtab = VSB_new_auto();
+	assert(tl->symtab != NULL);
+	VSB_printf(tl->symtab, "[\n    {\"version\": 0}");
 
 	tl->fc = VSB_new_auto();
 	assert(tl->fc != NULL);

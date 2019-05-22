@@ -48,6 +48,7 @@
 
 #include "common/common_param.h"
 
+struct vjsn;
 struct vsc_seg;
 struct vsmw_cluster;
 #include "VSC_mgt.h"
@@ -216,8 +217,7 @@ void mgt_vcl_startup(struct cli *, const char *vclsrc, const char *origin,
 int mgt_push_vcls(struct cli *, unsigned *status, char **p);
 void mgt_vcl_export_labels(struct vcc *);
 int mgt_has_vcl(void);
-void mgt_vcl_depends(struct vclprog *vp1, const char *name);
-void mgt_vcl_vmod(struct vclprog *, const char *src, const char *dst);
+void mgt_vcl_symtab(struct vclprog *, struct vjsn *);
 extern char *mgt_cc_cmd;
 extern const char *mgt_vcl_path;
 extern const char *mgt_vmod_path;

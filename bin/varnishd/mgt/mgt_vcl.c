@@ -45,6 +45,7 @@
 #include "vcli_serve.h"
 #include "vct.h"
 #include "vev.h"
+#include "vjsn.h"
 #include "vtim.h"
 
 #define VCL_STATE(sym, str)					\
@@ -84,6 +85,7 @@ struct vclprog {
 	unsigned		warm;
 	const char *		state;
 	double			go_cold;
+	struct vjsn		*symtab;
 	VTAILQ_HEAD(, vcldep)	dfrom;
 	VTAILQ_HEAD(, vcldep)	dto;
 	int			nto;
@@ -309,17 +311,32 @@ mgt_vcl_del(struct vclprog *vp)
 		}
 	}
 	free(vp->name);
+	if (vp->symtab)
+		vjsn_delete(&vp->symtab);
 	FREE_OBJ(vp);
 }
 
-void
-mgt_vcl_depends(struct vclprog *vp1, const char *name)
+static const char *
+mgt_vcl_symtab_val(const struct vjsn_val *vv, const char *val)
+{
+	const struct vjsn_val *jv;
+
+	jv = vjsn_child(vv, val);
+	AN(jv);
+	assert(jv->type == VJSN_STRING);
+	AN(jv->value);
+	return (jv->value);
+}
+
+static void
+mgt_vcl_import_vcl(struct vclprog *vp1, const struct vjsn_val *vv)
 {
 	struct vclprog *vp2;
 
 	CHECK_OBJ_NOTNULL(vp1, VCLPROG_MAGIC);
+	AN(vv);
 
-	vp2 = mcf_vcl_byname(name);
+	vp2 = mcf_vcl_byname(mgt_vcl_symtab_val(vv, "name"));
 	CHECK_OBJ_NOTNULL(vp2, VCLPROG_MAGIC);
 	mgt_vcl_dep_add(vp1, vp2);
 }
@@ -336,8 +353,8 @@ mgt_vcl_cache_vmod(const char *nm, const char *fm, const char *to)
 	if (fo < 0 && errno == EEXIST)
 		return (0);
 	if (fo < 0) {
-		fprintf(stderr, "Creating copy of vmod %s: %s\n",
-		    nm, vstrerror(errno));
+		fprintf(stderr, "While creating copy of vmod %s:\n\t%s: %s\n",
+		    nm, to, vstrerror(errno));
 		return (1);
 	}
 	fi = open(fm, O_RDONLY);
@@ -366,27 +383,32 @@ mgt_vcl_cache_vmod(const char *nm, const char *fm, const char *to)
 	return (ret);
 }
 
-void
-mgt_vcl_vmod(struct vclprog *vp, const char *src, const char *dst)
+static void
+mgt_vcl_import_vmod(struct vclprog *vp, const struct vjsn_val *vv)
 {
 	struct vmodfile *vf;
 	struct vmoddep *vd;
+	const char *v_name;
+	const char *v_file;
+	const char *v_dst;
 
 	CHECK_OBJ_NOTNULL(vp, VCLPROG_MAGIC);
-	AN(src);
-	AN(dst);
-	assert(!strncmp(dst, "./vmod_cache/", 13));
+	AN(vv);
+
+	v_name = mgt_vcl_symtab_val(vv, "name");
+	v_file = mgt_vcl_symtab_val(vv, "file");
+	v_dst = mgt_vcl_symtab_val(vv, "dst");
 
 	VTAILQ_FOREACH(vf, &vmodhead, list)
-		if (!strcmp(vf->fname, dst))
+		if (!strcmp(vf->fname, v_dst))
 			break;
 	if (vf == NULL) {
 		ALLOC_OBJ(vf, VMODFILE_MAGIC);
 		AN(vf);
-		REPLACE(vf->fname, dst);
+		REPLACE(vf->fname, v_dst);
 		AN(vf->fname);
 		VTAILQ_INIT(&vf->vcls);
-		AZ(mgt_vcl_cache_vmod(vp->name, src, dst));
+		AZ(mgt_vcl_cache_vmod(v_name, v_file, v_dst));
 		VTAILQ_INSERT_TAIL(&vmodhead, vf, list);
 	}
 	ALLOC_OBJ(vd, VMODDEP_MAGIC);
@@ -394,6 +416,33 @@ mgt_vcl_vmod(struct vclprog *vp, const char *src, const char *dst)
 	vd->to = vf;
 	VTAILQ_INSERT_TAIL(&vp->vmods, vd, lfrom);
 	VTAILQ_INSERT_TAIL(&vf->vcls, vd, lto);
+}
+
+void
+mgt_vcl_symtab(struct vclprog *vp, struct vjsn *vj)
+{
+	struct vjsn_val *v1, *v2;
+	const char *typ;
+
+	CHECK_OBJ_NOTNULL(vp, VCLPROG_MAGIC);
+	vp->symtab = vj;
+	assert(vj->value->type == VJSN_ARRAY);
+	VTAILQ_FOREACH(v1, &vj->value->children, list) {
+		assert(v1->type == VJSN_OBJECT);
+		v2 = vjsn_child(v1, "dir");
+		if (v2 == NULL)
+			continue;
+		assert(v2->type == VJSN_STRING);
+		if (strcmp(v2->value, "import"))
+			continue;
+		typ = mgt_vcl_symtab_val(v1, "type");
+		if (!strcmp(typ, "$VMOD"))
+			mgt_vcl_import_vmod(vp, v1);
+		else if (!strcmp(typ, "$VCL"))
+			mgt_vcl_import_vcl(vp, v1);
+		else
+			WRONG("Bad symtab import entry");
+	}
 }
 
 int

@@ -45,8 +45,8 @@
 #include "libvcc.h"
 #include "vcli_serve.h"
 #include "vfil.h"
+#include "vjsn.h"
 #include "vsub.h"
-#include "vav.h"
 #include "vtim.h"
 
 struct vcc_priv {
@@ -57,6 +57,7 @@ struct vcc_priv {
 	const char	*vclsrcfile;
 	char		*csrcfile;
 	char		*libfile;
+	char		*symfile;
 };
 
 char *mgt_cc_cmd;
@@ -69,6 +70,7 @@ unsigned mgt_vcc_unsafe_path;
 
 #define VGC_SRC		"vgc.c"
 #define VGC_LIB		"vgc.so"
+#define VGC_SYM		"vgc.sym"
 
 /*--------------------------------------------------------------------*/
 
@@ -107,7 +109,8 @@ run_vcc(void *priv)
 	STV_Foreach(stv)
 		VCC_Predef(vcc, "VCL_STEVEDORE", stv->ident);
 	mgt_vcl_export_labels(vcc);
-	i = VCC_Compile(vcc, &sb, vp->vclsrc, vp->vclsrcfile, VGC_SRC);
+	i = VCC_Compile(vcc, &sb, vp->vclsrc, vp->vclsrcfile,
+	    VGC_SRC, VGC_SYM);
 	if (VSB_len(sb))
 		printf("%s", VSB_data(sb));
 	VSB_destroy(&sb);
@@ -212,7 +215,9 @@ static unsigned
 mgt_vcc_compile(struct vcc_priv *vp, struct vsb *sb, int C_flag)
 {
 	char *csrc;
+	const char *err;
 	unsigned subs;
+	struct vjsn *vj;
 
 	if (mgt_vcc_touchfile(vp->csrcfile, sb))
 		return (2);
@@ -227,6 +232,18 @@ mgt_vcc_compile(struct vcc_priv *vp, struct vsb *sb, int C_flag)
 		csrc = VFIL_readfile(NULL, vp->csrcfile, NULL);
 		AN(csrc);
 		VSB_cat(sb, csrc);
+		free(csrc);
+
+		VSB_printf(sb, "/* EXTERNAL SYMBOL TABLE\n");
+		csrc = VFIL_readfile(NULL, vp->symfile, NULL);
+		AN(csrc);
+		VSB_cat(sb, csrc);
+		vj = vjsn_parse(csrc, &err);
+		if (err != NULL)
+			VSB_printf(sb, "# Parse error: %s\n", err);
+		if (vj != NULL)
+			vjsn_delete(&vj);
+		VSB_printf(sb, "*/\n");
 		free(csrc);
 	}
 
@@ -246,11 +263,10 @@ mgt_VccCompile(struct cli *cli, struct vclprog *vcl, const char *vclname,
 {
 	struct vcc_priv vp;
 	struct vsb *sb;
+	struct vjsn *vj;
 	unsigned status;
-	char buf[1024];
-	FILE *fcs;
-	char **av;
-	int ac;
+	const char *err;
+	char *p;
 
 	AN(cli);
 
@@ -319,6 +335,12 @@ mgt_VccCompile(struct cli *cli, struct vclprog *vcl, const char *vclname,
 	AN(vp.csrcfile);
 	VSB_clear(sb);
 
+	VSB_printf(sb, "%s/%s", vp.dir, VGC_SYM);
+	AZ(VSB_finish(sb));
+	vp.symfile = strdup(VSB_data(sb));
+	AN(vp.symfile);
+	VSB_clear(sb);
+
 	status = mgt_vcc_compile(&vp, sb, C_flag);
 
 	AZ(VSB_finish(sb));
@@ -330,6 +352,7 @@ mgt_VccCompile(struct cli *cli, struct vclprog *vcl, const char *vclname,
 		if (!MGT_DO_DEBUG(DBG_VCL_KEEP)) {
 			(void)unlink(vp.csrcfile);
 			(void)unlink(vp.libfile);
+			(void)unlink(vp.symfile);
 			(void)rmdir(vp.dir);
 		}
 		free(vp.csrcfile);
@@ -342,26 +365,17 @@ mgt_VccCompile(struct cli *cli, struct vclprog *vcl, const char *vclname,
 		return (NULL);
 	}
 
-	fcs = fopen(vp.csrcfile, "r");
-	AN(fcs);
-	while (1) {
-		AN(fgets(buf, sizeof buf, fcs));
-		if (memcmp(buf, VCC_INFO_PREFIX, strlen(VCC_INFO_PREFIX)))
-			break;
-		av = VAV_Parse(buf, &ac, 0);
-		AN(av);
-		AZ(av[0]);
-		AZ(strcmp(av[1], "/*"));
-		AZ(strcmp(av[ac-1], "*/"));
-		if (!strcmp(av[3], "VCL"))
-			mgt_vcl_depends(vcl, av[4]);
-		else if (!strcmp(av[3], "VMOD"))
-			mgt_vcl_vmod(vcl, av[4], av[5]);
-		else
-			WRONG("Wrong VCCINFO");
-		VAV_Free(av);
-	}
-	AZ(fclose(fcs));
+	p = VFIL_readfile(NULL, vp.symfile, NULL);
+	AN(p);
+	vj = vjsn_parse(p, &err);
+	if (err != NULL)
+		fprintf(stderr, "FATAL: Symtab parse error: %s\n%s\n",
+		    err, p);
+	AZ(err);
+	AN(vj);
+	free(p);
+	mgt_vcl_symtab(vcl, vj);
+	(void)unlink(vp.symfile);
 
 	if (!MGT_DO_DEBUG(DBG_VCL_KEEP))
 		(void)unlink(vp.csrcfile);

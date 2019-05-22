@@ -357,8 +357,15 @@ vcc_ParseImport(struct vcc *tl)
 	VSB_printf(ifp->ini, "\t    ))\n");
 	VSB_printf(ifp->ini, "\t\treturn(1);");
 
-	VSB_printf(tl->fi, "%s VMOD %s ./vmod_cache/_vmod_%.*s.%s */\n",
-	    VCC_INFO_PREFIX, fnpx, PF(mod), vmd->file_id);
+	VSB_printf(tl->symtab, ",\n    {\n");
+	VSB_printf(tl->symtab, "\t\"dir\": \"import\",\n");
+	VSB_printf(tl->symtab, "\t\"type\": \"$VMOD\",\n");
+	VSB_printf(tl->symtab, "\t\"name\": \"%.*s\",\n", PF(mod));
+	VSB_printf(tl->symtab, "\t\"file\": \"%s\",\n", fnpx);
+	VSB_printf(tl->symtab,
+	    "\t\"dst\": \"./vmod_cache/_vmod_%.*s.%s\"\n",
+	    PF(mod), vmd->file_id);
+	VSB_printf(tl->symtab, "    }");
 
 	/* XXX: zero the function pointer structure ?*/
 	VSB_printf(ifp->fin, "\t\tVRT_priv_fini(&vmod_priv_%.*s);", PF(mod));

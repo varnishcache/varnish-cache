@@ -422,7 +422,7 @@ VCL_Close(struct vcl **vclp)
 }
 
 /*--------------------------------------------------------------------
- * NB: This function is called from the test-load subprocess.
+ * NB: This function is called in/from the test-load subprocess.
  */
 
 int
