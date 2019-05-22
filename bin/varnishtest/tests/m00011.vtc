@@ -77,6 +77,11 @@ varnish v1 -vcl+backend {
 		set resp.http.port11 = std.port(debug.get_ip());
 		std.timestamp("1.2.3.4 80, p = 443");
 
+		debug.store_ip(std.ip(req.http.non-existent, server.ip));
+		set resp.http.ip12 = debug.get_ip();
+		set resp.http.port12 = std.port(debug.get_ip());
+		std.timestamp("NULL, server.ip");
+
 	}
 } -start
 
@@ -110,4 +115,6 @@ client c1 {
 	expect resp.http.port10 == ${s1_port}
 	expect resp.http.ip11 == 1.2.3.4
 	expect resp.http.port11 == 80
+	expect resp.http.ip12 == ${v1_addr}
+	expect resp.http.port12 == ${v1_port}
 } -run

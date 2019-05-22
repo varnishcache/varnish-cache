@@ -194,7 +194,7 @@ VCL_IP
 vmod_ip(VRT_CTX, struct VARGS(ip) *a)
 {
 	void *p;
-	VCL_IP retval;
+	VCL_IP retval = NULL;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	if (a->valid_fallback)
@@ -206,10 +206,11 @@ vmod_ip(VRT_CTX, struct VARGS(ip) *a)
 		return (NULL);
 	}
 
-	retval = VSS_ResolveFirst(
-	    p, a->s, a->valid_p ? a->p : "80",
-	    AF_UNSPEC, SOCK_STREAM,
-	    a->resolve ? 0 : AI_NUMERICHOST|AI_NUMERICSERV);
+	if (a->s != NULL)
+		retval = VSS_ResolveFirst(
+		    p, a->s, a->valid_p ? a->p : "80",
+		    AF_UNSPEC, SOCK_STREAM,
+		    a->resolve ? 0 : AI_NUMERICHOST|AI_NUMERICSERV);
 
 	if (retval != NULL)
 		return (retval);
