@@ -58,4 +58,5 @@ struct vjsn *vjsn_parse_end(const char *, const char *, const char **);
 struct vjsn *vjsn_parse(const char *, const char **);
 void vjsn_delete(struct vjsn **);
 void vjsn_dump(const struct vjsn *js, FILE *fo);
+void vjsn_dump_val(const struct vjsn_val *jsv, FILE *fo);
 struct vjsn_val *vjsn_child(const struct vjsn_val *, const char *);

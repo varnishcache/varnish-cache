@@ -465,6 +465,7 @@ vjsn_dump_i(const struct vjsn_val *jsv, FILE *fo, int indent)
 {
 	struct vjsn_val *jsve;
 
+	CHECK_OBJ_NOTNULL(jsv, VJSN_VAL_MAGIC);
 	printf("%*s", indent, "");
 	if (jsv->name != NULL)
 		printf("[\"%s\"]: ", jsv->name);
@@ -480,6 +481,13 @@ vjsn_dump_i(const struct vjsn_val *jsv, FILE *fo, int indent)
 	printf("\n");
 	VTAILQ_FOREACH(jsve, &jsv->children, list)
 		vjsn_dump_i(jsve, fo, indent + 2);
+}
+
+void
+vjsn_dump_val(const struct vjsn_val *jsv, FILE *fo)
+{
+	CHECK_OBJ_NOTNULL(jsv, VJSN_VAL_MAGIC);
+	vjsn_dump_i(jsv, fo, 0);
 }
 
 void
