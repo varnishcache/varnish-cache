@@ -52,9 +52,11 @@
 
 #include "config.h"
 
+#include <fcntl.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "vcc_compile.h"
 
@@ -729,25 +731,48 @@ VCC_VCL_Range(unsigned *lo, unsigned *hi)
  * formatted into the vsb.
  */
 
-struct vsb *
+int
 VCC_Compile(struct vcc *tl, struct vsb **sb,
-    const char *vclsrc, const char *vclsrcfile)
+    const char *vclsrc, const char *vclsrcfile,
+    const char *ofile)
 {
 	struct source *sp;
 	struct vsb *r = NULL;
+	int fo, retval = 0;
 
 	CHECK_OBJ_NOTNULL(tl, VCC_MAGIC);
 	AN(sb);
 	AN(vclsrcfile);
-
+	AN(ofile);
 	if (vclsrc != NULL)
 		sp = vcc_new_source(vclsrc, NULL, vclsrcfile);
 	else
 		sp = vcc_file_source(tl, vclsrcfile);
+
 	if (sp != NULL)
 		r = vcc_CompileSource(tl, sp);
+
+	if (r != NULL) {
+		fo = open(ofile, O_WRONLY|O_TRUNC|O_CREAT, 0600);
+		if (fo < 0) {
+			VSB_printf(tl->sb,
+			    "Could not open C-source file %s: %s\n",
+			    ofile, strerror(errno));
+		} else {
+			if (VSB_tofile(fo, r)) {
+				VSB_printf(tl->sb,
+				    "Could not write C-source to %s: %s\n",
+				    ofile, strerror(errno));
+			}
+			closefd(&fo);
+		}
+		VSB_destroy(&r);
+	} else {
+		retval = -1;
+	}
+	AZ(VSB_finish(tl->sb));
 	*sb = tl->sb;
-	return (r);
+	return (retval);
 }
 
 /*--------------------------------------------------------------------

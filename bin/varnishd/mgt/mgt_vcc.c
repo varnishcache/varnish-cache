@@ -85,12 +85,11 @@ mgt_DumpBuiltin(void)
 static void v_matchproto_(vsub_func_f)
 run_vcc(void *priv)
 {
-	struct vsb *csrc;
 	struct vsb *sb = NULL;
 	struct vcc_priv *vp;
-	int fd, i, l;
 	struct vcc *vcc;
 	struct stevedore *stv;
+	int i;
 
 	VJ_subproc(JAIL_SUBPROC_VCC);
 	CAST_OBJ_NOTNULL(vp, priv, VCC_PRIV_MAGIC);
@@ -108,28 +107,11 @@ run_vcc(void *priv)
 	STV_Foreach(stv)
 		VCC_Predef(vcc, "VCL_STEVEDORE", stv->ident);
 	mgt_vcl_export_labels(vcc);
-	csrc = VCC_Compile(vcc, &sb, vp->vclsrc, vp->vclsrcfile);
-	AZ(VSB_finish(sb));
+	i = VCC_Compile(vcc, &sb, vp->vclsrc, vp->vclsrcfile, VGC_SRC);
 	if (VSB_len(sb))
 		printf("%s", VSB_data(sb));
 	VSB_destroy(&sb);
-	if (csrc == NULL)
-		exit(2);
-
-	fd = open(VGC_SRC, O_WRONLY|O_TRUNC|O_CREAT, 0600);
-	if (fd < 0) {
-		fprintf(stderr, "VCC cannot open %s", vp->csrcfile);
-		exit(2);
-	}
-	l = VSB_len(csrc);
-	i = write(fd, VSB_data(csrc), l);
-	if (i != l) {
-		fprintf(stderr, "VCC cannot write %s", vp->csrcfile);
-		exit(2);
-	}
-	closefd(&fd);
-	VSB_destroy(&csrc);
-	exit(0);
+	exit(i == 0 ? 0 : 2);
 }
 
 /*--------------------------------------------------------------------
