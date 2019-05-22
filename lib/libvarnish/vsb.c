@@ -34,6 +34,7 @@ __FBSDID("$FreeBSD: head/sys/kern/subr_vsb.c 222004 2011-05-17 06:36:32Z phk $")
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "vdef.h"
 #include "vas.h"	// XXX Flexelint "not used" - but req'ed for assert()
@@ -618,7 +619,7 @@ VSB_quote(struct vsb *s, const void *v, int len, int how)
  */
 
 void
-VSB_indent(struct vsb * s, int i)
+VSB_indent(struct vsb *s, int i)
 {
 
 	assert_VSB_integrity(s);
@@ -626,4 +627,15 @@ VSB_indent(struct vsb * s, int i)
 		s->s_error = EINVAL;
 	else
 		s->s_indent += i;
+}
+
+int
+VSB_tofile(int fd, const struct vsb *s)
+{
+	int sz;
+
+	assert_VSB_integrity(s);
+	assert_VSB_state(s, VSB_FINISHED);
+	sz = write(fd, VSB_data(s), VSB_len(s));
+	return (sz == VSB_len(s) ? 0 : -1);
 }
