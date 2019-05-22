@@ -84,7 +84,7 @@ vtc_send_proxy(int fd, int version, const struct suckaddr *sac,
 	char pc[VTCP_PORTBUFSIZE];
 	char hs[VTCP_ADDRBUFSIZE];
 	char ps[VTCP_PORTBUFSIZE];
-	int i, len;
+	int i;
 	int proto;
 
 	AN(sac);
@@ -126,8 +126,7 @@ vtc_send_proxy(int fd, int version, const struct suckaddr *sac,
 		WRONG("Wrong proxy version");
 
 	AZ(VSB_finish(vsb));
-	len = VSB_len(vsb);
-	i = write(fd, VSB_data(vsb), len);
+	i = VSB_tofile(fd, vsb);
 	VSB_delete(vsb);
-	return (i != len);
+	return (i);
 }

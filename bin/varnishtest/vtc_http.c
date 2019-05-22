@@ -213,14 +213,12 @@ synth_body(const char *len, int rnd)
 static void
 http_write(const struct http *hp, int lvl, const char *pfx)
 {
-	ssize_t l;
 
 	AZ(VSB_finish(hp->vsb));
 	vtc_dump(hp->vl, lvl, pfx, VSB_data(hp->vsb), VSB_len(hp->vsb));
-	l = write(hp->fd, VSB_data(hp->vsb), VSB_len(hp->vsb));
-	if (l != VSB_len(hp->vsb))
-		vtc_log(hp->vl, hp->fatal, "Write failed: (%zd vs %zd) %s",
-		    l, VSB_len(hp->vsb), strerror(errno));
+	if (VSB_tofile(hp->fd, hp->vsb))
+		vtc_log(hp->vl, hp->fatal, "Write failed: %s",
+		    strerror(errno));
 }
 
 /**********************************************************************
@@ -1417,7 +1415,6 @@ cmd_http_sendhex(CMD_ARGS)
 {
 	struct vsb *vsb;
 	struct http *hp;
-	int j;
 
 	(void)cmd;
 	(void)vl;
@@ -1427,8 +1424,9 @@ cmd_http_sendhex(CMD_ARGS)
 	vsb = vtc_hex_to_bin(hp->vl, av[1]);
 	assert(VSB_len(vsb) >= 0);
 	vtc_hexdump(hp->vl, 4, "sendhex", VSB_data(vsb), VSB_len(vsb));
-	j = write(hp->fd, VSB_data(vsb), VSB_len(vsb));
-	assert(j == VSB_len(vsb));
+	if (VSB_tofile(hp->fd, vsb))
+		vtc_log(hp->vl, hp->fatal, "Write failed: %s",
+		    strerror(errno));
 	VSB_destroy(&vsb);
 }
 

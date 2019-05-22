@@ -198,7 +198,6 @@ static void
 vsmw_append_record(struct vsmw *vsmw, struct vsmwseg *seg, char act)
 {
 	int fd;
-	ssize_t s;
 
 	CHECK_OBJ_NOTNULL(vsmw, VSMW_MAGIC);
 	CHECK_OBJ_NOTNULL(seg, VSMWSEG_MAGIC);
@@ -207,9 +206,8 @@ vsmw_append_record(struct vsmw *vsmw, struct vsmwseg *seg, char act)
 	VSB_clear(vsmw->vsb);
 	vsmw_fmt_index(vsmw, seg, act);
 	AZ(VSB_finish(vsmw->vsb));
-	s = write(fd, VSB_data(vsmw->vsb), VSB_len(vsmw->vsb));
-	assert(s == VSB_len(vsmw->vsb)); // XXX handle ENOSPC? #2764
-	AZ(close(fd));
+	XXXAZ(VSB_tofile(fd, vsmw->vsb)); // XXX handle ENOSPC? #2764
+	closefd(&fd);
 }
 
 /*--------------------------------------------------------------------*/
@@ -230,7 +228,6 @@ static void
 vsmw_delseg(struct vsmw *vsmw, struct vsmwseg *seg)
 {
 	char *t = NULL;
-	ssize_t s;
 	int fd;
 	struct vsmwseg *s2;
 
@@ -256,9 +253,8 @@ vsmw_delseg(struct vsmw *vsmw, struct vsmwseg *seg)
 		VTAILQ_FOREACH(s2, &vsmw->segs, list)
 			vsmw_fmt_index(vsmw, s2, '+');
 		AZ(VSB_finish(vsmw->vsb));
-		s = write(fd, VSB_data(vsmw->vsb), VSB_len(vsmw->vsb));
-		assert(s == VSB_len(vsmw->vsb));
-		AZ(close(fd));
+		XXXAZ(VSB_tofile(fd, vsmw->vsb)); // XXX handle ENOSPC? #2764
+		closefd(&fd);
 		AZ(renameat(vsmw->vdirfd, t, vsmw->vdirfd, vsmw->idx));
 		REPLACE(t, NULL);
 		vsmw->nsubs = 0;

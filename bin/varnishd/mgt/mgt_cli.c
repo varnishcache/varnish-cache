@@ -145,8 +145,7 @@ mcf_askchild(struct cli *cli, const char * const *av, void *priv)
 	}
 	VSB_putc(vsb, '\n');
 	AZ(VSB_finish(vsb));
-	i = write(cli_o, VSB_data(vsb), VSB_len(vsb));
-	if (i != VSB_len(vsb)) {
+	if (VSB_tofile(cli_o, vsb)) {
 		VSB_destroy(&vsb);
 		VCLI_SetResult(cli, CLIS_COMMS);
 		VCLI_Out(cli, "CLI communication error");
@@ -177,7 +176,7 @@ static struct cli_proto cli_askchild[] = {
 int
 mgt_cli_askchild(unsigned *status, char **resp, const char *fmt, ...)
 {
-	int i, j;
+	int i;
 	va_list ap;
 	unsigned u;
 
@@ -203,8 +202,7 @@ mgt_cli_askchild(unsigned *status, char **resp, const char *fmt, ...)
 	AZ(VSB_finish(cli_buf));
 	i = VSB_len(cli_buf);
 	assert(i > 0 && VSB_data(cli_buf)[i - 1] == '\n');
-	j = write(cli_o, VSB_data(cli_buf), i);
-	if (j != i) {
+	if (VSB_tofile(cli_o, cli_buf)) {
 		if (status != NULL)
 			*status = CLIS_COMMS;
 		if (resp != NULL)

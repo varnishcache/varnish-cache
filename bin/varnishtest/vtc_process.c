@@ -786,7 +786,6 @@ static void
 process_write_hex(const struct process *p, const char *text)
 {
 	struct vsb *vsb;
-	int j;
 
 	if (!p->hasthread)
 		vtc_fatal(p->vl, "Cannot write to a non-running process");
@@ -794,8 +793,7 @@ process_write_hex(const struct process *p, const char *text)
 	vsb = vtc_hex_to_bin(p->vl, text);
 	assert(VSB_len(vsb) >= 0);
 	vtc_hexdump(p->vl, 4, "sendhex", VSB_data(vsb), VSB_len(vsb));
-	j = write(p->fd_term, VSB_data(vsb), VSB_len(vsb));
-	assert(j == VSB_len(vsb));
+	AZ(VSB_tofile(p->fd_term, vsb));
 	VSB_destroy(&vsb);
 }
 
