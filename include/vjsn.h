@@ -54,6 +54,7 @@ struct vjsn {
 	const char		*err;
 };
 
+struct vjsn *vjsn_parse_end(const char *, const char *, const char **);
 struct vjsn *vjsn_parse(const char *, const char **);
 void vjsn_delete(struct vjsn **);
 void vjsn_dump(const struct vjsn *js, FILE *fo);
