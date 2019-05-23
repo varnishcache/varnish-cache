@@ -14,7 +14,7 @@ varnish v1 -vcl+backend { }
 delay 4
 varnish v1 -cliok ping
 
-shell -match "auto +cold" { varnishadm -n ${v1_name} vcl.list | grep vcl1 }
+shell -match "auto +cold +0 +vcl1" { varnishadm -n ${v1_name} vcl.list }
 
 # first we try to label a cold VCL in auto state
 
@@ -28,7 +28,7 @@ shell -err { varnishadm -n ${v1_name} vcl.list | grep label1 }
 # second we try to label VCL in cold state
 varnish v1 -cliok "vcl.state vcl1 cold"
 
-shell -match "cold +cold" { varnishadm -n ${v1_name} vcl.list | grep vcl1 }
+shell -match "cold +cold +0 +vcl1" { varnishadm -n ${v1_name} vcl.list }
 
 varnish v1 -cliexpect "set to auto or warm first" "vcl.label label1 vcl1"
 
