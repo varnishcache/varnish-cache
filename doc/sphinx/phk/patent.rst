@@ -47,6 +47,8 @@ this morning, and as a result, you will soon be able to say::
 
 	import vmod_with_impractically_long_name as v;
 
+(You can thank Dridi for suggesting that)
+
 My idea that Varnish would be configured in a Domain Specific
 Language compiled to native code is obviously one of my better,
 and about 10 years ago, that was becoming very obvious.
