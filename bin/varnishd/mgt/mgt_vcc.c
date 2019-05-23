@@ -357,6 +357,7 @@ mgt_VccCompile(struct cli *cli, struct vclprog *vcl, const char *vclname,
 		}
 		free(vp.csrcfile);
 		free(vp.libfile);
+		free(vp.symfile);
 		free(vp.dir);
 		if (status) {
 			VCLI_Out(cli, "VCL compilation failed");
@@ -376,6 +377,7 @@ mgt_VccCompile(struct cli *cli, struct vclprog *vcl, const char *vclname,
 	free(p);
 	mgt_vcl_symtab(vcl, vj);
 	(void)unlink(vp.symfile);
+	free(vp.symfile);
 
 	if (!MGT_DO_DEBUG(DBG_VCL_KEEP))
 		(void)unlink(vp.csrcfile);
