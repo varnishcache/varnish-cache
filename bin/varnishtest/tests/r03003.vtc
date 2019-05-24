@@ -1,0 +1,23 @@
+varnishtest "Test PRIV_TOP vs PRIV_TASK"
+
+varnish v1 -vcl {
+	import debug;
+
+	backend bad { .host = "${bad_backend}"; }
+
+	sub vcl_recv {
+		return (synth(200));
+	}
+
+	sub vcl_synth {
+		set resp.http.priv_task = debug.test_priv_task("task");
+		set resp.http.priv_top = debug.test_priv_top("top");
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.priv_task == task
+	expect resp.http.priv_top == top
+} -run
