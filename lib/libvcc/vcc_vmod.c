@@ -332,6 +332,7 @@ vcc_ParseImport(struct vcc *tl)
 			msym->extra = vsym->extra;
 			msym->vmod_name = vsym->vmod_name;
 			AZ(dlclose(vop->hdl));
+			free(fnpx);
 			return;
 		}
 	}
