@@ -103,7 +103,7 @@ vss_resolve(const char *addr, const char *def_port, int family, int socktype,
     int flags, struct addrinfo **res, const char **errp)
 {
 	struct addrinfo hints;
-	char *p = NULL, *hp, *pp;
+	char *p, *hp, *pp;
 	int ret;
 
 	AN(addr);

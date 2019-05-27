@@ -636,6 +636,7 @@ VSB_tofile(int fd, const struct vsb *s)
 
 	assert_VSB_integrity(s);
 	assert_VSB_state(s, VSB_FINISHED);
-	sz = write(fd, VSB_data(s), VSB_len(s));
-	return (sz == VSB_len(s) ? 0 : -1);
+	assert(s->s_len >= 0);
+	sz = write(fd, s->s_buf, s->s_len);
+	return (sz == s->s_len ? 0 : -1);
 }
