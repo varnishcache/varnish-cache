@@ -222,8 +222,10 @@ mgt_vcl_del(struct vclprog *vp)
 	struct vmodfile *vf;
 
 	CHECK_OBJ_NOTNULL(vp, VCLPROG_MAGIC);
-	while (!VTAILQ_EMPTY(&vp->dto))
-		mgt_vcl_dep_del(VTAILQ_FIRST(&vp->dto));
+	assert(VTAILQ_EMPTY(&vp->dto));
+
+	mgt_vcl_symtab_clean(vp);
+
 	while (!VTAILQ_EMPTY(&vp->dfrom))
 		mgt_vcl_dep_del(VTAILQ_FIRST(&vp->dfrom));
 
@@ -247,7 +249,6 @@ mgt_vcl_del(struct vclprog *vp)
 		VJ_master(JAIL_MASTER_LOW);
 		free(vp->fname);
 	}
-	mgt_vcl_symtab_clean(vp);
 	while (!VTAILQ_EMPTY(&vp->vmods)) {
 		vd = VTAILQ_FIRST(&vp->vmods);
 		CHECK_OBJ(vd, VMODDEP_MAGIC);
@@ -915,16 +916,15 @@ static struct cli_proto cli_vcl[] = {
 static void
 mgt_vcl_atexit(void)
 {
-	struct vclprog *vp;
+	struct vclprog *vp, *vp2;
 
 	if (getpid() != heritage.mgt_pid)
 		return;
 	active_vcl = NULL;
-	do {
-		vp = VTAILQ_FIRST(&vclhead);
-		if (vp != NULL)
-			mgt_vcl_del(vp);
-	} while (vp != NULL);
+	VTAILQ_FOREACH_REVERSE_SAFE(vp, &vclhead, vclproghead, list, vp2) {
+		assert(VTAILQ_EMPTY(&vp->dto));
+		mgt_vcl_del(vp);
+	}
 }
 
 void
