@@ -247,6 +247,7 @@ mgt_vcl_del(struct vclprog *vp)
 		VJ_master(JAIL_MASTER_LOW);
 		free(vp->fname);
 	}
+	mgt_vcl_symtab_clean(vp);
 	while (!VTAILQ_EMPTY(&vp->vmods)) {
 		vd = VTAILQ_FIRST(&vp->vmods);
 		CHECK_OBJ(vd, VMODDEP_MAGIC);
@@ -265,7 +266,6 @@ mgt_vcl_del(struct vclprog *vp)
 		}
 	}
 	free(vp->name);
-	mgt_vcl_symtab_clean(vp);
 	FREE_OBJ(vp);
 }
 
