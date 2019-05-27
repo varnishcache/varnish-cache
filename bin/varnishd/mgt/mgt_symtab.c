@@ -40,6 +40,7 @@
 #include "mgt/mgt.h"
 #include "mgt/mgt_vcl.h"
 
+#include "vcli_serve.h"
 #include "libvcc.h"
 #include "vjsn.h"
 
@@ -198,3 +199,33 @@ mgt_vcl_export_labels(struct vcc *vcc)
 
 /*--------------------------------------------------------------------*/
 
+static void
+mcf_vcl_vjsn_dump(struct cli *cli, const struct vjsn_val *vj, int indent)
+{
+	struct vjsn_val *vj1;
+	AN(cli);
+	AN(vj);
+
+	VCLI_Out(cli, "%*s", indent, "");
+	if (vj->name != NULL)
+		VCLI_Out(cli, "[\"%s\"]: ", vj->name);
+	VCLI_Out(cli, "{%s}", vj->type);
+	if (vj->value != NULL)
+		VCLI_Out(cli, " <%s>", vj->value);
+	VCLI_Out(cli, "\n");
+	VTAILQ_FOREACH(vj1, &vj->children, list)
+		mcf_vcl_vjsn_dump(cli, vj1, indent + 2);
+}
+
+void v_matchproto_(cli_func_t)
+mcf_vcl_symtab(struct cli *cli, const char * const *av, void *priv)
+{
+	struct vclprog *vp;
+	(void)av;
+	(void)priv;
+	VTAILQ_FOREACH(vp, &vclhead, list) {
+		VCLI_Out(cli, "VCL: %s\n", vp->name);
+		if (vp->symtab != NULL)
+			mcf_vcl_vjsn_dump(cli, vp->symtab->value, 4);
+	}
+}

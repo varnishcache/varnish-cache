@@ -362,6 +362,14 @@ CLI_CMD(DEBUG_PANIC_MASTER,
 	0, 0
 )
 
+CLI_CMD(DEBUG_VCL_SYMTAB,
+	"vcl.symtab",
+	"vcl.symtab",
+	"Dump the VCL symbol-tables.",
+	"",
+	0, 0
+)
+
 CLI_CMD(DEBUG_VMOD,
 	"debug.vmod",
 	"debug.vmod",

@@ -59,6 +59,9 @@ varnish v1 -vcl+backend { sub vcl_recv { return (vcl(vclA)); } }
 varnish v1 -clierr 300 "vcl.discard vclA"
 
 varnish v1 -vcl+backend { }
+
+varnish v1 -cliok "vcl.symtab"
+
 varnish v1 -cliok "vcl.discard vcl3"
 varnish v1 -cliok "vcl.discard vcl4"
 varnish v1 -cliok "vcl.discard vcl5"

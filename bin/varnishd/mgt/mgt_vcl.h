@@ -82,4 +82,5 @@ int mcf_is_label(const struct vclprog *vp);
 
 void mgt_vcl_export_labels(struct vcc *vcc);
 void mgt_vcl_symtab(struct vclprog *vp, const char *input);
+void mcf_vcl_symtab(struct cli *cli, const char * const *av, void *priv);
 

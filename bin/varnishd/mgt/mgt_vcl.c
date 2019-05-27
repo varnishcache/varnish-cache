@@ -906,6 +906,7 @@ static struct cli_proto cli_vcl[] = {
 	{ CLICMD_VCL_DISCARD,		"", mcf_vcl_discard },
 	{ CLICMD_VCL_LIST,		"", mcf_vcl_list, mcf_vcl_list_json },
 	{ CLICMD_VCL_LABEL,		"", mcf_vcl_label },
+	{ CLICMD_DEBUG_VCL_SYMTAB,	"d", mcf_vcl_symtab },
 	{ NULL }
 };
 
