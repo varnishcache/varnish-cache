@@ -136,3 +136,13 @@ shell -match "^500 503 $" {
 
 	./ncsa.sh -Q query1.vslq -q 'RespStatus == 503'
 }
+
+# Make v1 log a multiline VSL record and query it
+
+logexpect l1 -v v1 -g raw -q {CLI ~ "\\nvcl1.s1"} {
+	expect 0 0 CLI "vcl1.s1 +healthy"
+} -start
+
+varnish v1 -cliok backend.list
+
+logexpect l1 -wait
