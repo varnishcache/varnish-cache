@@ -89,6 +89,7 @@ varnishd_SOURCES = \
 	mgt/mgt_param_tweak.c \
 	mgt/mgt_pool.c \
 	mgt/mgt_shmem.c \
+	mgt/mgt_symtab.c \
 	mgt/mgt_util.c \
 	mgt/mgt_vcc.c \
 	mgt/mgt_vcl.c \
@@ -137,6 +138,7 @@ noinst_HEADERS = \
 	http1/cache_http1.h \
 	http2/cache_http2.h \
 	mgt/mgt.h \
+	mgt/mgt_vcl.h \
 	mgt/mgt_param.h \
 	storage/storage.h \
 	storage/storage_persistent.h \

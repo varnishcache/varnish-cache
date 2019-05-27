@@ -39,25 +39,25 @@
 #include <sys/stat.h>
 
 #include "mgt/mgt.h"
+#include "mgt/mgt_vcl.h"
 #include "common/heritage.h"
 #include "storage/storage.h"
 
 #include "libvcc.h"
 #include "vcli_serve.h"
 #include "vfil.h"
-#include "vjsn.h"
 #include "vsub.h"
 #include "vtim.h"
 
 struct vcc_priv {
 	unsigned	magic;
 #define VCC_PRIV_MAGIC	0x70080cb8
-	char		*dir;
 	const char	*vclsrc;
 	const char	*vclsrcfile;
-	char		*csrcfile;
-	char		*libfile;
-	char		*symfile;
+	struct vsb	*dir;
+	struct vsb	*csrcfile;
+	struct vsb	*libfile;
+	struct vsb	*symfile;
 };
 
 char *mgt_cc_cmd;
@@ -96,7 +96,7 @@ run_vcc(void *priv)
 	VJ_subproc(JAIL_SUBPROC_VCC);
 	CAST_OBJ_NOTNULL(vp, priv, VCC_PRIV_MAGIC);
 
-	AZ(chdir(vp->dir));
+	AZ(chdir(VSB_data(vp->dir)));
 
 	vcc = VCC_New();
 	AN(vcc);
@@ -132,7 +132,7 @@ run_cc(void *priv)
 	VJ_subproc(JAIL_SUBPROC_CC);
 	CAST_OBJ_NOTNULL(vp, priv, VCC_PRIV_MAGIC);
 
-	AZ(chdir(vp->dir));
+	AZ(chdir(VSB_data(vp->dir)));
 
 	sb = VSB_new_auto();
 	AN(sb);
@@ -180,7 +180,7 @@ run_dlopen(void *priv)
 
 	VJ_subproc(JAIL_SUBPROC_VCLLOAD);
 	CAST_OBJ_NOTNULL(vp, priv, VCC_PRIV_MAGIC);
-	if (VCL_TestLoad(vp->libfile))
+	if (VCL_TestLoad(VSB_data(vp->libfile)))
 		exit(1);
 	exit(0);
 }
@@ -215,13 +215,13 @@ static unsigned
 mgt_vcc_compile(struct vcc_priv *vp, struct vsb *sb, int C_flag)
 {
 	char *csrc;
-	const char *err;
 	unsigned subs;
-	struct vjsn *vj;
 
-	if (mgt_vcc_touchfile(vp->csrcfile, sb))
+	AN(sb);
+	VSB_clear(sb);
+	if (mgt_vcc_touchfile(VSB_data(vp->csrcfile), sb))
 		return (2);
-	if (mgt_vcc_touchfile(vp->libfile, sb))
+	if (mgt_vcc_touchfile(VSB_data(vp->libfile), sb))
 		return (2);
 
 	subs = VSUB_run(sb, run_vcc, vp, "VCC-compiler", -1);
@@ -229,20 +229,15 @@ mgt_vcc_compile(struct vcc_priv *vp, struct vsb *sb, int C_flag)
 		return (subs);
 
 	if (C_flag) {
-		csrc = VFIL_readfile(NULL, vp->csrcfile, NULL);
+		csrc = VFIL_readfile(NULL, VSB_data(vp->csrcfile), NULL);
 		AN(csrc);
 		VSB_cat(sb, csrc);
 		free(csrc);
 
 		VSB_printf(sb, "/* EXTERNAL SYMBOL TABLE\n");
-		csrc = VFIL_readfile(NULL, vp->symfile, NULL);
+		csrc = VFIL_readfile(NULL, VSB_data(vp->symfile), NULL);
 		AN(csrc);
 		VSB_cat(sb, csrc);
-		vj = vjsn_parse(csrc, &err);
-		if (err != NULL)
-			VSB_printf(sb, "# Parse error: %s\n", err);
-		if (vj != NULL)
-			vjsn_delete(&vj);
 		VSB_printf(sb, "*/\n");
 		free(csrc);
 	}
@@ -257,25 +252,53 @@ mgt_vcc_compile(struct vcc_priv *vp, struct vsb *sb, int C_flag)
 
 /*--------------------------------------------------------------------*/
 
+static void
+mgt_vcc_init_vp(struct vcc_priv *vp)
+{
+	INIT_OBJ(vp, VCC_PRIV_MAGIC);
+	vp->csrcfile = VSB_new_auto();
+	AN(vp->csrcfile);
+	vp->libfile = VSB_new_auto();
+	AN(vp->libfile);
+	vp->symfile = VSB_new_auto();
+	AN(vp->symfile);
+	vp->dir = VSB_new_auto();
+	AN(vp->dir);
+}
+
+static void
+mgt_vcc_fini_vp(struct vcc_priv *vp, int leave_lib)
+{
+	if (!MGT_DO_DEBUG(DBG_VCL_KEEP)) {
+		(void)unlink(VSB_data(vp->csrcfile));
+		(void)unlink(VSB_data(vp->symfile));
+		if (!leave_lib)
+			(void)unlink(VSB_data(vp->libfile));
+	}
+	(void)rmdir(VSB_data(vp->dir));
+	VSB_destroy(&vp->csrcfile);
+	VSB_destroy(&vp->libfile);
+	VSB_destroy(&vp->symfile);
+	VSB_destroy(&vp->dir);
+}
+
 char *
 mgt_VccCompile(struct cli *cli, struct vclprog *vcl, const char *vclname,
     const char *vclsrc, const char *vclsrcfile, int C_flag)
 {
-	struct vcc_priv vp;
+	struct vcc_priv vp[1];
 	struct vsb *sb;
-	struct vjsn *vj;
 	unsigned status;
-	const char *err;
 	char *p;
 
 	AN(cli);
 
 	sb = VSB_new_auto();
-	XXXAN(sb);
+	AN(sb);
 
-	INIT_OBJ(&vp, VCC_PRIV_MAGIC);
-	vp.vclsrc = vclsrc;
-	vp.vclsrcfile = vclsrcfile;
+	mgt_vcc_init_vp(vp);
+	vp->vclsrc = vclsrc;
+	vp->vclsrcfile = vclsrcfile;
 
 	/*
 	 * The subdirectory must have a unique name to 100% certain evade
@@ -309,56 +332,35 @@ mgt_VccCompile(struct cli *cli, struct vclprog *vcl, const char *vclname,
 	 *
 	 * The Best way to reproduce this is to have regexps in the VCL.
 	 */
-	VSB_printf(sb, "vcl_%s.%.6f", vclname, VTIM_real());
-	AZ(VSB_finish(sb));
-	vp.dir = strdup(VSB_data(sb));
-	AN(vp.dir);
 
-	if (VJ_make_subdir(vp.dir, "VCL", cli->sb)) {
-		free(vp.dir);
+	VSB_printf(vp->dir, "vcl_%s.%.6f", vclname, VTIM_real());
+	AZ(VSB_finish(vp->dir));
+
+	VSB_printf(vp->csrcfile, "%s/%s", VSB_data(vp->dir), VGC_SRC);
+	AZ(VSB_finish(vp->csrcfile));
+
+	VSB_printf(vp->libfile, "%s/%s", VSB_data(vp->dir), VGC_LIB);
+	AZ(VSB_finish(vp->libfile));
+
+	VSB_printf(vp->symfile, "%s/%s", VSB_data(vp->dir), VGC_SYM);
+	AZ(VSB_finish(vp->symfile));
+
+	if (VJ_make_subdir(VSB_data(vp->dir), "VCL", cli->sb)) {
+		mgt_vcc_fini_vp(vp, 0);
 		VSB_destroy(&sb);
 		VCLI_Out(cli, "VCL compilation failed");
 		VCLI_SetResult(cli, CLIS_PARAM);
 		return (NULL);
 	}
 
-	VSB_clear(sb);
-	VSB_printf(sb, "%s/%s", vp.dir, VGC_SRC);
-	AZ(VSB_finish(sb));
-	vp.csrcfile = strdup(VSB_data(sb));
-	AN(vp.csrcfile);
-	VSB_clear(sb);
-
-	VSB_printf(sb, "%s/%s", vp.dir, VGC_LIB);
-	AZ(VSB_finish(sb));
-	vp.libfile = strdup(VSB_data(sb));
-	AN(vp.csrcfile);
-	VSB_clear(sb);
-
-	VSB_printf(sb, "%s/%s", vp.dir, VGC_SYM);
-	AZ(VSB_finish(sb));
-	vp.symfile = strdup(VSB_data(sb));
-	AN(vp.symfile);
-	VSB_clear(sb);
-
-	status = mgt_vcc_compile(&vp, sb, C_flag);
-
+	status = mgt_vcc_compile(vp, sb, C_flag);
 	AZ(VSB_finish(sb));
 	if (VSB_len(sb) > 0)
 		VCLI_Out(cli, "%s", VSB_data(sb));
 	VSB_destroy(&sb);
 
 	if (status || C_flag) {
-		if (!MGT_DO_DEBUG(DBG_VCL_KEEP)) {
-			(void)unlink(vp.csrcfile);
-			(void)unlink(vp.libfile);
-			(void)unlink(vp.symfile);
-			(void)rmdir(vp.dir);
-		}
-		free(vp.csrcfile);
-		free(vp.libfile);
-		free(vp.symfile);
-		free(vp.dir);
+		mgt_vcc_fini_vp(vp, 0);
 		if (status) {
 			VCLI_Out(cli, "VCL compilation failed");
 			VCLI_SetResult(cli, CLIS_PARAM);
@@ -366,26 +368,13 @@ mgt_VccCompile(struct cli *cli, struct vclprog *vcl, const char *vclname,
 		return (NULL);
 	}
 
-	p = VFIL_readfile(NULL, vp.symfile, NULL);
+	p = VFIL_readfile(NULL, VSB_data(vp->symfile), NULL);
 	AN(p);
-	vj = vjsn_parse(p, &err);
-	if (err != NULL)
-		fprintf(stderr, "FATAL: Symtab parse error: %s\n%s\n",
-		    err, p);
-	AZ(err);
-	AN(vj);
-	free(p);
-	mgt_vcl_symtab(vcl, vj);
-	(void)unlink(vp.symfile);
-	free(vp.symfile);
-
-	if (!MGT_DO_DEBUG(DBG_VCL_KEEP))
-		(void)unlink(vp.csrcfile);
-	free(vp.csrcfile);
-
-	free(vp.dir);
+	mgt_vcl_symtab(vcl, p);
 
 	VCLI_Out(cli, "VCL compiled.\n");
 
-	return (vp.libfile);
+	REPLACE(p, VSB_data(vp->libfile));
+	mgt_vcc_fini_vp(vp, 1);
+	return (p);
 }
