@@ -30,6 +30,18 @@
 
 struct vclprog;
 struct vmodfile;
+struct vjsn_val;
+
+struct import {
+	unsigned		magic;
+#define IMPORT_MAGIC		0xce767c9b
+	struct vclprog		*target;
+	VTAILQ_ENTRY(import)	from;
+	VTAILQ_ENTRY(import)	to;
+	struct vjsn_val		*vj;
+	struct vmodfile		*vmod;
+	struct vclprog		*vcl;
+};
 
 struct vmoddep {
 	unsigned		magic;
@@ -58,6 +70,8 @@ struct vclprog {
 	const char *		state;
 	double			go_cold;
 	struct vjsn		*symtab;
+	VTAILQ_HEAD(, import)	imports;
+	VTAILQ_HEAD(, import)	exports;
 	VTAILQ_HEAD(, vcldep)	dfrom;
 	VTAILQ_HEAD(, vcldep)	dto;
 	int			nto;
@@ -69,6 +83,7 @@ struct vmodfile {
 	unsigned		magic;
 #define VMODFILE_MAGIC		0xffa1a0d5
 	char			*fname;
+	VTAILQ_HEAD(, import)	exports;
 	VTAILQ_ENTRY(vmodfile)	list;
 	VTAILQ_HEAD(, vmoddep)	vcls;
 };
@@ -80,6 +95,7 @@ struct vclprog *mcf_vcl_byname(const char *name);
 void mgt_vcl_dep_add(struct vclprog *vp_from, struct vclprog *vp_to);
 int mcf_is_label(const struct vclprog *vp);
 
+void mgt_vcl_symtab_clean(struct vclprog *vp);
 void mgt_vcl_export_labels(struct vcc *vcc);
 void mgt_vcl_symtab(struct vclprog *vp, const char *input);
 void mcf_vcl_symtab(struct cli *cli, const char * const *av, void *priv);

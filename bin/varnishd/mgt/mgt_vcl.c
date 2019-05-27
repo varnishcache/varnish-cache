@@ -43,7 +43,6 @@
 #include "vcli_serve.h"
 #include "vct.h"
 #include "vev.h"
-#include "vjsn.h"
 #include "vtim.h"
 
 #define VCL_STATE(sym, str)					\
@@ -199,9 +198,11 @@ mgt_vcl_add(const char *name, const char *state)
 	ALLOC_OBJ(vp, VCLPROG_MAGIC);
 	XXXAN(vp);
 	REPLACE(vp->name, name);
+	VTAILQ_INIT(&vp->exports);
 	VTAILQ_INIT(&vp->dfrom);
 	VTAILQ_INIT(&vp->dto);
 	VTAILQ_INIT(&vp->vmods);
+	VTAILQ_INIT(&vp->imports);
 	vp->state = state;
 
 	if (vp->state != VCL_STATE_COLD)
@@ -264,8 +265,7 @@ mgt_vcl_del(struct vclprog *vp)
 		}
 	}
 	free(vp->name);
-	if (vp->symtab)
-		vjsn_delete(&vp->symtab);
+	mgt_vcl_symtab_clean(vp);
 	FREE_OBJ(vp);
 }
 

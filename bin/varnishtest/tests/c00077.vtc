@@ -51,8 +51,8 @@ client c1 {
 
 delay .2
 
-varnish v1 -vcl+backend { sub vcl_recv { return (vcl(vclA)); } }
-varnish v1 -vcl+backend { sub vcl_recv { return (vcl(vclA)); } }
+varnish v1 -vcl+backend { import std; sub vcl_recv { return (vcl(vclA)); } }
+varnish v1 -vcl+backend { import debug; sub vcl_recv { return (vcl(vclA)); } }
 varnish v1 -vcl+backend { sub vcl_recv { return (vcl(vclA)); } }
 varnish v1 -vcl+backend { sub vcl_recv { return (vcl(vclA)); } }
 
