@@ -127,6 +127,9 @@ cscope.*out
 /lib/libvarnishapi/vsl_glob_test
 /lib/libvarnishapi/vsl_glob_test_coverage
 
+# vtc-bisect.sh default vtc
+/bisect.vtc
+
 # vtest.sh droppings
 /tools/tmp/
 /tools/_vtest_tmp/
