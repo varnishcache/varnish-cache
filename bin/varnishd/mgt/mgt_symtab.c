@@ -59,19 +59,16 @@ mgt_vcl_symtab_val(const struct vjsn_val *vv, const char *val)
 }
 
 static void
-mgt_vcl_import_vcl(struct vclprog *vp1, struct import *ip, const struct vjsn_val *vv)
+mgt_vcl_import_vcl(struct vclprog *vp1, const struct vjsn_val *vv)
 {
 	struct vclprog *vp2;
 
 	CHECK_OBJ_NOTNULL(vp1, VCLPROG_MAGIC);
-	AN(ip);
 	AN(vv);
 
 	vp2 = mcf_vcl_byname(mgt_vcl_symtab_val(vv, "name"));
 	CHECK_OBJ_NOTNULL(vp2, VCLPROG_MAGIC);
-	ip->vcl = vp2;
-	VTAILQ_INSERT_TAIL(&vp2->exports, ip, to);
-	mgt_vcl_dep_add(vp1, vp2);
+	mgt_vcl_dep_add(vp1, vp2)->vj = vv;
 }
 
 static int
@@ -117,7 +114,7 @@ mgt_vcl_cache_vmod(const char *nm, const char *fm, const char *to)
 }
 
 static void
-mgt_vcl_import_vmod(struct vclprog *vp, struct import *ip, const struct vjsn_val *vv)
+mgt_vcl_import_vmod(struct vclprog *vp, const struct vjsn_val *vv)
 {
 	struct vmodfile *vf;
 	struct vmoddep *vd;
@@ -126,7 +123,6 @@ mgt_vcl_import_vmod(struct vclprog *vp, struct import *ip, const struct vjsn_val
 	const char *v_dst;
 
 	CHECK_OBJ_NOTNULL(vp, VCLPROG_MAGIC);
-	AN(ip);
 	AN(vv);
 
 	v_name = mgt_vcl_symtab_val(vv, "name");
@@ -142,7 +138,6 @@ mgt_vcl_import_vmod(struct vclprog *vp, struct import *ip, const struct vjsn_val
 		REPLACE(vf->fname, v_dst);
 		AN(vf->fname);
 		VTAILQ_INIT(&vf->vcls);
-		VTAILQ_INIT(&vf->exports);
 		AZ(mgt_vcl_cache_vmod(v_name, v_file, v_dst));
 		VTAILQ_INSERT_TAIL(&vmodhead, vf, list);
 	}
@@ -151,8 +146,6 @@ mgt_vcl_import_vmod(struct vclprog *vp, struct import *ip, const struct vjsn_val
 	vd->to = vf;
 	VTAILQ_INSERT_TAIL(&vp->vmods, vd, lfrom);
 	VTAILQ_INSERT_TAIL(&vf->vcls, vd, lto);
-	ip->vmod = vf;
-	VTAILQ_INSERT_TAIL(&vf->exports, ip, to);
 }
 
 void
@@ -161,7 +154,6 @@ mgt_vcl_symtab(struct vclprog *vp, const char *input)
 	struct vjsn *vj;
 	struct vjsn_val *v1, *v2;
 	const char *typ, *err;
-	struct import *ip;
 
 	CHECK_OBJ_NOTNULL(vp, VCLPROG_MAGIC);
 	AN(input);
@@ -182,16 +174,11 @@ mgt_vcl_symtab(struct vclprog *vp, const char *input)
 		assert(v2->type == VJSN_STRING);
 		if (strcmp(v2->value, "import"))
 			continue;
-		ALLOC_OBJ(ip, IMPORT_MAGIC);
-		AN(ip);
-		ip->vj = v1;
-		ip->target = vp;
-		VTAILQ_INSERT_TAIL(&vp->imports, ip, from);
 		typ = mgt_vcl_symtab_val(v1, "type");
 		if (!strcmp(typ, "$VMOD"))
-			mgt_vcl_import_vmod(vp, ip, v1);
+			mgt_vcl_import_vmod(vp, v1);
 		else if (!strcmp(typ, "$VCL"))
-			mgt_vcl_import_vcl(vp, ip, v1);
+			mgt_vcl_import_vcl(vp, v1);
 		else
 			WRONG("Bad symtab import entry");
 	}
@@ -200,19 +187,9 @@ mgt_vcl_symtab(struct vclprog *vp, const char *input)
 void
 mgt_vcl_symtab_clean(struct vclprog *vp)
 {
-	struct import *ip;
 
 	if (vp->symtab)
 		vjsn_delete(&vp->symtab);
-	while (!VTAILQ_EMPTY(&vp->imports)) {
-		ip = VTAILQ_FIRST(&vp->imports);
-		VTAILQ_REMOVE(&vp->imports, ip, from);
-		if (ip->vmod)
-			VTAILQ_REMOVE(&ip->vmod->exports, ip, to);
-		if (ip->vcl)
-			VTAILQ_REMOVE(&ip->vcl->exports, ip, to);
-		FREE_OBJ(ip);
-	}
 }
 
 /*--------------------------------------------------------------------*/
@@ -251,22 +228,23 @@ void v_matchproto_(cli_func_t)
 mcf_vcl_symtab(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vclprog *vp;
-	struct import *ip;
+	struct vcldep *vd;
+
 	(void)av;
 	(void)priv;
 	VTAILQ_FOREACH(vp, &vclhead, list) {
 		VCLI_Out(cli, "VCL: %s\n", vp->name);
-		VCLI_Out(cli, "  imports:\n");
-		VTAILQ_FOREACH(ip, &vp->imports, from) {
-			VCLI_Out(cli, "    %p -> (%p, %p)\n",
-				ip, ip->vcl, ip->vmod);
-			mcf_vcl_vjsn_dump(cli, ip->vj, 6);
+		VCLI_Out(cli, "  imports from:\n");
+		VTAILQ_FOREACH(vd, &vp->dto, lto) {
+			VCLI_Out(cli, "    %s\n", vd->from->name);
+			if (vd->vj)
+				mcf_vcl_vjsn_dump(cli, vd->vj, 6);
 		}
-		VCLI_Out(cli, "  exports:\n");
-		VTAILQ_FOREACH(ip, &vp->exports, to) {
-			VCLI_Out(cli, "    %p -> (%p, %p) %s\n",
-				ip, ip->vcl, ip->vmod, ip->target->name);
-			mcf_vcl_vjsn_dump(cli, ip->vj, 6);
+		VCLI_Out(cli, "  exports to:\n");
+		VTAILQ_FOREACH(vd, &vp->dfrom, lfrom) {
+			VCLI_Out(cli, "    %s\n", vd->to->name);
+			if (vd->vj)
+				mcf_vcl_vjsn_dump(cli, vd->vj, 6);
 		}
 	}
 }

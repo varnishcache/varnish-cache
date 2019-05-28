@@ -149,7 +149,7 @@ mcf_is_label(const struct vclprog *vp)
 
 /*--------------------------------------------------------------------*/
 
-void
+struct vcldep *
 mgt_vcl_dep_add(struct vclprog *vp_from, struct vclprog *vp_to)
 {
 	struct vcldep *vd;
@@ -169,6 +169,7 @@ mgt_vcl_dep_add(struct vclprog *vp_from, struct vclprog *vp_to)
 	vd->to = vp_to;
 	VTAILQ_INSERT_TAIL(&vp_to->dto, vd, lto);
 	vp_to->nto++;
+	return (vd);
 }
 
 static void
@@ -198,11 +199,9 @@ mgt_vcl_add(const char *name, const char *state)
 	ALLOC_OBJ(vp, VCLPROG_MAGIC);
 	XXXAN(vp);
 	REPLACE(vp->name, name);
-	VTAILQ_INIT(&vp->exports);
 	VTAILQ_INIT(&vp->dfrom);
 	VTAILQ_INIT(&vp->dto);
 	VTAILQ_INIT(&vp->vmods);
-	VTAILQ_INIT(&vp->imports);
 	vp->state = state;
 
 	if (vp->state != VCL_STATE_COLD)
@@ -862,7 +861,7 @@ mcf_vcl_label(struct cli *cli, const char * const *av, void *priv)
 	AN(vpl);
 	if (mgt_vcl_requirewarm(cli, vpl))
 		return;
-	mgt_vcl_dep_add(vpl, vpt);
+	(void)mgt_vcl_dep_add(vpl, vpt);
 
 	if (!MCH_Running())
 		return;
