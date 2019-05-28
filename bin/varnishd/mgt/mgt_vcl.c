@@ -921,10 +921,10 @@ mgt_vcl_atexit(void)
 	if (getpid() != heritage.mgt_pid)
 		return;
 	active_vcl = NULL;
-	VTAILQ_FOREACH_REVERSE_SAFE(vp, &vclhead, vclproghead, list, vp2) {
-		assert(VTAILQ_EMPTY(&vp->dto));
-		mgt_vcl_del(vp);
-	}
+	while (!VTAILQ_EMPTY(&vclhead))
+		VTAILQ_FOREACH_SAFE(vp, &vclhead, list, vp2)
+			if (VTAILQ_EMPTY(&vp->dto))
+				mgt_vcl_del(vp);
 }
 
 void
