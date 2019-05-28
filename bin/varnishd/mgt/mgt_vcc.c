@@ -88,6 +88,7 @@ static void v_matchproto_(vsub_func_f)
 run_vcc(void *priv)
 {
 	struct vsb *sb = NULL;
+	struct vclprog *vpg;
 	struct vcc_priv *vp;
 	struct vcc *vcc;
 	struct stevedore *stv;
@@ -108,7 +109,9 @@ run_vcc(void *priv)
 	VCC_Unsafe_Path(vcc, mgt_vcc_unsafe_path);
 	STV_Foreach(stv)
 		VCC_Predef(vcc, "VCL_STEVEDORE", stv->ident);
-	mgt_vcl_export_labels(vcc);
+	VTAILQ_FOREACH(vpg, &vclhead, list)
+		if (mcf_is_label(vpg))
+			VCC_Predef(vcc, "VCL_VCL", vpg->name);
 	i = VCC_Compile(vcc, &sb, vp->vclsrc, vp->vclsrcfile,
 	    VGC_SRC, VGC_SYM);
 	if (VSB_len(sb))

@@ -194,18 +194,6 @@ mgt_vcl_symtab_clean(struct vclprog *vp)
 
 /*--------------------------------------------------------------------*/
 
-void
-mgt_vcl_export_labels(struct vcc *vcc)
-{
-	struct vclprog *vp;
-	VTAILQ_FOREACH(vp, &vclhead, list) {
-		if (mcf_is_label(vp))
-			VCC_Predef(vcc, "VCL_VCL", vp->name);
-	}
-}
-
-/*--------------------------------------------------------------------*/
-
 static void
 mcf_vcl_vjsn_dump(struct cli *cli, const struct vjsn_val *vj, int indent)
 {
@@ -233,18 +221,29 @@ mcf_vcl_symtab(struct cli *cli, const char * const *av, void *priv)
 	(void)av;
 	(void)priv;
 	VTAILQ_FOREACH(vp, &vclhead, list) {
-		VCLI_Out(cli, "VCL: %s\n", vp->name);
-		VCLI_Out(cli, "  imports from:\n");
-		VTAILQ_FOREACH(vd, &vp->dfrom, lfrom) {
-			VCLI_Out(cli, "    %s\n", vd->to->name);
-			if (vd->vj)
-				mcf_vcl_vjsn_dump(cli, vd->vj, 6);
+		if (mcf_is_label(vp))
+			VCLI_Out(cli, "Label: %s\n", vp->name);
+		else
+			VCLI_Out(cli, "Vcl: %s\n", vp->name);
+		if (!VTAILQ_EMPTY(&vp->dfrom)) {
+			VCLI_Out(cli, "  imports from:\n");
+			VTAILQ_FOREACH(vd, &vp->dfrom, lfrom) {
+				VCLI_Out(cli, "    %s\n", vd->to->name);
+				if (vd->vj)
+					mcf_vcl_vjsn_dump(cli, vd->vj, 6);
+			}
 		}
-		VCLI_Out(cli, "  exports to:\n");
-		VTAILQ_FOREACH(vd, &vp->dto, lto) {
-			VCLI_Out(cli, "    %s\n", vd->from->name);
-			if (vd->vj)
-				mcf_vcl_vjsn_dump(cli, vd->vj, 6);
+		if (!VTAILQ_EMPTY(&vp->dto)) {
+			VCLI_Out(cli, "  exports to:\n");
+			VTAILQ_FOREACH(vd, &vp->dto, lto) {
+				VCLI_Out(cli, "    %s\n", vd->from->name);
+				if (vd->vj)
+					mcf_vcl_vjsn_dump(cli, vd->vj, 6);
+			}
+		}
+		if (vp->symtab != NULL) {
+			VCLI_Out(cli, "  symtab:\n");
+			mcf_vcl_vjsn_dump(cli, vp->symtab->value, 4);
 		}
 	}
 }
