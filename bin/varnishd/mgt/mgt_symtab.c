@@ -235,14 +235,14 @@ mcf_vcl_symtab(struct cli *cli, const char * const *av, void *priv)
 	VTAILQ_FOREACH(vp, &vclhead, list) {
 		VCLI_Out(cli, "VCL: %s\n", vp->name);
 		VCLI_Out(cli, "  imports from:\n");
-		VTAILQ_FOREACH(vd, &vp->dto, lto) {
-			VCLI_Out(cli, "    %s\n", vd->from->name);
+		VTAILQ_FOREACH(vd, &vp->dfrom, lfrom) {
+			VCLI_Out(cli, "    %s\n", vd->to->name);
 			if (vd->vj)
 				mcf_vcl_vjsn_dump(cli, vd->vj, 6);
 		}
 		VCLI_Out(cli, "  exports to:\n");
-		VTAILQ_FOREACH(vd, &vp->dfrom, lfrom) {
-			VCLI_Out(cli, "    %s\n", vd->to->name);
+		VTAILQ_FOREACH(vd, &vp->dto, lto) {
+			VCLI_Out(cli, "    %s\n", vd->from->name);
 			if (vd->vj)
 				mcf_vcl_vjsn_dump(cli, vd->vj, 6);
 		}

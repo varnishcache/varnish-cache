@@ -802,6 +802,27 @@ mcf_vcl_list_json(struct cli *cli, const char * const *av, void *priv)
 	}
 }
 
+static int
+mcf_vcl_check_dag(struct cli *cli, struct vclprog *tree, struct vclprog *target)
+{
+	struct vcldep *vd;
+
+	if (target == tree)
+		return (1);
+	VTAILQ_FOREACH(vd, &tree->dfrom, lfrom) {
+		if (!mcf_vcl_check_dag(cli, vd->to, target))
+			continue;
+		if (mcf_is_label(tree))
+			VCLI_Out(cli, "Label %s points to vcl %s\n",
+			    tree->name, vd->to->name);
+		else
+			VCLI_Out(cli, "Vcl %s uses Label %s\n",
+			    tree->name, vd->to->name);
+		return (1);
+	}
+	return(0);
+}
+
 static void v_matchproto_(cli_func_t)
 mcf_vcl_label(struct cli *cli, const char * const *av, void *priv)
 {
@@ -814,8 +835,12 @@ mcf_vcl_label(struct cli *cli, const char * const *av, void *priv)
 	(void)priv;
 	if (mcf_invalid_vclname(cli, av[2]))
 		return;
-	if (mcf_invalid_vclname(cli, av[3]))
+	vpl = mcf_vcl_byname(av[2]);
+	if (vpl != NULL && !mcf_is_label(vpl)) {
+		VCLI_SetResult(cli, CLIS_PARAM);
+		VCLI_Out(cli, "%s is not a label", vpl->name);
 		return;
+	}
 	vpt = mcf_find_vcl(cli, av[3]);
 	if (vpt == NULL)
 		return;
@@ -824,23 +849,13 @@ mcf_vcl_label(struct cli *cli, const char * const *av, void *priv)
 		VCLI_Out(cli, "VCL labels cannot point to labels");
 		return;
 	}
-	vpl = mcf_vcl_byname(av[2]);
 	if (vpl != NULL) {
-		if (!mcf_is_label(vpl)) {
-			VCLI_SetResult(cli, CLIS_PARAM);
-			VCLI_Out(cli, "%s is not a label", vpl->name);
-			return;
-		}
-		if (!VTAILQ_EMPTY(&vpt->dfrom) &&
-		    !VTAILQ_EMPTY(&vpl->dto)) {
-			VCLI_SetResult(cli, CLIS_PARAM);
-			VCLI_Out(cli, "return(vcl) can only be used from"
-			    " the active VCL.\n\n");
+		if (VTAILQ_FIRST(&vpl->dfrom)->to != vpt &&
+		    mcf_vcl_check_dag(cli, vpt, vpl)) {
 			VCLI_Out(cli,
-			    "Label %s is used in return(vcl) from VCL %s\n",
-			    vpl->name, VTAILQ_FIRST(&vpl->dto)->from->name);
-			VCLI_Out(cli, "and VCL %s also has return(vcl)",
-			    vpt->name);
+			    "Pointing label %s at %s would create a loop",
+			    vpl->name, vpt->name);
+			VCLI_SetResult(cli, CLIS_PARAM);
 			return;
 		}
 	}

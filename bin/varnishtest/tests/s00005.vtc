@@ -127,6 +127,6 @@ varnish v1 -vcl+backend { sub vcl_recv { return (vcl(lblB)); } }
 
 varnish v1 -clierr 106 "vcl.label lblA vcl5"
 varnish v1 -cliexpect \
-	{can only be used from the active VCL} \
+	{would create a loop} \
 	{vcl.label lblA vcl5}
 
