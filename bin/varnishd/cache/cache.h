@@ -441,6 +441,11 @@ struct busyobj {
 
 /*--------------------------------------------------------------------*/
 
+struct reqtop {
+	unsigned		magic;
+#define REQTOP_MAGIC		0x57fbda52
+	struct req		*topreq;
+};
 
 struct req {
 	unsigned		magic;
@@ -451,7 +456,7 @@ struct req {
 	enum sess_close		doclose;
 	unsigned		restarts;
 	unsigned		esi_level;
-	struct req		*topreq;	/* esi_level == 0 request */
+	struct reqtop		*top;	/* esi_level == 0 request */
 	struct vcl		*vcl0;
 
 #define REQ_FLAG(l, r, w, d) unsigned	l:1;
@@ -532,7 +537,7 @@ struct req {
 	struct vcf		*vcf;
 };
 
-#define IS_TOPREQ(req) ((req)->topreq == (req))
+#define IS_TOPREQ(req) ((req)->top == NULL || (req)->top->topreq == (req))
 
 /*--------------------------------------------------------------------
  * Struct sess is a high memory-load structure because sessions typically

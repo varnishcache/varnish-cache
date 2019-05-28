@@ -113,7 +113,7 @@ ved_include(struct req *preq, const char *src, const char *host,
 	enum req_fsm_nxt s;
 
 	CHECK_OBJ_NOTNULL(preq, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(preq->topreq, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(preq->top, REQTOP_MAGIC);
 	sp = preq->sp;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(ecx, ECX_MAGIC);
@@ -139,7 +139,7 @@ ved_include(struct req *preq, const char *src, const char *host,
 
 	req->esi_level = preq->esi_level + 1;
 
-	req->topreq = preq->topreq;
+	req->top = preq->top;
 
 	HTTP_Setup(req->http, req->ws, req->vsl, SLT_ReqMethod);
 	HTTP_Dup(req->http, preq->http0);
@@ -171,8 +171,8 @@ ved_include(struct req *preq, const char *src, const char *host,
 	req->req_body_status = REQ_BODY_NONE;
 
 	AZ(req->vcl);
-	if (req->topreq->vcl0)
-		req->vcl = req->topreq->vcl0;
+	if (req->vcl0)
+		req->vcl = req->vcl0;
 	else
 		req->vcl = preq->vcl;
 	VCL_Ref(req->vcl);
@@ -263,6 +263,16 @@ ved_vdp_esi_init(struct req *req, void **priv)
 	ecx->preq = req;
 	*priv = ecx;
 	RFC2616_Weaken_Etag(req->resp);
+
+	if (IS_TOPREQ(req)) {
+		Req_MakeTop(req);
+		if (req->top == NULL) {
+			VSLb(req->vsl, SLT_Error,
+			    "(top)request workspace overflow");
+			Req_Fail(req, SC_OVERLOAD);
+			return (-1);
+		}
+	}
 
 	req->res_mode |= RES_ESI;
 	if (req->resp_len != 0)

@@ -351,6 +351,7 @@ void Req_Rollback(struct req *req);
 void Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req);
 void Req_Fail(struct req *req, enum sess_close reason);
 void Req_AcctLogCharge(struct VSC_main_wrk *, struct req *);
+void Req_MakeTop(struct req *req);
 
 /* cache_req_body.c */
 int VRB_Ignore(struct req *);
