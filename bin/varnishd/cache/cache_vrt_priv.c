@@ -166,7 +166,13 @@ VRT_priv_top(VRT_CTX, const void *vmod_id)
 		NEEDLESS(return (NULL));
 	}
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	req = ctx->req->topreq;
+	if (ctx->req->top != NULL) {
+		CHECK_OBJ_NOTNULL(ctx->req->top, REQTOP_MAGIC);
+		CHECK_OBJ_NOTNULL(ctx->req->top->topreq, REQ_MAGIC);
+		req = ctx->req->top->topreq;
+	} else {
+		req = ctx->req;
+	}
 	CAST_OBJ_NOTNULL(vps, req->privs, VRT_PRIVS_MAGIC);
 	return (vrt_priv_dynamic(req->ws, vps, (uintptr_t)vmod_id));
 }

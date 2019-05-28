@@ -1014,7 +1014,6 @@ CNT_Embark(struct worker *wrk, struct req *req)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(req->topreq, REQ_MAGIC);
 
 	/* wrk can have changed for restarts */
 	req->vfc->wrk = req->wrk = wrk;
