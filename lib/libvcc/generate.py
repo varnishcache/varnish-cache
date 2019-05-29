@@ -249,8 +249,8 @@ def parse_var(ln):
     l1 = ln.pop(0).split("``")
     assert len(l1) in (1, 3)
     vn = l1[0].strip()
-    if vn[-1] == '*':
-        vn = vn[:-1]
+    if vn[-2:] == '.*':
+        vn = vn[:-2]
     if len(l1) == 3:
         vlo, vhi = parse_vcl(l1[1])
     else:
