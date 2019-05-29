@@ -37,6 +37,8 @@
 
 #include "vct.h"
 
+static const char * const rootname = "";
+
 /*--------------------------------------------------------------------*/
 #define VCC_KIND(U,l) const struct kind SYM_##U[1] = {{ KIND_MAGIC, #l}};
 #include "tbl/symbol_kind.h"
@@ -134,22 +136,15 @@ vcc_symtab_new(const char *b, const char *e)
 	return (st);
 }
 
-static const char * const rootname = "";
-
 static struct symtab *
-vcc_symtab_str(struct vcc *tl, const char *b, const char *e)
+vcc_symtab_str(struct symtab *st, const char *b, const char *e)
 {
-	struct symtab *st1, *st2, *st3;
+	struct symtab *st2, *st3;
 	size_t l;
 	int i;
 	char *p, *q;
 
-	AN(tl);
 	p = vcc_dup_be(b, e);
-
-	if (tl->syms == NULL)
-		tl->syms = vcc_symtab_new(rootname, rootname);
-	st1 = tl->syms;
 
 	while (1) {
 		q = strchr(p, '.');
@@ -159,26 +154,26 @@ vcc_symtab_str(struct vcc *tl, const char *b, const char *e)
 			assert(q[1] != '.' && q[1] != '\0');
 		AN(q);
 		l = q - p;
-		VTAILQ_FOREACH(st2, &st1->children, list) {
+		VTAILQ_FOREACH(st2, &st->children, list) {
 			i = strncasecmp(st2->name, p, l);
 			if (i < 0)
 				continue;
 			if (i == 0 && l == st2->nlen)
 				break;
 			st3 = vcc_symtab_new(p, q);
-			st3->parent = st1;
+			st3->parent = st;
 			VTAILQ_INSERT_BEFORE(st2, st3, list);
 			st2 = st3;
 			break;
 		}
 		if (st2 == NULL) {
 			st2 = vcc_symtab_new(p, q);
-			st2->parent = st1;
-			VTAILQ_INSERT_TAIL(&st1->children, st2, list);
+			st2->parent = st;
+			VTAILQ_INSERT_TAIL(&st->children, st2, list);
 		}
 		if (*q == '\0')
 			return (st2);
-		st1 = st2;
+		st = st2;
 		p = q + 1;
 	}
 }
@@ -202,17 +197,11 @@ vcc_new_symbol(struct vcc *tl, struct symtab *st)
 }
 
 static struct symbol *
-VCC_Symbol(struct vcc *tl,
-    const char *b, const char *e, vcc_kind_t kind,
-    int create, int vlo, int vhi)
+vcc_sym_in_tab(struct vcc *tl, struct symtab *st,
+    vcc_kind_t kind, int vlo, int vhi)
 {
-	struct symtab *st, *pst;
+	struct symtab *pst;
 	struct symbol *sym, *psym;
-
-	assert(vlo <= vhi);
-
-	st = vcc_symtab_str(tl, b, e);
-	AN(st);
 
 	VTAILQ_FOREACH(sym, &st->symbols, list) {
 		if (sym->lorev > vhi || sym->hirev < vlo)
@@ -222,15 +211,7 @@ VCC_Symbol(struct vcc *tl,
 		if (tl->syntax < VCL_41 && strcmp(sym->name, "default") &&
 		     (kind != SYM_NONE && kind != sym->kind))
 			continue;
-		break;
-	}
-	if (sym != NULL)
 		return (sym);
-	if (create) {
-		sym = vcc_new_symbol(tl, st);
-		sym->lorev = vlo;
-		sym->hirev = vhi;
-		sym->kind = kind;
 	}
 	pst = st->parent;
 	if (pst == NULL)
@@ -238,14 +219,39 @@ VCC_Symbol(struct vcc *tl,
 	psym = VTAILQ_FIRST(&pst->symbols);
 	if (psym == NULL)
 		return(sym);
-	if (psym->wildcard != NULL) {
+	if (psym->wildcard == NULL)
+		return(sym);
+
+	sym = vcc_new_symbol(tl, st);
+	sym->lorev = vlo;
+	sym->hirev = vhi;
+	sym->kind = kind;
+	psym->wildcard(tl, psym, sym);
+	if (tl->err)
+		return(NULL);
+	return (sym);
+}
+
+static struct symbol *
+VCC_Symbol(struct vcc *tl,
+    const char *b, const char *e, vcc_kind_t kind,
+    int create, int vlo, int vhi)
+{
+	struct symtab *st;
+	struct symbol *sym;
+
+	assert(vlo <= vhi);
+	if (tl->syms == NULL)
+		tl->syms = vcc_symtab_new(rootname, rootname);
+
+	st = vcc_symtab_str(tl->syms, b, e);
+	AN(st);
+	sym = vcc_sym_in_tab(tl, st, kind, vlo, vhi);
+	if (sym == NULL && create) {
 		sym = vcc_new_symbol(tl, st);
 		sym->lorev = vlo;
 		sym->hirev = vhi;
 		sym->kind = kind;
-		psym->wildcard(tl, psym, sym);
-		if (tl->err)
-			return(NULL);
 	}
 	return(sym);
 }
