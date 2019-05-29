@@ -262,6 +262,22 @@ const char XREF_REF[] = "xref_ref";
 const char SYMTAB_NOERR[] = "sym_noerror";
 const char SYMTAB_CREATE[] = "sym_create";
 
+static void
+vcc_symxref(struct symbol *sym, const char *x, const struct token *t)
+{
+	if (x == XREF_DEF) {
+		if (sym->def_b == NULL)
+			sym->def_b = t;
+		sym->ndef++;
+	} else if (x == XREF_REF) {
+		if (sym->ref_b == NULL)
+			sym->ref_b = t;
+		sym->nref++;
+	} else {
+		assert (x == XREF_NONE);
+	}
+}
+
 struct symbol *
 VCC_SymbolGetTok(struct vcc *tl, vcc_kind_t kind, const char *e, const char *x,
     const struct token *t)
@@ -320,28 +336,90 @@ VCC_SymbolGetTok(struct vcc *tl, vcc_kind_t kind, const char *e, const char *x,
 		}
 		return (NULL);
 	}
-	if (x == XREF_DEF) {
-		if (sym->def_b == NULL)
-			sym->def_b = t;
-		sym->ndef++;
-	} else if (x == XREF_REF) {
-		if (sym->ref_b == NULL)
-			sym->ref_b = t;
-		sym->nref++;
-	} else {
-		assert (x == XREF_NONE);
-	}
+	vcc_symxref(sym, x, t);
 	return (sym);
 }
 
 struct symbol *
 VCC_SymbolGet(struct vcc *tl, vcc_kind_t kind, const char *e, const char *x)
 {
+	struct symtab *st;
 	struct symbol *sym;
+	struct token *tn, *tn1;
 
-	sym = VCC_SymbolGetTok(tl, kind, e, x, tl->t);
-	if (sym != NULL)
-		vcc_NextToken(tl);
+	if (tl->syntax >= VCL_41 && e == SYMTAB_CREATE && kind != SYM_SUB &&
+	    (tl->t->b[0] == 'v'|| tl->t->b[0] == 'V') &&
+	    (tl->t->b[1] == 'c'|| tl->t->b[1] == 'C') &&
+	    (tl->t->b[2] == 'l'|| tl->t->b[2] == 'L') &&
+	    (tl->t->b[3] == '_')) {
+		VSB_printf(tl->sb,
+		    "Symbols named 'vcl_*' are reserved.\nAt:");
+		vcc_ErrWhere(tl, tl->t);
+		return (NULL);
+	}
+
+	st = tl->syms;
+	tn = tl->t;
+	while (1) {
+		st = vcc_symtab_str(st, tn->b, tn->e);
+		tn1 = VTAILQ_NEXT(tn, list);
+		if (tn1->tok != '.')
+			break;
+		tn1 = VTAILQ_NEXT(tn1, list);
+		if (tn1->tok != ID)
+			break;
+		tn = tn1;
+	}
+	sym = vcc_sym_in_tab(tl, st, kind, tl->syntax, tl->syntax);
+	if (sym == NULL && e == SYMTAB_CREATE) {
+		sym = vcc_new_symbol(tl, st);
+		sym->lorev = tl->syntax;
+		sym->hirev = tl->syntax;
+		sym->kind = kind;
+	}
+	if (sym == NULL && e == SYMTAB_NOERR)
+		return (sym);
+	if (sym == NULL) {
+		VSB_printf(tl->sb, "%s: '", e);
+		tn = VTAILQ_NEXT(tn, list);
+		for (tn1 = tl->t; tn1 != tn; tn1 = VTAILQ_NEXT(tn1, list))
+			VSB_printf(tl->sb, "%.*s", PF(tn1));
+		VSB_printf(tl->sb, "'");
+		sym = vcc_sym_in_tab(tl, st, kind, VCL_LOW, VCL_HIGH);
+		if (sym != NULL) {
+			VSB_printf(tl->sb, " (Only available when");
+			if (sym->lorev >= VCL_LOW)
+				VSB_printf(tl->sb, " %.1f <=", .1 * sym->lorev);
+			VSB_printf(tl->sb, " VCL syntax");
+			if (sym->hirev <= VCL_HIGH)
+				VSB_printf(tl->sb, " <= %.1f", .1 * sym->hirev);
+			VSB_printf(tl->sb, ")");
+		}
+		VSB_cat(tl->sb, "\nAt: ");
+		vcc_ErrWhere(tl, tl->t);
+		return (NULL);
+	}
+	if (kind != SYM_NONE && kind != sym->kind) {
+		VSB_printf(tl->sb, "Symbol '");
+		tn = VTAILQ_NEXT(tn, list);
+		for (tn1 = tl->t; tn1 != tn; tn1 = VTAILQ_NEXT(tn1, list))
+			VSB_printf(tl->sb, "%.*s", PF(tn1));
+		VSB_printf(tl->sb, "' has wrong type (%s): ", sym->kind->name);
+		VSB_cat(tl->sb, "\nAt: ");
+		vcc_ErrWhere2(tl, tl->t, tn);
+		if (sym->def_b != NULL) {
+			VSB_printf(tl->sb, "Symbol was defined here: ");
+			vcc_ErrWhere(tl, sym->def_b);
+		} else if (sym->ref_b != NULL) {
+			VSB_printf(tl->sb, "Symbol was declared here: ");
+			vcc_ErrWhere(tl, sym->ref_b);
+		} else {
+			VSB_printf(tl->sb, "Symbol was builtin\n");
+		}
+		return (NULL);
+	}
+	vcc_symxref(sym, x, tl->t);
+	tl->t = VTAILQ_NEXT(tn, list);
 	return (sym);
 }
 

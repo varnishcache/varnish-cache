@@ -299,18 +299,29 @@ vcc_IdIs(const struct token *t, const char *p)
 void
 vcc_ExpectVid(struct vcc *tl, const char *what)
 {
-	const char *bad;
+	const char *bad = NULL;
+	struct token *t2, *t3;
 
 	ExpectErr(tl, ID);
 	ERRCHK(tl);
 
-	bad = VCT_invalid_name(tl->t->b, tl->t->e);
+	t2 = VTAILQ_NEXT(tl->t, list);
+	while (t2->tok == '.') {
+		bad = ".";
+		t2 = VTAILQ_NEXT(t2, list);
+		if (t2->tok != ID)
+			break;
+		t2 = VTAILQ_NEXT(t2, list);
+	}
+	if (bad == NULL)
+		bad = VCT_invalid_name(tl->t->b, tl->t->e);
 	if (bad != NULL) {
-		VSB_printf(tl->sb, "Name of %s, ", what);
-		vcc_ErrToken(tl, tl->t);
+		VSB_printf(tl->sb, "Name of %s, '", what);
+		for (t3 = tl->t; t3 != t2; t3 = VTAILQ_NEXT(t3, list))
+			VSB_printf(tl->sb, "%.*s", PF(t3));
 		VSB_printf(tl->sb,
-		    ", contains illegal character '%c'\n", *bad);
-		vcc_ErrWhere(tl, tl->t);
+		    "', contains illegal character '%c'\n", *bad);
+		vcc_ErrWhere2(tl, tl->t, t2);
 		return;
 	}
 }
@@ -493,7 +504,7 @@ vcc_Lexer(struct vcc *tl, struct source *sp)
 		/* Match Identifiers */
 		if (vct_isident1(*p)) {
 			for (q = p; q < sp->e; q++)
-				if (!vct_isvar(*q))
+				if (!vct_isident(*q))
 					break;
 			vcc_AddToken(tl, ID, p, q);
 			p = q;
