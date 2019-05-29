@@ -72,6 +72,16 @@ VCC_PrintCName(struct vsb *vsb, const char *b, const char *e)
 			VSB_printf(vsb, "_%02x_", *b);
 }
 
+void
+VCC_SymName(struct vsb *vsb, const struct symbol *sym)
+{
+	if (sym->parent != NULL && sym->parent->parent != NULL) {
+		VCC_SymName(vsb, sym->parent);
+		VSB_putc(vsb, '.');
+	}
+	VSB_cat(vsb, sym->name);
+}
+
 static struct symbol *
 vcc_new_symbol(struct vcc *tl, const char *b, const char *e)
 {

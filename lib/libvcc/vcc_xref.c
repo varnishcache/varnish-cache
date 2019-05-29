@@ -326,17 +326,6 @@ vcc_CheckUses(struct vcc *tl)
 
 /*---------------------------------------------------------------------*/
 
-static void
-vcc_pnam(struct vcc *tl, const struct symbol *sym)
-{
-
-	if (sym->parent != tl->symbols) {
-		vcc_pnam(tl, sym->parent);
-		Fc(tl, 0, ".");
-	}
-	Fc(tl, 0, "%s", sym->name);
-}
-
 static void v_matchproto_(symwalk_f)
 vcc_xreftable(struct vcc *tl, const struct symbol *sym)
 {
@@ -347,7 +336,7 @@ vcc_xreftable(struct vcc *tl, const struct symbol *sym)
 	Fc(tl, 0, " * %-8s ", sym->kind->name);
 	Fc(tl, 0, " %-9s ", sym->type->name);
 	Fc(tl, 0, " %2u %2u ", sym->lorev, sym->hirev);
-	vcc_pnam(tl, sym);
+	VCC_SymName(tl->fc, sym);
 	if (sym->wildcard != NULL)
 		Fc(tl, 0, "*");
 	Fc(tl, 0, "\n");
