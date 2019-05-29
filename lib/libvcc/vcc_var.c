@@ -43,7 +43,7 @@ vcc_Var_Wildcard(struct vcc *tl, struct symbol *parent, struct symbol *sym)
 
 	assert(parent->type == HEADER);
 
-	if (sym->nlen >= 127) {
+	if (strlen(sym->name) >= 127) {
 		VSB_printf(tl->sb, "HTTP header (%.20s..) is too long.\n",
 		    sym->name);
 		VSB_cat(tl->sb, "\nAt: ");
@@ -69,7 +69,7 @@ vcc_Var_Wildcard(struct vcc *tl, struct symbol *parent, struct symbol *sym)
 	/* Create the static identifier */
 	Fh(tl, 0, "static const struct gethdr_s %s =\n", VSB_data(vsb) + 1);
 	Fh(tl, 0, "    { %s, \"\\%03o%s:\"};\n",
-	    parent->rname, sym->nlen + 1, sym->name);
+	    parent->rname, (unsigned int)strlen(sym->name) + 1, sym->name);
 
 	/* Create the symbol r/l values */
 	sym->rname = TlDup(tl, VSB_data(vsb));

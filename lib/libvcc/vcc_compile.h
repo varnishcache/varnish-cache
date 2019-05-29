@@ -58,6 +58,7 @@ struct vsb;
 struct token;
 struct sockaddr_storage;
 struct method;
+struct symtab;
 
 unsigned vcl_fixed_token(const char *p, const char **q);
 extern const char * const vcl_tnames[256];
@@ -135,15 +136,13 @@ struct symbol {
 #define SYMBOL_MAGIC			0x3368c9fb
 	VTAILQ_ENTRY(symbol)		list;
 	VTAILQ_ENTRY(symbol)		sideways;
-	VTAILQ_HEAD(,symbol)		children;
 
-	char				*name;
-	unsigned			nlen;
+	const char			*name;
 
 	int				lorev;
 	int				hirev;
 
-	struct symbol			*parent;
+	const struct symtab		*symtab;
 	const char			*vmod_name;
 
 	sym_wildcard_t			*wildcard;
@@ -222,7 +221,7 @@ struct vcc {
 	unsigned		allow_inline_c;
 	unsigned		unsafe_path;
 
-	struct symbol		*symbols;
+	struct symtab		*syms;
 
 	struct inifinhead	inifin;
 	unsigned		ninifin;
