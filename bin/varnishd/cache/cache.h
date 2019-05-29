@@ -451,6 +451,7 @@ struct reqtop {
 	unsigned		magic;
 #define REQTOP_MAGIC		0x57fbda52
 	struct req		*topreq;
+	struct vcl		*vcl0;
 };
 
 struct req {
@@ -463,7 +464,6 @@ struct req {
 	int			restarts;
 	int			esi_level;
 	struct reqtop		*top;	/* esi_level == 0 request */
-	struct vcl		*vcl0;
 
 #define REQ_FLAG(l, r, w, d) unsigned	l:1;
 #include "tbl/req_flags.h"

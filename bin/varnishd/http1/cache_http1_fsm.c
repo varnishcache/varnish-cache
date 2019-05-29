@@ -415,7 +415,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 				VCL_TaskEnter(req->vcl, req->privs);
 			if (CNT_Request(req) == REQ_FSM_DISEMBARK)
 				return;
-			AZ(req->vcl0);
+			assert(req->top == NULL || req->top->vcl0 == NULL);
 			req->task.func = NULL;
 			req->task.priv = NULL;
 			AZ(req->ws->r);

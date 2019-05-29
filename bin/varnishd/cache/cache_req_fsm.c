@@ -1025,7 +1025,6 @@ CNT_Embark(struct worker *wrk, struct req *req)
 		VSLb(req->vsl, SLT_VCL_use, "%s", VCL_Name(req->vcl));
 	}
 
-	AZ(req->vcl0);
 	AN(req->vcl);
 }
 
@@ -1036,7 +1035,7 @@ CNT_Request(struct req *req)
 	enum req_fsm_nxt nxt;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	assert(IS_TOPREQ(req) || req->vcl0 == NULL);
+	assert(IS_TOPREQ(req) || req->top != NULL);
 
 	wrk = req->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -1080,8 +1079,10 @@ CNT_Request(struct req *req)
 	}
 	wrk->vsl = NULL;
 	if (nxt == REQ_FSM_DONE) {
-		if (IS_TOPREQ(req) && req->vcl0 != NULL)
-			VCL_Rel(&req->vcl0);
+		if (IS_TOPREQ(req) && req->top != NULL) {
+			if (req->top->vcl0 != NULL)
+				VCL_Rel(&req->top->vcl0);
+		}
 		VCL_TaskLeave(req->vcl, req->privs);
 		AN(req->vsl->wid);
 		VRB_Free(req);

@@ -189,7 +189,6 @@ Req_Rollback(struct req *req)
 	if (WS_Overflowed(req->ws))
 		req->wrk->stats->ws_client_overflow++;
 	WS_Reset(req->ws, req->ws_req);
-	req->top = NULL;
 }
 
 /*----------------------------------------------------------------------
@@ -204,7 +203,8 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	assert(sp == req->sp);
-	AZ(req->vcl0);
+	if (req->top != NULL && IS_TOPREQ(req))
+		AZ(req->top->vcl0);
 
 	req->director_hint = NULL;
 	req->restarts = 0;
@@ -237,7 +237,7 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	req->hash_ignore_busy = 0;
 	req->esi_level = 0;
 	req->is_hit = 0;
-	req->top = 0;
+	req->top = NULL;
 
 	if (WS_Overflowed(req->ws))
 		wrk->stats->ws_client_overflow++;
