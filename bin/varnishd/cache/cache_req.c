@@ -207,7 +207,8 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	assert(sp == req->sp);
-	AZ(req->vcl0);
+	if (IS_TOPREQ(req))
+		AZ(req->top->vcl0);
 
 	req->director_hint = NULL;
 	req->restarts = 0;

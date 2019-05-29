@@ -1,0 +1,35 @@
+varnishtest "return(vcl) then reembark"
+
+barrier b1 cond 2
+
+server s1 {
+	rxreq
+	barrier b1 sync
+	txresp
+} -start
+
+varnish v1 -vcl+backend ""
+varnish v1 -cliok "vcl.label lbl vcl1"
+varnish v1 -vcl {
+	backend be { .host = "${bad_backend}"; }
+
+	sub vcl_recv {
+		return (vcl(lbl));
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -start
+
+client c2 {
+	barrier b1 sync
+	txreq
+	rxresp
+	expect resp.status == 200
+} -start
+
+client c1 -wait
+client c2 -wait

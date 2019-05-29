@@ -91,12 +91,14 @@ VPI_vcl_select(VRT_CTX, VCL_VCL vcl)
 
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 
-	if (IS_TOPREQ(req) && req->vcl0 != NULL)
+	if (IS_TOPREQ(req) && req->top->vcl0 != NULL)
 		return;		// Illegal, req-FSM will fail this later.
 
 	VCL_TaskLeave(req->vcl, req->privs);
 	if (IS_TOPREQ(req)) {
-		req->vcl0 = req->vcl;
+		AN(req->top);
+		AZ(req->top->vcl0);
+		req->top->vcl0 = req->vcl;
 		req->vcl = NULL;
 	} else {
 		VCL_Rel(&req->vcl);
