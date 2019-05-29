@@ -304,7 +304,7 @@ ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
 			VSC_C_main->bans_lurker_obj_killed += lok;
 			VSC_C_main->bans_lurker_obj_killed_cutoff += lokc;
 			tested = tested_tests = lok = lokc = 0;
-			if (oc->ban == bt) {
+			if (oc->ban == bt && bt != bd) {
 				bt->refcount--;
 				VTAILQ_REMOVE(&bt->objcore, oc, ban_list);
 				oc->ban = bd;
@@ -356,7 +356,7 @@ ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 	bd = NULL;
 	VTAILQ_INIT(&obans);
 	for (; b != NULL; b = VTAILQ_NEXT(b, list)) {
-		if (bd != NULL && bd != b)
+		if (bd != NULL)
 			ban_lurker_test_ban(wrk, vsl, b, &obans, bd,
 			    count > cutoff);
 		if (b->flags & BANS_FLAG_COMPLETED)
