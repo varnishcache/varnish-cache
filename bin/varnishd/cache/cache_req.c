@@ -260,16 +260,22 @@ Req_Fail(struct req *req, enum sess_close reason)
 /*----------------------------------------------------------------------
  */
 
-void
+int
 Req_MakeTop(struct req *req)
 {
 
 	CHECK_OBJ_ORNULL(req->top, REQTOP_MAGIC);
 	if (req->top != NULL)
-		return;
+		return (0);
 	req->top = WS_Alloc(req->ws, sizeof *req->top);
-	if (req->top != NULL) {
-		INIT_OBJ(req->top, REQTOP_MAGIC);
-		req->top->topreq = req;
+	if (req->top == NULL) {
+		VSLb(req->vsl, SLT_Error,
+		     "(top)request workspace overflow");
+		Req_Fail(req, SC_OVERLOAD);
+		return (-1);
 	}
+	INIT_OBJ(req->top, REQTOP_MAGIC);
+	req->top->topreq = req;
+
+	return (0);
 }

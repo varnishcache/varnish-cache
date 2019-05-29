@@ -263,15 +263,8 @@ ved_vdp_esi_init(struct req *req, void **priv)
 	*priv = ecx;
 	RFC2616_Weaken_Etag(req->resp);
 
-	if (IS_TOPREQ(req)) {
-		Req_MakeTop(req);
-		if (req->top == NULL) {
-			VSLb(req->vsl, SLT_Error,
-			    "(top)request workspace overflow");
-			Req_Fail(req, SC_OVERLOAD);
-			return (-1);
-		}
-	}
+	if (IS_TOPREQ(req) && Req_MakeTop(req))
+		return (-1);
 
 	req->res_mode |= RES_ESI;
 	if (req->resp_len != 0)
