@@ -396,7 +396,7 @@ VCC_SymbolGet(struct vcc *tl, vcc_kind_t kind, const char *e, const char *x)
 			VSB_printf(tl->sb, ")");
 		}
 		VSB_cat(tl->sb, "\nAt: ");
-		vcc_ErrWhere(tl, tl->t);
+		vcc_ErrWhere2(tl, tl->t, tn);
 		return (NULL);
 	}
 	if (kind != SYM_NONE && kind != sym->kind) {

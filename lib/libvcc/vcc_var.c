@@ -46,8 +46,8 @@ vcc_Var_Wildcard(struct vcc *tl, struct symbol *parent, struct symbol *sym)
 	if (strlen(sym->name) >= 127) {
 		VSB_printf(tl->sb, "HTTP header (%.20s..) is too long.\n",
 		    sym->name);
-		VSB_cat(tl->sb, "\nAt: ");
-		vcc_ErrWhere(tl, tl->t);
+		tl->err = 1;
+		return;
 	}
 
 	AN(sym);
