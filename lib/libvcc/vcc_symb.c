@@ -279,68 +279,6 @@ vcc_symxref(struct symbol *sym, const char *x, const struct token *t)
 }
 
 struct symbol *
-VCC_SymbolGetTok(struct vcc *tl, vcc_kind_t kind, const char *e, const char *x,
-    const struct token *t)
-{
-	struct symbol *sym;
-
-	AN(e);
-	if (tl->syntax >= VCL_41 && e == SYMTAB_CREATE && kind != SYM_SUB &&
-	    (t->b[0] == 'v'|| t->b[0] == 'V') &&
-	    (t->b[1] == 'c'|| t->b[1] == 'C') &&
-	    (t->b[2] == 'l'|| t->b[2] == 'L') &&
-	    (t->b[3] == '_')) {
-		VSB_printf(tl->sb,
-		    "Symbols named 'vcl_*' are reserved.\nAt:");
-		vcc_ErrWhere(tl, t);
-		return (NULL);
-	}
-
-	sym = VCC_Symbol(tl, t->b, t->e, kind,
-	    e == SYMTAB_CREATE ? 1 : 0, tl->syntax, tl->syntax);
-	if (sym == NULL && e == SYMTAB_NOERR)
-		return (sym);
-	if (sym == NULL) {
-		VSB_printf(tl->sb, "%s: ", e);
-		vcc_ErrToken(tl, t);
-		sym = VCC_Symbol(tl, t->b, t->e, kind, 0,
-			VCL_LOW, VCL_HIGH);
-		if (sym != NULL) {
-			VSB_printf(tl->sb, " (Only available when");
-			if (sym->lorev >= VCL_LOW)
-				VSB_printf(tl->sb, " %.1f <=", .1 * sym->lorev);
-			VSB_printf(tl->sb, " VCL syntax");
-			if (sym->hirev <= VCL_HIGH)
-				VSB_printf(tl->sb, " <= %.1f", .1 * sym->hirev);
-			VSB_printf(tl->sb, ")");
-		}
-		VSB_cat(tl->sb, "\nAt: ");
-		vcc_ErrWhere(tl, t);
-		return (NULL);
-	}
-	assert (sym->lorev <= tl->syntax && sym->hirev >= tl->syntax);
-	if (kind != SYM_NONE && kind != sym->kind) {
-		VSB_printf(tl->sb, "Symbol ");
-		vcc_ErrToken(tl, t);
-		VSB_printf(tl->sb, " has wrong type (%s): ", sym->kind->name);
-		VSB_cat(tl->sb, "\nAt: ");
-		vcc_ErrWhere(tl, t);
-		if (sym->def_b != NULL) {
-			VSB_printf(tl->sb, "Symbol was defined here: ");
-			vcc_ErrWhere(tl, sym->def_b);
-		} else if (sym->ref_b != NULL) {
-			VSB_printf(tl->sb, "Symbol was declared here: ");
-			vcc_ErrWhere(tl, sym->ref_b);
-		} else {
-			VSB_printf(tl->sb, "Symbol was builtin\n");
-		}
-		return (NULL);
-	}
-	vcc_symxref(sym, x, t);
-	return (sym);
-}
-
-struct symbol *
 VCC_SymbolGet(struct vcc *tl, vcc_kind_t kind, const char *e, const char *x)
 {
 	struct symtab *st;

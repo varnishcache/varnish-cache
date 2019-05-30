@@ -357,8 +357,6 @@ extern const char SYMTAB_NOERR[];
 extern const char SYMTAB_CREATE[];
 struct symbol *VCC_SymbolGet(struct vcc *, vcc_kind_t, const char *,
     const char *);
-struct symbol *VCC_SymbolGetTok(struct vcc *, vcc_kind_t, const char *,
-    const char *, const struct token *);
 
 typedef void symwalk_f(struct vcc *tl, const struct symbol *s);
 void VCC_WalkSymbols(struct vcc *tl, symwalk_f *func, vcc_kind_t);

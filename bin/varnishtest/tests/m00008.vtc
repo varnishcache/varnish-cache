@@ -2,7 +2,7 @@ varnishtest "VCL compiler vmod coverage / vmod loading"
 
 feature topbuild
 
-varnish v1 -errvcl {Module debug conflicts with other symbol.} {
+varnish v1 -errvcl {Symbol 'debug' has wrong type (sub):} {
 	backend b { .host = "127.0.0.1"; }
 	sub debug {}
 	import debug;

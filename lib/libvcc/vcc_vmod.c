@@ -232,16 +232,17 @@ vcc_ParseImport(struct vcc *tl)
 
 	ExpectErr(tl, ID);		/* "vmod_name" */
 	mod = tl->t;
-	vcc_NextToken(tl);
-
-	if (tl->t->tok == ID && vcc_IdIs(tl->t, "as")) {
-		SkipToken(tl, ID);		/* "as" */
+	tmod = VTAILQ_NEXT(mod, list);
+	if (tmod->tok == ID && vcc_IdIs(tmod, "as")) {
+		vcc_NextToken(tl);		/* "vmod_name" */
+		vcc_NextToken(tl);		/* "as" */
 		ExpectErr(tl, ID);		/* "vcl_name" */
-		tmod = tl->t;
-		vcc_NextToken(tl);
-	} else {
-		tmod = mod;
 	}
+	tmod = tl->t;
+
+	msym = VCC_SymbolGet(tl, SYM_VMOD, SYMTAB_CREATE, XREF_NONE);
+	ERRCHK(tl);
+	AN(msym);
 
 	if (tl->t->tok == ID) {
 		if (!vcc_IdIs(tl->t, "from")) {
@@ -293,33 +294,19 @@ vcc_ParseImport(struct vcc *tl)
 		return;
 	}
 
-	msym = VCC_SymbolGetTok(tl, SYM_NONE, SYMTAB_NOERR, XREF_NONE, tmod);
-
-	if (msym != NULL && msym->kind == SYM_VMOD &&
-	    !strcmp(msym->extra, vmd->file_id)) {
-		/* Identical import is OK */
-		AZ(dlclose(vop->hdl));
-		free(fnpx);
-		return;
-	} else if (msym != NULL && msym->kind == SYM_VMOD) {
-		VSB_printf(tl->sb,
-		    "Another module already imported as %.*s.\n", PF(tmod));
-		vcc_ErrWhere2(tl, t1, tl->t);
-		AZ(dlclose(vop->hdl));
-		free(fnpx);
-		return;
-	} else if (msym != NULL) {
-		VSB_printf(tl->sb,
-		    "Module %.*s conflicts with other symbol.\n", PF(tmod));
-		vcc_ErrWhere2(tl, t1, tl->t);
+	if (msym->extra != NULL) {
+		if (!strcmp(msym->extra, vmd->file_id)) {
+			/* Identical import is OK */
+		} else {
+			VSB_printf(tl->sb,
+			    "Another module already imported as %.*s.\n",
+			    PF(tmod));
+			vcc_ErrWhere2(tl, t1, tl->t);
+		}
 		AZ(dlclose(vop->hdl));
 		free(fnpx);
 		return;
 	}
-
-	msym = VCC_SymbolGetTok(tl, SYM_VMOD, SYMTAB_CREATE, XREF_NONE, tmod);
-	ERRCHK(tl);
-	AN(msym);
 	msym->def_b = t1;
 	msym->def_e = tl->t;
 
