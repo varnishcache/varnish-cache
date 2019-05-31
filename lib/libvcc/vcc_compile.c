@@ -669,15 +669,6 @@ vcc_CompileSource(struct vcc *tl, struct source *sp, const char *jfile)
 	if (tl->err)
 		return (NULL);
 
-	/* Check if we have any backends at all */
-	if (tl->default_director == NULL) {
-		VSB_printf(tl->sb,
-		    "No backends or directors found in VCL program, "
-		    "at least one is necessary.\n");
-		tl->err = 1;
-		return (NULL);
-	}
-
 	/* Check for orphans */
 	if (vcc_CheckReferences(tl))
 		return (NULL);
@@ -692,6 +683,24 @@ vcc_CompileSource(struct vcc *tl, struct source *sp, const char *jfile)
 
 	/* Tie vcl_init/fini in */
 	ifp = New_IniFin(tl);
+
+	/* Check if we have any backends at all */
+	if (tl->default_director == NULL) {
+		if (!(tl->no_backend)) {
+			VSB_printf(tl->sb,
+				"No backends or directors found in VCL program, "
+				"at least one is necessary %d.\n", tl->no_backend);
+			tl->err = 1;
+			return (NULL);
+		}
+
+		Fh(tl, 0, "\nstatic VCL_BACKEND vgc_backend_default;\n");
+		VSB_printf(ifp->ini, "\tvgc_backend_default = (NULL);\n");
+
+		tl->default_director = "vgc_backend_default";
+		tl->ndirector++;
+	}
+
 	VSB_printf(ifp->ini, "\tVGC_function_vcl_init(ctx);\n");
 	/*
 	 * Because the failure could be half way into vcl_init{} so vcl_fini{}
@@ -889,6 +898,14 @@ VCC_Allow_InlineC(struct vcc *vcc, unsigned u)
 
 	CHECK_OBJ_NOTNULL(vcc, VCC_MAGIC);
 	vcc->allow_inline_c = u;
+}
+
+void
+VCC_No_Backend(struct vcc *vcc, unsigned u)
+{
+
+	CHECK_OBJ_NOTNULL(vcc, VCC_MAGIC);
+	vcc->no_backend = u;
 }
 
 void

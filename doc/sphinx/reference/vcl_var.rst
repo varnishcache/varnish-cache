@@ -351,6 +351,8 @@ req.backend_hint
 
 	Writable from: client
 
+	Unsetable from: client
+
 	Set bereq.backend to this if we attempt to fetch.
 	When set to a director, reading this variable returns
 	an actual backend if the director has resolved immediately,
@@ -495,6 +497,8 @@ bereq.backend
 	Readable from: vcl_pipe, backend
 
 	Writable from: vcl_pipe, backend
+
+	Unsetable from: vcl_pipe, backend
 
 	This is the backend or director we attempt to fetch from.
 	When set to a director, reading this variable returns

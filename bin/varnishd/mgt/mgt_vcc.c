@@ -65,6 +65,7 @@ const char *mgt_vcl_path;
 const char *mgt_vmod_path;
 unsigned mgt_vcc_err_unref;
 unsigned mgt_vcc_allow_inline_c;
+unsigned mgt_vcc_no_backend;
 unsigned mgt_vcc_unsafe_path;
 
 
@@ -106,6 +107,7 @@ run_vcc(void *priv)
 	VCC_VMOD_path(vcc, mgt_vmod_path);
 	VCC_Err_Unref(vcc, mgt_vcc_err_unref);
 	VCC_Allow_InlineC(vcc, mgt_vcc_allow_inline_c);
+	VCC_No_Backend(vcc, mgt_vcc_no_backend);
 	VCC_Unsafe_Path(vcc, mgt_vcc_unsafe_path);
 	STV_Foreach(stv)
 		VCC_Predef(vcc, "VCL_STEVEDORE", stv->ident);

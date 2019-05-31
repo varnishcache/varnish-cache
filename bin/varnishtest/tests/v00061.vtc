@@ -1,0 +1,114 @@
+varnishtest "Allow backend and backend_hint unset"
+
+server s1 -repeat 10 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -arg "-p vcc_no_backend=true" -vcl+backend {
+	sub vcl_recv {
+		return (pass);
+	}
+
+	sub vcl_backend_fetch {
+		if (bereq.url == "/no-backend") {
+			unset bereq.backend;
+		}
+
+		if (bereq.url == "/unset-set") {
+			unset bereq.backend;
+			set bereq.backend = s1;
+		}
+	}
+} -start
+
+client c1 {
+	txreq -url "/no-backend"
+	rxresp
+	expect resp.status == 503
+
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+
+	txreq -url "/unset-set"
+	rxresp
+	expect resp.status == 200
+} -run
+
+# Unset with no backend
+
+varnish v1 -vcl {
+	sub vcl_recv {
+		return (pass);
+	}
+
+	sub vcl_backend_fetch {
+		if (bereq.url == "/no-backend") {
+			unset bereq.backend;
+		}
+	}
+}
+
+client c1 {
+	txreq -url "/no-backend"
+	rxresp
+	expect resp.status == 503
+
+	txreq -url "/"
+	rxresp
+	expect resp.status == 503
+} -run
+
+# Unset backend_hint
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		if (req.url == "/no-backend") {
+			unset req.backend_hint;
+		}
+
+		if (req.url == "/unset-set") {
+			unset req.backend_hint;
+			set req.backend_hint = s1;
+		}
+
+		return (pass);
+	}
+}
+
+client c1 {
+	txreq -url "/no-backend"
+	rxresp
+	expect resp.status == 503
+
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+
+	txreq -url "/unset-set"
+	rxresp
+	expect resp.status == 200
+} -run
+
+
+# Unset backend_hint with no default backend
+
+varnish v1 -vcl {
+	sub vcl_recv {
+		if (req.url == "/no-backend") {
+			unset req.backend_hint;
+		}
+		return (pass);
+	}
+}
+
+client c1 {
+	txreq -url "/no-backend"
+	rxresp
+	expect resp.status == 503
+
+	txreq -url "/"
+	rxresp
+	expect resp.status == 503
+} -run

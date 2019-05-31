@@ -84,6 +84,11 @@ struct parspec mgt_parspec[] = {
 		"Allow inline C code in VCL.",
 		0,
 		"off", "bool" },
+	{ "vcc_no_backend", tweak_bool, &mgt_vcc_no_backend,
+		NULL, NULL,
+		"Allow VCL to not include a minimum of one backend.",
+		0,
+		"off", "bool" },
 	{ "vcc_unsafe_path", tweak_bool, &mgt_vcc_unsafe_path,
 		NULL, NULL,
 		"Allow '/' in vmod & include paths.\n"

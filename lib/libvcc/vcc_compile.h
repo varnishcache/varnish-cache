@@ -219,6 +219,7 @@ struct vcc {
 	struct vfil_path	*vmod_path;
 	unsigned		err_unref;
 	unsigned		allow_inline_c;
+	unsigned		no_backend;
 	unsigned		unsafe_path;
 
 	struct symtab		*syms;

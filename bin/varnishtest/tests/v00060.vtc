@@ -1,0 +1,22 @@
+varnishtest "No backend needed"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -arg "-pvcc_no_backend=on" -vcl {
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 503
+} -run
+
+# if the flag is off an error should be thrown
+
+varnish v1 -cliok "param.set vcc_no_backend false"
+
+varnish v1 -errvcl {No backends or directors found} {
+}

@@ -459,8 +459,19 @@ VRT_r_req_##nm(VRT_CTX)							\
 	return (ctx->req->elem);					\
 }
 
+#define REQ_VAR_U(nm, elem)						\
+									\
+VCL_VOID								\
+VRT_u_req_##nm(VRT_CTX)							\
+{									\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);				\
+	ctx->req->elem = NULL;						\
+}
+
 REQ_VAR_L(backend_hint, director_hint, VCL_BACKEND,)
 REQ_VAR_R(backend_hint, director_hint, VCL_BACKEND)
+REQ_VAR_U(backend_hint, director_hint)
 REQ_VAR_L(ttl, d_ttl, VCL_DURATION, if (!(arg>0.0)) arg = 0;)
 REQ_VAR_R(ttl, d_ttl, VCL_DURATION)
 REQ_VAR_L(grace, d_grace, VCL_DURATION, if (!(arg>0.0)) arg = 0;)
@@ -484,6 +495,15 @@ VRT_r_bereq_backend(VRT_CTX)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
 	return (ctx->bo->director_req);
+}
+
+VCL_VOID
+VRT_u_bereq_backend(VRT_CTX)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	ctx->bo->director_req = NULL;
 }
 
 VCL_BACKEND
