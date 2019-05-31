@@ -1,0 +1,54 @@
+varnishtest "test ban lurker destination being completed by dup ban"
+
+server s1 -repeat 4 -keepalive {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+varnish v1 -cliok "param.set ban_lurker_age 99"
+
+# this ban becomes the pruned tail
+varnish v1 -cliok "ban obj.http.t == 1"
+client c1 {
+	txreq -url /1
+	rxresp
+} -run
+
+# this ban becomes the new tail
+varnish v1 -cliok "ban obj.http.t == 2"
+client c1 {
+	txreq -url /2
+	rxresp
+} -run
+
+# req ban to define where the tail goes (at t == 2)
+varnish v1 -cliok "ban req.http.barrier == here"
+client c1 {
+	txreq -url /3
+	rxresp
+} -run
+
+# dup ban to trigger #3006
+varnish v1 -cliok "ban obj.http.t == 2"
+client c1 {
+	txreq -url /4
+	rxresp
+} -run
+
+varnish v1 -cliok "ban.list"
+
+varnish v1 -cliok "param.set ban_lurker_age 0.1"
+
+varnish v1 -cliok "ban.list"
+
+delay 2
+
+varnish v1 -expect bans == 3
+varnish v1 -expect bans_completed == 2
+
+varnish v1 -cliok "ban.list"
+
+varnish v1 -expect bans == 3
+varnish v1 -expect bans_completed == 2

@@ -58,19 +58,18 @@ ban_kick_lurker(void)
  * still referenced. For already completed bans, we update statistics
  * accordingly, but otherwise just skip the completion step and remove directly
  *
- * return 1 if we removed the victim, 0 otherwise
+ * if an obans list is passed, we clean its tail as well
  */
 
-static int
-ban_cleantail(const struct ban *victim)
+static void
+ban_cleantail(struct banhead_s *obans)
 {
 	struct ban *b, *bt;
 	struct banhead_s freelist = VTAILQ_HEAD_INITIALIZER(freelist);
-	int r = 0;
 
 	/* handle the zero-length tail unprotected */
 	if (VTAILQ_LAST(&ban_head, banhead_s) == VTAILQ_FIRST(&ban_head))
-		return (r);
+		return;
 
 	Lck_Lock(&ban_mtx);
 	do {
@@ -99,13 +98,27 @@ ban_cleantail(const struct ban *victim)
 
 	Lck_Unlock(&ban_mtx);
 
-	VTAILQ_FOREACH_SAFE(b, &freelist, list, bt) {
-		if (b == victim)
-			r = 1;
-		BAN_Free(b);
+	/* oban order is head to tail, freelist tail to head */
+	if (obans != NULL)
+		bt = VTAILQ_LAST(obans, banhead_s);
+	else
+		bt = NULL;
+
+	if (bt != NULL) {
+		VTAILQ_FOREACH(b, &freelist, list) {
+			if (b != bt)
+				continue;
+			VTAILQ_REMOVE(obans, b, l_list);
+			bt = VTAILQ_LAST(obans, banhead_s);
+			if (bt == NULL)
+				break;
+		}
 	}
 
-	return (r);
+	VTAILQ_FOREACH_SAFE(b, &freelist, list, bt)
+		BAN_Free(b);
+
+	return;
 }
 
 /*--------------------------------------------------------------------
@@ -327,7 +340,7 @@ ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 
 	dt = 49.62;		// Random, non-magic
 	if (cache_param->ban_lurker_sleep == 0) {
-		(void)ban_cleantail(NULL);
+		ban_cleantail(NULL);
 		return (dt);
 	}
 	if (cache_param->ban_cutoff > 0)
@@ -363,42 +376,18 @@ ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 	}
 
 	/*
-	 * conceptually, all obans are now completed. Remove the tail. If it
-	 * containted the first oban, all obans were on the tail and we're
-	 * done.
+	 * conceptually, all obans are now completed. Remove the tail.
+	 * If any bans to be completed remain after the tail is cut,
+	 * mark them completed
 	 */
-	if (ban_cleantail(VTAILQ_FIRST(&obans)))
-		return (dt);
+	ban_cleantail(&obans);
 
 	if (VTAILQ_FIRST(&obans) == NULL)
 		return (dt);
 
-	/*
-	 * Mark remaining bans completed: the tail of the obans list is now
-	 * removed, but iterating over it is safe until we hit the new ban list
-	 * tail
-	 *
-	 * bans at the tail of the list may have been completed by other means
-	 * and, consequently, may have been removed from obans, so we skip all
-	 * already completed bans at the tail.
-	 *
-	 * While traversing the ban list backwards, we check if we pass by the
-	 * first oban, in which case we're done.
-	 */
-	bd = VTAILQ_LAST(&ban_head, banhead_s);
-	while (bd->flags & BANS_FLAG_COMPLETED) {
-		if (bd == VTAILQ_FIRST(&ban_head) ||
-		    bd == VTAILQ_FIRST(&obans))
-			return (dt);
-		bd = VTAILQ_PREV(bd, banhead_s, list);
-	}
-
 	Lck_Lock(&ban_mtx);
-	VTAILQ_FOREACH(b, &obans, l_list) {
+	VTAILQ_FOREACH(b, &obans, l_list)
 		ban_mark_completed(b);
-		if (b == bd)
-			break;
-	}
 	Lck_Unlock(&ban_mtx);
 	return (dt);
 }
