@@ -802,24 +802,50 @@ vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 /*--------------------------------------------------------------------
  * SYNTAX:
  *    Expr4:
- *      Expr5 
+ *      Expr5
  */
+
+static const struct vcc_methods {
+	vcc_type_t		type_from;
+	vcc_type_t		type_to;
+	const char		*method;
+	const char		*impl;
+} vcc_methods[] = {
+	//{ BACKEND, BOOL,	"healthy",	"VRT_Healthy(ctx, \v1, 0)" },
+	{ NULL, NULL,		NULL,		NULL},	// XXX: For Flexelint
+	{ NULL, NULL,		NULL,		NULL},
+};
 
 static void
 vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 {
+	const struct vcc_methods *vm;
 
 	*e = NULL;
 	vcc_expr5(tl, e, fmt);
+	ERRCHK(tl);
+	AN(*e);
 	while (tl->t->tok == '.') {
 		vcc_NextToken(tl);
 		ExpectErr(tl, ID);
-		VSB_printf(tl->sb, "Unknown property ");
-		vcc_ErrToken(tl, tl->t);
-		VSB_printf(tl->sb,
-		 " for type %s\n", (*e)->fmt->name);
-		vcc_ErrWhere(tl, tl->t);
-		return;
+
+		for(vm = vcc_methods; vm->type_from != NULL; vm++) {
+
+			if (vm->type_from == (*e)->fmt &&
+			    vcc_IdIs(tl->t, vm->method))
+				break;
+		}
+
+		if (vm->type_from == NULL) {
+			VSB_printf(tl->sb, "Unknown property ");
+			vcc_ErrToken(tl, tl->t);
+			VSB_printf(tl->sb,
+			 " for type %s\n", (*e)->fmt->name);
+			vcc_ErrWhere(tl, tl->t);
+			return;
+		}
+		vcc_NextToken(tl);
+		*e = vcc_expr_edit(tl, vm->type_to, vm->impl, *e, NULL);
 	}
 }
 
