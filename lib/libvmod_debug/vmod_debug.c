@@ -513,7 +513,7 @@ xyzzy_match_acl(VRT_CTX, VCL_ACL acl, VCL_IP ip)
 {
 
 	CHECK_OBJ_ORNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_ORNULL(acl, VRT_ACL_MAGIC);
+	AN(acl);
 	assert(VSA_Sane(ip));
 
 	return (VRT_acl_match(ctx, acl, ip));

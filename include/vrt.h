@@ -387,14 +387,6 @@ struct vrt_backend_probe {
  * Implementation details of ACLs
  */
 
-typedef int acl_match_f(VRT_CTX, const VCL_IP);
-
-struct vrt_acl {
-	unsigned	magic;
-#define VRT_ACL_MAGIC	0x78329d96
-	acl_match_f	*match;
-};
-
 void VRT_acl_log(VRT_CTX, const char *);
 int VRT_acl_match(VRT_CTX, VCL_ACL, VCL_IP);
 
