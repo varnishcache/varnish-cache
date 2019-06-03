@@ -41,7 +41,7 @@ varnish v1 -errvcl {Operator > not possible on BACKEND} {
 	sub vcl_recv { if (a > b) { } }
 }
 
-varnish v1 -errvcl {Symbol not found: 'req.foo'} {
+varnish v1 -errvcl {Unknown property 'foo' for type HTTP} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_hash { if (req.foo != "bar") { } }
 }

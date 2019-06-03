@@ -238,7 +238,7 @@ struct symbol *
 VCC_SymbolGet(struct vcc *tl, vcc_kind_t kind,
     const struct symmode *e, const struct symxref *x)
 {
-	struct symtab *st, *st2;
+	struct symtab *st, *st2 = NULL;
 	struct symbol *sym = NULL, *sym2 = NULL;
 	struct token *t0, *tn, *tn1, *tn2 = NULL;
 

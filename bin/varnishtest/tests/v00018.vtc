@@ -38,7 +38,7 @@ varnish v1 -errvcl {Expected ';' got 'if'} {
 	sub vcl_recv { set req.url = "foo" if "bar"; }
 }
 
-varnish v1 -errvcl {Symbol not found: 'req.foo'} {
+varnish v1 -errvcl {Unknown property 'foo' for type HTTP} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_hash { hash_data(req.foo); }
 }

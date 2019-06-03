@@ -688,7 +688,7 @@ vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	switch (tl->t->tok) {
 	case ID:
 		t = tl->t;
-		sym = VCC_SymbolGet(tl, SYM_NONE, SYMTAB_EXISTING, XREF_REF);
+		sym = VCC_SymbolGet(tl, SYM_NONE, SYMTAB_PARTIAL, XREF_REF);
 		ERRCHK(tl);
 		AN(sym);
 		if (sym->kind == SYM_FUNC && sym->type == VOID) {
@@ -811,7 +811,16 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 
 	*e = NULL;
 	vcc_expr5(tl, e, fmt);
-	return;
+	while (tl->t->tok == '.') {
+		vcc_NextToken(tl);
+		ExpectErr(tl, ID);
+		VSB_printf(tl->sb, "Unknown property ");
+		vcc_ErrToken(tl, tl->t);
+		VSB_printf(tl->sb,
+		 " for type %s\n", (*e)->fmt->name);
+		vcc_ErrWhere(tl, tl->t);
+		return;
+	}
 }
 
 /*--------------------------------------------------------------------
