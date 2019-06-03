@@ -402,7 +402,7 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 
 	ExpectErr(tl, ID);
 	t = tl->t;
-	sy2 = VCC_SymbolGet(tl, SYM_OBJECT, "Symbol not found", XREF_NONE);
+	sy2 = VCC_SymbolGet(tl, SYM_OBJECT, SYMTAB_EXISTING, XREF_NONE);
 	ERRCHK(tl);
 	AN(sy2);
 	if (sy2->eval_priv == NULL) {

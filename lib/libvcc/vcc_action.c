@@ -94,7 +94,7 @@ vcc_act_set(struct vcc *tl, struct token *t, struct symbol *sym)
 	(void)t;
 	ExpectErr(tl, ID);
 	t = tl->t;
-	sym = VCC_SymbolGet(tl, SYM_VAR, "Unknown variable", XREF_NONE);
+	sym = VCC_SymbolGet(tl, SYM_VAR, SYMTAB_EXISTING, XREF_NONE);
 	ERRCHK(tl);
 	AN(sym);
 	if (sym->w_methods == 0) {
@@ -146,7 +146,7 @@ vcc_act_unset(struct vcc *tl, struct token *t, struct symbol *sym)
 	/* XXX: Wrong, should use VCC_Expr(HEADER) */
 	ExpectErr(tl, ID);
 	t = tl->t;
-	sym = VCC_SymbolGet(tl, SYM_VAR, "Unknown variable", XREF_NONE);
+	sym = VCC_SymbolGet(tl, SYM_VAR, SYMTAB_EXISTING, XREF_NONE);
 	ERRCHK(tl);
 	AN(sym);
 	if (sym->u_methods == 0) {
@@ -269,7 +269,7 @@ vcc_act_return_vcl(struct vcc *tl)
 	ExpectErr(tl, '(');
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
-	sym = VCC_SymbolGet(tl, SYM_VCL, "Not a VCL label", XREF_NONE);
+	sym = VCC_SymbolGet(tl, SYM_VCL, SYMTAB_EXISTING, XREF_NONE);
 	ERRCHK(tl);
 	AN(sym);
 	if (sym->eval_priv == NULL) {

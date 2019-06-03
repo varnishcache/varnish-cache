@@ -226,19 +226,25 @@ vcc_sym_in_tab(struct vcc *tl, struct symtab *st,
 }
 
 
-const char XREF_NONE[] = "xref_none";
-const char XREF_DEF[] = "xref_def";
-const char XREF_REF[] = "xref_ref";
-const char SYMTAB_NOERR[] = "sym_noerror";
-const char SYMTAB_CREATE[] = "sym_create";
+const struct symxref XREF_NONE[1] = {{"xref_none"}};
+const struct symxref XREF_DEF[1] = {{"xref_def"}};
+const struct symxref XREF_REF[1] = {{"xref_ref"}};
+const struct symmode SYMTAB_NOERR[1] = {{"sym_noerror"}};
+const struct symmode SYMTAB_CREATE[1] = {{"sym_create"}};
+const struct symmode SYMTAB_EXISTING[1] = {{"Symbol not found"}};
 
 struct symbol *
-VCC_SymbolGet(struct vcc *tl, vcc_kind_t kind, const char *e, const char *x)
+VCC_SymbolGet(struct vcc *tl, vcc_kind_t kind,
+    const struct symmode *e, const struct symxref *x)
 {
 	struct symtab *st;
 	struct symbol *sym;
 	struct token *t0, *tn, *tn1;
 
+	AN(tl);
+	AN(e);
+	AN(x);
+	AN(x->name);
 	if (tl->syntax >= VCL_41 && e == SYMTAB_CREATE && kind != SYM_SUB &&
 	    (tl->t->b[0] == 'v'|| tl->t->b[0] == 'V') &&
 	    (tl->t->b[1] == 'c'|| tl->t->b[1] == 'C') &&
@@ -270,7 +276,7 @@ VCC_SymbolGet(struct vcc *tl, vcc_kind_t kind, const char *e, const char *x)
 		return (sym);
 	tl->t = VTAILQ_NEXT(tn, list);
 	if (sym == NULL) {
-		VSB_printf(tl->sb, "%s: '", e);
+		VSB_printf(tl->sb, "%s: '", e->name);
 		for (tn1 = t0; tn1 != tl->t; tn1 = VTAILQ_NEXT(tn1, list))
 			VSB_printf(tl->sb, "%.*s", PF(tn1));
 		VSB_printf(tl->sb, "'");

@@ -432,7 +432,7 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 				(void)vcc_default_probe(tl);
 			} else {
 				pb = VCC_SymbolGet(tl, SYM_PROBE,
-				    "Probe not found", XREF_REF);
+				    SYMTAB_EXISTING, XREF_REF);
 				ERRCHK(tl);
 				AN(pb);
 				Fb(tl, 0, "\t.probe = %s,\n", pb->rname);
@@ -540,6 +540,7 @@ vcc_ParseBackend(struct vcc *tl)
 	} else {
 		sym = VCC_HandleSymbol(tl, BACKEND, "vgc_backend");
 		ERRCHK(tl);
+		AN(sym);
 		dn = sym->rname;
 		if (tl->default_director == NULL) {
 			tl->first_director = sym;

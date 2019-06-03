@@ -688,8 +688,7 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	switch (tl->t->tok) {
 	case ID:
 		t = tl->t;
-		sym = VCC_SymbolGet(tl, SYM_NONE, "Symbol not found",
-		    XREF_REF);
+		sym = VCC_SymbolGet(tl, SYM_NONE, SYMTAB_EXISTING, XREF_REF);
 		ERRCHK(tl);
 		AN(sym);
 		if (sym->kind == SYM_FUNC && sym->type == VOID) {

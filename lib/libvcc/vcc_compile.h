@@ -350,13 +350,19 @@ void vcc_stevedore(struct vcc *vcc, const char *stv_name);
 /* vcc_symb.c */
 void VCC_PrintCName(struct vsb *vsb, const char *b, const char *e);
 struct symbol *VCC_MkSym(struct vcc *tl, const char *b, vcc_kind_t, int, int);
-extern const char XREF_NONE[];
-extern const char XREF_DEF[];
-extern const char XREF_REF[];
-extern const char SYMTAB_NOERR[];
-extern const char SYMTAB_CREATE[];
-struct symbol *VCC_SymbolGet(struct vcc *, vcc_kind_t, const char *,
-    const char *);
+
+struct symxref { const char *name; };
+extern const struct symxref XREF_NONE[1];
+extern const struct symxref XREF_DEF[1];
+extern const struct symxref XREF_REF[1];
+
+struct symmode { const char *name; };
+extern const struct symmode SYMTAB_NOERR[1];
+extern const struct symmode SYMTAB_CREATE[1];
+extern const struct symmode SYMTAB_EXISTING[1];
+
+struct symbol *VCC_SymbolGet(struct vcc *, vcc_kind_t,
+    const struct symmode *, const struct symxref *);
 
 typedef void symwalk_f(struct vcc *tl, const struct symbol *s);
 void VCC_WalkSymbols(struct vcc *tl, symwalk_f *func, vcc_kind_t);
