@@ -232,14 +232,15 @@ const struct symxref XREF_REF[1] = {{"xref_ref"}};
 const struct symmode SYMTAB_NOERR[1] = {{"sym_noerror"}};
 const struct symmode SYMTAB_CREATE[1] = {{"sym_create"}};
 const struct symmode SYMTAB_EXISTING[1] = {{"Symbol not found"}};
+const struct symmode SYMTAB_PARTIAL[1] = {{"Symbol not found"}};
 
 struct symbol *
 VCC_SymbolGet(struct vcc *tl, vcc_kind_t kind,
     const struct symmode *e, const struct symxref *x)
 {
-	struct symtab *st;
-	struct symbol *sym;
-	struct token *t0, *tn, *tn1;
+	struct symtab *st, *st2;
+	struct symbol *sym = NULL, *sym2 = NULL;
+	struct token *t0, *tn, *tn1, *tn2 = NULL;
 
 	AN(tl);
 	AN(e);
@@ -261,6 +262,12 @@ VCC_SymbolGet(struct vcc *tl, vcc_kind_t kind,
 	tn = tl->t;
 	while (1) {
 		st = vcc_symtab_str(st, tn->b, tn->e);
+		sym2 = vcc_sym_in_tab(tl, st, kind, tl->syntax, tl->syntax);
+		if (sym2 != NULL) {
+			sym = sym2;
+			st2 = st;
+			tn2 = tn;
+		}
 		tn1 = VTAILQ_NEXT(tn, list);
 		if (tn1->tok != '.')
 			break;
@@ -269,11 +276,18 @@ VCC_SymbolGet(struct vcc *tl, vcc_kind_t kind,
 			break;
 		tn = tn1;
 	}
-	sym = vcc_sym_in_tab(tl, st, kind, tl->syntax, tl->syntax);
-	if (sym == NULL && e == SYMTAB_CREATE)
-		sym = vcc_new_symbol(tl, st, kind, tl->syntax, tl->syntax);
+	if (sym != NULL && e == SYMTAB_PARTIAL) {
+		st = st2;
+		tn = tn2;
+	} else if (st != st2) {
+		sym = NULL;
+	}
 	if (sym == NULL && e == SYMTAB_NOERR)
 		return (sym);
+	AN(st);
+	AN(tn);
+	if (sym == NULL && e == SYMTAB_CREATE)
+		sym = vcc_new_symbol(tl, st, kind, tl->syntax, tl->syntax);
 	tl->t = VTAILQ_NEXT(tn, list);
 	if (sym == NULL) {
 		VSB_printf(tl->sb, "%s: '", e->name);

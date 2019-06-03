@@ -360,6 +360,7 @@ struct symmode { const char *name; };
 extern const struct symmode SYMTAB_NOERR[1];
 extern const struct symmode SYMTAB_CREATE[1];
 extern const struct symmode SYMTAB_EXISTING[1];
+extern const struct symmode SYMTAB_PARTIAL[1];
 
 struct symbol *VCC_SymbolGet(struct vcc *, vcc_kind_t,
     const struct symmode *, const struct symxref *);
