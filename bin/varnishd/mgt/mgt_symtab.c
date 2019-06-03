@@ -41,7 +41,6 @@
 #include "mgt/mgt_vcl.h"
 
 #include "vcli_serve.h"
-#include "libvcc.h"
 #include "vjsn.h"
 
 /*--------------------------------------------------------------------*/

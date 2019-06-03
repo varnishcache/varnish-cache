@@ -105,6 +105,7 @@ ban_cleantail(struct banhead_s *obans)
 		bt = NULL;
 
 	if (bt != NULL) {
+		AN(obans);
 		VTAILQ_FOREACH(b, &freelist, list) {
 			if (b != bt)
 				continue;
