@@ -454,6 +454,7 @@ vcc_acl_emit(struct vcc *tl, const char *name, const char *rname, int anon)
 		Fh(tl, 0, "\nconst struct vrt_acl %s[] = {{\n", rname);
 		Fh(tl, 0, "\t.magic = VRT_ACL_MAGIC,\n");
 		Fh(tl, 0, "\t.match = &%s,\n", VSB_data(func));
+		Fh(tl, 0, "\t.name = \"%s\",\n", name);
 		Fh(tl, 0, "}};\n\n");
 	}
 	VSB_destroy(&func);

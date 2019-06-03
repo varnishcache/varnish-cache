@@ -61,5 +61,6 @@ struct vrt_acl {
 	unsigned        magic;
 #define VRT_ACL_MAGIC   0x78329d96
 	acl_match_f     *match;
+	const char	*name;
 };
 
