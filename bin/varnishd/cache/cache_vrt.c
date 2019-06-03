@@ -40,6 +40,7 @@
 #include "vsa.h"
 #include "vtcp.h"
 #include "vtim.h"
+#include "vcc_interface.h"
 
 #include "common/heritage.h"
 #include "common/vsmw.h"
