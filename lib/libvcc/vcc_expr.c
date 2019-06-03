@@ -655,7 +655,7 @@ vcc_Eval_SymFunc(struct vcc *tl, struct expr **e, struct token *t,
 
 /*--------------------------------------------------------------------
  * SYNTAX:
- *    Expr4:
+ *    Expr5:
  *	'(' ExprCor ')'
  *	symbol
  *	CNUM
@@ -664,7 +664,7 @@ vcc_Eval_SymFunc(struct vcc *tl, struct expr **e, struct token *t,
  */
 
 static void
-vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
+vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 {
 	struct expr *e1, *e2;
 	const char *ip, *sign;
@@ -797,6 +797,21 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	vcc_ErrToken(tl, tl->t);
 	VSB_printf(tl->sb, " when looking for %s\n\n", vcc_utype(fmt));
 	vcc_ErrWhere(tl, tl->t);
+}
+
+/*--------------------------------------------------------------------
+ * SYNTAX:
+ *    Expr4:
+ *      Expr5 
+ */
+
+static void
+vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
+{
+
+	*e = NULL;
+	vcc_expr5(tl, e, fmt);
+	return;
 }
 
 /*--------------------------------------------------------------------
