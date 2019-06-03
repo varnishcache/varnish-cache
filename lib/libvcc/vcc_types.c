@@ -37,6 +37,7 @@
 const struct type ACL[1] = {{
 	.magic =		TYPE_MAGIC,
 	.name =			"ACL",
+	.tostring =		"((\v1)->name)",
 }};
 
 const struct type BACKEND[1] = {{
