@@ -315,7 +315,8 @@ vcc_Eval_Handle(struct vcc *tl, struct expr **e, struct token *t,
 	AN(sym->rname);
 	AZ(type->stringform);
 
-	if (sym->type != STRING && type == STRINGS) {
+	if (sym->type->tostring == NULL &&
+	    sym->type != STRING && type == STRINGS) {
 		*e = vcc_mk_expr(STRINGS, "\"%s\"", sym->name);
 		(*e)->nstr = 1;
 		(*e)->constant |= EXPR_CONST | EXPR_STR_CONST;
