@@ -41,7 +41,6 @@
 #include "storage/storage.h"
 #include "vrt_obj.h"
 
-
 static pthread_mutex_t stv_mtx;
 
 /*--------------------------------------------------------------------
@@ -214,18 +213,13 @@ VRT_stevedore(const char *nm)
 	return (stv_find(nm));
 }
 
-#define VRTSTVVAR(nm, vtype, ctype, dval)	\
-ctype						\
-VRT_Stv_##nm(const char *nm)			\
-{						\
-	const struct stevedore *stv;		\
-						\
-	stv = stv_find(nm);			\
-	if (stv == NULL)			\
-		return (dval);			\
-	if (stv->var_##nm == NULL)		\
-		return (dval);			\
-	return (stv->var_##nm(stv));		\
+#define VRTSTVVAR(nm, vtype, ctype, dval)		\
+ctype							\
+VRT_stevedore_##nm(VCL_STEVEDORE stv)			\
+{							\
+	if (stv == NULL)				\
+		return (0);				\
+	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);	\
+	return (stv->var_##nm(stv));			\
 }
-
 #include "tbl/vrt_stv_var.h"

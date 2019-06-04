@@ -813,7 +813,11 @@ static const struct vcc_methods {
 	const char		*impl;
 } vcc_methods[] = {
 	//{ BACKEND, BOOL,	"healthy",	"VRT_Healthy(ctx, \v1, 0)" },
-	{ NULL, NULL,		NULL,		NULL},	// XXX: For Flexelint
+
+#define VRTSTVVAR(nm, vtype, ctype, dval) \
+	{ STEVEDORE, vtype, #nm, "VRT_stevedore_" #nm "(\v1)"},
+#include "tbl/vrt_stv_var.h"
+
 	{ NULL, NULL,		NULL,		NULL},
 };
 

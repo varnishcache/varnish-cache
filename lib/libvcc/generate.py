@@ -731,12 +731,11 @@ vcc_Var_Init(struct vcc *tl)
     struct symbol *sym;
 """)
 
-
 parse_var_doc(join(srcroot, "doc/sphinx/reference/vcl_var.rst"))
 fo.write("}\n")
 
 for i in stv_variables:
-    fh.write(vcltypes[i[1]].c + " VRT_Stv_" + i[0] + "(const char *);\n")
+    fh.write(vcltypes[i[1]].c + " VRT_stevedore_" + i[0] + "(VCL_STEVEDORE);\n")
 
 fo.write("\n/* VCL type identifiers */\n")
 

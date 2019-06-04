@@ -59,27 +59,11 @@
 #include <string.h>
 
 #include "vcc_compile.h"
-#include "libvcc.h"		// VCC_Stevedore() proto
-
-/*--------------------------------------------------------------------
- *
- */
-
-static struct stvars {
-	const char	*name;
-	vcc_type_t	type;
-} stvars[] = {
-#define VRTSTVVAR(nm, vtype, ctype, dval)	{ #nm, vtype },
-#include "tbl/vrt_stv_var.h"
-#undef VRTSTVVAR
-	{ NULL,			BOOL }
-};
 
 void
 vcc_stevedore(struct vcc *vcc, const char *stv_name)
 {
 	struct symbol *sym;
-	struct stvars *sv;
 	char buf[1024];
 
 	CHECK_OBJ_NOTNULL(vcc, VCC_MAGIC);
@@ -91,15 +75,4 @@ vcc_stevedore(struct vcc *vcc, const char *stv_name)
 	bprintf(buf, "VRT_stevedore(\"%s\")", stv_name);
 	sym->rname = TlDup(vcc, buf);
 	sym->r_methods = ~0;
-
-	for (sv = stvars; sv->name != NULL; sv++) {
-		bprintf(buf, "storage.%s.%s", stv_name, sv->name);
-		sym = VCC_MkSym(vcc, buf, SYM_VAR, VCL_LOW, VCL_41);
-		AN(sym);
-		sym->type = sv->type;
-		sym->eval = vcc_Eval_Var;
-		bprintf(buf, "VRT_Stv_%s(\"%s\")", sv->name, stv_name);
-		sym->rname = TlDup(vcc, buf);
-		sym->r_methods = ~0;
-	}
 }
