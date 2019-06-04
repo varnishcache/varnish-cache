@@ -345,7 +345,12 @@ The `vcl_backend_fetch` subroutine may terminate with calling
     background fetch, control is passed to :ref:`vcl_synth` on the
     client side with ``resp.status`` preset to 503.
 
-Before calling `vcl_backend_fetch`, varnish core prepares the `bereq`
+  ``error(status code, reason)``
+    Transition to :ref:`vcl_backend_error` with ``beresp.status`` and
+    ``beresp.reason`` being preset to the arguments of ``error()`` if
+    arguments are provided.
+
+Before calling `vcl_backend_fetch`, Varnish core prepares the `bereq`
 backend request as follows:
 
 * Unless the request is a `pass`,
@@ -407,6 +412,11 @@ The `vcl_backend_response` subroutine may terminate with calling
     Mark the object as a hit-for-pass for the given duration. Subsequent
     lookups hitting this object will be turned into passed transactions,
     as if ``vcl_recv`` had returned ``pass``.
+
+  ``error(status code, reason)``
+    Transition to :ref:`vcl_backend_error` with ``beresp.status`` and
+    ``beresp.reason`` being preset to the arguments of ``error()`` if
+    arguments are provided.
 
 304 handling
 ~~~~~~~~~~~~

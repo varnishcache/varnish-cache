@@ -55,9 +55,18 @@ VRT_synth(VRT_CTX, VCL_INT code, VCL_STRING reason)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	assert(ctx->req != NULL || ctx->bo != NULL);
 	if (code < 100 || code > 65535)
 		code = 503;
+
+	if (ctx->req == NULL) {
+		CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+		ctx->bo->err_code = (uint16_t)code;
+		ctx->bo->err_reason = reason ? reason
+		    : http_Status2Reason(ctx->bo->err_code % 1000, NULL);
+		return;
+	}
+
 	ctx->req->err_code = (uint16_t)code;
 	ctx->req->err_reason = reason ? reason
 	    : http_Status2Reason(ctx->req->err_code % 1000, NULL);
