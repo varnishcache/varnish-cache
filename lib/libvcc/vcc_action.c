@@ -335,7 +335,7 @@ vcc_act_return(struct vcc *tl, struct token *t, struct symbol *sym)
 	vcc_ProcAction(tl->curproc, hand, tl->t);
 	vcc_NextToken(tl);
 	if (tl->t->tok == '(') {
-		if (hand == VCL_RET_SYNTH)
+		if (hand == VCL_RET_SYNTH || hand == VCL_RET_ERROR)
 			vcc_act_return_synth(tl);
 		else if (hand == VCL_RET_VCL)
 			vcc_act_return_vcl(tl);
