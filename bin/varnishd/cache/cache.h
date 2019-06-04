@@ -404,6 +404,7 @@ struct busyobj {
 
 	struct ws		ws[1];
 	uintptr_t		ws_bo;
+	uintptr_t		ws_bo_rst;
 	struct http		*bereq0;
 	struct http		*bereq;
 	struct http		*beresp;

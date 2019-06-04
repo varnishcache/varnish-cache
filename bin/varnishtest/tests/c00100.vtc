@@ -1,0 +1,95 @@
+varnishtest "Dont overwrite workspace when using std.rollback()"
+
+server s1 -repeat 7 {
+	rxreq
+	txresp
+} -start
+
+# Dont panic
+varnish v1 -arg "-p workspace_backend=12000" -vcl+backend {
+	import std;
+	import vtc;
+
+	sub vcl_recv {
+		set req.http.test = "1";
+	}
+
+	sub vcl_backend_fetch {
+		unset bereq.http.test;
+	}
+
+	sub vcl_backend_response {
+		std.rollback(bereq);
+		set beresp.http.test = bereq.http.test;
+		vtc.workspace_alloc(backend, -10);
+	}
+} -start
+
+client c1 {
+	txreq -url /1
+	rxresp
+	expect resp.status == 200
+	expect resp.http.test == "1"
+} -run
+
+# Dont run out of workspace
+varnish v1 -vcl+backend {
+	import std;
+	import vtc;
+
+	sub vcl_backend_fetch {
+		vtc.workspace_alloc(backend, 1000);
+	}
+
+	sub vcl_backend_response {
+		if (bereq.retries == 0) {
+			vtc.workspace_alloc(backend, -10);
+			std.rollback(bereq);
+			return (retry);
+		}
+	}
+}
+
+client c2 {
+	txreq -url /2
+	rxresp
+	expect resp.status == 200
+} -run
+
+# Keep workspace intact (and possibly overflow)
+varnish v1 -vcl+backend {
+	import std;
+	import vtc;
+
+	sub vcl_backend_fetch {
+		set bereq.http.fetch = "Fetch value " + bereq.retries;
+	}
+
+	sub vcl_backend_response {
+		if (bereq.retries == 0) {
+			std.rollback(bereq);
+			set bereq.http.response = "123";
+			set bereq.http.response2 = "Another response";
+			if (bereq.url == "/4") {
+				vtc.workspace_alloc(backend, -10);
+			}
+			return (retry);
+		}
+		set beresp.http.fetch = bereq.http.fetch;
+		set beresp.http.response = bereq.http.response;
+		set beresp.http.response2 = bereq.http.response2;
+	}
+}
+
+client c3 {
+	txreq -url /3
+	rxresp
+	expect resp.status == 200
+	expect resp.http.fetch == "Fetch value 1"
+	expect resp.http.response == "123"
+	expect resp.http.response2 == "Another response"
+
+	txreq -url /4
+	rxresp
+	expect resp.status == 503
+} -run

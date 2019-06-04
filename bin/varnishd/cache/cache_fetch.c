@@ -209,6 +209,7 @@ vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo)
 	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, SLT_BereqMethod);
 	bo->ws_bo = WS_Snapshot(bo->ws);
 	HTTP_Clone(bo->bereq, bo->bereq0);
+	AZ(bo->ws_bo_rst);
 
 	if (bo->req->req_body_status == REQ_BODY_NONE) {
 		bo->req = NULL;
@@ -235,12 +236,20 @@ vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 	/* VDI_Finish must have been called before */
 	assert(bo->director_state == DIR_S_NULL);
 
+	/* Workspace hasn't been used since rollback */
+	if (bo->ws_bo_rst == WS_Snapshot(bo->ws)) {
+		CHECK_OBJ_NOTNULL(bo->bereq, HTTP_MAGIC);
+		WS_Reset(bo->bereq->ws, bo->ws_bo);
+		WS_Reset(bo->ws, bo->ws_bo);
+	}
+
 	/* reset other bo attributes - See VBO_GetBusyObj */
 	bo->storage = NULL;
 	bo->do_esi = 0;
 	bo->do_stream = 1;
 	bo->filter_list = NULL;
 	bo->was_304 = 0;
+	bo->ws_bo_rst = 0;
 
 	// XXX: BereqEnd + BereqAcct ?
 	VSL_ChgId(bo->vsl, "bereq", "retry", VXID_Get(wrk, VSL_BACKENDMARKER));

@@ -666,8 +666,7 @@ VRT_Rollback(VRT_CTX, VCL_HTTP hp)
 		VCL_TaskLeave(ctx->bo->vcl, ctx->bo->privs);
 		VCL_TaskEnter(ctx->bo->vcl, ctx->bo->privs);
 		HTTP_Clone(ctx->bo->bereq, ctx->bo->bereq0);
-		WS_Reset(ctx->bo->bereq->ws, ctx->bo->ws_bo);
-		WS_Reset(ctx->bo->ws, ctx->bo->ws_bo);
+		ctx->bo->ws_bo_rst = WS_Snapshot(ctx->bo->ws);
 	} else
 		WRONG("VRT_Rollback 'hp' invalid");
 }
