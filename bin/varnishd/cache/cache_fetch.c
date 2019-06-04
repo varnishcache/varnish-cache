@@ -277,7 +277,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	if (wrk->handling == VCL_RET_ABANDON || wrk->handling == VCL_RET_FAIL)
 		return (F_STP_FAIL);
 
-	assert (wrk->handling == VCL_RET_FETCH);
+	assert (wrk->handling == VCL_RET_FETCH || wrk->handling == VCL_RET_ERROR);
 
 	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, SLT_BerespMethod);
 
@@ -289,6 +289,9 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	bo->vfc->oc = bo->fetch_objcore;
 	bo->vfc->resp = bo->beresp;
 	bo->vfc->req = bo->bereq;
+
+	if (wrk->handling == VCL_RET_ERROR)
+		return (F_STP_ERROR);
 
 	i = VDI_GetHdr(wrk, bo);
 
@@ -383,10 +386,15 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	VCL_backend_response_method(bo->vcl, wrk, NULL, bo, NULL);
 
-	if (wrk->handling == VCL_RET_ABANDON || wrk->handling == VCL_RET_FAIL) {
+	if (wrk->handling == VCL_RET_ABANDON || wrk->handling == VCL_RET_FAIL ||
+	    wrk->handling == VCL_RET_ERROR) {
 		bo->htc->doclose = SC_RESP_CLOSE;
+
 		VDI_Finish(bo->wrk, bo);
-		return (F_STP_FAIL);
+		if (wrk->handling == VCL_RET_ERROR)
+			return (F_STP_ERROR);
+		else
+			return (F_STP_FAIL);
 	}
 
 	if (wrk->handling == VCL_RET_RETRY) {
@@ -756,7 +764,8 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	AN(bo->fetch_objcore->flags & OC_F_BUSY);
 	assert(bo->director_state == DIR_S_NULL);
 
-	wrk->stats->fetch_failed++;
+	if (wrk->handling !=  VCL_RET_ERROR)
+		wrk->stats->fetch_failed++;
 
 	now = W_TIM_real(wrk);
 	VSLb_ts_busyobj(bo, "Error", now);
@@ -770,7 +779,11 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	// XXX: reset all beresp flags ?
 
 	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, SLT_BerespMethod);
-	http_PutResponse(bo->beresp, "HTTP/1.1", 503, "Backend fetch failed");
+	if (bo->err_code > 0)
+		http_PutResponse(bo->beresp, "HTTP/1.1", bo->err_code, bo->err_reason);
+	else
+		http_PutResponse(bo->beresp, "HTTP/1.1", 503, "Backend fetch failed");
+
 	http_TimeHeader(bo->beresp, "Date: ", now);
 	http_SetHeader(bo->beresp, "Server: Varnish");
 

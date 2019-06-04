@@ -1,0 +1,78 @@
+varnishtest "backend_(fetch|response) error state with custom status/reason"
+
+server s1 -repeat 3 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_fetch {
+		if (bereq.url == "/errorsynth") {
+			return (error(403));
+		}
+
+		if (bereq.url == "/errorsynthbody") {
+			return (error(403, "Steven has no cookies"));
+		}
+
+		if (bereq.url == "/error") {
+			return (error);
+		}
+	}
+
+	sub vcl_backend_response {
+		if (bereq.url == "/resperrorsynth") {
+			return (error(403));
+		}
+
+		if (bereq.url == "/resperrorsynthbody") {
+			return (error(403, "Steven has no cookies"));
+		}
+
+		if (bereq.url == "/resperror") {
+			return (error);
+		}
+	}
+
+	sub vcl_backend_error {
+		set beresp.http.error = "visited";
+	}
+} -start
+
+client c1 {
+	txreq -url /error
+	rxresp
+	expect resp.status == 503
+	expect resp.http.error == visited
+
+	txreq -url /errorsynth
+	rxresp
+	expect resp.status == 403
+	expect resp.http.error == visited
+
+	txreq -url /errorsynthbody
+	rxresp
+	expect resp.status == 403
+	expect resp.reason == "Steven has no cookies"
+	expect resp.http.error == visited
+
+	txreq -url /resperror
+	rxresp
+	expect resp.status == 503
+	expect resp.http.error == visited
+
+	txreq -url /resperrorsynth
+	rxresp
+	expect resp.status == 403
+	expect resp.http.error == visited
+
+	txreq -url /resperrorsynthbody
+	rxresp
+	expect resp.status == 403
+	expect resp.reason == "Steven has no cookies"
+	expect resp.http.error == visited
+} -run
+
+# Make sure we don't increment the failed fetch counter
+
+varnish v1 -expect fetch_failed == 0
