@@ -151,6 +151,23 @@ is identical to this query::
 Comments can be used and will be ignored, they start with the ``'#'``
 character, which may be more useful when the query is read from a file.
 
+For very long queries that couldn't easily be split into multiple queries
+it is possible to break them into multiple lines with a backslash preceding
+an end of line.
+
+For example this query::
+
+  BerespStatus >= 500
+
+is identical to this query::
+
+  BerespStatus \
+  >= \
+  500
+
+A backslash-newline sequence doesn't continue a comment on the next line
+and isn't allowed in a quoted string.
+
 Record selection criteria
 -------------------------
 

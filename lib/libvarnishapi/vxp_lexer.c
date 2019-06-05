@@ -106,6 +106,11 @@ vxp_Lexer(struct vxp *vxp)
 			continue;
 		}
 
+		if (*p == '\\' && p[1] == '\n') {
+			p += 2;
+			continue;
+		}
+
 		/* Skip comments */
 		if (*p == '#') {
 			while (p < vxp->e && *p != '\n')
@@ -128,7 +133,7 @@ vxp_Lexer(struct vxp *vxp)
 			for (q = p + 1; q < vxp->e; q++) {
 				if (*q == '\\') {
 					q++;
-					if (q == vxp->e)
+					if (q == vxp->e || *q == '\n')
 						break;
 				} else if (*q == '\n') {
 					break;
