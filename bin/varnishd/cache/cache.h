@@ -452,6 +452,7 @@ struct reqtop {
 #define REQTOP_MAGIC		0x57fbda52
 	struct req		*topreq;
 	struct vcl		*vcl0;
+	struct vrt_privs	privs[1];
 };
 
 struct req {

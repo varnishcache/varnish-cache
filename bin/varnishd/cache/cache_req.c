@@ -178,11 +178,14 @@ Req_Release(struct req *req)
  * TODO:
  * - check for code duplication with cnt_recv_prep
  * - re-check if complete
+ * - XXX should TASK_TOP use vcl0?
  */
 
 void
 Req_Rollback(struct req *req)
 {
+	if (req->top != NULL)
+		VCL_TaskLeave(req->vcl, req->top->privs);
 	VCL_TaskLeave(req->vcl, req->privs);
 	VCL_TaskEnter(req->vcl, req->privs);
 	HTTP_Clone(req->http, req->http0);
@@ -196,6 +199,7 @@ Req_Rollback(struct req *req)
 	else
 		WS_Assert_Allocated(req->top->topreq->ws,
 		    req->top, sizeof(*req->top));
+	VCL_TaskEnter(req->vcl, req->top->privs);
 }
 
 /*----------------------------------------------------------------------
@@ -283,7 +287,7 @@ Req_MakeTop(struct req *req)
 	}
 	INIT_OBJ(req->top, REQTOP_MAGIC);
 	req->top->topreq = req;
-
+	VCL_TaskEnter(req->vcl, req->top->privs);
 	return (0);
 }
 
