@@ -54,7 +54,8 @@ shell -err -expect "Query expression error" {
 
 shell -err -expect "Query expression error" {
 	varnishncsa -d -n ${v1_name} -q '
-		* ~ "Incomplete quoted string
+		* ~ "Incomplete quoted
+		string"
 	'
 }
 
@@ -137,7 +138,32 @@ shell -match "^500 503 $" {
 	./ncsa.sh -Q query1.vslq -q 'RespStatus == 503'
 }
 
-# Make v1 log a multiline VSL record and query it
+shell -match "^500 $" {
+	set -e
+
+	tee query1_cont.vslq <<-EOF | wc -l | grep -q 4 # ensure 4 lines
+	# line continuation
+	RespStatus \\
+	== \\
+	500
+	EOF
+
+	./ncsa.sh -Q query1_cont.vslq
+}
+
+shell -err -expect "Query expression error" {
+	set -e
+
+	tee string_cont.vslq <<-EOF | wc -l | grep -q 3 # ensure 3 lines
+	# quoted string continuation
+	* ~ "very long \\
+	string"
+	EOF
+
+	varnishncsa -d -n ${v1_name} -Q string_cont.vslq
+}
+
+# Make v1 log a multiline VSL record and query it (hardly useful)
 
 logexpect l1 -v v1 -g raw -q {CLI ~ "\\nvcl1.s1"} {
 	expect 0 0 CLI "vcl1.s1 +healthy"
