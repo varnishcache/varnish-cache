@@ -189,6 +189,13 @@ Req_Rollback(struct req *req)
 	if (WS_Overflowed(req->ws))
 		req->wrk->stats->ws_client_overflow++;
 	WS_Reset(req->ws, req->ws_req);
+	if (req->top == NULL)
+		return;
+	if (req->esi_level == 0)
+		Req_MoveTop(req);
+	else
+		WS_Assert_Allocated(req->top->topreq->ws,
+		    req->top, sizeof(*req->top));
 }
 
 /*----------------------------------------------------------------------
@@ -278,4 +285,18 @@ Req_MakeTop(struct req *req)
 	req->top->topreq = req;
 
 	return (0);
+}
+
+void
+Req_MoveTop(struct req *req)
+{
+	struct reqtop *top = req->top;
+
+	if (top == NULL)
+		return;
+
+	CHECK_OBJ_NOTNULL(top, REQTOP_MAGIC);
+	req->top = WS_Alloc(req->ws, sizeof *req->top);
+	AN(req->top);	// MoveTop to be called after WS_Reset
+	memmove(req->top, top, sizeof *req->top);
 }
