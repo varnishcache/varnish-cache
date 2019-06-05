@@ -270,10 +270,10 @@ Req_Fail(struct req *req, enum sess_close reason)
 int
 Req_MakeTop(struct req *req)
 {
-
 	CHECK_OBJ_ORNULL(req->top, REQTOP_MAGIC);
 	if (req->top != NULL)
 		return (0);
+	assert(req->esi_level == 0);
 	req->top = WS_Alloc(req->ws, sizeof *req->top);
 	if (req->top == NULL) {
 		VSLb(req->vsl, SLT_Error,
@@ -287,6 +287,7 @@ Req_MakeTop(struct req *req)
 	return (0);
 }
 
+/* to be called after WS_Reset() and VCL_TaskLeve (empty privs) */
 void
 Req_MoveTop(struct req *req)
 {
@@ -295,8 +296,10 @@ Req_MoveTop(struct req *req)
 	if (top == NULL)
 		return;
 
+	assert(req->esi_level == 0);
 	CHECK_OBJ_NOTNULL(top, REQTOP_MAGIC);
+	AZ(top->privs->magic);
 	req->top = WS_Alloc(req->ws, sizeof *req->top);
-	AN(req->top);	// MoveTop to be called after WS_Reset
+	AN(req->top);
 	memmove(req->top, top, sizeof *req->top);
 }
