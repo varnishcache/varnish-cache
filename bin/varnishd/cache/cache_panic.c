@@ -493,6 +493,7 @@ pan_top(struct vsb *vsb, const struct reqtop *top)
 		return;
 	VSB_indent(vsb, 2);
 	pan_req(vsb, top->topreq);
+	pan_privs(vsb, top->privs);
 	VCL_Panic(vsb, "vcl0", top->vcl0);
 	VSB_indent(vsb, -2);
 	VSB_cat(vsb, "},\n");

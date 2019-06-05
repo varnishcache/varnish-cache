@@ -94,6 +94,11 @@ VPI_vcl_select(VRT_CTX, VCL_VCL vcl)
 	if (IS_TOPREQ(req) && req->top->vcl0 != NULL)
 		return;		// Illegal, req-FSM will fail this later.
 
+	/* XXX VCL_Task* are somewhat duplicated to those in Req_Rollback called
+	 * from FSM for VCL_RET_VCL. Keeping them here to ensure there are no
+	 * tasks during calls to VCL_Rel / vcl_get
+	 */
+	VCL_TaskLeave(req->vcl, req->top->privs);
 	VCL_TaskLeave(req->vcl, req->privs);
 	if (IS_TOPREQ(req)) {
 		AN(req->top);
@@ -107,4 +112,5 @@ VPI_vcl_select(VRT_CTX, VCL_VCL vcl)
 	VSLb(ctx->req->vsl, SLT_VCL_use, "%s via %s",
 	    req->vcl->loaded_name, vcl->loaded_name);
 	VCL_TaskEnter(req->vcl, req->privs);
+	VCL_TaskEnter(req->vcl, req->top->privs);
 }

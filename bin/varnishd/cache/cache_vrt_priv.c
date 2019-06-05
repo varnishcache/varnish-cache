@@ -170,16 +170,12 @@ VRT_priv_top(VRT_CTX, const void *vmod_id)
 		WRONG("PRIV_TOP is only accessible in client VCL context");
 		NEEDLESS(return (NULL));
 	}
-	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	req = ctx->req;
-	if (req->top != NULL) {
-		CHECK_OBJ_NOTNULL(req->top, REQTOP_MAGIC);
-		CHECK_OBJ_NOTNULL(req->top->topreq, REQ_MAGIC);
-		req = req->top->topreq;
-	}
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(req->top, REQTOP_MAGIC);
 	return (vrt_priv_dynamic(
 	    req->ws,
-	    req->privs,
+	    req->top->privs,
 	    (uintptr_t)vmod_id
 	));
 }
