@@ -42,11 +42,6 @@ shell -match "^500 503 $" {
 }
 
 shell -err -expect "Query expression error" {
-	# empty query
-	varnishncsa -d -n ${v1_name} -q ''
-}
-
-shell -err -expect "Query expression error" {
 	varnishncsa -d -n ${v1_name} -q '
 		# empty multiline query
 	'
