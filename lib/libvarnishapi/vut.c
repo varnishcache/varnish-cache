@@ -132,7 +132,6 @@ static void
 vut_arg_q(struct VUT *vut, const char *arg)
 {
 	struct vsb *vsb;
-	char *s;
 
 	AN(arg);
 	if (vut->q_arg == NULL) {
@@ -145,10 +144,8 @@ vut_arg_q(struct VUT *vut, const char *arg)
 	AZ(VSB_printf(vsb, "%s\n%s", vut->q_arg, arg));
 	AZ(VSB_finish(vsb));
 
-	s = strdup(VSB_data(vsb));
-	REPLACE(vut->q_arg, s);
+	REPLACE(vut->q_arg, VSB_data(vsb));
 
-	VSB_clear(vsb);
 	VSB_destroy(&vsb);
 }
 
