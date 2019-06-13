@@ -199,10 +199,8 @@ VUT_Arg(struct VUT *vut, int opt, const char *arg)
 	case 'Q':
 		AN(arg);
 		p = VFIL_readfile(NULL, arg, NULL);
-		if (p == NULL) {
+		if (p == NULL)
 			VUT_Error(vut, 1, "-Q %s: %s", arg, strerror(errno));
-			return (-1);
-		}
 		vut_arg_q(vut, p);
 		free(p);
 		return (1);
