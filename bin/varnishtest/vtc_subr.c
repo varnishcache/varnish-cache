@@ -30,7 +30,7 @@
 
 #include <sys/types.h>
 #include <math.h>
-#include <poll.h>
+#include <stdio.h>
 #include <string.h>
 #include <stdint.h>
 #include <unistd.h>
@@ -42,7 +42,6 @@
 #include "vct.h"
 #include "vnum.h"
 #include "vre.h"
-#include "vtcp.h"
 
 struct vsb *
 vtc_hex_to_bin(struct vtclog *vl, const char *arg)
@@ -188,29 +187,24 @@ vtc_wait4(struct vtclog *vl, long pid,
 void *
 vtc_record(struct vtclog *vl, int fd, struct vsb *vsb)
 {
-	char buf[65536];
-	struct pollfd fds[1];
+	char buf[BUFSIZ];
 	int i;
 
-	VTCP_nonblocking(fd);
 	while (1) {
-		memset(fds, 0, sizeof fds);
-		fds->fd = fd;
-		fds->events = POLLIN;
-		i = poll(fds, 1, 10000);
-		if (i == 0)
-			continue;
-		if (fds->revents & POLLIN) {
-			i = read(fd, buf, sizeof buf - 1);
-			if (i > 0) {
-				if (vsb != NULL)
-					VSB_bcat(vsb, buf, i);
-				buf[i] = '\0';
-				vtc_dump(vl, 3, "debug", buf, -2);
-			}
-		}
-		if (fds->revents & (POLLERR|POLLHUP)) {
-			vtc_log(vl, 4, "STDOUT poll 0x%x", fds->revents);
+		errno = 0;
+		i = read(fd, buf, sizeof buf - 1);
+		if (i > 0) {
+			if (vsb != NULL)
+				VSB_bcat(vsb, buf, i);
+			buf[i] = '\0';
+			vtc_dump(vl, 3, "debug", buf, -2);
+		} else if (i == 0 && errno == 0) {
+			vtc_log(vl, 4, "STDOUT EOF");
+			break;
+		} else {
+			vtc_log(vl, 4,
+			    "STDOUT read failed with %d - %s.",
+			    errno, strerror(errno));
 			break;
 		}
 	}
