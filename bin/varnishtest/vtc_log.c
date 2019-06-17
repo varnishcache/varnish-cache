@@ -28,6 +28,7 @@
 
 #include "config.h"
 
+#include <math.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -48,7 +49,6 @@ struct vtclog {
 	struct vsb	*vsb;
 	pthread_mutex_t	mtx;
 	int		act;
-	double		tx;
 };
 
 static pthread_key_t log_key;
@@ -59,7 +59,6 @@ static double t0;
 #define GET_VL(vl)					\
 	do {						\
 		CHECK_OBJ_NOTNULL(vl, VTCLOG_MAGIC);	\
-		vl->tx = VTIM_mono() - t0;		\
 		AZ(pthread_mutex_lock(&vl->mtx));	\
 		vl->act = 1;				\
 		VSB_clear(vl->vsb);			\
@@ -129,8 +128,8 @@ vtc_leadinv(const struct vtclog *vl, int lvl, const char *fmt, va_list ap)
 
 	assert(lvl < (int)NLEAD);
 	assert(lvl >= 0);
-	VSB_printf(vl->vsb, "%s %-4s %4.1f ",
-	    lead[lvl < 0 ? 1: lvl], vl->id, vl->tx);
+	VSB_printf(vl->vsb, "%s %-4s ",
+	    lead[lvl < 0 ? 1: lvl], vl->id);
 	if (fmt != NULL)
 		(void)VSB_vprintf(vl->vsb, fmt, ap);
 }
@@ -149,11 +148,23 @@ static void
 vtc_log_emit(const struct vtclog *vl)
 {
 	unsigned l;
+	int i;
+	int t_this;
+	static int t_last = -1;
 
 	l = VSB_len(vl->vsb);
 	if (l == 0)
 		return;
+	t_this = (int)round((VTIM_mono() - t0) * 1000);
 	AZ(pthread_mutex_lock(&vtclog_mtx));
+	if (t_last != t_this) {
+		assert(vtclog_left > 25);
+		i = snprintf(vtclog_buf, vtclog_left,
+		    "**** dT   %d.%03d\n", t_this / 1000, t_this % 1000);
+		t_last = t_this;
+		vtclog_buf += i;
+		vtclog_left -= i;
+	}
 	assert(vtclog_left > l);
 	memcpy(vtclog_buf, VSB_data(vl->vsb), l);
 	vtclog_buf += l;
@@ -211,8 +222,8 @@ vtc_dump(struct vtclog *vl, int lvl, const char *pfx, const char *str, int len)
 	if (str == NULL)
 		vtc_leadin(vl, lvl, "%s(null)\n", pfx);
 	else {
-		bprintf(buf, "%s %-4s %4.1f %s|",
-		    lead[lvl < 0 ? 1: lvl], vl->id, vl->tx, pfx);
+		bprintf(buf, "%s %-4s %s|",
+		    lead[lvl < 0 ? 1: lvl], vl->id, pfx);
 		if (len < 0)
 			len = strlen(str);
 		VSB_quote_pfx(vl->vsb, buf, str,
