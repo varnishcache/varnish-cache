@@ -268,3 +268,7 @@ $Function IP get_ip(PRIV_TASK)
 
 Get the IP address previously stored by ``debug.store_ip()`` in the same
 transaction.
+
+$Function BACKEND fail_backend()
+
+Return a backend that always fails with an internal error.

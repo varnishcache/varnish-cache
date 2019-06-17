@@ -1,0 +1,23 @@
+varnishtest "Director internal error"
+
+varnish v1 -vcl {
+	import debug;
+
+	backend be { .host = "${bad_backend}"; }
+
+	sub vcl_backend_fetch {
+		set bereq.backend = debug.fail_backend();
+	}
+
+	sub vcl_backend_error {
+		set beresp.http.visited = "true";
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 500
+	expect resp.reason == "Internal Server Error"
+	expect resp.http.visited == true
+} -run

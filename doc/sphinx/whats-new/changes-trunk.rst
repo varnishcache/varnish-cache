@@ -143,4 +143,6 @@ Changes for developers and VMOD authors
 **XXX changes concerning VRT, the public APIs, source code organization,
 builds etc.**
 
+**TODO: directors can fail with an arbitrary beresp.status**
+
 *eof*

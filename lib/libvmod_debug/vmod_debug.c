@@ -883,6 +883,38 @@ xyzzy_get_ip(VRT_CTX, struct vmod_priv *priv)
 }
 
 /**********************************************************************
+ * The backend that always fails a fetch
+ */
+
+static int v_matchproto_(vdi_gethdrs_f)
+fbe_dir_gethdrs(VRT_CTX, VCL_BACKEND d)
+{
+	struct busyobj *bo;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	bo = ctx->bo;
+
+	bo->err_code = 500;
+	bo->err_reason = NULL;
+	return (-1);
+}
+
+static const struct vdi_methods fbe_methods[1] = {{
+	.magic =		VDI_METHODS_MAGIC,
+	.type =			"fail-backend",
+	.gethdrs =		fbe_dir_gethdrs,
+}};
+
+VCL_BACKEND
+xyzzy_fail_backend(VRT_CTX)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	return (VRT_AddDirector(ctx, fbe_methods, NULL, "%s", "fail-backend"));
+}
+
+/**********************************************************************
  * For testing import code on bad vmod files (m00003.vtc)
  */
 
