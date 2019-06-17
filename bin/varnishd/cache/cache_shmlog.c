@@ -371,19 +371,26 @@ VSLb(struct vsl_log *vsl, enum VSL_tag_e tag, const char *fmt, ...)
 	va_end(ap);
 }
 
+#define Tf6 "%ju.%06u"
+#define Ta6(t) (uintmax_t)floor((t)), (uint32_t)floor((t) * 1e6) % 1000000U
+
 void
 VSLb_ts(struct vsl_log *vsl, const char *event, vtim_real first,
     vtim_real *pprev, vtim_real now)
 {
 
-	/* XXX: Make an option to turn off some unnecessary timestamp
-	   logging. This must be done carefully because some functions
-	   (e.g. V1L_Open) takes the last timestamp as its initial
-	   value for timeout calculation. */
+	/*
+	 * XXX: Make an option to turn off some unnecessary timestamp
+	 * logging. This must be done carefully because some functions
+	 * (e.g. V1L_Open) takes the last timestamp as its initial
+	 * value for timeout calculation.
+	 */
 	vsl_sanity(vsl);
+	AN(event);
+	AN(pprev);
 	assert(!isnan(now) && now != 0.);
-	VSLb(vsl, SLT_Timestamp, "%s: %.6f %.6f %.6f",
-	    event, now, now - first, now - *pprev);
+	VSLb(vsl, SLT_Timestamp, "%s: " Tf6 " " Tf6 " " Tf6,
+	    event, Ta6(now), Ta6(now - first), Ta6(now - *pprev));
 	*pprev = now;
 }
 
