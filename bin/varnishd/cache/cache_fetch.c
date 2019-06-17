@@ -712,7 +712,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	AN(bo->fetch_objcore->flags & OC_F_BUSY);
 	assert(bo->director_state == DIR_S_NULL);
 
-	if (wrk->handling !=  VCL_RET_ERROR)
+	if (wrk->handling != VCL_RET_ERROR)
 		wrk->stats->fetch_failed++;
 
 	now = W_TIM_real(wrk);
@@ -728,9 +728,11 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 
 	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, SLT_BerespMethod);
 	if (bo->err_code > 0)
-		http_PutResponse(bo->beresp, "HTTP/1.1", bo->err_code, bo->err_reason);
+		http_PutResponse(bo->beresp, "HTTP/1.1", bo->err_code,
+		    bo->err_reason);
 	else
-		http_PutResponse(bo->beresp, "HTTP/1.1", 503, "Backend fetch failed");
+		http_PutResponse(bo->beresp, "HTTP/1.1", 503,
+		    "Backend fetch failed");
 
 	http_TimeHeader(bo->beresp, "Date: ", now);
 	http_SetHeader(bo->beresp, "Server: Varnish");
