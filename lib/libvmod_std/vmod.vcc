@@ -84,7 +84,7 @@ Example::
 
 	set req.url = std.querysort(req.url);
 
-$Function STRING toupper(STRING_LIST s)
+$Function STRING toupper(STRANDS s)
 
 Converts the string *s* to uppercase.
 
@@ -92,7 +92,7 @@ Example::
 
 	set beresp.http.scream = std.toupper("yes!");
 
-$Function STRING tolower(STRING_LIST s)
+$Function STRING tolower(STRANDS s)
 
 Converts the string *s* to lowercase.
 

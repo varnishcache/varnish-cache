@@ -65,26 +65,25 @@ vmod_set_ip_tos(VRT_CTX, VCL_INT tos)
 }
 
 static const char *
-vmod_updown(VRT_CTX, int up, const char *s, va_list ap)
+vmod_updown(VRT_CTX, int up, VCL_STRANDS s)
 {
 	unsigned u;
 	char *b, *e;
 	const char *p;
+	int i;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	u = WS_ReserveAll(ctx->ws);
 	e = b = ctx->ws->f;
 	e += u;
-	p = s;
-	while (p != vrt_magic_string_end && b < e) {
-		if (p != NULL) {
-			for (; b < e && *p != '\0'; p++)
-				if (up)
-					*b++ = (char)toupper(*p);
-				else
-					*b++ = (char)tolower(*p);
+	for (i = 0; i < s->n && b < e; i++) {
+		p = s->p[i];
+		while (p != NULL && *p != '\0' && b < e) {
+			if (up)
+				*b++ = (char)toupper(*p++);
+			else
+				*b++ = (char)tolower(*p++);
 		}
-		p = va_arg(ap, const char *);
 	}
 	if (b < e)
 		*b = '\0';
@@ -102,29 +101,19 @@ vmod_updown(VRT_CTX, int up, const char *s, va_list ap)
 }
 
 VCL_STRING v_matchproto_(td_std_toupper)
-vmod_toupper(VRT_CTX, const char *s, ...)
+vmod_toupper(VRT_CTX, VCL_STRANDS s)
 {
-	const char *p;
-	va_list ap;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	va_start(ap, s);
-	p = vmod_updown(ctx, 1, s, ap);
-	va_end(ap);
-	return (p);
+	return (vmod_updown(ctx, 1, s));
 }
 
 VCL_STRING v_matchproto_(td_std_tolower)
-vmod_tolower(VRT_CTX, const char *s, ...)
+vmod_tolower(VRT_CTX, VCL_STRANDS s)
 {
-	const char *p;
-	va_list ap;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	va_start(ap, s);
-	p = vmod_updown(ctx, 0, s, ap);
-	va_end(ap);
-	return (p);
+	return (vmod_updown(ctx, 0, s));
 }
 
 VCL_REAL v_matchproto_(td_std_random)
