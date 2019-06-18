@@ -52,6 +52,7 @@
  * binary/load-time compatible, increment MAJOR version
  *
  * unreleased (planned for 2019-09-15)
+ *	VRT_BundleStrands() moved to vcc_interface.h
  *	VRT_VCL_{Busy|Unbusy} changed to VRT_VCL_{Prevent|Allow}_Cold
  *	VRT_re[fl]_vcl changed to VRT_VCL_{Prevent|Allow}_Discard
  *	VRT_Vmod_{Init|Unload} moved to vcc_interface.h
@@ -528,8 +529,6 @@ VCL_STEVEDORE VRT_stevedore(const char *nm);
 
 /* Convert things to string */
 
-VCL_STRANDS VRT_BundleStrands(int, struct strands *, char const **,
-    const char *f, ...);
 int VRT_CompareStrands(VCL_STRANDS a, VCL_STRANDS b);
 char *VRT_Strands(char *, size_t, VCL_STRANDS);
 VCL_STRING VRT_StrandsWS(struct ws *, const char *, VCL_STRANDS);

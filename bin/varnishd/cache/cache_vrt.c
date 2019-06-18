@@ -179,7 +179,7 @@ VRT_GetHdr(VRT_CTX, const struct gethdr_s *hs)
  */
 
 VCL_STRANDS
-VRT_BundleStrands(int n, struct strands *s, char const **d, const char *f, ...)
+VPI_BundleStrands(int n, struct strands *s, char const **d, const char *f, ...)
 {
 	va_list ap;
 

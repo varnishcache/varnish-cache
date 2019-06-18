@@ -64,3 +64,5 @@ struct vrt_acl {
 	const char	*name;
 };
 
+VCL_STRANDS VPI_BundleStrands(int, struct strands *, char const **,
+    const char *f, ...);

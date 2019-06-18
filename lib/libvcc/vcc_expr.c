@@ -186,7 +186,7 @@ vcc_expr_edit(struct vcc *tl, vcc_type_t fmt, const char *p, struct expr *e1,
 			    "  const char * strs_%u_s[%d];\n",
 			    tl->unique, tl->unique, e3->nstr);
 			VSB_printf(e->vsb,
-			    "VRT_BundleStrands(%d, &strs_%u_a, strs_%u_s,"
+			    "VPI_BundleStrands(%d, &strs_%u_a, strs_%u_s,"
 			    "\v+\n%s,\nvrt_magic_string_end\v-\n)",
 			    e3->nstr, tl->unique, tl->unique,
 			VSB_data(e3->vsb));
