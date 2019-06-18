@@ -371,8 +371,8 @@ VSLb(struct vsl_log *vsl, enum VSL_tag_e tag, const char *fmt, ...)
 	va_end(ap);
 }
 
-#define Tf6 "%ju.%06u"
-#define Ta6(t) (uintmax_t)floor((t)), (uint32_t)floor((t) * 1e6) % 1000000U
+#define Tf6 "%ju.%06ju"
+#define Ta6(t) (uintmax_t)floor((t)), (uintmax_t)floor((t) * 1e6) % 1000000U
 
 void
 VSLb_ts(struct vsl_log *vsl, const char *event, vtim_real first,
