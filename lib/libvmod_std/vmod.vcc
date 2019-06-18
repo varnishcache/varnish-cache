@@ -419,7 +419,7 @@ Examples::
 LOGGING functions
 =================
 
-$Function VOID log(STRING_LIST s)
+$Function VOID log(STRANDS s)
 
 Logs the string *s* to the shared memory log, using :ref:`vsl(7)` tag
 ``SLT_VCL_Log``.
@@ -428,7 +428,7 @@ Example::
 
 	std.log("Something fishy is going on with the vhost " + req.http.host);
 
-$Function VOID syslog(INT priority, STRING_LIST s)
+$Function VOID syslog(INT priority, STRANDS s)
 
 Logs the string *s* to syslog tagged with *priority*. *priority* is
 formed by ORing the facility and level values. See your system's

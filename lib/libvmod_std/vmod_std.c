@@ -129,45 +129,33 @@ vmod_random(VRT_CTX, VCL_REAL lo, VCL_REAL hi)
 }
 
 VCL_VOID v_matchproto_(td_std_log)
-vmod_log(VRT_CTX, const char *fmt, ...)
+vmod_log(VRT_CTX, VCL_STRANDS s)
 {
 	const char *p;
-	va_list ap;
 	uintptr_t sn;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	sn = WS_Snapshot(ctx->ws);
-	va_start(ap, fmt);
-	p = VRT_String(ctx->ws, NULL, fmt, ap);
-	va_end(ap);
-
-	if (p == NULL) {
-		WS_Reset(ctx->ws, sn);
-		WS_MarkOverflow(ctx->ws);
-		return;
+	p = VRT_StrandsWS(ctx->ws, NULL, s);
+	if (p != NULL) {
+		if (ctx->vsl != NULL)
+			VSLb(ctx->vsl, SLT_VCL_Log, "%s", p);
+		else
+			VSL(SLT_VCL_Log, 0, "%s", p);
 	}
-
-	AN(p);
-	if (ctx->vsl != NULL)
-		VSLb(ctx->vsl, SLT_VCL_Log, "%s", p);
-	else
-		VSL(SLT_VCL_Log, 0, "%s", p);
 	WS_Reset(ctx->ws, sn);
 }
 
 /* XXX use vsyslog() ? */
 VCL_VOID v_matchproto_(td_std_syslog)
-vmod_syslog(VRT_CTX, VCL_INT fac, const char *fmt, ...)
+vmod_syslog(VRT_CTX, VCL_INT fac, VCL_STRANDS s)
 {
 	const char *p;
-	va_list ap;
 	uintptr_t sn;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	sn = WS_Snapshot(ctx->ws);
-	va_start(ap, fmt);
-	p = VRT_String(ctx->ws, NULL, fmt, ap);
-	va_end(ap);
+	p = VRT_StrandsWS(ctx->ws, NULL, s);
 	if (p != NULL)
 		syslog((int)fac, "%s", p);
 	WS_Reset(ctx->ws, sn);
