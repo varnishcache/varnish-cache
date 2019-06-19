@@ -168,7 +168,7 @@ both your VMOD and the built-in VMODs::
     SBINDIR="$(pkg-config --variable=sbindir varnishapi)"
     PATH="SBINDIR:BINDIR:$PATH"
 
-    VMODDIR"$(pkg-config --variable=vmoddir varnishapi)"
+    VMODDIR="$(pkg-config --variable=vmoddir varnishapi)"
     VMOD_PATH="/path/to/your/vmod/build/dir:$VMODDIR"
 
     varnishtest -p vmod_path="$VMOD_PATH" ...
