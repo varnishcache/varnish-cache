@@ -193,7 +193,7 @@ vcc_act_hash_data(struct vcc *tl, struct token *t, struct symbol *sym)
 	SkipToken(tl, '(');
 
 	Fb(tl, 1, "VRT_hashdata(ctx,\n  ");
-	vcc_Expr(tl, STRING_LIST);
+	vcc_Expr(tl, STRANDS);
 	ERRCHK(tl);
 	Fb(tl, 1, ");\n");
 	SkipToken(tl, ')');

@@ -52,6 +52,7 @@
  * binary/load-time compatible, increment MAJOR version
  *
  * unreleased (planned for 2019-09-15)
+ *	VRT_hashdata() now takes STRANDS argument
  *	VCL_BOOL VRT_Strands2Bool(VCL_STRANDS) added.
  *	VRT_BundleStrands() moved to vcc_interface.h
  *	VRT_VCL_{Busy|Unbusy} changed to VRT_VCL_{Prevent|Allow}_Cold
@@ -438,7 +439,7 @@ VCL_VOID VRT_hit_for_pass(VRT_CTX, VCL_DURATION);
 VCL_VOID VRT_SetHdr(VRT_CTX, VCL_HEADER, const char *, ...);
 VCL_VOID VRT_handling(VRT_CTX, unsigned hand);
 VCL_VOID VRT_fail(VRT_CTX, const char *fmt, ...) v_printflike_(2,3);
-VCL_VOID VRT_hashdata(VRT_CTX, const char *str, ...);
+VCL_VOID VRT_hashdata(VRT_CTX, VCL_STRANDS);
 
 /* Simple stuff */
 int VRT_strcmp(const char *s1, const char *s2);

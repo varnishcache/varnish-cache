@@ -555,23 +555,16 @@ VRT_fail(VRT_CTX, const char *fmt, ...)
  */
 
 VCL_VOID
-VRT_hashdata(VRT_CTX, const char *str, ...)
+VRT_hashdata(VRT_CTX, VCL_STRANDS s)
 {
-	va_list ap;
-	const char *p;
+	int i;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	AN(ctx->specific);
-	HSH_AddString(ctx->req, ctx->specific, str);
-	va_start(ap, str);
-	while (1) {
-		p = va_arg(ap, const char *);
-		if (p == vrt_magic_string_end)
-			break;
-		HSH_AddString(ctx->req, ctx->specific, p);
-	}
-	va_end(ap);
+	AN(s);
+	for (i = 0; i < s->n; i++)
+		HSH_AddString(ctx->req, ctx->specific, s->p[i]);
 	/*
 	 * Add a 'field-separator' to make it more difficult to
 	 * manipulate the hash.
