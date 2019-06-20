@@ -281,19 +281,13 @@ vmod_shard__fini(struct vmod_directors_shard **vshardp)
 }
 
 VCL_INT v_matchproto_(td_directors_shard_key)
-vmod_shard_key(VRT_CTX, struct vmod_directors_shard *vshard, const char *s, ...)
+vmod_shard_key(VRT_CTX, struct vmod_directors_shard *vshard, VCL_STRANDS s)
 {
-	va_list ap;
-	uint32_t r;
 
 	(void)ctx;
 	(void)vshard;
 
-	va_start(ap, s);
-	r = sharddir_sha256v(s, ap);
-	va_end(ap);
-
-	return ((VCL_INT)r);
+	return ((VCL_INT)sharddir_sha256(s));
 }
 
 VCL_VOID v_matchproto_(td_directors_set_warmup)
@@ -397,6 +391,8 @@ static inline uint32_t
 shard_get_key(VRT_CTX, const struct vmod_directors_shard_param *p)
 {
 	struct http *http;
+	struct strands s[1];
+	const char *sp[1];
 
 	switch (p->by) {
 	case BY_HASH:
@@ -412,8 +408,10 @@ shard_get_key(VRT_CTX, const struct vmod_directors_shard_param *p)
 			AN(ctx->http_bereq);
 			AN(http = ctx->http_bereq);
 		}
-		return (sharddir_sha256(http->hd[HTTP_HDR_URL].b,
-					vrt_magic_string_end));
+		sp[0] = http->hd[HTTP_HDR_URL].b;
+		s->n = 1;
+		s->p = sp;
+		return (sharddir_sha256(s));
 	case BY_KEY:
 	case BY_BLOB:
 		return (p->key);

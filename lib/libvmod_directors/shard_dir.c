@@ -89,44 +89,22 @@ sharddir_err(VRT_CTX, enum VSL_tag_e tag,  const char *fmt, ...)
 }
 
 uint32_t
-sharddir_sha256v(const char *s, va_list ap)
+sharddir_sha256(VCL_STRANDS s)
 {
 	struct VSHA256Context sha256;
-	union {
-		unsigned char digest[32];
-		uint32_t uint32_digest[8];
-	} sha256_digest;
-	uint32_t r;
-	const char *p;
+	unsigned char digest[VSHA256_LEN];
+	int i;
 
+	AN(s);
 	VSHA256_Init(&sha256);
-	p = s;
-	while (p != vrt_magic_string_end) {
-		if (p != NULL && *p != '\0')
-			VSHA256_Update(&sha256, p, strlen(p));
-		p = va_arg(ap, const char *);
+	for (i = 0; i < s->n; i++) {
+		if (s->p[i] != NULL)
+			VSHA256_Update(&sha256, s->p[i], strlen(s->p[i]));
 	}
-	VSHA256_Final(sha256_digest.digest, &sha256);
+	VSHA256_Final(digest, &sha256);
 
-	/*
-	 * use low 32 bits only
-	 * XXX: Are these the best bits to pick?
-	 */
-	vle32enc(&r, sha256_digest.uint32_digest[7]);
-	return (r);
-}
-
-uint32_t
-sharddir_sha256(const char *s, ...)
-{
-	va_list ap;
-	uint32_t r;
-
-	va_start(ap, s);
-	r = sharddir_sha256v(s, ap);
-	va_end(ap);
-
-	return (r);
+	/* The low 32 bits are as good as any. */
+	return (vle32dec(&digest[VSHA256_LEN - 4]));
 }
 
 static int

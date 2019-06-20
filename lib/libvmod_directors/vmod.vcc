@@ -415,7 +415,7 @@ Reconfigure the consistent hashing ring to reflect backend changes.
 This method must be called at least once before the director can be
 used.
 
-$Method INT .key(STRING_LIST)
+$Method INT .key(STRANDS)
 
 Convenience method to generate a sharding key for use with the *key*
 argument to the `vmod_directors.shard.backend`_ method by hashing the
