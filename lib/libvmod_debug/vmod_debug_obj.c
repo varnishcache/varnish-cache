@@ -234,7 +234,7 @@ xyzzy_obj_opt_meth_opt(VRT_CTX,
 
 	return (WS_Printf(ctx->ws,
 	    "obj %s obj_s %s obj_b %s met_s %s met_b %s",
-            o->name,
+	    o->name,
 	    (o->args.valid_s ? o->args.s : "*undef*"),
 	    (o->args.valid_b
 			? (o->args.b ? "true" : "false" )
