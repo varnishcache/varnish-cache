@@ -232,15 +232,16 @@ xyzzy_obj_opt_meth_opt(VRT_CTX,
 	assert(args->arg1 != args->arg2);
 	assert(args->arg2 != args->arg3);
 
-	return (VRT_CollectString(ctx,
-	    "obj ", o->name,
-	    " obj_s ", (o->args.valid_s ? o->args.s : "*undef*"),
-	    " obj_b ", (o->args.valid_b
+	return (WS_Printf(ctx->ws,
+	    "obj %s obj_s %s obj_b %s met_s %s met_b %s",
+            o->name,
+	    (o->args.valid_s ? o->args.s : "*undef*"),
+	    (o->args.valid_b
 			? (o->args.b ? "true" : "false" )
 			: "*undef*"),
-	    " met_s ", (args->valid_s ? args->s : "*undef*"),
-	    " met_b ", (args->valid_b
+	    (args->valid_s ? args->s : "*undef*"),
+	    (args->valid_b
 			? (args->b ? "true" : "false" )
-			: "*undef*"),
-	    vrt_magic_string_end));
+			: "*undef*")
+	));
 }
