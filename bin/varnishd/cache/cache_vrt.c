@@ -233,6 +233,22 @@ VRT_CompareStrands(VCL_STRANDS a, VCL_STRANDS b)
 }
 
 /*--------------------------------------------------------------------
+ * STRANDS to BOOL
+ */
+
+VCL_BOOL
+VRT_Strands2Bool(VCL_STRANDS s)
+{
+	int i;
+
+	AN(s);
+	for (i = 0; i < s->n; i++)
+		if (s->p[i] != NULL)
+			return (1);
+	return (0);
+}
+
+/*--------------------------------------------------------------------
  * Collapse a STRING_LIST in the space provided, or return NULL
  */
 

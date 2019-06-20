@@ -261,7 +261,7 @@ vcc_expr_tobool(struct vcc *tl, struct expr **e)
 	else if ((*e)->fmt == DURATION)
 		*e = vcc_expr_edit(tl, BOOL, "(\v1 > 0)", *e, NULL);
 	else if ((*e)->fmt == STRINGS)
-		*e = vcc_expr_edit(tl, BOOL, "(\vS != 0)", *e, NULL);
+		*e = vcc_expr_edit(tl, BOOL, "VRT_Strands2Bool(\vT)", *e, NULL);
 	/*
 	 * We do not provide automatic folding from REAL to BOOL
 	 * because comparing to zero is seldom an exact science
