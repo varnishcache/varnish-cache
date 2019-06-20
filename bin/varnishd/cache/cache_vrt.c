@@ -675,26 +675,19 @@ VRT_Rollback(VRT_CTX, VCL_HTTP hp)
 /*--------------------------------------------------------------------*/
 
 VCL_VOID
-VRT_synth_page(VRT_CTX, const char *str, ...)
+VRT_synth_page(VRT_CTX, VCL_STRANDS s)
 {
-	va_list ap;
-	const char *p;
 	struct vsb *vsb;
+	int i;
 
 	CAST_OBJ_NOTNULL(vsb, ctx->specific, VSB_MAGIC);
-	va_start(ap, str);
-	p = str;
-	while (p != vrt_magic_string_end) {
-		if (p == NULL)
-			p = "(null)";
-		if (VSB_cat(vsb, p)) {
-			VRT_fail(ctx, "synthetic(): %s",
-				 vstrerror(VSB_error(vsb)));
-			break;
-		}
-		p = va_arg(ap, const char *);
+	AN(s);
+	for (i = 0; i < s->n; i++) {
+		if (s->p[i] != NULL)
+			VSB_cat(vsb, s->p[i]);
+		else
+			VSB_cat(vsb, "(null)");
 	}
-	va_end(ap);
 }
 
 /*--------------------------------------------------------------------*/

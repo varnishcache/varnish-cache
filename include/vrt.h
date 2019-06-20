@@ -52,6 +52,7 @@
  * binary/load-time compatible, increment MAJOR version
  *
  * unreleased (planned for 2019-09-15)
+ *	VRT_synth_page now takes STRANDS argument
  *	VRT_hashdata() now takes STRANDS argument
  *	VCL_BOOL VRT_Strands2Bool(VCL_STRANDS) added.
  *	VRT_BundleStrands() moved to vcc_interface.h
@@ -450,7 +451,7 @@ VCL_BLOB VRT_blob(VRT_CTX, const char *, const void *, size_t, unsigned);
 VCL_VOID VRT_Rollback(VRT_CTX, VCL_HTTP);
 
 /* Synthetic pages */
-VCL_VOID VRT_synth_page(VRT_CTX, const char *, ...);
+VCL_VOID VRT_synth_page(VRT_CTX, VCL_STRANDS);
 
 /* Backend related */
 VCL_BACKEND VRT_new_backend(VRT_CTX, const struct vrt_backend *);
