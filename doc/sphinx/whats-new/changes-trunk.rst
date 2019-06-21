@@ -39,6 +39,8 @@ VCL variables
 Other changes to VCL
 ~~~~~~~~~~~~~~~~~~~~
 
+**TODO: return (error);**
+
 VMODs
 =====
 
