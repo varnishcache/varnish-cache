@@ -27,6 +27,8 @@ server s1 {
 	barrier bprobe sync
 } -start
 
+varnish v1 -cliok {param.set vcc_err_unref off}
+
 varnish v1 -vcl {
 	backend b1 {
 		.host = "${s1_sock}";
@@ -36,12 +38,6 @@ varnish v1 -vcl {
 	backend b2 {
 		.host = "${bad_backend}";
 		.probe = { .interval = 24h; }
-	}
-
-	sub vcl_recv {
-		if (!req.url) {
-			set req.backend_hint = b2;
-		}
 	}
 } -start
 
