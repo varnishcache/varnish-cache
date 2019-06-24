@@ -37,7 +37,7 @@ varnish v1 -vcl {
 	}
 
 	backend b2 {
-		.host = "${bad_ip}";
+		.host = "${bad_backend}";
 		.probe = {
 			.interval = 24h;
 		}
