@@ -54,7 +54,7 @@ jobs:
         - ./configure --enable-developer-warnings --enable-debugging-symbols --disable-stack-protector --with-persistent-storage --enable-asan --enable-ubsan
     - stage: test
       os: osx
-      osx_image: xcode10.1
+      osx_image: xcode10.2
       compiler: clang
       addons:
         homebrew:
