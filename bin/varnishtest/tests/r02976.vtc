@@ -29,18 +29,13 @@ server s1 {
 
 varnish v1 -vcl {
 	backend b1 {
-		.host = "${s1_addr}";
-		.port = "${s1_port}";
-		.probe = {
-			.interval = 1s;
-		}
+		.host = "${s1_sock}";
+		.probe = { .interval = 1s; }
 	}
 
 	backend b2 {
 		.host = "${bad_backend}";
-		.probe = {
-			.interval = 24h;
-		}
+		.probe = { .interval = 24h; }
 	}
 
 	sub vcl_recv {
