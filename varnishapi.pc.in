@@ -18,5 +18,5 @@ vsctool=${pkgdatadir}/vsctool.py
 Name: VarnishAPI
 Description: Varnish API
 Version: @PACKAGE_VERSION@
-Cflags: -I${includedir}/@PACKAGE@
+Cflags: -I${pkgincludedir}
 Libs: -L${libdir} -lvarnishapi
