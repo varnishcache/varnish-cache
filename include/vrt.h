@@ -66,6 +66,7 @@
  *	VRT_vcl_select moved to vcc_interface.h
  *	VRT_VSA_GetPtr() changed
  *	VRT_ipcmp() changed
+ *	VRT_Stv_*() functions renamed to VRT_stevedore_*()
  *	[cache.h] WS_ReserveAll() added
  *	[cache.h] WS_Reserve(ws, 0) deprecated
  * 9.0 (2019-03-15)
