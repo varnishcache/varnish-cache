@@ -975,11 +975,17 @@ h2_stream_tmo(struct h2_sess *h2, const struct h2_req *r2, vtim_real now)
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 	Lck_AssertHeld(&h2->sess->mtx);
 
+	/* NB: when now is NAN, it means that idle_send_timeout was hit
+	 * on a lock condwait operation.
+	 */
+	if (isnan(now))
+		AN(r2->t_winupd);
+
 	if (r2->t_winupd == 0 && r2->t_send == 0)
 		return (0);
 
-	if (r2->t_winupd != 0 &&
-	    now - r2->t_winupd > cache_param->idle_send_timeout) {
+	if (isnan(now) || (r2->t_winupd != 0 &&
+	    now - r2->t_winupd > cache_param->idle_send_timeout)) {
 		VSLb(h2->vsl, SLT_Debug,
 		     "H2: stream %u: Hit idle_send_timeout waiting for"
 		     " WINDOW_UPDATE", r2->stream);
