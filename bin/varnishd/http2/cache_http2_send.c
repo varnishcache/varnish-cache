@@ -58,21 +58,29 @@ h2_cond_wait(pthread_cond_t *cond, struct h2_sess *h2, struct h2_req *r2)
 		when = now + cache_param->idle_send_timeout;
 
 	r = Lck_CondWait(cond, &h2->sess->mtx, when);
+	assert(r == 0 || r == ETIMEDOUT);
 
 	now = VTIM_real();
+
 	/* NB: when we grab idle_send_timeout before acquiring the session
 	 * lock we may time out, but once we wake up both send_timeout and
 	 * idle_send_timeout may have changed meanwhile. For this reason
-	 * h2_stream_tmo() may not log what timed out and we need to check
-	 * both conditions to decide whether we cancel the stream or not.
+	 * h2_stream_tmo() may not log what timed out and we need to call
+	 * again with a magic NAN "now" that indicates to h2_stream_tmo()
+	 * that the stream reached the idle_send_timeout via the lock and
+	 * force it to log it.
 	 */
-	if (h2_stream_tmo(h2, r2, now) || r == ETIMEDOUT) {
+	if (h2_stream_tmo(h2, r2, now))
+		r = ETIMEDOUT;
+	else if (r == ETIMEDOUT)
+		AN(h2_stream_tmo(h2, r2, NAN));
+
+	if (r == ETIMEDOUT) {
 		if (r2->error == NULL)
 			r2->error = H2SE_CANCEL;
 		return (-1);
 	}
 
-	AZ(r);
 	return (0);
 }
 
