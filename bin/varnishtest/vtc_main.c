@@ -569,8 +569,8 @@ ip_magic(void)
 	sa = VSS_ResolveOne(NULL, "127.0.0.1", "0", 0, SOCK_STREAM, 0);
 	AN(sa);
 	bad_backend_fd = VTCP_bind(sa, NULL);
-	free(sa);
 	assert(bad_backend_fd >= 0);
+	free(sa);
 	VTCP_myname(bad_backend_fd, abuf, sizeof abuf, pbuf, sizeof(pbuf));
 	extmacro_def("localhost", "%s", abuf);
 
