@@ -61,14 +61,15 @@ static const char *const h2_types[] = {
 	NULL
 };
 
-#define SETTINGS_MAX 0x06
-
 static const char * const h2_settings[] = {
 	[0] = "unknown",
 #define H2_SETTING(U,l,v,...) [v] = #U,
 #include <tbl/h2_settings.h>
 	NULL
 };
+
+#define SETTINGS_MAX (sizeof(h2_settings)/sizeof(h2_settings[0]) - 1U)
+
 
 enum h2_type {
 #define H2_FRAME(l,u,t,f,...) TYPE_##u = t,
@@ -569,8 +570,8 @@ static void
 parse_settings(const struct stream *s, struct frame *f)
 {
 	struct http *hp;
-	int t, v;
-	unsigned u;
+	int v;
+	unsigned u, t;
 	const char *buf;
 	enum hpk_result r;
 	CHECK_OBJ_NOTNULL(f, FRAME_MAGIC);
@@ -600,7 +601,7 @@ parse_settings(const struct stream *s, struct frame *f)
 			assert(r == hpk_done);
 		}
 
-		vtc_log(hp->vl, 4, "settings->%s (%d): %d", buf, t, v);
+		vtc_log(hp->vl, 4, "settings->%s (%u): %d", buf, t, v);
 	}
 
 }
