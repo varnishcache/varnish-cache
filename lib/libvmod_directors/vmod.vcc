@@ -217,7 +217,7 @@ Remove a backend from the director.
 Example::
 	vdir.remove_backend(backend1);
 
-$Method BACKEND .backend(STRING_LIST)
+$Method BACKEND .backend(STRANDS)
 
 Pick a backend from the backend director.
 
