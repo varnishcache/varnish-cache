@@ -623,7 +623,7 @@ vcc_CompileSource(struct vcc *tl, struct source *sp, const char *jfile)
 	Fh(tl, 0, "/* ---===### VCC generated .h code ###===---*/\n");
 	Fc(tl, 0, "\n/* ---===### VCC generated .c code ###===---*/\n");
 
-	Fc(tl, 0, "\n#define END_ if (*ctx->handling) return\n");
+	Fc(tl, 0, "\n#define END_ if (UNLIKELY(*ctx->handling)) return\n");
 
 	vcc_Parse_Init(tl);
 
