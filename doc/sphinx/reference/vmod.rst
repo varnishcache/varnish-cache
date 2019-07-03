@@ -390,7 +390,7 @@ STEVEDORE
 STRING_LIST
 	C-type: ``const char *, ...``
 
-	`Notice: New vmod developments for 6.1 and later must
+	`Notice: New vmod developments for 6.0 LTS and later must
 	use STRANDS instead of STRING_LIST, which is going away.`
 
 	A multi-component text-string.  We try very hard to avoid
