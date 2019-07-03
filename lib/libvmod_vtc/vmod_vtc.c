@@ -99,16 +99,13 @@ vmod_no_ip(VRT_CTX)
 /*--------------------------------------------------------------------*/
 
 VCL_VOID v_matchproto_(td_vtc_panic)
-vmod_panic(VRT_CTX, const char *str, ...)
+vmod_panic(VRT_CTX, VCL_STRANDS str)
 {
-	va_list ap;
 	const char *b;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
-	va_start(ap, str);
-	b = VRT_String(ctx->ws, "PANIC: ", str, ap);
-	va_end(ap);
+	b = VRT_StrandsWS(ctx->ws, "PANIC:", str);
 	VAS_Fail("VCL", "", 0, b, VAS_VCL);
 }
 
