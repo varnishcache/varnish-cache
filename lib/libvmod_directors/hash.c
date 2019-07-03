@@ -33,9 +33,6 @@
 
 #include "cache/cache.h"
 
-#include "vend.h"
-#include "vsha256.h"
-
 #include "vdir.h"
 
 #include "vcc_if.h"
@@ -110,26 +107,15 @@ vmod_hash_remove_backend(VRT_CTX,
 VCL_BACKEND v_matchproto_()
 vmod_hash_backend(VRT_CTX, struct vmod_directors_hash *rr, VCL_STRANDS s)
 {
-	struct VSHA256Context sha_ctx;
-	const char *p;
-	unsigned char sha256[VSHA256_LEN];
 	VCL_BACKEND be;
 	double r;
-	int i;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_ORNULL(ctx->bo, BUSYOBJ_MAGIC);
-
 	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_HASH_MAGIC);
-	VSHA256_Init(&sha_ctx);
-	for (i = 0; i < s->n; i++) {
-		p = s->p[i];
-		if (p != NULL && *p != '\0')
-			VSHA256_Update(&sha_ctx, p, strlen(p));
-	}
-	VSHA256_Final(sha256, &sha_ctx);
+	AN(s);
 
-	r = vbe32dec(sha256);
+	r = VRT_HashStrands32(s);
 	r = scalbn(r, -32);
 	assert(r >= 0 && r <= 1.0);
 	be = vdir_pick_be(ctx, rr->vd, r);

@@ -252,7 +252,7 @@ vmod_shard_key(VRT_CTX, struct vmod_directors_shard *vshard, VCL_STRANDS s)
 	(void)ctx;
 	(void)vshard;
 
-	return ((VCL_INT)sharddir_sha256(s));
+	return ((VCL_INT)VRT_HashStrands32(s));
 }
 
 VCL_VOID v_matchproto_(td_directors_set_warmup)
@@ -376,7 +376,7 @@ shard_get_key(VRT_CTX, const struct vmod_directors_shard_param *p)
 		sp[0] = http->hd[HTTP_HDR_URL].b;
 		s->n = 1;
 		s->p = sp;
-		return (sharddir_sha256(s));
+		return (VRT_HashStrands32(s));
 	}
 	WRONG("by enum");
 }

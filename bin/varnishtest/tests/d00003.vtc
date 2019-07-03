@@ -2,22 +2,22 @@ varnishtest "Test hash director"
 
 server s1 {
 	rxreq
-	txresp -hdr "Foo: 1" -body "1"
-	rxreq
-	txresp -hdr "Foo: 3" -body "3"
-	rxreq
-	txresp -hdr "Foo: 9" -body "9"
-} -start
-
-server s2 {
-	rxreq
 	txresp -hdr "Foo: 2" -body "2"
 	rxreq
-	txresp -hdr "Foo: 4" -body "4"
+	txresp -hdr "Foo: 3" -body "3"
 	rxreq
 	txresp -hdr "Foo: 6" -body "6"
 	rxreq
 	txresp -hdr "Foo: 8" -body "8"
+} -start
+
+server s2 {
+	rxreq
+	txresp -hdr "Foo: 1" -body "1"
+	rxreq
+	txresp -hdr "Foo: 4" -body "4"
+	rxreq
+	txresp -hdr "Foo: 9" -body "9"
 } -start
 
 varnish v1 -vcl+backend {
@@ -67,15 +67,15 @@ client c1 {
 	rxresp
 	expect resp.http.foo == "4"
 
-	txreq -url /emptystring
+	txreq -url "/emptystring"
 	rxresp
 	expect resp.http.foo == "6"
 
-	txreq -url /nohdr
+	txreq -url "/nohdr"
 	rxresp
 	expect resp.http.foo == "8"
 
-	txreq -url /ip
+	txreq -url "/ip"
 	rxresp
 	expect resp.http.foo == "9"
 } -run
@@ -89,7 +89,7 @@ client c1 {
 
 	txreq
 	rxresp
-	expect resp.http.foo == "2"
+	expect resp.http.foo == "1"
 
 	txreq
 	rxresp
@@ -97,9 +97,5 @@ client c1 {
 
 	txreq
 	rxresp
-	expect resp.http.foo == "6"
-
-	txreq
-	rxresp
-	expect resp.http.foo == "8"
+	expect resp.http.foo == "9"
 } -run

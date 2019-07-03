@@ -268,7 +268,7 @@ shardcfg_hashcircle(struct sharddir *shardd, VCL_INT replicas)
 			ssp[1] = s;
 			ss->p = ssp;
 			shardd->hashcircle[i * replicas + j].point =
-				sharddir_sha256(ss);
+			    VRT_HashStrands32(ss);
 			shardd->hashcircle[i * replicas + j].host = i;
 		}
 		/* not used in current interface */

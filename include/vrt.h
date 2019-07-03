@@ -53,6 +53,7 @@
  *
  * unreleased (planned for 2020-03-15)
  *	New prefix_{ptr|len} fields in vrt_backend
+ *	VRT_HashStrands32() added
  * 10.0 (2019-09-15)
  *	VRT_UpperLowerStrands added.
  *	VRT_synth_page now takes STRANDS argument
@@ -546,6 +547,7 @@ VCL_STEVEDORE VRT_stevedore(const char *nm);
 
 int VRT_CompareStrands(VCL_STRANDS a, VCL_STRANDS b);
 VCL_BOOL VRT_Strands2Bool(VCL_STRANDS);
+uint32_t VRT_HashStrands32(VCL_STRANDS);
 char *VRT_Strands(char *, size_t, VCL_STRANDS);
 VCL_STRING VRT_StrandsWS(struct ws *, const char *, VCL_STRANDS);
 VCL_STRING VRT_CollectStrands(VRT_CTX, VCL_STRANDS);

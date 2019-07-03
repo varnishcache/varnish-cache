@@ -98,7 +98,6 @@ sharddir_backend(const struct sharddir *shardd, int id)
 
 void sharddir_debug(struct sharddir *shardd, const uint32_t flags);
 void sharddir_err(VRT_CTX, enum VSL_tag_e tag,  const char *fmt, ...);
-uint32_t sharddir_sha256(VCL_STRANDS s);
 void sharddir_new(struct sharddir **sharddp, const char *vcl_name,
     const struct vmod_directors_shard_param *param);
 void sharddir_set_param(struct sharddir *shardd,
