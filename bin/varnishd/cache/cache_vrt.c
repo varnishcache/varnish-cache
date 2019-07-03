@@ -37,8 +37,10 @@
 #include "vav.h"
 #include "vcl.h"
 #include "vct.h"
+#include "vend.h"
 #include "vrt_obj.h"
 #include "vsa.h"
+#include "vsha256.h"
 #include "vtcp.h"
 #include "vtim.h"
 #include "vcc_interface.h"
@@ -248,6 +250,35 @@ VRT_Strands2Bool(VCL_STRANDS s)
 		if (s->p[i] != NULL)
 			return (1);
 	return (0);
+}
+
+/*--------------------------------------------------------------------
+ * Hash a STRANDS
+ */
+
+uint32_t
+VRT_HashStrands32(VCL_STRANDS s)
+{
+	struct VSHA256Context sha_ctx;
+	unsigned char sha256[VSHA256_LEN];
+	const char *p;
+	int i;
+
+	AN(s);
+	VSHA256_Init(&sha_ctx);
+	for (i = 0; i < s->n; i++) {
+		p = s->p[i];
+		if (p != NULL && *p != '\0')
+			VSHA256_Update(&sha_ctx, p, strlen(p));
+	}
+	VSHA256_Final(sha256, &sha_ctx);
+
+	/* NB: for some reason vmod_director's shard director specifically
+	 * relied on little-endian decoding of the last 4 octets. In order
+	 * to maintain a stable hash function to share across consumers we
+	 * need to stick to that.
+	 */
+	return (vle32dec(sha256 + VSHA256_LEN - 4));
 }
 
 /*--------------------------------------------------------------------

@@ -40,8 +40,6 @@
 
 #include "vbm.h"
 #include "vrnd.h"
-#include "vsha256.h"
-#include "vend.h"
 
 #include "vcc_if.h"
 #include "shard_dir.h"
@@ -87,25 +85,6 @@ sharddir_err(VRT_CTX, enum VSL_tag_e tag,  const char *fmt, ...)
 	else
 		VSLv(tag, 0, fmt, ap);
 	va_end(ap);
-}
-
-uint32_t
-sharddir_sha256(VCL_STRANDS s)
-{
-	struct VSHA256Context sha256;
-	unsigned char digest[VSHA256_LEN];
-	int i;
-
-	AN(s);
-	VSHA256_Init(&sha256);
-	for (i = 0; i < s->n; i++) {
-		if (s->p[i] != NULL)
-			VSHA256_Update(&sha256, s->p[i], strlen(s->p[i]));
-	}
-	VSHA256_Final(digest, &sha256);
-
-	/* The low 32 bits are as good as any. */
-	return (vle32dec(&digest[VSHA256_LEN - 4]));
 }
 
 static int
