@@ -27,15 +27,16 @@
  */
 
 #include "config.h"
-#include <ctype.h>
 
-#include "hex.h"
+#include <ctype.h>
 
 #include "vdef.h"
 #include "vrt.h"
 #include "vas.h"
 
 #include "vmod_blob.h"
+
+#include "hex.h"
 
 const char hex_alphabet[][16] = {
 	"0123456789abcdef",
@@ -48,12 +49,12 @@ const char hex_alphabet[][16] = {
  * into 55 bytes (cacheline friendly).
  */
 const uint8_t nibble[] = {
-	   0,   1,   2,   3,   4,   5,   6,   7,   8,   9,
-	   ILL, ILL, ILL, ILL, ILL, ILL, ILL, 10,  11,  12,
-	   13,  14,  15,  ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-	   ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-	   ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL, 10,
-	   11,  12,  13,  14,  15
+	0,   1,   2,   3,   4,   5,   6,   7,   8,   9,
+	ILL, ILL, ILL, ILL, ILL, ILL, ILL, 10,  11,  12,
+	13,  14,  15,  ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+	ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+	ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL, 10,
+	11,  12,  13,  14,  15
 };
 
 size_t
@@ -76,11 +77,12 @@ hex2byte(const unsigned char hi, const unsigned char lo)
 
 ssize_t
 hex_encode(const enum encoding enc, const enum case_e kase,
-	   char *restrict const buf, const size_t buflen,
-	   const char *restrict const in, const size_t inlen)
+    char *restrict const buf, const size_t buflen,
+    const char *restrict const in, const size_t inlen)
 {
 	char *p = buf;
 	const char *alphabet = hex_alphabet[0];
+	int i;
 
 	AN(buf);
 	assert(enc == HEX);
@@ -92,7 +94,7 @@ hex_encode(const enum encoding enc, const enum case_e kase,
 	if (kase == UPPER)
 		alphabet = hex_alphabet[1];
 
-	for (int i = 0; i < inlen; i++) {
+	for (i = 0; i < inlen; i++) {
 		*p++ = alphabet[(in[i] & 0xf0) >> 4];
 		*p++ = alphabet[in[i] & 0x0f];
 	}
@@ -102,20 +104,20 @@ hex_encode(const enum encoding enc, const enum case_e kase,
 
 ssize_t
 hex_decode(const enum encoding dec, char *restrict const buf,
-	   const size_t buflen, ssize_t n,
-	   const struct strands *restrict const strings)
+    const size_t buflen, ssize_t n, VCL_STRANDS strings)
 {
 	char *dest = buf;
-	const char *b;
+	const char *b, *s;
 	unsigned char extranib = 0;
 	size_t len = 0;
+	int i;
 
 	AN(buf);
 	AN(strings);
 	assert(dec == HEX);
 
-	for (int i = 0; i < strings->n; i++) {
-		const char *s = strings->p[i];
+	for (i = 0; i < strings->n; i++) {
+		s = strings->p[i];
 
 		if (s == NULL)
 			continue;
@@ -143,8 +145,8 @@ hex_decode(const enum encoding dec, char *restrict const buf,
 		len++;
 	}
 
-	for (int i = 0; len > 0 && i < strings->n; i++) {
-		const char *s = strings->p[i];
+	for (i = 0; len > 0 && i < strings->n; i++) {
+		s = strings->p[i];
 
 		if (s == NULL || *s == '\0')
 			continue;

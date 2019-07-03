@@ -27,6 +27,7 @@
  */
 
 #include "config.h"
+
 #include <string.h>
 
 #include "vdef.h"
@@ -49,8 +50,8 @@ id_decode_l(size_t l)
 
 ssize_t
 id_encode(const enum encoding enc, const enum case_e kase,
-	  char *restrict const buf, const size_t buflen,
-	  const char *restrict const in, const size_t inlen)
+    char *restrict const buf, const size_t buflen,
+    const char *restrict const in, const size_t inlen)
 {
 	(void) enc;
 	(void) kase;
@@ -66,12 +67,12 @@ id_encode(const enum encoding enc, const enum case_e kase,
 }
 
 ssize_t
-id_decode(const enum encoding enc,
-	  char *restrict const buf, const size_t buflen,
-	  ssize_t n, const struct strands *restrict const strings)
+id_decode(const enum encoding enc, char *restrict const buf,
+    const size_t buflen, ssize_t n, VCL_STRANDS strings)
 {
+	const char *s;
 	char *dest = buf;
-	size_t outlen = 0, c = SIZE_MAX;
+	size_t len, outlen = 0, c = SIZE_MAX;
 
 	(void) enc;
 	AN(buf);
@@ -81,9 +82,7 @@ id_decode(const enum encoding enc,
 		c = n;
 
 	for (int i = 0; c > 0 && i < strings->n; i++) {
-		size_t len;
-		const char *s = strings->p[i];
-
+		s = strings->p[i];
 		if (s == NULL || *s == '\0')
 			continue;
 		len = strlen(s);

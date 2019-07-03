@@ -107,10 +107,8 @@ ssize_t encode_f(const enum encoding enc, const enum case_e kase,
  *    a static constant empty BLOB
  * otherwise, the number of bytes written
  */
-typedef
-ssize_t decode_f(const enum encoding dec, char *restrict const buf,
-		 const size_t buflen, const ssize_t inlen,
-		 const struct strands *restrict const strings);
+typedef ssize_t decode_f(const enum encoding dec, char *restrict const buf,
+    const size_t buflen, const ssize_t inlen, VCL_STRANDS strings);
 
 /* id.c */
 len_f	 id_encode_l;

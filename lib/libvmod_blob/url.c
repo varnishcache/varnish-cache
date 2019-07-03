@@ -28,13 +28,13 @@
 
 #include "config.h"
 
-#include "hex.h"
-
 #include "vdef.h"
 #include "vrt.h"
 #include "vas.h"
 
 #include "vmod_blob.h"
+
+#include "hex.h"
 
 /* Decoder states */
 enum state_e {
@@ -60,10 +60,10 @@ url_decode_l(size_t l)
  * (locale-independent and cacheline friendly)
  */
 static const uint8_t unreserved[] = {
-	0x0,  0x0,  0x0,  0x0,  0x0,  0x60, 0xff, 0x3,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x60, 0xff, 0x03,
 	0xfe, 0xff, 0xff, 0x87, 0xfe, 0xff, 0xff, 0x47,
-	0x0,  0x0,  0x0,  0x0,  0x0,  0x0,  0x0,  0x0,
-	0x0,  0x0,  0x0,  0x0,  0x0,  0x0,  0x0,  0x0
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
 static inline int
@@ -80,12 +80,13 @@ isoutofrange(const uint8_t c)
 
 ssize_t
 url_encode(const enum encoding enc, const enum case_e kase,
-	   char *restrict const buf, const size_t buflen,
-	   const char *restrict const in, const size_t inlen)
+    char *restrict const buf, const size_t buflen,
+    const char *restrict const in, const size_t inlen)
 {
 	char *p = buf;
 	const char * const end = buf + buflen;
 	const char *alphabet = hex_alphabet[0];
+	int i;
 
 	AN(buf);
 	assert(enc == URL);
@@ -95,7 +96,7 @@ url_encode(const enum encoding enc, const enum case_e kase,
 	if (kase == UPPER)
 		alphabet = hex_alphabet[1];
 
-	for (int i = 0; i < inlen; i++) {
+	for (i = 0; i < inlen; i++) {
 		if (isunreserved(in[i])) {
 			if (p == end)
 				return (-1);
@@ -115,14 +116,15 @@ url_encode(const enum encoding enc, const enum case_e kase,
 
 ssize_t
 url_decode(const enum encoding dec, char *restrict const buf,
-	   const size_t buflen, ssize_t n,
-	   const struct strands *restrict const strings)
+    const size_t buflen, ssize_t n, VCL_STRANDS strings)
 {
 	char *dest = buf;
 	const char * const end = buf + buflen;
+	const char *s;
 	size_t len = SIZE_MAX;
-	uint8_t nib = 0;
+	uint8_t nib = 0, nib2;
 	enum state_e state = NORMAL;
+	int i;
 
 	AN(buf);
 	AN(strings);
@@ -131,14 +133,12 @@ url_decode(const enum encoding dec, char *restrict const buf,
 	if (n >= 0)
 		len = n;
 
-	for (int i = 0; len > 0 && i < strings->n; i++) {
-		const char *s = strings->p[i];
+	for (i = 0; len > 0 && i < strings->n; i++) {
+		s = strings->p[i];
 
 		if (s == NULL || *s == '\0')
 			continue;
 		while (*s && len) {
-			uint8_t nib2;
-
 			switch (state) {
 			case NORMAL:
 				if (*s == '%')
