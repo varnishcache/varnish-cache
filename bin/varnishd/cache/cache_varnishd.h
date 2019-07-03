@@ -477,7 +477,7 @@ void SMP_Ready(void);
 #endif
 
 #define FEATURE(x)	COM_FEATURE(cache_param->feature_bits, x)
-#define DO_DEBUG(x)	COM_DO_DEBUG(cache_param->debug_bits, x)
+#define DO_DEBUG(x)	UNLIKELY(COM_DO_DEBUG(cache_param->debug_bits, x))
 
 #define DSL(debug_bit, id, ...)					\
 	do {							\

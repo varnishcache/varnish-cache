@@ -40,6 +40,16 @@
 
 #include "verrno.h"
 
+#ifdef __GNUC__
+// GCC/Clang/ICC
+#define LIKELY(x)   __builtin_expect(!!(x), 1)
+#define UNLIKELY(x) __builtin_expect(!!(x), 0)
+#else
+// TCC, Sun CC etc.
+#define LIKELY(x)   (x)
+#define UNLIKELY(x) (x)
+#endif
+
 enum vas_e {
 	VAS_WRONG,
 	VAS_MISSING,
@@ -58,7 +68,7 @@ extern vas_f VAS_Fail v_noreturn_;
 #else /* WITH_ASSERTS */
 #define assert(e)							\
 do {									\
-	if (!(e)) {							\
+	if (UNLIKELY(!(e))) {					\
 		VAS_Fail(__func__, __FILE__, __LINE__,			\
 		    #e, VAS_ASSERT);					\
 	}								\
@@ -67,7 +77,7 @@ do {									\
 
 #define xxxassert(e)							\
 do {									\
-	if (!(e)) {							\
+	if (UNLIKELY(!(e))) {					\
 		VAS_Fail(__func__, __FILE__, __LINE__,			\
 		    #e, VAS_MISSING);					\
 	}								\
