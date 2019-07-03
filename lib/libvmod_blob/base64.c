@@ -134,11 +134,12 @@ base64_decode(const enum encoding dec, char *restrict const buf,
     const size_t buflen, ssize_t inlen, VCL_STRANDS strings)
 {
 	const struct b64_alphabet *alpha = &b64_alphabet[dec];
+	const char *s;
 	char *dest = buf;
 	unsigned u = 0, term = 0;
-	int n = 0;
 	size_t len = SIZE_MAX;
-	const char *s;
+	int n = 0, i;
+	char b;
 
 	AN(buf);
 	AN(alpha);
@@ -147,7 +148,7 @@ base64_decode(const enum encoding dec, char *restrict const buf,
 	if (inlen >= 0)
 		len = inlen;
 
-	for (int i = 0; len > 0 && i < strings->n; i++) {
+	for (i = 0; len > 0 && i < strings->n; i++) {
 		s = strings->p[i];
 
 		if (s == NULL)
@@ -157,24 +158,20 @@ base64_decode(const enum encoding dec, char *restrict const buf,
 			return (-1);
 		}
 		while (*s && len) {
-			while (n < 4) {
-				char b = alpha->i64[(uint8_t) *s++];
-				u <<= 6;
-				if (b == ILL) {
-					errno = EINVAL;
-					return (-1);
-				}
-				n++;
-				if (b == PAD) {
-					term++;
-					continue;
-				}
-				u |= (uint8_t) b;
-				if (--len == 0)
-					break;
-				if (!*s)
-					break;
+			b = alpha->i64[(uint8_t)*s];
+			s++;
+			len--;
+			u <<= 6;
+			if (b == ILL) {
+				errno = EINVAL;
+				return (-1);
 			}
+			n++;
+			if (b == PAD) {
+				term++;
+				continue;
+			}
+			u |= (uint8_t)b;
 			if (n == 4) {
 				if (decode(&dest, buf, buflen, u, n-term) < 0)
 					return (-1);
