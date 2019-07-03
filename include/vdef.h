@@ -147,3 +147,14 @@
 typedef double vtim_mono;
 typedef double vtim_real;
 typedef double vtim_dur;
+
+/* Branch prediction hints */
+#ifdef __GNUC__
+// GCC/Clang/ICC
+#  define LIKELY(x)   __builtin_expect(!!(x), 1)
+#  define UNLIKELY(x) __builtin_expect(!!(x), 0)
+#else
+// TCC, Sun CC etc.
+#  define LIKELY(x)   (x)
+#  define UNLIKELY(x) (x)
+#endif

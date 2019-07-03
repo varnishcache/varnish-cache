@@ -597,17 +597,6 @@ fo.write("""
 #ifndef VRT_H_INCLUDED
 #  error "include vrt.h before vcl.h"
 #endif
-
-#ifdef __GNUC__
-// GCC/Clang/ICC
-#define LIKELY(x)   __builtin_expect(!!(x), 1)
-#define UNLIKELY(x) __builtin_expect(!!(x), 0)
-#else
-// TCC, Sun CC etc.
-#define LIKELY(x)   (x)
-#define UNLIKELY(x) (x)
-#endif
-
 """)
 
 
