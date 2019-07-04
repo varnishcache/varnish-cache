@@ -47,6 +47,10 @@
 #define NODEF_NOTICE \
     "NB: This log record is masked by default.\n\n"
 
+/*
+ * REL_20190915 remove after VSLng
+ * kept for now for VSL binary compatibility
+ */
 #define NOSUP_NOTICE \
     "\tNOTE: This tag is currently not in use in the Varnish log.\n" \
     "\tIt is mentioned here to document legacy versions of the log,\n" \
@@ -157,10 +161,6 @@ SLTM(ProxyGarbage, 0, "Unparseable PROXY request",
 	"A PROXY protocol header was unparseable.\n\n"
 )
 
-/*
- * REL_20190915 remove after VSLng
- * kept for now for VSL binary compatibility
- */
 SLTM(Backend, 0, "Backend selected",
 	"Logged when a connection is selected for handling a backend"
 	" request.\n\n"
@@ -170,11 +170,8 @@ SLTM(Backend, 0, "Backend selected",
 	"\t|  |  +- Backend display name\n"
 	"\t|  +---- VCL name\n"
 	"\t+------- Connection file descriptor\n"
-	"\t\n"
-	"\tNOTE: This tag is currently not in use in the Varnish log.\n"
-	"\tIt is mentioned here to document legacy versions of the log,\n"
-	"\tand reserved for possible use in future versions.\n"
 	"\n"
+	NOSUP_NOTICE
 )
 
 SLTM(Length, 0, "Size of object body",
@@ -602,11 +599,17 @@ SLTM(Witness, 0, "Lock order witness records",
 	"Diagnostic recording of locking order.\n"
 )
 
-/*
- * REL_20190915 remove after VSLng
- * kept for now for VSL binary compatibility
- */
-SLTM(BackendStart, 0, "(retired)", "")
+SLTM(BackendStart, 0, "Backend request start",
+	"Start of backend processing. Logs the backend IP address and port"
+	" number.\n\n"
+	"The format is::\n\n"
+	"\t%s %s\n"
+	"\t|  |\n"
+	"\t|  +- Backend Port number\n"
+	"\t+---- Backend IP4/6 address\n"
+	"\n"
+	NOSUP_NOTICE
+)
 
 SLTM(H2RxHdr, SLT_F_BINARY, "Received HTTP2 frame header",
 	"Binary data"
