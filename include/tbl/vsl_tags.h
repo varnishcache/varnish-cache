@@ -33,7 +33,6 @@
  * page) whenever this list changes.
  *
  * XXX: Please add new entries a the end to not break saved log-segments.
- * XXX: we can resort them when we have a major release.
  *
  * Arguments:
  *	Tag-Name
