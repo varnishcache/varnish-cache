@@ -665,6 +665,7 @@ SLTM(VCL_use, 0, "VCL in use",
 	"\n"
 )
 
+#undef NOSUP_NOTICE
 #undef NODEF_NOTICE
 #undef SLTM
 
