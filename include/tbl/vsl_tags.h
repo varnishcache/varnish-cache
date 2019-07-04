@@ -47,6 +47,11 @@
 #define NODEF_NOTICE \
     "NB: This log record is masked by default.\n\n"
 
+#define NOSUP_NOTICE \
+    "\tNOTE: This tag is currently not in use in the Varnish log.\n" \
+    "\tIt is mentioned here to document legacy versions of the log,\n" \
+    "\tor reserved for possible use in future versions.\n\n"
+
 SLTM(Debug, SLT_F_UNSAFE, "Debug messages",
 	"Debug messages can normally be ignored, but are sometimes"
 	" helpful during trouble-shooting.  Most debug messages must"
