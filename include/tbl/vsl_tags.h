@@ -53,6 +53,7 @@ SLTM(Debug, SLT_F_UNSAFE, "Debug messages",
 	" be explicitly enabled with parameters.\n\n"
 	"Debug messages may be added, changed or removed without"
 	" prior notice and shouldn't be considered stable.\n\n"
+	NODEF_NOTICE
 )
 
 SLTM(Error, 0, "Error messages",
