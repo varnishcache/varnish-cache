@@ -31,14 +31,22 @@
 #include <stdlib.h>
 #include <sys/types.h>
 
+#include "vcc_if.h"
+
 enum encoding {
-	__INVALID_ENCODING = 0,
 #define VMODENUM(x) x,
 #include "tbl_encodings.h"
-	__MAX_ENCODING
 };
 
-#define AENC(enc) assert((enc) > __INVALID_ENCODING && (enc) < __MAX_ENCODING)
+struct vmod_blob_codec;
+
+#define BLOB_CODEC const struct vmod_blob_codec *codec
+
+#define CHECK_BLOB_CODEC(codec, nm)			\
+	do {						\
+		AN(codec);				\
+		assert((codec)->name == &VENUM(nm));	\
+	} while (0)
 
 /*
  * The enums MUST appear in this order, since LOWER and UPPER are used to
@@ -52,8 +60,7 @@ enum case_e {
 /*
  * Length estimate interface
  */
-typedef
-size_t  len_f(size_t);
+typedef size_t len_f(size_t);
 
 /*
  * General interface for an encoder: encode the data at in of length inlen
@@ -80,10 +87,9 @@ size_t  len_f(size_t);
  * otherwise, the number of bytes written (note that this does not
  *            include any terminating null byte)
  */
-typedef
-ssize_t encode_f(const enum encoding enc, const enum case_e kase,
-		 char *restrict const buf, const size_t buflen,
-		 const char *restrict const in, const size_t inlen);
+typedef ssize_t encode_f(BLOB_CODEC, const enum case_e kase,
+    char *restrict const buf, const size_t buflen,
+    const char *restrict const in, const size_t inlen);
 
 /*
  * General interface for a decoder: decode the concatenation of strings
@@ -107,7 +113,7 @@ ssize_t encode_f(const enum encoding enc, const enum case_e kase,
  *    a static constant empty BLOB
  * otherwise, the number of bytes written
  */
-typedef ssize_t decode_f(const enum encoding dec, char *restrict const buf,
+typedef ssize_t decode_f(BLOB_CODEC, char *restrict const buf,
     const size_t buflen, const ssize_t inlen, VCL_STRANDS strings);
 
 #define vmod_blob_fptr vmod_blob_codec

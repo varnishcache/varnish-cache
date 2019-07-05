@@ -78,28 +78,31 @@ decode(char *restrict *restrict dest, const char *restrict const buf,
 }
 
 ssize_t
-base64_encode(const enum encoding enc, const enum case_e kase,
-    char *restrict const buf, const size_t buflen,
-    const char *restrict const inbuf, const size_t inlength)
+base64_encode(BLOB_CODEC, const enum case_e kase, char *restrict const buf,
+    const size_t buflen, const char *restrict const inbuf, const size_t inlen)
 {
-	const struct b64_alphabet *alpha = &b64_alphabet[enc];
+	const struct b64_alphabet *alpha = NULL;
 	char *p = buf;
 	const uint8_t *in = (const uint8_t *)inbuf;
-	const uint8_t * const end = in + inlength;
+	const uint8_t * const end = in + inlen;
 
 	(void) kase;
 	AN(buf);
-	AN(alpha);
-	if (in == NULL || inlength == 0)
+	if (in == NULL || inlen == 0)
 		return (0);
 
-	if ((enc == BASE64URLNOPAD &&
-	     buflen < base64nopad_encode_l(inlength)) ||
-	    (enc != BASE64URLNOPAD &&
-	     buflen < base64_encode_l(inlength))) {
+	if (buflen < codec->encode_l(inlen)) {
 		errno = ENOMEM;
 		return (-1);
 	}
+
+	if (*codec->name == VENUM(BASE64))
+		alpha = &b64_alphabet[BASE64];
+	else if (*codec->name == VENUM(BASE64URL))
+		alpha = &b64_alphabet[BASE64URL];
+	else if (*codec->name == VENUM(BASE64URLNOPAD))
+		alpha = &b64_alphabet[BASE64URLNOPAD];
+	AN(alpha);
 
 	while (end - in >= 3) {
 		*p++ = alpha->b64[(in[0] >> 2) & 0x3f];
@@ -130,10 +133,10 @@ base64_encode(const enum encoding enc, const enum case_e kase,
 }
 
 ssize_t
-base64_decode(const enum encoding dec, char *restrict const buf,
-    const size_t buflen, ssize_t inlen, VCL_STRANDS strings)
+base64_decode(BLOB_CODEC, char *restrict const buf, const size_t buflen,
+    ssize_t inlen, VCL_STRANDS strings)
 {
-	const struct b64_alphabet *alpha = &b64_alphabet[dec];
+	const struct b64_alphabet *alpha = NULL;
 	const char *s;
 	char *dest = buf;
 	unsigned u = 0, term = 0;
@@ -142,8 +145,15 @@ base64_decode(const enum encoding dec, char *restrict const buf,
 	char b;
 
 	AN(buf);
-	AN(alpha);
 	AN(strings);
+
+	if (*codec->name == VENUM(BASE64))
+		alpha = &b64_alphabet[BASE64];
+	else if (*codec->name == VENUM(BASE64URL))
+		alpha = &b64_alphabet[BASE64URL];
+	else if (*codec->name == VENUM(BASE64URLNOPAD))
+		alpha = &b64_alphabet[BASE64URLNOPAD];
+	AN(alpha);
 
 	if (inlen >= 0)
 		len = inlen;

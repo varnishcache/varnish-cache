@@ -49,12 +49,12 @@ id_decode_l(size_t l)
 }
 
 ssize_t
-id_encode(const enum encoding enc, const enum case_e kase,
-    char *restrict const buf, const size_t buflen,
-    const char *restrict const in, const size_t inlen)
+id_encode(BLOB_CODEC, const enum case_e kase, char *restrict const buf,
+    const size_t buflen, const char *restrict const in, const size_t inlen)
 {
-	(void) enc;
-	(void) kase;
+
+	CHECK_BLOB_CODEC(codec, IDENTITY);
+	(void)kase;
 	AN(buf);
 
 	if (buflen < inlen + 1)
@@ -67,14 +67,14 @@ id_encode(const enum encoding enc, const enum case_e kase,
 }
 
 ssize_t
-id_decode(const enum encoding enc, char *restrict const buf,
-    const size_t buflen, ssize_t n, VCL_STRANDS strings)
+id_decode(BLOB_CODEC, char *restrict const buf, const size_t buflen, ssize_t n,
+    VCL_STRANDS strings)
 {
 	const char *s;
 	char *dest = buf;
 	size_t len, outlen = 0, c = SIZE_MAX;
 
-	(void) enc;
+	CHECK_BLOB_CODEC(codec, IDENTITY);
 	AN(buf);
 	AN(strings);
 
