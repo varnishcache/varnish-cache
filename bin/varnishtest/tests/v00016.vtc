@@ -85,7 +85,7 @@ varnish v1 -errvcl {Regexp compilation error:} {
 varnish v1 -errvcl {resolves to too many addresses} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
-		if (remote.ip == "r.freebsd.dk") {}
+		if (remote.ip == "www.varnish-cache.org") {}
 	}
 }
 
