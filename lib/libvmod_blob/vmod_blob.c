@@ -50,12 +50,7 @@ struct vmod_blob_blob {
 		.decode		= base64_decode,   \
 		.encode		= base64_encode
 
-static const struct vmod_blob_fptr {
-	len_f		*const decode_l;
-	decode_f	*const decode;
-	len_f		*const encode_l;
-	encode_f	*const encode;
-} func[__MAX_ENCODING] = {
+static const struct vmod_blob_fptr func[__MAX_ENCODING] = {
 	[IDENTITY] = {
 		.decode_l	= id_decode_l,
 		.decode		= id_decode,

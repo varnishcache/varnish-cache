@@ -110,6 +110,13 @@ ssize_t encode_f(const enum encoding enc, const enum case_e kase,
 typedef ssize_t decode_f(const enum encoding dec, char *restrict const buf,
     const size_t buflen, const ssize_t inlen, VCL_STRANDS strings);
 
+struct vmod_blob_fptr {
+	len_f		*decode_l;
+	len_f		*encode_l;
+	decode_f	*decode;
+	encode_f	*encode;
+};
+
 /* id.c */
 len_f	 id_encode_l;
 len_f	 id_decode_l;
