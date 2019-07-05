@@ -43,13 +43,13 @@ enum state_e {
 	FIRSTNIB, /* just read the first nibble after '%' */
 };
 
-size_t
+static size_t
 url_encode_l(size_t l)
 {
 	return ((l * 3) + 1);
 }
 
-size_t
+static size_t
 url_decode_l(size_t l)
 {
 	return (l);
@@ -78,7 +78,7 @@ isoutofrange(const uint8_t c)
 	return (c < '0' || c > 'f');
 }
 
-ssize_t
+static ssize_t
 url_encode(BLOB_CODEC, const enum case_e kase, char *restrict const buf,
     const size_t buflen, const char *restrict const in, const size_t inlen)
 {
@@ -113,7 +113,7 @@ url_encode(BLOB_CODEC, const enum case_e kase, char *restrict const buf,
 	return (p - buf);
 }
 
-ssize_t
+static ssize_t
 url_decode(BLOB_CODEC, char *restrict const buf, const size_t buflen, ssize_t n,
     VCL_STRANDS strings)
 {
@@ -186,3 +186,11 @@ url_decode(BLOB_CODEC, char *restrict const buf, const size_t buflen, ssize_t n,
 	assert(dest <= end);
 	return (dest - buf);
 }
+
+const struct vmod_blob_codec blob_codec_url = {
+	.decode_l	= url_decode_l,
+	.decode		= url_decode,
+	.encode_l	= url_encode_l,
+	.encode		= url_encode,
+	.name		= &VENUM(URL)
+};

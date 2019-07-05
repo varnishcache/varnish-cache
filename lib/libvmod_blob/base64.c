@@ -36,19 +36,19 @@
 
 #define base64_l(l)		(((l) << 2) / 3)
 
-size_t
+static size_t
 base64nopad_encode_l(size_t l)
 {
 	return (base64_l(l) + 4);
 }
 
-size_t
+static size_t
 base64_encode_l(size_t l)
 {
 	return ((((base64_l(l)) + 3) & ~3) + 1);
 }
 
-size_t
+static size_t
 base64_decode_l(size_t l)
 {
 	return (((l) * 3) >> 2);
@@ -77,7 +77,7 @@ decode(char *restrict *restrict dest, const char *restrict const buf,
 	return (1);
 }
 
-ssize_t
+static ssize_t
 base64_encode(BLOB_CODEC, const enum case_e kase, char *restrict const buf,
     const size_t buflen, const char *restrict const inbuf, const size_t inlen)
 {
@@ -132,7 +132,7 @@ base64_encode(BLOB_CODEC, const enum case_e kase, char *restrict const buf,
 	return (p - buf);
 }
 
-ssize_t
+static ssize_t
 base64_decode(BLOB_CODEC, char *restrict const buf, const size_t buflen,
     ssize_t inlen, VCL_STRANDS strings)
 {
@@ -198,3 +198,27 @@ base64_decode(BLOB_CODEC, char *restrict const buf, const size_t buflen,
 
 	return (dest - buf);
 }
+
+const struct vmod_blob_codec blob_codec_base64 = {
+	.decode_l	= base64_decode_l,
+	.decode		= base64_decode,
+	.encode_l	= base64_encode_l,
+	.encode		= base64_encode,
+	.name		= &VENUM(BASE64)
+};
+
+const struct vmod_blob_codec blob_codec_base64url = {
+	.decode_l	= base64_decode_l,
+	.decode		= base64_decode,
+	.encode_l	= base64_encode_l,
+	.encode		= base64_encode,
+	.name		= &VENUM(BASE64URL)
+};
+
+const struct vmod_blob_codec blob_codec_base64urlnopad = {
+	.decode_l	= base64_decode_l,
+	.decode		= base64_decode,
+	.encode_l	= base64nopad_encode_l,
+	.encode		= base64_encode,
+	.name		= &VENUM(BASE64URLNOPAD)
+};

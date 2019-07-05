@@ -116,8 +116,6 @@ typedef ssize_t encode_f(BLOB_CODEC, const enum case_e kase,
 typedef ssize_t decode_f(BLOB_CODEC, char *restrict const buf,
     const size_t buflen, const ssize_t inlen, VCL_STRANDS strings);
 
-#define vmod_blob_fptr vmod_blob_codec
-
 struct vmod_blob_codec {
 	len_f		*decode_l;
 	len_f		*encode_l;
@@ -127,30 +125,15 @@ struct vmod_blob_codec {
 };
 
 /* id.c */
-len_f	 id_encode_l;
-len_f	 id_decode_l;
-
-encode_f id_encode;
-decode_f id_decode;
+extern const struct vmod_blob_codec blob_codec_id;
 
 /* base64.c */
-len_f	 base64_decode_l;
-len_f	 base64nopad_encode_l;
-len_f	 base64_encode_l;
-
-encode_f base64_encode;
-decode_f base64_decode;
+extern const struct vmod_blob_codec blob_codec_base64;
+extern const struct vmod_blob_codec blob_codec_base64url;
+extern const struct vmod_blob_codec blob_codec_base64urlnopad;
 
  /* hex.c */
-len_f	 hex_encode_l;
-len_f	 hex_decode_l;
-
-encode_f hex_encode;
-decode_f hex_decode;
+extern const struct vmod_blob_codec blob_codec_hex;
 
 /* url.c */
-len_f	 url_encode_l;
-len_f	 url_decode_l;
-
-encode_f url_encode;
-decode_f url_decode;
+extern const struct vmod_blob_codec blob_codec_url;

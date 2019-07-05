@@ -36,19 +36,19 @@
 
 #include "vmod_blob.h"
 
-size_t
+static size_t
 id_encode_l(size_t l)
 {
 	return (l + 1);
 }
 
-size_t
+static size_t
 id_decode_l(size_t l)
 {
 	return (l);
 }
 
-ssize_t
+static ssize_t
 id_encode(BLOB_CODEC, const enum case_e kase, char *restrict const buf,
     const size_t buflen, const char *restrict const in, const size_t inlen)
 {
@@ -66,7 +66,7 @@ id_encode(BLOB_CODEC, const enum case_e kase, char *restrict const buf,
 	return (inlen);
 }
 
-ssize_t
+static ssize_t
 id_decode(BLOB_CODEC, char *restrict const buf, const size_t buflen, ssize_t n,
     VCL_STRANDS strings)
 {
@@ -99,3 +99,11 @@ id_decode(BLOB_CODEC, char *restrict const buf, const size_t buflen, ssize_t n,
 
 	return (outlen);
 }
+
+const struct vmod_blob_codec blob_codec_id = {
+	.decode_l	= id_decode_l,
+	.decode		= id_decode,
+	.encode_l	= id_encode_l,
+	.encode		= id_encode,
+	.name		= &VENUM(IDENTITY)
+};

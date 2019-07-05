@@ -57,13 +57,13 @@ const uint8_t nibble[] = {
 	11,  12,  13,  14,  15
 };
 
-size_t
+static size_t
 hex_encode_l(size_t l)
 {
 	return (((l) << 1) + 1);
 }
 
-size_t
+static size_t
 hex_decode_l(size_t l)
 {
 	return (((l) + 1) >> 1);
@@ -75,7 +75,7 @@ hex2byte(const unsigned char hi, const unsigned char lo)
 	return ((nibble[hi - '0'] << 4) | nibble[lo - '0']);
 }
 
-ssize_t
+static ssize_t
 hex_encode(BLOB_CODEC, const enum case_e kase, char *restrict const buf,
     const size_t buflen, const char *restrict const in, const size_t inlen)
 {
@@ -102,7 +102,7 @@ hex_encode(BLOB_CODEC, const enum case_e kase, char *restrict const buf,
 	return (p - buf);
 }
 
-ssize_t
+static ssize_t
 hex_decode(BLOB_CODEC, char *restrict const buf, const size_t buflen, ssize_t n,
     VCL_STRANDS strings)
 {
@@ -164,3 +164,11 @@ hex_decode(BLOB_CODEC, char *restrict const buf, const size_t buflen, ssize_t n,
 	assert(dest <= buf + buflen);
 	return (dest - buf);
 }
+
+const struct vmod_blob_codec blob_codec_hex = {
+	.decode_l	= hex_decode_l,
+	.decode		= hex_decode,
+	.encode_l	= hex_encode_l,
+	.encode		= hex_encode,
+	.name		= &VENUM(HEX)
+};

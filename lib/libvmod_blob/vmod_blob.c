@@ -35,50 +35,17 @@
 
 #define VMOD_BLOB_TYPE 0xfade4faa
 
-static const struct vmod_blob_codec func[] = {
-	{
-		.decode_l	= id_decode_l,
-		.decode		= id_decode,
-		.encode_l	= id_encode_l,
-		.encode		= id_encode,
-		.name		= &VENUM(IDENTITY)
-	}, {
-		.decode_l	= base64_decode_l,
-		.decode		= base64_decode,
-		.encode_l	= base64_encode_l,
-		.encode		= base64_encode,
-		.name		= &VENUM(BASE64)
-	}, {
-		.decode_l	= base64_decode_l,
-		.decode		= base64_decode,
-		.encode_l	= base64_encode_l,
-		.encode		= base64_encode,
-		.name		= &VENUM(BASE64URL)
-	}, {
-		.decode_l	= base64_decode_l,
-		.decode		= base64_decode,
-		.encode_l	= base64nopad_encode_l,
-		.encode		= base64_encode,
-		.name		= &VENUM(BASE64URLNOPAD)
-	}, {
-		.decode_l	= hex_decode_l,
-		.decode		= hex_decode,
-		.encode_l	= hex_encode_l,
-		.encode		= hex_encode,
-		.name		= &VENUM(HEX)
-	}, {
-		.decode_l	= url_decode_l,
-		.decode		= url_decode,
-		.encode_l	= url_encode_l,
-		.encode		= url_encode,
-		.name		= &VENUM(URL)
-	}, {
-		/* null-terminated array */
-	}
+static const struct vmod_blob_codec *codecs[] = {
+	&blob_codec_id,
+	&blob_codec_base64,
+	&blob_codec_base64url,
+	&blob_codec_base64urlnopad,
+	&blob_codec_hex,
+	&blob_codec_url,
+	NULL
 };
 
-#define __MAX_ENCODING (sizeof (func) / sizeof (*func))
-#define CODEC_INDEX(c) ((c) - func)
+#define __MAX_ENCODING (sizeof (codecs) / sizeof (*codecs))
 
 struct vmod_blob_blob {
 	unsigned magic;
@@ -115,15 +82,18 @@ static const struct vrt_blob null_blob[1] = {{
 }};
 
 static const struct vmod_blob_codec *
-parse_encoding(VCL_ENUM e)
+parse_encoding(VCL_ENUM e, int *idxp)
 {
 	int i = 0;
 
 	AN(e);
 
-	while (func[i].name != NULL) {
-		if (*func[i].name == e)
-			return (&func[i]);
+	while (codecs[i] != NULL) {
+		if (*codecs[i]->name == e) {
+			if (idxp != NULL)
+				*idxp = i;
+			return (codecs[i]);
+		}
 		i++;
 	}
 	WRONG("illegal encoding enum");
@@ -210,7 +180,7 @@ vmod_blob__init(VRT_CTX, struct vmod_blob_blob **blobp, const char *vcl_name,
 	AN(decs);
 	AN(strings);
 
-	dec = parse_encoding(decs);
+	dec = parse_encoding(decs, NULL);
 	AN(dec);
 
 	ALLOC_OBJ(b, VMOD_BLOB_MAGIC);
@@ -265,16 +235,16 @@ vmod_blob_encode(VRT_CTX, struct vmod_blob_blob *b, VCL_ENUM encs,
 {
 	const struct vmod_blob_codec *enc;
 	enum case_e kase = parse_case(case_s);
-	int idx;
+	int idx = -1;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(b, VMOD_BLOB_MAGIC);
 	AN(encs);
 	AN(case_s);
 
-	enc = parse_encoding(encs);
+	enc = parse_encoding(encs, &idx);
 	AN(enc);
-	idx = enc - func;
+	assert(idx >= 0);
 
 	if (!check_enc_case(ctx, enc, case_s, kase))
 		return NULL;
@@ -288,7 +258,7 @@ vmod_blob_encode(VRT_CTX, struct vmod_blob_blob *b, VCL_ENUM encs,
 
 	AZ(pthread_mutex_lock(&b->lock));
 	if (b->encoding[idx][kase] == NULL) {
-		ssize_t len = func[idx].encode_l(b->blob.len);
+		ssize_t len = enc->encode_l(b->blob.len);
 
 		assert(len >= 0);
 		if (len == 0)
@@ -299,7 +269,7 @@ vmod_blob_encode(VRT_CTX, struct vmod_blob_blob *b, VCL_ENUM encs,
 				ERRNOMEM(ctx, "cannot encode");
 			else {
 				char *s = b->encoding[idx][kase];
-				len = func[idx].encode(enc, kase, s, len,
+				len = enc->encode(enc, kase, s, len,
 				    b->blob.blob, b->blob.len);
 				assert(len >= 0);
 				if (len == 0) {
@@ -356,7 +326,7 @@ vmod_decode(VRT_CTX, VCL_ENUM decs, VCL_INT length, VCL_STRANDS strings)
 	AN(decs);
 	AN(strings);
 
-	dec = parse_encoding(decs);
+	dec = parse_encoding(decs, NULL);
 	AN(dec);
 
 	buf = WS_Front(ctx->ws);
@@ -429,7 +399,7 @@ vmod_encode(VRT_CTX, VCL_ENUM encs, VCL_ENUM case_s, VCL_BLOB b)
 	AN(encs);
 	AN(case_s);
 
-	enc = parse_encoding(encs);
+	enc = parse_encoding(encs, NULL);
 	AN(enc);
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -454,9 +424,9 @@ vmod_transcode(VRT_CTX, VCL_ENUM decs, VCL_ENUM encs, VCL_ENUM case_s,
 	AN(case_s);
 	AN(strings);
 
-	dec = parse_encoding(decs);
+	dec = parse_encoding(decs, NULL);
 	AN(dec);
-	enc = parse_encoding(encs);
+	enc = parse_encoding(encs, NULL);
 	AN(enc);
 
 	if (!check_enc_case(ctx, enc, case_s, kase))
