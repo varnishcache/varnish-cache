@@ -45,42 +45,45 @@ struct vmod_blob_blob {
 	pthread_mutex_t lock;
 };
 
-#define B64_FUNCS				   \
-		.decode_l	= base64_decode_l, \
-		.decode		= base64_decode,   \
+#define B64_FUNCS					\
+		.decode_l	= base64_decode_l,	\
+		.decode		= base64_decode,	\
 		.encode		= base64_encode
 
-static const struct vmod_blob_fptr func[__MAX_ENCODING] = {
-	[IDENTITY] = {
+static const struct vmod_blob_fptr func[] = {
+	{
+		/* XXX: temporary invalid placeholder */
+	}, {
 		.decode_l	= id_decode_l,
 		.decode		= id_decode,
 		.encode_l	= id_encode_l,
-		.encode		= id_encode
-	},
-	[BASE64] = {
+		.encode		= id_encode,
+		.name		= &VENUM(IDENTITY)
+	}, {
 		B64_FUNCS,
-		.encode_l	= base64_encode_l
-	},
-	[BASE64URL] = {
+		.encode_l	= base64_encode_l,
+		.name		= &VENUM(BASE64)
+	}, {
 		B64_FUNCS,
-		.encode_l	= base64_encode_l
-	},
-	[BASE64URLNOPAD] = {
+		.encode_l	= base64_encode_l,
+		.name		= &VENUM(BASE64URL)
+	}, {
 		B64_FUNCS,
-		.encode_l	= base64nopad_encode_l
-	},
-	[HEX] = {
+		.encode_l	= base64nopad_encode_l,
+		.name		= &VENUM(BASE64URLNOPAD)
+	}, {
 		.decode_l	= hex_decode_l,
 		.decode		= hex_decode,
 		.encode_l	= hex_encode_l,
-		.encode		= hex_encode
-	},
-	[URL] = {
+		.encode		= hex_encode,
+		.name		= &VENUM(HEX)
+	}, {
 		.decode_l	= url_decode_l,
 		.decode		= url_decode,
 		.encode_l	= url_encode_l,
-		.encode		= url_encode
-	},
+		.encode		= url_encode,
+		.name		= &VENUM(URL)
+	}
 };
 
 #undef B64_FUNCS
