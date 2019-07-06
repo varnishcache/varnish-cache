@@ -41,8 +41,7 @@ static const struct vmod_blob_codec *codecs[] = {
 	&blob_codec_base64url,
 	&blob_codec_base64urlnopad,
 	&blob_codec_hex,
-	&blob_codec_url,
-	NULL
+	&blob_codec_url
 };
 
 #define __MAX_ENCODING (sizeof (codecs) / sizeof (*codecs))
@@ -84,17 +83,16 @@ static const struct vrt_blob null_blob[1] = {{
 static const struct vmod_blob_codec *
 parse_encoding(VCL_ENUM e, int *idxp)
 {
-	int i = 0;
+	int i;
 
 	AN(e);
 
-	while (codecs[i] != NULL) {
+	for (i = 0; i < __MAX_ENCODING; i++) {
 		if (*codecs[i]->name == e) {
 			if (idxp != NULL)
 				*idxp = i;
 			return (codecs[i]);
 		}
-		i++;
 	}
 	WRONG("illegal encoding enum");
 }
