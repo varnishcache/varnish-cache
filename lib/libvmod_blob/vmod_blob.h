@@ -33,11 +33,6 @@
 
 #include "vcc_if.h"
 
-enum encoding {
-#define VMODENUM(x) x,
-#include "tbl_encodings.h"
-};
-
 struct vmod_blob_codec;
 
 #define BLOB_CODEC const struct vmod_blob_codec *codec
@@ -122,6 +117,7 @@ struct vmod_blob_codec {
 	decode_f	*decode;
 	encode_f	*encode;
 	VCL_ENUM	*name;
+	const void	*priv;
 };
 
 /* id.c */
