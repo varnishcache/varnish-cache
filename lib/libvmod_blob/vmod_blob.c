@@ -110,10 +110,11 @@ static inline size_t
 decode_l(BLOB_CODEC, VCL_STRANDS s)
 {
 	size_t len = 0;
+	int i;
 
 	AN(codec);
 
-	for (int i = 0; i < s->n; i++)
+	for (i = 0; i < s->n; i++)
 		if (s->p[i] != NULL && *s->p[i] != '\0')
 			len += strlen(s->p[i]);
 
@@ -156,7 +157,7 @@ check_enc_case(VRT_CTX, BLOB_CODEC, VCL_ENUM case_s, enum case_e kase)
 
 VCL_VOID v_matchproto_(td_blob_blob__init)
 vmod_blob__init(VRT_CTX, struct vmod_blob_blob **blobp, const char *vcl_name,
-		VCL_ENUM decs, VCL_STRANDS strings)
+    VCL_ENUM decs, VCL_STRANDS strings)
 {
 	const struct vmod_blob_codec *dec;
 	struct vmod_blob_blob *b;
@@ -225,7 +226,9 @@ vmod_blob_encode(VRT_CTX, struct vmod_blob_blob *b, VCL_ENUM encs,
 {
 	const struct vmod_blob_codec *enc;
 	enum case_e kase = parse_case(case_s);
+	ssize_t len;
 	int idx = -1;
+	char *s;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(b, VMOD_BLOB_MAGIC);
@@ -237,18 +240,18 @@ vmod_blob_encode(VRT_CTX, struct vmod_blob_blob *b, VCL_ENUM encs,
 	assert(idx >= 0);
 
 	if (!check_enc_case(ctx, enc, case_s, kase))
-		return NULL;
+		return (NULL);
 	if (b->blob.len == 0)
-		return "";
+		return ("");
 	if (kase == DEFAULT)
 		kase = LOWER;
 
 	if (b->encoding[idx][kase] != NULL)
-		return b->encoding[idx][kase];
+		return (b->encoding[idx][kase]);
 
 	AZ(pthread_mutex_lock(&b->lock));
 	if (b->encoding[idx][kase] == NULL) {
-		ssize_t len = enc->encode_l(b->blob.len);
+		len = enc->encode_l(b->blob.len);
 
 		assert(len >= 0);
 		if (len == 0)
@@ -258,7 +261,7 @@ vmod_blob_encode(VRT_CTX, struct vmod_blob_blob *b, VCL_ENUM encs,
 			if (b->encoding[idx][kase] == NULL)
 				ERRNOMEM(ctx, "cannot encode");
 			else {
-				char *s = b->encoding[idx][kase];
+				s = b->encoding[idx][kase];
 				len = enc->encode(enc, kase, s, len,
 				    b->blob.blob, b->blob.len);
 				assert(len >= 0);
@@ -273,7 +276,7 @@ vmod_blob_encode(VRT_CTX, struct vmod_blob_blob *b, VCL_ENUM encs,
 	}
 	AZ(pthread_mutex_unlock(&b->lock));
 
-	return b->encoding[idx][kase];
+	return (b->encoding[idx][kase]);
 }
 
 VCL_VOID v_matchproto_(td_blob_blob__fini)
@@ -330,11 +333,11 @@ vmod_decode(VRT_CTX, VCL_ENUM decs, VCL_INT length, VCL_STRANDS strings)
 	if (len == -1) {
 		err_decode(ctx, strings->p[0]);
 		WS_Release(ctx->ws, 0);
-		return NULL;
+		return (NULL);
 	}
 	if (len == 0) {
 		WS_Release(ctx->ws, 0);
-		return null_blob;
+		return (null_blob);
 	}
 	WS_Release(ctx->ws, len);
 
@@ -394,8 +397,8 @@ vmod_encode(VRT_CTX, VCL_ENUM encs, VCL_ENUM case_s, VCL_BLOB b)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	if (!check_enc_case(ctx, enc, case_s, kase))
-		return NULL;
-	return encode(ctx, enc, kase, b);
+		return (NULL);
+	return (encode(ctx, enc, kase, b));
 }
 
 VCL_STRING v_matchproto_(td_blob_transcode)
@@ -405,6 +408,7 @@ vmod_transcode(VRT_CTX, VCL_ENUM decs, VCL_ENUM encs, VCL_ENUM case_s,
 	const struct vmod_blob_codec *dec, *enc;
 	enum case_e kase = parse_case(case_s);
 	struct vrt_blob b;
+	size_t l;
 	VCL_STRING r;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -420,15 +424,15 @@ vmod_transcode(VRT_CTX, VCL_ENUM decs, VCL_ENUM encs, VCL_ENUM case_s,
 	AN(enc);
 
 	if (!check_enc_case(ctx, enc, case_s, kase))
-		return NULL;
+		return (NULL);
 
 	/*
 	 * Allocate space for the decoded blob on the stack
 	 * ignoring the limitation imposed by n
 	 */
-	size_t l = decode_l(dec, strings);
+	l = decode_l(dec, strings);
 	if (l == 0)
-		return "";
+		return ("");
 
 	/* XXX: handle stack overflow? */
 	char buf[l];
@@ -441,7 +445,7 @@ vmod_transcode(VRT_CTX, VCL_ENUM decs, VCL_ENUM encs, VCL_ENUM case_s,
 
 	if (b.len == -1) {
 		err_decode(ctx, strings->p[0]);
-		return NULL;
+		return (NULL);
 	}
 
 	/*
@@ -467,53 +471,57 @@ vmod_transcode(VRT_CTX, VCL_ENUM decs, VCL_ENUM encs, VCL_ENUM case_s,
 VCL_BOOL v_matchproto_(td_blob_same)
 vmod_same(VRT_CTX, VCL_BLOB b1, VCL_BLOB b2)
 {
-	(void) ctx;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
 	if (b1 == b2)
-		return 1;
+		return (1);
 	if (b1 == NULL || b2 == NULL)
-		return 0;
+		return (0);
 	return (b1->len == b2->len && b1->blob == b2->blob);
 }
 
 VCL_BOOL v_matchproto_(td_blob_equal)
 vmod_equal(VRT_CTX, VCL_BLOB b1, VCL_BLOB b2)
 {
-	(void) ctx;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
 	if (b1 == b2)
-		return 1;
+		return (1);
 	if (b1 == NULL || b2 == NULL)
-		return 0;
+		return (0);
 	if (b1->len != b2->len)
-		return 0;
+		return (0);
 	if (b1->blob == b2->blob)
-		return 1;
+		return (1);
 	if (b1->blob == NULL || b2->blob == NULL)
-		return 0;
+		return (0);
 	return (memcmp(b1->blob, b2->blob, b1->len) == 0);
 }
 
 VCL_INT v_matchproto_(td_blob_length)
 vmod_length(VRT_CTX, VCL_BLOB b)
 {
-	(void) ctx;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
 	if (b == NULL)
-		return 0;
-	return b->len;
+		return (0);
+	return (b->len);
 }
 
 VCL_BLOB v_matchproto_(td_blob_sub)
 vmod_sub(VRT_CTX, VCL_BLOB b, VCL_BYTES n, VCL_BYTES off)
 {
+
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	assert(n >= 0);
 	assert(off >= 0);
 
 	if (b == NULL || b->len == 0 || b->blob == NULL) {
 		ERR(ctx, "blob is empty in blob.sub()");
-		return NULL;
+		return (NULL);
 	}
 
 	assert(b->len > 0);
@@ -522,12 +530,11 @@ vmod_sub(VRT_CTX, VCL_BLOB b, VCL_BYTES n, VCL_BYTES off)
 		VERR(ctx, "size %jd from offset %jd requires more bytes than "
 		     "blob length %zd in blob.sub()",
 		     (intmax_t)n, (intmax_t)off, b->len);
-		return NULL;
+		return (NULL);
 	}
 
 	if (n == 0)
-		return null_blob;
-
+		return (null_blob);
 
 	return (VRT_blob(ctx, "blob.sub()",
 	    (const char *)b->blob + off, n, b->type));
