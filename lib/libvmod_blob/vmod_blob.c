@@ -270,7 +270,7 @@ vmod_blob_encode(VRT_CTX, struct vmod_blob_blob *b, VCL_ENUM encs,
 					b->encoding[idx][kase] = empty;
 				}
 				else
-					s[len] = '\0';
+					s[len] = '\0'; /* XXX: safe? */
 			}
 		}
 	}

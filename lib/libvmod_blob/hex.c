@@ -99,6 +99,19 @@ hex_encode(BLOB_CODEC, const enum case_e kase, char *restrict const buf,
 		*p++ = alphabet[in[i] & 0x0f];
 	}
 
+	/* XXX: the length arithmetics here are a bit complicated for such
+	 * a simple problem. It looks like the estimated encoded length
+	 * makes room for a null character, which makes sense for string
+	 * encoding. But null characters are set by the caller as documented.
+	 *
+	 * The result is a confusing length computation where:
+	 *
+	 *     hex_decode_l(hex_encode_l(len)) != len
+	 *
+	 * Needs a proper review of "half byte" decoding. Should it be
+	 * supported in the first place?
+	 */
+
 	return (p - buf);
 }
 
@@ -108,7 +121,7 @@ hex_decode(BLOB_CODEC, char *restrict const buf, const size_t buflen, ssize_t n,
 {
 	char *dest = buf;
 	const char *b, *s;
-	unsigned char extranib = 0;
+	unsigned char extranib = '\0';
 	size_t len = 0;
 	int i;
 
@@ -136,10 +149,12 @@ hex_decode(BLOB_CODEC, char *restrict const buf, const size_t buflen, ssize_t n,
 	if (n != -1 && len > n)
 		len = n;
 
-	if (((len+1) >> 1) > buflen) {
+	if (hex_decode_l(len) > buflen) {
 		errno = ENOMEM;
 		return (-1);
 	}
+
+	/* XXX: prepended extra nibble, not appended! */
 	if (len & 1) {
 		extranib = '0';
 		len++;
@@ -161,6 +176,9 @@ hex_decode(BLOB_CODEC, char *restrict const buf, const size_t buflen, ssize_t n,
 		}
 		extranib = *s;
 	}
+
+	/* XXX: no extra nible check for the last string? */
+
 	assert(dest <= buf + buflen);
 	return (dest - buf);
 }
