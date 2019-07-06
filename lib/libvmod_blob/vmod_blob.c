@@ -135,14 +135,6 @@ err_decode(VRT_CTX, const char *enc)
 	}
 }
 
-static inline int
-encodes_hex(BLOB_CODEC)
-{
-
-	AN(codec);
-	return (codec->name == &VENUM(HEX) || codec->name == &VENUM(URL));
-}
-
 /* Require case DEFAULT for all encodings besides HEX and URL. */
 
 static inline int
@@ -152,7 +144,7 @@ check_enc_case(VRT_CTX, BLOB_CODEC, VCL_ENUM case_s, enum case_e kase)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(codec);
 
-	if (!encodes_hex(codec) && kase != DEFAULT) {
+	if (codec->case_sensitive && kase != DEFAULT) {
 		VERR(ctx, "case %s is illegal with encoding %s", case_s,
 		    *codec->name);
 		return (0);
@@ -459,13 +451,14 @@ vmod_transcode(VRT_CTX, VCL_ENUM decs, VCL_ENUM encs, VCL_ENUM case_s,
 	 * since the call may specify upper- or lower-case that differs
 	 * from the encoded string.
 	 */
-	if (length == -1 && enc == dec && !encodes_hex(enc))
+	if (length == -1 && enc == dec && enc->case_sensitive) {
 		/*
 		 * Returns NULL and invokes VCL failure on workspace
 		 * overflow. If there is only one string already in the
 		 * workspace, then it is re-used.
 		 */
 		return (VRT_CollectStrands(ctx, strings));
+	}
 
 	r = encode(ctx, enc, kase, &b);
 	return (r);

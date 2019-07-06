@@ -329,7 +329,8 @@ const struct vmod_blob_codec blob_codec_base64 = {
 	.encode_l	= base64_encode_l,
 	.encode		= base64_encode,
 	.name		= &VENUM(BASE64),
-	.priv		= &b64_alpha
+	.priv		= &b64_alpha,
+	.case_sensitive = 1
 };
 
 const struct vmod_blob_codec blob_codec_base64url = {
@@ -338,7 +339,8 @@ const struct vmod_blob_codec blob_codec_base64url = {
 	.encode_l	= base64_encode_l,
 	.encode		= base64_encode,
 	.name		= &VENUM(BASE64URL),
-	.priv		= &b64_alpha_url
+	.priv		= &b64_alpha_url,
+	.case_sensitive = 1
 };
 
 const struct vmod_blob_codec blob_codec_base64urlnopad = {
@@ -347,5 +349,6 @@ const struct vmod_blob_codec blob_codec_base64urlnopad = {
 	.encode_l	= base64nopad_encode_l,
 	.encode		= base64_encode,
 	.name		= &VENUM(BASE64URLNOPAD),
-	.priv		= &b64_alpha_urlnopad
+	.priv		= &b64_alpha_urlnopad,
+	.case_sensitive = 1
 };

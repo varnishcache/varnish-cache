@@ -118,6 +118,7 @@ struct vmod_blob_codec {
 	encode_f	*encode;
 	VCL_ENUM	*name;
 	const void	*priv;
+	unsigned	case_sensitive;
 };
 
 /* id.c */

@@ -105,5 +105,6 @@ const struct vmod_blob_codec blob_codec_id = {
 	.decode		= id_decode,
 	.encode_l	= id_encode_l,
 	.encode		= id_encode,
-	.name		= &VENUM(IDENTITY)
+	.name		= &VENUM(IDENTITY),
+	.case_sensitive = 1
 };
