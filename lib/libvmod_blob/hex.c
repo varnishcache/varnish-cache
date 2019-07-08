@@ -60,24 +60,24 @@ const uint8_t nibble[] = {
 static size_t
 hex_encode_l(size_t l)
 {
-	return (((l) << 1) + 1);
+	return ((l << 1) + 1);
 }
 
 static size_t
 hex_decode_l(size_t l)
 {
-	return (((l) + 1) >> 1);
+	return ((l + 1) >> 1);
 }
 
 static inline char
-hex2byte(const unsigned char hi, const unsigned char lo)
+hex2byte(unsigned char hi, unsigned char lo)
 {
 	return ((nibble[hi - '0'] << 4) | nibble[lo - '0']);
 }
 
 static ssize_t
-hex_encode(BLOB_CODEC, const enum case_e kase, char *restrict const buf,
-    const size_t buflen, const char *restrict const in, const size_t inlen)
+hex_encode(BLOB_CODEC, enum case_e kase, char *buf, size_t buflen,
+    const char *in, size_t inlen)
 {
 	char *p = buf;
 	const char *alphabet = hex_alphabet[0];
@@ -116,7 +116,7 @@ hex_encode(BLOB_CODEC, const enum case_e kase, char *restrict const buf,
 }
 
 static ssize_t
-hex_decode(BLOB_CODEC, char *restrict const buf, const size_t buflen, ssize_t n,
+hex_decode(BLOB_CODEC, char *buf, size_t buflen, ssize_t inlen,
     VCL_STRANDS strings)
 {
 	char *dest = buf;
@@ -125,9 +125,9 @@ hex_decode(BLOB_CODEC, char *restrict const buf, const size_t buflen, ssize_t n,
 	size_t len = 0;
 	int i;
 
+	CHECK_BLOB_CODEC(codec, HEX);
 	AN(buf);
 	AN(strings);
-	CHECK_BLOB_CODEC(codec, HEX);
 
 	for (i = 0; i < strings->n; i++) {
 		s = strings->p[i];
@@ -146,8 +146,8 @@ hex_decode(BLOB_CODEC, char *restrict const buf, const size_t buflen, ssize_t n,
 
 	if (len == 0)
 		return (0);
-	if (n != -1 && len > n)
-		len = n;
+	if (inlen != -1 && len > inlen)
+		len = inlen;
 
 	if (hex_decode_l(len) > buflen) {
 		errno = ENOMEM;

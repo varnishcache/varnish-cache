@@ -79,8 +79,8 @@ isoutofrange(const uint8_t c)
 }
 
 static ssize_t
-url_encode(BLOB_CODEC, const enum case_e kase, char *restrict const buf,
-    const size_t buflen, const char *restrict const in, const size_t inlen)
+url_encode(BLOB_CODEC, enum case_e kase, char *buf, size_t buflen,
+    const char *in, size_t inlen)
 {
 	char *p = buf;
 	const char * const end = buf + buflen;
@@ -114,7 +114,7 @@ url_encode(BLOB_CODEC, const enum case_e kase, char *restrict const buf,
 }
 
 static ssize_t
-url_decode(BLOB_CODEC, char *restrict const buf, const size_t buflen, ssize_t n,
+url_decode(BLOB_CODEC, char *buf, size_t buflen, ssize_t inlen,
     VCL_STRANDS strings)
 {
 	char *dest = buf;
@@ -129,8 +129,8 @@ url_decode(BLOB_CODEC, char *restrict const buf, const size_t buflen, ssize_t n,
 	AN(strings);
 	CHECK_BLOB_CODEC(codec, URL);
 
-	if (n >= 0)
-		len = n;
+	if (inlen >= 0)
+		len = inlen;
 
 	for (i = 0; len > 0 && i < strings->n; i++) {
 		s = strings->p[i];

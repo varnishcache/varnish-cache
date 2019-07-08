@@ -69,10 +69,8 @@ typedef size_t len_f(size_t);
  * in: source of data to be encoded
  * inlen: length of data to be encoded
  *
- * The regions pointed to by buf and in MUST NOT overlap (this is the
- * contract imposed by restrict).
- * An encoder SHALL NOT append the terminating null byte (this must
- * be done by the caller).
+ * The regions pointed to by buf and in MUST NOT overlap. An encoder SHALL
+ * NOT append the terminating null byte (this must be done by the caller).
  *
  * Returns:
  * -1, if there is insufficient space at buf, *including* space for the
@@ -82,9 +80,8 @@ typedef size_t len_f(size_t);
  * otherwise, the number of bytes written (note that this does not
  *            include any terminating null byte)
  */
-typedef ssize_t encode_f(BLOB_CODEC, const enum case_e kase,
-    char *restrict const buf, const size_t buflen,
-    const char *restrict const in, const size_t inlen);
+typedef ssize_t encode_f(BLOB_CODEC, enum case_e kase, char *buf, size_t buflen,
+    const char *in, size_t inlen);
 
 /*
  * General interface for a decoder: decode the concatenation of strings
@@ -97,9 +94,8 @@ typedef ssize_t encode_f(BLOB_CODEC, const enum case_e kase,
  * inlen: maximum length to read or -1 to read up to \0
  * strings: strings obtained from VCL STRANDS
  *
- * The regions pointed to by buf and strings MUST NOT overlap (per
- * restrict).
- * Note that any member of the strings list may be NULL or empty.
+ * The regions pointed to by buf and strings MUST NOT overlap. Note that any
+ * member of the strings list may be NULL or empty.
  *
  * Returns:
  * -1, if there is insufficient space at buf, or if the decoding is
@@ -108,8 +104,8 @@ typedef ssize_t encode_f(BLOB_CODEC, const enum case_e kase,
  *    a static constant empty BLOB
  * otherwise, the number of bytes written
  */
-typedef ssize_t decode_f(BLOB_CODEC, char *restrict const buf,
-    const size_t buflen, const ssize_t inlen, VCL_STRANDS strings);
+typedef ssize_t decode_f(BLOB_CODEC, char *buf, size_t buflen, ssize_t inlen,
+    VCL_STRANDS strings);
 
 struct vmod_blob_codec {
 	len_f		*decode_l;

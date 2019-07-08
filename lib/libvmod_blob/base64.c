@@ -35,8 +35,6 @@
 
 #include "vmod_blob.h"
 
-#define base64_l(l)		(((l) << 2) / 3)
-
 #define ILL ((int8_t) 127)
 #define PAD ((int8_t) 126)
 
@@ -171,6 +169,8 @@ static const struct b64_alphabet b64_alpha_urlnopad = {
 	'\0'
 };
 
+#define base64_l(l)		(((l) << 2) / 3)
+
 static size_t
 base64nopad_encode_l(size_t l)
 {
@@ -180,27 +180,27 @@ base64nopad_encode_l(size_t l)
 static size_t
 base64_encode_l(size_t l)
 {
-	return ((((base64_l(l)) + 3) & ~3) + 1);
+	return (((base64_l(l) + 3) & ~3) + 1);
 }
 
 static size_t
 base64_decode_l(size_t l)
 {
-	return (((l) * 3) >> 2);
+	return ((l * 3) >> 2);
 }
 
 static inline int
-decode(char *restrict *restrict dest, const char *restrict const buf,
-    const size_t buflen, unsigned u, const int n)
+decode(char **dest, char *buf, size_t buflen, unsigned u, int n)
 {
 	char *d;
+	int i;
 
 	if (n <= 1) {
 		errno = EINVAL;
 		return (-1);
 	}
 	d = *dest;
-	for (int i = 0; i < n - 1; i++) {
+	for (i = 0; i < n - 1; i++) {
 		if (d == buf + buflen) {
 			errno = ENOMEM;
 			return (-1);
@@ -213,13 +213,13 @@ decode(char *restrict *restrict dest, const char *restrict const buf,
 }
 
 static ssize_t
-base64_encode(BLOB_CODEC, const enum case_e kase, char *restrict const buf,
-    const size_t buflen, const char *restrict const inbuf, const size_t inlen)
+base64_encode(BLOB_CODEC, enum case_e kase, char *buf, size_t buflen,
+    const char *inbuf, size_t inlen)
 {
 	const struct b64_alphabet *alpha;
 	char *p = buf;
 	const uint8_t *in = (const uint8_t *)inbuf;
-	const uint8_t * const end = in + inlen;
+	const uint8_t *end = in + inlen;
 
 	AN(codec);
 	CAST_OBJ_NOTNULL(alpha, codec->priv, B64_ALPHABET_MAGIC);
@@ -263,8 +263,8 @@ base64_encode(BLOB_CODEC, const enum case_e kase, char *restrict const buf,
 }
 
 static ssize_t
-base64_decode(BLOB_CODEC, char *restrict const buf, const size_t buflen,
-    ssize_t inlen, VCL_STRANDS strings)
+base64_decode(BLOB_CODEC, char *buf, const size_t buflen, ssize_t inlen,
+    VCL_STRANDS strings)
 {
 	const struct b64_alphabet *alpha;
 	const char *s;

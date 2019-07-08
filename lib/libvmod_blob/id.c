@@ -49,8 +49,8 @@ id_decode_l(size_t l)
 }
 
 static ssize_t
-id_encode(BLOB_CODEC, const enum case_e kase, char *restrict const buf,
-    const size_t buflen, const char *restrict const in, const size_t inlen)
+id_encode(BLOB_CODEC, enum case_e kase, char *buf, size_t buflen,
+    const char *in, size_t inlen)
 {
 
 	CHECK_BLOB_CODEC(codec, IDENTITY);
@@ -67,36 +67,39 @@ id_encode(BLOB_CODEC, const enum case_e kase, char *restrict const buf,
 }
 
 static ssize_t
-id_decode(BLOB_CODEC, char *restrict const buf, const size_t buflen, ssize_t n,
+id_decode(BLOB_CODEC, char *buf, size_t buflen, ssize_t inlen,
     VCL_STRANDS strings)
 {
+	size_t len, outlen = 0, maxlen = SIZE_MAX;
 	const char *s;
-	char *dest = buf;
-	size_t len, outlen = 0, c = SIZE_MAX;
+	int i;
 
 	CHECK_BLOB_CODEC(codec, IDENTITY);
 	AN(buf);
 	AN(strings);
 
-	if (n >= 0)
-		c = n;
+	if (inlen >= 0)
+		maxlen = inlen;
 
-	for (int i = 0; c > 0 && i < strings->n; i++) {
+	for (i = 0; maxlen > 0 && i < strings->n; i++) {
 		s = strings->p[i];
 		if (s == NULL || *s == '\0')
 			continue;
 		len = strlen(s);
-		if (len > c)
-			len = c;
-		c -= len;
-		if ((outlen += len) > buflen) {
+		if (len > maxlen)
+			len = maxlen;
+		if (len > buflen) {
 			errno = ENOMEM;
 			return (-1);
 		}
-		memcpy(dest, s, len);
-		dest += len;
+		memcpy(buf, s, len);
+		buf += len;
+		buflen -= len;
+		maxlen -= len;
+		outlen += len;
 	}
 
+	assert(outlen <= inlen);
 	return (outlen);
 }
 
