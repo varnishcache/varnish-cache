@@ -50,35 +50,36 @@ data structures that do all the hard work.
 
 The std VMODs vmod.vcc file looks somewhat like this::
 
-	$Module std 3
 	$ABI strict
+	$Module std 3 "Varnish Standard Module"
 	$Event event_function
-	$Function STRING toupper(STRING_LIST)
-	$Function STRING tolower(STRING_LIST)
+	$Function STRING toupper(STRANDS s)
+	$Function STRING tolower(STRANDS s)
 	$Function VOID set_ip_tos(INT)
 
-The first line gives the name of the module and the manual section where
-the documentation will reside.
+The ``$ABI`` line is optional.  Possible values are ``strict``
+(default) and ``vrt``.  It allows to specify that a vmod is integrating
+with the blessed ``vrt`` interface provided by ``varnishd`` or go
+deeper in the stack.
 
-The ``$ABI`` line is optional (possible values ``strict`` (default)
-and ``vrt``) and allows to specify that a vmod is integrating with the
-blessed ``vrt`` interface provided by ``varnishd`` or go deeper in the
-stack. As a general rule of thumb you are considered "on your own" if
-your VMOD uses more than the VRT (Varnish RunTime), in which case it
-needs to be built for the exact Varnish version.
+As a rule of thumb you, if the VMOD uses more than the VRT (Varnish
+RunTime), in which case it needs to be built for the exact Varnish
+version, use ``strict``.  If it complies to the VRT and only needs
+to be rebuilt when breaking changes are introduced to the VRT API,
+use ``vrt``.
 
-``$ABI vrt`` means that a module complies to the VRT and only needs to
-be rebuilt when breaking changes are introduced to the VRT API.
+The ``$Module`` line gives the name of the module, the manual section
+where the documentation will reside, and the description.
 
-The third line specifies an optional "Event" function, which will be
-called whenever a VCL program which imports this VMOD is loaded or
-transitions to any of the warm, active, cold or discarded states.
-More on this below.
+The ``$Event`` line specifies an optional "Event" function, which
+will be called whenever a VCL program which imports this VMOD is
+loaded or transitions to any of the warm, active, cold or discarded
+states.  More on this below.
 
-The next three lines define three functions in the VMOD, along with the
-types of the arguments, and that is probably where the hardest bit of
-writing a VMOD is to be found, so we will talk about that at length in
-a moment.
+The ``$Function`` lines define three functions in the VMOD, along
+with the types of the arguments, and that is probably where the
+hardest bit of writing a VMOD is to be found, so we will talk about
+that at length in a moment.
 
 Notice that the third function returns VOID, that makes it a "procedure"
 in VCL lingo, meaning that it cannot be used in expressions, right side
@@ -102,10 +103,8 @@ the functions you want to export to VCL.
 
 For the std VMOD, the compiled vcc_if.h file looks like this::
 
-	struct vmod_priv;
-
-	VCL_STRING vmod_toupper(VRT_CTX, const char *, ...);
-	VCL_STRING vmod_tolower(VRT_CTX, const char *, ...);
+	VCL_STRING vmod_toupper(VRT_CTX, VCL_STRANDS);
+	VCL_STRING vmod_tolower(VRT_CTX, VCL_STRANDS);
 	VCL_VOID vmod_set_ip_tos(VRT_CTX, VCL_INT);
 
 	vmod_event_f event_function;
