@@ -1,5 +1,9 @@
 varnishtest "Detect probe interval inversion"
 
+# For lack of a better mechanism this test passes by not timing out.
+# This is not enough to guarantee that there wasn't a bug in probe
+# scheduling but it's enough to avoid running into #2976 again.
+
 server s1 -repeat 5 { # probe requests
 	rxreq
 	txresp
