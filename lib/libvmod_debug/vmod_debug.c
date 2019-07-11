@@ -603,11 +603,7 @@ xyzzy_concat__fini(struct xyzzy_debug_concat **concatp)
 	struct xyzzy_debug_concat *concat;
 	void *p;
 
-	if (concatp == NULL || *concatp == NULL)
-		return;
-	CHECK_OBJ(*concatp, CONCAT_MAGIC);
-	concat = *concatp;
-	*concatp = NULL;
+	TAKE_OBJ_NOTNULL(concat, concatp, CONCAT_MAGIC);
 	p = TRUST_ME(concat->s);
 	free(p);
 	FREE_OBJ(concat);
