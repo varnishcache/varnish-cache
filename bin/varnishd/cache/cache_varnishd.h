@@ -346,7 +346,7 @@ int Pool_Task_Any(struct pool_task *task, enum task_prio prio);
 /* cache_req.c */
 struct req *Req_New(const struct worker *, struct sess *);
 void Req_Release(struct req *);
-void Req_Rollback(struct req *req);
+void Req_Rollback(struct req *req, int delay);
 void Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req);
 void Req_Fail(struct req *req, enum sess_close reason);
 

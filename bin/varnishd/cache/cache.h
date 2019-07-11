@@ -497,6 +497,7 @@ struct req {
 	struct vcl		*vcl;
 
 	uintptr_t		ws_req;		/* WS above request data */
+	uintptr_t		ws_req_rst;
 
 	/* Timestamps */
 	vtim_real		t_first;	/* First timestamp logged */

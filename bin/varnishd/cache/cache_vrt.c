@@ -659,7 +659,7 @@ VRT_Rollback(VRT_CTX, VCL_HTTP hp)
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	if (hp == ctx->http_req) {
 		CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-		Req_Rollback(ctx->req);
+		Req_Rollback(ctx->req, 1);
 	} else if (hp == ctx->http_bereq) {
 		CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
 		// -> VBO_Rollback ?

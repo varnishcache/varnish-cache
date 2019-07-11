@@ -96,6 +96,7 @@ cnt_transport(struct worker *wrk, struct req *req)
 
 	req->ws_req = WS_Snapshot(req->ws);
 	HTTP_Clone(req->http0, req->http);	// For ESI & restart
+	AZ(req->ws_req_rst);
 	req->req_step = R_STP_RECV;
 	return (REQ_FSM_MORE);
 }
@@ -205,7 +206,7 @@ cnt_vclfail(const struct worker *wrk, struct req *req)
 	AZ(req->objcore);
 	AZ(req->stale_oc);
 
-	Req_Rollback(req);
+	Req_Rollback(req, 0);
 
 	req->err_code = 503;
 	req->err_reason = "VCL failed";
@@ -751,11 +752,15 @@ cnt_restart(struct worker *wrk, struct req *req)
 		req->req_step = R_STP_SYNTH;
 	} else {
 		// XXX: ReqEnd + ReqAcct ?
+		if (req->ws_req_rst == WS_Snapshot(req->ws))
+			WS_Reset(req->ws, req->ws_req);
+
 		VSLb_ts_req(req, "Restart", W_TIM_real(wrk));
 		VSL_ChgId(req->vsl, "req", "restart",
 		    VXID_Get(wrk, VSL_CLIENTMARKER));
 		VSLb_ts_req(req, "Start", req->t_prev);
 		req->err_code = 0;
+		req->ws_req_rst = 0;
 		req->req_step = R_STP_RECV;
 	}
 	return (REQ_FSM_MORE);
@@ -851,7 +856,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 
 	VCL_recv_method(req->vcl, wrk, req, NULL, NULL);
 	if (wrk->handling == VCL_RET_VCL && req->restarts == 0) {
-		Req_Rollback(req);
+		Req_Rollback(req, 0);
 		cnt_recv_prep(req, ci);
 		VCL_recv_method(req->vcl, wrk, req, NULL, NULL);
 	}

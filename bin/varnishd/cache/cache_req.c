@@ -185,14 +185,17 @@ Req_Release(struct req *req)
  */
 
 void
-Req_Rollback(struct req *req)
+Req_Rollback(struct req *req, int delay)
 {
 	VCL_TaskLeave(req->vcl, req->privs);
 	VCL_TaskEnter(req->vcl, req->privs);
 	HTTP_Clone(req->http, req->http0);
 	if (WS_Overflowed(req->ws))
 		req->wrk->stats->ws_client_overflow++;
-	WS_Reset(req->ws, req->ws_req);
+	if (delay)
+		req->ws_req_rst = WS_Snapshot(req->ws);
+	else
+		WS_Reset(req->ws, req->ws_req);
 }
 
 /*----------------------------------------------------------------------
