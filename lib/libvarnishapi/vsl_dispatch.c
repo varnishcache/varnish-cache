@@ -274,6 +274,7 @@ vslc_vtx_next(const struct VSL_cursor *cursor)
 {
 	struct vslc_vtx *c;
 	const uint32_t *ptr;
+	unsigned overrun;
 
 	CAST_OBJ_NOTNULL(c, cursor->priv_data, VSLC_VTX_MAGIC);
 	assert(&c->cursor == cursor);
@@ -287,7 +288,8 @@ vslc_vtx_next(const struct VSL_cursor *cursor)
 			c->cursor.rec.ptr = c->synth->data;
 			c->synth = VTAILQ_NEXT(c->synth, list);
 		} else {
-			assert(c->offset <= c->vtx->len);
+			overrun = c->offset > c->vtx->len;
+			AZ(overrun);
 			if (c->offset == c->vtx->len)
 				return (vsl_end);
 
