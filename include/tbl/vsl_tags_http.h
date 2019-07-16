@@ -43,6 +43,11 @@
  *
  */
 
+#define HEADER_NOTICE \
+    "NOTE: HTTP header fields are free form records and not strictly\n" \
+    "made of 2 fields. Accessing a specific header with the prefix\n" \
+    "notation helps treating the header value as a single string.\n\n"
+
 /*lint -save -e525 -e539 -e835 */
 
 SLTH(Method,	HTTP_HDR_METHOD,	1, 0, "method",
@@ -73,6 +78,7 @@ SLTH(Header,	HTTP_HDR_FIRST,		1, 1, "header",
 	"\t|   +- Header value\n"
 	"\t+----- Header name\n"
 	"\n"
+	HEADER_NOTICE
 )
 
 SLTH(Unset,	HTTP_HDR_UNSET,		0, 0, "unset header",
@@ -83,12 +89,14 @@ SLTH(Unset,	HTTP_HDR_UNSET,		0, 0, "unset header",
 	"\t|   +- Header value\n"
 	"\t+----- Header name\n"
 	"\n"
+	HEADER_NOTICE
 )
 
 SLTH(Lost,	HTTP_HDR_LOST,		0, 0, "lost header",
 	""
 )
 
+#undef HEADER_NOTICE
 #undef SLTH
 
 /*lint -restore */
