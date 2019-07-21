@@ -533,7 +533,7 @@ pan_req(struct vsb *vsb, const struct req *req)
 	if (VALID_OBJ(req->htc, HTTP_CONN_MAGIC))
 		pan_htc(vsb, req->htc);
 	pan_http(vsb, "req", req->http);
-	if (req->resp->ws != NULL)
+	if (req->resp != NULL && req->resp->ws != NULL)
 		pan_http(vsb, "resp", req->resp);
 	if (req->vdc != NULL)
 		pan_vdp(vsb, req->vdc);
