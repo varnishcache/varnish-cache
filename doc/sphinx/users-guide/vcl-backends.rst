@@ -131,7 +131,7 @@ call certain actions in `vcl_init`.::
         .host = "192.168.0.10";
     }
     backend server2 {
-        .host = "192.168.0.10";
+        .host = "192.168.0.11";
     }
 
     sub vcl_init {
