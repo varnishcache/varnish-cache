@@ -30,7 +30,8 @@ SIGNALS
 
 * SIGHUP
 
-  Rotate the log file (see -w option)
+  Rotate the log file (see -w option) in daemon mode,
+  abort the loop and die gracefully when running in the foreground.
 
 * SIGUSR1
 
