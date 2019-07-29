@@ -376,6 +376,7 @@ server_break(struct server *s)
 	vtc_log(s->vl, 2, "Breaking for server");
 	(void)pthread_cancel(s->tp);
 	AZ(pthread_join(s->tp, &res));
+	VTCP_close(&s->sock);
 	s->tp = 0;
 	s->run = 0;
 }
