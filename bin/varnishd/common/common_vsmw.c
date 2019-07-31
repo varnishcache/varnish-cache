@@ -132,7 +132,7 @@ vsmw_fmt_index(const struct vsmw *vsmw, const struct vsmwseg *seg)
 
 	CHECK_OBJ_NOTNULL(vsmw, VSMW_MAGIC);
 	CHECK_OBJ_NOTNULL(seg, VSMWSEG_MAGIC);
-	VSB_printf(vsmw->vsb, "%s %zu %zu %s %s\n",
+	VSB_printf(vsmw->vsb, "+ %s %zu %zu %s %s\n",
 	    seg->cluster->fn,
 	    seg->off,
 	    seg->len,
