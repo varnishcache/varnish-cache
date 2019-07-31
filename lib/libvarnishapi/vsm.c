@@ -459,7 +459,7 @@ vsm_vlu_plus(struct vsm *vd, struct vsm_set *vs, const char *line)
 	int ac;
 	struct vsm_seg *vg2;
 
-	av = VAV_Parse(line, &ac, 0);
+	av = VAV_Parse(line + 1, &ac, 0);
 
 	if (av[0] != NULL || ac < 4 || ac > 6) {
 		(void)(vsm_diag(vd,
@@ -508,14 +508,19 @@ vsm_vlu_func(void *priv, const char *line)
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	AN(line);
 
-	if (line[0] == '#') {
+	switch (line[0]) {
+	case '#':
 		i = vsm_vlu_hash(vd, vs, line);
 		VTAILQ_FOREACH(vs->vg, &vs->segs, list)
 			vs->vg->flags &= ~VSM_FLAG_MARKSCAN;
 		if (!(vs->retval & VSM_MGT_RESTARTED))
 			vs->vg = VTAILQ_FIRST(&vs->segs);
-	} else {
+		break;
+	case '+':
 		i = vsm_vlu_plus(vd, vs, line);
+		break;
+	default:
+		break;
 	}
 	return (i);
 }
