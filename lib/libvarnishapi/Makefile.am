@@ -25,6 +25,7 @@ libvarnishapi_la_SOURCES = \
 	../libvarnish/vfl.c \
 	../libvarnish/vin.c \
 	../libvarnish/vjsn.c \
+	../libvarnish/vlu.c \
 	../libvarnish/vmb.c \
 	../libvarnish/vpf.c \
 	../libvarnish/vre.c \

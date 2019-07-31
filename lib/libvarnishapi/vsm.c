@@ -50,6 +50,7 @@
 
 #include "vav.h"
 #include "vin.h"
+#include "vlu.h"
 #include "vsb.h"
 #include "vsm_priv.h"
 #include "vqueue.h"
@@ -96,6 +97,7 @@ struct vsm_set {
 	unsigned		magic;
 #define VSM_SET_MAGIC		0xdee401b8
 	const char		*dname;
+	struct vsm		*vsm;
 	VTAILQ_HEAD(,vsm_seg)	segs;
 	VTAILQ_HEAD(,vsm_seg)	stale;
 	VTAILQ_HEAD(,vsm_seg)	clusters;
@@ -107,6 +109,10 @@ struct vsm_set {
 	struct stat		fst;
 
 	uintmax_t		id1, id2;
+
+	// _.index reading state
+	unsigned		retval;
+	struct vsm_seg		*vg;
 };
 
 struct vsm {
@@ -291,6 +297,8 @@ VSM_New(void)
 
 	vd->mgt = vsm_newset(VSM_MGT_DIRNAME);
 	vd->child = vsm_newset(VSM_CHILD_DIRNAME);
+	vd->mgt->vsm = vd;
+	vd->child->vsm = vd;
 	vd->dfd = -1;
 	vd->patience = 5;
 	if (getenv("VSM_NOPID") != NULL)
@@ -418,21 +426,110 @@ vsm_findcluster(const struct vsm_seg *vga)
 	return (NULL);
 }
 
-static unsigned
-vsm_refresh_set2(struct vsm *vd, struct vsm_set *vs, struct vsb *vsb)
+static int
+vsm_vlu_hash(struct vsm *vd, struct vsm_set *vs, const char *line)
 {
-	unsigned retval = 0;
-	struct stat st;
-	char buf[BUFSIZ];
-	ssize_t sz;
-	int i, ac;
-	char *p, *e;
+	int i;
 	uintmax_t id1, id2;
+
+	i = sscanf(line, "# %ju %ju", &id1, &id2);
+	if (i != 2) {
+		vs->retval |= VSM_MGT_RESTARTED | VSM_MGT_CHANGED;
+		return (0);
+	}
+	if (vd->couldkill >= 0 && !kill(id1, 0)) {
+		vd->couldkill = 1;
+	} else if (vd->couldkill > 0 && errno == ESRCH) {
+		vs->retval |= VSM_MGT_RESTARTED | VSM_MGT_CHANGED;
+		return (0);
+	}
+	vs->retval |= VSM_MGT_RUNNING;
+	if (id1 != vs->id1 || id2 != vs->id2) {
+		vs->retval |= VSM_MGT_RESTARTED | VSM_MGT_CHANGED;
+		vs->id1 = id1;
+		vs->id2 = id2;
+	}
+	return (0);
+}
+
+static int
+vsm_vlu_plus(struct vsm *vd, struct vsm_set *vs, const char *line)
+{
 	char **av;
-	struct vsm_seg *vg, *vg2;
+	int ac;
+	struct vsm_seg *vg2;
+
+	av = VAV_Parse(line, &ac, 0);
+
+	if (av[0] != NULL || ac < 4 || ac > 6) {
+		(void)(vsm_diag(vd,
+		    "vsm_refresh_set2: bad index (%d/%s)",
+		    ac, av[0]));
+		VAV_Free(av);
+		return(-1);
+	}
+
+	if (vs->vg == NULL) {
+		ALLOC_OBJ(vg2, VSM_SEG_MAGIC);
+		AN(vg2);
+		vg2->av = av;
+		vg2->set = vs;
+		vg2->flags = VSM_FLAG_MARKSCAN;
+		vg2->serial = ++vd->serial;
+		if (ac == 4) {
+			vg2->flags |= VSM_FLAG_CLUSTER;
+			VTAILQ_INSERT_TAIL(&vs->clusters, vg2, list);
+		} else {
+			VTAILQ_INSERT_TAIL(&vs->segs, vg2, list);
+			vg2->cluster = vsm_findcluster(vg2);
+		}
+	} else {
+		while (vs->vg != NULL && vsm_cmp_av(&vs->vg->av[1], &av[1]))
+			vs->vg = VTAILQ_NEXT(vs->vg, list);
+		VAV_Free(av);
+		if (vs->vg != NULL) {
+			/* entry compared equal, so it survives */
+			vs->vg->flags |= VSM_FLAG_MARKSCAN;
+			vs->vg = VTAILQ_NEXT(vs->vg, list);
+		}
+	}
+	return (0);
+}
+
+static int v_matchproto_(vlu_f)
+vsm_vlu_func(void *priv, const char *line)
+{
+	struct vsm *vd;
+	struct vsm_set *vs;
+	int i = -1;
+
+	CAST_OBJ_NOTNULL(vs, priv, VSM_SET_MAGIC);
+	vd = vs->vsm;
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	AN(line);
+
+	if (line[0] == '#') {
+		i = vsm_vlu_hash(vd, vs, line);
+		VTAILQ_FOREACH(vs->vg, &vs->segs, list)
+			vs->vg->flags &= ~VSM_FLAG_MARKSCAN;
+		if (!(vs->retval & VSM_MGT_RESTARTED))
+			vs->vg = VTAILQ_FIRST(&vs->segs);
+	} else {
+		i = vsm_vlu_plus(vd, vs, line);
+	}
+	return (i);
+}
+
+static unsigned
+vsm_refresh_set2(struct vsm *vd, struct vsm_set *vs)
+{
+	struct stat st;
+	int i;
+	struct vlu *vlu;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	CHECK_OBJ_NOTNULL(vs, VSM_SET_MAGIC);
+	vs->retval = 0;
 	if (vs->dfd >= 0) {
 		if (fstatat(vd->dfd, vs->dname, &st, AT_SYMLINK_NOFOLLOW)) {
 			closefd(&vs->dfd);
@@ -451,10 +548,10 @@ vsm_refresh_set2(struct vsm *vd, struct vsm_set *vs, struct vsb *vsb)
 		if (vs->fd >= 0)
 			closefd(&vs->fd);
 		vs->dfd = openat(vd->dfd, vs->dname, O_RDONLY);
-		retval |= VSM_MGT_RESTARTED;
+		vs->retval |= VSM_MGT_RESTARTED;
 		if (vs->dfd < 0) {
 			vs->id1 = vs->id2 = 0;
-			return (retval|VSM_NUKE_ALL);
+			return (vs->retval|VSM_NUKE_ALL);
 		}
 		AZ(fstat(vs->dfd, &vs->dst));
 	}
@@ -472,123 +569,36 @@ vsm_refresh_set2(struct vsm *vd, struct vsm_set *vs, struct vsb *vsb)
 
 	if (vs->fd >= 0) {
 		if (vd->couldkill < 1 || !kill(vs->id1, 0))
-			retval |= VSM_MGT_RUNNING;
-		return (retval);
+			vs->retval |= VSM_MGT_RUNNING;
+		return (vs->retval);
 	}
 
-	retval |= VSM_MGT_CHANGED;
+	vs->retval |= VSM_MGT_CHANGED;
 	vs->fd = openat(vs->dfd, "_.index", O_RDONLY);
 	if (vs->fd < 0)
-		return (retval|VSM_MGT_RESTARTED);
+		return (vs->retval|VSM_MGT_RESTARTED);
 
 	AZ(fstat(vs->fd, &vs->fst));
 
-	VSB_clear(vsb);
+	vlu = VLU_New(vsm_vlu_func, vs, 0);
+	AN(vlu);
+
+	vs->vg = NULL;
 	do {
-		sz = read(vs->fd, buf, sizeof buf);
-		if (sz > 0)
-			VSB_bcat(vsb, buf, sz);
-	} while (sz > 0);
-	AZ(VSB_finish(vsb));
-
-	vs->fst.st_size = VSB_len(vsb);
-
-	if (VSB_len(vsb) == 0)
-		return (retval|VSM_NUKE_ALL);
-
-	/*
-	 * First line is ident comment
-	 */
-	i = sscanf(VSB_data(vsb), "# %ju %ju\n%n", &id1, &id2, &ac);
-	if (i != 2) {
-		retval |= VSM_MGT_RESTARTED | VSM_MGT_CHANGED;
-		return (retval);
-	}
-	if (vd->couldkill >= 0 && !kill(id1, 0)) {
-		vd->couldkill = 1;
-	} else if (vd->couldkill > 0 && errno == ESRCH) {
-		retval |= VSM_MGT_RESTARTED | VSM_MGT_CHANGED;
-		return (retval);
-	}
-	retval |= VSM_MGT_RUNNING;
-	if (id1 != vs->id1 || id2 != vs->id2) {
-		retval |= VSM_MGT_RESTARTED | VSM_MGT_CHANGED;
-		vs->id1 = id1;
-		vs->id2 = id2;
-	}
-	p = VSB_data(vsb) + ac;
-
-	VTAILQ_FOREACH(vg, &vs->segs, list)
-		vg->flags &= ~VSM_FLAG_MARKSCAN;
-
-	/*
-	 * Efficient comparison by walking the two lists side-by-side because
-	 * segment inserts always happen at the tail (VSMW_Allocv()). So, as
-	 * soon as vg is exhausted, we only insert.
-	 *
-	 * For restarts, we require a tabula rasa
-	 */
-
-	if (retval & VSM_MGT_RESTARTED)
-		vg = NULL;
-	else
-		vg = VTAILQ_FIRST(&vs->segs);
-
-	while (p != NULL && *p != '\0') {
-		e = strchr(p, '\n');
-		if (e == NULL)
-			break;
-		*e = '\0';
-		av = VAV_Parse(p, &ac, 0);
-		p = e + 1;
-
-		if (av[0] != NULL || ac < 4 || ac > 6) {
-			(void)(vsm_diag(vd,
-			    "vsm_refresh_set2: bad index (%d/%s)",
-			    ac, av[0]));
-			VAV_Free(av);
-			break;
-		}
-
-		if (vg == NULL) {
-			ALLOC_OBJ(vg2, VSM_SEG_MAGIC);
-			AN(vg2);
-			vg2->av = av;
-			vg2->set = vs;
-			vg2->flags = VSM_FLAG_MARKSCAN;
-			vg2->serial = ++vd->serial;
-			if (ac == 4) {
-				vg2->flags |= VSM_FLAG_CLUSTER;
-				VTAILQ_INSERT_TAIL(&vs->clusters, vg2, list);
-			} else {
-				VTAILQ_INSERT_TAIL(&vs->segs, vg2, list);
-				vg2->cluster = vsm_findcluster(vg2);
-			}
-			continue;
-		}
-
-		while (vg != NULL && vsm_cmp_av(&vg->av[1], &av[1]))
-			vg = VTAILQ_NEXT(vg, list);
-
-		VAV_Free(av);
-
-		if (vg == NULL)
-			continue;
-
-		/* entry compared equal, so it survives */
-		vg->flags |= VSM_FLAG_MARKSCAN;
-		vg = VTAILQ_NEXT(vg, list);
-	}
-	return (retval);
+		i = VLU_Fd(vlu, vs->fd);
+	} while (!i);
+	assert(i == -2);
+	VLU_Destroy(&vlu);
+	return (vs->retval);
 }
 
 static unsigned
-vsm_refresh_set(struct vsm *vd, struct vsm_set *vs, struct vsb *vsb)
+vsm_refresh_set(struct vsm *vd, struct vsm_set *vs)
 {
 	unsigned retval;
 	struct vsm_seg *vg, *vg2;
 
-	retval = vsm_refresh_set2(vd, vs, vsb);
+	retval = vsm_refresh_set2(vd, vs);
 	if (retval & VSM_NUKE_ALL)
 		retval |= VSM_MGT_CHANGED;
 	VTAILQ_FOREACH_SAFE(vg, &vs->segs, list, vg2) {
@@ -614,7 +624,6 @@ VSM_Status(struct vsm *vd)
 {
 	unsigned retval = 0, u;
 	struct stat st;
-	struct vsb *vsb;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 
@@ -641,14 +650,10 @@ VSM_Status(struct vsm *vd)
 			AZ(fstat(vd->dfd, &vd->dst));
 	}
 
-	vsb = VSB_new_auto();
-	AN(vsb);
-
-	u = vsm_refresh_set(vd, vd->mgt, vsb);
+	u = vsm_refresh_set(vd, vd->mgt);
 	retval |= u;
 	if (u & VSM_MGT_RUNNING)
-		retval |= vsm_refresh_set(vd, vd->child, vsb) << 8;
-	VSB_destroy(&vsb);
+		retval |= vsm_refresh_set(vd, vd->child) << 8;
 	return (retval);
 }
 
