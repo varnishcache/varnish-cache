@@ -112,6 +112,8 @@ struct vsmw {
 	struct vsb			*vsb;
 	pid_t				pid;
 	time_t				birth;
+	uint64_t			nsegs;
+	uint64_t			nsubs;
 };
 
 /*--------------------------------------------------------------------*/
@@ -127,12 +129,14 @@ vsmw_idx_head(const struct vsmw *vsmw, int fd)
 }
 
 static void
-vsmw_fmt_index(const struct vsmw *vsmw, const struct vsmwseg *seg)
+vsmw_fmt_index(const struct vsmw *vsmw, const struct vsmwseg *seg, char act)
 {
 
 	CHECK_OBJ_NOTNULL(vsmw, VSMW_MAGIC);
 	CHECK_OBJ_NOTNULL(seg, VSMWSEG_MAGIC);
-	VSB_printf(vsmw->vsb, "+ %s %zu %zu %s %s\n",
+	AN(seg->cluster);
+	VSB_printf(vsmw->vsb, "%c %s %zu %zu %s %s\n",
+	    act,
 	    seg->cluster->fn,
 	    seg->off,
 	    seg->len,
@@ -166,18 +170,31 @@ vsmw_mkent(const struct vsmw *vsmw, const char *pfx)
 /*--------------------------------------------------------------------*/
 
 static void
-vsmw_addseg(struct vsmw *vsmw, struct vsmwseg *seg)
+vsmw_append_record(struct vsmw *vsmw, struct vsmwseg *seg, char act)
 {
 	int fd;
 
-	VTAILQ_INSERT_TAIL(&vsmw->segs, seg, list);
+	CHECK_OBJ_NOTNULL(vsmw, VSMW_MAGIC);
+	CHECK_OBJ_NOTNULL(seg, VSMWSEG_MAGIC);
 	fd = openat(vsmw->vdirfd, vsmw->idx, O_APPEND | O_WRONLY);
 	assert(fd >= 0);
 	VSB_clear(vsmw->vsb);
-	vsmw_fmt_index(vsmw, seg);
+	vsmw_fmt_index(vsmw, seg, act);
 	AZ(VSB_finish(vsmw->vsb));
 	XXXAZ(VSB_tofile(fd, vsmw->vsb)); // XXX handle ENOSPC? #2764
 	closefd(&fd);
+	vsmw->nsegs++;
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+vsmw_addseg(struct vsmw *vsmw, struct vsmwseg *seg)
+{
+
+	VTAILQ_INSERT_TAIL(&vsmw->segs, seg, list);
+	vsmw_append_record(vsmw, seg, '+');
+	vsmw->nsegs++;
 }
 
 /*--------------------------------------------------------------------*/
@@ -187,16 +204,19 @@ vsmw_delseg(struct vsmw *vsmw, struct vsmwseg *seg, int fixidx)
 {
 	char *t = NULL;
 	int fd;
+	struct vsmwseg *s2;
 
 	CHECK_OBJ_NOTNULL(vsmw, VSMW_MAGIC);
 	CHECK_OBJ_NOTNULL(seg, VSMWSEG_MAGIC);
 
 	VTAILQ_REMOVE(&vsmw->segs, seg, list);
-	REPLACE(seg->class, NULL);
-	REPLACE(seg->id, NULL);
-	FREE_OBJ(seg);
 
-	if (fixidx) {
+	vsmw->nsegs--;
+	if (vsmw->nsubs < vsmw->nsegs || !fixidx) {
+		vsmw_append_record(vsmw, seg, '-');
+		vsmw->nsubs++;
+	} else {
+		vsmw->nsubs = 0;
 		vsmw_mkent(vsmw, vsmw->idx);
 		REPLACE(t, VSB_data(vsmw->vsb));
 		AN(t);
@@ -205,14 +225,17 @@ vsmw_delseg(struct vsmw *vsmw, struct vsmwseg *seg, int fixidx)
 		assert(fd >= 0);
 		vsmw_idx_head(vsmw, fd);
 		VSB_clear(vsmw->vsb);
-		VTAILQ_FOREACH(seg, &vsmw->segs, list)
-			vsmw_fmt_index(vsmw, seg);
+		VTAILQ_FOREACH(s2, &vsmw->segs, list)
+			vsmw_fmt_index(vsmw, s2, '+');
 		AZ(VSB_finish(vsmw->vsb));
 		XXXAZ(VSB_tofile(fd, vsmw->vsb)); // XXX handle ENOSPC? #2764
 		closefd(&fd);
 		AZ(renameat(vsmw->vdirfd, t, vsmw->vdirfd, vsmw->idx));
 		REPLACE(t, NULL);
 	}
+	REPLACE(seg->class, NULL);
+	REPLACE(seg->id, NULL);
+	FREE_OBJ(seg);
 }
 
 /*--------------------------------------------------------------------*/
