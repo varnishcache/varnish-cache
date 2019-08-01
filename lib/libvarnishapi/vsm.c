@@ -463,7 +463,7 @@ vsm_vlu_plus(struct vsm *vd, struct vsm_set *vs, const char *line)
 
 	if (av[0] != NULL || ac < 4 || ac > 6) {
 		(void)(vsm_diag(vd,
-		    "vsm_refresh_set2: bad index (%d/%s)",
+		    "vsm_vlu_plus: bad index (%d/%s)",
 		    ac, av[0]));
 		VAV_Free(av);
 		return(-1);
@@ -496,6 +496,39 @@ vsm_vlu_plus(struct vsm *vd, struct vsm_set *vs, const char *line)
 	return (0);
 }
 
+static int
+vsm_vlu_minus(struct vsm *vd, struct vsm_set *vs, const char *line)
+{
+	char **av;
+	int ac;
+	struct vsm_seg *vg, *vg2;
+
+	av = VAV_Parse(line + 1, &ac, 0);
+
+	if (av[0] != NULL || ac < 4 || ac > 6) {
+		(void)(vsm_diag(vd,
+		    "vsm_vlu_minus: bad index (%d/%s)",
+		    ac, av[0]));
+		VAV_Free(av);
+		return(-1);
+	}
+
+	VTAILQ_FOREACH_SAFE(vg, &vs->segs, list, vg2) {
+		if (vsm_cmp_av(&vg->av[1], &av[1]))
+			continue;
+		VTAILQ_REMOVE(&vs->segs, vg, list);
+		if (vg->refs) {
+			vg->flags |= VSM_FLAG_STALE;
+			VTAILQ_INSERT_TAIL(&vs->stale, vg, list);
+		} else {
+			VAV_Free(vg->av);
+			FREE_OBJ(vg);
+		}
+		break;
+	}
+	return (0);
+}
+
 static int v_matchproto_(vlu_f)
 vsm_vlu_func(void *priv, const char *line)
 {
@@ -518,6 +551,9 @@ vsm_vlu_func(void *priv, const char *line)
 		break;
 	case '+':
 		i = vsm_vlu_plus(vd, vs, line);
+		break;
+	case '-':
+		i = vsm_vlu_minus(vd, vs, line);
 		break;
 	default:
 		break;
