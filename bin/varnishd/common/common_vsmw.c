@@ -285,7 +285,6 @@ VSMW_DestroyCluster(struct vsmw *vsmw, struct vsmw_cluster **vsmcp)
 {
 	struct vsmw_cluster *vc;
 
-	vsmw_lock();
 	CHECK_OBJ_NOTNULL(vsmw, VSMW_MAGIC);
 	AN(vsmcp);
 	vc = *vsmcp;
@@ -301,10 +300,8 @@ VSMW_DestroyCluster(struct vsmw *vsmw, struct vsmw_cluster **vsmcp)
 		 */
 		vsmw_delseg(vsmw, vc->cseg, 1);
 		vc->cseg = NULL;
-		if (vc->refs > 0) {
-			vsmw_unlock();
+		if (vc->refs > 0)
 			return;
-		}
 	}
 	AZ(munmap(vc->ptr, vc->len));
 
@@ -314,7 +311,6 @@ VSMW_DestroyCluster(struct vsmw *vsmw, struct vsmw_cluster **vsmcp)
 		assert (errno == ENOENT);
 	REPLACE(vc->fn, NULL);
 	FREE_OBJ(vc);
-	vsmw_unlock();
 }
 
 /*--------------------------------------------------------------------*/
@@ -376,26 +372,24 @@ void
 VSMW_Free(struct vsmw *vsmw, void **pp)
 {
 	struct vsmwseg *seg;
-	void *p;
+	struct vsmw_cluster *cp;
 
 	vsmw_lock();
 	CHECK_OBJ_NOTNULL(vsmw, VSMW_MAGIC);
 	AN(pp);
-	p = *pp;
-	AN(p);
-	*pp = NULL;
 	VTAILQ_FOREACH(seg, &vsmw->segs, list)
-		if (seg->ptr == p)
+		if (seg->ptr == *pp)
 			break;
 	AN(seg);
+	*pp = NULL;
 
-	if (!--seg->cluster->refs && seg->cluster->cseg == NULL) {
-		vsmw_unlock();
-		VSMW_DestroyCluster(vsmw, &seg->cluster);
-		vsmw_lock();
-	}
+	cp = seg->cluster;
 
 	vsmw_delseg(vsmw, seg, 1);
+
+	if (!--cp->refs && cp->cseg == NULL)
+		VSMW_DestroyCluster(vsmw, &cp);
+
 	vsmw_unlock();
 }
 
