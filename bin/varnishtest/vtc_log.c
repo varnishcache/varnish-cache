@@ -227,7 +227,8 @@ vtc_dump(struct vtclog *vl, int lvl, const char *pfx, const char *str, int len)
 		if (len < 0)
 			len = strlen(str);
 		VSB_quote_pfx(vl->vsb, buf, str,
-		    len > MAX_DUMP ? MAX_DUMP : len, VSB_QUOTE_UNSAFE);
+		    len > MAX_DUMP ? MAX_DUMP : len,
+		    VSB_QUOTE_UNSAFE | VSB_QUOTE_ESCHEX);
 		if (len > MAX_DUMP)
 			VSB_printf(vl->vsb, "%s [...] (%d)\n",
 			    buf, len - MAX_DUMP);
