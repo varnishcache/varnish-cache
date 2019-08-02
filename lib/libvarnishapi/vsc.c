@@ -62,7 +62,6 @@ VTAILQ_HEAD(vsc_sf_head, vsc_sf);
 struct vsc_pt {
 	struct VSC_point	point;
 	char			*name;
-	int			exposed;
 };
 
 struct vsc_seg {
@@ -77,6 +76,7 @@ struct vsc_seg {
 
 	unsigned		npoints;
 	struct vsc_pt		*points;
+	int			exposed;
 };
 
 struct vsc {
@@ -368,26 +368,31 @@ vsc_add_seg(const struct vsc *vsc, struct vsm *vsm, const struct vsm_fantom *fp)
  */
 
 static void
-vsc_expose(const struct vsc *vsc, const struct vsc_seg *sp, int del)
+vsc_expose(const struct vsc *vsc, struct vsc_seg *sp, int del)
 {
 	struct vsc_pt *pp;
 	unsigned u;
+	int expose;
+
+	if (vsc->fnew != NULL && !sp->exposed &&
+	    !del && sp->head->ready == 1)
+		expose = 1;
+	else if (vsc->fdestroy != NULL && sp->exposed &&
+	    (del || sp->head->ready == 2))
+		expose = 0;
+	else
+		return;
 
 	pp = sp->points;
 	for (u = 0; u < sp->npoints; u++, pp++) {
 		if (pp->name == NULL)
 			continue;
-		if (vsc->fdestroy != NULL && pp->exposed &&
-		    (del || sp->head->ready == 2)) {
-			vsc->fdestroy(vsc->priv, &pp->point);
-			pp->exposed = 0;
-		}
-		if (vsc->fnew != NULL && !pp->exposed &&
-		    !del && sp->head->ready == 1) {
+		if (expose)
 			pp->point.priv = vsc->fnew(vsc->priv, &pp->point);
-			pp->exposed = 1;
-		}
+		else
+			vsc->fdestroy(vsc->priv, &pp->point);
 	}
+	sp->exposed = expose;
 }
 
 /*--------------------------------------------------------------------
