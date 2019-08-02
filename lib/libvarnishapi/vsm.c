@@ -526,6 +526,7 @@ vsm_vlu_minus(struct vsm *vd, struct vsm_set *vs, const char *line)
 		}
 		break;
 	}
+	VAV_Free(av);
 	return (0);
 }
 
