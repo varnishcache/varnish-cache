@@ -67,6 +67,8 @@
 #  define MAP_NOSYNC 0 /* XXX Linux */
 #endif
 
+#define VSM_SEGLINE_SIZE	4096
+
 const struct vsm_valid VSM_invalid[1] = {{"invalid"}};
 const struct vsm_valid VSM_valid[1] = {{"valid"}};
 
@@ -86,12 +88,26 @@ struct vsm_seg {
 	struct vsm_seg		*cluster;
 	char			**av;
 	int			refs;
+	unsigned		idx;
 	void			*s;
 	size_t			sz;
 	void			*b;
 	void			*e;
 	uintptr_t		serial;
 };
+VTAILQ_HEAD(vsm_seg_head, vsm_seg);
+
+struct vsm_segline {
+	unsigned		magic;
+#define VSM_SEGLINE_MAGIC	0xfa241b15
+	unsigned		start;
+	unsigned		max;
+	unsigned		used;
+	VTAILQ_ENTRY(vsm_segline)
+				list;
+	struct vsm_seg		*segs[];
+};
+VTAILQ_HEAD(vsm_segline_head, vsm_segline);
 
 struct vsm_set {
 	unsigned		magic;
@@ -121,6 +137,10 @@ struct vsm {
 
 	struct vsb		*diag;
 	uintptr_t		serial;
+
+	VTAILQ_HEAD(,vsm_segline)
+				lines;
+	VTAILQ_HEAD(,vsm_seg)	segs_free;
 
 	int			dfd;
 	struct stat		dst;
@@ -228,9 +248,46 @@ vsm_unmapseg(struct vsm_seg *vg)
 
 /*--------------------------------------------------------------------*/
 
-static void
-vsm_delseg(struct vsm_seg *vg)
+static struct vsm_seg *
+vsm_newseg(struct vsm *vd)
 {
+	struct vsm_segline *line, *newline;
+	struct vsm_seg *vg;
+
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	if (VTAILQ_EMPTY(&vd->segs_free)) {
+		line = VTAILQ_LAST(&vd->lines, vsm_segline_head);
+		CHECK_OBJ_ORNULL(line, VSM_SEGLINE_MAGIC);
+		if (line == NULL || line->used == line->max) {
+			assert(VSM_SEGLINE_SIZE > sizeof *newline);
+			newline = calloc(1, VSM_SEGLINE_SIZE);
+			AN(newline);
+			INIT_OBJ(newline, VSM_SEGLINE_MAGIC);
+			newline->max = (VSM_SEGLINE_SIZE - sizeof *newline) /
+			    sizeof *newline->segs;
+			assert(newline->max > 0);
+			if (line != NULL)
+				newline->start = line->start + line->max;
+			VTAILQ_INSERT_TAIL(&vd->lines, newline, list);
+			line = newline;
+		}
+		AZ(line->segs[line->used]);
+		ALLOC_OBJ(vg, VSM_SEG_MAGIC);
+		vg->idx = line->start + line->used;
+		line->segs[line->used++] = vg;
+	} else {
+		vg = VTAILQ_FIRST(&vd->segs_free);
+		CHECK_OBJ_NOTNULL(vg, VSM_SEG_MAGIC);
+		VTAILQ_REMOVE(&vd->segs_free, vg, list);
+	}
+	vg->serial = ++vd->serial;
+	return (vg);
+}
+
+static void
+vsm_delseg(struct vsm *vd, struct vsm_seg *vg)
+{
+	unsigned idx;
 
 	CHECK_OBJ_NOTNULL(vg, VSM_SEG_MAGIC);
 
@@ -243,8 +300,13 @@ vsm_delseg(struct vsm_seg *vg)
 		VTAILQ_REMOVE(&vg->set->clusters, vg, list);
 	else
 		VTAILQ_REMOVE(&vg->set->segs, vg, list);
+
+	idx = vg->idx;
 	VAV_Free(vg->av);
-	FREE_OBJ(vg);
+	INIT_OBJ(vg, VSM_SEG_MAGIC);
+	vg->idx = idx;
+
+	VTAILQ_INSERT_HEAD(&vd->segs_free, vg, list);
 }
 
 /*--------------------------------------------------------------------*/
@@ -265,7 +327,7 @@ vsm_newset(const char *dirname)
 }
 
 static void
-vsm_delset(struct vsm_set **p)
+vsm_delset(struct vsm *vd, struct vsm_set **p)
 {
 	struct vsm_set *vs;
 
@@ -277,11 +339,11 @@ vsm_delset(struct vsm_set **p)
 	if (vs->dfd >= 0)
 		closefd(&vs->dfd);
 	while (!VTAILQ_EMPTY(&vs->stale))
-		vsm_delseg(VTAILQ_FIRST(&vs->stale));
+		vsm_delseg(vd, VTAILQ_FIRST(&vs->stale));
 	while (!VTAILQ_EMPTY(&vs->segs))
-		vsm_delseg(VTAILQ_FIRST(&vs->segs));
+		vsm_delseg(vd, VTAILQ_FIRST(&vs->segs));
 	while (!VTAILQ_EMPTY(&vs->clusters))
-		vsm_delseg(VTAILQ_FIRST(&vs->clusters));
+		vsm_delseg(vd, VTAILQ_FIRST(&vs->clusters));
 	FREE_OBJ(vs);
 }
 
@@ -295,6 +357,8 @@ VSM_New(void)
 	ALLOC_OBJ(vd, VSM_MAGIC);
 	AN(vd);
 
+	VTAILQ_INIT(&vd->lines);
+	VTAILQ_INIT(&vd->segs_free);
 	vd->mgt = vsm_newset(VSM_MGT_DIRNAME);
 	vd->child = vsm_newset(VSM_CHILD_DIRNAME);
 	vd->mgt->vsm = vd;
@@ -349,6 +413,8 @@ void
 VSM_Destroy(struct vsm **vdp)
 {
 	struct vsm *vd;
+	struct vsm_seg *vg;
+	struct vsm_segline *line;
 
 	TAKE_OBJ_NOTNULL(vd, vdp, VSM_MAGIC);
 
@@ -358,8 +424,18 @@ VSM_Destroy(struct vsm **vdp)
 		VSB_destroy(&vd->diag);
 	if (vd->dfd >= 0)
 		closefd(&vd->dfd);
-	vsm_delset(&vd->mgt);
-	vsm_delset(&vd->child);
+	vsm_delset(vd, &vd->mgt);
+	vsm_delset(vd, &vd->child);
+	while (!VTAILQ_EMPTY(&vd->segs_free)) {
+		vg = VTAILQ_FIRST(&vd->segs_free);
+		VTAILQ_REMOVE(&vd->segs_free, vg, list);
+		FREE_OBJ(vg);
+	}
+	while (!VTAILQ_EMPTY(&vd->lines)) {
+		line = VTAILQ_FIRST(&vd->lines);
+		VTAILQ_REMOVE(&vd->lines, line, list);
+		FREE_OBJ(line);
+	}
 	FREE_OBJ(vd);
 }
 
@@ -470,12 +546,11 @@ vsm_vlu_plus(struct vsm *vd, struct vsm_set *vs, const char *line)
 	}
 
 	if (vs->vg == NULL) {
-		ALLOC_OBJ(vg2, VSM_SEG_MAGIC);
-		AN(vg2);
+		vg2 = vsm_newseg(vd);
+		CHECK_OBJ_NOTNULL(vg2, VSM_SEG_MAGIC);
 		vg2->av = av;
 		vg2->set = vs;
 		vg2->flags = VSM_FLAG_MARKSCAN;
-		vg2->serial = ++vd->serial;
 		if (ac == 4) {
 			vg2->flags |= VSM_FLAG_CLUSTER;
 			VTAILQ_INSERT_TAIL(&vs->clusters, vg2, list);
@@ -516,13 +591,12 @@ vsm_vlu_minus(struct vsm *vd, struct vsm_set *vs, const char *line)
 	VTAILQ_FOREACH_SAFE(vg, &vs->segs, list, vg2) {
 		if (vsm_cmp_av(&vg->av[1], &av[1]))
 			continue;
-		VTAILQ_REMOVE(&vs->segs, vg, list);
 		if (vg->refs) {
+			VTAILQ_REMOVE(&vs->segs, vg, list);
 			vg->flags |= VSM_FLAG_STALE;
 			VTAILQ_INSERT_TAIL(&vs->stale, vg, list);
 		} else {
-			VAV_Free(vg->av);
-			FREE_OBJ(vg);
+			vsm_delseg(vd, vg);
 		}
 		break;
 	}
@@ -646,13 +720,12 @@ vsm_refresh_set(struct vsm *vd, struct vsm_set *vs)
 	VTAILQ_FOREACH_SAFE(vg, &vs->segs, list, vg2) {
 		if ((vg->flags & VSM_FLAG_MARKSCAN) == 0 ||
 		    (retval & VSM_NUKE_ALL)) {
-			VTAILQ_REMOVE(&vs->segs, vg, list);
 			if (vg->refs) {
+				VTAILQ_REMOVE(&vs->segs, vg, list);
 				vg->flags |= VSM_FLAG_STALE;
 				VTAILQ_INSERT_TAIL(&vs->stale, vg, list);
 			} else {
-				VAV_Free(vg->av);
-				FREE_OBJ(vg);
+				vsm_delseg(vd, vg);
 			}
 		}
 	}
@@ -751,26 +824,26 @@ VSM_Attach(struct vsm *vd, int progress)
 static struct vsm_seg *
 vsm_findseg(const struct vsm *vd, const struct vsm_fantom *vf)
 {
-	struct vsm_set *vs;
-	struct vsm_seg *vg;
-	uintptr_t x;
+	struct vsm_segline *line;
+	uintptr_t u;
 
-	x = vf->priv;
-	vs = vd->mgt;
-	VTAILQ_FOREACH(vg, &vs->segs, list)
-		if (vg->serial == x)
-			return (vg);
-	VTAILQ_FOREACH(vg, &vs->stale, list)
-		if (vg->serial == x)
-			return (vg);
-	vs = vd->child;
-	VTAILQ_FOREACH(vg, &vs->segs, list)
-		if (vg->serial == x)
-			return (vg);
-	VTAILQ_FOREACH(vg, &vs->stale, list)
-		if (vg->serial == x)
-			return (vg);
-	return (NULL);
+	u = vf->priv2;
+
+	VTAILQ_FOREACH(line, &vd->lines, list) {
+		CHECK_OBJ_NOTNULL(line, VSM_SEGLINE_MAGIC);
+		if (u < line->start + line->max)
+			break;
+	}
+	if (line == NULL)
+		return (NULL);
+	assert(u >= line->start);
+	u -= line->start;
+	if (line->segs[u] == NULL)
+		return (NULL);
+	CHECK_OBJ_NOTNULL(line->segs[u], VSM_SEG_MAGIC);
+	if (line->segs[u]->serial != vf->priv)
+		return (NULL);
+	return (line->segs[u]);
 }
 
 /*--------------------------------------------------------------------*/
@@ -809,6 +882,7 @@ VSM__itern(struct vsm *vd, struct vsm_fantom *vf)
 		return (0);
 	memset(vf, 0, sizeof *vf);
 	vf->priv = vg2->serial;
+	vf->priv2 = vg2->idx;
 	vf->class = vg2->av[4];
 	vf->ident = vg2->av[5];
 	return (1);
@@ -917,7 +991,7 @@ VSM_Unmap(struct vsm *vd, struct vsm_fantom *vf)
 		vsm_unmapseg(vg);
 	}
 	if (vg->flags & VSM_FLAG_STALE)
-		vsm_delseg(vg);
+		vsm_delseg(vd, vg);
 	return (0);
 }
 
