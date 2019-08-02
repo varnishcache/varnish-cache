@@ -876,6 +876,11 @@ vcl_cli_show(struct cli *cli, const char * const *av, void *priv)
 		return;
 	}
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
+	if (vcl->label) {
+		vcl = vcl->label;
+		CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
+		AZ(vcl->label);
+	}
 	CHECK_OBJ_NOTNULL(vcl->conf, VCL_CONF_MAGIC);
 	if (verbose) {
 		for (i = 0; i < vcl->conf->nsrc; i++)
