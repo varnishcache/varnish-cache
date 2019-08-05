@@ -392,7 +392,7 @@ h2_send(struct worker *wrk, struct h2_req *r2, h2_frame ftyp, uint8_t flags,
 }
 
 void
-H2_Send_RST(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2,
+H2_Send_RST(struct worker *wrk, struct h2_sess *h2, const struct h2_req *r2,
     uint32_t stream, h2_error h2e)
 {
 	char b[4];
