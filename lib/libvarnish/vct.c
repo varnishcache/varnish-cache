@@ -41,8 +41,8 @@
 
 /* NB: VCT always operate in ASCII, don't replace 0x0d with \r etc. */
 
-#define VCT_UPALPHA	VCT_ALPHA
-#define VCT_LOALPHA	VCT_ALPHA
+#define VCT_UPALPHA	(VCT_ALPHA | VCT_UPPER)
+#define VCT_LOALPHA	(VCT_ALPHA | VCT_LOWER)
 
 const uint16_t vct_typtab[256] = {
 	[0x00]	=	VCT_CTL,

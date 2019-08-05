@@ -45,6 +45,8 @@
 #define VCT_IDENT		(VCT_ALPHA | VCT_DIGIT | VCT_ID)
 #define VCT_VT			(1<<12)
 #define VCT_SPACE		(VCT_LWS | VCT_VT)
+#define VCT_UPPER		(1<<13)
+#define VCT_LOWER		(1<<14)
 
 extern const uint16_t vct_typtab[256];
 
@@ -65,6 +67,8 @@ vct_is(int x, uint16_t y)
 #define vct_isspace(x) vct_is(x, VCT_SPACE)
 #define vct_isdigit(x) vct_is(x, VCT_DIGIT)
 #define vct_isalpha(x) vct_is(x, VCT_ALPHA)
+#define vct_islower(x) vct_is(x, VCT_LOWER)
+#define vct_isupper(x) vct_is(x, VCT_UPPER)
 #define vct_isalnum(x) vct_is(x, VCT_ALPHA | VCT_DIGIT)
 #define vct_issep(x) vct_is(x, VCT_SEPARATOR)
 #define vct_issepctl(x) vct_is(x, VCT_SEPARATOR | VCT_CTL)
