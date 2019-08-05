@@ -70,8 +70,28 @@ vsmw_dummy_lock(void)
 {
 }
 
+static int vsmw_haslock;
 vsm_lock_f *vsmw_lock = vsmw_dummy_lock;
 vsm_lock_f *vsmw_unlock = vsmw_dummy_lock;
+
+#define vsmw_assert_lock()	AN(vsmw_haslock)
+
+#define vsmw_do_lock() vsmw_do_lock_(__func__, __LINE__)
+
+#define vsmw_do_lock_(f, l) 				\
+	do {					\
+		vsmw_lock();			\
+		AZ(vsmw_haslock);		\
+		vsmw_haslock = 1;		\
+	} while(0)
+
+#define vsmw_do_unlock() vsmw_do_unlock_(__func__, __LINE__)
+#define vsmw_do_unlock_(f, l) 				\
+	do {					\
+		AN(vsmw_haslock);		\
+		vsmw_haslock = 0;		\
+		vsmw_unlock();			\
+	} while(0)
 
 /*--------------------------------------------------------------------*/
 
@@ -153,6 +173,7 @@ vsmw_mkent(const struct vsmw *vsmw, const char *pfx)
 	uint64_t rn;
 
 	AN(pfx);
+	vsmw_assert_lock();
 	while (1) {
 		VSB_clear(vsmw->vsb);
 		VSB_printf(vsmw->vsb, "_.%s", pfx);
@@ -192,6 +213,7 @@ static void
 vsmw_addseg(struct vsmw *vsmw, struct vsmwseg *seg)
 {
 
+	vsmw_assert_lock();
 	VTAILQ_INSERT_TAIL(&vsmw->segs, seg, list);
 	vsmw_append_record(vsmw, seg, '+');
 	vsmw->nsegs++;
@@ -206,6 +228,7 @@ vsmw_delseg(struct vsmw *vsmw, struct vsmwseg *seg, int fixidx)
 	int fd;
 	struct vsmwseg *s2;
 
+	vsmw_assert_lock();
 	CHECK_OBJ_NOTNULL(vsmw, VSMW_MAGIC);
 	CHECK_OBJ_NOTNULL(seg, VSMWSEG_MAGIC);
 
@@ -283,7 +306,7 @@ VSMW_NewCluster(struct vsmw *vsmw, size_t len, const char *pfx)
 	struct vsmw_cluster *vc;
 	struct vsmwseg *seg;
 
-	vsmw_lock();
+	vsmw_do_lock();
 	vc = vsmw_newcluster(vsmw, len, pfx);
 
 	ALLOC_OBJ(seg, VSMWSEG_MAGIC);
@@ -295,12 +318,12 @@ VSMW_NewCluster(struct vsmw *vsmw, size_t len, const char *pfx)
 	REPLACE(seg->id, "");
 	vsmw_addseg(vsmw, seg);
 
-	vsmw_unlock();
+	vsmw_do_unlock();
 	return (vc);
 }
 
-void
-VSMW_DestroyCluster(struct vsmw *vsmw, struct vsmw_cluster **vsmcp)
+static void
+vsmw_DestroyCluster_locked(struct vsmw *vsmw, struct vsmw_cluster **vsmcp)
 {
 	struct vsmw_cluster *vc;
 
@@ -329,6 +352,15 @@ VSMW_DestroyCluster(struct vsmw *vsmw, struct vsmw_cluster **vsmcp)
 	FREE_OBJ(vc);
 }
 
+void
+VSMW_DestroyCluster(struct vsmw *vsmw, struct vsmw_cluster **vsmcp)
+{
+
+	vsmw_do_lock();
+	vsmw_DestroyCluster_locked(vsmw, vsmcp);
+	vsmw_do_unlock();
+}
+
 /*--------------------------------------------------------------------*/
 
 void *
@@ -338,7 +370,7 @@ VSMW_Allocv(struct vsmw *vsmw, struct vsmw_cluster *vc,
 {
 	struct vsmwseg *seg;
 
-	vsmw_lock();
+	vsmw_do_lock();
 	CHECK_OBJ_NOTNULL(vsmw, VSMW_MAGIC);
 	(void)vc;
 
@@ -365,7 +397,7 @@ VSMW_Allocv(struct vsmw *vsmw, struct vsmw_cluster *vc,
 
 	vsmw_addseg(vsmw, seg);
 
-	vsmw_unlock();
+	vsmw_do_unlock();
 	return (seg->ptr);
 }
 
@@ -390,7 +422,7 @@ VSMW_Free(struct vsmw *vsmw, void **pp)
 	struct vsmwseg *seg;
 	struct vsmw_cluster *cp;
 
-	vsmw_lock();
+	vsmw_do_lock();
 	CHECK_OBJ_NOTNULL(vsmw, VSMW_MAGIC);
 	AN(pp);
 	VTAILQ_FOREACH(seg, &vsmw->segs, list)
@@ -404,9 +436,8 @@ VSMW_Free(struct vsmw *vsmw, void **pp)
 	vsmw_delseg(vsmw, seg, 1);
 
 	if (!--cp->refs && cp->cseg == NULL)
-		VSMW_DestroyCluster(vsmw, &cp);
-
-	vsmw_unlock();
+		vsmw_DestroyCluster_locked(vsmw, &cp);
+	vsmw_do_unlock();
 }
 
 /*--------------------------------------------------------------------*/
@@ -421,7 +452,7 @@ VSMW_New(int vdirfd, int mode, const char *idxname)
 	assert(mode > 0);
 	AN(idxname);
 
-	vsmw_lock();
+	vsmw_do_lock();
 	ALLOC_OBJ(vsmw, VSMW_MAGIC);
 	AN(vsmw);
 
@@ -443,7 +474,7 @@ VSMW_New(int vdirfd, int mode, const char *idxname)
 	vsmw_idx_head(vsmw, fd);
 	closefd(&fd);
 
-	vsmw_unlock();
+	vsmw_do_unlock();
 	return (vsmw);
 }
 
@@ -453,7 +484,7 @@ VSMW_Destroy(struct vsmw **pp)
 	struct vsmw *vsmw;
 	struct vsmwseg *seg, *s2;
 
-	vsmw_lock();
+	vsmw_do_lock();
 	TAKE_OBJ_NOTNULL(vsmw, pp, VSMW_MAGIC);
 	VTAILQ_FOREACH_SAFE(seg, &vsmw->segs, list, s2)
 		vsmw_delseg(vsmw, seg, 0);
@@ -463,5 +494,5 @@ VSMW_Destroy(struct vsmw **pp)
 	VSB_destroy(&vsmw->vsb);
 	closefd(&vsmw->vdirfd);
 	FREE_OBJ(vsmw);
-	vsmw_unlock();
+	vsmw_do_unlock();
 }
