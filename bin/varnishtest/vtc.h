@@ -130,6 +130,10 @@ void start_h2(struct http *hp);
 void stop_h2(struct http *hp);
 void b64_settings(const struct http *hp, const char *s);
 
+/* vtc_gzip.c */
+void vtc_gzip(struct http *, const char *, char **, unsigned *);
+void vtc_gunzip(struct http *, char *, unsigned *);
+
 /* vtc_subr.c */
 struct vsb *vtc_hex_to_bin(struct vtclog *vl, const char *arg);
 void vtc_expect(struct vtclog *, const char *, const char *, const char *,

@@ -38,6 +38,7 @@ varnishtest_SOURCES = \
 		vtc.c \
 		vtc_barrier.c \
 		vtc_client.c \
+		vtc_gzip.c \
 		vtc_haproxy.c \
 		vtc_h2_dectbl.h \
 		vtc_h2_enctbl.h \

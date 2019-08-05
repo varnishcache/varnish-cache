@@ -749,12 +749,6 @@ cmd_http_rxresphdrs(CMD_ARGS)
 		    "Multiple Content-Length headers.\n");
 }
 
-/**********************************************************************
- * Ungzip rx'ed body
- */
-
-#define OVERHEAD 64L
-
 /* SECTION: client-server.spec.gunzip
  *
  * gunzip
@@ -763,107 +757,14 @@ cmd_http_rxresphdrs(CMD_ARGS)
 static void
 cmd_http_gunzip(CMD_ARGS)
 {
-	int i;
-	z_stream vz;
 	struct http *hp;
-	char *p;
-	unsigned l;
 
 	(void)av;
 	(void)cmd;
 	(void)vl;
+
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
-
-	memset(&vz, 0, sizeof vz);
-
-	AN(hp->body);
-	if (hp->body[0] != (char)0x1f || hp->body[1] != (char)0x8b)
-		vtc_log(hp->vl, hp->fatal,
-		    "Gunzip error: Body lacks gzip magics");
-	vz.next_in = TRUST_ME(hp->body);
-	vz.avail_in = hp->bodyl;
-
-	l = hp->bodyl * 10;
-	p = calloc(1, l);
-	AN(p);
-
-	vz.next_out = TRUST_ME(p);
-	vz.avail_out = l;
-
-	assert(Z_OK == inflateInit2(&vz, 31));
-	i = inflate(&vz, Z_FINISH);
-	assert(vz.total_out < l);
-	hp->bodyl = vz.total_out;
-	memcpy(hp->body, p, hp->bodyl);
-	free(p);
-	vtc_log(hp->vl, 3, "new bodylen %u", hp->bodyl);
-	vtc_dump(hp->vl, 4, "body", hp->body, hp->bodyl);
-	bprintf(hp->bodylen, "%u", hp->bodyl);
-#ifdef VGZ_EXTENSIONS
-	vtc_log(hp->vl, 4, "startbit = %ju %ju/%ju",
-	    (uintmax_t)vz.start_bit,
-	    (uintmax_t)vz.start_bit >> 3, (uintmax_t)vz.start_bit & 7);
-	vtc_log(hp->vl, 4, "lastbit = %ju %ju/%ju",
-	    (uintmax_t)vz.last_bit,
-	    (uintmax_t)vz.last_bit >> 3, (uintmax_t)vz.last_bit & 7);
-	vtc_log(hp->vl, 4, "stopbit = %ju %ju/%ju",
-	    (uintmax_t)vz.stop_bit,
-	    (uintmax_t)vz.stop_bit >> 3, (uintmax_t)vz.stop_bit & 7);
-#endif
-	if (i != Z_STREAM_END)
-		vtc_log(hp->vl, hp->fatal,
-		    "Gunzip error = %d (%s) in:%jd out:%jd",
-		    i, vz.msg, (intmax_t)vz.total_in, (intmax_t)vz.total_out);
-	assert(Z_OK == inflateEnd(&vz));
-	hp->body[hp->bodyl] = '\0';
-}
-
-/**********************************************************************
- * Create a gzip'ed body
- */
-
-static void
-gzip_body(const struct http *hp, const char *txt, char **body, int *bodylen)
-{
-	int l;
-	z_stream vz;
-#ifdef VGZ_EXTENSIONS
-	int i;
-#endif
-
-	memset(&vz, 0, sizeof vz);
-
-	l = strlen(txt);
-	*body = calloc(1, l + OVERHEAD);
-	AN(*body);
-
-	vz.next_in = TRUST_ME(txt);
-	vz.avail_in = l;
-
-	vz.next_out = TRUST_ME(*body);
-	vz.avail_out = l + OVERHEAD;
-
-	assert(Z_OK == deflateInit2(&vz,
-	    hp->gziplevel, Z_DEFLATED, 31, 9, Z_DEFAULT_STRATEGY));
-	assert(Z_STREAM_END == deflate(&vz, Z_FINISH));
-	*bodylen = vz.total_out;
-#ifdef VGZ_EXTENSIONS
-	i = vz.stop_bit & 7;
-	if (hp->gzipresidual >= 0 && hp->gzipresidual != i)
-		vtc_log(hp->vl, hp->fatal,
-		    "Wrong gzip residual got %d wanted %d",
-		    i, hp->gzipresidual);
-	vtc_log(hp->vl, 4, "startbit = %ju %ju/%ju",
-	    (uintmax_t)vz.start_bit,
-	    (uintmax_t)vz.start_bit >> 3, (uintmax_t)vz.start_bit & 7);
-	vtc_log(hp->vl, 4, "lastbit = %ju %ju/%ju",
-	    (uintmax_t)vz.last_bit,
-	    (uintmax_t)vz.last_bit >> 3, (uintmax_t)vz.last_bit & 7);
-	vtc_log(hp->vl, 4, "stopbit = %ju %ju/%ju",
-	    (uintmax_t)vz.stop_bit,
-	    (uintmax_t)vz.stop_bit >> 3, (uintmax_t)vz.stop_bit & 7);
-	assert(Z_OK == deflateEnd(&vz));
-#endif
+	vtc_gunzip(hp, hp->body, (unsigned *)&hp->bodyl);
 }
 
 /**********************************************************************
@@ -947,7 +848,7 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
 			assert(body == nullbody);
 			free(body);
 			b = synth_body(av[1], 1);
-			gzip_body(hp, b, &body, &bodylen);
+			vtc_gzip(hp, b, &body, (unsigned *)&bodylen);
 			free(b);
 			VSB_printf(hp->vsb, "Content-Encoding: gzip%s", nl);
 			// vtc_hexdump(hp->vl, 4, "gzip", (void*)body, bodylen);
@@ -955,7 +856,7 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
 		} else if (!strcmp(*av, "-gzipbody")) {
 			assert(body == nullbody);
 			free(body);
-			gzip_body(hp, av[1], &body, &bodylen);
+			vtc_gzip(hp, av[1], &body, (unsigned *)&bodylen);
 			VSB_printf(hp->vsb, "Content-Encoding: gzip%s", nl);
 			// vtc_hexdump(hp->vl, 4, "gzip", (void*)body, bodylen);
 			av++;
