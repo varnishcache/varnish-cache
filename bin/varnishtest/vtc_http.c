@@ -755,6 +755,11 @@ cmd_http_rxresphdrs(CMD_ARGS)
 
 #define OVERHEAD 64L
 
+/* SECTION: client-server.spec.gunzip
+ *
+ * gunzip
+ *         Gunzip the body in place.
+ */
 static void
 cmd_http_gunzip(CMD_ARGS)
 {
