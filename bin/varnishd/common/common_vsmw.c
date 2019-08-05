@@ -78,7 +78,7 @@ vsm_lock_f *vsmw_unlock = vsmw_dummy_lock;
 
 #define vsmw_do_lock() vsmw_do_lock_(__func__, __LINE__)
 
-#define vsmw_do_lock_(f, l) 				\
+#define vsmw_do_lock_(f, l)				\
 	do {					\
 		vsmw_lock();			\
 		AZ(vsmw_haslock);		\
@@ -86,7 +86,7 @@ vsm_lock_f *vsmw_unlock = vsmw_dummy_lock;
 	} while(0)
 
 #define vsmw_do_unlock() vsmw_do_unlock_(__func__, __LINE__)
-#define vsmw_do_unlock_(f, l) 				\
+#define vsmw_do_unlock_(f, l)				\
 	do {					\
 		AN(vsmw_haslock);		\
 		vsmw_haslock = 0;		\
