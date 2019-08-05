@@ -36,6 +36,7 @@
 #include "cache_objhead.h"
 #include "vav.h"
 #include "vcl.h"
+#include "vct.h"
 #include "vrt_obj.h"
 #include "vsa.h"
 #include "vtcp.h"
@@ -183,6 +184,7 @@ VPI_BundleStrands(int n, struct strands *s, char const **d, const char *f, ...)
 {
 	va_list ap;
 
+	assert(n > 0);
 	s->n = n;
 	s->p = d;
 	*d++ = f;
@@ -478,6 +480,57 @@ VRT_CollectStrands(VRT_CTX, VCL_STRANDS s)
 	if (b == NULL)
 		VRT_fail(ctx, "Workspace overflow");
 	return (b);
+}
+
+/*--------------------------------------------------------------------
+ * upper/lower-case STRANDS (onto workspace)
+ */
+
+#include <stdio.h>
+
+VCL_STRING
+VRT_UpperLowerStrands(VRT_CTX, VCL_STRANDS s, int up)
+{
+	unsigned u;
+	char *b, *e, *r;
+	const char *p, *q = NULL;
+	int i, copy = 0;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->ws, WS_MAGIC);
+	AN(s);
+	u = WS_ReserveAll(ctx->ws);
+	r = b = WS_Front(ctx->ws);
+	e = b + u;
+	for (i = 0; i < s->n; i++) {
+		if (s->p[i] == NULL || s->p[i][0] == '\0')
+			continue;
+		if (q != NULL)
+			copy = 1;
+		p = q = s->p[i];
+		for(p = q = s->p[i]; *p != '\0'; p++) {
+			if ((up && vct_islower(*p)) ||
+			    (!up && vct_isupper(*p))) {
+				*b++ = *p ^ 0x20;
+				copy = 1;
+			} else {
+				*b++ = *p;
+			}
+			if (b == e) {
+				WS_Release(ctx->ws, 0);
+				VRT_fail(ctx, "Workspace overflow");
+				return (NULL);
+			}
+		}
+	}
+	if (!copy) {
+		WS_Release(ctx->ws, 0);
+		return (q);
+	}
+	*b++ = '\0';
+	assert(b <= e);
+	WS_ReleaseP(ctx->ws, b);
+	return (r);
 }
 
 /*--------------------------------------------------------------------*/

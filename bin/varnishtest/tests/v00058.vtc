@@ -174,3 +174,36 @@ client c1 {
 
 varnish v1 -expect client_resp_500 == 1
 varnish v1 -expect ws_client_overflow == 2
+
+# Test $STRINGS.{upper|lower}
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_deliver {
+		set resp.http.l-proto = resp.proto.lower;
+		set resp.http.u-proto = resp.proto.upper;
+		set resp.http.l-req = req.url.lower;
+		set resp.http.u-req = req.url.upper;
+		set resp.http.l-mod = (req.url + "bar").lower;
+		set resp.http.u-mod = (req.url + "bar").upper;
+		set resp.http.uu-mod = (req.url + "bar").upper.upper;
+		set resp.http.ul-mod = (req.url + "bar").upper.lower;
+	}
+}
+
+client c1 {
+	txreq -url /foo
+	rxresp
+	expect resp.http.l-proto == "http/1.1"
+	expect resp.http.u-proto == "HTTP/1.1"
+	expect resp.http.l-req == "/foo"
+	expect resp.http.u-req == "/FOO"
+	expect resp.http.l-mod == "/foobar"
+	expect resp.http.u-mod == "/FOOBAR"
+	expect resp.http.uu-mod == "/FOOBAR"
+	expect resp.http.ul-mod == "/foobar"
+} -run

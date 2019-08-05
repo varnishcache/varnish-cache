@@ -803,7 +803,7 @@ vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 /*--------------------------------------------------------------------
  * SYNTAX:
  *    Expr4:
- *      Expr5
+ *      Expr5 [ '.' type_method() ]*
  */
 
 static const struct vcc_methods {
@@ -817,6 +817,9 @@ static const struct vcc_methods {
 #define VRTSTVVAR(nm, vtype, ctype, dval) \
 	{ STEVEDORE, vtype, #nm, "VRT_stevedore_" #nm "(\v1)"},
 #include "tbl/vrt_stv_var.h"
+
+	{ STRINGS, STRING, "upper", "VRT_UpperLowerStrands(ctx, \vT, 1)" },
+	{ STRINGS, STRING, "lower", "VRT_UpperLowerStrands(ctx, \vT, 0)" },
 
 	{ NULL, NULL,		NULL,		NULL},
 };
@@ -851,6 +854,11 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		}
 		vcc_NextToken(tl);
 		*e = vcc_expr_edit(tl, vm->type_to, vm->impl, *e, NULL);
+		ERRCHK(tl);
+		if ((*e)->fmt == STRING) {
+			(*e)->fmt = STRINGS;
+			(*e)->nstr = 1;
+		}
 	}
 }
 

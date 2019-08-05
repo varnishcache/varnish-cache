@@ -52,6 +52,7 @@
  * binary/load-time compatible, increment MAJOR version
  *
  * unreleased (planned for 2019-09-15)
+ *	VRT_UpperLowerStrands added.
  *	VRT_synth_page now takes STRANDS argument
  *	VRT_hashdata() now takes STRANDS argument
  *	VCL_BOOL VRT_Strands2Bool(VCL_STRANDS) added.
@@ -538,6 +539,7 @@ VCL_BOOL VRT_Strands2Bool(VCL_STRANDS);
 char *VRT_Strands(char *, size_t, VCL_STRANDS);
 VCL_STRING VRT_StrandsWS(struct ws *, const char *, VCL_STRANDS);
 VCL_STRING VRT_CollectStrands(VRT_CTX, VCL_STRANDS);
+VCL_STRING VRT_UpperLowerStrands(VRT_CTX, VCL_STRANDS s, int up);
 
 VCL_STRING VRT_BACKEND_string(VCL_BACKEND);
 VCL_STRING VRT_BOOL_string(VCL_BOOL);
