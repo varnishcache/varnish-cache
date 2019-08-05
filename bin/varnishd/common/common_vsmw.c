@@ -206,7 +206,6 @@ vsmw_append_record(struct vsmw *vsmw, struct vsmwseg *seg, char act)
 	s = write(fd, VSB_data(vsmw->vsb), VSB_len(vsmw->vsb));
 	assert(s == VSB_len(vsmw->vsb)); // XXX handle ENOSPC? #2764
 	AZ(close(fd));
-	vsmw->nsegs++;
 }
 
 /*--------------------------------------------------------------------*/
@@ -238,7 +237,7 @@ vsmw_delseg(struct vsmw *vsmw, struct vsmwseg *seg, int fixidx)
 	VTAILQ_REMOVE(&vsmw->segs, seg, list);
 
 	vsmw->nsegs--;
-	if (vsmw->nsubs < vsmw->nsegs || !fixidx) {
+	if (vsmw->nsubs * 2 < vsmw->nsegs || !fixidx) {
 		vsmw_append_record(vsmw, seg, '-');
 		vsmw->nsubs++;
 	} else {
