@@ -1,0 +1,85 @@
+varnishtest "Test VSM _.index rewrite when too many deletes"
+
+varnish v1 -vcl {
+	backend default { .host = "${bad_ip}"; }
+} -start
+
+process p1 {
+	nlines=`wc -l < ${tmpdir}/v1/_.vsm_child/_.index`
+	nminus=`grep -c '^-' ${tmpdir}/v1/_.vsm_child/_.index`
+	echo NLINES $nlines NMINUS $nminus
+} -dump -run
+
+# The child process starts out with approx 37 VSM segments
+# so it takes 20 backends to cause a _.index rewrite.
+# Make it 25 to be safe.
+varnish v1 -vcl {
+	backend b00 { .host = "${bad_ip}"; }
+	backend b01 { .host = "${bad_ip}"; }
+	backend b02 { .host = "${bad_ip}"; }
+	backend b03 { .host = "${bad_ip}"; }
+	backend b04 { .host = "${bad_ip}"; }
+	backend b05 { .host = "${bad_ip}"; }
+	backend b06 { .host = "${bad_ip}"; }
+	backend b07 { .host = "${bad_ip}"; }
+	backend b08 { .host = "${bad_ip}"; }
+	backend b09 { .host = "${bad_ip}"; }
+	backend b10 { .host = "${bad_ip}"; }
+	backend b11 { .host = "${bad_ip}"; }
+	backend b12 { .host = "${bad_ip}"; }
+	backend b13 { .host = "${bad_ip}"; }
+	backend b14 { .host = "${bad_ip}"; }
+	backend b15 { .host = "${bad_ip}"; }
+	backend b16 { .host = "${bad_ip}"; }
+	backend b17 { .host = "${bad_ip}"; }
+	backend b18 { .host = "${bad_ip}"; }
+	backend b19 { .host = "${bad_ip}"; }
+	backend b20 { .host = "${bad_ip}"; }
+	backend b21 { .host = "${bad_ip}"; }
+	backend b22 { .host = "${bad_ip}"; }
+	backend b23 { .host = "${bad_ip}"; }
+	backend b24 { .host = "${bad_ip}"; }
+
+	sub vcl_recv {
+		set req.backend_hint = b00;
+		set req.backend_hint = b01;
+		set req.backend_hint = b02;
+		set req.backend_hint = b03;
+		set req.backend_hint = b04;
+		set req.backend_hint = b05;
+		set req.backend_hint = b06;
+		set req.backend_hint = b07;
+		set req.backend_hint = b08;
+		set req.backend_hint = b09;
+		set req.backend_hint = b10;
+		set req.backend_hint = b11;
+		set req.backend_hint = b12;
+		set req.backend_hint = b13;
+		set req.backend_hint = b14;
+		set req.backend_hint = b15;
+		set req.backend_hint = b16;
+		set req.backend_hint = b17;
+		set req.backend_hint = b18;
+		set req.backend_hint = b19;
+		set req.backend_hint = b20;
+		set req.backend_hint = b21;
+		set req.backend_hint = b22;
+		set req.backend_hint = b23;
+		set req.backend_hint = b24;
+	}
+}
+
+varnish v1 -cliok vcl.list
+
+process p1 -run
+
+varnish v1 -cliok "vcl.use vcl1"
+varnish v1 -cliok "vcl.discard vcl2"
+
+# Check that the _.index rewrite did happen
+process p1 {
+	nlines=`wc -l < ${tmpdir}/v1/_.vsm_child/_.index`
+	nminus=`grep -c '^-' ${tmpdir}/v1/_.vsm_child/_.index`
+	echo NLINES $nlines NMINUS $nminus
+	test $nminus -lt 25
+} -run
