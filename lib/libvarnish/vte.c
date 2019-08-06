@@ -31,6 +31,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h> /* for MUSL (ssize_t) */
 
 #include "vdef.h"
 #include "vqueue.h"
