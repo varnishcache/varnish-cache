@@ -577,7 +577,7 @@ class Stanza(object):
             fmt_cstruct(
                 fo,
                 '.' + proto.cname() + ' =',
-                '*' + self.vcc.sympfx + proto.cname() + ','
+                self.vcc.sympfx + proto.cname() + ','
             )
 
     def cstruct(self, unused_fo, unused_define):
@@ -703,7 +703,7 @@ class EventStanza(Stanza):
         else:
             fmt_cstruct(fo,
                         "._event =",
-                        '*' + self.vcc.sympfx + self.event_func + ',')
+                        self.vcc.sympfx + self.event_func + ',')
 
     def json(self, jl):
         jl.append(["$EVENT", "%s._event" % self.vcc.csn])
