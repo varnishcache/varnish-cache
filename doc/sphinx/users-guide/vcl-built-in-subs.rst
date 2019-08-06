@@ -267,10 +267,6 @@ with one of the following keywords:
   ``pass``
     see  `pass`_
 
-  ``miss``
-    Synchronously refresh the object from the backend despite the
-    cache hit. Control will eventually pass to :ref:`vcl_miss`.
-
   ``deliver``
     Deliver the object. If it is stale, a background fetch to refresh
     it is triggered.
