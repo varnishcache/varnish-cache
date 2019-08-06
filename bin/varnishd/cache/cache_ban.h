@@ -145,6 +145,7 @@ extern struct ban * volatile ban_start;
 extern pthread_cond_t	ban_lurker_cond;
 extern uint64_t bans_persisted_bytes;
 extern uint64_t bans_persisted_fragmentation;
+extern const char * const ban_oper[BAN_OPERARRSZ + 1];
 
 void ban_mark_completed(struct ban *);
 unsigned ban_len(const uint8_t *banspec);

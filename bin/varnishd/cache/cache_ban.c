@@ -70,8 +70,6 @@ static const char * const arg_name[BAN_ARGARRSZ + 1] = {
 	[BAN_ARGARRSZ] = NULL
 };
 
-extern const char * const oper[BAN_OPERARRSZ + 1];
-
 /*--------------------------------------------------------------------
  * Storage handling of bans
  */
@@ -806,7 +804,7 @@ ban_render(struct cli *cli, const uint8_t *bs, int quote)
 		else
 			VCLI_Out(cli, "%s", arg_name[BAN_ARGIDX(bt.arg1)]);
 
-		VCLI_Out(cli, " %s ", oper[BAN_OPERIDX(bt.oper)]);
+		VCLI_Out(cli, " %s ", ban_oper[BAN_OPERIDX(bt.oper)]);
 
 		if (BANS_HAS_ARG2_DOUBLE(bt.arg1)) {
 			vdur_render(buf, bt.arg2_double);

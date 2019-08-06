@@ -76,7 +76,7 @@ static const unsigned arg_opervalid[BAN_ARGARRSZ + 1] = {
 static const char *arg_operhelp[BAN_ARGARRSZ + 1];
 
 // operators
-const char * const oper[BAN_OPERARRSZ + 1] = {
+const char * const ban_oper[BAN_OPERARRSZ + 1] = {
 #define OPER(op, str) [BAN_OPERIDX(op)] = (str),
 #include "tbl/ban_oper.h"
 	[BAN_OPERARRSZ] = NULL
@@ -205,7 +205,7 @@ ban_parse_oper(const char *p)
 	int i;
 
 	for (i = 0; i < BAN_OPERARRSZ; i++) {
-		if (!strcmp(p, oper[i]))
+		if (!strcmp(p, ban_oper[i]))
 			return (_BANS_OPER_OFF + i);
 	}
 	return (-1);
@@ -396,14 +396,14 @@ ban_build_arg_operhelp(struct vsb *vsb, int arg)
 		if ((mask & (1U << i)) == 0)
 			continue;
 		if (p == NULL)
-			p = oper[i];
+			p = ban_oper[i];
 		else if (n == NULL)
-			n = oper[i];
+			n = ban_oper[i];
 		else {
 			VSB_cat(vsb, p);
 			VSB_cat(vsb, ", ");
 			p = n;
-			n = oper[i];
+			n = ban_oper[i];
 		}
 	}
 
