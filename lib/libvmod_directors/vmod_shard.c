@@ -93,11 +93,11 @@
 #define arg_healthy	((uint32_t)1 << 6)
 #define arg_param	((uint32_t)1 << 7)
 #define arg_resolve	((uint32_t)1 << 8)
-#define _arg_mask	((arg_resolve << 1) - 1)
+#define arg_mask_	((arg_resolve << 1) - 1)
 /* allowed in shard_param.set */
-#define _arg_mask_set	(arg_param - 1)
+#define arg_mask_set_	(arg_param - 1)
 /* allowed in shard_param */
-#define _arg_mask_param ( _arg_mask_set		\
+#define arg_mask_param_ ( arg_mask_set_		\
 			  & ~arg_key			\
 			  & ~arg_key_blob )
 
@@ -143,7 +143,7 @@ static const struct vmod_directors_shard_param shard_param_default = {
 	.defaults	= NULL,
 	.scope		= SCOPE_VMOD,
 
-	.mask		= _arg_mask_param,
+	.mask		= arg_mask_param_,
 	.by		= BY_HASH,
 	.healthy	= CHOSEN,
 	.rampup	= 1,
@@ -429,13 +429,13 @@ shard_param_merge(struct vmod_directors_shard_param *to,
 		  const struct vmod_directors_shard_param *from)
 {
 	CHECK_OBJ_NOTNULL(to, VMOD_SHARD_SHARD_PARAM_MAGIC);
-	assert((to->mask & ~_arg_mask_param) == 0);
+	assert((to->mask & ~arg_mask_param_) == 0);
 
-	if (to->mask == _arg_mask_param)
+	if (to->mask == arg_mask_param_)
 		return;
 
 	CHECK_OBJ_NOTNULL(from, VMOD_SHARD_SHARD_PARAM_MAGIC);
-	assert((from->mask & ~_arg_mask_param) == 0);
+	assert((from->mask & ~arg_mask_param_) == 0);
 
 	if ((to->mask & arg_by) == 0 && (from->mask & arg_by) != 0) {
 		to->by = from->by;
@@ -457,7 +457,7 @@ shard_param_merge(struct vmod_directors_shard_param *to,
 
 	to->mask |= from->mask;
 
-	if (to->mask == _arg_mask_param)
+	if (to->mask == arg_mask_param_)
 		return;
 
 	AN(from->defaults);
@@ -495,7 +495,7 @@ shard_blob_key(VCL_BLOB key_blob)
 #define tobit(args, name) ((args)->valid_##name ? arg_##name : 0)
 
 static uint32_t
-shard_backend_arg_mask(const struct VARGS(shard_backend) * const a)
+shard_backendarg_mask_(const struct VARGS(shard_backend) * const a)
 {
 	return (tobit(a, by)		|
 		tobit(a, key)		|
@@ -535,7 +535,7 @@ shard_param_args(VRT_CTX,
 	CHECK_OBJ_NOTNULL(p, VMOD_SHARD_SHARD_PARAM_MAGIC);
 	AN(p->vcl_name);
 
-	assert((args & ~_arg_mask_set) == 0);
+	assert((args & ~arg_mask_set_) == 0);
 
 	by = (args & arg_by) ? parse_by_e(by_s) : BY_HASH;
 	healthy = (args & arg_healthy) ? parse_healthy_e(healthy_s) : CHOSEN;
@@ -631,7 +631,7 @@ shard_param_args(VRT_CTX,
 	if (args & arg_healthy)
 		p->healthy = healthy;
 
-	p->mask = args & _arg_mask_param;
+	p->mask = args & arg_mask_param_;
 	return (p);
 }
 
@@ -643,11 +643,11 @@ vmod_shard_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 	struct vmod_directors_shard_param *pp = NULL;
 	const struct vmod_directors_shard_param *ppt;
 	enum resolve_e resolve;
-	uint32_t args = shard_backend_arg_mask(a);
+	uint32_t args = shard_backendarg_mask_(a);
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vshard, VMOD_SHARD_SHARD_MAGIC);
-	assert((args & ~_arg_mask) == 0);
+	assert((args & ~arg_mask_) == 0);
 
 	if (args & arg_resolve)
 		resolve = parse_resolve_e(a->resolve);
@@ -703,7 +703,7 @@ vmod_shard_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 	}
 
 	pp = shard_param_args(ctx, pp, "shard.backend()",
-			      args & _arg_mask_set,
+			      args & arg_mask_set_,
 			      a->by, a->key, a->key_blob, a->alt, a->warmup,
 			      a->rampup, a->healthy);
 	if (pp == NULL)
@@ -987,7 +987,7 @@ vmod_shard_param_set(VRT_CTX, struct vmod_directors_shard_param *p,
 {
 	uint32_t args = shard_param_set_mask(a);
 
-	assert((args & ~_arg_mask_set) == 0);
+	assert((args & ~arg_mask_set_) == 0);
 
 	p = shard_param_prep(ctx, p, "shard_param.set()");
 	if (p == NULL)

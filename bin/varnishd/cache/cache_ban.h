@@ -77,7 +77,7 @@
 #define BANS_FLAG_NODEDUP	(1<<5)
 
 #define BANS_OPER_EQ		0x10
-#define _BANS_OPER_OFF		BANS_OPER_EQ
+#define BANS_OPER_OFF_		BANS_OPER_EQ
 #define BANS_OPER_NEQ		0x11
 #define BANS_OPER_MATCH		0x12
 #define BANS_OPER_NMATCH	0x13
@@ -85,14 +85,14 @@
 #define BANS_OPER_GTE		0x15
 #define BANS_OPER_LT		0x16
 #define BANS_OPER_LTE		0x17
-#define _BANS_OPER_LIM		(BANS_OPER_LTE + 1)
+#define BANS_OPER_LIM_		(BANS_OPER_LTE + 1)
 
-#define BAN_OPERIDX(x) ((x) - _BANS_OPER_OFF)
-#define BAN_OPERARRSZ  (_BANS_OPER_LIM - _BANS_OPER_OFF)
-#define ASSERT_BAN_OPER(x) assert((x) >= _BANS_OPER_OFF && (x) < _BANS_OPER_LIM)
+#define BAN_OPERIDX(x) ((x) - BANS_OPER_OFF_)
+#define BAN_OPERARRSZ  (BANS_OPER_LIM_ - BANS_OPER_OFF_)
+#define ASSERT_BAN_OPER(x) assert((x) >= BANS_OPER_OFF_ && (x) < BANS_OPER_LIM_)
 
 #define BANS_ARG_URL		0x18
-#define _BANS_ARG_OFF		BANS_ARG_URL
+#define BANS_ARG_OFF_		BANS_ARG_URL
 #define BANS_ARG_REQHTTP	0x19
 #define BANS_ARG_OBJHTTP	0x1a
 #define BANS_ARG_OBJSTATUS	0x1b
@@ -100,11 +100,11 @@
 #define BANS_ARG_OBJAGE	0x1d
 #define BANS_ARG_OBJGRACE	0x1e
 #define BANS_ARG_OBJKEEP	0x1f
-#define _BANS_ARG_LIM		(BANS_ARG_OBJKEEP + 1)
+#define BANS_ARG_LIM		(BANS_ARG_OBJKEEP + 1)
 
-#define BAN_ARGIDX(x) ((x) - _BANS_ARG_OFF)
-#define BAN_ARGARRSZ  (_BANS_ARG_LIM - _BANS_ARG_OFF)
-#define ASSERT_BAN_ARG(x) assert((x) >= _BANS_ARG_OFF && (x) < _BANS_ARG_LIM)
+#define BAN_ARGIDX(x) ((x) - BANS_ARG_OFF_)
+#define BAN_ARGARRSZ  (BANS_ARG_LIM - BANS_ARG_OFF_)
+#define ASSERT_BAN_ARG(x) assert((x) >= BANS_ARG_OFF_ && (x) < BANS_ARG_LIM)
 
 // has an arg1_spec (BANS_FLAG_HTTP at build time)
 #define BANS_HAS_ARG1_SPEC(arg)	\

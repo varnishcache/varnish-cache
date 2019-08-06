@@ -206,7 +206,7 @@ ban_parse_oper(const char *p)
 
 	for (i = 0; i < BAN_OPERARRSZ; i++) {
 		if (!strcmp(p, ban_oper[i]))
-			return (_BANS_OPER_OFF + i);
+			return (BANS_OPER_OFF_ + i);
 	}
 	return (-1);
 }
@@ -251,7 +251,7 @@ BAN_AddTest(struct ban_proto *bp,
 	}
 
 	op = ban_parse_oper(a2);
-	if (op < _BANS_OPER_OFF ||
+	if (op < BANS_OPER_OFF_ ||
 	    ((1U << BAN_OPERIDX(op)) & arg_opervalid[BAN_ARGIDX(pv->tag)]) == 0)
 		return (ban_error(bp,
 		    "expected conditional (%s) got \"%s\"",
@@ -424,7 +424,7 @@ BAN_Build_Init(void) {
 	struct vsb *vsb = VSB_new_auto();
 	int i;
 
-	for (i = _BANS_ARG_OFF; i < _BANS_ARG_LIM; i ++) {
+	for (i = BANS_ARG_OFF_; i < BANS_ARG_LIM; i ++) {
 		VSB_clear(vsb);
 		ban_build_arg_operhelp(vsb, i);
 		AZ(VSB_finish(vsb));
