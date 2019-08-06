@@ -570,7 +570,7 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 	}
 
 	if (sa != NULL)
-		e1 = vcc_mk_expr(rfmt, "%s(ctx%s,\v+ &(%s){\n",
+		e1 = vcc_mk_expr(rfmt, "%s(ctx%s,\v+\n&(%s)\v+ {\n",
 		    cfunc, extra, sa);
 	else
 		e1 = vcc_mk_expr(rfmt, "%s(ctx%s\v+", cfunc, extra);
@@ -607,7 +607,7 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 		free(fa);
 	}
 	if (sa != NULL) {
-		*e = vcc_expr_edit(tl, e1->fmt, "\v1\n})\v-", e1, NULL);
+		*e = vcc_expr_edit(tl, e1->fmt, "\v1\v-\n}\v-\n)", e1, NULL);
 	} else {
 		*e = vcc_expr_edit(tl, e1->fmt, "\v1\v-\n)", e1, NULL);
 	}
