@@ -882,6 +882,8 @@ xyzzy_get_ip(VRT_CTX, struct vmod_priv *priv)
  * For testing import code on bad vmod files (m00003.vtc)
  */
 
+//lint -save -e9075 external symbol '...' defined without a prior declaration
+
 const struct vmod_data Vmod_wrong0_Data = {
 	.vrt_major =    0,
 	.vrt_minor =    0,
@@ -918,3 +920,5 @@ const struct vmod_data Vmod_wrong3_Data = {
 	.proto =	"blablabla",
 	.abi =		"abiblabla",
 };
+
+//lint -restore
