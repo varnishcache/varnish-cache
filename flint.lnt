@@ -5,6 +5,46 @@
 //d__flexelint_v9__=1
 +fan
 
+///////////////////////////////////////////////////////////////////////
+// electives
+//+e9*
+-e904
+-e935
+-e955   
+//+e958   // report internal struct padding
+//+e959   // report struct tail/size padding
+-e960
+-e964
+-e970
+-e9012
+-e9021
+-e9022
+-e9024
+-e9026
+-e9034
+-e9042
+-e9067
++e9071	// defined macro '...' is reserved to the compiler
++e9075	// external symbol without declaration
+-esym(9075, main)
+-e9085
+-e9107
+-e9109
+-e9113
+-e9131
+-e9132
+-e9133
+-e9136
+-e9140
+-e9141
+-e9147	// we dont use & on func_pointers
+-e9149
+-e9158
+-e9159
+-e9165
+///////////////////////////////////////////////////////////////////////
+
+
 -emacro((835),*)	// A zero has been given as ___ argument to operator '___
 
 ///////////////////////////////////////////////////////////////////////
