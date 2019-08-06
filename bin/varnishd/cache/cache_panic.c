@@ -725,8 +725,8 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 		    "Incomplete code in %s(), %s line %d:\n",
 		    func, file, line);
 		break;
-	default:
 	case VAS_ASSERT:
+	default:
 		VSB_printf(pan_vsb,
 		    "Assert error in %s(), %s line %d:\n"
 		    "  Condition(%s) not true.\n",

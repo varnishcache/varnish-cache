@@ -691,7 +691,8 @@ MCF_InitParams(struct cli *cli)
 /*--------------------------------------------------------------------*/
 
 void
-MCF_ParamConf(enum mcf_which_e which, const char *param, const char *fmt, ...)
+MCF_ParamConf(enum mcf_which_e which, const char * const param,
+    const char *fmt, ...)
 {
 	struct parspec *pp;
 	struct vsb *vsb;
@@ -718,6 +719,8 @@ MCF_ParamConf(enum mcf_which_e which, const char *param, const char *fmt, ...)
 		pp->max = strdup(VSB_data(vsb));
 		AN(pp->max);
 		break;
+	default:
+		WRONG("bad 'which'");
 	}
 	VSB_delete(vsb);
 }

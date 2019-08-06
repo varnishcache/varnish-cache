@@ -126,9 +126,6 @@ RFC2616_Ttl(struct busyobj *bo, vtim_real now, vtim_real *t_origin,
 		h_date = VTIM_parse(p);
 
 	switch (http_GetStatus(hp)) {
-	default:
-		*ttl = -1.;
-		break;
 	case 302: /* Moved Temporarily */
 	case 307: /* Temporary Redirect */
 		/*
@@ -192,7 +189,10 @@ RFC2616_Ttl(struct busyobj *bo, vtim_real now, vtim_real *t_origin,
 			 */
 			*ttl = (int)(h_expires - h_date);
 		}
-
+		break;
+	default:
+		*ttl = -1.;
+		break;
 	}
 
 	/*
