@@ -285,6 +285,25 @@ vsm_delset(struct vsm_set **p)
 	FREE_OBJ(vs);
 }
 
+static void
+vsm_wash_set(struct vsm_set *vs, int all)
+{
+	struct vsm_seg *vg, *vg2;
+
+	VTAILQ_FOREACH_SAFE(vg, &vs->segs, list, vg2) {
+		if (all || (vg->flags & VSM_FLAG_MARKSCAN) == 0) {
+			VTAILQ_REMOVE(&vs->segs, vg, list);
+			if (vg->refs) {
+				vg->flags |= VSM_FLAG_STALE;
+				VTAILQ_INSERT_TAIL(&vs->stale, vg, list);
+			} else {
+				VAV_Free(vg->av);
+				FREE_OBJ(vg);
+			}
+		}
+	}
+}
+
 /*--------------------------------------------------------------------*/
 
 struct vsm *
@@ -392,8 +411,6 @@ VSM_ResetError(struct vsm *vd)
 
 /*--------------------------------------------------------------------
  */
-
-#define VSM_NUKE_ALL	(1U << 16)
 
 static int
 vsm_cmp_av(char * const *a1, char * const *a2)
@@ -562,7 +579,7 @@ vsm_vlu_func(void *priv, const char *line)
 }
 
 static unsigned
-vsm_refresh_set2(struct vsm *vd, struct vsm_set *vs)
+vsm_refresh_set(struct vsm *vd, struct vsm_set *vs)
 {
 	struct stat st;
 	int i;
@@ -575,7 +592,8 @@ vsm_refresh_set2(struct vsm *vd, struct vsm_set *vs)
 		if (fstatat(vd->dfd, vs->dname, &st, AT_SYMLINK_NOFOLLOW)) {
 			closefd(&vs->dfd);
 			vs->id1 = vs->id2 = 0;
-			return (VSM_MGT_RESTARTED|VSM_NUKE_ALL);
+			vsm_wash_set(vs, 1);
+			return (VSM_MGT_RESTARTED|VSM_MGT_CHANGED);
 		}
 		if (st.st_ino != vs->dst.st_ino ||
 		    st.st_dev != vs->dst.st_dev ||
@@ -592,7 +610,8 @@ vsm_refresh_set2(struct vsm *vd, struct vsm_set *vs)
 		vs->retval |= VSM_MGT_RESTARTED;
 		if (vs->dfd < 0) {
 			vs->id1 = vs->id2 = 0;
-			return (vs->retval|VSM_NUKE_ALL);
+			vsm_wash_set(vs, 1);
+			return (vs->retval|VSM_MGT_CHANGED);
 		}
 		AZ(fstat(vs->dfd, &vs->dst));
 	}
@@ -630,32 +649,8 @@ vsm_refresh_set2(struct vsm *vd, struct vsm_set *vs)
 	} while (!i);
 	assert(i == -2);
 	VLU_Destroy(&vlu);
+	vsm_wash_set(vs, 0);
 	return (vs->retval);
-}
-
-static unsigned
-vsm_refresh_set(struct vsm *vd, struct vsm_set *vs)
-{
-	unsigned retval;
-	struct vsm_seg *vg, *vg2;
-
-	retval = vsm_refresh_set2(vd, vs);
-	if (retval & VSM_NUKE_ALL)
-		retval |= VSM_MGT_CHANGED;
-	VTAILQ_FOREACH_SAFE(vg, &vs->segs, list, vg2) {
-		if ((vg->flags & VSM_FLAG_MARKSCAN) == 0 ||
-		    (retval & VSM_NUKE_ALL)) {
-			VTAILQ_REMOVE(&vs->segs, vg, list);
-			if (vg->refs) {
-				vg->flags |= VSM_FLAG_STALE;
-				VTAILQ_INSERT_TAIL(&vs->stale, vg, list);
-			} else {
-				VAV_Free(vg->av);
-				FREE_OBJ(vg);
-			}
-		}
-	}
-	return (retval & ~VSM_NUKE_ALL);
 }
 
 /*--------------------------------------------------------------------*/
