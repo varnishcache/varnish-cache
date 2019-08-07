@@ -345,14 +345,18 @@ AC_SUBST(JEMALLOC_LDADD)
 AC_CHECK_FUNCS([setproctitle])
 
 AC_ARG_WITH([backtrace],
-	    [AS_HELP_STRING([--without-backtrace], [Disable backtrace() ])])
+	[AS_HELP_STRING([--without-backtrace], [Disable backtrace() ])])
 
-if test "$with_backtrace" != no; then
-	AC_SEARCH_LIBS(backtrace, [execinfo], [], [
-		AC_MSG_ERROR([Could not find backtrace() support])
-	])
-	AC_DEFINE([HAVE_BACKTRACE], [1],
-		[Define to 1 to enable backtraces iin panic reports])
+if test "$with_backtrace" == no; then
+	AC_MSG_WARN([backtrace() support disabled])
+else
+	AC_RUN_IFELSE(
+		[AC_LANG_PROGRAM([[#include <execinfo.h>]],
+			[[void *buf[10];backtrace(buf, 10);]])],
+		[AC_DEFINE([HAVE_BACKTRACE], [1],
+			[Define to 1 to enable backtraces in panic reports])],
+		[AC_MSG_WARN([Could not find backtrace() support])]
+	)
 fi
 
 # white lie - we don't actually test it
