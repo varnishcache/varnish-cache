@@ -10,24 +10,35 @@
 //+e9*
 -e904
 -e935
--e955   
+-e955
+-e956
 //+e958   // report internal struct padding
 //+e959   // report struct tail/size padding
 -e960
+-e961
+-efile(966, "/usr/include/*")	// unused indir include
+-efile(966, "../../include/tbl/*")
 -e964
 -e970
+-e971
 -e9012
 -e9021
 -e9022
+-e9023
 -e9024
 -e9026
 -e9034
+-e9037
 -e9042
+-e9048
+-e9050
+-e9051
 -e9067
 +e9071	// defined macro '...' is reserved to the compiler
 +e9075	// external symbol without declaration
 -esym(9075, main)
 -e9085
+-e9105
 -e9107
 -e9109
 -e9113
@@ -52,6 +63,7 @@
 
 -efile(451, "tbl/*.h")		// No include guard
 -efile(537, "tbl/*.h")		// Repeated include
+-efile(967, "tbl/*.h")		// No include guard
 
 -efile(451, "../../include/vut_options.h")		// No include guard
 -efile(451, "../../include/vapi/vapi_options.h")	// No include guard
