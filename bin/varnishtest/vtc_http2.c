@@ -1381,7 +1381,7 @@ cmd_tx11obj(CMD_ARGS)
 	int method_done = 1;
 	int path_done = 1;
 	int scheme_done = 1;
-	int bodylen = 0;
+	long bodylen = 0;
 	ssize_t len;
 	uint32_t stid = 0, pstid;
 	uint32_t weight = 16;
@@ -1550,8 +1550,7 @@ cmd_tx11obj(CMD_ARGS)
 			}
 			else if (!strcmp(*av, "-gzipbody")) {
 				AZ(body);
-				vtc_gzip(s->hp, av[1], &body,
-				    (unsigned *)&bodylen);
+				vtc_gzip(s->hp, av[1], &body, &bodylen);
 				AN(body);
 				ENC(hdr, ":content-encoding", "gzip");
 				f.flags &= ~END_STREAM;
@@ -1560,8 +1559,7 @@ cmd_tx11obj(CMD_ARGS)
 			else if (!strcmp(*av, "-gziplen")) {
 				AZ(body);
 				b = synth_body(av[1], 1);
-				vtc_gzip(s->hp, b, &body,
-				    (unsigned *)&bodylen);
+				vtc_gzip(s->hp, b, &body, &bodylen);
 				AN(body);
 				free(b);
 				ENC(hdr, ":content-encoding", "gzip");

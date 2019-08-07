@@ -40,7 +40,7 @@
 
 
 void
-vtc_gzip(const struct http *hp, const char *input, char **body, unsigned *bodylen)
+vtc_gzip(const struct http *hp, const char *input, char **body, long *bodylen)
 {
 	unsigned l;
 	z_stream vz;

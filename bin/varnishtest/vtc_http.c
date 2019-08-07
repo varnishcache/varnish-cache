@@ -774,7 +774,7 @@ static char* const *
 http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
     char *body, unsigned nohost)
 {
-	int bodylen = 0;
+	long bodylen = 0;
 	char *b, *c;
 	char *nullbody;
 	char *m;
@@ -847,7 +847,7 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
 			assert(body == nullbody);
 			free(body);
 			b = synth_body(av[1], 1);
-			vtc_gzip(hp, b, &body, (unsigned *)&bodylen);
+			vtc_gzip(hp, b, &body, &bodylen);
 			free(b);
 			VSB_printf(hp->vsb, "Content-Encoding: gzip%s", nl);
 			// vtc_hexdump(hp->vl, 4, "gzip", (void*)body, bodylen);
@@ -855,7 +855,7 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
 		} else if (!strcmp(*av, "-gzipbody")) {
 			assert(body == nullbody);
 			free(body);
-			vtc_gzip(hp, av[1], &body, (unsigned *)&bodylen);
+			vtc_gzip(hp, av[1], &body, &bodylen);
 			VSB_printf(hp->vsb, "Content-Encoding: gzip%s", nl);
 			// vtc_hexdump(hp->vl, 4, "gzip", (void*)body, bodylen);
 			av++;
@@ -869,7 +869,7 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
 		free(m);
 	}
 	if (body != NULL && !nolen)
-		VSB_printf(hp->vsb, "Content-Length: %d%s", bodylen, nl);
+		VSB_printf(hp->vsb, "Content-Length: %ld%s", bodylen, nl);
 	VSB_cat(hp->vsb, nl);
 	if (body != NULL) {
 		VSB_bcat(hp->vsb, body, bodylen);
