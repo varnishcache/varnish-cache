@@ -12,8 +12,7 @@ libvmod_directors_la_SOURCES = \
 	shard_cfg.c \
 	shard_cfg.h \
 	shard_dir.c \
-	shard_dir.h \
-	tbl_healthy.h
+	shard_dir.h
 
 # Use vmodtool.py generated automake boilerplate
 include $(srcdir)/automake_boilerplate.am

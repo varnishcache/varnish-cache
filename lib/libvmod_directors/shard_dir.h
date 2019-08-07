@@ -27,13 +27,6 @@
  * SUCH DAMAGE.
  */
 
-enum healthy_e {
-	_HEALTHY_E_INVALID = 0,
-#define VMODENUM(x) x,
-#include "tbl_healthy.h"
-	_HEALTHY_E_MAX
-};
-
 struct vbitmap;
 
 struct shard_circlepoint {
@@ -116,7 +109,7 @@ void sharddir_wrlock(struct sharddir *shardd);
 void sharddir_unlock(struct sharddir *shardd);
 VCL_BOOL sharddir_any_healthy(VRT_CTX, struct sharddir *, VCL_TIME *);
 VCL_BACKEND sharddir_pick_be(VRT_CTX, struct sharddir *, uint32_t, VCL_INT,
-   VCL_REAL, VCL_BOOL, enum healthy_e);
+   VCL_REAL, VCL_BOOL, VCL_ENUM healthy);
 
 /* in shard_cfg.c */
 void shardcfg_delete(const struct sharddir *shardd);

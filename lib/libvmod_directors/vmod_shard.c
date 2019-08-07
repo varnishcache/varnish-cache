@@ -128,7 +128,7 @@ struct vmod_directors_shard_param {
 
 	/* parameters */
 	VCL_ENUM				by;
-	enum healthy_e				healthy;
+	VCL_ENUM				healthy;
 	uint32_t				mask;
 	VCL_BOOL				rampup;
 	VCL_INT					alt;
@@ -144,13 +144,13 @@ static const struct vmod_directors_shard_param shard_param_default = {
 	.scope		= SCOPE_VMOD,
 
 	.mask		= arg_mask_param_,
-	.healthy	= CHOSEN,
 	.rampup	= 1,
 	.alt		= 0,
 	.warmup		= -1,
 };
 
 #define default_by(ptr) (ptr == NULL ? VENUM(HASH) : ptr)
+#define default_healthy(ptr) (ptr == NULL ? VENUM(CHOSEN) : ptr)
 
 static struct vmod_directors_shard_param *
 shard_param_stack(struct vmod_directors_shard_param *p,
@@ -180,20 +180,6 @@ struct vmod_directors_shard {
 #define VMOD_SHARD_SHARD_MAGIC			0x6e63e1bf
 	struct sharddir				*shardd;
 	VCL_BACKEND				dir;
-};
-
-static enum healthy_e
-parse_healthy_e(VCL_ENUM e)
-{
-#define VMODENUM(n) if (e == VENUM(n)) return(n);
-#include "tbl_healthy.h"
-       WRONG("illegal healthy enum");
-}
-
-static const char * const healthy_str[_HEALTHY_E_MAX] = {
-	[_HEALTHY_E_INVALID] = "*INVALID*",
-#define VMODENUM(n) [n] = #n,
-#include "tbl_healthy.h"
 };
 
 static void
@@ -504,7 +490,6 @@ shard_param_args(VRT_CTX,
     uint32_t args, VCL_ENUM by_s, VCL_INT key_int, VCL_BLOB key_blob,
     VCL_INT alt, VCL_REAL warmup, VCL_BOOL rampup, VCL_ENUM healthy_s)
 {
-	enum healthy_e	healthy;
 
 	CHECK_OBJ_NOTNULL(p, VMOD_SHARD_SHARD_PARAM_MAGIC);
 	AN(p->vcl_name);
@@ -514,7 +499,6 @@ shard_param_args(VRT_CTX,
 	if (!(args & arg_by))
 		by_s = NULL;
 	by_s = default_by(by_s);
-	healthy = (args & arg_healthy) ? parse_healthy_e(healthy_s) : CHOSEN;
 
 	/* by_s / key_int / key_blob */
 	if (by_s == VENUM(KEY)) {
@@ -587,7 +571,7 @@ shard_param_args(VRT_CTX,
 		p->rampup = !!rampup;
 
 	if (args & arg_healthy)
-		p->healthy = healthy;
+		p->healthy = healthy_s;
 
 	p->mask = args & arg_mask_param_;
 	return (p);
@@ -1063,9 +1047,7 @@ vmod_shard_param_get_healthy(VRT_CTX,
 				   "shard_param.get_healthy()");
 	if (pp == NULL)
 		return (NULL);
-	assert(pp->healthy > _HEALTHY_E_INVALID);
-	return (healthy_str[pp->healthy]);
-
+	return (default_healthy(pp->healthy));
 }
 
 static const struct vmod_directors_shard_param *

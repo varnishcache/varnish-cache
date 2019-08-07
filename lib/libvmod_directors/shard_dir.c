@@ -43,6 +43,7 @@
 #include "vsha256.h"
 #include "vend.h"
 
+#include "vcc_if.h"
 #include "shard_dir.h"
 
 struct shard_be_info {
@@ -323,7 +324,7 @@ sharddir_any_healthy(VRT_CTX, struct sharddir *shardd, VCL_TIME *changed)
 
 static VCL_BACKEND
 sharddir_pick_be_locked(VRT_CTX, const struct sharddir *shardd, uint32_t key,
-    VCL_INT alt, VCL_REAL warmup, VCL_BOOL rampup, enum healthy_e healthy,
+    VCL_INT alt, VCL_REAL warmup, VCL_BOOL rampup, VCL_ENUM healthy,
     struct shard_state *state)
 {
 	VCL_BACKEND be;
@@ -345,7 +346,8 @@ sharddir_pick_be_locked(VRT_CTX, const struct sharddir *shardd, uint32_t key,
 	    key, state->idx, shardd->hashcircle[state->idx].host);
 
 	if (alt > 0) {
-		if (shard_next(state, alt - 1, healthy == ALL ? 1 : 0) == -1) {
+		if (shard_next(state, alt - 1,
+		    healthy == VENUM(ALL) ? 1 : 0) == -1) {
 			if (state->previous.hostid != -1) {
 				be = sharddir_backend(shardd,
 				    state->previous.hostid);
@@ -356,7 +358,7 @@ sharddir_pick_be_locked(VRT_CTX, const struct sharddir *shardd, uint32_t key,
 		}
 	}
 
-	if (shard_next(state, 0, healthy == IGNORE ? 0 : 1) == -1) {
+	if (shard_next(state, 0, healthy == VENUM(IGNORE) ? 0 : 1) == -1) {
 		if (state->previous.hostid != -1) {
 			be = sharddir_backend(shardd, state->previous.hostid);
 			AN(be);
@@ -372,7 +374,7 @@ sharddir_pick_be_locked(VRT_CTX, const struct sharddir *shardd, uint32_t key,
 		warmup = shardd->warmup;
 
 	/* short path for cases we dont want ramup/warmup or can't */
-	if (alt > 0 || healthy == IGNORE || (!rampup && warmup == 0) ||
+	if (alt > 0 || healthy == VENUM(IGNORE) || (!rampup && warmup == 0) ||
 	    shard_next(state, 0, 1) == -1)
 		return (be);
 
@@ -415,7 +417,7 @@ sharddir_pick_be_locked(VRT_CTX, const struct sharddir *shardd, uint32_t key,
 
 VCL_BACKEND
 sharddir_pick_be(VRT_CTX, struct sharddir *shardd, uint32_t key, VCL_INT alt,
-    VCL_REAL warmup, VCL_BOOL rampup, enum healthy_e healthy)
+    VCL_REAL warmup, VCL_BOOL rampup, VCL_ENUM healthy)
 {
 	VCL_BACKEND be;
 	struct shard_state state[1];
