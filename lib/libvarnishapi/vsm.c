@@ -460,7 +460,7 @@ vsm_vlu_plus(struct vsm *vd, struct vsm_set *vs, const char *line)
 	struct vsm_seg *vg2;
 
 	av = VAV_Parse(line + 1, &ac, 0);
-
+	AN(av);
 	if (av[0] != NULL || ac < 4 || ac > 6) {
 		(void)(vsm_diag(vd,
 		    "vsm_vlu_plus: bad index (%d/%s)",
@@ -504,7 +504,7 @@ vsm_vlu_minus(struct vsm *vd, struct vsm_set *vs, const char *line)
 	struct vsm_seg *vg, *vg2;
 
 	av = VAV_Parse(line + 1, &ac, 0);
-
+	AN(av);
 	if (av[0] != NULL || ac < 4 || ac > 6) {
 		(void)(vsm_diag(vd,
 		    "vsm_vlu_minus: bad index (%d/%s)",
