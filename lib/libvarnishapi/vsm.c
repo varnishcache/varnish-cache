@@ -113,6 +113,10 @@ struct vsm_set {
 	// _.index reading state
 	unsigned		retval;
 	struct vsm_seg		*vg;
+
+	unsigned		flag_running;
+	unsigned		flag_changed;
+	unsigned		flag_restarted;
 };
 
 struct vsm {
@@ -122,9 +126,9 @@ struct vsm {
 	struct vsb		*diag;
 	uintptr_t		serial;
 
-	int			dfd;
-	struct stat		dst;
-	char			*dname;
+	int			wdfd;
+	struct stat		wdst;
+	char			*wdname;
 
 	struct vsm_set		*mgt;
 	struct vsm_set		*child;
@@ -186,7 +190,7 @@ vsm_mapseg(struct vsm *vd, struct vsm_seg *vg)
 
 	vsb = VSB_new_auto();
 	AN(vsb);
-	VSB_printf(vsb, "%s/%s/%s", vd->dname, vg->set->dname, vg->av[1]);
+	VSB_printf(vsb, "%s/%s/%s", vd->wdname, vg->set->dname, vg->av[1]);
 	AZ(VSB_finish(vsb));
 
 	fd = open(VSB_data(vsb), O_RDONLY);	// XXX: openat
@@ -315,10 +319,18 @@ VSM_New(void)
 	AN(vd);
 
 	vd->mgt = vsm_newset(VSM_MGT_DIRNAME);
+	vd->mgt->flag_running = VSM_MGT_RUNNING;
+	vd->mgt->flag_changed = VSM_MGT_CHANGED;
+	vd->mgt->flag_restarted = VSM_MGT_RESTARTED;
+
 	vd->child = vsm_newset(VSM_CHILD_DIRNAME);
+	vd->child->flag_running = VSM_WRK_RUNNING;
+	vd->child->flag_changed = VSM_WRK_CHANGED;
+	vd->child->flag_restarted = VSM_WRK_RESTARTED;
+
 	vd->mgt->vsm = vd;
 	vd->child->vsm = vd;
-	vd->dfd = -1;
+	vd->wdfd = -1;
 	vd->patience = 5;
 	if (getenv("VSM_NOPID") != NULL)
 		vd->couldkill = -1;
@@ -353,7 +365,7 @@ VSM_Arg(struct vsm *vd, char flag, const char *arg)
 			return (vsm_diag(vd, "Invalid instance name: %s",
 			    strerror(errno)));
 		AN(p);
-		REPLACE(vd->dname, p);
+		REPLACE(vd->wdname, p);
 		free(p);
 		break;
 	default:
@@ -372,11 +384,11 @@ VSM_Destroy(struct vsm **vdp)
 	TAKE_OBJ_NOTNULL(vd, vdp, VSM_MAGIC);
 
 	VSM_ResetError(vd);
-	REPLACE(vd->dname, NULL);
+	REPLACE(vd->wdname, NULL);
 	if (vd->diag != NULL)
 		VSB_destroy(&vd->diag);
-	if (vd->dfd >= 0)
-		closefd(&vd->dfd);
+	if (vd->wdfd >= 0)
+		closefd(&vd->wdfd);
 	vsm_delset(&vd->mgt);
 	vsm_delset(&vd->child);
 	FREE_OBJ(vd);
@@ -563,7 +575,7 @@ vsm_vlu_func(void *priv, const char *line)
 		i = vsm_vlu_hash(vd, vs, line);
 		VTAILQ_FOREACH(vs->vg, &vs->segs, list)
 			vs->vg->flags &= ~VSM_FLAG_MARKSCAN;
-		if (!(vs->retval & VSM_MGT_RESTARTED))
+		if (!(vs->retval & vs->flag_restarted))
 			vs->vg = VTAILQ_FIRST(&vs->segs);
 		break;
 	case '+':
@@ -589,29 +601,27 @@ vsm_refresh_set(struct vsm *vd, struct vsm_set *vs)
 	CHECK_OBJ_NOTNULL(vs, VSM_SET_MAGIC);
 	vs->retval = 0;
 	if (vs->dfd >= 0) {
-		if (fstatat(vd->dfd, vs->dname, &st, AT_SYMLINK_NOFOLLOW)) {
+		if (fstatat(vd->wdfd, vs->dname, &st, AT_SYMLINK_NOFOLLOW) ||
+		    st.st_ino != vs->dst.st_ino ||
+		    st.st_dev != vs->dst.st_dev ||
+		    st.st_mode != vs->dst.st_mode ||
+		    st.st_nlink == 0) {
 			closefd(&vs->dfd);
 			vs->id1 = vs->id2 = 0;
 			vsm_wash_set(vs, 1);
-			return (VSM_MGT_RESTARTED|VSM_MGT_CHANGED);
-		}
-		if (st.st_ino != vs->dst.st_ino ||
-		    st.st_dev != vs->dst.st_dev ||
-		    st.st_mode != vs->dst.st_mode) {
-			closefd(&vs->dfd);
-			vs->id1 = vs->id2 = 0;
+			vs->retval |= vs->flag_restarted;
 		}
 	}
 
 	if (vs->dfd < 0) {
 		if (vs->fd >= 0)
 			closefd(&vs->fd);
-		vs->dfd = openat(vd->dfd, vs->dname, O_RDONLY);
-		vs->retval |= VSM_MGT_RESTARTED;
+		vs->dfd = openat(vd->wdfd, vs->dname, O_RDONLY);
 		if (vs->dfd < 0) {
 			vs->id1 = vs->id2 = 0;
 			vsm_wash_set(vs, 1);
-			return (vs->retval|VSM_MGT_CHANGED);
+			vs->retval |= vs->flag_restarted;
+			return (vs->retval);
 		}
 		AZ(fstat(vs->dfd, &vs->dst));
 	}
@@ -629,14 +639,14 @@ vsm_refresh_set(struct vsm *vd, struct vsm_set *vs)
 
 	if (vs->fd >= 0) {
 		if (vd->couldkill < 1 || !kill(vs->id1, 0))
-			vs->retval |= VSM_MGT_RUNNING;
+			vs->retval |= vs->flag_running;
 		return (vs->retval);
 	}
 
-	vs->retval |= VSM_MGT_CHANGED;
+	vs->retval |= vs->flag_changed;
 	vs->fd = openat(vs->dfd, "_.index", O_RDONLY);
 	if (vs->fd < 0)
-		return (vs->retval|VSM_MGT_RESTARTED);
+		return (vs->retval|vs->flag_restarted);
 
 	AZ(fstat(vs->fd, &vs->fst));
 
@@ -658,38 +668,41 @@ vsm_refresh_set(struct vsm *vd, struct vsm_set *vs)
 unsigned
 VSM_Status(struct vsm *vd)
 {
-	unsigned retval = 0, u;
+	unsigned retval = 0;
 	struct stat st;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 
 	/* See if the -n workdir changed */
-	if (vd->dfd >= 0) {
-		AZ(fstat(vd->dfd, &st));
-		if (st.st_ino != vd->dst.st_ino ||
-		    st.st_dev != vd->dst.st_dev ||
-		    st.st_mode != vd->dst.st_mode ||
+	if (vd->wdfd >= 0) {
+		AZ(fstat(vd->wdfd, &st));
+		if (st.st_ino != vd->wdst.st_ino ||
+		    st.st_dev != vd->wdst.st_dev ||
+		    st.st_mode != vd->wdst.st_mode ||
 		    st.st_nlink == 0) {
-			closefd(&vd->dfd);
-			retval |= VSM_MGT_CHANGED;
-			retval |= VSM_WRK_CHANGED;
+			closefd(&vd->wdfd);
+			vsm_wash_set(vd->mgt, 1);
+			vsm_wash_set(vd->child, 1);
 		}
 	}
 
 	/* Open workdir */
-	if (vd->dfd < 0) {
-		vd->dfd = open(vd->dname, O_RDONLY);
-		if (vd->dfd < 0)
+	if (vd->wdfd < 0) {
+		retval |= VSM_MGT_RESTARTED | VSM_MGT_CHANGED;
+		retval |= VSM_WRK_RESTARTED | VSM_MGT_CHANGED;
+		vd->wdfd = open(vd->wdname, O_RDONLY);
+		if (vd->wdfd < 0)
 			(void)vsm_diag(vd,
 			    "VSM_Status: Cannot open workdir");
 		else
-			AZ(fstat(vd->dfd, &vd->dst));
+			AZ(fstat(vd->wdfd, &vd->wdst));
 	}
 
-	u = vsm_refresh_set(vd, vd->mgt);
-	retval |= u;
-	if (u & VSM_MGT_RUNNING)
-		retval |= vsm_refresh_set(vd, vd->child) << 8;
+	if (vd->wdfd >= 0) {
+		retval |= vsm_refresh_set(vd, vd->mgt);
+		if (retval & VSM_MGT_RUNNING)
+			retval |= vsm_refresh_set(vd, vd->child);
+	}
 	return (retval);
 }
 
@@ -709,12 +722,12 @@ VSM_Attach(struct vsm *vd, int progress)
 	else
 		t0 = VTIM_mono() + vd->patience;
 
-	if (vd->dname == NULL) {
+	if (vd->wdname == NULL) {
 		/* Use default (hostname) */
 		i = VSM_Arg(vd, 'n', "");
 		if (i < 0)
 			return (i);
-		AN(vd->dname);
+		AN(vd->wdname);
 	}
 
 	AZ(vd->attached);
