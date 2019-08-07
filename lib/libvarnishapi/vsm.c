@@ -469,6 +469,9 @@ vsm_vlu_plus(struct vsm *vd, struct vsm_set *vs, const char *line)
 		return(-1);
 	}
 
+	while (vs->vg != NULL && vsm_cmp_av(&vs->vg->av[1], &av[1]))
+		vs->vg = VTAILQ_NEXT(vs->vg, list);
+
 	if (vs->vg == NULL) {
 		ALLOC_OBJ(vg2, VSM_SEG_MAGIC);
 		AN(vg2);
@@ -484,14 +487,10 @@ vsm_vlu_plus(struct vsm *vd, struct vsm_set *vs, const char *line)
 			vg2->cluster = vsm_findcluster(vg2);
 		}
 	} else {
-		while (vs->vg != NULL && vsm_cmp_av(&vs->vg->av[1], &av[1]))
-			vs->vg = VTAILQ_NEXT(vs->vg, list);
+		/* Entry compared equal, so it survives */
+		vs->vg->flags |= VSM_FLAG_MARKSCAN;
+		vs->vg = VTAILQ_NEXT(vs->vg, list);
 		VAV_Free(av);
-		if (vs->vg != NULL) {
-			/* entry compared equal, so it survives */
-			vs->vg->flags |= VSM_FLAG_MARKSCAN;
-			vs->vg = VTAILQ_NEXT(vs->vg, list);
-		}
 	}
 	return (0);
 }
