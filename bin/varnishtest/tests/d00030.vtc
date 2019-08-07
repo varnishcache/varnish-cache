@@ -111,7 +111,7 @@ varnish v1 -errvcl {key and key_blob arguments are invalid with by=URL} {
     }
 }
 
-varnish v1 -errvcl {key and key_blob arguments are invalid with by=HASH (default)} {
+varnish v1 -errvcl {key and key_blob arguments are invalid with by=HASH} {
     import directors;
     import blob;
 

@@ -127,7 +127,7 @@ struct vmod_directors_shard_param {
 	enum vmod_directors_shard_param_scope	scope;
 
 	/* parameters */
-	enum by_e				by;
+	VCL_ENUM				by;
 	enum healthy_e				healthy;
 	uint32_t				mask;
 	VCL_BOOL				rampup;
@@ -144,12 +144,13 @@ static const struct vmod_directors_shard_param shard_param_default = {
 	.scope		= SCOPE_VMOD,
 
 	.mask		= arg_mask_param_,
-	.by		= BY_HASH,
 	.healthy	= CHOSEN,
 	.rampup	= 1,
 	.alt		= 0,
 	.warmup		= -1,
 };
+
+#define default_by(ptr) (ptr == NULL ? VENUM(HASH) : ptr)
 
 static struct vmod_directors_shard_param *
 shard_param_stack(struct vmod_directors_shard_param *p,
@@ -181,14 +182,6 @@ struct vmod_directors_shard {
 	VCL_BACKEND				dir;
 };
 
-static enum by_e
-parse_by_e(VCL_ENUM e)
-{
-#define VMODENUM(n) if (e == VENUM(n)) return(BY_ ## n);
-#include "tbl_by.h"
-       WRONG("illegal by enum");
-}
-
 static enum healthy_e
 parse_healthy_e(VCL_ENUM e)
 {
@@ -204,12 +197,6 @@ parse_resolve_e(VCL_ENUM e)
 #include "tbl_resolve.h"
        WRONG("illegal resolve enum");
 }
-
-static const char * const by_str[_BY_E_MAX] = {
-	[_BY_E_INVALID] = "*INVALID*",
-#define VMODENUM(n) [BY_ ## n] = #n,
-#include "tbl_by.h"
-};
 
 static const char * const healthy_str[_HEALTHY_E_MAX] = {
 	[_HEALTHY_E_INVALID] = "*INVALID*",
@@ -393,15 +380,15 @@ shard_get_key(VRT_CTX, const struct vmod_directors_shard_param *p)
 	struct http *http;
 	struct strands s[1];
 	const char *sp[1];
+	VCL_ENUM by = default_by(p->by);
 
-	switch (p->by) {
-	case BY_HASH:
-		if (ctx->bo) {
-			CHECK_OBJ(ctx->bo, BUSYOBJ_MAGIC);
-			return (vbe32dec(ctx->bo->digest));
-		}
-		/* FALLTHROUGH */
-	case BY_URL:
+	if (by == VENUM(KEY) || by == VENUM(BLOB))
+		return (p->key);
+	if (by == VENUM(HASH) && ctx->bo != NULL) {
+		CHECK_OBJ(ctx->bo, BUSYOBJ_MAGIC);
+		return (vbe32dec(ctx->bo->digest));
+	}
+	if (by == VENUM(HASH) || by == VENUM(URL)) {
 		if (ctx->http_req) {
 			AN(http = ctx->http_req);
 		} else {
@@ -412,12 +399,8 @@ shard_get_key(VRT_CTX, const struct vmod_directors_shard_param *p)
 		s->n = 1;
 		s->p = sp;
 		return (sharddir_sha256(s));
-	case BY_KEY:
-	case BY_BLOB:
-		return (p->key);
-	default:
-		WRONG("by enum");
 	}
+	WRONG("by enum");
 }
 
 /*
@@ -439,7 +422,7 @@ shard_param_merge(struct vmod_directors_shard_param *to,
 
 	if ((to->mask & arg_by) == 0 && (from->mask & arg_by) != 0) {
 		to->by = from->by;
-		if (from->by == BY_KEY || from->by == BY_BLOB)
+		if (from->by == VENUM(KEY) || from->by == VENUM(BLOB))
 			to->key = from->key;
 	}
 
@@ -529,7 +512,6 @@ shard_param_args(VRT_CTX,
     uint32_t args, VCL_ENUM by_s, VCL_INT key_int, VCL_BLOB key_blob,
     VCL_INT alt, VCL_REAL warmup, VCL_BOOL rampup, VCL_ENUM healthy_s)
 {
-	enum by_e	by;
 	enum healthy_e	healthy;
 
 	CHECK_OBJ_NOTNULL(p, VMOD_SHARD_SHARD_PARAM_MAGIC);
@@ -537,73 +519,57 @@ shard_param_args(VRT_CTX,
 
 	assert((args & ~arg_mask_set_) == 0);
 
-	by = (args & arg_by) ? parse_by_e(by_s) : BY_HASH;
+	if (!(args & arg_by))
+		by_s = NULL;
+	by_s = default_by(by_s);
 	healthy = (args & arg_healthy) ? parse_healthy_e(healthy_s) : CHOSEN;
 
 	/* by_s / key_int / key_blob */
-	if (args & arg_by) {
-		switch (by) {
-		case BY_KEY:
-			if ((args & arg_key) == 0) {
-				VRT_fail(ctx, "%s %s: "
-					 "missing key argument with by=%s",
-					 who, p->vcl_name, by_s);
-				return (NULL);
-			}
-			if (key_int < 0 || key_int > UINT32_MAX) {
-				VRT_fail(ctx, "%s %s: "
-					 "invalid key argument %jd with by=%s",
-					 who, p->vcl_name,
-					 (intmax_t)key_int, by_s);
-				return (NULL);
-			}
-			assert(key_int >= 0);
-			assert(key_int <= UINT32_MAX);
-			p->key = (uint32_t)key_int;
-			break;
-		case BY_BLOB:
-			if ((args & arg_key_blob) == 0) {
-				VRT_fail(ctx, "%s %s: "
-					 "missing key_blob argument with by=%s",
-					 who, p->vcl_name, by_s);
-				return (NULL);
-			}
-			if (key_blob == NULL || key_blob->len == 0 ||
-			    key_blob->blob == NULL) {
-				sharddir_err(ctx, SLT_Error, "%s %s: "
-					     "by=BLOB but no or empty key_blob "
-					     "- using key 0",
-					     who, p->vcl_name);
-				p->key = 0;
-			} else
-				p->key = shard_blob_key(key_blob);
-			break;
-		case BY_HASH:
-		case BY_URL:
-			if (args & (arg_key|arg_key_blob)) {
-				VRT_fail(ctx, "%s %s: "
-					 "key and key_blob arguments are "
-					 "invalid with by=%s",
-					 who, p->vcl_name, by_s);
-				return (NULL);
-			}
-			break;
-		default:
-			WRONG("by enum");
+	if (by_s == VENUM(KEY)) {
+		if ((args & arg_key) == 0) {
+			VRT_fail(ctx, "%s %s: "
+				 "missing key argument with by=%s",
+				 who, p->vcl_name, by_s);
+			return (NULL);
 		}
-		p->by = by;
-	} else {
-		/* (args & arg_by) == 0 */
-		p->by = BY_HASH;
-
+		if (key_int < 0 || key_int > UINT32_MAX) {
+			VRT_fail(ctx, "%s %s: "
+				 "invalid key argument %jd with by=%s",
+				 who, p->vcl_name,
+				 (intmax_t)key_int, by_s);
+			return (NULL);
+		}
+		assert(key_int >= 0);
+		assert(key_int <= UINT32_MAX);
+		p->key = (uint32_t)key_int;
+	} else if (by_s == VENUM(BLOB)) {
+		if ((args & arg_key_blob) == 0) {
+			VRT_fail(ctx, "%s %s: "
+				 "missing key_blob argument with by=%s",
+				 who, p->vcl_name, by_s);
+			return (NULL);
+		}
+		if (key_blob == NULL || key_blob->len == 0 ||
+		    key_blob->blob == NULL) {
+			sharddir_err(ctx, SLT_Error, "%s %s: "
+				     "by=BLOB but no or empty key_blob "
+				     "- using key 0",
+				     who, p->vcl_name);
+			p->key = 0;
+		} else
+			p->key = shard_blob_key(key_blob);
+	} else if (by_s == VENUM(HASH) || by_s == VENUM(URL)) {
 		if (args & (arg_key|arg_key_blob)) {
 			VRT_fail(ctx, "%s %s: "
 				 "key and key_blob arguments are "
-				 "invalid with by=HASH (default)",
-				 who, p->vcl_name);
+				 "invalid with by=%s",
+				 who, p->vcl_name, by_s);
 			return (NULL);
 		}
+	} else {
+		WRONG("by enum");
 	}
+	p->by = by_s;
 
 	if (args & arg_alt) {
 		if (alt < 0) {
@@ -1040,8 +1006,7 @@ vmod_shard_param_get_by(VRT_CTX,
 	pp = vmod_shard_param_read(ctx, p, p, &pstk, "shard_param.get_by()");
 	if (pp == NULL)
 		return (NULL);
-	assert(pp->by > _BY_E_INVALID);
-	return (by_str[pp->by]);
+	return (default_by(pp->by));
 }
 
 VCL_INT v_matchproto_(td_directors_shard_param_get_key)
