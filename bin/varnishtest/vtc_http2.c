@@ -43,7 +43,6 @@
 #include "vtc_http.h"
 
 #include "vfil.h"
-#include "vgz.h"
 #include "hpack.h"
 #include "vend.h"
 
