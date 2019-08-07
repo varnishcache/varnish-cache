@@ -121,7 +121,7 @@ digraph cache_req_fsm {
 		]
 		lookup2 [
 			 shape=record
-			 label="{<top>cnt_lookup:|{vcl_hit\{\}|{req.*|obj.*}}|{fail|<deliver>deliver|<pass>pass|restart|synth|<miss>miss}}"
+			 label="{<top>cnt_lookup:|{vcl_hit\{\}|{req.*|obj.*}}|{fail|<deliver>deliver|<pass>pass|restart|synth}}"
 		]
 	}
 	lookup:busy:s -> lookup:top:ne [label=" waitinglist",
