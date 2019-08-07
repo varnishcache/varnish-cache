@@ -611,6 +611,7 @@ pan_sess(struct vsb *vsb, const struct sess *sp)
 
 #define BACKTRACE_LEVELS	10
 
+#ifdef HAVE_BACKTRACE
 static void
 pan_backtrace(struct vsb *vsb)
 {
@@ -649,6 +650,7 @@ pan_backtrace(struct vsb *vsb)
 	}
 	VSB_indent(vsb, -2);
 }
+#endif
 
 #ifdef HAVE_PTHREAD_GETATTR_NP
 static void
@@ -740,7 +742,11 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 	VSB_printf(pan_vsb, "now = %f (mono), %f (real)\n",
 	    VTIM_mono(), VTIM_real());
 
+#ifdef HAVE_BACKTRACE
 	pan_backtrace(pan_vsb);
+#else
+	VSB_printf(pan_vsb, "Backtrace support disabled at compile time");
+#endif
 
 	if (err)
 		VSB_printf(pan_vsb, "errno = %d (%s)\n", err, vstrerror(err));

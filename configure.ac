@@ -343,9 +343,18 @@ esac
 AC_SUBST(JEMALLOC_LDADD)
 
 AC_CHECK_FUNCS([setproctitle])
-AC_SEARCH_LIBS(backtrace, [execinfo], [], [
-   AC_MSG_ERROR([Could not find backtrace() support])
-])
+
+AC_ARG_WITH([backtrace],
+	    [AS_HELP_STRING([--without-backtrace], [Disable backtrace() ])])
+
+if test "$with_backtrace" != no; then
+	AC_SEARCH_LIBS(backtrace, [execinfo], [], [
+		AC_MSG_ERROR([Could not find backtrace() support])
+	])
+	AC_DEFINE([HAVE_BACKTRACE], [1],
+		[Define to 1 to enable backtraces iin panic reports])
+fi
+
 # white lie - we don't actually test it
 AC_MSG_CHECKING([whether daemon() works])
 case $target in
