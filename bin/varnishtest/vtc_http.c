@@ -763,7 +763,7 @@ cmd_http_gunzip(CMD_ARGS)
 	(void)vl;
 
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
-	vtc_gunzip(hp, hp->body, (unsigned *)&hp->bodyl);
+	vtc_gunzip(hp, hp->body, &hp->bodyl);
 }
 
 /**********************************************************************

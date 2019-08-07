@@ -2484,7 +2484,7 @@ cmd_gunzip(CMD_ARGS)
 	hp = s->hp;
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 
-	vtc_gunzip(s->hp, s->body, (unsigned *)&s->bodylen);
+	vtc_gunzip(s->hp, s->body, &s->bodylen);
 }
 
 /* SECTION: stream.spec.write_body

@@ -47,7 +47,7 @@ struct http {
 	char			*rem_port;
 	char			*rem_path;
 	char			*body;
-	unsigned		bodyl;
+	long			bodyl;
 	char			bodylen[20];
 	char			chunklen[20];
 

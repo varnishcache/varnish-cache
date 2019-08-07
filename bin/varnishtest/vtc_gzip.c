@@ -26,6 +26,8 @@
  * SUCH DAMAGE.
  */
 
+#include "config.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -38,7 +40,7 @@
 
 
 void
-vtc_gzip(struct http *hp, const char *input, char **body, unsigned *bodylen)
+vtc_gzip(const struct http *hp, const char *input, char **body, unsigned *bodylen)
 {
 	unsigned l;
 	z_stream vz;
@@ -82,7 +84,7 @@ vtc_gzip(struct http *hp, const char *input, char **body, unsigned *bodylen)
 }
 
 void
-vtc_gunzip(struct http *hp, char *body, unsigned *bodylen)
+vtc_gunzip(struct http *hp, char *body, long *bodylen)
 {
 	z_stream vz;
 	char *p;
@@ -111,9 +113,9 @@ vtc_gunzip(struct http *hp, char *body, unsigned *bodylen)
 	*bodylen = vz.total_out;
 	memcpy(body, p, *bodylen);
 	free(p);
-	vtc_log(hp->vl, 3, "new bodylen %u", *bodylen);
+	vtc_log(hp->vl, 3, "new bodylen %ld", *bodylen);
 	vtc_dump(hp->vl, 4, "body", body, *bodylen);
-	bprintf(hp->bodylen, "%u", *bodylen);
+	bprintf(hp->bodylen, "%ld", *bodylen);
 #ifdef VGZ_EXTENSIONS
 	vtc_log(hp->vl, 4, "startbit = %ju %ju/%ju",
 	    (uintmax_t)vz.start_bit,
