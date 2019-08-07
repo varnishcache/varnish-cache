@@ -479,6 +479,7 @@ main(int argc, char **argv)
 	char *colon;
 	const char *ptag, *profile = "responsetime";
 	pthread_t thr;
+	pthread_attr_t attr;
 	int fnum;
 	struct profile cli_p = {0};
 
@@ -627,7 +628,9 @@ main(int argc, char **argv)
 		ident = VSM_Dup(vut->vsm, "Arg", "-i");
 	else
 		ident = strdup("");
-	AZ(pthread_create(&thr, NULL, do_curses, NULL));
+	AZ(pthread_attr_init(&attr));
+	pthread_attr_setstacksize(&attr, 2097152);
+	AZ(pthread_create(&thr, &attr, do_curses, NULL));
 	vut->dispatch_f = accumulate;
 	vut->dispatch_priv = NULL;
 	(void)VUT_Main(vut);

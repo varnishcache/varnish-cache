@@ -312,6 +312,7 @@ main(int argc, char **argv)
 {
 	int o, once = 0;
 	pthread_t thr;
+	pthread_attr_t attr;
 	char *e = NULL;
 
 	vut = VUT_InitProg(argc, argv, &vopt_spec);
@@ -359,7 +360,9 @@ main(int argc, char **argv)
 		(void)VUT_Main(vut);
 		dump();
 	} else {
-		AZ(pthread_create(&thr, NULL, do_curses, NULL));
+		AZ(pthread_attr_init(&attr));
+		pthread_attr_setstacksize(&attr, 2097152);
+		AZ(pthread_create(&thr, &attr, do_curses, NULL));
 		(void)VUT_Main(vut);
 		end_of_file = 1;
 		AZ(pthread_join(thr, NULL));
