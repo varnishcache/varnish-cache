@@ -34,11 +34,6 @@ enum healthy_e {
 	_HEALTHY_E_MAX
 };
 
-enum resolve_e {
-#define VMODENUM(x) x,
-#include "tbl_resolve.h"
-};
-
 struct vbitmap;
 
 struct shard_circlepoint {

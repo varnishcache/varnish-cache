@@ -190,14 +190,6 @@ parse_healthy_e(VCL_ENUM e)
        WRONG("illegal healthy enum");
 }
 
-static enum resolve_e
-parse_resolve_e(VCL_ENUM e)
-{
-#define VMODENUM(n) if (e == VENUM(n)) return(n);
-#include "tbl_resolve.h"
-       WRONG("illegal resolve enum");
-}
-
 static const char * const healthy_str[_HEALTHY_E_MAX] = {
 	[_HEALTHY_E_INVALID] = "*INVALID*",
 #define VMODENUM(n) [n] = #n,
@@ -608,7 +600,7 @@ vmod_shard_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 	struct vmod_directors_shard_param pstk;
 	struct vmod_directors_shard_param *pp = NULL;
 	const struct vmod_directors_shard_param *ppt;
-	enum resolve_e resolve;
+	VCL_ENUM resolve;
 	uint32_t args = shard_backendarg_mask_(a);
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -616,14 +608,13 @@ vmod_shard_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 	assert((args & ~arg_mask_) == 0);
 
 	if (args & arg_resolve)
-		resolve = parse_resolve_e(a->resolve);
+		resolve = a->resolve;
 	else if (ctx->method & VCL_MET_TASK_H)
-		resolve = LAZY;
+		resolve = VENUM(LAZY);
 	else
-		resolve = NOW;
+		resolve = VENUM(NOW);
 
-	switch (resolve) {
-	case LAZY:
+	if (resolve == VENUM(LAZY)) {
 		if ((args & ~arg_resolve) == 0) {
 			AN(vshard->dir);
 			return (vshard->dir);
@@ -643,8 +634,7 @@ vmod_shard_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 		if (pp == NULL)
 			return (NULL);
 		pp->vcl_name = vshard->shardd->name;
-		break;
-	case NOW:
+	} else if (resolve == VENUM(NOW)) {
 		if (ctx->method & VCL_MET_TASK_H) {
 			VRT_fail(ctx,
 				 "shard .backend resolve=NOW can not be "
@@ -653,8 +643,7 @@ vmod_shard_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 		}
 		pp = shard_param_stack(&pstk, vshard->shardd->param,
 				       vshard->shardd->name);
-		break;
-	default:
+	} else {
 		WRONG("resolve enum");
 	}
 
@@ -675,10 +664,10 @@ vmod_shard_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 	if (pp == NULL)
 		return (NULL);
 
-	if (resolve == LAZY)
+	if (resolve == VENUM(LAZY))
 		return (vshard->dir);
 
-	assert(resolve == NOW);
+	assert(resolve == VENUM(NOW));
 	shard_param_merge(pp, pp->defaults);
 	return (sharddir_pick_be(ctx, vshard->shardd,
 				 shard_get_key(ctx, pp), pp->alt, pp->warmup,
