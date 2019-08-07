@@ -89,6 +89,7 @@ struct haproxy {
 
 	char			*workdir;
 	struct vsb		*msgs;
+	char			closed_sock[256]; /* Closed TCP socket */
 	VTAILQ_HEAD(,envar) envars;
 };
 
@@ -494,6 +495,9 @@ haproxy_new(const char *name)
 	struct haproxy *h;
 	struct vsb *vsb;
 	char buf[PATH_MAX];
+	int closed_sock;
+	char addr[128], port[128];
+	const char *err;
 
 	ALLOC_OBJ(h, HAPROXY_MAGIC);
 	AN(h);
@@ -522,6 +526,21 @@ haproxy_new(const char *name)
 	bprintf(buf, "%s/cfg", h->workdir);
 	h->cfg_fn = strdup(buf);
 	AN(h->cfg_fn);
+
+	/* Create a new TCP socket to reserve an IP:port and close it asap.
+	 * May be useful to simulate an unreachable server.
+	 */
+	bprintf(h->closed_sock, "%s_closed", h->name);
+	closed_sock = VTCP_listen_on("localhost:0", NULL, 100, &err);
+	if (err != NULL)
+		vtc_fatal(h->vl,
+			"Create listen socket failed: %s", err);
+	assert(closed_sock > 0);
+	VTCP_myname(closed_sock, addr, sizeof addr, port, sizeof port);
+	macro_def(h->vl, h->closed_sock, "sock", "%s %s", addr, port);
+	macro_def(h->vl, h->closed_sock, "addr", "%s", addr);
+	macro_def(h->vl, h->closed_sock, "port", "%s", port);
+	VTCP_close(&closed_sock);
 
 	h->cli = haproxy_cli_new(h);
 	AN(h->cli);
