@@ -249,6 +249,29 @@ vsm_delseg(struct vsm_seg *vg)
 
 /*--------------------------------------------------------------------*/
 
+static void
+vsm_retireseg(struct vsm_seg **pvg)
+{
+	struct vsm_seg *vg;
+
+	TAKE_OBJ_NOTNULL(vg, pvg, VSM_SEG_MAGIC);
+
+	AZ(vg->flags & VSM_FLAG_STALE);
+
+	if (vg->refs) {
+		/* There are still reference holders, move it to stale */
+		if (vg->flags & VSM_FLAG_CLUSTER)
+			VTAILQ_REMOVE(&vg->set->clusters, vg, list);
+		else
+			VTAILQ_REMOVE(&vg->set->segs, vg, list);
+		vg->flags |= VSM_FLAG_STALE;
+		VTAILQ_INSERT_TAIL(&vg->set->stale, vg, list);
+	} else
+		vsm_delseg(vg);
+}
+
+/*--------------------------------------------------------------------*/
+
 static struct vsm_set *
 vsm_newset(const char *dirname)
 {
@@ -500,7 +523,7 @@ vsm_vlu_minus(struct vsm *vd, struct vsm_set *vs, const char *line)
 {
 	char **av;
 	int ac;
-	struct vsm_seg *vg, *vg2;
+	struct vsm_seg *vg;
 
 	av = VAV_Parse(line + 1, &ac, 0);
 	AN(av);
@@ -512,19 +535,13 @@ vsm_vlu_minus(struct vsm *vd, struct vsm_set *vs, const char *line)
 		return(-1);
 	}
 
-	VTAILQ_FOREACH_SAFE(vg, &vs->segs, list, vg2) {
-		if (vsm_cmp_av(&vg->av[1], &av[1]))
-			continue;
-		VTAILQ_REMOVE(&vs->segs, vg, list);
-		if (vg->refs) {
-			vg->flags |= VSM_FLAG_STALE;
-			VTAILQ_INSERT_TAIL(&vs->stale, vg, list);
-		} else {
-			VAV_Free(vg->av);
-			FREE_OBJ(vg);
-		}
-		break;
+	VTAILQ_FOREACH(vg, &vs->segs, list) {
+		if (!vsm_cmp_av(&vg->av[1], &av[1]))
+			break;
 	}
+	if (vg)
+		vsm_retireseg(&vg);
+	AZ(vg);
 	VAV_Free(av);
 	return (0);
 }
@@ -645,14 +662,8 @@ vsm_refresh_set(struct vsm *vd, struct vsm_set *vs)
 	VTAILQ_FOREACH_SAFE(vg, &vs->segs, list, vg2) {
 		if ((vg->flags & VSM_FLAG_MARKSCAN) == 0 ||
 		    (retval & VSM_NUKE_ALL)) {
-			VTAILQ_REMOVE(&vs->segs, vg, list);
-			if (vg->refs) {
-				vg->flags |= VSM_FLAG_STALE;
-				VTAILQ_INSERT_TAIL(&vs->stale, vg, list);
-			} else {
-				VAV_Free(vg->av);
-				FREE_OBJ(vg);
-			}
+			vsm_retireseg(&vg);
+			AZ(vg);
 		}
 	}
 	return (retval & ~VSM_NUKE_ALL);
