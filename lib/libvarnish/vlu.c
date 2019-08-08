@@ -73,6 +73,13 @@ VLU_New(vlu_f *func, void *priv, unsigned bufsize)
 }
 
 void
+VLU_Reset(struct vlu *l)
+{
+	CHECK_OBJ_NOTNULL(l, LINEUP_MAGIC);
+	l->bufp = 0;
+}
+
+void
 VLU_Destroy(struct vlu **lp)
 {
 	struct vlu *l;

@@ -34,6 +34,7 @@
 
 typedef int (vlu_f)(void *, const char *);
 struct vlu *VLU_New(vlu_f *, void *, unsigned);
+void VLU_Reset(struct vlu *);
 int VLU_Fd(struct vlu *, int);
 void VLU_Destroy(struct vlu **);
 int VLU_File(int, vlu_f *, void *, unsigned);
