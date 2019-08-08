@@ -286,6 +286,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 {
 	int i;
 	vtim_real now;
+	unsigned handling;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -416,9 +417,15 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	if (wrk->handling == VCL_RET_ABANDON || wrk->handling == VCL_RET_FAIL ||
 	    wrk->handling == VCL_RET_ERROR) {
+		/* do not count deliberately ending the backend connection as
+		 * fetch failure
+		 */
+		handling = wrk->handling;
 		if (bo->htc)
 			bo->htc->doclose = SC_RESP_CLOSE;
 		vbf_cleanup(bo);
+		wrk->handling = handling;
+
 		if (wrk->handling == VCL_RET_ERROR)
 			return (F_STP_ERROR);
 		else
