@@ -142,6 +142,6 @@ mgt_SHM_ChildDestroy(void)
 		AZ(system("rm -rf " VSM_CHILD_DIRNAME));
 		VJ_master(JAIL_MASTER_LOW);
 	}
-	heritage.panic_str = NULL;
-	heritage.param = NULL;
+	VSMW_Free(mgt_vsmw, (void**)&heritage.panic_str);
+	VSMW_Free(mgt_vsmw, (void**)&heritage.param);
 }
