@@ -82,6 +82,7 @@ struct vsm_seg {
 #define VSM_FLAG_STALE		(1U<<2)
 #define VSM_FLAG_CLUSTER	(1U<<3)
 	VTAILQ_ENTRY(vsm_seg)	list;
+	VTAILQ_ENTRY(vsm_seg)	list_cluster;
 	struct vsm_set		*set;
 	struct vsm_seg		*cluster;
 	char			**av;
@@ -237,12 +238,14 @@ vsm_delseg(struct vsm_seg *vg)
 	if (vg->s != NULL)
 		vsm_unmapseg(vg);
 
+	if (vg->flags & VSM_FLAG_CLUSTER)
+		VTAILQ_REMOVE(&vg->set->clusters, vg, list_cluster);
+
 	if (vg->flags & VSM_FLAG_STALE)
 		VTAILQ_REMOVE(&vg->set->stale, vg, list);
-	else if (vg->flags & VSM_FLAG_CLUSTER)
-		VTAILQ_REMOVE(&vg->set->clusters, vg, list);
 	else
 		VTAILQ_REMOVE(&vg->set->segs, vg, list);
+
 	VAV_Free(vg->av);
 	FREE_OBJ(vg);
 }
@@ -261,9 +264,8 @@ vsm_retireseg(struct vsm_seg **pvg)
 	if (vg->refs) {
 		/* There are still reference holders, move it to stale */
 		if (vg->flags & VSM_FLAG_CLUSTER)
-			VTAILQ_REMOVE(&vg->set->clusters, vg, list);
-		else
-			VTAILQ_REMOVE(&vg->set->segs, vg, list);
+			VTAILQ_REMOVE(&vg->set->clusters, vg, list_cluster);
+		VTAILQ_REMOVE(&vg->set->segs, vg, list);
 		vg->flags |= VSM_FLAG_STALE;
 		VTAILQ_INSERT_TAIL(&vg->set->stale, vg, list);
 	} else
@@ -441,7 +443,7 @@ vsm_findcluster(const struct vsm_seg *vga)
 	struct vsm_seg *vg;
 	AN(vs);
 	AN(vga->av[1]);
-	VTAILQ_FOREACH(vg, &vs->clusters, list) {
+	VTAILQ_FOREACH(vg, &vs->clusters, list_cluster) {
 		AN(vg->av[1]);
 		if (!strcmp(vga->av[1], vg->av[1]))
 			return (vg);
@@ -504,11 +506,10 @@ vsm_vlu_plus(struct vsm *vd, struct vsm_set *vs, const char *line)
 		vg2->serial = ++vd->serial;
 		if (ac == 4) {
 			vg2->flags |= VSM_FLAG_CLUSTER;
-			VTAILQ_INSERT_TAIL(&vs->clusters, vg2, list);
-		} else {
-			VTAILQ_INSERT_TAIL(&vs->segs, vg2, list);
+			VTAILQ_INSERT_TAIL(&vs->clusters, vg2, list_cluster);
+		} else
 			vg2->cluster = vsm_findcluster(vg2);
-		}
+		VTAILQ_INSERT_TAIL(&vs->segs, vg2, list);
 	} else {
 		/* Entry compared equal, so it survives */
 		vs->vg->flags |= VSM_FLAG_MARKSCAN;
@@ -799,28 +800,39 @@ VSM__iter0(const struct vsm *vd, struct vsm_fantom *vf)
 int
 VSM__itern(struct vsm *vd, struct vsm_fantom *vf)
 {
-	struct vsm_seg *vg, *vg2;
+	struct vsm_set *set;
+	struct vsm_seg *vg;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	AN(vd->attached);
 	AN(vf);
 
 	if (vf->priv == 0) {
-		vg2 = VTAILQ_FIRST(&vd->mgt->segs);
+		vg = NULL;
+		set = vd->mgt;
 	} else {
 		vg = vsm_findseg(vd, vf);
 		if (vg == NULL)
 			return (vsm_diag(vd, "VSM_FOREACH: inconsistency"));
-		vg2 = VTAILQ_NEXT(vg, list);
-		if (vg2 == NULL && vg->set == vd->mgt)
-			vg2 = VTAILQ_FIRST(&vd->child->segs);
+		set = vg->set;
 	}
-	if (vg2 == NULL)
+	do {
+		if (vg == NULL)
+			vg = VTAILQ_FIRST(&set->segs);
+		else
+			vg = VTAILQ_NEXT(vg, list);
+		if (vg == NULL && (set == vd->mgt)) {
+			set = vd->child;
+			vg = VTAILQ_FIRST(&set->segs);
+		}
+	} while (vg != NULL && (vg->flags & VSM_FLAG_CLUSTER));
+
+	if (vg == NULL)
 		return (0);
 	memset(vf, 0, sizeof *vf);
-	vf->priv = vg2->serial;
-	vf->class = vg2->av[4];
-	vf->ident = vg2->av[5];
+	vf->priv = vg->serial;
+	vf->class = vg->av[4];
+	vf->ident = vg->av[5];
 	return (1);
 }
 
