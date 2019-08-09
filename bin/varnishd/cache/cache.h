@@ -450,6 +450,7 @@ struct reqtop {
 	struct req		*topreq;
 	struct vcl		*vcl0;
 	struct vrt_privs	privs[1];
+	pthread_mutex_t		*mtx;
 };
 
 struct req {
