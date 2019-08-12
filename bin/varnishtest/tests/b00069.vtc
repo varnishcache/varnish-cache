@@ -1,0 +1,56 @@
+varnishtest "Check backend connection limit (beresp.was_max_conn)"
+
+barrier b1 cond 2
+barrier b2 cond 2
+
+server s1 {
+	rxreq
+	barrier b1 sync
+	barrier b2 sync
+	txresp
+} -start
+
+varnish v1 -vcl {
+
+ 	backend default {
+		.host = "${s1_addr}";
+		.port = "${s1_port}";
+		.max_connections = 1;
+		.first_byte_timeout = 1s;
+	}
+
+ 	sub vcl_recv {
+		return(pass);
+	}
+
+	sub vcl_backend_error {
+		set beresp.http.max_conn = beresp.was_max_conn;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.max_conn == <undef>
+} -start
+
+client c2 {
+	barrier b1 sync
+	txreq
+	rxresp
+	expect resp.status == 503
+	expect resp.http.max_conn == true
+} -run
+
+barrier b2 sync
+client c1 -wait
+
+varnish v1 -expect backend_busy == 1
+
+client c3 {
+	txreq
+	rxresp
+	expect resp.status == 503
+	expect resp.http.max_conn == false
+} -run

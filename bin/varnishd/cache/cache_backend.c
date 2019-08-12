@@ -133,6 +133,7 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
 	if (bp->max_connections > 0 && bp->n_conn >= bp->max_connections) {
 		VSLb(bo->vsl, SLT_FetchError,
 		     "backend %s: busy", VRT_BACKEND_string(bp->director));
+		bo->was_max_conn = 1;
 		bp->vsc->busy++;
 		VSC_C_main->backend_busy++;
 		return (NULL);

@@ -808,6 +808,16 @@ beresp.was_304
 	to our conditional fetch from the backend and turned
 	that into `beresp.status = 200`
 
+beresp.was_max_conn
+
+ 	Type: BOOL
+
+ 	Readable from: vcl_backend_error
+
+
+ 	When `true` this indicates that we got a 503 response
+	due to the backend not having enough available connections.
+
 beresp.uncacheable
 
 	Type: BOOL
