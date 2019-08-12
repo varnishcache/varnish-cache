@@ -407,9 +407,6 @@ struct busyobj {
 
 	struct http_conn	*htc;
 
-	uint16_t		err_code;
-	const char		*err_reason;
-
 	struct pool_task	fetch_task;
 
 #define BO_FLAG(l, r, w, d) unsigned	l:1;
@@ -437,6 +434,9 @@ struct busyobj {
 
 	uint8_t			digest[DIGEST_LEN];
 	struct vrt_privs	privs[1];
+
+	uint16_t		err_code;
+	const char		*err_reason;
 };
 
 
