@@ -409,6 +409,7 @@ http_splitheader(struct http *hp, int req)
 	char *p, *q, **hh;
 	int n;
 	char buf[20];
+	const char* rxbuf_e = &hp->rxbuf[hp->prxbuf];
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	if (req) {
@@ -428,20 +429,20 @@ http_splitheader(struct http *hp, int req)
 	hh[n++] = p;
 	while (!vct_islws(*p))
 		p++;
-	AZ(vct_iscrlf(p));
+	AZ(vct_iscrlf(p, rxbuf_e));
 	*p++ = '\0';
 
 	/* URL/STATUS */
 	while (vct_issp(*p))		/* XXX: H space only */
 		p++;
-	AZ(vct_iscrlf(p));
+	AZ(vct_iscrlf(p, rxbuf_e));
 	hh[n++] = p;
 	while (!vct_islws(*p))
 		p++;
-	if (vct_iscrlf(p)) {
+	if (vct_iscrlf(p, rxbuf_e)) {
 		hh[n++] = NULL;
 		q = p;
-		p += vct_skipcrlf(p);
+		p = vct_skipcrlf(p, rxbuf_e);
 		*q = '\0';
 	} else {
 		*p++ = '\0';
@@ -449,26 +450,26 @@ http_splitheader(struct http *hp, int req)
 		while (vct_issp(*p))		/* XXX: H space only */
 			p++;
 		hh[n++] = p;
-		while (!vct_iscrlf(p))
+		while (!vct_iscrlf(p, rxbuf_e))
 			p++;
 		q = p;
-		p += vct_skipcrlf(p);
+		p = vct_skipcrlf(p, rxbuf_e);
 		*q = '\0';
 	}
 	assert(n == 3);
 
 	while (*p != '\0') {
 		assert(n < MAX_HDR);
-		if (vct_iscrlf(p))
+		if (vct_iscrlf(p, rxbuf_e))
 			break;
 		hh[n++] = p++;
-		while (*p != '\0' && !vct_iscrlf(p))
+		while (*p != '\0' && !vct_iscrlf(p, rxbuf_e))
 			p++;
 		q = p;
-		p += vct_skipcrlf(p);
+		p = vct_skipcrlf(p, rxbuf_e);
 		*q = '\0';
 	}
-	p += vct_skipcrlf(p);
+	p = vct_skipcrlf(p, rxbuf_e);
 	assert(*p == '\0');
 
 	for (n = 0; n < 3 || hh[n] != NULL; n++) {
@@ -564,15 +565,16 @@ http_rxchunk(struct http *hp)
 		vtc_dump(hp->vl, 4, "chunk", hp->rxbuf + l, i);
 	}
 	l = hp->prxbuf;
+
 	if (http_rxchar(hp, 2, 0) < 0)
 		return (-1);
-	if (!vct_iscrlf(hp->rxbuf + l)) {
+	if (!vct_iscrlf(&hp->rxbuf[l], &hp->rxbuf[hp->prxbuf])) {
 		vtc_log(hp->vl, hp->fatal,
 		    "Wrong chunk tail[0] = %02x",
 		    hp->rxbuf[l] & 0xff);
 		return (-1);
 	}
-	if (!vct_iscrlf(hp->rxbuf + l + 1)) {
+	if (!vct_iscrlf(&hp->rxbuf[l + 1], &hp->rxbuf[hp->prxbuf])) {
 		vtc_log(hp->vl, hp->fatal,
 		    "Wrong chunk tail[1] = %02x",
 		    hp->rxbuf[l + 1] & 0xff);
