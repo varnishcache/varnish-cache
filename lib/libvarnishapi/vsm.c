@@ -82,6 +82,7 @@ struct vsm_seg {
 #define VSM_FLAG_STALE		(1U<<2)
 #define VSM_FLAG_CLUSTER	(1U<<3)
 	VTAILQ_ENTRY(vsm_seg)	list;
+	VTAILQ_ENTRY(vsm_seg)	clist;
 	struct vsm_set		*set;
 	struct vsm_seg		*cluster;
 	char			**av;
@@ -233,10 +234,18 @@ vsm_unmapseg(struct vsm_seg *vg)
 /*--------------------------------------------------------------------*/
 
 static void
-vsm_delseg(struct vsm_seg *vg)
+vsm_delseg(struct vsm_seg *vg, int refsok)
 {
 
 	CHECK_OBJ_NOTNULL(vg, VSM_SEG_MAGIC);
+
+	if (refsok && vg->refs) {
+		AZ(vg->flags & VSM_FLAG_STALE);
+		vg->flags |= VSM_FLAG_STALE;
+		VTAILQ_REMOVE(&vg->set->segs, vg, list);
+		VTAILQ_INSERT_TAIL(&vg->set->stale, vg, list);
+		return;
+	}
 
 	if (vg->s != NULL)
 		vsm_unmapseg(vg);
@@ -244,7 +253,7 @@ vsm_delseg(struct vsm_seg *vg)
 	if (vg->flags & VSM_FLAG_STALE)
 		VTAILQ_REMOVE(&vg->set->stale, vg, list);
 	else if (vg->flags & VSM_FLAG_CLUSTER)
-		VTAILQ_REMOVE(&vg->set->clusters, vg, list);
+		VTAILQ_REMOVE(&vg->set->clusters, vg, clist);
 	else
 		VTAILQ_REMOVE(&vg->set->segs, vg, list);
 	VAV_Free(vg->av);
@@ -281,11 +290,11 @@ vsm_delset(struct vsm_set **p)
 	if (vs->dfd >= 0)
 		closefd(&vs->dfd);
 	while (!VTAILQ_EMPTY(&vs->stale))
-		vsm_delseg(VTAILQ_FIRST(&vs->stale));
+		vsm_delseg(VTAILQ_FIRST(&vs->stale), 0);
 	while (!VTAILQ_EMPTY(&vs->segs))
-		vsm_delseg(VTAILQ_FIRST(&vs->segs));
+		vsm_delseg(VTAILQ_FIRST(&vs->segs), 0);
 	while (!VTAILQ_EMPTY(&vs->clusters))
-		vsm_delseg(VTAILQ_FIRST(&vs->clusters));
+		vsm_delseg(VTAILQ_FIRST(&vs->clusters), 0);
 	FREE_OBJ(vs);
 }
 
@@ -295,16 +304,8 @@ vsm_wash_set(struct vsm_set *vs, int all)
 	struct vsm_seg *vg, *vg2;
 
 	VTAILQ_FOREACH_SAFE(vg, &vs->segs, list, vg2) {
-		if (all || (vg->flags & VSM_FLAG_MARKSCAN) == 0) {
-			VTAILQ_REMOVE(&vs->segs, vg, list);
-			if (vg->refs) {
-				vg->flags |= VSM_FLAG_STALE;
-				VTAILQ_INSERT_TAIL(&vs->stale, vg, list);
-			} else {
-				VAV_Free(vg->av);
-				FREE_OBJ(vg);
-			}
-		}
+		if (all || (vg->flags & VSM_FLAG_MARKSCAN) == 0)
+			vsm_delseg(vg, 1);
 	}
 }
 
@@ -441,15 +442,14 @@ vsm_cmp_av(char * const *a1, char * const *a2)
 }
 
 static struct vsm_seg *
-vsm_findcluster(const struct vsm_seg *vga)
+vsm_findcluster(const struct vsm_set *vs, const char *cnam)
 {
-	const struct vsm_set *vs = vga->set;
 	struct vsm_seg *vg;
 	AN(vs);
-	AN(vga->av[1]);
-	VTAILQ_FOREACH(vg, &vs->clusters, list) {
+	AN(cnam);
+	VTAILQ_FOREACH(vg, &vs->clusters, clist) {
 		AN(vg->av[1]);
-		if (!strcmp(vga->av[1], vg->av[1]))
+		if (!strcmp(cnam, vg->av[1]))
 			return (vg);
 	}
 	return (NULL);
@@ -498,7 +498,14 @@ vsm_vlu_plus(struct vsm *vd, struct vsm_set *vs, const char *line)
 		return(-1);
 	}
 
-	if (vs->vg == NULL) {
+	while (vs->vg != NULL && vsm_cmp_av(&vs->vg->av[1], &av[1]))
+		vs->vg = VTAILQ_NEXT(vs->vg, list);
+	if (vs->vg != NULL) {
+		VAV_Free(av);
+		/* entry compared equal, so it survives */
+		vs->vg->flags |= VSM_FLAG_MARKSCAN;
+		vs->vg = VTAILQ_NEXT(vs->vg, list);
+	} else {
 		ALLOC_OBJ(vg2, VSM_SEG_MAGIC);
 		AN(vg2);
 		vg2->av = av;
@@ -507,19 +514,10 @@ vsm_vlu_plus(struct vsm *vd, struct vsm_set *vs, const char *line)
 		vg2->serial = ++vd->serial;
 		if (ac == 4) {
 			vg2->flags |= VSM_FLAG_CLUSTER;
-			VTAILQ_INSERT_TAIL(&vs->clusters, vg2, list);
+			VTAILQ_INSERT_TAIL(&vs->clusters, vg2, clist);
 		} else {
 			VTAILQ_INSERT_TAIL(&vs->segs, vg2, list);
-			vg2->cluster = vsm_findcluster(vg2);
-		}
-	} else {
-		while (vs->vg != NULL && vsm_cmp_av(&vs->vg->av[1], &av[1]))
-			vs->vg = VTAILQ_NEXT(vs->vg, list);
-		VAV_Free(av);
-		if (vs->vg != NULL) {
-			/* entry compared equal, so it survives */
-			vs->vg->flags |= VSM_FLAG_MARKSCAN;
-			vs->vg = VTAILQ_NEXT(vs->vg, list);
+			vg2->cluster = vsm_findcluster(vs, vg2->av[1]);
 		}
 	}
 	return (0);
@@ -530,7 +528,7 @@ vsm_vlu_minus(struct vsm *vd, struct vsm_set *vs, const char *line)
 {
 	char **av;
 	int ac;
-	struct vsm_seg *vg, *vg2;
+	struct vsm_seg *vg;
 
 	av = VAV_Parse(line + 1, &ac, 0);
 
@@ -542,18 +540,11 @@ vsm_vlu_minus(struct vsm *vd, struct vsm_set *vs, const char *line)
 		return(-1);
 	}
 
-	VTAILQ_FOREACH_SAFE(vg, &vs->segs, list, vg2) {
-		if (vsm_cmp_av(&vg->av[1], &av[1]))
-			continue;
-		VTAILQ_REMOVE(&vs->segs, vg, list);
-		if (vg->refs) {
-			vg->flags |= VSM_FLAG_STALE;
-			VTAILQ_INSERT_TAIL(&vs->stale, vg, list);
-		} else {
-			VAV_Free(vg->av);
-			FREE_OBJ(vg);
+	VTAILQ_FOREACH(vg, &vs->segs, list) {
+		if (!vsm_cmp_av(&vg->av[1], &av[1])) {
+			vsm_delseg(vg, 1);
+			break;
 		}
-		break;
 	}
 	return (0);
 }
@@ -923,7 +914,7 @@ VSM_Unmap(struct vsm *vd, struct vsm_fantom *vf)
 		vsm_unmapseg(vg);
 	}
 	if (vg->flags & VSM_FLAG_STALE)
-		vsm_delseg(vg);
+		vsm_delseg(vg, 0);
 	return (0);
 }
 
