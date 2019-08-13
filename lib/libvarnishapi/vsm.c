@@ -239,6 +239,11 @@ vsm_delseg(struct vsm_seg *vg, int refsok)
 
 	CHECK_OBJ_NOTNULL(vg, VSM_SEG_MAGIC);
 
+	if (vg->flags & VSM_FLAG_CLUSTER) {
+		vg->flags &= ~VSM_FLAG_CLUSTER;
+		VTAILQ_REMOVE(&vg->set->clusters, vg, clist);
+	}
+
 	if (refsok && vg->refs) {
 		AZ(vg->flags & VSM_FLAG_STALE);
 		vg->flags |= VSM_FLAG_STALE;
@@ -252,8 +257,6 @@ vsm_delseg(struct vsm_seg *vg, int refsok)
 
 	if (vg->flags & VSM_FLAG_STALE)
 		VTAILQ_REMOVE(&vg->set->stale, vg, list);
-	else if (vg->flags & VSM_FLAG_CLUSTER)
-		VTAILQ_REMOVE(&vg->set->clusters, vg, clist);
 	else
 		VTAILQ_REMOVE(&vg->set->segs, vg, list);
 	VAV_Free(vg->av);
@@ -293,13 +296,12 @@ vsm_delset(struct vsm_set **p)
 		vsm_delseg(VTAILQ_FIRST(&vs->stale), 0);
 	while (!VTAILQ_EMPTY(&vs->segs))
 		vsm_delseg(VTAILQ_FIRST(&vs->segs), 0);
-	while (!VTAILQ_EMPTY(&vs->clusters))
-		vsm_delseg(VTAILQ_FIRST(&vs->clusters), 0);
+	assert(VTAILQ_EMPTY(&vs->clusters));
 	FREE_OBJ(vs);
 }
 
 static void
-vsm_wash_set(struct vsm_set *vs, int all)
+vsm_wash_set(const struct vsm_set *vs, int all)
 {
 	struct vsm_seg *vg, *vg2;
 
@@ -486,13 +488,12 @@ vsm_vlu_plus(struct vsm *vd, struct vsm_set *vs, const char *line)
 {
 	char **av;
 	int ac;
-	struct vsm_seg *vg2;
+	struct vsm_seg *vg;
 
 	av = VAV_Parse(line + 1, &ac, 0);
 
 	if (av[0] != NULL || ac < 4 || ac > 6) {
-		(void)(vsm_diag(vd,
-		    "vsm_vlu_plus: bad index (%d/%s)",
+		(void)(vsm_diag(vd, "vsm_vlu_plus: bad index (%d/%s)",
 		    ac, av[0]));
 		VAV_Free(av);
 		return(-1);
@@ -506,25 +507,26 @@ vsm_vlu_plus(struct vsm *vd, struct vsm_set *vs, const char *line)
 		vs->vg->flags |= VSM_FLAG_MARKSCAN;
 		vs->vg = VTAILQ_NEXT(vs->vg, list);
 	} else {
-		ALLOC_OBJ(vg2, VSM_SEG_MAGIC);
-		AN(vg2);
-		vg2->av = av;
-		vg2->set = vs;
-		vg2->flags = VSM_FLAG_MARKSCAN;
-		vg2->serial = ++vd->serial;
+		ALLOC_OBJ(vg, VSM_SEG_MAGIC);
+		AN(vg);
+		vg->av = av;
+		vg->set = vs;
+		vg->flags = VSM_FLAG_MARKSCAN;
+		vg->serial = ++vd->serial;
+		VTAILQ_INSERT_TAIL(&vs->segs, vg, list);
 		if (ac == 4) {
-			vg2->flags |= VSM_FLAG_CLUSTER;
-			VTAILQ_INSERT_TAIL(&vs->clusters, vg2, clist);
-		} else {
-			VTAILQ_INSERT_TAIL(&vs->segs, vg2, list);
-			vg2->cluster = vsm_findcluster(vs, vg2->av[1]);
+			vg->flags |= VSM_FLAG_CLUSTER;
+			VTAILQ_INSERT_TAIL(&vs->clusters, vg, clist);
+		} else if (*vg->av[2] != '0') {
+			vg->cluster = vsm_findcluster(vs, vg->av[1]);
+			AN(vg->cluster);
 		}
 	}
 	return (0);
 }
 
 static int
-vsm_vlu_minus(struct vsm *vd, struct vsm_set *vs, const char *line)
+vsm_vlu_minus(struct vsm *vd, const struct vsm_set *vs, const char *line)
 {
 	char **av;
 	int ac;
@@ -533,19 +535,25 @@ vsm_vlu_minus(struct vsm *vd, struct vsm_set *vs, const char *line)
 	av = VAV_Parse(line + 1, &ac, 0);
 
 	if (av[0] != NULL || ac < 4 || ac > 6) {
-		(void)(vsm_diag(vd,
-		    "vsm_vlu_minus: bad index (%d/%s)",
+		(void)(vsm_diag(vd, "vsm_vlu_minus: bad index (%d/%s)",
 		    ac, av[0]));
 		VAV_Free(av);
 		return(-1);
 	}
 
-	VTAILQ_FOREACH(vg, &vs->segs, list) {
+	/* Clustered segments cannot come before their cluster */
+	if (*av[2] != '0')
+		vg = vsm_findcluster(vs, av[1]);
+	else
+		vg = VTAILQ_FIRST(&vs->segs);
+
+	for (;vg != NULL; vg = VTAILQ_NEXT(vg, list)) {
 		if (!vsm_cmp_av(&vg->av[1], &av[1])) {
 			vsm_delseg(vg, 1);
 			break;
 		}
 	}
+	AN(vg);
 	VAV_Free(av);
 	return (0);
 }
@@ -788,28 +796,36 @@ VSM__iter0(const struct vsm *vd, struct vsm_fantom *vf)
 int
 VSM__itern(struct vsm *vd, struct vsm_fantom *vf)
 {
-	struct vsm_seg *vg, *vg2;
+	struct vsm_seg *vg;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	AN(vd->attached);
 	AN(vf);
 
 	if (vf->priv == 0) {
-		vg2 = VTAILQ_FIRST(&vd->mgt->segs);
+		vg = VTAILQ_FIRST(&vd->mgt->segs);
+		if (vg == NULL)
+			return (0);
 	} else {
 		vg = vsm_findseg(vd, vf);
 		if (vg == NULL)
 			return (vsm_diag(vd, "VSM_FOREACH: inconsistency"));
-		vg2 = VTAILQ_NEXT(vg, list);
-		if (vg2 == NULL && vg->set == vd->mgt)
-			vg2 = VTAILQ_FIRST(&vd->child->segs);
+		while (1) {
+			if (vg->set == vd->mgt && VTAILQ_NEXT(vg, list) == NULL)
+				vg = VTAILQ_FIRST(&vd->child->segs);
+			else
+				vg = VTAILQ_NEXT(vg, list);
+			if (vg == NULL)
+				return (0);
+			if (!(vg->flags & VSM_FLAG_CLUSTER))
+				break;
+		}
 	}
-	if (vg2 == NULL)
-		return (0);
 	memset(vf, 0, sizeof *vf);
-	vf->priv = vg2->serial;
-	vf->class = vg2->av[4];
-	vf->ident = vg2->av[5];
+	vf->priv = vg->serial;
+	vf->class = vg->av[4];
+	vf->ident = vg->av[5];
+	AN(vf->class);
 	return (1);
 }
 

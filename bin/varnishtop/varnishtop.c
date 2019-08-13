@@ -353,6 +353,7 @@ main(int argc, char **argv)
 		ident = VSM_Dup(vut->vsm, "Arg", "-i");
 	else
 		ident = strdup("");
+	AN(ident);
 	vut->dispatch_f = accumulate;
 	vut->dispatch_priv = NULL;
 	if (once) {

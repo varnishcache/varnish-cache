@@ -423,6 +423,7 @@ VSC_Iter(struct vsc *vsc, struct vsm *vsm, VSC_iter_f *fiter, void *priv)
 	AN(vsm);
 	sp = VTAILQ_FIRST(&vsc->segs);
 	VSM_FOREACH(&ifantom, vsm) {
+		AN(ifantom.class);
 		if (strcmp(ifantom.class, VSC_CLASS) &&
 		    strcmp(ifantom.class, VSC_DOC_CLASS))
 			continue;
