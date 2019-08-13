@@ -138,6 +138,9 @@ struct vsmw {
 	uint64_t			nsubs;
 };
 
+/* Allocations in clusters never start at offset zero */
+#define VSM_CLUSTER_OFFSET 16
+
 /*--------------------------------------------------------------------*/
 
 static void
@@ -311,7 +314,9 @@ VSMW_NewCluster(struct vsmw *vsmw, size_t len, const char *pfx)
 	struct vsmwseg *seg;
 
 	vsmw_do_lock();
-	vc = vsmw_newcluster(vsmw, len, pfx);
+	vc = vsmw_newcluster(vsmw, len + VSM_CLUSTER_OFFSET, pfx);
+	AN(vc);
+	vc->next += VSM_CLUSTER_OFFSET;
 
 	ALLOC_OBJ(seg, VSMWSEG_MAGIC);
 	AN(seg);
