@@ -431,20 +431,20 @@ http_splitheader(struct http *hp, int req)
 	hh[n++] = p;
 	while (!vct_islws(*p))
 		p++;
-	AZ(vct_iscrlf(p));
+	AZ(vct_iscrlf(p, hp->rx_e));
 	*p++ = '\0';
 
 	/* URL/STATUS */
 	while (vct_issp(*p))		/* XXX: H space only */
 		p++;
-	AZ(vct_iscrlf(p));
+	AZ(vct_iscrlf(p, hp->rx_e));
 	hh[n++] = p;
 	while (!vct_islws(*p))
 		p++;
-	if (vct_iscrlf(p)) {
+	if (vct_iscrlf(p, hp->rx_e)) {
 		hh[n++] = NULL;
 		q = p;
-		p += vct_skipcrlf(p);
+		p = vct_skipcrlf(p, hp->rx_e);
 		*q = '\0';
 	} else {
 		*p++ = '\0';
@@ -452,26 +452,26 @@ http_splitheader(struct http *hp, int req)
 		while (vct_issp(*p))		/* XXX: H space only */
 			p++;
 		hh[n++] = p;
-		while (!vct_iscrlf(p))
+		while (!vct_iscrlf(p, hp->rx_e))
 			p++;
 		q = p;
-		p += vct_skipcrlf(p);
+		p = vct_skipcrlf(p, hp->rx_e);
 		*q = '\0';
 	}
 	assert(n == 3);
 
 	while (*p != '\0') {
 		assert(n < MAX_HDR);
-		if (vct_iscrlf(p))
+		if (vct_iscrlf(p, hp->rx_e))
 			break;
 		hh[n++] = p++;
-		while (*p != '\0' && !vct_iscrlf(p))
+		while (*p != '\0' && !vct_iscrlf(p, hp->rx_e))
 			p++;
 		q = p;
-		p += vct_skipcrlf(p);
+		p = vct_skipcrlf(p, hp->rx_e);
 		*q = '\0';
 	}
-	p += vct_skipcrlf(p);
+	p = vct_skipcrlf(p, hp->rx_e);
 	assert(*p == '\0');
 
 	for (n = 0; n < 3 || hh[n] != NULL; n++) {
@@ -567,7 +567,7 @@ http_rxchunk(struct http *hp)
 	old = hp->rx_p;
 	if (http_rxchar(hp, 2, 0) < 0)
 		return (-1);
-	if (!vct_iscrlf(old)) {
+	if (!vct_iscrlf(old, hp->rx_e)) {
 		vtc_log(hp->vl, hp->fatal, "Chunklen without CRLF");
 		return (-1);
 	}

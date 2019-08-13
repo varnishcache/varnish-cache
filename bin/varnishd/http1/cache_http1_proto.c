@@ -120,31 +120,31 @@ http1_dissect_hdrs(struct http *hp, char *p, struct http_conn *htc,
 
 		/* Find end of next header */
 		q = r = p;
-		if (vct_iscrlf(p))
+		if (vct_iscrlf(p, htc->rxbuf_e))
 			break;
 		while (r < htc->rxbuf_e) {
 			if (!vct_isctl(*r) || vct_issp(*r)) {
 				r++;
 				continue;
 			}
-			if (!vct_iscrlf(r)) {
+			if (!vct_iscrlf(r, htc->rxbuf_e)) {
 				VSLb(hp->vsl, SLT_BogoHeader,
 				    "Header has ctrl char 0x%02x", *r);
 				return (400);
 			}
 			q = r;
 			assert(r < htc->rxbuf_e);
-			r += vct_skipcrlf(r);
+			r = vct_skipcrlf(r, htc->rxbuf_e);
 			if (r >= htc->rxbuf_e)
 				break;
-			if (vct_iscrlf(r))
+			if (vct_iscrlf(r, htc->rxbuf_e))
 				break;
 			/* If line does not continue: got it. */
 			if (!vct_issp(*r))
 				break;
 
 			/* Clear line continuation LWS to spaces */
-			while (vct_islws(*q))
+			while (q < htc->rxbuf_e && vct_islws(*q))
 				*q++ = ' ';
 		}
 
@@ -269,7 +269,7 @@ http1_splitline(struct http *hp, struct http_conn *htc, const int *hf,
 	hp->hd[hf[2]].b = p;
 
 	/* Third field is optional and cannot contain CTL except TAB */
-	for (; !vct_iscrlf(p); p++) {
+	for (; p < htc->rxbuf_e && !vct_iscrlf(p, htc->rxbuf_e); p++) {
 		if (vct_isctl(*p) && !vct_issp(*p)) {
 			hp->hd[hf[2]].b = NULL;
 			return (400);
@@ -278,7 +278,9 @@ http1_splitline(struct http *hp, struct http_conn *htc, const int *hf,
 	hp->hd[hf[2]].e = p;
 
 	/* Skip CRLF */
-	i = vct_skipcrlf(p);
+	i = vct_iscrlf(p, htc->rxbuf_e);
+	if (!i)
+		return (400);
 	*p = '\0';
 	p += i;
 

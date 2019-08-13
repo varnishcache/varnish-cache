@@ -30,6 +30,8 @@
 
 /* from libvarnish/vct.c */
 
+#include "vas.h"
+
 #define VCT_SP			(1<<0)
 #define VCT_CRLF		(1<<1)
 #define VCT_LWS			(VCT_CRLF | VCT_SP)
@@ -76,7 +78,22 @@ vct_is(int x, uint16_t y)
 #define vct_isxmlname(x) vct_is(x, VCT_XMLNAMESTART | VCT_XMLNAME)
 #define vct_istchar(x) vct_is(x, VCT_ALPHA | VCT_DIGIT | VCT_TCHAR)
 
-#define vct_iscrlf(p) (((p)[0] == 0x0d && (p)[1] == 0x0a) || (p)[0] == 0x0a)
+static inline int
+vct_iscrlf(const char* p, const char* end)
+{
+	assert(p <= end);
+	if (p == end)
+		return (0);
+	if ((p[0] == 0x0d && (p+1 < end) && p[1] == 0x0a)) // CR LF
+		return (2);
+	if (p[0] == 0x0a) // LF
+		return (1);
+	return (0);
+}
 
 /* NB: VCT always operate in ASCII, don't replace 0x0d with \r etc. */
-#define vct_skipcrlf(p) ((p)[0] == 0x0d && (p)[1] == 0x0a ? 2 : 1)
+static inline char*
+vct_skipcrlf(char* p, const char* end)
+{
+	return (p + vct_iscrlf(p, end));
+}

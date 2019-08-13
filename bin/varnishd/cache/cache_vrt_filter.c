@@ -34,11 +34,11 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "vct.h"
-
 #include "cache_varnishd.h"
 #include "cache_vcl.h"
 #include "vrt_obj.h"
+
+#include "vct.h"
 
 #include "cache_filter.h"
 
