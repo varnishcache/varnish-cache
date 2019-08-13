@@ -4,15 +4,47 @@ varnish v1 -vcl {
 	backend default { .host = "${bad_ip}"; }
 } -start
 
+delay 1
+
 process p1 {
 	nlines=`wc -l < ${tmpdir}/v1/_.vsm_child/_.index`
 	nminus=`grep -c '^-' ${tmpdir}/v1/_.vsm_child/_.index`
-	echo NLINES $nlines NMINUS $nminus
+	echo CHILD NLINES $nlines NMINUS $nminus
 } -dump -run
 
+# Useful for debugging
+process p2 {tail -F ${tmpdir}/v1/_.vsm_child/_.index} -dump -start
+process p3 {tail -F ${tmpdir}/v1/_.vsm_mgt/_.index} -dump -start
+
+varnish v1 -vcl {
+	backend b00 { .host = "${bad_ip}"; }
+	backend b01 { .host = "${bad_ip}"; }
+	backend b02 { .host = "${bad_ip}"; }
+	backend b03 { .host = "${bad_ip}"; }
+
+	sub vcl_recv {
+		set req.backend_hint = b00;
+		set req.backend_hint = b01;
+		set req.backend_hint = b02;
+		set req.backend_hint = b03;
+	}
+}
+
+varnish v1 -cliok vcl.list
+
+process p1 -run
+
+varnish v1 -cliok "vcl.use vcl1"
+varnish v1 -cliok "vcl.discard vcl2"
+
+delay 1
+
+process p1 -run
+
 # The child process starts out with approx 37 VSM segments
-# so it takes 20 backends to cause a _.index rewrite.
-# Make it 25 to be safe.
+# and spent 10 lines on vcl2, so it takes ~ 15 backends to
+# cause a _.index rewrite.
+# Make it 20 to be on the safe side.
 varnish v1 -vcl {
 	backend b00 { .host = "${bad_ip}"; }
 	backend b01 { .host = "${bad_ip}"; }
@@ -34,11 +66,6 @@ varnish v1 -vcl {
 	backend b17 { .host = "${bad_ip}"; }
 	backend b18 { .host = "${bad_ip}"; }
 	backend b19 { .host = "${bad_ip}"; }
-	backend b20 { .host = "${bad_ip}"; }
-	backend b21 { .host = "${bad_ip}"; }
-	backend b22 { .host = "${bad_ip}"; }
-	backend b23 { .host = "${bad_ip}"; }
-	backend b24 { .host = "${bad_ip}"; }
 
 	sub vcl_recv {
 		set req.backend_hint = b00;
@@ -61,25 +88,54 @@ varnish v1 -vcl {
 		set req.backend_hint = b17;
 		set req.backend_hint = b18;
 		set req.backend_hint = b19;
-		set req.backend_hint = b20;
-		set req.backend_hint = b21;
-		set req.backend_hint = b22;
-		set req.backend_hint = b23;
-		set req.backend_hint = b24;
 	}
 }
 
 varnish v1 -cliok vcl.list
 
+delay 1
+
 process p1 -run
 
 varnish v1 -cliok "vcl.use vcl1"
-varnish v1 -cliok "vcl.discard vcl2"
+varnish v1 -cliok "vcl.discard vcl3"
+
+delay 1
 
 # Check that the _.index rewrite did happen
+
 process p1 {
 	nlines=`wc -l < ${tmpdir}/v1/_.vsm_child/_.index`
 	nminus=`grep -c '^-' ${tmpdir}/v1/_.vsm_child/_.index`
-	echo NLINES $nlines NMINUS $nminus
-	test $nminus -lt 25
+	echo CHILD NLINES $nlines NMINUS $nminus
+	# cat ${tmpdir}/v1/_.vsm_child/_.index
+	test $nminus -lt 20
 } -run
+
+# Now check the management process VSM
+
+process p1 {
+	nlines=`wc -l < ${tmpdir}/v1/_.vsm_mgt/_.index`
+	nminus=`grep -c '^-' ${tmpdir}/v1/_.vsm_mgt/_.index`
+	echo MGT NLINES $nlines NMINUS $nminus
+	# cat ${tmpdir}/v1/_.vsm_child/_.index
+	test $nminus -eq 0
+} -run
+
+varnish v1 -cliok "stop"
+
+delay 1
+
+process p1 {
+	nlines=`wc -l < ${tmpdir}/v1/_.vsm_mgt/_.index`
+	nminus=`grep -c '^-' ${tmpdir}/v1/_.vsm_mgt/_.index`
+	echo MGT NLINES $nlines NMINUS $nminus
+	# cat ${tmpdir}/v1/_.vsm_child/_.index
+	test $nminus -eq 2
+} -run
+
+varnish v1 -cliok "start"
+
+delay 1
+
+process p1 -run
