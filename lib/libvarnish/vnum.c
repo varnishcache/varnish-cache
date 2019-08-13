@@ -38,9 +38,9 @@
 
 #include "vdef.h"
 
-#include "vct.h"
 #include "vnum.h"
 #include "vas.h"
+#include "vct.h"
 
 static const char err_miss_num[] = "Missing number";
 static const char err_invalid_num[] = "Invalid number";
