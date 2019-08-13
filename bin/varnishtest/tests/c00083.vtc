@@ -13,8 +13,8 @@ process p1 {
 } -dump -run
 
 # Useful for debugging
-process p2 {tail -F ${tmpdir}/v1/_.vsm_child/_.index} -dump -start
-process p3 {tail -F ${tmpdir}/v1/_.vsm_mgt/_.index} -dump -start
+#process p2 {tail -F ${tmpdir}/v1/_.vsm_child/_.index} -dump -start
+#process p3 {tail -F ${tmpdir}/v1/_.vsm_mgt/_.index} -dump -start
 
 varnish v1 -vcl {
 	backend b00 { .host = "${bad_ip}"; }
