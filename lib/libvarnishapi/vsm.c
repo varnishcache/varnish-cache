@@ -70,6 +70,8 @@
 const struct vsm_valid VSM_invalid[1] = {{"invalid"}};
 const struct vsm_valid VSM_valid[1] = {{"valid"}};
 
+static vlu_f vsm_vlu_func;
+
 /*--------------------------------------------------------------------*/
 
 struct vsm_set;
@@ -112,6 +114,7 @@ struct vsm_set {
 	uintmax_t		id1, id2;
 
 	// _.index reading state
+	struct vlu		*vlu;
 	unsigned		retval;
 	struct vsm_seg		*vg;
 
@@ -277,6 +280,8 @@ vsm_newset(const char *dirname)
 	VTAILQ_INIT(&vs->clusters);
 	vs->dname = dirname;
 	vs->dfd = vs->fd = -1;
+	vs->vlu = VLU_New(vsm_vlu_func, vs, 0);
+	AN(vs->vlu);
 	return (vs);
 }
 
@@ -297,6 +302,7 @@ vsm_delset(struct vsm_set **p)
 	while (!VTAILQ_EMPTY(&vs->segs))
 		vsm_delseg(VTAILQ_FIRST(&vs->segs), 0);
 	assert(VTAILQ_EMPTY(&vs->clusters));
+	VLU_Destroy(&vs->vlu);
 	FREE_OBJ(vs);
 }
 
@@ -590,76 +596,79 @@ vsm_vlu_func(void *priv, const char *line)
 	return (i);
 }
 
+static void
+vsm_readlines(struct vsm_set *vs)
+{
+	int i;
+
+	do {
+		i = VLU_Fd(vs->vlu, vs->fd);
+	} while (!i);
+	assert(i == -2);
+}
+
 static unsigned
 vsm_refresh_set(struct vsm *vd, struct vsm_set *vs)
 {
 	struct stat st;
-	int i;
-	struct vlu *vlu;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	CHECK_OBJ_NOTNULL(vs, VSM_SET_MAGIC);
 	vs->retval = 0;
-	if (vs->dfd >= 0) {
-		if (fstatat(vd->wdfd, vs->dname, &st, AT_SYMLINK_NOFOLLOW) ||
-		    st.st_ino != vs->dst.st_ino ||
-		    st.st_dev != vs->dst.st_dev ||
-		    st.st_mode != vs->dst.st_mode ||
-		    st.st_nlink == 0) {
-			closefd(&vs->dfd);
-			vs->id1 = vs->id2 = 0;
-			vsm_wash_set(vs, 1);
-			vs->retval |= vs->flag_restarted;
-		}
+	if (vs->dfd >= 0 && (
+	    fstatat(vd->wdfd, vs->dname, &st, AT_SYMLINK_NOFOLLOW) ||
+	    st.st_ino != vs->dst.st_ino ||
+	    st.st_dev != vs->dst.st_dev ||
+	    st.st_mode != vs->dst.st_mode ||
+	    st.st_nlink == 0)) {
+		closefd(&vs->dfd);
 	}
 
 	if (vs->dfd < 0) {
 		if (vs->fd >= 0)
 			closefd(&vs->fd);
 		vs->dfd = openat(vd->wdfd, vs->dname, O_RDONLY);
-		if (vs->dfd < 0) {
-			vs->id1 = vs->id2 = 0;
-			vsm_wash_set(vs, 1);
-			vs->retval |= vs->flag_restarted;
-			return (vs->retval);
-		}
-		AZ(fstat(vs->dfd, &vs->dst));
 	}
+
+	if (vs->dfd < 0) {
+		vs->id1 = vs->id2 = 0;
+		vsm_wash_set(vs, 1);
+		return (vs->retval | vs->flag_restarted);
+	}
+
+	AZ(fstat(vs->dfd, &vs->dst));
 
 	if (vs->fd >= 0 && (
 	    fstatat(vs->dfd, "_.index", &st, AT_SYMLINK_NOFOLLOW) ||
 	    st.st_ino != vs->fst.st_ino ||
 	    st.st_dev != vs->fst.st_dev ||
 	    st.st_mode != vs->fst.st_mode ||
-	    st.st_size != vs->fst.st_size ||
+	    st.st_size < vs->fst.st_size ||
 	    st.st_nlink < 1 ||
 	    memcmp(&st.st_mtime, &vs->fst.st_mtime, sizeof st.st_mtime))) {
 		closefd(&vs->fd);
 	}
 
 	if (vs->fd >= 0) {
-		if (vd->couldkill < 1 || !kill(vs->id1, 0))
-			vs->retval |= vs->flag_running;
-		return (vs->retval);
+		vs->vg = NULL;
+		vsm_readlines(vs);
+	} else {
+		VTAILQ_FOREACH(vs->vg, &vs->segs, list)
+			vs->vg->flags &= ~VSM_FLAG_MARKSCAN;
+		vs->vg = VTAILQ_FIRST(&vs->segs);
+		vs->fd = openat(vs->dfd, "_.index", O_RDONLY);
+		if (vs->fd < 0)
+			return (vs->retval|vs->flag_restarted);
+		VLU_Reset(vs->vlu);
+		AZ(fstat(vs->fd, &vs->fst));
+		vsm_readlines(vs);
+		vsm_wash_set(vs, 0);
 	}
 
-	vs->retval |= vs->flag_changed;
-	vs->fd = openat(vs->dfd, "_.index", O_RDONLY);
-	if (vs->fd < 0)
-		return (vs->retval|vs->flag_restarted);
+	vs->fst.st_size = lseek(vs->fd, 0L, SEEK_CUR);
 
-	AZ(fstat(vs->fd, &vs->fst));
-
-	vlu = VLU_New(vsm_vlu_func, vs, 0);
-	AN(vlu);
-
-	vs->vg = NULL;
-	do {
-		i = VLU_Fd(vlu, vs->fd);
-	} while (!i);
-	assert(i == -2);
-	VLU_Destroy(&vlu);
-	vsm_wash_set(vs, 0);
+	if (vd->couldkill < 1 || !kill(vs->id1, 0))
+		vs->retval |= vs->flag_running;
 	return (vs->retval);
 }
 
