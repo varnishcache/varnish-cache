@@ -803,7 +803,13 @@ vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 /*--------------------------------------------------------------------
  * SYNTAX:
  *    Expr4:
- *      Expr5 [ '.' type_method() ]*
+ *      Expr5 [ '.' (type_attribute | type_method()) ]*
+ *
+ * type_attributes is information already existing, requiring no
+ * processing or resource usage.
+ *
+ * type_methods are calls and may do (significant processing, change things,
+ * eat workspace etc.
  */
 
 static const struct vcc_methods {
@@ -811,15 +817,16 @@ static const struct vcc_methods {
 	vcc_type_t		type_to;
 	const char		*method;
 	const char		*impl;
+	int			func;
 } vcc_methods[] = {
 	//{ BACKEND, BOOL,	"healthy",	"VRT_Healthy(ctx, \v1, 0)" },
 
 #define VRTSTVVAR(nm, vtype, ctype, dval) \
-	{ STEVEDORE, vtype, #nm, "VRT_stevedore_" #nm "(\v1)"},
+	{ STEVEDORE, vtype, #nm, "VRT_stevedore_" #nm "(\v1)", 0},
 #include "tbl/vrt_stv_var.h"
 
-	{ STRINGS, STRING, "upper", "VRT_UpperLowerStrands(ctx, \vT, 1)" },
-	{ STRINGS, STRING, "lower", "VRT_UpperLowerStrands(ctx, \vT, 0)" },
+	{ STRINGS, STRING, "upper", "VRT_UpperLowerStrands(ctx, \vT, 1)", 1 },
+	{ STRINGS, STRING, "lower", "VRT_UpperLowerStrands(ctx, \vT, 0)", 1 },
 
 	{ NULL, NULL,		NULL,		NULL},
 };
@@ -858,6 +865,12 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		if ((*e)->fmt == STRING) {
 			(*e)->fmt = STRINGS;
 			(*e)->nstr = 1;
+		}
+		if (vm->func) {
+			ExpectErr(tl, '(');
+			vcc_NextToken(tl);
+			ExpectErr(tl, ')');
+			vcc_NextToken(tl);
 		}
 	}
 }
