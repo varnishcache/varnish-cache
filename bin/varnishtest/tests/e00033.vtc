@@ -1,0 +1,32 @@
+varnishtest "varnishncsa show ESI request"
+
+server s1 {
+	rxreq
+	txresp -body {
+		<html>
+		Before include
+		<esi:include src="/esi"/>
+		After include
+		</html>
+	}
+	rxreq
+	txresp -body {
+		Included file
+	}
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.do_esi = true;
+	}
+} -start
+
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+shell -match "^0$" "varnishncsa -n ${v1_name}  -d  -q \"requrl ~ '/esi'\"    | wc -l"
+shell -match "^1$" "varnishncsa -n ${v1_name}  -d  -q \"requrl ~ '/esi'\" -e | wc -l"
+
