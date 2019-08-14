@@ -562,6 +562,10 @@ VTCP_Check(int a)
 		return (1);
 	if (errno == ECONNRESET || errno == ENOTCONN || errno == EPIPE)
 		return (1);
+#if (defined (__SVR4) && defined (__sun))
+	if (errno == EPROTO)
+		return (1);
+#endif
 #if (defined (__SVR4) && defined (__sun)) || defined (__NetBSD__)
 	/*
 	 * Solaris returns EINVAL if the other end unexpectedly reset the
