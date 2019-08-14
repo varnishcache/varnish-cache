@@ -110,7 +110,7 @@ of the following keywords:
     Switch to vcl labelled *label*. This will continue vcl processing
     in this vcl's :ref:`vcl_recv` as if it was the active vcl.
 
-    See the :ref:`varnishadm(1)` ``vcl.label`` command.
+    See the :ref:`ref_cli_vcl_label` command.
 
 .. _vcl_pipe:
 
@@ -537,8 +537,8 @@ with one of the following keywords:
     :ref:`vcl_synth` on the client side is called with ``resp.status``
     preset to 503.
 
-vcl.load / vcl.discard
-----------------------
+During vcl.load / vcl.discard
+-----------------------------
 
 .. _vcl_init:
 

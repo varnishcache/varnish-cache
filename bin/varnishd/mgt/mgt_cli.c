@@ -690,6 +690,7 @@ void
 mgt_DumpRstCli(void)
 {
 	const struct cli_cmd_desc *cp;
+	const char *p;
 	int i, j;
 
 	qsort(cmds, ncmds, sizeof cmds[0], cli_cmp);
@@ -697,7 +698,10 @@ mgt_DumpRstCli(void)
 		cp = cmds[i];
 		if (!strncmp(cp->request, "debug.", 6))
 			continue;
-		printf(".. _ref_cli_%s:\n\n", cp->syntax);
+		printf(".. _ref_cli_");
+		for (p = cp->request; *p; p++)
+			putchar(*p == '.' ? '_' : *p);
+		printf(":\n\n");
 		printf("%s\n", cp->syntax);
 		for (j = 0; j < strlen(cp->syntax); j++)
 			printf("~");

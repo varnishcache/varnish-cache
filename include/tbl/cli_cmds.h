@@ -141,7 +141,9 @@ CLI_CMD(VCL_LABEL,
 	"vcl.label",
 	"vcl.label <label> <configname>",
 	"Apply label to configuration.",
-	"",
+	"A VCL label is like a UNIX symbolic link, "
+	"a name without substance, which points to another VCL.\n\n"
+	"Labels are mandatory whenever one VCL references another.",
 	2, 2
 )
 
