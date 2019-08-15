@@ -232,7 +232,8 @@ http_Proto(struct http *to)
 
 	fm = to->hd[HTTP_HDR_PROTO].b;
 
-	if ((fm[0] == 'H' || fm[0] == 'h') &&
+	if (fm != NULL &&
+	    (fm[0] == 'H' || fm[0] == 'h') &&
 	    (fm[1] == 'T' || fm[1] == 't') &&
 	    (fm[2] == 'T' || fm[2] == 't') &&
 	    (fm[3] == 'P' || fm[3] == 'p') &&
