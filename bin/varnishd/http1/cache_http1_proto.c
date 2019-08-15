@@ -111,6 +111,7 @@ http1_dissect_hdrs(struct http *hp, char *p, struct http_conn *htc,
     unsigned maxhdr)
 {
 	char *q, *r, *s;
+	int i;
 
 	assert(p > htc->rxbuf_b);
 	assert(p <= htc->rxbuf_e);
@@ -206,11 +207,9 @@ http1_dissect_hdrs(struct http *hp, char *p, struct http_conn *htc,
 			return (400);
 		}
 	}
-	/* We cannot use vct_skipcrlf() we have to respect rxbuf_e */
-	if (p+2 <= htc->rxbuf_e && p[0] == '\r' && p[1] == '\n')
-		p += 2;
-	else if (p+1 <= htc->rxbuf_e && p[0] == '\n')
-		p += 1;
+	i = vct_iscrlf(p, htc->rxbuf_e);
+	assert(i > 0);		/* HTTP1_Complete guarantees this */
+	p += i;
 	HTC_RxPipeline(htc, p);
 	htc->rxbuf_e = p;
 	return (0);
