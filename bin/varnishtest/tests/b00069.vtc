@@ -1,0 +1,29 @@
+varnishtest "HTTP/1 parsing checks"
+
+# Some tricky requests that have been known to cause parsing errors in the past.
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+} -start
+
+# This test checks a bug that was dependent on the contents of the buffer left behind
+# by the previous request
+client c1 {
+	send "GET / HTTP/1.1\r\nHost: asdf.com\r\nFoo: baar\r\n\r\n\r\n\r\n\r\n"
+	rxresp
+	send "GET / HTTP/1.1\r\nHost: asdf.com\r\nAsdf: b\n \r\n\r\nSj\r"
+	rxresp
+	expect resp.status == 200
+} -run
+
+# This tests that the line continuation handling doesn't clear out the end of headers
+# [CR]LF
+client c1 {
+	send "GET / HTTP/1.1\r\nHost: asdf.com\r\nAsdf: b\n \r\n\r\nSj"
+	rxresp
+	expect resp.status == 200
+} -run
