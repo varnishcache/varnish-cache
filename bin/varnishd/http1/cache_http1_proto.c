@@ -145,7 +145,9 @@ http1_dissect_hdrs(struct http *hp, char *p, struct http_conn *htc,
 				break;
 
 			/* Clear line continuation LWS to spaces */
-			while (q < htc->rxbuf_e && vct_islws(*q))
+			while (q < r)
+				*q++ = ' ';
+			while (q < htc->rxbuf_e && vct_issp(*q))
 				*q++ = ' ';
 		}
 
