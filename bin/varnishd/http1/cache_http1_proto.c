@@ -218,7 +218,7 @@ static uint16_t
 http1_splitline(struct http *hp, struct http_conn *htc, const int *hf,
     unsigned maxhdr)
 {
-	char *p;
+	char *p, *q;
 	int i;
 
 	assert(hf == HTTP1_Req || hf == HTTP1_Resp);
@@ -259,14 +259,19 @@ http1_splitline(struct http *hp, struct http_conn *htc, const int *hf,
 	hp->hd[hf[1]].e = p;
 	if (!Tlen(hp->hd[hf[1]]))
 		return (400);
-	*p++ = '\0';
 
 	/* Skip SP */
+	q = p;
 	for (; vct_issp(*p); p++) {
 		if (vct_isctl(*p))
 			return (400);
 	}
 	hp->hd[hf[2]].b = p;
+	if (q < p)
+		*q = '\0';	/* Nul guard for the 2nd field. If q == p
+				 * (the third optional field is not
+				 * present), the last nul guard will
+				 * cover this field. */
 
 	/* Third field is optional and cannot contain CTL except TAB */
 	for (; p < htc->rxbuf_e && !vct_iscrlf(p, htc->rxbuf_e); p++) {
