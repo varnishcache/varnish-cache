@@ -266,7 +266,6 @@ http1_splitline(struct http *hp, struct http_conn *htc, const int *hf,
 		if (vct_isctl(*p))
 			return (400);
 	}
-	hp->hd[hf[2]].b = p;
 	if (q < p)
 		*q = '\0';	/* Nul guard for the 2nd field. If q == p
 				 * (the third optional field is not
@@ -274,13 +273,15 @@ http1_splitline(struct http *hp, struct http_conn *htc, const int *hf,
 				 * cover this field. */
 
 	/* Third field is optional and cannot contain CTL except TAB */
+	q = p;
 	for (; p < htc->rxbuf_e && !vct_iscrlf(p, htc->rxbuf_e); p++) {
-		if (vct_isctl(*p) && !vct_issp(*p)) {
-			hp->hd[hf[2]].b = NULL;
+		if (vct_isctl(*p) && !vct_issp(*p))
 			return (400);
-		}
 	}
-	hp->hd[hf[2]].e = p;
+	if (p > q) {
+		hp->hd[hf[2]].b = q;
+		hp->hd[hf[2]].e = p;
+	}
 
 	/* Skip CRLF */
 	i = vct_iscrlf(p, htc->rxbuf_e);
