@@ -63,6 +63,7 @@ Varnish Cache 6.0.4 (2019-08-27)
 
 * Ensure that backend probes are executed in a timely manner. (2976_)
 
+* Fixed issues related to HTTP/1 request parsing (VSV00003_)
 
 .. _2993: https://github.com/varnishcache/varnish-cache/pull/2993
 .. _2871: https://github.com/varnishcache/varnish-cache/issues/2871
@@ -72,6 +73,7 @@ Varnish Cache 6.0.4 (2019-08-27)
 .. _2846: https://github.com/varnishcache/varnish-cache/issues/2846
 .. _2839: https://github.com/varnishcache/varnish-cache/issues/2839
 .. _2976: https://github.com/varnishcache/varnish-cache/issues/2976
+.. _VSV00003: https://varnish-cache.org/security/VSV00003.html
 
 ================================
 Varnish Cache 6.0.3 (2019-02-19)
