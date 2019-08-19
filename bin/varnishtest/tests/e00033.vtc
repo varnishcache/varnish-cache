@@ -27,6 +27,5 @@ client c1 {
 	rxresp
 } -run
 
-shell -match "^0$" "varnishncsa -n ${v1_name}  -d  -q \"requrl ~ '/esi'\"    | wc -l"
-shell -match "^1$" "varnishncsa -n ${v1_name}  -d  -q \"requrl ~ '/esi'\" -e | wc -l"
-
+shell -match "^ *0$" {varnishncsa -n ${v1_name}  -d  -q "requrl ~ '/esi'"    | wc -l}
+shell -match "^ *1$" {varnishncsa -n ${v1_name}  -d  -q "requrl ~ '/esi'" -E | wc -l}
