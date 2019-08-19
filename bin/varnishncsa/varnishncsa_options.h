@@ -72,18 +72,18 @@
 	    "Log client requests. This is the default. If -b is"	\
 	    " specified, then -c is needed to also log client requests"	\
 	)
-#define NCSA_OPT_e							\
-	VOPT("e", "[-e]", "Show ESI request",				\
+#define NCSA_OPT_E							\
+	VOPT("E", "[-E]", "Show ESI request",				\
 	    "Show ESI request."	\
 	)
 
 NCSA_OPT_a
 NCSA_OPT_b
 NCSA_OPT_c
-NCSA_OPT_e
 VSL_OPT_C
 VUT_OPT_d
 VUT_GLOBAL_OPT_D
+NCSA_OPT_E
 NCSA_OPT_F
 NCSA_OPT_f
 NCSA_OPT_g

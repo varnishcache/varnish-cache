@@ -140,7 +140,7 @@ static struct ctx {
 	int			a_opt;
 	int			b_opt;
 	int			c_opt;
-	int			e_opt;
+	int			E_opt;
 	char			*w_arg;
 
 	FILE			*fo;
@@ -892,7 +892,7 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			be_mark = BACKEND_MARKER;
 		} else
 			continue;
-		if (t->reason == VSL_r_esi && !CTX.e_opt)
+		if (t->reason == VSL_r_esi && !CTX.E_opt)
 			/* Skip ESI requests */
 			continue;
 		CTX.hitmiss = "-";
@@ -1112,9 +1112,9 @@ main(int argc, char * const *argv)
 			/* client mode */
 			CTX.c_opt = 1;
 			break;
-		case 'e':
+		case 'E':
 			/* show ESI */
-			CTX.e_opt = 1;
+			CTX.E_opt = 1;
 			break;
 		case 'F':
 			if (format != NULL)
