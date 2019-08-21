@@ -576,8 +576,8 @@ via_resolve(VRT_CTX, const struct vrt_endpoint *vep, VCL_BACKEND via)
 {
 	const struct backend *viabe = NULL;
 
-	AN(vep);
-	AN(via);
+	CHECK_OBJ_NOTNULL(vep, VRT_ENDPOINT_MAGIC);
+	CHECK_OBJ_NOTNULL(via, DIRECTOR_MAGIC);
 
 	if (vep->uds_path) {
 		VRT_fail(ctx, "Via is only supported for IP addresses");
@@ -586,9 +586,16 @@ via_resolve(VRT_CTX, const struct vrt_endpoint *vep, VCL_BACKEND via)
 
 	via = VRT_DirectorResolve(ctx, via);
 
-	if (via != NULL &&
-	    (via->vdir->methods == vbe_methods ||
-	     via->vdir->methods == vbe_methods_noprobe))
+	if (via == NULL) {
+		VRT_fail(ctx, "Via resolution failed");
+		return (NULL);
+	}
+
+	CHECK_OBJ(via, DIRECTOR_MAGIC);
+	CHECK_OBJ_NOTNULL(via->vdir, VCLDIR_MAGIC);
+
+	if (via->vdir->methods == vbe_methods ||
+	    via->vdir->methods == vbe_methods_noprobe)
 		CAST_OBJ_NOTNULL(viabe, via->priv, BACKEND_MAGIC);
 
 	if (viabe == NULL)
@@ -601,18 +608,19 @@ via_resolve(VRT_CTX, const struct vrt_endpoint *vep, VCL_BACKEND via)
  * construct a new endpoint identical to vep with sa in a proxy header
  */
 static struct vrt_endpoint *
-via_endpoint(const struct vrt_endpoint *vep, const struct suckaddr *sa)
+via_endpoint(const struct vrt_endpoint *vep, const struct suckaddr *sa,
+    const char *auth)
 {
 	struct vsb *preamble;
 	struct vrt_blob blob[1];
 	struct vrt_endpoint *nvep, *ret;
 	const struct suckaddr *client_bogo;
 
-	AN(vep);
+	CHECK_OBJ_NOTNULL(vep, VRT_ENDPOINT_MAGIC);
 	AN(sa);
 
 	nvep = VRT_Endpoint_Clone(vep);
-	AN(nvep);
+	CHECK_OBJ_NOTNULL(nvep, VRT_ENDPOINT_MAGIC);
 
 	if (VSA_Get_Proto(sa) == AF_INET6)
 		client_bogo = bogo_ip6;
@@ -621,11 +629,12 @@ via_endpoint(const struct vrt_endpoint *vep, const struct suckaddr *sa)
 
 	preamble = VSB_new_auto();
 	AN(preamble);
-	VPX_Format_Proxy(preamble, 2, client_bogo, sa, NULL);
+	VPX_Format_Proxy(preamble, 2, client_bogo, sa, auth);
 	blob->blob = VSB_data(preamble);
 	blob->len = VSB_len(preamble);
 	nvep->preamble = blob;
 	ret = VRT_Endpoint_Clone(nvep);
+	CHECK_OBJ_NOTNULL(ret, VRT_ENDPOINT_MAGIC);
 	VSB_destroy(&preamble);
 	free(nvep);
 
@@ -658,7 +667,7 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 		assert(vep->ipv4== NULL && vep->ipv6== NULL);
 	}
 
-	if (via) {
+	if (via != NULL) {
 		viabe = via_resolve(ctx, vep, via);
 		if (viabe == NULL)
 			return (NULL);
@@ -701,7 +710,8 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 		VRT_VSC_Hide(be->vsc_seg);
 
 	if (viabe)
-		vep = be->endpoint = via_endpoint(viabe->endpoint, sa);
+		vep = be->endpoint = via_endpoint(viabe->endpoint, sa,
+		    be->authority);
 	else
 		vep = be->endpoint = VRT_Endpoint_Clone(vep);
 

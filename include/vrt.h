@@ -63,6 +63,7 @@
  *	exp_close added to struct vrt_backend_probe
  *	VRT_new_backend() signature changed
  *	VRT_new_backend_clustered() signature changed
+ *	authority field added to struct vrt_backend
  * 16.0 (2022-09-15)
  *	VMOD C-prototypes moved into JSON
  *	VRT_AddVDP() deprecated
@@ -561,6 +562,7 @@ struct vrt_endpoint {
 #define VRT_BACKEND_FIELDS(rigid)				\
 	rigid char			*vcl_name;		\
 	rigid char			*hosthdr;		\
+	rigid char			*authority;		\
 	vtim_dur			connect_timeout;	\
 	vtim_dur			first_byte_timeout;	\
 	vtim_dur			between_bytes_timeout;	\
@@ -571,6 +573,7 @@ struct vrt_endpoint {
 	do {					\
 		DA(vcl_name);			\
 		DA(hosthdr);			\
+		DA(authority);			\
 		DN(connect_timeout);		\
 		DN(first_byte_timeout);		\
 		DN(between_bytes_timeout);	\

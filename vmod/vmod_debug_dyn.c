@@ -79,6 +79,7 @@ dyn_dir_init(VRT_CTX, struct xyzzy_debug_dyn *dyn,
 	vrt.endpoint = &vep;
 	vrt.vcl_name = dyn->vcl_name;
 	vrt.hosthdr = addr;
+	vrt.authority = addr;
 	vrt.probe = probe;
 
 	sa = VSS_ResolveOne(NULL, addr, port, AF_UNSPEC, SOCK_STREAM, 0);
