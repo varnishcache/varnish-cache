@@ -40,4 +40,4 @@
 
 int VPX_tlv(const struct req *req, int tlv, void **dst, int *len);
 void VPX_Format_Proxy(struct vsb *, int, const struct suckaddr *,
-    const struct suckaddr *);
+    const struct suckaddr *, const char *);

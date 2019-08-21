@@ -652,9 +652,8 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 		AN(sa);
 		AN(bogo);
 		be->tcp_pool = VTP_Clone(viabe->tcp_pool, sa);
-		// XXX proxy v2 - using 1 for easy vtc ?
 		be->preamble = VSB_new_auto();
-		VPX_Format_Proxy(be->preamble, 1, bogo, sa);
+		VPX_Format_Proxy(be->preamble, 2, bogo, sa, be->authority);
 		AN(be->preamble);
 	} else {
 		be->tcp_pool = VTP_Ref(vrt->ipv4_suckaddr, vrt->ipv6_suckaddr,

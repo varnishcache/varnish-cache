@@ -962,5 +962,5 @@ VRT_VSA_GetPtr(VRT_CTX, const struct suckaddr *sua, const unsigned char ** dst)
 void
 VRT_Format_Proxy(struct vsb *vsb, VCL_INT version, VCL_IP sac, VCL_IP sas)
 {
-	VPX_Format_Proxy(vsb, (int)version, sac, sas);
+	VPX_Format_Proxy(vsb, (int)version, sac, sas, NULL);
 }

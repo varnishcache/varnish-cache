@@ -1,10 +1,10 @@
 varnishtest "Test vcl defined via backends"
 
 server s1 {
-	rxreq
-	txresp
-	rxreq
-	txresp
+	loop 5 {
+		rxreq
+		txresp
+	}
 } -start
 
 # the use case for via-proxy is to have a(n ha)proxy make a(n ssl)
@@ -16,6 +16,7 @@ server s1 {
 varnish v2 -proto PROXY -vcl {
 	import debug;
 	import std;
+	import proxy;
 
 	backend dummy { .host = "${bad_backend}"; }
 
@@ -28,14 +29,13 @@ varnish v2 -proto PROXY -vcl {
 		set req.backend_hint = s1.backend();
 		return (pass);
 	}
+
+	sub vcl_deliver {
+		set resp.http.Authority = proxy.authority();
+	}
 } -start
 
 varnish v1 -vcl {
-	import debug;
-	import vtc;
-
-	backend dummy { .host = "${bad_backend}"; }
-
 	backend v2 { .host = "${v2_addr}"; .port = "${v2_port}"; }
 	backend s1 { .via = v2; .host = "${s1_addr}"; .port = "${s1_port}"; }
 
@@ -48,7 +48,106 @@ client c1 {
 	txreq -url /1
 	rxresp
 	expect resp.status == 200
+	expect resp.http.Authority == "127.0.0.1"
 	txreq -url /2
 	rxresp
 	expect resp.status == 200
+	expect resp.http.Authority == "127.0.0.1"
 } -run
+
+varnish v1 -vcl {
+	backend v2 { .host = "${v2_addr}"; .port = "${v2_port}"; }
+
+	backend s1 {
+		.via = v2;
+		.host = "${s1_addr}";
+		.port = "${s1_port}";
+		.authority = "authority.com";
+	}
+
+	sub vcl_recv {
+		set req.backend_hint = s1;
+	}
+}
+
+client c1 {
+	txreq -url /3
+	rxresp
+	expect resp.status == 200
+	expect resp.http.Authority == "authority.com"
+} -run
+
+varnish v1 -vcl {
+	backend v2 { .host = "${v2_addr}"; .port = "${v2_port}"; }
+
+	backend s1 {
+		.via = v2;
+		.host = "${s1_addr}";
+		.port = "${s1_port}";
+		.host_header = "host.com";
+	}
+
+	sub vcl_recv {
+		set req.backend_hint = s1;
+	}
+}
+
+client c1 {
+	txreq -url /4
+	rxresp
+	expect resp.status == 200
+	expect resp.http.Authority == "host.com"
+} -run
+
+# Setting .authority = "" disables sending the TLV.
+varnish v1 -vcl {
+	backend v2 { .host = "${v2_addr}"; .port = "${v2_port}"; }
+
+	backend s1 {
+		.via = v2;
+		.host = "${s1_addr}";
+		.port = "${s1_port}";
+		.authority = "";
+	}
+
+	sub vcl_recv {
+		set req.backend_hint = s1;
+	}
+}
+
+client c1 {
+	txreq -url /5
+	rxresp
+	expect resp.status == 200
+	# vmod_proxy returns the empty string if the TLV is absent.
+	expect resp.http.Authority == ""
+} -run
+
+varnish v1 -errvcl "Cannot set both .via and .path" {
+	backend v2 { .host = "${v2_addr}"; .port = "${v2_port}"; }
+
+	backend s1 {
+		.via = v2;
+		.path = "/path/to/uds";
+	}
+}
+
+varnish v1 -errvcl "Cannot set both .via and .proxy_header" {
+	backend v2 { .host = "${v2_addr}"; .port = "${v2_port}"; }
+
+	backend s1 {
+		.via = v2;
+		.host = "${s1_addr}";
+		.proxy_header = 1;
+	}
+}
+
+varnish v1 -errvcl "Cannot set both .via and .proxy_header" {
+	backend v2 { .host = "${v2_addr}"; .port = "${v2_port}"; }
+
+	backend s1 {
+		.via = v2;
+		.host = "${s1_addr}";
+		.proxy_header = 2;
+	}
+}

@@ -1,0 +1,63 @@
+varnishtest "TLV authority over via backends used as SNI for haproxy backend/2"
+
+# This test is skipped unless invoked in an environment in which
+# $HAPROXY_PROGRAM is set to the path of a haproxy binary. It fails
+# unless that binary implements the fc_pp_authority fetch, to return
+# the TLV Authority value sent in a PROXYv2 header.
+
+# In this version of the test, we set a fixed port number in the
+# server config of the "ssl-onloading" haproxy, and do not set the
+# destination port in the backend config for Varnish. Then the
+# onloader always uses the fixed port number for every destination.
+# This may be useful if the destination servers always use the same
+# port, such as 443; then there's no need repeat it for all of the
+# Varnish backends. See c00100.vtc for another config method.
+
+feature ignore_unknown_macro
+
+feature cmd {$HAPROXY_PROGRAM --version 2>&1 | grep -q 'HA-Proxy version'}
+
+server s1 {
+	rxreq
+	txresp -hdr "Foo: bar"
+} -start
+
+haproxy h1 -conf {
+    listen feh1
+	mode   http
+	bind "fd@${feh1}" ssl verify none crt ${testdir}/common.pem
+	server s1 ${s1_addr}:${s1_port}
+	http-response set-header X-SNI %[ssl_fc_sni]
+} -start
+
+# Note the use of the fixed port number (expanded from the macro) for
+# server s0.
+haproxy h2 -conf {
+    listen clear-to-ssl
+	bind unix@"${tmpdir}/h2.sock" accept-proxy
+	server s0 0.0.0.0:${h1_feh1_port} ssl verify none sni fc_pp_authority
+} -start
+
+varnish v1 -vcl {
+	backend h2 { .path = "${tmpdir}/h2.sock"; }
+
+	# No port number set here, the ssl-onloader uses the fixed
+	# port.
+	backend h1 {
+		.via = h2;
+		.host = "${h1_feh1_addr}";
+		.authority = "authority.com";
+	}
+
+	sub vcl_recv {
+		set req.backend_hint = h1;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.Foo == "bar"
+	expect resp.http.X-SNI == "authority.com"
+} -run
