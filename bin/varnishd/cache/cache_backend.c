@@ -561,7 +561,7 @@ VRT_backend_vsm_need(VRT_CTX)
 }
 
 static uint64_t
-vrt_hash_be(const struct vrt_backend *vrt)
+vrt_hash_be(const struct vrt_backend *vrt, const struct vsb *aux)
 {
 	struct VSHA256Context cx[1];
 	unsigned char ident[VSHA256_DIGEST_LENGTH];
@@ -576,6 +576,8 @@ vrt_hash_be(const struct vrt_backend *vrt)
 		VSHA256_Update(cx, vrt->path, strlen(vrt->path));
 	if (vrt->prefix_ptr != NULL)
 		VSHA256_Update(cx, vrt->prefix_ptr, vrt->prefix_len);
+	if (aux != NULL)
+		VSHA256_Update(cx, VSB_data(aux), VSB_len(aux));
 	VSHA256_Final(ident, cx);
 	return (vbe64dec(ident));
 }
@@ -672,16 +674,16 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 
 	if (viabe) {
 		AN(viabe->tcp_pool);
+		be->preamble = VSB_new_auto();
 		AN(bogo);
 		AN(sa);
-		be->tcp_pool = VTP_Clone(viabe->tcp_pool, vrt_hash_be(vrt));
-		// XXX proxy v2 - using 1 for easy vtc ?
-		be->preamble = VSB_new_auto();
-		VPX_Format_Proxy(be->preamble, 1, bogo, sa, NULL);
+		VPX_Format_Proxy(be->preamble, 2, bogo, sa, be->authority);
 		AN(be->preamble);
+		be->tcp_pool = VTP_Clone(viabe->tcp_pool,
+		    vrt_hash_be(vrt, be->preamble));
 	} else {
 		be->tcp_pool = VTP_Ref(vrt->ipv4_suckaddr, vrt->ipv6_suckaddr,
-		    vrt->path, vrt_hash_be(vrt));
+		    vrt->path, vrt_hash_be(vrt, NULL));
 	}
 	AN(be->tcp_pool);
 

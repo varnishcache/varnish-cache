@@ -2,18 +2,30 @@ varnishtest "Test dynamic backends"
 
 server s1 {
 	rxreq
+	expect req.url == "/"
+	expect req.http.Probe == "p1"
+	expect req.http.Authority == <undef>
 	txresp
 	close
 	accept
 	rxreq
+	expect req.url == "/1"
+	expect req.http.Probe == <undef>
+	expect req.http.Authority == <undef>
 	txresp
 	close
 	accept
 	rxreq
+	expect req.url == "/"
+	expect req.http.Probe == "p2"
+	expect req.http.Authority == "127.0.0.1"
 	txresp
 	close
 	accept
 	rxreq
+	expect req.url == "/2"
+	expect req.http.Probe == <undef>
+	expect req.http.Authority == "127.0.0.1"
 	txresp
 } -start
 
@@ -26,6 +38,7 @@ server s1 {
 varnish v2 -proto PROXY -vcl {
 	import debug;
 	import std;
+	import proxy;
 
 	backend dummy { .host = "${bad_backend}"; }
 
@@ -36,7 +49,12 @@ varnish v2 -proto PROXY -vcl {
 	sub vcl_recv {
 		s1.refresh(server.ip, std.port(server.ip));
 		set req.backend_hint = s1.backend();
+		set req.http.Authority = proxy.authority();
 		return (pass);
+	}
+
+	sub vcl_deliver {
+		set resp.http.Authority = req.http.Authority;
 	}
 } -start
 
@@ -55,7 +73,21 @@ varnish v1 -vcl {
 
 	backend v2 { .host = "${v2_addr}"; .port = "${v2_port}"; }
 
-	probe pr { .interval = 1m; }
+	probe p1 {
+		.interval = 1m;
+		.request = "GET / HTTP/1.1"
+		           "Host: ${s1_addr}"
+		           "Probe: p1"
+			   "Connection: close";
+	}
+
+	probe p2 {
+		.interval = 1m;
+		.request = "GET / HTTP/1.1"
+		           "Host: ${s1_addr}"
+		           "Probe: p2"
+			   "Connection: close";
+	}
 
 	sub vcl_init {
 		new s1 = debug.dyn("0.0.0.0", "0");
@@ -63,10 +95,10 @@ varnish v1 -vcl {
 
 	sub vcl_recv {
 		if (req.url == "/1") {
-			s1.refresh("${s1_addr}", "${s1_port}", pr);
+			s1.refresh("${s1_addr}", "${s1_port}", p1);
 			vtc.sleep(1s);
 		} else if (req.url == "/2") {
-			s1.refresh("${s1_addr}", "${s1_port}", pr,
+			s1.refresh("${s1_addr}", "${s1_port}", p2,
 			    via=v2);
 			vtc.sleep(1s);
 		}
@@ -80,7 +112,9 @@ client c1 {
 	txreq -url /1
 	rxresp
 	expect resp.status == 200
+	expect resp.http.Authority == <undef>
 	txreq -url /2
 	rxresp
 	expect resp.status == 200
+	expect resp.http.Authority == "127.0.0.1"
 } -run
