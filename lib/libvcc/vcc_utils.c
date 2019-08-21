@@ -329,12 +329,15 @@ vcc_UintVal(struct vcc *tl)
 	unsigned d = 0;
 	const char *p;
 
-	Expect(tl, CNUM);
-	for (p = tl->t->b; p < tl->t->e; p++) {
-		d *= 10;
-		d += *p - '0';
+	if (tl->t->tok != CNUM) {
+		Expect(tl, CNUM);
+	} else {
+		for (p = tl->t->b; p < tl->t->e; p++) {
+			d *= 10;
+			d += *p - '0';
+		}
+		vcc_NextToken(tl);
 	}
-	vcc_NextToken(tl);
 	return (d);
 }
 
@@ -344,6 +347,10 @@ vcc_DoubleVal(struct vcc *tl)
 	const size_t l = tl->t->e - tl->t->b;
 	char buf[l + 1];
 
+	if (tl->t->tok != CNUM && tl->t->tok != FNUM) {
+		Expect(tl, CNUM);
+		return (0);
+	}
 	assert(tl->t->tok == CNUM || tl->t->tok == FNUM);
 	memcpy(buf, tl->t->b, l);
 	vcc_NextToken(tl);
