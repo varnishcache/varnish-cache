@@ -325,6 +325,7 @@ mgt_launch_child(struct cli *cli)
 
 	AN(heritage.param);
 	AN(heritage.panic_str);
+#ifndef SINGLE_PROCESS_MODE
 	if ((pid = fork()) < 0) {
 		perror("Could not fork child");
 		exit(1);		// XXX Harsh ?
@@ -359,6 +360,7 @@ mgt_launch_child(struct cli *cli)
 			assert(close(i) == -1);
 			assert(errno == EBADF);
 		}
+#endif
 
 		mgt_ProcTitle("Child");
 
@@ -385,8 +387,16 @@ mgt_launch_child(struct cli *cli)
 		 */
 		// VSMW_Destroy(&heritage.proc_vsmw);
 
+
+#ifdef SINGLE_PROCESS_MODE
+		free(p);
+		child_state = CH_RUNNING;
+		// do we need to do more here? goto?
+		return;
+#else
 		exit(0);
 	}
+#endif
 	assert(pid > 1);
 	MGT_Complain(C_DEBUG, "Child (%jd) Started", (intmax_t)pid);
 	VSC_C_mgt->child_start++;

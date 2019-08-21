@@ -409,9 +409,11 @@ child_main(int sigmagic, size_t altstksz)
 
 	CLI_Run();
 
+#ifndef LIBFUZZER_ENABLED
 	VCA_Shutdown();
 	BAN_Shutdown();
 	STV_close();
 
 	printf("Child dies\n");
+#endif
 }

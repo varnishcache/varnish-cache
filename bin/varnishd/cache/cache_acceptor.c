@@ -621,7 +621,7 @@ vca_acct(void *arg)
 
 /*--------------------------------------------------------------------*/
 
-static void v_matchproto_(cli_func_t)
+/*static*/ void v_matchproto_(cli_func_t)
 ccf_start(struct cli *cli, const char * const *av, void *priv)
 {
 	struct listen_sock *ls;

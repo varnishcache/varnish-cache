@@ -957,3 +957,60 @@ mgt_vcl_init(void)
 
 	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_vcl);
 }
+
+
+
+#ifdef SINGLE_PROCESS_MODE
+#include "cache/cache_vcl.h"
+extern void vcl_cli_load(struct cli *cli, const char * const *av, void *priv);
+extern void vcl_cli_use(struct cli *cli, const char * const *av, void *priv);
+
+int direct_load_vcls(struct cli *cli)
+{
+	struct vclprog *vp;
+	struct vcldep *vd;
+	int done = 0;
+
+	AN(active_vcl);
+
+	/* The VCL has not been loaded yet, it cannot fail */
+	AZ(mgt_vcl_setstate(cli, active_vcl, VCL_STATE_WARM));
+
+	VTAILQ_FOREACH(vp, &vclhead, list)
+		vp->loaded = 0;
+
+	do {
+		done = 1;
+		VTAILQ_FOREACH(vp, &vclhead, list) {
+			if (vp->loaded)
+				continue;
+			VTAILQ_FOREACH(vd, &vp->dfrom, lfrom)
+				if (!vd->to->loaded)
+					break;
+			if (vd != NULL) {
+				done = 0;
+				continue;
+			}
+			if (!mcf_is_label(vp)) {
+				// "vcl.load \"%s\" %s %d%s\n", vp->name, vp->fname, vp->warm, vp->state
+				printf("vcl.load \"%s\" %s\n", vp->name, vp->fname);
+				char warm_state[128];
+				snprintf(warm_state, sizeof(warm_state),
+						"%d%s", vp->warm, vp->state);
+				const char* args[] = {
+					"", "vcl.load", vp->name, vp->fname, warm_state
+				};
+				vcl_cli_load(cli, args, NULL);
+			}
+			vp->loaded = 1;
+		}
+	} while (!done);
+
+	// "vcl.use \"%s\"\n", active_vcl->name
+	const char* args[] = {
+		"", "vcl.use", active_vcl->name
+	};
+	vcl_cli_use(cli, args, NULL);
+	return (0);
+}
+#endif

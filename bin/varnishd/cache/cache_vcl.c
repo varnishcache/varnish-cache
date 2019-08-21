@@ -735,7 +735,7 @@ vcl_cli_list_json(struct cli *cli, const char * const *av, void *priv)
 	VCLI_JSON_end(cli);
 }
 
-static void v_matchproto_(cli_func_t)
+/*static*/ void v_matchproto_(cli_func_t)
 vcl_cli_load(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vrt_ctx *ctx;
@@ -830,7 +830,7 @@ vcl_cli_label(struct cli *cli, const char * const *av, void *priv)
 	vcl->nlabels++;
 }
 
-static void v_matchproto_(cli_func_t)
+/*static*/ void v_matchproto_(cli_func_t)
 vcl_cli_use(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vcl *vcl;

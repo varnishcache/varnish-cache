@@ -102,10 +102,20 @@ CLI_Run(void)
 	AN(cli);
 	cli->auth = 255;	// Non-zero to disable paranoia in vcli_serve
 
+#ifdef SINGLE_PROCESS_MODE
+	extern void v_matchproto_(cli_func_t)
+		ccf_start(struct cli *cli, const char * const *av, void *priv);
+	ccf_start(NULL, NULL, NULL);
+	// push VCLs
+	extern int direct_load_vcls(struct cli *cli);
+	direct_load_vcls(cli);
+#endif
+#ifndef LIBFUZZER_ENABLED
 	do {
 		i = VCLS_Poll(cache_cls, cli, -1);
 	} while (i == 0);
 	VSL(SLT_CLI, 0, "EOF on CLI connection, worker stops");
+#endif
 }
 
 /*--------------------------------------------------------------------*/

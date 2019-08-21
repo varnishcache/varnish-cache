@@ -117,7 +117,11 @@ run_vcc(void *priv)
 	if (VSB_len(sb))
 		printf("%s", VSB_data(sb));
 	VSB_destroy(&sb);
+#ifndef LIBFUZZER_ENABLED
 	exit(i == 0 ? 0 : 2);
+#else
+	_exit(i == 0 ? 0 : 2);
+#endif
 }
 
 /*--------------------------------------------------------------------
@@ -185,7 +189,11 @@ run_dlopen(void *priv)
 	CAST_OBJ_NOTNULL(vp, priv, VCC_PRIV_MAGIC);
 	if (VCL_TestLoad(VSB_data(vp->libfile)))
 		exit(1);
+#ifndef LIBFUZZER_ENABLED
 	exit(0);
+#else
+	_exit(0);
+#endif
 }
 
 /*--------------------------------------------------------------------
