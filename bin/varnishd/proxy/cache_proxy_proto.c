@@ -606,6 +606,24 @@ vpx_enc_port(struct vsb *vsb, const struct suckaddr *s)
 	VSB_bcat(vsb, b, sizeof(b));
 }
 
+static void
+vpx_enc_authority(struct vsb *vsb, const char *authority, size_t l_authority)
+{
+	uint16_t l;
+
+	AN(vsb);
+
+	if (l_authority == 0)
+		return;
+	AN(authority);
+	AN(*authority);
+
+	VSB_putc(vsb, PP2_TYPE_AUTHORITY);
+	vbe16enc(&l, l_authority);
+	VSB_bcat(vsb, &l, sizeof(l));
+	VSB_cat(vsb, authority);
+}
+
 /* short path for stringified addresses from session attributes */
 static void
 vpx_format_proxy_v1(struct vsb *vsb, int proto,
@@ -634,22 +652,33 @@ vpx_format_proxy_v1(struct vsb *vsb, int proto,
 
 static void
 vpx_format_proxy_v2(struct vsb *vsb, int proto,
-    const struct suckaddr *sac, const struct suckaddr *sas)
+    const struct suckaddr *sac, const struct suckaddr *sas,
+    const char *authority)
 {
+	size_t l_authority = 0;
+	uint16_t l_tlv = 0, l;
+
 	AN(vsb);
 	AN(sac);
 	AN(sas);
+
+	if (authority != NULL && *authority != '\0') {
+		l_authority = strlen(authority);
+		/* 3 bytes in the TLV before the authority string */
+		assert(3 + l_authority <= UINT16_MAX);
+		l_tlv = 3 + l_authority;
+	}
 
 	VSB_bcat(vsb, vpx2_sig, sizeof(vpx2_sig));
 	VSB_putc(vsb, 0x21);
 	if (proto == PF_INET6) {
 		VSB_putc(vsb, 0x21);
-		VSB_putc(vsb, 0x00);
-		VSB_putc(vsb, 0x24);
+		vbe16enc(&l, 0x24 + l_tlv);
+		VSB_bcat(vsb, &l, sizeof(l));
 	} else if (proto == PF_INET) {
 		VSB_putc(vsb, 0x11);
-		VSB_putc(vsb, 0x00);
-		VSB_putc(vsb, 0x0c);
+		vbe16enc(&l, 0x0c + l_tlv);
+		VSB_bcat(vsb, &l, sizeof(l));
 	} else {
 		WRONG("Wrong proxy v2 proto");
 	}
@@ -657,12 +686,14 @@ vpx_format_proxy_v2(struct vsb *vsb, int proto,
 	vpx_enc_addr(vsb, proto, sas);
 	vpx_enc_port(vsb, sac);
 	vpx_enc_port(vsb, sas);
+	vpx_enc_authority(vsb, authority, l_authority);
 	AZ(VSB_finish(vsb));
 }
 
 void
 VPX_Format_Proxy(struct vsb *vsb, int version,
-    const struct suckaddr *sac, const struct suckaddr *sas)
+    const struct suckaddr *sac, const struct suckaddr *sas,
+    const char *authority)
 {
 	int proto;
 	char hac[VTCP_ADDRBUFSIZE];
@@ -684,7 +715,7 @@ VPX_Format_Proxy(struct vsb *vsb, int version,
 		VTCP_name(sas, has, sizeof has, pas, sizeof pas);
 		vpx_format_proxy_v1(vsb, proto, hac, pac, has, pas);
 	} else if (version == 2) {
-		vpx_format_proxy_v2(vsb, proto, sac, sas);
+		vpx_format_proxy_v2(vsb, proto, sac, sas, authority);
 	} else
 		WRONG("Wrong proxy version");
 }
@@ -721,7 +752,7 @@ VPX_Send_Proxy(int fd, int version, const struct sess *sp)
 	} else if (version == 2) {
 		AZ(SES_Get_client_addr(sp, &sac));
 		AN(sac);
-		vpx_format_proxy_v2(vsb, proto, sac, sas);
+		vpx_format_proxy_v2(vsb, proto, sac, sas, NULL);
 	} else
 		WRONG("Wrong proxy version");
 

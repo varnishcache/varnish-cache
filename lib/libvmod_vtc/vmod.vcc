@@ -155,6 +155,18 @@ Returns the size in bytes of a collection of C-datatypes:
 
 This can be useful for VMOD authors in conjunction with workspace operations.
 
+$Function BLOB proxy_header(ENUM {v1,v2} version,
+    IP client, IP server, STRING authority=0)
+
+Format a proxy header of the given version ``v1`` or ``v2`` and
+addresses (The VCL IP type also conatins the port number).
+
+Optionally also send an authority TLV with version ``v2`` (ignored for
+version ``v1``).
+
+Candidate for moving into vmod_proxy, but there were concerns about
+the interface design
+
 SEE ALSO
 ========
 

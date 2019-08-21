@@ -35,6 +35,7 @@
 
 #include "cache/cache.h"
 
+#include "vsb.h"
 #include "vtcp.h"
 #include "vtim.h"
 
@@ -330,4 +331,42 @@ vmod_typesize(VRT_CTX, VCL_STRING s)
 	if (a != 0)
 		i += (p - a); /* pad */
 	return ((VCL_INT)i);
+}
+
+/*--------------------------------------------------------------------*/
+
+#define BLOB_VMOD_PROXY_HEADER_TYPE	0xc8f34f78
+
+VCL_BLOB v_matchproto_(td_vtc_proxy_header)
+vmod_proxy_header(VRT_CTX, VCL_ENUM venum, VCL_IP client, VCL_IP server,
+    VCL_STRING authority)
+{
+	struct vsb *vsb;
+	const void *h;
+	int version;
+	size_t l;
+
+	CHECK_OBJ_ORNULL(ctx, VRT_CTX_MAGIC);
+
+	if (venum == VENUM(v1))
+		version = 1;
+	else if (venum == VENUM(v2))
+		version = 2;
+	else
+		WRONG(venum);
+
+	vsb = VSB_new_auto();
+	AN(vsb);
+	VRT_Format_Proxy(vsb, version, client, server, authority);
+	l = VSB_len(vsb);
+	h = WS_Copy(ctx->ws, VSB_data(vsb), l);
+	VSB_delete(vsb);
+
+	if (h == NULL) {
+		VRT_fail(ctx, "proxy_header: out of workspace");
+		return (NULL);
+	}
+
+	return (VRT_blob(ctx, "proxy_header", h, l,
+	    BLOB_VMOD_PROXY_HEADER_TYPE));
 }

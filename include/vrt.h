@@ -57,6 +57,7 @@
  *	VRT_HashStrands32() added
  *	VRT_l_resp_body() changed
  *	VRT_l_beresp_body() changed
+ *	VRT_Format_Proxy() added	// transitional interface
  * 10.0 (2019-09-15)
  *	VRT_UpperLowerStrands added.
  *	VRT_synth_page now takes STRANDS argument
@@ -76,7 +77,6 @@
  *	VRT_Stv_*() functions renamed to VRT_stevedore_*()
  *	[cache.h] WS_ReserveAll() added
  *	[cache.h] WS_Reserve(ws, 0) deprecated
- *	VRT_Fortmat_Proxy() added
  * 9.0 (2019-03-15)
  *	Make 'len' in vmod_priv 'long'
  *	HTTP_Copy() removed
@@ -550,7 +550,8 @@ void VRT_DelDirector(VCL_BACKEND *);
 
 /* Suckaddr related */
 int VRT_VSA_GetPtr(VRT_CTX, VCL_IP sua, const unsigned char ** dst);
-void VRT_Format_Proxy(struct vsb *, VCL_INT, VCL_IP, VCL_IP);
+/* transitional interface */
+void VRT_Format_Proxy(struct vsb *, VCL_INT, VCL_IP, VCL_IP, VCL_STRING);
 
 typedef int vmod_event_f(VRT_CTX, struct vmod_priv *, enum vcl_event_e);
 
