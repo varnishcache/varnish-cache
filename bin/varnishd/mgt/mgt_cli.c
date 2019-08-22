@@ -700,7 +700,7 @@ mgt_DumpRstCli(void)
 			continue;
 		printf(".. _ref_cli_");
 		for (p = cp->request; *p; p++)
-			putchar(*p == '.' ? '_' : *p);
+			fputc(*p == '.' ? '_' : *p, stdout);
 		printf(":\n\n");
 		printf("%s\n", cp->syntax);
 		for (j = 0; j < strlen(cp->syntax); j++)

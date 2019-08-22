@@ -127,6 +127,7 @@
 -esym(534, fprintf)
 -esym(534, vfprintf)
 -esym(534, sprintf)
+-esym(534, fputc)
 
 -esym(534, memset)
 -esym(534, memcpy)
