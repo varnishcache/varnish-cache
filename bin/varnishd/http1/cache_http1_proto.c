@@ -128,15 +128,16 @@ http1_dissect_hdrs(struct http *hp, char *p, struct http_conn *htc,
 				r++;
 				continue;
 			}
-			if (!vct_iscrlf(r, htc->rxbuf_e)) {
+			i = vct_iscrlf(r, htc->rxbuf_e);
+			if (i == 0) {
 				VSLb(hp->vsl, SLT_BogoHeader,
 				    "Header has ctrl char 0x%02x", *r);
 				return (400);
 			}
 			q = r;
-			assert(r < htc->rxbuf_e);
-			r = vct_skipcrlf(r, htc->rxbuf_e);
-			if (r >= htc->rxbuf_e)
+			r += i;
+			assert(r <= htc->rxbuf_e);
+			if (r == htc->rxbuf_e)
 				break;
 			if (vct_iscrlf(r, htc->rxbuf_e))
 				break;
