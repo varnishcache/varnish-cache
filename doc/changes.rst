@@ -25,6 +25,17 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
+Varnish Cache 6.2.1 (2019-09-03)
+================================
+
+Bugs fixed
+----------
+
+* Fixed issues related to HTTP/1 request parsing (VSV00003_)
+
+.. _VSV00003: https://varnish-cache.org/security/VSV00003.html
+
+================================
 Varnish Cache 6.2.0 (2019-03-15)
 ================================
 
