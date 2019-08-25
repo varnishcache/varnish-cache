@@ -48,7 +48,11 @@
 #include "VSC_smf.h"
 
 #ifndef MAP_NOCORE
+#ifdef MAP_CONCEAL
+#define MAP_NOCORE MAP_CONCEAL /* XXX OpenBSD */
+#else
 #define MAP_NOCORE 0 /* XXX Linux */
+#endif
 #endif
 
 #ifndef MAP_NOSYNC
