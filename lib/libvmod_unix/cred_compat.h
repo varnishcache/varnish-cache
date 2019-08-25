@@ -68,8 +68,13 @@ get_ids(int fd, uid_t *uid, gid_t *gid)
 {
 
 #if defined(SO_PEERCRED)
+#if defined(__OpenBSD__)
+	typedef struct sockpeercred ucred_t;
+#else
+	typedef struct ucred ucred_t;
+#endif
 
-	struct ucred ucred;
+	ucred_t ucred;
 	socklen_t l = sizeof(ucred);
 
 	errno = 0;
