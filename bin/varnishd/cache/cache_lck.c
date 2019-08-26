@@ -216,6 +216,7 @@ Lck_CondWait(pthread_cond_t *cond, struct lock *lck, vtim_real when)
 		errno = pthread_cond_timedwait(cond, &ilck->mtx, &ts);
 		assert(errno == 0 ||
 		    errno == ETIMEDOUT ||
+		    errno == EINVAL ||
 		    errno == EINTR);
 	}
 	AZ(ilck->held);
