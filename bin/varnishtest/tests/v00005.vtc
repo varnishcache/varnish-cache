@@ -59,10 +59,10 @@ varnish v1 -errvcl {Probe request redefinition at:} {
 }
 
 varnish v1 -errvcl {Expected CNUM got '"120s"'} {
-        backend default {
-                .host = "127.0.0.1";
-                .probe = {
-                        .timeout = "120s";
-                }
-        }
+	backend default {
+		.host = "127.0.0.1";
+		.probe = {
+			.timeout = "120s";
+		}
+	}
 }
