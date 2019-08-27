@@ -27,7 +27,7 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
-Varnish Cache 6.0.4 (2019-08-27)
+Varnish Cache 6.0.4 (2019-09-03)
 ================================
 
 * Now ``std.ip()`` can optionally take a port number or service name
