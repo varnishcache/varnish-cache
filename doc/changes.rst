@@ -27,6 +27,53 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
+Varnish Cache 6.0.4 (2019-08-27)
+================================
+
+* Now ``std.ip()`` can optionally take a port number or service name
+  argument. This is documented in the ``vmod_std(3)`` manual. (2993_)
+
+* Permit subsequent conditional requests on 304. (2871_)
+
+* Improved error messages from the VCL compiler on VMOD call argument
+  missmatch. (2874_)
+
+* Updated the builtin.vcl to use case-insensitive matching on
+  Surrogate-Control and Cache-Control backend response headers.
+
+* Ignore invalid Cache-Control time values containing trailing non-numeric
+  characters.
+
+* `varnishstat` now responds to the Home and End keys in interactive mode.
+
+* Fix a compile issue when using newer builds of gcc. (2879_)
+
+* Fix a VCL compilation assert when using very long VMOD object
+  names. (2880_)
+
+* Improved documentation on boolean types in VCL. (2846_)
+
+* New VRT functions for handling STRANDS (split strings) in
+  VMODs. `vmod_blob` now uses strands internally.
+
+* New log tag `VCL_use` will show which VCL is in use during request
+  handling.
+
+* Fail VCL loading if a VMOD objects are left uninitialized. (2839_)
+
+* Ensure that backend probes are executed in a timely manner. (2976_)
+
+
+.. _2993: https://github.com/varnishcache/varnish-cache/pull/2993
+.. _2871: https://github.com/varnishcache/varnish-cache/issues/2871
+.. _2874: https://github.com/varnishcache/varnish-cache/issues/2874
+.. _2879: https://github.com/varnishcache/varnish-cache/issues/2879
+.. _2880: https://github.com/varnishcache/varnish-cache/issues/2880
+.. _2846: https://github.com/varnishcache/varnish-cache/issues/2846
+.. _2839: https://github.com/varnishcache/varnish-cache/issues/2839
+.. _2976: https://github.com/varnishcache/varnish-cache/issues/2976
+
+================================
 Varnish Cache 6.0.3 (2019-02-19)
 ================================
 
