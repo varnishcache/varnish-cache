@@ -646,6 +646,7 @@ pan_backtrace(struct vsb *vsb)
 			VSB_printf(vsb, "%s", p);
 		}
 		VSB_printf (vsb, "\n");
+		free(strings);
 	}
 	VSB_indent(vsb, -2);
 }
