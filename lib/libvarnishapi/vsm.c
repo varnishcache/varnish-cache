@@ -579,7 +579,7 @@ vsm_vlu_func(void *priv, const char *line)
 {
 	struct vsm *vd;
 	struct vsm_set *vs;
-	int i = -1;
+	int i = 0;
 
 	CAST_OBJ_NOTNULL(vs, priv, VSM_SET_MAGIC);
 	vd = vs->vsm;
