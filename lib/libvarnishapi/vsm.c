@@ -975,8 +975,13 @@ VSM_Unmap(struct vsm *vd, struct vsm_fantom *vf)
 		assert(vg->s == NULL);
 		assert(vg->sz == 0);
 		assert(vg->cluster->refs > 0);
-		if (--vg->cluster->refs == 0)
+		if (--vg->cluster->refs == 0) {
 			vsm_unmapseg(vg->cluster);
+			if (vg->cluster->flags & VSM_FLAG_STALE) {
+				AN(vg->flags & VSM_FLAG_STALE);
+				vsm_delseg(vg->cluster, 0);
+			}
+		}
 		vg->b = vg->e = NULL;
 	} else {
 		vsm_unmapseg(vg);
