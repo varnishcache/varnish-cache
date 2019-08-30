@@ -44,7 +44,7 @@ struct vsm;
 
 struct vsm_fantom {
 	uintptr_t		priv;		/* VSM private */
-	struct VSM_chunk	*chunk;
+	uintptr_t		priv2;		/* VSM private */
 	void			*b;		/* first byte of payload */
 	void			*e;		/* first byte past payload */
 	char			*class;

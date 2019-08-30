@@ -72,6 +72,17 @@ const struct vsm_valid VSM_valid[1] = {{"valid"}};
 
 static vlu_f vsm_vlu_func;
 
+#define VSM_PRIV_SHIFT							\
+	(sizeof (uintptr_t) * 4)
+#define VSM_PRIV_MASK							\
+	(~((uintptr_t)UINTPTR_MAX << VSM_PRIV_SHIFT))
+#define VSM_PRIV_LOW(u)							\
+	((uintptr_t)(u) & VSM_PRIV_MASK)
+#define VSM_PRIV_HIGH(u)						\
+	(((uintptr_t)(u) >> VSM_PRIV_SHIFT) & VSM_PRIV_MASK)
+#define VSM_PRIV_MERGE(low, high)					\
+	(VSM_PRIV_LOW(low) | (VSM_PRIV_LOW(high) << VSM_PRIV_SHIFT))
+
 /*--------------------------------------------------------------------*/
 
 struct vsm_set;
@@ -518,7 +529,8 @@ vsm_vlu_plus(struct vsm *vd, struct vsm_set *vs, const char *line)
 		vg->av = av;
 		vg->set = vs;
 		vg->flags = VSM_FLAG_MARKSCAN;
-		vg->serial = ++vd->serial;
+		vg->serial = vd->serial;
+
 		VTAILQ_INSERT_TAIL(&vs->segs, vg, list);
 		if (ac == 4) {
 			vg->flags |= VSM_FLAG_CLUSTER;
@@ -576,6 +588,11 @@ vsm_vlu_func(void *priv, const char *line)
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	AN(line);
 
+	/* Up the serial counter. This wraps at UINTPTR_MAX/2
+	 * because thats the highest value we can store in struct
+	 * vsm_fantom. */
+	vd->serial = VSM_PRIV_LOW(vd->serial + 1);
+
 	switch (line[0]) {
 	case '#':
 		i = vsm_vlu_hash(vd, vs, line);
@@ -602,6 +619,7 @@ vsm_readlines(struct vsm_set *vs)
 	int i;
 
 	do {
+		assert(vs->fd >= 0);
 		i = VLU_Fd(vs->vlu, vs->fd);
 	} while (!i);
 	assert(i == -2);
@@ -771,22 +789,44 @@ vsm_findseg(const struct vsm *vd, const struct vsm_fantom *vf)
 	struct vsm_seg *vg;
 	uintptr_t x;
 
-	x = vf->priv;
+	x = VSM_PRIV_HIGH(vf->priv);
+	if (x == vd->serial) {
+		vg = (struct vsm_seg *)vf->priv2;
+		if (!VALID_OBJ(vg, VSM_SEG_MAGIC) ||
+		    vg->serial != VSM_PRIV_LOW(vf->priv))
+			WRONG("Corrupt fantom");
+		return (vg);
+	}
+
+	x = VSM_PRIV_LOW(vf->priv);
 	vs = vd->mgt;
 	VTAILQ_FOREACH(vg, &vs->segs, list)
 		if (vg->serial == x)
-			return (vg);
-	VTAILQ_FOREACH(vg, &vs->stale, list)
-		if (vg->serial == x)
-			return (vg);
+			break;
+	if (vg == NULL) {
+		VTAILQ_FOREACH(vg, &vs->stale, list)
+			if (vg->serial == x)
+				break;
+	}
 	vs = vd->child;
-	VTAILQ_FOREACH(vg, &vs->segs, list)
-		if (vg->serial == x)
-			return (vg);
-	VTAILQ_FOREACH(vg, &vs->stale, list)
-		if (vg->serial == x)
-			return (vg);
-	return (NULL);
+	if (vg == NULL) {
+		VTAILQ_FOREACH(vg, &vs->segs, list)
+			if (vg->serial == x)
+				break;
+	}
+	if (vg == NULL) {
+		VTAILQ_FOREACH(vg, &vs->stale, list)
+			if (vg->serial == x)
+				break;
+	}
+	if (vg == NULL)
+		return (NULL);
+
+	/* Update the fantom with the new priv so that lookups will be
+	 * fast on the next call. Note that this casts away the const. */
+	((struct vsm_fantom *)TRUST_ME(vf))->priv =
+	    VSM_PRIV_MERGE(vg->serial, vd->serial);
+	return (vg);
 }
 
 /*--------------------------------------------------------------------*/
@@ -831,7 +871,8 @@ VSM__itern(struct vsm *vd, struct vsm_fantom *vf)
 		}
 	}
 	memset(vf, 0, sizeof *vf);
-	vf->priv = vg->serial;
+	vf->priv = VSM_PRIV_MERGE(vg->serial, vd->serial);
+	vf->priv2 = (uintptr_t)vg;
 	vf->class = vg->av[4];
 	vf->ident = vg->av[5];
 	AN(vf->class);
@@ -854,7 +895,7 @@ VSM_Map(struct vsm *vd, struct vsm_fantom *vf)
 	if (vg == NULL)
 		return (vsm_diag(vd, "VSM_Map: bad fantom"));
 
-	assert(vg->serial == vf->priv);
+	assert(vg->serial == VSM_PRIV_LOW(vf->priv));
 	assert(vg->av[4] == vf->class);
 	assert(vg->av[5] == vf->ident);
 
