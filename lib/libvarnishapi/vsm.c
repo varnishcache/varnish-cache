@@ -253,11 +253,6 @@ vsm_delseg(struct vsm_seg *vg, int refsok)
 
 	CHECK_OBJ_NOTNULL(vg, VSM_SEG_MAGIC);
 
-	if (vg->flags & VSM_FLAG_CLUSTER) {
-		vg->flags &= ~VSM_FLAG_CLUSTER;
-		VTAILQ_REMOVE(&vg->set->clusters, vg, clist);
-	}
-
 	if (refsok && vg->refs) {
 		AZ(vg->flags & VSM_FLAG_STALE);
 		vg->flags |= VSM_FLAG_STALE;
@@ -268,6 +263,11 @@ vsm_delseg(struct vsm_seg *vg, int refsok)
 
 	if (vg->s != NULL)
 		vsm_unmapseg(vg);
+
+	if (vg->flags & VSM_FLAG_CLUSTER) {
+		vg->flags &= ~VSM_FLAG_CLUSTER;
+		VTAILQ_REMOVE(&vg->set->clusters, vg, clist);
+	}
 
 	if (vg->flags & VSM_FLAG_STALE)
 		VTAILQ_REMOVE(&vg->set->stale, vg, list);
