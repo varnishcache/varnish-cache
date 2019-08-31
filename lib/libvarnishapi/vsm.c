@@ -644,8 +644,7 @@ vsm_refresh_set(struct vsm *vd, struct vsm_set *vs)
 	    st.st_dev != vs->fst.st_dev ||
 	    st.st_mode != vs->fst.st_mode ||
 	    st.st_size < vs->fst.st_size ||
-	    st.st_nlink < 1 ||
-	    memcmp(&st.st_mtime, &vs->fst.st_mtime, sizeof st.st_mtime))) {
+	    st.st_nlink < 1)) {
 		closefd(&vs->fd);
 	}
 
