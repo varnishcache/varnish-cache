@@ -525,7 +525,7 @@ vsm_vlu_plus(struct vsm *vd, struct vsm_set *vs, const char *line)
 			VTAILQ_INSERT_TAIL(&vs->clusters, vg, clist);
 		} else if (*vg->av[2] != '0') {
 			vg->cluster = vsm_findcluster(vs, vg->av[1]);
-			AN(vg->cluster);
+			CHECK_OBJ_NOTNULL(vg->cluster, VSM_SEG_MAGIC);
 		}
 	}
 	return (0);
@@ -882,6 +882,7 @@ VSM_Map(struct vsm *vd, struct vsm_fantom *vf)
 		return (0);
 	}
 
+	CHECK_OBJ_NOTNULL(vgc, VSM_SEG_MAGIC);
 	assert(vgc->flags & VSM_FLAG_CLUSTER);
 	assert(vg->s == NULL);
 	assert(vg->sz == 0);
@@ -922,6 +923,7 @@ VSM_Unmap(struct vsm *vd, struct vsm_fantom *vf)
 	vg = vsm_findseg(vd, vf);
 	if (vg == NULL)
 		return (vsm_diag(vd, "VSM_Unmap: bad fantom"));
+	CHECK_OBJ_NOTNULL(vg, VSM_SEG_MAGIC);
 	assert(vg->refs > 0);
 	vg->refs--;
 	vf->b = NULL;
@@ -930,6 +932,7 @@ VSM_Unmap(struct vsm *vd, struct vsm_fantom *vf)
 		return(0);
 
 	if (vg->cluster) {
+		CHECK_OBJ_NOTNULL(vg->cluster, VSM_SEG_MAGIC);
 		assert(vg->s == NULL);
 		assert(vg->sz == 0);
 		assert(vg->cluster->refs > 0);
