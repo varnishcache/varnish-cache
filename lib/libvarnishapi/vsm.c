@@ -242,6 +242,11 @@ vsm_delseg(struct vsm_seg *vg, int refsok)
 
 	CHECK_OBJ_NOTNULL(vg, VSM_SEG_MAGIC);
 
+	if (vg->set->vg == vg) {
+		AZ(vg->flags & VSM_FLAG_STALE);
+		vg->set->vg = VTAILQ_NEXT(vg, list);
+	}
+
 	if (refsok && vg->refs) {
 		AZ(vg->flags & VSM_FLAG_STALE);
 		vg->flags |= VSM_FLAG_STALE;
@@ -505,13 +510,18 @@ vsm_vlu_plus(struct vsm *vd, struct vsm_set *vs, const char *line)
 		return(-1);
 	}
 
-	while (vs->vg != NULL && vsm_cmp_av(&vs->vg->av[1], &av[1]))
-		vs->vg = VTAILQ_NEXT(vs->vg, list);
-	if (vs->vg != NULL) {
-		VAV_Free(av);
+	vg = vs->vg;
+	CHECK_OBJ_ORNULL(vg, VSM_SEG_MAGIC);
+	if (vg != NULL)
+		AZ(vg->flags & VSM_FLAG_STALE);
+	while (vg != NULL && vsm_cmp_av(&vg->av[1], &av[1]))
+		vg = VTAILQ_NEXT(vg, list);
+	if (vg != NULL) {
 		/* entry compared equal, so it survives */
-		vs->vg->flags |= VSM_FLAG_MARKSCAN;
-		vs->vg = VTAILQ_NEXT(vs->vg, list);
+		CHECK_OBJ_NOTNULL(vg, VSM_SEG_MAGIC);
+		VAV_Free(av);
+		vg->flags |= VSM_FLAG_MARKSCAN;
+		vs->vg = VTAILQ_NEXT(vg, list);
 	} else {
 		ALLOC_OBJ(vg, VSM_SEG_MAGIC);
 		AN(vg);
