@@ -1,0 +1,162 @@
+.. _phk_vsv00003:
+
+Here we are again - VSV00003 in perspective
+===========================================
+
+So it probably helps if you first re-read what I wrote two years ago
+about our first :ref:`first major security hole. <phk_vsv00001>`
+
+Statistically, it is incredibly hard to derive any information from
+a single binary datapoint.
+
+If some event happens after X years, and that is all you know, there
+is no way to meaningfully tell if that was a once per millenium
+event arriving embarrassingly early or a biannual event arriving
+fashionably late.
+
+We now have two datapoints: `VSV00001 </security/VSV00001.html>`_
+happened after 11 year and `VSV00003 </security/VSV00003.html>`_
+after 13 years [#f1]_.
+
+That allows us to cabin the expectations for the discovery of major
+security problems in Varnish Cache to "probably about 3 per decade" [#f2]_.
+
+Given that one of my goals with Varnish Cache was to see how well
+systems-programming in C can be done in the FOSS world [#f3]_ and
+even though we are doing a lot better than most of the FOSS world,
+that is a bit of a disappointment [#f4]_.
+
+The nature of the beast
+-----------------------
+
+VSV00003 is a buffer overflow, a kind of bug which could have
+manifested itself in many different ways, but here it runs directly
+into the maw of an `assert` statement before it can do any harm,
+so it is "merely" a Denial-Of-Service vulnerability.
+
+A DoS is of course bad enough, but not nearly as bad as a
+remote code execution or information disclosure vulnerability
+would have been.
+
+That, again, validates our strategy of littering our source code
+with asserts, about one in ten source lines contain an assert, and
+even more so that we leaving the asserts in the production code.
+
+I really wish more FOSS projects would pick up this practice.
+
+How did we find it
+------------------
+
+This is a bit embarrasing for me.
+
+For ages I have been muttering about wanting to "fuzz"[#f5]_ Varnish,
+to see what would happen, but between all the many other items
+on the TODO list, it never really bubbled to the top.
+
+A new employee at Varnish-Software needed a way to get to know
+the source code, so he did, and struck this nugget of gold far
+too fast.
+
+Hat-tip to Alf-André Walla.
+
+Dealing with it
+---------------
+
+Martin Grydeland from Varnish Software has been the Senior Wrangler
+of this security issue, while I deliberatly have taken a hands-off
+stance, a decision I have no reason to regret.
+
+Thanks a lot Martin!
+
+As I explained at length in context of VSV00001, we really like to
+be able to offer a VCL-based mitigation, so that people who
+for one reason or another cannot update right away, still can
+protect themselves.
+
+Initially we did not think that would even be possible, but tell
+that to a German Engineer...
+
+Nils Goroll from UPLEX didn't quite say *"Halten Sie Mein Bier…"*,
+but he did produce a VCL workaround right away, once again using
+the inline-C capability, to frob things which are normally 
+"No User Serviceable Parts Behind This Door".
+
+Bravo Nils!
+
+Are we barking up the wrong tree ?
+----------------------------------
+
+An event like this is a good chance to "recalculate the route"
+so to speak, and the first question we need to answer is if we
+are barking up the wrong tree?
+
+Does it matter in the real world, that Varnish does not spit
+out a handful of CVE's per year ?
+
+Would the significant amount of time we spend on trying to
+prevent that be better used to extend Varnish ?
+
+There is no doubt that part of Varnish Cache's success is that
+it is largely "fire & forget".
+
+Every so often I get an email from "the new guy" who just found a
+Varnish instance which has been running for years, unbeknownst to
+everybody still in the company.
+
+There are still Varnish 2.x and 3.x out there, running serious
+workloads without making a fuzz about it.
+
+But is that actually a good thing ?
+
+Dan Geer thinks not, he has argued that all software should
+have a firm expiry date, to prevent cyberspace ending as a
+"Cybersecurity SuperFund Site".
+
+So far our two big security issues have both been DoS vulnerabilities,
+and Varnish recovers as soon as the attack ends, but what if the
+next one is a data-disclosure issue ?
+
+When Varnish users are not used to patch their Varnish instance,
+would they even notice the security advisory, or would they
+obliviously keep running the vulnerable code for years on end ?
+
+Of course, updating a software package has never been easier, in a
+well-run installation it should be a non-event which happens
+automatically.
+
+And in a world where August 2019 saw a grand total of 2004 CVEs,
+how much should we (still) cater to people who "fire & forget" ?
+
+And finally we must ask ourselves if all the effort we spend on
+code quality is worth it, if we still face a major security issue
+as often as every other year ?
+
+We will be discussing these and many other issues at our next VDD.
+
+User input would be very welcome.
+
+*phk*
+
+.. rubric:: Footnotes
+
+.. [#f1] I'm not counting `VSV00002 </security/VSV00002.html>`_,
+	 it only affected a very small fraction of our users.
+
+.. [#f2] Sandia has a really fascinating introduction to
+	 this obscure corner of statistics:
+	 `Sensitivity in Risk Analyses with Uncertain Numbers
+	 <https://prod.sandia.gov/techlib/access-control.cgi/2006/062801.pdf>`_
+
+.. [#f3] As distinct from for instance Aerospace or Automotive
+	 organizations who must set aside serious resources for
+	 Quality Assurance, meet legal requirements.
+
+.. [#f4] A disappointment not in any way reduced by the fact that
+	 this is a bug of my own creation.
+
+.. [#f5] "Fuzzing" is a testing method to where you send random
+	 garbage into your program, to see what happens.  In practice
+	 it is a lot more involved like that if you want it to
+	 be an efficient process.  John Regehr writes a lot about
+	 it on `his blog "Embedded in Academia" <https://blog.regehr.org/>`_
+	 and I fully agree with most of what he writes.

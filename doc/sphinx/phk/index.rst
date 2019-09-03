@@ -8,6 +8,7 @@ You may or may not want to know what Poul-Henning thinks.
 .. toctree::
 	:maxdepth: 1
 
+	VSV00003.rst
 	patent.rst
 	lucky.rst
 	apispaces.rst
