@@ -691,7 +691,6 @@ VPX_Send_Proxy(int fd, int version, const struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	assert(version == 1 || version == 2);
 	AN(VSB_new(vsb, buf, sizeof buf, VSB_FIXEDLEN));
-	AN(vsb);
 
 	AZ(SES_Get_server_addr(sp, &sas));
 	AN(sas);
