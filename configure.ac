@@ -336,9 +336,25 @@ esac
 AC_SUBST(JEMALLOC_LDADD)
 
 AC_CHECK_FUNCS([setproctitle])
-AC_SEARCH_LIBS(backtrace, [execinfo], [], [
-   AC_MSG_ERROR([Could not find backtrace() support])
-])
+
+# if the default libexecinfo on alpine causes issues, you can use libunwind
+AC_ARG_WITH([unwind],
+            [AS_HELP_STRING([--with-unwind],
+              [use libunwind to print stacktraces (use libexecinfo otherwise). Recommended on alpine linux. Defaults to no.])])
+
+if test "$with_unwind" = yes; then
+    PKG_CHECK_MODULES([LIBUNWIND], [libunwind])
+    AC_DEFINE([WITH_UNWIND], [1],
+              [Define to 1 to use libunwind instead of libexecinfo])
+else
+    AC_SEARCH_LIBS(backtrace, [execinfo], [], [
+        AC_MSG_ERROR([Could not find backtrace() support])
+    ])
+fi
+
+AM_CONDITIONAL([WITH_UNWIND],
+	[test "$with_unwind" = yes])
+
 # white lie - we don't actually test it
 AC_MSG_CHECKING([whether daemon() works])
 case $target in

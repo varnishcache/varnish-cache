@@ -29,7 +29,11 @@
 
 #include "config.h"
 
+#ifdef WITH_UNWIND
+#include <libunwind.h>
+#else
 #include <execinfo.h>
+#endif
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -575,6 +579,47 @@ pan_sess(struct vsb *vsb, const struct sess *sp)
 
 /*--------------------------------------------------------------------*/
 
+#ifdef WITH_UNWIND
+
+static void
+pan_backtrace(struct vsb *vsb)
+{
+	unw_cursor_t cursor; unw_context_t uc;
+	unw_word_t ip, sp;
+	unw_word_t offp;
+	char fname[1024];
+	int ret;
+
+	VSB_printf(vsb, "Backtrace:\n");
+	VSB_indent(vsb, 2);
+
+	ret = unw_getcontext(&uc);
+	if (ret != 0) {
+		VSB_printf(vsb, "Backtrace not available "
+		    "(unw_getcontext returned %d)\n", ret);
+		return;
+	}
+	unw_init_local(&cursor, &uc);
+	if (ret != 0) {
+		VSB_printf(vsb, "Backtrace not available "
+		    "(unw_init_local returned %d)\n", ret);
+		return;
+	}
+	while (unw_step(&cursor) > 0) {
+		fname[0] = '\0';
+		ip = sp = 0;
+		unw_get_reg(&cursor, UNW_REG_IP, &ip);
+		unw_get_reg(&cursor, UNW_REG_SP, &sp);
+		unw_get_proc_name(&cursor, fname, sizeof(fname), &offp);
+		VSB_printf(vsb, "ip=0x%lx, sp=0x%lx <%s+0x%lx>\n", (long) ip,
+		    (long) sp, fname[0] ? fname : "???", offp);
+	}
+
+	VSB_indent(vsb, -2);
+}
+
+#else /* WITH_UNWIND */
+
 #define BACKTRACE_LEVELS	10
 
 static void
@@ -615,6 +660,8 @@ pan_backtrace(struct vsb *vsb)
 	}
 	VSB_indent(vsb, -2);
 }
+
+#endif /* WITH_UNWIND */
 
 /*--------------------------------------------------------------------*/
 
