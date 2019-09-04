@@ -32,6 +32,11 @@ NEXT (2020-03-15)
 
 * The ``MAIN.sess_drop`` counter is gone.
 
+* New configure switch: --with-unwind. Alpine linux appears to offer a
+  `libexecinfo` implementation that crashes when called by Varnish, this
+  offers the alternative of using `libunwind` instead.
+
+
 ================================
 Varnish Cache 6.3.0 (2019-09-15)
 ================================
