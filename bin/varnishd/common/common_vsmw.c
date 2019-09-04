@@ -321,7 +321,7 @@ VSMW_NewCluster(struct vsmw *vsmw, size_t len, const char *pfx)
 	ALLOC_OBJ(seg, VSMWSEG_MAGIC);
 	AN(seg);
 	vc->cseg = seg;
-	seg->len = len;
+	seg->len = vc->len;
 	seg->cluster = vc;
 	REPLACE(seg->class, "");
 	REPLACE(seg->id, "");
