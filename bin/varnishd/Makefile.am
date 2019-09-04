@@ -173,6 +173,11 @@ varnishd_LDADD = \
 	@PCRE_LIBS@ \
 	${DL_LIBS} ${PTHREAD_LIBS} ${NET_LIBS} ${RT_LIBS} ${LIBM}
 
+if WITH_UNWIND
+varnishd_CFLAGS += -DUNW_LOCAL_ONLY
+varnishd_LDADD += ${LIBUNWIND_LIBS}
+endif
+
 noinst_PROGRAMS = vhp_gen_hufdec
 vhp_gen_hufdec_SOURCES = hpack/vhp_gen_hufdec.c
 vhp_gen_hufdec_CFLAGS = @SAN_CFLAGS@ \
