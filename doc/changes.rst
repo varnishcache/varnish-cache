@@ -43,6 +43,25 @@ Varnish Cache 6.0.5 (unreleased)
 
 * Fix a problem where the ban lurker would skip objects. (3007_)
 
+* Incremental VSM updates. With this change, added or removed VSM segments
+  (ie varnishstat counters) will be done incrementally instead of complete
+  republishments of the entire set of VSM segments. This reduces the load
+  in the utilities (varnishncsa, varnishstat etc.) when there are frequent
+  changes to the set.
+
+* Optimize the VSM and VSC subsystems to handle large sets of counters
+  more gracefully.
+
+* Fix several resource leaks in libvarnishapi that would cause the
+  utilities to incrementally go slower and use CPU cycles after many
+  changes to the set of VSM segments.
+
+* Fixed a VSM bug that would cause varnishlog like utilities to not
+  produce log data. This could trigger when the varnish management process
+  is running root, the cache worker as a non-privileged user, and the log
+  utility run as the same user as the cache worker. This retires the
+  VSM_NOPID environment variable.
+
 .. _2395: https://github.com/varnishcache/varnish-cache/issues/2395
 .. _2572: https://github.com/varnishcache/varnish-cache/issues/2572
 .. _2905: https://github.com/varnishcache/varnish-cache/issues/2905
