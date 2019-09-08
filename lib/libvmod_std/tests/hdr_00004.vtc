@@ -1,0 +1,51 @@
+# Got reports of no data being sent in return after 3.0.1, this test-case
+# tries to do some simple verification, though it fails to detect the
+# problem.
+
+
+varnishtest "Header-vmod: Send some data too"
+
+server s1 {
+	timeout 10
+	rxreq
+	expect req.url == "/foo"
+	txresp -status 200 -hdr "bar: xxx=y" -hdr "foo: one=1" -hdr "foo: two=2" -hdr "foo: three=3" -body "Hello"
+	rxreq
+	expect req.url == "/foo"
+	txresp -status 200 -hdr "Content-Type: text/html" -hdr "foo: one=1" -hdr "foo: two=2" -hdr "foo: three=3" -body "Hello"
+	rxreq
+	expect req.url == "/foo"
+	txresp -status 200 -hdr "foo: one=1" -hdr "foo: two=2" -hdr "foo: three=3" -hdr "Content-Type: text/html" -body "Hello"
+} -start
+
+varnish v1 -vcl+backend {
+	import std;
+
+	sub vcl_backend_response {
+		if (bereq.url == "/foo") {
+			std.hdr_remove(beresp.http.foo,"one=1");
+		}
+		set beresp.uncacheable = true;
+	}
+} -start
+
+client c1 {
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.foo == "two=2"
+	expect resp.http.bar == "xxx=y"
+	expect resp.bodylen == 5
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.foo == "two=2"
+	expect resp.http.Content-Type == "text/html"
+	expect resp.bodylen == 5
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.foo == "two=2"
+	expect resp.http.Content-Type == "text/html"
+	expect resp.bodylen == 5
+} -run

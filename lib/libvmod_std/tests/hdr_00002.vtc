@@ -1,0 +1,45 @@
+
+# This assumes that:
+#  1. Append works
+#  2. The first header is the only tested in varnishtest when multiple
+#     copies are present
+
+varnishtest "Header-vmod: Test copying"
+
+server s1 {
+	timeout 10
+	rxreq
+	expect req.url == "/foo"
+	txresp -status 200 -hdr "foo: one=1" -hdr "foo: two=2" -hdr "foo: three=3"
+} -start
+
+varnish v1 -vcl+backend {
+	import std;
+
+	sub vcl_backend_response {
+		if (bereq.url == "/foo") {
+			std.hdr_copy(beresp.http.foo,beresp.http.bar);
+			set beresp.http.x-one = std.hdr_get(beresp.http.bar,"one");
+			set beresp.http.x-two = std.hdr_get(beresp.http.bar,"two");
+			set beresp.http.x-three = std.hdr_get(beresp.http.bar,"three");
+			set beresp.http.y-one = std.hdr_get(beresp.http.foo,"one");
+			set beresp.http.y-two = std.hdr_get(beresp.http.foo,"two");
+			set beresp.http.y-three = std.hdr_get(beresp.http.foo,"three");
+		}
+		return(deliver);
+	}
+} -start
+
+client c1 {
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.bar == "one=1"
+	expect resp.http.foo == "one=1"
+	expect resp.http.x-one == "one=1"
+	expect resp.http.x-two == "two=2"
+	expect resp.http.x-three == "three=3"
+	expect resp.http.y-one == "one=1"
+	expect resp.http.y-two == "two=2"
+	expect resp.http.y-three == "three=3"
+} -run

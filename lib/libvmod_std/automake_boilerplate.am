@@ -37,6 +37,12 @@ CLEANFILES = $(builddir)/vcc_if.c $(builddir)/vcc_if.h \
 	$(builddir)/vmod_std.man.rst
 
 TESTS = \
+	tests/hdr_00001.vtc \
+	tests/hdr_00002.vtc \
+	tests/hdr_00003.vtc \
+	tests/hdr_00004.vtc \
+	tests/hdr_00005.vtc \
+	tests/hdr_00006.vtc \
 	tests/std_b00001.vtc
 
 EXTRA_DIST += $(TESTS)

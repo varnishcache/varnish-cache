@@ -29,6 +29,7 @@
 
 $ABI strict
 $Module std 3 "Varnish Standard Module"
+$Event event_function
 
 DESCRIPTION
 ===========
@@ -39,6 +40,64 @@ DESCRIPTION
 
 *vmod_std* contains basic functions which are part and parcel of
 Varnish, but which for reasons of architecture fit better in a VMOD.
+
+Header functions
+================
+
+.. vcl-start
+
+Example::
+
+    vcl 4.0;
+    import header;
+
+    backend default { .host = "192.0.2.11"; .port = "8080"; }
+
+    sub vcl_backend_response {
+        if (beresp.http.Set-Cookie) {
+            # Add another line of Set-Cookie in the response.
+            std.hdr_append(beresp.http.Set-Cookie, "VSESS=abbabeef");
+
+            # CMS always set this, but doesn't really need it.
+            std.hdr_remove(beresp.http.Set-Cookie, "JSESSIONID=");
+        }
+    }
+
+.. vcl-end
+
+$Function VOID hdr_append(HEADER, STRANDS)
+
+Description
+        Append an extra occurrence to an existing header.
+Example
+    ::
+    std.hdr_append(beresp.http.Set-Cookie, "foo=bar")
+
+$Function VOID hdr_copy(HEADER, HEADER)
+
+Description
+        Copy all source headers to a new header.
+Example
+    ::
+    std.hdr_copy(beresp.http.set-cookie, beresp.http.x-old-cookie);
+
+$Function STRING hdr_get(PRIV_CALL, HEADER header, STRING regex)
+
+Description
+        Fetches the value of the first `header` that matches the given
+        regular expression `regex`.
+Example
+    ::
+    set beresp.http.xusr = std.hdr_get(beresp.http.set-cookie,"user=");
+
+$Function VOID hdr_remove(PRIV_CALL, HEADER header, STRING regex)
+
+Description
+        Remove all occurrences of `header` that matches `regex`.
+Example
+    ::
+    std.hdr_remove(beresp.http.set-cookie,"^(?!(funcookie=))");
+
 
 Numeric functions
 =================

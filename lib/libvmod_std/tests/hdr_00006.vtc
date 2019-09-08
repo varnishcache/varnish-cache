@@ -1,0 +1,96 @@
+
+varnishtest "Header-vmod: Test removing"
+
+server s1 {
+	timeout 10
+	rxreq
+	expect req.url == "/foo"
+	txresp -status 200 -hdr "foo: notok=1" -hdr "foo: ok2k" -hdr "foo: notok=2"
+	rxreq
+	expect req.url == "/bar"
+	txresp -status 200 -hdr "foo: notok=1" -hdr "foo: ok2k" -hdr "foo: notok=2"
+	rxreq
+	expect req.url == "/nothing"
+	txresp -status 200 -hdr "foo: notok=1" -hdr "foo: ok2k" -hdr "foo: notok=2"
+	rxreq
+	expect req.url == "/blatti1"
+	txresp -status 200 -hdr "foo: notok=1" -hdr "foo:notok=3" -hdr "foo: ok2k" -hdr "foo: notok=2"
+	rxreq
+	expect req.url == "/blatti2"
+	txresp -status 200 -hdr "foo: notok=1" -hdr "foo: ok2k" -hdr "foo:notok=3" -hdr "foo: notok=2"
+	rxreq
+	expect req.url == "/blatti3"
+	txresp -status 200 -hdr "set-cookie: analytics=1" -hdr "set-cookie: funcookie=ok2k" -hdr "set-cookie: uglycookie=3" -hdr "set-cookie: notok=2"
+	
+} -start
+
+varnish v1 -vcl+backend {
+	import std;
+
+	sub vcl_backend_response {
+		if (bereq.url == "/foo") {
+			std.hdr_remove(beresp.http.foo,"notok");
+		}
+		if (bereq.url == "/nothing") {
+			std.hdr_remove(beresp.http.foo,".");
+		}
+		if (bereq.url == "/blatti1") {
+			std.hdr_remove(beresp.http.foo,"^ no.ok=.$");
+		}
+		if (bereq.url == "/blatti2") {
+			std.hdr_remove(beresp.http.foo,"^no.ok=.$");
+		}
+		if (bereq.url == "/blatti3") {
+			std.hdr_remove(beresp.http.set-cookie,"^(?!(funcookie=))");
+		}
+		if (beresp.http.foo) {
+			set beresp.http.foo-exists = "yes";
+		} else {
+			set beresp.http.foo-exists = "no";
+		}
+
+		return(deliver);
+	}
+} -start
+
+client c1 {
+	# Remove one, "notok". Assumes ok2k (second in line) is tested next
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.foo == "ok2k"
+
+	# Remove nothing
+	txreq -url "/bar"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.foo == "notok=1"
+
+	# Remove everything (confusing names, huh?)
+	txreq -url "/nothing"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.foo-exists == "no"
+
+	# Remove with regex - fail due to whitespace in the regex
+	txreq -url "/blatti1"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.foo-exists == "yes"
+	expect resp.http.foo == "notok=1"
+
+	# Remove with regex - work (remove leading whitespace)
+	txreq -url "/blatti2"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.foo-exists == "yes"
+	expect resp.http.foo == "ok2k"
+	
+	# Remove everything except fun-cookie
+	txreq -url "/blatti3"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.foo-exists == "no"
+	expect resp.http.set-cookie == "funcookie=ok2k"
+} -run
+

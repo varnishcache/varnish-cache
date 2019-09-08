@@ -1,0 +1,48 @@
+# Bug #1 !
+# The remove-function was removing somewhat vigorously.
+# This check ensures that other headers are kept intact.
+
+varnishtest "Header-vmod: Ensure other headers remain untouched"
+
+server s1 {
+	timeout 10
+	rxreq
+	expect req.url == "/foo"
+	txresp -status 200 -hdr "bar: xxx=y" -hdr "foo: one=1" -hdr "foo: two=2" -hdr "foo: three=3"
+	rxreq
+	expect req.url == "/foo"
+	txresp -status 200 -hdr "Content-Type: text/html" -hdr "foo: one=1" -hdr "foo: two=2" -hdr "foo: three=3"
+	rxreq
+	expect req.url == "/foo"
+	txresp -status 200 -hdr "foo: one=1" -hdr "foo: two=2" -hdr "foo: three=3" -hdr "Content-Type: text/html"
+} -start
+
+varnish v1 -vcl+backend {
+	import std;
+
+	sub vcl_backend_response {
+		if (bereq.url == "/foo") {
+			std.hdr_remove(beresp.http.foo,"one=1");
+		}
+
+		set beresp.uncacheable = true;
+	}
+} -start
+
+client c1 {
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.foo == "two=2"
+	expect resp.http.bar == "xxx=y"
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.foo == "two=2"
+	expect resp.http.Content-Type == "text/html"
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.foo == "two=2"
+	expect resp.http.Content-Type == "text/html"
+} -run

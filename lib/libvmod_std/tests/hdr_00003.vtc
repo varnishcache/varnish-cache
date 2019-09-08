@@ -1,0 +1,40 @@
+
+varnishtest "Header-vmod: Test fetching"
+
+server s1 {
+	timeout 10
+
+	rxreq
+	expect req.url == "/"
+	txresp -status 200 -hdr "foo: sillycookie=blah" -hdr "foo: realcookie=YAI"
+	rxreq
+	expect req.url == "/two"
+	txresp -status 200 -hdr "foo: sillycookie=blah" -hdr "foo: realcookie=YAI"
+} -start
+
+varnish v1 -vcl+backend {
+	import std;
+
+	sub vcl_backend_response {
+		if (bereq.url == "/") {
+			set beresp.http.xusr = std.hdr_get(beresp.http.foo,"realcookie=");
+		} elsif (bereq.url == "/two") {
+			set beresp.http.xusr = std.hdr_get(beresp.http.foo,"^realcookie=");
+		}
+		return(deliver);
+	}
+} -start
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.xusr == "realcookie=YAI"
+
+	txreq -url "/two"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.xusr == "realcookie=YAI"
+} -run
+
+
