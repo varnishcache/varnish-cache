@@ -6,6 +6,7 @@ SUBDIRS = \
 	libvcc \
 	libvgz \
 	libvmod_debug \
+	libvmod_header \
 	libvmod_std \
 	libvmod_directors \
 	libvmod_purge \

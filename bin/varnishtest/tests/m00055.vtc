@@ -1,0 +1,20 @@
+varnishtest "Header-vmod: Test basic import"
+
+server s1 {
+	timeout 10
+	rxreq
+	expect req.url == "/"
+	txresp -status 200 -hdr "foo: 1"
+} -start
+
+varnish v1 -vcl+backend {
+	import header;
+} -start
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.foo == 1
+} -run
+

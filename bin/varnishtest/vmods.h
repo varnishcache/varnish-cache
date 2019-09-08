@@ -30,6 +30,7 @@
 VTC_VMOD(std)
 VTC_VMOD(debug)
 VTC_VMOD(directors)
+VTC_VMOD(header)
 VTC_VMOD(purge)
 VTC_VMOD(vtc)
 VTC_VMOD(blob)

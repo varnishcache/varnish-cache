@@ -16,6 +16,7 @@ dist_man_MANS = \
 	vtc.7 \
 	varnishtop.1 \
 	vmod_directors.3 \
+	vmod_header.3 \
 	vmod_purge.3 \
 	vmod_std.3 \
 	vmod_vtc.3 \
@@ -91,6 +92,9 @@ varnishhist.1: \
 	$(BUILD_MAN) $(top_srcdir)/doc/sphinx/reference/varnishhist.rst $@
 
 vmod_directors.3: $(top_builddir)/lib/libvmod_directors/vmod_directors.man.rst
+	$(BUILD_MAN) $? $@
+
+vmod_header.3: $(top_builddir)/lib/libvmod_header/vmod_header.man.rst
 	$(BUILD_MAN) $? $@
 
 vmod_purge.3: $(top_builddir)/lib/libvmod_purge/vmod_purge.man.rst

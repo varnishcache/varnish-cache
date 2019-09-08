@@ -831,6 +831,7 @@ AC_CONFIG_FILES([
     lib/libvcc/Makefile
     lib/libvgz/Makefile
     lib/libvmod_debug/Makefile
+    lib/libvmod_header/Makefile
     lib/libvmod_std/Makefile
     lib/libvmod_directors/Makefile
     lib/libvmod_purge/Makefile
