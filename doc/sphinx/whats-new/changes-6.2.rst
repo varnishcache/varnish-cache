@@ -117,7 +117,7 @@ to make them more flexible and easier to use. The ``std.``\ *x2y*
 conversion functions are now deprecated. See
 :ref:`whatsnew_upgrading_std_conversion_2019_03`.
 
-The function :ref:`vmod_directors.lookup` has been added to
+The function :ref:`directors.lookup()` has been added to
 :ref:`vmod_directors(3)`, only for use in ``vcl_init`` or
 ``vcl_fini``.
 

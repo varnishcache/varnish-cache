@@ -98,9 +98,9 @@ All functions in this VMOD are subject to the following constraints:
 
 * If the current listener is not a Unix domain socket, or if the
   attempt to read credentials fails, then a ``VCL_Error`` message is
-  written to the log. The STRING functions (`vmod_unix.user`_ and
-  `vmod_unix.group`_) return ``NULL``, while the INT functions
-  (`vmod_unix.uid`_ and `vmod_unix.gid`_) return -1.
+  written to the log. The STRING functions (`unix.user()`_ and
+  `unix.group()`_) return ``NULL``, while the INT functions
+  (`unix.uid()`_ and `unix.gid()`_) return -1.
 
 SEE ALSO
 ========

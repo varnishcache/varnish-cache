@@ -58,11 +58,11 @@ The existing type-conversion functions in :ref:`vmod_std(3)` have been
 reworked to make them more flexible and easier to use. These functions
 now also accept suitable numeral or quantitative arguments.
 
-* :ref:`vmod_std.duration`
-* :ref:`vmod_std.bytes`
-* :ref:`vmod_std.integer`
-* :ref:`vmod_std.real`
-* :ref:`vmod_std.time`
+* :ref:`std.duration()`
+* :ref:`std.bytes()`
+* :ref:`std.integer()`
+* :ref:`std.real()`
+* :ref:`std.time()`
 
 These type-conversion functions should be fully backwards compatible,
 but the following differences should be noted:
@@ -76,15 +76,15 @@ but the following differences should be noted:
 * Conversion functions now only ever truncate if necessary (instead of
   rounding).
 
-* :ref:`vmod_std.round` has been added for explicit rounding.
+* :ref:`std.round()` has been added for explicit rounding.
 
 The following functions are deprecated and should be replaced by the
 new conversion functions:
 
-* :ref:`vmod_std.real2integer`
-* :ref:`vmod_std.real2time`
-* :ref:`vmod_std.time2integer`
-* :ref:`vmod_std.time2real`
+* :ref:`std.real2integer()`
+* :ref:`std.real2time()`
+* :ref:`std.time2integer()`
+* :ref:`std.time2real()`
 
 They will be removed in a future version of Varnish.
 

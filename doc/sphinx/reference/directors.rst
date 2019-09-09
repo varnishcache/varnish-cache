@@ -162,7 +162,7 @@ Health Probes
 =============
 
 It is possible in a VCL program to query the health of a director (see
-:ref:`vmod_std.healthy`). A director can report its health if it implements the
+:ref:`std.healthy()`). A director can report its health if it implements the
 ``healthy`` function, it is otherwise always considered healthy.
 
 Unless you are making a dynamic backend, you need to take care of the
