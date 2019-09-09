@@ -1,5 +1,5 @@
 QUIC visions of OSI
--------------------
+===================
 
 New York Times Style Magazine had an article last week
 `about the Italian town Ivrea
