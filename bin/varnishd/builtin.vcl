@@ -35,6 +35,9 @@ vcl 4.0;
 # Client side
 
 sub vcl_recv {
+    if (req.http.host) {
+        set req.http.host = req.http.host.lower();
+    }
     if (req.method == "PRI") {
         /* This will never happen in properly formed traffic (see: RFC7540) */
         return (synth(405));
