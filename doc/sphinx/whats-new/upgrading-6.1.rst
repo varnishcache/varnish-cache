@@ -138,7 +138,7 @@ Other changes to VCL
 VMODs
 =====
 
-Added the :ref:`vmod_std.fnmatch` function to :ref:`vmod_std(3)`, which
+Added the :ref:`std.fnmatch()` function to :ref:`vmod_std(3)`, which
 you can use for shell-style wildcard matching. Wildcard patterns may
 be a good fit for matching URLs, to match against a pattern like
 ``/foo/*/bar/*``. The patterns can be built at runtime, if you need to

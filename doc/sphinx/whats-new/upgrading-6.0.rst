@@ -461,9 +461,9 @@ backend, or set a value for the Host header in VCL.
 VMOD std
 --------
 
-:ref:`std.port(IP) <vmod_std.port>` always returns 0 when applied to a
+:ref:`std.port()` always returns 0 when applied to a
 ``*.ip`` variable whose value is set to ``0.0.0.0`` because the
-listener is UDS.  :ref:`std.set_ip_tos(INT) <vmod_std.set_ip_tos>` is
+listener is UDS.  :ref:`std.set_ip_tos()` is
 silently ignored when the listener is UDS.
 
 The ``shard`` director
@@ -519,7 +519,7 @@ except for ``req.restarts`` and ``req.xid``, which change by design.
 
 If you need to reset the client request headers to their original
 state (before changes in VCL), call
-:ref:`std.rollback(req) <vmod_std.rollback>`.
+:ref:`std.rollback()`.
 
 ``return(restart)`` can now be called from ``vcl_recv{}``.
 

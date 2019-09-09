@@ -240,7 +240,7 @@ the encoding of the resulting blob according to the scheme
 *encoding*. *case* determines the case of hex digits for the
 ``HEX`` and ``URL`` encodings, and is ignored for other encodings.
 
-As with `vmod_blob.decode`_: If *length* > 0, only decode the first
+As with `blob.decode()`_: If *length* > 0, only decode the first
 *length* characters of the encoded string, otherwise decode the
 entire string. The default value of *length* is 0.
 
@@ -274,8 +274,8 @@ object, i.e. they specify exactly the same region of memory, or both
 are empty.
 
 If the BLOBs are both empty (length is 0 and/or the internal pointer
-is ``NULL``), then `vmod_blob.same`_ returns ``true``. If any
-non-empty BLOB is compared to an empty BLOB, then `vmod_blob.same`_
+is ``NULL``), then `blob.same()`_ returns ``true``. If any
+non-empty BLOB is compared to an empty BLOB, then `blob.same()`_
 returns ``false``.
 
 $Function BOOL equal(BLOB, BLOB)
@@ -283,9 +283,9 @@ $Function BOOL equal(BLOB, BLOB)
 Returns true if and only if the two BLOB arguments have equal contents
 (possibly in different memory regions).
 
-As with `vmod_blob.same`_: If the BLOBs are both empty, then `vmod_blob.equal`_
+As with `blob.same()`_: If the BLOBs are both empty, then `blob.equal()`_
 returns ``true``. If any non-empty BLOB is compared to an empty BLOB,
-then `vmod_blob.equal`_ returns ``false``.
+then `blob.equal()`_ returns ``false``.
 
 $Function INT length(BLOB)
 
@@ -297,7 +297,7 @@ Returns a new BLOB formed from *length* bytes of the BLOB argument
 starting at *offset* bytes from the start of its memory region. The
 default value of *offset* is ``0B``.
 
-`vmod_blob.sub`_ fails and returns NULL if the BLOB argument is empty, or if
+`blob.sub()`_ fails and returns NULL if the BLOB argument is empty, or if
 ``offset + length`` requires more bytes than are available in the
 BLOB.
 
@@ -350,28 +350,28 @@ Example::
 	# blob as base64
 	set resp.http.The-Blob-b64 = theblob1.encode(BASE64);
 
-For any `vmod_blob.blob`_ object, `encoding` and `case`, encodings via
-the `vmod_blob.blob.encode`_ method and the `vmod_blob.encode`_
+For any `blob.blob()`_ object, `encoding` and `case`, encodings via
+the `xblob.encode()`_ method and the `blob.encode()`_
 function are equal::
 
   # Always true:
   blob.encode(ENC, CASE, blob.get()) == blob.encode(ENC, CASE)
 
-But the `vmod_blob.blob.encode`_ object method is more efficient --
+But the `xblob.encode()`_ object method is more efficient --
 the encoding is computed once and cached (with allocation in heap
 memory), and the cached encoding is retrieved on every subsequent
-call. The `vmod_blob.encode`_ function computes the encoding on every
+call. The `blob.encode()`_ function computes the encoding on every
 call, allocating space for the string in Varnish workspaces.
 
 So if the data in a BLOB are fixed at VCL initialization time, so that
 its encodings will always be the same, it is better to create a
-`vmod_blob.blob`_ object. The VMOD's functions should be used for data that are
+`blob.blob()`_ object. The VMOD's functions should be used for data that are
 not known until runtime.
 
 ERRORS
 ======
 
-The encoders, decoders and `vmod_blob.sub`_ may fail if there is
+The encoders, decoders and `blob.sub()`_ may fail if there is
 insufficient space to create the new blob or string. Decoders may also
 fail if the encoded string is an illegal format for the decoding
 scheme. Encoders will fail for the ``IDENTITY`` and ``BASE64*``
@@ -381,7 +381,7 @@ If any of the VMOD's methods, functions or constructor fail, then VCL
 failure is invoked, just as if ``return(fail)`` had been called in the
 VCL source. This means that:
 
-* If the ``vmod_blob.blob`_ object constructor fails, or if any methods or
+* If the ``blob.blob()`_ object constructor fails, or if any methods or
   functions fail during ``vcl_init{}``, then the VCL program will fail
   to load, and the VCC compiler will emit an error message.
 
@@ -399,18 +399,18 @@ LIMITATIONS
 ===========
 
 The VMOD allocates memory in various ways for new blobs and
-strings. The `vmod_blob.blob`_ object and its methods allocate memory
+strings. The `blob.blob()`_ object and its methods allocate memory
 from the heap, and hence they are only limited by available virtual
 memory.
 
-The `vmod_blob.encode`_, `vmod_blob.decode`_ and
-`vmod_blob.transcode`_ functions allocate Varnish workspace, as does
-`vmod_blob.sub`_ for the newly created BLOB.  If these functions are
+The `blob.encode()`_, `blob.decode()`_ and
+`blob.transcode()`_ functions allocate Varnish workspace, as does
+`blob.sub()`_ for the newly created BLOB.  If these functions are
 failing, as indicated by "out of space" messages in the Varnish log
 (with the ``VCL_Error`` tag), then you will need to increase the
 varnishd parameters ``workspace_client`` and/or ``workspace_backend``.
 
-The `vmod_blob.transcode`_ function also allocates space on the stack
+The `blob.transcode()`_ function also allocates space on the stack
 for a temporary BLOB. If this function causes stack overflow, you may
 need to increase the varnishd parameter ``thread_pool_stack``.
 

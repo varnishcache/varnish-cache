@@ -715,7 +715,7 @@ class FunctionStanza(Stanza):
 
     def parse(self):
         self.proto = ProtoType(self)
-        self.rstlbl = 'vmod_%s.%s' % (self.vcc.modname, self.proto.name)
+        self.rstlbl = '%s.%s()' % (self.vcc.modname, self.proto.name)
         self.vcc.contents.append(self)
 
     def cstuff(self, fo, where):
@@ -748,7 +748,7 @@ class ObjectStanza(Stanza):
         self.fini.argstruct = False
         self.fini.args = []
 
-        self.rstlbl = 'vmod_%s.%s' % (self.vcc.modname, self.proto.name)
+        self.rstlbl = '%s.%s()' % (self.vcc.modname, self.proto.name)
         self.vcc.contents.append(self)
         self.methods = []
 
@@ -831,7 +831,7 @@ class MethodStanza(Stanza):
             err("$Method %s: Method names need to start with . (dot)"
                 % self.proto.bname, warn=False)
         self.proto.obj = "x" + self.pfx
-        self.rstlbl = 'vmod_%s.%s' % ( self.vcc.modname, self.proto.name)
+        self.rstlbl = 'x%s()' % self.proto.name
         p.methods.append(self)
 
     def cstruct(self, fo, define):

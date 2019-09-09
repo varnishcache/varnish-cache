@@ -190,7 +190,7 @@ $Object hash()
 Create a hashing backend director.
 
 The director chooses the backend server by computing a hash/digest of
-the string given to `vmod_directors.hash.backend`_.
+the string given to `xhash.backend()`_.
 
 Commonly used with ``client.ip`` or a session cookie to get sticky
 sessions.
@@ -232,8 +232,8 @@ $Object shard()
 Create a shard director.
 
 Note that the shard director needs to be configured using at least one
-`vmod_directors.shard.add_backend`_ call(s) **followed by a**
-`vmod_directors.shard.reconfigure`_ **call** before it can hand out
+`xshard.add_backend()`_ call(s) **followed by a**
+`xshard.reconfigure()`_ **call** before it can hand out
 backends.
 
 _Note_ that due to various restrictions (documented below), it is
@@ -312,14 +312,14 @@ The drawbacks are:
 Method
 ``````
 
-When `vmod_directors.shard.reconfigure`_ is called, a consistent
+When `xshard.reconfigure()`_ is called, a consistent
 hashing circular data structure gets built from the last 32 bits of
 SHA256 hash values of *<ident>*\ *<n>* (default *ident* being the
 backend name) for each backend and for a running number *n* from 1 to
 *replicas*. Hashing creates the seemingly random order for placement
 of backends on the consistent hashing ring.
 
-When `vmod_directors.shard.backend`_ is called, a load balancing key
+When `xshard.backend()`_ is called, a load balancing key
 gets generated unless provided. The smallest hash value in the circle
 is looked up that is larger than the key (searching clockwise and
 wrapping around as necessary). The backend for this hash value is the
@@ -349,26 +349,26 @@ when configuring the shard director, you are advised to check::
 $Method VOID .set_warmup(REAL probability=0.0)
 
 Set the default warmup probability. See the *warmup* parameter of
-`vmod_directors.shard.backend`_. If *probability* is 0.0 (default),
+`xshard.backend()`_. If *probability* is 0.0 (default),
 warmup is disabled.
 
 $Method VOID .set_rampup(DURATION duration=0)
 
 Set the default rampup duration. See *rampup* parameter of
-`vmod_directors.shard.backend`_. If *duration* is 0 (default), rampup
+`xshard.backend()`_. If *duration* is 0 (default), rampup
 is disabled.
 
 $Method VOID .associate(BLOB param=0)
 
-Associate a default `vmod_directors.shard_param`_ object or clear an
+Associate a default `directors.shard_param()`_ object or clear an
 association.
 
 The value of the *param* argument must be a call to the
-`vmod_directors.shard_param.use`_ method. No argument clears the
+`xshard_param.use()`_ method. No argument clears the
 association.
 
 The association can be changed per backend request using the *param*
-argument of `vmod_directors.shard.backend`_.
+argument of `xshard.backend()`_.
 
 $Method BOOL .add_backend(PRIV_TASK, BACKEND backend,
 	[STRING ident], [DURATION rampup])
@@ -376,7 +376,7 @@ $Method BOOL .add_backend(PRIV_TASK, BACKEND backend,
 Add a backend *backend* to the director.
 
 *ident*: Optionally specify an identification string for this backend,
-which will be hashed by `vmod_directors.shard.reconfigure`_ to
+which will be hashed by `xshard.reconfigure()`_ to
 construct the consistent hashing ring. The identification string
 defaults to the backend name.
 
@@ -384,10 +384,10 @@ defaults to the backend name.
 
 *rampup*: Optionally specify a specific rampup time for this
 backend. Otherwise, the per-director rampup time is used (see
-`vmod_directors.shard.set_rampup`_).
+`xshard.set_rampup()`_).
 
 NOTE: Backend changes need to be finalized with
-`vmod_directors.shard.reconfigure`_ and are only supported on one
+`xshard.reconfigure()`_ and are only supported on one
 shard director at a time.
 
 $Method BOOL .remove_backend(PRIV_TASK, [BACKEND backend=0], [STRING ident=0])
@@ -397,7 +397,7 @@ be specified. *ident* removes a specific instance. If *backend* is
 given without *ident*, all instances of this backend are removed.
 
 NOTE: Backend changes need to be finalized with
-`vmod_directors.shard.reconfigure`_ and are only supported on one
+`xshard.reconfigure()`_ and are only supported on one
 shard director at a time.
 
 $Method BOOL .clear(PRIV_TASK)
@@ -405,7 +405,7 @@ $Method BOOL .clear(PRIV_TASK)
 Remove all backends from the director.
 
 NOTE: Backend changes need to be finalized with
-`vmod_directors.shard.reconfigure`_ and are only supported on one
+`xshard.reconfigure()`_ and are only supported on one
 shard director at a time.
 
 $Method BOOL .reconfigure(PRIV_TASK, INT replicas=67)
@@ -418,12 +418,12 @@ used.
 $Method INT .key(STRANDS)
 
 Convenience method to generate a sharding key for use with the *key*
-argument to the `vmod_directors.shard.backend`_ method by hashing the
+argument to the `xshard.backend()`_ method by hashing the
 given string with SHA256.
 
 To generate sharding keys using other hashes, use a custom vmod like
 `vmod blobdigest`_ with the *key_blob* argument of the
-`vmod_directors.shard.backend`_ method.
+`xshard.backend()`_ method.
 
 .. _vmod blobdigest: https://code.uplex.de/uplex-varnish/libvmod-blobdigest/blob/master/README.rst
 
@@ -464,7 +464,7 @@ is _not_ the order given when backends are added.
 
 * *key* lookup key with ``by=KEY``
 
-  the `vmod_directors.shard.key`_ method may come handy to generate a
+  the `xshard.key()`_ method may come handy to generate a
   sharding key from custom strings.
 
 * *key_blob* lookup key with ``by=BLOB``
@@ -491,8 +491,8 @@ is _not_ the order given when backends are added.
   backend, unless this is also in its rampup period.
 
   The default rampup interval can be set per shard director using the
-  `vmod_directors.shard.set_rampup`_ method or specifically per
-  backend with the `vmod_directors.shard.add_backend`_ method.
+  `xshard.set_rampup()`_ method or specifically per
+  backend with the `xshard.add_backend()`_ method.
 
 * *warmup* probabilistic alternative server selection
 
@@ -552,14 +552,14 @@ is _not_ the order given when backends are added.
 * *param*
 
   Use or associate a parameter set. The value of the *param* argument
-  must be a call to the `vmod_directors.shard_param.use`_ method.
+  must be a call to the `xshard_param.use()`_ method.
 
-  default: as set by `vmod_directors.shard.associate`_ or unset.
+  default: as set by `xshard.associate()`_ or unset.
 
   * for ``resolve=NOW`` take parameter defaults from the
-    `vmod_directors.shard_param`_ parameter set
+    `directors.shard_param()`_ parameter set
 
-  * for ``resolve=LAZY`` associate the `vmod_directors.shard_param`_
+  * for ``resolve=LAZY`` associate the `directors.shard_param()`_
     parameter set for this backend request
 
     Implementation notes for use of parameter sets with
@@ -574,7 +574,7 @@ is _not_ the order given when backends are added.
       *param* argument is subsequently changed within the same backend
       request.
 
-    * Each call to `vmod_directors.shard.backend`_ overrides any
+    * Each call to `xshard.backend()`_ overrides any
       previous call.
 
 $Method VOID .debug(INT)
@@ -585,7 +585,7 @@ $Object shard_param()
 
 Create a shard parameter set.
 
-A parameter set allows for re-use of `vmod_directors.shard.backend`_
+A parameter set allows for re-use of `xshard.backend()`_
 arguments across many shard director instances and simplifies advanced
 use cases (e.g. shard director with custom parameters layered below
 other directors).
@@ -636,7 +636,7 @@ implement retries on alternative backends::
 $Method VOID .clear()
 
 Reset the parameter set to default values as documented for
-`vmod_directors.shard.backend`_.
+`xshard.backend()`_.
 
 * in ``vcl_init{}``, resets the parameter set default for this VCL
 * in backend context, resets the parameter set for this backend
@@ -654,7 +654,7 @@ $Method VOID .set(
 	[ ENUM {CHOSEN, IGNORE, ALL} healthy ])
 
 Change the given parameters of a parameter set as documented for
-`vmod_directors.shard.backend`_.
+`xshard.backend()`_.
 
 * in ``vcl_init{}``, changes the parameter set default for this VCL
 
@@ -668,39 +668,39 @@ $Method STRING .get_by()
 
 Get a string representation of the *by* enum argument which denotes
 how a shard director using this parameter object would derive the
-shard key. See `vmod_directors.shard.backend`_.
+shard key. See `xshard.backend()`_.
 
 $Method INT .get_key()
 
 Get the key which a shard director using this parameter object would
-use. See `vmod_directors.shard.backend`_.
+use. See `xshard.backend()`_.
 
 $Method INT .get_alt()
 
 Get the *alt* parameter which a shard director using this parameter
-object would use. See `vmod_directors.shard.backend`_.
+object would use. See `xshard.backend()`_.
 
 $Method REAL .get_warmup()
 
 Get the *warmup* parameter which a shard director using this parameter
-object would use. See `vmod_directors.shard.backend`_.
+object would use. See `xshard.backend()`_.
 
 $Method BOOL .get_rampup()
 
 Get the *rampup* parameter which a shard director using this parameter
-object would use. See `vmod_directors.shard.backend`_.
+object would use. See `xshard.backend()`_.
 
 $Method STRING .get_healthy()
 
 Get a string representation of the *healthy* enum argument which a
 shard director using this parameter object would use. See
-`vmod_directors.shard.backend`_.
+`xshard.backend()`_.
 
 $Method BLOB .use()
 
 This method may only be used in backend context.
 
-For use with the *param* argument of `vmod_directors.shard.backend`_
+For use with the *param* argument of `xshard.backend()`_
 to associate this shard parameter set with a shard director.
 
 $Function BACKEND lookup(STRING)
