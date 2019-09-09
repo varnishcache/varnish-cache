@@ -513,20 +513,24 @@ VRT_UpperLowerStrands(VRT_CTX, VCL_STRANDS s, int up)
 			    (!up && vct_isupper(*p))) {
 				*b++ = *p ^ 0x20;
 				copy = 1;
-			} else {
+			} else if (b < e) {
 				*b++ = *p;
 			}
-			if (b == e) {
-				WS_Release(ctx->ws, 0);
-				VRT_fail(ctx, "Workspace overflow");
-				return (NULL);
-			}
+			if (copy && b == e)
+				break;
+		}
+		if (copy && b == e) {
+			WS_Release(ctx->ws, 0);
+			VRT_fail(ctx, "Workspace overflow");
+			return (NULL);
 		}
 	}
+	assert(b <= e);
 	if (!copy) {
 		WS_Release(ctx->ws, 0);
 		return (q);
 	}
+	assert(b < e);
 	*b++ = '\0';
 	assert(b <= e);
 	WS_ReleaseP(ctx->ws, b);
