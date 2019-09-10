@@ -1,0 +1,65 @@
+varnishtest "Streaming delivery and waitinglist rushing"
+
+# Barrier to make sure that c1 connects to s1
+barrier b1 cond 2
+
+# Barrier to make sure that all requests are on waitinglist before
+# HSH_Unbusy is called
+barrier b2 cond 2
+
+# Barrier to control that all requests start streaming before the object
+# finishes. This tests that waitinglists are rushed before
+# HSH_DerefObjCore().
+barrier b3 sock 4
+
+server s1 {
+	rxreq
+	barrier b1 sync
+	barrier b2 sync
+	txresp -nolen -hdr "Transfer-Encoding: chunked"
+	chunkedlen 10
+	barrier b3 sync
+	chunkedlen 10
+	chunkedlen 0
+} -start
+
+varnish v1 -arg "-p thread_pools=1" -arg "-p thread_pool_min=20" -arg "-p rush_exponent=2" -arg "-p debug=+syncvsl" -arg "-p debug=+waitinglist" -vcl+backend {
+	import vtc;
+	sub vcl_hit {
+		vtc.barrier_sync("${b3_sock}");
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+} -start
+
+barrier b1 sync
+
+client c2 {
+	txreq
+	rxresp
+} -start
+
+client c3 {
+	txreq
+	rxresp
+} -start
+
+client c4 {
+	txreq
+	rxresp
+} -start
+
+# Wait until c2-c4 are on the waitinglist
+delay 1
+varnish v1 -expect busy_sleep == 3
+
+# Open up the response headers from s1, and as a result HSH_Unbusy
+barrier b2 sync
+
+client c1 -wait
+client c2 -wait
+client c3 -wait
+client c4 -wait
