@@ -150,8 +150,6 @@ struct vsm {
 
 	int			attached;
 	double			patience;
-
-	int			couldkill;
 };
 
 /*--------------------------------------------------------------------*/
@@ -357,8 +355,6 @@ VSM_New(void)
 	vd->child->vsm = vd;
 	vd->wdfd = -1;
 	vd->patience = 5;
-	if (getenv("VSM_NOPID") != NULL)
-		vd->couldkill = -1;
 	return (vd);
 }
 
@@ -485,14 +481,10 @@ vsm_vlu_hash(struct vsm *vd, struct vsm_set *vs, const char *line)
 	int i;
 	uintmax_t id1, id2;
 
+	(void)vd;
+
 	i = sscanf(line, "# %ju %ju", &id1, &id2);
 	if (i != 2) {
-		vs->retval |= VSM_MGT_RESTARTED | VSM_MGT_CHANGED;
-		return (0);
-	}
-	if (vd->couldkill >= 0 && !kill(id1, 0)) {
-		vd->couldkill = 1;
-	} else if (vd->couldkill > 0 && errno == ESRCH) {
 		vs->retval |= VSM_MGT_RESTARTED | VSM_MGT_CHANGED;
 		return (0);
 	}
@@ -694,8 +686,7 @@ vsm_refresh_set(struct vsm *vd, struct vsm_set *vs)
 
 	vs->fst.st_size = lseek(vs->fd, 0L, SEEK_CUR);
 
-	if (vd->couldkill < 1 || !kill(vs->id1, 0))
-		vs->retval |= vs->flag_running;
+	vs->retval |= vs->flag_running;
 	return (vs->retval);
 }
 
