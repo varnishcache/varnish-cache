@@ -62,12 +62,6 @@ AC_DEFUN([_VARNISH_SEARCH_LIBS], [
 	LIBS="${save_LIBS}"
 ])
 
-# _VARNISH_CHECK_EXPLICIT_BZERO()
-# -------------------------------
-AC_DEFUN([_VARNISH_CHECK_EXPLICIT_BZERO], [
-	AC_CHECK_FUNCS([explicit_bzero])
-])
-
 # _VARNISH_PKG_CONFIG
 # --------------------
 AC_DEFUN([_VARNISH_PKG_CONFIG], [
