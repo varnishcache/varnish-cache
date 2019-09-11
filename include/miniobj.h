@@ -5,11 +5,11 @@
  *
  */
 
-#ifdef HAVE_EXPLICIT_BZERO
-#  define ZERO_OBJ(to, sz)	explicit_bzero(to, sz)
-#else
-#  define ZERO_OBJ(to, sz)	(void)memset(to, 0, sz)
-#endif
+#define ZERO_OBJ(to, sz)						\
+	do {								\
+		void *(*volatile z_obj)(void *, int, size_t) = memset;	\
+		(void)z_obj(to, 0, sz);					\
+	} while (0)
 
 #define INIT_OBJ(to, type_magic)					\
 	do {								\
