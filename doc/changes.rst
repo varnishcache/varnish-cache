@@ -86,6 +86,8 @@ APIs / VMODs
     :ref:`name.obj()`
     :ref:`xobj.method()`
 
+  ``tools/vmod_ref_rename.sh`` is provided to automate this task
+
 ================================
 Varnish Cache 6.2.0 (2019-03-15)
 ================================
