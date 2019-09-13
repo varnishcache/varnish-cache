@@ -70,6 +70,7 @@
  *	VRT_Stv_*() functions renamed to VRT_stevedore_*()
  *	[cache.h] WS_ReserveAll() added
  *	[cache.h] WS_Reserve(ws, 0) deprecated
+ *	VRT_Fortmat_Proxy() added
  * 9.0 (2019-03-15)
  *	Make 'len' in vmod_priv 'long'
  *	HTTP_Copy() removed
@@ -515,6 +516,7 @@ VCL_BACKEND VRT_DirectorResolve(VRT_CTX, VCL_BACKEND);
 
 /* Suckaddr related */
 int VRT_VSA_GetPtr(VRT_CTX, VCL_IP sua, const unsigned char ** dst);
+void VRT_Format_Proxy(struct vsb *, VCL_INT, VCL_IP, VCL_IP);
 
 typedef int vmod_event_f(VRT_CTX, struct vmod_priv *, enum vcl_event_e);
 

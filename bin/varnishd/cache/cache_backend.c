@@ -169,8 +169,27 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
 	bp->vsc->req++;
 	Lck_Unlock(&bp->mtx);
 
+	err = 0;
 	if (bp->proxy_header != 0)
-		VPX_Send_Proxy(*fdp, bp->proxy_header, bo->sp);
+		err += VPX_Send_Proxy(*fdp, bp->proxy_header, bo->sp);
+	if (err < 0) {
+		VSLb(bo->vsl, SLT_FetchError,
+		     "backend %s: proxy write errno %d (%s)",
+		     VRT_BACKEND_string(bp->director),
+		     errno, vstrerror(errno));
+		// account as if connect failed - good idea?
+		VSC_C_main->backend_fail++;
+		bo->htc = NULL;
+		VTP_Close(&pfd);
+		AZ(pfd);
+		Lck_Lock(&bp->mtx);
+		bp->n_conn--;
+		bp->vsc->conn--;
+		bp->vsc->req--;
+		Lck_Unlock(&bp->mtx);
+		return (NULL);
+	}
+	bo->acct.bereq_hdrbytes += err;
 
 	PFD_LocalName(pfd, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
 	PFD_RemoteName(pfd, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);

@@ -1,4 +1,4 @@
-varnishtest "VCL backend side access to IP#s"
+varnishtest "VCL backend side access to IP#s and proxy.header"
 
 server s1 {
 	rxreq
@@ -6,11 +6,17 @@ server s1 {
 } -start
 
 varnish v1 -proto PROXY -vcl+backend {
+	import proxy;
+	import blob;
+
 	sub vcl_backend_response {
 		set beresp.http.li = local.ip;
 		set beresp.http.ri = remote.ip;
 		set beresp.http.ci = client.ip;
 		set beresp.http.si = server.ip;
+
+		set beresp.http.proxy1 = blob.encode(blob=blob.sub(proxy.header(1, client.ip, server.ip), 36B));
+		set beresp.http.proxy2 = blob.encode(encoding=HEX, blob=proxy.header(2, client.ip, server.ip));
 	}
 } -start
 
@@ -20,4 +26,6 @@ client c1 -proxy1 "1.2.3.4:1111 5.6.7.8:5678" {
 	expect resp.http.li == ${v1_addr}
 	expect resp.http.ci == 1.2.3.4
 	expect resp.http.si == 5.6.7.8
+	expect resp.http.proxy1 == "PROXY TCP4 1.2.3.4 5.6.7.8 1111 5678"
+	expect resp.http.proxy2 == "0d0a0d0a000d0a515549540a2111000c01020304050607080457162e"
 } -run

@@ -590,65 +590,130 @@ vpx_enc_port(struct vsb *vsb, const struct suckaddr *s)
 	VSB_bcat(vsb, b, sizeof(b));
 }
 
+/* short path for stringified addresses from session attributes */
+static void
+vpx_format_proxy_v1(struct vsb *vsb, int proto,
+    const char *cip,  const char *cport,
+    const char *sip,  const char *sport)
+{
+	AN(vsb);
+	AN(cip);
+	AN(cport);
+	AN(sip);
+	AN(sport);
+
+	VSB_bcat(vsb, vpx1_sig, sizeof(vpx1_sig));
+
+	if (proto == PF_INET6)
+		VSB_printf(vsb, " TCP6 ");
+	else if (proto == PF_INET)
+		VSB_printf(vsb, " TCP4 ");
+	else
+		WRONG("Wrong proxy v1 proto");
+
+	VSB_printf(vsb, "%s %s %s %s\r\n", cip, sip, cport, sport);
+
+	AZ(VSB_finish(vsb));
+}
+
+static void
+vpx_format_proxy_v2(struct vsb *vsb, int proto,
+    const struct suckaddr *sac, const struct suckaddr *sas)
+{
+	AN(vsb);
+	AN(sac);
+	AN(sas);
+
+	VSB_bcat(vsb, vpx2_sig, sizeof(vpx2_sig));
+	VSB_putc(vsb, 0x21);
+	if (proto == PF_INET6) {
+		VSB_putc(vsb, 0x21);
+		VSB_putc(vsb, 0x00);
+		VSB_putc(vsb, 0x24);
+	} else if (proto == PF_INET) {
+		VSB_putc(vsb, 0x11);
+		VSB_putc(vsb, 0x00);
+		VSB_putc(vsb, 0x0c);
+	} else {
+		WRONG("Wrong proxy v2 proto");
+	}
+	vpx_enc_addr(vsb, proto, sac);
+	vpx_enc_addr(vsb, proto, sas);
+	vpx_enc_port(vsb, sac);
+	vpx_enc_port(vsb, sas);
+	AZ(VSB_finish(vsb));
+}
+
 void
+VPX_Format_Proxy(struct vsb *vsb, int version,
+    const struct suckaddr *sac, const struct suckaddr *sas)
+{
+	int proto;
+	char hac[VTCP_ADDRBUFSIZE];
+	char pac[VTCP_PORTBUFSIZE];
+	char has[VTCP_ADDRBUFSIZE];
+	char pas[VTCP_PORTBUFSIZE];
+
+	AN(vsb);
+	AN(sac);
+	AN(sas);
+
+	assert(version == 1 || version == 2);
+
+	proto = VSA_Get_Proto(sas);
+	assert(proto == VSA_Get_Proto(sac));
+
+	if (version == 1) {
+		VTCP_name(sac, hac, sizeof hac, pac, sizeof pac);
+		VTCP_name(sas, has, sizeof has, pas, sizeof pas);
+		vpx_format_proxy_v1(vsb, proto, hac, pac, has, pas);
+	} else if (version == 2) {
+		vpx_format_proxy_v2(vsb, proto, sac, sas);
+	} else
+		WRONG("Wrong proxy version");
+}
+
+#define PXY_BUFSZ						\
+	sizeof(vpx1_sig) + 4 /* TCPx */ +			\
+	2 * VTCP_ADDRBUFSIZE + 2 * VTCP_PORTBUFSIZE +		\
+	6 /* spaces, CRLF */ + 16 /* safety */
+
+int
 VPX_Send_Proxy(int fd, int version, const struct sess *sp)
 {
-	struct vsb *vsb, *vsb2;
-	const char *p1, *p2;
+	struct vsb vsb[1], *vsb2;
 	struct suckaddr *sac, *sas;
 	char ha[VTCP_ADDRBUFSIZE];
 	char pa[VTCP_PORTBUFSIZE];
-	int proto;
+	char buf[PXY_BUFSZ];
+	int proto, r;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	assert(version == 1 || version == 2);
-	vsb = VSB_new_auto();
-	AN(vsb);
+	AN(VSB_new(vsb, buf, sizeof buf, VSB_FIXEDLEN));
 
 	AZ(SES_Get_server_addr(sp, &sas));
 	AN(sas);
 	proto = VSA_Get_Proto(sas);
-	assert(proto == PF_INET6 || proto == PF_INET);
 
 	if (version == 1) {
-		VSB_bcat(vsb, vpx1_sig, sizeof(vpx1_sig));
-		p1 = SES_Get_String_Attr(sp, SA_CLIENT_IP);
-		AN(p1);
-		p2 = SES_Get_String_Attr(sp, SA_CLIENT_PORT);
-		AN(p2);
 		VTCP_name(sas, ha, sizeof ha, pa, sizeof pa);
-		if (proto == PF_INET6)
-			VSB_printf(vsb, " TCP6 ");
-		else if (proto == PF_INET)
-			VSB_printf(vsb, " TCP4 ");
-		VSB_printf(vsb, "%s %s %s %s\r\n", p1, ha, p2, pa);
+		vpx_format_proxy_v1(vsb, proto,
+		    SES_Get_String_Attr(sp, SA_CLIENT_IP),
+		    SES_Get_String_Attr(sp, SA_CLIENT_PORT),
+		    ha, pa);
 	} else if (version == 2) {
 		AZ(SES_Get_client_addr(sp, &sac));
 		AN(sac);
-
-		VSB_bcat(vsb, vpx2_sig, sizeof(vpx2_sig));
-		VSB_putc(vsb, 0x21);
-		if (proto == PF_INET6) {
-			VSB_putc(vsb, 0x21);
-			VSB_putc(vsb, 0x00);
-			VSB_putc(vsb, 0x24);
-		} else if (proto == PF_INET) {
-			VSB_putc(vsb, 0x11);
-			VSB_putc(vsb, 0x00);
-			VSB_putc(vsb, 0x0c);
-		}
-		vpx_enc_addr(vsb, proto, sac);
-		vpx_enc_addr(vsb, proto, sas);
-		vpx_enc_port(vsb, sac);
-		vpx_enc_port(vsb, sas);
+		vpx_format_proxy_v2(vsb, proto, sac, sas);
 	} else
 		WRONG("Wrong proxy version");
 
-	AZ(VSB_finish(vsb));
-	(void)VSB_tofile(fd, vsb);	// XXX: Error handling ?
+	r = write(fd, VSB_data(vsb), VSB_len(vsb));
+
 	if (!DO_DEBUG(DBG_PROTOCOL)) {
 		VSB_delete(vsb);
-		return;
+		return (r);
 	}
 
 	vsb2 = VSB_new_auto();
@@ -659,4 +724,7 @@ VPX_Send_Proxy(int fd, int version, const struct sess *sp)
 	VSL(SLT_Debug, 999, "PROXY_HDR %s", VSB_data(vsb2));
 	VSB_delete(vsb);
 	VSB_delete(vsb2);
+	return (r);
 }
+
+#undef PXY_BUFSZ
