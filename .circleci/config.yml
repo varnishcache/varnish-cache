@@ -1,0 +1,393 @@
+version: 2.1
+commands:
+  debian_install_build_deps:
+    description: Install build dependencies
+    steps:
+      - run:
+          name: Install build dependencies
+          command: |
+            export DEBIAN_FRONTEND=noninteractive
+            export DEBCONF_NONINTERACTIVE_SEEN=true
+            apt-get update
+            apt-get install -y \
+                autoconf \
+                automake \
+                build-essential \
+                ca-certificates \
+                git \
+                graphviz \
+                libconfig-dev \
+                libedit-dev \
+                libjemalloc-dev \
+                libncurses-dev \
+                libpcre3-dev \
+                libtool \
+                libunwind-dev \
+                make \
+                pkg-config \
+                python3-sphinx \
+                rst2pdf \
+                sudo
+  centos_install_build_deps:
+    description: Install build dependencies
+    steps:
+      - run:
+          name: Install build dependencies
+          command: |
+            yum install -y epel-release
+            yum install -y \
+                automake \
+                jemalloc-devel \
+                git \
+                libconfig-devel \
+                libcurl-devel \
+                libedit-devel \
+                libtool \
+                libunwind-devel \
+                make \
+                openssh-clients \
+                pcre-devel \
+                python-docutils \
+                python3-sphinx \
+                rst2pdf \
+                ssh \
+                sudo
+  alpine_install_build_deps:
+    description: Install build dependencies
+    steps:
+      - run:
+          name: Install build dependencies
+          command: |
+            apk update
+            apk add -q \
+                autoconf \
+                automake \
+                build-base \
+                ca-certificates \
+                gzip \
+                libconfig-dev \
+                libedit-dev \
+                libtool \
+                libunwind-dev \
+                linux-headers \
+                pcre-dev \
+                py-docutils \
+                py-sphinx \
+                tar \
+                sudo
+jobs:
+  build_debs:
+    parameters:
+      release:
+        description: the release name (stretch|buster|xenial|bionic)
+        default: ""
+        type: string
+      dist:
+        description: the Linux distribution (debian|ubuntu)
+        default: ""
+        type: string
+    description: Build << parameters.release >> debs
+    docker:
+      - image: << parameters.dist >>:<< parameters.release >>
+    steps:
+      - run:
+          name: Install packaging tools
+          command: |
+            apt-get update
+            apt-get install -y dpkg-dev ca-certificates debhelper devscripts equivs
+      - attach_workspace:
+          at: ~/project
+      - run:
+          name: Untar debian
+          command: tar xavf debian.tar.gz
+      - run:
+          name: Untar orig
+          command: tar xavf varnish*.tar.gz --strip 1
+      - run:
+          name: Update changelog version
+          command: |
+            VERSION=$(./configure --version | awk 'NR == 1 {print $NF}')
+
+            # VERSION looks like 5.2.1 or 5.2.0-rc1
+            MAJOR=${VERSION%.*}		# 5.2
+            MINOR=${VERSION##*.}	# 1 or 0-rc1
+            MINOR=${MINOR%%-*}		# 1 or 0
+            RELEASE=${VERSION#*-}	# 5.2.1 or rc1
+            RELEASE=${RELEASE#$VERSION}	# '' or rc1
+
+            # Take version override set on Jenkins builds into account.
+            if [ "$VERSION" = "trunk" ]; then
+            	DEBVERSION=`date "+%Y%m%d"`-weekly~<< parameters.release >>
+            else
+            	DEBVERSION="$MAJOR.$MINOR"-1~<< parameters.release >>
+            fi
+
+            sed -i -e "s|@SECTION@|varnish-$MAJOR|" "debian/control"
+            sed -i -e "s|@VERSION@|$DEBVERSION|"  "debian/changelog"
+      - run:
+          name: Install Build-Depends packages
+          command: |
+            export DEBIAN_FRONTEND=noninteractive
+            export DEBCONF_NONINTERACTIVE_SEEN=true
+            yes | mk-build-deps --install debian/control || true
+      - run:
+          name: Build the packages
+          command: |
+            dpkg-buildpackage -us -uc -j16
+      - run:
+          name: Import the packages into the workspace
+          command: |
+            mkdir debs
+            mv ../*.deb debs/
+      - persist_to_workspace:
+          root: .
+          paths:
+            - debs/varnish*.deb
+  dist_ubuntu:
+    docker:
+      - image: ubuntu:bionic
+    steps:
+      - run:
+          command: |
+            export DEBIAN_FRONTEND=noninteractive
+            export DEBCONF_NONINTERACTIVE_SEEN=true
+            apt-get update
+            apt-get install -y python3-sphinx autoconf automake libedit-dev make libtool pkg-config git libconfig-dev libpcre3-dev
+      - run:
+          name: Create the dist tarball
+          command: |
+            mkdir -p ~/.ssh
+            ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+            git clone --branch=${CIRCLE_BRANCH} ${CIRCLE_REPOSITORY_URL} .
+            git checkout ${CIRCLE_SHA1}
+            ./autogen.des --quiet
+            make dist -j 16
+      - persist_to_workspace:
+          root: .
+          paths:
+            - varnish*.tar.gz
+  tar_pkg_tools:
+    docker:
+      - image: centos:7
+    steps:
+      - add_ssh_keys:
+          fingerprints:
+            - "11:ed:57:75:32:81:9d:d0:a4:5e:af:15:4b:d8:74:27"
+      - run:
+          name: Grab the pkg repo
+          command: |
+            yum install -y git
+            mkdir -p ~/.ssh
+            ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+            echo ${CIRCLE_REPOSITORY_URL}
+            git clone --branch=weekly git@github.com:varnishcache/pkg-varnish-cache.git .
+            tar cvzf debian.tar.gz debian --dereference
+            tar cvzf redhat.tar.gz redhat --dereference 
+      - persist_to_workspace:
+          root: .
+          paths:
+            - debian.tar.gz
+            - redhat.tar.gz
+  distcheck:
+    parameters:
+      release:
+        description: the release name (stretch|buster|xenial|bionic)
+        default: ""
+        type: string
+      dist:
+        description: the Linux distribution (debian|ubuntu)
+        default: ""
+        type: string
+      extra_conf:
+        description: platform-specific configure arguments
+        default: ""
+        type: string
+    docker:
+      - image: << parameters.dist >>:<< parameters.release >>
+    working_directory: /workspace
+    steps:
+      - << parameters.dist >>_install_build_deps
+      - attach_workspace:
+          at: /workspace
+      - run:
+          name: Extract and distcheck
+          command: |
+            tar xavf *.tar.gz --strip 1
+            if [ << parameters.dist >> = centos ]; then
+            	adduser varnish
+            else
+            	adduser --disabled-password --gecos "" varnish
+            fi
+            chown -R varnish:varnish /workspace
+            sudo -u varnish ./configure \
+            	--quiet \
+            	--with-unwind \
+            	--enable-developer-warnings \
+            	--enable-debugging-symbols \
+            	--disable-stack-protector \
+            	--with-persistent-storage \
+            	<< parameters.extra_conf >>
+            sudo -u varnish make distcheck -j 12 -k
+  push_packages:
+    docker:
+      - image: centos:7
+    steps:
+      - attach_workspace:
+          at: ~/project
+      - run:
+          name: Tar the packages
+          command: |
+              rm rpms/varnish*.src.rpm
+              mv rpms/*/*.rpm rpms/
+              tar cvzf packages.tar.gz rpms/*.rpm debs/*.deb
+      - store_artifacts:
+          destination: packages.tar.gz
+          path: packages.tar.gz
+  build_centos_7:
+    docker:
+      - image: centos:7
+    environment:
+      DIST_DIR: build
+      DIST: el7
+    steps:
+      - run:
+          name: Install packaging tools
+          command: |
+            yum install -y rpm-build yum-utils epel-release
+            # XXX: we should NOT have to do that here, they should be in the
+            # spec as BuildRequires
+            yum install -y make gcc
+      - attach_workspace:
+          at: ~/project
+      - run:
+          name: Create build dir
+          command: mkdir $DIST_DIR
+      - run:
+          name: Untar redhat
+          command: |
+            tar xavf redhat.tar.gz -C build
+      - run:
+          name: Untar orig
+          command: |
+            tar xavf varnish*.tar.gz -C build --strip 1
+      - run:
+          name: Build Packages
+          command: |
+            set -e
+            set -u
+
+            # use python3
+            sed -i '1 i\%global __python %{__python3}' "$DIST_DIR"/redhat/varnish.spec
+            [ -n "$DIST" ]
+            VERSION=$("$DIST_DIR"/configure --version | awk 'NR == 1 {print $NF}')
+
+            # VERSION looks like 5.2.1 or 5.2.0-rc1
+            MAJOR=${VERSION%.*}		# 5.2
+            MINOR=${VERSION##*.}	# 1 or 0-rc1
+            MINOR=${MINOR%%-*}		# 1 or 0
+            RELEASE=${VERSION#*-}	# 5.2.1 or rc1
+            RELEASE=${RELEASE#$VERSION}	# '' or rc1
+
+            cp -r -L "$DIST_DIR"/redhat/* "$DIST_DIR"/
+            tar zcf "$DIST_DIR.tgz" --exclude "$DIST_DIR/redhat" "$DIST_DIR"/
+
+            if [ "$VERSION" = "trunk" ]; then
+            	RPMVERSION=`date "+%Y%m%d"`
+            else
+            	RPMVERSION="$MAJOR.$MINOR"
+            fi
+
+            RESULT_DIR="rpms"
+            CUR_DIR="$(pwd)"
+
+            rpmbuild() {
+            	if [ -n "$RELEASE" ]
+            	then
+            		set -- --define "v_rc $RELEASE" "$@"
+            	fi
+            	command rpmbuild \
+            		--define "_smp_mflags -j10" \
+            		--define "dist $DIST" \
+                	--define "_topdir $HOME/rpmbuild" \
+                	--define "_sourcedir $CUR_DIR" \
+                	--define "_srcrpmdir $CUR_DIR/${RESULT_DIR}" \
+                	--define "_rpmdir $CUR_DIR/${RESULT_DIR}" \
+            		--define "versiontag ${RPMVERSION}" \
+            		--define "releasetag 0.0." \
+            		--define "srcname $DIST_DIR" \
+            		--define "nocheck 1" \
+            		"$@"
+            }
+            yum-builddep -y "$DIST_DIR"/redhat/varnish.spec
+            rpmbuild -bs "$DIST_DIR"/redhat/varnish.spec
+            rpmbuild --rebuild "$RESULT_DIR"/varnish-*.src.rpm
+      - persist_to_workspace:
+          root: .
+          paths:
+            - rpms/*.rpm
+            - rpms/*/*.rpm
+
+pkg_req: &pkg_req
+  requires:
+    - dist_ubuntu
+    - tar_pkg_tools
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - dist_ubuntu
+      - tar_pkg_tools
+      - build_debs:
+          name: build_debian_stretch
+          dist: debian
+          release: stretch
+          <<: *pkg_req
+      - build_debs:
+          name: build_debian_buster
+          dist: debian
+          release: buster
+          <<: *pkg_req
+      - build_debs:
+          name: build_ubuntu_xenial
+          dist: ubuntu
+          release: xenial
+          <<: *pkg_req
+      - build_debs:
+          name: build_ubuntu_bionic
+          dist: ubuntu
+          release: bionic
+          <<: *pkg_req
+      - build_centos_7:
+          <<: *pkg_req
+      - hold:
+          type: approval
+          requires:
+            - build_debian_stretch
+            - build_debian_buster
+            - build_ubuntu_xenial
+            - build_ubuntu_bionic
+            - build_centos_7
+      - push_packages:
+          requires:
+            - hold
+      - distcheck:
+          name: distcheck_centos_7
+          dist: centos
+          release: "7"
+          requires:
+            - dist_ubuntu
+      - distcheck:
+          name: distcheck_debian_buster
+          dist: debian
+          release: buster
+          extra_conf: --enable-asan --enable-ubsan  
+          requires:
+            - dist_ubuntu
+      - distcheck:
+          name: distcheck_alpine_3.10
+          dist: alpine
+          release: "latest"
+          #extra_conf: --without-jemalloc
+          requires:
+            - dist_ubuntu
