@@ -27,8 +27,18 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
-NEXT (2019-09-15)
+NEXT (2020-03-15)
 ================================
+
+(nothing yet)
+
+================================
+Varnish Cache 6.3.0 (2019-09-15)
+================================
+
+* The Host: header is folded to lower-case in the builtin_vcl.
+
+* Improved performance of shared memory statistics counters.
 
 * Synthetic objects created from ``vcl_backend_error {}`` now replace
   existing stale objects as ordinary backend fetches would, unless:
