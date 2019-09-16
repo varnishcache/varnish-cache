@@ -51,7 +51,9 @@
  * Whenever something is deleted or changed in a way which is not
  * binary/load-time compatible, increment MAJOR version
  *
- * unreleased (planned for 2019-09-15)
+ * unreleased (planned for 2020-03-15)
+ *	(nothing yet)
+ * 10.0 (2019-09-15)
  *	VRT_UpperLowerStrands added.
  *	VRT_synth_page now takes STRANDS argument
  *	VRT_hashdata() now takes STRANDS argument
@@ -143,7 +145,7 @@
  *	vrt_acl type added
  */
 
-#define VRT_MAJOR_VERSION	9U
+#define VRT_MAJOR_VERSION	10U
 
 #define VRT_MINOR_VERSION	0U
 
