@@ -1,16 +1,11 @@
 varnishtest "HTTP continuation lines"
 
-#NB: careful about spaces and tabs in this test.
-
 server s1 {
 	rxreq
-	txresp -hdr {Foo: bar,
-	barf: fail} -body "xxx"
+	txresp -hdr "Foo: bar,\n\tbarf: fail" -body "xxx"
 
 	rxreq
-	txresp -hdr {Foo: bar,
- 	
-	barf: fail} -body "xxx"
+	txresp -hdr "Foo: bar,\n \t\n\tbarf: fail" -body "xxx"
 } -start
 
 varnish v1 -vcl+backend {
