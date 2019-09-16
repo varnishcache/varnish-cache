@@ -27,12 +27,6 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
-NEXT (2020-03-15)
-================================
-
-(nothing yet)
-
-================================
 Varnish Cache 6.3.0 (2019-09-15)
 ================================
 
