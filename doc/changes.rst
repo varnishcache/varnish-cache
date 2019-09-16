@@ -36,6 +36,9 @@ NEXT (2020-03-15)
 Varnish Cache 6.3.0 (2019-09-15)
 ================================
 
+In addition to a significant number of bug fixes, these are the most
+important changes in 6.3:
+
 * The Host: header is folded to lower-case in the builtin_vcl.
 
 * Improved performance of shared memory statistics counters.
