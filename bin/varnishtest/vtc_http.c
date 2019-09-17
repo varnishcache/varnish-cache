@@ -69,14 +69,15 @@ extern const struct cmds http_cmds[];
  * SECTION: client-server.macros Macros and automatic behaviour
  *
  * To make things easier in the general case, clients will connect by default
- * to the first Varnish server declared and the -vcl+backend switch of the
- * ``varnish`` command will add all the declared servers as backends.
+ * to a Varnish server called v1. To connect to a different Varnish server, use
+ * '-connect ${vNAME_sock}'.
  *
- * Be careful though, servers will by default listen to the 127.0.0.1 IP and
- * will pick a random port, and publish 3 macros: sNAME_addr, sNAME_port and
- * sNAME_sock, but only once they are started.
- * For 'varnish -vcl+backend' to create the vcl with the correct values, the
- * server must be started first.
+ * The -vcl+backend switch of the ``varnish`` command will add all the declared
+ * servers as backends. Be careful though, servers will by default listen to
+ * the 127.0.0.1 IP and will pick a random port, and publish 3 macros:
+ * sNAME_addr, sNAME_port and sNAME_sock, but only once they are started. For
+ * 'varnish -vcl+backend' to create the vcl with the correct values, the server
+ * must be started first.
  *
  * SECTION: client-server.args Arguments
  *
