@@ -1,0 +1,98 @@
+varnishtest "VSV00004"
+
+server s1 {
+	rxreq
+	expect req.url == /test1
+	txresp
+
+	rxreq
+	expect req.url == /test2
+	send "bogus\r\n\r\n"
+	expect_close
+
+	accept
+	rxreq
+	expect req.url == /test3
+	txresp
+} -start
+
+varnish v1 -arg "-p debug=+syncvsl" -arg "-p max_restarts=0" -vcl+backend {
+	import vtc;
+
+	sub vcl_recv {
+		if (req.url == "/prime") {
+			# Avoid allocations at start of workspace so
+			# that test string is not overwritten
+			vtc.workspace_alloc(client, 1024);
+
+			set req.http.temp = "super";
+			set req.http.secret = req.http.temp + "secret";
+			return (synth(200, req.http.secret));
+		}
+	}
+	sub vcl_deliver {
+		if (req.url == "/test1") {
+			return (restart);
+		}
+	}
+	sub vcl_backend_error {
+		return (abandon);
+	}
+} -start
+
+# Case 1
+client c1 {
+	txreq -url /prime
+	rxresp
+	expect resp.status == 200
+	expect resp.reason == supersecret
+
+	txreq -url /test1
+	rxresp
+	expect resp.status == 503
+	expect resp.reason != supersecret
+	expect resp.reason == "Service Unavailable"
+} -run
+
+# Case 2
+client c2 {
+	txreq -url /prime
+	rxresp
+	expect resp.status == 200
+	expect resp.reason == supersecret
+
+	txreq -url /test2
+	rxresp
+	expect resp.status == 503
+	expect resp.reason != supersecret
+	expect resp.reason == "Service Unavailable"
+} -run
+
+# Case 3
+varnish v1 -cliok "vcl.label label1 vcl1"
+varnish v1 -cliok "param.reset max_restarts"
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		if (req.url == "/prime") {
+			return (vcl(label1));
+		}
+		if (req.restarts > 0) {
+			return (vcl(label1));
+		}
+	}
+	sub vcl_deliver {
+		return (restart);
+	}
+}
+client c3 {
+	txreq -url /prime
+	rxresp
+	expect resp.status == 200
+	expect resp.reason == supersecret
+
+	txreq -url /test3
+	rxresp
+	expect resp.status == 503
+	expect resp.reason != supersecret
+	expect resp.reason == "Service Unavailable"
+} -run
