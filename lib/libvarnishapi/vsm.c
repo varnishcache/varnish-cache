@@ -75,7 +75,7 @@ static vlu_f vsm_vlu_func;
 #define VSM_PRIV_SHIFT							\
 	(sizeof (uintptr_t) * 4)
 #define VSM_PRIV_MASK							\
-	(~((uintptr_t)UINTPTR_MAX << VSM_PRIV_SHIFT))
+	((1UL << VSM_PRIV_SHIFT) - 1)
 #define VSM_PRIV_LOW(u)							\
 	((uintptr_t)(u) & VSM_PRIV_MASK)
 #define VSM_PRIV_HIGH(u)						\
