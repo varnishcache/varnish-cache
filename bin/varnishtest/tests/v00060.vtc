@@ -1,0 +1,45 @@
+varnishtest "NULL backend allowed"
+
+server s1 {
+	rxreq
+	txresp
+
+} -start
+
+varnish v1 -vcl {
+	backend default none;
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 503
+} -run
+
+# Test NULL none default backend
+
+varnish v1 -vcl+backend {
+	backend null_backend none;
+        backend null_backend_uppercase None;
+        sub vcl_recv {
+                if (req.url ~ "/no_backend_lowercase") {
+                        set req.backend_hint = null_backend;
+                } else if (req.url ~ "no_backend_uppercase") {
+                        set req.backend_hint = null_backend_uppercase;
+                }
+        }
+}
+
+client c1 {
+        txreq
+	rxresp
+	expect resp.status == 200
+
+	txreq -url "/no_backend_lowercase"
+	rxresp
+	expect resp.status == 503
+
+        txreq -url "/no_backend_uppercase"
+	rxresp
+	expect resp.status == 503
+} -run

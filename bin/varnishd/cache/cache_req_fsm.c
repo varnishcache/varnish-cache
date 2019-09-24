@@ -792,7 +792,6 @@ cnt_recv_prep(struct req *req, const char *ci)
 
 		/* By default we use the first backend */
 		req->director_hint = VCL_DefaultDirector(req->vcl);
-		AN(req->director_hint);
 
 		req->d_ttl = -1;
 		req->d_grace = -1;
