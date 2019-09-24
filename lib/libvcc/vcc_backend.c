@@ -321,6 +321,16 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 	    "?proxy_header",
 	    NULL);
 
+	if (tl->t->tok == ID && (vcc_IdIs(tl->t, "none") || vcc_IdIs(tl->t, "None"))) {
+		vsb = VSB_new_auto();
+		AN(vsb);
+		tl->fb = vsb;
+		Fb(tl, 0, "\n\t%s = (NULL);\n", vgcname);
+		vcc_NextToken(tl);
+		SkipToken(tl, ';');
+		return;
+	}
+
 	SkipToken(tl, '{');
 
 	vsb = VSB_new_auto();
