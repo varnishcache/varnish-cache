@@ -50,6 +50,23 @@ commands:
                 rst2pdf \
                 ssh \
                 sudo
+  alpine_install_build_deps:
+    description: Install build dependencies
+    steps:
+      - run:
+          name: Install build dependencies
+          command: |
+            apk update
+            apk add -q \
+                autoconf \
+                automake \
+                libconfig-dev \
+                libedit-dev \
+                libtool \
+                linux-headers \
+                pcre-dev \
+                py-docutils \
+                py-sphinx
 jobs:
   build_debs:
     parameters:
@@ -173,6 +190,10 @@ jobs:
         description: the Linux distribution (debian|ubuntu)
         default: ""
         type: string
+      extra_conf:
+        description: platform-specific configure arguments
+        default: ""
+        type: string
     docker:
       - image: << parameters.dist >>:<< parameters.release >>
     working_directory: /workspace
@@ -186,7 +207,7 @@ jobs:
             tar xavf *.tar.gz --strip 1
             useradd varnish
             chown -R varnish:varnish /workspace
-            sudo -u varnish ./configure --quiet
+            sudo -u varnish ./configure --quiet --with-unwind << parameters.extra_conf >>
             sudo -u varnish make distcheck -j 12 -k
   push_packages:
     docker:
@@ -341,5 +362,12 @@ workflows:
           name: distcheck_debian_buster
           dist: debian
           release: buster
+          requires:
+            - dist_debian
+      - distcheck:
+          name: distcheck_alpine_3.10
+          dist: alpine
+          release: "3.10"
+          extra_conf: --without-jemalloc
           requires:
             - dist_debian
