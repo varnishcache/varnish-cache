@@ -85,6 +85,9 @@
  *	VRT_LookupDirector() added
  *	VRT_SetChanged() added
  *	VRT_SetHealth() removed
+ *	// in cache_filter.h:
+ *	VRT_AddVDP() added
+ *	VRT_RemoveVDP() added
  * 8.0 (2018-09-15)
  *	VRT_Strands() added
  *	VRT_StrandsWS() added
@@ -101,6 +104,9 @@
  *	VRT_SetHealth() added
  *	VRT_DisableDirector() added
  *	VRT_DelDirector() added
+ *	// in cache_filter.h:
+ *	VRT_AddVFP() added
+ *	VRT_RemoveVFP() added
  * 7.0 (2018-03-15)
  *	lots of stuff moved from cache.h to cache_varnishd.h
  *	   (ie: from "$Abi vrt" to "$Abi strict")
