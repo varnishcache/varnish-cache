@@ -27,12 +27,6 @@
 
 	Count of sessions successfully accepted
 
-.. varnish_vsc:: sess_drop
-	:group: wrk
-	:oneliner:	Sessions dropped
-
-	Count of sessions silently dropped due to lack of worker thread.
-
 .. varnish_vsc:: sess_fail
 	:group: wrk
 	:oneliner:	Session accept failures

@@ -373,19 +373,6 @@ vca_make_session(struct worker *wrk, void *arg)
 	/* Turn accepted socket into a session */
 	AN(wrk->aws->r);
 	sp = SES_New(wrk->pool);
-	if (sp == NULL) {
-		/*
-		 * We consider this a DoS situation and silently close the
-		 * connection with minimum effort and fuzz, rather than try
-		 * to send an intelligent message back.
-		 */
-		vca_pace_bad();
-		VTCP_nonblocking(wa->acceptsock);
-		closefd(&wa->acceptsock);
-		wrk->stats->sess_drop++;
-		WS_Release(wrk->aws, 0);
-		return;
-	}
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	wrk->stats->s_sess++;
 

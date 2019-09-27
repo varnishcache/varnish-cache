@@ -30,7 +30,7 @@ release process.
 NEXT (2020-03-15)
 ================================
 
-(nothing yet)
+* The ``MAIN.sess_drop`` counter is gone.
 
 ================================
 Varnish Cache 6.3.0 (2019-09-15)

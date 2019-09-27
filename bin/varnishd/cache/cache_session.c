@@ -365,7 +365,8 @@ SES_New(struct pool *pp)
 
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 	sp = MPL_Get(pp->mpl_sess, &sz);
-	sp->magic = SESS_MAGIC;
+	AN(sp);
+	INIT_OBJ(sp, SESS_MAGIC);
 	sp->pool = pp;
 	sp->refcnt = 1;
 	memset(sp->sattr, 0xff, sizeof sp->sattr);
