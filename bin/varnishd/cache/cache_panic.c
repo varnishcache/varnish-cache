@@ -30,10 +30,11 @@
 #include "config.h"
 
 #ifdef WITH_UNWIND
-#include <libunwind.h>
+#  include <libunwind.h>
 #else
-#include <execinfo.h>
+#  include <execinfo.h>
 #endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -633,7 +634,7 @@ pan_backtrace(struct vsb *vsb)
 		    "(unw_getcontext returned %d)\n", ret);
 		return;
 	}
-	unw_init_local(&cursor, &uc);
+	ret = unw_init_local(&cursor, &uc);
 	if (ret != 0) {
 		VSB_printf(vsb, "Backtrace not available "
 		    "(unw_init_local returned %d)\n", ret);
