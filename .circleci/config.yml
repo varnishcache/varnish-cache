@@ -166,6 +166,7 @@ jobs:
           root: .
           paths:
             - varnish*.tar.gz
+            - tools/*.suppr
   tar_pkg_tools:
     docker:
       - image: centos:7
@@ -219,6 +220,12 @@ jobs:
             	adduser --disabled-password --gecos "" varnish
             fi
             chown -R varnish:varnish /workspace
+
+            export ASAN_OPTIONS=abort_on_error=1,detect_odr_violation=1,detect_leaks=1,detect_stack_use_after_return=1,detect_invalid_pointer_pairs=1,handle_segv=0,handle_sigbus=0,use_sigaltstack=0,disable_coredump=0
+            export LSAN_OPTIONS=abort_on_error=1,use_sigaltstack=0,suppressions=$(pwd)/tools/lsan.suppr
+            export TSAN_OPTIONS=abort_on_error=1,halt_on_error=1,use_sigaltstack=0,suppressions=$(pwd)/tools/tsan.suppr
+            export UBSAN_OPTIONS=halt_on_error=1,print_stacktrace=1,use_sigaltstack=0,suppressions=$(pwd)/tools/ubsan.suppr
+
             sudo -u varnish ./configure \
             	--quiet \
             	--with-unwind \
@@ -227,7 +234,9 @@ jobs:
             	--disable-stack-protector \
             	--with-persistent-storage \
             	<< parameters.extra_conf >>
-            sudo -u varnish make distcheck -j 12 -k
+            sudo -u varnish \
+            	--preserve-env=ASAN_OPTIONS,LSAN_OPTIONS,TSAN_OPTIONS,UBSAN_OPTIONS \
+            	make distcheck -j 12 -k
   push_packages:
     docker:
       - image: centos:7
