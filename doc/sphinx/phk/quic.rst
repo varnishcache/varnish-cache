@@ -1,3 +1,5 @@
+.. _phk_quick_osi:
+
 QUIC visions of OSI
 ===================
 
