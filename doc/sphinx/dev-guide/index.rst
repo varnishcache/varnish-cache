@@ -6,21 +6,6 @@ The Varnish Developers Guide
 This is the deliberately short and to the point list of things
 Varnish Developers should know.
 
-Behaviour
----------
-
-* Be sensible.
-
-* If in doubt, think.
-
-* If still in doubt, ask.
-
-* Admit your mistakes, it's faster that way.
-
-* Thou SHALL not paint `bikesheds. <http://bikeshed.org/>`_
-
-* We will toss you out of the project rather than add another rule.
-
 Technical stuff
 ----------------
 
@@ -41,22 +26,46 @@ Technical stuff
 
 * Our license is BSD 2-clause or looser, no GPL or LGPL.
 
-* It took 11 years for the first major security issue, and that was too soon.
+* Writing secure code is more important than performance.
 
-Bugs, issues, feature requests & VIPs
+* Varnishtest cases (VTC) for bugs is the norm, not the exception.
+
+Bugs, pull requests, feature requests
 -------------------------------------
 
-Bugs, issues and feature requests start out as github issues.
+Bugs, pull requests and feature requests start out as github issues.
 
-Monday at 13:00-14:00 (EU time) we "bug-wash" on IRC to
-decide who and how issues are dealt with.
+Monday at 15:00-15:30 (EU time) we "bug-wash" on IRC to decide on the
+who and how of issues to be dealt with.
 
 Issues we cannot do anything about are closed.
 
-If feature-requests make sense, they get moved to a wiki/VIP page until
+If feature requests make sense, they get moved to a wiki/VIP page until
 somebody implements them.
 
-Varnishtest cases for bugs is the norm, not the exception.
+Pull requests are obligatory for all contributions, unless they
+qualify for the exceptions laid out below.
+
+Pull requests should be reviewed by all interested developers.
+
+The project `maintainers <policy-maintainers>`_ decide on pull
+requests within two weeks:
+
+* Each `maintainer <policy-maintainers>`_ has a veto right on pull
+  requests.
+
+* Undisputed pull requests get merged after two approvals from
+  different maintainers.
+
+The exception to the pull request process are small, *risk free*
+changes, which can be committed and pushed (by a developer with the
+*commit bit*) without a review. These include in particular, but are
+not limited to,
+
+* Documentation changes, unless they concern policies or governance of
+  the project
+
+* Simple bug fixes tested by a varnishtest case (VTC).
 
 Architectural stuff
 -------------------
