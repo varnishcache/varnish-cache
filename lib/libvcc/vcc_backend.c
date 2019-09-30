@@ -321,10 +321,12 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 	    "?proxy_header",
 	    NULL);
 
-	if (tl->t->tok == ID && (vcc_IdIs(tl->t, "none") || vcc_IdIs(tl->t, "None"))) {
-		vsb = VSB_new_auto();
-		AN(vsb);
-		tl->fb = vsb;
+	vsb = VSB_new_auto();
+	AN(vsb);
+	tl->fb = vsb;
+
+	if (tl->t->tok == ID &&
+	    (vcc_IdIs(tl->t, "none") || vcc_IdIs(tl->t, "None"))) {
 		Fb(tl, 0, "\n\t%s = (NULL);\n", vgcname);
 		vcc_NextToken(tl);
 		SkipToken(tl, ';');
@@ -332,10 +334,6 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 	}
 
 	SkipToken(tl, '{');
-
-	vsb = VSB_new_auto();
-	AN(vsb);
-	tl->fb = vsb;
 
 	Fb(tl, 0, "\nstatic const struct vrt_backend vgc_dir_priv_%s = {\n",
 	    vgcname);
