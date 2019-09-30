@@ -139,6 +139,10 @@ cscope.*out
 /cov-int
 /myproject.tgz
 
+# Witness droppings
+witness.dot
+witness.svg
+
 # Flexelint droppings
 _.fl
 _.fl.old
