@@ -42,6 +42,9 @@ NEXT (2020-03-15)
   they are delimited by "double quotes". This was applied to ``SessError``
   and ``Backend_health``.
 
+* The option ``varnishtest -W`` is gone, the same can be achieved with
+  ``varnishtest -p debug=+witness``.
+
 ================================
 Varnish Cache 6.3.0 (2019-09-15)
 ================================

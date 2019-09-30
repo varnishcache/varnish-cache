@@ -106,7 +106,6 @@ static char *cwd = NULL;
 char *vmod_path = NULL;
 struct vsb *params_vsb = NULL;
 int leave_temp;
-int vtc_witness = 0;
 static struct vsb *cbvsb;
 static int bad_backend_fd;
 
@@ -189,7 +188,6 @@ usage(void)
 	fprintf(stderr, FMT, "-q", "Quiet mode: report only failures");
 	fprintf(stderr, FMT, "-t duration", "Time tests out after this long");
 	fprintf(stderr, FMT, "-v", "Verbose mode: always report test log");
-	fprintf(stderr, FMT, "-W", "Enable the witness facility for locking");
 	exit(1);
 }
 
@@ -747,9 +745,6 @@ main(int argc, char * const *argv)
 		case 'v':
 			if (vtc_verbosity < 2)
 				vtc_verbosity++;
-			break;
-		case 'W':
-			vtc_witness++;
 			break;
 		default:
 			usage();

@@ -15,7 +15,7 @@ Test program for Varnish
 SYNOPSIS
 ========
 
-varnishtest [-hikLlqvW] [-b size] [-D name=val] [-j jobs] [-n iter] [-t duration] file [file ...]
+varnishtest [-hikLlqv] [-b size] [-D name=val] [-j jobs] [-n iter] [-t duration] file [file ...]
 
 DESCRIPTION
 ===========
@@ -55,8 +55,6 @@ The following options are available:
 -t duration      Time tests out after this long (default: 60s)
 
 -v               Verbose mode: always report test log
-
--W               Enable the witness facility for locking
 
 file             File to use as a script
 
