@@ -36,6 +36,7 @@ NEXT (2020-03-15)
   `libexecinfo` implementation that crashes when called by Varnish, this
   offers the alternative of using `libunwind` instead.
 
+* backend ``none`` was added for "no backend"
 
 ================================
 Varnish Cache 6.3.0 (2019-09-15)
