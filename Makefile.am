@@ -8,7 +8,13 @@ pkgconfig_DATA = varnishapi.pc
 m4dir = $(datadir)/aclocal
 m4_DATA = varnish.m4 varnish-legacy.m4
 
-CLEANFILES = cscope.in.out cscope.out cscope.po.out
+CLEANFILES = \
+	cscope.in.out \
+	cscope.out \
+	cscope.po.out \
+	witness.dot \
+	witness.svg
+
 EXTRA_DIST = \
 	README.rst \
 	README.Packaging \
@@ -48,4 +54,24 @@ cscope:
 gcov_digest:
 	${PYTHON} tools/gcov_digest.py -o _gcov
 
-.PHONY: cscope
+witness.dot: all
+	$(MAKE) -C bin/varnishtest check AM_VTC_LOG_FLAGS=-pdebug=+witness
+	$(AM_V_GEN) $(srcdir)/tools/witness.sh witness.dot bin/varnishtest
+
+.dot.svg:
+if ! HAVE_DOT
+	@echo ==================================================
+	@echo You need graphviz installed to generate svg output
+	@echo ==================================================
+	@false
+else
+	$(AM_V_GEN) $(DOT) -Tsvg $< >$@
+endif
+
+if HAVE_DOT
+witness: witness.svg
+else
+witness: witness.dot
+endif
+
+.PHONY: cscope witness.dot
