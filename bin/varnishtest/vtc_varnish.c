@@ -411,8 +411,6 @@ varnish_launch(struct varnish *v)
 	VSB_printf(vsb, " exec varnishd %s -d -n %s",
 	    v->jail, v->workdir);
 	VSB_cat(vsb, VSB_data(params_vsb));
-	if (vtc_witness)
-		VSB_cat(vsb, " -p debug=+witness");
 	if (leave_temp) {
 		VSB_cat(vsb, " -p debug=+vcl_keep");
 		VSB_cat(vsb, " -p debug=+vmod_so_keep");
