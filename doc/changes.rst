@@ -25,6 +25,18 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
+Varnish Cache 6.2.2 (2019-10-21)
+================================
+
+Bugs fixed
+----------
+
+* Fixed clearing of a state variable that could cause an information leak
+  (VSV00004_)
+
+.. _VSV00004: https://varnish-cache.org/security/VSV00004.html
+
+================================
 Varnish Cache 6.2.1 (2019-09-03)
 ================================
 
