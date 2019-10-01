@@ -806,6 +806,8 @@ cnt_recv_prep(struct req *req, const char *ci)
 	req->is_hit = 0;
 	req->is_hitmiss = 0;
 	req->is_hitpass = 0;
+	req->err_code = 0;
+	req->err_reason = NULL;
 }
 
 /*--------------------------------------------------------------------
