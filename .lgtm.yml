@@ -1,4 +1,5 @@
 queries:
+  - exclude: cpp/empty-block
   - exclude: cpp/missing-header-guard
   - exclude: cpp/short-global-name
 extraction:
