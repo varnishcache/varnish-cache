@@ -84,6 +84,20 @@ vbf_allocobj(struct busyobj *bo, unsigned l)
 	return (STV_NewObject(bo->wrk, bo->fetch_objcore, stv_transient, l));
 }
 
+static void
+vbf_cleanup(struct busyobj *bo)
+{
+	struct vfp_ctx *vfc;
+
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	vfc = bo->vfc;
+	CHECK_OBJ_NOTNULL(vfc, VFP_CTX_MAGIC);
+
+	VFP_Close(vfc);
+	if (bo->director_state != DIR_S_NULL)
+		VDI_Finish(bo);
+}
+
 /*--------------------------------------------------------------------
  * Turn the beresp into a obj
  */
@@ -232,7 +246,7 @@ vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 
 	VSLb_ts_busyobj(bo, "Retry", W_TIM_real(wrk));
 
-	/* VDI_Finish must have been called before */
+	/* VDI_Finish (via vbf_cleanup) must have been called before */
 	assert(bo->director_state == DIR_S_NULL);
 
 	/* reset other bo attributes - See VBO_GetBusyObj */
@@ -307,7 +321,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	if (bo->htc->body_status == BS_ERROR) {
 		bo->htc->doclose = SC_RX_BODY;
-		VDI_Finish(bo);
+		vbf_cleanup(bo);
 		VSLb(bo->vsl, SLT_Error, "Body cannot be fetched");
 		assert(bo->director_state == DIR_S_NULL);
 		return (F_STP_ERROR);
@@ -380,7 +394,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 			VSLb(bo->vsl, SLT_Error,
 			    "304 response but not conditional fetch");
 			bo->htc->doclose = SC_RX_BAD;
-			VDI_Finish(bo);
+			vbf_cleanup(bo);
 			return (F_STP_ERROR);
 		}
 	}
@@ -390,7 +404,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	if (wrk->handling == VCL_RET_ABANDON || wrk->handling == VCL_RET_FAIL ||
 	    wrk->handling == VCL_RET_ERROR) {
 		bo->htc->doclose = SC_RESP_CLOSE;
-		VDI_Finish(bo);
+		vbf_cleanup(bo);
 		if (wrk->handling == VCL_RET_ERROR)
 			return (F_STP_ERROR);
 		else
@@ -400,8 +414,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	if (wrk->handling == VCL_RET_RETRY) {
 		if (bo->htc->body_status != BS_NONE)
 			bo->htc->doclose = SC_RESP_CLOSE;
-		if (bo->director_state != DIR_S_NULL)
-			VDI_Finish(bo);
+		vbf_cleanup(bo);
 
 		if (bo->retries++ < cache_param->max_retries)
 			return (F_STP_RETRY);
@@ -491,8 +504,7 @@ vbf_stp_fetchbody(struct worker *wrk, struct busyobj *bo)
 	if (vfc->failed) {
 		(void)VFP_Error(vfc, "Fetch pipeline failed to process");
 		bo->htc->doclose = SC_RX_BODY;
-		VFP_Close(vfc);
-		VDI_Finish(bo);
+		vbf_cleanup(bo);
 		if (!bo->do_stream) {
 			assert(bo->fetch_objcore->boc->state < BOS_STREAM);
 			// XXX: doclose = ?
@@ -529,7 +541,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->filter_list == NULL ||
 	    VCL_StackVFP(bo->vfc, bo->vcl, bo->filter_list)) {
 		(bo)->htc->doclose = SC_OVERLOAD;
-		VDI_Finish(bo);
+		vbf_cleanup(bo);
 		return (F_STP_ERROR);
 	}
 
@@ -541,15 +553,14 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (VFP_Open(bo->vfc)) {
 		(void)VFP_Error(bo->vfc, "Fetch pipeline failed to open");
 		bo->htc->doclose = SC_RX_BODY;
-		VDI_Finish(bo);
+		vbf_cleanup(bo);
 		return (F_STP_ERROR);
 	}
 
 	if (vbf_beresp2obj(bo)) {
 		(void)VFP_Error(bo->vfc, "Could not get storage");
 		bo->htc->doclose = SC_RX_BODY;
-		VFP_Close(bo->vfc);
-		VDI_Finish(bo);
+		vbf_cleanup(bo);
 		return (F_STP_ERROR);
 	}
 
@@ -591,7 +602,10 @@ vbf_stp_fetchend(struct worker *wrk, struct busyobj *bo)
 {
 
 	AZ(bo->vfc->failed);
-	VFP_Close(bo->vfc);
+
+	/* Recycle the backend connection before setting BOS_FINISHED to
+	   give predictable backend reuse behavior for varnishtest */
+	vbf_cleanup(bo);
 
 	AZ(ObjSetU64(wrk, bo->fetch_objcore, OA_LEN,
 	    bo->fetch_objcore->boc->len_so_far));
@@ -603,10 +617,6 @@ vbf_stp_fetchend(struct worker *wrk, struct busyobj *bo)
 		ObjSetState(wrk, bo->fetch_objcore, BOS_PREP_STREAM);
 		HSH_Unbusy(wrk, bo->fetch_objcore);
 	}
-
-	/* Recycle the backend connection before setting BOS_FINISHED to
-	   give predictable backend reuse behavior for varnishtest */
-	VDI_Finish(bo);
 
 	ObjSetState(wrk, bo->fetch_objcore, BOS_FINISHED);
 	VSLb_ts_busyobj(bo, "BerespBody", W_TIM_real(wrk));
@@ -673,7 +683,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->stale_oc->flags & OC_F_FAILED)
 		(void)VFP_Error(bo->vfc, "Template object failed");
 	if (bo->vfc->failed) {
-		VDI_Finish(bo);
+		vbf_cleanup(bo);
 		wrk->stats->fetch_failed++;
 		return (F_STP_FAIL);
 	}
