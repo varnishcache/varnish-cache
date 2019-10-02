@@ -94,6 +94,8 @@ vbf_cleanup(struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(vfc, VFP_CTX_MAGIC);
 
 	VFP_Close(vfc);
+	bo->filter_list = NULL;
+
 	if (bo->director_state != DIR_S_NULL)
 		VDI_Finish(bo);
 }
@@ -253,7 +255,6 @@ vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 	bo->storage = NULL;
 	bo->do_esi = 0;
 	bo->do_stream = 1;
-	bo->filter_list = NULL;
 	bo->was_304 = 0;
 
 	// XXX: BereqEnd + BereqAcct ?
