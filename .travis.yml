@@ -39,6 +39,7 @@ jobs:
             - llvm-toolchain-xenial-8
           packages:
             - clang-8
+            - libunwind-dev
             - llvm-8
             - nghttp2
             - python3-docutils
