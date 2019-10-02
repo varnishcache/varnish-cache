@@ -99,6 +99,18 @@ vbf_cleanup(struct busyobj *bo)
 		VDI_Finish(bo->wrk, bo);
 }
 
+void Bereq_Rollback(struct busyobj *bo)
+{
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+
+	vbf_cleanup(bo);
+	VCL_TaskLeave(bo->vcl, bo->privs);
+	VCL_TaskEnter(bo->vcl, bo->privs);
+	HTTP_Copy(bo->bereq, bo->bereq0);
+	WS_Reset(bo->bereq->ws, bo->ws_bo);
+	WS_Reset(bo->ws, bo->ws_bo);
+}
+
 /*--------------------------------------------------------------------
  * Turn the beresp into a obj
  */
@@ -404,7 +416,8 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	if (wrk->handling == VCL_RET_ABANDON || wrk->handling == VCL_RET_FAIL ||
 	    wrk->handling == VCL_RET_ERROR) {
-		bo->htc->doclose = SC_RESP_CLOSE;
+		if (bo->htc)
+			bo->htc->doclose = SC_RESP_CLOSE;
 		vbf_cleanup(bo);
 		if (wrk->handling == VCL_RET_ERROR)
 			return (F_STP_ERROR);
@@ -413,7 +426,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	}
 
 	if (wrk->handling == VCL_RET_RETRY) {
-		if (bo->htc->body_status != BS_NONE)
+		if (bo->htc && bo->htc->body_status != BS_NONE)
 			bo->htc->doclose = SC_RESP_CLOSE;
 		vbf_cleanup(bo);
 
@@ -595,6 +608,12 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(bo->fetch_objcore, OBJCORE_MAGIC);
 
 	assert(wrk->handling == VCL_RET_DELIVER);
+
+	if (bo->htc == NULL) {
+		(void)VFP_Error(bo->vfc, "No backend connection (rollback?)");
+		vbf_cleanup(bo);
+		return (F_STP_ERROR);
+	}
 
 	if (vbf_figure_out_vfp(bo)) {
 		(bo)->htc->doclose = SC_OVERLOAD;

@@ -202,6 +202,7 @@ enum vbf_fetch_mode_e {
 };
 void VBF_Fetch(struct worker *wrk, struct req *req,
     struct objcore *oc, struct objcore *oldoc, enum vbf_fetch_mode_e);
+void Bereq_Rollback(struct busyobj *);
 
 /* cache_fetch_proc.c */
 void VFP_Init(void);
