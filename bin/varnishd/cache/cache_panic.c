@@ -612,7 +612,7 @@ pan_backtrace(struct vsb *vsb)
 		unw_get_reg(&cursor, UNW_REG_SP, &sp);
 		unw_get_proc_name(&cursor, fname, sizeof(fname), &offp);
 		VSB_printf(vsb, "ip=0x%lx, sp=0x%lx <%s+0x%lx>\n", (long) ip,
-		    (long) sp, fname[0] ? fname : "???", offp);
+		    (long) sp, fname[0] ? fname : "<unknown>", offp);
 	}
 
 	VSB_indent(vsb, -2);
