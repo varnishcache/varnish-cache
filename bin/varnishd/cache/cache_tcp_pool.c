@@ -85,7 +85,7 @@ struct conn_pool {
 
 	const struct cp_methods			*methods;
 
-	const void				*id;
+	uintmax_t				id;
 	void					*priv;
 
 	VTAILQ_ENTRY(conn_pool)			list;
@@ -201,7 +201,7 @@ vcp_handle(struct waited *w, enum wait_event ev, vtim_real now)
  */
 
 static struct conn_pool *
-VCP_Ref(const void *id, const void *priv)
+VCP_Ref(uintmax_t id, const void *priv)
 {
 	struct conn_pool *cp;
 
@@ -224,7 +224,7 @@ VCP_Ref(const void *id, const void *priv)
  */
 
 static void *
-VCP_New(struct conn_pool *cp, const void *id, void *priv,
+VCP_New(struct conn_pool *cp, uintmax_t id, void *priv,
     const struct cp_methods *cm)
 {
 
@@ -728,7 +728,7 @@ static const struct cp_methods vus_methods = {
 
 struct tcp_pool *
 VTP_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6, const char *uds,
-	const void *id)
+	uintmax_t id)
 {
 	struct tcp_pool *tp;
 	struct conn_pool *cp;

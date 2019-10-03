@@ -563,7 +563,7 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 	AN(be->vsc);
 
 	be->tcp_pool = VTP_Ref(vrt->ipv4_suckaddr, vrt->ipv6_suckaddr,
-	    vrt->path, vbe_proto_ident);
+	    vrt->path, (uintptr_t)vbe_proto_ident);
 	AN(be->tcp_pool);
 
 	vbp = vrt->probe;
