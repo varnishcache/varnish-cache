@@ -573,7 +573,7 @@ not have surprises in the future.  The syntax version set in an
 included file only applies to that file and any files it includes -
 unless these set their own VCL syntax version.
 
-The version of Varnish this file belongs to supports syntax 4.0 only.
+The version of Varnish this file belongs to supports syntax 4.0 and 4.1.
 
 
 EXAMPLES
