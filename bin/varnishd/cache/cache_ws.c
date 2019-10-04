@@ -104,8 +104,7 @@ WS_Init(struct ws *ws, const char *id, void *space, unsigned len)
 	*ws->e = 0x15;
 	ws->f = ws->s;
 	assert(id[0] & 0x20);
-	assert(strlen(id) < sizeof ws->id);
-	strcpy(ws->id, id);
+	AZ(VSB_strcpy(ws->id, id));
 	WS_Assert(ws);
 }
 

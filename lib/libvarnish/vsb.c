@@ -640,3 +640,16 @@ VSB_tofile(int fd, const struct vsb *s)
 	sz = write(fd, s->s_buf, s->s_len);
 	return (sz == s->s_len ? 0 : -1);
 }
+
+/*
+ * string.h
+ */
+
+int
+VSB_strncpy(char *dest, const char *src, size_t len)
+{
+	struct vsb s[1];
+
+	AN(VSB_new(s, dest, len, VSB_FIXEDLEN));
+	return (VSB_cat(s, src));
+}
