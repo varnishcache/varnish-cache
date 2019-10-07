@@ -1,5 +1,9 @@
 varnishtest "Test std.rollback"
 
+# bug regressions:
+# - #3009
+# - #3083
+
 server s1 {
 	rxreq
 	expect req.url == "/foo"
@@ -67,3 +71,253 @@ client c1 {
 	txreq -url "/baz" -hdr "foobar: baz"
 	rxresp
 } -run
+
+server s1 -wait
+
+varnish v1 -cliok "param.set workspace_client 12000"
+varnish v1 -cliok "param.set workspace_backend 12000"
+
+# Dont panic
+varnish v1 -vcl+backend {
+	import std;
+	import vtc;
+
+	sub vcl_recv {
+		set req.http.test = "1";
+	}
+
+	sub vcl_backend_fetch {
+		unset bereq.http.test;
+	}
+
+	sub vcl_backend_response {
+		std.rollback(bereq);
+		set beresp.http.test = bereq.http.test;
+		vtc.workspace_alloc(backend, -10);
+	}
+}
+
+server s1 {
+	rxreq
+	expect req.url == "/1"
+	txresp
+} -start
+
+client c1 {
+	txreq -url /1
+	rxresp
+	expect resp.status == 503
+	expect resp.http.test == <undef>
+} -run
+
+server s1 -wait
+
+# Dont run out of workspace
+varnish v1 -vcl+backend {
+	import std;
+	import vtc;
+
+	sub vcl_backend_fetch {
+		vtc.workspace_alloc(backend, 1000);
+	}
+
+	sub vcl_backend_response {
+		if (bereq.retries == 0) {
+			vtc.workspace_alloc(backend, -10);
+			std.rollback(bereq);
+			return (retry);
+		}
+	}
+}
+
+server s1 -repeat 2 {
+	rxreq
+	expect req.url == "/2"
+	txresp
+} -start
+
+client c2 {
+	txreq -url /2
+	rxresp
+	expect resp.status == 200
+} -run
+
+server s1 -wait
+
+# Keep workspace intact (and possibly overflow)
+varnish v1 -vcl+backend {
+	import std;
+	import vtc;
+
+	sub vcl_backend_fetch {
+		set bereq.http.fetch = "Fetch value " + bereq.retries;
+	}
+
+	sub vcl_backend_response {
+		if (bereq.retries == 0) {
+			std.rollback(bereq);
+			set bereq.http.response = "123";
+			set bereq.http.response2 = "Another response";
+			if (bereq.url == "/4") {
+				vtc.workspace_alloc(backend, -10);
+			} else if (bereq.url == "/5") {
+				vtc.workspace_alloc(backend, -10);
+				std.rollback(bereq);
+			}
+			return (retry);
+		}
+		set beresp.http.fetch = bereq.http.fetch;
+		set beresp.http.response = bereq.http.response;
+		set beresp.http.response2 = bereq.http.response2;
+	}
+}
+
+server s1 -repeat 5 {
+	rxreq
+	txresp
+} -start
+
+client c3 {
+	txreq -url /3
+	rxresp
+	expect resp.status == 200
+	expect resp.http.fetch == "Fetch value 1"
+	expect resp.http.response == "123"
+	expect resp.http.response2 == "Another response"
+
+	txreq -url /4
+	rxresp
+	expect resp.status == 503
+
+	txreq -url /5
+	rxresp
+	expect resp.status == 200
+	expect resp.http.fetch == "Fetch value 1"
+	expect resp.http.response == ""
+	expect resp.http.response2 == ""
+} -run
+
+server s1 -wait
+
+# CLIENT
+
+# Dont panic
+varnish v1 -vcl+backend {
+	import std;
+	import vtc;
+
+	sub vcl_recv {
+		unset req.http.test;
+	}
+
+	sub vcl_deliver {
+		std.rollback(req);
+		set resp.http.test = req.http.test;
+		vtc.workspace_alloc(client, -200);
+	}
+}
+
+# XXX server keeps params, so we need to reset previous -repeat 5
+server s1 -repeat 1 {
+	rxreq
+	expect req.url == "/6"
+	txresp
+} -start
+
+client c4 {
+	txreq -url /6 -hdr "test: 1"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.test == "1"
+} -run
+
+server s1 -wait
+
+# Dont run out of workspace
+varnish v1 -vcl+backend {
+	import std;
+	import vtc;
+
+	sub vcl_recv {
+		vtc.workspace_alloc(client, 1000);
+	}
+
+	sub vcl_deliver {
+		if (req.restarts == 0) {
+			vtc.workspace_alloc(client, -10);
+			std.rollback(req);
+			return (restart);
+		}
+	}
+}
+
+server s1 {
+	rxreq
+	expect req.url == "/7"
+	txresp
+} -start
+
+client c5 {
+	txreq -url /7
+	rxresp
+	expect resp.status == 200
+} -run
+
+server s1 -wait
+
+# Keep workspace intact (and possibly overflow)
+varnish v1 -vcl+backend {
+	import std;
+	import vtc;
+
+	sub vcl_recv {
+		set req.http.fetch = "Fetch value " + req.restarts;
+	}
+
+	sub vcl_deliver {
+		if (req.restarts == 0) {
+			std.rollback(req);
+			set req.http.response = "123";
+			set req.http.response2 = "Another response";
+			if (req.url == "/9") {
+				vtc.workspace_alloc(client, -200);
+			} else if (req.url == "/10") {
+				vtc.workspace_alloc(client, -10);
+				std.rollback(req);
+			}
+			return (restart);
+		}
+		set resp.http.fetch = req.http.fetch;
+		set resp.http.response = req.http.response;
+		set resp.http.response2 = req.http.response2;
+	}
+}
+
+server s1 -repeat 3 {
+	rxreq
+	txresp
+} -start
+
+client c6 {
+	txreq -url /8
+	rxresp
+	expect resp.status == 200
+	expect resp.http.fetch == "Fetch value 1"
+	expect resp.http.response == "123"
+	expect resp.http.response2 == "Another response"
+
+	txreq -url /9
+	rxresp
+	expect resp.status == 200
+	expect resp.http.fetch == "Fetch value 1"
+	expect resp.http.response == "123"
+	expect resp.http.response2 == "Another response"
+
+	txreq -url /10
+	rxresp
+	expect resp.status == 200
+	expect resp.http.fetch == "Fetch value 1"
+	expect resp.http.response == ""
+} -run
+
+server s1 -wait
