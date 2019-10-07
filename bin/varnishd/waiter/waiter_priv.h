@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2011 Varnish Software AS
+ * Copyright (c) 2006-2019 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -63,15 +63,14 @@ Wait_Tmo(const struct waited *wp)
 {
 	CHECK_OBJ_ORNULL(wp, WAITED_MAGIC);
 	AN(wp->tmo);
-	return (*wp->tmo);
+	return (wp->tmo);
 }
 
 static inline double
 Wait_When(const struct waited *wp)
 {
 	CHECK_OBJ_ORNULL(wp, WAITED_MAGIC);
-	AN(wp->tmo);
-	return (wp->idle + *wp->tmo);
+	return (wp->idle + wp->tmo);
 }
 
 void Wait_Call(const struct waiter *, struct waited *,

@@ -12,7 +12,7 @@ server s1 {
 
 varnish v1 -cliok "param.set feature +http2"
 varnish v1 -cliok "param.set debug +syncvsl"
-varnish v1 -cliok "param.set h2_max_concurrent_streams 3"
+varnish v1 -cliok "param.set h2_max_concurrent_streams 2"
 
 varnish v1 -vcl+backend {
 	import vtc;

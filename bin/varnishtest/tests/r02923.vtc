@@ -1,0 +1,99 @@
+varnishtest "race cond in max_concurrent_streams when request after receiving RST_STREAM"
+
+barrier b1 sock 2
+barrier b2 sock 2
+barrier b3 sock 2
+barrier b4 sock 2
+barrier b5 sock 3
+
+server s1 {
+	rxreq
+	expect req.url == /nosync
+	txresp
+	rxreq
+	expect req.url == /sync
+	txresp
+} -start
+
+varnish v1 -cliok "param.set feature +http2"
+varnish v1 -cliok "param.set debug +syncvsl"
+varnish v1 -cliok "param.set h2_max_concurrent_streams 3"
+
+varnish v1 -vcl+backend {
+	import vtc;
+
+	sub vcl_recv {
+	}
+
+	sub vcl_backend_fetch {
+		if(bereq.url ~ "/sync"){
+			vtc.barrier_sync("${b1_sock}");
+			vtc.barrier_sync("${b5_sock}");
+		}
+	}
+} -start
+
+client c1 {
+	txpri
+	stream 0 rxsettings -run
+
+	stream 1 {
+		txreq -url /sync
+		rxresp
+		expect resp.status == 200
+	} -start
+
+	stream 3 {
+		barrier b1 sync
+		delay .5
+		# Goes on waiting list
+		txreq -url /sync
+		delay .5
+		txrst -err 0x8
+		delay .5
+		barrier b2 sync
+	} -start
+
+	stream 5 {
+		barrier b2 sync
+		txreq -url /nosync
+		delay .5
+		rxresp
+		delay .5
+		expect resp.status == 200
+		barrier b3 sync
+	} -start
+
+	stream 7 {
+		barrier b3 sync
+		# Goes on waiting list
+		txreq -url /sync
+		delay .5
+		txrst -err 0x8
+		delay .5
+		barrier b4 sync
+	} -start
+
+	stream 9 {
+		barrier b4 sync
+		# Goes on waiting list
+		txreq -url /sync
+		delay .5
+		barrier b5 sync
+		delay .5
+		rxresp
+		delay .5
+		expect resp.status == 200
+	} -start
+
+	stream 11 {
+		barrier b5 sync
+		txreq -url /sync
+		delay .5
+		rxresp
+		delay .5
+		expect resp.status == 200
+	} -start
+
+
+} -run

@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2016 Varnish Software AS
+ * Copyright (c) 2016-2019 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -53,21 +53,21 @@ static const char H2_prism[24] = {
 };
 
 static size_t
-h2_enc_settings(const struct h2_settings *h2s, uint8_t *buf, size_t n)
+h2_enc_settings(const struct h2_settings *h2s, uint8_t *buf, ssize_t n)
 {
-	size_t len = 0;
+	uint8_t *p = buf;
 
 #define H2_SETTING(U,l,v,d,...)				\
 	if (h2s->l != d) {				\
-		len += 6;				\
-		assert(len <= n);			\
-		vbe16enc(buf, v);			\
-		buf += 2;				\
-		vbe32enc(buf, h2s->l);			\
-		buf += 4;				\
+		n -= 6;					\
+		assert(n >= 0);				\
+		vbe16enc(p, v);				\
+		p += 2;					\
+		vbe32enc(p, h2s->l);			\
+		p += 4;					\
 	}
 #include "tbl/h2_settings.h"
-	return (len);
+	return (p - buf);
 }
 
 static const struct h2_settings H2_proto_settings = {
@@ -151,7 +151,7 @@ h2_del_sess(struct worker *wrk, struct h2_sess *h2, enum sess_close reason)
 
 	VHT_Fini(h2->dectbl);
 	AZ(pthread_cond_destroy(h2->winupd_cond));
-	req = h2->srq;
+	TAKE_OBJ_NOTNULL(req, &h2->srq, REQ_MAGIC);
 	AZ(req->ws->r);
 	sp = h2->sess;
 	Req_Cleanup(sp, wrk, req);
@@ -242,7 +242,7 @@ h2_ou_rel(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	AN (req->vcl);
 	VCL_Rel(&req->vcl);
-	Req_AcctLogCharge(wrk->stats, req);
+	Req_Cleanup(req->sp, wrk, req);
 	Req_Release(req);
 	return (0);
 }
@@ -293,7 +293,7 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 
 	/* Wait for PRISM response */
 	hs = HTC_RxStuff(h2->htc, H2_prism_complete,
-	    NULL, NULL, NAN, h2->sess->t_idle + cache_param->timeout_idle,
+	    NULL, NULL, NAN, h2->sess->t_idle + cache_param->timeout_idle, NAN,
 	    sizeof H2_prism);
 	if (hs != HTC_S_COMPLETE) {
 		VSLb(h2->vsl, SLT_Debug, "H2: No/Bad OU PRISM (hs=%d)", hs);
@@ -301,7 +301,12 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 		h2_del_req(wrk, r2);
 		return (0);
 	}
-	XXXAZ(Pool_Task(wrk->pool, &req->task, TASK_QUEUE_REQ));
+	if (Pool_Task(wrk->pool, &req->task, TASK_QUEUE_REQ)) {
+		r2->scheduled = 0;
+		h2_del_req(wrk, r2);
+		VSLb(h2->vsl, SLT_Debug, "H2: No Worker-threads");
+		return (0);
+	}
 	return (1);
 }
 

@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2011 Varnish Software AS
+ * Copyright (c) 2006-2019 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -62,7 +62,7 @@ struct waited {
 	void			*priv1;
 	uintptr_t		priv2;
 	waiter_handle_f		*func;
-	volatile vtim_real	*tmo;
+	vtim_dur		tmo;
 	vtim_real		idle;
 };
 

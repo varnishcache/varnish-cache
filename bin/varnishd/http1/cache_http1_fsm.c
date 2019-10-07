@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2015 Varnish Software AS
+ * Copyright (c) 2006-2019 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -337,13 +337,14 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			hs = HTC_RxStuff(req->htc, HTTP1_Complete,
 			    &req->t_first, &req->t_req,
 			    sp->t_idle + cache_param->timeout_linger,
-			    sp->t_idle + cache_param->timeout_idle,
+			    sp->t_idle + SESS_TMO(sp, timeout_idle),
+			    NAN,
 			    cache_param->http_req_size);
 			AZ(req->htc->ws->r);
 			if (hs < HTC_S_EMPTY) {
 				req->acct.req_hdrbytes +=
 				    req->htc->rxbuf_e - req->htc->rxbuf_b;
-				Req_AcctLogCharge(wrk->stats, req);
+				Req_Cleanup(sp, wrk, req);
 				Req_Release(req);
 				switch (hs) {
 				case HTC_S_CLOSE:
@@ -364,6 +365,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			}
 			if (hs == HTC_S_IDLE) {
 				wrk->stats->sess_herd++;
+				Req_Cleanup(sp, wrk, req);
 				Req_Release(req);
 				SES_Wait(sp, &HTTP1_transport);
 				return;

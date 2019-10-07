@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2015 Varnish Software AS
+ * Copyright (c) 2006-2019 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -318,7 +318,6 @@ void Req_Release(struct req *);
 void Req_Rollback(struct req *req);
 void Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req);
 void Req_Fail(struct req *req, enum sess_close reason);
-void Req_AcctLogCharge(struct VSC_main_wrk *, struct req *);
 
 /* cache_req_body.c */
 int VRB_Ignore(struct req *);
@@ -347,7 +346,8 @@ const char * HTC_Status(enum htc_status_e);
 void HTC_RxInit(struct http_conn *htc, struct ws *ws);
 void HTC_RxPipeline(struct http_conn *htc, void *);
 enum htc_status_e HTC_RxStuff(struct http_conn *, htc_complete_f *,
-    vtim_real *t1, vtim_real *t2, vtim_real ti, vtim_real tn, int maxbytes);
+    vtim_real *t1, vtim_real *t2, vtim_real ti, vtim_real tn, vtim_dur td,
+    int maxbytes);
 
 #define SESS_ATTR(UP, low, typ, len)					\
 	int SES_Set_##low(const struct sess *sp, const typ *src);	\

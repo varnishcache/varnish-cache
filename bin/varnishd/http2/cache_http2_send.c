@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2016 Varnish Software AS
+ * Copyright (c) 2016-2019 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -30,6 +30,7 @@
 #include "config.h"
 
 #include <sys/uio.h>
+#include <errno.h>
 
 #include "cache/cache_varnishd.h"
 
@@ -39,8 +40,52 @@
 #include "vend.h"
 #include "vtim.h"
 
+#define H2_SEND_HELD(h2, r2) (VTAILQ_FIRST(&(h2)->txqueue) == (r2))
+
+static int
+h2_cond_wait(pthread_cond_t *cond, struct h2_sess *h2, struct h2_req *r2)
+{
+	vtim_real now, when = 0.;
+	int r;
+
+	AN(cond);
+	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
+
+	Lck_AssertHeld(&h2->sess->mtx);
+
+	now = VTIM_real();
+	if (cache_param->idle_send_timeout > 0.)
+		when = now + cache_param->idle_send_timeout;
+
+	r = Lck_CondWait(cond, &h2->sess->mtx, when);
+	assert(r == 0 || r == ETIMEDOUT);
+
+	now = VTIM_real();
+	/* NB: when we grab idle_send_timeout before acquiring the session
+	 * lock we may time out, but once we wake up both send_timeout and
+	 * idle_send_timeout may have changed meanwhile. For this reason
+	 * h2_stream_tmo() may not log what timed out and we need to call
+	 * again with a magic NAN "now" that indicates to h2_stream_tmo()
+	 * that the stream reached the idle_send_timeout via the lock and
+	 * force it to log it.
+	 */
+	if (h2_stream_tmo(h2, r2, now))
+		r = ETIMEDOUT;
+	else if (r == ETIMEDOUT)
+		AN(h2_stream_tmo(h2, r2, NAN));
+
+	if (r == ETIMEDOUT) {
+		if (r2->error == NULL)
+			r2->error = H2SE_CANCEL;
+		return (-1);
+	}
+
+	return (0);
+}
+
 static void
-h2_send_get(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
+h2_send_get_locked(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
@@ -51,7 +96,7 @@ h2_send_get(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		ASSERT_RXTHR(h2);
 	r2->wrk = wrk;
 	VTAILQ_INSERT_TAIL(&h2->txqueue, r2, tx_list);
-	while (VTAILQ_FIRST(&h2->txqueue) != r2)
+	while (!H2_SEND_HELD(h2, r2))
 		AZ(Lck_CondWait(&wrk->cond, &h2->sess->mtx, 0));
 	r2->wrk = NULL;
 }
@@ -64,18 +109,18 @@ H2_Send_Get(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
 	Lck_Lock(&h2->sess->mtx);
-	h2_send_get(wrk, h2, r2);
+	h2_send_get_locked(wrk, h2, r2);
 	Lck_Unlock(&h2->sess->mtx);
 }
 
 static void
-h2_send_rel(struct h2_sess *h2, const struct h2_req *r2)
+h2_send_rel_locked(struct h2_sess *h2, const struct h2_req *r2)
 {
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
 
 	Lck_AssertHeld(&h2->sess->mtx);
-	assert(VTAILQ_FIRST(&h2->txqueue) == r2);
+	AN(H2_SEND_HELD(h2, r2));
 	VTAILQ_REMOVE(&h2->txqueue, r2, tx_list);
 	r2 = VTAILQ_FIRST(&h2->txqueue);
 	if (r2 != NULL) {
@@ -91,7 +136,7 @@ H2_Send_Rel(struct h2_sess *h2, const struct h2_req *r2)
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 
 	Lck_Lock(&h2->sess->mtx);
-	h2_send_rel(h2, r2);
+	h2_send_rel_locked(h2, r2);
 	Lck_Unlock(&h2->sess->mtx);
 }
 
@@ -109,7 +154,7 @@ h2_mk_hdr(uint8_t *hdr, h2_frame ftyp, uint8_t flags,
 }
 
 /*
- * This is the "raw" frame sender, all per stream accounting and
+ * This is the "raw" frame sender, all per-stream accounting and
  * prioritization must have happened before this is called, and
  * the session mtx must be held.
  */
@@ -217,15 +262,14 @@ h2_do_window(struct worker *wrk, struct h2_req *r2,
 	Lck_Lock(&h2->sess->mtx);
 	if (r2->t_window <= 0 || h2->req0->t_window <= 0) {
 		r2->t_winupd = VTIM_real();
-		h2_send_rel(h2, r2);
+		h2_send_rel_locked(h2, r2);
 		while (r2->t_window <= 0 && h2_errcheck(r2, h2) == 0) {
 			r2->cond = &wrk->cond;
-			AZ(Lck_CondWait(r2->cond, &h2->sess->mtx, 0));
+			(void)h2_cond_wait(r2->cond, h2, r2);
 			r2->cond = NULL;
 		}
-		while (h2->req0->t_window <= 0 && h2_errcheck(r2, h2) == 0) {
-			AZ(Lck_CondWait(h2->winupd_cond, &h2->sess->mtx, 0));
-		}
+		while (h2->req0->t_window <= 0 && h2_errcheck(r2, h2) == 0)
+			(void)h2_cond_wait(h2->winupd_cond, h2, r2);
 
 		if (h2_errcheck(r2, h2) == 0) {
 			w = h2_win_limit(r2, h2);
@@ -234,7 +278,7 @@ h2_do_window(struct worker *wrk, struct h2_req *r2,
 			h2_win_charge(r2, h2, w);
 			assert (w > 0);
 		}
-		h2_send_get(wrk, h2, r2);
+		h2_send_get_locked(wrk, h2, r2);
 	}
 
 	if (w == 0 && h2_errcheck(r2, h2) == 0) {
@@ -256,9 +300,9 @@ h2_do_window(struct worker *wrk, struct h2_req *r2,
  * XXX: priority
  */
 
-void
-H2_Send(struct worker *wrk, struct h2_req *r2,
-    h2_frame ftyp, uint8_t flags, uint32_t len, const void *ptr)
+static void
+h2_send(struct worker *wrk, struct h2_req *r2, h2_frame ftyp, uint8_t flags,
+    uint32_t len, const void *ptr, uint64_t *counter)
 {
 	struct h2_sess *h2;
 	uint32_t mfs, tf;
@@ -270,8 +314,9 @@ H2_Send(struct worker *wrk, struct h2_req *r2,
 	h2 = r2->h2sess;
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
 	assert(len == 0 || ptr != NULL);
+	AN(counter);
 
-	assert(VTAILQ_FIRST(&h2->txqueue) == r2);
+	AN(H2_SEND_HELD(h2, r2));
 
 	if (h2_errcheck(r2, h2))
 		return;
@@ -285,19 +330,28 @@ H2_Send(struct worker *wrk, struct h2_req *r2,
 
 	Lck_Lock(&h2->sess->mtx);
 	mfs = h2->remote_settings.max_frame_size;
+	if (r2->counted && (
+	    (ftyp == H2_F_HEADERS && (flags & H2FF_HEADERS_END_STREAM)) ||
+	    (ftyp == H2_F_DATA && (flags & H2FF_DATA_END_STREAM)) ||
+	    ftyp == H2_F_RST_STREAM
+	    )) {
+		assert(h2->open_streams > 0);
+		h2->open_streams--;
+		r2->counted = 0;
+	}
 	Lck_Unlock(&h2->sess->mtx);
 
 	if (ftyp->respect_window) {
-		tf = h2_do_window(wrk, r2, h2,
-				  (len > mfs) ? mfs : len);
+		tf = h2_do_window(wrk, r2, h2, (len > mfs) ? mfs : len);
 		if (h2_errcheck(r2, h2))
 			return;
-		assert(VTAILQ_FIRST(&h2->txqueue) == r2);
+		AN(H2_SEND_HELD(h2, r2));
 	} else
 		tf = mfs;
 
 	if (len <= tf) {
 		H2_Send_Frame(wrk, h2, ftyp, flags, len, r2->stream, ptr);
+		*counter += len;
 	} else {
 		AN(ptr);
 		p = ptr;
@@ -309,10 +363,10 @@ H2_Send(struct worker *wrk, struct h2_req *r2,
 				tf = mfs;
 			if (ftyp->respect_window && p != ptr) {
 				tf = h2_do_window(wrk, r2, h2,
-						  (len > mfs) ? mfs : len);
+					(len > mfs) ? mfs : len);
 				if (h2_errcheck(r2, h2))
 					return;
-				assert(VTAILQ_FIRST(&h2->txqueue) == r2);
+				AN(H2_SEND_HELD(h2, r2));
 			}
 			if (tf < len) {
 				H2_Send_Frame(wrk, h2, ftyp,
@@ -321,13 +375,49 @@ H2_Send(struct worker *wrk, struct h2_req *r2,
 				if (ftyp->respect_window)
 					assert(tf == len);
 				tf = len;
-				H2_Send_Frame(wrk, h2, ftyp,
-				    final_flags, tf, r2->stream, p);
+				H2_Send_Frame(wrk, h2, ftyp, final_flags, tf,
+					r2->stream, p);
 				flags = 0;
 			}
 			p += tf;
 			len -= tf;
+			*counter += tf;
 			ftyp = ftyp->continuation;
+			flags &= ftyp->flags;
+			final_flags &= ftyp->flags;
 		} while (!h2->error && len > 0);
 	}
+}
+
+void
+H2_Send_RST(struct worker *wrk, struct h2_sess *h2, const struct h2_req *r2,
+    uint32_t stream, h2_error h2e)
+{
+	char b[4];
+
+	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
+	AN(H2_SEND_HELD(h2, r2));
+
+	Lck_Lock(&h2->sess->mtx);
+	VSLb(h2->vsl, SLT_Debug, "H2: stream %u: %s", stream, h2e->txt);
+	Lck_Unlock(&h2->sess->mtx);
+	vbe32enc(b, h2e->val);
+
+	H2_Send_Frame(wrk, h2, H2_F_RST_STREAM, 0, sizeof b, stream, b);
+}
+
+void
+H2_Send(struct worker *wrk, struct h2_req *r2, h2_frame ftyp, uint8_t flags,
+    uint32_t len, const void *ptr, uint64_t *counter)
+{
+	uint64_t dummy_counter;
+
+	if (counter == NULL)
+		counter = &dummy_counter;
+
+	h2_send(wrk, r2, ftyp, flags, len, ptr, counter);
+
+	if (h2_errcheck(r2, r2->h2sess) == H2SE_CANCEL)
+		H2_Send_RST(wrk, r2->h2sess, r2, r2->stream, H2SE_CANCEL);
 }

@@ -1,0 +1,119 @@
+varnishtest "client h2 send timeouts"
+
+server s1 {
+	rxreq
+	txresp -bodylen 12345
+} -start
+
+varnish v1 -cliok "param.set feature +http2"
+varnish v1 -vcl+backend "" -start
+
+# coverage for send_timeout with c1
+
+varnish v1 -cliok "param.set send_timeout 1"
+
+logexpect l1 -v v1 {
+	expect * * Debug "Hit send_timeout"
+} -start
+
+client c1 {
+	txpri
+
+	stream 0 {
+		rxsettings
+		expect settings.ack == false
+		txsettings -ack
+		txsettings -winsize 1000
+		rxsettings
+		expect settings.ack == true
+	} -run
+
+	stream 1 {
+		txreq
+		rxhdrs
+		rxdata
+		# keep the stream idle for 2 seconds
+		delay 2
+		txwinup -size 256
+		# too late
+		rxrst
+		expect rst.err == CANCEL
+	} -run
+
+} -run
+
+logexpect l1 -wait
+
+# coverage for idle_send_timeout with c2
+
+varnish v1 -cliok "param.set idle_send_timeout 1"
+varnish v1 -cliok "param.reset send_timeout"
+
+logexpect l2 -v v1 {
+	expect * * Debug "Hit idle_send_timeout"
+} -start
+
+client c2 {
+	txpri
+
+	stream 0 {
+		rxsettings
+		expect settings.ack == false
+		txsettings -ack
+		txsettings -winsize 1000
+		rxsettings
+		expect settings.ack == true
+	} -run
+
+	stream 1 {
+		txreq
+		rxhdrs
+		rxdata
+		# keep the stream idle for 2 seconds
+		delay 2
+		rxrst
+		expect rst.err == CANCEL
+	} -run
+
+} -run
+
+logexpect l2 -wait
+
+# coverage for idle_send_timeout change with c3
+
+barrier b3 cond 2
+
+logexpect l3 -v v1 {
+	expect * * Debug "Hit idle_send_timeout"
+} -start
+
+client c3 {
+	txpri
+
+	stream 0 {
+		rxsettings
+		expect settings.ack == false
+		txsettings -ack
+		txsettings -winsize 1000
+		rxsettings
+		expect settings.ack == true
+	} -run
+
+	stream 1 {
+		txreq
+		rxhdrs
+		rxdata
+		# keep the stream idle for 2 seconds
+		barrier b3 sync
+		delay 2
+		rxrst
+		expect rst.err == CANCEL
+	} -run
+
+} -start
+
+barrier b3 sync
+varnish v1 -cliok "param.reset idle_send_timeout"
+
+client c3 -wait
+logexpect l3 -wait

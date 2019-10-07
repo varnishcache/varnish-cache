@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2015 Varnish Software AS
+ * Copyright (c) 2006-2019 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -133,7 +133,6 @@ Wait_Enter(const struct waiter *w, struct waited *wp)
 	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
 	assert(wp->fd > 0);			// stdin never comes here
 	AN(wp->func);
-	AN(wp->tmo);
 	wp->idx = BINHEAP_NOIDX;
 	return (w->impl->enter(w->priv, wp));
 }

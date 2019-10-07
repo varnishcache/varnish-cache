@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2016 Varnish Software AS
+ * Copyright (c) 2016-2019 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -132,28 +132,6 @@ h2_connectionerror(uint32_t u)
 
 /**********************************************************************/
 
-static void
-h2_tx_rst(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2,
-    uint32_t stream, h2_error h2e)
-{
-	char b[4];
-
-	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
-
-	Lck_Lock(&h2->sess->mtx);
-	VSLb(h2->vsl, SLT_Debug, "H2: stream %u: %s", stream, h2e->txt);
-	Lck_Unlock(&h2->sess->mtx);
-	vbe32enc(b, h2e->val);
-
-	H2_Send_Get(wrk, h2, r2);
-	H2_Send_Frame(wrk, h2, H2_F_RST_STREAM, 0, sizeof b, stream, b);
-	H2_Send_Rel(h2, r2);
-}
-
-/**********************************************************************
- */
-
 struct h2_req *
 h2_new_req(const struct worker *wrk, struct h2_sess *h2,
     unsigned stream, struct req *req)
@@ -172,10 +150,14 @@ h2_new_req(const struct worker *wrk, struct h2_sess *h2,
 	r2->h2sess = h2;
 	r2->stream = stream;
 	r2->req = req;
+	if (stream)
+		r2->counted = 1;
 	r2->r_window = h2->local_settings.initial_window_size;
 	r2->t_window = h2->remote_settings.initial_window_size;
 	req->transport_priv = r2;
 	Lck_Lock(&h2->sess->mtx);
+	if (stream)
+		h2->open_streams++;
 	VTAILQ_INSERT_TAIL(&h2->streams, r2, list);
 	Lck_Unlock(&h2->sess->mtx);
 	h2->refcnt++;
@@ -206,14 +188,20 @@ h2_del_req(struct worker *wrk, const struct h2_req *r2)
 }
 
 void
-h2_kill_req(struct worker *wrk, const struct h2_sess *h2,
+h2_kill_req(struct worker *wrk, struct h2_sess *h2,
     struct h2_req *r2, h2_error h2e)
 {
 
 	ASSERT_RXTHR(h2);
 	AN(h2e);
 	Lck_Lock(&h2->sess->mtx);
-	VSLb(h2->vsl, SLT_Debug, "KILL st=%u state=%d", r2->stream, r2->state);
+	VSLb(h2->vsl, SLT_Debug, "KILL st=%u state=%d sched=%d",
+	    r2->stream, r2->state, r2->scheduled);
+	if (r2->counted) {
+		assert(h2->open_streams > 0);
+		h2->open_streams--;
+		r2->counted = 0;
+	}
 	if (r2->error == NULL)
 		r2->error = h2e;
 	if (r2->scheduled) {
@@ -631,7 +619,12 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	if (r2 == NULL) {
 		if (h2->rxf_stream <= h2->highest_stream)
 			return (H2CE_PROTOCOL_ERROR);	// rfc7540,l,1153,1158
-		if (h2->refcnt >= h2->local_settings.max_concurrent_streams) {
+		/* NB: we don't need to guard the read of h2->open_streams
+		 * because headers are handled sequentially so it cannot
+		 * increase under our feet.
+		 */
+		if (h2->open_streams >=
+		    h2->local_settings.max_concurrent_streams) {
 			VSLb(h2->vsl, SLT_Debug,
 			     "H2: stream %u: Hit maximum number of "
 			     "concurrent streams", h2->rxf_stream);
@@ -755,6 +748,10 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		return (H2SE_STREAM_CLOSED); // rfc7540,l,1766,1769
 	}
 	Lck_Lock(&h2->sess->mtx);
+	while (h2->mailcall != NULL && h2->error == 0 && r2->error == 0)
+		AZ(Lck_CondWait(h2->cond, &h2->sess->mtx, 0));
+	if (h2->error || r2->error)
+		return (h2->error ? h2->error : r2->error);
 	AZ(h2->mailcall);
 	h2->mailcall = r2;
 	h2->req0->r_window -= h2->rxf_len;
@@ -858,8 +855,10 @@ h2_vfp_body_fini(struct vfp_ctx *vc, struct vfp_entry *vfe)
 
 	if (vc->failed) {
 		CHECK_OBJ_NOTNULL(r2->req->wrk, WORKER_MAGIC);
-		h2_tx_rst(r2->req->wrk, h2, r2, r2->stream,
+		H2_Send_Get(r2->req->wrk, h2, r2);
+		H2_Send_RST(r2->req->wrk, h2, r2, r2->stream,
 		    H2SE_REFUSED_STREAM);
+		H2_Send_Rel(h2, r2);
 		Lck_Lock(&h2->sess->mtx);
 		r2->error = H2SE_REFUSED_STREAM;
 		if (h2->mailcall == r2) {
@@ -963,37 +962,56 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2, h2_frame h2f)
 	if (h2->rxf_stream == 0 || h2e->connection)
 		return (h2e);	// Connection errors one level up
 
-	h2_tx_rst(wrk, h2, h2->req0, h2->rxf_stream, h2e);
+	H2_Send_Get(wrk, h2, h2->req0);
+	H2_Send_RST(wrk, h2, h2->req0, h2->rxf_stream, h2e);
+	H2_Send_Rel(h2, h2->req0);
 	return (0);
 }
 
-static int
-h2_stream_tmo(struct h2_sess *h2, const struct h2_req *r2)
+int
+h2_stream_tmo(struct h2_sess *h2, const struct h2_req *r2, vtim_real now)
 {
 	int r = 0;
 
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
+	Lck_AssertHeld(&h2->sess->mtx);
 
-	if (r2->t_winupd != 0 || r2->t_send != 0) {
-		Lck_Lock(&h2->sess->mtx);
-		if (r2->t_winupd != 0 &&
-		    h2->sess->t_idle - r2->t_winupd >
-		    cache_param->idle_send_timeout) {
-			VSLb(h2->vsl, SLT_Debug,
-			     "H2: stream %u: Hit idle_send_timeout waiting "
-			     "for WINDOW_UPDATE", r2->stream);
-			r = 1;
-		}
+	/* NB: when now is NAN, it means that idle_send_timeout was hit
+	 * on a lock condwait operation.
+	 */
+	if (isnan(now))
+		AN(r2->t_winupd);
 
-		if (r == 0 && r2->t_send != 0 &&
-		    h2->sess->t_idle - r2->t_send > cache_param->send_timeout) {
-			VSLb(h2->vsl, SLT_Debug,
-			     "H2: stream %u: Hit send_timeout", r2->stream);
-			r = 1;
-		}
-		Lck_Unlock(&h2->sess->mtx);
+	if (r2->t_winupd == 0 && r2->t_send == 0)
+		return (0);
+
+	if (isnan(now) || (r2->t_winupd != 0 &&
+	    now - r2->t_winupd > cache_param->idle_send_timeout)) {
+		VSLb(h2->vsl, SLT_Debug,
+		     "H2: stream %u: Hit idle_send_timeout waiting for"
+		     " WINDOW_UPDATE", r2->stream);
+		r = 1;
 	}
+
+	if (r == 0 && r2->t_send != 0 &&
+	    now - r2->t_send > cache_param->send_timeout) {
+		VSLb(h2->vsl, SLT_Debug,
+		     "H2: stream %u: Hit send_timeout", r2->stream);
+		r = 1;
+	}
+
+	return (r);
+}
+
+static int
+h2_stream_tmo_unlocked(struct h2_sess *h2, const struct h2_req *r2)
+{
+	int r;
+
+	Lck_Lock(&h2->sess->mtx);
+	r = h2_stream_tmo(h2, r2, h2->sess->t_idle);
+	Lck_Unlock(&h2->sess->mtx);
 
 	return (r);
 }
@@ -1023,15 +1041,17 @@ h2_sweep(struct worker *wrk, struct h2_sess *h2)
 			break;
 		case H2_S_CLOS_REM:
 			if (!r2->scheduled) {
-				h2_tx_rst(wrk, h2, h2->req0, r2->stream,
+				H2_Send_Get(wrk, h2, h2->req0);
+				H2_Send_RST(wrk, h2, h2->req0, r2->stream,
 				    H2SE_REFUSED_STREAM);
+				H2_Send_Rel(h2, h2->req0);
 				h2_del_req(wrk, r2);
 				continue;
 			}
 			/* FALLTHROUGH */
 		case H2_S_CLOS_LOC:
 		case H2_S_OPEN:
-			if (h2_stream_tmo(h2, r2)) {
+			if (h2_stream_tmo_unlocked(h2, r2)) {
 				tmo = 1;
 				continue;
 			}
@@ -1080,8 +1100,8 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 	h2->sess->t_idle = VTIM_real();
 	hs = HTC_RxStuff(h2->htc, h2_frame_complete,
 	    NULL, NULL, NAN,
-	    h2->sess->t_idle + cache_param->timeout_idle,
-	    h2->local_settings.max_frame_size + 9);
+	    h2->sess->t_idle + SESS_TMO(h2->sess, timeout_idle),
+	    NAN, h2->local_settings.max_frame_size + 9);
 	switch (hs) {
 	case HTC_S_COMPLETE:
 		break;

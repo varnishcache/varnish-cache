@@ -208,7 +208,7 @@ ved_include(struct req *preq, const char *src, const char *host,
 	req->wrk = NULL;
 	THR_SetRequest(preq);
 
-	Req_AcctLogCharge(wrk->stats, req);
+	Req_Cleanup(sp, wrk, req);
 	Req_Release(req);
 	SES_Rel(sp);
 }

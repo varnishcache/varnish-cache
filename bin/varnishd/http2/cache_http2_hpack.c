@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2016 Varnish Software AS
+ * Copyright (c) 2016-2019 Varnish Software AS
  * All rights reserved.
  *
  * Author: Martin Blix Grydeland <martin@varnish-software.com>
@@ -141,7 +141,7 @@ h2h_addhdr(struct http *hp, char *b, size_t namelen, size_t len)
 
 	if (n < HTTP_HDR_FIRST) {
 		/* Check for duplicate pseudo-header */
-		if (n < HTTP_HDR_FIRST && hp->hd[n].b != NULL) {
+		if (hp->hd[n].b != NULL) {
 			VSLb(hp->vsl, SLT_BogoHeader,
 			    "Duplicate pseudo-header: %.*s",
 			    (int)(len > 20 ? 20 : len), b);
@@ -176,8 +176,11 @@ h2h_decode_init(const struct h2_sess *h2)
 	INIT_OBJ(d, H2H_DECODE_MAGIC);
 	VHD_Init(d->vhd);
 	d->out_l = WS_Reserve(h2->new_req->http->ws, 0);
-	assert(d->out_l > 0);	/* Can't do any work without any buffer
-				   space. Require non-zero size. */
+	/*
+	 * Can't do any work without any buffer
+	 * space. Require non-zero size.
+	 */
+	XXXAN(d->out_l);
 	d->out = h2->new_req->http->ws->f;
 	d->reset = d->out;
 }
