@@ -661,6 +661,8 @@ VRT_Rollback(VRT_CTX, VCL_HTTP hp)
 	if (hp == ctx->http_req) {
 		CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 		Req_Rollback(ctx->req);
+		if ((ctx->method & (VCL_MET_DELIVER | VCL_MET_SYNTH)) != 0)
+			Resp_Setup(ctx->req, ctx->method);
 	} else if (hp == ctx->http_bereq) {
 		CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
 		Bereq_Rollback(ctx->bo);

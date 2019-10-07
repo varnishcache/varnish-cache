@@ -107,35 +107,29 @@ cnt_transport(struct worker *wrk, struct req *req)
  * Deliver an object to client
  */
 
-static enum req_fsm_nxt
-cnt_deliver(struct worker *wrk, struct req *req)
+static int
+resp_setup_deliver(struct req *req)
 {
+	struct http *h;
+	struct objcore *oc;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
-	CHECK_OBJ_NOTNULL(req->objcore->objhead, OBJHEAD_MAGIC);
-	AZ(req->stale_oc);
-	AN(req->vcl);
+	oc = req->objcore;
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
-	assert(req->objcore->refcnt > 0);
+	h = req->resp;
 
-	ObjTouch(req->wrk, req->objcore, req->t_prev);
+	HTTP_Setup(h, req->ws, req->vsl, SLT_RespMethod);
 
-	HTTP_Setup(req->resp, req->ws, req->vsl, SLT_RespMethod);
-	if (HTTP_Decode(req->resp,
-	    ObjGetAttr(req->wrk, req->objcore, OA_HEADERS, NULL))) {
-		(void)HSH_DerefObjCore(wrk, &req->objcore, HSH_RUSH_POLICY);
-		req->err_code = 500;
-		req->req_step = R_STP_SYNTH;
-		return (REQ_FSM_MORE);
-	}
+	if (HTTP_Decode(h, ObjGetAttr(req->wrk, oc, OA_HEADERS, NULL)))
+		return (-1);
+
 	http_ForceField(req->resp, HTTP_HDR_PROTO, "HTTP/1.1");
 
 	if (req->is_hit)
 		http_PrintfHeader(req->resp,
 		    "X-Varnish: %u %u", VXID(req->vsl->wid),
-		    ObjGetXID(wrk, req->objcore));
+		    ObjGetXID(req->wrk, req->objcore));
 	else
 		http_PrintfHeader(req->resp,
 		    "X-Varnish: %u", VXID(req->vsl->wid));
@@ -157,6 +151,76 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	    ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED) &&
 	    !RFC2616_Req_Gzip(req->http))
 		RFC2616_Weaken_Etag(req->resp);
+
+	return (0);
+}
+
+static int
+resp_setup_synth(struct req *req)
+{
+	struct http *h;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
+	h = req->resp;
+
+	HTTP_Setup(h, req->ws, req->vsl, SLT_RespMethod);
+
+	AZ(req->objcore);
+	http_PutResponse(h, "HTTP/1.1", req->err_code, req->err_reason);
+
+	http_TimeHeader(h, "Date: ", W_TIM_real(req->wrk));
+	http_SetHeader(h, "Server: Varnish");
+	http_PrintfHeader(h, "X-Varnish: %u",
+	    VXID(req->vsl->wid));
+
+	/*
+	 * For late 100-continue, we suggest to VCL to close the connection to
+	 * neither send a 100-continue nor drain-read the request. But VCL has
+	 * the option to veto by removing Connection: close
+	 */
+	if (req->want100cont)
+		http_SetHeader(h, "Connection: close");
+
+	return (0);
+}
+
+int
+Resp_Setup(struct req *req, unsigned method)
+{
+	switch (method) {
+	case VCL_MET_DELIVER:
+		return (resp_setup_deliver(req));
+	case VCL_MET_SYNTH:
+		return (resp_setup_synth(req));
+	default:
+		WRONG("vcl method");
+	}
+
+	return (0);
+}
+
+static enum req_fsm_nxt
+cnt_deliver(struct worker *wrk, struct req *req)
+{
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(req->objcore->objhead, OBJHEAD_MAGIC);
+	AZ(req->stale_oc);
+	AN(req->vcl);
+
+	assert(req->objcore->refcnt > 0);
+
+	ObjTouch(req->wrk, req->objcore, req->t_prev);
+
+	if (resp_setup_deliver(req)) {
+		(void)HSH_DerefObjCore(wrk, &req->objcore, HSH_RUSH_POLICY);
+		req->err_code = 500;
+		req->req_step = R_STP_SYNTH;
+		return (REQ_FSM_MORE);
+	}
 
 	VCL_deliver_method(req->vcl, wrk, req, NULL, NULL);
 	VSLb_ts_req(req, "Process", W_TIM_real(wrk));
@@ -225,8 +289,6 @@ cnt_vclfail(const struct worker *wrk, struct req *req)
 static enum req_fsm_nxt
 cnt_synth(struct worker *wrk, struct req *req)
 {
-	struct http *h;
-	double now;
 	struct vsb *synth_body;
 	ssize_t sz, szl;
 	uint8_t *ptr;
@@ -239,27 +301,12 @@ cnt_synth(struct worker *wrk, struct req *req)
 
 	wrk->stats->s_synth++;
 
-	now = W_TIM_real(wrk);
-	VSLb_ts_req(req, "Process", now);
+	VSLb_ts_req(req, "Process", W_TIM_real(wrk));
 
 	if (req->err_code < 100)
 		req->err_code = 501;
 
-	HTTP_Setup(req->resp, req->ws, req->vsl, SLT_RespMethod);
-	h = req->resp;
-	http_TimeHeader(h, "Date: ", now);
-	http_SetHeader(h, "Server: Varnish");
-	http_PrintfHeader(req->resp, "X-Varnish: %u", VXID(req->vsl->wid));
-	http_PutResponse(h, "HTTP/1.1", req->err_code, req->err_reason);
-
-	/*
-	 * For late 100-continue, we suggest to VCL to close the connection to
-	 * neither send a 100-continue nor drain-read the request. But VCL has
-	 * the option to veto by removing Connection: close
-	 */
-	if (req->want100cont) {
-		http_SetHeader(h, "Connection: close");
-	}
+	(void) resp_setup_synth(req);
 
 	synth_body = VSB_new_auto();
 	AN(synth_body);
@@ -281,14 +328,14 @@ cnt_synth(struct worker *wrk, struct req *req)
 		 * XXX: Should we reset req->doclose = SC_VCL_FAILURE
 		 * XXX: If so, to what ?
 		 */
-		HTTP_Setup(h, req->ws, req->vsl, SLT_RespMethod);
+		HTTP_Setup(req->resp, req->ws, req->vsl, SLT_RespMethod);
 		VSB_destroy(&synth_body);
 		req->req_step = R_STP_RESTART;
 		return (REQ_FSM_MORE);
 	}
 	assert(wrk->handling == VCL_RET_DELIVER);
 
-	http_Unset(h, H_Content_Length);
+	http_Unset(req->resp, H_Content_Length);
 	http_PrintfHeader(req->resp, "Content-Length: %zd",
 	    VSB_len(synth_body));
 
