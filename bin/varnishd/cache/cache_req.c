@@ -43,8 +43,8 @@
 
 #include "vtim.h"
 
-void
-Req_AcctLogCharge(struct VSC_main_wrk *ds, struct req *req)
+static void
+req_AcctLogCharge(struct VSC_main_wrk *ds, struct req *req)
 {
 	struct acct_req *a;
 
@@ -63,7 +63,11 @@ Req_AcctLogCharge(struct VSC_main_wrk *ds, struct req *req)
 		    (uintmax_t)(a->resp_hdrbytes + a->resp_bodybytes));
 	}
 
-	/* Charge to main byte counters (except for ESI subrequests) */
+	/*
+	 * Charge to main byte counters, except for ESI subrequests
+	 * which are charged as they pass through the topreq.
+	 * XXX: make this test req->top instead
+	 */
 #define ACCT(foo)			\
 	if (req->esi_level == 0)	\
 		ds->s_##foo += a->foo;	\
@@ -166,8 +170,7 @@ Req_Release(struct req *req)
 #include "tbl/acct_fields_req.h"
 
 	AZ(req->vcl);
-	if (req->vsl->wid)
-		VSL_End(req->vsl);
+	AZ(req->vsl->wid);
 	sp = req->sp;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	pp = sp->pool;
@@ -212,9 +215,7 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	req->director_hint = NULL;
 	req->restarts = 0;
 
-	AZ(req->esi_level);
 	AZ(req->privs->magic);
-	assert(req->top == req);
 
 	if (req->vcl != NULL) {
 		if (wrk->vcl != NULL)
@@ -224,10 +225,9 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	}
 
 	/* Charge and log byte counters */
-	if (req->vsl->wid) {
-		Req_AcctLogCharge(wrk->stats, req);
+	req_AcctLogCharge(wrk->stats, req);
+	if (req->vsl->wid)
 		VSL_End(req->vsl);
-	}
 	req->req_bodybytes = 0;
 
 	if (!isnan(req->t_prev) && req->t_prev > 0. && req->t_prev > sp->t_idle)
@@ -243,6 +243,7 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	req->hash_always_miss = 0;
 	req->hash_ignore_busy = 0;
 	req->is_hit = 0;
+	req->esi_level = 0;
 
 	if (WS_Overflowed(req->ws))
 		wrk->stats->ws_client_overflow++;

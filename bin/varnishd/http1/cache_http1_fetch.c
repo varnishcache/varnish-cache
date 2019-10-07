@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2015 Varnish Software AS
+ * Copyright (c) 2006-2019 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -170,7 +170,7 @@ V1F_FetchRespHdr(struct busyobj *bo)
 
 	t = VTIM_real() + htc->first_byte_timeout;
 	hs = HTC_RxStuff(htc, HTTP1_Complete, NULL, NULL,
-	    t, t + htc->between_bytes_timeout, cache_param->http_resp_size);
+	     t, NAN, htc->between_bytes_timeout, cache_param->http_resp_size);
 	if (hs != HTC_S_COMPLETE) {
 		bo->acct.beresp_hdrbytes +=
 		    htc->rxbuf_e - htc->rxbuf_b;

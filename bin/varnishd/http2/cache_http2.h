@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2016 Varnish Software AS
+ * Copyright (c) 2016-2019 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -133,6 +133,8 @@ struct h2_req {
 
 	VTAILQ_ENTRY(h2_req)		tx_list;
 	h2_error			error;
+
+	int				counted;
 };
 
 VTAILQ_HEAD(h2_req_s, h2_req);
@@ -178,6 +180,8 @@ struct h2_sess {
 	VTAILQ_HEAD(,h2_req)		txqueue;
 
 	h2_error			error;
+
+	int				open_streams;
 };
 
 #define ASSERT_RXTHR(h2) do {assert(h2->rxthr == pthread_self());} while(0)
@@ -221,15 +225,18 @@ void H2_Send_Frame(struct worker *, struct h2_sess *,
     h2_frame type, uint8_t flags, uint32_t len, uint32_t stream,
     const void *);
 
-void H2_Send(struct worker *, struct h2_req *,
-    h2_frame type, uint8_t flags, uint32_t len, const void *);
+void H2_Send_RST(struct worker *wrk, struct h2_sess *h2,
+    const struct h2_req *r2, uint32_t stream, h2_error h2e);
+
+void H2_Send(struct worker *, struct h2_req *, h2_frame type, uint8_t flags,
+    uint32_t len, const void *, uint64_t *acct);
 
 /* cache_http2_proto.c */
 struct h2_req * h2_new_req(const struct worker *, struct h2_sess *,
     unsigned stream, struct req *);
+int h2_stream_tmo(struct h2_sess *, const struct h2_req *, vtim_real);
 void h2_del_req(struct worker *, const struct h2_req *);
-void h2_kill_req(struct worker *, const struct h2_sess *,
-    struct h2_req *, h2_error);
+void h2_kill_req(struct worker *, struct h2_sess *, struct h2_req *, h2_error);
 int h2_rxframe(struct worker *, struct h2_sess *);
 h2_error h2_set_setting(struct h2_sess *, const uint8_t *);
 void h2_req_body(struct req*);

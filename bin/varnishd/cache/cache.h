@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2015 Varnish Software AS
+ * Copyright (c) 2006-2019 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -567,7 +567,11 @@ struct sess {
 	vtim_real		t_open;		/* fd accepted */
 	vtim_real		t_idle;		/* fd accepted or resp sent */
 
+	vtim_dur		timeout_idle;
 };
+
+#define SESS_TMO(sp, tmo)					\
+	(isnan((sp)->tmo) ? cache_param->tmo : (sp)->tmo)
 
 /* Prototypes etc ----------------------------------------------------*/
 
