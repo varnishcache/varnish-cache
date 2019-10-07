@@ -414,6 +414,9 @@ extern struct vrt_privs cli_task_privs[1];
 void VMOD_Init(void);
 void VMOD_Panic(struct vsb *);
 
+/* cache_wrk.c */
+void WRK_Init(void);
+
 /* http1/cache_http1_pipe.c */
 void V1P_Init(void);
 

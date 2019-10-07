@@ -58,11 +58,14 @@
 #include "cache_varnishd.h"
 #include "cache_pool.h"
 
+#include "vcli_serve.h"
 #include "vtim.h"
 
 #include "hash/hash_slinger.h"
 
 static void Pool_Work_Thread(struct pool *pp, struct worker *wrk);
+
+static uintmax_t reqpoolfail;
 
 /*--------------------------------------------------------------------
  * Create and start a back-ground thread which as its own worker and
@@ -260,6 +263,17 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum task_prio prio)
 	AN(task);
 	AN(task->func);
 	assert(prio < TASK_QUEUE_END);
+
+	if (prio == TASK_QUEUE_REQ && reqpoolfail) {
+		retval = reqpoolfail & 1;
+		reqpoolfail >>= 1;
+		if (retval) {
+			VSL(SLT_Debug, 0,
+			    "Failing due to reqpoolfail (next= 0x%jx)",
+			    reqpoolfail);
+			return(retval);
+		}
+	}
 
 	Lck_Lock(&pp->mtx);
 
@@ -609,4 +623,40 @@ pool_herder(void *priv)
 		Lck_Unlock(&pp->mtx);
 	}
 	return (NULL);
+}
+
+/*--------------------------------------------------------------------
+ * Debugging aids
+ */
+
+static void v_matchproto_(cli_func_t)
+debug_reqpoolfail(struct cli *cli, const char * const *av, void *priv)
+{
+	uintmax_t u = 1;
+	const char *p;
+
+        (void)priv;
+        (void)cli;
+	reqpoolfail = 0;
+	for (p = av[2]; *p != '\0'; p++) {
+		if (*p == 'F' || *p == 'f')
+			reqpoolfail |= u;
+		u <<= 1;
+	}
+}
+
+static struct cli_proto debug_cmds[] = {
+	{ CLICMD_DEBUG_REQPOOLFAIL,		"d", debug_reqpoolfail },
+	{ NULL }
+};
+
+/*--------------------------------------------------------------------
+ *
+ */
+
+void
+WRK_Init(void)
+{
+
+        CLI_AddFuncs(debug_cmds);
 }

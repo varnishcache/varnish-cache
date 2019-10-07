@@ -391,6 +391,8 @@ child_main(int sigmagic, size_t altstksz)
 
 	VMOD_Init();
 
+	WRK_Init();
+
 	BAN_Compile();
 
 	VRND_SeedAll();
