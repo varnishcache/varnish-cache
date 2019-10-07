@@ -505,6 +505,8 @@ MCF_ParamSet(struct cli *cli, const char *param, const char *val)
 		VCLI_Out(cli, "parameter \"%s\" is protected.", param);
 		return;
 	}
+	if (!val)
+		val = pp->def;
 	if (pp->func(cli->sb, pp, val))
 		VCLI_SetResult(cli, CLIS_PARAM);
 
@@ -532,6 +534,16 @@ mcf_param_set(struct cli *cli, const char * const *av, void *priv)
 
 	(void)priv;
 	MCF_ParamSet(cli, av[2], av[3]);
+}
+
+/*--------------------------------------------------------------------*/
+
+static void v_matchproto_(cli_func_t)
+mcf_param_reset(struct cli *cli, const char * const *av, void *priv)
+{
+
+	(void)priv;
+	MCF_ParamSet(cli, av[2], NULL);
 }
 
 /*--------------------------------------------------------------------
@@ -595,6 +607,7 @@ static struct cli_proto cli_params[] = {
 	{ CLICMD_PARAM_SHOW,		"", mcf_param_show,
 	  mcf_param_show_json },
 	{ CLICMD_PARAM_SET,		"", mcf_param_set },
+	{ CLICMD_PARAM_RESET,		"", mcf_param_reset },
 	{ NULL }
 };
 
