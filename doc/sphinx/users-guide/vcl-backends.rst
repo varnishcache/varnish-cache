@@ -31,6 +31,9 @@ Varnish can have several backends defined you can even join
 several backends together into clusters of backends for load balancing
 purposes.
 
+backends can also be empty or 'none' with the following syntax.::
+
+    backend default none;
 
 Multiple backends
 -----------------
