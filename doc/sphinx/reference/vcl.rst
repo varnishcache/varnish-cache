@@ -297,6 +297,12 @@ parameters. The following attributes are available:
     Varnish reaches the maximum Varnish it will start failing
     connections.
 
+Empty backends can also be defined using the following syntax.::
+
+  backend name none;
+
+An empty backend will always return status code 503 as if it is sick.
+
 Backends can be used with *directors*. Please see the
 :ref:`vmod_directors(3)` man page for more information.
 
