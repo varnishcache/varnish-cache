@@ -52,7 +52,7 @@
  * binary/load-time compatible, increment MAJOR version
  *
  * unreleased (planned for 2020-03-15)
- *	(nothing yet)
+ *	New prefix_{ptr|len} fields in vrt_backend
  * 10.0 (2019-09-15)
  *	VRT_UpperLowerStrands added.
  *	VRT_synth_page now takes STRANDS argument
@@ -344,7 +344,9 @@ extern const void * const vrt_magic_string_unset;
 	vtim_dur			first_byte_timeout;	\
 	vtim_dur			between_bytes_timeout;	\
 	unsigned			max_connections;	\
-	unsigned			proxy_header;
+	unsigned			proxy_header;		\
+	void				*prefix_ptr;		\
+	unsigned			prefix_len;
 
 #define VRT_BACKEND_HANDLE()			\
 	do {					\
@@ -363,7 +365,7 @@ extern const void * const vrt_magic_string_unset;
 
 struct vrt_backend {
 	unsigned			magic;
-#define VRT_BACKEND_MAGIC		0x4799ce6b
+#define VRT_BACKEND_MAGIC		0x4799ce6c
 	VRT_BACKEND_FIELDS(const)
 	VCL_IP				ipv4_suckaddr;
 	VCL_IP				ipv6_suckaddr;

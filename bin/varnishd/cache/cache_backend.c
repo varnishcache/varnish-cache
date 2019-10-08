@@ -541,6 +541,8 @@ vrt_hash_be(const struct vrt_backend *vrt)
 		VSHA256_Update(cx, vrt->ipv6_suckaddr, vsa_suckaddr_len);
 	if (vrt->path != NULL)
 		VSHA256_Update(cx, vrt->path, strlen(vrt->path));
+	if (vrt->prefix_ptr != NULL)
+		VSHA256_Update(cx, vrt->prefix_ptr, vrt->prefix_len);
 	VSHA256_Final(ident, cx);
 	return (vbe64dec(ident));
 }
