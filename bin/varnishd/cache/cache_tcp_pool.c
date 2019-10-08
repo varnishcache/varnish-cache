@@ -68,13 +68,11 @@ struct pfd {
 typedef int cp_open_f(const struct conn_pool *, vtim_dur tmo,
     const void **privp);
 typedef void cp_close_f(struct pfd *);
-typedef int cp_cmp_f(const struct conn_pool *, const void *priv);
 typedef void cp_name_f(const struct pfd *, char *, unsigned, char *, unsigned);
 
 struct cp_methods {
 	cp_open_f				*open;
 	cp_close_f				*close;
-	cp_cmp_f				*cmp;
 	cp_name_f				*local_name;
 	cp_name_f				*remote_name;
 };
@@ -201,7 +199,7 @@ vcp_handle(struct waited *w, enum wait_event ev, vtim_real now)
  */
 
 static struct conn_pool *
-VCP_Ref(uintmax_t id, const void *priv)
+VCP_Ref(uintmax_t id)
 {
 	struct conn_pool *cp;
 
@@ -209,8 +207,6 @@ VCP_Ref(uintmax_t id, const void *priv)
 	VTAILQ_FOREACH(cp, &conn_pools, list) {
 		assert(cp->refcnt > 0);
 		if (cp->id != id)
-			continue;
-		if (cp->methods->cmp(cp, priv))
 			continue;
 		cp->refcnt++;
 		Lck_Unlock(&conn_pools_mtx);
@@ -232,7 +228,6 @@ VCP_New(struct conn_pool *cp, uintmax_t id, void *priv,
 	AN(cm);
 	AN(cm->open);
 	AN(cm->close);
-	AN(cm->cmp);
 
 	INIT_OBJ(cp, CONN_POOL_MAGIC);
 	cp->id = id;
@@ -620,31 +615,6 @@ vtp_close(struct pfd *pfd)
 	VTCP_close(&pfd->fd);
 }
 
-static int v_matchproto_(cp_cmp_f)
-vtp_cmp(const struct conn_pool *cp, const void *priv)
-{
-	const struct vtp_cs *vcs;
-	const struct tcp_pool *tp;
-
-	CAST_OBJ_NOTNULL(vcs, priv, VTP_CS_MAGIC);
-	CAST_OBJ_NOTNULL(tp, cp->priv, TCP_POOL_MAGIC);
-	if (tp->ip4 == NULL && vcs->ip4 != NULL)
-		return (1);
-	if (tp->ip4 != NULL && vcs->ip4 == NULL)
-		return (1);
-	if (tp->ip6 == NULL && vcs->ip6 != NULL)
-		return (1);
-	if (tp->ip6 != NULL && vcs->ip6 == NULL)
-		return (1);
-	if (tp->ip4 != NULL && vcs->ip4 != NULL &&
-	    VSA_Compare(tp->ip4, vcs->ip4))
-		return (1);
-	if (tp->ip6 != NULL && vcs->ip6 != NULL &&
-	    VSA_Compare(tp->ip6, vcs->ip6))
-		return (1);
-	return (0);
-}
-
 static void v_matchproto_(cp_name_f)
 vtp_local_name(const struct pfd *pfd, char *addr, unsigned alen, char *pbuf,
 	       unsigned plen)
@@ -664,7 +634,6 @@ vtp_remote_name(const struct pfd *pfd, char *addr, unsigned alen, char *pbuf,
 static const struct cp_methods vtp_methods = {
 	.open = vtp_open,
 	.close = vtp_close,
-	.cmp = vtp_cmp,
 	.local_name = vtp_local_name,
 	.remote_name = vtp_remote_name,
 };
@@ -689,19 +658,6 @@ vus_open(const struct conn_pool *cp, vtim_dur tmo, const void **privp)
 	return (s);
 }
 
-static int v_matchproto_(cp_cmp_f)
-vus_cmp(const struct conn_pool *cp, const void *priv)
-{
-	const struct vtp_cs *vcs;
-	const struct tcp_pool *tp;
-
-	CAST_OBJ_NOTNULL(vcs, priv, VTP_CS_MAGIC);
-	CAST_OBJ_NOTNULL(tp, cp->priv, TCP_POOL_MAGIC);
-	if (tp->uds != NULL && vcs->uds != NULL)
-		return (strcmp(tp->uds, vcs->uds));
-	return (1);
-}
-
 static void v_matchproto_(cp_name_f)
 vus_name(const struct pfd *pfd, char *addr, unsigned alen, char *pbuf,
 	 unsigned plen)
@@ -716,7 +672,6 @@ vus_name(const struct pfd *pfd, char *addr, unsigned alen, char *pbuf,
 static const struct cp_methods vus_methods = {
 	.open = vus_open,
 	.close = vtp_close,
-	.cmp = vus_cmp,
 	.local_name = vus_name,
 	.remote_name = vus_name,
 };
@@ -742,7 +697,7 @@ VTP_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6, const char *uds,
 	vcs.ip6 = ip6;
 	vcs.uds = uds;
 
-	cp = VCP_Ref(id, &vcs);
+	cp = VCP_Ref(id);
 	if (cp != NULL)
 		return (cp->priv);
 

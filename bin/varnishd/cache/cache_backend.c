@@ -36,6 +36,9 @@
 
 #include "cache_varnishd.h"
 
+#include "vend.h"
+#include "vsa.h"
+#include "vsha256.h"
 #include "vtcp.h"
 #include "vtim.h"
 
@@ -524,6 +527,24 @@ VRT_backend_vsm_need(VRT_CTX)
 	return (VRT_VSC_Overhead(VSC_vbe_size));
 }
 
+static uint64_t
+vrt_hash_be(const struct vrt_backend *vrt)
+{
+	struct VSHA256Context cx[1];
+	unsigned char ident[VSHA256_DIGEST_LENGTH];
+
+	VSHA256_Init(cx);
+	VSHA256_Update(cx, vbe_proto_ident, strlen(vbe_proto_ident));
+	if (vrt->ipv4_suckaddr != NULL)
+		VSHA256_Update(cx, vrt->ipv4_suckaddr, vsa_suckaddr_len);
+	if (vrt->ipv6_suckaddr != NULL)
+		VSHA256_Update(cx, vrt->ipv6_suckaddr, vsa_suckaddr_len);
+	if (vrt->path != NULL)
+		VSHA256_Update(cx, vrt->path, strlen(vrt->path));
+	VSHA256_Final(ident, cx);
+	return (vbe64dec(ident));
+}
+
 VCL_BACKEND v_matchproto_()
 VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
     const struct vrt_backend *vrt)
@@ -563,7 +584,7 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 	AN(be->vsc);
 
 	be->tcp_pool = VTP_Ref(vrt->ipv4_suckaddr, vrt->ipv6_suckaddr,
-	    vrt->path, (uintptr_t)vbe_proto_ident);
+	    vrt->path, vrt_hash_be(vrt));
 	AN(be->tcp_pool);
 
 	vbp = vrt->probe;
