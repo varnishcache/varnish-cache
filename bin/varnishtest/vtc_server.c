@@ -343,7 +343,7 @@ server_dispatch_thread(void *priv)
 		vtc_log(vl, 3, "dispatch fd %d -> %s", fd, snbuf);
 		s2 = server_new(snbuf, vl);
 		s2->spec = s->spec;
-		strcpy(s2->listen, s->listen);
+		bstrcpy(s2->listen, s->listen);
 		s2->fd = fd;
 		s2->run = 1;
 		AZ(pthread_create(&s2->tp, NULL, server_dispatch_wrk, s2));

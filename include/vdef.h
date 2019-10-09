@@ -56,6 +56,16 @@
 		assert(ivbprintf >= 0 && ivbprintf < (int)sizeof buf);	\
 	} while (0)
 
+/* Safe strcpy into a fixed-size buffer */
+#define bstrcpy(dst, src)						\
+	do {								\
+		size_t lbstrcpy = strlen(src) + 1;			\
+		assert(lbstrcpy <= sizeof dst);				\
+		memcpy(dst, src, lbstrcpy);				\
+	} while (0)
+
+// TODO #define strcpy BANNED
+
 /* Close and discard filedescriptor */
 #define closefd(fdp)				\
 	do {					\

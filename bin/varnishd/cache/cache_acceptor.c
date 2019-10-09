@@ -501,8 +501,8 @@ vca_accept_task(struct worker *wrk, void *arg)
 			wrk->stats->sess_fail++;
 
 			if (wa.acceptlsock->uds) {
-				strcpy(laddr, "0.0.0.0");
-				strcpy(lport, "0");
+				bstrcpy(laddr, "0.0.0.0");
+				bstrcpy(lport, "0");
 			} else {
 				VTCP_myname(ls->sock, laddr, VTCP_ADDRBUFSIZE,
 				    lport, VTCP_PORTBUFSIZE);

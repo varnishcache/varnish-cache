@@ -406,7 +406,7 @@ smu_open(struct stevedore *st)
 
 	smu_open_init();
 
-	AN(strcpy(ident, st->ident));
+	bstrcpy(ident, st->ident);
 	smu_sc->smu_cache = umem_cache_createf(ident,
 					  sizeof(struct smu),
 					  0,		// align

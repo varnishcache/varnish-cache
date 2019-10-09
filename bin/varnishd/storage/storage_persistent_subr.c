@@ -278,7 +278,6 @@ smp_newsilo(struct smp_sc *sc)
 	struct smp_ident	*si;
 
 	ASSERT_MGT();
-	assert(strlen(SMP_IDENT_STRING) < sizeof si->ident);
 
 	/* Choose a new random number */
 	AZ(VRND_RandomCrypto(&sc->unique, sizeof sc->unique));
@@ -287,7 +286,7 @@ smp_newsilo(struct smp_sc *sc)
 	si = sc->ident;
 
 	memset(si, 0, sizeof *si);
-	strcpy(si->ident, SMP_IDENT_STRING);
+	bstrcpy(si->ident, SMP_IDENT_STRING);
 	si->byte_order = 0x12345678;
 	si->size = sizeof *si;
 	si->major_version = 2;
