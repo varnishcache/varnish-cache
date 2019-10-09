@@ -62,8 +62,7 @@ client c2 {
 	txreq -hdr "Client: c2"
 	barrier b1 sync
 	rxresphdrs
-	expect resp.status == 200
-	expect resp.http.transfer-encoding == "chunked"
+	expect resp.status == 503
 } -run
 
 delay 1
@@ -76,4 +75,5 @@ client c3 {
 	expect resp.body == "abcdef"
 } -run
 
+client c1 -wait
 varnish v1 -expect fetch_failed == 2
