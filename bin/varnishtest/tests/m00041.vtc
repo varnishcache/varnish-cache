@@ -4,7 +4,7 @@ varnishtest "VMOD blob test transcode()"
 varnish v1 -arg "-p workspace_client=256k" -vcl {
 	import blob;
 	import std;
-	backend b { .host = "${bad_ip}"; }
+	backend b None;
 
 	sub vcl_recv {
 	  return(synth(200));
@@ -129,7 +129,7 @@ client c1 {
 varnish v1 -vcl {
 	import blob;
 	import std;
-	backend b { .host = "${bad_ip}"; }
+	backend b None;
 
 	sub vcl_recv {
 	  return(synth(200));
@@ -274,7 +274,7 @@ client c1 {
 varnish v1 -vcl {
 	import blob;
 	import std;
-	backend b { .host = "${bad_ip}"; }
+	backend b None;
 
 	sub vcl_recv {
 	  return(synth(200));

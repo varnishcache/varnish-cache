@@ -15,7 +15,7 @@ varnish v1 -cliok "param.set feature +http2"
 varnish v1 -cliok "param.set feature +no_coredump"
 
 varnish v1 -vcl {
-	backend b1 { .host = "${bad_ip}"; }
+	backend b1 None;
 	sub vcl_recv {
 		return (synth(200));
 	}

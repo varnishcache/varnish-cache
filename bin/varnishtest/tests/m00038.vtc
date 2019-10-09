@@ -2,7 +2,7 @@ varnishtest "VMOD blob base64 decode() n chars"
 
 varnish v1 -vcl {
 	import blob;
-	backend b { .host = "${bad_ip}"; }
+	backend b None;
 
 	sub vcl_recv {
 	  return(synth(200));

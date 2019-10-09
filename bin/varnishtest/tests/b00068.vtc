@@ -15,7 +15,7 @@ varnish v1 -arg "-p timeout_linger=1"	\
 	import vtc;
 	import blob;
 
-	backend dummy { .host = "${bad_ip}"; }
+	backend dummy None;
 
 	sub vcl_recv {
 		std.log(blob.encode(encoding=HEX,

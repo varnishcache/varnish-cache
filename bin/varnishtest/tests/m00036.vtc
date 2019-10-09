@@ -3,7 +3,7 @@ varnishtest "VMOD blob hex decode() n chars"
 varnish v1 -vcl {
 	import blob;
 	import std;
-	backend b { .host = "${bad_ip}"; }
+	backend b None;
 
 	sub vcl_recv {
 	  return(synth(200));

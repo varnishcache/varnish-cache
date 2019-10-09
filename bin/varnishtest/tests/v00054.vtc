@@ -35,7 +35,7 @@ client c1 -connect "${tmpdir}/v2.sock" {
 } -run
 
 varnish v3 -arg "-a ${tmpdir}/v3.sock" -vcl {
-	backend b { .host = "${bad_ip}"; }
+	backend b None;
 
 	sub vcl_recv {
 		if (req.url == "/nobody") {

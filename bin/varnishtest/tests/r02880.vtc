@@ -2,7 +2,7 @@ varnishtest "Long VMOD object names"
 
 varnish v1 -vcl {
 	import debug;
-	backend b { .host = "${bad_ip}"; }
+	backend b None;
 
 	sub vcl_init {
 		new l234567890123456789012345678901234567890123456789012345678

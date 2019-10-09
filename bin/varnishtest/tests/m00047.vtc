@@ -61,7 +61,7 @@ logexpect l1 -v v1 -d 1 -c {
 varnish v1 -errvcl {vmod unix failure: may not be called in vcl_init or vcl_fini} {
 	import unix;
 	import std;
-	backend b { .host = "${bad_ip}"; }
+	backend b None;
 
 	sub vcl_init {
 		std.log(unix.uid());
@@ -71,7 +71,7 @@ varnish v1 -errvcl {vmod unix failure: may not be called in vcl_init or vcl_fini
 varnish v1 -errvcl {vmod unix failure: may not be called in vcl_init or vcl_fini} {
 	import unix;
 	import std;
-	backend b { .host = "${bad_ip}"; }
+	backend b None;
 
 	sub vcl_init {
 		std.log(unix.gid());
@@ -81,7 +81,7 @@ varnish v1 -errvcl {vmod unix failure: may not be called in vcl_init or vcl_fini
 varnish v1 -errvcl {vmod unix failure: may not be called in vcl_init or vcl_fini} {
 	import unix;
 	import std;
-	backend b { .host = "${bad_ip}"; }
+	backend b None;
 
 	sub vcl_init {
 		std.log(unix.user());
@@ -91,7 +91,7 @@ varnish v1 -errvcl {vmod unix failure: may not be called in vcl_init or vcl_fini
 varnish v1 -errvcl {vmod unix failure: may not be called in vcl_init or vcl_fini} {
 	import unix;
 	import std;
-	backend b { .host = "${bad_ip}"; }
+	backend b None;
 
 	sub vcl_init {
 		std.log(unix.group());

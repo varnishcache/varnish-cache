@@ -2,7 +2,7 @@ varnishtest "VMOD blob blob object interface"
 
 varnish v1 -arg "-i serverid" -vcl {
 	import blob;
-	backend b { .host = "${bad_ip}"; }
+	backend b None;
 
 	sub vcl_init {
 	  new id = blob.blob(IDENTITY,
@@ -94,7 +94,7 @@ client c1 -run
 
 varnish v1 -vcl {
 	import blob;
-	backend b { .host = "${bad_ip}"; }
+	backend b None;
 
 	sub vcl_init {
 	  new idempty = blob.blob(IDENTITY, "");
@@ -167,7 +167,7 @@ client c1 -run
 
 varnish v1 -vcl {
 	import blob;
-	backend b { .host = "${bad_ip}"; }
+	backend b None;
 
 	sub vcl_init {
 	  new b64 = blob.blob(BASE64, "L0hlbGxvIHdvcmxkLw==");
@@ -257,7 +257,7 @@ client c2 -run
 
 varnish v1 -vcl {
 	import blob;
-	backend b { .host = "${bad_ip}"; }
+	backend b None;
 
 	sub vcl_init {
 	  new id = blob.blob(IDENTITY,
@@ -455,7 +455,7 @@ logexpect l1 -wait
 
 varnish v1 -errvcl {vmod blob error: cannot create blob err, illegal encoding beginning with "g"} {
 	import blob;
-	backend b { .host="${bad_ip}"; }
+	backend b None;
 	sub vcl_init {
 	  new err = blob.blob(HEX, "g");
 	}
@@ -463,7 +463,7 @@ varnish v1 -errvcl {vmod blob error: cannot create blob err, illegal encoding be
 
 varnish v1 -errvcl {vmod blob error: cannot create blob bad64, illegal encoding beginning with "-_-_"} {
 	import blob;
-	backend b { .host="${bad_ip}"; }
+	backend b None;
 	sub vcl_init {
 	  new bad64 = blob.blob(BASE64, "-_-_");
 	}
@@ -471,7 +471,7 @@ varnish v1 -errvcl {vmod blob error: cannot create blob bad64, illegal encoding 
 
 varnish v1 -errvcl {vmod blob error: cannot create blob badurl, illegal encoding beginning with "+/+/"} {
 	import blob;
-	backend b { .host="${bad_ip}"; }
+	backend b None;
 	sub vcl_init {
 	  new badurl = blob.blob(BASE64URL, "+/+/");
 	}
@@ -479,7 +479,7 @@ varnish v1 -errvcl {vmod blob error: cannot create blob badurl, illegal encoding
 
 varnish v1 -errvcl {vmod blob error: cannot create blob badpad, illegal encoding beginning with "YWI="} {
 	import blob;
-	backend b { .host="${bad_ip}"; }
+	backend b None;
 	sub vcl_init {
 	  new badpad = blob.blob(BASE64URLNOPAD, "YWI=");
 	}
@@ -487,7 +487,7 @@ varnish v1 -errvcl {vmod blob error: cannot create blob badpad, illegal encoding
 
 varnish v1 -errvcl {vmod blob error: cannot create blob badurl, illegal encoding beginning with "%"} {
 	import blob;
-	backend b { .host="${bad_ip}"; }
+	backend b None;
 	sub vcl_init {
 	  new badurl = blob.blob(URL, "%");
 	}
@@ -495,7 +495,7 @@ varnish v1 -errvcl {vmod blob error: cannot create blob badurl, illegal encoding
 
 varnish v1 -errvcl {vmod blob error: cannot create blob badurl, illegal encoding beginning with "%2"} {
 	import blob;
-	backend b { .host="${bad_ip}"; }
+	backend b None;
 	sub vcl_init {
 	  new badurl = blob.blob(URL, "%2");
 	}
@@ -503,7 +503,7 @@ varnish v1 -errvcl {vmod blob error: cannot create blob badurl, illegal encoding
 
 varnish v1 -errvcl {vmod blob error: cannot create blob badurl, illegal encoding beginning with "%q"} {
 	import blob;
-	backend b { .host="${bad_ip}"; }
+	backend b None;
 	sub vcl_init {
 	  new badurl = blob.blob(URL, "%q");
 	}
@@ -511,7 +511,7 @@ varnish v1 -errvcl {vmod blob error: cannot create blob badurl, illegal encoding
 
 varnish v1 -errvcl {vmod blob error: cannot create blob badurl, illegal encoding beginning with "%2q"} {
 	import blob;
-	backend b { .host="${bad_ip}"; }
+	backend b None;
 	sub vcl_init {
 	  new badurl = blob.blob(URL, "%2q");
 	}

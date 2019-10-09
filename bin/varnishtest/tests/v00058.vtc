@@ -2,7 +2,7 @@ varnishtest "Test VRT STRANDS functions"
 
 varnish v1 -arg "-i foobar" -vcl {
 	import debug;
-	backend b { .host = "${bad_ip}"; }
+	backend b None;
 
 	sub vcl_init {
 		# tests VRT_Strands()

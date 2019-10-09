@@ -15,7 +15,7 @@ varnish v1 -vcl {
 	import debug;
 	import vtc;
 
-	backend dummy { .host = "${bad_ip}"; }
+	backend dummy None;
 
 	sub vcl_init {
 		new s1 = debug.dyn_uds("${s1_sock}");
@@ -37,7 +37,7 @@ varnish v1 -vcl {
 	}
 } -start
 
-varnish v1 -expect MAIN.n_backend == 2
+varnish v1 -expect MAIN.n_backend == 1
 
 client c1 {
 	txreq

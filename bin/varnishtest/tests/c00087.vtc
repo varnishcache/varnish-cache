@@ -69,7 +69,7 @@ logexpect l1 -v v1 -d 1 -g vxid -q "VCL_acl" {
 } -run
 
 varnish v1 -vcl {
-	backend b { .host = "${bad_ip}"; }
+	backend b None;
 
 	acl acl1 {
 		"0.0.0.0";
@@ -97,7 +97,7 @@ client c1 -connect "${tmpdir}/v1.sock" {
 } -run
 
 varnish v1 -errvcl {.../mask is not numeric.} {
-	backend b { .host = "${bad_ip}"; }
+	backend b None;
 
 	acl acl1 {
 		"${tmpdir}/v1.sock";

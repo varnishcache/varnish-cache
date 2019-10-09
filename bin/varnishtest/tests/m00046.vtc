@@ -4,7 +4,7 @@ varnish v1 -arg "-a ${tmpdir}/v1.sock -b '${bad_backend}'" -start
 
 varnish v2 -arg "-a ${tmpdir}/v2.sock" -vcl {
 	import std;
-	backend default { .host = "${bad_ip}"; }
+	backend default None;
 
 	sub vcl_recv {
 		return(synth(200));
@@ -31,7 +31,7 @@ varnish v2 -errvcl {Cannot convert to an IP address: '"${v1_addr}"'} {
 
 varnish v2 -vcl {
 	import std;
-	backend default { .host = "${bad_ip}"; }
+	backend default None;
 
 	sub vcl_recv {
 	    # Silently ignored for a UDS

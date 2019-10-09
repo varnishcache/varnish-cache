@@ -132,7 +132,7 @@ varnish v1 -errvcl "Not a socket:" {
 # VCC warns, but does not fail, if stat(UDS) fails with ENOENT.
 shell { rm -f ${tmpdir}/foo }
 
-varnish v1 -vcl { backend b {.host="${bad_ip}";} }
+varnish v1 -vcl { backend b None; }
 
 varnish v1 -cliexpect "(?s)Cannot stat:.+That was just a warning" \
 	{vcl.inline test "vcl 4.1; backend b {.path=\"${tmpdir}/foo\";}"}

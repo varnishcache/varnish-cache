@@ -60,7 +60,7 @@ shell { chmod go-rx ${tmpdir}/dir }
 
 varnish v8 \
 	-jail "-junix,user=varnish,ccgroup=varnish,workuser=vcache" \
-	-vcl { backend b {.host="${bad_ip}";}
+	-vcl { backend b None;
 }
 
 varnish v8 -cliexpect "(?s)Cannot stat:.+That was just a warning" \

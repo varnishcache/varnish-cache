@@ -2,7 +2,7 @@ varnishtest "std.fnmatch()"
 
 varnish v1 -vcl {
 	import std;
-	backend b { .host = "${bad_ip}"; }
+	backend b None;
 
 	sub vcl_recv {
 		return (synth(200));

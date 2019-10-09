@@ -2,7 +2,7 @@ varnishtest "VMOD blob same(), equal(), length() and sub()"
 
 varnish v1 -vcl {
 	import blob;
-	backend b { .host = "${bad_ip}"; }
+	backend b None;
 
 	sub vcl_init {
 		new foo1 = blob.blob(IDENTITY, "foobarbazquux");
@@ -168,7 +168,7 @@ client c1 {
 # sub()
 varnish v1 -vcl {
 	import blob;
-	backend b { .host = "${bad_ip}"; }
+	backend b None;
 
 	sub vcl_init {
 		# Byte values 0 up to 7
@@ -291,7 +291,7 @@ logexpect l1 -v v1 -d 1 -g vxid -q "VCL_Error" {
 # VCL load failures from sub()
 varnish v1 -errvcl {vmod blob error: blob is empty in blob.sub()} {
 	import blob;
-	backend b { .host = "${bad_ip}"; }
+	backend b None;
 
 	sub vcl_init {
 		new empty = blob.blob(IDENTITY, "");
@@ -303,7 +303,7 @@ varnish v1 -errvcl {vmod blob error: blob is empty in blob.sub()} {
 
 varnish v1 -errvcl {vmod blob error: size 9 from offset 0 requires more bytes than blob length 8 in blob.sub()} {
 	import blob;
-	backend b { .host = "${bad_ip}"; }
+	backend b None;
 
 	sub vcl_init {
 		new up07 = blob.blob(BASE64, "AAECAwQFBgc=");
@@ -315,7 +315,7 @@ varnish v1 -errvcl {vmod blob error: size 9 from offset 0 requires more bytes th
 
 varnish v1 -errvcl {vmod blob error: size 4 from offset 5 requires more bytes than blob length 8 in blob.sub()} {
 	import blob;
-	backend b { .host = "${bad_ip}"; }
+	backend b None;
 
 	sub vcl_init {
 		new up07 = blob.blob(BASE64, "AAECAwQFBgc=");

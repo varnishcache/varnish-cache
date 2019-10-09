@@ -14,7 +14,7 @@ server s1 -listen "${tmpdir}/s1.sock" {
 varnish v1 -arg "-p thread_pools=1" -vcl {
 	import debug;
 
-	backend dummy { .host = "${bad_ip}"; }
+	backend dummy None;
 
 	sub vcl_init {
 		new s1 = debug.dyn_uds("${s1_sock}");
@@ -31,7 +31,7 @@ client c1 {
 	expect resp.status == 200
 } -start
 
-varnish v1 -expect MAIN.n_backend == 2
+varnish v1 -expect MAIN.n_backend == 1
 
 server s2 -listen "${tmpdir}/s2.sock" {
 	rxreq
@@ -44,7 +44,7 @@ barrier b1 sync
 varnish v1 -vcl {
 	import debug;
 
-	backend dummy { .host = "${bad_ip}"; }
+	backend dummy None;
 
 	sub vcl_init {
 		new s2 = debug.dyn_uds("${s2_sock}");
@@ -61,7 +61,7 @@ barrier b2 sync
 client c1 -wait
 delay 2
 
-varnish v1 -expect MAIN.n_backend == 4
+varnish v1 -expect MAIN.n_backend == 2
 
 varnish v1 -expect n_vcl_avail == 1
 varnish v1 -expect n_vcl_discard == 1

@@ -38,7 +38,7 @@ varnish v1 -expect s_resp_hdrbytes == 178
 varnish v2 -arg "-a ${tmpdir}/v1.sock -b '${bad_backend}'" -start
 
 varnish v2 -syntax 4.0 -errvcl {Compiled VCL version (4.0) not supported.} {
-	backend default { .host = "${bad_ip}"; }
+	backend default None;
 }
 
 varnish v2 -syntax 4.0 -errvcl \
@@ -46,7 +46,7 @@ varnish v2 -syntax 4.0 -errvcl \
 	{backend default { .path = "${tmpdir}/v1.sock"; }}
 
 varnish v3 -vcl {
-	backend default { .host = "${bad_ip}"; }
+	backend default None;
 
 	sub vcl_recv {
 		return(synth(200));
