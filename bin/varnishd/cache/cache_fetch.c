@@ -683,9 +683,37 @@ vbf_objiterator(void *priv, unsigned flush, const void *ptr, ssize_t len)
 static enum fetch_step
 vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 {
+	struct boc *stale_boc;
+	enum boc_state_e stale_state;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(bo->fetch_objcore, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(bo->stale_oc, OBJCORE_MAGIC);
+
+	stale_boc = HSH_RefBoc(bo->stale_oc);
+	CHECK_OBJ_ORNULL(stale_boc, BOC_MAGIC);
+	if (stale_boc) {
+		/* Wait for the stale object to become fully fetched, so
+		 * that we can catch fetch errors, before we unbusy the
+		 * new object. This serves two purposes. First it helps
+		 * with request coalesching, and stops long chains of
+		 * IMS-updated short-TTL objects all streaming from a
+		 * single slow body fetch. Second it makes sure that all
+		 * the object attributes are complete when we copy them
+		 * (this would be an issue for ie OA_GZIPBITS). */
+		ObjWaitState(bo->stale_oc, BOS_FINISHED);
+		stale_state = stale_boc->state;
+		HSH_DerefBoc(bo->wrk, bo->stale_oc);
+		stale_boc = NULL;
+		if (stale_state != BOS_FINISHED) {
+			(void)VFP_Error(bo->vfc, "Template object failed");
+			vbf_cleanup(bo);
+			wrk->stats->fetch_failed++;
+			return (F_STP_FAIL);
+		}
+	}
+	AZ(bo->stale_oc->flags & OC_F_FAILED);
 
 	AZ(vbf_beresp2obj(bo));
 
@@ -707,8 +735,6 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	if (ObjIterate(wrk, bo->stale_oc, bo, vbf_objiterator, 0))
 		(void)VFP_Error(bo->vfc, "Template object failed");
 
-	if (bo->stale_oc->flags & OC_F_FAILED)
-		(void)VFP_Error(bo->vfc, "Template object failed");
 	if (bo->vfc->failed) {
 		vbf_cleanup(bo);
 		wrk->stats->fetch_failed++;
