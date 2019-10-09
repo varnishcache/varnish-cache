@@ -13,8 +13,6 @@ leak:vcc_
 leak:VSL_Setup
 leak:WRK_BgThread
 #
-leak:hpack/vhp_gen_hufdec.c
-#
 leak:binheap_new
 # ev
 leak:mct_callback
