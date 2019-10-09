@@ -1,7 +1,7 @@
 varnishtest "Test VSM _.index rewrite when too many deletes"
 
 varnish v1 -vcl {
-	backend default None;
+	backend default { .host = "${bad_ip}"; }
 } -start
 
 delay 1
@@ -17,10 +17,10 @@ process p1 {
 #process p3 {tail -F ${tmpdir}/v1/_.vsm_mgt/_.index} -dump -start
 
 varnish v1 -vcl {
-	backend b00 None;
-	backend b01 None;
-	backend b02 None;
-	backend b03 None;
+	backend b00 { .host = "${bad_ip}"; }
+	backend b01 { .host = "${bad_ip}"; }
+	backend b02 { .host = "${bad_ip}"; }
+	backend b03 { .host = "${bad_ip}"; }
 
 	sub vcl_recv {
 		set req.backend_hint = b00;
@@ -46,26 +46,26 @@ process p1 -run
 # cause a _.index rewrite.
 # Make it 20 to be on the safe side.
 varnish v1 -vcl {
-	backend b00 None;
-	backend b01 None;
-	backend b02 None;
-	backend b03 None;
-	backend b04 None;
-	backend b05 None;
-	backend b06 None;
-	backend b07 None;
-	backend b08 None;
-	backend b09 None;
-	backend b10 None;
-	backend b11 None;
-	backend b12 None;
-	backend b13 None;
-	backend b14 None;
-	backend b15 None;
-	backend b16 None;
-	backend b17 None;
-	backend b18 None;
-	backend b19 None;
+	backend b00 { .host = "${bad_ip}"; }
+	backend b01 { .host = "${bad_ip}"; }
+	backend b02 { .host = "${bad_ip}"; }
+	backend b03 { .host = "${bad_ip}"; }
+	backend b04 { .host = "${bad_ip}"; }
+	backend b05 { .host = "${bad_ip}"; }
+	backend b06 { .host = "${bad_ip}"; }
+	backend b07 { .host = "${bad_ip}"; }
+	backend b08 { .host = "${bad_ip}"; }
+	backend b09 { .host = "${bad_ip}"; }
+	backend b10 { .host = "${bad_ip}"; }
+	backend b11 { .host = "${bad_ip}"; }
+	backend b12 { .host = "${bad_ip}"; }
+	backend b13 { .host = "${bad_ip}"; }
+	backend b14 { .host = "${bad_ip}"; }
+	backend b15 { .host = "${bad_ip}"; }
+	backend b16 { .host = "${bad_ip}"; }
+	backend b17 { .host = "${bad_ip}"; }
+	backend b18 { .host = "${bad_ip}"; }
+	backend b19 { .host = "${bad_ip}"; }
 
 	sub vcl_recv {
 		set req.backend_hint = b00;
@@ -92,6 +92,7 @@ varnish v1 -vcl {
 }
 
 varnish v1 -cliok vcl.list
+varnish v1 -cliok backend.list
 
 delay 1
 
