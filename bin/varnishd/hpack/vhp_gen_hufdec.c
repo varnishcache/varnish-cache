@@ -93,6 +93,16 @@ tbl_new(unsigned mask)
 }
 
 static void
+tbl_free(struct tbl* table)
+{
+	for (unsigned i = 0; i < table->n; i++) {
+		if (table->e[i].next != NULL)
+			tbl_free(table->e[i].next);
+	}
+	free(table);
+}
+
+static void
 tbl_add(struct tbl *tbl, uint32_t code, unsigned codelen,
     uint32_t bits, unsigned len, char chr)
 {
@@ -250,5 +260,6 @@ main(int argc, const char **argv)
 	tbl_print(top);
 	printf("};\n");
 
+	tbl_free(top);
 	return (0);
 }
