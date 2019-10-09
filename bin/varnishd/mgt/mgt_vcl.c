@@ -715,10 +715,10 @@ mcf_vcl_list(struct cli *cli, const char * const *av, void *priv)
 	(void)priv;
 
 	if (MCH_Running()) {
-		if (!mgt_cli_askchild(&status, &p, "vcl.list\n")) {
-			VCLI_SetResult(cli, status);
+		if (!mgt_cli_askchild(&status, &p, "vcl.list\n"))
 			VCLI_Out(cli, "%s", p);
-		}
+		else
+			VCLI_SetResult(cli, status);
 		free(p);
 	} else {
 		vsb = VSB_new_auto();
