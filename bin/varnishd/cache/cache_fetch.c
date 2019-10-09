@@ -712,6 +712,8 @@ vbf_objiterator(void *priv, int flush, const void *ptr, ssize_t len)
 static enum fetch_step
 vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 {
+	struct boc *stale_boc;
+	enum boc_state_e stale_state;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -737,7 +739,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 		stale_boc = NULL;
 		if (stale_state != BOS_FINISHED) {
 			(void)VFP_Error(bo->vfc, "Template object failed");
-			vbf_cleanup(bo);
+			VDI_Finish(bo->wrk, bo);
 			wrk->stats->fetch_failed++;
 			return (F_STP_FAIL);
 		}
@@ -764,8 +766,6 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	if (ObjIterate(wrk, bo->stale_oc, bo, vbf_objiterator, 0))
 		(void)VFP_Error(bo->vfc, "Template object failed");
 
-	if (bo->stale_oc->flags & OC_F_FAILED)
-		(void)VFP_Error(bo->vfc, "Template object failed");
 	if (bo->vfc->failed) {
 		VDI_Finish(bo->wrk, bo);
 		wrk->stats->fetch_failed++;

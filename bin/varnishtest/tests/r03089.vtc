@@ -1,0 +1,69 @@
+varnishtest "r03089 - Assert error corrupt OA_GZIPBITS"
+
+barrier b1 cond 2
+
+server s1 {
+	rxreq
+	expect req.url == /included
+	expect req.http.accept-encoding == "gzip"
+	txresp -nolen -hdr "Content-Length: 49" -hdr "Content-Encoding: gzip" -hdr {Etag: "asdf"}
+	barrier b1 sync
+	delay 1
+	sendhex "1f 8b 08 08 ef 00 22 59  02 03 5f 00 0b 2e cd 53"
+	sendhex "f0 4d ac 54 30 32 04 22  2b 03 13 2b 13 73 85 d0"
+	sendhex "10 67 05 23 03 43 73 2e  00 cf 9b db c0 1d 00 00"
+	sendhex "00"
+} -start
+
+server s2 {
+	rxreq
+	expect req.url == /included
+	expect req.http.If-None-Match == {"asdf"}
+	barrier b1 sync
+	txresp -status 304 -nolen -hdr "Etag: asdf"
+} -start
+
+server s3 {
+	rxreq
+	expect req.url == /
+	txresp -gzipbody {<esi:include src="/included"/>}
+} -start
+
+varnish v1 -arg "-p debug=+syncvsl" -vcl+backend {
+	sub vcl_deliver {
+	}
+	sub vcl_backend_fetch {
+		if (bereq.url == "/") {
+			set bereq.backend = s3;
+		} else if (bereq.http.backend == "s1") {
+			set bereq.backend = s1;
+		} else {
+			set bereq.backend = s2;
+		}
+	}
+	sub vcl_backend_response {
+		if (bereq.url == "/") {
+			set beresp.do_esi = true;
+		} else {
+			set beresp.ttl = 0.1s;
+			set beresp.grace = 0s;
+			set beresp.keep = 1m;
+		}
+	}
+} -start
+
+client c1 {
+	txreq -url / -hdr "backend: s1" -hdr "Accept-encoding: gzip"
+	rxresp
+} -start
+
+delay 1
+
+client c2 {
+	txreq -url / -hdr "backend: s2" -hdr "Accept-encoding: gzip"
+	rxresp
+} -start
+
+client c1 -wait
+client c2 -wait
+
