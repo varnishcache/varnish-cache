@@ -1,0 +1,45 @@
+varnishtest "r03093 - fail retry on missing req body"
+
+barrier b1 sock 2
+
+server s1 {
+	rxreq
+	expect req.method == POST
+	expect req.body == foo
+	txresp -nolen -hdr "Content-Length: 3"
+	barrier b1 sync
+} -start
+
+# In this test s2 should not be called. The attempt to retry should fail because
+# the request was already released from the fetch thread in the first attempt.
+server s2 {
+	rxreq
+	expect req.method == POST
+	expect req.body == foo
+	txresp -body bar
+} -start
+
+varnish v1 -arg "-p debug=+syncvsl" -vcl+backend {
+	import vtc;
+	sub vcl_backend_fetch {
+		set bereq.http.retries = bereq.retries;
+		if (bereq.retries == 1) {
+			set bereq.backend = s2;
+		}
+	}
+	sub vcl_backend_response {
+		if (bereq.http.retries == "0") {
+			vtc.barrier_sync("${b1_sock}");
+		}
+		set beresp.do_stream = false;
+	}
+	sub vcl_backend_error {
+		return (retry);
+	}
+} -start
+
+client c1 {
+	txreq -req POST -body foo
+	rxresp
+	expect resp.status == 503
+} -run
