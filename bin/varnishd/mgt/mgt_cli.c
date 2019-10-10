@@ -347,7 +347,7 @@ mgt_cli_cb_after(const struct cli *cli)
 
 	MGT_Complain(C_CLI, "CLI %s Wr %03u %s",
 	    cli->ident, cli->result, VSB_data(cli->sb));
-	if (cli->priv == stderr &&
+	if (cli->priv == stderr && cli->result != CLIS_TRUNCATED &&
 	    cli->result != CLIS_OK && *VSB_data(cli->cmd) != '-') {
 		MGT_Complain(C_ERR, "-I file CLI command failed (%d)\n%s\n",
 		    cli->result, VSB_data(cli->sb));

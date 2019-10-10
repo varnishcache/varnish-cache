@@ -74,9 +74,17 @@ shell -err -expect {Warning: Ignoring deprecated second subargument} {
 
 # Code coverage of mgt_main, (VCL compiler and RSTdump etc) (former a00017)
 
-# Test -F mode with no VCL loaded
+# Test -F mode with no VCL loaded, and -I cli_limit truncation
 
-process p1 "exec varnishd -n ${tmpdir}/v1 -F -f '' -a :0 -l2m,1m" -log -start
+shell {
+	cat >truncation.cli <<-EOF
+	param.set cli_limit 128
+	param.show
+	param.reset cli_limit
+	EOF
+}
+
+process p1 "exec varnishd -n ${tmpdir}/v1 -I truncation.cli -F -f '' -a :0 -l2m,1m" -log -start
 
 delay 2
 
