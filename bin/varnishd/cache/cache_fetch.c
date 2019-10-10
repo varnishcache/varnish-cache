@@ -211,6 +211,7 @@ vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo)
 	bo->ws_bo = WS_Snapshot(bo->ws);
 	HTTP_Copy(bo->bereq, bo->bereq0);
 
+	bo->initial_req_body_status = bo->req->req_body_status;
 	if (bo->req->req_body_status == REQ_BODY_NONE) {
 		bo->req = NULL;
 		ObjSetState(bo->wrk, bo->fetch_objcore, BOS_REQ_DONE);
@@ -230,6 +231,15 @@ vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
 	assert(bo->fetch_objcore->boc->state <= BOS_REQ_DONE);
+
+	if (bo->fetch_objcore->boc->state == BOS_REQ_DONE &&
+	    bo->initial_req_body_status != REQ_BODY_NONE &&
+	    bo->bereq_body == NULL) {
+		/* We have already released the req and there was a
+		 * request body that was not cached. Too late to retry. */
+		VSLb(bo->vsl, SLT_Error, "req.body already consumed");
+		return (F_STP_FAIL);
+	}
 
 	VSLb_ts_busyobj(bo, "Retry", W_TIM_real(wrk));
 
