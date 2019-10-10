@@ -260,7 +260,6 @@ cls_exec(struct VCLS_fd *cfd, char * const *av)
 	struct cli *cli;
 	int na;
 	ssize_t len;
-	char *s;
 	unsigned lim;
 	int retval = 0;
 	const char *trunc = "!\n[response was truncated]\n";
@@ -321,23 +320,24 @@ cls_exec(struct VCLS_fd *cfd, char * const *av)
 
 	} while (0);
 
-	AZ(VSB_finish(cli->sb));
-
-	s = VSB_data(cli->sb);
 	len = VSB_len(cli->sb);
 	lim = *cs->limit;
 	if (len > lim) {
 		if (cli->result == CLIS_OK)
 			cli->result = CLIS_TRUNCATED;
-		strcpy(s + (lim - strlen(trunc)), trunc);
-		assert(strlen(s) <= lim);
+		AZ(VSB_truncate(cli->sb, lim - strlen(trunc)));
+		AZ(VSB_cat(cli->sb, trunc));
+		len = VSB_len(cli->sb);
 	}
+
+	assert(len <= lim);
+	AZ(VSB_finish(cli->sb));
 
 	if (cs->after != NULL)
 		cs->after(cli);
 
 	cli->cls = NULL;
-	if (VCLI_WriteResult(cfd->fdo, cli->result, s) ||
+	if (VCLI_WriteResult(cfd->fdo, cli->result, VSB_data(cli->sb)) ||
 	    cli->result == CLIS_CLOSE)
 		retval = 1;
 
