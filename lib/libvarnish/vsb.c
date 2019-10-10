@@ -250,6 +250,20 @@ VSB_clear(struct vsb *s)
 	s->s_indent = 0;
 }
 
+int
+VSB_truncate(struct vsb *s, size_t len)
+{
+
+	assert_VSB_integrity(s);
+	assert_VSB_state(s, 0);
+
+	if (s->s_error != 0 || len > s->s_len)
+		return (-1);
+
+	s->s_len = len;
+	return (0);
+}
+
 /*
  * Append a byte to an vsb.  This is the core function for appending
  * to an vsb and is the main place that deals with extending the
