@@ -389,6 +389,7 @@ struct busyobj {
 	 * is recycled.
 	 */
 	unsigned		retries;
+	enum req_body_state_e	initial_req_body_status;
 	struct req		*req;
 	struct sess		*sp;
 	struct worker		*wrk;
