@@ -323,11 +323,6 @@ cls_exec(struct VCLS_fd *cfd, char * const *av)
 
 	AZ(VSB_finish(cli->sb));
 
-	if (cs->after != NULL)
-		cs->after(cli);
-
-	cli->cls = NULL;
-
 	s = VSB_data(cli->sb);
 	len = VSB_len(cli->sb);
 	lim = *cs->limit;
@@ -337,6 +332,11 @@ cls_exec(struct VCLS_fd *cfd, char * const *av)
 		strcpy(s + (lim - strlen(trunc)), trunc);
 		assert(strlen(s) <= lim);
 	}
+
+	if (cs->after != NULL)
+		cs->after(cli);
+
+	cli->cls = NULL;
 	if (VCLI_WriteResult(cfd->fdo, cli->result, s) ||
 	    cli->result == CLIS_CLOSE)
 		retval = 1;
