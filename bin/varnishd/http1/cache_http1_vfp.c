@@ -161,7 +161,7 @@ v1f_pull_chunked(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
 			l = vfe->priv2;
 		lr = v1f_read(vc, htc, ptr, l);
 		if (lr <= 0)
-			return (VFP_Error(vc, "straight insufficient bytes"));
+			return (VFP_Error(vc, "chunked insufficient bytes"));
 		*lp = lr;
 		vfe->priv2 -= lr;
 		if (vfe->priv2 == 0)
