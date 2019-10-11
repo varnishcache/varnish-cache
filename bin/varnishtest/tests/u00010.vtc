@@ -38,4 +38,4 @@ process p1 -need-bytes +1
 
 process p1 -screen_dump -write {q} -wait
 process p2 -screen_dump -kill TERM -wait
-process p3 -screen_dump -kill HUP {q} -wait
+process p3 -screen_dump -kill HUP -wait
