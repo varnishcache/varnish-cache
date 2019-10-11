@@ -53,6 +53,7 @@
 #include "vas.h"
 #include "vut.h"
 #include "vtim.h"
+#include "vapi/vsig.h"
 
 #define HIST_N 2000		/* how far back we remember */
 #define HIST_RES 100		/* bucket resolution */
@@ -130,8 +131,6 @@ static const struct profile profiles[] = {
 #undef HIS_PROF
 
 static const struct profile *active_profile;
-
-static volatile sig_atomic_t quit = 0;
 
 static void
 update(void)
@@ -384,7 +383,7 @@ do_curses(void *arg)
 	intrflush(stdscr, FALSE);
 	curs_set(0);
 	erase();
-	while (!quit && !vut->last_sighup) {
+	while (!VSIG_int && !VSIG_term && !VSIG_hup) {
 		AZ(pthread_mutex_lock(&mtx));
 		update();
 		AZ(pthread_mutex_unlock(&mtx));
@@ -413,7 +412,6 @@ do_curses(void *arg)
 		case 'Q':
 		case 'q':
 			AZ(raise(SIGINT));
-			quit = 1;
 			break;
 		case '0':
 		case '1':

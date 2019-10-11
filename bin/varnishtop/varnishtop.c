@@ -54,6 +54,7 @@
 #include "vas.h"
 #include "vtree.h"
 #include "vut.h"
+#include "vapi/vsig.h"
 
 #if 0
 #define AC(x) assert((x) != ERR)
@@ -81,8 +82,6 @@ static pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
 static int f_flag = 0;
 static unsigned maxfieldlen = 0;
 static const char *ident;
-
-static volatile sig_atomic_t quit = 0;
 
 static VRBT_HEAD(t_order, top) h_order = VRBT_INITIALIZER(&h_order);
 static VRBT_HEAD(t_key, top) h_key = VRBT_INITIALIZER(&h_key);
@@ -257,7 +256,7 @@ do_curses(void *arg)
 	(void)curs_set(0);
 	AC(erase());
 	timeout(1000);
-	while (!quit && !vut->last_sighup) {
+	while (!VSIG_int && !VSIG_term && !VSIG_hup) {
 		AZ(pthread_mutex_lock(&mtx));
 		update(period);
 		AZ(pthread_mutex_unlock(&mtx));
@@ -284,7 +283,6 @@ do_curses(void *arg)
 		case 'Q':
 		case 'q':
 			AZ(raise(SIGINT));
-			quit = 1;
 			break;
 		default:
 			AC(beep());
