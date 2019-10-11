@@ -45,6 +45,7 @@
 #include "miniobj.h"
 #include "vqueue.h"
 #include "vtim.h"
+#include "vapi/vsig.h"
 
 #include "varnishstat.h"
 #include "vcurses.h"
@@ -1032,7 +1033,7 @@ do_curses(struct vsm *vsm, struct vsc *vsc)
 	build_pt_array();
 	init_hitrate();
 
-	while (keep_running) {
+	while (keep_running && !VSIG_int && !VSIG_term && !VSIG_hup) {
 		(void)VSC_Iter(vsc, vsm, NULL, NULL);
 		vsm_status = VSM_Status(vsm);
 		if (vsm_status & (VSM_MGT_RESTARTED|VSM_WRK_RESTARTED))
