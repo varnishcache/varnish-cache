@@ -45,6 +45,10 @@ NEXT (2020-03-15)
 * The option ``varnishtest -W`` is gone, the same can be achieved with
   ``varnishtest -p debug=+witness``.
 
+* The ``Process`` timestamp for ``vcl_synth {}`` was wrongly issued
+  before the VCL callback, now it gets emitted after VCL returns for
+  consistency with ``vcl_deliver {}``
+
 ================================
 Varnish Cache 6.3.0 (2019-09-15)
 ================================
