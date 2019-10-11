@@ -52,4 +52,4 @@ process p1 -writehex 0c -need-bytes +10
 
 process p1 -screen_dump -write {q} -wait
 process p2 -screen_dump -kill HUP -wait
-process p3 -screen_dump -write {q} -wait
+process p3 -screen_dump -kill TERM -wait

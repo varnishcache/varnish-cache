@@ -8,6 +8,8 @@ server s1 {
 varnish v1 -vcl+backend {} -start
 
 process p1 -dump {varnishtop -n ${v1_name}} -start
+process p2 -dump {varnishtop -n ${v1_name}} -start
+process p3 -dump {varnishtop -n ${v1_name}} -start
 
 process p1 -expect-text 1 1 {list length}
 
@@ -35,3 +37,5 @@ process p1 -winsz 30 80
 process p1 -need-bytes +1
 
 process p1 -screen_dump -write {q} -wait
+process p2 -screen_dump -kill TERM -wait
+process p3 -screen_dump -kill HUP {q} -wait
