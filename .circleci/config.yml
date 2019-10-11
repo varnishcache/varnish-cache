@@ -380,12 +380,12 @@ workflows:
       - push_packages:
           requires:
             - hold
-      - distcheck:
-          name: distcheck_centos_7
-          dist: centos
-          release: "7"
-          requires:
-            - dist_ubuntu
+#      - distcheck:
+#          name: distcheck_centos_7
+#          dist: centos
+#          release: "7"
+#          requires:
+#            - dist_ubuntu
       - distcheck:
           name: distcheck_debian_buster
           dist: debian
