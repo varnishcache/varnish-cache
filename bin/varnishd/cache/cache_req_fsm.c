@@ -301,8 +301,6 @@ cnt_synth(struct worker *wrk, struct req *req)
 
 	wrk->stats->s_synth++;
 
-	VSLb_ts_req(req, "Process", W_TIM_real(wrk));
-
 	if (req->err_code < 100)
 		req->err_code = 501;
 
@@ -314,6 +312,8 @@ cnt_synth(struct worker *wrk, struct req *req)
 	VCL_synth_method(req->vcl, wrk, req, NULL, synth_body);
 
 	AZ(VSB_finish(synth_body));
+
+	VSLb_ts_req(req, "Process", W_TIM_real(wrk));
 
 	if (wrk->handling == VCL_RET_FAIL) {
 		VSB_destroy(&synth_body);

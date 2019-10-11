@@ -122,7 +122,6 @@ logexpect l1 -v v1 -g raw {
 	expect 0 1011	VCL_return      {^synth$}
 	expect 0 1011	VCL_call        {^HASH$}
 	expect 0 1011	VCL_return      {^lookup$}
-	expect 0 1011	Timestamp       {^Process:}
 	expect 0 1011	RespProtocol    {^HTTP/1.1$}
 	expect 0 1011	RespStatus      {^405$}
 	expect 0 1011	RespReason      {^Method Not Allowed$}
@@ -130,6 +129,7 @@ logexpect l1 -v v1 -g raw {
 	expect 1 1011	RespHeader      {^Date:}
 	expect 0 1011	RespHeader      {^Server: Varnish$}
 	expect 0 1011	RespHeader      {^X-Varnish: 1011$}
+	expect * 1011	Timestamp       {^Process:}
 
 } -start
 

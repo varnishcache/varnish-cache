@@ -27,6 +27,14 @@ individual releases. These documents are updated as part of the
 release process.
 
 =================================
+Varnish Cache 6.0.13 (unreleased)
+=================================
+
+* The ``Process`` timestamp for ``vcl_synth {}`` was wrongly issued
+  before the VCL callback, now it gets emitted after VCL returns for
+  consistency with ``vcl_deliver {}``
+
+=================================
 Varnish Cache 6.0.12 (2023-11-13)
 =================================
 
