@@ -205,8 +205,6 @@ jobs:
         type: string
     docker:
       - image: << parameters.dist >>:<< parameters.release >>
-    environment:
-      VERBOSE: "1"
     working_directory: /workspace
     steps:
       - << parameters.dist >>_install_build_deps
@@ -238,7 +236,7 @@ jobs:
             	<< parameters.extra_conf >>
             sudo -u varnish \
             	--preserve-env=ASAN_OPTIONS,LSAN_OPTIONS,TSAN_OPTIONS,UBSAN_OPTIONS \
-            	make distcheck -j 12 -k
+            	make distcheck VERBOSE=1 -j 12 -k
   push_packages:
     docker:
       - image: centos:7
