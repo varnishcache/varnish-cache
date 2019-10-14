@@ -143,6 +143,66 @@ jobs:
           root: .
           paths:
             - debs/varnish*.deb
+  build_alpine:
+    description: Build alpine apks
+    docker:
+      - image: alpine
+    working_directory: /workspace
+    steps:
+      - run:
+          name: Install certificates to mount the workspace, and tar
+          command: |
+            apk update
+            apk add -q ca-certificates tar
+      - attach_workspace:
+          at: /workspace
+      - run:
+          name: Untar alpine
+          command: |
+            tar xavf alpine.tar.gz --strip 1
+      - run:
+          name: Install sdk, add user
+          command: |
+            apk add alpine-sdk
+            adduser -D builder
+            echo "builder ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers
+            addgroup builder abuild
+            mkdir -p /var/cache/distfiles
+            chmod a+w /var/cache/distfiles
+      - run:
+          name: Generate key
+          command: |
+            su builder -c "abuild-keygen -nai"
+      - run:
+          name: Fix APKBUILD's variables
+          command: |
+            tar xavf varnish-*.tar.gz
+            VERSION=$(varnish-*/configure --version | awk 'NR == 1 {print $NF}')
+            if [ "$VERSION" = trunk ]; then
+            	WEEKLYVERSION=`date "+%Y%m%d"`
+            	sed -i \
+                    -e "s@^pkgver=.*@pkgver=$WEEKLYVERSION@" \
+                    -e "s@^builddir=.*@builddir=\"\$srcdir/varnish-$VERSION\"@" \
+                    -e "s@^source=.*@source=varnish-trunk.tar.gz@" APKBUILD
+            else
+            	sed -i "s@^pkgver=.*@pkgver=$VERSION@" APKBUILD
+            fi
+            rm -rf varnish-$VERSION
+      - run:
+          name: Fix checksums, build
+          command: |
+            chown builder -R /workspace
+            su builder -c "abuild checksum"
+            su builder -c "abuild -r"
+      - run:
+          name: Fix the APKBUILD's version
+          command: |
+            mkdir apks
+            cp /home/builder/packages/x86_64/*.apk apks
+      - persist_to_workspace:
+          root: .
+          paths:
+            - apks/*.apk
   dist_ubuntu:
     docker:
       - image: ubuntu:bionic
@@ -181,14 +241,17 @@ jobs:
             mkdir -p ~/.ssh
             ssh-keyscan -H github.com >> ~/.ssh/known_hosts
             echo ${CIRCLE_REPOSITORY_URL}
-            git clone --branch=weekly git@github.com:varnishcache/pkg-varnish-cache.git .
+            git clone --branch=alpine https://github.com/gquintard/pkg-varnish-cache.git .
+            git checkout alpine
             tar cvzf debian.tar.gz debian --dereference
             tar cvzf redhat.tar.gz redhat --dereference 
+            tar cvzf alpine.tar.gz alpine --dereference
       - persist_to_workspace:
           root: .
           paths:
             - debian.tar.gz
             - redhat.tar.gz
+            - alpine.tar.gz
   distcheck:
     parameters:
       release:
@@ -248,7 +311,7 @@ jobs:
           command: |
               rm rpms/varnish*.src.rpm
               mv rpms/*/*.rpm rpms/
-              tar cvzf packages.tar.gz rpms/*.rpm debs/*.deb
+              tar cvzf packages.tar.gz rpms/*.rpm debs/*.deb apks/*.apk
       - store_artifacts:
           destination: packages.tar.gz
           path: packages.tar.gz
@@ -369,6 +432,8 @@ workflows:
           <<: *pkg_req
       - build_centos_7:
           <<: *pkg_req
+      - build_alpine:
+          <<: *pkg_req
       - hold:
           type: approval
           requires:
@@ -377,6 +442,7 @@ workflows:
             - build_ubuntu_xenial
             - build_ubuntu_bionic
             - build_centos_7
+            - build_alpine
       - push_packages:
           requires:
             - hold
@@ -390,7 +456,7 @@ workflows:
           name: distcheck_debian_buster
           dist: debian
           release: buster
-          extra_conf: --enable-asan --enable-ubsan  
+          extra_conf: --enable-asan --enable-ubsan
           requires:
             - dist_ubuntu
       - distcheck:
