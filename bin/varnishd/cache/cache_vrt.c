@@ -128,7 +128,7 @@ VRT_hit_for_pass(VRT_CTX, VCL_DURATION d)
 VCL_HTTP
 VRT_selecthttp(VRT_CTX, enum gethdr_e where)
 {
-	struct http *hp;
+	VCL_HTTP hp;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	switch (where) {
@@ -158,8 +158,8 @@ VRT_selecthttp(VRT_CTX, enum gethdr_e where)
 VCL_STRING
 VRT_GetHdr(VRT_CTX, const struct gethdr_s *hs)
 {
+	VCL_HTTP hp;
 	const char *p;
-	struct http *hp;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	if (hs->where == HDR_OBJ) {
@@ -543,7 +543,7 @@ VCL_VOID
 VRT_SetHdr(VRT_CTX , const struct gethdr_s *hs,
     const char *p, ...)
 {
-	struct http *hp;
+	VCL_HTTP hp;
 	va_list ap;
 	const char *b;
 
