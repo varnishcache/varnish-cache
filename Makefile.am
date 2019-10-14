@@ -24,6 +24,10 @@ AM_DISTCHECK_CONFIGURE_FLAGS = \
     --enable-dependency-tracking \
     CFLAGS="$(EXTCFLAGS)"
 
+if WITH_UNWIND
+AM_DISTCHECK_CONFIGURE_FLAGS += --with-unwind
+endif
+
 install-data-local:
 	$(install_sh) -d -m 0755 $(DESTDIR)$(localstatedir)/varnish
 
