@@ -229,7 +229,7 @@ SLTM(FetchError, 0, "Error while fetching object",
 #undef SLTH
 
 #define SLTH(tag, ind, req, resp, sdesc, ldesc) \
-	SLTM(Obj##tag, (resp ? 0 : SLT_F_UNUSED), "Object  " sdesc, ldesc)
+	SLTM(Obj##tag, (resp ? 0 : SLT_F_UNUSED), "Object " sdesc, ldesc)
 #include "tbl/vsl_tags_http.h"
 #undef SLTH
 
