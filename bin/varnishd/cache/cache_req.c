@@ -167,14 +167,12 @@ Req_Release(struct req *req)
 	AZ(req->vcl);
 	if (req->vsl->wid)
 		VSL_End(req->vsl);
-	sp = req->sp;
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	TAKE_OBJ_NOTNULL(sp, &req->sp, SESS_MAGIC);
 	pp = sp->pool;
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	MPL_AssertSane(req);
 	VSL_Flush(req->vsl, 0);
-	req->sp = NULL;
 	req->topreq = NULL;
 	MPL_Free(pp->mpl_req, req);
 }
