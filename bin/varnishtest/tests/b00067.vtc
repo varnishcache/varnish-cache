@@ -37,6 +37,28 @@ client c2 {
 	expect_close
 } -start
 
+client c3 {
+	loop 3 {
+		# send a periodic CRLF
+		delay 0.3
+		sendhex 0d0a
+	}
+	delay 0.3
+	expect_close
+} -start
+
+client c4 {
+	txreq
+	rxresp
+	loop 3 {
+		# send a periodic CRLF
+		delay 0.3
+		sendhex 0d0a
+	}
+	delay 0.3
+	expect_close
+} -start
+
 client c1u -connect "${tmpdir}/v1.sock" {
 	txreq
 	rxresp
@@ -57,7 +79,33 @@ client c2u -connect "${tmpdir}/v1.sock" {
 	expect_close
 } -start
 
+client c3u -connect "${tmpdir}/v1.sock" {
+	loop 3 {
+		# send a periodic CRLF
+		delay 0.3
+		sendhex 0d0a
+	}
+	delay 0.3
+	expect_close
+} -start
+
+client c4u -connect "${tmpdir}/v1.sock" {
+	txreq
+	rxresp
+	loop 3 {
+		# send a periodic CRLF
+		delay 0.3
+		sendhex 0d0a
+	}
+	delay 0.3
+	expect_close
+} -start
+
 client c1 -wait
 client c2 -wait
+client c3 -wait
+client c4 -wait
 client c1u -wait
 client c2u -wait
+client c3u -wait
+client c4u -wait
