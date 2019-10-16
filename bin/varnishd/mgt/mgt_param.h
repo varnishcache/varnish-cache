@@ -72,7 +72,14 @@ tweak_t tweak_uint;
 tweak_t tweak_vsl_buffer;
 tweak_t tweak_vsl_reclen;
 
-int tweak_generic_uint(struct vsb *vsb, volatile unsigned *dest,
+enum tweak_e {
+	TWEAK_OK,
+	TWEAK_ERR,
+	TWEAK_BELOW_MIN,
+	TWEAK_ABOVE_MAX,
+};
+
+enum tweak_e tweak_generic_uint(struct vsb *vsb, volatile unsigned *dest,
     const char *arg, const char *min, const char *max);
 
 extern struct parspec mgt_parspec[]; /* mgt_param_tbl.c */
