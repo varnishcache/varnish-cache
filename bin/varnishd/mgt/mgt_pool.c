@@ -121,7 +121,7 @@ struct parspec WRK_parspec[] = {
 		DELAYED_EFFECT,
 		"100", "threads" },
 	{ "thread_pool_reserve", tweak_uint, &mgt_param.wthread_reserve,
-		0, NULL,
+		NULL, NULL,
 		"The number of worker threads reserved for vital tasks "
 		"in each pool.\n"
 		"\n"
