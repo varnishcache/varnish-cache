@@ -55,6 +55,10 @@ struct parspec {
 
 	const char	*def;
 	const char	*units;
+
+	char		*dyn_min;
+	char		*dyn_max;
+	char		*dyn_def;
 };
 
 tweak_t tweak_bool;
