@@ -1,0 +1,25 @@
+varnishtest "Explain how param.(re)?set may fail"
+
+# NB: we don't need or want to start the cache process
+
+varnish v1 -cliok "param.set thread_pool_max 10000"
+varnish v1 -cliok "param.set thread_pool_min  8000"
+
+# NB: "varnish v1 -cliexpect" wouldn't work with a non-200 status
+shell -err -expect "Must be at least 8000 (thread_pool_min)" {
+	exec varnishadm -n ${v1_name} param.reset thread_pool_max
+}
+
+varnish v1 -cliok "param.set thread_pool_min  8"
+varnish v1 -cliok "param.set thread_pool_max 10"
+
+shell -err -expect "Must be no more than 10 (thread_pool_max)" {
+	exec varnishadm -n ${v1_name} param.reset thread_pool_min
+}
+
+varnish v1 -cliok "param.reset thread_pool_max"
+varnish v1 -cliok "param.reset thread_pool_min"
+
+shell -err -expect "Must be no more than 95 (95% of thread_pool_min)" {
+	exec varnishadm -n ${v1_name} param.set thread_pool_reserve 96
+}
