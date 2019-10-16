@@ -434,8 +434,7 @@ workflows:
           <<: *pkg_req
       - build_alpine:
           <<: *pkg_req
-      - hold:
-          type: approval
+      - push_packages:
           requires:
             - build_debian_stretch
             - build_debian_buster
@@ -443,9 +442,6 @@ workflows:
             - build_ubuntu_bionic
             - build_centos_7
             - build_alpine
-      - push_packages:
-          requires:
-            - hold
 #      - distcheck:
 #          name: distcheck_centos_7
 #          dist: centos
