@@ -57,26 +57,64 @@ static int
 tweak_thread_pool_min(struct vsb *vsb, const struct parspec *par,
     const char *arg)
 {
+	enum tweak_e tweak;
 
-	if (tweak_generic_uint(vsb, par->priv, arg, par->min, par->max))
-		return (-1);
-	MCF_ParamConf(MCF_MINIMUM, "thread_pool_max",
-	    "%u", mgt_param.wthread_min);
-	MCF_ParamConf(MCF_MAXIMUM, "thread_pool_reserve",
-	    "%u", mgt_param.wthread_min * 950 / 1000);
-	return (0);
+	tweak = tweak_generic_uint(vsb, par->priv, arg, par->min, par->max);
+
+	if (tweak == TWEAK_OK) {
+		MCF_ParamConf(MCF_MINIMUM, "thread_pool_max",
+		    "%u", mgt_param.wthread_min);
+		MCF_ParamConf(MCF_MAXIMUM, "thread_pool_reserve",
+		    "%u", mgt_param.wthread_min * 950 / 1000);
+		return (0);
+	}
+
+	if (arg != JSON_FMT && tweak == TWEAK_ABOVE_MAX) {
+		vsb->s_len--; /* XXX: VSB_trim(vsb, "\n"); instead? */
+		VSB_cat(vsb, " (thread_pool_max)\n");
+	}
+
+	return (-1);
 }
 
 static int
 tweak_thread_pool_max(struct vsb *vsb, const struct parspec *par,
     const char *arg)
 {
+	enum tweak_e tweak;
 
-	if (tweak_generic_uint(vsb, par->priv, arg, par->min, par->max))
-		return (-1);
-	MCF_ParamConf(MCF_MAXIMUM, "thread_pool_min",
-	    "%u", mgt_param.wthread_max);
-	return (0);
+	tweak = tweak_generic_uint(vsb, par->priv, arg, par->min, par->max);
+
+	if (tweak == TWEAK_OK) {
+		MCF_ParamConf(MCF_MAXIMUM, "thread_pool_min",
+		    "%u", mgt_param.wthread_max);
+		return (0);
+	}
+
+	if (arg != JSON_FMT && tweak == TWEAK_BELOW_MIN) {
+		vsb->s_len--; /* XXX: VSB_trim(vsb, "\n"); instead? */
+		VSB_cat(vsb, " (thread_pool_min)\n");
+	}
+
+	return (-1);
+}
+
+static int
+tweak_thread_pool_reserve(struct vsb *vsb, const struct parspec *par,
+    const char *arg)
+{
+	enum tweak_e tweak;
+
+	tweak = tweak_generic_uint(vsb, par->priv, arg, par->min, par->max);
+	if (tweak == TWEAK_OK)
+		return (0);
+
+	if (arg != JSON_FMT && tweak == TWEAK_ABOVE_MAX) {
+		vsb->s_len--; /* XXX: VSB_trim(vsb, "\n"); instead? */
+		VSB_cat(vsb, " (95% of thread_pool_min)\n");
+	}
+
+	return (-1);
 }
 
 /*--------------------------------------------------------------------*/
@@ -120,7 +158,8 @@ struct parspec WRK_parspec[] = {
 		"Minimum is 10 threads.",
 		DELAYED_EFFECT,
 		"100", "threads" },
-	{ "thread_pool_reserve", tweak_uint, &mgt_param.wthread_reserve,
+	{ "thread_pool_reserve", tweak_thread_pool_reserve,
+		&mgt_param.wthread_reserve,
 		NULL, NULL,
 		"The number of worker threads reserved for vital tasks "
 		"in each pool.\n"
