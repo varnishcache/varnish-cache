@@ -708,21 +708,15 @@ MCF_ParamConf(enum mcf_which_e which, const char * const param,
 	AZ(VSB_finish(vsb));
 	switch (which) {
 	case MCF_DEFAULT:
-		free(pp->dyn_def);
-		pp->dyn_def = strdup(VSB_data(vsb));
-		AN(pp->dyn_def);
+		REPLACE(pp->dyn_def, VSB_data(vsb));
 		pp->def = pp->dyn_def;
 		break;
 	case MCF_MINIMUM:
-		free(pp->dyn_min);
-		pp->dyn_min = strdup(VSB_data(vsb));
-		AN(pp->dyn_min);
+		REPLACE(pp->dyn_min, VSB_data(vsb));
 		pp->min = pp->dyn_min;
 		break;
 	case MCF_MAXIMUM:
-		free(pp->dyn_max);
-		pp->dyn_max = strdup(VSB_data(vsb));
-		AN(pp->dyn_max);
+		REPLACE(pp->dyn_max, VSB_data(vsb));
 		pp->max = pp->dyn_max;
 		break;
 	default:
