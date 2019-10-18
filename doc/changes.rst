@@ -62,6 +62,9 @@ Varnish Cache 6.0.5 (unreleased)
   utility run as the same user as the cache worker. This retires the
   VSM_NOPID environment variable.
 
+* Fixed clearing of a state variable that could case an information leak
+  (VSV00004_)
+
 .. _2395: https://github.com/varnishcache/varnish-cache/issues/2395
 .. _2572: https://github.com/varnishcache/varnish-cache/issues/2572
 .. _2905: https://github.com/varnishcache/varnish-cache/issues/2905
@@ -75,6 +78,7 @@ Varnish Cache 6.0.5 (unreleased)
 .. _2967: https://github.com/varnishcache/varnish-cache/issues/2967
 .. _2977: https://github.com/varnishcache/varnish-cache/issues/2977
 .. _3007: https://github.com/varnishcache/varnish-cache/issues/3007
+.. _VSV00004: https://varnish-cache.org/security/VSV00004.html
 
 ================================
 Varnish Cache 6.0.4 (2019-09-03)
