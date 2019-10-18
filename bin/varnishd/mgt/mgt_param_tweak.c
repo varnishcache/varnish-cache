@@ -156,7 +156,7 @@ tweak_bool(struct vsb *vsb, const struct parspec *par, const char *arg)
 
 /*--------------------------------------------------------------------*/
 
-enum tweak_e
+int
 tweak_generic_uint(struct vsb *vsb, volatile unsigned *dest, const char *arg,
     const char *min, const char *max,
     const char *min_reason, const char *max_reason)
@@ -170,7 +170,7 @@ tweak_generic_uint(struct vsb *vsb, volatile unsigned *dest, const char *arg,
 			minv = strtoul(min, &p, 0);
 			if (*arg == '\0' || *p != '\0') {
 				VSB_printf(vsb, "Illegal Min: %s\n", min);
-				return (TWEAK_ERR);
+				return (-1);
 			}
 		}
 		if (max != NULL) {
@@ -178,7 +178,7 @@ tweak_generic_uint(struct vsb *vsb, volatile unsigned *dest, const char *arg,
 			maxv = strtoul(max, &p, 0);
 			if (*arg == '\0' || *p != '\0') {
 				VSB_printf(vsb, "Illegal Max: %s\n", max);
-				return (TWEAK_ERR);
+				return (-1);
 			}
 		}
 		p = NULL;
@@ -188,7 +188,7 @@ tweak_generic_uint(struct vsb *vsb, volatile unsigned *dest, const char *arg,
 			u = strtoul(arg, &p, 0);
 			if (*arg == '\0' || *p != '\0') {
 				VSB_printf(vsb, "Not a number (%s)\n", arg);
-				return (TWEAK_ERR);
+				return (-1);
 			}
 		}
 		if (min != NULL && u < minv) {
@@ -196,14 +196,14 @@ tweak_generic_uint(struct vsb *vsb, volatile unsigned *dest, const char *arg,
 			if (min_reason != NULL)
 				VSB_printf(vsb, " %s", min_reason);
 			VSB_putc(vsb, '\n');
-			return (TWEAK_BELOW_MIN);
+			return (-1);
 		}
 		if (max != NULL && u > maxv) {
 			VSB_printf(vsb, "Must be no more than %s", max);
 			if (max_reason != NULL)
 				VSB_printf(vsb, " %s", max_reason);
 			VSB_putc(vsb, '\n');
-			return (TWEAK_ABOVE_MAX);
+			return (-1);
 		}
 		*dest = u;
 	} else if (*dest == UINT_MAX && arg != JSON_FMT) {
@@ -211,7 +211,7 @@ tweak_generic_uint(struct vsb *vsb, volatile unsigned *dest, const char *arg,
 	} else {
 		VSB_printf(vsb, "%u", *dest);
 	}
-	return (TWEAK_OK);
+	return (0);
 }
 
 /*--------------------------------------------------------------------*/

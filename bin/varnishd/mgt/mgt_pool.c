@@ -57,38 +57,30 @@ static int
 tweak_thread_pool_min(struct vsb *vsb, const struct parspec *par,
     const char *arg)
 {
-	enum tweak_e tweak;
 
-	tweak = tweak_generic_uint(vsb, par->priv, arg, par->min, par->max,
-	    par->dyn_min_reason, par->dyn_max_reason);
+	if (tweak_generic_uint(vsb, par->priv, arg, par->min, par->max,
+	    par->dyn_min_reason, par->dyn_max_reason))
+		return (-1);
 
-	if (tweak == TWEAK_OK) {
-		MCF_ParamConf(MCF_MINIMUM, "thread_pool_max",
-		    "%u", mgt_param.wthread_min);
-		MCF_ParamConf(MCF_MAXIMUM, "thread_pool_reserve",
-		    "%u", mgt_param.wthread_min * 950 / 1000);
-		return (0);
-	}
-
-	return (-1);
+	MCF_ParamConf(MCF_MINIMUM, "thread_pool_max",
+	    "%u", mgt_param.wthread_min);
+	MCF_ParamConf(MCF_MAXIMUM, "thread_pool_reserve",
+	    "%u", mgt_param.wthread_min * 950 / 1000);
+	return (0);
 }
 
 static int
 tweak_thread_pool_max(struct vsb *vsb, const struct parspec *par,
     const char *arg)
 {
-	enum tweak_e tweak;
 
-	tweak = tweak_generic_uint(vsb, par->priv, arg, par->min, par->max,
-	    par->dyn_min_reason, par->dyn_max_reason);
+	if (tweak_generic_uint(vsb, par->priv, arg, par->min, par->max,
+	    par->dyn_min_reason, par->dyn_max_reason))
+		return (-1);
 
-	if (tweak == TWEAK_OK) {
-		MCF_ParamConf(MCF_MAXIMUM, "thread_pool_min",
-		    "%u", mgt_param.wthread_max);
-		return (0);
-	}
-
-	return (-1);
+	MCF_ParamConf(MCF_MAXIMUM, "thread_pool_min",
+	    "%u", mgt_param.wthread_max);
+	return (0);
 }
 
 /*--------------------------------------------------------------------*/
