@@ -56,6 +56,8 @@ struct parspec {
 	const char	*def;
 	const char	*units;
 
+	const char	*dyn_min_reason;
+	const char	*dyn_max_reason;
 	char		*dyn_min;
 	char		*dyn_max;
 	char		*dyn_def;
@@ -80,7 +82,8 @@ enum tweak_e {
 };
 
 enum tweak_e tweak_generic_uint(struct vsb *vsb, volatile unsigned *dest,
-    const char *arg, const char *min, const char *max);
+    const char *arg, const char *min, const char *max,
+    const char *min_reason, const char *max_reason);
 
 extern struct parspec mgt_parspec[]; /* mgt_param_tbl.c */
 extern struct parspec VSL_parspec[]; /* mgt_param_vsl.c */

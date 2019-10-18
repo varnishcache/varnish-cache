@@ -59,7 +59,8 @@ tweak_thread_pool_min(struct vsb *vsb, const struct parspec *par,
 {
 	enum tweak_e tweak;
 
-	tweak = tweak_generic_uint(vsb, par->priv, arg, par->min, par->max);
+	tweak = tweak_generic_uint(vsb, par->priv, arg, par->min, par->max,
+	    par->dyn_min_reason, par->dyn_max_reason);
 
 	if (tweak == TWEAK_OK) {
 		MCF_ParamConf(MCF_MINIMUM, "thread_pool_max",
@@ -67,11 +68,6 @@ tweak_thread_pool_min(struct vsb *vsb, const struct parspec *par,
 		MCF_ParamConf(MCF_MAXIMUM, "thread_pool_reserve",
 		    "%u", mgt_param.wthread_min * 950 / 1000);
 		return (0);
-	}
-
-	if (arg != JSON_FMT && tweak == TWEAK_ABOVE_MAX) {
-		vsb->s_len--; /* XXX: VSB_trim(vsb, "\n"); instead? */
-		VSB_cat(vsb, " (thread_pool_max)\n");
 	}
 
 	return (-1);
@@ -83,35 +79,13 @@ tweak_thread_pool_max(struct vsb *vsb, const struct parspec *par,
 {
 	enum tweak_e tweak;
 
-	tweak = tweak_generic_uint(vsb, par->priv, arg, par->min, par->max);
+	tweak = tweak_generic_uint(vsb, par->priv, arg, par->min, par->max,
+	    par->dyn_min_reason, par->dyn_max_reason);
 
 	if (tweak == TWEAK_OK) {
 		MCF_ParamConf(MCF_MAXIMUM, "thread_pool_min",
 		    "%u", mgt_param.wthread_max);
 		return (0);
-	}
-
-	if (arg != JSON_FMT && tweak == TWEAK_BELOW_MIN) {
-		vsb->s_len--; /* XXX: VSB_trim(vsb, "\n"); instead? */
-		VSB_cat(vsb, " (thread_pool_min)\n");
-	}
-
-	return (-1);
-}
-
-static int
-tweak_thread_pool_reserve(struct vsb *vsb, const struct parspec *par,
-    const char *arg)
-{
-	enum tweak_e tweak;
-
-	tweak = tweak_generic_uint(vsb, par->priv, arg, par->min, par->max);
-	if (tweak == TWEAK_OK)
-		return (0);
-
-	if (arg != JSON_FMT && tweak == TWEAK_ABOVE_MAX) {
-		vsb->s_len--; /* XXX: VSB_trim(vsb, "\n"); instead? */
-		VSB_cat(vsb, " (95% of thread_pool_min)\n");
 	}
 
 	return (-1);
@@ -146,7 +120,8 @@ struct parspec WRK_parspec[] = {
 		"worker threads soak up RAM and CPU and generally just get "
 		"in the way of getting work done.",
 		DELAYED_EFFECT,
-		"5000", "threads" },
+		"5000", "threads",
+		"(thread_pool_min)" },
 	{ "thread_pool_min", tweak_thread_pool_min, &mgt_param.wthread_min,
 		NULL, NULL,
 		"The minimum number of worker threads in each pool. The "
@@ -157,8 +132,9 @@ struct parspec WRK_parspec[] = {
 		"\n"
 		"Minimum is 10 threads.",
 		DELAYED_EFFECT,
-		"100", "threads" },
-	{ "thread_pool_reserve", tweak_thread_pool_reserve,
+		"100", "threads",
+		NULL, "(thread_pool_max)" },
+	{ "thread_pool_reserve", tweak_uint,
 		&mgt_param.wthread_reserve,
 		NULL, NULL,
 		"The number of worker threads reserved for vital tasks "
@@ -177,7 +153,8 @@ struct parspec WRK_parspec[] = {
 		"Default is 0 to auto-tune (currently 5% of thread_pool_min).\n"
 		"Minimum is 1 otherwise, maximum is 95% of thread_pool_min.",
 		DELAYED_EFFECT,
-		"0", "threads" },
+		"0", "threads",
+		NULL, "(95% of thread_pool_min)" },
 	{ "thread_pool_timeout",
 		tweak_timeout, &mgt_param.wthread_timeout,
 		"10", NULL,

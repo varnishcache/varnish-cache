@@ -158,7 +158,8 @@ tweak_bool(struct vsb *vsb, const struct parspec *par, const char *arg)
 
 enum tweak_e
 tweak_generic_uint(struct vsb *vsb, volatile unsigned *dest, const char *arg,
-    const char *min, const char *max)
+    const char *min, const char *max,
+    const char *min_reason, const char *max_reason)
 {
 	unsigned u, minv = 0, maxv = 0;
 	char *p;
@@ -191,11 +192,17 @@ tweak_generic_uint(struct vsb *vsb, volatile unsigned *dest, const char *arg,
 			}
 		}
 		if (min != NULL && u < minv) {
-			VSB_printf(vsb, "Must be at least %s\n", min);
+			VSB_printf(vsb, "Must be at least %s", min);
+			if (min_reason != NULL)
+				VSB_printf(vsb, " %s", min_reason);
+			VSB_putc(vsb, '\n');
 			return (TWEAK_BELOW_MIN);
 		}
 		if (max != NULL && u > maxv) {
-			VSB_printf(vsb, "Must be no more than %s\n", max);
+			VSB_printf(vsb, "Must be no more than %s", max);
+			if (max_reason != NULL)
+				VSB_printf(vsb, " %s", max_reason);
+			VSB_putc(vsb, '\n');
 			return (TWEAK_ABOVE_MAX);
 		}
 		*dest = u;
@@ -215,7 +222,8 @@ tweak_uint(struct vsb *vsb, const struct parspec *par, const char *arg)
 	volatile unsigned *dest;
 
 	dest = par->priv;
-	return (tweak_generic_uint(vsb, dest, arg, par->min, par->max));
+	return (tweak_generic_uint(vsb, dest, arg, par->min, par->max,
+	    par->dyn_min_reason, par->dyn_max_reason));
 }
 
 /*--------------------------------------------------------------------*/
@@ -415,11 +423,13 @@ tweak_poolparam(struct vsb *vsb, const struct parspec *par, const char *arg)
 			}
 			px = *pp;
 			retval = tweak_generic_uint(vsb, &px.min_pool, av[1],
-			    par->min, par->max);
+			    par->min, par->max, par->dyn_min_reason,
+			    par->dyn_max_reason);
 			if (retval)
 				break;
 			retval = tweak_generic_uint(vsb, &px.max_pool, av[2],
-			    par->min, par->max);
+			    par->min, par->max, par->dyn_min_reason,
+			    par->dyn_max_reason);
 			if (retval)
 				break;
 			retval = tweak_generic_double(vsb,
