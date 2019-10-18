@@ -27,6 +27,37 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
+Varnish Cache 6.0.5 (unreleased)
+================================
+
+* Various H2 bug fixes and improvements have been back ported from the
+  master branch. (2395_, 2572_, 2905_, 2923_, 2930_, 2931_, 2933_,
+  2934_, 2937_, 2938_, 2967_)
+
+* The idle timeout can now be set per session, by setting the
+  `sess.timeout_idle` variable in VCL.
+
+* A `param.reset` command has been added to `varnishadm`.
+
+* Make waitinglist rushes propagate on streaming delivery. (2977_)
+
+* Fix a problem where the ban lurker would skip objects. (3007_)
+
+.. _2395: https://github.com/varnishcache/varnish-cache/issues/2395
+.. _2572: https://github.com/varnishcache/varnish-cache/issues/2572
+.. _2905: https://github.com/varnishcache/varnish-cache/issues/2905
+.. _2923: https://github.com/varnishcache/varnish-cache/issues/2923
+.. _2923: https://github.com/varnishcache/varnish-cache/issues/2930
+.. _2931: https://github.com/varnishcache/varnish-cache/issues/2931
+.. _2933: https://github.com/varnishcache/varnish-cache/pull/2933
+.. _2934: https://github.com/varnishcache/varnish-cache/issues/2934
+.. _2937: https://github.com/varnishcache/varnish-cache/issues/2937
+.. _2938: https://github.com/varnishcache/varnish-cache/issues/2938
+.. _2967: https://github.com/varnishcache/varnish-cache/issues/2967
+.. _2977: https://github.com/varnishcache/varnish-cache/issues/2977
+.. _3007: https://github.com/varnishcache/varnish-cache/issues/3007
+
+================================
 Varnish Cache 6.0.4 (2019-09-03)
 ================================
 
