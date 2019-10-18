@@ -27,7 +27,7 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
-Varnish Cache 6.0.5 (unreleased)
+Varnish Cache 6.0.5 (2019-10-21)
 ================================
 
 * Various H2 bug fixes and improvements have been back ported from the
