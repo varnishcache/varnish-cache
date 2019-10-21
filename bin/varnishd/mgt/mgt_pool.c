@@ -81,7 +81,10 @@ tweak_thread_pool_max(struct vsb *vsb, const struct parspec *par,
 	return (0);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * The thread pool parameter definitions used to generate the varnishd
+ * manual. Check the generated RST after updating.
+ */
 
 struct parspec WRK_parspec[] = {
 	{ "thread_pools", tweak_uint, &mgt_param.wthread_pools,
