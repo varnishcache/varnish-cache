@@ -64,6 +64,8 @@
 	} while (0)
 
 // TODO #define strcpy BANNED
+// TODO then revert 0fa4baead49f0a45f68d3db0b7743c5e4e93ad4d
+// TODO and replace with flexelint exception
 
 /* Close and discard filedescriptor */
 #define closefd(fdp)				\
