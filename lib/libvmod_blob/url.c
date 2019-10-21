@@ -86,7 +86,7 @@ url_encode(const enum encoding enc, const enum case_e kase,
 	char *p = buf;
 	const char * const end = buf + buflen;
 	const char *alphabet = hex_alphabet[0];
-	int i;
+	size_t i;
 
 	AN(buf);
 	assert(enc == URL);

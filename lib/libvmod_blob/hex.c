@@ -82,7 +82,7 @@ hex_encode(const enum encoding enc, const enum case_e kase,
 {
 	char *p = buf;
 	const char *alphabet = hex_alphabet[0];
-	int i;
+	size_t i;
 
 	AN(buf);
 	assert(enc == HEX);
