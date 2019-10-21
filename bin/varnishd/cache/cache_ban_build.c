@@ -306,9 +306,11 @@ BAN_Commit(struct ban_proto *bp)
 	struct ban  *b, *bi;
 	ssize_t ln;
 	vtim_real t0;
+	uint64_t u;
 
 	CHECK_OBJ_NOTNULL(bp, BAN_PROTO_MAGIC);
 	AN(bp->vsb);
+	assert(sizeof u == sizeof t0);
 
 	if (ban_shutdown)
 		return (ban_error(bp, "Shutting down"));
@@ -330,10 +332,10 @@ BAN_Commit(struct ban_proto *bp)
 
 	b->flags = bp->flags;
 
-	// XXX why don't we vbe*enc timestamp and flags?
 	memset(b->spec, 0, BANS_HEAD_LEN);
 	t0 = VTIM_real();
-	memcpy(b->spec + BANS_TIMESTAMP, &t0, sizeof t0);
+	memcpy(&u, &t0, sizeof u);
+	vbe64enc(b->spec + BANS_TIMESTAMP, u);
 	b->spec[BANS_FLAGS] = b->flags & 0xff;
 	memcpy(b->spec + BANS_HEAD_LEN, VSB_data(bp->vsb), ln);
 	ln += BANS_HEAD_LEN;

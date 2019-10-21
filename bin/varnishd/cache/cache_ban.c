@@ -134,9 +134,12 @@ vtim_real
 ban_time(const uint8_t *banspec)
 {
 	vtim_real t;
+	uint64_t u;
 
+	assert(sizeof t == sizeof u);
 	assert(sizeof t == (BANS_LENGTH - BANS_TIMESTAMP));
-	memcpy(&t, banspec, sizeof t);
+	u = vbe64dec(banspec + BANS_TIMESTAMP);
+	memcpy(&t, &u, sizeof t);
 	return (t);
 }
 
@@ -157,8 +160,8 @@ ban_equal(const uint8_t *bs1, const uint8_t *bs2)
 	/*
 	 * Compare two ban-strings.
 	 */
-	u = vbe32dec(bs1 + BANS_LENGTH);
-	if (u != vbe32dec(bs2 + BANS_LENGTH))
+	u = ban_len(bs1);
+	if (u != ban_len(bs2))
 		return (0);
 	if (bs1[BANS_FLAGS] & BANS_FLAG_NODEDUP)
 		return (0);
