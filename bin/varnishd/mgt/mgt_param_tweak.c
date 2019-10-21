@@ -156,7 +156,7 @@ tweak_bool(struct vsb *vsb, const struct parspec *par, const char *arg)
 
 /*--------------------------------------------------------------------*/
 
-int
+static int
 tweak_generic_uint(struct vsb *vsb, volatile unsigned *dest, const char *arg,
     const char *min, const char *max,
     const char *min_reason, const char *max_reason)

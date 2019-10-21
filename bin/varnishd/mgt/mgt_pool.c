@@ -58,8 +58,7 @@ tweak_thread_pool_min(struct vsb *vsb, const struct parspec *par,
     const char *arg)
 {
 
-	if (tweak_generic_uint(vsb, par->priv, arg, par->min, par->max,
-	    par->dyn_min_reason, par->dyn_max_reason))
+	if (tweak_uint(vsb, par, arg))
 		return (-1);
 
 	MCF_ParamConf(MCF_MINIMUM, "thread_pool_max",
@@ -74,8 +73,7 @@ tweak_thread_pool_max(struct vsb *vsb, const struct parspec *par,
     const char *arg)
 {
 
-	if (tweak_generic_uint(vsb, par->priv, arg, par->min, par->max,
-	    par->dyn_min_reason, par->dyn_max_reason))
+	if (tweak_uint(vsb, par, arg))
 		return (-1);
 
 	MCF_ParamConf(MCF_MAXIMUM, "thread_pool_min",
