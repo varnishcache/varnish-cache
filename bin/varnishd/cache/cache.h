@@ -628,7 +628,7 @@ double http_GetHdrQ(const struct http *hp, const char *hdr, const char *field);
 ssize_t http_GetContentLength(const struct http *hp);
 uint16_t http_GetStatus(const struct http *hp);
 int http_IsStatus(const struct http *hp, int);
-void http_SetStatus(struct http *to, uint16_t status);
+void http_SetStatus(struct http *to, uint16_t status, const char *reason);
 const char *http_GetMethod(const struct http *hp);
 int http_HdrIs(const struct http *hp, const char *hdr, const char *val);
 void http_CopyHome(const struct http *hp);

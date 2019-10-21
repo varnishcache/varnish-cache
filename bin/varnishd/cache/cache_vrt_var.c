@@ -108,7 +108,7 @@ VRT_l_##obj##_status(VRT_CTX, VCL_INT num)				\
 		VRT_fail(ctx, "illegal %s.status (%jd) (..0##)",	\
 		    #obj, (intmax_t)num);				\
 	else								\
-		http_SetStatus(ctx->http_##obj, (uint16_t)num);		\
+		http_SetStatus(ctx->http_##obj, (uint16_t)num, NULL);	\
 }
 
 #define VRT_STATUS_R(obj)						\

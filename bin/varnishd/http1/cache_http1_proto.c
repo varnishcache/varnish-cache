@@ -453,7 +453,7 @@ HTTP1_DissectResponse(struct http_conn *htc, struct http *hp,
 		    (int)(htc->rxbuf_e - htc->rxbuf_b), htc->rxbuf_b);
 		assert(retval >= 100 && retval <= 999);
 		assert(retval == 503);
-		http_SetStatus(hp, 503);
+		http_SetStatus(hp, 503, NULL);
 	}
 
 	if (hp->hd[HTTP_HDR_REASON].b == NULL ||
