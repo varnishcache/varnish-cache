@@ -158,7 +158,7 @@ VRT_selecthttp(VRT_CTX, enum gethdr_e where)
 /*--------------------------------------------------------------------*/
 
 VCL_STRING
-VRT_GetHdr(VRT_CTX, const struct gethdr_s *hs)
+VRT_GetHdr(VRT_CTX, VCL_HEADER hs)
 {
 	VCL_HTTP hp;
 	const char *p;
@@ -571,8 +571,7 @@ VRT_UpperLowerStrands(VRT_CTX, VCL_STRANDS s, int up)
 /*--------------------------------------------------------------------*/
 
 VCL_VOID
-VRT_SetHdr(VRT_CTX , const struct gethdr_s *hs,
-    const char *p, ...)
+VRT_SetHdr(VRT_CTX , VCL_HEADER hs, const char *p, ...)
 {
 	VCL_HTTP hp;
 	va_list ap;
