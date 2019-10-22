@@ -1,0 +1,94 @@
+varnishtest "Check the += operator on strings"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+
+	sub vcl_deliver {
+
+		# NOTE: These are type: HEADER
+
+		# existing string assignment
+		set resp.http.a = "a";
+		set resp.http.b = resp.http.a + "b";
+		set resp.http.c = "c";
+
+		# new: string addition assinment
+		set resp.http.c += resp.http.b + "d";
+
+		# int += string
+		set resp.http.i = 1;
+		set resp.http.i += "i";
+
+		set resp.http.k = 2;
+		set resp.http.k += "k" + 22;
+
+		set resp.http.l = 3;
+		set resp.http.l += 33 + "l";
+
+
+		# string += int
+		set resp.http.s = "s";
+		set resp.http.s += 1;
+
+		set resp.http.q = "q";
+		set resp.http.q += "q" + 44;
+
+		set resp.http.r = "r";
+		set resp.http.r += 55 + "r";
+
+		set resp.http.t = "t";
+		set resp.http.t += now;
+
+		# NOTE: this is type: STRING
+
+		set client.identity = "c1";
+		set client.identity += "c2";
+		set resp.http.id = client.identity;
+	}
+
+	# regression testing integer
+	sub vcl_backend_response {
+		set beresp.status = 198;
+		set beresp.status += 2;
+
+		set beresp.http.a += beresp.grace;
+	}
+
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.a == "a"
+	expect resp.http.b == "ab"
+	expect resp.http.c == "cabd"
+
+	expect resp.http.i == "1i"
+
+	expect resp.http.k == "2k22"
+	expect resp.http.l == "333l"
+
+	expect resp.http.s == "s1"
+	expect resp.http.q == "qq44"
+	expect resp.http.r == "r55r"
+
+	# NOTE: test somehow:
+	# expect resp.http.t == "t" + now
+
+	expect resp.http.id == "c1c2"
+
+	expect resp.status == 200
+} -run
+
+# testing type: BODY
+varnish v1 -errvcl "Cannot convert BODY to STRING" {
+	sub vcl_synth {
+		set resp.body = "body";
+		set resp.body += "mary";
+		return (deliver);
+	}
+}

@@ -120,8 +120,26 @@ vcc_act_set(struct vcc *tl, struct token *t, struct symbol *sym)
 		type = ap->want;
 		break;
 	}
-	if (ap->type == VOID)
+
+	int ss = 0;
+	if (ap->type == VOID && tl->t->tok == T_INCR) {
+		if (type == HEADER) {
+			SkipToken(tl, T_INCR);
+			ss = 1;
+			Fb(tl, 1, "VRT_GetHdr(ctx, %s),\n", sym->rname);
+		} else  if (type == STRING) {
+			SkipToken(tl, T_INCR);
+			ss = 1;
+			Fb(tl, 1, "%s,\n", sym->rname);
+		} else if (type == BODY) {
+			VSB_printf(tl->sb, "Cannot convert BODY to STRING\n");
+		}
+	}
+
+	if (!ss && ap->type == VOID) {
 		SkipToken(tl, ap->oper);
+	}
+
 	if (type == HEADER) {
 		vcc_Expr(tl, STRING_LIST);
 	} else if (type == STRING) {
