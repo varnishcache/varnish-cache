@@ -860,17 +860,17 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 			return;
 		}
 		vcc_NextToken(tl);
-		*e = vcc_expr_edit(tl, vm->type_to, vm->impl, *e, NULL);
-		ERRCHK(tl);
-		if ((*e)->fmt == STRING) {
-			(*e)->fmt = STRINGS;
-			(*e)->nstr = 1;
-		}
 		if (vm->func) {
 			ExpectErr(tl, '(');
 			vcc_NextToken(tl);
 			ExpectErr(tl, ')');
 			vcc_NextToken(tl);
+		}
+		*e = vcc_expr_edit(tl, vm->type_to, vm->impl, *e, NULL);
+		ERRCHK(tl);
+		if ((*e)->fmt == STRING) {
+			(*e)->fmt = STRINGS;
+			(*e)->nstr = 1;
 		}
 	}
 }
