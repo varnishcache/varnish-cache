@@ -829,6 +829,8 @@ static const struct vcc_methods {
 	{ STRINGS, STRING, "upper", "VRT_UpperLowerStrands(ctx, \vT, 1)", 0 },
 	{ STRINGS, STRING, "lower", "VRT_UpperLowerStrands(ctx, \vT, 0)", 0 },
 
+	{ HTTP, HEADER, "http", "VRT_Header(ctx, \v1, \v2)", 1, { STRING } },
+
 	{ NULL, NULL,		NULL,		NULL},
 };
 

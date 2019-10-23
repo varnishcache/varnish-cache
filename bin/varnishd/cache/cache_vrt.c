@@ -177,6 +177,44 @@ VRT_GetHdr(VRT_CTX, VCL_HEADER hs)
 	return (p);
 }
 
+/*--------------------------------------------------------------------*/
+
+VCL_HEADER
+VRT_Header(VRT_CTX, VCL_HTTP hp, VCL_STRING name)
+{
+	struct gethdr_s *hs;
+	int len;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+	AN(name);
+
+	len = strlen(name);
+	/* TODO: check header name validity */
+
+	CHECK_OBJ_NOTNULL(ctx->ws, WS_MAGIC);
+	hs = WS_Alloc(ctx->ws, sizeof *hs);
+	XXXAN(hs);
+
+	if (hp == ctx->http_req)
+		hs->where = HDR_REQ;
+	else if (hp == ctx->http_req_top)
+		hs->where = HDR_REQ_TOP;
+	else if (hp == ctx->http_bereq)
+		hs->where = HDR_BEREQ;
+	else if (hp == ctx->http_beresp)
+		hs->where = HDR_BERESP;
+	else if (hp == ctx->http_resp)
+		hs->where = HDR_RESP;
+	else
+		hs->where = HDR_OBJ;
+
+	hs->what = WS_Printf(ctx->ws, "%c%s:", len + 1, name);
+	XXXAN(hs->what);
+
+	return (hs);
+}
+
 /*--------------------------------------------------------------------
  * Build STRANDS from what is essentially a STRING_LIST
  */

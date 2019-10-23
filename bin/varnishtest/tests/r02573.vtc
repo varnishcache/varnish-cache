@@ -1,0 +1,22 @@
+varnishtest "Valid header names, invalid VCL symbols"
+
+varnish v1 -vcl {
+	backend be none;
+
+	sub vcl_recv {
+		return (synth(200));
+	}
+
+	sub vcl_synth {
+		set resp.http.req_http_foo = req.http("req.http.foo");
+		set resp.http.seven_hello = req.http("7" + "hello");
+	}
+} -start
+
+client c1 {
+	txreq -hdr "req.http.foo: bar" -hdr "7hello: world"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.req_http_foo == bar
+	expect resp.http.seven_hello == world
+} -run

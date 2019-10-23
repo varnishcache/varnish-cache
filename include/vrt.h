@@ -54,6 +54,7 @@
  * unreleased (planned for 2020-03-15)
  *	New prefix_{ptr|len} fields in vrt_backend
  *	VRT_HashStrands32() added
+ *	VRT_Header() added
  * 10.0 (2019-09-15)
  *	VRT_UpperLowerStrands added.
  *	VRT_synth_page now takes STRANDS argument
@@ -435,6 +436,7 @@ struct gethdr_s {
 
 VCL_HTTP VRT_selecthttp(VRT_CTX, enum gethdr_e);
 VCL_STRING VRT_GetHdr(VRT_CTX, VCL_HEADER);
+VCL_HEADER VRT_Header(VRT_CTX, VCL_HTTP, VCL_STRING);
 
 /***********************************************************************
  * req related
