@@ -173,7 +173,7 @@ enum mcf_which_e {
 void MCF_ParamConf(enum mcf_which_e, const char *param, const char *, ...)
     v_printflike_(3, 4);
 
-void MCF_ParamSet(struct cli *, const char *param, const char *val);
+void MCF_ParamSet(struct cli *, const char *param, const char *val, int init);
 void MCF_ParamProtect(struct cli *, const char *arg);
 void MCF_DumpRstParam(void);
 void MCF_AddParams(struct parspec *ps);

@@ -55,6 +55,7 @@ struct parspec {
 
 	const char	*def;
 	const char	*units;
+	char		*init;
 
 	const char	*dyn_min_reason;
 	const char	*dyn_max_reason;

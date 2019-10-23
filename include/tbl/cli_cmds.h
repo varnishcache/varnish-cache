@@ -149,10 +149,13 @@ CLI_CMD(VCL_LABEL,
 
 CLI_CMD(PARAM_RESET,
 	"param.reset",
-	"param.reset <param>",
+	"param.reset [-i] <param>",
 	"Reset parameter to default value.",
-	"",
-	1,1
+	"If -i is specified, apply the ``initial`` value given to the parameter"
+	" from the ``varnishd`` start line (``-p`` argument). If there was no"
+	" initial value, use the default one. Notes that it also impact the -t"
+	" and -l ``varnishd`` arguments.",
+	1,2
 )
 
 CLI_CMD(PARAM_SHOW,
