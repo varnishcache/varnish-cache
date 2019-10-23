@@ -138,7 +138,7 @@ vcc_delete_expr(struct expr *e)
  *	anything else is literal
  *
  * When editing, we check if any of the subexpressions contain a newline
- * and issue it as an indented block of so.
+ * and issue it as an indented block if so.
  *
  * XXX: check line lengths in edit, should pass indent in for this
  */
@@ -817,16 +817,17 @@ static const struct vcc_methods {
 	vcc_type_t		type_to;
 	const char		*method;
 	const char		*impl;
-	int			func;
+	int			argc;
+	vcc_type_t		argv[1]; /* largest argc */
 } vcc_methods[] = {
-	//{ BACKEND, BOOL,	"healthy",	"VRT_Healthy(ctx, \v1, 0)" },
+	//{ BACKEND, BOOL,	"healthy",	"VRT_Healthy(ctx, \v1, -1)" },
 
 #define VRTSTVVAR(nm, vtype, ctype, dval) \
-	{ STEVEDORE, vtype, #nm, "VRT_stevedore_" #nm "(\v1)", 0},
+	{ STEVEDORE, vtype, #nm, "VRT_stevedore_" #nm "(\v1)", -1},
 #include "tbl/vrt_stv_var.h"
 
-	{ STRINGS, STRING, "upper", "VRT_UpperLowerStrands(ctx, \vT, 1)", 1 },
-	{ STRINGS, STRING, "lower", "VRT_UpperLowerStrands(ctx, \vT, 0)", 1 },
+	{ STRINGS, STRING, "upper", "VRT_UpperLowerStrands(ctx, \vT, 1)", 0 },
+	{ STRINGS, STRING, "lower", "VRT_UpperLowerStrands(ctx, \vT, 0)", 0 },
 
 	{ NULL, NULL,		NULL,		NULL},
 };
@@ -835,8 +836,12 @@ static void
 vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 {
 	const struct vcc_methods *vm;
+	struct expr *e2, *ev;
+	int i;
 
 	*e = NULL;
+	e2 = NULL;
+	ev = NULL;
 	vcc_expr5(tl, e, fmt);
 	ERRCHK(tl);
 	AN(*e);
@@ -855,18 +860,32 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 			VSB_printf(tl->sb, "Unknown property ");
 			vcc_ErrToken(tl, tl->t);
 			VSB_printf(tl->sb,
-			 " for type %s\n", (*e)->fmt->name);
+			    " for type %s\n", (*e)->fmt->name);
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
 		vcc_NextToken(tl);
-		if (vm->func) {
+		if (vm->argc >= 0) {
 			ExpectErr(tl, '(');
 			vcc_NextToken(tl);
+			i = 0;
+			while (i < vm->argc) {
+				if (i > 0)
+					SkipToken(tl, ',');
+				vcc_expr0(tl, &e2, vm->argv[i]);
+				ERRCHK(tl);
+				if (ev != NULL) {
+					e2 = vcc_expr_edit(tl, VOID,
+					    "\v1, \v2", ev, e2);
+					ERRCHK(tl);
+				}
+				ev = e2;
+				i++;
+			}
 			ExpectErr(tl, ')');
 			vcc_NextToken(tl);
 		}
-		*e = vcc_expr_edit(tl, vm->type_to, vm->impl, *e, NULL);
+		*e = vcc_expr_edit(tl, vm->type_to, vm->impl, *e, e2);
 		ERRCHK(tl);
 		if ((*e)->fmt == STRING) {
 			(*e)->fmt = STRINGS;
