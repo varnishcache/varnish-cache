@@ -1,6 +1,6 @@
 varnishtest "Test CLI commands and parameter functions"
 
-varnish v1 -arg "-b ${bad_ip}:9080"
+varnish v1 -arg "-b ${bad_ip}:9080 -p first_byte_timeout=17"
 
 varnish v1 -cliok "help"
 
@@ -43,6 +43,8 @@ varnish v1 -cliok "param.set first_byte_timeout 120"
 varnish v1 -cliexpect 120 "param.show first_byte_timeout"
 varnish v1 -cliok "param.reset first_byte_timeout"
 varnish v1 -cliexpect 60 "param.show first_byte_timeout"
+varnish v1 -cliok "param.reset -i first_byte_timeout"
+varnish v1 -cliexpect 17 "param.show first_byte_timeout"
 
 varnish v1 -cliok "param.set cli_limit 128"
 

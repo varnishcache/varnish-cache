@@ -636,7 +636,7 @@ main(int argc, char * const *argv)
 			if (av[1] != NULL && av[2] != NULL && av[3] != NULL)
 				ARGV_ERR("Too many sub arguments to -l\n");
 			if (av[1] != NULL) {
-				MCF_ParamSet(cli, "vsl_space", av[1]);
+				MCF_ParamSet(cli, "vsl_space", av[1], 1);
 				cli_check(cli);
 			}
 			if (av[1] != NULL && av[2] != NULL) {
@@ -661,7 +661,7 @@ main(int argc, char * const *argv)
 				ARGV_ERR("\t-p lacks '='\n");
 			AN(p);
 			*p++ = '\0';
-			MCF_ParamSet(cli, optarg, p);
+			MCF_ParamSet(cli, optarg, p, 1);
 			*--p = '=';
 			cli_check(cli);
 			break;
@@ -683,7 +683,7 @@ main(int argc, char * const *argv)
 				T_arg = optarg;
 			break;
 		case 't':
-			MCF_ParamSet(cli, "default_ttl", optarg);
+			MCF_ParamSet(cli, "default_ttl", optarg, 1);
 			break;
 		case 'W':
 			W_arg = optarg;

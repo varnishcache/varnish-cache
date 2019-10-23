@@ -307,6 +307,9 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 			if (pp->max != NULL)
 				VCLI_Out(cli, "%-*sMaximum is: %s\n",
 				    margin1, "", pp->max);
+			if (pp->init != NULL)
+				VCLI_Out(cli, "%-*sInitial is: %s\n",
+				    margin1, "", pp->init);
 			VCLI_Out(cli, "\n");
 			mcf_wrap(cli, pp->descr);
 			if (pp->flags & OBJ_STICKY)
@@ -415,6 +418,8 @@ mcf_param_show_json(struct cli *cli, const char * const *av, void *priv)
 			mcf_json_key_valstr(cli, "minimum", pp->min);
 		if (pp->max != NULL)
 			mcf_json_key_valstr(cli, "maximum", pp->max);
+		if (pp->init != NULL)
+			mcf_json_key_valstr(cli, "initial", pp->init);
 		mcf_json_key_valstr(cli, "description", pp->descr);
 
 		flags = 0;
@@ -488,11 +493,12 @@ MCF_ParamProtect(struct cli *cli, const char *args)
 }
 
 /*--------------------------------------------------------------------*/
-
 void
-MCF_ParamSet(struct cli *cli, const char *param, const char *val)
+MCF_ParamSet(struct cli *cli, const char *param, const char *val, int init)
 {
 	const struct parspec *pp;
+	struct vsb *vsb;
+	char **i;
 
 	pp = mcf_findpar(param);
 	if (pp == NULL) {
@@ -505,14 +511,31 @@ MCF_ParamSet(struct cli *cli, const char *param, const char *val)
 		VCLI_Out(cli, "parameter \"%s\" is protected.", param);
 		return;
 	}
-	if (!val)
-		val = pp->def;
+	if (!val) {
+		if (init && pp->init)
+			val = pp->init;
+		else
+			val = pp->def;
+	}
+	AN(val);
 	if (pp->func(cli->sb, pp, val))
 		VCLI_SetResult(cli, CLIS_PARAM);
 
-	if (cli->result == CLIS_OK && heritage.param != NULL)
-		*heritage.param = mgt_param;
-
+	if (cli->result == CLIS_OK) {
+		if (heritage.param != NULL)
+			*heritage.param = mgt_param;
+		/* retrieve the formatted value and copy it to init*/
+		if (init) {
+			vsb = VSB_new_auto();
+			AZ(pp->func(vsb, pp, NULL));
+			AZ(VSB_finish(vsb));
+			i = TRUST_ME(&pp->init);
+			free(*i);
+			*i = strdup(VSB_data(vsb));
+			AN(*i);
+			VSB_delete(vsb);
+		}
+	}
 	if (cli->result != CLIS_OK) {
 		VCLI_Out(cli, "\n(attempting to set param '%s' to '%s')",
 		    pp->name, val);
@@ -533,7 +556,7 @@ mcf_param_set(struct cli *cli, const char * const *av, void *priv)
 {
 
 	(void)priv;
-	MCF_ParamSet(cli, av[2], av[3]);
+	MCF_ParamSet(cli, av[2], av[3], 0);
 }
 
 /*--------------------------------------------------------------------*/
@@ -543,7 +566,11 @@ mcf_param_reset(struct cli *cli, const char * const *av, void *priv)
 {
 
 	(void)priv;
-	MCF_ParamSet(cli, av[2], NULL);
+
+	if (av[2] && !strcmp(av[2], "-i"))
+		MCF_ParamSet(cli, av[3], NULL, 1);
+	else
+		MCF_ParamSet(cli, av[2], NULL, 0);
 }
 
 /*--------------------------------------------------------------------

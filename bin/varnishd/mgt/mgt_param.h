@@ -61,6 +61,8 @@ struct parspec {
 	char		*dyn_min;
 	char		*dyn_max;
 	char		*dyn_def;
+
+	char		*init;
 };
 
 tweak_t tweak_bool;
