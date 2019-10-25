@@ -38,6 +38,10 @@ NEXT (2020-03-15)
 
 * backend ``none`` was added for "no backend"
 
+* Log records can safely have empty fields or fields containing blanks if
+  they are delimited by "double quotes". This was applied to ``SessError``
+  and ``Backend_health``.
+
 ================================
 Varnish Cache 6.3.0 (2019-09-15)
 ================================
