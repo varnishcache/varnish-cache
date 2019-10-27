@@ -31,6 +31,7 @@ server stest {
 
 varnish v1 -arg "-p debug=+syncvsl -p debug=+flush_head"
 varnish v1 -arg "-p thread_pools=1 -p thread_pool_min=10"
+varnish v1 -arg "-p thread_pool_add_delay=0.01"
 varnish v1 -vcl+backend {
 	sub vcl_backend_fetch {
 		if (bereq.url == "/test") {
@@ -41,10 +42,7 @@ varnish v1 -vcl+backend {
 	}
 } -start
 
-# NB: we might go above 10 threads when early tasks are submitted to
-# the pool since at least one idle thread must be kept in the pool
-# reserve.
-varnish v1 -expect MAIN.threads >= 10
+varnish v1 -expect MAIN.threads == 10
 
 client c1 {
 	txreq -url /1
