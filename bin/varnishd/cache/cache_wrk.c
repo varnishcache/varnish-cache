@@ -53,6 +53,7 @@
 #include "config.h"
 
 #include <stdlib.h>
+#include <sched.h>
 
 #include "cache_varnishd.h"
 #include "cache_pool.h"
@@ -478,7 +479,10 @@ pool_breed(struct pool *qp)
 		VSC_C_main->threads++;
 		VSC_C_main->threads_created++;
 		Lck_Unlock(&pool_mtx);
-		VTIM_sleep(cache_param->wthread_add_delay);
+		if (cache_param->wthread_add_delay > 0.0)
+			VTIM_sleep(cache_param->wthread_add_delay);
+		else
+			sched_yield();
 	}
 
 	AZ(pthread_attr_destroy(&tp_attr));
