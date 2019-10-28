@@ -750,8 +750,10 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	Lck_Lock(&h2->sess->mtx);
 	while (h2->mailcall != NULL && h2->error == 0 && r2->error == 0)
 		AZ(Lck_CondWait(h2->cond, &h2->sess->mtx, 0));
-	if (h2->error || r2->error)
+	if (h2->error || r2->error) {
+		Lck_Unlock(&h2->sess->mtx);
 		return (h2->error ? h2->error : r2->error);
+	}
 	AZ(h2->mailcall);
 	h2->mailcall = r2;
 	h2->req0->r_window -= h2->rxf_len;
