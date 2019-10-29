@@ -194,14 +194,14 @@ tweak_generic_uint(struct vsb *vsb, volatile unsigned *dest, const char *arg,
 		if (min != NULL && u < minv) {
 			VSB_printf(vsb, "Must be at least %s", min);
 			if (min_reason != NULL)
-				VSB_printf(vsb, " %s", min_reason);
+				VSB_printf(vsb, " (%s)", min_reason);
 			VSB_putc(vsb, '\n');
 			return (-1);
 		}
 		if (max != NULL && u > maxv) {
 			VSB_printf(vsb, "Must be no more than %s", max);
 			if (max_reason != NULL)
-				VSB_printf(vsb, " %s", max_reason);
+				VSB_printf(vsb, " (%s)", max_reason);
 			VSB_putc(vsb, '\n');
 			return (-1);
 		}
