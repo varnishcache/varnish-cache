@@ -37,8 +37,8 @@ DESCRIPTION
 attributes as described in
 https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt.
 
-It also allows for generating a proxy header (without the option to
-add TLV attributes for the time being).
+It also allows for generating a proxy header with an optional
+authority TLV.
 
 $Function STRING alpn()
 
@@ -128,10 +128,13 @@ Example::
 
 	set req.http.cert-key = proxy.cert_key();
 
-$Function BLOB header(INT version, IP client, IP server)
+$Function BLOB header(INT version, IP client, IP server, STRING authority=0)
 
 Format a proxy header of the given version (must be 1 or 2) and
 addresses (The VCL IP type also conatins the port number).
+
+Optionally also send an authority TLV with version 2 (ignored for
+version 1).
 
 
 SEE ALSO

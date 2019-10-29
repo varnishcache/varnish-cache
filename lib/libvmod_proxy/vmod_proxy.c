@@ -164,7 +164,8 @@ vmod_client_cert_cn(VRT_CTX)
 #define BLOB_VMOD_PROXY_HEADER_TYPE	0xc8f34f78
 
 VCL_BLOB v_matchproto_(td_proxy_header)
-vmod_header(VRT_CTX, VCL_INT version, VCL_IP client, VCL_IP server)
+vmod_header(VRT_CTX, VCL_INT version, VCL_IP client, VCL_IP server,
+    VCL_STRING authority)
 {
 	struct vsb *vsb;
 	const void *h;
@@ -180,7 +181,7 @@ vmod_header(VRT_CTX, VCL_INT version, VCL_IP client, VCL_IP server)
 
 	vsb = VSB_new_auto();
 	AN(vsb);
-	VRT_Format_Proxy(vsb, version, client, server);
+	VRT_Format_Proxy(vsb, version, client, server, authority);
 	l = VSB_len(vsb);
 	h = WS_Copy(ctx->ws, VSB_data(vsb), l);
 	VSB_delete(vsb);

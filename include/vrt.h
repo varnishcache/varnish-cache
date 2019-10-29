@@ -543,7 +543,7 @@ void VRT_DelDirector(VCL_BACKEND *);
 
 /* Suckaddr related */
 int VRT_VSA_GetPtr(VRT_CTX, VCL_IP sua, const unsigned char ** dst);
-void VRT_Format_Proxy(struct vsb *, VCL_INT, VCL_IP, VCL_IP);
+void VRT_Format_Proxy(struct vsb *, VCL_INT, VCL_IP, VCL_IP, VCL_STRING);
 
 typedef int vmod_event_f(VRT_CTX, struct vmod_priv *, enum vcl_event_e);
 
