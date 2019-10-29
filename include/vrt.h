@@ -55,6 +55,7 @@
  *	Changed type of vsa_suckaddr_len from int to size_t
  *	New prefix_{ptr|len} fields in vrt_backend
  *	VRT_HashStrands32() added
+ *	VRT_DirectorResolve() added	// consider UNSTABLE for now
  * 10.0 (2019-09-15)
  *	VRT_UpperLowerStrands added.
  *	VRT_synth_page now takes STRANDS argument
