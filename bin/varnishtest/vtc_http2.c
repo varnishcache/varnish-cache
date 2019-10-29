@@ -710,7 +710,7 @@ receive_frame(void *priv)
 		}
 		AZ(pthread_mutex_unlock(&hp->mtx));
 
-		if (!get_bytes(hp, hdr, 9)) {
+		if (get_bytes(hp, hdr, sizeof hdr) <= 0) {
 			AZ(pthread_mutex_lock(&hp->mtx));
 			VTAILQ_FOREACH(s, &hp->streams, list)
 				AZ(pthread_cond_signal(&s->cond));
