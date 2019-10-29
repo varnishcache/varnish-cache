@@ -304,7 +304,36 @@ The following hash algorithms are available:
 Storage Backend
 ---------------
 
-The following storage types are available:
+The argument format to define storage backends is:
+
+-s <[name]=kind[,options]>
+
+  If *name* is omitted, Varnish will name storages ``s``\ *N*,
+  starting with ``s0`` and incrementing *N* for every new storage.
+
+  For *kind* and *options* see details below.
+
+Storages can be used in vcl as ``storage.``\ *name*, so, for
+example if ``myStorage`` was defined by ``-s myStorage=malloc,5G``, it
+could be used in VCL like so::
+
+  set beresp.storage = storage.myStorage;
+
+A special *name* is ``Transient`` which is the default storage for
+uncacheable objects as resulting from a pass, hit-for-miss or
+hit-for-pass.
+
+If no ``-s`` options are given, the default is::
+
+	-s malloc=100m
+
+If no ``Transient`` storage is defined, the default is an unbound
+``malloc`` storage as if defined as::
+
+	-s Transient,malloc
+
+
+The following storage types and options are available:
 
 -s <default[,size]>
 
@@ -353,18 +382,6 @@ The following storage types are available:
   of a planned or unplanned shutdown of Varnish. The persistent
   storage backend has multiple issues with it and will likely be
   removed from a future version of Varnish.
-
-
-You can also prefix the type with ``NAME=`` to explicitly name a storage::
-
-  -s myStorage=malloc,5G
-
-This allows to address it more easily in VCL::
-
-  set beresp.storage = storage.myStorage;
-
-If the name is omitted, Varnish will name storages ``sN``, starting with ``s0``
-and incrementing N for every new storage.
 
 .. _ref-varnishd-opt_j:
 
