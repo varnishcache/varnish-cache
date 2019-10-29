@@ -330,7 +330,7 @@ If no ``-s`` options are given, the default is::
 If no ``Transient`` storage is defined, the default is an unbound
 ``malloc`` storage as if defined as::
 
-	-s Transient,malloc
+	-s Transient=malloc
 
 
 The following storage types and options are available:
