@@ -61,6 +61,7 @@
  *	VRT_l_beresp_body() changed
  *	VRT_Format_Proxy() added	// transitional interface
  *	VRT_AllocStrandsWS() added
+ *	VRT_DirectorResolve() added	// consider UNSTABLE for now
  * 10.0 (2019-09-15)
  *	VRT_UpperLowerStrands added.
  *	VRT_synth_page now takes STRANDS argument
