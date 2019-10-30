@@ -54,13 +54,23 @@ void PFD_RemoteName(const struct pfd *, char *, unsigned, char *, unsigned);
 
 struct VSC_vbe;
 
+struct tcp_pool *VTP_Clone(struct tcp_pool *tp, uintmax_t id,
+    const struct vsb *preamble);
+	/*
+	 * Reference a (potentially new) clone of a pool with a different id and
+	 * preamble
+	 */
+
 struct tcp_pool *VTP_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6,
-    const char *uds, uintmax_t id);
+    const char *uds, uintmax_t id, const struct vsb *preamble);
 	/*
 	 * Get a reference to a TCP pool. Either one or both of ip4 or
 	 * ip6 arg must be non-NULL, or uds must be non-NULL. If recycling
 	 * is to be used, the id pointer distinguishes the pool per
 	 * protocol.
+	 *
+	 * The optional preamble is being sent first after opening a new
+	 * connection. The preamble argument is owned by the caller
 	 */
 
 void VTP_AddRef(struct tcp_pool *);

@@ -111,6 +111,8 @@ struct tcp_pool {
 	struct suckaddr				*ip4;
 	struct suckaddr				*ip6;
 	char					*uds;
+	void					*preamble;
+	ssize_t					preamble_l;
 	struct conn_pool			cp[1];
 };
 
@@ -569,6 +571,20 @@ tmo2msec(vtim_dur tmo)
 	return ((int)floor(tmo * 1000.0));
 }
 
+static int
+vtp_preamble(const struct tcp_pool *tp, int s)
+{
+	int r;
+
+	if (s < 0 || tp->preamble == NULL)
+		return (s);
+	r = write(s, tp->preamble, tp->preamble_l);
+	if (r == tp->preamble_l)
+		return (s);
+	VTCP_close(&s);
+	return (-1);
+}
+
 static int v_matchproto_(cp_open_f)
 vtp_open(const struct conn_pool *cp, vtim_dur tmo, const void **privp)
 {
@@ -584,17 +600,17 @@ vtp_open(const struct conn_pool *cp, vtim_dur tmo, const void **privp)
 		*privp = tp->ip6;
 		s = VTCP_connect(tp->ip6, msec);
 		if (s >= 0)
-			return (s);
+			return (vtp_preamble(tp, s));
 	}
 	*privp = tp->ip4;
 	s = VTCP_connect(tp->ip4, msec);
 	if (s >= 0)
-		return (s);
+		return (vtp_preamble(tp, s));
 	if (!cache_param->prefer_ipv6) {
 		*privp = tp->ip6;
 		s = VTCP_connect(tp->ip6, msec);
 	}
-	return (s);
+	return (vtp_preamble(tp, s));
 }
 
 static void v_matchproto_(cp_close_f)
@@ -645,7 +661,7 @@ vus_open(const struct conn_pool *cp, vtim_dur tmo, const void **privp)
 	msec = tmo2msec(tmo);
 	*privp = bogo_ip;
 	s = VUS_connect(tp->uds, msec);
-	return (s);
+	return (vtp_preamble(tp, s));
 }
 
 static void v_matchproto_(cp_name_f)
@@ -667,13 +683,24 @@ static const struct cp_methods vus_methods = {
 };
 
 /*--------------------------------------------------------------------
+ * Reference a (potentially new) clone of a pool with a different id
+ * and preamble
+ */
+struct tcp_pool *
+VTP_Clone(struct tcp_pool *tp, uintmax_t id, const struct vsb *preamble)
+{
+	AN(tp);
+	return (VTP_Ref(tp->ip4, tp->ip6, tp->uds, id, preamble));
+}
+
+/*--------------------------------------------------------------------
  * Reference a TCP pool given by {ip4, ip6} pair or a UDS.  Create if
  * it doesn't exist already.
  */
 
 struct tcp_pool *
 VTP_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6, const char *uds,
-	uintmax_t id)
+    uintmax_t id, const struct vsb *preamble)
 {
 	struct tcp_pool *tp;
 	struct conn_pool *cp;
@@ -687,6 +714,12 @@ VTP_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6, const char *uds,
 		tp = cp->priv;
 		CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
 
+		if (preamble != NULL && VSB_len(preamble) > 0) {
+			AN(tp->preamble);
+			assert(tp->preamble_l == VSB_len(preamble));
+			AZ(memcmp(tp->preamble, VSB_data(preamble),
+			    tp->preamble_l));
+		}
 		if (uds != NULL) {
 			AN(tp->uds);
 			AZ(strcmp(tp->uds, uds));
@@ -715,6 +748,13 @@ VTP_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6, const char *uds,
 		if (ip6 != NULL)
 			tp->ip6 = VSA_Clone(ip6);
 	}
+	if (preamble != NULL && VSB_len(preamble) > 0) {
+		tp->preamble_l = VSB_len(preamble);
+		tp->preamble = malloc(tp->preamble_l);
+		AN(tp->preamble);
+		memcpy(tp->preamble, VSB_data(preamble), tp->preamble_l);
+	}
+
 	return (VCP_New(tp->cp, id, tp, methods));
 }
 
@@ -745,6 +785,7 @@ VTP_Rel(struct tcp_pool **tpp)
 	free(tp->ip4);
 	free(tp->ip6);
 	free(tp->uds);
+	free(tp->preamble);
 	FREE_OBJ(tp);
 }
 

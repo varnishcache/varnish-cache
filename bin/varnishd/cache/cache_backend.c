@@ -639,7 +639,7 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 		VRT_VSC_Hide(be->vsc_seg);
 
 	be->tcp_pool = VTP_Ref(vep->ipv4, vep->ipv6,
-	    vep->uds_path, vrt_hash_be(vrt->endpoint));
+	    vep->uds_path, vrt_hash_be(vep), NULL);
 	AN(be->tcp_pool);
 
 	vbp = vrt->probe;
