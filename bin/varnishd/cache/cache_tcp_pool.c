@@ -685,12 +685,24 @@ VTP_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6, const char *uds,
 	    (uds == NULL && (ip4 != NULL || ip6 != NULL)));
 
 	cp = VCP_Ref(id);
-	if (cp != NULL)
+	if (cp != NULL) {
+		tp = cp->priv;
+		CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
+
+		if (uds != NULL) {
+			AN(tp->uds);
+			AZ(strcmp(tp->uds, uds));
+		}
+		if (ip4 != NULL)
+			AZ(VSA_Compare(tp->ip4, ip4));
+		if (ip6 != NULL)
+			AZ(VSA_Compare(tp->ip6, ip6));
 		return (cp->priv);
+	}
 
 	/*
-	 * this is racy - we could end up with additional pools on the same id /
-	 * destination address with just a single connection
+	 * this is racy - we could end up with additional pools on the same id
+	 * with just a single connection
 	 */
 	ALLOC_OBJ(tp, TCP_POOL_MAGIC);
 	AN(tp);
