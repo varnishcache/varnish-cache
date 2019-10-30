@@ -1,0 +1,34 @@
+varnishtest "Test garbage after gzip end reaching gunzip vdp"
+
+server s1 {
+	rxreq
+	txresp -hdr "content-encoding: gzip" -nolen
+	# (date | gzip -9f ; echo bad)  | od -t x1|
+	# sed -e 's:^[0-9a-f]* :sendhex ":' -e 's:$:":' -e '/^[0-9a-f]*"/ d'
+	sendhex "1f 8b 08 00 f5 8a b9 5d 02 03 0b 4f 4d 51 30 36"
+	sendhex "50 f0 4f 2e 51 30 34 b1 32 30 b7 32 30 54 70 76"
+	sendhex "0d 51 30 32 30 b4 e4 02 00 fa 76 79 ba 1d 00 00"
+	sendhex "00 62 61 64 0a"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		# no gunzip check
+		set beresp.filters = "";
+	}
+	sub vcl_deliver {
+		set resp.filters = "gunzip";
+	}
+} -start
+
+logexpect l1 -v v1 -q "vxid == 1001" {
+	expect * 1001	Gzip {^G.un.zip error: 1 .junk after VGZ_END.$}
+} -start
+
+client c1 {
+	txreq
+	rxresphdrs
+	expect_close
+} -run
+
+logexpect l1 -wait

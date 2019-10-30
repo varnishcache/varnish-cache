@@ -364,6 +364,11 @@ vdp_gunzip_bytes(struct req *req, enum vdp_action act, void **priv,
 	VGZ_Ibuf(vg, ptr, len);
 	do {
 		vr = VGZ_Gunzip(vg, &dp, &dl);
+		if (vr == VGZ_END && !VGZ_IbufEmpty(vg)) {
+			VSLb(vg->vsl, SLT_Gzip, "G(un)zip error: %d (%s)",
+			     vr, "junk after VGZ_END");
+			return (-1);
+		}
 		vg->m_len += dl;
 		if (vr < VGZ_OK)
 			return (-1);
