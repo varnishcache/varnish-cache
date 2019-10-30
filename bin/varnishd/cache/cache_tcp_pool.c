@@ -565,14 +565,6 @@ VCP_Wait(struct worker *wrk, struct pfd *pfd, vtim_real tmo)
 /*--------------------------------------------------------------------
  */
 
-struct vtp_cs {
-	unsigned			magic;
-#define VTP_CS_MAGIC			0xc1e40447
-	const struct suckaddr		*ip4;
-	const struct suckaddr		*ip6;
-	const char			*uds;
-};
-
 static inline int
 tmo2msec(vtim_dur tmo)
 {
@@ -687,15 +679,10 @@ VTP_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6, const char *uds,
 {
 	struct tcp_pool *tp;
 	struct conn_pool *cp;
-	struct vtp_cs vcs;
 	const struct cp_methods *methods;
 
 	assert((uds != NULL && ip4 == NULL && ip6 == NULL) ||
 	    (uds == NULL && (ip4 != NULL || ip6 != NULL)));
-	INIT_OBJ(&vcs, VTP_CS_MAGIC);
-	vcs.ip4 = ip4;
-	vcs.ip6 = ip6;
-	vcs.uds = uds;
 
 	cp = VCP_Ref(id);
 	if (cp != NULL)
