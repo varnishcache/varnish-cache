@@ -108,7 +108,7 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 	    (bo->req->req_body_status == REQ_BODY_CACHED || !onlycached)) {
 		if (do_chunked)
 			V1L_Chunked(wrk);
-		i = VRB_Iterate(bo->req, vbf_iter_req_body, bo);
+		i = VRB_Iterate(wrk, bo->vsl, bo->req, vbf_iter_req_body, bo);
 
 		if (bo->req->req_body_status == REQ_BODY_FAIL) {
 			/*

@@ -179,7 +179,8 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
  */
 
 ssize_t
-VRB_Iterate(struct req *req, objiterate_f *func, void *priv)
+VRB_Iterate(struct worker *wrk, struct vsl_log *vsl,
+    struct req *req, objiterate_f *func, void *priv)
 {
 	int i;
 
@@ -189,7 +190,7 @@ VRB_Iterate(struct req *req, objiterate_f *func, void *priv)
 	switch (req->req_body_status) {
 	case REQ_BODY_CACHED:
 		AN(req->body_oc);
-		if (ObjIterate(req->wrk, req->body_oc, priv, func, 0))
+		if (ObjIterate(wrk, req->body_oc, priv, func, 0))
 			return (-1);
 		return (0);
 	case REQ_BODY_NONE:
@@ -198,11 +199,11 @@ VRB_Iterate(struct req *req, objiterate_f *func, void *priv)
 	case REQ_BODY_WITHOUT_LEN:
 		break;
 	case REQ_BODY_TAKEN:
-		VSLb(req->vsl, SLT_VCL_Error,
+		VSLb(vsl, SLT_VCL_Error,
 		    "Uncached req.body can only be consumed once.");
 		return (-1);
 	case REQ_BODY_FAIL:
-		VSLb(req->vsl, SLT_FetchError,
+		VSLb(vsl, SLT_FetchError,
 		    "Had failed reading req.body before.");
 		return (-1);
 	default:
@@ -217,7 +218,7 @@ VRB_Iterate(struct req *req, objiterate_f *func, void *priv)
 		i = -1;
 	Lck_Unlock(&req->sp->mtx);
 	if (i) {
-		VSLb(req->vsl, SLT_VCL_Error,
+		VSLb(vsl, SLT_VCL_Error,
 		    "Multiple attempts to access non-cached req.body");
 		return (i);
 	}
@@ -253,7 +254,7 @@ VRB_Ignore(struct req *req)
 		return (0);
 	if (req->req_body_status == REQ_BODY_WITH_LEN ||
 	    req->req_body_status == REQ_BODY_WITHOUT_LEN)
-		(void)VRB_Iterate(req, httpq_req_body_discard, NULL);
+		(void)VRB_Iterate(req->wrk, req->vsl, req, httpq_req_body_discard, NULL);
 	return (0);
 }
 
