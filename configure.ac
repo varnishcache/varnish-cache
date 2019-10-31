@@ -341,7 +341,14 @@ AC_ARG_WITH([unwind],
               [use libunwind to print stacktraces (use libexecinfo otherwise). Recommended on alpine linux. Defaults to no.])])
 
 if test "$with_unwind" = yes; then
-    PKG_CHECK_MODULES([LIBUNWIND], [libunwind])
+    case $target in
+    *-*-darwin*)
+        # Always present but .pc is not installed
+        ;;
+    *)
+        PKG_CHECK_MODULES([LIBUNWIND], [libunwind])
+        ;;
+    esac
     AC_DEFINE([WITH_UNWIND], [1],
               [Define to 1 to use libunwind instead of libexecinfo])
 else
