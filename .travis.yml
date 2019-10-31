@@ -104,6 +104,7 @@ stages:
 
 notifications:
   irc:
+    if: branch = master
     channels:
       - "irc.linpro.no#varnish-hacking"
     on_success: change
