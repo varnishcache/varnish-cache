@@ -245,10 +245,10 @@ PARAM(
 	/* flags */	0,
 	/* s-text */
 	"Default timeout for receiving first byte from backend. We only "
-	"wait for this many seconds for the first byte before giving up. A "
-	"value of 0 means it will never time out. VCL can override this "
-	"default value for each backend and backend request. This "
-	"parameter does not apply to pipe.",
+	"wait for this many seconds for the first byte before giving up.\n"
+	"VCL can override this default value for each backend and backend "
+	"request.\n"
+	"This parameter does not apply to pipe'ed requests.",
 	/* l-text */	"",
 	/* func */	NULL
 )
@@ -264,7 +264,6 @@ PARAM(
 	/* s-text */
 	"We only wait for this many seconds between bytes received from "
 	"the backend before giving up the fetch.\n"
-	"A value of zero means never give up.\n"
 	"VCL values, per backend or per backend request take precedence.\n"
 	"This parameter does not apply to pipe'ed requests.",
 	/* l-text */	"",
