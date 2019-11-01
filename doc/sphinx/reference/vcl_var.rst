@@ -997,6 +997,28 @@ beresp.filters
 	* ``testgunzip`` gets added for compressed content if
 	  ``beresp.do_gunzip`` is false.
 
+beresp.fail_reason
+
+	Type: STRING
+
+	Readable from: vcl_backend_error
+
+	The reason for entering vcl_backend_error. This will always
+	have a value. The value should be picked from the pre-defined
+	list found in tbl/backend_fail.h. This should not contain
+	sensitive information (hostnames, IP address, etc.).
+
+beresp.fail_detail
+
+	Type: STRING
+
+	Readable from: vcl_backend_error
+
+	Like ``beresp.fail_reason``. Contains additional or custom
+	information. It may contain sensitive information. It will
+	not be put in client response by ``builtin.vcl``. Suggested
+	format: ``<director> : <details>``.
+
 obj
 ~~~
 

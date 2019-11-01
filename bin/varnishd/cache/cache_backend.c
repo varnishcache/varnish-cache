@@ -45,6 +45,7 @@
 #include "vtim.h"
 
 #include "cache_backend.h"
+#include "cache_backend_fail.h"
 #include "cache_tcp_pool.h"
 #include "cache_transport.h"
 #include "cache_vcl.h"
@@ -127,9 +128,12 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
 	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
 	AN(bp->vsc);
 
+	bo->fail_reason = BE_FAIL_UNKNOWN;
+
 	if (bp->sick) {
 		VSLb(bo->vsl, SLT_FetchError,
 		     "backend %s: unhealthy", VRT_BACKEND_string(bp->director));
+		bo->fail_reason = BE_FAIL_SICK;
 		bp->vsc->unhealthy++;
 		VSC_C_main->backend_unhealthy++;
 		return (NULL);
@@ -138,6 +142,7 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
 	if (bp->max_connections > 0 && bp->n_conn >= bp->max_connections) {
 		VSLb(bo->vsl, SLT_FetchError,
 		     "backend %s: busy", VRT_BACKEND_string(bp->director));
+		bo->fail_reason = BE_FAIL_BUSY;
 		bp->vsc->busy++;
 		VSC_C_main->backend_busy++;
 		return (NULL);
@@ -147,6 +152,7 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
 	bo->htc = WS_Alloc(bo->ws, sizeof *bo->htc);
 	if (bo->htc == NULL) {
 		VSLb(bo->vsl, SLT_FetchError, "out of workspace");
+		bo->fail_reason = BE_FAIL_WORKSPACE;
 		/* XXX: counter ? */
 		return (NULL);
 	}
@@ -159,6 +165,9 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
 		VSLb(bo->vsl, SLT_FetchError,
 		     "backend %s: fail errno %d (%s)",
 		     VRT_BACKEND_string(bp->director), err, vstrerror(err));
+		bo->fail_reason = BE_FAIL_CONNECT_TO;
+		bo->fail_detail = WS_Printf(bo->ws, "fail errno %d (%s)", err,
+		    vstrerror(err));
 		VSC_C_main->backend_fail++;
 		bo->htc = NULL;
 		return (NULL);
@@ -296,6 +305,7 @@ vbe_dir_gethdrs(VRT_CTX, VCL_BACKEND d)
 				bo->htc->doclose = SC_RX_TIMEOUT;
 				VSLb(bo->vsl, SLT_FetchError,
 				     "Timed out reusing backend connection");
+				bo->fail_reason = BE_FAIL_FBTO;
 				extrachance = 0;
 			}
 		}

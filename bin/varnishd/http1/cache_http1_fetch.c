@@ -32,6 +32,7 @@
 #include "config.h"
 
 #include "cache/cache_varnishd.h"
+#include "cache/cache_backend_fail.h"
 #include "cache/cache_filter.h"
 
 #include <stdio.h>
@@ -133,6 +134,9 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 			VSLb(bo->vsl, SLT_FetchError,
 			    "req.body read error: %d (%s)",
 			    errno, vstrerror(errno));
+			bo->fail_reason = BE_FAIL_REQBODY_ERROR;
+			bo->fail_detail = WS_Printf(bo->ws,
+			    "fail errno %d (%s)", errno, vstrerror(errno));
 			bo->req->doclose = SC_RX_BODY;
 		}
 		if (do_chunked)
@@ -155,6 +159,9 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 	if (sc != SC_NULL) {
 		VSLb(bo->vsl, SLT_FetchError, "backend write error: %d (%s)",
 		    errno, vstrerror(errno));
+		bo->fail_reason = BE_FAIL_WRITE_ERROR;
+		bo->fail_detail = WS_Printf(bo->ws, "fail errno %d (%s)", errno,
+		    vstrerror(errno));
 		VSLb_ts_busyobj(bo, "Bereq", W_TIM_real(wrk));
 		htc->doclose = sc;
 		return (-1);
@@ -197,26 +204,34 @@ V1F_FetchRespHdr(struct busyobj *bo)
 		switch (hs) {
 		case HTC_S_JUNK:
 			VSLb(bo->vsl, SLT_FetchError, "Received junk");
+			bo->fail_reason = BE_FAIL_RX_JUNK;
 			htc->doclose = SC_RX_JUNK;
 			break;
 		case HTC_S_CLOSE:
 			VSLb(bo->vsl, SLT_FetchError, "backend closed");
+			bo->fail_reason = BE_FAIL_CLOSE;
 			htc->doclose = SC_RESP_CLOSE;
 			break;
 		case HTC_S_TIMEOUT:
 			VSLb(bo->vsl, SLT_FetchError, "timeout");
+			bo->fail_reason = BE_FAIL_BBTO;
 			htc->doclose = SC_RX_TIMEOUT;
 			break;
 		case HTC_S_OVERFLOW:
 			VSLb(bo->vsl, SLT_FetchError, "overflow");
+			bo->fail_reason = BE_FAIL_OVERFLOW;
 			htc->doclose = SC_RX_OVERFLOW;
 			break;
 		case HTC_S_IDLE:
 			VSLb(bo->vsl, SLT_FetchError, "first byte timeout");
+			bo->fail_reason = BE_FAIL_FBTO;
 			htc->doclose = SC_RX_TIMEOUT;
 			break;
 		default:
 			VSLb(bo->vsl, SLT_FetchError, "HTC %s (%d)",
+			     HTC_Status(hs), hs);
+			bo->fail_reason = BE_FAIL_RX_BAD;
+			bo->fail_detail = WS_Printf(bo->ws, "HTC %s (%d)",
 			     HTC_Status(hs), hs);
 			htc->doclose = SC_RX_BAD;
 			break;
@@ -231,6 +246,7 @@ V1F_FetchRespHdr(struct busyobj *bo)
 	bo->acct.beresp_hdrbytes += htc->rxbuf_e - htc->rxbuf_b;
 	if (i) {
 		VSLb(bo->vsl, SLT_FetchError, "http format error");
+		bo->fail_reason = BE_FAIL_RX_JUNK;
 		htc->doclose = SC_RX_JUNK;
 		return (-1);
 	}
@@ -296,6 +312,7 @@ V1F_FetchRespHdr(struct busyobj *bo)
 	    bo->htc->body_status != BS_ERROR)
 		if (V1F_Setup_Fetch(bo->vfc, bo->htc)) {
 			VSLb(bo->vsl, SLT_FetchError, "overflow");
+			bo->fail_reason = BE_FAIL_OVERFLOW;
 			htc->doclose = SC_RX_OVERFLOW;
 			return (-1);
 		}

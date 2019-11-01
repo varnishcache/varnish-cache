@@ -1,0 +1,73 @@
+<<<<<<< HEAD
+varnishtest "client.ip vs. string session attrs"
+
+varnish v1 -vcl {
+	import debug;
+	import std;
+	backend dummy None;
+	sub vcl_recv {
+		return (synth(200));
+	}
+	sub vcl_synth {
+		set resp.http.ci = client.ip;
+		set resp.http.s-ci = debug.client_ip();
+		set resp.http.pi = std.port(client.ip);
+		set resp.http.s-pi = debug.client_port();
+=======
+varnishtest "Test beresp.fail_reason/detail"
+
+barrier b1 cond 2
+barrier b2 cond 2
+
+server s1 {
+	rxreq
+	barrier b1 sync
+	barrier b2 sync
+	txresp
+} -start
+
+varnish v1 -vcl {
+	backend default {
+		.host = "${s1_addr}";
+		.port = "${s1_port}";
+		.max_connections = 1;
+	}
+
+	sub vcl_recv { return(pass); }
+	sub vcl_backend_error {
+                set beresp.http.fail_reason = beresp.fail_reason;
+                set beresp.http.fail_detail = beresp.fail_detail;
+>>>>>>> Introduce beresp.fail_reason & beresp.fail_detail
+	}
+} -start
+
+client c1 {
+<<<<<<< HEAD
+	txreq
+	rxresp
+	expect resp.http.ci == resp.http.s-ci
+	expect resp.http.pi == resp.http.s-pi
+} -run
+=======
+        # Didn't hit v_b_e so not set
+	txreq
+	rxresp
+	expect resp.status == 200
+        expect resp.http.fail_reason == <undef>
+        expect resp.http.fail_detail == <undef>
+} -start
+
+client c2 {
+	barrier b1 sync
+	txreq
+	rxresp
+	expect resp.status == 503
+        expect resp.http.fail_reason == "backend busy"
+        expect resp.http.fail_detail == ""
+} -run
+
+barrier b2 sync
+client c1 -wait
+
+varnish v1 -expect backend_busy == 1
+>>>>>>> Introduce beresp.fail_reason & beresp.fail_detail

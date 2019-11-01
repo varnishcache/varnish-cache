@@ -439,6 +439,9 @@ struct busyobj {
 
 	uint16_t		err_code;
 	const char		*err_reason;
+
+	const char		*fail_reason;
+	const char		*fail_detail;
 };
 
 

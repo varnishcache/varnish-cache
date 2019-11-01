@@ -379,6 +379,19 @@ VRT_l_beresp_storage(VRT_CTX, VCL_STEVEDORE stv)
 	ctx->bo->storage = stv;
 }
 
+#define BERESP_FAIL(which)					\
+VCL_STRING							\
+VRT_r_beresp_fail_##which(VRT_CTX)				\
+{								\
+								\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);		\
+	return (ctx->bo->fail_##which);				\
+}								\
+
+BERESP_FAIL(reason)
+BERESP_FAIL(detail)
+
 /*--------------------------------------------------------------------
  * VCL <= 4.0 ONLY
  */
