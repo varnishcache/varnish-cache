@@ -253,7 +253,7 @@ struct parspec VSL_parspec[] = {
 	{ "vsl_mask", tweak_vsl_mask, NULL, NULL, NULL,
 		"Mask individual VSL messages from being logged.\n"
 		"\tdefault\tSet default value\n"
-		"\nUse +/- prefix in front of VSL tag name, to mask/unmask "
+		"\nUse +/- prefix in front of VSL tag name to unmask/mask "
 		"individual VSL messages.",
 		0, "default", "" },
 	{ "debug", tweak_debug, NULL, NULL, NULL,

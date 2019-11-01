@@ -1616,7 +1616,7 @@ PARAM(
 	"Mask individual VSL messages from being logged.\n"
 	"	default	Set default value\n"
 	"\n"
-	"Use +/- prefix in front of VSL tag name, to mask/unmask "
+	"Use +/- prefix in front of VSL tag name to unmask/mask "
 	"individual VSL messages.",
 	/* l-text */	"",
 	/* func */	NULL
