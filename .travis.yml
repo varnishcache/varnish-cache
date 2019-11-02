@@ -31,6 +31,9 @@ jobs:
           fi
     - <<: *test-linux
       compiler: gcc
+      before_script:
+        - ./autogen.sh
+        - ./configure
     - <<: *test-linux
       stage: sanitizers
       addons:
