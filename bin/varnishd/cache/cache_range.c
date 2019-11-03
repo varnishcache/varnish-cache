@@ -33,6 +33,7 @@
 #include "cache_filter.h"
 
 #include "vct.h"
+#include <vtim.h>
 
 /*--------------------------------------------------------------------*/
 
@@ -180,6 +181,58 @@ vrg_dorange(struct req *req, const char *r, void **priv)
 	return (NULL);
 }
 
+/*
+ * return 1 if range should be observed, based on if-range value
+ * if-range can either be a date or an ETag [RFC7233 3.2 p8]
+ */
+static int
+vrg_ifrange(struct req *req)
+{
+	const char *p, *e;
+	vtim_real ims, lm, d;
+
+	if (!http_GetHdr(req->http, H_If_Range, &p))	// rfc7233,l,455,456
+		return (1);
+
+	/* strong validation needed */
+	if (p[0] == 'W' && p[1] == '/')			// rfc7233,l,500,501
+		return (0);
+
+	/* ETag */
+	if (p[0] == '"') {				// rfc7233,l,512,514
+		if (!http_GetHdr(req->resp, H_ETag, &e))
+			return (0);
+		if ((e[0] == 'W' && e[1] == '/'))	// rfc7232,l,547,548
+			return (0);
+		return (strcmp(p, e) == 0);		// rfc7232,l,548,548
+	}
+
+	/* assume date, strong check [RFC7232 2.2.2 p7] */
+	if (!(ims = VTIM_parse(p)))			// rfc7233,l,502,512
+		return (0);
+
+	/* the response needs a Date */
+	// rfc7232 fc7232,l,439,440
+	if (!http_GetHdr(req->resp, H_Date, &p) || !(d = VTIM_parse(p)))
+		return (0);
+
+	/* grab the Last Modified value */
+	if (!http_GetHdr(req->resp, H_Last_Modified, &p))
+		return (0);
+
+	lm = VTIM_parse(p);
+	if (!lm)
+		return (0);
+	
+	/* Last Modified must be 60 seconds older than Date */
+	if (lm > d + 60)				// rfc7232,l,442,443
+		return (0);
+
+	if (lm != ims)					// rfc7233,l,455,456
+		return (0);
+	return (1);
+}
+
 static int v_matchproto_(vdp_init_f)
 vrg_range_init(struct req *req, void **priv)
 {
@@ -187,6 +240,8 @@ vrg_range_init(struct req *req, void **priv)
 	const char *err;
 
 	assert(http_GetHdr(req->http, H_Range, &r));
+	if (!vrg_ifrange(req))	// rfc7233,l,455,456
+		return (1);
 	err = vrg_dorange(req, r, priv);
 	if (err == NULL)
 		return (*priv == NULL ? 1 : 0);
