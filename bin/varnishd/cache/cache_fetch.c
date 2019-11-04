@@ -215,6 +215,12 @@ vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo)
 	if (bo->req->req_body_status == REQ_BODY_NONE) {
 		bo->req = NULL;
 		ObjSetState(bo->wrk, bo->fetch_objcore, BOS_REQ_DONE);
+	} else if (bo->req->req_body_status == REQ_BODY_CACHED) {
+		AN(bo->req->body_oc);
+		bo->bereq_body = bo->req->body_oc;
+		HSH_Ref(bo->bereq_body);
+		bo->req = NULL;
+		ObjSetState(bo->wrk, bo->fetch_objcore, BOS_REQ_DONE);
 	}
 	return (F_STP_STARTFETCH);
 }
@@ -950,6 +956,8 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	VCL_TaskLeave(bo->vcl, bo->privs);
 	http_Teardown(bo->bereq);
 	http_Teardown(bo->beresp);
+	if (bo->bereq_body != NULL)
+		HSH_DerefObjCore(bo->wrk, &bo->bereq_body, 0);
 
 	if (bo->fetch_objcore->boc->state == BOS_FINISHED) {
 		AZ(bo->fetch_objcore->flags & OC_F_FAILED);

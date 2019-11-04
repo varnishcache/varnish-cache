@@ -105,7 +105,14 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 	/* Deal with any message-body the request might (still) have */
 	i = 0;
 
-	if (bo->req != NULL &&
+	if (bo->bereq_body != NULL) {
+		if (do_chunked)
+			V1L_Chunked(wrk);
+		(void)ObjIterate(bo->wrk, bo->bereq_body,
+		    bo, vbf_iter_req_body, 0);
+		if (do_chunked)
+			V1L_EndChunk(wrk);
+	} else if (bo->req != NULL &&
 	    (bo->req->req_body_status == REQ_BODY_CACHED || !onlycached)) {
 		if (do_chunked)
 			V1L_Chunked(wrk);

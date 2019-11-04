@@ -403,6 +403,7 @@ struct busyobj {
 	struct http		*bereq0;
 	struct http		*bereq;
 	struct http		*beresp;
+	struct objcore		*bereq_body;
 	struct objcore		*stale_oc;
 	struct objcore		*fetch_objcore;
 
