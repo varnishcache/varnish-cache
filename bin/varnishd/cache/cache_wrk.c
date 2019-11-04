@@ -482,7 +482,7 @@ pool_breed(struct pool *qp)
 		if (cache_param->wthread_add_delay > 0.0)
 			VTIM_sleep(cache_param->wthread_add_delay);
 		else
-			sched_yield();
+			(void)sched_yield();
 	}
 
 	AZ(pthread_attr_destroy(&tp_attr));

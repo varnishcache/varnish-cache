@@ -104,8 +104,8 @@ cnt_transport(struct worker *wrk, struct req *req)
  * Deliver an object to client
  */
 
-static int
-resp_setup_deliver(struct req *req)
+int
+Resp_Setup_Deliver(struct req *req)
 {
 	struct http *h;
 	struct objcore *oc;
@@ -145,12 +145,11 @@ resp_setup_deliver(struct req *req)
 	    ObjCheckFlag(req->wrk, oc, OF_GZIPED) &&
 	    !RFC2616_Req_Gzip(req->http))
 		RFC2616_Weaken_Etag(h);
-
-	return (0);
+	return(0);
 }
 
-static int
-resp_setup_synth(struct req *req)
+void
+Resp_Setup_Synth(struct req *req)
 {
 	struct http *h;
 
@@ -175,23 +174,6 @@ resp_setup_synth(struct req *req)
 	 */
 	if (req->want100cont)
 		http_SetHeader(h, "Connection: close");
-
-	return (0);
-}
-
-int
-Resp_Setup(struct req *req, unsigned method)
-{
-	switch (method) {
-	case VCL_MET_DELIVER:
-		return (resp_setup_deliver(req));
-	case VCL_MET_SYNTH:
-		return (resp_setup_synth(req));
-	default:
-		WRONG("vcl method");
-	}
-
-	return (0);
 }
 
 static enum req_fsm_nxt
@@ -209,7 +191,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 	ObjTouch(req->wrk, req->objcore, req->t_prev);
 
-	if (resp_setup_deliver(req)) {
+	if (Resp_Setup_Deliver(req)) {
 		(void)HSH_DerefObjCore(wrk, &req->objcore, HSH_RUSH_POLICY);
 		req->err_code = 500;
 		req->req_step = R_STP_SYNTH;
@@ -297,7 +279,7 @@ cnt_synth(struct worker *wrk, struct req *req)
 	if (req->err_code < 100)
 		req->err_code = 501;
 
-	(void) resp_setup_synth(req);
+	Resp_Setup_Synth(req);
 
 	synth_body = VSB_new_auto();
 	AN(synth_body);

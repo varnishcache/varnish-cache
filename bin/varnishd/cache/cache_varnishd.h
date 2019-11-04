@@ -361,7 +361,8 @@ void VRB_Free(struct req *);
 
 /* cache_req_fsm.c [CNT] */
 
-int Resp_Setup(struct req *, unsigned);
+int Resp_Setup_Deliver(struct req *);
+void Resp_Setup_Synth(struct req *);
 
 enum req_fsm_nxt {
 	REQ_FSM_MORE,
