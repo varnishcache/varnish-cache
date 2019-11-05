@@ -537,7 +537,7 @@ struct req {
 	struct vcf		*vcf;
 };
 
-#define IS_TOPREQ(req) ((req)->top == NULL || (req)->top->topreq == (req))
+#define IS_TOPREQ(req) ((req)->top->topreq == (req))
 
 /*--------------------------------------------------------------------
  * Struct sess is a high memory-load structure because sessions typically

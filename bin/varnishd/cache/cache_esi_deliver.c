@@ -139,6 +139,7 @@ ved_include(struct req *preq, const char *src, const char *host,
 
 	req->esi_level = preq->esi_level + 1;
 
+	memset(req->top, 0, sizeof *req->top);
 	req->top = preq->top;
 
 	HTTP_Setup(req->http, req->ws, req->vsl, SLT_ReqMethod);
@@ -263,16 +264,6 @@ ved_vdp_esi_init(struct req *req, void **priv)
 	ecx->preq = req;
 	*priv = ecx;
 	RFC2616_Weaken_Etag(req->resp);
-
-	if (IS_TOPREQ(req)) {
-		Req_MakeTop(req);
-		if (req->top == NULL) {
-			VSLb(req->vsl, SLT_Error,
-			    "(top)request workspace overflow");
-			Req_Fail(req, SC_OVERLOAD);
-			return (-1);
-		}
-	}
 
 	req->res_mode |= RES_ESI;
 	if (req->resp_len != 0)
