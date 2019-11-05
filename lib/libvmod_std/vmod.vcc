@@ -188,6 +188,8 @@ $Function STRING fileread(PRIV_CALL, STRING)
 Reads a file and returns a string with the content. The result is
 cached indefinitely per filename.
 
+This function should not be used for reading binary files.
+
 Example::
 
 	synthetic("Response was served by " + std.fileread("/etc/hostname"));
