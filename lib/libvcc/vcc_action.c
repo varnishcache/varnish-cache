@@ -56,12 +56,12 @@ vcc_act_call(struct vcc *tl, struct token *t, struct symbol *sym)
 
 /*--------------------------------------------------------------------*/
 
-static const struct arith {
+static const struct assign {
 	vcc_type_t		type;
 	unsigned		oper;
 	vcc_type_t		want;
 	const char		*expr;
-} arith[] = {
+} assign[] = {
 	{ INT,		T_INCR,		INT, "\v + " },
 	{ INT,		T_DECR,		INT, "\v - " },
 	{ INT,		T_MUL,		INT, "\v * " },
@@ -88,7 +88,7 @@ static const struct arith {
 };
 
 static void
-vcc_arith_expr(struct vcc *tl, struct symbol *sym, const struct arith *ap)
+vcc_assign_expr(struct vcc *tl, struct symbol *sym, const struct assign *ap)
 {
 	const char *e;
 
@@ -110,7 +110,7 @@ vcc_arith_expr(struct vcc *tl, struct symbol *sym, const struct arith *ap)
 static void v_matchproto_(sym_act_f)
 vcc_act_set(struct vcc *tl, struct token *t, struct symbol *sym)
 {
-	const struct arith *ap;
+	const struct assign *ap;
 	vcc_type_t type;
 
 	(void)t;
@@ -129,7 +129,7 @@ vcc_act_set(struct vcc *tl, struct token *t, struct symbol *sym)
 	}
 	vcc_AddUses(tl, t, tl->t, sym->w_methods, "Cannot be set");
 	type = sym->type;
-	for (ap = arith; ap->type != VOID; ap++) {
+	for (ap = assign; ap->type != VOID; ap++) {
 		if (ap->type != type)
 			continue;
 		if (ap->oper != tl->t->tok)
@@ -144,7 +144,7 @@ vcc_act_set(struct vcc *tl, struct token *t, struct symbol *sym)
 
 	Fb(tl, 1, "%s\n", sym->lname);
 	tl->indent += INDENT;
-	vcc_arith_expr(tl, sym, ap);
+	vcc_assign_expr(tl, sym, ap);
 	vcc_Expr(tl, type);
 	ERRCHK(tl);
 	tl->indent -= INDENT;
