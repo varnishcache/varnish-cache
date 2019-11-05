@@ -161,9 +161,10 @@ ved_include(struct req *preq, const char *src, const char *host,
 	http_Unset(req->http, H_Range);
 
 	/* Set Accept-Encoding according to what we want */
-	http_Unset(req->http, H_Accept_Encoding);
 	if (ecx->isgzip)
 		http_ForceHeader(req->http, H_Accept_Encoding, "gzip");
+	else
+		http_Unset(req->http, H_Accept_Encoding);
 
 	/* Client content already taken care of */
 	http_Unset(req->http, H_Content_Length);
