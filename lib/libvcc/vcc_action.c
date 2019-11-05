@@ -80,6 +80,7 @@ static const struct arith {
 	{ DURATION,	T_DIV,		REAL, "\v / " },
 	{ DURATION,	'=',		DURATION },
 	{ DURATION,	0,		DURATION },
+	{ STRING,	T_INCR,		STRING, "\v,\n" },
 	{ VOID,		'=',		VOID }
 };
 

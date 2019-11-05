@@ -27,11 +27,6 @@ varnish v1 -errvcl {Expected '=' got '+='} {
 	sub vcl_backend_fetch { set bereq.backend += b; }
 }
 
-varnish v1 -errvcl {Expected '=' got '+='} {
-	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv { set req.url += now; }
-}
-
 varnish v1 -errvcl {Expected ';' got 'if'} {
 	backend b { .host = "127.0.0.1"; }
 	/* XXX: This should not really be an synth */
