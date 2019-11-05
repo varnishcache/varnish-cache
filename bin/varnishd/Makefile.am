@@ -151,7 +151,7 @@ noinst_HEADERS = \
 nobase_pkginclude_HEADERS = \
 	cache/cache.h \
 	cache/cache_backend.h \
-	cache/cache_backend_fail.c \
+	cache/cache_backend_fail.h \
 	cache/cache_director.h \
 	cache/cache_filter.h \
 	cache/cache_varnishd.h \

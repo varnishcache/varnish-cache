@@ -4,6 +4,7 @@
 nobase_pkginclude_HEADERS = \
 	tbl/acct_fields_bereq.h \
 	tbl/acct_fields_req.h \
+	tbl/backend_fail.h \
 	tbl/backend_poll.h \
 	tbl/ban_arg_oper.h \
 	tbl/ban_oper.h \
