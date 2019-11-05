@@ -128,8 +128,6 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
 	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
 	AN(bp->vsc);
 
-	bo->fail_reason = BE_FAIL_UNKNOWN;
-
 	if (bp->sick) {
 		VSLb(bo->vsl, SLT_FetchError,
 		     "backend %s: unhealthy", VRT_BACKEND_string(bp->director));
