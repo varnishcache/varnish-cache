@@ -55,6 +55,7 @@ struct frfile {
 #define CACHED_FILE_MAGIC 0xa8e9d87a
 	char				*file_name;
 	char				*contents;
+	size_t				size;
 	int				refcount;
 	VTAILQ_ENTRY(frfile)		list;
 };
@@ -88,6 +89,7 @@ vmod_fileread(VRT_CTX, struct vmod_priv *priv,
 {
 	struct frfile *frf = NULL;
 	char *s;
+	ssize_t sz;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(priv);
@@ -117,14 +119,15 @@ vmod_fileread(VRT_CTX, struct vmod_priv *priv,
 		return (frf->contents);
 	}
 
-	s = VFIL_readfile(NULL, file_name, NULL);
+	s = VFIL_readfile(NULL, file_name, &sz);
 	if (s != NULL) {
+		assert(sz > 0);
 		ALLOC_OBJ(frf, CACHED_FILE_MAGIC);
 		AN(frf);
-		frf->file_name = strdup(file_name);
-		AN(frf->file_name);
+		REPLACE(frf->file_name, file_name);
 		frf->refcount = 1;
 		frf->contents = s;
+		frf->size = (size_t)sz;
 		priv->free = free_frfile;
 		priv->priv = frf;
 		AZ(pthread_mutex_lock(&frmtx));
