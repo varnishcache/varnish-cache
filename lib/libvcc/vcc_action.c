@@ -82,6 +82,7 @@ static const struct assign {
 	{ DURATION,	0,		DURATION },
 	{ STRING,	T_INCR,		STRING_LIST, "\v,\n" },
 	{ STRING,	'=',		STRING_LIST },
+	{ HEADER,	T_INCR,		STRING_LIST, "VRT_GetHdr(ctx, \v),\n" },
 	{ HEADER,	'=',		STRING_LIST },
 	{ BODY,		'=',		STRING_LIST },
 	{ VOID,		'=',		VOID }
@@ -98,9 +99,9 @@ vcc_assign_expr(struct vcc *tl, struct symbol *sym, const struct assign *ap)
 
 	while (*e != '\0') {
 		if (*e == '\v')
-			Fb(tl, 1, "%s", sym->rname);
+			Fb(tl, 0, "%s", sym->rname);
 		else
-			Fb(tl, 1, "%c", *e);
+			Fb(tl, 0, "%c", *e);
 		e++;
 	}
 }
