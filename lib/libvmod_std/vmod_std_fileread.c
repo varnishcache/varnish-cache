@@ -83,15 +83,13 @@ free_frfile(void *ptr)
 	}
 }
 
-VCL_STRING v_matchproto_(td_std_fileread)
-vmod_fileread(VRT_CTX, struct vmod_priv *priv,
-    VCL_STRING file_name)
+static struct frfile *
+find_frfile(struct vmod_priv *priv, VCL_STRING file_name)
 {
 	struct frfile *frf = NULL;
 	char *s;
 	ssize_t sz;
 
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(priv);
 
 	if (file_name == NULL)
@@ -100,7 +98,7 @@ vmod_fileread(VRT_CTX, struct vmod_priv *priv,
 	if (priv->priv != NULL) {
 		CAST_OBJ_NOTNULL(frf, priv->priv, CACHED_FILE_MAGIC);
 		if (!strcmp(file_name, frf->file_name))
-			return (frf->contents);
+			return (frf);
 	}
 
 	AZ(pthread_mutex_lock(&frmtx));
@@ -116,7 +114,7 @@ vmod_fileread(VRT_CTX, struct vmod_priv *priv,
 	if (frf != NULL) {
 		priv->free = free_frfile;
 		priv->priv = frf;
-		return (frf->contents);
+		return (frf);
 	}
 
 	s = VFIL_readfile(NULL, file_name, &sz);
@@ -134,5 +132,20 @@ vmod_fileread(VRT_CTX, struct vmod_priv *priv,
 		VTAILQ_INSERT_HEAD(&frlist, frf, list);
 		AZ(pthread_mutex_unlock(&frmtx));
 	}
-	return (s);
+	return (frf);
+}
+
+VCL_STRING v_matchproto_(td_std_fileread)
+vmod_fileread(VRT_CTX, struct vmod_priv *priv,
+    VCL_STRING file_name)
+{
+	struct frfile *frf;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(priv);
+
+	frf = find_frfile(priv, file_name);
+	if (file_name == NULL)
+		return (NULL);
+	return (frf->contents);
 }
