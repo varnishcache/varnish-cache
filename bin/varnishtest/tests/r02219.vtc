@@ -10,7 +10,10 @@ server s1 {
 } -start
 
 varnish v1 -arg "-p workspace_client=9k" -proto PROXY -vcl+backend {
+	import std;
+	import vtc;
 	sub vcl_recv {
+		std.log(vtc.workspace_free(client));
 		return (pass);
 	}
 } -start
