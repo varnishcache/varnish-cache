@@ -60,28 +60,46 @@ static const struct arith {
 	vcc_type_t		type;
 	unsigned		oper;
 	vcc_type_t		want;
+	const char		*expr;
 } arith[] = {
-	{ INT,		T_INCR,		INT },
-	{ INT,		T_DECR,		INT },
-	{ INT,		T_MUL,		INT },
-	{ INT,		T_DIV,		INT },
+	{ INT,		T_INCR,		INT, "\v + " },
+	{ INT,		T_DECR,		INT, "\v - " },
+	{ INT,		T_MUL,		INT, "\v * " },
+	{ INT,		T_DIV,		INT, "\v / " },
 	{ INT,		'=',		INT },
 	{ INT,		0,		INT },
-	{ TIME,		T_INCR,		DURATION },
-	{ TIME,		T_DECR,		DURATION },
-	{ TIME,		T_MUL,		REAL },
-	{ TIME,		T_DIV,		REAL },
+	{ TIME,		T_INCR,		DURATION, "\v + " },
+	{ TIME,		T_DECR,		DURATION, "\v - " },
+	{ TIME,		T_MUL,		REAL, "\v * " },
+	{ TIME,		T_DIV,		REAL, "\v / " },
 	{ TIME,		'=',		TIME },
 	{ TIME,		0,		TIME },
-	{ DURATION,	T_INCR,		DURATION },
-	{ DURATION,	T_DECR,		DURATION },
-	{ DURATION,	T_MUL,		REAL },
-	{ DURATION,	T_DIV,		REAL },
+	{ DURATION,	T_INCR,		DURATION, "\v + " },
+	{ DURATION,	T_DECR,		DURATION, "\v - " },
+	{ DURATION,	T_MUL,		REAL, "\v * " },
+	{ DURATION,	T_DIV,		REAL, "\v / " },
 	{ DURATION,	'=',		DURATION },
 	{ DURATION,	0,		DURATION },
 	{ VOID,		'=',		VOID }
 };
 
+static void
+vcc_arith_expr(struct vcc *tl, struct symbol *sym, const struct arith *ap)
+{
+	const char *e;
+
+	e = ap->expr;
+	if (e == NULL)
+		return;
+
+	while (*e != '\0') {
+		if (*e == '\v')
+			Fb(tl, 1, "%s", sym->rname);
+		else
+			Fb(tl, 1, "%c", *e);
+		e++;
+	}
+}
 
 /*--------------------------------------------------------------------*/
 
@@ -106,15 +124,12 @@ vcc_act_set(struct vcc *tl, struct token *t, struct symbol *sym)
 		return;
 	}
 	vcc_AddUses(tl, t, tl->t, sym->w_methods, "Cannot be set");
-	t = NULL;
 	type = sym->type;
 	for (ap = arith; ap->type != VOID; ap++) {
 		if (ap->type != type)
 			continue;
 		if (ap->oper != tl->t->tok)
 			continue;
-		if (ap->oper != '=')
-			t = tl->t;
 		vcc_NextToken(tl);
 		type = ap->want;
 		break;
@@ -129,8 +144,7 @@ vcc_act_set(struct vcc *tl, struct token *t, struct symbol *sym)
 
 	Fb(tl, 1, "%s\n", sym->lname);
 	tl->indent += INDENT;
-	if (t != NULL)
-		Fb(tl, 1, "%s %c ", sym->rname, *t->b);
+	vcc_arith_expr(tl, sym, ap);
 	vcc_Expr(tl, type);
 	ERRCHK(tl);
 	tl->indent -= INDENT;
