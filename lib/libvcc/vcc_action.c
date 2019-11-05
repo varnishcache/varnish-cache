@@ -106,8 +106,7 @@ vcc_act_set(struct vcc *tl, struct token *t, struct symbol *sym)
 		return;
 	}
 	vcc_AddUses(tl, t, tl->t, sym->w_methods, "Cannot be set");
-	Fb(tl, 1, "%s\n", sym->lname);
-	tl->indent += INDENT;
+	t = NULL;
 	type = sym->type;
 	for (ap = arith; ap->type != VOID; ap++) {
 		if (ap->type != type)
@@ -115,22 +114,24 @@ vcc_act_set(struct vcc *tl, struct token *t, struct symbol *sym)
 		if (ap->oper != tl->t->tok)
 			continue;
 		if (ap->oper != '=')
-			Fb(tl, 1, "%s %c ", sym->rname, *tl->t->b);
+			t = tl->t;
 		vcc_NextToken(tl);
 		type = ap->want;
 		break;
 	}
+
 	if (ap->type == VOID)
 		SkipToken(tl, ap->oper);
-	if (type == HEADER) {
-		vcc_Expr(tl, STRING_LIST);
-	} else if (type == STRING) {
-		vcc_Expr(tl, STRING_LIST);
-	} else if (type == BODY) {
-		vcc_Expr(tl, STRING_LIST);
-	} else {
-		vcc_Expr(tl, type);
+
+	if (type == HEADER || type == STRING || type == BODY) {
+		type = STRING_LIST;
 	}
+
+	Fb(tl, 1, "%s\n", sym->lname);
+	tl->indent += INDENT;
+	if (t != NULL)
+		Fb(tl, 1, "%s %c ", sym->rname, *t->b);
+	vcc_Expr(tl, type);
 	ERRCHK(tl);
 	tl->indent -= INDENT;
 	Fb(tl, 1, ");\n");
