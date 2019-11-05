@@ -80,7 +80,10 @@ static const struct arith {
 	{ DURATION,	T_DIV,		REAL, "\v / " },
 	{ DURATION,	'=',		DURATION },
 	{ DURATION,	0,		DURATION },
-	{ STRING,	T_INCR,		STRING, "\v,\n" },
+	{ STRING,	T_INCR,		STRING_LIST, "\v,\n" },
+	{ STRING,	'=',		STRING_LIST },
+	{ HEADER,	'=',		STRING_LIST },
+	{ BODY,		'=',		STRING_LIST },
 	{ VOID,		'=',		VOID }
 };
 
@@ -138,10 +141,6 @@ vcc_act_set(struct vcc *tl, struct token *t, struct symbol *sym)
 
 	if (ap->type == VOID)
 		SkipToken(tl, ap->oper);
-
-	if (type == HEADER || type == STRING || type == BODY) {
-		type = STRING_LIST;
-	}
 
 	Fb(tl, 1, "%s\n", sym->lname);
 	tl->indent += INDENT;
