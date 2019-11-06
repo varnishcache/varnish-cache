@@ -92,6 +92,7 @@ static void
 vcc_assign_expr(struct vcc *tl, struct symbol *sym, const struct assign *ap)
 {
 	const char *e;
+	unsigned indent = 1;
 
 	e = ap->expr;
 	if (e == NULL)
@@ -99,9 +100,10 @@ vcc_assign_expr(struct vcc *tl, struct symbol *sym, const struct assign *ap)
 
 	while (*e != '\0') {
 		if (*e == '\v')
-			Fb(tl, 0, "%s", sym->rname);
+			Fb(tl, indent, "%s", sym->rname);
 		else
-			Fb(tl, 0, "%c", *e);
+			Fb(tl, indent, "%c", *e);
+		indent = 0;
 		e++;
 	}
 }
