@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2019 Varnish Software AS
+ * Copyright (c) 2019 Varnish Software
  * All rights reserved.
  *
  * Author: Steven Wojcik <swojcik@varnish-software.com>
@@ -29,21 +29,20 @@
 
 /*lint -save -e525 -e539 */
 
-/* upper, doc */
-BACKEND_FAIL(UNKNOWN,		"unknown")
-BACKEND_FAIL(SICK,		"backend sick")
-BACKEND_FAIL(BUSY,		"backend busy")
-BACKEND_FAIL(WORKSPACE,		"out of workspace")
-BACKEND_FAIL(FBTO,		"first byte timeout")
-BACKEND_FAIL(CONNECT_TO,	"connect timeout")
-BACKEND_FAIL(BBTO,		"between bytes timeout")
-BACKEND_FAIL(REQBODY_ERROR,	"reqbody read error")
-BACKEND_FAIL(WRITE_ERROR,	"backend write error")
-BACKEND_FAIL(RX_JUNK,		"recieved junk")
-BACKEND_FAIL(CLOSE,		"backend close")
-BACKEND_FAIL(OVERFLOW,		"overflow")
-BACKEND_FAIL(RX_BAD,		"recieved bad response")
-BACKEND_FAIL(FORMATE_ERROR,	"http format error")
+/* upper, lower, doc */
+BACKEND_FAIL(UNKNOWN, unkown,		        "unknown")
+BACKEND_FAIL(SICK, sick,		        "backend sick")
+BACKEND_FAIL(BUSY, busy,		        "backend busy")
+BACKEND_FAIL(WORKSPACE, workspace,		"out of workspace")
+BACKEND_FAIL(FBTO, fbto,		        "first byte timeout")
+BACKEND_FAIL(CONNECT_TO, connect_to,		"connect timeout")
+BACKEND_FAIL(BBTO, bbto,		        "between bytes timeout")
+BACKEND_FAIL(REQBODY_ERROR, reqbody_error,	"reqbody read error")
+BACKEND_FAIL(WRITE_ERROR, write_error,		"backend write error")
+BACKEND_FAIL(RX_JUNK, rx_junk,			"recieved junk")
+BACKEND_FAIL(RX_BAD, rx_bad,			"recieved bad response")
+BACKEND_FAIL(CLOSE, close,			"backend close")
+BACKEND_FAIL(OVERFLOW, overflow,		"overflow")
 
 #undef BACKEND_FAIL
 
