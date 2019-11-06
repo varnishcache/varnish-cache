@@ -293,10 +293,6 @@ RFC2616_Do_Cond(const struct req *req)
 				return (0);
 			return (1);
 		}
-		AZ(ObjGetDouble(req->wrk, req->objcore, OA_LASTMODIFIED, &lm));
-		if (lm > ims)
-			return (0);
-		return (1);
 	}
 
 	return (0);
