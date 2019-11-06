@@ -222,6 +222,10 @@ include/vmod_directors.generated.rst: $(top_builddir)/lib/libvmod_directors/vmod
 	cp $(top_builddir)/lib/libvmod_directors/vmod_directors.rst $@
 BUILT_SOURCES += include/vmod_directors.generated.rst
 
+include/vmod_error.generated.rst: $(top_builddir)/lib/libvmod_error/vmod_error.rst
+	cp $(top_builddir)/lib/libvmod_error/vmod_error.rst $@
+BUILT_SOURCES += include/vmod_error.generated.rst
+
 include/vmod_purge.generated.rst: $(top_builddir)/lib/libvmod_purge/vmod_purge.rst
 	cp $(top_builddir)/lib/libvmod_purge/vmod_purge.rst $@
 BUILT_SOURCES += include/vmod_purge.generated.rst

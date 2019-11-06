@@ -29,5 +29,5 @@
 
 #include "cache_backend_fail.h"
 
-#define BACKEND_FAIL(U, s)	const char *BE_FAIL_##U = s;
+#define BACKEND_FAIL(U,l, s)	const char *BE_FAIL_##U = s;
 #include "tbl/backend_fail.h"

@@ -1,0 +1,41 @@
+#-
+# This document is licensed under the same conditions as Varnish itself.
+# See LICENSE for details.
+#
+# Authors: Steven Wojcik <swojcik@varnish-software.com>
+#
+
+$ABI strict
+$Module error 3 "Utility for backend errors"
+
+DESCRIPTION
+===========
+
+A utility to describe backend errors in ``sub vcl_backend_error``.
+These values returned from the below functions come from ``tbl/backend_fail.h``.
+
+$Function STRING be_fail_unkown()
+
+$Function STRING be_fail_sick()
+
+$Function STRING be_fail_busy()
+
+$Function STRING be_fail_workspace()
+
+$Function STRING be_fail_fbto()
+
+$Function STRING be_fail_connect_to()
+
+$Function STRING be_fail_bbto()
+
+$Function STRING be_fail_reqbody_error()
+
+$Function STRING be_fail_write_error()
+
+$Function STRING be_fail_rx_junk()
+
+$Function STRING be_fail_rx_bad()
+
+$Function STRING be_fail_close()
+
+$Function STRING be_fail_overflow()

@@ -7,6 +7,7 @@ SUBDIRS = \
 	libvgz \
 	libvmod_cookie \
 	libvmod_debug \
+	libvmod_error \
 	libvmod_std \
 	libvmod_directors \
 	libvmod_purge \

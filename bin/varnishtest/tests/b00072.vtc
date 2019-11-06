@@ -27,6 +27,7 @@ server s1 {
 } -start
 
 varnish v1 -vcl {
+	import error;
 	backend default {
 		.host = "${s1_addr}";
 		.port = "${s1_port}";
@@ -35,6 +36,9 @@ varnish v1 -vcl {
 
 	sub vcl_recv { return(pass); }
 	sub vcl_backend_error {
+		if (beresp.fail_reason == error.be_fail_busy()) {
+			set beresp.http.wait = "Please wait. We are too busy";
+		}
                 set beresp.http.fail_reason = beresp.fail_reason;
                 set beresp.http.fail_detail = beresp.fail_detail;
 >>>>>>> Introduce beresp.fail_reason & beresp.fail_detail
@@ -64,6 +68,7 @@ client c2 {
 	expect resp.status == 503
         expect resp.http.fail_reason == "backend busy"
         expect resp.http.fail_detail == ""
+	expect resp.http.wait == "Please wait. We are too busy"
 } -run
 
 barrier b2 sync

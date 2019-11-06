@@ -17,6 +17,7 @@ dist_man_MANS = \
 	varnishtop.1 \
 	vmod_cookie.3 \
 	vmod_directors.3 \
+	vmod_error.3 \
 	vmod_purge.3 \
 	vmod_std.3 \
 	vmod_vtc.3 \
@@ -114,6 +115,9 @@ vmod_unix.3: $(top_builddir)/lib/libvmod_unix/vmod_unix.man.rst
 	$(BUILD_MAN) $? $@
 
 vmod_proxy.3: $(top_builddir)/lib/libvmod_proxy/vmod_proxy.man.rst
+	$(BUILD_MAN) $? $@
+
+vmod_error.3: $(top_builddir)/lib/libvmod_error/vmod_error.man.rst
 	$(BUILD_MAN) $? $@
 
 .NOPATH: $(dist_man_MANS)
