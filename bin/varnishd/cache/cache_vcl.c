@@ -278,6 +278,7 @@ vcl_iterdir(struct cli *cli, const char *pat, const struct vcl *vcl,
 	int i, found = 0;
 	struct vcldir *vdir;
 
+	Lck_AssertHeld(&vcl_mtx);
 	VTAILQ_FOREACH(vdir, &vcl->director_list, list) {
 		if (fnmatch(pat, vdir->cli_name, 0))
 			continue;
@@ -343,8 +344,10 @@ vcl_BackendEvent(const struct vcl *vcl, enum vcl_event_e e)
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	AZ(vcl->busy);
 
+	Lck_Lock(&vcl_mtx);
 	VTAILQ_FOREACH(vdir, &vcl->director_list, list)
 		VDI_Event(vdir->dir, e);
+	Lck_Unlock(&vcl_mtx);
 }
 
 static void
@@ -355,6 +358,7 @@ vcl_KillBackends(struct vcl *vcl)
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	AZ(vcl->busy);
 	assert(VTAILQ_EMPTY(&vcl->ref_list));
+	Lck_Lock(&vcl_mtx);
 	while (1) {
 		vdir = VTAILQ_FIRST(&vcl->director_list);
 		if (vdir == NULL)
@@ -366,6 +370,7 @@ vcl_KillBackends(struct vcl *vcl)
 		FREE_OBJ(vdir->dir);
 		FREE_OBJ(vdir);
 	}
+	Lck_Unlock(&vcl_mtx);
 }
 
 /*--------------------------------------------------------------------*/
