@@ -131,8 +131,6 @@
 -esym(759, vcc_ProcAction) // could be moved to module
 -esym(714, vcc_ProcAction) // not ref.
 
--esym(765, panicstr)	// Could be static
-
 -emacro(506, isnan, isfinite)	// constant value boolean
 -emacro(736, isfinite)	// loss of precision
 -emacro(774, HTTPH)	// always false

@@ -52,12 +52,13 @@
 #include "vcs.h"
 
 /*
- * The panic string is constructed in memory, then copied to the
+ * The panic string is constructed in a VSB, then copied to the
  * shared memory.
  *
  * It can be extracted post-mortem from a core dump using gdb:
  *
- * (gdb) printf "%s", panicstr
+ * (gdb) p *(char **)((char *)pan_vsb+8)
+ *
  */
 
 static struct vsb pan_vsb_storage, *pan_vsb;
