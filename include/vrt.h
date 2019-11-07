@@ -55,6 +55,8 @@
  *	Changed type of vsa_suckaddr_len from int to size_t
  *	New prefix_{ptr|len} fields in vrt_backend
  *	VRT_HashStrands32() added
+ *	VRT_l_resp_body() changed
+ *	VRT_l_beresp_body() changed
  * 10.0 (2019-09-15)
  *	VRT_UpperLowerStrands added.
  *	VRT_synth_page now takes STRANDS argument
@@ -262,6 +264,11 @@ struct vrt_type {
 	const char			*uname;
 	const char			*ctype;
 	size_t				szof;
+};
+
+enum lbody_e {
+	LBODY_SET,
+	LBODY_ADD,
 };
 
 /***********************************************************************
