@@ -1,4 +1,6 @@
-varnishtest "set VCL_??? += VCL_STRING;"
+varnishtest "set VCL_??? [+]= VCL_???;"
+
+# set STRING|HEADER += STRINGS;
 
 server s1 {
 	rxreq
@@ -22,4 +24,54 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 	expect resp.http.x-powered-by == varnishtest1002
+} -run
+
+# set BODY [+]= STRINGS;
+
+varnish v1 -vcl {
+	import blob;
+	backend be none;
+	sub vcl_recv {
+		return (synth(200));
+	}
+	sub vcl_synth {
+		if (req.url ~ "synth") {
+			synthetic("hello");
+			if (req.url ~ "add") {
+				synthetic("world");
+			}
+		}
+		if (req.url ~ "string") {
+			set resp.body = "hello";
+			if (req.url ~ "reset") {
+				set resp.body = "world";
+			}
+			if (req.url ~ "add") {
+				set resp.body += "world";
+			}
+		}
+		return (deliver);
+	}
+}
+
+client c1 {
+	txreq -url "/synth"
+	rxresp
+	expect resp.body == hello
+
+	txreq -url "/synth/add"
+	rxresp
+	expect resp.body == helloworld
+
+	txreq -url "/string"
+	rxresp
+	expect resp.body == hello
+
+	txreq -url "/string/reset"
+	rxresp
+	expect resp.body == world
+
+	txreq -url "/string/add"
+	rxresp
+	expect resp.body == helloworld
 } -run

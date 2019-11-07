@@ -216,10 +216,12 @@ class vardef(object):
         elif self.wr:
             fo.write('\tsym->lname = "VRT_l_%s(ctx, ";\n' % cnam)
             s = "void VRT_l_%s(VRT_CTX, " % cnam
-            if self.typ != "STRING" and self.typ != "BODY":
-                s += "VCL_" + self.typ + ")"
-            else:
+            if self.typ == "STRING":
                 s += ctyp.c + ", ...)"
+            elif self.typ == "BODY":
+                s += "enum lbody_e, " + ctyp.c + ", ...)"
+            else:
+                s += "VCL_" + self.typ + ")"
             varproto(s)
         fo.write("\tsym->w_methods =\n")
         restrict(fo, self.wr)
