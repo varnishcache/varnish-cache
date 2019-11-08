@@ -357,7 +357,7 @@ event_load(VRT_CTX, struct vmod_priv *priv)
 	loads++;
 
 	if (cache_param->nuke_limit == 42) {
-		VSB_printf(ctx->msg, "nuke_limit is not the answer.");
+		VSB_cat(ctx->msg, "nuke_limit is not the answer.");
 		return (-1);
 	}
 
@@ -414,7 +414,7 @@ event_warm(VRT_CTX, const struct vmod_priv *priv)
 
 	AN(ctx->msg);
 	if (cache_param->max_esi_depth == 42) {
-		VSB_printf(ctx->msg, "max_esi_depth is not the answer.");
+		VSB_cat(ctx->msg, "max_esi_depth is not the answer.");
 		return (-1);
 	}
 

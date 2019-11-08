@@ -618,9 +618,9 @@ VPX_Send_Proxy(int fd, int version, const struct sess *sp)
 		AN(p2);
 		VTCP_name(sas, ha, sizeof ha, pa, sizeof pa);
 		if (proto == PF_INET6)
-			VSB_printf(vsb, " TCP6 ");
+			VSB_cat(vsb, " TCP6 ");
 		else if (proto == PF_INET)
-			VSB_printf(vsb, " TCP4 ");
+			VSB_cat(vsb, " TCP4 ");
 		VSB_printf(vsb, "%s %s %s %s\r\n", p1, ha, p2, pa);
 	} else if (version == 2) {
 		AZ(SES_Get_client_addr(sp, &sac));

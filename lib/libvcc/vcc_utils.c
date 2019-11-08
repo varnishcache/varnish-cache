@@ -75,7 +75,7 @@ vcc_regexp(struct vcc *tl, struct vsb *vgc_name)
 	ifp = New_IniFin(tl);
 	VSB_printf(ifp->ini, "\tVRT_re_init(&%s, ",buf);
 	EncToken(ifp->ini, tl->t);
-	VSB_printf(ifp->ini, ");");
+	VSB_cat(ifp->ini, ");");
 	VSB_printf(ifp->fin, "\t\tVRT_re_fini(%s);", buf);
 	vcc_NextToken(tl);
 }
@@ -282,7 +282,7 @@ Emit_UDS_Path(struct vcc *tl, const struct token *t_path, const char *errid)
 			   strerror(errno));
 		vcc_ErrWhere(tl, t_path);
 		if (err == ENOENT || err == EACCES) {
-			VSB_printf(tl->sb, "(That was just a warning)\n");
+			VSB_cat(tl->sb, "(That was just a warning)\n");
 			tl->err = 0;
 		} else
 			return;
@@ -311,7 +311,7 @@ vcc_DurationUnit(struct vcc *tl)
 		vcc_NextToken(tl);
 		return (sc);
 	}
-	VSB_printf(tl->sb, "Unknown duration unit ");
+	VSB_cat(tl->sb, "Unknown duration unit ");
 	vcc_ErrToken(tl, tl->t);
 	VSB_printf(tl->sb, "\n%s\n", VNUM_LEGAL_DURATION);
 	vcc_ErrWhere(tl, tl->t);
@@ -382,15 +382,15 @@ vcc_ByteVal(struct vcc *tl, double *d)
 	v = vcc_DoubleVal(tl);
 	ERRCHK(tl);
 	if (tl->t->tok != ID) {
-		VSB_printf(tl->sb, "Expected BYTES unit (B, KB, MB...) got ");
+		VSB_cat(tl->sb, "Expected BYTES unit (B, KB, MB...) got ");
 		vcc_ErrToken(tl, tl->t);
-		VSB_printf(tl->sb, "\n");
+		VSB_cat(tl->sb, "\n");
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}
 	sc = VNUM_bytes_unit(1.0, tl->t->b, tl->t->e, 0);
 	if (isnan(sc)) {
-		VSB_printf(tl->sb, "Unknown BYTES unit ");
+		VSB_cat(tl->sb, "Unknown BYTES unit ");
 		vcc_ErrToken(tl, tl->t);
 		VSB_printf(tl->sb, "\n%s\n", VNUM_LEGAL_BYTES);
 		vcc_ErrWhere(tl, tl->t);

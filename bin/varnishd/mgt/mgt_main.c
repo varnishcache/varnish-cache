@@ -590,15 +590,15 @@ main(int argc, char * const *argv)
 			REPLACE(fa->farg, "<-b argument>");
 			vsb = VSB_new_auto();
 			AN(vsb);
-			VSB_printf(vsb, "vcl 4.1;\n");
-			VSB_printf(vsb, "backend default {\n");
+			VSB_cat(vsb, "vcl 4.1;\n");
+			VSB_cat(vsb, "backend default {\n");
 			if (*optarg != '/')
 				VSB_printf(vsb, "    .host = \"%s\";\n",
 					   optarg);
 			else
 				VSB_printf(vsb, "    .path = \"%s\";\n",
 					   optarg);
-			VSB_printf(vsb, "}\n");
+			VSB_cat(vsb, "}\n");
 			AZ(VSB_finish(vsb));
 			fa->src = strdup(VSB_data(vsb));
 			AN(fa->src);
@@ -710,8 +710,8 @@ main(int argc, char * const *argv)
 			if (getenv("TMPDIR") != NULL)
 				VSB_printf(vsb, "%s", getenv("TMPDIR"));
 			else
-				VSB_printf(vsb, "/tmp");
-			VSB_printf(vsb, "/varnishd_C_XXXXXXX");
+				VSB_cat(vsb, "/tmp");
+			VSB_cat(vsb, "/varnishd_C_XXXXXXX");
 			AZ(VSB_finish(vsb));
 			Cn_arg = strdup(VSB_data(vsb));
 			AN(Cn_arg);

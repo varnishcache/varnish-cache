@@ -294,7 +294,7 @@ vcc_ParseVcl(struct vcc *tl)
 
 	Expect(tl, FNUM);
 	if (tl->t->e - tl->t->b != 3 || tl->t->b[1] != '.') {
-		VSB_printf(tl->sb,
+		VSB_cat(tl->sb,
 		    "Don't play silly buggers with VCL version numbers\n");
 		vcc_ErrWhere(tl, tl->t);
 		ERRCHK(tl);
@@ -314,8 +314,7 @@ vcc_ParseVcl(struct vcc *tl)
 		 * in the built-in VCL, and that would give a very
 		 * confusing error message
 		 */
-		VSB_printf(tl->sb,
-		    "Expected 'vcl N.N;' found no semi-colon\n");
+		VSB_cat(tl->sb, "Expected 'vcl N.N;' found no semi-colon\n");
 		vcc_ErrWhere2(tl, tok0, tl->t);
 		ERRCHK(tl);
 	}
@@ -367,7 +366,7 @@ vcc_Parse(struct vcc *tl)
 
 	AZ(tl->indent);
 	if (tl->t->tok != ID || !vcc_IdIs(tl->t, "vcl")) {
-		VSB_printf(tl->sb,
+		VSB_cat(tl->sb,
 		    "VCL version declaration missing\n"
 		    "Update your VCL to Version 4 syntax, and add\n"
 		    "\tvcl 4.1;\n"
@@ -389,8 +388,7 @@ vcc_Parse(struct vcc *tl)
 				    tl->t->b + 2);
 				vcc_NextToken(tl);
 			} else {
-				VSB_printf(tl->sb,
-				    "Inline-C not allowed\n");
+				VSB_cat(tl->sb, "Inline-C not allowed\n");
 				vcc_ErrWhere(tl, tl->t);
 			}
 			break;
@@ -410,17 +408,17 @@ vcc_Parse(struct vcc *tl)
 			/* FALLTHROUGH */
 		default:
 			/* We deliberately do not mention inline-C */
-			VSB_printf(tl->sb, "Expected one of\n\t");
+			VSB_cat(tl->sb, "Expected one of\n\t");
 			for (tp = toplev; tp->name != NULL; tp++) {
 				if (tp[1].name == NULL)
-					VSB_printf(tl->sb, " or ");
+					VSB_cat(tl->sb, " or ");
 				VSB_printf(tl->sb, "'%s'", tp->name);
 				if (tp[1].name != NULL)
-					VSB_printf(tl->sb, ", ");
+					VSB_cat(tl->sb, ", ");
 			}
-			VSB_printf(tl->sb, "\nFound: ");
+			VSB_cat(tl->sb, "\nFound: ");
 			vcc_ErrToken(tl, tl->t);
-			VSB_printf(tl->sb, " at\n");
+			VSB_cat(tl->sb, " at\n");
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}

@@ -118,7 +118,7 @@ VPI_Vmod_Init(VRT_CTX, struct vmod **hdl, unsigned nbr, void *ptr, int len,
 		    strcmp(d->file_id, file_id)) {
 			VSB_printf(ctx->msg, "Loading vmod %s from %s (%s):\n",
 			    nm, backup, path);
-			VSB_printf(ctx->msg,
+			VSB_cat(ctx->msg,
 			    "This is no longer the same file seen by"
 			    " the VCL-compiler.\n");
 			(void)dlclose(v->hdl);
@@ -134,7 +134,7 @@ VPI_Vmod_Init(VRT_CTX, struct vmod **hdl, unsigned nbr, void *ptr, int len,
 		    d->json == NULL) {
 			VSB_printf(ctx->msg, "Loading vmod %s from %s (%s):\n",
 			    nm, backup, path);
-			VSB_printf(ctx->msg, "VMOD data is mangled.\n");
+			VSB_cat(ctx->msg, "VMOD data is mangled.\n");
 			(void)dlclose(v->hdl);
 			FREE_OBJ(v);
 			return (1);
@@ -197,13 +197,13 @@ VMOD_Panic(struct vsb *vsb)
 {
 	struct vmod *v;
 
-	VSB_printf(vsb, "vmods = {\n");
+	VSB_cat(vsb, "vmods = {\n");
 	VSB_indent(vsb, 2);
 	VTAILQ_FOREACH(v, &vmods, list)
 		VSB_printf(vsb, "%s = {%p, %s, %u.%u},\n",
 		    v->nm, v, v->abi, v->vrt_major, v->vrt_minor);
 	VSB_indent(vsb, -2);
-	VSB_printf(vsb, "},\n");
+	VSB_cat(vsb, "},\n");
 }
 
 /*---------------------------------------------------------------------*/

@@ -243,33 +243,33 @@ EmitCoordinates(const struct vcc *tl, struct vsb *vsb)
 	struct source *sp;
 	const char *p;
 
-	VSB_printf(vsb, "/* ---===### Source Code ###===---*/\n");
+	VSB_cat(vsb, "/* ---===### Source Code ###===---*/\n");
 
 	VSB_printf(vsb, "\n#define VGC_NSRCS %u\n", tl->nsources);
 
-	VSB_printf(vsb, "\nstatic const char *srcname[VGC_NSRCS] = {\n");
+	VSB_cat(vsb, "\nstatic const char *srcname[VGC_NSRCS] = {\n");
 	VTAILQ_FOREACH(sp, &tl->sources, list) {
-		VSB_printf(vsb, "\t");
+		VSB_cat(vsb, "\t");
 		VSB_quote(vsb, sp->name, -1, VSB_QUOTE_CSTR);
-		VSB_printf(vsb, ",\n");
+		VSB_cat(vsb, ",\n");
 	}
-	VSB_printf(vsb, "};\n");
+	VSB_cat(vsb, "};\n");
 
 	VSB_printf(vsb, "\nstatic const char *srcbody[%u] = {\n", tl->nsources);
 	VTAILQ_FOREACH(sp, &tl->sources, list) {
-		VSB_printf(vsb, "    /* ");
+		VSB_cat(vsb, "    /* ");
 		VSB_quote(vsb, sp->name, -1, VSB_QUOTE_CSTR);
-		VSB_printf(vsb, " */\n");
+		VSB_cat(vsb, " */\n");
 		VSB_quote_pfx(vsb, "\t", sp->b, sp->e - sp->b, VSB_QUOTE_CSTR);
-		VSB_printf(vsb, ",\n");
+		VSB_cat(vsb, ",\n");
 	}
-	VSB_printf(vsb, "};\n\n");
+	VSB_cat(vsb, "};\n\n");
 
-	VSB_printf(vsb, "/* ---===### Location Counters ###===---*/\n");
+	VSB_cat(vsb, "/* ---===### Location Counters ###===---*/\n");
 
 	VSB_printf(vsb, "\n#define VGC_NREFS %u\n\n", tl->cnt + 1);
 
-	VSB_printf(vsb, "static const struct vpi_ref VGC_ref[VGC_NREFS] = {\n");
+	VSB_cat(vsb, "static const struct vpi_ref VGC_ref[VGC_NREFS] = {\n");
 	lin = 1;
 	pos = 0;
 	sp = 0;
@@ -300,11 +300,11 @@ EmitCoordinates(const struct vcc *tl, struct vsb *vsb)
 		VSB_printf(vsb, "  [%3u] = { %u, %8tu, %4u, %3u, ",
 		    t->cnt, sp->idx, t->b - sp->b, lin, pos + 1);
 		if (t->tok == CSRC)
-			VSB_printf(vsb, " \"C{\"},\n");
+			VSB_cat(vsb, " \"C{\"},\n");
 		else
 			VSB_printf(vsb, " \"%.*s\" },\n", PF(t));
 	}
-	VSB_printf(vsb, "};\n\n");
+	VSB_cat(vsb, "};\n\n");
 }
 
 /*--------------------------------------------------------------------
@@ -551,7 +551,7 @@ vcc_resolve_includes(struct vcc *tl)
 		t1 = VTAILQ_NEXT(t, list);
 		AN(t1);			/* There's always an EOI */
 		if (t1->tok != CSTR) {
-			VSB_printf(tl->sb,
+			VSB_cat(tl->sb,
 			    "include not followed by string constant.\n");
 			vcc_ErrWhere(tl, t1);
 			return;
@@ -560,7 +560,7 @@ vcc_resolve_includes(struct vcc *tl)
 		AN(t2);			/* There's always an EOI */
 
 		if (t2->tok != ';') {
-			VSB_printf(tl->sb,
+			VSB_cat(tl->sb,
 			    "include <string> not followed by semicolon.\n");
 			vcc_ErrWhere(tl, t1);
 			return;
@@ -573,7 +573,7 @@ vcc_resolve_includes(struct vcc *tl)
 			 * the include directive.
 			 */
 			if (t1->src->name[0] != '/') {
-				VSB_printf(tl->sb,
+				VSB_cat(tl->sb,
 				    "include \"./xxxxx\"; needs absolute "
 				    "filename of including file.\n");
 				vcc_ErrWhere(tl, t1);
@@ -671,7 +671,7 @@ vcc_CompileSource(struct vcc *tl, struct source *sp, const char *jfile)
 
 	/* Check if we have any backends at all */
 	if (tl->default_director == NULL) {
-		VSB_printf(tl->sb,
+		VSB_cat(tl->sb,
 		    "No backends or directors found in VCL program, "
 		    "at least one is necessary.\n");
 		tl->err = 1;
@@ -692,13 +692,13 @@ vcc_CompileSource(struct vcc *tl, struct source *sp, const char *jfile)
 
 	/* Tie vcl_init/fini in */
 	ifp = New_IniFin(tl);
-	VSB_printf(ifp->ini, "\tVGC_function_vcl_init(ctx);\n");
+	VSB_cat(ifp->ini, "\tVGC_function_vcl_init(ctx);\n");
 	/*
 	 * Because the failure could be half way into vcl_init{} so vcl_fini{}
 	 * must always be called, also on failure.
 	 */
 	ifp->ignore_errors = 1;
-	VSB_printf(ifp->fin, "\t\tVGC_function_vcl_fini(ctx);");
+	VSB_cat(ifp->fin, "\t\tVGC_function_vcl_fini(ctx);");
 
 	/* Emit method functions */
 	Fh(tl, 1, "\n");
@@ -715,7 +715,7 @@ vcc_CompileSource(struct vcc *tl, struct source *sp, const char *jfile)
 
 	VCC_XrefTable(tl);
 
-	VSB_printf(tl->symtab, "\n]\n");
+	VSB_cat(tl->symtab, "\n]\n");
 	AZ(VSB_finish(tl->symtab));
 	if (TLWriteVSB(tl, jfile, tl->symtab, "Symbol table"))
 		return (NULL);
@@ -815,7 +815,7 @@ VCC_New(void)
 
 	tl->symtab = VSB_new_auto();
 	assert(tl->symtab != NULL);
-	VSB_printf(tl->symtab, "[\n    {\"version\": 0}");
+	VSB_cat(tl->symtab, "[\n    {\"version\": 0}");
 
 	tl->fc = VSB_new_auto();
 	assert(tl->fc != NULL);

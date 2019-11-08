@@ -285,9 +285,9 @@ VDI_Panic(const struct director *d, struct vsb *vsb, const char *nm)
 	if (d->vdir->methods->panic != NULL)
 		d->vdir->methods->panic(d, vsb);
 	VSB_indent(vsb, -2);
-	VSB_printf(vsb, "},\n");
+	VSB_cat(vsb, "},\n");
 	VSB_indent(vsb, -2);
-	VSB_printf(vsb, "},\n");
+	VSB_cat(vsb, "},\n");
 }
 
 

@@ -237,11 +237,11 @@ mgt_vcc_compile(struct vcc_priv *vp, struct vsb *sb, int C_flag)
 		VSB_cat(sb, csrc);
 		free(csrc);
 
-		VSB_printf(sb, "/* EXTERNAL SYMBOL TABLE\n");
+		VSB_cat(sb, "/* EXTERNAL SYMBOL TABLE\n");
 		csrc = VFIL_readfile(NULL, VSB_data(vp->symfile), NULL);
 		AN(csrc);
 		VSB_cat(sb, csrc);
-		VSB_printf(sb, "*/\n");
+		VSB_cat(sb, "*/\n");
 		free(csrc);
 	}
 

@@ -78,7 +78,7 @@ pan_privs(struct vsb *vsb, const struct vrt_privs *privs)
 		}
 	}
 	VSB_indent(vsb, -2);
-	VSB_printf(vsb, "},\n");
+	VSB_cat(vsb, "},\n");
 }
 
 

@@ -151,7 +151,7 @@ tweak_vsl_mask(struct vsb *vsb, const struct parspec *par, const char *arg)
 			}
 		}
 		if (*s == '\0')
-			VSB_printf(vsb, "(all enabled)");
+			VSB_cat(vsb, "(all enabled)");
 		if (arg == JSON_FMT)
 			VSB_putc(vsb, '"');
 	}
@@ -194,7 +194,7 @@ tweak_debug(struct vsb *vsb, const struct parspec *par, const char *arg)
 			}
 		}
 		if (*s == '\0')
-			VSB_printf(vsb, "none");
+			VSB_cat(vsb, "none");
 		if (arg == JSON_FMT)
 			VSB_putc(vsb, '"');
 	}
@@ -238,7 +238,7 @@ tweak_feature(struct vsb *vsb, const struct parspec *par, const char *arg)
 			}
 		}
 		if (*s == '\0')
-			VSB_printf(vsb, "none");
+			VSB_cat(vsb, "none");
 		if (arg == JSON_FMT)
 			VSB_putc(vsb, '"');
 	}

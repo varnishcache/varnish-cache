@@ -505,7 +505,7 @@ vbp_bitmap(struct vsb *vsb, char c, uint64_t map, const char *lbl)
 	int i;
 	uint64_t u = (1ULL << 63);
 
-	VSB_printf(vsb, "  ");
+	VSB_cat(vsb, "  ");
 	for (i = 0; i < 64; i++) {
 		if (map & u)
 			VSB_putc(vsb, c);
@@ -539,7 +539,7 @@ VBP_Status(struct vsb *vsb, const struct backend *be, int details, int json)
 	}
 
 	if (json) {
-		VSB_printf(vsb, "{\n");
+		VSB_cat(vsb, "{\n");
 		VSB_indent(vsb, 2);
 #define BITMAP(nn, cc, tt, bb)					\
 		VSB_printf(vsb, "\"bits_%c\": %ju,\n", cc, vt->nn);
@@ -548,8 +548,8 @@ VBP_Status(struct vsb *vsb, const struct backend *be, int details, int json)
 		VSB_printf(vsb, "\"threshold\": %u,\n", vt->threshold);
 		VSB_printf(vsb, "\"window\": %u", vt->window);
 		VSB_indent(vsb, -2);
-		VSB_printf(vsb, "\n");
-		VSB_printf(vsb, "},\n");
+		VSB_cat(vsb, "\n");
+		VSB_cat(vsb, "},\n");
 		return;
 	}
 
@@ -558,7 +558,7 @@ VBP_Status(struct vsb *vsb, const struct backend *be, int details, int json)
 	    vt->good, vt->threshold, vt->window);
 	VSB_printf(vsb,
 	    "  Average response time of good probes: %.6f\n", vt->avg);
-	VSB_printf(vsb,
+	VSB_cat(vsb,
 	    "  Oldest ======================"
 	    "============================ Newest\n");
 
@@ -588,8 +588,8 @@ vbp_build_req(struct vbp_target *vt, const struct vrt_backend_probe *vbp,
 		    vbp->url != NULL ?  vbp->url : "/");
 		if (be->hosthdr != NULL)
 			VSB_printf(vsb, "Host: %s\r\n", be->hosthdr);
-		VSB_printf(vsb, "Connection: close\r\n");
-		VSB_printf(vsb, "\r\n");
+		VSB_cat(vsb, "Connection: close\r\n");
+		VSB_cat(vsb, "\r\n");
 	}
 	AZ(VSB_finish(vsb));
 	vt->req = strdup(VSB_data(vsb));

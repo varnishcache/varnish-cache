@@ -50,7 +50,7 @@ vxp_ErrToken(const struct vxp *vxp, const struct token *t)
 {
 
 	if (t->tok == EOI)
-		VSB_printf(vxp->sb, "end of input");
+		VSB_cat(vxp->sb, "end of input");
 	else
 		VSB_printf(vxp->sb, "'%.*s'", PF(t));
 }
@@ -120,7 +120,7 @@ vxp_NextToken(struct vxp *vxp)
 	AN(vxp->t);
 	vxp->t = VTAILQ_NEXT(vxp->t, list);
 	if (vxp->t == NULL) {
-		VSB_printf(vxp->sb,
+		VSB_cat(vxp->sb,
 		    "Ran out of input, something is missing or"
 		    " maybe unbalanced parenthesis\n");
 		vxp->err = 1;

@@ -145,7 +145,7 @@ vxp_Lexer(struct vxp *vxp)
 			}
 			vxp_append_token(vxp, VAL, p, q);
 			if (quote != '\0') {
-				VSB_printf(vxp->sb, "Unterminated string ");
+				VSB_cat(vxp->sb, "Unterminated string ");
 				vxp_ErrWhere(vxp, vxp->t, q - p);
 				return;
 			}
@@ -177,7 +177,7 @@ vxp_Lexer(struct vxp *vxp)
 
 		/* Error */
 		vxp_append_token(vxp, EOI, p, p + 1);
-		VSB_printf(vxp->sb, "Syntax error ");
+		VSB_cat(vxp->sb, "Syntax error ");
 		vxp_ErrWhere(vxp, vxp->t, q - p);
 		return;
 	}

@@ -273,11 +273,11 @@ vcc_act_return_vcl(struct vcc *tl)
 	ERRCHK(tl);
 	AN(sym);
 	if (sym->eval_priv == NULL) {
-		VSB_printf(tl->symtab, ",\n    {\n");
-		VSB_printf(tl->symtab, "\t\"dir\": \"import\",\n");
-		VSB_printf(tl->symtab, "\t\"type\": \"$VCL\",\n");
+		VSB_cat(tl->symtab, ",\n    {\n");
+		VSB_cat(tl->symtab, "\t\"dir\": \"import\",\n");
+		VSB_cat(tl->symtab, "\t\"type\": \"$VCL\",\n");
 		VSB_printf(tl->symtab, "\t\"name\": \"%s\"\n", sym->name);
-		VSB_printf(tl->symtab, "   }");
+		VSB_cat(tl->symtab, "   }");
 
 		bprintf(buf, "vgc_vcl_%u", tl->unique++);
 		sym->eval_priv = strdup(buf);

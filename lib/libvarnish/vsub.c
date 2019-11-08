@@ -178,8 +178,8 @@ VSUB_run(struct vsb *sb, vsub_func_f *func, void *priv, const char *name,
 			VSB_printf(sb, ", signal %d", WTERMSIG(status));
 		}
 		if (WCOREDUMP(status))
-			VSB_printf(sb, ", core dumped");
-		VSB_printf(sb, "\n");
+			VSB_cat(sb, ", core dumped");
+		VSB_cat(sb, "\n");
 		assert(rv != -1);
 		return (rv);
 	}

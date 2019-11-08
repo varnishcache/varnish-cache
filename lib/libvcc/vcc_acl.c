@@ -135,9 +135,9 @@ vcc_acl_add_entry(struct vcc *tl, const struct acl_e *ae, int l,
 			 */
 			if (aen->not == ae2->not)
 				return;
-			VSB_printf(tl->sb, "Conflicting ACL entries:\n");
+			VSB_cat(tl->sb, "Conflicting ACL entries:\n");
 			vcc_ErrWhere(tl, ae2->t_addr);
-			VSB_printf(tl->sb, "vs:\n");
+			VSB_cat(tl->sb, "vs:\n");
 			vcc_ErrWhere(tl, aen->t_addr);
 			return;
 		}
@@ -311,13 +311,13 @@ vcc_acl_entry(struct vcc *tl)
 		e = NULL;
 		ae->mask = strtoul(sl, &e, 10);
 		if (*e != '\0') {
-			VSB_printf(tl->sb, ".../mask is not numeric.\n");
+			VSB_cat(tl->sb, ".../mask is not numeric.\n");
 			vcc_ErrWhere(tl, ae->t_addr);
 			return;
 		}
 		ae->t_mask = ae->t_addr;
 		if (tl->t->tok == '/') {
-			VSB_printf(tl->sb, "/mask only allowed once.\n");
+			VSB_cat(tl->sb, "/mask only allowed once.\n");
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}

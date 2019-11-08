@@ -143,7 +143,7 @@ tweak_bool(struct vsb *vsb, const struct parspec *par, const char *arg)
 		else if (!strcasecmp(arg, "true"))
 			*dest = 1;
 		else {
-			VSB_printf(vsb, "use \"on\" or \"off\"\n");
+			VSB_cat(vsb, "use \"on\" or \"off\"\n");
 			return (-1);
 		}
 	} else if (arg == JSON_FMT) {
@@ -207,7 +207,7 @@ tweak_generic_uint(struct vsb *vsb, volatile unsigned *dest, const char *arg,
 		}
 		*dest = u;
 	} else if (*dest == UINT_MAX && arg != JSON_FMT) {
-		VSB_printf(vsb, "unlimited");
+		VSB_cat(vsb, "unlimited");
 	} else {
 		VSB_printf(vsb, "%u", *dest);
 	}
@@ -248,7 +248,7 @@ fmt_bytes(struct vsb *vsb, uintmax_t t)
 			return;
 		}
 	}
-	VSB_printf(vsb, "(bogus number)");
+	VSB_cat(vsb, "(bogus number)");
 }
 
 static int
@@ -275,21 +275,19 @@ tweak_generic_bytes(struct vsb *vsb, volatile ssize_t *dest, const char *arg,
 		}
 		p = VNUM_2bytes(arg, &r, 0);
 		if (p != NULL) {
-			VSB_printf(vsb, "Could not convert to bytes.\n");
+			VSB_cat(vsb, "Could not convert to bytes.\n");
 			VSB_printf(vsb, "%s\n", p);
-			VSB_printf(vsb,
-			    "  Try something like '80k' or '120M'\n");
+			VSB_cat(vsb, "  Try something like '80k' or '120M'\n");
 			return (-1);
 		}
 		if ((uintmax_t)((ssize_t)r) != r) {
 			fmt_bytes(vsb, r);
-			VSB_printf(vsb,
-			    " is too large for this architecture.\n");
+			VSB_cat(vsb, " is too large for this architecture.\n");
 			return (-1);
 		}
 		if (max != NULL && r > rmax) {
 			VSB_printf(vsb, "Must be no more than %s\n", max);
-			VSB_printf(vsb, "\n");
+			VSB_cat(vsb, "\n");
 			return (-1);
 		}
 		if (min != NULL && r < rmin) {
@@ -396,13 +394,13 @@ tweak_poolparam(struct vsb *vsb, const struct parspec *par, const char *arg)
 
 	pp = par->priv;
 	if (arg == JSON_FMT) {
-		VSB_printf(vsb, "{\n");
+		VSB_cat(vsb, "{\n");
 		VSB_indent(vsb, 8);
 		VSB_printf(vsb, "\"min_pool\": %u,\n", pp->min_pool);
 		VSB_printf(vsb, "\"max_pool\": %u,\n", pp->max_pool);
 		VSB_printf(vsb, "\"max_age\": %g\n", pp->max_age);
 		VSB_indent(vsb, -4);
-		VSB_printf(vsb, "}");
+		VSB_cat(vsb, "}");
 	} else if (arg == NULL) {
 		VSB_printf(vsb, "%u,%u,%g",
 		    pp->min_pool, pp->max_pool, pp->max_age);
@@ -415,7 +413,7 @@ tweak_poolparam(struct vsb *vsb, const struct parspec *par, const char *arg)
 				break;
 			}
 			if (av[1] == NULL || av[2] == NULL || av[3] == NULL) {
-				VSB_printf(vsb,
+				VSB_cat(vsb,
 				    "Three fields required:"
 				    " min_pool, max_pool and max_age\n");
 				retval = -1;
@@ -437,7 +435,7 @@ tweak_poolparam(struct vsb *vsb, const struct parspec *par, const char *arg)
 			if (retval)
 				break;
 			if (px.min_pool > px.max_pool) {
-				VSB_printf(vsb,
+				VSB_cat(vsb,
 				    "min_pool cannot be larger"
 				    " than max_pool\n");
 				retval = -1;

@@ -222,24 +222,24 @@ VCL_Panic(struct vsb *vsb, const char *nm, const struct vcl *vcl)
 	VSB_printf(vsb, "discard = %u,\n", vcl->discard);
 	VSB_printf(vsb, "state = %s,\n", vcl->state);
 	VSB_printf(vsb, "temp = %s,\n", (const volatile char *)vcl->temp);
-	VSB_printf(vsb, "conf = {\n");
+	VSB_cat(vsb, "conf = {\n");
 	VSB_indent(vsb, 2);
 	if (vcl->conf == NULL) {
-		VSB_printf(vsb, "conf = NULL\n");
+		VSB_cat(vsb, "conf = NULL\n");
 	} else {
 		PAN_CheckMagic(vsb, vcl->conf, VCL_CONF_MAGIC);
 		VSB_printf(vsb, "syntax = \"%u\",\n", vcl->conf->syntax);
-		VSB_printf(vsb, "srcname = {\n");
+		VSB_cat(vsb, "srcname = {\n");
 		VSB_indent(vsb, 2);
 		for (i = 0; i < vcl->conf->nsrc; ++i)
 			VSB_printf(vsb, "\"%s\",\n", vcl->conf->srcname[i]);
 		VSB_indent(vsb, -2);
-		VSB_printf(vsb, "},\n");
+		VSB_cat(vsb, "},\n");
 	}
 	VSB_indent(vsb, -2);
-	VSB_printf(vsb, "},\n");
+	VSB_cat(vsb, "},\n");
 	VSB_indent(vsb, -2);
-	VSB_printf(vsb, "},\n");
+	VSB_cat(vsb, "},\n");
 }
 
 /*--------------------------------------------------------------------*/
@@ -388,18 +388,18 @@ VCL_Open(const char *fn, struct vsb *msg)
 #endif
 	dlh = dlopen(fn, RTLD_NOW | RTLD_LOCAL);
 	if (dlh == NULL) {
-		VSB_printf(msg, "Could not load compiled VCL.\n");
+		VSB_cat(msg, "Could not load compiled VCL.\n");
 		VSB_printf(msg, "\tdlopen() = %s\n", dlerror());
 		return (NULL);
 	}
 	cnf = dlsym(dlh, "VCL_conf");
 	if (cnf == NULL) {
-		VSB_printf(msg, "Compiled VCL lacks metadata.\n");
+		VSB_cat(msg, "Compiled VCL lacks metadata.\n");
 		(void)dlclose(dlh);
 		return (NULL);
 	}
 	if (cnf->magic != VCL_CONF_MAGIC) {
-		VSB_printf(msg, "Compiled VCL has mangled metadata.\n");
+		VSB_cat(msg, "Compiled VCL has mangled metadata.\n");
 		(void)dlclose(dlh);
 		return (NULL);
 	}

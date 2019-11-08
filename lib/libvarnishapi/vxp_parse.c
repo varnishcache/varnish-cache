@@ -86,7 +86,7 @@ vxp_expr_lhs(struct vxp *vxp, struct vex_lhs **plhs)
 		}
 		(*plhs)->level = (int)strtol(vxp->t->dec, &p, 0);
 		if ((*plhs)->level < 0) {
-			VSB_printf(vxp->sb, "Expected positive integer ");
+			VSB_cat(vxp->sb, "Expected positive integer ");
 			vxp_ErrWhere(vxp, vxp->t, -1);
 			return;
 		}
@@ -98,7 +98,7 @@ vxp_expr_lhs(struct vxp *vxp, struct vex_lhs **plhs)
 			p++;
 		}
 		if (*p) {
-			VSB_printf(vxp->sb, "Syntax error in level limit ");
+			VSB_cat(vxp->sb, "Syntax error in level limit ");
 			vxp_ErrWhere(vxp, vxp->t, -1);
 			return;
 		}
@@ -123,17 +123,17 @@ vxp_expr_lhs(struct vxp *vxp, struct vex_lhs **plhs)
 			    (*plhs)->tags);
 		}
 		if (i == -1) {
-			VSB_printf(vxp->sb, "Tag name matches zero tags ");
+			VSB_cat(vxp->sb, "Tag name matches zero tags ");
 			vxp_ErrWhere(vxp, vxp->t, -1);
 			return;
 		}
 		if (i == -2) {
-			VSB_printf(vxp->sb, "Tag name is ambiguous ");
+			VSB_cat(vxp->sb, "Tag name is ambiguous ");
 			vxp_ErrWhere(vxp, vxp->t, -1);
 			return;
 		}
 		if (i == -3) {
-			VSB_printf(vxp->sb, "Syntax error in tag name ");
+			VSB_cat(vxp->sb, "Syntax error in tag name ");
 			vxp_ErrWhere(vxp, vxp->t, -1);
 			return;
 		}
@@ -171,7 +171,7 @@ vxp_expr_lhs(struct vxp *vxp, struct vex_lhs **plhs)
 		}
 		(*plhs)->field = (int)strtol(vxp->t->dec, &p, 0);
 		if (*p || (*plhs)->field <= 0) {
-			VSB_printf(vxp->sb, "Expected positive integer ");
+			VSB_cat(vxp->sb, "Expected positive integer ");
 			vxp_ErrWhere(vxp, vxp->t, -1);
 			return;
 		}
@@ -186,7 +186,7 @@ vxp_expr_lhs(struct vxp *vxp, struct vex_lhs **plhs)
 	if ((*plhs)->vxid > 1 || (*plhs)->level >= 0 ||
 	    (*plhs)->field > 0 || (*plhs)->prefixlen > 0 ||
 	    (*plhs)->taglist > 0) {
-		VSB_printf(vxp->sb, "Unexpected taglist selection for vxid ");
+		VSB_cat(vxp->sb, "Unexpected taglist selection for vxid ");
 		vxp_ErrWhere(vxp, vxp->t, -1);
 	}
 }
@@ -210,7 +210,7 @@ vxp_expr_num(struct vxp *vxp, struct vex_rhs **prhs, unsigned vxid)
 		(*prhs)->type = VEX_FLOAT;
 		(*prhs)->val_float = VNUM(vxp->t->dec);
 		if (isnan((*prhs)->val_float)) {
-			VSB_printf(vxp->sb, "Floating point parse error ");
+			VSB_cat(vxp->sb, "Floating point parse error ");
 			vxp_ErrWhere(vxp, vxp->t, -1);
 			return;
 		}
@@ -220,7 +220,7 @@ vxp_expr_num(struct vxp *vxp, struct vex_rhs **prhs, unsigned vxid)
 		while (isspace(*endptr))
 			endptr++;
 		if (*endptr != '\0') {
-			VSB_printf(vxp->sb, "Integer parse error ");
+			VSB_cat(vxp->sb, "Integer parse error ");
 			vxp_ErrWhere(vxp, vxp->t, -1);
 			return;
 		}

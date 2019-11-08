@@ -133,13 +133,13 @@ PAN_already(struct vsb *vsb, const void *ptr)
 	int i;
 
 	if (ptr == NULL) {
-		VSB_printf(vsb, "},\n");
+		VSB_cat(vsb, "},\n");
 		return (1);
 	}
 	for (i = 0; i < already_idx; i++) {
 		if (already_list[i] == ptr) {
-			VSB_printf(vsb, "  [Already dumped, see above]\n");
-			VSB_printf(vsb, "},\n");
+			VSB_cat(vsb, "  [Already dumped, see above]\n");
+			VSB_cat(vsb, "},\n");
 			return (1);
 		}
 	}
@@ -160,7 +160,7 @@ pan_ws(struct vsb *vsb, const struct ws *ws)
 	VSB_indent(vsb, 2);
 	PAN_CheckMagic(vsb, ws, WS_MAGIC);
 	if (ws->id[0] != '\0' && (!(ws->id[0] & 0x20)))
-		VSB_printf(vsb, "OVERFLOWED ");
+		VSB_cat(vsb, "OVERFLOWED ");
 	VSB_printf(vsb, "id = \"%s\",\n", ws->id);
 	VSB_printf(vsb, "{s, f, r, e} = {%p", ws->s);
 	if (ws->f >= ws->s)
@@ -175,9 +175,9 @@ pan_ws(struct vsb *vsb, const struct ws *ws)
 		VSB_printf(vsb, ", +%ld", (long) (ws->e - ws->s));
 	else
 		VSB_printf(vsb, ", %p", ws->e);
-	VSB_printf(vsb, "},\n");
+	VSB_cat(vsb, "},\n");
 	VSB_indent(vsb, -2);
-	VSB_printf(vsb, "},\n");
+	VSB_cat(vsb, "},\n");
 }
 
 /*--------------------------------------------------------------------*/
@@ -208,7 +208,7 @@ pan_htc(struct vsb *vsb, const struct http_conn *htc)
 	VSB_printf(vsb, "between_bytes_timeout = %f,\n",
 	    htc->between_bytes_timeout);
 	VSB_indent(vsb, -2);
-	VSB_printf(vsb, "},\n");
+	VSB_cat(vsb, "},\n");
 }
 
 /*--------------------------------------------------------------------*/
@@ -224,7 +224,7 @@ pan_http(struct vsb *vsb, const char *id, const struct http *h)
 	VSB_indent(vsb, 2);
 	PAN_CheckMagic(vsb, h, HTTP_MAGIC);
 	pan_ws(vsb, h->ws);
-	VSB_printf(vsb, "hdrs {\n");
+	VSB_cat(vsb, "hdrs {\n");
 	VSB_indent(vsb, 2);
 	for (i = 0; i < h->nhd; ++i) {
 		if (h->hd[i].b == NULL && h->hd[i].e == NULL)
@@ -233,9 +233,9 @@ pan_http(struct vsb *vsb, const char *id, const struct http *h)
 		    (int)(h->hd[i].e - h->hd[i].b), h->hd[i].b);
 	}
 	VSB_indent(vsb, -2);
-	VSB_printf(vsb, "},\n");
+	VSB_cat(vsb, "},\n");
 	VSB_indent(vsb, -2);
-	VSB_printf(vsb, "},\n");
+	VSB_cat(vsb, "},\n");
 }
 
 /*--------------------------------------------------------------------*/
@@ -252,7 +252,7 @@ pan_boc(struct vsb *vsb, const struct boc *boc)
 	VSB_printf(vsb, "vary = %p,\n", boc->vary);
 	VSB_printf(vsb, "stevedore_priv = %p,\n", boc->stevedore_priv);
 	VSB_indent(vsb, -2);
-	VSB_printf(vsb, "},\n");
+	VSB_cat(vsb, "},\n");
 }
 
 /*--------------------------------------------------------------------*/
@@ -268,21 +268,21 @@ pan_objcore(struct vsb *vsb, const char *typ, const struct objcore *oc)
 	VSB_indent(vsb, 2);
 	PAN_CheckMagic(vsb, oc, OBJCORE_MAGIC);
 	VSB_printf(vsb, "refcnt = %d,\n", oc->refcnt);
-	VSB_printf(vsb, "flags = {");
+	VSB_cat(vsb, "flags = {");
 
 /*lint -save -esym(438,p) -esym(838,p) -e539 */
 	p = "";
 #define OC_FLAG(U, l, v) \
 	if (oc->flags & v) { VSB_printf(vsb, "%s" #l, p); p = ", "; }
 #include "tbl/oc_flags.h"
-	VSB_printf(vsb, "},\n");
-	VSB_printf(vsb, "exp_flags = {");
+	VSB_cat(vsb, "},\n");
+	VSB_cat(vsb, "exp_flags = {");
 	p = "";
 #define OC_EXP_FLAG(U, l, v) \
 	if (oc->exp_flags & v) { VSB_printf(vsb, "%s" #l, p); p = ", "; }
 #include "tbl/oc_exp_flags.h"
 /*lint -restore */
-	VSB_printf(vsb, "},\n");
+	VSB_cat(vsb, "},\n");
 
 	if (oc->boc != NULL)
 		pan_boc(vsb, oc->boc);
@@ -294,18 +294,18 @@ pan_objcore(struct vsb *vsb, const char *typ, const struct objcore *oc)
 		VSB_printf(vsb, " (%s", oc->stobj->stevedore->name);
 		if (strlen(oc->stobj->stevedore->ident))
 			VSB_printf(vsb, " %s", oc->stobj->stevedore->ident);
-		VSB_printf(vsb, ")");
+		VSB_cat(vsb, ")");
 		if (oc->stobj->stevedore->panic) {
-			VSB_printf(vsb, " {\n");
+			VSB_cat(vsb, " {\n");
 			VSB_indent(vsb, 2);
 			oc->stobj->stevedore->panic(vsb, oc);
 			VSB_indent(vsb, -2);
-			VSB_printf(vsb, "}");
+			VSB_cat(vsb, "}");
 		}
 	}
-	VSB_printf(vsb, ",\n");
+	VSB_cat(vsb, ",\n");
 	VSB_indent(vsb, -2);
-	VSB_printf(vsb, "},\n");
+	VSB_cat(vsb, "},\n");
 }
 
 /*--------------------------------------------------------------------*/
@@ -325,13 +325,13 @@ pan_wrk(struct vsb *vsb, const struct worker *wrk)
 	pan_ws(vsb, wrk->aws);
 
 	m = wrk->cur_method;
-	VSB_printf(vsb, "VCL::method = ");
+	VSB_cat(vsb, "VCL::method = ");
 	if (m == 0) {
-		VSB_printf(vsb, "none,\n");
+		VSB_cat(vsb, "none,\n");
 		return;
 	}
 	if (!(m & 1))
-		VSB_printf(vsb, "inside ");
+		VSB_cat(vsb, "inside ");
 	m &= ~1;
 	hand = VCL_Method_Name(m);
 	if (hand != NULL)
@@ -344,7 +344,7 @@ pan_wrk(struct vsb *vsb, const struct worker *wrk)
 		VSB_printf(vsb, "VCL::return = %s,\n", hand);
 	else
 		VSB_printf(vsb, "VCL::return = 0x%x,\n", wrk->handling);
-	VSB_printf(vsb, "VCL::methods = {");
+	VSB_cat(vsb, "VCL::methods = {");
 	m = wrk->seen_methods;
 	p = "";
 	for (u = 1; m ; u <<= 1) {
@@ -354,9 +354,9 @@ pan_wrk(struct vsb *vsb, const struct worker *wrk)
 			p = ", ";
 		}
 	}
-	VSB_printf(vsb, "},\n");
+	VSB_cat(vsb, "},\n");
 	VSB_indent(vsb, -2);
-	VSB_printf(vsb, "},\n");
+	VSB_cat(vsb, "},\n");
 }
 
 static void
@@ -374,7 +374,7 @@ pan_vfp(struct vsb *vsb, const struct vfp_ctx *vfc)
 	VSB_printf(vsb, "oc = %p,\n", vfc->oc);
 
 	if (!VTAILQ_EMPTY(&vfc->vfp)) {
-		VSB_printf(vsb, "filters = {\n");
+		VSB_cat(vsb, "filters = {\n");
 		VSB_indent(vsb, 2);
 		VTAILQ_FOREACH(vfe, &vfc->vfp, list) {
 			VSB_printf(vsb, "%s = %p {\n", vfe->vfp->name, vfe);
@@ -383,15 +383,15 @@ pan_vfp(struct vsb *vsb, const struct vfp_ctx *vfc)
 			VSB_printf(vsb, "priv2 = %zd,\n", vfe->priv2);
 			VSB_printf(vsb, "closed = %d\n", vfe->closed);
 			VSB_indent(vsb, -2);
-			VSB_printf(vsb, "},\n");
+			VSB_cat(vsb, "},\n");
 		}
 		VSB_indent(vsb, -2);
-		VSB_printf(vsb, "},\n");
+		VSB_cat(vsb, "},\n");
 	}
 
 	VSB_printf(vsb, "obj_flags = 0x%x,\n", vfc->obj_flags);
 	VSB_indent(vsb, -2);
-	VSB_printf(vsb, "},\n");
+	VSB_cat(vsb, "},\n");
 }
 
 static void
@@ -406,17 +406,17 @@ pan_vdp(struct vsb *vsb, const struct vdp_ctx *vdc)
 	VSB_printf(vsb, "retval = %d,\n", vdc->retval);
 
 	if (!VTAILQ_EMPTY(&vdc->vdp)) {
-		VSB_printf(vsb, "filters = {\n");
+		VSB_cat(vsb, "filters = {\n");
 		VSB_indent(vsb, 2);
 		VTAILQ_FOREACH(vde, &vdc->vdp, list)
 			VSB_printf(vsb, "%s = %p { priv = %p }\n",
 			    vde->vdp->name, vde, vde->priv);
 		VSB_indent(vsb, -2);
-		VSB_printf(vsb, "},\n");
+		VSB_cat(vsb, "},\n");
 	}
 
 	VSB_indent(vsb, -2);
-	VSB_printf(vsb, "},\n");
+	VSB_cat(vsb, "},\n");
 }
 
 static void
@@ -462,25 +462,25 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 
 	// fetch_task left out
 
-	VSB_printf(vsb, "flags = {");
+	VSB_cat(vsb, "flags = {");
 	p = "";
 /*lint -save -esym(438,p) -e539 */
 #define BO_FLAG(l, r, w, d) \
 	if (bo->l) { VSB_printf(vsb, "%s" #l, p); p = ", "; }
 #include "tbl/bo_flags.h"
 /*lint -restore */
-	VSB_printf(vsb, "},\n");
+	VSB_cat(vsb, "},\n");
 
 	// timeouts/timers/acct/storage left out
 
 	VDI_Panic(bo->director_req, vsb, "director_req");
 	if (bo->director_resp == bo->director_req)
-		VSB_printf(vsb, "director_resp = director_req,\n");
+		VSB_cat(vsb, "director_resp = director_req,\n");
 	else
 		VDI_Panic(bo->director_resp, vsb, "director_resp");
 	VCL_Panic(vsb, "vcl", bo->vcl);
 	VSB_indent(vsb, -2);
-	VSB_printf(vsb, "},\n");
+	VSB_cat(vsb, "},\n");
 }
 
 /*--------------------------------------------------------------------*/
@@ -501,13 +501,13 @@ pan_req(struct vsb *vsb, const struct req *req)
 	    xp == NULL ? "NULL" : xp->name);
 
 	if (xp != NULL && xp->req_panic != NULL) {
-		VSB_printf(vsb, " {\n");
+		VSB_cat(vsb, " {\n");
 		VSB_indent(vsb, 2);
 		xp->req_panic(vsb, req);
 		VSB_indent(vsb, -2);
-		VSB_printf(vsb, "}");
+		VSB_cat(vsb, "}");
 	}
-	VSB_printf(vsb, "\n");
+	VSB_cat(vsb, "\n");
 	switch (req->req_step) {
 #define REQ_STEP(l, u, arg) case R_STP_##u: stp = "R_STP_" #u; break;
 #include "tbl/steps.h"
@@ -552,23 +552,23 @@ pan_req(struct vsb *vsb, const struct req *req)
 	if (req->objcore != NULL)
 		pan_objcore(vsb, "REQ", req->objcore);
 
-	VSB_printf(vsb, "flags = {\n");
+	VSB_cat(vsb, "flags = {\n");
 	VSB_indent(vsb, 2);
 #define REQ_FLAG(l, r, w, d) if (req->l) VSB_printf(vsb, #l ",\n");
 #include "tbl/req_flags.h"
 	VSB_indent(vsb, -2);
-	VSB_printf(vsb, "},\n");
+	VSB_cat(vsb, "},\n");
 
 	pan_privs(vsb, req->privs);
 
-	VSB_printf(vsb, "topreq = {\n");
+	VSB_cat(vsb, "topreq = {\n");
 	VSB_indent(vsb, 2);
 	pan_req(vsb, req->topreq);
 	VSB_indent(vsb, -2);
-	VSB_printf(vsb, "},\n");
+	VSB_cat(vsb, "},\n");
 
 	VSB_indent(vsb, -2);
-	VSB_printf(vsb, "},\n");
+	VSB_cat(vsb, "},\n");
 }
 
 /*--------------------------------------------------------------------*/
@@ -594,13 +594,13 @@ pan_sess(struct vsb *vsb, const struct sess *sp)
 	VSB_printf(vsb, "transport = %s",
 	    xp == NULL ? "<none>" : xp->name);
 	if (xp != NULL && xp->sess_panic != NULL) {
-		VSB_printf(vsb, " {\n");
+		VSB_cat(vsb, " {\n");
 		VSB_indent(vsb, 2);
 		xp->sess_panic(vsb, sp);
 		VSB_indent(vsb, -2);
-		VSB_printf(vsb, "}");
+		VSB_cat(vsb, "}");
 	}
-	VSB_printf(vsb, "\n");
+	VSB_cat(vsb, "\n");
 	ci = SES_Get_String_Attr(sp, SA_CLIENT_IP);
 	cp = SES_Get_String_Attr(sp, SA_CLIENT_PORT);
 	if (VALID_OBJ(sp->listen_sock, LISTEN_SOCK_MAGIC))
@@ -610,7 +610,7 @@ pan_sess(struct vsb *vsb, const struct sess *sp)
 		VSB_printf(vsb, "client = %s %s <unknown>\n", ci, cp);
 
 	VSB_indent(vsb, -2);
-	VSB_printf(vsb, "},\n");
+	VSB_cat(vsb, "},\n");
 }
 
 /*--------------------------------------------------------------------*/
@@ -626,7 +626,7 @@ pan_backtrace(struct vsb *vsb)
 	char fname[1024];
 	int ret;
 
-	VSB_printf(vsb, "Backtrace:\n");
+	VSB_cat(vsb, "Backtrace:\n");
 	VSB_indent(vsb, 2);
 
 	ret = unw_getcontext(&uc);
@@ -673,14 +673,14 @@ pan_backtrace(struct vsb *vsb)
 		VSB_printf(vsb, "Backtrace not available (ret=%zu)\n", size);
 		return;
 	}
-	VSB_printf(vsb, "Backtrace:\n");
+	VSB_cat(vsb, "Backtrace:\n");
 	VSB_indent(vsb, 2);
 	for (i = 0; i < size; i++) {
 		bprintf(buf, "%p", array[i]);
 		VSB_printf(vsb, "%s: ", buf);
 		strings = backtrace_symbols(&array[i], 1);
 		if (strings == NULL || strings[0] == NULL) {
-			VSB_printf(vsb, "(?)");
+			VSB_cat(vsb, "(?)");
 		} else {
 			p = strings[0];
 			if (!memcmp(buf, p, strlen(buf))) {
@@ -692,7 +692,7 @@ pan_backtrace(struct vsb *vsb)
 			}
 			VSB_printf(vsb, "%s", p);
 		}
-		VSB_printf (vsb, "\n");
+		VSB_cat(vsb, "\n");
 		free(strings);
 	}
 	VSB_indent(vsb, -2);
@@ -816,10 +816,9 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 			VSL_Flush(bo->vsl, 0);
 		VMOD_Panic(pan_vsb);
 	} else {
-		VSB_printf(pan_vsb,
-		    "Feature short panic supressed details.\n");
+		VSB_cat(pan_vsb, "Feature short panic supressed details.\n");
 	}
-	VSB_printf(pan_vsb, "\n");
+	VSB_cat(pan_vsb, "\n");
 	VSB_putc(pan_vsb, '\0');	/* NUL termination */
 
 	if (FEATURE(FEATURE_NO_COREDUMP))
@@ -860,7 +859,7 @@ PAN_Init(void)
 	AN(heritage.panic_str_len);
 	AN(VSB_new(pan_vsb, heritage.panic_str, heritage.panic_str_len,
 	    VSB_FIXEDLEN));
-	VSB_printf(pan_vsb, "This is a test\n");
+	VSB_cat(pan_vsb, "This is a test\n");
 	AZ(VSB_finish(pan_vsb));
 	VSB_clear(pan_vsb);
 	heritage.panic_str[0] = '\0';

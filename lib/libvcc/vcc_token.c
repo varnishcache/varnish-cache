@@ -43,9 +43,9 @@ vcc_ErrToken(const struct vcc *tl, const struct token *t)
 {
 
 	if (t->tok == EOI)
-		VSB_printf(tl->sb, "end of input");
+		VSB_cat(tl->sb, "end of input");
 	else if (t->tok == CSRC)
-		VSB_printf(tl->sb, "C{ ... }C");
+		VSB_cat(tl->sb, "C{ ... }C");
 	else
 		VSB_printf(tl->sb, "'%.*s'", PF(t));
 }
@@ -104,7 +104,7 @@ vcc_icoord(struct vsb *vsb, const struct token *t, int tail)
 		} else
 			pos++;
 	}
-	VSB_printf(vsb, "(");
+	VSB_cat(vsb, "(");
 	if (tail < 2)
 		VSB_printf(vsb, "'%s' Line %u ", t->src->name, lin);
 	VSB_printf(vsb, "Pos %u)", pos + 1);
@@ -255,7 +255,7 @@ vcc_NextToken(struct vcc *tl)
 
 	tl->t = VTAILQ_NEXT(tl->t, list);
 	if (tl->t == NULL) {
-		VSB_printf(tl->sb,
+		VSB_cat(tl->sb,
 		    "Ran out of input, something is missing or"
 		    " maybe unbalanced (...) or {...}\n");
 		tl->err = 1;
@@ -398,7 +398,7 @@ vcc_Lexer(struct vcc *tl, struct source *sp)
 		if (*p == '/' && p[1] == '*') {
 			for (q = p + 2; q < sp->e; q++) {
 				if (*q == '/' && q[1] == '*') {
-					VSB_printf(tl->sb,
+					VSB_cat(tl->sb,
 					    "/* ... */ comment contains /*\n");
 					vcc_AddToken(tl, EOI, p, p + 2);
 					vcc_ErrWhere(tl, tl->t);
@@ -414,7 +414,7 @@ vcc_Lexer(struct vcc *tl, struct source *sp)
 			if (q < sp->e)
 				continue;
 			vcc_AddToken(tl, EOI, p, p + 2);
-			VSB_printf(tl->sb,
+			VSB_cat(tl->sb,
 			    "Unterminated /* ... */ comment, starting at\n");
 			vcc_ErrWhere(tl, tl->t);
 			return;
@@ -440,7 +440,7 @@ vcc_Lexer(struct vcc *tl, struct source *sp)
 				continue;
 			}
 			vcc_AddToken(tl, EOI, p, p + 2);
-			VSB_printf(tl->sb,
+			VSB_cat(tl->sb,
 			    "Unterminated inline C source, starting at\n");
 			vcc_ErrWhere(tl, tl->t);
 			return;
@@ -465,7 +465,7 @@ vcc_Lexer(struct vcc *tl, struct source *sp)
 				continue;
 			}
 			vcc_AddToken(tl, EOI, p, p + 2);
-			VSB_printf(tl->sb,
+			VSB_cat(tl->sb,
 			    "Unterminated long-string, starting at\n");
 			vcc_ErrWhere(tl, tl->t);
 			return;
@@ -488,7 +488,7 @@ vcc_Lexer(struct vcc *tl, struct source *sp)
 				}
 				if (*q == '\r' || *q == '\n') {
 					vcc_AddToken(tl, EOI, p, q);
-					VSB_printf(tl->sb,
+					VSB_cat(tl->sb,
 					    "Unterminated string at\n");
 					vcc_ErrWhere(tl, tl->t);
 					return;
@@ -529,7 +529,7 @@ vcc_Lexer(struct vcc *tl, struct source *sp)
 			continue;
 		}
 		vcc_AddToken(tl, EOI, p, p + 1);
-		VSB_printf(tl->sb, "Syntax error at\n");
+		VSB_cat(tl->sb, "Syntax error at\n");
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}

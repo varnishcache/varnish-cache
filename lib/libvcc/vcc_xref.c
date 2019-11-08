@@ -84,7 +84,7 @@ vcc_checkref(struct vcc *tl, const struct symbol *sym)
 		    sym->kind->name, PF(sym->def_b));
 		vcc_ErrWhere(tl, sym->def_b);
 		if (!tl->err_unref) {
-			VSB_printf(tl->sb, "(That was just a warning)\n");
+			VSB_cat(tl->sb, "(That was just a warning)\n");
 			tl->err = 0;
 		}
 	}
@@ -155,7 +155,7 @@ vcc_CheckActionRecurse(struct vcc *tl, struct proc *p, unsigned bitmap)
 
 	AN(p);
 	if (p->active) {
-		VSB_printf(tl->sb, "Function recurses on\n");
+		VSB_cat(tl->sb, "Function recurses on\n");
 		vcc_ErrWhere(tl, p->name);
 		return (1);
 	}
@@ -209,13 +209,13 @@ vcc_checkaction1(struct vcc *tl, const struct symbol *sym)
 	if (vcc_CheckActionRecurse(tl, p, p->method->ret_bitmap)) {
 		VSB_printf(tl->sb,
 		    "\n...which is the \"%s\" method\n", p->method->name);
-		VSB_printf(tl->sb, "Legal returns are:");
+		VSB_cat(tl->sb, "Legal returns are:");
 #define VCL_RET_MAC(l, U, B)						\
 		if (p->method->ret_bitmap & ((1 << VCL_RET_##U)))	\
 			VSB_printf(tl->sb, " \"%s\"", #l);
 
 #include "tbl/vcl_returns.h"
-		VSB_printf(tl->sb, "\n");
+		VSB_cat(tl->sb, "\n");
 		tl->err = 1;
 	}
 
@@ -231,10 +231,10 @@ vcc_checkaction2(struct vcc *tl, const struct symbol *sym)
 
 	if (p->called)
 		return;
-	VSB_printf(tl->sb, "Function unused\n");
+	VSB_cat(tl->sb, "Function unused\n");
 	vcc_ErrWhere(tl, p->name);
 	if (!tl->err_unref) {
-		VSB_printf(tl->sb, "(That was just a warning)\n");
+		VSB_cat(tl->sb, "(That was just a warning)\n");
 		tl->err = 0;
 	}
 }

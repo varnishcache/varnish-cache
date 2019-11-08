@@ -45,7 +45,7 @@ h2_sess_panic(struct vsb *vsb, const struct sess *sp)
 
 	h2 = (void*)*up;
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
-	VSB_printf(vsb, "streams {\n");
+	VSB_cat(vsb, "streams {\n");
 	VSB_indent(vsb, 2);
 	VTAILQ_FOREACH(r2, &h2->streams, list) {
 		PAN_CheckMagic(vsb, r2, H2_REQ_MAGIC);
@@ -57,8 +57,8 @@ h2_sess_panic(struct vsb *vsb, const struct sess *sp)
 			VSB_printf(vsb, " State %d", r2->state);
 			break;
 		}
-		VSB_printf(vsb, "\n");
+		VSB_cat(vsb, "\n");
 	}
 	VSB_indent(vsb, -2);
-	VSB_printf(vsb, "}\n");
+	VSB_cat(vsb, "}\n");
 }

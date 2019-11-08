@@ -541,7 +541,7 @@ mgt_reap_child(void)
 	}
 #ifdef WCOREDUMP
 	if (WCOREDUMP(status)) {
-		VSB_printf(vsb, " (core dumped)");
+		VSB_cat(vsb, " (core dumped)");
 		exit_status |= 0x80;
 		VSC_C_mgt->child_dump++;
 	}

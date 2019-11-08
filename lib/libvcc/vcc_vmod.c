@@ -169,7 +169,7 @@ vcc_VmodSanity(struct vcc *tl, void *hdl, struct token *mod, char *fnp)
 	if (vmd == NULL) {
 		VSB_printf(tl->sb, "Malformed VMOD %.*s\n", PF(mod));
 		VSB_printf(tl->sb, "\tFile name: %s\n", fnp);
-		VSB_printf(tl->sb, "\t(no Vmod_Data symbol)\n");
+		VSB_cat(tl->sb, "\t(no Vmod_Data symbol)\n");
 		vcc_ErrWhere(tl, mod);
 		return (NULL);
 	}
@@ -200,7 +200,7 @@ vcc_VmodSanity(struct vcc *tl, void *hdl, struct token *mod, char *fnp)
 	    vmd->abi == NULL) {
 		VSB_printf(tl->sb, "Mangled VMOD %.*s\n", PF(mod));
 		VSB_printf(tl->sb, "\tFile name: %s\n", fnp);
-		VSB_printf(tl->sb, "\tInconsistent metadata\n");
+		VSB_cat(tl->sb, "\tInconsistent metadata\n");
 		vcc_ErrWhere(tl, mod);
 		return (NULL);
 	}
@@ -246,13 +246,13 @@ vcc_ParseImport(struct vcc *tl)
 
 	if (tl->t->tok == ID) {
 		if (!vcc_IdIs(tl->t, "from")) {
-			VSB_printf(tl->sb, "Expected 'from path ...'\n");
+			VSB_cat(tl->sb, "Expected 'from path ...'\n");
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
 		vcc_NextToken(tl);
 		if (!tl->unsafe_path && strchr(tl->t->dec, '/')) {
-			VSB_printf(tl->sb,
+			VSB_cat(tl->sb,
 			    "'import ... from path ...' is unsafe.\nAt:");
 			vcc_ErrToken(tl, tl->t);
 			vcc_ErrWhere(tl, tl->t);
@@ -328,32 +328,32 @@ vcc_ParseImport(struct vcc *tl)
 
 	ifp = New_IniFin(tl);
 
-	VSB_printf(ifp->ini, "\tif (VPI_Vmod_Init(ctx,\n");
+	VSB_cat(ifp->ini, "\tif (VPI_Vmod_Init(ctx,\n");
 	VSB_printf(ifp->ini, "\t    &VGC_vmod_%.*s,\n", PF(mod));
 	VSB_printf(ifp->ini, "\t    %u,\n", tl->vmod_count++);
 	VSB_printf(ifp->ini, "\t    &%s,\n", vmd->func_name);
 	VSB_printf(ifp->ini, "\t    sizeof(%s),\n", vmd->func_name);
 	VSB_printf(ifp->ini, "\t    \"%.*s\",\n", PF(mod));
-	VSB_printf(ifp->ini, "\t    ");
+	VSB_cat(ifp->ini, "\t    ");
 	VSB_quote(ifp->ini, fnpx, -1, VSB_QUOTE_CSTR);
-	VSB_printf(ifp->ini, ",\n");
+	VSB_cat(ifp->ini, ",\n");
 	AN(vmd);
 	AN(vmd->file_id);
 	VSB_printf(ifp->ini, "\t    \"%s\",\n", vmd->file_id);
 	VSB_printf(ifp->ini, "\t    \"./vmod_cache/_vmod_%.*s.%s\"\n",
 	    PF(mod), vmd->file_id);
-	VSB_printf(ifp->ini, "\t    ))\n");
-	VSB_printf(ifp->ini, "\t\treturn(1);");
+	VSB_cat(ifp->ini, "\t    ))\n");
+	VSB_cat(ifp->ini, "\t\treturn(1);");
 
-	VSB_printf(tl->symtab, ",\n    {\n");
-	VSB_printf(tl->symtab, "\t\"dir\": \"import\",\n");
-	VSB_printf(tl->symtab, "\t\"type\": \"$VMOD\",\n");
+	VSB_cat(tl->symtab, ",\n    {\n");
+	VSB_cat(tl->symtab, "\t\"dir\": \"import\",\n");
+	VSB_cat(tl->symtab, "\t\"type\": \"$VMOD\",\n");
 	VSB_printf(tl->symtab, "\t\"name\": \"%.*s\",\n", PF(mod));
 	VSB_printf(tl->symtab, "\t\"file\": \"%s\",\n", fnpx);
 	VSB_printf(tl->symtab,
 	    "\t\"dst\": \"./vmod_cache/_vmod_%.*s.%s\"\n",
 	    PF(mod), vmd->file_id);
-	VSB_printf(tl->symtab, "    }");
+	VSB_cat(tl->symtab, "    }");
 
 	/* XXX: zero the function pointer structure ?*/
 	VSB_printf(ifp->fin, "\t\tVRT_priv_fini(&vmod_priv_%.*s);", PF(mod));

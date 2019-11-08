@@ -104,17 +104,17 @@ vcc_IsField(struct vcc *tl, struct token **t, struct fld_spec *fs)
 			fs->found = t_field;
 			return;
 		}
-		VSB_printf(tl->sb, "Field ");
+		VSB_cat(tl->sb, "Field ");
 		vcc_ErrToken(tl, t_field);
-		VSB_printf(tl->sb, " redefined at:\n");
+		VSB_cat(tl->sb, " redefined at:\n");
 		vcc_ErrWhere(tl, t_field);
-		VSB_printf(tl->sb, "\nFirst defined at:\n");
+		VSB_cat(tl->sb, "\nFirst defined at:\n");
 		vcc_ErrWhere(tl, fs->found);
 		return;
 	}
-	VSB_printf(tl->sb, "Unknown field: ");
+	VSB_cat(tl->sb, "Unknown field: ");
 	vcc_ErrToken(tl, t_field);
-	VSB_printf(tl->sb, " at\n");
+	VSB_cat(tl->sb, " at\n");
 	vcc_ErrWhere(tl, t_field);
 }
 

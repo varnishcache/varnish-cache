@@ -290,7 +290,7 @@ vcc_expr_tostring(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		(*e)->nstr = 1;
 	} else {
 		if ((*e)->fmt == BLOB)
-			VSB_printf(tl->sb,
+			VSB_cat(tl->sb,
 			    "Wrong use of BLOB value.\n"
 			    "BLOBs can only be used as arguments to VMOD"
 			    " functions.\n");
@@ -436,8 +436,8 @@ vcc_do_arg(struct vcc *tl, struct func_arg *fa)
 			if (vcc_IdIs(tl->t, vv->value))
 				break;
 		if (vv == NULL) {
-			VSB_printf(tl->sb, "Wrong enum value.");
-			VSB_printf(tl->sb, "  Expected one of:\n");
+			VSB_cat(tl->sb, "Wrong enum value.");
+			VSB_cat(tl->sb, "  Expected one of:\n");
 			VTAILQ_FOREACH(vv, &fa->enums->children, list)
 				VSB_printf(tl->sb, "\t%s\n", vv->value);
 			vcc_ErrWhere(tl, tl->t);
@@ -626,7 +626,7 @@ vcc_Eval_Func(struct vcc *tl, const struct vjsn_val *spec,
 
 	vcc_func(tl, &e, spec, extra, sym);
 	if (tl->err)
-		VSB_printf(tl->sb, "While compiling function call:\n");
+		VSB_cat(tl->sb, "While compiling function call:\n");
 	ERRCHK(tl);
 	vcc_expr_fmt(tl->fb, tl->indent, e);
 	VSB_cat(tl->fb, ";\n");
@@ -693,7 +693,7 @@ vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		ERRCHK(tl);
 		AN(sym);
 		if (sym->kind == SYM_FUNC && sym->type == VOID) {
-			VSB_printf(tl->sb, "Function returns VOID:\n");
+			VSB_cat(tl->sb, "Function returns VOID:\n");
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
@@ -702,7 +702,7 @@ vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 			AZ(*e);
 			sym->eval(tl, e, t, sym, fmt);
 			if (tl->err) {
-				VSB_printf(tl->sb,
+				VSB_cat(tl->sb,
 				    "While compiling function call:\n\n");
 				vcc_ErrWhere2(tl, t, tl->t);
 			}
@@ -719,7 +719,7 @@ vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		    PF(t), sym->kind->name);
 		vcc_ErrWhere(tl, t);
 		if (sym->def_b != NULL) {
-			VSB_printf(tl->sb, "That symbol was defined here:\n");
+			VSB_cat(tl->sb, "That symbol was defined here:\n");
 			vcc_ErrWhere(tl, sym->def_b);
 		}
 		return;
@@ -733,8 +733,8 @@ vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 				 * sockaddr_un if it happens to exist and
 				 * is a socket. So don't let that happen.
 				 */
-				VSB_printf(tl->sb,
-					"Cannot convert to an IP address: ");
+				VSB_cat(tl->sb,
+				    "Cannot convert to an IP address: ");
 				vcc_ErrToken(tl, tl->t);
 				vcc_ErrWhere(tl, tl->t);
 				return;
@@ -794,7 +794,7 @@ vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	default:
 		break;
 	}
-	VSB_printf(tl->sb, "Unknown token ");
+	VSB_cat(tl->sb, "Unknown token ");
 	vcc_ErrToken(tl, tl->t);
 	VSB_printf(tl->sb, " when looking for %s\n\n", vcc_utype(fmt));
 	vcc_ErrWhere(tl, tl->t);
@@ -852,7 +852,7 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		}
 
 		if (vm->type_from == NULL) {
-			VSB_printf(tl->sb, "Unknown property ");
+			VSB_cat(tl->sb, "Unknown property ");
 			vcc_ErrToken(tl, tl->t);
 			VSB_printf(tl->sb,
 			 " for type %s\n", (*e)->fmt->name);
@@ -1223,7 +1223,7 @@ vcc_expr_not(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	vcc_expr_tobool(tl, e);
 	ERRCHK(tl);
 	if ((*e)->fmt != BOOL) {
-		VSB_printf(tl->sb, "'!' must be followed by BOOL, found ");
+		VSB_cat(tl->sb, "'!' must be followed by BOOL, found ");
 		VSB_printf(tl->sb, "%s.\n", vcc_utype((*e)->fmt));
 		vcc_ErrWhere2(tl, tk, tl->t);
 	} else {
@@ -1391,7 +1391,7 @@ vcc_Expr(struct vcc *tl, vcc_type_t fmt)
 	assert(e->fmt == fmt);
 
 	vcc_expr_fmt(tl->fb, tl->indent, e);
-	VSB_printf(tl->fb, "\n");
+	VSB_cat(tl->fb, "\n");
 	vcc_delete_expr(e);
 }
 

@@ -525,9 +525,9 @@ VSB_quote_pfx(struct vsb *s, const char *pfx, const void *v, int len, int how)
 		for (w = u; w < u + len; w++)
 			if (*w != 0x00)
 				break;
-		VSB_printf(s, "0x");
+		VSB_cat(s, "0x");
 		if (w == u + len && len > 4) {
-			VSB_printf(s, "0...0");
+			VSB_cat(s, "0...0");
 		} else {
 			for (w = u; w < u + len; w++)
 				VSB_printf(s, "%02x", *w);
