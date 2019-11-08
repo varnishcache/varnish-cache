@@ -920,8 +920,6 @@ static struct cli_proto vcl_cmds[] = {
 void
 VCL_Init(void)
 {
-	unsigned sz;
-	char *vslbuf;
 
 	assert(cache_param->workspace_client > 0);
 	WS_Init(&ws_cli, "cli", malloc(cache_param->workspace_client),
@@ -929,8 +927,5 @@ VCL_Init(void)
 	ws_snapshot_cli = WS_Snapshot(&ws_cli);
 	CLI_AddFuncs(vcl_cmds);
 	Lck_New(&vcl_mtx, lck_vcl);
-	sz = cache_param->vsl_buffer;
-	vslbuf = malloc(sz);
-	AN(vslbuf);
-	VSL_Setup(&vsl_cli, vslbuf, sz);
+	VSL_Setup(&vsl_cli, NULL, 0);
 }
