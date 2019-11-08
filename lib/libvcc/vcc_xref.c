@@ -83,10 +83,8 @@ vcc_checkref(struct vcc *tl, const struct symbol *sym)
 		VSB_printf(tl->sb, "Unused %s %.*s, defined:\n",
 		    sym->kind->name, PF(sym->def_b));
 		vcc_ErrWhere(tl, sym->def_b);
-		if (!tl->err_unref) {
-			VSB_cat(tl->sb, "(That was just a warning)\n");
-			tl->err = 0;
-		}
+		if (!tl->err_unref)
+			vcc_Warn(tl);
 	}
 }
 
@@ -233,10 +231,8 @@ vcc_checkaction2(struct vcc *tl, const struct symbol *sym)
 		return;
 	VSB_cat(tl->sb, "Function unused\n");
 	vcc_ErrWhere(tl, p->name);
-	if (!tl->err_unref) {
-		VSB_cat(tl->sb, "(That was just a warning)\n");
-		tl->err = 0;
-	}
+	if (!tl->err_unref)
+		vcc_Warn(tl);
 }
 
 int

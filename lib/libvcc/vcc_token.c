@@ -183,6 +183,16 @@ vcc_markline(const struct vcc *tl, const char *l, const char *le,
 	VSB_putc(tl->sb, '\n');
 }
 
+void
+vcc_Warn(struct vcc *tl)
+{
+
+	AN(tl);
+	AN(tl->err);
+	VSB_cat(tl->sb, "(That was just a warning)\n");
+	tl->err = 0;
+}
+
 /*--------------------------------------------------------------------*/
 /* XXX: should take first+last token */
 
