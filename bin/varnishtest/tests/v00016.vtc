@@ -117,6 +117,19 @@ varnish v1 -syntax 4.0 -errvcl {Undefined acl foo} {
 	}
 }
 
+# NB: The line break in -errvcl is here on purpose, it prevents
+# a spurious "Only available when" addition to be missed when the
+# foo constructor could be confused with the foo instance name.
+varnish v1 -syntax 4.0 -errvcl {Symbol not found: 'directors.foo'
+At:} {
+	import directors;
+	backend b { .host = "127.0.0.1"; }
+
+	sub vcl_init {
+		new foo = directors.foo();
+	}
+}
+
 # 'foo' overloaded
 varnish v1 -syntax 4.0 -errvcl {Symbol not found: 'foo'} {
 	backend b { .host = "127.0.0.1"; }

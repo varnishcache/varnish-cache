@@ -275,6 +275,8 @@ VCC_SymbolGet(struct vcc *tl, vcc_kind_t kind,
 			break;
 		tn = tn1;
 	}
+	if (sym != NULL && sym->kind == SYM_VMOD && e == SYMTAB_PARTIAL)
+		e = SYMTAB_EXISTING;
 	if (sym != NULL && e == SYMTAB_PARTIAL) {
 		st = st2;
 		tn = tn2;
@@ -294,7 +296,8 @@ VCC_SymbolGet(struct vcc *tl, vcc_kind_t kind,
 			VSB_printf(tl->sb, "%.*s", PF(tn1));
 		VSB_cat(tl->sb, "'");
 		sym = vcc_sym_in_tab(tl, st, kind, VCL_LOW, VCL_HIGH);
-		if (sym != NULL) {
+		if (sym != NULL && sym->kind != SYM_OBJECT &&
+		    sym->kind != SYM_INSTANCE) { /* XXX: too specific */
 			VSB_cat(tl->sb, " (Only available when");
 			if (sym->lorev >= VCL_LOW)
 				VSB_printf(tl->sb, " %.1f <=", .1 * sym->lorev);
