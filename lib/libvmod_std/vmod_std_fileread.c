@@ -54,8 +54,7 @@ struct frfile {
 	unsigned			magic;
 #define CACHED_FILE_MAGIC 0xa8e9d87a
 	char				*file_name;
-	char				*contents;
-	size_t				size;
+	struct vrt_blob			contents[1];
 	int				refcount;
 	VTAILQ_ENTRY(frfile)		list;
 };
@@ -77,7 +76,7 @@ free_frfile(void *ptr)
 		VTAILQ_REMOVE(&frlist, frf, list);
 	AZ(pthread_mutex_unlock(&frmtx));
 	if (frf != NULL) {
-		free(frf->contents);
+		free(TRUST_ME(frf->contents->blob));
 		free(frf->file_name);
 		FREE_OBJ(frf);
 	}
@@ -124,8 +123,8 @@ find_frfile(struct vmod_priv *priv, VCL_STRING file_name)
 		AN(frf);
 		REPLACE(frf->file_name, file_name);
 		frf->refcount = 1;
-		frf->contents = s;
-		frf->size = (size_t)sz;
+		frf->contents->blob = s;
+		frf->contents->len = (size_t)sz;
 		priv->free = free_frfile;
 		priv->priv = frf;
 		AZ(pthread_mutex_lock(&frmtx));
@@ -136,8 +135,21 @@ find_frfile(struct vmod_priv *priv, VCL_STRING file_name)
 }
 
 VCL_STRING v_matchproto_(td_std_fileread)
-vmod_fileread(VRT_CTX, struct vmod_priv *priv,
-    VCL_STRING file_name)
+vmod_fileread(VRT_CTX, struct vmod_priv *priv, VCL_STRING file_name)
+{
+	struct frfile *frf;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(priv);
+
+	frf = find_frfile(priv, file_name);
+	if (file_name == NULL)
+		return (NULL);
+	return (frf->contents->blob);
+}
+
+VCL_BLOB v_matchproto_(td_std_blobread)
+vmod_blobread(VRT_CTX, struct vmod_priv *priv, VCL_STRING file_name)
 {
 	struct frfile *frf;
 
