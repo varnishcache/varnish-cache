@@ -199,13 +199,7 @@ struct vxid_pool {
 
 /*--------------------------------------------------------------------*/
 
-VRBT_HEAD(vrt_priv_tree,vrt_priv);
-
-struct vrt_privs {
-	unsigned		magic;
-#define VRT_PRIVS_MAGIC		0x03ba7502
-	struct vrt_priv_tree	privs;
-};
+VRBT_HEAD(vrt_privs, vrt_priv);
 
 /* Worker pool stuff -------------------------------------------------*/
 

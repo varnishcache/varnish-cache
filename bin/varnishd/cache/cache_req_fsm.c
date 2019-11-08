@@ -1082,7 +1082,6 @@ CNT_Request(struct req *req)
 
 	AN(req->vsl->wid & VSL_CLIENTMARKER);
 	AN(req->vcl);
-	CHECK_OBJ(req->privs, VRT_PRIVS_MAGIC);
 
 	for (nxt = REQ_FSM_MORE; nxt == REQ_FSM_MORE; ) {
 		/*

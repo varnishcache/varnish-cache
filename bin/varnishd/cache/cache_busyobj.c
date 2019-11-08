@@ -153,8 +153,6 @@ VBO_ReleaseBusyObj(struct worker *wrk, struct busyobj **pbo)
 	AZ(bo->htc);
 	AZ(bo->stale_oc);
 
-	AZ(bo->privs->magic);
-
 	VSLb(bo->vsl, SLT_BereqAcct, "%ju %ju %ju %ju %ju %ju",
 	    (uintmax_t)bo->acct.bereq_hdrbytes,
 	    (uintmax_t)bo->acct.bereq_bodybytes,
