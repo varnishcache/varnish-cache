@@ -242,6 +242,7 @@ RFC2616_Req_Gzip(const struct http *hp)
 
 /*--------------------------------------------------------------------*/
 
+// rfc7232,l,547,548
 static inline int
 rfc2616_strong_compare(const char *p, const char *e)
 {
@@ -251,6 +252,7 @@ rfc2616_strong_compare(const char *p, const char *e)
 	return (strcmp(p, e) == 0);
 }
 
+// rfc7232,l,550,552
 static inline int
 rfc2616_weak_compare(const char *p, const char *e)
 {
@@ -271,8 +273,8 @@ RFC2616_Do_Cond(const struct req *req)
 		return (0);
 
 	/*
-	 * We MUST ignore If-Modified-Since if we have an If-None-Match
-	 * header [RFC7232 3.3 p16].
+	 * rfc7232,l,861,866
+	 * We MUST ignore If-Modified-Since if we have an If-None-Match header
 	 */
 	if (http_GetHdr(req->http, H_If_None_Match, &p)) {
 		if (!http_GetHdr(req->resp, H_ETag, &e))
@@ -285,7 +287,7 @@ RFC2616_Do_Cond(const struct req *req)
 
 	if (http_GetHdr(req->http, H_If_Modified_Since, &p)) {
 		ims = VTIM_parse(p);
-		if (!ims || ims > req->t_req)	/* [RFC7232 3.3 p16] */
+		if (!ims || ims > req->t_req)	// rfc7232,l,868,869
 			return (0);
 		if (http_GetHdr(req->resp, H_Last_Modified, &p)) {
 			lm = VTIM_parse(p);
