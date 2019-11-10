@@ -1159,6 +1159,17 @@ resp.status
 	a return(deliver) from vcl_deliver for conditional requests
 	to cached content if validation succeeds.
 
+	For the validation, first ``req.http.If-None-Match`` is
+	compared against ``resp.http.Etag``. If they compare equal
+	according to the rules for weak validation (see RFC7232), a
+	304 is sent.
+
+	Secondly, ``req.http.If-Modified-Since`` is compared against
+	``resp.http.Last-Modified`` or, if it is unset, against the
+	point in time when the object was last modified based on the
+	``Date`` and ``Age`` headers received with the backend
+	response which created the object. If the object has not been
+	modified based on that comparison, a 304 is sent.
 
 resp.reason
 
