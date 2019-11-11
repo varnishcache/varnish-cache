@@ -49,6 +49,9 @@ NEXT (2020-03-15)
   before the VCL callback, now it gets emitted after VCL returns for
   consistency with ``vcl_deliver {}``
 
+* The ``if-range`` header is now handled, allowing clients to conditionally
+  request a range based on a date or an ETag
+
 ================================
 Varnish Cache 6.3.0 (2019-09-15)
 ================================
