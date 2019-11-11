@@ -132,19 +132,21 @@ ses_reserve_attr(struct sess *sp, enum sess_attr a, void **dst, int sz)
 	int								\
 	SES_Set_##low(const struct sess *sp, const typ *src)		\
 	{								\
+		assert(len > 0);					\
 		return (ses_set_attr(sp, SA_##UP, src, len));		\
 	}								\
 									\
 	int								\
 	SES_Get_##low(const struct sess *sp, typ **dst)			\
 	{								\
+		assert(len > 0);					\
 		return (ses_get_attr(sp, SA_##UP, (void**)dst));	\
 	}								\
 									\
 	void								\
 	SES_Reserve_##low(struct sess *sp, typ **dst)			\
 	{								\
-		assert(len >= 0);					\
+		assert(len > 0);					\
 		ses_reserve_attr(sp, SA_##UP, (void**)dst, len);	\
 	}
 
