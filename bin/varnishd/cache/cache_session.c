@@ -49,6 +49,13 @@
 #include "vtim.h"
 #include "waiter/waiter.h"
 
+static const struct {
+	const char		*type;
+} sess_attr[SA_LAST] = {
+#define SESS_ATTR(UC, lc, typ, len) [SA_##UC] = { #typ },
+#include "tbl/sess_attr.h"
+};
+
 /*--------------------------------------------------------------------*/
 
 void
@@ -151,15 +158,9 @@ SES_Set_String_Attr(struct sess *sp, enum sess_attr a, const char *src)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	AN(src);
 
-	/*lint -save -e506 -e774 */
-	switch (a) {
-#define SESS_ATTR(UP, low, typ, len) \
-		case SA_##UP: if (len > 0) WRONG("wrong: " #UP); break;
-#include "tbl/sess_attr.h"
-		default:
-			WRONG("wrong sess_attr");
-	}
-	/*lint -restore */
+	assert (a >= SA_TRANSPORT && a <  SA_LAST);
+	if (strcmp(sess_attr[a].type, "char"))
+		WRONG("wrong sess_attr: not char");
 
 	ses_reserve_attr(sp, a, &q, strlen(src) + 1);
 	strcpy(q, src);
@@ -172,15 +173,9 @@ SES_Get_String_Attr(const struct sess *sp, enum sess_attr a)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
-	/*lint -save -e506 -e774 */
-	switch (a) {
-#define SESS_ATTR(UP, low, typ, len) \
-		case SA_##UP: if (len > 0) WRONG("wrong: " #UP); break;
-#include "tbl/sess_attr.h"
-		default:
-			WRONG("wrong sess_attr");
-	}
-	/*lint -restore */
+	assert (a >= SA_TRANSPORT && a <  SA_LAST);
+	if (strcmp(sess_attr[a].type, "char"))
+		WRONG("wrong sess_attr: not char");
 
 	if (ses_get_attr(sp, a, &q) < 0)
 		return (NULL);

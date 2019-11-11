@@ -546,7 +546,6 @@ struct req {
 
 enum sess_attr {
 #define SESS_ATTR(UP, low, typ, len)	SA_##UP,
-	SA_TRANSPORT,
 #include "tbl/sess_attr.h"
 	SA_LAST
 };
