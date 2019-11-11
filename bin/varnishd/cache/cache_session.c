@@ -160,7 +160,7 @@ SES_Set_String_Attr(struct sess *sp, enum sess_attr a, const char *src)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	AN(src);
 
-	assert (a >= SA_TRANSPORT && a <  SA_LAST);
+	assert(a <  SA_LAST);
 	if (strcmp(sess_attr[a].type, "char"))
 		WRONG("wrong sess_attr: not char");
 
@@ -175,7 +175,7 @@ SES_Get_String_Attr(const struct sess *sp, enum sess_attr a)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
-	assert (a >= SA_TRANSPORT && a <  SA_LAST);
+	assert(a <  SA_LAST);
 	if (strcmp(sess_attr[a].type, "char"))
 		WRONG("wrong sess_attr: not char");
 
