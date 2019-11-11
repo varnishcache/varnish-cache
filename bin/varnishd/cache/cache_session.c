@@ -151,11 +151,15 @@ SES_Set_String_Attr(struct sess *sp, enum sess_attr a, const char *src)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	AN(src);
 
+	/*lint -save -e568 -e685 */
+
 	switch (a) {
 #define SESS_ATTR(UP, low, typ, len)	case SA_##UP: assert(len < 0); break;
 #include "tbl/sess_attr.h"
 	default:  WRONG("wrong sess_attr");
 	}
+
+	/*lint -restore */
 
 	ses_reserve_attr(sp, a, &q, strlen(src) + 1);
 	strcpy(q, src);
@@ -168,11 +172,15 @@ SES_Get_String_Attr(const struct sess *sp, enum sess_attr a)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
+	/*lint -save -e568 -e685 */
+
 	switch (a) {
 #define SESS_ATTR(UP, low, typ, len)	case SA_##UP: assert(len < 0); break;
 #include "tbl/sess_attr.h"
 	default:  WRONG("wrong sess_attr");
 	}
+
+	/*lint -restore */
 
 	if (ses_get_attr(sp, a, &q) < 0)
 		return (NULL);

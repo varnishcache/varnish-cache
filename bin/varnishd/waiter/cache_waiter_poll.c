@@ -118,7 +118,6 @@ vwp_del(struct vwp *vwp, int n)
 		vwp->pollfd[n] = vwp->pollfd[vwp->hpoll];
 		vwp->idx[n] = vwp->idx[vwp->hpoll];
 	}
-VSL(SLT_Debug, vwp->pollfd[vwp->hpoll].fd, "DEL");
 	memset(&vwp->pollfd[vwp->hpoll], 0, sizeof(*vwp->pollfd));
 	vwp->pollfd[vwp->hpoll].fd = -1;
 	vwp->idx[vwp->hpoll] = NULL;
@@ -154,12 +153,12 @@ vwp_dopipe(struct vwp *vwp)
 static void *
 vwp_main(void *priv)
 {
-	int v;
+	int t, v;
 	struct vwp *vwp;
 	struct waiter *w;
 	struct waited *wp;
 	double now, then;
-	int i;
+	size_t z;
 
 	THR_SetName("cache-poll");
 	THR_Init();
@@ -169,38 +168,38 @@ vwp_main(void *priv)
 	while (1) {
 		then = Wait_HeapDue(w, &wp);
 		if (wp == NULL)
-			i = -1;
+			t = -1;
 		else
-			i = (int)floor(1e3 * (then - VTIM_real()));
+			t = (int)floor(1e3 * (then - VTIM_real()));
 		assert(vwp->hpoll > 0);
 		AN(vwp->pollfd);
-		v = poll(vwp->pollfd, vwp->hpoll, i);
+		v = poll(vwp->pollfd, vwp->hpoll, t);
 		assert(v >= 0);
 		now = VTIM_real();
 		if (vwp->pollfd[0].revents)
 			v--;
-		for (i = 1; i < vwp->hpoll;) {
-			assert(vwp->pollfd[i].fd != vwp->pipes[0]);
-			wp = vwp->idx[i];
+		for (z = 1; z < vwp->hpoll;) {
+			assert(vwp->pollfd[z].fd != vwp->pipes[0]);
+			wp = vwp->idx[z];
 			CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
 
 			if (v == 0 && Wait_HeapDue(w, NULL) > now)
 				break;
-			if (vwp->pollfd[i].revents)
+			if (vwp->pollfd[z].revents)
 				v--;
 			then = Wait_When(wp);
 			if (then <= now) {
 				AN(Wait_HeapDelete(w, wp));
 				Wait_Call(w, wp, WAITER_TIMEOUT, now);
-				vwp_del(vwp, i);
-			} else if (vwp->pollfd[i].revents & POLLIN) {
+				vwp_del(vwp, z);
+			} else if (vwp->pollfd[z].revents & POLLIN) {
 				assert(wp->fd > 0);
-				assert(wp->fd == vwp->pollfd[i].fd);
+				assert(wp->fd == vwp->pollfd[z].fd);
 				AN(Wait_HeapDelete(w, wp));
 				Wait_Call(w, wp, WAITER_ACTION, now);
-				vwp_del(vwp, i);
+				vwp_del(vwp, z);
 			} else {
-				i++;
+				z++;
 			}
 		}
 		if (vwp->pollfd[0].revents)

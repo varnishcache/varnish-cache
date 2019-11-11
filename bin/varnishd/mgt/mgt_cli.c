@@ -245,16 +245,16 @@ mgt_cli_stop_child(void)
 static void
 mgt_cli_challenge(struct cli *cli)
 {
-	int i;
+	size_t z;
 	uint8_t u;
 
 	AZ(VRND_RandomCrypto(cli->challenge, sizeof cli->challenge - 2));
-	for (i = 0; i < (sizeof cli->challenge) - 2; i++) {
+	for (z = 0; z < (sizeof cli->challenge) - 2; z++) {
 		AZ(VRND_RandomCrypto(&u, sizeof u));
-		cli->challenge[i] = (u % 26) + 'a';
+		cli->challenge[z] = (u % 26) + 'a';
 	}
-	cli->challenge[i++] = '\n';
-	cli->challenge[i] = '\0';
+	cli->challenge[z++] = '\n';
+	cli->challenge[z] = '\0';
 	VCLI_Out(cli, "%s", cli->challenge);
 	VCLI_Out(cli, "\nAuthentication required.\n");
 	VCLI_SetResult(cli, CLIS_AUTH);
@@ -691,11 +691,12 @@ mgt_DumpRstCli(void)
 {
 	const struct cli_cmd_desc *cp;
 	const char *p;
-	int i, j;
+	int z;
+	size_t j;
 
 	qsort(cmds, ncmds, sizeof cmds[0], cli_cmp);
-	for (i = 0; i < ncmds; i++, cp++) {
-		cp = cmds[i];
+	for (z = 0; z < ncmds; z++, cp++) {
+		cp = cmds[z];
 		if (!strncmp(cp->request, "debug.", 6))
 			continue;
 		printf(".. _ref_cli_");

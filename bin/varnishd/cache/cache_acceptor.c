@@ -384,7 +384,7 @@ vca_make_session(struct worker *wrk, void *arg)
 	wa->acceptsock = -1;
 	sp->listen_sock = wa->acceptlsock;
 
-	assert(wa->acceptaddrlen <= vsa_suckaddr_len);
+	assert((size_t)wa->acceptaddrlen <= vsa_suckaddr_len);
 
 	if (wa->acceptlsock->uds)
 		vca_mk_uds(wa, sp, laddr, lport, raddr, rport);

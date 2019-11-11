@@ -472,7 +472,8 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 static enum htc_status_e v_matchproto_(htc_complete_f)
 vpx_complete(struct http_conn *htc)
 {
-	int i, l, j;
+	size_t z, l;
+	unsigned j;
 	char *p, *q;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
@@ -483,26 +484,26 @@ vpx_complete(struct http_conn *htc)
 	l = htc->rxbuf_e - htc->rxbuf_b;
 	p = htc->rxbuf_b;
 	j = 0x3;
-	for (i = 0; i < l; i++) {
-		if (i < sizeof vpx1_sig && p[i] != vpx1_sig[i])
+	for (z = 0; z < l; z++) {
+		if (z < sizeof vpx1_sig && p[z] != vpx1_sig[z])
 			j &= ~1;
-		if (i < sizeof vpx2_sig && p[i] != vpx2_sig[i])
+		if (z < sizeof vpx2_sig && p[z] != vpx2_sig[z])
 			j &= ~2;
 		if (j == 0)
 			return (HTC_S_JUNK);
-		if (j == 1 && i == sizeof vpx1_sig) {
-			q = memchr(p + i, '\n', htc->rxbuf_e - (p + i));
+		if (j == 1 && z == sizeof vpx1_sig) {
+			q = memchr(p + z, '\n', htc->rxbuf_e - (p + z));
 			if (q != NULL && (q - htc->rxbuf_b) > 107)
 				return (HTC_S_OVERFLOW);
 			if (q == NULL)
 				return (HTC_S_MORE);
 			return (HTC_S_COMPLETE);
 		}
-		if (j == 2 && i == sizeof vpx2_sig) {
+		if (j == 2 && z == sizeof vpx2_sig) {
 			if (l < 16)
 				return (HTC_S_MORE);
 			j = vbe16dec(p + 14);
-			if (l < 16 + j)
+			if (l < 16L + j)
 				return (HTC_S_MORE);
 			return (HTC_S_COMPLETE);
 		}

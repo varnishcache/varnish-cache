@@ -578,7 +578,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 static void
 hsh_rush1(const struct worker *wrk, struct objhead *oh, struct rush *r, int max)
 {
-	unsigned u;
+	int i;
 	struct req *req;
 
 	if (max == 0)
@@ -592,7 +592,7 @@ hsh_rush1(const struct worker *wrk, struct objhead *oh, struct rush *r, int max)
 	CHECK_OBJ_NOTNULL(r, RUSH_MAGIC);
 	VTAILQ_INIT(&r->reqs);
 	Lck_AssertHeld(&oh->mtx);
-	for (u = 0; u < max; u++) {
+	for (i = 0; i < max; i++) {
 		req = VTAILQ_FIRST(&oh->waitinglist);
 		if (req == NULL)
 			break;

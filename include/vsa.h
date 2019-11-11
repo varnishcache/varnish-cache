@@ -31,7 +31,7 @@
 #define VSA_H_INCLUDED
 
 struct suckaddr;
-extern const int vsa_suckaddr_len;
+extern const size_t vsa_suckaddr_len;
 extern const struct suckaddr *bogo_ip;
 
 void VSA_Init(void);

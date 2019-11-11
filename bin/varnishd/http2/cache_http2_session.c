@@ -163,7 +163,7 @@ h2_del_sess(struct worker *wrk, struct h2_sess *h2, enum sess_close reason)
 enum htc_status_e v_matchproto_(htc_complete_f)
 H2_prism_complete(struct http_conn *htc)
 {
-	int l;
+	ptrdiff_t l;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	l = htc->rxbuf_e - htc->rxbuf_b;

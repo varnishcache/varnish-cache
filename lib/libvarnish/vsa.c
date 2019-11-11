@@ -173,7 +173,7 @@ struct suckaddr {
 	};
 };
 
-const int vsa_suckaddr_len = sizeof(struct suckaddr);
+const size_t vsa_suckaddr_len = sizeof(struct suckaddr);
 
 /*
  * Bogus IPv4 address 0.0.0.0:0 to be used for VCL *.ip variables when the
