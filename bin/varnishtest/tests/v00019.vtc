@@ -70,3 +70,10 @@ varnish v1 -errvcl {Symbol not found: 'req.http.req.http.foo'} {
 		set req.http.req.http.foo = "bar";
 	}
 }
+
+varnish v1 -errvcl {Unknown token '--' when looking for INT} {
+	backend be none;
+	sub vcl_synth {
+		set resp.status = --200;
+	}
+}

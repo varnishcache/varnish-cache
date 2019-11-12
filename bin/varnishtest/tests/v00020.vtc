@@ -327,6 +327,7 @@ varnish v1 -vcl+backend {
 }
 
 varnish v1 -vcl+backend {
+	import std;
 	import debug;
 	sub vcl_deliver {
 		// Ticket 2745
@@ -339,6 +340,9 @@ varnish v1 -vcl+backend {
 	sub vcl_deliver {
 		set resp.http.p = (0 + 9223372036854775807);
 		set resp.http.n = (0 - 9223372036854775807);
+		if (resp.status == -(-200)) {
+			set resp.http.o = -std.integer("-200");
+		}
 	}
 } -start
 
@@ -350,4 +354,32 @@ client c1 {
 	expect resp.http.bar == "false"
 	expect resp.http.p == 9223372036854775807
 	expect resp.http.n == -9223372036854775807
+	expect resp.http.o == 200
+} -run
+
+varnish v1 -vcl {
+	import std;
+	backend be none;
+	sub vcl_recv {
+		return (synth(200));
+	}
+	sub vcl_synth {
+		if (req.url ~ "double-minus") {
+			set resp.status = -(-204);
+		}
+		if (req.url ~ "minus-std") {
+			set resp.status = -std.integer("-204");
+		}
+		return (deliver);
+	}
+}
+
+client c1 {
+	txreq -url "/double-minus"
+	rxresp
+	expect resp.status == 204
+
+	txreq -url "/minus-std"
+	rxresp
+	expect resp.status == 204
 } -run
