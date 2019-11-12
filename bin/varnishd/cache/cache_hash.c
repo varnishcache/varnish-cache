@@ -248,8 +248,8 @@ static struct hsh_magiclist {
 static void
 hsh_testmagic(void *result)
 {
-	int i, j;
-	static int nused = 0;
+	size_t i, j;
+	static size_t nused = 0;
 
 	for (i = 0; i < nused; i++)
 		if (!memcmp(hsh_magiclist[i].was, result, VSHA256_LEN))

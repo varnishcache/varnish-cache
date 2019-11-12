@@ -938,7 +938,7 @@ VEP_Parse(struct vep_state *vep, const char *p, size_t l)
 				vep->match = NULL;
 				vep->tag_i = 0;
 			} else {
-				assert(e - p <= sizeof(vep->tag));
+				assert(p + sizeof(vep->tag) >= e);
 				memcpy(vep->tag, p, e - p);
 				vep->tag_i = e - p;
 				vep->state = VEP_MATCHBUF;

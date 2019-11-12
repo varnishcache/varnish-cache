@@ -149,7 +149,7 @@ struct h2_sess {
 
 	struct sess			*sess;
 	int				refcnt;
-	int				open_streams;
+	unsigned			open_streams;
 	uint32_t			highest_stream;
 	int				bogosity;
 	int				do_sweep;

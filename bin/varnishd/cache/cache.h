@@ -388,7 +388,7 @@ struct busyobj {
 	 * All fields from retries and down are zeroed when the busyobj
 	 * is recycled.
 	 */
-	int			retries;
+	unsigned		retries;
 	struct req		*req;
 	struct sess		*sp;
 	struct worker		*wrk;
@@ -449,7 +449,7 @@ struct req {
 	enum req_step		req_step;
 	volatile enum req_body_state_e	req_body_status;
 	enum sess_close		doclose;
-	int			restarts;
+	unsigned		restarts;
 	unsigned		esi_level;
 	struct req		*topreq;	/* esi_level == 0 request */
 	struct vcl		*vcl0;

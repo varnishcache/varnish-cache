@@ -143,7 +143,7 @@ V1L_Close(struct worker *wrk, uint64_t *cnt)
 }
 
 static void
-v1l_prune(struct v1l *v1l, ssize_t bytes)
+v1l_prune(struct v1l *v1l, size_t bytes)
 {
 	ssize_t used = 0;
 	ssize_t j, used_here;

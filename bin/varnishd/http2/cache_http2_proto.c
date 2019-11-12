@@ -906,19 +906,13 @@ static enum htc_status_e v_matchproto_(htc_complete_f)
 h2_frame_complete(struct http_conn *htc)
 {
 	struct h2_sess *h2;
-	int l;
-	unsigned u;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	CAST_OBJ_NOTNULL(h2, htc->priv, H2_SESS_MAGIC);
-	l = htc->rxbuf_e - htc->rxbuf_b;
-	if (l < 9)
+	if (htc->rxbuf_b + 9 > htc->rxbuf_e ||
+	    htc->rxbuf_b + 9 + (vbe32dec(htc->rxbuf_b) >> 8) > htc->rxbuf_e)
 		return (HTC_S_MORE);
-	u = vbe32dec(htc->rxbuf_b) >> 8;
-	if (l >= u + 9)
-		return (HTC_S_COMPLETE);
-
-	return (HTC_S_MORE);
+	return (HTC_S_COMPLETE);
 }
 
 /**********************************************************************/

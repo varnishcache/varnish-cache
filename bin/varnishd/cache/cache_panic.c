@@ -430,7 +430,7 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 	VSB_indent(vsb, 2);
 	PAN_CheckMagic(vsb, bo, BUSYOBJ_MAGIC);
 	VSB_printf(vsb, "end = %p,\n", bo->end);
-	VSB_printf(vsb, "retries = %d,\n", bo->retries);
+	VSB_printf(vsb, "retries = %u,\n", bo->retries);
 
 	if (bo->req != NULL)
 		pan_req(vsb, bo->req);
@@ -526,7 +526,7 @@ pan_req(struct vsb *vsb, const struct req *req)
 		    "err_code = %d, err_reason = %s,\n", req->err_code,
 		    req->err_reason ? req->err_reason : "(null)");
 
-	VSB_printf(vsb, "restarts = %d, esi_level = %u,\n",
+	VSB_printf(vsb, "restarts = %u, esi_level = %u,\n",
 	    req->restarts, req->esi_level);
 
 	if (req->sp != NULL)
