@@ -764,8 +764,12 @@ vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		    fmt != STRINGS)
 			break;
 		vcc_NextToken(tl);
-		if (tl->t->tok != FNUM && tl->t->tok != CNUM)
-			break;
+		if (tl->t->tok != FNUM && tl->t->tok != CNUM) {
+			vcc_expr_cor(tl, &e1, fmt);
+			ERRCHK(tl);
+			*e = vcc_expr_edit(tl, e1->fmt, "-(\v1)", e1, NULL);
+			return;
+		}
 		sign = "-";
 		/* FALLTHROUGH */
 	case FNUM:
