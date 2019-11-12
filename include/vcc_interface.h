@@ -74,3 +74,6 @@ struct vpi_ii {
 
 VCL_STRANDS VPI_BundleStrands(int, struct strands *, char const **,
     const char *f, ...);
+
+struct vrt_blob;
+VCL_BLOB VPI_blob(VRT_CTX, VCL_STRING);

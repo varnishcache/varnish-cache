@@ -118,7 +118,7 @@ sub vcl_deliver {
 sub vcl_synth {
     set resp.http.Content-Type = "text/html; charset=utf-8";
     set resp.http.Retry-After = "5";
-    set resp.body = {"<!DOCTYPE html>
+    synthetic({"<!DOCTYPE html>
 <html>
   <head>
     <title>"} + resp.status + " " + resp.reason + {"</title>
@@ -132,7 +132,7 @@ sub vcl_synth {
     <p>Varnish cache server</p>
   </body>
 </html>
-"};
+"});
     return (deliver);
 }
 
@@ -165,7 +165,7 @@ sub vcl_backend_response {
 sub vcl_backend_error {
     set beresp.http.Content-Type = "text/html; charset=utf-8";
     set beresp.http.Retry-After = "5";
-    set beresp.body = {"<!DOCTYPE html>
+    synthetic({"<!DOCTYPE html>
 <html>
   <head>
     <title>"} + beresp.status + " " + beresp.reason + {"</title>
@@ -179,7 +179,7 @@ sub vcl_backend_error {
     <p>Varnish cache server</p>
   </body>
 </html>
-"};
+"});
     return (deliver);
 }
 

@@ -978,6 +978,22 @@ VRT_blob(VRT_CTX, const char *err, const void *src, size_t len, unsigned type)
 	return (p);
 }
 
+static const struct vrt_blob null_string_blob = {
+	.blob = "(null)",
+	.len = sizeof "(null)" - 1,
+};
+
+VCL_BLOB
+VPI_blob(VRT_CTX, VCL_STRING s)
+{
+
+	if (s == NULL)
+		return (&null_string_blob);
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	return (VRT_blob(ctx, "STRING", s, strlen(s), 0));
+}
+
 int
 VRT_VSA_GetPtr(VRT_CTX, const struct suckaddr *sua, const unsigned char ** dst)
 {
