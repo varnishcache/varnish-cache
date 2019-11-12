@@ -79,10 +79,10 @@ The following keys control the interactive display:
 <DOWN>
 	Navigate the counter list one line down.
 
-<PAGEUP> or <b>
+<PAGEUP> or <b> or <CTRL-b>
 	Navigate the counter list one page up.
 
-<PAGEDOWN> or <SPACE>
+<PAGEDOWN> or <SPACE> or <CTRL-f>
 	Navigate the counter list one page down.
 
 <HOME>

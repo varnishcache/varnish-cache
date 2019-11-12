@@ -62,6 +62,8 @@
 
 #define VALUE_MAX		999999999999
 
+#define CTRL(c) ((c) & 037)
+
 struct ma {
 	unsigned n, nmax;
 	double acc;
@@ -881,11 +883,13 @@ handle_keypress(int ch)
 		current++;
 		break;
 	case KEY_PPAGE:
+	case CTRL('b'):
 	case 'b':
 		current -= l_points;
 		page_start -= l_points;
 		break;
 	case KEY_NPAGE:
+	case CTRL('f'):
 	case ' ':
 		current += l_points;
 		if (page_start + l_points < n_ptarray - 1)
