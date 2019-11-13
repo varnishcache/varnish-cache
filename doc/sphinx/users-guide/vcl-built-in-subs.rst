@@ -107,8 +107,14 @@ of the following keywords:
     :ref:`vcl_hash` to :ref:`vcl_purge`.
 
   ``vcl(label)``
-    Switch to vcl labelled *label*. This will continue vcl processing
-    in this vcl's :ref:`vcl_recv` as if it was the active vcl.
+    Switch to vcl labelled *label*.
+
+    This will roll back the request as if ``std.rollback(req)`` was
+    called and continue vcl processing in :ref:`vcl_recv` of the vcl
+    labelled *label* as if it was the active vcl.
+
+    The ``vcl(label)`` return is only valid while the ``req.restarts``
+    count is zero and if used from the active vcl.
 
     See the :ref:`ref_cli_vcl_label` command.
 
