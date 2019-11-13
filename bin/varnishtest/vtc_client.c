@@ -67,8 +67,7 @@ struct client {
 	pthread_t		tp;
 };
 
-static VTAILQ_HEAD(, client)	clients =
-    VTAILQ_HEAD_INITIALIZER(clients);
+static VTAILQ_HEAD(, client)	clients = VTAILQ_HEAD_INITIALIZER(clients);
 
 /**********************************************************************
  * Send the proxy header

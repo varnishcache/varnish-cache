@@ -67,8 +67,7 @@ struct server {
 
 static pthread_mutex_t		server_mtx;
 
-static VTAILQ_HEAD(, server)	servers =
-    VTAILQ_HEAD_INITIALIZER(servers);
+static VTAILQ_HEAD(, server)	servers = VTAILQ_HEAD_INITIALIZER(servers);
 
 /**********************************************************************
  * Allocate and initialize a server

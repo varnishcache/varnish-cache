@@ -74,5 +74,3 @@ struct http {
 	uint64_t		iws;
 	int64_t			ws;
 };
-
-

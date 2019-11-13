@@ -68,7 +68,7 @@
  *         Filter records using a query expression, see ``man vsl-query`` for
  *         more information.
  * \-m
- *	   Also emit log records for misses (only for debugging)
+ *         Also emit log records for misses (only for debugging)
  *
  * \-start
  *         Start the logexpect thread in the background.
