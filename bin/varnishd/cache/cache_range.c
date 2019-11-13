@@ -223,7 +223,7 @@ vrg_ifrange(struct req *req)
 	lm = VTIM_parse(p);
 	if (!lm)
 		return (0);
-	
+
 	/* Last Modified must be 60 seconds older than Date */
 	if (lm > d + 60)				// rfc7232,l,442,443
 		return (0);
