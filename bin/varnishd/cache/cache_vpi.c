@@ -93,7 +93,7 @@ VPI_vcl_select(VRT_CTX, VCL_VCL vcl)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->top, REQTOP_MAGIC);
 
-	if (IS_TOPREQ(req) && req->top->vcl0 != NULL)
+	if ((IS_TOPREQ(req) && req->top->vcl0 != NULL) || req->restarts > 0)
 		return;		// Illegal, req-FSM will fail this later.
 
 	/* XXX VCL_Task* are somewhat duplicated to those in Req_Rollback called
