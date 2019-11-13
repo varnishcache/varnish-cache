@@ -41,6 +41,8 @@
 #include "cache_director.h"
 #include "cache_vcl.h"
 
+static void deldirector(struct vcldir *);
+
 /*--------------------------------------------------------------------*/
 
 const char *
@@ -203,6 +205,16 @@ VRT_AddDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
 	return (d);
 }
 
+static void
+deldirector(struct vcldir *vdir)
+{
+	if(vdir->methods->destroy != NULL)
+		vdir->methods->destroy(vdir->dir);
+	free(vdir->cli_name);
+	FREE_OBJ(vdir->dir);
+	FREE_OBJ(vdir);
+}
+
 void
 VRT_DelDirector(VCL_BACKEND *bp)
 {
@@ -223,12 +235,8 @@ VRT_DelDirector(VCL_BACKEND *bp)
 	if (VCL_WARM(vcl->temp))
 		VDI_Event(d, VCL_EVENT_COLD);
 	AZ(errno=pthread_rwlock_unlock(&vcl->temp_rwl));
-	if(vdir->methods->destroy != NULL)
-		vdir->methods->destroy(d);
 	assert (d == vdir->dir);
-	free(vdir->cli_name);
-	FREE_OBJ(vdir->dir);
-	FREE_OBJ(vdir);
+	deldirector(vdir);
 }
 
 void
