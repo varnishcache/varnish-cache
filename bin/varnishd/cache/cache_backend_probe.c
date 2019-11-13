@@ -278,7 +278,8 @@ vbp_poke(struct vbp_target *vt)
 	char buf[8192], *p;
 	struct pollfd pfda[1], *pfd = pfda;
 	const struct suckaddr *sa;
-	const struct vsb *preamble = NULL;
+	char *preamble = NULL;
+	size_t preamble_l = 0;
 
 	t_start = t_now = VTIM_real();
 	t_end = t_start + vt->timeout;
@@ -314,9 +315,15 @@ vbp_poke(struct vbp_target *vt)
 	}
 
 	Lck_Lock(&vbp_mtx);
-	if (vt->backend != NULL) {
+	if (vt->backend != NULL)
 		proxy_header = vt->backend->proxy_header;
-		preamble = vt->backend->preamble;
+	// XXX avoid race by copying
+	if (vt->backend != NULL && vt->backend->preamble != NULL &&
+	    (preamble_l = VSB_len(vt->backend->preamble)) > 0) {
+		preamble = malloc(preamble_l);
+		AN(preamble);
+		memcpy(preamble, VSB_data(vt->backend->preamble),
+		    preamble_l);
 	}
 	Lck_Unlock(&vbp_mtx);
 
@@ -326,9 +333,15 @@ vbp_poke(struct vbp_target *vt)
 		return;
 	}
 
-	if (preamble && vbp_write(vt, &s, VSB_data(preamble),
-	    VSB_len(preamble)) != 0)
-		return;
+	if (preamble_l > 0) {
+		AN(preamble);
+		err = vbp_write(vt, &s, preamble, preamble_l);
+		free(preamble);
+		preamble = NULL;
+		preamble_l = 0;
+		if (err != 0)
+			return;
+	}
 
 	/* Send the PROXY header */
 	assert(proxy_header <= 2);
