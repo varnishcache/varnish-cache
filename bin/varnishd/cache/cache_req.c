@@ -190,11 +190,11 @@ void
 Req_Rollback(struct req *req)
 {
 	if (IS_TOPREQ(req))
-		VCL_TaskLeave(req->vcl, req->top->privs);
-	VCL_TaskLeave(req->vcl, req->privs);
-	VCL_TaskEnter(req->vcl, req->privs);
+		VCL_TaskLeave(req->top->privs);
+	VCL_TaskLeave(req->privs);
+	VCL_TaskEnter(req->privs);
 	if (IS_TOPREQ(req))
-		VCL_TaskEnter(req->vcl, req->top->privs);
+		VCL_TaskEnter(req->top->privs);
 	HTTP_Clone(req->http, req->http0);
 	if (WS_Overflowed(req->ws))
 		req->wrk->stats->ws_client_overflow++;

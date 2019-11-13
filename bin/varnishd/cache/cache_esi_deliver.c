@@ -186,7 +186,7 @@ ved_include(struct req *preq, const char *src, const char *host,
 	req->transport_priv = ecx;
 
 	CNT_Embark(wrk, req);
-	VCL_TaskEnter(req->vcl, req->privs);
+	VCL_TaskEnter(req->privs);
 
 	while (1) {
 		ecx->woken = 0;

@@ -100,8 +100,8 @@ VPI_vcl_select(VRT_CTX, VCL_VCL vcl)
 	 * from FSM for VCL_RET_VCL. Keeping them here to ensure there are no
 	 * tasks during calls to VCL_Rel / vcl_get
 	 */
-	VCL_TaskLeave(req->vcl, req->top->privs);
-	VCL_TaskLeave(req->vcl, req->privs);
+	VCL_TaskLeave(req->top->privs);
+	VCL_TaskLeave(req->privs);
 	if (IS_TOPREQ(req)) {
 		AN(req->top);
 		AZ(req->top->vcl0);
@@ -113,6 +113,6 @@ VPI_vcl_select(VRT_CTX, VCL_VCL vcl)
 	vcl_get(&req->vcl, vcl);
 	VSLb(ctx->req->vsl, SLT_VCL_use, "%s via %s",
 	    req->vcl->loaded_name, vcl->loaded_name);
-	VCL_TaskEnter(req->vcl, req->privs);
-	VCL_TaskEnter(req->vcl, req->top->privs);
+	VCL_TaskEnter(req->privs);
+	VCL_TaskEnter(req->top->privs);
 }

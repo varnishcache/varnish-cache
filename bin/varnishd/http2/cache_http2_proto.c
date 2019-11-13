@@ -524,8 +524,8 @@ h2_do_req(struct worker *wrk, void *priv)
 	THR_SetRequest(req);
 	CNT_Embark(wrk, req);
 	if (req->req_step == R_STP_TRANSPORT) {
-		VCL_TaskEnter(req->vcl, req->privs);
-		VCL_TaskEnter(req->vcl, req->top->privs);
+		VCL_TaskEnter(req->privs);
+		VCL_TaskEnter(req->top->privs);
 	}
 
 	wrk->stats->client_req++;

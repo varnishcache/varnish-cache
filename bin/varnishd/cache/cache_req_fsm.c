@@ -1105,11 +1105,11 @@ CNT_Request(struct req *req)
 	wrk->vsl = NULL;
 	if (nxt == REQ_FSM_DONE) {
 		if (IS_TOPREQ(req)) {
-			VCL_TaskLeave(req->vcl, req->top->privs);
+			VCL_TaskLeave(req->top->privs);
 			if (req->top->vcl0 != NULL)
 				VCL_Rel(&req->top->vcl0);
 		}
-		VCL_TaskLeave(req->vcl, req->privs);
+		VCL_TaskLeave(req->privs);
 		AN(req->vsl->wid);
 		VRB_Free(req);
 		req->wrk = NULL;
