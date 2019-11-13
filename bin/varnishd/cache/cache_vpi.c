@@ -90,6 +90,8 @@ VPI_vcl_select(VRT_CTX, VCL_VCL vcl)
 	struct req *req = ctx->req;
 
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(req->top, REQTOP_MAGIC);
 
 	if (IS_TOPREQ(req) && req->top->vcl0 != NULL)
 		return;		// Illegal, req-FSM will fail this later.
