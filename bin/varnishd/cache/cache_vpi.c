@@ -96,6 +96,9 @@ VPI_vcl_select(VRT_CTX, VCL_VCL vcl)
 	if ((IS_TOPREQ(req) && req->top->vcl0 != NULL) || req->restarts > 0)
 		return;		// Illegal, req-FSM will fail this later.
 
+	if (! IS_TOPREQ(req))
+		assert(req->vcl == req->top->vcl0);
+
 	/* XXX VCL_Task* are somewhat duplicated to those in Req_Rollback called
 	 * from FSM for VCL_RET_VCL. Keeping them here to ensure there are no
 	 * tasks during calls to VCL_Rel / vcl_get
