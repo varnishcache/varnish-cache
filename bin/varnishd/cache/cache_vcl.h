@@ -47,7 +47,6 @@ struct vcl {
 	unsigned		busy;
 	unsigned		discard;
 	const char		*temp;
-	pthread_rwlock_t	temp_rwl;
 	VTAILQ_HEAD(,vcldir)	director_list;
 	VTAILQ_HEAD(,vclref)	ref_list;
 	int			nrefs;

@@ -50,6 +50,7 @@ struct priv_vcl {
 	struct vclref		*vclref_discard;
 	struct vclref		*vclref_cold;
 	VCL_DURATION		vcl_discard_delay;
+	VCL_BACKEND		be;
 };
 
 
@@ -403,6 +404,10 @@ xyzzy_vcl_allow_cold(VRT_CTX, struct vmod_priv *priv)
 	VRT_VCL_Allow_Cold(&priv_vcl->vclref_cold);
 }
 
+static const struct vdi_methods empty_methods[1] = {{
+	.magic =	VDI_METHODS_MAGIC,
+	.type =	"debug.dummy"
+}};
 
 static int
 event_warm(VRT_CTX, const struct vmod_priv *priv)
@@ -423,6 +428,11 @@ event_warm(VRT_CTX, const struct vmod_priv *priv)
 
 	bprintf(buf, "vmod-debug ref on %s", VCL_Name(ctx->vcl));
 	priv_vcl->vclref_discard = VRT_VCL_Prevent_Discard(ctx, buf);
+
+	AZ(priv_vcl->be);
+	priv_vcl->be = VRT_AddDirector(ctx, empty_methods,
+	    NULL, "%s", "dir_warmcold");
+
 	return (0);
 }
 
@@ -449,6 +459,8 @@ event_cold(VRT_CTX, const struct vmod_priv *priv)
 	AN(priv_vcl->vclref_discard);
 
 	VSL(SLT_Debug, 0, "%s: VCL_EVENT_COLD", VCL_Name(ctx->vcl));
+
+	VRT_DelDirector(&priv_vcl->be);
 
 	if (priv_vcl->vcl_discard_delay == 0.0) {
 		VRT_VCL_Allow_Discard(&priv_vcl->vclref_discard);

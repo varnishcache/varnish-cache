@@ -264,9 +264,7 @@ vcl_get(struct vcl **vcc, struct vcl *vcl)
 	AZ((*vcc)->discard);
 	(*vcc)->busy++;
 	Lck_Unlock(&vcl_mtx);
-	AZ(errno=pthread_rwlock_rdlock(&(*vcc)->temp_rwl));
 	assert(VCL_WARM((*vcc)->temp));
-	AZ(errno=pthread_rwlock_unlock(&(*vcc)->temp_rwl));
 }
 
 /*--------------------------------------------------------------------*/
@@ -415,7 +413,6 @@ VCL_Open(const char *fn, struct vsb *msg)
 	}
 	ALLOC_OBJ(vcl, VCL_MAGIC);
 	AN(vcl);
-	AZ(errno=pthread_rwlock_init(&vcl->temp_rwl, NULL));
 	vcl->dlh = dlh;
 	vcl->conf = cnf;
 	return (vcl);
@@ -432,7 +429,6 @@ VCL_Close(struct vcl **vclp)
 	assert(VTAILQ_EMPTY(&vcl->vfps));
 	assert(VTAILQ_EMPTY(&vcl->vdps));
 	AZ(dlclose(vcl->dlh));
-	AZ(errno=pthread_rwlock_destroy(&vcl->temp_rwl));
 	FREE_OBJ(vcl);
 }
 
@@ -496,7 +492,6 @@ vcl_set_state(VRT_CTX, const char *state)
 	assert(ctx->msg != NULL || *state == '0');
 
 	vcl = ctx->vcl;
-	AZ(errno=pthread_rwlock_wrlock(&vcl->temp_rwl));
 	AN(vcl->temp);
 
 	switch (state[0]) {
@@ -543,7 +538,6 @@ vcl_set_state(VRT_CTX, const char *state)
 	}
 	if (i == 0 && state[1])
 		bprintf(vcl->state, "%s", state + 1);
-	AZ(errno=pthread_rwlock_unlock(&vcl->temp_rwl));
 
 	return (i);
 }
@@ -811,7 +805,6 @@ vcl_cli_discard(struct cli *cli, const char * const *av, void *priv)
 	if (!strcmp(vcl->state, VCL_TEMP_LABEL)) {
 		VTAILQ_REMOVE(&vcl_head, vcl, list);
 		free(vcl->loaded_name);
-		AZ(errno=pthread_rwlock_destroy(&vcl->temp_rwl));
 		FREE_OBJ(vcl);
 	} else if (vcl->temp == VCL_TEMP_COLD) {
 		VCL_Poll();
@@ -836,7 +829,6 @@ vcl_cli_label(struct cli *cli, const char * const *av, void *priv)
 		bprintf(lbl->state, "%s", VCL_TEMP_LABEL);
 		lbl->temp = VCL_TEMP_WARM;
 		REPLACE(lbl->loaded_name, av[2]);
-		AZ(errno=pthread_rwlock_init(&lbl->temp_rwl, NULL));
 		VTAILQ_INSERT_TAIL(&vcl_head, lbl, list);
 	}
 	if (lbl->label != NULL)

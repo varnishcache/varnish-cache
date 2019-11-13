@@ -113,9 +113,7 @@ VCL_Ref(struct vcl *vcl)
 {
 
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
-	AZ(errno=pthread_rwlock_rdlock(&vcl->temp_rwl));
 	assert(!VCL_COLD(vcl->temp));
-	AZ(errno=pthread_rwlock_unlock(&vcl->temp_rwl));
 	Lck_Lock(&vcl_mtx);
 	assert(vcl->busy > 0);
 	vcl->busy++;
@@ -152,6 +150,7 @@ VRT_AddDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
 	struct vcl *vcl;
 	struct vcldir *vdir;
 	struct director *d;
+	const char *temp;
 	va_list ap;
 	int i;
 
@@ -160,11 +159,10 @@ VRT_AddDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
 	AN(fmt);
 	vcl = ctx->vcl;
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
-	AZ(errno=pthread_rwlock_rdlock(&vcl->temp_rwl));
-	if (vcl->temp == VCL_TEMP_COOLING) {
-		AZ(errno=pthread_rwlock_unlock(&vcl->temp_rwl));
+
+	// opportunistic, re-checked again under lock
+	if (vcl->temp == VCL_TEMP_COOLING)
 		return (NULL);
-	}
 
 	ALLOC_OBJ(d, DIRECTOR_MAGIC);
 	AN(d);
@@ -192,15 +190,19 @@ VRT_AddDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
 	vdir->health_changed = VTIM_real();
 
 	Lck_Lock(&vcl_mtx);
-	VTAILQ_INSERT_TAIL(&vcl->director_list, vdir, list);
+	temp = vcl->temp;
+	if (temp != VCL_TEMP_COOLING)
+		VTAILQ_INSERT_TAIL(&vcl->director_list, vdir, list);
+	if (VCL_WARM(temp))
+		VDI_Event(d, VCL_EVENT_WARM);
 	Lck_Unlock(&vcl_mtx);
 
-	if (VCL_WARM(vcl->temp))
-		/* Only when adding backend to already warm VCL */
-		VDI_Event(d, VCL_EVENT_WARM);
-	else if (vcl->temp != VCL_TEMP_INIT)
+	if (temp == VCL_TEMP_COOLING) {
+		deldirector(vdir);
+		return (NULL);
+	}
+	if (!VCL_WARM(temp) && temp != VCL_TEMP_INIT)
 		WRONG("Dynamic Backends can only be added to warm VCLs");
-	AZ(errno=pthread_rwlock_unlock(&vcl->temp_rwl));
 
 	return (d);
 }
@@ -220,6 +222,7 @@ VRT_DelDirector(VCL_BACKEND *bp)
 {
 	struct vcl *vcl;
 	struct vcldir *vdir;
+	const char *temp;
 	VCL_BACKEND d;
 
 	TAKE_OBJ_NOTNULL(d, bp, DIRECTOR_MAGIC);
@@ -227,14 +230,14 @@ VRT_DelDirector(VCL_BACKEND *bp)
 	CHECK_OBJ_NOTNULL(vdir, VCLDIR_MAGIC);
 	vcl = vdir->vcl;
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
+
 	Lck_Lock(&vcl_mtx);
+	temp = vcl->temp;
 	VTAILQ_REMOVE(&vcl->director_list, vdir, list);
 	Lck_Unlock(&vcl_mtx);
 
-	AZ(errno=pthread_rwlock_rdlock(&vcl->temp_rwl));
-	if (VCL_WARM(vcl->temp))
+	if (VCL_WARM(temp))
 		VDI_Event(d, VCL_EVENT_COLD);
-	AZ(errno=pthread_rwlock_unlock(&vcl->temp_rwl));
 	assert (d == vdir->dir);
 	deldirector(vdir);
 }
