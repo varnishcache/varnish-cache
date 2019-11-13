@@ -143,3 +143,124 @@ varnish v1 -errvcl {Failed initialization} {
 		new shp = directors.shard_param();
 	}
 }
+
+varnish v1 -cliok "param.set vcc_allow_inline_c on"
+varnish v1 -vcl {
+	import std;
+	import vtc;
+
+	backend be none;
+
+	C{
+		struct empty { };
+		struct zc {
+			size_t	z;
+			char	c;
+		};
+		struct ic {
+			int	i;
+			char	c;
+		};
+		struct sc {
+			short	s;
+			char	c;
+		};
+		struct cc {
+			char	c1;
+			char	c2;
+		};
+		struct czc {
+			char	c1;
+			size_t	z;
+			char	c2;
+		};
+		struct cic {
+			char	c1;
+			int	i;
+			char	c2;
+		};
+		struct csc {
+			char	c1;
+			short	s;
+			char	c2;
+		};
+		struct uzp { /* same as vrt_blob */
+			unsigned	u;
+			size_t		z;
+			void		*p;
+		};
+
+		#define SETHDR(type)					\
+			VRT_SetHdr(ctx,					\
+			    &VGC_HDR_RESP_ ## type ## _2d_sizeof,	\
+			    VRT_INT_string(ctx, sizeof(struct type)),	\
+			    vrt_magic_string_end)
+	}C
+
+	sub vcl_recv {
+		return (synth(200));
+	}
+
+	sub vcl_synth {
+		C{ SETHDR(empty); }C
+		set resp.http.empty-typesize = vtc.typesize("");
+		set resp.http.empty-match =
+		    (resp.http.empty-sizeof == resp.http.empty-typesize);
+
+		C{ SETHDR(zc); }C
+		set resp.http.zc-typesize = vtc.typesize("zc");
+		set resp.http.zc-match =
+		    (resp.http.zc-sizeof == resp.http.zc-typesize);
+
+		C{ SETHDR(ic); }C
+		set resp.http.ic-typesize = vtc.typesize("ic");
+		set resp.http.ic-match =
+		    (resp.http.ic-sizeof == resp.http.ic-typesize);
+
+		C{ SETHDR(sc); }C
+		set resp.http.sc-typesize = vtc.typesize("sc");
+		set resp.http.sc-match =
+		    (resp.http.sc-sizeof == resp.http.sc-typesize);
+
+		C{ SETHDR(cc); }C
+		set resp.http.cc-typesize = vtc.typesize("cc");
+		set resp.http.cc-match =
+		    (resp.http.cc-sizeof == resp.http.cc-typesize);
+
+		C{ SETHDR(czc); }C
+		set resp.http.czc-typesize = vtc.typesize("czc");
+		set resp.http.czc-match =
+		    (resp.http.czc-sizeof == resp.http.czc-typesize);
+
+		C{ SETHDR(cic); }C
+		set resp.http.cic-typesize = vtc.typesize("cic");
+		set resp.http.cic-match =
+		    (resp.http.cic-sizeof == resp.http.cic-typesize);
+
+		C{ SETHDR(csc); }C
+		set resp.http.csc-typesize = vtc.typesize("csc");
+		set resp.http.csc-match =
+		    (resp.http.csc-sizeof == resp.http.csc-typesize);
+
+		C{ SETHDR(uzp); }C
+		set resp.http.uzp-typesize = vtc.typesize("uzp");
+		set resp.http.uzp-match =
+		    (resp.http.uzp-sizeof == resp.http.uzp-typesize);
+	}
+}
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.empty-match == true
+
+	expect resp.http.zc-match == true
+	expect resp.http.ic-match == true
+	expect resp.http.sc-match == true
+	expect resp.http.cc-match == true
+
+	expect resp.http.czc-match == true
+	expect resp.http.cic-match == true
+	expect resp.http.csc-match == true
+	expect resp.http.uzp-match == true
+} -run
