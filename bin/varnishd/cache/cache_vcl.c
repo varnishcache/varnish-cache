@@ -265,7 +265,7 @@ vcl_get(struct vcl **vcc, struct vcl *vcl)
 	(*vcc)->busy++;
 	Lck_Unlock(&vcl_mtx);
 	AZ(errno=pthread_rwlock_rdlock(&(*vcc)->temp_rwl));
-	assert(VCL_WARM(*vcc));
+	assert(VCL_WARM((*vcc)->temp));
 	AZ(errno=pthread_rwlock_unlock(&(*vcc)->temp_rwl));
 }
 
@@ -503,7 +503,7 @@ vcl_set_state(VRT_CTX, const char *state)
 	case '0':
 		if (vcl->temp == VCL_TEMP_COLD)
 			break;
-		if (vcl->busy == 0 && VCL_WARM(vcl)) {
+		if (vcl->busy == 0 && VCL_WARM(vcl->temp)) {
 			vcl->temp = VTAILQ_EMPTY(&vcl->ref_list) ?
 			    VCL_TEMP_COLD : VCL_TEMP_COOLING;
 			AZ(vcl_send_event(ctx, VCL_EVENT_COLD));

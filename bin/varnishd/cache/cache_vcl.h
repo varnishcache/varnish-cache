@@ -80,7 +80,5 @@ extern const char * const VCL_TEMP_COOLING;
  * NB: The COOLING temperature is neither COLD nor WARM.
  * And LABEL is not a temperature, it's a different kind of VCL.
  */
-#define VCL_WARM(v) ((v)->temp == VCL_TEMP_WARM || (v)->temp == VCL_TEMP_BUSY)
-#define VCL_COLD(v) ((v)->temp == VCL_TEMP_INIT || (v)->temp == VCL_TEMP_COLD)
-
-
+#define VCL_WARM(t) ((t) == VCL_TEMP_WARM || (t) == VCL_TEMP_BUSY)
+#define VCL_COLD(t) ((t) == VCL_TEMP_INIT || (t) == VCL_TEMP_COLD)

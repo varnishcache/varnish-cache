@@ -112,7 +112,7 @@ VCL_Ref(struct vcl *vcl)
 
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	AZ(errno=pthread_rwlock_rdlock(&vcl->temp_rwl));
-	assert(!VCL_COLD(vcl));
+	assert(!VCL_COLD(vcl->temp));
 	AZ(errno=pthread_rwlock_unlock(&vcl->temp_rwl));
 	Lck_Lock(&vcl_mtx);
 	assert(vcl->busy > 0);
@@ -193,7 +193,7 @@ VRT_AddDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
 	VTAILQ_INSERT_TAIL(&vcl->director_list, vdir, list);
 	Lck_Unlock(&vcl_mtx);
 
-	if (VCL_WARM(vcl))
+	if (VCL_WARM(vcl->temp))
 		/* Only when adding backend to already warm VCL */
 		VDI_Event(d, VCL_EVENT_WARM);
 	else if (vcl->temp != VCL_TEMP_INIT)
@@ -220,7 +220,7 @@ VRT_DelDirector(VCL_BACKEND *bp)
 	Lck_Unlock(&vcl_mtx);
 
 	AZ(errno=pthread_rwlock_rdlock(&vcl->temp_rwl));
-	if (VCL_WARM(vcl))
+	if (VCL_WARM(vcl->temp))
 		VDI_Event(d, VCL_EVENT_COLD);
 	AZ(errno=pthread_rwlock_unlock(&vcl->temp_rwl));
 	if(vdir->methods->destroy != NULL)
@@ -363,7 +363,7 @@ VRT_VCL_Prevent_Discard(VRT_CTX, const char *desc)
 
 	vcl = ctx->vcl;
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
-	assert(VCL_WARM(vcl));
+	assert(VCL_WARM(vcl->temp));
 
 	ALLOC_OBJ(ref, VCLREF_MAGIC);
 	AN(ref);

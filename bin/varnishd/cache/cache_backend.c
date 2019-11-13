@@ -604,7 +604,7 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 
 	if (be->director != NULL) {
 		/* for cold VCL, update initial director state */
-		if (be->probe != NULL && ! VCL_WARM(vcl))
+		if (be->probe != NULL && ! VCL_WARM(vcl->temp))
 			VBP_Update_Backend(be->probe);
 
 		Lck_Lock(&backends_mtx);
