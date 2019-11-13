@@ -99,6 +99,7 @@ void VRT_RemoveVFP(VRT_CTX, const struct vfp *);
 enum vdp_action {
 	VDP_NULL,		/* Input buffer valid after call */
 	VDP_FLUSH,		/* Input buffer will be invalidated */
+	VDP_END,		/* Last buffer or after, implies VDP_FLUSH */
 };
 
 typedef int vdp_init_f(struct req *, void **priv);
@@ -123,6 +124,7 @@ struct vdp {
 struct vdp_entry {
 	unsigned		magic;
 #define VDP_ENTRY_MAGIC		0x353eb781
+	enum vdp_action		end;	// VDP_NULL or VDP_END
 	const struct vdp	*vdp;
 	void			*priv;
 	VTAILQ_ENTRY(vdp_entry)	list;

@@ -413,17 +413,20 @@ ved_vdp_esi_bytes(struct req *req, enum vdp_action act, void **priv,
 				/* MOD(2^32) length */
 				vle32enc(tailbuf + 9, ecx->l_crc);
 
-				(void)VDP_bytes(req, VDP_NULL, tailbuf, 13);
+				retval = VDP_bytes(req, VDP_END, tailbuf, 13);
 			} else if (ecx->pecx != NULL) {
 				ecx->pecx->crc = crc32_combine(ecx->pecx->crc,
 				    ecx->crc, ecx->l_crc);
 				ecx->pecx->l_crc += ecx->l_crc;
+				retval = VDP_bytes(req, VDP_FLUSH, NULL, 0);
+			} else {
+				retval = VDP_bytes(req, VDP_END, NULL, 0);
 			}
-			retval = VDP_bytes(req, VDP_FLUSH, NULL, 0);
 			ecx->state = 99;
 			return (retval);
 		case 3:
 		case 4:
+			assert(act != VDP_END);
 			/*
 			 * There is no guarantee that the 'l' bytes are all
 			 * in the same storage segment, so loop over storage
@@ -473,6 +476,8 @@ ved_bytes(struct req *req, struct ecx *ecx, enum vdp_action act,
     const void *ptr, ssize_t len)
 {
 	req->acct.resp_bodybytes += len;
+	if (act == VDP_END)
+		act = VDP_FLUSH;
 	return (VDP_bytes(ecx->preq, act, ptr, len));
 }
 
@@ -757,6 +762,12 @@ ved_gzgz_fini(struct req *req, void **priv)
 	CAST_OBJ_NOTNULL(foo, *priv, VED_FOO_MAGIC);
 	*priv = NULL;
 
+	/* XXX
+	 * this works due to the esi layering, a VDP pushing bytes from _fini
+	 * will otherwise have it's own _bytes method called.
+	 *
+	 * Could rewrite use VDP_END
+	 */
 	(void)ved_bytes(req, foo->ecx, VDP_FLUSH, NULL, 0);
 
 	icrc = vle32dec(foo->tailbuf);
@@ -856,9 +867,6 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 		VSLb(req->vsl, SLT_Error, "Failure to push ESI processors");
 		req->doclose = SC_OVERLOAD;
 	}
-
-	if (i == 0)
-		i = VDP_bytes(req, VDP_FLUSH, NULL, 0);
 
 	if (i && req->doclose == SC_NULL)
 		req->doclose = SC_REM_CLOSE;

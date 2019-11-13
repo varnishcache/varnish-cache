@@ -84,13 +84,14 @@ vrg_range_bytes(struct req *req, enum vdp_action act, void **priv,
 	l = vrg_priv->range_high - vrg_priv->range_off;
 	if (l > len)
 		l = len;
+	vrg_priv->range_off += len;
+	if (vrg_priv->range_off >= vrg_priv->range_high)
+		act = VDP_END;
 	if (l > 0)
 		retval = VDP_bytes(req, act, p, l);
-	else if (act > VDP_NULL)
+	else if (l == 0 && act > VDP_NULL)
 		retval = VDP_bytes(req, act, p, 0);
-	vrg_priv->range_off += len;
-	return (retval ||
-	    vrg_priv->range_off >= vrg_priv->range_high ? 1 : 0);
+	return (retval || act == VDP_END ? 1 : 0);
 }
 
 /*--------------------------------------------------------------------*/
