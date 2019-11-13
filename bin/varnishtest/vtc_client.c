@@ -54,6 +54,7 @@ struct client {
 	char			*spec;
 
 	char			connect[256];
+	const char		*addr;
 	int			rcvbuf;
 
 	char			*proxy_spec;
@@ -180,6 +181,27 @@ client_uds_connect(struct vtclog *vl, const char *path, double tmo,
 	return (fd);
 }
 
+static int
+client_connect(struct vtclog *vl, struct client *c)
+{
+	const char *err;
+	int fd;
+
+	vtc_log(vl, 3, "Connect to %s", c->addr);
+	if (*c->addr == '/')
+		fd = client_uds_connect(vl, c->addr, 10., &err);
+	else
+		fd = client_tcp_connect(vl, c->addr, 10., &err);
+	if (fd < 0)
+		vtc_fatal(c->vl, "Failed to open %s: %s",
+		    c->addr, err);
+	/* VTCP_blocking does its own checks, trust it */
+	VTCP_blocking(fd);
+	if (c->proxy_spec != NULL)
+		client_proxy(vl, fd, c->proxy_version, c->proxy_spec);
+	return (fd);
+}
+
 /**********************************************************************
  * Client thread
  */
@@ -192,7 +214,6 @@ client_thread(void *priv)
 	int fd;
 	int i;
 	struct vsb *vsb;
-	const char *err;
 
 	CAST_OBJ_NOTNULL(c, priv, CLIENT_MAGIC);
 	AN(*c->connect);
@@ -202,6 +223,7 @@ client_thread(void *priv)
 
 	vsb = macro_expand(vl, c->connect);
 	AN(vsb);
+	c->addr = VSB_data(vsb);
 
 	if (c->repeat == 0)
 		c->repeat = 1;
@@ -209,27 +231,15 @@ client_thread(void *priv)
 		vtc_log(vl, 2, "Started (%u iterations%s)", c->repeat,
 			c->keepalive ? " using keepalive" : "");
 	for (i = 0; i < c->repeat; i++) {
-		char *addr = VSB_data(vsb);
+		fd = client_connect(vl, c);
 
-		vtc_log(vl, 3, "Connect to %s", addr);
-		if (*addr == '/')
-			fd = client_uds_connect(vl, addr, 10., &err);
-		else
-			fd = client_tcp_connect(vl, VSB_data(vsb), 10., &err);
-		if (fd < 0)
-			vtc_fatal(c->vl, "Failed to open %s: %s",
-			    VSB_data(vsb), err);
-		/* VTCP_blocking does its own checks, trust it */
-		VTCP_blocking(fd);
-		if (c->proxy_spec != NULL)
-			client_proxy(vl, fd, c->proxy_version, c->proxy_spec);
 		if (! c->keepalive)
-			fd = http_process(vl, c->spec, fd, NULL, addr,
+			fd = http_process(vl, c->spec, fd, NULL, c->addr,
 			    c->rcvbuf);
 		else
 			while (fd >= 0 && i++ < c->repeat)
-				fd = http_process(vl, c->spec, fd, NULL, addr,
-				    c->rcvbuf);
+				fd = http_process(vl, c->spec, fd, NULL,
+				    c->addr, c->rcvbuf);
 		vtc_log(vl, 3, "closing fd %d", fd);
 		VTCP_close(&fd);
 	}
