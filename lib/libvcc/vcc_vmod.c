@@ -358,7 +358,7 @@ vcc_ParseImport(struct vcc *tl)
 	/* XXX: zero the function pointer structure ?*/
 	VSB_printf(ifp->fin, "\t\tVRT_priv_fini(&vmod_priv_%.*s);", PF(mod));
 	VSB_printf(ifp->final,
-	    "\t\tVPI_Vmod_Unload(ctx, &VGC_vmod_%.*s);", PF(mod));
+	    "\t\tVPI_Vmod_Unload(&VGC_vmod_%.*s);", PF(mod));
 
 	vj = vjsn_parse(vmd->json, &p);
 	XXXAZ(p);

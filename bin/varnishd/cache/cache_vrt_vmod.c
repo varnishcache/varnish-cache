@@ -163,11 +163,9 @@ VPI_Vmod_Init(VRT_CTX, struct vmod **hdl, unsigned nbr, void *ptr, int len,
 }
 
 void
-VPI_Vmod_Unload(VRT_CTX, struct vmod **hdl)
+VPI_Vmod_Unload(struct vmod **hdl)
 {
 	struct vmod *v;
-
-	(void) ctx;
 
 	ASSERT_CLI();
 
