@@ -66,7 +66,8 @@
  *
  * \-q query
  *         Filter records using a query expression, see ``man vsl-query`` for
- *         more information.
+ *         more information. Multiple -q options are not supported.
+ *
  * \-m
  *         Also emit log records for misses (only for debugging)
  *
@@ -77,9 +78,6 @@
  *         Wait for the logexpect thread to finish
  *
  * VSL arguments (similar to the varnishlog options):
- *
- * \-b|-c
- *         Process only backend/client records.
  *
  * \-C
  *         Use caseless regex
