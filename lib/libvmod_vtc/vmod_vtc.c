@@ -267,14 +267,14 @@ vmod_workspace_dump(VRT_CTX, VCL_ENUM which, VCL_ENUM where,
 VCL_INT v_matchproto_(td_vtc_typesize)
 vmod_typesize(VRT_CTX, VCL_STRING s)
 {
-	size_t i = 0;
+	size_t i = 0, l, a;
 	const char *p;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
 	for (p = s; *p; p++) {
 		switch (*p) {
-#define VTC_TYPESIZE(c, t) case c: i += sizeof(t); break;
+#define VTC_TYPESIZE(c, t) case c: l = sizeof(t); break;
 		VTC_TYPESIZE('d', double)
 		VTC_TYPESIZE('f', float)
 		VTC_TYPESIZE('i', int)
@@ -283,10 +283,15 @@ vmod_typesize(VRT_CTX, VCL_STRING s)
 		VTC_TYPESIZE('o', off_t)
 		VTC_TYPESIZE('p', void *)
 		VTC_TYPESIZE('s', short)
+		VTC_TYPESIZE('u', unsigned)
 		VTC_TYPESIZE('z', size_t)
 #undef VTC_TYPESIZE
 		default:	return (-1);
 		}
+		a = i % l;
+		if (a != 0)
+			i += (l - a);
+		i += l;
 	}
 	return ((VCL_INT)i);
 }
