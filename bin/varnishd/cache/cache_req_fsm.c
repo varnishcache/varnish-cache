@@ -879,7 +879,8 @@ cnt_recv(struct worker *wrk, struct req *req)
 
 	VCL_recv_method(req->vcl, wrk, req, NULL, NULL);
 	if (wrk->handling == VCL_RET_VCL && req->restarts == 0) {
-		Req_Rollback(req);
+		// Req_Rollback has happened in VPI_vcl_select
+		assert(WS_Snapshot(req->ws) == req->ws_req);
 		cnt_recv_prep(req, ci);
 		VCL_recv_method(req->vcl, wrk, req, NULL, NULL);
 	}
