@@ -225,6 +225,7 @@ VRT_DelDirector(VCL_BACKEND *bp)
 	AZ(errno=pthread_rwlock_unlock(&vcl->temp_rwl));
 	if(vdir->methods->destroy != NULL)
 		vdir->methods->destroy(d);
+	assert (d == vdir->dir);
 	free(vdir->cli_name);
 	FREE_OBJ(vdir->dir);
 	FREE_OBJ(vdir);
