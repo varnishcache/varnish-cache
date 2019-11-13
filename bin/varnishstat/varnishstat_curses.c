@@ -944,13 +944,13 @@ handle_keypress(int ch)
 	case 'q':
 		keep_running = 0;
 		return;
-	case '\003':		/* Ctrl-C */
+	case CTRL('c'):
 		AZ(raise(SIGINT));
 		return;
-	case '\024':		/* Ctrl-T */
+	case CTRL('t'):
 		sample = 1;
 		return;
-	case '\032':		/* Ctrl-Z */
+	case CTRL('z'):
 		AZ(raise(SIGTSTP));
 		return;
 	default:
