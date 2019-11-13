@@ -109,6 +109,8 @@ h2_bytes(struct req *req, enum vdp_action act, void **priv,
 
 	if ((r2->h2sess->error || r2->error))
 		return (-1);
+	if (len == 0)
+		return (0);
 	H2_Send_Get(req->wrk, r2->h2sess, r2);
 	H2_Send(req->wrk, r2, H2_F_DATA, H2FF_NONE, len, ptr,
 	    &req->acct.resp_bodybytes);
