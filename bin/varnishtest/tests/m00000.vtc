@@ -152,7 +152,6 @@ varnish v1 -vcl {
 	backend be none;
 
 	C{
-		struct empty { };
 		struct zc {
 			size_t	z;
 			char	c;
@@ -202,11 +201,6 @@ varnish v1 -vcl {
 	}
 
 	sub vcl_synth {
-		C{ SETHDR(empty); }C
-		set resp.http.empty-typesize = vtc.typesize("");
-		set resp.http.empty-match =
-		    (resp.http.empty-sizeof == resp.http.empty-typesize);
-
 		C{ SETHDR(zc); }C
 		set resp.http.zc-typesize = vtc.typesize("zc");
 		set resp.http.zc-match =

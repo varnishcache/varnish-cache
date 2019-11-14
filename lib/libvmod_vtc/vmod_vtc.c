@@ -271,6 +271,7 @@ vmod_typesize(VRT_CTX, VCL_STRING s)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(s);
+	AN(*s);
 
 	for (; *s; s++) {
 		switch (*s) {
@@ -296,10 +297,8 @@ vmod_typesize(VRT_CTX, VCL_STRING s)
 			i += (l - a); /* align */
 		i += l;
 	}
-	if (i > 0) {
-		a = i % p;
-		if (a != 0)
-			i += (p - a); /* pad */
-	}
+	a = i % p;
+	if (a != 0)
+		i += (p - a); /* pad */
 	return ((VCL_INT)i);
 }
