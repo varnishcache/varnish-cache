@@ -105,12 +105,13 @@ tlv_string(VRT_CTX, int tlv)
 
 	if (VPX_tlv(ctx->req, tlv, (void **)&dst, &len))
 		return (NULL);
-	if (!WS_ReserveSize(ctx->ws, len+1))
+	d = WS_Alloc(ctx->ws, len+1);
+	if (d == NULL) {
+		VRT_fail(ctx, "proxy.TLV: out of workspace");
 		return (NULL);
-	d = ctx->ws->f;
+	}
 	memcpy(d, dst, len);
 	d[len] = '\0';
-	WS_Release(ctx->ws, len+1);
 	return (d);
 }
 
