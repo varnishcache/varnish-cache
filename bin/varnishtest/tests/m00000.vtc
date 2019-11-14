@@ -246,7 +246,6 @@ varnish v1 -vcl {
 client c1 {
 	txreq
 	rxresp
-	expect resp.http.empty-match == true
 
 	expect resp.http.zc-match == true
 	expect resp.http.ic-match == true
