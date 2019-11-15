@@ -85,6 +85,7 @@ VCC_HandleKind(vcc_type_t fmt)
 	if (fmt == STEVEDORE)	return (SYM_STEVEDORE);
 	if (fmt == SUB)		return (SYM_SUB);
 	if (fmt == INSTANCE)	return (SYM_INSTANCE);
+	if (fmt->constable)	return (SYM_CONSTANT);
 	return (SYM_NONE);
 }
 

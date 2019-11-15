@@ -1,0 +1,53 @@
+varnishtest "constants"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -cliok "param.set vcc_err_unref off"
+
+varnish v1 -vcl {
+	const string s1_sock = "${s1_sock}";
+	const duration my_tmo = 3s;
+	const duration my_ttl = 15y;
+	const int redirect = 301;
+	const int deliver = 42; # unused
+
+	backend s1 {
+		.host = s1_sock;
+		.connect_timeout = my_tmo;
+	}
+
+	sub vcl_recv {
+		if (req.url == "/old") {
+			return (synth(redirect));
+		}
+	}
+
+	sub vcl_synth {
+		if (resp.status == redirect) {
+			set resp.http.location =
+			    "http://" + req.http.host + "/";
+			set resp.http.s1_sock = s1_sock;
+			return (deliver);
+		}
+	}
+
+	sub vcl_backend_response {
+		set beresp.ttl = my_ttl;
+		set beresp.http.my_ttl = my_ttl;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.my_ttl == 473040000.000
+
+	txreq -url "/old"
+	rxresp
+	expect resp.status == 301
+	expect resp.http.s1_sock == "${s1_sock}"
+} -run

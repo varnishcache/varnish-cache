@@ -288,6 +288,37 @@ vcc__Expect(struct vcc *tl, unsigned tok, unsigned line)
 	vcc_ErrWhere(tl, tl->t);
 }
 
+const struct token *
+vcc__ExpectConst(struct vcc *tl, vcc_type_t fmt, unsigned line)
+{
+	const struct token *t;
+	struct symbol *sym;
+
+	AN(fmt->constable);
+	if (tl->t->tok == fmt->constable) {
+		t = tl->t;
+		vcc_NextToken(tl);
+		return (t);
+	}
+
+	if (tl->t->tok != ID) {
+		vcc__Expect(tl, fmt->constable, line);
+		AN(tl->err);
+		return (NULL);
+	}
+
+	sym = VCC_SymbolGet(tl, SYM_MAIN, SYM_CONSTANT, SYMTAB_EXISTING,
+	    XREF_REF);
+	if (sym != NULL) {
+		t = sym->def_e;
+		AN(t);
+		assert(t->tok == fmt->constable);
+		return (t);
+	}
+
+	INCOMPL();
+}
+
 /*--------------------------------------------------------------------
  * Compare ID token to string, return true of match
  */

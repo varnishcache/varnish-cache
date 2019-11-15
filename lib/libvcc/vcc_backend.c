@@ -402,10 +402,10 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 		if (vcc_IdIs(t_field, "host")) {
 			vcc_Redef(tl, "Address", &t_did, t_field);
 			ERRCHK(tl);
-			ExpectErr(tl, CSTR);
-			assert(tl->t->dec != NULL);
-			t_host = tl->t;
-			vcc_NextToken(tl);
+			t_host = ExpectConst(tl, STRING);
+			ERRCHK(tl);
+			AN(t_host);
+			AN(t_host->dec);
 			SkipToken(tl, ';');
 		} else if (vcc_IdIs(t_field, "port")) {
 			ExpectErr(tl, CSTR);

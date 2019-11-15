@@ -130,6 +130,8 @@ const struct type INT[1] = {{
 	.magic =		TYPE_MAGIC,
 	.name =			"INT",
 	.multype =		INT,
+	.constable =		CNUM,
+	.constqual =		"const ",
 	.tostring =		"VRT_INT_string(ctx, \v1)",
 }};
 
@@ -168,6 +170,8 @@ const struct type STEVEDORE[1] = {{
 const struct type STRING[1] = {{
 	.magic =		TYPE_MAGIC,
 	.name =			"STRING",
+	.constable =		CSTR,
+	.constqual =		"",
 	.stringform =		1,
 }};
 

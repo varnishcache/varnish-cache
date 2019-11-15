@@ -113,6 +113,8 @@ struct type {
 	const char		*tostring;
 	vcc_type_t		multype;
 	int			stringform;
+	unsigned		constable;
+	const char		*constqual;
 };
 
 #define VCC_TYPE(UC, lc)	extern const struct type UC[1];
@@ -407,6 +409,10 @@ void vcc_Lexer(struct vcc *tl, const struct source *sp, int eoi);
 void vcc_NextToken(struct vcc *tl);
 void vcc__ErrInternal(struct vcc *tl, const char *func,
     unsigned line);
+void vcc_AddToken(struct vcc *tl, unsigned tok, const char *b,
+    const char *e);
+const struct token * vcc__ExpectConst(struct vcc *tl, vcc_type_t fmt,
+    unsigned line);
 
 /* vcc_types.c */
 vcc_type_t VCC_Type(const char *p);
@@ -450,5 +456,6 @@ const char *vcc_MarkPriv(struct vcc *, struct procprivhead *,
     do { vcc__Expect(a, b, __LINE__); ERRCHK(a);} while (0)
 #define SkipToken(a, b) \
     do { vcc__Expect(a, b, __LINE__); ERRCHK(a); vcc_NextToken(a); } while (0)
+#define ExpectConst(a, b) vcc__ExpectConst(a, b, __LINE__)
 
 #define ACL_SYMBOL_PREFIX "vrt_acl_named"

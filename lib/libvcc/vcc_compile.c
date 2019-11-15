@@ -237,8 +237,16 @@ void
 EncToken(struct vsb *sb, const struct token *t)
 {
 
-	assert(t->tok == CSTR);
-	VSB_quote(sb, t->dec, -1, VSB_QUOTE_CSTR);
+	if (t->tok == CSTR) {
+		VSB_quote(sb, t->dec, -1, VSB_QUOTE_CSTR);
+		return;
+	}
+	if (t->tok == CNUM) {
+		VSB_printf(sb, "%.*s", PF(t));
+		return;
+	}
+
+	WRONG("Unsupported token");
 }
 
 /*--------------------------------------------------------------------

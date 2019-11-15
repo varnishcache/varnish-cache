@@ -332,6 +332,50 @@ vcc_ParseVcl(struct vcc *tl)
 }
 
 /*--------------------------------------------------------------------
+ */
+
+static void
+vcc_ParseConst(struct vcc *tl)
+{
+	struct symbol *sym;
+	vcc_type_t fmt;
+
+	assert(vcc_IdIs(tl->t, "const"));
+
+	vcc_NextToken(tl);
+	ExpectErr(tl, ID);
+	fmt = VCC_TypeTok(tl->t);
+	if (fmt == NULL) {
+		VSB_printf(tl->sb, "Unknown type: %.*s.\n", PF(tl->t));
+		vcc_ErrWhere(tl, tl->t);
+		ERRCHK(tl);
+	}
+	if (! fmt->constable) {
+		VSB_printf(tl->sb,
+		    "Type %s cannot be a constant.\n", fmt->name);
+		vcc_ErrWhere(tl, tl->t);
+		ERRCHK(tl);
+	}
+	AN(fmt->constqual);
+
+	vcc_NextToken(tl);
+	ExpectErr(tl, ID);
+	sym = VCC_HandleSymbol(tl, fmt, "vrt_const");
+	ERRCHK(tl);
+	AN(sym);
+
+	SkipToken(tl, '=');
+	ExpectErr(tl, fmt->constable);
+	sym->def_e = tl->t;
+	Fh(tl, 0, "\n%sVCL_%s %s = ", fmt->constqual, fmt->name, sym->rname);
+	EncToken(tl->fh, tl->t);
+	Fh(tl, 0, ";\n");
+
+	vcc_NextToken(tl);
+	SkipToken(tl, ';');
+}
+
+/*--------------------------------------------------------------------
  * Top level of parser, recognize:
  *	Inline C-code
  *	ACL definitions
@@ -356,6 +400,7 @@ static struct toplev {
 	{ "probe",		vcc_ParseProbe,		VCL_41,	VCL_HIGH },
 	{ "import",		vcc_ParseImport,	VCL_41,	VCL_HIGH },
 	{ "vcl",		vcc_ParseVcl,		VCL_41,	VCL_HIGH },
+	{ "const",		vcc_ParseConst,		VCL_41,	VCL_HIGH },
 	{ NULL, NULL }
 };
 
