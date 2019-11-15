@@ -126,8 +126,6 @@ vpx_proto1(const struct worker *wrk, const struct req *req)
 		    "PROXY1: Cannot resolve destination address");
 		return (-1);
 	}
-	SES_Set_String_Attr(req->sp, SA_CLIENT_IP, fld[1]);
-	SES_Set_String_Attr(req->sp, SA_CLIENT_PORT, fld[3]);
 
 	VSL(SLT_Proxy, req->sp->vxid, "1 %s %s %s %s",
 	    fld[1], fld[3], fld[2], fld[4]);
