@@ -307,7 +307,7 @@ void vcc_Backend_Init(struct vcc *tl);
 void vcc_ParseProbe(struct vcc *tl);
 void vcc_ParseBackend(struct vcc *tl);
 struct fld_spec * vcc_FldSpec(struct vcc *tl, const char *first, ...);
-void vcc_IsField(struct vcc *tl, struct token **t, struct fld_spec *fs);
+void vcc_IsField(struct vcc *tl, const struct token **t, struct fld_spec *fs);
 void vcc_FieldsOk(struct vcc *tl, const struct fld_spec *fs);
 
 /* vcc_compile.c */

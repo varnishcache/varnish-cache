@@ -88,7 +88,7 @@ vcc_FldSpec(struct vcc *tl, const char *first, ...)
 }
 
 void
-vcc_IsField(struct vcc *tl, struct token **t, struct fld_spec *fs)
+vcc_IsField(struct vcc *tl, const struct token **t, struct fld_spec *fs)
 {
 	struct token *t_field;
 

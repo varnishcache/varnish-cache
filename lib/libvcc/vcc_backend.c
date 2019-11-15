@@ -131,8 +131,8 @@ Emit_UDS_Path(struct vcc *tl, struct vsb *vsb1,
  */
 
 static void
-vcc_Redef(struct vcc *tl, const char *redef, struct token **t_did,
-    struct token *t_field)
+vcc_Redef(struct vcc *tl, const char *redef, const struct token **t_did,
+    const struct token *t_field)
 {
 	if (*t_did != NULL) {
 		VSB_printf(tl->sb, "%s redefinition at:\n", redef);
@@ -152,8 +152,8 @@ static void
 vcc_ParseProbeSpec(struct vcc *tl, const struct symbol *sym, char **namep)
 {
 	struct fld_spec *fs;
-	struct token *t_field;
-	struct token *t_did = NULL, *t_window = NULL, *t_threshold = NULL;
+	const struct token *t_field;
+	const struct token *t_did = NULL, *t_window = NULL, *t_threshold = NULL;
 	struct token *t_initial = NULL;
 	unsigned window, threshold, initial, status;
 	char buf[32];
@@ -332,14 +332,14 @@ vcc_ParseProbe(struct vcc *tl)
 static void
 vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 {
-	struct token *t_field;
-	struct token *t_val;
-	struct token *t_host = NULL;
-	struct token *t_port = NULL;
-	struct token *t_path = NULL;
-	struct token *t_hosthdr = NULL;
+	const struct token *t_field;
+	const struct token *t_val;
+	const struct token *t_host = NULL;
+	const struct token *t_port = NULL;
+	const struct token *t_path = NULL;
+	const struct token *t_hosthdr = NULL;
+	const struct token *t_did = NULL;
 	struct symbol *pb;
-	struct token *t_did = NULL;
 	struct fld_spec *fs;
 	struct inifin *ifp;
 	struct vsb *vsb1;
