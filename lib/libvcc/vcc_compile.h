@@ -410,6 +410,7 @@ void vcc__ErrInternal(struct vcc *tl, const char *func,
 
 /* vcc_types.c */
 vcc_type_t VCC_Type(const char *p);
+vcc_type_t VCC_TypeTok(const struct token *t);
 const char * VCC_Type_EvalMethod(struct vcc *, const struct symbol *);
 void vcc_Type_Init(struct vcc *tl);
 

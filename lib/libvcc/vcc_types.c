@@ -229,6 +229,19 @@ VCC_Type(const char *p)
 	return (NULL);
 }
 
+vcc_type_t
+VCC_TypeTok(const struct token *t)
+{
+	size_t l;
+
+#define VCC_TYPE(UC, lc)					\
+	l = pdiff(t->b, t->e);					\
+	if (sizeof #UC - 1 == l && !strncasecmp(t->b, #UC, l))	\
+		return (UC);
+#include "vcc_types.h"
+	return (NULL);
+}
+
 static void
 vcc_type_init(struct vcc *tl, vcc_type_t type)
 {
