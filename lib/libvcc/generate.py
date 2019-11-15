@@ -76,7 +76,11 @@ tokens = {
     "CSRC":     None,
     "CBLOB":    None,
 
-    # End of token list
+    # These are sentinels for compound literals lookups
+    "CDUR":     None,
+    "CBYTES":   None,
+
+    # End Of Input
     "EOI":      None,
 }
 

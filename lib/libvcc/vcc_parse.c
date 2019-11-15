@@ -368,9 +368,11 @@ vcc_ParseConst(struct vcc *tl)
 	ExpectErr(tl, fmt->constable);
 	sym->def_e = tl->t;
 	Fh(tl, 0, "\n%sVCL_%s %s = ", fmt->constqual, fmt->name, sym->rname);
-	EncToken(tl->fh, tl->t);
+	EncConstToken(tl, sym);
 	Fh(tl, 0, ";\n");
 
+	if (tl->t->tok != fmt->constable)
+		vcc_NextToken(tl); /* compound literal */
 	vcc_NextToken(tl);
 	SkipToken(tl, ';');
 }

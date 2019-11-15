@@ -249,6 +249,31 @@ EncToken(struct vsb *sb, const struct token *t)
 	WRONG("Unsupported token");
 }
 
+void
+EncConstToken(struct vcc *tl, struct symbol *sym)
+{
+	const struct token *t;
+	double d;
+
+	assert(sym->kind == SYM_CONSTANT);
+	AN(sym->type->constable);
+	t = sym->def_e;
+
+	if (sym->type->constable == CDUR) {
+		AN(tl);
+		vcc_Duration(tl, t, &d);
+		AZ(tl->err);
+		VSB_printf(tl->fh, "%g", d);
+		return;
+	}
+
+	if (sym->type->constable == CBYTES)
+		INCOMPL();
+
+	assert(sym->type->constable == t->tok); /* not a compound literal */
+	EncToken(tl->fh, t);
+}
+
 /*--------------------------------------------------------------------
  * Output the location/profiling table.  For each counted token, we
  * record source+line+charpos for the first character in the token.

@@ -280,8 +280,16 @@ vcc_NextToken(struct vcc *tl)
 void
 vcc__Expect(struct vcc *tl, unsigned tok, unsigned line)
 {
+	double d;
+
 	if (tl->t->tok == tok)
 		return;
+	if (tok == CDUR) {
+		vcc_Duration(tl, tl->t, &d);
+		return;
+	}
+	if (tok == CBYTES)
+		INCOMPL();
 	VSB_printf(tl->sb, "Expected %s got ", vcl_tnames[tok]);
 	vcc_ErrToken(tl, tl->t);
 	VSB_printf(tl->sb, "\n(program line %u), at\n", line);
@@ -312,7 +320,6 @@ vcc__ExpectConst(struct vcc *tl, vcc_type_t fmt, unsigned line)
 	if (sym != NULL) {
 		t = sym->def_e;
 		AN(t);
-		assert(t->tok == fmt->constable);
 		return (t);
 	}
 

@@ -321,9 +321,19 @@ vcc_DoubleVal(struct vcc *tl)
 /*--------------------------------------------------------------------*/
 
 void
-vcc_Duration(struct vcc *tl, double *d)
+vcc_Duration(struct vcc *tl, const struct token *t, double *d)
 {
+	struct token *t0;
 	double v, sc;
+
+	if (t != NULL) {
+		t0 = tl->t;
+		tl->t = TRUST_ME(t);
+		vcc_Duration(tl, NULL, d);
+		ERRCHK(tl);
+		tl->t = t0;
+		return;
+	}
 
 	v = vcc_DoubleVal(tl);
 	ERRCHK(tl);

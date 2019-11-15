@@ -330,6 +330,7 @@ void Fc(const struct vcc *tl, int indent, const char *fmt, ...)
 void Fb(const struct vcc *tl, int indent, const char *fmt, ...)
     v_printflike_(3, 4);
 void EncToken(struct vsb *sb, const struct token *t);
+void EncConstToken(struct vcc *tl, struct symbol *sym);
 void *TlAlloc(struct vcc *tl, unsigned len);
 char *TlDup(struct vcc *tl, const char *s);
 
@@ -364,7 +365,7 @@ void Resolve_Sockaddr(struct vcc *tl, const char *host, const char *defport,
     const struct token *t_err, const char *errid);
 double vcc_DurationUnit(struct vcc *);
 void vcc_ByteVal(struct vcc *, double *);
-void vcc_Duration(struct vcc *tl, double *);
+void vcc_Duration(struct vcc *tl, const struct token *, double *);
 unsigned vcc_UintVal(struct vcc *tl);
 
 /* vcc_storage.c */

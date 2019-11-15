@@ -102,6 +102,8 @@ const struct type DURATION[1] = {{
 	.name =			"DURATION",
 	.tostring =		"VRT_REAL_string(ctx, \v1)", // XXX 's' suff?
 	.multype =		REAL,
+	.constable =		CDUR,
+	.constqual =		"const ",
 }};
 
 const struct type ENUM[1] = {{

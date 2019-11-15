@@ -214,12 +214,12 @@ vcc_ParseProbeSpec(struct vcc *tl, const struct symbol *sym, char **namep)
 			Fh(tl, 0, "\t\t\"\\r\\n\",\n");
 		} else if (vcc_IdIs(t_field, "timeout")) {
 			Fh(tl, 0, "\t.timeout = ");
-			vcc_Duration(tl, &t);
+			vcc_Duration(tl, NULL, &t);
 			ERRCHK(tl);
 			Fh(tl, 0, "%g,\n", t);
 		} else if (vcc_IdIs(t_field, "interval")) {
 			Fh(tl, 0, "\t.interval = ");
-			vcc_Duration(tl, &t);
+			vcc_Duration(tl, NULL, &t);
 			ERRCHK(tl);
 			Fh(tl, 0, "%g,\n", t);
 		} else if (vcc_IdIs(t_field, "window")) {
@@ -439,19 +439,21 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 			SkipToken(tl, ';');
 		} else if (vcc_IdIs(t_field, "connect_timeout")) {
 			Fb(tl, 0, "\t.connect_timeout = ");
-			vcc_Duration(tl, &t);
+			t_field = ExpectConst(tl, DURATION);
 			ERRCHK(tl);
+			AN(t_field);
+			vcc_Duration(tl, t_field, &t);
 			Fb(tl, 0, "%g,\n", t);
 			SkipToken(tl, ';');
 		} else if (vcc_IdIs(t_field, "first_byte_timeout")) {
 			Fb(tl, 0, "\t.first_byte_timeout = ");
-			vcc_Duration(tl, &t);
+			vcc_Duration(tl, NULL, &t);
 			ERRCHK(tl);
 			Fb(tl, 0, "%g,\n", t);
 			SkipToken(tl, ';');
 		} else if (vcc_IdIs(t_field, "between_bytes_timeout")) {
 			Fb(tl, 0, "\t.between_bytes_timeout = ");
-			vcc_Duration(tl, &t);
+			vcc_Duration(tl, NULL, &t);
 			ERRCHK(tl);
 			Fb(tl, 0, "%g,\n", t);
 			SkipToken(tl, ';');
