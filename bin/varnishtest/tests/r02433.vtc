@@ -2,7 +2,7 @@ varnishtest "label a cold vcl"
 
 server s1 { } -start
 
-varnish v1 -cliok "param.set vcl_cooldown 0.1"
+varnish v1 -cliok "param.set vcl_cooldown 1"
 varnish v1 -vcl+backend {
 	import debug; # can fail a VCL warmup
 } -start
