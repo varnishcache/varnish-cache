@@ -1522,7 +1522,7 @@ PARAM(
 PARAM(
 	/* name */	vcl_cooldown,
 	/* typ */	timeout,
-	/* min */	"0.000",
+	/* min */	"1.000",
 	/* max */	NULL,
 	/* default */	"600.000",
 	/* units */	"seconds",
