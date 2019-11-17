@@ -22,7 +22,7 @@ handled.
 varnishadm
 ~~~~~~~~~~
 
-Varnish Cache has an admin console. You can connect it it through the
+Varnish Cache has an admin console. You can connect it through the
 :ref:`varnishadm(1)` command. In order to connect the user needs to be
 able to read `/etc/varnish/secret` in order to authenticate.
 
