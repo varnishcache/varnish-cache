@@ -150,7 +150,7 @@ HTTP service, but a few can do more damage than others:
 	Execute arbitrary programs
 
 :ref:`ref_param_vcc_allow_inline_c`
-        Allow inline C in VCL, which would any C code from VCL to be executed by Varnish.
+        Allow inline C in VCL, which would allow any C code from VCL to be executed by Varnish.
 
 Furthermore you may want to look at and lock down:
 
