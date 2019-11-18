@@ -405,8 +405,7 @@ vcc_Action_Init(struct vcc *tl)
 	ACT(hash_data,	vcc_act_hash_data,
 		VCL_MET_HASH);
 	ACT(if,		vcc_Act_If,	0);
-	ACT(new,	vcc_Act_New,
-		VCL_MET_INIT);
+	ACT(new,	vcc_Act_New,	0);
 	ACT(return,	vcc_act_return,	0);
 	ACT(set,	vcc_act_set,	0);
 	ACT(synthetic,	vcc_act_synthetic,

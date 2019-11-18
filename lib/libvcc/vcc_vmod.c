@@ -378,6 +378,35 @@ vcc_ParseImport(struct vcc *tl)
 	free(fnpx);
 }
 
+static unsigned
+vcc_calc_mask(struct vcc *tl)
+{
+	unsigned met;
+
+	if (!tl->curproc || !tl->curproc->method)
+		return (0);
+
+	met = tl->curproc->method->bitval;
+	if (met & VCL_MET_RECV)
+		/* vcl_recv objects can be used anywhere client side */
+		return (VCL_MET_TASK_C);
+	if (met & VCL_MET_SYNTH || met & VCL_MET_PIPE ||
+	    met & VCL_MET_PURGE || met & VCL_MET_INIT)
+		/* These objects are not shared between subs */
+		return (met);
+	else if (met & VCL_MET_TASK_C)
+		/* All other client states  */
+		return (met | VCL_MET_DELIVER | VCL_MET_SYNTH);
+	if (met & VCL_MET_BACKEND_FETCH)
+		/* v_b_f objects can be used anywhere backend */
+		return (VCL_MET_TASK_B);
+	else if (met & VCL_MET_TASK_B)
+		/* These objects are not shared between backend subs */
+		return (met);
+
+	return (0);
+}
+
 void v_matchproto_(sym_act_f)
 vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 {
@@ -385,8 +414,9 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 	struct inifin *ifp;
 	struct vsb *buf;
 	const struct vjsn_val *vv, *vf;
-	const char *p;
-	int null_ok = 0;
+	const char *p, *s_struct;
+	int null_ok = 0, request_scope = 0;
+	unsigned mask;
 
 	(void)sym;
 	ExpectErr(tl, ID);
@@ -395,7 +425,14 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 	sy1 = VCC_HandleSymbol(tl, INSTANCE, "vo");
 	ERRCHK(tl);
 	AN(sy1);
+	mask = vcc_calc_mask(tl);
+	if (!mask) {
+		VSB_printf(tl->sb, "Object cannot be declared at ");
+		vcc_ErrWhere(tl, t);
+		return;
+	}
 	sy1->noref = 1;
+	sy1->r_methods = mask;
 
 	ExpectErr(tl, '=');
 	vcc_NextToken(tl);
@@ -419,14 +456,26 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 	vv = VTAILQ_NEXT(vv, list);
 	// vv = flags
 	assert(vv->type == VJSN_OBJECT);
-	VTAILQ_FOREACH(vf, &vv->children, list)
+	VTAILQ_FOREACH(vf, &vv->children, list) {
 		if (!strcmp(vf->name, "NULL_OK") && vf->type == VJSN_TRUE)
 			null_ok = 1;
-	if (!null_ok)
-		VTAILQ_INSERT_TAIL(&tl->sym_objects, sy1, sideways);
+		else if (!strcmp(vf->name, "REQUEST_SCOPE") &&
+		    vf->type == VJSN_TRUE)
+			request_scope = 1;
+	}
+	if (!request_scope) {
+		if (mask != VCL_MET_INIT) {
+			VSB_printf(tl->sb, "Object cannot be declared at ");
+			vcc_ErrWhere(tl, t);
+			return;
+		}
+		mask = 0;
+		if (!null_ok)
+			VTAILQ_INSERT_TAIL(&tl->sym_objects, sy1, sideways);
+	}
 
 	vv = VTAILQ_NEXT(vv, list);
-	// vv = struct name
+	s_struct = vv->value;
 
 	Fh(tl, 0, "static %s *%s;\n\n", vv->value, sy1->rname);
 	vv = VTAILQ_NEXT(vv, list);
@@ -440,7 +489,12 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 
 	buf = VSB_new_auto();
 	AN(buf);
-	VSB_printf(buf, ", &%s, \"%s\"", sy1->rname, sy1->name);
+	if (request_scope)
+		VSB_printf(buf, ", (%s**)\n  "
+		    "VRT_priv_task_object(ctx, &%s, &vo_free_%s),\n  \"%s\"",
+		    s_struct, sy1->rname, sy1->name, sy1->name);
+	else
+		VSB_printf(buf, ", &%s, \"%s\"", sy1->rname, sy1->name);
 	AZ(VSB_finish(buf));
 	vcc_Eval_Func(tl, vf, VSB_data(buf), sy2);
 	VSB_destroy(&buf);
@@ -457,13 +511,25 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 	vf = VTAILQ_FIRST(&vf->children);
 	vf = VTAILQ_NEXT(vf, list);
 	ifp = New_IniFin(tl);
-	VSB_printf(ifp->fin, "\t\tif (%s)\n", sy1->rname);
-	VSB_printf(ifp->fin, "\t\t\t\t%s(&%s);", vf->value, sy1->rname);
+	if (request_scope) {
+		Fh(tl, 0, "void vo_free_%s(void *);\n\n", sy1->name);
+		Fc(tl, 0, "\nvoid vo_free_%s(void *priv) {\n", sy1->name);
+		Fc(tl, 0, "  %s((%s**)&priv);\n", vf->value, s_struct);
+		Fc(tl, 0, "}\n");
+	} else {
+		VSB_printf(ifp->fin, "\t\tif (%s)\n", sy1->rname);
+		VSB_printf(ifp->fin, "\t\t\t\t%s(&%s);", vf->value, sy1->rname);
+	}
 
 	/* Instantiate symbols for the methods */
 	buf = VSB_new_auto();
 	AN(buf);
-	VSB_printf(buf, ", %s", sy1->rname);
+	if (request_scope)
+		VSB_printf(buf, ", (%s*)\n  "
+		    "((VRT_priv_task(ctx, &%s))->priv)",
+		    s_struct, sy1->rname);
+	else
+		VSB_printf(buf, ", %s", sy1->rname);
 	AZ(VSB_finish(buf));
 	p = TlDup(tl, VSB_data(buf));
 	while (vv != NULL) {
@@ -480,6 +546,7 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 		AN(sy3);
 		func_sym(sy3, sy2->vmod_name, VTAILQ_NEXT(vf, list));
 		sy3->extra = p;
+		sy3->r_methods = mask;
 		vv = VTAILQ_NEXT(vv, list);
 	}
 	VSB_destroy(&buf);

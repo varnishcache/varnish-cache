@@ -528,6 +528,7 @@ class Stanza(object):
         self.vcc = vcc
         self.rstlbl = None
         self.null_ok = False
+        self.request_scope = False
         self.methods = None
         self.proto = None
         self.parse()
@@ -734,9 +735,17 @@ class ObjectStanza(Stanza):
     ''' $Object TYPE class ( ARGUMENTS ) '''
 
     def parse(self):
-        if self.toks[1] == "NULL_OK":
-            self.toks.pop(1)
-            self.null_ok = True
+        while True:
+            if self.toks[1] == "NULL_OK":
+                self.toks.pop(1)
+                self.null_ok = True
+                continue
+            elif self.toks[1] == "REQUEST_SCOPE":
+                self.toks.pop(1)
+                self.request_scope = True
+                continue
+            else:
+                break
         self.proto = ProtoType(self, retval=False)
         self.proto.obj = "x" + self.proto.name
 
@@ -797,7 +806,8 @@ class ObjectStanza(Stanza):
         ll = [
             "$OBJ",
             self.proto.name,
-            {"NULL_OK": self.null_ok},
+            {"NULL_OK": self.null_ok,
+            "REQUEST_SCOPE": self.request_scope},
             "struct %s%s_%s" %
             (self.vcc.sympfx, self.vcc.modname, self.proto.name),
         ]

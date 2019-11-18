@@ -645,6 +645,8 @@ vcc_Eval_SymFunc(struct vcc *tl, struct expr **e, struct token *t,
 	(void)fmt;
 	assert(sym->kind == SYM_FUNC);
 	AN(sym->eval_priv);
+	if(sym->r_methods)
+		vcc_AddUses(tl, t, tl->t, sym->r_methods, "Not available");
 
 	vcc_func(tl, e, sym->eval_priv, sym->extra, sym);
 	ERRCHK(tl);
@@ -1409,6 +1411,8 @@ vcc_Act_Call(struct vcc *tl, struct token *t, struct symbol *sym)
 	struct expr *e;
 
 	e = NULL;
+	if(sym->r_methods)
+		vcc_AddUses(tl, t, tl->t, sym->r_methods, "Not available");
 	vcc_func(tl, &e, sym->eval_priv, sym->extra, sym);
 	if (!tl->err) {
 		vcc_expr_fmt(tl->fb, tl->indent, e);
