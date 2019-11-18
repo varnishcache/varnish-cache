@@ -32,6 +32,7 @@
  */
 
 struct vfilter;
+struct vcltemp;;
 
 VTAILQ_HEAD(vfilter_head, vfilter);
 
@@ -46,7 +47,7 @@ struct vcl {
 	char			*loaded_name;
 	unsigned		busy;
 	unsigned		discard;
-	const char		*temp;
+	const struct vcltemp	*temp;
 	VTAILQ_HEAD(,vcldir)	director_list;
 	VTAILQ_HEAD(,vclref)	ref_list;
 	int			nrefs;
@@ -69,15 +70,18 @@ extern struct vcl		*vcl_active; /* protected by vcl_mtx */
 struct vcl *vcl_find(const char *);
 void vcl_get(struct vcl **, struct vcl *);
 
-extern const char * const VCL_TEMP_INIT;
-extern const char * const VCL_TEMP_COLD;
-extern const char * const VCL_TEMP_WARM;
-extern const char * const VCL_TEMP_BUSY;
-extern const char * const VCL_TEMP_COOLING;
+struct vcltemp {
+	const char * const	name;
+	unsigned		is_warm;
+	unsigned		is_cold;
+};
 
 /*
  * NB: The COOLING temperature is neither COLD nor WARM.
  * And LABEL is not a temperature, it's a different kind of VCL.
  */
-#define VCL_WARM(t) ((t) == VCL_TEMP_WARM || (t) == VCL_TEMP_BUSY)
-#define VCL_COLD(t) ((t) == VCL_TEMP_INIT || (t) == VCL_TEMP_COLD)
+extern const struct vcltemp VCL_TEMP_INIT[1];
+extern const struct vcltemp VCL_TEMP_COLD[1];
+extern const struct vcltemp VCL_TEMP_WARM[1];
+extern const struct vcltemp VCL_TEMP_BUSY[1];
+extern const struct vcltemp VCL_TEMP_COOLING[1];

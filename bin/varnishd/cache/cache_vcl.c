@@ -45,14 +45,14 @@
 #include "vcli_serve.h"
 #include "vtim.h"
 
-const char * const VCL_TEMP_INIT = "init";
-const char * const VCL_TEMP_COLD = "cold";
-const char * const VCL_TEMP_WARM = "warm";
-const char * const VCL_TEMP_BUSY = "busy";
-const char * const VCL_TEMP_COOLING = "cooling";
+const struct vcltemp VCL_TEMP_INIT[1] = {{ .name = "init", .is_cold = 1 }};
+const struct vcltemp VCL_TEMP_COLD[1] = {{ .name = "cold", .is_cold = 1 }};
+const struct vcltemp VCL_TEMP_WARM[1] = {{ .name = "warm", .is_warm = 1 }};
+const struct vcltemp VCL_TEMP_BUSY[1] = {{ .name = "busy", .is_warm = 1 }};
+const struct vcltemp VCL_TEMP_COOLING[1] = {{ .name = "cooling" }};
 
 // not really a state
-static const char * const VCL_TEMP_LABEL = "label";
+const struct vcltemp VCL_TEMP_LABEL[1] = {{ .name = "label" }};
 
 /*
  * XXX: Presently all modifications to this list happen from the
@@ -254,17 +254,17 @@ vcl_get(struct vcl **vcc, struct vcl *vcl)
 				   * race */
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	if (vcl->label == NULL) {
-		AN(strcmp(vcl->state, VCL_TEMP_LABEL));
+		AN(strcmp(vcl->state, VCL_TEMP_LABEL->name));
 		*vcc = vcl;
 	} else {
-		AZ(strcmp(vcl->state, VCL_TEMP_LABEL));
+		AZ(strcmp(vcl->state, VCL_TEMP_LABEL->name));
 		*vcc = vcl->label;
 	}
 	CHECK_OBJ_NOTNULL(*vcc, VCL_MAGIC);
 	AZ((*vcc)->discard);
 	(*vcc)->busy++;
 	Lck_Unlock(&vcl_mtx);
-	assert(VCL_WARM((*vcc)->temp));
+	assert((*vcc)->temp->is_warm);
 }
 
 /*--------------------------------------------------------------------*/
@@ -498,7 +498,7 @@ vcl_set_state(VRT_CTX, const char *state)
 	case '0':
 		if (vcl->temp == VCL_TEMP_COLD)
 			break;
-		if (vcl->busy == 0 && VCL_WARM(vcl->temp)) {
+		if (vcl->busy == 0 && vcl->temp->is_warm) {
 			vcl->temp = VTAILQ_EMPTY(&vcl->ref_list) ?
 			    VCL_TEMP_COLD : VCL_TEMP_COOLING;
 			AZ(vcl_send_event(ctx, VCL_EVENT_COLD));
@@ -682,8 +682,8 @@ vcl_cli_list(struct cli *cli, const char * const *av, void *priv)
 			flg = "discarded";
 		} else
 			flg = "available";
-		VSB_printf(vsb, "%s\t%s\t%s\t%6u\t%s",
-		    flg, vcl->state, vcl->temp, vcl->busy, vcl->loaded_name);
+		VSB_printf(vsb, "%s\t%s\t%s\t%6u\t%s", flg, vcl->state,
+		    vcl->temp->name, vcl->busy, vcl->loaded_name);
 		if (vcl->label != NULL) {
 			VSB_printf(vsb, "\t->\t%s", vcl->label->loaded_name);
 			if (vcl->nrefs)
@@ -718,7 +718,7 @@ vcl_cli_list_json(struct cli *cli, const char * const *av, void *priv)
 		} else
 			VCLI_Out(cli, "\"available\",\n");
 		VCLI_Out(cli, "\"state\": \"%s\",\n", vcl->state);
-		VCLI_Out(cli, "\"temperature\": \"%s\",\n", vcl->temp);
+		VCLI_Out(cli, "\"temperature\": \"%s\",\n", vcl->temp->name);
 		VCLI_Out(cli, "\"busy\": %u,\n", vcl->busy);
 		VCLI_Out(cli, "\"name\": \"%s\"", vcl->loaded_name);
 		if (vcl->label != NULL) {
@@ -796,13 +796,13 @@ vcl_cli_discard(struct cli *cli, const char * const *av, void *priv)
 	VSC_C_main->n_vcl_avail--;
 	vcl->discard = 1;
 	if (vcl->label != NULL) {
-		AZ(strcmp(vcl->state, VCL_TEMP_LABEL));
+		AZ(strcmp(vcl->state, VCL_TEMP_LABEL->name));
 		vcl->label->nlabels--;
 		vcl->label= NULL;
 	}
 	Lck_Unlock(&vcl_mtx);
 
-	if (!strcmp(vcl->state, VCL_TEMP_LABEL)) {
+	if (!strcmp(vcl->state, VCL_TEMP_LABEL->name)) {
 		VTAILQ_REMOVE(&vcl_head, vcl, list);
 		free(vcl->loaded_name);
 		FREE_OBJ(vcl);
@@ -826,7 +826,7 @@ vcl_cli_label(struct cli *cli, const char * const *av, void *priv)
 	if (lbl == NULL) {
 		ALLOC_OBJ(lbl, VCL_MAGIC);
 		AN(lbl);
-		bprintf(lbl->state, "%s", VCL_TEMP_LABEL);
+		bprintf(lbl->state, "%s", VCL_TEMP_LABEL->name);
 		lbl->temp = VCL_TEMP_WARM;
 		REPLACE(lbl->loaded_name, av[2]);
 		VTAILQ_INSERT_TAIL(&vcl_head, lbl, list);

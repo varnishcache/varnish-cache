@@ -113,7 +113,7 @@ VCL_Ref(struct vcl *vcl)
 {
 
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
-	assert(!VCL_COLD(vcl->temp));
+	assert(!vcl->temp->is_cold);
 	Lck_Lock(&vcl_mtx);
 	assert(vcl->busy > 0);
 	vcl->busy++;
@@ -150,7 +150,7 @@ VRT_AddDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
 	struct vcl *vcl;
 	struct vcldir *vdir;
 	struct director *d;
-	const char *temp;
+	const struct vcltemp *temp;
 	va_list ap;
 	int i;
 
@@ -193,7 +193,7 @@ VRT_AddDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
 	temp = vcl->temp;
 	if (temp != VCL_TEMP_COOLING)
 		VTAILQ_INSERT_TAIL(&vcl->director_list, vdir, list);
-	if (VCL_WARM(temp))
+	if (temp->is_warm)
 		VDI_Event(d, VCL_EVENT_WARM);
 	Lck_Unlock(&vcl_mtx);
 
@@ -201,7 +201,7 @@ VRT_AddDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
 		deldirector(vdir);
 		return (NULL);
 	}
-	if (!VCL_WARM(temp) && temp != VCL_TEMP_INIT)
+	if (!temp->is_warm && temp != VCL_TEMP_INIT)
 		WRONG("Dynamic Backends can only be added to warm VCLs");
 
 	return (d);
@@ -222,7 +222,7 @@ VRT_DelDirector(VCL_BACKEND *bp)
 {
 	struct vcl *vcl;
 	struct vcldir *vdir;
-	const char *temp;
+	const struct vcltemp *temp;
 	VCL_BACKEND d;
 
 	TAKE_OBJ_NOTNULL(d, bp, DIRECTOR_MAGIC);
@@ -236,7 +236,7 @@ VRT_DelDirector(VCL_BACKEND *bp)
 	VTAILQ_REMOVE(&vcl->director_list, vdir, list);
 	Lck_Unlock(&vcl_mtx);
 
-	if (VCL_WARM(temp))
+	if (temp->is_warm)
 		VDI_Event(d, VCL_EVENT_COLD);
 	assert (d == vdir->dir);
 	deldirector(vdir);
@@ -374,7 +374,7 @@ VRT_VCL_Prevent_Discard(VRT_CTX, const char *desc)
 
 	vcl = ctx->vcl;
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
-	assert(VCL_WARM(vcl->temp));
+	assert(vcl->temp->is_warm);
 
 	ALLOC_OBJ(ref, VCLREF_MAGIC);
 	AN(ref);
