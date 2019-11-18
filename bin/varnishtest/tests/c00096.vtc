@@ -42,10 +42,11 @@ varnish v1 -vcl+backend {
 	}
 } -start
 
-# XXX: there is a bug in the pool_herder logic that could
-# lead to over-breeding of threads resulting in more than
-# 10 threads. This is currently mitigated by increasing the
+# XXX: to minimize the amount of synchronization in the pool_herder
+# logic, it may over-breed threads, resulting in more than 10
+# threads. This is currently mitigated by increasing the
 # thread_pool_add_delay parameter.
+
 varnish v1 -expect MAIN.threads == 10
 
 client c1 {
