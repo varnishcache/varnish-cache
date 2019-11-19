@@ -188,9 +188,9 @@ struct strands {
 /*
  * VCL_BLOB:
  *
- * opaque, immutable data (pointer + length), minimum lifetime is the VCL task.
+ * Opaque, immutable data (pointer + length), minimum lifetime is the VCL task.
  *
- * type (optional) is owned by the creator of the blob. blob consumers may use
+ * Type (optional) is owned by the creator of the blob. blob consumers may use
  * it for checks, but should not assert on it.
  *
  * The data behind the blob pointer is assumed to be immutable for the blob's
