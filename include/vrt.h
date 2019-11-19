@@ -180,6 +180,22 @@ struct vsl_log;
 struct ws;
 struct VSC_main;
 
+/*
+ * VCL_STRANDS:
+ *
+ * An argc+argv type of data structure where n indicates the number of strings
+ * in the p array. Individual components of a strands may be null.
+ *
+ * A STRANDS allows you to work on a strings concatenation with the option to
+ * collect it into a single STRING, or if possible work directly on individual
+ * parts.
+ *
+ * The memory management is very strict: a VMOD function receiving a STRANDS
+ * argument should keep no reference after the function returns. Retention of
+ * a STRANDS further in the ongoing task is undefined behavior and may result
+ * in a panic or data corruption.
+ */
+
 struct strands {
 	int		n;
 	const char	**p;
