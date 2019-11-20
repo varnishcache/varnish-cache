@@ -31,6 +31,7 @@
 struct vclprog;
 struct vmodfile;
 struct vjsn_val;
+struct vclstate;
 
 struct vmoddep {
 	unsigned		magic;
@@ -57,7 +58,7 @@ struct vclprog {
 	char			*name;
 	char			*fname;
 	unsigned		warm;
-	const char *		state;
+	const struct vclstate	*state;
 	double			go_cold;
 	struct vjsn		*symtab;
 	VTAILQ_HEAD(, vcldep)	dfrom;

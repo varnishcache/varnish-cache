@@ -45,11 +45,15 @@
 #include "vev.h"
 #include "vtim.h"
 
-#define VCL_STATE(sym, str)					\
-	static const char * const VCL_STATE_ ## sym = str;
+struct vclstate {
+	const char		*name;
+};
+
+#define VCL_STATE(sym, str)						\
+	static const struct vclstate VCL_STATE_ ## sym[1] = {{ str }};
 #include "tbl/vcl_states.h"
 
-static const char * const VCL_STATE_LABEL = "label";
+static const struct vclstate VCL_STATE_LABEL[1] = {{ "label" }};
 
 static int vcl_count;
 
@@ -58,19 +62,20 @@ struct vmodfilehead vmodhead = VTAILQ_HEAD_INITIALIZER(vmodhead);
 static struct vclprog		*active_vcl;
 static struct vev *e_poker;
 
-static int mgt_vcl_setstate(struct cli *, struct vclprog *, const char *);
+static int mgt_vcl_setstate(struct cli *, struct vclprog *,
+    const struct vclstate *);
 static int mgt_vcl_settemp(struct cli *, struct vclprog *, unsigned);
 static int mgt_vcl_askchild(struct cli *, struct vclprog *, unsigned);
 static void mgt_vcl_set_cooldown(struct vclprog *, vtim_mono);
 
 /*--------------------------------------------------------------------*/
 
-static const char *
+static const struct vclstate *
 mcf_vcl_parse_state(struct cli *cli, const char *s)
 {
 	if (s != NULL) {
-#define VCL_STATE(sym, str)						\
-		if (!strcmp(s, VCL_STATE_ ## sym))			\
+#define VCL_STATE(sym, str)				\
+		if (!strcmp(s, str))			\
 			return (VCL_STATE_ ## sym);
 #include "tbl/vcl_states.h"
 	}
@@ -188,7 +193,7 @@ mgt_vcl_dep_del(struct vcldep *vd)
 /*--------------------------------------------------------------------*/
 
 static struct vclprog *
-mgt_vcl_add(const char *name, const char *state)
+mgt_vcl_add(const char *name, const struct vclstate *state)
 {
 	struct vclprog *vp;
 
@@ -347,7 +352,7 @@ mgt_vcl_askchild(struct cli *cli, struct vclprog *vp, unsigned warm)
 	}
 
 	i = mgt_cli_askchild(&status, &p, "vcl.state %s %d%s\n",
-	    vp->name, warm, vp->state);
+	    vp->name, warm, vp->state->name);
 	if (i && cli != NULL) {
 		VCLI_SetResult(cli, status);
 		VCLI_Out(cli, "%s", p);
@@ -355,7 +360,7 @@ mgt_vcl_askchild(struct cli *cli, struct vclprog *vp, unsigned warm)
 		MGT_Complain(C_ERR,
 		    "Please file ticket: VCL poker problem: "
 		    "'vcl.state %s %d%s' -> %03d '%s'",
-		    vp->name, warm, vp->state, i, p);
+		    vp->name, warm, vp->state->name, i, p);
 	} else {
 		/* Success, update mgt's VCL state to reflect child's
 		   state */
@@ -367,11 +372,11 @@ mgt_vcl_askchild(struct cli *cli, struct vclprog *vp, unsigned warm)
 }
 
 static int
-mgt_vcl_setstate(struct cli *cli, struct vclprog *vp, const char *vs)
+mgt_vcl_setstate(struct cli *cli, struct vclprog *vp, const struct vclstate *vs)
 {
 	unsigned warm;
 	int i;
-	const char *os;
+	const struct vclstate *os;
 
 	CHECK_OBJ_NOTNULL(vp, VCLPROG_MAGIC);
 
@@ -416,6 +421,7 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 	unsigned status;
 	char *lib, *p;
 	struct vclprog *vp;
+	const struct vclstate *vs;
 	char buf[32];
 
 	AN(cli);
@@ -432,14 +438,14 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 	}
 
 	if (state == NULL)
-		state = VCL_STATE_AUTO;
+		vs = VCL_STATE_AUTO;
 	else
-		state = mcf_vcl_parse_state(cli, state);
+		vs = mcf_vcl_parse_state(cli, state);
 
-	if (state == NULL)
+	if (vs == NULL)
 		return;
 
-	vp = mgt_vcl_add(vclname, state);
+	vp = mgt_vcl_add(vclname, vs);
 	lib = mgt_VccCompile(cli, vp, vclname, vclsrc, vclsrcfile, C_flag);
 	if (lib == NULL) {
 		mgt_vcl_del(vp);
@@ -464,7 +470,7 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 		return;
 
 	if (mgt_cli_askchild(&status, &p, "vcl.load %s %s %d%s\n",
-	    vp->name, vp->fname, vp->warm, vp->state)) {
+	    vp->name, vp->fname, vp->warm, vp->state->name)) {
 		mgt_vcl_del(vp);
 		VCLI_Out(cli, "%s", p);
 		VCLI_SetResult(cli, status);
@@ -534,7 +540,8 @@ mgt_push_vcls(struct cli *cli, unsigned *status, char **p)
 			} else {
 				if (mgt_cli_askchild(status, p,
 				    "vcl.load \"%s\" %s %d%s\n",
-				    vp->name, vp->fname, vp->warm, vp->state))
+				    vp->name, vp->fname, vp->warm,
+				    vp->state->name))
 					return (1);
 			}
 			vp->loaded = 1;
@@ -579,7 +586,7 @@ mcf_vcl_load(struct cli *cli, const char * const *av, void *priv)
 static void v_matchproto_(cli_func_t)
 mcf_vcl_state(struct cli *cli, const char * const *av, void *priv)
 {
-	const char *state;
+	const struct vclstate *state;
 	struct vclprog *vp;
 
 	(void)priv;
@@ -707,6 +714,7 @@ mcf_vcl_list(struct cli *cli, const char * const *av, void *priv)
 	char *p;
 	struct vclprog *vp;
 	struct vcldep *vd;
+	const struct vclstate *vs;
 	struct vsb *vsb;
 
 	/* NB: Shall generate same output as vcl_cli_list() */
@@ -727,8 +735,8 @@ mcf_vcl_list(struct cli *cli, const char * const *av, void *priv)
 		VTAILQ_FOREACH(vp, &vclhead, list) {
 			VSB_printf(vsb, "%s",
 			    vp == active_vcl ? "active" : "available");
-			VSB_printf(vsb, "\t%s\t%s", vp->state, vp->warm ?
-			    VCL_STATE_WARM : VCL_STATE_COLD);
+			vs = vp->warm ?  VCL_STATE_WARM : VCL_STATE_COLD;
+			VSB_printf(vsb, "\t%s\t%s", vp->state->name, vs->name);
 			VSB_printf(vsb, "\t%6s\t%s", "-", vp->name);
 			if (mcf_is_label(vp)) {
 				vd = VTAILQ_FIRST(&vp->dfrom);
@@ -754,6 +762,7 @@ mcf_vcl_list_json(struct cli *cli, const char * const *av, void *priv)
 	char *p;
 	struct vclprog *vp;
 	struct vcldep *vd;
+	const struct vclstate *vs;
 
 	/* NB: Shall generate same output as vcl_cli_list() */
 
@@ -772,9 +781,9 @@ mcf_vcl_list_json(struct cli *cli, const char * const *av, void *priv)
 			VSB_indent(cli->sb, 2);
 			VCLI_Out(cli, "\"status\": \"%s\",\n",
 			    vp == active_vcl ? "active" : "available");
-			VCLI_Out(cli, "\"state\": \"%s\",\n", vp->state);
-			VCLI_Out(cli, "\"temperature\": \"%s\",\n",
-			    vp->warm ? VCL_STATE_WARM : VCL_STATE_COLD);
+			VCLI_Out(cli, "\"state\": \"%s\",\n", vp->state->name);
+			vs = vp->warm ?  VCL_STATE_WARM : VCL_STATE_COLD;
+			VCLI_Out(cli, "\"temperature\": \"%s\",\n", vs->name);
 			VCLI_Out(cli, "\"name\": \"%s\"", vp->name);
 			if (mcf_is_label(vp)) {
 				vd = VTAILQ_FIRST(&vp->dfrom);

@@ -51,7 +51,7 @@ const struct vcltemp VCL_TEMP_WARM[1] = {{ .name = "warm", .is_warm = 1 }};
 const struct vcltemp VCL_TEMP_BUSY[1] = {{ .name = "busy", .is_warm = 1 }};
 const struct vcltemp VCL_TEMP_COOLING[1] = {{ .name = "cooling" }};
 
-// not really a state
+// not really a temperature
 const struct vcltemp VCL_TEMP_LABEL[1] = {{ .name = "label" }};
 
 /*
