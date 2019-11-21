@@ -1,0 +1,61 @@
+varnishtest "Ensure we don't override Content-Encoding on a cond fetch"
+
+server s1 {
+    rxreq
+    txresp -hdr {ETag: "foo"} -body {****}
+
+    rxreq
+    expect req.http.If-None-Match == {"foo"}
+    txresp -status 304 -hdr {ETag: W/"foo"} -hdr "Content-Encoding: gzip"
+
+    rxreq
+    expect req.url == "/1"
+    txresp -hdr {Etag: "bar"} -gzipbody {asdf}
+
+    rxreq
+    expect req.url == "/1"
+    expect req.http.If-None-Match == {"bar"}
+    txresp -status 304
+
+} -start
+
+varnish v1 -vcl+backend {
+    sub vcl_backend_response {
+        set beresp.ttl = 1s;
+        set beresp.grace = 0s;
+        set beresp.keep = 1d;
+    }
+} -start
+
+client c1 {
+    txreq -hdr "Accept-Encoding: gzip"
+    rxresp
+    expect resp.status == 200
+    expect resp.http.ETag == {"foo"}
+    expect resp.http.Content-Length == "4"
+    expect resp.http.Content-Encoding == <undef>
+
+    delay 1.5
+
+    txreq -hdr "Accept-Encoding: gzip"
+    rxresp
+    expect resp.status == 200
+    expect resp.http.ETag == {W/"foo"}
+    expect resp.http.Content-Length == "4"
+    expect resp.http.Content-Encoding == <undef>
+
+    # Also check that we're still OK in the general case
+    txreq -url "/1" -hdr "Accept-Encoding: gzip"
+    rxresp
+    expect resp.status == 200
+    expect resp.http.ETag == {"bar"}
+    expect resp.http.Content-Encoding == "gzip"
+
+    delay 1.5
+
+    txreq -url "/1" -hdr "Accept-Encoding: gzip"
+    rxresp
+    expect resp.status == 200
+    expect resp.http.ETag == {"bar"}
+    expect resp.http.Content-Encoding == "gzip"
+} -run
