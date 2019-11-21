@@ -267,9 +267,9 @@ vbf_304_logic(struct busyobj *bo)
 			 * the IMS fetch, and we must weaken any
 			 * new ETag we get.
 			 */
-			http_Unset(bo->beresp, H_Content_Encoding);
 			RFC2616_Weaken_Etag(bo->beresp);
 		}
+		http_Unset(bo->beresp, H_Content_Encoding);
 		http_Unset(bo->beresp, H_Content_Length);
 		HTTP_Merge(bo->wrk, bo->stale_oc, bo->beresp);
 		assert(http_IsStatus(bo->beresp, 200));
