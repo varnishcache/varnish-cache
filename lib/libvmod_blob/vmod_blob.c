@@ -300,7 +300,7 @@ VCL_VOID v_matchproto_(td_blob_blob__fini)
 vmod_blob__fini(struct vmod_blob_blob **blobp)
 {
 	struct vmod_blob_blob *b;
-	blob_dest_t s;
+	char *s;
 	int i, j;
 
 	TAKE_OBJ_NOTNULL(b, blobp, VMOD_BLOB_MAGIC);
