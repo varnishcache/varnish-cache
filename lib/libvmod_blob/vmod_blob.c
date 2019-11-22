@@ -59,10 +59,10 @@ static const struct vmod_blob_fptr {
 	encode_f	*const encode;
 } func[__MAX_ENCODING] = {
 	[IDENTITY] = {
-		.decode_l	= id_decode_l,
-		.decode		= id_decode,
-		.encode_l	= id_encode_l,
-		.encode		= id_encode
+		.decode_l	= old_id_decode_l,
+		.decode		= old_id_decode,
+		.encode_l	= old_id_encode_l,
+		.encode		= old_id_encode
 	},
 	[BASE64] = {
 		B64_FUNCS,

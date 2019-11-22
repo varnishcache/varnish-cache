@@ -38,67 +38,113 @@
 
 #include "vmod_blob.h"
 
-size_t
-id_encode_l(size_t l)
+static size_t
+id_encode_len(size_t l)
 {
 	return (l + 1);
 }
 
-size_t
-id_decode_l(size_t l)
+static size_t
+id_decode_len(size_t l)
 {
 	return (l);
 }
 
-ssize_t
-id_encode(const enum encoding enc, const enum case_e kase,
-    blob_dest_t buf, blob_len_t buflen,
-    blob_src_t in, blob_len_t inlen)
+static ssize_t
+id_encode(BLOB_CODEC, enum case_e kase, blob_dest_t dest, size_t destlen,
+    blob_src_t src, size_t srclen)
 {
-	(void) enc;
-	(void) kase;
-	AN(buf);
 
-	if (buflen < inlen + 1)
+	CHECK_BLOB_CODEC(codec, IDENTITY);
+	(void)kase;
+	AN(dest);
+
+	if (destlen < srclen + 1)
 		return (-1);
-	if (in == NULL || inlen == 0)
+	if (src == NULL || srclen == 0)
 		return (0);
 
-	memcpy(buf, in, inlen);
-	return (inlen);
+	memcpy(dest, src, srclen);
+	return (srclen);
 }
 
-ssize_t
-id_decode(const enum encoding enc, blob_dest_t buf,
-    blob_len_t buflen, ssize_t n, VCL_STRANDS strings)
+static ssize_t
+id_decode(BLOB_CODEC, blob_dest_t dest, size_t destlen, ssize_t slen,
+    VCL_STRANDS strings)
 {
+	size_t len, outlen = 0, maxlen = SIZE_MAX;
 	const char *s;
-	char *dest = buf;
-	size_t len, outlen = 0, c = SIZE_MAX;
 	int i;
 
-	(void)enc;
-	AN(buf);
+	CHECK_BLOB_CODEC(codec, IDENTITY);
+	AN(dest);
 	AN(strings);
 
-	if (n >= 0)
-		c = n;
+	if (slen >= 0)
+		maxlen = (size_t)slen;
 
-	for (i = 0; c > 0 && i < strings->n; i++) {
+	for (i = 0; maxlen > 0 && i < strings->n; i++) {
 		s = strings->p[i];
 		if (s == NULL || *s == '\0')
 			continue;
 		len = strlen(s);
-		if (len > c)
-			len = c;
-		c -= len;
-		if ((outlen += len) > buflen) {
+		if (len > maxlen)
+			len = maxlen;
+		if (len > destlen) {
 			errno = ENOMEM;
 			return (-1);
 		}
 		memcpy(dest, s, len);
 		dest += len;
+		destlen -= len;
+		maxlen -= len;
+		outlen += len;
 	}
 
+	assert(outlen <= (size_t)slen);
 	return (outlen);
+}
+
+const struct blob_codec blob_codec_id = {
+	.decode_len	= id_decode_len,
+	.decode		= id_decode,
+	.encode_len	= id_encode_len,
+	.encode		= id_encode,
+	.name		= &VENUM(IDENTITY),
+	.case_sensitive = 1
+};
+
+/*---------------------------------------------------------------------
+ * The deprecated codec interface.
+ */
+
+size_t
+old_id_encode_l(size_t l)
+{
+	return (l + 1);
+}
+
+size_t
+old_id_decode_l(size_t l)
+{
+	return (l);
+}
+
+ssize_t
+old_id_encode(const enum encoding enc, const enum case_e kase,
+    blob_dest_t buf, blob_len_t buflen,
+    blob_src_t in, blob_len_t inlen)
+{
+
+	(void)enc;
+	return (id_encode(&blob_codec_id, kase, buf, buflen, in, inlen));
+}
+
+ssize_t
+old_id_decode(const enum encoding enc, blob_dest_t buf,
+    blob_len_t buflen, ssize_t n, VCL_STRANDS strings)
+{
+
+	(void)enc;
+	return (id_decode(&blob_codec_id, buf, buflen, n, strings));
 }

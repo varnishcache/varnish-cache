@@ -77,6 +77,9 @@ struct blob_codec {
 	unsigned	case_sensitive;
 };
 
+/* id.c */
+extern const struct blob_codec blob_codec_id;
+
 /*---------------------------------------------------------------------
  * The deprecated codec interface.
  */
@@ -154,10 +157,10 @@ typedef ssize_t decode_f(const enum encoding dec, blob_dest_t buf,
     blob_len_t buflen, blob_slen_t inlen, VCL_STRANDS strings);
 
 /* id.c */
-len_f		id_encode_l;
-len_f		id_decode_l;
-encode_f	id_encode;
-decode_f	id_decode;
+len_f		old_id_encode_l;
+len_f		old_id_decode_l;
+encode_f	old_id_encode;
+decode_f	old_id_decode;
 
 /* base64.c */
 len_f		base64_decode_l;
