@@ -49,6 +49,11 @@ enum case_e {
 #include "tbl_case.h"
 };
 
+typedef const size_t			blob_len_t;
+typedef const ssize_t			blob_slen_t;
+typedef char *restrict const		blob_dest_t;
+typedef const char *restrict const	blob_src_t;
+
 /*
  * Length estimate interface
  */
@@ -82,8 +87,8 @@ size_t  len_f(size_t);
  */
 typedef
 ssize_t encode_f(const enum encoding enc, const enum case_e kase,
-		 char *restrict const buf, const size_t buflen,
-		 const char *restrict const in, const size_t inlen);
+		 blob_dest_t buf, blob_len_t buflen,
+		 blob_src_t in, blob_len_t inlen);
 
 /*
  * General interface for a decoder: decode the concatenation of strings
@@ -107,8 +112,8 @@ ssize_t encode_f(const enum encoding enc, const enum case_e kase,
  *    a static constant empty BLOB
  * otherwise, the number of bytes written
  */
-typedef ssize_t decode_f(const enum encoding dec, char *restrict const buf,
-    const size_t buflen, const ssize_t inlen, VCL_STRANDS strings);
+typedef ssize_t decode_f(const enum encoding dec, blob_dest_t buf,
+    blob_len_t buflen, blob_slen_t inlen, VCL_STRANDS strings);
 
 /* id.c */
 len_f	 id_encode_l;

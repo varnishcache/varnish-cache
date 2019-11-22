@@ -50,8 +50,8 @@ id_decode_l(size_t l)
 
 ssize_t
 id_encode(const enum encoding enc, const enum case_e kase,
-    char *restrict const buf, const size_t buflen,
-    const char *restrict const in, const size_t inlen)
+    blob_dest_t buf, blob_len_t buflen,
+    blob_src_t in, blob_len_t inlen)
 {
 	(void) enc;
 	(void) kase;
@@ -67,8 +67,8 @@ id_encode(const enum encoding enc, const enum case_e kase,
 }
 
 ssize_t
-id_decode(const enum encoding enc, char *restrict const buf,
-    const size_t buflen, ssize_t n, VCL_STRANDS strings)
+id_decode(const enum encoding enc, blob_dest_t buf,
+    blob_len_t buflen, ssize_t n, VCL_STRANDS strings)
 {
 	const char *s;
 	char *dest = buf;

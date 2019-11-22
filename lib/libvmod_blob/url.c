@@ -80,8 +80,8 @@ isoutofrange(const uint8_t c)
 
 ssize_t
 url_encode(const enum encoding enc, const enum case_e kase,
-    char *restrict const buf, const size_t buflen,
-    const char *restrict const in, const size_t inlen)
+    blob_dest_t buf, blob_len_t buflen,
+    blob_src_t in, blob_len_t inlen)
 {
 	char *p = buf;
 	const char * const end = buf + buflen;
@@ -115,8 +115,8 @@ url_encode(const enum encoding enc, const enum case_e kase,
 }
 
 ssize_t
-url_decode(const enum encoding dec, char *restrict const buf,
-    const size_t buflen, ssize_t n, VCL_STRANDS strings)
+url_decode(const enum encoding dec, blob_dest_t buf,
+    blob_len_t buflen, ssize_t n, VCL_STRANDS strings)
 {
 	char *dest = buf;
 	const char * const end = buf + buflen;

@@ -55,8 +55,8 @@ base64_decode_l(size_t l)
 }
 
 static inline int
-decode(char *restrict *restrict dest, const char *restrict const buf,
-    const size_t buflen, unsigned u, const int n)
+decode(char *restrict *restrict dest, blob_src_t buf,
+    blob_len_t buflen, unsigned u, const int n)
 {
 	char *d;
 
@@ -79,8 +79,8 @@ decode(char *restrict *restrict dest, const char *restrict const buf,
 
 ssize_t
 base64_encode(const enum encoding enc, const enum case_e kase,
-    char *restrict const buf, const size_t buflen,
-    const char *restrict const inbuf, const size_t inlength)
+    blob_dest_t buf, blob_len_t buflen,
+    blob_src_t inbuf, blob_len_t inlength)
 {
 	const struct b64_alphabet *alpha = &b64_alphabet[enc];
 	char *p = buf;
@@ -130,8 +130,8 @@ base64_encode(const enum encoding enc, const enum case_e kase,
 }
 
 ssize_t
-base64_decode(const enum encoding dec, char *restrict const buf,
-    const size_t buflen, ssize_t inlen, VCL_STRANDS strings)
+base64_decode(const enum encoding dec, blob_dest_t buf,
+    blob_len_t buflen, ssize_t inlen, VCL_STRANDS strings)
 {
 	const struct b64_alphabet *alpha = &b64_alphabet[dec];
 	const char *s;
