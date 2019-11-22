@@ -118,7 +118,7 @@ static const struct vrt_blob null_blob[1] = {{
 static enum encoding
 parse_encoding(VCL_ENUM e)
 {
-#define VMODENUM(n) if (e == VENUM(n)) return(n);
+#define VMODENUM(n) if (e == VENUM(n)) return (n);
 #include "tbl_encodings.h"
 	WRONG("illegal encoding enum");
 }
@@ -126,7 +126,7 @@ parse_encoding(VCL_ENUM e)
 static enum case_e
 parse_case(VCL_ENUM e)
 {
-#define VMODENUM(n) if (e == VENUM(n)) return(n);
+#define VMODENUM(n) if (e == VENUM(n)) return (n);
 #include "tbl_case.h"
 	WRONG("illegal case enum");
 }
@@ -171,7 +171,7 @@ encodes_hex(enum encoding enc)
 
 static inline int
 check_enc_case(VRT_CTX, VCL_ENUM encs, VCL_ENUM case_s, enum encoding enc,
-	       enum case_e kase)
+    enum case_e kase)
 {
 	if (!encodes_hex(enc) && kase != DEFAULT) {
 		VERR(ctx, "case %s is illegal with encoding %s", case_s, encs);
@@ -184,7 +184,7 @@ check_enc_case(VRT_CTX, VCL_ENUM encs, VCL_ENUM case_s, enum encoding enc,
 
 VCL_VOID v_matchproto_(td_blob_blob__init)
 vmod_blob__init(VRT_CTX, struct vmod_blob_blob **blobp, const char *vcl_name,
-		VCL_ENUM decs, VCL_STRANDS strings)
+    VCL_ENUM decs, VCL_STRANDS strings)
 {
 	struct vmod_blob_blob *b;
 	enum encoding dec = parse_encoding(decs);
@@ -246,7 +246,7 @@ vmod_blob_get(VRT_CTX, struct vmod_blob_blob *b)
 
 VCL_STRING v_matchproto_(td_blob_blob_encode)
 vmod_blob_encode(VRT_CTX, struct vmod_blob_blob *b, VCL_ENUM encs,
-		 VCL_ENUM case_s)
+    VCL_ENUM case_s)
 {
 	enum encoding enc = parse_encoding(encs);
 	AENC(enc);
@@ -256,9 +256,9 @@ vmod_blob_encode(VRT_CTX, struct vmod_blob_blob *b, VCL_ENUM encs,
 	CHECK_OBJ_NOTNULL(b, VMOD_BLOB_MAGIC);
 
 	if (!check_enc_case(ctx, encs, case_s, enc, kase))
-		return NULL;
+		return (NULL);
 	if (b->blob.len == 0)
-		return "";
+		return ("");
 	if (kase == DEFAULT)
 		kase = LOWER;
 
@@ -293,13 +293,15 @@ vmod_blob_encode(VRT_CTX, struct vmod_blob_blob *b, VCL_ENUM encs,
 		}
 		AZ(pthread_mutex_unlock(&b->lock));
 	}
-	return b->encoding[enc][kase];
+	return (b->encoding[enc][kase]);
 }
 
 VCL_VOID v_matchproto_(td_blob_blob__fini)
 vmod_blob__fini(struct vmod_blob_blob **blobp)
 {
 	struct vmod_blob_blob *b;
+	blob_dest_t s;
+	int i, j;
 
 	TAKE_OBJ_NOTNULL(b, blobp, VMOD_BLOB_MAGIC);
 
@@ -308,9 +310,9 @@ vmod_blob__fini(struct vmod_blob_blob **blobp)
 		b->blob.blob = NULL;
 	}
 
-	for (int i = 0; i < __MAX_ENCODING; i++)
-		for (int j = 0; j < 2; j++) {
-			char *s = b->encoding[i][j];
+	for (i = 0; i < __MAX_ENCODING; i++)
+		for (j = 0; j < 2; j++) {
+			s = b->encoding[i][j];
 			if (s != NULL && s != empty) {
 				free(s);
 				b->encoding[i][j] = NULL;
@@ -347,11 +349,11 @@ vmod_decode(VRT_CTX, VCL_ENUM decs, VCL_INT length, VCL_STRANDS strings)
 	if (len == -1) {
 		err_decode(ctx, strings->p[0]);
 		WS_Release(ctx->ws, 0);
-		return NULL;
+		return (NULL);
 	}
 	if (len == 0) {
 		WS_Release(ctx->ws, 0);
-		return null_blob;
+		return (null_blob);
 	}
 	WS_Release(ctx->ws, len);
 
@@ -404,8 +406,8 @@ vmod_encode(VRT_CTX, VCL_ENUM encs, VCL_ENUM case_s, VCL_BLOB b)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	if (!check_enc_case(ctx, encs, case_s, enc, kase))
-		return NULL;
-	return encode(ctx, enc, kase, b);
+		return (NULL);
+	return (encode(ctx, enc, kase, b));
 }
 
 VCL_STRING v_matchproto_(td_blob_transcode)
@@ -417,6 +419,7 @@ vmod_transcode(VRT_CTX, VCL_ENUM decs, VCL_ENUM encs, VCL_ENUM case_s,
 	enum case_e kase = parse_case(case_s);
 	struct vrt_blob b;
 	VCL_STRING r;
+	size_t l;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->ws, WS_MAGIC);
@@ -426,15 +429,15 @@ vmod_transcode(VRT_CTX, VCL_ENUM decs, VCL_ENUM encs, VCL_ENUM case_s,
 	AENC(enc);
 
 	if (!check_enc_case(ctx, encs, case_s, enc, kase))
-		return NULL;
+		return (NULL);
 
 	/*
 	 * Allocate space for the decoded blob on the stack
 	 * ignoring the limitation imposed by n
 	 */
-	size_t l = decode_l(dec, strings);
+	l = decode_l(dec, strings);
 	if (l == 0)
-		return "";
+		return ("");
 
 	/* XXX: handle stack overflow? */
 	char buf[l];
@@ -447,7 +450,7 @@ vmod_transcode(VRT_CTX, VCL_ENUM decs, VCL_ENUM encs, VCL_ENUM case_s,
 
 	if (b.len == -1) {
 		err_decode(ctx, strings->p[0]);
-		return NULL;
+		return (NULL);
 	}
 
 	/*
@@ -472,66 +475,67 @@ vmod_transcode(VRT_CTX, VCL_ENUM decs, VCL_ENUM encs, VCL_ENUM case_s,
 VCL_BOOL v_matchproto_(td_blob_same)
 vmod_same(VRT_CTX, VCL_BLOB b1, VCL_BLOB b2)
 {
-	(void) ctx;
 
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	if (b1 == b2)
-		return 1;
+		return (1);
 	if (b1 == NULL || b2 == NULL)
-		return 0;
+		return (0);
 	return (b1->len == b2->len && b1->blob == b2->blob);
 }
 
 VCL_BOOL v_matchproto_(td_blob_equal)
 vmod_equal(VRT_CTX, VCL_BLOB b1, VCL_BLOB b2)
 {
-	(void) ctx;
 
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	if (b1 == b2)
-		return 1;
+		return (1);
 	if (b1 == NULL || b2 == NULL)
-		return 0;
+		return (0);
 	if (b1->len != b2->len)
-		return 0;
+		return (0);
 	if (b1->blob == b2->blob)
-		return 1;
+		return (1);
 	if (b1->blob == NULL || b2->blob == NULL)
-		return 0;
+		return (0);
 	return (memcmp(b1->blob, b2->blob, b1->len) == 0);
 }
 
 VCL_INT v_matchproto_(td_blob_length)
 vmod_length(VRT_CTX, VCL_BLOB b)
 {
-	(void) ctx;
 
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	if (b == NULL)
-		return 0;
-	return b->len;
+		return (0);
+	return (b->len);
 }
 
 VCL_BLOB v_matchproto_(td_blob_sub)
 vmod_sub(VRT_CTX, VCL_BLOB b, VCL_BYTES n, VCL_BYTES off)
 {
+
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	assert(n >= 0);
 	assert(off >= 0);
 
 	if (b == NULL || b->len == 0 || b->blob == NULL) {
 		ERR(ctx, "blob is empty in blob.sub()");
-		return NULL;
+		return (NULL);
 	}
 
 	assert(b->len > 0);
 
 	if (off + n > b->len) {
 		VERR(ctx, "size %jd from offset %jd requires more bytes than "
-		     "blob length %zd in blob.sub()",
-		     (intmax_t)n, (intmax_t)off, b->len);
-		return NULL;
+		    "blob length %zd in blob.sub()",
+		    (intmax_t)n, (intmax_t)off, b->len);
+		return (NULL);
 	}
 
 	if (n == 0)
-		return null_blob;
+		return (null_blob);
 
 
 	return (VRT_blob(ctx, "blob.sub",

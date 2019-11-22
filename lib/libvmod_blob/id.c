@@ -73,15 +73,16 @@ id_decode(const enum encoding enc, blob_dest_t buf,
 	const char *s;
 	char *dest = buf;
 	size_t len, outlen = 0, c = SIZE_MAX;
+	int i;
 
-	(void) enc;
+	(void)enc;
 	AN(buf);
 	AN(strings);
 
 	if (n >= 0)
 		c = n;
 
-	for (int i = 0; c > 0 && i < strings->n; i++) {
+	for (i = 0; c > 0 && i < strings->n; i++) {
 		s = strings->p[i];
 		if (s == NULL || *s == '\0')
 			continue;

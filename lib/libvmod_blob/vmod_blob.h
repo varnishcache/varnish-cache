@@ -57,8 +57,7 @@ typedef const char *restrict const	blob_src_t;
 /*
  * Length estimate interface
  */
-typedef
-size_t  len_f(size_t);
+typedef size_t len_f(size_t);
 
 /*
  * General interface for an encoder: encode the data at in of length inlen
@@ -116,30 +115,26 @@ typedef ssize_t decode_f(const enum encoding dec, blob_dest_t buf,
     blob_len_t buflen, blob_slen_t inlen, VCL_STRANDS strings);
 
 /* id.c */
-len_f	 id_encode_l;
-len_f	 id_decode_l;
-
-encode_f id_encode;
-decode_f id_decode;
+len_f		id_encode_l;
+len_f		id_decode_l;
+encode_f	id_encode;
+decode_f	id_decode;
 
 /* base64.c */
-len_f	 base64_decode_l;
-len_f	 base64nopad_encode_l;
-len_f	 base64_encode_l;
-
-encode_f base64_encode;
-decode_f base64_decode;
+len_f		base64_decode_l;
+len_f		base64nopad_encode_l;
+len_f		base64_encode_l;
+encode_f	base64_encode;
+decode_f	base64_decode;
 
  /* hex.c */
-len_f	 hex_encode_l;
-len_f	 hex_decode_l;
-
-encode_f hex_encode;
-decode_f hex_decode;
+len_f		hex_encode_l;
+len_f		hex_decode_l;
+encode_f	hex_encode;
+decode_f	hex_decode;
 
 /* url.c */
-len_f	 url_encode_l;
-len_f	 url_decode_l;
-
-encode_f url_encode;
-decode_f url_decode;
+len_f		url_encode_l;
+len_f		url_decode_l;
+encode_f	url_encode;
+decode_f	url_decode;

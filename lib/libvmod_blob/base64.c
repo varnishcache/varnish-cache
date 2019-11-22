@@ -59,13 +59,14 @@ decode(char *restrict *restrict dest, blob_src_t buf,
     blob_len_t buflen, unsigned u, const int n)
 {
 	char *d;
+	int i;
 
 	if (n <= 1) {
 		errno = EINVAL;
 		return (-1);
 	}
 	d = *dest;
-	for (int i = 0; i < n - 1; i++) {
+	for (i = 0; i < n - 1; i++) {
 		if (d == buf + buflen) {
 			errno = ENOMEM;
 			return (-1);
@@ -87,16 +88,15 @@ base64_encode(const enum encoding enc, const enum case_e kase,
 	const uint8_t *in = (const uint8_t *)inbuf;
 	const uint8_t * const end = in + inlength;
 
-	(void) kase;
+	(void)kase;
 	AN(buf);
 	AN(alpha);
 	if (in == NULL || inlength == 0)
 		return (0);
 
 	if ((enc == BASE64URLNOPAD &&
-	     buflen < base64nopad_encode_l(inlength)) ||
-	    (enc != BASE64URLNOPAD &&
-	     buflen < base64_encode_l(inlength))) {
+	    buflen < base64nopad_encode_l(inlength)) ||
+	    (enc != BASE64URLNOPAD && buflen < base64_encode_l(inlength))) {
 		errno = ENOMEM;
 		return (-1);
 	}
