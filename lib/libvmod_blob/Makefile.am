@@ -6,8 +6,7 @@ libvmod_blob_la_SOURCES = \
 	id.c \
 	base64.c \
 	hex.c \
-	url.c \
-	tbl_case.h
+	url.c
 
 # Use vmodtool.py generated automake boilerplate
 include $(srcdir)/automake_boilerplate.am

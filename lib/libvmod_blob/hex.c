@@ -70,23 +70,23 @@ hex2byte(unsigned char hi, unsigned char lo)
 }
 
 static ssize_t v_matchproto_(blob_encode_f)
-hex_encode(BLOB_CODEC, enum case_e kase, blob_dest_t dest, size_t destlen,
+hex_encode(BLOB_CODEC, blob_case_t kase, blob_dest_t dest, size_t destlen,
     blob_src_t src, size_t srclen)
 {
 	blob_dest_t p = dest;
-	const char *alphabet = hex_alphabet[0];
+	const char *alphabet;
 	size_t i;
 
-	AN(dest);
-	AN(codec);
 	CHECK_BLOB_CODEC(codec, HEX);
+	AN(dest);
+	AN(kase);
+
 	if (src == NULL || srclen == 0)
 		return (0);
 	if (destlen < hex_encode_len(srclen))
 		return (-1);
 
-	if (kase == UPPER)
-		alphabet = hex_alphabet[1];
+	alphabet = hex_alphabet[kase->upper];
 
 	for (i = 0; i < srclen; i++) {
 		*p++ = alphabet[(src[i] & 0xf0) >> 4];

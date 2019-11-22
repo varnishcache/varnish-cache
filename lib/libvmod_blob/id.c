@@ -45,12 +45,12 @@ id_decode_len(size_t l)
 }
 
 static ssize_t v_matchproto_(blob_encode_f)
-id_encode(BLOB_CODEC, enum case_e kase, blob_dest_t dest, size_t destlen,
+id_encode(BLOB_CODEC, blob_case_t kase, blob_dest_t dest, size_t destlen,
     blob_src_t src, size_t srclen)
 {
 
 	CHECK_BLOB_CODEC(codec, IDENTITY);
-	(void)kase;
+	AN(kase);
 	AN(dest);
 
 	if (destlen < srclen + 1)

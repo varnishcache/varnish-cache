@@ -63,6 +63,12 @@ extern const uint8_t hex_nibble[];
 
 struct blob_codec;
 
+struct blob_case {
+	VCL_ENUM	*name;
+	unsigned	upper; /* both a flag and an index */
+	unsigned	def;
+};
+
 #define BLOB_CODEC const struct blob_codec *codec
 
 #define CHECK_BLOB_CODEC(codec, nm)			\
@@ -71,17 +77,9 @@ struct blob_codec;
 		assert((codec)->name == &VENUM(nm));	\
 	} while (0)
 
-typedef char *restrict		blob_dest_t;
-typedef const char *restrict	blob_src_t;
-
-/*
- * The enums MUST appear in this order, since LOWER and UPPER are used to
- * index the array of cached encodings for the blob object.
- */
-enum case_e {
-#define VMODENUM(x) x,
-#include "tbl_case.h"
-};
+typedef char *restrict			blob_dest_t;
+typedef const char *restrict		blob_src_t;
+typedef const struct blob_case *	blob_case_t;
 
 /*
  * Length estimate interface.
@@ -134,7 +132,7 @@ typedef ssize_t blob_decode_f(BLOB_CODEC, blob_dest_t dest, size_t destlen,
  * otherwise, the number of bytes written (note that this does not
  *            include any terminating null byte)
  */
-typedef ssize_t blob_encode_f(BLOB_CODEC, enum case_e kase, blob_dest_t dest,
+typedef ssize_t blob_encode_f(BLOB_CODEC, blob_case_t kase, blob_dest_t dest,
     size_t destlen, blob_src_t src, size_t srclen);
 
 struct blob_codec {

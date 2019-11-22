@@ -208,7 +208,7 @@ decode(blob_dest_t *restrict destp, blob_dest_t dest, size_t destlen,
 }
 
 static ssize_t v_matchproto_(blob_encode_f)
-base64_encode(BLOB_CODEC, enum case_e kase, blob_dest_t dest, size_t destlen,
+base64_encode(BLOB_CODEC, blob_case_t kase, blob_dest_t dest, size_t destlen,
     blob_src_t srcbuf, size_t srclen)
 {
 	const struct b64_alphabet *alpha;
@@ -218,7 +218,7 @@ base64_encode(BLOB_CODEC, enum case_e kase, blob_dest_t dest, size_t destlen,
 
 	AN(codec);
 	CAST_OBJ_NOTNULL(alpha, codec->priv, B64_ALPHABET_MAGIC);
-	(void)kase;
+	AN(kase);
 	AN(dest);
 
 	if (src == NULL || srclen == 0)

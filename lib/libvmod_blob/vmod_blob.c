@@ -45,6 +45,13 @@ static const struct blob_codec *codecs[] = {
 
 #define __MAX_ENCODING (sizeof (codecs) / sizeof (*codecs))
 
+static const struct blob_case cases[] = {
+	{ &VENUM(UPPER), 1, 0 },
+	{ &VENUM(LOWER), 0, 0 },
+	{ &VENUM(DEFAULT), 0, 1 },
+	{ NULL, 0, 0 },
+};
+
 struct vmod_blob_blob {
 	unsigned magic;
 #define VMOD_BLOB_MAGIC 0xfade4fa9
@@ -96,11 +103,14 @@ parse_encoding(VCL_ENUM e, int *idxp)
 	WRONG("illegal encoding enum");
 }
 
-static enum case_e
+static blob_case_t
 parse_case(VCL_ENUM e)
 {
-#define VMODENUM(n) if (e == VENUM(n)) return (n);
-#include "tbl_case.h"
+	blob_case_t kase;
+
+	for (kase = cases; kase->name != NULL; kase++)
+		if (*kase->name == e)
+			return (kase);
 	WRONG("illegal case enum");
 }
 
@@ -138,14 +148,14 @@ err_decode(VRT_CTX, const char *enc)
 /* Require case DEFAULT for all encodings besides HEX and URL. */
 
 static inline int
-check_enc_case(VRT_CTX, BLOB_CODEC, VCL_ENUM case_s, enum case_e kase)
+check_enc_case(VRT_CTX, BLOB_CODEC, blob_case_t kase)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(codec);
 
-	if (codec->case_sensitive && kase != DEFAULT) {
-		VERR(ctx, "case %s is illegal with encoding %s", case_s,
+	if (codec->case_sensitive && !kase->def) {
+		VERR(ctx, "case %s is illegal with encoding %s", *kase->name,
 		    *codec->name);
 		return (0);
 	}
@@ -224,7 +234,7 @@ vmod_blob_encode(VRT_CTX, struct vmod_blob_blob *b, VCL_ENUM encs,
     VCL_ENUM case_s)
 {
 	const struct blob_codec *enc;
-	enum case_e kase = parse_case(case_s);
+	blob_case_t kase;
 	ssize_t len;
 	int idx = -1;
 	char *s;
@@ -238,35 +248,36 @@ vmod_blob_encode(VRT_CTX, struct vmod_blob_blob *b, VCL_ENUM encs,
 	AN(enc);
 	assert(idx >= 0);
 
-	if (!check_enc_case(ctx, enc, case_s, kase))
+	kase = parse_case(case_s);
+	AN(kase);
+
+	if (!check_enc_case(ctx, enc, kase))
 		return (NULL);
 	if (b->blob.len == 0)
 		return ("");
-	if (kase == DEFAULT)
-		kase = LOWER;
 
-	if (b->encoding[idx][kase] != NULL)
-		return (b->encoding[idx][kase]);
+	if (b->encoding[idx][kase->upper] != NULL)
+		return (b->encoding[idx][kase->upper]);
 
 	AZ(pthread_mutex_lock(&b->lock));
-	if (b->encoding[idx][kase] == NULL) {
+	if (b->encoding[idx][kase->upper] == NULL) {
 		len = enc->encode_len(b->blob.len);
 
 		assert(len >= 0);
 		if (len == 0)
-			b->encoding[idx][kase] = empty;
+			b->encoding[idx][kase->upper] = empty;
 		else {
-			b->encoding[idx][kase] = malloc(len);
-			if (b->encoding[idx][kase] == NULL)
+			b->encoding[idx][kase->upper] = malloc(len);
+			if (b->encoding[idx][kase->upper] == NULL)
 				ERRNOMEM(ctx, "cannot encode");
 			else {
-				s = b->encoding[idx][kase];
+				s = b->encoding[idx][kase->upper];
 				len = enc->encode(enc, kase, s, len,
 				    b->blob.blob, b->blob.len);
 				assert(len >= 0);
 				if (len == 0) {
 					free(s);
-					b->encoding[idx][kase] = empty;
+					b->encoding[idx][kase->upper] = empty;
 				}
 				else
 					s[len] = '\0';
@@ -275,7 +286,7 @@ vmod_blob_encode(VRT_CTX, struct vmod_blob_blob *b, VCL_ENUM encs,
 	}
 	AZ(pthread_mutex_unlock(&b->lock));
 
-	return (b->encoding[idx][kase]);
+	return (b->encoding[idx][kase->upper]);
 }
 
 VCL_VOID v_matchproto_(td_blob_blob__fini)
@@ -348,7 +359,7 @@ vmod_decode(VRT_CTX, VCL_ENUM decs, VCL_INT length, VCL_STRANDS strings)
 }
 
 static VCL_STRING
-encode(VRT_CTX, BLOB_CODEC, enum case_e kase, VCL_BLOB b)
+encode(VRT_CTX, BLOB_CODEC, blob_case_t kase, VCL_BLOB b)
 {
 	ssize_t len;
 	char *buf;
@@ -387,7 +398,7 @@ VCL_STRING v_matchproto_(td_blob_encode)
 vmod_encode(VRT_CTX, VCL_ENUM encs, VCL_ENUM case_s, VCL_BLOB b)
 {
 	const struct blob_codec *enc;
-	enum case_e kase = parse_case(case_s);
+	blob_case_t kase = parse_case(case_s);
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(encs);
@@ -397,7 +408,7 @@ vmod_encode(VRT_CTX, VCL_ENUM encs, VCL_ENUM case_s, VCL_BLOB b)
 	AN(enc);
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	if (!check_enc_case(ctx, enc, case_s, kase))
+	if (!check_enc_case(ctx, enc, kase))
 		return (NULL);
 	return (encode(ctx, enc, kase, b));
 }
@@ -407,7 +418,7 @@ vmod_transcode(VRT_CTX, VCL_ENUM decs, VCL_ENUM encs, VCL_ENUM case_s,
     VCL_INT length, VCL_STRANDS strings)
 {
 	const struct blob_codec *dec, *enc;
-	enum case_e kase = parse_case(case_s);
+	blob_case_t kase = parse_case(case_s);
 	struct vrt_blob b;
 	VCL_STRING r;
 	size_t l;
@@ -425,7 +436,7 @@ vmod_transcode(VRT_CTX, VCL_ENUM decs, VCL_ENUM encs, VCL_ENUM case_s,
 	enc = parse_encoding(encs, NULL);
 	AN(enc);
 
-	if (!check_enc_case(ctx, enc, case_s, kase))
+	if (!check_enc_case(ctx, enc, kase))
 		return (NULL);
 
 	/*

@@ -75,21 +75,22 @@ url_decode_len(size_t l)
 }
 
 static ssize_t v_matchproto_(blob_encode_f)
-url_encode(BLOB_CODEC, enum case_e kase, blob_dest_t dest, size_t destlen,
+url_encode(BLOB_CODEC, blob_case_t kase, blob_dest_t dest, size_t destlen,
     blob_src_t src, size_t srclen)
 {
 	blob_dest_t p = dest;
 	blob_dest_t const end = dest + destlen;
-	const char *alphabet = hex_alphabet[0];
+	const char *alphabet;
 	size_t i;
 
-	AN(dest);
 	CHECK_BLOB_CODEC(codec, URL);
+	AN(kase);
+	AN(dest);
+
 	if (src == NULL || srclen == 0)
 		return (0);
 
-	if (kase == UPPER)
-		alphabet = hex_alphabet[1];
+	alphabet = hex_alphabet[kase->upper];
 
 	for (i = 0; i < srclen; i++) {
 		if (isunreserved(src[i])) {
