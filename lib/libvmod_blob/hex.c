@@ -60,13 +60,13 @@ const uint8_t nibble[] = {
 size_t
 hex_encode_l(size_t l)
 {
-	return (((l) << 1) + 1);
+	return ((l << 1) + 1);
 }
 
 size_t
 hex_decode_l(size_t l)
 {
-	return (((l) + 1) >> 1);
+	return ((l + 1) >> 1);
 }
 
 static inline char

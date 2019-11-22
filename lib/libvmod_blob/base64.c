@@ -177,7 +177,7 @@ base64_encode_l(size_t l)
 size_t
 base64_decode_l(size_t l)
 {
-	return (((l) * 3) >> 2);
+	return ((l * 3) >> 2);
 }
 
 static inline int
