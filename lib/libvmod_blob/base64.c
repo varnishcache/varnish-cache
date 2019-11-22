@@ -32,8 +32,134 @@
 #include "vrt.h"
 #include "vas.h"
 
-#include "base64.h"
+#include "vmod_blob.h"
 
+#define ILL ((int8_t) 127)
+#define PAD ((int8_t) 126)
+
+static const struct b64_alphabet {
+	const char b64[64];
+	const int8_t i64[256];
+	const int padding;
+} b64_alphabet[] = {
+	[BASE64] = {
+		"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef"
+		"ghijklmnopqrstuvwxyz0123456789+/",
+		{
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL,  62, ILL, ILL, ILL,  63, /* +, -    */
+			 52,  53,  54,  55,  56,  57,  58,  59, /* 0 - 7   */
+			 60,  61, ILL, ILL, ILL, PAD, ILL, ILL, /* 8, 9, = */
+			ILL,   0,   1,   2,   3,   4,   5,   6, /* A - G   */
+			  7,   8,   9,  10,  11,  12,  13,  14, /* H - O   */
+			 15,  16,  17,  18,  19,  20,  21,  22, /* P - W   */
+			 23,  24,  25, ILL, ILL, ILL, ILL, ILL, /* X, Y, Z */
+			ILL,  26,  27,  28,  29,  30,  31,  32, /* a - g   */
+			 33,  34,  35,  36,  37,  38,  39,  40, /* h - o   */
+			 41,  42,  43,  44,  45,  46,  47,  48, /* p - w   */
+			 49,  50,  51, ILL, ILL, ILL, ILL, ILL, /* x, y, z */
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+		},
+		'='
+	},
+	[BASE64URL] = {
+		"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef"
+		"ghijklmnopqrstuvwxyz0123456789-_",
+		{
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL,  62, ILL, ILL, /* -       */
+			 52,  53,  54,  55,  56,  57,  58,  59, /* 0 - 7   */
+			 60,  61, ILL, ILL, ILL, PAD, ILL, ILL, /* 8, 9, = */
+			ILL,   0,   1,   2,   3,   4,   5,   6, /* A - G   */
+			  7,   8,   9,  10,  11,  12,  13,  14, /* H - O   */
+			 15,  16,  17,  18,  19,  20,  21,  22, /* P - W   */
+			 23,  24,  25, ILL, ILL, ILL, ILL,  63, /* X-Z, _  */
+			ILL,  26,  27,  28,  29,  30,  31,  32, /* a - g   */
+			 33,  34,  35,  36,  37,  38,  39,  40, /* h - o   */
+			 41,  42,  43,  44,  45,  46,  47,  48, /* p - w   */
+			 49,  50,  51, ILL, ILL, ILL, ILL, ILL, /* x, y, z */
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+		},
+		'='
+	},
+	[BASE64URLNOPAD] = {
+		"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef"
+		"ghijklmnopqrstuvwxyz0123456789-_",
+		{
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL,  62, ILL, ILL, /* -       */
+			 52,  53,  54,  55,  56,  57,  58,  59, /* 0 - 7   */
+			 60,  61, ILL, ILL, ILL, ILL, ILL, ILL, /* 8, 9    */
+			ILL,   0,   1,   2,   3,   4,   5,   6, /* A - G   */
+			  7,   8,   9,  10,  11,  12,  13,  14, /* H - O   */
+			 15,  16,  17,  18,  19,  20,  21,  22, /* P - W   */
+			 23,  24,  25, ILL, ILL, ILL, ILL,  63, /* X-Z, _  */
+			ILL,  26,  27,  28,  29,  30,  31,  32, /* a - g   */
+			 33,  34,  35,  36,  37,  38,  39,  40, /* h - o   */
+			 41,  42,  43,  44,  45,  46,  47,  48, /* p - w   */
+			 49,  50,  51, ILL, ILL, ILL, ILL, ILL, /* x, y, z */
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+		},
+		0
+	},
+};
 #define base64_l(l)		(((l) << 2) / 3)
 
 size_t
