@@ -33,14 +33,24 @@
 #include <stdlib.h>
 #include <sys/types.h>
 
-enum encoding {
-	__INVALID_ENCODING = 0,
-#define VMODENUM(x) x,
-#include "tbl_encodings.h"
-	__MAX_ENCODING
-};
+#include "vcc_if.h"
 
-#define AENC(enc) assert((enc) > __INVALID_ENCODING && (enc) < __MAX_ENCODING)
+/*---------------------------------------------------------------------
+ * The vmod_blob codec interface.
+ */
+
+struct blob_codec;
+
+#define BLOB_CODEC const struct blob_codec *codec
+
+#define CHECK_BLOB_CODEC(codec, nm)			\
+	do {						\
+		AN(codec);				\
+		assert((codec)->name == &VENUM(nm));	\
+	} while (0)
+
+typedef char *restrict		blob_dest_t;
+typedef const char *restrict	blob_src_t;
 
 /*
  * The enums MUST appear in this order, since LOWER and UPPER are used to
@@ -51,10 +61,37 @@ enum case_e {
 #include "tbl_case.h"
 };
 
+typedef size_t blob_len_f(size_t);
+typedef ssize_t blob_encode_f(BLOB_CODEC, enum case_e, blob_dest_t, size_t,
+    blob_src_t, size_t);
+typedef ssize_t blob_decode_f(BLOB_CODEC, blob_dest_t, size_t, ssize_t,
+    VCL_STRANDS);
+
+struct blob_codec {
+	blob_len_f	*decode_len;
+	blob_len_f	*encode_len;
+	blob_decode_f	*decode;
+	blob_encode_f	*encode;
+	VCL_ENUM	*name;
+	const void	*priv;
+	unsigned	case_sensitive;
+};
+
+/*---------------------------------------------------------------------
+ * The deprecated codec interface.
+ */
+
 typedef const size_t			blob_len_t;
 typedef const ssize_t			blob_slen_t;
-typedef char *restrict const		blob_dest_t;
-typedef const char *restrict const	blob_src_t;
+
+enum encoding {
+	__INVALID_ENCODING = 0,
+#define VMODENUM(x) x,
+#include "tbl_encodings.h"
+	__MAX_ENCODING
+};
+
+#define AENC(enc) assert((enc) > __INVALID_ENCODING && (enc) < __MAX_ENCODING)
 
 /*
  * Length estimate interface
