@@ -173,19 +173,19 @@ static const struct b64_alphabet b64_alpha_urlnopad = {
 
 #define base64_len(l)		(((l) << 2) / 3)
 
-static size_t
+static size_t v_matchproto_(blob_len_f)
 base64nopad_encode_len(size_t l)
 {
 	return (base64_len(l) + 4);
 }
 
-static size_t
+static size_t v_matchproto_(blob_len_f)
 base64_encode_len(size_t l)
 {
 	return (((base64_len(l) + 3) & ~3) + 1);
 }
 
-static size_t
+static size_t v_matchproto_(blob_len_f)
 base64_decode_len(size_t l)
 {
 	return ((l * 3) >> 2);
@@ -215,7 +215,7 @@ decode(blob_dest_t *restrict destp, blob_dest_t dest, size_t destlen,
 	return (1);
 }
 
-static ssize_t
+static ssize_t v_matchproto_(blob_encode_f)
 base64_encode(BLOB_CODEC, enum case_e kase, blob_dest_t dest, size_t destlen,
     blob_src_t srcbuf, size_t srclen)
 {
@@ -266,7 +266,7 @@ base64_encode(BLOB_CODEC, enum case_e kase, blob_dest_t dest, size_t destlen,
 	return (p - dest);
 }
 
-static ssize_t
+static ssize_t v_matchproto_(blob_decode_f)
 base64_decode(BLOB_CODEC, blob_dest_t dest, size_t destlen, ssize_t slen,
     VCL_STRANDS strings)
 {

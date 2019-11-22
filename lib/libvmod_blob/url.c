@@ -68,19 +68,19 @@ isoutofrange(const uint8_t c)
 	return (c < '0' || c > 'f');
 }
 
-static size_t
+static size_t v_matchproto_(blob_len_f)
 url_encode_len(size_t l)
 {
 	return ((l * 3) + 1);
 }
 
-static size_t
+static size_t v_matchproto_(blob_len_f)
 url_decode_len(size_t l)
 {
 	return (l);
 }
 
-static ssize_t
+static ssize_t v_matchproto_(blob_encode_f)
 url_encode(BLOB_CODEC, enum case_e kase, blob_dest_t dest, size_t destlen,
     blob_src_t src, size_t srclen)
 {
@@ -115,7 +115,7 @@ url_encode(BLOB_CODEC, enum case_e kase, blob_dest_t dest, size_t destlen,
 	return (p - dest);
 }
 
-static ssize_t
+static ssize_t v_matchproto_(blob_decode_f)
 url_decode(BLOB_CODEC, blob_dest_t dest, size_t destlen, ssize_t slen,
     VCL_STRANDS strings)
 {

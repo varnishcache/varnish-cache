@@ -59,13 +59,13 @@ const uint8_t nibble[] = {
 	11,  12,  13,  14,  15
 };
 
-static size_t
+static size_t v_matchproto_(blob_len_f)
 hex_encode_len(size_t l)
 {
 	return ((l << 1) + 1);
 }
 
-static size_t
+static size_t v_matchproto_(blob_len_f)
 hex_decode_len(size_t l)
 {
 	return ((l + 1) >> 1);
@@ -77,7 +77,7 @@ hex2byte(unsigned char hi, unsigned char lo)
 	return ((nibble[hi - '0'] << 4) | nibble[lo - '0']);
 }
 
-static ssize_t
+static ssize_t v_matchproto_(blob_encode_f)
 hex_encode(BLOB_CODEC, enum case_e kase, blob_dest_t dest, size_t destlen,
     blob_src_t src, size_t srclen)
 {
@@ -104,7 +104,7 @@ hex_encode(BLOB_CODEC, enum case_e kase, blob_dest_t dest, size_t destlen,
 	return (p - dest);
 }
 
-static ssize_t
+static ssize_t v_matchproto_(blob_decode_f)
 hex_decode(BLOB_CODEC, blob_dest_t dest, size_t destlen, ssize_t slen,
     VCL_STRANDS strings)
 {

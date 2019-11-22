@@ -38,19 +38,19 @@
 
 #include "vmod_blob.h"
 
-static size_t
+static size_t v_matchproto_(blob_len_f)
 id_encode_len(size_t l)
 {
 	return (l + 1);
 }
 
-static size_t
+static size_t v_matchproto_(blob_len_f)
 id_decode_len(size_t l)
 {
 	return (l);
 }
 
-static ssize_t
+static ssize_t v_matchproto_(blob_encode_f)
 id_encode(BLOB_CODEC, enum case_e kase, blob_dest_t dest, size_t destlen,
     blob_src_t src, size_t srclen)
 {
@@ -68,7 +68,7 @@ id_encode(BLOB_CODEC, enum case_e kase, blob_dest_t dest, size_t destlen,
 	return (srclen);
 }
 
-static ssize_t
+static ssize_t v_matchproto_(blob_decode_f)
 id_decode(BLOB_CODEC, blob_dest_t dest, size_t destlen, ssize_t slen,
     VCL_STRANDS strings)
 {
