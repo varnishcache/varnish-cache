@@ -59,64 +59,64 @@ const uint8_t nibble[] = {
 	11,  12,  13,  14,  15
 };
 
-size_t
-hex_encode_l(size_t l)
+static size_t
+hex_encode_len(size_t l)
 {
 	return ((l << 1) + 1);
 }
 
-size_t
-hex_decode_l(size_t l)
+static size_t
+hex_decode_len(size_t l)
 {
 	return ((l + 1) >> 1);
 }
 
 static inline char
-hex2byte(const unsigned char hi, const unsigned char lo)
+hex2byte(unsigned char hi, unsigned char lo)
 {
 	return ((nibble[hi - '0'] << 4) | nibble[lo - '0']);
 }
 
-ssize_t
-hex_encode(const enum encoding enc, const enum case_e kase,
-    blob_dest_t buf, blob_len_t buflen,
-    blob_src_t in, blob_len_t inlen)
+static ssize_t
+hex_encode(BLOB_CODEC, enum case_e kase, blob_dest_t dest, size_t destlen,
+    blob_src_t src, size_t srclen)
 {
-	char *p = buf;
+	blob_dest_t p = dest;
 	const char *alphabet = hex_alphabet[0];
 	size_t i;
 
-	AN(buf);
-	assert(enc == HEX);
-	if (in == NULL || inlen == 0)
+	AN(dest);
+	AN(codec);
+	CHECK_BLOB_CODEC(codec, HEX);
+	if (src == NULL || srclen == 0)
 		return (0);
-	if (buflen < hex_encode_l(inlen))
+	if (destlen < hex_encode_len(srclen))
 		return (-1);
 
 	if (kase == UPPER)
 		alphabet = hex_alphabet[1];
 
-	for (i = 0; i < inlen; i++) {
-		*p++ = alphabet[(in[i] & 0xf0) >> 4];
-		*p++ = alphabet[in[i] & 0x0f];
+	for (i = 0; i < srclen; i++) {
+		*p++ = alphabet[(src[i] & 0xf0) >> 4];
+		*p++ = alphabet[src[i] & 0x0f];
 	}
 
-	return (p - buf);
+	return (p - dest);
 }
 
-ssize_t
-hex_decode(const enum encoding dec, blob_dest_t buf,
-    blob_len_t buflen, ssize_t n, VCL_STRANDS strings)
+static ssize_t
+hex_decode(BLOB_CODEC, blob_dest_t dest, size_t destlen, ssize_t slen,
+    VCL_STRANDS strings)
 {
-	char *dest = buf;
+	blob_dest_t p = dest;
 	const char *b, *s;
-	unsigned char extranib = 0;
+	unsigned char extranib = '\0';
 	size_t len = 0;
 	int i;
 
-	AN(buf);
+	CHECK_BLOB_CODEC(codec, HEX);
+	AN(dest);
 	AN(strings);
-	assert(dec == HEX);
 
 	for (i = 0; i < strings->n; i++) {
 		s = strings->p[i];
@@ -135,13 +135,15 @@ hex_decode(const enum encoding dec, blob_dest_t buf,
 
 	if (len == 0)
 		return (0);
-	if (n >= 0 && len > (size_t)n)
-		len = n;
+	if (slen != -1 && len > slen)
+		len = slen;
 
-	if (((len+1) >> 1) > buflen) {
+	if (hex_decode_len(len) > destlen) {
 		errno = ENOMEM;
 		return (-1);
 	}
+
+	/* XXX: prepended extra nibble, not appended! */
 	if (len & 1) {
 		extranib = '0';
 		len++;
@@ -153,16 +155,62 @@ hex_decode(const enum encoding dec, blob_dest_t buf,
 		if (s == NULL || *s == '\0')
 			continue;
 		if (extranib) {
-			*dest++ = hex2byte(extranib, *s++);
+			*p++ = hex2byte(extranib, *s++);
 			len -= 2;
 		}
 		while (len >= 2 && *s && *(s+1)) {
-			*dest++ = hex2byte(*s, *(s+1));
+			*p++ = hex2byte(*s, *(s+1));
 			s += 2;
 			len -= 2;
 		}
 		extranib = *s;
 	}
-	assert(dest <= buf + buflen);
-	return (dest - buf);
+
+	/* XXX: no extra nible check after the last string? */
+
+	assert(p <= dest + destlen);
+	return (p - dest);
+}
+
+const struct blob_codec blob_codec_hex = {
+	.decode_len	= hex_decode_len,
+	.decode		= hex_decode,
+	.encode_len	= hex_encode_len,
+	.encode		= hex_encode,
+	.name		= &VENUM(HEX)
+};
+
+/*---------------------------------------------------------------------
+ * The deprecated codec interface.
+ */
+
+size_t
+old_hex_encode_l(size_t l)
+{
+	return ((l << 1) + 1);
+}
+
+size_t
+old_hex_decode_l(size_t l)
+{
+	return ((l + 1) >> 1);
+}
+
+ssize_t
+old_hex_encode(const enum encoding enc, const enum case_e kase,
+    blob_dest_t buf, blob_len_t buflen,
+    blob_src_t in, blob_len_t inlen)
+{
+
+	assert(enc == HEX);
+	return (hex_encode(&blob_codec_hex, kase, buf, buflen, in, inlen));
+}
+
+ssize_t
+old_hex_decode(const enum encoding dec, blob_dest_t buf,
+    blob_len_t buflen, ssize_t n, VCL_STRANDS strings)
+{
+
+	assert(dec == HEX);
+	return (hex_decode(&blob_codec_hex, buf, buflen, n, strings));
 }

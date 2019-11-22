@@ -77,10 +77,10 @@ static const struct vmod_blob_fptr {
 		.encode_l	= base64nopad_encode_l
 	},
 	[HEX] = {
-		.decode_l	= hex_decode_l,
-		.decode		= hex_decode,
-		.encode_l	= hex_encode_l,
-		.encode		= hex_encode
+		.decode_l	= old_hex_decode_l,
+		.decode		= old_hex_decode,
+		.encode_l	= old_hex_encode_l,
+		.encode		= old_hex_encode
 	},
 	[URL] = {
 		.decode_l	= url_decode_l,
