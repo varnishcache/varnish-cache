@@ -45,18 +45,6 @@ enum state_e {
 	FIRSTNIB, /* just read the first nibble after '%' */
 };
 
-size_t
-url_encode_l(size_t l)
-{
-	return ((l * 3) + 1);
-}
-
-size_t
-url_decode_l(size_t l)
-{
-	return (l);
-}
-
 /*
  * Bitmap of unreserved characters according to RFC 3986 section 2.3
  * (locale-independent and cacheline friendly)
@@ -80,60 +68,71 @@ isoutofrange(const uint8_t c)
 	return (c < '0' || c > 'f');
 }
 
-ssize_t
-url_encode(const enum encoding enc, const enum case_e kase,
-    blob_dest_t buf, blob_len_t buflen,
-    blob_src_t in, blob_len_t inlen)
+static size_t
+url_encode_len(size_t l)
 {
-	char *p = buf;
-	const char * const end = buf + buflen;
+	return ((l * 3) + 1);
+}
+
+static size_t
+url_decode_len(size_t l)
+{
+	return (l);
+}
+
+static ssize_t
+url_encode(BLOB_CODEC, enum case_e kase, blob_dest_t dest, size_t destlen,
+    blob_src_t src, size_t srclen)
+{
+	blob_dest_t p = dest;
+	blob_dest_t const end = dest + destlen;
 	const char *alphabet = hex_alphabet[0];
 	size_t i;
 
-	AN(buf);
-	assert(enc == URL);
-	if (in == NULL || inlen == 0)
+	AN(dest);
+	CHECK_BLOB_CODEC(codec, URL);
+	if (src == NULL || srclen == 0)
 		return (0);
 
 	if (kase == UPPER)
 		alphabet = hex_alphabet[1];
 
-	for (i = 0; i < inlen; i++) {
-		if (isunreserved(in[i])) {
+	for (i = 0; i < srclen; i++) {
+		if (isunreserved(src[i])) {
 			if (p == end)
 				return (-1);
-			*p++ = in[i];
+			*p++ = src[i];
 		}
 		else {
 			if (p + 3 > end)
 				return (-1);
 			*p++ = '%';
-			*p++ = alphabet[(in[i] & 0xf0) >> 4];
-			*p++ = alphabet[in[i] & 0x0f];
+			*p++ = alphabet[(src[i] & 0xf0) >> 4];
+			*p++ = alphabet[src[i] & 0x0f];
 		}
 	}
 
-	return (p - buf);
+	return (p - dest);
 }
 
-ssize_t
-url_decode(const enum encoding dec, blob_dest_t buf,
-    blob_len_t buflen, ssize_t n, VCL_STRANDS strings)
+static ssize_t
+url_decode(BLOB_CODEC, blob_dest_t dest, size_t destlen, ssize_t slen,
+    VCL_STRANDS strings)
 {
-	char *dest = buf;
-	const char * const end = buf + buflen;
+	blob_dest_t p = dest;
+	blob_dest_t const end = dest + destlen;
 	const char *s;
 	size_t len = SIZE_MAX;
 	uint8_t nib = 0, nib2;
 	enum state_e state = NORMAL;
 	int i;
 
-	AN(buf);
+	AN(dest);
 	AN(strings);
-	assert(dec == URL);
+	CHECK_BLOB_CODEC(codec, URL);
 
-	if (n >= 0)
-		len = n;
+	if (slen >= 0)
+		len = slen;
 
 	for (i = 0; len > 0 && i < strings->n; i++) {
 		s = strings->p[i];
@@ -146,11 +145,11 @@ url_decode(const enum encoding dec, blob_dest_t buf,
 				if (*s == '%')
 					state = PERCENT;
 				else {
-					if (dest == end) {
+					if (p == end) {
 						errno = ENOMEM;
 						return (-1);
 					}
-					*dest++ = *s;
+					*p++ = *s;
 				}
 				break;
 			case PERCENT:
@@ -162,7 +161,7 @@ url_decode(const enum encoding dec, blob_dest_t buf,
 				state = FIRSTNIB;
 				break;
 			case FIRSTNIB:
-				if (dest == end) {
+				if (p == end) {
 					errno = ENOMEM;
 					return (-1);
 				}
@@ -171,7 +170,7 @@ url_decode(const enum encoding dec, blob_dest_t buf,
 					errno = EINVAL;
 					return (-1);
 				}
-				*dest++ = (nib << 4) | nib2;
+				*p++ = (nib << 4) | nib2;
 				nib = 0;
 				state = NORMAL;
 				break;
@@ -186,6 +185,49 @@ url_decode(const enum encoding dec, blob_dest_t buf,
 		errno = EINVAL;
 		return (-1);
 	}
-	assert(dest <= end);
-	return (dest - buf);
+	assert(p <= end);
+	return (p - dest);
+}
+
+const struct blob_codec blob_codec_url = {
+	.decode_len	= url_decode_len,
+	.decode		= url_decode,
+	.encode_len	= url_encode_len,
+	.encode		= url_encode,
+	.name		= &VENUM(URL)
+};
+
+/*---------------------------------------------------------------------
+ * The deprecated codec interface.
+ */
+
+size_t
+old_url_encode_l(size_t l)
+{
+	return ((l * 3) + 1);
+}
+
+size_t
+old_url_decode_l(size_t l)
+{
+	return (l);
+}
+
+ssize_t
+old_url_encode(const enum encoding enc, const enum case_e kase,
+    blob_dest_t buf, blob_len_t buflen,
+    blob_src_t in, blob_len_t inlen)
+{
+
+	assert(enc == URL);
+	return (url_encode(&blob_codec_url, kase, buf, buflen, in, inlen));
+}
+
+ssize_t
+old_url_decode(const enum encoding dec, blob_dest_t buf,
+    blob_len_t buflen, ssize_t n, VCL_STRANDS strings)
+{
+
+	assert(dec == URL);
+	return (url_decode(&blob_codec_url, buf, buflen, n, strings));
 }

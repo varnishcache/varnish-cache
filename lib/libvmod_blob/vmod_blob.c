@@ -83,10 +83,10 @@ static const struct vmod_blob_fptr {
 		.encode		= old_hex_encode
 	},
 	[URL] = {
-		.decode_l	= url_decode_l,
-		.decode		= url_decode,
-		.encode_l	= url_encode_l,
-		.encode		= url_encode
+		.decode_l	= old_url_decode_l,
+		.decode		= old_url_decode,
+		.encode_l	= old_url_encode_l,
+		.encode		= old_url_encode
 	},
 };
 

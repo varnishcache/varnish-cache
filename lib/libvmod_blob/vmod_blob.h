@@ -83,6 +83,9 @@ extern const struct blob_codec blob_codec_id;
 /* hex.c */
 extern const struct blob_codec blob_codec_hex;
 
+/* url.c */
+extern const struct blob_codec blob_codec_url;
+
 /*---------------------------------------------------------------------
  * The deprecated codec interface.
  */
@@ -179,7 +182,7 @@ encode_f	old_hex_encode;
 decode_f	old_hex_decode;
 
 /* url.c */
-len_f		url_encode_l;
-len_f		url_decode_l;
-encode_f	url_encode;
-decode_f	url_decode;
+len_f		old_url_encode_l;
+len_f		old_url_decode_l;
+encode_f	old_url_encode;
+decode_f	old_url_decode;
