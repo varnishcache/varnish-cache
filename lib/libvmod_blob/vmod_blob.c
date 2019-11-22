@@ -48,9 +48,9 @@ struct vmod_blob_blob {
 };
 
 #define B64_FUNCS				   \
-		.decode_l	= base64_decode_l, \
-		.decode		= base64_decode,   \
-		.encode		= base64_encode
+		.decode_l	= old_base64_decode_l, \
+		.decode		= old_base64_decode,   \
+		.encode		= old_base64_encode
 
 static const struct vmod_blob_fptr {
 	len_f		*const decode_l;
@@ -66,15 +66,15 @@ static const struct vmod_blob_fptr {
 	},
 	[BASE64] = {
 		B64_FUNCS,
-		.encode_l	= base64_encode_l
+		.encode_l	= old_base64_encode_l
 	},
 	[BASE64URL] = {
 		B64_FUNCS,
-		.encode_l	= base64_encode_l
+		.encode_l	= old_base64_encode_l
 	},
 	[BASE64URLNOPAD] = {
 		B64_FUNCS,
-		.encode_l	= base64nopad_encode_l
+		.encode_l	= old_base64nopad_encode_l
 	},
 	[HEX] = {
 		.decode_l	= old_hex_decode_l,

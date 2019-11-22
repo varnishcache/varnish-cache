@@ -80,6 +80,11 @@ struct blob_codec {
 /* id.c */
 extern const struct blob_codec blob_codec_id;
 
+/* base64.c */
+extern const struct blob_codec blob_codec_base64;
+extern const struct blob_codec blob_codec_base64url;
+extern const struct blob_codec blob_codec_base64urlnopad;
+
 /* hex.c */
 extern const struct blob_codec blob_codec_hex;
 
@@ -169,11 +174,11 @@ encode_f	old_id_encode;
 decode_f	old_id_decode;
 
 /* base64.c */
-len_f		base64_decode_l;
-len_f		base64nopad_encode_l;
-len_f		base64_encode_l;
-encode_f	base64_encode;
-decode_f	base64_decode;
+len_f		old_base64_decode_l;
+len_f		old_base64nopad_encode_l;
+len_f		old_base64_encode_l;
+encode_f	old_base64_encode;
+decode_f	old_base64_decode;
 
  /* hex.c */
 len_f		old_hex_encode_l;
