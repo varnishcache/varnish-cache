@@ -30,15 +30,7 @@
  *
  */
 
-#include "config.h"
-
-#include "vdef.h"
-#include "vrt.h"
-#include "vas.h"
-
 #include "vmod_blob.h"
-
-#include "hex.h"
 
 /* Decoder states */
 enum state_e {
@@ -156,7 +148,7 @@ url_decode(BLOB_CODEC, blob_dest_t dest, size_t destlen, ssize_t slen,
 				break;
 			case PERCENT:
 				if (isoutofrange(*s) ||
-				    (nib = nibble[*s - '0']) == ILL) {
+				    (nib = hex_nibble[*s - '0']) == ILL) {
 					errno = EINVAL;
 					return (-1);
 				}
@@ -168,7 +160,7 @@ url_decode(BLOB_CODEC, blob_dest_t dest, size_t destlen, ssize_t slen,
 					return (-1);
 				}
 				if (isoutofrange(*s) ||
-				    (nib2 = nibble[*s - '0']) == ILL) {
+				    (nib2 = hex_nibble[*s - '0']) == ILL) {
 					errno = EINVAL;
 					return (-1);
 				}

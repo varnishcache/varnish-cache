@@ -30,17 +30,7 @@
  *
  */
 
-#include "config.h"
-
-#include <ctype.h>
-
-#include "vdef.h"
-#include "vrt.h"
-#include "vas.h"
-
 #include "vmod_blob.h"
-
-#include "hex.h"
 
 const char hex_alphabet[][16] = {
 	"0123456789abcdef",
@@ -52,13 +42,13 @@ const char hex_alphabet[][16] = {
  * hex digits with their binary values. This fits all of the hex digits
  * into 55 bytes (cacheline friendly).
  */
-const uint8_t nibble[] = {
-	0,   1,   2,   3,   4,   5,   6,   7,   8,   9,
-	ILL, ILL, ILL, ILL, ILL, ILL, ILL, 10,  11,  12,
-	13,  14,  15,  ILL, ILL, ILL, ILL, ILL, ILL, ILL,
+const uint8_t hex_nibble[] = {
+	0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9,
+	ILL, ILL, ILL, ILL, ILL, ILL, ILL, 0xa, 0xb, 0xc,
+	0xd, 0xe, 0xf, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
 	ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-	ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL, 10,
-	11,  12,  13,  14,  15
+	ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL, 0xa,
+	0xb, 0xc, 0xd, 0xe, 0xf
 };
 
 static size_t v_matchproto_(blob_len_f)
@@ -76,7 +66,7 @@ hex_decode_len(size_t l)
 static inline char
 hex2byte(unsigned char hi, unsigned char lo)
 {
-	return ((nibble[hi - '0'] << 4) | nibble[lo - '0']);
+	return ((hex_nibble[hi - '0'] << 4) | hex_nibble[lo - '0']);
 }
 
 static ssize_t v_matchproto_(blob_encode_f)

@@ -30,11 +30,6 @@
  *
  */
 
-#include "config.h"
-#include <string.h>
-
-#include "cache/cache.h"
-
 #include "vmod_blob.h"
 
 #define VMOD_BLOB_TYPE 0xfade4faa

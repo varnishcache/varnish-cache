@@ -30,17 +30,7 @@
  *
  */
 
-#include "config.h"
-
-#include "vdef.h"
-#include "vrt.h"
-#include "vas.h"
-#include "miniobj.h"
-
 #include "vmod_blob.h"
-
-#define ILL ((int8_t) 127)
-#define PAD ((int8_t) 126)
 
 struct b64_alphabet {
 	const unsigned		magic;

@@ -30,14 +30,6 @@
  *
  */
 
-#include "config.h"
-
-#include <string.h>
-
-#include "vdef.h"
-#include "vrt.h"
-#include "vas.h"
-
 #include "vmod_blob.h"
 
 static size_t v_matchproto_(blob_len_f)

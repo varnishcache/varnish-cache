@@ -30,12 +30,32 @@
  *
  */
 
-/* vrt.h must be included before this header (for struct strands). */
+#include "config.h"
 
-#include <stdlib.h>
 #include <sys/types.h>
 
+#include <ctype.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+
+#include "cache/cache.h"
+
+#include "vas.h"
+#include "miniobj.h"
+
 #include "vcc_if.h"
+
+/*---------------------------------------------------------------------
+ * Utilities for codec alphabets.
+ */
+
+#define ILL ((int8_t) 127)
+#define PAD ((int8_t) 126)
+
+/* hex.c */
+extern const char hex_alphabet[][16];
+extern const uint8_t hex_nibble[];
 
 /*---------------------------------------------------------------------
  * The vmod_blob codec interface.
