@@ -8,7 +8,6 @@ libvmod_blob_la_SOURCES = \
 	hex.h \
 	hex.c \
 	url.c \
-	tbl_encodings.h \
 	tbl_case.h
 
 # Use vmodtool.py generated automake boilerplate

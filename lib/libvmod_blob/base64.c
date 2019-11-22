@@ -1,9 +1,11 @@
 /*-
  * Copyright 2015-2016 UPLEX - Nils Goroll Systemoptimierung
+ * Copyright 2019 Varnish Software
  * All rights reserved.
  *
  * Authors: Nils Goroll <nils.goroll@uplex.de>
  *          Geoffrey Simmons <geoffrey.simmons@uplex.de>
+ *          Dridi Boukelmoune <dridi.boukelmoune@gmail.com>
  *
  * SPDX-License-Identifier: BSD-2-Clause
  *
@@ -356,60 +358,3 @@ const struct blob_codec blob_codec_base64urlnopad = {
 	.priv		= &b64_alpha_urlnopad,
 	.case_sensitive = 1
 };
-
-/*---------------------------------------------------------------------
- * The deprecated codec interface.
- */
-
-size_t
-old_base64nopad_encode_l(size_t l)
-{
-	return (base64_len(l) + 4);
-}
-
-size_t
-old_base64_encode_l(size_t l)
-{
-	return ((((base64_len(l)) + 3) & ~3) + 1);
-}
-
-size_t
-old_base64_decode_l(size_t l)
-{
-	return ((l * 3) >> 2);
-}
-
-ssize_t
-old_base64_encode(const enum encoding enc, const enum case_e kase,
-    blob_dest_t buf, blob_len_t buflen,
-    blob_src_t inbuf, blob_len_t inlength)
-{
-	const struct blob_codec *c;
-
-	if (enc == BASE64URLNOPAD)
-		c = &blob_codec_base64urlnopad;
-	else if (enc == BASE64URL)
-		c = &blob_codec_base64url;
-	else if (enc == BASE64)
-		c = &blob_codec_base64;
-	else
-		WRONG("wrong encoding");
-	return (base64_encode(c, kase, buf, buflen, inbuf, inlength));
-}
-
-ssize_t
-old_base64_decode(const enum encoding dec, blob_dest_t buf,
-    blob_len_t buflen, ssize_t inlen, VCL_STRANDS strings)
-{
-	const struct blob_codec *c;
-
-	if (dec == BASE64URLNOPAD)
-		c = &blob_codec_base64urlnopad;
-	else if (dec == BASE64URL)
-		c = &blob_codec_base64url;
-	else if (dec == BASE64)
-		c = &blob_codec_base64;
-	else
-		WRONG("wrong encoding");
-	return (base64_decode(c, buf, buflen, inlen, strings));
-}

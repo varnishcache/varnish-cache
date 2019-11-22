@@ -1,9 +1,11 @@
 /*-
  * Copyright 2015-2017 UPLEX - Nils Goroll Systemoptimierung
+ * Copyright 2019 Varnish Software
  * All rights reserved.
  *
  * Authors: Nils Goroll <nils.goroll@uplex.de>
  *          Geoffrey Simmons <geoffrey.simmons@uplex.de>
+ *          Dridi Boukelmoune <dridi.boukelmoune@gmail.com>
  *
  * SPDX-License-Identifier: BSD-2-Clause
  *

@@ -1,9 +1,11 @@
 /*-
  * Copyright 2015-2016 UPLEX - Nils Goroll Systemoptimierung
+ * Copyright 2019 Varnish Software
  * All rights reserved.
  *
  * Authors: Nils Goroll <nils.goroll@uplex.de>
  *          Geoffrey Simmons <geoffrey.simmons@uplex.de>
+ *          Dridi Boukelmoune <dridi.boukelmoune@gmail.com>
  *
  * SPDX-License-Identifier: BSD-2-Clause
  *
@@ -196,38 +198,3 @@ const struct blob_codec blob_codec_url = {
 	.encode		= url_encode,
 	.name		= &VENUM(URL)
 };
-
-/*---------------------------------------------------------------------
- * The deprecated codec interface.
- */
-
-size_t
-old_url_encode_l(size_t l)
-{
-	return ((l * 3) + 1);
-}
-
-size_t
-old_url_decode_l(size_t l)
-{
-	return (l);
-}
-
-ssize_t
-old_url_encode(const enum encoding enc, const enum case_e kase,
-    blob_dest_t buf, blob_len_t buflen,
-    blob_src_t in, blob_len_t inlen)
-{
-
-	assert(enc == URL);
-	return (url_encode(&blob_codec_url, kase, buf, buflen, in, inlen));
-}
-
-ssize_t
-old_url_decode(const enum encoding dec, blob_dest_t buf,
-    blob_len_t buflen, ssize_t n, VCL_STRANDS strings)
-{
-
-	assert(dec == URL);
-	return (url_decode(&blob_codec_url, buf, buflen, n, strings));
-}

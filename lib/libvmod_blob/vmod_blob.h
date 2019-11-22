@@ -1,9 +1,11 @@
 /*-
  * Copyright 2015-2016 UPLEX - Nils Goroll Systemoptimierung
+ * Copyright 2019 Varnish Software
  * All rights reserved.
  *
  * Authors: Nils Goroll <nils.goroll@uplex.de>
  *          Geoffrey Simmons <geoffrey.simmons@uplex.de>
+ *          Dridi Boukelmoune <dridi.boukelmoune@gmail.com>
  *
  * SPDX-License-Identifier: BSD-2-Clause
  *
@@ -138,54 +140,3 @@ extern const struct blob_codec blob_codec_hex;
 
 /* url.c */
 extern const struct blob_codec blob_codec_url;
-
-/*---------------------------------------------------------------------
- * The deprecated codec interface.
- */
-
-typedef const size_t			blob_len_t;
-typedef const ssize_t			blob_slen_t;
-
-enum encoding {
-	__INVALID_ENCODING = 0,
-#define VMODENUM(x) x,
-#include "tbl_encodings.h"
-	__MAX_ENCODING
-};
-
-#define AENC(enc) assert((enc) > __INVALID_ENCODING && (enc) < __MAX_ENCODING)
-
-typedef size_t len_f(size_t);
-
-typedef
-ssize_t encode_f(const enum encoding enc, const enum case_e kase,
-		 blob_dest_t buf, blob_len_t buflen,
-		 blob_src_t in, blob_len_t inlen);
-
-typedef ssize_t decode_f(const enum encoding dec, blob_dest_t buf,
-    blob_len_t buflen, blob_slen_t inlen, VCL_STRANDS strings);
-
-/* id.c */
-len_f		old_id_encode_l;
-len_f		old_id_decode_l;
-encode_f	old_id_encode;
-decode_f	old_id_decode;
-
-/* base64.c */
-len_f		old_base64_decode_l;
-len_f		old_base64nopad_encode_l;
-len_f		old_base64_encode_l;
-encode_f	old_base64_encode;
-decode_f	old_base64_decode;
-
- /* hex.c */
-len_f		old_hex_encode_l;
-len_f		old_hex_decode_l;
-encode_f	old_hex_encode;
-decode_f	old_hex_decode;
-
-/* url.c */
-len_f		old_url_encode_l;
-len_f		old_url_decode_l;
-encode_f	old_url_encode;
-decode_f	old_url_decode;

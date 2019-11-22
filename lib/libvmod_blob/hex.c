@@ -1,9 +1,11 @@
 /*-
  * Copyright 2016 UPLEX - Nils Goroll Systemoptimierung
+ * Copyright 2019 Varnish Software
  * All rights reserved.
  *
  * Authors: Nils Goroll <nils.goroll@uplex.de>
  *          Geoffrey Simmons <geoffrey.simmons@uplex.de>
+ *          Dridi Boukelmoune <dridi.boukelmoune@gmail.com>
  *
  * SPDX-License-Identifier: BSD-2-Clause
  *
@@ -179,38 +181,3 @@ const struct blob_codec blob_codec_hex = {
 	.encode		= hex_encode,
 	.name		= &VENUM(HEX)
 };
-
-/*---------------------------------------------------------------------
- * The deprecated codec interface.
- */
-
-size_t
-old_hex_encode_l(size_t l)
-{
-	return ((l << 1) + 1);
-}
-
-size_t
-old_hex_decode_l(size_t l)
-{
-	return ((l + 1) >> 1);
-}
-
-ssize_t
-old_hex_encode(const enum encoding enc, const enum case_e kase,
-    blob_dest_t buf, blob_len_t buflen,
-    blob_src_t in, blob_len_t inlen)
-{
-
-	assert(enc == HEX);
-	return (hex_encode(&blob_codec_hex, kase, buf, buflen, in, inlen));
-}
-
-ssize_t
-old_hex_decode(const enum encoding dec, blob_dest_t buf,
-    blob_len_t buflen, ssize_t n, VCL_STRANDS strings)
-{
-
-	assert(dec == HEX);
-	return (hex_decode(&blob_codec_hex, buf, buflen, n, strings));
-}
