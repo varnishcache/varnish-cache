@@ -197,7 +197,9 @@ vcc_Compound(struct vcc *tl)
 				vcc_AddUses(tl, t, NULL,
 				    sym->action_mask,
 				    "Not a valid action");
+			Fb_splice_push(tl);
 			sym->action(tl, t, sym);
+			Fb_splice_pop(tl);
 			break;
 		default:
 			/* We deliberately do not mention inline C */
@@ -266,6 +268,7 @@ vcc_ParseFunction(struct vcc *tl)
 	}
 	CHECK_OBJ_NOTNULL(p, PROC_MAGIC);
 	tl->fb = p->body;
+	VTAILQ_INIT(&tl->fb_splices);
 	Fb(tl, 1, "  /* ... from ");
 	vcc_Coord(tl, p->body, NULL);
 	Fb(tl, 0, " */\n");
@@ -277,6 +280,7 @@ vcc_ParseFunction(struct vcc *tl)
 	tl->indent -= INDENT;
 	tl->fb = NULL;
 	tl->curproc = NULL;
+	AN(VTAILQ_EMPTY(&tl->fb_splices));
 }
 
 /*--------------------------------------------------------------------

@@ -209,6 +209,80 @@ Fb(const struct vcc *tl, int indent, const char *fmt, ...)
 }
 
 void
+Fb_splice_push(struct vcc *tl)
+{
+	struct splice *s;
+
+	AN(tl->fb);
+	ALLOC_OBJ(s, SPLICE_MAGIC);
+	AN(s);
+	s->fb = tl->fb;
+	VTAILQ_INIT(&s->callbacks);
+	VTAILQ_INSERT_HEAD(&tl->fb_splices, s, list);
+
+	tl->fb = VSB_new_auto();
+	AN(tl->fb);
+}
+
+void
+Fb_splice_print(const struct vcc *tl, int indent, const char *fmt, ...)
+{
+	struct splice *s;
+	va_list ap;
+
+	s = VTAILQ_FIRST(&tl->fb_splices);
+	AN(s);
+	if (indent)
+		VSB_printf(s->fb, "%*.*s", tl->indent, tl->indent, "");
+	va_start(ap, fmt);
+	VSB_vprintf(s->fb, fmt, ap);
+	va_end(ap);
+}
+
+void
+Fb_splice_cb(const struct vcc *tl, splice_cb_f *f, const void *priv)
+{
+	struct splice *s;
+	struct splice_cb *cb;
+
+	s = VTAILQ_FIRST(&tl->fb_splices);
+	AN(s);
+
+	ALLOC_OBJ(cb, SPLICE_CB_MAGIC);
+	AN(cb);
+	cb->callback = f;
+	cb->priv = priv;
+	VTAILQ_INSERT_TAIL(&s->callbacks, cb, list);
+}
+
+void
+Fb_splice_pop(struct vcc *tl)
+{
+	struct splice *s;
+	struct splice_cb *cb, *cb_temp;
+
+	s = VTAILQ_FIRST(&tl->fb_splices);
+	AN(s);
+
+	VTAILQ_FOREACH_SAFE(cb, &s->callbacks, list, cb_temp) {
+		AN(cb->callback);
+		cb->callback(tl, cb->priv);
+		VTAILQ_REMOVE(&s->callbacks, cb, list);
+		FREE_OBJ(cb);
+	}
+
+	VTAILQ_REMOVE(&tl->fb_splices, s, list);
+
+	AN(tl->fb);
+	AZ(VSB_finish(tl->fb));
+	VSB_bcat(s->fb, VSB_data(tl->fb), VSB_len(tl->fb));
+	VSB_delete(tl->fb);
+	tl->fb = s->fb;
+
+	FREE_OBJ(s);
+}
+
+void
 Fc(const struct vcc *tl, int indent, const char *fmt, ...)
 {
 	va_list ap;

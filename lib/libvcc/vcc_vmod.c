@@ -490,6 +490,7 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 	buf = VSB_new_auto();
 	AN(buf);
 	if (request_scope)
+		// TODO this needs to move into the splice_cb
 		VSB_printf(buf, ", (%s**)\n  "
 		    "VRT_priv_task_object(ctx, &%s, &vo_free_%s),\n  \"%s\"",
 		    s_struct, sy1->rname, sy1->name, sy1->name);
@@ -525,6 +526,7 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 	buf = VSB_new_auto();
 	AN(buf);
 	if (request_scope)
+		// TODO move to splice_cb with double null check
 		VSB_printf(buf, ", (%s*)\n  "
 		    "((VRT_priv_task(ctx, &%s))->priv)",
 		    s_struct, sy1->rname);
@@ -546,7 +548,10 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 		AN(sy3);
 		func_sym(sy3, sy2->vmod_name, VTAILQ_NEXT(vf, list));
 		sy3->extra = p;
+		sy3->rname = sy1->rname;
 		sy3->r_methods = mask;
+		sy3->request_scope = request_scope;
+		sy3->null_ok = null_ok;
 		vv = VTAILQ_NEXT(vv, list);
 	}
 	VSB_destroy(&buf);

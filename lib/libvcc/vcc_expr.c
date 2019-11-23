@@ -454,6 +454,18 @@ vcc_do_arg(struct vcc *tl, struct func_arg *fa)
 	fa->avail = 1;
 }
 
+static void v_matchproto_(splice_cb_f)
+vcc_func_sym(struct vcc *tl, const void *priv)
+{
+	const struct symbol *sym;
+
+	CAST_OBJ_NOTNULL(sym, priv, SYMBOL_MAGIC);
+	Fb_splice_print(tl, 1, "// XXX NULL? %s %s\n", sym->rname, sym->name);
+	VSB_printf(tl->curproc->prologue,
+	    "  //struct vmod_priv *lvo_priv_%u;\n", tl->curproc->need_privs);
+	tl->curproc->need_privs++;
+}
+
 static void
 vcc_func(struct vcc *tl, struct expr **e, const void *priv,
     const char *extra, const struct symbol *sym)
@@ -568,6 +580,9 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 			break;
 		SkipToken(tl, ',');
 	}
+
+	if (sym->request_scope && !sym->null_ok)
+		Fb_splice_cb(tl, vcc_func_sym, sym);
 
 	if (sa != NULL)
 		e1 = vcc_mk_expr(rfmt, "%s(ctx%s,\v+\n&(%s)\v+ {\n",

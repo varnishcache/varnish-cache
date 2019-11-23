@@ -166,6 +166,7 @@ VRT_priv_task_object(VRT_CTX, void *vmod_id, vmod_priv_free_f *free)
 	struct vmod_priv *priv;
 
 	priv = VRT_priv_task(ctx, vmod_id);
+	// TODO this is ws, move NULL check to splice_cb
 	priv->free = free;
 	return (&priv->priv);
 }

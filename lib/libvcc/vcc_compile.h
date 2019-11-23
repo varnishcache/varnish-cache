@@ -163,6 +163,7 @@ struct symbol {
 	unsigned			noref, nref, ndef;
 
 	const char			*extra;
+	const char			*extra2;
 
 	/* SYM_VAR */
 	const char			*rname;
@@ -171,6 +172,9 @@ struct symbol {
 	unsigned			w_methods;
 	const char			*uname;
 	unsigned			u_methods;
+
+	int				request_scope;
+	int				null_ok;
 };
 
 VTAILQ_HEAD(tokenhead, token);
@@ -193,6 +197,7 @@ struct proc {
 	struct vsb		*cname;
 	struct vsb		*prologue;
 	struct vsb		*body;
+	int			need_privs;
 };
 
 struct inifin {
@@ -205,6 +210,24 @@ struct inifin {
 	struct vsb		*final;
 	struct vsb		*event;
 	VTAILQ_ENTRY(inifin)	list;
+};
+
+typedef void splice_cb_f(struct vcc *, const void *);
+
+struct splice_cb {
+	unsigned		magic;
+#define	SPLICE_CB_MAGIC		0x6C34AEB9
+	VTAILQ_ENTRY(splice_cb)	list;
+	splice_cb_f		*callback;
+	const void			*priv;
+};
+
+struct splice {
+	unsigned		magic;
+#define	SPLICE_MAGIC		0x8E28B6C8
+	VTAILQ_ENTRY(splice)	list;
+	struct vsb		*fb;
+	VTAILQ_HEAD(,splice_cb)	callbacks;
 };
 
 VTAILQ_HEAD(inifinhead, inifin);
@@ -242,6 +265,7 @@ struct vcc {
 	struct vsb		*fb;		/* Body of current sub
 						 * NULL otherwise
 						 */
+	VTAILQ_HEAD(, splice)	fb_splices;
 	struct vsb		*sb;
 	int			err;
 	struct proc		*curproc;
@@ -306,6 +330,11 @@ void Fc(const struct vcc *tl, int indent, const char *fmt, ...)
     v_printflike_(3, 4);
 void Fb(const struct vcc *tl, int indent, const char *fmt, ...)
     v_printflike_(3, 4);
+void Fb_splice_push(struct vcc *tl);
+void Fb_splice_print(const struct vcc *tl, int indent, const char *fmt, ...)
+    v_printflike_(3, 4);
+void Fb_splice_cb(const struct vcc *tl, splice_cb_f *f, const void *priv);
+void Fb_splice_pop(struct vcc *tl);
 void EncToken(struct vsb *sb, const struct token *t);
 void *TlAlloc(struct vcc *tl, unsigned len);
 char *TlDup(struct vcc *tl, const char *s);
