@@ -32,7 +32,7 @@
  */
 
 struct vfilter;
-struct vcltemp;;
+struct vcltemp;
 
 VTAILQ_HEAD(vfilter_head, vfilter);
 

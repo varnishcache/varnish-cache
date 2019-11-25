@@ -32,8 +32,8 @@
 
 /*lint -save -e525 -e539 */
 
-//        upper           lower         type		    len
-SESS_ATTR(TRANSPORT,	  transport,	void,    	    0)
+//	  upper		  lower		type		    len
+SESS_ATTR(TRANSPORT,	  transport,	void,		    0)
 SESS_ATTR(REMOTE_ADDR,	  remote_addr,	struct suckaddr,    vsa_suckaddr_len)
 SESS_ATTR(LOCAL_ADDR,	  local_addr,	struct suckaddr,    vsa_suckaddr_len)
 SESS_ATTR(CLIENT_ADDR,	  client_addr,	struct suckaddr,    vsa_suckaddr_len)

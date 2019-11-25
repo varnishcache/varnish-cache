@@ -297,6 +297,7 @@ vmod_typesize(VRT_CTX, VCL_STRING s)
 			i += (l - a); /* align */
 		i += l;
 	}
+	AN(p);
 	a = i % p;
 	if (a != 0)
 		i += (p - a); /* pad */

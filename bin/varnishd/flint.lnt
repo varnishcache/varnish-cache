@@ -146,6 +146,8 @@
 
 // cache_vcl.c
 -esym(528, vcl_call_method)	// Not referenced
+-esym(765, VCL_TEMP_*)
+-esym(759, VCL_TEMP_*)
 
 -e441	//  for clause irregularity: loop variable '___' not found in 2nd for expression
 
