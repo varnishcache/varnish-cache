@@ -661,6 +661,13 @@ SLTM(VCL_use, 0, "VCL in use",
 	"\n"
 )
 
+SLTM(Notice, 0, "Informational messages about request handling",
+	"Informational log messages on events occured during request"
+	" handling. Lines are prefixed with either [core] or [<VMOD name>]."
+	" See the NOTICE MESSAGES section below or the individual VMOD manual"
+	" pages for detailed information of notice messages.\n"
+)
+
 #undef NOSUP_NOTICE
 #undef NODEF_NOTICE
 #undef SLTM
