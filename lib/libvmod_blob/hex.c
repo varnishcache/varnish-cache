@@ -135,7 +135,6 @@ hex_decode(BLOB_CODEC, blob_dest_t dest, size_t destlen, ssize_t slen,
 		return (-1);
 	}
 
-	/* XXX: prepended extra nibble, not appended! */
 	if (len & 1) {
 		extranib = '0';
 		len++;
@@ -157,8 +156,6 @@ hex_decode(BLOB_CODEC, blob_dest_t dest, size_t destlen, ssize_t slen,
 		}
 		extranib = *s;
 	}
-
-	/* XXX: no extra nible check after the last string? */
 
 	assert(p <= dest + destlen);
 	return (p - dest);
