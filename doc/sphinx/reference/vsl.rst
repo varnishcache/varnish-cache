@@ -102,6 +102,26 @@ Error
 	Backend request failed to vcl_backend_error.
 
 
+NOTICE MESSAGES
+===============
+
+Notice messages contain informational messages about the handling of a
+request. These can be exceptional circumstances encountered that causes
+deviation from the normal handling. The messages are prefixed with [core]
+for core Varnish generated messages, or with [<VMOD name>] for VMOD
+generated messages. The [core] messages are described in detail below, see
+the individual VMOD documentation for messages from VMODs.
+
+[core] Conditional fetch wait for streaming object
+	The backend answered 304 Not Modified on a conditional fetch using
+	an object that has not yet been fully fetched as the stale
+	template object. This can only happen when the TTL of the object
+	is less than the time it takes to fetch it. The fetch is halted
+	until the stale object is fully fetched, upon which the new object
+	is created as normal. While waiting, any grace time on the stale
+	object will be in effect.
+
+
 HISTORY
 =======
 
