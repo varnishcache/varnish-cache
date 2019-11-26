@@ -112,7 +112,7 @@ http1_new_session(struct worker *wrk, void *arg)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	HTC_RxInit(req->htc, req->ws);
-	SES_Reserve_proto_priv(sp, &u);
+	XXXAN(SES_Reserve_proto_priv(sp, &u));
 	http1_setstate(sp, H1NEWREQ);
 	wrk->task.func = http1_req;
 	wrk->task.priv = req;

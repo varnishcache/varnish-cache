@@ -50,6 +50,13 @@ struct vpx_tlv {
 	char			tlv[1];
 };
 
+static inline int
+vpx_ws_err(const struct req *req)
+{
+	VSL(SLT_Error, req->sp->vxid, "insufficient workspace");
+	return (-1);
+}
+
 /**********************************************************************
  * PROXY 1 protocol
  */
@@ -109,17 +116,23 @@ vpx_proto1(const struct worker *wrk, const struct req *req)
 		return (-1);
 	}
 
-	SES_Reserve_client_addr(req->sp, &sa);
+	if (! SES_Reserve_client_addr(req->sp, &sa))
+		return (vpx_ws_err(req));
+
 	if (VSS_ResolveOne(sa, fld[1], fld[3],
 	    pfam, SOCK_STREAM, AI_NUMERICHOST | AI_NUMERICSERV) == NULL) {
 		VSL(SLT_ProxyGarbage, req->sp->vxid,
 		    "PROXY1: Cannot resolve source address");
 		return (-1);
 	}
-	SES_Set_String_Attr(req->sp, SA_CLIENT_IP, fld[1]);
-	SES_Set_String_Attr(req->sp, SA_CLIENT_PORT, fld[3]);
+	if (! SES_Set_String_Attr(req->sp, SA_CLIENT_IP, fld[1]))
+		return (vpx_ws_err(req));
+	if (! SES_Set_String_Attr(req->sp, SA_CLIENT_PORT, fld[3]))
+		return (vpx_ws_err(req));
 
-	SES_Reserve_server_addr(req->sp, &sa);
+	if (! SES_Reserve_server_addr(req->sp, &sa))
+		return (vpx_ws_err(req));
+
 	if (VSS_ResolveOne(sa, fld[2], fld[4],
 	    pfam, SOCK_STREAM, AI_NUMERICHOST | AI_NUMERICSERV) == NULL) {
 		VSL(SLT_ProxyGarbage, req->sp->vxid,
@@ -377,14 +390,16 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 		/* dst/server */
 		memcpy(&sin4.sin_addr, p + 20, 4);
 		memcpy(&sin4.sin_port, p + 26, 2);
-		SES_Reserve_server_addr(req->sp, &sa);
+		if (! SES_Reserve_server_addr(req->sp, &sa))
+			return (vpx_ws_err(req));
 		AN(VSA_Build(sa, &sin4, sizeof sin4));
 		VTCP_name(sa, ha, sizeof ha, pa, sizeof pa);
 
 		/* src/client */
 		memcpy(&sin4.sin_addr, p + 16, 4);
 		memcpy(&sin4.sin_port, p + 24, 2);
-		SES_Reserve_client_addr(req->sp, &sa);
+		if (! SES_Reserve_client_addr(req->sp, &sa))
+			return (vpx_ws_err(req));
 		AN(VSA_Build(sa, &sin4, sizeof sin4));
 		break;
 	case 0x21:
@@ -403,14 +418,16 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 		/* dst/server */
 		memcpy(&sin6.sin6_addr, p + 32, 16);
 		memcpy(&sin6.sin6_port, p + 50, 2);
-		SES_Reserve_server_addr(req->sp, &sa);
+		if (! SES_Reserve_server_addr(req->sp, &sa))
+			return (vpx_ws_err(req));
 		AN(VSA_Build(sa, &sin6, sizeof sin6));
 		VTCP_name(sa, ha, sizeof ha, pa, sizeof pa);
 
 		/* src/client */
 		memcpy(&sin6.sin6_addr, p + 16, 16);
 		memcpy(&sin6.sin6_port, p + 48, 2);
-		SES_Reserve_client_addr(req->sp, &sa);
+		if (! SES_Reserve_client_addr(req->sp, &sa))
+			return (vpx_ws_err(req));
 		AN(VSA_Build(sa, &sin6, sizeof sin6));
 		break;
 	default:
@@ -422,8 +439,10 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 
 	AN(sa);
 	VTCP_name(sa, hb, sizeof hb, pb, sizeof pb);
-	SES_Set_String_Attr(req->sp, SA_CLIENT_IP, hb);
-	SES_Set_String_Attr(req->sp, SA_CLIENT_PORT, pb);
+	if (! SES_Set_String_Attr(req->sp, SA_CLIENT_IP, hb))
+		return (vpx_ws_err(req));
+	if (! SES_Set_String_Attr(req->sp, SA_CLIENT_PORT, pb))
+		return (vpx_ws_err(req));
 
 	VSL(SLT_Proxy, req->sp->vxid, "2 %s %s %s %s", hb, pb, ha, pa);
 
@@ -450,15 +469,13 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 		return (-1);
 	}
 	tlv = WS_Alloc(req->sp->ws, sizeof *tlv + tlv_len);
-	if (tlv == NULL) {
-		VSL(SLT_ProxyGarbage, req->sp->vxid,
-		    "PROXY2: TLV overflows WS");
-		return (-1);
-	}
+	if (tlv == NULL)
+		return (vpx_ws_err(req));
 	INIT_OBJ(tlv, VPX_TLV_MAGIC);
 	tlv->len = tlv_len;
 	memcpy(tlv->tlv, tlv_start, tlv_len);
-	SES_Reserve_proxy_tlv(req->sp, &up);
+	if (! SES_Reserve_proxy_tlv(req->sp, &up))
+		return (vpx_ws_err(req));
 	*up = (uintptr_t)tlv;
 	return (0);
 }

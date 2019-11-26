@@ -110,8 +110,8 @@ ses_set_attr(const struct sess *sp, enum sess_attr a, const void *src, int sz)
 	return (0);
 }
 
-static void
-ses_reserve_attr(struct sess *sp, enum sess_attr a, void **dst, int sz)
+static int
+ses_res_attr(struct sess *sp, enum sess_attr a, void **dst, int sz)
 {
 	ssize_t o;
 
@@ -120,12 +120,14 @@ ses_reserve_attr(struct sess *sp, enum sess_attr a, void **dst, int sz)
 	assert(sz >= 0);
 	AN(dst);
 	o = WS_ReserveSize(sp->ws, sz);
-	assert(o >= sz);
+	if (o < sz)
+		return (0);
 	*dst = sp->ws->f;
 	o = sp->ws->f - sp->ws->s;
 	WS_Release(sp->ws, sz);
 	assert(o >= 0 && o <= 0xffff);
 	sp->sattr[a] = (uint16_t)o;
+	return (1);
 }
 
 #define SESS_ATTR(UP, low, typ, len)					\
@@ -143,16 +145,16 @@ ses_reserve_attr(struct sess *sp, enum sess_attr a, void **dst, int sz)
 		return (ses_get_attr(sp, SA_##UP, (void**)dst));	\
 	}								\
 									\
-	void								\
+	int								\
 	SES_Reserve_##low(struct sess *sp, typ **dst)			\
 	{								\
 		assert(len > 0);					\
-		ses_reserve_attr(sp, SA_##UP, (void**)dst, len);	\
+		return (ses_res_attr(sp, SA_##UP, (void**)dst, len));	\
 	}
 
 #include "tbl/sess_attr.h"
 
-void
+int
 SES_Set_String_Attr(struct sess *sp, enum sess_attr a, const char *src)
 {
 	void *q;
@@ -164,8 +166,10 @@ SES_Set_String_Attr(struct sess *sp, enum sess_attr a, const char *src)
 	if (strcmp(sess_attr[a].type, "char"))
 		WRONG("wrong sess_attr: not char");
 
-	ses_reserve_attr(sp, a, &q, strlen(src) + 1);
+	if (! ses_res_attr(sp, a, &q, strlen(src) + 1))
+		return (0);
 	strcpy(q, src);
+	return (1);
 }
 
 const char *
