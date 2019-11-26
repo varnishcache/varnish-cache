@@ -1,4 +1,4 @@
-varnishtest "Test workspace functions in vmod_vtc"
+varnishtest "Test WS_ReserveSize() overflow behavior"
 
 varnish v1 -vcl {
 	import vtc;
