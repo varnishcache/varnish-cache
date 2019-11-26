@@ -1,0 +1,24 @@
+varnishtest "Test workspace functions in vmod_vtc"
+
+varnish v1 -vcl {
+	import vtc;
+	import std;
+
+	backend dummy { .host = "${bad_backend}"; }
+
+	sub vcl_recv {
+		return (synth(200));
+	}
+
+	sub vcl_synth {
+		set resp.http.res1 = vtc.workspace_reserve(client, 1024 * 1024);
+		vtc.workspace_alloc(client, -1);
+		set resp.http.res2 = vtc.workspace_reserve(client, 8);
+		set resp.http.res3 = vtc.workspace_reserve(client, 8);
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+} -run
