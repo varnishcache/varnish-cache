@@ -383,9 +383,9 @@ enum htc_status_e HTC_RxStuff(struct http_conn *, htc_complete_f *,
 
 #define SESS_ATTR(UP, low, typ, len)					\
 	int SES_Set_##low(const struct sess *sp, const typ *src);	\
-	void SES_Reserve_##low(struct sess *sp, typ **dst);
+	int SES_Reserve_##low(struct sess *sp, typ **dst);
 #include "tbl/sess_attr.h"
-void SES_Set_String_Attr(struct sess *sp, enum sess_attr a, const char *src);
+int SES_Set_String_Attr(struct sess *sp, enum sess_attr a, const char *src);
 
 /* cache_shmlog.c */
 extern struct VSC_main *VSC_C_main;
