@@ -319,17 +319,17 @@ vca_mk_tcp(const struct wrk_accept *wa,
 	struct sockaddr_storage ss;
 	socklen_t sl;
 
-	SES_Reserve_remote_addr(sp, &sa);
+	AN(SES_Reserve_remote_addr(sp, &sa));
 	AN(VSA_Build(sa, &wa->acceptaddr, wa->acceptaddrlen));
 	sp->sattr[SA_CLIENT_ADDR] = sp->sattr[SA_REMOTE_ADDR];
 
 	VTCP_name(sa, raddr, VTCP_ADDRBUFSIZE, rport, VTCP_PORTBUFSIZE);
-	SES_Set_String_Attr(sp, SA_CLIENT_IP, raddr);
-	SES_Set_String_Attr(sp, SA_CLIENT_PORT, rport);
+	AN(SES_Set_String_Attr(sp, SA_CLIENT_IP, raddr));
+	AN(SES_Set_String_Attr(sp, SA_CLIENT_PORT, rport));
 
 	sl = sizeof ss;
 	AZ(getsockname(sp->fd, (void*)&ss, &sl));
-	SES_Reserve_local_addr(sp, &sa);
+	AN(SES_Reserve_local_addr(sp, &sa));
 	AN(VSA_Build(sa, &ss, sl));
 	sp->sattr[SA_SERVER_ADDR] = sp->sattr[SA_LOCAL_ADDR];
 	VTCP_name(sa, laddr, VTCP_ADDRBUFSIZE, lport, VTCP_PORTBUFSIZE);
@@ -342,13 +342,13 @@ vca_mk_uds(struct wrk_accept *wa, struct sess *sp, char *laddr, char *lport,
 	struct suckaddr *sa;
 
 	(void) wa;
-	SES_Reserve_remote_addr(sp, &sa);
+	AN(SES_Reserve_remote_addr(sp, &sa));
 	AZ(SES_Set_remote_addr(sp, bogo_ip));
 	sp->sattr[SA_CLIENT_ADDR] = sp->sattr[SA_REMOTE_ADDR];
 	sp->sattr[SA_LOCAL_ADDR] = sp->sattr[SA_REMOTE_ADDR];
 	sp->sattr[SA_SERVER_ADDR] = sp->sattr[SA_REMOTE_ADDR];
-	SES_Set_String_Attr(sp, SA_CLIENT_IP, "0.0.0.0");
-	SES_Set_String_Attr(sp, SA_CLIENT_PORT, "0");
+	AN(SES_Set_String_Attr(sp, SA_CLIENT_IP, "0.0.0.0"));
+	AN(SES_Set_String_Attr(sp, SA_CLIENT_PORT, "0"));
 
 	strcpy(laddr, "0.0.0.0");
 	strcpy(raddr, "0.0.0.0");
