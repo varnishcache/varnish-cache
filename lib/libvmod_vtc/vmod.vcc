@@ -102,7 +102,7 @@ $Function BYTES workspace_reserve(ENUM { client, backend, session, thread },
 Attempt to reserve *size* bytes and release the reservation right
 away. Return the size of the reservation.
 
-See `vtc.workspace_alloc`_ for semantics of the *size* argument.
+See `vtc.workspace_alloc()`_ for semantics of the *size* argument.
 
 $Function INT workspace_free(ENUM { client, backend, session, thread })
 

@@ -261,7 +261,7 @@ WS_ReserveSize(struct ws *ws, unsigned bytes)
 	if (bytes < b2)
 		b2 = PRNDUP(bytes);
 
-	if (ws->f + b2 > ws->e) {
+	if (ws->f + b2 >= ws->e) {
 		WS_MarkOverflow(ws);
 		return (0);
 	}
