@@ -169,6 +169,34 @@ vmod_workspace_alloc(VRT_CTX, VCL_ENUM which, VCL_INT size)
 		memset(p, '\0', size);
 }
 
+VCL_BYTES v_matchproto_(td_vtc_workspace_reserve)
+vmod_workspace_reserve(VRT_CTX, VCL_ENUM which, VCL_INT size)
+{
+	struct ws *ws;
+	unsigned r;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	ws = vtc_ws_find(ctx, which);
+	if (ws == NULL)
+		return (0);
+	WS_Assert(ws);
+
+	if (size < 0) {
+		size += WS_ReserveAll(ws);
+		WS_Release(ws, 0);
+	}
+	if (size <= 0) {
+		VRT_fail(ctx, "Attempted negative WS reservation");
+		return (0);
+	}
+	r = WS_ReserveSize(ws, size);
+	if (r == 0)
+		return (0);
+	WS_Release(ws, 0);
+	return (1);
+}
+
 VCL_INT v_matchproto_(td_vtc_workspace_free)
 vmod_workspace_free(VRT_CTX, VCL_ENUM which)
 {
