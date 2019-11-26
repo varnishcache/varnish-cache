@@ -96,6 +96,14 @@ as much as needed to leave that many bytes free. The actual allocation size
 may be higher to comply with memory alignment requirements of the CPU
 architecture. A failed allocation fails the transaction.
 
+$Function BYTES workspace_reserve(ENUM { client, backend, session, thread },
+	INT size)
+
+Attempt to reserve *size* bytes and release the reservation right
+away. Return the size of the reservation.
+
+See `vtc.workspace_alloc`_ for semantics of the *size* argument.
+
 $Function INT workspace_free(ENUM { client, backend, session, thread })
 
 Find how much unallocated space there is left in a workspace.
