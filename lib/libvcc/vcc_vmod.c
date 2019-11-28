@@ -405,14 +405,6 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 	sy2 = VCC_SymbolGet(tl, SYM_OBJECT, SYMTAB_EXISTING, XREF_NONE);
 	ERRCHK(tl);
 	AN(sy2);
-	if (sy2->eval_priv == NULL) {
-		VSB_printf(tl->sb, "Constructor not found: ");
-		vcc_ErrToken(tl, t);
-		VSB_printf(tl->sb, " at ");
-		vcc_ErrWhere(tl, t);
-		return;
-	}
-
 	CAST_OBJ_NOTNULL(vv, sy2->eval_priv, VJSN_VAL_MAGIC);
 	// vv = object name
 
