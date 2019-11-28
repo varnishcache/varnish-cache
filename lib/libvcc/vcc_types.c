@@ -42,9 +42,15 @@ const struct type ACL[1] = {{
 	.tostring =		"((\v1)->name)",
 }};
 
+static const struct vcc_method backend_methods[] = {
+	{ BACKEND, "resolve", "VRT_VDI_Resolve(ctx, \v1)", 1 },
+	{ NULL },
+};
+
 const struct type BACKEND[1] = {{
 	.magic =		TYPE_MAGIC,
 	.name =			"BACKEND",
+	.methods =		backend_methods,
 	.tostring =		"VRT_BACKEND_string(\v1)",
 }};
 
@@ -125,9 +131,17 @@ const struct type REAL[1] = {{
 	.multype =		REAL,
 }};
 
+static const struct vcc_method stevedore_methods[] = {
+#define VRTSTVVAR(nm, vtype, ctype, dval) \
+	{ vtype, #nm, "VRT_stevedore_" #nm "(\v1)", 0},
+#include "tbl/vrt_stv_var.h"
+	{ NULL },
+};
+
 const struct type STEVEDORE[1] = {{
 	.magic =		TYPE_MAGIC,
 	.name =			"STEVEDORE",
+	.methods =		stevedore_methods,
 	.tostring =		"VRT_STEVEDORE_string(\v1)",
 }};
 
@@ -144,9 +158,16 @@ const struct type STRANDS[1] = {{
 	.tostring =		"VRT_CollectStrands(ctx,\v+\n\v1\v-\n)",
 }};
 
+static const struct vcc_method strings_methods[] = {
+	{ STRING, "upper", "VRT_UpperLowerStrands(ctx, \vT, 1)", 1 },
+	{ STRING, "lower", "VRT_UpperLowerStrands(ctx, \vT, 0)", 1 },
+	{ NULL },
+};
+
 const struct type STRINGS[1] = {{
 	.magic =		TYPE_MAGIC,
 	.name =			"STRINGS",
+	.methods =		strings_methods,
 	.tostring =		"",
 }};
 
