@@ -43,7 +43,7 @@ const struct type ACL[1] = {{
 }};
 
 static const struct vcc_method backend_methods[] = {
-	{ BACKEND, "resolve", "VRT_VDI_Resolve(ctx, \v1)", 1 },
+	{ BACKEND, "resolve", "VRT_DirectorResolve(ctx, \v1)", 1 },
 	{ NULL },
 };
 

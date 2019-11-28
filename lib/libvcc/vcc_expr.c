@@ -816,38 +816,12 @@ vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
  * SYNTAX:
  *    Expr4:
  *      Expr5 [ '.' (type_attribute | type_method()) ]*
- *
- * type_attributes is information already existing, requiring no
- * processing or resource usage.
- *
- * type_methods are calls and may do (significant processing, change things,
- * eat workspace etc.
  */
-
-static const struct vcc_methods {
-	vcc_type_t		type_from;
-	vcc_type_t		type_to;
-	const char		*method;
-	const char		*impl;
-	int			func;
-} vcc_methods[] = {
-	//{ BACKEND, BOOL,	"healthy",	"VRT_Healthy(ctx, \v1, 0)" },
-
-#define VRTSTVVAR(nm, vtype, ctype, dval) \
-	{ STEVEDORE, vtype, #nm, "VRT_stevedore_" #nm "(\v1)", 0},
-#include "tbl/vrt_stv_var.h"
-
-	{ STRINGS, STRING, "upper", "VRT_UpperLowerStrands(ctx, \vT, 1)", 1 },
-	{ STRINGS, STRING, "lower", "VRT_UpperLowerStrands(ctx, \vT, 0)", 1 },
-	{ BACKEND, BACKEND, "resolve", "VRT_DirectorResolve(ctx, \v1)", 1 },
-
-	{ NULL, NULL,		NULL,		NULL},
-};
 
 static void
 vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 {
-	const struct vcc_methods *vm;
+	const struct vcc_method *vm;
 
 	*e = NULL;
 	vcc_expr5(tl, e, fmt);
@@ -857,14 +831,14 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		vcc_NextToken(tl);
 		ExpectErr(tl, ID);
 
-		for(vm = vcc_methods; vm->type_from != NULL; vm++) {
-
-			if (vm->type_from == (*e)->fmt &&
-			    vcc_IdIs(tl->t, vm->method))
+		vm = (*e)->fmt->methods;
+		while (vm != NULL && vm->type != NULL) {
+			if (vcc_IdIs(tl->t, vm->name))
 				break;
+			vm++;
 		}
 
-		if (vm->type_from == NULL) {
+		if (vm == NULL || vm->type == NULL) {
 			VSB_cat(tl->sb, "Unknown property ");
 			vcc_ErrToken(tl, tl->t);
 			VSB_printf(tl->sb,
@@ -873,7 +847,7 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 			return;
 		}
 		vcc_NextToken(tl);
-		*e = vcc_expr_edit(tl, vm->type_to, vm->impl, *e, NULL);
+		*e = vcc_expr_edit(tl, vm->type, vm->impl, *e, NULL);
 		ERRCHK(tl);
 		if ((*e)->fmt == STRING) {
 			(*e)->fmt = STRINGS;
