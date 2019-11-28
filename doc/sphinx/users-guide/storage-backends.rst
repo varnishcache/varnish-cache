@@ -142,7 +142,7 @@ the storage file using `dd(1)` will reduce fragmentation to a minimum.
 .. XXX:1? benc
 
 The 'granularity' parameter specifies the granularity of
-allocation. All allocations are rounded up to this size. The granularity is
+allocation. All allocations are rounded up to this size. The granularity
 is assumed to be expressed in bytes, unless followed by one of the
 suffixes described for size.
 
