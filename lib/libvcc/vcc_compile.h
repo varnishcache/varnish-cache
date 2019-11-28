@@ -100,6 +100,15 @@ struct token {
 
 typedef const struct type	*vcc_type_t;
 
+/*
+ * A type attribute is information already existing, requiring no processing
+ * or resource usage.
+ *
+ * A type method is a call and may do significant processing, change things,
+ * eat workspace etc.
+ *
+ * XXX: type methods might move in a more comprehensive direction.
+ */
 struct vcc_method {
 	vcc_type_t		type;
 	const char		*name;
