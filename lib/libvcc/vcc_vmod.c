@@ -389,6 +389,8 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 	int null_ok = 0;
 
 	(void)sym;
+	(void)t;
+
 	ExpectErr(tl, ID);
 	vcc_ExpectVid(tl, "VCL object");
 	ERRCHK(tl);
@@ -401,7 +403,6 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 	vcc_NextToken(tl);
 
 	ExpectErr(tl, ID);
-	t = tl->t;
 	sy2 = VCC_SymbolGet(tl, SYM_OBJECT, SYMTAB_EXISTING, XREF_NONE);
 	ERRCHK(tl);
 	AN(sy2);
