@@ -97,13 +97,23 @@ struct token {
 };
 
 /*---------------------------------------------------------------------*/
+
 typedef const struct type	*vcc_type_t;
+
+struct vcc_method {
+	vcc_type_t		type;
+	const char		*name;
+	const char		*impl;
+	int			func;
+};
 
 struct type {
 	unsigned		magic;
 #define TYPE_MAGIC		0xfae932d9
 
 	const char		*name;
+	const struct vcc_method	*methods;
+
 	const char		*tostring;
 	vcc_type_t		multype;
 	int			stringform;
