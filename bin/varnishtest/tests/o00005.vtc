@@ -249,10 +249,16 @@ delay 1
 
 varnish v1 -expect ws_session_overflow == 1
 
-# error handling elsewhere in the proxy code
-# request is the same as initial
-
-varnish v1 -cliok "param.set workspace_session 450"
+# workspace overflow handling elsewhere in the proxy code
+#
+# the workspace_session size is chosen to fail as closely as possible
+# below the minimum required value for the vtc to work (= the
+# workspace to overflow) both on 64 and 32 bit.
+#
+# This value is fragile, ideally we would want something like
+# vtc.alloc(-x), yet there is no vcl code being run before we parse
+# proxy headers
+varnish v1 -cliok "param.set workspace_session 410"
 varnish v1 -cliok "param.set pool_sess 10,100,1"
 
 delay 1
