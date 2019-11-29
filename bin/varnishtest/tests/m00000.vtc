@@ -127,6 +127,20 @@ varnish v1 -errvcl {Expression has type STRING, expected REAL} {
 	}
 }
 
+varnish v1 -errvcl {Symbol not found: 'obj'} {
+	import debug;
+	sub vcl_hit {
+		debug.rot52(obj);
+	}
+}
+
+varnish v1 -errvcl {Symbol not found: 'obj'} {
+	import debug;
+	sub vcl_deliver {
+		debug.rot52(obj);
+	}
+}
+
 varnish v1 -errvcl {Failed initialization} {
 	import debug;
 	import directors;
