@@ -381,8 +381,13 @@ VCC_MkSym(struct vcc *tl, const char *b, vcc_kind_t kind, int vlo, int vhi)
 	st = vcc_symtab_str(tl->syms, b, NULL);
 	AN(st);
 	sym = vcc_sym_in_tab(tl, st, kind, vlo, vhi);
-	AZ(sym);
-	sym = vcc_new_symbol(tl, st, kind, vlo, vhi);
+	if (sym != NULL) {
+		assert(sym->kind == SYM_METHOD);
+		AN(sym->vmod_name);
+	} else {
+		sym = vcc_new_symbol(tl, st, kind, vlo, vhi);
+		AN(sym);
+	}
 	sym->noref = 1;
 	return (sym);
 }

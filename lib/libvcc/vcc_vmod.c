@@ -138,7 +138,9 @@ vcc_json_always(struct vcc *tl, const struct vjsn *vj, const char *vmod_name)
 static void
 vcc_vmod_RegisterObject(struct vcc *tl, struct symbol *sym)
 {
+	const struct vjsn_val *vv, *vf, *vs;
 	struct vmod_obj *obj;
+	struct symbol *met;
 	struct vsb *buf;
 
 	buf = VSB_new_auto();
@@ -154,6 +156,50 @@ vcc_vmod_RegisterObject(struct vcc *tl, struct symbol *sym)
 	obj->type->name = obj->name;
 	sym->type = obj->type;
 	VTAILQ_INSERT_TAIL(&tl->vmod_objects, obj, list);
+
+	/* Find object methods */
+	CAST_OBJ_NOTNULL(vv, sym->eval_priv, VJSN_VAL_MAGIC);
+	for (; vv != NULL; vv = VTAILQ_NEXT(vv, list)) {
+		if (vv->type != VJSN_ARRAY)
+			continue;
+		vf = VTAILQ_FIRST(&vv->children);
+		if (vf->type != VJSN_STRING)
+			continue;
+		if (!strcmp(vf->value, "$METHOD"))
+			break;
+	}
+
+	/* Make object methods symbols */
+	while (vv != NULL) {
+		vf = VTAILQ_FIRST(&vv->children);
+		assert(vf->type == VJSN_STRING);
+		assert(!strcmp(vf->value, "$METHOD"));
+		vf = VTAILQ_NEXT(vf, list); /* method name */
+		assert(vf->type == VJSN_STRING);
+
+		VSB_clear(buf);
+		VSB_printf(buf, "%s::%s", obj->name, vf->value);
+		AZ(VSB_finish(buf));
+		met = VCC_MkSym(tl, VSB_data(buf), SYM_METHOD, VCL_LOW,
+		    VCL_HIGH);
+		if (tl->err)
+			break;
+		AN(met);
+
+		vs = VTAILQ_NEXT(vf, list); /* method signature */
+		assert(vs->type == VJSN_ARRAY);
+		vf = VTAILQ_FIRST(&vs->children); /* return type */
+		assert(vf->type == VJSN_ARRAY);
+		vf = VTAILQ_FIRST(&vf->children); /* return type value */
+		assert(vf->type == VJSN_STRING);
+
+		met->type = VCC_Type(vf->value);
+		XXXAN(met->type);
+		/* XXX: met->eval not set yet */
+		met->eval_priv = vs;
+		vv = VTAILQ_NEXT(vv, list);
+	}
+
 	VSB_destroy(&buf);
 }
 
@@ -164,6 +210,12 @@ vcc_json_wildcard(struct vcc *tl, struct symbol *msym, struct symbol *tsym)
 	const struct vjsn_val *vv, *vv1, *vv2;
 
 	assert(msym->kind == SYM_VMOD);
+
+	if (tsym->kind == SYM_METHOD) {
+		tsym->vmod_name = msym->vmod_name;
+		return;
+	}
+
 	CAST_OBJ_NOTNULL(vj, msym->eval_priv, VJSN_MAGIC);
 	VTAILQ_FOREACH(vv, &vj->value->children, list) {
 		assert(vv->type == VJSN_ARRAY);
