@@ -365,6 +365,31 @@ VCC_SymbolGet(struct vcc *tl, vcc_ns_t ns, vcc_kind_t kind,
 }
 
 struct symbol *
+VCC_TypeSymbol(struct vcc *tl, vcc_kind_t kind, vcc_type_t type)
+{
+	struct token t[1], *t0;
+	struct symbol *sym;
+	struct vsb *buf;
+
+	buf = VSB_new_auto();
+	AN(buf);
+	VSB_printf(buf, "%s.%.*s", type->name, PF(tl->t));
+	AZ(VSB_finish(buf));
+
+	/* NB: we create a fake token but errors are handled by the caller. */
+	memcpy(t, tl->t, sizeof *t);
+	t->b = VSB_data(buf);
+	t->e = t->b + VSB_len(buf);
+
+	t0 = tl->t;
+	tl->t = t;
+	sym = VCC_SymbolGet(tl, SYM_TYPE, kind, SYMTAB_NOERR, XREF_NONE);
+	tl->t = t0;
+	VSB_destroy(&buf);
+	return (sym);
+}
+
+struct symbol *
 VCC_MkSym(struct vcc *tl, const char *b, vcc_ns_t ns, vcc_kind_t kind,
     int vlo, int vhi)
 {

@@ -823,6 +823,7 @@ static void
 vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 {
 	const struct vcc_method *vm;
+	const struct symbol *sym;
 
 	*e = NULL;
 	vcc_expr5(tl, e, fmt);
@@ -832,14 +833,8 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		vcc_NextToken(tl);
 		ExpectErr(tl, ID);
 
-		vm = (*e)->fmt->methods;
-		while (vm != NULL && vm->type != NULL) {
-			if (vcc_IdIs(tl->t, vm->name))
-				break;
-			vm++;
-		}
-
-		if (vm == NULL || vm->type == NULL) {
+		sym = VCC_TypeSymbol(tl, SYM_METHOD, (*e)->fmt);
+		if (sym == NULL) {
 			VSB_cat(tl->sb, "Unknown property ");
 			vcc_ErrToken(tl, tl->t);
 			VSB_printf(tl->sb,
@@ -847,6 +842,8 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
+		CAST_OBJ_NOTNULL(vm, sym->eval_priv, VCC_METHOD_MAGIC);
+
 		vcc_NextToken(tl);
 		*e = vcc_expr_edit(tl, vm->type, vm->impl, *e, NULL);
 		ERRCHK(tl);

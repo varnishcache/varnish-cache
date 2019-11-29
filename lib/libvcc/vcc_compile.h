@@ -402,6 +402,8 @@ extern const struct symmode SYMTAB_PARTIAL[1];
 struct symbol *VCC_SymbolGet(struct vcc *, vcc_ns_t, vcc_kind_t,
     const struct symmode *, const struct symxref *);
 
+struct symbol *VCC_TypeSymbol(struct vcc *, vcc_kind_t, vcc_type_t);
+
 typedef void symwalk_f(struct vcc *tl, const struct symbol *s);
 void VCC_WalkSymbols(struct vcc *tl, symwalk_f *func, vcc_ns_t, vcc_kind_t);
 
