@@ -74,6 +74,7 @@ struct expr;
 struct vcc;
 struct vjsn_val;
 struct symbol;
+struct vmod_obj;
 
 struct source {
 	VTAILQ_ENTRY(source)	list;
@@ -261,6 +262,7 @@ struct vcc {
 
 	VTAILQ_HEAD(, symbol)	sym_objects;
 	VTAILQ_HEAD(, symbol)	sym_vmods;
+	VTAILQ_HEAD(, vmod_obj)	vmod_objects;
 
 	unsigned		unique;
 	unsigned		vmod_count;

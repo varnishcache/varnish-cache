@@ -47,6 +47,14 @@ struct vmod_open {
 	const char		*err;
 };
 
+struct vmod_obj {
+	unsigned		magic;
+#define VMOD_OBJ_MAGIC		0x349885f8
+	char			*name;
+	struct type		type[1];
+	VTAILQ_ENTRY(vmod_obj)	list;
+};
+
 static int
 vcc_path_dlopen(void *priv, const char *fn)
 {
@@ -127,6 +135,28 @@ vcc_json_always(struct vcc *tl, const struct vjsn *vj, const char *vmod_name)
 	}
 }
 
+static void
+vcc_vmod_RegisterObject(struct vcc *tl, struct symbol *sym)
+{
+	struct vmod_obj *obj;
+	struct vsb *buf;
+
+	buf = VSB_new_auto();
+	AN(buf);
+	VSB_printf(buf, "%s.%s", sym->vmod_name, sym->name);
+	AZ(VSB_finish(buf));
+
+	ALLOC_OBJ(obj, VMOD_OBJ_MAGIC);
+	AN(obj);
+	REPLACE(obj->name, VSB_data(buf));
+
+	INIT_OBJ(obj->type, TYPE_MAGIC);
+	obj->type->name = obj->name;
+	sym->type = obj->type;
+	VTAILQ_INSERT_TAIL(&tl->vmod_objects, obj, list);
+	VSB_destroy(&buf);
+}
+
 static void v_matchproto_(sym_wildcard_t)
 vcc_json_wildcard(struct vcc *tl, struct symbol *msym, struct symbol *tsym)
 {
@@ -152,6 +182,7 @@ vcc_json_wildcard(struct vcc *tl, struct symbol *msym, struct symbol *tsym)
 			tsym->kind = SYM_OBJECT;
 			tsym->eval_priv = vv2;
 			tsym->vmod_name = msym->vmod_name;
+			vcc_vmod_RegisterObject(tl, tsym);
 			return;
 		}
 	}

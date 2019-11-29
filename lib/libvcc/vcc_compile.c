@@ -812,6 +812,7 @@ VCC_New(void)
 	VTAILQ_INIT(&tl->procs);
 	VTAILQ_INIT(&tl->sym_objects);
 	VTAILQ_INIT(&tl->sym_vmods);
+	VTAILQ_INIT(&tl->vmod_objects);
 
 	tl->nsources = 0;
 
