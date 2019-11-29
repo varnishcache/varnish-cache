@@ -244,7 +244,7 @@ vcc_VmodSymbols(struct vcc *tl, struct symbol *msym)
 	if (msym->kind == SYM_VMOD) {
 		CAST_OBJ_NOTNULL(vj, msym->eval_priv, VJSN_MAGIC);
 		vv = VTAILQ_FIRST(&vj->value->children);
-	} else if (msym->kind == SYM_INSTANCE) {
+	} else if (msym->kind == SYM_INSTANCE || msym->kind == SYM_OBJECT) {
 		CAST_OBJ_NOTNULL(vv, msym->eval_priv, VJSN_VAL_MAGIC);
 	} else {
 		WRONG("symbol kind");
@@ -281,7 +281,8 @@ vcc_VmodSymbols(struct vcc *tl, struct symbol *msym)
 		 */
 
 		VSB_clear(buf);
-		VSB_printf(buf, "%s.%s", msym->name, vv2->value);
+		VCC_SymName(buf, msym);
+		VSB_printf(buf, ".%s", vv2->value);
 		AZ(VSB_finish(buf));
 		fsym = VCC_MkSym(tl, VSB_data(buf), SYM_MAIN, kind,
 		    VCL_LOW, VCL_HIGH);
@@ -289,14 +290,19 @@ vcc_VmodSymbols(struct vcc *tl, struct symbol *msym)
 
 		if (kind == SYM_FUNC) {
 			func_sym(fsym, msym->vmod_name, VTAILQ_NEXT(vv2, list));
-			/* XXX: until we use SYM_METHOD, string check. */
-			if (!strcmp(vv1->value, "$METHOD"))
+			/* XXX: until we use SYM_METHOD only, string check. */
+			if (!strcmp(vv1->value, "$METHOD")) {
 				fsym->extra = msym->rname;
+				/* XXX: cohabitation temporary hack */
+				if (msym->kind == SYM_OBJECT)
+					fsym->kind = SYM_METHOD;
+			}
 		} else {
 			assert(kind == SYM_OBJECT);
 			fsym->eval_priv = vv2;
 			fsym->vmod_name = msym->vmod_name;
 			vcc_VmodObject(tl, fsym);
+			vcc_VmodSymbols(tl, fsym);
 		}
 	}
 
