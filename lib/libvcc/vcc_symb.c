@@ -386,6 +386,7 @@ VCC_TypeSymbol(struct vcc *tl, vcc_kind_t kind, vcc_type_t type)
 	sym = VCC_SymbolGet(tl, SYM_TYPE, kind, SYMTAB_NOERR, XREF_NONE);
 	tl->t = t0;
 	VSB_destroy(&buf);
+
 	return (sym);
 }
 
