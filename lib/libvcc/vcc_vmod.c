@@ -495,6 +495,10 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 	osym = VCC_SymbolGet(tl, SYM_OBJECT, SYMTAB_EXISTING, XREF_NONE);
 	ERRCHK(tl);
 	AN(osym);
+
+	/* Scratch the generic INSTANCE type */
+	isym->type = osym->type;
+
 	CAST_OBJ_NOTNULL(vv, osym->eval_priv, VJSN_VAL_MAGIC);
 	// vv = object name
 
