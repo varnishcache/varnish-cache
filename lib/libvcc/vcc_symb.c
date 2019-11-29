@@ -113,10 +113,8 @@ vcc_dup_be(const char *b, const char *e)
 	AN(e);
 	assert(e >= b);
 
-	p = malloc((e - b) + 1);
+	p = strndup(b, e - b);
 	AN(p);
-	memcpy(p, b, e - b);
-	p[e - b] = '\0';
 	return (p);
 }
 
