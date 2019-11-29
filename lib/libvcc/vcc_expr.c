@@ -819,11 +819,23 @@ vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
  *      Expr5 [ '.' (type_attribute | type_method()) ]*
  */
 
+void
+vcc_Eval_TypeMethod(struct vcc *tl, struct expr **e, struct token *t,
+    struct symbol *sym, vcc_type_t fmt)
+{
+	const char *impl;
+
+	(void)t;
+	impl = VCC_Type_EvalMethod(tl, sym);
+	ERRCHK(tl);
+	AN(impl);
+	*e = vcc_expr_edit(tl, fmt, impl, *e, NULL);
+}
+
 static void
 vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 {
-	const struct vcc_method *vm;
-	const struct symbol *sym;
+	struct symbol *sym;
 
 	*e = NULL;
 	vcc_expr5(tl, e, fmt);
@@ -842,20 +854,13 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
-		CAST_OBJ_NOTNULL(vm, sym->eval_priv, VCC_METHOD_MAGIC);
 
-		vcc_NextToken(tl);
-		*e = vcc_expr_edit(tl, vm->type, vm->impl, *e, NULL);
+		AN(sym->eval);
+		sym->eval(tl, e, tl->t, sym, sym->type);
 		ERRCHK(tl);
 		if ((*e)->fmt == STRING) {
 			(*e)->fmt = STRINGS;
 			(*e)->nstr = 1;
-		}
-		if (vm->func) {
-			ExpectErr(tl, '(');
-			vcc_NextToken(tl);
-			ExpectErr(tl, ')');
-			vcc_NextToken(tl);
 		}
 	}
 }
