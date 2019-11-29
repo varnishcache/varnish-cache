@@ -195,8 +195,7 @@ vcc_vmod_RegisterObject(struct vcc *tl, struct symbol *sym)
 
 		met->type = VCC_Type(vf->value);
 		XXXAN(met->type);
-		/* XXX: met->eval not set yet */
-		met->eval_priv = vs;
+		func_sym(met, met->vmod_name, vs);
 		vv = VTAILQ_NEXT(vv, list);
 	}
 
@@ -464,11 +463,10 @@ vcc_ParseImport(struct vcc *tl)
 void v_matchproto_(sym_act_f)
 vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 {
-	struct symbol *sy1, *sy2, *sy3;
+	struct symbol *sy1, *sy2;
 	struct inifin *ifp;
 	struct vsb *buf;
 	const struct vjsn_val *vv, *vf;
-	const char *p;
 	int null_ok = 0;
 
 	(void)sym;
@@ -481,6 +479,7 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 	ERRCHK(tl);
 	AN(sy1);
 	sy1->noref = 1;
+	sy1->action = vcc_Act_Obj;
 
 	ExpectErr(tl, '=');
 	vcc_NextToken(tl);
@@ -520,7 +519,7 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 
 	buf = VSB_new_auto();
 	AN(buf);
-	VSB_printf(buf, ", &%s, \"%s\"", sy1->rname, sy1->name);
+	VSB_printf(buf, "&%s, \"%s\"", sy1->rname, sy1->name);
 	AZ(VSB_finish(buf));
 	vcc_Eval_Func(tl, vf, VSB_data(buf), sy2);
 	VSB_destroy(&buf);
@@ -539,28 +538,4 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 	ifp = New_IniFin(tl);
 	VSB_printf(ifp->fin, "\t\tif (%s)\n", sy1->rname);
 	VSB_printf(ifp->fin, "\t\t\t\t%s(&%s);", vf->value, sy1->rname);
-
-	/* Instantiate symbols for the methods */
-	buf = VSB_new_auto();
-	AN(buf);
-	VSB_printf(buf, ", %s", sy1->rname);
-	AZ(VSB_finish(buf));
-	p = TlDup(tl, VSB_data(buf));
-	while (vv != NULL) {
-		vf = VTAILQ_FIRST(&vv->children);
-		assert(vf->type == VJSN_STRING);
-		assert(!strcmp(vf->value, "$METHOD"));
-		vf = VTAILQ_NEXT(vf, list);
-		assert(vf->type == VJSN_STRING);
-
-		VSB_clear(buf);
-		VSB_printf(buf, "%s.%s", sy1->name, vf->value);
-		AZ(VSB_finish(buf));
-		sy3 = VCC_MkSym(tl, VSB_data(buf), SYM_FUNC, VCL_LOW, VCL_HIGH);
-		AN(sy3);
-		func_sym(sy3, sy2->vmod_name, VTAILQ_NEXT(vf, list));
-		sy3->extra = p;
-		vv = VTAILQ_NEXT(vv, list);
-	}
-	VSB_destroy(&buf);
 }

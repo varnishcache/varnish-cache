@@ -48,6 +48,7 @@ struct expr {
 #define EXPR_CONST	(1<<1)
 #define EXPR_STR_CONST	(1<<2)		// Last STRING_LIST elem is "..."
 	struct token	*t1, *t2;
+	struct symbol	*instance;
 	int		nstr;
 };
 
@@ -465,7 +466,7 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 	VTAILQ_HEAD(,func_arg) head;
 	struct token *t1;
 	const struct vjsn_val *vv, *vvp;
-	const char *sa;
+	const char *sa, *extra_sep;
 	char ssa[64];
 	int n;
 
@@ -482,9 +483,21 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 		sa = NULL;
 	}
 	vv = VTAILQ_NEXT(vv, list);
+	if (sym->kind == SYM_METHOD) {
+		vcc_NextToken(tl);
+		AZ(extra);
+		AN((*e)->instance);
+		extra = (*e)->instance->rname;
+	}
 	SkipToken(tl, '(');
-	if (extra == NULL)
+
+	if (extra == NULL) {
 		extra = "";
+		extra_sep = "";
+	} else {
+		extra_sep = ", ";
+	}
+
 	VTAILQ_INIT(&head);
 	for (;vv != NULL; vv = VTAILQ_NEXT(vv, list)) {
 		assert(vv->type == VJSN_ARRAY);
@@ -570,10 +583,11 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 	}
 
 	if (sa != NULL)
-		e1 = vcc_mk_expr(rfmt, "%s(ctx%s,\v+\n&(%s)\v+ {\n",
-		    cfunc, extra, sa);
+		e1 = vcc_mk_expr(rfmt, "%s(ctx%s%s,\v+\n&(%s)\v+ {\n",
+		    cfunc, extra_sep, extra, sa);
 	else
-		e1 = vcc_mk_expr(rfmt, "%s(ctx%s\v+", cfunc, extra);
+		e1 = vcc_mk_expr(rfmt, "%s(ctx%s%s\v+",
+		    cfunc, extra_sep, extra);
 	n = 0;
 	VTAILQ_FOREACH_SAFE(fa, &head, list, fa2) {
 		n++;
@@ -643,7 +657,7 @@ vcc_Eval_SymFunc(struct vcc *tl, struct expr **e, struct token *t,
 
 	(void)t;
 	(void)fmt;
-	assert(sym->kind == SYM_FUNC);
+	assert(sym->kind == SYM_FUNC || sym->kind == SYM_METHOD);
 	AN(sym->eval_priv);
 
 	vcc_func(tl, e, sym->eval_priv, sym->extra, sym);
@@ -692,6 +706,12 @@ vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		sym = VCC_SymbolGet(tl, SYM_NONE, SYMTAB_PARTIAL, XREF_REF);
 		ERRCHK(tl);
 		AN(sym);
+		if (sym->kind == SYM_INSTANCE) {
+			AZ(*e);
+			*e = vcc_new_expr(sym->type);
+			(*e)->instance = sym;
+			return;
+		}
 		if (sym->kind == SYM_FUNC && sym->type == VOID) {
 			VSB_cat(tl->sb, "Function returns VOID:\n");
 			vcc_ErrWhere(tl, tl->t);
@@ -840,8 +860,7 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		if (sym == NULL) {
 			VSB_cat(tl->sb, "Unknown property ");
 			vcc_ErrToken(tl, tl->t);
-			VSB_printf(tl->sb,
-			 " for type %s\n", (*e)->fmt->name);
+			VSB_printf(tl->sb, " for type %s\n", (*e)->fmt->name);
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
@@ -1397,6 +1416,23 @@ vcc_Act_Call(struct vcc *tl, struct token *t, struct symbol *sym)
 	}
 	vcc_delete_expr(e);
 }
+
+void v_matchproto_(sym_act_f)
+vcc_Act_Obj(struct vcc *tl, struct token *t, struct symbol *sym)
+{
+
+	struct expr *e = NULL;
+
+	assert(sym->kind == SYM_INSTANCE);
+	tl->t = t;
+	vcc_expr4(tl, &e, sym->type);
+	ERRCHK(tl);
+	vcc_expr_fmt(tl->fb, tl->indent, e);
+	vcc_delete_expr(e);
+	SkipToken(tl, ';');
+	VSB_cat(tl->fb, ";\n");
+}
+
 /*--------------------------------------------------------------------
  */
 
