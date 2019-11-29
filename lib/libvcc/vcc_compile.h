@@ -100,24 +100,6 @@ struct token {
 
 typedef const struct type	*vcc_type_t;
 
-/*
- * A type attribute is information already existing, requiring no processing
- * or resource usage.
- *
- * A type method is a call and may do significant processing, change things,
- * eat workspace etc.
- *
- * XXX: type methods might move in a more comprehensive direction.
- */
-struct vcc_method {
-	unsigned		magic;
-#define VCC_METHOD_MAGIC	0x594108cd
-	vcc_type_t		type;
-	const char		*name;
-	const char		*impl;
-	int			func;
-};
-
 struct type {
 	unsigned		magic;
 #define TYPE_MAGIC		0xfae932d9
@@ -353,6 +335,7 @@ void vcc_Expr_Init(struct vcc *tl);
 sym_expr_t vcc_Eval_Var;
 sym_expr_t vcc_Eval_Handle;
 sym_expr_t vcc_Eval_SymFunc;
+sym_expr_t vcc_Eval_TypeMethod;
 void vcc_Eval_Func(struct vcc *, const struct vjsn_val *,
     const char *, const struct symbol *);
 void VCC_GlobalSymbol(struct symbol *, vcc_type_t fmt, const char *pfx);
@@ -427,6 +410,7 @@ void vcc_AddToken(struct vcc *tl, unsigned tok, const char *b,
 
 /* vcc_types.c */
 vcc_type_t VCC_Type(const char *p);
+const char * VCC_Type_EvalMethod(struct vcc *, const struct symbol *);
 void vcc_Type_Init(struct vcc *tl);
 
 /* vcc_var.c */

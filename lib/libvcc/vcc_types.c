@@ -36,6 +36,24 @@
 
 #include "vcc_compile.h"
 
+/*
+ * A type attribute is information already existing, requiring no processing
+ * or resource usage.
+ *
+ * A type method is a call and may do significant processing, change things,
+ * eat workspace etc.
+ *
+ * XXX: type methods might move in a more comprehensive direction.
+ */
+struct vcc_method {
+	unsigned		magic;
+#define VCC_METHOD_MAGIC	0x594108cd
+	vcc_type_t		type;
+	const char		*name;
+	const char		*impl;
+	int			func;
+};
+
 const struct type ACL[1] = {{
 	.magic =		TYPE_MAGIC,
 	.name =			"ACL",
@@ -237,10 +255,35 @@ vcc_type_init(struct vcc *tl, vcc_type_t type)
 			break;
 		AN(sym);
 		sym->type = vm->type;
+		sym->eval = vcc_Eval_TypeMethod;
 		sym->eval_priv = vm;
 	}
 
 	VSB_destroy(&buf);
+}
+
+const char *
+VCC_Type_EvalMethod(struct vcc *tl, const struct symbol *sym)
+{
+	const struct vcc_method *vm;
+
+	AN(sym);
+	AN(sym->kind == SYM_METHOD);
+	CAST_OBJ_NOTNULL(vm, sym->eval_priv, VCC_METHOD_MAGIC);
+
+	vcc_NextToken(tl);
+	if (vm->func) {
+		Expect(tl, '(');
+		if (tl->err)
+			return (NULL);
+		vcc_NextToken(tl);
+		Expect(tl, ')');
+		if (tl->err)
+			return (NULL);
+		vcc_NextToken(tl);
+	}
+
+	return (vm->impl);
 }
 
 void
