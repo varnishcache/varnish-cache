@@ -147,3 +147,11 @@ varnish v1 -errvcl {Syntax error} {
 		directors.round_robin.backend();
 	}
 }
+
+varnish v1 -errvcl {Expected '.' got ';'} {
+	import directors;
+	sub vcl_init {
+		new rr = directors.round_robin();
+		rr;
+	}
+}

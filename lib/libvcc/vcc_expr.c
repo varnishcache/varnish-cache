@@ -1431,6 +1431,7 @@ vcc_Act_Obj(struct vcc *tl, struct token *t, struct symbol *sym)
 	struct expr *e = NULL;
 
 	assert(sym->kind == SYM_INSTANCE);
+	ExpectErr(tl, '.');
 	tl->t = t;
 	vcc_expr4(tl, &e, sym->type);
 	ERRCHK(tl);
