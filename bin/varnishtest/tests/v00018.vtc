@@ -153,3 +153,11 @@ varnish v1 -errvcl {Syntax error} {
 		_type.strings.upper();
 	}
 }
+
+varnish v1 -errvcl {Expected '.' got ';'} {
+	import directors;
+	sub vcl_init {
+		new rr = directors.round_robin();
+		rr;
+	}
+}
