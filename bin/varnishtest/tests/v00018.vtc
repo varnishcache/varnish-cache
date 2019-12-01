@@ -138,3 +138,11 @@ varnish v1 -syntax 4.0 -errvcl {Symbol not found:} {
 		return (vcl(vcl_recv));
 	}
 }
+
+varnish v1 -errvcl {Expected '.' got ';'} {
+	import directors;
+	sub vcl_init {
+		new rr = directors.round_robin();
+		rr;
+	}
+}
