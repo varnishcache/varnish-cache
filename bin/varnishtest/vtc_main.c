@@ -508,7 +508,7 @@ i_mode(void)
 	/*
 	 * Build $PATH which can find all programs in the build tree
 	 */
-	VSB_printf(vsb, "PATH=");
+	VSB_cat(vsb, "PATH=");
 	sep = "";
 #define VTC_PROG(l)							\
 	do {								\
@@ -690,7 +690,7 @@ main(int argc, char * const *argv)
 	AN(cbvsb);
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
-	while ((ch = getopt(argc, argv, "b:CD:hij:kLln:p:qt:vW")) != -1) {
+	while ((ch = getopt(argc, argv, "b:CD:hij:kLln:p:qt:v")) != -1) {
 		switch (ch) {
 		case 'b':
 			if (VNUM_2bytes(optarg, &bufsiz, 0)) {
@@ -734,7 +734,7 @@ main(int argc, char * const *argv)
 			ntest = strtoul(optarg, NULL, 0);
 			break;
 		case 'p':
-			VSB_printf(params_vsb, " -p ");
+			VSB_cat(params_vsb, " -p ");
 			VSB_quote(params_vsb, optarg, -1, 0);
 			break;
 		case 'q':

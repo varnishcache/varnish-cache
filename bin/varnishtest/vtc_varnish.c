@@ -408,7 +408,7 @@ varnish_launch(struct varnish *v)
 	vtc_log(v->vl, 2, "Launch");
 	vsb = VSB_new_auto();
 	AN(vsb);
-	VSB_printf(vsb, "cd ${pwd} &&");
+	VSB_cat(vsb, "cd ${pwd} &&");
 	VSB_printf(vsb, " exec varnishd %s -d -n %s",
 	    v->jail, v->workdir);
 	VSB_cat(vsb, VSB_data(params_vsb));
@@ -419,13 +419,13 @@ varnish_launch(struct varnish *v)
 		VSB_cat(vsb, " -p debug=+vmod_so_keep");
 		VSB_cat(vsb, " -p debug=+vsm_keep");
 	}
-	VSB_printf(vsb, " -l 2m");
-	VSB_printf(vsb, " -p auto_restart=off");
-	VSB_printf(vsb, " -p syslog_cli_traffic=off");
-	VSB_printf(vsb, " -p sigsegv_handler=on");
-	VSB_printf(vsb, " -p thread_pool_min=10");
-	VSB_printf(vsb, " -p debug=+vtc_mode");
-	VSB_printf(vsb, " -p vsl_mask=+Debug");
+	VSB_cat(vsb, " -l 2m");
+	VSB_cat(vsb, " -p auto_restart=off");
+	VSB_cat(vsb, " -p syslog_cli_traffic=off");
+	VSB_cat(vsb, " -p sigsegv_handler=on");
+	VSB_cat(vsb, " -p thread_pool_min=10");
+	VSB_cat(vsb, " -p debug=+vtc_mode");
+	VSB_cat(vsb, " -p vsl_mask=+Debug");
 	if (!v->has_a_arg) {
 		VSB_printf(vsb, " -a '%s'", "127.0.0.1:0");
 		if (v->proto != NULL)
