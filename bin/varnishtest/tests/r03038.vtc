@@ -1,0 +1,25 @@
+varnishtest "vcl.list and cli_limit"
+
+server s1 { 
+} -start
+
+varnish v1 -vcl+backend { } -start
+varnish v1 -vcl+backend { } 
+varnish v1 -vcl+backend { }
+varnish v1 -vcl+backend { }
+varnish v1 -vcl+backend { }
+varnish v1 -vcl+backend { }
+varnish v1 -vcl+backend { }
+varnish v1 -vcl+backend { }
+varnish v1 -vcl+backend { }
+varnish v1 -vcl+backend { }
+
+varnish v1 -expect n_vcl_avail == 10
+
+varnish v1 -cliok "param.set cli_limit 128b"
+
+varnish v1 -clierr 201 "vcl.list"
+
+varnish v1 -stop
+
+varnish v1 -clierr 201 "vcl.list"

@@ -123,7 +123,6 @@ mcf_askchild(struct cli *cli, const char * const *av, void *priv)
 	int i;
 	char *q;
 	unsigned u;
-	struct vsb *vsb;
 
 	(void)priv;
 	/*
@@ -138,21 +137,19 @@ mcf_askchild(struct cli *cli, const char * const *av, void *priv)
 		    "Type 'help' for more info.");
 		return;
 	}
-	vsb = VSB_new_auto();
+	VSB_clear(cli_buf);
 	for (i = 1; av[i] != NULL; i++) {
-		VSB_quote(vsb, av[i], strlen(av[i]), 0);
-		VSB_putc(vsb, ' ');
+		VSB_quote(cli_buf, av[i], strlen(av[i]), 0);
+		VSB_putc(cli_buf, ' ');
 	}
-	VSB_putc(vsb, '\n');
-	AZ(VSB_finish(vsb));
-	if (VSB_tofile(cli_o, vsb)) {
-		VSB_destroy(&vsb);
+	VSB_putc(cli_buf, '\n');
+	AZ(VSB_finish(cli_buf));
+	if (VSB_tofile(cli_o, cli_buf)) {
 		VCLI_SetResult(cli, CLIS_COMMS);
 		VCLI_Out(cli, "CLI communication error");
 		MCH_Cli_Fail();
 		return;
 	}
-	VSB_destroy(&vsb);
 	if (VCLI_ReadResult(cli_i, &u, &q, mgt_param.cli_timeout))
 		MCH_Cli_Fail();
 	VCLI_SetResult(cli, u);
@@ -180,20 +177,14 @@ mgt_cli_askchild(unsigned *status, char **resp, const char *fmt, ...)
 	va_list ap;
 	unsigned u;
 
-	if (cli_buf == NULL) {
-		cli_buf = VSB_new_auto();
-		AN(cli_buf);
-	} else {
-		VSB_clear(cli_buf);
-	}
+	AN(status);
+	VSB_clear(cli_buf);
 
 	if (resp != NULL)
 		*resp = NULL;
-	if (status != NULL)
-		*status = 0;
+	*status = 0;
 	if (cli_i < 0 || cli_o < 0) {
-		if (status != NULL)
-			*status = CLIS_CANT;
+		*status = CLIS_CANT;
 		return (CLIS_CANT);
 	}
 	va_start(ap, fmt);
@@ -203,8 +194,7 @@ mgt_cli_askchild(unsigned *status, char **resp, const char *fmt, ...)
 	i = VSB_len(cli_buf);
 	assert(i > 0 && VSB_data(cli_buf)[i - 1] == '\n');
 	if (VSB_tofile(cli_o, cli_buf)) {
-		if (status != NULL)
-			*status = CLIS_COMMS;
+		*status = CLIS_COMMS;
 		if (resp != NULL)
 			*resp = strdup("CLI communication error");
 		MCH_Cli_Fail();
@@ -213,9 +203,8 @@ mgt_cli_askchild(unsigned *status, char **resp, const char *fmt, ...)
 
 	if (VCLI_ReadResult(cli_i, &u, resp, mgt_param.cli_timeout))
 		MCH_Cli_Fail();
-	if (status != NULL)
-		*status = u;
-	return (u == CLIS_OK ? 0 : u);
+	*status = u;
+	return (u == CLIS_OK || u == CLIS_TRUNCATED ? 0 : u);
 }
 
 /*--------------------------------------------------------------------*/
@@ -370,6 +359,8 @@ mgt_cli_init_cls(void)
 	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_proto);
 	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_debug);
 	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_askchild);
+	cli_buf = VSB_new_auto();
+	AN(cli_buf);
 }
 
 /*--------------------------------------------------------------------
