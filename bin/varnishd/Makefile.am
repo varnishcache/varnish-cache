@@ -11,7 +11,6 @@ sbin_PROGRAMS = varnishd
 varnishd_SOURCES = \
 	cache/cache_acceptor.c \
 	cache/cache_backend.c \
-	cache/cache_backend_fail.c \
 	cache/cache_backend_probe.c \
 	cache/cache_ban.c \
 	cache/cache_ban_build.c \
@@ -151,7 +150,6 @@ noinst_HEADERS = \
 nobase_pkginclude_HEADERS = \
 	cache/cache.h \
 	cache/cache_backend.h \
-	cache/cache_backend_fail.h \
 	cache/cache_director.h \
 	cache/cache_filter.h \
 	cache/cache_varnishd.h \

@@ -30,7 +30,7 @@
 /*lint -save -e525 -e539 */
 
 /* upper, lower, doc */
-BACKEND_FAIL(UNKNOWN, unkown,		        "unknown")
+BACKEND_FAIL(UNSPEC, unspec,		        "unspecified")
 BACKEND_FAIL(SICK, sick,		        "backend sick")
 BACKEND_FAIL(BUSY, busy,		        "backend busy")
 BACKEND_FAIL(WORKSPACE, workspace,		"out of workspace")

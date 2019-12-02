@@ -14,7 +14,7 @@ DESCRIPTION
 A utility to describe backend errors in ``sub vcl_backend_error``.
 These values returned from the below functions come from ``tbl/backend_fail.h``.
 
-$Function STRING be_fail_unkown()
+$Function STRING be_fail_unspec()
 
 $Function STRING be_fail_sick()
 

@@ -37,7 +37,7 @@
 #include <stdlib.h>
 
 #include "cache_varnishd.h"
-#include "cache_backend_fail.h"
+#include "cache_backend.h"
 #include "cache_filter.h"
 #include "cache_objhead.h"
 
@@ -133,7 +133,7 @@ VBO_GetBusyObj(struct worker *wrk, const struct req *req)
 
 	bo->do_stream = 1;
 
-	bo->fail_reason = BE_FAIL_UNKNOWN;
+	bo->fail_reason = BE_FAIL_UNSPEC;
 
 	bo->director_req = req->director_hint;
 	bo->vcl = req->vcl;

@@ -74,6 +74,9 @@ struct backend {
 	vtim_real		cooled;
 };
 
+#define BACKEND_FAIL(U,l, s)	extern const char *BE_FAIL_##U;
+#include "tbl/backend_fail.h"
+
 /*---------------------------------------------------------------------
  * Prototypes
  */

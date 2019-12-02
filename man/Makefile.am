@@ -99,6 +99,9 @@ vmod_cookie.3: $(top_builddir)/lib/libvmod_cookie/vmod_cookie.man.rst
 vmod_directors.3: $(top_builddir)/lib/libvmod_directors/vmod_directors.man.rst
 	$(BUILD_MAN) $? $@
 
+vmod_error.3: $(top_builddir)/lib/libvmod_error/vmod_error.man.rst
+	$(BUILD_MAN) $? $@
+
 vmod_purge.3: $(top_builddir)/lib/libvmod_purge/vmod_purge.man.rst
 	$(BUILD_MAN) $? $@
 
@@ -115,9 +118,6 @@ vmod_unix.3: $(top_builddir)/lib/libvmod_unix/vmod_unix.man.rst
 	$(BUILD_MAN) $? $@
 
 vmod_proxy.3: $(top_builddir)/lib/libvmod_proxy/vmod_proxy.man.rst
-	$(BUILD_MAN) $? $@
-
-vmod_error.3: $(top_builddir)/lib/libvmod_error/vmod_error.man.rst
 	$(BUILD_MAN) $? $@
 
 .NOPATH: $(dist_man_MANS)

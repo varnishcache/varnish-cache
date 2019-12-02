@@ -45,7 +45,6 @@
 #include "vtim.h"
 
 #include "cache_backend.h"
-#include "cache_backend_fail.h"
 #include "cache_tcp_pool.h"
 #include "cache_transport.h"
 #include "cache_vcl.h"
@@ -61,6 +60,9 @@ static VTAILQ_HEAD(, backend) backends = VTAILQ_HEAD_INITIALIZER(backends);
 static VTAILQ_HEAD(, backend) cool_backends =
     VTAILQ_HEAD_INITIALIZER(cool_backends);
 static struct lock backends_mtx;
+
+#define BACKEND_FAIL(U,l, s)	const char *BE_FAIL_##U = s;
+#include "tbl/backend_fail.h"
 
 /*--------------------------------------------------------------------*/
 

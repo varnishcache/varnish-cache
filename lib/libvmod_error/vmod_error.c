@@ -28,7 +28,7 @@
 #include "config.h"
 
 #include "cache/cache.h"
-#include "cache/cache_backend_fail.h"
+#include "cache/cache_backend.h"
 
 #include "vcc_if.h"
 

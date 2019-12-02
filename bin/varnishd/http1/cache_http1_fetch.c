@@ -32,7 +32,7 @@
 #include "config.h"
 
 #include "cache/cache_varnishd.h"
-#include "cache/cache_backend_fail.h"
+#include "cache/cache_backend.h"
 #include "cache/cache_filter.h"
 
 #include <stdio.h>

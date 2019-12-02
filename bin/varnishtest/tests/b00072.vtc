@@ -34,18 +34,27 @@ varnish v1 -vcl {
 		.max_connections = 1;
 	}
 
-	sub vcl_recv { return(pass); }
+	sub vcl_recv {
+		return(pass);
+	}
+	
 	sub vcl_backend_error {
 		if (beresp.fail_reason == error.be_fail_busy()) {
 			set beresp.http.wait = "Please wait. We are too busy";
 		}
+<<<<<<< HEAD:bin/varnishtest/tests/b00072.vtc
                 set beresp.http.fail_reason = beresp.fail_reason;
                 set beresp.http.fail_detail = beresp.fail_detail;
 >>>>>>> Introduce beresp.fail_reason & beresp.fail_detail
+=======
+		set beresp.http.fail_reason = beresp.fail_reason;
+		set beresp.http.fail_detail = beresp.fail_detail;
+>>>>>>> Review updates pt. 1:bin/varnishtest/tests/b00070.vtc
 	}
 } -start
 
 client c1 {
+<<<<<<< HEAD:bin/varnishtest/tests/b00072.vtc
 <<<<<<< HEAD
 	txreq
 	rxresp
@@ -54,11 +63,14 @@ client c1 {
 } -run
 =======
         # Didn't hit v_b_e so not set
+=======
+	# Didn't hit v_b_e so not set
+>>>>>>> Review updates pt. 1:bin/varnishtest/tests/b00070.vtc
 	txreq
 	rxresp
 	expect resp.status == 200
-        expect resp.http.fail_reason == <undef>
-        expect resp.http.fail_detail == <undef>
+	expect resp.http.fail_reason == <undef>
+	expect resp.http.fail_detail == <undef>
 } -start
 
 client c2 {
@@ -66,8 +78,8 @@ client c2 {
 	txreq
 	rxresp
 	expect resp.status == 503
-        expect resp.http.fail_reason == "backend busy"
-        expect resp.http.fail_detail == ""
+	expect resp.http.fail_reason == "backend busy"
+	expect resp.http.fail_detail == ""
 	expect resp.http.wait == "Please wait. We are too busy"
 } -run
 

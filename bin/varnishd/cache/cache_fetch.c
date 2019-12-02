@@ -32,7 +32,7 @@
 #include "config.h"
 
 #include "cache_varnishd.h"
-#include "cache_backend_fail.h"
+#include "cache_backend.h"
 #include "cache_filter.h"
 #include "cache_objhead.h"
 #include "hash/hash_slinger.h"
@@ -283,7 +283,7 @@ vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 	bo->do_esi = 0;
 	bo->do_stream = 1;
 	bo->was_304 = 0;
-	bo->fail_reason = BE_FAIL_UNKNOWN;
+	bo->fail_reason = BE_FAIL_UNSPEC;
 	bo->fail_detail = NULL;
 
 	// XXX: BereqEnd + BereqAcct ?
