@@ -214,7 +214,7 @@ V1F_FetchRespHdr(struct busyobj *bo)
 			break;
 		case HTC_S_TIMEOUT:
 			VSLb(bo->vsl, SLT_FetchError, "timeout");
-			bo->fail_reason = BE_FAIL_BBTO;
+			bo->fail_reason = BE_FAIL_BETWEEN_BYTES;
 			htc->doclose = SC_RX_TIMEOUT;
 			break;
 		case HTC_S_OVERFLOW:
@@ -224,7 +224,7 @@ V1F_FetchRespHdr(struct busyobj *bo)
 			break;
 		case HTC_S_IDLE:
 			VSLb(bo->vsl, SLT_FetchError, "first byte timeout");
-			bo->fail_reason = BE_FAIL_FBTO;
+			bo->fail_reason = BE_FAIL_FIRST_BYTE;
 			htc->doclose = SC_RX_TIMEOUT;
 			break;
 		default:

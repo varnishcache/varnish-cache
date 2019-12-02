@@ -30,13 +30,13 @@
 /*lint -save -e525 -e539 */
 
 /* upper, lower, doc */
-BACKEND_FAIL(UNSPEC, unspec,		        "unspecified")
-BACKEND_FAIL(SICK, sick,		        "backend sick")
-BACKEND_FAIL(BUSY, busy,		        "backend busy")
+BACKEND_FAIL(UNSPEC, unspec,			"unspecified")
+BACKEND_FAIL(SICK, sick,			"backend sick")
+BACKEND_FAIL(BUSY, busy,			"backend busy")
 BACKEND_FAIL(WORKSPACE, workspace,		"out of workspace")
-BACKEND_FAIL(FBTO, fbto,		        "first byte timeout")
-BACKEND_FAIL(CONNECT_TO, connect_to,		"connect timeout")
-BACKEND_FAIL(BBTO, bbto,		        "between bytes timeout")
+BACKEND_FAIL(FIRST_BYTE, first_byte,		"first byte timeout")
+BACKEND_FAIL(CONNECT, connect,			"connect timeout")
+BACKEND_FAIL(BETWEEN_BYTES, between_bytes,	"between bytes timeout")
 BACKEND_FAIL(REQBODY_ERROR, reqbody_error,	"reqbody read error")
 BACKEND_FAIL(WRITE_ERROR, write_error,		"backend write error")
 BACKEND_FAIL(RX_JUNK, rx_junk,			"recieved junk")

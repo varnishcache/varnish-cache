@@ -22,11 +22,11 @@ $Function STRING be_fail_busy()
 
 $Function STRING be_fail_workspace()
 
-$Function STRING be_fail_fbto()
+$Function STRING be_fail_first_byte()
 
-$Function STRING be_fail_connect_to()
+$Function STRING be_fail_connect()
 
-$Function STRING be_fail_bbto()
+$Function STRING be_fail_between_bytes()
 
 $Function STRING be_fail_reqbody_error()
 

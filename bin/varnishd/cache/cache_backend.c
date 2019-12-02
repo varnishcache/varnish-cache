@@ -165,7 +165,7 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
 		VSLb(bo->vsl, SLT_FetchError,
 		     "backend %s: fail errno %d (%s)",
 		     VRT_BACKEND_string(bp->director), err, vstrerror(err));
-		bo->fail_reason = BE_FAIL_CONNECT_TO;
+		bo->fail_reason = BE_FAIL_CONNECT;
 		bo->fail_detail = WS_Printf(bo->ws, "fail errno %d (%s)", err,
 		    vstrerror(err));
 		VSC_C_main->backend_fail++;
@@ -305,7 +305,7 @@ vbe_dir_gethdrs(VRT_CTX, VCL_BACKEND d)
 				bo->htc->doclose = SC_RX_TIMEOUT;
 				VSLb(bo->vsl, SLT_FetchError,
 				     "Timed out reusing backend connection");
-				bo->fail_reason = BE_FAIL_FBTO;
+				bo->fail_reason = BE_FAIL_FIRST_BYTE;
 				extrachance = 0;
 			}
 		}
