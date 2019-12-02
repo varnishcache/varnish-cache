@@ -100,9 +100,9 @@ vtc_send_proxy(int fd, int version, const struct suckaddr *sac,
 	if (version == 1) {
 		VSB_bcat(vsb, vpx1_sig, sizeof(vpx1_sig));
 		if (proto == PF_INET6)
-			VSB_printf(vsb, " TCP6 ");
+			VSB_cat(vsb, " TCP6 ");
 		else if (proto == PF_INET)
-			VSB_printf(vsb, " TCP4 ");
+			VSB_cat(vsb, " TCP4 ");
 		VTCP_name(sac, hc, sizeof(hc), pc, sizeof(pc));
 		VTCP_name(sas, hs, sizeof(hs), ps, sizeof(ps));
 		VSB_printf(vsb, "%s %s %s %s\r\n", hc, hs, pc, ps);
