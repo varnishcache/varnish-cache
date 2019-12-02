@@ -509,7 +509,7 @@ vsm_vsmw_unlock(void)
 void
 VSM_Init(void)
 {
-	int i;
+	unsigned u;
 
 	assert(UINT_MAX % VSL_SEGMENTS == VSL_SEGMENTS - 1);
 
@@ -543,8 +543,8 @@ VSM_Init(void)
 	vsl_head->segsize = vsl_segsize;
 	vsl_head->offset[0] = 0;
 	vsl_head->segment_n = vsl_segment_n;
-	for (i = 1; i < VSL_SEGMENTS; i++)
-		vsl_head->offset[i] = -1;
+	for (u = 1; u < VSL_SEGMENTS; u++)
+		vsl_head->offset[u] = -1;
 	VWMB();
 	memcpy(vsl_head->marker, VSL_HEAD_MARKER, sizeof vsl_head->marker);
 }

@@ -163,16 +163,15 @@ h2_del_sess(struct worker *wrk, struct h2_sess *h2, enum sess_close reason)
 enum htc_status_e v_matchproto_(htc_complete_f)
 H2_prism_complete(struct http_conn *htc)
 {
-	ptrdiff_t l;
+	size_t sz;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
-	l = htc->rxbuf_e - htc->rxbuf_b;
-	if (l >= sizeof(H2_prism) &&
-	    !memcmp(htc->rxbuf_b, H2_prism, sizeof(H2_prism)))
-		return (HTC_S_COMPLETE);
-	if (l < sizeof(H2_prism) && !memcmp(htc->rxbuf_b, H2_prism, l))
-		return (HTC_S_MORE);
-	return (HTC_S_JUNK);
+	sz = sizeof(H2_prism);
+	if (htc->rxbuf_b + sz > htc->rxbuf_e)
+		sz = htc->rxbuf_e - htc->rxbuf_b;
+	if (memcmp(htc->rxbuf_b, H2_prism, sz))
+		return (HTC_S_JUNK);
+	return (sz == sizeof(H2_prism) ? HTC_S_COMPLETE : HTC_S_MORE);
 }
 
 

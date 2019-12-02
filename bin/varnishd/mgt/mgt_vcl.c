@@ -55,7 +55,7 @@ struct vclstate {
 
 static const struct vclstate VCL_STATE_LABEL[1] = {{ "label" }};
 
-static int vcl_count;
+static unsigned vcl_count;
 
 struct vclproghead vclhead = VTAILQ_HEAD_INITIALIZER(vclhead);
 struct vmodfilehead vmodhead = VTAILQ_HEAD_INITIALIZER(vmodhead);

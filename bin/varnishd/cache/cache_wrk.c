@@ -165,7 +165,7 @@ pool_addstat(struct VSC_main_wrk *dst, struct VSC_main_wrk *src)
 	memset(src, 0, sizeof *src);
 }
 
-static inline int
+static unsigned
 pool_reserve(void)
 {
 	unsigned lim;
@@ -508,7 +508,7 @@ pool_herder(void *priv)
 	double t_idle;
 	struct worker *wrk;
 	double delay;
-	int wthread_min;
+	unsigned wthread_min;
 	uintmax_t dq = (1ULL << 31);
 	vtim_mono dqt = 0;
 

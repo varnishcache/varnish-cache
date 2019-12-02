@@ -230,7 +230,7 @@ struct smp_sc {
 	const struct stevedore	*stevedore;
 	int			fd;
 	const char		*filename;
-	off_t			mediasize;
+	uint64_t		mediasize;
 	uintptr_t		align;
 	uint32_t		granularity;
 	uint32_t		unique;

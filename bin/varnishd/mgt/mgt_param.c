@@ -565,8 +565,8 @@ MCF_AddParams(struct parspec *ps)
 			exit(4);
 		}
 		mcf_addpar(pp);
-		if (strlen(pp->name) + 1L > margin2)
-			margin2 = strlen(pp->name) + 1;
+		if ((int)strlen(pp->name) + 1 > margin2)
+			margin2 = (int)strlen(pp->name) + 1;
 	}
 }
 

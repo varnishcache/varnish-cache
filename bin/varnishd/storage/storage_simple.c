@@ -45,7 +45,7 @@
 /*-------------------------------------------------------------------*/
 
 static struct storage *
-sml_stv_alloc(const struct stevedore *stv, size_t size, int flags)
+sml_stv_alloc(const struct stevedore *stv, ssize_t size, int flags)
 {
 	struct storage *st;
 
@@ -74,7 +74,7 @@ sml_stv_alloc(const struct stevedore *stv, size_t size, int flags)
 		if (size <= cache_param->fetch_chunksize)
 			break;
 
-		size >>= 1;
+		size /= 2;
 	}
 	CHECK_OBJ_ORNULL(st, STORAGE_MAGIC);
 	return (st);
@@ -343,7 +343,7 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
  */
 
 static struct storage *
-objallocwithnuke(struct worker *wrk, const struct stevedore *stv, size_t size,
+objallocwithnuke(struct worker *wrk, const struct stevedore *stv, ssize_t size,
     int flags)
 {
 	struct storage *st = NULL;
