@@ -33,11 +33,6 @@
 #######################################################################
 # These are our tokens
 
-# We could drop all words such as "include", "if" etc, and use the
-# ID type instead, but declaring them tokens makes them reserved words
-# which hopefully makes for better error messages.
-# XXX: does it actually do that ?
-
 import copy
 import sys
 from os.path import join
