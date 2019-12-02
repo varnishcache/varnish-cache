@@ -322,6 +322,21 @@ vcc_CheckUses(struct vcc *tl)
 
 /*---------------------------------------------------------------------*/
 
+static int sym_type_len = 0;
+
+static void v_matchproto_(symwalk_f)
+vcc_xreftable_len(struct vcc *tl, const struct symbol *sym)
+{
+	int len;
+
+	(void)tl;
+	CHECK_OBJ_NOTNULL(sym, SYMBOL_MAGIC);
+	CHECK_OBJ_NOTNULL(sym->type, TYPE_MAGIC);
+	len = strlen(sym->type->name);
+	if (sym_type_len < len)
+		sym_type_len = len;
+}
+
 static void v_matchproto_(symwalk_f)
 vcc_xreftable(struct vcc *tl, const struct symbol *sym)
 {
@@ -330,7 +345,7 @@ vcc_xreftable(struct vcc *tl, const struct symbol *sym)
 	CHECK_OBJ_NOTNULL(sym->kind, KIND_MAGIC);
 	CHECK_OBJ_NOTNULL(sym->type, TYPE_MAGIC);
 	Fc(tl, 0, " * %-8s ", sym->kind->name);
-	Fc(tl, 0, " %-9s ", sym->type->name);
+	Fc(tl, 0, " %-*s ", sym_type_len, sym->type->name);
 	Fc(tl, 0, " %2u %2u ", sym->lorev, sym->hirev);
 	VCC_SymName(tl->fc, sym);
 	if (sym->wildcard != NULL)
@@ -343,6 +358,7 @@ VCC_XrefTable(struct vcc *tl)
 {
 
 	Fc(tl, 0, "\n/*\n * Symbol Table\n *\n");
+	VCC_WalkSymbols(tl, vcc_xreftable_len, SYM_NONE);
 	VCC_WalkSymbols(tl, vcc_xreftable, SYM_NONE);
 	Fc(tl, 0, "*/\n\n");
 }
