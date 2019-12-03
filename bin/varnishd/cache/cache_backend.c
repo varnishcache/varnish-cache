@@ -405,7 +405,6 @@ vbe_destroy(const struct director *d)
 {
 	struct backend *be;
 
-	ASSERT_CLI();
 	CAST_OBJ_NOTNULL(be, d->priv, BACKEND_MAGIC);
 
 	if (be->probe != NULL)
@@ -537,8 +536,8 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 	if (retval == 0)
 		return (d);
 
-	VRT_delete_backend(ctx, &d);
-	AZ(d);
+	/* Undo the above */
+	d->destroy(d);
 	return (NULL);
 }
 

@@ -142,6 +142,7 @@ VCL_AddDirector(struct vcl *vcl, struct director *d, const char *vcl_name)
 	AZ(errno=pthread_rwlock_rdlock(&vcl->temp_rwl));
 	if (vcl->temp == VCL_TEMP_COOLING) {
 		AZ(errno=pthread_rwlock_unlock(&vcl->temp_rwl));
+		REPLACE(d->display_name, NULL);
 		return (1);
 	}
 
