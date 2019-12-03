@@ -67,6 +67,13 @@ varnish v1 -vcl+backend {
 		if (req.http.vrstart) {
 			return(restart);
 		}
+
+		set resp.http.all-alt-0 = vd.backend(by=KEY, key=1756955383, alt=0, healthy=ALL);
+		set resp.http.all-alt-1 = vd.backend(by=KEY, key=1756955383, alt=1, healthy=ALL);
+		set resp.http.all-alt-2 = vd.backend(by=KEY, key=1756955383, alt=2, healthy=ALL);
+		set resp.http.chosen-alt-0 = vd.backend(by=KEY, key=1756955383, alt=0, healthy=CHOSEN);
+		set resp.http.chosen-alt-1 = vd.backend(by=KEY, key=1756955383, alt=1, healthy=CHOSEN);
+		set resp.http.chosen-alt-2 = vd.backend(by=KEY, key=1756955383, alt=2, healthy=CHOSEN);
 	}
 
 } -start
@@ -76,12 +83,30 @@ client c1 {
 	txreq -url /1
 	rxresp
 	expect resp.body == "ech3Ooj"
+	expect resp.http.all-alt-0 == "s1"
+	expect resp.http.all-alt-1 == "s2"
+	expect resp.http.all-alt-2 == "s3"
+	expect resp.http.chosen-alt-0 == "s1"
+	expect resp.http.chosen-alt-1 == "s2"
+	expect resp.http.chosen-alt-2 == "s3"
 
 	txreq -url /2 -hdr "vrstart: 1"
 	rxresp
 	expect resp.body == "ieQu2qua"
+	expect resp.http.all-alt-0 == "s1"
+	expect resp.http.all-alt-1 == "s2"
+	expect resp.http.all-alt-2 == "s3"
+	expect resp.http.chosen-alt-0 == "s1"
+	expect resp.http.chosen-alt-1 == "s2"
+	expect resp.http.chosen-alt-2 == "s3"
 
 	txreq -url /3 -hdr "vrstart: 1"
 	rxresp
 	expect resp.body == "xiuFi3Pe"
+	expect resp.http.all-alt-0 == "s1"
+	expect resp.http.all-alt-1 == "s2"
+	expect resp.http.all-alt-2 == "s3"
+	expect resp.http.chosen-alt-0 == "s1"
+	expect resp.http.chosen-alt-1 == "s2"
+	expect resp.http.chosen-alt-2 == "s3"
 } -run
