@@ -565,9 +565,9 @@ VRT_delete_backend(VRT_CTX, struct director **dp)
 	Lck_Lock(&be->mtx);
 	be->director->admin_health = VDI_AH_DELETED;
 	be->director->health_changed = VTIM_real();
-	be->cooled = VTIM_real() + 60.;
 	Lck_Unlock(&be->mtx);
 	Lck_Lock(&backends_mtx);
+	be->cooled = VTIM_real() + 60.;
 	VTAILQ_REMOVE(&backends, be, list);
 	VTAILQ_INSERT_TAIL(&cool_backends, be, list);
 	Lck_Unlock(&backends_mtx);
