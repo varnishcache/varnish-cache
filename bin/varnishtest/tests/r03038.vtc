@@ -1,10 +1,10 @@
 varnishtest "vcl.list and cli_limit"
 
-server s1 { 
+server s1 {
 } -start
 
 varnish v1 -vcl+backend { } -start
-varnish v1 -vcl+backend { } 
+varnish v1 -vcl+backend { }
 varnish v1 -vcl+backend { }
 varnish v1 -vcl+backend { }
 varnish v1 -vcl+backend { }
