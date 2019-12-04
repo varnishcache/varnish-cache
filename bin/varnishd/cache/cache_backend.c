@@ -655,6 +655,7 @@ VRT_delete_backend(VRT_CTX, VCL_BACKEND *dp)
 	VRT_DisableDirector(be->director);
 	Lck_Unlock(&be->mtx);
 	Lck_Lock(&backends_mtx);
+	AZ(be->cooled);
 	be->cooled = VTIM_real() + 60.;
 	VTAILQ_REMOVE(&backends, be, list);
 	VTAILQ_INSERT_TAIL(&cool_backends, be, list);
