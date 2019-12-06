@@ -32,6 +32,7 @@ varnish v1 -vcl+backend {
 	}
 
 	sub vcl_deliver {
+		std.log(std.fileread("/this/file/should/not/exists"));
 		if (req.url == "/one") {
 			set resp.http.one = std.fileread("${tmpdir}/m00004_file_one");
 		} else if (req.url == "/two") {
