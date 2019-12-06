@@ -145,8 +145,6 @@ include/counters.rst: $(top_srcdir)/lib/libvcc/vsctool.py $(COUNTERS)
 
 BUILT_SOURCES += include/counters.rst
 
-# XXX add varnishstat here when it's been _opt2rst'ed
-
 include/varnishncsa_options.rst: $(top_builddir)/bin/varnishncsa/varnishncsa
 	$(top_builddir)/bin/varnishncsa/varnishncsa --options > ${@}_
 	mv ${@}_ ${@}
