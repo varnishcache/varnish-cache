@@ -143,7 +143,7 @@ vmod_fileread(VRT_CTX, struct vmod_priv *priv, VCL_STRING file_name)
 	AN(priv);
 
 	frf = find_frfile(priv, file_name);
-	if (file_name == NULL)
+	if (frf == NULL)
 		return (NULL);
 	return (frf->contents->blob);
 }
@@ -157,7 +157,7 @@ vmod_blobread(VRT_CTX, struct vmod_priv *priv, VCL_STRING file_name)
 	AN(priv);
 
 	frf = find_frfile(priv, file_name);
-	if (file_name == NULL)
+	if (frf == NULL)
 		return (NULL);
 	return (frf->contents);
 }
