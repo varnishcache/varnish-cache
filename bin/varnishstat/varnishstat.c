@@ -257,6 +257,18 @@ usage(int status)
 	exit(status);
 }
 
+static int
+key_bindings(void)
+{
+
+#define BINDING_KEY(chr, name, next)	\
+	printf("<%s>" next, name);
+#define BINDING(name, desc)		\
+	printf("\n%s\n\n", desc);
+#include "varnishstat_bindings.h"
+	return (0);
+}
+
 int
 main(int argc, char * const *argv)
 {
@@ -266,6 +278,9 @@ main(int argc, char * const *argv)
 	int i;
 	int has_f = 0;
 	struct vsc *vsc;
+
+	if (argc == 2 && !strcmp(argv[1], "--bindings"))
+		exit(key_bindings());
 
 	vut = VUT_InitProg(argc, argv, &vopt_spec);
 	AN(vut);

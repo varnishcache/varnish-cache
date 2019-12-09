@@ -187,8 +187,12 @@ include/varnishstat_options.rst: $(top_builddir)/bin/varnishstat/varnishstat
 include/varnishstat_synopsis.rst: $(top_builddir)/bin/varnishstat/varnishstat
 	$(top_builddir)/bin/varnishstat/varnishstat --synopsis > ${@}_
 	mv ${@}_ ${@}
+include/varnishstat_bindings.rst: $(top_builddir)/bin/varnishstat/varnishstat
+	$(top_builddir)/bin/varnishstat/varnishstat --bindings > ${@}_
+	mv ${@}_ ${@}
 BUILT_SOURCES += include/varnishstat_options.rst \
-	 include/varnishstat_synopsis.rst
+	 include/varnishstat_synopsis.rst \
+	 include/varnishstat_bindings.rst
 
 include/vsl-tags.rst: $(top_builddir)/lib/libvarnishapi/vsl2rst
 	$(top_builddir)/lib/libvarnishapi/vsl2rst > ${@}_
