@@ -85,10 +85,10 @@ The following keys control the interactive display:
 <PAGEDOWN> or <SPACE> or <CTRL-f>
 	Navigate the counter list one page down.
 
-<HOME>
+<HOME> or <g>
 	Navigate the counter list to the top.
 
-<END>
+<END> or <G>
 	Navigate the counter list to the bottom.
 
 <d>
@@ -98,12 +98,6 @@ The following keys control the interactive display:
 
 <e>
 	Toggle scaling of values.
-
-<g>
-	Go to the top of the counter list.
-
-<G>
-	Go to the bottom of the counter list.
 
 <v>
 	Increase verbosity. Defaults to only showing informational

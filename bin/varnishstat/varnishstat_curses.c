@@ -896,9 +896,11 @@ handle_keypress(int ch)
 			page_start += l_points;
 		break;
 	case KEY_HOME:
+	case 'g':
 		current = 0;
 		break;
 	case KEY_END:
+	case 'G':
 		current = n_ptarray - 1;
 		break;
 	case 'd':
@@ -908,14 +910,6 @@ handle_keypress(int ch)
 	case 'e':
 		scale = 1 - scale;
 		rebuild = 1;
-		break;
-	case 'g':
-		current = 0;
-		page_start = 0;
-		break;
-	case 'G':
-		current = n_ptarray - 1;
-		page_start = (current - l_points) + 1;
 		break;
 	case '+':
 		interval += 0.1;
