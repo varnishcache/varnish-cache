@@ -871,13 +871,13 @@ handle_keypress(int ch)
 {
 	switch (ch) {
 	case KEY_UP:
-	case 107:  /* k */
+	case 'k':
 		if (current == 0)
 			return;
 		current--;
 		break;
 	case KEY_DOWN:
-	case 106:  /* j */
+	case 'j':
 		if (current == n_ptarray - 1)
 			return;
 		current++;

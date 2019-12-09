@@ -73,10 +73,10 @@ Key bindings
 
 The following keys control the interactive display:
 
-<UP>
+<UP> or <k>
 	Navigate the counter list one line up.
 
-<DOWN>
+<DOWN> or <j>
 	Navigate the counter list one line down.
 
 <PAGEUP> or <b> or <CTRL-b>
