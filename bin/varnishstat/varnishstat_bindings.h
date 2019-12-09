@@ -26,6 +26,8 @@
  * SUCH DAMAGE.
  */
 
+/*lint -save -e525 -e539 */
+
 #ifndef BINDING_KEY
 #  define BINDING_KEY(key, name, next)
 #endif
@@ -104,3 +106,6 @@ BINDING(SIG_TSTP, "")
 #undef BINDING_KEY
 #undef BINDING_CTRL
 #undef BINDING
+
+/*lint -restore */
+

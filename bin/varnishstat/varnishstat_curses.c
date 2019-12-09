@@ -107,7 +107,7 @@ static const volatile uint64_t *main_cache_hit;
 static const volatile uint64_t *main_cache_miss;
 
 static int l_status, l_bar_t, l_points, l_bar_b, l_info;
-static int colw_name = COLW_NAME_MIN;
+static unsigned colw_name = COLW_NAME_MIN;
 static WINDOW *w_status = NULL;
 static WINDOW *w_bar_t = NULL;
 static WINDOW *w_points = NULL;
