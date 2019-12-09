@@ -263,7 +263,6 @@ cls_exec(struct VCLS_fd *cfd, char * const *av)
 	char *s;
 	unsigned lim;
 	int retval = 0;
-	const char *trunc = "!\n[response was truncated]\n";
 
 	CHECK_OBJ_NOTNULL(cfd, VCLS_FD_MAGIC);
 	cs = cfd->cls;
@@ -334,7 +333,7 @@ cls_exec(struct VCLS_fd *cfd, char * const *av)
 	if (len > lim) {
 		if (cli->result == CLIS_OK)
 			cli->result = CLIS_TRUNCATED;
-		strcpy(s + (lim - strlen(trunc)), trunc);
+		s[lim - 1] = '\0';
 		assert(strlen(s) <= lim);
 	}
 	if (VCLI_WriteResult(cfd->fdo, cli->result, s) ||
