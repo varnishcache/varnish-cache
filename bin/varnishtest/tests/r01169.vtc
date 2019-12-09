@@ -1,4 +1,4 @@
-varnishtest "cli_limit truncating full parameter listing - #1169"
+varnishtest "cli_limit *not* truncating full parameter listing by default - #1169"
 
 server s1 {
 	rxreq

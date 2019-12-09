@@ -161,7 +161,7 @@ do_args(int sock, int argc, char * const *argv)
 	unsigned status;
 	char *answer = NULL;
 
-	for (i=0; i<argc; i++) {
+	for (i = 0; i < argc; i++) {
 		/* XXX: We should really CLI-quote these */
 		if (i > 0)
 			cli_write(sock, " ");
@@ -175,8 +175,12 @@ do_args(int sock, int argc, char * const *argv)
 	(void)close(sock);
 
 	printf("%s\n", answer);
-	if (status == CLIS_OK || status == CLIS_TRUNCATED)
+	if (status == CLIS_OK)
 		exit(0);
+	if (status == CLIS_TRUNCATED) {
+		printf("[response was truncated]\n");
+		exit(0);
+	}
 	fprintf(stderr, "Command failed with error code %u\n", status);
 	exit(1);
 }
@@ -254,6 +258,8 @@ pass_answer(int fd)
 		printf("%s\n", answer);
 		free(answer);
 	}
+        if (status == CLIS_TRUNCATED)
+		printf("[response was truncated]\n");
 	(void)fflush(stdout);
 }
 
