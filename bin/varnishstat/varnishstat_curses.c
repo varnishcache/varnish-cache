@@ -62,7 +62,11 @@
 
 #define VALUE_MAX		999999999999
 
-#define CTRL(c) ((c) & 037)
+enum kb_e {
+#define BINDING(name, desc) KB_ ## name,
+#define BINDING_SIG
+#include "varnishstat_bindings.h"
+};
 
 struct ma {
 	unsigned n, nmax;
@@ -869,56 +873,62 @@ draw_screen(void)
 static void
 handle_keypress(int ch)
 {
+	enum kb_e kb;
+
 	switch (ch) {
-	case KEY_UP:
-	case 'k':
+#define BINDING_KEY(chr, name, or)	\
+	case chr:
+#define BINDING(name, desc)		\
+		kb = KB_ ## name;		\
+		break;
+#define BINDING_SIG
+#include "varnishstat_bindings.h"
+	default:
+		return;
+	}
+
+	switch (kb) {
+	case KB_UP:
 		if (current == 0)
 			return;
 		current--;
 		break;
-	case KEY_DOWN:
-	case 'j':
+	case KB_DOWN:
 		if (current == n_ptarray - 1)
 			return;
 		current++;
 		break;
-	case KEY_PPAGE:
-	case CTRL('b'):
-	case 'b':
+	case KB_PAGEUP:
 		current -= l_points;
 		page_start -= l_points;
 		break;
-	case KEY_NPAGE:
-	case CTRL('f'):
-	case ' ':
+	case KB_PAGEDOWN:
 		current += l_points;
 		if (page_start + l_points < n_ptarray - 1)
 			page_start += l_points;
 		break;
-	case KEY_HOME:
-	case 'g':
+	case KB_TOP:
 		current = 0;
 		break;
-	case KEY_END:
-	case 'G':
+	case KB_BOTTOM:
 		current = n_ptarray - 1;
 		break;
-	case 'd':
+	case KB_UNSEEN:
 		hide_unseen = 1 - hide_unseen;
 		rebuild = 1;
 		break;
-	case 'e':
+	case KB_SCALE:
 		scale = 1 - scale;
 		rebuild = 1;
 		break;
-	case '+':
+	case KB_ACCEL:
 		interval += 0.1;
 		(void)snprintf(notification_message, NOTIF_MAXLEN,
 		    "Refresh interval set to %.1f seconds.", interval);
 
 		notification_eol = VTIM_mono() + 1.25;
 		break;
-	case '-':
+	case KB_DECEL:
 		interval -= 0.1;
 		if (interval < 0.1)
 			interval = 0.1;
@@ -927,28 +937,28 @@ handle_keypress(int ch)
 
 		notification_eol = VTIM_mono() + 1.25;
 		break;
-	case 'v':
+	case KB_VERBOSE:
 		verbosity = VSC_ChangeLevel(verbosity, 1);
 		rebuild = 1;
 		break;
-	case 'V':
+	case KB_QUIET:
 		verbosity = VSC_ChangeLevel(verbosity, -1);
 		rebuild = 1;
 		break;
-	case 'q':
+	case KB_QUIT:
 		keep_running = 0;
 		return;
-	case CTRL('c'):
+	case KB_SIG_INT:
 		AZ(raise(SIGINT));
 		return;
-	case CTRL('t'):
+	case KB_SAMPLE:
 		sample = 1;
 		return;
-	case CTRL('z'):
+	case KB_SIG_TSTP:
 		AZ(raise(SIGTSTP));
 		return;
 	default:
-		return;
+		WRONG("unhandled key binding");
 	}
 
 	update_position();

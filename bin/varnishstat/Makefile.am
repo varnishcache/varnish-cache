@@ -9,6 +9,7 @@ bin_PROGRAMS = varnishstat
 varnishstat_SOURCES = \
 	varnishstat.h \
 	varnishstat.c \
+	varnishstat_bindings.h \
 	varnishstat_curses.c \
 	varnishstat_options.h
 
