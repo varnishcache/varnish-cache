@@ -528,7 +528,6 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 	sy1->def_e = tl->t;
 
 	vf = VTAILQ_FIRST(&vv->children);
-	vv = VTAILQ_NEXT(vv, list);
 	assert(vf->type == VJSN_STRING);
 	assert(!strcmp(vf->value, "$FINI"));
 
