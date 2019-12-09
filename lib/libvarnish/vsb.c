@@ -309,6 +309,8 @@ VSB_cat(struct vsb *s, const char *str)
 
 	assert_VSB_integrity(s);
 	assert_VSB_state(s, 0);
+	KASSERT(str != NULL,
+	    ("%s called with a NULL str pointer", __func__));
 
 	if (s->s_error != 0)
 		return (-1);
