@@ -379,7 +379,7 @@ vcc_ParseImport(struct vcc *tl)
 void v_matchproto_(sym_act_f)
 vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 {
-	struct symbol *sy1, *sy2, *sy3;
+	struct symbol *isym, *osym, *msym;
 	struct inifin *ifp;
 	struct vsb *buf;
 	const struct vjsn_val *vv, *vf;
@@ -391,19 +391,19 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 	ExpectErr(tl, ID);
 	vcc_ExpectVid(tl, "VCL object");
 	ERRCHK(tl);
-	sy1 = VCC_HandleSymbol(tl, INSTANCE, "vo");
+	isym = VCC_HandleSymbol(tl, INSTANCE, "vo");
 	ERRCHK(tl);
-	AN(sy1);
-	sy1->noref = 1;
+	AN(isym);
+	isym->noref = 1;
 
 	ExpectErr(tl, '=');
 	vcc_NextToken(tl);
 
 	ExpectErr(tl, ID);
-	sy2 = VCC_SymbolGet(tl, SYM_OBJECT, SYMTAB_EXISTING, XREF_NONE);
+	osym = VCC_SymbolGet(tl, SYM_OBJECT, SYMTAB_EXISTING, XREF_NONE);
 	ERRCHK(tl);
-	AN(sy2);
-	CAST_OBJ_NOTNULL(vv, sy2->eval_priv, VJSN_VAL_MAGIC);
+	AN(osym);
+	CAST_OBJ_NOTNULL(vv, osym->eval_priv, VJSN_VAL_MAGIC);
 	// vv = object name
 
 	vv = VTAILQ_NEXT(vv, list);
@@ -413,12 +413,12 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 		if (!strcmp(vf->name, "NULL_OK") && vf->type == VJSN_TRUE)
 			null_ok = 1;
 	if (!null_ok)
-		VTAILQ_INSERT_TAIL(&tl->sym_objects, sy1, sideways);
+		VTAILQ_INSERT_TAIL(&tl->sym_objects, isym, sideways);
 
 	vv = VTAILQ_NEXT(vv, list);
 	// vv = struct name
 
-	Fh(tl, 0, "static %s *%s;\n\n", vv->value, sy1->rname);
+	Fh(tl, 0, "static %s *%s;\n\n", vv->value, isym->rname);
 	vv = VTAILQ_NEXT(vv, list);
 
 	vf = VTAILQ_FIRST(&vv->children);
@@ -430,13 +430,13 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 
 	buf = VSB_new_auto();
 	AN(buf);
-	VSB_printf(buf, "&%s, \"%s\"", sy1->rname, sy1->name);
+	VSB_printf(buf, "&%s, \"%s\"", isym->rname, isym->name);
 	AZ(VSB_finish(buf));
-	vcc_Eval_Func(tl, vf, VSB_data(buf), sy2);
+	vcc_Eval_Func(tl, vf, VSB_data(buf), osym);
 	VSB_destroy(&buf);
 	ERRCHK(tl);
 	SkipToken(tl, ';');
-	sy1->def_e = tl->t;
+	isym->def_e = tl->t;
 
 	vf = VTAILQ_FIRST(&vv->children);
 	vv = VTAILQ_NEXT(vv, list);
@@ -447,8 +447,8 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 	vf = VTAILQ_FIRST(&vf->children);
 	vf = VTAILQ_NEXT(vf, list);
 	ifp = New_IniFin(tl);
-	VSB_printf(ifp->fin, "\t\tif (%s)\n", sy1->rname);
-	VSB_printf(ifp->fin, "\t\t\t\t%s(&%s);", vf->value, sy1->rname);
+	VSB_printf(ifp->fin, "\t\tif (%s)\n", isym->rname);
+	VSB_printf(ifp->fin, "\t\t\t\t%s(&%s);", vf->value, isym->rname);
 
 	/* Instantiate symbols for the methods */
 	buf = VSB_new_auto();
@@ -462,12 +462,12 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 		assert(vf->type == VJSN_STRING);
 
 		VSB_clear(buf);
-		VSB_printf(buf, "%s.%s", sy1->name, vf->value);
+		VSB_printf(buf, "%s.%s", isym->name, vf->value);
 		AZ(VSB_finish(buf));
-		sy3 = VCC_MkSym(tl, VSB_data(buf), SYM_FUNC, VCL_LOW, VCL_HIGH);
-		AN(sy3);
-		func_sym(sy3, sy2->vmod_name, VTAILQ_NEXT(vf, list));
-		sy3->extra = sy1->rname;
+		msym = VCC_MkSym(tl, VSB_data(buf), SYM_FUNC, VCL_LOW, VCL_HIGH);
+		AN(msym);
+		func_sym(msym, osym->vmod_name, VTAILQ_NEXT(vf, list));
+		msym->extra = isym->rname;
 		vv = VTAILQ_NEXT(vv, list);
 	}
 	VSB_destroy(&buf);
