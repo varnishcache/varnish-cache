@@ -185,12 +185,28 @@ vcc_VmodSanity(struct vcc *tl, void *hdl, struct token *mod, char *fnp)
 	return (vmd);
 }
 
+static vcc_kind_t
+vcc_vmod_kind(const char *type)
+{
+
+#define VMOD_KIND(str, kind)		\
+	do {				\
+		if (!strcmp(str, type))	\
+			return (kind);	\
+	} while (0)
+	VMOD_KIND("$OBJ", SYM_OBJECT);
+	VMOD_KIND("$FUNC", SYM_FUNC);
+#undef VMOD_KIND
+	return (SYM_NONE);
+}
+
 static void
 vcc_VmodSymbols(struct vcc *tl, struct symbol *msym)
 {
 	const struct vjsn *vj;
 	const struct vjsn_val *vv, *vv1, *vv2;
 	struct symbol *fsym;
+	vcc_kind_t kind;
 	struct vsb *buf;
 
 	assert(msym->kind == SYM_VMOD);
@@ -200,26 +216,26 @@ vcc_VmodSymbols(struct vcc *tl, struct symbol *msym)
 	AN(buf);
 
 	VTAILQ_FOREACH(vv, &vj->value->children, list) {
-		VSB_clear(buf);
-
 		assert(vv->type == VJSN_ARRAY);
 		vv1 = VTAILQ_FIRST(&vv->children);
 		assert(vv1->type == VJSN_STRING);
 		vv2 = VTAILQ_NEXT(vv1, list);
 		assert(vv2->type == VJSN_STRING);
 
+		kind = vcc_vmod_kind(vv1->value);
+		if (kind == SYM_NONE)
+			continue;
+
+		VSB_clear(buf);
 		VSB_printf(buf, "%s.%s", msym->name, vv2->value);
 		AZ(VSB_finish(buf));
+		fsym = VCC_MkSym(tl, VSB_data(buf), kind, VCL_LOW, VCL_HIGH);
+		AN(fsym);
 
-		if (!strcmp(vv1->value, "$FUNC")) {
-			fsym = VCC_MkSym(tl, VSB_data(buf), SYM_FUNC,
-			    VCL_LOW, VCL_HIGH);
-			AN(fsym);
+		if (kind == SYM_FUNC) {
 			func_sym(fsym, msym->vmod_name, VTAILQ_NEXT(vv2, list));
-		} else if (!strcmp(vv1->value, "$OBJ")) {
-			fsym = VCC_MkSym(tl, VSB_data(buf), SYM_OBJECT,
-			    VCL_LOW, VCL_HIGH);
-			AN(fsym);
+		} else {
+			assert(kind == SYM_OBJECT);
 			fsym->eval_priv = vv2;
 			fsym->vmod_name = msym->vmod_name;
 		}
