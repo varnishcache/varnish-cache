@@ -465,7 +465,7 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 	VTAILQ_HEAD(,func_arg) head;
 	struct token *t1;
 	const struct vjsn_val *vv, *vvp;
-	const char *sa;
+	const char *sa, *extra_sep;
 	char ssa[64];
 	int n;
 
@@ -483,8 +483,13 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 	}
 	vv = VTAILQ_NEXT(vv, list);
 	SkipToken(tl, '(');
-	if (extra == NULL)
+	if (extra == NULL) {
 		extra = "";
+		extra_sep = "";
+	} else {
+		AN(*extra);
+		extra_sep = ", ";
+	}
 	VTAILQ_INIT(&head);
 	for (;vv != NULL; vv = VTAILQ_NEXT(vv, list)) {
 		assert(vv->type == VJSN_ARRAY);
@@ -570,10 +575,11 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 	}
 
 	if (sa != NULL)
-		e1 = vcc_mk_expr(rfmt, "%s(ctx%s,\v+\n&(%s)\v+ {\n",
-		    cfunc, extra, sa);
+		e1 = vcc_mk_expr(rfmt, "%s(ctx%s%s,\v+\n&(%s)\v+ {\n",
+		    cfunc, extra_sep, extra, sa);
 	else
-		e1 = vcc_mk_expr(rfmt, "%s(ctx%s\v+", cfunc, extra);
+		e1 = vcc_mk_expr(rfmt, "%s(ctx%s%s\v+",
+		    cfunc, extra_sep, extra);
 	n = 0;
 	VTAILQ_FOREACH_SAFE(fa, &head, list, fa2) {
 		n++;

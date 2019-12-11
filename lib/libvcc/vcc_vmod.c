@@ -385,7 +385,6 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 	struct inifin *ifp;
 	struct vsb *buf;
 	const struct vjsn_val *vv, *vf;
-	const char *p;
 	int null_ok = 0;
 
 	(void)sym;
@@ -433,7 +432,7 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 
 	buf = VSB_new_auto();
 	AN(buf);
-	VSB_printf(buf, ", &%s, \"%s\"", sy1->rname, sy1->name);
+	VSB_printf(buf, "&%s, \"%s\"", sy1->rname, sy1->name);
 	AZ(VSB_finish(buf));
 	vcc_Eval_Func(tl, vf, VSB_data(buf), sy2);
 	VSB_destroy(&buf);
@@ -456,9 +455,7 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 	/* Instantiate symbols for the methods */
 	buf = VSB_new_auto();
 	AN(buf);
-	VSB_printf(buf, ", %s", sy1->rname);
-	AZ(VSB_finish(buf));
-	p = TlDup(tl, VSB_data(buf));
+
 	while (vv != NULL) {
 		vf = VTAILQ_FIRST(&vv->children);
 		assert(vf->type == VJSN_STRING);
@@ -472,7 +469,7 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 		sy3 = VCC_MkSym(tl, VSB_data(buf), SYM_FUNC, VCL_LOW, VCL_HIGH);
 		AN(sy3);
 		func_sym(sy3, sy2->vmod_name, VTAILQ_NEXT(vf, list));
-		sy3->extra = p;
+		sy3->extra = sy1->rname;
 		vv = VTAILQ_NEXT(vv, list);
 	}
 	VSB_destroy(&buf);
