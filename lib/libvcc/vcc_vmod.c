@@ -195,6 +195,7 @@ vcc_vmod_kind(const char *type)
 			return (kind);	\
 	} while (0)
 	VMOD_KIND("$OBJ", SYM_OBJECT);
+	VMOD_KIND("$METHOD", SYM_FUNC);
 	VMOD_KIND("$FUNC", SYM_FUNC);
 #undef VMOD_KIND
 	return (SYM_NONE);
@@ -209,22 +210,44 @@ vcc_VmodSymbols(struct vcc *tl, struct symbol *msym)
 	vcc_kind_t kind;
 	struct vsb *buf;
 
-	assert(msym->kind == SYM_VMOD);
-	CAST_OBJ_NOTNULL(vj, msym->eval_priv, VJSN_MAGIC);
+	if (msym->kind == SYM_VMOD) {
+		CAST_OBJ_NOTNULL(vj, msym->eval_priv, VJSN_MAGIC);
+		vv = VTAILQ_FIRST(&vj->value->children);
+	} else if (msym->kind == SYM_INSTANCE) {
+		CAST_OBJ_NOTNULL(vv, msym->eval_priv, VJSN_VAL_MAGIC);
+	} else {
+		WRONG("symbol kind");
+	}
 
 	buf = VSB_new_auto();
 	AN(buf);
 
-	VTAILQ_FOREACH(vv, &vj->value->children, list) {
-		assert(vv->type == VJSN_ARRAY);
+	for (; vv != NULL; vv = VTAILQ_NEXT(vv, list)) {
+		if (vv->type != VJSN_ARRAY)
+			continue;
 		vv1 = VTAILQ_FIRST(&vv->children);
 		assert(vv1->type == VJSN_STRING);
 		vv2 = VTAILQ_NEXT(vv1, list);
-		assert(vv2->type == VJSN_STRING);
+		if (vv2->type != VJSN_STRING)
+			continue;
 
 		kind = vcc_vmod_kind(vv1->value);
 		if (kind == SYM_NONE)
 			continue;
+
+		/* NB: currently VMOD object methods are effectively function
+		 * symbols (SYM_FUNC) because they are declared per instance
+		 * instead of per object. Once they become proper methods
+		 * symbols (SYM_METHOD) we can move the symbol creation inside
+		 * the func_sym() function and replace the rest of the loop
+		 * with a single statement:
+		 *
+		 *     func_sym(kind, msym, vv2);
+		 *
+		 * Then based on kind, the func_sym() function would account
+		 * for the slight differences between the 3 kinds of VMOD
+		 * functions (function, object constructor, object method).
+		 */
 
 		VSB_clear(buf);
 		VSB_printf(buf, "%s.%s", msym->name, vv2->value);
@@ -234,6 +257,9 @@ vcc_VmodSymbols(struct vcc *tl, struct symbol *msym)
 
 		if (kind == SYM_FUNC) {
 			func_sym(fsym, msym->vmod_name, VTAILQ_NEXT(vv2, list));
+			/* XXX: until we use SYM_METHOD, string check. */
+			if (!strcmp(vv1->value, "$METHOD"))
+				fsym->extra = msym->rname;
 		} else {
 			assert(kind == SYM_OBJECT);
 			fsym->eval_priv = vv2;
@@ -409,7 +435,7 @@ vcc_ParseImport(struct vcc *tl)
 void v_matchproto_(sym_act_f)
 vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 {
-	struct symbol *isym, *osym, *msym;
+	struct symbol *isym, *osym;
 	struct inifin *ifp;
 	struct vsb *buf;
 	const struct vjsn_val *vv, *vf;
@@ -433,6 +459,10 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 	AN(osym);
 	CAST_OBJ_NOTNULL(vv, osym->eval_priv, VJSN_VAL_MAGIC);
 	// vv = object name
+
+	isym->vmod_name = osym->vmod_name;
+	isym->eval_priv = vv;
+	vcc_VmodSymbols(tl, isym);
 
 	vv = VTAILQ_NEXT(vv, list);
 	// vv = flags
@@ -467,7 +497,6 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 	isym->def_e = tl->t;
 
 	vf = VTAILQ_FIRST(&vv->children);
-	vv = VTAILQ_NEXT(vv, list);
 	assert(vf->type == VJSN_STRING);
 	assert(!strcmp(vf->value, "$FINI"));
 
@@ -477,26 +506,4 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 	ifp = New_IniFin(tl);
 	VSB_printf(ifp->fin, "\t\tif (%s)\n", isym->rname);
 	VSB_printf(ifp->fin, "\t\t\t\t%s(&%s);", vf->value, isym->rname);
-
-	/* Instantiate symbols for the methods */
-	buf = VSB_new_auto();
-	AN(buf);
-
-	while (vv != NULL) {
-		vf = VTAILQ_FIRST(&vv->children);
-		assert(vf->type == VJSN_STRING);
-		assert(!strcmp(vf->value, "$METHOD"));
-		vf = VTAILQ_NEXT(vf, list);
-		assert(vf->type == VJSN_STRING);
-
-		VSB_clear(buf);
-		VSB_printf(buf, "%s.%s", isym->name, vf->value);
-		AZ(VSB_finish(buf));
-		msym = VCC_MkSym(tl, VSB_data(buf), SYM_FUNC, VCL_LOW, VCL_HIGH);
-		AN(msym);
-		func_sym(msym, osym->vmod_name, VTAILQ_NEXT(vf, list));
-		msym->extra = isym->rname;
-		vv = VTAILQ_NEXT(vv, list);
-	}
-	VSB_destroy(&buf);
 }
