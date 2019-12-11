@@ -350,15 +350,13 @@ vcc_ParseImport(struct vcc *tl)
 	VSB_cat(tl->symtab, "\t\"type\": \"$VMOD\",\n");
 	VSB_printf(tl->symtab, "\t\"name\": \"%.*s\",\n", PF(mod));
 	VSB_printf(tl->symtab, "\t\"file\": \"%s\",\n", fnpx);
-	VSB_printf(tl->symtab,
-	    "\t\"dst\": \"./vmod_cache/_vmod_%.*s.%s\"\n",
+	VSB_printf(tl->symtab, "\t\"dst\": \"./vmod_cache/_vmod_%.*s.%s\"\n",
 	    PF(mod), vmd->file_id);
 	VSB_cat(tl->symtab, "    }");
 
 	/* XXX: zero the function pointer structure ?*/
 	VSB_printf(ifp->fin, "\t\tVRT_priv_fini(&vmod_priv_%.*s);", PF(mod));
-	VSB_printf(ifp->final,
-	    "\t\tVPI_Vmod_Unload(&VGC_vmod_%.*s);", PF(mod));
+	VSB_printf(ifp->final, "\t\tVPI_Vmod_Unload(&VGC_vmod_%.*s);", PF(mod));
 
 	vj = vjsn_parse(vmd->json, &p);
 	XXXAZ(p);
