@@ -129,37 +129,6 @@ vcc_json_always(struct vcc *tl, const struct vjsn *vj, const char *vmod_name)
 	}
 }
 
-static void v_matchproto_(sym_wildcard_t)
-vcc_json_wildcard(struct vcc *tl, struct symbol *msym, struct symbol *tsym)
-{
-	const struct vjsn *vj;
-	const struct vjsn_val *vv, *vv1, *vv2;
-
-	assert(msym->kind == SYM_VMOD);
-	CAST_OBJ_NOTNULL(vj, msym->eval_priv, VJSN_MAGIC);
-	VTAILQ_FOREACH(vv, &vj->value->children, list) {
-		assert(vv->type == VJSN_ARRAY);
-		vv1 = VTAILQ_FIRST(&vv->children);
-		assert(vv1->type == VJSN_STRING);
-		vv2 = VTAILQ_NEXT(vv1, list);
-		assert(vv2->type == VJSN_STRING);
-		if (!strcmp(vv1->value, "$FUNC") &&
-		    !strcmp(vv2->value, tsym->name)) {
-			tsym->kind = SYM_FUNC;
-			tsym->noref = 1;
-			func_sym(tsym, msym->vmod_name, VTAILQ_NEXT(vv2, list));
-			return;
-		} else if (!strcmp(vv1->value, "$OBJ") &&
-			   !strcmp(vv2->value, tsym->name)) {
-			tsym->kind = SYM_OBJECT;
-			tsym->eval_priv = vv2;
-			tsym->vmod_name = msym->vmod_name;
-			return;
-		}
-	}
-	tl->err = 1;
-}
-
 static const struct vmod_data *
 vcc_VmodSanity(struct vcc *tl, void *hdl, struct token *mod, char *fnp)
 {
@@ -214,6 +183,49 @@ vcc_VmodSanity(struct vcc *tl, void *hdl, struct token *mod, char *fnp)
 		return (NULL);
 	}
 	return (vmd);
+}
+
+static void
+vcc_VmodSymbols(struct vcc *tl, struct symbol *msym)
+{
+	const struct vjsn *vj;
+	const struct vjsn_val *vv, *vv1, *vv2;
+	struct symbol *fsym;
+	struct vsb *buf;
+
+	assert(msym->kind == SYM_VMOD);
+	CAST_OBJ_NOTNULL(vj, msym->eval_priv, VJSN_MAGIC);
+
+	buf = VSB_new_auto();
+	AN(buf);
+
+	VTAILQ_FOREACH(vv, &vj->value->children, list) {
+		VSB_clear(buf);
+
+		assert(vv->type == VJSN_ARRAY);
+		vv1 = VTAILQ_FIRST(&vv->children);
+		assert(vv1->type == VJSN_STRING);
+		vv2 = VTAILQ_NEXT(vv1, list);
+		assert(vv2->type == VJSN_STRING);
+
+		VSB_printf(buf, "%s.%s", msym->name, vv2->value);
+		AZ(VSB_finish(buf));
+
+		if (!strcmp(vv1->value, "$FUNC")) {
+			fsym = VCC_MkSym(tl, VSB_data(buf), SYM_FUNC,
+			    VCL_LOW, VCL_HIGH);
+			AN(fsym);
+			func_sym(fsym, msym->vmod_name, VTAILQ_NEXT(vv2, list));
+		} else if (!strcmp(vv1->value, "$OBJ")) {
+			fsym = VCC_MkSym(tl, VSB_data(buf), SYM_OBJECT,
+			    VCL_LOW, VCL_HIGH);
+			AN(fsym);
+			fsym->eval_priv = vv2;
+			fsym->vmod_name = msym->vmod_name;
+		}
+	}
+
+	VSB_destroy(&buf);
 }
 
 void
@@ -317,9 +329,9 @@ vcc_ParseImport(struct vcc *tl)
 		if (!strcmp(vsym->extra, vmd->file_id)) {
 			/* Already loaded under different name */
 			msym->eval_priv = vsym->eval_priv;
-			msym->wildcard = vsym->wildcard;
 			msym->extra = vsym->extra;
 			msym->vmod_name = vsym->vmod_name;
+			vcc_VmodSymbols(tl, msym);
 			AZ(dlclose(vop->hdl));
 			free(fnpx);
 			return;
@@ -364,9 +376,9 @@ vcc_ParseImport(struct vcc *tl)
 	XXXAZ(p);
 	AN(vj);
 	msym->eval_priv = vj;
-	msym->wildcard = vcc_json_wildcard;
 	msym->extra = TlDup(tl, vmd->file_id);
 	msym->vmod_name = TlDup(tl, vmd->name);
+	vcc_VmodSymbols(tl, msym);
 
 	vcc_json_always(tl, vj, msym->vmod_name);
 
