@@ -35,6 +35,18 @@ bb cc dd ee ff 11 22 33
 	expect_close
 } -run
 
+# Badly formatted TLV proxy payload
+client c1 {
+	sendhex {
+0d 0a 0d 0a 00 0d 0a 51
+55 49 54 0a
+21 11 00 13 00 ff 20 ff  10 ff 03 21 20 30 00 20
+20 00 00 19 00 02 29 20  00 00 00 41 20 9e 15 15
+d6 00 00 08 00 00 00 00  00 07 7a 20 b1 3f 43 20
+	}
+	expect_close
+} -run
+
 # Reduced size proxy payload to verify Varnish is still running
 client c1 {
 	sendhex {
