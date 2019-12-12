@@ -101,41 +101,37 @@ h2_init_sess(const struct worker *wrk, struct sess *sp,
 	uintptr_t *up;
 	struct h2_sess *h2;
 
-	if (SES_Get_proto_priv(sp, &up)) {
-		/* Already reserved if we came via H1 */
-		XXXAN(SES_Reserve_proto_priv(sp, &up));
-		*up = 0;
-	}
-	if (*up == 0) {
-		if (srq == NULL)
-			srq = Req_New(wrk, sp);
-		AN(srq);
-		h2 = h2s;
-		AN(h2);
-		INIT_OBJ(h2, H2_SESS_MAGIC);
-		h2->srq = srq;
-		h2->htc = srq->htc;
-		h2->ws = srq->ws;
-		h2->vsl = srq->vsl;
-		VSL_Flush(h2->vsl, 0);
-		h2->vsl->wid = sp->vxid;
-		h2->htc->rfd = &sp->fd;
-		h2->sess = sp;
-		h2->rxthr = pthread_self();
-		AZ(pthread_cond_init(h2->winupd_cond, NULL));
-		VTAILQ_INIT(&h2->streams);
-		VTAILQ_INIT(&h2->txqueue);
-		h2_local_settings(&h2->local_settings);
-		h2->remote_settings = H2_proto_settings;
-		h2->decode = decode;
+	/* proto_priv session attribute will always have been set up by H1
+	 * before reaching here. */
+	AZ(SES_Get_proto_priv(sp, &up));
+	assert(*up == 0);
 
-		AZ(VHT_Init(h2->dectbl,
-			h2->local_settings.header_table_size));
+	if (srq == NULL)
+		srq = Req_New(wrk, sp);
+	AN(srq);
+	h2 = h2s;
+	AN(h2);
+	INIT_OBJ(h2, H2_SESS_MAGIC);
+	h2->srq = srq;
+	h2->htc = srq->htc;
+	h2->ws = srq->ws;
+	h2->vsl = srq->vsl;
+	VSL_Flush(h2->vsl, 0);
+	h2->vsl->wid = sp->vxid;
+	h2->htc->rfd = &sp->fd;
+	h2->sess = sp;
+	h2->rxthr = pthread_self();
+	AZ(pthread_cond_init(h2->winupd_cond, NULL));
+	VTAILQ_INIT(&h2->streams);
+	VTAILQ_INIT(&h2->txqueue);
+	h2_local_settings(&h2->local_settings);
+	h2->remote_settings = H2_proto_settings;
+	h2->decode = decode;
 
-		*up = (uintptr_t)h2;
-	}
-	AN(up);
-	CAST_OBJ_NOTNULL(h2, (void*)(*up), H2_SESS_MAGIC);
+	AZ(VHT_Init(h2->dectbl, h2->local_settings.header_table_size));
+
+	*up = (uintptr_t)h2;
+
 	return (h2);
 }
 
