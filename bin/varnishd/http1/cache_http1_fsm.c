@@ -114,7 +114,15 @@ http1_new_session(struct worker *wrk, void *arg)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	HTC_RxInit(req->htc, req->ws);
-	XXXAN(SES_Reserve_proto_priv(sp, &u));
+	if (!SES_Reserve_proto_priv(sp, &u)) {
+		/* Out of session workspace. Free the req, close the sess,
+		 * and do not set a new task func, which will exit the
+		 * worker thread. */
+		VSL(SLT_Error, req->sp->vxid, "insufficient workspace");
+		Req_Release(req);
+		SES_Delete(sp, SC_RX_JUNK, NAN);
+		return;
+	}
 	http1_setstate(sp, H1NEWREQ);
 	wrk->task.func = http1_req;
 	wrk->task.priv = req;
