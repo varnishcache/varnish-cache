@@ -130,7 +130,6 @@ h2_init_sess(const struct worker *wrk, struct sess *sp,
 		AZ(VHT_Init(h2->dectbl,
 			h2->local_settings.header_table_size));
 
-		XXXAN(SES_Reserve_proto_priv(sp, &up));
 		*up = (uintptr_t)h2;
 	}
 	AN(up);
