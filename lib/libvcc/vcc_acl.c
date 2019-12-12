@@ -40,6 +40,8 @@
 #include <string.h>
 
 #include "vcc_compile.h"
+#include <vtcp.h>
+#include <vsa.h>
 
 #define ACL_MAXADDR	(sizeof(struct in6_addr) + 1)
 
@@ -50,6 +52,7 @@ struct acl_e {
 	unsigned		not;
 	unsigned		para;
 	char			*addr;
+	char			*fixed;
 	struct token		*t_addr;
 	struct token		*t_mask;
 };
@@ -91,10 +94,60 @@ vcl_acl_cmp(struct acl_e *ae1, struct acl_e *ae2)
 	return (0);
 }
 
+static char *
+vcc_acl_chk(struct vcc *tl, const struct acl_e *ae, const int l,
+    unsigned char *p, int fam)
+{
+	const unsigned char *u;
+	char h[VTCP_ADDRBUFSIZE];
+	char t[VTCP_ADDRBUFSIZE + 10];
+	char s[vsa_suckaddr_len];
+	struct suckaddr *sa;
+	unsigned m;
+	int ll, ret = 0;
+
+	u = p;
+	ll = l;
+	m = ae->mask;
+
+	p += m / 8;
+	ll -= m / 8;
+	assert (ll >= 0);
+	m %= 8;
+
+	if (m && (*p << m & 0xff) != 0) {
+		ret = 1;
+		m = 0xff00 >> m;
+		*p &= m;
+	}
+	if (m) {
+		p++;
+		ll--;
+	}
+
+	for ( ; ll > 0; p++, ll--) {
+		if (*p == 0)
+			continue;
+		ret = 1;
+		*p = 0;
+	}
+	if (ret == 0)
+		return (NULL);
+
+	sa = VSA_BuildFAP(s, fam, u, l, NULL, 0);
+	AN(sa);
+	VTCP_name(sa, h, sizeof h, NULL, 0);
+	bprintf(t, "%s/%d", h, ae->mask);
+	VSB_printf(tl->sb, "Address/Netmask mismatch, changed to %s\n", t);
+	vcc_ErrWhere(tl, ae->t_addr);
+	vcc_Warn(tl);
+	return (strdup(t));
+}
+
 
 static void
 vcc_acl_add_entry(struct vcc *tl, const struct acl_e *ae, int l,
-    const unsigned char *u, int fam)
+    unsigned char *u, int fam)
 {
 	struct acl_e *ae2, *aen;
 	int i;
@@ -119,6 +172,8 @@ vcc_acl_add_entry(struct vcc *tl, const struct acl_e *ae, int l,
 	aen = TlAlloc(tl, sizeof *ae2);
 	AN(aen);
 	*aen = *ae;
+
+	aen->fixed = vcc_acl_chk(tl, ae, l, u, fam);
 
 	/* We treat family as part of address, it saves code */
 	assert(fam <= 0xff);
@@ -410,6 +465,7 @@ vcc_acl_emit(struct vcc *tl, const char *name, const char *rname, int anon)
 		}
 
 		if (m > 0) {
+			// XXX can remove masking due to fixup
 			/* Do fractional byte compares */
 			Fh(tl, 0, "\t%*s%sif ((a[%d] & 0x%x) == %d) {\n",
 			    -i, "", "", i - 1, (0xff00 >> m) & 0xff,
@@ -436,6 +492,9 @@ vcc_acl_emit(struct vcc *tl, const char *name, const char *rname, int anon)
 				t = VTAILQ_NEXT(t, list);
 				AN(t);
 			} while (ae->t_mask != NULL);
+			if (ae->fixed)
+				Fh(tl, 0, "\" fixed: %s\"",
+				   ae->fixed);
 			Fh(tl, 0, ");\n");
 		}
 

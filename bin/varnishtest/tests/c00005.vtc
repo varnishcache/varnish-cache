@@ -115,11 +115,11 @@ varnish v1 -vcl {
 
 logexpect l1 -v v1 -g raw {
 	expect * 1007	ReqHeader	{^\Qip: 1.2.3.0\E$}
-	expect 0 =	VCL_acl	{^\QMATCH acl1 "1.2.3.4"/24\E$}
+	expect 0 =	VCL_acl	{^\QMATCH acl1 "1.2.3.4"/24 fixed: 1.2.3.0/24\E$}
 	expect 1 =	ReqHeader	{^\Qip: 1.2.3.63\E$}
-	expect 0 =	VCL_acl	{^\QMATCH acl1 "1.2.3.4"/24\E$}
+	expect 0 =	VCL_acl	{^\QMATCH acl1 "1.2.3.4"/24 fixed: 1.2.3.0/24\E$}
 	expect 1 =	ReqHeader	{^\Qip: 1.2.3.64\E$}
-	expect 0 =	VCL_acl	{^\QMATCH acl1 "1.2.3.66"/26\E$}
+	expect 0 =	VCL_acl	{^\QMATCH acl1 "1.2.3.66"/26 fixed: 1.2.3.64/26\E$}
 
 	expect 1 =	ReqHeader	{^\Qip: 1.3.4.255\E$}
 	expect 0 =	VCL_acl	{^\QMATCH acl1 "1.3.4.0"/23\E$}
