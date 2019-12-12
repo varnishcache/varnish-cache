@@ -57,6 +57,18 @@ struct suckaddr *VSA_Malloc(const void *s, unsigned  sal);
  */
 struct suckaddr *VSA_Build(void *d, const void *s, unsigned sal);
 
+/* 'd' SHALL point to vsa_suckaddr_len aligned bytes of storage
+ *
+ * fam: address family
+ * a / al : address and length
+ * p / pl : port and length
+ *
+ * NULL or 0 length argument are ignored.
+ * argument of the wrong length are an error (NULL return value, EINVAL)
+ */
+struct suckaddr * VSA_BuildFAP(void *d, sa_family_t fam,
+    const void *a, unsigned al, const void *p, unsigned pl);
+
 /*
  * This VRT interface is for the VCC generated ACL code, which needs
  * to know the address family and a pointer to the actual address.

@@ -326,8 +326,6 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 	const uint8_t *p;
 	char *d, *tlv_start;
 	sa_family_t pfam = 0xff;
-	struct sockaddr_in sin4;
-	struct sockaddr_in6 sin6;
 	struct suckaddr *sa = NULL;
 	char ha[VTCP_ADDRBUFSIZE];
 	char pa[VTCP_PORTBUFSIZE];
@@ -387,23 +385,17 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 		}
 		l -= 12;
 		d += 12;
-		memset(&sin4, 0, sizeof sin4);
-		sin4.sin_family = pfam;
 
 		/* dst/server */
-		memcpy(&sin4.sin_addr, p + 20, 4);
-		memcpy(&sin4.sin_port, p + 26, 2);
 		if (! SES_Reserve_server_addr(req->sp, &sa))
 			return (vpx_ws_err(req));
-		AN(VSA_Build(sa, &sin4, sizeof sin4));
+		AN(VSA_BuildFAP(sa, pfam, p + 20, 4, p + 26, 2));
 		VTCP_name(sa, ha, sizeof ha, pa, sizeof pa);
 
 		/* src/client */
-		memcpy(&sin4.sin_addr, p + 16, 4);
-		memcpy(&sin4.sin_port, p + 24, 2);
 		if (! SES_Reserve_client_addr(req->sp, &sa))
 			return (vpx_ws_err(req));
-		AN(VSA_Build(sa, &sin4, sizeof sin4));
+		AN(VSA_BuildFAP(sa, pfam, p + 16, 4, p + 24, 2));
 		break;
 	case 0x21:
 		/* IPv6|TCP */
@@ -415,23 +407,17 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 		}
 		l -= 36;
 		d += 36;
-		memset(&sin6, 0, sizeof sin6);
-		sin6.sin6_family = pfam;
 
 		/* dst/server */
-		memcpy(&sin6.sin6_addr, p + 32, 16);
-		memcpy(&sin6.sin6_port, p + 50, 2);
 		if (! SES_Reserve_server_addr(req->sp, &sa))
 			return (vpx_ws_err(req));
-		AN(VSA_Build(sa, &sin6, sizeof sin6));
+		AN(VSA_BuildFAP(sa, pfam, p + 32, 16, p + 50, 2));
 		VTCP_name(sa, ha, sizeof ha, pa, sizeof pa);
 
 		/* src/client */
-		memcpy(&sin6.sin6_addr, p + 16, 16);
-		memcpy(&sin6.sin6_port, p + 48, 2);
 		if (! SES_Reserve_client_addr(req->sp, &sa))
 			return (vpx_ws_err(req));
-		AN(VSA_Build(sa, &sin6, sizeof sin6));
+		AN(VSA_BuildFAP(sa, pfam, p + 16, 16, p + 48, 2));
 		break;
 	default:
 		/* Ignore proxy header */

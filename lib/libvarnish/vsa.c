@@ -187,16 +187,7 @@ const struct suckaddr *bogo_ip = &bogo_ip_vsa;
 void
 VSA_Init()
 {
-	struct addrinfo hints, *res = NULL;
-
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_INET;
-	hints.ai_flags = AI_NUMERICHOST | AI_NUMERICSERV;
-	hints.ai_socktype = SOCK_STREAM;
-	AZ(getaddrinfo("0.0.0.0", "0", &hints, &res));
-	AN(VSA_Build(&bogo_ip_vsa, res->ai_addr, res->ai_addrlen));
-	assert(VSA_Sane(bogo_ip));
-	freeaddrinfo(res);
+	AN(VSA_BuildFAP(&bogo_ip_vsa, PF_INET, NULL, 0, NULL, 0));
 }
 
 /*
@@ -264,6 +255,59 @@ VSA_Malloc(const void *s, unsigned  sal)
 		return (NULL);
 
 	return (VSA_Build(d, s, sal));
+}
+
+/* 'd' SHALL point to vsa_suckaddr_len aligned bytes of storage
+ *
+ * fam: address family
+ * a / al : address and length
+ * p / pl : port and length
+ *
+ * NULL or 0 length argument are ignored.
+ * argument of the wrong length are an error (NULL return value, EINVAL)
+ */
+struct suckaddr *
+VSA_BuildFAP(void *d, sa_family_t fam, const void *a, unsigned al,
+	    const void *p, unsigned pl)
+{
+	struct sockaddr_in sin4;
+	struct sockaddr_in6 sin6;
+
+	switch (fam) {
+	case PF_INET:
+		memset(&sin4, 0, sizeof sin4);
+		sin4.sin_family = fam;
+		if (a != NULL && al > 0) {
+			if (al != sizeof(sin4.sin_addr))
+				break;
+			memcpy(&sin4.sin_addr, a, al);
+		}
+		if (p != NULL && pl > 0) {
+			if (pl != sizeof(sin4.sin_port))
+				break;
+			memcpy(&sin4.sin_port, p, pl);
+		}
+		return (VSA_Build(d, &sin4, sizeof sin4));
+	case PF_INET6:
+		memset(&sin6, 0, sizeof sin6);
+		sin6.sin6_family = fam;
+		if (a != NULL && al > 0) {
+			if (al != sizeof(sin6.sin6_addr))
+				break;
+			memcpy(&sin6.sin6_addr, a, al);
+		}
+		if (p != NULL && pl > 0) {
+			if (pl != sizeof(sin6.sin6_port))
+				break;
+			memcpy(&sin6.sin6_port, p, pl);
+		}
+		return (VSA_Build(d, &sin6, sizeof sin6));
+	default:
+		errno = EAFNOSUPPORT;
+		return (NULL);
+	}
+	errno = EINVAL;
+	return (NULL);
 }
 
 /* 'd' SHALL point to vsa_suckaddr_len aligned bytes of storage */
