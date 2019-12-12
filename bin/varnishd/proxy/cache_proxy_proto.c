@@ -323,7 +323,7 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 	int l, hdr_len;
 	uintptr_t *up;
 	uint16_t tlv_len;
-	const uint8_t *p;
+	const uint8_t *p, *ap, *pp;
 	char *d, *tlv_start;
 	sa_family_t pfam = 0xff;
 	struct suckaddr *sa = NULL;
@@ -333,6 +333,8 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 	char pb[VTCP_PORTBUFSIZE];
 	struct vpx_tlv_iter vpi[1], vpi2[1];
 	struct vpx_tlv *tlv;
+	unsigned flen, alen;
+	unsigned const plen = 2, aoff = 16;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -378,46 +380,12 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 	case 0x11:
 		/* IPv4|TCP */
 		pfam = AF_INET;
-		if (l < 12) {
-			VSL(SLT_ProxyGarbage, req->sp->vxid,
-			    "PROXY2: Ignoring short IPv4 addresses (%d)", l);
-			return (0);
-		}
-		l -= 12;
-		d += 12;
-
-		/* dst/server */
-		if (! SES_Reserve_server_addr(req->sp, &sa))
-			return (vpx_ws_err(req));
-		AN(VSA_BuildFAP(sa, pfam, p + 20, 4, p + 26, 2));
-		VTCP_name(sa, ha, sizeof ha, pa, sizeof pa);
-
-		/* src/client */
-		if (! SES_Reserve_client_addr(req->sp, &sa))
-			return (vpx_ws_err(req));
-		AN(VSA_BuildFAP(sa, pfam, p + 16, 4, p + 24, 2));
+		alen = 4;
 		break;
 	case 0x21:
 		/* IPv6|TCP */
 		pfam = AF_INET6;
-		if (l < 36) {
-			VSL(SLT_ProxyGarbage, req->sp->vxid,
-			    "PROXY2: Ignoring short IPv6 addresses (%d)", l);
-			return (0);
-		}
-		l -= 36;
-		d += 36;
-
-		/* dst/server */
-		if (! SES_Reserve_server_addr(req->sp, &sa))
-			return (vpx_ws_err(req));
-		AN(VSA_BuildFAP(sa, pfam, p + 32, 16, p + 50, 2));
-		VTCP_name(sa, ha, sizeof ha, pa, sizeof pa);
-
-		/* src/client */
-		if (! SES_Reserve_client_addr(req->sp, &sa))
-			return (vpx_ws_err(req));
-		AN(VSA_BuildFAP(sa, pfam, p + 16, 16, p + 48, 2));
+		alen = 16;
 		break;
 	default:
 		/* Ignore proxy header */
@@ -426,8 +394,36 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 		return (0);
 	}
 
-	AN(sa);
+	flen = 2 * alen + 2 * plen;
+
+	if (l < flen) {
+		VSL(SLT_ProxyGarbage, req->sp->vxid,
+		    "PROXY2: Ignoring short %s addresses (%d)",
+		    pfam == AF_INET ? "IPv4" : "IPv6", l);
+		return (0);
+	}
+
+	l -= flen;
+	d += flen;
+
+	ap = p + aoff;
+	pp = ap + 2 * alen;
+
+	/* src/client */
+	if (! SES_Reserve_client_addr(req->sp, &sa))
+		return (vpx_ws_err(req));
+	AN(VSA_BuildFAP(sa, pfam, ap, alen, pp, plen));
 	VTCP_name(sa, hb, sizeof hb, pb, sizeof pb);
+
+	ap += alen;
+	pp += plen;
+
+	/* dst/server */
+	if (! SES_Reserve_server_addr(req->sp, &sa))
+		return (vpx_ws_err(req));
+	AN(VSA_BuildFAP(sa, pfam, ap, alen, pp, plen));
+	VTCP_name(sa, ha, sizeof ha, pa, sizeof pa);
+
 	if (! SES_Set_String_Attr(req->sp, SA_CLIENT_IP, hb))
 		return (vpx_ws_err(req));
 	if (! SES_Set_String_Attr(req->sp, SA_CLIENT_PORT, pb))
