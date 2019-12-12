@@ -48,7 +48,7 @@ client c1 {
 
 varnish v1 -vcl+backend {
 	acl acl1 {
-		! "localhost";
+		! "${localhost}";
 		"0.0.0.0" / 0;
 		"::" / 0;
 	}
