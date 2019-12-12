@@ -44,7 +44,7 @@
 struct acl_e {
 	VTAILQ_ENTRY(acl_e)	list;
 	unsigned char		data[ACL_MAXADDR];
-	int			mask;
+	unsigned		mask;
 	unsigned		not;
 	unsigned		para;
 	char			*addr;
