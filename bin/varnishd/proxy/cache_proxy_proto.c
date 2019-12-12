@@ -306,8 +306,9 @@ vpx_tlv_itern(struct vpx_tlv_iter *vpi)
 	return (1);
 }
 
-#define VPX_TLV_FOREACH(ptr, len, itv) \
-	for(vpx_tlv_iter0(itv, ptr, len); vpx_tlv_itern(itv);)
+#define VPX_TLV_FOREACH(ptr, len, itv)				\
+	for (vpx_tlv_iter0(itv, ptr, len);			\
+		(vpi->e == NULL) && vpx_tlv_itern(itv);)
 
 int
 VPX_tlv(const struct req *req, int typ, void **dst, int *len)
@@ -483,6 +484,10 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 
 	VPX_TLV_FOREACH(d, l, vpi) {
 		if (vpi->t == PP2_TYPE_SSL) {
+			if (vpi->l < 5) {
+				vpi->e = "Length Error";
+				break;
+			}
 			VPX_TLV_FOREACH((char*)vpi->p + 5, vpi->l - 5, vpi2) {
 			}
 			vpi->e = vpi2->e;
