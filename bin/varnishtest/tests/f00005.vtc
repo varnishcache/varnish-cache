@@ -1,0 +1,64 @@
+varnishtest "proxy ws panic"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -proto "PROXY" -vcl+backend {}-start
+
+# Too large proxy payload using TLV
+client c1 {
+	sendhex {
+0d 0a 0d 0a 00 0d 0a 51
+55 49 54 0a 21 21 00 93
+aa bb cc dd ee ff 11 22
+33 44 55 66 77 88 99 aa
+bb cc dd ee ff 11 22 33
+44 55 66 77 88 99 aa bb
+88 da 0d 73 02 00 3c 61
+61 61 61 61 61 61 61 61
+61 61 61 61 61 61 61 61
+61 61 61 61 61 61 61 61
+61 61 61 61 61 61 61 61
+61 61 61 61 61 61 61 61
+61 61 61 61 61 61 61 61
+61 61 61 61 61 61 61 61
+61 61 61 20 00 2d 01 01
+00 00 00 21 00 07 54 4c
+53 76 31 2e 32 23 00 1b
+45 43 44 48 45 2d 52 53
+41 2d 41 45 53 32 35 36
+2d 47 43 4d 2d 53 48 41
+33 38 34
+	}
+	expect_close
+} -run
+
+# Reduced size proxy payload to verify Varnish is still running
+client c1 {
+	sendhex {
+0d 0a 0d 0a 00 0d 0a 51
+55 49 54 0a 21 21 00 8b
+aa bb cc dd ee ff 11 22
+33 44 55 66 77 88 99 aa
+bb cc dd ee ff 11 22 33
+44 55 66 77 88 99 aa bb
+88 da 0d 73 02 00 34 61
+61 61 61 61 61 61 61 61
+61 61 61 61 61 61 61 61
+61 61 61 61 61 61 61 61
+61 61 61 61 61 61 61 61
+61 61 61 61 61 61 61 61
+61 61 61 61 61 61 61 61
+61 61 61 20 00 2d 01 01
+00 00 00 21 00 07 54 4c
+53 76 31 2e 32 23 00 1b
+45 43 44 48 45 2d 52 53
+41 2d 41 45 53 32 35 36
+2d 47 43 4d 2d 53 48 41
+33 38 34
+	}
+	txreq
+	rxresp
+} -run
