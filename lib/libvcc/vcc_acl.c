@@ -156,10 +156,29 @@ vcc_acl_chk(struct vcc *tl, const struct acl_e *ae, const int l,
 }
 
 static void
+vcc_acl_insert_entry(struct vcc *tl, struct acl_e *aen)
+{
+	struct acl_e *ae2;
+
+	ae2 = VRBT_FIND(acl_tree, &tl->acl_tree, aen);
+	if (ae2 != NULL) {
+		if (ae2->not != aen->not) {
+			VSB_cat(tl->sb, "Conflicting ACL entries:\n");
+			vcc_ErrWhere(tl, ae2->t_addr);
+			VSB_cat(tl->sb, "vs:\n");
+			vcc_ErrWhere(tl, aen->t_addr);
+		}
+		free(aen);
+		return;
+	}
+	VRBT_INSERT(acl_tree, &tl->acl_tree, aen);
+}
+
+static void
 vcc_acl_add_entry(struct vcc *tl, const struct acl_e *ae, int l,
     unsigned char *u, int fam)
 {
-	struct acl_e *ae2, *aen;
+	struct acl_e *aen;
 
 	if (fam == PF_INET && ae->mask > 32) {
 		VSB_printf(tl->sb,
@@ -178,7 +197,7 @@ vcc_acl_add_entry(struct vcc *tl, const struct acl_e *ae, int l,
 	}
 
 	/* Make a copy from the template */
-	aen = TlAlloc(tl, sizeof *ae2);
+	aen = TlAlloc(tl, sizeof *aen);
 	AN(aen);
 	*aen = *ae;
 
@@ -192,18 +211,7 @@ vcc_acl_add_entry(struct vcc *tl, const struct acl_e *ae, int l,
 	assert(l + 1UL <= sizeof aen->data);
 	memcpy(aen->data + 1L, u, l);
 
-	ae2 = VRBT_FIND(acl_tree, &tl->acl_tree, aen);
-	if (ae2 != NULL) {
-		if (ae2->not != aen->not) {
-			VSB_cat(tl->sb, "Conflicting ACL entries:\n");
-			vcc_ErrWhere(tl, ae2->t_addr);
-			VSB_cat(tl->sb, "vs:\n");
-			vcc_ErrWhere(tl, aen->t_addr);
-		}
-		free(aen);
-		return;
-	}
-	VRBT_INSERT(acl_tree, &tl->acl_tree, aen);
+	vcc_acl_insert_entry(tl, aen);
 }
 
 static void
