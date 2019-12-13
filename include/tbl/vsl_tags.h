@@ -282,6 +282,17 @@ SLTM(Fetch_Body, 0, "Body fetched from backend",
 
 SLTM(VCL_acl, 0, "VCL ACL check results",
 	"Logs VCL ACL evaluation results.\n\n"
+	"The format is::\n\n"
+	"\t%s [%s [%s]]\n"
+	"\t|   |   |\n"
+	"\t|   |   +- Matching entry (only for MATCH)\n"
+	"\t|   +----- Name of the ACL for MATCH or NO_MATCH\n"
+	"\t+--------- MATCH, NO_MATCH or NO_FAM\n"
+	"\n"
+	"MATCH denotes an ACL match\n"
+	"NO_MATCH denotes that a checked ACL has not matched\n"
+	"NO_FAM denotes a missing address family and should not occur.\n"
+	"\n"
 )
 
 SLTM(VCL_call, 0, "VCL method called",
