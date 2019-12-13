@@ -351,7 +351,9 @@ VCC_TypeSymbol(struct vcc *tl, vcc_kind_t kind, vcc_type_t type)
 
 	buf = VSB_new_auto();
 	AN(buf);
-	VSB_printf(buf, "_type.%s.%.*s", type->name, PF(tl->t));
+	if (!strchr(type->name, '.'))
+		VSB_cat(buf, "_type.");
+	VSB_printf(buf, "%s.%.*s", type->name, PF(tl->t));
 	AZ(VSB_finish(buf));
 
 	/* NB: we create a fake token but errors are handled by the caller. */
