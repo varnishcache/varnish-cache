@@ -1553,6 +1553,26 @@ PARAM(
 
 /* actual location mgt_param_tbl.c */
 PARAM(
+	/* name */	vcc_acl_pedantic,
+	/* type */	bool,
+	/* min */	NULL,
+	/* max */	NULL,
+	/* def */	"off",	// XXX change to on in 7.x ?
+	/* units */	"bool",
+	/* descr */
+	"Insist that network numbers used in ACLs have an all-zero host part, "
+	"e.g. make 1.2.3.4/24 an error.\n"
+	"With this option set to off (the default), the host part of network "
+	"numbers is being fixed to all-zeroes (e.g. the above changed to "
+	"1.2.3.0/24), a warning is output during VCL compilation and any ACL "
+	"entry hits are logged with the fixed address as \"fixed: ...\" "
+	"after the original VCL entry.\n"
+	"With this option set to on, any ACL entries with non-zero host parts "
+	"cause VCL compilation to fail."
+)
+
+/* actual location mgt_param_tbl.c */
+PARAM(
 	/* name */	vcc_allow_inline_c,
 	/* type */	bool,
 	/* min */	NULL,

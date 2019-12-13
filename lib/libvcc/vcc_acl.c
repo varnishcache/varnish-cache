@@ -43,6 +43,8 @@
 #include <vtcp.h>
 #include <vsa.h>
 
+unsigned mgt_vcc_acl_pedantic;
+
 #define ACL_MAXADDR	(sizeof(struct in6_addr) + 1)
 
 struct acl_e {
@@ -138,9 +140,13 @@ vcc_acl_chk(struct vcc *tl, const struct acl_e *ae, const int l,
 	AN(sa);
 	VTCP_name(sa, h, sizeof h, NULL, 0);
 	bprintf(t, "%s/%d", h, ae->mask);
-	VSB_printf(tl->sb, "Address/Netmask mismatch, changed to %s\n", t);
+	if (mgt_vcc_acl_pedantic)
+		VSB_printf(tl->sb, "Address/Netmask mismatch, need be %s\n", t);
+	else
+		VSB_printf(tl->sb, "Address/Netmask mismatch, changed to %s\n", t);
 	vcc_ErrWhere(tl, ae->t_addr);
-	vcc_Warn(tl);
+	if (mgt_vcc_acl_pedantic == 0)
+		vcc_Warn(tl);
 	return (strdup(t));
 }
 

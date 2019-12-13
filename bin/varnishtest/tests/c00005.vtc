@@ -148,3 +148,19 @@ client c1 {
 } -run
 
 logexpect l1 -wait
+
+varnish v1 -cliok "param.set vcc_acl_pedantic on"
+
+varnish v1 -errvcl {Address/Netmask mismatch, need be 1.2.3.0/24} {
+	import std;
+
+	backend dummy None;
+
+	acl acl1 {
+		"1.2.3.4"/24;
+	}
+
+	sub vcl_recv {
+		if (client.ip ~ acl1) {}
+	}
+}
