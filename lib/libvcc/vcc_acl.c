@@ -416,6 +416,8 @@ vcc_acl_emit_tokens(const struct vcc *tl, const struct acl_e *ae)
 			Fh(tl, 0, "%s\"\\\"\" ", sep);
 			EncToken(tl->fh, t);
 			Fh(tl, 0, " \"\\\"\"");
+		} else if (t == ae->t_mask) {
+			Fh(tl, 0, " \"%u\"", ae->mask - 8);
 		} else {
 			Fh(tl, 0, "%s\"%.*s\"", sep, PF(t));
 		}
