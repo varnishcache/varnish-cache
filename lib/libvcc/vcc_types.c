@@ -201,3 +201,9 @@ VCC_Type(const char *p)
 	return (NULL);
 }
 
+void
+vcc_Type_Init(struct vcc *tl)
+{
+
+	AN(VCC_MkSym(tl, "_type", SYM_RESERVED, VCL_LOW, VCL_HIGH));
+}
