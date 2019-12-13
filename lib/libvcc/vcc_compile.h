@@ -110,6 +110,8 @@ typedef const struct type	*vcc_type_t;
  * XXX: type methods might move in a more comprehensive direction.
  */
 struct vcc_method {
+	unsigned		magic;
+#define VCC_METHOD_MAGIC	0x594108cd
 	vcc_type_t		type;
 	const char		*name;
 	const char		*impl;
