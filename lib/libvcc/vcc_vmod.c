@@ -73,13 +73,43 @@ vcc_path_dlopen(void *priv, const char *fn)
 	return (0);
 }
 
+static void vcc_VmodObject(struct vcc *tl, struct symbol *sym);
+static void vcc_VmodSymbols(struct vcc *tl, struct symbol *sym);
+
 static void
-func_sym(struct symbol *sym, const char *vmod_name, const struct vjsn_val *v)
+func_sym(struct vcc *tl, vcc_kind_t kind, struct symbol *psym,
+    const struct vjsn_val *v)
 {
+	struct symbol *sym;
+	struct vsb *buf;
+
+	buf = VSB_new_auto();
+	AN(buf);
+
+	VSB_clear(buf);
+	VCC_SymName(buf, psym);
+	VSB_printf(buf, ".%s", v->value);
+	AZ(VSB_finish(buf));
+	sym = VCC_MkSym(tl, VSB_data(buf), SYM_MAIN, kind, VCL_LOW, VCL_HIGH);
+	AN(sym);
+	VSB_destroy(&buf);
+
+	if (kind == SYM_OBJECT) {
+		sym->eval_priv = v;
+		sym->vmod_name = psym->vmod_name;
+		vcc_VmodObject(tl, sym);
+		vcc_VmodSymbols(tl, sym);
+		return;
+	}
+
+	if (kind == SYM_METHOD)
+		sym->extra = psym->rname;
+
+	v = VTAILQ_NEXT(v, list);
 
 	assert(v->type == VJSN_ARRAY);
 	sym->action = vcc_Act_Call;
-	sym->vmod_name = vmod_name;
+	sym->vmod_name = psym->vmod_name;
 	sym->eval = vcc_Eval_SymFunc;
 	sym->eval_priv = v;
 	v = VTAILQ_FIRST(&v->children);
@@ -233,25 +263,20 @@ vcc_VmodObject(struct vcc *tl, struct symbol *sym)
 }
 
 static void
-vcc_VmodSymbols(struct vcc *tl, struct symbol *msym)
+vcc_VmodSymbols(struct vcc *tl, struct symbol *sym)
 {
 	const struct vjsn *vj;
 	const struct vjsn_val *vv, *vv1, *vv2;
-	struct symbol *fsym;
 	vcc_kind_t kind;
-	struct vsb *buf;
 
-	if (msym->kind == SYM_VMOD) {
-		CAST_OBJ_NOTNULL(vj, msym->eval_priv, VJSN_MAGIC);
+	if (sym->kind == SYM_VMOD) {
+		CAST_OBJ_NOTNULL(vj, sym->eval_priv, VJSN_MAGIC);
 		vv = VTAILQ_FIRST(&vj->value->children);
-	} else if (msym->kind == SYM_OBJECT) {
-		CAST_OBJ_NOTNULL(vv, msym->eval_priv, VJSN_VAL_MAGIC);
+	} else if (sym->kind == SYM_OBJECT) {
+		CAST_OBJ_NOTNULL(vv, sym->eval_priv, VJSN_VAL_MAGIC);
 	} else {
 		WRONG("symbol kind");
 	}
-
-	buf = VSB_new_auto();
-	AN(buf);
 
 	for (; vv != NULL; vv = VTAILQ_NEXT(vv, list)) {
 		if (vv->type != VJSN_ARRAY)
@@ -266,44 +291,8 @@ vcc_VmodSymbols(struct vcc *tl, struct symbol *msym)
 		if (kind == SYM_NONE)
 			continue;
 
-		/* NB: currently VMOD object methods are effectively function
-		 * symbols (SYM_FUNC) because they are declared per instance
-		 * instead of per object. Once they become proper methods
-		 * symbols (SYM_METHOD) we can move the symbol creation inside
-		 * the func_sym() function and replace the rest of the loop
-		 * with a single statement:
-		 *
-		 *     func_sym(kind, msym, vv2);
-		 *
-		 * Then based on kind, the func_sym() function would account
-		 * for the slight differences between the 3 kinds of VMOD
-		 * functions (function, object constructor, object method).
-		 */
-
-		VSB_clear(buf);
-		VCC_SymName(buf, msym);
-		VSB_printf(buf, ".%s", vv2->value);
-		AZ(VSB_finish(buf));
-		fsym = VCC_MkSym(tl, VSB_data(buf), SYM_MAIN, kind,
-		    VCL_LOW, VCL_HIGH);
-		AN(fsym);
-
-		if (kind == SYM_FUNC) {
-			func_sym(fsym, msym->vmod_name, VTAILQ_NEXT(vv2, list));
-		} else if (kind == SYM_METHOD) {
-			func_sym(fsym, msym->vmod_name, VTAILQ_NEXT(vv2, list));
-			fsym->extra = msym->rname;
-			fsym->kind = SYM_METHOD;
-		} else {
-			assert(kind == SYM_OBJECT);
-			fsym->eval_priv = vv2;
-			fsym->vmod_name = msym->vmod_name;
-			vcc_VmodObject(tl, fsym);
-			vcc_VmodSymbols(tl, fsym);
-		}
+		func_sym(tl, kind, sym, vv2);
 	}
-
-	VSB_destroy(&buf);
 }
 
 void
