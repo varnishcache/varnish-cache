@@ -364,8 +364,8 @@ VCC_SymbolGet(struct vcc *tl, vcc_ns_t ns, vcc_kind_t kind,
 	return (sym);
 }
 
-struct symbol *
-VCC_TypeSymbol(struct vcc *tl, vcc_kind_t kind, vcc_type_t type)
+static struct symbol *
+vcc_TypeSymbol(struct vcc *tl, vcc_ns_t ns, vcc_kind_t kind, vcc_type_t type)
 {
 	struct token t[1], *t0;
 	struct symbol *sym;
@@ -383,11 +383,22 @@ VCC_TypeSymbol(struct vcc *tl, vcc_kind_t kind, vcc_type_t type)
 
 	t0 = tl->t;
 	tl->t = t;
-	sym = VCC_SymbolGet(tl, SYM_TYPE, kind, SYMTAB_NOERR, XREF_NONE);
+	sym = VCC_SymbolGet(tl, ns, kind, SYMTAB_NOERR, XREF_NONE);
 	tl->t = t0;
 	VSB_destroy(&buf);
 
 	return (sym);
+}
+
+struct symbol *
+VCC_TypeSymbol(struct vcc *tl, vcc_kind_t kind, vcc_type_t type)
+{
+
+	if (strchr(type->name, '.') == NULL)
+		return (vcc_TypeSymbol(tl, SYM_TYPE, kind, type));
+
+	/* NB: type imported from a VMOD */
+	return (vcc_TypeSymbol(tl, SYM_MAIN, kind, type));
 }
 
 struct symbol *
