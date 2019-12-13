@@ -77,3 +77,11 @@ varnish v1 -errvcl {Unknown token '--' when looking for INT} {
 		set resp.status = --200;
 	}
 }
+
+varnish v1 -errvcl "Syntax error" {
+	import debug;
+	backend be none;
+	sub vcl_init {
+		new _invalid = debug.obj();
+	}
+}
