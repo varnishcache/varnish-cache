@@ -1,4 +1,4 @@
-.. _phk_pesistent:
+.. _phk_persistent:
 
 ====================
 A persistent message
@@ -15,9 +15,16 @@ Under narrow and ill defined circumstances, -spersistent works well,
 but in general it is more trouble than it is worth for you to run
 it, and we don't presently have the development resources to fix that.
 
-If you think you have these circumstances, you need to specify
+If you think you have these circumstances, you need to
 
-	-sdeprecated_persistent
+* call ``configure`` with ``--with-persistent-storage`` before
+  compilation
+
+* use the storage engine name ``deprecated_persistent``, use a::
+
+    -sdeprecated_persistent,<options>
+
+  argument when starting varnish
 
 in order to use it.
 

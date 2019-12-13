@@ -162,10 +162,12 @@ and MADV_SEQUENTIAL madvise() advice argument, respectively.  Defaults to
 On Linux, large objects and rotational disk should benefit from
 "sequential".
 
-persistent (experimental)
-~~~~~~~~~~~~~~~~~~~~~~~~~
+deprecated_persistent
+~~~~~~~~~~~~~~~~~~~~~
 
-syntax: persistent,path,size {experimental}
+syntax: deprecated_persistent,path,size {experimental}
+
+*Before using, read `phk_persistent`_!*
 
 Persistent storage. Varnish will store objects in a file in a manner
 that will secure the survival of *most* of the objects in the event of
@@ -193,9 +195,10 @@ starts after a shutdown it will discard the content of any silo that
 isn't sealed.
 
 Note that taking persistent silos offline and at the same time using
-bans can cause problems. This is due to the fact that bans added while the silo was
-offline will not be applied to the silo when it reenters the cache. Consequently enabling
-previously banned objects to reappear.
+bans can cause problems. This is due to the fact that bans added while
+the silo was offline will not be applied to the silo when it reenters
+the cache. Consequently enabling previously banned objects to
+reappear.
 
 Transient Storage
 -----------------
