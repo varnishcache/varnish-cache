@@ -74,14 +74,29 @@ struct acl_e {
 	struct token		*t_mask;
 };
 
-/* Compare two acl rules for ordering */
+/*
+ * Compare two acl rules for ordering
+ * returns:
+ * 0	same
+ * -1/1	strictly less/greater
+ * -2/2	b contains a / a contains b
+ * -3/3	a left of b / b left of a
+ */
 
-#define CMP(a, b)							\
+#define CMP(n, a, b)							\
 	do {								\
 		if ((a) < (b))						\
-			return (-1);					\
+			return (-n);					\
 		else if ((b) < (a))					\
-			return (1);					\
+			return (n);					\
+	} while (0)
+
+#define CMPA(a, b)							\
+	do {								\
+		if (((a) | 1) == (b))					\
+			return (-3);					\
+		else if (((b) | 1) == (a))				\
+			return (3);					\
 	} while (0)
 
 static void
@@ -99,6 +114,7 @@ vcl_acl_cmp(const struct acl_e *ae1, const struct acl_e *ae2)
 {
 	const unsigned char *p1, *p2;
 	unsigned m;
+	unsigned char a1, a2;
 
 	CHECK_OBJ_NOTNULL(ae1, VCC_ACL_E_MAGIC);
 	CHECK_OBJ_NOTNULL(ae2, VCC_ACL_E_MAGIC);
@@ -107,17 +123,22 @@ vcl_acl_cmp(const struct acl_e *ae1, const struct acl_e *ae2)
 	p2 = ae2->data;
 	m = vmin_t(unsigned, ae1->mask, ae2->mask);
 	for (; m >= 8; m -= 8) {
-		CMP(*p1, *p2);
+		CMP(1, *p1, *p2);
 		p1++;
 		p2++;
 	}
 	if (m) {
-		m = 0xff00 >> m;
-		m &= 0xff;
-		CMP(*p1 & m, *p2 & m);
+		assert (m < 8);
+		a1 = *p1 >> (8 - m);
+		a2 = *p2 >> (8 - m);
+		if (ae1->mask == ae2->mask)
+			CMPA(a1, a2);
+		CMP(1, a1, a2);
+	} else if (ae1->mask == ae2->mask) {
+		CMPA(*p1, *p2);
 	}
 	/* Long mask is less than short mask */
-	CMP(ae2->mask, ae1->mask);
+	CMP(2, ae2->mask, ae1->mask);
 
 	return (0);
 }
@@ -135,14 +156,14 @@ vcl_acl_disjoint(const struct acl_e *ae1, const struct acl_e *ae2)
 	p2 = ae2->data;
 	m = vmin_t(unsigned, ae1->mask, ae2->mask);
 	for (; m >= 8; m -= 8) {
-		CMP(*p1, *p2);
+		CMP(1, *p1, *p2);
 		p1++;
 		p2++;
 	}
 	if (m) {
 		m = 0xff00 >> m;
 		m &= 0xff;
-		CMP(*p1 & m, *p2 & m);
+		CMP(1, *p1 & m, *p2 & m);
 	}
 	return (0);
 }
