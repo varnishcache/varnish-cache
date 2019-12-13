@@ -133,3 +133,17 @@ varnish v1 -syntax 4.0 -errvcl {Symbol not found:} {
 		return (vcl(vcl_recv));
 	}
 }
+
+varnish v1 -errvcl {Syntax error} {
+	import directors;
+	sub vcl_recv {
+		set req.backend_hint = directors.round_robin.backend();
+	}
+}
+
+varnish v1 -errvcl {Syntax error} {
+	import directors;
+	sub vcl_recv {
+		directors.round_robin.backend();
+	}
+}

@@ -183,7 +183,7 @@ vcc_Compound(struct vcc *tl)
 			return;
 		case ID:
 			sym = VCC_SymbolGet(tl, SYM_MAIN, SYM_NONE,
-			    SYMTAB_NOERR, XREF_NONE);
+			    SYMTAB_PARTIAL, XREF_NONE);
 			if (sym == NULL) {
 				VSB_printf(tl->sb, "Symbol not found.\n");
 				vcc_ErrWhere(tl, tl->t);
