@@ -225,8 +225,7 @@ static void
 vcc_act_return_pass(struct vcc *tl)
 {
 
-	ExpectErr(tl, '(');
-	vcc_NextToken(tl);
+	SkipToken(tl, '(');
 	Fb(tl, 1, "VRT_hit_for_pass(ctx,\n");
 	tl->indent += INDENT;
 	vcc_Expr(tl, DURATION);
@@ -240,8 +239,7 @@ vcc_act_return_pass(struct vcc *tl)
 static void
 vcc_act_return_fail(struct vcc *tl)
 {
-	ExpectErr(tl, '(');
-	vcc_NextToken(tl);
+	SkipToken(tl, '(');
 	Fb(tl, 1, "VRT_fail(ctx,\n");
 	tl->indent += INDENT;
 	vcc_Expr(tl, STRING);
@@ -257,8 +255,7 @@ static void
 vcc_act_return_synth(struct vcc *tl)
 {
 
-	ExpectErr(tl, '(');
-	vcc_NextToken(tl);
+	SkipToken(tl, '(');
 	Fb(tl, 1, "VRT_synth(ctx,\n");
 	tl->indent += INDENT;
 	vcc_Expr(tl, INT);
@@ -285,8 +282,7 @@ vcc_act_return_vcl(struct vcc *tl)
 	struct inifin *p;
 	char buf[1024];
 
-	ExpectErr(tl, '(');
-	vcc_NextToken(tl);
+	SkipToken(tl, '(');
 	ExpectErr(tl, ID);
 	sym = VCC_SymbolGet(tl, SYM_VCL, SYMTAB_EXISTING, XREF_NONE);
 	ERRCHK(tl);

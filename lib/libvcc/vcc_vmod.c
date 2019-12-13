@@ -396,9 +396,7 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 	AN(isym);
 	isym->noref = 1;
 
-	ExpectErr(tl, '=');
-	vcc_NextToken(tl);
-
+	SkipToken(tl, '=');
 	ExpectErr(tl, ID);
 	osym = VCC_SymbolGet(tl, SYM_OBJECT, SYMTAB_EXISTING, XREF_NONE);
 	ERRCHK(tl);
