@@ -352,13 +352,13 @@ dns_works(void)
 	char abuf[VTCP_ADDRBUFSIZE];
 	char pbuf[VTCP_PORTBUFSIZE];
 
-	sa = VSS_ResolveOne(NULL, "dns-canary.freebsd.dk", NULL,
-	    AF_UNSPEC, SOCK_STREAM, 0);
+	sa = VSS_ResolveOne(NULL, "varnish.org", NULL,
+	    AF_INET, SOCK_STREAM, 0);
 	if (sa == NULL)
 		return (0);
 	VTCP_name(sa, abuf, sizeof abuf, pbuf, sizeof pbuf);
 	free(sa);
-	if (strcmp(abuf, "192.0.2.255"))
+	if (strcmp(abuf, "176.58.90.154"))
 		return (0);
 
 	sa = VSS_ResolveOne(NULL, "varnish.org", NULL,
