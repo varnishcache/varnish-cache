@@ -195,7 +195,7 @@ vcc_CheckActionRecurse(struct vcc *tl, struct proc *p, unsigned bitmap)
 /*--------------------------------------------------------------------*/
 
 static void
-vcc_checkaction1(struct vcc *tl, const struct symbol *sym)
+vcc_checkaction(struct vcc *tl, const struct symbol *sym)
 {
 	struct proc *p;
 
@@ -219,30 +219,11 @@ vcc_checkaction1(struct vcc *tl, const struct symbol *sym)
 
 }
 
-static void
-vcc_checkaction2(struct vcc *tl, const struct symbol *sym)
-{
-	struct proc *p;
-
-	p = sym->proc;
-	AN(p);
-
-	if (p->called)
-		return;
-	VSB_cat(tl->sb, "Function unused\n");
-	vcc_ErrWhere(tl, p->name);
-	if (!tl->err_unref)
-		vcc_Warn(tl);
-}
-
 int
 vcc_CheckAction(struct vcc *tl)
 {
 
-	VCC_WalkSymbols(tl, vcc_checkaction1, SYM_SUB);
-	if (tl->err)
-		return (tl->err);
-	VCC_WalkSymbols(tl, vcc_checkaction2, SYM_SUB);
+	VCC_WalkSymbols(tl, vcc_checkaction, SYM_SUB);
 	return (tl->err);
 }
 
