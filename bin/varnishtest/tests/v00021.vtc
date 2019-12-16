@@ -54,6 +54,7 @@ varnish v1 -errvcl {Unused sub foo, defined:} {
 	}
 }
 
+# deliberately testing for name "none"
 varnish v1 -errvcl {Unused sub none, defined:} {
 	backend b { .host = "127.0.0.1"; }
 
