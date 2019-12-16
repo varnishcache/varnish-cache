@@ -795,13 +795,15 @@ VCC_Compile(struct vcc *tl, struct vsb **sb,
  */
 
 struct vcc *
-VCC_New(void)
+VCC_New(const char *workdir)
 {
 	struct vcc *tl;
 	struct symbol *sym;
 	struct proc *p;
 	int i;
 
+	AN(workdir);
+	assert(*workdir == '/');
 	ALLOC_OBJ(tl, VCC_MAGIC);
 	AN(tl);
 	VTAILQ_INIT(&tl->inifin);
@@ -811,6 +813,7 @@ VCC_New(void)
 	VTAILQ_INIT(&tl->sym_objects);
 	VTAILQ_INIT(&tl->sym_vmods);
 
+	tl->workdir = workdir;
 	tl->nsources = 0;
 
 	tl->symtab = VSB_new_auto();

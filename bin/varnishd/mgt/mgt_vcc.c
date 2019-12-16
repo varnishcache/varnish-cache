@@ -99,7 +99,7 @@ run_vcc(void *priv)
 
 	AZ(chdir(VSB_data(vp->dir)));
 
-	vcc = VCC_New();
+	vcc = VCC_New(heritage.workdir);
 	AN(vcc);
 	VCC_Builtin_VCL(vcc, builtin_vcl);
 	VCC_VCL_path(vcc, mgt_vcl_path);

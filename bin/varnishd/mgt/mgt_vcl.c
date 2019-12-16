@@ -469,8 +469,8 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 	if (!MCH_Running())
 		return;
 
-	if (mgt_cli_askchild(&status, &p, "vcl.load %s %s %d%s\n",
-	    vp->name, vp->fname, vp->warm, vp->state->name)) {
+	if (mgt_cli_askchild(&status, &p, "vcl.load %s %s%s %d%s\n",
+	    vp->name, heritage.workdir, vp->fname, vp->warm, vp->state->name)) {
 		mgt_vcl_del(vp);
 		VCLI_Out(cli, "%s", p);
 		VCLI_SetResult(cli, status);
@@ -539,9 +539,9 @@ mgt_push_vcls(struct cli *cli, unsigned *status, char **p)
 					return (1);
 			} else {
 				if (mgt_cli_askchild(status, p,
-				    "vcl.load \"%s\" %s %d%s\n",
-				    vp->name, vp->fname, vp->warm,
-				    vp->state->name))
+				    "vcl.load \"%s\" %s%s %d%s\n",
+				    vp->name, heritage.workdir, vp->fname,
+				    vp->warm, vp->state->name))
 					return (1);
 			}
 			vp->loaded = 1;

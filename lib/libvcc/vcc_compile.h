@@ -217,6 +217,7 @@ struct vcc {
 	char			*builtin_vcl;
 	struct vfil_path	*vcl_path;
 	struct vfil_path	*vmod_path;
+	const char		*workdir;
 	unsigned		err_unref;
 	unsigned		allow_inline_c;
 	unsigned		unsafe_path;

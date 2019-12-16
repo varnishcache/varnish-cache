@@ -340,8 +340,8 @@ vcc_ParseImport(struct vcc *tl)
 	AN(vmd);
 	AN(vmd->file_id);
 	VSB_printf(ifp->ini, "\t    \"%s\",\n", vmd->file_id);
-	VSB_printf(ifp->ini, "\t    \"./vmod_cache/_vmod_%.*s.%s\"\n",
-	    PF(mod), vmd->file_id);
+	VSB_printf(ifp->ini, "\t    \"%svmod_cache/_vmod_%.*s.%s\"\n",
+	    tl->workdir, PF(mod), vmd->file_id);
 	VSB_cat(ifp->ini, "\t    ))\n");
 	VSB_cat(ifp->ini, "\t\treturn(1);");
 
@@ -350,8 +350,8 @@ vcc_ParseImport(struct vcc *tl)
 	VSB_cat(tl->symtab, "\t\"type\": \"$VMOD\",\n");
 	VSB_printf(tl->symtab, "\t\"name\": \"%.*s\",\n", PF(mod));
 	VSB_printf(tl->symtab, "\t\"file\": \"%s\",\n", fnpx);
-	VSB_printf(tl->symtab, "\t\"dst\": \"./vmod_cache/_vmod_%.*s.%s\"\n",
-	    PF(mod), vmd->file_id);
+	VSB_printf(tl->symtab, "\t\"dst\": \"%svmod_cache/_vmod_%.*s.%s\"\n",
+	    tl->workdir, PF(mod), vmd->file_id);
 	VSB_cat(tl->symtab, "    }");
 
 	/* XXX: zero the function pointer structure ?*/

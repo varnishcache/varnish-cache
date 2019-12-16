@@ -73,6 +73,7 @@ struct heritage {
 	struct params			*param;
 
 	const char			*identity;
+	const char			*workdir;
 
 	char				*panic_str;
 	ssize_t				panic_str_len;

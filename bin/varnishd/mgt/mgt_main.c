@@ -738,6 +738,7 @@ main(int argc, char * const *argv)
 
 	if (VIN_n_Arg(n_arg, &dirname) != 0)
 		ARGV_ERR("Invalid instance (-n) name: %s\n", vstrerror(errno));
+	heritage.workdir = dirname;
 
 	if (i_arg == NULL || *i_arg == '\0')
 		i_arg = mgt_HostName();

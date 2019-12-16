@@ -30,7 +30,7 @@
 
 struct vcc;
 
-struct vcc *VCC_New(void);
+struct vcc *VCC_New(const char *);
 void VCC_Allow_InlineC(struct vcc *, unsigned);
 void VCC_Builtin_VCL(struct vcc *, const char *);
 void VCC_Err_Unref(struct vcc *, unsigned);
