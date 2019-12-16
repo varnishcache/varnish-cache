@@ -234,6 +234,7 @@ WS_ReserveAll(struct ws *ws)
 {
 	unsigned b;
 
+	WS_Assert(ws);
 	assert(ws->r == NULL);
 
 	ws->r = ws->e;
