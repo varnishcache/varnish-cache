@@ -419,6 +419,7 @@ ses_handle(struct waited *wp, enum wait_event ev, vtim_real now)
 	wp->magic = 0;
 	wp = NULL;
 
+	/* The WS was reserved in SES_Wait() */
 	WS_Release(sp->ws, 0);
 
 	switch (ev) {
@@ -431,6 +432,7 @@ ses_handle(struct waited *wp, enum wait_event ev, vtim_real now)
 	case WAITER_ACTION:
 		pp = sp->pool;
 		CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
+		/* SES_Wait() guarantees the next will not assert. */
 		assert(sizeof *tp <= WS_ReserveSize(sp->ws, sizeof *tp));
 		tp = (void*)sp->ws->f;
 		tp->func = xp->unwait;
@@ -454,6 +456,7 @@ SES_Wait(struct sess *sp, const struct transport *xp)
 {
 	struct pool *pp;
 	struct waited *wp;
+	unsigned u;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(xp, TRANSPORT_MAGIC);
@@ -467,10 +470,15 @@ SES_Wait(struct sess *sp, const struct transport *xp)
 	VTCP_nonblocking(sp->fd);
 
 	/*
-	 * put struct waited on the workspace
+	 * Put struct waited on the workspace. Make sure that the
+	 * workspace can hold enough space for the largest of struct
+	 * waited and pool_task, as pool_task will be needed when coming
+	 * off the waiter again.
 	 */
-	if (WS_ReserveSize(sp->ws, sizeof(struct waited))
-	    < sizeof(struct waited)) {
+	u = sizeof (struct waited);
+	if (sizeof (struct pool_task) > u)
+		u = sizeof (struct pool_task);
+	if (!WS_ReserveSize(sp->ws, u)) {
 		SES_Delete(sp, SC_OVERLOAD, NAN);
 		return;
 	}
