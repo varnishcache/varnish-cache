@@ -106,8 +106,7 @@ vcc_AddUses(struct vcc *tl, const struct token *t1, const struct token *t2,
 {
 	struct procuse *pu;
 
-	if (tl->curproc == NULL)	/* backend */
-		return;
+	AN(tl->curproc);
 	pu = TlAlloc(tl, sizeof *pu);
 	assert(pu != NULL);
 	pu->t1 = t1;
