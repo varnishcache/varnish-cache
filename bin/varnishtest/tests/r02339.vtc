@@ -63,39 +63,39 @@ logexpect l2 -v v1 -g raw {
 logexpect l1 -v v1 {
 
 	expect * 1003	VCL_call	HIT
-	expect * =	VCL_call	DELIVER
+	expect 0 =	VCL_return	deliver
 
 	expect * 1004	VCL_call	MISS
-	expect * =	VCL_call	DELIVER
+	expect 0 =	VCL_return	fetch
 
 	expect * 1007	VCL_call	RECV
-	expect * =	VCL_Error	purge
-	expect * =	VCL_return	fail
+	expect 0 =	VCL_Error	purge
+	expect 0 =	VCL_return	fail
 
 	expect * 1009	VCL_call	HASH
-	expect * =	VCL_Error	purge
-	expect * =	VCL_return	fail
+	expect 0 =	VCL_Error	purge
+	expect 0 =	VCL_return	fail
 
 	expect * 1011	VCL_call	PURGE
-	expect * =	VCL_Error	purge
+	expect 0 =	VCL_Error	purge
 
 	expect * 1013	VCL_call	PASS
-	expect * =	VCL_Error	purge
+	expect 0 =	VCL_Error	purge
 
 	expect * 1015	VCL_call	DELIVER
-	expect * =	VCL_Error	purge
+	expect 0 =	VCL_Error	purge
 
 	expect * 1018	VCL_call	SYNTH
-	expect * =	VCL_Error	purge
+	expect 0 =	VCL_Error	purge
 
 	expect * 1021	VCL_call	BACKEND_FETCH
-	expect * =	VCL_Error	purge
+	expect 0 =	VCL_Error	purge
 
 	expect * 1024	VCL_call	BACKEND_ERROR
-	expect * =	VCL_Error	purge
+	expect 0 =	VCL_Error	purge
 
 	expect * 1027	VCL_call	BACKEND_RESPONSE
-	expect * =	VCL_Error	purge
+	expect 0 =	VCL_Error	purge
 } -start
 
 client c1 {
