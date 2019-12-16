@@ -175,6 +175,9 @@ static void
 cli_check(const struct cli *cli)
 {
 	if (cli->result == CLIS_OK) {
+		AZ(VSB_finish(cli->sb));
+		if (VSB_len(cli->sb) > 0)
+			fprintf(stderr, "Warnings:\n%s\n", VSB_data(cli->sb));
 		VSB_clear(cli->sb);
 		return;
 	}

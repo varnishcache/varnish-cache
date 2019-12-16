@@ -1,4 +1,6 @@
-varnishtest "double sub unref warning"
+varnishtest "double sub unref warning / warnings output for -f"
+
+# Also tests #3160
 
 shell {
 	cat >unref.vcl <<-EOF
@@ -6,6 +8,16 @@ shell {
 	backend be none;
 	sub foo { }
 	EOF
+}
+
+shell -match "^1$" {
+	{
+		varnishd -F -n "${tmpdir}/t" -a "${tmpdir}/sock" \
+			-p vcc_err_unref=off -f "${tmpdir}/unref.vcl" &
+		pid=$!
+		varnishadm -n "${tmpdir}/t" stop
+		kill $pid
+	} 2>&1 | grep -c "That was just a warning"
 }
 
 varnish v1 -cliok "param.set vcc_err_unref off"
