@@ -1,0 +1,16 @@
+varnishtest "double sub unref warning"
+
+shell {
+	cat >unref.vcl <<-EOF
+	vcl 4.1;
+	backend be none;
+	sub foo { }
+	EOF
+}
+
+varnish v1 -cliok "param.set vcc_err_unref off"
+
+shell -match "^1$" {
+	varnishadm -n "${v1_name}" vcl.load unref "${tmpdir}/unref.vcl" 2>&1 |
+	grep -c "That was just a warning"
+}
