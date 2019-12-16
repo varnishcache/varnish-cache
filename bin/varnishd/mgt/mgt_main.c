@@ -175,7 +175,10 @@ usage(void)
 static void
 cli_check(const struct cli *cli)
 {
-	if (cli->result == CLIS_OK) {
+	if (cli->result == CLIS_OK || cli->result == CLIS_TRUNCATED) {
+		AZ(VSB_finish(cli->sb));
+		if (VSB_len(cli->sb) > 0)
+			fprintf(stderr, "Warnings:\n%s\n", VSB_data(cli->sb));
 		VSB_clear(cli->sb);
 		return;
 	}
@@ -798,7 +801,9 @@ main(int argc, char * const *argv)
 			fprintf(stderr, "%s\n", VSB_data(cli->sb));
 			VSB_clear(cli->sb);
 		}
-		exit(cli->result == CLIS_OK ? 0 : 2);
+		if (cli->result == CLIS_OK || cli->result == CLIS_TRUNCATED)
+			exit(0);
+		exit(2);
 	} else {
 		while (!VTAILQ_EMPTY(&f_args)) {
 			fa = VTAILQ_FIRST(&f_args);
