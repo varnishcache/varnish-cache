@@ -703,6 +703,8 @@ main(int argc, char * const *argv)
 		    VSB_data(cli[0].sb));
 	}
 
+	VCLS_SetLimit(mgt_cls, &mgt_param.cli_limit);
+
 	assert(d_flag == 0 || F_flag == 0);
 
 	if (C_flag) {
