@@ -246,6 +246,16 @@ varnish v1 -errvcl {Not available in method 'vcl_recv'.} {
 	}
 }
 
+varnish v1 -errvcl {Not available from method 'vcl_recv'.} {
+	backend b { .host = "127.0.0.1"; }
+	sub foo {
+		set req.http.foo = 100 + beresp.status;
+	}
+	sub vcl_recv {
+		call foo;
+	}
+}
+
 varnish v1 -errvcl {Name of ACL, 'foo.bar', contains illegal character '.'} {
 	acl foo.bar {
 	}
