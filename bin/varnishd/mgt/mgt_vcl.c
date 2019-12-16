@@ -603,7 +603,7 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 	if (active_vcl == NULL)
 		active_vcl = vp;
 
-	if (cli->result == CLIS_OK &&
+	if ((cli->result == CLIS_OK || cli->result == CLIS_TRUNCATED) &&
 	    vcl_count > mgt_param.max_vcl &&
 	    mgt_param.max_vcl_handling == 1) {
 		VCLI_Out(cli, "%d VCLs loaded\n", vcl_count);
