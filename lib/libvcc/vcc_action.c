@@ -315,7 +315,7 @@ vcc_act_return_vcl(struct vcc *tl)
 static void v_matchproto_(sym_act_f)
 vcc_act_return(struct vcc *tl, struct token *t, struct symbol *sym)
 {
-	unsigned hand;
+	unsigned hand, mask;
 	const char *h;
 
 	(void)t;
@@ -335,6 +335,7 @@ vcc_act_return(struct vcc *tl, struct token *t, struct symbol *sym)
 		if (vcc_IdIs(tl->t, #l)) {		\
 			hand = VCL_RET_ ## U;		\
 			h = #U;				\
+			mask = B;			\
 		}
 #include "tbl/vcl_returns.h"
 	if (h == NULL) {
@@ -344,7 +345,7 @@ vcc_act_return(struct vcc *tl, struct token *t, struct symbol *sym)
 	}
 	assert(hand < VCL_RET_MAX);
 
-	vcc_ProcAction(tl->curproc, hand, tl->t);
+	vcc_ProcAction(tl->curproc, hand, mask, tl->t);
 	vcc_NextToken(tl);
 	if (tl->t->tok == '(') {
 		if (hand == VCL_RET_SYNTH || hand == VCL_RET_ERROR)

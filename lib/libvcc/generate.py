@@ -644,7 +644,6 @@ fo.write("""
 typedef int vcl_event_f(VRT_CTX, enum vcl_event_e);
 typedef int vcl_init_f(VRT_CTX);
 typedef void vcl_fini_f(VRT_CTX);
-typedef void vcl_func_f(VRT_CTX);
 
 struct VCL_conf {
 	unsigned		magic;
@@ -657,6 +656,7 @@ struct VCL_conf {
 	const struct vpi_ref	*ref;
 
 	int			nsrc;
+	unsigned		nsub;
 	const char		**srcname;
 	const char		**srcbody;
 

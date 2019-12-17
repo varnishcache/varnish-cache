@@ -76,3 +76,15 @@ struct vpi_ii {
 
 void VPI_re_init(struct vre **, const char *);
 void VPI_re_fini(struct vre *);
+
+/* VCL_SUB type */
+
+struct vcl_sub {
+	unsigned		magic;
+#define VCL_SUB_MAGIC		0x12c1750b
+	const unsigned		methods;	// ok &= ctx->method
+	const char * const	name;
+	const struct VCL_conf	*vcl_conf;
+	vcl_func_f		*func;
+	unsigned		n;
+};

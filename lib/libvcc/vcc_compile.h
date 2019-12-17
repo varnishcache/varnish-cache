@@ -211,6 +211,7 @@ struct proc {
 	unsigned		ret_bitmap;
 	unsigned		called;
 	unsigned		active;
+	unsigned		okmask;
 	struct token		*return_tok[VCL_RET_MAX];
 	struct vsb		*cname;
 	struct vsb		*prologue;
@@ -264,6 +265,7 @@ struct vcc {
 						 */
 	struct vsb		*sb;
 	int			err;
+	unsigned		nsub;
 	struct proc		*curproc;
 	VTAILQ_HEAD(, proc)	procs;
 
@@ -426,7 +428,7 @@ void VCC_InstanceInfo(struct vcc *tl);
 void VCC_XrefTable(struct vcc *);
 
 void vcc_AddCall(struct vcc *, struct token *, struct symbol *);
-void vcc_ProcAction(struct proc *p, unsigned action, struct token *t);
+void vcc_ProcAction(struct proc *, unsigned, unsigned, struct token *);
 int vcc_CheckAction(struct vcc *tl);
 
 
