@@ -59,6 +59,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <limits.h>
 
 #include "vcc_compile.h"
 
@@ -160,6 +161,7 @@ vcc_NewProc(struct vcc *tl, struct symbol *sym)
 	AN(p->body);
 	p->cname = VSB_new_auto();
 	AN(p->cname);
+	p->okmask = VCL_MET_TASK_ALL;
 	sym->proc = p;
 	p->sym = sym;
 	return (p);
@@ -170,11 +172,21 @@ vcc_EmitProc(struct vcc *tl, struct proc *p)
 {
 	struct vsb *vsbm;
 
+	AN(p->okmask);
 	AZ(VSB_finish(p->cname));
 	AZ(VSB_finish(p->prologue));
 	AZ(VSB_finish(p->body));
 
 	Fh(tl, 1, "vcl_func_f %s;\n", VSB_data(p->cname));
+	Fh(tl, 1, "const struct vcl_sub sub_%s[1] = {{\n",
+	   VSB_data(p->cname));
+	Fh(tl, 1, "\t.magic\t\t= VCL_SUB_MAGIC,\n");
+	Fh(tl, 1, "\t.methods\t= 0x%x,\n", p->okmask);
+	Fh(tl, 1, "\t.name\t\t= \"%.*s\",\n", PF(p->name));
+	Fh(tl, 1, "\t.vcl_conf\t= &VCL_conf,\n");
+	Fh(tl, 1, "\t.func\t\t= %s,\n", VSB_data(p->cname));
+	Fh(tl, 1, "\t.n\t\t= %d\n", tl->nsub++);
+	Fh(tl, 1, "}};\n");
 	/*
 	 * TODO: v_dont_optimize for custom subs called from vcl_init/fini only
 	 *
@@ -526,6 +538,7 @@ EmitStruct(const struct vcc *tl)
 	Fc(tl, 0, "\t.ref = VGC_ref,\n");
 	Fc(tl, 0, "\t.nref = VGC_NREFS,\n");
 	Fc(tl, 0, "\t.nsrc = VGC_NSRCS,\n");
+	Fc(tl, 0, "\t.nsub = %d,\n", tl->nsub);
 	Fc(tl, 0, "\t.srcname = srcname,\n");
 	Fc(tl, 0, "\t.srcbody = srcbody,\n");
 	Fc(tl, 0, "\t.nvmod = %u,\n", tl->vmod_count);

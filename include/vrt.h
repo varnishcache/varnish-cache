@@ -211,6 +211,7 @@ struct vsc_seg;
 struct vsl_log;
 struct vsmw_cluster;
 struct ws;
+struct vcl_sub;
 
 /***********************************************************************
  * VCL_STRANDS:
@@ -283,6 +284,7 @@ typedef const struct vre *			VCL_REGEX;
 typedef const struct stevedore *		VCL_STEVEDORE;
 typedef const struct strands *			VCL_STRANDS;
 typedef const char *				VCL_STRING;
+typedef const struct vcl_sub *			VCL_SUB;
 typedef vtim_real				VCL_TIME;
 typedef struct vcl *				VCL_VCL;
 typedef void					VCL_VOID;
@@ -334,6 +336,8 @@ struct vrt_ctx {
 
 #define VRT_CTX		const struct vrt_ctx *ctx
 void VRT_CTX_Assert(VRT_CTX);
+
+typedef void vcl_func_f(VRT_CTX);
 
 /***********************************************************************
  * This is the interface structure to a compiled VMOD
