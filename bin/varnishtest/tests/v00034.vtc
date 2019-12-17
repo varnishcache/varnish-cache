@@ -46,4 +46,5 @@ client c1 {
 	txreq
 	rxresp
 	expect resp.http.foo == "foo"
+	expect resp.http.bar == <undef>
 } -run
