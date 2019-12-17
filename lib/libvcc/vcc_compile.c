@@ -59,6 +59,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <limits.h>
 
 #include "vcc_compile.h"
 
@@ -140,6 +141,7 @@ vcc_NewProc(struct vcc *tl, struct symbol *sym)
 	AN(p->body);
 	p->cname = VSB_new_auto();
 	AN(p->cname);
+	p->okmask = UINT_MAX;
 	sym->proc = p;
 	return (p);
 }
@@ -151,6 +153,12 @@ vcc_EmitProc(struct vcc *tl, struct proc *p)
 	AZ(VSB_finish(p->prologue));
 	AZ(VSB_finish(p->body));
 	Fh(tl, 1, "vcl_func_f %s;\n", VSB_data(p->cname));
+	Fh(tl, 1, "const struct vcl_sub sub_%s[1] = {{\n",
+	   VSB_data(p->cname));
+	Fh(tl, 1, "\t.methods\t= 0x%x,\n", p->okmask);
+	Fh(tl, 1, "\t.name\t\t= \"%.*s\",\n", PF(p->name));
+	Fh(tl, 1, "\t.func\t\t= %s\n", VSB_data(p->cname));
+	Fh(tl, 1, "}};\n");
 	/*
 	 * TODO: v_dont_optimize for custom subs called from vcl_init/fini only
 	 *
