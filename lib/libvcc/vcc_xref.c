@@ -160,11 +160,12 @@ vcc_AddCall(struct vcc *tl, struct token *t, struct symbol *sym)
 }
 
 void
-vcc_ProcAction(struct proc *p, unsigned returns, struct token *t)
+vcc_ProcAction(struct proc *p, unsigned returns, unsigned mask, struct token *t)
 {
 
 	assert(returns < VCL_RET_MAX);
 	p->ret_bitmap |= (1U << returns);
+	p->okmask &= mask;
 	/* Record the first instance of this return */
 	if (p->return_tok[returns] == NULL)
 		p->return_tok[returns] = t;
@@ -211,6 +212,7 @@ vcc_CheckActionRecurse(struct vcc *tl, struct proc *p, unsigned bitmap)
 			vcc_ErrWhere(tl, pc->t);
 			return (1);
 		}
+		p->okmask &= pc->sym->proc->okmask;
 	}
 	p->active = 0;
 	p->called++;
@@ -278,22 +280,27 @@ vcc_illegal_write(struct vcc *tl, struct procuse *pu, const struct method *m)
 }
 
 static struct procuse *
-vcc_FindIllegalUse(struct vcc *tl, const struct proc *p, const struct method *m)
+vcc_FindIllegalUse(struct vcc *tl, struct proc *p, const struct method *m)
 {
-	struct procuse *pu, *pw;
+	struct procuse *pu, *pw, *r = NULL;
 
 	VTAILQ_FOREACH(pu, &p->uses, list) {
+		p->okmask &= pu->mask;
+		if (m == NULL)
+			continue;
 		pw = vcc_illegal_write(tl, pu, m);
+		if (r != NULL)
+			continue;
 		if (tl->err)
-			return (pw);
-		if (!(pu->mask & m->bitval))
-			return (pu);
+			r = pw;
+		else if (!(pu->mask & m->bitval))
+			r = pu;
 	}
-	return (NULL);
+	return (r);
 }
 
 static int
-vcc_CheckUseRecurse(struct vcc *tl, const struct proc *p,
+vcc_CheckUseRecurse(struct vcc *tl, struct proc *p,
     const struct method *m)
 {
 	struct proccall *pc;
@@ -318,6 +325,7 @@ vcc_CheckUseRecurse(struct vcc *tl, const struct proc *p,
 			vcc_ErrWhere(tl, pc->t);
 			return (1);
 		}
+		p->okmask &= pc->sym->proc->okmask;
 	}
 	return (0);
 }
@@ -330,8 +338,6 @@ vcc_checkuses(struct vcc *tl, const struct symbol *sym)
 
 	p = sym->proc;
 	AN(p);
-	if (p->method == NULL)
-		return;
 	pu = vcc_FindIllegalUse(tl, p, p->method);
 	if (pu != NULL) {
 		vcc_ErrWhere2(tl, pu->t1, pu->t2);
