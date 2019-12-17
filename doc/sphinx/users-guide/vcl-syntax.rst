@@ -79,10 +79,23 @@ down for, uhm, examples.
  Logical *or*
 
 
-Subroutines
-~~~~~~~~~~~
+Built in subroutines
+~~~~~~~~~~~~~~~~~~~~
 
-A subroutine is used to group code for legibility or reusability::
+Varnish has quite a few built in subroutines that are called for each
+transaction as it flows through Varnish. These builtin subroutines are all
+named ``vcl_*`` and are explained in :ref:`vcl-built-in-subs`.
+
+Processing in built in subroutines ends with ``return (<action>)``
+(see :ref:`user-guide-vcl_actions`).
+
+
+Custom subroutines
+~~~~~~~~~~~~~~~~~~
+
+You can write your own subroutines, whose names cannot start with ``vcl_``.
+
+A subroutine is typically used to group code for legibility or reusability::
 
   sub pipe_if_local {
     if (client.ip ~ local) {
@@ -90,15 +103,18 @@ A subroutine is used to group code for legibility or reusability::
     }
   }
 
-
-Subroutines in VCL do not take arguments, nor do they return values.
-
-To call a subroutine, use the call keyword followed by the subroutine's name::
+To call a subroutine, use the ``call`` keyword followed by the
+subroutine's name::
 
   call pipe_if_local;
 
-Varnish has quite a few built in subroutines that are called for each
-transaction as it flows through Varnish. These builtin subroutines are all
-named `vcl_*`. Your own subroutines cannot start their name with `vcl\_`.
+Custom subroutines in VCL do not take arguments, nor do they return
+values.
 
-.. XXX:looks as bit funky as red text? benc
+``return (<action>)`` (see :ref:`user-guide-vcl_actions`) as shown in
+the example above returns all the way from the top level built in
+subroutine (see :ref:`vcl-built-in-subs`) which, possibly through
+multiple steps, lead to the call of the custom subroutine.
+
+``return`` without an action resumes execution after the ``call``
+statement of the calling subroutine.
