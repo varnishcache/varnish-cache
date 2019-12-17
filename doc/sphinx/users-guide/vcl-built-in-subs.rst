@@ -9,63 +9,20 @@ and backend requests as well as upon ``vcl.load`` and ``vcl.discard``.
 See :ref:`reference-states` for a detailed graphical overview of the
 states and how they relate to core code functions and VCL subroutines.
 
-Subroutines always terminate with a ``return()`` on a keyword, which
-determines how processing continues in the request processing state
-machine.
+Built-in subroutines always terminate with a ``return(<action>)``,
+where ``<action>`` determines how processing continues in the request
+processing state machine.
 
-The behaviour for ``return()`` keywords is identical or at least
-similar across subroutines, so differences are only documented where
-relevant.
+The behaviour of actions is identical or at least similar across
+subroutines, so differences are only documented where relevant.
 
-common return keywords for the client and backend side
-------------------------------------------------------
+Common actions are documented in
+:ref:`user-guide-vcl_actions`. Actions specific to only one or some
+subroutines are documented herein.
 
-.. _fail:
-
-  ``fail``
-    Transition to :ref:`vcl_synth` on the client side as for
-    ``return(synth(503, "VCL Failed"))``, but with any request state
-    changes undone as if ``std.rollback()`` was called and forcing a
-    connection close.
-
-    Intended for fatal errors, for which only minimal error handling is
-    possible.
 
 client side
 -----------
-
-common return keywords for the client side
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. _synth:
-
-  ``synth(status code, reason)``
-    Transition to :ref:`vcl_synth` with ``resp.status`` and
-    ``resp.reason`` being preset to the arguments of ``synth()``.
-
-.. _pass:
-
-  ``pass``
-    Switch to pass mode. Control will eventually pass to
-    :ref:`vcl_pass`.
-
-.. _pipe:
-
-  ``pipe``
-    Switch to pipe mode. Control will eventually pass to
-    :ref:`vcl_pipe`.
-
-.. _restart:
-
-  ``restart``
-    Restart the transaction. Increases the ``req.restarts`` counter.
-
-    If the number of restarts is higher than the *max_restarts*
-    parameter, control is passed to :ref:`vcl_synth` as for
-    ``return(synth(503, "Too many restarts"))``
-
-    For a restart, all modifications to ``req`` attributes are
-    preserved except for ``req.restarts`` and ``req.xid``, which need
-    to change by design.
 
 .. _vcl_recv:
 
@@ -84,19 +41,19 @@ The `vcl_recv` subroutine may terminate with calling ``return()`` on one
 of the following keywords:
 
   ``fail``
-    see `fail`_
+    see :ref:`fail`
 
   ``synth(status code, reason)``
-    see `synth`_
+    see :ref:`synth`
 
   ``restart``
-    see `restart`_
+    see :ref:`restart`
 
   ``pass``
-    see `pass`_
+    see :ref:`pass`
 
   ``pipe``
-    see `pipe`_
+    see :ref:`pipe`
 
   ``hash``
     Continue processing the object as a potential candidate for
@@ -134,10 +91,10 @@ The `vcl_pipe` subroutine may terminate with calling ``return()`` with one
 of the following keywords:
 
   ``fail``
-    see   `fail`_
+    see   :ref:`fail`
 
   ``synth(status code, reason)``
-    see  `synth`_
+    see  :ref:`synth`
 
   ``pipe``
     Proceed with pipe mode.
@@ -156,13 +113,13 @@ The `vcl_pass` subroutine may terminate with calling ``return()`` with one
 of the following keywords:
 
   ``fail``
-    see  `fail`_
+    see  :ref:`fail`
 
   ``synth(status code, reason)``
-    see  `synth`_
+    see  :ref:`synth`
 
   ``restart``
-    see  `restart`_
+    see  :ref:`restart`
 
   ``fetch``
     Proceed with pass mode - initiate a backend request.
@@ -179,7 +136,7 @@ The `vcl_hash` subroutine may terminate with calling ``return()`` with one
 of the following keywords:
 
   ``fail``
-    see  `fail`_
+    see  :ref:`fail`
 
   ``lookup``
     Look up the object in cache.
@@ -210,13 +167,13 @@ The `vcl_purge` subroutine may terminate with calling ``return()`` with one
 of the following keywords:
 
   ``fail``
-    see  `fail`_
+    see  :ref:`fail`
 
   ``synth(status code, reason)``
-    see  `synth`_
+    see  :ref:`synth`
 
   ``restart``
-    see  `restart`_
+    see  :ref:`restart`
 
 .. _vcl_miss:
 
@@ -234,16 +191,16 @@ The `vcl_miss` subroutine may terminate with calling ``return()`` with one
 of the following keywords:
 
   ``fail``
-    see  `fail`_
+    see  :ref:`fail`
 
   ``synth(status code, reason)``
-    see  `synth`_
+    see  :ref:`synth`
 
   ``restart``
-    see  `restart`_
+    see  :ref:`restart`
 
   ``pass``
-    see  `pass`_
+    see  :ref:`pass`
 
   ``fetch``
     Retrieve the requested object from the backend. Control will
@@ -262,16 +219,16 @@ The `vcl_hit` subroutine may terminate with calling ``return()``
 with one of the following keywords:
 
   ``fail``
-    see  `fail`_
+    see  :ref:`fail`
 
   ``synth(status code, reason)``
-    see  `synth`_
+    see  :ref:`synth`
 
   ``restart``
-    see  `restart`_
+    see  :ref:`restart`
 
   ``pass``
-    see  `pass`_
+    see  :ref:`pass`
 
   ``deliver``
     Deliver the object. If it is stale, a background fetch to refresh
@@ -288,13 +245,13 @@ The `vcl_deliver` subroutine may terminate with calling ``return()`` with one
 of the following keywords:
 
   ``fail``
-    see  `fail`_
+    see  :ref:`fail`
 
   ``synth(status code, reason)``
-    see  `synth`_
+    see  :ref:`synth`
 
   ``restart``
-    see  `restart`_
+    see  :ref:`restart`
 
   ``deliver``
     Deliver the object to the client.
@@ -315,10 +272,10 @@ The subroutine may terminate with calling ``return()`` with one of the
 following keywords:
 
   ``fail``
-    see  `fail`_
+    see  :ref:`fail`
 
   ``restart``
-    see  `restart`_
+    see  :ref:`restart`
 
   ``deliver``
     Directly deliver the object defined by `vcl_synth` to the client
@@ -326,17 +283,6 @@ following keywords:
 
 Backend Side
 ------------
-
-
-common return keywords for the backend side
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. _abandon:
-
-  ``abandon``
-    Abandon the backend request. Unless the backend request was a
-    background fetch, control is passed to :ref:`vcl_synth` on the
-    client side with ``resp.status`` preset to 503.
 
 .. _vcl_backend_fetch:
 
@@ -350,10 +296,10 @@ The `vcl_backend_fetch` subroutine may terminate with calling
 ``return()`` with one of the following keywords:
 
   ``fail``
-    see  `fail`_
+    see  :ref:`fail`
 
   ``abandon``
-    see  `abandon`_
+    see  :ref:`abandon`
 
   ``fetch``
     Fetch the object from the backend.
@@ -403,10 +349,10 @@ The `vcl_backend_response` subroutine may terminate with calling
 ``return()`` with one of the following keywords:
 
   ``fail``
-    see  `fail`_
+    see  :ref:`fail`
 
   ``abandon``
-    see  `abandon`_
+    see  :ref:`abandon`
 
   ``deliver``
     For a 304 response, create an updated cache object.
@@ -507,7 +453,7 @@ vcl_backend_error
 This subroutine is called if we fail the backend fetch or if
 *max_retries* has been exceeded.
 
-Returning with `abandon`_ does not leave a cache object.
+Returning with :ref:`abandon` does not leave a cache object.
 
 If returning with ``deliver`` and a ``beresp.ttl > 0s``, a synthetic
 cache object is generated in VCL, whose body may be constructed using
@@ -527,10 +473,10 @@ The `vcl_backend_error` subroutine may terminate with calling ``return()``
 with one of the following keywords:
 
   ``fail``
-    see  `fail`_
+    see  :ref:`fail`
 
   ``abandon``
-    see  `abandon`_
+    see  :ref:`abandon`
 
   ``deliver``
     Deliver and possibly cache the object defined in

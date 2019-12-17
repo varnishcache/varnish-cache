@@ -1,40 +1,84 @@
 .. _user-guide-vcl_actions:
 
-actions
-~~~~~~~
+Actions
+=======
 
-The most common actions to return are these:
+Actions are used with the ``return(<action>)`` keyword, which returns
+control from subroutines back to varnish. The action determines how
+processing in varnish continues as shown in :ref:`reference-states`.
 
-.. XXX:Maybe a bit more explanation here what is an action and how it is returned? benc
+Common actions are documented here, while additional actions specific
+to only one or some subroutines are documented in
+:ref:`vcl-built-in-subs` as well as which action can be used from
+which built in subroutine.
 
-*pass*
-  When you return pass the request and subsequent response will be passed to
-  and from the backend server. It won't be cached. `pass` can be returned from
-  `vcl_recv`.
+common actions for the client and backend side
+----------------------------------------------
 
-*hash*
-  When you return hash from `vcl_recv` you tell Varnish to deliver content
-  from cache even if the request otherwise indicates that the request
-  should be passed.
+.. _fail:
 
-*pipe*
+``fail``
+~~~~~~~~
 
-.. XXX:What is pipe? benc
+    Transition to :ref:`vcl_synth` on the client side as for
+    ``return(synth(503, "VCL Failed"))``, but with any request state
+    changes undone as if ``std.rollback()`` was called and forcing a
+    connection close.
 
-  Pipe can be returned from `vcl_recv` as well. Pipe short circuits the
-  client and the backend connections and Varnish will just sit there
-  and shuffle bytes back and forth. Varnish will not look at the data being
-  send back and forth - so your logs will be incomplete.
+    Intended for fatal errors, for which only minimal error handling is
+    possible.
 
-*deliver*
-  Deliver the object to the client. Usually returned from `vcl_backend_response`.
+common actions for the client side
+----------------------------------
 
-*restart*
-  Restart processing of the request. You can restart the processing of
-  the whole transaction. Changes to the `req` object are retained, except
-  for `req.backend_hint`, which gets reset to the default backend.
+.. _synth:
 
-*retry*
-  Retry the request against the backend. This can be returned from
-  `vcl_backend_response` or `vcl_backend_error` if you don't like the response
-  that the backend delivered.
+``synth(status code, reason)``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    Transition to :ref:`vcl_synth` with ``resp.status`` and
+    ``resp.reason`` being preset to the arguments of ``synth()``.
+
+.. _pass:
+
+``pass``
+~~~~~~~~
+
+    Switch to pass mode, making the current request not use the cache
+    and not putting its response into it. Control will eventually pass to
+    :ref:`vcl_pass`.
+
+.. _pipe:
+
+``pipe``
+~~~~~~~~
+
+    Switch to pipe mode. Control will eventually pass to
+    :ref:`vcl_pipe`.
+
+.. _restart:
+
+``restart``
+~~~~~~~~~~~
+
+    Restart the transaction. Increases the ``req.restarts`` counter.
+
+    If the number of restarts is higher than the *max_restarts*
+    parameter, control is passed to :ref:`vcl_synth` as for
+    ``return(synth(503, "Too many restarts"))``
+
+    For a restart, all modifications to ``req`` attributes are
+    preserved except for ``req.restarts`` and ``req.xid``, which need
+    to change by design.
+
+common actions for the backend side
+-----------------------------------
+
+.. _abandon:
+
+``abandon``
+~~~~~~~~~~~
+
+    Abandon the backend request. Unless the backend request was a
+    background fetch, control is passed to :ref:`vcl_synth` on the
+    client side with ``resp.status`` preset to 503.
