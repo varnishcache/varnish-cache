@@ -322,9 +322,6 @@ vcc_instance_info(struct vcc *tl, const struct symbol *sym)
 {
 
 	CHECK_OBJ_NOTNULL(sym, SYMBOL_MAGIC);
-	CHECK_OBJ_NOTNULL(sym->kind, KIND_MAGIC);
-	if (sym->kind != SYM_INSTANCE)
-		return;
 	AN(sym->rname);
 	Fc(tl, 0, "\t{ .p = &%s, .name = \"", sym->rname);
 	VCC_SymName(tl->fc, sym);
@@ -335,7 +332,7 @@ void
 VCC_InstanceInfo(struct vcc *tl)
 {
 	Fc(tl, 0, "\nconst struct vpi_ii VGC_instance_info[] = {\n");
-	VCC_WalkSymbols(tl, vcc_instance_info, SYM_NONE);
+	VCC_WalkSymbols(tl, vcc_instance_info, SYM_INSTANCE);
 	Fc(tl, 0, "\t{ .p = NULL, .name = \"\" }\n");
 	Fc(tl, 0, "};\n");
 }
