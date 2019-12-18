@@ -42,12 +42,14 @@
 static void v_matchproto_(sym_act_f)
 vcc_act_call(struct vcc *tl, struct token *t, struct symbol *sym)
 {
+	struct token *t0;
 
 	(void)t;
 	ExpectErr(tl, ID);
+	t0 = tl->t;
 	sym = VCC_SymbolGet(tl, SYM_SUB, SYMTAB_CREATE, XREF_REF);
 	if (sym != NULL) {
-		vcc_AddCall(tl, sym);
+		vcc_AddCall(tl, t0, sym);
 		VCC_GlobalSymbol(sym, SUB, "VGC_function");
 		Fb(tl, 1, "%s(ctx);\n", sym->rname);
 		SkipToken(tl, ';');

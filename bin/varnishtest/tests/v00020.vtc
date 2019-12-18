@@ -246,14 +246,57 @@ varnish v1 -errvcl {Not available in method 'vcl_recv'.} {
 	}
 }
 
-varnish v1 -errvcl {Not available from method 'vcl_recv'.} {
+varnish v1 -errvcl {
+('<vcl.inline>' Line 4 Pos 44) -- (Pos 49)
+        sub foo { set req.http.foo = 100 + beresp.status; }
+-------------------------------------------######----------
+
+Not available from method 'vcl_recv'.
+
+...in subroutine "foo"
+('<vcl.inline>' Line 4 Pos 13)
+        sub foo { set req.http.foo = 100 + beresp.status; }
+------------###--------------------------------------------
+
+
+...called from "vcl_recv"
+('<vcl.inline>' Line 5 Pos 29)
+        sub vcl_recv { call foo; }
+----------------------------###---
+} {
 	backend b { .host = "127.0.0.1"; }
-	sub foo {
-		set req.http.foo = 100 + beresp.status;
-	}
-	sub vcl_recv {
-		call foo;
-	}
+	sub foo { set req.http.foo = 100 + beresp.status; }
+	sub vcl_recv { call foo; }
+}
+
+varnish v1 -errvcl {
+('<vcl.inline>' Line 4 Pos 44) -- (Pos 49)
+        sub foo { set req.http.foo = 100 + beresp.status; }
+-------------------------------------------######----------
+
+Not available from method 'vcl_recv'.
+
+...in subroutine "foo"
+('<vcl.inline>' Line 4 Pos 13)
+        sub foo { set req.http.foo = 100 + beresp.status; }
+------------###--------------------------------------------
+
+
+...called from "bar"
+('<vcl.inline>' Line 5 Pos 24)
+        sub bar { call foo; }
+-----------------------###---
+
+
+...called from "vcl_recv"
+('<vcl.inline>' Line 6 Pos 29)
+        sub vcl_recv { call bar; }
+----------------------------###---
+} {
+	backend b { .host = "127.0.0.1"; }
+	sub foo { set req.http.foo = 100 + beresp.status; }
+	sub bar { call foo; }
+	sub vcl_recv { call bar; }
 }
 
 varnish v1 -errvcl {Name of ACL, 'foo.bar', contains illegal character '.'} {

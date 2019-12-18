@@ -25,14 +25,54 @@ varnish v1 -errvcl "Symbol not found" {
 	sub vcl_recv { call foo; }
 }
 
-varnish v1 -errvcl "Function recurses on" {
+varnish v1 -errvcl {
+Function recurses on
+('<vcl.inline>' Line 5 Pos 13)
+        sub foo { call foo; }
+------------###--------------
+
+
+...called from "foo"
+('<vcl.inline>' Line 5 Pos 24)
+        sub foo { call foo; }
+-----------------------###---
+
+
+...called from "vcl_recv"
+('<vcl.inline>' Line 6 Pos 29)
+        sub vcl_recv { call foo; }
+----------------------------###---
+} {
 	backend b { .host = "127.0.0.1"; }
 
 	sub foo { call foo; }
 	sub vcl_recv { call foo; }
 }
 
-varnish v1 -errvcl "Function recurses on" {
+varnish v1 -errvcl {
+Function recurses on
+('<vcl.inline>' Line 6 Pos 13)
+        sub foo { call bar; }
+------------###--------------
+
+
+...called from "bar"
+('<vcl.inline>' Line 5 Pos 24)
+        sub bar { call foo; }
+-----------------------###---
+
+
+...called from "foo"
+('<vcl.inline>' Line 6 Pos 24)
+        sub foo { call bar; }
+-----------------------###---
+
+
+...called from "vcl_recv"
+('<vcl.inline>' Line 7 Pos 29)
+        sub vcl_recv { call foo; }
+----------------------------###---
+} {
 	backend b { .host = "127.0.0.1"; }
 
 	sub bar { call foo; }

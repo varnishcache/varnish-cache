@@ -108,7 +108,7 @@ vcc_AddUses(struct vcc *tl, const struct token *t1, const struct token *t2,
 
 	AN(tl->curproc);
 	pu = TlAlloc(tl, sizeof *pu);
-	assert(pu != NULL);
+	AN(pu);
 	pu->t1 = t1;
 	pu->t2 = t2;
 	if (pu->t2 == NULL)
@@ -120,15 +120,15 @@ vcc_AddUses(struct vcc *tl, const struct token *t1, const struct token *t2,
 }
 
 void
-vcc_AddCall(struct vcc *tl, struct symbol *sym)
+vcc_AddCall(struct vcc *tl, struct token *t, struct symbol *sym)
 {
 	struct proccall *pc;
 
 	AN(sym);
 	pc = TlAlloc(tl, sizeof *pc);
-	assert(pc != NULL);
+	AN(pc);
 	pc->sym = sym;
-	pc->t = tl->t;
+	pc->t = t;
 	pc->fm = tl->curproc;
 	VTAILQ_INSERT_TAIL(&tl->curproc->calls, pc, list);
 }
@@ -180,8 +180,8 @@ vcc_CheckActionRecurse(struct vcc *tl, struct proc *p, unsigned bitmap)
 			return (1);
 		}
 		if (vcc_CheckActionRecurse(tl, pc->sym->proc, bitmap)) {
-			VSB_printf(tl->sb, "\n...called from \"%s\"\n",
-			    pc->sym->name);
+			VSB_printf(tl->sb, "\n...called from \"%.*s\"\n",
+			    PF(p->name));
 			vcc_ErrWhere(tl, pc->t);
 			return (1);
 		}
@@ -259,7 +259,7 @@ vcc_CheckUseRecurse(struct vcc *tl, const struct proc *p,
 	VTAILQ_FOREACH(pc, &p->calls, list) {
 		if (vcc_CheckUseRecurse(tl, pc->sym->proc, m)) {
 			VSB_printf(tl->sb, "\n...called from \"%.*s\"\n",
-			    PF(pc->fm->name));
+			    PF(p->name));
 			vcc_ErrWhere(tl, pc->t);
 			return (1);
 		}
