@@ -135,7 +135,7 @@ vcc_act_set(struct vcc *tl, struct token *t, struct symbol *sym)
 			VSB_printf(tl->sb, "Variable cannot be set.\n");
 		return;
 	}
-	vcc_AddUses(tl, t, tl->t, sym->w_methods, "Cannot be set");
+	vcc_AddUses(tl, t, tl->t, sym, XREF_WRITE);
 	type = sym->type;
 	for (ap = assign; ap->type != VOID; ap++) {
 		if (ap->type != type)
@@ -177,7 +177,7 @@ vcc_act_unset(struct vcc *tl, struct token *t, struct symbol *sym)
 		VSB_printf(tl->sb, "Variable cannot be unset.\n");
 		return;
 	}
-	vcc_AddUses(tl, t, tl->t, sym->u_methods, "Cannot be unset");
+	vcc_AddUses(tl, t, tl->t, sym, XREF_UNSET);
 	Fb(tl, 1, "%s;\n", sym->uname);
 	SkipToken(tl, ';');
 }

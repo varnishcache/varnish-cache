@@ -406,8 +406,16 @@ void VCC_XrefTable(struct vcc *);
 void vcc_AddCall(struct vcc *, struct token *, struct symbol *);
 void vcc_ProcAction(struct proc *p, unsigned action, struct token *t);
 int vcc_CheckAction(struct vcc *tl);
+
+
+struct xrefuse { const char *name, *err; };
+extern const struct xrefuse XREF_READ[1];
+extern const struct xrefuse XREF_WRITE[1];
+extern const struct xrefuse XREF_UNSET[1];
+extern const struct xrefuse XREF_ACTION[1];
+
 void vcc_AddUses(struct vcc *, const struct token *, const struct token *,
-     unsigned mask, const char *use);
+    const struct symbol *sym, const struct xrefuse *use);
 int vcc_CheckUses(struct vcc *tl);
 const char *vcc_MarkPriv(struct vcc *, struct procprivhead *,
     const char *);

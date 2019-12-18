@@ -57,8 +57,9 @@ struct procuse {
 	VTAILQ_ENTRY(procuse)	list;
 	const struct token	*t1;
 	const struct token	*t2;
+	const struct symbol	*sym;
+	const struct xrefuse	*use;
 	unsigned		mask;
-	const char		*use;
 	struct proc		*fm;
 };
 
@@ -102,22 +103,41 @@ vcc_CheckReferences(struct vcc *tl)
  * Returns checks
  */
 
+const struct xrefuse XREF_READ[1] = {{"xref_read", "Not available"}};
+const struct xrefuse XREF_WRITE[1] = {{"xref_write", "Cannot be set"}};
+const struct xrefuse XREF_UNSET[1] = {{"xref_unset", "Cannot be unset"}};
+const struct xrefuse XREF_ACTION[1] = {{"xref_action", "Not a valid action"}};
+
 void
 vcc_AddUses(struct vcc *tl, const struct token *t1, const struct token *t2,
-    unsigned mask, const char *use)
+    const struct symbol *sym, const struct xrefuse *use)
 {
 	struct procuse *pu;
 
 	AN(tl->curproc);
 	pu = TlAlloc(tl, sizeof *pu);
 	AN(pu);
+	AN(sym);
+	AN(use);
 	pu->t1 = t1;
 	pu->t2 = t2;
 	if (pu->t2 == NULL)
 		pu->t2 = VTAILQ_NEXT(t1, list);
-	pu->mask = mask;
+	pu->sym = sym;
 	pu->use = use;
 	pu->fm = tl->curproc;
+
+	if (pu->use == XREF_READ)
+		pu->mask = sym->r_methods;
+	else if (pu->use == XREF_WRITE)
+		pu->mask = sym->w_methods;
+	else if (pu->use == XREF_UNSET)
+		pu->mask = sym->u_methods;
+	else if (pu->use == XREF_ACTION)
+		pu->mask = sym->action_mask;
+	else
+		WRONG("wrong xref use");
+
 	VTAILQ_INSERT_TAIL(&tl->curproc->uses, pu, list);
 }
 
@@ -252,7 +272,7 @@ vcc_CheckUseRecurse(struct vcc *tl, const struct proc *p,
 	if (pu != NULL) {
 		vcc_ErrWhere2(tl, pu->t1, pu->t2);
 		VSB_printf(tl->sb, "%s from subroutine '%s'.\n",
-		    pu->use, m->name);
+		    pu->use->err, m->name);
 		VSB_printf(tl->sb, "\n...in subroutine \"%.*s\"\n",
 		    PF(pu->fm->name));
 		vcc_ErrWhere(tl, p->name);
@@ -283,7 +303,7 @@ vcc_checkuses(struct vcc *tl, const struct symbol *sym)
 	if (pu != NULL) {
 		vcc_ErrWhere2(tl, pu->t1, pu->t2);
 		VSB_printf(tl->sb, "%s in subroutine '%.*s'.",
-		    pu->use, PF(p->name));
+		    pu->use->err, PF(p->name));
 		VSB_cat(tl->sb, "\nAt: ");
 		return;
 	}
