@@ -139,6 +139,9 @@ vcc_AddUses(struct vcc *tl, const struct token *t1, const struct token *t2,
 		WRONG("wrong xref use");
 
 	VTAILQ_INSERT_TAIL(&tl->curproc->uses, pu, list);
+
+	if (pu->mask == 0)
+		vcc_CheckUses(tl);
 }
 
 void
@@ -251,13 +254,40 @@ vcc_CheckAction(struct vcc *tl)
 /*--------------------------------------------------------------------*/
 
 static struct procuse *
-vcc_FindIllegalUse(const struct proc *p, const struct method *m)
+vcc_illegal_write(struct vcc *tl, struct procuse *pu, const struct method *m)
 {
-	struct procuse *pu;
 
-	VTAILQ_FOREACH(pu, &p->uses, list)
+	if (pu->mask || pu->use != XREF_WRITE)
+		return (NULL);
+
+	if (pu->sym->r_methods == 0) {
+		vcc_ErrWhere2(tl, pu->t1, pu->t2);
+		VSB_printf(tl->sb, "Variable cannot be set.\n");
+		return (NULL);
+	}
+
+	if (!(pu->sym->r_methods & m->bitval)) {
+		pu->use = XREF_READ; /* NB: change the error message. */
+		return (pu);
+	}
+
+	vcc_ErrWhere2(tl, pu->t1, pu->t2);
+	VSB_printf(tl->sb, "Variable is read only.\n");
+	return (NULL);
+}
+
+static struct procuse *
+vcc_FindIllegalUse(struct vcc *tl, const struct proc *p, const struct method *m)
+{
+	struct procuse *pu, *pw;
+
+	VTAILQ_FOREACH(pu, &p->uses, list) {
+		pw = vcc_illegal_write(tl, pu, m);
+		if (tl->err)
+			return (pw);
 		if (!(pu->mask & m->bitval))
 			return (pu);
+	}
 	return (NULL);
 }
 
@@ -268,7 +298,7 @@ vcc_CheckUseRecurse(struct vcc *tl, const struct proc *p,
 	struct proccall *pc;
 	struct procuse *pu;
 
-	pu = vcc_FindIllegalUse(p, m);
+	pu = vcc_FindIllegalUse(tl, p, m);
 	if (pu != NULL) {
 		vcc_ErrWhere2(tl, pu->t1, pu->t2);
 		VSB_printf(tl->sb, "%s from subroutine '%s'.\n",
@@ -278,6 +308,8 @@ vcc_CheckUseRecurse(struct vcc *tl, const struct proc *p,
 		vcc_ErrWhere(tl, p->name);
 		return (1);
 	}
+	if (tl->err)
+		return (1);
 	VTAILQ_FOREACH(pc, &p->calls, list) {
 		if (vcc_CheckUseRecurse(tl, pc->sym->proc, m)) {
 			VSB_printf(tl->sb, "\n...called from \"%.*s\"\n",
@@ -299,7 +331,7 @@ vcc_checkuses(struct vcc *tl, const struct symbol *sym)
 	AN(p);
 	if (p->method == NULL)
 		return;
-	pu = vcc_FindIllegalUse(p, p->method);
+	pu = vcc_FindIllegalUse(tl, p, p->method);
 	if (pu != NULL) {
 		vcc_ErrWhere2(tl, pu->t1, pu->t2);
 		VSB_printf(tl->sb, "%s in subroutine '%.*s'.",
@@ -307,6 +339,7 @@ vcc_checkuses(struct vcc *tl, const struct symbol *sym)
 		VSB_cat(tl->sb, "\nAt: ");
 		return;
 	}
+	ERRCHK(tl);
 	if (vcc_CheckUseRecurse(tl, p, p->method)) {
 		VSB_printf(tl->sb,
 		    "\n...which is the \"%s\" subroutine\n", p->method->name);

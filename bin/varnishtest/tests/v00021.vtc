@@ -2,14 +2,26 @@ varnishtest "VCL compiler coverage test: vcc_xref.c vcc_var.c vcc_symb.c"
 
 varnish v1 -errvcl {Variable is read only.} {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv { set obj.ttl = 1 w; }
+	sub vcl_deliver { set obj.ttl = 1 w; }
 }
 
 varnish v1 -errvcl {Variable is read only.} {
 	backend b { .host = "127.0.0.1"; }
 
 	sub foo { set obj.ttl = 1 w; }
-	sub vcl_recv { call foo ; }
+	sub vcl_deliver { call foo; }
+}
+
+varnish v1 -errvcl {Not available in subroutine 'vcl_recv'.} {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_recv { set obj.ttl = 1 w; }
+}
+
+varnish v1 -errvcl {Not available from subroutine 'vcl_recv'.} {
+	backend b { .host = "127.0.0.1"; }
+
+	sub foo { set obj.ttl = 1 w; }
+	sub vcl_recv { call foo; }
 }
 
 varnish v1 -errvcl "Symbol not found" {
