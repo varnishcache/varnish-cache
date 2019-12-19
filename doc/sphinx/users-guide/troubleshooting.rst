@@ -59,9 +59,10 @@ Varnish is crashing - panics
 ----------------------------
 
 When Varnish goes bust the child processes crashes. Most of the
-crashes are caught by one of the many consistency checks we have included in the Varnish source code. When Varnish hits one of these the caching
-process will crash itself in a controlled manner, leaving a nice
-stack trace with the mother process.
+crashes are caught by one of the many consistency checks we have
+included in the Varnish source code. When Varnish hits one of these
+the caching process will crash itself in a controlled manner, leaving
+a nice stack trace with the mother process.
 
 You can inspect any panic messages by typing ``panic.show`` in the CLI.::
 
@@ -80,7 +81,8 @@ You can inspect any panic messages by typing ``panic.show`` in the CLI.::
    (..)
 
 The crash might be due to misconfiguration or a bug. If you suspect it
-is a bug you can use the output in a bug report, see the "Trouble Tickets" section in the Introduction chapter above.
+is a bug you can use the output in a bug report, see the "Trouble
+Tickets" section in the Introduction chapter above.
 
 Varnish is crashing - segfaults
 -------------------------------
@@ -94,7 +96,9 @@ debug a segfault the developers need you to provide a fair bit of
 data.
 
  * Make sure you have Varnish installed with debugging symbols.
- * Make sure core dumps are allowed in the parent shell. (``ulimit -c unlimited``)
+ * Make sure core dumps are allowed in the parent shell::
+
+   ulimit -c unlimited
 
 Once you have the core you open it with `gdb` and issue the command ``bt``
 to get a stack trace of the thread that caused the segfault.
