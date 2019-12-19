@@ -6,10 +6,10 @@ Troubleshooting Varnish
 Sometimes Varnish misbehaves or rather behaves the way you told it to
 behave but not necessarily the way you want it to behave. In order for
 you to understand whats going on there are a couple of places you can
-check. :ref:`varnishlog(1)`, `/var/log/syslog`, `/var/log/messages`
-are all good places where Varnish might leave clues of whats going
-on. This section will guide you through basic troubleshooting in
-Varnish.
+check. :ref:`varnishlog(1)`, ``/var/log/syslog``,
+``/var/log/messages`` are all good places where Varnish might leave
+clues of whats going on. This section will guide you through basic
+troubleshooting in Varnish.
 
 
 When Varnish won't start
@@ -17,17 +17,14 @@ When Varnish won't start
 
 Sometimes Varnish wont start. There is a plethora of possible reasons why
 Varnish wont start on your machine. We've seen everything from wrong
-permissions on `/dev/null` to other processes blocking the ports.
+permissions on ``/dev/null`` to other processes blocking the ports.
 
 Starting Varnish in debug mode to see what is going on.
 
-Try to start Varnish by::
-
-    # varnishd -f /usr/local/etc/varnish/default.vcl -s malloc,1G -T 127.0.0.1: 2000  -a 0.0.0.0:8080 -d
-
-Notice the '-d' parameter. It will give you some more information on what
-is going on. Let us see how Varnish will react when something else is
-listening on its port.::
+Try to start Varnish with the same arguments as otherwise, but ``-d``
+added. This will give you some more information on what is going
+on. Let us see how Varnish will react when something else is listening
+on its port.::
 
     # varnishd -n foo -f /usr/local/etc/varnish/default.vcl -s malloc,1G -T 127.0.0.1:2000  -a 0.0.0.0:8080 -d
     storage_malloc: max size 1024 MB.
