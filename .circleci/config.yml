@@ -71,7 +71,7 @@ commands:
                 linux-headers \
                 pcre-dev \
                 py-docutils \
-                py-sphinx \
+                py3-sphinx \
                 tar \
                 sudo
 jobs:
