@@ -703,7 +703,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 		 * the object attributes are complete when we copy them
 		 * (this would be an issue for ie OA_GZIPBITS). */
 		VSLb(bo->vsl, SLT_Notice,
-		    "[core] Conditional fetch wait for streaming object");
+		    "vsl: Conditional fetch wait for streaming object");
 		ObjWaitState(bo->stale_oc, BOS_FINISHED);
 		stale_state = stale_boc->state;
 		HSH_DerefBoc(bo->wrk, bo->stale_oc);
