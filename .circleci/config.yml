@@ -26,7 +26,6 @@ commands:
                 make \
                 pkg-config \
                 python3-sphinx \
-                rst2pdf \
                 sudo
   centos_install_build_deps:
     description: Install build dependencies
@@ -35,8 +34,16 @@ commands:
           name: Install build dependencies
           command: |
             yum install -y epel-release
+            if [ `rpm -E %{rhel}` = 8 ]; then
+                dnf install -y 'dnf-command(config-manager)'
+                dnf config-manager --set-enabled PowerTools
+                PSPHINX=python3-sphinx
+            else
+                PSPHINX=python-sphinx
+            fi
             yum install -y \
                 automake \
+                diffutils \
                 jemalloc-devel \
                 git \
                 libconfig-devel \
@@ -48,8 +55,7 @@ commands:
                 openssh-clients \
                 pcre-devel \
                 python3 \
-                python-sphinx \
-                rst2pdf \
+                $PSPHINX \
                 sudo
   alpine_install_build_deps:
     description: Install build dependencies
@@ -305,17 +311,24 @@ jobs:
       - store_artifacts:
           destination: packages.tar.gz
           path: packages.tar.gz
-  build_centos_7:
+  build_rpms:
+    parameters:
+      release:
+        description: the release number
+        type: string
+    description: Build centos:<< parameters.release >> rpms
     docker:
-      - image: centos:7
+      - image: centos:<< parameters.release >>
     environment:
       DIST_DIR: build
-      DIST: el7
     steps:
       - run:
           name: Install packaging tools
           command: |
             yum install -y rpm-build yum-utils epel-release
+            if [ `rpm -E %{rhel}` = 8 ]; then
+                dnf config-manager --set-enabled PowerTools
+            fi
             # XXX: we should NOT have to do that here, they should be in the
             # spec as BuildRequires
             yum install -y make gcc
@@ -340,15 +353,14 @@ jobs:
 
             # use python3
             sed -i '1 i\%global __python %{__python3}' "$DIST_DIR"/redhat/varnish.spec
-            [ -n "$DIST" ]
             VERSION=$("$DIST_DIR"/configure --version | awk 'NR == 1 {print $NF}')
 
             # VERSION looks like 5.2.1 or 5.2.0-rc1
-            MAJOR=${VERSION%.*}		# 5.2
+            MAJOR=${VERSION%.*}	# 5.2
             MINOR=${VERSION##*.}	# 1 or 0-rc1
             MINOR=${MINOR%%-*}		# 1 or 0
             RELEASE=${VERSION#*-}	# 5.2.1 or rc1
-            RELEASE=${RELEASE#$VERSION}	# '' or rc1
+            RELEASE=${RELEASE#$VERSION} # '' or rc1
 
             cp -r -L "$DIST_DIR"/redhat/* "$DIST_DIR"/
             tar zcf "$DIST_DIR.tgz" --exclude "$DIST_DIR/redhat" "$DIST_DIR"/
@@ -369,13 +381,12 @@ jobs:
             	fi
             	command rpmbuild \
             		--define "_smp_mflags -j10" \
-            		--define "dist $DIST" \
                 	--define "_topdir $HOME/rpmbuild" \
                 	--define "_sourcedir $CUR_DIR" \
                 	--define "_srcrpmdir $CUR_DIR/${RESULT_DIR}" \
                 	--define "_rpmdir $CUR_DIR/${RESULT_DIR}" \
             		--define "versiontag ${RPMVERSION}" \
-            		--define "releasetag 0.0." \
+            		--define "releasetag 0.0" \
             		--define "srcname $DIST_DIR" \
             		--define "nocheck 1" \
             		"$@"
@@ -420,7 +431,13 @@ workflows:
           dist: ubuntu
           release: bionic
           <<: *pkg_req
-      - build_centos_7:
+      - build_rpms:
+          name: build_centos_7
+          release: "7"
+          <<: *pkg_req
+      - build_rpms:
+          name: build_centos_8
+          release: "8"
           <<: *pkg_req
       - build_alpine:
           <<: *pkg_req
@@ -436,6 +453,12 @@ workflows:
           name: distcheck_centos_7
           dist: centos
           release: "7"
+          requires:
+            - dist
+      - distcheck:
+          name: distcheck_centos_8
+          dist: centos
+          release: "8"
           requires:
             - dist
       - distcheck:
