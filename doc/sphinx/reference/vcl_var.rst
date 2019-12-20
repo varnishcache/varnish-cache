@@ -24,8 +24,8 @@ possible, is done with a `unset` statement::
 
 Which operations are possible on each variable is described below,
 often with the shorthand "backend" which covers the `vcl_backend_*`
-methods and "client" which covers the rest, except `vcl_init` and
-`vcl_fini`.
+subroutines and "client" which covers the rest, except `vcl_init`
+and `vcl_fini`.
 
 When setting a variable, the right hand side of the equal sign
 must have the variables type, you cannot assign a STRING to

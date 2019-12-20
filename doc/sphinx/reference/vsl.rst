@@ -36,7 +36,7 @@ spent since the last timestamp was logged.
 The timestamps logged automatically by Varnish are inserted after
 completing events that are expected to have delays (e.g. network IO or
 spending time on a waitinglist). Timestamps can also be inserted from
-VCL using the std.timestamp() method. If one is doing time consuming
+VCL using the std.timestamp() function. If one is doing time consuming
 tasks in the VCL configuration, it's a good idea to log a timestamp
 after completing that task. This keeps the timing information in
 subsequent timestamps from including the time spent on the VCL event.

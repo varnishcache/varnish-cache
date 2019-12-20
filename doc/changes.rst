@@ -36,7 +36,7 @@ NEXT (2020-03-15)
   `libexecinfo` implementation that crashes when called by Varnish, this
   offers the alternative of using `libunwind` instead.
 
-* backend ``none`` was added for "no backend"
+* backend ``none`` was added for "no backend".
 
 * Log records can safely have empty fields or fields containing blanks if
   they are delimited by "double quotes". This was applied to ``SessError``
@@ -46,11 +46,11 @@ NEXT (2020-03-15)
   ``varnishtest -p debug=+witness``.
 
 * The ``Process`` timestamp for ``vcl_synth {}`` was wrongly issued
-  before the VCL callback, now it gets emitted after VCL returns for
-  consistency with ``vcl_deliver {}``
+  before the VCL subroutine, now it gets emitted after VCL returns for
+  consistency with ``vcl_deliver {}``.
 
 * The ``if-range`` header is now handled, allowing clients to conditionally
-  request a range based on a date or an ETag
+  request a range based on a date or an ETag.
 
 ================================
 Varnish Cache 6.3.0 (2019-09-15)

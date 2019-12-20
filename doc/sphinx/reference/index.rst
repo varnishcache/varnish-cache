@@ -53,7 +53,7 @@ The Varnish Reference Manual
 	. - start
 	. - ...
 	VCL language
-	. The functions:
+	. The subroutines:
 	. - vcl_recv
 	. - vcl_miss
 	. ---

@@ -23,9 +23,9 @@ through HTTP with the method `PURGE`.
 
 An HTTP purge is similar to an HTTP GET request, except that the
 *method* is `PURGE`. Actually you can call the method whatever you'd
-like, but most people refer to this as purging. Squid, for example, supports the
-same mechanism. In order to support purging in Varnish you need the
-following VCL in place::
+like, but most people refer to this as purging. Squid, for example,
+supports the same mechanism. In order to support purging in Varnish
+you need the following VCL in place::
 
   acl purge {
 	  "localhost";

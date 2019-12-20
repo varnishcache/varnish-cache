@@ -449,9 +449,9 @@ This will send a message to syslog using ``LOG_USER | LOG_ALERT``.
 $Function VOID timestamp(STRING s)
 
 Introduces a timestamp in the log with the current time, using the
-string *s* as the label. This is useful to time the execution of
-lengthy VCL procedures, and makes the timestamps inserted
-automatically by Varnish more accurate.
+string *s* as the label. This is useful to time the execution of lengthy
+VCL subroutines, and makes the timestamps inserted automatically by
+Varnish more accurate.
 
 Example::
 

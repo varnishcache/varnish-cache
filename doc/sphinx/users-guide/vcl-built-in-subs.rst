@@ -9,7 +9,7 @@ and backend requests as well as upon ``vcl.load`` and ``vcl.discard``.
 See :ref:`reference-states` for a detailed graphical overview of the
 states and how they relate to core code functions and VCL subroutines.
 
-Built-in subroutines always terminate with a ``return(<action>)``,
+Built-in subroutines always terminate with a ``return (<action>)``,
 where ``<action>`` determines how processing continues in the request
 processing state machine.
 
