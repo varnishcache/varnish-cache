@@ -1011,3 +1011,19 @@ vmod_debug_director_resolve(VRT_CTX, VCL_BACKEND dir)
 	VRT_fail(ctx, "fail");
 	return (NULL);
 }
+
+VCL_STRING v_matchproto_(td_xyzzy_debug_client_ip)
+xyzzy_client_ip(VRT_CTX)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	return (SES_Get_String_Attr(ctx->sp, SA_CLIENT_IP));
+}
+
+VCL_STRING v_matchproto_(td_xyzzy_debug_client_port)
+xyzzy_client_port(VRT_CTX)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	return (SES_Get_String_Attr(ctx->sp, SA_CLIENT_PORT));
+}

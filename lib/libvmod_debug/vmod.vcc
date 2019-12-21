@@ -274,3 +274,11 @@ $Object director()
 $Method BACKEND .fail()
 
 Return a backend which fails in director context
+
+$Function STRING client_ip()
+
+Get the stringified client ip from the session attr
+
+$Function STRING client_port()
+
+Get the stringified client port from the session attr
