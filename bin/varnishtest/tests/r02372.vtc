@@ -2,17 +2,14 @@ varnishtest "Count purges when there are many variants"
 
 server s1 -repeat 72 -keepalive {
 	rxreq
-	txresp -hdr "Vary: foo"
+	txresp -hdr "Vary: x-varnish"
 } -start
 
 varnish v1 -arg "-p workspace_thread=512" -vcl+backend {
-	import std;
-
 	sub vcl_recv {
 		if (req.method == "PURGE") {
 			return (purge);
 		}
-		set req.http.foo = "x" + std.random(1,10) * 1000000000;
 	}
 } -start
 
