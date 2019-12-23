@@ -688,7 +688,6 @@ SLTM(Notice, 0, "Informational messages about request handling",
 	"See the NOTICE MESSAGES section below or the individual VMOD manual"
 	" pages for detailed information of notice messages.\n"
 	"\n"
-
 )
 
 #undef NOSUP_NOTICE
