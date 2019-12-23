@@ -1,4 +1,4 @@
-varnishtest "Check function calls with no action return"
+varnishtest "Check subroutine calls with no action return"
 
 server s1 {
 	rxreq

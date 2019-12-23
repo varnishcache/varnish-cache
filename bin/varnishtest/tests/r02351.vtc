@@ -19,21 +19,25 @@ client c1 {
 
 	# missing :path
 	stream 3 {
-		txreq -noadd -hdr ":authority" "example.com"  -hdr ":method" "GET" -hdr ":scheme" "http"
+		txreq -noadd -hdr ":authority" "example.com" \
+		    -hdr ":method" "GET" -hdr ":scheme" "http"
 		rxrst
 		expect rst.err == PROTOCOL_ERROR
 	} -run
 
 	# missing :method
 	stream 5 {
-		txreq -noadd -hdr ":authority" "example.com"  -hdr ":path" "/foo" -hdr ":scheme" "http"
+		txreq -noadd -hdr ":authority" "example.com" \
+		    -hdr ":path" "/foo" -hdr ":scheme" "http"
 		rxrst
 		expect rst.err == PROTOCOL_ERROR
 	} -run
 
 	# Duplicate :path
 	stream 7 {
-		txreq -noadd -hdr ":path" "/" -hdr ":path" "/foo" -hdr ":method" "GET" -hdr ":authority" "example.com" -hdr ":scheme" "http"
+		txreq -noadd -hdr ":path" "/" -hdr ":path" "/foo" \
+		    -hdr ":method" "GET" -hdr ":authority" "example.com" \
+		    -hdr ":scheme" "http"
 		rxrst
 		expect rst.err == PROTOCOL_ERROR
 	} -run
