@@ -105,24 +105,13 @@ jobs:
       - run:
           name: Update changelog version
           command: |
-            VERSION=$(./configure --version | awk 'NR == 1 {print $NF}')
-
-            # VERSION looks like 5.2.1 or 5.2.0-rc1
-            MAJOR=${VERSION%.*}		# 5.2
-            MINOR=${VERSION##*.}	# 1 or 0-rc1
-            MINOR=${MINOR%%-*}		# 1 or 0
-            RELEASE=${VERSION#*-}	# 5.2.1 or rc1
-            RELEASE=${RELEASE#$VERSION}	# '' or rc1
-
-            # Take version override set on Jenkins builds into account.
-            if [ "$VERSION" = "trunk" ]; then
-            	DEBVERSION=`date "+%Y%m%d"`-weekly~<< parameters.release >>
+            if [ -e .is_weekly ]; then
+                WEEKLY='-weekly'
             else
-            	DEBVERSION="$MAJOR.$MINOR"-1~<< parameters.release >>
+                WEEKLY=
             fi
-
-            sed -i -e "s|@SECTION@|varnish-$MAJOR|" "debian/control"
-            sed -i -e "s|@VERSION@|$DEBVERSION|"  "debian/changelog"
+            VERSION=$(./configure --version | awk 'NR == 1 {print $NF}')$WEEKLY~<< parameters.release >>
+            sed -i -e "s|@VERSION@|$VERSION|"  "debian/changelog"
       - run:
           name: Install Build-Depends packages
           command: |
@@ -143,7 +132,7 @@ jobs:
           paths:
             - debs/varnish*.deb
             - debs/varnish*.dsc
-  build_alpine:
+  build_apks:
     description: Build alpine apks
     docker:
       - image: alpine
@@ -178,16 +167,8 @@ jobs:
           command: |
             tar xavf varnish-*.tar.gz
             VERSION=$(varnish-*/configure --version | awk 'NR == 1 {print $NF}')
-            if [ "$VERSION" = trunk ]; then
-            	WEEKLYVERSION=`date "+%Y%m%d"`
-            	sed -i \
-                    -e "s@^pkgver=.*@pkgver=$WEEKLYVERSION@" \
-                    -e "s@^builddir=.*@builddir=\"\$srcdir/varnish-$VERSION\"@" \
-                    -e "s@^source=.*@source=varnish-trunk.tar.gz@" APKBUILD
-            else
-            	sed -i "s@^pkgver=.*@pkgver=$VERSION@" APKBUILD
-            fi
-            rm -rf varnish-$VERSION
+            sed -i "s/@VERSION@/$VERSION/" APKBUILD
+            rm -rf varnish-*/
       - run:
           name: Fix checksums, build
           command: |
@@ -212,11 +193,17 @@ jobs:
       - run:
           name: Create the dist tarball
           command: |
+            # if version is "trunk", it's a weekly tarball, override the version
+            if grep 'AC_INIT.*trunk.*' ./configure.ac; then
+                sed -i -e "s/^AC_INIT.*trunk.*/AC_INIT([Varnish], [$(date +%Y%m%d)], [varnish-dev@varnish-cache.org])/" ./configure.ac
+                touch .is_weekly
+            fi
             ./autogen.des --quiet
             make dist -j 16
       - persist_to_workspace:
           root: .
           paths:
+            - .is_weekly
             - varnish*.tar.gz
             - tools/*.suppr
   tar_pkg_tools:
@@ -340,33 +327,22 @@ jobs:
 
             # use python3
             sed -i '1 i\%global __python %{__python3}' "$DIST_DIR"/redhat/varnish.spec
-            [ -n "$DIST" ]
-            VERSION=$("$DIST_DIR"/configure --version | awk 'NR == 1 {print $NF}')
-
-            # VERSION looks like 5.2.1 or 5.2.0-rc1
-            MAJOR=${VERSION%.*}		# 5.2
-            MINOR=${VERSION##*.}	# 1 or 0-rc1
-            MINOR=${MINOR%%-*}		# 1 or 0
-            RELEASE=${VERSION#*-}	# 5.2.1 or rc1
-            RELEASE=${RELEASE#$VERSION}	# '' or rc1
+            if [ -e .is_weekly ]; then
+                WEEKLY='.weekly'
+            else
+                WEEKLY=
+            fi
+            VERSION=$("$DIST_DIR"/configure --version | awk 'NR == 1 {print $NF}')$WEEKLY
 
             cp -r -L "$DIST_DIR"/redhat/* "$DIST_DIR"/
             tar zcf "$DIST_DIR.tgz" --exclude "$DIST_DIR/redhat" "$DIST_DIR"/
 
-            if [ "$VERSION" = "trunk" ]; then
-            	RPMVERSION=`date "+%Y%m%d"`
-            else
-            	RPMVERSION="$MAJOR.$MINOR"
-            fi
+            RPMVERSION="$VERSION"
 
             RESULT_DIR="rpms"
             CUR_DIR="$(pwd)"
 
             rpmbuild() {
-            	if [ -n "$RELEASE" ]
-            	then
-            		set -- --define "v_rc $RELEASE" "$@"
-            	fi
             	command rpmbuild \
             		--define "_smp_mflags -j10" \
             		--define "dist $DIST" \
@@ -422,7 +398,8 @@ workflows:
           <<: *pkg_req
       - build_centos_7:
           <<: *pkg_req
-      - build_alpine:
+      - build_apks:
+          name: build_alpine
           <<: *pkg_req
       - push_packages:
           requires:
