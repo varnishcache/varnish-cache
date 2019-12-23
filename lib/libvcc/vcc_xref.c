@@ -152,7 +152,7 @@ vcc_CheckActionRecurse(struct vcc *tl, struct proc *p, unsigned bitmap)
 
 	AN(p);
 	if (p->active) {
-		VSB_cat(tl->sb, "Function recurses on\n");
+		VSB_cat(tl->sb, "Subroutine recurses on\n");
 		vcc_ErrWhere(tl, p->name);
 		return (1);
 	}
@@ -174,7 +174,7 @@ vcc_CheckActionRecurse(struct vcc *tl, struct proc *p, unsigned bitmap)
 	p->active = 1;
 	VTAILQ_FOREACH(pc, &p->calls, list) {
 		if (pc->sym->proc == NULL) {
-			VSB_printf(tl->sb, "Function %s does not exist\n",
+			VSB_printf(tl->sb, "Subroutine %s does not exist\n",
 			    pc->sym->name);
 			vcc_ErrWhere(tl, pc->t);
 			return (1);
@@ -205,7 +205,7 @@ vcc_checkaction(struct vcc *tl, const struct symbol *sym)
 		return;
 	if (vcc_CheckActionRecurse(tl, p, p->method->ret_bitmap)) {
 		VSB_printf(tl->sb,
-		    "\n...which is the \"%s\" method\n", p->method->name);
+		    "\n...which is the \"%s\" subroutine\n", p->method->name);
 		VSB_cat(tl->sb, "Legal returns are:");
 #define VCL_RET_MAC(l, U, B)						\
 		if (p->method->ret_bitmap & ((1 << VCL_RET_##U)))	\
@@ -249,7 +249,7 @@ vcc_CheckUseRecurse(struct vcc *tl, const struct proc *p,
 	pu = vcc_FindIllegalUse(p, m);
 	if (pu != NULL) {
 		vcc_ErrWhere2(tl, pu->t1, pu->t2);
-		VSB_printf(tl->sb, "%s from method '%s'.\n",
+		VSB_printf(tl->sb, "%s from subroutine '%s'.\n",
 		    pu->use, m->name);
 		VSB_printf(tl->sb, "\n...in subroutine \"%.*s\"\n",
 		    PF(pu->fm->name));
@@ -280,14 +280,14 @@ vcc_checkuses(struct vcc *tl, const struct symbol *sym)
 	pu = vcc_FindIllegalUse(p, p->method);
 	if (pu != NULL) {
 		vcc_ErrWhere2(tl, pu->t1, pu->t2);
-		VSB_printf(tl->sb, "%s in method '%.*s'.",
+		VSB_printf(tl->sb, "%s in subroutine '%.*s'.",
 		    pu->use, PF(p->name));
 		VSB_cat(tl->sb, "\nAt: ");
 		return;
 	}
 	if (vcc_CheckUseRecurse(tl, p, p->method)) {
 		VSB_printf(tl->sb,
-		    "\n...which is the \"%s\" method\n", p->method->name);
+		    "\n...which is the \"%s\" subroutine\n", p->method->name);
 		return;
 	}
 }

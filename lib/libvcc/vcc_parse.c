@@ -224,7 +224,7 @@ vcc_ParseFunction(struct vcc *tl)
 	struct proc *p;
 
 	vcc_NextToken(tl);
-	vcc_ExpectVid(tl, "function");
+	vcc_ExpectVid(tl, "subroutine");
 	ERRCHK(tl);
 
 	t = tl->t;
@@ -253,7 +253,7 @@ vcc_ParseFunction(struct vcc *tl)
 		p->name = t;
 		VSB_printf(p->cname, "%s", sym->rname);
 	} else if (p->method == NULL) {
-		VSB_printf(tl->sb, "Function '%s' redefined\n", sym->name);
+		VSB_printf(tl->sb, "Subroutine '%s' redefined\n", sym->name);
 		vcc_ErrWhere(tl, t);
 		VSB_printf(tl->sb, "Previously defined here:\n");
 		vcc_ErrWhere(tl, p->name);

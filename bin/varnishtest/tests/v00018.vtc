@@ -114,7 +114,7 @@ varnish v1 -errvcl {Expected return action name.} {
 }
 
 # issue #936
-varnish v1 -errvcl {Not a valid action in method 'vcl_recv'} {
+varnish v1 -errvcl {Not a valid action in subroutine 'vcl_recv'} {
 	backend foo { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		synthetic("XXX");

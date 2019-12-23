@@ -26,7 +26,7 @@ varnish v1 -errvcl "Symbol not found" {
 }
 
 varnish v1 -errvcl {
-Function recurses on
+Subroutine recurses on
 ('<vcl.inline>' Line 5 Pos 13)
         sub foo { call foo; }
 ------------###--------------
@@ -50,7 +50,7 @@ Function recurses on
 }
 
 varnish v1 -errvcl {
-Function recurses on
+Subroutine recurses on
 ('<vcl.inline>' Line 6 Pos 13)
         sub foo { call bar; }
 ------------###--------------

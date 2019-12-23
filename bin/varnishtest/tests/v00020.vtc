@@ -200,7 +200,7 @@ varnish v1 -errvcl {IP + IP not possible.} {
 	}
 }
 
-varnish v1 -errvcl {Name of function, 'foo.bar', contains illegal character '.'} {
+varnish v1 -errvcl {Name of subroutine, 'foo.bar', contains illegal character '.'} {
 	sub foo.bar {
 	}
 	sub vcl_recv {
@@ -223,7 +223,7 @@ varnish v1 -errvcl {Function returns VOID} {
 	}
 }
 
-varnish v1 -errvcl {Not available in method 'vcl_recv'.} {
+varnish v1 -errvcl {Not available in subroutine 'vcl_recv'.} {
 	import blob;
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
@@ -231,7 +231,7 @@ varnish v1 -errvcl {Not available in method 'vcl_recv'.} {
 	}
 }
 
-varnish v1 -errvcl {Not available in method 'vcl_hash'.} {
+varnish v1 -errvcl {Not available in subroutine 'vcl_hash'.} {
 	import blob;
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_hash {
@@ -239,7 +239,7 @@ varnish v1 -errvcl {Not available in method 'vcl_hash'.} {
 	}
 }
 
-varnish v1 -errvcl {Not available in method 'vcl_recv'.} {
+varnish v1 -errvcl {Not available in subroutine 'vcl_recv'.} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.http.foo = 100 + beresp.status;
@@ -251,7 +251,7 @@ varnish v1 -errvcl {
         sub foo { set req.http.foo = 100 + beresp.status; }
 -------------------------------------------######----------
 
-Not available from method 'vcl_recv'.
+Not available from subroutine 'vcl_recv'.
 
 ...in subroutine "foo"
 ('<vcl.inline>' Line 4 Pos 13)
@@ -274,7 +274,7 @@ varnish v1 -errvcl {
         sub foo { set req.http.foo = 100 + beresp.status; }
 -------------------------------------------######----------
 
-Not available from method 'vcl_recv'.
+Not available from subroutine 'vcl_recv'.
 
 ...in subroutine "foo"
 ('<vcl.inline>' Line 4 Pos 13)

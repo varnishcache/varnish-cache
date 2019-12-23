@@ -7,7 +7,7 @@ server s1 {
 
 varnish v1 -vcl+backend { } -start
 
-varnish v1 -errvcl {Function 'c1' redefined} {
+varnish v1 -errvcl {Subroutine 'c1' redefined} {
 	backend foo { .host = "127.0.0.1"; }
 	sub c1 { }
 	sub c1 { }
