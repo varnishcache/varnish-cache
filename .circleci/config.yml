@@ -345,8 +345,6 @@ jobs:
             rpmbuild() {
             	command rpmbuild \
             		--define "_smp_mflags -j10" \
-            		--define "dist $DIST" \
-                	--define "_topdir $HOME/rpmbuild" \
                 	--define "_sourcedir $CUR_DIR" \
                 	--define "_srcrpmdir $CUR_DIR/${RESULT_DIR}" \
                 	--define "_rpmdir $CUR_DIR/${RESULT_DIR}" \
