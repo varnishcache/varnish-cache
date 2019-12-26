@@ -23,7 +23,6 @@ commands:
                 libpcre3-dev \
                 libtool \
                 libunwind-dev \
-                make \
                 pkg-config \
                 python3-sphinx \
                 sudo
