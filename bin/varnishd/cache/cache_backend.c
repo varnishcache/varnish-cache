@@ -396,7 +396,6 @@ vbe_destroy(const struct director *d)
 {
 	struct backend *be;
 
-	ASSERT_CLI();
 	CAST_OBJ_NOTNULL(be, d->priv, BACKEND_MAGIC);
 
 	if (be->probe != NULL)
@@ -520,7 +519,7 @@ static const struct vdi_methods vbe_methods_noprobe[1] = {{
  * Create a new static or dynamic director::backend instance.
  */
 
-size_t v_matchproto_()
+size_t
 VRT_backend_vsm_need(VRT_CTX)
 {
 	(void)ctx;
@@ -547,13 +546,15 @@ vrt_hash_be(const struct vrt_backend *vrt)
 	return (vbe64dec(ident));
 }
 
-VCL_BACKEND v_matchproto_()
+VCL_BACKEND
 VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
     const struct vrt_backend *vrt)
 {
+	VCL_BACKEND d;
 	struct backend *be;
 	struct vcl *vcl;
 	const struct vrt_backend_probe *vbp;
+	const struct vdi_methods *m;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vrt, VRT_BACKEND_MAGIC);
@@ -593,45 +594,34 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 	if (vbp == NULL)
 		vbp = VCL_DefaultProbe(vcl);
 
-	if (vbp != NULL)
+	if (vbp != NULL) {
 		VBP_Insert(be, vbp, be->tcp_pool);
-	else
+		m = vbe_methods;
+	} else {
 		be->sick = 0;
+		m = vbe_methods_noprobe;
+	}
 
-	be->director = VRT_AddDirector(ctx,
-	    vbp != NULL ? vbe_methods : vbe_methods_noprobe, be,
-	    "%s", vrt->vcl_name);
+	Lck_Lock(&backends_mtx);
+	VTAILQ_INSERT_TAIL(&backends, be, list);
+	VSC_C_main->n_backend++;
+	Lck_Unlock(&backends_mtx);
 
-	if (be->director != NULL) {
+	d = VRT_AddDirector(ctx, m, be, "%s", vrt->vcl_name);
+
+	/* NB: if VRT_AddDirector failed, be was already freed. */
+	if (d != NULL) {
+		be->director = d;
+
 		/* for cold VCL, update initial director state */
 		if (be->probe != NULL && ! vcl->temp->is_warm)
 			VBP_Update_Backend(be->probe);
-
-		Lck_Lock(&backends_mtx);
-		VTAILQ_INSERT_TAIL(&backends, be, list);
-		VSC_C_main->n_backend++;
-		Lck_Unlock(&backends_mtx);
-		return (be->director);
 	}
 
-	/* undo */
-	if (vbp != NULL)
-		VBP_Remove(be);
-
-	VTP_Rel(&be->tcp_pool);
-
-	VSC_vbe_Destroy(&be->vsc_seg);
-#define DA(x)	do { if (be->x != NULL) free(be->x); } while (0)
-#define DN(x)	/**/
-	VRT_BACKEND_HANDLE();
-#undef DA
-#undef DN
-	Lck_Delete(&be->mtx);
-	FREE_OBJ(be);
-	return (NULL);
+	return (d);
 }
 
-VCL_BACKEND v_matchproto_()
+VCL_BACKEND
 VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
 {
 	return (VRT_new_backend_clustered(ctx, NULL, vrt));

@@ -52,6 +52,7 @@ struct priv_vcl {
 	VCL_DURATION		vcl_discard_delay;
 	VCL_BACKEND		be;
 	unsigned		cold_be;
+	unsigned		cooling_be;
 };
 
 
@@ -418,6 +419,17 @@ xyzzy_cold_backend(VRT_CTX, struct vmod_priv *priv)
 	priv_vcl->cold_be = 1;
 }
 
+VCL_VOID
+xyzzy_cooling_backend(VRT_CTX, struct vmod_priv *priv)
+{
+	struct priv_vcl *priv_vcl;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(priv);
+	CAST_OBJ_NOTNULL(priv_vcl, priv->priv, PRIV_VCL_MAGIC);
+	priv_vcl->cooling_be = 1;
+}
+
 static const struct vdi_methods empty_methods[1] = {{
 	.magic =	VDI_METHODS_MAGIC,
 	.type =	"debug.dummy"
@@ -466,12 +478,22 @@ cooldown_thread(void *priv)
 	return (NULL);
 }
 
+static VCL_BACKEND
+create_cold_backend(VRT_CTX)
+{
+	struct vrt_backend be[1];
+
+	INIT_OBJ(be, VRT_BACKEND_MAGIC);
+	be->path = "/";
+	be->vcl_name = "doomed";
+	return (VRT_new_backend(ctx, be));
+}
+
 static int
 event_cold(VRT_CTX, const struct vmod_priv *priv)
 {
 	pthread_t thread;
 	struct priv_vcl *priv_vcl;
-	struct vrt_backend be[1];
 
 	CAST_OBJ_NOTNULL(priv_vcl, priv->priv, PRIV_VCL_MAGIC);
 
@@ -481,11 +503,14 @@ event_cold(VRT_CTX, const struct vmod_priv *priv)
 
 	if (priv_vcl->cold_be) {
 		AZ(priv_vcl->vclref_discard);
-		INIT_OBJ(be, VRT_BACKEND_MAGIC);
-		be->path = "/";
-		be->vcl_name = "doomed";
-		priv_vcl->be = VRT_new_backend(ctx, be);
+		priv_vcl->be = create_cold_backend(ctx);
 		WRONG("unreachable");
+	}
+
+	if (priv_vcl->cooling_be) {
+		AN(priv_vcl->vclref_discard);
+		priv_vcl->be = create_cold_backend(ctx);
+		AZ(priv_vcl->be);
 	}
 
 	if (priv_vcl->vcl_discard_delay == 0.0) {

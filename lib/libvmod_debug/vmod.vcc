@@ -255,7 +255,11 @@ Allow VCL to go cold.
 
 $Function VOID cold_backend(PRIV_VCL)
 
-Schedule a backend creation attempt when the VCL cools down, panic guaranteed.
+Schedule a backend creation attempt when the VCL is COLD, panic guaranteed.
+
+$Function VOID cooling_backend(PRIV_VCL)
+
+Schedule a backend creation attempt when the VCL is COOLING, failure guaranteed.
 
 $Function VOID sndbuf(BYTES sndbuf)
 

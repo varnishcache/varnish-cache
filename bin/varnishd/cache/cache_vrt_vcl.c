@@ -149,7 +149,6 @@ VRT_AddDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
 	struct vsb *vsb;
 	struct vcl *vcl;
 	struct vcldir *vdir;
-	struct director *d;
 	const struct vcltemp *temp;
 	va_list ap;
 	int i;
@@ -161,18 +160,17 @@ VRT_AddDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 
 	// opportunistic, re-checked again under lock
-	if (vcl->temp == VCL_TEMP_COOLING)
+	if (vcl->temp == VCL_TEMP_COOLING && !DO_DEBUG(DBG_VTC_MODE))
 		return (NULL);
 
-	ALLOC_OBJ(d, DIRECTOR_MAGIC);
-	AN(d);
 	ALLOC_OBJ(vdir, VCLDIR_MAGIC);
 	AN(vdir);
-	vdir->dir = d;
-	d->vdir = vdir;
+	ALLOC_OBJ(vdir->dir, DIRECTOR_MAGIC);
+	AN(vdir->dir);
+	vdir->dir->vdir = vdir;
 
 	vdir->methods = m;
-	d->priv = priv;
+	vdir->dir->priv = priv;
 	vsb = VSB_new_auto();
 	AN(vsb);
 	VSB_printf(vsb, "%s.", VCL_Name(vcl));
@@ -183,18 +181,24 @@ VRT_AddDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
 	AZ(VSB_finish(vsb));
 	REPLACE(vdir->cli_name, VSB_data(vsb));
 	VSB_destroy(&vsb);
-	d->vcl_name = vdir->cli_name + i;
+	vdir->dir->vcl_name = vdir->cli_name + i;
 
 	vdir->vcl = vcl;
 	vdir->admin_health = VDI_AH_AUTO;
 	vdir->health_changed = VTIM_real();
 
+	/* NB: at this point we look at the VCL temperature after getting
+	 * through the trouble of creating the director even though it might
+	 * not be legal to do so. Because we change the VCL temperature before
+	 * sending COLD events we have to tolerate and undo attempts for the
+	 * COOLING case.
+	 */
 	Lck_Lock(&vcl_mtx);
 	temp = vcl->temp;
 	if (temp != VCL_TEMP_COOLING)
 		VTAILQ_INSERT_TAIL(&vcl->director_list, vdir, list);
 	if (temp->is_warm)
-		VDI_Event(d, VCL_EVENT_WARM);
+		VDI_Event(vdir->dir, VCL_EVENT_WARM);
 	Lck_Unlock(&vcl_mtx);
 
 	if (temp == VCL_TEMP_COOLING) {
@@ -204,7 +208,7 @@ VRT_AddDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
 	if (!temp->is_warm && temp != VCL_TEMP_INIT)
 		WRONG("Dynamic Backends can only be added to warm VCLs");
 
-	return (d);
+	return (vdir->dir);
 }
 
 static void
