@@ -26,7 +26,6 @@ commands:
                 make \
                 pkg-config \
                 python3-sphinx \
-                rst2pdf \
                 sudo
   centos_install_build_deps:
     description: Install build dependencies
@@ -49,7 +48,6 @@ commands:
                 pcre-devel \
                 python3 \
                 python-sphinx \
-                rst2pdf \
                 sudo
   alpine_install_build_deps:
     description: Install build dependencies
