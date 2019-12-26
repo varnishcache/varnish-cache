@@ -52,6 +52,7 @@ struct priv_vcl {
 	VCL_DURATION		vcl_discard_delay;
 	VCL_BACKEND		be;
 	unsigned		cold_be;
+	unsigned		cooling_be;
 };
 
 
@@ -418,6 +419,17 @@ xyzzy_cold_backend(VRT_CTX, struct vmod_priv *priv)
 	priv_vcl->cold_be = 1;
 }
 
+VCL_VOID
+xyzzy_cooling_backend(VRT_CTX, struct vmod_priv *priv)
+{
+	struct priv_vcl *priv_vcl;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(priv);
+	CAST_OBJ_NOTNULL(priv_vcl, priv->priv, PRIV_VCL_MAGIC);
+	priv_vcl->cooling_be = 1;
+}
+
 static const struct vdi_methods empty_methods[1] = {{
 	.magic =	VDI_METHODS_MAGIC,
 	.type =	"debug.dummy"
@@ -479,8 +491,12 @@ event_cold(VRT_CTX, const struct vmod_priv *priv)
 
 	VRT_DelDirector(&priv_vcl->be);
 
-	if (priv_vcl->cold_be) {
-		AZ(priv_vcl->vclref_discard);
+	if (priv_vcl->cold_be || priv_vcl->cooling_be) {
+		assert(priv_vcl->cold_be != priv_vcl->cooling_be);
+		if (priv_vcl->cold_be)
+			AZ(priv_vcl->vclref_discard); /* COLD state */
+		else
+			AN(priv_vcl->vclref_discard); /* COOLING state */
 		INIT_OBJ(be, VRT_BACKEND_MAGIC);
 		be->path = "/";
 		be->vcl_name = "doomed";

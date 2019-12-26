@@ -7,14 +7,31 @@ varnish v1 -expectexit 0x20
 varnish v1 -vcl+backend {
 	import debug;
 	sub vcl_init {
-		debug.cold_backend();
+		debug.cold_backend(); # prevents COOLING state
 	}
 } -start
 
 # load and use a new VCL
 varnish v1 -vcl+backend {}
 
-# expect a panic during the COLD event
+# expect a panic during the COLD event, COLD state
 varnish v1 -clierr 400 "vcl.state vcl1 cold"
+varnish v1 -cliexpect "Dynamic Backends can only be added to warm VCLs" panic.show
+varnish v1 -cliok panic.clear
+
+varnish v1 -cliok vcl.list
+
+varnish v1 -vcl+backend {
+	import debug;
+	sub vcl_init {
+		debug.cooling_backend(); # expects COOLING state
+	}
+} -start
+
+# switch the active VCL back to vcl2
+varnish v1 -cliok "vcl.use vcl2"
+
+# expect a panic during the COLD event, COOLING state
+varnish v1 -clierr 400 "vcl.state vcl3 cold"
 varnish v1 -cliexpect "Dynamic Backends can only be added to warm VCLs" panic.show
 varnish v1 -cliok panic.clear

@@ -160,10 +160,6 @@ VRT_AddDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
 	vcl = ctx->vcl;
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 
-	// opportunistic, re-checked again under lock
-	if (vcl->temp == VCL_TEMP_COOLING)
-		return (NULL);
-
 	ALLOC_OBJ(d, DIRECTOR_MAGIC);
 	AN(d);
 	ALLOC_OBJ(vdir, VCLDIR_MAGIC);
@@ -191,16 +187,11 @@ VRT_AddDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
 
 	Lck_Lock(&vcl_mtx);
 	temp = vcl->temp;
-	if (temp != VCL_TEMP_COOLING)
-		VTAILQ_INSERT_TAIL(&vcl->director_list, vdir, list);
+	VTAILQ_INSERT_TAIL(&vcl->director_list, vdir, list);
 	if (temp->is_warm)
 		VDI_Event(d, VCL_EVENT_WARM);
 	Lck_Unlock(&vcl_mtx);
 
-	if (temp == VCL_TEMP_COOLING) {
-		deldirector(vdir);
-		return (NULL);
-	}
 	if (!temp->is_warm && temp != VCL_TEMP_INIT)
 		WRONG("Dynamic Backends can only be added to warm VCLs");
 
