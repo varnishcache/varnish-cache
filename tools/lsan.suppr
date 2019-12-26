@@ -1,9 +1,5 @@
 # varnishtest
 leak:varnishtest
-# pp->{def,min,max}
-leak:MCF_ParamConf
-# pp->{def,min,max}
-leak:mcf_wash_param
 # av
 leak:STV_Config
 # av

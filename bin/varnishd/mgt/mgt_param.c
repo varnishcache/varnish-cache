@@ -575,16 +575,47 @@ MCF_AddParams(struct parspec *ps)
  */
 
 static void
-mcf_wash_param(struct cli *cli, const struct parspec *pp, const char **val,
+mcf_dyn_vsb(enum mcf_which_e which, struct parspec *pp, struct vsb *vsb)
+{
+
+	switch (which) {
+	case MCF_DEFAULT:
+		REPLACE(pp->dyn_def, VSB_data(vsb));
+		pp->def = pp->dyn_def;
+		break;
+	case MCF_MINIMUM:
+		REPLACE(pp->dyn_min, VSB_data(vsb));
+		pp->min = pp->dyn_min;
+		break;
+	case MCF_MAXIMUM:
+		REPLACE(pp->dyn_max, VSB_data(vsb));
+		pp->max = pp->dyn_max;
+		break;
+	default:
+		WRONG("bad 'which'");
+	}
+}
+
+static void
+mcf_wash_param(struct cli *cli, struct parspec *pp, enum mcf_which_e which,
     const char *name, struct vsb *vsb)
 {
+	const char *val;
 	int err;
 
-	AN(*val);
+	switch (which) {
+	case MCF_DEFAULT: val = pp->def; break;
+	case MCF_MINIMUM: val = pp->min; break;
+	case MCF_MAXIMUM: val = pp->max; break;
+	default:
+		WRONG("bad 'which'");
+	}
+	AN(val);
+
 	VSB_clear(vsb);
 	VSB_printf(vsb, "FAILED to set %s for param %s: %s\n",
-	    name, pp->name, *val);
-	err = pp->func(vsb, pp, *val);
+	    name, pp->name, val);
+	err = pp->func(vsb, pp, val);
 	AZ(VSB_finish(vsb));
 	if (err) {
 		VCLI_Out(cli, "%s\n", VSB_data(vsb));
@@ -595,10 +626,8 @@ mcf_wash_param(struct cli *cli, const struct parspec *pp, const char **val,
 	err = pp->func(vsb, pp, NULL);
 	AZ(err);
 	AZ(VSB_finish(vsb));
-	if (strcmp(*val, VSB_data(vsb))) {
-		*val = strdup(VSB_data(vsb));
-		AN(*val);
-	}
+	if (strcmp(val, VSB_data(vsb)))
+		mcf_dyn_vsb(which, pp, vsb);
 }
 
 /*--------------------------------------------------------------------*/
@@ -679,11 +708,11 @@ MCF_InitParams(struct cli *cli)
 		if (pp->flags & NOT_IMPLEMENTED)
 			continue;
 		if (pp->min != NULL)
-			mcf_wash_param(cli, pp, &pp->min, "minimum", vsb);
+			mcf_wash_param(cli, pp, MCF_MINIMUM, "minimum", vsb);
 		if (pp->max != NULL)
-			mcf_wash_param(cli, pp, &pp->max, "maximum", vsb);
+			mcf_wash_param(cli, pp, MCF_MAXIMUM, "maximum", vsb);
 		AN(pp->def);
-		mcf_wash_param(cli, pp, &pp->def, "default", vsb);
+		mcf_wash_param(cli, pp, MCF_DEFAULT, "default", vsb);
 	}
 	VSB_destroy(&vsb);
 }
@@ -706,22 +735,7 @@ MCF_ParamConf(enum mcf_which_e which, const char * const param,
 	VSB_vprintf(vsb, fmt, ap);
 	va_end(ap);
 	AZ(VSB_finish(vsb));
-	switch (which) {
-	case MCF_DEFAULT:
-		REPLACE(pp->dyn_def, VSB_data(vsb));
-		pp->def = pp->dyn_def;
-		break;
-	case MCF_MINIMUM:
-		REPLACE(pp->dyn_min, VSB_data(vsb));
-		pp->min = pp->dyn_min;
-		break;
-	case MCF_MAXIMUM:
-		REPLACE(pp->dyn_max, VSB_data(vsb));
-		pp->max = pp->dyn_max;
-		break;
-	default:
-		WRONG("bad 'which'");
-	}
+	mcf_dyn_vsb(which, pp, vsb);
 	VSB_delete(vsb);
 }
 
