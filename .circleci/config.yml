@@ -75,115 +75,6 @@ commands:
                 tar \
                 sudo
 jobs:
-  build_debs:
-    parameters:
-      release:
-        description: the release name (stretch|buster|xenial|bionic)
-        default: ""
-        type: string
-      dist:
-        description: the Linux distribution (debian|ubuntu)
-        default: ""
-        type: string
-    description: Build << parameters.release >> debs
-    docker:
-      - image: << parameters.dist >>:<< parameters.release >>
-    steps:
-      - run:
-          name: Install packaging tools
-          command: |
-            apt-get update
-            apt-get install -y dpkg-dev ca-certificates debhelper devscripts equivs
-      - attach_workspace:
-          at: ~/project
-      - run:
-          name: Untar debian
-          command: tar xavf debian.tar.gz
-      - run:
-          name: Untar orig
-          command: tar xavf varnish*.tar.gz --strip 1
-      - run:
-          name: Update changelog version
-          command: |
-            if [ -e .is_weekly ]; then
-                WEEKLY='-weekly'
-            else
-                WEEKLY=
-            fi
-            VERSION=$(./configure --version | awk 'NR == 1 {print $NF}')$WEEKLY~<< parameters.release >>
-            sed -i -e "s|@VERSION@|$VERSION|"  "debian/changelog"
-      - run:
-          name: Install Build-Depends packages
-          command: |
-            export DEBIAN_FRONTEND=noninteractive
-            export DEBCONF_NONINTERACTIVE_SEEN=true
-            yes | mk-build-deps --install debian/control || true
-      - run:
-          name: Build the packages
-          command: |
-            dpkg-buildpackage -us -uc -j16
-      - run:
-          name: Import the packages into the workspace
-          command: |
-            mkdir debs
-            mv ../*.deb ../*.dsc debs/
-      - persist_to_workspace:
-          root: .
-          paths:
-            - debs/varnish*.deb
-            - debs/varnish*.dsc
-  build_apks:
-    description: Build alpine apks
-    docker:
-      - image: alpine
-    working_directory: /workspace
-    steps:
-      - run:
-          name: Install certificates to mount the workspace, and tar
-          command: |
-            apk update
-            apk add -q ca-certificates tar
-      - attach_workspace:
-          at: /workspace
-      - run:
-          name: Untar alpine
-          command: |
-            tar xavf alpine.tar.gz --strip 1
-      - run:
-          name: Install sdk, add user
-          command: |
-            apk add alpine-sdk
-            adduser -D builder
-            echo "builder ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers
-            addgroup builder abuild
-            mkdir -p /var/cache/distfiles
-            chmod a+w /var/cache/distfiles
-      - run:
-          name: Generate key
-          command: |
-            su builder -c "abuild-keygen -nai"
-      - run:
-          name: Fix APKBUILD's variables
-          command: |
-            tar xavf varnish-*.tar.gz
-            VERSION=$(varnish-*/configure --version | awk 'NR == 1 {print $NF}')
-            sed -i "s/@VERSION@/$VERSION/" APKBUILD
-            rm -rf varnish-*/
-      - run:
-          name: Fix checksums, build
-          command: |
-            chown builder -R /workspace
-            su builder -c "abuild checksum"
-            su builder -c "abuild -r"
-      - run:
-          name: Fix the APKBUILD's version
-          command: |
-            mkdir apks
-            cp /home/builder/packages/x86_64/*.apk apks
-      - persist_to_workspace:
-          root: .
-          paths:
-            - apks/*.apk
   dist:
     docker:
       - image: centos:7
@@ -278,19 +169,115 @@ jobs:
             sudo -u varnish \
             	--preserve-env=ASAN_OPTIONS,LSAN_OPTIONS,TSAN_OPTIONS,UBSAN_OPTIONS \
             	make distcheck VERBOSE=1 -j 12 -k
-  push_packages:
+  build_apks:
+    description: Build alpine apks
     docker:
-      - image: centos:7
+      - image: alpine
+    working_directory: /workspace
     steps:
+      - run:
+          name: Install certificates to mount the workspace, and tar
+          command: |
+            apk update
+            apk add -q ca-certificates tar
+      - attach_workspace:
+          at: /workspace
+      - run:
+          name: Untar alpine
+          command: |
+            tar xavf alpine.tar.gz --strip 1
+      - run:
+          name: Install sdk, add user
+          command: |
+            apk add alpine-sdk
+            adduser -D builder
+            echo "builder ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers
+            addgroup builder abuild
+            mkdir -p /var/cache/distfiles
+            chmod a+w /var/cache/distfiles
+      - run:
+          name: Generate key
+          command: |
+            su builder -c "abuild-keygen -nai"
+      - run:
+          name: Fix APKBUILD's variables
+          command: |
+            tar xavf varnish-*.tar.gz
+            VERSION=$(varnish-*/configure --version | awk 'NR == 1 {print $NF}')
+            sed -i "s/@VERSION@/$VERSION/" APKBUILD
+            rm -rf varnish-*/
+      - run:
+          name: Fix checksums, build
+          command: |
+            chown builder -R /workspace
+            su builder -c "abuild checksum"
+            su builder -c "abuild -r"
+      - run:
+          name: Fix the APKBUILD's version
+          command: |
+            mkdir apks
+            cp /home/builder/packages/x86_64/*.apk apks
+      - persist_to_workspace:
+          root: .
+          paths:
+            - apks/*.apk
+  build_debs:
+    parameters:
+      release:
+        description: the release name (stretch|buster|xenial|bionic)
+        default: ""
+        type: string
+      dist:
+        description: the Linux distribution (debian|ubuntu)
+        default: ""
+        type: string
+    description: Build << parameters.release >> debs
+    docker:
+      - image: << parameters.dist >>:<< parameters.release >>
+    steps:
+      - run:
+          name: Install packaging tools
+          command: |
+            apt-get update
+            apt-get install -y dpkg-dev ca-certificates debhelper devscripts equivs
       - attach_workspace:
           at: ~/project
       - run:
-          name: Tar the packages
+          name: Untar debian
+          command: tar xavf debian.tar.gz
+      - run:
+          name: Untar orig
+          command: tar xavf varnish*.tar.gz --strip 1
+      - run:
+          name: Update changelog version
           command: |
-              tar cvzf packages.tar.gz rpms/*.rpm debs/*.deb debs/*.dsc apks/*.apk
-      - store_artifacts:
-          destination: packages.tar.gz
-          path: packages.tar.gz
+            if [ -e .is_weekly ]; then
+                WEEKLY='-weekly'
+            else
+                WEEKLY=
+            fi
+            VERSION=$(./configure --version | awk 'NR == 1 {print $NF}')$WEEKLY~<< parameters.release >>
+            sed -i -e "s|@VERSION@|$VERSION|"  "debian/changelog"
+      - run:
+          name: Install Build-Depends packages
+          command: |
+            export DEBIAN_FRONTEND=noninteractive
+            export DEBCONF_NONINTERACTIVE_SEEN=true
+            yes | mk-build-deps --install debian/control || true
+      - run:
+          name: Build the packages
+          command: |
+            dpkg-buildpackage -us -uc -j16
+      - run:
+          name: Import the packages into the workspace
+          command: |
+            mkdir debs
+            mv ../*.deb ../*.dsc debs/
+      - persist_to_workspace:
+          root: .
+          paths:
+            - debs/varnish*.deb
+            - debs/varnish*.dsc
   build_centos_7:
     docker:
       - image: centos:7
@@ -361,7 +348,19 @@ jobs:
           paths:
             - rpms/*.rpm
             - rpms/*/*.rpm
-
+  push_packages:
+    docker:
+      - image: centos:7
+    steps:
+      - attach_workspace:
+          at: ~/project
+      - run:
+          name: Tar the packages
+          command: |
+              tar cvzf packages.tar.gz rpms/*.rpm debs/*.deb debs/*.dsc apks/*.apk
+      - store_artifacts:
+          destination: packages.tar.gz
+          path: packages.tar.gz
 pkg_req: &pkg_req
   requires:
     - dist
