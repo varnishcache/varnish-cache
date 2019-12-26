@@ -247,11 +247,15 @@ should now only be used for diagnostic purposes.
 
 $Function VOID vcl_prevent_cold(PRIV_VCL)
 
-Prevent VCL from going cold
+Prevent VCL from going cold.
 
 $Function VOID vcl_allow_cold(PRIV_VCL)
 
-Allow VCL to go cold
+Allow VCL to go cold.
+
+$Function VOID cold_backend(PRIV_VCL)
+
+Schedule a backend creation attempt when the VCL cools down, panic guaranteed.
 
 $Function VOID sndbuf(BYTES sndbuf)
 

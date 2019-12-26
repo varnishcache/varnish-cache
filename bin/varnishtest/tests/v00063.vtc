@@ -1,0 +1,20 @@
+varnishtest "Create a backend after a COLD event"
+
+server s1 -start
+
+varnish v1 -cliok "param.set feature +no_coredump"
+varnish v1 -expectexit 0x20
+varnish v1 -vcl+backend {
+	import debug;
+	sub vcl_init {
+		debug.cold_backend();
+	}
+} -start
+
+# load and use a new VCL
+varnish v1 -vcl+backend {}
+
+# expect a panic during the COLD event
+varnish v1 -clierr 400 "vcl.state vcl1 cold"
+varnish v1 -cliexpect "Dynamic Backends can only be added to warm VCLs" panic.show
+varnish v1 -cliok panic.clear

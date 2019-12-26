@@ -51,6 +51,7 @@ struct priv_vcl {
 	struct vclref		*vclref_cold;
 	VCL_DURATION		vcl_discard_delay;
 	VCL_BACKEND		be;
+	unsigned		cold_be;
 };
 
 
@@ -385,6 +386,8 @@ xyzzy_vcl_prevent_cold(VRT_CTX, struct vmod_priv *priv)
 	struct priv_vcl *priv_vcl;
 	char buf[32];
 
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(priv);
 	CAST_OBJ_NOTNULL(priv_vcl, priv->priv, PRIV_VCL_MAGIC);
 	AZ(priv_vcl->vclref_cold);
 
@@ -397,11 +400,22 @@ xyzzy_vcl_allow_cold(VRT_CTX, struct vmod_priv *priv)
 {
 	struct priv_vcl *priv_vcl;
 
-	(void)ctx;
-
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(priv);
 	CAST_OBJ_NOTNULL(priv_vcl, priv->priv, PRIV_VCL_MAGIC);
 	AN(priv_vcl->vclref_cold);
 	VRT_VCL_Allow_Cold(&priv_vcl->vclref_cold);
+}
+
+VCL_VOID
+xyzzy_cold_backend(VRT_CTX, struct vmod_priv *priv)
+{
+	struct priv_vcl *priv_vcl;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(priv);
+	CAST_OBJ_NOTNULL(priv_vcl, priv->priv, PRIV_VCL_MAGIC);
+	priv_vcl->cold_be = 1;
 }
 
 static const struct vdi_methods empty_methods[1] = {{
@@ -426,8 +440,11 @@ event_warm(VRT_CTX, const struct vmod_priv *priv)
 	CAST_OBJ_NOTNULL(priv_vcl, priv->priv, PRIV_VCL_MAGIC);
 	AZ(priv_vcl->vclref_discard);
 
-	bprintf(buf, "vmod-debug ref on %s", VCL_Name(ctx->vcl));
-	priv_vcl->vclref_discard = VRT_VCL_Prevent_Discard(ctx, buf);
+	if (!priv_vcl->cold_be) {
+		/* NB: set up a COOLING step unless we want a COLD backend. */
+		bprintf(buf, "vmod-debug ref on %s", VCL_Name(ctx->vcl));
+		priv_vcl->vclref_discard = VRT_VCL_Prevent_Discard(ctx, buf);
+	}
 
 	AZ(priv_vcl->be);
 	priv_vcl->be = VRT_AddDirector(ctx, empty_methods,
@@ -454,15 +471,25 @@ event_cold(VRT_CTX, const struct vmod_priv *priv)
 {
 	pthread_t thread;
 	struct priv_vcl *priv_vcl;
+	struct vrt_backend be[1];
 
 	CAST_OBJ_NOTNULL(priv_vcl, priv->priv, PRIV_VCL_MAGIC);
-	AN(priv_vcl->vclref_discard);
 
 	VSL(SLT_Debug, 0, "%s: VCL_EVENT_COLD", VCL_Name(ctx->vcl));
 
 	VRT_DelDirector(&priv_vcl->be);
 
+	if (priv_vcl->cold_be) {
+		AZ(priv_vcl->vclref_discard);
+		INIT_OBJ(be, VRT_BACKEND_MAGIC);
+		be->path = "/";
+		be->vcl_name = "doomed";
+		priv_vcl->be = VRT_new_backend(ctx, be);
+		WRONG("unreachable");
+	}
+
 	if (priv_vcl->vcl_discard_delay == 0.0) {
+		AN(priv_vcl->vclref_discard);
 		VRT_VCL_Allow_Discard(&priv_vcl->vclref_discard);
 		return (0);
 	}
