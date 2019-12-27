@@ -379,12 +379,16 @@ HPK_DecHdr(struct hpk_iter *iter, struct hpk_hdr *header)
 			return (hpk_err);
 		txtcpy(&header->key, t);
 	} else {
-		if (hpk_more != str_decode(iter, &header->key))
+		if (hpk_more != str_decode(iter, &header->key)) {
+			free(header->key.ptr);
 			return (hpk_err);
+		}
 	}
 
-	if (hpk_err == str_decode(iter, &header->value))
+	if (hpk_err == str_decode(iter, &header->value)) {
+		free(header->key.ptr);
 		return (hpk_err);
+	}
 
 	if (must_index)
 		push_header(iter->ctx, header);

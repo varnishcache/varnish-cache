@@ -174,11 +174,12 @@ wait_running(const struct varnish *v)
 			vtc_fatal(v->vl,
 			    "Child stopped before running: %u %s", st, r);
 		if (!strcmp(r, "Child in state running")) {
+			free(r);
+			r = NULL;
 			st = varnish_ask_cli(v, "debug.listen_address", &r);
 			if (st != CLIS_OK)
 				vtc_fatal(v->vl,
-					  "CLI status command failed: %u %s",
-					  st, r);
+				    "CLI status command failed: %u %s", st, r);
 			free(r);
 			break;
 		}
@@ -349,7 +350,9 @@ varnish_delete(struct varnish *v)
 	CHECK_OBJ_NOTNULL(v, VARNISH_MAGIC);
 	vtc_logclose(v->vl);
 	free(v->name);
+	free(v->jail);
 	free(v->workdir);
+	VSB_destroy(&v->args);
 	if (v->vsc != NULL)
 		VSC_Destroy(&v->vsc, v->vsm_vsc);
 	if (v->vsm_vsc != NULL)

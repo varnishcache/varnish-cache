@@ -370,6 +370,10 @@ tst_cb(const struct vev *ve, int what)
 			VEV_Stop(vb, jp->evt);
 			free(jp->evt);
 		}
+		if (jp->tst->ntodo == 0) {
+			free(jp->tst->script);
+			FREE_OBJ(jp->tst);
+		}
 		FREE_OBJ(jp);
 		return (1);
 	}
@@ -406,8 +410,7 @@ start_test(void)
 		VTAILQ_INSERT_TAIL(&tst_head, tp, list);
 
 	jp->tst = tp;
-	jp->tmpdir = strdup(tmpdir);
-	AN(jp->tmpdir);
+	REPLACE(jp->tmpdir, tmpdir);
 
 	AZ(pipe(p));
 	assert(p[0] > STDERR_FILENO);

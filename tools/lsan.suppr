@@ -1,5 +1,5 @@
 # varnishtest
-leak:varnishtest
+leak:parse_string
 # av
 leak:STV_Config
 # av

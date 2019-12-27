@@ -116,13 +116,16 @@ struct stream {
 static void
 clean_headers(struct hpk_hdr *h)
 {
-	while (h->t) {
+	unsigned n = MAX_HDR;
+
+	while (h->t && n > 0) {
 		if (h->key.len)
 			free(h->key.ptr);
 		if (h->value.len)
 			free(h->value.ptr);
 		memset(h, 0, sizeof(*h));
 		h++;
+		n--;
 	}
 }
 
@@ -284,18 +287,30 @@ do { \
 } while(0)
 
 static void
-clean_frame(struct frame **f)
+replace_frame(struct frame **fp, struct frame *new)
 {
-	AN(f);
-	if (!*f)
+	struct frame *old;
+
+	AN(fp);
+	CHECK_OBJ_ORNULL(new, FRAME_MAGIC);
+
+	old = *fp;
+	*fp = new;
+	if (old == NULL)
 		return;
 
-	CHECK_OBJ_NOTNULL(*f, FRAME_MAGIC);
+	CHECK_OBJ(old, FRAME_MAGIC);
+	if (old->type == TYPE_GOAWAY)
+		free(old->md.goaway.debug);
+	free(old->data);
+	FREE_OBJ(old);
+}
 
-	if ((*f)->type == TYPE_GOAWAY)
-		free((*f)->md.goaway.debug);
-	free((*f)->data);
-	FREE_OBJ(*f);
+static void
+clean_frame(struct frame **fp)
+{
+
+	replace_frame(fp, NULL);
 }
 
 static void
@@ -783,6 +798,7 @@ receive_frame(void *priv)
 					else
 						hdrs = s->resp;
 				}
+				clean_headers(hdrs);
 				hdrs[0].t = hpk_unset;
 				AZ(vsb);
 				vsb = VSB_new_auto();
@@ -2107,10 +2123,9 @@ rxstuff(struct stream *s)
 	}
 	clean_frame(&s->frame);
 	f = VTAILQ_LAST(&s->fq, fq_head);
+	CHECK_OBJ_NOTNULL(f, FRAME_MAGIC);
 	VTAILQ_REMOVE(&s->fq, f, list);
 	AZ(pthread_mutex_unlock(&s->hp->mtx));
-
-	CHECK_OBJ_NOTNULL(f, FRAME_MAGIC);
 	return (f);
 }
 
@@ -2165,14 +2180,14 @@ cmd_rxhdrs(CMD_ARGS)
 		vtc_fatal(vl, "Unknown rxhdrs spec: %s\n", *av);
 
 	do {
-		f = rxstuff(s);
-		if (!f)
-			return;
+		replace_frame(&f, rxstuff(s));
+		if (f == NULL)
+			break;
 		rcv++;
 		CHKFRAME(f->type, expect, rcv, "rxhdrs");
 		expect = TYPE_CONTINUATION;
 	} while (rcv < times || (loop && !(f->flags & END_HEADERS)));
-	s->frame = f;
+	replace_frame(&s->frame, f);
 }
 
 static void
@@ -2203,13 +2218,13 @@ cmd_rxcont(CMD_ARGS)
 		vtc_fatal(vl, "Unknown rxcont spec: %s\n", *av);
 
 	do {
-		f = rxstuff(s);
-		if (!f)
-			return;
+		replace_frame(&f, rxstuff(s));
+		if (f == NULL)
+			break;
 		rcv++;
 		CHKFRAME(f->type, TYPE_CONTINUATION, rcv, "rxcont");
 	} while (rcv < times || (loop && !(f->flags & END_HEADERS)));
-	s->frame = f;
+	replace_frame(&s->frame, f);
 }
 
 
@@ -2254,13 +2269,13 @@ cmd_rxdata(CMD_ARGS)
 		vtc_fatal(vl, "Unknown rxdata spec: %s\n", *av);
 
 	do {
-		f = rxstuff(s);
-		if (!f)
-			return;
+		replace_frame(&f, rxstuff(s));
+		if (f == NULL)
+			break;
 		rcv++;
 		CHKFRAME(f->type, TYPE_DATA, rcv, "rxhdata");
 	} while (rcv < times || (loop && !(f->flags & END_STREAM)));
-	s->frame = f;
+	replace_frame(&s->frame, f);
 }
 
 /* SECTION: stream.spec.data_10 rxreq, rxresp
@@ -2300,19 +2315,22 @@ cmd_rxmsg(CMD_ARGS)
 	end_stream = f->flags & END_STREAM;
 
 	while (!(f->flags & END_HEADERS)) {
-		f = rxstuff(s);
-		if (!f)
+		replace_frame(&f, rxstuff(s));
+		if (f == NULL)
 			return;
 		rcv++;
 		CHKFRAME(f->type, TYPE_CONTINUATION, rcv, *av);
 	}
 
-	while (!end_stream && (f = rxstuff(s)) != NULL) {
+	while (!end_stream) {
+		replace_frame(&f, rxstuff(s));
+		if (f == NULL)
+			break;
 		rcv++;
 		CHKFRAME(f->type, TYPE_DATA, rcv, *av);
 		end_stream = f->flags & END_STREAM;
 	}
-	s->frame = f;
+	replace_frame(&s->frame, f);
 }
 
 /* SECTION: stream.spec.data_12 rxpush
@@ -2553,11 +2571,7 @@ stream_thread(void *priv)
 	struct stream *s;
 
 	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
-
 	parse_string(s->spec, stream_cmds, s, s->hp->vl);
-
-	clean_headers(s->req);
-	clean_headers(s->resp);
 	vtc_log(s->hp->vl, 2, "Ending stream %u", s->id);
 	return (NULL);
 }
@@ -2604,7 +2618,17 @@ stream_new(const char *name, struct http *h)
 static void
 stream_delete(struct stream *s)
 {
+	struct frame *f, *f2;
+
 	CHECK_OBJ_NOTNULL(s, STREAM_MAGIC);
+
+	VTAILQ_FOREACH_SAFE(f, &s->fq, list, f2) {
+		VTAILQ_REMOVE(&s->fq, f, list);
+		clean_frame(&f);
+	}
+	clean_headers(s->req);
+	clean_headers(s->resp);
+	AZ(s->frame);
 	free(s->body);
 	free(s->spec);
 	free(s->name);
@@ -2640,8 +2664,10 @@ stream_wait(struct stream *s)
 		vtc_fatal(s->hp->vl, "Stream %u returned \"%s\"", s->id,
 		    (char *)res);
 
-	VTAILQ_FOREACH_SAFE(f, &s->fq, list, f2)
+	VTAILQ_FOREACH_SAFE(f, &s->fq, list, f2) {
+		VTAILQ_REMOVE(&s->fq, f, list);
 		clean_frame(&f);
+	}
 	clean_frame(&s->frame);
 	s->tp = 0;
 	s->running = 0;
