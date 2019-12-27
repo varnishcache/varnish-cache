@@ -391,12 +391,11 @@ vbe_dir_event(const struct director *d, enum vcl_event_e ev)
 
 /*---------------------------------------------------------------------*/
 
-static void v_matchproto_(vdi_destroy_f)
-vbe_destroy(const struct director *d)
+static void
+vbe_free(struct backend *be)
 {
-	struct backend *be;
 
-	CAST_OBJ_NOTNULL(be, d->priv, BACKEND_MAGIC);
+	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
 
 	if (be->probe != NULL)
 		VBP_Remove(be);
@@ -419,6 +418,15 @@ vbe_destroy(const struct director *d)
 
 	Lck_Delete(&be->mtx);
 	FREE_OBJ(be);
+}
+
+static void v_matchproto_(vdi_destroy_f)
+vbe_destroy(const struct director *d)
+{
+	struct backend *be;
+
+	CAST_OBJ_NOTNULL(be, d->priv, BACKEND_MAGIC);
+	vbe_free(be);
 }
 
 /*--------------------------------------------------------------------*/
@@ -550,7 +558,6 @@ VCL_BACKEND
 VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
     const struct vrt_backend *vrt)
 {
-	VCL_BACKEND d;
 	struct backend *be;
 	struct vcl *vcl;
 	const struct vrt_backend_probe *vbp;
@@ -607,18 +614,17 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 	VSC_C_main->n_backend++;
 	Lck_Unlock(&backends_mtx);
 
-	d = VRT_AddDirector(ctx, m, be, "%s", vrt->vcl_name);
+	be->director = VRT_AddDirector(ctx, m, be, "%s", vrt->vcl_name);
 
-	/* NB: if VRT_AddDirector failed, be was already freed. */
-	if (d != NULL) {
-		be->director = d;
-
+	if (be->director != NULL) {
 		/* for cold VCL, update initial director state */
 		if (be->probe != NULL && ! vcl->temp->is_warm)
 			VBP_Update_Backend(be->probe);
+		return (be->director);
 	}
 
-	return (d);
+	vbe_free(be);
+	return (NULL);
 }
 
 VCL_BACKEND

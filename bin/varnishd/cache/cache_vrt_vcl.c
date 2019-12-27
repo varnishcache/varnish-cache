@@ -41,8 +41,6 @@
 #include "cache_director.h"
 #include "cache_vcl.h"
 
-static void deldirector(struct vcldir *);
-
 /*--------------------------------------------------------------------*/
 
 const char *
@@ -142,6 +140,15 @@ VCL_Rel(struct vcl **vcc)
 
 /*--------------------------------------------------------------------*/
 
+static void
+vcldir_free(struct vcldir *vdir)
+{
+
+	free(vdir->cli_name);
+	FREE_OBJ(vdir->dir);
+	FREE_OBJ(vdir);
+}
+
 VCL_BACKEND
 VRT_AddDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
     const char *fmt, ...)
@@ -158,6 +165,10 @@ VRT_AddDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
 	AN(fmt);
 	vcl = ctx->vcl;
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
+
+	// opportunistic, re-checked again under lock
+	if (vcl->temp == VCL_TEMP_COOLING && !DO_DEBUG(DBG_VTC_MODE))
+		return (NULL);
 
 	ALLOC_OBJ(vdir, VCLDIR_MAGIC);
 	AN(vdir);
@@ -198,23 +209,13 @@ VRT_AddDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
 	Lck_Unlock(&vcl_mtx);
 
 	if (temp == VCL_TEMP_COOLING) {
-		deldirector(vdir);
+		vcldir_free(vdir);
 		return (NULL);
 	}
 	if (!temp->is_warm && temp != VCL_TEMP_INIT)
 		WRONG("Dynamic Backends can only be added to warm VCLs");
 
 	return (vdir->dir);
-}
-
-static void
-deldirector(struct vcldir *vdir)
-{
-	if(vdir->methods->destroy != NULL)
-		vdir->methods->destroy(vdir->dir);
-	free(vdir->cli_name);
-	FREE_OBJ(vdir->dir);
-	FREE_OBJ(vdir);
 }
 
 void
@@ -238,8 +239,10 @@ VRT_DelDirector(VCL_BACKEND *bp)
 
 	if (temp->is_warm)
 		VDI_Event(d, VCL_EVENT_COLD);
+	if(vdir->methods->destroy != NULL)
+		vdir->methods->destroy(d);
 	assert (d == vdir->dir);
-	deldirector(vdir);
+	vcldir_free(vdir);
 }
 
 void
