@@ -227,6 +227,7 @@ pool_poolherder(void *priv)
 			free(ppx->a_stat);
 			free(ppx->b_stat);
 			SES_DestroyPool(ppx);
+			Lck_Delete(&ppx->mtx);
 			FREE_OBJ(ppx);
 			VSC_C_main->pools--;
 		}

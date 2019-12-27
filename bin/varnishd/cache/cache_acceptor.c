@@ -456,13 +456,10 @@ vca_accept_task(struct worker *wrk, void *arg)
 		do {
 			i = accept(ls->sock, (void*)&wa.acceptaddr,
 				   &wa.acceptaddrlen);
-		} while (i < 0 && errno == EAGAIN);
+		} while (i < 0 && errno == EAGAIN && !ps->pool->die);
 
-		if (i < 0 && ps->pool->die) {
-			VSL(SLT_Debug, 0, "XXX Accept thread dies %p", ps);
-			FREE_OBJ(ps);
-			return;
-		}
+		if (i < 0 && ps->pool->die)
+			break;
 
 		if (i < 0 && ls->sock == -2) {
 			/* Shut down in progress */
@@ -525,15 +522,19 @@ vca_accept_task(struct worker *wrk, void *arg)
 			 * must reschedule the listening task so it will be
 			 * taken up by another thread again.
 			 */
-			if (!ps->pool->die)
+			if (!ps->pool->die) {
 				AZ(Pool_Task(wrk->pool, &ps->task,
 				    TASK_QUEUE_VCA));
-			return;
+				return;
+			}
 		}
 		if (!ps->pool->die && DO_DEBUG(DBG_SLOW_ACCEPTOR))
 			VTIM_sleep(2.0);
 
 	}
+
+	VSL(SLT_Debug, 0, "XXX Accept thread dies %p", ps);
+	FREE_OBJ(ps);
 }
 
 /*--------------------------------------------------------------------
