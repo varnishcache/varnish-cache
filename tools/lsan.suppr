@@ -13,6 +13,4 @@ leak:binheap_new
 # ev
 leak:mct_callback
 #
-leak:backtrace_symbols
-#
 leak:vsmw_newcluster
