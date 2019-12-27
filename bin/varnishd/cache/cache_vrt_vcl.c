@@ -159,10 +159,6 @@ VRT_AddDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
 	vcl = ctx->vcl;
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 
-	// opportunistic, re-checked again under lock
-	if (vcl->temp == VCL_TEMP_COOLING && !DO_DEBUG(DBG_VTC_MODE))
-		return (NULL);
-
 	ALLOC_OBJ(vdir, VCLDIR_MAGIC);
 	AN(vdir);
 	ALLOC_OBJ(vdir->dir, DIRECTOR_MAGIC);
