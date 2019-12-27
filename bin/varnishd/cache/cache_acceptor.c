@@ -33,10 +33,13 @@
 
 #include "config.h"
 
-#include <stdlib.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <sys/socket.h>
+
+#include <poll.h>
+#include <signal.h>
+#include <stdlib.h>
 
 #include "cache_varnishd.h"
 
@@ -261,7 +264,7 @@ vca_tcp_opt_set(const int sock, const unsigned uds, const int force)
 }
 
 /*--------------------------------------------------------------------
- * If accept(2)'ing fails, we pace ourselves to relive any resource
+ * If accept(2)'ing fails, we pace ourselves to relieve any resource
  * shortage if possible.
  */
 
@@ -416,6 +419,31 @@ vca_make_session(struct worker *wrk, void *arg)
 	SES_SetTransport(wrk, sp, req, wa->acceptlsock->transport);
 }
 
+static int
+vca_accept(struct wrk_accept *wa, struct poolsock *ps)
+{
+	struct pollfd pf[1];
+	int i;
+
+	vca_pace_check();
+	VTCP_nonblocking(wa->acceptsock);
+	wa->acceptaddrlen = sizeof wa->acceptaddr;
+	pf->fd = wa->acceptlsock->sock;
+	pf->events = POLLIN;
+	while (1) {
+		if (ps->pool->die)
+			return (-1);
+		i = poll(pf, 1, 100); /* XXX: magic timeout */
+		if (i == 0)
+			continue;
+		assert(i == 1);
+		i = accept(wa->acceptlsock->sock, (void*)&wa->acceptaddr,
+		    &wa->acceptaddrlen);
+		if (i >= 0 || errno != EAGAIN)
+			return (i);
+	}
+}
+
 /*--------------------------------------------------------------------
  * This function accepts on a single socket for a single thread pool.
  *
@@ -450,19 +478,10 @@ vca_accept_task(struct worker *wrk, void *arg)
 		INIT_OBJ(&wa, WRK_ACCEPT_MAGIC);
 		wa.acceptlsock = ls;
 
-		vca_pace_check();
+		i = vca_accept(&wa, ps);
 
-		wa.acceptaddrlen = sizeof wa.acceptaddr;
-		do {
-			i = accept(ls->sock, (void*)&wa.acceptaddr,
-				   &wa.acceptaddrlen);
-		} while (i < 0 && errno == EAGAIN);
-
-		if (i < 0 && ps->pool->die) {
-			VSL(SLT_Debug, 0, "XXX Accept thread dies %p", ps);
-			FREE_OBJ(ps);
-			return;
-		}
+		if (i < 0 && ps->pool->die)
+			break;
 
 		if (i < 0 && ls->sock == -2) {
 			/* Shut down in progress */
@@ -534,6 +553,9 @@ vca_accept_task(struct worker *wrk, void *arg)
 			VTIM_sleep(2.0);
 
 	}
+
+	VSL(SLT_Debug, 0, "XXX Accept thread dies %p", ps);
+	FREE_OBJ(ps);
 }
 
 /*--------------------------------------------------------------------
