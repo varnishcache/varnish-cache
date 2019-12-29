@@ -1,4 +1,12 @@
 version: 2.1
+
+parameters:
+  vc-commit:
+    type: string
+    default: "HEAD"
+  pkg-commit:
+    type: string
+    default: "weekly"
 commands:
   debian_install_build_deps:
     description: Install build dependencies
@@ -81,6 +89,7 @@ jobs:
       - run:
           name: Create the dist tarball
           command: |
+            git checkout << pipeline.parameters.vc-commit >>
             # if version is "trunk", it's a weekly tarball, override the version
             if grep 'AC_INIT.*trunk.*' ./configure.ac; then
                 sed -i -e "s/^AC_INIT.*trunk.*/AC_INIT([Varnish], [$(date +%Y%m%d)], [varnish-dev@varnish-cache.org])/" ./configure.ac
@@ -108,7 +117,8 @@ jobs:
             mkdir -p ~/.ssh
             ssh-keyscan -H github.com >> ~/.ssh/known_hosts
             echo ${CIRCLE_REPOSITORY_URL}
-            git clone --branch=weekly https://github.com/varnishcache/pkg-varnish-cache.git .
+            git clone https://github.com/varnishcache/pkg-varnish-cache.git .
+            git checkout << pipeline.parameters.pkg-commit >>
             tar cvzf debian.tar.gz debian --dereference
             tar cvzf redhat.tar.gz redhat --dereference 
             tar cvzf alpine.tar.gz alpine --dereference
