@@ -286,13 +286,75 @@ child_poker(const struct vev *e, int what)
  */
 
 static void
+child_startup(void *userdata)
+{
+	int i;
+	(void) userdata;
+
+	/* Redirect stdin/out/err */
+	VFIL_null_fd(STDIN_FILENO);
+	assert(dup2(heritage.std_fd, STDOUT_FILENO) == STDOUT_FILENO);
+	assert(dup2(heritage.std_fd, STDERR_FILENO) == STDERR_FILENO);
+
+	/*
+	 * Close all FDs the child shouldn't know about
+	 *
+	 * We cannot just close these filedescriptors, some random
+	 * library routine might miss it later on and wantonly close
+	 * a FD we use at that point in time. (See bug #1841).
+	 * We close the FD and replace it with /dev/null instead,
+	 * That prevents security leakage, and gives the library
+	 * code a valid FD to close when it discovers the changed
+	 * circumstances.
+	 */
+	closelog();
+	for (i = STDERR_FILENO + 1; i <= CLOSE_FD_UP_TO; i++) {
+		if (vbit_test(fd_map, i))
+			continue;
+		if (close(i) == 0)
+			VFIL_null_fd(i);
+	}
+	for (i = CLOSE_FD_UP_TO + 1; i <= CHECK_FD_UP_TO; i++) {
+		assert(close(i) == -1);
+		assert(errno == EBADF);
+	}
+
+	mgt_ProcTitle("Child");
+
+	heritage.cls = mgt_cls;
+	heritage.ident = VSB_data(vident) + 1;
+
+	VJ_subproc(JAIL_SUBPROC_WORKER);
+
+	heritage.proc_vsmw = VSMW_New(heritage.vsm_fd, 0640, "_.index");
+	AN(heritage.proc_vsmw);
+
+	/*
+	 * We pass these two params because child_main needs them
+	 * Well before it has found its own param struct.
+	 */
+	child_main(mgt_param.sigsegv_handler,
+		mgt_param.wthread_stacksize);
+
+	/*
+	 * It would be natural to clean VSMW up here, but it is apt
+	 * to fail in some scenarios because of the fall-back
+	 * "rm -rf" in mgt_SHM_ChildDestroy() which is there to
+	 * catch the cases were we don't get here.
+	 */
+	// VSMW_Destroy(&heritage.proc_vsmw);
+
+	exit(0);
+}
+
+static void
 mgt_launch_child(struct cli *cli)
 {
 	pid_t pid;
 	unsigned u;
 	char *p;
 	struct vev *e;
-	int i, cp[2];
+	int cp[2];
 
 	if (child_state != CH_STOPPED && child_state != CH_DIED)
 		return;
@@ -330,64 +392,10 @@ mgt_launch_child(struct cli *cli)
 		exit(1);		// XXX Harsh ?
 	}
 	if (pid == 0) {
-
-		/* Redirect stdin/out/err */
-		VFIL_null_fd(STDIN_FILENO);
-		assert(dup2(heritage.std_fd, STDOUT_FILENO) == STDOUT_FILENO);
-		assert(dup2(heritage.std_fd, STDERR_FILENO) == STDERR_FILENO);
-
-		/*
-		 * Close all FDs the child shouldn't know about
-		 *
-		 * We cannot just close these filedescriptors, some random
-		 * library routine might miss it later on and wantonly close
-		 * a FD we use at that point in time. (See bug #1841).
-		 * We close the FD and replace it with /dev/null instead,
-		 * That prevents security leakage, and gives the library
-		 * code a valid FD to close when it discovers the changed
-		 * circumstances.
-		 */
-		closelog();
-
-		for (i = STDERR_FILENO + 1; i <= CLOSE_FD_UP_TO; i++) {
-			if (vbit_test(fd_map, i))
-				continue;
-			if (close(i) == 0)
-				VFIL_null_fd(i);
-		}
-		for (i = CLOSE_FD_UP_TO + 1; i <= CHECK_FD_UP_TO; i++) {
-			assert(close(i) == -1);
-			assert(errno == EBADF);
-		}
-
-		mgt_ProcTitle("Child");
-
-		heritage.cls = mgt_cls;
-		heritage.ident = VSB_data(vident) + 1;
-
-		VJ_subproc(JAIL_SUBPROC_WORKER);
-
-		heritage.proc_vsmw = VSMW_New(heritage.vsm_fd, 0640, "_.index");
-		AN(heritage.proc_vsmw);
-
-		/*
-		 * We pass these two params because child_main needs them
-		 * Well before it has found its own param struct.
-		 */
-		child_main(mgt_param.sigsegv_handler,
-		    mgt_param.wthread_stacksize);
-
-		/*
-		 * It would be natural to clean VSMW up here, but it is apt
-		 * to fail in some scenarios because of the fall-back
-		 * "rm -rf" in mgt_SHM_ChildDestroy() which is there to
-		 * catch the cases were we don't get here.
-		 */
-		// VSMW_Destroy(&heritage.proc_vsmw);
-
-		exit(0);
+		child_startup(NULL);
 	}
 	assert(pid > 1);
+
 	MGT_Complain(C_DEBUG, "Child (%jd) Started", (intmax_t)pid);
 	VSC_C_mgt->child_start++;
 
@@ -447,7 +455,6 @@ mgt_launch_child(struct cli *cli)
 	free(p);
 	child_state = CH_RUNNING;
 }
-
 /*=====================================================================
  * Cleanup when child dies.
  */
