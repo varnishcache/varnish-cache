@@ -623,14 +623,11 @@ ccf_start(struct cli *cli, const char * const *av, void *priv)
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
 		CHECK_OBJ_NOTNULL(ls->transport, TRANSPORT_MAGIC);
 		assert (ls->sock > 0);	// We know where stdin is
-		if (cache_param->tcp_fastopen) {
-			int i;
-			i = VTCP_fastopen(ls->sock, cache_param->listen_depth);
-			if (i)
-				VSL(SLT_Error, 0,
-				    "Kernel TCP Fast Open: sock=%d, ret=%d %s",
-				    ls->sock, i, vstrerror(errno));
-		}
+		if (cache_param->tcp_fastopen &&
+		    VTCP_fastopen(ls->sock, cache_param->listen_depth))
+			VSL(SLT_Error, 0,
+			    "Kernel TCP Fast Open: sock=%d, errno=%d %s",
+			    ls->sock, errno, vstrerror(errno));
 		if (listen(ls->sock, cache_param->listen_depth)) {
 			VCLI_SetResult(cli, CLIS_CANT);
 			VCLI_Out(cli, "Listen failed on socket '%s': %s",
@@ -638,14 +635,10 @@ ccf_start(struct cli *cli, const char * const *av, void *priv)
 			return;
 		}
 		vca_tcp_opt_set(ls->sock, ls->uds, 1);
-		if (cache_param->accept_filter) {
-			int i;
-			i = VTCP_filter_http(ls->sock);
-			if (i)
-				VSL(SLT_Error, 0,
-				    "Kernel filtering: sock=%d, ret=%d %s",
-				    ls->sock, i, vstrerror(errno));
-		}
+		if (cache_param->accept_filter && VTCP_filter_http(ls->sock))
+			VSL(SLT_Error, 0,
+			    "Kernel filtering: sock=%d, errno=%d %s",
+			    ls->sock, errno, vstrerror(errno));
 	}
 
 	need_test = 1;
