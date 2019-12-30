@@ -348,6 +348,14 @@ CLI_CMD(STORAGE_LIST,
 	0, 0
 )
 
+CLI_CMD(PID,
+	"pid",
+	"pid [-j]",
+	"Show the pid of the master process, and the worker if it's running.",
+	"  ``-j`` specifies JSON output.",
+	0, 0
+)
+
 #undef CLI_CMD
 
 /*lint -restore */

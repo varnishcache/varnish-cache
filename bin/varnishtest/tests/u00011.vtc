@@ -18,7 +18,7 @@ process p1 -log {varnishadm -n ${v1_name}} -start
 
 process p1 -expect-text 0 1 "Type 'quit' to close CLI session."
 
-process p1 -write "pi\t\r"
+process p1 -write "pin\t\r"
 
 process p1 -expect-text 0 1 "PONG"
 
