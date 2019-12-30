@@ -152,7 +152,7 @@ VTCP_filter_http(int sock)
 	struct accept_filter_arg afa;
 
 	memset(&afa, 0, sizeof afa);
-	bprintf(afa.af_name, "httpready");
+	bprintf(afa.af_name, "%s", "httpready");
 	errno = 0;
 	retval = setsockopt(sock, SOL_SOCKET, SO_ACCEPTFILTER,
 	    &afa, sizeof afa);
