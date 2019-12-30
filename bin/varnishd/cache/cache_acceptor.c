@@ -455,7 +455,7 @@ vca_accept_task(struct worker *wrk, void *arg)
 		wa.acceptaddrlen = sizeof wa.acceptaddr;
 		do {
 			i = accept(ls->sock, (void*)&wa.acceptaddr,
-				   &wa.acceptaddrlen);
+			    &wa.acceptaddrlen);
 		} while (i < 0 && errno == EAGAIN && !ps->pool->die);
 
 		if (i < 0 && ps->pool->die)
