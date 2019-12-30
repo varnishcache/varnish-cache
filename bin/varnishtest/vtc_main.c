@@ -72,6 +72,7 @@ struct vtc_tst {
 	const char		*filename;
 	char			*script;
 	unsigned		ntodo;
+	unsigned		nwait;
 };
 
 struct vtc_job {
@@ -370,7 +371,8 @@ tst_cb(const struct vev *ve, int what)
 			VEV_Stop(vb, jp->evt);
 			free(jp->evt);
 		}
-		if (jp->tst->ntodo == 0) {
+		jp->tst->nwait--;
+		if (jp->tst->nwait == 0) {
 			free(jp->tst->script);
 			FREE_OBJ(jp->tst);
 		}
@@ -644,6 +646,7 @@ read_file(const char *fn, int ntest)
 	tp->filename = fn;
 	tp->script = p;
 	tp->ntodo = ntest;
+	tp->nwait = ntest;
 	VTAILQ_INSERT_TAIL(&tst_head, tp, list);
 	return (0);
 }
