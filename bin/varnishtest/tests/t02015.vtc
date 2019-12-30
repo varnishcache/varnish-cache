@@ -36,14 +36,12 @@ client c1 {
 	} -run
 } -run
 
-shell {
+shell -match "^12345$" {
 	varnishncsa -n ${v1_name} -F '%{VSL:ReqAcct[5]}x' -d \
-		-q 'ReqHeader:stream == 1' |
-	grep 12345
+		-q 'ReqHeader:stream == 1'
 }
 
-shell {
+shell -match "^1000$" {
 	varnishncsa -n ${v1_name} -F '%{VSL:ReqAcct[5]}x' -d \
-		-q 'ReqHeader:stream == 3' |
-	grep 1000
+		-q 'ReqHeader:stream == 3'
 }
