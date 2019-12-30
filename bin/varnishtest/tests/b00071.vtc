@@ -1,0 +1,9 @@
+varnishtest "varnish-cli pid command"
+
+varnish v1 -cliexpect "^Master: +[0-9]+\n$" pid
+varnish v1 -cliok "pid -j"
+
+varnish v1 -vcl {backend be none;} -start
+
+varnish v1 -cliexpect "^Master: +[0-9]+\nWorker: +[0-9]+\n$" pid
+varnish v1 -cliok "pid -j"

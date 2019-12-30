@@ -671,6 +671,31 @@ MCH_Running(void)
  */
 
 static void v_matchproto_(cli_func_t)
+mch_pid(struct cli *cli, const char * const *av, void *priv)
+{
+
+	(void)av;
+	(void)priv;
+	VCLI_Out(cli, "Master: %10jd\n", (intmax_t)getpid());
+	if (!MCH_Running())
+		return;
+	VCLI_Out(cli, "Worker: %10jd\n", (intmax_t)child_pid);
+}
+
+static void v_matchproto_(cli_func_t)
+mch_pid_json(struct cli *cli, const char * const *av, void *priv)
+{
+
+	(void)priv;
+	VCLI_JSON_begin(cli, 2, av);
+	VCLI_Out(cli, ",\n  {\"master\": %jd", (intmax_t)getpid());
+	if (MCH_Running())
+		VCLI_Out(cli, ", \"worker\": %jd", (intmax_t)child_pid);
+	VCLI_Out(cli, "}");
+	VCLI_JSON_end(cli);
+}
+
+static void v_matchproto_(cli_func_t)
 mch_cli_server_start(struct cli *cli, const char * const *av, void *priv)
 {
 
@@ -729,6 +754,7 @@ static struct cli_proto cli_mch[] = {
 	{ CLICMD_PANIC_SHOW,		"", mch_cli_panic_show,
 	  mch_cli_panic_show_json },
 	{ CLICMD_PANIC_CLEAR,		"", mch_cli_panic_clear },
+	{ CLICMD_PID,			"", mch_pid, mch_pid_json },
 	{ NULL }
 };
 
