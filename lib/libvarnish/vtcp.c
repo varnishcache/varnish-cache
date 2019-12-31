@@ -153,7 +153,6 @@ VTCP_filter_http(int sock)
 
 	memset(&afa, 0, sizeof afa);
 	bprintf(afa.af_name, "%s", "httpready");
-	errno = 0;
 	retval = setsockopt(sock, SOL_SOCKET, SO_ACCEPTFILTER,
 	    &afa, sizeof afa);
 	return (retval);

@@ -48,7 +48,8 @@ PARAM(
 	/* units */	"bool",
 	/* flags */	XYZZY,
 	/* s-text */
-	"Enable kernel accept-filters.",
+	"Enable kernel accept-filters. This may require a kernel module to "
+	"be loaded to have an effect when enabled.",
 	/* l-text */	NULL,
 	/* func */	NULL
 )
