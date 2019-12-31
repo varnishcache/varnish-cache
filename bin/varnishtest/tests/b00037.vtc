@@ -1,12 +1,6 @@
 varnishtest "Error on multiple Host headers"
 
-server s1 {
-	rxreq
-	txresp
-} -start
-
-varnish v1 -vcl+backend {
-} -start
+varnish v1 -vcl {backend be none;} -start
 
 client c1 {
 	txreq -hdr "Host: foo" -hdr "Host: bar"
@@ -17,7 +11,7 @@ client c1 {
 varnish v1 -expect client_req_400 == 1
 
 client c1 {
-	txreq -hdr "Content-Length: 12" -bodylen 12
+	txreq -method POST -hdr "Content-Length: 12" -bodylen 12
 	rxresp
 	expect resp.status == 400
 } -run

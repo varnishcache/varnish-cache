@@ -49,7 +49,11 @@ PARAM(
 	/* flags */	XYZZY,
 	/* s-text */
 	"Enable kernel accept-filters. This may require a kernel module to "
-	"be loaded to have an effect when enabled.",
+	"be loaded to have an effect when enabled.\n\n"
+	"Enabling accept_filter may prevent some requests to reach Varnish "
+	"in the first place. Malformed requests may go unnoticed and not "
+	"increase the client_req_400 counter. GET or HEAD requests with a "
+	"body may be blocked altogether.",
 	/* l-text */	NULL,
 	/* func */	NULL
 )

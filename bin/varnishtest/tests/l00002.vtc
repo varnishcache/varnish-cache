@@ -23,11 +23,11 @@ varnish v1 -vcl+backend {
 } -start
 
 # Request (1001):
-# GET /1 HTTP/1.1\r\n		 17 bytes
+# POST /1 HTTP/1.1\r\n		 18 bytes
 # Host: foo\r\n			 11 bytes
 # Content-Length: 4\r\n		 19 bytes
 # \r\n				  2 bytes
-# Total:			 49 bytes
+# Total:			 50 bytes
 # Response:
 # HTTP/1.1 200 OK\r\n		 17 bytes
 # Content-Length: 1000\r\n	 22 bytes
@@ -72,7 +72,7 @@ varnish v1 -vcl+backend {
 # Total:			 28 bytes
 logexpect l1 -v v1 -g session {
 	expect * 1001	Begin	"^req .* rxreq"
-	expect * =	ReqAcct	"^49 4 53 87 1000 1087$"
+	expect * =	ReqAcct	"^50 4 54 87 1000 1087$"
 	expect 0 =	End
 	expect * 1003	Begin	"^req .* rxreq"
 	expect * =	ReqAcct "^30 0 30 87 2000 2087$"
@@ -87,7 +87,7 @@ logexpect l1 -v v1 -g session {
 
 # Request 1001
 client c1 {
-	txreq -url "/1" -hdr "Host: foo" -body "asdf"
+	txreq -method POST -url "/1" -hdr "Host: foo" -body "asdf"
 	rxresp
 	expect resp.status == 200
 
@@ -104,7 +104,7 @@ client c1 {
 
 logexpect l1 -wait
 
-varnish v1 -expect s_req_hdrbytes == 116
+varnish v1 -expect s_req_hdrbytes == 117
 varnish v1 -expect s_req_bodybytes == 4
 varnish v1 -expect s_resp_hdrbytes == 289
 varnish v1 -expect s_resp_bodybytes == 5000

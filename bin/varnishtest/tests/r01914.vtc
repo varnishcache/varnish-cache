@@ -13,6 +13,7 @@ varnish v1 \
     -arg "-s default,1MB" \
     -arg "-s default,1MB" \
     -arg "-s Transient=default" \
+    -arg "-p accept_filter=off" \
     -syntax 4.0 \
     -vcl+backend {
 	import std;
