@@ -36,6 +36,8 @@ client c1 {
 	} -run
 } -run
 
+varnish v1 -vsl_catchup
+
 shell -match "^12345$" {
 	varnishncsa -n ${v1_name} -F '%{VSL:ReqAcct[5]}x' -d \
 		-q 'ReqHeader:stream == 1'
