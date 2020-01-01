@@ -205,6 +205,8 @@ client_connect(struct vtclog *vl, struct client *c)
  * Client thread
  */
 
+typedef void (*cleanup_f)(void *);
+
 static void *
 client_thread(void *priv)
 {
@@ -222,6 +224,7 @@ client_thread(void *priv)
 
 	vsb = macro_expand(vl, c->connect);
 	AN(vsb);
+	pthread_cleanup_push((cleanup_f)VSB_delete, vsb);
 	c->addr = VSB_data(vsb);
 
 	if (c->repeat == 0)
@@ -243,8 +246,9 @@ client_thread(void *priv)
 		VTCP_close(&fd);
 	}
 	vtc_log(vl, 2, "Ending");
-	VSB_destroy(&vsb);
 	pthread_cleanup_pop(0);
+	pthread_cleanup_pop(0);
+	VSB_delete(vsb);
 	vtc_logclose(vl);
 	return (NULL);
 }
