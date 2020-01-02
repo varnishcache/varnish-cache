@@ -117,7 +117,10 @@ run_vcc(void *priv)
 	if (VSB_len(sb))
 		printf("%s", VSB_data(sb));
 	VSB_destroy(&sb);
-	exit(i == 0 ? 0 : 2);
+
+	/* Avoid calling destructors when in single process mode */
+	i = (i == 0) ? 0 : 2;
+	(!MGT_DO_DEBUG(DBG_EXEC_MODE)) ? exit(i) : _exit(i);
 }
 
 /*--------------------------------------------------------------------
@@ -185,7 +188,9 @@ run_dlopen(void *priv)
 	CAST_OBJ_NOTNULL(vp, priv, VCC_PRIV_MAGIC);
 	if (VCL_TestLoad(VSB_data(vp->libfile)))
 		exit(1);
-	exit(0);
+
+	/* Avoid calling destructors when in single process mode */
+	(!MGT_DO_DEBUG(DBG_EXEC_MODE)) ? exit(0) : _exit(0);
 }
 
 /*--------------------------------------------------------------------

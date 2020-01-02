@@ -51,6 +51,7 @@ DEBUG_BIT(PROCESSORS,		processors,	"Fetch/Deliver processors")
 DEBUG_BIT(PROTOCOL,		protocol,	"Protocol debugging")
 DEBUG_BIT(VCL_KEEP,		vcl_keep,	"Keep VCL C and so files")
 DEBUG_BIT(LCK,			lck,		"Additional lock statistics")
+DEBUG_BIT(EXEC_MODE,         execute_mode,    "Varnishd exits with the child process")
 #undef DEBUG_BIT
 
 /*lint -restore */
