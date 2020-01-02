@@ -1,50 +1,41 @@
 varnishtest	"vcl_backend_response{} retry with a UDS backend"
 
-server s1 -listen "${tmpdir}/s1.sock" {
+server s0 -listen "${tmpdir}/s1.sock" {
 	rxreq
-	txresp -hdr "foo: 1"
-	accept
-	rxreq
-	txresp -hdr "foo: 2"
-} -start
+	txresp -hdr "connection: close"
+} -dispatch
 
 varnish v1 -vcl+backend {
 	sub vcl_recv { return (pass); }
 	sub vcl_backend_response {
-		set beresp.http.bar = bereq.retries;
-		if (beresp.http.foo != bereq.http.stop) {
+		set beresp.http.retries = bereq.retries;
+		if (bereq.http.stop != beresp.http.retries) {
 			return (retry);
 		}
 	}
 } -start
 
-varnish v1 -cliok "param.set debug +syncvsl"
-
 client c1 {
 	txreq -hdr "stop: 2"
 	rxresp
-	expect resp.http.foo == 2
+	expect resp.status == 200
+	expect resp.http.retries == 2
 } -run
-
-delay .1
-
-server s1 -listen "${tmpdir}/s1.sock" {
-	rxreq
-	txresp -hdr "foo: 1"
-	accept
-	rxreq
-	txresp -hdr "foo: 2"
-	accept
-	rxreq
-	txresp -hdr "foo: 3"
-} -start
 
 varnish v1 -cliok "param.set max_retries 2"
 
-client c1 {
-	txreq -hdr "stop: 3"
+client c2 {
+	txreq -hdr "stop: 2"
 	rxresp
-	expect resp.http.foo == 3
+	expect resp.status == 200
+	expect resp.http.retries == 2
 } -run
 
-# XXX: Add a test which exceeds max_retries and gets 503 back
+client c3 {
+	txreq -hdr "stop: 3"
+	rxresp
+	expect resp.status == 503
+	expect resp.http.retries == <undef>
+} -run
+
+varnish v1 -expect backend_conn == 9
