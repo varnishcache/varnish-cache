@@ -11,6 +11,7 @@ server s1 {
 } -start
 
 varnish v1				\
+	-arg "-p debug=+flush_head"	\
 	-arg "-p timeout_idle=1"	\
 	-arg "-p idle_send_timeout=.1"	\
 	-arg "-p send_timeout=.1"	\
@@ -31,8 +32,10 @@ client c1 -rcvbuf 128 {
 	txreq
 	non_fatal
 	rxresphdrs
-	# keep the session open for 4 seconds
+	# keep the session open
 	delay 4
+	# avoid a broken pipe
+	rxrespbody
 } -start
 
 client c1 -wait
@@ -45,12 +48,5 @@ logexpect l2 -v v1 {
 	expect * * Debug "Hit idle send timeout"
 } -start
 
-client c2 -rcvbuf 128 {
-	txreq
-	rxresphdrs
-	# keep the session open for 4 seconds
-	delay 4
-} -start
-
-client c2 -wait
+client c1 -run
 logexpect l2 -wait
