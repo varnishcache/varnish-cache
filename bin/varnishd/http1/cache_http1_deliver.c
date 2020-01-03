@@ -85,7 +85,7 @@ void v_matchproto_(vtr_deliver_f)
 V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 {
 	int err = 0, chunked = 0;
-	unsigned u;
+	enum sess_close sc;
 	uint64_t hdrbytes, bytes;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -152,7 +152,7 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 			V1L_EndChunk(req->wrk);
 	}
 
-	u = V1L_Close(req->wrk, &bytes);
+	sc = V1L_Close(req->wrk, &bytes);
 	AZ(req->wrk->v1l);
 
 	/* Bytes accounting */
@@ -163,7 +163,9 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 		req->acct.resp_bodybytes += bytes - hdrbytes;
 	}
 
-	if ((u || err) && req->sp->fd >= 0)
-		Req_Fail(req, SC_REM_CLOSE);
+	if (sc == SC_NULL && err && req->sp->fd >= 0)
+		sc = SC_REM_CLOSE;
+	if (sc != SC_NULL)
+		Req_Fail(req, sc);
 	VDP_close(req);
 }

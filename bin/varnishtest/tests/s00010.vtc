@@ -33,7 +33,8 @@ varnish v1 -vcl+backend {
 } -start
 
 logexpect l1 -v v1 -g raw {
-	expect * 1001 Debug "Hit total send timeout"
+	expect * 1001 Debug	"Hit total send timeout"
+	expect * 1000 SessClose	TX_ERROR
 } -start
 
 client c1 -rcvbuf 256 {
