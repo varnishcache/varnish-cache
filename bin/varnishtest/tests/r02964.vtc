@@ -1,6 +1,7 @@
 varnishtest "Cancel private busy obj from vcl_deliver"
 
 server s1 {
+	non_fatal
 	rxreq
 	expect req.url == "/hfm"
 	txresp -hdr "HFM: True" -bodylen 65530
