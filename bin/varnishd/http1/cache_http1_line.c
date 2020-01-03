@@ -53,7 +53,7 @@ struct v1l {
 	unsigned		magic;
 #define V1L_MAGIC		0x2f2142e5
 	int			*wfd;
-	unsigned		werr;	/* valid after V1L_Flush() */
+	enum sess_close		werr;	/* valid after V1L_Flush() */
 	struct iovec		*iov;
 	unsigned		siov;
 	unsigned		niov;
@@ -122,15 +122,15 @@ V1L_Open(struct worker *wrk, struct ws *ws, int *fd, struct vsl_log *vsl,
 		WS_Release(ws, u * sizeof(struct iovec));
 }
 
-unsigned
+enum sess_close
 V1L_Close(struct worker *wrk, uint64_t *cnt)
 {
 	struct v1l *v1l;
-	unsigned u;
+	enum sess_close sc;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AN(cnt);
-	u = V1L_Flush(wrk);
+	sc = V1L_Flush(wrk);
 	v1l = wrk->v1l;
 	wrk->v1l = NULL;
 	CHECK_OBJ_NOTNULL(v1l, V1L_MAGIC);
@@ -139,7 +139,7 @@ V1L_Close(struct worker *wrk, uint64_t *cnt)
 		WS_Release(v1l->ws, 0);
 	WS_Reset(v1l->ws, v1l->res);
 	ZERO_OBJ(v1l, sizeof *v1l);
-	return (u);
+	return (sc);
 }
 
 static void
@@ -166,7 +166,7 @@ v1l_prune(struct v1l *v1l, size_t bytes)
 	AZ(v1l->liov);
 }
 
-unsigned
+enum sess_close
 V1L_Flush(const struct worker *wrk)
 {
 	ssize_t i;
@@ -181,7 +181,7 @@ V1L_Flush(const struct worker *wrk)
 
 	assert(v1l->niov <= v1l->siov);
 
-	if (*v1l->wfd >= 0 && v1l->liov > 0 && v1l->werr == 0) {
+	if (*v1l->wfd >= 0 && v1l->liov > 0 && v1l->werr == SC_NULL) {
 		if (v1l->ciov < v1l->siov && v1l->cliov > 0) {
 			/* Add chunk head & tail */
 			bprintf(cbuf, "00%zx\r\n", v1l->cliov);
@@ -225,9 +225,13 @@ V1L_Flush(const struct worker *wrk)
 			}
 		}
 		if (err != NULL) {
-			v1l->werr++;
 			VSLb(v1l->vsl, SLT_Debug, "%s, len=%zd, errno=%d (%s)",
 			    err, v1l->liov, errno, vstrerror(errno));
+			AZ(v1l->werr);
+			if (errno == EPIPE)
+				v1l->werr = SC_REM_CLOSE;
+			else
+				v1l->werr = SC_TX_ERROR;
 		}
 	}
 	v1l->liov = 0;

@@ -12,6 +12,7 @@ server s1 {
 
 varnish v1				\
 	-arg "-p debug=+flush_head"	\
+	-arg "-p thread_pools=1"	\
 	-arg "-p timeout_idle=1"	\
 	-arg "-p idle_send_timeout=.1"	\
 	-arg "-p send_timeout=.1"	\
@@ -25,7 +26,8 @@ varnish v1				\
 } -start
 
 logexpect l1 -v v1 {
-	expect * * Debug "Hit total send timeout"
+	expect * 1001 Debug	"Hit total send timeout"
+	expect * 1000 SessClose	TX_ERROR
 } -start
 
 client c1 -rcvbuf 128 {
@@ -45,7 +47,8 @@ varnish v1 -cliok "param.set idle_send_timeout 1"
 varnish v1 -cliok "param.reset send_timeout"
 
 logexpect l2 -v v1 {
-	expect * * Debug "Hit idle send timeout"
+	expect * 1004 Debug	"Hit idle send timeout"
+	expect * 1003 SessClose	TX_ERROR
 } -start
 
 client c1 -run
