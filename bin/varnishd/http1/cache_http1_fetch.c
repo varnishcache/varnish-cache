@@ -72,7 +72,7 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
     uint64_t *ctr_bodybytes, int onlycached)
 {
 	struct http *hp;
-	int j;
+	enum sess_close sc;
 	ssize_t i;
 	uint64_t bytes, hdrbytes;
 	struct http_conn *htc;
@@ -130,7 +130,7 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 			V1L_EndChunk(wrk);
 	}
 
-	j = V1L_Close(wrk, &bytes);
+	sc = V1L_Close(wrk, &bytes);
 
 	/* Bytes accounting */
 	if (bytes < hdrbytes)
@@ -140,11 +140,14 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 		*ctr_bodybytes += bytes - hdrbytes;
 	}
 
-	if (j != 0 || i < 0) {
+	if (sc == SC_NULL && i < 0)
+		sc = SC_TX_ERROR;
+
+	if (sc != SC_NULL) {
 		VSLb(bo->vsl, SLT_FetchError, "backend write error: %d (%s)",
 		    errno, vstrerror(errno));
 		VSLb_ts_busyobj(bo, "Bereq", W_TIM_real(wrk));
-		htc->doclose = SC_TX_ERROR;
+		htc->doclose = sc;
 		return (-1);
 	}
 	VSLb_ts_busyobj(bo, "Bereq", W_TIM_real(wrk));
