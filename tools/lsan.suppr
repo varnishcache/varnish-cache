@@ -14,3 +14,5 @@ leak:binheap_new
 leak:mct_callback
 #
 leak:vsmw_newcluster
+#
+leak:smp_thread
