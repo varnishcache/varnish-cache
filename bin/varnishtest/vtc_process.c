@@ -513,6 +513,13 @@ process_stderr(const struct vev *ev, int what)
 	return (0);
 }
 
+static void
+process_cleanup(void *priv)
+{
+	struct vev_root *evb = priv;
+	VEV_Destroy(&evb);
+}
+
 static void *
 process_thread(void *priv)
 {
@@ -530,6 +537,7 @@ process_thread(void *priv)
 
 	evb = VEV_New();
 	AN(evb);
+	pthread_cleanup_push(process_cleanup, evb);
 
 	ev = VEV_Alloc();
 	AN(ev);
@@ -575,6 +583,7 @@ process_thread(void *priv)
 
 	AZ(pthread_mutex_unlock(&p->mtx));
 
+	pthread_cleanup_pop(0);
 	VEV_Destroy(&evb);
 	if (p->log == 1) {
 		VLU_Destroy(&p->vlu_stdout);
