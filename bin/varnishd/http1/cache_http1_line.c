@@ -172,6 +172,7 @@ V1L_Flush(const struct worker *wrk)
 	ssize_t i;
 	struct v1l *v1l;
 	char cbuf[32];
+	const char *err;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	v1l = wrk->v1l;
@@ -201,39 +202,32 @@ V1L_Flush(const struct worker *wrk)
 		i = writev(*v1l->wfd, v1l->iov, v1l->niov);
 		if (i > 0)
 			v1l->cnt += i;
-		while (i != v1l->liov && (i > 0 || errno == EWOULDBLOCK)) {
+		err = NULL;
+		while (i != v1l->liov && err == NULL) {
 			/* Remove sent data from start of I/O vector,
-			 * then retry; we hit a timeout, but some data
-			 * was sent.
+			 * then retry; unless we hit a timeout.
 			 *
 			 * XXX: Add a "minimum sent data per timeout
 			 * counter to prevent slowloris attacks
 			*/
 
 			if (VTIM_real() > v1l->deadline) {
-				VSLb(v1l->vsl, SLT_Debug,
-				    "Hit total send timeout, "
-				    "wrote = %zd/%zd; not retrying",
-				    i, v1l->liov);
-				i = -1;
-				break;
-			}
-
-			VSLb(v1l->vsl, SLT_Debug,
-			    "Hit idle send timeout, wrote = %zd/%zd; retrying",
-			    i, v1l->liov);
-
-			if (i > 0)
+				err = "Hit total send timeout";
+			} else if (errno == EWOULDBLOCK) {
+				err = "Hit idle send timeout";
+			} else if (i <= 0) {
+				err = "Write error";
+			} else {
 				v1l_prune(v1l, i);
-			i = writev(*v1l->wfd, v1l->iov, v1l->niov);
-			if (i > 0)
-				v1l->cnt += i;
+				i = writev(*v1l->wfd, v1l->iov, v1l->niov);
+				if (i > 0)
+					v1l->cnt += i;
+			}
 		}
-		if (i <= 0) {
+		if (err != NULL) {
 			v1l->werr++;
-			VSLb(v1l->vsl, SLT_Debug,
-			    "Write error, retval = %zd, len = %zd, errno = %s",
-			    i, v1l->liov, vstrerror(errno));
+			VSLb(v1l->vsl, SLT_Debug, "%s, len=%zd, errno=%d (%s)",
+			    err, v1l->liov, errno, vstrerror(errno));
 		}
 	}
 	v1l->liov = 0;
