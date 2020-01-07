@@ -852,11 +852,12 @@ VCC_Builtin_VCL(struct vcc *vcc, const char *str)
  */
 
 void
-VCC_VCL_path(struct vcc *vcc, const char *str)
+VCC_VCL_path(struct vcc *vcc, const struct vfil_path *path)
 {
 
 	CHECK_OBJ_NOTNULL(vcc, VCC_MAGIC);
-	VFIL_setpath(&vcc->vcl_path, str);
+	AN(path);
+	vcc->vcl_path = path;
 }
 
 /*--------------------------------------------------------------------
@@ -864,11 +865,12 @@ VCC_VCL_path(struct vcc *vcc, const char *str)
  */
 
 void
-VCC_VMOD_path(struct vcc *vcc, const char *str)
+VCC_VMOD_path(struct vcc *vcc, const struct vfil_path *path)
 {
 
 	CHECK_OBJ_NOTNULL(vcc, VCC_MAGIC);
-	VFIL_setpath(&vcc->vmod_path, str);
+	AN(path);
+	vcc->vmod_path = path;
 }
 
 /*--------------------------------------------------------------------

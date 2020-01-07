@@ -73,7 +73,6 @@ static char		*Cn_arg;
 static struct vpf_fh *pfh1 = NULL;
 static struct vpf_fh *pfh2 = NULL;
 
-static struct vfil_path *vcl_path = NULL;
 static VTAILQ_HEAD(,f_arg) f_args = VTAILQ_HEAD_INITIALIZER(f_args);
 
 static const char opt_spec[] = "a:b:Cdf:Fh:i:I:j:l:M:n:P:p:r:S:s:T:t:VW:x:";
@@ -418,8 +417,8 @@ mgt_f_read(const char *fn)
 	ALLOC_OBJ(fa, F_ARG_MAGIC);
 	AN(fa);
 	REPLACE(fa->farg, fn);
-	VFIL_setpath(&vcl_path, mgt_vcl_path);
-	if (VFIL_searchpath(vcl_path, NULL, &f, fn, &fnp) || f == NULL) {
+	AN(mgt_vcl_path);
+	if (VFIL_searchpath(mgt_vcl_path, NULL, &f, fn, &fnp) || f == NULL) {
 		ARGV_ERR("Cannot read -f file '%s' (%s)\n",
 		    fnp != NULL ? fnp : fn, vstrerror(errno));
 	}

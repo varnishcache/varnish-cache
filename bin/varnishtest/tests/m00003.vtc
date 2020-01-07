@@ -54,4 +54,15 @@ varnish v1 -errvcl {Wrong file for VMOD wrong3} {
 	import wrong3 from "${tmpdir}/libvmod_wrong.so";
 }
 
-shell "rm -f ${tmpdir}/libvmod_wrong.so"
+varnish v1 -clierr 106 "param.set vmod_path /absolute/path:relative/path"
+varnish v1 -cliexpect "Invalid path component at: 'relative/path'" \
+	"param.set vmod_path /absolute/path:relative/path"
+
+varnish v1 -cliexpect "Invalid path component at: ':/previous/empty'" \
+	"param.set vmod_path :/previous/empty"
+
+varnish v1 -cliexpect "Invalid path component at: ':/previous/empty'" \
+	"param.set vmod_path /next/empty::/previous/empty"
+
+# we let this one get a free pass
+varnish v1 -cliok "param.set vmod_path /last/empty:"

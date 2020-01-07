@@ -61,8 +61,8 @@ struct vcc_priv {
 };
 
 char *mgt_cc_cmd;
-const char *mgt_vcl_path;
-const char *mgt_vmod_path;
+struct vfil_path *mgt_vcl_path;
+struct vfil_path *mgt_vmod_path;
 unsigned mgt_vcc_err_unref;
 unsigned mgt_vcc_allow_inline_c;
 unsigned mgt_vcc_unsafe_path;

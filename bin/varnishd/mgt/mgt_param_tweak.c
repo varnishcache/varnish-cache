@@ -41,6 +41,7 @@
 
 #include "mgt/mgt_param.h"
 #include "vav.h"
+#include "vfil.h"
 #include "vnum.h"
 
 const char * const JSON_FMT = (const char *)&JSON_FMT;
@@ -379,6 +380,33 @@ tweak_string(struct vsb *vsb, const struct parspec *par, const char *arg)
 		VSB_quote(vsb, *p, -1, VSB_QUOTE_JSON|VSB_QUOTE_CSTR);
 	} else {
 		REPLACE(*p, arg);
+	}
+	return (0);
+}
+
+/*--------------------------------------------------------------------*/
+
+int
+tweak_path(struct vsb *vsb, const struct parspec *par, const char *arg)
+{
+	struct vfil_path **p = TRUST_ME(par->priv);
+	const char *err;
+
+	if (arg == NULL) {
+		AN(p);
+		VFIL_quotepath(*p, vsb, 0);
+	} else if (arg == JSON_FMT) {
+		AN(p);
+		(void)VSB_putc(vsb, '"');
+		VFIL_quotepath(*p, vsb, VSB_QUOTE_JSON);
+		(void)VSB_putc(vsb, '"');
+	} else {
+		err = VFIL_setpath(p, arg);
+		if (err != NULL) {
+			VSB_printf(vsb,
+			    "Invalid path component at: '%s'\n", err);
+			return (-1);
+		}
 	}
 	return (0);
 }

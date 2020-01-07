@@ -55,7 +55,7 @@ struct parspec mgt_parspec[] = {
 		"and %o will be replaced with the output file name.",
 		MUST_RELOAD,
 		VCC_CC , NULL },
-	{ "vcl_path", tweak_string, &mgt_vcl_path,
+	{ "vcl_path", tweak_path, &mgt_vcl_path,
 		NULL, NULL,
 		"Directory (or colon separated list of directories) "
 		"from which relative VCL filenames (vcl.load and "
@@ -67,7 +67,7 @@ struct parspec mgt_parspec[] = {
 		0,
 		VARNISH_VCL_DIR,
 		NULL },
-	{ "vmod_path", tweak_string, &mgt_vmod_path,
+	{ "vmod_path", tweak_path, &mgt_vmod_path,
 		NULL, NULL,
 		"Directory (or colon separated list of directories) "
 		"where VMODs are to be found.",

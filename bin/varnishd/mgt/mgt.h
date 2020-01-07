@@ -217,8 +217,8 @@ void mgt_vcl_startup(struct cli *, const char *vclsrc, const char *origin,
 int mgt_push_vcls(struct cli *, unsigned *status, char **p);
 int mgt_has_vcl(void);
 extern char *mgt_cc_cmd;
-extern const char *mgt_vcl_path;
-extern const char *mgt_vmod_path;
+extern struct vfil_path *mgt_vcl_path;
+extern struct vfil_path *mgt_vmod_path;
 extern unsigned mgt_vcc_err_unref;
 extern unsigned mgt_vcc_allow_inline_c;
 extern unsigned mgt_vcc_unsafe_path;
