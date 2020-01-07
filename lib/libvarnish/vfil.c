@@ -313,11 +313,12 @@ VFIL_destroypath(struct vfil_path **pp)
 	FREE_OBJ(p);
 }
 
-void
+const char *
 VFIL_setpath(struct vfil_path **pp, const char *path)
 {
 	struct vfil_path vp[1];
 	struct vsb *vsb;
+	const char *err;
 	char *p, *q;
 
 	AN(pp);
@@ -331,14 +332,20 @@ VFIL_setpath(struct vfil_path **pp, const char *path)
 	VSB_bcat(vsb, vp, sizeof vp);
 
 	for (p = vp->str; p != NULL; p = q) {
+		if (*p != '\0' && *p != '/')
+			break;
 		q = strchr(p, ':');
 		if (q != NULL)
 			*q++ = '\0';
 		if (*p != '\0')
 			VSB_bcat(vsb, &p, sizeof p);
 	}
-	AZ(p);
-	VSB_bcat(vsb, &p, sizeof p);
+	if (p != NULL) {
+		err = path + (p - vp->str);
+		free(vp->str);
+		return (err);
+	}
+	VSB_bcat(vsb, &p, sizeof p); /* null terminator */
 	AZ(VSB_finish(vsb));
 
 	if (*pp != NULL)
@@ -348,6 +355,7 @@ VFIL_setpath(struct vfil_path **pp, const char *path)
 	AN(*pp);
 	memcpy(*pp, VSB_data(vsb), VSB_len(vsb));
 	VSB_destroy(&vsb);
+	return (NULL);
 }
 
 static int
