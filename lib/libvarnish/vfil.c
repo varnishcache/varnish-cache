@@ -419,3 +419,17 @@ VFIL_searchpath(const struct vfil_path *vp, vfil_path_func_f *func, void *priv,
 	VSB_destroy(&vsb);
 	return (-1);
 }
+
+void
+VFIL_quotepath(const struct vfil_path *vp, struct vsb *vsb, int how)
+{
+	const char * const *dir;
+	const char *sep;
+
+	CHECK_OBJ_NOTNULL(vp, VFIL_PATH_MAGIC);
+	AN(vsb);
+	for (dir = vp->dirs, sep = ""; *dir != NULL; dir++, sep = ":") {
+		(void)VSB_quote(vsb, sep, -1, how);
+		(void)VSB_quote(vsb, *dir, -1, how);
+	}
+}

@@ -29,6 +29,7 @@
  */
 
 struct vfil_path;
+struct vsb;
 
 /* from libvarnish/vfil.c */
 
@@ -44,3 +45,4 @@ const char *VFIL_setpath(struct vfil_path **, const char *path);
 typedef int vfil_path_func_f(void *priv, const char *fn);
 int VFIL_searchpath(const struct vfil_path *, vfil_path_func_f *func,
     void *priv, const char *fni, char **fno);
+void VFIL_quotepath(const struct vfil_path *, struct vsb *, int);
