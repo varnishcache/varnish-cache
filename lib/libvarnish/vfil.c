@@ -313,6 +313,23 @@ struct vfil_path {
  */
 
 void
+VFIL_destroypath(struct vfil_path **pp)
+{
+	struct vfil_path *vp;
+	struct vfil_dir *vd;
+
+	TAKE_OBJ_NOTNULL(vp, pp, VFIL_PATH_MAGIC);
+	while (!VTAILQ_EMPTY(&vp->paths)) {
+		vd = VTAILQ_FIRST(&vp->paths);
+		CHECK_OBJ_NOTNULL(vd, VFIL_DIR_MAGIC);
+		VTAILQ_REMOVE(&vp->paths, vd, list);
+		FREE_OBJ(vd);
+	}
+	free(vp->str);
+	FREE_OBJ(vp);
+}
+
+void
 VFIL_setpath(struct vfil_path **pp, const char *path)
 {
 	struct vfil_path *vp;
@@ -322,20 +339,15 @@ VFIL_setpath(struct vfil_path **pp, const char *path)
 	AN(pp);
 	AN(path);
 
-	vp = *pp;
-	if (vp == NULL) {
-		ALLOC_OBJ(vp, VFIL_PATH_MAGIC);
-		AN(vp);
-		VTAILQ_INIT(&vp->paths);
-		*pp = vp;
-	}
+	if (*pp != NULL)
+		VFIL_destroypath(pp);
+
+	ALLOC_OBJ(vp, VFIL_PATH_MAGIC);
+	AN(vp);
+	VTAILQ_INIT(&vp->paths);
 	REPLACE(vp->str, path);
-	while (!VTAILQ_EMPTY(&vp->paths)) {
-		vd = VTAILQ_FIRST(&vp->paths);
-		CHECK_OBJ_NOTNULL(vd, VFIL_DIR_MAGIC);
-		VTAILQ_REMOVE(&vp->paths, vd, list);
-		FREE_OBJ(vd);
-	}
+	*pp = vp;
+
 	for (p = vp->str; p != NULL; p = q) {
 		q = strchr(p, ':');
 		if (q != NULL)
