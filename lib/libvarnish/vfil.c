@@ -292,18 +292,11 @@ VFIL_allocate(int fd, uintmax_t size, int insist)
 	return (retval);
 }
 
-struct vfil_dir {
-	unsigned		magic;
-#define VFIL_DIR_MAGIC		0x3e214967
-	char			*dir;
-	VTAILQ_ENTRY(vfil_dir)	list;
-};
-
 struct vfil_path {
 	unsigned		magic;
 #define VFIL_PATH_MAGIC		0x92dbcc31
 	char			*str;
-	VTAILQ_HEAD(,vfil_dir)	paths;
+	const char		*dirs[0];
 };
 
 /*
@@ -313,35 +306,41 @@ struct vfil_path {
 void
 VFIL_setpath(struct vfil_path **pp, const char *path)
 {
-	struct vfil_path *vp;
-	struct vfil_dir *vd;
+	struct vfil_path vp[1];
+	struct vsb *vsb;
 	char *p, *q;
 
 	AN(pp);
 	AN(path);
 
-	vp = *pp;
-	if (vp == NULL) {
-		ALLOC_OBJ(vp, VFIL_PATH_MAGIC);
-		AN(vp);
-		VTAILQ_INIT(&vp->paths);
-		*pp = vp;
-	}
+	INIT_OBJ(vp, VFIL_PATH_MAGIC);
 	REPLACE(vp->str, path);
-	while (!VTAILQ_EMPTY(&vp->paths)) {
-		vd = VTAILQ_FIRST(&vp->paths);
-		VTAILQ_REMOVE(&vp->paths, vd, list);
-		FREE_OBJ(vd);
-	}
+
+	vsb = VSB_new_auto();
+	AN(vsb);
+	VSB_bcat(vsb, vp, sizeof vp);
+
 	for (p = vp->str; p != NULL; p = q) {
 		q = strchr(p, ':');
 		if (q != NULL)
 			*q++ = '\0';
-		ALLOC_OBJ(vd, VFIL_DIR_MAGIC);
-		AN(vd);
-		vd->dir = p;
-		VTAILQ_INSERT_TAIL(&vp->paths, vd, list);
+		if (*p != '\0')
+			VSB_bcat(vsb, &p, sizeof p);
 	}
+	AZ(p);
+	VSB_bcat(vsb, &p, sizeof p);
+	AZ(VSB_finish(vsb));
+
+	if (*pp != NULL) {
+		CHECK_OBJ(*pp, VFIL_PATH_MAGIC);
+		free((*pp)->str);
+		FREE_OBJ(*pp);
+	}
+
+	*pp = malloc(VSB_len(vsb));
+	AN(*pp);
+	memcpy(*pp, VSB_data(vsb), VSB_len(vsb));
+	VSB_destroy(&vsb);
 }
 
 static int
@@ -365,10 +364,11 @@ VFIL_searchpath(const struct vfil_path *vp, vfil_path_func_f *func, void *priv,
     const char *fni, char **fno)
 {
 	struct vsb *vsb;
-	struct vfil_dir *vd;
+	const char * const *dir;
 	int i, e;
 
 	CHECK_OBJ_NOTNULL(vp, VFIL_PATH_MAGIC);
+	AN(fni);
 	AN(fno);
 	*fno = NULL;
 
@@ -385,9 +385,9 @@ VFIL_searchpath(const struct vfil_path *vp, vfil_path_func_f *func, void *priv,
 	}
 	vsb = VSB_new_auto();
 	AN(vsb);
-	VTAILQ_FOREACH(vd, &vp->paths, list) {
+	for (dir = vp->dirs; *dir != NULL; dir++) {
 		VSB_clear(vsb);
-		VSB_printf(vsb, "%s/%s", vd->dir, fni);
+		VSB_printf(vsb, "%s/%s", *dir, fni);
 		AZ(VSB_finish(vsb));
 		if (access(VSB_data(vsb), F_OK))
 			continue;
