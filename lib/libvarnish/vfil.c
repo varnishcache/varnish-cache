@@ -304,6 +304,16 @@ struct vfil_path {
  */
 
 void
+VFIL_destroypath(struct vfil_path **pp)
+{
+	struct vfil_path *p;
+
+	TAKE_OBJ_NOTNULL(p, pp, VFIL_PATH_MAGIC);
+	free(p->str);
+	FREE_OBJ(p);
+}
+
+void
 VFIL_setpath(struct vfil_path **pp, const char *path)
 {
 	struct vfil_path vp[1];
@@ -331,11 +341,8 @@ VFIL_setpath(struct vfil_path **pp, const char *path)
 	VSB_bcat(vsb, &p, sizeof p);
 	AZ(VSB_finish(vsb));
 
-	if (*pp != NULL) {
-		CHECK_OBJ(*pp, VFIL_PATH_MAGIC);
-		free((*pp)->str);
-		FREE_OBJ(*pp);
-	}
+	if (*pp != NULL)
+		VFIL_destroypath(pp);
 
 	*pp = malloc(VSB_len(vsb));
 	AN(*pp);
