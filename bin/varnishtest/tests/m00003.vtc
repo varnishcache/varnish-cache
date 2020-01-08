@@ -66,3 +66,6 @@ varnish v1 -cliexpect "Invalid path component at: ':/previous/empty'" \
 
 # we let this one get a free pass
 varnish v1 -cliok "param.set vmod_path /last/empty:"
+
+varnish v1 -cliexpect "Invalid path component at: ':'" \
+	"param.set vmod_path /next/empty::"
