@@ -42,6 +42,9 @@
 	"\tmax_pool\tmaximum size of free pool.\n"			\
 	"\tmax_age\tmax age of free element."
 
+#define TWEAK_PATH_TEXT							\
+	"All components of the path must be absolute directories."
+
 struct parspec mgt_parspec[] = {
 #define PARAM(nm, ty, mi, ma, de, un, fl, st, lt, fn)		\
 	{ #nm, tweak_##ty, &mgt_param.nm, mi, ma, st, fl, de, un },
@@ -63,14 +66,16 @@ struct parspec mgt_parspec[] = {
 		"VCL files in both the system configuration and shared "
 		"data directories to allow packages to drop their VCL "
 		"files in a standard location where relative includes "
-		"would work.",
+		"would work.\n\n"
+		TWEAK_PATH_TEXT,
 		0,
 		VARNISH_VCL_DIR,
 		NULL },
 	{ "vmod_path", tweak_path, &mgt_vmod_path,
 		NULL, NULL,
 		"Directory (or colon separated list of directories) "
-		"where VMODs are to be found.",
+		"where VMODs are to be found.\n\n"
+		TWEAK_PATH_TEXT,
 		0,
 		VARNISH_VMOD_DIR,
 		NULL },
