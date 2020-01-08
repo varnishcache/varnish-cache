@@ -203,8 +203,8 @@ V1L_Flush(const struct worker *wrk)
 			v1l->cnt += i;
 		while (i != v1l->liov && (i > 0 || errno == EWOULDBLOCK)) {
 			/* Remove sent data from start of I/O vector,
-			 * then retry; we hit a timeout, but some data
-			 * was sent.
+			 * then retry; we hit a timeout, and some data
+			 * may have been sent.
 			 *
 			 * XXX: Add a "minimum sent data per timeout
 			 * counter to prevent slowloris attacks

@@ -772,8 +772,8 @@ PARAM(
 	"Send timeout for individual pieces of data on client connections."
 	" May get extended if 'send_timeout' applies.\n\n"
 	"When this timeout is hit, the session is closed.\n\n"
-	"See the man page for `setsockopt(2)` under ``SO_SNDTIMEO`` for more"
-	" information.",
+	"See the man page for `setsockopt(2)` or `socket(7)` under"
+	" ``SO_SNDTIMEO`` for more information.",
 	/* l-text */	"",
 	/* func */	NULL
 )
