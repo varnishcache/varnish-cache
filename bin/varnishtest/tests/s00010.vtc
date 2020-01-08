@@ -5,52 +5,57 @@ feature cmd {test $(uname) != "SunOS" && test $(uname) != "Darwin"}
 
 feature SO_RCVTIMEO_WORKS
 
-server s1 {
+barrier b1 cond 2 -cyclic
+barrier b2 cond 2 -cyclic
+
+server s1 -repeat 2 {
+	fatal
 	rxreq
-	txresp -bodylen 100000
-} -start
-
-varnish v1				\
-	-arg "-p timeout_idle=1"	\
-	-arg "-p idle_send_timeout=.1"	\
-	-arg "-p send_timeout=.1"	\
-	-arg "-a 127.0.0.1:0"		\
-	-vcl+backend {
-	import debug;
-
-	sub vcl_deliver {
-		debug.sndbuf(128b);
-	}
-} -start
-
-logexpect l1 -v v1 {
-	expect * * Debug "Hit total send timeout"
-} -start
-
-client c1 -rcvbuf 128 {
-	txreq
+	txresp -nolen -hdr "Transfer-encoding: chunked"
+	chunkedlen 100000
+	# make sure varnish is stuck in delivery
+	barrier b1 sync
 	non_fatal
-	rxresphdrs
-	# keep the session open for 4 seconds
-	delay 4
+	chunkedlen 0
 } -start
 
-client c1 -wait
-logexpect l1 -wait
+varnish v1 -cliok "param.set debug +syncvsl"
+varnish v1 -cliok "param.set debug +flush_head"
+varnish v1 -cliok "param.set thread_pools 1"
+varnish v1 -cliok "param.set timeout_idle 1"
+varnish v1 -cliok "param.set idle_send_timeout .1"
+varnish v1 -cliok "param.set send_timeout .1"
 
-varnish v1 -cliok "param.set idle_send_timeout 1"
+varnish v1 -vcl+backend {
+	import debug;
+	sub vcl_recv { return (pass); }
+	sub vcl_deliver { debug.sndbuf(256b); }
+} -start
+
+logexpect l1 -v v1 -g raw {
+	expect * 1001 Debug "Hit total send timeout"
+} -start
+
+client c1 -rcvbuf 256 {
+	txreq
+	rxresphdrs
+	# varnish is stuck sending the chunk
+	barrier b1 sync
+	# wait for the timeout to kick in
+	barrier b2 sync
+} -start
+
+logexpect l1 -wait
+barrier b2 sync
+client c1 -wait
+
 varnish v1 -cliok "param.reset send_timeout"
 
-logexpect l2 -v v1 {
-	expect * * Debug "Hit idle send timeout"
+logexpect l2 -v v1 -g raw {
+	expect * 1004 Debug "Hit idle send timeout"
 } -start
 
-client c2 -rcvbuf 128 {
-	txreq
-	rxresphdrs
-	# keep the session open for 4 seconds
-	delay 4
-} -start
-
-client c2 -wait
+client c1 -start
 logexpect l2 -wait
+barrier b2 sync
+client c1 -wait
