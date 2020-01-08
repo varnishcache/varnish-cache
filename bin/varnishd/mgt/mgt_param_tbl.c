@@ -118,19 +118,19 @@ struct parspec mgt_parspec[] = {
 		"20", ""},
 	{ "pool_req", tweak_poolparam, &mgt_param.req_pool,
 		NULL, NULL,
-		"Parameters for per worker pool request memory pool.\n"
+		"Parameters for per worker pool request memory pool.\n\n"
 		MEMPOOL_TEXT,
 		0,
 		"10,100,10", ""},
 	{ "pool_sess", tweak_poolparam, &mgt_param.sess_pool,
 		NULL, NULL,
-		"Parameters for per worker pool session memory pool.\n"
+		"Parameters for per worker pool session memory pool.\n\n"
 		MEMPOOL_TEXT,
 		0,
 		"10,100,10", ""},
 	{ "pool_vbo", tweak_poolparam, &mgt_param.vbo_pool,
 		NULL, NULL,
-		"Parameters for backend object fetch memory pool.\n"
+		"Parameters for backend object fetch memory pool.\n\n"
 		MEMPOOL_TEXT,
 		0,
 		"10,100,10", ""},
