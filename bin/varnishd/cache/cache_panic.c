@@ -849,6 +849,8 @@ ccf_panic(struct cli *cli, const char * const *av, void *priv)
 	(void)av;
 	AZ(priv);
 	AZ(strcmp("", "You asked for it"));
+	/* NOTREACHED */
+	abort();
 }
 
 /*--------------------------------------------------------------------*/

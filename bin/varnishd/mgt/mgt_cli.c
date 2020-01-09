@@ -107,6 +107,8 @@ mcf_panic(struct cli *cli, const char * const *av, void *priv)
 	(void)av;
 	(void)priv;
 	AZ(strcmp("", "You asked for it"));
+	/* NOTREACHED */
+	abort();
 }
 
 static struct cli_proto cli_debug[] = {
