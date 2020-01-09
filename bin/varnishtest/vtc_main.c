@@ -170,7 +170,7 @@ parse_D_opt(char *arg)
  * Print usage
  */
 
-static void
+static void v_noreturn_
 usage(void)
 {
 	fprintf(stderr, "usage: %s [options] file ...\n", argv0);

@@ -154,7 +154,7 @@ cli_sock(const char *T_arg, const char *S_arg)
 	return (sock);
 }
 
-static void
+static void v_noreturn_
 do_args(int sock, int argc, char * const *argv)
 {
 	int i;
@@ -267,7 +267,7 @@ pass_answer(int fd)
  * No arguments given, simply pass bytes on stdin/stdout and CLI socket
  * Send a "banner" to varnish, to provoke a welcome message.
  */
-static void
+static void v_noreturn_
 interactive(int sock)
 {
 	struct pollfd fds[2];
@@ -334,7 +334,7 @@ interactive(int sock)
 /*
  * No arguments given, simply pass bytes on stdin/stdout and CLI socket
  */
-static void
+static void v_noreturn_
 pass(int sock)
 {
 	struct pollfd fds[2];

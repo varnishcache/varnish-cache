@@ -841,7 +841,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 
 /*--------------------------------------------------------------------*/
 
-static void v_matchproto_(cli_func_t)
+static void v_noreturn_ v_matchproto_(cli_func_t)
 ccf_panic(struct cli *cli, const char * const *av, void *priv)
 {
 

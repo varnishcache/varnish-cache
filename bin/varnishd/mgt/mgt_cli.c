@@ -99,7 +99,7 @@ static struct cli_proto cli_proto[] = {
 
 /*--------------------------------------------------------------------*/
 
-static void v_matchproto_(cli_func_t)
+static void v_noreturn_ v_matchproto_(cli_func_t)
 mcf_panic(struct cli *cli, const char * const *av, void *priv)
 {
 

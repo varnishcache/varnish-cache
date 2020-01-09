@@ -243,7 +243,7 @@ child_malloc_fail(void *p, const char *s)
  * signal handler for child process
  */
 
-static void v_matchproto_()
+static void v_noreturn_ v_matchproto_()
 child_signal_handler(int s, siginfo_t *si, void *c)
 {
 	char buf[1024];

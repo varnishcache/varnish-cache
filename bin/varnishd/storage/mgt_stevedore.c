@@ -119,7 +119,7 @@ static struct cli_proto cli_stv[] = {
  */
 
 #ifdef WITH_PERSISTENT_STORAGE
-static void v_matchproto_(storage_init_f)
+static void v_noreturn_ v_matchproto_(storage_init_f)
 smp_fake_init(struct stevedore *parent, int ac, char * const *av)
 {
 

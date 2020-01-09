@@ -84,7 +84,7 @@ mgt_DumpBuiltin(void)
  * Invoke system VCC compiler in a sub-process
  */
 
-static void v_matchproto_(vsub_func_f)
+static void v_noreturn_ v_matchproto_(vsub_func_f)
 run_vcc(void *priv)
 {
 	struct vsb *sb = NULL;
@@ -176,7 +176,7 @@ run_cc(void *priv)
  * Attempt to open compiled VCL in a sub-process
  */
 
-static void v_matchproto_(vsub_func_f)
+static void v_noreturn_ v_matchproto_(vsub_func_f)
 run_dlopen(void *priv)
 {
 	struct vcc_priv *vp;
