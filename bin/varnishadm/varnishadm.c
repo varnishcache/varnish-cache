@@ -486,5 +486,5 @@ main(int argc, char * const *argv)
 		interactive(sock);
 	else
 		pass(sock);
-	exit(0);
+	NEEDLESS(exit(0));
 }
