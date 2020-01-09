@@ -1,0 +1,42 @@
+varnishtest "NULL/empty value checks"
+
+server s1 {
+       rxreq
+       txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import cookie;
+
+	sub vcl_recv {
+		// nothing in here at this point.
+		set req.http.x-foo = cookie.get_string();
+
+		// empty name
+		cookie.set("", "foo");
+
+		// empty value
+		cookie.set("cookie1", "");
+
+		// proper NULL
+		cookie.set(req.http.null, "foo");
+
+		// double delete
+		cookie.delete("cookie2");
+		cookie.delete("cookie2");
+
+		cookie.delete(req.http.null);
+
+	}
+	sub vcl_deliver {
+		set resp.http.x-foo = cookie.get_string();
+	}
+} -start
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.http.x-foo == ""
+}
+
+client c1 -run

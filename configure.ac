@@ -852,6 +852,7 @@ AC_CONFIG_FILES([
     lib/libvarnishapi/Makefile
     lib/libvcc/Makefile
     lib/libvgz/Makefile
+    lib/libvmod_cookie/Makefile
     lib/libvmod_debug/Makefile
     lib/libvmod_std/Makefile
     lib/libvmod_directors/Makefile

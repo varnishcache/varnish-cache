@@ -1,0 +1,28 @@
+varnishtest "Test keep_re in vmod-cookie"
+
+server s1 {
+       rxreq
+       txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import cookie;
+
+	sub vcl_deliver {
+		cookie.parse("foo=bar; baz=qux;");
+		cookie.keep_re("NOTHING_MATCHES_SO_NOTHING_KEPT$");
+		set resp.http.X-empty = cookie.get_string();
+
+		cookie.parse("biscuit=standard; bredela=eggwhites; empire=jellytots;");
+		cookie.keep_re("^b");
+		set resp.http.X-bees = cookie.get_string();
+	}
+} -start
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.http.X-empty == ""
+	expect resp.http.X-bees == "biscuit=standard; bredela=eggwhites;"
+}
+client c1 -run

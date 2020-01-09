@@ -5,6 +5,7 @@ SUBDIRS = \
 	libvarnishapi \
 	libvcc \
 	libvgz \
+	libvmod_cookie \
 	libvmod_debug \
 	libvmod_std \
 	libvmod_directors \

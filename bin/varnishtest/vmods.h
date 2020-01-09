@@ -30,6 +30,7 @@
  */
 
 VTC_VMOD(std)
+VTC_VMOD(cookie)
 VTC_VMOD(debug)
 VTC_VMOD(directors)
 VTC_VMOD(purge)
