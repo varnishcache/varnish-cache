@@ -98,7 +98,7 @@ vmod_no_ip(VRT_CTX)
 
 /*--------------------------------------------------------------------*/
 
-VCL_VOID  v_matchproto_(td_vtc_panic) v_noreturn_
+VCL_VOID v_noreturn_ v_matchproto_(td_vtc_panic)
 vmod_panic(VRT_CTX, VCL_STRANDS str)
 {
 	const char *b;
