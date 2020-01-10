@@ -69,3 +69,7 @@ varnish v1 -cliok "param.set vmod_path /last/empty:"
 
 varnish v1 -cliexpect "Invalid path component at: ':'" \
 	"param.set vmod_path /next/empty::"
+
+shell -err -expect "Invalid path component at: 'invalid'" {
+	varnishd -d -n ${tmpdir}/tmp -p vmod_path=invalid -f ${tmpdir}/invalid
+}
