@@ -42,6 +42,7 @@
 
 #include "cache_varnishd.h"
 #include "cache_filter.h"
+#include "cache_objhead.h"
 #include "cache_vgz.h"
 #include "vend.h"
 
@@ -288,6 +289,8 @@ static int v_matchproto_(vdp_init_f)
 vdp_gunzip_init(struct req *req, void **priv)
 {
 	struct vgz *vg;
+	struct boc *boc;
+	enum boc_state_e bos;
 	const char *p;
 	ssize_t dl;
 	uint64_t u;
@@ -309,8 +312,15 @@ vdp_gunzip_init(struct req *req, void **priv)
 
 	req->resp_len = -1;
 
+	boc = HSH_RefBoc(req->objcore);
+	if (boc != NULL) {
+		bos = boc->state;
+		HSH_DerefBoc(req->wrk, req->objcore);
+	} else
+		bos = BOS_FINISHED;
+
 	/* OA_GZIPBITS is not stable yet */
-	if (req->objcore->boc)
+	if (bos < BOS_FINISHED)
 		return (0);
 
 	p = ObjGetAttr(req->wrk, req->objcore, OA_GZIPBITS, &dl);

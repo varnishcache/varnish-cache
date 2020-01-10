@@ -35,7 +35,7 @@ client c1 {
 
 varnish v1 -vsl_catchup
 
-client c1 {
+client c2 {
 	txreq -hdr "Accept-encoding: gzip;q=0.1"
 	rxresp
 	expect resp.http.content-encoding == "gzip"
@@ -49,7 +49,7 @@ varnish v1 -vsl_catchup
 # is completed before we attempt the range request
 delay 2
 
-client c1 {
+client c3 {
 	txreq -hdr "Range: bytes=3-5"
 	rxresp
 	expect resp.status == 206
@@ -60,7 +60,7 @@ client c1 {
 
 varnish v1 -vsl_catchup
 
-client c1 {
+client c4 {
 	txreq -url "/nostreamcachemiss" -hdr "Range: bytes=3-5"
 	rxresp
 	expect resp.status == 206
@@ -71,7 +71,7 @@ client c1 {
 
 varnish v1 -vsl_catchup
 
-client c1 {
+client c5 {
 	# simple cache miss, no stream, no gunzip
 	txreq -url "/nostream2" -hdr "Range: bytes=3-5" -hdr "Accept-Encoding: gzip"
 	rxresp
