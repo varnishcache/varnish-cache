@@ -13,8 +13,7 @@ Regular expressions can be used for either selecting cookies, deleting matching
 cookies and deleting non-matching cookie names.
 
 A convenience function for formatting the Set-Cookie Expires date field
-is also included. If there are multiple Set-Cookie headers vmod-header
-should be used.
+is also included.
 
 The state loaded with cookie.parse() has a lifetime of the current request
 or backend request context. To pass variables to the backend request, store
