@@ -7,6 +7,15 @@ server s1 {
 	txresp
 } -start
 
+shell {
+	echo "vcl 4.1; import std; backend dummy None;" >${tmpdir}/test.vcl
+	varnishd -pvmod_path=${topbuild}/lib/libvmod_std/.libs -C -f ${tmpdir}/test.vcl 2>/dev/null
+}
+
+shell -err -expect {Could not find VMOD std} {
+	varnishd -C -f ${tmpdir}/test.vcl 2>&1
+}
+
 varnish v1 -arg "-pvmod_path=${topbuild}/lib/libvmod_std/.libs/" \
     -vcl+backend {
 	import std;
