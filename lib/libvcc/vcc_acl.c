@@ -66,7 +66,7 @@ static int
 vcl_acl_cmp(struct acl_e *ae1, struct acl_e *ae2)
 {
 	unsigned char *p1, *p2;
-	int m;
+	unsigned m;
 
 	p1 = ae1->data;
 	p2 = ae2->data;
@@ -99,7 +99,7 @@ vcc_acl_add_entry(struct vcc *tl, const struct acl_e *ae, int l,
 
 	if (fam == PF_INET && ae->mask > 32) {
 		VSB_printf(tl->sb,
-		    "Too wide mask (/%d) for IPv4 address\n", ae->mask);
+		    "Too wide mask (/%u) for IPv4 address\n", ae->mask);
 		if (ae->t_mask != NULL)
 			vcc_ErrWhere(tl, ae->t_mask);
 		else
@@ -108,7 +108,7 @@ vcc_acl_add_entry(struct vcc *tl, const struct acl_e *ae, int l,
 	}
 	if (fam == PF_INET6 && ae->mask > 128) {
 		VSB_printf(tl->sb,
-		    "Too wide mask (/%d) for IPv6 address\n", ae->mask);
+		    "Too wide mask (/%u) for IPv6 address\n", ae->mask);
 		vcc_ErrWhere(tl, ae->t_mask);
 		return;
 	}
@@ -231,7 +231,7 @@ vcc_acl_try_getaddrinfo(struct vcc *tl, struct acl_e *ae)
 
 	if (ae->t_mask != NULL && i4 > 0 && i6 > 0) {
 		VSB_printf(tl->sb,
-		    "Mask (/%d) specified, but string resolves to"
+		    "Mask (/%u) specified, but string resolves to"
 		    " both IPv4 and IPv6 addresses.\n", ae->mask);
 		vcc_ErrWhere(tl, ae->t_mask);
 		return;
@@ -379,7 +379,7 @@ vcc_acl_emit(struct vcc *tl, const char *name, const char *rname, int anon)
 	VTAILQ_FOREACH(ae, &tl->acl, list) {
 
 		/* Find how much common prefix we have */
-		for (l = 0; l <= depth && l * 8 < ae->mask - 7; l++) {
+		for (l = 0; l <= depth && l * 8 < (int)ae->mask - 7; l++) {
 			assert(l >= 0);
 			if (ae->data[l] != at[l])
 				break;
