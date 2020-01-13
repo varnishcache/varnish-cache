@@ -35,6 +35,7 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <unistd.h>
+#include <stdlib.h>
 #include <stdio.h>
 
 #include "compat/daemon.h"
