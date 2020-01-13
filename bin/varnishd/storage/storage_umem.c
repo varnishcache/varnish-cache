@@ -94,7 +94,7 @@ static umem_cache_destroy_f umem_cache_destroyf = NULL;
 static umem_cache_alloc_f umem_cache_allocf = NULL;
 static umem_cache_free_f umem_cache_freef = NULL;
 
-static const char * const def_umem_options = "perthread_cache=0,backend=mmap";
+static const char * const def_umem_options = "perthread_cache=0";
 static const char * const env_umem_options = "UMEM_OPTIONS";
 
 /* init required per cache get:
