@@ -251,6 +251,43 @@ vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 }
 
 /*--------------------------------------------------------------------
+ * 304 setup logic
+ */
+
+static int
+vbf_304_logic(struct busyobj *bo)
+{
+	if (bo->stale_oc != NULL &&
+	    ObjCheckFlag(bo->wrk, bo->stale_oc, OF_IMSCAND)) {
+		AZ(bo->stale_oc->flags & (OC_F_HFM|OC_F_PRIVATE));
+		if (ObjCheckFlag(bo->wrk, bo->stale_oc, OF_CHGCE)) {
+			/*
+			 * If a VFP changed C-E in the stored
+			 * object, then don't overwrite C-E from
+			 * the IMS fetch, and we must weaken any
+			 * new ETag we get.
+			 */
+			http_Unset(bo->beresp, H_Content_Encoding);
+			RFC2616_Weaken_Etag(bo->beresp);
+		}
+		http_Unset(bo->beresp, H_Content_Length);
+		HTTP_Merge(bo->wrk, bo->stale_oc, bo->beresp);
+		assert(http_IsStatus(bo->beresp, 200));
+		bo->was_304 = 1;
+	} else if (!bo->do_pass) {
+		/*
+		 * Backend sent unallowed 304
+		 */
+		VSLb(bo->vsl, SLT_Error,
+		    "304 response but not conditional fetch");
+		bo->htc->doclose = SC_RX_BAD;
+		VDI_Finish(bo->wrk, bo);
+		return (-1);
+	}
+	return (1);
+}
+
+/*--------------------------------------------------------------------
  * Setup bereq from bereq0, run vcl_backend_fetch
  */
 
@@ -346,35 +383,8 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	AZ(bo->do_esi);
 	AZ(bo->was_304);
 
-	if (http_IsStatus(bo->beresp, 304)) {
-		if (bo->stale_oc != NULL &&
-		    ObjCheckFlag(bo->wrk, bo->stale_oc, OF_IMSCAND)) {
-			AZ(bo->stale_oc->flags & (OC_F_HFM|OC_F_PRIVATE));
-			if (ObjCheckFlag(bo->wrk, bo->stale_oc, OF_CHGCE)) {
-				/*
-				 * If a VFP changed C-E in the stored
-				 * object, then don't overwrite C-E from
-				 * the IMS fetch, and we must weaken any
-				 * new ETag we get.
-				 */
-				http_Unset(bo->beresp, H_Content_Encoding);
-				RFC2616_Weaken_Etag(bo->beresp);
-			}
-			http_Unset(bo->beresp, H_Content_Length);
-			HTTP_Merge(bo->wrk, bo->stale_oc, bo->beresp);
-			assert(http_IsStatus(bo->beresp, 200));
-			bo->was_304 = 1;
-		} else if (!bo->do_pass) {
-			/*
-			 * Backend sent unallowed 304
-			 */
-			VSLb(bo->vsl, SLT_Error,
-			    "304 response but not conditional fetch");
-			bo->htc->doclose = SC_RX_BAD;
-			VDI_Finish(bo->wrk, bo);
-			return (F_STP_ERROR);
-		}
-	}
+	if (http_IsStatus(bo->beresp, 304) && vbf_304_logic(bo) < 0)
+		return (F_STP_ERROR);
 
 	VCL_backend_response_method(bo->vcl, wrk, NULL, bo, NULL);
 
