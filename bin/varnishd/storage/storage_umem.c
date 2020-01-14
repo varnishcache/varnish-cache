@@ -431,8 +431,12 @@ smu_close(const struct stevedore *st, int warn)
 	CAST_OBJ_NOTNULL(smu_sc, st->priv, SMU_SC_MAGIC);
 	if (warn)
 		return;
+
+#ifdef WORKAROUND_3190
+	/* see ticket 3190 for explanation */
 	umem_cache_destroyf(smu_sc->smu_cache);
 	smu_sc->smu_cache = NULL;
+#endif
 
 	/*
 	   XXX TODO?
