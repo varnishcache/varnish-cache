@@ -52,9 +52,11 @@ struct exp_priv {
 	struct worker			*wrk;
 	struct vsl_log			vsl;
 	struct binheap			*heap;
+	pthread_t			thread;
 };
 
 static struct exp_priv *exphdl;
+static int exp_shutdown = 0;
 
 /*--------------------------------------------------------------------
  * Calculate an object's effective ttl time, taking req.ttl into account
@@ -332,7 +334,7 @@ exp_thread(struct worker *wrk, void *priv)
 	VSL_Setup(&ep->vsl, NULL, 0);
 	ep->heap = binheap_new(NULL, object_cmp, object_update);
 	AN(ep->heap);
-	while (1) {
+	while (exp_shutdown == 0) {
 
 		Lck_Lock(&ep->mtx);
 		oc = VSTAILQ_FIRST(&ep->inbox);
@@ -361,7 +363,7 @@ exp_thread(struct worker *wrk, void *priv)
 		else
 			tnext = exp_expire(ep, t);
 	}
-	NEEDLESS(return (NULL));
+	return (NULL);
 }
 
 /*--------------------------------------------------------------------*/
@@ -378,6 +380,26 @@ EXP_Init(void)
 	Lck_New(&ep->mtx, lck_exp);
 	AZ(pthread_cond_init(&ep->condvar, NULL));
 	VSTAILQ_INIT(&ep->inbox);
-	exphdl = ep;
 	WRK_BgThread(&pt, "cache-exp", exp_thread, ep);
+	ep->thread = pt;
+	exphdl = ep;
+}
+
+void
+EXP_Shutdown(void)
+{
+	struct exp_priv *ep = exphdl;
+	void *status;
+
+	Lck_Lock(&ep->mtx);
+	exp_shutdown = 1;
+	AZ(pthread_cond_signal(&ep->condvar));
+	Lck_Unlock(&ep->mtx);
+
+	AN(ep->thread);
+	AZ(pthread_join(ep->thread, &status));
+	AZ(status);
+	memset(&ep->thread, 0, sizeof ep->thread);
+
+	/* XXX could cleanup more - not worth it for now */
 }

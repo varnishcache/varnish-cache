@@ -229,6 +229,7 @@ extern const struct vdp VDP_range;
 
 /* cache_expire.c */
 void EXP_Init(void);
+void EXP_Shutdown(void);
 
 /* cache_fetch.c */
 enum vbf_fetch_mode_e {
