@@ -223,6 +223,7 @@ smu_free(struct storage *s)
 
 	umem_freef(smu->s.ptr, smu->sz);
 	smu_smu_init(smu, sc);
+	AN(sc->smu_cache);
 	umem_cache_freef(sc->smu_cache, smu);
 }
 
