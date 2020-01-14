@@ -50,6 +50,7 @@
 
 #include "hash/hash_slinger.h"
 
+int cache_shutdown = 0;
 
 volatile struct params		*cache_param;
 static pthread_mutex_t		cache_vrnd_mtx;
@@ -409,8 +410,10 @@ child_main(int sigmagic, size_t altstksz)
 
 	CLI_Run();
 
+	cache_shutdown = 1;
 	VCA_Shutdown();
 	BAN_Shutdown();
+	EXP_Shutdown();
 	STV_close();
 
 	printf("Child dies\n");
