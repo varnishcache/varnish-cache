@@ -314,6 +314,7 @@ vdp_gunzip_init(struct req *req, void **priv)
 
 	boc = HSH_RefBoc(req->objcore);
 	if (boc != NULL) {
+		CHECK_OBJ(boc, BOC_MAGIC);
 		bos = boc->state;
 		HSH_DerefBoc(req->wrk, req->objcore);
 	} else
