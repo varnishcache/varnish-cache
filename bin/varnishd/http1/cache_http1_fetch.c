@@ -200,7 +200,6 @@ V1F_FetchRespHdr(struct busyobj *bo)
 			bo->err_code = 502;
 			break;
 		case HTC_S_EOF:
-		case HTC_S_CLOSE:
 			VSLb(bo->vsl, SLT_FetchError, "backend closed");
 			htc->doclose = SC_RESP_CLOSE;
 			bo->err_code = 502;

@@ -33,7 +33,6 @@
 
 // enum htc_status_e	n	short		long
 HTC_STATUS(JUNK,	-5,	"junk",		"Received unexpected data")
-HTC_STATUS(CLOSE,	-4,	"close",	"Connection closed") // unused?
 HTC_STATUS(TIMEOUT,	-3,	"timeout",	"Timed out")
 HTC_STATUS(OVERFLOW,	-2,	"overflow",	"Buffer/workspace too small")
 HTC_STATUS(EOF,		-1,	"eof",		"Unexpected end of input")
