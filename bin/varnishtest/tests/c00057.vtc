@@ -44,6 +44,8 @@ client c1 {
 	expect_close
 } -run
 
+delay 3
+
 varnish v1 -cliexpect "STACK OVERFLOW" "panic.show"
 varnish v1 -clijson "panic.show -j"
 
@@ -81,6 +83,8 @@ client c2 -connect ${v2_sock} {
 	txreq
 	expect_close
 } -run
+
+delay 3
 
 varnish v2 -cliexpect "[bB]us error|Segmentation [fF]ault" "panic.show"
 varnish v2 -clijson "panic.show -j"
