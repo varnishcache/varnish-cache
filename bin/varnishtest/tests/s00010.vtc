@@ -23,8 +23,8 @@ varnish v1 -cliok "param.set debug +syncvsl"
 varnish v1 -cliok "param.set debug +flush_head"
 varnish v1 -cliok "param.set thread_pools 1"
 varnish v1 -cliok "param.set timeout_idle 1"
-varnish v1 -cliok "param.set idle_send_timeout .1"
-varnish v1 -cliok "param.set send_timeout .1"
+varnish v1 -cliok "param.set idle_send_timeout 1"
+varnish v1 -cliok "param.set send_timeout 1"
 
 varnish v1 -vcl+backend {
 	import debug;
