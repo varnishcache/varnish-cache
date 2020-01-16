@@ -16,6 +16,7 @@ varnish v1 -vcl+backend {}
 
 # expect a panic during the COLD event, COLD state
 varnish v1 -clierr 400 "vcl.state vcl1 cold"
+delay 3
 varnish v1 -cliexpect "Dynamic Backends can only be added to warm VCLs" panic.show
 varnish v1 -cliok panic.clear
 
