@@ -1731,7 +1731,7 @@ PARAM(
 	/* typ */	bytes_u,
 	/* min */	"0.25k",
 	/* max */	NULL,
-	/* default */	"0.50k",
+	/* default */	"0.75k",
 	/* units */	"bytes",
 	/* flags */	DELAYED_EFFECT,
 	/* s-text */
