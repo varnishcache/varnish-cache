@@ -155,6 +155,16 @@ VCL_Rel_CliCtx(struct vrt_ctx **ctx)
 
 /*--------------------------------------------------------------------*/
 
+int16_t
+VCL_FailStatus(const struct vcl *vcl)
+{
+
+	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
+	return (vcl->conf->syntax <= 41 ? 503 : 500);
+}
+
+/*--------------------------------------------------------------------*/
+
 static int
 vcl_send_event(VRT_CTX, enum vcl_event_e ev)
 {

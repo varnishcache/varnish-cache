@@ -624,7 +624,7 @@ VRT_fail(VRT_CTX, const char *fmt, ...)
 	AN(ctx->handling);
 	if (*ctx->handling == VCL_RET_FAIL)
 		return;
-	AZ(*ctx->handling);
+	AZ(*ctx->handling); /* XXX: turns VMOD nested failure into panic */
 	AN(fmt);
 	AZ(strchr(fmt, '\n'));
 	va_start(ap, fmt);

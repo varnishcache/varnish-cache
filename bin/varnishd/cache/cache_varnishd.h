@@ -430,6 +430,7 @@ void VCL_Bo2Ctx(struct vrt_ctx *, struct busyobj *);
 void VCL_Req2Ctx(struct vrt_ctx *, struct req *);
 struct vrt_ctx *VCL_Get_CliCtx(int);
 void VCL_Rel_CliCtx(struct vrt_ctx **);
+int16_t VCL_FailStatus(const struct vcl *);
 
 #define VCL_MET_MAC(l,u,t,b) \
     void VCL_##l##_method(struct vcl *, struct worker *, struct req *, \
