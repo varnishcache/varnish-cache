@@ -274,7 +274,7 @@ varnish v1 -expect ws_session_overflow == 1
 
 # increased workspace is being reflected immediately
 
-varnish v1 -cliok "param.set workspace_session 536"
+varnish v1 -cliok "param.set workspace_session 528"
 
 delay 1
 
