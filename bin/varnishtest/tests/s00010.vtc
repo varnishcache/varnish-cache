@@ -12,7 +12,7 @@ server s1 -repeat 2 {
 	fatal
 	rxreq
 	txresp -nolen -hdr "Transfer-encoding: chunked"
-	chunkedlen 100000
+	chunkedlen 65536
 	# make sure varnish is stuck in delivery
 	barrier b1 sync
 	non_fatal
@@ -76,7 +76,7 @@ client c2 -rcvbuf 256 {
 	rxresphdrs
 	delay 0.8
 	rxrespbody
-	expect resp.bodylen == 100000
+	expect resp.bodylen == 65536
 } -start
 
 logexpect l0 -wait
@@ -99,15 +99,17 @@ logexpect l2 -v v1 -g raw {
 } -start
 
 
-logexpect l3 -v v1 -q "ReqURL ~ \"^/$\"" {
+logexpect l3 -v v1 -X RespHeader:Transfer-Encoding \
+    -q "ReqURL ~ \"^/$\"" {
 	expect * * ReqURL	"^/$"
-	expect * = RespHeader	"^Transfer-Encoding"
+	expect * = RespHeader	"^Connection"
 	expect 0 = Debug	"^Hit idle send timeout"
 } -start
 
-logexpect l4 -v v1 -q "ReqURL ~ \"^/longidlesend$\"" {
+logexpect l4 -v v1 -X RespHeader:Transfer-Encoding \
+    -q "ReqURL ~ \"^/longidlesend$\"" {
 	expect * * ReqURL	"^/longidlesend$"
-	expect * = RespHeader	"^Transfer-Encoding"
+	expect * = RespHeader	"^Connection"
 	# no Hit idle send ...
 	expect 0 = Timestamp	"^Resp"
 } -start
@@ -119,7 +121,7 @@ client c3 -rcvbuf 256 {
 	rxresphdrs
 	delay 1.8
 	rxrespbody
-	expect resp.bodylen == 100000
+	expect resp.bodylen == 65536
 } -start
 
 logexpect l2 -wait
