@@ -213,8 +213,8 @@ logexpect l1 -wait
 # This value is fragile, ideally we would want something like
 # vtc.alloc(-x), yet there is no vcl code being run before we parse
 # proxy headers
+
 varnish v1 -cliok "param.set workspace_session 402"
-varnish v1 -cliok "param.set pool_sess 10,100,1"
 
 delay 1
 
@@ -246,6 +246,7 @@ client c12 -wait
 client c13 -wait
 client c14 -wait
 
+varnish v1 -cliok "param.set pool_sess 1,1,1"
 client c2 {
 	# PROXY2 with CRC32C TLV
 	sendhex {
@@ -274,9 +275,9 @@ varnish v1 -expect ws_session_overflow == 1
 
 # increased workspace is being reflected immediately
 
-varnish v1 -cliok "param.set workspace_session 528"
+varnish v1 -cliok "param.set workspace_session 524"
 
-delay 1
+varnish v1 -cliok "param.set debug +workspace"
 
 client c1 {
 	# PROXY2 sp->ws overflow
