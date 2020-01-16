@@ -12,10 +12,10 @@ server s1 -repeat 2 {
 	fatal
 	rxreq
 	txresp -nolen -hdr "Transfer-encoding: chunked"
-	chunkedlen 65536
+	chunkedlen 8192
 	# make sure varnish is stuck in delivery
 	barrier b1 sync
-	non_fatal
+	chunkedlen 57344
 	chunkedlen 0
 } -start
 
