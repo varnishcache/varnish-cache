@@ -8,58 +8,47 @@ feature SO_RCVTIMEO_WORKS
 barrier b1 cond 2 -cyclic
 barrier b2 cond 2 -cyclic
 
-server s1 -repeat 2 {
+server s0 {
 	fatal
 	rxreq
 	txresp -nolen -hdr "Transfer-encoding: chunked"
-	chunkedlen 8192
+	chunkedlen 100000
 	# make sure varnish is stuck in delivery
 	barrier b1 sync
-	chunkedlen 57344
+	non_fatal
 	chunkedlen 0
-} -start
+} -dispatch
 
 varnish v1 -cliok "param.set debug +syncvsl"
-varnish v1 -cliok "param.set debug +flush_head"
 varnish v1 -cliok "param.set thread_pools 1"
 varnish v1 -cliok "param.set timeout_idle 1"
-varnish v1 -cliok "param.set idle_send_timeout 1"
-varnish v1 -cliok "param.set send_timeout 1"
+varnish v1 -cliok "param.set idle_send_timeout .1"
+varnish v1 -cliok "param.set send_timeout .1"
 
 varnish v1 -vcl+backend {
+	import std;
 	import debug;
 	sub vcl_recv {
-		if (req.url == "/longsend") {
-			# client -rcvbuf 256 is super inefficient, so
-			# we need a very long timeout
-			set sess.send_timeout = 20s;
-		} else
-		if (req.url == "/longidlesend") {
-			set sess.idle_send_timeout = 20s;
+		if (req.http.send_timeout) {
+			set sess.send_timeout =
+			    std.duration(req.http.send_timeout);
 		}
+		if (req.http.idle_send_timeout) {
+			set sess.idle_send_timeout =
+			    std.duration(req.http.idle_send_timeout);
+		}
+		return (pass);
 	}
-
-	sub vcl_hash {
-		hash_data("/");
-		return (lookup);
-	}
-
 	sub vcl_deliver {
 		debug.sndbuf(256b);
 	}
 } -start
 
-# l0 signals when to raise the barrier
-# l1 checks for the TX_ERROR in the same session
+# case 1: send_timeout parameter
 
-logexpect l0 -v v1 -g raw {
-	expect * * ReqURL	"^/$"
-	expect * = Debug	"^Hit total send timeout"
-} -start
-
-logexpect l1 -v v1 -g session -q "ReqURL ~ \"^/$\"" {
-	expect * * SessClose "^TX_ERROR"
-	expect * * Debug "^Hit total send timeout"
+logexpect l1 -v v1 -g raw {
+	expect * 1001 Debug	"Hit total send timeout"
+	expect * 1000 SessClose	TX_ERROR
 } -start
 
 client c1 -rcvbuf 256 {
@@ -69,64 +58,79 @@ client c1 -rcvbuf 256 {
 	barrier b1 sync
 	# wait for the timeout to kick in
 	barrier b2 sync
-} -start
-
-client c2 -rcvbuf 256 {
-	txreq -url /longsend
-	rxresphdrs
-	delay 0.8
+	non_fatal
 	rxrespbody
-	expect resp.bodylen == 65536
+	expect_close
 } -start
 
-logexpect l0 -wait
-barrier b2 sync
 logexpect l1 -wait
+barrier b2 sync
 client c1 -wait
-client c2 -wait
+
+# case 2: send_timeout overriden in VCL
 
 varnish v1 -cliok "param.reset send_timeout"
 
-varnish v1 -cliok "ban obj.status != 0"
-
-# l2 signals when to raise the barrier
-# l3 checks the idle send timeout in the right transaction
-# l4 checks for no idle send timeout with the prolonged timeout
-
 logexpect l2 -v v1 -g raw {
-	expect * * ReqURL	"^/$"
-	expect * = Debug	"^Hit idle send timeout"
+	expect * 1004 Debug	"Hit total send timeout"
+	expect * 1003 SessClose	TX_ERROR
 } -start
 
-
-logexpect l3 -v v1 -X RespHeader:Transfer-Encoding \
-    -q "ReqURL ~ \"^/$\"" {
-	expect * * ReqURL	"^/$"
-	expect * = RespHeader	"^Connection"
-	expect 0 = Debug	"^Hit idle send timeout"
-} -start
-
-logexpect l4 -v v1 -X RespHeader:Transfer-Encoding \
-    -q "ReqURL ~ \"^/longidlesend$\"" {
-	expect * * ReqURL	"^/longidlesend$"
-	expect * = RespHeader	"^Connection"
-	# no Hit idle send ...
-	expect 0 = Timestamp	"^Resp"
-} -start
-
-client c1 -start
-
-client c3 -rcvbuf 256 {
-	txreq -url /longidlesend
+client c2 -rcvbuf 256 {
+	txreq -hdr "send_timeout: 100ms"
 	rxresphdrs
-	delay 1.8
+	# varnish is stuck sending the chunk
+	barrier b1 sync
+	# wait for the timeout to kick in
+	barrier b2 sync
+	# expect the transaction to be interrupted
+	non_fatal
 	rxrespbody
-	expect resp.bodylen == 65536
+	expect_close
 } -start
 
 logexpect l2 -wait
 barrier b2 sync
-client c1 -wait
-client c3 -wait
+client c2 -wait
+
+# case 3: idle_send_timeout parameter
+
+logexpect l3 -v v1 -g raw {
+	expect * 1007 Debug "Hit idle send timeout"
+} -start
+
+client c3 -rcvbuf 256 {
+	txreq
+	rxresphdrs
+	# varnish is stuck sending the chunk
+	barrier b1 sync
+	# wait for the timeout to kick in
+	barrier b2 sync
+	# don't wait for the transaction to complete
+} -start
+
 logexpect l3 -wait
+barrier b2 sync
+client c3 -wait
+
+# case 4: idle_send_timeout overriden in VCL
+
+varnish v1 -cliok "param.reset idle_send_timeout"
+
+logexpect l4 -v v1 -g raw {
+	expect * 1010 Debug "Hit idle send timeout"
+} -start
+
+client c4 -rcvbuf 256 {
+	txreq -hdr "idle_send_timeout: 100ms"
+	rxresphdrs
+	# varnish is stuck sending the chunk
+	barrier b1 sync
+	# wait for the timeout to kick in
+	barrier b2 sync
+	# don't wait for the transaction to complete
+} -start
+
 logexpect l4 -wait
+barrier b2 sync
+client c4 -wait
