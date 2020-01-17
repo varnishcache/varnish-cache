@@ -345,11 +345,7 @@ VRT_VCL_Allow_Cold(struct vclref **refp)
 	struct vcl *vcl;
 	struct vclref *ref;
 
-	AN(refp);
-	ref = *refp;
-	*refp = NULL;
-
-	CHECK_OBJ_NOTNULL(ref, VCLREF_MAGIC);
+	TAKE_OBJ_NOTNULL(ref, refp, VCLREF_MAGIC);
 	vcl = ref->vcl;
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 
@@ -398,11 +394,7 @@ VRT_VCL_Allow_Discard(struct vclref **refp)
 	struct vcl *vcl;
 	struct vclref *ref;
 
-	AN(refp);
-	ref = *refp;
-	*refp = NULL;
-
-	CHECK_OBJ_NOTNULL(ref, VCLREF_MAGIC);
+	TAKE_OBJ_NOTNULL(ref, refp, VCLREF_MAGIC);
 	vcl = ref->vcl;
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 
