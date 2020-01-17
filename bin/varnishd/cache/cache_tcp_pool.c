@@ -316,9 +316,7 @@ VCP_Recycle(const struct worker *wrk, struct pfd **pfdp)
 	int i = 0;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	pfd = *pfdp;
-	*pfdp = NULL;
-	CHECK_OBJ_NOTNULL(pfd, PFD_MAGIC);
+	TAKE_OBJ_NOTNULL(pfd, pfdp, PFD_MAGIC);
 	cp = pfd->conn_pool;
 	CHECK_OBJ_NOTNULL(cp, CONN_POOL_MAGIC);
 
@@ -451,9 +449,7 @@ VCP_Close(struct pfd **pfdp)
 	struct pfd *pfd;
 	struct conn_pool *cp;
 
-	pfd = *pfdp;
-	*pfdp = NULL;
-	CHECK_OBJ_NOTNULL(pfd, PFD_MAGIC);
+	TAKE_OBJ_NOTNULL(pfd, pfdp, PFD_MAGIC);
 	cp = pfd->conn_pool;
 	CHECK_OBJ_NOTNULL(cp, CONN_POOL_MAGIC);
 

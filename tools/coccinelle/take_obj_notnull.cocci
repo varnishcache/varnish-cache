@@ -24,6 +24,19 @@ expression obj, objp, magic;
 expression obj, objp, magic;
 @@
 
+- AN(*objp);
+...
+- obj = *objp;
+...
+- *objp = NULL;
+...
+- CHECK_OBJ_NOTNULL(obj, magic);
++ TAKE_OBJ_NOTNULL(obj, objp, magic);
+
+@@
+expression obj, objp, magic;
+@@
+
 - AN(objp);
 ...
 - obj = *objp;
@@ -45,3 +58,14 @@ expression obj, objp, magic;
 + TAKE_OBJ_NOTNULL(obj, objp, magic);
 ...
 - *objp = NULL;
+
+@@
+expression obj, objp, magic;
+@@
+
+- obj = *objp;
+...
+- *objp = NULL;
+...
+- CHECK_OBJ_NOTNULL(obj, magic);
++ TAKE_OBJ_NOTNULL(obj, objp, magic);

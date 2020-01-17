@@ -123,11 +123,7 @@ VCL_Rel(struct vcl **vcc)
 {
 	struct vcl *vcl;
 
-	AN(*vcc);
-	vcl = *vcc;
-	*vcc = NULL;
-
-	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
+	TAKE_OBJ_NOTNULL(vcl, vcc, VCL_MAGIC);
 	Lck_Lock(&vcl_mtx);
 	assert(vcl->busy > 0);
 	vcl->busy--;
