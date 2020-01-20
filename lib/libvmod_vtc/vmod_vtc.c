@@ -193,7 +193,7 @@ vmod_workspace_reserve(VRT_CTX, VCL_ENUM which, VCL_INT size)
 	if (r == 0)
 		return (0);
 	WS_Release(ws, 0);
-	return (1);
+	return (r);
 }
 
 VCL_INT v_matchproto_(td_vtc_workspace_free)
