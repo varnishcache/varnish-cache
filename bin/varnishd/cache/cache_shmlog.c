@@ -43,6 +43,55 @@
 #include "common/heritage.h"
 #include "common/vsmw.h"
 
+/* ------------------------------------------------------------
+ * strands helpers - move elsewhere?
+ */
+
+static unsigned
+strands_len(const struct strands *s)
+{
+	unsigned r = 0;
+	int i;
+
+	for (i = 0; i < s->n; i++) {
+		if (s->p[i] == NULL || *s->p[i] == '\0')
+			continue;
+		r += strlen(s->p[i]);
+	}
+
+	return (r);
+}
+
+/*
+ * like VRT_Strands(), but truncating instead of failing for end of buffer
+ *
+ * returns number of bytes including NUL
+ */
+static unsigned
+strands_cat(char *buf, unsigned bufl, const struct strands *s)
+{
+	unsigned l = 0, ll;
+	int i;
+
+	/* NUL-terminated */
+	assert(bufl > 0);
+	bufl--;
+
+	for (i = 0; i < s->n && bufl > 0; i++) {
+		if (s->p[i] == NULL || *s->p[i] == '\0')
+			continue;
+		ll = strlen(s->p[i]);
+		if (ll > bufl)
+			ll = bufl;
+		memcpy(buf, s->p[i], ll);
+		l += ll;
+		buf += ll;
+		bufl -= ll;
+	}
+	*buf = '\0';	/* NUL-terminated */
+	return (l + 1);
+}
+
 /* These cannot be struct lock, which depends on vsm/vsl working */
 static pthread_mutex_t vsl_mtx;
 static pthread_mutex_t vsc_mtx;
@@ -232,6 +281,20 @@ VSLv(enum VSL_tag_e tag, uint32_t vxid, const char *fmt, va_list ap)
 }
 
 void
+VSLs(enum VSL_tag_e tag, uint32_t vxid, const struct strands *s)
+{
+	unsigned n, mlen = cache_param->vsl_reclen;
+	char buf[mlen];
+
+	if (vsl_tag_is_masked(tag))
+		return;
+
+	n = strands_cat(buf, mlen, s);
+
+	vslr(tag, vxid, buf, n);
+}
+
+void
 VSL(enum VSL_tag_e tag, uint32_t vxid, const char *fmt, ...)
 {
 	va_list ap;
@@ -296,6 +359,42 @@ VSLbt(struct vsl_log *vsl, enum VSL_tag_e tag, txt t)
 	p = VSL_DATA(vsl->wlp);
 	memcpy(p, t.b, l);
 	p[l++] = '\0';		/* NUL-terminated */
+	vsl->wlp = vsl_hdr(tag, vsl->wlp, l, vsl->wid);
+	assert(vsl->wlp < vsl->wle);
+	vsl->wlr++;
+
+	if (DO_DEBUG(DBG_SYNCVSL))
+		VSL_Flush(vsl, 0);
+}
+
+/*--------------------------------------------------------------------
+ * VSL-buffered-strands
+ */
+void
+VSLbs(struct vsl_log *vsl, enum VSL_tag_e tag, const struct strands *s)
+{
+	unsigned l, mlen;
+
+	vsl_sanity(vsl);
+	if (vsl_tag_is_masked(tag))
+		return;
+	mlen = cache_param->vsl_reclen;
+
+	/* including NUL */
+	l = strands_len(s) + 1;
+	if (l > mlen)
+		l = mlen;
+
+	assert(vsl->wlp < vsl->wle);
+
+	/* Flush if necessary */
+	if (VSL_END(vsl->wlp, l) >= vsl->wle)
+		VSL_Flush(vsl, 1);
+	assert(VSL_END(vsl->wlp, l) < vsl->wle);
+
+	mlen = strands_cat(VSL_DATA(vsl->wlp), l, s);
+	assert(l == mlen);
+
 	vsl->wlp = vsl_hdr(tag, vsl->wlp, l, vsl->wid);
 	assert(vsl->wlp < vsl->wle);
 	vsl->wlr++;

@@ -133,19 +133,12 @@ vmod_random(VRT_CTX, VCL_REAL lo, VCL_REAL hi)
 VCL_VOID v_matchproto_(td_std_log)
 vmod_log(VRT_CTX, VCL_STRANDS s)
 {
-	const char *p;
-	uintptr_t sn;
-
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	sn = WS_Snapshot(ctx->ws);
-	p = VRT_StrandsWS(ctx->ws, NULL, s);
-	if (p != NULL) {
-		if (ctx->vsl != NULL)
-			VSLb(ctx->vsl, SLT_VCL_Log, "%s", p);
-		else
-			VSL(SLT_VCL_Log, 0, "%s", p);
-	}
-	WS_Reset(ctx->ws, sn);
+
+	if (ctx->vsl != NULL)
+		VSLbs(ctx->vsl, SLT_VCL_Log, s);
+	else
+		VSLs(SLT_VCL_Log, 0, s);
 }
 
 /* XXX use vsyslog() ? */

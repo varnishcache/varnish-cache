@@ -727,10 +727,12 @@ const char *SES_Get_String_Attr(const struct sess *sp, enum sess_attr a);
 void VSLv(enum VSL_tag_e tag, uint32_t vxid, const char *fmt, va_list va);
 void VSL(enum VSL_tag_e tag, uint32_t vxid, const char *fmt, ...)
     v_printflike_(3, 4);
+void VSLs(enum VSL_tag_e tag, uint32_t vxid, const struct strands *s);
 void VSLbv(struct vsl_log *, enum VSL_tag_e tag, const char *fmt, va_list va);
 void VSLb(struct vsl_log *, enum VSL_tag_e tag, const char *fmt, ...)
     v_printflike_(3, 4);
 void VSLbt(struct vsl_log *, enum VSL_tag_e tag, txt t);
+void VSLbs(struct vsl_log *, enum VSL_tag_e tag, const struct strands *s);
 void VSLb_ts(struct vsl_log *, const char *event, vtim_real first,
     vtim_real *pprev, vtim_real now);
 void VSLb_bin(struct vsl_log *, enum VSL_tag_e, ssize_t, const void*);
