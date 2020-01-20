@@ -149,6 +149,13 @@ vmod_syslog(VRT_CTX, VCL_INT fac, VCL_STRANDS s)
 	uintptr_t sn;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	// WS_Reset() could clear overflow
+	if (WS_Overflowed(ctx->ws)) {
+		VRT_fail(ctx, "overflowed workspace");
+		return;
+	}
+
 	sn = WS_Snapshot(ctx->ws);
 	p = VRT_StrandsWS(ctx->ws, NULL, s);
 	if (p != NULL)

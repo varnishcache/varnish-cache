@@ -378,6 +378,13 @@ encode(VRT_CTX, enum encoding enc, enum case_e kase, VCL_BLOB b)
 		return (NULL);
 
 	CHECK_OBJ_NOTNULL(ctx->ws, WS_MAGIC);
+
+	// WS_Reset() could clear overflow
+	if (WS_Overflowed(ctx->ws)) {
+		ERRNOMEM(ctx, "overflowed workspace");
+		return (NULL);
+	}
+
 	snap = WS_Snapshot(ctx->ws);
 	buf = WS_Front(ctx->ws);
 	space = WS_ReserveAll(ctx->ws);

@@ -202,6 +202,12 @@ vmod_ip(VRT_CTX, struct VARGS(ip) *a)
 	if (a->valid_fallback)
 		assert(VSA_Sane(a->fallback));
 
+	// WS_Reset() could clear overflow
+	if (WS_Overflowed(ctx->ws)) {
+		VRT_fail(ctx, "std.ip: overflowed workspace");
+		return (NULL);
+	}
+
 	p = WS_Alloc(ctx->ws, vsa_suckaddr_len);
 	if (p == NULL) {
 		VRT_fail(ctx, "std.ip: insufficient workspace");

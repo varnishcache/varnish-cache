@@ -392,6 +392,8 @@ h2_new_session(struct worker *wrk, void *arg)
 	h2->cond = &wrk->cond;
 
 	while (h2_rxframe(wrk, h2)) {
+		// XXX do we need to check for overflowed workspace before
+		// reset?
 		WS_Reset(h2->ws, 0);
 		HTC_RxInit(h2->htc, h2->ws);
 		if (WS_Overflowed(h2->ws)) {

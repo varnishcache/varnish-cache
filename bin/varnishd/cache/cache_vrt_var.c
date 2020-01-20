@@ -407,6 +407,12 @@ VRT_l_beresp_storage_hint(VRT_CTX, const char *str, ...)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
 
+	// WS_Reset() could clear overflow
+	if (WS_Overflowed(ctx->ws)) {
+		VRT_fail(ctx, "overflowed workspace");
+		return;
+	}
+
 	sn = WS_Snapshot(ctx->ws);
 	va_start(ap, str);
 	p = VRT_String(ctx->ws, NULL, str, ap);
