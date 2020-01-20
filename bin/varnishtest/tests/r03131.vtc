@@ -12,13 +12,38 @@ varnish v1 -vcl {
 
 	sub vcl_synth {
 		set resp.http.res1 = vtc.workspace_reserve(client, 1024 * 1024);
-		vtc.workspace_alloc(client, -1);
-		set resp.http.res2 = vtc.workspace_reserve(client, 8);
-		set resp.http.res3 = vtc.workspace_reserve(client, 8);
+
+		# XXX overflow gets cleared by WS_Reset called from std.log()
+		# -> do we want this ?
+
+		vtc.workspace_alloc(session, -16);
+		std.log("res(8) = " + vtc.workspace_reserve(session, 8));
+		std.log("res(15) = " + vtc.workspace_reserve(session, 15));
+		std.log("res(16) = " + vtc.workspace_reserve(session, 16));
+		std.log("res(17) = " + vtc.workspace_reserve(session, 17));
+		std.log("res(8) = " + vtc.workspace_reserve(session, 8));
 	}
+} -start
+
+logexpect l1 -v v1 -g raw {
+	expect * * VCL_Log	{^\Qres(8) = 8.000\E$}
+
+	# XXX these should return 16
+	expect 0 = VCL_Log	{^\Qres(15) = 0.000\E$}
+	expect 0 = VCL_Log	{^\Qres(16) = 0.000\E$}
+
+	expect 0 = VCL_Log	{^\Qres(17) = 0.000\E$}
+
+	# workspace is now overflown, but smaller reservation still succeeds
+	expect 0 = VCL_Log	{^\Qres(8) = 8.000\E$}
+
+	expect * = Error	{^workspace_session overflow$}
 } -start
 
 client c1 {
 	txreq
 	rxresp
+	expect resp.status == 500
 } -run
+
+logexpect l1 -wait
