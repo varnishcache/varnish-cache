@@ -758,10 +758,8 @@ VPX_Send_Proxy(int fd, int version, const struct sess *sp)
 
 	r = write(fd, VSB_data(vsb), VSB_len(vsb));
 
-	if (!DO_DEBUG(DBG_PROTOCOL)) {
-		VSB_delete(vsb);
+	if (!DO_DEBUG(DBG_PROTOCOL))
 		return (r);
-	}
 
 	vsb2 = VSB_new_auto();
 	AN(vsb2);
@@ -769,7 +767,6 @@ VPX_Send_Proxy(int fd, int version, const struct sess *sp)
 	    version == 2 ? VSB_QUOTE_HEX : 0);
 	AZ(VSB_finish(vsb2));
 	VSL(SLT_Debug, 999, "PROXY_HDR %s", VSB_data(vsb2));
-	VSB_delete(vsb);
 	VSB_delete(vsb2);
 	return (r);
 }
