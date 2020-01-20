@@ -40,6 +40,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#if defined (__APPLE__)
+#    include "vtim.h"
+#endif
+
 #include "VSC_lck.h"
 
 struct ilck {
@@ -214,6 +218,19 @@ Lck_CondWait(pthread_cond_t *cond, struct lock *lck, vtim_real when)
 		ts.tv_sec = (long)t;
 		assert(ts.tv_nsec >= 0 && ts.tv_nsec < 999999999);
 		errno = pthread_cond_timedwait(cond, &ilck->mtx, &ts);
+#if defined (__APPLE__)
+		if (errno == EINVAL && when > VTIM_real()) {
+			/*
+			 * Most kernels treat this as honest error,
+			 * recognizing that a thread has no way to
+			 * prevent being descheduled between a user-
+			 * land check of the timestamp, and getting
+			 * the timestamp into the kernel before it
+			 * expires.  OS/X on the other hand...
+			 */
+			errno = ETIMEDOUT;
+		}
+#endif
 		assert(errno == 0 ||
 		    errno == ETIMEDOUT ||
 		    errno == EINTR);
