@@ -540,7 +540,7 @@ vcl_set_state(VRT_CTX, const char *state)
 				vcl_BackendEvent(vcl, VCL_EVENT_WARM);
 				break;
 			}
-			AZ(vcl->conf->event_vcl(ctx, VCL_EVENT_COLD));
+			AZ(vcl_send_event(ctx, VCL_EVENT_COLD));
 			vcl->temp = VCL_TEMP_COLD;
 		}
 		break;
