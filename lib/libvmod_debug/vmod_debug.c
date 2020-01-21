@@ -495,6 +495,8 @@ event_cold(VRT_CTX, const struct vmod_priv *priv)
 	pthread_t thread;
 	struct priv_vcl *priv_vcl;
 
+	AN(ctx->msg);
+
 	CAST_OBJ_NOTNULL(priv_vcl, priv->priv, PRIV_VCL_MAGIC);
 
 	VSL(SLT_Debug, 0, "%s: VCL_EVENT_COLD", VCL_Name(ctx->vcl));
@@ -530,6 +532,8 @@ event_discard(VRT_CTX, void *priv)
 
 	(void)priv;
 
+	AZ(ctx->msg);
+
 	VRT_RemoveVFP(ctx, &xyzzy_rot13);
 	VRT_RemoveVDP(ctx, &xyzzy_vdp_rot13);
 
@@ -557,7 +561,7 @@ xyzzy_event_function(VRT_CTX, struct vmod_priv *priv, enum vcl_event_e e)
 	case VCL_EVENT_WARM:	return (event_warm(ctx, priv));
 	case VCL_EVENT_COLD:	return (event_cold(ctx, priv));
 	case VCL_EVENT_DISCARD:	return (event_discard(ctx, priv));
-	default: return (0);
+	default: WRONG("we should test all possible events");
 	}
 }
 

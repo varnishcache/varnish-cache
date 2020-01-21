@@ -286,7 +286,13 @@ struct vrt_ctx {
 	unsigned			*handling;
 	unsigned			vclver;
 
-	struct vsb			*msg;	// Only in ...init()
+	/*
+	 * msg is for error messages and exists only for
+	 * VCL_EVENT_LOAD
+	 * VCL_EVENT_WARM
+	 * VCL_EVENT_COLD
+	 */
+	struct vsb			*msg;
 	struct vsl_log			*vsl;
 	VCL_VCL				vcl;
 	struct ws			*ws;
