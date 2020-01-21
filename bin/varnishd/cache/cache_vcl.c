@@ -567,6 +567,9 @@ vcl_cancel_load(struct vrt_ctx *ctx, struct cli *cli,
 	VCLI_Out(cli, "VCL \"%s\" Failed %s", name, step);
 	if (VSB_len(ctx->msg))
 		VCLI_Out(cli, "\nMessage:\n\t%s", VSB_data(ctx->msg));
+	VCL_Rel_CliCtx(&ctx);
+	ctx = VCL_Get_CliCtx(0);
+	ctx->vcl = vcl;
 	ctx->method = VCL_MET_FINI;
 	AZ(vcl_send_event(ctx, VCL_EVENT_DISCARD));
 	ctx->method = 0;
@@ -641,20 +644,24 @@ VCL_Poll(void)
 	struct vcl *vcl, *vcl2;
 
 	ASSERT_CLI();
-	ctx = VCL_Get_CliCtx(0);
 	VTAILQ_FOREACH_SAFE(vcl, &vcl_head, list, vcl2) {
 		if (vcl->temp == VCL_TEMP_BUSY ||
 		    vcl->temp == VCL_TEMP_COOLING) {
+			// XXX #2902 : cold event to have msg ?
+			//	       move ctx into vcl_set_state() ?
+			ctx = VCL_Get_CliCtx(1);
 			ctx->vcl = vcl;
 			ctx->syntax = ctx->vcl->conf->syntax;
 			ctx->method = 0;
 			(void)vcl_set_state(ctx, "0");
+			VCL_Rel_CliCtx(&ctx);
 		}
 		if (vcl->discard && vcl->temp == VCL_TEMP_COLD) {
 			AZ(vcl->busy);
 			assert(vcl != vcl_active);
 			assert(VTAILQ_EMPTY(&vcl->ref_list));
 			VTAILQ_REMOVE(&vcl_head, vcl, list);
+			ctx = VCL_Get_CliCtx(0);
 			ctx->vcl = vcl;
 			ctx->syntax = ctx->vcl->conf->syntax;
 			ctx->method = VCL_MET_FINI;
@@ -665,9 +672,9 @@ VCL_Poll(void)
 			VCL_Close(&vcl);
 			VSC_C_main->n_vcl--;
 			VSC_C_main->n_vcl_discard--;
+			VCL_Rel_CliCtx(&ctx);
 		}
 	}
-	VCL_Rel_CliCtx(&ctx);
 }
 
 /*--------------------------------------------------------------------*/

@@ -631,6 +631,7 @@ VRT_fail(VRT_CTX, const char *fmt, ...)
 	if (ctx->vsl != NULL) {
 		VSLbv(ctx->vsl, SLT_VCL_Error, fmt, ap);
 	} else {
+		AN(ctx->msg);
 		VSB_vprintf(ctx->msg, fmt, ap);
 		VSB_putc(ctx->msg, '\n');
 	}
