@@ -778,7 +778,7 @@ vcl_cli_state(struct cli *cli, const char * const *av, void *priv)
 	AN(av[3]);
 	ctx = VCL_Get_CliCtx(1);
 	ctx->vcl = vcl_find(av[2]);
-	AN(ctx->vcl);			// MGT ensures this
+	AN(ctx->vcl);
 	if (vcl_set_state(ctx, av[3])) {
 		AZ(VSB_finish(ctx->msg));
 		VCLI_SetResult(cli, CLIS_CANT);
