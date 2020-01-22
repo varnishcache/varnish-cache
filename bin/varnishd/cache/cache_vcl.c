@@ -260,6 +260,7 @@ void
 vcl_get(struct vcl **vcc, struct vcl *vcl)
 {
 	AN(vcc);
+	AZ(*vcc);
 
 	Lck_Lock(&vcl_mtx);
 	if (vcl == NULL)
