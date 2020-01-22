@@ -84,8 +84,6 @@ VCL_Refresh(struct vcl **vcc)
 
 	if (*vcc == vcl_active)
 		return;
-	if (*vcc != NULL)
-		VCL_Rel(vcc);	/* XXX: optimize locking */
 
 	vcl_get(vcc, NULL);
 }

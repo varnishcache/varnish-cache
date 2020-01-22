@@ -259,10 +259,21 @@ VCL_Panic(struct vsb *vsb, const char *nm, const struct vcl *vcl)
 void
 vcl_get(struct vcl **vcc, struct vcl *vcl)
 {
+	struct vcl *old;
+
 	AN(vcc);
-	AZ(*vcc);
+
+	old = *vcc;
+	*vcc = NULL;
+
+	CHECK_OBJ_ORNULL(old, VCL_MAGIC);
 
 	Lck_Lock(&vcl_mtx);
+	if (old != NULL) {
+		assert(old->busy > 0);
+		old->busy--;
+	}
+
 	if (vcl == NULL)
 		vcl = vcl_active; /* Sample vcl_active under lock to avoid
 				   * race */
