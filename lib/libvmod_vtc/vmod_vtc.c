@@ -118,7 +118,7 @@ VCL_VOID v_matchproto_(td_vtc_sleep)
 vmod_sleep(VRT_CTX, VCL_DURATION t)
 {
 
-	CHECK_OBJ_ORNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	VTIM_sleep(t);
 }
 
@@ -348,7 +348,7 @@ vmod_proxy_header(VRT_CTX, VCL_ENUM venum, VCL_IP client, VCL_IP server,
 	int version;
 	size_t l;
 
-	CHECK_OBJ_ORNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
 	if (venum == VENUM(v1))
 		version = 1;
