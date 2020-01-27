@@ -13,6 +13,7 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	import vtc;
+	import std;
 	sub vcl_deliver {
 		vtc.workspace_alloc(client, -192);
 
@@ -21,7 +22,8 @@ varnish v1 -vcl+backend {
 			vtc.workspace_alloc(client, -10);
 		}
 		else if (req.url ~ "/baz") {
-			set resp.http.x-foo = regsub(req.url, "baz", "baaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaz");
+			set resp.http.x-foo = regsub(req.url, "baz", "baaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaz");
+			std.log("dummy");
 		}
 		set resp.http.x-of = vtc.workspace_overflowed(client);
 	}
@@ -41,6 +43,16 @@ client c1 {
 
 varnish v1 -vsl_catchup
 
+logexpect l1 -v v1 -g raw {
+	expect * 1006	VCL_call	{^DELIVER$}
+	expect 0 =	LostHeader	{^x-foo:$}
+	# std.log does not need workspace
+	expect 0 =	VCL_Log		{^dummy$}
+	# the workspace is overflowed, but still has space
+	expect 0 =	RespHeader	{^x-of: true$}
+	expect 6 =	Error		{^workspace_client overflow}
+} -start
+
 client c2 {
 	txreq -url /baz
 	rxresp
@@ -48,6 +60,7 @@ client c2 {
 	expect resp.http.x-of == <undef>
 } -run
 
+logexpect l1 -wait
 
 varnish v1 -expect client_resp_500 == 2
 varnish v1 -expect ws_client_overflow == 2
