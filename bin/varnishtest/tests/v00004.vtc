@@ -140,6 +140,7 @@ server s1 {
 varnish v1 -vcl+backend {
 	import std;
 	import debug;
+	import vtc;
 
 	sub recv0 { call recv1; std.log("STK recv0 " + debug.stk()); }
 	sub recv1 { call recv2; std.log("STK recv1 " + debug.stk()); }
@@ -151,11 +152,14 @@ varnish v1 -vcl+backend {
 	sub recv7 { call recv8; std.log("STK recv7 " + debug.stk()); }
 	sub recv8 { call recv9; std.log("STK recv8 " + debug.stk()); }
 	sub recv9 {
-		std.log("STK recv9 " + debug.stk());
+		std.log("STK recv9 " + debug.stk() + " WS " +
+		    vtc.workspace_free(client));
 		set req.http.regex = regsub(req.http.cookie, "(.*)", "\1\1\1\1\1\1\1\1");
+		std.log("WS " + vtc.workspace_free(client));
 		# hey geoff, this is deliberate
 		set req.http.regex = regsub(req.http.regex,
 		  "(.*)(.{5})(.{6})(.{7})(.{8})", "/\5\4\3\2\1");
+		std.log("WS " + vtc.workspace_free(client));
 		std.log("REGEX recv9 " + req.http.regex);
 	}
 
