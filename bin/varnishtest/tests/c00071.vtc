@@ -22,7 +22,7 @@ varnish v1 -vcl+backend {
 			vtc.workspace_alloc(client, -10);
 		}
 		else if (req.url ~ "/baz") {
-			set resp.http.x-foo = regsub(req.url, "baz", "baaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaz");
+			set resp.http.x-foo = regsub(req.url, "baz", "baaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaz");
 			std.log("dummy");
 		}
 		set resp.http.x-of = vtc.workspace_overflowed(client);
