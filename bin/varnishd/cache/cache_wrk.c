@@ -348,7 +348,7 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 		CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 		tp = NULL;
 
-		WS_Reset(wrk->aws, 0);
+		WS_Rollback(wrk->aws, 0);
 		AZ(wrk->vsl);
 
 		Lck_Lock(&pp->mtx);

@@ -463,6 +463,9 @@ void VMOD_Panic(struct vsb *);
 /* cache_wrk.c */
 void WRK_Init(void);
 
+/* cache_ws.c */
+void WS_Rollback(struct ws *, uintptr_t);
+
 /* http1/cache_http1_pipe.c */
 void V1P_Init(void);
 

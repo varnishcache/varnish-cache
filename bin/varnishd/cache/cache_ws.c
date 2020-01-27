@@ -36,6 +36,8 @@
 
 #include <stdio.h>
 
+static const void * const snap_overflowed = &snap_overflowed;
+
 void
 WS_Assert(const struct ws *ws)
 {
@@ -127,7 +129,12 @@ ws_ClearOverflow(struct ws *ws)
 }
 
 /*
- * Reset a WS to start or a given pointer, likely from WS_Snapshot
+ * Reset a WS to a cookie from WS_Snapshot
+ *
+ * for use by any code using cache.h
+ *
+ * does not reset the overflow bit and asserts that, if WS_Snapshot had found
+ * the workspace overflown, the marker is intact
  */
 
 void
@@ -136,18 +143,37 @@ WS_Reset(struct ws *ws, uintptr_t pp)
 	char *p;
 
 	WS_Assert(ws);
+	AN(pp);
+	if (pp == (uintptr_t)snap_overflowed) {
+		DSL(DBG_WORKSPACE, 0, "WS_Reset(%p, overflowed)", ws);
+		AN(WS_Overflowed(ws));
+		return;
+	}
 	p = (char *)pp;
 	DSL(DBG_WORKSPACE, 0, "WS_Reset(%p, %p)", ws, p);
 	assert(ws->r == NULL);
-	if (p == NULL)
-		ws->f = ws->s;
-	else {
-		assert(p >= ws->s);
-		assert(p <= ws->e);
-		ws->f = p;
-	}
-	ws_ClearOverflow(ws);
+	assert(p >= ws->s);
+	assert(p <= ws->e);
+	ws->f = p;
 	WS_Assert(ws);
+}
+
+/*
+ * Reset the WS to a cookie or its start and clears any overflow
+ *
+ * for varnishd internal use only
+ */
+
+void
+WS_Rollback(struct ws *ws, uintptr_t pp)
+{
+	WS_Assert(ws);
+
+	if (pp == 0)
+		pp = (uintptr_t)ws->s;
+
+	ws_ClearOverflow(ws);
+	WS_Reset(ws, pp);
 }
 
 void *
@@ -224,8 +250,12 @@ WS_Snapshot(struct ws *ws)
 
 	WS_Assert(ws);
 	assert(ws->r == NULL);
+	if (WS_Overflowed(ws)) {
+		DSL(DBG_WORKSPACE, 0, "WS_Snapshot(%p) = overflowed", ws);
+		return ((uintptr_t) snap_overflowed);
+	}
 	DSL(DBG_WORKSPACE, 0, "WS_Snapshot(%p) = %p", ws, ws->f);
-	return (ws->f == ws->s ? 0 : (uintptr_t)ws->f);
+	return ((uintptr_t)ws->f);
 }
 
 /*
