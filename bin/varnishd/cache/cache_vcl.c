@@ -163,7 +163,7 @@ VCL_Rel_CliCtx(struct vrt_ctx **ctx)
 	if (ctx_cli.vsl)
 		VSL_Flush(ctx_cli.vsl, 0);
 	WS_Assert(ctx_cli.ws);
-	WS_Reset(&ws_cli, ws_snapshot_cli);
+	WS_Rollback(&ws_cli, ws_snapshot_cli);
 	INIT_OBJ(*ctx, VRT_CTX_MAGIC);
 	*ctx = NULL;
 

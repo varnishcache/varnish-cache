@@ -321,8 +321,7 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 	    sz, r, &req->acct.resp_hdrbytes);
 	H2_Send_Rel(r2->h2sess, r2);
 
-	if (!WS_Overflowed(req->ws))	// XXX: remove if when #3202 is fixed
-		WS_Reset(req->ws, ss);
+	WS_Reset(req->ws, ss);
 
 	/* XXX someone into H2 please add appropriate error handling */
 	if (sendbody) {

@@ -200,7 +200,7 @@ Req_Rollback(struct req *req)
 	HTTP_Clone(req->http, req->http0);
 	if (WS_Overflowed(req->ws))
 		req->wrk->stats->ws_client_overflow++;
-	WS_Reset(req->ws, req->ws_req);
+	WS_Rollback(req->ws, req->ws_req);
 }
 
 /*----------------------------------------------------------------------
@@ -251,7 +251,7 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	if (WS_Overflowed(req->ws))
 		wrk->stats->ws_client_overflow++;
 
-	WS_Reset(req->ws, 0);
+	WS_Rollback(req->ws, 0);
 }
 
 /*----------------------------------------------------------------------

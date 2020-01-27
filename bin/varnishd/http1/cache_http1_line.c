@@ -139,7 +139,7 @@ V1L_Close(struct worker *wrk, uint64_t *cnt)
 	*cnt = v1l->cnt;
 	if (v1l->ws->r)
 		WS_Release(v1l->ws, 0);
-	WS_Reset(v1l->ws, v1l->res);
+	WS_Rollback(v1l->ws, v1l->res);
 	ZERO_OBJ(v1l, sizeof *v1l);
 	return (sc);
 }
