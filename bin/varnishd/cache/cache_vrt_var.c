@@ -950,19 +950,18 @@ HTTP_VAR(beresp)
 
 /*--------------------------------------------------------------------*/
 
-#define set_noop(sp, d) (void)0
-
-#ifdef SO_SNDTIMEO_WORKS
 static inline void
-set_idle_send_timeout(struct sess *sp, VCL_DURATION d)
+set_idle_send_timeout(const struct sess *sp, VCL_DURATION d)
 {
+#ifdef SO_SNDTIMEO_WORKS
 	struct timeval tv = VTIM_timeval(d);
 	VTCP_Assert(setsockopt(sp->fd, SOL_SOCKET, SO_SNDTIMEO,
 	    &tv, sizeof tv));
-}
 #else
-#define set_idle_send_timeout(sp, d) set_noop(sp, d)
+	(void)sp;
+	(void)d;
 #endif
+}
 
 #define SESS_VAR_DUR(x, setter)				\
 VCL_VOID						\
@@ -972,7 +971,7 @@ VRT_l_sess_##x(VRT_CTX, VCL_DURATION d)		\
 	CHECK_OBJ_NOTNULL(ctx->sp, SESS_MAGIC);		\
 	if (d < 0.0)					\
 		d = 0.0;				\
-	setter(ctx->sp, d);				\
+	setter;						\
 	ctx->sp->x = d;					\
 }							\
 							\
@@ -984,7 +983,7 @@ VRT_r_sess_##x(VRT_CTX)				\
 	return (SESS_TMO(ctx->sp, x));			\
 }
 
-SESS_VAR_DUR(timeout_idle, set_noop)
-SESS_VAR_DUR(timeout_linger, set_noop)
-SESS_VAR_DUR(send_timeout, set_noop)
-SESS_VAR_DUR(idle_send_timeout, set_idle_send_timeout)
+SESS_VAR_DUR(timeout_idle, )
+SESS_VAR_DUR(timeout_linger, )
+SESS_VAR_DUR(send_timeout, )
+SESS_VAR_DUR(idle_send_timeout, set_idle_send_timeout(ctx->sp, d))
