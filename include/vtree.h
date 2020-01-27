@@ -3,6 +3,8 @@
 /* $FreeBSD: release/9.0.0/sys/sys/tree.h 189204 2009-03-01 04:57:23Z bms $ */
 
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ *
  * Copyright 2002 Niels Provos <provos@citi.umich.edu>
  * All rights reserved.
  *

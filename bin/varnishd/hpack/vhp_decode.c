@@ -5,6 +5,8 @@
  * Author: Martin Blix Grydeland <martin@varnish-software.com>
  * Author: Dridi Boukelmoune <dridi.boukelmoune@gmail.com>
  *
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:

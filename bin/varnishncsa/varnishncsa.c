@@ -8,6 +8,8 @@
  * Author: Tollef Fog Heen <tfheen@varnish-software.com>
  * Author: Martin Blix Grydeland <mbgrydeland@varnish-software.com>
  *
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:

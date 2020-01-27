@@ -2,6 +2,8 @@
 # Copyright (c) 2016-2018 Varnish Cache project
 # Copyright (c) 2012-2016 Varnish Software AS
 #
+# SPDX-License-Identifier: BSD-2-Clause
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
 # are met:
