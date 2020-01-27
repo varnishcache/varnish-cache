@@ -1,10 +1,8 @@
 varnishtest "backend send timeouts"
 
 server s1 {
+	non_fatal
 	rxreq
-	expect req.method == POST
-	expect req.body == helloworld
-	txresp
 } -start
 
 varnish v1 -vcl+backend "" -start
@@ -21,5 +19,5 @@ client c1 {
 	delay 2
 	send world
 	rxresp
-	expect resp.status == 200
+	expect resp.status == 503
 } -run
