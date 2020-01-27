@@ -257,7 +257,7 @@ VCL_Panic(struct vsb *vsb, const char *nm, const struct vcl *vcl)
 /*--------------------------------------------------------------------*/
 
 void
-vcl_get(struct vcl **vcc, struct vcl *vcl)
+VCL_Update(struct vcl **vcc, struct vcl *vcl)
 {
 	struct vcl *old;
 

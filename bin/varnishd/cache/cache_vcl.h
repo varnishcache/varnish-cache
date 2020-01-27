@@ -70,7 +70,7 @@ struct vclref {
 extern struct lock		vcl_mtx;
 extern struct vcl		*vcl_active; /* protected by vcl_mtx */
 struct vcl *vcl_find(const char *);
-void vcl_get(struct vcl **, struct vcl *);
+void VCL_Update(struct vcl **, struct vcl *);
 
 struct vcltemp {
 	const char * const	name;

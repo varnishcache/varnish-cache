@@ -85,7 +85,7 @@ VCL_Refresh(struct vcl **vcc)
 	if (*vcc == vcl_active)
 		return;
 
-	vcl_get(vcc, NULL);
+	VCL_Update(vcc, NULL);
 }
 
 void

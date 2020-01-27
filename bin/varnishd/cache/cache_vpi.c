@@ -109,7 +109,7 @@ VPI_vcl_select(VRT_CTX, VCL_VCL vcl)
 		req->top->vcl0 = req->vcl;
 		req->vcl = NULL;
 	}
-	vcl_get(&req->vcl, vcl);
+	VCL_Update(&req->vcl, vcl);
 	VSLb(ctx->req->vsl, SLT_VCL_use, "%s via %s",
 	    req->vcl->loaded_name, vcl->loaded_name);
 }
