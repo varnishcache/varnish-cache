@@ -87,7 +87,7 @@ Various policies
 .. toctree::
 	:maxdepth: 1
 
-	policy_governance
+	Varnish Cache organization and day-to-day operation <https://varnish-cache.org/organization/index.html>
 	policy_vmods
 
 The varnish-cache.org homepage
