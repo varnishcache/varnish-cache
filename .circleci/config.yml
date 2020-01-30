@@ -7,38 +7,13 @@ parameters:
   pkg-commit:
     type: string
     default: "weekly"
-commands:
-  debian_install_build_deps:
-    description: Install build dependencies
+jobs:
+  dist:
+    docker:
+      - image: centos:7
     steps:
       - run:
-          name: Install build dependencies
-          command: |
-            export DEBIAN_FRONTEND=noninteractive
-            export DEBCONF_NONINTERACTIVE_SEEN=true
-            apt-get update
-            apt-get install -y \
-                autoconf \
-                automake \
-                build-essential \
-                ca-certificates \
-                git \
-                graphviz \
-                libconfig-dev \
-                libedit-dev \
-                libjemalloc-dev \
-                libncurses-dev \
-                libpcre3-dev \
-                libtool \
-                libunwind-dev \
-                pkg-config \
-                python3-sphinx \
-                sudo
-  centos_install_build_deps:
-    description: Install build dependencies
-    steps:
-      - run:
-          name: Install build dependencies
+          name: Install deps
           command: |
             yum install -y epel-release
             yum install -y \
@@ -56,35 +31,6 @@ commands:
                 python3 \
                 python-sphinx \
                 sudo
-  alpine_install_build_deps:
-    description: Install build dependencies
-    steps:
-      - run:
-          name: Install build dependencies
-          command: |
-            apk update
-            apk add -q \
-                autoconf \
-                automake \
-                build-base \
-                ca-certificates \
-                gzip \
-                libconfig-dev \
-                libedit-dev \
-                libtool \
-                libunwind-dev \
-                linux-headers \
-                pcre-dev \
-                py-docutils \
-                py3-sphinx \
-                tar \
-                sudo
-jobs:
-  dist:
-    docker:
-      - image: centos:7
-    steps:
-      - centos_install_build_deps
       - checkout
       - run:
           name: Create the dist tarball
@@ -146,7 +92,70 @@ jobs:
       - image: << parameters.dist >>:<< parameters.release >>
     working_directory: /workspace
     steps:
-      - << parameters.dist >>_install_build_deps
+      - run:
+          name: Possibly activate centos:8 extra repos
+          command: |
+            if [ << parameters.dist >> = centos ]; then
+                if [ << parameters.release >> = 8 ]; then
+                    dnf install -y 'dnf-command(config-manager)'
+                    yum config-manager --set-enabled PowerTools
+                    yum install -y diffutils python3-sphinx
+                else
+                    yum install -y python-sphinx
+                fi
+                yum install -y epel-release
+                yum install -y \
+                    automake \
+                    jemalloc-devel \
+                    libconfig-devel \
+                    libcurl-devel \
+                    libedit-devel \
+                    libtool \
+                    libunwind-devel \
+                    make \
+                    openssh-clients \
+                    pcre-devel \
+                    python3 \
+                    sudo
+            elif [ << parameters.dist >> = debian -o << parameters.dist >> = ubuntu ]; then
+                export DEBIAN_FRONTEND=noninteractive
+                export DEBCONF_NONINTERACTIVE_SEEN=true
+                apt-get update
+                apt-get install -y \
+                    autoconf \
+                    automake \
+                    build-essential \
+                    ca-certificates \
+                    graphviz \
+                    libconfig-dev \
+                    libedit-dev \
+                    libjemalloc-dev \
+                    libncurses-dev \
+                    libpcre3-dev \
+                    libtool \
+                    libunwind-dev \
+                    pkg-config \
+                    python3-sphinx \
+                    sudo
+            elif [ << parameters.dist >> = alpine ]; then
+                apk update
+                apk add -q \
+                    autoconf \
+                    automake \
+                    build-base \
+                    ca-certificates \
+                    gzip \
+                    libconfig-dev \
+                    libedit-dev \
+                    libtool \
+                    libunwind-dev \
+                    linux-headers \
+                    pcre-dev \
+                    py-docutils \
+                    py3-sphinx \
+                    tar \
+                    sudo
+            fi
       - attach_workspace:
           at: /workspace
       - run:
@@ -285,9 +294,14 @@ jobs:
           paths:
             - debs/varnish*.deb
             - debs/varnish*.dsc
-  build_centos_7:
+  build_rpms:
+    parameters:
+      release:
+        description: the Centos version (7|8)
+        type: string
+    description: Build Centos << parameters.release >> rpms
     docker:
-      - image: centos:7
+      - image: centos:<< parameters.release >>
     environment:
       DIST_DIR: build
       DIST: el7
@@ -318,6 +332,9 @@ jobs:
             set -e
             set -u
 
+            if [ << parameters.release >> = 8 ]; then
+                yum config-manager --set-enabled PowerTools
+            fi
             # use python3
             sed -i '1 i\%global __python %{__python3}' "$DIST_DIR"/redhat/varnish.spec
             if [ -e .is_weekly ]; then
@@ -399,7 +416,13 @@ workflows:
           dist: ubuntu
           release: bionic
           <<: *pkg_req
-      - build_centos_7:
+      - build_rpms:
+          name: build_centos_7
+          release: "7"
+          <<: *pkg_req
+      - build_rpms:
+          name: build_centos_8
+          release: "8"
           <<: *pkg_req
       - build_apks:
           name: build_alpine
@@ -411,11 +434,18 @@ workflows:
             - build_ubuntu_xenial
             - build_ubuntu_bionic
             - build_centos_7
+            - build_centos_8
             - build_alpine
       - distcheck:
           name: distcheck_centos_7
           dist: centos
           release: "7"
+          requires:
+            - dist
+      - distcheck:
+          name: distcheck_centos_8
+          dist: centos
+          release: "8"
           requires:
             - dist
       - distcheck:
