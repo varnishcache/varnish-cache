@@ -60,6 +60,7 @@
  *	VRT_l_resp_body() changed
  *	VRT_l_beresp_body() changed
  *	VRT_Format_Proxy() added	// transitional interface
+ *	VRT_re_quote() added
  * 10.0 (2019-09-15)
  *	VRT_UpperLowerStrands added.
  *	VRT_synth_page now takes STRANDS argument
@@ -477,6 +478,7 @@ VCL_BYTES VRT_CacheReqBody(VRT_CTX, VCL_BYTES maxsize);
 
 /* Regexp related */
 
+VCL_STRING VRT_re_quote(VRT_CTX, VCL_STRING);
 const char *VRT_regsub(VRT_CTX, int all, const char *, void *, const char *);
 VCL_VOID VRT_ban_string(VRT_CTX, VCL_STRING);
 VCL_INT VRT_purge(VRT_CTX, VCL_DURATION, VCL_DURATION, VCL_DURATION);

@@ -93,6 +93,32 @@ VRT_re_match(VRT_CTX, const char *s, void *re)
 	return (0);
 }
 
+VCL_STRING
+VRT_re_quote(VRT_CTX, VCL_STRING s)
+{
+	size_t r;
+	ssize_t l;
+	char *q;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->ws, WS_MAGIC);
+
+	if (s == NULL)
+		return (NULL);
+
+	r = WS_ReserveAll(ctx->ws);
+	q = ctx->ws->f;
+	l = VRE_quote(q, r, s);
+	if (l < 0) {
+		WS_Release(ctx->ws, 0);
+		WS_MarkOverflow(ctx->ws);
+		return (NULL);
+	}
+
+	WS_Release(ctx->ws, l);
+	return (q);
+}
+
 const char *
 VRT_regsub(VRT_CTX, int all, const char *str, void *re,
     const char *sub)
