@@ -27,6 +27,18 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
+Varnish Cache 6.3.2 (2020-02-04)
+================================
+
+Bugs fixed
+----------
+
+* Fix a denial of service vulnerability when using the proxy protocol
+  version 2. (VSV00005_)
+
+.. _VSV00005: https://varnish-cache.org/security/VSV00005.html
+
+================================
 Varnish Cache 6.3.1 (2019-10-21)
 ================================
 
