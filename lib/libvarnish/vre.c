@@ -31,11 +31,13 @@
 #include "config.h"
 
 #include <pcre.h>
+#include <stdint.h>
 #include <string.h>
 
 #include "vdef.h"
 
 #include "vas.h"	// XXX Flexelint "not used" - but req'ed for assert()
+#include "vct.h"
 #include "miniobj.h"
 
 #include "vre.h"
@@ -146,4 +148,63 @@ VRE_free(vre_t **vv)
 	if (v->re != NULL)
 		pcre_free(v->re);
 	FREE_OBJ(v);
+}
+
+/* NB: The word size matches the number of leading control characters in the
+ * ASCII table to conveniently also serve as an offset.
+ */
+#define VRE_QUOTE_WORDLEN 32
+#define VRE_QUOTE_BITMASK (VRE_QUOTE_WORDLEN - 1)
+
+/* NB: This is a bitmap of ASCII characters (omitting leading control
+ * characters) that may have a special meaning in a regular expression.
+ */
+static const uint32_t vre_quote_bitmap[] = {
+	0xf4006f1a, /* ! # $ ( ) * + - . : < = > ? */
+	0x78000000, /* [ \ ] ^ */
+	0x38000000  /* { | } */
+};
+
+static unsigned
+vre_quote(char c)
+{
+	unsigned u;
+	uint32_t w;
+
+	if (!vct_isascii(c) || vct_isctl(c))
+		return (0);
+
+	u = (unsigned)c - VRE_QUOTE_WORDLEN;
+	w = vre_quote_bitmap[u / VRE_QUOTE_WORDLEN];
+	return ((w >> (u & VRE_QUOTE_BITMASK)) & 1);
+}
+
+ssize_t
+VRE_quote(char *dst, size_t len, const char *src)
+{
+	char *p;
+
+	AN(dst);
+	AN(src);
+
+	p = dst;
+	while (len > 0 && *src != '\0') {
+		if (vre_quote(*src)) {
+			*p = '\\';
+			p++;
+			len--;
+		}
+		if (len > 0) {
+			*p = *src;
+			p++;
+			src++;
+			len--;
+		}
+	}
+
+	if (len == 0)
+		return (-1);
+
+	*p = '\0';
+	return (1 + p - dst);
 }

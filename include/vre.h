@@ -59,5 +59,6 @@ int VRE_exec(const vre_t *code, const char *subject, int length,
     int startoffset, int options, int *ovector, int ovecsize,
     const volatile struct vre_limits *lim);
 void VRE_free(vre_t **);
+ssize_t VRE_quote(char *, size_t, const char *);
 
 #endif /* VRE_H_INCLUDED */
