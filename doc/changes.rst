@@ -27,6 +27,41 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
+Varnish Cache 6.0.6 (2020-02-04)
+================================
+
+* Fix an H2 locking bug during error handling. (3086_)
+
+* Replace `python` with `python3` in all build scripts.
+
+* Introduce `none` backends, which are empty backends that are always
+  sick. This is documented in the ``vcl(7)`` manual page.
+
+* Fix an assertion panic when labelling a VCL twice. (2834_)
+
+* Fix semantics of VCL `auto` state management. (2836_)
+
+* Fix a probe scheduling timeout sorting error. (3115_)
+
+* Allow switching to the error state from the backend fetch and backend
+  response states.  This makes it possible to execute `return (error)`
+  from within the `vcl_backend_fetch()` and `vcl_backend_response()` VCL
+  functions.
+
+* Implement the `If-Range` header as specified in RFC 7233 section
+  3.2. (RFC-7233-32_)
+
+* Fix a denial of service vulnerability when using the proxy protocol
+  version 2. (VSV00005_)
+
+.. _3086: https://github.com/varnishcache/varnish-cache/issues/3086
+.. _2834: https://github.com/varnishcache/varnish-cache/issues/2834
+.. _2836: https://github.com/varnishcache/varnish-cache/issues/2836
+.. _3115: https://github.com/varnishcache/varnish-cache/issues/3115
+.. _RFC-7233-32: https://tools.ietf.org/html/rfc7233#section-3.2
+.. _VSV00005: https://varnish-cache.org/security/VSV00005.html
+
+================================
 Varnish Cache 6.0.5 (2019-10-21)
 ================================
 
