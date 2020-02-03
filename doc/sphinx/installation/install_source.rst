@@ -74,16 +74,34 @@ Build dependencies on Red Hat / CentOS
 
 .. gawk '/^BuildRequires/ {print "* `" $2 "`"}' ../../../redhat/varnish.spec | sort | uniq | egrep -v '(systemd)'
 
-To build Varnish on a Red Hat or CentOS system, this command should
-install required packages (replace ``sudo yum install`` if needed)::
+in the following shell commands, replace ``sudo yum install`` if needed.
 
-    sudo yum install \
+Install sphinx
+
+* On Red Hat / CentOS 8, sphinx is not included in the default
+  repositories, so execute these steps to include it from the
+  PowerTools repository::
+
+    sudo dnf install -y 'dnf-command(config-manager)'
+    sudo yum config-manager --set-enabled PowerTools
+    sudo yum install -y diffutils python3-sphinx
+
+* On Red Hat / CentOS <= 7, install sphinx::
+
+    sudo yum install -y python-sphinx
+
+The following step should conclude installation of the required
+packages::
+
+  yum install -y \
 	make \
 	autoconf \
 	automake \
 	jemalloc-devel \
+	libconfig-devel \
 	libedit-devel \
 	libtool \
+	libunwind-devel \
 	ncurses-devel \
 	pcre-devel \
 	pkgconfig \
