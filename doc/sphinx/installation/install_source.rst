@@ -98,15 +98,13 @@ packages::
 	autoconf \
 	automake \
 	jemalloc-devel \
-	libconfig-devel \
 	libedit-devel \
 	libtool \
 	libunwind-devel \
 	ncurses-devel \
 	pcre-devel \
 	pkgconfig \
-	python3-docutils \
-	python3-sphinx
+	python3-docutils
 
 Optionally, to rebuild the svg files::
 
