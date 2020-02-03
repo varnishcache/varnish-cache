@@ -313,7 +313,6 @@ jobs:
       - image: centos:<< parameters.release >>
     environment:
       DIST_DIR: build
-      DIST: el7
     steps:
       - run:
           name: Install packaging tools
