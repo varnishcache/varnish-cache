@@ -1,5 +1,7 @@
 varnishtest "test if our default paramers make sense ..."
 
+feature 64bit
+
 # ... for our definition of a standard use case:
 # - 2019 header madness
 # - 5 ESI levels down
@@ -154,10 +156,6 @@ varnish v1 -vcl+backend {
 	sub recv9 {
 		std.log("STK recv9 " + debug.stk() + " WS " +
 		    vtc.workspace_free(client));
-		if (vtc.workspace_free(client) < 48 * 1024) {
-			std.log("XXX #3203 skipping");
-			return;
-		}
 		set req.http.regex = regsub(req.http.cookie, "(.*)", "\1\1\1\1\1\1\1\1");
 		std.log("WS " + vtc.workspace_free(client));
 		# hey geoff, this is deliberate
