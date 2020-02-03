@@ -72,13 +72,11 @@ jobs:
             - alpine.tar.gz
   distcheck:
     parameters:
-      release:
-        description: the release name (stretch|buster|xenial|bionic)
-        default: ""
-        type: string
       dist:
         description: the Linux distribution (debian|ubuntu)
-        default: ""
+        type: string
+      release:
+        description: the release name (stretch|buster|xenial|bionic)
         type: string
       extra_conf:
         description: platform-specific configure arguments
@@ -177,6 +175,15 @@ jobs:
             	--preserve-env=ASAN_OPTIONS,LSAN_OPTIONS,TSAN_OPTIONS,UBSAN_OPTIONS \
             	make distcheck VERBOSE=1 -j 12 -k
   build_apks:
+    parameters:
+      dist:
+        description: the Linux distribution (alpine)
+        default: alpine
+        type: string
+      release:
+        description: the release version
+        default: latest
+        type: string
     description: Build alpine apks
     docker:
       - image: alpine
@@ -224,19 +231,25 @@ jobs:
           command: |
             mkdir apks
             cp /home/builder/packages/x86_64/*.apk apks
+      - run:
+          name: Import the packages into the workspace
+          command: |
+            mkdir -p packages/<< parameters.dist >>/<< parameters.release >>
+            mv /home/builder/packages/x86_64/*.apk packages/<< parameters.dist >>/<< parameters.release >>
       - persist_to_workspace:
           root: .
           paths:
-            - apks/*.apk
+            - packages/<< parameters.dist >>/<< parameters.release >>/varnish*
+      - store_artifacts:
+          path: packages/<< parameters.dist >>/<< parameters.release >>
+          destination: ./
   build_debs:
     parameters:
-      release:
-        description: the release name (stretch|buster|xenial|bionic)
-        default: ""
-        type: string
       dist:
         description: the Linux distribution (debian|ubuntu)
-        default: ""
+        type: string
+      release:
+        description: the release name (stretch|buster|xenial|bionic)
         type: string
     description: Build << parameters.release >> debs
     docker:
@@ -278,19 +291,24 @@ jobs:
       - run:
           name: Import the packages into the workspace
           command: |
-            mkdir debs
-            mv ../*.deb ../*.dsc debs/
+            mkdir -p packages/<< parameters.dist >>/<< parameters.release >>
+            mv ../*.deb ../*.dsc packages/<< parameters.dist >>/<< parameters.release >>
       - persist_to_workspace:
           root: .
           paths:
-            - debs/varnish*.deb
-            - debs/varnish*.dsc
+            - packages/<< parameters.dist >>/<< parameters.release >>/varnish*
+      - store_artifacts:
+          path: packages/<< parameters.dist >>/<< parameters.release >>
+          destination: ./
   build_rpms:
     parameters:
-      release:
-        description: the Centos version (7|8)
+      dist:
+        description: the Linux distribution (centos|amazonlinux)
         type: string
-    description: Build Centos << parameters.release >> rpms
+      release:
+        description: the distribution version (7|8|2)
+        type: string
+    description: Build << parameters.dist >>:<< parameters.release >> rpms
     docker:
       - image: centos:<< parameters.release >>
     environment:
@@ -358,12 +376,19 @@ jobs:
             yum-builddep -y "$DIST_DIR"/redhat/varnish.spec
             rpmbuild -bs "$DIST_DIR"/redhat/varnish.spec
             rpmbuild --rebuild "$RESULT_DIR"/varnish-*.src.rpm
+      - run:
+          name: Prepare the packages for storage
+          command: |
+            mkdir -p packages/<< parameters.dist >>/<< parameters.release >>
+            mv rpms/*/*.rpm packages/<< parameters.dist >>/<< parameters.release >>
       - persist_to_workspace:
           root: .
           paths:
-            - rpms/*.rpm
-            - rpms/*/*.rpm
-  push_packages:
+            - packages/<< parameters.dist >>/<< parameters.release >>/*.rpm
+      - store_artifacts:
+          path: packages/<< parameters.dist >>/<< parameters.release >>
+          destination: ./
+  collect_packages:
     docker:
       - image: centos:7
     steps:
@@ -372,7 +397,7 @@ jobs:
       - run:
           name: Tar the packages
           command: |
-              tar cvzf packages.tar.gz rpms/*.rpm debs/*.deb debs/*.dsc apks/*.apk
+              tar cvzf packages.tar.gz packages 
       - store_artifacts:
           destination: packages.tar.gz
           path: packages.tar.gz
@@ -409,16 +434,18 @@ workflows:
           <<: *pkg_req
       - build_rpms:
           name: build_centos_7
+          dist: centos
           release: "7"
           <<: *pkg_req
       - build_rpms:
           name: build_centos_8
+          dist: centos
           release: "8"
           <<: *pkg_req
       - build_apks:
           name: build_alpine
           <<: *pkg_req
-      - push_packages:
+      - collect_packages:
           requires:
             - build_debian_stretch
             - build_debian_buster
