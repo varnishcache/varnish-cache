@@ -342,9 +342,6 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 				Req_AcctLogCharge(wrk->stats, req);
 				Req_Release(req);
 				switch (hs) {
-				case HTC_S_CLOSE:
-					SES_Delete(sp, SC_REM_CLOSE, NAN);
-					return;
 				case HTC_S_TIMEOUT:
 					SES_Delete(sp, SC_RX_TIMEOUT, NAN);
 					return;

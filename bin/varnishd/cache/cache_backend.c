@@ -267,7 +267,7 @@ vbe_dir_gethdrs(VRT_CTX, VCL_BACKEND d)
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	bo = ctx->bo;
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	wrk = ctx->bo->wrk;
+	wrk = bo->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
 
@@ -288,7 +288,7 @@ vbe_dir_gethdrs(VRT_CTX, VCL_BACKEND d)
 			extrachance = 0;
 
 		i = V1F_SendReq(wrk, bo, &bo->acct.bereq_hdrbytes,
-				&bo->acct.bereq_bodybytes, 0);
+		    &bo->acct.bereq_bodybytes, 0);
 
 		if (PFD_State(pfd) != PFD_STATE_USED) {
 			if (VTP_Wait(wrk, pfd, VTIM_real() +
@@ -302,8 +302,20 @@ vbe_dir_gethdrs(VRT_CTX, VCL_BACKEND d)
 
 		if (bo->htc->doclose == SC_NULL) {
 			assert(PFD_State(pfd) == PFD_STATE_USED);
-			if (i == 0)
+			if (i == 0) {
+				if (extrachance) {
+					AZ(bo->err_code);
+					AZ(bo->err_reason);
+				} else {
+					bo->err_code = 0;
+					bo->err_reason = NULL;
+				}
 				i = V1F_FetchRespHdr(bo);
+				if (bo->err_code > 0 && ctx->syntax <= 41) {
+					bo->err_code = 503;
+					bo->err_reason = NULL;
+				}
+			}
 			if (i == 0) {
 				AN(bo->htc->priv);
 				return (0);

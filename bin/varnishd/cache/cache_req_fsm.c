@@ -252,7 +252,7 @@ cnt_vclfail(const struct worker *wrk, struct req *req)
 
 	Req_Rollback(req);
 
-	req->err_code = 503;
+	req->err_code = VCL_FailStatus(req->vcl);
 	req->err_reason = "VCL failed";
 	req->req_step = R_STP_SYNTH;
 	req->doclose = SC_VCL_FAILURE;
@@ -470,7 +470,7 @@ cnt_fetch(struct worker *wrk, struct req *req)
 	(void)VRB_Ignore(req);
 
 	if (req->objcore->flags & OC_F_FAILED) {
-		req->err_code = 503;
+		req->err_code = VCL_FailStatus(req->vcl);
 		req->req_step = R_STP_SYNTH;
 		(void)HSH_DerefObjCore(wrk, &req->objcore, 1);
 		AZ(req->objcore);
@@ -776,7 +776,7 @@ cnt_restart(struct worker *wrk, struct req *req)
 
 	if (++req->restarts > cache_param->max_restarts) {
 		VSLb(req->vsl, SLT_VCL_Error, "Too many restarts");
-		req->err_code = 503;
+		req->err_code = VCL_FailStatus(req->vcl);
 		req->req_step = R_STP_SYNTH;
 	} else {
 		// XXX: ReqEnd + ReqAcct ?
@@ -928,7 +928,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 		    "Illegal return(vcl): %s",
 		    req->restarts ? "Not after restarts" :
 		    "Only from active VCL");
-		req->err_code = 503;
+		req->err_code = VCL_FailStatus(req->vcl);
 		req->req_step = R_STP_SYNTH;
 		break;
 	case VCL_RET_PURGE:

@@ -292,3 +292,7 @@ Get the stringified client ip from the session attr
 $Function STRING client_port()
 
 Get the stringified client port from the session attr
+
+$Function BACKEND fail_backend()
+
+Return a backend that always fails with an internal error.

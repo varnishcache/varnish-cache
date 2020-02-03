@@ -1,0 +1,95 @@
+varnishtest "VCL 4.[01] 503 status coverage"
+
+# This test case checks that future VCL versions don't
+# break the current assumption that almost all failure
+# conditions lead to a 503 response.
+
+barrier b1 cond 2 -cyclic
+barrier b2 cond 2 -cyclic
+
+server s1 -repeat 2 {
+	rxreq
+	expect req.url == "/junk"
+	txresp -proto JUNK/1.1
+	expect_close
+
+	barrier b1 sync
+	accept
+	rxreq
+	expect req.url == "/first_byte_timeout"
+	barrier b2 sync
+	expect_close
+
+	barrier b1 sync
+	accept
+	rxreq
+	expect req.url == "/between_bytes_timeout"
+	send "HTTP/1.0 200 OK\r\n"
+	barrier b2 sync
+	expect_close
+} -start
+
+varnish v1 -cliok "param.set first_byte_timeout 1"
+varnish v1 -cliok "param.set between_bytes_timeout 1"
+
+varnish v1 -syntax 4.1 -vcl+backend {
+	sub vcl_backend_fetch {
+		if (bereq.url ~ "fail") {
+			return (fail);
+		}
+	}
+} -start
+
+logexpect l1 -v v1 -i BereqUrl,*Error -b dummy-arg {
+	expect 0 1002 BereqURL		{^/junk$}
+	expect 0 1002 FetchError	{^http format error$}
+	expect 0 1004 BereqURL		{^/first_byte_timeout$}
+	expect 0 1004 FetchError	{^first byte timeout$}
+	expect 0 1006 BereqURL		{^/between_bytes_timeout$}
+	expect 0 1006 FetchError	{^timeout$}
+	expect 0 1008 BereqURL		{^/fail$}
+	expect 0 1008 VCL_Error		{^Failed from VCL$}
+
+	expect 0 1011 BereqURL		{^/junk$}
+	expect 0 1011 FetchError	{^http format error$}
+	expect 0 1013 BereqURL		{^/first_byte_timeout$}
+	expect 0 1013 FetchError	{^first byte timeout$}
+	expect 0 1015 BereqURL		{^/between_bytes_timeout$}
+	expect 0 1015 FetchError	{^timeout$}
+	expect 0 1017 BereqURL		{^/fail$}
+	expect 0 1017 VCL_Error		{^Failed from VCL$}
+} -start
+
+client c1 {
+	txreq -url "/junk"
+	rxresp
+	expect resp.status == 503
+
+	barrier b1 sync
+	txreq -url "/first_byte_timeout"
+	rxresp
+	expect resp.status == 503
+	barrier b2 sync
+
+	barrier b1 sync
+	txreq -url "/between_bytes_timeout"
+	rxresp
+	expect resp.status == 503
+	barrier b2 sync
+
+	txreq -url "/fail"
+	rxresp
+	expect resp.status == 503
+} -run
+
+varnish v1 -syntax 4.0 -vcl+backend {
+	sub vcl_backend_fetch {
+		if (bereq.url ~ "fail") {
+			return (fail);
+		}
+	}
+}
+
+client c1 -run
+
+logexpect l1 -wait
