@@ -10,7 +10,7 @@ check-am: check-local
 check-local:
 	@mkdir -p tests ; \
 	LC_ALL=C; \
-	if [ "$$(cd $(srcdir) && echo tests/*.vtc)" != "@VTC_TESTS@" ]; then \
+	if [ "$$(cd $(srcdir) && echo tests/*.vtc vmodtests/*/*.vtc)" != "@VTC_TESTS@" ]; then \
 		cd $(top_builddir) && ./config.status --recheck ; \
 	fi
 
@@ -75,6 +75,7 @@ varnishtest_CFLAGS = \
 		-DTOP_BUILDDIR='"${top_builddir}"'
 
 EXTRA_DIST = $(top_srcdir)/bin/varnishtest/tests/*.vtc \
+	$(top_srcdir)/bin/varnishtest/vmodtests/*/*.vtc \
 	$(top_srcdir)/bin/varnishtest/tests/README \
 	$(top_srcdir)/bin/varnishtest/gensequences \
 	$(top_srcdir)/bin/varnishtest/sequences \
