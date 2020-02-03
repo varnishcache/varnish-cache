@@ -20,17 +20,13 @@ jobs:
                 automake \
                 jemalloc-devel \
                 git \
-                libconfig-devel \
-                libcurl-devel \
                 libedit-devel \
                 libtool \
                 libunwind-devel \
                 make \
-                openssh-clients \
                 pcre-devel \
                 python3 \
-                python-sphinx \
-                sudo
+                python-sphinx
       - checkout
       - run:
           name: Create the dist tarball
@@ -107,13 +103,10 @@ jobs:
                 yum install -y \
                     automake \
                     jemalloc-devel \
-                    libconfig-devel \
-                    libcurl-devel \
                     libedit-devel \
                     libtool \
                     libunwind-devel \
                     make \
-                    openssh-clients \
                     pcre-devel \
                     python3 \
                     sudo
@@ -127,7 +120,6 @@ jobs:
                     build-essential \
                     ca-certificates \
                     graphviz \
-                    libconfig-dev \
                     libedit-dev \
                     libjemalloc-dev \
                     libncurses-dev \
@@ -145,7 +137,6 @@ jobs:
                     build-base \
                     ca-certificates \
                     gzip \
-                    libconfig-dev \
                     libedit-dev \
                     libtool \
                     libunwind-dev \
