@@ -35,8 +35,9 @@ varnish-cli.7: $(top_builddir)/doc/sphinx/reference/varnish-cli.rst
 varnish-counters.7: $(top_builddir)/doc/sphinx/reference/varnish-counters.rst
 	$(BUILD_MAN) $(top_srcdir)/doc/sphinx/reference/varnish-counters.rst $@
 
-vcl.7: $(top_builddir)/doc/sphinx/reference/vcl.rst \
-	$(top_builddir)/bin/varnishd/builtin.vcl
+vcl.7: $(top_srcdir)/doc/sphinx/reference/vcl.rst \
+	$(top_srcdir)/doc/sphinx/reference/vcl_var.rst \
+	$(top_srcdir)/bin/varnishd/builtin.vcl
 	$(BUILD_MAN) $(top_srcdir)/doc/sphinx/reference/vcl.rst $@
 
 vsl.7: $(top_builddir)/doc/sphinx/reference/vsl.rst \
