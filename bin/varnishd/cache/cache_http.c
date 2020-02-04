@@ -48,7 +48,7 @@ const char H__Proto[]	= "\007:proto:";
 const char H__Reason[]	= "\010:reason:";
 
 /*--------------------------------------------------------------------
- * These two functions are in an incestous relationship with the
+ * These two functions are in an incestuous relationship with the
  * order of macros in include/tbl/vsl_tags_http.h
  *
  * The http->logtag is the SLT_*Method enum, and we add to that, to
@@ -109,8 +109,9 @@ http_fail(const struct http *hp)
 	WS_MarkOverflow(hp->ws);
 }
 
-/*--------------------------------------------------------------------*/
-/* List of canonical HTTP response code names from RFC2616 */
+/*--------------------------------------------------------------------
+ * List of canonical HTTP response code names from RFC2616
+ */
 
 static struct http_msg {
 	unsigned	nbr;
@@ -345,7 +346,7 @@ http_CountHdr(const struct http *hp, const char *hdr)
 }
 
 /*--------------------------------------------------------------------
- * This function collapses multiple headerlines of the same name.
+ * This function collapses multiple header lines of the same name.
  * The lines are joined with a comma, according to [rfc2616, 4.2bot, p32]
  */
 
@@ -472,7 +473,7 @@ http_GetHdr(const struct http *hp, const char *hdr, const char **ptr)
 
 /*-----------------------------------------------------------------------------
  * Split source string at any of the separators, return pointer to first
- * and last+1 char of substrings, with whitespace trimed at both ends.
+ * and last+1 char of substrings, with whitespace trimmed at both ends.
  * If sep being an empty string is shorthand for VCT::SP
  * If stop is NULL, src is NUL terminated.
  */
@@ -606,7 +607,7 @@ http_GetHdrToken(const struct http *hp, const char *hdr,
 }
 
 /*--------------------------------------------------------------------
- * Find a given headerfields Q value.
+ * Find a given header field's quality value (qvalue).
  */
 
 double
@@ -655,7 +656,7 @@ http_GetHdrQ(const struct http *hp, const char *hdr, const char *field)
 }
 
 /*--------------------------------------------------------------------
- * Find a given headerfields value.
+ * Find a given header field's value.
  */
 
 int
