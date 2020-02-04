@@ -367,7 +367,7 @@ req.hash_ignore_busy
 
 	Writable from: client
 
-	Default: `false`
+	Default: ``false``.
 
 	Ignore any busy object during cache lookup.
 
@@ -383,7 +383,7 @@ req.hash_always_miss
 
 	Writable from: client
 
-	Default: `false`
+	Default: ``false``.
 
 	Force a cache miss for this request, even if perfectly
 	good matching objects are in the cache.
@@ -602,7 +602,7 @@ bereq.connect_timeout
 
 	Default: ``.connect_timeout`` attribute from the
 	:ref:`backend_definition`, which defaults to the
-	``connect_timeout`` parameter, see :ref:`varnishd(1)`
+	``connect_timeout`` parameter, see :ref:`varnishd(1)`.
 
 	The time in seconds to wait for a backend connection to be
 	established.
@@ -618,7 +618,7 @@ bereq.first_byte_timeout
 
 	Default: ``.first_byte_timeout`` attribute from the
 	:ref:`backend_definition`, which defaults to the
-	``first_byte_timeout`` parameter, see :ref:`varnishd(1)`
+	``first_byte_timeout`` parameter, see :ref:`varnishd(1)`.
 
 	The time in seconds to wait getting the first byte back
 	from the backend.  Not available in pipe mode.
@@ -634,7 +634,7 @@ bereq.between_bytes_timeout
 
 	Default: ``.between_bytes_timeout`` attribute from the
 	:ref:`backend_definition`, which defaults to the
-	``between_bytes_timeout`` parameter, see :ref:`varnishd(1)`
+	``between_bytes_timeout`` parameter, see :ref:`varnishd(1)`.
 
 	The time in seconds to wait between each received byte from the
 	backend.  Not available in pipe mode.
@@ -740,7 +740,7 @@ beresp.do_esi
 
 	Writable from: vcl_backend_response, vcl_backend_error
 
-	Default: false
+	Default: ``false``.
 
 	Set it to true to parse the object for ESI directives.
 	Will only be honored if req.esi is true.
@@ -754,7 +754,7 @@ beresp.do_stream
 
 	Writable from: vcl_backend_response, vcl_backend_error
 
-	Default: true
+	Default: ``true``.
 
 	Deliver the object to the client while fetching the whole
 	object into varnish.
@@ -774,7 +774,7 @@ beresp.do_gzip
 
 	Writable from: vcl_backend_response, vcl_backend_error
 
-	Default: false
+	Default: ``false``.
 
 	Set to `true` to gzip the object while storing it.
 
@@ -789,7 +789,7 @@ beresp.do_gunzip
 
 	Writable from: vcl_backend_response, vcl_backend_error
 
-	Default: false
+	Default: ``false``.
 
 	Set to `true` to gunzip the object while storing it in the
 	cache.
@@ -834,6 +834,10 @@ beresp.ttl
 
 	Writable from: vcl_backend_response, vcl_backend_error
 
+	Default: Cache-Control ``s-maxage`` or ``max-age`` directives,
+	or a value computed from the Expires header's deadline, or the
+	``default_ttl`` parameter.
+
 	The object's remaining time to live, in seconds.
 
 
@@ -842,6 +846,8 @@ beresp.age
 	Type: DURATION
 
 	Readable from: vcl_backend_response, vcl_backend_error
+
+	Default: Age header, or zero.
 
 	The age of the object.
 
@@ -854,6 +860,9 @@ beresp.grace
 
 	Writable from: vcl_backend_response, vcl_backend_error
 
+	Default: Cache-Control ``stale-while-revalidate`` directive,
+	or ``default_grace`` parameter.
+
 	Set to a period to enable grace.
 
 
@@ -864,6 +873,8 @@ beresp.keep
 	Readable from: vcl_backend_response, vcl_backend_error
 
 	Writable from: vcl_backend_response, vcl_backend_error
+
+	Default: ``default_keep`` parameter.
 
 	Set to a period to enable conditional backend requests.
 
