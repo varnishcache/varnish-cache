@@ -265,6 +265,9 @@ vcc_expr_tobool(struct vcc *tl, struct expr **e)
 		*e = vcc_expr_edit(tl, BOOL, "(\v1 > 0)", *e, NULL);
 	else if ((*e)->fmt == STRINGS)
 		*e = vcc_expr_edit(tl, BOOL, "VRT_Strands2Bool(\vT)", *e, NULL);
+	else if ((*e)->fmt == HEADER)
+		*e = vcc_expr_edit(tl, BOOL,
+		    "(VRT_GetHdr(ctx, \v1) != NULL)", *e, NULL);
 	/*
 	 * We do not provide automatic folding from REAL to BOOL
 	 * because comparing to zero is seldom an exact science
@@ -733,11 +736,6 @@ vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 				vcc_ErrWhere2(tl, t, tl->t);
 			}
 			ERRCHK(tl);
-			/* Unless asked for a HEADER, fold to string here */
-			if (*e && fmt != HEADER && (*e)->fmt == HEADER) {
-				vcc_expr_tostring(tl, e, STRINGS);
-				ERRCHK(tl);
-			}
 			return;
 		}
 		VSB_printf(tl->sb,
@@ -863,6 +861,16 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		ExpectErr(tl, ID);
 
 		sym = VCC_TypeSymbol(tl, SYM_METHOD, (*e)->fmt);
+
+		/* NB: didn't find a HEADER method or property, fall back to
+		 * STRINGS operations.
+		 */
+		if (sym == NULL && (*e)->fmt == HEADER) {
+			vcc_expr_tostring(tl, e, STRINGS);
+			AZ(tl->err);
+			sym = VCC_TypeSymbol(tl, SYM_METHOD, (*e)->fmt);
+		}
+
 		if (sym == NULL) {
 			VSB_cat(tl->sb, "Unknown property ");
 			vcc_ErrToken(tl, tl->t);
@@ -1069,6 +1077,11 @@ cmp_regexp(struct vcc *tl, struct expr **e, const struct cmps *cp)
 	char buf[128];
 	struct vsb vsb;
 
+	if ((*e)->fmt != STRINGS) {
+		vcc_expr_tostring(tl, e, STRINGS);
+		AZ(tl->err);
+	}
+
 	*e = vcc_expr_edit(tl, STRING, "\vS", *e, NULL);
 	vcc_NextToken(tl);
 	ExpectErr(tl, CSTR);
@@ -1104,10 +1117,21 @@ cmp_string(struct vcc *tl, struct expr **e, const struct cmps *cp)
 	struct token *tk;
 	char buf[128];
 
+	if ((*e)->fmt != STRINGS) {
+		vcc_expr_tostring(tl, e, STRINGS);
+		AZ(tl->err);
+	}
+
 	tk = tl->t;
 	vcc_NextToken(tl);
 	vcc_expr_add(tl, &e2, STRINGS);
 	ERRCHK(tl);
+
+	if (e2->fmt == HEADER) {
+		vcc_expr_tostring(tl, &e2, STRINGS);
+		AZ(tl->err);
+	}
+
 	if (e2->fmt != STRINGS) {
 		VSB_printf(tl->sb,
 		    "Comparison of different types: %s '%.*s' %s\n",
@@ -1122,6 +1146,16 @@ cmp_string(struct vcc *tl, struct expr **e, const struct cmps *cp)
 	}
 }
 
+#define STRING_REL(typ)							\
+	{typ,		T_EQ,		cmp_string, "0 =="},		\
+	{typ,		T_NEQ,		cmp_string, "0 !="},		\
+	{typ,		'<',		cmp_string, "0 > "},		\
+	{typ,		'>',		cmp_string, "0 < "},		\
+	{typ,		T_LEQ,		cmp_string, "0 >="},		\
+	{typ,		T_GEQ,		cmp_string, "0 <="},		\
+	{typ,		'~',		cmp_regexp, "" },		\
+	{typ,		T_NOMATCH,	cmp_regexp, "!" }
+
 #define IDENT_REL(typ)							\
 	{typ,		T_EQ,		cmp_simple, "(\v1 == \v2)" },	\
 	{typ,		T_NEQ,		cmp_simple, "(\v1 != \v2)" }
@@ -1134,6 +1168,8 @@ cmp_string(struct vcc *tl, struct expr **e, const struct cmps *cp)
 	{typ,		'>',		cmp_simple, "(\v1 > \v2)" }
 
 static const struct cmps vcc_cmps[] = {
+	STRING_REL(HEADER),
+	STRING_REL(STRINGS),
 	NUM_REL(INT),
 	NUM_REL(DURATION),
 	NUM_REL(BYTES),
@@ -1154,19 +1190,10 @@ static const struct cmps vcc_cmps[] = {
 	{IP,		'~',		cmp_acl, "" },
 	{IP,		T_NOMATCH,	cmp_acl, "!" },
 
-	{STRINGS,	T_EQ,		cmp_string, "0 =="},
-	{STRINGS,	T_NEQ,		cmp_string, "0 !="},
-	{STRINGS,	'<',		cmp_string, "0 > "},
-	{STRINGS,	'>',		cmp_string, "0 < "},
-	{STRINGS,	T_LEQ,		cmp_string, "0 >="},
-	{STRINGS,	T_GEQ,		cmp_string, "0 <="},
-
-	{STRINGS,	'~',		cmp_regexp, "" },
-	{STRINGS,	T_NOMATCH,	cmp_regexp, "!" },
-
 	{VOID,		0,		NULL, NULL}
 };
 
+#undef STRING_REL
 #undef IDENT_REL
 #undef NUM_REL
 
@@ -1339,8 +1366,10 @@ vcc_expr0(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	if ((*e)->fmt == fmt)
 		return;
 
-	if ((*e)->fmt != STRINGS && fmt->stringform)
+	if ((*e)->fmt != STRINGS && fmt->stringform) {
 		vcc_expr_tostring(tl, e, STRINGS);
+		ERRCHK(tl);
+	}
 
 	if ((*e)->fmt->stringform) {
 		VSB_printf(tl->sb, "Cannot convert type %s(%s) to %s(%s)\n",

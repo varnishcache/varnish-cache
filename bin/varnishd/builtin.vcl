@@ -150,10 +150,10 @@ sub vcl_backend_response {
     if (bereq.uncacheable) {
         return (deliver);
     } else if (beresp.ttl <= 0s ||
-      beresp.http.Set-Cookie ||
+      (beresp.http.Set-Cookie && !beresp.http.Set-Cookie.is_private) ||
       beresp.http.Surrogate-control ~ "(?i)no-store" ||
       (!beresp.http.Surrogate-Control &&
-        beresp.http.Cache-Control ~ "(?i:no-cache|no-store|private)") ||
+        beresp.http.Cache-Control ~ "(?i:(private|no-cache)(?!=)|no-store)") ||
       beresp.http.Vary == "*") {
         # Mark as "Hit-For-Miss" for the next 2 minutes
         set beresp.ttl = 120s;

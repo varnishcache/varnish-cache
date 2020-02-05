@@ -396,6 +396,7 @@ struct busyobj {
 
 	struct vfp_ctx		*vfc;
 	const char		*filter_list;
+	const char		*private_headers;
 
 	struct ws		ws[1];
 	uintptr_t		ws_bo;
@@ -611,8 +612,9 @@ unsigned http_EstimateWS(const struct http *fm, unsigned how);
 void http_PutResponse(struct http *to, const char *proto, uint16_t status,
     const char *response);
 void http_FilterReq(struct http *to, const struct http *fm, unsigned how);
-void HTTP_Encode(const struct http *fm, uint8_t *, unsigned len, unsigned how);
-int HTTP_Decode(struct http *to, const uint8_t *fm);
+void HTTP_Encode(const struct http *fm, uint8_t *, unsigned len, unsigned how,
+    const char *privhdr);
+int HTTP_Decode(struct http *to, const uint8_t *fm, unsigned len, unsigned hit);
 void http_ForceHeader(struct http *to, const char *hdr, const char *val);
 void http_PrintfHeader(struct http *to, const char *fmt, ...)
     v_printflike_(2, 3);
@@ -648,6 +650,7 @@ int HTTP_IterHdrPack(struct worker *, struct objcore *, const char **);
 	 for ((ptr) = NULL; HTTP_IterHdrPack(wrk, oc, &(ptr));)
 const char *HTTP_GetHdrPack(struct worker *, struct objcore *, const char *hdr);
 enum sess_close http_DoConnection(struct http *hp);
+unsigned http_IsPrivHdr(const char *hd, const char *privhdr);
 
 #define HTTPH_R_PASS	(1 << 0)	/* Request (c->b) in pass mode */
 #define HTTPH_R_FETCH	(1 << 1)	/* Request (c->b) for fetch */

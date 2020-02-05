@@ -102,9 +102,15 @@ const struct type ENUM[1] = {{
 	.tostring =		"",
 }};
 
+static const struct vcc_method header_methods[] = {
+	{ VCC_METHOD_MAGIC, BOOL, "is_private", "VRT_IsPrivHdr(ctx, \v1)", 0 },
+	{ VCC_METHOD_MAGIC, NULL },
+};
+
 const struct type HEADER[1] = {{
 	.magic =		TYPE_MAGIC,
 	.name =			"HEADER",
+	.methods =		header_methods,
 	.tostring =		"VRT_GetHdr(ctx, \v1)",
 }};
 

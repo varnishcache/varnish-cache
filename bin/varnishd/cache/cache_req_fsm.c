@@ -111,6 +111,8 @@ Resp_Setup_Deliver(struct req *req)
 {
 	struct http *h;
 	struct objcore *oc;
+	const uint8_t *hdr;
+	ssize_t len;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	oc = req->objcore;
@@ -120,7 +122,10 @@ Resp_Setup_Deliver(struct req *req)
 
 	HTTP_Setup(h, req->ws, req->vsl, SLT_RespMethod);
 
-	if (HTTP_Decode(h, ObjGetAttr(req->wrk, oc, OA_HEADERS, NULL)))
+	hdr = ObjGetAttr(req->wrk, oc, OA_HEADERS, &len);
+	AN(hdr);
+	assert(len > 0);
+	if (HTTP_Decode(h, hdr, (unsigned)len, req->is_hit))
 		return (-1);
 
 	http_ForceField(h, HTTP_HDR_PROTO, "HTTP/1.1");

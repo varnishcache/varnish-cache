@@ -379,6 +379,47 @@ VRT_l_beresp_storage(VRT_CTX, VCL_STEVEDORE stv)
 	ctx->bo->storage = stv;
 }
 
+/*--------------------------------------------------------------------*/
+
+VCL_STRING
+VRT_r_beresp_private(VRT_CTX)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	AN(ctx->bo->beresp);
+	AN(ctx->bo->private_headers);
+	assert(ctx->syntax >= 41);
+	return (ctx->bo->private_headers);
+}
+
+VCL_VOID
+VRT_l_beresp_private(VRT_CTX, const char *str, ...)
+{
+	const char *s;
+	uintptr_t sn;
+	va_list ap;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->ws, WS_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	assert(ctx->syntax >= 41);
+
+	sn = WS_Snapshot(ctx->ws);
+	va_start(ap, str);
+	s = VRT_String(ctx->ws, NULL, str, ap);
+	va_end(ap);
+
+	if (s == NULL) {
+		VSLb(ctx->vsl, SLT_LostHeader, "beresp.private");
+		WS_Reset(ctx->ws, sn);
+		WS_MarkOverflow(ctx->ws);
+		return;
+	}
+
+	Beresp_Private(ctx->bo, s);
+}
+
 /*--------------------------------------------------------------------
  * VCL <= 4.0 ONLY
  */

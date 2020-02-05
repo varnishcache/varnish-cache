@@ -910,8 +910,37 @@ http_EstimateWS(const struct http *fm, unsigned how)
  * XXX: It could possibly be a good idea for later HTTP versions.
  */
 
+unsigned
+http_IsPrivHdr(const char *hd, const char *privhdr)
+{
+	const char *c;
+	txt p, h;
+
+	if (privhdr == NULL)
+		return (0);
+
+	h.b = hd;
+	h.e = strchr(hd, ':');
+	Tcheck(h);
+
+	c = privhdr - 1;
+	do {
+		p.b = c + 1; /* XXX: make p.b skip blanks */
+		c = strchr(p.b, ',');
+		if (c == NULL)
+			c = strchr(p.b, '\0');
+		p.e = c; /* XXX: make p.e rewind blanks */
+		Tcheck(p);
+		if (Tlen(p) == Tlen(h) && !strncasecmp(p.b, h.b, Tlen(p)))
+			return (1);
+	} while (*c != '\0');
+
+	return (0);
+}
+
 void
-HTTP_Encode(const struct http *fm, uint8_t *p0, unsigned l, unsigned how)
+HTTP_Encode(const struct http *fm, uint8_t *p0, unsigned l, unsigned how,
+    const char *privhdr)
 {
 	unsigned u, w;
 	uint16_t n;
@@ -919,6 +948,11 @@ HTTP_Encode(const struct http *fm, uint8_t *p0, unsigned l, unsigned how)
 
 	AN(p0);
 	AN(l);
+	AN(privhdr);
+
+	if (how != HTTPH_A_INS || *privhdr == '\0')
+		privhdr = NULL;
+
 	p = p0;
 	e = p + l;
 	assert(p + 5 <= e);
@@ -938,6 +972,16 @@ HTTP_Encode(const struct http *fm, uint8_t *p0, unsigned l, unsigned how)
 			continue;
 #include "tbl/http_headers.h"
 		http_VSLH(fm, u);
+		if (u >= HTTP_HDR_FIRST &&
+		    http_IsPrivHdr(fm->hd[u].b, privhdr)) {
+			/* NB: the HTTP grammar guarantees that header names
+			 * are only made of ASCII characters. We can use the
+			 * MSB to mark the next header as private.
+			 */
+			assert(p < e);
+			*p = 0x80; /* XXX: magic constant */
+			p++;
+		}
 		w = Tlen(fm->hd[u]) + 1L;
 		assert(p + w + 1 <= e);
 		memcpy(p, fm->hd[u].b, w);
@@ -954,16 +998,21 @@ HTTP_Encode(const struct http *fm, uint8_t *p0, unsigned l, unsigned how)
  */
 
 int
-HTTP_Decode(struct http *to, const uint8_t *fm)
+HTTP_Decode(struct http *to, const uint8_t *fm, unsigned len, unsigned hit)
 {
+	const uint8_t *e;
+	uint8_t marker;
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	AN(to->vsl);
 	AN(fm);
+	assert(len > 4);
+	e = fm + len;
 	if (vbe16dec(fm) <= to->shd) {
 		to->status = vbe16dec(fm + 2);
 		fm += 4;
 		for (to->nhd = 0; to->nhd < to->shd; to->nhd++) {
+			assert(fm < e);
 			if (to->nhd == HTTP_HDR_METHOD ||
 			    to->nhd == HTTP_HDR_URL) {
 				to->hd[to->nhd].b = NULL;
@@ -972,10 +1021,20 @@ HTTP_Decode(struct http *to, const uint8_t *fm)
 			}
 			if (*fm == '\0')
 				return (0);
+			marker = *fm;
+			if (marker == 0x80)
+				fm++;
 			to->hd[to->nhd].b = (const void*)fm;
 			fm = (const void*)strchr((const void*)fm, '\0');
 			to->hd[to->nhd].e = (const void*)fm;
 			fm++;
+			/* XXX: I know, this branch needs polish */
+			if (marker == 0x80 && hit) {
+				to->hd[to->nhd].b = NULL;
+				to->hd[to->nhd].e = NULL;
+				to->nhd--;
+				continue;
+			}
 			http_VSLH(to, to->nhd);
 		}
 	}

@@ -153,6 +153,20 @@ vbf_beresp2obj(struct busyobj *bo)
 
 	l2 = http_EstimateWS(bo->beresp,
 	    bo->uncacheable ? HTTPH_A_PASS : HTTPH_A_INS);
+
+	/* Ensure space for private header markers */
+	const char *ph = bo->private_headers;
+	if (ph != NULL && *ph != '\0') {
+		do {
+			ph = strchr(ph, ',');
+			if (ph != NULL) {
+				l2++;
+				ph++;
+			}
+		} while (ph != NULL);
+		l2++;
+	}
+
 	l += l2;
 
 	if (bo->uncacheable)
@@ -180,7 +194,8 @@ vbf_beresp2obj(struct busyobj *bo)
 	bp = ObjSetAttr(bo->wrk, bo->fetch_objcore, OA_HEADERS, l2, NULL);
 	AN(bp);
 	HTTP_Encode(bo->beresp, bp, l2,
-	    bo->uncacheable ? HTTPH_A_PASS : HTTPH_A_INS);
+	    bo->uncacheable ? HTTPH_A_PASS : HTTPH_A_INS,
+	    bo->private_headers);
 
 	if (http_GetHdr(bo->beresp, H_Last_Modified, &b))
 		AZ(ObjSetDouble(bo->wrk, bo->fetch_objcore, OA_LASTMODIFIED,
@@ -286,6 +301,7 @@ vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 	bo->do_esi = 0;
 	bo->do_stream = 1;
 	bo->was_304 = 0;
+	bo->private_headers = "";
 
 	// XXX: BereqEnd + BereqAcct ?
 	VSL_ChgId(bo->vsl, "bereq", "retry", VXID_Get(wrk, VSL_BACKENDMARKER));
@@ -330,6 +346,102 @@ vbf_304_logic(struct busyobj *bo)
 		return (-1);
 	}
 	return (1);
+}
+
+/*--------------------------------------------------------------------
+ * Manage the beresp.private variable
+ */
+
+void
+Beresp_Private(struct busyobj *bo, const char *s)
+{
+
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	AN(bo->beresp);
+	AN(bo->vsl);
+	AN(s);
+
+	/* XXX: reject and log invalid list of private headers */
+
+	VSLb(bo->vsl, SLT_Debug, "beresp.private: %s", s);
+	bo->private_headers = s;
+}
+
+/*--------------------------------------------------------------------
+ * Collect private headers from Cache-Control directives
+ */
+
+static int
+vbf_get_private_headers(struct busyobj *bo, const char *field,
+    struct vsb *vsb, const char **sep)
+{
+	const char *b, *e;
+
+	if (!http_GetHdrField(bo->beresp, H_Cache_Control, field, &b))
+		return (0);
+
+	if (b == NULL || *b == '\0' || *b == ',')
+		return (0);
+
+	if (*b != '"') {
+		/* token form */
+		e = strchr(b, ',');
+		if (e == NULL)
+			e = strchr(b, '\0');
+	} else {
+		/* quoted string form */
+		b++;
+		e = strchr(b, '"');
+		if (b == e)
+			return (0);
+		if (e == NULL || e[-1] == '\\')
+			return (-1);
+	}
+	assert(b < e);
+	(void)VSB_cat(vsb, *sep);
+	(void)VSB_bcat(vsb, b, (e - b));
+	*sep = ",";
+	return (0);
+}
+
+static void
+vbf_private_headers(struct busyobj *bo)
+{
+	struct vsb vsb[1];
+	const char *sep;
+	unsigned r;
+
+	AN(bo->private_headers);
+	AZ(*bo->private_headers);
+
+	/* XXX: no way to bail out if syntax < 41 */
+
+	CHECK_OBJ_NOTNULL(bo->ws, WS_MAGIC);
+	r = WS_ReserveAll(bo->ws);
+	XXXAN(r);
+	AN(VSB_new(vsb, bo->ws->f, r, VSB_FIXEDLEN));
+	sep = "";
+
+	if (vbf_get_private_headers(bo, "no-cache", vsb, &sep) < 0 ||
+	    vbf_get_private_headers(bo, "private", vsb, &sep) < 0)
+		INCOMPL();
+
+	if (VSB_finish(vsb)) {
+		VSB_delete(vsb);
+		WS_MarkOverflow(bo->ws);
+		INCOMPL();
+		return;
+	}
+
+	if (VSB_len(vsb) == 0) {
+		VSB_delete(vsb);
+		WS_Release(bo->ws, 0);
+		return;
+	}
+
+	WS_Release(bo->ws, VSB_len(vsb) + 1);
+	Beresp_Private(bo, VSB_data(vsb));
+	VSB_delete(vsb);
 }
 
 /*--------------------------------------------------------------------
@@ -434,6 +546,8 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 		    &bo->fetch_objcore->keep
 		    );
 	}
+
+	vbf_private_headers(bo);
 
 	AZ(bo->do_esi);
 	AZ(bo->was_304);

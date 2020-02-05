@@ -180,6 +180,18 @@ VRT_GetHdr(VRT_CTX, VCL_HEADER hs)
 	return (p);
 }
 
+VCL_BOOL
+VRT_IsPrivHdr(VRT_CTX, VCL_HEADER hs)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	if (hs->where != HDR_BERESP)
+		return (0);
+
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	return (http_IsPrivHdr(hs->what + 1, ctx->bo->private_headers));
+}
+
 /*--------------------------------------------------------------------
  * Build STRANDS from what is essentially a STRING_LIST
  */
