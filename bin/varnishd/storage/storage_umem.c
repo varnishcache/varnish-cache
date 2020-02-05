@@ -201,6 +201,11 @@ smu_alloc(const struct stevedore *st, size_t size)
 	}
 	smu->sz = size;
 	smu->s.space = size;
+#ifndef BUG3210
+	assert(smu->sc == smu_sc);
+	assert(smu->s.priv == smu);
+	AZ(smu->s.len);
+#endif
 	return (&smu->s);
 }
 
