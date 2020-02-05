@@ -123,9 +123,6 @@ do_json_cb(void *priv, const struct VSC_point * const pt)
 	printf("\"format\": \"%c\",\n", pt->format);
 	printf("    \"value\": %ju", (uintmax_t)val);
 	printf("\n  }");
-
-	if (*jp)
-		printf("\n");
 	return (0);
 }
 
