@@ -134,12 +134,10 @@ do_json(struct vsm *vsm, struct vsc *vsc)
 	int jp;
 
 	jp = 1;
-
-	printf("{\n");
 	now = time(NULL);
 
 	(void)strftime(time_stamp, 20, "%Y-%m-%dT%H:%M:%S", localtime(&now));
-	printf("  \"timestamp\": \"%s\",\n", time_stamp);
+	printf("{\n  \"timestamp\": \"%s\",\n", time_stamp);
 	(void)VSC_Iter(vsc, vsm, do_json_cb, &jp);
 	printf("\n}\n");
 }
