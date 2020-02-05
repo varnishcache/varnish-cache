@@ -114,15 +114,13 @@ do_json_cb(void *priv, const struct VSC_point * const pt)
 	else
 		printf(",\n");
 
-	printf("  \"");
-	/* build the JSON key name.  */
-	printf("%s\": {\n", pt->name);
-	printf("    \"description\": \"%s\",\n", pt->sdesc);
+	printf("    \"%s\": {\n", pt->name);
+	printf("      \"description\": \"%s\",\n", pt->sdesc);
 
-	printf("    \"flag\": \"%c\", ", pt->semantics);
+	printf("      \"flag\": \"%c\", ", pt->semantics);
 	printf("\"format\": \"%c\",\n", pt->format);
-	printf("    \"value\": %ju", (uintmax_t)val);
-	printf("\n  }");
+	printf("      \"value\": %ju", (uintmax_t)val);
+	printf("\n    }");
 	return (0);
 }
 
@@ -137,9 +135,12 @@ do_json(struct vsm *vsm, struct vsc *vsc)
 	now = time(NULL);
 
 	(void)strftime(time_stamp, 20, "%Y-%m-%dT%H:%M:%S", localtime(&now));
-	printf("{\n  \"timestamp\": \"%s\",\n", time_stamp);
+	printf("{\n"
+	    "  \"version\": 1,\n"
+	    "  \"timestamp\": \"%s\",\n"
+	    "  \"counters\": {\n", time_stamp);
 	(void)VSC_Iter(vsc, vsm, do_json_cb, &jp);
-	printf("\n}\n");
+	printf("\n  }\n}\n");
 }
 
 
