@@ -9,6 +9,9 @@ varnish v1 -vcl+backend { } -start
 
 logexpect l1 -v v1 -g raw {
 	expect * 1004	BogoHeader	"Illegal char 0x20 in header name"
+} -start
+
+logexpect l2 -v v1 -g raw {
 	expect * 1006	BogoHeader	"Illegal char 0x2f in header name"
 } -start
 
@@ -46,3 +49,4 @@ client c1 {
 } -run
 
 logexpect l1 -wait
+logexpect l2 -wait
