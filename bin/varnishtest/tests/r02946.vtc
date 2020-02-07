@@ -1,7 +1,7 @@
 varnishtest "#2946 - objcore leak for backend_synth"
 
 varnish v1 -vcl {
-	backend bad { .host = "${bad_backend}"; }
+	backend bad None;
 
 	sub vcl_backend_error {
 		if (bereq.http.abandon) {
