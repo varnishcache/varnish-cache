@@ -5,6 +5,7 @@
  * All rights reserved.
  *
  * Author: Dag-Erling Smørgrav <des@des.no>
+ * Author: Pål Hermunn Johansen <hermunn@varnish-software.com>
  *
  * SPDX-License-Identifier: BSD-2-Clause
  *
@@ -77,6 +78,14 @@ static uint32_t * const state = &randtbl[1];
 static const int rand_deg = DEG_3;
 static const int rand_sep = SEP_3;
 static const uint32_t * const end_ptr = &randtbl[DEG_3 + 1];
+
+/*
+ * the global state for the xorshiro** quasi random numbers, advances by
+ * (1 << 64) at a time
+ */
+xorshiro_state_t xorshiro_s = {0, 0};
+/* thread local state for xorshiro**, advances one at a time */
+__thread xorshiro_state_t xorshiro_thread_s = {0, 0};
 
 static inline uint32_t
 good_rand(uint32_t ctx)
@@ -195,4 +204,84 @@ VRND_SeedAll(void)
 	VRND_SeedTestable(seed);
 	AZ(VRND_RandomCrypto(&seed, sizeof seed));
 	srand48(seed);
+}
+
+/**********************************************************************
+ * The following random generator should be better and faster than the
+ * above. Source: http://prng.di.unimi.it/xoroshiro128starstar.c
+ */
+
+void
+VRND_Seed_xshiro128ss(xorshiro_state_t seed)
+{
+	xorshiro_state_t s;
+	if (seed) {
+		xorshiro_s[0] = seed[0];
+		xorshiro_s[1] = seed[1];
+	} else {
+		VRND_RandomCrypto(s, sizeof s);
+		xorshiro_s[0] = s[0];
+		xorshiro_s[1] = s[1];
+	}
+}
+
+
+static inline uint64_t
+Vrotl(const uint64_t x, int k)
+{
+	return ((x << k) | (x >> (64 - k)));
+}
+
+static uint64_t
+vrnd_xshiro128ss_next(xorshiro_state_t xstate)
+{
+	const uint64_t s0 = xstate[0];
+	uint64_t s1 = xstate[1];
+	const uint64_t result = Vrotl(s0 * 5, 7) * 9;
+
+	s1 ^= s0;
+	xstate[0] = Vrotl(s0, 24) ^ s1 ^ (s1 << 16);
+	xstate[1] = Vrotl(s1, 37);
+
+	return (result);
+}
+
+static void
+vrnd_xshiro128ss_jump(xorshiro_state_t xstate)
+{
+	static const uint64_t JUMP[] = { 0xdf900294d8f554a5, 0x170865df4b3201fc };
+	uint64_t s0 = 0;
+	uint64_t s1 = 0;
+	for(int i = 0; i < 2; i++) {
+		for(int b = 0; b < 64; b++) {
+			if (JUMP[i] & (((uint64_t)1) << b)) {
+				s0 ^= xstate[0];
+				s1 ^= xstate[1];
+			}
+			(void)vrnd_xshiro128ss_next(xstate);
+		}
+	}
+
+	xstate[0] = s0;
+	xstate[1] = s1;
+}
+
+uint64_t
+VRND_xshiro128ss()
+{
+
+	if (xorshiro_thread_s[0] == 0 && xorshiro_thread_s[1] == 0) {
+		// here we are in the first invocation of the random
+		// generator in this thread, so we need the lock
+		AN(VRND_Lock);
+		VRND_Lock();
+		if (xorshiro_s[0] == 0 && xorshiro_s[1] == 0) // are we seeded?
+			VRND_Seed_xshiro128ss(NULL);
+		vrnd_xshiro128ss_jump(xorshiro_s); // Jump (1 << 64) steps
+		xorshiro_thread_s[0] = xorshiro_s[0];
+		xorshiro_thread_s[1] = xorshiro_s[1];
+		AN(VRND_Unlock);
+		VRND_Unlock();
+	}
+	return (vrnd_xshiro128ss_next(xorshiro_thread_s));
 }

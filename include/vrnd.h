@@ -32,6 +32,8 @@
 
 typedef void vrnd_lock_f(void);
 
+typedef uint64_t xorshiro_state_t[2];
+
 extern vrnd_lock_f *VRND_Lock;
 extern vrnd_lock_f *VRND_Unlock;
 
@@ -42,3 +44,5 @@ double VRND_RandomTestableDouble(void);
 void VRND_SeedTestable(unsigned int);
 void VRND_SeedAll(void);		/* Seed random(3) properly */
 
+void VRND_Seed_xshiro128ss(xorshiro_state_t seed);
+uint64_t VRND_xshiro128ss(void);
