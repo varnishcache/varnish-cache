@@ -37,6 +37,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include <syslog.h>
 #include <sys/socket.h>
 #include <fnmatch.h>
@@ -128,6 +129,27 @@ vmod_random(VRT_CTX, VCL_REAL lo, VCL_REAL hi)
 	a *= hi - lo;
 	a += lo;
 	return (a);
+}
+
+VCL_REAL
+vmod_random52(VRT_CTX)
+{
+	double t;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	// we drop the lower bits to get a uniform distribution
+	t = VRND_xshiro128ss() >> 12;
+
+	return (ldexp(t, -52));
+}
+
+VCL_INT
+vmod_random_mod(VRT_CTX, VCL_INT m)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	return (m > 0 ? VRND_xshiro128ss() % m : VRND_xshiro128ss());
 }
 
 VCL_VOID v_matchproto_(td_std_log)

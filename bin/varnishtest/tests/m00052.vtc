@@ -1,0 +1,163 @@
+varnishtest "Test xorshiro128** random generator"
+
+varnish v1 -vcl {
+	import std;
+	import debug;
+
+	backend default none;
+
+	sub vcl_init {
+		debug.deterministic_random();
+	}
+
+	sub vcl_recv {
+		return (synth(200, "OK"));
+	}
+	sub vcl_synth {
+		set resp.http.r1 = 1000.0 * std.random52();
+		set resp.http.r2 = 1000.0 * std.random52();
+		set resp.http.r3 = 1000.0 * std.random52();
+		set resp.http.r4 = 1000.0 * std.random52();
+		set resp.http.r5 = 1000.0 * std.random52();
+		set resp.http.r6 = 1000.0 * std.random52();
+		return (deliver);
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.r1 == "457.371"
+	expect resp.http.r2 == "215.082"
+	expect resp.http.r3 == "978.593"
+	expect resp.http.r4 == "477.719"
+	expect resp.http.r5 == "340.118"
+	expect resp.http.r6 == "478.416"
+} -run
+
+# State in various threads are independent of each other. We need a
+# new varnishd instance below since threads will keep their random
+# generator even when the global state is reset, and it is possible
+# that a thread from the previous part is reused.
+
+varnish v1 -stop
+
+barrier b1 cond 2
+
+varnish v2 -vcl {
+	import std;
+	import debug;
+	import vtc;
+
+	backend default none;
+
+	sub vcl_init {
+		debug.deterministic_random();
+	}
+
+	sub vcl_recv {
+		return (synth(200, "OK"));
+	}
+	sub vcl_synth {
+		set resp.http.r = 1000.0 * std.random52();
+		vtc.sleep(0.2s);
+		return (deliver);
+	}
+} -start
+
+client c2 -connect ${v2_sock} {
+	# Note that the state here is the same as in the first client
+	txreq
+	barrier b1 sync
+	rxresp
+	expect resp.http.r == "457.371"
+	txreq
+	rxresp
+	expect resp.http.r == "215.082"
+	txreq
+	rxresp
+	expect resp.http.r == "978.593"
+} -start
+
+barrier b1 sync
+
+client c3 -connect ${v2_sock} {
+	txreq
+	rxresp
+	expect resp.http.r == "208.987"
+	txreq
+	rxresp
+	expect resp.http.r == "229.042"
+	txreq
+	rxresp
+	expect resp.http.r == "334.334"
+} -start
+
+client c2 -wait
+client c3 -wait
+
+varnish v2 -stop
+
+# Same again, but with a different order after the first
+# request. Since we have the same expect statements as above, we know
+# that the threads get their own sequence quasi random numbers
+# independenty of each other.
+
+varnish v3 -vcl {
+	import std;
+	import debug;
+	import vtc;
+
+	backend default none;
+
+	sub vcl_init {
+		debug.deterministic_random();
+	}
+
+	sub vcl_recv {
+		return (synth(200, "OK"));
+	}
+	sub vcl_synth {
+		set resp.http.r = 1000.0 * std.random52();
+		vtc.sleep(0.2s);
+		return (deliver);
+	}
+} -start
+
+barrier b2 cond 2
+barrier b3 cond 2
+
+
+client c4 -connect ${v3_sock} {
+	txreq
+	rxresp
+	barrier b2 sync
+	barrier b3 sync
+	expect resp.http.r == "457.371"
+	txreq
+	rxresp
+	expect resp.http.r == "215.082"
+	txreq
+	rxresp
+	expect resp.http.r == "978.593"
+} -start
+
+barrier b2 sync
+
+client c5 -connect ${v3_sock} {
+	txreq
+	rxresp
+	expect resp.http.r == "208.987"
+	txreq
+	rxresp
+	expect resp.http.r == "229.042"
+	txreq
+	rxresp
+	expect resp.http.r == "334.334"
+} -start
+
+barrier b3 sync
+
+client c4 -wait
+client c5 -wait

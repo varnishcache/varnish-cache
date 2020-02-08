@@ -292,3 +292,9 @@ Get the stringified client ip from the session attr
 $Function STRING client_port()
 
 Get the stringified client port from the session attr
+
+$Function VOID deterministic_random()
+
+Set the xorshiro algoritm to a constant initialized state. If a setup
+or test case is not timing sensitive, this should produce reproducable
+random numbers.

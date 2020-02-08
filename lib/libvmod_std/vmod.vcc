@@ -55,6 +55,25 @@ Example::
 
 	set beresp.http.random-number = std.random(1, 100);
 
+$Function REAL random52()
+
+Description
+
+	Returns a uniformly distributed random number between 0 and 1,
+	where 0 is possible while 1 is not. The source is a quasi
+	random generator which returns unique numbers per thread. It
+	is fit for most simulations, but not cryptologically
+	strong. The names comes from the fact that there is 52 bits of
+	quasi randomness in the result.
+
+$Function INT random_mod(INT m)
+
+Description
+	Returns the result of a 64 bit quasi random number modulo the
+	argument. If the argument is negative or zero, the result is
+	instead the same 64 bit unsigned integer cast to a VCL_INT,
+	which can be negative or positive.
+
 $Function REAL round(REAL r)
 
 Rounds the real *r* to the nearest integer, but round halfway cases

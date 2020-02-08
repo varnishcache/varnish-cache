@@ -39,6 +39,7 @@
 #include "cache/cache_varnishd.h"
 #include "cache/cache_filter.h"
 
+#include "vrnd.h"
 #include "vsa.h"
 #include "vtim.h"
 #include "vcc_if.h"
@@ -1084,4 +1085,14 @@ xyzzy_client_port(VRT_CTX)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
 	return (SES_Get_String_Attr(ctx->sp, SA_CLIENT_PORT));
+}
+
+VCL_VOID
+xyzzy_deterministic_random(VRT_CTX)
+{
+	xorshiro_state_t s = {1, 1};
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	VRND_Seed_xshiro128ss(s);
 }
