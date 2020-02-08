@@ -120,12 +120,12 @@ vmod_tolower(VRT_CTX, VCL_STRANDS s)
 }
 
 VCL_REAL v_matchproto_(td_std_random)
-vmod_random(VRT_CTX, VCL_REAL lo, VCL_REAL hi)
+vmod_random(VRT_CTX, VCL_REAL lo, VCL_REAL hi, VCL_BOOL legacy)
 {
 	double a;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	a = VRND_RandomTestableDouble();
+	a = (legacy ? VRND_RandomTestableDouble() : vmod_random52(ctx));
 	a *= hi - lo;
 	a += lo;
 	return (a);

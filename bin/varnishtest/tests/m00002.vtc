@@ -9,10 +9,10 @@ varnish v1 -vcl+backend {
 	import std;
 
 	sub vcl_deliver {
-		set resp.http.rnd1 = std.random(0, 1);
-		set resp.http.rnd2 = std.random(0, 10);
-		set resp.http.rnd3 = std.random(8, 10);
-		set resp.http.rnd4 = std.random(99, 100);
+		set resp.http.rnd1 = std.random(0, 1, true);
+		set resp.http.rnd2 = std.random(0, 10, true);
+		set resp.http.rnd3 = std.random(8, 10, true);
+		set resp.http.rnd4 = std.random(99, 100, true);
 	}
 } -start
 

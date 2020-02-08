@@ -43,13 +43,16 @@ Varnish, but which for reasons of architecture fit better in a VMOD.
 Numeric functions
 =================
 
-$Function REAL random(REAL lo, REAL hi)
+$Function REAL random(REAL lo, REAL hi, BOOL legacy=0)
 
 Returns a random real number between *lo* and *hi*.
 
-This function uses the "testable" random generator in varnishd which
-enables determinstic tests to be run (See ``m00002.vtc``).  This
-function should not be used for cryptographic applications.
+The functions uses random52 under the hood, so it should not be used
+for cryptographical applications.
+
+If *legacy* is set, then this function uses the old "testable" random
+generator in varnishd which enables determinstic tests to be run (See
+``m00002.vtc``). This option should not be used.
 
 Example::
 
