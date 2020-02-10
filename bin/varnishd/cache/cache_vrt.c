@@ -474,7 +474,7 @@ VRT_StrandsWS(struct ws *ws, const char *h, VCL_STRANDS s)
 		if (s->p[i] != NULL && *s->p[i] != '\0')
 			VSB_cat(vsb, s->p[i]);
 	}
-	return (WS_VSB_finish(vsb, ws));
+	return (WS_VSB_finish(vsb, ws, NULL));
 }
 
 /*--------------------------------------------------------------------

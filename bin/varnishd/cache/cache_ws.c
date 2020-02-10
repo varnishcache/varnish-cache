@@ -352,7 +352,7 @@ WS_Overflowed(const struct ws *ws)
  *
  *	WS_VSB_new(vsb, ctx->ws);
  *	VSB_printf(vsb, "blablabla");
- *	p = WS_VSB_finish(vsb);
+ *	p = WS_VSB_finish(vsb, NULL);
  *	if (p == NULL)
  *		return (FAILURE);
  */
@@ -375,7 +375,7 @@ WS_VSB_new(struct vsb *vsb, struct ws *ws)
 }
 
 char *
-WS_VSB_finish(struct vsb *vsb, struct ws *ws)
+WS_VSB_finish(struct vsb *vsb, struct ws *ws, size_t *szp)
 {
 	char *p;
 
@@ -384,11 +384,15 @@ WS_VSB_finish(struct vsb *vsb, struct ws *ws)
 		p = VSB_data(vsb);
 		if (p == WS_Front(ws)) {
 			WS_Release(ws, VSB_len(vsb) + 1);
+			if (szp != NULL)
+				*szp = VSB_len(vsb);
 			VSB_delete(vsb);
 			return (p);
 		}
 	}
 	VSB_delete(vsb);
 	WS_Release(ws, 0);
+	if (szp)
+		*szp = 0;
 	return (NULL);
 }
