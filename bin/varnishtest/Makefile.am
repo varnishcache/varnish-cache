@@ -105,7 +105,21 @@ vmods.h: $(top_srcdir)/lib/Makefile.am
 		find * -maxdepth 0 -type d -name 'libvmod_*' | sed -e 's/^libvmod_/VTC_VMOD(/' -e 's/$$/)/' \
 	) > $@
 
-BUILT_SOURCES = vtc_h2_dectbl.h vmods.h
+# same for programs.h, but with bin/Makefile.am.
+# haproxy is injected manually
+programs.h: $(top_srcdir)/bin/Makefile.am
+	( \
+		echo '/* Warning: this is a generated file, do no edit */'; \
+		cd $(top_srcdir)/bin/; \
+		echo 'VTC_PROG(haproxy)'; \
+		find * -maxdepth 0 -type d | sed -e 's/^/VTC_PROG(/' -e 's/$$/)/'; \
+		echo '#undef VTC_PROG' \
+	) > $@
+
+BUILT_SOURCES = \
+	programs.h \
+	vmods.h \
+	vtc_h2_dectbl.h
 
 CLEANFILES = \
 	$(builddir)/teken_state.h	\
