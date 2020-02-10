@@ -96,7 +96,16 @@ vtc_h2_dectbl.h: huffman_gen.py $(top_srcdir)/include/tbl/vhp_huffman.h
 	    $(top_srcdir)/include/tbl/vhp_huffman.h > $@_
 	mv $@_ $@
 
-BUILT_SOURCES = vtc_h2_dectbl.h
+# vmods.h depends on directories that we don't know of, but that will be
+# declared in lib/Makefile.am
+vmods.h: $(top_srcdir)/lib/Makefile.am
+	( \
+		echo '/* Warning: this is a generated file, do no edit */'; \
+		cd $(top_srcdir)/lib/; \
+		find * -maxdepth 0 -type d -name 'libvmod_*' | sed -e 's/^libvmod_/VTC_VMOD(/' -e 's/$$/)/' \
+	) > $@
+
+BUILT_SOURCES = vtc_h2_dectbl.h vmods.h
 
 CLEANFILES = \
 	$(builddir)/teken_state.h	\
