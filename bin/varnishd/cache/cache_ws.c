@@ -365,7 +365,6 @@ WS_VSB_new(struct vsb *vsb, struct ws *ws)
 	WS_Assert(ws);
 	u = WS_ReserveAll(ws);
 	if (WS_Overflowed(ws) || u < 2) {
-		WS_MarkOverflow(ws);
 		/* Create a malloced-buffer VSB, and fail it up front */
 		AN(VSB_new(vsb, NULL, 2, 0));
 		VSB_cat(vsb, "XXX");
@@ -390,6 +389,7 @@ WS_VSB_finish(struct vsb *vsb, struct ws *ws, size_t *szp)
 			return (p);
 		}
 	}
+	WS_MarkOverflow(ws);
 	VSB_delete(vsb);
 	WS_Release(ws, 0);
 	if (szp)

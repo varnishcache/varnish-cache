@@ -221,7 +221,7 @@ static const uint8_t h2_500_resp[] = {
 	0x1f, 0x27, 0x07, 'V', 'a', 'r', 'n', 'i', 's', 'h',
 };
 
-static int
+static void
 h2_build_headers(struct vsb *resp, struct req *req)
 {
 	unsigned u, l;
@@ -231,14 +231,6 @@ h2_build_headers(struct vsb *resp, struct req *req)
 	const struct hpack_static *hps;
 	uint8_t buf[6];
 	ssize_t sz, sz1;
-
-	l = WS_ReserveAll(req->ws);
-	if (l < 10) {
-		WS_Release(req->ws, 0);
-		return (-1);
-	}
-
-	AN(VSB_new(resp, req->ws->f, l, VSB_FIXEDLEN));
 
 	l = h2_status(buf, req->resp->status);
 	VSB_bcat(resp, buf, l);
@@ -281,17 +273,17 @@ h2_build_headers(struct vsb *resp, struct req *req)
 		h2_enc_len(resp, 7, sz, 0);
 		VSB_bcat(resp, r, sz);
 	}
-	return (VSB_finish(resp));
 }
 
 void v_matchproto_(vtr_deliver_f)
 h2_deliver(struct req *req, struct boc *boc, int sendbody)
 {
-	ssize_t sz;
+	size_t sz;
 	const char *r;
 	struct sess *sp;
 	struct h2_req *r2;
-	struct vsb resp;
+	struct vsb resp[1];
+	uintptr_t ss;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_ORNULL(boc, BOC_MAGIC);
@@ -302,9 +294,13 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 
 	VSLb(req->vsl, SLT_RespProtocol, "HTTP/2.0");
 
-	if (h2_build_headers(&resp, req)) {
-		// We ran out of workspace, return minimal 500
-		WS_MarkOverflow(req->ws);
+	ss = WS_Snapshot(req->ws);
+
+	WS_VSB_new(resp, req->ws);
+	h2_build_headers(resp, req);
+	r = WS_VSB_finish(resp, req->ws, &sz);
+
+	if (r == NULL) {
 		VSLb(req->vsl, SLT_Error, "workspace_client overflow");
 		VSLb(req->vsl, SLT_RespStatus, "500");
 		VSLb(req->vsl, SLT_RespReason, "Internal Server Error");
@@ -313,9 +309,6 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 		r = (const char*)h2_500_resp;
 		sz = sizeof h2_500_resp;
 		sendbody = 0;
-	} else {
-		sz = VSB_len(&resp);
-		r = req->ws->f;
 	}
 
 	AZ(req->wrk->v1l);
@@ -328,7 +321,8 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 	    sz, r, &req->acct.resp_hdrbytes);
 	H2_Send_Rel(r2->h2sess, r2);
 
-	WS_Release(req->ws, 0);
+	if (!WS_Overflowed(req->ws))	// XXX: remove if when #3202 is fixed
+		WS_Reset(req->ws, ss);
 
 	/* XXX someone into H2 please add appropriate error handling */
 	if (sendbody) {
