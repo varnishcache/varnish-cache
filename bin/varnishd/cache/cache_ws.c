@@ -361,16 +361,14 @@ void
 WS_VSB_new(struct vsb *vsb, struct ws *ws)
 {
 	unsigned u;
+	static char bogus[2];	// Smallest possible vsb
 
 	WS_Assert(ws);
 	u = WS_ReserveAll(ws);
-	if (WS_Overflowed(ws) || u < 2) {
-		/* Create a malloced-buffer VSB, and fail it up front */
-		AN(VSB_new(vsb, NULL, 2, 0));
-		VSB_cat(vsb, "XXX");
-	} else {
+	if (WS_Overflowed(ws) || u < 2)
+		AN(VSB_new(vsb, bogus, sizeof bogus, 0));
+	else
 		AN(VSB_new(vsb, WS_Front(ws), u, 0));
-	}
 }
 
 char *

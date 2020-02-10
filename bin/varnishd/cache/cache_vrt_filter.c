@@ -248,30 +248,17 @@ typedef void filter_list_t(void *, struct vsb *vsb);
 static const char *
 filter_on_ws(struct ws *ws, filter_list_t *func, void *arg)
 {
-	unsigned u;
 	struct vsb vsb[1];
+	const char *p;
 
 	AN(func);
 	AN(arg);
-	u = WS_ReserveAll(ws);
-	if (u == 0) {
-		WS_Release(ws, 0);
-		WS_MarkOverflow(ws);
-		return (NULL);
-	}
-	AN(VSB_new(vsb, ws->f, u, VSB_FIXEDLEN));
+	WS_VSB_new(vsb, ws);
 	func(arg, vsb);
-	if (VSB_finish(vsb)) {
-		WS_Release(ws, 0);
-		WS_MarkOverflow(ws);
-		return (NULL);
-	}
-	if (VSB_len(vsb)) {
-		WS_Release(ws, VSB_len(vsb) + 1);
-		return (VSB_data(vsb) + 1);
-	}
-	WS_Release(ws, 0);
-	return ("");
+	p = WS_VSB_finish(vsb, ws, NULL);
+	if (p == NULL)
+		p = "";
+	return (p);
 }
 
 /*--------------------------------------------------------------------

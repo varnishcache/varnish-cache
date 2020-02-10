@@ -1228,28 +1228,32 @@ http_ForceHeader(struct http *to, const char *hdr, const char *val)
 void
 http_PrintfHeader(struct http *to, const char *fmt, ...)
 {
-	va_list ap;
-	unsigned l, n;
+	va_list ap, ap2;
+	struct vsb vsb[1];
+	size_t sz;
+	char *p;
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
-	l = WS_ReserveAll(to->ws);
+
 	va_start(ap, fmt);
-	n = vsnprintf(to->ws->f, l, fmt, ap);
-	va_end(ap);
-	if (n + 1 >= l || to->nhd >= to->shd) {
+	va_copy(ap2, ap);
+
+	WS_VSB_new(vsb, to->ws);
+	VSB_vprintf(vsb, fmt, ap);
+	p = WS_VSB_finish(vsb, to->ws, &sz);
+
+	if (p == NULL || to->nhd >= to->shd) {
 		http_fail(to);
-		va_start(ap, fmt);
-		VSLbv(to->vsl, SLT_LostHeader, fmt, ap);
-		va_end(ap);
-		WS_Release(to->ws, 0);
-		return;
+		VSLbv(to->vsl, SLT_LostHeader, fmt, ap2);
+	} else {
+		to->hd[to->nhd].b = p;
+		to->hd[to->nhd].e = p + sz;
+		to->hdf[to->nhd] = 0;
+		http_VSLH(to, to->nhd);
+		to->nhd++;
 	}
-	to->hd[to->nhd].b = to->ws->f;
-	to->hd[to->nhd].e = to->ws->f + n;
-	to->hdf[to->nhd] = 0;
-	WS_Release(to->ws, n + 1);
-	http_VSLH(to, to->nhd);
-	to->nhd++;
+	va_end(ap);
+	va_end(ap2);
 }
 
 void
