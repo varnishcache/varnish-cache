@@ -25,9 +25,7 @@ bin_PROGRAMS =	varnishtest
 
 varnishtest_SOURCES = \
 		hpack.h \
-		programs.h \
 		cmds.h \
-		vmods.h \
 		vtc.h \
 		teken.c \
 		teken.h \
