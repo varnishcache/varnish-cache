@@ -440,63 +440,41 @@ VRT_Strands(char *d, size_t dl, VCL_STRANDS s)
 VCL_STRING
 VRT_StrandsWS(struct ws *ws, const char *h, VCL_STRANDS s)
 {
-	char *b;
-	const char *q = NULL, *e;
-	VCL_STRING r;
-	unsigned u, x;
+	const char *q = NULL;
+	struct vsb vsb[1];
 	int i;
 
+	WS_Assert(ws);
 	AN(s);
-	u = WS_ReserveAll(ws);
 
-	for (i = 0; i < s->n; i++)
+	for (i = 0; i < s->n; i++) {
 		if (s->p[i] != NULL && *s->p[i] != '\0') {
 			q = s->p[i];
 			break;
 		}
-
-	if (h != NULL && q == NULL && WS_Inside(ws, h, NULL)) {
-		WS_Release(ws, 0);
-		return (h);
 	}
 
-	if (h == NULL) {
-		if (q == NULL) {
-			WS_Release(ws, 0);
+	if (q == NULL) {
+		if (h == NULL)
 			return ("");
-		}
-		if (WS_Inside(ws, q, NULL)) {
-			for (i++; i < s->n; i++)
-				if (s->p[i] != NULL && *s->p[i] != '\0')
-					break;
-			if (i == s->n) {
-				WS_Release(ws, 0);
-				return (q);
-			}
-		}
+		if (WS_Inside(ws, h, NULL))
+			return (h);
+	} else if (h == NULL && WS_Inside(ws, q, NULL)) {
+		for (i++; i < s->n; i++)
+			if (s->p[i] != NULL && *s->p[i] != '\0')
+				break;
+		if (i == s->n)
+			return (q);
 	}
 
-	b = WS_Front(ws);
-	e = b + u;
-
-	if (h != NULL) {
-		x = strlen(h);
-		if (b + x < e)
-			memcpy(b, h, x);
-		b += x;
-		if (b < e)
-			*b = ' ';
-		b++;
+	WS_VSB_new(vsb, ws);
+	if (h != NULL)
+		VSB_cat(vsb, h);
+	for (i = 0; i < s->n; i++) {
+		if (s->p[i] != NULL && *s->p[i] != '\0')
+			VSB_cat(vsb, s->p[i]);
 	}
-	r = VRT_Strands(b, e > b ? e - b : 0, s);
-	if (r == NULL || r == e) {
-		WS_MarkOverflow(ws);
-		WS_Release(ws, 0);
-		return (NULL);
-	}
-	b = WS_Front(ws);
-	WS_Release(ws, r - b);
-	return (b);
+	return (WS_VSB_finish(vsb, ws));
 }
 
 /*--------------------------------------------------------------------

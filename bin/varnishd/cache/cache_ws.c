@@ -342,3 +342,53 @@ WS_Overflowed(const struct ws *ws)
 		return (0);
 	return (1);
 }
+
+/*---------------------------------------------------------------------
+ * Build a VSB on a workspace.
+ * Usage pattern:
+ *
+ *	struct vsb vsb[1];
+ *	char *p;
+ *
+ *	WS_VSB_new(vsb, ctx->ws);
+ *	VSB_printf(vsb, "blablabla");
+ *	p = WS_VSB_finish(vsb);
+ *	if (p == NULL)
+ *		return (FAILURE);
+ */
+
+void
+WS_VSB_new(struct vsb *vsb, struct ws *ws)
+{
+	unsigned u;
+
+	WS_Assert(ws);
+	u = WS_ReserveAll(ws);
+	if (WS_Overflowed(ws) || u < 2) {
+		WS_MarkOverflow(ws);
+		/* Create a malloced-buffer VSB, and fail it up front */
+		AN(VSB_new(vsb, NULL, 2, 0));
+		VSB_cat(vsb, "XXX");
+	} else {
+		AN(VSB_new(vsb, WS_Front(ws), u, 0));
+	}
+}
+
+char *
+WS_VSB_finish(struct vsb *vsb, struct ws *ws)
+{
+	char *p;
+
+	WS_Assert(ws);
+	if (!VSB_finish(vsb)) {
+		p = VSB_data(vsb);
+		if (p == WS_Front(ws)) {
+			WS_Release(ws, VSB_len(vsb) + 1);
+			VSB_delete(vsb);
+			return (p);
+		}
+	}
+	VSB_delete(vsb);
+	WS_Release(ws, 0);
+	return (NULL);
+}

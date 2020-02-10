@@ -795,6 +795,9 @@ void *WS_Printf(struct ws *ws, const char *fmt, ...) v_printflike_(2, 3);
 int WS_Inside(const struct ws *, const void *, const void *);
 void WS_Assert_Allocated(const struct ws *ws, const void *ptr, ssize_t len);
 
+void WS_VSB_new(struct vsb *, struct ws *);
+char *WS_VSB_finish(struct vsb *, struct ws *);
+
 static inline char*
 WS_Front(const struct ws *ws)
 {
