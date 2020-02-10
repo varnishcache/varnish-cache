@@ -44,6 +44,11 @@ sub vcl_recv {
         /* This will never happen in properly formed traffic (see: RFC7540) */
         return (synth(405));
     }
+    if (req.http.proxy) {
+        /* Poxy mitigation. Standards-compliant HTTP clients and servers will
+           never read or send this header. See https://httpoxy.org/#fix-now  */
+        return (synth(400));
+    }
     if (!req.http.host &&
       req.esi_level == 0 &&
       req.proto ~ "^(?i)HTTP/1.1") {
