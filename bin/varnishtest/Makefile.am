@@ -8,11 +8,13 @@ TESTS = @VTC_TESTS@
 check-am: check-local
 # See if list of checks have changed, recheck
 check-local:
-	@mkdir -p tests ; \
-	LC_ALL=C; \
-	if [ "$$(cd $(srcdir) && echo tests/*.vtc vmodtests/*/*.vtc)" != "@VTC_TESTS@" ]; then \
+	@LC_ALL=C; \
+	if [ "$$(cd $(srcdir) && echo tests/*.vtc ../../lib/libvmod_*/tests/*.vtc)" != "@VTC_TESTS@" ]; then \
 		cd $(top_builddir) && ./config.status --recheck ; \
 	fi
+	for i in $$(cd $(srcdir) && tests ../../lib/libvmod_*/tests); do \
+		mkdir -p $$d; \
+	done
 
 DISTCLEANFILES = _.ok
 
@@ -75,11 +77,11 @@ varnishtest_CFLAGS = \
 		-DTOP_BUILDDIR='"${top_builddir}"'
 
 EXTRA_DIST = $(top_srcdir)/bin/varnishtest/tests/*.vtc \
-	$(top_srcdir)/bin/varnishtest/vmodtests/*/*.vtc \
 	$(top_srcdir)/bin/varnishtest/tests/README \
 	$(top_srcdir)/bin/varnishtest/gensequences \
 	$(top_srcdir)/bin/varnishtest/sequences \
 	$(top_srcdir)/bin/varnishtest/teken.3 \
+	$(top_srcdir)/lib/libvmod_*/tests/*.vtc \
 	huffman_gen.py
 
 teken.c: teken_state.h
