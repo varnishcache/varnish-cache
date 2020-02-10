@@ -35,12 +35,14 @@
 #include <sys/wait.h>
 
 #include <ctype.h>
+#include <dirent.h>
 #include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 
 #include "vtc.h"
 
@@ -458,14 +460,44 @@ start_test(void)
  * Find the abs path to top of source dir from Makefile, if that
  * fails, fall back on "../../"
  *
- * Set path to all programs build directories
+ * Set PATH to all programs build directories
+ * Set vmod_path to all vmods build directories
  *
  */
 
 static void
+build_path(const char *topbuilddir, const char *subdir,
+    const char *pfx, const char *sfx, struct vsb *vsb)
+{
+	char buf[PATH_MAX];
+	DIR *dir;
+	struct dirent *de;
+	struct stat st;
+	const char *sep = "";
+
+	bprintf(buf, "%s/%s/", topbuilddir, subdir);
+	dir = opendir(buf);
+	XXXAN(dir);
+	while (1) {
+		de = readdir(dir);
+		if (de == NULL)
+			break;
+		if (strncmp(de->d_name, pfx, strlen(pfx)))
+			continue;
+		bprintf(buf, "%s/%s/%s", topbuilddir, subdir, de->d_name);
+		if (!stat(buf, &st) && S_ISDIR(st.st_mode)) {
+			VSB_cat(vsb, sep);
+			VSB_cat(vsb, buf);
+			VSB_cat(vsb, sfx);
+			sep = ":";
+		}
+	}
+	AZ(closedir(dir));
+}
+
+static void
 i_mode(void)
 {
-	const char *sep;
 	struct vsb *vsb;
 	char *p, *q;
 	char *topbuild;
@@ -511,39 +543,27 @@ i_mode(void)
 	}
 	AN(topbuild);
 	extmacro_def("topbuild", "%s", topbuild);
+
 	/*
 	 * Build $PATH which can find all programs in the build tree
 	 */
+	VSB_clear(vsb);
 	VSB_cat(vsb, "PATH=");
-	sep = "";
-#define VTC_PROG(l)							\
-	do {								\
-		VSB_printf(vsb, "%s%s/bin/" #l, sep, topbuild);		\
-		sep = ":";						\
-	} while (0);
-#include "programs.h"
-
+	build_path(topbuild, "bin", "varnish", "", vsb);
 	VSB_printf(vsb, ":%s", getenv("PATH"));
 	AZ(VSB_finish(vsb));
-
 	AZ(putenv(strdup(VSB_data(vsb))));
 
 	/*
 	 * Build vmod_path which can find all VMODs in the build tree
 	 */
+
 	VSB_clear(vsb);
-	sep = "";
-#define VTC_VMOD(l)							\
-	do {								\
-		VSB_printf(vsb, "%s%s/lib/libvmod_" #l "/.libs",	\
-		    sep, topbuild);					\
-		sep = ":";						\
-	} while (0);
-#include "vmods.h"
-#undef VTC_VMOD
+	build_path(topbuild, "lib", "libvmod_", "/.libs", vsb);
 	AZ(VSB_finish(vsb));
 	vmod_path = strdup(VSB_data(vsb));
 	AN(vmod_path);
+
 	free(topbuild);
 	VSB_destroy(&vsb);
 
