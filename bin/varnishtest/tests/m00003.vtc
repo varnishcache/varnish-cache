@@ -10,7 +10,7 @@ server s1 {
 shell {
 	echo "vcl 4.1; import std; backend dummy None;" >${tmpdir}/test.vcl
 	varnishd -pvmod_path=${topbuild}/lib/libvmod_std/.libs \
-	         -C -f ${tmpdir}/test.vcl 2>/dev/null
+		 -C -f ${tmpdir}/test.vcl 2>/dev/null
 }
 
 varnish v1 -arg "-pvmod_path=${topbuild}/lib/libvmod_std/.libs/" -vcl+backend {

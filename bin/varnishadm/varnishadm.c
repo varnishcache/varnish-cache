@@ -260,7 +260,7 @@ pass_answer(int fd)
 		printf("%s\n", answer);
 		free(answer);
 	}
-        if (status == CLIS_TRUNCATED)
+	if (status == CLIS_TRUNCATED)
 		printf("[response was truncated]\n");
 	(void)fflush(stdout);
 }
