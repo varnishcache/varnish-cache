@@ -39,6 +39,8 @@
 #include "vcl.h"
 #include "vtim.h"
 
+const struct gethdr_t *const H_X_Varnish = GETHDR_T("X-Varnish");
+
 /*--------------------------------------------------------------------
  * Allocate an object, with fall-back to Transient.
  * XXX: This somewhat overlaps the stuff in stevedore.c
@@ -350,9 +352,10 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	bo->storage = bo->do_pass ? stv_transient : STV_next();
 
 	if (bo->retries > 0)
-		http_Unset(bo->bereq, "\012X-Varnish:");
+		http_Unset(bo->bereq, H_X_Varnish);
 
-	http_PrintfHeader(bo->bereq, "X-Varnish: %u", VXID(bo->vsl->wid));
+	http_PrintfHeader(bo->bereq, "%s %u", H_X_Varnish->str,
+	    VXID(bo->vsl->wid));
 
 	VCL_backend_fetch_method(bo->vcl, wrk, NULL, bo, NULL);
 

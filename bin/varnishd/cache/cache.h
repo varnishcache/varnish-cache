@@ -613,7 +613,8 @@ void http_PutResponse(struct http *to, const char *proto, uint16_t status,
 void http_FilterReq(struct http *to, const struct http *fm, unsigned how);
 void HTTP_Encode(const struct http *fm, uint8_t *, unsigned len, unsigned how);
 int HTTP_Decode(struct http *to, const uint8_t *fm);
-void http_ForceHeader(struct http *to, const char *hdr, const char *val);
+void http_ForceHeader(struct http *to, const struct gethdr_t *hdr,
+    const char *val);
 void http_PrintfHeader(struct http *to, const char *fmt, ...)
     v_printflike_(2, 3);
 void http_TimeHeader(struct http *to, const char *fmt, vtim_real now);
@@ -623,30 +624,35 @@ void http_SetH(struct http *to, unsigned n, const char *fm);
 void http_ForceField(struct http *to, unsigned n, const char *t);
 void HTTP_Setup(struct http *, struct ws *, struct vsl_log *, enum VSL_tag_e);
 void http_Teardown(struct http *ht);
-int http_GetHdr(const struct http *hp, const char *hdr, const char **ptr);
-int http_GetHdrToken(const struct http *hp, const char *hdr,
+int http_GetHdr(const struct http *hp, const struct gethdr_t *hdr,
+    const char **ptr);
+int http_GetHdrToken(const struct http *hp, const struct gethdr_t *hdr,
     const char *token, const char **pb, const char **pe);
-int http_GetHdrField(const struct http *hp, const char *hdr,
+int http_GetHdrField(const struct http *hp, const struct gethdr_t *hdr,
     const char *field, const char **ptr);
-double http_GetHdrQ(const struct http *hp, const char *hdr, const char *field);
+double http_GetHdrQ(const struct http *hp, const struct gethdr_t *hdr,
+    const char *field);
 ssize_t http_GetContentLength(const struct http *hp);
 uint16_t http_GetStatus(const struct http *hp);
 int http_IsStatus(const struct http *hp, int);
 void http_SetStatus(struct http *to, uint16_t status, const char *reason);
 const char *http_GetMethod(const struct http *hp);
-int http_HdrIs(const struct http *hp, const char *hdr, const char *val);
+int http_HdrIs(const struct http *hp, const struct gethdr_t *hdr,
+    const char *val);
 void http_CopyHome(const struct http *hp);
-void http_Unset(struct http *hp, const char *hdr);
-unsigned http_CountHdr(const struct http *hp, const char *hdr);
-void http_CollectHdr(struct http *hp, const char *hdr);
-void http_CollectHdrSep(struct http *hp, const char *hdr, const char *sep);
+void http_Unset(struct http *hp, const struct gethdr_t *hdr);
+unsigned http_CountHdr(const struct http *hp, const struct gethdr_t *hdr);
+void http_CollectHdr(struct http *hp, const struct gethdr_t *hdr);
+void http_CollectHdrSep(struct http *hp, const struct gethdr_t *hdr,
+    const char *sep);
 void http_VSL_log(const struct http *hp);
 void HTTP_Merge(struct worker *, struct objcore *, struct http *to);
 uint16_t HTTP_GetStatusPack(struct worker *, struct objcore *oc);
 int HTTP_IterHdrPack(struct worker *, struct objcore *, const char **);
 #define HTTP_FOREACH_PACK(wrk, oc, ptr) \
 	 for ((ptr) = NULL; HTTP_IterHdrPack(wrk, oc, &(ptr));)
-const char *HTTP_GetHdrPack(struct worker *, struct objcore *, const char *hdr);
+const char *HTTP_GetHdrPack(struct worker *, struct objcore *,
+    const struct gethdr_t *hdr);
 enum sess_close http_DoConnection(struct http *hp);
 
 #define HTTPH_R_PASS	(1 << 0)	/* Request (c->b) in pass mode */
@@ -654,12 +660,12 @@ enum sess_close http_DoConnection(struct http *hp);
 #define HTTPH_A_INS	(1 << 2)	/* Response (b->o) for insert */
 #define HTTPH_A_PASS	(1 << 3)	/* Response (b->o) for pass */
 
-#define HTTPH(a, b, c) extern char b[];
+#define HTTPH(a, b, c) extern const struct gethdr_t *const b;
 #include "tbl/http_headers.h"
 
-extern const char H__Status[];
-extern const char H__Proto[];
-extern const char H__Reason[];
+extern const struct gethdr_t *const H__Status;
+extern const struct gethdr_t *const H__Proto;
+extern const struct gethdr_t *const H__Reason;
 
 /* cache_main.c */
 #define VXID(u) ((u) & VSL_IDENTMASK)

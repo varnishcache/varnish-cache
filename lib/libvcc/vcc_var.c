@@ -70,8 +70,8 @@ vcc_Var_Wildcard(struct vcc *tl, struct symbol *parent, struct symbol *sym)
 
 	/* Create the static identifier */
 	Fh(tl, 0, "static const struct gethdr_s %s =\n", VSB_data(vsb) + 1);
-	Fh(tl, 0, "    { %s, \"\\%03o%s:\"};\n",
-	    parent->rname, (unsigned int)strlen(sym->name) + 1, sym->name);
+	Fh(tl, 0, "    { %s, GETHDR_T(\"%s\") };\n",
+	    parent->rname, sym->name);
 
 	/* Create the symbol r/l values */
 	sym->rname = TlDup(tl, VSB_data(vsb));

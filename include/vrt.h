@@ -60,6 +60,8 @@
  *	VRT_l_resp_body() changed
  *	VRT_l_beresp_body() changed
  *	VRT_Format_Proxy() added	// transitional interface
+ *	struct gethdr_t added
+ *	struct gethdr_s changed (same ABI)
  * 10.0 (2019-09-15)
  *	VRT_UpperLowerStrands added.
  *	VRT_synth_page now takes STRANDS argument
@@ -461,9 +463,18 @@ enum gethdr_e {
 	HDR_BERESP
 };
 
+struct gethdr_t {
+	uint8_t		len;
+	const char	str[];
+};
+
+#define GETHDR_T(name)	((const struct gethdr_t*)			\
+	    &(const struct { uint8_t _l; char _s[sizeof(name ":")]; })	\
+	    { sizeof(name), name ":" })
+
 struct gethdr_s {
-	enum gethdr_e	where;
-	const char	*what;
+	enum gethdr_e		where;
+	const struct gethdr_t	*what;
 };
 
 VCL_HTTP VRT_selecthttp(VRT_CTX, enum gethdr_e);

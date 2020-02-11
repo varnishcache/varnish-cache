@@ -567,9 +567,9 @@ VRT_SetHdr(VRT_CTX , VCL_HEADER hs, const char *p, ...)
 	if (p == vrt_magic_string_unset) {
 		http_Unset(hp, hs->what);
 	} else {
-		b = VRT_String(hp->ws, hs->what + 1, p, ap);
+		b = VRT_String(hp->ws, hs->what->str, p, ap);
 		if (b == NULL) {
-			VSLb(ctx->vsl, SLT_LostHeader, "%s", hs->what + 1);
+			VSLb(ctx->vsl, SLT_LostHeader, "%s", hs->what->str);
 		} else {
 			http_Unset(hp, hs->what);
 			http_SetHeader(hp, b);

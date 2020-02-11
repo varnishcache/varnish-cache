@@ -40,12 +40,12 @@
 #include "vct.h"
 #include "vtim.h"
 
-#define HTTPH(a, b, c) char b[] = "*" a ":";
+#define HTTPH(a, b, c) const struct gethdr_t *const b = GETHDR_T(a);
 #include "tbl/http_headers.h"
 
-const char H__Status[]	= "\010:status:";
-const char H__Proto[]	= "\007:proto:";
-const char H__Reason[]	= "\010:reason:";
+const struct gethdr_t *const H__Status = GETHDR_T(":status");
+const struct gethdr_t *const H__Proto = GETHDR_T(":proto");
+const struct gethdr_t *const H__Reason = GETHDR_T(":reason");
 
 /*--------------------------------------------------------------------
  * These two functions are in an incestuous relationship with the
@@ -292,17 +292,14 @@ http_PutField(struct http *to, int field, const char *string)
 /*--------------------------------------------------------------------*/
 
 static int
-http_IsHdr(const txt *hh, const char *hdr)
+http_IsHdr(const txt *hh, const struct gethdr_t *hdr)
 {
-	unsigned l;
 
 	Tcheck(*hh);
 	AN(hdr);
-	l = hdr[0];
-	assert(l == strlen(hdr + 1));
-	assert(hdr[l] == ':');
-	hdr++;
-	return (!strncasecmp(hdr, hh->b, l));
+	assert(hdr->len == strlen(hdr->str));
+	assert(hdr->str[hdr->len - 1] == ':');
+	return (!strncasecmp(hdr->str, hh->b, hdr->len));
 }
 
 /*--------------------------------------------------------------------*/
@@ -330,7 +327,7 @@ http_findhdr(const struct http *hp, unsigned l, const char *hdr)
  */
 
 unsigned
-http_CountHdr(const struct http *hp, const char *hdr)
+http_CountHdr(const struct http *hp, const struct gethdr_t *hdr)
 {
 	unsigned retval = 0;
 	unsigned u;
@@ -351,7 +348,7 @@ http_CountHdr(const struct http *hp, const char *hdr)
  */
 
 void
-http_CollectHdr(struct http *hp, const char *hdr)
+http_CollectHdr(struct http *hp, const struct gethdr_t *hdr)
 {
 
 	http_CollectHdrSep(hp, hdr, NULL);
@@ -364,9 +361,9 @@ http_CollectHdr(struct http *hp, const char *hdr)
  */
 
 void
-http_CollectHdrSep(struct http *hp, const char *hdr, const char *sep)
+http_CollectHdrSep(struct http *hp, const struct gethdr_t *hdr, const char *sep)
 {
-	unsigned u, l, lsep, ml, f, x, d;
+	unsigned u, lsep, ml, f, x, d;
 	char *b = NULL, *e = NULL;
 	const char *v;
 
@@ -378,10 +375,9 @@ http_CollectHdrSep(struct http *hp, const char *hdr, const char *sep)
 		sep = ", ";
 	lsep = strlen(sep);
 
-	l = hdr[0];
-	assert(l == strlen(hdr + 1));
-	assert(hdr[l] == ':');
-	f = http_findhdr(hp, l - 1, hdr + 1);
+	assert(hdr->len == strlen(hdr->str));
+	assert(hdr->str[hdr->len - 1] == ':');
+	f = http_findhdr(hp, hdr->len - 1, hdr->str);
 	if (f == 0)
 		return;
 
@@ -403,7 +399,7 @@ http_CollectHdrSep(struct http *hp, const char *hdr, const char *sep)
 			x = Tlen(hp->hd[f]);
 			if (b + x >= e) {
 				http_fail(hp);
-				VSLb(hp->vsl, SLT_LostHeader, "%s", hdr + 1);
+				VSLb(hp->vsl, SLT_LostHeader, "%s", hdr->str);
 				WS_Release(hp->ws, 0);
 				return;
 			}
@@ -415,9 +411,9 @@ http_CollectHdrSep(struct http *hp, const char *hdr, const char *sep)
 		AN(e);
 
 		/* Append the Nth header we found */
-		x = Tlen(hp->hd[u]) - l;
+		x = Tlen(hp->hd[u]) - hdr->len;
 
-		v = hp->hd[u].b + *hdr;
+		v = hp->hd[u].b + hdr->len;
 		while (vct_issp(*v)) {
 			v++;
 			x--;
@@ -425,7 +421,7 @@ http_CollectHdrSep(struct http *hp, const char *hdr, const char *sep)
 
 		if (b + lsep + x >= e) {
 			http_fail(hp);
-			VSLb(hp->vsl, SLT_LostHeader, "%s", hdr + 1);
+			VSLb(hp->vsl, SLT_LostHeader, "%s", hdr->str);
 			WS_Release(hp->ws, 0);
 			return;
 		}
@@ -447,23 +443,21 @@ http_CollectHdrSep(struct http *hp, const char *hdr, const char *sep)
 /*--------------------------------------------------------------------*/
 
 int
-http_GetHdr(const struct http *hp, const char *hdr, const char **ptr)
+http_GetHdr(const struct http *hp, const struct gethdr_t *hdr, const char **ptr)
 {
-	unsigned u, l;
+	unsigned u;
 	const char *p;
 
-	l = hdr[0];
-	assert(l == strlen(hdr + 1));
-	assert(hdr[l] == ':');
-	hdr++;
-	u = http_findhdr(hp, l - 1, hdr);
+	assert(hdr->len == strlen(hdr->str));
+	assert(hdr->str[hdr->len - 1] == ':');
+	u = http_findhdr(hp, hdr->len - 1, hdr->str);
 	if (u == 0) {
 		if (ptr != NULL)
 			*ptr = NULL;
 		return (0);
 	}
 	if (ptr != NULL) {
-		p = hp->hd[u].b + l;
+		p = hp->hd[u].b + hdr->len;
 		while (vct_issp(*p))
 			p++;
 		*ptr = p;
@@ -574,7 +568,7 @@ http_istoken(const char **bp, const char *e, const char *token)
  */
 
 int
-http_GetHdrToken(const struct http *hp, const char *hdr,
+http_GetHdrToken(const struct http *hp, const struct gethdr_t *hdr,
     const char *token, const char **pb, const char **pe)
 {
 	const char *h, *b, *e;
@@ -611,7 +605,8 @@ http_GetHdrToken(const struct http *hp, const char *hdr,
  */
 
 double
-http_GetHdrQ(const struct http *hp, const char *hdr, const char *field)
+http_GetHdrQ(const struct http *hp, const struct gethdr_t *hdr,
+    const char *field)
 {
 	const char *hb, *he, *b, *e;
 	int i;
@@ -660,7 +655,7 @@ http_GetHdrQ(const struct http *hp, const char *hdr, const char *field)
  */
 
 int
-http_GetHdrField(const struct http *hp, const char *hdr,
+http_GetHdrField(const struct http *hp, const struct gethdr_t *hdr,
     const char *field, const char **ptr)
 {
 	const char *h;
@@ -765,7 +760,7 @@ http_DoConnection(struct http *hp)
 /*--------------------------------------------------------------------*/
 
 int
-http_HdrIs(const struct http *hp, const char *hdr, const char *val)
+http_HdrIs(const struct http *hp, const struct gethdr_t *hdr, const char *val)
 {
 	const char *p;
 
@@ -1026,41 +1021,38 @@ HTTP_IterHdrPack(struct worker *wrk, struct objcore *oc, const char **p)
 }
 
 const char *
-HTTP_GetHdrPack(struct worker *wrk, struct objcore *oc, const char *hdr)
+HTTP_GetHdrPack(struct worker *wrk, struct objcore *oc, const struct gethdr_t *hdr)
 {
 	const char *ptr;
-	unsigned l;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AN(hdr);
 
-	l = hdr[0];
-	assert(l > 0);
-	assert(l == strlen(hdr + 1));
-	assert(hdr[l] == ':');
-	hdr++;
+	assert(hdr->len > 0);
+	assert(hdr->len == strlen(hdr->str));
+	assert(hdr->str[hdr->len - 1] == ':');
 
-	if (hdr[0] == ':') {
+	if (hdr->str[0] == ':') {
 		/* Special cases */
 		ptr = ObjGetAttr(wrk, oc, OA_HEADERS, NULL);
 		AN(ptr);
 		ptr += 4;	/* Skip nhd and status */
 
-		if (!strcmp(hdr, ":proto:"))
+		if (!strcmp(hdr->str, ":proto:"))
 			return (ptr);
 		ptr = strchr(ptr, '\0') + 1;
-		if (!strcmp(hdr, ":status:"))
+		if (!strcmp(hdr->str, ":status:"))
 			return (ptr);
 		ptr = strchr(ptr, '\0') + 1;
-		if (!strcmp(hdr, ":reason:"))
+		if (!strcmp(hdr->str, ":reason:"))
 			return (ptr);
 		WRONG("Unknown magic packed header");
 	}
 
 	HTTP_FOREACH_PACK(wrk, oc, ptr) {
-		if (!strncasecmp(ptr, hdr, l)) {
-			ptr += l;
+		if (!strncasecmp(ptr, hdr->str, hdr->len)) {
+			ptr += hdr->len;
 			while (vct_islws(*ptr))
 				ptr++;
 			return (ptr);
@@ -1215,14 +1207,14 @@ http_SetHeader(struct http *to, const char *hdr)
 /*--------------------------------------------------------------------*/
 
 void
-http_ForceHeader(struct http *to, const char *hdr, const char *val)
+http_ForceHeader(struct http *to, const struct gethdr_t *hdr, const char *val)
 {
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	if (http_HdrIs(to, hdr, val))
 		return;
 	http_Unset(to, hdr);
-	http_PrintfHeader(to, "%s %s", hdr + 1, val);
+	http_PrintfHeader(to, "%s %s", hdr->str, val);
 }
 
 void
@@ -1285,7 +1277,7 @@ http_TimeHeader(struct http *to, const char *fmt, vtim_real now)
 /*--------------------------------------------------------------------*/
 
 void
-http_Unset(struct http *hp, const char *hdr)
+http_Unset(struct http *hp, const struct gethdr_t *hdr)
 {
 	uint16_t u, v;
 
@@ -1302,14 +1294,4 @@ http_Unset(struct http *hp, const char *hdr)
 		v++;
 	}
 	hp->nhd = v;
-}
-
-/*--------------------------------------------------------------------*/
-
-void
-HTTP_Init(void)
-{
-
-#define HTTPH(a, b, c) b[0] = (char)strlen(b + 1);
-#include "tbl/http_headers.h"
 }
