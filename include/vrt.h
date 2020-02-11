@@ -472,6 +472,14 @@ struct gethdr_t {
 	    &(const struct { uint8_t _l; char _s[sizeof(name ":")]; })	\
 	    { sizeof(name), name ":" })
 
+#define CHECK_GETHDR_T(hdr)						\
+	do {								\
+		AN(hdr);						\
+		assert((hdr)->len > 0);					\
+		assert((hdr)->len == strlen((hdr)->str));		\
+		assert((hdr)->str[(hdr)->len - 1] == ':');		\
+	} while (0)
+
 struct gethdr_s {
 	enum gethdr_e		where;
 	const struct gethdr_t	*what;

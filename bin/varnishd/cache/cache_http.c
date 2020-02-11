@@ -296,9 +296,8 @@ http_IsHdr(const txt *hh, const struct gethdr_t *hdr)
 {
 
 	Tcheck(*hh);
-	AN(hdr);
-	assert(hdr->len == strlen(hdr->str));
-	assert(hdr->str[hdr->len - 1] == ':');
+	CHECK_GETHDR_T(hdr);
+	/* XXX: hh overflow? */
 	return (!strncasecmp(hdr->str, hh->b, hdr->len));
 }
 
@@ -375,8 +374,7 @@ http_CollectHdrSep(struct http *hp, const struct gethdr_t *hdr, const char *sep)
 		sep = ", ";
 	lsep = strlen(sep);
 
-	assert(hdr->len == strlen(hdr->str));
-	assert(hdr->str[hdr->len - 1] == ':');
+	CHECK_GETHDR_T(hdr);
 	f = http_findhdr(hp, hdr->len - 1, hdr->str);
 	if (f == 0)
 		return;
@@ -448,8 +446,7 @@ http_GetHdr(const struct http *hp, const struct gethdr_t *hdr, const char **ptr)
 	unsigned u;
 	const char *p;
 
-	assert(hdr->len == strlen(hdr->str));
-	assert(hdr->str[hdr->len - 1] == ':');
+	CHECK_GETHDR_T(hdr);
 	u = http_findhdr(hp, hdr->len - 1, hdr->str);
 	if (u == 0) {
 		if (ptr != NULL)
@@ -1027,11 +1024,7 @@ HTTP_GetHdrPack(struct worker *wrk, struct objcore *oc, const struct gethdr_t *h
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	AN(hdr);
-
-	assert(hdr->len > 0);
-	assert(hdr->len == strlen(hdr->str));
-	assert(hdr->str[hdr->len - 1] == ':');
+	CHECK_GETHDR_T(hdr);
 
 	if (hdr->str[0] == ':') {
 		/* Special cases */
