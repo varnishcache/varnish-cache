@@ -60,6 +60,7 @@
  *	VRT_l_resp_body() changed
  *	VRT_l_beresp_body() changed
  *	VRT_Format_Proxy() added	// transitional interface
+ *	VRT_AllocStrandsWS() added
  * 10.0 (2019-09-15)
  *	VRT_UpperLowerStrands added.
  *	VRT_synth_page now takes STRANDS argument
@@ -205,6 +206,9 @@ struct strands {
 	int		n;
 	const char	**p;
 };
+
+struct strands * VRT_AllocStrandsWS(struct ws *, int);
+
 
 /*
  * VCL_BLOB:

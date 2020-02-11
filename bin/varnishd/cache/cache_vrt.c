@@ -181,6 +181,30 @@ VRT_GetHdr(VRT_CTX, VCL_HEADER hs)
 }
 
 /*--------------------------------------------------------------------
+ * Alloc Strands with space for n elements on workspace
+ *
+ * Error handling is deliberately left to the caller
+ */
+
+struct strands *
+VRT_AllocStrandsWS(struct ws *ws, int n)
+{
+	struct strands *s;
+	const char **p;
+
+	s = WS_Alloc(ws, sizeof *s);
+	p = WS_Alloc(ws, n * sizeof *p);
+
+	if (s == NULL || p == NULL)
+		return (NULL);
+
+	s->n = n;
+	s->p = p;
+
+	return (s);
+}
+
+/*--------------------------------------------------------------------
  * Build STRANDS from what is essentially a STRING_LIST
  */
 
