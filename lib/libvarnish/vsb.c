@@ -563,7 +563,7 @@ VSB_quote_pfx(struct vsb *s, const char *pfx, const void *v, int len, int how)
 		nl = 0;
 		switch (*q) {
 		case '?':
-			if (how & VSB_QUOTE_CSTR)
+			if (how & (VSB_QUOTE_CSTR | VSB_QUOTE_GLOB))
 				(void)VSB_putc(s, '\\');
 			(void)VSB_putc(s, *q);
 			break;
@@ -571,6 +571,10 @@ VSB_quote_pfx(struct vsb *s, const char *pfx, const void *v, int len, int how)
 			(void)VSB_putc(s, *q);
 			break;
 		case '\\':
+			if (!(how & (VSB_QUOTE_UNSAFE)))
+				(void)VSB_putc(s, '\\');
+			(void)VSB_putc(s, *q);
+			break;
 		case '"':
 			if (!(how & VSB_QUOTE_UNSAFE))
 				(void)VSB_putc(s, '\\');
@@ -582,18 +586,42 @@ VSB_quote_pfx(struct vsb *s, const char *pfx, const void *v, int len, int how)
 			} else if (how & (VSB_QUOTE_NONL|VSB_QUOTE_UNSAFE)) {
 				(void)VSB_printf(s, "\n");
 				nl = 1;
+			} else if (how & VSB_QUOTE_GLOB) {
+				(void)VSB_printf(s, "\\\\n");
 			} else {
 				(void)VSB_printf(s, "\\n");
 			}
 			break;
 		case '\r':
-			(void)VSB_cat(s, "\\r");
+			if (how & VSB_QUOTE_GLOB)
+				(void)VSB_cat(s, "\\\\r");
+			else
+				(void)VSB_cat(s, "\\r");
 			break;
 		case '\t':
-			(void)VSB_cat(s, "\\t");
+			if (how & VSB_QUOTE_GLOB)
+				(void)VSB_cat(s, "\\\\t");
+			else
+				(void)VSB_cat(s, "\\t");
 			break;
 		case '\v':
-			(void)VSB_cat(s, "\\v");
+			if (how & VSB_QUOTE_GLOB)
+				(void)VSB_cat(s, "\\\\v");
+			else
+				(void)VSB_cat(s, "\\v");
+			break;
+		case '[':
+			/* FALLTHROUGH */
+		case ']':
+			/* FALLTHROUGH */
+		case '{':
+			/* FALLTHROUGH */
+		case '}':
+			/* FALLTHROUGH */
+		case '*':
+			if (how & VSB_QUOTE_GLOB)
+				(void)VSB_putc(s, '\\');
+			(void)VSB_putc(s, *q);
 			break;
 		default:
 			/* XXX: Implement VSB_QUOTE_JSON */

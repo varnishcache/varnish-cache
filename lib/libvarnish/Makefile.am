@@ -43,7 +43,7 @@ libvarnish_a_SOURCES = \
 	vtim.c \
 	vus.c
 
-TESTS = vjsn_test vnum_c_test binheap
+TESTS = vjsn_test vnum_c_test binheap vsb_test
 
 noinst_PROGRAMS = ${TESTS}
 
@@ -57,3 +57,6 @@ vnum_c_test_LDADD = ${LIBM} libvarnish.a @SAN_LDFLAGS@
 vjsn_test_SOURCES = vjsn.c
 vjsn_test_CFLAGS = -DVJSN_TEST @SAN_CFLAGS@
 vjsn_test_LDADD = libvarnish.a @SAN_LDFLAGS@
+
+vsb_test_SOURCES = vsb_test.c vsb.c vas.c
+vsb_test_LDADD = libvarnish.a
