@@ -226,8 +226,7 @@ clean-vmod-$1:
 "
 
 	AC_SUBST(m4_toupper(BUILD_VMOD_$1), [$VMOD_RULES])
-	m4_ifdef([_AM_SUBST_NOTMAKE],
-		[_AM_SUBST_NOTMAKE(m4_toupper(BUILD_VMOD_$1))])
+	AM_SUBST_NOTMAKE(m4_toupper(BUILD_VMOD_$1))
 ])
 
 # VARNISH_VMODS(NAMES)
@@ -418,8 +417,7 @@ clean-vsc-$1:
 "
 
 	AC_SUBST(m4_toupper(BUILD_VSC_$1), [$VSC_RULES])
-	m4_ifdef([_AM_SUBST_NOTMAKE],
-		[_AM_SUBST_NOTMAKE(m4_toupper(BUILD_VSC_$1))])
+	AM_SUBST_NOTMAKE(m4_toupper(BUILD_VSC_$1))
 ])
 
 # VARNISH_COUNTERS(NAMES)
@@ -488,8 +486,7 @@ clean-vut-$1:
 "
 
 	AC_SUBST(m4_toupper(GENERATE_$1_DOCS), [$VUT_RULES])
-	m4_ifdef([_AM_SUBST_NOTMAKE],
-		[_AM_SUBST_NOTMAKE(m4_toupper(GENERATE_$1_DOCS))])
+	AM_SUBST_NOTMAKE(m4_toupper(GENERATE_$1_DOCS))
 
 ])
 
