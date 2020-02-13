@@ -13,6 +13,7 @@ _*
 *~
 *.sw[op]
 *.trs
+*.log
 
 # Various auto-tools artifacts
 /aclocal.m4
@@ -22,8 +23,6 @@ _*
 /config.guess
 /config.h
 /config.h.in
-/config.h.in~
-/config.log
 /config.status
 /config.sub
 /configure
@@ -108,22 +107,16 @@ cscope.*out
 /nbproject/private/
 
 # Test droppings
-/bin/varnishd/*.log
 /bin/varnishd/vhp_decode_test
 /bin/varnishd/vhp_table_test
-/bin/varnishtest/*.log
-/bin/varnishtest/tests/*.log
 /bin/varnishtest/tests/*.log-t
-/include/*.log
 /include/_vrt.c
 /include/_vrt_test
 /include/vrt_test
 /include/vbm_test
-/lib/libvarnish/*.log
 /lib/libvarnish/binheap
 /lib/libvarnish/vjsn_test
 /lib/libvarnish/vnum_c_test
-/lib/libvarnishapi/*.log
 /lib/libvarnishapi/vsl_glob_test
 /lib/libvarnishapi/vsl_glob_test_coverage
 
