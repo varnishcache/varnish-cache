@@ -442,7 +442,6 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 		VCL_Bo2Ctx(&ctx, bo);
 	}
 	assert(ctx.now != 0);
-	ctx.syntax = ctx.vcl->conf->syntax;
 	ctx.specific = specific;
 	ctx.method = method;
 	aws = WS_Snapshot(wrk->aws);

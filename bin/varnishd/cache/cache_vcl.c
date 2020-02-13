@@ -83,6 +83,7 @@ VCL_Bo2Ctx(struct vrt_ctx *ctx, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(bo->wrk, WORKER_MAGIC);
 	ctx->vcl = bo->vcl;
+	ctx->syntax = ctx->vcl->conf->syntax;
 	ctx->vsl = bo->vsl;
 	ctx->http_bereq = bo->bereq;
 	ctx->http_beresp = bo->beresp;
@@ -102,6 +103,7 @@ VCL_Req2Ctx(struct vrt_ctx *ctx, struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 	ctx->vcl = req->vcl;
+	ctx->syntax = ctx->vcl->conf->syntax;
 	ctx->vsl = req->vsl;
 	ctx->http_req = req->http;
 	CHECK_OBJ_NOTNULL(req->top, REQTOP_MAGIC);
@@ -586,6 +588,7 @@ vcl_cancel_load(struct vrt_ctx *ctx, struct cli *cli,
 	ctx = VCL_Get_CliCtx(0);
 	ctx->vcl = vcl;
 	ctx->method = VCL_MET_FINI;
+	ctx->syntax = ctx->vcl->conf->syntax;
 	AZ(vcl_send_event(ctx, VCL_EVENT_DISCARD));
 	ctx->method = 0;
 	vcl_KillBackends(vcl);
@@ -623,6 +626,7 @@ vcl_load(struct cli *cli, struct vrt_ctx *ctx,
 	vcl->temp = VCL_TEMP_INIT;
 
 	ctx->vcl = vcl;
+	ctx->syntax = ctx->vcl->conf->syntax;
 
 	VSB_clear(ctx->msg);
 	ctx->method = VCL_MET_INIT;
@@ -801,6 +805,7 @@ vcl_cli_state(struct cli *cli, const char * const *av, void *priv)
 	ctx = VCL_Get_CliCtx(1);
 	ctx->vcl = vcl_find(av[2]);
 	AN(ctx->vcl);
+	ctx->syntax = ctx->vcl->conf->syntax;
 	if (vcl_set_state(ctx, av[3])) {
 		AZ(VSB_finish(ctx->msg));
 		VCLI_SetResult(cli, CLIS_CANT);
