@@ -611,6 +611,7 @@ vcl_load(struct cli *cli, struct vrt_ctx *ctx,
     const char *name, const char *fn, const char *state)
 {
 	struct vcl *vcl;
+	struct vsb *msg;
 	int i;
 
 	ASSERT_CLI();
@@ -618,13 +619,17 @@ vcl_load(struct cli *cli, struct vrt_ctx *ctx,
 	vcl = vcl_find(name);
 	AZ(vcl);
 
-	vcl = VCL_Open(fn, ctx->msg);
+	msg = VSB_new_auto();
+	vcl = VCL_Open(fn, msg);
+	AZ(VSB_finish(ctx->msg));
 	if (vcl == NULL) {
-		AZ(VSB_finish(ctx->msg));
 		VCLI_SetResult(cli, CLIS_PARAM);
 		VCLI_Out(cli, "%s", VSB_data(ctx->msg));
+		VSB_destroy(&msg);
 		return;
 	}
+
+	VSB_destroy(&msg);
 
 	vcl->loaded_name = strdup(name);
 	XXXAN(vcl->loaded_name);
