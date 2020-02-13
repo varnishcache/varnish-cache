@@ -50,6 +50,11 @@ vtest-clean:
 # solved it better, but we don't, so use this at least for now.
 LICENSE: all
 
+# XXX: This is a similar hack to ensure we have a built varnishtest
+# (and technically any other binary that may be involved in a VTC)
+# before we try to run tests anywhere in the tree.
+check-recursive: all
+
 cscope:
 	-rm -f cscope*
 	find . -name '*.[hcS]' > cscope.files
