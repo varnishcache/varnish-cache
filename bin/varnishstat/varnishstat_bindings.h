@@ -51,7 +51,7 @@ BINDING(PAGEUP, "\tNavigate the counter list one page up.")
 
 BINDING_KEY(KEY_NPAGE,		"PAGEDOWN",	" or ")
 BINDING_KEY(' ',		"SPACE",	" or ")
-BINDING_KEY(BINDING_CTRL('F'),	"CTRL-F",)
+BINDING_KEY(BINDING_CTRL('f'),	"CTRL-F",)
 BINDING(PAGEDOWN, "\tNavigate the counter list one page down.")
 
 BINDING_KEY(KEY_HOME,	"HOME",	" or ")

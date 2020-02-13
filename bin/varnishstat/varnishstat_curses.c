@@ -881,7 +881,7 @@ handle_keypress(int ch)
 #define BINDING_KEY(chr, name, or)	\
 	case chr:
 #define BINDING(name, desc)		\
-		kb = KB_ ## name;		\
+		kb = KB_ ## name;	\
 		break;
 #define BINDING_SIG
 #include "varnishstat_bindings.h"
