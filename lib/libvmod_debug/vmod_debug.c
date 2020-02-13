@@ -499,7 +499,7 @@ event_cold(VRT_CTX, const struct vmod_priv *priv)
 	pthread_t thread;
 	struct priv_vcl *priv_vcl;
 
-	AN(ctx->msg);
+	AZ(ctx->msg);
 
 	CAST_OBJ_NOTNULL(priv_vcl, priv->priv, PRIV_VCL_MAGIC);
 

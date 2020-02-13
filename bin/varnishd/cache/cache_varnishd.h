@@ -430,7 +430,7 @@ const char *VCL_Method_Name(unsigned);
 void VCL_Bo2Ctx(struct vrt_ctx *, struct busyobj *);
 void VCL_Req2Ctx(struct vrt_ctx *, struct req *);
 struct vrt_ctx *VCL_Get_CliCtx(int);
-void VCL_Rel_CliCtx(struct vrt_ctx **);
+struct vsb *VCL_Rel_CliCtx(struct vrt_ctx **);
 
 #define VCL_MET_MAC(l,u,t,b) \
     void VCL_##l##_method(struct vcl *, struct worker *, struct req *, \

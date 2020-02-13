@@ -140,62 +140,91 @@ VCL_Get_CliCtx(int msg)
 	return (&ctx_cli);
 }
 
-void
+/*
+ * releases CLI ctx
+ *
+ * returns finished error msg vsb if VCL_Get_CliCtx(1) was called
+ *
+ * caller needs to VSB_destroy a non-NULL return value
+ *
+ */
+struct vsb *
 VCL_Rel_CliCtx(struct vrt_ctx **ctx)
 {
+	struct vsb *r = NULL;
 
 	ASSERT_CLI();
 	assert(*ctx == &ctx_cli);
 	AN((*ctx)->handling);
-	if (ctx_cli.msg)
-		VSB_destroy(&ctx_cli.msg);
+	if (ctx_cli.msg) {
+		TAKE_OBJ_NOTNULL(r, &ctx_cli.msg, VSB_MAGIC);
+		AZ(VSB_finish(r));
+	}
 	if (ctx_cli.vsl)
 		VSL_Flush(ctx_cli.vsl, 0);
 	WS_Assert(ctx_cli.ws);
 	WS_Reset(&ws_cli, ws_snapshot_cli);
 	INIT_OBJ(*ctx, VRT_CTX_MAGIC);
 	*ctx = NULL;
+
+	return (r);
 }
 
 /*--------------------------------------------------------------------*/
 
 static int
-vcl_send_event(struct vrt_ctx *ctx, enum vcl_event_e ev)
+vcl_send_event(struct vcl *vcl, enum vcl_event_e ev, struct vsb **msg)
 {
-	int r;
+	int r, havemsg = 0;
+	unsigned method = 0;
+	struct vrt_ctx *ctx;
 
 	ASSERT_CLI();
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->vcl, VCL_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->vcl->conf, VCL_CONF_MAGIC);
 
-	AZ(ctx->method);
+	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
+	CHECK_OBJ_NOTNULL(vcl->conf, VCL_CONF_MAGIC);
+	AN(msg);
+	AZ(*msg);
+
 	switch (ev) {
 	case VCL_EVENT_LOAD:
-		ctx->method = VCL_MET_INIT;
+		method = VCL_MET_INIT;
 		/* FALLTHROUGH */
 	case VCL_EVENT_WARM:
-		AN(ctx->msg);
+		havemsg = 1;
 		break;
 	case VCL_EVENT_DISCARD:
-		ctx->method = VCL_MET_FINI;
+		method = VCL_MET_FINI;
 		/* FALLTHROUGH */
 	case VCL_EVENT_COLD:
-		// XXX AZ(ctx->msg);
+		AZ(havemsg);
 		break;
 	default:
 		WRONG("vcl_event");
 	}
 
+	ctx = VCL_Get_CliCtx(havemsg);
+
 	AN(ctx->handling);
-	*ctx->handling = 0;
+	AZ(*ctx->handling);
 	AN(ctx->ws);
+
+	ctx->vcl = vcl;
+	ctx->syntax = ctx->vcl->conf->syntax;
+	ctx->method = method;
 
 	VCL_TaskEnter(cli_task_privs);
 	r = ctx->vcl->conf->event_vcl(ctx, ev);
 	VCL_TaskLeave(cli_task_privs);
 
-	ctx->method = 0;
+	/* if the warm event did not get to vcl_init, vcl_fini
+	 * won't be run, so handling may be zero */
+	if (method && *ctx->handling && *ctx->handling != VCL_RET_OK) {
+		assert(ev == VCL_EVENT_LOAD);
+		r = 1;
+	}
+
+	*msg = VCL_Rel_CliCtx(&ctx);
 
 	if (r && (ev == VCL_EVENT_COLD || ev == VCL_EVENT_DISCARD))
 		WRONG("A VMOD cannot fail COLD or DISCARD events");
@@ -499,39 +528,37 @@ VCL_TestLoad(const char *fn)
 
 /*--------------------------------------------------------------------*/
 
-static void
-vcl_print_refs(VRT_CTX)
+static struct vsb *
+vcl_print_refs(const struct vcl *vcl)
 {
-	struct vcl *vcl;
+	struct vsb *msg;
 	struct vclref *ref;
 
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->vcl, VCL_MAGIC);
-	AN(ctx->msg);
-	vcl = ctx->vcl;
-	VSB_printf(ctx->msg, "VCL %s is waiting for:", vcl->loaded_name);
+	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
+	msg = VSB_new_auto();
+
+	VSB_printf(msg, "VCL %s is waiting for:", vcl->loaded_name);
 	Lck_Lock(&vcl_mtx);
-	VTAILQ_FOREACH(ref, &ctx->vcl->ref_list, list)
-		VSB_printf(ctx->msg, "\n\t- %s", ref->desc);
+	VTAILQ_FOREACH(ref, &vcl->ref_list, list)
+		VSB_printf(msg, "\n\t- %s", ref->desc);
 	Lck_Unlock(&vcl_mtx);
+	AZ(VSB_finish(msg));
+	return (msg);
 }
 
 static int
-vcl_set_state(struct vrt_ctx *ctx, const char *state)
+vcl_set_state(struct vcl *vcl, const char *state, struct vsb **msg)
 {
-	struct vcl *vcl;
+	struct vsb *nomsg = NULL;
 	int i = 0;
 
 	ASSERT_CLI();
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->vcl, VCL_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->vcl->conf, VCL_CONF_MAGIC);
-	AN(ctx->handling);
-	AN(ctx->vcl);
-	AN(state);
-	assert(ctx->msg != NULL || *state == '0');
 
-	vcl = ctx->vcl;
+	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
+	AN(state);
+	AN(msg);
+	AZ(*msg);
+
 	AN(vcl->temp);
 
 	switch (state[0]) {
@@ -541,7 +568,8 @@ vcl_set_state(struct vrt_ctx *ctx, const char *state)
 		if (vcl->busy == 0 && vcl->temp->is_warm) {
 			vcl->temp = VTAILQ_EMPTY(&vcl->ref_list) ?
 			    VCL_TEMP_COLD : VCL_TEMP_COOLING;
-			AZ(vcl_send_event(ctx, VCL_EVENT_COLD));
+			AZ(vcl_send_event(vcl, VCL_EVENT_COLD, msg));
+			AZ(*msg);
 			vcl_BackendEvent(vcl, VCL_EVENT_COLD);
 		}
 		else if (vcl->busy)
@@ -559,17 +587,18 @@ vcl_set_state(struct vrt_ctx *ctx, const char *state)
 			vcl->temp = VCL_TEMP_WARM;
 		/* The VCL must first reach a stable cold state */
 		else if (vcl->temp == VCL_TEMP_COOLING) {
-			vcl_print_refs(ctx);
+			*msg = vcl_print_refs(vcl);
 			i = -1;
 		}
 		else {
 			vcl->temp = VCL_TEMP_WARM;
-			i = vcl_send_event(ctx, VCL_EVENT_WARM);
+			i = vcl_send_event(vcl, VCL_EVENT_WARM, msg);
 			if (i == 0) {
 				vcl_BackendEvent(vcl, VCL_EVENT_WARM);
 				break;
 			}
-			AZ(vcl_send_event(ctx, VCL_EVENT_COLD));
+			AZ(vcl_send_event(vcl, VCL_EVENT_COLD, &nomsg));
+			AZ(nomsg);
 			vcl->temp = VCL_TEMP_COLD;
 		}
 		break;
@@ -583,36 +612,33 @@ vcl_set_state(struct vrt_ctx *ctx, const char *state)
 }
 
 static void
-vcl_cancel_load(struct vrt_ctx *ctx, struct cli *cli,
+vcl_cancel_load(struct vcl *vcl, struct cli *cli, struct vsb *msg,
     const char *name, const char *step)
 {
-	struct vcl *vcl = ctx->vcl;
 
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	CHECK_OBJ_NOTNULL(vcl->conf, VCL_CONF_MAGIC);
 
-	AZ(VSB_finish(ctx->msg));
 	VCLI_SetResult(cli, CLIS_CANT);
 	VCLI_Out(cli, "VCL \"%s\" Failed %s", name, step);
-	if (VSB_len(ctx->msg))
-		VCLI_Out(cli, "\nMessage:\n\t%s", VSB_data(ctx->msg));
-	VCL_Rel_CliCtx(&ctx);
-	ctx = VCL_Get_CliCtx(0);
-	ctx->vcl = vcl;
-	ctx->syntax = ctx->vcl->conf->syntax;
-	AZ(vcl_send_event(ctx, VCL_EVENT_DISCARD));
+	if (VSB_len(msg))
+		VCLI_Out(cli, "\nMessage:\n\t%s", VSB_data(msg));
+	VSB_destroy(&msg);
+
+	AZ(vcl_send_event(vcl, VCL_EVENT_DISCARD, &msg));
+	AZ(msg);
+
 	vcl_KillBackends(vcl);
 	free(vcl->loaded_name);
 	VCL_Close(&vcl);
 }
 
 static void
-vcl_load(struct cli *cli, struct vrt_ctx *ctx,
+vcl_load(struct cli *cli,
     const char *name, const char *fn, const char *state)
 {
 	struct vcl *vcl;
 	struct vsb *msg;
-	int i;
 
 	ASSERT_CLI();
 
@@ -621,10 +647,10 @@ vcl_load(struct cli *cli, struct vrt_ctx *ctx,
 
 	msg = VSB_new_auto();
 	vcl = VCL_Open(fn, msg);
-	AZ(VSB_finish(ctx->msg));
+	AZ(VSB_finish(msg));
 	if (vcl == NULL) {
 		VCLI_SetResult(cli, CLIS_PARAM);
-		VCLI_Out(cli, "%s", VSB_data(ctx->msg));
+		VCLI_Out(cli, "%s", VSB_data(msg));
 		VSB_destroy(&msg);
 		return;
 	}
@@ -640,23 +666,20 @@ vcl_load(struct cli *cli, struct vrt_ctx *ctx,
 
 	vcl->temp = VCL_TEMP_INIT;
 
-	ctx->vcl = vcl;
-	ctx->syntax = ctx->vcl->conf->syntax;
+	if (vcl_send_event(vcl, VCL_EVENT_LOAD, &msg)) {
+		vcl_cancel_load(vcl, cli, msg, name, "initialization");
+		return;
+	}
+	VSB_destroy(&msg);
 
-	VSB_clear(ctx->msg);
-	i = vcl_send_event(ctx, VCL_EVENT_LOAD);
-	if (i || *ctx->handling != VCL_RET_OK) {
-		vcl_cancel_load(ctx, cli, name, "initialization");
-		return;
-	}
-	assert(*ctx->handling == VCL_RET_OK);
-	VSB_clear(ctx->msg);
-	i = vcl_set_state(ctx, state);
-	if (i) {
+	if (vcl_set_state(vcl, state, &msg)) {
 		assert(*state == '1');
-		vcl_cancel_load(ctx, cli, name, "warmup");
+		vcl_cancel_load(vcl, cli, msg, name, "warmup");
 		return;
 	}
+	if (msg)
+		VSB_destroy(&msg);
+
 	VCLI_Out(cli, "Loaded \"%s\" as \"%s\"", fn , name);
 	VTAILQ_INSERT_TAIL(&vcl_head, vcl, list);
 	Lck_Lock(&vcl_mtx);
@@ -672,36 +695,27 @@ vcl_load(struct cli *cli, struct vrt_ctx *ctx,
 void
 VCL_Poll(void)
 {
-	struct vrt_ctx *ctx;
+	struct vsb *nomsg = NULL;
 	struct vcl *vcl, *vcl2;
 
 	ASSERT_CLI();
 	VTAILQ_FOREACH_SAFE(vcl, &vcl_head, list, vcl2) {
 		if (vcl->temp == VCL_TEMP_BUSY ||
-		    vcl->temp == VCL_TEMP_COOLING) {
-			// XXX #2902 : cold event to have msg ?
-			//	       move ctx into vcl_set_state() ?
-			ctx = VCL_Get_CliCtx(1);
-			ctx->vcl = vcl;
-			ctx->syntax = ctx->vcl->conf->syntax;
-			(void)vcl_set_state(ctx, "0");
-			VCL_Rel_CliCtx(&ctx);
-		}
+		    vcl->temp == VCL_TEMP_COOLING)
+			AZ(vcl_set_state(vcl, "0", &nomsg));
+		AZ(nomsg);
 		if (vcl->discard && vcl->temp == VCL_TEMP_COLD) {
 			AZ(vcl->busy);
 			assert(vcl != vcl_active);
 			assert(VTAILQ_EMPTY(&vcl->ref_list));
 			VTAILQ_REMOVE(&vcl_head, vcl, list);
-			ctx = VCL_Get_CliCtx(0);
-			ctx->vcl = vcl;
-			ctx->syntax = ctx->vcl->conf->syntax;
-			AZ(vcl_send_event(ctx, VCL_EVENT_DISCARD));
+			AZ(vcl_send_event(vcl, VCL_EVENT_DISCARD, &nomsg));
+			AZ(nomsg);
 			vcl_KillBackends(vcl);
 			free(vcl->loaded_name);
 			VCL_Close(&vcl);
 			VSC_C_main->n_vcl--;
 			VSC_C_main->n_vcl_discard--;
-			VCL_Rel_CliCtx(&ctx);
 		}
 	}
 }
@@ -794,37 +808,38 @@ vcl_cli_list_json(struct cli *cli, const char * const *av, void *priv)
 static void v_matchproto_(cli_func_t)
 vcl_cli_load(struct cli *cli, const char * const *av, void *priv)
 {
-	struct vrt_ctx *ctx;
 
 	AZ(priv);
 	ASSERT_CLI();
-	ctx = VCL_Get_CliCtx(1);
-	vcl_load(cli, ctx, av[2], av[3], av[4]);
-	VCL_Rel_CliCtx(&ctx);
+	// XXX move back code from vcl_load?
+	vcl_load(cli, av[2], av[3], av[4]);
 }
 
 static void v_matchproto_(cli_func_t)
 vcl_cli_state(struct cli *cli, const char * const *av, void *priv)
 {
-	struct vrt_ctx *ctx;
+	struct vcl *vcl;
+	struct vsb *msg = NULL;
 
 	AZ(priv);
 	ASSERT_CLI();
 	AN(av[2]);
 	AN(av[3]);
-	ctx = VCL_Get_CliCtx(1);
-	ctx->vcl = vcl_find(av[2]);
-	AN(ctx->vcl);
-	ctx->syntax = ctx->vcl->conf->syntax;
-	if (vcl_set_state(ctx, av[3])) {
-		AZ(VSB_finish(ctx->msg));
+
+	vcl = vcl_find(av[2]);
+	AN(vcl);
+
+	if (vcl_set_state(vcl, av[3], &msg)) {
+		CHECK_OBJ_NOTNULL(msg, VSB_MAGIC);
+
 		VCLI_SetResult(cli, CLIS_CANT);
-		VCLI_Out(cli, "Failed <vcl.state %s %s>", ctx->vcl->loaded_name,
+		VCLI_Out(cli, "Failed <vcl.state %s %s>", vcl->loaded_name,
 		    av[3] + 1);
-		if (VSB_len(ctx->msg))
-			VCLI_Out(cli, "\nMessage:\n\t%s", VSB_data(ctx->msg));
+		if (VSB_len(msg))
+			VCLI_Out(cli, "\nMessage:\n\t%s", VSB_data(msg));
 	}
-	VCL_Rel_CliCtx(&ctx);
+	if (msg)
+		VSB_destroy(&msg);
 }
 
 static void v_matchproto_(cli_func_t)

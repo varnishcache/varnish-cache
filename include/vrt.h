@@ -292,7 +292,6 @@ struct vrt_ctx {
 	 * msg is for error messages and exists only for
 	 * VCL_EVENT_LOAD
 	 * VCL_EVENT_WARM
-	 * VCL_EVENT_COLD
 	 */
 	struct vsb			*msg;
 	struct vsl_log			*vsl;

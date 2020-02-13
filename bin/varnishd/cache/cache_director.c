@@ -344,7 +344,7 @@ do_list(struct cli *cli, struct director *d, void *priv)
 		d->vdir->methods->list(ctx, d, la->vsb, la->p, 0);
 
 	VSB_printf(la->vsb, "\n");
-	VCL_Rel_CliCtx(&ctx);
+	AZ(VCL_Rel_CliCtx(&ctx));
 	AZ(ctx);
 
 	return (0);
@@ -389,7 +389,7 @@ do_list_json(struct cli *cli, struct director *d, void *priv)
 	VSB_indent(cli->sb, -2);
 	VCLI_Out(cli, "}");
 
-	VCL_Rel_CliCtx(&ctx);
+	AZ(VCL_Rel_CliCtx(&ctx));
 	AZ(ctx);
 
 	return (0);
