@@ -286,7 +286,7 @@ mgt_initialize(struct cli *cli)
 
 	MCF_InitParams(cli);
 
-	VCC_VCL_Range(&heritage.min_vcl, &heritage.max_vcl);
+	VCC_VCL_Range(&heritage.min_vcl_version, &heritage.max_vcl_version);
 
 	cli_check(cli);
 }

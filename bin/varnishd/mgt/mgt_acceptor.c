@@ -269,8 +269,8 @@ MAC_Arg(const char *spec)
 		ARGV_ERR("Unix domain socket addresses must be"
 		    " absolute paths in -a (%s)\n", la->endpoint);
 
-	if (*la->endpoint == '/' && heritage.min_vcl < 41)
-		heritage.min_vcl = 41;
+	if (*la->endpoint == '/' && heritage.min_vcl_version < 41)
+		heritage.min_vcl_version = 41;
 
 	for (int i = 2; av[i] != NULL; i++) {
 		char *eq, *val;

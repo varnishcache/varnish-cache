@@ -87,8 +87,8 @@ struct heritage {
 
 	struct vsmw			*proc_vsmw;
 
-	unsigned			min_vcl;
-	unsigned			max_vcl;
+	unsigned			min_vcl_version;
+	unsigned			max_vcl_version;
 };
 
 extern struct heritage heritage;

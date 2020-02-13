@@ -430,7 +430,8 @@ VCL_Open(const char *fn, struct vsb *msg)
 		(void)dlclose(dlh);
 		return (NULL);
 	}
-	if (cnf->syntax < heritage.min_vcl || cnf->syntax > heritage.max_vcl) {
+	if (cnf->syntax < heritage.min_vcl_version ||
+	    cnf->syntax > heritage.max_vcl_version) {
 		VSB_printf(msg, "Compiled VCL version (%.1f) not supported.\n",
 		    .1 * cnf->syntax);
 		(void)dlclose(dlh);
