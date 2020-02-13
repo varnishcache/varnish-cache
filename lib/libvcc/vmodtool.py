@@ -36,13 +36,13 @@ Read the vmod.vcc file (inputvcc) and produce:
     vmod_${name}.man.rst -- Extracted documentation (rst2man input)
 """
 
-import os
-import sys
-import re
-import optparse
 import copy
-import json
 import hashlib
+import json
+import optparse
+import os
+import re
+import sys
 import time
 
 AMBOILERPLATE = '''
