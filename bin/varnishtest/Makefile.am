@@ -1,18 +1,11 @@
 #
 
-VTC_LOG_COMPILER = ./varnishtest -v -i
-TEST_EXTENSIONS = .vtc
 TESTS = @VTC_TESTS@
 
-# Make sure we run check-local first
-check-am: check-local
-# See if list of checks have changed, recheck
-check-local:
-	@mkdir -p tests ; \
-	LC_ALL=C; \
-	if [ "$$(cd $(srcdir) && echo tests/*.vtc)" != "@VTC_TESTS@" ]; then \
-		cd $(top_builddir) && ./config.status --recheck ; \
-	fi
+vtc-refresh-tests:
+	@cd $(top_builddir) && ./config.status --recheck
+
+include $(top_srcdir)/vtc.am
 
 DISTCLEANFILES = _.ok
 
