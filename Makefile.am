@@ -22,7 +22,8 @@ EXTRA_DIST = \
 	autogen.sh \
 	varnishapi.pc.in \
 	varnish.m4 \
-	varnish-legacy.m4
+	varnish-legacy.m4 \
+	vtc.am
 
 AM_DISTCHECK_CONFIGURE_FLAGS = \
     --enable-developer-warnings \
