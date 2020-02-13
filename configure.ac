@@ -817,6 +817,7 @@ AC_DEFINE_UNQUOTED([VCC_CC],"$VCC_CC",[C compiler command line for VCL code])
 # Stupid automake needs this
 VTC_TESTS="$(cd $srcdir/bin/varnishtest && echo tests/*.vtc)"
 AC_SUBST(VTC_TESTS)
+AM_SUBST_NOTMAKE(VTC_TESTS)
 
 VSC_SRC="$(cd $srcdir/bin/varnishd && echo *.vsc)"
 VSC_GEN_C="$(echo $VSC_SRC | sed 's:\.vsc:.c:g')"
