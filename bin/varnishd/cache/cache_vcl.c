@@ -160,7 +160,7 @@ VCL_Rel_CliCtx(struct vrt_ctx **ctx)
 /*--------------------------------------------------------------------*/
 
 static int
-vcl_send_event(VRT_CTX, enum vcl_event_e ev)
+vcl_send_event(struct vrt_ctx *ctx, enum vcl_event_e ev)
 {
 	int r;
 
@@ -168,22 +168,34 @@ vcl_send_event(VRT_CTX, enum vcl_event_e ev)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->vcl, VCL_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->vcl->conf, VCL_CONF_MAGIC);
-	assert(ev == VCL_EVENT_LOAD ||
-	       ev == VCL_EVENT_WARM ||
-	       ev == VCL_EVENT_COLD ||
-	       ev == VCL_EVENT_DISCARD);
-	assert(ev != VCL_EVENT_LOAD || ctx->method == VCL_MET_INIT);
-	assert(ev != VCL_EVENT_DISCARD || ctx->method == VCL_MET_FINI);
+
+	AZ(ctx->method);
+	switch (ev) {
+	case VCL_EVENT_LOAD:
+		ctx->method = VCL_MET_INIT;
+		/* FALLTHROUGH */
+	case VCL_EVENT_WARM:
+		AN(ctx->msg);
+		break;
+	case VCL_EVENT_DISCARD:
+		ctx->method = VCL_MET_FINI;
+		/* FALLTHROUGH */
+	case VCL_EVENT_COLD:
+		// XXX AZ(ctx->msg);
+		break;
+	default:
+		WRONG("vcl_event");
+	}
+
 	AN(ctx->handling);
 	*ctx->handling = 0;
 	AN(ctx->ws);
 
-	if (ev == VCL_EVENT_LOAD || ev == VCL_EVENT_WARM)
-		AN(ctx->msg);
-
 	VCL_TaskEnter(cli_task_privs);
 	r = ctx->vcl->conf->event_vcl(ctx, ev);
 	VCL_TaskLeave(cli_task_privs);
+
+	ctx->method = 0;
 
 	if (r && (ev == VCL_EVENT_COLD || ev == VCL_EVENT_DISCARD))
 		WRONG("A VMOD cannot fail COLD or DISCARD events");
@@ -505,7 +517,7 @@ vcl_print_refs(VRT_CTX)
 }
 
 static int
-vcl_set_state(VRT_CTX, const char *state)
+vcl_set_state(struct vrt_ctx *ctx, const char *state)
 {
 	struct vcl *vcl;
 	int i = 0;
@@ -587,10 +599,8 @@ vcl_cancel_load(struct vrt_ctx *ctx, struct cli *cli,
 	VCL_Rel_CliCtx(&ctx);
 	ctx = VCL_Get_CliCtx(0);
 	ctx->vcl = vcl;
-	ctx->method = VCL_MET_FINI;
 	ctx->syntax = ctx->vcl->conf->syntax;
 	AZ(vcl_send_event(ctx, VCL_EVENT_DISCARD));
-	ctx->method = 0;
 	vcl_KillBackends(vcl);
 	free(vcl->loaded_name);
 	VCL_Close(&vcl);
@@ -629,9 +639,7 @@ vcl_load(struct cli *cli, struct vrt_ctx *ctx,
 	ctx->syntax = ctx->vcl->conf->syntax;
 
 	VSB_clear(ctx->msg);
-	ctx->method = VCL_MET_INIT;
 	i = vcl_send_event(ctx, VCL_EVENT_LOAD);
-	ctx->method = 0;
 	if (i || *ctx->handling != VCL_RET_OK) {
 		vcl_cancel_load(ctx, cli, name, "initialization");
 		return;
@@ -671,7 +679,6 @@ VCL_Poll(void)
 			ctx = VCL_Get_CliCtx(1);
 			ctx->vcl = vcl;
 			ctx->syntax = ctx->vcl->conf->syntax;
-			ctx->method = 0;
 			(void)vcl_set_state(ctx, "0");
 			VCL_Rel_CliCtx(&ctx);
 		}
@@ -683,9 +690,7 @@ VCL_Poll(void)
 			ctx = VCL_Get_CliCtx(0);
 			ctx->vcl = vcl;
 			ctx->syntax = ctx->vcl->conf->syntax;
-			ctx->method = VCL_MET_FINI;
 			AZ(vcl_send_event(ctx, VCL_EVENT_DISCARD));
-			ctx->method = 0;
 			vcl_KillBackends(vcl);
 			free(vcl->loaded_name);
 			VCL_Close(&vcl);
