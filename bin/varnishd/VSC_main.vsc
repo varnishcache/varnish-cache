@@ -539,6 +539,14 @@
 
 	Number of session closes with Error RX_TIMEOUT (Receive timeout)
 
+.. varnish_vsc:: sc_rx_close_idle
+	:level:	diag
+	:oneliner:	Session Err RX_CLOSE_IDLE
+
+	Number of session closes with Error RX_CLOSE_IDLE:
+	timeout_idle has been exceeded while waiting for a
+	client request.
+
 .. varnish_vsc:: sc_tx_pipe
 	:level:	diag
 	:oneliner:	Session OK  TX_PIPE

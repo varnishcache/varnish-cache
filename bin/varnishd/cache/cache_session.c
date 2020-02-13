@@ -424,7 +424,7 @@ ses_handle(struct waited *wp, enum wait_event ev, vtim_real now)
 
 	switch (ev) {
 	case WAITER_TIMEOUT:
-		SES_Delete(sp, SC_RX_TIMEOUT, now);
+		SES_Delete(sp, SC_RX_CLOSE_IDLE, now);
 		break;
 	case WAITER_REMCLOSE:
 		SES_Delete(sp, SC_REM_CLOSE, now);
