@@ -91,6 +91,8 @@ AMBOILERPLATE_CHECK = '''
 TESTS = \\
 \tXXX
 
+EXTRA_DIST += $(TESTS)
+
 vtc-refresh-tests:
 \t@PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/vmod.vcc
 \t@cd $(top_builddir) && ./config.status --file=$(subdir)/Makefile

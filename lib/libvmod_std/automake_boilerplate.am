@@ -40,6 +40,8 @@ CLEANFILES = $(builddir)/vcc_if.c $(builddir)/vcc_if.h \
 TESTS = \
 	tests/b00001.vtc
 
+EXTRA_DIST += $(TESTS)
+
 vtc-refresh-tests:
 	@PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/vmod.vcc
 	@cd $(top_builddir) && ./config.status --file=$(subdir)/Makefile
