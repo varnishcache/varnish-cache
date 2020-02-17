@@ -169,6 +169,20 @@ version ``v1``).
 Candidate for moving into vmod_proxy, but there were concerns about
 the interface design
 
+$Function DURATION benchmark(SUB, INT total=1000, INT leg=10)
+
+Benchmark a VCL sub and return the average runtime.
+
+Initially and after every *leg* invocations, the task is rolled back
+in order to avoid workspace overflows, unless the workspace is already
+overflowed, in which case the benchmark is aborted. This implies that
+**the sub to be benchmarked can not use any VCL-generated data or
+PRIV_TASK state**.
+
+The run time is averaged over *total* runs. The actual total may be up
+to *leg* - 1 more, in other words, there are always *leg* calls
+executed before *total* is checked.
+
 SEE ALSO
 ========
 
