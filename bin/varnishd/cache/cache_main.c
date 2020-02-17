@@ -374,8 +374,6 @@ child_main(int sigmagic, size_t altstksz)
 	VCL_Init();
 	VCL_VRT_Init();
 
-	HTTP_Init();
-
 	VBO_Init();
 	VTP_Init();
 	VBP_Init();

@@ -520,11 +520,13 @@ ban_evaluate(struct worker *wrk, const uint8_t *bsarg, struct objcore *oc,
 			break;
 		case BANS_ARG_REQHTTP:
 			AN(reqhttp);
-			(void)http_GetHdr(reqhttp, bt.arg1_spec, &p);
+			(void)http_GetHdr(reqhttp,
+			    (const struct gethdr_t *)bt.arg1_spec, &p);
 			arg1 = p;
 			break;
 		case BANS_ARG_OBJHTTP:
-			arg1 = HTTP_GetHdrPack(wrk, oc, bt.arg1_spec);
+			arg1 = HTTP_GetHdrPack(wrk, oc,
+			    (const struct gethdr_t *)bt.arg1_spec);
 			break;
 		case BANS_ARG_OBJSTATUS:
 			arg1 = HTTP_GetHdrPack(wrk, oc, H__Status);

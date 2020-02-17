@@ -726,9 +726,9 @@ xyzzy_sethdr(VRT_CTX, VCL_HEADER hs, VCL_STRANDS s)
 	if (s->n == 0) {
 		http_Unset(hp, hs->what);
 	} else {
-		b = VRT_StrandsWS(hp->ws, hs->what + 1, s);
+		b = VRT_StrandsWS(hp->ws, hs->what->str, s);
 		if (b == NULL) {
-			VSLb(ctx->vsl, SLT_LostHeader, "%s", hs->what + 1);
+			VSLb(ctx->vsl, SLT_LostHeader, "%s", hs->what->str);
 		} else {
 			if (*b != '\0')
 				WS_Assert_Allocated(hp->ws, b, strlen(b) + 1);

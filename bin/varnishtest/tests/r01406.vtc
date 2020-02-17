@@ -10,7 +10,7 @@ varnish v1 -arg "-p vcc_allow_inline_c=true" -vcl+backend {
 
 	C{
 		static const struct gethdr_s VGC_HDR_REQ_foo =
-		    { HDR_REQ, "\020X-CUSTOM-HEADER:"};
+		    { HDR_REQ, GETHDR_T("X-CUSTOM-HEADER") };
 	}C
 
 	sub vcl_recv {

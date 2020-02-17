@@ -123,7 +123,7 @@ VRY_Create(struct busyobj *bo, struct vsb **psb)
 		    (char)(1 + (q - p)), (int)(q - p), p, 0));
 		AZ(VSB_finish(sbh));
 
-		if (http_GetHdr(bo->bereq, VSB_data(sbh), &h)) {
+		if (http_GetHdr(bo->bereq, (const void *)VSB_data(sbh), &h)) {
 			AZ(vct_issp(*h));
 			/* Trim trailing space */
 			e = strchr(h, '\0');
@@ -200,7 +200,7 @@ vry_cmp(const uint8_t *v1, const uint8_t *v2)
 		/* Different header */
 		retval = 1;
 	} else if (cache_param->http_gzip_support &&
-	    !strcasecmp(H_Accept_Encoding, (const char*) v1 + 2)) {
+	    !strcasecmp((const char*)H_Accept_Encoding, (const char*) v1 + 2)) {
 		/*
 		 * If we do gzip processing, we do not vary on Accept-Encoding,
 		 * because we want everybody to get the gzip'ed object, and
@@ -310,7 +310,8 @@ VRY_Match(struct req *req, const uint8_t *vary)
 			 */
 
 			ln = 2 + vary[2] + 2;
-			i = http_GetHdr(req->http, (const char*)(vary+2), &h);
+			i = http_GetHdr(req->http,
+			    (const struct gethdr_t*)(vary+2), &h);
 			if (i) {
 				/* Trim trailing space */
 				e = strchr(h, '\0');
