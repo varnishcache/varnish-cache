@@ -74,3 +74,9 @@ struct vpi_ii {
 
 VCL_STRANDS VPI_BundleStrands(int, struct strands *, char const **,
     const char *f, ...);
+
+struct vcl_sub {
+	const unsigned		methods;	// ok &= ctx->method
+	const char * const	name;
+	vcl_func_f		*func;
+};

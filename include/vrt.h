@@ -68,6 +68,7 @@
  *	VRT_l_beresp_body() changed
  *	VRT_Format_Proxy() added	// transitional interface
  *	VRT_AllocStrandsWS() added
+ *	VRT_call() added
  * 10.0 (2019-09-15)
  *	VRT_UpperLowerStrands added.
  *	VRT_synth_page now takes STRANDS argument
@@ -335,12 +336,6 @@ struct vrt_ctx {
 #define VRT_CTX		const struct vrt_ctx *ctx
 
 typedef void vcl_func_f(VRT_CTX);
-
-struct vcl_sub {
-	const unsigned		methods;	// ok &= ctx->method
-	const char * const	name;
-	vcl_func_f		*func;
-};
 
 /***********************************************************************
  * This is the interface structure to a compiled VMOD
@@ -638,3 +633,7 @@ void VRT_VCL_Allow_Cold(struct vclref **);
 
 struct vclref * VRT_VCL_Prevent_Discard(VRT_CTX, const char *);
 void VRT_VCL_Allow_Discard(struct vclref **);
+
+/* VCL_SUB */
+
+VCL_VOID VRT_call(VRT_CTX, VCL_SUB);
