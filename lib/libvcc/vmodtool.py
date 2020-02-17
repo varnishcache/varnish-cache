@@ -990,6 +990,7 @@ class vcc(object):
                  .replace("PFX", self.pfx))
         tests = glob.glob("tests/*.vtc")
         if len(tests) > 0:
+            tests.sort()
             fo.write(AMBOILERPLATE_CHECK.replace("XXX", " \\\n\t".join(tests)))
         fo.close()
 
