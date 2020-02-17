@@ -292,3 +292,11 @@ Get the stringified client ip from the session attr
 $Function STRING client_port()
 
 Get the stringified client port from the session attr
+
+$Function VOID fail_rollback()
+
+fail any rollback before ok_rollback() is called
+
+$Function VOID ok_rollback()
+
+Allow rollbacks. Must be called before the end of the task.

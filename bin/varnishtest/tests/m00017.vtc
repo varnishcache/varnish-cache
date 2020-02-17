@@ -204,6 +204,7 @@ server s1 -wait
 # Dont panic
 varnish v1 -vcl+backend {
 	import std;
+	import debug;
 	import vtc;
 
 	sub vcl_recv {
@@ -211,6 +212,12 @@ varnish v1 -vcl+backend {
 	}
 
 	sub vcl_deliver {
+		if (req.url ~ "/veto") {
+			debug.fail_rollback();
+		}
+		if (req.url ~ "/ok") {
+			debug.ok_rollback();
+		}
 		std.rollback(req);
 		set resp.http.test = req.http.test;
 		vtc.workspace_alloc(client, -200);
@@ -218,9 +225,9 @@ varnish v1 -vcl+backend {
 }
 
 # XXX server keeps params, so we need to reset previous -repeat 5
-server s1 -repeat 1 {
+server s1 -repeat 3 {
 	rxreq
-	expect req.url == "/6"
+	expect req.url ~ "^/6"
 	txresp
 } -start
 
@@ -229,6 +236,13 @@ client c4 {
 	rxresp
 	expect resp.status == 200
 	expect resp.http.test == "1"
+	txreq -url /6/veto/ok -hdr "test: 1"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.test == "1"
+	txreq -url /6/veto -hdr "test: 1"
+	rxresp
+	expect resp.status == 503
 } -run
 
 server s1 -wait
@@ -251,7 +265,7 @@ varnish v1 -vcl+backend {
 	}
 }
 
-server s1 {
+server s1 -repeat 1 {
 	rxreq
 	expect req.url == "/7"
 	txresp

@@ -1085,3 +1085,52 @@ xyzzy_client_port(VRT_CTX)
 
 	return (SES_Get_String_Attr(ctx->sp, SA_CLIENT_PORT));
 }
+
+static void
+fail_f(void *priv)
+{
+	VRT_CTX;
+
+	CAST_OBJ_NOTNULL(ctx, priv, VRT_CTX_MAGIC);
+	VRT_fail(ctx, "thou shalt not rollet back");
+}
+
+VCL_VOID v_matchproto_(td_xyzzy_debug_fail_rollback)
+xyzzy_fail_rollback(VRT_CTX)
+{
+	struct vmod_priv *p;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	p = VRT_priv_task(ctx, (void *)xyzzy_fail_rollback);
+	if (p == NULL) {
+		VRT_fail(ctx, "no priv task - out of ws?");
+		return;
+	}
+
+	if (p->priv != NULL) {
+		assert(p->priv == ctx);
+		assert(p->free == fail_f);
+		return;
+	}
+
+	p->priv = TRUST_ME(ctx);
+	p->free = fail_f;
+}
+
+VCL_VOID v_matchproto_(td_xyzzy_debug_ok_rollback)
+xyzzy_ok_rollback(VRT_CTX)
+{
+	struct vmod_priv *p;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	p = VRT_priv_task(ctx, (void *)xyzzy_fail_rollback);
+	if (p == NULL) {
+		VRT_fail(ctx, "no priv task - out of ws?");
+		return;
+	}
+
+	p->priv = NULL;
+	p->free = NULL;
+}
