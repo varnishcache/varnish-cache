@@ -1,0 +1,21 @@
+varnishtest "Test missing cookie"
+
+varnish v1 -vcl {
+	import cookie;
+	backend be none;
+	sub vcl_recv { return (synth(200)); }
+	sub vcl_synth {
+		cookie.set("cookie1", "cookie1value");
+		cookie.set("cookie2", "cookie2value");
+		set resp.http.X-foo = cookie.get("cookie2");
+		# Make sure we handle this gracefully.
+		set resp.http.X-bar = "" + cookie.get("non-existing");
+	}
+} -start
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.http.X-foo == "cookie2value"
+	expect resp.http.X-bar == ""
+} -run

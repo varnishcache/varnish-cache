@@ -1,0 +1,17 @@
+varnishtest "Test rfc1123 string formatting function"
+
+varnish v1 -vcl {
+	import cookie;
+	backend be none;
+	sub vcl_recv { return (synth(200)); }
+	sub vcl_synth {
+		set resp.http.x-date = cookie.format_rfc1123(now, 1d);
+	}
+} -start
+
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.http.date != <undef>
+} -run

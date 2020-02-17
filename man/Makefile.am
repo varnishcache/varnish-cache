@@ -15,6 +15,7 @@ dist_man_MANS = \
 	varnishtest.1 \
 	vtc.7 \
 	varnishtop.1 \
+	vmod_cookie.3 \
 	vmod_directors.3 \
 	vmod_purge.3 \
 	vmod_std.3 \
@@ -90,6 +91,9 @@ varnishhist.1: \
 	$(top_builddir)/doc/sphinx/include/varnishhist_options.rst \
 	$(top_builddir)/doc/sphinx/include/varnishhist_synopsis.rst
 	$(BUILD_MAN) $(top_srcdir)/doc/sphinx/reference/varnishhist.rst $@
+
+vmod_cookie.3: $(top_builddir)/lib/libvmod_cookie/vmod_cookie.man.rst
+	$(BUILD_MAN) $? $@
 
 vmod_directors.3: $(top_builddir)/lib/libvmod_directors/vmod_directors.man.rst
 	$(BUILD_MAN) $? $@

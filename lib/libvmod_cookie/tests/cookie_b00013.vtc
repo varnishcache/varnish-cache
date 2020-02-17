@@ -1,0 +1,23 @@
+varnishtest "Test cookie.keep_re()"
+
+varnish v1 -vcl {
+	import cookie;
+	backend be none;
+	sub vcl_recv { return (synth(200)); }
+	sub vcl_synth {
+		cookie.parse("foo=bar; baz=qux;");
+		cookie.keep_re("NOTHING_MATCHES_SO_NOTHING_KEPT$");
+		set resp.http.X-empty = cookie.get_string();
+
+		cookie.parse("biscuit=standard; bredela=eggwhites; empire=jellytots;");
+		cookie.keep_re("^b");
+		set resp.http.X-bees = cookie.get_string();
+	}
+} -start
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.http.X-empty == ""
+	expect resp.http.X-bees == "biscuit=standard; bredela=eggwhites;"
+} -run

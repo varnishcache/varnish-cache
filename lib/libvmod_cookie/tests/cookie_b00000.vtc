@@ -1,0 +1,22 @@
+varnishtest "Test vmod_cookie"
+
+varnish v1 -vcl {
+	import cookie;
+	backend be none;
+	sub vcl_recv { return (synth(200)); }
+	sub vcl_synth {
+		cookie.set("cookie1", "cookie1BAD");
+		cookie.set("cookie2", "cookie2value");
+		cookie.set("cookie3", "cookie3value");
+		cookie.set("cookie4", "cookie4value");
+		cookie.set("cookie1", "cookie1value"); # overrides cookie1
+		cookie.delete("cookie2");
+		set resp.http.X-foo = cookie.get_string();
+	}
+} -start
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.http.X-foo == "cookie1=cookie1value; cookie3=cookie3value; cookie4=cookie4value;"
+} -run

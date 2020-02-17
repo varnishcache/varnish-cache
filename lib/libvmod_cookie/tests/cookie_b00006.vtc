@@ -1,0 +1,50 @@
+varnishtest "Test vmod_cookie concurrency"
+
+barrier b1 cond 2
+
+server s1 {
+	rxreq
+	barrier b1 sync
+	expect req.url == "/s1"
+	txresp
+} -start
+
+server s2 {
+	rxreq
+	expect req.url == "/s2"
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import cookie;
+
+	sub vcl_recv {
+		cookie.parse(req.http.cookie);
+
+		if (req.url == "/s1") {
+			set req.backend_hint = s1;
+		}
+		else {
+			set req.backend_hint = s2;
+		}
+	}
+
+	sub vcl_deliver {
+		set resp.http.x-val = cookie.get("a");
+	}
+} -start
+
+client c1 {
+	txreq -url "/s1" -hdr "Cookie: a=bar"
+	rxresp
+	expect resp.http.x-val == "bar"
+} -start
+
+client c2 {
+	barrier b1 sync
+	txreq -url "/s2" -hdr "Cookie: a=foo"
+	rxresp
+	expect resp.http.x-val == "foo"
+} -run
+
+client c1 -wait

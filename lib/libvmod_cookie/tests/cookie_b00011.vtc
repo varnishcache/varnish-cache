@@ -1,0 +1,24 @@
+varnishtest "Test cookie.get_re()"
+
+varnish v1 -vcl {
+	import cookie;
+	backend be none;
+	sub vcl_recv { return (synth(200)); }
+	sub vcl_synth {
+		cookie.set("biscuit", "standard");
+		cookie.set("chocolatechip", "verychippy");
+		cookie.set("empire", "jellytots");
+
+		set resp.http.X-first = cookie.get_re("DOES_NOT_EXIST");
+		set resp.http.X-second = cookie.get_re("biscuit");
+		set resp.http.X-third = cookie.get_re("DOES_NOT_EXIST_EITHER");
+	}
+} -start
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.http.X-first == ""
+	expect resp.http.X-second == "standard"
+	expect resp.http.X-third == ""
+} -run

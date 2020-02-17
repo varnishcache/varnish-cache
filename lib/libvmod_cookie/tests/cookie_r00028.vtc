@@ -1,0 +1,101 @@
+varnishtest "Test issue https://github.com/varnish/varnish-modules/issues/28"
+
+varnish v1 -vcl {
+	import cookie;
+	backend be none;
+	sub vcl_recv { return (synth(200)); }
+	sub vcl_synth {
+		cookie.parse(req.http.cookie);
+		set resp.http.X-foo = cookie.get_string();
+	}
+} -start
+
+client c1 {
+	txreq -hdr "Cookie: csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560"
+	rxresp
+	expect resp.http.X-foo == "csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560;"
+
+	txreq -hdr "Cookie: csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560"
+	rxresp
+	expect resp.http.X-foo == "csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560;"
+
+	txreq -hdr "Cookie: csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560"
+	rxresp
+	expect resp.http.X-foo == "csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560;"
+
+	txreq -hdr "Cookie: csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560"
+	rxresp
+	expect resp.http.X-foo == "csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560;"
+
+	txreq -hdr "Cookie: csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560"
+	rxresp
+	expect resp.http.X-foo == "csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560;"
+
+	txreq -hdr "Cookie: csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560"
+	rxresp
+	expect resp.http.X-foo == "csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560;"
+
+	txreq -hdr "Cookie: csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560"
+	rxresp
+	expect resp.http.X-foo == "csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560;"
+
+	txreq -hdr "Cookie: csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560"
+	rxresp
+	expect resp.http.X-foo == "csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560;"
+
+	txreq -hdr "Cookie: csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560"
+	rxresp
+	expect resp.http.X-foo == "csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560;"
+
+	txreq -hdr "Cookie: csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560"
+	rxresp
+	expect resp.http.X-foo == "csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560;"
+
+
+}
+
+client c2 {
+	txreq -hdr "Cookie: csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560"
+	rxresp
+	expect resp.http.X-foo == "csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560;"
+
+	txreq -hdr "Cookie: csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560"
+	rxresp
+	expect resp.http.X-foo == "csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560;"
+
+	txreq -hdr "Cookie: csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560"
+	rxresp
+	expect resp.http.X-foo == "csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560;"
+
+	txreq -hdr "Cookie: csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560"
+	rxresp
+	expect resp.http.X-foo == "csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560;"
+
+	txreq -hdr "Cookie: csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560"
+	rxresp
+	expect resp.http.X-foo == "csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560;"
+
+	txreq -hdr "Cookie: csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560"
+	rxresp
+	expect resp.http.X-foo == "csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560;"
+
+	txreq -hdr "Cookie: csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560"
+	rxresp
+	expect resp.http.X-foo == "csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560;"
+
+	txreq -hdr "Cookie: csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560"
+	rxresp
+	expect resp.http.X-foo == "csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560;"
+
+	txreq -hdr "Cookie: csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560"
+	rxresp
+	expect resp.http.X-foo == "csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560;"
+
+	txreq -hdr "Cookie: csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560"
+	rxresp
+	expect resp.http.X-foo == "csrftoken=0e0c3616e41a6bd561b72b7f5fc1128f; sessionid=a707505310ddf259bb290d3ca63fc560;"
+
+}
+
+client c1 -repeat 2 -run
+client c2 -repeat 2 -run

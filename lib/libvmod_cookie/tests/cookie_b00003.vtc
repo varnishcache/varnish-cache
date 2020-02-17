@@ -1,0 +1,31 @@
+varnishtest "Test cookie.keep()"
+
+varnish v1 -vcl {
+	import cookie;
+	backend be none;
+	sub vcl_recv { return (synth(200)); }
+	sub vcl_synth {
+		cookie.set("biscuit", "standard");
+		cookie.set("bredela", "eggwhites");
+		cookie.set("chocolatechip", "verychippy");
+		cookie.set("empire", "jellytots");
+		cookie.keep("bredela,empire,baz");
+		set resp.http.X-foo = cookie.get_string();
+
+		# Test exotic admin-supplied filter strings.
+		cookie.parse("bredela=eggwhites; empire=jellytots;");
+		cookie.keep(",,,,bredela,    ,empire,baz,");
+		set resp.http.X-bar = cookie.get_string();
+
+		cookie.keep(req.http.none);
+		set resp.http.X-baz = cookie.get_string();
+	}
+} -start
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.http.X-foo == "bredela=eggwhites; empire=jellytots;"
+	expect resp.http.X-bar == "bredela=eggwhites; empire=jellytots;"
+	expect resp.http.X-baz == ""
+} -run

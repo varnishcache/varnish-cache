@@ -1,0 +1,33 @@
+varnishtest "Test cookie.filter_re()"
+
+varnish v1 -vcl {
+	import cookie;
+	backend be none;
+	sub vcl_recv { return (synth(200)); }
+	sub vcl_synth {
+		cookie.set("biscuit", "standard");
+		cookie.set("bredela", "eggwhites");
+		cookie.set("empire", "jellytots");
+
+		set resp.http.X-foo = cookie.get_string();
+		cookie.filter_re("^NOT-MATCHING-ANYTHING$");
+		set resp.http.X-bar = cookie.get_string();
+
+		cookie.filter_re("^bredela");
+		set resp.http.X-baz = cookie.get_string();
+
+		cookie.filter_re(".*");
+		set resp.http.X-qux = cookie.get_string();
+	}
+} -start
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.http.X-foo == resp.http.X-bar
+
+	expect resp.http.X-baz != resp.http.X-foo
+	expect resp.http.X-baz == "biscuit=standard; empire=jellytots;"
+
+	expect resp.http.X-qux == ""
+} -run

@@ -1,0 +1,37 @@
+varnishtest "NULL/empty value checks"
+
+varnish v1 -vcl {
+	import cookie;
+	backend be none;
+	sub vcl_recv { return (synth(200)); }
+	sub vcl_synth {
+		# nothing in here at this point.
+		set req.http.x-foo = cookie.get_string();
+
+		# XXX: We might want to revisit these assumptions since "="
+		# (empty name and empty value) is as correct as "name=value"
+		# for a cookie. See rfc6265 section 5.2 for reference.
+
+		# empty name
+		cookie.set("", "foo");
+
+		# empty value
+		cookie.set("cookie1", "");
+
+		# proper NULL
+		cookie.set(req.http.null, "foo");
+
+		# double delete
+		cookie.delete("cookie2");
+		cookie.delete("cookie2");
+
+		cookie.delete(req.http.null);
+		set resp.http.x-foo = cookie.get_string();
+	}
+} -start
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.http.x-foo == ""
+} -run

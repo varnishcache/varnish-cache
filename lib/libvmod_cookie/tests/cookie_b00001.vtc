@@ -1,0 +1,21 @@
+varnishtest "Test cookie.clean()"
+
+varnish v1 -vcl {
+	import cookie;
+	backend be none;
+	sub vcl_recv { return (synth(200)); }
+	sub vcl_synth {
+		cookie.clean();
+		cookie.set("cookie1", "cookie1BAD");
+		set resp.http.X-foo = cookie.get_string();
+		cookie.clean();
+		set resp.http.X-bar = cookie.get_string();
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.X-foo == "cookie1=cookie1BAD;"
+	expect resp.http.X-bar == ""
+} -run
