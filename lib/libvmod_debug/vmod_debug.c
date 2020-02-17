@@ -40,6 +40,7 @@
 #include "cache/cache_filter.h"
 
 #include "vre.h"
+#include "vcl.h"
 #include "vsa.h"
 #include "vtim.h"
 #include "vcc_debug_if.h"
@@ -1172,4 +1173,12 @@ xyzzy_priv_task_with_option(VRT_CTX, struct VARGS(priv_task_with_option) *args)
 	if (args->priv->priv == NULL && args->valid_opt)
 		args->priv->priv = WS_Copy(ctx->ws, args->opt, -1);
 	return (args->priv->priv);
+}
+
+/*---------------------------------------------------------------------*/
+
+VCL_VOID v_matchproto_(td_xyzzy_call)
+xyzzy_call(VRT_CTX, VCL_SUB sub)
+{
+	VRT_call(ctx, sub);
 }

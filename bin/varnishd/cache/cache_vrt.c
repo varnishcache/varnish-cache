@@ -957,6 +957,51 @@ VRT_VSM_Cluster_Destroy(VRT_CTX, struct vsmw_cluster **vsmcp)
 }
 
 /*--------------------------------------------------------------------
+ */
+
+static void
+no_rollback(void *priv)
+{
+	VRT_CTX;
+
+	CAST_OBJ_NOTNULL(ctx, priv, VRT_CTX_MAGIC);
+	VRT_fail(ctx, "no rollback during dynamic sub calls");
+}
+
+VCL_VOID
+VRT_call(VRT_CTX, VCL_SUB sub)
+{
+	struct vmod_priv *p;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	p = VRT_priv_task(ctx, (void *)sub->func);
+	if (p == NULL) {
+		VRT_fail(ctx, "no priv task - out of ws?");
+		return;
+	}
+
+	if (p->priv != NULL) {
+		assert(p->priv == ctx);
+		assert(p->free == no_rollback);
+		VRT_fail(ctx, "recursive call to %s", sub->name);
+		return;
+	}
+
+	p->priv = TRUST_ME(ctx);
+	p->free = no_rollback;
+
+	if (sub->methods & ctx->method)
+		sub->func(ctx);
+	else
+		VRT_fail(ctx, "not allowed here");
+
+	p->priv = NULL;
+	p->free = NULL;
+}
+
+
+/*--------------------------------------------------------------------
  * Simple stuff
  */
 
