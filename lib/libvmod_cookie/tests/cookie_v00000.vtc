@@ -1,0 +1,35 @@
+varnishtest "Test priv_call discard"
+
+varnish v1 -cliok "param.set thread_pools 1"
+varnish v1 -vcl {
+	import cookie;
+	backend be none;
+	sub vcl_recv { return (synth(200)); }
+	sub vcl_synth {
+		cookie.set("cookie1", "value1");
+		cookie.set("cookie2", "value2");
+		cookie.set("cookie3", "value3");
+
+		cookie.filter_re("noop");
+		cookie.keep_re("cook");
+		set resp.http.get = cookie.get_re("cookie");
+	}
+} -start
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.http.get == value1
+} -run
+
+# load a new VCL to discard the first one
+varnish v1 -vcl {backend be none;}
+varnish v1 -cliok {vcl.discard vcl1}
+
+# tickle the CLI to trigger the effective VCL discard
+varnish v1 -cliok ping
+varnish v1 -expect n_vcl_avail == 1
+varnish v1 -expect n_vcl_discard == 0
+
+# tickle again, check we survived discard-time assertions
+varnish v1 -cliok ping
