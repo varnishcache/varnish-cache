@@ -372,3 +372,37 @@ vmod_proxy_header(VRT_CTX, VCL_ENUM venum, VCL_IP client, VCL_IP server,
 	return (VRT_blob(ctx, "proxy_header", h, l,
 	    BLOB_VMOD_PROXY_HEADER_TYPE));
 }
+
+/*--------------------------------------------------------------------*/
+
+VCL_DURATION v_matchproto_(td_vtc_benchmark)
+vmod_benchmark(VRT_CTX, VCL_SUB sub, VCL_INT total, VCL_INT leg)
+{
+	VCL_HTTP where;
+
+	VCL_INT i, count = 0;
+
+	vtim_mono t_tot = 0;
+	vtim_mono b, e;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	where = ctx->http_req ? ctx->http_req : ctx->http_bereq;
+
+	while (count < total) {
+		if (WS_Overflowed(ctx->ws))
+			break;
+		VRT_Rollback(ctx, where);
+		b = VTIM_mono();
+		for (i = 0; i < leg; i++)
+			VRT_call(ctx, sub);
+		e = VTIM_mono();
+		count += i;
+		t_tot += e - b;
+	}
+
+	if (count == 0)
+		return (0);
+
+	return (t_tot / count);
+}
