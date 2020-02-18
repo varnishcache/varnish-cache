@@ -922,29 +922,37 @@ xyzzy_sndbuf(VRT_CTX, VCL_BYTES arg)
 }
 
 VCL_VOID
-xyzzy_store_ip(VRT_CTX, struct vmod_priv *priv, VCL_IP ip)
+xyzzy_store_ip(VRT_CTX, VCL_IP ip)
 {
+	struct vmod_priv *priv;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	AN(priv);
+
+	priv = VRT_priv_task(ctx, xyzzy_store_ip);
+	if (priv == NULL) {
+		VRT_fail(ctx, "no priv task - out of ws?");
+		return;
+	}
+
 	AZ(priv->free);
 	assert(VSA_Sane(ip));
-
 	priv->priv = TRUST_ME(ip);
 }
 
 VCL_IP
-xyzzy_get_ip(VRT_CTX, struct vmod_priv *priv)
+xyzzy_get_ip(VRT_CTX)
 {
+	struct vmod_priv *priv;
 	VCL_IP ip;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	priv = VRT_priv_task(ctx, xyzzy_store_ip);
 	AN(priv);
 	AZ(priv->free);
 
 	ip = priv->priv;
 	assert(VSA_Sane(ip));
-
 	return (ip);
 }
 
