@@ -492,8 +492,8 @@ vmod_get_string(VRT_CTX, struct vmod_priv *priv)
 {
 	struct cookie *curr;
 	struct vsb output[1];
-	char *res;
 	struct vmod_cookie *vcp = cobj_get(priv);
+	const char *sep = "", *res;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->ws, WS_MAGIC);
@@ -503,9 +503,8 @@ vmod_get_string(VRT_CTX, struct vmod_priv *priv)
 		CHECK_OBJ_NOTNULL(curr, VMOD_COOKIE_ENTRY_MAGIC);
 		AN(curr->name);
 		AN(curr->value);
-		VSB_printf(output, "%s%s=%s;",
-		    (curr == VTAILQ_FIRST(&vcp->cookielist)) ? "" : " ",
-		    curr->name, curr->value);
+		VSB_printf(output, "%s%s=%s;", sep, curr->name, curr->value);
+		sep = " ";
 	}
 	res = WS_VSB_finish(output, ctx->ws, NULL);
 	if (res == NULL)
