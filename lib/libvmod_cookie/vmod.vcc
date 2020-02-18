@@ -3,7 +3,7 @@ $Module cookie 3 "Varnish Cookie Module"
 DESCRIPTION
 ===========
 
-Handle HTTP cookies easier in Varnish VCL.
+Handle HTTP cookies more easily in Varnish VCL.
 
 Parses a cookie header into an internal data store, where per-cookie
 get/set/delete functions are available. A filter_except() method removes all
