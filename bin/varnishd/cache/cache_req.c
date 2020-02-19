@@ -94,6 +94,7 @@ Req_New(const struct worker *wrk, struct sess *sp)
 	AN(req);
 	req->magic = REQ_MAGIC;
 	req->sp = sp;
+	req->req_body_status = REQ_BODY_INIT;
 
 	e = (char*)req + sz;
 	p = (char*)(req + 1);
