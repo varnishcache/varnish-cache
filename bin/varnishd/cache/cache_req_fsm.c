@@ -740,6 +740,9 @@ cnt_pipe(struct worker *wrk, struct req *req)
 			AZ(bo->req);
 			bo->req = req;
 			bo->wrk = wrk;
+			/* Unless cached, reqbody is not our job */
+			if (req->req_body_status != REQ_BODY_CACHED)
+				req->req_body_status = REQ_BODY_NONE;
 			SES_Close(req->sp, VDI_Http1Pipe(req, bo));
 			nxt = REQ_FSM_DONE;
 			V1P_Leave();

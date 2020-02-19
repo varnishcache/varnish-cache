@@ -288,7 +288,7 @@ vbe_dir_gethdrs(VRT_CTX, VCL_BACKEND d)
 			extrachance = 0;
 
 		i = V1F_SendReq(wrk, bo, &bo->acct.bereq_hdrbytes,
-				&bo->acct.bereq_bodybytes, 0);
+				&bo->acct.bereq_bodybytes);
 
 		if (PFD_State(pfd) != PFD_STATE_USED) {
 			if (VTP_Wait(wrk, pfd, VTIM_real() +
@@ -374,7 +374,7 @@ vbe_dir_http1pipe(VRT_CTX, VCL_BACKEND d)
 	} else {
 		CHECK_OBJ_NOTNULL(ctx->bo->htc, HTTP_CONN_MAGIC);
 		i = V1F_SendReq(ctx->req->wrk, ctx->bo,
-		    &v1a.bereq, &v1a.out, 1);
+		    &v1a.bereq, &v1a.out);
 		VSLb_ts_req(ctx->req, "Pipe", W_TIM_real(ctx->req->wrk));
 		if (i == 0)
 			V1P_Process(ctx->req, *PFD_Fd(pfd), &v1a);

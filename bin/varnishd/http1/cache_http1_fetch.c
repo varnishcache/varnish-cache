@@ -71,7 +71,7 @@ vbf_iter_req_body(void *priv, unsigned flush, const void *ptr, ssize_t l)
 
 int
 V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
-    uint64_t *ctr_bodybytes, int onlycached)
+    uint64_t *ctr_bodybytes)
 {
 	struct http *hp;
 	enum sess_close sc;
@@ -114,7 +114,7 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 		if (do_chunked)
 			V1L_EndChunk(wrk);
 	} else if (bo->req != NULL &&
-	    (bo->req->req_body_status == REQ_BODY_CACHED || !onlycached)) {
+	    bo->req->req_body_status != REQ_BODY_NONE) {
 		if (do_chunked)
 			V1L_Chunked(wrk);
 		i = VRB_Iterate(wrk, bo->vsl, bo->req, vbf_iter_req_body, bo);
