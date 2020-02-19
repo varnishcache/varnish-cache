@@ -728,9 +728,9 @@ VPX_Format_Proxy(struct vsb *vsb, int version,
 }
 
 #define PXY_BUFSZ						\
-	sizeof(vpx1_sig) + 4 /* TCPx */ +			\
+	(sizeof(vpx1_sig) + 4 /* TCPx */ +			\
 	2 * VTCP_ADDRBUFSIZE + 2 * VTCP_PORTBUFSIZE +		\
-	6 /* spaces, CRLF */ + 16 /* safety */
+	6 /* spaces, CRLF */ + 16 /* safety */ )
 
 int
 VPX_Send_Proxy(int fd, int version, const struct sess *sp)
