@@ -62,6 +62,8 @@ static pthread_mutex_t vsc_mtx = PTHREAD_MUTEX_INITIALIZER;
 static struct vsc_seg *vsc_seg = NULL;
 static struct VSC_debug *vsc = NULL;
 static int loads;
+static const int store_ip_token;
+static const int fail_rollback_token;
 
 /**********************************************************************/
 
@@ -928,7 +930,7 @@ xyzzy_store_ip(VRT_CTX, VCL_IP ip)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
-	priv = VRT_priv_task(ctx, (void *)xyzzy_store_ip);
+	priv = VRT_priv_task(ctx, &store_ip_token);
 	if (priv == NULL) {
 		VRT_fail(ctx, "no priv task - out of ws?");
 		return;
@@ -947,7 +949,7 @@ xyzzy_get_ip(VRT_CTX)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
-	priv = VRT_priv_task(ctx, (void *)xyzzy_store_ip);
+	priv = VRT_priv_task(ctx, &store_ip_token);
 	AN(priv);
 	AZ(priv->free);
 
@@ -1110,7 +1112,7 @@ xyzzy_fail_rollback(VRT_CTX)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
-	p = VRT_priv_task(ctx, (void *)xyzzy_fail_rollback);
+	p = VRT_priv_task(ctx, &fail_rollback_token);
 	if (p == NULL) {
 		VRT_fail(ctx, "no priv task - out of ws?");
 		return;
@@ -1133,7 +1135,7 @@ xyzzy_ok_rollback(VRT_CTX)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
-	p = VRT_priv_task(ctx, (void *)xyzzy_fail_rollback);
+	p = VRT_priv_task(ctx, &fail_rollback_token);
 	if (p == NULL) {
 		VRT_fail(ctx, "no priv task - out of ws?");
 		return;
