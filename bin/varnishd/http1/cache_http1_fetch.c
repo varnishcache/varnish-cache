@@ -120,6 +120,9 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 			V1L_Chunked(wrk);
 		i = VRB_Iterate(wrk, bo->vsl, bo->req, vbf_iter_req_body, bo);
 
+		if (bo->req->req_body_status != REQ_BODY_CACHED)
+			bo->no_retry = "req.body not cached";
+
 		if (bo->req->req_body_status == REQ_BODY_FAIL) {
 			/*
 			 * XXX: (#2332) We should test to see if the backend
