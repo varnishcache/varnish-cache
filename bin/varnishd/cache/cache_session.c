@@ -471,18 +471,18 @@ SES_Wait(struct sess *sp, const struct transport *xp)
 
 	/*
 	 * Put struct waited on the workspace. Make sure that the
-	 * workspace can hold enough space for the largest of struct
-	 * waited and pool_task, as pool_task will be needed when coming
+	 * workspace can hold enough space for both struct waited
+	 * and pool_task, as pool_task will be needed when coming
 	 * off the waiter again.
 	 */
-	u = sizeof (struct waited);
-	if (sizeof (struct pool_task) > u)
-		u = sizeof (struct pool_task);
-	if (!WS_ReserveSize(sp->ws, u)) {
+	u = WS_ReserveAll(sp->ws);
+	if (u < sizeof (struct waited) || u < sizeof(struct pool_task)) {
+		WS_MarkOverflow(sp->ws);
 		SES_Delete(sp, SC_OVERLOAD, NAN);
 		return;
 	}
-	wp = (void*)sp->ws->f;
+
+	wp = (void*)WS_Front(sp->ws);
 	INIT_OBJ(wp, WAITED_MAGIC);
 	wp->fd = sp->fd;
 	wp->priv1 = sp;
