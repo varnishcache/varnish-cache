@@ -928,7 +928,7 @@ xyzzy_store_ip(VRT_CTX, VCL_IP ip)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
-	priv = VRT_priv_task(ctx, (void *)xyzzy_store_ip);
+	priv = VRT_priv_task(ctx, xyzzy_store_ip);
 	if (priv == NULL) {
 		VRT_fail(ctx, "no priv task - out of ws?");
 		return;
@@ -947,7 +947,7 @@ xyzzy_get_ip(VRT_CTX)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
-	priv = VRT_priv_task(ctx, (void *)xyzzy_store_ip);
+	priv = VRT_priv_task(ctx, xyzzy_store_ip);
 	AN(priv);
 	AZ(priv->free);
 
@@ -1110,7 +1110,7 @@ xyzzy_fail_rollback(VRT_CTX)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
-	p = VRT_priv_task(ctx, (void *)xyzzy_fail_rollback);
+	p = VRT_priv_task(ctx, xyzzy_fail_rollback);
 	if (p == NULL) {
 		VRT_fail(ctx, "no priv task - out of ws?");
 		return;
@@ -1133,7 +1133,7 @@ xyzzy_ok_rollback(VRT_CTX)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
-	p = VRT_priv_task(ctx, (void *)xyzzy_fail_rollback);
+	p = VRT_priv_task(ctx, xyzzy_fail_rollback);
 	if (p == NULL) {
 		VRT_fail(ctx, "no priv task - out of ws?");
 		return;
