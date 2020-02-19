@@ -6,14 +6,17 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-	sub vcl_recv {
+	sub vcl_deliver {
 		if (req.http.foo_bar == req.http.foo-bar) {
-			set req.http.foo_bar = "xxx";
+			set resp.http.foo = "xxx";
+		} else {
+			set resp.http.foo = "yyy";
 		}
 	}
 } -start
 
 client c1 {
-	txreq
+	txreq -hdr "foo_bar: 1" -hdr "foo-bar: 2"
 	rxresp
+	expect resp.http.foo == yyy
 } -run
