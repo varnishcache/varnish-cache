@@ -30,7 +30,7 @@ The following options are available:
 CURSES MODE
 ===========
 
-When neither -1, -j or -x options are given, the application starts up
+When neither -1, -j nor -x options are given, the application starts up
 in curses mode. This shows a continuously updated view of the counter
 values, along with their description.
 
@@ -40,6 +40,8 @@ The center area shows a list of counter values.
 
 The bottom area shows the description of the currently selected
 counter.
+
+On startup, only counters at INFO level are shown.
 
 Columns
 -------
