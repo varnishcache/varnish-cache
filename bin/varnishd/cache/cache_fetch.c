@@ -250,6 +250,9 @@ vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo)
 		HSH_Ref(bo->bereq_body);
 		bo->req = NULL;
 		ObjSetState(bo->wrk, bo->fetch_objcore, BOS_REQ_DONE);
+	} else if (bo->req->req_body_status != REQ_BODY_WITH_LEN &&
+	    bo->req->req_body_status != REQ_BODY_WITHOUT_LEN) {
+		WRONG("Bad req_body_status");
 	}
 	return (F_STP_STARTFETCH);
 }

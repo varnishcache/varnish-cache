@@ -107,6 +107,7 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 	i = 0;
 
 	if (bo->bereq_body != NULL) {
+		AZ(bo->req);
 		if (do_chunked)
 			V1L_Chunked(wrk);
 		(void)ObjIterate(bo->wrk, bo->bereq_body,
