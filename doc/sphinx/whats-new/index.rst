@@ -8,19 +8,14 @@ This section describes the changes and improvements between different
 versions of Varnish, and what upgrading between the different versions
 entail.
 
-Varnish **$NEXT_RELEASE**
--------------------------
-
-**Note: These are working documents for a future release, with running
-updates for changes in the development branch. For changes in the
-released versions of Varnish, see the chapters listed below.**
-
+Varnish 6.3
+-----------
 
 .. toctree::
    :maxdepth: 2
 
-   changes-trunk
-   upgrading-trunk
+   changes-6.3
+   upgrading-6.3
 
 Varnish 6.2
 -----------
