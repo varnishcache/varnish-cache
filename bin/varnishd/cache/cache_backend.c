@@ -319,9 +319,7 @@ vbe_dir_gethdrs(VRT_CTX, VCL_BACKEND d)
 		AZ(bo->htc);
 		if (i < 0 || extrachance == 0)
 			break;
-		if (bo->req != NULL &&
-		    bo->req->req_body_status != REQ_BODY_NONE &&
-		    bo->req->req_body_status != REQ_BODY_CACHED)
+		if (bo->no_retry != NULL)
 			break;
 		VSC_C_main->backend_retry++;
 	} while (extrachance--);
