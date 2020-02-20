@@ -938,18 +938,18 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
  *                 Generate and input a body that is NUMBER bytes-long.
  *
  *         \-gziplevel NUMBER
- *		   Set the gzip level (call it before any of the other gzip
- *		   switches).
+ *                 Set the gzip level (call it before any of the other gzip
+ *                 switches).
  *
  *         \-gzipresidual NUMBER
  *                 Add extra gzip bits. You should never need it.
  *
  *         \-gzipbody STRING
- *                 Zip STRING and send it as body.
+ *                 Gzip STRING and send it as body.
  *
  *         \-gziplen NUMBER
- *                 Combine -body and -gzipbody: create a body of length NUMBER,
- *                 zip it and send as body.
+ *                 Combine -bodylen and -gzipbody: generate a string of length
+ *                 NUMBER, gzip it and send as body.
  */
 
 /**********************************************************************

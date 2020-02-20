@@ -1349,14 +1349,14 @@ cmd_sendhex(CMD_ARGS)
  *	Same as ``-body`` but content is read from FILE.
  *
  * \-bodylen INT (txreq, txresp)
- *	Do the same thing as ``-body`` but generate an string of INT length
+ *	Do the same thing as ``-body`` but generate a string of INT length
  *	for you.
  *
  * \-gzipbody STRING (txreq, txresp)
  *      Gzip STRING and send it as body.
  *
  * \-gziplen NUMBER (txreq, txresp)
- *      Combine -body and -gzipbody: create a body of length NUMBER,
+ *      Combine -bodylen and -gzipbody: generate a string of length NUMBER,
  *      gzip it and send as body.
  *
  * \-nostrend (txreq, txresp)
