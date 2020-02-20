@@ -199,7 +199,7 @@ Resolve_Sockaddr(struct vcc *tl,
     const char *errid)
 {
 	int error;
-	struct rss *rss;
+	struct rss rss[1];
 	const char *err;
 
 	*ipv4 = NULL;
@@ -207,8 +207,7 @@ Resolve_Sockaddr(struct vcc *tl,
 	if (p_ascii != NULL)
 		*p_ascii = NULL;
 
-	ALLOC_OBJ(rss, RSS_MAGIC);
-	AN(rss);
+	INIT_OBJ(rss, RSS_MAGIC);
 	rss->vsb = VSB_new_auto();
 	AN(rss->vsb);
 
@@ -224,7 +223,7 @@ Resolve_Sockaddr(struct vcc *tl,
 		free(rss->vsa4);
 		free(rss->vsa6);
 		VSB_destroy(&rss->vsb);
-		FREE_OBJ(rss);
+		ZERO_OBJ(rss, sizeof rss);
 		return;
 	}
 	AZ(error);
@@ -255,7 +254,7 @@ Resolve_Sockaddr(struct vcc *tl,
 		vcc_ErrWhere(tl, t_err);
 	}
 	VSB_destroy(&rss->vsb);
-	FREE_OBJ(rss);
+	ZERO_OBJ(rss, sizeof rss);
 }
 
 /*
