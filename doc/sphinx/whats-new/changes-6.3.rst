@@ -23,10 +23,30 @@ varnishd
 Parameters
 ~~~~~~~~~~
 
-**XXX changes in -p parameters**
+A new :ref:`ref_param_pipe_sess_max` parameter allows to limit the number of
+concurrent pipe transactions. The default value is zero and means unlimited,
+for backwards compatibility.
 
 Other changes in varnishd
 ~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The transferred bytes accounting for HTTP/2 sessions is more accurate:
+``ReqAcct`` log records no longer report a full delivery if a stream did
+not complete.
+
+The meaning of VCL temperature changed for the ``auto`` state: it used to
+automatically cool down a VCL transitioning from active to available, but
+that VCL would remain ``cold``. It now works in both directions, and such a
+cold VCL keeps the ``auto`` state and may be used or labelled immediately
+without an explicit change of state to ``warm``.
+
+As a result, a VCL with the ``cold`` state will no longer warm up
+automatically.
+
+The management of counters, and in particular dynamic counters (for example
+appearing or disappearing when a VCL is loaded or discarded), has seen
+significant performance improvements and setups involving a large amount of
+backends should be more responsive.
 
 Changes to VCL
 ==============
@@ -34,17 +54,51 @@ Changes to VCL
 VCL variables
 ~~~~~~~~~~~~~
 
-**XXX new, deprecated or removed variables, or changed semantics**
+The :ref:`ref_param_timeout_idle` parameter can be overriden in VCL using the
+``sess.timeout_idle`` variable.
 
 Other changes to VCL
 ~~~~~~~~~~~~~~~~~~~~
 
-**TODO: return (error);**
+A new ``error`` transition to ``vcl_backend_error`` allows to purposely move
+to that subroutine. It is similar to the ``synth`` transition and can
+optionally take arguments. The three following statements are equivalent::
+
+    return (error);
+    return (error(503));
+    return (error(503, "Service Unavailable"));
+
+The ``error`` transition is available in :ref:`vcl_backend_fetch` and
+:ref:`vcl_backend_response`. Using an explicit ``error`` transition in
+``vcl_backend_fetch`` does not increment the ``MAIN.fetch_failed`` counter.
+
+It is possible to import the same VMOD twice, as long as the two imports are
+identical and wouldn't otherwise conflict. This allows for example included
+VCL files to import the VMODs they need without preventing the including VCL
+to also perform the same import.
+
+Similarly, it is now possible to include a VMOD under a different name::
+
+    import directors as dir;
+
+    sub vcl_init {
+        new rr = dir.round_robin();
+    }
+
+This can be useful for VMODs with a long name, or VMODs that could use a
+more expressive name in VCL code.
+
+The built-in VCL turns the ``Host`` header lowercase in ``vcl_recv`` to
+improve its hashing later in ``vcl_hash`` since domain names are case
+insensitive.
 
 VMODs
 =====
 
-**XXX changes in the bundled VMODs**
+``std.ip()`` now takes an optional ``STRING`` argument to specify a port
+number or service name.
+
+See: :ref:`std.ip()`
 
 vsl-query(7)
 ============
@@ -122,25 +176,53 @@ will operate as if the ``or`` operator was used to join all the queries.
 A new ``-Q`` option allows you to read the query from a file instead. It
 can also be used multiple times and adds up to any ``-q`` option specified.
 
-varnishadm
-==========
+Similar to ``-c`` or ``-b`` for client or backend transactions,
+``varnishncsa(1)`` can take a ``-E`` option to include ESI transactions.
 
-**XXX changes concerning varnishadm(1) and/or varnish-cli(7)**
+``BackendStart`` log records are no longer used, but newer versions of log
+utilities should still recognize deprecated records. It remains possible
+to read logs written to a file with an older version of ``varnishlog(1)``,
+and that backward compatibility officially goes as far as Varnish 6.0.0
+even though it *may* be possible to read logs saved from older releases.
+
+``Debug`` records are no longer logged by default and can be removed from
+the :ref:`ref_param_vsl_mask` parameter to appear in the logs. Since such
+records are not meant for production they are only automatically enabled
+by ``varnishtest(1)``.
 
 varnishstat
 ===========
 
-**XXX changes concerning varnishstat(1) and/or varnish-counters(7)**
+A new ``MAIN.n_pipe`` gauge keeps track of the number of ongoing pipe
+transactions.
+
+A new ``MAIN.pipe_limited`` counter keeps track of how many times a
+transaction failed to turn into a pipe because of the
+:ref:`ref_param_pipe_sess_max` parameter.
 
 varnishtest
 ===========
 
-**XXX changes concerning varnishtest(1) and/or vtc(7)**
+A ``client`` can now use the ``-method`` action for ``txreq`` commands to
+specify the request method. This used to be done with ``-req`` which remains
+as an alias for compatibility.
+
+A ``client`` or ``server`` may use the ``-bodyfrom`` action for respectively
+``txreq`` or ``txresp`` commands to send a body from a file.
+
+An HTTP/2 ``client`` or ``server`` can work with gzip content encoding and has
+access to ``-gzipbody`` and ``-gziplen``.
 
 Changes for developers and VMOD authors
 =======================================
 
-**XXX changes concerning VRT, the public APIs, source code organization,
-builds etc.**
+The most notable change for VMOD developers is the deprecation of string lists
+in favor of strands.
+
+As usual, new functions were added to VRT, and others were changed or removed.
+See ``vrt.h`` for a list of changes since the 6.2.0 release.
+
+We continue to remove functions from VRT that weren't meant to be used by VMOD
+authors and were only part of the VMOD infrastructure code.
 
 *eof*
