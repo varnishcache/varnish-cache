@@ -197,7 +197,7 @@ VRB_Iterate(struct worker *wrk, struct vsl_log *vsl,
 		return (0);
 	case REQ_BODY_NONE:
 		return (0);
-	case REQ_BODY_WITH_LEN:
+	case REQ_BODY_LENGTH:
 	case REQ_BODY_WITHOUT_LEN:
 		break;
 	case REQ_BODY_TAKEN:
@@ -212,7 +212,7 @@ VRB_Iterate(struct worker *wrk, struct vsl_log *vsl,
 		WRONG("Wrong req_body_status in VRB_Iterate()");
 	}
 	Lck_Lock(&req->sp->mtx);
-	if (req->req_body_status == REQ_BODY_WITH_LEN ||
+	if (req->req_body_status == REQ_BODY_LENGTH ||
 	    req->req_body_status == REQ_BODY_WITHOUT_LEN) {
 		req->req_body_status = REQ_BODY_TAKEN;
 		i = 0;
@@ -254,7 +254,7 @@ VRB_Ignore(struct req *req)
 
 	if (req->doclose)
 		return (0);
-	if (req->req_body_status == REQ_BODY_WITH_LEN ||
+	if (req->req_body_status == REQ_BODY_LENGTH ||
 	    req->req_body_status == REQ_BODY_WITHOUT_LEN)
 		(void)VRB_Iterate(req->wrk, req->vsl, req, httpq_req_body_discard, NULL);
 	return (0);
@@ -312,7 +312,7 @@ VRB_Cache(struct req *req, ssize_t maxsize)
 	case REQ_BODY_NONE:
 		return (0);
 	case REQ_BODY_WITHOUT_LEN:
-	case REQ_BODY_WITH_LEN:
+	case REQ_BODY_LENGTH:
 		break;
 	default:
 		WRONG("Wrong req_body_status in VRB_Cache()");

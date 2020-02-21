@@ -278,7 +278,7 @@ http1_dissect(struct worker *wrk, struct req *req)
 	if (req->htc->body_status == BS_CHUNKED)
 		req->req_body_status = REQ_BODY_WITHOUT_LEN;
 	else if (req->htc->body_status == BS_LENGTH)
-		req->req_body_status = REQ_BODY_WITH_LEN;
+		req->req_body_status = REQ_BODY_LENGTH;
 	else if (req->htc->body_status == BS_NONE)
 		req->req_body_status = REQ_BODY_NONE;
 	else if (req->htc->body_status == BS_EOF)

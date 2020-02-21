@@ -583,7 +583,7 @@ h2_end_headers(struct worker *wrk, struct h2_sess *h2,
 		if (!http_GetHdr(req->http, H_Content_Length, NULL))
 			req->req_body_status = REQ_BODY_WITHOUT_LEN;
 		else
-			req->req_body_status = REQ_BODY_WITH_LEN;
+			req->req_body_status = REQ_BODY_LENGTH;
 	} else {
 		assert (req->req_body_status == REQ_BODY_NONE);
 		if (http_GetContentLength(req->http) > 0)
