@@ -812,7 +812,6 @@ unsigned RFC2616_Req_Gzip(const struct http *);
 int RFC2616_Do_Cond(const struct req *sp);
 void RFC2616_Weaken_Etag(struct http *hp);
 void RFC2616_Vary_AE(struct http *hp);
-void RFC2616_Response_Body(const struct worker *, const struct busyobj *);
 
 /*
  * A normal pointer difference is signed, but we never want a negative value
