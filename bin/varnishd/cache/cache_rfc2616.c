@@ -92,6 +92,7 @@ RFC2616_Ttl(struct busyobj *bo, vtim_real now, vtim_real *t_origin,
 	const struct http *hp;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(bo->fetch_objcore, OBJCORE_MAGIC);
 	assert(now != 0.0 && !isnan(now));
 	AN(t_origin);
 	AN(ttl);
@@ -117,6 +118,19 @@ RFC2616_Ttl(struct busyobj *bo, vtim_real now, vtim_real *t_origin,
 	if (http_GetHdr(hp, H_Age, &p)) {
 		age = rfc2616_time(p);
 		*t_origin -= age;
+	}
+
+	if (bo->fetch_objcore->flags & OC_F_PRIVATE) {
+		/* Pass object. Halt the processing here, keeping only the
+		 * parsed value of t_origin, as that will be needed to
+		 * synthesize a correct Age header in delivery. The
+		 * SLT_TTL log tag at the end of this function is
+		 * deliberetaly skipped to avoid confusion when reading
+		 * the log.*/
+		*ttl = -1;
+		*grace = 0;
+		*keep = 0;
+		return;
 	}
 
 	if (http_GetHdr(hp, H_Expires, &p))
