@@ -71,19 +71,6 @@ static void pan_req(struct vsb *, const struct req *);
 
 /*--------------------------------------------------------------------*/
 
-const char *
-body_status_2str(enum body_status e)
-{
-	switch (e) {
-#define BODYSTATUS(U,l)	case BS_##U: return (#l);
-#include "tbl/body_status.h"
-	default:
-		return ("?");
-	}
-}
-
-/*--------------------------------------------------------------------*/
-
 static const char *
 reqbody_status_2str(enum req_body_state_e e)
 {
@@ -204,7 +191,7 @@ pan_htc(struct vsb *vsb, const struct http_conn *htc)
 	VSB_printf(vsb, "content_length = %jd,\n",
 	    (intmax_t)htc->content_length);
 	VSB_printf(vsb, "body_status = %s,\n",
-	    body_status_2str(htc->body_status));
+	    htc->body_status ? htc->body_status->name : "NULL");
 	VSB_printf(vsb, "first_byte_timeout = %f,\n",
 	    htc->first_byte_timeout);
 	VSB_printf(vsb, "between_bytes_timeout = %f,\n",

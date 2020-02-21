@@ -265,31 +265,26 @@ V1F_Setup_Fetch(struct vfp_ctx *vfc, struct http_conn *htc)
 	CHECK_OBJ_NOTNULL(vfc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 
-	switch (htc->body_status) {
-	case BS_EOF:
+	if (htc->body_status == BS_EOF) {
 		assert(htc->content_length == -1);
 		vfe = VFP_Push(vfc, &v1f_eof);
 		if (vfe == NULL)
 			return (ENOSPC);
 		vfe->priv2 = 0;
-		break;
-	case BS_LENGTH:
+	} else if (htc->body_status == BS_LENGTH) {
 		assert(htc->content_length > 0);
 		vfe = VFP_Push(vfc, &v1f_straight);
 		if (vfe == NULL)
 			return (ENOSPC);
 		vfe->priv2 = htc->content_length;
-		break;
-	case BS_CHUNKED:
+	} else if (htc->body_status == BS_CHUNKED) {
 		assert(htc->content_length == -1);
 		vfe = VFP_Push(vfc, &v1f_chunked);
 		if (vfe == NULL)
 			return (ENOSPC);
 		vfe->priv2 = -1;
-		break;
-	default:
+	} else {
 		WRONG("Wrong body_status");
-		break;
 	}
 	vfe->priv1 = htc;
 	return (0);

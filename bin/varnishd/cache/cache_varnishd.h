@@ -67,7 +67,7 @@ struct http_conn {
 
 	int			*rfd;
 	enum sess_close		doclose;
-	enum body_status	body_status;
+	body_status_t		body_status;
 	struct ws		*ws;
 	char			*rxbuf_b;
 	char			*rxbuf_e;
@@ -335,7 +335,6 @@ void ObjUnsubscribeEvents(uintptr_t *);
 /* cache_panic.c */
 void PAN_Init(void);
 int PAN_already(struct vsb *, const void *);
-const char *body_status_2str(enum body_status e);
 const char *sess_close_2str(enum sess_close sc, int want_desc);
 
 /* cache_pool.c */

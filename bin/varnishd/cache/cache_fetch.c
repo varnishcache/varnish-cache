@@ -640,7 +640,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	}
 
 	VSLb(bo->vsl, SLT_Fetch_Body, "%u %s %s",
-	    bo->htc->body_status, body_status_2str(bo->htc->body_status),
+	    bo->htc->body_status->nbr, bo->htc->body_status->name,
 	    bo->do_stream ? "stream" : "-");
 
 	if (bo->htc->body_status != BS_NONE) {

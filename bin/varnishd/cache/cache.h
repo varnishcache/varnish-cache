@@ -57,10 +57,17 @@
 
 /*--------------------------------------------------------------------*/
 
-enum body_status {
-#define BODYSTATUS(U,l)	BS_##U,
-#include "tbl/body_status.h"
+struct body_status {
+	const char		*name;
+	int			nbr;
+	int			avail;
+	int			length_known;
 };
+
+#define BODYSTATUS(U, l, n, a, k) extern const struct body_status BS_##U[1];
+#include "tbl/body_status.h"
+
+typedef const struct body_status *body_status_t;
 
 /*--------------------------------------------------------------------*/
 
