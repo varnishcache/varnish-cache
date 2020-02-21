@@ -66,7 +66,7 @@ cnt_transport(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->http, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(req->transport, TRANSPORT_MAGIC);
-	assert(req->req_body_status != REQ_BODY_INIT);
+	AN(req->req_body_status);
 
 	if (http_GetHdr(req->http, H_Expect, &p)) {
 		if (strcasecmp(p, "100-continue")) {
@@ -89,7 +89,7 @@ cnt_transport(struct worker *wrk, struct req *req)
 		return (REQ_FSM_DONE);
 	}
 
-	if (req->req_body_status < REQ_BODY_TAKEN) {
+	if (req->req_body_status->avail == 1) {
 		AN(req->transport->req_body != NULL);
 		VFP_Setup(req->vfc, wrk);
 		req->vfc->resp = req->http;		// XXX
@@ -741,8 +741,8 @@ cnt_pipe(struct worker *wrk, struct req *req)
 			bo->req = req;
 			bo->wrk = wrk;
 			/* Unless cached, reqbody is not our job */
-			if (req->req_body_status != REQ_BODY_CACHED)
-				req->req_body_status = REQ_BODY_NONE;
+			if (req->req_body_status != BS_CACHED)
+				req->req_body_status = BS_NONE;
 			SES_Close(req->sp, VDI_Http1Pipe(req, bo));
 			nxt = REQ_FSM_DONE;
 			V1P_Leave();
@@ -877,7 +877,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 
 	cnt_recv_prep(req, ci);
 
-	if (req->req_body_status == REQ_BODY_ERROR) {
+	if (req->req_body_status == BS_ERROR) {
 		req->doclose = SC_OVERLOAD;
 		return (REQ_FSM_DONE);
 	}
@@ -899,7 +899,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 	}
 
 	/* Attempts to cache req.body may fail */
-	if (req->req_body_status == REQ_BODY_ERROR) {
+	if (req->req_body_status == BS_ERROR) {
 		req->doclose = SC_RX_BODY;
 		return (REQ_FSM_DONE);
 	}

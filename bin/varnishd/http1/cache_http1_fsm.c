@@ -151,9 +151,8 @@ http1_req_body(struct req *req)
 {
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	if (req->htc->body_status->avail &&
-	    V1F_Setup_Fetch(req->vfc, req->htc) != 0)
-		req->req_body_status = REQ_BODY_ERROR;
+	if (V1F_Setup_Fetch(req->vfc, req->htc) != 0)
+		req->req_body_status = BS_ERROR;
 }
 
 static void
@@ -273,18 +272,8 @@ http1_dissect(struct worker *wrk, struct req *req)
 		return (-1);
 	}
 
-	assert (req->req_body_status == REQ_BODY_INIT);
-
-	if (req->htc->body_status == BS_CHUNKED)
-		req->req_body_status = REQ_BODY_WITHOUT_LEN;
-	else if (req->htc->body_status == BS_LENGTH)
-		req->req_body_status = REQ_BODY_LENGTH;
-	else if (req->htc->body_status == BS_NONE)
-		req->req_body_status = REQ_BODY_NONE;
-	else if (req->htc->body_status == BS_EOF)
-		req->req_body_status = REQ_BODY_WITHOUT_LEN;
-	else
-		WRONG("Unknown req_body_status situation");
+	AZ(req->req_body_status);
+	req->req_body_status = req->htc->body_status;
 	return (0);
 }
 

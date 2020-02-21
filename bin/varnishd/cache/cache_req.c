@@ -94,7 +94,6 @@ Req_New(const struct worker *wrk, struct sess *sp)
 	AN(req);
 	req->magic = REQ_MAGIC;
 	req->sp = sp;
-	req->req_body_status = REQ_BODY_INIT;
 
 	e = (char*)req + sz;
 	p = (char*)(req + 1);
@@ -242,7 +241,7 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	req->t_first = NAN;
 	req->t_prev = NAN;
 	req->t_req = NAN;
-	req->req_body_status = REQ_BODY_INIT;
+	req->req_body_status = NULL;
 
 	req->hash_always_miss = 0;
 	req->hash_ignore_busy = 0;

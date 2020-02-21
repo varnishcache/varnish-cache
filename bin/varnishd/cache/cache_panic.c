@@ -72,19 +72,6 @@ static void pan_req(struct vsb *, const struct req *);
 /*--------------------------------------------------------------------*/
 
 static const char *
-reqbody_status_2str(enum req_body_state_e e)
-{
-	switch (e) {
-#define REQ_BODY(U) case REQ_BODY_##U: return("R_BODY_" #U);
-#include "tbl/req_body.h"
-	default:
-		return ("?");
-	}
-}
-
-/*--------------------------------------------------------------------*/
-
-static const char *
 boc_state_2str(enum boc_state_e e)
 {
 	switch (e) {
@@ -524,7 +511,7 @@ pan_req(struct vsb *vsb, const struct req *req)
 		VSB_printf(vsb, "step = 0x%x,\n", req->req_step);
 
 	VSB_printf(vsb, "req_body = %s,\n",
-	    reqbody_status_2str(req->req_body_status));
+	    req->req_body_status ? req->req_body_status->name : "NULL");
 
 	if (req->err_code)
 		VSB_printf(vsb,

@@ -240,18 +240,15 @@ vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo)
 	bo->ws_bo = WS_Snapshot(bo->ws);
 	HTTP_Clone(bo->bereq, bo->bereq0);
 
-	if (bo->req->req_body_status == REQ_BODY_NONE) {
+	if (bo->req->req_body_status->avail == 0) {
 		bo->req = NULL;
 		ObjSetState(bo->wrk, bo->fetch_objcore, BOS_REQ_DONE);
-	} else if (bo->req->req_body_status == REQ_BODY_CACHED) {
+	} else if (bo->req->req_body_status == BS_CACHED) {
 		AN(bo->req->body_oc);
 		bo->bereq_body = bo->req->body_oc;
 		HSH_Ref(bo->bereq_body);
 		bo->req = NULL;
 		ObjSetState(bo->wrk, bo->fetch_objcore, BOS_REQ_DONE);
-	} else if (bo->req->req_body_status != REQ_BODY_LENGTH &&
-	    bo->req->req_body_status != REQ_BODY_WITHOUT_LEN) {
-		WRONG("Bad req_body_status");
 	}
 	return (F_STP_STARTFETCH);
 }

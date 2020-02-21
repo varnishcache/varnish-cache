@@ -77,7 +77,7 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 	req->storage = NULL;
 
 	if (STV_NewObject(req->wrk, req->body_oc, stv, 8) == 0) {
-		req->req_body_status = REQ_BODY_ERROR;
+		req->req_body_status = BS_ERROR;
 		HSH_DerefBoc(req->wrk, req->body_oc);
 		AZ(HSH_DerefObjCore(req->wrk, &req->body_oc, 0));
 		(void)VFP_Error(vfc, "Object allocation failed:"
@@ -88,7 +88,7 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 	vfc->oc = req->body_oc;
 
 	if (VFP_Open(vfc) < 0) {
-		req->req_body_status = REQ_BODY_ERROR;
+		req->req_body_status = BS_ERROR;
 		HSH_DerefBoc(req->wrk, req->body_oc);
 		AZ(HSH_DerefObjCore(req->wrk, &req->body_oc, 0));
 		return (-1);
@@ -136,7 +136,7 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 		HSH_DerefBoc(req->wrk, req->body_oc);
 		AZ(HSH_DerefObjCore(req->wrk, &req->body_oc, 0));
 		if (vfps != VFP_END) {
-			req->req_body_status = REQ_BODY_ERROR;
+			req->req_body_status = BS_ERROR;
 			if (r == 0)
 				r = -1;
 		}
@@ -148,7 +148,7 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 	HSH_DerefBoc(req->wrk, req->body_oc);
 
 	if (vfps != VFP_END) {
-		req->req_body_status = REQ_BODY_ERROR;
+		req->req_body_status = BS_ERROR;
 		AZ(HSH_DerefObjCore(req->wrk, &req->body_oc, 0));
 		return (-1);
 	}
@@ -167,7 +167,7 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 		    (uintmax_t)req_bodybytes);
 	}
 
-	req->req_body_status = REQ_BODY_CACHED;
+	req->req_body_status = BS_CACHED;
 	return (req_bodybytes);
 }
 
@@ -189,32 +189,27 @@ VRB_Iterate(struct worker *wrk, struct vsl_log *vsl,
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	AN(func);
 
-	switch (req->req_body_status) {
-	case REQ_BODY_CACHED:
+	if (req->req_body_status == BS_CACHED) {
 		AN(req->body_oc);
 		if (ObjIterate(wrk, req->body_oc, priv, func, 0))
 			return (-1);
 		return (0);
-	case REQ_BODY_NONE:
+	}
+	if (req->req_body_status == BS_NONE)
 		return (0);
-	case REQ_BODY_LENGTH:
-	case REQ_BODY_WITHOUT_LEN:
-		break;
-	case REQ_BODY_TAKEN:
+	if (req->req_body_status == BS_TAKEN) {
 		VSLb(vsl, SLT_VCL_Error,
 		    "Uncached req.body can only be consumed once.");
 		return (-1);
-	case REQ_BODY_ERROR:
+	}
+	if (req->req_body_status == BS_ERROR) {
 		VSLb(vsl, SLT_FetchError,
 		    "Had failed reading req.body before.");
 		return (-1);
-	default:
-		WRONG("Wrong req_body_status in VRB_Iterate()");
 	}
 	Lck_Lock(&req->sp->mtx);
-	if (req->req_body_status == REQ_BODY_LENGTH ||
-	    req->req_body_status == REQ_BODY_WITHOUT_LEN) {
-		req->req_body_status = REQ_BODY_TAKEN;
+	if (req->req_body_status->avail > 0) {
+		req->req_body_status = BS_TAKEN;
 		i = 0;
 	} else
 		i = -1;
@@ -254,9 +249,9 @@ VRB_Ignore(struct req *req)
 
 	if (req->doclose)
 		return (0);
-	if (req->req_body_status == REQ_BODY_LENGTH ||
-	    req->req_body_status == REQ_BODY_WITHOUT_LEN)
-		(void)VRB_Iterate(req->wrk, req->vsl, req, httpq_req_body_discard, NULL);
+	if (req->req_body_status->avail > 0)
+		(void)VRB_Iterate(req->wrk, req->vsl, req,
+		    httpq_req_body_discard, NULL);
 	return (0);
 }
 
@@ -292,6 +287,7 @@ VRB_Cache(struct req *req, ssize_t maxsize)
 	uint64_t u;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	assert (req->req_step == R_STP_RECV);
 	assert(maxsize >= 0);
 
 	/*
@@ -299,27 +295,22 @@ VRB_Cache(struct req *req, ssize_t maxsize)
 	 * where we know we will have no competition or conflicts for the
 	 * updates to req.http.* etc.
 	 */
-	if (req->restarts > 0 && req->req_body_status != REQ_BODY_CACHED)
+	if (req->restarts > 0 && req->req_body_status != BS_CACHED) {
+		VSLb(req->vsl, SLT_VCL_Error,
+		    "req.body must be cached before restarts");
 		return (-1);
-
-	assert (req->req_step == R_STP_RECV);
-	switch (req->req_body_status) {
-	case REQ_BODY_CACHED:
-		AZ(ObjGetU64(req->wrk, req->body_oc, OA_LEN, &u));
-		return (u);
-	case REQ_BODY_ERROR:
-		return (-1);
-	case REQ_BODY_NONE:
-		return (0);
-	case REQ_BODY_WITHOUT_LEN:
-	case REQ_BODY_LENGTH:
-		break;
-	default:
-		WRONG("Wrong req_body_status in VRB_Cache()");
 	}
 
+	if (req->req_body_status == BS_CACHED) {
+		AZ(ObjGetU64(req->wrk, req->body_oc, OA_LEN, &u));
+		return (u);
+	}
+
+	if (req->req_body_status->avail <= 0)
+		return (req->req_body_status->avail);
+
 	if (req->htc->content_length > maxsize) {
-		req->req_body_status = REQ_BODY_ERROR;
+		req->req_body_status = BS_ERROR;
 		(void)VFP_Error(req->vfc, "Request body too big to cache");
 		return (-1);
 	}

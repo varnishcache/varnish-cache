@@ -91,8 +91,7 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 	assert(*htc->rfd > 0);
 	hp = bo->bereq;
 
-	if (bo->req != NULL &&
-	    bo->req->req_body_status == REQ_BODY_WITHOUT_LEN) {
+	if (bo->req != NULL && !bo->req->req_body_status->length_known) {
 		http_PrintfHeader(hp, "Transfer-Encoding: chunked");
 		do_chunked = 1;
 	}
@@ -112,15 +111,15 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 		(void)ObjIterate(bo->wrk, bo->bereq_body,
 		    bo, vbf_iter_req_body, 0);
 	} else if (bo->req != NULL &&
-	    bo->req->req_body_status != REQ_BODY_NONE) {
+	    bo->req->req_body_status != BS_NONE) {
 		if (do_chunked)
 			V1L_Chunked(wrk);
 		i = VRB_Iterate(wrk, bo->vsl, bo->req, vbf_iter_req_body, bo);
 
-		if (bo->req->req_body_status != REQ_BODY_CACHED)
+		if (bo->req->req_body_status != BS_CACHED)
 			bo->no_retry = "req.body not cached";
 
-		if (bo->req->req_body_status == REQ_BODY_ERROR) {
+		if (bo->req->req_body_status == BS_ERROR) {
 			/*
 			 * XXX: (#2332) We should test to see if the backend
 			 * XXX: sent us some headers explaining why.

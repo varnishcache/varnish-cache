@@ -26,7 +26,6 @@ nobase_pkginclude_HEADERS = \
 	tbl/oc_exp_flags.h \
 	tbl/oc_flags.h \
 	tbl/params.h \
-	tbl/req_body.h \
 	tbl/req_flags.h \
 	tbl/sess_attr.h \
 	tbl/sess_close.h \

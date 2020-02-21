@@ -34,10 +34,12 @@
 
 /*         Upper        lower         nbr,	avail   len_known */
 BODYSTATUS(NONE,	none,		0,	0,	1)
-BODYSTATUS(ERROR,	error,		1,	0,	0)
+BODYSTATUS(ERROR,	error,		1,	-1,	0)
 BODYSTATUS(CHUNKED,	chunked,	2,	1,	0)
 BODYSTATUS(LENGTH,	length,		3,	1,	1)
 BODYSTATUS(EOF,		eof,		4,	1,	0)
+BODYSTATUS(TAKEN,	taken,		5,	0,	0)
+BODYSTATUS(CACHED,	cached,		6,	2,	1)
 #undef BODYSTATUS
 
 /*lint -restore */

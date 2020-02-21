@@ -559,11 +559,6 @@ h2_end_headers(struct worker *wrk, struct h2_sess *h2,
 	assert(r2->state == H2_S_OPEN);
 	h2e = h2h_decode_fini(h2);
 	h2->new_req = NULL;
-	if (r2->req->req_body_status == REQ_BODY_NONE) {
-		/* REQ_BODY_NONE implies one of the frames in the
-		 * header block contained END_STREAM */
-		r2->state = H2_S_CLOS_REM;
-	}
 	if (h2e != NULL) {
 		Lck_Lock(&h2->sess->mtx);
 		VSLb(h2->vsl, SLT_Debug, "HPACK/FINI %s", h2e->name);
@@ -579,13 +574,15 @@ h2_end_headers(struct worker *wrk, struct h2_sess *h2,
 	// XXX: Have I mentioned H/2 Is hodge-podge ?
 	http_CollectHdrSep(req->http, H_Cookie, "; ");	// rfc7540,l,3114,3120
 
-	if (req->req_body_status == REQ_BODY_INIT) {
+	if (req->req_body_status == NULL) {
 		if (!http_GetHdr(req->http, H_Content_Length, NULL))
-			req->req_body_status = REQ_BODY_WITHOUT_LEN;
+			req->req_body_status = BS_EOF;
 		else
-			req->req_body_status = REQ_BODY_LENGTH;
+			req->req_body_status = BS_LENGTH;
 	} else {
-		assert (req->req_body_status == REQ_BODY_NONE);
+		/* A HEADER frame contained END_STREAM */
+		assert (req->req_body_status == BS_NONE);
+		r2->state = H2_S_CLOS_REM;
 		if (http_GetContentLength(req->http) > 0)
 			return (H2CE_PROTOCOL_ERROR); //rfc7540,l,1838,1840
 	}
@@ -694,7 +691,7 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	}
 
 	if (h2->rxf_flags & H2FF_HEADERS_END_STREAM)
-		req->req_body_status = REQ_BODY_NONE;
+		req->req_body_status = BS_NONE;
 
 	if (h2->rxf_flags & H2FF_HEADERS_END_HEADERS)
 		return (h2_end_headers(wrk, h2, req, r2));

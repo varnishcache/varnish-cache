@@ -71,13 +71,6 @@ typedef const struct body_status *body_status_t;
 
 /*--------------------------------------------------------------------*/
 
-enum req_body_state_e {
-#define REQ_BODY(U)	REQ_BODY_##U,
-#include "tbl/req_body.h"
-};
-
-/*--------------------------------------------------------------------*/
-
 enum sess_close {
 	SC_NULL = 0,
 #define SESS_CLOSE(nm, stat, err, desc)	SC_##nm,
@@ -464,7 +457,7 @@ struct req {
 #define REQ_MAGIC		0x2751aaa1
 
 	enum req_step		req_step;
-	volatile enum req_body_state_e	req_body_status;
+	body_status_t		req_body_status;
 	enum sess_close		doclose;
 	unsigned		restarts;
 	unsigned		esi_level;
