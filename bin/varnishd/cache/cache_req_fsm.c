@@ -877,7 +877,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 
 	cnt_recv_prep(req, ci);
 
-	if (req->req_body_status == REQ_BODY_FAIL) {
+	if (req->req_body_status == REQ_BODY_ERROR) {
 		req->doclose = SC_OVERLOAD;
 		return (REQ_FSM_DONE);
 	}
@@ -899,7 +899,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 	}
 
 	/* Attempts to cache req.body may fail */
-	if (req->req_body_status == REQ_BODY_FAIL) {
+	if (req->req_body_status == REQ_BODY_ERROR) {
 		req->doclose = SC_RX_BODY;
 		return (REQ_FSM_DONE);
 	}

@@ -153,7 +153,7 @@ http1_req_body(struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	if (req->htc->body_status->avail &&
 	    V1F_Setup_Fetch(req->vfc, req->htc) != 0)
-		req->req_body_status = REQ_BODY_FAIL;
+		req->req_body_status = REQ_BODY_ERROR;
 }
 
 static void

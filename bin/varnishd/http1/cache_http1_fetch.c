@@ -120,7 +120,7 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 		if (bo->req->req_body_status != REQ_BODY_CACHED)
 			bo->no_retry = "req.body not cached";
 
-		if (bo->req->req_body_status == REQ_BODY_FAIL) {
+		if (bo->req->req_body_status == REQ_BODY_ERROR) {
 			/*
 			 * XXX: (#2332) We should test to see if the backend
 			 * XXX: sent us some headers explaining why.
