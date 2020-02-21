@@ -1,0 +1,27 @@
+varnishtest "Handling of Age when return(pass)"
+
+server s1 {
+	rxreq
+	txresp -hdr "cache-control: max-age=2" -hdr "age: 1"
+
+	rxreq
+	txresp -hdr "cache-control: max-age=2" -hdr "age: 1"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		if (req.url == "/pass") {
+			return(pass);
+		}
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.age == 1
+
+	txreq -url /pass
+	rxresp
+	expect resp.http.age == 1
+} -run
