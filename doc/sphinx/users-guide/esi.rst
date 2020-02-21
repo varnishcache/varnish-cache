@@ -107,7 +107,7 @@ ESI on invalid XML
 
 The ESI parser expects the XML to be reasonably well formed, but
 this may fail if you are ESI including non-XML files.  You can
-make the ESI parser disrecard anything but ESI tags by setting:
+make the ESI parser disrecard anything but ESI tags by setting::
 
    param.set feature +esi_ignore_other_elements
 
