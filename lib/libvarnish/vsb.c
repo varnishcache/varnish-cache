@@ -611,13 +611,9 @@ VSB_quote_pfx(struct vsb *s, const char *pfx, const void *v, int len, int how)
 				(void)VSB_cat(s, "\\v");
 			break;
 		case '[':
-			/* FALLTHROUGH */
 		case ']':
-			/* FALLTHROUGH */
 		case '{':
-			/* FALLTHROUGH */
 		case '}':
-			/* FALLTHROUGH */
 		case '*':
 			if (how & VSB_QUOTE_GLOB)
 				(void)VSB_putc(s, '\\');
