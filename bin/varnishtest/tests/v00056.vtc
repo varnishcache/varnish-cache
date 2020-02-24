@@ -54,16 +54,21 @@ client c1 {
 	txreq
 	rxresp
 	expect resp.status == 500
+} -run
 
-	barrier b1 sync
+barrier b1 sync
+barrier b2 sync
 
-	barrier b2 sync
+client c2 {
 	txreq
 	rxresp
 	expect resp.status == 500
+} -run
 
-	barrier b3 sync
-	barrier b4 sync
+barrier b3 sync
+barrier b4 sync
+
+client c3 {
 	txreq
 	rxresp
 	expect resp.status == 200
