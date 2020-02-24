@@ -59,4 +59,5 @@ vjsn_test_CFLAGS = -DVJSN_TEST @SAN_CFLAGS@
 vjsn_test_LDADD = libvarnish.a @SAN_LDFLAGS@
 
 vsb_test_SOURCES = vsb_test.c vsb.c vas.c
+vsb_test_CFLAGS = -DVSB_TEST
 vsb_test_LDADD = libvarnish.a
