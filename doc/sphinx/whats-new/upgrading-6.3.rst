@@ -14,7 +14,27 @@ features are listed in "Changes". Explicitly mention what does *not*
 have to be changed, especially in VCL. May include, but is not limited
 to:**
 
-TODO: a word on VCL temperature and the ``auto`` change.
+For users of many and/or labeled VCLs
+=====================================
+
+Users of the advanced mechanics behind the ``vcl.state`` CLI command
+(most likely used via ``varnishadm``) should be aware of the following
+changes, which may require adjustments to (or, more likely, allow for
+simplifications of) scripts/programs interfacing with varnish:
+
+The VCL ``auto`` state has been streamlined. Conceptually, it used to
+be a variant of the ``warm`` state which would automatically cool
+the vcl. Yet, cooling did not only transition the temperature, but
+also the state, so ``auto`` only worked one way - except that
+``vcl.use`` or moving a label (by labeling another vcl) would also set
+``auto``, so a manual warm/cold setting would get lost.
+
+Now the ``auto`` state will remain no matter the actual temperature or
+labeling, so when a vcl needs to implicitly change temperature (due to
+being used or being labeled), an ``auto`` vcl will remain ``auto``,
+and a ``cold`` / ``warm`` vcl will change state, but never become
+``auto`` implicitly.
+
 
 For developers and authors of VMODs and API clients
 ===================================================
