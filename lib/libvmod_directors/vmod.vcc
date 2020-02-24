@@ -711,6 +711,28 @@ Lookup a backend by its name.
 
 This function can only be used from ``vcl_init{}`` and  ``vcl_fini{}``.
 
+$Function BACKEND resolve(BACKEND)
+
+Return a backend which any layer of directors resolves to.
+
+Most ``.backend()`` methods of varnish directors return a reference to
+the director itself (basically, all except ``shard`` with
+``resolve=NOW``). Only when it is time to make an actual connection is
+the decision on which backend to contact made.
+
+This function allows to have that decision made early, it returns a
+final ("real") backend which the given director argument would
+return.
+
+Notice that this decision is not saved, in other words, repeated calls
+to `directors.resolve()`_ may return different values, and the implicit
+resolution may use a different value yet again.
+
+To make a resolution decision permanent, it has to be saved
+explicitly, for example by assignment to ``(be)req.backend`` as in::
+
+	set bereq.backend = directors.resolve(bereq.backend);
+
 ACKNOWLEDGEMENTS
 ================
 

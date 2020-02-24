@@ -33,6 +33,8 @@
 #include "vdef.h"
 #include "vrt.h"
 #include "vcl.h"
+#include "vas.h"
+#include "miniobj.h"
 
 #include "vcc_if.h"
 
@@ -46,4 +48,12 @@ VPFX(lookup)(VRT_CTX, VCL_STRING name)
 	}
 
 	return (VRT_LookupDirector(ctx, name));
+}
+
+VCL_BACKEND
+VPFX(resolve)(VRT_CTX, VCL_BACKEND d)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	return (VRT_DirectorResolve(ctx, d));
 }

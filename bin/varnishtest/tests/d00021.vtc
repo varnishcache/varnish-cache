@@ -1,16 +1,16 @@
 varnishtest "shard director LAZY and layering"
 
-server s1 -repeat 2 {
+server s1 -repeat 3 {
 	rxreq
 	txresp -body "ech3Ooj"
 } -start
 
-server s2 -repeat 2 {
+server s2 -repeat 3 {
 	rxreq
 	txresp -body "ieQu2qua"
 } -start
 
-server s3 -repeat 2 {
+server s3 -repeat 3 {
 	rxreq
 	txresp -body "xiuFi3Pe"
 } -start
@@ -54,6 +54,10 @@ varnish v1 -vcl+backend {
 	}
 
 	sub vcl_recv {
+	    # coverage
+	    set req.backend_hint = directors.resolve(vd.backend());
+	    set req.backend_hint = directors.resolve(l.backend());
+	    set req.backend_hint = directors.resolve(ll.backend());
 	    return(pass);
 	}
 
@@ -86,7 +90,10 @@ varnish v1 -vcl+backend {
 	}
 
 	sub vcl_backend_fetch {
-	    if (bereq.http.layered) {
+	    if (bereq.http.resolve) {
+		call backend_fetch_layered;
+		set bereq.backend = directors.resolve(bereq.backend);
+	    } else if (bereq.http.layered) {
 		call backend_fetch_layered;
 	    } else {
 		call backend_fetch_direct;
@@ -147,5 +154,26 @@ client c1 {
 	expect resp.body == "xiuFi3Pe"
 	expect resp.http.healthy == "true"
 	expect resp.http.director == "ll"
+	expect resp.http.backend == "s3"
+
+	txreq -url /1 -hdr "resolve: true"
+	rxresp
+	expect resp.body == "ech3Ooj"
+	expect resp.http.healthy == "true"
+	expect resp.http.director == "s1"
+	expect resp.http.backend == "s1"
+
+	txreq -url /2 -hdr "resolve: true"
+	rxresp
+	expect resp.body == "ieQu2qua"
+	expect resp.http.healthy == "true"
+	expect resp.http.director == "s2"
+	expect resp.http.backend == "s2"
+
+	txreq -url /3 -hdr "resolve: true"
+	rxresp
+	expect resp.body == "xiuFi3Pe"
+	expect resp.http.healthy == "true"
+	expect resp.http.director == "s3"
 	expect resp.http.backend == "s3"
 } -run
