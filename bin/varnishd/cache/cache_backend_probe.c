@@ -586,12 +586,14 @@ vbp_build_req(struct vbp_target *vt, const struct vrt_backend_probe *vbp,
 	if (vbp->request != NULL) {
 		VSB_cat(vsb, vbp->request);
 	} else {
-		VSB_printf(vsb, "GET %s HTTP/1.1\r\n",
-		    vbp->url != NULL ?  vbp->url : "/");
-		if (be->hosthdr != NULL)
-			VSB_printf(vsb, "Host: %s\r\n", be->hosthdr);
-		VSB_cat(vsb, "Connection: close\r\n");
-		VSB_cat(vsb, "\r\n");
+		AN(be->hosthdr);
+		VSB_printf(vsb,
+		    "GET %s HTTP/1.1\r\n"
+		    "Host: %s\r\n"
+		    "Connection: close\r\n"
+		    "\r\n",
+		    vbp->url != NULL ?  vbp->url : "/",
+		    be->hosthdr);
 	}
 	AZ(VSB_finish(vsb));
 	vt->req = strdup(VSB_data(vsb));
