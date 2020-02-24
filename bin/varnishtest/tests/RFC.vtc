@@ -1,0 +1,52 @@
+varnishtest "probe request expansion"
+
+barrier b1 cond 3
+
+server s1 {
+	rxreq
+	expect req.http.date != <undef>
+	expect req.http.host == s1.example.org
+	expect req.http.user-agent == Varnish/%{version}
+	expect req.http.connection == close
+	txresp
+	barrier b1 sync
+	expect_close
+} -start
+
+server s2 {
+	rxreq
+	expect req.http.date != <undef>
+	expect req.http.host == s2.example.org
+	expect req.http.user-agent == Varnish/%{version}
+	expect req.http.connection == close
+	txresp
+	barrier b1 sync
+	expect_close
+} -start
+
+varnish v1 -vcl {
+	probe default {
+		.request =
+		    "HEALTH * HTTP/1.1"
+		    "Date: %{now}"
+		    "%{host_header}"
+		    "User-Agent: Varnish/%{version}"
+		    "Connection: close";
+	}
+	backend s1 {
+		.host = "${s1_sock}";
+		.host_header = "s1.example.org";
+	}
+	backend s2 {
+		.host = "${s2_sock}";
+		.host_header = "s2.example.org";
+	}
+	sub vcl_recv {
+		set req.backend_hint = s2; # reference s2
+	}
+} -start
+
+barrier b1 sync
+
+server s1 -wait
+server s2 -wait

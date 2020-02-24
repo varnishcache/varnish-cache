@@ -575,6 +575,55 @@ VBP_Status(struct vsb *vsb, const struct backend *be, int details, int json)
  */
 
 static void
+vbp_expand_host_header(struct vsb *vsb, const struct backend *be)
+{
+
+	VSB_printf(vsb, "Host: %s", be->hosthdr);
+}
+
+static void
+vbp_expand_now(struct vsb *vsb, const struct backend *be)
+{
+	char buf[VTIM_FORMAT_SIZE];
+
+	(void)be;
+	VTIM_format(VTIM_real(), buf);
+	VSB_cat(vsb, buf);
+}
+
+static void
+vbp_expand_req(struct vsb *vsb, const struct backend *be,
+    const char *s)
+{
+	const char *p, *q;
+
+	p = s;
+	while (1) {
+		q = strchr(p, '%');
+		if (q == NULL) {
+			VSB_cat(vsb, p);
+			break;
+		}
+		if (p < q) {
+			VSB_bcat(vsb, p, q - p);
+			p = q;
+		}
+#define VBP_MATCH_MACRO(m)				\
+		if (!strncasecmp(p, "%{" #m "}",	\
+		    sizeof("%{" #m "}") - 1)) {		\
+			vbp_expand_ ## m(vsb, be);	\
+			p += sizeof("%{" #m "}") - 1;	\
+			continue;			\
+		}
+		VBP_MATCH_MACRO(host_header)
+		VBP_MATCH_MACRO(now)
+#undef VBP_MATCH_MACRO
+		VSB_putc(vsb, *p);
+		p++;
+	}
+}
+
+static void
 vbp_build_req(struct vbp_target *vt, const struct vrt_backend_probe *vbp,
     const struct backend *be)
 {
@@ -584,16 +633,16 @@ vbp_build_req(struct vbp_target *vt, const struct vrt_backend_probe *vbp,
 	AN(vsb);
 	VSB_clear(vsb);
 	if (vbp->request != NULL) {
-		VSB_cat(vsb, vbp->request);
+		vbp_expand_req(vsb, be, vbp->request);
 	} else {
 		AN(be->hosthdr);
-		VSB_printf(vsb,
-		    "GET %s HTTP/1.1\r\n"
-		    "Host: %s\r\n"
+		VSB_printf(vsb, "GET %s HTTP/1.1\r\n",
+		    vbp->url != NULL ?  vbp->url : "/");
+		vbp_expand_req(vsb, be,
+		    "Date: %{now}\r\n"
+		    "%{host_header}\r\n"
 		    "Connection: close\r\n"
-		    "\r\n",
-		    vbp->url != NULL ?  vbp->url : "/",
-		    be->hosthdr);
+		    "\r\n");
 	}
 	AZ(VSB_finish(vsb));
 	vt->req = strdup(VSB_data(vsb));
