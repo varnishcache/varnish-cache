@@ -62,17 +62,22 @@
  *
  */
 
-static inline int
+static inline unsigned
 rfc2616_time(const char *p)
 {
 	char *ep;
-	int val;
+	unsigned long val;
 	if (*p == '-')
 		return (0);
 	val = strtoul(p, &ep, 10);
-	for (; *ep != '\0' && vct_issp(*ep); ep++)
-		continue;
-	if (*ep == '\0' || *ep == ',')
+	if (val > UINT_MAX)
+		return (UINT_MAX);
+	while (vct_issp(*ep))
+		ep++;
+	/* We accept ',' as an end character because we may be parsing a
+	 * multi-element Cache-Control part. We accept '.' to be future
+	 * compatble with fractional seconds. */
+	if (*ep == '\0' || *ep == ',' || *ep == '.')
 		return (val);
 	return (0);
 }
