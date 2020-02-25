@@ -124,8 +124,9 @@ VRT_hit_for_pass(VRT_CTX, VCL_DURATION d)
 	oc->ttl = d;
 	oc->grace = 0.0;
 	oc->keep = 0.0;
-	VSLb(ctx->vsl, SLT_TTL, "HFP %.0f %.0f %.0f %.0f uncacheable",
-	    oc->ttl, oc->grace, oc->keep, oc->t_origin);
+	if (!(oc->flags & OC_F_PRIVATE))
+		VSLb(ctx->vsl, SLT_TTL, "HFP %.0f %.0f %.0f %.0f uncacheable",
+		    oc->ttl, oc->grace, oc->keep, oc->t_origin);
 }
 
 /*--------------------------------------------------------------------*/

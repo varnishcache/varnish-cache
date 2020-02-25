@@ -246,9 +246,10 @@ VRT_l_beresp_uncacheable(VRT_CTX, VCL_BOOL a)
 	}
 	oc = ctx->bo->fetch_objcore;
 
-	VSLb(ctx->vsl, SLT_TTL, "VCL %.0f %.0f %.0f %.0f %s",	\
-	    oc->ttl, oc->grace, oc->keep, oc->t_origin,		\
-	    ctx->bo->uncacheable ? "uncacheable" : "cacheable");\
+	if (!(oc->flags & OC_F_PRIVATE))
+		VSLb(ctx->vsl, SLT_TTL, "VCL %.0f %.0f %.0f %.0f %s",
+		    oc->ttl, oc->grace, oc->keep, oc->t_origin,
+		    ctx->bo->uncacheable ? "uncacheable" : "cacheable");
 }
 
 VCL_BOOL
@@ -606,20 +607,20 @@ ttl_now(VRT_CTX)
 	}
 }
 
-#define VRT_DO_EXP_L(which, oc, fld, offset)			\
-								\
-VCL_VOID							\
-VRT_l_##which##_##fld(VRT_CTX, VCL_DURATION a)			\
-{								\
-								\
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
-	a += (offset);						\
-	if (a < 0.0)						\
-		a = 0.0;					\
-	oc->fld = a;						\
-	VSLb(ctx->vsl, SLT_TTL, "VCL %.0f %.0f %.0f %.0f %s",	\
-	    oc->ttl, oc->grace, oc->keep, oc->t_origin,		\
-	    ctx->bo->uncacheable ? "uncacheable" : "cacheable");\
+#define VRT_DO_EXP_L(which, oc, fld, offset)				\
+									\
+VCL_VOID								\
+VRT_l_##which##_##fld(VRT_CTX, VCL_DURATION a)				\
+{									\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
+	a += (offset);							\
+	if (a < 0.0)							\
+		a = 0.0;						\
+	oc->fld = a;							\
+	if (!(oc->flags & OC_F_PRIVATE))				\
+		VSLb(ctx->vsl, SLT_TTL, "VCL %.0f %.0f %.0f %.0f %s",	\
+		    oc->ttl, oc->grace, oc->keep, oc->t_origin,		\
+		    ctx->bo->uncacheable ? "uncacheable" : "cacheable");\
 }
 
 #define VRT_DO_EXP_R(which, oc, fld, offset)			\
