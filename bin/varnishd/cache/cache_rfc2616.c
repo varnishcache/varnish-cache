@@ -115,12 +115,7 @@ RFC2616_Ttl(struct busyobj *bo, vtim_real now, vtim_real *t_origin,
 	 */
 
 	if (http_GetHdr(hp, H_Age, &p)) {
-		/*
-		 * We deliberately run with partial results, rather than
-		 * reject the Age: header outright.  This will be future
-		 * compatible with fractional seconds.
-		 */
-		age = strtoul(p, NULL, 10);
+		age = rfc2616_time(p);
 		*t_origin -= age;
 	}
 
