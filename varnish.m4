@@ -429,7 +429,7 @@ clean-vsc-$1:
 # to declare sets of counters, but does not associates them automatically
 # with their respective VMODs:
 #
-#     VARNISH_UTILITIES([foo bar])
+#     VARNISH_COUNTERS([foo bar])
 #
 # Two build rules will be available for use in Makefile.am for the counters
 # foo and bar:
