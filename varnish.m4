@@ -426,7 +426,7 @@ clean-vsc-$1:
 #
 # In order to manipulate custom counters that tools like varnishstat can
 # report, it is possible to do that via a VMOD. This macro allows you
-# to declare sets of counters, but does not associates them automatically
+# to declare sets of counters, but does not associate them automatically
 # with their respective VMODs:
 #
 #     VARNISH_COUNTERS([foo bar])
