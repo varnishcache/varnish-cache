@@ -437,7 +437,7 @@ clean-vsc-$1:
 #     @BUILD_VSC_FOO@
 #     @BUILD_VSC_BAR@
 #
-# They take care of turning VSC_foo.vsc and VCS_bar.vsc into C code and
+# They take care of turning foo.vsc and bar.vsc into C code and
 # RST documentation.
 #
 # Just like the vcc_*_if.[ch] files, you need to manually add the generated
@@ -447,7 +447,8 @@ clean-vsc-$1:
 #             vcc_baz_if.c \
 #             vcc_baz_if.h \
 #             VSC_foo.c \
-#             VSC_foo.h
+#             VSC_foo.h \
+#             VSC_foo.rst
 #
 # You can then include the counters documentation somewhere in the VMOD's
 # VCC descriptor:
