@@ -467,9 +467,6 @@ main(int argc, char * const *argv)
 	argc -= optind;
 	argv += optind;
 
-	VSIG_Arm_int();
-	VSIG_Arm_term();
-
 	if (T_arg != NULL) {
 		if (n_arg != NULL)
 			usage(1);
@@ -482,9 +479,14 @@ main(int argc, char * const *argv)
 	if (sock < 0)
 		exit(2);
 
-	if (argc > 0)
+	if (argc > 0) {
+		VSIG_Arm_int();
+		VSIG_Arm_term();
 		do_args(sock, argc, argv);
-	else if (isatty(0))
+		NEEDLESS(exit(0));
+	}
+
+	if (isatty(0))
 		interactive(sock);
 	else
 		pass(sock);
