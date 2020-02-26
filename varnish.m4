@@ -437,7 +437,7 @@ clean-vsc-$1:
 #     @BUILD_VSC_FOO@
 #     @BUILD_VSC_BAR@
 #
-# They take care of turning VSC_foo.vsc and VCS_bar.vcs into C code and
+# They take care of turning VSC_foo.vsc and VCS_bar.vsc into C code and
 # RST documentation.
 #
 # Just like the vcc_*_if.[ch] files, you need to manually add the generated
