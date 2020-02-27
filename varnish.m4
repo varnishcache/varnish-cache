@@ -437,8 +437,8 @@ clean-vsc-$1:
 #     @BUILD_VSC_FOO@
 #     @BUILD_VSC_BAR@
 #
-# They take care of turning VSC_foo.vsc and VCS_bar.vsc into C code and
-# RST documentation.
+# They take care of turning foo.vsc and bar.vsc into C code and RST
+# documentation.
 #
 # Just like the vcc_*_if.[ch] files, you need to manually add the generated
 # sources to the appropriate VMODs:
@@ -453,6 +453,11 @@ clean-vsc-$1:
 # VCC descriptor:
 #
 #     .. include:: VSC_foo.rst
+#
+# Doing so, you can add the generated RST as a dependency of the manual in
+# Makefile.am:
+#
+#     vmod_baz.3: VSC_foo.rst
 #
 # That should be all you need to do to start implementing custom counters.
 #
