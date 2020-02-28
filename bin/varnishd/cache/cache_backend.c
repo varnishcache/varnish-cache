@@ -61,7 +61,7 @@ static VTAILQ_HEAD(, backend) cool_backends =
     VTAILQ_HEAD_INITIALIZER(cool_backends);
 static struct lock backends_mtx;
 
-#define BACKEND_FAIL(U,l, s)	const char *BE_FAIL_##U = s;
+#define BACKEND_FAIL(U,l, s)	const char *const BE_FAIL_##U = s;
 #include "tbl/backend_fail.h"
 
 /*--------------------------------------------------------------------*/
