@@ -1,19 +1,3 @@
-<<<<<<< HEAD
-varnishtest "client.ip vs. string session attrs"
-
-varnish v1 -vcl {
-	import debug;
-	import std;
-	backend dummy None;
-	sub vcl_recv {
-		return (synth(200));
-	}
-	sub vcl_synth {
-		set resp.http.ci = client.ip;
-		set resp.http.s-ci = debug.client_ip();
-		set resp.http.pi = std.port(client.ip);
-		set resp.http.s-pi = debug.client_port();
-=======
 varnishtest "Test beresp.fail_reason/detail"
 
 barrier b1 cond 2
@@ -42,30 +26,13 @@ varnish v1 -vcl {
 		if (beresp.fail_reason == error.be_fail_busy()) {
 			set beresp.http.wait = "Please wait. We are too busy";
 		}
-<<<<<<< HEAD:bin/varnishtest/tests/b00072.vtc
-                set beresp.http.fail_reason = beresp.fail_reason;
-                set beresp.http.fail_detail = beresp.fail_detail;
->>>>>>> Introduce beresp.fail_reason & beresp.fail_detail
-=======
 		set beresp.http.fail_reason = beresp.fail_reason;
 		set beresp.http.fail_detail = beresp.fail_detail;
->>>>>>> Review updates pt. 1:bin/varnishtest/tests/b00070.vtc
 	}
 } -start
 
 client c1 {
-<<<<<<< HEAD:bin/varnishtest/tests/b00072.vtc
-<<<<<<< HEAD
-	txreq
-	rxresp
-	expect resp.http.ci == resp.http.s-ci
-	expect resp.http.pi == resp.http.s-pi
-} -run
-=======
-        # Didn't hit v_b_e so not set
-=======
 	# Didn't hit v_b_e so not set
->>>>>>> Review updates pt. 1:bin/varnishtest/tests/b00070.vtc
 	txreq
 	rxresp
 	expect resp.status == 200
@@ -87,4 +54,4 @@ barrier b2 sync
 client c1 -wait
 
 varnish v1 -expect backend_busy == 1
->>>>>>> Introduce beresp.fail_reason & beresp.fail_detail
+
