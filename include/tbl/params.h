@@ -1431,8 +1431,8 @@ PARAM(
 	"and workspace_backend will have to be adjusted by the same amount.\n\n"
 	"Setting this too high costs memory, setting it too low will cause "
 	"more VSL flushes and likely increase lock-contention on the VSL "
-	"mutex.\n\n"
-	"The minimum tracks the vsl_reclen parameter + 12 bytes."
+	"mutex.",
+	/* dyn_min_reason */	"vsl_reclen + 12 bytes"
 )
 
 #if 0
@@ -1463,8 +1463,9 @@ PARAM(
 	/* units */	"bytes",
 	/* flags */	0,
 	/* s-text */
-	"Maximum number of bytes in SHM log record.\n\n"
-	"The maximum tracks the vsl_buffer parameter - 12 bytes."
+	"Maximum number of bytes in SHM log record.",
+	/* dyn_min_reason */	NULL,
+	/* dyn_max_reason */	"vsl_buffer - 12 bytes"
 )
 
 PARAM(
