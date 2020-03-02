@@ -131,6 +131,7 @@ VBO_GetBusyObj(struct worker *wrk, const struct req *req)
 	WS_Init(bo->ws, "bo", p, bo->end - p);
 
 	bo->do_stream = 1;
+	bo->private_headers = "";
 
 	bo->director_req = req->director_hint;
 	bo->vcl = req->vcl;

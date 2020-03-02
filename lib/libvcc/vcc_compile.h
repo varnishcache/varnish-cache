@@ -76,6 +76,7 @@ struct expr;
 struct vcc;
 struct vjsn_val;
 struct symbol;
+struct vmod_obj;
 
 struct source {
 	VTAILQ_ENTRY(source)	list;
@@ -97,6 +98,7 @@ struct token {
 };
 
 /*---------------------------------------------------------------------*/
+
 typedef const struct type	*vcc_type_t;
 
 struct type {
@@ -104,6 +106,8 @@ struct type {
 #define TYPE_MAGIC		0xfae932d9
 
 	const char		*name;
+	const struct vcc_method	*methods;
+
 	const char		*tostring;
 	vcc_type_t		multype;
 	int			stringform;
@@ -260,6 +264,7 @@ struct vcc {
 
 	VTAILQ_HEAD(, symbol)	sym_objects;
 	VTAILQ_HEAD(, symbol)	sym_vmods;
+	VTAILQ_HEAD(, vmod_obj)	vmod_objects;
 
 	unsigned		unique;
 	unsigned		vmod_count;
@@ -315,10 +320,12 @@ char *TlDup(struct vcc *tl, const char *s);
 /* vcc_expr.c */
 void vcc_Expr(struct vcc *tl, vcc_type_t typ);
 sym_act_f vcc_Act_Call;
+sym_act_f vcc_Act_Obj;
 void vcc_Expr_Init(struct vcc *tl);
 sym_expr_t vcc_Eval_Var;
 sym_expr_t vcc_Eval_Handle;
 sym_expr_t vcc_Eval_SymFunc;
+sym_expr_t vcc_Eval_TypeMethod;
 void vcc_Eval_Func(struct vcc *, const struct vjsn_val *,
     const char *, const struct symbol *);
 void VCC_GlobalSymbol(struct symbol *, vcc_type_t fmt, const char *pfx);
@@ -367,6 +374,8 @@ extern const struct symmode SYMTAB_PARTIAL[1];
 struct symbol *VCC_SymbolGet(struct vcc *, vcc_kind_t,
     const struct symmode *, const struct symxref *);
 
+struct symbol *VCC_TypeSymbol(struct vcc *, vcc_kind_t, vcc_type_t);
+
 typedef void symwalk_f(struct vcc *tl, const struct symbol *s);
 void VCC_WalkSymbols(struct vcc *tl, symwalk_f *func, vcc_kind_t);
 
@@ -390,6 +399,8 @@ void vcc_AddToken(struct vcc *tl, unsigned tok, const char *b,
 
 /* vcc_types.c */
 vcc_type_t VCC_Type(const char *p);
+const char * VCC_Type_EvalMethod(struct vcc *, const struct symbol *);
+void vcc_Type_Init(struct vcc *tl);
 
 /* vcc_var.c */
 sym_wildcard_t vcc_Var_Wildcard;

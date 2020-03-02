@@ -997,6 +997,20 @@ beresp.filters
 	* ``testgunzip`` gets added for compressed content if
 	  ``beresp.do_gunzip`` is false.
 
+beresp.private	``VCL >= 4.1``
+
+	Type: STRING
+
+	Readable from: vcl_backend_response, vcl_backend_error
+
+	Writable from: vcl_backend_response, vcl_backend_error
+
+	Default: The list of headers from Cache-Control directives
+	``no-cache`` and ``private`` when they are in header form.
+
+	A comma-separated list of HTTP headers limited to the client that
+	triggered the fetch.
+
 obj
 ~~~
 

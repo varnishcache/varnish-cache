@@ -326,7 +326,7 @@ varnish v1 -errvcl {Symbol not found: 'storage.foo'} {
 	}
 }
 
-varnish v1 -errvcl {Comparison of different types: BACKEND '==' STRING} {
+varnish v1 -errvcl {Comparison of different types: BACKEND '==' HEADER} {
 	sub vcl_backend_response {
 		set beresp.http.bereq_backend = bereq.backend;
 		if (bereq.backend == beresp.http.bereq_backend) {

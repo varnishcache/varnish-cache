@@ -49,6 +49,14 @@ struct vmod_open {
 	const char		*err;
 };
 
+struct vmod_obj {
+	unsigned		magic;
+#define VMOD_OBJ_MAGIC		0x349885f8
+	char			*name;
+	struct type		type[1];
+	VTAILQ_ENTRY(vmod_obj)	list;
+};
+
 static int
 vcc_path_dlopen(void *priv, const char *fn)
 {
@@ -65,13 +73,43 @@ vcc_path_dlopen(void *priv, const char *fn)
 	return (0);
 }
 
+static void vcc_VmodObject(struct vcc *tl, struct symbol *sym);
+static void vcc_VmodSymbols(struct vcc *tl, struct symbol *sym);
+
 static void
-func_sym(struct symbol *sym, const char *vmod_name, const struct vjsn_val *v)
+func_sym(struct vcc *tl, vcc_kind_t kind, struct symbol *psym,
+    const struct vjsn_val *v)
 {
+	struct symbol *sym;
+	struct vsb *buf;
+
+	buf = VSB_new_auto();
+	AN(buf);
+
+	VSB_clear(buf);
+	VCC_SymName(buf, psym);
+	VSB_printf(buf, ".%s", v->value);
+	AZ(VSB_finish(buf));
+	sym = VCC_MkSym(tl, VSB_data(buf), kind, VCL_LOW, VCL_HIGH);
+	AN(sym);
+	VSB_destroy(&buf);
+
+	if (kind == SYM_OBJECT) {
+		sym->eval_priv = v;
+		sym->vmod_name = psym->vmod_name;
+		vcc_VmodObject(tl, sym);
+		vcc_VmodSymbols(tl, sym);
+		return;
+	}
+
+	if (kind == SYM_METHOD)
+		sym->extra = psym->rname;
+
+	v = VTAILQ_NEXT(v, list);
 
 	assert(v->type == VJSN_ARRAY);
 	sym->action = vcc_Act_Call;
-	sym->vmod_name = vmod_name;
+	sym->vmod_name = psym->vmod_name;
 	sym->eval = vcc_Eval_SymFunc;
 	sym->eval_priv = v;
 	v = VTAILQ_FIRST(&v->children);
@@ -129,37 +167,6 @@ vcc_json_always(struct vcc *tl, const struct vjsn *vj, const char *vmod_name)
 	}
 }
 
-static void v_matchproto_(sym_wildcard_t)
-vcc_json_wildcard(struct vcc *tl, struct symbol *msym, struct symbol *tsym)
-{
-	const struct vjsn *vj;
-	const struct vjsn_val *vv, *vv1, *vv2;
-
-	assert(msym->kind == SYM_VMOD);
-	CAST_OBJ_NOTNULL(vj, msym->eval_priv, VJSN_MAGIC);
-	VTAILQ_FOREACH(vv, &vj->value->children, list) {
-		assert(vv->type == VJSN_ARRAY);
-		vv1 = VTAILQ_FIRST(&vv->children);
-		assert(vv1->type == VJSN_STRING);
-		vv2 = VTAILQ_NEXT(vv1, list);
-		assert(vv2->type == VJSN_STRING);
-		if (!strcmp(vv1->value, "$FUNC") &&
-		    !strcmp(vv2->value, tsym->name)) {
-			tsym->kind = SYM_FUNC;
-			tsym->noref = 1;
-			func_sym(tsym, msym->vmod_name, VTAILQ_NEXT(vv2, list));
-			return;
-		} else if (!strcmp(vv1->value, "$OBJ") &&
-			   !strcmp(vv2->value, tsym->name)) {
-			tsym->kind = SYM_OBJECT;
-			tsym->eval_priv = vv2;
-			tsym->vmod_name = msym->vmod_name;
-			return;
-		}
-	}
-	tl->err = 1;
-}
-
 static const struct vmod_data *
 vcc_VmodSanity(struct vcc *tl, void *hdl, struct token *mod, char *fnp)
 {
@@ -214,6 +221,78 @@ vcc_VmodSanity(struct vcc *tl, void *hdl, struct token *mod, char *fnp)
 		return (NULL);
 	}
 	return (vmd);
+}
+
+static vcc_kind_t
+vcc_vmod_kind(const char *type)
+{
+
+#define VMOD_KIND(str, kind)		\
+	do {				\
+		if (!strcmp(str, type))	\
+			return (kind);	\
+	} while (0)
+	VMOD_KIND("$OBJ", SYM_OBJECT);
+	VMOD_KIND("$METHOD", SYM_METHOD);
+	VMOD_KIND("$FUNC", SYM_FUNC);
+#undef VMOD_KIND
+	return (SYM_NONE);
+}
+
+static void
+vcc_VmodObject(struct vcc *tl, struct symbol *sym)
+{
+	struct vmod_obj *obj;
+	struct vsb *buf;
+
+	buf = VSB_new_auto();
+	AN(buf);
+
+	VSB_printf(buf, "%s.%s", sym->vmod_name, sym->name);
+	AZ(VSB_finish(buf));
+
+	ALLOC_OBJ(obj, VMOD_OBJ_MAGIC);
+	AN(obj);
+	REPLACE(obj->name, VSB_data(buf));
+
+	INIT_OBJ(obj->type, TYPE_MAGIC);
+	obj->type->name = obj->name;
+	sym->type = obj->type;
+	VTAILQ_INSERT_TAIL(&tl->vmod_objects, obj, list);
+	VSB_destroy(&buf);
+}
+
+static void
+vcc_VmodSymbols(struct vcc *tl, struct symbol *sym)
+{
+	const struct vjsn *vj;
+	const struct vjsn_val *vv, *vv1, *vv2;
+	vcc_kind_t kind;
+
+	if (sym->kind == SYM_VMOD) {
+		CAST_OBJ_NOTNULL(vj, sym->eval_priv, VJSN_MAGIC);
+		vv = VTAILQ_FIRST(&vj->value->children);
+	} else if (sym->kind == SYM_OBJECT) {
+		CAST_OBJ_NOTNULL(vv, sym->eval_priv, VJSN_VAL_MAGIC);
+	} else {
+		WRONG("symbol kind");
+	}
+
+	for (; vv != NULL; vv = VTAILQ_NEXT(vv, list)) {
+		if (vv->type != VJSN_ARRAY)
+			continue;
+		vv1 = VTAILQ_FIRST(&vv->children);
+		assert(vv1->type == VJSN_STRING);
+		vv2 = VTAILQ_NEXT(vv1, list);
+		if (vv2->type != VJSN_STRING)
+			continue;
+
+		kind = vcc_vmod_kind(vv1->value);
+		if (kind == SYM_NONE)
+			continue;
+
+		func_sym(tl, kind, sym, vv2);
+	}
 }
 
 void
@@ -317,9 +396,9 @@ vcc_ParseImport(struct vcc *tl)
 		if (!strcmp(vsym->extra, vmd->file_id)) {
 			/* Already loaded under different name */
 			msym->eval_priv = vsym->eval_priv;
-			msym->wildcard = vsym->wildcard;
 			msym->extra = vsym->extra;
 			msym->vmod_name = vsym->vmod_name;
+			vcc_VmodSymbols(tl, msym);
 			AZ(dlclose(vop->hdl));
 			free(fnpx);
 			return;
@@ -364,9 +443,9 @@ vcc_ParseImport(struct vcc *tl)
 	XXXAZ(p);
 	AN(vj);
 	msym->eval_priv = vj;
-	msym->wildcard = vcc_json_wildcard;
 	msym->extra = TlDup(tl, vmd->file_id);
 	msym->vmod_name = TlDup(tl, vmd->name);
+	vcc_VmodSymbols(tl, msym);
 
 	vcc_json_always(tl, vj, msym->vmod_name);
 
@@ -381,7 +460,7 @@ vcc_ParseImport(struct vcc *tl)
 void v_matchproto_(sym_act_f)
 vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 {
-	struct symbol *isym, *osym, *msym;
+	struct symbol *isym, *osym;
 	struct inifin *ifp;
 	struct vsb *buf;
 	const struct vjsn_val *vv, *vf;
@@ -397,14 +476,22 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 	ERRCHK(tl);
 	AN(isym);
 	isym->noref = 1;
+	isym->action = vcc_Act_Obj;
 
 	SkipToken(tl, '=');
 	ExpectErr(tl, ID);
 	osym = VCC_SymbolGet(tl, SYM_OBJECT, SYMTAB_EXISTING, XREF_NONE);
 	ERRCHK(tl);
 	AN(osym);
+
+	/* Scratch the generic INSTANCE type */
+	isym->type = osym->type;
+
 	CAST_OBJ_NOTNULL(vv, osym->eval_priv, VJSN_VAL_MAGIC);
 	// vv = object name
+
+	isym->vmod_name = osym->vmod_name;
+	isym->eval_priv = vv;
 
 	vv = VTAILQ_NEXT(vv, list);
 	// vv = flags
@@ -439,7 +526,6 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 	isym->def_e = tl->t;
 
 	vf = VTAILQ_FIRST(&vv->children);
-	vv = VTAILQ_NEXT(vv, list);
 	assert(vf->type == VJSN_STRING);
 	assert(!strcmp(vf->value, "$FINI"));
 
@@ -449,26 +535,4 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 	ifp = New_IniFin(tl);
 	VSB_printf(ifp->fin, "\t\tif (%s)\n", isym->rname);
 	VSB_printf(ifp->fin, "\t\t\t\t%s(&%s);", vf->value, isym->rname);
-
-	/* Instantiate symbols for the methods */
-	buf = VSB_new_auto();
-	AN(buf);
-
-	while (vv != NULL) {
-		vf = VTAILQ_FIRST(&vv->children);
-		assert(vf->type == VJSN_STRING);
-		assert(!strcmp(vf->value, "$METHOD"));
-		vf = VTAILQ_NEXT(vf, list);
-		assert(vf->type == VJSN_STRING);
-
-		VSB_clear(buf);
-		VSB_printf(buf, "%s.%s", isym->name, vf->value);
-		AZ(VSB_finish(buf));
-		msym = VCC_MkSym(tl, VSB_data(buf), SYM_FUNC, VCL_LOW, VCL_HIGH);
-		AN(msym);
-		func_sym(msym, osym->vmod_name, VTAILQ_NEXT(vf, list));
-		msym->extra = isym->rname;
-		vv = VTAILQ_NEXT(vv, list);
-	}
-	VSB_destroy(&buf);
 }

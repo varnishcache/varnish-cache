@@ -36,6 +36,24 @@
 
 #include "vcc_compile.h"
 
+/*
+ * A type attribute is information already existing, requiring no processing
+ * or resource usage.
+ *
+ * A type method call and may do (significant processing, change things, eat
+ * workspace etc).
+ *
+ * XXX: type methods might move in a more comprehensive direction.
+ */
+struct vcc_method {
+	unsigned		magic;
+#define VCC_METHOD_MAGIC	0x594108cd
+	vcc_type_t		type;
+	const char		*name;
+	const char		*impl;
+	int			func;
+};
+
 const struct type ACL[1] = {{
 	.magic =		TYPE_MAGIC,
 	.name =			"ACL",
@@ -84,9 +102,15 @@ const struct type ENUM[1] = {{
 	.tostring =		"",
 }};
 
+static const struct vcc_method header_methods[] = {
+	{ VCC_METHOD_MAGIC, BOOL, "is_private", "VRT_IsPrivHdr(ctx, \v1)", 0 },
+	{ VCC_METHOD_MAGIC, NULL },
+};
+
 const struct type HEADER[1] = {{
 	.magic =		TYPE_MAGIC,
 	.name =			"HEADER",
+	.methods =		header_methods,
 	.tostring =		"VRT_GetHdr(ctx, \v1)",
 }};
 
@@ -125,9 +149,17 @@ const struct type REAL[1] = {{
 	.multype =		REAL,
 }};
 
+static const struct vcc_method stevedore_methods[] = {
+#define VRTSTVVAR(nm, vtype, ctype, dval) \
+	{ VCC_METHOD_MAGIC, vtype, #nm, "VRT_stevedore_" #nm "(\v1)", 0},
+#include "tbl/vrt_stv_var.h"
+	{ VCC_METHOD_MAGIC, NULL },
+};
+
 const struct type STEVEDORE[1] = {{
 	.magic =		TYPE_MAGIC,
 	.name =			"STEVEDORE",
+	.methods =		stevedore_methods,
 	.tostring =		"VRT_STEVEDORE_string(\v1)",
 }};
 
@@ -144,9 +176,18 @@ const struct type STRANDS[1] = {{
 	.tostring =		"VRT_CollectStrands(ctx,\v+\n\v1\v-\n)",
 }};
 
+static const struct vcc_method strings_methods[] = {
+	{ VCC_METHOD_MAGIC, STRING, "upper",
+	    "VRT_UpperLowerStrands(ctx, \vT, 1)", 1 },
+	{ VCC_METHOD_MAGIC, STRING, "lower",
+	    "VRT_UpperLowerStrands(ctx, \vT, 0)", 1 },
+	{ VCC_METHOD_MAGIC, NULL },
+};
+
 const struct type STRINGS[1] = {{
 	.magic =		TYPE_MAGIC,
 	.name =			"STRINGS",
+	.methods =		strings_methods,
 	.tostring =		"",
 }};
 
@@ -186,3 +227,72 @@ VCC_Type(const char *p)
 	return (NULL);
 }
 
+static void
+vcc_type_init(struct vcc *tl, vcc_type_t type)
+{
+	const struct vcc_method *vm;
+	struct symbol *sym;
+	struct vsb *buf;
+
+	/* NB: Don't bother even creating a type symbol if there are no
+	 * methods attached to it.
+	 */
+	if (type->methods == NULL)
+		return;
+
+	buf = VSB_new_auto();
+	AN(buf);
+	VSB_printf(buf, "_type.%s", type->name);
+	AZ(VSB_finish(buf));
+	AN(VCC_MkSym(tl, VSB_data(buf), SYM_NONE, VCL_LOW, VCL_HIGH));
+
+	for (vm = type->methods; vm->type != NULL; vm++) {
+		VSB_clear(buf);
+		VSB_printf(buf, "_type.%s.%s", type->name, vm->name);
+		AZ(VSB_finish(buf));
+		sym = VCC_MkSym(tl, VSB_data(buf), SYM_METHOD, VCL_LOW,
+		    VCL_HIGH);
+		if (tl->err)
+			break;
+		AN(sym);
+		sym->type = vm->type;
+		sym->eval = vcc_Eval_TypeMethod;
+		sym->eval_priv = vm;
+	}
+
+	VSB_destroy(&buf);
+}
+
+const char *
+VCC_Type_EvalMethod(struct vcc *tl, const struct symbol *sym)
+{
+	const struct vcc_method *vm;
+
+	AN(sym);
+	AN(sym->kind == SYM_METHOD);
+	CAST_OBJ_NOTNULL(vm, sym->eval_priv, VCC_METHOD_MAGIC);
+
+	vcc_NextToken(tl);
+	if (vm->func) {
+		Expect(tl, '(');
+		if (tl->err)
+			return (NULL);
+		vcc_NextToken(tl);
+		Expect(tl, ')');
+		if (tl->err)
+			return (NULL);
+		vcc_NextToken(tl);
+	}
+
+	return (vm->impl);
+}
+
+void
+vcc_Type_Init(struct vcc *tl)
+{
+
+	AN(VCC_MkSym(tl, "_type", SYM_RESERVED, VCL_LOW, VCL_HIGH));
+
+#define VCC_TYPE(UC, lc)	vcc_type_init(tl, UC);
+#include "tbl/vcc_types.h"
+}

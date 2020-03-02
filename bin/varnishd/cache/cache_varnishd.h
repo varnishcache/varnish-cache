@@ -243,6 +243,7 @@ void VBF_Fetch(struct worker *wrk, struct req *req,
     struct objcore *oc, struct objcore *oldoc, enum vbf_fetch_mode_e);
 const char *VBF_Get_Filter_List(struct busyobj *);
 void Bereq_Rollback(struct busyobj *);
+void Beresp_Private(struct busyobj *, const char *);
 
 /* cache_fetch_proc.c */
 void VFP_Init(void);

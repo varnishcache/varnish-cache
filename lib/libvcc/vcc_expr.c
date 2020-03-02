@@ -50,6 +50,7 @@ struct expr {
 #define EXPR_CONST	(1<<1)
 #define EXPR_STR_CONST	(1<<2)		// Last STRING_LIST elem is "..."
 	struct token	*t1, *t2;
+	struct symbol	*instance;
 	int		nstr;
 };
 
@@ -264,6 +265,9 @@ vcc_expr_tobool(struct vcc *tl, struct expr **e)
 		*e = vcc_expr_edit(tl, BOOL, "(\v1 > 0)", *e, NULL);
 	else if ((*e)->fmt == STRINGS)
 		*e = vcc_expr_edit(tl, BOOL, "VRT_Strands2Bool(\vT)", *e, NULL);
+	else if ((*e)->fmt == HEADER)
+		*e = vcc_expr_edit(tl, BOOL,
+		    "(VRT_GetHdr(ctx, \v1) != NULL)", *e, NULL);
 	/*
 	 * We do not provide automatic folding from REAL to BOOL
 	 * because comparing to zero is seldom an exact science
@@ -484,6 +488,17 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 		sa = NULL;
 	}
 	vv = VTAILQ_NEXT(vv, list);
+	if (sym->kind == SYM_METHOD) {
+		if (*e == NULL) {
+			VSB_cat(tl->sb, "Syntax error.");
+			tl->err = 1;
+			return;
+		}
+		vcc_NextToken(tl);
+		AZ(extra);
+		AN((*e)->instance);
+		extra = (*e)->instance->rname;
+	}
 	SkipToken(tl, '(');
 	if (extra == NULL) {
 		extra = "";
@@ -651,7 +666,7 @@ vcc_Eval_SymFunc(struct vcc *tl, struct expr **e, struct token *t,
 
 	(void)t;
 	(void)fmt;
-	assert(sym->kind == SYM_FUNC);
+	assert(sym->kind == SYM_FUNC || sym->kind == SYM_METHOD);
 	AN(sym->eval_priv);
 
 	vcc_func(tl, e, sym->eval_priv, sym->extra, sym);
@@ -700,6 +715,12 @@ vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		sym = VCC_SymbolGet(tl, SYM_NONE, SYMTAB_PARTIAL, XREF_REF);
 		ERRCHK(tl);
 		AN(sym);
+		if (sym->kind == SYM_INSTANCE) {
+			AZ(*e);
+			*e = vcc_new_expr(sym->type);
+			(*e)->instance = sym;
+			return;
+		}
 		if (sym->kind == SYM_FUNC && sym->type == VOID) {
 			VSB_cat(tl->sb, "Function returns VOID:\n");
 			vcc_ErrWhere(tl, tl->t);
@@ -715,11 +736,6 @@ vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 				vcc_ErrWhere2(tl, t, tl->t);
 			}
 			ERRCHK(tl);
-			/* Unless asked for a HEADER, fold to string here */
-			if (*e && fmt != HEADER && (*e)->fmt == HEADER) {
-				vcc_expr_tostring(tl, e, STRINGS);
-				ERRCHK(tl);
-			}
 			return;
 		}
 		VSB_printf(tl->sb,
@@ -816,37 +832,25 @@ vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
  * SYNTAX:
  *    Expr4:
  *      Expr5 [ '.' (type_attribute | type_method()) ]*
- *
- * type_attributes is information already existing, requiring no
- * processing or resource usage.
- *
- * type_methods are calls and may do (significant processing, change things,
- * eat workspace etc.
  */
 
-static const struct vcc_methods {
-	vcc_type_t		type_from;
-	vcc_type_t		type_to;
-	const char		*method;
-	const char		*impl;
-	int			func;
-} vcc_methods[] = {
-	//{ BACKEND, BOOL,	"healthy",	"VRT_Healthy(ctx, \v1, 0)" },
+void
+vcc_Eval_TypeMethod(struct vcc *tl, struct expr **e, struct token *t,
+    struct symbol *sym, vcc_type_t fmt)
+{
+	const char *impl;
 
-#define VRTSTVVAR(nm, vtype, ctype, dval) \
-	{ STEVEDORE, vtype, #nm, "VRT_stevedore_" #nm "(\v1)", 0},
-#include "tbl/vrt_stv_var.h"
-
-	{ STRINGS, STRING, "upper", "VRT_UpperLowerStrands(ctx, \vT, 1)", 1 },
-	{ STRINGS, STRING, "lower", "VRT_UpperLowerStrands(ctx, \vT, 0)", 1 },
-
-	{ NULL, NULL,		NULL,		NULL},
-};
+	(void)t;
+	impl = VCC_Type_EvalMethod(tl, sym);
+	ERRCHK(tl);
+	AN(impl);
+	*e = vcc_expr_edit(tl, fmt, impl, *e, NULL);
+}
 
 static void
 vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 {
-	const struct vcc_methods *vm;
+	struct symbol *sym;
 
 	*e = NULL;
 	vcc_expr5(tl, e, fmt);
@@ -856,33 +860,31 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		vcc_NextToken(tl);
 		ExpectErr(tl, ID);
 
-		for(vm = vcc_methods; vm->type_from != NULL; vm++) {
+		sym = VCC_TypeSymbol(tl, SYM_METHOD, (*e)->fmt);
 
-			if (vm->type_from == (*e)->fmt &&
-			    vcc_IdIs(tl->t, vm->method))
-				break;
+		/* NB: didn't find a HEADER method or property, fall back to
+		 * STRINGS operations.
+		 */
+		if (sym == NULL && (*e)->fmt == HEADER) {
+			vcc_expr_tostring(tl, e, STRINGS);
+			AZ(tl->err);
+			sym = VCC_TypeSymbol(tl, SYM_METHOD, (*e)->fmt);
 		}
 
-		if (vm->type_from == NULL) {
+		if (sym == NULL) {
 			VSB_cat(tl->sb, "Unknown property ");
 			vcc_ErrToken(tl, tl->t);
-			VSB_printf(tl->sb,
-			 " for type %s\n", (*e)->fmt->name);
+			VSB_printf(tl->sb, " for type %s\n", (*e)->fmt->name);
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
-		vcc_NextToken(tl);
-		*e = vcc_expr_edit(tl, vm->type_to, vm->impl, *e, NULL);
+
+		AN(sym->eval);
+		sym->eval(tl, e, tl->t, sym, sym->type);
 		ERRCHK(tl);
 		if ((*e)->fmt == STRING) {
 			(*e)->fmt = STRINGS;
 			(*e)->nstr = 1;
-		}
-		if (vm->func) {
-			ExpectErr(tl, '(');
-			vcc_NextToken(tl);
-			ExpectErr(tl, ')');
-			vcc_NextToken(tl);
 		}
 	}
 }
@@ -1075,6 +1077,11 @@ cmp_regexp(struct vcc *tl, struct expr **e, const struct cmps *cp)
 	char buf[128];
 	struct vsb vsb;
 
+	if ((*e)->fmt != STRINGS) {
+		vcc_expr_tostring(tl, e, STRINGS);
+		AZ(tl->err);
+	}
+
 	*e = vcc_expr_edit(tl, STRING, "\vS", *e, NULL);
 	vcc_NextToken(tl);
 	ExpectErr(tl, CSTR);
@@ -1110,10 +1117,21 @@ cmp_string(struct vcc *tl, struct expr **e, const struct cmps *cp)
 	struct token *tk;
 	char buf[128];
 
+	if ((*e)->fmt != STRINGS) {
+		vcc_expr_tostring(tl, e, STRINGS);
+		AZ(tl->err);
+	}
+
 	tk = tl->t;
 	vcc_NextToken(tl);
 	vcc_expr_add(tl, &e2, STRINGS);
 	ERRCHK(tl);
+
+	if (e2->fmt == HEADER) {
+		vcc_expr_tostring(tl, &e2, STRINGS);
+		AZ(tl->err);
+	}
+
 	if (e2->fmt != STRINGS) {
 		VSB_printf(tl->sb,
 		    "Comparison of different types: %s '%.*s' %s\n",
@@ -1128,6 +1146,16 @@ cmp_string(struct vcc *tl, struct expr **e, const struct cmps *cp)
 	}
 }
 
+#define STRING_REL(typ)							\
+	{typ,		T_EQ,		cmp_string, "0 =="},		\
+	{typ,		T_NEQ,		cmp_string, "0 !="},		\
+	{typ,		'<',		cmp_string, "0 > "},		\
+	{typ,		'>',		cmp_string, "0 < "},		\
+	{typ,		T_LEQ,		cmp_string, "0 >="},		\
+	{typ,		T_GEQ,		cmp_string, "0 <="},		\
+	{typ,		'~',		cmp_regexp, "" },		\
+	{typ,		T_NOMATCH,	cmp_regexp, "!" }
+
 #define IDENT_REL(typ)							\
 	{typ,		T_EQ,		cmp_simple, "(\v1 == \v2)" },	\
 	{typ,		T_NEQ,		cmp_simple, "(\v1 != \v2)" }
@@ -1140,6 +1168,8 @@ cmp_string(struct vcc *tl, struct expr **e, const struct cmps *cp)
 	{typ,		'>',		cmp_simple, "(\v1 > \v2)" }
 
 static const struct cmps vcc_cmps[] = {
+	STRING_REL(HEADER),
+	STRING_REL(STRINGS),
 	NUM_REL(INT),
 	NUM_REL(DURATION),
 	NUM_REL(BYTES),
@@ -1160,19 +1190,10 @@ static const struct cmps vcc_cmps[] = {
 	{IP,		'~',		cmp_acl, "" },
 	{IP,		T_NOMATCH,	cmp_acl, "!" },
 
-	{STRINGS,	T_EQ,		cmp_string, "0 =="},
-	{STRINGS,	T_NEQ,		cmp_string, "0 !="},
-	{STRINGS,	'<',		cmp_string, "0 > "},
-	{STRINGS,	'>',		cmp_string, "0 < "},
-	{STRINGS,	T_LEQ,		cmp_string, "0 >="},
-	{STRINGS,	T_GEQ,		cmp_string, "0 <="},
-
-	{STRINGS,	'~',		cmp_regexp, "" },
-	{STRINGS,	T_NOMATCH,	cmp_regexp, "!" },
-
 	{VOID,		0,		NULL, NULL}
 };
 
+#undef STRING_REL
 #undef IDENT_REL
 #undef NUM_REL
 
@@ -1345,8 +1366,10 @@ vcc_expr0(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	if ((*e)->fmt == fmt)
 		return;
 
-	if ((*e)->fmt != STRINGS && fmt->stringform)
+	if ((*e)->fmt != STRINGS && fmt->stringform) {
 		vcc_expr_tostring(tl, e, STRINGS);
+		ERRCHK(tl);
+	}
 
 	if ((*e)->fmt->stringform) {
 		VSB_printf(tl->sb, "Cannot convert type %s(%s) to %s(%s)\n",
@@ -1428,6 +1451,24 @@ vcc_Act_Call(struct vcc *tl, struct token *t, struct symbol *sym)
 	}
 	vcc_delete_expr(e);
 }
+
+void v_matchproto_(sym_act_f)
+vcc_Act_Obj(struct vcc *tl, struct token *t, struct symbol *sym)
+{
+
+	struct expr *e = NULL;
+
+	assert(sym->kind == SYM_INSTANCE);
+	ExpectErr(tl, '.');
+	tl->t = t;
+	vcc_expr4(tl, &e, sym->type);
+	ERRCHK(tl);
+	vcc_expr_fmt(tl->fb, tl->indent, e);
+	vcc_delete_expr(e);
+	SkipToken(tl, ';');
+	VSB_cat(tl->fb, ";\n");
+}
+
 /*--------------------------------------------------------------------
  */
 

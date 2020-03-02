@@ -60,6 +60,9 @@
  *	VRT_l_resp_body() changed
  *	VRT_l_beresp_body() changed
  *	VRT_Format_Proxy() added	// transitional interface
+ *	VRT_r_beresp_private() added
+ *	VRT_l_beresp_private() added
+ *	VRT_IsPrivHdr() added
  * 10.0 (2019-09-15)
  *	VRT_UpperLowerStrands added.
  *	VRT_synth_page now takes STRANDS argument
@@ -468,6 +471,7 @@ struct gethdr_s {
 
 VCL_HTTP VRT_selecthttp(VRT_CTX, enum gethdr_e);
 VCL_STRING VRT_GetHdr(VRT_CTX, VCL_HEADER);
+VCL_BOOL VRT_IsPrivHdr(VRT_CTX, VCL_HEADER);
 
 /***********************************************************************
  * req related
