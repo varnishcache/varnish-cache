@@ -43,13 +43,13 @@
 #endif
 PARAM(
 	/* name */	accept_filter,
-	/* typ */	bool,
+	/* type */	bool,
 	/* min */	NULL,
 	/* max */	NULL,
-	/* default */	"on",
+	/* def */	"on",
 	/* units */	"bool",
 	/* flags */	XYZZY,
-	/* s-text */
+	/* descr */
 	"Enable kernel accept-filters. This may require a kernel module to "
 	"be loaded to have an effect when enabled.\n\n"
 	"Enabling accept_filter may prevent some requests to reach Varnish "
@@ -61,13 +61,13 @@ PARAM(
 
 PARAM(
 	/* name */	acceptor_sleep_decay,
-	/* typ */	double,
+	/* type */	double,
 	/* min */	"0",
 	/* max */	"1",
-	/* default */	"0.9",
+	/* def */	"0.9",
 	/* units */	NULL,
 	/* flags */	EXPERIMENTAL,
-	/* s-text */
+	/* descr */
 	"If we run out of resources, such as file descriptors or worker "
 	"threads, the acceptor will sleep between accepts.\n"
 	"This parameter (multiplicatively) reduce the sleep duration for "
@@ -76,13 +76,13 @@ PARAM(
 
 PARAM(
 	/* name */	acceptor_sleep_incr,
-	/* typ */	timeout,
+	/* type */	timeout,
 	/* min */	"0",
 	/* max */	"1",
-	/* default */	"0",
+	/* def */	"0",
 	/* units */	"seconds",
 	/* flags */	EXPERIMENTAL,
-	/* s-text */
+	/* descr */
 	"If we run out of resources, such as file descriptors or worker "
 	"threads, the acceptor will sleep between accepts.\n"
 	"This parameter control how much longer we sleep, each time we "
@@ -91,13 +91,13 @@ PARAM(
 
 PARAM(
 	/* name */	acceptor_sleep_max,
-	/* typ */	timeout,
+	/* type */	timeout,
 	/* min */	"0",
 	/* max */	"10",
-	/* default */	"0.05",
+	/* def */	"0.05",
 	/* units */	"seconds",
 	/* flags */	EXPERIMENTAL,
-	/* s-text */
+	/* descr */
 	"If we run out of resources, such as file descriptors or worker "
 	"threads, the acceptor will sleep between accepts.\n"
 	"This parameter limits how long it can sleep between attempts to "
@@ -106,25 +106,25 @@ PARAM(
 
 PARAM(
 	/* name */	auto_restart,
-	/* typ */	bool,
+	/* type */	bool,
 	/* min */	NULL,
 	/* max */	NULL,
-	/* default */	"on",
+	/* def */	"on",
 	/* units */	"bool",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"Automatically restart the child/worker process if it dies."
 )
 
 PARAM(
 	/* name */	ban_dups,
-	/* typ */	bool,
+	/* type */	bool,
 	/* min */	NULL,
 	/* max */	NULL,
-	/* default */	"on",
+	/* def */	"on",
 	/* units */	"bool",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"Eliminate older identical bans when a new ban is added.  This saves "
 	"CPU cycles by not comparing objects to identical bans.\n"
 	"This is a waste of time if you have many bans which are never "
@@ -133,13 +133,13 @@ PARAM(
 
 PARAM(
 	/* name */	ban_cutoff,
-	/* typ */	uint,
+	/* type */	uint,
 	/* min */	"0",
 	/* max */	NULL,
-	/* default */	"0",
+	/* def */	"0",
 	/* units */	"bans",
 	/* flags */	EXPERIMENTAL,
-	/* s-text */
+	/* descr */
 	"Expurge long tail content from the cache to keep the number of bans "
 	"below this value. 0 disables.\n\n"
 	"When this parameter is set to a non-zero value, the ban lurker "
@@ -163,13 +163,13 @@ PARAM(
 
 PARAM(
 	/* name */	ban_lurker_age,
-	/* typ */	timeout,
+	/* type */	timeout,
 	/* min */	"0",
 	/* max */	NULL,
-	/* default */	"60",
+	/* def */	"60",
 	/* units */	"seconds",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"The ban lurker will ignore bans until they are this old.  "
 	"When a ban is added, the active traffic will be tested against it "
 	"as part of object lookup.  Because many applications issue bans in "
@@ -180,13 +180,13 @@ PARAM(
 
 PARAM(
 	/* name */	ban_lurker_batch,
-	/* typ */	uint,
+	/* type */	uint,
 	/* min */	"1",
 	/* max */	NULL,
-	/* default */	"1000",
+	/* def */	"1000",
 	/* units */	NULL,
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"The ban lurker sleeps ${ban_lurker_sleep} after examining this "
 	"many objects."
 	"  Use this to pace the ban-lurker if it eats too many resources."
@@ -194,13 +194,13 @@ PARAM(
 
 PARAM(
 	/* name */	ban_lurker_sleep,
-	/* typ */	timeout,
+	/* type */	timeout,
 	/* min */	"0",
 	/* max */	NULL,
-	/* default */	"0.010",
+	/* def */	"0.010",
 	/* units */	"seconds",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"How long the ban lurker sleeps after examining ${ban_lurker_batch} "
 	"objects."
 	"  Use this to pace the ban-lurker if it eats too many resources.\n"
@@ -209,26 +209,26 @@ PARAM(
 
 PARAM(
 	/* name */	ban_lurker_holdoff,
-	/* typ */	timeout,
+	/* type */	timeout,
 	/* min */	"0",
 	/* max */	NULL,
-	/* default */	"0.010",
+	/* def */	"0.010",
 	/* units */	"seconds",
 	/* flags */	EXPERIMENTAL,
-	/* s-text */
+	/* descr */
 	"How long the ban lurker sleeps when giving way to lookup"
 	" due to lock contention."
 )
 
 PARAM(
 	/* name */	first_byte_timeout,
-	/* typ */	timeout,
+	/* type */	timeout,
 	/* min */	"0",
 	/* max */	NULL,
-	/* default */	"60",
+	/* def */	"60",
 	/* units */	"seconds",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"Default timeout for receiving first byte from backend. We only "
 	"wait for this many seconds for the first byte before giving up.\n"
 	"VCL can override this default value for each backend and backend "
@@ -238,13 +238,13 @@ PARAM(
 
 PARAM(
 	/* name */	between_bytes_timeout,
-	/* typ */	timeout,
+	/* type */	timeout,
 	/* min */	"0",
 	/* max */	NULL,
-	/* default */	"60",
+	/* def */	"60",
 	/* units */	"seconds",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"We only wait for this many seconds between bytes received from "
 	"the backend before giving up the fetch.\n"
 	"VCL values, per backend or per backend request take precedence.\n"
@@ -253,25 +253,25 @@ PARAM(
 
 PARAM(
 	/* name */	backend_idle_timeout,
-	/* typ */	timeout,
+	/* type */	timeout,
 	/* min */	"1",
 	/* max */	NULL,
-	/* default */	"60",
+	/* def */	"60",
 	/* units */	"seconds",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"Timeout before we close unused backend connections."
 )
 
 PARAM(
 	/* name */	backend_local_error_holddown,
-	/* typ */	timeout,
+	/* type */	timeout,
 	/* min */	"0.000",
 	/* max */	NULL,
-	/* default */	"10.000",
+	/* def */	"10.000",
 	/* units */	"seconds",
 	/* flags */	EXPERIMENTAL,
-	/* s-text */
+	/* descr */
 	"When connecting to backends, certain error codes "
 	"(EADDRNOTAVAIL, EACCESS, EPERM) signal a local resource shortage "
 	"or configuration issue for which retrying connection attempts "
@@ -283,13 +283,13 @@ PARAM(
 
 PARAM(
 	/* name */	backend_remote_error_holddown,
-	/* typ */	timeout,
+	/* type */	timeout,
 	/* min */	"0.000",
 	/* max */	NULL,
-	/* default */	"0.250",
+	/* def */	"0.250",
 	/* units */	"seconds",
 	/* flags */	EXPERIMENTAL,
-	/* s-text */
+	/* descr */
 	"When connecting to backends, certain error codes (ECONNREFUSED, "
 	"ENETUNREACH) signal fundamental connection issues such as the backend "
 	"not accepting connections or routing problems for which repeated "
@@ -300,13 +300,13 @@ PARAM(
 
 PARAM(
 	/* name */	cli_limit,
-	/* typ */	bytes_u,
+	/* type */	bytes_u,
 	/* min */	"128b",
 	/* max */	"99999999b",
-	/* default */	"48k",
+	/* def */	"48k",
 	/* units */	"bytes",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"Maximum size of CLI response.  If the response exceeds this "
 	"limit, the response code will be 201 instead of 200 and the last "
 	"line will indicate the truncation."
@@ -314,52 +314,52 @@ PARAM(
 
 PARAM(
 	/* name */	cli_timeout,
-	/* typ */	timeout,
+	/* type */	timeout,
 	/* min */	"0.000",
 	/* max */	NULL,
-	/* default */	"60.000",
+	/* def */	"60.000",
 	/* units */	"seconds",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"Timeout for the childs replies to CLI requests from the "
 	"mgt_param."
 )
 
 PARAM(
 	/* name */	clock_skew,
-	/* typ */	uint,
+	/* type */	uint,
 	/* min */	"0",
 	/* max */	NULL,
-	/* default */	"10",
+	/* def */	"10",
 	/* units */	"seconds",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"How much clockskew we are willing to accept between the backend "
 	"and our own clock."
 )
 
 PARAM(
 	/* name */	clock_step,
-	/* typ */	timeout,
+	/* type */	timeout,
 	/* min */	"0.000",
 	/* max */	NULL,
-	/* default */	"1.000",
+	/* def */	"1.000",
 	/* units */	"seconds",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"How much observed clock step we are willing to accept before "
 	"we panic."
 )
 
 PARAM(
 	/* name */	connect_timeout,
-	/* typ */	timeout,
+	/* type */	timeout,
 	/* min */	"0.000",
 	/* max */	NULL,
-	/* default */	"3.500",
+	/* def */	"3.500",
 	/* units */	"seconds",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"Default connection timeout for backend connections. We only try "
 	"to connect to the backend for this many seconds before giving up. "
 	"VCL can override this default value for each backend and backend "
@@ -368,13 +368,13 @@ PARAM(
 
 PARAM(
 	/* name */	critbit_cooloff,
-	/* typ */	timeout,
+	/* type */	timeout,
 	/* min */	"60.000",
 	/* max */	"254.000",
-	/* default */	"180.000",
+	/* def */	"180.000",
 	/* units */	"seconds",
 	/* flags */	WIZARD,
-	/* s-text */
+	/* descr */
 	"How long the critbit hasher keeps deleted objheads on the cooloff "
 	"list."
 )
@@ -384,13 +384,13 @@ PARAM(
 /* see tbl/debug_bits.h */
 PARAM(
 	/* name */	debug,
-	/* typ */	debug,
+	/* type */	debug,
 	/* min */	NULL,
 	/* max */	NULL,
-	/* default */	NULL,
+	/* def */	NULL,
 	/* units */	NULL,
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"Enable/Disable various kinds of debugging.\n"
 	"	none	Disable all debugging\n"
 	"\n"
@@ -411,13 +411,13 @@ PARAM(
 
 PARAM(
 	/* name */	default_grace,
-	/* typ */	timeout,
+	/* type */	timeout,
 	/* min */	"0.000",
 	/* max */	NULL,
-	/* default */	"10.000",
+	/* def */	"10.000",
 	/* units */	"seconds",
 	/* flags */	OBJ_STICKY,
-	/* s-text */
+	/* descr */
 	"Default grace period.  We will deliver an object this long after "
 	"it has expired, provided another thread is attempting to get a "
 	"new copy."
@@ -425,13 +425,13 @@ PARAM(
 
 PARAM(
 	/* name */	default_keep,
-	/* typ */	timeout,
+	/* type */	timeout,
 	/* min */	"0.000",
 	/* max */	NULL,
-	/* default */	"0.000",
+	/* def */	"0.000",
 	/* units */	"seconds",
 	/* flags */	OBJ_STICKY,
-	/* s-text */
+	/* descr */
 	"Default keep period.  We will keep a useless object around this "
 	"long, making it available for conditional backend fetches.  That "
 	"means that the object will be removed from the cache at the end "
@@ -440,26 +440,26 @@ PARAM(
 
 PARAM(
 	/* name */	default_ttl,
-	/* typ */	timeout,
+	/* type */	timeout,
 	/* min */	"0.000",
 	/* max */	NULL,
-	/* default */	"120.000",
+	/* def */	"120.000",
 	/* units */	"seconds",
 	/* flags */	OBJ_STICKY,
-	/* s-text */
+	/* descr */
 	"The TTL assigned to objects if neither the backend nor the VCL "
 	"code assigns one."
 )
 
 PARAM(
 	/* name */	http1_iovs,
-	/* typ */	uint,
+	/* type */	uint,
 	/* min */	"5",
 	/* max */	"1024",		// XXX stringify IOV_MAX
-	/* default */	"64",
+	/* def */	"64",
 	/* units */	"struct iovec (=16 bytes)",
 	/* flags */	WIZARD,
-	/* s-text */
+	/* descr */
 	"Number of io vectors to allocate for HTTP1 protocol transmission."
 	"  A HTTP1 header needs 7 + 2 per HTTP header field."
 	"  Allocated from workspace_thread."
@@ -470,13 +470,13 @@ PARAM(
 /* See tbl/feature_bits.h */
 PARAM(
 	/* name */	feature,
-	/* typ */	feature,
+	/* type */	feature,
 	/* min */	NULL,
 	/* max */	NULL,
-	/* default */	NULL,
+	/* def */	NULL,
 	/* units */	NULL,
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"Enable/Disable various minor features.\n"
 	"	none	Disable all features.\n"
 	"\n"
@@ -493,13 +493,13 @@ PARAM(
 
 PARAM(
 	/* name */	fetch_chunksize,
-	/* typ */	bytes,
+	/* type */	bytes,
 	/* min */	"4k",
 	/* max */	NULL,
-	/* default */	"16k",
+	/* def */	"16k",
 	/* units */	"bytes",
 	/* flags */	EXPERIMENTAL,
-	/* s-text */
+	/* descr */
 	"The default chunksize used by fetcher. This should be bigger than "
 	"the majority of objects with short TTLs.\n"
 	"Internal limits in the storage_file module makes increases above "
@@ -508,26 +508,26 @@ PARAM(
 
 PARAM(
 	/* name */	fetch_maxchunksize,
-	/* typ */	bytes,
+	/* type */	bytes,
 	/* min */	"64k",
 	/* max */	NULL,
-	/* default */	"0.25G",
+	/* def */	"0.25G",
 	/* units */	"bytes",
 	/* flags */	EXPERIMENTAL,
-	/* s-text */
+	/* descr */
 	"The maximum chunksize we attempt to allocate from storage. Making "
 	"this too large may cause delays and storage fragmentation."
 )
 
 PARAM(
 	/* name */	gzip_buffer,
-	/* typ */	bytes_u,
+	/* type */	bytes_u,
 	/* min */	"2k",
 	/* max */	NULL,
-	/* default */	"32k",
+	/* def */	"32k",
 	/* units */	"bytes",
 	/* flags */	EXPERIMENTAL,
-	/* s-text */
+	/* descr */
 	"Size of malloc buffer used for gzip processing.\n"
 	"These buffers are used for in-transit data, for instance "
 	"gunzip'ed data being sent to a client.Making this space to small "
@@ -537,38 +537,38 @@ PARAM(
 
 PARAM(
 	/* name */	gzip_level,
-	/* typ */	uint,
+	/* type */	uint,
 	/* min */	"0",
 	/* max */	"9",
-	/* default */	"6",
+	/* def */	"6",
 	/* units */	NULL,
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"Gzip compression level: 0=debug, 1=fast, 9=best"
 )
 
 PARAM(
 	/* name */	gzip_memlevel,
-	/* typ */	uint,
+	/* type */	uint,
 	/* min */	"1",
 	/* max */	"9",
-	/* default */	"8",
+	/* def */	"8",
 	/* units */	NULL,
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"Gzip memory level 1=slow/least, 9=fast/most compression.\n"
 	"Memory impact is 1=1k, 2=2k, ... 9=256k."
 )
 
 PARAM(
 	/* name */	http_gzip_support,
-	/* typ */	bool,
+	/* type */	bool,
 	/* min */	NULL,
 	/* max */	NULL,
-	/* default */	"on",
+	/* def */	"on",
 	/* units */	"bool",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"Enable gzip support. When enabled Varnish request compressed "
 	"objects from the backend and store them compressed. If a client "
 	"does not support gzip encoding Varnish will uncompress compressed "
@@ -587,13 +587,13 @@ PARAM(
 
 PARAM(
 	/* name */	http_max_hdr,
-	/* typ */	uint,
+	/* type */	uint,
 	/* min */	"32",
 	/* max */	"65535",
-	/* default */	"64",
+	/* def */	"64",
 	/* units */	"header lines",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"Maximum number of HTTP header lines we allow in "
 	"{req|resp|bereq|beresp}.http (obj.http is autosized to the exact "
 	"number of headers).\n"
@@ -603,38 +603,38 @@ PARAM(
 
 PARAM(
 	/* name */	http_range_support,
-	/* typ */	bool,
+	/* type */	bool,
 	/* min */	NULL,
 	/* max */	NULL,
-	/* default */	"on",
+	/* def */	"on",
 	/* units */	"bool",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"Enable support for HTTP Range headers."
 )
 
 PARAM(
 	/* name */	http_req_hdr_len,
-	/* typ */	bytes_u,
+	/* type */	bytes_u,
 	/* min */	"40b",
 	/* max */	NULL,
-	/* default */	"8k",
+	/* def */	"8k",
 	/* units */	"bytes",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"Maximum length of any HTTP client request header we will allow.  "
 	"The limit is inclusive its continuation lines."
 )
 
 PARAM(
 	/* name */	http_req_size,
-	/* typ */	bytes_u,
+	/* type */	bytes_u,
 	/* min */	"0.25k",
 	/* max */	NULL,
-	/* default */	"32k",
+	/* def */	"32k",
 	/* units */	"bytes",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"Maximum number of bytes of HTTP client request we will deal with. "
 	" This is a limit on all bytes up to the double blank line which "
 	"ends the HTTP request.\n"
@@ -645,26 +645,26 @@ PARAM(
 
 PARAM(
 	/* name */	http_resp_hdr_len,
-	/* typ */	bytes_u,
+	/* type */	bytes_u,
 	/* min */	"40b",
 	/* max */	NULL,
-	/* default */	"8k",
+	/* def */	"8k",
 	/* units */	"bytes",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"Maximum length of any HTTP backend response header we will allow. "
 	" The limit is inclusive its continuation lines."
 )
 
 PARAM(
 	/* name */	http_resp_size,
-	/* typ */	bytes_u,
+	/* type */	bytes_u,
 	/* min */	"0.25k",
 	/* max */	NULL,
-	/* default */	"32k",
+	/* def */	"32k",
 	/* units */	"bytes",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"Maximum number of bytes of HTTP backend response we will deal "
 	"with.  This is a limit on all bytes up to the double blank line "
 	"which ends the HTTP response.\n"
@@ -684,13 +684,13 @@ PARAM(
 #endif
 PARAM(
 	/* name */	idle_send_timeout,
-	/* typ */	timeout,
+	/* type */	timeout,
 	/* min */	"0.000",
 	/* max */	NULL,
-	/* default */	"60.000",
+	/* def */	"60.000",
 	/* units */	"seconds",
 	/* flags */	XYZZY,
-	/* s-text */
+	/* descr */
 	"Send timeout for individual pieces of data on client connections."
 	" May get extended if 'send_timeout' applies.\n\n"
 	"When this timeout is hit, the session is closed.\n\n"
@@ -701,25 +701,25 @@ PARAM(
 
 PARAM(
 	/* name */	listen_depth,
-	/* typ */	uint,
+	/* type */	uint,
 	/* min */	"0",
 	/* max */	NULL,
-	/* default */	"1024",
+	/* def */	"1024",
 	/* units */	"connections",
 	/* flags */	MUST_RESTART,
-	/* s-text */
+	/* descr */
 	"Listen queue depth."
 )
 
 PARAM(
 	/* name */	lru_interval,
-	/* typ */	timeout,
+	/* type */	timeout,
 	/* min */	"0.000",
 	/* max */	NULL,
-	/* default */	"2.000",
+	/* def */	"2.000",
 	/* units */	"seconds",
 	/* flags */	EXPERIMENTAL,
-	/* s-text */
+	/* descr */
 	"Grace period before object moves on LRU list.\n"
 	"Objects are only moved to the front of the LRU list if they have "
 	"not been moved there already inside this timeout period.  This "
@@ -729,49 +729,49 @@ PARAM(
 
 PARAM(
 	/* name */	max_esi_depth,
-	/* typ */	uint,
+	/* type */	uint,
 	/* min */	"0",
 	/* max */	NULL,
-	/* default */	"5",
+	/* def */	"5",
 	/* units */	"levels",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"Maximum depth of esi:include processing."
 )
 
 PARAM(
 	/* name */	max_restarts,
-	/* typ */	uint,
+	/* type */	uint,
 	/* min */	"0",
 	/* max */	NULL,
-	/* default */	"4",
+	/* def */	"4",
 	/* units */	"restarts",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"Upper limit on how many times a request can restart."
 )
 
 PARAM(
 	/* name */	max_retries,
-	/* typ */	uint,
+	/* type */	uint,
 	/* min */	"0",
 	/* max */	NULL,
-	/* default */	"4",
+	/* def */	"4",
 	/* units */	"retries",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"Upper limit on how many times a backend fetch can retry."
 )
 
 PARAM(
 	/* name */	nuke_limit,
-	/* typ */	uint,
+	/* type */	uint,
 	/* min */	"0",
 	/* max */	NULL,
-	/* default */	"50",
+	/* def */	"50",
 	/* units */	"allocations",
 	/* flags */	EXPERIMENTAL,
-	/* s-text */
+	/* descr */
 	"Maximum number of objects we attempt to nuke in order to make "
 	"space for a object body."
 )
@@ -780,13 +780,13 @@ PARAM(
 /* actual location mgt_param_tbl.c */
 PARAM(
 	/* name */	pcre_match_limit,
-	/* typ */	uint,
+	/* type */	uint,
 	/* min */	"1",
 	/* max */	NULL,
-	/* default */	"1.000",
+	/* def */	"1.000",
 	/* units */	NULL,
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"The limit for the  number of internal matching function calls in "
 	"a pcre_exec() execution."
 )
@@ -794,13 +794,13 @@ PARAM(
 /* actual location mgt_param_tbl.c */
 PARAM(
 	/* name */	pcre_match_limit_recursion,
-	/* typ */	uint,
+	/* type */	uint,
 	/* min */	"1",
 	/* max */	NULL,
-	/* default */	"1.000",
+	/* def */	"1.000",
 	/* units */	NULL,
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"The limit for the  number of internal matching function "
 	"recursions in a pcre_exec() execution."
 )
@@ -808,13 +808,13 @@ PARAM(
 
 PARAM(
 	/* name */	ping_interval,
-	/* typ */	uint,
+	/* type */	uint,
 	/* min */	"0",
 	/* max */	NULL,
-	/* default */	"3",
+	/* def */	"3",
 	/* units */	"seconds",
 	/* flags */	MUST_RESTART,
-	/* s-text */
+	/* descr */
 	"Interval between pings from parent to child.\n"
 	"Zero will disable pinging entirely, which makes it possible to "
 	"attach a debugger to the child."
@@ -822,25 +822,25 @@ PARAM(
 
 PARAM(
 	/* name */	pipe_sess_max,
-	/* typ */	uint,
+	/* type */	uint,
 	/* min */	"0",
 	/* max */	NULL,
-	/* default */	"0",
+	/* def */	"0",
 	/* units */	"connections",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"Maximum number of sessions dedicated to pipe transactions."
 )
 
 PARAM(
 	/* name */	pipe_timeout,
-	/* typ */	timeout,
+	/* type */	timeout,
 	/* min */	"0.000",
 	/* max */	NULL,
-	/* default */	"60.000",
+	/* def */	"60.000",
 	/* units */	"seconds",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"Idle timeout for PIPE sessions. If nothing have been received in "
 	"either direction for this many seconds, the session is closed."
 )
@@ -849,13 +849,13 @@ PARAM(
 /* actual location mgt_param_tbl.c */
 PARAM(
 	/* name */	pool_req,
-	/* typ */	poolparam,
+	/* type */	poolparam,
 	/* min */	NULL,
 	/* max */	NULL,
-	/* default */	"10,100,10",
+	/* def */	"10,100,10",
 	/* units */	NULL,
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"Parameters for per worker pool request memory pool.\n"
 	MEMPOOL_TEXT
 )
@@ -863,13 +863,13 @@ PARAM(
 /* actual location mgt_param_tbl.c */
 PARAM(
 	/* name */	pool_sess,
-	/* typ */	poolparam,
+	/* type */	poolparam,
 	/* min */	NULL,
 	/* max */	NULL,
-	/* default */	"10,100,10",
+	/* def */	"10,100,10",
 	/* units */	NULL,
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"Parameters for per worker pool session memory pool.\n"
 	MEMPOOL_TEXT
 )
@@ -877,13 +877,13 @@ PARAM(
 /* actual location mgt_param_tbl.c */
 PARAM(
 	/* name */	pool_vbo,
-	/* typ */	poolparam,
+	/* type */	poolparam,
 	/* min */	NULL,
 	/* max */	NULL,
-	/* default */	"10,100,10",
+	/* def */	"10,100,10",
 	/* units */	NULL,
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"Parameters for backend object fetch memory pool.\n"
 	MEMPOOL_TEXT
 )
@@ -891,26 +891,26 @@ PARAM(
 
 PARAM(
 	/* name */	prefer_ipv6,
-	/* typ */	bool,
+	/* type */	bool,
 	/* min */	NULL,
 	/* max */	NULL,
-	/* default */	"off",
+	/* def */	"off",
 	/* units */	"bool",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"Prefer IPv6 address when connecting to backends which have both "
 	"IPv4 and IPv6 addresses."
 )
 
 PARAM(
 	/* name */	rush_exponent,
-	/* typ */	uint,
+	/* type */	uint,
 	/* min */	"2",
 	/* max */	NULL,
-	/* default */	"3",
+	/* def */	"3",
 	/* units */	"requests per request",
 	/* flags */	EXPERIMENTAL,
-	/* s-text */
+	/* descr */
 	"How many parked request we start for each completed request on "
 	"the object.\n"
 	"NB: Even with the implict delay of delivery, this parameter "
@@ -928,13 +928,13 @@ PARAM(
 #endif
 PARAM(
 	/* name */	send_timeout,
-	/* typ */	timeout,
+	/* type */	timeout,
 	/* min */	"0.000",
 	/* max */	NULL,
-	/* default */	"600.000",
+	/* def */	"600.000",
 	/* units */	"seconds",
 	/* flags */	XYZZY,
-	/* s-text */
+	/* descr */
 	"Total timeout for ordinary HTTP1 responses. Does not apply to some"
 	" internally generated errors and pipe mode.\n\n"
 	"When 'idle_send_timeout' is hit while sending an HTTP1 response, the"
@@ -946,39 +946,39 @@ PARAM(
 
 PARAM(
 	/* name */	shortlived,
-	/* typ */	timeout,
+	/* type */	timeout,
 	/* min */	"0.000",
 	/* max */	NULL,
-	/* default */	"10.000",
+	/* def */	"10.000",
 	/* units */	"seconds",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"Objects created with (ttl+grace+keep) shorter than this are "
 	"always put in transient storage."
 )
 
 PARAM(
 	/* name */	sigsegv_handler,
-	/* typ */	bool,
+	/* type */	bool,
 	/* min */	NULL,
 	/* max */	NULL,
-	/* default */	"on",
+	/* def */	"on",
 	/* units */	"bool",
 	/* flags */	MUST_RESTART,
-	/* s-text */
+	/* descr */
 	"Install a signal handler which tries to dump debug information on "
 	"segmentation faults, bus errors and abort signals."
 )
 
 PARAM(
 	/* name */	syslog_cli_traffic,
-	/* typ */	bool,
+	/* type */	bool,
 	/* min */	NULL,
 	/* max */	NULL,
-	/* default */	"on",
+	/* def */	"on",
 	/* units */	"bool",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"Log all CLI traffic to syslog(LOG_INFO)."
 )
 
@@ -989,13 +989,13 @@ PARAM(
 #endif
 PARAM(
 	/* name */	tcp_fastopen,
-	/* typ */	bool,
+	/* type */	bool,
 	/* min */	NULL,
 	/* max */	NULL,
-	/* default */	"off",
+	/* def */	"off",
 	/* units */	"bool",
 	/* flags */	XYZZY,
-	/* s-text */
+	/* descr */
 	"Enable TCP Fast Open extension."
 )
 #undef XYZZY
@@ -1007,26 +1007,26 @@ PARAM(
 #endif
 PARAM(
 	/* name */	tcp_keepalive_intvl,
-	/* typ */	timeout,
+	/* type */	timeout,
 	/* min */	"1",
 	/* max */	"100",
-	/* default */	"",
+	/* def */	"",
 	/* units */	"seconds",
 	/* flags */	XYZZY,
-	/* s-text */
+	/* descr */
 	"The number of seconds between TCP keep-alive probes. "
 	"Ignored for Unix domain sockets."
 )
 
 PARAM(
 	/* name */	tcp_keepalive_probes,
-	/* typ */	uint,
+	/* type */	uint,
 	/* min */	"1",
 	/* max */	"100",
-	/* default */	"",
+	/* def */	"",
 	/* units */	"probes",
 	/* flags */	XYZZY,
-	/* s-text */
+	/* descr */
 	"The maximum number of TCP keep-alive probes to send before giving "
 	"up and killing the connection if no response is obtained from the "
 	"other end. Ignored for Unix domain sockets."
@@ -1034,13 +1034,13 @@ PARAM(
 
 PARAM(
 	/* name */	tcp_keepalive_time,
-	/* typ */	timeout,
+	/* type */	timeout,
 	/* min */	"1",
 	/* max */	"7200",
-	/* default */	"",
+	/* def */	"",
 	/* units */	"seconds",
 	/* flags */	XYZZY,
-	/* s-text */
+	/* descr */
 	"The number of seconds a connection needs to be idle before TCP "
 	"begins sending out keep-alive probes. "
 	"Ignored for Unix domain sockets."
@@ -1051,13 +1051,13 @@ PARAM(
 /* actual location mgt_pool.c */
 PARAM(
 	/* name */	thread_pool_add_delay,
-	/* typ */	timeout,
+	/* type */	timeout,
 	/* min */	"0.000",
 	/* max */	NULL,
-	/* default */	"0.000",
+	/* def */	"0.000",
 	/* units */	"seconds",
 	/* flags */	EXPERIMENTAL,
-	/* s-text */
+	/* descr */
 	"Wait at least this long after creating a thread.\n"
 	"\n"
 	"Some (buggy) systems may need a short (sub-second) delay between "
@@ -1070,13 +1070,13 @@ PARAM(
 /* actual location mgt_pool.c */
 PARAM(
 	/* name */	thread_pool_watchdog,
-	/* typ */	timeout,
+	/* type */	timeout,
 	/* min */	"0.1",
 	/* max */	NULL,
-	/* default */	"60.000",
+	/* def */	"60.000",
 	/* units */	"seconds",
 	/* flags */	EXPERIMENTAL,
-	/* s-text */
+	/* descr */
 	"Thread queue stuck watchdog.\n"
 	"\n"
 	"If no queued work have been released for this long,"
@@ -1086,13 +1086,13 @@ PARAM(
 /* actual location mgt_pool.c */
 PARAM(
 	/* name */	thread_pool_destroy_delay,
-	/* typ */	timeout,
+	/* type */	timeout,
 	/* min */	"0.010",
 	/* max */	NULL,
-	/* default */	"1.000",
+	/* def */	"1.000",
 	/* units */	"seconds",
 	/* flags */	DELAYED_EFFECT| EXPERIMENTAL,
-	/* s-text */
+	/* descr */
 	"Wait this long after destroying a thread.\n"
 	"This controls the decay of thread pools when idle(-ish)."
 )
@@ -1100,13 +1100,13 @@ PARAM(
 /* actual location mgt_pool.c */
 PARAM(
 	/* name */	thread_pool_fail_delay,
-	/* typ */	timeout,
+	/* type */	timeout,
 	/* min */	"0.010",
 	/* max */	NULL,
-	/* default */	"0.200",
+	/* def */	"0.200",
 	/* units */	"seconds",
 	/* flags */	EXPERIMENTAL,
-	/* s-text */
+	/* descr */
 	"Wait at least this long after a failed thread creation before "
 	"trying to create another thread.\n"
 	"\n"
@@ -1125,13 +1125,13 @@ PARAM(
 /* actual location mgt_pool.c */
 PARAM(
 	/* name */	thread_pool_max,
-	/* typ */	thread_pool_max,
+	/* type */	thread_pool_max,
 	/* min */	"100",
 	/* max */	NULL,
-	/* default */	"5000",
+	/* def */	"5000",
 	/* units */	"threads",
 	/* flags */	DELAYED_EFFECT,
-	/* s-text */
+	/* descr */
 	"The maximum number of worker threads in each pool.\n"
 	"\n"
 	"Do not set this higher than you have to, since excess worker "
@@ -1142,13 +1142,13 @@ PARAM(
 /* actual location mgt_pool.c */
 PARAM(
 	/* name */	thread_pool_min,
-	/* typ */	thread_pool_min,
+	/* type */	thread_pool_min,
 	/* min */	NULL,
 	/* max */	"5000",
-	/* default */	"100",
+	/* def */	"100",
 	/* units */	"threads",
 	/* flags */	DELAYED_EFFECT,
-	/* s-text */
+	/* descr */
 	"The minimum number of worker threads in each pool.\n"
 	"\n"
 	"Increasing this may help ramp up faster from low load situations "
@@ -1159,13 +1159,13 @@ PARAM(
 /* actual location mgt_pool.c */
 PARAM(
 	/* name */	thread_pool_reserve,
-	/* typ */	thread_pool_reserve,
+	/* type */	thread_pool_reserve,
 	/* min */	NULL,
 	/* max */	NULL,
-	/* default */	"0",
+	/* def */	"0",
 	/* units */	"threads",
 	/* flags */	DELAYED_EFFECT| EXPERIMENTAL,
-	/* s-text */
+	/* descr */
 	"The number of worker threads reserved for vital tasks "
 	"in each pool.\n"
 	"\n"
@@ -1186,13 +1186,13 @@ PARAM(
 /* actual location mgt_pool.c */
 PARAM(
 	/* name */	thread_pool_stack,
-	/* typ */	bytes,
+	/* type */	bytes,
 	/* min */	"2k",
 	/* max */	NULL,
-	/* default */	"56k",
+	/* def */	"56k",
 	/* units */	"bytes",
 	/* flags */	EXPERIMENTAL,
-	/* s-text */
+	/* descr */
 	"Worker thread stack size.\n"
 	"This will likely be rounded up to a multiple of 4k (or whatever "
 	"the page_size might be) by the kernel."
@@ -1201,13 +1201,13 @@ PARAM(
 /* actual location mgt_pool.c */
 PARAM(
 	/* name */	thread_pool_timeout,
-	/* typ */	timeout,
+	/* type */	timeout,
 	/* min */	"10.000",
 	/* max */	NULL,
-	/* default */	"300.000",
+	/* def */	"300.000",
 	/* units */	"seconds",
 	/* flags */	DELAYED_EFFECT| EXPERIMENTAL,
-	/* s-text */
+	/* descr */
 	"Thread idle threshold.\n"
 	"\n"
 	"Threads in excess of thread_pool_min, which have been idle for at "
@@ -1217,13 +1217,13 @@ PARAM(
 /* actual location mgt_pool.c */
 PARAM(
 	/* name */	thread_pools,
-	/* typ */	uint,
+	/* type */	uint,
 	/* min */	"1",
 	/* max */	NULL,
-	/* default */	"2",
+	/* def */	"2",
 	/* units */	"pools",
 	/* flags */	DELAYED_EFFECT| EXPERIMENTAL,
-	/* s-text */
+	/* descr */
 	"Number of worker thread pools.\n"
 	"\n"
 	"Increasing the number of worker pools decreases lock "
@@ -1242,13 +1242,13 @@ PARAM(
 /* actual location mgt_pool.c */
 PARAM(
 	/* name */	thread_queue_limit,
-	/* typ */	uint,
+	/* type */	uint,
 	/* min */	"0",
 	/* max */	NULL,
-	/* default */	"20",
+	/* def */	"20",
 	/* units */	NULL,
 	/* flags */	EXPERIMENTAL,
-	/* s-text */
+	/* descr */
 	"Permitted request queue length per thread-pool.\n"
 	"\n"
 	"This sets the number of requests we will queue, waiting for an "
@@ -1259,13 +1259,13 @@ PARAM(
 /* actual location mgt_pool.c */
 PARAM(
 	/* name */	thread_stats_rate,
-	/* typ */	uint,
+	/* type */	uint,
 	/* min */	"0",
 	/* max */	NULL,
-	/* default */	"10",
+	/* def */	"10",
 	/* units */	"requests",
 	/* flags */	EXPERIMENTAL,
-	/* s-text */
+	/* descr */
 	"Worker threads accumulate statistics, and dump these into the "
 	"global stats counters if the lock is free when they finish a job "
 	"(request/fetch etc).\n"
@@ -1286,13 +1286,13 @@ PARAM(
 #endif
 PARAM(
 	/* name */	timeout_idle,
-	/* typ */	timeout,
+	/* type */	timeout,
 	/* min */	"0.000",
 	/* max */	NULL,
-	/* default */	"5.000",
+	/* def */	"5.000",
 	/* units */	"seconds",
 	/* flags */	XYZZY,
-	/* s-text */
+	/* descr */
 	"Idle timeout for client connections.\n\n"
 	"A connection is considered idle until we have received the full"
 	" request headers.\n\n"
@@ -1304,13 +1304,13 @@ PARAM(
 
 PARAM(
 	/* name */	timeout_linger,
-	/* typ */	timeout,
+	/* type */	timeout,
 	/* min */	"0.000",
 	/* max */	NULL,
-	/* default */	"0.050",
+	/* def */	"0.050",
 	/* units */	"seconds",
 	/* flags */	EXPERIMENTAL,
-	/* s-text */
+	/* descr */
 	"How long the worker thread lingers on an idle session before "
 	"handing it over to the waiter.\n"
 	"When sessions are reused, as much as half of all reuses happen "
@@ -1324,39 +1324,39 @@ PARAM(
 /* actual location mgt_param_tbl.c */
 PARAM(
 	/* name */	vcc_allow_inline_c,
-	/* typ */	bool,
+	/* type */	bool,
 	/* min */	NULL,
 	/* max */	NULL,
-	/* default */	"off",
+	/* def */	"off",
 	/* units */	"bool",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"Allow inline C code in VCL."
 )
 
 /* actual location mgt_param_tbl.c */
 PARAM(
 	/* name */	vcc_err_unref,
-	/* typ */	bool,
+	/* type */	bool,
 	/* min */	NULL,
 	/* max */	NULL,
-	/* default */	"on",
+	/* def */	"on",
 	/* units */	"bool",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"Unreferenced VCL objects result in error."
 )
 
 /* actual location mgt_param_tbl.c */
 PARAM(
 	/* name */	vcc_unsafe_path,
-	/* typ */	bool,
+	/* type */	bool,
 	/* min */	NULL,
 	/* max */	NULL,
-	/* default */	"on",
+	/* def */	"on",
 	/* units */	"bool",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"Allow '/' in vmod & include paths.\n"
 	"Allow 'import ... from ...'."
 )
@@ -1364,26 +1364,26 @@ PARAM(
 
 PARAM(
 	/* name */	vcl_cooldown,
-	/* typ */	timeout,
+	/* type */	timeout,
 	/* min */	"1.000",
 	/* max */	NULL,
-	/* default */	"600.000",
+	/* def */	"600.000",
 	/* units */	"seconds",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"How long a VCL is kept warm after being replaced as the "
 	"active VCL (granularity approximately 30 seconds)."
 )
 
 PARAM(
 	/* name */	max_vcl_handling,
-	/* typ */	uint,
+	/* type */	uint,
 	/* min */	"0",
 	/* max */	"2",
-	/* default */	"1",
+	/* def */	"1",
 	/* units */	NULL,
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"Behaviour when attempting to exceed max_vcl loaded VCL.\n"
 	"\n*  0 - Ignore max_vcl parameter.\n"
 	"\n*  1 - Issue warning.\n"
@@ -1392,39 +1392,39 @@ PARAM(
 
 PARAM(
 	/* name */	max_vcl,
-	/* typ */	uint,
+	/* type */	uint,
 	/* min */	"0",
 	/* max */	NULL,
-	/* default */	"100",
+	/* def */	"100",
 	/* units */	NULL,
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"Threshold of loaded VCL programs.  (VCL labels are not counted.)"
 	"  Parameter max_vcl_handling determines behaviour."
 )
 
 PARAM(
 	/* name */	vsm_free_cooldown,
-	/* typ */	timeout,
+	/* type */	timeout,
 	/* min */	"10.000",
 	/* max */	"600.000",
-	/* default */	"60.000",
+	/* def */	"60.000",
 	/* units */	"seconds",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"How long VSM memory is kept warm after a deallocation "
 	"(granularity approximately 2 seconds)."
 )
 
 PARAM(
 	/* name */	vsl_buffer,
-	/* typ */	vsl_buffer,
+	/* type */	vsl_buffer,
 	/* min */	"267",
 	/* max */	NULL,
-	/* default */	"4k",
+	/* def */	"4k",
 	/* units */	"bytes",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"Bytes of (req-/backend-)workspace dedicated to buffering VSL "
 	"records.\n"
 	"When this parameter is adjusted, most likely workspace_client "
@@ -1439,13 +1439,13 @@ PARAM(
 /* actual location mgt_param_bits.c*/
 PARAM(
 	/* name */	vsl_mask,
-	/* typ */	vsl_mask,
+	/* type */	vsl_mask,
 	/* min */	NULL,
 	/* max */	NULL,
-	/* default */	"default",
+	/* def */	"default",
 	/* units */	NULL,
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"Mask individual VSL messages from being logged.\n"
 	"	default	Set default value\n"
 	"\n"
@@ -1456,13 +1456,13 @@ PARAM(
 
 PARAM(
 	/* name */	vsl_reclen,
-	/* typ */	vsl_reclen,
+	/* type */	vsl_reclen,
 	/* min */	"16b",
 	/* max */	NULL,
-	/* default */	"255b",
+	/* def */	"255b",
 	/* units */	"bytes",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"Maximum number of bytes in SHM log record.",
 	/* dyn_min_reason */	NULL,
 	/* dyn_max_reason */	"vsl_buffer - 12 bytes"
@@ -1470,13 +1470,13 @@ PARAM(
 
 PARAM(
 	/* name */	vsl_space,
-	/* typ */	bytes,
+	/* type */	bytes,
 	/* min */	"1M",
 	/* max */	"4G",
-	/* default */	"80M",
+	/* def */	"80M",
 	/* units */	"bytes",
 	/* flags */	MUST_RESTART,
-	/* s-text */
+	/* descr */
 	"The amount of space to allocate for the VSL fifo buffer in the "
 	"VSM memory segment.  If you make this too small, "
 	"varnish{ncsa|log} etc will not be able to keep up.  Making it too "
@@ -1485,13 +1485,13 @@ PARAM(
 
 PARAM(
 	/* name */	vsm_space,
-	/* typ */	bytes,
+	/* type */	bytes,
 	/* min */	"1M",
 	/* max */	"1G",
-	/* default */	"1M",
+	/* def */	"1M",
 	/* units */	"bytes",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"DEPRECATED: This parameter is ignored.\n"
 	"There is no global limit on amount of shared memory now."
 )
@@ -1500,39 +1500,39 @@ PARAM(
 /* see mgt_waiter.c */
 PARAM(
 	/* name */	waiter,
-	/* typ */	waiter,
+	/* type */	waiter,
 	/* min */	NULL,
 	/* max */	NULL,
-	/* default */	"kqueue (possible values: kqueue, poll)",
+	/* def */	"kqueue (possible values: kqueue, poll)",
 	/* units */	NULL,
 	/* flags */	MUST_RESTART| WIZARD,
-	/* s-text */
+	/* descr */
 	"Select the waiter kernel interface."
 )
 #endif
 
 PARAM(
 	/* name */	workspace_backend,
-	/* typ */	bytes_u,
+	/* type */	bytes_u,
 	/* min */	"1k",
 	/* max */	NULL,
-	/* default */	"64k",
+	/* def */	"64k",
 	/* units */	"bytes",
 	/* flags */	DELAYED_EFFECT,
-	/* s-text */
+	/* descr */
 	"Bytes of HTTP protocol workspace for backend HTTP req/resp.  If "
 	"larger than 4k, use a multiple of 4k for VM efficiency."
 )
 
 PARAM(
 	/* name */	workspace_client,
-	/* typ */	bytes_u,
+	/* type */	bytes_u,
 	/* min */	"9k",
 	/* max */	NULL,
-	/* default */	"64k",
+	/* def */	"64k",
 	/* units */	"bytes",
 	/* flags */	DELAYED_EFFECT,
-	/* s-text */
+	/* descr */
 	"Bytes of HTTP protocol workspace for clients HTTP req/resp.  Use a "
 	"multiple of 4k for VM efficiency.\n"
 	"For HTTP/2 compliance this must be at least 20k, in order to "
@@ -1543,13 +1543,13 @@ PARAM(
 
 PARAM(
 	/* name */	workspace_session,
-	/* typ */	bytes_u,
+	/* type */	bytes_u,
 	/* min */	"0.25k",
 	/* max */	NULL,
-	/* default */	"0.75k",
+	/* def */	"0.75k",
 	/* units */	"bytes",
 	/* flags */	DELAYED_EFFECT,
-	/* s-text */
+	/* descr */
 	"Allocation size for session structure and workspace.    The "
 	"workspace is primarily used for TCP connection addresses.  If "
 	"larger than 4k, use a multiple of 4k for VM efficiency."
@@ -1557,13 +1557,13 @@ PARAM(
 
 PARAM(
 	/* name */	workspace_thread,
-	/* typ */	bytes_u,
+	/* type */	bytes_u,
 	/* min */	"0.25k",
 	/* max */	"8k",
-	/* default */	"2k",
+	/* def */	"2k",
 	/* units */	"bytes",
 	/* flags */	DELAYED_EFFECT,
-	/* s-text */
+	/* descr */
 	"Bytes of auxiliary workspace per thread.\n"
 	"This workspace is used for certain temporary data structures "
 	"during the operation of a worker thread.\n"
@@ -1577,13 +1577,13 @@ PARAM(
 
 PARAM(
 	/* name */	h2_rx_window_low_water,
-	/* typ */	bytes_u,
+	/* type */	bytes_u,
 	/* min */	"65535",
 	/* max */	"1G",
-	/* default */	"10M",
+	/* def */	"10M",
 	/* units */	"bytes",
 	/* flags */	WIZARD,
-	/* s-text */
+	/* descr */
 	"HTTP2 Receive Window low water mark.\n"
 	"We try to keep the window at least this big\n"
 	"Only affects incoming request bodies (ie: POST, PUT etc.)"
@@ -1591,13 +1591,13 @@ PARAM(
 
 PARAM(
 	/* name */	h2_rx_window_increment,
-	/* typ */	bytes_u,
+	/* type */	bytes_u,
 	/* min */	"1M",
 	/* max */	"1G",
-	/* default */	"1M",
+	/* def */	"1M",
 	/* units */	"bytes",
 	/* flags */	WIZARD,
-	/* s-text */
+	/* descr */
 	"HTTP2 Receive Window Increments.\n"
 	"How big credits we send in WINDOW_UPDATE frames\n"
 	"Only affects incoming request bodies (ie: POST, PUT etc.)"
@@ -1605,13 +1605,13 @@ PARAM(
 
 PARAM(
 	/* name */	h2_header_table_size,
-	/* typ */	bytes_u,
+	/* type */	bytes_u,
 	/* min */	"0b",
 	/* max */	NULL,
-	/* default */	"4k",
+	/* def */	"4k",
 	/* units */	"bytes",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"HTTP2 header table size.\n"
 	"This is the size that will be used for the HPACK dynamic\n"
 	"decoding table."
@@ -1619,13 +1619,13 @@ PARAM(
 
 PARAM(
 	/* name */	h2_max_concurrent_streams,
-	/* typ */	uint,
+	/* type */	uint,
 	/* min */	"0",
 	/* max */	NULL,
-	/* default */	"100",
+	/* def */	"100",
 	/* units */	"streams",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"HTTP2 Maximum number of concurrent streams.\n"
 	"This is the number of requests that can be active\n"
 	"at the same time for a single HTTP2 connection."
@@ -1633,37 +1633,37 @@ PARAM(
 
 PARAM(
 	/* name */	h2_initial_window_size,
-	/* typ */	bytes_u,
+	/* type */	bytes_u,
 	/* min */	"0",
 	/* max */	"2147483647b",
-	/* default */	"65535b",
+	/* def */	"65535b",
 	/* units */	"bytes",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"HTTP2 initial flow control window size."
 )
 
 PARAM(
 	/* name */	h2_max_frame_size,
-	/* typ */	bytes_u,
+	/* type */	bytes_u,
 	/* min */	"16k",
 	/* max */	"16777215b",
-	/* default */	"16k",
+	/* def */	"16k",
 	/* units */	"bytes",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"HTTP2 maximum per frame payload size we are willing to accept."
 )
 
 PARAM(
 	/* name */	h2_max_header_list_size,
-	/* typ */	bytes_u,
+	/* type */	bytes_u,
 	/* min */	"0b",
 	/* max */	NULL,
-	/* default */	"2147483647b",
+	/* def */	"2147483647b",
 	/* units */	"bytes",
 	/* flags */	0,
-	/* s-text */
+	/* descr */
 	"HTTP2 maximum size of an uncompressed header list."
 )
 
