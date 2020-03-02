@@ -151,7 +151,16 @@ vcc_EmitProc(struct vcc *tl, struct proc *p)
 	AZ(VSB_finish(p->prologue));
 	AZ(VSB_finish(p->body));
 	Fh(tl, 1, "vcl_func_f %s;\n", VSB_data(p->cname));
-	Fc(tl, 1, "\nvoid v_matchproto_(vcl_func_f)\n");
+	/*
+	 * TODO: v_dont_optimize for custom subs called from vcl_init/fini only
+	 *
+	 * Needs infrastructure similar to that in #3163 : custom subs need a
+	 * mask containing the builtin subs calling the custom sub. If that is
+	 * no larger than VCL_MET_TASK_H, we can enable v_dont_optimize
+	 */
+	Fc(tl, 1, "\nvoid %sv_matchproto_(vcl_func_f)\n",
+	   p->method && p->method->bitval & VCL_MET_TASK_H ?
+	   "v_dont_optimize " : "");
 	Fc(tl, 1, "%s(VRT_CTX)\n", VSB_data(p->cname));
 	Fc(tl, 1, "{\n%s\n%s}\n", VSB_data(p->prologue), VSB_data(p->body));
 	VSB_destroy(&p->body);

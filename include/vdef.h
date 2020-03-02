@@ -100,6 +100,12 @@
 #  define v_deprecated_
 #endif
 
+#if __GNUC_PREREQ__(4,4) // added 2008-07-23
+#  define v_dont_optimize __attribute__((optimize("O")))
+#else
+#  define v_dont_optimize
+#endif
+
 /*********************************************************************
  * Pointer alignment magic
  */
