@@ -369,35 +369,6 @@ PARAM(
 	/* flags */	WIZARD
 )
 
-#if 0
-/* actual location mgt_param_bits.c*/
-/* see tbl/debug_bits.h */
-PARAM(
-	/* name */	debug,
-	/* type */	debug,
-	/* min */	NULL,
-	/* max */	NULL,
-	/* def */	NULL,
-	/* units */	NULL,
-	/* descr */
-	"Enable/Disable various kinds of debugging.\n"
-	"	none	Disable all debugging\n"
-	"\n"
-	"Use +/- prefix to set/reset individual bits:\n"
-	"	req_state	VSL Request state engine\n"
-	"	workspace	VSL Workspace operations\n"
-	"	waiter	VSL Waiter internals\n"
-	"	waitinglist	VSL Waitinglist events\n"
-	"	syncvsl	Make VSL synchronous\n"
-	"	hashedge	Edge cases in Hash\n"
-	"	vclrel	Rapid VCL release\n"
-	"	lurker	VSL Ban lurker\n"
-	"	esi_chop	Chop ESI fetch to bits\n"
-	"	flush_head	Flush after http1 head\n"
-	"	vtc_mode	Varnishtest Mode"
-)
-#endif
-
 PARAM(
 	/* name */	default_grace,
 	/* type */	timeout,
@@ -453,31 +424,6 @@ PARAM(
 	"  Allocated from workspace_thread.",
 	/* flags */	WIZARD
 )
-
-#if 0
-/* actual location mgt_param_bits.c*/
-/* See tbl/feature_bits.h */
-PARAM(
-	/* name */	feature,
-	/* type */	feature,
-	/* min */	NULL,
-	/* max */	NULL,
-	/* def */	NULL,
-	/* units */	NULL,
-	/* descr */
-	"Enable/Disable various minor features.\n"
-	"	none	Disable all features.\n"
-	"\n"
-	"Use +/- prefix to enable/disable individual feature:\n"
-	"	short_panic	Short panic message.\n"
-	"	wait_silo	Wait for persistent silo.\n"
-	"	no_coredump	No coredumps.\n"
-	"	esi_ignore_https	Treat HTTPS as HTTP in ESI:includes\n"
-	"	esi_disable_xml_check	Don't check of body looks like XML\n"
-	"	esi_ignore_other_elements	Ignore non-esi XML-elements\n"
-	"	esi_remove_bom	Remove UTF-8 BOM"
-)
-#endif
 
 PARAM(
 	/* name */	fetch_chunksize,
@@ -752,34 +698,6 @@ PARAM(
 	/* flags */	EXPERIMENTAL
 )
 
-#if 0
-/* actual location mgt_param_tbl.c */
-PARAM(
-	/* name */	pcre_match_limit,
-	/* type */	uint,
-	/* min */	"1",
-	/* max */	NULL,
-	/* def */	"1.000",
-	/* units */	NULL,
-	/* descr */
-	"The limit for the  number of internal matching function calls in "
-	"a pcre_exec() execution."
-)
-
-/* actual location mgt_param_tbl.c */
-PARAM(
-	/* name */	pcre_match_limit_recursion,
-	/* type */	uint,
-	/* min */	"1",
-	/* max */	NULL,
-	/* def */	"1.000",
-	/* units */	NULL,
-	/* descr */
-	"The limit for the  number of internal matching function "
-	"recursions in a pcre_exec() execution."
-)
-#endif
-
 PARAM(
 	/* name */	ping_interval,
 	/* type */	uint,
@@ -816,47 +734,6 @@ PARAM(
 	"Idle timeout for PIPE sessions. If nothing have been received in "
 	"either direction for this many seconds, the session is closed."
 )
-
-#if 0
-/* actual location mgt_param_tbl.c */
-PARAM(
-	/* name */	pool_req,
-	/* type */	poolparam,
-	/* min */	NULL,
-	/* max */	NULL,
-	/* def */	"10,100,10",
-	/* units */	NULL,
-	/* descr */
-	"Parameters for per worker pool request memory pool.\n"
-	MEMPOOL_TEXT
-)
-
-/* actual location mgt_param_tbl.c */
-PARAM(
-	/* name */	pool_sess,
-	/* type */	poolparam,
-	/* min */	NULL,
-	/* max */	NULL,
-	/* def */	"10,100,10",
-	/* units */	NULL,
-	/* descr */
-	"Parameters for per worker pool session memory pool.\n"
-	MEMPOOL_TEXT
-)
-
-/* actual location mgt_param_tbl.c */
-PARAM(
-	/* name */	pool_vbo,
-	/* type */	poolparam,
-	/* min */	NULL,
-	/* max */	NULL,
-	/* def */	"10,100,10",
-	/* units */	NULL,
-	/* descr */
-	"Parameters for backend object fetch memory pool.\n"
-	MEMPOOL_TEXT
-)
-#endif
 
 PARAM(
 	/* name */	prefer_ipv6,
@@ -1013,7 +890,428 @@ PARAM(
 )
 #undef XYZZY
 
+#if defined(XYZZY)
+  #error "Temporary macro XYZZY already defined"
+#endif
+
+#if defined(SO_RCVTIMEO_WORKS)
+  #define XYZZY 0
+#else
+  #define XYZZY NOT_IMPLEMENTED
+#endif
+PARAM(
+	/* name */	timeout_idle,
+	/* type */	timeout,
+	/* min */	"0.000",
+	/* max */	NULL,
+	/* def */	"5.000",
+	/* units */	"seconds",
+	/* descr */
+	"Idle timeout for client connections.\n\n"
+	"A connection is considered idle until we have received the full"
+	" request headers.\n\n"
+	"This parameter is particularly relevant for HTTP1 keepalive "
+	" connections which are closed unless the next request is received"
+	" before this timeout is reached.",
+	/* flags */	XYZZY
+)
+#undef XYZZY
+
+PARAM(
+	/* name */	timeout_linger,
+	/* type */	timeout,
+	/* min */	"0.000",
+	/* max */	NULL,
+	/* def */	"0.050",
+	/* units */	"seconds",
+	/* descr */
+	"How long the worker thread lingers on an idle session before "
+	"handing it over to the waiter.\n"
+	"When sessions are reused, as much as half of all reuses happen "
+	"within the first 100 msec of the previous request completing.\n"
+	"Setting this too high results in worker threads not doing "
+	"anything for their keep, setting it too low just means that more "
+	"sessions take a detour around the waiter.",
+	/* flags */	EXPERIMENTAL
+)
+
+PARAM(
+	/* name */	vcl_cooldown,
+	/* type */	timeout,
+	/* min */	"1.000",
+	/* max */	NULL,
+	/* def */	"600.000",
+	/* units */	"seconds",
+	/* descr */
+	"How long a VCL is kept warm after being replaced as the "
+	"active VCL (granularity approximately 30 seconds)."
+)
+
+PARAM(
+	/* name */	max_vcl_handling,
+	/* type */	uint,
+	/* min */	"0",
+	/* max */	"2",
+	/* def */	"1",
+	/* units */	NULL,
+	/* descr */
+	"Behaviour when attempting to exceed max_vcl loaded VCL.\n"
+	"\n*  0 - Ignore max_vcl parameter.\n"
+	"\n*  1 - Issue warning.\n"
+	"\n*  2 - Refuse loading VCLs."
+)
+
+PARAM(
+	/* name */	max_vcl,
+	/* type */	uint,
+	/* min */	"0",
+	/* max */	NULL,
+	/* def */	"100",
+	/* units */	NULL,
+	/* descr */
+	"Threshold of loaded VCL programs.  (VCL labels are not counted.)"
+	"  Parameter max_vcl_handling determines behaviour."
+)
+
+PARAM(
+	/* name */	vsm_free_cooldown,
+	/* type */	timeout,
+	/* min */	"10.000",
+	/* max */	"600.000",
+	/* def */	"60.000",
+	/* units */	"seconds",
+	/* descr */
+	"How long VSM memory is kept warm after a deallocation "
+	"(granularity approximately 2 seconds)."
+)
+
+PARAM(
+	/* name */	vsl_buffer,
+	/* type */	vsl_buffer,
+	/* min */	"267",
+	/* max */	NULL,
+	/* def */	"4k",
+	/* units */	"bytes",
+	/* descr */
+	"Bytes of (req-/backend-)workspace dedicated to buffering VSL "
+	"records.\n"
+	"When this parameter is adjusted, most likely workspace_client "
+	"and workspace_backend will have to be adjusted by the same amount.\n\n"
+	"Setting this too high costs memory, setting it too low will cause "
+	"more VSL flushes and likely increase lock-contention on the VSL "
+	"mutex.",
+	/* flags */	0,
+	/* dyn_min_reason */	"vsl_reclen + 12 bytes"
+)
+
+PARAM(
+	/* name */	vsl_reclen,
+	/* type */	vsl_reclen,
+	/* min */	"16b",
+	/* max */	NULL,
+	/* def */	"255b",
+	/* units */	"bytes",
+	/* descr */
+	"Maximum number of bytes in SHM log record.",
+	/* flags */	0,
+	/* dyn_min_reason */	NULL,
+	/* dyn_max_reason */	"vsl_buffer - 12 bytes"
+)
+
+PARAM(
+	/* name */	vsl_space,
+	/* type */	bytes,
+	/* min */	"1M",
+	/* max */	"4G",
+	/* def */	"80M",
+	/* units */	"bytes",
+	/* descr */
+	"The amount of space to allocate for the VSL fifo buffer in the "
+	"VSM memory segment.  If you make this too small, "
+	"varnish{ncsa|log} etc will not be able to keep up.  Making it too "
+	"large just costs memory resources.",
+	/* flags */	MUST_RESTART
+)
+
+PARAM(
+	/* name */	vsm_space,
+	/* type */	bytes,
+	/* min */	"1M",
+	/* max */	"1G",
+	/* def */	"1M",
+	/* units */	"bytes",
+	/* descr */
+	"DEPRECATED: This parameter is ignored.\n"
+	"There is no global limit on amount of shared memory now."
+)
+
+PARAM(
+	/* name */	workspace_backend,
+	/* type */	bytes_u,
+	/* min */	"1k",
+	/* max */	NULL,
+	/* def */	"64k",
+	/* units */	"bytes",
+	/* descr */
+	"Bytes of HTTP protocol workspace for backend HTTP req/resp.  If "
+	"larger than 4k, use a multiple of 4k for VM efficiency.",
+	/* flags */	DELAYED_EFFECT
+)
+
+PARAM(
+	/* name */	workspace_client,
+	/* type */	bytes_u,
+	/* min */	"9k",
+	/* max */	NULL,
+	/* def */	"64k",
+	/* units */	"bytes",
+	/* descr */
+	"Bytes of HTTP protocol workspace for clients HTTP req/resp.  Use a "
+	"multiple of 4k for VM efficiency.\n"
+	"For HTTP/2 compliance this must be at least 20k, in order to "
+	"receive fullsize (=16k) frames from the client.   That usually "
+	"happens only in POST/PUT bodies.  For other traffic-patterns "
+	"smaller values work just fine.",
+	/* flags */	DELAYED_EFFECT
+)
+
+PARAM(
+	/* name */	workspace_session,
+	/* type */	bytes_u,
+	/* min */	"0.25k",
+	/* max */	NULL,
+	/* def */	"0.75k",
+	/* units */	"bytes",
+	/* descr */
+	"Allocation size for session structure and workspace.    The "
+	"workspace is primarily used for TCP connection addresses.  If "
+	"larger than 4k, use a multiple of 4k for VM efficiency.",
+	/* flags */	DELAYED_EFFECT
+)
+
+PARAM(
+	/* name */	workspace_thread,
+	/* type */	bytes_u,
+	/* min */	"0.25k",
+	/* max */	"8k",
+	/* def */	"2k",
+	/* units */	"bytes",
+	/* descr */
+	"Bytes of auxiliary workspace per thread.\n"
+	"This workspace is used for certain temporary data structures "
+	"during the operation of a worker thread.\n"
+	"One use is for the IO-vectors used during delivery. Setting "
+	"this parameter too low may increase the number of writev() "
+	"syscalls, setting it too high just wastes space.  ~0.1k + "
+	"UIO_MAXIOV * sizeof(struct iovec) (typically = ~16k for 64bit) "
+	"is considered the maximum sensible value under any known "
+	"circumstances (excluding exotic vmod use).",
+	/* flags */	DELAYED_EFFECT
+)
+
+PARAM(
+	/* name */	h2_rx_window_low_water,
+	/* type */	bytes_u,
+	/* min */	"65535",
+	/* max */	"1G",
+	/* def */	"10M",
+	/* units */	"bytes",
+	/* descr */
+	"HTTP2 Receive Window low water mark.\n"
+	"We try to keep the window at least this big\n"
+	"Only affects incoming request bodies (ie: POST, PUT etc.)",
+	/* flags */	WIZARD
+)
+
+PARAM(
+	/* name */	h2_rx_window_increment,
+	/* type */	bytes_u,
+	/* min */	"1M",
+	/* max */	"1G",
+	/* def */	"1M",
+	/* units */	"bytes",
+	/* descr */
+	"HTTP2 Receive Window Increments.\n"
+	"How big credits we send in WINDOW_UPDATE frames\n"
+	"Only affects incoming request bodies (ie: POST, PUT etc.)",
+	/* flags */	WIZARD
+)
+
+PARAM(
+	/* name */	h2_header_table_size,
+	/* type */	bytes_u,
+	/* min */	"0b",
+	/* max */	NULL,
+	/* def */	"4k",
+	/* units */	"bytes",
+	/* descr */
+	"HTTP2 header table size.\n"
+	"This is the size that will be used for the HPACK dynamic\n"
+	"decoding table."
+)
+
+PARAM(
+	/* name */	h2_max_concurrent_streams,
+	/* type */	uint,
+	/* min */	"0",
+	/* max */	NULL,
+	/* def */	"100",
+	/* units */	"streams",
+	/* descr */
+	"HTTP2 Maximum number of concurrent streams.\n"
+	"This is the number of requests that can be active\n"
+	"at the same time for a single HTTP2 connection."
+)
+
+PARAM(
+	/* name */	h2_initial_window_size,
+	/* type */	bytes_u,
+	/* min */	"0",
+	/* max */	"2147483647b",
+	/* def */	"65535b",
+	/* units */	"bytes",
+	/* descr */
+	"HTTP2 initial flow control window size."
+)
+
+PARAM(
+	/* name */	h2_max_frame_size,
+	/* type */	bytes_u,
+	/* min */	"16k",
+	/* max */	"16777215b",
+	/* def */	"16k",
+	/* units */	"bytes",
+	/* descr */
+	"HTTP2 maximum per frame payload size we are willing to accept."
+)
+
+PARAM(
+	/* name */	h2_max_header_list_size,
+	/* type */	bytes_u,
+	/* min */	"0b",
+	/* max */	NULL,
+	/* def */	"2147483647b",
+	/* units */	"bytes",
+	/* descr */
+	"HTTP2 maximum size of an uncompressed header list."
+)
+
 #if 0
+/* actual location mgt_param_bits.c*/
+/* see tbl/debug_bits.h */
+PARAM(
+	/* name */	debug,
+	/* type */	debug,
+	/* min */	NULL,
+	/* max */	NULL,
+	/* def */	NULL,
+	/* units */	NULL,
+	/* descr */
+	"Enable/Disable various kinds of debugging.\n"
+	"	none	Disable all debugging\n"
+	"\n"
+	"Use +/- prefix to set/reset individual bits:\n"
+	"	req_state	VSL Request state engine\n"
+	"	workspace	VSL Workspace operations\n"
+	"	waiter	VSL Waiter internals\n"
+	"	waitinglist	VSL Waitinglist events\n"
+	"	syncvsl	Make VSL synchronous\n"
+	"	hashedge	Edge cases in Hash\n"
+	"	vclrel	Rapid VCL release\n"
+	"	lurker	VSL Ban lurker\n"
+	"	esi_chop	Chop ESI fetch to bits\n"
+	"	flush_head	Flush after http1 head\n"
+	"	vtc_mode	Varnishtest Mode"
+)
+
+/* actual location mgt_param_bits.c*/
+/* See tbl/feature_bits.h */
+PARAM(
+	/* name */	feature,
+	/* type */	feature,
+	/* min */	NULL,
+	/* max */	NULL,
+	/* def */	NULL,
+	/* units */	NULL,
+	/* descr */
+	"Enable/Disable various minor features.\n"
+	"	none	Disable all features.\n"
+	"\n"
+	"Use +/- prefix to enable/disable individual feature:\n"
+	"	short_panic	Short panic message.\n"
+	"	wait_silo	Wait for persistent silo.\n"
+	"	no_coredump	No coredumps.\n"
+	"	esi_ignore_https	Treat HTTPS as HTTP in ESI:includes\n"
+	"	esi_disable_xml_check	Don't check of body looks like XML\n"
+	"	esi_ignore_other_elements	Ignore non-esi XML-elements\n"
+	"	esi_remove_bom	Remove UTF-8 BOM"
+)
+
+/* actual location mgt_param_tbl.c */
+PARAM(
+	/* name */	pcre_match_limit,
+	/* type */	uint,
+	/* min */	"1",
+	/* max */	NULL,
+	/* def */	"1.000",
+	/* units */	NULL,
+	/* descr */
+	"The limit for the  number of internal matching function calls in "
+	"a pcre_exec() execution."
+)
+
+/* actual location mgt_param_tbl.c */
+PARAM(
+	/* name */	pcre_match_limit_recursion,
+	/* type */	uint,
+	/* min */	"1",
+	/* max */	NULL,
+	/* def */	"1.000",
+	/* units */	NULL,
+	/* descr */
+	"The limit for the  number of internal matching function "
+	"recursions in a pcre_exec() execution."
+)
+
+/* actual location mgt_param_tbl.c */
+PARAM(
+	/* name */	pool_req,
+	/* type */	poolparam,
+	/* min */	NULL,
+	/* max */	NULL,
+	/* def */	"10,100,10",
+	/* units */	NULL,
+	/* descr */
+	"Parameters for per worker pool request memory pool.\n"
+	MEMPOOL_TEXT
+)
+
+/* actual location mgt_param_tbl.c */
+PARAM(
+	/* name */	pool_sess,
+	/* type */	poolparam,
+	/* min */	NULL,
+	/* max */	NULL,
+	/* def */	"10,100,10",
+	/* units */	NULL,
+	/* descr */
+	"Parameters for per worker pool session memory pool.\n"
+	MEMPOOL_TEXT
+)
+
+/* actual location mgt_param_tbl.c */
+PARAM(
+	/* name */	pool_vbo,
+	/* type */	poolparam,
+	/* min */	NULL,
+	/* max */	NULL,
+	/* def */	"10,100,10",
+	/* units */	NULL,
+	/* descr */
+	"Parameters for backend object fetch memory pool.\n"
+	MEMPOOL_TEXT
+)
+
 /* actual location mgt_pool.c */
 PARAM(
 	/* name */	thread_pool_add_delay,
@@ -1239,54 +1537,7 @@ PARAM(
 	"stats into the global counters.",
 	/* flags */	EXPERIMENTAL
 )
-#endif
 
-#if defined(XYZZY)
-  #error "Temporary macro XYZZY already defined"
-#endif
-
-#if defined(SO_RCVTIMEO_WORKS)
-  #define XYZZY 0
-#else
-  #define XYZZY NOT_IMPLEMENTED
-#endif
-PARAM(
-	/* name */	timeout_idle,
-	/* type */	timeout,
-	/* min */	"0.000",
-	/* max */	NULL,
-	/* def */	"5.000",
-	/* units */	"seconds",
-	/* descr */
-	"Idle timeout for client connections.\n\n"
-	"A connection is considered idle until we have received the full"
-	" request headers.\n\n"
-	"This parameter is particularly relevant for HTTP1 keepalive "
-	" connections which are closed unless the next request is received"
-	" before this timeout is reached.",
-	/* flags */	XYZZY
-)
-#undef XYZZY
-
-PARAM(
-	/* name */	timeout_linger,
-	/* type */	timeout,
-	/* min */	"0.000",
-	/* max */	NULL,
-	/* def */	"0.050",
-	/* units */	"seconds",
-	/* descr */
-	"How long the worker thread lingers on an idle session before "
-	"handing it over to the waiter.\n"
-	"When sessions are reused, as much as half of all reuses happen "
-	"within the first 100 msec of the previous request completing.\n"
-	"Setting this too high results in worker threads not doing "
-	"anything for their keep, setting it too low just means that more "
-	"sessions take a detour around the waiter.",
-	/* flags */	EXPERIMENTAL
-)
-
-#if 0
 /* actual location mgt_param_tbl.c */
 PARAM(
 	/* name */	vcc_allow_inline_c,
@@ -1323,78 +1574,7 @@ PARAM(
 	"Allow '/' in vmod & include paths.\n"
 	"Allow 'import ... from ...'."
 )
-#endif
 
-PARAM(
-	/* name */	vcl_cooldown,
-	/* type */	timeout,
-	/* min */	"1.000",
-	/* max */	NULL,
-	/* def */	"600.000",
-	/* units */	"seconds",
-	/* descr */
-	"How long a VCL is kept warm after being replaced as the "
-	"active VCL (granularity approximately 30 seconds)."
-)
-
-PARAM(
-	/* name */	max_vcl_handling,
-	/* type */	uint,
-	/* min */	"0",
-	/* max */	"2",
-	/* def */	"1",
-	/* units */	NULL,
-	/* descr */
-	"Behaviour when attempting to exceed max_vcl loaded VCL.\n"
-	"\n*  0 - Ignore max_vcl parameter.\n"
-	"\n*  1 - Issue warning.\n"
-	"\n*  2 - Refuse loading VCLs."
-)
-
-PARAM(
-	/* name */	max_vcl,
-	/* type */	uint,
-	/* min */	"0",
-	/* max */	NULL,
-	/* def */	"100",
-	/* units */	NULL,
-	/* descr */
-	"Threshold of loaded VCL programs.  (VCL labels are not counted.)"
-	"  Parameter max_vcl_handling determines behaviour."
-)
-
-PARAM(
-	/* name */	vsm_free_cooldown,
-	/* type */	timeout,
-	/* min */	"10.000",
-	/* max */	"600.000",
-	/* def */	"60.000",
-	/* units */	"seconds",
-	/* descr */
-	"How long VSM memory is kept warm after a deallocation "
-	"(granularity approximately 2 seconds)."
-)
-
-PARAM(
-	/* name */	vsl_buffer,
-	/* type */	vsl_buffer,
-	/* min */	"267",
-	/* max */	NULL,
-	/* def */	"4k",
-	/* units */	"bytes",
-	/* descr */
-	"Bytes of (req-/backend-)workspace dedicated to buffering VSL "
-	"records.\n"
-	"When this parameter is adjusted, most likely workspace_client "
-	"and workspace_backend will have to be adjusted by the same amount.\n\n"
-	"Setting this too high costs memory, setting it too low will cause "
-	"more VSL flushes and likely increase lock-contention on the VSL "
-	"mutex.",
-	/* flags */	0,
-	/* dyn_min_reason */	"vsl_reclen + 12 bytes"
-)
-
-#if 0
 /* actual location mgt_param_bits.c*/
 PARAM(
 	/* name */	vsl_mask,
@@ -1411,198 +1591,6 @@ PARAM(
 	"individual VSL messages."
 )
 #endif
-
-PARAM(
-	/* name */	vsl_reclen,
-	/* type */	vsl_reclen,
-	/* min */	"16b",
-	/* max */	NULL,
-	/* def */	"255b",
-	/* units */	"bytes",
-	/* descr */
-	"Maximum number of bytes in SHM log record.",
-	/* flags */	0,
-	/* dyn_min_reason */	NULL,
-	/* dyn_max_reason */	"vsl_buffer - 12 bytes"
-)
-
-PARAM(
-	/* name */	vsl_space,
-	/* type */	bytes,
-	/* min */	"1M",
-	/* max */	"4G",
-	/* def */	"80M",
-	/* units */	"bytes",
-	/* descr */
-	"The amount of space to allocate for the VSL fifo buffer in the "
-	"VSM memory segment.  If you make this too small, "
-	"varnish{ncsa|log} etc will not be able to keep up.  Making it too "
-	"large just costs memory resources.",
-	/* flags */	MUST_RESTART
-)
-
-PARAM(
-	/* name */	vsm_space,
-	/* type */	bytes,
-	/* min */	"1M",
-	/* max */	"1G",
-	/* def */	"1M",
-	/* units */	"bytes",
-	/* descr */
-	"DEPRECATED: This parameter is ignored.\n"
-	"There is no global limit on amount of shared memory now."
-)
-
-PARAM(
-	/* name */	workspace_backend,
-	/* type */	bytes_u,
-	/* min */	"1k",
-	/* max */	NULL,
-	/* def */	"64k",
-	/* units */	"bytes",
-	/* descr */
-	"Bytes of HTTP protocol workspace for backend HTTP req/resp.  If "
-	"larger than 4k, use a multiple of 4k for VM efficiency.",
-	/* flags */	DELAYED_EFFECT
-)
-
-PARAM(
-	/* name */	workspace_client,
-	/* type */	bytes_u,
-	/* min */	"9k",
-	/* max */	NULL,
-	/* def */	"64k",
-	/* units */	"bytes",
-	/* descr */
-	"Bytes of HTTP protocol workspace for clients HTTP req/resp.  Use a "
-	"multiple of 4k for VM efficiency.\n"
-	"For HTTP/2 compliance this must be at least 20k, in order to "
-	"receive fullsize (=16k) frames from the client.   That usually "
-	"happens only in POST/PUT bodies.  For other traffic-patterns "
-	"smaller values work just fine.",
-	/* flags */	DELAYED_EFFECT
-)
-
-PARAM(
-	/* name */	workspace_session,
-	/* type */	bytes_u,
-	/* min */	"0.25k",
-	/* max */	NULL,
-	/* def */	"0.75k",
-	/* units */	"bytes",
-	/* descr */
-	"Allocation size for session structure and workspace.    The "
-	"workspace is primarily used for TCP connection addresses.  If "
-	"larger than 4k, use a multiple of 4k for VM efficiency.",
-	/* flags */	DELAYED_EFFECT
-)
-
-PARAM(
-	/* name */	workspace_thread,
-	/* type */	bytes_u,
-	/* min */	"0.25k",
-	/* max */	"8k",
-	/* def */	"2k",
-	/* units */	"bytes",
-	/* descr */
-	"Bytes of auxiliary workspace per thread.\n"
-	"This workspace is used for certain temporary data structures "
-	"during the operation of a worker thread.\n"
-	"One use is for the IO-vectors used during delivery. Setting "
-	"this parameter too low may increase the number of writev() "
-	"syscalls, setting it too high just wastes space.  ~0.1k + "
-	"UIO_MAXIOV * sizeof(struct iovec) (typically = ~16k for 64bit) "
-	"is considered the maximum sensible value under any known "
-	"circumstances (excluding exotic vmod use).",
-	/* flags */	DELAYED_EFFECT
-)
-
-PARAM(
-	/* name */	h2_rx_window_low_water,
-	/* type */	bytes_u,
-	/* min */	"65535",
-	/* max */	"1G",
-	/* def */	"10M",
-	/* units */	"bytes",
-	/* descr */
-	"HTTP2 Receive Window low water mark.\n"
-	"We try to keep the window at least this big\n"
-	"Only affects incoming request bodies (ie: POST, PUT etc.)",
-	/* flags */	WIZARD
-)
-
-PARAM(
-	/* name */	h2_rx_window_increment,
-	/* type */	bytes_u,
-	/* min */	"1M",
-	/* max */	"1G",
-	/* def */	"1M",
-	/* units */	"bytes",
-	/* descr */
-	"HTTP2 Receive Window Increments.\n"
-	"How big credits we send in WINDOW_UPDATE frames\n"
-	"Only affects incoming request bodies (ie: POST, PUT etc.)",
-	/* flags */	WIZARD
-)
-
-PARAM(
-	/* name */	h2_header_table_size,
-	/* type */	bytes_u,
-	/* min */	"0b",
-	/* max */	NULL,
-	/* def */	"4k",
-	/* units */	"bytes",
-	/* descr */
-	"HTTP2 header table size.\n"
-	"This is the size that will be used for the HPACK dynamic\n"
-	"decoding table."
-)
-
-PARAM(
-	/* name */	h2_max_concurrent_streams,
-	/* type */	uint,
-	/* min */	"0",
-	/* max */	NULL,
-	/* def */	"100",
-	/* units */	"streams",
-	/* descr */
-	"HTTP2 Maximum number of concurrent streams.\n"
-	"This is the number of requests that can be active\n"
-	"at the same time for a single HTTP2 connection."
-)
-
-PARAM(
-	/* name */	h2_initial_window_size,
-	/* type */	bytes_u,
-	/* min */	"0",
-	/* max */	"2147483647b",
-	/* def */	"65535b",
-	/* units */	"bytes",
-	/* descr */
-	"HTTP2 initial flow control window size."
-)
-
-PARAM(
-	/* name */	h2_max_frame_size,
-	/* type */	bytes_u,
-	/* min */	"16k",
-	/* max */	"16777215b",
-	/* def */	"16k",
-	/* units */	"bytes",
-	/* descr */
-	"HTTP2 maximum per frame payload size we are willing to accept."
-)
-
-PARAM(
-	/* name */	h2_max_header_list_size,
-	/* type */	bytes_u,
-	/* min */	"0b",
-	/* max */	NULL,
-	/* def */	"2147483647b",
-	/* units */	"bytes",
-	/* descr */
-	"HTTP2 maximum size of an uncompressed header list."
-)
 
 #undef PARAM
 
