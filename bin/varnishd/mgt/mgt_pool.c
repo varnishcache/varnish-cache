@@ -228,7 +228,7 @@ struct parspec WRK_parspec[] = {
 		EXPERIMENTAL },
 	{ "thread_pool_stack",
 		tweak_bytes, &mgt_param.wthread_stacksize,
-		NULL, NULL, NULL,	// default set in mgt_main.c
+		NULL, NULL, NULL,	// default set in mgt_param.c
 		"bytes",
 		"Worker thread stack size.\n"
 		"This will likely be rounded up to a multiple of 4k"
@@ -264,6 +264,7 @@ struct parspec WRK_parspec[] = {
 		" overflow occurs. Setting it in 150%-200%"
 		" increments is recommended until stack overflows"
 		" cease to occur.",
-		DELAYED_EFFECT },
+		DELAYED_EFFECT,
+		NULL, NULL, "sysconf(_SC_THREAD_STACK_MIN)" },
 	{ NULL, NULL, NULL }
 };

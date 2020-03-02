@@ -766,15 +766,16 @@ MCF_DumpRstParam(void)
 
 		if (pp->units != NULL && *pp->units != '\0')
 			printf("\t* Units: %s\n", pp->units);
-		printf("\t* Default: %s\n", pp->def);
-		if (pp->dyn_min_reason != NULL)
-			printf("\t* Minimum: %s\n", pp->dyn_min_reason);
-		else if (pp->min != NULL)
-			printf("\t* Minimum: %s\n", pp->min);
-		if (pp->dyn_max_reason != NULL)
-			printf("\t* Maximum: %s\n", pp->dyn_max_reason);
-		else if (pp->max != NULL)
-			printf("\t* Maximum: %s\n", pp->max);
+#define MCF_DYN_REASON(lbl, nm)					\
+		if (pp->dyn_ ## nm ## _reason != NULL)		\
+			printf("\t* " #lbl ": %s\n",		\
+			    pp->dyn_ ## nm ## _reason);		\
+		else if (pp->nm != NULL)			\
+			printf("\t* " #lbl ": %s\n", pp->nm);
+		MCF_DYN_REASON(Default, def);
+		MCF_DYN_REASON(Minimum, min);
+		MCF_DYN_REASON(Maximum, max);
+#undef MCF_DYN_REASON
 		/*
 		 * XXX: we should mark the params with one/two flags
 		 * XXX: that say if ->min/->max are valid, so we
