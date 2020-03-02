@@ -43,6 +43,8 @@ struct parspec {
 	volatile void	*priv;
 	const char	*min;
 	const char	*max;
+	const char	*def;
+	const char	*units;
 	const char	*descr;
 	int		 flags;
 #define DELAYED_EFFECT	(1<<0)
@@ -54,9 +56,6 @@ struct parspec {
 #define OBJ_STICKY	(1<<6)
 #define ONLY_ROOT	(1<<7)
 #define NOT_IMPLEMENTED	(1<<8)
-
-	const char	*def;
-	const char	*units;
 
 	const char	*dyn_min_reason;
 	const char	*dyn_max_reason;
