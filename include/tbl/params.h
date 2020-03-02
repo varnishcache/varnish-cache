@@ -27,7 +27,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * PARAM(nm, ty, mi, ma, de, un, fl, st, lt, fn)
+ * PARAM(nm, ty, mi, ma, de, un, fl, st)
  */
 
 /*lint -save -e525 -e539 */
@@ -55,9 +55,7 @@ PARAM(
 	"Enabling accept_filter may prevent some requests to reach Varnish "
 	"in the first place. Malformed requests may go unnoticed and not "
 	"increase the client_req_400 counter. GET or HEAD requests with a "
-	"body may be blocked altogether.",
-	/* l-text */	NULL,
-	/* func */	NULL
+	"body may be blocked altogether."
 )
 #undef XYZZY
 
@@ -73,9 +71,7 @@ PARAM(
 	"If we run out of resources, such as file descriptors or worker "
 	"threads, the acceptor will sleep between accepts.\n"
 	"This parameter (multiplicatively) reduce the sleep duration for "
-	"each successful accept. (ie: 0.9 = reduce by 10%)",
-	/* l-text */	"",
-	/* func */	NULL
+	"each successful accept. (ie: 0.9 = reduce by 10%)"
 )
 
 PARAM(
@@ -90,9 +86,7 @@ PARAM(
 	"If we run out of resources, such as file descriptors or worker "
 	"threads, the acceptor will sleep between accepts.\n"
 	"This parameter control how much longer we sleep, each time we "
-	"fail to accept a new connection.",
-	/* l-text */	"",
-	/* func */	NULL
+	"fail to accept a new connection."
 )
 
 PARAM(
@@ -107,9 +101,7 @@ PARAM(
 	"If we run out of resources, such as file descriptors or worker "
 	"threads, the acceptor will sleep between accepts.\n"
 	"This parameter limits how long it can sleep between attempts to "
-	"accept new connections.",
-	/* l-text */	"",
-	/* func */	NULL
+	"accept new connections."
 )
 
 PARAM(
@@ -121,9 +113,7 @@ PARAM(
 	/* units */	"bool",
 	/* flags */	0,
 	/* s-text */
-	"Automatically restart the child/worker process if it dies.",
-	/* l-text */	"",
-	/* func */	NULL
+	"Automatically restart the child/worker process if it dies."
 )
 
 PARAM(
@@ -138,9 +128,7 @@ PARAM(
 	"Eliminate older identical bans when a new ban is added.  This saves "
 	"CPU cycles by not comparing objects to identical bans.\n"
 	"This is a waste of time if you have many bans which are never "
-	"identical.",
-	/* l-text */	"",
-	/* func */	NULL
+	"identical."
 )
 
 PARAM(
@@ -170,9 +158,7 @@ PARAM(
 	"additional latency due to request ban testing is in the order of "
 	"ban_cutoff / rate(bans_lurker_tests_tested). For example, for "
 	"rate(bans_lurker_tests_tested) = 2M/s and a tolerable latency of "
-	"100ms, a good value for ban_cutoff may be 200K.",
-	/* l-text */	"",
-	/* func */	NULL
+	"100ms, a good value for ban_cutoff may be 200K."
 )
 
 PARAM(
@@ -189,9 +175,7 @@ PARAM(
 	"as part of object lookup.  Because many applications issue bans in "
 	"bursts, this parameter holds the ban-lurker off until the rush is "
 	"over.\n"
-	"This should be set to the approximate time which a ban-burst takes.",
-	/* l-text */	"",
-	/* func */	NULL
+	"This should be set to the approximate time which a ban-burst takes."
 )
 
 PARAM(
@@ -205,9 +189,7 @@ PARAM(
 	/* s-text */
 	"The ban lurker sleeps ${ban_lurker_sleep} after examining this "
 	"many objects."
-	"  Use this to pace the ban-lurker if it eats too many resources.",
-	/* l-text */	"",
-	/* func */	NULL
+	"  Use this to pace the ban-lurker if it eats too many resources."
 )
 
 PARAM(
@@ -222,9 +204,7 @@ PARAM(
 	"How long the ban lurker sleeps after examining ${ban_lurker_batch} "
 	"objects."
 	"  Use this to pace the ban-lurker if it eats too many resources.\n"
-	"A value of zero will disable the ban lurker entirely.",
-	/* l-text */	"",
-	/* func */	NULL
+	"A value of zero will disable the ban lurker entirely."
 )
 
 PARAM(
@@ -237,9 +217,7 @@ PARAM(
 	/* flags */	EXPERIMENTAL,
 	/* s-text */
 	"How long the ban lurker sleeps when giving way to lookup"
-	" due to lock contention.",
-	/* l-text */	"",
-	/* func */	NULL
+	" due to lock contention."
 )
 
 PARAM(
@@ -255,9 +233,7 @@ PARAM(
 	"wait for this many seconds for the first byte before giving up.\n"
 	"VCL can override this default value for each backend and backend "
 	"request.\n"
-	"This parameter does not apply to pipe'ed requests.",
-	/* l-text */	"",
-	/* func */	NULL
+	"This parameter does not apply to pipe'ed requests."
 )
 
 PARAM(
@@ -272,9 +248,7 @@ PARAM(
 	"We only wait for this many seconds between bytes received from "
 	"the backend before giving up the fetch.\n"
 	"VCL values, per backend or per backend request take precedence.\n"
-	"This parameter does not apply to pipe'ed requests.",
-	/* l-text */	"",
-	/* func */	NULL
+	"This parameter does not apply to pipe'ed requests."
 )
 
 PARAM(
@@ -286,9 +260,7 @@ PARAM(
 	/* units */	"seconds",
 	/* flags */	0,
 	/* s-text */
-	"Timeout before we close unused backend connections.",
-	/* l-text */	"",
-	/* func */	NULL
+	"Timeout before we close unused backend connections."
 )
 
 PARAM(
@@ -306,9 +278,7 @@ PARAM(
 	"may worsen the situation due to the complexity of the operations "
 	"involved in the kernel.\n"
 	"This parameter prevents repeated connection attempts for the "
-	"configured duration.",
-	/* l-text */	"",
-	/* func */	NULL
+	"configured duration."
 )
 
 PARAM(
@@ -325,9 +295,7 @@ PARAM(
 	"not accepting connections or routing problems for which repeated "
 	"connection attempts are considered useless\n"
 	"This parameter prevents repeated connection attempts for the "
-	"configured duration.",
-	/* l-text */	"",
-	/* func */	NULL
+	"configured duration."
 )
 
 PARAM(
@@ -341,9 +309,7 @@ PARAM(
 	/* s-text */
 	"Maximum size of CLI response.  If the response exceeds this "
 	"limit, the response code will be 201 instead of 200 and the last "
-	"line will indicate the truncation.",
-	/* l-text */	"",
-	/* func */	NULL
+	"line will indicate the truncation."
 )
 
 PARAM(
@@ -356,9 +322,7 @@ PARAM(
 	/* flags */	0,
 	/* s-text */
 	"Timeout for the childs replies to CLI requests from the "
-	"mgt_param.",
-	/* l-text */	"",
-	/* func */	NULL
+	"mgt_param."
 )
 
 PARAM(
@@ -371,9 +335,7 @@ PARAM(
 	/* flags */	0,
 	/* s-text */
 	"How much clockskew we are willing to accept between the backend "
-	"and our own clock.",
-	/* l-text */	"",
-	/* func */	NULL
+	"and our own clock."
 )
 
 PARAM(
@@ -386,9 +348,7 @@ PARAM(
 	/* flags */	0,
 	/* s-text */
 	"How much observed clock step we are willing to accept before "
-	"we panic.",
-	/* l-text */	"",
-	/* func */	NULL
+	"we panic."
 )
 
 PARAM(
@@ -403,9 +363,7 @@ PARAM(
 	"Default connection timeout for backend connections. We only try "
 	"to connect to the backend for this many seconds before giving up. "
 	"VCL can override this default value for each backend and backend "
-	"request.",
-	/* l-text */	"",
-	/* func */	NULL
+	"request."
 )
 
 PARAM(
@@ -418,9 +376,7 @@ PARAM(
 	/* flags */	WIZARD,
 	/* s-text */
 	"How long the critbit hasher keeps deleted objheads on the cooloff "
-	"list.",
-	/* l-text */	"",
-	/* func */	NULL
+	"list."
 )
 
 #if 0
@@ -449,9 +405,7 @@ PARAM(
 	"	lurker	VSL Ban lurker\n"
 	"	esi_chop	Chop ESI fetch to bits\n"
 	"	flush_head	Flush after http1 head\n"
-	"	vtc_mode	Varnishtest Mode",
-	/* l-text */	"",
-	/* func */	NULL
+	"	vtc_mode	Varnishtest Mode"
 )
 #endif
 
@@ -466,9 +420,7 @@ PARAM(
 	/* s-text */
 	"Default grace period.  We will deliver an object this long after "
 	"it has expired, provided another thread is attempting to get a "
-	"new copy.",
-	/* l-text */	"",
-	/* func */	NULL
+	"new copy."
 )
 
 PARAM(
@@ -483,9 +435,7 @@ PARAM(
 	"Default keep period.  We will keep a useless object around this "
 	"long, making it available for conditional backend fetches.  That "
 	"means that the object will be removed from the cache at the end "
-	"of ttl+grace+keep.",
-	/* l-text */	"",
-	/* func */	NULL
+	"of ttl+grace+keep."
 )
 
 PARAM(
@@ -498,9 +448,7 @@ PARAM(
 	/* flags */	OBJ_STICKY,
 	/* s-text */
 	"The TTL assigned to objects if neither the backend nor the VCL "
-	"code assigns one.",
-	/* l-text */	"",
-	/* func */	NULL
+	"code assigns one."
 )
 
 PARAM(
@@ -514,9 +462,7 @@ PARAM(
 	/* s-text */
 	"Number of io vectors to allocate for HTTP1 protocol transmission."
 	"  A HTTP1 header needs 7 + 2 per HTTP header field."
-	"  Allocated from workspace_thread.",
-	/* l-text */	"",
-	/* func */	NULL
+	"  Allocated from workspace_thread."
 )
 
 #if 0
@@ -541,9 +487,7 @@ PARAM(
 	"	esi_ignore_https	Treat HTTPS as HTTP in ESI:includes\n"
 	"	esi_disable_xml_check	Don't check of body looks like XML\n"
 	"	esi_ignore_other_elements	Ignore non-esi XML-elements\n"
-	"	esi_remove_bom	Remove UTF-8 BOM",
-	/* l-text */	"",
-	/* func */	NULL
+	"	esi_remove_bom	Remove UTF-8 BOM"
 )
 #endif
 
@@ -559,9 +503,7 @@ PARAM(
 	"The default chunksize used by fetcher. This should be bigger than "
 	"the majority of objects with short TTLs.\n"
 	"Internal limits in the storage_file module makes increases above "
-	"128kb a dubious idea.",
-	/* l-text */	"",
-	/* func */	NULL
+	"128kb a dubious idea."
 )
 
 PARAM(
@@ -574,9 +516,7 @@ PARAM(
 	/* flags */	EXPERIMENTAL,
 	/* s-text */
 	"The maximum chunksize we attempt to allocate from storage. Making "
-	"this too large may cause delays and storage fragmentation.",
-	/* l-text */	"",
-	/* func */	NULL
+	"this too large may cause delays and storage fragmentation."
 )
 
 PARAM(
@@ -592,9 +532,7 @@ PARAM(
 	"These buffers are used for in-transit data, for instance "
 	"gunzip'ed data being sent to a client.Making this space to small "
 	"results in more overhead, writes to sockets etc, making it too "
-	"big is probably just a waste of memory.",
-	/* l-text */	"",
-	/* func */	NULL
+	"big is probably just a waste of memory."
 )
 
 PARAM(
@@ -606,9 +544,7 @@ PARAM(
 	/* units */	NULL,
 	/* flags */	0,
 	/* s-text */
-	"Gzip compression level: 0=debug, 1=fast, 9=best",
-	/* l-text */	"",
-	/* func */	NULL
+	"Gzip compression level: 0=debug, 1=fast, 9=best"
 )
 
 PARAM(
@@ -621,9 +557,7 @@ PARAM(
 	/* flags */	0,
 	/* s-text */
 	"Gzip memory level 1=slow/least, 9=fast/most compression.\n"
-	"Memory impact is 1=1k, 2=2k, ... 9=256k.",
-	/* l-text */	"",
-	/* func */	NULL
+	"Memory impact is 1=1k, 2=2k, ... 9=256k."
 )
 
 PARAM(
@@ -647,10 +581,8 @@ PARAM(
 	"please see the chapter on gzip in the Varnish reference.\n"
 	"\n"
 	"When gzip support is disabled the variables beresp.do_gzip and "
-	"beresp.do_gunzip have no effect in VCL.",
+	"beresp.do_gunzip have no effect in VCL."
 	/* XXX: what about the effect on beresp.filters? */
-	/* l-text */	"",
-	/* func */	NULL
 )
 
 PARAM(
@@ -666,9 +598,7 @@ PARAM(
 	"{req|resp|bereq|beresp}.http (obj.http is autosized to the exact "
 	"number of headers).\n"
 	"Cheap, ~20 bytes, in terms of workspace memory.\n"
-	"Note that the first line occupies five header lines.",
-	/* l-text */	"",
-	/* func */	NULL
+	"Note that the first line occupies five header lines."
 )
 
 PARAM(
@@ -680,9 +610,7 @@ PARAM(
 	/* units */	"bool",
 	/* flags */	0,
 	/* s-text */
-	"Enable support for HTTP Range headers.",
-	/* l-text */	"",
-	/* func */	NULL
+	"Enable support for HTTP Range headers."
 )
 
 PARAM(
@@ -695,9 +623,7 @@ PARAM(
 	/* flags */	0,
 	/* s-text */
 	"Maximum length of any HTTP client request header we will allow.  "
-	"The limit is inclusive its continuation lines.",
-	/* l-text */	"",
-	/* func */	NULL
+	"The limit is inclusive its continuation lines."
 )
 
 PARAM(
@@ -714,9 +640,7 @@ PARAM(
 	"ends the HTTP request.\n"
 	"The memory for the request is allocated from the client workspace "
 	"(param: workspace_client) and this parameter limits how much of "
-	"that the request is allowed to take up.",
-	/* l-text */	"",
-	/* func */	NULL
+	"that the request is allowed to take up."
 )
 
 PARAM(
@@ -729,9 +653,7 @@ PARAM(
 	/* flags */	0,
 	/* s-text */
 	"Maximum length of any HTTP backend response header we will allow. "
-	" The limit is inclusive its continuation lines.",
-	/* l-text */	"",
-	/* func */	NULL
+	" The limit is inclusive its continuation lines."
 )
 
 PARAM(
@@ -748,9 +670,7 @@ PARAM(
 	"which ends the HTTP response.\n"
 	"The memory for the response is allocated from the backend workspace "
 	"(param: workspace_backend) and this parameter limits how much "
-	"of that the response is allowed to take up.",
-	/* l-text */	"",
-	/* func */	NULL
+	"of that the response is allowed to take up."
 )
 
 #if defined(XYZZY)
@@ -775,9 +695,7 @@ PARAM(
 	" May get extended if 'send_timeout' applies.\n\n"
 	"When this timeout is hit, the session is closed.\n\n"
 	"See the man page for `setsockopt(2)` or `socket(7)` under"
-	" ``SO_SNDTIMEO`` for more information.",
-	/* l-text */	"",
-	/* func */	NULL
+	" ``SO_SNDTIMEO`` for more information."
 )
 #undef XYZZY
 
@@ -790,9 +708,7 @@ PARAM(
 	/* units */	"connections",
 	/* flags */	MUST_RESTART,
 	/* s-text */
-	"Listen queue depth.",
-	/* l-text */	"",
-	/* func */	NULL
+	"Listen queue depth."
 )
 
 PARAM(
@@ -808,9 +724,7 @@ PARAM(
 	"Objects are only moved to the front of the LRU list if they have "
 	"not been moved there already inside this timeout period.  This "
 	"reduces the amount of lock operations necessary for LRU list "
-	"access.",
-	/* l-text */	"",
-	/* func */	NULL
+	"access."
 )
 
 PARAM(
@@ -822,9 +736,7 @@ PARAM(
 	/* units */	"levels",
 	/* flags */	0,
 	/* s-text */
-	"Maximum depth of esi:include processing.",
-	/* l-text */	"",
-	/* func */	NULL
+	"Maximum depth of esi:include processing."
 )
 
 PARAM(
@@ -836,9 +748,7 @@ PARAM(
 	/* units */	"restarts",
 	/* flags */	0,
 	/* s-text */
-	"Upper limit on how many times a request can restart.",
-	/* l-text */	"",
-	/* func */	NULL
+	"Upper limit on how many times a request can restart."
 )
 
 PARAM(
@@ -850,9 +760,7 @@ PARAM(
 	/* units */	"retries",
 	/* flags */	0,
 	/* s-text */
-	"Upper limit on how many times a backend fetch can retry.",
-	/* l-text */	"",
-	/* func */	NULL
+	"Upper limit on how many times a backend fetch can retry."
 )
 
 PARAM(
@@ -865,9 +773,7 @@ PARAM(
 	/* flags */	EXPERIMENTAL,
 	/* s-text */
 	"Maximum number of objects we attempt to nuke in order to make "
-	"space for a object body.",
-	/* l-text */	"",
-	/* func */	NULL
+	"space for a object body."
 )
 
 #if 0
@@ -882,9 +788,7 @@ PARAM(
 	/* flags */	0,
 	/* s-text */
 	"The limit for the  number of internal matching function calls in "
-	"a pcre_exec() execution.",
-	/* l-text */	"",
-	/* func */	NULL
+	"a pcre_exec() execution."
 )
 
 /* actual location mgt_param_tbl.c */
@@ -898,9 +802,7 @@ PARAM(
 	/* flags */	0,
 	/* s-text */
 	"The limit for the  number of internal matching function "
-	"recursions in a pcre_exec() execution.",
-	/* l-text */	"",
-	/* func */	NULL
+	"recursions in a pcre_exec() execution."
 )
 #endif
 
@@ -915,9 +817,7 @@ PARAM(
 	/* s-text */
 	"Interval between pings from parent to child.\n"
 	"Zero will disable pinging entirely, which makes it possible to "
-	"attach a debugger to the child.",
-	/* l-text */	"",
-	/* func */	NULL
+	"attach a debugger to the child."
 )
 
 PARAM(
@@ -929,9 +829,7 @@ PARAM(
 	/* units */	"connections",
 	/* flags */	0,
 	/* s-text */
-	"Maximum number of sessions dedicated to pipe transactions.",
-	/* l-text */	"",
-	/* func */	NULL
+	"Maximum number of sessions dedicated to pipe transactions."
 )
 
 PARAM(
@@ -944,9 +842,7 @@ PARAM(
 	/* flags */	0,
 	/* s-text */
 	"Idle timeout for PIPE sessions. If nothing have been received in "
-	"either direction for this many seconds, the session is closed.",
-	/* l-text */	"",
-	/* func */	NULL
+	"either direction for this many seconds, the session is closed."
 )
 
 #if 0
@@ -961,9 +857,7 @@ PARAM(
 	/* flags */	0,
 	/* s-text */
 	"Parameters for per worker pool request memory pool.\n"
-	MEMPOOL_TEXT,
-	/* l-text */	"",
-	/* func */	NULL
+	MEMPOOL_TEXT
 )
 
 /* actual location mgt_param_tbl.c */
@@ -977,9 +871,7 @@ PARAM(
 	/* flags */	0,
 	/* s-text */
 	"Parameters for per worker pool session memory pool.\n"
-	MEMPOOL_TEXT,
-	/* l-text */	"",
-	/* func */	NULL
+	MEMPOOL_TEXT
 )
 
 /* actual location mgt_param_tbl.c */
@@ -993,9 +885,7 @@ PARAM(
 	/* flags */	0,
 	/* s-text */
 	"Parameters for backend object fetch memory pool.\n"
-	MEMPOOL_TEXT,
-	/* l-text */	"",
-	/* func */	NULL
+	MEMPOOL_TEXT
 )
 #endif
 
@@ -1009,9 +899,7 @@ PARAM(
 	/* flags */	0,
 	/* s-text */
 	"Prefer IPv6 address when connecting to backends which have both "
-	"IPv4 and IPv6 addresses.",
-	/* l-text */	"",
-	/* func */	NULL
+	"IPv4 and IPv6 addresses."
 )
 
 PARAM(
@@ -1026,9 +914,7 @@ PARAM(
 	"How many parked request we start for each completed request on "
 	"the object.\n"
 	"NB: Even with the implict delay of delivery, this parameter "
-	"controls an exponential increase in number of worker threads.",
-	/* l-text */	"",
-	/* func */	NULL
+	"controls an exponential increase in number of worker threads."
 )
 
 #if defined(XYZZY)
@@ -1054,9 +940,7 @@ PARAM(
 	"When 'idle_send_timeout' is hit while sending an HTTP1 response, the"
 	" timeout is extended unless the total time already taken for sending"
 	" the response in its entirety exceeds this many seconds.\n\n"
-	"When this timeout is hit, the session is closed",
-	/* l-text */	"",
-	/* func */	NULL
+	"When this timeout is hit, the session is closed"
 )
 #undef XYZZY
 
@@ -1070,9 +954,7 @@ PARAM(
 	/* flags */	0,
 	/* s-text */
 	"Objects created with (ttl+grace+keep) shorter than this are "
-	"always put in transient storage.",
-	/* l-text */	"",
-	/* func */	NULL
+	"always put in transient storage."
 )
 
 PARAM(
@@ -1085,9 +967,7 @@ PARAM(
 	/* flags */	MUST_RESTART,
 	/* s-text */
 	"Install a signal handler which tries to dump debug information on "
-	"segmentation faults, bus errors and abort signals.",
-	/* l-text */	"",
-	/* func */	NULL
+	"segmentation faults, bus errors and abort signals."
 )
 
 PARAM(
@@ -1099,9 +979,7 @@ PARAM(
 	/* units */	"bool",
 	/* flags */	0,
 	/* s-text */
-	"Log all CLI traffic to syslog(LOG_INFO).",
-	/* l-text */	"",
-	/* func */	NULL
+	"Log all CLI traffic to syslog(LOG_INFO)."
 )
 
 #if defined(HAVE_TCP_FASTOPEN)
@@ -1118,9 +996,7 @@ PARAM(
 	/* units */	"bool",
 	/* flags */	XYZZY,
 	/* s-text */
-	"Enable TCP Fast Open extension.",
-	/* l-text */	NULL,
-	/* func */	NULL
+	"Enable TCP Fast Open extension."
 )
 #undef XYZZY
 
@@ -1139,9 +1015,7 @@ PARAM(
 	/* flags */	XYZZY,
 	/* s-text */
 	"The number of seconds between TCP keep-alive probes. "
-	"Ignored for Unix domain sockets.",
-	/* l-text */	"",
-	/* func */	NULL
+	"Ignored for Unix domain sockets."
 )
 
 PARAM(
@@ -1155,9 +1029,7 @@ PARAM(
 	/* s-text */
 	"The maximum number of TCP keep-alive probes to send before giving "
 	"up and killing the connection if no response is obtained from the "
-	"other end. Ignored for Unix domain sockets.",
-	/* l-text */	"",
-	/* func */	NULL
+	"other end. Ignored for Unix domain sockets."
 )
 
 PARAM(
@@ -1171,9 +1043,7 @@ PARAM(
 	/* s-text */
 	"The number of seconds a connection needs to be idle before TCP "
 	"begins sending out keep-alive probes. "
-	"Ignored for Unix domain sockets.",
-	/* l-text */	"",
-	/* func */	NULL
+	"Ignored for Unix domain sockets."
 )
 #undef XYZZY
 
@@ -1194,9 +1064,7 @@ PARAM(
 	"creating threads.\n"
 	"Set this to a few milliseconds if you see the 'threads_failed' "
 	"counter grow too much.\n"
-	"Setting this too high results in insufficient worker threads.",
-	/* l-text */	"",
-	/* func */	NULL
+	"Setting this too high results in insufficient worker threads."
 )
 
 /* actual location mgt_pool.c */
@@ -1212,9 +1080,7 @@ PARAM(
 	"Thread queue stuck watchdog.\n"
 	"\n"
 	"If no queued work have been released for this long,"
-	" the worker process panics itself.",
-	/* l-text */	"",
-	/* func */	NULL
+	" the worker process panics itself."
 )
 
 /* actual location mgt_pool.c */
@@ -1228,9 +1094,7 @@ PARAM(
 	/* flags */	DELAYED_EFFECT| EXPERIMENTAL,
 	/* s-text */
 	"Wait this long after destroying a thread.\n"
-	"This controls the decay of thread pools when idle(-ish).",
-	/* l-text */	"",
-	/* func */	NULL
+	"This controls the decay of thread pools when idle(-ish)."
 )
 
 /* actual location mgt_pool.c */
@@ -1255,9 +1119,7 @@ PARAM(
 	"\n"
 	"It may also help to increase thread_pool_timeout and "
 	"thread_pool_min, to reduce the rate at which treads are destroyed "
-	"and later recreated.",
-	/* l-text */	"",
-	/* func */	NULL
+	"and later recreated."
 )
 
 /* actual location mgt_pool.c */
@@ -1274,9 +1136,7 @@ PARAM(
 	"\n"
 	"Do not set this higher than you have to, since excess worker "
 	"threads soak up RAM and CPU and generally just get in the way of "
-	"getting work done.",
-	/* l-text */	"",
-	/* func */	NULL
+	"getting work done."
 )
 
 /* actual location mgt_pool.c */
@@ -1293,9 +1153,7 @@ PARAM(
 	"\n"
 	"Increasing this may help ramp up faster from low load situations "
 	"or when threads have expired."
-	"Minimum is 10 threads.",
-	/* l-text */	"",
-	/* func */	NULL
+	"Minimum is 10 threads."
 )
 
 /* actual location mgt_pool.c */
@@ -1322,9 +1180,7 @@ PARAM(
 	"unused.\n"
 	"\n"
 	"Default is 0 to auto-tune (currently 5% of thread_pool_min).\n"
-	"Minimum is 1 otherwise, maximum is 95% of thread_pool_min.",
-	/* l-text */	"",
-	/* func */	NULL
+	"Minimum is 1 otherwise, maximum is 95% of thread_pool_min."
 )
 
 /* actual location mgt_pool.c */
@@ -1339,9 +1195,7 @@ PARAM(
 	/* s-text */
 	"Worker thread stack size.\n"
 	"This will likely be rounded up to a multiple of 4k (or whatever "
-	"the page_size might be) by the kernel.",
-	/* l-text */	"",
-	/* func */	NULL
+	"the page_size might be) by the kernel."
 )
 
 /* actual location mgt_pool.c */
@@ -1357,9 +1211,7 @@ PARAM(
 	"Thread idle threshold.\n"
 	"\n"
 	"Threads in excess of thread_pool_min, which have been idle for at "
-	"least this long, will be destroyed.",
-	/* l-text */	"",
-	/* func */	NULL
+	"least this long, will be destroyed."
 )
 
 /* actual location mgt_pool.c */
@@ -1384,9 +1236,7 @@ PARAM(
 	"pool for each CPU is most likely detrimental to performance.\n"
 	"\n"
 	"Can be increased on the fly, but decreases require a restart to "
-	"take effect.",
-	/* l-text */	"",
-	/* func */	NULL
+	"take effect."
 )
 
 /* actual location mgt_pool.c */
@@ -1403,9 +1253,7 @@ PARAM(
 	"\n"
 	"This sets the number of requests we will queue, waiting for an "
 	"available thread.  Above this limit sessions will be dropped "
-	"instead of queued.",
-	/* l-text */	"",
-	/* func */	NULL
+	"instead of queued."
 )
 
 /* actual location mgt_pool.c */
@@ -1423,9 +1271,7 @@ PARAM(
 	"(request/fetch etc).\n"
 	"This parameters defines the maximum number of jobs a worker "
 	"thread may handle, before it is forced to dump its accumulated "
-	"stats into the global counters.",
-	/* l-text */	"",
-	/* func */	NULL
+	"stats into the global counters."
 )
 #endif
 
@@ -1452,9 +1298,7 @@ PARAM(
 	" request headers.\n\n"
 	"This parameter is particularly relevant for HTTP1 keepalive "
 	" connections which are closed unless the next request is received"
-	" before this timeout is reached.",
-	/* l-text */	"",
-	/* func */	NULL
+	" before this timeout is reached."
 )
 #undef XYZZY
 
@@ -1473,9 +1317,7 @@ PARAM(
 	"within the first 100 msec of the previous request completing.\n"
 	"Setting this too high results in worker threads not doing "
 	"anything for their keep, setting it too low just means that more "
-	"sessions take a detour around the waiter.",
-	/* l-text */	"",
-	/* func */	NULL
+	"sessions take a detour around the waiter."
 )
 
 #if 0
@@ -1489,9 +1331,7 @@ PARAM(
 	/* units */	"bool",
 	/* flags */	0,
 	/* s-text */
-	"Allow inline C code in VCL.",
-	/* l-text */	"",
-	/* func */	NULL
+	"Allow inline C code in VCL."
 )
 
 /* actual location mgt_param_tbl.c */
@@ -1504,9 +1344,7 @@ PARAM(
 	/* units */	"bool",
 	/* flags */	0,
 	/* s-text */
-	"Unreferenced VCL objects result in error.",
-	/* l-text */	"",
-	/* func */	NULL
+	"Unreferenced VCL objects result in error."
 )
 
 /* actual location mgt_param_tbl.c */
@@ -1520,9 +1358,7 @@ PARAM(
 	/* flags */	0,
 	/* s-text */
 	"Allow '/' in vmod & include paths.\n"
-	"Allow 'import ... from ...'.",
-	/* l-text */	"",
-	/* func */	NULL
+	"Allow 'import ... from ...'."
 )
 #endif
 
@@ -1536,9 +1372,7 @@ PARAM(
 	/* flags */	0,
 	/* s-text */
 	"How long a VCL is kept warm after being replaced as the "
-	"active VCL (granularity approximately 30 seconds).",
-	/* l-text */	"",
-	/* func */	NULL
+	"active VCL (granularity approximately 30 seconds)."
 )
 
 PARAM(
@@ -1553,9 +1387,7 @@ PARAM(
 	"Behaviour when attempting to exceed max_vcl loaded VCL.\n"
 	"\n*  0 - Ignore max_vcl parameter.\n"
 	"\n*  1 - Issue warning.\n"
-	"\n*  2 - Refuse loading VCLs.",
-	/* l-text */	"",
-	/* func */	NULL
+	"\n*  2 - Refuse loading VCLs."
 )
 
 PARAM(
@@ -1568,9 +1400,7 @@ PARAM(
 	/* flags */	0,
 	/* s-text */
 	"Threshold of loaded VCL programs.  (VCL labels are not counted.)"
-	"  Parameter max_vcl_handling determines behaviour.",
-	/* l-text */	"",
-	/* func */	NULL
+	"  Parameter max_vcl_handling determines behaviour."
 )
 
 PARAM(
@@ -1583,9 +1413,7 @@ PARAM(
 	/* flags */	0,
 	/* s-text */
 	"How long VSM memory is kept warm after a deallocation "
-	"(granularity approximately 2 seconds).",
-	/* l-text */	"",
-	/* func */	NULL
+	"(granularity approximately 2 seconds)."
 )
 
 PARAM(
@@ -1604,9 +1432,7 @@ PARAM(
 	"Setting this too high costs memory, setting it too low will cause "
 	"more VSL flushes and likely increase lock-contention on the VSL "
 	"mutex.\n\n"
-	"The minimum tracks the vsl_reclen parameter + 12 bytes.",
-	/* l-text */	"",
-	/* func */	NULL
+	"The minimum tracks the vsl_reclen parameter + 12 bytes."
 )
 
 #if 0
@@ -1624,9 +1450,7 @@ PARAM(
 	"	default	Set default value\n"
 	"\n"
 	"Use +/- prefix in front of VSL tag name to unmask/mask "
-	"individual VSL messages.",
-	/* l-text */	"",
-	/* func */	NULL
+	"individual VSL messages."
 )
 #endif
 
@@ -1640,9 +1464,7 @@ PARAM(
 	/* flags */	0,
 	/* s-text */
 	"Maximum number of bytes in SHM log record.\n\n"
-	"The maximum tracks the vsl_buffer parameter - 12 bytes.",
-	/* l-text */	"",
-	/* func */	NULL
+	"The maximum tracks the vsl_buffer parameter - 12 bytes."
 )
 
 PARAM(
@@ -1657,9 +1479,7 @@ PARAM(
 	"The amount of space to allocate for the VSL fifo buffer in the "
 	"VSM memory segment.  If you make this too small, "
 	"varnish{ncsa|log} etc will not be able to keep up.  Making it too "
-	"large just costs memory resources.",
-	/* l-text */	"",
-	/* func */	NULL
+	"large just costs memory resources."
 )
 
 PARAM(
@@ -1672,9 +1492,7 @@ PARAM(
 	/* flags */	0,
 	/* s-text */
 	"DEPRECATED: This parameter is ignored.\n"
-	"There is no global limit on amount of shared memory now.",
-	/* l-text */	"",
-	/* func */	NULL
+	"There is no global limit on amount of shared memory now."
 )
 
 #if 0
@@ -1688,9 +1506,7 @@ PARAM(
 	/* units */	NULL,
 	/* flags */	MUST_RESTART| WIZARD,
 	/* s-text */
-	"Select the waiter kernel interface.",
-	/* l-text */	"",
-	/* func */	NULL
+	"Select the waiter kernel interface."
 )
 #endif
 
@@ -1704,9 +1520,7 @@ PARAM(
 	/* flags */	DELAYED_EFFECT,
 	/* s-text */
 	"Bytes of HTTP protocol workspace for backend HTTP req/resp.  If "
-	"larger than 4k, use a multiple of 4k for VM efficiency.",
-	/* l-text */	"",
-	/* func */	NULL
+	"larger than 4k, use a multiple of 4k for VM efficiency."
 )
 
 PARAM(
@@ -1723,9 +1537,7 @@ PARAM(
 	"For HTTP/2 compliance this must be at least 20k, in order to "
 	"receive fullsize (=16k) frames from the client.   That usually "
 	"happens only in POST/PUT bodies.  For other traffic-patterns "
-	"smaller values work just fine.",
-	/* l-text */	"",
-	/* func */	NULL
+	"smaller values work just fine."
 )
 
 PARAM(
@@ -1739,9 +1551,7 @@ PARAM(
 	/* s-text */
 	"Allocation size for session structure and workspace.    The "
 	"workspace is primarily used for TCP connection addresses.  If "
-	"larger than 4k, use a multiple of 4k for VM efficiency.",
-	/* l-text */	"",
-	/* func */	NULL
+	"larger than 4k, use a multiple of 4k for VM efficiency."
 )
 
 PARAM(
@@ -1761,9 +1571,7 @@ PARAM(
 	"syscalls, setting it too high just wastes space.  ~0.1k + "
 	"UIO_MAXIOV * sizeof(struct iovec) (typically = ~16k for 64bit) "
 	"is considered the maximum sensible value under any known "
-	"circumstances (excluding exotic vmod use).",
-	/* l-text */	"",
-	/* func */	NULL
+	"circumstances (excluding exotic vmod use)."
 )
 
 PARAM(
@@ -1777,9 +1585,7 @@ PARAM(
 	/* s-text */
 	"HTTP2 Receive Window low water mark.\n"
 	"We try to keep the window at least this big\n"
-	"Only affects incoming request bodies (ie: POST, PUT etc.)",
-	/* l-text */	"",
-	/* func */	NULL
+	"Only affects incoming request bodies (ie: POST, PUT etc.)"
 )
 
 PARAM(
@@ -1793,9 +1599,7 @@ PARAM(
 	/* s-text */
 	"HTTP2 Receive Window Increments.\n"
 	"How big credits we send in WINDOW_UPDATE frames\n"
-	"Only affects incoming request bodies (ie: POST, PUT etc.)",
-	/* l-text */	"",
-	/* func */	NULL
+	"Only affects incoming request bodies (ie: POST, PUT etc.)"
 )
 
 PARAM(
@@ -1809,9 +1613,7 @@ PARAM(
 	/* s-text */
 	"HTTP2 header table size.\n"
 	"This is the size that will be used for the HPACK dynamic\n"
-	"decoding table.",
-	/* l-text */	"",
-	/* func */	NULL
+	"decoding table."
 )
 
 PARAM(
@@ -1825,9 +1627,7 @@ PARAM(
 	/* s-text */
 	"HTTP2 Maximum number of concurrent streams.\n"
 	"This is the number of requests that can be active\n"
-	"at the same time for a single HTTP2 connection.",
-	/* l-text */	"",
-	/* func */	NULL
+	"at the same time for a single HTTP2 connection."
 )
 
 PARAM(
@@ -1839,9 +1639,7 @@ PARAM(
 	/* units */	"bytes",
 	/* flags */	0,
 	/* s-text */
-	"HTTP2 initial flow control window size.",
-	/* l-text */	"",
-	/* func */	NULL
+	"HTTP2 initial flow control window size."
 )
 
 PARAM(
@@ -1853,9 +1651,7 @@ PARAM(
 	/* units */	"bytes",
 	/* flags */	0,
 	/* s-text */
-	"HTTP2 maximum per frame payload size we are willing to accept.",
-	/* l-text */	"",
-	/* func */	NULL
+	"HTTP2 maximum per frame payload size we are willing to accept."
 )
 
 PARAM(
@@ -1867,9 +1663,7 @@ PARAM(
 	/* units */	"bytes",
 	/* flags */	0,
 	/* s-text */
-	"HTTP2 maximum size of an uncompressed header list.",
-	/* l-text */	"",
-	/* func */	NULL
+	"HTTP2 maximum size of an uncompressed header list."
 )
 
 #undef PARAM
