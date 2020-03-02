@@ -45,8 +45,9 @@
 	"\tmax_age\tmax age of free element."
 
 struct parspec mgt_parspec[] = {
-#define PARAM(nm, ty, mi, ma, de, un, fl, st)				\
-	{ #nm, tweak_##ty, &mgt_param.nm, mi, ma, st, fl, de, un },
+#define PARAM(nm, ty, mi, ma, de, un, fl, st, ...)			\
+	{ #nm, tweak_##ty, &mgt_param.nm, mi, ma, st, fl, de, un,	\
+	    __VA_ARGS__ },
 #include "tbl/params.h"
 
 	{ "cc_command", tweak_string, &mgt_cc_cmd,

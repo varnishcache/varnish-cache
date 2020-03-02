@@ -27,7 +27,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * PARAM(nm, ty, mi, ma, de, un, fl, st)
+ * PARAM(nm, ty, mi, ma, de, un, fl, st[, dyn_min_reason, dyn_max_reason])
  */
 
 /*lint -save -e525 -e539 */
