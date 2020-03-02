@@ -1453,21 +1453,6 @@ PARAM(
 	"There is no global limit on amount of shared memory now."
 )
 
-#if 0
-/* see mgt_waiter.c */
-PARAM(
-	/* name */	waiter,
-	/* type */	waiter,
-	/* min */	NULL,
-	/* max */	NULL,
-	/* def */	"kqueue (possible values: kqueue, poll)",
-	/* units */	NULL,
-	/* descr */
-	"Select the waiter kernel interface.",
-	/* flags */	MUST_RESTART| WIZARD
-)
-#endif
-
 PARAM(
 	/* name */	workspace_backend,
 	/* type */	bytes_u,
