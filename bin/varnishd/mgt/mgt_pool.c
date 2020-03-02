@@ -89,7 +89,8 @@ tweak_thread_pool_max(struct vsb *vsb, const struct parspec *par,
 
 struct parspec WRK_parspec[] = {
 	{ "thread_pools", tweak_uint, &mgt_param.wthread_pools,
-		"1", NULL,
+		"1", NULL, "2",
+		"pools",
 		"Number of worker thread pools.\n"
 		"\n"
 		"Increasing the number of worker pools decreases lock "
@@ -103,21 +104,20 @@ struct parspec WRK_parspec[] = {
 		"\n"
 		"Can be increased on the fly, but decreases require a "
 		"restart to take effect.",
-		EXPERIMENTAL | DELAYED_EFFECT,
-		"2", "pools" },
+		EXPERIMENTAL | DELAYED_EFFECT },
 	{ "thread_pool_max", tweak_thread_pool_max, &mgt_param.wthread_max,
-		NULL, NULL,
+		NULL, NULL, "5000",
+		"threads",
 		"The maximum number of worker threads in each pool.\n"
 		"\n"
 		"Do not set this higher than you have to, since excess "
 		"worker threads soak up RAM and CPU and generally just get "
 		"in the way of getting work done.",
 		DELAYED_EFFECT,
-		"5000", "threads",
 		"thread_pool_min" },
 	{ "thread_pool_min", tweak_thread_pool_min, &mgt_param.wthread_min,
-		"5", // TASK_QUEUE__END
-		NULL,
+		"5" /* TASK_QUEUE__END */, NULL, "100",
+		"threads",
 		"The minimum number of worker threads in each pool.\n"
 		"\n"
 		"Increasing this may help ramp up faster from low load "
@@ -127,11 +127,11 @@ struct parspec WRK_parspec[] = {
 		"but this parameter is strongly recommended to be "
 		"at least 10", // 2 * TASK_QUEUE__END
 		DELAYED_EFFECT,
-		"100", "threads",
 		NULL, "thread_pool_max" },
 	{ "thread_pool_reserve", tweak_uint,
 		&mgt_param.wthread_reserve,
-		NULL, NULL,
+		NULL, NULL, "0",
+		"threads",
 		"The number of worker threads reserved for vital tasks "
 		"in each pool.\n"
 		"\n"
@@ -147,37 +147,37 @@ struct parspec WRK_parspec[] = {
 		"Default is 0 to auto-tune (5% of thread_pool_min).\n"
 		"Minimum is 1 otherwise, maximum is 95% of thread_pool_min.",
 		DELAYED_EFFECT,
-		"0", "threads",
 		NULL, "95% of thread_pool_min" },
 	{ "thread_pool_timeout",
 		tweak_timeout, &mgt_param.wthread_timeout,
-		"10", NULL,
+		"10", NULL, "300",
+		"seconds",
 		"Thread idle threshold.\n"
 		"\n"
 		"Threads in excess of thread_pool_min, which have been idle "
 		"for at least this long, will be destroyed.",
-		EXPERIMENTAL | DELAYED_EFFECT,
-		"300", "seconds" },
+		EXPERIMENTAL | DELAYED_EFFECT },
 	{ "thread_pool_watchdog",
 		tweak_timeout, &mgt_param.wthread_watchdog,
-		"0.1", NULL,
+		"0.1", NULL, "60",
+		"seconds",
 		"Thread queue stuck watchdog.\n"
 		"\n"
 		"If no queued work have been released for this long,"
 		" the worker process panics itself.",
-		EXPERIMENTAL,
-		"60", "seconds" },
+		EXPERIMENTAL },
 	{ "thread_pool_destroy_delay",
 		tweak_timeout, &mgt_param.wthread_destroy_delay,
-		"0.01", NULL,
+		"0.01", NULL, "1",
+		"seconds",
 		"Wait this long after destroying a thread.\n"
 		"\n"
 		"This controls the decay of thread pools when idle(-ish).",
-		EXPERIMENTAL | DELAYED_EFFECT,
-		"1", "seconds" },
+		EXPERIMENTAL | DELAYED_EFFECT },
 	{ "thread_pool_add_delay",
 		tweak_timeout, &mgt_param.wthread_add_delay,
-		"0", NULL,
+		"0", NULL, "0",
+		"seconds",
 		"Wait at least this long after creating a thread.\n"
 		"\n"
 		"Some (buggy) systems may need a short (sub-second) "
@@ -186,11 +186,11 @@ struct parspec WRK_parspec[] = {
 		"'threads_failed' counter grow too much.\n"
 		"\n"
 		"Setting this too high results in insufficient worker threads.",
-		EXPERIMENTAL,
-		"0", "seconds" },
+		EXPERIMENTAL },
 	{ "thread_pool_fail_delay",
 		tweak_timeout, &mgt_param.wthread_fail_delay,
-		"10e-3", NULL,
+		"10e-3", NULL, "0.2",
+		"seconds",
 		"Wait at least this long after a failed thread creation "
 		"before trying to create another thread.\n"
 		"\n"
@@ -205,31 +205,31 @@ struct parspec WRK_parspec[] = {
 		"It may also help to increase thread_pool_timeout and "
 		"thread_pool_min, to reduce the rate at which treads are "
 		"destroyed and later recreated.",
-		EXPERIMENTAL,
-		"0.2", "seconds" },
+		EXPERIMENTAL },
 	{ "thread_stats_rate",
 		tweak_uint, &mgt_param.wthread_stats_rate,
-		"0", NULL,
+		"0", NULL, "10",
+		"requests",
 		"Worker threads accumulate statistics, and dump these into "
 		"the global stats counters if the lock is free when they "
 		"finish a job (request/fetch etc.)\n"
 		"This parameters defines the maximum number of jobs "
 		"a worker thread may handle, before it is forced to dump "
 		"its accumulated stats into the global counters.",
-		EXPERIMENTAL,
-		"10", "requests" },
+		EXPERIMENTAL },
 	{ "thread_queue_limit", tweak_uint, &mgt_param.wthread_queue_limit,
-		"0", NULL,
+		"0", NULL, "20",
+		NULL,
 		"Permitted request queue length per thread-pool.\n"
 		"\n"
 		"This sets the number of requests we will queue, waiting "
 		"for an available thread.  Above this limit sessions will "
 		"be dropped instead of queued.",
-		EXPERIMENTAL,
-		"20", "" },
+		EXPERIMENTAL },
 	{ "thread_pool_stack",
 		tweak_bytes, &mgt_param.wthread_stacksize,
-		NULL, NULL,
+		NULL, NULL, NULL,	// default set in mgt_main.c
+		"bytes",
 		"Worker thread stack size.\n"
 		"This will likely be rounded up to a multiple of 4k"
 		" (or whatever the page_size might be) by the kernel.\n"
@@ -264,7 +264,6 @@ struct parspec WRK_parspec[] = {
 		" overflow occurs. Setting it in 150%-200%"
 		" increments is recommended until stack overflows"
 		" cease to occur.",
-		DELAYED_EFFECT,
-		NULL, "bytes" },	// default set in mgt_main.c
+		DELAYED_EFFECT },
 	{ NULL, NULL, NULL }
 };

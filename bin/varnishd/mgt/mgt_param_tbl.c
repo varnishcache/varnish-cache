@@ -46,66 +46,59 @@
 
 struct parspec mgt_parspec[] = {
 #define PARAM(nm, ty, mi, ma, de, un, fl, st, ...)			\
-	{ #nm, tweak_##ty, &mgt_param.nm, mi, ma, st, fl, de, un,	\
+	{ #nm, tweak_##ty, &mgt_param.nm, mi, ma, de, un, st, fl,	\
 	    __VA_ARGS__ },
 #include "tbl/params.h"
 
 	{ "cc_command", tweak_string, &mgt_cc_cmd,
-		NULL, NULL,
+		NULL, NULL, VCC_CC,
+		NULL,
 		"Command used for compiling the C source code to a "
 		"dlopen(3) loadable object.  Any occurrence of %s in "
 		"the string will be replaced with the source file name, "
 		"and %o will be replaced with the output file name.",
-		MUST_RELOAD,
-		VCC_CC , NULL },
+		MUST_RELOAD },
 	{ "vcl_path", tweak_string, &mgt_vcl_path,
-		NULL, NULL,
+		NULL, NULL, VARNISH_VCL_DIR,
+		NULL,
 		"Directory (or colon separated list of directories) "
 		"from which relative VCL filenames (vcl.load and "
 		"include) are to be found.  By default Varnish searches "
 		"VCL files in both the system configuration and shared "
 		"data directories to allow packages to drop their VCL "
 		"files in a standard location where relative includes "
-		"would work.",
-		0,
-		VARNISH_VCL_DIR,
-		NULL },
+		"would work." },
 	{ "vmod_path", tweak_string, &mgt_vmod_path,
-		NULL, NULL,
+		NULL, NULL, VARNISH_VMOD_DIR,
+		NULL,
 		"Directory (or colon separated list of directories) "
-		"where VMODs are to be found.",
-		0,
-		VARNISH_VMOD_DIR,
-		NULL },
+		"where VMODs are to be found." },
 	{ "vcc_err_unref", tweak_bool, &mgt_vcc_err_unref,
-		NULL, NULL,
-		"Unreferenced VCL objects result in error.",
-		0,
-		"on", "bool" },
+		NULL, NULL, "on",
+		"bool",
+		"Unreferenced VCL objects result in error." },
 	{ "vcc_allow_inline_c", tweak_bool, &mgt_vcc_allow_inline_c,
-		NULL, NULL,
-		"Allow inline C code in VCL.",
-		0,
-		"off", "bool" },
+		NULL, NULL, "off",
+		"bool",
+		"Allow inline C code in VCL." },
 	{ "vcc_unsafe_path", tweak_bool, &mgt_vcc_unsafe_path,
-		NULL, NULL,
+		NULL, NULL, "on",
+		"bool",
 		"Allow '/' in vmod & include paths.\n"
-		"Allow 'import ... from ...'.",
-		0,
-		"on", "bool" },
+		"Allow 'import ... from ...'." },
 	{ "pcre_match_limit", tweak_uint,
 		&mgt_param.vre_limits.match,
-		"1", NULL,
+		"1", NULL, "10000",
+		NULL,
 		"The limit for the number of calls to the internal match()"
 		" function in pcre_exec().\n\n"
 		"(See: PCRE_EXTRA_MATCH_LIMIT in pcre docs.)\n\n"
 		"This parameter limits how much CPU time"
-		" regular expression matching can soak up.",
-		0,
-		"10000", ""},
+		" regular expression matching can soak up." },
 	{ "pcre_match_limit_recursion", tweak_uint,
 		&mgt_param.vre_limits.match_recursion,
-		"1", NULL,
+		"1", NULL, "20",
+		NULL,
 		"The recursion depth-limit for the internal match() function"
 		" in a pcre_exec().\n\n"
 		"(See: PCRE_EXTRA_MATCH_LIMIT_RECURSION in pcre docs.)\n\n"
@@ -116,27 +109,22 @@ struct parspec mgt_parspec[] = {
 		" matching failures.\n\n"
 		"Matching failures will show up in the log as VCL_Error"
 		" messages with regexp errors -27 or -21.\n\n"
-		"Testcase r01576 can be useful when tuning this parameter.",
-		0,
-		"20", ""},
+		"Testcase r01576 can be useful when tuning this parameter." },
 	{ "pool_req", tweak_poolparam, &mgt_param.req_pool,
-		NULL, NULL,
+		NULL, NULL, "10,100,10",
+		NULL,
 		"Parameters for per worker pool request memory pool.\n\n"
-		MEMPOOL_TEXT,
-		0,
-		"10,100,10", ""},
+		MEMPOOL_TEXT },
 	{ "pool_sess", tweak_poolparam, &mgt_param.sess_pool,
-		NULL, NULL,
+		NULL, NULL, "10,100,10",
+		NULL,
 		"Parameters for per worker pool session memory pool.\n\n"
-		MEMPOOL_TEXT,
-		0,
-		"10,100,10", ""},
+		MEMPOOL_TEXT },
 	{ "pool_vbo", tweak_poolparam, &mgt_param.vbo_pool,
-		NULL, NULL,
+		NULL, NULL, "10,100,10",
+		NULL,
 		"Parameters for backend object fetch memory pool.\n\n"
-		MEMPOOL_TEXT,
-		0,
-		"10,100,10", ""},
+		MEMPOOL_TEXT },
 
 	{ NULL, NULL, NULL }
 };
