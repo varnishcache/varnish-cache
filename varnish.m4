@@ -1,4 +1,4 @@
-# Copyright (c) 2016-2018 Varnish Software AS
+# Copyright (c) 2016-2020 Varnish Software AS
 # All rights reserved.
 #
 # Author: Dridi Boukelmoune <dridi.boukelmoune@gmail.com>
@@ -438,7 +438,7 @@ clean-vsc-$1:
 #     @BUILD_VSC_BAR@
 #
 # They take care of turning foo.vsc and bar.vsc into C code and RST
-# documentation.
+# documentation. Now let's imagine a vmod_baz uses the counters foo.
 #
 # Just like the vcc_*_if.[ch] files, you need to manually add the generated
 # sources to the appropriate VMODs:
@@ -449,8 +449,13 @@ clean-vsc-$1:
 #             VSC_foo.c \
 #             VSC_foo.h
 #
+# Don't forget to add foo.vsc and bar.vsc to EXTRA_DIST.
+#
 # You can then include the counters documentation somewhere in the VMOD's
 # VCC descriptor:
+#
+#     COUNTERS
+#     ========
 #
 #     .. include:: VSC_foo.rst
 #
