@@ -175,7 +175,7 @@ VCL_Rel_CliCtx(struct vrt_ctx **ctx)
 static int
 vcl_send_event(struct vcl *vcl, enum vcl_event_e ev, struct vsb **msg)
 {
-	int r, havemsg = 0;
+	int r, havemsg;
 	unsigned method = 0;
 	struct vrt_ctx *ctx;
 
@@ -197,7 +197,7 @@ vcl_send_event(struct vcl *vcl, enum vcl_event_e ev, struct vsb **msg)
 		method = VCL_MET_FINI;
 		/* FALLTHROUGH */
 	case VCL_EVENT_COLD:
-		AZ(havemsg);
+		havemsg = 0;
 		break;
 	default:
 		WRONG("vcl_event");
