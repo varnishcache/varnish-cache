@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2011-2017 Varnish Software AS
+ * Copyright (c) 2011-2020 Varnish Software AS
  * All rights reserved.
  *
  * Author: Tollef Fog Heen <tfheen@varnish-software.com>
@@ -172,7 +172,16 @@ LIBVARNISHAPI_2.2 {
 
 LIBVARNISHAPI_2.3 {	/* 2019-09-15 release */
     global:
+	# vcs.c
 	VCS_String;
+    local:
+	*;
+};
+
+LIBVARNISHAPI_2.4 {	/* 2020-03-15 release */
+    global:
+	# vsb.c
+	VSB_tofile;
     local:
 	*;
 };
