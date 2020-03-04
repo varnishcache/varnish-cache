@@ -49,7 +49,7 @@ PARAM(
 	/* type */	bool,
 	/* min */	NULL,
 	/* max */	NULL,
-	/* def */	"on",
+	/* def */	"on",	/* default adjusted in mgt_param.c */
 	/* units */	"bool",
 	/* descr */
 	"Enable kernel accept-filters. This may require a kernel module to "
@@ -58,7 +58,10 @@ PARAM(
 	"in the first place. Malformed requests may go unnoticed and not "
 	"increase the client_req_400 counter. GET or HEAD requests with a "
 	"body may be blocked altogether.",
-	/* flags */	XYZZY
+	/* flags */	XYZZY,
+	/* dyn_min_reason */	NULL,
+	/* dyn_max_reason */	NULL,
+	/* dyn_def_reason */	"on (if your platform supports accept filters)"
 )
 #undef XYZZY
 
