@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2011-2017 Varnish Software AS
+ * Copyright (c) 2011-2020 Varnish Software AS
  * All rights reserved.
  *
  * Author: Tollef Fog Heen <tfheen@varnish-software.com>
@@ -137,6 +137,14 @@ LIBVARNISHAPI_2.0 {
 		VUT_Signal;
 		VUT_Signaled;
 
+    local:
+	*;
+};
+
+LIBVARNISHAPI_2.1 {
+    global:
+	# vsb.c
+	VSB_tofile;
     local:
 	*;
 };
