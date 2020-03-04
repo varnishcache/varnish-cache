@@ -781,7 +781,7 @@ MCF_DumpRstParam(void)
 		 * XXX: that say if ->min/->max are valid, so we
 		 * XXX: can emit those also in help texts.
 		 */
-		if (pp->flags) {
+		if (pp->flags & ~NOT_IMPLEMENTED) {
 			printf("\t* Flags: ");
 			q = "";
 
