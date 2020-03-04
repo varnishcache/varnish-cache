@@ -1,18 +1,8 @@
-**Note: This is a working document for a future release, with running
-updates for changes in the development branch. For changes in the
-released versions of Varnish, see:** :ref:`whats-new-index`
-
 .. _whatsnew_upgrading_6.3:
 
 %%%%%%%%%%%%%%%%%%%%%%%%
 Upgrading to Varnish 6.3
 %%%%%%%%%%%%%%%%%%%%%%%%
-
-**XXX: how to upgrade from previous deployments to this
-version. Limited to work that has to be done for an upgrade, new
-features are listed in "Changes". Explicitly mention what does *not*
-have to be changed, especially in VCL. May include, but is not limited
-to:**
 
 For users of many and/or labeled VCLs
 =====================================
@@ -34,7 +24,6 @@ labeling, so when a vcl needs to implicitly change temperature (due to
 being used or being labeled), an ``auto`` vcl will remain ``auto``,
 and a ``cold`` / ``warm`` vcl will change state, but never become
 ``auto`` implicitly.
-
 
 For developers and authors of VMODs and API clients
 ===================================================
