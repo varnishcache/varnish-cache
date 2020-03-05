@@ -40,20 +40,25 @@ The following operators are available in VCL:
   ``=``
     Assignment operator.
 
-  ``==``
-    Comparison.
+  ``+=``, ``-=``, ``*=``, ``/=``
+    Assign and increment/decrement/multiply/divide operator.
 
-  ``~``
-    Match. Can either be used with regular expressions or ACLs.
+    For strings, ``+=`` appends.
+
+  ``==``, ``!=``, ``<``, ``>``, ``<=``, ``>=``
+    Comparisons
+
+  ``~``, ``!~``
+    Match / non-match. Can either be used with regular expressions or ACLs.
 
   ``!``
     Negation.
 
-  ``&&``
-    Logical and.
+  ``&&`` / ``||``
+    Logical and/or.
 
-  ``||``
-    Logical or.
+  ``<<``, ``>>``
+    left/right bit-shift
 
 
 Conditionals
