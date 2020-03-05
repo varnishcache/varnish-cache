@@ -318,32 +318,28 @@ sample_data(void)
 }
 
 static void
+destroy_window(WINDOW **w)
+{
+
+	AN(w);
+	if (*w == NULL)
+		return;
+	assert(delwin(*w) != ERR);
+	*w = NULL;
+}
+
+static void
 make_windows(void)
 {
 	int Y, X;
 	int y;
 	int y_status, y_bar_t, y_points, y_bar_b, y_info;
 
-	if (w_status) {
-		delwin(w_status);
-		w_status = NULL;
-	}
-	if (w_bar_t) {
-		delwin(w_bar_t);
-		w_bar_t = NULL;
-	}
-	if (w_points) {
-		delwin(w_points);
-		w_points = NULL;
-	}
-	if (w_bar_b) {
-		delwin(w_bar_b);
-		w_bar_b = NULL;
-	}
-	if (w_info) {
-		delwin(w_info);
-		w_info = NULL;
-	}
+	destroy_window(&w_status);
+	destroy_window(&w_bar_t);
+	destroy_window(&w_points);
+	destroy_window(&w_bar_b);
+	destroy_window(&w_info);
 
 	Y = LINES;
 	X = COLS;
