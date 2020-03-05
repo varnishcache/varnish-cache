@@ -43,6 +43,25 @@ process p1 -write {dek}
 process p1 -expect-text 0 1 "Concurrent connections to backend:"
 process p1 -screen_dump
 
+process p1 -write {h}
+process p1 -expect-text 0 0 "Navigate the counter list one line up."
+process p1 -screen_dump
+
+process p1 -write {G}
+process p1 -expect-text 0 0 "Decrease refresh interval."
+process p1 -screen_dump
+
+# the counters screen is preserved
+process p1 -write {h}
+process p1 -expect-text 0 1 "Concurrent connections to backend:"
+process p1 -screen_dump
+
+# the help screen always appears from the top
+process p1 -write {h}
+process p1 -expect-text 0 0 "Navigate the counter list one line up."
+process p1 -screen_dump
+
+process p1 -write {h}
 process p1 -winsz 25 132
 process p1 -expect-text 4 124 "AVG_1000"
 process p1 -expect-text 22 108 "UNSEEN  DIAG"
