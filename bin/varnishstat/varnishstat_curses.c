@@ -117,6 +117,7 @@ static WINDOW *w_bar_b = NULL;
 static WINDOW *w_info = NULL;
 
 static const struct VSC_level_desc *verbosity;
+static int show_help = 0;
 static int keep_running = 1;
 static int hide_unseen = 1;
 static int page_start = 0;
@@ -443,6 +444,7 @@ draw_status(void)
 	running(w_status, up_mgt, VSM_MGT_RUNNING);
 	mvwprintw(w_status, 1, 0, "Uptime child: ");
 	running(w_status, up_chld, VSM_WRK_RUNNING);
+	mvwprintw(w_status, 2, 0, "Press <h> to toggle help screen");
 
 	if (VTIM_mono() < notification_eol)
 		mvwaddstr(w_status, 2, 0, notification_message);
@@ -804,6 +806,14 @@ draw_points(void)
 }
 
 static void
+draw_help(void)
+{
+
+	werase(w_points);
+	wnoutrefresh(w_points);
+}
+
+static void
 draw_bar_b(void)
 {
 	int x, X;
@@ -860,32 +870,33 @@ static void
 draw_screen(void)
 {
 	draw_status();
-	draw_bar_t();
-	draw_points();
-	draw_bar_b();
-	draw_info();
+	if (show_help) {
+		werase(w_bar_t);
+		werase(w_bar_b);
+		werase(w_info);
+		wnoutrefresh(w_bar_t);
+		wnoutrefresh(w_bar_b);
+		wnoutrefresh(w_info);
+		draw_help();
+	} else {
+		draw_bar_t();
+		draw_points();
+		draw_bar_b();
+		draw_info();
+	}
 	doupdate();
 	redraw = 0;
 }
 
 static void
-handle_keypress(int ch)
+handle_points_keypress(enum kb_e kb)
 {
-	enum kb_e kb;
-
-	switch (ch) {
-#define BINDING_KEY(chr, name, or)	\
-	case chr:
-#define BINDING(name, desc)		\
-		kb = KB_ ## name;	\
-		break;
-#define BINDING_SIG
-#include "varnishstat_bindings.h"
-	default:
-		return;
-	}
 
 	switch (kb) {
+	case KB_HELP:
+		show_help = 1;
+		redraw = 1;
+		return;
 	case KB_UP:
 		if (current == 0)
 			return;
@@ -961,6 +972,43 @@ handle_keypress(int ch)
 
 	update_position();
 	redraw = 1;
+}
+
+static void
+handle_help_keypress(enum kb_e kb)
+{
+
+	switch (kb) {
+	case KB_HELP:
+		show_help = 0;
+		redraw = 1;
+		/* FALLTHROUGH */
+	default:
+		return;
+	}
+}
+
+static void
+handle_keypress(int ch)
+{
+	enum kb_e kb;
+
+	switch (ch) {
+#define BINDING_KEY(chr, name, or)	\
+	case chr:
+#define BINDING(name, desc)		\
+		kb = KB_ ## name;	\
+		break;
+#define BINDING_SIG
+#include "varnishstat_bindings.h"
+	default:
+		return;
+	}
+
+	if (show_help)
+		handle_help_keypress(kb);
+	else
+		handle_points_keypress(kb);
 }
 
 static void * v_matchproto_(VSC_new_f)

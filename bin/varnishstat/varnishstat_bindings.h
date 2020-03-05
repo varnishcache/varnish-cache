@@ -36,6 +36,9 @@
 
 #define BINDING_CTRL(c) ((c) & 0x1f)
 
+BINDING_KEY('h',	"h",)
+BINDING(HELP, "\tToggle the help screen.")
+
 BINDING_KEY(KEY_UP,	"UP",	" or ")
 BINDING_KEY('k',	"k",)
 BINDING(UP, "\tNavigate the counter list one line up.")
