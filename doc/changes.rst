@@ -40,8 +40,9 @@ NEXT (2020-03-15)
 
 * ``std.rollback(bereq)`` is now safe to use, fixed bug 3009_
 
-* Fixed ``varnishstat``, ``varnishtop`` and ``varnishhist`` handling
-  INT, TERM and HUP signals (bug 3088_)
+* Fixed ``varnishstat``, ``varnishtop``, ``varnishhist`` and
+  ``varnishadm`` handling INT, TERM and HUP signals (bugs 3088_ and
+  3229_)
 
 * The hash algorithm of the ``hash`` director was changed, so backend
   selection will change once only when upgrading. Users of the
@@ -72,17 +73,116 @@ NEXT (2020-03-15)
 
 * ``VRT_fail()`` now also works from director code
 
-* deliberately closing backend requests through ``return(abandon)``,
+* Deliberately closing backend requests through ``return(abandon)``,
   ``return(fail)`` or ``return(error)`` is no longer accounted as a
   fetch failure
 
-.. slink: continue at f402e5ff3063026f6ac779295b318da491a934a9
+* Fixed a bug which could cause probes not to run
 
 * The ``if-range`` header is now handled, allowing clients to conditionally
   request a range based on a date or an ETag.
 
+* (Re)introduced struct reqtop to hold information on the ESI top
+  request and PRIV_TOP, fixed regression 3019_
+
+* Allow numerical expressions in VCL to be negative / negated
+
+* Add vi-stype CTRL-f / CTRL-b for page down/up to interactive
+  varnishstat
+
+* Fixed wrong handling of an out-of-workspae condition in the proxy
+  vmod and in the workspace allocator, bug 3131_
+
+* Raised the minimum for the ``vcl_cooldown`` parameter to 1s to fix
+  bug 3135_
+
+* Improved creation of additional threads when none are available
+
+* Fixed a race between director creation and the ``backend.list`` CLI
+  command - see bug 3094_
+
+* Added error handling to avoid panics for workspace overflows during
+  session attribute allocation - bug 3145_
+
+* Overloaded the ``+=`` operator to also append to headers
+
+* Fixed set ``*.body`` commands.
+
+* Fixed status for truncated CLI responses, bug 3038_
+
+* Output VCC warnings also for VCLs loaded via the ``varnishd -f``
+  option, see bug 3160_
+
+* Improved fetch error handling when stale objects are present in
+  cache, see bug 3089_
+
+* Added a ``Notice`` VSL tag (used for ``varnishlog`` logging)
+
+.. mention #3176? (backend cooling straightened out)
+
+* Fixed session close reason reporting and accounting, added
+  ``rx_close_idle`` counter for separate accounting when
+  ``timeout_idle`` is reached.
+
+* Fixed handling of request bodies for backend retries
+
+* Fix deadlocks when the maximum number of threads has been reached,
+  in particular with http/2, see 2418_
+
+* Add more vcl control over timeouts with ``sess.timeout_linger``,
+  ``sess.send_timeout`` and ``sess.idle_send_timeout``
+
+* Fix panics due to missing EINVAL handling on MacOS, see 1853_
+
+* Added ``VSLs()`` and ``VSLbs()`` functions for logging ``STRANDS`` to
+  VSL
+
+* Fixed cases where a workspace overflow would not result in a VCL
+  failure, see 3194_
+
+* Added ``WS_VSB_new()`` / ``WS_VSB_finish()`` for VSBs on workspaces
+
+* Imported ``vmod_cookie`` from `varnish_modules`_
+
+* ``body_status`` and ``req_body_status`` have been collapsed into one
+  type. In particular, the ``REQ_BODY_*`` enums now have been replaced
+  with ``BS_*``.
+
+.. mention VSB_QUOTE_GLOB ?
+
+* Fixed an old regression of the ``Age:`` header for passes, see bug
+  3221_
+
+* Added ``VRT_AllocStrandsWS()`` as a utility function to allocate
+  STRANDS on a workspace.
+
+* Reduced compile time of ``vcl_init{}`` / ``vcl_fini{}`` with gcc,
+  added ``v_dont_optimize`` attribute macro
+
+* Fixed a case where ``send_timeout`` would have no effect when
+  streaming from a backend fetch, see bug 3189_
+
+  *NOTE* Users upgrading varnish should re-check ``send_timeout`` with
+  respect to long pass and streaming fetches and watch out for
+  increased session close rates.
+
 .. _3009: https://github.com/varnishcache/varnish-cache/issues/3009
 .. _3088: https://github.com/varnishcache/varnish-cache/issues/3088
+.. _3019: https://github.com/varnishcache/varnish-cache/issues/3019
+.. _3131: https://github.com/varnishcache/varnish-cache/issues/3131
+.. _3135: https://github.com/varnishcache/varnish-cache/issues/3135
+.. _3094: https://github.com/varnishcache/varnish-cache/issues/3094
+.. _3145: https://github.com/varnishcache/varnish-cache/issues/3145
+.. _3038: https://github.com/varnishcache/varnish-cache/issues/3038
+.. _3160: https://github.com/varnishcache/varnish-cache/issues/3160
+.. _3089: https://github.com/varnishcache/varnish-cache/issues/3089
+.. _2418: https://github.com/varnishcache/varnish-cache/issues/2418
+.. _1853: https://github.com/varnishcache/varnish-cache/issues/1853
+.. _3194: https://github.com/varnishcache/varnish-cache/issues/3194
+.. _varnish_modules: https://github.com/varnish/varnish-modules
+.. _3221: https://github.com/varnishcache/varnish-cache/issues/3221
+.. _3229: https://github.com/varnishcache/varnish-cache/issues/3229
+.. _3189: https://github.com/varnishcache/varnish-cache/issues/3189
 
 ================================
 Varnish Cache 6.3.0 (2019-09-15)
