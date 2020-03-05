@@ -27,9 +27,9 @@ jobs:
       script: &script-common
         - |
           if [[ "$TRAVIS_PULL_REQUEST" != "false" ]]; then
-            make -j3 distcheck VERBOSE=1
+            make -j8 distcheck VERBOSE=1
           else
-            make -j3 check VERBOSE=1
+            make -j8 check VERBOSE=1
           fi
     - <<: *test-linux
       arch: arm64
