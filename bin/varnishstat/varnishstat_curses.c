@@ -770,7 +770,6 @@ draw_line(WINDOW *w, int y, const struct pt *pt)
 static void
 draw_points(void)
 {
-	int Y, X;
 	int line;
 	int n;
 
@@ -789,9 +788,6 @@ draw_points(void)
 	assert(current >= page_start);
 	assert(current - page_start < l_points);
 
-	getmaxyx(w_points, Y, X);
-	(void)Y;
-	(void)X;
 	for (line = 0; line < l_points; line++) {
 		n = line + page_start;
 		if (n >= n_ptarray)
