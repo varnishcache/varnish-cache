@@ -38,9 +38,25 @@ NEXT (2020-03-15)
 
 * backend ``none`` was added for "no backend".
 
+* ``std.rollback(bereq)`` is now safe to use, fixed bug 3009_
+
+* Fixed ``varnishstat``, ``varnishtop`` and ``varnishhist`` handling
+  INT, TERM and HUP signals (bug 3088_)
+
+* The hash algorithm of the ``hash`` director was changed, so backend
+  selection will change once only when upgrading. Users of the
+  ``hash`` director are advised to consider using the ``shard``
+  director, which, amongst other advantages, offers more stable
+  backend selection through consistent hashing.
+
+.. do we want to mention VSV00004 ?
+
 * Log records can safely have empty fields or fields containing blanks if
   they are delimited by "double quotes". This was applied to ``SessError``
   and ``Backend_health``.
+
+.. 3109 (vdp gunzip) is probably irrelevant for users because it only
+   happens with gzip objects inserted bypassing the built-in vfps
 
 * The option ``varnishtest -W`` is gone, the same can be achieved with
   ``varnishtest -p debug=+witness``.
@@ -49,8 +65,24 @@ NEXT (2020-03-15)
   before the VCL subroutine, now it gets emitted after VCL returns for
   consistency with ``vcl_deliver {}``.
 
+* Latencies for newly created worker threads to start work on
+  congested systems have been improved.
+
+* ``VRB_Iterate()`` signature has changed
+
+* ``VRT_fail()`` now also works from director code
+
+* deliberately closing backend requests through ``return(abandon)``,
+  ``return(fail)`` or ``return(error)`` is no longer accounted as a
+  fetch failure
+
+.. slink: continue at f402e5ff3063026f6ac779295b318da491a934a9
+
 * The ``if-range`` header is now handled, allowing clients to conditionally
   request a range based on a date or an ETag.
+
+.. _3009: https://github.com/varnishcache/varnish-cache/issues/3009
+.. _3088: https://github.com/varnishcache/varnish-cache/issues/3088
 
 ================================
 Varnish Cache 6.3.0 (2019-09-15)
