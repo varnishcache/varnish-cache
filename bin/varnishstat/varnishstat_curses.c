@@ -118,6 +118,7 @@ static WINDOW *w_info = NULL;
 
 static const struct VSC_level_desc *verbosity;
 static int show_help = 0;
+static int help_line = 0;
 static int keep_running = 1;
 static int hide_unseen = 1;
 static int page_start = 0;
@@ -804,8 +805,31 @@ draw_points(void)
 static void
 draw_help(void)
 {
+	const char *const *p;
+	int l, y, X;
 
+	if (l_points >= bindings_help_len) {
+		assert(help_line == 0);
+		l = bindings_help_len;
+	} else {
+		assert(help_line >= 0);
+		assert(help_line <= bindings_help_len - l_points);
+		l = l_points;
+	}
+
+	X = getmaxx(w_points);
 	werase(w_points);
+
+	for (y = 0, p = bindings_help + help_line; y < l; y++, p++) {
+		if (**p == '\t') {
+			mvwprintw(w_points, y, 0, "    %.*s", X - 4, *p + 1);
+		} else {
+			wattron(w_points, A_BOLD);
+			mvwprintw(w_points, y, 0, "%.*s", X, *p);
+			wattroff(w_points, A_BOLD);
+		}
+	}
+
 	wnoutrefresh(w_points);
 }
 
@@ -885,12 +909,32 @@ draw_screen(void)
 }
 
 static void
+handle_common_keypress(enum kb_e kb)
+{
+
+	switch (kb) {
+	case KB_QUIT:
+		keep_running = 0;
+		return;
+	case KB_SIG_INT:
+		AZ(raise(SIGINT));
+		return;
+	case KB_SIG_TSTP:
+		AZ(raise(SIGTSTP));
+		return;
+	default:
+		WRONG("unexpected key binding");
+	}
+}
+
+static void
 handle_points_keypress(enum kb_e kb)
 {
 
 	switch (kb) {
 	case KB_HELP:
 		show_help = 1;
+		help_line = 0;
 		redraw = 1;
 		return;
 	case KB_UP:
@@ -950,17 +994,13 @@ handle_points_keypress(enum kb_e kb)
 		verbosity = VSC_ChangeLevel(verbosity, -1);
 		rebuild = 1;
 		break;
-	case KB_QUIT:
-		keep_running = 0;
-		return;
-	case KB_SIG_INT:
-		AZ(raise(SIGINT));
-		return;
 	case KB_SAMPLE:
 		sample = 1;
 		return;
+	case KB_QUIT:
+	case KB_SIG_INT:
 	case KB_SIG_TSTP:
-		AZ(raise(SIGTSTP));
+		handle_common_keypress(kb);
 		return;
 	default:
 		WRONG("unhandled key binding");
@@ -973,15 +1013,55 @@ handle_points_keypress(enum kb_e kb)
 static void
 handle_help_keypress(enum kb_e kb)
 {
+	int hl = help_line;
 
 	switch (kb) {
 	case KB_HELP:
 		show_help = 0;
 		redraw = 1;
-		/* FALLTHROUGH */
-	default:
 		return;
+	case KB_UP:
+		help_line--;
+		break;
+	case KB_DOWN:
+		help_line++;
+		break;
+	case KB_PAGEUP:
+		help_line -= l_points;
+		break;
+	case KB_PAGEDOWN:
+		help_line += l_points;
+		break;
+	case KB_TOP:
+		help_line = 0;
+		break;
+	case KB_BOTTOM:
+		help_line = bindings_help_len;
+		break;
+	case KB_UNSEEN:
+	case KB_SCALE:
+	case KB_ACCEL:
+	case KB_DECEL:
+	case KB_VERBOSE:
+	case KB_QUIET:
+	case KB_SAMPLE:
+		break;
+	case KB_QUIT:
+	case KB_SIG_INT:
+	case KB_SIG_TSTP:
+		handle_common_keypress(kb);
+		return;
+	default:
+		WRONG("unhandled key binding");
 	}
+
+	if (help_line > bindings_help_len - l_points)
+		help_line = bindings_help_len - l_points;
+
+	if (help_line < 0)
+		help_line = 0;
+
+	redraw = (help_line != hl);
 }
 
 static void
