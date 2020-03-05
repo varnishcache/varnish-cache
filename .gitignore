@@ -88,6 +88,8 @@ cscope.*out
 /bin/varnishlog/varnishlog
 /bin/varnishncsa/varnishncsa
 /bin/varnishstat/varnishstat
+/bin/varnishstat/varnishstat_help_gen
+/bin/varnishstat/varnishstat_curses_help.c
 /bin/varnishstat/vsc2rst
 /bin/varnishtest/teken_state.h
 /bin/varnishtest/varnishtest
