@@ -1,8 +1,8 @@
 /*-
- * Copyright (c) 2010-2014 Varnish Software AS
+ * Copyright (c) 2020 Varnish Software AS
  * All rights reserved.
  *
- * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
+ * Author: Dridi Boukelmoune <dridi.boukelmoune@gmail.com>
  *
  * SPDX-License-Identifier: BSD-2-Clause
  *
@@ -26,18 +26,61 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
  */
 
-#include <stdint.h>
+#include <stddef.h>
+#include <string.h>
+#include <unistd.h>
 
-#include "vapi/vsm.h"
-#include "vapi/vsc.h"
+#include <vdef.h>
+#include <vas.h>
+#include <vsb.h>
 
-#include "vas.h"
-#include "vcs.h"
+static const char help[] = "\n\n"
+#define BINDING_KEY(key, name, next) "<" name ">" next
+#define BINDING(name, desc) "\n\n" desc "\n\n"
+#include "varnishstat_bindings.h"
+;
 
-void do_curses(struct vsm *,  struct vsc *);
+int
+main(void)
+{
+	struct vsb vsb[1];
+	const char *p, *n;
+	unsigned u;
 
-extern const char *const bindings_help[];
-extern const int bindings_help_len;
+	AN(VSB_new(vsb, NULL, 0, VSB_AUTOEXTEND));
+	VSB_cat(vsb,
+	    "/*\n"
+	    " * NB:  This file is machine generated, DO NOT EDIT!\n"
+	    " *\n"
+	    " * Edit varnishstat_bindings.h and run make instead\n"
+	    " */\n"
+	    "\n"
+	    "#include <stddef.h>\n"
+	    "\n"
+	    "const char *const bindings_help[] = {\n");
+
+	n = help;
+	u = 0;
+	do {
+		p = n + 1;
+		n = strchr(p, '\n');
+		if (n != NULL) {
+			VSB_putc(vsb, '\t');
+			VSB_quote(vsb, p, (int)(n - p), VSB_QUOTE_CSTR);
+			VSB_cat(vsb, ",\n");
+			u++;
+		}
+	} while (n != NULL);
+
+	VSB_printf(vsb,
+	    "\tNULL\n"
+	    "};\n"
+	    "\n"
+	    "const int bindings_help_len = %u;\n", u);
+	AZ(VSB_finish(vsb));
+	AZ(VSB_tofile(vsb, STDOUT_FILENO));
+	VSB_delete(vsb);
+	return (0);
+}
