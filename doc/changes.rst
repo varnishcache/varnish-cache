@@ -82,8 +82,8 @@ NEXT (2020-03-15)
 * The ``if-range`` header is now handled, allowing clients to conditionally
   request a range based on a date or an ETag.
 
-* (Re)introduced struct reqtop to hold information on the ESI top
-  request and PRIV_TOP, fixed regression 3019_
+* Introduced struct reqtop to hold information on the ESI top request
+  and PRIV_TOP, fixed regression 3019_
 
 * Allow numerical expressions in VCL to be negative / negated
 
