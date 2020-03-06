@@ -54,6 +54,7 @@
 #include "varnishstat.h"
 
 static struct VUT *vut;
+int has_f = 0;
 
 /*--------------------------------------------------------------------*/
 
@@ -278,7 +279,6 @@ main(int argc, char * const *argv)
 	int once = 0, xml = 0, json = 0, f_list = 0, curses = 0;
 	signed char opt;
 	int i;
-	int has_f = 0;
 	struct vsc *vsc;
 
 	if (argc == 2 && !strcmp(argv[1], "--bindings"))

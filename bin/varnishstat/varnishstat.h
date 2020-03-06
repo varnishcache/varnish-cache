@@ -37,7 +37,12 @@
 #include "vas.h"
 #include "vcs.h"
 
+/* varnishstat.c */
+extern int has_f;
+
+/* varnishstat_curses.c */
 void do_curses(struct vsm *,  struct vsc *);
 
+/* varnishstat_curses_help.c */
 extern const char *const bindings_help[];
 extern const int bindings_help_len;

@@ -64,6 +64,9 @@
 
 #define VALUE_MAX		999999999999
 
+#define REBUILD_NEXT		(1u << 0)
+#define REBUILD_FIRST		(1u << 1)
+
 enum kb_e {
 #define BINDING(name, desc) KB_ ## name,
 #define BINDING_SIG
@@ -220,9 +223,14 @@ build_pt_array(void)
 
 	VTAILQ_FOREACH(pt, &ptlist, list) {
 		CHECK_OBJ_NOTNULL(pt, PT_MAGIC);
+		if (pt->vpt->level > verbosity) {
+			if (has_f && (rebuild & REBUILD_FIRST))
+				verbosity = VSC_ChangeLevel(verbosity,
+				    pt->vpt->level - verbosity);
+			else
+				continue;
+		}
 		if (!pt->seen && hide_unseen)
-			continue;
-		if (pt->vpt->level > verbosity)
 			continue;
 		assert(n_ptarray < n_ptlist);
 		ptarray[n_ptarray++] = pt;
@@ -254,7 +262,7 @@ sample_points(void)
 			continue;
 		if (!pt->seen) {
 			pt->seen = 1;
-			rebuild = 1;
+			rebuild = REBUILD_NEXT;
 		}
 		pt->last = pt->cur;
 		pt->cur = v;
@@ -964,11 +972,11 @@ handle_points_keypress(enum kb_e kb)
 		break;
 	case KB_UNSEEN:
 		hide_unseen = 1 - hide_unseen;
-		rebuild = 1;
+		rebuild = REBUILD_NEXT;
 		break;
 	case KB_SCALE:
 		scale = 1 - scale;
-		rebuild = 1;
+		rebuild = REBUILD_NEXT;
 		break;
 	case KB_ACCEL:
 		interval += 0.1;
@@ -988,11 +996,11 @@ handle_points_keypress(enum kb_e kb)
 		break;
 	case KB_VERBOSE:
 		verbosity = VSC_ChangeLevel(verbosity, 1);
-		rebuild = 1;
+		rebuild = REBUILD_NEXT;
 		break;
 	case KB_QUIET:
 		verbosity = VSC_ChangeLevel(verbosity, -1);
-		rebuild = 1;
+		rebuild = REBUILD_NEXT;
 		break;
 	case KB_SAMPLE:
 		sample = 1;
@@ -1094,7 +1102,7 @@ newpt(void *priv, const struct VSC_point *const vpt)
 
 	AZ(priv);
 	ALLOC_OBJ(pt, PT_MAGIC);
-	rebuild |= 1;
+	rebuild |= REBUILD_NEXT;
 	AN(pt);
 	pt->vpt = vpt;
 	pt->last = *pt->vpt->ptr;
@@ -1125,7 +1133,7 @@ delpt(void *priv, const struct VSC_point *const vpt)
 
 	AZ(priv);
 	CAST_OBJ_NOTNULL(pt, vpt->priv, PT_MAGIC);
-	rebuild |= 2;
+	rebuild |= REBUILD_NEXT;
 	VTAILQ_REMOVE(&ptlist, pt, list);
 	n_ptlist--;
 	FREE_OBJ(pt);
@@ -1159,6 +1167,7 @@ do_curses(struct vsm *vsm, struct vsc *vsc)
 
 	VSC_State(vsc, newpt, delpt, NULL);
 
+	rebuild |= REBUILD_FIRST;
 	(void)VSC_Iter(vsc, vsm, NULL, NULL);
 	build_pt_array();
 	init_hitrate();
