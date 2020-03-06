@@ -57,9 +57,6 @@ The following operators are available in VCL:
   ``&&`` / ``||``
     Logical and/or.
 
-  ``<<``, ``>>``
-    left/right bit-shift
-
 
 Conditionals
 ------------
