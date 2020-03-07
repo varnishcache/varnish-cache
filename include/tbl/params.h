@@ -1199,7 +1199,7 @@ PARAM(
 	"HTTP2 maximum size of an uncompressed header list."
 )
 
-#if 0
+#if 0 /* NOT ACTUALLY DEFINED HERE */
 /* actual location mgt_param_bits.c*/
 /* see tbl/debug_bits.h */
 PARAM(
@@ -1593,7 +1593,7 @@ PARAM(
 	"Use +/- prefix in front of VSL tag name to unmask/mask "
 	"individual VSL messages."
 )
-#endif
+#endif /* NOT ACTUALLY DEFINED HERE */
 
 #undef PARAM
 
