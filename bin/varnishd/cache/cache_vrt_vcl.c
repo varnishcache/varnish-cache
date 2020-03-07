@@ -90,6 +90,12 @@ VCL_Refresh(struct vcl **vcc)
 	VCL_Update(vcc, NULL);
 }
 
+static inline int
+vcl_cacheable(const struct vcl *vcl)
+{
+	return (vcl == vcl_active || vcl->nlabels > 0);
+}
+
 void
 VCL_Recache(const struct worker *wrk, struct vcl **vclp)
 {
@@ -98,12 +104,17 @@ VCL_Recache(const struct worker *wrk, struct vcl **vclp)
 	AN(vclp);
 	CHECK_OBJ_NOTNULL(*vclp, VCL_MAGIC);
 
-	if (*vclp != vcl_active || wrk->wpriv->vcl == vcl_active) {
+	if (! vcl_cacheable(*vclp))
 		VCL_Rel(vclp);
-		return;
-	}
-	if (wrk->wpriv->vcl != NULL)
+
+	if (wrk->wpriv->vcl != NULL &&
+	    (*vclp != NULL || ! vcl_cacheable(wrk->wpriv->vcl)))
 		VCL_Rel(&wrk->wpriv->vcl);
+
+	if (*vclp == NULL)
+		return;
+
+	AZ(wrk->wpriv->vcl);
 	wrk->wpriv->vcl = *vclp;
 	*vclp = NULL;
 }
