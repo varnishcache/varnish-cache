@@ -180,7 +180,7 @@ ved_include(struct req *preq, const char *src, const char *host,
 		req->vcl = req->top->vcl0;
 	else
 		req->vcl = preq->vcl;
-	VCL_Ref(req->vcl);
+	VCL_Ref(req->vcl, wrk);
 
 	assert(req->req_step == R_STP_TRANSPORT);
 	req->t_req = preq->t_req;
@@ -207,7 +207,7 @@ ved_include(struct req *preq, const char *src, const char *host,
 		AZ(req->wrk);
 	}
 
-	VCL_Rel(&req->vcl);
+	VCL_Recache(wrk, &req->vcl);
 
 	req->wrk = NULL;
 	THR_SetRequest(preq);

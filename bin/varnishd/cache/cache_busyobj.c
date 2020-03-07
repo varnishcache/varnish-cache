@@ -139,7 +139,7 @@ VBO_GetBusyObj(const struct worker *wrk, const struct req *req)
 
 	bo->director_req = req->director_hint;
 	bo->vcl = req->vcl;
-	VCL_Ref(bo->vcl);
+	VCL_Ref(bo->vcl, wrk);
 
 	bo->t_first = bo->t_prev = NAN;
 
@@ -180,7 +180,7 @@ VBO_ReleaseBusyObj(struct worker *wrk, struct busyobj **pbo)
 		    HSH_RUSH_POLICY);
 	}
 
-	VCL_Rel(&bo->vcl);
+	VCL_Recache(wrk, &bo->vcl);
 
 	memset(&bo->retries, 0,
 	    sizeof *bo - offsetof(struct busyobj, retries));

@@ -109,11 +109,18 @@ VCL_Recache(const struct worker *wrk, struct vcl **vclp)
 }
 
 void
-VCL_Ref(struct vcl *vcl)
+VCL_Ref(struct vcl *vcl, const struct worker *wrk)
 {
 
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
+	CHECK_OBJ_ORNULL(wrk, WORKER_MAGIC);
 	assert(!vcl->temp->is_cold);
+
+	if (wrk && vcl == wrk->wpriv->vcl) {
+		wrk->wpriv->vcl = NULL;
+		return;
+	}
+
 	Lck_Lock(&vcl_mtx);
 	assert(vcl->busy > 0);
 	vcl->busy++;
@@ -357,7 +364,7 @@ VRT_VCL_Prevent_Cold(VRT_CTX, const char *desc)
 	ref->vcl = ctx->vcl;
 	REPLACE(ref->desc, desc);
 
-	VCL_Ref(ctx->vcl);
+	VCL_Ref(ctx->vcl, NULL);
 
 	Lck_Lock(&vcl_mtx);
 	VTAILQ_INSERT_TAIL(&ctx->vcl->ref_list, ref, list);
