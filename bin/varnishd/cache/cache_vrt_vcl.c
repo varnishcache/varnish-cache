@@ -90,6 +90,12 @@ VCL_Refresh(struct vcl **vcc)
 	VCL_Update(vcc, NULL);
 }
 
+static inline int
+vcl_cancache(const struct vcl *vcl)
+{
+	return (vcl == vcl_active || vcl->nlabels > 0);
+}
+
 void
 VCL_Recache(struct worker *wrk, struct vcl **vclp)
 {
@@ -98,12 +104,17 @@ VCL_Recache(struct worker *wrk, struct vcl **vclp)
 	AN(vclp);
 	CHECK_OBJ_NOTNULL(*vclp, VCL_MAGIC);
 
-	if (*vclp != vcl_active || wrk->vcl == vcl_active) {
+	if (! vcl_cancache(*vclp))
 		VCL_Rel(vclp);
-		return;
-	}
-	if (wrk->vcl != NULL)
+
+	if (wrk->vcl != NULL &&
+	    (*vclp != NULL || ! vcl_cancache(wrk->vcl)))
 		VCL_Rel(&wrk->vcl);
+
+	if (*vclp == NULL)
+		return;
+
+	AZ(wrk->vcl);
 	wrk->vcl = *vclp;
 	*vclp = NULL;
 }
