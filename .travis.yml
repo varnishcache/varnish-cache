@@ -69,7 +69,7 @@ jobs:
         - ./configure --with-unwind --enable-developer-warnings --enable-debugging-symbols --disable-stack-protector --with-persistent-storage --enable-asan --enable-ubsan
     - stage: test
       os: osx
-      osx_image: xcode10.2
+      osx_image: xcode11.3
       compiler: clang
       addons:
         homebrew:
@@ -80,7 +80,6 @@ jobs:
           update: true
       before_script:
         - export PATH="/usr/local/opt/sphinx-doc/bin:$PATH"
-        - brew link --overwrite python
         - ./autogen.sh
         - ./configure
       script: *script-common
