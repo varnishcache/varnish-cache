@@ -396,9 +396,9 @@ WS_VSB_new(struct vsb *vsb, struct ws *ws)
 	WS_Assert(ws);
 	u = WS_ReserveAll(ws);
 	if (WS_Overflowed(ws) || u < 2)
-		AN(VSB_new(vsb, bogus, sizeof bogus, 0));
+		AN(VSB_new(vsb, bogus, sizeof bogus, VSB_FIXEDLEN));
 	else
-		AN(VSB_new(vsb, WS_Front(ws), u, 0));
+		AN(VSB_new(vsb, WS_Front(ws), u, VSB_FIXEDLEN));
 }
 
 char *
