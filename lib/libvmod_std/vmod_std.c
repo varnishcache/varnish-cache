@@ -46,7 +46,6 @@
 #include "vrnd.h"
 #include "vtcp.h"
 #include "vsa.h"
-#include "vsb.h"
 #include "vtim.h"
 #include "vcl.h"
 
@@ -67,34 +66,56 @@ vmod_set_ip_tos(VRT_CTX, VCL_INT tos)
 	    IPPROTO_IP, IP_TOS, &itos, sizeof(itos)));
 }
 
-VCL_STRING v_matchproto_(td_std_toupper)
-vmod_toupper(VRT_CTX, VCL_STRANDS s)
+static const char *
+vmod_updown(VRT_CTX, int up, VCL_STRANDS s)
 {
+	unsigned u;
+	char *b, *e;
 	const char *p;
-	struct vsb vsb[1];
 	int i;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	WS_VSB_new(vsb, ctx->ws);
-	for (i = 0; i < s->n; i++)
-		for (p = s->p[i]; p != NULL && *p != '\0'; p++)
-			VSB_putc(vsb, (char)toupper(*p));
-	return (WS_VSB_finish(vsb, ctx->ws, NULL));
+	u = WS_ReserveAll(ctx->ws);
+	e = b = ctx->ws->f;
+	e += u;
+	for (i = 0; i < s->n && b < e; i++) {
+		p = s->p[i];
+		while (p != NULL && *p != '\0' && b < e) {
+			if (up)
+				*b++ = (char)toupper(*p++);
+			else
+				*b++ = (char)tolower(*p++);
+		}
+	}
+	if (b < e)
+		*b = '\0';
+	b++;
+	if (b > e) {
+		WS_MarkOverflow(ctx->ws);
+		WS_Release(ctx->ws, 0);
+		return (NULL);
+	} else {
+		e = b;
+		b = ctx->ws->f;
+		WS_Release(ctx->ws, e - b);
+		return (b);
+	}
+}
+
+VCL_STRING v_matchproto_(td_std_toupper)
+vmod_toupper(VRT_CTX, VCL_STRANDS s)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	return (vmod_updown(ctx, 1, s));
 }
 
 VCL_STRING v_matchproto_(td_std_tolower)
 vmod_tolower(VRT_CTX, VCL_STRANDS s)
 {
-	const char *p;
-	struct vsb vsb[1];
-	int i;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	WS_VSB_new(vsb, ctx->ws);
-	for (i = 0; i < s->n; i++)
-		for (p = s->p[i]; p != NULL && *p != '\0'; p++)
-			VSB_putc(vsb, (char)tolower(*p));
-	return (WS_VSB_finish(vsb, ctx->ws, NULL));
+	return (vmod_updown(ctx, 0, s));
 }
 
 VCL_REAL v_matchproto_(td_std_random)
