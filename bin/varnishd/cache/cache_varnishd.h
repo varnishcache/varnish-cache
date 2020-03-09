@@ -461,7 +461,7 @@ void VCL_VRT_Init(void);
 /* cache_vrt_vcl.c */
 const char *VCL_Return_Name(unsigned);
 const char *VCL_Method_Name(unsigned);
-void VCL_Refresh(struct vcl **);
+void VCL_Refresh(struct vcl **, struct worker *);
 void VCL_Ref(struct vcl *, struct worker *);
 void VCL_Rel(struct vcl **, struct worker *);
 VCL_BACKEND VCL_DefaultDirector(const struct vcl *);

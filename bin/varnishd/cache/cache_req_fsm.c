@@ -1097,9 +1097,7 @@ CNT_Embark(struct worker *wrk, struct req *req)
 	req->vfc->wrk = req->wrk = wrk;
 	wrk->vsl = req->vsl;
 	if (req->req_step == R_STP_TRANSPORT && req->vcl == NULL) {
-		VCL_Refresh(&wrk->vcl);
-		req->vcl = wrk->vcl;
-		wrk->vcl = NULL;
+		VCL_Refresh(&req->vcl, wrk);
 		VSLb(req->vsl, SLT_VCL_use, "%s", VCL_Name(req->vcl));
 	}
 
