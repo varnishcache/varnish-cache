@@ -6,8 +6,8 @@ DESCRIPTION
 Handle HTTP cookies more easily in Varnish VCL.
 
 Parses a cookie header into an internal data store, where per-cookie
-get/set/delete functions are available. A keep() method removes all
-but a set comma-separated list of cookies. A filter() method removes a comma-
+get/set/delete functions are available. A keep() function removes all
+but a set comma-separated list of cookies. A filter() function removes a comma-
 separated list of cookies.
 
 Regular expressions can be used for either selecting cookies, deleting matching
