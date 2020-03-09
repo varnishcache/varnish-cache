@@ -144,6 +144,9 @@ NEXT (2020-03-15)
 
 * Imported ``vmod_cookie`` from `varnish_modules`_
 
+  The previously deprecated function ``cookie.filter_except()`` has
+  been removed during import. It was replaced by ``cookie.keep()``
+
 * ``body_status`` and ``req_body_status`` have been collapsed into one
   type. In particular, the ``REQ_BODY_*`` enums now have been replaced
   with ``BS_*``.
