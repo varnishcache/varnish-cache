@@ -6,7 +6,7 @@ DESCRIPTION
 Handle HTTP cookies more easily in Varnish VCL.
 
 Parses a cookie header into an internal data store, where per-cookie
-get/set/delete functions are available. A filter_except() method removes all
+get/set/delete functions are available. A keep() method removes all
 but a set comma-separated list of cookies. A filter() method removes a comma-
 separated list of cookies.
 
@@ -178,7 +178,7 @@ Example::
 
 	sub vcl_recv {
 	    cookie.parse(req.http.cookie);
-	    cookie.filter_except("SESSIONID,PHPSESSID");
+	    cookie.keep("SESSIONID,PHPSESSID");
 	    set req.http.cookie = cookie.get_string();
 	}
 
