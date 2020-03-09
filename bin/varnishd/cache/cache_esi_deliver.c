@@ -207,7 +207,7 @@ ved_include(struct req *preq, const char *src, const char *host,
 		AZ(req->wrk);
 	}
 
-	VCL_Recache(wrk, &req->vcl);
+	VCL_Rel(&req->vcl, wrk);
 
 	req->wrk = NULL;
 	THR_SetRequest(preq);

@@ -446,7 +446,7 @@ vca_accept_task(struct worker *wrk, void *arg)
 
 	/* Dont hold on to (possibly) discarded VCLs */
 	if (wrk->vcl != NULL)
-		VCL_Rel(&wrk->vcl);
+		VCL_Rel(&wrk->vcl, NULL);
 
 	while (!ps->pool->die) {
 		INIT_OBJ(&wa, WRK_ACCEPT_MAGIC);

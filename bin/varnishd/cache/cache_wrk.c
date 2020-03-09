@@ -150,7 +150,7 @@ WRK_Thread(struct pool *qp, size_t stacksize, unsigned thread_workspace)
 
 	VSL(SLT_WorkThread, 0, "%p end", w);
 	if (w->vcl != NULL)
-		VCL_Rel(&w->vcl);
+		VCL_Rel(&w->vcl, NULL);
 	AZ(pthread_cond_destroy(&w->cond));
 	HSH_Cleanup(w);
 	Pool_Sumstat(w);
@@ -433,8 +433,10 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 				else
 					tmo =  wrk->lastused+60.;
 				i = Lck_CondWait(&wrk->cond, &pp->mtx, tmo);
+
 				if (i == ETIMEDOUT && wrk->vcl != NULL)
-					VCL_Rel(&wrk->vcl);
+					VCL_Rel(&wrk->vcl, NULL);
+
 				if (wrk->task->func != NULL) {
 					/* We have been handed a new task */
 					tpx = *wrk->task;
@@ -472,7 +474,7 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 			assert(wrk->pool == pp);
 			tp->func(wrk, tp->priv);
 			if (DO_DEBUG(DBG_VCLREL) && wrk->vcl != NULL)
-				VCL_Rel(&wrk->vcl);
+				VCL_Rel(&wrk->vcl, NULL);
 			tpx = *wrk->task;
 			tp = &tpx;
 		} while (tp->func != NULL);

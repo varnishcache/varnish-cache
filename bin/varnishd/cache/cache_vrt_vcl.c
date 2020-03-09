@@ -97,29 +97,6 @@ vcl_cancache(const struct vcl *vcl)
 }
 
 void
-VCL_Recache(struct worker *wrk, struct vcl **vclp)
-{
-
-	AN(wrk);
-	AN(vclp);
-	CHECK_OBJ_NOTNULL(*vclp, VCL_MAGIC);
-
-	if (! vcl_cancache(*vclp))
-		VCL_Rel(vclp);
-
-	if (wrk->vcl != NULL &&
-	    (*vclp != NULL || ! vcl_cancache(wrk->vcl)))
-		VCL_Rel(&wrk->vcl);
-
-	if (*vclp == NULL)
-		return;
-
-	AZ(wrk->vcl);
-	wrk->vcl = *vclp;
-	*vclp = NULL;
-}
-
-void
 VCL_Ref(struct vcl *vcl, struct worker *wrk)
 {
 
@@ -138,21 +115,53 @@ VCL_Ref(struct vcl *vcl, struct worker *wrk)
 	Lck_Unlock(&vcl_mtx);
 }
 
+/*
+ * We do not garbage collect discarded VCL's here, that happens in VCL_Poll()
+ * which is called from the CLI thread.
+ */
+
+#define vcl_rel(vcl) do {			\
+	assert((vcl)->busy > 0);		\
+	(vcl)->busy--;				\
+	(vcl) = NULL;				\
+	} while (0)
+
 void
-VCL_Rel(struct vcl **vcc)
+VCL_Rel(struct vcl **vclp, struct worker *wrk)
 {
 	struct vcl *vcl;
 
-	TAKE_OBJ_NOTNULL(vcl, vcc, VCL_MAGIC);
+	CHECK_OBJ_ORNULL(wrk, WORKER_MAGIC);
+	TAKE_OBJ_NOTNULL(vcl, vclp, VCL_MAGIC);
+
+	/* lockless case first */
+	if (wrk != NULL && wrk->vcl == NULL &&
+	    vcl_cancache(vcl)) {
+		wrk->vcl = vcl;
+		return;
+	}
+
 	Lck_Lock(&vcl_mtx);
-	assert(vcl->busy > 0);
-	vcl->busy--;
-	/*
-	 * We do not garbage collect discarded VCL's here, that happens
-	 * in VCL_Poll() which is called from the CLI thread.
-	 */
+
+	if (wrk == NULL || ! vcl_cancache(vcl))
+		vcl_rel(vcl);
+
+	if (wrk != NULL && wrk->vcl != NULL &&
+	    (vcl != NULL || ! vcl_cancache(wrk->vcl)))
+		vcl_rel(wrk->vcl);
+
 	Lck_Unlock(&vcl_mtx);
+
+	if (wrk == NULL || vcl == NULL) {
+		AZ(vcl);
+		return;
+	}
+
+	AZ(wrk->vcl);
+	wrk->vcl = vcl;
 }
+
+#undef vcl_ref
 
 /*--------------------------------------------------------------------*/
 
@@ -399,7 +408,7 @@ VRT_VCL_Allow_Cold(struct vclref **refp)
 	VTAILQ_REMOVE(&vcl->ref_list, ref, list);
 	Lck_Unlock(&vcl_mtx);
 
-	VCL_Rel(&vcl);
+	VCL_Rel(&vcl, NULL);
 
 	REPLACE(ref->desc, NULL);
 	FREE_OBJ(ref);

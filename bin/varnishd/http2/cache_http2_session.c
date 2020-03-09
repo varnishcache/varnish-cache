@@ -348,7 +348,7 @@ h2_new_session(struct worker *wrk, void *arg)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	if (wrk->vcl)
-		VCL_Rel(&wrk->vcl);
+		VCL_Rel(&wrk->vcl, NULL);
 
 	assert(req->transport == &H2_transport);
 
