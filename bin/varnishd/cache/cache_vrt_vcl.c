@@ -78,16 +78,22 @@ VCL_Method_Name(unsigned m)
 /*--------------------------------------------------------------------*/
 
 void
-VCL_Refresh(struct vcl **vcc)
+VCL_Refresh(struct vcl **vclp, const struct worker *wrk)
 {
+	AN(vclp);
+	AZ(*vclp);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
 	while (vcl_active == NULL)
 		(void)usleep(100000);
 
-	if (*vcc == vcl_active)
+	*vclp = wrk->wpriv->vcl;
+	wrk->wpriv->vcl = NULL;
+
+	if (*vclp == vcl_active)
 		return;
 
-	VCL_Update(vcc, NULL);
+	VCL_Update(vclp, NULL);
 }
 
 static inline int
