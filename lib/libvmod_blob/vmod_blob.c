@@ -532,8 +532,9 @@ vmod_sub(VRT_CTX, VCL_BLOB b, VCL_BYTES n, VCL_BYTES off)
 
 	assert(b->len > 0);
 
-	if (off < 0 || n < 0 || off > SIZE_MAX || n > SIZE_MAX) {
-		ERR(ctx, "size or offset negative or out of range in blob.sub()");
+	// XXX check for > SIZE_MAX ?
+	if (off < 0 || n < 0) {
+		ERR(ctx, "size or offset negative in blob.sub()");
 		return (NULL);
 	}
 
