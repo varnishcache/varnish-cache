@@ -56,6 +56,10 @@ NEXT (2020-03-15)
   they are delimited by "double quotes". This was applied to ``SessError``
   and ``Backend_health``.
 
+* It is now possible for VMOD authors to customize the connection pooling
+  of a dynamic backend. A hash is now computed to determine uniqueness and
+  a backend declaration can contribute arbitrary data to influence the pool.
+
 .. 3109 (vdp gunzip) is probably irrelevant for users because it only
    happens with gzip objects inserted bypassing the built-in vfps
 
@@ -110,6 +114,9 @@ NEXT (2020-03-15)
 
 * Fixed status for truncated CLI responses, bug 3038_
 
+* New or improved Coccinelle semantic patches that may be useful for
+  VMOD or utilities authors.
+
 * Output VCC warnings also for VCLs loaded via the ``varnishd -f``
   option, see bug 3160_
 
@@ -118,11 +125,20 @@ NEXT (2020-03-15)
 
 * Added a ``Notice`` VSL tag (used for ``varnishlog`` logging)
 
+* Always refer to ``sub`` as subroutine in the documentation and error
+  messages to avoid confusion with other terms.
+
 .. mention #3176? (backend cooling straightened out)
 
-* Fixed session close reason reporting and accounting, added
-  ``rx_close_idle`` counter for separate accounting when
-  ``timeout_idle`` is reached.
+* New ``pid`` command in the Varnish CLI, to get the master and optionally
+  cache process PIDs, for example from ``varnishadm``.
+
+* Fixed a race that could result in a partial response being served in its
+  entirety when it is also compressed with gzip.
+
+* Fixed session close reason reporting and accounting, added ``rx_close_idle``
+  counter for separate accounting when ``timeout_idle`` is reached. Also,
+  ``send_timeout`` is no longer reported as "remote closed".
 
 * Fixed handling of request bodies for backend retries
 
@@ -165,27 +181,30 @@ NEXT (2020-03-15)
 * Fixed a case where ``send_timeout`` would have no effect when
   streaming from a backend fetch, see bug 3189_
 
+* Added ``VSB_tofile()`` to ``libvarnishapi``, see 3238_
+
   *NOTE* Users upgrading varnish should re-check ``send_timeout`` with
   respect to long pass and streaming fetches and watch out for
   increased session close rates.
 
+.. _1853: https://github.com/varnishcache/varnish-cache/issues/1853
+.. _2418: https://github.com/varnishcache/varnish-cache/issues/2418
 .. _3009: https://github.com/varnishcache/varnish-cache/issues/3009
-.. _3088: https://github.com/varnishcache/varnish-cache/issues/3088
 .. _3019: https://github.com/varnishcache/varnish-cache/issues/3019
+.. _3038: https://github.com/varnishcache/varnish-cache/issues/3038
+.. _3088: https://github.com/varnishcache/varnish-cache/issues/3088
+.. _3089: https://github.com/varnishcache/varnish-cache/issues/3089
+.. _3094: https://github.com/varnishcache/varnish-cache/issues/3094
 .. _3131: https://github.com/varnishcache/varnish-cache/issues/3131
 .. _3135: https://github.com/varnishcache/varnish-cache/issues/3135
-.. _3094: https://github.com/varnishcache/varnish-cache/issues/3094
 .. _3145: https://github.com/varnishcache/varnish-cache/issues/3145
-.. _3038: https://github.com/varnishcache/varnish-cache/issues/3038
 .. _3160: https://github.com/varnishcache/varnish-cache/issues/3160
-.. _3089: https://github.com/varnishcache/varnish-cache/issues/3089
-.. _2418: https://github.com/varnishcache/varnish-cache/issues/2418
-.. _1853: https://github.com/varnishcache/varnish-cache/issues/1853
+.. _3189: https://github.com/varnishcache/varnish-cache/issues/3189
 .. _3194: https://github.com/varnishcache/varnish-cache/issues/3194
-.. _varnish_modules: https://github.com/varnish/varnish-modules
 .. _3221: https://github.com/varnishcache/varnish-cache/issues/3221
 .. _3229: https://github.com/varnishcache/varnish-cache/issues/3229
-.. _3189: https://github.com/varnishcache/varnish-cache/issues/3189
+.. _3238: https://github.com/varnishcache/varnish-cache/issues/3238
+.. _varnish_modules: https://github.com/varnish/varnish-modules
 
 ================================
 Varnish Cache 6.3.0 (2019-09-15)
