@@ -54,7 +54,7 @@ logexpect l1 -v v1 -g vxid -q "vxid == 1006" {
 	expect 6 =	Error		{^workspace_client overflow}
 } -start
 
-logexpect l2 -v v1 -g raw  {
+logexpect l2 -v v1 -g raw -i Debug {
 	expect *  0	Debug		{^WS_Snapshot.* = overflowed}
 	expect 12 0	Debug		{^WS_Reset.*, overflowed}
 } -start
