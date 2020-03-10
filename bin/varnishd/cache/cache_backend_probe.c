@@ -465,6 +465,7 @@ vbp_thread(struct worker *wrk, void *priv)
 {
 	vtim_real now, nxt;
 	struct vbp_target *vt;
+	int r;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AZ(priv);
@@ -486,7 +487,10 @@ vbp_thread(struct worker *wrk, void *priv)
 				vt->running = 1;
 				vt->task.func = vbp_task;
 				vt->task.priv = vt;
-				if (Pool_Task_Any(&vt->task, TASK_QUEUE_REQ))
+				Lck_Unlock(&vbp_mtx);
+				r = Pool_Task_Any(&vt->task, TASK_QUEUE_REQ);
+				Lck_Lock(&vbp_mtx);
+				if (r)
 					vt->running = 0;
 			}
 			binheap_insert(vbp_heap, vt);
