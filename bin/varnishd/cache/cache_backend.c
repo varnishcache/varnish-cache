@@ -280,7 +280,7 @@ vbe_dir_gethdrs(VRT_CTX, VCL_BACKEND d)
 		http_PrintfHeader(bo->bereq, "Host: %s", bp->hosthdr);
 
 	do {
-		pfd = vbe_dir_getfd(wrk, bp, bo, extrachance == 0);
+		pfd = vbe_dir_getfd(wrk, bp, bo, extrachance == 0 ? 1 : 0);
 		if (pfd == NULL)
 			return (-1);
 		AN(bo->htc);

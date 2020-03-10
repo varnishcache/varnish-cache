@@ -730,6 +730,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 			return (F_STP_FAIL);
 		}
 	}
+	AZ(stale_boc);
 	AZ(bo->stale_oc->flags & OC_F_FAILED);
 
 	AZ(vbf_beresp2obj(bo));
@@ -974,8 +975,11 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	VCL_TaskLeave(bo->privs);
 	http_Teardown(bo->bereq);
 	http_Teardown(bo->beresp);
+	// XXX after 6.4 release:
+	// bereq_body should have 0 or 1 references remaining,
+	// see VRB_Free() for the other end
 	if (bo->bereq_body != NULL)
-		HSH_DerefObjCore(bo->wrk, &bo->bereq_body, 0);
+		(void) HSH_DerefObjCore(bo->wrk, &bo->bereq_body, 0);
 
 	if (bo->fetch_objcore->boc->state == BOS_FINISHED) {
 		AZ(bo->fetch_objcore->flags & OC_F_FAILED);

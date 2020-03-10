@@ -177,9 +177,8 @@ smf_init(struct stevedore *parent, int ac, char * const *av)
 static void
 insfree(struct smf_sc *sc, struct smf *sp)
 {
-	size_t b;
+	off_t b, ns;
 	struct smf *sp2;
-	size_t ns;
 
 	AZ(sp->alloc);
 	assert(sp->flist == NULL);
@@ -231,10 +230,10 @@ remfree(const struct smf_sc *sc, struct smf *sp)
  */
 
 static struct smf *
-alloc_smf(struct smf_sc *sc, size_t bytes)
+alloc_smf(struct smf_sc *sc, off_t bytes)
 {
 	struct smf *sp, *sp2;
-	size_t b;
+	off_t b;
 
 	AZ(bytes % sc->pagesize);
 	b = bytes / sc->pagesize;
@@ -398,8 +397,6 @@ smf_open_chunk(struct smf_sc *sc, off_t sz, off_t off, off_t *fail, off_t *sum)
 		*fail = sz;
 
 	h = sz / 2;
-	if (h > SSIZE_MAX)
-		h = SSIZE_MAX;
 	h -= (h % sc->pagesize);
 
 	smf_open_chunk(sc, h, off, fail, sum);
@@ -436,13 +433,16 @@ smf_open(struct stevedore *st)
 /*--------------------------------------------------------------------*/
 
 static struct storage * v_matchproto_(sml_alloc_f)
-smf_alloc(const struct stevedore *st, size_t size)
+smf_alloc(const struct stevedore *st, size_t sz)
 {
 	struct smf *smf;
 	struct smf_sc *sc;
+	off_t size;
 
 	CAST_OBJ_NOTNULL(sc, st->priv, SMF_SC_MAGIC);
-	assert(size > 0);
+	assert(sz > 0);
+	// XXX missing OFF_T_MAX
+	size = (off_t)sz;
 	size += (sc->pagesize - 1UL);
 	size &= ~(sc->pagesize - 1UL);
 	Lck_Lock(&sc->mtx);

@@ -340,7 +340,7 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 	struct pool_task *tp;
 	struct pool_task tpx, tps;
 	vtim_real tmo;
-	int i, reserve;
+	unsigned i, reserve;
 
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 	wrk->pool = pp;

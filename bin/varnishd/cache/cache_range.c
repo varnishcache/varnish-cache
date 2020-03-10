@@ -210,13 +210,18 @@ vrg_ifrange(struct req *req)
 	}
 
 	/* assume date, strong check [RFC7232 2.2.2 p7] */
-	if (!(ims = VTIM_parse(p)))			// rfc7233,l,502,512
+	ims = VTIM_parse(p);
+	if (!ims)					// rfc7233,l,502,512
 		return (0);
 
 	/* the response needs a Date */
 	// rfc7232 fc7232,l,439,440
-	if (!http_GetHdr(req->resp, H_Date, &p) || !(d = VTIM_parse(p)))
+	if (!http_GetHdr(req->resp, H_Date, &p))
 		return (0);
+	d = VTIM_parse(p);
+	if (!d)
+		return (0);
+
 
 	/* grab the Last Modified value */
 	if (!http_GetHdr(req->resp, H_Last_Modified, &p))

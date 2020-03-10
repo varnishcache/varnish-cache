@@ -724,13 +724,17 @@ static int v_matchproto_(binheap_cmp_t)
 vbp_cmp(void *priv, const void *a, const void *b)
 {
 	const struct vbp_target *aa, *bb;
+	int ar, br;
 
 	AZ(priv);
 	CAST_OBJ_NOTNULL(aa, a, VBP_TARGET_MAGIC);
 	CAST_OBJ_NOTNULL(bb, b, VBP_TARGET_MAGIC);
 
-	if ((aa->running == 0) != (bb->running == 0))
-		return (aa->running == 0);
+	ar = aa->running == 0;
+	br = bb->running == 0;
+
+	if (ar != br)
+		return (ar);
 
 	return (aa->due < bb->due);
 }
