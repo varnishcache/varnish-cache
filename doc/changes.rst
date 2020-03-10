@@ -64,7 +64,9 @@ NEXT (2020-03-15)
    happens with gzip objects inserted bypassing the built-in vfps
 
 * The option ``varnishtest -W`` is gone, the same can be achieved with
-  ``varnishtest -p debug=+witness``.
+  ``varnishtest -p debug=+witness``. A ``witness.sh`` script is available
+  in the source tree to generate a graphviz dot file and detect potential
+  lock cycles from the test logs.
 
 * The ``Process`` timestamp for ``vcl_synth {}`` was wrongly issued
   before the VCL subroutine, now it gets emitted after VCL returns for
