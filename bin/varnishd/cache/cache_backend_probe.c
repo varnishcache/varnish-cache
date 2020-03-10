@@ -748,7 +748,7 @@ VBP_Init(void)
 {
 	pthread_t thr;
 
-	Lck_New(&vbp_mtx, lck_backend);
+	Lck_New(&vbp_mtx, lck_probe);
 	vbp_heap = binheap_new(NULL, vbp_cmp, vbp_update);
 	AN(vbp_heap);
 	AZ(pthread_cond_init(&vbp_cond, NULL));
