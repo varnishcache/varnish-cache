@@ -146,7 +146,7 @@ pool_mkpool(unsigned pool_no)
 	AN(pp->a_stat);
 	pp->b_stat = calloc(1, sizeof *pp->b_stat);
 	AN(pp->b_stat);
-	Lck_New(&pp->mtx, lck_wq);
+	Lck_New(&pp->mtx, lck_perpool);
 
 	VTAILQ_INIT(&pp->idle_queue);
 	VTAILQ_INIT(&pp->poolsocks);
