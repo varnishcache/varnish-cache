@@ -12,27 +12,10 @@ lib_LTLIBRARIES = libvarnishapi.la
 libvarnishapi_la_LDFLAGS = $(AM_LDFLAGS) -version-info 2:0:0
 
 libvarnishapi_la_SOURCES = \
+	../../include/vcs_version.h \
 	vsl_api.h \
 	vxp.h \
 	vxp_tokens.h \
-	../libvarnish/vas.c \
-	../libvarnish/vav.c \
-	../../include/vcs_version.h \
-	../libvarnish/version.c \
-	../libvarnish/vcli_proto.c \
-	../libvarnish/vct.c \
-	../libvarnish/vfil.c \
-	../libvarnish/vfl.c \
-	../libvarnish/vin.c \
-	../libvarnish/vjsn.c \
-	../libvarnish/vlu.c \
-	../libvarnish/vmb.c \
-	../libvarnish/vpf.c \
-	../libvarnish/vre.c \
-	../libvarnish/vsb.c \
-	../libvarnish/vtim.c \
-	../libvarnish/vnum.c \
-	../libvarnish/vsha256.c \
 	vsc.c \
 	vsig.c \
 	vsl.c \
@@ -57,6 +40,7 @@ libvarnishapi_la_CFLAGS = \
 	@SAN_CFLAGS@
 
 libvarnishapi_la_LIBADD = \
+	$(top_builddir)/lib/libvarnish/libvarnish.la \
 	@SAN_LDFLAGS@ @PCRE_LIBS@ ${RT_LIBS} ${LIBM}
 
 if HAVE_LD_VERSION_SCRIPT

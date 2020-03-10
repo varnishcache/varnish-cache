@@ -52,7 +52,7 @@ varnishtest_SOURCES = \
 		vtc_varnish.c
 
 varnishtest_LDADD = \
-		$(top_builddir)/lib/libvarnish/libvarnish.a \
+		$(top_builddir)/lib/libvarnish/libvarnish.la \
 		$(top_builddir)/lib/libvarnishapi/libvarnishapi.la \
 		$(top_builddir)/lib/libvgz/libvgz.a \
 		@SAN_LDFLAGS@ \

@@ -5,15 +5,16 @@ AM_CPPFLAGS = \
 	-I$(top_builddir)/include \
 	@PCRE_CFLAGS@
 
-AM_LDFLAGS  = $(AM_LT_LDFLAGS)
+AM_CFLAGS   = $(AM_LT_CFLAGS)  @SAN_CFLAGS@
+AM_LDFLAGS  = $(AM_LT_LDFLAGS) @SAN_LDFLAGS@
 
-noinst_LIBRARIES = libvarnish.a
+noinst_LTLIBRARIES = libvarnish.la
 
-libvarnish_a_CFLAGS = \
+libvarnish_la_CFLAGS = \
 	-DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"' \
-	@SAN_CFLAGS@
+	$(AM_CFLAGS)
 
-libvarnish_a_SOURCES = \
+libvarnish_la_SOURCES = \
 	binary_heap.c \
 	vas.c \
 	vav.c \
@@ -47,17 +48,18 @@ TESTS = vjsn_test vnum_c_test binheap vsb_test
 
 noinst_PROGRAMS = ${TESTS}
 
-binheap_SOURCES = binary_heap.c vas.c vrnd.c
-binheap_CFLAGS = -DTEST_DRIVER
+binheap_SOURCES	= binary_heap.c
+binheap_CFLAGS = $(AM_CFLAGS) -DTEST_DRIVER
+binheap_LDADD = $(AM_LDFLAGS) libvarnish.la
 
-vnum_c_test_SOURCES = vnum.c vas.c
-vnum_c_test_CFLAGS = -DNUM_C_TEST -include config.h @SAN_CFLAGS@
-vnum_c_test_LDADD = ${LIBM} libvarnish.a @SAN_LDFLAGS@
+vnum_c_test_SOURCES = vnum.c
+vnum_c_test_CFLAGS = $(AM_CFLAGS) -DNUM_C_TEST
+vnum_c_test_LDADD = $(AM_LDFLAGS) libvarnish.la ${LIBM}
 
 vjsn_test_SOURCES = vjsn.c
-vjsn_test_CFLAGS = -DVJSN_TEST @SAN_CFLAGS@
-vjsn_test_LDADD = libvarnish.a @SAN_LDFLAGS@
+vjsn_test_CFLAGS = $(AM_CFLAGS) -DVJSN_TEST
+vjsn_test_LDADD = $(AM_LDFLAGS) libvarnish.la
 
-vsb_test_SOURCES = vsb_test.c vsb.c vas.c
-vsb_test_CFLAGS = -DVSB_TEST
-vsb_test_LDADD = libvarnish.a
+vsb_test_SOURCES = vsb_test.c
+vsb_test_CFLAGS = $(AM_CFLAGS) -DVSB_TEST
+vsb_test_LDADD = $(AM_LDFLAGS) libvarnish.la
