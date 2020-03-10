@@ -50,11 +50,15 @@ vcc_obj.c: \
 	@PYTHON@ $(top_srcdir)/lib/libvcc/generate.py \
 	    $(top_srcdir) $(top_builddir)
 
+## this list is not complete, but it contains important files
+## used as includes and the last file built by generate.py
 GEN_H = \
 	vcc_fixed_token.c \
-	vcc_token_defs.h
+	vcc_token_defs.h \
+	vcc_compile.h \
+	tbl/vrt_stv_var.h
 
-$(GEN_H): vcc_obj.c vcc_compile.h
+$(GEN_H): vcc_obj.c
 
 GENERATED_H = vcc_obj.c $(GEN_H)
 
