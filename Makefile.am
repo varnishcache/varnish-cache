@@ -65,8 +65,9 @@ gcov_digest:
 	${PYTHON} tools/gcov_digest.py -o _gcov
 
 witness.dot: all
-	$(MAKE) -C bin/varnishtest check AM_VTC_LOG_FLAGS=-pdebug=+witness
-	$(AM_V_GEN) $(srcdir)/tools/witness.sh witness.dot bin/varnishtest
+	$(MAKE) check AM_VTC_LOG_FLAGS=-pdebug=+witness
+	$(AM_V_GEN) $(srcdir)/tools/witness.sh witness.dot bin/varnishtest/ \
+		lib/libvmod_*/
 
 .dot.svg:
 if ! HAVE_DOT
