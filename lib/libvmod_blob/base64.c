@@ -253,7 +253,8 @@ base64_encode(const enum encoding enc, const enum case_e kase,
 			}
 		}
 	}
-	assert(p >= buf && p - buf <= buflen);
+	assert(p >= buf);
+	assert(p <= buf + buflen);
 	return (p - buf);
 }
 

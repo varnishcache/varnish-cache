@@ -422,6 +422,7 @@ vmod_transcode(VRT_CTX, VCL_ENUM decs, VCL_ENUM encs, VCL_ENUM case_s,
 	struct vrt_blob b;
 	VCL_STRING r;
 	size_t l;
+	ssize_t len;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->ws, WS_MAGIC);
@@ -447,13 +448,15 @@ vmod_transcode(VRT_CTX, VCL_ENUM decs, VCL_ENUM encs, VCL_ENUM case_s,
 	if (length <= 0)
 		length = -1;
 	errno = 0;
-	b.len = func[dec].decode(dec, buf, l, length, strings);
-	b.blob = buf;
+	len = func[dec].decode(dec, buf, l, length, strings);
 
-	if (b.len == -1) {
+	if (len < 0) {
 		err_decode(ctx, strings->p[0]);
 		return (NULL);
 	}
+
+	b.len = len;
+	b.blob = buf;
 
 	/*
 	 * If the encoding and decoding are the same, and the decoding was
@@ -528,6 +531,11 @@ vmod_sub(VRT_CTX, VCL_BLOB b, VCL_BYTES n, VCL_BYTES off)
 	}
 
 	assert(b->len > 0);
+
+	if (off < 0 || n < 0) {
+		ERR(ctx, "size and offset cannot be negative in blob.sub()");
+		return (NULL);
+	}
 
 	if (off + n > b->len) {
 		VERR(ctx, "size %jd from offset %jd requires more bytes than "
