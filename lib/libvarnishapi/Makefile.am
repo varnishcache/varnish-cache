@@ -41,7 +41,7 @@ libvarnishapi_la_CFLAGS = \
 
 libvarnishapi_la_LIBADD = \
 	$(top_builddir)/lib/libvarnish/libvarnish.la \
-	@SAN_LDFLAGS@ @PCRE_LIBS@ ${RT_LIBS} ${LIBM}
+	@SAN_LDFLAGS@ @PCRE_LIBS@ ${NET_LIBS} ${RT_LIBS} ${LIBM}
 
 if HAVE_LD_VERSION_SCRIPT
 libvarnishapi_la_LDFLAGS += -Wl,--version-script=$(srcdir)/libvarnishapi.map
