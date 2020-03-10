@@ -45,6 +45,8 @@ jobs:
         - ./autogen.sh
         - ./configure
     - <<: *test-linux
+      script: make -j8 witness
+    - <<: *test-linux
       stage: sanitizers
       addons:
         apt:
