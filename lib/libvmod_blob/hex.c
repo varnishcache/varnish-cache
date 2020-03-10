@@ -135,7 +135,7 @@ hex_decode(const enum encoding dec, blob_dest_t buf,
 
 	if (len == 0)
 		return (0);
-	if (n > 0 && len > n)
+	if (n >= 0 && len > (size_t)n)
 		len = n;
 
 	if (((len+1) >> 1) > buflen) {
