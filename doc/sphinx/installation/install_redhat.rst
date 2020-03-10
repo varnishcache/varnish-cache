@@ -12,10 +12,15 @@ We therefore recommend that you install the latest version directly from our rep
 
 Varnish Cache is packaged in RPMs for easy installation and upgrade on Red Hat
 systems. The Varnish Cache project maintains official packages for the current
-Enterprise Linux versions. Varnish Cache 4.1 and 5.x are supported on EL6 and EL7.
+Enterprise Linux versions. Varnish Cache 6.x series are supported on el7 and el8.
 
-We try to keep the latest version available as prebuilt RPMs (el5 and el6)
+We try to keep the latest version available as prebuilt RPMs (el7 and el8)
 on `packagecloud.io/varnishcache <https://packagecloud.io/varnishcache/>`_.
+
+Starting with el8 a DNF module will inhibit Varnish packages, and the solution
+is to disable the module before installing::
+
+    dnf module disable varnish
 
 Official packages of 6
 ----------------------
@@ -36,17 +41,9 @@ With the release of 6.0.2, users have to switch to switch repositories to get
 the latest version.
 Read more about this on `Release 6.0.2 </releases/rel6.0.2>`_.
 
-
-Official packages of 4.1
-------------------------
-
-To use Varnish Cache 4.1 packages from the official varnish-cache.org repos,
-follow the instructions available at:
-
-* https://packagecloud.io/varnishcache/varnish41/install#manual-rpm
-
 External packaging
 ------------------
+
 Varnish Cache is also distributed in third party package repositories.
 
 .. _`Fedora EPEL`: https://fedoraproject.org/wiki/EPEL
