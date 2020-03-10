@@ -54,7 +54,7 @@ GEN_H = \
 	vcc_fixed_token.c \
 	vcc_token_defs.h
 
-$(GEN_H): vcc_obj.c
+$(GEN_H): vcc_obj.c vcc_compile.h
 
 GENERATED_H = vcc_obj.c $(GEN_H)
 
