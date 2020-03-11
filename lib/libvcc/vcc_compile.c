@@ -110,7 +110,7 @@ TLWriteVSB(struct vcc *tl, const char *fn, const struct vsb *vsb,
 		    what, fn, strerror(errno));
 		return (-1);
 	}
-	i = VSB_tofile(fo, vsb);
+	i = VSB_tofile(vsb, fo);
 	if (i) {
 		VSB_printf(tl->sb,
 		    "Could not write %s to %s: %s\n",
