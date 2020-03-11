@@ -49,36 +49,6 @@ struct parspec mgt_parspec[] = {
 #define PARAM(ty, nm, ...) { #nm, __VA_ARGS__ },
 #include "tbl/params.h"
 	{
-		.name = "pcre_match_limit",
-		.func = tweak_uint,
-		.priv = &mgt_param.vre_limits.match,
-		.min = "1",
-		.def = "10000",
-		.descr =
-		"The limit for the number of calls to the internal match()"
-		" function in pcre_exec().\n\n"
-		"(See: PCRE_EXTRA_MATCH_LIMIT in pcre docs.)\n\n"
-		"This parameter limits how much CPU time"
-		" regular expression matching can soak up."
-	}, {
-		.name = "pcre_match_limit_recursion",
-		.func = tweak_uint,
-		.priv = &mgt_param.vre_limits.match_recursion,
-		.min = "1",
-		.def = "20",
-		.descr =
-		"The recursion depth-limit for the internal match() function"
-		" in a pcre_exec().\n\n"
-		"(See: PCRE_EXTRA_MATCH_LIMIT_RECURSION in pcre docs.)\n\n"
-		"This puts an upper limit on the amount of stack used"
-		" by PCRE for certain classes of regular expressions.\n\n"
-		"We have set the default value low in order to"
-		" prevent crashes, at the cost of possible regexp"
-		" matching failures.\n\n"
-		"Matching failures will show up in the log as VCL_Error"
-		" messages with regexp errors -27 or -21.\n\n"
-		"Testcase r01576 can be useful when tuning this parameter."
-	}, {
 		.name = "pool_req",
 		.func = tweak_poolparam,
 		.priv = &mgt_param.req_pool,
