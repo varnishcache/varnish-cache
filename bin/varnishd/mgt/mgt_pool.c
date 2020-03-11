@@ -161,11 +161,10 @@ struct parspec WRK_parspec[] = {
 		"\n"
 		"The effective value is at least 5 (the number of internal "
 		/*                               ^ TASK_QUEUE__END */
-		"priority classes), irrespective of this parameter.\n"
-		"Default is 0 to auto-tune (5% of thread_pool_min).\n"
-		"Minimum is 1 otherwise, maximum is 95% of thread_pool_min.",
+		"priority classes), irrespective of this parameter.",
 		.flags = DELAYED_EFFECT,
-		.dyn_max_reason = "95% of thread_pool_min"
+		.dyn_max_reason = "95% of thread_pool_min",
+		.dyn_def_reason = "0 (auto-tune: 5% of thread_pool_min)"
 	}, {
 		.name = "thread_pool_timeout",
 		.func = tweak_timeout,
