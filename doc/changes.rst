@@ -92,8 +92,8 @@ Varnish Cache 6.4.0 (2019-09-16)
 * The ``if-range`` header is now handled, allowing clients to conditionally
   request a range based on a date or an ETag.
 
-* Introduced struct reqtop to hold information on the ESI top request
-  and PRIV_TOP, fixed regression 3019_
+* Introduced ``struct reqtop`` to hold information on the ESI top
+  request and ``PRIV_TOP``, fixed regression 3019_
 
 * Allow numerical expressions in VCL to be negative / negated
 
@@ -187,11 +187,11 @@ Varnish Cache 6.4.0 (2019-09-16)
 * Fixed a case where ``send_timeout`` would have no effect when
   streaming from a backend fetch, see bug 3189_
 
-* Added ``VSB_tofile()`` to ``libvarnishapi``, see 3238_
-
   *NOTE* Users upgrading varnish should re-check ``send_timeout`` with
   respect to long pass and streaming fetches and watch out for
   increased session close rates.
+
+* Added ``VSB_tofile()`` to ``libvarnishapi``, see 3238_
 
 .. _1853: https://github.com/varnishcache/varnish-cache/issues/1853
 .. _2418: https://github.com/varnishcache/varnish-cache/issues/2418

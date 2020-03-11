@@ -5,7 +5,7 @@ Changes in Varnish 6.4.0
 %%%%%%%%%%%%%%%%%%%%%%%%
 
 For information about updating your current Varnish deployment to the
-new version, see :ref:`whatsnew_upgrading_CURRENT`.
+new version, see :ref:`whatsnew_upgrading_6.4`.
 
 A more detailed and technical account of changes in Varnish, with
 links to issues that have been fixed and pull requests that have been
@@ -16,8 +16,13 @@ merged, may be found in the `change log`_.
 varnishd
 ========
 
-Parameters
-~~~~~~~~~~
+bugs
+~~~~
+
+Numerous bugs have been fixed.
+
+Generic Parameter Handling
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Some parameters have dependencies and those are better documented now. For
 example :ref:`ref_param_thread_pool_min` can't be increased above
@@ -43,51 +48,133 @@ the error message::
 
     (attempting to set param 'thread_pool_reserve' to '100')
 
-**XXX changes in -p parameters**
+Parameters
+~~~~~~~~~~
 
-Other changes in varnishd
-~~~~~~~~~~~~~~~~~~~~~~~~~
+* Raised the minimum for the ``vcl_cooldown`` parameter to 1 second.
+
+Changes in behavior
+~~~~~~~~~~~~~~~~~~~
+
+* The ``if-range`` header is now handled, allowing clients to conditionally
+  request a range based on a date or an ETag.
+
+* Output VCC warnings also for VCLs loaded via the ``varnishd -f``
+  option
 
 Changes to VCL
 ==============
 
+* backend ``none`` was added for "no backend".
+
+  It can be used whenever a backend is needed for syntactical
+  reasons. The ``none`` backend will fail any attempt to use it.
+
+* ``std.rollback(bereq)`` is now safe to use
+
+* Deliberately closing backend requests through ``return(abandon)``,
+  ``return(fail)`` or ``return(error)`` is no longer accounted as a
+  fetch failure
+
+* Numerical expressions can now be negative or negated as in ``set
+  resp.http.o = -std.integer("-200");``
+
+* Overloaded the ``+=`` operator to also append to headers as in ``set
+  reqp.http.header += "add this"``
+
 VCL variables
 ~~~~~~~~~~~~~
 
-**XXX new, deprecated or removed variables, or changed semantics**
-
-Other changes to VCL
-~~~~~~~~~~~~~~~~~~~~
+* Add more vcl control over timeouts with ``sess.timeout_linger``,
+  ``sess.send_timeout`` and ``sess.idle_send_timeout``
 
 VMODs
 =====
 
-**XXX changes in the bundled VMODs**
+* Imported ``vmod_cookie`` from `varnish_modules`_
+
+  The previously deprecated function ``cookie.filter_except()`` has
+  been removed during import. It was replaced by ``cookie.keep()``
 
 varnishlog
 ==========
 
-**XXX changes concerning varnishlog(1) and/or vsl(7)**
+* A ``Notice`` VSL tag has been added
 
 varnishadm
 ==========
 
-**XXX changes concerning varnishadm(1) and/or varnish-cli(7)**
+* New ``pid`` command in the Varnish CLI, to get the master and optionally
+  cache process PIDs, for example from ``varnishadm``.
 
 varnishstat
 ===========
 
-**XXX changes concerning varnishstat(1) and/or varnish-counters(7)**
+* Add vi-stype CTRL-f / CTRL-b for page down/up to interactive
+  varnishstat
 
-varnishtest
-===========
+* The ``MAIN.sess_drop`` counter is gone.
 
-**XXX changes concerning varnishtest(1) and/or vtc(7)**
+* Added ``rx_close_idle`` counter for separate accounting when
+  ``timeout_idle`` is reached. Also, ``send_timeout`` is no longer
+  reported as "remote closed".
 
 Changes for developers and VMOD authors
 =======================================
 
-**XXX changes concerning VRT, the public APIs, source code organization,
-builds etc.**
+general
+-------
+
+* New configure switch: --with-unwind. Alpine linux appears to offer a
+  ``libexecinfo`` implementation that crashes when called by Varnish, this
+  offers the alternative of using ``libunwind`` instead.
+
+* The option ``varnishtest -W`` is gone, the same can be achieved with
+  ``varnishtest -p debug=+witness``. A ``witness.sh`` script is available
+  in the source tree to generate a graphviz dot file and detect potential
+  lock cycles from the test logs.
+
+* Introduced ``struct reqtop`` to hold information on the ESI top request
+  and ``PRIV_TOP``
+
+* New or improved Coccinelle semantic patches that may be useful for
+  VMOD or utilities authors.
+
+* Added ``VSLs()`` and ``VSLbs()`` functions for logging ``STRANDS`` to
+  VSL
+
+* Added ``WS_VSB_new()`` / ``WS_VSB_finish()`` for VSBs on workspaces
+
+* added ``v_dont_optimize`` attribute macro to instruct compilers
+  (only gcc as of this release) to not optimize a function
+
+* Added ``VSB_tofile()`` to ``libvarnishapi``
+
+VMODs
+-----
+
+* It is now possible for VMOD authors to customize the connection pooling
+  of a dynamic backend. A hash is now computed to determine uniqueness and
+  a backend declaration can contribute arbitrary data to influence the pool.
+
+* ``VRB_Iterate()`` signature has changed
+
+* ``VRT_fail()`` now also works from director code
+
+* ``body_status`` and ``req_body_status`` have been collapsed into one
+  type. In particular, the ``REQ_BODY_*`` enums now have been replaced
+  with ``BS_*``.
+
+* Added ``VRT_AllocStrandsWS()`` as a utility function to allocate
+  STRANDS on a workspace.
+
+log tools
+---------
+
+* Log records can safely have empty fields or fields containing blanks
+  if they are delimited by "double quotes". This was applied to
+  ``SessError`` and ``Backend_health``.
+
+  Authors of log handling tools might need to review this change.
 
 *eof*
