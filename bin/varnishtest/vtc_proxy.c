@@ -126,7 +126,7 @@ vtc_send_proxy(int fd, int version, const struct suckaddr *sac,
 		WRONG("Wrong proxy version");
 
 	AZ(VSB_finish(vsb));
-	i = VSB_tofile(fd, vsb);
+	i = VSB_tofile(vsb, fd);
 	VSB_delete(vsb);
 	return (i);
 }

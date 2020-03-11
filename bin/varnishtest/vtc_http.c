@@ -216,7 +216,7 @@ http_write(const struct http *hp, int lvl, const char *pfx)
 
 	AZ(VSB_finish(hp->vsb));
 	vtc_dump(hp->vl, lvl, pfx, VSB_data(hp->vsb), VSB_len(hp->vsb));
-	if (VSB_tofile(hp->fd, hp->vsb))
+	if (VSB_tofile(hp->vsb, hp->fd))
 		vtc_log(hp->vl, hp->fatal, "Write failed: %s",
 		    strerror(errno));
 }
@@ -1424,7 +1424,7 @@ cmd_http_sendhex(CMD_ARGS)
 	vsb = vtc_hex_to_bin(hp->vl, av[1]);
 	assert(VSB_len(vsb) >= 0);
 	vtc_hexdump(hp->vl, 4, "sendhex", VSB_data(vsb), VSB_len(vsb));
-	if (VSB_tofile(hp->fd, vsb))
+	if (VSB_tofile(vsb, hp->fd))
 		vtc_log(hp->vl, hp->fatal, "Write failed: %s",
 		    strerror(errno));
 	VSB_destroy(&vsb);

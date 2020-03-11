@@ -793,7 +793,7 @@ process_write_hex(const struct process *p, const char *text)
 	vsb = vtc_hex_to_bin(p->vl, text);
 	assert(VSB_len(vsb) >= 0);
 	vtc_hexdump(p->vl, 4, "sendhex", VSB_data(vsb), VSB_len(vsb));
-	AZ(VSB_tofile(p->fd_term, vsb));
+	AZ(VSB_tofile(vsb, p->fd_term));
 	VSB_destroy(&vsb);
 }
 
