@@ -710,7 +710,7 @@ parse_format(const char *format)
 			if (!*q)
 				VUT_Error(vut, 1, "Unmatched bracket at: %s",
 				    p - 2);
-			assert(q - p < sizeof buf - 1);
+			assert((unsigned)(q - p) < sizeof buf - 1);
 			strncpy(buf, p, q - p);
 			buf[q - p] = '\0';
 			q++;
@@ -755,7 +755,7 @@ isprefix(const char *prefix, size_t len, const char *b,
     const char *e, const char **next)
 {
 	assert(len > 0);
-	if (e - b < len || strncasecmp(b, prefix, len))
+	if (e < b + len || strncasecmp(b, prefix, len))
 		return (0);
 	b += len;
 	if (next) {

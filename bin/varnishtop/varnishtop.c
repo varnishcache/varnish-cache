@@ -77,7 +77,7 @@ struct top {
 	double			count;
 };
 
-static int period = 60; /* seconds */
+static unsigned period = 60; /* seconds */
 static int end_of_file = 0;
 static unsigned ntop;
 static pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
@@ -184,7 +184,7 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 }
 
 static void
-update(int p)
+update(unsigned p)
 {
 	struct top *tp, *tp2;
 	int l, len;

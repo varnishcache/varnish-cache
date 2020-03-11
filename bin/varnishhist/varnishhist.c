@@ -142,17 +142,18 @@ update(void)
 	const unsigned n = w * hist_range;
 	unsigned bm[n], bh[n];
 	unsigned max;
-	unsigned i, j, scale;
+	unsigned scale;
+	int i, j;
 	unsigned k, l;
 
 	erase();
 
 	/* Draw horizontal axis */
-	for (i = 0; i < n; ++i)
-		(void)mvaddch(LINES - 2, i, '-');
-	for (k = 0, l = hist_low; k < hist_range; ++k, ++l) {
-		(void)mvaddch(LINES - 2, w * k, '+');
-		mvprintw(LINES - 1, w * k, "|1e%d", l);
+	for (k = 0; k < n; ++k)
+		(void)mvaddch(LINES - 2, k, '-');
+	for (i = 0, j = hist_low; i < hist_range; ++i, ++j) {
+		(void)mvaddch(LINES - 2, w * i, '+');
+		mvprintw(LINES - 1, w * i, "|1e%d", j);
 	}
 
 	if (end_of_file)
@@ -191,11 +192,11 @@ update(void)
 		mvprintw((LINES - 2) - j, 0, "%u_", j * scale);
 
 	/* show them */
-	for (i = 0; i < n; ++i) {
-		for (j = 0; j < bm[i] / scale; ++j)
-			(void)mvaddch((LINES - 3) - j, i, '#');
-		for (; j < (bm[i] + bh[i]) / scale; ++j)
-			(void)mvaddch((LINES - 3) - j, i, '|');
+	for (k = 0; k < n; ++k) {
+		for (l = 0; l < bm[k] / scale; ++l)
+			(void)mvaddch((LINES - 3) - l, k, '#');
+		for (; l < (bm[k] + bh[k]) / scale; ++l)
+			(void)mvaddch((LINES - 3) - l, k, '|');
 	}
 
 	refresh();
@@ -306,7 +307,7 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			i = hist_high * HIST_RES - 1;
 		i -= hist_low * HIST_RES;
 		assert(i >= 0);
-		assert(i < hist_buckets);
+		assert((unsigned)i < hist_buckets);
 
 		AZ(pthread_mutex_lock(&mtx));
 
