@@ -667,7 +667,7 @@ VPX_Send_Proxy(int fd, int version, const struct sess *sp)
 		WRONG("Wrong proxy version");
 
 	AZ(VSB_finish(vsb));
-	(void)VSB_tofile(fd, vsb);	// XXX: Error handling ?
+	(void)VSB_tofile(vsb, fd);	// XXX: Error handling ?
 	if (!DO_DEBUG(DBG_PROTOCOL)) {
 		VSB_delete(vsb);
 		return;

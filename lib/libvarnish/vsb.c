@@ -626,7 +626,7 @@ VSB_indent(struct vsb *s, int i)
 }
 
 int
-VSB_tofile(int fd, const struct vsb *s)
+VSB_tofile(const struct vsb *s, int fd)
 {
 	int sz;
 

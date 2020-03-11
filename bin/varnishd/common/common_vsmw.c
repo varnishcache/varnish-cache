@@ -206,7 +206,7 @@ vsmw_append_record(struct vsmw *vsmw, struct vsmwseg *seg, char act)
 	VSB_clear(vsmw->vsb);
 	vsmw_fmt_index(vsmw, seg, act);
 	AZ(VSB_finish(vsmw->vsb));
-	XXXAZ(VSB_tofile(fd, vsmw->vsb)); // XXX handle ENOSPC? #2764
+	XXXAZ(VSB_tofile(vsmw->vsb, fd)); // XXX handle ENOSPC? #2764
 	closefd(&fd);
 }
 
@@ -253,7 +253,7 @@ vsmw_delseg(struct vsmw *vsmw, struct vsmwseg *seg)
 		VTAILQ_FOREACH(s2, &vsmw->segs, list)
 			vsmw_fmt_index(vsmw, s2, '+');
 		AZ(VSB_finish(vsmw->vsb));
-		XXXAZ(VSB_tofile(fd, vsmw->vsb)); // XXX handle ENOSPC? #2764
+		XXXAZ(VSB_tofile(vsmw->vsb, fd)); // XXX handle ENOSPC? #2764
 		closefd(&fd);
 		AZ(renameat(vsmw->vdirfd, t, vsmw->vdirfd, vsmw->idx));
 		REPLACE(t, NULL);

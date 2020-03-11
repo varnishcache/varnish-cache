@@ -173,7 +173,7 @@ cmd_haproxy_cli_send(CMD_ARGS)
 	}
 	vtc_dump(hc->vl, 4, "CLI send", VSB_data(vsb), -1);
 
-	if (VSB_tofile(hc->sock, vsb))
+	if (VSB_tofile(vsb, hc->sock))
 		vtc_fatal(hc->vl,
 		    "CLI fd %d send error %s", hc->sock, strerror(errno));
 
