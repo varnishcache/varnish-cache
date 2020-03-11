@@ -27,7 +27,11 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
-NEXT (2020-03-15)
+NEXT (2020-09-15)
+================================
+
+================================
+Varnish Cache 6.4.0 (2019-09-16)
 ================================
 
 * The ``MAIN.sess_drop`` counter is gone.

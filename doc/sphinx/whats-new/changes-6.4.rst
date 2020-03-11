@@ -1,12 +1,8 @@
-**Note: This is a working document for a future release, with running
-updates for changes in the development branch. For changes in the
-released versions of Varnish, see:** :ref:`whats-new-index`
+.. _whatsnew_changes_6.4:
 
-.. _whatsnew_changes_CURRENT:
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Changes in Varnish **$NEXT_RELEASE**
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%
+Changes in Varnish 6.4.0
+%%%%%%%%%%%%%%%%%%%%%%%%
 
 For information about updating your current Varnish deployment to the
 new version, see :ref:`whatsnew_upgrading_CURRENT`.

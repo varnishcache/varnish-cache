@@ -21,6 +21,15 @@ released versions of Varnish, see the chapters listed below.**
    changes-trunk
    upgrading-trunk
 
+Varnish 6.4
+-----------
+
+.. toctree::
+   :maxdepth: 2
+
+   changes-6.4
+   upgrading-6.4
+
 Varnish 6.3
 -----------
 
