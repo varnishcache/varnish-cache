@@ -30,10 +30,12 @@ RST2ANY_FLAGS = --halt=2
 
 BUILD_MAN = $(AM_V_GEN) $(RST2MAN) $(RST2ANY_FLAGS)
 
-varnish-cli.7: $(top_builddir)/doc/sphinx/reference/varnish-cli.rst
+varnish-cli.7: $(top_builddir)/doc/sphinx/reference/varnish-cli.rst \
+	$(top_srcdir)/doc/sphinx/include/cli.rst
 	$(BUILD_MAN) $(top_srcdir)/doc/sphinx/reference/varnish-cli.rst $@
 
-varnish-counters.7: $(top_builddir)/doc/sphinx/reference/varnish-counters.rst
+varnish-counters.7: $(top_builddir)/doc/sphinx/reference/varnish-counters.rst \
+	$(top_srcdir)/doc/sphinx/include/counters.rst
 	$(BUILD_MAN) $(top_srcdir)/doc/sphinx/reference/varnish-counters.rst $@
 
 vcl.7: $(top_srcdir)/doc/sphinx/reference/vcl.rst \
@@ -70,7 +72,8 @@ varnishlog.1: \
 
 varnishstat.1: $(top_builddir)/doc/sphinx/reference/varnishstat.rst \
 	$(top_builddir)/doc/sphinx/include/varnishstat_options.rst \
-	$(top_builddir)/doc/sphinx/include/varnishstat_synopsis.rst
+	$(top_builddir)/doc/sphinx/include/varnishstat_synopsis.rst \
+	$(top_builddir)/doc/sphinx/include/varnishstat_bindings.rst
 	$(BUILD_MAN) $(top_srcdir)/doc/sphinx/reference/varnishstat.rst $@
 
 varnishtest.1: $(top_builddir)/doc/sphinx/reference/varnishtest.rst
