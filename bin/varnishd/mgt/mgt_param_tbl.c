@@ -45,42 +45,10 @@
 	"\tmax_age\tmax age of free element."
 
 struct parspec mgt_parspec[] = {
+#define PARAM_ALL
 #define PARAM(ty, nm, ...) { #nm, __VA_ARGS__ },
 #include "tbl/params.h"
-
 	{
-		.name = "cc_command",
-		.func = tweak_string,
-		.priv = &mgt_cc_cmd,
-		.def = VCC_CC,
-		.descr =
-		"Command used for compiling the C source code to a "
-		"dlopen(3) loadable object.  Any occurrence of %s in "
-		"the string will be replaced with the source file name, "
-		"and %o will be replaced with the output file name.",
-		.flags = MUST_RELOAD
-	}, {
-		.name = "vcl_path",
-		.func = tweak_string,
-		.priv = &mgt_vcl_path,
-		.def = VARNISH_VCL_DIR,
-		.descr =
-		"Directory (or colon separated list of directories) "
-		"from which relative VCL filenames (vcl.load and "
-		"include) are to be found.  By default Varnish searches "
-		"VCL files in both the system configuration and shared "
-		"data directories to allow packages to drop their VCL "
-		"files in a standard location where relative includes "
-		"would work."
-	}, {
-		.name = "vmod_path",
-		.func = tweak_string,
-		.priv = &mgt_vmod_path,
-		.def = VARNISH_VMOD_DIR,
-		.descr =
-		"Directory (or colon separated list of directories) "
-		"where VMODs are to be found."
-	}, {
 		.name = "vcc_err_unref",
 		.func = tweak_bool,
 		.priv = &mgt_vcc_err_unref,
