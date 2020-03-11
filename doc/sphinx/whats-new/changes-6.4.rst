@@ -123,7 +123,7 @@ Changes for developers and VMOD authors
 =======================================
 
 general
--------
+~~~~~~~
 
 * New configure switch: --with-unwind. Alpine linux appears to offer a
   ``libexecinfo`` implementation that crashes when called by Varnish, this
@@ -151,7 +151,7 @@ general
 * Added ``VSB_tofile()`` to ``libvarnishapi``
 
 VMODs
------
+~~~~~
 
 * It is now possible for VMOD authors to customize the connection pooling
   of a dynamic backend. A hash is now computed to determine uniqueness and
@@ -169,7 +169,7 @@ VMODs
   STRANDS on a workspace.
 
 log tools
----------
+~~~~~~~~~
 
 * Log records can safely have empty fields or fields containing blanks
   if they are delimited by "double quotes". This was applied to
@@ -178,3 +178,5 @@ log tools
   Authors of log handling tools might need to review this change.
 
 *eof*
+
+.. _varnish_modules: https://github.com/varnish/varnish-modules
