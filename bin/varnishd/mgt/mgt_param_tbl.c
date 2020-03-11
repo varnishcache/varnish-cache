@@ -49,31 +49,6 @@ struct parspec mgt_parspec[] = {
 #define PARAM(ty, nm, ...) { #nm, __VA_ARGS__ },
 #include "tbl/params.h"
 	{
-		.name = "vcc_err_unref",
-		.func = tweak_bool,
-		.priv = &mgt_vcc_err_unref,
-		.def = "on",
-		.units = "bool",
-		.descr =
-		"Unreferenced VCL objects result in error."
-	}, {
-		.name = "vcc_allow_inline_c",
-		.func = tweak_bool,
-		.priv = &mgt_vcc_allow_inline_c,
-		.def = "off",
-		.units = "bool",
-		.descr =
-		"Allow inline C code in VCL."
-	}, {
-		.name = "vcc_unsafe_path",
-		.func = tweak_bool,
-		.priv = &mgt_vcc_unsafe_path,
-		.def = "on",
-		.units = "bool",
-		.descr =
-		"Allow '/' in vmod & include paths.\n"
-		"Allow 'import ... from ...'."
-	}, {
 		.name = "pcre_match_limit",
 		.func = tweak_uint,
 		.priv = &mgt_param.vre_limits.match,

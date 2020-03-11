@@ -1259,14 +1259,48 @@ PARAM_STRING(
 	"where VMODs are to be found."
 )
 
+/*--------------------------------------------------------------------
+ * VCC parameters
+ */
+
+#  define PARAM_VCC(nm, def, descr) \
+	PARAM(, nm, tweak_bool, &mgt_ ## nm, NULL, NULL, def, "bool", descr)
+
+PARAM_VCC(
+	/* name */	vcc_err_unref,
+	/* def */	"on",
+	/* descr */
+	"Unreferenced VCL objects result in error."
+)
+
+PARAM_VCC(
+	/* name */	vcc_allow_inline_c,
+	/* def */	"off",
+	/* descr */
+	"Allow inline C code in VCL."
+)
+
+PARAM_VCC(
+	/* name */	vcc_unsafe_path,
+	/* def */	"on",
+	/* descr */
+	"Allow '/' in vmod & include paths.\n"
+	"Allow 'import ... from ...'."
+)
+
 #  undef PARAM_ALL
 #  undef PARAM_STRING
+#  undef PARAM_VCC
 #endif /* defined(PARAM_ALL) */
 
 #undef PARAM_SIMPLE
 #undef PARAM
 
 /*lint -restore */
+
+/*--------------------------------------------------------------------
+ * Outsourced parameters
+ */
 
 #if 0 /* NOT ACTUALLY DEFINED HERE */
 /* actual location mgt_param_bits.c*/
@@ -1608,43 +1642,6 @@ PARAM(
 	"thread may handle, before it is forced to dump its accumulated "
 	"stats into the global counters.",
 	/* flags */	EXPERIMENTAL
-)
-
-/* actual location mgt_param_tbl.c */
-PARAM(
-	/* name */	vcc_allow_inline_c,
-	/* type */	bool,
-	/* min */	NULL,
-	/* max */	NULL,
-	/* def */	"off",
-	/* units */	"bool",
-	/* descr */
-	"Allow inline C code in VCL."
-)
-
-/* actual location mgt_param_tbl.c */
-PARAM(
-	/* name */	vcc_err_unref,
-	/* type */	bool,
-	/* min */	NULL,
-	/* max */	NULL,
-	/* def */	"on",
-	/* units */	"bool",
-	/* descr */
-	"Unreferenced VCL objects result in error."
-)
-
-/* actual location mgt_param_tbl.c */
-PARAM(
-	/* name */	vcc_unsafe_path,
-	/* type */	bool,
-	/* min */	NULL,
-	/* max */	NULL,
-	/* def */	"on",
-	/* units */	"bool",
-	/* descr */
-	"Allow '/' in vmod & include paths.\n"
-	"Allow 'import ... from ...'."
 )
 
 /* actual location mgt_param_bits.c*/
