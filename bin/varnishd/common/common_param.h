@@ -40,6 +40,14 @@
 
 #define VSM_CLASS_PARAM		"Params"
 
+static const char *const debug_bits_descr =
+	"Enable/Disable various kinds of debugging.\n"
+	"\tnone\tDisable all debugging\n\n"
+	"Use +/- prefix to set/reset individual bits:"
+#define DEBUG_BIT(U, l, d) "\n\t" #l "\t" d
+#include "tbl/debug_bits.h"
+;
+
 enum debug_bits {
 #define DEBUG_BIT(U, l, d) DBG_##U,
 #include "tbl/debug_bits.h"
@@ -51,6 +59,14 @@ COM_DO_DEBUG(const volatile uint8_t *p, enum debug_bits x)
 {
 	return (p[(unsigned)x>>3] & (0x80U >> ((unsigned)x & 7)));
 }
+
+static const char *const feature_bits_descr =
+	"Enable/Disable various minor features.\n"
+	"\tnone\tDisable all features.\n\n"
+	"Use +/- prefix to enable/disable individual feature:"
+#define FEATURE_BIT(U, l, d, ld) "\n\t" #l "\t" d
+#include "tbl/feature_bits.h"
+;
 
 enum feature_bits {
 #define FEATURE_BIT(U, l, d, ld) FEATURE_##U,

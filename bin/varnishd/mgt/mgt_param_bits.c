@@ -265,24 +265,12 @@ struct parspec VSL_parspec[] = {
 		.name = "debug",
 		.func = tweak_debug,
 		.def = "none",
-		.descr =
-		"Enable/Disable various kinds of debugging.\n"
-		"\tnone\tDisable all debugging\n\n"
-		"Use +/- prefix to set/reset individual bits:"
-#define DEBUG_BIT(U, l, d) "\n\t" #l "\t" d
-#include "tbl/debug_bits.h"
-#undef DEBUG_BIT
+		.descr = debug_bits_descr
 	}, {
 		.name = "feature",
 		.func = tweak_feature,
 		.def = "none",
-		.descr =
-		"Enable/Disable various minor features.\n"
-		"\tnone\tDisable all features.\n\n"
-		"Use +/- prefix to enable/disable individual feature:"
-#define FEATURE_BIT(U, l, d, ld) "\n\t" #l "\t" d
-#include "tbl/feature_bits.h"
-#undef FEATURE_BIT
+		.descr = feature_bits_descr
 	}, {
 		.name = NULL
 	}
