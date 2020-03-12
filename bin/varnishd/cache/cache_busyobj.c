@@ -49,7 +49,7 @@ void
 VBO_Init(void)
 {
 
-	vbopool = MPL_New("busyobj", &cache_param->vbo_pool,
+	vbopool = MPL_New("busyobj", &cache_param->pool_vbo,
 	    &cache_param->workspace_backend);
 	AN(vbopool);
 }

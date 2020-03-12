@@ -51,7 +51,7 @@ struct parspec mgt_parspec[] = {
 	{
 		.name = "pool_req",
 		.func = tweak_poolparam,
-		.priv = &mgt_param.req_pool,
+		.priv = &mgt_param.pool_req,
 		.def = "10,100,10",
 		.descr =
 		"Parameters for per worker pool request memory pool.\n\n"
@@ -59,7 +59,7 @@ struct parspec mgt_parspec[] = {
 	}, {
 		.name = "pool_sess",
 		.func = tweak_poolparam,
-		.priv = &mgt_param.sess_pool,
+		.priv = &mgt_param.pool_sess,
 		.def = "10,100,10",
 		.descr =
 		"Parameters for per worker pool session memory pool.\n\n"
@@ -67,7 +67,7 @@ struct parspec mgt_parspec[] = {
 	}, {
 		.name = "pool_vbo",
 		.func = tweak_poolparam,
-		.priv = &mgt_param.vbo_pool,
+		.priv = &mgt_param.pool_vbo,
 		.def = "10,100,10",
 		.descr =
 		"Parameters for backend object fetch memory pool.\n\n"
