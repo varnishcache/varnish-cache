@@ -113,7 +113,7 @@ static const char * const VSL_tags[256] = {
 #  include "tbl/vsl_tags.h"
 };
 
-static int
+int
 tweak_vsl_mask(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	unsigned j;
@@ -170,7 +170,7 @@ static const char * const debug_tags[] = {
        NULL
 };
 
-static int
+int
 tweak_debug(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	const char *s;
@@ -213,7 +213,7 @@ static const char * const feature_tags[] = {
        NULL
 };
 
-static int
+int
 tweak_feature(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	const char *s;
@@ -246,32 +246,3 @@ tweak_feature(struct vsb *vsb, const struct parspec *par, const char *arg)
 	}
 	return (0);
 }
-
-/*--------------------------------------------------------------------
- * The parameter table itself
- */
-
-struct parspec VSL_parspec[] = {
-	{
-		.name = "vsl_mask",
-		.func = tweak_vsl_mask,
-		.def = "default",
-		.descr =
-		"Mask individual VSL messages from being logged.\n"
-		"\tdefault\tSet default value\n"
-		"\nUse +/- prefix in front of VSL tag name to unmask/mask "
-		"individual VSL messages."
-	}, {
-		.name = "debug",
-		.func = tweak_debug,
-		.def = "none",
-		.descr = debug_bits_descr
-	}, {
-		.name = "feature",
-		.func = tweak_feature,
-		.def = "none",
-		.descr = feature_bits_descr
-	}, {
-		.name = NULL
-	}
-};

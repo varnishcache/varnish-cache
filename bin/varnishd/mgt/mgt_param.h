@@ -75,7 +75,9 @@ tweak_t tweak_timeout;
 tweak_t tweak_uint;
 tweak_t tweak_vsl_buffer;
 tweak_t tweak_vsl_reclen;
+tweak_t tweak_vsl_mask;
+tweak_t tweak_debug;
+tweak_t tweak_feature;
 
 extern struct parspec mgt_parspec[]; /* mgt_param_tbl.c */
-extern struct parspec VSL_parspec[]; /* mgt_param_vsl.c */
 extern struct parspec WRK_parspec[]; /* mgt_pool.c */

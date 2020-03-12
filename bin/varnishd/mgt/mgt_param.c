@@ -656,7 +656,6 @@ MCF_InitParams(struct cli *cli)
 
 	MCF_AddParams(mgt_parspec);
 	MCF_AddParams(WRK_parspec);
-	MCF_AddParams(VSL_parspec);
 
 	MCF_TcpParams();
 

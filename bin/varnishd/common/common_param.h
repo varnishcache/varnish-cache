@@ -87,6 +87,10 @@ struct poolparam {
 	double			max_age;
 };
 
+typedef uint8_t vsl_mask_t[256>>3];
+typedef uint8_t debug_t[(DBG_Reserved+7)>>3];
+typedef uint8_t feature_t[(FEATURE_Reserved+7)>>3];
+
 struct params {
 
 #define	ptyp_bool	unsigned
@@ -98,8 +102,11 @@ struct params {
 #define	ptyp_uint	unsigned
 #define	ptyp_vsl_buffer	unsigned
 #define	ptyp_vsl_reclen	unsigned
-#define PARAM(ty, nm, ...)		\
-	ptyp_##ty		nm;
+#define	ptyp_vsl_mask	vsl_mask_t
+#define	ptyp_debug	debug_t
+#define	ptyp_feature	feature_t
+#define PARAM(typ, fld, ...)		\
+	ptyp_##typ		fld;
 #include <tbl/params.h>
 #undef ptyp_bool
 #undef ptyp_bytes
@@ -110,6 +117,9 @@ struct params {
 #undef ptyp_uint
 #undef ptyp_vsl_buffer
 #undef ptyp_vsl_reclen
+#undef ptyp_vsl_mask
+#undef ptyp_debug
+#undef ptyp_feature
 
 	/* Unprivileged user / group */
 	uid_t			uid;
@@ -130,8 +140,4 @@ struct params {
 	unsigned		wthread_queue_limit;
 
 	struct vre_limits	vre_limits;
-
-	uint8_t			vsl_mask[256>>3];
-	uint8_t			debug_bits[(DBG_Reserved+7)>>3];
-	uint8_t			feature_bits[(FEATURE_Reserved+7)>>3];
 };

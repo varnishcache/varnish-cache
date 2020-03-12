@@ -27,10 +27,11 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * PARAM(ty, ...)
+ * PARAM(typ, fld, ...)
  *
- * Variable arguments refer to struct parspec fields, except the non constant
- * string fields.
+ * typ: parameter type
+ * fld: struct params field
+ * ...: struct parspec fields, except the non constant string fields
  */
 
 /*lint -save -e525 -e539 */
@@ -39,8 +40,8 @@
  * Simple parameters
  */
 
-#define PARAM_SIMPLE(nm, ty, ...) \
-	PARAM(ty, nm, tweak_##ty, &mgt_param.nm, __VA_ARGS__)
+#define PARAM_SIMPLE(nm, typ, ...) \
+	PARAM(typ, nm, nm, tweak_##typ, &mgt_param.nm, __VA_ARGS__)
 
 #if defined(XYZZY)
   #error "Temporary macro XYZZY already defined"
@@ -1222,7 +1223,7 @@ PARAM_SIMPLE(
  */
 
 #  define PARAM_STRING(nm, pv, def, ...) \
-	PARAM(, nm, tweak_string, pv, NULL, NULL, def, NULL, __VA_ARGS__)
+	PARAM(, , nm, tweak_string, pv, NULL, NULL, def, NULL, __VA_ARGS__)
 
 PARAM_STRING(
 	/* name */	cc_command,
@@ -1264,7 +1265,7 @@ PARAM_STRING(
  */
 
 #  define PARAM_VCC(nm, def, descr) \
-	PARAM(, nm, tweak_bool, &mgt_ ## nm, NULL, NULL, def, "bool", descr)
+	PARAM(, , nm, tweak_bool, &mgt_ ## nm, NULL, NULL, def, "bool", descr)
 
 PARAM_VCC(
 	/* name */	vcc_err_unref,
@@ -1293,7 +1294,7 @@ PARAM_VCC(
  */
 
 #  define PARAM_PCRE(nm, pv, min, def, descr)			\
-	PARAM(, nm, tweak_uint, &mgt_param.vre_limits.pv,	\
+	PARAM(, , nm, tweak_uint, &mgt_param.vre_limits.pv,	\
 	    min, NULL, def, NULL, descr)
 
 PARAM_PCRE(
@@ -1338,13 +1339,13 @@ PARAM_PCRE(
  * Memory pool parameters
  */
 
-#define PARAM_MEMPOOL(nm, def, descr)				\
-	PARAM(poolparam, nm, tweak_poolparam, &mgt_param.nm,	\
-	    NULL, NULL, def, NULL,				\
-	    descr						\
-	    "The three numbers are:\n"				\
-	    "\tmin_pool\tminimum size of free pool.\n"		\
-	    "\tmax_pool\tmaximum size of free pool.\n"		\
+#define PARAM_MEMPOOL(nm, def, descr)					\
+	PARAM(poolparam, nm, nm, tweak_poolparam, &mgt_param.nm,	\
+	    NULL, NULL, def, NULL,					\
+	    descr							\
+	    "The three numbers are:\n"					\
+	    "\tmin_pool\tminimum size of free pool.\n"			\
+	    "\tmax_pool\tmaximum size of free pool.\n"			\
 	    "\tmax_age\tmax age of free element.")
 
 PARAM_MEMPOOL(
@@ -1368,6 +1369,39 @@ PARAM_MEMPOOL(
 		"Parameters for backend object fetch memory pool.\n\n"
 )
 
+/*--------------------------------------------------------------------
+ * Bit flags parameters
+ */
+
+#define PARAM_BITS(nm, fld, def, descr) \
+	PARAM(nm, fld, nm, tweak_ ## nm, NULL, NULL, NULL, def, NULL, descr)
+
+PARAM_BITS(
+		/* name */	vsl_mask,
+		/* field */	vsl_mask,
+		/* def */	"default",
+		/* descr */
+		"Mask individual VSL messages from being logged.\n"
+		"\tdefault\tSet default value\n"
+		"\nUse +/- prefix in front of VSL tag name to unmask/mask "
+		"individual VSL messages."
+)
+
+PARAM_BITS(
+		/* name */	debug,
+		/* field */	debug_bits,
+		/* def */	"none",
+		/* descr */	debug_bits_descr
+)
+
+PARAM_BITS(
+		/* name */	feature,
+		/* field */	feature_bits,
+		/* def */	"none",
+		/* descr */	feature_bits_descr
+)
+
+#undef PARAM_BITS
 #undef PARAM_MEMPOOL
 #undef PARAM_SIMPLE
 #undef PARAM
@@ -1379,56 +1413,6 @@ PARAM_MEMPOOL(
  */
 
 #if 0 /* NOT ACTUALLY DEFINED HERE */
-/* actual location mgt_param_bits.c*/
-/* see tbl/debug_bits.h */
-PARAM(
-	/* name */	debug,
-	/* type */	debug,
-	/* min */	NULL,
-	/* max */	NULL,
-	/* def */	NULL,
-	/* units */	NULL,
-	/* descr */
-	"Enable/Disable various kinds of debugging.\n"
-	"	none	Disable all debugging\n"
-	"\n"
-	"Use +/- prefix to set/reset individual bits:\n"
-	"	req_state	VSL Request state engine\n"
-	"	workspace	VSL Workspace operations\n"
-	"	waiter	VSL Waiter internals\n"
-	"	waitinglist	VSL Waitinglist events\n"
-	"	syncvsl	Make VSL synchronous\n"
-	"	hashedge	Edge cases in Hash\n"
-	"	vclrel	Rapid VCL release\n"
-	"	lurker	VSL Ban lurker\n"
-	"	esi_chop	Chop ESI fetch to bits\n"
-	"	flush_head	Flush after http1 head\n"
-	"	vtc_mode	Varnishtest Mode"
-)
-
-/* actual location mgt_param_bits.c*/
-/* See tbl/feature_bits.h */
-PARAM(
-	/* name */	feature,
-	/* type */	feature,
-	/* min */	NULL,
-	/* max */	NULL,
-	/* def */	NULL,
-	/* units */	NULL,
-	/* descr */
-	"Enable/Disable various minor features.\n"
-	"	none	Disable all features.\n"
-	"\n"
-	"Use +/- prefix to enable/disable individual feature:\n"
-	"	short_panic	Short panic message.\n"
-	"	wait_silo	Wait for persistent silo.\n"
-	"	no_coredump	No coredumps.\n"
-	"	esi_ignore_https	Treat HTTPS as HTTP in ESI:includes\n"
-	"	esi_disable_xml_check	Don't check of body looks like XML\n"
-	"	esi_ignore_other_elements	Ignore non-esi XML-elements\n"
-	"	esi_remove_bom	Remove UTF-8 BOM"
-)
-
 /* actual location mgt_pool.c */
 PARAM(
 	/* name */	thread_pool_add_delay,
@@ -1653,21 +1637,5 @@ PARAM(
 	"thread may handle, before it is forced to dump its accumulated "
 	"stats into the global counters.",
 	/* flags */	EXPERIMENTAL
-)
-
-/* actual location mgt_param_bits.c*/
-PARAM(
-	/* name */	vsl_mask,
-	/* type */	vsl_mask,
-	/* min */	NULL,
-	/* max */	NULL,
-	/* def */	"default",
-	/* units */	NULL,
-	/* descr */
-	"Mask individual VSL messages from being logged.\n"
-	"	default	Set default value\n"
-	"\n"
-	"Use +/- prefix in front of VSL tag name to unmask/mask "
-	"individual VSL messages."
 )
 #endif /* NOT ACTUALLY DEFINED HERE */

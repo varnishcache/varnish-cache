@@ -39,7 +39,7 @@
 
 struct parspec mgt_parspec[] = {
 #define PARAM_ALL
-#define PARAM(ty, nm, ...) { #nm, __VA_ARGS__ },
+#define PARAM(typ, fld, nm, ...) { #nm, __VA_ARGS__ },
 #include "tbl/params.h"
 	{ NULL }
 };
