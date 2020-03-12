@@ -37,42 +37,9 @@
 
 #include "mgt/mgt_param.h"
 
-
-#define MEMPOOL_TEXT							\
-	"The three numbers are:\n"					\
-	"\tmin_pool\tminimum size of free pool.\n"			\
-	"\tmax_pool\tmaximum size of free pool.\n"			\
-	"\tmax_age\tmax age of free element."
-
 struct parspec mgt_parspec[] = {
 #define PARAM_ALL
 #define PARAM(ty, nm, ...) { #nm, __VA_ARGS__ },
 #include "tbl/params.h"
-	{
-		.name = "pool_req",
-		.func = tweak_poolparam,
-		.priv = &mgt_param.pool_req,
-		.def = "10,100,10",
-		.descr =
-		"Parameters for per worker pool request memory pool.\n\n"
-		MEMPOOL_TEXT
-	}, {
-		.name = "pool_sess",
-		.func = tweak_poolparam,
-		.priv = &mgt_param.pool_sess,
-		.def = "10,100,10",
-		.descr =
-		"Parameters for per worker pool session memory pool.\n\n"
-		MEMPOOL_TEXT
-	}, {
-		.name = "pool_vbo",
-		.func = tweak_poolparam,
-		.priv = &mgt_param.pool_vbo,
-		.def = "10,100,10",
-		.descr =
-		"Parameters for backend object fetch memory pool.\n\n"
-		MEMPOOL_TEXT
-	}, {
-		.name = NULL
-	}
+	{ NULL }
 };

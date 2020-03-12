@@ -115,10 +115,6 @@ struct params {
 
 	struct vre_limits	vre_limits;
 
-	struct poolparam	pool_req;
-	struct poolparam	pool_sess;
-	struct poolparam	pool_vbo;
-
 	uint8_t			vsl_mask[256>>3];
 	uint8_t			debug_bits[(DBG_Reserved+7)>>3];
 	uint8_t			feature_bits[(FEATURE_Reserved+7)>>3];
