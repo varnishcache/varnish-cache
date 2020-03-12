@@ -856,12 +856,15 @@ PARAM(
 	/* type */	timeout,
 	/* min */	"1",
 	/* max */	"100",
-	/* def */	"",
+	/* def */	NULL,
 	/* units */	"seconds",
 	/* descr */
 	"The number of seconds between TCP keep-alive probes. "
 	"Ignored for Unix domain sockets.",
-	/* flags */	XYZZY
+	/* flags */	XYZZY,
+	/* dyn_min_reason */	NULL,
+	/* dyn_max_reason */	NULL,
+	/* dyn_def_reason */	"platform dependent"
 )
 
 PARAM(
@@ -869,13 +872,16 @@ PARAM(
 	/* type */	uint,
 	/* min */	"1",
 	/* max */	"100",
-	/* def */	"",
+	/* def */	NULL,
 	/* units */	"probes",
 	/* descr */
 	"The maximum number of TCP keep-alive probes to send before giving "
 	"up and killing the connection if no response is obtained from the "
 	"other end. Ignored for Unix domain sockets.",
-	/* flags */	XYZZY
+	/* flags */	XYZZY,
+	/* dyn_min_reason */	NULL,
+	/* dyn_max_reason */	NULL,
+	/* dyn_def_reason */	"platform dependent"
 )
 
 PARAM(
@@ -883,13 +889,16 @@ PARAM(
 	/* type */	timeout,
 	/* min */	"1",
 	/* max */	"7200",
-	/* def */	"",
+	/* def */	NULL,
 	/* units */	"seconds",
 	/* descr */
 	"The number of seconds a connection needs to be idle before TCP "
 	"begins sending out keep-alive probes. "
 	"Ignored for Unix domain sockets.",
-	/* flags */	XYZZY
+	/* flags */	XYZZY,
+	/* dyn_min_reason */	NULL,
+	/* dyn_max_reason */	NULL,
+	/* dyn_def_reason */	"platform dependent"
 )
 #undef XYZZY
 
