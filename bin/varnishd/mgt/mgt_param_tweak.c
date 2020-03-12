@@ -449,3 +449,37 @@ tweak_poolparam(struct vsb *vsb, const struct parspec *par, const char *arg)
 	}
 	return (retval);
 }
+
+/*--------------------------------------------------------------------
+ * Thread pool tweaks.
+ *
+ * The min/max values automatically update the opposites appropriate
+ * limit, so they don't end up crossing.
+ */
+
+int
+tweak_thread_pool_min(struct vsb *vsb, const struct parspec *par,
+    const char *arg)
+{
+	if (tweak_uint(vsb, par, arg))
+		return (-1);
+
+	MCF_ParamConf(MCF_MINIMUM, "thread_pool_max",
+	    "%u", mgt_param.wthread_min);
+	MCF_ParamConf(MCF_MAXIMUM, "thread_pool_reserve",
+	    "%u", mgt_param.wthread_min * 950 / 1000);
+	return (0);
+}
+
+int
+tweak_thread_pool_max(struct vsb *vsb, const struct parspec *par,
+    const char *arg)
+{
+
+	if (tweak_uint(vsb, par, arg))
+		return (-1);
+
+	MCF_ParamConf(MCF_MAXIMUM, "thread_pool_min",
+	    "%u", mgt_param.wthread_max);
+	return (0);
+}
