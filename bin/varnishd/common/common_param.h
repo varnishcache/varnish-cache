@@ -93,18 +93,20 @@ typedef uint8_t feature_t[(FEATURE_Reserved+7)>>3];
 
 struct params {
 
-#define	ptyp_bool	unsigned
-#define	ptyp_bytes	ssize_t
-#define	ptyp_bytes_u	unsigned
-#define	ptyp_double	double
-#define	ptyp_poolparam	struct poolparam
-#define	ptyp_timeout	double
-#define	ptyp_uint	unsigned
-#define	ptyp_vsl_buffer	unsigned
-#define	ptyp_vsl_reclen	unsigned
-#define	ptyp_vsl_mask	vsl_mask_t
-#define	ptyp_debug	debug_t
-#define	ptyp_feature	feature_t
+#define	ptyp_bool		unsigned
+#define	ptyp_bytes		ssize_t
+#define	ptyp_bytes_u		unsigned
+#define	ptyp_double		double
+#define	ptyp_poolparam		struct poolparam
+#define	ptyp_timeout		double
+#define	ptyp_uint		unsigned
+#define	ptyp_vsl_buffer		unsigned
+#define	ptyp_vsl_reclen		unsigned
+#define	ptyp_vsl_mask		vsl_mask_t
+#define	ptyp_debug		debug_t
+#define	ptyp_feature		feature_t
+#define	ptyp_thread_pool_max	unsigned
+#define	ptyp_thread_pool_min	unsigned
 #define PARAM(typ, fld, ...)		\
 	ptyp_##typ		fld;
 #include <tbl/params.h>
@@ -120,24 +122,12 @@ struct params {
 #undef ptyp_vsl_mask
 #undef ptyp_debug
 #undef ptyp_feature
+#undef ptyp_thread_pool_max
+#undef ptyp_thread_pool_min
 
 	/* Unprivileged user / group */
 	uid_t			uid;
 	gid_t			gid;
-
-	/* Worker threads and pool */
-	unsigned		wthread_min;
-	unsigned		wthread_max;
-	unsigned		wthread_reserve;
-	double			wthread_timeout;
-	unsigned		wthread_pools;
-	double			wthread_add_delay;
-	double			wthread_fail_delay;
-	double			wthread_destroy_delay;
-	double			wthread_watchdog;
-	unsigned		wthread_stats_rate;
-	ssize_t			wthread_stacksize;
-	unsigned		wthread_queue_limit;
 
 	struct vre_limits	vre_limits;
 };

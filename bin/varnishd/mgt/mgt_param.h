@@ -78,6 +78,7 @@ tweak_t tweak_vsl_reclen;
 tweak_t tweak_vsl_mask;
 tweak_t tweak_debug;
 tweak_t tweak_feature;
+tweak_t tweak_thread_pool_min;
+tweak_t tweak_thread_pool_max;
 
 extern struct parspec mgt_parspec[]; /* mgt_param_tbl.c */
-extern struct parspec WRK_parspec[]; /* mgt_pool.c */

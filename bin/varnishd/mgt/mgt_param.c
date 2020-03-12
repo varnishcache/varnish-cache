@@ -655,8 +655,6 @@ MCF_InitParams(struct cli *cli)
 	ssize_t def, low;
 
 	MCF_AddParams(mgt_parspec);
-	MCF_AddParams(WRK_parspec);
-
 	MCF_TcpParams();
 
 	def = 56 * 1024;
