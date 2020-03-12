@@ -43,14 +43,14 @@
 #define PARAM_SIMPLE(nm, typ, ...) \
 	PARAM(typ, nm, nm, tweak_##typ, &mgt_param.nm, __VA_ARGS__)
 
-#if defined(XYZZY)
-  #error "Temporary macro XYZZY already defined"
+#if defined(PLATFORM_FLAGS)
+#  error "Temporary macro PLATFORM_FLAGS already defined"
 #endif
 
 #if defined(HAVE_ACCEPT_FILTERS)
-  #define XYZZY MUST_RESTART
+#  define PLATFORM_FLAGS MUST_RESTART
 #else
-  #define XYZZY NOT_IMPLEMENTED
+#  define PLATFORM_FLAGS NOT_IMPLEMENTED
 #endif
 PARAM_SIMPLE(
 	/* name */	accept_filter,
@@ -66,12 +66,12 @@ PARAM_SIMPLE(
 	"in the first place. Malformed requests may go unnoticed and not "
 	"increase the client_req_400 counter. GET or HEAD requests with a "
 	"body may be blocked altogether.",
-	/* flags */	XYZZY,
+	/* flags */	PLATFORM_DEPENDENT | PLATFORM_FLAGS,
 	/* dyn_min_reason */	NULL,
 	/* dyn_max_reason */	NULL,
 	/* dyn_def_reason */	"on (if your platform supports accept filters)"
 )
-#undef XYZZY
+#undef PLATFORM_FLAGS
 
 PARAM_SIMPLE(
 	/* name */	acceptor_sleep_decay,
@@ -610,14 +610,10 @@ PARAM_SIMPLE(
 	"of that the response is allowed to take up."
 )
 
-#if defined(XYZZY)
-  #error "Temporary macro XYZZY already defined"
-#endif
-
 #if defined(SO_SNDTIMEO_WORKS)
-  #define XYZZY DELAYED_EFFECT
+#  define PLATFORM_FLAGS DELAYED_EFFECT
 #else
-  #define XYZZY NOT_IMPLEMENTED
+#  define PLATFORM_FLAGS NOT_IMPLEMENTED
 #endif
 PARAM_SIMPLE(
 	/* name */	idle_send_timeout,
@@ -632,9 +628,9 @@ PARAM_SIMPLE(
 	"When this timeout is hit, the session is closed.\n\n"
 	"See the man page for `setsockopt(2)` or `socket(7)` under"
 	" ``SO_SNDTIMEO`` for more information.",
-	/* flags */	XYZZY
+	/* flags */	PLATFORM_DEPENDENT | PLATFORM_FLAGS
 )
-#undef XYZZY
+#undef PLATFORM_FLAGS
 
 PARAM_SIMPLE(
 	/* name */	listen_depth,
@@ -774,14 +770,10 @@ PARAM_SIMPLE(
 	/* flags */	EXPERIMENTAL
 )
 
-#if defined(XYZZY)
-  #error "Temporary macro XYZZY already defined"
-#endif
-
 #if defined(SO_SNDTIMEO_WORKS)
-  #define XYZZY DELAYED_EFFECT
+#  define PLATFORM_FLAGS DELAYED_EFFECT
 #else
-  #define XYZZY NOT_IMPLEMENTED
+#  define PLATFORM_FLAGS NOT_IMPLEMENTED
 #endif
 PARAM_SIMPLE(
 	/* name */	send_timeout,
@@ -797,9 +789,9 @@ PARAM_SIMPLE(
 	" timeout is extended unless the total time already taken for sending"
 	" the response in its entirety exceeds this many seconds.\n\n"
 	"When this timeout is hit, the session is closed",
-	/* flags */	XYZZY
+	/* flags */	PLATFORM_DEPENDENT | PLATFORM_FLAGS
 )
-#undef XYZZY
+#undef PLATFORM_FLAGS
 
 PARAM_SIMPLE(
 	/* name */	shortlived,
@@ -838,9 +830,9 @@ PARAM_SIMPLE(
 )
 
 #if defined(HAVE_TCP_FASTOPEN)
-  #define XYZZY MUST_RESTART
+#  define PLATFORM_FLAGS MUST_RESTART
 #else
-  #define XYZZY NOT_IMPLEMENTED
+#  define PLATFORM_FLAGS NOT_IMPLEMENTED
 #endif
 PARAM_SIMPLE(
 	/* name */	tcp_fastopen,
@@ -851,14 +843,14 @@ PARAM_SIMPLE(
 	/* units */	"bool",
 	/* descr */
 	"Enable TCP Fast Open extension.",
-	/* flags */	XYZZY
+	/* flags */	PLATFORM_FLAGS
 )
-#undef XYZZY
+#undef PLATFORM_FLAGS
 
 #if defined(HAVE_TCP_KEEP)
-  #define XYZZY	EXPERIMENTAL
+#  define PLATFORM_FLAGS EXPERIMENTAL
 #else
-  #define XYZZY	NOT_IMPLEMENTED
+#  define PLATFORM_FLAGS NOT_IMPLEMENTED
 #endif
 PARAM_SIMPLE(
 	/* name */	tcp_keepalive_intvl,
@@ -870,7 +862,7 @@ PARAM_SIMPLE(
 	/* descr */
 	"The number of seconds between TCP keep-alive probes. "
 	"Ignored for Unix domain sockets.",
-	/* flags */	XYZZY,
+	/* flags */	PLATFORM_DEPENDENT | PLATFORM_FLAGS,
 	/* dyn_min_reason */	NULL,
 	/* dyn_max_reason */	NULL,
 	/* dyn_def_reason */	"platform dependent"
@@ -887,7 +879,7 @@ PARAM_SIMPLE(
 	"The maximum number of TCP keep-alive probes to send before giving "
 	"up and killing the connection if no response is obtained from the "
 	"other end. Ignored for Unix domain sockets.",
-	/* flags */	XYZZY,
+	/* flags */	PLATFORM_DEPENDENT | PLATFORM_FLAGS,
 	/* dyn_min_reason */	NULL,
 	/* dyn_max_reason */	NULL,
 	/* dyn_def_reason */	"platform dependent"
@@ -904,21 +896,17 @@ PARAM_SIMPLE(
 	"The number of seconds a connection needs to be idle before TCP "
 	"begins sending out keep-alive probes. "
 	"Ignored for Unix domain sockets.",
-	/* flags */	XYZZY,
+	/* flags */	PLATFORM_DEPENDENT | PLATFORM_FLAGS,
 	/* dyn_min_reason */	NULL,
 	/* dyn_max_reason */	NULL,
 	/* dyn_def_reason */	"platform dependent"
 )
-#undef XYZZY
-
-#if defined(XYZZY)
-  #error "Temporary macro XYZZY already defined"
-#endif
+#undef PLATFORM_FLAGS
 
 #if defined(SO_RCVTIMEO_WORKS)
-  #define XYZZY 0
+#  define PLATFORM_FLAGS 0
 #else
-  #define XYZZY NOT_IMPLEMENTED
+#  define PLATFORM_FLAGS NOT_IMPLEMENTED
 #endif
 PARAM_SIMPLE(
 	/* name */	timeout_idle,
@@ -934,9 +922,9 @@ PARAM_SIMPLE(
 	"This parameter is particularly relevant for HTTP1 keepalive "
 	" connections which are closed unless the next request is received"
 	" before this timeout is reached.",
-	/* flags */	XYZZY
+	/* flags */	PLATFORM_FLAGS
 )
-#undef XYZZY
+#undef PLATFORM_FLAGS
 
 PARAM_SIMPLE(
 	/* name */	timeout_linger,

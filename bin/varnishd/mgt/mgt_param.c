@@ -108,7 +108,7 @@ static const char NOT_IMPLEMENTED_TEXT[] =
 	"This parameter depends on a feature which is not available"
 	" on this platform.";
 
-static const char NOT_IMPLEMENTED_DOC[] =
+static const char PLATFORM_DEPENDENT_TEXT[] =
 	"NB: This parameter depends on a feature which is not available"
 	" on all platforms.";
 
@@ -763,8 +763,8 @@ MCF_DumpRstParam(void)
 			printf("~");
 		printf("\n");
 
-		if (pp->flags && pp->flags & NOT_IMPLEMENTED)
-			printf("\n%s\n\n", NOT_IMPLEMENTED_DOC);
+		if (pp->flags && pp->flags & PLATFORM_DEPENDENT)
+			printf("\n%s\n\n", PLATFORM_DEPENDENT_TEXT);
 
 		if (pp->units != NULL && *pp->units != '\0')
 			printf("\t* Units: %s\n", pp->units);
@@ -783,7 +783,7 @@ MCF_DumpRstParam(void)
 		 * XXX: that say if ->min/->max are valid, so we
 		 * XXX: can emit those also in help texts.
 		 */
-		if (pp->flags & ~NOT_IMPLEMENTED) {
+		if (pp->flags & ~(NOT_IMPLEMENTED|PLATFORM_DEPENDENT)) {
 			printf("\t* Flags: ");
 			q = "";
 

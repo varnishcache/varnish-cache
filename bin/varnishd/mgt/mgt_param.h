@@ -46,16 +46,17 @@ struct parspec {
 	const char	*def;
 	const char	*units;
 	const char	*descr;
-	int		 flags;
-#define DELAYED_EFFECT	(1<<0)
-#define EXPERIMENTAL	(1<<1)
-#define MUST_RESTART	(1<<2)
-#define MUST_RELOAD	(1<<3)
-#define WIZARD		(1<<4)
-#define PROTECTED	(1<<5)
-#define OBJ_STICKY	(1<<6)
-#define ONLY_ROOT	(1<<7)
-#define NOT_IMPLEMENTED	(1<<8)
+	unsigned	 flags;
+#define DELAYED_EFFECT		(1<<0)
+#define EXPERIMENTAL		(1<<1)
+#define MUST_RESTART		(1<<2)
+#define MUST_RELOAD		(1<<3)
+#define WIZARD			(1<<4)
+#define PROTECTED		(1<<5)
+#define OBJ_STICKY		(1<<6)
+#define ONLY_ROOT		(1<<7)
+#define NOT_IMPLEMENTED		(1<<8)
+#define PLATFORM_DEPENDENT	(1<<9)
 
 	const char	*dyn_min_reason;
 	const char	*dyn_max_reason;
