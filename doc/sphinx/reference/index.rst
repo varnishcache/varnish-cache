@@ -19,20 +19,23 @@ The Varnish Reference Manual
 	varnishtest.rst
 	varnishtop.rst
 	vsm.rst
-	vmod.rst
-	vmod_std.rst
-	vmod_directors.rst
-	vmod_purge.rst
 	vmod_blob.rst
-	vmod_unix.rst
+	vmod_cookie.rst
+	vmod_directors.rst
 	vmod_proxy.rst
+	vmod_purge.rst
+	vmod_std.rst
+	vmod_unix.rst
 	vmod_vtc.rst
+	vmod.rst
 	directors.rst
 	varnish-counters.rst
 	vsl.rst
 	vsl-query.rst
 	vtc.rst
 	vtla.rst
+
+.. vmod_debug left out deliberately ?
 
 .. todo::
 	The programs:

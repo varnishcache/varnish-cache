@@ -214,6 +214,8 @@ include/vtc-syntax.rst: vtc-syntax.py $(VTCSYN_SRC)
 	@mv ${@}_ ${@}
 BUILT_SOURCES += include/vtc-syntax.rst
 
+# XXX copy/paste rules need some TLB
+
 include/vmod_std.generated.rst: $(top_builddir)/lib/libvmod_std/vmod_std.rst
 	cp $(top_builddir)/lib/libvmod_std/vmod_std.rst $@
 BUILT_SOURCES += include/vmod_std.generated.rst
@@ -233,6 +235,10 @@ BUILT_SOURCES += include/vmod_vtc.generated.rst
 include/vmod_blob.generated.rst: $(top_builddir)/lib/libvmod_blob/vmod_blob.rst
 	cp $(top_builddir)/lib/libvmod_blob/vmod_blob.rst $@
 BUILT_SOURCES += include/vmod_blob.generated.rst
+
+include/vmod_cookie.generated.rst: $(top_builddir)/lib/libvmod_cookie/vmod_cookie.rst
+	cp $(top_builddir)/lib/libvmod_cookie/vmod_cookie.rst $@
+BUILT_SOURCES += include/vmod_cookie.generated.rst
 
 include/vmod_unix.generated.rst: $(top_builddir)/lib/libvmod_unix/vmod_unix.rst
 	cp $(top_builddir)/lib/libvmod_unix/vmod_unix.rst $@
