@@ -214,7 +214,7 @@ include/vtc-syntax.rst: vtc-syntax.py $(VTCSYN_SRC)
 	@mv ${@}_ ${@}
 BUILT_SOURCES += include/vtc-syntax.rst
 
-# XXX copy/paste rules need some TLB
+# XXX copy/paste rules need some TLC
 
 include/vmod_std.generated.rst: $(top_builddir)/lib/libvmod_std/vmod_std.rst
 	cp $(top_builddir)/lib/libvmod_std/vmod_std.rst $@
