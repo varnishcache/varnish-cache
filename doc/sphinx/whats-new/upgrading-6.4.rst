@@ -26,20 +26,17 @@ varnishd
   connection might not have got closed despite the :ref:`ref_param_send_timeout`
   having been reached. HTTP/2 was not affected.
 
-  When :ref:`ref_param_send_timeout` is reached on HTTP/1, the ``MAIN.sc_tx_error``
-  is increased and a ``Debug`` message ``Hit total send timeout, wrote
-  = x/y; not retrying`` is logged.
-
-  .. actually H2 is really quite different and we have a plan to
-     harmonize timeout handling across the board
-
-  Users with long running backend fetches and HTTP/1 clients should
-  watch out for an increase of the ``MAIN.sc_tx_error`` compared to
-  before the deployment and consider increasing
+  When :ref:`ref_param_send_timeout` is reached on HTTP/1, the
+  ``MAIN.sc_tx_error`` is increased. Users with long running backend
+  fetches and HTTP/1 clients should watch out for an increase of that
+  counter compared to before the deployment and consider increasing
   :ref:`ref_param_send_timeout` appropriately.
 
   The timeout can also be set per connection from VCL as
   ``sess.send_timeout``.
+
+  .. actually H2 is really quite different and we have a plan to
+     harmonize timeout handling across the board
 
 Statistics
 ----------
