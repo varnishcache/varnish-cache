@@ -1,6 +1,6 @@
 varnishtest "Test dynamic UDS backend hot swap after it was picked by a bereq"
 
-barrier b1 cond 2
+barrier b1 sock 2
 
 server s1 -listen "${tmpdir}/s1.sock" {
 } -start
@@ -30,8 +30,8 @@ varnish v1 -vcl {
 
 	sub vcl_backend_fetch {
 		set bereq.backend = s1.backend();
-		# hot swap should happen while we sleep
-		vtc.sleep(2s);
+		# hot swap has happened
+		vtc.barrier_sync("${b1_sock}");
 		if (std.healthy(bereq.backend)) {
 			return(abandon);
 		} else {
@@ -44,17 +44,16 @@ varnish v1 -expect MAIN.n_backend == 1
 
 client c1 {
 	txreq
-	barrier b1 sync
 	rxresp
 	expect resp.status == 200
 }
 
 client c2 {
-	barrier b1 sync
 	delay 0.1
 	txreq -req "SWAP" -hdr "X-Path: ${s2_sock}"
 	rxresp
 	expect resp.status == 200
+	barrier b1 sync
 }
 
 client c1 -start
