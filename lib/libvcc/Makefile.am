@@ -32,7 +32,7 @@ libvcc_a_SOURCES = \
 	vcc_vmod.c \
 	vcc_xref.c
 
-EXTRA_DIST = \
+dist_noinst_SCRIPTS = \
 	generate.py
 
 dist_pkgdata_SCRIPTS = \
