@@ -42,11 +42,21 @@ the error message::
 
             [...]
 
+    varnish> param.show thread_pool_min
+    200
+    thread_pool_min
+            Value is: 100 [threads] (default)
+            Maximum is: 5000
+
+            [...]
+
     varnish> param.set thread_pool_reserve 100
     106
     Must be no more than 95 (95% of thread_pool_min)
 
     (attempting to set param 'thread_pool_reserve' to '100')
+
+Expect further improvements in future releases.
 
 Parameters
 ~~~~~~~~~~
@@ -66,23 +76,34 @@ Changes in behavior
 Changes to VCL
 ==============
 
-* backend ``none`` was added for "no backend".
+* New syntax for "no backend"::
+
+      backend dummy none;
+
+      sub vcl_recv {
+          set req.backend_hint = dummy;
+      }
 
   It can be used whenever a backend is needed for syntactical
   reasons. The ``none`` backend will fail any attempt to use it.
+  The other purpose is to avoid the declaration of a dummy backend
+  when one is not needed: for example an active VCL only passing
+  requests to other VCLs with the ``return (vcl(...))`` syntax or
+  setups relying on dynamic backends from a VMOD.
 
 * ``std.rollback(bereq)`` is now safe to use, see :ref:`vmod_std(3)`
   for details.
 
 * Deliberately closing backend requests through ``return(abandon)``,
   ``return(fail)`` or ``return(error)`` is no longer accounted as a
-  fetch failure
+  fetch failure.
 
-* Numerical expressions can now be negative or negated as in ``set
-  resp.http.o = -std.integer("-200");``
+* Numerical expressions can now be negative or negated as in
+  ``set resp.http.ok = -std.integer("-200");``.
 
-* Overloaded the ``+=`` operator to also append to headers as in ``set
-  reqp.http.header += "add this"``
+* The ``+=`` operator is now available for headers and response bodies::
+
+      set resp.http.header += "string";
 
 VCL variables
 ~~~~~~~~~~~~~
@@ -102,7 +123,11 @@ VMODs
 varnishlog
 ==========
 
-* A ``Notice`` VSL tag has been added
+* A ``Notice`` VSL tag has been added.
+
+* Log records can safely have empty fields or fields containing blanks
+  if they are delimited by "double quotes". This was applied to
+  ``SessError`` and ``Backend_health``.
 
 varnishadm
 ==========
@@ -113,8 +138,8 @@ varnishadm
 varnishstat
 ===========
 
-* Add vi-stype CTRL-f / CTRL-b for page down/up to interactive
-  varnishstat
+* Add vi-style CTRL-f / CTRL-b for page down/up to interactive
+  ``varnishstat``.
 
 * The ``MAIN.sess_drop`` counter is gone.
 
@@ -128,10 +153,10 @@ varnishstat
 Changes for developers and VMOD authors
 =======================================
 
-general
+General
 ~~~~~~~
 
-* New configure switch: --with-unwind. Alpine linux appears to offer a
+* New configure switch: ``--with-unwind``. Alpine linux appears to offer a
   ``libexecinfo`` implementation that crashes when called by Varnish, this
   offers the alternative of using ``libunwind`` instead.
 
@@ -141,20 +166,20 @@ general
   lock cycles from the test logs.
 
 * Introduced ``struct reqtop`` to hold information on the ESI top request
-  and ``PRIV_TOP``
+  and ``PRIV_TOP``.
 
 * New or improved Coccinelle semantic patches that may be useful for
   VMOD or utilities authors.
 
 * Added ``VSLs()`` and ``VSLbs()`` functions for logging ``STRANDS`` to
-  VSL
+  VSL.
 
-* Added ``WS_VSB_new()`` / ``WS_VSB_finish()`` for VSBs on workspaces
+* Added ``WS_VSB_new()`` / ``WS_VSB_finish()`` for VSBs on workspaces.
 
 * added ``v_dont_optimize`` attribute macro to instruct compilers
-  (only gcc as of this release) to not optimize a function
+  (only gcc as of this release) to not optimize a function.
 
-* Added ``VSB_tofile()`` to ``libvarnishapi``
+* Added ``VSB_tofile()`` to ``libvarnishapi``.
 
 VMODs
 ~~~~~
@@ -163,9 +188,9 @@ VMODs
   of a dynamic backend. A hash is now computed to determine uniqueness and
   a backend declaration can contribute arbitrary data to influence the pool.
 
-* ``VRB_Iterate()`` signature has changed
+* ``VRB_Iterate()`` signature has changed.
 
-* ``VRT_fail()`` now also works from director code
+* ``VRT_fail()`` now also works from director code.
 
 * ``body_status`` and ``req_body_status`` have been collapsed into one
   type. In particular, the ``REQ_BODY_*`` enums now have been replaced
@@ -173,15 +198,6 @@ VMODs
 
 * Added ``VRT_AllocStrandsWS()`` as a utility function to allocate
   STRANDS on a workspace.
-
-log tools
-~~~~~~~~~
-
-* Log records can safely have empty fields or fields containing blanks
-  if they are delimited by "double quotes". This was applied to
-  ``SessError`` and ``Backend_health``.
-
-  Authors of log handling tools might need to review this change.
 
 *eof*
 

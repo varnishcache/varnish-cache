@@ -53,7 +53,7 @@ Statistics
   on HTTP/1 used to be accounted to ``MAIN.sc_rem_close``. Such
   timeout events are now accounted towards ``MAIN.sc_tx_error``.
 
-see :ref:`varnish-counters(7)` for details
+See :ref:`varnish-counters(7)` for details.
 
 vsl/logs
 --------
@@ -66,6 +66,6 @@ vsl/logs
   ``vcl_synth {}`` processing time and appears at a different
   position in the log.
 
-* A ``Notice`` VSL tag has been added
+* A ``Notice`` VSL tag has been added.
 
 *eof*
