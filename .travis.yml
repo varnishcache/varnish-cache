@@ -5,6 +5,7 @@ jobs:
   allow_failures:
     - os: osx
     - stage: sanitizers
+    - arch: arm64
   fast_finish: true
   include:
     - &test-linux
