@@ -51,7 +51,8 @@ the error message::
 Parameters
 ~~~~~~~~~~
 
-* Raised the minimum for the ``vcl_cooldown`` parameter to 1 second.
+* Raised the minimum for the :ref:`ref_param_vcl_cooldown` parameter
+  to 1 second.
 
 Changes in behavior
 ~~~~~~~~~~~~~~~~~~~
@@ -70,7 +71,8 @@ Changes to VCL
   It can be used whenever a backend is needed for syntactical
   reasons. The ``none`` backend will fail any attempt to use it.
 
-* ``std.rollback(bereq)`` is now safe to use
+* ``std.rollback(bereq)`` is now safe to use, see :ref:`vmod_std(3)`
+  for details.
 
 * Deliberately closing backend requests through ``return(abandon)``,
   ``return(fail)`` or ``return(error)`` is no longer accounted as a
@@ -85,13 +87,14 @@ Changes to VCL
 VCL variables
 ~~~~~~~~~~~~~
 
-* Add more vcl control over timeouts with ``sess.timeout_linger``,
-  ``sess.send_timeout`` and ``sess.idle_send_timeout``
+* Add more vcl control over timeouts with the ``sess.timeout_linger``,
+  ``sess.send_timeout`` and ``sess.idle_send_timeout`` variables
+  corresponding the parameters by the same names.
 
 VMODs
 =====
 
-* Imported ``vmod_cookie`` from `varnish_modules`_
+* Imported :ref:`vmod_cookie(3)` from `varnish_modules`_
 
   The previously deprecated function ``cookie.filter_except()`` has
   been removed during import. It was replaced by ``cookie.keep()``
@@ -116,8 +119,11 @@ varnishstat
 * The ``MAIN.sess_drop`` counter is gone.
 
 * Added ``rx_close_idle`` counter for separate accounting when
-  ``timeout_idle`` is reached. Also, ``send_timeout`` is no longer
-  reported as "remote closed".
+  ``sess.timeout_idle`` / :ref:`ref_param_timeout_idle` is reached.
+
+* ``sess.send_timeout`` / :ref:`ref_param_send_timeout` being reached
+  is no longer reported as ``MAIN.sc_rem_close``, but as
+  ``MAIN.sc_tx_error``.
 
 Changes for developers and VMOD authors
 =======================================

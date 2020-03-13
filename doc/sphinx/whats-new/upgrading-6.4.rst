@@ -21,12 +21,12 @@ varnishd
   more stable backend selection through consistent hashing. See
   :ref:`vmod_directors(3)` for details.
 
-* We fixed a case where ``send_timeout`` had no effect on HTTP/1
+* We fixed a case where :ref:`ref_param_send_timeout` had no effect on HTTP/1
   connections when streaming from a backend fetch, in other words, a
-  connection might not have got closed despite the ``send_timeout``
+  connection might not have got closed despite the :ref:`ref_param_send_timeout`
   having been reached. HTTP/2 was not affected.
 
-  When ``send_timeout`` is reached on HTTP/1, the ``MAIN.sc_tx_error``
+  When :ref:`ref_param_send_timeout` is reached on HTTP/1, the ``MAIN.sc_tx_error``
   is increased and a ``Debug`` message ``Hit total send timeout, wrote
   = x/y; not retrying`` is logged.
 
@@ -35,8 +35,8 @@ varnishd
 
   Users with long running backend fetches and HTTP/1 clients should
   watch out for an increase of the ``MAIN.sc_tx_error`` compared to
-  before the deployment and consider increasing ``send_timeout``
-  appropriately.
+  before the deployment and consider increasing
+  :ref:`ref_param_send_timeout` appropriately.
 
   The timeout can also be set per connection from VCL as
   ``sess.send_timeout``.
@@ -47,13 +47,16 @@ Statistics
 * The ``MAIN.sess_drop`` counter is gone. It should be removed from
   any statistics gathering tools, if present
 
-* ``timeout_idle`` being reached on HTTP/1 used to be accounted to the
-  ``MAIN.rx_timeout`` statistic. We have now added the
-  ``MAIN.rx_close_idle`` counter for this case specifically.
+* ``sess.timeout_idle`` / :ref:`ref_param_timeout_idle` being reached
+  on HTTP/1 used to be accounted to the ``MAIN.rx_timeout``
+  statistic. We have now added the ``MAIN.rx_close_idle`` counter for
+  this case specifically.
 
-* ``send_timeout`` being reached on HTTP/1 used to be accounted to
-  ``MAIN.sc_rem_close``. Such timeout events are now accounted towards
-  ``MAIN.sc_tx_error``.
+* ``sess.send_timeout`` / :ref:`ref_param_send_timeout` being reached
+  on HTTP/1 used to be accounted to ``MAIN.sc_rem_close``. Such
+  timeout events are now accounted towards ``MAIN.sc_tx_error``.
+
+see :ref:`varnish-counters(7)` for details
 
 vsl/logs
 --------
