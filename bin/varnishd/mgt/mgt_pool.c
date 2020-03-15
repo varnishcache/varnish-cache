@@ -89,7 +89,7 @@ tweak_thread_pool_max(struct vsb *vsb, const struct parspec *par,
 
 struct parspec WRK_parspec[] = {
 	{ "thread_pools", tweak_uint, &mgt_param.wthread_pools,
-		"1", NULL, "2",
+		"1", NULL, /* maximum defined in mgt_param.c */ "2",
 		"pools",
 		"Number of worker thread pools.\n"
 		"\n"
@@ -104,7 +104,8 @@ struct parspec WRK_parspec[] = {
 		"\n"
 		"Can be increased on the fly, but decreases require a "
 		"restart to take effect.",
-		EXPERIMENTAL | DELAYED_EFFECT },
+		EXPERIMENTAL | DELAYED_EFFECT,
+		NULL, "defined when Varnish is built" },
 	{ "thread_pool_max", tweak_thread_pool_max, &mgt_param.wthread_max,
 		NULL, NULL, "5000",
 		"threads",

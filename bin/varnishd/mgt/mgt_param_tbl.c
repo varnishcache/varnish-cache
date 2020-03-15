@@ -55,7 +55,8 @@ struct parspec mgt_parspec[] = {
 		"dlopen(3) loadable object.  Any occurrence of %s in "
 		"the string will be replaced with the source file name, "
 		"and %o will be replaced with the output file name.",
-		MUST_RELOAD },
+		MUST_RELOAD,
+		NULL, NULL, "defined when Varnish is built" },
 	{ "vcl_path", tweak_string, &mgt_vcl_path,
 		NULL, NULL, VARNISH_VCL_DIR,
 		NULL,
