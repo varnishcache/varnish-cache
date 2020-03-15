@@ -10,6 +10,7 @@ leak:VSL_Setup
 leak:WRK_BgThread
 #
 leak:binheap_new
+leak:binheap_insert
 # ev
 leak:mct_callback
 #
