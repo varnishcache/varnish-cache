@@ -53,7 +53,7 @@
  * Whenever something is deleted or changed in a way which is not
  * binary/load-time compatible, increment MAJOR version
  *
- * unreleased (planned for 2020-03-15)
+ * 11.0 (2020-03-16)
  *	Changed type of vsa_suckaddr_len from int to size_t
  *	New prefix_{ptr|len} fields in vrt_backend
  *	VRT_HashStrands32() added
@@ -159,7 +159,7 @@
  *	vrt_acl type added
  */
 
-#define VRT_MAJOR_VERSION	10U
+#define VRT_MAJOR_VERSION	11U
 
 #define VRT_MINOR_VERSION	0U
 

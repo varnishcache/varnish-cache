@@ -50,8 +50,6 @@ Varnish Cache 6.4.0 (2019-09-16)
   director, which, amongst other advantages, offers more stable
   backend selection through consistent hashing.
 
-.. do we want to mention VSV00004 ?
-
 * Log records can safely have empty fields or fields containing blanks if
   they are delimited by "double quotes". This was applied to ``SessError``
   and ``Backend_health``.
@@ -59,9 +57,6 @@ Varnish Cache 6.4.0 (2019-09-16)
 * It is now possible for VMOD authors to customize the connection pooling
   of a dynamic backend. A hash is now computed to determine uniqueness and
   a backend declaration can contribute arbitrary data to influence the pool.
-
-.. 3109 (vdp gunzip) is probably irrelevant for users because it only
-   happens with gzip objects inserted bypassing the built-in vfps
 
 * The option ``varnishtest -W`` is gone, the same can be achieved with
   ``varnishtest -p debug=+witness``. A ``witness.sh`` script is available
@@ -129,8 +124,6 @@ Varnish Cache 6.4.0 (2019-09-16)
 
 * Always refer to ``sub`` as subroutine in the documentation and error
   messages to avoid confusion with other terms.
-
-.. mention #3176? (backend cooling straightened out)
 
 * New ``pid`` command in the Varnish CLI, to get the master and optionally
   cache process PIDs, for example from ``varnishadm``.
