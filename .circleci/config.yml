@@ -276,8 +276,8 @@ jobs:
             else
                 WEEKLY=
             fi
-            VERSION=$(./configure --version | awk 'NR == 1 {print $NF}')$WEEKLY~<< parameters.release >>
-            sed -i -e "s|@VERSION@|$VERSION-1|"  "debian/changelog"
+            VERSION=$(./configure --version | awk 'NR == 1 {print $NF}')$WEEKLY-1~<< parameters.release >>
+            sed -i -e "s|@VERSION@|$VERSION|"  "debian/changelog"
       - run:
           name: Install Build-Depends packages
           command: |
