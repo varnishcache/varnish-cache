@@ -122,7 +122,8 @@ stages:
 
 notifications:
   irc:
-    if: branch = master
+    if: branch = master AND
+        repo = varnishcache/varnish-cache
     channels:
       - "irc.linpro.no#varnish-hacking"
     on_success: change
