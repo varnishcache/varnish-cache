@@ -46,6 +46,7 @@ jobs:
         - ./autogen.sh
         - ./configure
     - <<: *test-linux
+      env: WITNESS=1
       script: make -j8 witness
     - <<: *test-linux
       stage: sanitizers
