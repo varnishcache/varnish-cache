@@ -11,7 +11,7 @@ jobs:
     - &test-linux
       stage: test
       os: linux
-      dist: xenial
+      dist: bionic
       arch: amd64
       compiler: clang
       addons:
@@ -50,6 +50,7 @@ jobs:
       script: make -j8 witness
     - <<: *test-linux
       stage: sanitizers
+      dist: xenial
       addons:
         apt:
           sources:
