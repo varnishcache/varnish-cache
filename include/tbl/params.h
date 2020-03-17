@@ -543,6 +543,7 @@ PARAM(
 	/* units */	"bool",
 	/* descr */
 	"Enable support for HTTP Range headers."
+	/* XXX: what about the effect on beresp.filters? */
 )
 
 PARAM(
