@@ -165,8 +165,13 @@ vfp_esi_gzip_init(struct vfp_ctx *vc, struct vfp_entry *vfe)
 	if (vef == NULL)
 		return (VFP_ERROR);
 	vc->obj_flags |= OF_GZIPED | OF_CHGCE | OF_ESIPROC;
-	vef->vgz = VGZ_NewGzip(vc->wrk->vsl, "G F E");
 	vef->vep = VEP_Init(vc, vc->req, vfp_vep_callback, vef);
+	if (vef->vep == NULL) {
+		FREE_OBJ(vef);
+		return (VFP_ERROR);
+	}
+	vef->vgz = VGZ_NewGzip(vc->wrk->vsl, "G F E");
+
 	vef->ibuf_sz = cache_param->gzip_buffer;
 	vef->ibuf = calloc(1L, vef->ibuf_sz);
 	if (vef->ibuf == NULL)
@@ -232,6 +237,7 @@ static enum vfp_status v_matchproto_(vfp_init_f)
 vfp_esi_init(struct vfp_ctx *vc, struct vfp_entry *vfe)
 {
 	struct vef_priv *vef;
+	struct vep_state *vep;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vc->req, HTTP_MAGIC);
@@ -240,11 +246,14 @@ vfp_esi_init(struct vfp_ctx *vc, struct vfp_entry *vfe)
 		    "Attempted ESI on partial (206) response");
 		return (VFP_ERROR);
 	}
+	vep = VEP_Init(vc, vc->req, NULL, NULL);
+	if (vep == NULL)
+		return (VFP_ERROR);
 	ALLOC_OBJ(vef, VEF_MAGIC);
 	if (vef == NULL)
 		return (VFP_ERROR);
 	vc->obj_flags |= OF_ESIPROC;
-	vef->vep = VEP_Init(vc, vc->req, NULL, NULL);
+	vef->vep = vep;
 	vfe->priv1 = vef;
 	return (VFP_OK);
 }
