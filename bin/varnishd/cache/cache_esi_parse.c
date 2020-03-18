@@ -1040,7 +1040,11 @@ VEP_Init(struct vfp_ctx *vc, const struct http *req, vep_callback_t *cb,
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(req, HTTP_MAGIC);
 	vep = WS_Alloc(vc->resp->ws, sizeof *vep);
-	AN(vep);
+	if (vep == NULL) {
+		VSLb(vc->wrk->vsl, SLT_VCL_Error,
+		     "VEP_Init() workspace overflow");
+		return (NULL);
+	}
 
 	INIT_OBJ(vep, VEP_MAGIC);
 	vep->url = req->hd[HTTP_HDR_URL].b;
