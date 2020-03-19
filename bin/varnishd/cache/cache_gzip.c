@@ -503,8 +503,7 @@ vfp_gzip_init(struct vfp_ctx *vc, struct vfp_entry *vfe)
 			vc->obj_flags |= OF_GZIPED;
 		}
 	}
-	if (vg == NULL)
-		return (VFP_ERROR);
+	AN(vg);
 	vfe->priv1 = vg;
 	if (vgz_getmbuf(vg))
 		return (VFP_ERROR);
