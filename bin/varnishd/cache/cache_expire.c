@@ -112,10 +112,10 @@ exp_mail_it(struct objcore *oc, uint8_t cmds)
 			else
 				VSTAILQ_INSERT_TAIL(&exphdl->inbox,
 				    oc, exp_list);
+			VSC_C_main->exp_mailed++;
 		}
 		oc->exp_flags |= cmds | OC_EF_POSTED;
 		AN(oc->exp_flags & OC_EF_REFD);
-		VSC_C_main->exp_mailed++;
 		AZ(pthread_cond_signal(&exphdl->condvar));
 	}
 }
