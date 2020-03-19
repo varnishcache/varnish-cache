@@ -170,6 +170,7 @@ vfp_esi_gzip_init(struct vfp_ctx *vc, struct vfp_entry *vfe)
 		return (VFP_ERROR);
 	}
 	vef->vgz = VGZ_NewGzip(vc->wrk->vsl, "G F E");
+	AN(vef->vgz);
 
 	vef->ibuf_sz = cache_param->gzip_buffer;
 	vef->ibuf = calloc(1L, vef->ibuf_sz);
