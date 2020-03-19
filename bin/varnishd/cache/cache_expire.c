@@ -102,7 +102,8 @@ exp_mail_it(struct objcore *oc, uint8_t cmds)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	assert(oc->refcnt > 0);
 
-	Lck_Lock(&exphdl->mtx);
+	Lck_AssertHeld(&exphdl->mtx);
+
 	if ((cmds | oc->exp_flags) & OC_EF_REFD) {
 		if (!(oc->exp_flags & OC_EF_POSTED)) {
 			if (cmds & OC_EF_REMOVE)
@@ -117,7 +118,6 @@ exp_mail_it(struct objcore *oc, uint8_t cmds)
 		VSC_C_main->exp_mailed++;
 		AZ(pthread_cond_signal(&exphdl->condvar));
 	}
-	Lck_Unlock(&exphdl->mtx);
 }
 
 /*--------------------------------------------------------------------
@@ -129,8 +129,11 @@ EXP_Remove(struct objcore *oc)
 {
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	if (oc->exp_flags & OC_EF_REFD)
+	if (oc->exp_flags & OC_EF_REFD) {
+		Lck_Lock(&exphdl->mtx);
 		exp_mail_it(oc, OC_EF_REMOVE);
+		Lck_Unlock(&exphdl->mtx);
+	}
 }
 
 /*--------------------------------------------------------------------
@@ -147,11 +150,13 @@ EXP_Insert(struct worker *wrk, struct objcore *oc)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	assert(oc->refcnt >= 2);
 
-	AZ(oc->exp_flags & (OC_EF_INSERT | OC_EF_MOVE));
 	AZ(oc->flags & OC_F_DYING);
 
 	ObjSendEvent(wrk, oc, OEV_INSERT);
+	Lck_Lock(&exphdl->mtx);
+	AZ(oc->exp_flags & (OC_EF_INSERT | OC_EF_MOVE));
 	exp_mail_it(oc, OC_EF_INSERT | OC_EF_REFD | OC_EF_MOVE);
+	Lck_Unlock(&exphdl->mtx);
 }
 
 /*--------------------------------------------------------------------
@@ -182,8 +187,11 @@ EXP_Rearm(struct objcore *oc, double now, double ttl, double grace, double keep)
 	VSL(SLT_ExpKill, 0, "EXP_Rearm p=%p E=%.6f e=%.6f f=0x%x", oc,
 	    oc->timer_when, when, oc->flags);
 
-	if (when < oc->t_origin || when < oc->timer_when)
+	if (when < oc->t_origin || when < oc->timer_when) {
+		Lck_Lock(&exphdl->mtx);
 		exp_mail_it(oc, OC_EF_MOVE);
+		Lck_Unlock(&exphdl->mtx);
+	}
 }
 
 /*--------------------------------------------------------------------
