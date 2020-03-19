@@ -294,7 +294,7 @@ HSH_Insert(struct worker *wrk, const void *digest, struct objcore *oc,
 	   objecthead. The new object inherits our objhead reference. */
 	oc->objhead = oh;
 	VTAILQ_INSERT_TAIL(&oh->objcs, oc, hsh_list);
-	oc->refcnt++;				// For EXP_Insert
+	EXP_RefNewObjcore(oc);
 	Lck_Unlock(&oh->mtx);
 
 	BAN_RefBan(oc, ban);
@@ -772,7 +772,7 @@ HSH_Unbusy(struct worker *wrk, struct objcore *oc)
 	assert(oh->refcnt > 0);
 	assert(oc->refcnt > 0);
 	if (!(oc->flags & OC_F_PRIVATE))
-		oc->refcnt++;			// For EXP_Insert
+		EXP_RefNewObjcore(oc); /* Takes a ref for expiry */
 	/* XXX: strictly speaking, we should sort in Date: order. */
 	VTAILQ_REMOVE(&oh->objcs, oc, hsh_list);
 	VTAILQ_INSERT_HEAD(&oh->objcs, oc, hsh_list);
@@ -782,8 +782,8 @@ HSH_Unbusy(struct worker *wrk, struct objcore *oc)
 		hsh_rush1(wrk, oh, &rush, HSH_RUSH_POLICY);
 	}
 	Lck_Unlock(&oh->mtx);
-	if (!(oc->flags & OC_F_PRIVATE))
-		EXP_Insert(wrk, oc);
+	EXP_Insert(wrk, oc); /* Does nothing unless EXP_RefNewObjcore was
+			      * called */
 	hsh_rush2(wrk, &rush);
 }
 
