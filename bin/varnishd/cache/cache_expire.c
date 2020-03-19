@@ -105,10 +105,11 @@ exp_mail_it(struct objcore *oc, uint8_t cmds)
 {
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	assert(oc->refcnt > 0);
+	AZ(cmds & OC_EF_REFD);
 
 	Lck_AssertHeld(&exphdl->mtx);
 
-	if ((cmds | oc->exp_flags) & OC_EF_REFD) {
+	if (oc->exp_flags & OC_EF_REFD) {
 		if (!(oc->exp_flags & OC_EF_POSTED)) {
 			if (cmds & OC_EF_REMOVE)
 				VSTAILQ_INSERT_HEAD(&exphdl->inbox,
@@ -119,10 +120,29 @@ exp_mail_it(struct objcore *oc, uint8_t cmds)
 			VSC_C_main->exp_mailed++;
 		}
 		oc->exp_flags |= cmds | OC_EF_POSTED;
-		AN(oc->exp_flags & OC_EF_REFD);
 		AZ(pthread_cond_signal(&exphdl->condvar));
 	}
 }
+
+/*--------------------------------------------------------------------
+ * Setup a new ObjCore for control by expire. Should be called with the
+ * ObjHead locked by HSH_Unbusy(/HSH_Insert) (in private access).
+ */
+
+void
+EXP_RefNewObjcore(struct objcore *oc)
+{
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+
+	Lck_AssertHeld(&oc->objhead->mtx);
+
+	AZ(oc->exp_flags);
+	assert(oc->refcnt >= 1);
+	oc->refcnt++;
+	oc->exp_flags |= OC_EF_REFD;
+}
+
+
 
 /*--------------------------------------------------------------------
  * Call EXP's attention to a an oc
@@ -152,6 +172,10 @@ EXP_Insert(struct worker *wrk, struct objcore *oc)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+
+	if (!(oc->exp_flags & OC_EF_REFD))
+		return;
+
 	assert(oc->refcnt >= 2);
 
 	AZ(oc->flags & OC_F_DYING);
@@ -159,7 +183,7 @@ EXP_Insert(struct worker *wrk, struct objcore *oc)
 	ObjSendEvent(wrk, oc, OEV_INSERT);
 	Lck_Lock(&exphdl->mtx);
 	AZ(oc->exp_flags & (OC_EF_INSERT | OC_EF_MOVE));
-	exp_mail_it(oc, OC_EF_INSERT | OC_EF_REFD | OC_EF_MOVE);
+	exp_mail_it(oc, OC_EF_INSERT | OC_EF_MOVE);
 	Lck_Unlock(&exphdl->mtx);
 }
 

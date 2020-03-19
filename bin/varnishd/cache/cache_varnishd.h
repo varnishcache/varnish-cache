@@ -165,6 +165,7 @@ void VDI_Init(void);
 /* cache_exp.c */
 vtim_real EXP_Ttl(const struct req *, const struct objcore *);
 vtim_real EXP_Ttl_grace(const struct req *, const struct objcore *oc);
+void EXP_RefNewObjcore(struct objcore *);
 void EXP_Insert(struct worker *wrk, struct objcore *oc);
 void EXP_Remove(struct objcore *);
 
