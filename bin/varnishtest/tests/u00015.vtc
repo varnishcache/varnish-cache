@@ -1,0 +1,19 @@
+varnishtest "varnishstat -j"
+
+server s1 -repeat 5 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+client c1 -repeat 5 {
+	txreq
+	rxresp
+} -run
+
+delay 1
+
+shell { varnishstat -n ${v1_name}  -j }
+shell -expect "1" { varnishstat -n ${v1_name} -j | python3 -c 'import sys, json; print(json.load(sys.stdin)["version"])' }
+shell -expect "5" { varnishstat -n ${v1_name} -j | python3 -c 'import sys, json; print(json.load(sys.stdin)["counters"]["MAIN.client_req"]["value"])' }
