@@ -783,6 +783,8 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 	if (err)
 		VSB_printf(pan_vsb, "errno = %d (%s)\n", err, vstrerror(err));
 
+	VSB_printf(pan_vsb, "pthread.self = %p\n", (void *)pthread_self());
+
 	q = THR_GetName();
 	if (q != NULL)
 		VSB_printf(pan_vsb, "pthread.name = (%s)\n", q);
