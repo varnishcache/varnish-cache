@@ -312,3 +312,11 @@ A function mixing a named PRIV_TASK with optional parameters.
 $Function VOID call(SUB)
 
 Call a sub
+
+$Function VOID bad_memory(SUB)
+
+To test *WRONG* behavior
+
+$Function SUB total_recall()
+
+To test *WRONG* behavior
