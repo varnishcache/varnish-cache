@@ -785,7 +785,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 
 	q = THR_GetName();
 	if (q != NULL)
-		VSB_printf(pan_vsb, "thread = (%s)\n", q);
+		VSB_printf(pan_vsb, "pthread.name = (%s)\n", q);
 
 #ifdef HAVE_PTHREAD_GETATTR_NP
 	pan_threadattr(pan_vsb);
