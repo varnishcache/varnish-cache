@@ -103,7 +103,8 @@ struct parspec WRK_parspec[] = {
 		"pool for each CPU is most likely detrimental to performance.\n"
 		"\n"
 		"Can be increased on the fly, but decreases require a "
-		"restart to take effect.",
+		"restart to take effect, unless the drop_pools experimental "
+		"debug flag is set.",
 		EXPERIMENTAL | DELAYED_EFFECT,
 		NULL, "defined when Varnish is built" },
 	{ "thread_pool_max", tweak_thread_pool_max, &mgt_param.wthread_max,
