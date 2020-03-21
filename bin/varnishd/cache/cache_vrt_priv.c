@@ -166,6 +166,9 @@ struct vmod_priv *
 VRT_priv_top(VRT_CTX, const void *vmod_id)
 {
 	struct req *req;
+	struct sess *sp;
+	struct reqtop *top;
+	struct vmod_priv *priv;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	if (ctx->req == NULL) {
@@ -174,12 +177,15 @@ VRT_priv_top(VRT_CTX, const void *vmod_id)
 	}
 	req = ctx->req;
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(req->top, REQTOP_MAGIC);
-	return (vrt_priv_dynamic(
-	    req->ws,
-	    req->top->privs,
-	    (uintptr_t)vmod_id
-	));
+	sp = ctx->sp;
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	top = req->top;
+	CHECK_OBJ_NOTNULL(top, REQTOP_MAGIC);
+
+	Lck_Lock(&sp->mtx);
+	priv = vrt_priv_dynamic(req->ws, top->privs, (uintptr_t)vmod_id);
+	Lck_Unlock(&sp->mtx);
+	return (priv);
 }
 
 /*--------------------------------------------------------------------
