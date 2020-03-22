@@ -851,6 +851,23 @@ http_PutResponse(struct http *to, const char *proto, uint16_t status,
 }
 
 /*--------------------------------------------------------------------
+ * check if header is filterd by the dynamic marker or the static
+ * definitions in http_headers.h
+ */
+
+static inline int
+http_isfiltered(const struct http *fm, unsigned u, unsigned how)
+{
+	if (fm->hdf[u] & HDF_FILTER)
+		return (1);
+#define HTTPH(a, b, c) \
+	if (((c) & how) && http_IsHdr(&fm->hd[u], (b))) \
+		return (1);
+#include "tbl/http_headers.h"
+	return (0);
+}
+
+/*--------------------------------------------------------------------
  * Estimate how much workspace we need to Filter this header according
  * to 'how'.
  */
@@ -866,12 +883,8 @@ http_EstimateWS(const struct http *fm, unsigned how)
 		if (u == HTTP_HDR_METHOD || u == HTTP_HDR_URL)
 			continue;
 		Tcheck(fm->hd[u]);
-		if (fm->hdf[u] & HDF_FILTER)
+		if (http_isfiltered(fm, u, how))
 			continue;
-#define HTTPH(a, b, c) \
-		if (((c) & how) && http_IsHdr(&fm->hd[u], (b))) \
-			continue;
-#include "tbl/http_headers.h"
 		l += Tlen(fm->hd[u]) + 1L;
 	}
 	return (PRNDUP(l + 1L));
@@ -907,12 +920,8 @@ HTTP_Encode(const struct http *fm, uint8_t *p0, unsigned l, unsigned how)
 		if (u == HTTP_HDR_METHOD || u == HTTP_HDR_URL)
 			continue;
 		Tcheck(fm->hd[u]);
-		if (fm->hdf[u] & HDF_FILTER)
+		if (http_isfiltered(fm, u, how))
 			continue;
-#define HTTPH(a, b, c) \
-		if (((c) & how) && http_IsHdr(&fm->hd[u], (b))) \
-			continue;
-#include "tbl/http_headers.h"
 		http_VSLH(fm, u);
 		w = Tlen(fm->hd[u]) + 1L;
 		assert(p + w + 1 <= e);
@@ -1099,13 +1108,8 @@ http_filterfields(struct http *to, const struct http *fm, unsigned how)
 	to->status = fm->status;
 	for (u = HTTP_HDR_FIRST; u < fm->nhd; u++) {
 		Tcheck(fm->hd[u]);
-		if (fm->hdf[u] & HDF_FILTER)
+		if (http_isfiltered(fm, u, how))
 			continue;
-		Tcheck(fm->hd[u]);
-#define HTTPH(a, b, c) \
-		if (((c) & how) && http_IsHdr(&fm->hd[u], (b))) \
-			continue;
-#include "tbl/http_headers.h"
 		assert (to->nhd < to->shd);
 		to->hd[to->nhd] = fm->hd[u];
 		to->hdf[to->nhd] = 0;
