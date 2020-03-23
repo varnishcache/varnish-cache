@@ -299,7 +299,6 @@ HSH_Insert(struct worker *wrk, const void *digest, struct objcore *oc,
 
 	BAN_RefBan(oc, ban);
 	AN(oc->ban);
-	EXP_Insert(wrk, oc);
 
 	/* Move the object first in the oh list, unbusy it and run the
 	   waitinglist if necessary */
@@ -311,6 +310,8 @@ HSH_Insert(struct worker *wrk, const void *digest, struct objcore *oc,
 		hsh_rush1(wrk, oh, &rush, HSH_RUSH_POLICY);
 	Lck_Unlock(&oh->mtx);
 	hsh_rush2(wrk, &rush);
+
+	EXP_Insert(wrk, oc);
 }
 
 /*---------------------------------------------------------------------
