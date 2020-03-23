@@ -497,6 +497,7 @@ VRT_call(VRT_CTX, VCL_SUB sub)
 	struct vmod_priv *p;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(sub, VCL_SUB_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->vcl, VCL_MAGIC);
 	assert(sub->vcl_conf == ctx->vcl->conf);
 
