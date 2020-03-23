@@ -139,7 +139,7 @@ EXP_RefNewObjcore(struct objcore *oc)
 	AZ(oc->exp_flags);
 	assert(oc->refcnt >= 1);
 	oc->refcnt++;
-	oc->exp_flags |= OC_EF_REFD;
+	oc->exp_flags |= OC_EF_REFD | OC_EF_NEW;
 }
 
 
@@ -155,7 +155,14 @@ EXP_Remove(struct objcore *oc)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	if (oc->exp_flags & OC_EF_REFD) {
 		Lck_Lock(&exphdl->mtx);
-		exp_mail_it(oc, OC_EF_REMOVE);
+		if (oc->exp_flags & OC_EF_NEW) {
+			/* EXP_Insert has not been called for this object
+			 * yet. Mark it for removal, and EXP_Insert will
+			 * clean up once it is called. */
+			AZ(oc->exp_flags & OC_EF_POSTED);
+			oc->exp_flags |= OC_EF_REMOVE;
+		} else
+			exp_mail_it(oc, OC_EF_REMOVE);
 		Lck_Unlock(&exphdl->mtx);
 	}
 }
@@ -169,22 +176,37 @@ EXP_Remove(struct objcore *oc)
 void
 EXP_Insert(struct worker *wrk, struct objcore *oc)
 {
+	unsigned remove_race = 0;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+
+	AZ(oc->flags & OC_F_BUSY);
 
 	if (!(oc->exp_flags & OC_EF_REFD))
 		return;
 
 	assert(oc->refcnt >= 2);
 
-	AZ(oc->flags & OC_F_DYING);
-
 	ObjSendEvent(wrk, oc, OEV_INSERT);
+
 	Lck_Lock(&exphdl->mtx);
-	AZ(oc->exp_flags & (OC_EF_INSERT | OC_EF_MOVE));
-	exp_mail_it(oc, OC_EF_INSERT | OC_EF_MOVE);
+	AN(oc->exp_flags & OC_EF_NEW);
+	oc->exp_flags &= ~OC_EF_NEW;
+	AZ(oc->exp_flags & (OC_EF_INSERT | OC_EF_MOVE | OC_EF_POSTED));
+	if (oc->exp_flags & OC_EF_REMOVE) {
+		/* We raced some other thread executing EXP_Remove */
+		remove_race = 1;
+		oc->exp_flags &= ~(OC_EF_REFD | OC_EF_REMOVE);
+	} else
+		exp_mail_it(oc, OC_EF_INSERT | OC_EF_MOVE);
 	Lck_Unlock(&exphdl->mtx);
+
+	if (remove_race) {
+		ObjSendEvent(wrk, oc, OEV_EXPIRE);
+		(void)HSH_DerefObjCore(wrk, &oc, 0);
+		AZ(oc);
+	}
 }
 
 /*--------------------------------------------------------------------
@@ -218,7 +240,12 @@ EXP_Rearm(struct objcore *oc, vtim_real now,
 
 	if (when < oc->t_origin || when < oc->timer_when) {
 		Lck_Lock(&exphdl->mtx);
-		exp_mail_it(oc, OC_EF_MOVE);
+		if (oc->exp_flags & OC_EF_NEW) {
+			/* EXP_Insert has not been called yet, do nothing
+			 * as the initial insert will execute the move
+			 * operation. */
+		} else
+			exp_mail_it(oc, OC_EF_MOVE);
 		Lck_Unlock(&exphdl->mtx);
 	}
 }
