@@ -107,6 +107,7 @@ struct type {
 	const char		*tostring;
 	vcc_type_t		multype;
 	int			stringform;
+	int			stringcast;
 };
 
 #define VCC_TYPE(UC, lc)	extern const struct type UC[1];
@@ -234,6 +235,7 @@ struct vcc {
 	unsigned		nsources;
 	struct source		*src;
 	struct token		*t;
+	struct token		*snap;
 	int			indent;
 	int			hindent;
 	unsigned		cnt;
@@ -244,7 +246,7 @@ struct vcc {
 	struct vsb		*fb;		/* Body of current sub
 						 * NULL otherwise
 						 */
-	struct vsb		*sb;
+	struct vsb		*err_sb;
 	int			err;
 	struct proc		*curproc;
 	VTAILQ_HEAD(, proc)	procs;
@@ -314,6 +316,7 @@ char *TlDup(struct vcc *tl, const char *s);
 
 /* vcc_expr.c */
 void vcc_Expr(struct vcc *tl, vcc_type_t typ);
+int vcc_PeekExpr(struct vcc *tl, vcc_type_t typ);
 sym_act_f vcc_Act_Call;
 void vcc_Expr_Init(struct vcc *tl);
 sym_expr_t vcc_Eval_Var;
@@ -371,12 +374,13 @@ typedef void symwalk_f(struct vcc *tl, const struct symbol *s);
 void VCC_WalkSymbols(struct vcc *tl, symwalk_f *func, vcc_kind_t);
 
 /* vcc_token.c */
-void vcc_Coord(const struct vcc *tl, struct vsb *vsb,
-    const struct token *t);
+void vcc_Coord(const struct vcc *tl, struct vsb *vsb);
 void vcc_ErrToken(const struct vcc *tl, const struct token *t);
 void vcc_ErrWhere(struct vcc *, const struct token *);
 void vcc_ErrWhere2(struct vcc *, const struct token *, const struct token *);
 void vcc_Warn(struct vcc *);
+void vcc_Complain(const struct vcc *, const char *);
+void vcc_Complainf(const struct vcc *, const char *, ...);
 
 void vcc__Expect(struct vcc *tl, unsigned tok, unsigned line);
 int vcc_IdIs(const struct token *t, const char *p);

@@ -106,17 +106,17 @@ vcc_IsField(struct vcc *tl, struct token **t, struct fld_spec *fs)
 			fs->found = t_field;
 			return;
 		}
-		VSB_cat(tl->sb, "Field ");
+		vcc_Complain(tl, "Field ");
 		vcc_ErrToken(tl, t_field);
-		VSB_cat(tl->sb, " redefined at:\n");
+		vcc_Complain(tl, " redefined at:\n");
 		vcc_ErrWhere(tl, t_field);
-		VSB_cat(tl->sb, "\nFirst defined at:\n");
+		vcc_Complain(tl, "\nFirst defined at:\n");
 		vcc_ErrWhere(tl, fs->found);
 		return;
 	}
-	VSB_cat(tl->sb, "Unknown field: ");
+	vcc_Complain(tl, "Unknown field: ");
 	vcc_ErrToken(tl, t_field);
-	VSB_cat(tl->sb, " at\n");
+	vcc_Complain(tl, " at\n");
 	vcc_ErrWhere(tl, t_field);
 }
 
@@ -126,7 +126,7 @@ vcc_FieldsOk(struct vcc *tl, const struct fld_spec *fs)
 
 	for (; fs->name != NULL; fs++) {
 		if (*fs->name == '!' && fs->found == NULL) {
-			VSB_printf(tl->sb,
+			vcc_Complainf(tl,
 			    "Mandatory field '%s' missing.\n", fs->name + 1);
 			tl->err = 1;
 		}

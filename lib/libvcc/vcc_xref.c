@@ -77,12 +77,12 @@ vcc_checkref(struct vcc *tl, const struct symbol *sym)
 		return;
 	if (sym->ndef == 0 && sym->nref != 0) {
 		AN(sym->ref_b);
-		VSB_printf(tl->sb, "Undefined %s %.*s, first reference:\n",
+		vcc_Complainf(tl, "Undefined %s %.*s, first reference:\n",
 		    sym->kind->name, PF(sym->ref_b));
 		vcc_ErrWhere(tl, sym->ref_b);
 	} else if (sym->ndef != 0 && sym->nref == 0) {
 		AN(sym->def_b);
-		VSB_printf(tl->sb, "Unused %s %.*s, defined:\n",
+		vcc_Complainf(tl, "Unused %s %.*s, defined:\n",
 		    sym->kind->name, PF(sym->def_b));
 		vcc_ErrWhere(tl, sym->def_b);
 		if (!tl->err_unref)
@@ -154,7 +154,7 @@ vcc_CheckActionRecurse(struct vcc *tl, struct proc *p, unsigned bitmap)
 
 	AN(p);
 	if (p->active) {
-		VSB_cat(tl->sb, "Subroutine recurses on\n");
+		vcc_Complain(tl, "Subroutine recurses on\n");
 		vcc_ErrWhere(tl, p->name);
 		return (1);
 	}
@@ -163,12 +163,12 @@ vcc_CheckActionRecurse(struct vcc *tl, struct proc *p, unsigned bitmap)
 
 #define VCL_RET_MAC(l, U, B)						\
 		if (u & (1 << (VCL_RET_##U))) {				\
-			VSB_printf(tl->sb, "Invalid return \"" #l "\"\n");\
+			vcc_Complainf(tl, "Invalid return \"" #l "\"\n");\
 			vcc_ErrWhere(tl, p->return_tok[VCL_RET_##U]);	\
 		}
 #include "tbl/vcl_returns.h"
 
-		VSB_printf(tl->sb, "\n...in subroutine \"%.*s\"\n",
+		vcc_Complainf(tl, "\n...in subroutine \"%.*s\"\n",
 		    PF(p->name));
 		vcc_ErrWhere(tl, p->name);
 		return (1);
@@ -176,13 +176,13 @@ vcc_CheckActionRecurse(struct vcc *tl, struct proc *p, unsigned bitmap)
 	p->active = 1;
 	VTAILQ_FOREACH(pc, &p->calls, list) {
 		if (pc->sym->proc == NULL) {
-			VSB_printf(tl->sb, "Subroutine %s does not exist\n",
+			vcc_Complainf(tl, "Subroutine %s does not exist\n",
 			    pc->sym->name);
 			vcc_ErrWhere(tl, pc->t);
 			return (1);
 		}
 		if (vcc_CheckActionRecurse(tl, pc->sym->proc, bitmap)) {
-			VSB_printf(tl->sb, "\n...called from \"%.*s\"\n",
+			vcc_Complainf(tl, "\n...called from \"%.*s\"\n",
 			    PF(p->name));
 			vcc_ErrWhere(tl, pc->t);
 			return (1);
@@ -206,15 +206,15 @@ vcc_checkaction(struct vcc *tl, const struct symbol *sym)
 	if (p->method == NULL)
 		return;
 	if (vcc_CheckActionRecurse(tl, p, p->method->ret_bitmap)) {
-		VSB_printf(tl->sb,
+		vcc_Complainf(tl,
 		    "\n...which is the \"%s\" subroutine\n", p->method->name);
-		VSB_cat(tl->sb, "Legal returns are:");
+		vcc_Complain(tl, "Legal returns are:");
 #define VCL_RET_MAC(l, U, B)						\
 		if (p->method->ret_bitmap & ((1 << VCL_RET_##U)))	\
-			VSB_printf(tl->sb, " \"%s\"", #l);
+			vcc_Complainf(tl, " \"%s\"", #l);
 
 #include "tbl/vcl_returns.h"
-		VSB_cat(tl->sb, "\n");
+		vcc_Complain(tl, "\n");
 		tl->err = 1;
 	}
 
@@ -251,16 +251,16 @@ vcc_CheckUseRecurse(struct vcc *tl, const struct proc *p,
 	pu = vcc_FindIllegalUse(p, m);
 	if (pu != NULL) {
 		vcc_ErrWhere2(tl, pu->t1, pu->t2);
-		VSB_printf(tl->sb, "%s from subroutine '%s'.\n",
+		vcc_Complainf(tl, "%s from subroutine '%s'.\n",
 		    pu->use, m->name);
-		VSB_printf(tl->sb, "\n...in subroutine \"%.*s\"\n",
+		vcc_Complainf(tl, "\n...in subroutine \"%.*s\"\n",
 		    PF(pu->fm->name));
 		vcc_ErrWhere(tl, p->name);
 		return (1);
 	}
 	VTAILQ_FOREACH(pc, &p->calls, list) {
 		if (vcc_CheckUseRecurse(tl, pc->sym->proc, m)) {
-			VSB_printf(tl->sb, "\n...called from \"%.*s\"\n",
+			vcc_Complainf(tl, "\n...called from \"%.*s\"\n",
 			    PF(p->name));
 			vcc_ErrWhere(tl, pc->t);
 			return (1);
@@ -282,13 +282,13 @@ vcc_checkuses(struct vcc *tl, const struct symbol *sym)
 	pu = vcc_FindIllegalUse(p, p->method);
 	if (pu != NULL) {
 		vcc_ErrWhere2(tl, pu->t1, pu->t2);
-		VSB_printf(tl->sb, "%s in subroutine '%.*s'.",
+		vcc_Complainf(tl, "%s in subroutine '%.*s'.",
 		    pu->use, PF(p->name));
-		VSB_cat(tl->sb, "\nAt: ");
+		vcc_Complain(tl, "\nAt: ");
 		return;
 	}
 	if (vcc_CheckUseRecurse(tl, p, p->method)) {
-		VSB_printf(tl->sb,
+		vcc_Complainf(tl,
 		    "\n...which is the \"%s\" subroutine\n", p->method->name);
 		return;
 	}
@@ -376,6 +376,8 @@ vcc_MarkPriv(struct vcc *tl, struct procprivhead *head,
 	struct procpriv *pp;
 
 	AN(vmod);
+	if (tl->snap != NULL)
+		return (NULL);
 
 	VTAILQ_FOREACH(pp, head, list) {
 		if (pp->vmod == vmod)

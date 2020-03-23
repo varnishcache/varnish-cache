@@ -51,6 +51,7 @@ const struct type BACKEND[1] = {{
 const struct type BLOB[1] = {{
 	.magic =		TYPE_MAGIC,
 	.name =			"BLOB",
+	.stringcast =		1,
 }};
 
 const struct type BODY[1] = {{
@@ -135,12 +136,14 @@ const struct type STRING[1] = {{
 	.magic =		TYPE_MAGIC,
 	.name =			"STRING",
 	.stringform =		1,
+	.stringcast =		1,
 }};
 
 const struct type STRANDS[1] = {{
 	.magic =		TYPE_MAGIC,
 	.name =			"STRANDS",
 	.stringform =		1,
+	.stringcast =		1,
 	.tostring =		"VRT_CollectStrands(ctx,\v+\n\v1\v-\n)",
 }};
 
@@ -154,6 +157,7 @@ const struct type STRING_LIST[1] = {{
 	.magic =		TYPE_MAGIC,
 	.name =			"STRING_LIST",
 	.stringform =		1,
+	.stringcast =		1,
 }};
 
 const struct type SUB[1] = {{

@@ -74,3 +74,9 @@ struct vpi_ii {
 
 VCL_STRANDS VPI_BundleStrands(int, struct strands *, char const **,
     const char *f, ...);
+
+struct vrt_blob;
+VCL_BLOB VPI_blob(VRT_CTX, VCL_STRING);
+
+/* Thin VFC wrapper for vmod_std and vmod_blob */
+VCL_BLOB VPI_VFC_find(struct vmod_priv *priv, const char *file_name);

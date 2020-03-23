@@ -245,7 +245,7 @@ struct vrt_blob {
 typedef const struct vrt_acl *			VCL_ACL;
 typedef const struct director *			VCL_BACKEND;
 typedef const struct vrt_blob *			VCL_BLOB;
-typedef const char *				VCL_BODY;
+typedef const void *				VCL_BODY;
 typedef unsigned				VCL_BOOL;
 typedef int64_t					VCL_BYTES;
 typedef vtim_dur				VCL_DURATION;
@@ -274,8 +274,10 @@ struct vrt_type {
 };
 
 enum lbody_e {
-	LBODY_SET,
-	LBODY_ADD,
+	LBODY_SET_STRING,
+	LBODY_ADD_STRING,
+	LBODY_SET_BLOB,
+	LBODY_ADD_BLOB,
 };
 
 /***********************************************************************

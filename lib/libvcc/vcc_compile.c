@@ -105,14 +105,14 @@ TLWriteVSB(struct vcc *tl, const char *fn, const struct vsb *vsb,
 
 	fo = open(fn, O_WRONLY|O_TRUNC|O_CREAT, 0600);
 	if (fo < 0) {
-		VSB_printf(tl->sb,
+		vcc_Complainf(tl,
 		    "Could not open %s file %s: %s\n",
 		    what, fn, strerror(errno));
 		return (-1);
 	}
 	i = VSB_tofile(vsb, fo);
 	if (i) {
-		VSB_printf(tl->sb,
+		vcc_Complainf(tl,
 		    "Could not write %s to %s: %s\n",
 		    what, fn, strerror(errno));
 	}
@@ -530,12 +530,12 @@ vcc_file_source(const struct vcc *tl, const char *fn)
 	struct source *sp;
 
 	if (!tl->unsafe_path && strchr(fn, '/') != NULL) {
-		VSB_printf(tl->sb, "VCL filename '%s' is unsafe.\n", fn);
+		vcc_Complainf(tl, "VCL filename '%s' is unsafe.\n", fn);
 		return (NULL);
 	}
 	f = NULL;
 	if (VFIL_searchpath(tl->vcl_path, NULL, &f, fn, &fnp) || f == NULL) {
-		VSB_printf(tl->sb, "Cannot read file '%s' (%s)\n",
+		vcc_Complainf(tl, "Cannot read file '%s' (%s)\n",
 		    fnp != NULL ? fnp : fn, strerror(errno));
 		free(fnp);
 		return (NULL);
@@ -563,7 +563,7 @@ vcc_resolve_includes(struct vcc *tl)
 		t1 = VTAILQ_NEXT(t, list);
 		AN(t1);			/* There's always an EOI */
 		if (t1->tok != CSTR) {
-			VSB_cat(tl->sb,
+			vcc_Complain(tl,
 			    "include not followed by string constant.\n");
 			vcc_ErrWhere(tl, t1);
 			return;
@@ -572,7 +572,7 @@ vcc_resolve_includes(struct vcc *tl)
 		AN(t2);			/* There's always an EOI */
 
 		if (t2->tok != ';') {
-			VSB_cat(tl->sb,
+			vcc_Complain(tl,
 			    "include <string> not followed by semicolon.\n");
 			vcc_ErrWhere(tl, t1);
 			return;
@@ -585,7 +585,7 @@ vcc_resolve_includes(struct vcc *tl)
 			 * the include directive.
 			 */
 			if (t1->src->name[0] != '/') {
-				VSB_cat(tl->sb,
+				vcc_Complain(tl,
 				    "include \"./xxxxx\"; needs absolute "
 				    "filename of including file.\n");
 				vcc_ErrWhere(tl, t1);
@@ -683,7 +683,7 @@ vcc_CompileSource(struct vcc *tl, struct source *sp, const char *jfile)
 
 	/* Check if we have any backends at all */
 	if (tl->default_director == NULL) {
-		VSB_cat(tl->sb,
+		vcc_Complain(tl,
 		    "No backends or directors found in VCL program, "
 		    "at least one is necessary.\n");
 		tl->err = 1;
@@ -799,8 +799,8 @@ VCC_Compile(struct vcc *tl, struct vsb **sb,
 	} else {
 		retval = -1;
 	}
-	AZ(VSB_finish(tl->sb));
-	*sb = tl->sb;
+	AZ(VSB_finish(tl->err_sb));
+	*sb = tl->err_sb;
 	return (retval);
 }
 
@@ -844,8 +844,8 @@ VCC_New(void)
 		p->method = &method_tab[i];
 		VSB_printf(p->cname, "VGC_function_%s", p->method->name);
 	}
-	tl->sb = VSB_new_auto();
-	AN(tl->sb);
+	tl->err_sb = VSB_new_auto();
+	AN(tl->err_sb);
 	return (tl);
 }
 

@@ -368,6 +368,15 @@ its encodings will always be the same, it is better to create a
 `blob.blob()`_ object. The VMOD's functions should be used for data that are
 not known until runtime.
 
+$Function BLOB fileread(PRIV_CALL, STRING)
+
+Reads a file and returns a BLOB with the content. The result is
+cached indefinitely per filename.
+
+Example::
+
+	set resp.body = std.fileread("/etc/varnish/assets/logo.png");
+
 ERRORS
 ======
 

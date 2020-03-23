@@ -102,7 +102,7 @@ vcc_Act_If(struct vcc *tl, struct token *t, struct symbol *sym)
 				return;
 			}
 			if (tl->t->tok != ID || !vcc_IdIs(tl->t, "if")) {
-				VSB_printf(tl->sb,
+				vcc_Complain(tl,
 				    "'else' must be followed by 'if' or '{'\n");
 				vcc_ErrWhere(tl, tl->t);
 				return;
@@ -171,13 +171,13 @@ vcc_Compound(struct vcc *tl)
 				    tl->t->b + 1);
 				vcc_NextToken(tl);
 			} else {
-				VSB_printf(tl->sb,
+				vcc_Complain(tl,
 				    "Inline-C not allowed\n");
 				vcc_ErrWhere(tl, tl->t);
 			}
 			break;
 		case EOI:
-			VSB_printf(tl->sb,
+			vcc_Complain(tl,
 			    "End of input while in compound statement\n");
 			tl->err = 1;
 			return;
@@ -185,12 +185,12 @@ vcc_Compound(struct vcc *tl)
 			sym = VCC_SymbolGet(tl, SYM_NONE, SYMTAB_NOERR,
 			    XREF_NONE);
 			if (sym == NULL) {
-				VSB_printf(tl->sb, "Symbol not found.\n");
+				vcc_Complain(tl, "Symbol not found.\n");
 				vcc_ErrWhere(tl, tl->t);
 				return;
 			}
 			if (sym->action == NULL) {
-				VSB_printf(tl->sb,
+				vcc_Complain(tl,
 				    "Symbol cannot be used here.\n");
 				vcc_ErrWhere(tl, tl->t);
 				return;
@@ -203,7 +203,7 @@ vcc_Compound(struct vcc *tl)
 			break;
 		default:
 			/* We deliberately do not mention inline C */
-			VSB_printf(tl->sb,
+			vcc_Complain(tl,
 			    "Expected an action, 'if', '{' or '}'\n");
 			vcc_ErrWhere(tl, tl->t);
 			return;
@@ -239,13 +239,13 @@ vcc_ParseFunction(struct vcc *tl)
 		    (t->b[1] == 'c'|| t->b[1] == 'C') &&
 		    (t->b[2] == 'l'|| t->b[2] == 'L') &&
 		    (t->b[3] == '_')) {
-			VSB_printf(tl->sb,"The names 'vcl_*'"
+			vcc_Complain(tl,"The names 'vcl_*'"
 			    " are reserved for subroutines.\n");
 			vcc_ErrWhere(tl, t);
-			VSB_printf(tl->sb, "Valid vcl_* subroutines are:\n");
+			vcc_Complain(tl, "Valid vcl_* subroutines are:\n");
 			VTAILQ_FOREACH(p, &tl->procs, list) {
 				if (p->method != NULL)
-					VSB_printf(tl->sb, "\t%s\n",
+					vcc_Complainf(tl, "\t%s\n",
 					    p->method->name);
 			}
 			return;
@@ -255,9 +255,9 @@ vcc_ParseFunction(struct vcc *tl)
 		p->name = t;
 		VSB_printf(p->cname, "%s", sym->rname);
 	} else if (p->method == NULL) {
-		VSB_printf(tl->sb, "Subroutine '%s' redefined\n", sym->name);
+		vcc_Complainf(tl, "Subroutine '%s' redefined\n", sym->name);
 		vcc_ErrWhere(tl, t);
-		VSB_printf(tl->sb, "Previously defined here:\n");
+		vcc_Complain(tl, "Previously defined here:\n");
 		vcc_ErrWhere(tl, p->name);
 		return;
 	} else {
@@ -269,7 +269,7 @@ vcc_ParseFunction(struct vcc *tl)
 	CHECK_OBJ_NOTNULL(p, PROC_MAGIC);
 	tl->fb = p->body;
 	Fb(tl, 1, "  /* ... from ");
-	vcc_Coord(tl, p->body, NULL);
+	vcc_Coord(tl, p->body);
 	Fb(tl, 0, " */\n");
 	tl->curproc = p;
 	tl->indent += INDENT;
@@ -296,7 +296,7 @@ vcc_ParseVcl(struct vcc *tl)
 
 	Expect(tl, FNUM);
 	if (tl->t->e - tl->t->b != 3 || tl->t->b[1] != '.') {
-		VSB_cat(tl->sb,
+		vcc_Complain(tl,
 		    "Don't play silly buggers with VCL version numbers\n");
 		vcc_ErrWhere(tl, tl->t);
 		ERRCHK(tl);
@@ -305,7 +305,7 @@ vcc_ParseVcl(struct vcc *tl)
 	vcc_NextToken(tl);
 
 	if (syntax < VCL_LOW || syntax > VCL_HIGH) {
-		VSB_printf(tl->sb, "VCL version %.1f not supported.\n",
+		vcc_Complainf(tl, "VCL version %.1f not supported.\n",
 		    .1 * syntax);
 		vcc_ErrWhere2(tl, tok0, tl->t);
 		ERRCHK(tl);
@@ -316,7 +316,8 @@ vcc_ParseVcl(struct vcc *tl)
 		 * in the built-in VCL, and that would give a very
 		 * confusing error message
 		 */
-		VSB_cat(tl->sb, "Expected 'vcl N.N;' found no semi-colon\n");
+		vcc_Complain(tl,
+		    "Expected 'vcl N.N;' found no semi-colon\n");
 		vcc_ErrWhere2(tl, tok0, tl->t);
 		ERRCHK(tl);
 	}
@@ -324,7 +325,7 @@ vcc_ParseVcl(struct vcc *tl)
 	if (tl->syntax == 0)
 		tl->syntax = syntax;
 	if (syntax > tl->syntax) {
-		VSB_printf(tl->sb,
+		vcc_Complainf(tl,
 		    "VCL version %.1f higher than"
 		    " the top level version %.1f\n",
 		    .1 * syntax, .1 * tl->syntax);
@@ -368,7 +369,7 @@ vcc_Parse(struct vcc *tl)
 
 	AZ(tl->indent);
 	if (tl->t->tok != ID || !vcc_IdIs(tl->t, "vcl")) {
-		VSB_cat(tl->sb,
+		vcc_Complain(tl,
 		    "VCL version declaration missing\n"
 		    "Update your VCL to Version 4 syntax, and add\n"
 		    "\tvcl 4.1;\n"
@@ -390,7 +391,8 @@ vcc_Parse(struct vcc *tl)
 				    tl->t->b + 2);
 				vcc_NextToken(tl);
 			} else {
-				VSB_cat(tl->sb, "Inline-C not allowed\n");
+				vcc_Complain(tl,
+				    "Inline-C not allowed\n");
 				vcc_ErrWhere(tl, tl->t);
 			}
 			break;
@@ -410,17 +412,17 @@ vcc_Parse(struct vcc *tl)
 			/* FALLTHROUGH */
 		default:
 			/* We deliberately do not mention inline-C */
-			VSB_cat(tl->sb, "Expected one of\n\t");
+			vcc_Complain(tl, "Expected one of\n\t");
 			for (tp = toplev; tp->name != NULL; tp++) {
 				if (tp[1].name == NULL)
-					VSB_cat(tl->sb, " or ");
-				VSB_printf(tl->sb, "'%s'", tp->name);
+					vcc_Complain(tl, " or ");
+				vcc_Complainf(tl, "'%s'", tp->name);
 				if (tp[1].name != NULL)
-					VSB_cat(tl->sb, ", ");
+					vcc_Complain(tl, ", ");
 			}
-			VSB_cat(tl->sb, "\nFound: ");
+			vcc_Complain(tl, "\nFound: ");
 			vcc_ErrToken(tl, tl->t);
-			VSB_cat(tl->sb, " at\n");
+			vcc_Complain(tl, " at\n");
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}

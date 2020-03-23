@@ -63,7 +63,7 @@ vcc_regexp(struct vcc *tl, struct vsb *vgc_name)
 		return;
 	t = VRE_compile(tl->t->dec, 0, &error, &erroroffset);
 	if (t == NULL) {
-		VSB_printf(tl->sb,
+		vcc_Complainf(tl,
 		    "Regexp compilation error:\n\n%s\n\n", error);
 		vcc_ErrWhere(tl, tl->t);
 		return;
@@ -77,7 +77,7 @@ vcc_regexp(struct vcc *tl, struct vsb *vgc_name)
 	ifp = New_IniFin(tl);
 	VSB_printf(ifp->ini, "\tVRT_re_init(&%s, ",buf);
 	EncToken(ifp->ini, tl->t);
-	VSB_cat(ifp->ini, ");");
+	VSB_printf(ifp->ini, ");");
 	VSB_printf(ifp->fin, "\t\tVRT_re_fini(%s);", buf);
 	vcc_NextToken(tl);
 }
@@ -110,6 +110,8 @@ vcc_suckaddr(struct vcc *tl, const char *host, const struct suckaddr *vsa,
 	unsigned len;
 	char *q;
 
+	if (tl->snap != NULL)
+		return;
 	VTCP_name(vsa, a, sizeof a, p, sizeof p);
 	Fh(tl, 0, "\n/* \"%s\" -> %s */\n", host, a);
 	if (ip_ascii != NULL)
@@ -214,7 +216,7 @@ Resolve_Sockaddr(struct vcc *tl,
 	error = VSS_resolver(host, def_port, rs_callback, rss, &err);
 	AZ(VSB_finish(rss->vsb));
 	if (err != NULL) {
-		VSB_printf(tl->sb,
+		vcc_Complainf(tl,
 		    "%s '%.*s' could not be resolved to an IP address:\n"
 		    "\t%s\n"
 		    "(Sorry if that error message is gibberish.)\n",
@@ -236,14 +238,14 @@ Resolve_Sockaddr(struct vcc *tl,
 		free(rss->vsa6);
 	}
 	if (rss->retval == 0) {
-		VSB_printf(tl->sb,
+		vcc_Complainf(tl,
 		    "%s '%.*s': resolves to "
 		    "neither IPv4 nor IPv6 addresses.\n",
 		    errid, PF(t_err) );
 		vcc_ErrWhere(tl, t_err);
 	}
 	if (rss->wrong || rss->retval > maxips) {
-		VSB_printf(tl->sb,
+		vcc_Complainf(tl,
 		    "%s %.*s: resolves to too many addresses.\n"
 		    "Only one IPv4 %s IPv6 are allowed.\n"
 		    "Please specify which exact address "
@@ -271,23 +273,23 @@ Emit_UDS_Path(struct vcc *tl, const struct token *t_path, const char *errid)
 	AN(t_path->dec);
 
 	if (*t_path->dec != '/') {
-		VSB_printf(tl->sb,
-			   "%s: Must be an absolute path:\n", errid);
+		vcc_Complainf(tl,
+		    "%s: Must be an absolute path:\n", errid);
 		vcc_ErrWhere(tl, t_path);
 		return;
 	}
 	errno = 0;
 	if (stat(t_path->dec, &st) != 0) {
 		int err = errno;
-		VSB_printf(tl->sb, "%s: Cannot stat: %s\n", errid,
-			   strerror(errno));
+		vcc_Complainf(tl, "%s: Cannot stat: %s\n", errid,
+		    strerror(errno));
 		vcc_ErrWhere(tl, t_path);
 		if (err == ENOENT || err == EACCES)
 			vcc_Warn(tl);
 		else
 			return;
 	} else if (!S_ISSOCK(st.st_mode)) {
-		VSB_printf(tl->sb, "%s: Not a socket:\n", errid);
+		vcc_Complainf(tl, "%s: Not a socket:\n", errid);
 		vcc_ErrWhere(tl, t_path);
 		return;
 	}
@@ -311,9 +313,9 @@ vcc_DurationUnit(struct vcc *tl)
 		vcc_NextToken(tl);
 		return (sc);
 	}
-	VSB_cat(tl->sb, "Unknown duration unit ");
+	vcc_Complain(tl, "Unknown duration unit ");
 	vcc_ErrToken(tl, tl->t);
-	VSB_printf(tl->sb, "\n%s\n", VNUM_LEGAL_DURATION);
+	vcc_Complainf(tl, "\n%s\n", VNUM_LEGAL_DURATION);
 	vcc_ErrWhere(tl, tl->t);
 	return (1.0);
 }
@@ -382,17 +384,17 @@ vcc_ByteVal(struct vcc *tl, double *d)
 	v = vcc_DoubleVal(tl);
 	ERRCHK(tl);
 	if (tl->t->tok != ID) {
-		VSB_cat(tl->sb, "Expected BYTES unit (B, KB, MB...) got ");
+		vcc_Complain(tl, "Expected BYTES unit (B, KB, MB...) got ");
 		vcc_ErrToken(tl, tl->t);
-		VSB_cat(tl->sb, "\n");
+		vcc_Complain(tl, "\n");
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}
 	sc = VNUM_bytes_unit(1.0, tl->t->b, tl->t->e, 0);
 	if (isnan(sc)) {
-		VSB_cat(tl->sb, "Unknown BYTES unit ");
+		vcc_Complain(tl, "Unknown BYTES unit ");
 		vcc_ErrToken(tl, tl->t);
-		VSB_printf(tl->sb, "\n%s\n", VNUM_LEGAL_BYTES);
+		vcc_Complainf(tl, "\n%s\n", VNUM_LEGAL_BYTES);
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}

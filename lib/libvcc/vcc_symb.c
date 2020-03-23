@@ -251,7 +251,8 @@ VCC_SymbolGet(struct vcc *tl, vcc_kind_t kind,
 	    (tl->t->b[1] == 'c'|| tl->t->b[1] == 'C') &&
 	    (tl->t->b[2] == 'l'|| tl->t->b[2] == 'L') &&
 	    (tl->t->b[3] == '_')) {
-		VSB_cat(tl->sb, "Symbols named 'vcl_*' are reserved.\nAt:");
+		vcc_Complain(tl,
+		    "Symbols named 'vcl_*' are reserved.\nAt:");
 		vcc_ErrWhere(tl, tl->t);
 		return (NULL);
 	}
@@ -291,40 +292,40 @@ VCC_SymbolGet(struct vcc *tl, vcc_kind_t kind,
 		sym = vcc_new_symbol(tl, st, kind, tl->syntax, tl->syntax);
 	tl->t = VTAILQ_NEXT(tn, list);
 	if (sym == NULL) {
-		VSB_printf(tl->sb, "%s: '", e->name);
+		vcc_Complainf(tl, "%s: '", e->name);
 		for (tn1 = t0; tn1 != tl->t; tn1 = VTAILQ_NEXT(tn1, list))
-			VSB_printf(tl->sb, "%.*s", PF(tn1));
-		VSB_cat(tl->sb, "'");
+			vcc_Complainf(tl, "%.*s", PF(tn1));
+		vcc_Complain(tl, "'");
 		sym = vcc_sym_in_tab(tl, st, kind, VCL_LOW, VCL_HIGH);
 		if (sym != NULL && sym->kind != SYM_OBJECT &&
 		    sym->kind != SYM_INSTANCE) { /* XXX: too specific */
-			VSB_cat(tl->sb, " (Only available when");
+			vcc_Complain(tl, " (Only available when");
 			if (sym->lorev >= VCL_LOW)
-				VSB_printf(tl->sb, " %.1f <=", .1 * sym->lorev);
-			VSB_cat(tl->sb, " VCL syntax");
+				vcc_Complainf(tl, " %.1f <=", .1 * sym->lorev);
+			vcc_Complain(tl, " VCL syntax");
 			if (sym->hirev <= VCL_HIGH)
-				VSB_printf(tl->sb, " <= %.1f", .1 * sym->hirev);
-			VSB_cat(tl->sb, ")");
+				vcc_Complainf(tl, " <= %.1f", .1 * sym->hirev);
+			vcc_Complain(tl, ")");
 		}
-		VSB_cat(tl->sb, "\nAt: ");
+		vcc_Complain(tl, "\nAt: ");
 		vcc_ErrWhere2(tl, t0, tl->t);
 		return (NULL);
 	}
 	if (kind != SYM_NONE && kind != sym->kind) {
-		VSB_cat(tl->sb, "Symbol '");
+		vcc_Complain(tl, "Symbol '");
 		for (tn1 = t0; tn1 != tl->t; tn1 = VTAILQ_NEXT(tn1, list))
-			VSB_printf(tl->sb, "%.*s", PF(tn1));
-		VSB_printf(tl->sb, "' has wrong type (%s): ", sym->kind->name);
-		VSB_cat(tl->sb, "\nAt: ");
+			vcc_Complainf(tl, "%.*s", PF(tn1));
+		vcc_Complainf(tl, "' has wrong type (%s): ", sym->kind->name);
+		vcc_Complain(tl, "\nAt: ");
 		vcc_ErrWhere2(tl, t0, tl->t);
 		if (sym->def_b != NULL) {
-			VSB_cat(tl->sb, "Symbol was defined here: ");
+			vcc_Complain(tl, "Symbol was defined here: ");
 			vcc_ErrWhere(tl, sym->def_b);
 		} else if (sym->ref_b != NULL) {
-			VSB_cat(tl->sb, "Symbol was declared here: ");
+			vcc_Complain(tl, "Symbol was declared here: ");
 			vcc_ErrWhere(tl, sym->ref_b);
 		} else {
-			VSB_cat(tl->sb, "Symbol was builtin\n");
+			vcc_Complain(tl, "Symbol was builtin\n");
 		}
 		return (NULL);
 	}
@@ -437,22 +438,22 @@ VCC_HandleSymbol(struct vcc *tl, vcc_type_t fmt, const char *pfx)
 	sym = VCC_SymbolGet(tl, SYM_NONE, SYMTAB_NOERR, XREF_NONE);
 	if (sym != NULL && sym->def_b != NULL && kind == sym->kind) {
 		p = sym->kind->name;
-		VSB_printf(tl->sb, "%c%s '%.*s' redefined.\n",
+		vcc_Complainf(tl, "%c%s '%.*s' redefined.\n",
 		    toupper(*p), p + 1, PF(t));
 		vcc_ErrWhere(tl, t);
-		VSB_cat(tl->sb, "First definition:\n");
+		vcc_Complain(tl, "First definition:\n");
 		AN(sym->def_b);
 		vcc_ErrWhere(tl, sym->def_b);
 		return (sym);
 	} else if (sym != NULL && sym->def_b != NULL) {
-		VSB_printf(tl->sb, "Name '%.*s' already defined.\n", PF(t));
+		vcc_Complainf(tl, "Name '%.*s' already defined.\n", PF(t));
 		vcc_ErrWhere(tl, t);
-		VSB_cat(tl->sb, "First definition:\n");
+		vcc_Complain(tl, "First definition:\n");
 		AN(sym->def_b);
 		vcc_ErrWhere(tl, sym->def_b);
 		return (sym);
 	} else if (sym != NULL && sym->kind != kind) {
-		VSB_printf(tl->sb,
+		vcc_Complainf(tl,
 		    "Name %.*s must have type '%s'.\n",
 		    PF(t), sym->kind->name);
 		vcc_ErrWhere(tl, t);

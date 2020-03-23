@@ -169,28 +169,28 @@ vcc_VmodSanity(struct vcc *tl, void *hdl, struct token *mod, char *fnp)
 	bprintf(buf, "Vmod_%.*s_Data", PF(mod));
 	vmd = dlsym(hdl, buf);
 	if (vmd == NULL) {
-		VSB_printf(tl->sb, "Malformed VMOD %.*s\n", PF(mod));
-		VSB_printf(tl->sb, "\tFile name: %s\n", fnp);
-		VSB_cat(tl->sb, "\t(no Vmod_Data symbol)\n");
+		vcc_Complainf(tl, "Malformed VMOD %.*s\n", PF(mod));
+		vcc_Complainf(tl, "\tFile name: %s\n", fnp);
+		vcc_Complain(tl, "\t(no Vmod_Data symbol)\n");
 		vcc_ErrWhere(tl, mod);
 		return (NULL);
 	}
 	if (vmd->vrt_major == 0 && vmd->vrt_minor == 0 &&
 	    (vmd->abi == NULL || strcmp(vmd->abi, VMOD_ABI_Version) != 0)) {
-		VSB_printf(tl->sb, "Incompatible VMOD %.*s\n", PF(mod));
-		VSB_printf(tl->sb, "\tFile name: %s\n", fnp);
-		VSB_printf(tl->sb, "\tABI mismatch, expected <%s>, got <%s>\n",
-			   VMOD_ABI_Version, vmd->abi);
+		vcc_Complainf(tl, "Incompatible VMOD %.*s\n", PF(mod));
+		vcc_Complainf(tl, "\tFile name: %s\n", fnp);
+		vcc_Complainf(tl, "\tABI mismatch, expected <%s>, got <%s>\n",
+		    VMOD_ABI_Version, vmd->abi);
 		vcc_ErrWhere(tl, mod);
 		return (NULL);
 	}
 	if (vmd->vrt_major != 0 && (vmd->vrt_major != VRT_MAJOR_VERSION ||
 	    vmd->vrt_minor > VRT_MINOR_VERSION)) {
-		VSB_printf(tl->sb, "Incompatible VMOD %.*s\n", PF(mod));
-		VSB_printf(tl->sb, "\tFile name: %s\n", fnp);
-		VSB_printf(tl->sb, "\tVMOD wants ABI version %u.%u\n",
+		vcc_Complainf(tl, "Incompatible VMOD %.*s\n", PF(mod));
+		vcc_Complainf(tl, "\tFile name: %s\n", fnp);
+		vcc_Complainf(tl, "\tVMOD wants ABI version %u.%u\n",
 		    vmd->vrt_major, vmd->vrt_minor);
-		VSB_printf(tl->sb, "\tvarnishd provides ABI version %u.%u\n",
+		vcc_Complainf(tl, "\tvarnishd provides ABI version %u.%u\n",
 		    VRT_MAJOR_VERSION, VRT_MINOR_VERSION);
 		vcc_ErrWhere(tl, mod);
 		return (NULL);
@@ -200,16 +200,16 @@ vcc_VmodSanity(struct vcc *tl, void *hdl, struct token *mod, char *fnp)
 	    vmd->func_len <= 0 ||
 	    vmd->proto == NULL ||
 	    vmd->abi == NULL) {
-		VSB_printf(tl->sb, "Mangled VMOD %.*s\n", PF(mod));
-		VSB_printf(tl->sb, "\tFile name: %s\n", fnp);
-		VSB_cat(tl->sb, "\tInconsistent metadata\n");
+		vcc_Complainf(tl, "Mangled VMOD %.*s\n", PF(mod));
+		vcc_Complainf(tl, "\tFile name: %s\n", fnp);
+		vcc_Complain(tl, "\tInconsistent metadata\n");
 		vcc_ErrWhere(tl, mod);
 		return (NULL);
 	}
 	if (!vcc_IdIs(mod, vmd->name)) {
-		VSB_printf(tl->sb, "Wrong file for VMOD %.*s\n", PF(mod));
-		VSB_printf(tl->sb, "\tFile name: %s\n", fnp);
-		VSB_printf(tl->sb, "\tContains vmod \"%s\"\n", vmd->name);
+		vcc_Complainf(tl, "Wrong file for VMOD %.*s\n", PF(mod));
+		vcc_Complainf(tl, "\tFile name: %s\n", fnp);
+		vcc_Complainf(tl, "\tContains vmod \"%s\"\n", vmd->name);
 		vcc_ErrWhere(tl, mod);
 		return (NULL);
 	}
@@ -248,13 +248,13 @@ vcc_ParseImport(struct vcc *tl)
 
 	if (tl->t->tok == ID) {
 		if (!vcc_IdIs(tl->t, "from")) {
-			VSB_cat(tl->sb, "Expected 'from path ...'\n");
+			vcc_Complain(tl, "Expected 'from path ...'\n");
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
 		vcc_NextToken(tl);
 		if (!tl->unsafe_path && strchr(tl->t->dec, '/')) {
-			VSB_cat(tl->sb,
+			vcc_Complain(tl,
 			    "'import ... from path ...' is unsafe.\nAt:");
 			vcc_ErrToken(tl, tl->t);
 			vcc_ErrWhere(tl, tl->t);
@@ -275,14 +275,14 @@ vcc_ParseImport(struct vcc *tl)
 
 	if (VFIL_searchpath(tl->vmod_path, vcc_path_dlopen, vop, fn, &fnpx)) {
 		if (vop->err == NULL) {
-			VSB_printf(tl->sb,
+			vcc_Complainf(tl,
 			    "Could not find VMOD %.*s\n", PF(mod));
 		} else {
-			VSB_printf(tl->sb,
+			vcc_Complainf(tl,
 			    "Could not open VMOD %.*s\n", PF(mod));
-			VSB_printf(tl->sb, "\tFile name: %s\n",
+			vcc_Complainf(tl, "\tFile name: %s\n",
 			    fnpx != NULL ? fnpx : fn);
-			VSB_printf(tl->sb, "\tdlerror: %s\n", vop->err);
+			vcc_Complainf(tl, "\tdlerror: %s\n", vop->err);
 		}
 		vcc_ErrWhere(tl, mod);
 		free(fnpx);
@@ -300,7 +300,7 @@ vcc_ParseImport(struct vcc *tl)
 		if (!strcmp(msym->extra, vmd->file_id)) {
 			/* Identical import is OK */
 		} else {
-			VSB_printf(tl->sb,
+			vcc_Complainf(tl,
 			    "Another module already imported as %.*s.\n",
 			    PF(tmod));
 			vcc_ErrWhere2(tl, t1, tl->t);

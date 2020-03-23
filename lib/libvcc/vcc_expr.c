@@ -120,6 +120,21 @@ vcc_delete_expr(struct expr *e)
 	FREE_OBJ(e);
 }
 
+/*--------------------------------------------------------------------*/
+
+static void v_printflike_(2, 3)
+vcc_prologue(struct vcc *tl, const char *fmt, ...)
+{
+	va_list ap;
+
+	if (tl->snap != NULL)
+		return;
+
+	va_start(ap, fmt);
+	VSB_vprintf(tl->curproc->prologue, fmt, ap);
+	va_end(ap);
+}
+
 /*--------------------------------------------------------------------
  * We want to get the indentation right in the emitted C code so we have
  * to represent it symbolically until we are ready to render.
@@ -135,6 +150,7 @@ vcc_delete_expr(struct expr *e)
  *	\vs  insert subexpression 2(STRINGS) as STRING
  *	\vT  insert subexpression 1(STRINGS) as STRANDS
  *	\vt  insert subexpression 2(STRINGS) as STRANDS
+ *	\vB  insert subexpression 1(STRINGS) as BLOB
  *	\v+  increase indentation
  *	\v-  decrease indentation
  *	anything else is literal
@@ -183,7 +199,7 @@ vcc_expr_edit(struct vcc *tl, vcc_type_t fmt, const char *p, struct expr *e1,
 		case 't':
 			e3 = (*p == 'T' ? e1 : e2);
 			AN(e3);
-			VSB_printf(tl->curproc->prologue,
+			vcc_prologue(tl,
 			    "  struct strands strs_%u_a;\n"
 			    "  const char * strs_%u_s[%d];\n",
 			    tl->unique, tl->unique, e3->nstr);
@@ -191,8 +207,14 @@ vcc_expr_edit(struct vcc *tl, vcc_type_t fmt, const char *p, struct expr *e1,
 			    "VPI_BundleStrands(%d, &strs_%u_a, strs_%u_s,"
 			    "\v+\n%s,\nvrt_magic_string_end\v-\n)",
 			    e3->nstr, tl->unique, tl->unique,
-			VSB_data(e3->vsb));
+			    VSB_data(e3->vsb));
 			tl->unique++;
+			break;
+		case 'B':
+			assert(e1->fmt == STRING);
+			AZ(e2);
+			VSB_printf(e->vsb,
+			    "VPI_blob(ctx, %s)", VSB_data(e1->vsb));
 			break;
 		case '1':
 			VSB_cat(e->vsb, VSB_data(e1->vsb));
@@ -291,15 +313,8 @@ vcc_expr_tostring(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		(*e)->constant = constant;
 		(*e)->nstr = 1;
 	} else {
-		if ((*e)->fmt == BLOB)
-			VSB_cat(tl->sb,
-			    "Wrong use of BLOB value.\n"
-			    "BLOBs can only be used as arguments to VMOD"
-			    " functions.\n");
-		else
-			VSB_printf(tl->sb,
-			    "Cannot convert %s to STRING.\n",
-			    vcc_utype((*e)->fmt));
+		vcc_Complainf(tl, "Cannot convert %s to STRING.\n",
+		    vcc_utype((*e)->fmt));
 		vcc_ErrWhere2(tl, (*e)->t1, tl->t);
 	}
 }
@@ -389,15 +404,13 @@ vcc_priv_arg(struct vcc *tl, const char *p, const struct symbol *sym)
 	bprintf(buf, "ARG_priv_%s_%s", f, sym->vmod_name);
 
 	if (vcc_MarkPriv(tl, marklist, sym->vmod_name) == NULL)
-		VSB_printf(tl->curproc->prologue,
-			   "  struct vmod_priv *%s = "
-			   "VRT_priv_%s(ctx, &VGC_vmod_%s);\n"
-			   "  if (%s == NULL) {\n"
-			   "    VRT_fail(ctx, \"failed to get %s priv "
-			   "for vmod %s\");\n"
-			   "    return;\n"
-			   "  }\n",
-			   buf, f, sym->vmod_name, buf, f, sym->vmod_name);
+		vcc_prologue(tl,
+		    "  struct vmod_priv *%s = VRT_priv_%s(ctx, &VGC_vmod_%s);\n"
+		    "  if (%s == NULL) {\n"
+		    "    VRT_fail(ctx, \"failed to get %s priv for vmod %s\");\n"
+		    "    return;\n"
+		    "  }\n",
+		    buf, f, sym->vmod_name, buf, f, sym->vmod_name);
 	return (vcc_mk_expr(VOID, "%s", buf));
 }
 
@@ -438,10 +451,10 @@ vcc_do_arg(struct vcc *tl, struct func_arg *fa)
 			if (vcc_IdIs(tl->t, vv->value))
 				break;
 		if (vv == NULL) {
-			VSB_cat(tl->sb, "Wrong enum value.");
-			VSB_cat(tl->sb, "  Expected one of:\n");
+			vcc_Complain(tl, "Wrong enum value.");
+			vcc_Complain(tl, "  Expected one of:\n");
 			VTAILQ_FOREACH(vv, &fa->enums->children, list)
-				VSB_printf(tl->sb, "\t%s\n", vv->value);
+				vcc_Complainf(tl, "\t%s\n", vv->value);
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
@@ -539,7 +552,7 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 		}
 		vcc_do_arg(tl, fa);
 		if (tl->err)
-			VSB_printf(tl->sb, "Expected argument: %s %s\n\n",
+			vcc_Complainf(tl, "Expected argument: %s %s\n\n",
 			    fa->type->name,
 			    fa->name ? fa->name : "(unnamed argument)");
 		ERRCHK(tl);
@@ -555,14 +568,14 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 				break;
 		}
 		if (fa == NULL) {
-			VSB_printf(tl->sb, "Unknown argument '%.*s'\n",
+			vcc_Complainf(tl, "Unknown argument '%.*s'\n",
 			    PF(tl->t));
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
 		if (fa->result != NULL) {
 			AN(fa->name);
-			VSB_printf(tl->sb, "Argument '%s' already used\n",
+			vcc_Complainf(tl, "Argument '%s' already used\n",
 			    fa->name);
 			vcc_ErrWhere(tl, tl->t);
 			return;
@@ -606,10 +619,10 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 			    e1, fa->result);
 		} else if (!fa->optional) {
 			if (fa->name)
-				VSB_printf(tl->sb, "Argument '%s' missing\n",
+				vcc_Complainf(tl, "Argument '%s' missing\n",
 				    fa->name);
 			else
-				VSB_printf(tl->sb, "Argument %d missing\n", n);
+				vcc_Complainf(tl, "Argument %d missing\n", n);
 			vcc_ErrWhere(tl, tl->t);
 		}
 		free(fa);
@@ -634,7 +647,7 @@ vcc_Eval_Func(struct vcc *tl, const struct vjsn_val *spec,
 
 	vcc_func(tl, &e, spec, extra, sym);
 	if (tl->err)
-		VSB_cat(tl->sb, "While compiling function call:\n");
+		vcc_Complain(tl, "While compiling function call:\n");
 	ERRCHK(tl);
 	vcc_expr_fmt(tl->fb, tl->indent, e);
 	VSB_cat(tl->fb, ";\n");
@@ -701,7 +714,7 @@ vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		ERRCHK(tl);
 		AN(sym);
 		if (sym->kind == SYM_FUNC && sym->type == VOID) {
-			VSB_cat(tl->sb, "Function returns VOID:\n");
+			vcc_Complain(tl, "Function returns VOID:\n");
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
@@ -710,7 +723,7 @@ vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 			AZ(*e);
 			sym->eval(tl, e, t, sym, fmt);
 			if (tl->err) {
-				VSB_cat(tl->sb,
+				vcc_Complain(tl,
 				    "While compiling function call:\n\n");
 				vcc_ErrWhere2(tl, t, tl->t);
 			}
@@ -722,12 +735,12 @@ vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 			}
 			return;
 		}
-		VSB_printf(tl->sb,
+		vcc_Complainf(tl,
 		    "Symbol '%.*s' type (%s) can not be used in expression.\n",
 		    PF(t), sym->kind->name);
 		vcc_ErrWhere(tl, t);
 		if (sym->def_b != NULL) {
-			VSB_cat(tl->sb, "That symbol was defined here:\n");
+			vcc_Complain(tl, "That symbol was defined here:\n");
 			vcc_ErrWhere(tl, sym->def_b);
 		}
 		return;
@@ -741,7 +754,7 @@ vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 				 * sockaddr_un if it happens to exist and
 				 * is a socket. So don't let that happen.
 				 */
-				VSB_cat(tl->sb,
+				vcc_Complain(tl,
 				    "Cannot convert to an IP address: ");
 				vcc_ErrToken(tl, tl->t);
 				vcc_ErrWhere(tl, tl->t);
@@ -806,9 +819,9 @@ vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	default:
 		break;
 	}
-	VSB_cat(tl->sb, "Unknown token ");
+	vcc_Complain(tl, "Unknown token ");
 	vcc_ErrToken(tl, tl->t);
-	VSB_printf(tl->sb, " when looking for %s\n\n", vcc_utype(fmt));
+	vcc_Complainf(tl, " when looking for %s\n\n", vcc_utype(fmt));
 	vcc_ErrWhere(tl, tl->t);
 }
 
@@ -864,10 +877,10 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		}
 
 		if (vm->type_from == NULL) {
-			VSB_cat(tl->sb, "Unknown property ");
+			vcc_Complain(tl, "Unknown property ");
 			vcc_ErrToken(tl, tl->t);
-			VSB_printf(tl->sb,
-			 " for type %s\n", (*e)->fmt->name);
+			vcc_Complainf(tl,
+			    " for type %s\n", (*e)->fmt->name);
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
@@ -908,7 +921,7 @@ vcc_expr_mul(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	while (tl->t->tok == '*' || tl->t->tok == '/') {
 		f2 = (*e)->fmt->multype;
 		if (f2 == NULL) {
-			VSB_printf(tl->sb,
+			vcc_Complainf(tl,
 			    "Operator %.*s not possible on type %s.\n",
 			    PF(tl->t), vcc_utype((*e)->fmt));
 			vcc_ErrWhere(tl, tl->t);
@@ -919,7 +932,7 @@ vcc_expr_mul(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		vcc_expr4(tl, &e2, f2);
 		ERRCHK(tl);
 		if (e2->fmt != INT && e2->fmt != f2) {
-			VSB_printf(tl->sb, "%s %.*s %s not possible.\n",
+			vcc_Complainf(tl, "%s %.*s %s not possible.\n",
 			    vcc_utype((*e)->fmt), PF(tk), vcc_utype(e2->fmt));
 			vcc_ErrWhere(tl, tk);
 			return;
@@ -1017,7 +1030,7 @@ vcc_expr_add(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 				(*e)->nstr = n;
 			}
 		} else {
-			VSB_printf(tl->sb, "%s %.*s %s not possible.\n",
+			vcc_Complainf(tl, "%s %.*s %s not possible.\n",
 			    vcc_utype((*e)->fmt), PF(tk), vcc_utype(e2->fmt));
 			vcc_ErrWhere2(tl, tk, tl->t);
 			return;
@@ -1061,7 +1074,7 @@ cmp_simple(struct vcc *tl, struct expr **e, const struct cmps *cp)
 	ERRCHK(tl);
 
 	if (e2->fmt != (*e)->fmt) {
-		VSB_printf(tl->sb,
+		vcc_Complainf(tl,
 		    "Comparison of different types: %s '%.*s' %s\n",
 		    vcc_utype((*e)->fmt), PF(tk), vcc_utype(e2->fmt));
 		vcc_ErrWhere(tl, tk);
@@ -1115,7 +1128,7 @@ cmp_string(struct vcc *tl, struct expr **e, const struct cmps *cp)
 	vcc_expr_add(tl, &e2, STRINGS);
 	ERRCHK(tl);
 	if (e2->fmt != STRINGS) {
-		VSB_printf(tl->sb,
+		vcc_Complainf(tl,
 		    "Comparison of different types: %s '%.*s' %s\n",
 		    vcc_utype((*e)->fmt), PF(tk), vcc_utype(e2->fmt));
 		vcc_ErrWhere(tl, tk);
@@ -1204,7 +1217,7 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	case T_GEQ:
 	case '~':
 	case T_NOMATCH:
-		VSB_printf(tl->sb, "Operator %.*s not possible on %s\n",
+		vcc_Complainf(tl, "Operator %.*s not possible on %s\n",
 		    PF(tl->t), vcc_utype((*e)->fmt));
 		vcc_ErrWhere(tl, tl->t);
 		return;
@@ -1235,8 +1248,8 @@ vcc_expr_not(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	vcc_expr_tobool(tl, e);
 	ERRCHK(tl);
 	if ((*e)->fmt != BOOL) {
-		VSB_cat(tl->sb, "'!' must be followed by BOOL, found ");
-		VSB_printf(tl->sb, "%s.\n", vcc_utype((*e)->fmt));
+		vcc_Complain(tl, "'!' must be followed by BOOL, found ");
+		vcc_Complainf(tl, "%s.\n", vcc_utype((*e)->fmt));
 		vcc_ErrWhere2(tl, tk, tl->t);
 	} else {
 		*e = vcc_expr_edit(tl, BOOL, "!(\v1)", *e, NULL);
@@ -1268,7 +1281,7 @@ vcc_expr_bin_bool(struct vcc *tl, struct expr **e, vcc_type_t fmt,
 	vcc_expr_tobool(tl, e);
 	ERRCHK(tl);
 	if ((*e)->fmt != BOOL) {
-		VSB_printf(tl->sb,
+		vcc_Complainf(tl,
 		    "'%s' must be preceeded by BOOL,"
 		    " found %s.\n", tokstr, vcc_utype((*e)->fmt));
 		vcc_ErrWhere2(tl, tk, tl->t);
@@ -1283,7 +1296,7 @@ vcc_expr_bin_bool(struct vcc *tl, struct expr **e, vcc_type_t fmt,
 		vcc_expr_tobool(tl, &e2);
 		ERRCHK(tl);
 		if (e2->fmt != BOOL) {
-			VSB_printf(tl->sb,
+			vcc_Complainf(tl,
 			    "'%s' must be followed by BOOL,"
 			    " found %s.\n", tokstr, vcc_utype(e2->fmt));
 			vcc_ErrWhere2(tl, tk, tl->t);
@@ -1345,31 +1358,32 @@ vcc_expr0(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	if ((*e)->fmt == fmt)
 		return;
 
-	if ((*e)->fmt != STRINGS && fmt->stringform)
+	if ((*e)->fmt != STRINGS && fmt->stringcast)
 		vcc_expr_tostring(tl, e, STRINGS);
 
 	if ((*e)->fmt->stringform) {
-		VSB_printf(tl->sb, "Cannot convert type %s(%s) to %s(%s)\n",
+		vcc_Complainf(tl, "Cannot convert type %s(%s) to %s(%s)\n",
 		    vcc_utype((*e)->fmt), (*e)->fmt->name,
 		    vcc_utype(fmt), fmt->name);
 		vcc_ErrWhere2(tl, t1, tl->t);
 		return;
 	}
 
-	if ((*e)->fmt == STRINGS && fmt->stringform) {
-		if (fmt == STRING_LIST)
+	if ((*e)->fmt == STRINGS && fmt->stringcast) {
+		if (fmt == STRING_LIST) {
 			(*e)->fmt = STRING_LIST;
-		else if (fmt == STRING)
+			*e = vcc_expr_edit(tl, STRING_LIST,
+			    "\n\v1,\nvrt_magic_string_end", *e, NULL);
+		} else if (fmt == STRING) {
 			*e = vcc_expr_edit(tl, STRING, "\vS", *e, NULL);
-		else if (fmt == STRANDS)
-			*e = vcc_expr_edit(tl, STRANDS, "\vT", (*e), NULL);
-		else
-			WRONG("Unhandled stringform");
+		} else if (fmt == BLOB) {
+			*e = vcc_expr_edit(tl, STRING, "\vS", *e, NULL);
+			*e = vcc_expr_edit(tl, BLOB, "\vB", *e, NULL);
+		} else if (fmt == STRANDS) {
+			*e = vcc_expr_edit(tl, STRANDS, "\vT", *e, NULL);
+		} else
+			WRONG("Unhandled stringcast");
 	}
-
-	if ((*e)->fmt == STRING_LIST)
-		*e = vcc_expr_edit(tl, STRING_LIST,
-		    "\n\v1,\nvrt_magic_string_end", *e, NULL);
 
 	if (fmt == BOOL) {
 		vcc_expr_tobool(tl, e);
@@ -1377,7 +1391,7 @@ vcc_expr0(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	}
 
 	if (fmt != (*e)->fmt)  {
-		VSB_printf(tl->sb, "Expression has type %s, expected %s\n",
+		vcc_Complainf(tl, "Expression has type %s, expected %s\n",
 		    vcc_utype((*e)->fmt), vcc_utype(fmt));
 		vcc_ErrWhere2(tl, t1, tl->t);
 		return;
@@ -1402,9 +1416,34 @@ vcc_Expr(struct vcc *tl, vcc_type_t fmt)
 	ERRCHK(tl);
 	assert(e->fmt == fmt);
 
-	vcc_expr_fmt(tl->fb, tl->indent, e);
-	VSB_cat(tl->fb, "\n");
+	if (tl->snap == NULL) {
+		vcc_expr_fmt(tl->fb, tl->indent, e);
+		VSB_cat(tl->fb, "\n");
+	}
 	vcc_delete_expr(e);
+}
+
+int
+vcc_PeekExpr(struct vcc *tl, vcc_type_t fmt)
+{
+	int err;
+
+	/* snapshot */
+	AZ(tl->snap);
+	AZ(tl->err);
+	tl->snap = tl->t;
+
+	/* evaluate */
+	vcc_Expr(tl, fmt);
+	err = tl->err;
+
+	/* restore */
+	AN(tl->snap);
+	tl->t = tl->snap;
+	tl->snap = NULL;
+	tl->err = 0;
+
+	return (err);
 }
 
 /*--------------------------------------------------------------------
@@ -1423,7 +1462,7 @@ vcc_Act_Call(struct vcc *tl, struct token *t, struct symbol *sym)
 		SkipToken(tl, ';');
 		VSB_cat(tl->fb, ";\n");
 	} else if (t != tl->t) {
-		VSB_printf(tl->sb, "While compiling function call:\n\n");
+		vcc_Complain(tl, "While compiling function call:\n\n");
 		vcc_ErrWhere2(tl, t, tl->t);
 	}
 	vcc_delete_expr(e);
@@ -1494,7 +1533,7 @@ vcc_Eval_Default(struct vcc *tl, struct expr **e, struct token *t,
 	else if (fmt == BACKEND)
 		*e = vcc_mk_expr(BACKEND, "*(VCL_conf.default_director)");
 	else {
-		VSB_printf(tl->sb,
+		vcc_Complain(tl,
 		    "Symbol 'default' is a reserved word.\n");
 		vcc_ErrWhere(tl, t);
 	}

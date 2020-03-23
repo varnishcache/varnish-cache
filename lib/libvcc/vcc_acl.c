@@ -100,7 +100,7 @@ vcc_acl_add_entry(struct vcc *tl, const struct acl_e *ae, int l,
 	int i;
 
 	if (fam == PF_INET && ae->mask > 32) {
-		VSB_printf(tl->sb,
+		vcc_Complainf(tl,
 		    "Too wide mask (/%u) for IPv4 address\n", ae->mask);
 		if (ae->t_mask != NULL)
 			vcc_ErrWhere(tl, ae->t_mask);
@@ -109,7 +109,7 @@ vcc_acl_add_entry(struct vcc *tl, const struct acl_e *ae, int l,
 		return;
 	}
 	if (fam == PF_INET6 && ae->mask > 128) {
-		VSB_printf(tl->sb,
+		vcc_Complainf(tl,
 		    "Too wide mask (/%u) for IPv6 address\n", ae->mask);
 		vcc_ErrWhere(tl, ae->t_mask);
 		return;
@@ -137,9 +137,9 @@ vcc_acl_add_entry(struct vcc *tl, const struct acl_e *ae, int l,
 			 */
 			if (aen->not == ae2->not)
 				return;
-			VSB_cat(tl->sb, "Conflicting ACL entries:\n");
+			vcc_Complain(tl, "Conflicting ACL entries:\n");
 			vcc_ErrWhere(tl, ae2->t_addr);
-			VSB_cat(tl->sb, "vs:\n");
+			vcc_Complain(tl, "vs:\n");
 			vcc_ErrWhere(tl, aen->t_addr);
 			return;
 		}
@@ -176,7 +176,7 @@ vcc_acl_try_getaddrinfo(struct vcc *tl, struct acl_e *ae)
 	error = getaddrinfo(ae->addr, "0", &hint, &res0);
 	if (error) {
 		if (ae->para) {
-			VSB_printf(tl->sb,
+			vcc_Complainf(tl,
 			    "Warning: %s ignored\n  -- %s\n",
 			    ae->addr, gai_strerror(error));
 			Fh(tl, 1, "/* Ignored ACL entry: %s%s",
@@ -188,7 +188,7 @@ vcc_acl_try_getaddrinfo(struct vcc *tl, struct acl_e *ae)
 			Fh(tl, 1, " * getaddrinfo:  %s */\n",
 			     gai_strerror(error));
 		} else {
-			VSB_printf(tl->sb,
+			vcc_Complainf(tl,
 			    "DNS lookup(%s): %s\n",
 			    ae->addr, gai_strerror(error));
 			vcc_ErrWhere(tl, ae->t_addr);
@@ -220,9 +220,9 @@ vcc_acl_try_getaddrinfo(struct vcc *tl, struct acl_e *ae)
 			vcc_acl_add_entry(tl, ae, 16, u, res->ai_family);
 			break;
 		default:
-			VSB_printf(tl->sb,
+			vcc_Complainf(tl,
 			    "Ignoring unknown protocol family (%d) for %.*s\n",
-				res->ai_family, PF(ae->t_addr));
+			    res->ai_family, PF(ae->t_addr));
 			continue;
 		}
 		if (tl->err)
@@ -232,7 +232,7 @@ vcc_acl_try_getaddrinfo(struct vcc *tl, struct acl_e *ae)
 	freeaddrinfo(res0);
 
 	if (ae->t_mask != NULL && i4 > 0 && i6 > 0) {
-		VSB_printf(tl->sb,
+		vcc_Complainf(tl,
 		    "Mask (/%u) specified, but string resolves to"
 		    " both IPv4 and IPv6 addresses.\n", ae->mask);
 		vcc_ErrWhere(tl, ae->t_mask);
@@ -313,13 +313,13 @@ vcc_acl_entry(struct vcc *tl)
 		e = NULL;
 		ae->mask = strtoul(sl, &e, 10);
 		if (*e != '\0') {
-			VSB_cat(tl->sb, ".../mask is not numeric.\n");
+			vcc_Complain(tl, ".../mask is not numeric.\n");
 			vcc_ErrWhere(tl, ae->t_addr);
 			return;
 		}
 		ae->t_mask = ae->t_addr;
 		if (tl->t->tok == '/') {
-			VSB_cat(tl->sb, "/mask only allowed once.\n");
+			vcc_Complain(tl, "/mask only allowed once.\n");
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}

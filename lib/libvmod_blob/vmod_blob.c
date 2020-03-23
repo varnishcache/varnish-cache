@@ -33,6 +33,8 @@
 
 #include "cache/cache.h"
 
+#include "vcc_interface.h"
+
 #include "vcc_if.h"
 #include "vmod_blob.h"
 
@@ -552,4 +554,13 @@ vmod_sub(VRT_CTX, VCL_BLOB b, VCL_BYTES n, VCL_BYTES off)
 
 	return (VRT_blob(ctx, "blob.sub",
 	    (const char *)b->blob + off, n, b->type));
+}
+
+VCL_BLOB v_matchproto_(td_blob_fileread)
+vmod_fileread(VRT_CTX, struct vmod_priv *priv, VCL_STRING file_name)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(priv);
+	return (VPI_VFC_find(priv, file_name));
 }

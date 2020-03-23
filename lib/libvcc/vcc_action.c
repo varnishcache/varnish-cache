@@ -88,8 +88,14 @@ static const struct assign {
 	{ STRING,	'=',		STRING_LIST },
 	{ HEADER,	T_INCR,		STRING_LIST, "VRT_GetHdr(ctx, \v),\n" },
 	{ HEADER,	'=',		STRING_LIST },
-	{ BODY,		'=',		STRING_LIST, "LBODY_SET,\n" },
-	{ BODY,		T_INCR,		STRING_LIST, "LBODY_ADD,\n" },
+	{ BODY,		'=',		STRING_LIST, "LBODY_SET_STRING,\n" },
+	{ BODY,		T_INCR,		STRING_LIST, "LBODY_ADD_STRING,\n" },
+	{ VOID,		'=',		VOID }
+};
+
+static const struct assign alt_assign[] = {
+	{ BODY,		'=',		BLOB, "LBODY_SET_BLOB,\n" },
+	{ BODY,		T_INCR,		BLOB, "LBODY_ADD_BLOB,\n" },
 	{ VOID,		'=',		VOID }
 };
 
@@ -113,15 +119,30 @@ vcc_assign_expr(struct vcc *tl, struct symbol *sym, const struct assign *ap)
 	}
 }
 
+static const struct assign *
+vcc_assign_search(struct token *t, vcc_type_t type, const struct assign *ap)
+{
+
+	for (; ap->type != VOID; ap++) {
+		if (ap->type != type)
+			continue;
+		if (ap->oper != t->tok)
+			continue;
+		break;
+	}
+
+	return (ap);
+}
+
 /*--------------------------------------------------------------------*/
 
 static void v_matchproto_(sym_act_f)
 vcc_act_set(struct vcc *tl, struct token *t, struct symbol *sym)
 {
-	const struct assign *ap;
+	const struct assign *ap, *alt_ap = NULL;
+	struct token *t_op;
 	vcc_type_t type;
 
-	(void)t;
 	ExpectErr(tl, ID);
 	t = tl->t;
 	sym = VCC_SymbolGet(tl, SYM_VAR, SYMTAB_EXISTING, XREF_NONE);
@@ -130,25 +151,37 @@ vcc_act_set(struct vcc *tl, struct token *t, struct symbol *sym)
 	if (sym->w_methods == 0) {
 		vcc_ErrWhere2(tl, t, tl->t);
 		if (sym->r_methods != 0)
-			VSB_printf(tl->sb, "Variable is read only.\n");
+			vcc_Complain(tl, "Variable is read only.\n");
 		else
-			VSB_printf(tl->sb, "Variable cannot be set.\n");
+			vcc_Complain(tl, "Variable cannot be set.\n");
 		return;
 	}
 	vcc_AddUses(tl, t, tl->t, sym->w_methods, "Cannot be set");
 	type = sym->type;
-	for (ap = assign; ap->type != VOID; ap++) {
-		if (ap->type != type)
-			continue;
-		if (ap->oper != tl->t->tok)
-			continue;
+	t_op = tl->t;
+	ap = vcc_assign_search(t_op, type, assign);
+
+	if (ap->type != VOID) {
 		vcc_NextToken(tl);
-		type = ap->want;
-		break;
+		if (vcc_PeekExpr(tl, ap->want) != 0) {
+			AZ(tl->err);
+			alt_ap = vcc_assign_search(t_op, type, alt_assign);
+		}
+		tl->t = t_op;
 	}
 
-	if (ap->type == VOID)
-		SkipToken(tl, ap->oper);
+	if (alt_ap != NULL && alt_ap->type != VOID) {
+		vcc_NextToken(tl);
+		if (vcc_PeekExpr(tl, alt_ap->want) == 0) {
+			AZ(tl->err);
+			ap = alt_ap;
+		}
+		tl->t = t_op;
+	}
+
+	SkipToken(tl, ap->oper);
+	if (ap->type != VOID)
+		type = ap->want;
 
 	Fb(tl, 1, "%s\n", sym->lname);
 	tl->indent += INDENT;
@@ -174,7 +207,7 @@ vcc_act_unset(struct vcc *tl, struct token *t, struct symbol *sym)
 	AN(sym);
 	if (sym->u_methods == 0) {
 		vcc_ErrWhere2(tl, t, tl->t);
-		VSB_printf(tl->sb, "Variable cannot be unset.\n");
+		vcc_Complain(tl, "Variable cannot be unset.\n");
 		return;
 	}
 	vcc_AddUses(tl, t, tl->t, sym->u_methods, "Cannot be unset");
@@ -345,7 +378,7 @@ vcc_act_return(struct vcc *tl, struct token *t, struct symbol *sym)
 		}
 #include "tbl/vcl_returns.h"
 	if (h == NULL) {
-		VSB_printf(tl->sb, "Expected return action name.\n");
+		vcc_Complain(tl, "Expected return action name.\n");
 		vcc_ErrWhere(tl, tl->t);
 		ERRCHK(tl);
 	}
@@ -363,12 +396,12 @@ vcc_act_return(struct vcc *tl, struct token *t, struct symbol *sym)
 		else if (hand == VCL_RET_FAIL)
 			vcc_act_return_fail(tl);
 		else {
-			VSB_printf(tl->sb, "Arguments not allowed.\n");
+			vcc_Complain(tl, "Arguments not allowed.\n");
 			vcc_ErrWhere(tl, tl->t);
 		}
 	} else {
 		if (hand == VCL_RET_SYNTH || hand == VCL_RET_VCL) {
-			VSB_printf(tl->sb, "Missing argument.\n");
+			vcc_Complain(tl, "Missing argument.\n");
 			vcc_ErrWhere(tl, tl->t);
 		}
 	}

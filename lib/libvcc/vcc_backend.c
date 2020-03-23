@@ -43,9 +43,9 @@ vcc_default_probe(struct vcc *tl)
 
 	if (tl->default_probe != NULL)
 		return (tl->default_probe);
-	VSB_cat(tl->sb, "No default probe defined\n");
+	vcc_Complain(tl, "No default probe defined\n");
 	vcc_ErrToken(tl, tl->t);
-	VSB_cat(tl->sb, " at\n");
+	vcc_Complain(tl, " at\n");
 	vcc_ErrWhere(tl, tl->t);
 	return ("");
 }
@@ -95,9 +95,9 @@ vcc_Redef(struct vcc *tl, const char *redef, struct token **t_did,
     struct token *t_field)
 {
 	if (*t_did != NULL) {
-		VSB_printf(tl->sb, "%s redefinition at:\n", redef);
+		vcc_Complainf(tl, "%s redefinition at:\n", redef);
 		vcc_ErrWhere(tl, t_field);
-		VSB_cat(tl->sb, "Previous definition:\n");
+		vcc_Complain(tl, "Previous definition:\n");
 		vcc_ErrWhere(tl, *t_did);
 		return;
 	}
@@ -197,7 +197,7 @@ vcc_ParseProbeSpec(struct vcc *tl, const struct symbol *sym, char **name)
 		} else if (vcc_IdIs(t_field, "expected_response")) {
 			status = vcc_UintVal(tl);
 			if (status < 100 || status > 999) {
-				VSB_cat(tl->sb,
+				vcc_Complain(tl,
 				    "Must specify .expected_response with "
 				    "exactly three digits "
 				    "(100 <= x <= 999)\n");
@@ -221,13 +221,13 @@ vcc_ParseProbeSpec(struct vcc *tl, const struct symbol *sym, char **name)
 
 	if (t_threshold != NULL || t_window != NULL) {
 		if (t_threshold == NULL && t_window != NULL) {
-			VSB_cat(tl->sb,
+			vcc_Complain(tl,
 			    "Must specify .threshold with .window\n");
 			vcc_ErrWhere(tl, t_window);
 			return;
 		} else if (t_threshold != NULL && t_window == NULL) {
 			if (threshold > 64) {
-				VSB_cat(tl->sb,
+				vcc_Complain(tl,
 				    "Threshold must be 64 or less.\n");
 				vcc_ErrWhere(tl, t_threshold);
 				return;
@@ -235,12 +235,12 @@ vcc_ParseProbeSpec(struct vcc *tl, const struct symbol *sym, char **name)
 			window = threshold + 1;
 		} else if (window > 64) {
 			AN(t_window);
-			VSB_cat(tl->sb, "Window must be 64 or less.\n");
+			vcc_Complain(tl, "Window must be 64 or less.\n");
 			vcc_ErrWhere(tl, t_window);
 			return;
 		}
 		if (threshold > window ) {
-			VSB_cat(tl->sb,
+			vcc_Complain(tl,
 			    "Threshold can not be greater than window.\n");
 			AN(t_threshold);
 			vcc_ErrWhere(tl, t_threshold);
@@ -349,12 +349,12 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 
 	/* Check for old syntax */
 	if (tl->t->tok == ID && vcc_IdIs(tl->t, "set")) {
-		VSB_cat(tl->sb,
+		vcc_Complain(tl,
 		    "NB: Backend Syntax has changed:\n"
 		    "Remove \"set\" and \"backend\" in front"
-		    " of backend fields.\n" );
+		    " of backend fields.\n");
 		vcc_ErrToken(tl, tl->t);
-		VSB_cat(tl->sb, " at ");
+		vcc_Complain(tl, " at ");
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}
@@ -379,11 +379,11 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 			SkipToken(tl, ';');
 		} else if (vcc_IdIs(t_field, "path")) {
 			if (tl->syntax < VCL_41) {
-				VSB_cat(tl->sb,
+				vcc_Complain(tl,
 				    "Unix socket backends only supported"
 				    " in VCL4.1 and higher.\n");
 				vcc_ErrToken(tl, tl->t);
-				VSB_cat(tl->sb, " at ");
+				vcc_Complain(tl, " at ");
 				vcc_ErrWhere(tl, tl->t);
 				return;
 			}
@@ -428,7 +428,7 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 			u = vcc_UintVal(tl);
 			ERRCHK(tl);
 			if (u != 1 && u != 2) {
-				VSB_cat(tl->sb,
+				vcc_Complain(tl,
 				    ".proxy_header must be 1 or 2\n");
 				vcc_ErrWhere(tl, t_val);
 				return;
@@ -452,9 +452,10 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 			}
 			SkipToken(tl, ';');
 		} else if (vcc_IdIs(t_field, "probe")) {
-			VSB_cat(tl->sb, "Expected '{' or name of probe, got ");
+			vcc_Complain(tl,
+			    "Expected '{' or name of probe, got ");
 			vcc_ErrToken(tl, tl->t);
-			VSB_cat(tl->sb, " at\n");
+			vcc_Complain(tl, " at\n");
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		} else {
@@ -468,7 +469,7 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 	ERRCHK(tl);
 
 	if (t_host == NULL && t_path == NULL) {
-		VSB_cat(tl->sb, "Expected .host or .path.\n");
+		vcc_Complain(tl, "Expected .host or .path.\n");
 		vcc_ErrWhere(tl, t_be);
 		return;
 	}
@@ -541,7 +542,7 @@ vcc_ParseBackend(struct vcc *tl)
 			tl->default_director = NULL;
 		}
 		if (tl->default_director != NULL) {
-			VSB_cat(tl->sb,
+			vcc_Complain(tl,
 			    "Only one default director possible.\n");
 			vcc_ErrWhere(tl, t_first);
 			return;
@@ -563,7 +564,7 @@ vcc_ParseBackend(struct vcc *tl)
 	Fh(tl, 0, "\nstatic VCL_BACKEND %s;\n", dn);
 	vcc_ParseHostDef(tl, t_be, dn);
 	if (tl->err) {
-		VSB_printf(tl->sb,
+		vcc_Complainf(tl,
 		    "\nIn %.*s specification starting at:\n", PF(t_first));
 		vcc_ErrWhere(tl, t_first);
 		return;

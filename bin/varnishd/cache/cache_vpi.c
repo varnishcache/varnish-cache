@@ -35,6 +35,7 @@
 #include "cache_varnishd.h"
 
 #include "vcl.h"
+#include "vfc.h"
 
 #include "vcc_interface.h"
 
@@ -112,4 +113,46 @@ VPI_vcl_select(VRT_CTX, VCL_VCL vcl)
 	VCL_Update(&req->vcl, vcl);
 	VSLb(ctx->req->vsl, SLT_VCL_use, "%s via %s",
 	    req->vcl->loaded_name, vcl->loaded_name);
+}
+
+static const struct vrt_blob null_string_blob = {
+	.blob = "(null)",
+	.len = sizeof "(null)" - 1,
+};
+
+VCL_BLOB
+VPI_blob(VRT_CTX, VCL_STRING s)
+{
+
+	if (s == NULL)
+		return (&null_string_blob);
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	return (VRT_blob(ctx, "STRING", s, strlen(s), 0));
+}
+
+/* Thin VFC wrapper for vmod_std and vmod_blob */
+
+static void
+vpi_vfc_priv_free(void *ptr)
+{
+	struct vfc *vfc;
+
+	CAST_OBJ_NOTNULL(vfc, ptr, CACHED_FILE_MAGIC);
+	VFC_destroy(&vfc);
+}
+
+VCL_BLOB
+VPI_VFC_find(struct vmod_priv *priv, const char *file_name)
+{
+	struct vfc *vfc;
+
+	AN(priv);
+
+	vfc = VFC_find(priv->priv, file_name);
+	priv->priv = vfc;
+	priv->free = vpi_vfc_priv_free;
+	if (vfc == NULL)
+		return (NULL);
+	return (vfc->contents);
 }
