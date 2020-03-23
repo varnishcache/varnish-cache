@@ -509,7 +509,7 @@ VRT_call(VRT_CTX, VCL_SUB sub)
 	if (p->priv != NULL) {
 		assert(p->priv == ctx);
 		assert(p->free == no_rollback);
-		VRT_fail(ctx, "recursive call to %s", sub->name);
+		VRT_fail(ctx, "recursive dynamic call to \"sub %s{}\"", sub->name);
 		return;
 	}
 
@@ -519,7 +519,8 @@ VRT_call(VRT_CTX, VCL_SUB sub)
 	if (sub->methods & ctx->method)
 		sub->func(ctx);
 	else
-		VRT_fail(ctx, "not allowed here");
+		VRT_fail(ctx, "dynamic call to \"sub %s{}\" not allowed "
+		     "from this context", sub->name);
 
 	p->priv = NULL;
 	p->free = NULL;
