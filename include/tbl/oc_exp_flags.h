@@ -33,6 +33,7 @@ OC_EXP_FLAG(REFD,	refd,		(1<<2))
 OC_EXP_FLAG(MOVE,	move,		(1<<3))
 OC_EXP_FLAG(INSERT,	insert,		(1<<4))
 OC_EXP_FLAG(REMOVE,	remove,		(1<<5))
+OC_EXP_FLAG(NEW,	new,		(1<<6))
 #undef OC_EXP_FLAG
 
 /*lint -restore */
