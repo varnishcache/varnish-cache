@@ -503,14 +503,16 @@ VRT_call(VRT_CTX, VCL_SUB sub)
 
 	p = VRT_priv_task(ctx, (void *)sub->func);
 	if (p == NULL) {
-		VRT_fail(ctx, "no priv task - out of ws?");
+		VRT_fail(ctx, "No priv task in dynamic call to \"sub %s{}\"",
+		    sub->name);
 		return;
 	}
 
 	if (p->priv != NULL) {
 		assert(p->priv == ctx);
 		assert(p->free == no_rollback);
-		VRT_fail(ctx, "recursive dynamic call to \"sub %s{}\"", sub->name);
+		VRT_fail(ctx, "Recursive dynamic call to \"sub %s{}\"",
+		    sub->name);
 		return;
 	}
 
@@ -520,7 +522,7 @@ VRT_call(VRT_CTX, VCL_SUB sub)
 	if (sub->methods & ctx->method)
 		sub->func(ctx);
 	else
-		VRT_fail(ctx, "dynamic call to \"sub %s{}\" not allowed "
+		VRT_fail(ctx, "Dynamic call to \"sub %s{}\" not allowed "
 		     "from this context", sub->name);
 
 	p->priv = NULL;
