@@ -2,6 +2,8 @@
 
 set -eux
 
+yum install -y epel-release automake jemalloc-devel git libedit-devel libtool libunwind-devel make pcre-devel python3 python-sphinx rpm-build yum-utils
+
 echo "PARAM_RELEASE: $PARAM_RELEASE"
 echo "PARAM_DIST: $PARAM_DIST"
 
