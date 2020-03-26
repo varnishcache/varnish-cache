@@ -24,6 +24,9 @@ aliases:
       arch:
         description: the architecture (x64|aarch64)
         type: string
+      image:
+        description: the base Docker image for Dockerfile
+        type: string
       workspace_extra:
         description: extra paths for the workspace root
         type: string
@@ -45,10 +48,16 @@ aliases:
       - checkout
       - <<: *activate_qemu
       - run:
+          name: Create Dockerfile
+          command: |
+            echo "FROM << parameters.image >>" > Dockerfile
+            echo "ADD make-<< parameters.ext >>-packages.sh /usr/bin/" >> Dockerfile
+            echo 'CMD ["make-<< parameters.ext >>-packages.sh"]' >> Dockerfile
+      - run:
           name: Build << parameters.arch >> apk
           command: |
-            cp .circleci/make-<< parameters.ext >>-packages.sh .circleci/<< parameters.arch >>/<< parameters.ext >>/
-            docker build -t varnish-<< parameters.ext >>-package-build:<< parameters.arch >> .circleci/<< parameters.arch >>/<< parameters.ext >>/
+            cp .circleci/make-<< parameters.ext >>-packages.sh .
+            docker build -t varnish-<< parameters.ext >>-package-build:<< parameters.arch >> .
             docker run --rm -it -e PARAM_DIST=<< parameters.dist >> -e PARAM_RELEASE=<< parameters.release >> -v$(pwd):/varnish-cache -v$HOME/workspace:/workspace varnish-<< parameters.ext >>-package-build:<< parameters.arch >>
       - run: find ./ -name "*.<< parameters.ext >>"
       - <<: *persist_packages
@@ -282,30 +291,35 @@ workflows:
           dist: ubuntu
           release: bionic
           arch: aarch64
+          image: multiarch/ubuntu-core:arm64-bionic
           ext: deb
           <<: *pkg_req
       - aarch64-rpm:
           dist: centos
           release: "7"
           arch: aarch64
+          image: multiarch/centos:7-aarch64-clean
           ext: rpm
           <<: *pkg_req
       - x64-deb:
           dist: ubuntu
           release: bionic
           arch: x64
+          image: ubuntu:bionic
           ext: deb
           <<: *pkg_req
       - x64-rpm:
           dist: centos
           release: "7"
           arch: x64
+          image: centos:7
           ext: rpm
           <<: *pkg_req
       - x64-apk:
           dist: alpine
           release: "3"
           arch: x64
+          image: alpine:3
           ext: apk
           workspace_extra: "/x86_64"
           <<: *pkg_req
@@ -313,6 +327,7 @@ workflows:
           dist: alpine
           release: "3"
           arch: aarch64
+          image: multiarch/alpine:aarch64-edge
           ext: apk
           workspace_extra: "/aarch64"
           <<: *pkg_req
