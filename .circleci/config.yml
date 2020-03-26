@@ -5,7 +5,7 @@ aliases:
     run:
       name: Activate QEMU
       command: |
-        sudo docker run --rm --privileged multiarch/qemu-user-static:register --reset
+        sudo docker run --rm --privileged multiarch/qemu-user-static:register --reset --credential yes
   pkg_req: &pkg_req
     requires:
       - dist
@@ -21,6 +21,9 @@ aliases:
       ext:
         description: the package extension (deb|rpm|apk)
         type: string
+      arch:
+        description: the architecture (x64|aarch64)
+        type: string
       workspace_extra:
         description: extra paths for the workspace root
         type: string
@@ -33,6 +36,24 @@ aliases:
   store_artifacts: &store_artifacts
     store_artifacts:
       path: ~/project/packages
+  package_job: &package_job
+    <<: *pkg_parameters
+    machine: true
+    steps:
+      - attach_workspace:
+          at: ~/workspace
+      - checkout
+      - <<: *activate_qemu
+      - run:
+          name: Build << parameters.arch >> apk
+          command: |
+            cp .circleci/make-<< parameters.ext >>-packages.sh .circleci/<< parameters.arch >>/<< parameters.ext >>/
+            docker build -t varnish-<< parameters.ext >>-package-build:<< parameters.arch >> .circleci/<< parameters.arch >>/<< parameters.ext >>/
+            docker run --rm -it -e PARAM_DIST=<< parameters.dist >> -e PARAM_RELEASE=<< parameters.release >> -v$(pwd):/varnish-cache -v$HOME/workspace:/workspace varnish-<< parameters.ext >>-package-build:<< parameters.arch >>
+      - run: find ./ -name "*.<< parameters.ext >>"
+      - <<: *persist_packages
+      - <<: *store_artifacts
+
 
 parameters:
   vc-commit:
@@ -119,110 +140,17 @@ jobs:
           destination: ~/workspace
           path: ~/workspace
   x64-rpm:
-    <<: *pkg_parameters
-    machine: true
-    steps:
-      - attach_workspace:
-          at: ~/workspace
-      - checkout
-      - <<: *activate_qemu
-      - run:
-          name: Build AMD64 rpm
-          command: |
-            cp .circleci/make-rpm-packages.sh .circleci/x64/rpm/
-            docker build -t varnish-rpm-package-build:x64 .circleci/x64/rpm/
-            docker run --rm -it -e PARAM_DIST=<< parameters.dist >> -e PARAM_RELEASE=<< parameters.release >> -v$(pwd):/varnish-cache -v$HOME/workspace:/workspace varnish-rpm-package-build:x64
-      - run: find ./ -name "*.rpm"
-      - <<: *persist_packages
-      - <<: *store_artifacts
+    <<: *package_job
   aarch64-rpm:
-    <<: *pkg_parameters
-    machine: true
-    steps:
-      - attach_workspace:
-          at: ~/workspace
-      - checkout
-      - <<: *activate_qemu
-      - run:
-          name: Build aarch64 rpm
-          command: |
-            cp .circleci/make-rpm-packages.sh .circleci/aarch64/rpm/
-            docker build -t varnish-rpm-package-build:aarch64 .circleci/aarch64/rpm/
-            docker run --rm -it -e PARAM_DIST=<< parameters.dist >> -e PARAM_RELEASE=<< parameters.release >> -v$(pwd):/varnish-cache -v$HOME/workspace:/workspace varnish-rpm-package-build:aarch64
-      - run: find ./ -name "*.rpm"
-      - <<: *persist_packages
-      - <<: *store_artifacts
+    <<: *package_job
   x64-deb:
-    <<: *pkg_parameters
-    machine: true
-    steps:
-      - attach_workspace:
-          at: ~/workspace
-      - checkout
-      - <<: *activate_qemu
-      - run:
-          name: Build AMD64 deb
-          command: |
-            cp .circleci/make-deb-packages.sh .circleci/x64/deb/
-            docker build -t varnish-deb-package-build:x64 .circleci/x64/deb/
-            docker run --rm -it -e PARAM_DIST=<< parameters.dist >> -e PARAM_RELEASE=<< parameters.release >> -v$(pwd):/varnish-cache -v$HOME/workspace:/workspace varnish-deb-package-build:x64
-      - run: find ./ -name "*.deb"
-      - <<: *persist_packages
-      - <<: *store_artifacts
-
+    <<: *package_job
   aarch64-deb:
-    <<: *pkg_parameters
-    machine: true
-    steps:
-      - attach_workspace:
-          at: ~/workspace
-      - checkout
-      - <<: *activate_qemu
-      - run:
-          name: Build aarch64 deb
-          command: |
-            cp .circleci/make-deb-packages.sh .circleci/aarch64/deb/
-            docker build -t varnish-deb-package-build:aarch64 .circleci/aarch64/deb/
-            docker run --rm -it -e PARAM_DIST=<< parameters.dist >> -e PARAM_RELEASE=<< parameters.release >> -v$(pwd):/varnish-cache -v$HOME/workspace:/workspace varnish-deb-package-build:aarch64
-      - run: find ./ -name "*.deb"
-      - <<: *persist_packages
-      - <<: *store_artifacts
-
+    <<: *package_job
   x64-apk:
-    <<: *pkg_parameters
-    machine: true
-    steps:
-      - attach_workspace:
-          at: ~/workspace
-      - checkout
-      - <<: *activate_qemu
-      - run:
-          name: Build x64 apk
-          command: |
-            cp .circleci/make-apk-packages.sh .circleci/x64/apk/
-            docker build -t varnish-apk-package-build:x64 .circleci/x64/apk/
-            docker run --rm -it -e PARAM_DIST=<< parameters.dist >> -e PARAM_RELEASE=<< parameters.release >> -v$(pwd):/varnish-cache -v$HOME/workspace:/workspace varnish-apk-package-build:x64
-      - run: find ./ -name "*.apk"
-      - <<: *persist_packages
-      - <<: *store_artifacts
-
+    <<: *package_job
   aarch64-apk:
-    <<: *pkg_parameters
-    machine: true
-    steps:
-      - attach_workspace:
-          at: ~/workspace
-      - checkout
-      - <<: *activate_qemu
-      - run:
-          name: Build aarch64 apk
-          command: |
-            cp .circleci/make-apk-packages.sh .circleci/aarch64/apk/
-            docker build -t varnish-apk-package-build:aarch64 .circleci/aarch64/apk/
-            docker run --rm -it -e PARAM_DIST=<< parameters.dist >> -e PARAM_RELEASE=<< parameters.release >> -v$(pwd):/varnish-cache -v$HOME/workspace:/workspace varnish-apk-package-build:aarch64
-      - run: find ./ -name "*.apk"
-      - <<: *persist_packages
-      - <<: *store_artifacts
+    <<: *package_job
   distcheck:
     parameters:
       dist:
@@ -353,40 +281,47 @@ workflows:
       - aarch64-deb:
           dist: ubuntu
           release: bionic
+          arch: aarch64
           ext: deb
           <<: *pkg_req
       - aarch64-rpm:
           dist: centos
           release: "7"
+          arch: aarch64
           ext: rpm
           <<: *pkg_req
       - x64-deb:
           dist: ubuntu
           release: bionic
+          arch: x64
           ext: deb
           <<: *pkg_req
       - x64-rpm:
           dist: centos
           release: "7"
+          arch: x64
           ext: rpm
           <<: *pkg_req
       - x64-apk:
           dist: alpine
           release: "3"
+          arch: x64
           ext: apk
           workspace_extra: "/x86_64"
           <<: *pkg_req
-#      - aarch64-apk:
-#          dist: alpine
-#          release: "3"
-#          ext: apk
-#          workspace_extra: "/aarch64"
-#          <<: *pkg_req
+      - aarch64-apk:
+          dist: alpine
+          release: "3"
+          arch: aarch64
+          ext: apk
+          workspace_extra: "/aarch64"
+          <<: *pkg_req
       - collect_packages:
           requires:
             - x64-deb
-            - x64-rpm
-            - x64-apk
-#            - aarch64-apk
             - aarch64-deb
+            - x64-rpm
             - aarch64-rpm
+            - x64-apk
+            - aarch64-apk
+
