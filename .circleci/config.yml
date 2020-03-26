@@ -1,5 +1,11 @@
 version: 2.1
 
+aliases:
+  pkg_req: &pkg_req
+    requires:
+      - dist
+      - tar_pkg_tools
+
 parameters:
   vc-commit:
     type: string
@@ -9,6 +15,7 @@ parameters:
     default: "master"
 jobs:
   dist:
+    description: Builds varnish-x.y.z.tar.gz that is used later for the packaging jobs
     docker:
       - image: centos:7
     steps:
@@ -45,7 +52,9 @@ jobs:
             - .is_weekly
             - varnish*.tar.gz
             - tools/*.suppr
+            - .circleci
   tar_pkg_tools:
+    description: Builds archives with the packaging tools from https://github.com/varnishcache/pkg-varnish-cache
     docker:
       - image: centos:7
     steps:
@@ -62,7 +71,7 @@ jobs:
             git clone https://github.com/varnishcache/pkg-varnish-cache.git .
             git checkout << pipeline.parameters.pkg-commit >>
             tar cvzf debian.tar.gz debian --dereference
-            tar cvzf redhat.tar.gz redhat --dereference 
+            tar cvzf redhat.tar.gz redhat --dereference
             tar cvzf alpine.tar.gz alpine --dereference
       - persist_to_workspace:
           root: .
@@ -70,6 +79,53 @@ jobs:
             - debian.tar.gz
             - redhat.tar.gz
             - alpine.tar.gz
+  package:
+    parameters:
+      dist:
+        description: the Linux distribution (debian|ubuntu|centos)
+        type: string
+      release:
+        description: the release name (stretch|buster|xenial|bionic|7|8)
+        type: string
+      ext:
+        description: the package extension (deb|rpm|apk)
+        type: string
+      arch:
+        description: the architecture (x64|aarch64)
+        type: string
+      image:
+        description: the base Docker image for Dockerfile
+        type: string
+    machine:
+      image: ubuntu-1604:201903-01
+    steps:
+      - attach_workspace:
+          at: ~/project
+      - run: ls -la ~/project
+      - run:
+          name: Activate QEMU
+          command: |
+            sudo docker run -it --rm --privileged multiarch/qemu-user-static --reset --credential yes --persistent yes
+      - run:
+          name: Create Dockerfile
+          command: |
+            echo "FROM << parameters.image >>" > Dockerfile
+            echo "ADD make-<< parameters.ext >>-packages.sh /usr/bin/" >> Dockerfile
+            echo 'CMD ["make-<< parameters.ext >>-packages.sh"]' >> Dockerfile
+      - run:
+          name: Build << parameters.dist >> << parameters.release >> << parameters.arch >> << parameters.ext >>
+          command: |
+            mkdir -p packages
+            cp .circleci/make-<< parameters.ext >>-packages.sh .
+            docker build -t varnish-<< parameters.ext >>-package-build:<< parameters.arch >> .
+            docker run --rm -it -e PARAM_DIST=<< parameters.dist >> -e PARAM_RELEASE=<< parameters.release >> -v$(pwd):/varnish-cache varnish-<< parameters.ext >>-package-build:<< parameters.arch >>
+      - run:
+          name: List created packages
+          command: find ./packages -name "*.<< parameters.ext >>"
+      - persist_to_workspace:
+          root: .
+          paths:
+            - "packages"
   distcheck:
     parameters:
       dist:
@@ -87,7 +143,7 @@ jobs:
     working_directory: /workspace
     steps:
       - run:
-          name: Possibly activate centos:8 extra repos
+          name: Possible << parameters.dist >>:<< parameters.release >> extra repos
           command: |
             if [ << parameters.dist >> = centos ]; then
                 if [ << parameters.release >> = 8 ]; then
@@ -150,13 +206,14 @@ jobs:
       - run:
           name: Extract and distcheck
           command: |
-            tar xavf *.tar.gz --strip 1
+            tar xavf varnish-*.tar.gz --strip 1
             if [ << parameters.dist >> = centos ]; then
             	adduser varnish
             else
             	adduser --disabled-password --gecos "" varnish
             fi
-            chown -R varnish:varnish /workspace
+
+            chown -R varnish:varnish .
 
             export ASAN_OPTIONS=abort_on_error=1,detect_odr_violation=1,detect_leaks=1,detect_stack_use_after_return=1,detect_invalid_pointer_pairs=1,handle_segv=0,handle_sigbus=0,use_sigaltstack=0,disable_coredump=0
             export LSAN_OPTIONS=abort_on_error=1,use_sigaltstack=0,suppressions=$(pwd)/tools/lsan.suppr
@@ -174,285 +231,28 @@ jobs:
             sudo -u varnish \
             	--preserve-env=ASAN_OPTIONS,LSAN_OPTIONS,TSAN_OPTIONS,UBSAN_OPTIONS \
             	make distcheck VERBOSE=1 -j 12 -k
-  build_apks:
-    parameters:
-      dist:
-        description: the Linux distribution (alpine)
-        default: alpine
-        type: string
-      release:
-        description: the release version
-        default: latest
-        type: string
-    description: Build alpine apks
-    docker:
-      - image: alpine
-    working_directory: /workspace
-    steps:
-      - run:
-          name: Install certificates to mount the workspace, and tar
-          command: |
-            apk update
-            apk add -q ca-certificates tar
-      - attach_workspace:
-          at: /workspace
-      - run:
-          name: Untar alpine
-          command: |
-            tar xavf alpine.tar.gz --strip 1
-      - run:
-          name: Install sdk, add user
-          command: |
-            apk add alpine-sdk
-            adduser -D builder
-            echo "builder ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers
-            addgroup builder abuild
-            mkdir -p /var/cache/distfiles
-            chmod a+w /var/cache/distfiles
-      - run:
-          name: Generate key
-          command: |
-            su builder -c "abuild-keygen -nai"
-      - run:
-          name: Fix APKBUILD's variables
-          command: |
-            tar xavf varnish-*.tar.gz
-            VERSION=$(varnish-*/configure --version | awk 'NR == 1 {print $NF}')
-            sed -i "s/@VERSION@/$VERSION/" APKBUILD
-            rm -rf varnish-*/
-      - run:
-          name: Fix checksums, build
-          command: |
-            chown builder -R /workspace
-            su builder -c "abuild checksum"
-            su builder -c "abuild -r"
-      - run:
-          name: Fix the APKBUILD's version
-          command: |
-            mkdir apks
-            cp /home/builder/packages/x86_64/*.apk apks
-      - run:
-          name: Import the packages into the workspace
-          command: |
-            mkdir -p packages/<< parameters.dist >>/<< parameters.release >>
-            mv /home/builder/packages/x86_64/*.apk packages/<< parameters.dist >>/<< parameters.release >>
-      - persist_to_workspace:
-          root: .
-          paths:
-            - packages/<< parameters.dist >>/<< parameters.release >>/varnish*
-      - store_artifacts:
-          path: packages/<< parameters.dist >>/<< parameters.release >>
-          destination: ./
-  build_debs:
-    parameters:
-      dist:
-        description: the Linux distribution (debian|ubuntu)
-        type: string
-      release:
-        description: the release name (stretch|buster|xenial|bionic)
-        type: string
-    description: Build << parameters.release >> debs
-    docker:
-      - image: << parameters.dist >>:<< parameters.release >>
-    steps:
-      - run:
-          name: Install packaging tools
-          command: |
-            apt-get update
-            apt-get install -y dpkg-dev ca-certificates debhelper devscripts equivs
-      - attach_workspace:
-          at: ~/project
-      - run:
-          name: Untar debian
-          command: tar xavf debian.tar.gz
-      - run:
-          name: Untar orig
-          command: tar xavf varnish*.tar.gz --strip 1
-      - run:
-          name: Update changelog version
-          command: |
-            if [ -e .is_weekly ]; then
-                WEEKLY='-weekly'
-            else
-                WEEKLY=
-            fi
-            VERSION=$(./configure --version | awk 'NR == 1 {print $NF}')$WEEKLY~<< parameters.release >>
-            sed -i -e "s|@VERSION@|$VERSION-1|"  "debian/changelog"
-      - run:
-          name: Install Build-Depends packages
-          command: |
-            export DEBIAN_FRONTEND=noninteractive
-            export DEBCONF_NONINTERACTIVE_SEEN=true
-            yes | mk-build-deps --install debian/control || true
-      - run:
-          name: Build the packages
-          command: |
-            dpkg-buildpackage -us -uc -j16
-      - run:
-          name: Import the packages into the workspace
-          command: |
-            mkdir -p packages/<< parameters.dist >>/<< parameters.release >>
-            mv ../*.deb ../*.dsc packages/<< parameters.dist >>/<< parameters.release >>
-      - persist_to_workspace:
-          root: .
-          paths:
-            - packages/<< parameters.dist >>/<< parameters.release >>/varnish*
-      - store_artifacts:
-          path: packages/<< parameters.dist >>/<< parameters.release >>
-          destination: ./
-  build_rpms:
-    parameters:
-      dist:
-        description: the Linux distribution (centos|amazonlinux)
-        type: string
-      release:
-        description: the distribution version (7|8|2)
-        type: string
-    description: Build << parameters.dist >>:<< parameters.release >> rpms
-    docker:
-      - image: centos:<< parameters.release >>
-    environment:
-      DIST_DIR: build
-    steps:
-      - run:
-          name: Install packaging tools
-          command: |
-            yum install -y rpm-build yum-utils epel-release
-            # XXX: we should NOT have to do that here, they should be in the
-            # spec as BuildRequires
-            yum install -y make gcc
-      - attach_workspace:
-          at: ~/project
-      - run:
-          name: Create build dir
-          command: mkdir $DIST_DIR
-      - run:
-          name: Untar redhat
-          command: |
-            tar xavf redhat.tar.gz -C build
-      - run:
-          name: Untar orig
-          command: |
-            tar xavf varnish*.tar.gz -C build --strip 1
-      - run:
-          name: Build Packages
-          command: |
-            set -e
-            set -u
 
-            if [ << parameters.release >> = 8 ]; then
-                yum config-manager --set-enabled PowerTools
-            fi
-            # use python3
-            sed -i '1 i\%global __python %{__python3}' "$DIST_DIR"/redhat/varnish.spec
-            if [ -e .is_weekly ]; then
-                WEEKLY='.weekly'
-            else
-                WEEKLY=
-            fi
-            VERSION=$("$DIST_DIR"/configure --version | awk 'NR == 1 {print $NF}')$WEEKLY
-
-            cp -r -L "$DIST_DIR"/redhat/* "$DIST_DIR"/
-            tar zcf "$DIST_DIR.tgz" --exclude "$DIST_DIR/redhat" "$DIST_DIR"/
-
-            RPMVERSION="$VERSION"
-
-            RESULT_DIR="rpms"
-            CUR_DIR="$(pwd)"
-
-            rpmbuild() {
-            	command rpmbuild \
-            		--define "_smp_mflags -j10" \
-                	--define "_sourcedir $CUR_DIR" \
-                	--define "_srcrpmdir $CUR_DIR/${RESULT_DIR}" \
-                	--define "_rpmdir $CUR_DIR/${RESULT_DIR}" \
-            		--define "versiontag ${RPMVERSION}" \
-            		--define "releasetag 0.0" \
-            		--define "srcname $DIST_DIR" \
-            		--define "nocheck 1" \
-            		"$@"
-            }
-            yum-builddep -y "$DIST_DIR"/redhat/varnish.spec
-            rpmbuild -bs "$DIST_DIR"/redhat/varnish.spec
-            rpmbuild --rebuild "$RESULT_DIR"/varnish-*.src.rpm
-      - run:
-          name: Prepare the packages for storage
-          command: |
-            mkdir -p packages/<< parameters.dist >>/<< parameters.release >>
-            mv rpms/*/*.rpm packages/<< parameters.dist >>/<< parameters.release >>
-      - persist_to_workspace:
-          root: .
-          paths:
-            - packages/<< parameters.dist >>/<< parameters.release >>/*.rpm
-      - store_artifacts:
-          path: packages/<< parameters.dist >>/<< parameters.release >>
-          destination: ./
   collect_packages:
     docker:
       - image: centos:7
     steps:
       - attach_workspace:
           at: ~/project
+      - run: ls -la ~/project/
       - run:
           name: Tar the packages
           command: |
-              tar cvzf packages.tar.gz packages 
+              tar cvzf packages.tar.gz packages
       - store_artifacts:
           destination: packages.tar.gz
           path: packages.tar.gz
-pkg_req: &pkg_req
-  requires:
-    - dist
-    - tar_pkg_tools
+
 
 workflows:
   version: 2
-  build:
+  commit:
     jobs:
       - dist
-      - tar_pkg_tools
-      - build_debs:
-          name: build_debian_stretch
-          dist: debian
-          release: stretch
-          <<: *pkg_req
-      - build_debs:
-          name: build_debian_buster
-          dist: debian
-          release: buster
-          <<: *pkg_req
-      - build_debs:
-          name: build_ubuntu_xenial
-          dist: ubuntu
-          release: xenial
-          <<: *pkg_req
-      - build_debs:
-          name: build_ubuntu_bionic
-          dist: ubuntu
-          release: bionic
-          <<: *pkg_req
-      - build_rpms:
-          name: build_centos_7
-          dist: centos
-          release: "7"
-          <<: *pkg_req
-      - build_rpms:
-          name: build_centos_8
-          dist: centos
-          release: "8"
-          <<: *pkg_req
-      - build_apks:
-          name: build_alpine
-          <<: *pkg_req
-      - collect_packages:
-          requires:
-            - build_debian_stretch
-            - build_debian_buster
-            - build_ubuntu_xenial
-            - build_ubuntu_bionic
-            - build_centos_7
-            - build_centos_8
-            - build_alpine
       - distcheck:
           name: distcheck_centos_7
           dist: centos
@@ -479,3 +279,161 @@ workflows:
           #extra_conf: --without-jemalloc
           requires:
             - dist
+  nightly:
+    triggers:
+      - schedule:
+          cron: "0 4 * * *"
+          filters:
+            branches:
+              only:
+                - master
+    jobs:
+      - dist
+      - tar_pkg_tools
+      - package:
+          name: aarch64-ubuntu-bionic
+          dist: ubuntu
+          release: bionic
+          arch: aarch64
+          image: arm64v8/ubuntu:bionic
+          ext: deb
+          <<: *pkg_req
+      - package:
+          name: x64-ubuntu-bionic
+          dist: ubuntu
+          release: bionic
+          arch: x64
+          image: ubuntu:bionic
+          ext: deb
+          <<: *pkg_req
+      - package:
+          name: aarch64-ubuntu-xenial
+          dist: ubuntu
+          release: xenial
+          arch: aarch64
+          image: arm64v8/ubuntu:xenial
+          ext: deb
+          <<: *pkg_req
+      - package:
+          name: x64-ubuntu-xenial
+          dist: ubuntu
+          release: xenial
+          arch: x64
+          image: ubuntu:xenial
+          ext: deb
+          <<: *pkg_req
+      - package:
+          name: aarch64-debian-bullseye
+          dist: debian
+          release: bullseye
+          arch: aarch64
+          image: arm64v8/debian:bullseye-slim
+          ext: deb
+          <<: *pkg_req
+      - package:
+          name: x64-debian-bullseye
+          dist: debian
+          release: bullseye
+          arch: x64
+          image: debian:bullseye-slim
+          ext: deb
+          <<: *pkg_req
+      - package:
+          name: aarch64-debian-buster
+          dist: debian
+          release: buster
+          arch: aarch64
+          image: arm64v8/debian:buster-slim
+          ext: deb
+          <<: *pkg_req
+      - package:
+          name: x64-debian-buster
+          dist: debian
+          release: buster
+          arch: x64
+          image: debian:buster-slim
+          ext: deb
+          <<: *pkg_req
+      - package:
+          name: aarch64-debian-stretch
+          dist: debian
+          release: stretch
+          arch: aarch64
+          image: arm64v8/debian:stretch-slim
+          ext: deb
+          <<: *pkg_req
+      - package:
+          name: x64-debian-stretch
+          dist: debian
+          release: stretch
+          arch: x64
+          image: debian:stretch-slim
+          ext: deb
+          <<: *pkg_req
+      - package:
+          name: aarch64-centos-7
+          dist: centos
+          release: "7"
+          arch: aarch64
+          image: arm64v8/centos:7
+          ext: rpm
+          <<: *pkg_req
+      - package:
+          name: x64-centos-7
+          dist: centos
+          release: "7"
+          arch: x64
+          image: centos:7
+          ext: rpm
+          <<: *pkg_req
+      - package:
+          name: aarch64-centos-8
+          dist: centos
+          release: "8"
+          arch: aarch64
+          image: arm64v8/centos:8
+          ext: rpm
+          <<: *pkg_req
+      - package:
+          name: x64-centos-8
+          dist: centos
+          release: "8"
+          arch: x64
+          image: centos:8
+          ext: rpm
+          <<: *pkg_req
+      - package:
+          name: x64-alpine-3
+          dist: alpine
+          release: "3"
+          arch: x64
+          image: alpine:3
+          ext: apk
+          <<: *pkg_req
+      - package:
+          name: aarch64-alpine-3
+          dist: alpine
+          release: "3"
+          arch: aarch64
+          image: arm64v8/alpine:3
+          ext: apk
+          <<: *pkg_req
+      - collect_packages:
+          requires:
+            - x64-ubuntu-xenial
+            - x64-ubuntu-bionic
+            - aarch64-ubuntu-xenial
+            - aarch64-ubuntu-bionic
+            - x64-debian-bullseye
+            - aarch64-debian-bullseye
+            - x64-debian-buster
+            - aarch64-debian-buster
+            - x64-debian-stretch
+            - aarch64-debian-stretch
+            - x64-centos-7
+            - x64-centos-8
+            - aarch64-centos-7
+            - aarch64-centos-8
+            - x64-alpine-3
+            - aarch64-alpine-3
+
