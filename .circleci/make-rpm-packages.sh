@@ -36,8 +36,10 @@ echo "Untar orig..."
 tar xavf /workspace/varnish-*.tar.gz -C $DIST_DIR --strip 1
 
 echo "Build Packages..."
-if [ $PARAM_RELEASE = 8 ]; then
+if [ "$PARAM_RELEASE" = 8 ]; then
+    dnf install -y 'dnf-command(config-manager)'
     yum config-manager --set-enabled PowerTools
+    yum install -y diffutils python3-sphinx
 fi
 # use python3
 sed -i '1 i\%global __python %{__python3}' "$DIST_DIR"/redhat/varnish.spec
@@ -74,5 +76,5 @@ rpmbuild -bs "$DIST_DIR"/redhat/varnish.spec
 rpmbuild --rebuild "$RESULT_DIR"/varnish-*.src.rpm
 
 echo "Prepare the packages for storage..."
-mkdir -p packages/rpm/$PARAM_DIST/$PARAM_RELEASE/
-mv rpms/*/*.rpm packages/rpm/$PARAM_DIST/$PARAM_RELEASE/
+mkdir -p /packages/$PARAM_DIST/$PARAM_RELEASE/
+mv rpms/*/*.rpm /packages/$PARAM_DIST/$PARAM_RELEASE/
