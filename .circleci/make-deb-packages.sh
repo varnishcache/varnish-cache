@@ -5,7 +5,7 @@ set -eux
 export DEBIAN_FRONTEND=noninteractive
 export DEBCONF_NONINTERACTIVE_SEEN=true
 apt-get update
-apt-get install -y autoconf automake build-essential graphviz libncurses-dev libtool dpkg-dev ca-certificates debhelper devscripts equivs make gcc pkg-config libunwind-dev python3-docutils python3-sphinx ncurses-dev libpcre3-dev libedit-dev libjemalloc-dev
+apt-get install -y autoconf automake build-essential graphviz libncurses-dev libtool dpkg-dev ca-certificates debhelper devscripts equivs make gcc pkg-config libunwind-dev python3-docutils python3-sphinx ncurses-dev libpcre3-dev libedit-dev libjemalloc-dev apt-utils
 
 echo "PARAM_RELEASE: $PARAM_RELEASE"
 echo "PARAM_DIST: $PARAM_DIST"
@@ -19,16 +19,15 @@ elif test "x$PARAM_DIST" = "x"; then
     exit 1
 fi
 
-export DIST_DIR=build
 
 adduser --disabled-password --gecos "" varnish
 
 chown -R varnish:varnish /workspace
 
-cd /varnish-cache
+DIST_DIR=build
 rm -rf $DIST_DIR
-mkdir $DIST_DIR
-
+mkdir -p $DIST_DIR
+cd $DIST_DIR
 
 echo "Untar debian..."
 tar xavf /workspace/debian.tar.gz
@@ -46,15 +45,11 @@ VERSION=$(./configure --version | awk 'NR == 1 {print $NF}')$WEEKLY~$PARAM_RELEA
 sed -i -e "s|@VERSION@|$VERSION-1|"  "debian/changelog"
 
 echo "Install Build-Depends packages..."
-export DEBIAN_FRONTEND=noninteractive
-export DEBCONF_NONINTERACTIVE_SEEN=true
 yes | mk-build-deps --install debian/control || true
 
-pwd
 echo "Build the packages..."
 dpkg-buildpackage -us -uc -j16
 
-pwd
 echo "Prepare the packages for storage..."
-mkdir -p packages/deb/$PARAM_DIST/$PARAM_RELEASE/
-mv ../*.deb packages/deb/$PARAM_DIST/$PARAM_RELEASE/
+mkdir -p /packages/$PARAM_DIST/$PARAM_RELEASE/
+mv ../*.deb /packages/$PARAM_DIST/$PARAM_RELEASE/
