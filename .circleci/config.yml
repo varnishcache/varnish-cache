@@ -261,7 +261,7 @@ jobs:
       - run:
           name: Extract and distcheck
           command: |
-            tar xavf *.tar.gz --strip 1
+            tar xavf /workspace/*.tar.gz --strip 1
             if [ << parameters.dist >> = centos ]; then
             	adduser varnish
             else
@@ -441,4 +441,29 @@ workflows:
 #            - aarch64-centos-8
             - x64-alpine-3
             - aarch64-alpine-3
-
+      - distcheck:
+          name: distcheck_centos_7
+          dist: centos
+          release: "7"
+          requires:
+            - dist
+      - distcheck:
+          name: distcheck_centos_8
+          dist: centos
+          release: "8"
+          requires:
+            - dist
+      - distcheck:
+          name: distcheck_debian_buster
+          dist: debian
+          release: buster
+          extra_conf: --enable-asan --enable-ubsan
+          requires:
+            - dist
+      - distcheck:
+          name: distcheck_alpine
+          dist: alpine
+          release: "latest"
+          #extra_conf: --without-jemalloc
+          requires:
+            - dist
