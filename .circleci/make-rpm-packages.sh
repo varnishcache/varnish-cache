@@ -2,9 +2,6 @@
 
 set -eux
 
-yum install -y epel-release
-yum install -y automake jemalloc-devel git libedit-devel libtool libunwind-devel make pcre-devel python3 sudo python-sphinx rpm-build yum-utils
-
 echo "PARAM_RELEASE: $PARAM_RELEASE"
 echo "PARAM_DIST: $PARAM_DIST"
 
@@ -15,6 +12,20 @@ elif test "x$PARAM_DIST" = "x"; then
     echo "Env variable PARAM_DIST is not set! For example PARAM_DIST=centos"
     exit 1
 fi
+
+if [ "$PARAM_DIST" = centos ]; then
+  if [ "$PARAM_RELEASE" = 8 ]; then
+      dnf install -y 'dnf-command(config-manager)'
+      yum config-manager --set-enabled PowerTools
+      yum install -y diffutils python3-sphinx
+  else
+      yum install -y python-sphinx
+  fi
+fi
+
+yum install -y epel-release
+yum install -y automake jemalloc-devel git libedit-devel libtool libunwind-devel make pcre-devel python3 sudo rpm-build yum-utils
+
 
 export DIST_DIR=build
 
@@ -37,11 +48,6 @@ echo "Untar orig..."
 tar xavf /workspace/varnish-*.tar.gz -C $DIST_DIR --strip 1
 
 echo "Build Packages..."
-if [ "$PARAM_RELEASE" = 8 ]; then
-    dnf install -y 'dnf-command(config-manager)'
-    yum config-manager --set-enabled PowerTools
-    yum install -y diffutils python3-sphinx
-fi
 # use python3
 sed -i '1 i\%global __python %{__python3}' "$DIST_DIR"/redhat/varnish.spec
 if [ -e /workspace/.is_weekly ]; then
