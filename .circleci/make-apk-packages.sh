@@ -15,8 +15,6 @@ elif test "x$PARAM_DIST" = "x"; then
     exit 1
 fi
 
-export DIST_DIR=build
-
 mkdir -p /package && cd /package
 tar xazf /workspace/alpine.tar.gz --strip 1
 
@@ -25,13 +23,11 @@ echo "builder ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers
 addgroup builder abuild
 mkdir -p /var/cache/distfiles
 chmod -R a+w /var/cache/distfiles
-chmod -R a+w /var/cache/apk
 
 echo "Generate key"
 su builder -c "abuild-keygen -nai"
 
 echo "Fix APKBUILD's variables"
-ls -la
 tar xavf /workspace/varnish-*.tar.gz
 if [ -e /workspace/.is_weekly ]; then
     WEEKLY='.weekly'
@@ -47,8 +43,6 @@ echo "Fix checksums, build"
 cp /workspace/varnish-*.tar.gz .
 chown builder -R /workspace
 chown builder -R /package
-rm -rf /var/cache/apk/*
-chown builder:abuild -R /var/cache/
 
 su builder -c "abuild checksum"
 su builder -c "abuild -r"
@@ -61,5 +55,5 @@ su builder -c "cp /home/builder/packages/$ARCH/*.apk apks"
 ls -laR apks
 
 echo "Import the packages into the workspace"
-mkdir -p /varnish-cache/packages/apk/$PARAM_DIST/$PARAM_RELEASE/$ARCH/
-mv /home/builder/packages/$ARCH/*.apk /varnish-cache/packages/apk/$PARAM_DIST/$PARAM_RELEASE/$ARCH/
+mkdir -p /packages/$PARAM_DIST/$PARAM_RELEASE/$ARCH/
+mv /home/builder/packages/$ARCH/*.apk /packages/$PARAM_DIST/$PARAM_RELEASE/$ARCH/

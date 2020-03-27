@@ -33,7 +33,7 @@ aliases:
         default: ""
   persist_packages: &persist_packages
     persist_to_workspace:
-      root: ~/project/
+      root: /tmp
       paths:
         - "packages"
   store_artifacts: &store_artifacts
@@ -54,11 +54,12 @@ aliases:
             echo "ADD make-<< parameters.ext >>-packages.sh /usr/bin/" >> Dockerfile
             echo 'CMD ["make-<< parameters.ext >>-packages.sh"]' >> Dockerfile
       - run:
-          name: Build << parameters.arch >> apk
+          name: Build << parameters.dist >> << parameters.release >> << parameters.arch >> apk
           command: |
+            mkdir /tmp/packages
             cp .circleci/make-<< parameters.ext >>-packages.sh .
             docker build -t varnish-<< parameters.ext >>-package-build:<< parameters.arch >> .
-            docker run --rm -it -e PARAM_DIST=<< parameters.dist >> -e PARAM_RELEASE=<< parameters.release >> -v$(pwd):/varnish-cache -v$HOME/workspace:/workspace varnish-<< parameters.ext >>-package-build:<< parameters.arch >>
+            docker run --rm -it -e PARAM_DIST=<< parameters.dist >> -e PARAM_RELEASE=<< parameters.release >> -v$(pwd):/varnish-cache -v$HOME/workspace:/workspace -v/tmp/packages:/packages varnish-<< parameters.ext >>-package-build:<< parameters.arch >>
       - run: find ./ -name "*.<< parameters.ext >>"
       - <<: *persist_packages
       - <<: *store_artifacts
@@ -148,17 +149,37 @@ jobs:
       - store_artifacts:
           destination: ~/workspace
           path: ~/workspace
-  x64-rpm:
+  x64-centos-7:
     <<: *package_job
-  aarch64-rpm:
+  aarch64-centos-7:
     <<: *package_job
-  x64-deb:
+  x64-centos-8:
     <<: *package_job
-  aarch64-deb:
+  aarch64-centos-8:
     <<: *package_job
-  x64-apk:
+  x64-ubuntu-bionic:
     <<: *package_job
-  aarch64-apk:
+  aarch64-ubuntu-bionic:
+    <<: *package_job
+  x64-ubuntu-xenial:
+    <<: *package_job
+  aarch64-ubuntu-xenial:
+    <<: *package_job
+  aarch64-debian-bullseye:
+    <<: *package_job
+  x64-debian-bullseye:
+    <<: *package_job
+  x64-debian-buster:
+    <<: *package_job
+  aarch64-debian-buster:
+    <<: *package_job
+  x64-debian-stretch:
+    <<: *package_job
+  aarch64-debian-stretch:
+    <<: *package_job
+  x64-alpine-3:
+    <<: *package_job
+  aarch64-alpine-3:
     <<: *package_job
   distcheck:
     parameters:
@@ -287,35 +308,106 @@ workflows:
     jobs:
       - dist
       - tar_pkg_tools
-      - aarch64-deb:
+      - aarch64-ubuntu-bionic:
           dist: ubuntu
           release: bionic
           arch: aarch64
           image: multiarch/ubuntu-core:arm64-bionic
           ext: deb
           <<: *pkg_req
-      - aarch64-rpm:
-          dist: centos
-          release: "7"
-          arch: aarch64
-          image: multiarch/centos:7-aarch64-clean
-          ext: rpm
-          <<: *pkg_req
-      - x64-deb:
+      - x64-ubuntu-bionic:
           dist: ubuntu
           release: bionic
           arch: x64
           image: ubuntu:bionic
           ext: deb
           <<: *pkg_req
-      - x64-rpm:
+      - aarch64-ubuntu-xenial:
+          dist: ubuntu
+          release: xenial
+          arch: aarch64
+          image: multiarch/ubuntu-core:arm64-xenial
+          ext: deb
+          <<: *pkg_req
+      - x64-ubuntu-xenial:
+          dist: ubuntu
+          release: xenial
+          arch: x64
+          image: ubuntu:xenial
+          ext: deb
+          <<: *pkg_req
+      - aarch64-debian-bullseye:
+          dist: debian
+          release: bullseye
+          arch: aarch64
+          image: multiarch/debian-debootstrap:arm64-bullseye-slim
+          ext: deb
+          <<: *pkg_req
+      - x64-debian-bullseye:
+          dist: debian
+          release: bullseye
+          arch: x64
+          image: debian:bullseye
+          ext: deb
+          <<: *pkg_req
+      - aarch64-debian-buster:
+          dist: debian
+          release: buster
+          arch: aarch64
+          image: multiarch/debian-debootstrap:arm64-buster-slim
+          ext: deb
+          <<: *pkg_req
+      - x64-debian-buster:
+          dist: debian
+          release: buster
+          arch: x64
+          image: debian:buster
+          ext: deb
+          <<: *pkg_req
+      - aarch64-debian-stretch:
+          dist: debian
+          release: stretch
+          arch: aarch64
+          image: multiarch/debian-debootstrap:arm64-stretch-slim
+          ext: deb
+          <<: *pkg_req
+      - x64-debian-stretch:
+          dist: debian
+          release: stretch
+          arch: x64
+          image: debian:stretch
+          ext: deb
+          <<: *pkg_req
+      - aarch64-centos-7:
+          dist: centos
+          release: "7"
+          arch: aarch64
+          image: multiarch/centos:7-aarch64-clean
+          ext: rpm
+          <<: *pkg_req
+      - x64-centos-7:
           dist: centos
           release: "7"
           arch: x64
           image: centos:7
           ext: rpm
           <<: *pkg_req
-      - x64-apk:
+# there is no multiarch image for aarch64
+#      - aarch64-centos-8:
+#          dist: centos
+#          release: "8"
+#          arch: aarch64
+#          image:
+#          ext: rpm
+#          <<: *pkg_req
+      - x64-centos-8:
+          dist: centos
+          release: "8"
+          arch: x64
+          image: centos:8
+          ext: rpm
+          <<: *pkg_req
+      - x64-alpine-3:
           dist: alpine
           release: "3"
           arch: x64
@@ -323,7 +415,7 @@ workflows:
           ext: apk
           workspace_extra: "/x86_64"
           <<: *pkg_req
-      - aarch64-apk:
+      - aarch64-alpine-3:
           dist: alpine
           release: "3"
           arch: aarch64
@@ -333,10 +425,20 @@ workflows:
           <<: *pkg_req
       - collect_packages:
           requires:
-            - x64-deb
-            - aarch64-deb
-            - x64-rpm
-            - aarch64-rpm
-            - x64-apk
-            - aarch64-apk
+            - x64-ubuntu-xenial
+            - x64-ubuntu-bionic
+            - aarch64-ubuntu-xenial
+            - aarch64-ubuntu-bionic
+            - x64-debian-bullseye
+            - aarch64-debian-bullseye
+            - x64-debian-buster
+            - aarch64-debian-buster
+            - x64-debian-stretch
+            - aarch64-debian-stretch
+            - x64-centos-7
+            - x64-centos-8
+            - aarch64-centos-7
+#            - aarch64-centos-8
+            - x64-alpine-3
+            - aarch64-alpine-3
 
