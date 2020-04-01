@@ -229,39 +229,41 @@ VSA_GetPtr(const struct suckaddr *sua, const unsigned char ** dst)
 }
 
 /*
+ * Return the size of a struct sockaddr in a struck suckaddr
+ * or 0 if unknown family
+ */
+static inline
+socklen_t sua_len(const struct sockaddr *sa)
+{
+	struct suckaddr *sua;
+
+	switch (sa->sa_family) {
+	case PF_INET:
+		return (sizeof sua->sa4);
+	case PF_INET6:
+		return (sizeof sua->sa6);
+	default:
+		return (0);
+	}
+}
+
+/*
  * Malloc a suckaddr from a sockaddr of some kind.
  */
 
 struct suckaddr *
 VSA_Malloc(const void *s, unsigned  sal)
 {
-	struct suckaddr *sua = NULL;
-	const struct sockaddr *sa = s;
-	unsigned l = 0;
+	void *d;
 
-	AN(s);
-	switch (sa->sa_family) {
-	case PF_INET:
-		if (sal == sizeof sua->sa4)
-			l = sal;
-		break;
-	case PF_INET6:
-		if (sal == sizeof sua->sa6)
-			l = sal;
-		break;
-	default:
-		break;
-	}
-	if (l != 0) {
-		ALLOC_OBJ(sua, SUCKADDR_MAGIC);
-		/* XXX: shouldn't we AN(sua) instead of mixing up failed
-		 * allocations with unsupported address family or bogus
-		 * sockaddr?
-		 */
-		if (sua != NULL)
-			memcpy(&sua->sa, s, l);
-	}
-	return (sua);
+	d = malloc(vsa_suckaddr_len);
+	/* XXX: shouldn't we AN(sua) instead of mixing up failed allocations
+	 * with unsupported address family or bogus sockaddr?
+	 */
+	if (d == NULL)
+		return (NULL);
+
+	return (VSA_Build(d, s, sal));
 }
 
 /* 'd' SHALL point to vsa_suckaddr_len aligned bytes of storage */
@@ -270,47 +272,30 @@ VSA_Build(void *d, const void *s, unsigned sal)
 {
 	struct suckaddr *sua = d;
 	const struct sockaddr *sa = s;
-	unsigned l = 0;
+	unsigned l;
 
 	AN(d);
 	AN(s);
-	switch (sa->sa_family) {
-	case PF_INET:
-		if (sal == sizeof sua->sa4)
-			l = sal;
-		break;
-	case PF_INET6:
-		if (sal == sizeof sua->sa6)
-			l = sal;
-		break;
-	default:
-		break;
-	}
-	if (l != 0) {
-		memset(sua, 0, sizeof *sua);
-		sua->magic = SUCKADDR_MAGIC;
-		memcpy(&sua->sa, s, l);
-		return (sua);
-	}
-	return (NULL);
+	l = sua_len(sa);
+	if (l == 0 || l != sal)
+		return (NULL);
+
+	INIT_OBJ(sua, SUCKADDR_MAGIC);
+	memcpy(&sua->sa, s, l);
+	return (sua);
 }
 
 const void *
-VSA_Get_Sockaddr(const struct suckaddr *sua, socklen_t *sl)
+VSA_Get_Sockaddr(const struct suckaddr *sua, socklen_t *slp)
 {
+	socklen_t sl;
 
 	CHECK_OBJ_NOTNULL(sua, SUCKADDR_MAGIC);
-	AN(sl);
-	switch (sua->sa.sa_family) {
-	case PF_INET:
-		*sl = sizeof sua->sa4;
-		break;
-	case PF_INET6:
-		*sl = sizeof sua->sa6;
-		break;
-	default:
+	AN(slp);
+	sl = sua_len(&sua->sa);
+	if (sl == 0)
 		return (NULL);
-	}
+	*slp = sl;
 	return (&sua->sa);
 }
 
@@ -326,14 +311,7 @@ int
 VSA_Sane(const struct suckaddr *sua)
 {
 	CHECK_OBJ_NOTNULL(sua, SUCKADDR_MAGIC);
-
-	switch (sua->sa.sa_family) {
-	case PF_INET:
-	case PF_INET6:
-		return (1);
-	default:
-		return (0);
-	}
+	return (sua_len(&sua->sa) != 0);
 }
 
 int
