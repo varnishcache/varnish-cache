@@ -99,48 +99,52 @@ do_xml(struct vsm *vsm, struct vsc *vsc)
 static int v_matchproto_(VSC_iter_f)
 do_json_cb(void *priv, const struct VSC_point * const pt)
 {
-	uint64_t val;
-	int *jp;
+	const char **sep;
+	uintmax_t val;
 
 	if (pt == NULL)
 		return (0);
 
-	jp = priv;
 	AZ(strcmp(pt->ctype, "uint64_t"));
-	val = *(const volatile uint64_t*)pt->ptr;
+	val = (uintmax_t)*(const volatile uint64_t*)pt->ptr;
 
-	if (*jp)
-		*jp = 0;
-	else
-		printf(",\n");
+	sep = priv;
 
-	printf("    \"%s\": {\n", pt->name);
-	printf("      \"description\": \"%s\",\n", pt->sdesc);
+	printf(
+	    "%s"
+	    "    \"%s\": {\n"
+	    "      \"description\": \"%s\",\n"
+	    "      \"flag\": \"%c\",\n"
+	    "      \"format\": \"%c\",\n"
+	    "      \"value\": %ju\n"
+	    "    }",
+	    *sep, pt->name, pt->sdesc, pt->semantics, pt->format, val);
 
-	printf("      \"flag\": \"%c\", ", pt->semantics);
-	printf("\"format\": \"%c\",\n", pt->format);
-	printf("      \"value\": %ju", (uintmax_t)val);
-	printf("\n    }");
+	*sep = ",\n";
 	return (0);
 }
 
 static void
 do_json(struct vsm *vsm, struct vsc *vsc)
 {
+	const char *sep;
 	char time_stamp[20];
 	time_t now;
-	int jp;
 
-	jp = 1;
+	sep = "";
 	now = time(NULL);
 
 	(void)strftime(time_stamp, 20, "%Y-%m-%dT%H:%M:%S", localtime(&now));
-	printf("{\n"
+	printf(
+	    "{\n"
 	    "  \"version\": 1,\n"
 	    "  \"timestamp\": \"%s\",\n"
 	    "  \"counters\": {\n", time_stamp);
-	(void)VSC_Iter(vsc, vsm, do_json_cb, &jp);
-	printf("\n  }\n}\n");
+	(void)VSC_Iter(vsc, vsm, do_json_cb, &sep);
+	printf(
+	    "\n"
+	    "  }\n"
+	    "}\n");
 }
 
 
