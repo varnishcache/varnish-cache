@@ -80,6 +80,9 @@ v1f_read(const struct vfp_ctx *vc, struct http_conn *htc, void *d, ssize_t len)
 			    "%s", strerror(errno));
 			return (i);
 		}
+		if (i == 0)
+			htc->doclose = SC_RESP_CLOSE;
+
 	}
 	return (i + l);
 }
