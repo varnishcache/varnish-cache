@@ -282,6 +282,9 @@ VSA_Build(void *d, const void *s, unsigned sal)
 
 	INIT_OBJ(sua, SUCKADDR_MAGIC);
 	memcpy(&sua->sa, s, l);
+#ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
+	sua->sa.sa_len = (unsigned char)l;
+#endif
 	return (sua);
 }
 
