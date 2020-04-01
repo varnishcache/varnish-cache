@@ -163,7 +163,6 @@ THR_Init(void)
 
 static uint32_t vxid_base;
 static uint32_t vxid_chunk = 32768;
-static struct lock vxid_lock;
 
 uint32_t
 VXID_Get(struct worker *wrk, uint32_t mask)
@@ -175,11 +174,8 @@ VXID_Get(struct worker *wrk, uint32_t mask)
 	AZ(VXID(mask));
 	do {
 		if (v->count == 0) {
-			Lck_Lock(&vxid_lock);
-			v->next = vxid_base;
 			v->count = vxid_chunk;
-			vxid_base = (vxid_base + v->count) & VSL_IDENTMASK;
-			Lck_Unlock(&vxid_lock);
+			v->next = __sync_fetch_and_add(&vxid_base, v->count) & VSL_IDENTMASK;
 		}
 		v->count--;
 		v->next++;
@@ -362,8 +358,6 @@ child_main(int sigmagic, size_t altstksz)
 	VSM_Init();	/* First, LCK needs it. */
 
 	LCK_Init();	/* Second, locking */
-
-	Lck_New(&vxid_lock, lck_vxid);
 
 	CLI_Init();
 	PAN_Init();
