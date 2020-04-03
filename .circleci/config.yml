@@ -72,7 +72,7 @@ parameters:
     default: "master"
 jobs:
   dist:
-    description: Builds varnish-x.y.z.tar.gz that is used later for the package builds
+    description: Builds varnish-x.y.z.tar.gz that is used later for the packaging jobs
     docker:
       - image: centos:7
     steps:
