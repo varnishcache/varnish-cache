@@ -1,0 +1,66 @@
+varnishtest "vbf_stp_condfetch could not get storage #3273"
+
+server s1 {
+    rxreq
+    expect req.url == "/transient"
+    txresp -bodylen 1048400
+
+    rxreq
+    expect req.url == "/malloc"
+    txresp -hdr "Cache-Control: max-age=2" -hdr "Last-Modified: Fri, 03 Apr 2020 13:00:01 GMT" -bodylen 1048300
+
+    rxreq
+    expect req.http.If-Modified-Since == "Fri, 03 Apr 2020 13:00:01 GMT"
+    expect req.url == "/malloc"
+    txresp -status 304
+} -start
+
+varnish v1 \
+ -arg "-s Transient=default,1m" \
+ -arg "-s malloc,1m" \
+ -arg "-p nuke_limit=0" \
+ -syntax 4.0 \
+ -vcl+backend {
+    sub vcl_backend_response {
+        if (bereq.url == "/transient") {
+            set beresp.storage = storage.Transient;
+            # Unset Date header to not change the object sizes
+            unset beresp.http.Date;
+        }
+    }
+} -start
+
+varnish v1 -cliok "param.set debug +syncvsl"
+
+delay .1
+
+client c1 {
+    # Fill transient
+    txreq -url "/transient"
+    rxresp
+    expect resp.status == 200
+} -run
+
+delay .1
+
+varnish v1 -expect SM?.Transient.g_bytes > 1048000
+varnish v1 -expect SM?.Transient.g_space == 8
+
+client c1 {
+    # Fill malloc
+    txreq -url "/malloc" -hdr "If-Modified-Since: Fri, 03 Apr 2020 12:00:01 GMT"
+    rxresp
+    expect resp.status == 200
+
+    delay 3
+} -run
+
+varnish v1 -expect SM?.s0.g_bytes > 1048000
+varnish v1 -expect SM?.s0.g_space == 4
+
+client c1 {
+    # Check that Varnish is still alive
+    txreq -url "/malloc" -hdr "If-Modified-Since: Fri, 03 Apr 2020 12:00:01 GMT"
+    rxresp
+    expect resp.status == 200
+} -run

@@ -737,7 +737,13 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	}
 	AZ(bo->stale_oc->flags & OC_F_FAILED);
 
-	AZ(vbf_beresp2obj(bo));
+	if (vbf_beresp2obj(bo)) {
+		(void)VFP_Error(bo->vfc, "Could not get storage");
+		bo->htc->doclose = SC_RX_BODY;
+		VFP_Close(bo->vfc);
+		VDI_Finish(bo->wrk, bo);
+		return (F_STP_ERROR);
+	}
 
 	if (ObjHasAttr(bo->wrk, bo->stale_oc, OA_ESIDATA))
 		AZ(ObjCopyAttr(bo->wrk, bo->fetch_objcore, bo->stale_oc,
