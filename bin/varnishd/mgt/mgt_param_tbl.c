@@ -76,6 +76,19 @@ struct parspec mgt_parspec[] = {
 		NULL, NULL, "on",
 		"bool",
 		"Unreferenced VCL objects result in error." },
+	{ "vcc_acl_pedantic", tweak_bool, &mgt_vcc_acl_pedantic,
+		NULL, NULL, "off",
+		"bool",
+		"Insist that network numbers used in ACLs have an "
+		"all-zero host part, e.g. make 1.2.3.4/24 an error.\n"
+		"With this option set to off (the default), the host "
+		"part of network numbers is being fixed to all-zeroes "
+		"(e.g. the above changed to 1.2.3.0/24), a warning is "
+		"output during VCL compilation and any ACL entry hits "
+		"are logged with the fixed address as \"fixed: ...\" "
+		"after the original VCL entry.\n"
+		"With this option set to on, any ACL entries with non-zero "
+		"host parts cause VCL compilation to fail." },
 	{ "vcc_allow_inline_c", tweak_bool, &mgt_vcc_allow_inline_c,
 		NULL, NULL, "off",
 		"bool",

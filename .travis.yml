@@ -96,7 +96,7 @@ jobs:
         - curl
             --data "token=$COVTOKEN&project=varnish"
             --insecure
-            -o coverity_tool.tgz https://scan.coverity.com/download/linux64
+            -o coverity_tool.tgz https://scan.coverity.com/download/cxx/linux64
         - tar xfz coverity_tool.tgz
         - export PATH=$PATH:$(echo $(pwd)/cov-analysis-*/bin)
       script:

@@ -323,11 +323,9 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 	int l, hdr_len;
 	uintptr_t *up;
 	uint16_t tlv_len;
-	const uint8_t *p;
+	const uint8_t *p, *ap, *pp;
 	char *d, *tlv_start;
 	sa_family_t pfam = 0xff;
-	struct sockaddr_in sin4;
-	struct sockaddr_in6 sin6;
 	struct suckaddr *sa = NULL;
 	char ha[VTCP_ADDRBUFSIZE];
 	char pa[VTCP_PORTBUFSIZE];
@@ -335,6 +333,8 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 	char pb[VTCP_PORTBUFSIZE];
 	struct vpx_tlv_iter vpi[1], vpi2[1];
 	struct vpx_tlv *tlv;
+	unsigned flen, alen;
+	unsigned const plen = 2, aoff = 16;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -380,58 +380,12 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 	case 0x11:
 		/* IPv4|TCP */
 		pfam = AF_INET;
-		if (l < 12) {
-			VSL(SLT_ProxyGarbage, req->sp->vxid,
-			    "PROXY2: Ignoring short IPv4 addresses (%d)", l);
-			return (0);
-		}
-		l -= 12;
-		d += 12;
-		memset(&sin4, 0, sizeof sin4);
-		sin4.sin_family = pfam;
-
-		/* dst/server */
-		memcpy(&sin4.sin_addr, p + 20, 4);
-		memcpy(&sin4.sin_port, p + 26, 2);
-		if (! SES_Reserve_server_addr(req->sp, &sa))
-			return (vpx_ws_err(req));
-		AN(VSA_Build(sa, &sin4, sizeof sin4));
-		VTCP_name(sa, ha, sizeof ha, pa, sizeof pa);
-
-		/* src/client */
-		memcpy(&sin4.sin_addr, p + 16, 4);
-		memcpy(&sin4.sin_port, p + 24, 2);
-		if (! SES_Reserve_client_addr(req->sp, &sa))
-			return (vpx_ws_err(req));
-		AN(VSA_Build(sa, &sin4, sizeof sin4));
+		alen = 4;
 		break;
 	case 0x21:
 		/* IPv6|TCP */
 		pfam = AF_INET6;
-		if (l < 36) {
-			VSL(SLT_ProxyGarbage, req->sp->vxid,
-			    "PROXY2: Ignoring short IPv6 addresses (%d)", l);
-			return (0);
-		}
-		l -= 36;
-		d += 36;
-		memset(&sin6, 0, sizeof sin6);
-		sin6.sin6_family = pfam;
-
-		/* dst/server */
-		memcpy(&sin6.sin6_addr, p + 32, 16);
-		memcpy(&sin6.sin6_port, p + 50, 2);
-		if (! SES_Reserve_server_addr(req->sp, &sa))
-			return (vpx_ws_err(req));
-		AN(VSA_Build(sa, &sin6, sizeof sin6));
-		VTCP_name(sa, ha, sizeof ha, pa, sizeof pa);
-
-		/* src/client */
-		memcpy(&sin6.sin6_addr, p + 16, 16);
-		memcpy(&sin6.sin6_port, p + 48, 2);
-		if (! SES_Reserve_client_addr(req->sp, &sa))
-			return (vpx_ws_err(req));
-		AN(VSA_Build(sa, &sin6, sizeof sin6));
+		alen = 16;
 		break;
 	default:
 		/* Ignore proxy header */
@@ -440,8 +394,36 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 		return (0);
 	}
 
-	AN(sa);
+	flen = 2 * alen + 2 * plen;
+
+	if (l < flen) {
+		VSL(SLT_ProxyGarbage, req->sp->vxid,
+		    "PROXY2: Ignoring short %s addresses (%d)",
+		    pfam == AF_INET ? "IPv4" : "IPv6", l);
+		return (0);
+	}
+
+	l -= flen;
+	d += flen;
+
+	ap = p + aoff;
+	pp = ap + 2 * alen;
+
+	/* src/client */
+	if (! SES_Reserve_client_addr(req->sp, &sa))
+		return (vpx_ws_err(req));
+	AN(VSA_BuildFAP(sa, pfam, ap, alen, pp, plen));
 	VTCP_name(sa, hb, sizeof hb, pb, sizeof pb);
+
+	ap += alen;
+	pp += plen;
+
+	/* dst/server */
+	if (! SES_Reserve_server_addr(req->sp, &sa))
+		return (vpx_ws_err(req));
+	AN(VSA_BuildFAP(sa, pfam, ap, alen, pp, plen));
+	VTCP_name(sa, ha, sizeof ha, pa, sizeof pa);
+
 	if (! SES_Set_String_Attr(req->sp, SA_CLIENT_IP, hb))
 		return (vpx_ws_err(req));
 	if (! SES_Set_String_Attr(req->sp, SA_CLIENT_PORT, pb))

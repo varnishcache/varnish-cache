@@ -127,15 +127,8 @@ vcc_act_set(struct vcc *tl, struct token *t, struct symbol *sym)
 	sym = VCC_SymbolGet(tl, SYM_VAR, SYMTAB_EXISTING, XREF_NONE);
 	ERRCHK(tl);
 	AN(sym);
-	if (sym->w_methods == 0) {
-		vcc_ErrWhere2(tl, t, tl->t);
-		if (sym->r_methods != 0)
-			VSB_printf(tl->sb, "Variable is read only.\n");
-		else
-			VSB_printf(tl->sb, "Variable cannot be set.\n");
-		return;
-	}
-	vcc_AddUses(tl, t, tl->t, sym->w_methods, "Cannot be set");
+	vcc_AddUses(tl, t, tl->t, sym, XREF_WRITE);
+	ERRCHK(tl);
 	type = sym->type;
 	for (ap = assign; ap->type != VOID; ap++) {
 		if (ap->type != type)
@@ -177,7 +170,7 @@ vcc_act_unset(struct vcc *tl, struct token *t, struct symbol *sym)
 		VSB_printf(tl->sb, "Variable cannot be unset.\n");
 		return;
 	}
-	vcc_AddUses(tl, t, tl->t, sym->u_methods, "Cannot be unset");
+	vcc_AddUses(tl, t, tl->t, sym, XREF_UNSET);
 	Fb(tl, 1, "%s;\n", sym->uname);
 	SkipToken(tl, ';');
 }

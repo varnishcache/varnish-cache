@@ -196,9 +196,7 @@ vcc_Compound(struct vcc *tl)
 				return;
 			}
 			if (sym->action_mask != 0)
-				vcc_AddUses(tl, t, NULL,
-				    sym->action_mask,
-				    "Not a valid action");
+				vcc_AddUses(tl, t, NULL, sym, XREF_ACTION);
 			sym->action(tl, t, sym);
 			break;
 		default:

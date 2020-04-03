@@ -222,6 +222,7 @@ extern char *mgt_cc_cmd;
 extern const char *mgt_vcl_path;
 extern const char *mgt_vmod_path;
 extern unsigned mgt_vcc_err_unref;
+extern unsigned mgt_vcc_acl_pedantic;
 extern unsigned mgt_vcc_allow_inline_c;
 extern unsigned mgt_vcc_unsafe_path;
 

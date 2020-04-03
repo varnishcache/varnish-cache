@@ -341,7 +341,7 @@ vcc_Eval_Var(struct vcc *tl, struct expr **e, struct token *t,
 
 	(void)type;
 	assert(sym->kind == SYM_VAR);
-	vcc_AddUses(tl, t, NULL, sym->r_methods, "Not available");
+	vcc_AddUses(tl, t, NULL, sym, XREF_READ);
 	ERRCHK(tl);
 	*e = vcc_mk_expr(sym->type, "%s", sym->rname);
 	(*e)->constant = EXPR_VAR;

@@ -1,0 +1,56 @@
+varnishtest "ESI include out of workspace"
+
+
+server s1 {
+	rxreq
+	expect req.http.esi0 == "foo"
+	txresp -body {
+		<html>
+		Before include
+		<esi:include src="/body" sr="foo"/>
+		After include
+		</html>
+	}
+	rxreq
+	expect req.url == "/body1"
+	expect req.http.esi0 != "foo"
+	txresp -body {
+		Included file
+	}
+} -start
+
+varnish v1 -vcl+backend {
+	import vtc;
+
+	sub vcl_recv {
+		if (req.esi_level > 0) {
+			set req.url = req.url + req.esi_level;
+		} else {
+			set req.http.esi0 = "foo";
+		}
+	}
+	sub vcl_backend_response {
+		if (bereq.url == "/") {
+			set beresp.do_esi = true;
+		}
+	}
+	sub vcl_deliver {
+		if (req.esi_level > 0) {
+			vtc.workspace_alloc(client, -16);
+		}
+	}
+} -start
+
+logexpect l1 -v v1 -g raw {
+	expect * * Error           "^Failure to push ESI processors"
+} -start
+
+client c1 {
+	txreq -hdr "Host: foo"
+	rxresp
+	# XXX this is actually wrong (missed include)
+	expect resp.bodylen == 57
+	expect resp.status == 200
+}  -run
+
+logexpect l1 -wait

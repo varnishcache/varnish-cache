@@ -2,7 +2,7 @@ AC_PREREQ(2.59)
 AC_COPYRIGHT([Copyright (c) 2006 Verdens Gang AS
 Copyright (c) 2006-2020 Varnish Software])
 AC_REVISION([$Id$])
-AC_INIT([Varnish], [6.4.0], [varnish-dev@varnish-cache.org])
+AC_INIT([Varnish], [trunk], [varnish-dev@varnish-cache.org])
 AC_CONFIG_SRCDIR(include/miniobj.h)
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -501,6 +501,11 @@ AM_CONDITIONAL([WITH_PERSISTENT_STORAGE],
 	[test "$with_persistent_storage" = yes])
 
 AM_MISSING_HAS_RUN
+
+AC_CHECK_MEMBER([struct sockaddr.sa_len],
+	[AC_DEFINE([HAVE_STRUCT_SOCKADDR_SA_LEN], [1],
+		[Define if sa_len is present in struct sockaddr])],
+	[], [#include <sys/socket.h>])
 
 AC_CHECK_DECL([SO_ACCEPTFILTER],
     AC_DEFINE(HAVE_ACCEPT_FILTERS,1,[Define to 1 if you have accept filters]),

@@ -835,16 +835,28 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 
 		INIT_OBJ(foo, VED_FOO_MAGIC);
 		foo->ecx = ecx;
-		XXXAZ(VDP_Push(req, &ved_gzgz, foo));
+		i = VDP_Push(req, &ved_gzgz, foo);
 
 	} else if (ecx->isgzip && !i) {
 		/* Non-Gzip'ed include in gzip'ed parent */
-		XXXAZ(VDP_Push(req, &ved_pretend_gz, ecx));
+		i = VDP_Push(req, &ved_pretend_gz, ecx);
 	} else {
 		/* Anything else goes straight through */
-		XXXAZ(VDP_Push(req, &ved_ved, ecx));
+		i = VDP_Push(req, &ved_ved, ecx);
 	}
-	(void)VDP_DeliverObj(req);
-	(void)VDP_bytes(req, VDP_FLUSH, NULL, 0);
+
+	if (i == 0) {
+		i = VDP_DeliverObj(req);
+	} else {
+		VSLb(req->vsl, SLT_Error, "Failure to push ESI processors");
+		req->doclose = SC_OVERLOAD;
+	}
+
+	if (i == 0)
+		i = VDP_bytes(req, VDP_FLUSH, NULL, 0);
+
+	if (i && req->doclose == SC_NULL)
+		req->doclose = SC_REM_CLOSE;
+
 	VDP_close(req);
 }

@@ -64,6 +64,9 @@
 
 #define VALUE_MAX		999999999999
 
+#define REBUILD_NEXT		(1u << 0)
+#define REBUILD_FIRST		(1u << 1)
+
 enum kb_e {
 #define BINDING(name, desc) KB_ ## name,
 #define BINDING_SIG
@@ -117,6 +120,8 @@ static WINDOW *w_bar_b = NULL;
 static WINDOW *w_info = NULL;
 
 static const struct VSC_level_desc *verbosity;
+static int show_help = 0;
+static int help_line = 0;
 static int keep_running = 1;
 static int hide_unseen = 1;
 static int page_start = 0;
@@ -218,9 +223,14 @@ build_pt_array(void)
 
 	VTAILQ_FOREACH(pt, &ptlist, list) {
 		CHECK_OBJ_NOTNULL(pt, PT_MAGIC);
+		if (pt->vpt->level > verbosity) {
+			if (has_f && (rebuild & REBUILD_FIRST))
+				verbosity = VSC_ChangeLevel(verbosity,
+				    pt->vpt->level - verbosity);
+			else
+				continue;
+		}
 		if (!pt->seen && hide_unseen)
-			continue;
-		if (pt->vpt->level > verbosity)
 			continue;
 		assert(n_ptarray < n_ptlist);
 		ptarray[n_ptarray++] = pt;
@@ -252,7 +262,7 @@ sample_points(void)
 			continue;
 		if (!pt->seen) {
 			pt->seen = 1;
-			rebuild = 1;
+			rebuild = REBUILD_NEXT;
 		}
 		pt->last = pt->cur;
 		pt->cur = v;
@@ -318,32 +328,28 @@ sample_data(void)
 }
 
 static void
+destroy_window(WINDOW **w)
+{
+
+	AN(w);
+	if (*w == NULL)
+		return;
+	assert(delwin(*w) != ERR);
+	*w = NULL;
+}
+
+static void
 make_windows(void)
 {
 	int Y, X;
 	int y;
 	int y_status, y_bar_t, y_points, y_bar_b, y_info;
 
-	if (w_status) {
-		delwin(w_status);
-		w_status = NULL;
-	}
-	if (w_bar_t) {
-		delwin(w_bar_t);
-		w_bar_t = NULL;
-	}
-	if (w_points) {
-		delwin(w_points);
-		w_points = NULL;
-	}
-	if (w_bar_b) {
-		delwin(w_bar_b);
-		w_bar_b = NULL;
-	}
-	if (w_info) {
-		delwin(w_info);
-		w_info = NULL;
-	}
+	destroy_window(&w_status);
+	destroy_window(&w_bar_t);
+	destroy_window(&w_points);
+	destroy_window(&w_bar_b);
+	destroy_window(&w_info);
 
 	Y = LINES;
 	X = COLS;
@@ -447,6 +453,7 @@ draw_status(void)
 	running(w_status, up_mgt, VSM_MGT_RUNNING);
 	mvwprintw(w_status, 1, 0, "Uptime child: ");
 	running(w_status, up_chld, VSM_WRK_RUNNING);
+	mvwprintw(w_status, 2, 0, "Press <h> to toggle help screen");
 
 	if (VTIM_mono() < notification_eol)
 		mvwaddstr(w_status, 2, 0, notification_message);
@@ -772,7 +779,6 @@ draw_line(WINDOW *w, int y, const struct pt *pt)
 static void
 draw_points(void)
 {
-	int Y, X;
 	int line;
 	int n;
 
@@ -791,9 +797,6 @@ draw_points(void)
 	assert(current >= page_start);
 	assert(current - page_start < l_points);
 
-	getmaxyx(w_points, Y, X);
-	(void)Y;
-	(void)X;
 	for (line = 0; line < l_points; line++) {
 		n = line + page_start;
 		if (n >= n_ptarray)
@@ -804,6 +807,37 @@ draw_points(void)
 		if (n == current)
 			wattroff(w_points, A_BOLD);
 	}
+	wnoutrefresh(w_points);
+}
+
+static void
+draw_help(void)
+{
+	const char *const *p;
+	int l, y, X;
+
+	if (l_points >= bindings_help_len) {
+		assert(help_line == 0);
+		l = bindings_help_len;
+	} else {
+		assert(help_line >= 0);
+		assert(help_line <= bindings_help_len - l_points);
+		l = l_points;
+	}
+
+	X = getmaxx(w_points);
+	werase(w_points);
+
+	for (y = 0, p = bindings_help + help_line; y < l; y++, p++) {
+		if (**p == '\t') {
+			mvwprintw(w_points, y, 0, "    %.*s", X - 4, *p + 1);
+		} else {
+			wattron(w_points, A_BOLD);
+			mvwprintw(w_points, y, 0, "%.*s", X, *p);
+			wattroff(w_points, A_BOLD);
+		}
+	}
+
 	wnoutrefresh(w_points);
 }
 
@@ -864,32 +898,53 @@ static void
 draw_screen(void)
 {
 	draw_status();
-	draw_bar_t();
-	draw_points();
-	draw_bar_b();
-	draw_info();
+	if (show_help) {
+		werase(w_bar_t);
+		werase(w_bar_b);
+		werase(w_info);
+		wnoutrefresh(w_bar_t);
+		wnoutrefresh(w_bar_b);
+		wnoutrefresh(w_info);
+		draw_help();
+	} else {
+		draw_bar_t();
+		draw_points();
+		draw_bar_b();
+		draw_info();
+	}
 	doupdate();
 	redraw = 0;
 }
 
 static void
-handle_keypress(int ch)
+handle_common_keypress(enum kb_e kb)
 {
-	enum kb_e kb;
-
-	switch (ch) {
-#define BINDING_KEY(chr, name, or)	\
-	case chr:
-#define BINDING(name, desc)		\
-		kb = KB_ ## name;	\
-		break;
-#define BINDING_SIG
-#include "varnishstat_bindings.h"
-	default:
-		return;
-	}
 
 	switch (kb) {
+	case KB_QUIT:
+		keep_running = 0;
+		return;
+	case KB_SIG_INT:
+		AZ(raise(SIGINT));
+		return;
+	case KB_SIG_TSTP:
+		AZ(raise(SIGTSTP));
+		return;
+	default:
+		WRONG("unexpected key binding");
+	}
+}
+
+static void
+handle_points_keypress(enum kb_e kb)
+{
+
+	switch (kb) {
+	case KB_HELP:
+		show_help = 1;
+		help_line = 0;
+		redraw = 1;
+		return;
 	case KB_UP:
 		if (current == 0)
 			return;
@@ -917,11 +972,11 @@ handle_keypress(int ch)
 		break;
 	case KB_UNSEEN:
 		hide_unseen = 1 - hide_unseen;
-		rebuild = 1;
+		rebuild = REBUILD_NEXT;
 		break;
 	case KB_SCALE:
 		scale = 1 - scale;
-		rebuild = 1;
+		rebuild = REBUILD_NEXT;
 		break;
 	case KB_ACCEL:
 		interval += 0.1;
@@ -941,23 +996,19 @@ handle_keypress(int ch)
 		break;
 	case KB_VERBOSE:
 		verbosity = VSC_ChangeLevel(verbosity, 1);
-		rebuild = 1;
+		rebuild = REBUILD_NEXT;
 		break;
 	case KB_QUIET:
 		verbosity = VSC_ChangeLevel(verbosity, -1);
-		rebuild = 1;
+		rebuild = REBUILD_NEXT;
 		break;
-	case KB_QUIT:
-		keep_running = 0;
-		return;
-	case KB_SIG_INT:
-		AZ(raise(SIGINT));
-		return;
 	case KB_SAMPLE:
 		sample = 1;
 		return;
+	case KB_QUIT:
+	case KB_SIG_INT:
 	case KB_SIG_TSTP:
-		AZ(raise(SIGTSTP));
+		handle_common_keypress(kb);
 		return;
 	default:
 		WRONG("unhandled key binding");
@@ -967,6 +1018,83 @@ handle_keypress(int ch)
 	redraw = 1;
 }
 
+static void
+handle_help_keypress(enum kb_e kb)
+{
+	int hl = help_line;
+
+	switch (kb) {
+	case KB_HELP:
+		show_help = 0;
+		redraw = 1;
+		return;
+	case KB_UP:
+		help_line--;
+		break;
+	case KB_DOWN:
+		help_line++;
+		break;
+	case KB_PAGEUP:
+		help_line -= l_points;
+		break;
+	case KB_PAGEDOWN:
+		help_line += l_points;
+		break;
+	case KB_TOP:
+		help_line = 0;
+		break;
+	case KB_BOTTOM:
+		help_line = bindings_help_len;
+		break;
+	case KB_UNSEEN:
+	case KB_SCALE:
+	case KB_ACCEL:
+	case KB_DECEL:
+	case KB_VERBOSE:
+	case KB_QUIET:
+	case KB_SAMPLE:
+		break;
+	case KB_QUIT:
+	case KB_SIG_INT:
+	case KB_SIG_TSTP:
+		handle_common_keypress(kb);
+		return;
+	default:
+		WRONG("unhandled key binding");
+	}
+
+	if (help_line > bindings_help_len - l_points)
+		help_line = bindings_help_len - l_points;
+
+	if (help_line < 0)
+		help_line = 0;
+
+	redraw = (help_line != hl);
+}
+
+static void
+handle_keypress(int ch)
+{
+	enum kb_e kb;
+
+	switch (ch) {
+#define BINDING_KEY(chr, name, or)	\
+	case chr:
+#define BINDING(name, desc)		\
+		kb = KB_ ## name;	\
+		break;
+#define BINDING_SIG
+#include "varnishstat_bindings.h"
+	default:
+		return;
+	}
+
+	if (show_help)
+		handle_help_keypress(kb);
+	else
+		handle_points_keypress(kb);
+}
+
 static void * v_matchproto_(VSC_new_f)
 newpt(void *priv, const struct VSC_point *const vpt)
 {
@@ -974,7 +1102,7 @@ newpt(void *priv, const struct VSC_point *const vpt)
 
 	AZ(priv);
 	ALLOC_OBJ(pt, PT_MAGIC);
-	rebuild |= 1;
+	rebuild |= REBUILD_NEXT;
 	AN(pt);
 	pt->vpt = vpt;
 	pt->last = *pt->vpt->ptr;
@@ -1005,7 +1133,7 @@ delpt(void *priv, const struct VSC_point *const vpt)
 
 	AZ(priv);
 	CAST_OBJ_NOTNULL(pt, vpt->priv, PT_MAGIC);
-	rebuild |= 2;
+	rebuild |= REBUILD_NEXT;
 	VTAILQ_REMOVE(&ptlist, pt, list);
 	n_ptlist--;
 	FREE_OBJ(pt);
@@ -1039,6 +1167,7 @@ do_curses(struct vsm *vsm, struct vsc *vsc)
 
 	VSC_State(vsc, newpt, delpt, NULL);
 
+	rebuild |= REBUILD_FIRST;
 	(void)VSC_Iter(vsc, vsm, NULL, NULL);
 	build_pt_array();
 	init_hitrate();
