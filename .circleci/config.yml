@@ -54,13 +54,15 @@ aliases:
             echo "ADD make-<< parameters.ext >>-packages.sh /usr/bin/" >> Dockerfile
             echo 'CMD ["make-<< parameters.ext >>-packages.sh"]' >> Dockerfile
       - run:
-          name: Build << parameters.dist >> << parameters.release >> << parameters.arch >> apk
+          name: Build << parameters.dist >> << parameters.release >> << parameters.arch >> << parameters.ext >>
           command: |
             mkdir /tmp/packages
             cp .circleci/make-<< parameters.ext >>-packages.sh .
             docker build -t varnish-<< parameters.ext >>-package-build:<< parameters.arch >> .
             docker run --rm -it -e PARAM_DIST=<< parameters.dist >> -e PARAM_RELEASE=<< parameters.release >> -v$(pwd):/varnish-cache -v$HOME/workspace:/workspace -v/tmp/packages:/packages varnish-<< parameters.ext >>-package-build:<< parameters.arch >>
-      - run: find ./ -name "*.<< parameters.ext >>"
+      - run:
+          name: List created packages
+          command: find ./ -name "*.<< parameters.ext >>"
       - <<: *persist_packages
       - <<: *store_artifacts
 
