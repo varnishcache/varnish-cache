@@ -73,37 +73,6 @@ parameters:
     type: string
     default: "weekly"
 jobs:
-  tar_pkg_tools:
-    description: Builds archives with the packaging tools from https://github.com/varnishcache/pkg-varnish-cache
-    docker:
-      - image: centos:7
-    steps:
-      - add_ssh_keys:
-          fingerprints:
-            - "11:ed:57:75:32:81:9d:d0:a4:5e:af:15:4b:d8:74:27"
-      - run:
-          name: Grab the pkg repo
-          command: |
-            yum install -y git
-            mkdir -p ~/.ssh
-            ssh-keyscan -H github.com >> ~/.ssh/known_hosts
-            echo ${CIRCLE_REPOSITORY_URL}
-            git clone https://github.com/varnishcache/pkg-varnish-cache.git .
-            git checkout << pipeline.parameters.pkg-commit >>
-            tar cvzf debian.tar.gz debian --dereference
-            tar cvzf redhat.tar.gz redhat --dereference
-            tar cvzf alpine.tar.gz alpine --dereference
-            mkdir -p ~/workspace
-            mv *.tar.gz ~/workspace
-      - persist_to_workspace:
-          root: ~/workspace
-          paths:
-            - debian.tar.gz
-            - redhat.tar.gz
-            - alpine.tar.gz
-      - store_artifacts:
-          destination: ~/workspace
-          path: ~/workspace
   dist:
     description: Builds varnish-x.y.z.tar.gz that is used later for the package builds
     docker:
@@ -146,6 +115,37 @@ jobs:
             - .is_weekly
             - varnish*.tar.gz
             - tools/*.suppr
+      - store_artifacts:
+          destination: ~/workspace
+          path: ~/workspace
+  tar_pkg_tools:
+    description: Builds archives with the packaging tools from https://github.com/varnishcache/pkg-varnish-cache
+    docker:
+      - image: centos:7
+    steps:
+      - add_ssh_keys:
+          fingerprints:
+            - "11:ed:57:75:32:81:9d:d0:a4:5e:af:15:4b:d8:74:27"
+      - run:
+          name: Grab the pkg repo
+          command: |
+            yum install -y git
+            mkdir -p ~/.ssh
+            ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+            echo ${CIRCLE_REPOSITORY_URL}
+            git clone https://github.com/varnishcache/pkg-varnish-cache.git .
+            git checkout << pipeline.parameters.pkg-commit >>
+            tar cvzf debian.tar.gz debian --dereference
+            tar cvzf redhat.tar.gz redhat --dereference
+            tar cvzf alpine.tar.gz alpine --dereference
+            mkdir -p ~/workspace
+            mv *.tar.gz ~/workspace
+      - persist_to_workspace:
+          root: ~/workspace
+          paths:
+            - debian.tar.gz
+            - redhat.tar.gz
+            - alpine.tar.gz
       - store_artifacts:
           destination: ~/workspace
           path: ~/workspace
