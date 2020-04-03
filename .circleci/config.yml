@@ -37,6 +37,7 @@ aliases:
     steps:
       - attach_workspace:
           at: ~/workspace
+      - run: ls -laR ~/workspace
       - checkout
       - <<: *activate_qemu
       - run:
@@ -195,6 +196,9 @@ jobs:
       - image: << parameters.dist >>:<< parameters.release >>
     working_directory: /workspace
     steps:
+      - run:
+          name: List the contents of ~/workspace
+          command: if [ -e ~/workspace ]; then ls -laR ~/workspace/; fi
       - run:
           name: Possibly activate centos:8 extra repos
           command: |
