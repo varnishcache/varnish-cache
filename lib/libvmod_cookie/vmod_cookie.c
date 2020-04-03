@@ -146,7 +146,7 @@ vmod_parse(VRT_CTX, struct vmod_priv *priv, VCL_STRING cookieheader)
 }
 
 static struct cookie *
-find_cookie(struct vmod_cookie *vcp, VCL_STRING name)
+find_cookie(const struct vmod_cookie *vcp, VCL_STRING name)
 {
 	struct cookie *cookie;
 
