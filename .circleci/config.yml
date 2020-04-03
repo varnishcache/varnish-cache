@@ -31,14 +31,6 @@ aliases:
         description: extra paths for the workspace root
         type: string
         default: ""
-  persist_packages: &persist_packages
-    persist_to_workspace:
-      root: /tmp
-      paths:
-        - "packages"
-  store_artifacts: &store_artifacts
-    store_artifacts:
-      path: ~/project/packages
   package_job: &package_job
     <<: *pkg_parameters
     machine: true
@@ -63,8 +55,12 @@ aliases:
       - run:
           name: List created packages
           command: find ./ -name "*.<< parameters.ext >>"
-      - <<: *persist_packages
-      - <<: *store_artifacts
+      - persist_to_workspace:
+          root: /tmp
+          paths:
+            - "packages"
+      - store_artifacts:
+          path: ~/project/packages
 
 
 parameters:
