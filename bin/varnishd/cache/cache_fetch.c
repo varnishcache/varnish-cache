@@ -716,7 +716,12 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-	AZ(vbf_beresp2obj(bo));
+	if (vbf_beresp2obj(bo)) {
+		(void)VFP_Error(bo->vfc, "Could not get storage in vbf_stp_condfetch");
+		vbf_cleanup(bo);
+		wrk->stats->fetch_failed++;
+		return (F_STP_FAIL);
+	}
 
 	if (ObjHasAttr(bo->wrk, bo->stale_oc, OA_ESIDATA))
 		AZ(ObjCopyAttr(bo->wrk, bo->fetch_objcore, bo->stale_oc,
