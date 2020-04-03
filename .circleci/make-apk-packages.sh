@@ -29,12 +29,7 @@ su builder -c "abuild-keygen -nai"
 
 echo "Fix APKBUILD's variables"
 tar xavf /workspace/varnish-*.tar.gz
-if [ -e /workspace/.is_weekly ]; then
-    WEEKLY='.weekly'
-else
-    WEEKLY=
-fi
-VERSION=$(varnish-*/configure --version | awk 'NR == 1 {print $NF}')$WEEKLY
+VERSION=$(varnish-*/configure --version | awk 'NR == 1 {print $NF}')
 echo "Version: $VERSION"
 sed -i "s/@VERSION@/$VERSION/" APKBUILD
 rm -rf varnish-*/
