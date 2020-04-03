@@ -1064,10 +1064,10 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	AZ(bo->req);
 	bo->req = req;
 
-	bo->fetch_task.priv = bo;
-	bo->fetch_task.func = vbf_fetch_thread;
+	bo->fetch_task->priv = bo;
+	bo->fetch_task->func = vbf_fetch_thread;
 
-	if (Pool_Task(wrk->pool, &bo->fetch_task, TASK_QUEUE_BO)) {
+	if (Pool_Task(wrk->pool, bo->fetch_task, TASK_QUEUE_BO)) {
 		wrk->stats->fetch_no_thread++;
 		(void)vbf_stp_fail(req->wrk, bo);
 		if (bo->stale_oc != NULL)

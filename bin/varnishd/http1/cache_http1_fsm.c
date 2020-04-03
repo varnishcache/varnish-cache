@@ -124,8 +124,8 @@ http1_new_session(struct worker *wrk, void *arg)
 		return;
 	}
 	http1_setstate(sp, H1NEWREQ);
-	wrk->task.func = http1_req;
-	wrk->task.priv = req;
+	wrk->task->func = http1_req;
+	wrk->task->priv = req;
 }
 
 static void v_matchproto_(task_func_t)
@@ -142,8 +142,8 @@ http1_unwait(struct worker *wrk, void *arg)
 	req->htc->rfd = &sp->fd;
 	HTC_RxInit(req->htc, req->ws);
 	http1_setstate(sp, H1NEWREQ);
-	wrk->task.func = http1_req;
-	wrk->task.priv = req;
+	wrk->task->func = http1_req;
+	wrk->task->priv = req;
 }
 
 static void v_matchproto_(vtr_req_body_t)
@@ -392,8 +392,8 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			req->req_step = R_STP_TRANSPORT;
 			http1_setstate(sp, H1PROC);
 		} else if (st == H1PROC) {
-			req->task.func = http1_req;
-			req->task.priv = req;
+			req->task->func = http1_req;
+			req->task->priv = req;
 			wrk->stats->client_req++;
 			CNT_Embark(wrk, req);
 			if (req->req_step == R_STP_TRANSPORT) {
@@ -403,8 +403,8 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			if (CNT_Request(req) == REQ_FSM_DISEMBARK)
 				return;
 			AZ(req->top->vcl0);
-			req->task.func = NULL;
-			req->task.priv = NULL;
+			req->task->func = NULL;
+			req->task->priv = NULL;
 			AZ(req->ws->r);
 			AZ(wrk->aws->r);
 			http1_setstate(sp, H1CLEANUP);

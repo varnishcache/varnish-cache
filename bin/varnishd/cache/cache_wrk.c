@@ -209,7 +209,7 @@ pool_getidleworker(struct pool *pp, enum task_prio prio)
 	CAST_OBJ_NOTNULL(wrk, pt->priv, WORKER_MAGIC);
 
 	AN(pp->nidle);
-	VTAILQ_REMOVE(&pp->idle_queue, &wrk->task, list);
+	VTAILQ_REMOVE(&pp->idle_queue, wrk->task, list);
 	pp->nidle--;
 
 	return (wrk);
@@ -244,11 +244,11 @@ Pool_Task_Arg(struct worker *wrk, enum task_prio prio, task_func_t *func,
 		wrk2 = wrk;
 		retval = 0;
 	}
-	AZ(wrk2->task.func);
+	AZ(wrk2->task->func);
 	assert(arg_len <= WS_ReserveSize(wrk2->aws, arg_len));
 	memcpy(wrk2->aws->f, arg, arg_len);
-	wrk2->task.func = func;
-	wrk2->task.priv = wrk2->aws->f;
+	wrk2->task->func = func;
+	wrk2->task->priv = wrk2->aws->f;
 	Lck_Unlock(&pp->mtx);
 	// see signaling_note at the top for explanation
 	if (retval)
@@ -287,9 +287,9 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum task_prio prio)
 
 	wrk = pool_getidleworker(pp, prio);
 	if (wrk != NULL) {
-		AZ(wrk->task.func);
-		wrk->task.func = task->func;
-		wrk->task.priv = task->priv;
+		AZ(wrk->task->func);
+		wrk->task->func = task->func;
+		wrk->task->priv = task->priv;
 		Lck_Unlock(&pp->mtx);
 		// see signaling_note at the top for explanation
 		AZ(pthread_cond_signal(&wrk->cond));
@@ -383,9 +383,9 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 			/* Nothing to do: To sleep, perchance to dream ... */
 			if (isnan(wrk->lastused))
 				wrk->lastused = VTIM_real();
-			wrk->task.func = NULL;
-			wrk->task.priv = wrk;
-			VTAILQ_INSERT_HEAD(&pp->idle_queue, &wrk->task, list);
+			wrk->task->func = NULL;
+			wrk->task->priv = wrk;
+			VTAILQ_INSERT_HEAD(&pp->idle_queue, wrk->task, list);
 			pp->nidle++;
 			do {
 				// see signaling_note at the top for explanation
@@ -398,8 +398,8 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 				i = Lck_CondWait(&wrk->cond, &pp->mtx, tmo);
 				if (i == ETIMEDOUT)
 					VCL_Rel(&wrk->vcl);
-			} while (wrk->task.func == NULL);
-			tpx = wrk->task;
+			} while (wrk->task->func == NULL);
+			tpx = *wrk->task;
 			tp = &tpx;
 			wrk->stats->summs++;
 		}
@@ -414,7 +414,7 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 			tp->func(wrk, tp->priv);
 			if (DO_DEBUG(DBG_VCLREL) && wrk->vcl != NULL)
 				VCL_Rel(&wrk->vcl);
-			tpx = wrk->task;
+			tpx = *wrk->task;
 			tp = &tpx;
 		} while (tp->func != NULL);
 
@@ -586,9 +586,9 @@ pool_herder(void *priv)
 				    pp->nthr > cache_param->wthread_max) {
 					/* Give it a kiss on the cheek... */
 					VTAILQ_REMOVE(&pp->idle_queue,
-					    &wrk->task, list);
+					    wrk->task, list);
 					pp->nidle--;
-					wrk->task.func = pool_kiss_of_death;
+					wrk->task->func = pool_kiss_of_death;
 					AZ(pthread_cond_signal(&wrk->cond));
 				} else {
 					delay = wrk->lastused - t_idle;
