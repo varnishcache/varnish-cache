@@ -115,7 +115,7 @@ vcc_acl_chk(struct vcc *tl, const struct acl_e *ae, const int l,
 	assert (ll >= 0);
 	m %= 8;
 
-	if (m && (*p << m & UINT8_C(0xff)) != 0) {
+	if (m && ((unsigned)*p << m & 0xff) != 0) {
 		ret = 1;
 		m = 0xff00 >> m;
 		*p &= m;
