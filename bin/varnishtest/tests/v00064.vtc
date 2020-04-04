@@ -44,7 +44,7 @@ client c1 {
 delay .1
 
 varnish v1 -expect SM?.Transient.g_bytes > 1048000
-varnish v1 -expect SM?.Transient.g_space == 8
+varnish v1 -expect SM?.Transient.g_space < 50
 
 client c1 {
     # Fill malloc
@@ -56,7 +56,7 @@ client c1 {
 } -run
 
 varnish v1 -expect SM?.s0.g_bytes > 1048000
-varnish v1 -expect SM?.s0.g_space == 4
+varnish v1 -expect SM?.s0.g_space < 50
 
 client c1 {
     # Check that Varnish is still alive
