@@ -222,6 +222,7 @@ struct vcc {
 	unsigned		err_unref;
 	unsigned		allow_inline_c;
 	unsigned		unsafe_path;
+	unsigned		acl_pedantic;
 
 	struct symtab		*syms;
 

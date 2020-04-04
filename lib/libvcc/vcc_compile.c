@@ -913,6 +913,14 @@ VCC_Unsafe_Path(struct vcc *vcc, unsigned u)
 	vcc->unsafe_path = u;
 }
 
+void
+VCC_Acl_Pedantic(struct vcc *vcc, unsigned u)
+{
+
+	CHECK_OBJ_NOTNULL(vcc, VCC_MAGIC);
+	vcc->acl_pedantic = u;
+}
+
 /*--------------------------------------------------------------------
  * Configure settings
  */

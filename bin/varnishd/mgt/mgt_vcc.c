@@ -68,6 +68,7 @@ const char *mgt_vmod_path;
 unsigned mgt_vcc_err_unref;
 unsigned mgt_vcc_allow_inline_c;
 unsigned mgt_vcc_unsafe_path;
+unsigned mgt_vcc_acl_pedantic;
 
 
 #define VGC_SRC		"vgc.c"
@@ -109,6 +110,7 @@ run_vcc(void *priv)
 	VCC_Err_Unref(vcc, mgt_vcc_err_unref);
 	VCC_Allow_InlineC(vcc, mgt_vcc_allow_inline_c);
 	VCC_Unsafe_Path(vcc, mgt_vcc_unsafe_path);
+	VCC_Acl_Pedantic(vcc, mgt_vcc_acl_pedantic);
 	STV_Foreach(stv)
 		VCC_Predef(vcc, "VCL_STEVEDORE", stv->ident);
 	VTAILQ_FOREACH(vpg, &vclhead, list)
