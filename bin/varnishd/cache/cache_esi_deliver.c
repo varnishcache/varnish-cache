@@ -259,8 +259,13 @@ ved_vdp_esi_init(struct req *req, void **priv)
 {
 	struct ecx *ecx;
 
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	AN(priv);
 	AZ(*priv);
+
+	if (!ObjHasAttr(req->wrk, req->objcore, OA_ESIDATA))
+		return (1);
+
 	ALLOC_OBJ(ecx, ECX_MAGIC);
 	AN(ecx);
 	assert(sizeof gzip_hdr == 10);
