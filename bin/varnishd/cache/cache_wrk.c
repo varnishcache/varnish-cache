@@ -409,7 +409,7 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 			break;
 
 		do {
-			memset(&wrk->task, 0, sizeof wrk->task);
+			memset(wrk->task, 0, sizeof wrk->task);
 			assert(wrk->pool == pp);
 			tp->func(wrk, tp->priv);
 			if (DO_DEBUG(DBG_VCLREL) && wrk->vcl != NULL)
