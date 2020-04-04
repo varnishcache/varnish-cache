@@ -323,7 +323,16 @@ VSA_Build(void *d, const void *s, unsigned sal)
 		return (NULL);
 
 	INIT_OBJ(sua, SUCKADDR_MAGIC);
-	memcpy(&sua->sa, s, sal);
+	switch (sal) {
+	case sizeof sua->sa4:
+		memcpy(&sua->sa4, s, sal);
+		break;
+	case sizeof sua->sa6:
+		memcpy(&sua->sa6, s, sal);
+		break;
+	default:
+		WRONG("VSA protocol vs. size");
+	}
 #ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
 	sua->sa.sa_len = (unsigned char)sal;
 #endif
