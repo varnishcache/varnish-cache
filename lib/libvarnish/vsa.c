@@ -248,11 +248,7 @@ VSA_Malloc(const void *s, unsigned  sal)
 	void *d;
 
 	d = malloc(vsa_suckaddr_len);
-	/* XXX: shouldn't we AN(sua) instead of mixing up failed allocations
-	 * with unsupported address family or bogus sockaddr?
-	 */
-	if (d == NULL)
-		return (NULL);
+	AN(d);
 
 	return (VSA_Build(d, s, sal));
 }
