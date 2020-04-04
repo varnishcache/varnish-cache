@@ -346,7 +346,7 @@ resp_default_filter_list(void *arg, struct vsb *vsb)
 
 	CAST_OBJ_NOTNULL(req, arg, REQ_MAGIC);
 
-	if (!req->disable_esi && req->resp_len != 0 &&
+	if (!req->disable_esi &&
 	    ObjHasAttr(req->wrk, req->objcore, OA_ESIDATA))
 		VSB_cat(vsb, " esi");
 
