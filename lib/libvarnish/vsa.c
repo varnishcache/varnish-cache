@@ -305,27 +305,29 @@ VSA_Build(void *d, const void *s, unsigned sal)
 {
 	struct suckaddr *sua;
 	const struct sockaddr *sa = s;
+	unsigned l;	// for flexelint
 
 	AN(d);
 	AN(s);
-	if (sal == 0 || sua_len(sa) != sal)
+	l = sua_len(sa);
+	if (l == 0 || l != sal)
 		return (NULL);
 
 	sua = d;
 
 	INIT_OBJ(sua, SUCKADDR_MAGIC);
-	switch (sal) {
+	switch (l) {
 	case sizeof sua->sa4:
-		memcpy(&sua->sa4, s, sal);
+		memcpy(&sua->sa4, s, l);
 		break;
 	case sizeof sua->sa6:
-		memcpy(&sua->sa6, s, sal);
+		memcpy(&sua->sa6, s, l);
 		break;
 	default:
 		WRONG("VSA protocol vs. size");
 	}
 #ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
-	sua->sa.sa_len = (unsigned char)sal;
+	sua->sa.sa_len = (unsigned char)l;
 #endif
 	return (sua);
 }
