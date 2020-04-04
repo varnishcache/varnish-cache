@@ -67,6 +67,8 @@ server s1 {
 	txresp -status 502
 } -start
 
+varnish v1 -cliok "param.set backend_remote_error_holddown 10"
+
 varnish v1 -vcl+backend {
 	sub vcl_backend_response {
 		if (beresp.status == 502) {
