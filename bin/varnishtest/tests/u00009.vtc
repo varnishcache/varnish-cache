@@ -34,7 +34,7 @@ client c1 {
 
 varnish v1 -vsl_catchup
 
-process p1 -expect-text 22 0 { | }
+process p1 -expect-text 22 0 { |}
 
 process p1 -expect-text 3 1 {20_}
 
