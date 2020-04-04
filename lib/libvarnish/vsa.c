@@ -226,13 +226,11 @@ VSA_GetPtr(const struct suckaddr *sua, const unsigned char ** dst)
 static inline
 socklen_t sua_len(const struct sockaddr *sa)
 {
-	struct suckaddr *sua;
-
 	switch (sa->sa_family) {
 	case PF_INET:
-		return (sizeof sua->sa4);
+		return (sizeof(struct sockaddr_in));
 	case PF_INET6:
-		return (sizeof sua->sa6);
+		return (sizeof(struct sockaddr_in6));
 	default:
 		return (0);
 	}
