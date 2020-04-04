@@ -442,6 +442,17 @@ VRT_r_obj_storage(VRT_CTX)
 
 /*--------------------------------------------------------------------*/
 
+VCL_BOOL
+VRT_r_obj_can_esi(VRT_CTX)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req->objcore, OBJCORE_MAGIC);
+	return (ObjHasAttr(ctx->req->wrk, ctx->req->objcore, OA_ESIDATA));
+}
+
+/*--------------------------------------------------------------------*/
+
 #define REQ_VAR_L(nm, elem, type, extra)				\
 									\
 VCL_VOID								\

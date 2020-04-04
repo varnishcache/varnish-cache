@@ -1107,6 +1107,18 @@ obj.storage
 	The storage backend where this object is stored.
 
 
+obj.can_esi
+
+	Type: BOOL
+
+	Readable from: vcl_hit, vcl_deliver
+
+	If the object can be ESI processed, that is if setting
+	``resp.do_esi`` or adding ``esi`` to ``resp.filters`` in
+	``vcl_deliver {}`` would cause the response body to be ESI
+	processed.
+
+
 resp
 ~~~~
 

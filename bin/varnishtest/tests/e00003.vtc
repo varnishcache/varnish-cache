@@ -32,12 +32,15 @@ varnish v1 -vcl+backend {
 			set beresp.do_esi = true;
 		}
 	}
+	sub vcl_deliver {
+		set resp.http.can_esi = obj.can_esi;
+	}
 } -start
 
 logexpect l1 -v v1 -g request {
 	expect 0 1001   Begin   "^req .* rxreq"
 	# ReqAcct body counts include chunked overhead
-	expect * =	ReqAcct	"^29 0 29 187 104 291$"
+	expect * =	ReqAcct	"^29 0 29 202 104 306$"
 	expect 0 =      End
 } -start
 
@@ -61,7 +64,7 @@ logexpect l5 -v v1 -g request {
 	expect * 1005   Begin   "^req .* rxreq"
 	# ReqAcct body counts include chunked overhead
 	# Header bytes is 5 larger than in l1 due to two item X-Varnish hdr
-	expect * =	ReqAcct	"^29 0 29 192 104 296$"
+	expect * =	ReqAcct	"^29 0 29 207 104 311$"
 	expect 0 =      End
 } -start
 
@@ -70,6 +73,7 @@ client c1 {
 	rxresp
 	expect resp.bodylen == 75
 	expect resp.status == 200
+	expect resp.http.can_esi == "true"
 
 	delay .1
 	# test that there is no difference on miss/hit
@@ -77,6 +81,7 @@ client c1 {
 	rxresp
 	expect resp.bodylen == 75
 	expect resp.status == 200
+	expect resp.http.can_esi == "true"
 }
 
 client c1 -run
