@@ -245,12 +245,7 @@ socklen_t sua_len(const struct sockaddr *sa)
 struct suckaddr *
 VSA_Malloc(const void *s, unsigned  sal)
 {
-	void *d;
-
-	d = malloc(vsa_suckaddr_len);
-	AN(d);
-
-	return (VSA_Build(d, s, sal));
+	return (VSA_Build(malloc(vsa_suckaddr_len), s, sal));
 }
 
 /* 'd' SHALL point to vsa_suckaddr_len aligned bytes of storage
