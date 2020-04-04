@@ -316,18 +316,16 @@ VSA_Build(void *d, const void *s, unsigned sal)
 {
 	struct suckaddr *sua = d;
 	const struct sockaddr *sa = s;
-	unsigned l;
 
 	AN(d);
 	AN(s);
-	l = sua_len(sa);
-	if (l == 0 || l != sal)
+	if (sal == 0 || sua_len(sa) != sal)
 		return (NULL);
 
 	INIT_OBJ(sua, SUCKADDR_MAGIC);
-	memcpy(&sua->sa, s, l);
+	memcpy(&sua->sa, s, sal);
 #ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
-	sua->sa.sa_len = (unsigned char)l;
+	sua->sa.sa_len = (unsigned char)sal;
 #endif
 	return (sua);
 }
