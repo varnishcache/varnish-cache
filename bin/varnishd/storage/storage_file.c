@@ -379,7 +379,7 @@ smf_open_chunk(struct smf_sc *sc, off_t sz, off_t off, off_t *fail, off_t *sum)
 	AN(sz);
 	AZ(sz % sc->pagesize);
 
-	if (*fail < (uintmax_t)sc->pagesize * MINPAGES)
+	if (*fail < (off_t)sc->pagesize * MINPAGES)
 		return;
 
 	if (sz > 0 && sz < *fail && sz < SSIZE_MAX) {
