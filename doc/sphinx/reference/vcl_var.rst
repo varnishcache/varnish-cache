@@ -12,24 +12,24 @@ Reading a variable is done simply by using its name in VCL::
 	return (synth(400));
     }
 
-Writing a variable, where this is possible, is done with a `set`
+Writing a variable, where this is possible, is done with a ``set``
 statement::
 
     set resp.http.never = "Let You Down";
 
 Similarly, deleting a variable, for the few variables where this is
-possible, is done with a `unset` statement::
+possible, is done with a ``unset`` statement::
 
     unset req.http.cookie;
 
 Which operations are possible on each variable is described below,
-often with the shorthand "backend" which covers the `vcl_backend_*`
-subroutines and "client" which covers the rest, except `vcl_init`
-and `vcl_fini`.
+often with the shorthand "backend" which covers the ``vcl_backend_* {}``
+subroutines and "client" which covers the rest, except ``vcl_init {}``
+and ``vcl_fini {}``.
 
 When setting a variable, the right hand side of the equal sign
 must have the variables type, you cannot assign a STRING to
-a variable of type NUMBER, even if the string is `"42"`.
+a variable of type NUMBER, even if the string is ``"42"``.
 (Explicit conversion functions can be found in
 :ref:`vmod_std(3)`).
 
@@ -61,10 +61,10 @@ local.ip
 	Readable from: client, backend
 
 	The IP address (and port number) of the local end of the
-	TCP connection, for instance `192.168.1.1:81`
+	TCP connection, for instance ``192.168.1.1:81``
 
 	If the connection is a UNIX domain socket, the value
-	will be `0.0.0.0:0`
+	will be ``0.0.0.0:0``
 
 local.endpoint	``VCL >= 4.1``
 
@@ -74,7 +74,7 @@ local.endpoint	``VCL >= 4.1``
 
 	The address of the '-a' socket the session was accepted on.
 
-	If the argument was `-a foo=:81` this would be ":81"
+	If the argument was ``-a foo=:81`` this would be ":81"
 
 
 local.socket	``VCL >= 4.1``
@@ -85,9 +85,9 @@ local.socket	``VCL >= 4.1``
 
 	The name of the '-a' socket the session was accepted on.
 
-	If the argument was `-a foo=:81` this would be "foo".
+	If the argument was ``-a foo=:81`` this would be "foo".
 
-	Note that all '-a' gets a default name on the form `a%d`
+	Note that all '-a' gets a default name on the form ``a%d``
 	if no name is provided.
 
 remote.ip
@@ -101,7 +101,7 @@ remote.ip
 	of a proxy server.
 
 	If the connection is a UNIX domain socket, the value
-	will be `0.0.0.0:0`
+	will be ``0.0.0.0:0``
 
 client.ip
 
@@ -110,7 +110,7 @@ client.ip
 	Readable from: client, backend
 
 
-	The client's IP address, either the same as `local.ip`
+	The client's IP address, either the same as ``local.ip``
 	or what the PROXY protocol told us.
 
 client.identity
@@ -123,10 +123,10 @@ client.identity
 
 
 	Identification of the client, used to load balance
-	in the client director.  Defaults to `client.ip`
+	in the client director.  Defaults to ``client.ip``
 
 	This variable can be overwritten with more precise
-	information, for instance extracted from a `Cookie:`
+	information, for instance extracted from a ``Cookie:``
 	header.
 
 
@@ -138,7 +138,7 @@ server.ip
 
 
 	The IP address of the socket on which the client
-	connection was received, either the same as `server.ip`
+	connection was received, either the same as ``server.ip``
 	or what the PROXY protocol told us.
 
 
@@ -158,9 +158,9 @@ server.identity
 
 	Readable from: all
 
-	The identity of the server, as set by the `-i` parameter.
+	The identity of the server, as set by the ``-i`` parameter.
 
-	If an `-i` parameter is not passed to varnishd, the return
+	If an ``-i`` parameter is not passed to varnishd, the return
 	value from `gethostname(3)` system function will be used.
 
 req and req_top
@@ -249,10 +249,10 @@ req.http.*
 	Unsetable from: client
 
 
-	The headers of request, things like `req.http.date`.
+	The headers of request, things like ``req.http.date``.
 
 	The RFCs allow multiple headers with the same name, and both
-	`set` and `unset` will remove *all* headers with the name given.
+	``set`` and ``unset`` will remove *all* headers with the name given.
 
 
 req.restarts
@@ -328,9 +328,9 @@ req.esi	``VCL <= 4.0``
 
 	Writable from: client
 
-	Set to `false` to disable ESI processing
+	Set to ``false`` to disable ESI processing
 	regardless of any value in beresp.do_esi. Defaults
-	to `true`. This variable is replaced by `resp.do_esi`
+	to ``true``. This variable is replaced by ``resp.do_esi``
 	in VCL 4.1.
 
 req.can_gzip
@@ -339,8 +339,8 @@ req.can_gzip
 
 	Readable from: client
 
-	True if the client provided `gzip` or `x-gzip` in the
-	`Accept-Encoding` header.
+	True if the client provided ``gzip`` or ``x-gzip`` in the
+	``Accept-Encoding`` header.
 
 
 req.backend_hint
@@ -454,11 +454,11 @@ bereq
 ~~~~~
 
 This is the request we send to the backend, it is built from the
-clients `req.*` fields by filtering out "per-hop" fields which
-should not be passed along (`Connection:`, `Range:` and similar).
+clients ``req.*`` fields by filtering out "per-hop" fields which
+should not be passed along (``Connection:``, ``Range:`` and similar).
 
-Slightly more fields are allowed through for `pass` fetches
-than for `miss` fetches, for instance `Range`.
+Slightly more fields are allowed through for ``pass` fetches
+than for `miss` fetches, for instance ``Range``.
 
 bereq
 
@@ -512,7 +512,7 @@ bereq.body
 
 	The request body.
 
-	Unset will also remove `bereq.http.Content-Length`.
+	Unset will also remove ``bereq.http.Content-Length``.
 
 bereq.hash
 
@@ -520,7 +520,7 @@ bereq.hash
 
 	Readable from: vcl_pipe, backend
 
-	The hash key of this request, a copy of `req.hash`.
+	The hash key of this request, a copy of ``req.hash``.
 
 
 bereq.method
@@ -544,7 +544,7 @@ bereq.url
 
 	Writable from: vcl_pipe, backend
 
-	The requested URL, copied from `req.url`
+	The requested URL, copied from ``req.url``
 
 
 bereq.proto	``VCL <= 4.0``
@@ -556,7 +556,7 @@ bereq.proto	``VCL <= 4.0``
 	Writable from: vcl_pipe, backend
 
 	The HTTP protocol version, "HTTP/1.1" unless a pass or pipe
-	request has "HTTP/1.0" in `req.proto`
+	request has "HTTP/1.0" in ``req.proto``
 
 bereq.proto	``VCL >= 4.1``
 
@@ -565,7 +565,7 @@ bereq.proto	``VCL >= 4.1``
 	Readable from: vcl_pipe, backend
 
 	The HTTP protocol version, "HTTP/1.1" unless a pass or pipe
-	request has "HTTP/1.0" in `req.proto`
+	request has "HTTP/1.0" in ``req.proto``
 
 
 bereq.http.*
@@ -654,7 +654,7 @@ beresp
 ~~~~~~
 
 The response received from the backend, one cache misses, the
-store object is built from `beresp`.
+store object is built from ``beresp``.
 
 beresp
 
@@ -707,8 +707,8 @@ beresp.status
 	Only YZZ will be sent back to clients.
 
 	XX can be therefore be used to pass information
-	around inside VCL, for instance `return(synth(22404))`
-	from `vcl_recv{}` to `vcl_synth{}`
+	around inside VCL, for instance ``return(synth(22404))``
+	from ``vcl_recv{}`` to ``vcl_synth{}``
 
 beresp.reason
 
@@ -776,9 +776,9 @@ beresp.do_gzip
 
 	Default: ``false``.
 
-	Set to `true` to gzip the object while storing it.
+	Set to ``true`` to gzip the object while storing it.
 
-	If `http_gzip_support` is disabled, setting this variable
+	If ``http_gzip_support`` is disabled, setting this variable
 	has no effect.
 
 beresp.do_gunzip
@@ -791,10 +791,10 @@ beresp.do_gunzip
 
 	Default: ``false``.
 
-	Set to `true` to gunzip the object while storing it in the
+	Set to ``true`` to gunzip the object while storing it in the
 	cache.
 
-	If `http_gzip_support` is disabled, setting this variable
+	If ``http_gzip_support`` is disabled, setting this variable
 	has no effect.
 
 beresp.was_304
@@ -804,9 +804,9 @@ beresp.was_304
 	Readable from: vcl_backend_response, vcl_backend_error
 
 
-	When `true` this indicates that we got a 304 response
+	When ``true`` this indicates that we got a 304 response
 	to our conditional fetch from the backend and turned
-	that into `beresp.status = 200`
+	that into ``beresp.status = 200``
 
 beresp.uncacheable
 
@@ -1111,10 +1111,10 @@ resp
 ~~~~
 
 This is the response we send to the client, it is built from either
-`beresp` (pass/miss), `obj` (hits) or created from whole cloth (synth).
+``beresp`` (pass/miss), ``obj`` (hits) or created from whole cloth (synth).
 
-With the exception of `resp.body` all `resp.*` variables available
-in both `vcl_deliver{}` and `vcl_synth{}` as a matter of symmetry.
+With the exception of ``resp.body`` all ``resp.*`` variables available
+in both ``vcl_deliver{}`` and ``vcl_synth{}`` as a matter of symmetry.
 
 resp
 
@@ -1253,7 +1253,7 @@ now
 	The current time, in seconds since the UNIX epoch.
 
 	When converted to STRING in expressions it returns
-	a formatted timestamp like `Tue, 20 Feb 2018 09:30:31 GMT`
+	a formatted timestamp like ``Tue, 20 Feb 2018 09:30:31 GMT``
 
 sess
 ~~~~
