@@ -305,13 +305,15 @@ VSA_BuildFAP(void *d, sa_family_t fam, const void *a, unsigned al,
 struct suckaddr *
 VSA_Build(void *d, const void *s, unsigned sal)
 {
-	struct suckaddr *sua = d;
+	struct suckaddr *sua;
 	const struct sockaddr *sa = s;
 
 	AN(d);
 	AN(s);
 	if (sal == 0 || sua_len(sa) != sal)
 		return (NULL);
+
+	sua = d;
 
 	INIT_OBJ(sua, SUCKADDR_MAGIC);
 	switch (sal) {
