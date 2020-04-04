@@ -58,6 +58,8 @@ main(void)
 	    " */\n"
 	    "\n"
 	    "#include <stddef.h>\n"
+	    "#include \"vdef.h\"\n"
+	    "#include \"varnishstat.h\"\n"
 	    "\n"
 	    "const char *const bindings_help[] = {\n");
 
