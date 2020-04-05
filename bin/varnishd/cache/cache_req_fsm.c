@@ -256,6 +256,7 @@ cnt_vclfail(const struct worker *wrk, struct req *req)
 	req->err_reason = "VCL failed";
 	req->req_step = R_STP_SYNTH;
 	req->doclose = SC_VCL_FAILURE;
+	req->filter_list = NULL;
 	return (REQ_FSM_MORE);
 }
 
@@ -283,6 +284,7 @@ cnt_synth(struct worker *wrk, struct req *req)
 
 	Resp_Setup_Synth(req);
 
+	req->filter_list = NULL;
 	synth_body = VSB_new_auto();
 	AN(synth_body);
 
