@@ -538,6 +538,8 @@ VRT_l_req_esi(VRT_CTX, VCL_BOOL process_esi)
 	/*
 	 * Only allow you to turn of esi in the main request
 	 * else everything gets confused
+	 * NOTE: this is not true, but we do not change behavior
+	 * for vcl 4.0. For 4.1, see VRT_l_resp_do_esi()
 	 */
 	if (IS_TOPREQ(ctx->req))
 		ctx->req->disable_esi = !process_esi;
@@ -874,10 +876,6 @@ VRT_l_resp_do_esi(VRT_CTX, VCL_BOOL process_esi)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	assert(ctx->syntax >= 41);
-	/*
-	 * Only allow you to turn of esi in the main request
-	 * else everything gets confused
-	 */
 	ctx->req->disable_esi = !process_esi;
 }
 
