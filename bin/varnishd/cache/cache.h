@@ -411,7 +411,7 @@ struct busyobj {
 
 	struct pool_task	fetch_task[1];
 
-#define BO_FLAG(l, r, w, d) unsigned	l:1;
+#define BO_FLAG(l, r, w, f, d) unsigned	l:1;
 #include "tbl/bo_flags.h"
 
 	/* Timeouts */

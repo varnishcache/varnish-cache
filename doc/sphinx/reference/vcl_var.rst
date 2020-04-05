@@ -745,6 +745,7 @@ beresp.do_esi
 	Set it to true to parse the object for ESI directives.
 	Will only be honored if req.esi is true.
 
+	It is a VCL error to use beresp.do_esi after setting beresp.filters.
 
 beresp.do_stream
 
@@ -781,6 +782,8 @@ beresp.do_gzip
 	If ``http_gzip_support`` is disabled, setting this variable
 	has no effect.
 
+	It is a VCL error to use beresp.do_gzip after setting beresp.filters.
+
 beresp.do_gunzip
 
 	Type: BOOL
@@ -796,6 +799,8 @@ beresp.do_gunzip
 
 	If ``http_gzip_support`` is disabled, setting this variable
 	has no effect.
+
+	It is a VCL error to use beresp.do_gunzip after setting beresp.filters.
 
 beresp.was_304
 
@@ -996,6 +1001,9 @@ beresp.filters
 
 	* ``testgunzip`` gets added for compressed content if
 	  ``beresp.do_gunzip`` is false.
+
+	After beresp.filters is set, using any of the beforementioned
+	``beresp.do_*`` switches is a VCL error.
 
 obj
 ~~~
