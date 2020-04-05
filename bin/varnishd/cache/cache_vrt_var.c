@@ -869,6 +869,15 @@ VRT_r_resp_is_streaming(VRT_CTX)
 
 /*--------------------------------------------------------------------*/
 
+static inline int
+resp_filter_fixed(VRT_CTX, const char *s)
+{
+	if (ctx->req->filter_list == NULL)
+		return (0);
+	VRT_fail(ctx, "resp.filters are already fixed, %s is undefined", s);
+	return (1);
+}
+
 VCL_VOID
 VRT_l_resp_do_esi(VRT_CTX, VCL_BOOL process_esi)
 {
@@ -876,6 +885,8 @@ VRT_l_resp_do_esi(VRT_CTX, VCL_BOOL process_esi)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	assert(ctx->syntax >= 41);
+	if (resp_filter_fixed(ctx, "resp.do_esi"))
+		return;
 	ctx->req->disable_esi = !process_esi;
 }
 
@@ -886,6 +897,8 @@ VRT_r_resp_do_esi(VRT_CTX)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	assert(ctx->syntax >= 41);
+	if (resp_filter_fixed(ctx, "resp.do_esi"))
+		return (0);
 	return (!ctx->req->disable_esi);
 }
 

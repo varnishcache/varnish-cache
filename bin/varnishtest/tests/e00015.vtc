@@ -71,10 +71,15 @@ server s1 {
 varnish v1 -syntax 4.1 -vcl+backend {
 	sub vcl_deliver {
 		set resp.http.was = resp.do_esi;
+		set resp.http.filter0 = resp.filters;
 		if (req.url == "/top2") {
 			set resp.do_esi = false;
 		}
 		set resp.http.filters = resp.filters;
+		if (req.http.fiddle) {
+			set resp.filters = resp.filters;
+			set resp.do_esi = false;
+		}
 	}
 	sub vcl_backend_response {
 		set beresp.do_esi = true;
@@ -89,6 +94,7 @@ client c1 {
 	expect resp.bodylen == 73
 	expect resp.status == 200
 	expect resp.http.was == true
+	expect resp.http.filter0 == "esi gunzip"
 	expect resp.http.filters == "gunzip"
 
 	txreq -url "/esi"
@@ -96,6 +102,7 @@ client c1 {
 	expect resp.bodylen == 76
 	expect resp.status == 200
 	expect resp.http.was == true
+	expect resp.http.filter0 == "esi"
 	expect resp.http.filters == "esi"
 
 	# see Note on Range above
@@ -120,6 +127,10 @@ client c1 {
 	expect resp.status == 200
 	expect resp.http.was == true
 	expect resp.http.filters == "esi gunzip range"
+
+	txreq -url /top2 -hdr "fiddle: do_esi"
+	rxresp
+	expect resp.status == 503
 } -run
 
 varnish v1 -expect esi_errors == 0

@@ -1218,6 +1218,8 @@ resp.http.*
 
 	The HTTP headers that will be returned.
 
+.. XXX does vcl_synth make any sense?
+
 resp.do_esi	``VCL >= 4.1``
 
 	Type: BOOL
@@ -1226,11 +1228,13 @@ resp.do_esi	``VCL >= 4.1``
 
 	Writable from: vcl_deliver, vcl_synth
 
-	Default: Set if ESI parsing has happened.
+	Default: obj.can_esi
 
 	This can be used to selectively disable ESI processing,
 	even though ESI parsing happened during fetch.
 	This is useful when Varnish caches peer with each other.
+
+	It is a VCL error to use resp.do_esi after setting resp.filters.
 
 
 resp.is_streaming
@@ -1251,6 +1255,15 @@ resp.filters
 	Writable from: vcl_deliver, vcl_synth
 
 	List of VDP filters the resp.body will be pushed through.
+
+	Before resp.filters is set, the value read will be the default
+	filter list as determined by varnish based on resp.do_esi and
+	request headers.
+
+	After resp.filters is set, changing any of the conditions
+	which otherwise determine the filter selection will have no
+	effiect. Using resp.do_esi is an error once resp.filters is
+	set.
 
 Special variables
 ~~~~~~~~~~~~~~~~~
