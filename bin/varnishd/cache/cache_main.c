@@ -371,6 +371,8 @@ child_main(int sigmagic, size_t altstksz)
 
 	ObjInit();
 
+	WRK_Init();
+
 	VCL_Init();
 	VCL_VRT_Init();
 
@@ -394,8 +396,6 @@ child_main(int sigmagic, size_t altstksz)
 	STV_open();
 
 	VMOD_Init();
-
-	WRK_Init();
 
 	BAN_Compile();
 

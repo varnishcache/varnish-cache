@@ -945,7 +945,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	VSLb_ts_busyobj(bo, "Start", W_TIM_real(wrk));
 
 	bo->wrk = wrk;
-	wrk->vsl = bo->vsl;
+	WRK_SetLog(wrk, bo->vsl);
 
 #if 0
 	if (bo->stale_oc != NULL) {
@@ -996,7 +996,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	if (bo->stale_oc != NULL)
 		(void)HSH_DerefObjCore(wrk, &bo->stale_oc, 0);
 
-	wrk->vsl = NULL;
+	WRK_SetLog(wrk, NULL);
 	HSH_DerefBoc(wrk, bo->fetch_objcore);
 	SES_Rel(bo->sp);
 	VBO_ReleaseBusyObj(wrk, &bo);

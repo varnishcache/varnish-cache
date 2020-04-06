@@ -339,9 +339,6 @@ const char *sess_close_2str(enum sess_close sc, int want_desc);
 
 /* cache_pool.c */
 void Pool_Init(void);
-int Pool_Task(struct pool *pp, struct pool_task *task, enum task_prio prio);
-int Pool_Task_Arg(struct worker *, enum task_prio, task_func_t *,
-    const void *arg, size_t arg_len);
 void Pool_Sumstat(const struct worker *w);
 int Pool_TrySumstat(const struct worker *wrk);
 void Pool_PurgeStat(unsigned nobj);
@@ -462,6 +459,11 @@ void VMOD_Panic(struct vsb *);
 
 /* cache_wrk.c */
 void WRK_Init(void);
+void WRK_SetLog(struct worker *, struct vsl_log *);
+struct vsl_log *WRK_GetLog(void);
+int Pool_Task(struct pool *pp, struct pool_task *task, enum task_prio prio);
+int Pool_Task_Arg(struct worker *, enum task_prio, task_func_t *,
+    const void *arg, size_t arg_len);
 
 /* cache_ws.c */
 void WS_Rollback(struct ws *, uintptr_t);

@@ -69,6 +69,28 @@ static void Pool_Work_Thread(struct pool *pp, struct worker *wrk);
 
 static uintmax_t reqpoolfail;
 
+static pthread_key_t wrk_key;
+
+/*--------------------------------------------------------------------
+ * Per thread storage for the running worker. This is used for debug
+ * logs of workspace usage.
+ */
+
+void
+WRK_SetLog(struct worker *wrk, struct vsl_log *vsl)
+{
+
+	wrk->vsl = vsl;
+	AZ(pthread_setspecific(wrk_key, vsl));
+}
+
+struct vsl_log *
+WRK_GetLog(void)
+{
+
+	return (pthread_getspecific(wrk_key));
+}
+
 /*--------------------------------------------------------------------
  * Create and start a back-ground thread which as its own worker and
  * session data structures;
@@ -664,4 +686,5 @@ WRK_Init(void)
 {
 	assert(cache_param->wthread_min >= TASK_QUEUE__END);
 	CLI_AddFuncs(debug_cmds);
+	AZ(pthread_key_create(&wrk_key, NULL));
 }

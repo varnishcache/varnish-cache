@@ -1052,7 +1052,7 @@ CNT_Embark(struct worker *wrk, struct req *req)
 
 	/* wrk can have changed for restarts */
 	req->vfc->wrk = req->wrk = wrk;
-	wrk->vsl = req->vsl;
+	WRK_SetLog(wrk, req->vsl);
 	if (req->req_step == R_STP_TRANSPORT && req->vcl == NULL) {
 		VCL_Refresh(&wrk->vcl);
 		req->vcl = wrk->vcl;
@@ -1110,7 +1110,7 @@ CNT_Request(struct req *req)
 		}
 		CHECK_OBJ_ORNULL(wrk->nobjhead, OBJHEAD_MAGIC);
 	}
-	wrk->vsl = NULL;
+	WRK_SetLog(wrk, NULL);
 	if (nxt == REQ_FSM_DONE) {
 		if (IS_TOPREQ(req)) {
 			VCL_TaskLeave(req->top->privs);
