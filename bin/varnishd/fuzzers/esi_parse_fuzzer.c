@@ -89,6 +89,14 @@ VSLb_ts(struct vsl_log *l, const char *event, vtim_real first, vtim_real *pprev,
 	(void)now;
 }
 
+void
+WRK_Log(enum VSL_tag_e tag, const char *fmt, ...)
+{
+
+	(void)tag;
+	(void)fmt;
+}
+
 int
 LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {

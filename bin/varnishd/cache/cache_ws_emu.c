@@ -118,7 +118,7 @@ WS_Assert(const struct ws *ws)
 		AZ(ws->r);
 	}
 
-	DSL(DBG_WORKSPACE, 0, "WS(%p) = (%s, %p %zu %zu %zu)",
+	DSLb(DBG_WORKSPACE, "WS(%p) = (%s, %p %zu %zu %zu)",
 	    ws, ws->id, ws->s, wa2 == NULL ? 0 : wa2->off + PRNDUP(wa2->len),
 	    ws->r == NULL ? 0 : pdiff(ws->f, ws->r),
 	    pdiff(ws->s, ws->e));
@@ -159,7 +159,7 @@ WS_Init(struct ws *ws, const char *id, void *space, unsigned len)
 {
 	struct ws_emu *we;
 
-	DSL(DBG_WORKSPACE, 0,
+	DSLb(DBG_WORKSPACE,
 	    "WS_Init(%p, \"%s\", %p, %u)", ws, id, space, len);
 	assert(space != NULL);
 	assert(PAOK(space));
@@ -203,12 +203,12 @@ WS_Reset(struct ws *ws, uintptr_t pp)
 	WS_Assert(ws);
 	AN(pp);
 	if (pp == snap_overflowed) {
-		DSL(DBG_WORKSPACE, 0, "WS_Reset(%p, overflowed)", ws);
+		DSLb(DBG_WORKSPACE, "WS_Reset(%p, overflowed)", ws);
 		AN(WS_Overflowed(ws));
 		return;
 	}
 	p = (char *)pp;
-	DSL(DBG_WORKSPACE, 0, "WS_Reset(%p, %p)", ws, p);
+	DSLb(DBG_WORKSPACE, "WS_Reset(%p, %p)", ws, p);
 	AZ(ws->r);
 
 	we = ws_emu(ws);
@@ -308,7 +308,7 @@ WS_Alloc(struct ws *ws, unsigned bytes)
 	WS_Assert(ws);
 	if (wa != NULL) {
 		AN(wa->ptr);
-		DSL(DBG_WORKSPACE, 0, "WS_Alloc(%p, %u) = %p",
+		DSLb(DBG_WORKSPACE, "WS_Alloc(%p, %u) = %p",
 		    ws, bytes, wa->ptr);
 		return (wa->ptr);
 	}
@@ -329,7 +329,7 @@ WS_Copy(struct ws *ws, const void *str, int len)
 	if (wa != NULL) {
 		AN(wa->ptr);
 		memcpy(wa->ptr, str, len);
-		DSL(DBG_WORKSPACE, 0, "WS_Copy(%p, %d) = %p",
+		DSLb(DBG_WORKSPACE, "WS_Copy(%p, %d) = %p",
 		    ws, len, wa->ptr);
 		return (wa->ptr);
 	}
@@ -346,7 +346,7 @@ WS_Snapshot(struct ws *ws)
 	WS_Assert(ws);
 	assert(ws->r == NULL);
 	if (WS_Overflowed(ws)) {
-		DSL(DBG_WORKSPACE, 0, "WS_Snapshot(%p) = overflowed", ws);
+		DSLb(DBG_WORKSPACE, "WS_Snapshot(%p) = overflowed", ws);
 		return (snap_overflowed);
 	}
 
@@ -354,7 +354,7 @@ WS_Snapshot(struct ws *ws)
 	wa = VTAILQ_LAST(&we->head, ws_alloc_head);
 	CHECK_OBJ_ORNULL(wa, WS_ALLOC_MAGIC);
 	p = (wa == NULL ? ws->s : wa->ptr);
-	DSL(DBG_WORKSPACE, 0, "WS_Snapshot(%p) = %p", ws, p);
+	DSLb(DBG_WORKSPACE, "WS_Snapshot(%p) = %p", ws, p);
 	return ((uintptr_t)p);
 }
 
@@ -376,7 +376,7 @@ WS_ReserveAll(struct ws *ws)
 	}
 
 	b = pdiff(ws->f, ws->r);
-	DSL(DBG_WORKSPACE, 0, "WS_ReserveAll(%p) = %u", ws, b);
+	DSLb(DBG_WORKSPACE, "WS_ReserveAll(%p) = %u", ws, b);
 	WS_Assert(ws);
 	return (b);
 }
@@ -397,7 +397,7 @@ WS_ReserveSize(struct ws *ws, unsigned bytes)
 	ws->f = wa->ptr;
 	ws->r = ws->f + bytes;
 	we = ws_emu(ws);
-	DSL(DBG_WORKSPACE, 0, "WS_ReserveSize(%p, %u/%u) = %u",
+	DSLb(DBG_WORKSPACE, "WS_ReserveSize(%p, %u/%u) = %u",
 	    ws, bytes, we->len - wa->off, bytes);
 	WS_Assert(ws);
 	return (bytes);
@@ -436,7 +436,7 @@ WS_Release(struct ws *ws, unsigned bytes)
 {
 
 	ws_release(ws, bytes);
-	DSL(DBG_WORKSPACE, 0, "WS_Release(%p, %u)", ws, bytes);
+	DSLb(DBG_WORKSPACE, "WS_Release(%p, %u)", ws, bytes);
 }
 
 void
@@ -450,7 +450,7 @@ WS_ReleaseP(struct ws *ws, const char *ptr)
 	assert(ptr <= ws->r);
 	l = pdiff(ws->f, ptr);
 	ws_release(ws, l);
-	DSL(DBG_WORKSPACE, 0, "WS_ReleaseP(%p, %p (%u))", ws, ptr, l);
+	DSLb(DBG_WORKSPACE, "WS_ReleaseP(%p, %p (%u))", ws, ptr, l);
 }
 
 void *
