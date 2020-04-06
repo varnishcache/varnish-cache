@@ -46,17 +46,14 @@ varnish v1 -vsl_catchup
 
 logexpect l1 -v v1 -g vxid -q "vxid == 1006" {
 	expect * 1006	VCL_call	{^DELIVER$}
-	expect 0 =	LostHeader	{^x-foo:$}
+	expect * =	LostHeader	{^x-foo:$}
 	# std.log does not need workspace
 	expect 0 =	VCL_Log		{^dummy$}
+	expect * =	Debug		{^WS_Snapshot.* = overflowed}
+	expect * =	Debug		{^WS_Reset.*, overflowed}
 	# the workspace is overflowed, but still has space
-	expect 0 =	RespHeader	{^x-of: true$}
-	expect 6 =	Error		{^workspace_client overflow}
-} -start
-
-logexpect l2 -v v1 -g raw -i Debug {
-	expect *  0	Debug		{^WS_Snapshot.* = overflowed}
-	expect 24 0	Debug		{^WS_Reset.*, overflowed}
+	expect * =	RespHeader	{^x-of: true$}
+	expect * =	Error		{^workspace_client overflow}
 } -start
 
 client c2 {
@@ -67,7 +64,6 @@ client c2 {
 } -run
 
 logexpect l1 -wait
-logexpect l2 -wait
 
 varnish v1 -expect client_resp_500 == 2
 varnish v1 -expect ws_client_overflow == 2
