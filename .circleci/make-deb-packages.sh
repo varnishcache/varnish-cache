@@ -11,10 +11,10 @@ echo "PARAM_RELEASE: $PARAM_RELEASE"
 echo "PARAM_DIST: $PARAM_DIST"
 
 
-if test "x$PARAM_RELEASE" = "x"; then
+if [ -z "$PARAM_RELEASE" ]; then
     echo "Env variable PARAM_RELEASE is not set! For example PARAM_RELEASE=8, for CentOS 8"
     exit 1
-elif test "x$PARAM_DIST" = "x"; then
+elif [ -z "$PARAM_DIST" ]; then
     echo "Env variable PARAM_DIST is not set! For example PARAM_DIST=centos"
     exit 1
 fi
