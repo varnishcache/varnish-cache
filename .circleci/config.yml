@@ -120,7 +120,7 @@ jobs:
       - run:
           name: Activate QEMU
           command: |
-            sudo docker run --rm --privileged multiarch/qemu-user-static:register --reset --credential yes
+            sudo docker run --rm --privileged multiarch/qemu-user-static:register --reset --credential yes  --persistent yes
       - run:
           name: Create Dockerfile
           command: |
@@ -278,7 +278,7 @@ workflows:
           dist: ubuntu
           release: bionic
           arch: aarch64
-          image: multiarch/ubuntu-core:arm64-bionic
+          image: arm64v8//ubuntu:bionic
           ext: deb
           <<: *pkg_req
       - package:
@@ -294,7 +294,7 @@ workflows:
           dist: ubuntu
           release: xenial
           arch: aarch64
-          image: multiarch/ubuntu-core:arm64-xenial
+          image: arm64v8/ubuntu:xenial
           ext: deb
           <<: *pkg_req
       - package:
@@ -310,7 +310,7 @@ workflows:
           dist: debian
           release: bullseye
           arch: aarch64
-          image: multiarch/debian-debootstrap:arm64-bullseye-slim
+          image: arm64v8/debian:bullseye-slim
           ext: deb
           <<: *pkg_req
       - package:
@@ -326,7 +326,7 @@ workflows:
           dist: debian
           release: buster
           arch: aarch64
-          image: multiarch/debian-debootstrap:arm64-buster-slim
+          image: arm64v8/debian:buster-slim
           ext: deb
           <<: *pkg_req
       - package:
@@ -342,7 +342,7 @@ workflows:
           dist: debian
           release: stretch
           arch: aarch64
-          image: multiarch/debian-debootstrap:arm64-stretch-slim
+          image: arm64v8/debian:stretch-slim
           ext: deb
           <<: *pkg_req
       - package:
@@ -358,7 +358,7 @@ workflows:
           dist: centos
           release: "7"
           arch: aarch64
-          image: multiarch/centos:7-aarch64-clean
+          image: arm64v8/centos:7-aarch64-clean
           ext: rpm
           <<: *pkg_req
       - package:
@@ -369,15 +369,14 @@ workflows:
           image: centos:7
           ext: rpm
           <<: *pkg_req
-# there is no multiarch image for aarch64
-#      - package:
-#          name: aarch64-centos-8
-#          dist: centos
-#          release: "8"
-#          arch: aarch64
-#          image:
-#          ext: rpm
-#          <<: *pkg_req
+      - package:
+          name: aarch64-centos-8
+          dist: centos
+          release: "8"
+          arch: aarch64
+          image: arm64v8/centos:8
+          ext: rpm
+          <<: *pkg_req
       - package:
           name: x64-centos-8
           dist: centos
@@ -400,7 +399,7 @@ workflows:
           dist: alpine
           release: "3"
           arch: aarch64
-          image: multiarch/alpine:aarch64-edge
+          image: arm64v8/alpine:3
           ext: apk
           workspace_extra: "/aarch64"
           <<: *pkg_req
@@ -419,7 +418,7 @@ workflows:
             - x64-centos-7
             - x64-centos-8
             - aarch64-centos-7
-#            - aarch64-centos-8
+            - aarch64-centos-8
             - x64-alpine-3
             - aarch64-alpine-3
       - distcheck:
