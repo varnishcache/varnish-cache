@@ -1,11 +1,6 @@
 version: 2.1
 
 aliases:
-  activate_qemu: &activate_qemu
-    run:
-      name: Activate QEMU
-      command: |
-        sudo docker run --rm --privileged multiarch/qemu-user-static:register --reset --credential yes
   pkg_req: &pkg_req
     requires:
       - dist
@@ -37,7 +32,10 @@ aliases:
           at: ~/workspace
       - run: ls -laR ~/workspace
       - checkout
-      - <<: *activate_qemu
+      - run:
+          name: Activate QEMU
+          command: |
+            sudo docker run --rm --privileged multiarch/qemu-user-static:register --reset --credential yes
       - run:
           name: Create Dockerfile
           command: |
