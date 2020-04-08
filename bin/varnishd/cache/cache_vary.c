@@ -262,16 +262,18 @@ void
 VRY_Finish(struct req *req, enum vry_finish_flag flg)
 {
 	uint8_t *p = NULL;
+	unsigned len = 0;
 
 	(void)VRY_Validate(req->vary_b);
 	if (flg == KEEP && req->vary_l != NULL) {
-		p = malloc(req->vary_l - req->vary_b);
+		len = req->vary_l - req->vary_b;
+		p = malloc(len);
 		if (p != NULL) {
-			memcpy(p, req->vary_b, req->vary_l - req->vary_b);
+			memcpy(p, req->vary_b, len);
 			(void)VRY_Validate(p);
 		}
 	}
-	WS_Release(req->ws, 0);
+	WS_ReleaseH(req->ws, 0, len);
 	req->vary_l = NULL;
 	req->vary_e = NULL;
 	req->vary_b = p;

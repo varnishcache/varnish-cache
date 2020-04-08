@@ -144,6 +144,7 @@ struct ws {
 	char			*f;		/* (F)ree/front pointer */
 	char			*r;		/* (R)eserved length */
 	char			*e;		/* (E)nd of buffer */
+	const char		*h;		/* (H)igh watermark */
 };
 
 /*--------------------------------------------------------------------
@@ -784,8 +785,11 @@ unsigned WS_ReserveSize(struct ws *, unsigned);
 unsigned WS_ReserveAll(struct ws *);
 unsigned WS_ReserveLumps(struct ws *ws, size_t sz);
 void WS_MarkOverflow(struct ws *ws);
+void WS_ReleaseH(struct ws *ws, unsigned bytes, unsigned high);
+void WS_ReleaseHP(struct ws *ws, const char *ptr, const char *high);
 void WS_Release(struct ws *ws, unsigned bytes);
 void WS_ReleaseP(struct ws *ws, const char *ptr);
+unsigned WS_High(const struct ws *ws);
 void WS_Assert(const struct ws *ws);
 void WS_Reset(struct ws *ws, uintptr_t);
 void *WS_Alloc(struct ws *ws, unsigned bytes);

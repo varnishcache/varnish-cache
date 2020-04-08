@@ -47,7 +47,7 @@ varnish v1 -vcl+backend {
 logexpect l1 -v v1 -g request {
 	expect 0 1001	Begin		"^req .* rxreq"
 	expect * =	PipeAcct	"^49 60 4 42$"
-	expect 0 =	End
+	expect 4 =	End
 } -start
 
 client c1 {

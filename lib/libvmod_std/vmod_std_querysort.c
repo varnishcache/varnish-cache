@@ -127,6 +127,6 @@ vmod_querysort(VRT_CTX, VCL_STRING url)
 	}
 	*p = '\0';
 
-	WS_Release(ctx->ws, 0);
+	WS_ReleaseH(ctx->ws, 0, np * sizeof(const char **));
 	return (r);
 }

@@ -400,7 +400,7 @@ vca_make_session(struct worker *wrk, void *arg)
 	    raddr, rport, wa->acceptlsock->name, laddr, lport,
 	    sp->t_open, sp->fd);
 
-	WS_Release(wrk->aws, 0);
+	WS_ReleaseHP(wrk->aws, wrk->aws->f, wrk->aws->r);
 
 	vca_pace_good();
 	wrk->stats->sess_conn++;
