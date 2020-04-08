@@ -19,11 +19,6 @@ elif [ -z "$PARAM_DIST" ]; then
     exit 1
 fi
 
-
-adduser --disabled-password --gecos "" varnish
-
-chown -R varnish:varnish /workspace
-
 DIST_DIR=build
 rm -rf $DIST_DIR
 mkdir -p $DIST_DIR
