@@ -5,60 +5,6 @@ aliases:
     requires:
       - dist
       - tar_pkg_tools
-  package_job: &package_job
-    parameters:
-      dist:
-        description: the Linux distribution (debian|ubuntu|centos)
-        type: string
-      release:
-        description: the release name (stretch|buster|xenial|bionic|7|8)
-        type: string
-      ext:
-        description: the package extension (deb|rpm|apk)
-        type: string
-      arch:
-        description: the architecture (x64|aarch64)
-        type: string
-      image:
-        description: the base Docker image for Dockerfile
-        type: string
-      workspace_extra:
-        description: extra paths for the workspace root
-        type: string
-        default: ""
-    machine: true
-    steps:
-      - attach_workspace:
-          at: ~/workspace
-      - run: ls -laR ~/workspace
-      - checkout
-      - run:
-          name: Activate QEMU
-          command: |
-            sudo docker run --rm --privileged multiarch/qemu-user-static:register --reset --credential yes
-      - run:
-          name: Create Dockerfile
-          command: |
-            echo "FROM << parameters.image >>" > Dockerfile
-            echo "ADD make-<< parameters.ext >>-packages.sh /usr/bin/" >> Dockerfile
-            echo 'CMD ["make-<< parameters.ext >>-packages.sh"]' >> Dockerfile
-      - run:
-          name: Build << parameters.dist >> << parameters.release >> << parameters.arch >> << parameters.ext >>
-          command: |
-            mkdir /tmp/packages
-            cp .circleci/make-<< parameters.ext >>-packages.sh .
-            docker build -t varnish-<< parameters.ext >>-package-build:<< parameters.arch >> .
-            docker run --rm -it -e PARAM_DIST=<< parameters.dist >> -e PARAM_RELEASE=<< parameters.release >> -v$(pwd):/varnish-cache -v$HOME/workspace:/workspace -v/tmp/packages:/packages varnish-<< parameters.ext >>-package-build:<< parameters.arch >>
-      - run:
-          name: List created packages
-          command: find ./ -name "*.<< parameters.ext >>"
-      - persist_to_workspace:
-          root: /tmp
-          paths:
-            - "packages"
-      - store_artifacts:
-          path: ~/project/packages
-
 
 parameters:
   vc-commit:
@@ -144,38 +90,59 @@ jobs:
       - store_artifacts:
           destination: ~/workspace
           path: ~/workspace
-  x64-centos-7:
-    <<: *package_job
-  aarch64-centos-7:
-    <<: *package_job
-  x64-centos-8:
-    <<: *package_job
-  aarch64-centos-8:
-    <<: *package_job
-  x64-ubuntu-bionic:
-    <<: *package_job
-  aarch64-ubuntu-bionic:
-    <<: *package_job
-  x64-ubuntu-xenial:
-    <<: *package_job
-  aarch64-ubuntu-xenial:
-    <<: *package_job
-  aarch64-debian-bullseye:
-    <<: *package_job
-  x64-debian-bullseye:
-    <<: *package_job
-  x64-debian-buster:
-    <<: *package_job
-  aarch64-debian-buster:
-    <<: *package_job
-  x64-debian-stretch:
-    <<: *package_job
-  aarch64-debian-stretch:
-    <<: *package_job
-  x64-alpine-3:
-    <<: *package_job
-  aarch64-alpine-3:
-    <<: *package_job
+  package:
+    parameters:
+      dist:
+        description: the Linux distribution (debian|ubuntu|centos)
+        type: string
+      release:
+        description: the release name (stretch|buster|xenial|bionic|7|8)
+        type: string
+      ext:
+        description: the package extension (deb|rpm|apk)
+        type: string
+      arch:
+        description: the architecture (x64|aarch64)
+        type: string
+      image:
+        description: the base Docker image for Dockerfile
+        type: string
+      workspace_extra:
+        description: extra paths for the workspace root
+        type: string
+        default: ""
+    machine: true
+    steps:
+      - attach_workspace:
+          at: ~/workspace
+      - run: ls -laR ~/workspace
+      - checkout
+      - run:
+          name: Activate QEMU
+          command: |
+            sudo docker run --rm --privileged multiarch/qemu-user-static:register --reset --credential yes
+      - run:
+          name: Create Dockerfile
+          command: |
+            echo "FROM << parameters.image >>" > Dockerfile
+            echo "ADD make-<< parameters.ext >>-packages.sh /usr/bin/" >> Dockerfile
+            echo 'CMD ["make-<< parameters.ext >>-packages.sh"]' >> Dockerfile
+      - run:
+          name: Build << parameters.dist >> << parameters.release >> << parameters.arch >> << parameters.ext >>
+          command: |
+            mkdir /tmp/packages
+            cp .circleci/make-<< parameters.ext >>-packages.sh .
+            docker build -t varnish-<< parameters.ext >>-package-build:<< parameters.arch >> .
+            docker run --rm -it -e PARAM_DIST=<< parameters.dist >> -e PARAM_RELEASE=<< parameters.release >> -v$(pwd):/varnish-cache -v$HOME/workspace:/workspace -v/tmp/packages:/packages varnish-<< parameters.ext >>-package-build:<< parameters.arch >>
+      - run:
+          name: List created packages
+          command: find ./ -name "*.<< parameters.ext >>"
+      - persist_to_workspace:
+          root: /tmp
+          paths:
+            - "packages"
+      - store_artifacts:
+          path: ~/project/packages
   distcheck:
     parameters:
       dist:
@@ -306,84 +273,96 @@ workflows:
     jobs:
       - dist
       - tar_pkg_tools
-      - aarch64-ubuntu-bionic:
+      - package:
+          name: aarch64-ubuntu-bionic
           dist: ubuntu
           release: bionic
           arch: aarch64
           image: multiarch/ubuntu-core:arm64-bionic
           ext: deb
           <<: *pkg_req
-      - x64-ubuntu-bionic:
+      - package:
+          name: x64-ubuntu-bionic
           dist: ubuntu
           release: bionic
           arch: x64
           image: ubuntu:bionic
           ext: deb
           <<: *pkg_req
-      - aarch64-ubuntu-xenial:
+      - package:
+          name: aarch64-ubuntu-xenial
           dist: ubuntu
           release: xenial
           arch: aarch64
           image: multiarch/ubuntu-core:arm64-xenial
           ext: deb
           <<: *pkg_req
-      - x64-ubuntu-xenial:
+      - package:
+          name: x64-ubuntu-xenial
           dist: ubuntu
           release: xenial
           arch: x64
           image: ubuntu:xenial
           ext: deb
           <<: *pkg_req
-      - aarch64-debian-bullseye:
+      - package:
+          name: aarch64-debian-bullseye
           dist: debian
           release: bullseye
           arch: aarch64
           image: multiarch/debian-debootstrap:arm64-bullseye-slim
           ext: deb
           <<: *pkg_req
-      - x64-debian-bullseye:
+      - package:
+          name: x64-debian-bullseye
           dist: debian
           release: bullseye
           arch: x64
           image: debian:bullseye
           ext: deb
           <<: *pkg_req
-      - aarch64-debian-buster:
+      - package:
+          name: aarch64-debian-buster
           dist: debian
           release: buster
           arch: aarch64
           image: multiarch/debian-debootstrap:arm64-buster-slim
           ext: deb
           <<: *pkg_req
-      - x64-debian-buster:
+      - package:
+          name: x64-debian-buster
           dist: debian
           release: buster
           arch: x64
           image: debian:buster
           ext: deb
           <<: *pkg_req
-      - aarch64-debian-stretch:
+      - package:
+          name: aarch64-debian-stretch
           dist: debian
           release: stretch
           arch: aarch64
           image: multiarch/debian-debootstrap:arm64-stretch-slim
           ext: deb
           <<: *pkg_req
-      - x64-debian-stretch:
+      - package:
+          name: x64-debian-stretch
           dist: debian
           release: stretch
           arch: x64
           image: debian:stretch
           ext: deb
           <<: *pkg_req
-      - aarch64-centos-7:
+      - package:
+          name: aarch64-centos-7
           dist: centos
           release: "7"
           arch: aarch64
           image: multiarch/centos:7-aarch64-clean
           ext: rpm
           <<: *pkg_req
-      - x64-centos-7:
+      - package:
+          name: x64-centos-7
           dist: centos
           release: "7"
           arch: x64
@@ -398,14 +377,16 @@ workflows:
 #          image:
 #          ext: rpm
 #          <<: *pkg_req
-      - x64-centos-8:
+      - package:
+          name: x64-centos-8
           dist: centos
           release: "8"
           arch: x64
           image: centos:8
           ext: rpm
           <<: *pkg_req
-      - x64-alpine-3:
+      - package:
+          name: x64-alpine-3
           dist: alpine
           release: "3"
           arch: x64
@@ -413,7 +394,8 @@ workflows:
           ext: apk
           workspace_extra: "/x86_64"
           <<: *pkg_req
-      - aarch64-alpine-3:
+      - package:
+          name: aarch64-alpine-3
           dist: alpine
           release: "3"
           arch: aarch64
