@@ -10,7 +10,7 @@ aliases:
     requires:
       - dist
       - tar_pkg_tools
-  pkg_parameters: &pkg_parameters
+  package_job: &package_job
     parameters:
       dist:
         description: the Linux distribution (debian|ubuntu|centos)
@@ -31,8 +31,6 @@ aliases:
         description: extra paths for the workspace root
         type: string
         default: ""
-  package_job: &package_job
-    <<: *pkg_parameters
     machine: true
     steps:
       - attach_workspace:
