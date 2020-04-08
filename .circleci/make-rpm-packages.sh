@@ -33,9 +33,6 @@ export DIST_DIR=build
 # spec as BuildRequires
 yum install -y make gcc
 
-adduser varnish
-chown -R varnish:varnish /workspace
-
 cd /varnish-cache
 rm -rf $DIST_DIR
 mkdir $DIST_DIR
