@@ -370,7 +370,8 @@ workflows:
           ext: rpm
           <<: *pkg_req
 # there is no multiarch image for aarch64
-#      - aarch64-centos-8:
+#      - package:
+#          name: aarch64-centos-8
 #          dist: centos
 #          release: "8"
 #          arch: aarch64
