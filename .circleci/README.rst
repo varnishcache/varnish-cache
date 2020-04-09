@@ -26,7 +26,8 @@ Pipeline steps
 
     2.1. ``distcheck`` - untars the source code distribution and builds (*configure*, *make*) it for the different CPU architectures
 
-    2.2. ``ARCH_DISTRO_RELEASE`` - step that creates the packages (e.g. .rpm, .deb) for each supported CPU architecture, Linux distribution and its major version (e.g. *x64_centos_7*, *aarch64_ubuntu_bionic*, *x64_alpine_3*, etc.). This step creates a Dockerfile on the fly by using a base Docker image. This custom Docker image executes a Shell script that has the recipe for creating the package for the specific Linux flavor, e.g. *make-rpm-packages.sh*. The step stores the packages in the build workspace and as an artefact.
+    2.2. ``package`` - step that creates the packages (e.g. .rpm, .deb) for each supported CPU architecture, Linux distribution and its major
+version (e.g. *x64_centos_7*, *aarch64_ubuntu_bionic*, *x64_alpine_3*, etc.). This step creates a Dockerfile on the fly by using a base Docker image. This custom Docker image executes a Shell script that has the recipe for creating the package for the specific Linux flavor, e.g. *make-rpm-packages.sh*. The step stores the packages in the build workspace and as an artefact.
 
 3. Finally, if the previous steps are successful, a final step is executed - ``collect_packages``. This step creates an archive with all packages and stores it as an artefact that can be uploaded to PackageCloud_.
 
@@ -34,7 +35,8 @@ Pipeline steps
 More
 -------------
 
-- This setup can be easily extended for any CPU architectures supported by QEMU and for any Linux distributions which have Docker image. To do this one needs to add a ``ARCH_DISTRO_RELEASE`` step.
+- This setup can be easily extended for any CPU architectures supported by QEMU and for any Linux distributions which have Docker image. To do this
+one needs to add a new ``package`` job with the proper parameters for it.
 - At the moment the setup uses *raw* Docker images and installs the required Linux distribution dependencies before running the tests/build/packaging code. This could be optimized to save some execution time by creating custom Docker images that extend the current ones and pre-installs the required dependencies.
 
 
