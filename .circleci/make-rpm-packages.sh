@@ -23,8 +23,9 @@ if [ "$PARAM_DIST" = centos ]; then
 
   ARCH=`uname -m`
   if [ $ARCH = aarch64 ]; then
-    # Remove Vault repo because of https://bugs.centos.org/view.php?id=15615
+    # Remove Vault & Sources repos because of https://bugs.centos.org/view.php?id=15615
     rm -f /etc/yum.repos.d/CentOS-Vault.repo
+    rm -f /etc/yum.repos.d/CentOS-Sources.repo
     yum clean all
   fi
 
