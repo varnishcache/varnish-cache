@@ -889,37 +889,13 @@ VCC_VMOD_path(struct vcc *vcc, const char *str)
  * Configure settings
  */
 
-void
-VCC_Err_Unref(struct vcc *vcc, unsigned u)
-{
-
-	CHECK_OBJ_NOTNULL(vcc, VCC_MAGIC);
-	vcc->err_unref = u;
-}
-
-void
-VCC_Allow_InlineC(struct vcc *vcc, unsigned u)
-{
-
-	CHECK_OBJ_NOTNULL(vcc, VCC_MAGIC);
-	vcc->allow_inline_c = u;
-}
-
-void
-VCC_Unsafe_Path(struct vcc *vcc, unsigned u)
-{
-
-	CHECK_OBJ_NOTNULL(vcc, VCC_MAGIC);
-	vcc->unsafe_path = u;
-}
-
-void
-VCC_Acl_Pedantic(struct vcc *vcc, unsigned u)
-{
-
-	CHECK_OBJ_NOTNULL(vcc, VCC_MAGIC);
-	vcc->acl_pedantic = u;
-}
+#define MGT_VCC(type, name, camelcase)				\
+	void VCC_ ## camelcase (struct vcc *vcc, type val)	\
+	{							\
+		CHECK_OBJ_NOTNULL(vcc, VCC_MAGIC);		\
+		vcc->name = val;				\
+	}
+#include "tbl/mgt_vcc.h"
 
 /*--------------------------------------------------------------------
  * Configure settings

@@ -65,11 +65,8 @@ struct vcc_priv {
 char *mgt_cc_cmd;
 const char *mgt_vcl_path;
 const char *mgt_vmod_path;
-unsigned mgt_vcc_err_unref;
-unsigned mgt_vcc_allow_inline_c;
-unsigned mgt_vcc_unsafe_path;
-unsigned mgt_vcc_acl_pedantic;
-
+#define MGT_VCC(t, n, cc) t mgt_vcc_ ## n;
+#include <tbl/mgt_vcc.h>
 
 #define VGC_SRC		"vgc.c"
 #define VGC_LIB		"vgc.so"
@@ -107,10 +104,11 @@ run_vcc(void *priv)
 	VCC_Builtin_VCL(vcc, builtin_vcl);
 	VCC_VCL_path(vcc, mgt_vcl_path);
 	VCC_VMOD_path(vcc, mgt_vmod_path);
-	VCC_Err_Unref(vcc, mgt_vcc_err_unref);
-	VCC_Allow_InlineC(vcc, mgt_vcc_allow_inline_c);
-	VCC_Unsafe_Path(vcc, mgt_vcc_unsafe_path);
-	VCC_Acl_Pedantic(vcc, mgt_vcc_acl_pedantic);
+
+#define MGT_VCC(type, name, camelcase)			\
+	VCC_ ## camelcase (vcc, mgt_vcc_ ## name);
+#include "tbl/mgt_vcc.h"
+
 	STV_Foreach(stv)
 		VCC_Predef(vcc, "VCL_STEVEDORE", stv->ident);
 	VTAILQ_FOREACH(vpg, &vclhead, list)

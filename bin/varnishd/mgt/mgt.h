@@ -221,10 +221,8 @@ int mgt_has_vcl(void);
 extern char *mgt_cc_cmd;
 extern const char *mgt_vcl_path;
 extern const char *mgt_vmod_path;
-extern unsigned mgt_vcc_err_unref;
-extern unsigned mgt_vcc_acl_pedantic;
-extern unsigned mgt_vcc_allow_inline_c;
-extern unsigned mgt_vcc_unsafe_path;
+#define MGT_VCC(t, n, cc) extern t mgt_vcc_ ## n;
+#include <tbl/mgt_vcc.h>
 
 #if defined(PTHREAD_CANCELED) || defined(PTHREAD_MUTEX_DEFAULT)
 #error "Keep pthreads out of in manager process"
