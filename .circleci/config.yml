@@ -281,7 +281,7 @@ workflows:
           dist: ubuntu
           release: bionic
           arch: aarch64
-          image: arm64v8//ubuntu:bionic
+          image: arm64v8/ubuntu:bionic
           ext: deb
           <<: *pkg_req
       - package:
