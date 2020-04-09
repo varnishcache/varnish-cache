@@ -126,7 +126,14 @@ jobs:
       - run:
           name: Create Dockerfile
           command: |
-            echo "FROM << parameters.image >>" > Dockerfile
+            rm -f Dockerfile
+            if [ ! << parameters.arch >> = x86_64 ]; then
+              echo "FROM multiarch/qemu-user-static:x86_64-<< parameters.arch >> as qemu" > Dockerfile
+            fi
+            echo "FROM << parameters.image >>" >> Dockerfile
+            if [ ! << parameters.arch >> = x86_64 ]; then
+              echo "COPY --from=qemu /usr/bin/qemu-<< parameters.arch >>-static /usr/bin" >> Dockerfile
+            fi
             echo "ADD make-<< parameters.ext >>-packages.sh /usr/bin/" >> Dockerfile
             echo 'CMD ["make-<< parameters.ext >>-packages.sh"]' >> Dockerfile
       - run:
