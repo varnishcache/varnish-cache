@@ -60,7 +60,7 @@ struct vfp {
 	vfp_init_f		*init;
 	vfp_pull_f		*pull;
 	vfp_fini_f		*fini;
-	const void		*priv1;
+	const void		*vfp_priv;
 };
 
 struct vfp_entry {
@@ -126,6 +126,7 @@ struct vdp {
 	vdp_init_f		*init;
 	vdp_bytes_f		*bytes;
 	vdp_fini_f		*fini;
+	const void		*vdp_priv;
 };
 
 struct vdp_entry {

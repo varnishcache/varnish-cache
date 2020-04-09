@@ -488,17 +488,17 @@ vfp_gzip_init(struct vfp_ctx *vc, struct vfp_entry *vfe)
 	if (vfe->vfp == &VFP_gzip) {
 		if (http_GetHdr(vc->resp, H_Content_Encoding, NULL))
 			return (VFP_NULL);
-		vg = VGZ_NewGzip(vc->wrk->vsl, vfe->vfp->priv1);
+		vg = VGZ_NewGzip(vc->wrk->vsl, vfe->vfp->vfp_priv);
 		vc->obj_flags |= OF_GZIPED | OF_CHGCE;
 	} else {
 		if (!http_HdrIs(vc->resp, H_Content_Encoding, "gzip"))
 			return (VFP_NULL);
 		if (vfe->vfp == &VFP_gunzip) {
-			vg = VGZ_NewGunzip(vc->wrk->vsl, vfe->vfp->priv1);
+			vg = VGZ_NewGunzip(vc->wrk->vsl, vfe->vfp->vfp_priv);
 			vc->obj_flags &= ~OF_GZIPED;
 			vc->obj_flags |= OF_CHGCE;
 		} else {
-			vg = VGZ_NewTestGunzip(vc->wrk->vsl, vfe->vfp->priv1);
+			vg = VGZ_NewTestGunzip(vc->wrk->vsl, vfe->vfp->vfp_priv);
 			vc->obj_flags |= OF_GZIPED;
 		}
 	}
@@ -703,7 +703,7 @@ const struct vfp VFP_gunzip = {
 	.init = vfp_gzip_init,
 	.pull = vfp_gunzip_pull,
 	.fini = vfp_gzip_fini,
-	.priv1 = "U F -",
+	.vfp_priv = "U F -",
 };
 
 const struct vfp VFP_gzip = {
@@ -711,7 +711,7 @@ const struct vfp VFP_gzip = {
 	.init = vfp_gzip_init,
 	.pull = vfp_gzip_pull,
 	.fini = vfp_gzip_fini,
-	.priv1 = "G F -",
+	.vfp_priv = "G F -",
 };
 
 const struct vfp VFP_testgunzip = {
@@ -719,5 +719,5 @@ const struct vfp VFP_testgunzip = {
 	.init = vfp_gzip_init,
 	.pull = vfp_testgunzip_pull,
 	.fini = vfp_gzip_fini,
-	.priv1 = "u F -",
+	.vfp_priv = "u F -",
 };
