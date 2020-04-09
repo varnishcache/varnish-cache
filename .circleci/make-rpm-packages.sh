@@ -31,7 +31,6 @@ if [ "$PARAM_DIST" = centos ]; then
 
 fi
 
-#yum install -y automake jemalloc-devel git libedit-devel libtool libunwind-devel make pcre-devel python3 sudo rpm-build yum-utils
 yum install -y rpm-build yum-utils
 
 export DIST_DIR=build
