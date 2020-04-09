@@ -120,6 +120,8 @@ jobs:
       - run:
           name: Activate QEMU
           command: |
+            cat /etc/*release
+            uname -a
             docker run -it --rm --privileged multiarch/qemu-user-static --reset --credential yes --persistent yes
       - run:
           name: Create Dockerfile
