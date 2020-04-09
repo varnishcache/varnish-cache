@@ -111,7 +111,9 @@ jobs:
         description: extra paths for the workspace root
         type: string
         default: ""
-    machine: true
+    machine:
+      image: ubuntu-1604:201903-01
+      docker_layer_caching: true
     steps:
       - attach_workspace:
           at: ~/workspace
@@ -122,18 +124,11 @@ jobs:
           command: |
             cat /etc/*release
             uname -a
-            docker run -it --rm --privileged multiarch/qemu-user-static --reset --credential yes --persistent yes
+            sudo docker run -it --rm --privileged multiarch/qemu-user-static --reset --credential yes --persistent yes
       - run:
           name: Create Dockerfile
           command: |
-            rm -f Dockerfile
-            if [ ! << parameters.arch >> = x86_64 ]; then
-              echo "FROM multiarch/qemu-user-static:x86_64-<< parameters.arch >> as qemu" > Dockerfile
-            fi
-            echo "FROM << parameters.image >>" >> Dockerfile
-            if [ ! << parameters.arch >> = x86_64 ]; then
-              echo "COPY --from=qemu /usr/bin/qemu-<< parameters.arch >>-static /usr/bin" >> Dockerfile
-            fi
+            echo "FROM << parameters.image >>" > Dockerfile
             echo "ADD make-<< parameters.ext >>-packages.sh /usr/bin/" >> Dockerfile
             echo 'CMD ["make-<< parameters.ext >>-packages.sh"]' >> Dockerfile
       - run:
