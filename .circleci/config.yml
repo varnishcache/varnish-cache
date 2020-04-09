@@ -120,7 +120,7 @@ jobs:
       - run:
           name: Activate QEMU
           command: |
-            sudo docker run --rm --privileged multiarch/qemu-user-static:register --reset --credential yes  --persistent yes
+            sudo docker run --rm --privileged multiarch/qemu-user-static --reset --credential yes --persistent yes
       - run:
           name: Create Dockerfile
           command: |
