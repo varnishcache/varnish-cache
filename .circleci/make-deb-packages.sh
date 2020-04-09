@@ -5,7 +5,6 @@ set -eux
 export DEBIAN_FRONTEND=noninteractive
 export DEBCONF_NONINTERACTIVE_SEEN=true
 apt-get update
-#apt-get install -y autoconf automake build-essential graphviz libncurses-dev libtool dpkg-dev ca-certificates debhelper devscripts equivs make gcc pkg-config libunwind-dev python3-docutils python3-sphinx ncurses-dev libpcre3-dev libedit-dev libjemalloc-dev apt-utils
 apt-get install -y dpkg-dev debhelper devscripts equivs pkg-config apt-utils
 
 echo "PARAM_RELEASE: $PARAM_RELEASE"
