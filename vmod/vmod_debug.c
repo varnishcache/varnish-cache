@@ -451,10 +451,13 @@ event_load(VRT_CTX, struct vmod_priv *priv)
 	priv->priv = priv_vcl;
 	priv->methods = priv_vcl_methods;
 
-	VRT_AddVFP(ctx, &xyzzy_rot13);
+	if (VRT_AddVFP(ctx, &xyzzy_rot13) ||
+	    VRT_AddVDP(ctx, &xyzzy_vdp_rot13) ||
+	    VRT_AddVDP(ctx, &xyzzy_vdp_pedantic)) {
+		VSB_cat(ctx->msg, "VFP/VDP registration error");
+		return (-1);
+	}
 
-	VRT_AddVDP(ctx, &xyzzy_vdp_rot13);
-	VRT_AddVDP(ctx, &xyzzy_vdp_pedantic);
 	return (0);
 }
 
@@ -621,9 +624,9 @@ event_discard(VRT_CTX, void *priv)
 
 	AZ(ctx->msg);
 
-	VRT_RemoveVFP(ctx, &xyzzy_rot13);
-	VRT_RemoveVDP(ctx, &xyzzy_vdp_rot13);
-	VRT_RemoveVDP(ctx, &xyzzy_vdp_pedantic);
+	AZ(VRT_RemoveVFP(ctx, &xyzzy_rot13));
+	AZ(VRT_RemoveVDP(ctx, &xyzzy_vdp_rot13));
+	AZ(VRT_RemoveVDP(ctx, &xyzzy_vdp_pedantic));
 
 	if (--loads)
 		return (0);

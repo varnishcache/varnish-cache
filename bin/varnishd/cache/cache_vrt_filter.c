@@ -63,7 +63,7 @@ static struct vfilter_head vfp_filters =
 static struct vfilter_head vdp_filters =
     VTAILQ_HEAD_INITIALIZER(vdp_filters);
 
-void
+enum vrt_filter_err
 VRT_AddVFP(VRT_CTX, const struct vfp *filter)
 {
 	struct vfilter *vp;
@@ -75,16 +75,20 @@ VRT_AddVFP(VRT_CTX, const struct vfp *filter)
 	AN(*filter->name);
 
 	VTAILQ_FOREACH(vp, hd, list) {
-		xxxassert(vp->vfp != filter);
-		xxxassert(strcasecmp(vp->name, filter->name));
+		if (vp->vfp == filter)
+			return (FLT_DUPLICATE);
+		if (strcasecmp(vp->name, filter->name) == 0)
+			return (FLT_CONFLICT);
 	}
 	if (ctx != NULL) {
 		ASSERT_CLI();
 		CHECK_OBJ_NOTNULL(ctx->vcl, VCL_MAGIC);
 		hd = &ctx->vcl->vfps;
 		VTAILQ_FOREACH(vp, hd, list) {
-			xxxassert(vp->vfp != filter);
-			xxxassert(strcasecmp(vp->name, filter->name));
+			if (vp->vfp == filter)
+				return (FLT_DUPLICATE);
+			if (strcasecmp(vp->name, filter->name) == 0)
+				return (FLT_CONFLICT);
 		}
 	}
 	ALLOC_OBJ(vp, VFILTER_MAGIC);
@@ -93,9 +97,11 @@ VRT_AddVFP(VRT_CTX, const struct vfp *filter)
 	vp->name = filter->name;
 	vp->nlen = strlen(vp->name);
 	VTAILQ_INSERT_TAIL(hd, vp, list);
+
+	return (FLT_OK);
 }
 
-void
+enum vrt_filter_err
 VRT_AddVDP(VRT_CTX, const struct vdp *filter)
 {
 	struct vfilter *vp;
@@ -107,16 +113,20 @@ VRT_AddVDP(VRT_CTX, const struct vdp *filter)
 	AN(*filter->name);
 
 	VTAILQ_FOREACH(vp, hd, list) {
-		xxxassert(vp->vdp != filter);
-		xxxassert(strcasecmp(vp->name, filter->name));
+		if (vp->vdp == filter)
+			return (FLT_DUPLICATE);
+		if (strcasecmp(vp->name, filter->name) == 0)
+			return (FLT_CONFLICT);
 	}
 	if (ctx != NULL) {
 		ASSERT_CLI();
 		CHECK_OBJ_NOTNULL(ctx->vcl, VCL_MAGIC);
 		hd = &ctx->vcl->vdps;
 		VTAILQ_FOREACH(vp, hd, list) {
-			xxxassert(vp->vdp != filter);
-			xxxassert(strcasecmp(vp->name, filter->name));
+			if (vp->vdp == filter)
+				return (FLT_DUPLICATE);
+			if (strcasecmp(vp->name, filter->name) == 0)
+				return (FLT_CONFLICT);
 		}
 	}
 	ALLOC_OBJ(vp, VFILTER_MAGIC);
@@ -125,9 +135,11 @@ VRT_AddVDP(VRT_CTX, const struct vdp *filter)
 	vp->name = filter->name;
 	vp->nlen = strlen(vp->name);
 	VTAILQ_INSERT_TAIL(hd, vp, list);
+
+	return (FLT_OK);
 }
 
-void
+enum vrt_filter_err
 VRT_RemoveVFP(VRT_CTX, const struct vfp *filter)
 {
 	struct vfilter *vp;
@@ -146,12 +158,15 @@ VRT_RemoveVFP(VRT_CTX, const struct vfp *filter)
 		if (vp->vfp == filter)
 			break;
 	}
-	XXXAN(vp);
+	if (vp == NULL)
+		return (FLT_MISSING);
 	VTAILQ_REMOVE(hd, vp, list);
 	FREE_OBJ(vp);
+
+	return (FLT_OK);
 }
 
-void
+enum vrt_filter_err
 VRT_RemoveVDP(VRT_CTX, const struct vdp *filter)
 {
 	struct vfilter *vp;
@@ -170,9 +185,12 @@ VRT_RemoveVDP(VRT_CTX, const struct vdp *filter)
 		if (vp->vdp == filter)
 			break;
 	}
-	XXXAN(vp);
+	if (vp == NULL)
+		return (FLT_MISSING);
 	VTAILQ_REMOVE(hd, vp, list);
 	FREE_OBJ(vp);
+
+	return (FLT_OK);
 }
 
 static const struct vfilter vfilter_error[1];
@@ -254,14 +272,14 @@ VCL_StackVDP(struct req *req, const struct vcl *vcl, const char *fl)
 void
 VCL_VRT_Init(void)
 {
-	VRT_AddVFP(NULL, &VFP_testgunzip);
-	VRT_AddVFP(NULL, &VFP_gunzip);
-	VRT_AddVFP(NULL, &VFP_gzip);
-	VRT_AddVFP(NULL, &VFP_esi);
-	VRT_AddVFP(NULL, &VFP_esi_gzip);
-	VRT_AddVDP(NULL, &VDP_esi);
-	VRT_AddVDP(NULL, &VDP_gunzip);
-	VRT_AddVDP(NULL, &VDP_range);
+	AZ(VRT_AddVFP(NULL, &VFP_testgunzip));
+	AZ(VRT_AddVFP(NULL, &VFP_gunzip));
+	AZ(VRT_AddVFP(NULL, &VFP_gzip));
+	AZ(VRT_AddVFP(NULL, &VFP_esi));
+	AZ(VRT_AddVFP(NULL, &VFP_esi_gzip));
+	AZ(VRT_AddVDP(NULL, &VDP_esi));
+	AZ(VRT_AddVDP(NULL, &VDP_gunzip));
+	AZ(VRT_AddVDP(NULL, &VDP_range));
 }
 
 /*--------------------------------------------------------------------

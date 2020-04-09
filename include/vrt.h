@@ -53,6 +53,11 @@
  * Whenever something is deleted or changed in a way which is not
  * binary/load-time compatible, increment MAJOR version
  *
+ * NEXT (2022-03-15)
+ *	VRT_AddVDP() signature changed for error handling
+ *	VRT_AddVFP() signature changed for error handling
+ *	VRT_RemoveVDP() signature changed for error handling
+ *	VRT_RemoveVFP() signature changed for error handling
  * 14.0 (2021-09-15)
  *	VIN_n_Arg() no directly returns the directory name.
  *	VSB_new() and VSB_delete() removed
