@@ -13,25 +13,19 @@ elif [ -z "$PARAM_DIST" ]; then
     exit 1
 fi
 
+yum install -y epel-release
+
 if [ "$PARAM_DIST" = centos ]; then
   if [ "$PARAM_RELEASE" = 8 ]; then
       dnf install -y 'dnf-command(config-manager)'
       yum config-manager --set-enabled PowerTools
-      yum install -y diffutils python3-sphinx
-  else
-      yum install -y python-sphinx
   fi
 fi
 
-yum install -y epel-release
-yum install -y automake jemalloc-devel git libedit-devel libtool libunwind-devel make pcre-devel python3 sudo rpm-build yum-utils
-
+#yum install -y automake jemalloc-devel git libedit-devel libtool libunwind-devel make pcre-devel python3 sudo rpm-build yum-utils
+yum install -y rpm-build yum-utils
 
 export DIST_DIR=build
-
-# XXX: we should NOT have to do that here, they should be in the
-# spec as BuildRequires
-yum install -y make gcc
 
 cd /varnish-cache
 rm -rf $DIST_DIR
@@ -46,7 +40,7 @@ tar xavf /workspace/varnish-*.tar.gz -C $DIST_DIR --strip 1
 
 echo "Build Packages..."
 # use python3
-sed -i '1 i\%global __python %{__python3}' "$DIST_DIR"/redhat/varnish.spec
+#sed -i '1 i\%global __python %{__python3}' "$DIST_DIR"/redhat/varnish.spec
 if [ -e /workspace/.is_weekly ]; then
     WEEKLY='.weekly'
 else
