@@ -130,7 +130,7 @@ VSL_Glob2Tags(const char *glob, int l, VSL_tagfind_f *func, void *priv)
 		if (p == NULL)
 			continue;
 		e = strchr(p, '\0');
-		if (e - p < l1 + l2)
+		if (e - p - l1 < l2)
 			continue;
 		if (p1 != NULL && strncasecmp(p, p1, l1))
 			continue;
