@@ -82,10 +82,10 @@ client c2u -connect "${tmpdir}/v1.sock" {
 client c3u -connect "${tmpdir}/v1.sock" {
 	loop 3 {
 		# send a periodic CRLF
-		delay 0.3
+		delay 0.2
 		sendhex 0d0a
 	}
-	delay 0.3
+	delay 0.4
 	expect_close
 } -start
 
@@ -94,10 +94,10 @@ client c4u -connect "${tmpdir}/v1.sock" {
 	rxresp
 	loop 3 {
 		# send a periodic CRLF
-		delay 0.3
+		delay 0.2
 		sendhex 0d0a
 	}
-	delay 0.3
+	delay 0.4
 	expect_close
 } -start
 
