@@ -20,6 +20,14 @@ if [ "$PARAM_DIST" = centos ]; then
       dnf install -y 'dnf-command(config-manager)'
       yum config-manager --set-enabled PowerTools
   fi
+
+  ARCH=`uname -m`
+  if [ $ARCH = aarch64 ]; then
+    # Remove Vault repo because of https://bugs.centos.org/view.php?id=15615
+    rm -f /etc/yum.repos.d/CentOS-Vault.repo
+    yum clean all
+  fi
+
 fi
 
 #yum install -y automake jemalloc-devel git libedit-devel libtool libunwind-devel make pcre-devel python3 sudo rpm-build yum-utils
@@ -39,8 +47,6 @@ echo "Untar orig..."
 tar xavf /workspace/varnish-*.tar.gz -C $DIST_DIR --strip 1
 
 echo "Build Packages..."
-# use python3
-#sed -i '1 i\%global __python %{__python3}' "$DIST_DIR"/redhat/varnish.spec
 if [ -e /workspace/.is_weekly ]; then
     WEEKLY='.weekly'
 else
@@ -74,5 +80,5 @@ rpmbuild -bs "$DIST_DIR"/redhat/varnish.spec
 rpmbuild --rebuild "$RESULT_DIR"/varnish-*.src.rpm
 
 echo "Prepare the packages for storage..."
-mkdir -p /packages/$PARAM_DIST/$PARAM_RELEASE/
-mv rpms/*/*.rpm /packages/$PARAM_DIST/$PARAM_RELEASE/
+mkdir -p "/packages/$PARAM_DIST/$PARAM_RELEASE/"
+mv rpms/*/*.rpm "/packages/$PARAM_DIST/$PARAM_RELEASE/"
