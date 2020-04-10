@@ -236,8 +236,6 @@ jobs:
     docker:
       - image: centos:7
     steps:
-      - attach_workspace:
-          at: ~/project
       - run: ls -la ~/project/
       - run:
           name: Tar the packages
