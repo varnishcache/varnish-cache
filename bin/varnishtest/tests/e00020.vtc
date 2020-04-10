@@ -27,7 +27,7 @@ logexpect l1 -v v1 -g vxid {
 	expect 0 = ESI_xmlerror {^ERR after 3 ESI 1.0 <esi:include> element nested in <esi:remove>$}
 	expect 0 = ESI_xmlerror {^ERR after 3 ESI 1.0 Nested <!--esi element in <esi:remove>$}
 	expect 0 = Gzip         {^U}
-	expect 0 = BackendReuse
+	expect 0 = BackendRecycle
 } -start
 
 client c1 {

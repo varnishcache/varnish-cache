@@ -27,7 +27,7 @@ varnish v1 -vcl+backend {
 logexpect l1 -v v1 -g raw {
 	expect * * Fetch_Body
 	expect 0 * ESI_xmlerror {^ERR after 66 ESI 1.0 Nested <!--esi element in <esi:remove>$}
-	expect 0 = BackendReuse
+	expect 0 = BackendRecycle
 } -start
 
 client c1 {

@@ -63,7 +63,7 @@ logexpect l1 -v v1 -g vxid -q "vxid == 1002" {
 	expect 0 = ESI_xmlerror {^WARN after 107 ESI 1.0 <esi:include> lacks final '/'$}
 	expect 0 = ESI_xmlerror {^ERR after 130 ESI 1.0 <esi:bogus> element$}
 	expect 0 = ESI_xmlerror {^ERR after 131837 VEP ended inside a tag$}
-	expect 0 = BackendReuse
+	expect 0 = BackendRecycle
 } -start
 
 client c1 {

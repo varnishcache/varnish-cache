@@ -117,9 +117,8 @@ SLTM(BackendOpen, 0, "Backend connection opened",
 	"\n"
 )
 
-SLTM(BackendReuse, 0, "Backend connection put up for reuse",
-	"Logged when a backend connection is put up for reuse by a later"
-	" connection.\n\n"
+SLTM(BackendRecycle, 0, "Backend connection recycled",
+	"Logged when a backend connection is saved for later use.\n\n"
 	"The format is::\n\n"
 	"\t%d %s\n"
 	"\t|  |\n"
