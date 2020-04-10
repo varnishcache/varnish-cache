@@ -48,3 +48,4 @@ su builder -c "cp /home/builder/packages/$ARCH/*.apk apks"
 echo "Import the packages into the workspace"
 mkdir -p packages/$PARAM_DIST/$PARAM_RELEASE/$ARCH/
 mv /home/builder/packages/$ARCH/*.apk packages/$PARAM_DIST/$PARAM_RELEASE/$ARCH/
+chown -R root: packages
