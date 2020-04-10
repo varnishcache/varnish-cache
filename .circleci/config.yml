@@ -56,9 +56,6 @@ jobs:
             - .is_weekly
             - varnish*.tar.gz
             - tools/*.suppr
-      - store_artifacts:
-          destination: ~/workspace
-          path: ~/workspace
   tar_pkg_tools:
     description: Builds archives with the packaging tools from https://github.com/varnishcache/pkg-varnish-cache
     docker:
@@ -87,9 +84,6 @@ jobs:
             - debian.tar.gz
             - redhat.tar.gz
             - alpine.tar.gz
-      - store_artifacts:
-          destination: ~/workspace
-          path: ~/workspace
   package:
     parameters:
       dist:
@@ -142,8 +136,6 @@ jobs:
           root: /tmp
           paths:
             - "packages"
-      - store_artifacts:
-          path: ~/project/packages
   distcheck:
     parameters:
       dist:
