@@ -22,11 +22,6 @@ fi
 cd /varnish-cache
 ls -la
 
-DIST_DIR=build
-rm -rf $DIST_DIR
-mkdir -p $DIST_DIR
-cd $DIST_DIR
-
 echo "Untar debian..."
 tar xavf debian.tar.gz
 
