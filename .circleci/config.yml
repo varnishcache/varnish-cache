@@ -46,12 +46,8 @@ jobs:
             fi
             ./autogen.des --quiet
             make dist -j 16
-            mkdir -p ~/workspace/tools
-            mv varnish-*tar.gz ~/workspace/
-            if test -e .is_weekly; then mv .is_weekly ~/workspace/; fi
-            mv tools/*.suppr ~/workspace/tools/
       - persist_to_workspace:
-          root: ~/workspace
+          root: .
           paths:
             - .is_weekly
             - varnish*.tar.gz
@@ -76,10 +72,8 @@ jobs:
             tar cvzf debian.tar.gz debian --dereference
             tar cvzf redhat.tar.gz redhat --dereference
             tar cvzf alpine.tar.gz alpine --dereference
-            mkdir -p ~/workspace
-            mv *.tar.gz ~/workspace
       - persist_to_workspace:
-          root: ~/workspace
+          root: .
           paths:
             - debian.tar.gz
             - redhat.tar.gz
@@ -101,16 +95,12 @@ jobs:
       image:
         description: the base Docker image for Dockerfile
         type: string
-      workspace_extra:
-        description: extra paths for the workspace root
-        type: string
-        default: ""
     machine:
       image: ubuntu-1604:201903-01
     steps:
       - attach_workspace:
-          at: ~/workspace
-      - run: ls -laR ~/workspace
+          at: ~/project
+      - run: ls -la ~/project
       - checkout
       - run:
           name: Activate QEMU
@@ -125,15 +115,15 @@ jobs:
       - run:
           name: Build << parameters.dist >> << parameters.release >> << parameters.arch >> << parameters.ext >>
           command: |
-            mkdir /tmp/packages
+            mkdir -p packages
             cp .circleci/make-<< parameters.ext >>-packages.sh .
             docker build -t varnish-<< parameters.ext >>-package-build:<< parameters.arch >> .
-            docker run --rm -it -e PARAM_DIST=<< parameters.dist >> -e PARAM_RELEASE=<< parameters.release >> -v$(pwd):/varnish-cache -v$HOME/workspace:/workspace -v/tmp/packages:/packages varnish-<< parameters.ext >>-package-build:<< parameters.arch >>
+            docker run --rm -it -e PARAM_DIST=<< parameters.dist >> -e PARAM_RELEASE=<< parameters.release >> -v$(pwd):/varnish-cache -v$(pwd):/project varnish-<< parameters.ext >>-package-build:<< parameters.arch >>
       - run:
           name: List created packages
-          command: find ./ -name "*.<< parameters.ext >>"
+          command: find ./packages -name "*.<< parameters.ext >>"
       - persist_to_workspace:
-          root: /tmp
+          root: .
           paths:
             - "packages"
   distcheck:
@@ -152,9 +142,6 @@ jobs:
       - image: << parameters.dist >>:<< parameters.release >>
     working_directory: /workspace
     steps:
-      - run:
-          name: List the contents of ~/workspace
-          command: if [ -e ~/workspace ]; then ls -laR ~/workspace/; fi
       - run:
           name: Possibly activate centos:8 extra repos
           command: |
@@ -215,11 +202,11 @@ jobs:
                     sudo
             fi
       - attach_workspace:
-          at: /workspace
+          at: ~/project
       - run:
           name: Extract and distcheck
           command: |
-            tar xavf /workspace/*.tar.gz --strip 1
+            tar xavf *.tar.gz --strip 1
             if [ << parameters.dist >> = centos ]; then
             	adduser varnish
             else
@@ -249,12 +236,12 @@ jobs:
       - image: centos:7
     steps:
       - attach_workspace:
-          at: ~/workspace
-      - run: ls -laR ~/workspace/
+          at: ~/project
+      - run: ls -la ~/project/
       - run:
           name: Tar the packages
           command: |
-              tar cvzf packages.tar.gz ~/workspace/packages
+              tar cvzf packages.tar.gz packages
       - store_artifacts:
           destination: packages.tar.gz
           path: packages.tar.gz
@@ -385,7 +372,6 @@ workflows:
           arch: x64
           image: alpine:3
           ext: apk
-          workspace_extra: "/x86_64"
           <<: *pkg_req
       - package:
           name: aarch64-alpine-3
@@ -394,7 +380,6 @@ workflows:
           arch: aarch64
           image: arm64v8/alpine:3
           ext: apk
-          workspace_extra: "/aarch64"
           <<: *pkg_req
       - collect_packages:
           requires:
