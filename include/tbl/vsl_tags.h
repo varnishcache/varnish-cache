@@ -117,6 +117,20 @@ SLTM(BackendOpen, 0, "Backend connection opened",
 	"\n"
 )
 
+SLTM(BackendReuse, 0, "Backend connection reused",
+	"Logged when an existing backend connection is reused.\n\n"
+	"The format is::\n\n"
+	"\t%d %s %s %s %s %s\n"
+	"\t|  |  |  |  |  |\n"
+	"\t|  |  |  |  |  +- Local port\n"
+	"\t|  |  |  |  +---- Local address\n"
+	"\t|  |  |  +------- Remote port\n"
+	"\t|  |  +---------- Remote address\n"
+	"\t|  +------------- Backend display name\n"
+	"\t+---------------- Connection file descriptor\n"
+	"\n"
+)
+
 SLTM(BackendRecycle, 0, "Backend connection recycled",
 	"Logged when a backend connection is saved for later use.\n\n"
 	"The format is::\n\n"

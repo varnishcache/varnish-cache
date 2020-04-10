@@ -198,7 +198,8 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
 
 	PFD_LocalName(pfd, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
 	PFD_RemoteName(pfd, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
-	VSLb(bo->vsl, SLT_BackendOpen, "%d %s %s %s %s %s",
+	VSLb(bo->vsl, PFD_State(pfd) == PFD_STATE_STOLEN ?
+	    SLT_BackendReuse : SLT_BackendOpen, "%d %s %s %s %s %s",
 	    *fdp, VRT_BACKEND_string(bp->director), abuf2, pbuf2, abuf1, pbuf1);
 
 	INIT_OBJ(bo->htc, HTTP_CONN_MAGIC);
