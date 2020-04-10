@@ -140,7 +140,6 @@ jobs:
         type: string
     docker:
       - image: << parameters.dist >>:<< parameters.release >>
-    working_directory: /workspace
     steps:
       - run:
           name: Possibly activate centos:8 extra repos
@@ -206,12 +205,7 @@ jobs:
       - run:
           name: Extract and distcheck
           command: |
-            echo "DEBUG: 1"
-            pwd
-            ls -la
             tar xavf varnish-cache-*.tar.gz --strip 1
-            echo "DEBUG: 2"
-            ls -la
             if [ << parameters.dist >> = centos ]; then
             	adduser varnish
             else
