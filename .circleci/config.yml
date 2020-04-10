@@ -205,7 +205,7 @@ jobs:
       - run:
           name: Extract and distcheck
           command: |
-            tar xavf varnish-cache-*.tar.gz --strip 1
+            tar xavf varnish-*.tar.gz --strip 1
             if [ << parameters.dist >> = centos ]; then
             	adduser varnish
             else
