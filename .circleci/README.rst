@@ -6,9 +6,12 @@ Varnish Cache uses CircleCI_ for building, testing and creating packages for sev
 Since CircleCI provides only x86_64 VMs the setup uses Docker and QEMU to be able to build, test and create packages for aarch64.
 This is accomplished by registering `qemu-user-static` for the CircleCI `machine` executor:
 
-        ``sudo docker run --rm --privileged multiarch/qemu-user-static:register --reset --credential yes``
+        ``sudo docker run --rm --privileged multiarch/qemu-user-static --reset --credential yes --persistent yes``
 
-Note: **--credential yes** is needed so that *setuid* flag is working. Without it `sudo` does not work in the Docker containers with architecture different than x86_64.
+Note 1: **--credential yes** is needed so that *setuid* flag is working. Without it `sudo` does not work in the Docker containers with architecture
+different than x86_64.
+Note 2: **--persistent yes** is needed so that there is no need to use `:register` tag. This way one can run locally pure foreign arch Docker
+images, like the official `arm64v8/***` ones. O
 
 With QEMU registered each build step can start a Docker image for any of the supported architectures to execute the `configure`, `make`, package steps.
 
