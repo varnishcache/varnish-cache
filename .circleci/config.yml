@@ -101,7 +101,6 @@ jobs:
       - attach_workspace:
           at: ~/project
       - run: ls -la ~/project
-      - checkout
       - run:
           name: Activate QEMU
           command: |
