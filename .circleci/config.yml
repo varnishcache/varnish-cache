@@ -207,6 +207,7 @@ jobs:
           name: Extract and distcheck
           command: |
             echo "DEBUG: 1"
+            pwd
             ls -la
             tar xavf varnish-cache-*.tar.gz --strip 1
             echo "DEBUG: 2"
