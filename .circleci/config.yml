@@ -52,6 +52,7 @@ jobs:
             - .is_weekly
             - varnish*.tar.gz
             - tools/*.suppr
+            - .circleci
   tar_pkg_tools:
     description: Builds archives with the packaging tools from https://github.com/varnishcache/pkg-varnish-cache
     docker:
@@ -117,7 +118,7 @@ jobs:
             mkdir -p packages
             cp .circleci/make-<< parameters.ext >>-packages.sh .
             docker build -t varnish-<< parameters.ext >>-package-build:<< parameters.arch >> .
-            docker run --rm -it -e PARAM_DIST=<< parameters.dist >> -e PARAM_RELEASE=<< parameters.release >> -v$(pwd):/varnish-cache -v$(pwd):/project varnish-<< parameters.ext >>-package-build:<< parameters.arch >>
+            docker run --rm -it -e PARAM_DIST=<< parameters.dist >> -e PARAM_RELEASE=<< parameters.release >> -v$(pwd):/varnish-cache varnish-<< parameters.ext >>-package-build:<< parameters.arch >>
       - run:
           name: List created packages
           command: find ./packages -name "*.<< parameters.ext >>"
