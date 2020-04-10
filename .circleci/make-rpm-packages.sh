@@ -41,13 +41,13 @@ mkdir $DIST_DIR
 
 
 echo "Untar redhat..."
-tar xavf /workspace/redhat.tar.gz -C $DIST_DIR
+tar xavf redhat.tar.gz -C $DIST_DIR
 
 echo "Untar orig..."
-tar xavf /workspace/varnish-*.tar.gz -C $DIST_DIR --strip 1
+tar xavf varnish-*.tar.gz -C $DIST_DIR --strip 1
 
 echo "Build Packages..."
-if [ -e /workspace/.is_weekly ]; then
+if [ -e .is_weekly ]; then
     WEEKLY='.weekly'
 else
     WEEKLY=
@@ -80,5 +80,5 @@ rpmbuild -bs "$DIST_DIR"/redhat/varnish.spec
 rpmbuild --rebuild "$RESULT_DIR"/varnish-*.src.rpm
 
 echo "Prepare the packages for storage..."
-mkdir -p "/packages/$PARAM_DIST/$PARAM_RELEASE/"
-mv rpms/*/*.rpm "/packages/$PARAM_DIST/$PARAM_RELEASE/"
+mkdir -p packages/$PARAM_DIST/$PARAM_RELEASE/
+mv rpms/*/*.rpm packages/$PARAM_DIST/$PARAM_RELEASE/
