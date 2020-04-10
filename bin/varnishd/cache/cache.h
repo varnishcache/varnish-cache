@@ -295,6 +295,8 @@ struct boc {
 	unsigned		refcount;
 	struct lock		mtx;
 	pthread_cond_t		cond;
+	struct lock		mtx_pipe;
+	pthread_cond_t		cond_pipe;
 	void			*stevedore_priv;
 	enum boc_state_e	state;
 	uint8_t			*vary;
