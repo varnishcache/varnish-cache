@@ -19,9 +19,6 @@ cd /varnish-cache
 ls -la
 tar xazf alpine.tar.gz --strip 1
 
-echo "DEBUG: alpine APKBUILD"
-ls -la
-
 adduser -D builder
 echo "builder ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers
 addgroup builder abuild
@@ -31,10 +28,6 @@ chmod -R a+w /var/cache/distfiles
 echo "Generate key"
 su builder -c "abuild-keygen -nai"
 
-echo "DEBUG 2: alpine APKBUILD"
-pwd
-ls -la
-
 echo "Fix APKBUILD's variables"
 tar xavf varnish-*.tar.gz
 VERSION=$(varnish-*/configure --version | awk 'NR == 1 {print $NF}')
@@ -42,20 +35,15 @@ echo "Version: $VERSION"
 sed -i "s/@VERSION@/$VERSION/" APKBUILD
 rm -rf varnish-*/
 
-echo "DEBUG 3: alpine APKBUILD"
-pwd
-ls -la
-
 echo "Fix checksums, build"
+chown builder -R .
 su builder -c "abuild checksum"
 su builder -c "abuild -r"
 
 echo "Fix the APKBUILD's version"
 su builder -c "mkdir apks"
 ARCH=`uname -m`
-echo "Arch: $ARCH"
 su builder -c "cp /home/builder/packages/$ARCH/*.apk apks"
-ls -laR apks
 
 echo "Import the packages into the workspace"
 mkdir -p packages/$PARAM_DIST/$PARAM_RELEASE/$ARCH/
