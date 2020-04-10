@@ -140,9 +140,10 @@ jobs:
         type: string
     docker:
       - image: << parameters.dist >>:<< parameters.release >>
+    working_directory: /workspace
     steps:
       - run:
-          name: Possibly activate centos:8 extra repos
+          name: Possibly << parameters.dist >>:<< parameters.release >> extra repos
           command: |
             if [ << parameters.dist >> = centos ]; then
                 if [ << parameters.release >> = 8 ]; then
@@ -201,7 +202,7 @@ jobs:
                     sudo
             fi
       - attach_workspace:
-          at: ~/project
+          at: /workspace
       - run:
           name: Extract and distcheck
           command: |
