@@ -16,7 +16,6 @@ elif [ -z "$PARAM_DIST" ]; then
 fi
 
 cd /varnish-cache
-ls -la
 tar xazf alpine.tar.gz --strip 1
 
 adduser -D builder
@@ -35,8 +34,9 @@ echo "Version: $VERSION"
 sed -i "s/@VERSION@/$VERSION/" APKBUILD
 rm -rf varnish-*/
 
-echo "Fix checksums, build"
+echo "Change the ownership so that abuild is able to write its logs"
 chown builder -R .
+echo "Fix checksums, build"
 su builder -c "abuild checksum"
 su builder -c "abuild -r"
 
@@ -48,4 +48,6 @@ su builder -c "cp /home/builder/packages/$ARCH/*.apk apks"
 echo "Import the packages into the workspace"
 mkdir -p packages/$PARAM_DIST/$PARAM_RELEASE/$ARCH/
 mv /home/builder/packages/$ARCH/*.apk packages/$PARAM_DIST/$PARAM_RELEASE/$ARCH/
-chown -R root: packages
+
+echo "Allow to read the packages by 'circleci' user outside of Docker after 'chown builder -R .' above"
+chmod -R a+rwx .
