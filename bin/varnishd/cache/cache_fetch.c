@@ -68,7 +68,7 @@ vbf_allocobj(struct busyobj *bo, unsigned l)
 	if (stv == NULL)
 		return (0);
 
-	if (STV_NewObject(bo->wrk, bo->fetch_objcore, stv, l))
+	if (STV_NewObject(bo->wrk, oc, stv, l))
 		return (1);
 
 	if (stv == stv_transient)
@@ -83,7 +83,7 @@ vbf_allocobj(struct busyobj *bo, unsigned l)
 		oc->ttl = cache_param->shortlived;
 	oc->grace = 0.0;
 	oc->keep = 0.0;
-	return (STV_NewObject(bo->wrk, bo->fetch_objcore, stv_transient, l));
+	return (STV_NewObject(bo->wrk, oc, stv_transient, l));
 }
 
 static void
@@ -126,11 +126,16 @@ vbf_beresp2obj(struct busyobj *bo)
 	uint8_t *bp;
 	struct vsb *vary = NULL;
 	int varyl = 0;
+	struct objcore *oc;
+
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	oc = bo->fetch_objcore;
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 	l = 0;
 
 	/* Create Vary instructions */
-	if (!(bo->fetch_objcore->flags & OC_F_PRIVATE)) {
+	if (!(oc->flags & OC_F_PRIVATE)) {
 		varyl = VRY_Create(bo, &vary);
 		if (varyl > 0) {
 			AN(vary);
@@ -156,7 +161,7 @@ vbf_beresp2obj(struct busyobj *bo)
 	l += l2;
 
 	if (bo->uncacheable)
-		bo->fetch_objcore->flags |= OC_F_HFM;
+		oc->flags |= OC_F_HFM;
 
 	if (!vbf_allocobj(bo, l)) {
 		if (vary != NULL)
@@ -166,28 +171,26 @@ vbf_beresp2obj(struct busyobj *bo)
 	}
 
 	if (vary != NULL) {
-		AN(ObjSetAttr(bo->wrk, bo->fetch_objcore, OA_VARY, varyl,
-			VSB_data(vary)));
+		AN(ObjSetAttr(bo->wrk, oc, OA_VARY, varyl, VSB_data(vary)));
 		VSB_destroy(&vary);
 	}
 
-	AZ(ObjSetU32(bo->wrk, bo->fetch_objcore, OA_VXID, VXID(bo->vsl->wid)));
+	AZ(ObjSetU32(bo->wrk, oc, OA_VXID, VXID(bo->vsl->wid)));
 
 	/* for HTTP_Encode() VSLH call */
 	bo->beresp->logtag = SLT_ObjMethod;
 
 	/* Filter into object */
-	bp = ObjSetAttr(bo->wrk, bo->fetch_objcore, OA_HEADERS, l2, NULL);
+	bp = ObjSetAttr(bo->wrk, oc, OA_HEADERS, l2, NULL);
 	AN(bp);
 	HTTP_Encode(bo->beresp, bp, l2,
 	    bo->uncacheable ? HTTPH_A_PASS : HTTPH_A_INS);
 
 	if (http_GetHdr(bo->beresp, H_Last_Modified, &b))
-		AZ(ObjSetDouble(bo->wrk, bo->fetch_objcore, OA_LASTMODIFIED,
-		    VTIM_parse(b)));
+		AZ(ObjSetDouble(bo->wrk, oc, OA_LASTMODIFIED, VTIM_parse(b)));
 	else
-		AZ(ObjSetDouble(bo->wrk, bo->fetch_objcore, OA_LASTMODIFIED,
-		    floor(bo->fetch_objcore->t_origin)));
+		AZ(ObjSetDouble(bo->wrk, oc, OA_LASTMODIFIED,
+		    floor(oc->t_origin)));
 
 	return (0);
 }
@@ -200,12 +203,15 @@ static enum fetch_step
 vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo)
 {
 	const char *q;
+	struct objcore *oc;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(bo->req, REQ_MAGIC);
+	oc = bo->fetch_objcore;
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
-	assert(bo->fetch_objcore->boc->state == BOS_INVALID);
+	assert(oc->boc->state == BOS_INVALID);
 	AZ(bo->storage);
 
 	HTTP_Setup(bo->bereq0, bo->ws, bo->vsl, SLT_BereqMethod);
@@ -242,13 +248,13 @@ vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo)
 
 	if (bo->req->req_body_status->avail == 0) {
 		bo->req = NULL;
-		ObjSetState(bo->wrk, bo->fetch_objcore, BOS_REQ_DONE);
+		ObjSetState(bo->wrk, oc, BOS_REQ_DONE);
 	} else if (bo->req->req_body_status == BS_CACHED) {
 		AN(bo->req->body_oc);
 		bo->bereq_body = bo->req->body_oc;
 		HSH_Ref(bo->bereq_body);
 		bo->req = NULL;
-		ObjSetState(bo->wrk, bo->fetch_objcore, BOS_REQ_DONE);
+		ObjSetState(bo->wrk, oc, BOS_REQ_DONE);
 	}
 	return (F_STP_STARTFETCH);
 }
@@ -338,9 +344,12 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	int i;
 	vtim_real now;
 	unsigned handling;
+	struct objcore *oc;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	oc = bo->fetch_objcore;
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 	AZ(bo->storage);
 	bo->storage = bo->do_pass ? stv_transient : STV_next();
@@ -360,12 +369,12 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, SLT_BerespMethod);
 
-	assert(bo->fetch_objcore->boc->state <= BOS_REQ_DONE);
+	assert(oc->boc->state <= BOS_REQ_DONE);
 
 	AZ(bo->htc);
 
 	VFP_Setup(bo->vfc, wrk);
-	bo->vfc->oc = bo->fetch_objcore;
+	bo->vfc->oc = oc;
 	bo->vfc->resp = bo->beresp;
 	bo->vfc->req = bo->bereq;
 
@@ -417,10 +426,10 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	/* What does RFC2616 think about TTL ? */
 	RFC2616_Ttl(bo, now,
-	    &bo->fetch_objcore->t_origin,
-	    &bo->fetch_objcore->ttl,
-	    &bo->fetch_objcore->grace,
-	    &bo->fetch_objcore->keep);
+	    &oc->t_origin,
+	    &oc->ttl,
+	    &oc->grace,
+	    &oc->keep);
 
 	AZ(bo->do_esi);
 	AZ(bo->was_304);
@@ -461,21 +470,21 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 		return (F_STP_ERROR);
 	}
 
-	assert(bo->fetch_objcore->boc->state <= BOS_REQ_DONE);
-	if (bo->fetch_objcore->boc->state != BOS_REQ_DONE) {
+	assert(oc->boc->state <= BOS_REQ_DONE);
+	if (oc->boc->state != BOS_REQ_DONE) {
 		bo->req = NULL;
-		ObjSetState(wrk, bo->fetch_objcore, BOS_REQ_DONE);
+		ObjSetState(wrk, oc, BOS_REQ_DONE);
 	}
 
 	if (bo->do_esi)
 		bo->do_stream = 0;
 	if (wrk->handling == VCL_RET_PASS) {
-		bo->fetch_objcore->flags |= OC_F_HFP;
+		oc->flags |= OC_F_HFP;
 		bo->uncacheable = 1;
 		wrk->handling = VCL_RET_DELIVER;
 	}
 	if (bo->do_pass || bo->uncacheable)
-		bo->fetch_objcore->flags |= OC_F_HFM;
+		oc->flags |= OC_F_HFM;
 
 	assert(wrk->handling == VCL_RET_DELIVER);
 
@@ -493,10 +502,13 @@ vbf_stp_fetchbody(struct worker *wrk, struct busyobj *bo)
 	enum vfp_status vfps = VFP_ERROR;
 	ssize_t est;
 	struct vfp_ctx *vfc;
+	struct objcore *oc;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	vfc = bo->vfc;
 	CHECK_OBJ_NOTNULL(vfc, VFP_CTX_MAGIC);
+	oc = bo->fetch_objcore;
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 	AN(vfc->vfp_nxt);
 
@@ -505,13 +517,13 @@ vbf_stp_fetchbody(struct worker *wrk, struct busyobj *bo)
 		est = 0;
 
 	do {
-		if (vfc->oc->flags & OC_F_ABANDON) {
+		if (oc->flags & OC_F_ABANDON) {
 			/*
 			 * A pass object and delivery was terminated
 			 * We don't fail the fetch, in order for HitMiss
 			 * objects to be created.
 			 */
-			AN(vfc->oc->flags & OC_F_HFM);
+			AN(oc->flags & OC_F_HFM);
 			VSLb(wrk->vsl, SLT_Debug,
 			    "Fetch: Pass delivery abandoned");
 			bo->htc->doclose = SC_RX_BODY;
@@ -542,7 +554,7 @@ vbf_stp_fetchbody(struct worker *wrk, struct busyobj *bo)
 		bo->htc->doclose = SC_RX_BODY;
 		vbf_cleanup(bo);
 		if (!bo->do_stream) {
-			assert(bo->fetch_objcore->boc->state < BOS_STREAM);
+			assert(oc->boc->state < BOS_STREAM);
 			// XXX: doclose = ?
 			return (F_STP_ERROR);
 		} else {
@@ -551,7 +563,7 @@ vbf_stp_fetchbody(struct worker *wrk, struct busyobj *bo)
 		}
 	}
 
-	ObjTrimStore(wrk, vfc->oc);
+	ObjTrimStore(wrk, oc);
 	return (F_STP_FETCHEND);
 }
 
@@ -791,11 +803,13 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	uint8_t *ptr;
 	struct vsb *synth_body;
 	struct objcore *stale;
+	struct objcore *oc;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	CHECK_OBJ_NOTNULL(bo->fetch_objcore, OBJCORE_MAGIC);
-	AN(bo->fetch_objcore->flags & OC_F_BUSY);
+	oc = bo->fetch_objcore;
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	AN(oc->flags & OC_F_BUSY);
 	assert(bo->director_state == DIR_S_NULL);
 
 	if (wrk->handling != VCL_RET_ERROR)
@@ -804,8 +818,8 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	now = W_TIM_real(wrk);
 	VSLb_ts_busyobj(bo, "Error", now);
 
-	if (bo->fetch_objcore->stobj->stevedore != NULL)
-		ObjFreeObj(bo->wrk, bo->fetch_objcore);
+	if (oc->stobj->stevedore != NULL)
+		ObjFreeObj(bo->wrk, oc);
 
 	if (bo->storage == NULL)
 		bo->storage = STV_next();
@@ -824,8 +838,8 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	http_SetHeader(bo->beresp, "Server: Varnish");
 
 	stale = bo->stale_oc;
-	bo->fetch_objcore->t_origin = now;
-	if (!VTAILQ_EMPTY(&bo->fetch_objcore->objhead->waitinglist)) {
+	oc->t_origin = now;
+	if (!VTAILQ_EMPTY(&oc->objhead->waitinglist)) {
 		/*
 		 * If there is a waitinglist, it means that there is no
 		 * grace-able object, so cache the error return for a
@@ -833,14 +847,14 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 		 * each objcore on the waiting list sequentially attempt
 		 * to fetch from the backend.
 		 */
-		bo->fetch_objcore->ttl = 1;
-		bo->fetch_objcore->grace = 5;
-		bo->fetch_objcore->keep = 5;
+		oc->ttl = 1;
+		oc->grace = 5;
+		oc->keep = 5;
 		stale = NULL;
 	} else {
-		bo->fetch_objcore->ttl = 0;
-		bo->fetch_objcore->grace = 0;
-		bo->fetch_objcore->keep = 0;
+		oc->ttl = 0;
+		oc->grace = 0;
+		oc->keep = 0;
 	}
 
 	synth_body = VSB_new_auto();
@@ -866,7 +880,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	assert(wrk->handling == VCL_RET_DELIVER);
 
 	assert(bo->vfc->wrk == bo->wrk);
-	assert(bo->vfc->oc == bo->fetch_objcore);
+	assert(bo->vfc->oc == oc);
 	assert(bo->vfc->resp == bo->beresp);
 	assert(bo->vfc->req == bo->bereq);
 
@@ -889,13 +903,13 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 		ll -= l;
 		o += l;
 	}
-	AZ(ObjSetU64(wrk, bo->fetch_objcore, OA_LEN, o));
+	AZ(ObjSetU64(wrk, oc, OA_LEN, o));
 	VSB_destroy(&synth_body);
-	ObjSetState(wrk, bo->fetch_objcore, BOS_PREP_STREAM);
-	HSH_Unbusy(wrk, bo->fetch_objcore);
-	if (stale != NULL && bo->fetch_objcore->ttl > 0)
+	ObjSetState(wrk, oc, BOS_PREP_STREAM);
+	HSH_Unbusy(wrk, oc);
+	if (stale != NULL && oc->ttl > 0)
 		HSH_Kill(stale);
-	ObjSetState(wrk, bo->fetch_objcore, BOS_FINISHED);
+	ObjSetState(wrk, oc, BOS_FINISHED);
 	return (F_STP_DONE);
 }
 
@@ -905,15 +919,18 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 static enum fetch_step
 vbf_stp_fail(struct worker *wrk, const struct busyobj *bo)
 {
+	struct objcore *oc;
+
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	CHECK_OBJ_NOTNULL(bo->fetch_objcore, OBJCORE_MAGIC);
+	oc = bo->fetch_objcore;
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
-	assert(bo->fetch_objcore->boc->state < BOS_FINISHED);
-	HSH_Fail(bo->fetch_objcore);
-	if (!(bo->fetch_objcore->flags & OC_F_BUSY))
-		HSH_Kill(bo->fetch_objcore);
-	ObjSetState(wrk, bo->fetch_objcore, BOS_FAILED);
+	assert(oc->boc->state < BOS_FINISHED);
+	HSH_Fail(oc);
+	if (!(oc->flags & OC_F_BUSY))
+		HSH_Kill(oc);
+	ObjSetState(wrk, oc, BOS_FAILED);
 	return (F_STP_DONE);
 }
 
@@ -931,12 +948,14 @@ static void v_matchproto_(task_func_t)
 vbf_fetch_thread(struct worker *wrk, void *priv)
 {
 	struct busyobj *bo;
+	struct objcore *oc;
 	enum fetch_step stp;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(bo->req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(bo->fetch_objcore, OBJCORE_MAGIC);
+	oc = bo->fetch_objcore;
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 	THR_SetBusyobj(bo);
 	stp = F_STP_MKBEREQ;
@@ -959,8 +978,8 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	VCL_TaskEnter(bo->privs);
 	while (stp != F_STP_DONE) {
 		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-		assert(bo->fetch_objcore->boc->refcount >= 1);
-		if (bo->fetch_objcore->boc->state < BOS_REQ_DONE)
+		assert(oc->boc->refcount >= 1);
+		if (oc->boc->state < BOS_REQ_DONE)
 			AN(bo->req);
 		else
 			AZ(bo->req);
@@ -986,18 +1005,18 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	if (bo->bereq_body != NULL)
 		(void) HSH_DerefObjCore(bo->wrk, &bo->bereq_body, 0);
 
-	if (bo->fetch_objcore->boc->state == BOS_FINISHED) {
-		AZ(bo->fetch_objcore->flags & OC_F_FAILED);
+	if (oc->boc->state == BOS_FINISHED) {
+		AZ(oc->flags & OC_F_FAILED);
 		VSLb(bo->vsl, SLT_Length, "%ju",
-		    (uintmax_t)ObjGetLen(bo->wrk, bo->fetch_objcore));
+		    (uintmax_t)ObjGetLen(bo->wrk, oc));
 	}
-	// AZ(bo->fetch_objcore->boc);	// XXX
+	// AZ(oc->boc);	// XXX
 
 	if (bo->stale_oc != NULL)
 		(void)HSH_DerefObjCore(wrk, &bo->stale_oc, 0);
 
 	wrk->vsl = NULL;
-	HSH_DerefBoc(wrk, bo->fetch_objcore);
+	HSH_DerefBoc(wrk, oc);
 	SES_Rel(bo->sp);
 	VBO_ReleaseBusyObj(wrk, &bo);
 	THR_SetBusyobj(NULL);
