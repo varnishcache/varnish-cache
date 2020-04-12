@@ -802,8 +802,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	vtim_real now;
 	uint8_t *ptr;
 	struct vsb *synth_body;
-	struct objcore *stale;
-	struct objcore *oc;
+	struct objcore *stale, *oc;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
