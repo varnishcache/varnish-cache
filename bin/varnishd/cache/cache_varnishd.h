@@ -248,7 +248,6 @@ void Bereq_Rollback(struct busyobj *);
 void VFP_Init(void);
 enum vfp_status VFP_GetStorage(struct vfp_ctx *, ssize_t *sz, uint8_t **ptr);
 void VFP_Extend(const struct vfp_ctx *, ssize_t sz);
-struct vfp_entry *VFP_Push(struct vfp_ctx *, const struct vfp *);
 void VFP_Setup(struct vfp_ctx *vc, struct worker *wrk);
 int VFP_Open(struct vfp_ctx *bo);
 void VFP_Close(struct vfp_ctx *bo);
