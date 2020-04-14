@@ -30,8 +30,8 @@
 
 """
 Read the vmod.vcc file (inputvcc) and produce:
-    vmod_if.h -- Prototypes for the implementation
-    vmod_if.c -- Magic glue & datastructures to make things a VMOD.
+    vcc_if.h -- Prototypes for the implementation
+    vcc_if.c -- Magic glue & datastructures to make things a VMOD.
     vmod_${name}.rst -- Extracted documentation
     vmod_${name}.man.rst -- Extracted documentation (rst2man input)
 """
