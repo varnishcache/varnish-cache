@@ -9,26 +9,50 @@ varnish v1 -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.do_stream = false;
 	}
+	sub vcl_deliver {
+		if (req.http.vtc-no-range) {
+			set resp.filters =
+			    regsub(resp.filters, "\brange\b", "");
+		}
+	}
 } -start
 
 varnish v1 -cliok "param.set http_range_support off"
 
 client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.Accept-Ranges == "<undef>"
+	expect resp.bodylen == 100
+
 	txreq -hdr "Range: bytes=0-9"
 	rxresp
 	expect resp.status == 200
+	expect resp.http.Accept-Ranges == "<undef>"
 	expect resp.bodylen == 100
 } -run
 
-varnish v1 -expect s_resp_bodybytes == 100
+varnish v1 -expect s_resp_bodybytes == 200
 
 varnish v1 -vsl_catchup
 
 varnish v1 -cliok "param.set http_range_support on"
 
 client c1 {
-	# Invalid range requests
+	# range support on -> Accept-Ranges
+	txreq
+	rxresp
+	expect resp.http.Accept-Ranges == "bytes"
+	expect resp.bodylen == 100
 
+	# range support off in vcl
+	txreq -hdr "vtc-no-range: 1"
+	rxresp
+	expect resp.http.Accept-Ranges == "<undef>"
+	expect resp.bodylen == 100
+
+	# Invalid range requests
 	txreq -hdr "Range: bytes =0-9"
 	rxresp
 	expect resp.status == 416
@@ -73,7 +97,7 @@ client c1 {
 	expect resp.bodylen == 0
 } -run
 
-varnish v1 -expect s_resp_bodybytes == 100
+varnish v1 -expect s_resp_bodybytes == 400
 
 varnish v1 -vsl_catchup
 
@@ -123,7 +147,7 @@ client c1 {
 	expect resp.http.content-range == "bytes 0-99/100"
 } -run
 
-varnish v1 -expect s_resp_bodybytes == 501
+varnish v1 -expect s_resp_bodybytes == 801
 
 varnish v1 -vsl_catchup
 
@@ -188,6 +212,7 @@ client c1 {
 		-hdr "Accept-encoding: gzip"
 	rxresp
 	expect resp.status == 200
+	expect resp.http.Accept-Ranges == "<undef>"
 	gunzip
 	expect resp.bodylen == 100
 } -run

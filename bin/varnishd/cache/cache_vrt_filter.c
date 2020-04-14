@@ -371,9 +371,7 @@ resp_default_filter_list(void *arg, struct vsb *vsb)
 	    !RFC2616_Req_Gzip(req->http))
 		VSB_cat(vsb, " gunzip");
 
-	if (cache_param->http_range_support &&
-	    http_GetStatus(req->resp) == 200 &&
-	    http_GetHdr(req->http, H_Range, NULL))
+	if (cache_param->http_range_support)
 		VSB_cat(vsb, " range");
 }
 

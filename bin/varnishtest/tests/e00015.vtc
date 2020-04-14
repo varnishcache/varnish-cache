@@ -94,16 +94,16 @@ client c1 {
 	expect resp.bodylen == 73
 	expect resp.status == 200
 	expect resp.http.was == true
-	expect resp.http.filter0 == "esi gunzip"
-	expect resp.http.filters == "gunzip"
+	expect resp.http.filter0 == "esi gunzip range"
+	expect resp.http.filters == "gunzip range"
 
 	txreq -url "/esi"
 	rxresp
 	expect resp.bodylen == 76
 	expect resp.status == 200
 	expect resp.http.was == true
-	expect resp.http.filter0 == "esi"
-	expect resp.http.filters == "esi"
+	expect resp.http.filter0 == "esi range"
+	expect resp.http.filters == "esi range"
 
 	# see Note on Range above
 	txreq -url "/esi" -hdr "Range: bytes=1-2"
@@ -118,7 +118,7 @@ client c1 {
 	expect resp.bodylen == 120
 	expect resp.status == 200
 	expect resp.http.was == true
-	expect resp.http.filters == "esi gunzip"
+	expect resp.http.filters == "esi gunzip range"
 
 	# see Note on Range above
 	txreq -url "/recurse" -hdr "Range: bytes=1-2"

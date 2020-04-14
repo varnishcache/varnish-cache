@@ -246,7 +246,14 @@ vrg_range_init(struct req *req, void **priv)
 	const char *r;
 	const char *err;
 
-	assert(http_GetHdr(req->http, H_Range, &r));
+	if (http_GetStatus(req->resp) != 200)
+		return (1);
+	if (! http_GetHdr(req->http, H_Range, &r)) {
+		// XXX can we exclude more cases where we know upfront that we
+		// cannot realiably fulfil range requests?
+		http_ForceHeader(req->resp, H_Accept_Ranges, "bytes");
+		return (1);
+	}
 	if (!vrg_ifrange(req))	// rfc7233,l,455,456
 		return (1);
 	err = vrg_dorange(req, r, priv);

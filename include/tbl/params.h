@@ -542,8 +542,11 @@ PARAM(
 	/* def */	"on",
 	/* units */	"bool",
 	/* descr */
-	"Enable support for HTTP Range headers."
-	/* XXX: what about the effect on beresp.filters? */
+	"Enable support for HTTP Range headers by adding the range delivery "
+	"processor by default.\n"
+	"This has the same effect as adding \"range\" to resp.filters.\n"
+	"Likewise, if this parameter is on, range support can be disabled "
+	"per request by removing \"range\" from resp.filters."
 )
 
 PARAM(

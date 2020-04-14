@@ -409,9 +409,6 @@ cnt_transmit(struct worker *wrk, struct req *req)
 		VSLb(req->vsl, SLT_Error, "Failure to push processors");
 		req->doclose = SC_OVERLOAD;
 	} else {
-		if (cache_param->http_range_support && status == 200)
-			http_ForceHeader(req->resp, H_Accept_Ranges, "bytes");
-
 		if (status < 200 || status == 204) {
 			// rfc7230,l,1691,1695
 			http_Unset(req->resp, H_Content_Length);
