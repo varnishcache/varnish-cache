@@ -163,7 +163,7 @@ varnishd_CFLAGS = \
 	@SAN_CFLAGS@ \
 	-DNOT_IN_A_VMOD \
 	-DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"' \
-	-DVARNISH_VMOD_DIR='"${pkglibdir}/vmods"' \
+	-DVARNISH_VMOD_DIR='"${vmoddir}"' \
 	-DVARNISH_VCL_DIR='"${pkgsysconfdir}:${vcldir}"'
 
 varnishd_LDFLAGS = -export-dynamic
