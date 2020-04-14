@@ -107,6 +107,7 @@ void Bereq_Rollback(struct busyobj *bo)
 	VCL_TaskLeave(bo->vcl, bo->privs);
 	VCL_TaskEnter(bo->vcl, bo->privs);
 	HTTP_Copy(bo->bereq, bo->bereq0);
+	bo->err_reason = NULL;
 	WS_Reset(bo->bereq->ws, bo->ws_bo);
 	WS_Reset(bo->ws, bo->ws_bo);
 }
