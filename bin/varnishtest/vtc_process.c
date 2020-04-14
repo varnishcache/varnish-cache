@@ -313,7 +313,7 @@ term_expect_text(struct process *pp,
 		AZ(pthread_mutex_unlock(&pp->mtx));
 		usleep(d);
 		AZ(pthread_mutex_lock(&pp->mtx));
-		if (d < 300000)
+		if (d < 3000000)
 			d += d;
 	}
 	AZ(pthread_mutex_unlock(&pp->mtx));
