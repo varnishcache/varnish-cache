@@ -30,7 +30,7 @@ vcc_if.h vmod_blob.rst vmod_blob.man.rst: vcc_if.c
 vcc_if.c: $(vmodtool) $(srcdir)/vmod.vcc
 	@PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/vmod.vcc
 
-EXTRA_DIST = vmod.vcc automake_boilerplate.am
+EXTRA_DIST = $(srcdir)/vmod.vcc automake_boilerplate.am
 
 CLEANFILES = $(builddir)/vcc_if.c $(builddir)/vcc_if.h \
 	$(builddir)/vmod_blob.rst \
