@@ -58,7 +58,7 @@ AM_CPPFLAGS = \\
 
 vmoddir = $(pkglibdir)/vmods
 vmodtool = $(top_srcdir)/lib/libvcc/vmodtool.py
-vmodtoolargs ?= --strict --boilerplate
+vmodtoolargs ?= --strict --boilerplate -o PFX
 
 vmod_LTLIBRARIES = libvmod_XXX.la
 
