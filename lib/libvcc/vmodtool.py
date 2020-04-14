@@ -77,8 +77,8 @@ $(libvmod_XXX_la_OBJECTS): PFX.h
 
 PFX.h vmod_XXX.rst vmod_XXX.man.rst: PFX.c
 
-PFX.c: $(vmodtool) $(srcdir)/vmod.vcc
-\t@PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/vmod.vcc
+PFX.c: $(vmodtool) $(srcdir)/VCC
+\t@PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/VCC
 
 EXTRA_DIST = vmod.vcc automake_boilerplate.am
 
@@ -987,6 +987,7 @@ class vcc(object):
         ''' Produce boilplate for autocrap tools '''
         fo = self.openfile("automake_boilerplate.am")
         fo.write(AMBOILERPLATE.replace("XXX", self.modname)
+                 .replace("VCC", os.path.basename(self.inputfile))
                  .replace("PFX", self.pfx))
         tests = glob.glob("tests/*.vtc")
         if len(tests) > 0:
