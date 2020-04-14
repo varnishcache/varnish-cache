@@ -89,7 +89,7 @@ CLEANFILES = $(builddir)/PFX.c $(builddir)/PFX.h \\
 
 AMBOILERPLATE_CHECK = '''
 TESTS = \\
-\tXXX
+\tVTC
 
 EXTRA_DIST += $(TESTS)
 
@@ -991,7 +991,7 @@ class vcc(object):
         tests = glob.glob("tests/*.vtc")
         if len(tests) > 0:
             tests.sort()
-            fo.write(AMBOILERPLATE_CHECK.replace("XXX", " \\\n\t".join(tests)))
+            fo.write(AMBOILERPLATE_CHECK.replace("VTC", " \\\n\t".join(tests)))
         fo.close()
 
     def mkdefs(self, fo):
