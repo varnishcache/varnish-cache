@@ -1,5 +1,7 @@
 varnishtest "varnishstat -j"
 
+feature cmd "python3 -c 'import json'"
+
 server s1 -repeat 5 {
 	rxreq
 	txresp
@@ -15,8 +17,5 @@ client c1 -repeat 5 {
 delay 1
 
 shell { varnishstat -n ${v1_name}  -j }
-## XXX:
-## - use @PYTHON@ discovered via autogen/automake
-## - make this test depend on json being available
-#shell -expect "1" { varnishstat -n ${v1_name} -j | python3 -c 'import sys, json; print(json.load(sys.stdin)["version"])' }
-#shell -expect "5" { varnishstat -n ${v1_name} -j | python3 -c 'import sys, json; print(json.load(sys.stdin)["counters"]["MAIN.client_req"]["value"])' }
+shell -match "^1$" { varnishstat -n ${v1_name} -j | python3 -c 'import sys, json; print(json.load(sys.stdin)["version"])' }
+shell -match "^5$" { varnishstat -n ${v1_name} -j | python3 -c 'import sys, json; print(json.load(sys.stdin)["counters"]["MAIN.client_req"]["value"])' }
