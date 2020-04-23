@@ -143,7 +143,7 @@ jobs:
     working_directory: /workspace
     steps:
       - run:
-          name: Possibly << parameters.dist >>:<< parameters.release >> extra repos
+          name: Possible << parameters.dist >>:<< parameters.release >> extra repos
           command: |
             if [ << parameters.dist >> = centos ]; then
                 if [ << parameters.release >> = 8 ]; then
