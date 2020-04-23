@@ -41,7 +41,7 @@ static unsigned fetchfrag;
 
 /*--------------------------------------------------------------------
  * We want to issue the first error we encounter on fetching and
- * supress the rest.  This function does that.
+ * suppress the rest.  This function does that.
  *
  * Other code is allowed to look at busyobj->fetch_failed to bail out
  *
