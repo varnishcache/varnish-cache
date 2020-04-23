@@ -99,7 +99,7 @@ Varnish will also output this message to recommend settings for using
 
 This recommendation should be followed to achieve an optimal
 `libumem`_ configuration for Varnish. Setting this environment
-variable before starting Varnish is required becuase `libumem`_ cannot
+variable before starting Varnish is required because `libumem`_ cannot
 be reconfigured once loaded.
 
 .. _libumem: http://dtrace.org/blogs/ahl/2004/07/13/number-11-of-20-libumem/
@@ -208,7 +208,7 @@ for transient (short lived) objects. This includes the temporary
 objects created when returning a synthetic object. By default Varnish
 would use an unlimited malloc backend for this.
 
-.. XXX: Is this another paramater? In that case handled in the same manner as above? benc
+.. XXX: Is this another parameter? In that case handled in the same manner as above? benc
 
 Varnish will consider an object short lived if the TTL is below the
 parameter 'shortlived'.

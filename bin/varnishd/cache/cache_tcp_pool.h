@@ -76,7 +76,7 @@ void VTP_Rel(struct tcp_pool **);
 
 int VTP_Open(struct tcp_pool *, vtim_dur tmo, const void **, int*);
 	/*
-	 * Open a new connection and return the adress used.
+	 * Open a new connection and return the address used.
 	 * errno will be returned in the last argument.
 	 */
 

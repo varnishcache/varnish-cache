@@ -101,7 +101,7 @@ VJ_Init(const char *j_arg)
 		if (av[0] != NULL)
 			ARGV_ERR("-j argument: %s\n", av[0]);
 		if (av[1] == NULL)
-			ARGV_ERR("-j argument is emtpy\n");
+			ARGV_ERR("-j argument is empty\n");
 		vjt = MGT_Pick(vj_choice, av[1], "jail");
 		CHECK_OBJ_NOTNULL(vjt, JAIL_TECH_MAGIC);
 		(void)vjt->init(av + 2);

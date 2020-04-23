@@ -55,7 +55,7 @@ Example 1: Send HTTP header to backend
 
 The basic case is that Varnish adds the 'X-UA-Device' HTTP header on the backend
 requests, and the backend mentions in the response 'Vary' header that the content
-is dependant on this header.
+is dependent on this header.
 
 Everything works out of the box from Varnish' perspective.
 

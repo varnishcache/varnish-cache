@@ -438,7 +438,7 @@ A stale object is not removed from the cache for the duration of
 increase the storage requirements for your cache, but if you have the
 space, it might be worth it to keep stale objects that can be
 validated for a fairly long time. If the backend can send a 304
-response long after the TTL has expired, you save bandwith on the
+response long after the TTL has expired, you save bandwidth on the
 fetch and reduce pressure on the storage; if not, then it's no
 different from any other cache miss.
 

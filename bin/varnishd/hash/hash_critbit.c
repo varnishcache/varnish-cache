@@ -188,7 +188,7 @@ hcb_crit_bit(const uint8_t *digest, const struct objhead *oh2, struct hcb_y *y)
 /*---------------------------------------------------------------------
  * Unless we have the lock, we need to be very careful about pointer
  * references into the tree, we cannot trust things to be the same
- * in two consequtive memory accesses.
+ * in two consecutive memory accesses.
  */
 
 static struct objhead *

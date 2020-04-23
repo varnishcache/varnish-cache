@@ -30,7 +30,7 @@
  *
  * Parameters related to TCP keepalives are not universally available
  * as socket options, and probing for system-wide defaults more appropriate
- * than our own involves slightly too much grunt-work to be neglible
+ * than our own involves slightly too much grunt-work to be negligible
  * so we sequestrate that code here.
  */
 
