@@ -299,7 +299,7 @@ workflows:
           dist: debian
           release: bullseye
           arch: x64
-          image: debian:bullseye
+          image: debian:bullseye-slim
           ext: deb
           <<: *pkg_req
       - package:
@@ -315,7 +315,7 @@ workflows:
           dist: debian
           release: buster
           arch: x64
-          image: debian:buster
+          image: debian:buster-slim
           ext: deb
           <<: *pkg_req
       - package:
@@ -331,7 +331,7 @@ workflows:
           dist: debian
           release: stretch
           arch: x64
-          image: debian:stretch
+          image: debian:stretch-slim
           ext: deb
           <<: *pkg_req
       - package:
