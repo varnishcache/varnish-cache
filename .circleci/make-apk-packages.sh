@@ -15,8 +15,8 @@ elif [ -z "$PARAM_DIST" ]; then
     exit 1
 fi
 
-mkdir -p /package && cd /package
-tar xazf /workspace/alpine.tar.gz --strip 1
+cd /varnish-cache
+tar xazf alpine.tar.gz --strip 1
 
 adduser -D builder
 echo "builder ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers
@@ -28,27 +28,26 @@ echo "Generate key"
 su builder -c "abuild-keygen -nai"
 
 echo "Fix APKBUILD's variables"
-tar xavf /workspace/varnish-*.tar.gz
+tar xavf varnish-*.tar.gz
 VERSION=$(varnish-*/configure --version | awk 'NR == 1 {print $NF}')
 echo "Version: $VERSION"
 sed -i "s/@VERSION@/$VERSION/" APKBUILD
 rm -rf varnish-*/
 
+echo "Change the ownership so that abuild is able to write its logs"
+chown builder -R .
 echo "Fix checksums, build"
-cp /workspace/varnish-*.tar.gz .
-chown builder -R /workspace
-chown builder -R /package
-
 su builder -c "abuild checksum"
 su builder -c "abuild -r"
 
 echo "Fix the APKBUILD's version"
 su builder -c "mkdir apks"
 ARCH=`uname -m`
-echo "Arch: $ARCH"
 su builder -c "cp /home/builder/packages/$ARCH/*.apk apks"
-ls -laR apks
 
 echo "Import the packages into the workspace"
-mkdir -p /packages/$PARAM_DIST/$PARAM_RELEASE/$ARCH/
-mv /home/builder/packages/$ARCH/*.apk /packages/$PARAM_DIST/$PARAM_RELEASE/$ARCH/
+mkdir -p packages/$PARAM_DIST/$PARAM_RELEASE/$ARCH/
+mv /home/builder/packages/$ARCH/*.apk packages/$PARAM_DIST/$PARAM_RELEASE/$ARCH/
+
+echo "Allow to read the packages by 'circleci' user outside of Docker after 'chown builder -R .' above"
+chmod -R a+rwx .

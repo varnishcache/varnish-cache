@@ -19,19 +19,17 @@ elif [ -z "$PARAM_DIST" ]; then
     exit 1
 fi
 
-DIST_DIR=build
-rm -rf $DIST_DIR
-mkdir -p $DIST_DIR
-cd $DIST_DIR
+cd /varnish-cache
+ls -la
 
 echo "Untar debian..."
-tar xavf /workspace/debian.tar.gz
+tar xavf debian.tar.gz
 
 echo "Untar orig..."
-tar xavf /workspace/varnish-*.tar.gz --strip 1
+tar xavf varnish-*.tar.gz --strip 1
 
 echo "Update changelog version..."
-if [ -e /workspace/.is_weekly ]; then
+if [ -e .is_weekly ]; then
     WEEKLY='-weekly'
 else
     WEEKLY=
@@ -46,5 +44,5 @@ echo "Build the packages..."
 dpkg-buildpackage -us -uc -j16
 
 echo "Prepare the packages for storage..."
-mkdir -p /packages/$PARAM_DIST/$PARAM_RELEASE/
-mv ../*.deb /packages/$PARAM_DIST/$PARAM_RELEASE/
+mkdir -p packages/$PARAM_DIST/$PARAM_RELEASE/
+mv ../*.deb packages/$PARAM_DIST/$PARAM_RELEASE/

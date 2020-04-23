@@ -6,9 +6,12 @@ Varnish Cache uses CircleCI_ for building, testing and creating packages for sev
 Since CircleCI provides only x86_64 VMs the setup uses Docker and QEMU to be able to build, test and create packages for aarch64.
 This is accomplished by registering `qemu-user-static` for the CircleCI `machine` executor:
 
-        ``sudo docker run --rm --privileged multiarch/qemu-user-static:register --reset --credential yes``
+        ``sudo docker run --rm --privileged multiarch/qemu-user-static --reset --credential yes --persistent yes``
 
-Note: **--credential yes** is needed so that *setuid* flag is working. Without it `sudo` does not work in the Docker containers with architecture different than x86_64.
+Note 1: **--credential yes** is needed so that *setuid* flag is working. Without it `sudo` does not work in the Docker containers with architecture
+different than x86_64.
+Note 2: **--persistent yes** is needed so that there is no need to use `:register` tag. This way one can run locally pure foreign arch Docker
+images, like the official `arm64v8/***` ones. O
 
 With QEMU registered each build step can start a Docker image for any of the supported architectures to execute the `configure`, `make`, package steps.
 
@@ -26,7 +29,8 @@ Pipeline steps
 
     2.1. ``distcheck`` - untars the source code distribution and builds (*configure*, *make*) it for the different CPU architectures
 
-    2.2. ``ARCH_DISTRO_RELEASE`` - step that creates the packages (e.g. .rpm, .deb) for each supported CPU architecture, Linux distribution and its major version (e.g. *x64_centos_7*, *aarch64_ubuntu_bionic*, *x64_alpine_3*, etc.). This step creates a Dockerfile on the fly by using a base Docker image. This custom Docker image executes a Shell script that has the recipe for creating the package for the specific Linux flavor, e.g. *make-rpm-packages.sh*. The step stores the packages in the build workspace and as an artefact.
+    2.2. ``package`` - step that creates the packages (e.g. .rpm, .deb) for each supported CPU architecture, Linux distribution and its major
+version (e.g. *x64_centos_7*, *aarch64_ubuntu_bionic*, *x64_alpine_3*, etc.). This step creates a Dockerfile on the fly by using a base Docker image. This custom Docker image executes a Shell script that has the recipe for creating the package for the specific Linux flavor, e.g. *make-rpm-packages.sh*. The step stores the packages in the build workspace and as an artefact.
 
 3. Finally, if the previous steps are successful, a final step is executed - ``collect_packages``. This step creates an archive with all packages and stores it as an artefact that can be uploaded to PackageCloud_.
 
@@ -34,7 +38,8 @@ Pipeline steps
 More
 -------------
 
-- This setup can be easily extended for any CPU architectures supported by QEMU and for any Linux distributions which have Docker image. To do this one needs to add a ``ARCH_DISTRO_RELEASE`` step.
+- This setup can be easily extended for any CPU architectures supported by QEMU and for any Linux distributions which have Docker image. To do this
+one needs to add a new ``package`` job with the proper parameters for it.
 - At the moment the setup uses *raw* Docker images and installs the required Linux distribution dependencies before running the tests/build/packaging code. This could be optimized to save some execution time by creating custom Docker images that extend the current ones and pre-installs the required dependencies.
 
 
