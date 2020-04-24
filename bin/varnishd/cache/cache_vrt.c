@@ -56,8 +56,22 @@ VRT_synth(VRT_CTX, VCL_INT code, VCL_STRING reason)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	assert(ctx->req != NULL || ctx->bo != NULL);
-	if (code < 100 || code > 65535)
-		code = 503;
+	if (code < 0) {
+		VRT_fail(ctx, "return(synth()) status code (%jd) is negative",
+		    code);
+		return;
+	}
+	if (code > 65535) {
+		VRT_fail(ctx, "return(synth()) status code (%jd) > 65535",
+		    code);
+		return;
+	}
+	if ((code % 1000) < 100) {
+		VRT_fail(ctx,
+		    "illegal return(synth()) status code (%jd) (..0##)",
+		    code);
+		return;
+	}
 
 	if (ctx->req == NULL) {
 		CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
