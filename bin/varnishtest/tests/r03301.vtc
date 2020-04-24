@@ -1,0 +1,73 @@
+varnishtest "Issue 3301: Illegal error codes"
+
+varnish v1 -vcl {
+	backend default none;
+	sub vcl_recv {
+		if (req.url == "/test1") {
+			return (synth(1301));
+		}
+		if (req.url == "/test2") {
+			return (synth(1001));
+		}
+	}
+	sub vcl_backend_fetch {
+		if (bereq.url == "/test3") {
+			return (error(1302));
+		}
+		if (bereq.url == "/test4") {
+			return (error(1000));
+		}
+	}
+} -start
+
+varnish v1 -cliok "param.set feature +http2"
+
+client c1 {
+	stream 1 {
+		txreq -url /test1
+		rxresp
+		expect resp.status == 301
+	} -run
+
+	stream 3 {
+		txreq -url /test2
+		rxresp
+		expect resp.status == 503
+	} -run
+
+	stream 5 {
+		txreq -url /test3
+		rxresp
+		expect resp.status == 302
+	} -run
+
+	stream 7 {
+		txreq -url /test4
+		rxresp
+		expect resp.status == 503
+	} -run
+} -run
+
+client c2 {
+	txreq -url /test1
+	rxresp
+	expect resp.status == 301
+	expect resp.reason == "Moved Permanently"
+
+	txreq -url /test2
+	rxresp
+	expect resp.status == 503
+} -run
+
+client c2 {
+	txreq -url /test3
+	rxresp
+	expect resp.status == 302
+	expect resp.reason == "Found"
+} -run
+
+client c2 {
+	txreq -url /test4
+	rxresp
+	expect resp.status == 503
+} -run
