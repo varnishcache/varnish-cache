@@ -350,6 +350,7 @@ vcc_act_return(struct vcc *tl, struct token *t, struct symbol *sym)
 		}
 	}
 	ERRCHK(tl);
+	Fb(tl, 1, "END_;\n");
 	Fb(tl, 1, "VRT_handling(ctx, VCL_RET_%s);\n", h);
 	SkipToken(tl, ')');
 	SkipToken(tl, ';');
