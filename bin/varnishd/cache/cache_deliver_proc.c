@@ -217,8 +217,16 @@ VDP_Close(struct vdp_ctx *vdc)
 static int v_matchproto_(objiterate_f)
 vdp_objiterator(void *priv, unsigned flush, const void *ptr, ssize_t len)
 {
+	enum vdp_action act;
 
-	return (VDP_bytes(priv, flush ? VDP_FLUSH : VDP_NULL, ptr, len));
+	if (flush == 0)
+		act = VDP_NULL;
+	else if ((flush & OBJ_ITER_END) != 0)
+		act = VDP_END;
+	else
+		act = VDP_FLUSH;
+
+	return (VDP_bytes(priv, act, ptr, len));
 }
 
 
@@ -234,8 +242,6 @@ VDP_DeliverObj(struct vdp_ctx *vdc, struct objcore *oc)
 	vdc->req = NULL;
 	final = oc->flags & (OC_F_PRIVATE | OC_F_HFM | OC_F_HFP) ? 1 : 0;
 	r = ObjIterate(vdc->wrk, oc, vdc, vdp_objiterator, final);
-	if (r == 0)
-		r = VDP_bytes(vdc, VDP_END, NULL, 0);
 	if (r < 0)
 		return (r);
 	return (0);
