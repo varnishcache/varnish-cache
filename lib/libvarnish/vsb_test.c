@@ -16,26 +16,6 @@ struct tc {
 
 static struct tc tcs[] = {
 	{
-	    VSB_QUOTE_GLOB,
-	    "abcdefghijklmnopqrstvwxyz",
-	    "abcdefghijklmnopqrstvwxyz"
-	}, {
-	    VSB_QUOTE_GLOB,
-	    "ABCDEFGHIJKLMNOPQRSTVWXYZ",
-	    "ABCDEFGHIJKLMNOPQRSTVWXYZ"
-	}, {
-	    VSB_QUOTE_GLOB,
-	    "01234567789",
-	    "01234567789"
-	}, {
-	    VSB_QUOTE_GLOB,
-	    "abcde[f-g]{h,i,j}\\l?*xyz",
-	    "abcde\\[f-g\\]\\{h,i,j\\}\\\\l\\?\\*xyz"
-	}, {
-	    VSB_QUOTE_GLOB,
-	    "0123\t \"\r\v\n'",
-	    "0123\\\\t \\\"\\\\r\\\\v\\\\n'"
-	}, {
 	    0, NULL, NULL
 	}
 };
