@@ -315,6 +315,9 @@ ved_vdp_esi_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 	struct ecx *ecx;
 	int retval = 0;
 
+	if (act == VDP_END)
+		act = VDP_FLUSH;
+
 	AN(priv);
 	CHECK_OBJ_NOTNULL(vdx, VDP_CTX_MAGIC);
 	CAST_OBJ_NOTNULL(ecx, *priv, ECX_MAGIC);
@@ -432,7 +435,6 @@ ved_vdp_esi_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 			return (retval);
 		case 3:
 		case 4:
-			assert(act != VDP_END);
 			/*
 			 * There is no guarantee that the 'l' bytes are all
 			 * in the same storage segment, so loop over storage

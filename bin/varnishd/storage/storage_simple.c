@@ -278,6 +278,7 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 	p = NULL;
 	l = 0;
 
+	u = 0;
 	while (1) {
 		ol = len;
 		nl = ObjWaitExtend(wrk, oc, ol);
@@ -333,11 +334,15 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 		u = 0;
 		if (st == NULL || final)
 			u |= OBJ_ITER_FLUSH;
+		if (st == NULL && boc->state == BOS_FINISHED)
+			u |= OBJ_ITER_END;
 		ret = func(priv, u, p, l);
 		if (ret)
 			break;
 	}
 	HSH_DerefBoc(wrk, oc);
+	if ((u & OBJ_ITER_END) == 0)
+		func(priv, OBJ_ITER_END, NULL, 0);
 	return (ret);
 }
 
