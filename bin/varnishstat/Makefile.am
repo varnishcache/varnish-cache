@@ -17,6 +17,7 @@ nodist_varnishstat_SOURCES = \
 	varnishstat_curses_help.c
 
 BUILT_SOURCES = $(nodist_varnishstat_SOURCES)
+DISTCLEANFILES = $(nodist_varnishstat_SOURCES)
 
 varnishstat_help_gen_SOURCES = \
 	varnishstat_help_gen.c \
