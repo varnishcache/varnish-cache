@@ -110,12 +110,15 @@ VBE_Connect_Error(struct VSC_vbe *vsc, int err)
 
 /*--------------------------------------------------------------------
  * Get a connection to the backend
+ *
+ * note: wrk is a separate argument because it differs for pipe vs. fetch
  */
 
 static struct pfd *
-vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
+vbe_dir_getfd(VRT_CTX, struct worker *wrk, struct backend *bp,
     unsigned force_fresh)
 {
+	struct busyobj *bo;
 	struct pfd *pfd;
 	int *fdp, err;
 	vtim_dur tmod;
@@ -123,11 +126,12 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
 	char pbuf1[VTCP_PORTBUFSIZE], pbuf2[VTCP_PORTBUFSIZE];
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	bo = ctx->bo;
 	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
 	AN(bp->vsc);
 
-	if (bp->sick) {
+	if (! VRT_Healthy(ctx, bp->director, NULL)) {
 		VSLb(bo->vsl, SLT_FetchError,
 		     "backend %s: unhealthy", VRT_BACKEND_string(bp->director));
 		bp->vsc->unhealthy++;
@@ -280,7 +284,7 @@ vbe_dir_gethdrs(VRT_CTX, VCL_BACKEND d)
 		http_PrintfHeader(bo->bereq, "Host: %s", bp->hosthdr);
 
 	do {
-		pfd = vbe_dir_getfd(wrk, bp, bo, extrachance == 0 ? 1 : 0);
+		pfd = vbe_dir_getfd(ctx, wrk, bp, extrachance == 0 ? 1 : 0);
 		if (pfd == NULL)
 			return (-1);
 		AN(bo->htc);
@@ -365,7 +369,7 @@ vbe_dir_http1pipe(VRT_CTX, VCL_BACKEND d)
 
 	ctx->req->res_mode = RES_PIPE;
 
-	pfd = vbe_dir_getfd(ctx->req->wrk, bp, ctx->bo, 0);
+	pfd = vbe_dir_getfd(ctx, ctx->req->wrk, bp, 0);
 
 	if (pfd == NULL) {
 		retval = SC_TX_ERROR;

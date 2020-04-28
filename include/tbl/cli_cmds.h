@@ -312,8 +312,11 @@ CLI_CMD(BACKEND_LIST,
 CLI_CMD(BACKEND_SET_HEALTH,
 	"backend.set_health",
 	"backend.set_health <backend_pattern> [auto|healthy|sick]",
-	"Set health status on the backends.",
-	"",
+	"Set health status of backend(s) matching <backend_pattern>.",
+	"  * With ``auto``, the health status is determined by a probe\n"
+	"    or some other dynamic mechanism, if any\n"
+	"  * ``healthy`` sets the backend as usable\n"
+	"  * ``sick`` sets the backend as unsable\n",
 	2, 2
 )
 
