@@ -1099,6 +1099,10 @@ resp.status
 	Assigning a HTTP standardized code to resp.status will also
 	set resp.reason to the corresponding status message.
 
+	Status codes on the form XXYZZ can be set where
+	XXYZZ is less than 65536 and Y is [1...9].
+	Only YZZ will be sent back to clients.
+
 	resp.status 200 will get changed into 304 by core code after
 	a return(deliver) from vcl_deliver for conditional requests
 	to cached content if validation succeeds.
