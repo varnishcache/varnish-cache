@@ -36,6 +36,8 @@
 
 #include <stdio.h>
 
+#define WS_REDZONE_END		'\x15'
+
 static const void * const snap_overflowed = &snap_overflowed;
 
 void
@@ -60,7 +62,7 @@ WS_Assert(const struct ws *ws)
 		assert(ws->r <= ws->e);
 		assert(PAOK(ws->r));
 	}
-	assert(*ws->e == 0x15);
+	assert(*ws->e == WS_REDZONE_END);
 }
 
 int
@@ -105,7 +107,7 @@ WS_Init(struct ws *ws, const char *id, void *space, unsigned len)
 	assert(PAOK(space));
 	len = PRNDDN(len - 1);
 	ws->e = ws->s + len;
-	*ws->e = 0x15;
+	*ws->e = WS_REDZONE_END;
 	ws->f = ws->s;
 	assert(id[0] & 0x20);		// cheesy islower()
 	bstrcpy(ws->id, id);
