@@ -307,30 +307,6 @@ WS_ReserveSize(struct ws *ws, unsigned bytes)
 	return (pdiff(ws->f, ws->r));
 }
 
-/* REL_20200915 remove */
-unsigned
-WS_Reserve(struct ws *ws, unsigned bytes)
-{
-	unsigned b2;
-
-	WS_Assert(ws);
-	assert(ws->r == NULL);
-
-	b2 = PRNDDN(ws->e - ws->f);
-	if (bytes != 0 && bytes < b2)
-		b2 = PRNDUP(bytes);
-
-	if (ws->f + b2 > ws->e) {
-		WS_MarkOverflow(ws);
-		return (0);
-	}
-	ws->r = ws->f + b2;
-	DSL(DBG_WORKSPACE, 0, "WS_Reserve(%p, %u/%u) = %u",
-	    ws, b2, bytes, pdiff(ws->f, ws->r));
-	WS_Assert(ws);
-	return (pdiff(ws->f, ws->r));
-}
-
 unsigned
 WS_ReserveLumps(struct ws *ws, size_t sz)
 {
