@@ -910,6 +910,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 
 	/* We wash the A-E header here for the sake of VRY */
 	if (cache_param->http_gzip_support &&
+	     (recv_handling != VCL_RET_FAIL) &&
 	     (recv_handling != VCL_RET_PIPE) &&
 	     (recv_handling != VCL_RET_PASS)) {
 		if (RFC2616_Req_Gzip(req->http)) {
@@ -919,13 +920,15 @@ cnt_recv(struct worker *wrk, struct req *req)
 		}
 	}
 
-	VSHA256_Init(&sha256ctx);
-	VCL_hash_method(req->vcl, wrk, req, NULL, &sha256ctx);
-	if (wrk->handling == VCL_RET_FAIL)
-		recv_handling = wrk->handling;
-	else
-		assert(wrk->handling == VCL_RET_LOOKUP);
-	VSHA256_Final(req->digest, &sha256ctx);
+	if (recv_handling != VCL_RET_FAIL) {
+		VSHA256_Init(&sha256ctx);
+		VCL_hash_method(req->vcl, wrk, req, NULL, &sha256ctx);
+		if (wrk->handling == VCL_RET_FAIL)
+			recv_handling = wrk->handling;
+		else
+			assert(wrk->handling == VCL_RET_LOOKUP);
+		VSHA256_Final(req->digest, &sha256ctx);
+	}
 
 	switch (recv_handling) {
 	case VCL_RET_VCL:
