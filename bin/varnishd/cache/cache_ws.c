@@ -36,6 +36,7 @@
 #include "cache_varnishd.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #define WS_REDZONE_BEFORE	'\xfa'
 #define WS_REDZONE_AFTER	'\xfb'
@@ -45,6 +46,8 @@
 #ifndef WS_REDZONE_SIZE
 #  define WS_REDZONE_SIZE	16
 #endif
+
+#define WS_REDZONE_PSIZE	PRNDUP(WS_REDZONE_SIZE)
 
 struct ws_alloc {
 	unsigned		magic;
@@ -64,6 +67,10 @@ struct wssan {
 
 static const uintptr_t snap_overflowed = (uintptr_t)&snap_overflowed;
 
+/*---------------------------------------------------------------------
+ * Workspace sanitizer-aware management
+ */
+
 static struct wssan *
 ws_Sanitizer(const struct ws *ws)
 {
@@ -78,6 +85,49 @@ ws_Sanitizer(const struct ws *ws)
 
 	return (NULL);
 }
+
+static void *
+ws_Alloc(struct ws *ws, unsigned bytes)
+{
+	struct wssan *san;
+	struct ws_alloc *wa;
+	void *r;
+
+	san = ws_Sanitizer(ws);
+	if (san == NULL) {
+		bytes = PRNDUP(bytes);
+		if (ws->f + bytes > ws->e) {
+			WS_MarkOverflow(ws);
+			return (NULL);
+		}
+		r = ws->f;
+		ws->f += bytes;
+		return (r);
+	}
+
+	ALLOC_OBJ(wa, WS_ALLOC_MAGIC);
+	AN(wa);
+	wa->len = bytes;
+	wa->align = PRNDUP(bytes) - bytes;
+	wa->ptr = ws->f + WS_REDZONE_PSIZE;
+	bytes = wa->len + wa->align + WS_REDZONE_PSIZE * 2;
+
+	if (ws->f + bytes > ws->e) {
+		FREE_OBJ(wa);
+		WS_MarkOverflow(ws);
+		return (NULL);
+	}
+
+	VTAILQ_INSERT_HEAD(&san->head, wa, list);
+	ws->f += bytes;
+	r = wa->ptr;
+	/* XXX: wssan_Mark(wa); */
+	return (r);
+}
+
+/*---------------------------------------------------------------------
+ * Workspace management
+ */
 
 void
 WS_Assert(const struct ws *ws)
@@ -246,17 +296,13 @@ WS_Alloc(struct ws *ws, unsigned bytes)
 	char *r;
 
 	WS_Assert(ws);
-	bytes = PRNDUP(bytes);
-
 	assert(ws->r == NULL);
-	if (ws->f + bytes > ws->e) {
-		WS_MarkOverflow(ws);
-		return (NULL);
+
+	r = ws_Alloc(ws, bytes);
+	if (r != NULL) {
+		DSL(DBG_WORKSPACE, 0, "WS_Alloc(%p, %u) = %p", ws, bytes, r);
+		WS_Assert(ws);
 	}
-	r = ws->f;
-	ws->f += bytes;
-	DSL(DBG_WORKSPACE, 0, "WS_Alloc(%p, %u) = %p", ws, bytes, r);
-	WS_Assert(ws);
 	return (r);
 }
 
