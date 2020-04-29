@@ -778,8 +778,6 @@ void WRK_BgThread(pthread_t *thr, const char *name, bgthread_t *func,
 
 void WS_Init(struct ws *ws, const char *id, void *space, unsigned len);
 
-/* WS_Reserve(): Use WS_ReserveSize() or WS_ReserveAll() */
-unsigned WS_Reserve(struct ws *ws, unsigned bytes) v_deprecated_;
 unsigned WS_ReserveSize(struct ws *, unsigned);
 unsigned WS_ReserveAll(struct ws *);
 unsigned WS_ReserveLumps(struct ws *ws, size_t sz);
