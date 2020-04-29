@@ -107,7 +107,7 @@ WS_Init(struct ws *ws, const char *id, void *space, unsigned len)
 	ws->e = ws->s + len;
 	*ws->e = 0x15;
 	ws->f = ws->s;
-	assert(id[0] & 0x20);
+	assert(id[0] & 0x20);		// cheesy islower()
 	bstrcpy(ws->id, id);
 	WS_Assert(ws);
 }
@@ -368,7 +368,7 @@ WS_Overflowed(const struct ws *ws)
 	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
 	AN(ws->id[0]);
 
-	if (ws->id[0] & 0x20)
+	if (ws->id[0] & 0x20)		// cheesy islower()
 		return (0);
 	return (1);
 }
