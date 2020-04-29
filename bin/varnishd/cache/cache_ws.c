@@ -310,7 +310,6 @@ void *
 WS_Copy(struct ws *ws, const void *str, int len)
 {
 	char *r;
-	unsigned bytes;
 
 	WS_Assert(ws);
 	assert(ws->r == NULL);
@@ -319,16 +318,12 @@ WS_Copy(struct ws *ws, const void *str, int len)
 		len = strlen(str) + 1;
 	assert(len >= 0);
 
-	bytes = PRNDUP((unsigned)len);
-	if (ws->f + bytes > ws->e) {
-		WS_MarkOverflow(ws);
-		return (NULL);
+	r = ws_Alloc(ws, len);
+	if (r != NULL) {
+		memcpy(r, str, len);
+		DSL(DBG_WORKSPACE, 0, "WS_Copy(%p, %d) = %p", ws, len, r);
+		WS_Assert(ws);
 	}
-	r = ws->f;
-	ws->f += bytes;
-	memcpy(r, str, len);
-	DSL(DBG_WORKSPACE, 0, "WS_Copy(%p, %d) = %p", ws, len, r);
-	WS_Assert(ws);
 	return (r);
 }
 
