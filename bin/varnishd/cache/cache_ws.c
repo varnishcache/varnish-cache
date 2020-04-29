@@ -64,9 +64,25 @@ struct wssan {
 
 static const uintptr_t snap_overflowed = (uintptr_t)&snap_overflowed;
 
+static struct wssan *
+ws_Sanitizer(const struct ws *ws)
+{
+	struct wssan *san;
+
+	if (ws->s + sizeof *san > ws->f)
+		return (NULL);
+
+	san = TRUST_ME(ws->s);
+	if (VALID_OBJ(san, WSSAN_MAGIC) && san->ws == ws)
+		return (san);
+
+	return (NULL);
+}
+
 void
 WS_Assert(const struct ws *ws)
 {
+	const struct wssan *san;
 
 	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
 	DSL(DBG_WORKSPACE, 0, "WS(%p) = (%s, %p %u %u %u)",
@@ -87,6 +103,9 @@ WS_Assert(const struct ws *ws)
 		assert(PAOK(ws->r));
 	}
 	assert(*ws->e == WS_REDZONE_END);
+
+	san = ws_Sanitizer(ws);
+	(void)san; /* NB: soft INCOMPL(); */
 }
 
 int
@@ -122,6 +141,7 @@ WS_Assert_Allocated(const struct ws *ws, const void *ptr, ssize_t len)
 void
 WS_Init(struct ws *ws, const char *id, void *space, unsigned len)
 {
+	struct wssan *san;
 	unsigned l;
 
 	DSL(DBG_WORKSPACE, 0,
@@ -136,6 +156,13 @@ WS_Init(struct ws *ws, const char *id, void *space, unsigned len)
 	ws->f = ws->s;
 	assert(id[0] & 0x20);		// cheesy islower()
 	bstrcpy(ws->id, id);
+	if (DO_DEBUG(DBG_WSSAN)) {
+		san = WS_Alloc(ws, sizeof *san);
+		assert((uintptr_t)san == (uintptr_t)ws->s);
+		INIT_OBJ(san, WSSAN_MAGIC);
+		VTAILQ_INIT(&san->head);
+		san->ws = ws;
+	}
 	WS_Assert(ws);
 }
 
