@@ -1,9 +1,10 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2011 Varnish Software AS
+ * Copyright (c) 2006-2020 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
+ * Author: Dridi Boukelmoune <dridi.boukelmoune@gmail.com>
  *
  * SPDX-License-Identifier: BSD-2-Clause
  *
@@ -36,7 +37,30 @@
 
 #include <stdio.h>
 
+#define WS_REDZONE_BEFORE	'\xfa'
+#define WS_REDZONE_AFTER	'\xfb'
+#define WS_REDZONE_ALIGN	'\xfc'
 #define WS_REDZONE_END		'\x15'
+
+#ifndef WS_REDZONE_SIZE
+#  define WS_REDZONE_SIZE	16
+#endif
+
+struct ws_alloc {
+	unsigned		magic;
+#define WS_ALLOC_MAGIC		0x22e7fd05
+	char			*ptr;
+	unsigned		len;
+	unsigned		align;
+	VTAILQ_ENTRY(ws_alloc)	list;
+};
+
+struct wssan {
+	unsigned		magic;
+#define WSSAN_MAGIC		0x1c89b6ab
+	struct ws		*ws;
+	VTAILQ_HEAD(, ws_alloc)	head;
+};
 
 static const uintptr_t snap_overflowed = (uintptr_t)&snap_overflowed;
 
