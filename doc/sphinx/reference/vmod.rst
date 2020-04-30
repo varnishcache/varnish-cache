@@ -636,3 +636,65 @@ unless they access VMOD specific global state, shared with other VCLs.
 
 Traffic in other VCLs which also import this VMOD, will be happening
 while housekeeping is going on.
+
+Statistics Counters
+===================
+
+Starting in Varnish 6.0, VMODs can define their own counters that appear
+in *varnishstat*.
+
+If you're using autotools, see the ``VARNISH_COUNTERS`` macro in
+varnish.m4 for documentation on getting your build set up.
+
+Counters are defined in a .vsc file. The ``VARNISH_COUNTERS`` macro
+calls *vsctool.py* to turn a *foo.vsc* file into *VSC_foo.c* and
+*VSC_foo.h* files, just like *vmodtool.py* turns *foo.vcc* into
+*vcc_foo_if.c* and *vcc_foo_if.h* files. Similarly to the VCC files, the
+generated VSC files give you a structure and functions that you can use
+in your VMOD's code to create and destroy the counters your defined. The
+*vsctool.py* tool also generates a *VSC_foo.rst* file that you can
+include in your documentation to describe the counters your VMOD has.
+
+The .vsc file looks like this::
+
+	.. varnish_vsc_begin:: xkey
+		:oneliner:	xkey Counters
+		:order:		70
+
+		Metrics from vmod_xkey
+
+	.. varnish_vsc:: g_keys
+		:type:		gauge
+		:oneliner:	Number of surrogate keys
+
+		Number of surrogate keys in use. Increases after a request that includes a new key in the xkey header. Decreases when a key is purged or when all cache objects associated with a key expire.
+
+	.. varnish_vsc_end:: xkey
+
+Counters can have the following parameters:
+
+type
+	The type of metric this is. Can be one of ``counter``,
+	``gauge``, or ``bitmap``.
+
+ctype
+	The type that this counter will have in the C code. This can
+	only be ``uint64_t`` and does not need to be specified.
+
+level
+	The verbosity level of this counter. *varnishstat* will only
+	show counters with a higher verbosity level than the one
+	currently configured. Can be one of ``info``, ``diag``, or
+	``debug``.
+
+oneliner
+	A short, one line description of the counter.
+
+group
+	I don't know what this does.
+
+format
+	Can be one of ``integer``, ``bytes``, ``bitmap``, or ``duration``.
+
+After these parameters, a counter can have a longer description, though
+this description has to be all on one line in the .vsc file.
