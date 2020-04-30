@@ -117,12 +117,13 @@ xyzzy_rot13_bytes(struct req *req, enum vdp_action act, void **priv,
 	const char *pp;
 	int i, j, retval = 0;
 
-	(void)act;
 	AN(priv);
 	AN(*priv);
-	AN(ptr);
 	if (len <= 0)
-		return (0);
+		return (VDP_bytes(req, act, ptr, len));
+	AN(ptr);
+	if (act != VDP_END)
+		act = VDP_FLUSH;
 	q = *priv;
 	pp = ptr;
 
@@ -134,14 +135,14 @@ xyzzy_rot13_bytes(struct req *req, enum vdp_action act, void **priv,
 		else
 			q[i] = pp[j];
 		if (i == ROT13_BUFSZ - 1) {
-			retval = VDP_bytes(req, VDP_FLUSH, q, ROT13_BUFSZ);
+			retval = VDP_bytes(req, act, q, ROT13_BUFSZ);
 			if (retval != 0)
 				return (retval);
 			i = -1;
 		}
 	}
 	if (i >= 0)
-		retval = VDP_bytes(req, VDP_FLUSH, q, i + 1L);
+		retval = VDP_bytes(req, act, q, i + 1L);
 	return (retval);
 }
 

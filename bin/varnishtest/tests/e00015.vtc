@@ -1,4 +1,4 @@
-varnishtest "ESI requests turned off"
+varnishtest "ESI requests turned off and other filters with esi"
 
 server s1 {
 	rxreq
@@ -52,10 +52,18 @@ varnish v1 -expect esi_errors == 0
 server s1 {
 	rxreq
 	expect req.url == /top2
-	txresp -body {
+	txresp -gzipbody {
 		<html>
 		Before include
 		<esi:include src="/body"/>
+		After include
+	}
+	rxreq
+	expect req.url == /recurse
+	txresp -gzipbody {
+		<html>
+		Before include
+		<esi:include src="/top2"/>
 		After include
 	}
 } -start
@@ -63,7 +71,13 @@ server s1 {
 varnish v1 -syntax 4.1 -vcl+backend {
 	sub vcl_deliver {
 		set resp.http.was = resp.do_esi;
+		set resp.http.filter0 = resp.filters;
 		if (req.url == "/top2") {
+			set resp.do_esi = false;
+		}
+		set resp.http.filters = resp.filters;
+		if (req.http.fiddle) {
+			set resp.filters = resp.filters;
 			set resp.do_esi = false;
 		}
 	}
@@ -72,17 +86,51 @@ varnish v1 -syntax 4.1 -vcl+backend {
 	}
 }
 
+# Note on Range requests: The range VDP is active, but as it cannot
+# reliably determine the size of the response, it falls back to a 200
 client c1 {
 	txreq -url /top2
 	rxresp
 	expect resp.bodylen == 73
 	expect resp.status == 200
 	expect resp.http.was == true
+	expect resp.http.filter0 == "esi gunzip"
+	expect resp.http.filters == "gunzip"
+
 	txreq -url "/esi"
 	rxresp
 	expect resp.bodylen == 76
 	expect resp.status == 200
 	expect resp.http.was == true
+	expect resp.http.filter0 == "esi"
+	expect resp.http.filters == "esi"
+
+	# see Note on Range above
+	txreq -url "/esi" -hdr "Range: bytes=1-2"
+	rxresp
+	expect resp.bodylen == 76
+	expect resp.status == 200
+	expect resp.http.was == true
+	expect resp.http.filters == "esi range"
+
+	txreq -url "/recurse"
+	rxresp
+	expect resp.bodylen == 120
+	expect resp.status == 200
+	expect resp.http.was == true
+	expect resp.http.filters == "esi gunzip"
+
+	# see Note on Range above
+	txreq -url "/recurse" -hdr "Range: bytes=1-2"
+	rxresp
+	expect resp.bodylen == 120
+	expect resp.status == 200
+	expect resp.http.was == true
+	expect resp.http.filters == "esi gunzip range"
+
+	txreq -url /top2 -hdr "fiddle: do_esi"
+	rxresp
+	expect resp.status == 503
 } -run
 
 varnish v1 -expect esi_errors == 0

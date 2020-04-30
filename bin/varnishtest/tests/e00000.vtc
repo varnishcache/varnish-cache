@@ -12,6 +12,9 @@ varnish v1 -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.do_esi = true;
 	}
+	sub vcl_deliver {
+		set resp.http.can_esi = obj.can_esi;
+	}
 } -start
 
 logexpect l1 -v v1 -g raw {
@@ -23,6 +26,7 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 33
+	expect resp.http.can_esi == "false"
 }
 
 client c1 -run

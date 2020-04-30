@@ -58,10 +58,10 @@ struct vfp {
 struct vfp_entry {
 	unsigned		magic;
 #define VFP_ENTRY_MAGIC		0xbe32a027
+	enum vfp_status		closed;
 	const struct vfp	*vfp;
 	void			*priv1;
 	intptr_t		priv2;
-	enum vfp_status		closed;
 	VTAILQ_ENTRY(vfp_entry)	list;
 	uint64_t		calls;
 	uint64_t		bytes_out;
@@ -87,6 +87,7 @@ struct vfp_ctx {
 	unsigned		obj_flags;
 };
 
+struct vfp_entry *VFP_Push(struct vfp_ctx *, const struct vfp *);
 enum vfp_status VFP_Suck(struct vfp_ctx *, void *p, ssize_t *lp);
 enum vfp_status VFP_Error(struct vfp_ctx *, const char *fmt, ...)
     v_printflike_(2, 3);
@@ -98,6 +99,7 @@ void VRT_RemoveVFP(VRT_CTX, const struct vfp *);
 enum vdp_action {
 	VDP_NULL,		/* Input buffer valid after call */
 	VDP_FLUSH,		/* Input buffer will be invalidated */
+	VDP_END,		/* Last buffer or after, implies VDP_FLUSH */
 };
 
 typedef int vdp_init_f(struct req *, void **priv);
@@ -122,6 +124,7 @@ struct vdp {
 struct vdp_entry {
 	unsigned		magic;
 #define VDP_ENTRY_MAGIC		0x353eb781
+	enum vdp_action		end;	// VDP_NULL or VDP_END
 	const struct vdp	*vdp;
 	void			*priv;
 	VTAILQ_ENTRY(vdp_entry)	list;
@@ -132,9 +135,9 @@ VTAILQ_HEAD(vdp_entry_s, vdp_entry);
 struct vdp_ctx {
 	unsigned		magic;
 #define VDP_CTX_MAGIC		0xee501df7
+	int			retval;
 	struct vdp_entry_s	vdp;
 	struct vdp_entry	*nxt;
-	int			retval;
 };
 
 int VDP_bytes(struct req *, enum vdp_action act, const void *ptr, ssize_t len);

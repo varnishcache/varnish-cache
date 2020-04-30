@@ -441,7 +441,7 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 	VSB_cat(vsb, "flags = {");
 	p = "";
 /*lint -save -esym(438,p) -e539 */
-#define BO_FLAG(l, r, w, d) \
+#define BO_FLAG(l, r, w, f, d)					\
 	if (bo->l) { VSB_printf(vsb, "%s" #l, p); p = ", "; }
 #include "tbl/bo_flags.h"
 /*lint -restore */
@@ -806,7 +806,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 			VSL_Flush(bo->vsl, 0);
 		VMOD_Panic(pan_vsb);
 	} else {
-		VSB_cat(pan_vsb, "Feature short panic supressed details.\n");
+		VSB_cat(pan_vsb, "Feature short panic suppressed details.\n");
 	}
 	VSB_cat(pan_vsb, "\n");
 	VSB_putc(pan_vsb, '\0');	/* NUL termination */

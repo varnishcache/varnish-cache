@@ -186,31 +186,63 @@ VRT_r_obj_reason(VRT_CTX)
  * bool-fields (.do_*)
  */
 
-#define VBERESPW0(field)
-#define VBERESPW1(field)						\
+static inline int
+beresp_filter_fixed(VRT_CTX, const char *s)
+{
+	if (ctx->bo->filter_list == NULL)
+		return (0);
+	VRT_fail(ctx, "beresp.filters are already fixed, beresp.%s is undefined", s);
+	return (1);
+}
+
+#define VBERESPWF0(ctx, str) (void) 0
+#define VBERESPWF1(ctx, str) do {		\
+	if (beresp_filter_fixed((ctx), str))	\
+		return;			\
+	} while(0)
+
+#define VBERESPW0(field, str, fltchk)
+#define VBERESPW1(field, str, fltchk)					\
 void									\
 VRT_l_beresp_##field(VRT_CTX, VCL_BOOL a)				\
 {									\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);			\
+	VBERESPWF##fltchk(ctx, str);					\
 	ctx->bo->field = a ? 1 : 0;					\
 }
 
-#define VBERESPR0(field)
-#define VBERESPR1(field)						\
+#define VBERESPRF0(ctx, str) (void) 0
+#define VBERESPRF1(ctx, str) do {		\
+	if (beresp_filter_fixed((ctx), str))	\
+		return (0);			\
+	} while(0)
+
+#define VBERESPR0(field, str, fltchk)
+#define VBERESPR1(field, str, fltchk)					\
 VCL_BOOL								\
 VRT_r_beresp_##field(VRT_CTX)						\
 {									\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);			\
+	VBERESPRF##fltchk(ctx, str);					\
 	return (ctx->bo->field);					\
 }
 
-#define BO_FLAG(l, r, w, d) \
-	VBERESPR##r(l) \
-	VBERESPW##w(l)
+#define BO_FLAG(l, r, w, f, d)			\
+	VBERESPR##r(l, #l, f)			\
+	VBERESPW##w(l, #l, f)
 #include "tbl/bo_flags.h"
 
+#undef VBERESPWF0
+#undef VBERESPWF1
+#undef VBERESPW0
+#undef VBERESPW1
+
+#undef VBERESPRF0
+#undef VBERESPRF1
+#undef VBERESPR0
+#undef VBERESPR1
 /*--------------------------------------------------------------------*/
 
 VCL_BOOL
@@ -442,6 +474,17 @@ VRT_r_obj_storage(VRT_CTX)
 
 /*--------------------------------------------------------------------*/
 
+VCL_BOOL
+VRT_r_obj_can_esi(VRT_CTX)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req->objcore, OBJCORE_MAGIC);
+	return (ObjHasAttr(ctx->req->wrk, ctx->req->objcore, OA_ESIDATA));
+}
+
+/*--------------------------------------------------------------------*/
+
 #define REQ_VAR_L(nm, elem, type, extra)				\
 									\
 VCL_VOID								\
@@ -527,6 +570,8 @@ VRT_l_req_esi(VRT_CTX, VCL_BOOL process_esi)
 	/*
 	 * Only allow you to turn of esi in the main request
 	 * else everything gets confused
+	 * NOTE: this is not true, but we do not change behavior
+	 * for vcl 4.0. For 4.1, see VRT_l_resp_do_esi()
 	 */
 	if (IS_TOPREQ(ctx->req))
 		ctx->req->disable_esi = !process_esi;
@@ -856,6 +901,15 @@ VRT_r_resp_is_streaming(VRT_CTX)
 
 /*--------------------------------------------------------------------*/
 
+static inline int
+resp_filter_fixed(VRT_CTX, const char *s)
+{
+	if (ctx->req->filter_list == NULL)
+		return (0);
+	VRT_fail(ctx, "resp.filters are already fixed, %s is undefined", s);
+	return (1);
+}
+
 VCL_VOID
 VRT_l_resp_do_esi(VRT_CTX, VCL_BOOL process_esi)
 {
@@ -863,10 +917,8 @@ VRT_l_resp_do_esi(VRT_CTX, VCL_BOOL process_esi)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	assert(ctx->syntax >= 41);
-	/*
-	 * Only allow you to turn of esi in the main request
-	 * else everything gets confused
-	 */
+	if (resp_filter_fixed(ctx, "resp.do_esi"))
+		return;
 	ctx->req->disable_esi = !process_esi;
 }
 
@@ -877,6 +929,8 @@ VRT_r_resp_do_esi(VRT_CTX)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	assert(ctx->syntax >= 41);
+	if (resp_filter_fixed(ctx, "resp.do_esi"))
+		return (0);
 	return (!ctx->req->disable_esi);
 }
 

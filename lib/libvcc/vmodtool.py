@@ -30,8 +30,8 @@
 
 """
 Read the vmod.vcc file (inputvcc) and produce:
-    vmod_if.h -- Prototypes for the implementation
-    vmod_if.c -- Magic glue & datastructures to make things a VMOD.
+    vcc_if.h -- Prototypes for the implementation
+    vcc_if.c -- Magic glue & datastructures to make things a VMOD.
     vmod_${name}.rst -- Extracted documentation
     vmod_${name}.man.rst -- Extracted documentation (rst2man input)
 """
@@ -56,9 +56,8 @@ AM_CPPFLAGS = \\
 \t-I$(top_srcdir)/bin/varnishd \\
 \t-I$(top_builddir)/include
 
-vmoddir = $(pkglibdir)/vmods
 vmodtool = $(top_srcdir)/lib/libvcc/vmodtool.py
-vmodtoolargs ?= --strict --boilerplate
+vmodtoolargs ?= --strict --boilerplate -o PFX
 
 vmod_LTLIBRARIES = libvmod_XXX.la
 
@@ -77,10 +76,10 @@ $(libvmod_XXX_la_OBJECTS): PFX.h
 
 PFX.h vmod_XXX.rst vmod_XXX.man.rst: PFX.c
 
-PFX.c: $(vmodtool) $(srcdir)/vmod.vcc
-\t@PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/vmod.vcc
+PFX.c: $(vmodtool) $(srcdir)/VCC
+\t@PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/VCC
 
-EXTRA_DIST = vmod.vcc automake_boilerplate.am
+EXTRA_DIST = $(srcdir)/VCC automake_boilerplate.am
 
 CLEANFILES = $(builddir)/PFX.c $(builddir)/PFX.h \\
 \t$(builddir)/vmod_XXX.rst \\
@@ -89,12 +88,12 @@ CLEANFILES = $(builddir)/PFX.c $(builddir)/PFX.h \\
 
 AMBOILERPLATE_CHECK = '''
 TESTS = \\
-\tXXX
+\tVTC
 
 EXTRA_DIST += $(TESTS)
 
 vtc-refresh-tests:
-\t@PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/vmod.vcc
+\t@PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/VCC
 \t@cd $(top_builddir) && ./config.status --file=$(subdir)/Makefile
 
 include $(top_srcdir)/vtc.am
@@ -171,20 +170,20 @@ def fmt_cstruct(fo, a, b):
 #######################################################################
 
 
-def write_file_warning(fo, a, b, c):
+def write_file_warning(fo, a, b, c, s):
     fo.write(a + "\n")
     fo.write(b + " NB:  This file is machine generated, DO NOT EDIT!\n")
     fo.write(b + "\n")
-    fo.write(b + " Edit vmod.vcc and run make instead\n")
+    fo.write(b + " Edit " + s + " and run make instead\n")
     fo.write(c + "\n\n")
 
 
-def write_c_file_warning(fo):
-    write_file_warning(fo, "/*", " *", " */")
+def write_c_file_warning(fo, s):
+    write_file_warning(fo, "/*", " *", " */", s)
 
 
-def write_rst_file_warning(fo):
-    write_file_warning(fo, "..", "..", "..")
+def write_rst_file_warning(fo, s):
+    write_file_warning(fo, "..", "..", "..", s)
 
 
 def write_rst_hdr(fo, s, below="-", above=None):
@@ -961,7 +960,7 @@ class vcc(object):
             fn += ".man"
         fn += ".rst"
         fo = self.openfile(fn)
-        write_rst_file_warning(fo)
+        write_rst_file_warning(fo, self.inputfile)
         if man:
             fo.write(".. role:: ref(emphasis)\n")
         else:
@@ -985,13 +984,16 @@ class vcc(object):
 
     def amboilerplate(self):
         ''' Produce boilplate for autocrap tools '''
+        vcc = os.path.basename(self.inputfile)
         fo = self.openfile("automake_boilerplate.am")
         fo.write(AMBOILERPLATE.replace("XXX", self.modname)
+                 .replace("VCC", vcc)
                  .replace("PFX", self.pfx))
         tests = glob.glob("tests/*.vtc")
         if len(tests) > 0:
             tests.sort()
-            fo.write(AMBOILERPLATE_CHECK.replace("XXX", " \\\n\t".join(tests)))
+            fo.write(AMBOILERPLATE_CHECK.replace("VCC", vcc).
+                    replace("VTC", " \\\n\t".join(tests)))
         fo.close()
 
     def mkdefs(self, fo):
@@ -1011,7 +1013,7 @@ class vcc(object):
         ''' Produce vcc_if.h file '''
         fn = self.pfx + ".h"
         fo = self.openfile(fn)
-        write_c_file_warning(fo)
+        write_c_file_warning(fo, self.inputfile)
         fo.write("#ifndef VDEF_H_INCLUDED\n")
         fo.write('#  error "Include vdef.h first"\n')
         fo.write("#endif\n")
@@ -1102,7 +1104,7 @@ class vcc(object):
         fnx = fno + ".tmp2"
         fx = open(fnx, "w")
 
-        write_c_file_warning(fo)
+        write_c_file_warning(fo, self.inputfile)
 
         self.mkdefs(fx);
 

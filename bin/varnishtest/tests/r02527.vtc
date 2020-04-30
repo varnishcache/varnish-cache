@@ -18,7 +18,7 @@ client c1 {
 
 varnish v1 -expect MAIN.n_lru_moved == 0
 
-delay 1
+delay 2
 
 client c1 {
 	txreq

@@ -320,7 +320,6 @@ VPX_tlv(const struct req *req, int typ, void **dst, int *len)
 static int
 vpx_proto2(const struct worker *wrk, struct req *req)
 {
-	int l, hdr_len;
 	uintptr_t *up;
 	uint16_t tlv_len;
 	const uint8_t *p, *ap, *pp;
@@ -333,7 +332,7 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 	char pb[VTCP_PORTBUFSIZE];
 	struct vpx_tlv_iter vpi[1], vpi2[1];
 	struct vpx_tlv *tlv;
-	unsigned flen, alen;
+	unsigned l, hdr_len, flen, alen;
 	unsigned const plen = 2, aoff = 16;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -343,7 +342,7 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 	assert(req->htc->rxbuf_e - req->htc->rxbuf_b >= 16L);
 	l = vbe16dec(req->htc->rxbuf_b + 14);
 	hdr_len = l + 16L;
-	assert(req->htc->rxbuf_e - req->htc->rxbuf_b >= hdr_len);
+	assert(req->htc->rxbuf_e >= req->htc->rxbuf_b + hdr_len);
 	HTC_RxPipeline(req->htc, req->htc->rxbuf_b + hdr_len);
 	WS_Rollback(req->ws, 0);
 	p = (const void *)req->htc->rxbuf_b;
@@ -398,7 +397,7 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 
 	if (l < flen) {
 		VSL(SLT_ProxyGarbage, req->sp->vxid,
-		    "PROXY2: Ignoring short %s addresses (%d)",
+		    "PROXY2: Ignoring short %s addresses (%u)",
 		    pfam == AF_INET ? "IPv4" : "IPv6", l);
 		return (0);
 	}

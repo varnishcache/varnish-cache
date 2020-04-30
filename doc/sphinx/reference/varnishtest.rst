@@ -144,9 +144,9 @@ they look roughly like this::
 
     exec varnishd [varnishtest -p params] [testing params] [vtc -arg params]
 
-Parameters you define with ``varnishtest -p`` may be overriden by
+Parameters you define with ``varnishtest -p`` may be overridden by
 parameters needed by ``varnishtest`` to run properly, and they may in
-turn be overriden by parameters set in test scripts.
+turn be overridden by parameters set in test scripts.
 
 There's also a special mode in which ``varnishtest`` builds itself a
 PATH and a *vmod_path* in order to find Varnish binaries (programs and

@@ -634,7 +634,7 @@ hsh_rush2(struct worker *wrk, struct rush *r)
 			 * may be vmod_privs to cleanup and we need a proper
 			 * workerthread for that.
 			 */
-			AZ(Pool_Task(req->sp->pool, &req->task, TASK_QUEUE_RUSH));
+			AZ(Pool_Task(req->sp->pool, req->task, TASK_QUEUE_RUSH));
 		}
 	}
 }

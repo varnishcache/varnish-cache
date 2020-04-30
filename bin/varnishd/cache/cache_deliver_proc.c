@@ -45,6 +45,13 @@
  * VDP_bytes will return that value directly without calling the next
  * processor.
  *
+ * VDP_END marks the end of successful processing, it is issued by
+ * VDP_DeliverObj() and may also be sent downstream by processors ending the
+ * stream (for return value != 0)
+ *
+ * VDP_END must at most be received once per processor, so any VDP sending it
+ * downstream must itself not forward it a second time.
+ *
  * Valid return values (of VDP_bytes and any VDP function):
  * r < 0:  Error, breaks out early on an error condition
  * r == 0: Continue
@@ -59,15 +66,23 @@ VDP_bytes(struct req *req, enum vdp_action act, const void *ptr, ssize_t len)
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	vdc = req->vdc;
-	assert(act == VDP_NULL || act == VDP_FLUSH);
 	if (vdc->retval)
 		return (vdc->retval);
 	vdpe = vdc->nxt;
 	CHECK_OBJ_NOTNULL(vdpe, VDP_ENTRY_MAGIC);
-	vdc->nxt = VTAILQ_NEXT(vdpe, list);
 
-	assert(act > VDP_NULL || len > 0);
+	/* at most one VDP_END call */
+	assert(vdpe->end == VDP_NULL);
+
+	if (act == VDP_NULL)
+		assert(len > 0);
+	else if (act == VDP_END)
+		vdpe->end = VDP_END;
+	else
+		assert(act == VDP_FLUSH);
+
 	/* Call the present layer, while pointing to the next layer down */
+	vdc->nxt = VTAILQ_NEXT(vdpe, list);
 	retval = vdpe->vdp->bytes(req, act, &vdpe->priv, ptr, len);
 	if (retval && (vdc->retval == 0 || retval < vdc->retval))
 		vdc->retval = retval; /* Latch error value */
@@ -158,6 +173,8 @@ VDP_DeliverObj(struct req *req)
 	final = req->objcore->flags & (OC_F_PRIVATE | OC_F_HFM | OC_F_HFP)
 	    ? 1 : 0;
 	r = ObjIterate(req->wrk, req->objcore, req, vdp_objiterator, final);
+	if (r == 0)
+		r = VDP_bytes(req, VDP_END, NULL, 0);
 	if (r < 0)
 		return (r);
 	return (0);

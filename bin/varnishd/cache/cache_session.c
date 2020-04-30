@@ -73,8 +73,8 @@ SES_SetTransport(struct worker *wrk, struct sess *sp, struct req *req,
 
 	sp->sattr[SA_TRANSPORT] = xp->number;
 	req->transport = xp;
-	wrk->task.func = xp->new_session;
-	wrk->task.priv = req;
+	wrk->task->func = xp->new_session;
+	wrk->task->priv = req;
 }
 
 /*--------------------------------------------------------------------*/

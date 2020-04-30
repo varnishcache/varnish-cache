@@ -278,8 +278,8 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 	r2 = h2_new_req(wrk, h2, 1, req);
 	req->transport = &H2_transport;
 	req->req_step = R_STP_TRANSPORT;
-	req->task.func = h2_do_req;
-	req->task.priv = req;
+	req->task->func = h2_do_req;
+	req->task->priv = req;
 	r2->scheduled = 1;
 	r2->state = H2_S_CLOS_REM; // rfc7540,l,489,491
 	req->err_code = 0;
@@ -295,7 +295,7 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 		h2_del_req(wrk, r2);
 		return (0);
 	}
-	if (Pool_Task(wrk->pool, &req->task, TASK_QUEUE_REQ)) {
+	if (Pool_Task(wrk->pool, req->task, TASK_QUEUE_REQ)) {
 		r2->scheduled = 0;
 		h2_del_req(wrk, r2);
 		VSLb(h2->vsl, SLT_Debug, "H2: No Worker-threads");

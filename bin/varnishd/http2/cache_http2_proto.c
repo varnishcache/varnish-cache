@@ -598,10 +598,10 @@ h2_end_headers(struct worker *wrk, struct h2_sess *h2,
 	AN(req->http->hd[HTTP_HDR_PROTO].b);
 
 	req->req_step = R_STP_TRANSPORT;
-	req->task.func = h2_do_req;
-	req->task.priv = req;
+	req->task->func = h2_do_req;
+	req->task->priv = req;
 	r2->scheduled = 1;
-	if (Pool_Task(wrk->pool, &req->task, TASK_QUEUE_STR) != 0) {
+	if (Pool_Task(wrk->pool, req->task, TASK_QUEUE_STR) != 0) {
 		r2->scheduled = 0;
 		r2->state = H2_S_CLOSED;
 		return (H2SE_REFUSED_STREAM); //rfc7540,l,3326,3329

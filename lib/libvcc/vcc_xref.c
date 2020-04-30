@@ -141,7 +141,8 @@ vcc_AddUses(struct vcc *tl, const struct token *t1, const struct token *t2,
 	VTAILQ_INSERT_TAIL(&tl->curproc->uses, pu, list);
 
 	if (pu->mask == 0)
-		vcc_CheckUses(tl);
+		if (vcc_CheckUses(tl))
+			AN(tl->err);
 }
 
 void

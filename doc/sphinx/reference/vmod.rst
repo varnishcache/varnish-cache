@@ -144,7 +144,7 @@ valid invocations from vcl::
 	debug.argtest("1", four=6);
 
 The C interface does not change with named arguments and default
-values, arguments remain positional and defaul values appear no
+values, arguments remain positional and default values appear no
 different to user specified values.
 
 `Note` that default values have to be given in the native C-type

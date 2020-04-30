@@ -198,6 +198,7 @@ Req_Rollback(struct req *req)
 	if (IS_TOPREQ(req))
 		VCL_TaskEnter(req->top->privs);
 	HTTP_Clone(req->http, req->http0);
+	req->filter_list = NULL;
 	if (WS_Overflowed(req->ws))
 		req->wrk->stats->ws_client_overflow++;
 	WS_Rollback(req->ws, req->ws_req);

@@ -1,6 +1,27 @@
 varnishtest "Forcing health of backends"
 
-server s1 -repeat 3 {
+barrier b1 cond 2
+
+server s1 {
+	# probe
+	rxreq
+	txresp
+
+	# req
+	accept
+	rxreq
+	txresp
+	rxreq
+	txresp -hdr "Connection: close"
+
+	# probe sick
+	accept
+	rxreq
+	txresp -status 500
+	barrier b1 sync
+
+	accept
+	# req
 	rxreq
 	txresp
 } -start
@@ -13,7 +34,7 @@ varnish v1 -vcl {
 			.window = 8;
 			.initial = 7;
 			.threshold = 8;
-			.interval = 10s;
+			.interval = 5s;
 		}
 	}
 
@@ -52,6 +73,18 @@ varnish v1 -vsl_catchup
 
 varnish v1 -cliok "backend.list"
 varnish v1 -cliok "backend.set_health s1 healthy"
+varnish v1 -cliok "backend.list"
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run
+
+# wait for sick probe
+barrier b1 sync
+
+# healthy overrides probe
 varnish v1 -cliok "backend.list"
 
 client c1 {

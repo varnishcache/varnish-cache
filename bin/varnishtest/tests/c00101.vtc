@@ -1,0 +1,48 @@
+varnishtest "bo_* with effect on filters"
+
+
+server s1 -repeat 2 -keepalive {
+	rxreq
+	txresp -body {
+		-This is a test: Hello world
+	}
+} -start
+
+varnish v1 -vcl+backend {
+	sub backend_response_filter {
+		set beresp.http.filter0 = beresp.filters;
+		set beresp.do_esi = true;
+		set beresp.http.filter1 = beresp.filters;
+		set beresp.do_gzip = true;
+		set beresp.http.filter2 = beresp.filters;
+		set beresp.do_esi = false;
+		set beresp.do_gzip = false;
+		set beresp.http.Content-Encoding = "gzip";
+		set beresp.do_gunzip = true;
+		set beresp.http.filter3 = beresp.filters;
+		set beresp.filters = "";
+
+		# does not affect filters
+		set beresp.do_stream = true;
+
+	}
+	sub vcl_backend_response {
+		call backend_response_filter;
+		if (bereq.http.fiddle) {
+			call backend_response_filter;
+		}
+	}
+	sub vcl_recv {
+		return (pass);
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+
+	txreq -hdr "fiddle: yes"
+	rxresp
+	expect resp.status == 503
+} -run

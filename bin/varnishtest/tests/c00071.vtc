@@ -56,7 +56,7 @@ logexpect l1 -v v1 -g vxid -q "vxid == 1006" {
 
 logexpect l2 -v v1 -g raw -i Debug {
 	expect *  0	Debug		{^WS_Snapshot.* = overflowed}
-	expect 12 0	Debug		{^WS_Reset.*, overflowed}
+	expect 24 0	Debug		{^WS_Reset.*, overflowed}
 } -start
 
 client c2 {

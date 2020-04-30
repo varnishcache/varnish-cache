@@ -11,10 +11,13 @@ varnishstat_SOURCES = \
 	varnishstat.c \
 	varnishstat_bindings.h \
 	varnishstat_curses.c \
-	varnishstat_curses_help.c \
 	varnishstat_options.h
 
-BUILT_SOURCES = varnishstat_curses_help.c
+nodist_varnishstat_SOURCES = \
+	varnishstat_curses_help.c
+
+BUILT_SOURCES = $(nodist_varnishstat_SOURCES)
+DISTCLEANFILES = $(nodist_varnishstat_SOURCES)
 
 varnishstat_help_gen_SOURCES = \
 	varnishstat_help_gen.c \

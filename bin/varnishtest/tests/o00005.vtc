@@ -322,4 +322,4 @@ client c1 {
 
 delay 1
 
-varnish v1 -expect ws_session_overflow == 2
+varnish v1 -expect ws_session_overflow >= 2

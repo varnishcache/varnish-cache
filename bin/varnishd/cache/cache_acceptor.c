@@ -73,7 +73,7 @@ struct poolsock {
 #define POOLSOCK_MAGIC			0x1b0a2d38
 	VTAILQ_ENTRY(poolsock)		list;
 	struct listen_sock		*lsock;
-	struct pool_task		task;
+	struct pool_task		task[1];
 	struct pool			*pool;
 };
 
@@ -525,7 +525,7 @@ vca_accept_task(struct worker *wrk, void *arg)
 			 * taken up by another thread again.
 			 */
 			if (!ps->pool->die) {
-				AZ(Pool_Task(wrk->pool, &ps->task,
+				AZ(Pool_Task(wrk->pool, ps->task,
 				    TASK_QUEUE_VCA));
 				return;
 			}
@@ -554,11 +554,11 @@ VCA_NewPool(struct pool *pp)
 		ALLOC_OBJ(ps, POOLSOCK_MAGIC);
 		AN(ps);
 		ps->lsock = ls;
-		ps->task.func = vca_accept_task;
-		ps->task.priv = ps;
+		ps->task->func = vca_accept_task;
+		ps->task->priv = ps;
 		ps->pool = pp;
 		VTAILQ_INSERT_TAIL(&pp->poolsocks, ps, list);
-		AZ(Pool_Task(pp, &ps->task, TASK_QUEUE_VCA));
+		AZ(Pool_Task(pp, ps->task, TASK_QUEUE_VCA));
 	}
 }
 

@@ -247,7 +247,7 @@ struct worker {
 	struct VSC_main_wrk	*stats;
 	struct vsl_log		*vsl;		// borrowed from req/bo
 
-	struct pool_task	task;
+	struct pool_task	task[1];
 
 	vtim_real		lastused;
 	int			strangelove;
@@ -409,9 +409,9 @@ struct busyobj {
 
 	struct http_conn	*htc;
 
-	struct pool_task	fetch_task;
+	struct pool_task	fetch_task[1];
 
-#define BO_FLAG(l, r, w, d) unsigned	l:1;
+#define BO_FLAG(l, r, w, f, d) unsigned	l:1;
 #include "tbl/bo_flags.h"
 
 	/* Timeouts */
@@ -471,7 +471,7 @@ struct req {
 
 	struct sess		*sp;
 	struct worker		*wrk;
-	struct pool_task	task;
+	struct pool_task	task[1];
 
 	const struct transport	*transport;
 	void			*transport_priv;

@@ -213,7 +213,7 @@ Backend Pattern
 A backend pattern can be a backend name or a combination of a VCL name
 and backend name in "VCL.backend" format.  If the VCL name is omitted,
 the active VCL is assumed.  Partial matching on the backend and VCL
-names is supported using shell-style wilcards, e.g. asterisk (*).
+names is supported using shell-style wildcards, e.g. asterisk (*).
 
 Examples::
 

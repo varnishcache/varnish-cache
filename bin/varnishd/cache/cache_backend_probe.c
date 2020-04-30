@@ -84,7 +84,7 @@ struct vbp_target {
 	vtim_real			due;
 	int				running;
 	int				heap_idx;
-	struct pool_task		task;
+	struct pool_task		task[1];
 };
 
 static struct lock			vbp_mtx;
@@ -485,10 +485,10 @@ vbp_thread(struct worker *wrk, void *priv)
 			vt->due = now + vt->interval;
 			if (!vt->running) {
 				vt->running = 1;
-				vt->task.func = vbp_task;
-				vt->task.priv = vt;
+				vt->task->func = vbp_task;
+				vt->task->priv = vt;
 				Lck_Unlock(&vbp_mtx);
-				r = Pool_Task_Any(&vt->task, TASK_QUEUE_REQ);
+				r = Pool_Task_Any(vt->task, TASK_QUEUE_REQ);
 				Lck_Lock(&vbp_mtx);
 				if (r)
 					vt->running = 0;

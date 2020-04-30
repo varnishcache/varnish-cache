@@ -98,7 +98,7 @@ Ignoring BOM in ESI objects
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you backend spits out a Unicode Byte-Order-Mark as the first
-bytes of the reponse, the "<" check will fail unless you set::
+bytes of the response, the "<" check will fail unless you set::
 
    param.set feature +esi_remove_bom
 

@@ -665,6 +665,9 @@ AC_SUBST(VARNISH_STATE_DIR)
 pkgsysconfdir='${sysconfdir}/varnish'
 AC_SUBST(pkgsysconfdir)
 
+# VMODs directory
+AC_SUBST(vmoddir, [$\(pkglibdir\)/vmods])
+
 # Check for linker script support
 gl_LD_VERSION_SCRIPT
 

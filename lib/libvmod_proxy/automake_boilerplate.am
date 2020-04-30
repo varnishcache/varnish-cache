@@ -7,9 +7,8 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/bin/varnishd \
 	-I$(top_builddir)/include
 
-vmoddir = $(pkglibdir)/vmods
 vmodtool = $(top_srcdir)/lib/libvcc/vmodtool.py
-vmodtoolargs ?= --strict --boilerplate
+vmodtoolargs ?= --strict --boilerplate -o vcc_if
 
 vmod_LTLIBRARIES = libvmod_proxy.la
 
@@ -31,7 +30,7 @@ vcc_if.h vmod_proxy.rst vmod_proxy.man.rst: vcc_if.c
 vcc_if.c: $(vmodtool) $(srcdir)/vmod.vcc
 	@PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/vmod.vcc
 
-EXTRA_DIST = vmod.vcc automake_boilerplate.am
+EXTRA_DIST = $(srcdir)/vmod.vcc automake_boilerplate.am
 
 CLEANFILES = $(builddir)/vcc_if.c $(builddir)/vcc_if.h \
 	$(builddir)/vmod_proxy.rst \

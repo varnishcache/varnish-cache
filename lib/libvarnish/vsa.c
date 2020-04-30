@@ -226,13 +226,11 @@ VSA_GetPtr(const struct suckaddr *sua, const unsigned char ** dst)
 static inline
 socklen_t sua_len(const struct sockaddr *sa)
 {
-	struct suckaddr *sua;
-
 	switch (sa->sa_family) {
 	case PF_INET:
-		return (sizeof sua->sa4);
+		return (sizeof(struct sockaddr_in));
 	case PF_INET6:
-		return (sizeof sua->sa6);
+		return (sizeof(struct sockaddr_in6));
 	default:
 		return (0);
 	}
@@ -245,16 +243,7 @@ socklen_t sua_len(const struct sockaddr *sa)
 struct suckaddr *
 VSA_Malloc(const void *s, unsigned  sal)
 {
-	void *d;
-
-	d = malloc(vsa_suckaddr_len);
-	/* XXX: shouldn't we AN(sua) instead of mixing up failed allocations
-	 * with unsupported address family or bogus sockaddr?
-	 */
-	if (d == NULL)
-		return (NULL);
-
-	return (VSA_Build(d, s, sal));
+	return (VSA_Build(malloc(vsa_suckaddr_len), s, sal));
 }
 
 /* 'd' SHALL point to vsa_suckaddr_len aligned bytes of storage
@@ -314,9 +303,9 @@ VSA_BuildFAP(void *d, sa_family_t fam, const void *a, unsigned al,
 struct suckaddr *
 VSA_Build(void *d, const void *s, unsigned sal)
 {
-	struct suckaddr *sua = d;
+	struct suckaddr *sua;
 	const struct sockaddr *sa = s;
-	unsigned l;
+	unsigned l;	// for flexelint
 
 	AN(d);
 	AN(s);
@@ -324,8 +313,19 @@ VSA_Build(void *d, const void *s, unsigned sal)
 	if (l == 0 || l != sal)
 		return (NULL);
 
+	sua = d;
+
 	INIT_OBJ(sua, SUCKADDR_MAGIC);
-	memcpy(&sua->sa, s, l);
+	switch (l) {
+	case sizeof sua->sa4:
+		memcpy(&sua->sa4, s, l);
+		break;
+	case sizeof sua->sa6:
+		memcpy(&sua->sa6, s, l);
+		break;
+	default:
+		WRONG("VSA protocol vs. size");
+	}
 #ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
 	sua->sa.sa_len = (unsigned char)l;
 #endif

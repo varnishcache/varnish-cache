@@ -1,7 +1,10 @@
 #!/bin/sh
 
 FLOPS='
-	*.c
+	varnishstat.c
+	varnishstat_curses.c
+	varnishstat_curses_help.c
+
 	../../lib/libvarnishapi/flint.lnt
 	../../lib/libvarnishapi/*.c
 '
