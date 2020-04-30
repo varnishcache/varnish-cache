@@ -72,6 +72,60 @@ static const uintptr_t snap_overflowed = (uintptr_t)&snap_overflowed;
  * Workspace sanitizer-aware management
  */
 
+static void
+wssan_Init(struct ws *ws)
+{
+	struct wssan *san;
+
+	if (!DO_DEBUG(DBG_WSSAN) || ws->f != ws->s)
+		return;
+
+	san = WS_Alloc(ws, sizeof *san);
+	assert((uintptr_t)san == (uintptr_t)ws->s);
+	INIT_OBJ(san, WSSAN_MAGIC);
+	VTAILQ_INIT(&san->head);
+	san->ws = ws;
+}
+
+static void
+wssan_Clear(struct wssan *san)
+{
+	struct ws *ws;
+
+	ws = san->ws;
+	assert(ws->f == ws->s + sizeof *san);
+	ZERO_OBJ(san, sizeof *san);
+	ws->f = ws->s;
+}
+
+static void
+wssan_Unwind(struct wssan *san)
+{
+	struct ws_alloc *wa;
+	struct ws *ws;
+	unsigned b;
+
+	ws = san->ws;
+	wa = VTAILQ_FIRST(&san->head);
+	if (wa == NULL) {
+		wssan_Clear(san);
+		return;
+	}
+
+	CHECK_OBJ(wa, WS_ALLOC_MAGIC);
+	assert(wa->align < WS_RESERVE_ALIGN);
+
+	/* XXX: wssan_Assert(san, wa); */
+	b = wa->len + wa->align + WS_REDZONE_PSIZE;
+	assert(wa->ptr + b == ws->f);
+
+	ws->f = wa->ptr - WS_REDZONE_PSIZE;
+	assert(ws->f >= ws->s + sizeof *san);
+
+	VTAILQ_REMOVE(&san->head, wa, list);
+	FREE_OBJ(wa);
+}
+
 static struct wssan *
 ws_Sanitizer(const struct ws *ws)
 {
@@ -219,6 +273,35 @@ ws_Release(struct ws *ws, unsigned bytes)
 	ws->r = NULL;
 }
 
+static void
+ws_Reset(struct ws *ws, uintptr_t pp)
+{
+	struct wssan *san;
+	const char *tmp;
+	char *p;
+
+	AZ(ws->r);
+
+	p = (char *)pp;
+	assert(p >= ws->s);
+	assert(p <= ws->f);
+	assert(p <= ws->e);
+
+	san = ws_Sanitizer(ws);
+	if (san == NULL) {
+		ws->f = p;
+		return;
+	}
+
+	while (p < ws->f) {
+		tmp = ws->f;
+		wssan_Unwind(san);
+		assert(ws->f < tmp);
+	}
+
+	assert(p == ws->f);
+}
+
 /*---------------------------------------------------------------------
  * Workspace management
  */
@@ -284,7 +367,6 @@ WS_Assert_Allocated(const struct ws *ws, const void *ptr, ssize_t len)
 void
 WS_Init(struct ws *ws, const char *id, void *space, unsigned len)
 {
-	struct wssan *san;
 	unsigned l;
 
 	DSL(DBG_WORKSPACE, 0,
@@ -299,13 +381,7 @@ WS_Init(struct ws *ws, const char *id, void *space, unsigned len)
 	ws->f = ws->s;
 	assert(id[0] & 0x20);		// cheesy islower()
 	bstrcpy(ws->id, id);
-	if (DO_DEBUG(DBG_WSSAN)) {
-		san = WS_Alloc(ws, sizeof *san);
-		assert((uintptr_t)san == (uintptr_t)ws->s);
-		INIT_OBJ(san, WSSAN_MAGIC);
-		VTAILQ_INIT(&san->head);
-		san->ws = ws;
-	}
+	wssan_Init(ws);
 	WS_Assert(ws);
 }
 
@@ -347,7 +423,6 @@ ws_ClearOverflow(struct ws *ws)
 void
 WS_Reset(struct ws *ws, uintptr_t pp)
 {
-	char *p;
 
 	WS_Assert(ws);
 	AN(pp);
@@ -356,12 +431,8 @@ WS_Reset(struct ws *ws, uintptr_t pp)
 		AN(WS_Overflowed(ws));
 		return;
 	}
-	p = (char *)pp;
-	DSL(DBG_WORKSPACE, 0, "WS_Reset(%p, %p)", ws, p);
-	AZ(ws->r);
-	assert(p >= ws->s);
-	assert(p <= ws->e);
-	ws->f = p;
+	DSL(DBG_WORKSPACE, 0, "WS_Reset(%p, %ju)", ws, pp);
+	ws_Reset(ws, pp);
 	WS_Assert(ws);
 }
 
@@ -381,6 +452,7 @@ WS_Rollback(struct ws *ws, uintptr_t pp)
 
 	ws_ClearOverflow(ws);
 	WS_Reset(ws, pp);
+	wssan_Init(ws);
 }
 
 void *

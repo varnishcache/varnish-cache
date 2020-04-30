@@ -177,6 +177,7 @@ Req_Release(struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	MPL_AssertSane(req);
 	VSL_Flush(req->vsl, 0);
+	WS_Rollback(req->ws, 0);
 	MPL_Free(pp->mpl_req, req);
 }
 
