@@ -655,7 +655,9 @@ in your VMOD's code to create and destroy the counters your defined. The
 *vsctool.py* tool also generates a *VSC_foo.rst* file that you can
 include in your documentation to describe the counters your VMOD has.
 
-The .vsc file looks like this::
+The .vsc file looks like this:
+
+.. code-block:: none
 
 	.. varnish_vsc_begin:: xkey
 		:oneliner:	xkey Counters
