@@ -700,3 +700,8 @@ format
 
 After these parameters, a counter can have a longer description, though
 this description has to be all on one line in the .vsc file.
+
+You should call ``VSC_*_New()`` when your VMOD is loaded and
+``VSC_*_Destroy()`` when it is unloaded. See the generated
+``VSC_*.h`` file for the full details about the structure that contains
+your counters.
