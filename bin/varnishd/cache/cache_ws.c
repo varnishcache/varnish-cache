@@ -126,6 +126,24 @@ wssan_Unwind(struct wssan *san)
 	FREE_OBJ(wa);
 }
 
+static void
+wssan_Mark(const struct ws_alloc *wa)
+{
+	char *c;
+
+	CHECK_OBJ_NOTNULL(wa, WS_ALLOC_MAGIC);
+	AN(wa->ptr);
+	AN(wa->len);
+	assert(wa->align <= WS_RESERVE_ALIGN);
+
+	c = wa->ptr - WS_REDZONE_PSIZE;
+	memset(c, WS_REDZONE_BEFORE, WS_REDZONE_PSIZE);
+	c = wa->ptr + wa->len;
+	memset(c, WS_REDZONE_ALIGN, wa->align);
+	c += wa->align;
+	memset(c, WS_REDZONE_AFTER, WS_REDZONE_PSIZE);
+}
+
 static struct wssan *
 ws_Sanitizer(const struct ws *ws)
 {
@@ -179,7 +197,7 @@ ws_Alloc(struct ws *ws, unsigned bytes)
 	VTAILQ_INSERT_HEAD(&san->head, wa, list);
 	ws->f += bytes;
 	r = wa->ptr;
-	/* XXX: wssan_Mark(wa); */
+	wssan_Mark(wa);
 	return (r);
 }
 
@@ -227,7 +245,7 @@ ws_Reserve(struct ws *ws, unsigned bytes)
 	wa->ptr = ws->f;
 	wa->len = bytes;
 	VTAILQ_INSERT_HEAD(&san->head, wa, list);
-	/* XXX: wssan_Mark(wa); */
+	wssan_Mark(wa);
 
 	return (bytes);
 }
@@ -266,7 +284,7 @@ ws_Release(struct ws *ws, unsigned bytes)
 		assert(wa->align < WS_RESERVE_ALIGN);
 		/* NB: ws->f is already past WS_REDZONE_BEFORE */
 		bytes = wa->len + wa->align + WS_REDZONE_PSIZE;
-		/* XXX: wssan_Mark(wa); */
+		wssan_Mark(wa);
 	}
 
 	ws->f += bytes;
