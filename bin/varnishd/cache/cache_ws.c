@@ -107,6 +107,39 @@ wssan_Init(struct ws *ws)
 }
 
 static void
+wssan_Assert(const struct wssan *san, const struct ws_alloc *wa)
+{
+	const struct ws_alloc *wa2;
+	char *c;
+	unsigned u;
+
+	CHECK_OBJ_NOTNULL(san, WSSAN_MAGIC);
+	if (wa == NULL) {
+		wa2 = NULL;
+		VTAILQ_FOREACH(wa, &san->head, list) {
+			wssan_Assert(san, wa);
+			/* XXX: wssan_AssertContiguous(wa, wa2); */
+			wa2 = wa;
+		}
+		return;
+	}
+
+	CHECK_OBJ(wa, WS_ALLOC_MAGIC);
+	AN(wa->ptr);
+	AN(wa->len);
+	assert(wa->align <= WS_RESERVE_ALIGN);
+
+	c = wa->ptr - WS_REDZONE_PSIZE;
+	for (u = 0; u < WS_REDZONE_PSIZE; u++, c++)
+		assert(*c == WS_REDZONE_BEFORE);
+	c += wa->len;
+	for (u = 0; u < wa->align; u++, c++)
+		assert(*c == WS_REDZONE_ALIGN);
+	for (u = 0; u < WS_REDZONE_PSIZE; u++, c++)
+		assert(*c == WS_REDZONE_AFTER);
+}
+
+static void
 wssan_Clear(struct wssan *san)
 {
 	struct ws *ws;
@@ -134,7 +167,7 @@ wssan_Unwind(struct wssan *san)
 	CHECK_OBJ(wa, WS_ALLOC_MAGIC);
 	assert(wa->align < WS_RESERVE_ALIGN);
 
-	/* XXX: wssan_Assert(san, wa); */
+	wssan_Assert(san, wa);
 	b = wa->len + wa->align + WS_REDZONE_PSIZE;
 	assert(wa->ptr + b == ws->f);
 
@@ -327,7 +360,7 @@ ws_Release(struct ws *ws, unsigned bytes)
 		wa = VTAILQ_FIRST(&san->head);
 		CHECK_OBJ_NOTNULL(wa, WS_ALLOC_MAGIC);
 		assert(wa->align == WS_RESERVE_ALIGN);
-		/* XXX: wssan_Assert(san, wa); */
+		wssan_Assert(san, wa);
 		if (bytes == 0) {
 			/* NB: ws->f is already past WS_REDZONE_BEFORE */
 			ws->f -= WS_REDZONE_PSIZE;
@@ -407,7 +440,8 @@ WS_Assert(const struct ws *ws)
 	assert(*ws->e == WS_REDZONE_END);
 
 	san = ws_Sanitizer(ws);
-	(void)san; /* NB: soft INCOMPL(); */
+	if (san != NULL)
+		wssan_Assert(san, NULL);
 }
 
 int
