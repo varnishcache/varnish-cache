@@ -68,6 +68,25 @@ struct wssan {
 
 static const uintptr_t snap_overflowed = (uintptr_t)&snap_overflowed;
 
+/*---------------------------------------------------------------------*/
+
+static int
+ws_generic_inside(const char *dst_b, const char *dst_e,
+    const char *src_b, const char *src_e)
+{
+
+	AN(dst_b);
+	AN(dst_e);
+	AN(src_b);
+	assert(dst_b <= dst_e);
+
+	if (src_b < dst_b || src_b >= dst_e)
+		return (0);
+	if (src_e != NULL && (src_e < src_b || src_e > dst_e))
+		return (0);
+	return (1);
+}
+
 /*---------------------------------------------------------------------
  * Workspace sanitizer-aware management
  */
@@ -144,6 +163,17 @@ wssan_Mark(const struct ws_alloc *wa)
 	memset(c, WS_REDZONE_AFTER, WS_REDZONE_PSIZE);
 }
 
+static int
+wssan_Allocated(const struct wssan *san, const char *b, const char *e)
+{
+	const struct ws_alloc *wa;
+
+	VTAILQ_FOREACH(wa, &san->head, list)
+		if (ws_generic_inside(wa->ptr, wa->ptr + wa->len, b, e))
+			return (1);
+	return (0);
+}
+
 static struct wssan *
 ws_Sanitizer(const struct ws *ws)
 {
@@ -158,6 +188,34 @@ ws_Sanitizer(const struct ws *ws)
 
 	return (NULL);
 }
+
+static int
+ws_Inside(const struct ws *ws, const char *b, const char *e)
+{
+	struct wssan *san;
+
+	san = ws_Sanitizer(ws);
+	if (san == NULL)
+		return (ws_generic_inside(ws->s, ws->e, b, e));
+
+	if (wssan_Allocated(san, b, e))
+		return (1);
+	/* NB: not allocated? last chance in the remaining space */
+	return (ws_generic_inside(ws->f, ws->e, b, e));
+}
+
+static void
+ws_Assert_Allocated(const struct ws *ws, const char *b, const char *e)
+{
+	struct wssan *san;
+
+	san = ws_Sanitizer(ws);
+	if (san == NULL)
+		assert(ws_generic_inside(ws->s, ws->f, b, e));
+	else
+		assert(wssan_Allocated(san, b, e));
+}
+
 
 static void *
 ws_Alloc(struct ws *ws, unsigned bytes)
@@ -353,17 +411,11 @@ WS_Assert(const struct ws *ws)
 }
 
 int
-WS_Inside(const struct ws *ws, const void *bb, const void *ee)
+WS_Inside(const struct ws *ws, const void *b, const void *e)
 {
-	const char *b = bb;
-	const char *e = ee;
 
 	WS_Assert(ws);
-	if (b < ws->s || b >= ws->e)
-		return (0);
-	if (e != NULL && (e < b || e > ws->e))
-		return (0);
-	return (1);
+	return (ws_Inside(ws, b, e));
 }
 
 void
@@ -374,7 +426,7 @@ WS_Assert_Allocated(const struct ws *ws, const void *ptr, ssize_t len)
 	WS_Assert(ws);
 	if (len < 0)
 		len = strlen(p) + 1;
-	assert(p >= ws->s && (p + len) <= ws->f);
+	ws_Assert_Allocated(ws, p, p + len);
 }
 
 /*
