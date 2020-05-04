@@ -38,7 +38,7 @@
 
 #define WS_REDZONE_END		'\x15'
 
-static const void * const snap_overflowed = &snap_overflowed;
+static const uintptr_t snap_overflowed = (uintptr_t)&snap_overflowed;
 
 void
 WS_Assert(const struct ws *ws)
@@ -146,7 +146,7 @@ WS_Reset(struct ws *ws, uintptr_t pp)
 
 	WS_Assert(ws);
 	AN(pp);
-	if (pp == (uintptr_t)snap_overflowed) {
+	if (pp == snap_overflowed) {
 		DSL(DBG_WORKSPACE, 0, "WS_Reset(%p, overflowed)", ws);
 		AN(WS_Overflowed(ws));
 		return;
@@ -254,7 +254,7 @@ WS_Snapshot(struct ws *ws)
 	assert(ws->r == NULL);
 	if (WS_Overflowed(ws)) {
 		DSL(DBG_WORKSPACE, 0, "WS_Snapshot(%p) = overflowed", ws);
-		return ((uintptr_t) snap_overflowed);
+		return (snap_overflowed);
 	}
 	DSL(DBG_WORKSPACE, 0, "WS_Snapshot(%p) = %p", ws, ws->f);
 	return ((uintptr_t)ws->f);
