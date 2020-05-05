@@ -340,8 +340,8 @@ vmod_decode(VRT_CTX, VCL_ENUM decs, VCL_INT length, VCL_STRANDS strings)
 	AN(strings);
 	CHECK_OBJ_NOTNULL(ctx->ws, WS_MAGIC);
 
-	buf = WS_Front(ctx->ws);
 	space = WS_ReserveAll(ctx->ws);
+	buf = WS_Front(ctx->ws);
 
 	if (length <= 0)
 		length = -1;
@@ -379,8 +379,8 @@ encode(VRT_CTX, enum encoding enc, enum case_e kase, VCL_BLOB b)
 
 	CHECK_OBJ_NOTNULL(ctx->ws, WS_MAGIC);
 	snap = WS_Snapshot(ctx->ws);
-	buf = WS_Front(ctx->ws);
 	space = WS_ReserveAll(ctx->ws);
+	buf = WS_Front(ctx->ws);
 
 	len = func[enc].encode(enc, kase, buf, space, b->blob, b->len);
 

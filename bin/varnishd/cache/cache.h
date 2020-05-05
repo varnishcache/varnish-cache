@@ -800,6 +800,8 @@ char *WS_VSB_finish(struct vsb *, struct ws *, size_t *);
 static inline char*
 WS_Front(const struct ws *ws)
 {
+
+	AN(ws->r);
 	return ws->f;
 }
 
