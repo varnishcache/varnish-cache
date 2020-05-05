@@ -1,0 +1,26 @@
+varnishtest "Detect workspace buffer overflow"
+
+varnish v1 -cliok "param.set feature +no_coredump"
+varnish v1 -cliok "param.set debug +wssan"
+
+varnish v1 -vcl {
+	import debug;
+
+	backend be none;
+
+	sub vcl_recv {
+		debug.ws_overflow("oops");
+		set req.url += "?expect=panic";
+	}
+} -start
+
+client c1 {
+	txreq
+	expect_close
+} -run
+
+delay 1
+
+varnish v1 -cliexpect "wssan_Assert" panic.show
+varnish v1 -cliok panic.clear
+varnish v1 -expectexit 0x20

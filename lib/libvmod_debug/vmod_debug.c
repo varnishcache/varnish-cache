@@ -1208,3 +1208,16 @@ xyzzy_priv_task_with_option(VRT_CTX, struct VARGS(priv_task_with_option) *args)
 		args->priv->priv = WS_Copy(ctx->ws, args->opt, -1);
 	return (args->priv->priv);
 }
+
+VCL_VOID v_matchproto_(td_xyzzy_debug_ws_overflow)
+xyzzy_ws_overflow(VRT_CTX, VCL_STRING s)
+{
+	char *p;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->ws, WS_MAGIC);
+
+	p = TRUST_ME(WS_Printf(ctx->ws, "%s", s));
+	AN(p);
+	strcat(p, "!"); /* overflow */
+}
