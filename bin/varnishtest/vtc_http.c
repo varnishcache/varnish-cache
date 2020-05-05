@@ -272,7 +272,7 @@ http_count_header(char * const *hh, const char *hdr)
  *         meant as strings OP is a matching operator, either == (exact match)
  *         or ~ (regex match).
  *
- *         varnishtet will first try to resolve STRING1 and STRING2 by looking
+ *         varnishtest will first try to resolve STRING1 and STRING2 by looking
  *         if they have special meanings, in which case, the resolved value is
  *         use for the test. Note that this value can be a string representing a
  *         number, allowing for tests such as::
