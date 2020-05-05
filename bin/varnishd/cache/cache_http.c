@@ -282,7 +282,7 @@ http_SetH(struct http *to, unsigned n, const char *fm)
 static void
 http_PutField(struct http *to, int field, const char *string)
 {
-	char *p;
+	const char *p;
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	p = WS_Copy(to->ws, string, -1);
@@ -1182,7 +1182,7 @@ void
 http_CopyHome(const struct http *hp)
 {
 	unsigned u, l;
-	char *p;
+	const char *p;
 
 	for (u = 0; u < hp->nhd; u++) {
 		if (hp->hd[u].b == NULL) {
