@@ -58,8 +58,8 @@ static pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
 struct cookie {
 	unsigned		magic;
 #define VMOD_COOKIE_ENTRY_MAGIC	0x3BB41543
-	char			*name;
-	char			*value;
+	const char		*name;
+	const char		*value;
 	VTAILQ_ENTRY(cookie)	list;
 };
 
@@ -163,7 +163,7 @@ vmod_set(VRT_CTX, struct vmod_priv *priv, VCL_STRING name, VCL_STRING value)
 {
 	struct vmod_cookie *vcp = cobj_get(priv);
 	struct cookie *cookie;
-	char *p;
+	const char *p;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->ws, WS_MAGIC);

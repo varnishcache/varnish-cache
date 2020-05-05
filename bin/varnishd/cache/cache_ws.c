@@ -224,7 +224,7 @@ WS_Copy(struct ws *ws, const void *str, int len)
 	return (r);
 }
 
-void *
+const char *
 WS_Printf(struct ws *ws, const char *fmt, ...)
 {
 	unsigned u, v;
