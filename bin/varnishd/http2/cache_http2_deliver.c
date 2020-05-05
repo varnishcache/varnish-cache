@@ -232,6 +232,7 @@ h2_build_headers(struct vsb *resp, struct req *req)
 	uint8_t buf[6];
 	ssize_t sz, sz1;
 
+	assert(req->resp->status % 1000 >= 100);
 	l = h2_status(buf, req->resp->status % 1000);
 	VSB_bcat(resp, buf, l);
 
