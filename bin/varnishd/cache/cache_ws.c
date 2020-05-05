@@ -107,9 +107,24 @@ wssan_Init(struct ws *ws)
 }
 
 static void
+wssan_AssertContiguous(const struct ws_alloc *wa, const struct ws_alloc *wa2)
+{
+	const char *p, *p2;
+
+	AN(wa);
+	if (wa2 == NULL)
+		return;
+
+	p = wa->ptr + wa->len + wa->align + WS_REDZONE_PSIZE;
+	p2 = wa2->ptr - WS_REDZONE_PSIZE;
+	assert(p == p2);
+}
+
+static void
 wssan_Assert(const struct wssan *san, const struct ws_alloc *wa)
 {
 	const struct ws_alloc *wa2;
+	uintptr_t ps, pa;
 	char *c;
 	unsigned u;
 
@@ -118,8 +133,13 @@ wssan_Assert(const struct wssan *san, const struct ws_alloc *wa)
 		wa2 = NULL;
 		VTAILQ_FOREACH(wa, &san->head, list) {
 			wssan_Assert(san, wa);
-			/* XXX: wssan_AssertContiguous(wa, wa2); */
+			wssan_AssertContiguous(wa, wa2);
 			wa2 = wa;
+		}
+		if (wa2 != NULL) {
+			ps = (uintptr_t)(san + 1);
+			pa = (uintptr_t)wa2->ptr - WS_REDZONE_PSIZE;
+			assert(ps == pa);
 		}
 		return;
 	}
