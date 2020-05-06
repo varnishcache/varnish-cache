@@ -70,9 +70,8 @@ HTTP1_Complete(struct http_conn *htc)
 	enum htc_status_e retval;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
-
-	assert(htc->rxbuf_e >= htc->rxbuf_b);
-	assert(htc->rxbuf_e <= htc->ws->r);
+	AN(WS_Reservation(htc->ws));
+	assert(pdiff(htc->rxbuf_b, htc->rxbuf_e) <= WS_ReservationSize(htc->ws));
 
 	/* Skip any leading white space */
 	for (p = htc->rxbuf_b ; p < htc->rxbuf_e && vct_islws(*p); p++)

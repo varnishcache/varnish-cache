@@ -184,7 +184,7 @@ h2_del_req(struct worker *wrk, const struct h2_req *r2)
 	/* XXX: PRIORITY reshuffle */
 	VTAILQ_REMOVE(&h2->streams, r2, list);
 	Lck_Unlock(&sp->mtx);
-	AZ(r2->req->ws->r);
+	AZ(WS_Reservation(r2->req->ws));
 	Req_Cleanup(sp, wrk, r2->req);
 	Req_Release(r2->req);
 }
@@ -532,7 +532,7 @@ h2_do_req(struct worker *wrk, void *priv)
 
 	wrk->stats->client_req++;
 	if (CNT_Request(req) != REQ_FSM_DISEMBARK) {
-		AZ(req->ws->r);
+		AZ(WS_Reservation(req->ws));
 		AZ(req->top->vcl0);
 		h2 = r2->h2sess;
 		CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
@@ -563,7 +563,7 @@ h2_end_headers(struct worker *wrk, struct h2_sess *h2,
 		Lck_Lock(&h2->sess->mtx);
 		VSLb(h2->vsl, SLT_Debug, "HPACK/FINI %s", h2e->name);
 		Lck_Unlock(&h2->sess->mtx);
-		AZ(r2->req->ws->r);
+		AZ(WS_Reservation(r2->req->ws));
 		h2_del_req(wrk, r2);
 		return (h2e);
 	}
@@ -685,7 +685,7 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		VSLb(h2->vsl, SLT_Debug, "HPACK(hdr) %s", h2e->name);
 		Lck_Unlock(&h2->sess->mtx);
 		(void)h2h_decode_fini(h2);
-		AZ(r2->req->ws->r);
+		AZ(WS_Reservation(r2->req->ws));
 		h2_del_req(wrk, r2);
 		return (h2e);
 	}
@@ -720,7 +720,7 @@ h2_rx_continuation(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		VSLb(h2->vsl, SLT_Debug, "HPACK(cont) %s", h2e->name);
 		Lck_Unlock(&h2->sess->mtx);
 		(void)h2h_decode_fini(h2);
-		AZ(r2->req->ws->r);
+		AZ(WS_Reservation(r2->req->ws));
 		h2_del_req(wrk, r2);
 		return (h2e);
 	}

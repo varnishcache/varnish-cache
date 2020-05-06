@@ -270,26 +270,29 @@ HTC_RxStuff(struct http_conn *htc, htc_complete_f *func,
 	vtim_dur tmo;
 	vtim_real now;
 	enum htc_status_e hs;
+	unsigned l, r;
 	ssize_t z;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	AN(htc->rfd);
 	assert(*htc->rfd > 0);
-	AN(htc->ws->r);
 	AN(htc->rxbuf_b);
-	assert(htc->rxbuf_b <= htc->rxbuf_e);
-	assert(htc->rxbuf_e <= htc->ws->r);
+	AN(WS_Reservation(htc->ws));
+
+	l = pdiff(htc->rxbuf_b, htc->rxbuf_e);
+	r = WS_ReservationSize(htc->ws);
+	assert(l <= r);
 
 	AZ(isnan(tn) && isnan(td));
 	if (t1 != NULL)
 		assert(isnan(*t1));
 
-	if (htc->rxbuf_e == htc->ws->r) {
+	if (l == r) {
 		/* Can't work with a zero size buffer */
 		WS_ReleaseP(htc->ws, htc->rxbuf_b);
 		return (HTC_S_OVERFLOW);
 	}
-	z = (htc->ws->r - htc->rxbuf_b);
+	z = r;
 	if (z < maxbytes)
 		maxbytes = z;	/* Cap maxbytes at available WS */
 
@@ -297,7 +300,8 @@ HTC_RxStuff(struct http_conn *htc, htc_complete_f *func,
 		now = VTIM_real();
 		AZ(htc->pipeline_b);
 		AZ(htc->pipeline_e);
-		assert(htc->rxbuf_e <= htc->ws->r);
+		l = pdiff(htc->rxbuf_b, htc->rxbuf_e);
+		assert(l <= r);
 
 		hs = func(htc);
 		if (hs == HTC_S_OVERFLOW || hs == HTC_S_JUNK) {

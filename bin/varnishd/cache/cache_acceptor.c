@@ -373,7 +373,7 @@ vca_make_session(struct worker *wrk, void *arg)
 	VTCP_blocking(wa->acceptsock);
 
 	/* Turn accepted socket into a session */
-	AN(wrk->aws->r);
+	AN(WS_Reservation(wrk->aws));
 	sp = SES_New(wrk->pool);
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	wrk->stats->s_sess++;

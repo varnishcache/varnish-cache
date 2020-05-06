@@ -1127,6 +1127,6 @@ CNT_Request(struct req *req)
 		VRB_Free(req);
 		req->wrk = NULL;
 	}
-	assert(nxt == REQ_FSM_DISEMBARK || req->ws->r == NULL);
+	assert(nxt == REQ_FSM_DISEMBARK || WS_Reservation(req->ws) == NULL);
 	return (nxt);
 }

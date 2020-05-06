@@ -480,9 +480,8 @@ vpx_complete(struct http_conn *htc)
 	char *p, *q;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
-
-	assert(htc->rxbuf_e >= htc->rxbuf_b);
-	assert(htc->rxbuf_e <= htc->ws->r);
+	AN(WS_Reservation(htc->ws));
+	assert(pdiff(htc->rxbuf_b, htc->rxbuf_e) <= WS_ReservationSize(htc->ws));
 
 	l = htc->rxbuf_e - htc->rxbuf_b;
 	p = htc->rxbuf_b;

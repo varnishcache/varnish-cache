@@ -231,13 +231,16 @@ h2h_decode_bytes(struct h2_sess *h2, const uint8_t *in, size_t in_l)
 	struct http *hp;
 	struct h2h_decode *d;
 	size_t in_u = 0;
+	const char *r, *e;
 
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(h2->new_req, REQ_MAGIC);
 	hp = h2->new_req->http;
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(hp->ws, WS_MAGIC);
-	AN(hp->ws->r);
+	r = WS_Reservation(hp->ws);
+	AN(r);
+	e = r + WS_ReservationSize(hp->ws);
 	d = h2->decode;
 	CHECK_OBJ_NOTNULL(d, H2H_DECODE_MAGIC);
 
@@ -316,9 +319,9 @@ h2h_decode_bytes(struct h2_sess *h2, const uint8_t *in, size_t in_l)
 
 		if (d->error == H2SE_ENHANCE_YOUR_CALM) {
 			d->out = d->reset;
-			d->out_l = hp->ws->r - d->out;
+			d->out_l = e - d->out;
 			d->out_u = 0;
-			assert(d->out_u < d->out_l);
+			assert(d->out_l > 0);
 		} else if (d->error)
 			break;
 	}
