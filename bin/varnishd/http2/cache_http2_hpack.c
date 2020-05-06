@@ -183,7 +183,7 @@ h2h_decode_init(const struct h2_sess *h2)
 	 * space. Require non-zero size.
 	 */
 	XXXAN(d->out_l);
-	d->out = h2->new_req->http->ws->f;
+	d->out = WS_Reservation(h2->new_req->http->ws);
 	d->reset = d->out;
 }
 
