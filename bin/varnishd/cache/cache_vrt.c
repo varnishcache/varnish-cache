@@ -554,7 +554,7 @@ VRT_UpperLowerStrands(VRT_CTX, VCL_STRANDS s, int up)
 	CHECK_OBJ_NOTNULL(ctx->ws, WS_MAGIC);
 	AN(s);
 	u = WS_ReserveAll(ctx->ws);
-	r = b = WS_Front(ctx->ws);
+	r = b = WS_Reservation(ctx->ws);
 	e = b + u;
 	for (i = 0; i < s->n; i++) {
 		if (s->p[i] == NULL || s->p[i][0] == '\0')

@@ -57,6 +57,8 @@
  *	Added VCL_STRING VRT_BLOB_string(VRT_CTX, VCL_BLOB)
  *	[cache.h] WS_Reserve() removed
  *	[cache.h] WS_Printf() changed
+ *	[cache.h] WS_ReservationSize() added
+ *	[cache.h] WS_Front() replaced by WS_Reservation()
  * 11.0 (2020-03-16)
  *	Changed type of vsa_suckaddr_len from int to size_t
  *	New prefix_{ptr|len} fields in vrt_backend
