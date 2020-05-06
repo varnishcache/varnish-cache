@@ -1,0 +1,20 @@
+varnishtest "Unformatable VCL_TIME"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import std;
+
+	sub vcl_deliver {
+		set resp.http.ts = std.real2time(std.real("1e+22", 0), now);
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.ts == ""
+} -run
