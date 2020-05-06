@@ -482,7 +482,7 @@ SES_Wait(struct sess *sp, const struct transport *xp)
 		return;
 	}
 
-	wp = (void*)WS_Front(sp->ws);
+	wp = WS_Reservation(sp->ws);
 	INIT_OBJ(wp, WAITED_MAGIC);
 	wp->fd = sp->fd;
 	wp->priv1 = sp;

@@ -797,12 +797,20 @@ void WS_Assert_Allocated(const struct ws *ws, const void *ptr, ssize_t len);
 void WS_VSB_new(struct vsb *, struct ws *);
 char *WS_VSB_finish(struct vsb *, struct ws *, size_t *);
 
-static inline char*
-WS_Front(const struct ws *ws)
+static inline void *
+WS_Reservation(const struct ws *ws)
+{
+
+	WS_Assert(ws);
+	return (ws->r != NULL ? ws->f : NULL);
+}
+
+static inline unsigned
+WS_ReservationSize(const struct ws *ws)
 {
 
 	AN(ws->r);
-	return ws->f;
+	return (ws->r - ws->f);
 }
 
 /* cache_rfc2616.c */

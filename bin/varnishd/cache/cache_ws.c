@@ -377,7 +377,7 @@ WS_VSB_new(struct vsb *vsb, struct ws *ws)
 	if (WS_Overflowed(ws) || u < 2)
 		AN(VSB_init(vsb, bogus, sizeof bogus));
 	else
-		AN(VSB_init(vsb, WS_Front(ws), u));
+		AN(VSB_init(vsb, WS_Reservation(ws), u));
 }
 
 char *
@@ -389,7 +389,7 @@ WS_VSB_finish(struct vsb *vsb, struct ws *ws, size_t *szp)
 	WS_Assert(ws);
 	if (!VSB_finish(vsb)) {
 		p = VSB_data(vsb);
-		if (p == WS_Front(ws)) {
+		if (p == WS_Reservation(ws)) {
 			WS_Release(ws, VSB_len(vsb) + 1);
 			if (szp != NULL)
 				*szp = VSB_len(vsb);
