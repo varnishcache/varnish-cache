@@ -840,8 +840,11 @@ VRT_TIME_string(VRT_CTX, VCL_TIME t)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	p = WS_Alloc(ctx->ws, VTIM_FORMAT_SIZE);
-	if (p != NULL)
+	if (p != NULL) {
 		VTIM_format(t, p);
+		if (*p == '\0')
+			p = NULL;
+	}
 	return (p);
 }
 
