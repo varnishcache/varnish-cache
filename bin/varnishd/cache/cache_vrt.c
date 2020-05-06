@@ -626,13 +626,17 @@ VCL_STRING v_matchproto_()
 VRT_TIME_string(VRT_CTX, VCL_TIME t)
 {
 	char *p;
+	uintptr_t snapshot;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	snapshot = WS_Snapshot(ctx->ws);
 	p = WS_Alloc(ctx->ws, VTIM_FORMAT_SIZE);
 	if (p != NULL) {
 		VTIM_format(t, p);
-		if (*p == '\0')
+		if (*p == '\0') {
 			p = NULL;
+			WS_Reset(ctx->ws, snapshot);
+		}
 	}
 	return (p);
 }
