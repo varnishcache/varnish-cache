@@ -115,6 +115,16 @@ WS_Init(struct ws *ws, const char *id, void *space, unsigned len)
 }
 
 void
+WS_Id(const struct ws *ws, char *id)
+{
+
+	WS_Assert(ws);
+	AN(id);
+	memcpy(id, ws->id, WS_ID_SIZE);
+	id[0] |= 0x20;			// cheesy tolower()
+}
+
+void
 WS_MarkOverflow(struct ws *ws)
 {
 	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);

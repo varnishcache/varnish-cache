@@ -136,10 +136,12 @@ struct lock { void *priv; };	// Opaque
  * Workspace structure for quick memory allocation.
  */
 
+#define WS_ID_SIZE 4
+
 struct ws {
 	unsigned		magic;
 #define WS_MAGIC		0x35fac554
-	char			id[4];		/* identity */
+	char			id[WS_ID_SIZE];	/* identity */
 	char			*s;		/* (S)tart of buffer */
 	char			*f;		/* (F)ree/front pointer */
 	char			*r;		/* (R)eserved length */
@@ -793,6 +795,7 @@ int WS_Overflowed(const struct ws *ws);
 const char *WS_Printf(struct ws *ws, const char *fmt, ...) v_printflike_(2, 3);
 int WS_Inside(const struct ws *, const void *, const void *);
 void WS_Assert_Allocated(const struct ws *ws, const void *ptr, ssize_t len);
+void WS_Id(const struct ws *ws, char *id);
 
 void WS_VSB_new(struct vsb *, struct ws *);
 char *WS_VSB_finish(struct vsb *, struct ws *, size_t *);
