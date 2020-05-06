@@ -351,6 +351,17 @@ WS_Overflowed(const struct ws *ws)
 	return (1);
 }
 
+void *
+WS_AtOffset(const struct ws *ws, unsigned off, unsigned len)
+{
+	char *ptr;
+
+	WS_Assert(ws);
+	ptr = ws->s + off;
+	WS_Assert_Allocated(ws, ptr, len);
+	return (ptr);
+}
+
 /*---------------------------------------------------------------------
  * Build a VSB on a workspace.
  * Usage pattern:

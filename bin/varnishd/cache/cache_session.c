@@ -89,10 +89,9 @@ ses_get_attr(const struct sess *sp, enum sess_attr a, void **dst)
 	if (sp->sattr[a] == 0xffff) {
 		*dst = NULL;
 		return (-1);
-	} else {
-		*dst = sp->ws->s + sp->sattr[a];
-		return (0);
 	}
+	*dst = WS_AtOffset(sp->ws, sp->sattr[a], 0);
+	return (0);
 }
 
 static int
@@ -106,7 +105,7 @@ ses_set_attr(const struct sess *sp, enum sess_attr a, const void *src, int sz)
 
 	if (sp->sattr[a] == 0xffff)
 		return (-1);
-	dst = sp->ws->s + sp->sattr[a];
+	dst = WS_AtOffset(sp->ws, sp->sattr[a], sz);
 	AN(dst);
 	memcpy(dst, src, sz);
 	return (0);
@@ -115,19 +114,18 @@ ses_set_attr(const struct sess *sp, enum sess_attr a, const void *src, int sz)
 static int
 ses_res_attr(struct sess *sp, enum sess_attr a, void **dst, int sz)
 {
-	ssize_t o;
+	unsigned o;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	assert(a < SA_LAST);
 	assert(sz >= 0);
 	AN(dst);
-	o = WS_ReserveSize(sp->ws, sz);
-	if (o < sz)
+	if (WS_ReserveSize(sp->ws, sz) == 0)
 		return (0);
 	*dst = WS_Reservation(sp->ws);
-	o = sp->ws->f - sp->ws->s;
+	o = WS_ReservationOffset(sp->ws);
 	WS_Release(sp->ws, sz);
-	assert(o >= 0 && o <= 0xffff);
+	assert(o <= 0xffff);
 	sp->sattr[a] = (uint16_t)o;
 	return (1);
 }
