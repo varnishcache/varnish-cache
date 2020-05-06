@@ -234,10 +234,10 @@ VRY_Prep(struct req *req)
 		AZ(req->vary_e);
 		(void)WS_ReserveAll(req->ws);
 	} else {
-		AN(req->ws->r);
+		AN(WS_Reservation(req->ws));
 	}
-	req->vary_b = (void*)req->ws->f;
-	req->vary_e = (void*)req->ws->r;
+	req->vary_b = WS_Reservation(req->ws);
+	req->vary_e = req->vary_b + WS_ReservationSize(req->ws);
 	if (req->vary_b + 2 < req->vary_e)
 		req->vary_b[2] = '\0';
 }

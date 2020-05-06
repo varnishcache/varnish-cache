@@ -403,7 +403,7 @@ http_CollectHdrSep(struct http *hp, const char *hdr, const char *sep)
 		if (b == NULL) {
 			/* Found second header, start our collection */
 			ml = WS_ReserveAll(hp->ws);
-			b = hp->ws->f;
+			b = WS_Reservation(hp->ws);
 			e = b + ml;
 			x = Tlen(hp->hd[f]);
 			if (b + x >= e) {
@@ -444,7 +444,7 @@ http_CollectHdrSep(struct http *hp, const char *hdr, const char *sep)
 	hp->nhd = (uint16_t)d;
 	AN(e);
 	*b = '\0';
-	hp->hd[f].b = hp->ws->f;
+	hp->hd[f].b = WS_Reservation(hp->ws);
 	hp->hd[f].e = b;
 	WS_ReleaseP(hp->ws, b + 1);
 }

@@ -76,7 +76,7 @@ vmod_updown(VRT_CTX, int up, VCL_STRANDS s)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	u = WS_ReserveAll(ctx->ws);
-	e = b = ctx->ws->f;
+	e = b = WS_Reservation(ctx->ws);
 	e += u;
 	for (i = 0; i < s->n && b < e; i++) {
 		p = s->p[i];
@@ -96,7 +96,7 @@ vmod_updown(VRT_CTX, int up, VCL_STRANDS s)
 		return (NULL);
 	} else {
 		e = b;
-		b = ctx->ws->f;
+		b = WS_Reservation(ctx->ws);
 		WS_Release(ctx->ws, e - b);
 		return (b);
 	}

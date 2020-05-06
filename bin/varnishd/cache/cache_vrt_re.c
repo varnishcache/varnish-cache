@@ -130,7 +130,7 @@ VRT_regsub(VRT_CTX, int all, const char *str, void *re,
 	}
 
 	u = WS_ReserveAll(ctx->ws);
-	res_e = res_b = b0 = ctx->ws->f;
+	res_e = res_b = b0 = WS_Reservation(ctx->ws);
 	res_e += u;
 
 	do {

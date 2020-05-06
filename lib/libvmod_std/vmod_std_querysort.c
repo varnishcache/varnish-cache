@@ -81,7 +81,7 @@ vmod_querysort(VRT_CTX, VCL_STRING url)
 		return (url);
 
 	u = WS_ReserveLumps(ctx->ws, sizeof(const char **));
-	pp = (const char**)(void*)(ctx->ws->f);
+	pp = WS_Reservation(ctx->ws);
 	if (u < 4) {
 		WS_Release(ctx->ws, 0);
 		WS_MarkOverflow(ctx->ws);

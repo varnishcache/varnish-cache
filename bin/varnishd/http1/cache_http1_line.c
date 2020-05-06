@@ -112,7 +112,7 @@ V1L_Open(struct worker *wrk, struct ws *ws, int *fd, struct vsl_log *vsl,
 		u = IOV_MAX;
 	if (niov != 0 && u > niov)
 		u = niov;
-	v1l->iov = (void*)ws->f;
+	v1l->iov = WS_Reservation(ws);
 	v1l->siov = u;
 	v1l->ciov = u;
 	v1l->wfd = fd;

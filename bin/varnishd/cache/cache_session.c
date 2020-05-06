@@ -124,7 +124,7 @@ ses_res_attr(struct sess *sp, enum sess_attr a, void **dst, int sz)
 	o = WS_ReserveSize(sp->ws, sz);
 	if (o < sz)
 		return (0);
-	*dst = sp->ws->f;
+	*dst = WS_Reservation(sp->ws);
 	o = sp->ws->f - sp->ws->s;
 	WS_Release(sp->ws, sz);
 	assert(o >= 0 && o <= 0xffff);
@@ -210,19 +210,19 @@ HTC_Status(enum htc_status_e e)
 void
 HTC_RxInit(struct http_conn *htc, struct ws *ws)
 {
+	unsigned r;
 	ssize_t l;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	htc->ws = ws;
-	(void)WS_ReserveAll(htc->ws);
-	htc->rxbuf_b = ws->f;
-	htc->rxbuf_e = ws->f;
+	r = WS_ReserveAll(htc->ws);
+	htc->rxbuf_b = htc->rxbuf_e = WS_Reservation(ws);
 	if (htc->pipeline_b != NULL) {
 		AN(htc->pipeline_e);
 		// assert(WS_Inside(ws, htc->pipeline_b, htc->pipeline_e));
 		l = htc->pipeline_e - htc->pipeline_b;
 		assert(l > 0);
-		assert(l <= ws->r - htc->rxbuf_b);
+		assert(l <= r);
 		memmove(htc->rxbuf_b, htc->pipeline_b, l);
 		htc->rxbuf_e += l;
 		htc->pipeline_b = NULL;
@@ -415,7 +415,7 @@ ses_handle(struct waited *wp, enum wait_event ev, vtim_real now)
 	CAST_OBJ_NOTNULL(sp, wp->priv1, SESS_MAGIC);
 	CAST_OBJ_NOTNULL(xp, (const void*)wp->priv2, TRANSPORT_MAGIC);
 	AN(wp->priv2);
-	assert((void *)sp->ws->f == wp);
+	assert(WS_Reservation(sp->ws) == wp);
 	wp->magic = 0;
 	wp = NULL;
 
@@ -434,7 +434,7 @@ ses_handle(struct waited *wp, enum wait_event ev, vtim_real now)
 		CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 		/* SES_Wait() guarantees the next will not assert. */
 		assert(sizeof *tp <= WS_ReserveSize(sp->ws, sizeof *tp));
-		tp = (void*)sp->ws->f;
+		tp = WS_Reservation(sp->ws);
 		tp->func = xp->unwait;
 		tp->priv = sp;
 		if (Pool_Task(pp, tp, TASK_QUEUE_REQ))

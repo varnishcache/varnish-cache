@@ -366,7 +366,7 @@ VRT_String(struct ws *ws, const char *h, const char *p, va_list ap)
 	va_list aq;
 
 	u = WS_ReserveAll(ws);
-	e = b = ws->f;
+	e = b = WS_Reservation(ws);
 	e += u;
 
 	va_copy(aq, ap);
@@ -422,7 +422,7 @@ VRT_String(struct ws *ws, const char *h, const char *p, va_list ap)
 		return (NULL);
 	}
 	e = b;
-	b = ws->f;
+	b = WS_Reservation(ws);
 	WS_Release(ws, e - b);
 	return (b);
 }
@@ -710,7 +710,7 @@ VRT_IP_string(VRT_CTX, VCL_IP ip)
 		WS_Release(ctx->ws, 0);
 		return (NULL);
 	}
-	p = ctx->ws->f;
+	p = WS_Reservation(ctx->ws);
 	VTCP_name(ip, p, len, NULL, 0);
 	WS_Release(ctx->ws, strlen(p) + 1);
 	return (p);

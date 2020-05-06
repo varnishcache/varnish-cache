@@ -674,7 +674,7 @@ HSH_Purge(struct worker *wrk, struct objhead *oh, vtim_real ttl_now,
 		more = 0;
 		spc = ospc;
 		nobj = 0;
-		ocp = (void*)wrk->aws->f;
+		ocp = WS_Reservation(wrk->aws);
 		Lck_Lock(&oh->mtx);
 		assert(oh->refcnt > 0);
 		VTAILQ_FOREACH(oc, &oh->objcs, hsh_list) {
