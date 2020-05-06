@@ -131,38 +131,6 @@ PAN_already(struct vsb *vsb, const void *ptr)
 /*--------------------------------------------------------------------*/
 
 static void
-pan_ws(struct vsb *vsb, const struct ws *ws)
-{
-
-	VSB_printf(vsb, "ws = %p {\n", ws);
-	if (PAN_already(vsb, ws))
-		return;
-	VSB_indent(vsb, 2);
-	PAN_CheckMagic(vsb, ws, WS_MAGIC);
-	if (ws->id[0] != '\0' && (!(ws->id[0] & 0x20)))
-		VSB_cat(vsb, "OVERFLOWED ");
-	VSB_printf(vsb, "id = \"%s\",\n", ws->id);
-	VSB_printf(vsb, "{s, f, r, e} = {%p", ws->s);
-	if (ws->f >= ws->s)
-		VSB_printf(vsb, ", +%ld", (long) (ws->f - ws->s));
-	else
-		VSB_printf(vsb, ", %p", ws->f);
-	if (ws->r >= ws->s)
-		VSB_printf(vsb, ", +%ld", (long) (ws->r - ws->s));
-	else
-		VSB_printf(vsb, ", %p", ws->r);
-	if (ws->e >= ws->s)
-		VSB_printf(vsb, ", +%ld", (long) (ws->e - ws->s));
-	else
-		VSB_printf(vsb, ", %p", ws->e);
-	VSB_cat(vsb, "},\n");
-	VSB_indent(vsb, -2);
-	VSB_cat(vsb, "},\n");
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
 pan_htc(struct vsb *vsb, const struct http_conn *htc)
 {
 
@@ -174,7 +142,7 @@ pan_htc(struct vsb *vsb, const struct http_conn *htc)
 	if (htc->rfd != NULL)
 		VSB_printf(vsb, "fd = %d (@%p),\n", *htc->rfd, htc->rfd);
 	VSB_printf(vsb, "doclose = %s,\n", sess_close_2str(htc->doclose, 0));
-	pan_ws(vsb, htc->ws);
+	WS_Panic(htc->ws, vsb);
 	VSB_printf(vsb, "{rxbuf_b, rxbuf_e} = {%p, %p},\n",
 	    htc->rxbuf_b, htc->rxbuf_e);
 	VSB_printf(vsb, "{pipeline_b, pipeline_e} = {%p, %p},\n",
@@ -203,7 +171,7 @@ pan_http(struct vsb *vsb, const char *id, const struct http *h)
 		return;
 	VSB_indent(vsb, 2);
 	PAN_CheckMagic(vsb, h, HTTP_MAGIC);
-	pan_ws(vsb, h->ws);
+	WS_Panic(h->ws, vsb);
 	VSB_cat(vsb, "hdrs {\n");
 	VSB_indent(vsb, 2);
 	for (i = 0; i < h->nhd; ++i) {
@@ -302,7 +270,7 @@ pan_wrk(struct vsb *vsb, const struct worker *wrk)
 		return;
 	VSB_indent(vsb, 2);
 	PAN_CheckMagic(vsb, wrk, WORKER_MAGIC);
-	pan_ws(vsb, wrk->aws);
+	WS_Panic(wrk->aws, vsb);
 
 	m = wrk->cur_method;
 	VSB_cat(vsb, "VCL::method = ");
@@ -424,7 +392,7 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 	if (bo->filter_list != NULL)
 		VSB_printf(vsb, "filter_list = \"%s\",\n", bo->filter_list);
 
-	pan_ws(vsb, bo->ws);
+	WS_Panic(bo->ws, vsb);
 	VSB_printf(vsb, "ws_bo = %p,\n", (void *)bo->ws_bo);
 
 	// bereq0 left out
@@ -531,7 +499,7 @@ pan_req(struct vsb *vsb, const struct req *req)
 	if (req->wrk != NULL)
 		pan_wrk(vsb, req->wrk);
 
-	pan_ws(vsb, req->ws);
+	WS_Panic(req->ws, vsb);
 	if (VALID_OBJ(req->htc, HTTP_CONN_MAGIC))
 		pan_htc(vsb, req->htc);
 	pan_http(vsb, "req", req->http);
@@ -582,7 +550,7 @@ pan_sess(struct vsb *vsb, const struct sess *sp)
 	    sp->fd, VXID(sp->vxid));
 	VSB_printf(vsb, "t_open = %f,\n", sp->t_open);
 	VSB_printf(vsb, "t_idle = %f,\n", sp->t_idle);
-	pan_ws(vsb, sp->ws);
+	WS_Panic(sp->ws, vsb);
 	VSB_printf(vsb, "transport = %s",
 	    xp == NULL ? "<none>" : xp->name);
 	if (xp != NULL && xp->sess_panic != NULL) {

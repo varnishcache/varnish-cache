@@ -219,9 +219,6 @@ vry_cmp(const uint8_t *v1, const uint8_t *v2)
 
 /**********************************************************************
  * Prepare predictive vary string
- *
- * XXX: Strictly speaking vary_b and vary_e could be replaced with
- * XXX: req->ws->{f,r}.   Space in struct req vs. code-readability...
  */
 
 void
