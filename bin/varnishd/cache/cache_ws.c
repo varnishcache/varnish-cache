@@ -89,6 +89,43 @@ ws_generic_inside(const char *dst_b, const char *dst_e,
 
 /*---------------------------------------------------------------------
  * Workspace sanitizer-aware management
+ *
+ * The functions in this section manage the workspace sanitizer (wssan)
+ * itself or implement workspace management for both cases: when wssan
+ * is either disabled or enabled.
+ *
+ * Let's consider the following statement:
+ *
+ *     WS_Printf(ws, "hello world");
+ *
+ * Without wssan this results in a pointer-aligned allocation inside
+ * the workspace:
+ *
+ *     'h' 'e' 'l' 'l' 'o' ' ' 'w' 'o'
+ *     'r' 'l' 'd' %00 ??? ??? ??? ???
+ *
+ * To guarantee that the next allocation will also be pointer-aligned
+ * the allocation size is rounded up, leaving in this example 4 bytes
+ * with undefined contents.
+ *
+ * With wssan we add 2 red zones before and after the allocation, and
+ * the alignment overhead is also used as a canary:
+ *
+ *     %fa %fa %fa %fa %fa %fa %fa %fa
+ *     %fa %fa %fa %fa %fa %fa %fa %fa
+ *     'h' 'e' 'l' 'l' 'o' ' ' 'w' 'o'
+ *     'r' 'l' 'd' %00 %fc %fc %fc %fc
+ *     %fb %fb %fb %fb %fb %fb %fb %fb
+ *     %fb %fb %fb %fb %fb %fb %fb %fb
+ *
+ * Whenever a workspace operation happens wssan will check the red
+ * zones and assert that they weren't altered. When wssan is enabled
+ * it is allocated at the very beginning of the workspace and keep
+ * track of allocations on the heap.
+ *
+ * Ongoing workspace reservations have an alignment of pointer size,
+ * even though they would work fine with regular alignment rules. This
+ * adds one more layer of assertions when wssan is in use.
  */
 
 static void
@@ -433,6 +470,11 @@ ws_Reset(struct ws *ws, uintptr_t pp)
 
 /*---------------------------------------------------------------------
  * Workspace management
+ *
+ * Most of the functions below are part of the workspace API, and they
+ * essentially assert before using a workspace and after modifying it,
+ * provide debug logs and otherwise offload the logic to wssan-aware
+ * functions.
  */
 
 void
