@@ -464,6 +464,8 @@ void VMOD_Panic(struct vsb *);
 void WRK_Init(void);
 
 /* cache_ws.c */
+void WS_Panic(const struct ws *ws, struct vsb *vsb);
+
 void WS_Rollback(struct ws *, uintptr_t);
 void *WS_AtOffset(const struct ws *ws, unsigned off, unsigned len);
 

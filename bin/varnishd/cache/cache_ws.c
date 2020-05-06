@@ -415,3 +415,35 @@ WS_VSB_finish(struct vsb *vsb, struct ws *ws, size_t *szp)
 		*szp = 0;
 	return (NULL);
 }
+
+/*--------------------------------------------------------------------*/
+
+void
+WS_Panic(const struct ws *ws, struct vsb *vsb)
+{
+
+	VSB_printf(vsb, "ws = %p {\n", ws);
+	if (PAN_already(vsb, ws))
+		return;
+	VSB_indent(vsb, 2);
+	PAN_CheckMagic(vsb, ws, WS_MAGIC);
+	if (ws->id[0] != '\0' && (!(ws->id[0] & 0x20)))	// cheesy islower()
+		VSB_cat(vsb, "OVERFLOWED ");
+	VSB_printf(vsb, "id = \"%s\",\n", ws->id);
+	VSB_printf(vsb, "{s, f, r, e} = {%p", ws->s);
+	if (ws->f >= ws->s)
+		VSB_printf(vsb, ", +%ld", (long) (ws->f - ws->s));
+	else
+		VSB_printf(vsb, ", %p", ws->f);
+	if (ws->r >= ws->s)
+		VSB_printf(vsb, ", +%ld", (long) (ws->r - ws->s));
+	else
+		VSB_printf(vsb, ", %p", ws->r);
+	if (ws->e >= ws->s)
+		VSB_printf(vsb, ", +%ld", (long) (ws->e - ws->s));
+	else
+		VSB_printf(vsb, ", %p", ws->e);
+	VSB_cat(vsb, "},\n");
+	VSB_indent(vsb, -2);
+	VSB_cat(vsb, "},\n");
+}
