@@ -165,11 +165,16 @@ VTIM_format(vtim_real t, char *p)
 	struct tm tm;
 	time_t tt;
 
+	AN(p);
 	tt = (time_t) t;
-	(void)gmtime_r(&tt, &tm);
-	AN(snprintf(p, VTIM_FORMAT_SIZE, "%s, %02d %s %4d %02d:%02d:%02d GMT",
-	    weekday_name[tm.tm_wday], tm.tm_mday, month_name[tm.tm_mon],
-	    tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec));
+	if (gmtime_r(&tt, &tm) != NULL)
+		AN(snprintf(p, VTIM_FORMAT_SIZE,
+			"%s, %02d %s %4d %02d:%02d:%02d GMT",
+			weekday_name[tm.tm_wday],
+			tm.tm_mday, month_name[tm.tm_mon],
+			tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec));
+	else
+		*p = '\0';
 }
 
 #ifdef TEST_DRIVER
