@@ -260,6 +260,15 @@ VRY_Finish(struct req *req, enum vry_finish_flag flg)
 {
 	uint8_t *p = NULL;
 
+	if (req->vary_b + 2 >= req->vary_e) {
+		AZ(req->vary_l);
+		req->vary_b = NULL;
+		req->vary_e = NULL;
+		WS_Release(req->ws, 0);
+		WS_MarkOverflow(req->ws);
+		return;
+	}
+
 	(void)VRY_Validate(req->vary_b);
 	if (flg == KEEP && req->vary_l != NULL) {
 		p = malloc(req->vary_l - req->vary_b);
