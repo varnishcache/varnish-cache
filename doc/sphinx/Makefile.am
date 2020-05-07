@@ -249,7 +249,6 @@ include/vmod_proxy.generated.rst: $(top_builddir)/lib/libvmod_proxy/vmod_proxy.r
 BUILT_SOURCES += include/vmod_proxy.generated.rst
 
 EXTRA_DIST += $(BUILT_SOURCES)
-MAINTAINERCLEANFILES = $(EXTRA_DIST)
 CLEANFILES = $(BUILT_SOURCES)
 
 .NOPATH: $(BUILT_SOURCES)

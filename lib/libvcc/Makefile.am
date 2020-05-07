@@ -55,7 +55,6 @@ vcc_obj.c: \
 GEN_H = \
 	vcc_fixed_token.c \
 	vcc_token_defs.h \
-	vcc_compile.h \
 	tbl/vrt_stv_var.h
 
 $(GEN_H): vcc_obj.c
