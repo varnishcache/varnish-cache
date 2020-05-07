@@ -98,6 +98,7 @@ WS_Assert_Allocated(const struct ws *ws, const void *ptr, ssize_t len)
 void
 WS_Init(struct ws *ws, const char *id, void *space, unsigned len)
 {
+	unsigned l;
 
 	DSL(DBG_WORKSPACE, 0,
 	    "WS_Init(%p, \"%s\", %p, %u)", ws, id, space, len);
@@ -105,9 +106,9 @@ WS_Init(struct ws *ws, const char *id, void *space, unsigned len)
 	INIT_OBJ(ws, WS_MAGIC);
 	ws->s = space;
 	assert(PAOK(space));
-	len = PRNDDN(len - 1);
-	ws->e = ws->s + len;
-	*ws->e = WS_REDZONE_END;
+	l = PRNDDN(len - 1);
+	ws->e = ws->s + l;
+	memset(ws->e, WS_REDZONE_END, len - l);
 	ws->f = ws->s;
 	assert(id[0] & 0x20);		// cheesy islower()
 	bstrcpy(ws->id, id);
