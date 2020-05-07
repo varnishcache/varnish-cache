@@ -1,0 +1,21 @@
+varnishtest "Vary handling out of workspace"
+
+varnish v1 -vcl {
+	import vtc;
+
+	backend be none;
+
+	sub vcl_recv {
+		vtc.workspace_alloc(client, vtc.workspace_free(client));
+	}
+
+	sub vcl_backend_fetch {
+		return (error(200));
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 500
+} -run
