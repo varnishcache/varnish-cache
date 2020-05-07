@@ -111,6 +111,7 @@ nobase_noinst_HEADERS = \
 ## keep in sync with lib/libvcc/Makefile.am
 vcl.h: \
 	    $(top_srcdir)/lib/libvcc/generate.py \
+	    $(top_srcdir)/include/vcc_interface.h \
 	    $(top_srcdir)/include/vdef.h \
 	    $(top_srcdir)/include/vrt.h \
 	    $(top_srcdir)/doc/sphinx/reference/vcl_var.rst
