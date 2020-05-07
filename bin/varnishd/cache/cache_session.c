@@ -79,6 +79,8 @@ SES_SetTransport(struct worker *wrk, struct sess *sp, struct req *req,
 
 /*--------------------------------------------------------------------*/
 
+#define SES_NOATTR_OFFSET 0xffff
+
 static int
 ses_get_attr(const struct sess *sp, enum sess_attr a, void **dst)
 {
@@ -86,7 +88,7 @@ ses_get_attr(const struct sess *sp, enum sess_attr a, void **dst)
 	assert(a < SA_LAST);
 	AN(dst);
 
-	if (sp->sattr[a] == 0xffff) {
+	if (sp->sattr[a] == SES_NOATTR_OFFSET) {
 		*dst = NULL;
 		return (-1);
 	}
@@ -103,7 +105,7 @@ ses_set_attr(const struct sess *sp, enum sess_attr a, const void *src, int sz)
 	AN(src);
 	assert(sz > 0);
 
-	if (sp->sattr[a] == 0xffff)
+	if (sp->sattr[a] == SES_NOATTR_OFFSET)
 		return (-1);
 	dst = WS_AtOffset(sp->ws, sp->sattr[a], sz);
 	AN(dst);
@@ -122,11 +124,14 @@ ses_res_attr(struct sess *sp, enum sess_attr a, void **dst, int sz)
 	AN(dst);
 	if (WS_ReserveSize(sp->ws, sz) == 0)
 		return (0);
-	*dst = WS_Reservation(sp->ws);
 	o = WS_ReservationOffset(sp->ws);
-	WS_Release(sp->ws, sz);
-	assert(o <= 0xffff);
+	if (o >= SES_NOATTR_OFFSET) {
+		WS_Release(sp->ws, 0);
+		return (0);
+	}
+	*dst = WS_Reservation(sp->ws);
 	sp->sattr[a] = (uint16_t)o;
+	WS_Release(sp->ws, sz);
 	return (1);
 }
 
