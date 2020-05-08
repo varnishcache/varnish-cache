@@ -5,9 +5,9 @@
 SPHINXOPTS    =
 SPHINXBUILD   = $(SPHINX) -W -q -N
 PAPER         = a4
-BUILDDIR      = $(builddir)/build
+BUILDDIR      = build
 
-ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees -D latex_elements.papersize=$(PAPER) $(SPHINXOPTS) $(srcdir)
+ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees -D latex_elements.papersize=$(PAPER) $(SPHINXOPTS) $(builddir)
 
 .PHONY: help clean html dirhtml pickle json htmlhelp qthelp latex changes linkcheck doctest
 
@@ -27,12 +27,22 @@ help:
 clean:
 	-rm -rf $(BUILDDIR)/* $(CLEANFILES)
 
+# use index.rst as an indicator if we have copied already
+.PHONY: link_srcdir
+link_srcdir:
+	if test "x$(srcdir)" != "x$(builddir)" && test ! -f index.rst ; then \
+		d=`pwd`/$(builddir) ; \
+		cd $(srcdir) && find . -type f | cpio -dmp $${d} || true ; \
+	fi
+
 # work around for make html called within doc/sphinx
 .PHONY: graphviz
 graphviz:
 	cd ../graphviz && $(MAKE) html
 
-sphinx_prereq: graphviz conf.py
+sphinx_prereq: link_srcdir graphviz conf.py
+
+all: link_srcdir
 
 html: sphinx_prereq
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
