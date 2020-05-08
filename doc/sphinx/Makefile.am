@@ -30,9 +30,13 @@ clean:
 # use index.rst as an indicator if we have copied already
 .PHONY: link_srcdir
 link_srcdir:
-	if test "x$(srcdir)" != "x$(builddir)" && test ! -f index.rst ; then \
-		d=`pwd`/$(builddir) ; \
-		cd $(srcdir) && find . -type f | cpio -dmp $${d} || true ; \
+	if test "x$(srcdir)" != "x$(builddir)" && test ! -f index.rst; then \
+		s=`realpath $(srcdir)`; \
+		for f in `cd $$s && find . -type f`; do \
+			d=`dirname $$f`; \
+			test -d $$d || mkdir -p $$d; \
+			test -f $$f || ln -s $$s/$$f $$f; \
+		done \
 	fi
 
 # work around for make html called within doc/sphinx
