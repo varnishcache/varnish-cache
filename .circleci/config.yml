@@ -12,7 +12,7 @@ parameters:
     default: "HEAD"
   pkg-commit:
     type: string
-    default: "weekly"
+    default: "master"
 jobs:
   dist:
     description: Builds varnish-x.y.z.tar.gz that is used later for the packaging jobs

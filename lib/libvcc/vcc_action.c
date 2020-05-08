@@ -366,6 +366,7 @@ vcc_act_return(struct vcc *tl, struct token *t, struct symbol *sym)
 		}
 	}
 	ERRCHK(tl);
+	Fb(tl, 1, "END_;\n");
 	if (hand == VCL_RET_FAIL)
 		Fb(tl, 1, "VRT_fail(ctx, \"Failed from VCL\");\n");
 	else

@@ -16,3 +16,5 @@ leak:mct_callback
 leak:vsmw_newcluster
 #
 leak:smp_thread
+#
+leak:Lck_Witness_Lock

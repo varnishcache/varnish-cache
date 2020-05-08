@@ -29,7 +29,7 @@
  * SUCH DAMAGE.
  *
  * This file contains the request-handling state engine, which is intended to
- * (over time) be(ome) protocol agnostic.
+ * (over time) be(come) protocol agnostic.
  * We already use this now with ESI:includes, which are for all relevant
  * purposes a different "protocol"
  *
