@@ -50,15 +50,16 @@ jobs:
       script: make -j8 witness
     - <<: *test-linux
       stage: sanitizers
-      dist: xenial
       addons:
         apt:
           sources:
-            - llvm-toolchain-xenial-8
+            - sourceline: 'deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-9 main'
+              key_url: https://apt.llvm.org/llvm-snapshot.gpg.key
+            - ubuntu-toolchain-r-test
           packages:
-            - clang-8
+            - clang-9
             - libunwind-dev
-            - llvm-8
+            - llvm-9
             - nghttp2
             - python3-docutils
             - python3-sphinx
@@ -69,7 +70,7 @@ jobs:
           export LSAN_OPTIONS=abort_on_error=1,use_sigaltstack=0,suppressions=$(pwd)/tools/lsan.suppr
           export TSAN_OPTIONS=abort_on_error=1,halt_on_error=1,use_sigaltstack=0,suppressions=$(pwd)/tools/tsan.suppr
           export UBSAN_OPTIONS=halt_on_error=1,print_stacktrace=1,use_sigaltstack=0,suppressions=$(pwd)/tools/ubsan.suppr
-          export CC=clang-8
+          export CC=clang-9
         - ./autogen.sh
         - ./configure --with-unwind --enable-developer-warnings --enable-debugging-symbols --disable-stack-protector --with-persistent-storage --enable-asan --enable-ubsan
     - stage: test
