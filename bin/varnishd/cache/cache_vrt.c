@@ -64,18 +64,18 @@ VRT_synth(VRT_CTX, VCL_INT code, VCL_STRING reason)
 	assert(ctx->req != NULL || ctx->bo != NULL);
 	if (code < 0) {
 		VRT_fail(ctx, "return(synth()) status code (%jd) is negative",
-		    code);
+		    (intmax_t)code);
 		return;
 	}
 	if (code > 65535) {
 		VRT_fail(ctx, "return(synth()) status code (%jd) > 65535",
-		    code);
+		    (intmax_t)code);
 		return;
 	}
 	if ((code % 1000) < 100) {
 		VRT_fail(ctx,
 		    "illegal return(synth()) status code (%jd) (..0##)",
-		    code);
+		    (intmax_t)code);
 		return;
 	}
 
