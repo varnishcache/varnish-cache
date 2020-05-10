@@ -74,7 +74,7 @@ jobs:
         - ./configure --with-unwind --enable-developer-warnings --enable-debugging-symbols --disable-stack-protector --with-persistent-storage --enable-asan --enable-ubsan
     - stage: test
       os: osx
-      osx_image: xcode11.3
+      osx_image: xcode11.4
       compiler: clang
       addons:
         homebrew:
