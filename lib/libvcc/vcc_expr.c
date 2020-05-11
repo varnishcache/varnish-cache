@@ -839,6 +839,7 @@ static const struct vcc_methods {
 
 	{ STRINGS, STRING, "upper", "VRT_UpperLowerStrands(ctx, \vT, 1)", 1 },
 	{ STRINGS, STRING, "lower", "VRT_UpperLowerStrands(ctx, \vT, 0)", 1 },
+	{ BACKEND, BACKEND, "resolve", "VRT_VDI_Resolve(ctx, \v1)", 1 },
 
 	{ NULL, NULL,		NULL,		NULL},
 };

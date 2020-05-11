@@ -435,6 +435,7 @@ struct vrt_backend_probe {
 	VRT_BACKEND_PROBE_FIELDS(const)
 };
 
+VCL_BACKEND VRT_VDI_Resolve(VRT_CTX, VCL_BACKEND);
 
 /***********************************************************************
  * Implementation details of ACLs
