@@ -59,23 +59,26 @@ const void * const vrt_magic_string_unset = &vrt_magic_string_unset;
 VCL_VOID
 VRT_synth(VRT_CTX, VCL_INT code, VCL_STRING reason)
 {
+	const char *ret;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	assert(ctx->req != NULL || ctx->bo != NULL);
+
+	ret = ctx->req == NULL ? "error" : "synth";
 	if (code < 0) {
-		VRT_fail(ctx, "return(synth()) status code (%jd) is negative",
-		    (intmax_t)code);
+		VRT_fail(ctx, "return(%s()) status code (%jd) is negative",
+		    ret, (intmax_t)code);
 		return;
 	}
 	if (code > 65535) {
-		VRT_fail(ctx, "return(synth()) status code (%jd) > 65535",
-		    (intmax_t)code);
+		VRT_fail(ctx, "return(%s()) status code (%jd) > 65535",
+		    ret, (intmax_t)code);
 		return;
 	}
 	if ((code % 1000) < 100) {
 		VRT_fail(ctx,
-		    "illegal return(synth()) status code (%jd) (..0##)",
-		    (intmax_t)code);
+		    "illegal return(%s()) status code (%jd) (..0##)",
+		    ret, (intmax_t)code);
 		return;
 	}
 
