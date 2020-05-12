@@ -40,7 +40,7 @@ process p1 -expect-text 0 0 "DIAG"
 process p1 -screen_dump
 
 process p1 -write {dek}
-process p1 -expect-text 0 1 "Concurrent connections to backend:"
+process p1 -expect-text 0 1 "Concurrent connections used:"
 process p1 -screen_dump
 
 process p1 -write {h}
@@ -53,7 +53,7 @@ process p1 -screen_dump
 
 # the counters screen is preserved
 process p1 -write {h}
-process p1 -expect-text 0 1 "Concurrent connections to backend:"
+process p1 -expect-text 0 1 "Concurrent connections used:"
 process p1 -screen_dump
 
 # the help screen always appears from the top
