@@ -219,3 +219,35 @@ VCLs. Varnish will coalesce probes that seem identical - so be careful
 not to change the probe config if you do a lot of VCL loading. Unloading
 the VCL will discard the probes. For more information on how to do this
 please see ref:`reference-vcl-director`.
+
+.. _users-guide-advanced_backend_connection-pooling:
+
+Connection Pooling
+------------------
+
+Opening connections to backends always comes at a cost: Depending on
+the type of connection and backend infrastructure, the overhead for
+opening a new connection ranges from pretty low for a local Unix
+domain socket (see :ref:`backend_definition` ``.path`` attribute) to
+substantial for establishing possibly multiple TCP and/or TLS
+connections over possibly multiple hops and long network
+paths. However relevant the overhead, it certainly always exists.
+
+So because re-using existing connections can generally be considered
+to reduce overhead and latencies, Varnish pools backend connections by
+default: Whenever a backend task is finished, the used connection is
+not closed but rather added to a pool for later reuse. To avoid a
+connection from being reused, the ``Connection: close`` http header
+can be added in :ref:`vcl_backend_fetch`.
+
+While backends are defined per VCL, connection pooling works across
+VCLs and even across backends: By default, the identifier for pooled
+connections is constructed from the ``.host``\ /\ ``.port`` or
+``.path`` attributes of the :ref:`backend_definition` (VMODs can make
+use of custom identifiers). So whenever two backends share the same
+address information, irrespective of which VCLs they are defined in,
+their connections are taken from a common pool.
+
+If not actively closed by the backend, pooled connections are kept
+open by Varnish until the :ref:`ref_param_backend_idle_timeout`
+expires.

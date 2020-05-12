@@ -71,7 +71,12 @@
 .. varnish_vsc:: conn
 	:type:	gauge
 	:level:	info
-	:oneliner:	Concurrent connections to backend
+	:oneliner:	Concurrent connections used
+
+	The number of currently used connections to the backend. This
+	number is always less or equal to the number of connections to
+	the backend (as, for example shown as ESTABLISHED for TCP
+	onnections in netstat) due to connection pooling.
 
 .. varnish_vsc:: req
 	:type:	counter
