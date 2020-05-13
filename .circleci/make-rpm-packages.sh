@@ -20,14 +20,6 @@ if [ "$PARAM_DIST" = centos ]; then
       dnf install -y 'dnf-command(config-manager)'
       yum config-manager --set-enabled PowerTools
   fi
-
-  ARCH=`uname -m`
-  if [ $ARCH = aarch64 ]; then
-    # Remove Vault repo because of https://bugs.centos.org/view.php?id=15615
-    rm -f /etc/yum.repos.d/CentOS-Vault.repo
-    yum clean all
-  fi
-
 fi
 
 yum install -y rpm-build yum-utils
