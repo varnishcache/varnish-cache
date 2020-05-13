@@ -86,14 +86,18 @@ VRT_VDI_Resolve(VRT_CTX, VCL_BACKEND d)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
 	while (d != NULL) {
-		CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+		CHECK_OBJ(d, DIRECTOR_MAGIC);
 		AN(d->vdir);
 		if (d->vdir->methods->resolve == NULL)
 			break;
 		d = d->vdir->methods->resolve(ctx, d);
-		CHECK_OBJ_ORNULL(d, DIRECTOR_MAGIC);
 	}
-        return (d);
+	if (d == NULL)
+		return (NULL);
+
+	CHECK_OBJ(d, DIRECTOR_MAGIC);
+	AN(d->vdir);
+	return (d);
 }
 
 static VCL_BACKEND
