@@ -398,10 +398,32 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 				i = Lck_CondWait(&wrk->cond, &pp->mtx, tmo);
 				if (i == ETIMEDOUT)
 					VCL_Rel(&wrk->vcl);
-			} while (wrk->task->func == NULL);
-			tpx = *wrk->task;
-			tp = &tpx;
-			wrk->stats->summs++;
+				if (wrk->task->func != NULL) {
+					/* We have been handed a new task */
+					tpx = *wrk->task;
+					tp = &tpx;
+					wrk->stats->summs++;
+				} else if (pp->b_stat != NULL &&
+				    pp->a_stat->summs) {
+					/* Woken up to release the VCL,
+					 * and noticing that there are
+					 * pool stats not pushed to the
+					 * global stats and no active
+					 * thread currently doing
+					 * it. Remove ourself from the
+					 * idle queue and take on the
+					 * task. */
+					assert(pp->nidle > 0);
+					VTAILQ_REMOVE(&pp->idle_queue,
+					    wrk->task, list);
+					pp->nidle--;
+					tps.func = pool_stat_summ;
+					tps.priv = pp->a_stat;
+					pp->a_stat = pp->b_stat;
+					pp->b_stat = NULL;
+					tp = &tps;
+				}
+			} while (tp == NULL);
 		}
 		Lck_Unlock(&pp->mtx);
 
