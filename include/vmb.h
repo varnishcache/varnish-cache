@@ -58,7 +58,7 @@
 
 #elif defined(__arm__)
 
-#define VMB()
+#define VMB() __asm __volatile("dmb;" : : : "memory")
 #define VWMB()
 #define VRMB()
 
