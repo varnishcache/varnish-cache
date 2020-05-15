@@ -291,6 +291,22 @@ workflows:
       - dist
       - tar_pkg_tools
       - package:
+          name: aarch64-ubuntu-focal
+          dist: ubuntu
+          release: focal
+          arch: aarch64
+          image: arm64v8/ubuntu:focal
+          ext: deb
+          <<: *pkg_req
+      - package:
+          name: x64-ubuntu-focal
+          dist: ubuntu
+          release: focal
+          arch: x64
+          image: ubuntu:focal
+          ext: deb
+          <<: *pkg_req
+      - package:
           name: aarch64-ubuntu-bionic
           dist: ubuntu
           release: bionic
@@ -422,8 +438,10 @@ workflows:
           requires:
             - x64-ubuntu-xenial
             - x64-ubuntu-bionic
+            - x64-ubuntu-focal
             - aarch64-ubuntu-xenial
             - aarch64-ubuntu-bionic
+            - aarch64-ubuntu-focal
             - x64-debian-bullseye
             - aarch64-debian-bullseye
             - x64-debian-buster
