@@ -695,7 +695,7 @@ process_start(struct process *p)
 		AZ(unsetenv("TERMCAP"));
 		// Not using NULL because GCC is now even more demented...
 		assert(write(STDERR_FILENO, "+", 1) == 1);
-		AZ(execl("/bin/sh", "/bin/sh", "-c", VSB_data(cl), (char*)0));
+		AZ(execlp("sh", "sh", "-c", VSB_data(cl), (char*)0));
 		exit(1);
 	}
 	vtc_log(p->vl, 3, "PID: %ld", (long)p->pid);

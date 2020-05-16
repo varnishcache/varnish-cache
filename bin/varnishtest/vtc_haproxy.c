@@ -739,7 +739,7 @@ haproxy_start(struct haproxy *h)
 		closefd(&h->fds[1]);
 		closefd(&h->fds[2]);
 		closefd(&h->fds[3]);
-		AZ(execl("/bin/sh", "/bin/sh", "-c", VSB_data(vsb), (char*)0));
+		AZ(execlp("sh", "sh", "-c", VSB_data(vsb), (char*)0));
 		exit(1);
 	}
 	VSB_destroy(&vsb);

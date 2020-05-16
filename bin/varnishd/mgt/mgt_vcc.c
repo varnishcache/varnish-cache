@@ -170,7 +170,7 @@ run_cc(void *priv)
 	AZ(VSB_finish(sb));
 
 	(void)umask(027);
-	(void)execl("/bin/sh", "/bin/sh", "-c", VSB_data(sb), (char*)0);
+	(void)execlp("sh", "sh", "-c", VSB_data(sb), (char*)0);
 	VSB_destroy(&sb);				// For flexelint
 }
 

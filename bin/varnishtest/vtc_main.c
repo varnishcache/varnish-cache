@@ -214,7 +214,7 @@ cleaner_do(const char *dirname)
 		assert(write(cleaner_fd, buf, strlen(buf)) == strlen(buf));
 		return;
 	}
-	bprintf(buf, "exec /bin/rm -rf %s\n", dirname);
+	bprintf(buf, "exec rm -rf %s\n", dirname);
 	AZ(system(buf));
 }
 
@@ -243,12 +243,12 @@ cleaner_setup(void)
 			assert(q[-1] == '\n');
 			q[-1] = '\0';
 
-			/* Dont expend a shell on running /bin/rm */
+			/* Dont expend a shell on running rm */
 			pp = fork();
 			assert(pp >= 0);
 			if (pp == 0)
-				exit(execl(
-				    "/bin/rm", "rm", "-rf", buf, (char*)0));
+				exit(execlp(
+				    "rm", "rm", "-rf", buf, (char*)0));
 			assert(waitpid(pp, &st, 0) == pp);
 			AZ(st);
 		}
