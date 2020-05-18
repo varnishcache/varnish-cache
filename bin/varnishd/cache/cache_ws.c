@@ -63,6 +63,7 @@ struct wssan {
 	unsigned		magic;
 #define WSSAN_MAGIC		0x1c89b6ab
 	struct ws		*ws;
+	unsigned		end_len;
 	VTAILQ_HEAD(, ws_alloc)	head;
 };
 
@@ -126,13 +127,19 @@ ws_generic_inside(const char *dst_b, const char *dst_e,
  * Ongoing workspace reservations have an alignment of pointer size,
  * even though they would work fine with regular alignment rules. This
  * adds one more layer of assertions when wssan is in use.
+ *
+ * Whether wssan is enabled or not, a red zone is systematically
+ * added at the end of the workspace. Subsequently we only check the
+ * first byte since we don't keep track of the original size, except
+ * with wssan that checks the entire red zone.
  */
 
 static void
-wssan_Init(struct ws *ws)
+wssan_Init(struct ws *ws, unsigned end_len)
 {
 	struct wssan *san;
 
+	AN(end_len);
 	if (!DO_DEBUG(DBG_WSSAN) || ws->f != ws->s)
 		return;
 
@@ -141,6 +148,7 @@ wssan_Init(struct ws *ws)
 	INIT_OBJ(san, WSSAN_MAGIC);
 	VTAILQ_INIT(&san->head);
 	san->ws = ws;
+	san->end_len = end_len;
 }
 
 static void
@@ -178,6 +186,8 @@ wssan_Assert(const struct wssan *san, const struct ws_alloc *wa)
 			pa = (uintptr_t)wa2->ptr - WS_REDZONE_PSIZE;
 			assert(ps == pa);
 		}
+		for (c = san->ws->e, u = san->end_len; u > 0; c++, u--)
+			assert(*c == WS_REDZONE_END);
 		return;
 	}
 
@@ -468,6 +478,15 @@ ws_Reset(struct ws *ws, uintptr_t pp)
 	assert(p == ws->f);
 }
 
+static unsigned
+ws_EndZoneLength(const struct ws *ws)
+{
+	const struct wssan *san;
+
+	san = ws_Sanitizer(ws);
+	return (san != NULL ? san->end_len : 1);
+}
+
 /*---------------------------------------------------------------------
  * Workspace management
  *
@@ -547,7 +566,7 @@ WS_Init(struct ws *ws, const char *id, void *space, unsigned len)
 	ws->f = ws->s;
 	assert(id[0] & 0x20);		// cheesy islower()
 	bstrcpy(ws->id, id);
-	wssan_Init(ws);
+	wssan_Init(ws, len - l);
 	WS_Assert(ws);
 }
 
@@ -611,14 +630,16 @@ WS_Reset(struct ws *ws, uintptr_t pp)
 void
 WS_Rollback(struct ws *ws, uintptr_t pp)
 {
-	WS_Assert(ws);
+	unsigned l;
 
+	WS_Assert(ws);
 	if (pp == 0)
 		pp = (uintptr_t)ws->s;
 
+	l = ws_EndZoneLength(ws);
 	ws_ClearOverflow(ws);
 	WS_Reset(ws, pp);
-	wssan_Init(ws);
+	wssan_Init(ws, l);
 }
 
 void *
