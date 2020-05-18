@@ -2,11 +2,11 @@ varnishtest "Check that we fail to start with erroneous -a/-b arguments"
 
 # Duplicate -a arguments
 # XXX: this cannot be tested reliably, we tolerate port collision
-shell -err -match "have same address|already in use" {
+shell -err -match "have same address|already in use|Address in use" {
 	varnishd -d -a 127.0.0.1:38484 -a 127.0.0.1:38484 -b localhost:80
 }
 
-shell -err -match "have same address|already in use" {
+shell -err -match "have same address|already in use|Address in use" {
 	varnishd -d -a ${tmpdir}/vtc.sock -a ${tmpdir}/vtc.sock -b localhost:80
 }
 
