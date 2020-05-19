@@ -1,2 +1,2 @@
-((nil . ((indent-tabs-mode . t)))
- (c-mode . ((c-file-style . "BSD"))))
+((c-mode . ((indent-tabs-mode . t)
+	    (c-file-style . "BSD"))))
