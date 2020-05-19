@@ -29,11 +29,13 @@
 # SUCH DAMAGE.
 
 """
-Read the vmod.vcc file (inputvcc) and produce:
-    vcc_if.h -- Prototypes for the implementation
-    vcc_if.c -- Magic glue & datastructures to make things a VMOD.
+Read the first existing file from arguments or vmod.vcc and produce:
+    ${prefix}.h -- Prototypes for the implementation
+    ${prefix}.c -- Magic glue & datastructures to make things a VMOD.
     vmod_${name}.rst -- Extracted documentation
     vmod_${name}.man.rst -- Extracted documentation (rst2man input)
+
+    prefix can set via -o and defaults to vcc_if
 """
 
 import copy
@@ -1189,12 +1191,13 @@ if __name__ == "__main__":
     (opts, args) = oparser.parse_args()
 
     i_vcc = None
-    if len(args) == 1 and os.path.exists(args[0]):
-        i_vcc = args[0]
-    elif os.path.exists("vmod.vcc"):
-        if not i_vcc:
-            i_vcc = "vmod.vcc"
-    else:
+    for f in args:
+        if os.path.exists(f):
+            i_vcc = f
+            break
+    if i_vcc is None and os.path.exists("vmod.vcc"):
+        i_vcc = "vmod.vcc"
+    if i_vcc is None:
         print("ERROR: No vmod.vcc file supplied or found.", file=sys.stderr)
         oparser.print_help()
         exit(-1)
