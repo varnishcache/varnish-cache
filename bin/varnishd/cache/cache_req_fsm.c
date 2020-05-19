@@ -166,8 +166,7 @@ Resp_Setup_Synth(struct req *req)
 
 	http_TimeHeader(h, "Date: ", W_TIM_real(req->wrk));
 	http_SetHeader(h, "Server: Varnish");
-	http_PrintfHeader(h, "X-Varnish: %u",
-	    VXID(req->vsl->wid));
+	http_PrintfHeader(h, "X-Varnish: %u", VXID(req->vsl->wid));
 
 	/*
 	 * For late 100-continue, we suggest to VCL to close the connection to
