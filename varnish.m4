@@ -31,7 +31,7 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # varnish.m4 - Macros to build against Varnish.         -*- Autoconf -*-
-# serial 10 (varnish-6.0.0)
+# serial 11 (varnish-7.0.0)
 #
 # This collection of macros helps create VMODs or tools interacting with
 # Varnish Cache using the GNU build system (autotools). In order to work
@@ -186,8 +186,8 @@ AC_DEFUN([_VARNISH_VMOD_CONFIG], [
 	AC_SUBST([VMOD_TEST_PATH], [$VARNISH_TEST_PATH])
 ])
 
-# _VARNISH_VMOD(NAME)
-# -------------------
+# _VARNISH_VMOD(NAME, MODE)
+# -------------------------
 AC_DEFUN([_VARNISH_VMOD], [
 
 	AC_REQUIRE([_VARNISH_VMOD_CONFIG])
@@ -201,7 +201,15 @@ AC_DEFUN([_VARNISH_VMOD], [
 	dnl Define the VCL directory for automake
 	AC_SUBST([vmod_$1_vcldir], [\${vcldir}/$1])
 
-	VMOD_RULES="
+	m4_case([$2],
+		[static],
+		[m4_pushdef([VCC_SRC], [\$(srcdir)/vmod_$1.vcc])],
+		[generated],
+		[m4_pushdef([VCC_SRC],
+			[\$(builddir)/vmod_$1.vcc \$(srcdir)/vmod_$1.vcc])],
+		[AC_MSG_ERROR([Unknown mode $2])])
+
+	AC_SUBST(m4_toupper(BUILD_VMOD_$1), ["
 
 vmod_$1.lo: vcc_$1_if.c vcc_$1_if.h
 
@@ -210,7 +218,7 @@ vmod_$1.lo: \$(nodist_libvmod_$1_la_SOURCES)
 vcc_$1_if.h vmod_$1.rst vmod_$1.man.rst: vcc_$1_if.c
 
 vcc_$1_if.c: vmod_$1.vcc
-	\$(A""M_V_VMODTOOL) \$(PYTHON) \$(VMODTOOL) -o vcc_$1_if \$(srcdir)/vmod_$1.vcc
+	\$(A""M_V_VMODTOOL) \$(PYTHON) \$(VMODTOOL) -o vcc_$1_if VCC_SRC
 
 vmod_$1.3: vmod_$1.man.rst
 	\$(A""M_V_GEN) \$(RST2MAN) vmod_$1.man.rst vmod_$1.3
@@ -223,10 +231,9 @@ clean-vmod-$1:
 	rm -f vcc_$1_if.c vcc_$1_if.h
 	rm -f vmod_$1.rst vmod_$1.man.rst vmod_$1.3
 
-"
-
-	AC_SUBST(m4_toupper(BUILD_VMOD_$1), [$VMOD_RULES])
-	AM_SUBST_NOTMAKE(m4_toupper(BUILD_VMOD_$1))
+"])dnl
+	AM_SUBST_NOTMAKE(m4_toupper(BUILD_VMOD_$1))dnl
+	m4_popdef([VCC_SRC])dnl
 ])
 
 # VARNISH_VMODS(NAMES)
@@ -368,7 +375,27 @@ clean-vmod-$1:
 AC_DEFUN([VARNISH_VMODS], [
 	m4_foreach([_vmod_name],
 		m4_split(m4_normalize([$1])),
-		[_VARNISH_VMOD(_vmod_name)])
+		[_VARNISH_VMOD(_vmod_name, [static])])
+])
+
+# VARNISH_VMODS_GENERATED(NAMES)
+# ------------------------------
+# Since: Varnish 7.0.0
+#
+# Varnish 7 adds the possibility to transparently work with a generated VCC
+# file. The VCC file would then be created in the build directory, which is
+# incompatible with how the VARNISH_VMODS macro operates.
+#
+# If that VCC file only needs to be generated once and is distributed, builds
+# from the dist archive will have the VCC file in the source directory.
+#
+# With Varnish's ability to run VMODTOOL in a VPATH build both scnerarios are
+# taken care of. This macro works otherwise exactly like VARNISH_VMODS.
+#
+AC_DEFUN([VARNISH_VMODS_GENERATED], [
+	m4_foreach([_vmod_name],
+		m4_split(m4_normalize([$1])),
+		[_VARNISH_VMOD(_vmod_name, [generated])])
 ])
 
 # _VARNISH_VSC_CONFIG
