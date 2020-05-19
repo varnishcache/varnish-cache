@@ -210,8 +210,7 @@ vmod_$1.lo: \$(nodist_libvmod_$1_la_SOURCES)
 vcc_$1_if.h vmod_$1.rst vmod_$1.man.rst: vcc_$1_if.c
 
 vcc_$1_if.c: vmod_$1.vcc
-	\$(A""M_V_VMODTOOL) \$(PYTHON) \$(VMODTOOL) -o vcc_$1_if \\
-	  \$(builddir)/vmod_$1.vcc \$(srcdir)/vmod_$1.vcc
+	\$(A""M_V_VMODTOOL) \$(PYTHON) \$(VMODTOOL) -o vcc_$1_if \$(srcdir)/vmod_$1.vcc
 
 vmod_$1.3: vmod_$1.man.rst
 	\$(A""M_V_GEN) \$(RST2MAN) vmod_$1.man.rst vmod_$1.3
