@@ -735,6 +735,14 @@ cnt_pipe(struct worker *wrk, struct req *req)
 	switch (wrk->handling) {
 	case VCL_RET_SYNTH:
 		req->req_step = R_STP_SYNTH;
+		if (req->err_reason != NULL &&
+		    WS_Inside(bo->ws, req->err_reason, NULL)) {
+			req->err_reason = WS_Copy(req->ws, req->err_reason, -1);
+			if (req->err_reason == NULL) {
+				VSLb(req->vsl, SLT_Error, "Out of workspace");
+				req->req_step = R_STP_VCLFAIL;
+			}
+		}
 		nxt = REQ_FSM_MORE;
 		break;
 	case VCL_RET_PIPE:

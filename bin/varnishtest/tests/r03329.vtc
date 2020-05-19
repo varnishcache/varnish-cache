@@ -1,0 +1,24 @@
+varnishtest "Return synth from vcl_pipe with computed reason"
+
+varnish v1 -vcl {
+	import vtc;
+	backend be none;
+	sub vcl_pipe {
+		if (req.method == "OVERFLOW") {
+			vtc.workspace_alloc(client, -5);
+		}
+		return (synth(405, req.method + " not allowed"));
+	}
+} -start
+
+client c1 {
+	txreq -method TEST
+	rxresp
+	expect resp.status == 405
+	expect resp.reason == "TEST not allowed"
+
+	txreq -method OVERFLOW
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+} -run
