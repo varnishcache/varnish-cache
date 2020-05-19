@@ -5,7 +5,7 @@ set -eux
 export DEBIAN_FRONTEND=noninteractive
 export DEBCONF_NONINTERACTIVE_SEEN=true
 apt-get update
-apt-get install -y dpkg-dev debhelper devscripts equivs pkg-config apt-utils
+apt-get install -y dpkg-dev debhelper devscripts equivs pkg-config apt-utils fakeroot
 
 echo "PARAM_RELEASE: $PARAM_RELEASE"
 echo "PARAM_DIST: $PARAM_DIST"
@@ -18,6 +18,10 @@ elif [ -z "$PARAM_DIST" ]; then
     echo "Env variable PARAM_DIST is not set! For example PARAM_DIST=centos"
     exit 1
 fi
+
+# Ubuntu 20.04 aarch64 fails when using fakeroot-sysv with:
+#    semop(1): encountered an error: Function not implemented
+update-alternatives --set fakeroot /usr/bin/fakeroot-tcp
 
 cd /varnish-cache
 ls -la
