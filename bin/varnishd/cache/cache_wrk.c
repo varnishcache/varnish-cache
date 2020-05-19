@@ -389,7 +389,17 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 			pp->nidle++;
 			do {
 				// see signaling_note at the top for explanation
-				if (wrk->vcl == NULL)
+				if (DO_DEBUG(DBG_VCLREL) &&
+				    pp->b_stat == NULL && pp->a_stat->summs)
+					/* We've released the VCL, but
+					 * there are pool stats not pushed
+					 * to the global stats and some
+					 * thread is busy pushing
+					 * stats. Set a 1 second timeout
+					 * so that we'll wake up and get a
+					 * chance to push stats. */
+					tmo = wrk->lastused + 1.;
+				else if (wrk->vcl == NULL)
 					tmo = 0;
 				else if (DO_DEBUG(DBG_VTC_MODE))
 					tmo =  wrk->lastused+1.;
