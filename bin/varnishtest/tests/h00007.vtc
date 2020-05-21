@@ -1,0 +1,55 @@
+varnishtest "haproxy tcp-mode, tcp, send-proxy-v2, client ip and acl"
+
+# same as h00006.vtc, but using tcp for haproxy->varnish
+
+feature ignore_unknown_macro
+
+feature cmd {haproxy --version 2>&1 | grep -q 'HA-Proxy version'}
+
+server s1 {
+    rxreq
+    txresp -body "s1 >>> Hello world!"
+} -start
+
+varnish v1 -proto "PROXY" -vcl+backend {
+	import std;
+
+	acl localhost {
+		"localhost";
+		"127.0.0.1";
+		"::1";
+	}
+
+	sub vcl_deliver {
+		set resp.http.cip = client.ip ~ localhost;
+		set resp.http.stdip =
+		    std.ip("" + client.ip, resolve = false) ~ localhost;
+
+		set resp.http.notcip = client.ip !~ localhost;
+		set resp.http.notstdip =
+		    std.ip("" + client.ip, resolve = false) !~ localhost;
+	}
+} -start
+
+haproxy h1 -D -conf {
+    defaults
+	mode   tcp
+	timeout connect         5s
+	timeout server          30s
+	timeout client          30s
+
+    listen ssloff
+	bind "fd@${fe1}"
+	server v1 ${v1_addr}:${v1_port} send-proxy-v2
+} -start
+
+client c1 -connect ${h1_fe1_sock} {
+    txreq -url "/"
+    rxresp
+    expect resp.status == 200
+    expect resp.http.cip == true
+    expect resp.http.stdip == true
+    expect resp.http.notcip == false
+    expect resp.http.notstdip == false
+    expect resp.body == "s1 >>> Hello world!"
+} -run
