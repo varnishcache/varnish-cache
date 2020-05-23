@@ -1,6 +1,6 @@
 varnishtest "haproxy tcp-mode, uds, send-proxy-v2, client ip and acl"
 
-# same as h00007.vtc, but usinguds for haproxy->varnish
+# same as h00007.vtc, but using uds for haproxy->varnish
 
 feature ignore_unknown_macro
 
@@ -9,26 +9,6 @@ feature cmd {haproxy --version 2>&1 | grep -q 'HA-Proxy version'}
 server s1 {
     rxreq
     txresp -body "s1 >>> Hello world!"
-} -start
-
-varnish v1 -arg "-a ${tmpdir}/v1.sock,PROXY" -vcl+backend {
-	import std;
-
-	acl localhost {
-		"localhost";
-		"127.0.0.1";
-		"::1";
-	}
-
-	sub vcl_deliver {
-		set resp.http.cip = client.ip ~ localhost;
-		set resp.http.stdip =
-		    std.ip("" + client.ip, resolve = false) ~ localhost;
-
-		set resp.http.notcip = client.ip !~ localhost;
-		set resp.http.notstdip =
-		    std.ip("" + client.ip, resolve = false) !~ localhost;
-	}
 } -start
 
 haproxy h1 -D -conf {
@@ -41,6 +21,28 @@ haproxy h1 -D -conf {
     listen ssloff
 	bind "fd@${fe1}"
 	server v1 ${tmpdir}/v1.sock send-proxy-v2
+} -start
+
+varnish v1 -arg "-a ${tmpdir}/v1.sock,PROXY" -vcl+backend {
+	import std;
+
+	acl localhost {
+		"localhost";
+		"127.0.0.1";
+		"::1";
+		"${s1_addr}";		// Jails IPv4 address
+		"${h1_fe1_addr}";	// Jails IPv6 address
+	}
+
+	sub vcl_deliver {
+		set resp.http.cip = client.ip ~ localhost;
+		set resp.http.stdip =
+		    std.ip("" + client.ip, resolve = false) ~ localhost;
+
+		set resp.http.notcip = client.ip !~ localhost;
+		set resp.http.notstdip =
+		    std.ip("" + client.ip, resolve = false) !~ localhost;
+	}
 } -start
 
 client c1 -connect ${h1_fe1_sock} {
