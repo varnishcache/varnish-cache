@@ -11,25 +11,7 @@ server s1 {
     txresp -body "s1 >>> Hello world!"
 } -start
 
-varnish v1 -proto "PROXY" -vcl+backend {
-	import std;
-
-	acl localhost {
-		"localhost";
-		"127.0.0.1";
-		"::1";
-	}
-
-	sub vcl_deliver {
-		set resp.http.cip = client.ip ~ localhost;
-		set resp.http.stdip =
-		    std.ip("" + client.ip, resolve = false) ~ localhost;
-
-		set resp.http.notcip = client.ip !~ localhost;
-		set resp.http.notstdip =
-		    std.ip("" + client.ip, resolve = false) !~ localhost;
-	}
-} -start
+varnish v1 -proto "PROXY" -vcl+backend {} -start
 
 haproxy h1 -D -conf {
     defaults
@@ -42,6 +24,28 @@ haproxy h1 -D -conf {
 	bind "fd@${fe1}"
 	server v1 ${v1_addr}:${v1_port} send-proxy-v2
 } -start
+
+varnish v1 -vcl+backend {
+	import std;
+
+	acl localhost {
+		"localhost";
+		"127.0.0.1";
+		"::1";
+		"${s1_addr}";		# Jail IPv4 address
+		"${h1_fe1_addr}";	# Jail IPv6 address
+	}
+
+	sub vcl_deliver {
+		set resp.http.cip = client.ip ~ localhost;
+		set resp.http.stdip =
+		    std.ip("" + client.ip, resolve = false) ~ localhost;
+
+		set resp.http.notcip = client.ip !~ localhost;
+		set resp.http.notstdip =
+		    std.ip("" + client.ip, resolve = false) !~ localhost;
+	}
+} 
 
 client c1 -connect ${h1_fe1_sock} {
     txreq -url "/"
