@@ -1,6 +1,17 @@
 varnishtest "Code coverage of mgt_main, (VCL compiler and RSTdump etc)"
 
 shell "varnishd -b 127.0.0.1:80 -C 2> ${tmpdir}/_.c"
+
+shell {
+	varnishd -n ${tmpdir}/no_keep -C -b 127.0.0.1:80 2> no_keep.c
+	test -s no_keep.c && ! test -d no_keep
+}
+
+shell {
+	varnishd -n ${tmpdir}/keep -p debug=+vcl_keep -C -b 127.0.0.1:80 2> keep.c
+	test -s keep.c && test -d keep
+}
+
 shell -err -expect {VCL version declaration missing} {
 	echo 'bad vcl' > ${tmpdir}/bad.vcl
 	varnishd -f ${tmpdir}/bad.vcl -n ${tmpdir}
