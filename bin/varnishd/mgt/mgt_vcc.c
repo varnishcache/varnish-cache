@@ -275,12 +275,12 @@ static void
 mgt_vcc_fini_vp(struct vcc_priv *vp, int leave_lib)
 {
 	if (!MGT_DO_DEBUG(DBG_VCL_KEEP)) {
-		(void)unlink(VSB_data(vp->csrcfile));
-		(void)unlink(VSB_data(vp->symfile));
+		VJ_unlink(VSB_data(vp->csrcfile));
+		VJ_unlink(VSB_data(vp->symfile));
 		if (!leave_lib)
-			(void)unlink(VSB_data(vp->libfile));
+			VJ_unlink(VSB_data(vp->libfile));
 	}
-	(void)rmdir(VSB_data(vp->dir));
+	VJ_rmdir(VSB_data(vp->dir));
 	VSB_destroy(&vp->csrcfile);
 	VSB_destroy(&vp->libfile);
 	VSB_destroy(&vp->symfile);
