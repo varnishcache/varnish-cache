@@ -71,7 +71,7 @@ int			exit_status = 0;
 struct vsb		*vident;
 struct VSC_mgt		*VSC_C_mgt;
 static int		I_fd = -1;
-static char		*Cn_arg;
+static char		*workdir;
 
 static struct vpf_fh *pfh1 = NULL;
 static struct vpf_fh *pfh2 = NULL;
@@ -250,9 +250,9 @@ mgt_Cflag_atexit(void)
 	/* Only master process */
 	if (getpid() != heritage.mgt_pid)
 		return;
-	(void)rmdir("vmod_cache");
-	(void)unlink("_.pid");
-	(void)rmdir(Cn_arg);
+	VJ_rmdir("vmod_cache");
+	VJ_unlink("_.pid");
+	VJ_rmdir(workdir);
 }
 
 /*--------------------------------------------------------------------*/
@@ -480,7 +480,6 @@ main(int argc, char * const *argv)
 	const char *T_arg = "localhost:0";
 	char *p;
 	struct cli cli[1];
-	char *dirname;
 	char **av;
 	unsigned u;
 	struct sigaction sac;
@@ -747,13 +746,11 @@ main(int argc, char * const *argv)
 				VSB_cat(vsb, "/tmp");
 			VSB_cat(vsb, "/varnishd_C_XXXXXXX");
 			AZ(VSB_finish(vsb));
-			Cn_arg = strdup(VSB_data(vsb));
-			AN(Cn_arg);
+			p = strdup(VSB_data(vsb));
+			AN(p);
 			VSB_destroy(&vsb);
-			AN(mkdtemp(Cn_arg));
-			AZ(chmod(Cn_arg, 0755));
-			AZ(atexit(mgt_Cflag_atexit));
-			n_arg = Cn_arg;
+			AN(mkdtemp(p));
+			n_arg = p;
 		}
 	}
 
@@ -770,7 +767,7 @@ main(int argc, char * const *argv)
 		VJ_master(JAIL_MASTER_LOW);
 	}
 
-	if (VIN_n_Arg(n_arg, &dirname) != 0)
+	if (VIN_n_Arg(n_arg, &workdir) != 0)
 		ARGV_ERR("Invalid instance (-n) name: %s\n", vstrerror(errno));
 
 	if (i_arg == NULL || *i_arg == '\0')
@@ -781,17 +778,20 @@ main(int argc, char * const *argv)
 
 	openlog("varnishd", LOG_PID, LOG_LOCAL0);
 
-	if (VJ_make_workdir(dirname))
+	if (VJ_make_workdir(workdir))
 		ARGV_ERR("Cannot create working directory (%s): %s\n",
-		    dirname, vstrerror(errno));
+		    workdir, vstrerror(errno));
 
 	if (VJ_make_subdir("vmod_cache", "VMOD cache", NULL)) {
 		ARGV_ERR(
 		    "Cannot create vmod directory (%s/vmod_cache): %s\n",
-		    dirname, vstrerror(errno));
+		    workdir, vstrerror(errno));
 	}
 
-	pfh1 = create_pid_file(&pid, "%s/_.pid", dirname);
+	if (C_flag)
+		AZ(atexit(mgt_Cflag_atexit));
+
+	pfh1 = create_pid_file(&pid, "%s/_.pid", workdir);
 
 	if (P_arg)
 		pfh2 = create_pid_file(&pid, "%s", P_arg);
@@ -805,31 +805,29 @@ main(int argc, char * const *argv)
 
 	mgt_vcl_init();
 
-	if (C_flag) {
-		VTAILQ_FOREACH(fa, &f_args, list) {
-			mgt_vcl_startup(cli, fa->src,
-			    VTAILQ_NEXT(fa, list) == NULL ? "boot" : NULL,
-			    fa->farg, 1);
+	u = 0;
+	while (!VTAILQ_EMPTY(&f_args)) {
+		fa = VTAILQ_FIRST(&f_args);
+		VTAILQ_REMOVE(&f_args, fa, list);
+		mgt_vcl_startup(cli, fa->src,
+		    VTAILQ_EMPTY(&f_args) ? "boot" : NULL,
+		    fa->farg, C_flag);
+		if (C_flag) {
+			if (cli->result != CLIS_OK &&
+			    cli->result != CLIS_TRUNCATED)
+				u = 2;
 			AZ(VSB_finish(cli->sb));
 			fprintf(stderr, "%s\n", VSB_data(cli->sb));
 			VSB_clear(cli->sb);
-		}
-		if (cli->result == CLIS_OK || cli->result == CLIS_TRUNCATED)
-			exit(0);
-		exit(2);
-	} else {
-		while (!VTAILQ_EMPTY(&f_args)) {
-			fa = VTAILQ_FIRST(&f_args);
-			VTAILQ_REMOVE(&f_args, fa, list);
-			mgt_vcl_startup(cli, fa->src,
-			    VTAILQ_EMPTY(&f_args) ? "boot" : NULL,
-			    fa->farg, 0);
+		} else {
 			cli_check(cli);
-			free(fa->farg);
-			free(fa->src);
-			FREE_OBJ(fa);
 		}
+		free(fa->farg);
+		free(fa->src);
+		FREE_OBJ(fa);
 	}
+	if (C_flag)
+		exit(u);
 
 	if (VTAILQ_EMPTY(&heritage.socks))
 		MAC_Arg(":80\0");	// XXX: extra NUL for FlexeLint
@@ -853,7 +851,7 @@ main(int argc, char * const *argv)
 	AZ(VSB_finish(vident));
 
 	if (S_arg == NULL)
-		S_arg = make_secret(dirname);
+		S_arg = make_secret(workdir);
 	AN(S_arg);
 
 	VPF_Write(pfh1);
