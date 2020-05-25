@@ -197,6 +197,28 @@ VJ_make_subdir(const char *dname, const char *what, struct vsb *vsb)
 }
 
 void
+VJ_unlink(const char *fname)
+{
+	VJ_master(JAIL_MASTER_FILE);
+	if (unlink(fname)) {
+		fprintf(stderr, "Could not delete '%s': %s\n",
+		    fname, strerror(errno));
+	}
+	VJ_master(JAIL_MASTER_LOW);
+}
+
+void
+VJ_rmdir(const char *dname)
+{
+	VJ_master(JAIL_MASTER_FILE);
+	if (rmdir(dname)) {
+		fprintf(stderr, "Could not rmdir '%s': %s\n",
+		    dname, strerror(errno));
+	}
+	VJ_master(JAIL_MASTER_LOW);
+}
+
+void
 VJ_fix_fd(int fd, enum jail_fixfd_e what)
 {
 
