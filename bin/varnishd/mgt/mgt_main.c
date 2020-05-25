@@ -36,6 +36,7 @@
 #include <ctype.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -431,6 +432,32 @@ mgt_f_read(const char *fn)
 	VTAILQ_INSERT_TAIL(&f_args, fa, list);
 }
 
+static struct vpf_fh *
+create_pid_file(pid_t *ppid, const char *fmt, ...)
+{
+	struct vsb *vsb;
+	va_list ap;
+	struct vpf_fh *pfh;
+
+	va_start(ap, fmt);
+	vsb = VSB_new_auto();
+	AN(vsb);
+	VSB_vprintf(vsb, fmt, ap);
+	AZ(VSB_finish(vsb));
+	VJ_master(JAIL_MASTER_FILE);
+	pfh = VPF_Open(VSB_data(vsb), 0644, ppid);
+	if (pfh == NULL && errno == EEXIST)
+		ARGV_ERR(
+		    "Varnishd is already running (pid=%jd) (pidfile=%s)\n",
+		    (intmax_t)*ppid, VSB_data(vsb));
+	if (pfh == NULL)
+		ARGV_ERR("Could not open pid-file (%s): %s\n",
+		    VSB_data(vsb), vstrerror(errno));
+	VJ_master(JAIL_MASTER_LOW);
+	VSB_destroy(&vsb);
+	return (pfh);
+}
+
 int
 main(int argc, char * const *argv)
 {
@@ -764,29 +791,10 @@ main(int argc, char * const *argv)
 		    dirname, vstrerror(errno));
 	}
 
-	vsb = VSB_new_auto();
-	AN(vsb);
-	VSB_printf(vsb, "%s/_.pid", dirname);
-	AZ(VSB_finish(vsb));
-	VJ_master(JAIL_MASTER_FILE);
-	pfh1 = VPF_Open(VSB_data(vsb), 0644, &pid);
-	if (pfh1 == NULL && errno == EEXIST)
-		ARGV_ERR("Varnishd is already running (pid=%jd)\n",
-		    (intmax_t)pid);
-	if (pfh1 == NULL)
-		ARGV_ERR("Could not open pid-file (%s): %s\n",
-		    VSB_data(vsb), vstrerror(errno));
-	VSB_destroy(&vsb);
-	if (P_arg) {
-		pfh2 = VPF_Open(P_arg, 0644, &pid);
-		if (pfh2 == NULL && errno == EEXIST)
-			ARGV_ERR("Varnishd is already running (pid=%jd)\n",
-			    (intmax_t)pid);
-		if (pfh2 == NULL)
-			ARGV_ERR("Could not open pid-file (%s): %s\n",
-			    P_arg, vstrerror(errno));
-	}
-	VJ_master(JAIL_MASTER_LOW);
+	pfh1 = create_pid_file(&pid, "%s/_.pid", dirname);
+
+	if (P_arg)
+		pfh2 = create_pid_file(&pid, "%s", P_arg);
 
 	/* If no -s argument specified, process default -s argument */
 	if (!s_arg_given)
