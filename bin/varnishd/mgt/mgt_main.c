@@ -750,6 +750,7 @@ main(int argc, char * const *argv)
 			AN(p);
 			VSB_destroy(&vsb);
 			AN(mkdtemp(p));
+			AZ(chmod(p, 0750));
 			n_arg = p;
 		}
 	}
