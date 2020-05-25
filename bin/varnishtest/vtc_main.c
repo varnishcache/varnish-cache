@@ -247,8 +247,8 @@ cleaner_setup(void)
 			pp = fork();
 			assert(pp >= 0);
 			if (pp == 0)
-				exit(execl(
-				    "/bin/rm", "rm", "-rf", buf, (char*)0));
+				exit(execlp(
+				    "rm", "rm", "-rf", buf, (char*)0));
 			assert(waitpid(pp, &st, 0) == pp);
 			AZ(st);
 		}
