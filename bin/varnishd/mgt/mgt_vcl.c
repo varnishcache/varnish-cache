@@ -424,14 +424,10 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 	char *lib, *p;
 	struct vclprog *vp;
 	const struct vclstate *vs;
-	char buf[32];
 
 	AN(cli);
 
-	if (C_flag) {
-		bprintf(buf, ".CflagTest.%d", (int)getpid());
-		vclname = buf;
-	} else if (vcl_count >= mgt_param.max_vcl &&
+	if (vcl_count >= mgt_param.max_vcl &&
 	    mgt_param.max_vcl_handling == 2) {
 		VCLI_Out(cli, "Too many (%d) VCLs already loaded\n", vcl_count);
 		VCLI_Out(cli, "(See max_vcl and max_vcl_handling parameters)");
