@@ -49,4 +49,4 @@ dpkg-buildpackage -us -uc -j16
 
 echo "Prepare the packages for storage..."
 mkdir -p packages/$PARAM_DIST/$PARAM_RELEASE/
-mv ../*.deb packages/$PARAM_DIST/$PARAM_RELEASE/
+mv ../*.deb ../*.dsc packages/$PARAM_DIST/$PARAM_RELEASE/
