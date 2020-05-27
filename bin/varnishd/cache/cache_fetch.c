@@ -169,7 +169,7 @@ vbf_beresp2obj(struct busyobj *bo)
 		if (vary != NULL)
 			VSB_destroy(&vary);
 		AZ(vary);
-		return (-1);
+		return (VFP_Error(bo->vfc, "Could not get storage"));
 	}
 
 	if (vary != NULL) {
@@ -617,7 +617,6 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	}
 
 	if (vbf_beresp2obj(bo)) {
-		(void)VFP_Error(bo->vfc, "Could not get storage");
 		bo->htc->doclose = SC_RX_BODY;
 		vbf_cleanup(bo);
 		return (F_STP_ERROR);
@@ -760,7 +759,6 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	AZ(stale_oc->flags & OC_F_FAILED);
 
 	if (vbf_beresp2obj(bo)) {
-		(void)VFP_Error(bo->vfc, "Could not get storage in vbf_stp_condfetch");
 		vbf_cleanup(bo);
 		wrk->stats->fetch_failed++;
 		return (F_STP_FAIL);
@@ -897,7 +895,6 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	assert(bo->vfc->req == bo->bereq);
 
 	if (vbf_beresp2obj(bo)) {
-		(void)VFP_Error(bo->vfc, "Could not get storage");
 		VSB_destroy(&synth_body);
 		return (F_STP_FAIL);
 	}
