@@ -49,4 +49,14 @@ dpkg-buildpackage -us -uc -j16
 
 echo "Prepare the packages for storage..."
 mkdir -p packages/$PARAM_DIST/$PARAM_RELEASE/
-mv ../*.deb ../*.dsc packages/$PARAM_DIST/$PARAM_RELEASE/
+mv ../*.deb packages/$PARAM_DIST/$PARAM_RELEASE/
+
+if [ "`uname -m`" = "x86_64" ]; then
+  ARCH="amd64"
+else
+  ARCH="arm64"
+fi
+
+DSC_FILE=$(ls ../*.dsc)
+DSC_FILE_WO_EXT=$(basename ${DSC_FILE%.*})
+mv $DSC_FILE packages/$PARAM_DIST/$PARAM_RELEASE/${DSC_FILE_WO_EXT}_${ARCH}.dsc
