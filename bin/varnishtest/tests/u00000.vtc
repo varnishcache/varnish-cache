@@ -4,8 +4,9 @@ shell "varnishd -b 127.0.0.1:80 -C 2> ${tmpdir}/_.c"
 
 shell {
 	varnishd -n ${tmpdir}/no_keep -C -b 127.0.0.1:80 2> no_keep.c
-	ls -l
+	ls -la
 	set -x
+	tail no_keep.c || true
 	test -s no_keep.c && ! test -d no_keep
 }
 
