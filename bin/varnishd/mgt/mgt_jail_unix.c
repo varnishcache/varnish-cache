@@ -188,6 +188,7 @@ vju_init(char **args)
 static void v_matchproto_(jail_master_f)
 vju_master(enum jail_master_e jme)
 {
+	ASSERT_JAIL_MASTER(jme);
 	if (jme == JAIL_MASTER_LOW) {
 		AZ(setegid(vju_gid));
 		AZ(seteuid(vju_uid));
@@ -203,6 +204,7 @@ vju_subproc(enum jail_subproc_e jse)
 	int i;
 	gid_t gid_list[NGID];
 
+	ASSERT_JAIL_SUBPROC(jse);
 	AZ(seteuid(0));
 	if (vju_wrkuser != NULL &&
 	    (jse == JAIL_SUBPROC_VCLLOAD || jse == JAIL_SUBPROC_WORKER)) {
