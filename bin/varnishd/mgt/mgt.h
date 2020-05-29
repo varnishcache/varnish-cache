@@ -102,20 +102,22 @@ void mgt_cli_init_cls(void);
 
 /* mgt_jail.c */
 
-enum jail_subproc_e {
-	JAIL_SUBPROC_VCC,
-	JAIL_SUBPROC_CC,
-	JAIL_SUBPROC_VCLLOAD,
-	JAIL_SUBPROC_WORKER,
-};
-
 enum jail_master_e {
-	JAIL_MASTER_LOW,
+	JAIL_MASTER_LOW = 0,
 	JAIL_MASTER_FILE,
 	JAIL_MASTER_STORAGE,
 	JAIL_MASTER_PRIVPORT,
 	JAIL_MASTER_KILL,
 };
+
+enum jail_subproc_e {
+	JAIL_SUBPROC_VCC = JAIL_MASTER_KILL + 1,
+	JAIL_SUBPROC_CC,
+	JAIL_SUBPROC_VCLLOAD,
+	JAIL_SUBPROC_WORKER,
+};
+
+#define JAIL_LIMIT (JAIL_SUBPROC_WORKER + 1)
 
 enum jail_fixfd_e {
 	JAIL_FIXFD_FILE,
