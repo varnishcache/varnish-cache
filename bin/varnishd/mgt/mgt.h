@@ -110,10 +110,7 @@ enum jail_master_e {
 	JAIL_MASTER_KILL,
 };
 
-#define ASSERT_JAIL_MASTER(x) do {		\
-	assert(x >= JAIL_MASTER_LOW);		\
-	assert(x <= JAIL_MASTER_KILL);		\
-	} while (0)
+#define ASSERT_JAIL_MASTER(x) assert(x <= JAIL_MASTER_KILL)
 
 enum jail_subproc_e {
 	JAIL_SUBPROC_VCC = JAIL_MASTER_KILL + 1,
