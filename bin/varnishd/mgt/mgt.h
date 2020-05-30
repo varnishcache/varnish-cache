@@ -108,23 +108,23 @@ enum jail_master_e {
 	JAIL_MASTER_STORAGE,
 	JAIL_MASTER_PRIVPORT,
 	JAIL_MASTER_KILL,
+#define JAIL_SUBPROC (JAIL_MASTER_KILL + 1)
 };
 
-#define ASSERT_JAIL_MASTER(x) assert(x <= JAIL_MASTER_KILL)
-
 enum jail_subproc_e {
-	JAIL_SUBPROC_VCC = JAIL_MASTER_KILL + 1,
+	JAIL_SUBPROC_VCC = JAIL_SUBPROC,
 	JAIL_SUBPROC_CC,
 	JAIL_SUBPROC_VCLLOAD,
 	JAIL_SUBPROC_WORKER,
+#define JAIL_LIMIT (JAIL_SUBPROC_WORKER + 1)
 };
 
-#define ASSERT_JAIL_SUBPROC(x) do {		\
-	assert(x >= JAIL_SUBPROC_VCC);		\
-	assert(x <= JAIL_SUBPROC_WORKER);	\
-	} while (0)
+#define ASSERT_JAIL_MASTER(x) assert((x) < JAIL_SUBPROC)
 
-#define JAIL_LIMIT (JAIL_SUBPROC_WORKER + 1)
+#define ASSERT_JAIL_SUBPROC(x) do {		\
+		assert((x) >= JAIL_SUBPROC);	\
+		assert((x) < JAIL_LIMIT);	\
+	} while (0)
 
 enum jail_fixfd_e {
 	JAIL_FIXFD_FILE,
