@@ -252,6 +252,7 @@ mgt_Cflag_atexit(void)
 		return;
 	VJ_rmdir("vmod_cache");
 	VJ_unlink("_.pid");
+	(void)chdir("/");
 	VJ_rmdir(workdir);
 }
 
