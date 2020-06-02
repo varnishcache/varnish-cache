@@ -327,7 +327,9 @@ mgt_launch_child(struct cli *cli)
 
 	AN(heritage.param);
 	AN(heritage.panic_str);
+	VJ_master(JAIL_MASTER_SYSTEM);
 	if ((pid = fork()) < 0) {
+		VJ_master(JAIL_MASTER_LOW);
 		perror("Could not fork child");
 		exit(1);		// XXX Harsh ?
 	}
@@ -389,6 +391,7 @@ mgt_launch_child(struct cli *cli)
 
 		exit(0);
 	}
+	VJ_master(JAIL_MASTER_LOW);
 	assert(pid > 1);
 	MGT_Complain(C_DEBUG, "Child (%jd) Started", (intmax_t)pid);
 	VSC_C_mgt->child_start++;

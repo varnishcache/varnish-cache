@@ -44,14 +44,15 @@
  * - INHERITABLE and PERMITTED joined from SUBPROC*
  * - implicit rules from above
  */
-PRIV(MASTER_LOW,	E	, PRIV_PROC_EXEC)	// XXX fork
-PRIV(MASTER_LOW,	E	, PRIV_PROC_FORK)	// XXX fork
 PRIV(MASTER_LOW,	E	, "file_write")	// XXX vcl_boot
 PRIV(MASTER_LOW,	E	, "file_read")	// XXX library open
 PRIV(MASTER_LOW,	E	, "net_access")
 
-PRIV(MASTER_FILE,	E	, PRIV_PROC_EXEC)	// XXX rm -rf in shm
-PRIV(MASTER_FILE,	E	, PRIV_PROC_FORK)	// XXX rm -rf in shm
+PRIV(MASTER_SYSTEM,	E|I	, PRIV_PROC_EXEC)
+PRIV(MASTER_SYSTEM,	E|I	, PRIV_PROC_FORK)
+PRIV(MASTER_SYSTEM,	E|I	, "file_read")
+PRIV(MASTER_SYSTEM,	E|I	, "file_write")
+
 PRIV(MASTER_FILE,	E	, "file_read")
 PRIV(MASTER_FILE,	E	, "file_write")
 

@@ -104,6 +104,7 @@ void mgt_cli_init_cls(void);
 
 enum jail_master_e {
 	JAIL_MASTER_LOW = 0,
+	JAIL_MASTER_SYSTEM,
 	JAIL_MASTER_FILE,
 	JAIL_MASTER_STORAGE,
 	JAIL_MASTER_PRIVPORT,

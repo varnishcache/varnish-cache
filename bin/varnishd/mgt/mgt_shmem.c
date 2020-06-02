@@ -78,6 +78,7 @@ mgt_shm_atexit(void)
 	VJ_master(JAIL_MASTER_FILE);
 	VSMW_Destroy(&mgt_vsmw);
 	if (!MGT_DO_DEBUG(DBG_VTC_MODE)) {
+		VJ_master(JAIL_MASTER_SYSTEM);
 		AZ(system("rm -rf " VSM_MGT_DIRNAME));
 		AZ(system("rm -rf " VSM_CHILD_DIRNAME));
 	}
@@ -93,8 +94,9 @@ mgt_SHM_Init(void)
 {
 	int fd;
 
-	VJ_master(JAIL_MASTER_FILE);
+	VJ_master(JAIL_MASTER_SYSTEM);
 	AZ(system("rm -rf " VSM_MGT_DIRNAME));
+	VJ_master(JAIL_MASTER_FILE);
 	AZ(mkdir(VSM_MGT_DIRNAME, 0755));
 	fd = open(VSM_MGT_DIRNAME, O_RDONLY);
 	VJ_fix_fd(fd, JAIL_FIXFD_VSMMGT);
@@ -112,8 +114,9 @@ void
 mgt_SHM_ChildNew(void)
 {
 
-	VJ_master(JAIL_MASTER_FILE);
+	VJ_master(JAIL_MASTER_SYSTEM);
 	AZ(system("rm -rf " VSM_CHILD_DIRNAME));
+	VJ_master(JAIL_MASTER_FILE);
 	AZ(mkdir(VSM_CHILD_DIRNAME, 0750));
 
 	heritage.vsm_fd = open(VSM_CHILD_DIRNAME, O_RDONLY);
@@ -140,7 +143,7 @@ mgt_SHM_ChildDestroy(void)
 
 	closefd(&heritage.vsm_fd);
 	if (!MGT_DO_DEBUG(DBG_VTC_MODE)) {
-		VJ_master(JAIL_MASTER_FILE);
+		VJ_master(JAIL_MASTER_SYSTEM);
 		AZ(system("rm -rf " VSM_CHILD_DIRNAME));
 		VJ_master(JAIL_MASTER_LOW);
 	}

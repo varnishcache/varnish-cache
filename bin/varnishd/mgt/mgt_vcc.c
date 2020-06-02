@@ -229,7 +229,9 @@ mgt_vcc_compile(struct vcc_priv *vp, struct vsb *sb, int C_flag)
 	if (mgt_vcc_touchfile(VSB_data(vp->libfile), sb))
 		return (2);
 
+	VJ_master(JAIL_MASTER_SYSTEM);
 	subs = VSUB_run(sb, run_vcc, vp, "VCC-compiler", -1);
+	VJ_master(JAIL_MASTER_LOW);
 	if (subs)
 		return (subs);
 
@@ -247,11 +249,15 @@ mgt_vcc_compile(struct vcc_priv *vp, struct vsb *sb, int C_flag)
 		free(csrc);
 	}
 
+	VJ_master(JAIL_MASTER_SYSTEM);
 	subs = VSUB_run(sb, run_cc, vp, "C-compiler", 10);
+	VJ_master(JAIL_MASTER_LOW);
 	if (subs)
 		return (subs);
 
+	VJ_master(JAIL_MASTER_SYSTEM);
 	subs = VSUB_run(sb, run_dlopen, vp, "dlopen", 10);
+	VJ_master(JAIL_MASTER_LOW);
 	return (subs);
 }
 
