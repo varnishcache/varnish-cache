@@ -263,18 +263,6 @@ priv_setop_check(int a)
 
 #define priv_setop_assert(a) assert(priv_setop_check(a))
 
-static inline int
-setppriv_check(int a)
-{
-	if (a == 0)
-		return (1);
-	if (errno == EPERM)
-		return (1);
-	return (0);
-}
-
-#define setppriv_assert(a) assert(setppriv_check(a))
-
 /* ------------------------------------------------------------
  * initialization of privilege sets from mgt_jail_solaris_tbl.h
  * and implicit rules documented therein
@@ -324,13 +312,22 @@ vjs_alloc(void)
 static int v_matchproto_(jail_init_f)
 vjs_init(char **args)
 {
-	priv_set_t **sets;
+	priv_set_t **sets, *permitted, *inheritable;
 	int vj, vs;
 
 	if (args != NULL && *args != NULL) {
 		ARGV_ERR("-jsolaris takes no arguments.\n");
 		return (0);
 	}
+
+	permitted = vjs_alloc();
+	AN(permitted);
+	AZ(getppriv(PRIV_PERMITTED, permitted));
+
+	inheritable = vjs_alloc();
+	AN(inheritable);
+	AZ(getppriv(PRIV_INHERITABLE, inheritable));
+	priv_union(permitted, inheritable);
 
 	/* init privset for vjs_setuid() */
 	vjs_proc_setid = priv_allocset();
@@ -365,6 +362,14 @@ vjs_init(char **args)
 #define PRIV(name, mask, priv) vjs_add(vjs_sets[JAIL_ ## name], mask, priv);
 #include "mgt_jail_solaris_tbl.h"
 
+	/* mask by available privs */
+	for (vj = 0; vj < JAIL_LIMIT; vj++) {
+		sets = vjs_sets[vj];
+		priv_intersect(permitted, sets[VJS_EFFECTIVE]);
+		priv_intersect(permitted, sets[VJS_PERMITTED]);
+		priv_intersect(inheritable, sets[VJS_INHERITABLE]);
+	}
+
 	/* SUBPROC implicit rules */
 	for (vj = JAIL_SUBPROC; vj < JAIL_LIMIT; vj++) {
 		sets = vjs_sets[vj];
@@ -383,10 +388,9 @@ vjs_init(char **args)
 		priv_union(sets[VJS_INHERITABLE], sets[VJS_LIMIT]);
 	}
 
-	/* attempt to enable privileges */
-	for (vs = VJS_PERMITTED; vs > VJS_EFFECTIVE; vs--)
-		setppriv_assert(setppriv(PRIV_ON, vjs_ptype[vs],
-		    vjs_sets[JAIL_MASTER_ANY][vs]));
+	/* extend inheritable */
+	vs = VJS_INHERITABLE;
+	AZ(setppriv(PRIV_ON, vjs_ptype[vs], vjs_sets[JAIL_MASTER_ANY][vs]));
 
 	/* generate inverse */
 	for (vj = 0; vj < JAIL_LIMIT; vj++)
@@ -397,6 +401,8 @@ vjs_init(char **args)
 
 	vjs_master(JAIL_MASTER_LOW);
 
+	priv_freeset(permitted);
+	priv_freeset(inheritable);
 	/* XXX LEAK: no _fini for priv_freeset() */
 	return (0);
 }
@@ -419,7 +425,6 @@ vjs_waive(int jail)
 static void
 vjs_setuid(void)
 {
-	setppriv_assert(setppriv(PRIV_ON, PRIV_EFFECTIVE, vjs_proc_setid));
 	if (priv_ineffect(PRIV_PROC_SETID)) {
 		if (getgid() != mgt_param.gid)
 			XXXAZ(setgid(mgt_param.gid));
@@ -437,6 +442,14 @@ vjs_setuid(void)
 static void v_matchproto_(jail_subproc_f)
 vjs_subproc(enum jail_subproc_e jse)
 {
+	priv_set_t **sets;
+	int i;
+
+	sets = vjs_sets[jse];
+
+	i = VJS_EFFECTIVE;
+	AZ(setppriv(PRIV_ON, vjs_ptype[i], sets[i]));
+
 	vjs_setuid();
 	vjs_waive(jse);
 }
@@ -452,7 +465,7 @@ vjs_master(enum jail_master_e jme)
 	sets = vjs_sets[jme];
 
 	i = VJS_EFFECTIVE;
-	setppriv_assert(setppriv(PRIV_ON, vjs_ptype[i], sets[i]));
+	AZ(setppriv(PRIV_ON, vjs_ptype[i], sets[i]));
 
 	vjs_waive(jme);
 }
