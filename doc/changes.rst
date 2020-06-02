@@ -26,6 +26,17 @@ http://varnish-cache.org/docs/trunk/whats-new/index.html and via
 individual releases. These documents are updated as part of the
 release process.
 
+===========================
+NEXT (scheduled 2020-09-15)
+===========================
+
+* The Varnish Jail (least privileges) code for Solaris has been
+  largely rewritten. It now reduces privileges even further and thus
+  should improve the security of Varnish on Solaris even more.
+
+* The Varnish Jail now accepts an optional ``worker=`` argument which
+  allows to extend the effective privilege set of the worker process.
+
 ================================
 Varnish Cache 6.4.0 (2020-03-16)
 ================================
