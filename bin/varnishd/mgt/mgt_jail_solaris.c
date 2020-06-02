@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006-2011 Varnish Software AS
- * Copyright (c) 2011-2015 UPLEX - Nils Goroll Systemoptimierung
+ * Copyright 2011-2020 UPLEX - Nils Goroll Systemoptimierung
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -209,6 +209,7 @@
 
 #ifdef HAVE_SETPPRIV
 
+#include <stdio.h>	// ARG_ERR
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -221,46 +222,35 @@
 #include <priv.h>
 #endif
 
-/* ============================================================
- * the real thing
- */
+/* renamed from sys/priv_const.h */
+#define VJS_EFFECTIVE		0
+#define VJS_INHERITABLE		1
+#define VJS_PERMITTED		2
+#define VJS_LIMIT		3
 
-// XXX @phk can we merge jail_subproc_e and jail_master_e please?
+#define VJS_NSET		(VJS_LIMIT + 1)
 
-#define JAILG_SHIFT 16
+#define VJS_MASK(x) (1U << (x))
 
-enum jail_gen_e {
-	JAILG_SUBPROC_VCC = JAIL_SUBPROC_VCC,
-	JAILG_SUBPROC_CC = JAIL_SUBPROC_CC,
-	JAILG_SUBPROC_VCLLOAD = JAIL_SUBPROC_VCLLOAD,
-	JAILG_SUBPROC_WORKER = JAIL_SUBPROC_WORKER,
+/* to denote sharing */
+#define JAIL_MASTER_ANY 0
 
-	JAILG_MASTER_LOW = JAIL_MASTER_LOW << JAILG_SHIFT,
-	JAILG_MASTER_STORAGE = JAIL_MASTER_STORAGE << JAILG_SHIFT,
-	JAILG_MASTER_PRIVPORT = JAIL_MASTER_PRIVPORT << JAILG_SHIFT
+const priv_ptype_t vjs_ptype[VJS_NSET] = {
+	[VJS_EFFECTIVE]		= PRIV_EFFECTIVE,
+	[VJS_INHERITABLE]	= PRIV_INHERITABLE,
+	[VJS_PERMITTED]		= PRIV_PERMITTED,
+	[VJS_LIMIT]		= PRIV_LIMIT
 };
 
-static inline enum jail_gen_e
-jail_subproc_gen(enum jail_subproc_e e)
-{
-	assert(e < (1 << JAILG_SHIFT));
-	return ((enum jail_gen_e)e);
-}
+static priv_set_t *vjs_sets[JAIL_LIMIT][VJS_NSET];
+static priv_set_t *vjs_inverse[JAIL_LIMIT][VJS_NSET];
+static priv_set_t *vjs_proc_setid;	// for vjs_setuid
 
-static inline enum jail_gen_e
-jail_master_gen(enum jail_master_e e)
-{
-	return ((enum jail_gen_e)(e << JAILG_SHIFT));
-}
+static void v_matchproto_(jail_master_f)
+	vjs_master(enum jail_master_e jme);
 
-static int v_matchproto_(jail_init_f)
-vjs_init(char **args)
-{
-	(void)args;
-	return 0;
-}
+/*------------------------------------------------------------*/
 
-/* for priv_delset() and priv_addset() */
 static inline int
 priv_setop_check(int a)
 {
@@ -273,13 +263,6 @@ priv_setop_check(int a)
 
 #define priv_setop_assert(a) assert(priv_setop_check(a))
 
-/*
- * we try to add all possible privileges to waive them later.
- *
- * when doing so, we need to expect EPERM
- */
-
-/* for setppriv */
 static inline int
 setppriv_check(int a)
 {
@@ -292,139 +275,163 @@ setppriv_check(int a)
 
 #define setppriv_assert(a) assert(setppriv_check(a))
 
-static void
-vjs_add_inheritable(priv_set_t *pset, enum jail_gen_e jge)
-{
-	switch (jge) {
-	case JAILG_SUBPROC_VCC:
-		break;
-	case JAILG_SUBPROC_CC:
-		priv_setop_assert(priv_addset(pset, PRIV_PROC_EXEC));
-		priv_setop_assert(priv_addset(pset, PRIV_PROC_FORK));
-		priv_setop_assert(priv_addset(pset, "file_read"));
-		priv_setop_assert(priv_addset(pset, "file_write"));
-		break;
-	case JAILG_SUBPROC_VCLLOAD:
-		break;
-	case JAILG_SUBPROC_WORKER:
-		break;
-	default:
-		INCOMPL();
-	}
-}
+/* ------------------------------------------------------------
+ * initialization of privilege sets from mgt_jail_solaris_tbl.h
+ * and implicit rules documented therein
+ */
 
-static void
-vjs_add_effective(priv_set_t *pset, enum jail_gen_e jge)
+static inline void
+vjs_add(priv_set_t *sets[VJS_NSET], unsigned mask, const char *priv)
 {
-	switch (jge) {
-	case JAILG_SUBPROC_VCC:
-		// open vmods
-		priv_setop_assert(priv_addset(pset, "file_read"));
-		// write .c output
-		priv_setop_assert(priv_addset(pset, "file_write"));
-		break;
-	case JAILG_SUBPROC_CC:
-		priv_setop_assert(priv_addset(pset, PRIV_PROC_EXEC));
-		priv_setop_assert(priv_addset(pset, PRIV_PROC_FORK));
-		priv_setop_assert(priv_addset(pset, "file_read"));
-		priv_setop_assert(priv_addset(pset, "file_write"));
-		break;
-	case JAILG_SUBPROC_VCLLOAD:
-		priv_setop_assert(priv_addset(pset, "file_read"));
-		break;
-	case JAILG_SUBPROC_WORKER:
-		priv_setop_assert(priv_addset(pset, "net_access"));
-		priv_setop_assert(priv_addset(pset, "file_read"));
-		priv_setop_assert(priv_addset(pset, "file_write"));
-		break;
-	default:
-		INCOMPL();
-	}
+	int i;
+	for (i = 0; i < VJS_NSET; i++)
+		if (mask & VJS_MASK(i))
+			priv_setop_assert(priv_addset(sets[i], priv));
 }
 
 /*
- * permitted is initialized from effective (see vjs_waive)
- * so only additionally required privileges need to be added here
+ * we reduce the limit set to the union of all jail level limit sets: first we
+ * try to enable all privileges which we possibly need, then we waive the
+ * inverse in vjs_init()
  */
 
-static void
-vjs_add_permitted(priv_set_t *pset, enum jail_gen_e jge)
+static int
+vjs_master_rules(void)
 {
-	(void) pset;
-	switch (jge) {
-	case JAILG_SUBPROC_VCC:
-	case JAILG_SUBPROC_CC:
-	case JAILG_SUBPROC_VCLLOAD:
-		break;
-	case JAILG_SUBPROC_WORKER:
-		/* vmod_unix getpeerucred() */
-		AZ(priv_addset(pset, PRIV_PROC_INFO));
-		break;
-	default:
-		INCOMPL();
-	}
-}
+	priv_set_t *punion = priv_allocset();
+	int vs, vj;
 
-/*
- * additional privileges needed by vjs_privsep -
- * will get waived in vjs_waive
- */
-static void
-vjs_add_initial(priv_set_t *pset, enum jail_gen_e jge)
-{
-	(void)jge;
+	AN(punion);
 
-	/* for setgid/setuid */
-	AZ(priv_addset(pset, PRIV_PROC_SETID));
-}
-
-/*
- * if we are not yet privilege-aware already (ie we have been started
- * not-privilege aware with euid 0), we try to grab any privileges we
- * will need later.
- * We will reduce to least privileges in vjs_waive
- *
- * We need to become privilege-aware to avoid setuid resetting them.
- */
-
-static void
-vjs_setup(enum jail_gen_e jge)
-{
-	priv_set_t *priv_all;
-
-	if (!(priv_all = priv_allocset())) {
-		MGT_Complain(C_SECURITY,
-		    "Solaris Jail warning: "
-		    " vjs_setup - priv_allocset failed: errno=%d (%s)",
-		    errno, vstrerror(errno));
-		return;
+	for (vs = VJS_INHERITABLE; vs <= VJS_PERMITTED; vs ++) {
+		priv_emptyset(punion);
+		for (vj = JAIL_SUBPROC; vj < JAIL_LIMIT; vj++)
+			priv_union(vjs_sets[vj][vs], punion);
+		priv_union(punion, vjs_sets[JAIL_MASTER_ANY][vs]);
 	}
 
-	priv_emptyset(priv_all);
+	priv_freeset(punion);
 
-	vjs_add_inheritable(priv_all, jge);
-	vjs_add_effective(priv_all, jge);
-	vjs_add_permitted(priv_all, jge);
-	vjs_add_initial(priv_all, jge);
+	return (0);
+}
 
-	/* try to get all possible privileges, expect EPERM here */
-	setppriv_assert(setppriv(PRIV_ON, PRIV_PERMITTED, priv_all));
-	setppriv_assert(setppriv(PRIV_ON, PRIV_EFFECTIVE, priv_all));
-	setppriv_assert(setppriv(PRIV_ON, PRIV_INHERITABLE, priv_all));
+static priv_set_t *
+vjs_alloc(void)
+{
+	priv_set_t *s;
 
-	priv_freeset(priv_all);
+	s = priv_allocset();
+	AN(s);
+	priv_emptyset(s);
+	return (s);
+}
+
+static int v_matchproto_(jail_init_f)
+vjs_init(char **args)
+{
+	priv_set_t **sets;
+	int vj, vs;
+
+	if (args != NULL && *args != NULL) {
+		ARGV_ERR("-jsolaris takes no arguments.\n");
+		return (0);
+	}
+
+	/* init privset for vjs_setuid() */
+	vjs_proc_setid = priv_allocset();
+	AN(vjs_proc_setid);
+	priv_emptyset(vjs_proc_setid);
+	priv_setop_assert(priv_addset(vjs_proc_setid, PRIV_PROC_SETID));
+
+	assert(JAIL_MASTER_ANY < JAIL_SUBPROC);
+	/* alloc privsets.
+	 * for master, anything but EFFECTIVE is shared
+	 */
+	for (vj = 0; vj < JAIL_SUBPROC; vj++)
+		for (vs = 0; vs < VJS_NSET; vs++) {
+			if (vj == JAIL_MASTER_ANY || vs == VJS_EFFECTIVE) {
+				vjs_sets[vj][vs] = vjs_alloc();
+				vjs_inverse[vj][vs] = vjs_alloc();
+			} else {
+				vjs_sets[vj][vs] =
+					vjs_sets[JAIL_MASTER_ANY][vs];
+				vjs_inverse[vj][vs] =
+					vjs_inverse[JAIL_MASTER_ANY][vs];
+			}
+		}
+
+	for (; vj < JAIL_LIMIT; vj++)
+		for (vs = 0; vs < VJS_NSET; vs++) {
+			vjs_sets[vj][vs] = vjs_alloc();
+			vjs_inverse[vj][vs] = vjs_alloc();
+		}
+
+	/* init from table */
+#define PRIV(name, mask, priv) vjs_add(vjs_sets[JAIL_ ## name], mask, priv);
+#include "mgt_jail_solaris_tbl.h"
+
+	/* SUBPROC implicit rules */
+	for (vj = JAIL_SUBPROC; vj < JAIL_LIMIT; vj++) {
+		sets = vjs_sets[vj];
+		priv_union(sets[VJS_EFFECTIVE], sets[VJS_PERMITTED]);
+		priv_union(sets[VJS_PERMITTED], sets[VJS_LIMIT]);
+		priv_union(sets[VJS_INHERITABLE], sets[VJS_LIMIT]);
+	}
+
+	vjs_master_rules();
+
+	/* MASTER implicit rules */
+	for (vj = 0; vj < JAIL_SUBPROC; vj++) {
+		sets = vjs_sets[vj];
+		priv_union(sets[VJS_EFFECTIVE], sets[VJS_PERMITTED]);
+		priv_union(sets[VJS_PERMITTED], sets[VJS_LIMIT]);
+		priv_union(sets[VJS_INHERITABLE], sets[VJS_LIMIT]);
+	}
+
+	/* attempt to enable privileges */
+	for (vs = VJS_PERMITTED; vs > VJS_EFFECTIVE; vs--)
+		setppriv_assert(setppriv(PRIV_ON, vjs_ptype[vs],
+		    vjs_sets[JAIL_MASTER_ANY][vs]));
+
+	/* generate inverse */
+	for (vj = 0; vj < JAIL_LIMIT; vj++)
+		for (vs = 0; vs < VJS_NSET; vs++) {
+			priv_copyset(vjs_sets[vj][vs], vjs_inverse[vj][vs]);
+			priv_inverse(vjs_inverse[vj][vs]);
+		}
+
+	vjs_master(JAIL_MASTER_LOW);
+
+	/* XXX LEAK: no _fini for priv_freeset() */
+	return (0);
 }
 
 static void
-vjs_privsep(enum jail_gen_e jge)
+vjs_waive(int jail)
 {
-	(void)jge;
+	priv_set_t **sets;
+	int i;
 
+	assert(jail >= 0);
+	assert(jail < JAIL_LIMIT);
+
+	sets = vjs_inverse[jail];
+
+	for (i = 0; i < VJS_NSET; i++)
+		AZ(setppriv(PRIV_OFF, vjs_ptype[i], sets[i]));
+}
+
+static void
+vjs_setuid(void)
+{
+	setppriv_assert(setppriv(PRIV_ON, PRIV_EFFECTIVE, vjs_proc_setid));
 	if (priv_ineffect(PRIV_PROC_SETID)) {
 		if (getgid() != mgt_param.gid)
 			XXXAZ(setgid(mgt_param.gid));
 		if (getuid() != mgt_param.uid)
 			XXXAZ(setuid(mgt_param.uid));
+		AZ(setppriv(PRIV_OFF, PRIV_EFFECTIVE, vjs_proc_setid));
+		AZ(setppriv(PRIV_OFF, PRIV_PERMITTED, vjs_proc_setid));
 	} else {
 		MGT_Complain(C_SECURITY,
 		    "Privilege %s missing, will not change uid/gid",
@@ -432,95 +439,27 @@ vjs_privsep(enum jail_gen_e jge)
 	}
 }
 
-/*
- * Waive most privileges in the child
- *
- * as of onnv_151a, we should end up with:
- *
- * > ppriv -v #pid of varnish child
- * PID:  .../varnishd ...
- * flags = PRIV_AWARE
- *      E: file_read,file_write,net_access
- *      I: none
- *      P: file_read,file_write,net_access,sys_resource
- *      L: file_read,file_write,net_access,sys_resource
- *
- * We should keep sys_resource in P in order to adjust our limits if we need to
- */
-
-static void
-vjs_waive(enum jail_gen_e jge)
-{
-	priv_set_t *effective, *inheritable, *permitted, *limited;
-
-	if (!(effective = priv_allocset()) ||
-	    !(inheritable = priv_allocset()) ||
-	    !(permitted = priv_allocset()) ||
-	    !(limited = priv_allocset())) {
-		MGT_Complain(C_SECURITY,
-		    "Solaris Jail warning: "
-		    " vjs_waive - priv_allocset failed: errno=%d (%s)",
-		    errno, vstrerror(errno));
-		return;
-	}
-
-	/*
-	 * inheritable and effective are distinct sets
-	 * effective is a subset of permitted
-	 * limit is the union of all
-	 */
-
-	priv_emptyset(inheritable);
-	vjs_add_inheritable(inheritable, jge);
-
-	priv_emptyset(effective);
-	vjs_add_effective(effective, jge);
-
-	priv_copyset(effective, permitted);
-	vjs_add_permitted(permitted, jge);
-
-	priv_copyset(inheritable, limited);
-	priv_union(permitted, limited);
-	/*
-	 * invert the sets and clear privileges such that setppriv will always
-	 * succeed
-	 */
-	priv_inverse(limited);
-	priv_inverse(permitted);
-	priv_inverse(effective);
-	priv_inverse(inheritable);
-
-	AZ(setppriv(PRIV_OFF, PRIV_LIMIT, limited));
-	AZ(setppriv(PRIV_OFF, PRIV_PERMITTED, permitted));
-	AZ(setppriv(PRIV_OFF, PRIV_EFFECTIVE, effective));
-	AZ(setppriv(PRIV_OFF, PRIV_INHERITABLE, inheritable));
-
-	priv_freeset(limited);
-	priv_freeset(permitted);
-	priv_freeset(effective);
-	priv_freeset(inheritable);
-}
-
 static void v_matchproto_(jail_subproc_f)
 vjs_subproc(enum jail_subproc_e jse)
 {
-	enum jail_gen_e jge = jail_subproc_gen(jse);
-	vjs_setup(jge);
-	vjs_privsep(jge);
-	vjs_waive(jge);
+	vjs_setuid();
+	vjs_waive(jse);
 }
 
 static void v_matchproto_(jail_master_f)
 vjs_master(enum jail_master_e jme)
 {
-	enum jail_gen_e jge = jail_master_gen(jme);
-	(void)jge;
-/*
-	if (jme == JAILG_MASTER_HIGH)
-		AZ(seteuid(0));
-	else
-		AZ(seteuid(vju_uid));
-*/
+	priv_set_t **sets;
+	int i;
+
+	assert(jme < JAIL_SUBPROC);
+
+	sets = vjs_sets[jme];
+
+	i = VJS_EFFECTIVE;
+	setppriv_assert(setppriv(PRIV_ON, vjs_ptype[i], sets[i]));
+
+	vjs_waive(jme);
 }
 
 const struct jail_tech jail_tech_solaris = {
