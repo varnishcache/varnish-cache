@@ -195,6 +195,7 @@ vmod_integer(VRT_CTX, struct VARGS(integer) *a)
 VCL_IP
 vmod_ip(VRT_CTX, struct VARGS(ip) *a)
 {
+	uintptr_t sn;
 	void *p;
 	VCL_IP retval = NULL;
 
@@ -202,6 +203,7 @@ vmod_ip(VRT_CTX, struct VARGS(ip) *a)
 	if (a->valid_fallback)
 		assert(VSA_Sane(a->fallback));
 
+	sn = WS_Snapshot(ctx->ws);
 	p = WS_Alloc(ctx->ws, vsa_suckaddr_len);
 	if (p == NULL) {
 		VRT_fail(ctx, "std.ip: insufficient workspace");
@@ -217,7 +219,7 @@ vmod_ip(VRT_CTX, struct VARGS(ip) *a)
 	if (retval != NULL)
 		return (retval);
 
-	WS_Reset(ctx->ws, (uintptr_t)p);
+	WS_Reset(ctx->ws, sn);
 
 	if (a->valid_fallback)
 		return (a->fallback);
