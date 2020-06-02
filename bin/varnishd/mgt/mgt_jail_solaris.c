@@ -323,12 +323,24 @@ vjs_alloc(void)
 static int v_matchproto_(jail_init_f)
 vjs_init(char **args)
 {
-	priv_set_t **sets, *permitted, *inheritable;
+	priv_set_t **sets, *permitted, *inheritable, *user = NULL;
+	const char *e;
 	int vj, vs;
 
 	if (args != NULL && *args != NULL) {
-		ARGV_ERR("-jsolaris takes no arguments.\n");
-		return (0);
+		for (;*args != NULL; args++) {
+			if (!strncmp(*args, "worker=", 7)) {
+				user = priv_str_to_set((*args) + 7, ",", &e);
+				if (user == NULL)
+					ARGV_ERR(
+					    "-jsolaris: parsing worker= "
+					    "argument failed near %s.\n",
+					    e);
+				continue;
+			}
+			ARGV_ERR("-jsolrais: unknown sub-argument '%s'\n",
+			    *args);
+		}
 	}
 
 	permitted = vjs_alloc();
@@ -371,6 +383,9 @@ vjs_init(char **args)
 	/* init from table */
 #define PRIV(name, mask, priv) vjs_add(vjs_sets[JAIL_ ## name], mask, priv);
 #include "mgt_jail_solaris_tbl.h"
+
+	if (user != NULL)
+		priv_union(user, vjs_sets[JAIL_SUBPROC_WORKER][VJS_EFFECTIVE]);
 
 	/* mask by available privs */
 	for (vj = 0; vj < JAIL_LIMIT; vj++) {

@@ -392,11 +392,21 @@ Varnish jails are a generalization over various platform specific
 methods to reduce the privileges of varnish processes. They may have
 specific options. Available jails are:
 
--j solaris
+-j <solaris[,worker=`privspec`]>
 
-  Reduce privileges(5) for `varnishd` and sub-process to the minimally
-  required set. Only available on platforms which have the setppriv(2)
-  call.
+  Reduce `privileges(5)` for `varnishd` and sub-process to the
+  minimally required set. Only available on platforms which have the
+  `setppriv(2)` call.
+
+  The optional `worker` argument can be used to pass a
+  privilege-specification (see `ppriv(1)`) by which to extend the
+  effective set of the varnish worker process. While extended
+  privileges may be required by custom vmods, it is always the more
+  secure to *not* use the `worker` option.
+
+  Example to grant basic privileges to the worker process::
+
+    -j solaris,worker=basic
 
 -j <unix[,user=`user`][,ccgroup=`group`][,workuser=`user`]>
 
