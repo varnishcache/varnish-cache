@@ -369,7 +369,6 @@ encode(VRT_CTX, enum encoding enc, enum case_e kase, VCL_BLOB b)
 {
 	ssize_t len;
 	char *buf;
-	uintptr_t snap;
 	unsigned space;
 
 	AENC(enc);
@@ -378,7 +377,6 @@ encode(VRT_CTX, enum encoding enc, enum case_e kase, VCL_BLOB b)
 		return (NULL);
 
 	CHECK_OBJ_NOTNULL(ctx->ws, WS_MAGIC);
-	snap = WS_Snapshot(ctx->ws);
 	space = WS_ReserveAll(ctx->ws);
 	buf = WS_Front(ctx->ws);
 
@@ -387,12 +385,10 @@ encode(VRT_CTX, enum encoding enc, enum case_e kase, VCL_BLOB b)
 	if (len == -1) {
 		ERRNOMEM(ctx, "cannot encode");
 		WS_Release(ctx->ws, 0);
-		WS_Reset(ctx->ws, snap);
 		return (NULL);
 	}
 	if (len == 0) {
 		WS_Release(ctx->ws, 0);
-		WS_Reset(ctx->ws, snap);
 		return ("");
 	}
 	buf[len] = '\0';
