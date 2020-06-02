@@ -180,6 +180,7 @@ VJ_make_subdir(const char *dname, const char *what, struct vsb *vsb)
 	if (vjt->make_subdir != NULL)
 		return (vjt->make_subdir(dname, what, vsb));
 
+	VJ_master(JAIL_MASTER_FILE);
 	if (mkdir(dname, 0755) < 0 && errno != EEXIST) {
 		e = errno;
 		if (vsb != NULL) {
@@ -193,6 +194,7 @@ VJ_make_subdir(const char *dname, const char *what, struct vsb *vsb)
 		}
 		return (1);
 	}
+	VJ_master(JAIL_MASTER_LOW);
 	return (0);
 }
 
