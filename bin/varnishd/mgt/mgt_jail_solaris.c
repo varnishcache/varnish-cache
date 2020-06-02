@@ -288,7 +288,7 @@ vjs_add(priv_set_t *sets[VJS_NSET], unsigned mask, const char *priv)
 			priv_setop_assert(priv_addset(sets[i], priv));
 }
 
-/* add SUBPROC INHERITABLE and PERMITTED to MASTER */
+/* add SUBPROC INHERITABLE and PERMITTED to MASTER PERMITTED */
 static int
 vjs_master_rules(void)
 {
@@ -301,7 +301,7 @@ vjs_master_rules(void)
 		priv_emptyset(punion);
 		for (vj = JAIL_SUBPROC; vj < JAIL_LIMIT; vj++)
 			priv_union(vjs_sets[vj][vs], punion);
-		priv_union(punion, vjs_sets[JAIL_MASTER_ANY][vs]);
+		priv_union(punion, vjs_sets[JAIL_MASTER_ANY][VJS_PERMITTED]);
 	}
 
 	priv_freeset(punion);
@@ -347,11 +347,11 @@ vjs_init(char **args)
 
 	assert(JAIL_MASTER_ANY < JAIL_SUBPROC);
 	/* alloc privsets.
-	 * for master, anything but EFFECTIVE is shared
+	 * for master, PERMITTED and LIMIT are shared
 	 */
 	for (vj = 0; vj < JAIL_SUBPROC; vj++)
 		for (vs = 0; vs < VJS_NSET; vs++) {
-			if (vj == JAIL_MASTER_ANY || vs == VJS_EFFECTIVE) {
+			if (vj == JAIL_MASTER_ANY || vs < VJS_PERMITTED) {
 				vjs_sets[vj][vs] = vjs_alloc();
 				vjs_inverse[vj][vs] = vjs_alloc();
 			} else {
@@ -397,9 +397,6 @@ vjs_init(char **args)
 		priv_union(sets[VJS_PERMITTED], sets[VJS_LIMIT]);
 		priv_union(sets[VJS_INHERITABLE], sets[VJS_LIMIT]);
 	}
-
-	/* extend inheritable */
-	AZ(vjs_priv_on(VJS_INHERITABLE, vjs_sets[JAIL_MASTER_ANY]));
 
 	/* generate inverse */
 	for (vj = 0; vj < JAIL_LIMIT; vj++)
@@ -453,6 +450,7 @@ vjs_subproc(enum jail_subproc_e jse)
 {
 
 	AZ(vjs_priv_on(VJS_EFFECTIVE, vjs_sets[jse]));
+	AZ(vjs_priv_on(VJS_INHERITABLE, vjs_sets[jse]));
 
 	vjs_setuid();
 	vjs_waive(jse);
@@ -465,6 +463,7 @@ vjs_master(enum jail_master_e jme)
 	assert(jme < JAIL_SUBPROC);
 
 	AZ(vjs_priv_on(VJS_EFFECTIVE, vjs_sets[jme]));
+	AZ(vjs_priv_on(VJS_INHERITABLE, vjs_sets[jme]));
 
 	vjs_waive(jme);
 }
