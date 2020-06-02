@@ -34,8 +34,9 @@ NEXT (scheduled 2020-09-15)
   largely rewritten. It now reduces privileges even further and thus
   should improve the security of Varnish on Solaris even more.
 
-* The Varnish Jail now accepts an optional ``worker=`` argument which
-  allows to extend the effective privilege set of the worker process.
+* The Varnish Jail for Solaris now accepts an optional ``worker=``
+  argument which allows to extend the effective privilege set of the
+  worker process.
 
 ================================
 Varnish Cache 6.4.0 (2020-03-16)
