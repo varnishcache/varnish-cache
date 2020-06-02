@@ -330,9 +330,8 @@ vjs_init(char **args)
 	priv_union(permitted, inheritable);
 
 	/* init privset for vjs_setuid() */
-	vjs_proc_setid = priv_allocset();
+	vjs_proc_setid = vjs_alloc();
 	AN(vjs_proc_setid);
-	priv_emptyset(vjs_proc_setid);
 	priv_setop_assert(priv_addset(vjs_proc_setid, PRIV_PROC_SETID));
 
 	assert(JAIL_MASTER_ANY < JAIL_SUBPROC);
