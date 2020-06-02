@@ -37,11 +37,11 @@
 
 /* ------------------------------------------------------------
  * MASTER
- * - only MASTER_EFFECTIVE is per JAIL state
+ * - only EFFECTIVE & INHERITABLE are per JAIL state
  * - other priv sets are shared across all MASTER_* JAIL states
  *
  * MASTER implicit rules (vjs_master_rules())
- * - INHERITABLE and PERMITTED joined from SUBPROC*
+ * - INHERITABLE and PERMITTED from SUBPROC* joined into PERMITTED
  * - implicit rules from above
  */
 PRIV(MASTER_LOW,	E	, "file_write")	// XXX vcl_boot
@@ -85,7 +85,7 @@ PRIV(SUBPROC_WORKER,	E	, PRIV_PROC_SETID)	// waived after setuid
 PRIV(SUBPROC_WORKER,	E	, "net_access")
 PRIV(SUBPROC_WORKER,	E	, "file_read")
 PRIV(SUBPROC_WORKER,	E	, "file_write")
-PRIV(SUBPROC_WORKER,	P	, PRIV_PROC_INFO)	/* vmod_unix */
+PRIV(SUBPROC_WORKER,	P	, PRIV_PROC_INFO)	// vmod_unix
 
 #undef E
 #undef I
