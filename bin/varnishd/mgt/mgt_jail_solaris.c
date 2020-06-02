@@ -289,12 +289,7 @@ vjs_add(priv_set_t *sets[VJS_NSET], unsigned mask, const char *priv)
 			priv_setop_assert(priv_addset(sets[i], priv));
 }
 
-/*
- * we reduce the limit set to the union of all jail level limit sets: first we
- * try to enable all privileges which we possibly need, then we waive the
- * inverse in vjs_init()
- */
-
+/* add SUBPROC INHERITABLE and PERMITTED to MASTER */
 static int
 vjs_master_rules(void)
 {
