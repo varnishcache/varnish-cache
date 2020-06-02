@@ -263,6 +263,17 @@ priv_setop_check(int a)
 
 #define priv_setop_assert(a) assert(priv_setop_check(a))
 
+/*------------------------------------------------------------*/
+
+static int
+vjs_priv_on(int vs, priv_set_t **set)
+{
+	assert(vs >= 0);
+	assert(vs < VJS_NSET);
+
+	return (setppriv(PRIV_ON, vjs_ptype[vs], set[vs]));
+}
+
 /* ------------------------------------------------------------
  * initialization of privilege sets from mgt_jail_solaris_tbl.h
  * and implicit rules documented therein
@@ -388,8 +399,7 @@ vjs_init(char **args)
 	}
 
 	/* extend inheritable */
-	vs = VJS_INHERITABLE;
-	AZ(setppriv(PRIV_ON, vjs_ptype[vs], vjs_sets[JAIL_MASTER_ANY][vs]));
+	AZ(vjs_priv_on(VJS_INHERITABLE, vjs_sets[JAIL_MASTER_ANY]));
 
 	/* generate inverse */
 	for (vj = 0; vj < JAIL_LIMIT; vj++)
@@ -441,13 +451,8 @@ vjs_setuid(void)
 static void v_matchproto_(jail_subproc_f)
 vjs_subproc(enum jail_subproc_e jse)
 {
-	priv_set_t **sets;
-	int i;
 
-	sets = vjs_sets[jse];
-
-	i = VJS_EFFECTIVE;
-	AZ(setppriv(PRIV_ON, vjs_ptype[i], sets[i]));
+	AZ(vjs_priv_on(VJS_EFFECTIVE, vjs_sets[jse]));
 
 	vjs_setuid();
 	vjs_waive(jse);
@@ -456,15 +461,10 @@ vjs_subproc(enum jail_subproc_e jse)
 static void v_matchproto_(jail_master_f)
 vjs_master(enum jail_master_e jme)
 {
-	priv_set_t **sets;
-	int i;
 
 	assert(jme < JAIL_SUBPROC);
 
-	sets = vjs_sets[jme];
-
-	i = VJS_EFFECTIVE;
-	AZ(setppriv(PRIV_ON, vjs_ptype[i], sets[i]));
+	AZ(vjs_priv_on(VJS_EFFECTIVE, vjs_sets[jme]));
 
 	vjs_waive(jme);
 }
