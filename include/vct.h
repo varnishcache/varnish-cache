@@ -34,9 +34,9 @@
 
 #include "vas.h"
 
-#define VCT_SP			(1<<0)
+#define VCT_OWS			(1<<0)
 #define VCT_CRLF		(1<<1)
-#define VCT_LWS			(VCT_CRLF | VCT_SP)
+#define VCT_LWS			(VCT_CRLF | VCT_OWS)
 #define VCT_CTL			(1<<2)
 #define VCT_ALPHA		(1<<3)
 #define VCT_SEPARATOR		(1<<4)
@@ -64,7 +64,8 @@ vct_is(int x, uint16_t y)
 	return (vct_typtab[x] & (y));
 }
 
-#define vct_issp(x) vct_is(x, VCT_SP)
+#define vct_isows(x) vct_is(x, VCT_OWS)
+#define vct_issp(x) vct_is(x, VCT_OWS)
 #define vct_ishex(x) vct_is(x, VCT_HEX)
 #define vct_islws(x) vct_is(x, VCT_LWS)
 #define vct_isctl(x) vct_is(x, VCT_CTL)
