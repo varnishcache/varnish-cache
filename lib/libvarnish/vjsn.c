@@ -201,20 +201,21 @@ vjsn_unicode(struct vjsn *js, char **d)
 }
 
 static char *
-vjsn_string(struct vjsn *js)
+vjsn_string(struct vjsn *js, char **e)
 {
 	char *p, *b;
 
+	AN(e);
 	vjsn_skip_ws(js);
 	VJSN_EXPECT(js, '"', NULL);
 	b = p = js->ptr;
 	while (*js->ptr != '"') {
 		if (*js->ptr == '\0') {
-			js->err = "Unterminate string";
+			js->err = "Unterminated string";
 			return (NULL);
 		}
 		if ((unsigned char)(*js->ptr) <= 0x1f) {
-			js->err = "unescaped control char in string";
+			js->err = "Unescaped control char in string";
 			return (NULL);
 		}
 		if (*js->ptr != '\\') {
@@ -242,6 +243,7 @@ vjsn_string(struct vjsn *js)
 	}
 	VJSN_EXPECT(js, '"', NULL);
 	*p = '\0';
+	*e = p;
 	return (b);
 }
 
@@ -249,7 +251,7 @@ static struct vjsn_val *
 vjsn_object(struct vjsn *js)
 {
 	struct vjsn_val *jsv, *jsve;
-	char *s;
+	char *s, *e;
 
 	VJSN_EXPECT(js, '{', NULL);
 
@@ -259,7 +261,7 @@ vjsn_object(struct vjsn *js)
 	vjsn_skip_ws(js);
 	if (*js->ptr != '}') {
 		while (1) {
-			s = vjsn_string(js);
+			s = vjsn_string(js, &e);
 			if (js->err != NULL)
 				return (jsv);
 			vjsn_skip_ws(js);
@@ -272,6 +274,7 @@ vjsn_object(struct vjsn *js)
 			}
 			CHECK_OBJ_NOTNULL(jsve, VJSN_VAL_MAGIC);
 			jsve->name = s;
+			jsve->name_e = e;
 			VTAILQ_INSERT_TAIL(&jsv->children, jsve, list);
 			vjsn_skip_ws(js);
 			if (*js->ptr == '}')
@@ -372,7 +375,7 @@ vjsn_value(struct vjsn *js)
 		return (vjsn_array(js));
 	if (*js->ptr== '"') {
 		jsv = vjsn_val_new(VJSN_STRING);
-		jsv->value = vjsn_string(js);
+		jsv->value = vjsn_string(js, &jsv->value_e);
 		if (js->err != NULL)
 			return (jsv);
 		AN(jsv->value);

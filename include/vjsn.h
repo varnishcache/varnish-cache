@@ -41,9 +41,11 @@ struct vjsn_val {
 #define VJSN_VAL_MAGIC		0x08a06b80
 	const char		*type;
 	const char		*name;
+	const char		*name_e;
 	VTAILQ_ENTRY(vjsn_val)	list;
 	VTAILQ_HEAD(,vjsn_val)	children;
 	char			*value;
+	char			*value_e;
 };
 
 struct vjsn {
