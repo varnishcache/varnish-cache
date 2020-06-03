@@ -35,6 +35,10 @@ if WITH_UNWIND
 AM_DISTCHECK_CONFIGURE_FLAGS += --with-unwind
 endif
 
+if WITH_LINUX_JAIL
+AM_DISTCHECK_CONFIGURE_FLAGS += --with-linux-jail
+endif
+
 install-data-local:
 	$(install_sh) -d -m 0755 $(DESTDIR)$(localstatedir)/varnish
 

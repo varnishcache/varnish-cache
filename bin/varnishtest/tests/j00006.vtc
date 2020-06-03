@@ -1,0 +1,21 @@
+varnishtest "Code coverage basic Linux jail"
+
+feature user_varnish
+feature group_varnish
+feature root
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 \
+	-jail "-jlinux,user=varnish,ccgroup=varnish,mgt_filter=/tmp/mgt_filter,vcc_filter=/tmp/vcc_filter,wrk_filter=/tmp/wrk_filter" \
+	-vcl+backend {
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run

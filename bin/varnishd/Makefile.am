@@ -119,6 +119,10 @@ varnishd_SOURCES += \
 	storage/storage_persistent_subr.c
 endif
 
+if WITH_LINUX_JAIL
+varnishd_SOURCES +=	mgt/mgt_jail_linux.c
+endif
+
 nodist_varnishd_SOURCES = \
 	builtin_vcl.c
 
@@ -175,6 +179,7 @@ varnishd_LDADD = \
 	$(top_builddir)/lib/libvgz/libvgz.a \
 	@SAN_LDFLAGS@ \
 	@JEMALLOC_LDADD@ \
+	@SECCOMP_LDADD@ \
 	@PCRE_LIBS@ \
 	${DL_LIBS} ${PTHREAD_LIBS} ${NET_LIBS} ${RT_LIBS} ${LIBM}
 

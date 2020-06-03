@@ -162,6 +162,7 @@ void VJ_rmdir(const char *);
 
 extern const struct jail_tech jail_tech_unix;
 extern const struct jail_tech jail_tech_solaris;
+extern const struct jail_tech jail_tech_linux;
 
 /* mgt_main.c */
 extern struct vsb *vident;

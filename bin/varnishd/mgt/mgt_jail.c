@@ -86,6 +86,9 @@ static const struct choice vj_choice[] = {
 #endif
 	{ "unix",	&jail_tech_unix },
 	{ "none",	&jail_tech_none },
+#ifdef WITH_LINUX_JAIL
+	{ "linux_experimental",	&jail_tech_linux},
+#endif
 	{ NULL,		NULL },
 };
 

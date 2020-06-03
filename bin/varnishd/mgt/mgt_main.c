@@ -159,6 +159,9 @@ usage(void)
 #ifdef HAVE_SETPPRIV
 	printf(FMT, "", "  -j solaris");
 #endif
+#ifdef WITH_LINUX_JAIL
+	printf(FMT, "", "  -j linux_experimental");
+#endif
 	printf(FMT, "", "  -j unix");
 	printf(FMT, "", "  -j none");
 

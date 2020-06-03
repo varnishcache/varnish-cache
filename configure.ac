@@ -365,8 +365,29 @@ else
     ])
 fi
 
+
 AM_CONDITIONAL([WITH_UNWIND],
 	[test "$with_unwind" = yes])
+
+AC_ARG_WITH([linux_jail],
+			[AS_HELP_STRING([--with-linux-jail],
+			[Turn on experimental linux jailing support])],
+			[],
+			[with_linux_jail=check])
+
+case $target in
+	*-*-linux*)
+		if test "$with_linux_jail" = yes; then
+			AC_DEFINE([WITH_LINUX_JAIL], [1], [Define to 1 when using Linux Jailing Mechanism])
+			AC_CHECK_LIB([seccomp], [seccomp_init],
+				  [SECCOMP_LDADD="-lseccomp"],
+				  [AC_MSG_WARN([No libseccomp found])])
+		fi
+		;;
+esac
+
+AM_CONDITIONAL([WITH_LINUX_JAIL], [test "$with_linux_jail" = yes])
+AC_SUBST(SECCOMP_LDADD)
 
 # white lie - we don't actually test it
 AC_MSG_CHECKING([whether daemon() works])
