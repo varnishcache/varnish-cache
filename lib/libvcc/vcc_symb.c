@@ -49,7 +49,7 @@ struct symtab {
 #define SYMTAB_MAGIC			0x084d9c8a
 	unsigned			nlen;
 	const char			*name;
-	struct symtab			*parent;
+	const struct symtab		*parent;
 	VTAILQ_ENTRY(symtab)		list;
 	VTAILQ_HEAD(,symtab)		children;
 	VTAILQ_HEAD(,symbol)		symbols;
@@ -196,7 +196,7 @@ static struct symbol *
 vcc_sym_in_tab(struct vcc *tl, struct symtab *st,
     vcc_kind_t kind, int vlo, int vhi)
 {
-	struct symtab *pst;
+	const struct symtab *pst;
 	struct symbol *sym, *psym;
 
 	VTAILQ_FOREACH(sym, &st->symbols, list) {
