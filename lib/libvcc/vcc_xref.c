@@ -358,21 +358,6 @@ vcc_CheckUses(struct vcc *tl)
 
 /*---------------------------------------------------------------------*/
 
-static int sym_type_len = 0;
-
-static void v_matchproto_(symwalk_f)
-vcc_xreftable_len(struct vcc *tl, const struct symbol *sym)
-{
-	int len;
-
-	(void)tl;
-	CHECK_OBJ_NOTNULL(sym, SYMBOL_MAGIC);
-	CHECK_OBJ_NOTNULL(sym->type, TYPE_MAGIC);
-	len = strlen(sym->type->name);
-	if (sym_type_len < len)
-		sym_type_len = len;
-}
-
 static void v_matchproto_(symwalk_f)
 vcc_instance_info(struct vcc *tl, const struct symbol *sym)
 {
@@ -391,6 +376,23 @@ VCC_InstanceInfo(struct vcc *tl)
 	VCC_WalkSymbols(tl, vcc_instance_info, SYM_MAIN, SYM_INSTANCE);
 	Fc(tl, 0, "\t{ .p = NULL, .name = \"\" }\n");
 	Fc(tl, 0, "};\n");
+}
+
+/*---------------------------------------------------------------------*/
+
+static int sym_type_len;
+
+static void v_matchproto_(symwalk_f)
+vcc_xreftable_len(struct vcc *tl, const struct symbol *sym)
+{
+	int len;
+
+	(void)tl;
+	CHECK_OBJ_NOTNULL(sym, SYMBOL_MAGIC);
+	CHECK_OBJ_NOTNULL(sym->type, TYPE_MAGIC);
+	len = strlen(sym->type->name);
+	if (sym_type_len < len)
+		sym_type_len = len;
 }
 
 static void v_matchproto_(symwalk_f)
@@ -413,10 +415,13 @@ void
 VCC_XrefTable(struct vcc *tl)
 {
 
-	Fc(tl, 0, "\n/*\n * Symbol Table\n *\n");
-	VCC_WalkSymbols(tl, vcc_xreftable_len, SYM_MAIN, SYM_NONE);
-	VCC_WalkSymbols(tl, vcc_xreftable, SYM_MAIN, SYM_NONE);
+#define VCC_NAMESPACE(U, l)						\
+	Fc(tl, 0, "\n/*\n * Symbol Table " #U "\n *\n");		\
+	sym_type_len = 0;						\
+	VCC_WalkSymbols(tl, vcc_xreftable_len, SYM_##U, SYM_NONE);	\
+	VCC_WalkSymbols(tl, vcc_xreftable, SYM_##U, SYM_NONE);		\
 	Fc(tl, 0, "*/\n\n");
+#include "vcc_namespace.h"
 }
 
 /*---------------------------------------------------------------------

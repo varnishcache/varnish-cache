@@ -110,6 +110,8 @@ typedef const struct type	*vcc_type_t;
  * XXX: type methods might move in a more comprehensive direction.
  */
 struct vcc_method {
+	unsigned		magic;
+#define VCC_METHOD_MAGIC	0x594108cd
 	vcc_type_t		type;
 	const char		*name;
 	const char		*impl;
@@ -423,6 +425,7 @@ void vcc_AddToken(struct vcc *tl, unsigned tok, const char *b,
 
 /* vcc_types.c */
 vcc_type_t VCC_Type(const char *p);
+void vcc_Type_Init(struct vcc *tl);
 
 /* vcc_var.c */
 sym_wildcard_t vcc_Var_Wildcard;

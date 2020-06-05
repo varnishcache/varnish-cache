@@ -647,6 +647,8 @@ vcc_CompileSource(struct vcc *tl, struct source *sp, const char *jfile)
 
 	vcc_Var_Init(tl);
 
+	vcc_Type_Init(tl);
+
 	Fh(tl, 0, "\nextern const struct VCL_conf VCL_conf;\n");
 
 	/* Register and lex the main source */
