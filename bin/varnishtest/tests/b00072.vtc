@@ -1,0 +1,21 @@
+varnishtest "failure in vcl_recv"
+
+varnish v1 -vcl {
+	import vtc;
+
+	backend be none;
+
+	sub vcl_recv {
+		return (fail);
+	}
+
+	sub vcl_hash {
+		vtc.panic("on purpose");
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 503
+} -run
