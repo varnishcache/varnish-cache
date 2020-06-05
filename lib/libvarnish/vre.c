@@ -36,6 +36,7 @@
 #include "vdef.h"
 
 #include "vas.h"	// XXX Flexelint "not used" - but req'ed for assert()
+#include "vsb.h"
 #include "miniobj.h"
 
 #include "vre.h"
@@ -146,4 +147,18 @@ VRE_free(vre_t **vv)
 	if (v->re != NULL)
 		pcre_free(v->re);
 	FREE_OBJ(v);
+}
+
+void
+VRE_quote(struct vsb *vsb, const char *src)
+{
+	const char *b, *e;
+
+	CHECK_OBJ_NOTNULL(vsb, VSB_MAGIC);
+	if (src == NULL)
+		return;
+	for (b = src; (e = strstr(b, "\\E")) != NULL; b = e + 2)
+		VSB_printf(vsb, "\\Q%.*s\\\\EE", (int)(e - b), b);
+	if (*b != '\0')
+		VSB_printf(vsb, "\\Q%s\\E", b);
 }

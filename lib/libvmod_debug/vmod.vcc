@@ -300,3 +300,7 @@ fail any rollback before ok_rollback() is called
 $Function VOID ok_rollback()
 
 Allow rollbacks. Must be called before the end of the task.
+
+$Function STRING re_quote(STRING)
+
+Quote an input string to be usable for an exact match in a regular expression.

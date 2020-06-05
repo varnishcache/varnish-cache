@@ -38,6 +38,7 @@
 #define VRE_H_INCLUDED
 
 struct vre;
+struct vsb;
 
 struct vre_limits {
 	unsigned	match;
@@ -59,5 +60,6 @@ int VRE_exec(const vre_t *code, const char *subject, int length,
     int startoffset, int options, int *ovector, int ovecsize,
     const volatile struct vre_limits *lim);
 void VRE_free(vre_t **);
+void VRE_quote(struct vsb *, const char *);
 
 #endif /* VRE_H_INCLUDED */
