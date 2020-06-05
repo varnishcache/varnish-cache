@@ -884,6 +884,12 @@ cnt_recv(struct worker *wrk, struct req *req)
 	}
 
 	VCL_recv_method(req->vcl, wrk, req, NULL, NULL);
+
+	if (recv_handling == VCL_RET_FAIL) {
+		req->req_step = R_STP_VCLFAIL;
+		return (REQ_FSM_MORE);
+	}
+
 	if (wrk->handling == VCL_RET_VCL && req->restarts == 0) {
 		// Req_Rollback has happened in VPI_vcl_select
 		assert(WS_Snapshot(req->ws) == req->ws_req);
