@@ -252,7 +252,8 @@ vcc_VmodSymbols(struct vcc *tl, struct symbol *msym)
 		VSB_clear(buf);
 		VSB_printf(buf, "%s.%s", msym->name, vv2->value);
 		AZ(VSB_finish(buf));
-		fsym = VCC_MkSym(tl, VSB_data(buf), kind, VCL_LOW, VCL_HIGH);
+		fsym = VCC_MkSym(tl, VSB_data(buf), SYM_MAIN, kind,
+		    VCL_LOW, VCL_HIGH);
 		AN(fsym);
 
 		if (kind == SYM_FUNC) {
@@ -296,7 +297,7 @@ vcc_ParseImport(struct vcc *tl)
 	}
 	tmod = tl->t;
 
-	msym = VCC_SymbolGet(tl, SYM_VMOD, SYMTAB_CREATE, XREF_NONE);
+	msym = VCC_SymbolGet(tl, SYM_MAIN, SYM_VMOD, SYMTAB_CREATE, XREF_NONE);
 	ERRCHK(tl);
 	AN(msym);
 
@@ -454,7 +455,8 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 
 	SkipToken(tl, '=');
 	ExpectErr(tl, ID);
-	osym = VCC_SymbolGet(tl, SYM_OBJECT, SYMTAB_EXISTING, XREF_NONE);
+	osym = VCC_SymbolGet(tl, SYM_MAIN, SYM_OBJECT, SYMTAB_EXISTING,
+	    XREF_NONE);
 	ERRCHK(tl);
 	AN(osym);
 	CAST_OBJ_NOTNULL(vv, osym->eval_priv, VJSN_VAL_MAGIC);

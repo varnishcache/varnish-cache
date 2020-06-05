@@ -95,7 +95,7 @@ int
 vcc_CheckReferences(struct vcc *tl)
 {
 
-	VCC_WalkSymbols(tl, vcc_checkref, SYM_NONE);
+	VCC_WalkSymbols(tl, vcc_checkref, SYM_MAIN, SYM_NONE);
 	return (tl->err);
 }
 
@@ -248,7 +248,7 @@ int
 vcc_CheckAction(struct vcc *tl)
 {
 
-	VCC_WalkSymbols(tl, vcc_checkaction, SYM_SUB);
+	VCC_WalkSymbols(tl, vcc_checkaction, SYM_MAIN, SYM_SUB);
 	return (tl->err);
 }
 
@@ -352,7 +352,7 @@ int
 vcc_CheckUses(struct vcc *tl)
 {
 
-	VCC_WalkSymbols(tl, vcc_checkuses, SYM_SUB);
+	VCC_WalkSymbols(tl, vcc_checkuses, SYM_MAIN, SYM_SUB);
 	return (tl->err);
 }
 
@@ -388,7 +388,7 @@ void
 VCC_InstanceInfo(struct vcc *tl)
 {
 	Fc(tl, 0, "\nconst struct vpi_ii VGC_instance_info[] = {\n");
-	VCC_WalkSymbols(tl, vcc_instance_info, SYM_INSTANCE);
+	VCC_WalkSymbols(tl, vcc_instance_info, SYM_MAIN, SYM_INSTANCE);
 	Fc(tl, 0, "\t{ .p = NULL, .name = \"\" }\n");
 	Fc(tl, 0, "};\n");
 }
@@ -414,8 +414,8 @@ VCC_XrefTable(struct vcc *tl)
 {
 
 	Fc(tl, 0, "\n/*\n * Symbol Table\n *\n");
-	VCC_WalkSymbols(tl, vcc_xreftable_len, SYM_NONE);
-	VCC_WalkSymbols(tl, vcc_xreftable, SYM_NONE);
+	VCC_WalkSymbols(tl, vcc_xreftable_len, SYM_MAIN, SYM_NONE);
+	VCC_WalkSymbols(tl, vcc_xreftable, SYM_MAIN, SYM_NONE);
 	Fc(tl, 0, "*/\n\n");
 }
 

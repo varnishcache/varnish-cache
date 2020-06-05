@@ -839,7 +839,7 @@ VCC_New(void)
 
 	for (i = 1; i < VCL_MET_MAX; i++) {
 		sym = VCC_MkSym(tl, method_tab[i].name,
-		    SYM_SUB, VCL_LOW, VCL_HIGH);
+		    SYM_MAIN, SYM_SUB, VCL_LOW, VCL_HIGH);
 		p = vcc_NewProc(tl, sym);
 		p->method = &method_tab[i];
 		VSB_printf(p->cname, "VGC_function_%s", p->method->name);
@@ -906,7 +906,7 @@ vcc_predef_vcl(struct vcc *vcc, const char *name)
 {
 	struct symbol *sym;
 
-	sym = VCC_MkSym(vcc, name, SYM_VCL, VCL_LOW, VCL_HIGH);
+	sym = VCC_MkSym(vcc, name, SYM_MAIN, SYM_VCL, VCL_LOW, VCL_HIGH);
 	AN(sym);
 	sym->type = VCL;
 	sym->r_methods = VCL_MET_RECV;

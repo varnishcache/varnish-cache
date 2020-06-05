@@ -184,7 +184,7 @@ class vardef(object):
         ctyp = vcltypes[self.typ]
 
         # fo.write("\t{ \"%s\", %s,\n" % (nm, self.typ))
-        fo.write("\tsym = VCC_MkSym(tl, \"%s\", " % self.nam)
+        fo.write("\tsym = VCC_MkSym(tl, \"%s\", SYM_MAIN," % self.nam)
         if self.typ == "HEADER":
             fo.write(" SYM_NONE, %d, %d);\n" % (self.vlo, self.vhi))
             fo.write("\tAN(sym);\n")

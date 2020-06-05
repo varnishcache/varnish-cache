@@ -40,8 +40,28 @@
 #include "vct.h"
 
 /*--------------------------------------------------------------------*/
+
 #define VCC_KIND(U,l) const struct kind SYM_##U[1] = {{ KIND_MAGIC, #l}};
 #include "tbl/symbol_kind.h"
+
+/*--------------------------------------------------------------------*/
+
+struct vcc_namespace {
+	unsigned		magic;
+#define VCC_NAMESPACE_MAGIC	0x27b842f4
+	const char		*name;
+	enum vcc_namespace_e	id;
+};
+
+#define VCC_NAMESPACE(U, l)				\
+	static const struct vcc_namespace sym_##l = {	\
+		VCC_NAMESPACE_MAGIC,			\
+		#l,					\
+		VCC_NAMESPACE_##U			\
+	};						\
+	vcc_ns_t SYM_##U = &sym_##l;
+#include "vcc_namespace.h"
+
 /*--------------------------------------------------------------------*/
 
 struct symtab {
@@ -235,7 +255,7 @@ const struct symmode SYMTAB_EXISTING[1] = {{"Symbol not found"}};
 const struct symmode SYMTAB_PARTIAL[1] = {{"Symbol not found"}};
 
 struct symbol *
-VCC_SymbolGet(struct vcc *tl, vcc_kind_t kind,
+VCC_SymbolGet(struct vcc *tl, vcc_ns_t ns, vcc_kind_t kind,
     const struct symmode *e, const struct symxref *x)
 {
 	struct symtab *st, *st2 = NULL;
@@ -243,6 +263,8 @@ VCC_SymbolGet(struct vcc *tl, vcc_kind_t kind,
 	struct token *t0, *tn, *tn1, *tn2 = NULL;
 
 	AN(tl);
+	CHECK_OBJ_NOTNULL(ns, VCC_NAMESPACE_MAGIC);
+	CHECK_OBJ_NOTNULL(kind, KIND_MAGIC);
 	AN(e);
 	AN(x);
 	AN(x->name);
@@ -256,7 +278,7 @@ VCC_SymbolGet(struct vcc *tl, vcc_kind_t kind,
 		return (NULL);
 	}
 
-	st = tl->syms;
+	st = tl->syms[ns->id];
 	t0 = tl->t;
 	tn = tl->t;
 	while (1) {
@@ -343,19 +365,21 @@ VCC_SymbolGet(struct vcc *tl, vcc_kind_t kind,
 }
 
 struct symbol *
-VCC_MkSym(struct vcc *tl, const char *b, vcc_kind_t kind, int vlo, int vhi)
+VCC_MkSym(struct vcc *tl, const char *b, vcc_ns_t ns, vcc_kind_t kind,
+    int vlo, int vhi)
 {
 	struct symtab *st;
 	struct symbol *sym;
 
 	AN(tl);
 	AN(b);
+	CHECK_OBJ_NOTNULL(ns, VCC_NAMESPACE_MAGIC);
 	CHECK_OBJ_NOTNULL(kind, KIND_MAGIC);
 	assert(vlo <= vhi);
 
-	if (tl->syms == NULL)
-		tl->syms = vcc_symtab_new("");
-	st = vcc_symtab_str(tl->syms, b, NULL);
+	if (tl->syms[ns->id] == NULL)
+		tl->syms[ns->id] = vcc_symtab_new("");
+	st = vcc_symtab_str(tl->syms[ns->id], b, NULL);
 	AN(st);
 	sym = vcc_sym_in_tab(tl, st, kind, vlo, vhi);
 	AZ(sym);
@@ -386,10 +410,11 @@ vcc_walksymbols(struct vcc *tl, const struct symtab *root,
 }
 
 void
-VCC_WalkSymbols(struct vcc *tl, symwalk_f *func, vcc_kind_t kind)
+VCC_WalkSymbols(struct vcc *tl, symwalk_f *func, vcc_ns_t ns, vcc_kind_t kind)
 {
 
-	vcc_walksymbols(tl, tl->syms, func, kind);
+	CHECK_OBJ_NOTNULL(ns, VCC_NAMESPACE_MAGIC);
+	vcc_walksymbols(tl, tl->syms[ns->id], func, kind);
 }
 
 void
@@ -434,7 +459,7 @@ VCC_HandleSymbol(struct vcc *tl, vcc_type_t fmt, const char *pfx)
 	assert(kind != SYM_NONE);
 
 	t = tl->t;
-	sym = VCC_SymbolGet(tl, SYM_NONE, SYMTAB_NOERR, XREF_NONE);
+	sym = VCC_SymbolGet(tl, SYM_MAIN, SYM_NONE, SYMTAB_NOERR, XREF_NONE);
 	if (sym != NULL && sym->def_b != NULL && kind == sym->kind) {
 		p = sym->kind->name;
 		VSB_printf(tl->sb, "%c%s '%.*s' redefined.\n",
@@ -459,7 +484,8 @@ VCC_HandleSymbol(struct vcc *tl, vcc_type_t fmt, const char *pfx)
 		return (sym);
 	}
 	if (sym == NULL)
-		sym = VCC_SymbolGet(tl, kind, SYMTAB_CREATE, XREF_NONE);
+		sym = VCC_SymbolGet(tl, SYM_MAIN, kind, SYMTAB_CREATE,
+		    XREF_NONE);
 	if (sym == NULL)
 		return (NULL);
 	AN(sym);

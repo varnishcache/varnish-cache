@@ -182,8 +182,8 @@ vcc_Compound(struct vcc *tl)
 			tl->err = 1;
 			return;
 		case ID:
-			sym = VCC_SymbolGet(tl, SYM_NONE, SYMTAB_NOERR,
-			    XREF_NONE);
+			sym = VCC_SymbolGet(tl, SYM_MAIN, SYM_NONE,
+			    SYMTAB_NOERR, XREF_NONE);
 			if (sym == NULL) {
 				VSB_printf(tl->sb, "Symbol not found.\n");
 				vcc_ErrWhere(tl, tl->t);
@@ -228,7 +228,7 @@ vcc_ParseFunction(struct vcc *tl)
 	ERRCHK(tl);
 
 	t = tl->t;
-	sym = VCC_SymbolGet(tl, SYM_SUB, SYMTAB_CREATE, XREF_DEF);
+	sym = VCC_SymbolGet(tl, SYM_MAIN, SYM_SUB, SYMTAB_CREATE, XREF_DEF);
 	ERRCHK(tl);
 	AN(sym);
 	p = sym->proc;
@@ -432,5 +432,6 @@ vcc_Parse_Init(struct vcc *tl)
 	struct toplev *tp;
 
 	for (tp = toplev; tp->name != NULL; tp++)
-		AN(VCC_MkSym(tl, tp->name, SYM_RESERVED, tp->vcllo, tp->vclhi));
+		AN(VCC_MkSym(tl, tp->name, SYM_MAIN, SYM_RESERVED,
+		    tp->vcllo, tp->vclhi));
 }

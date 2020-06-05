@@ -13,6 +13,7 @@ libvcc_a_CFLAGS = \
 
 libvcc_a_SOURCES = \
 	vcc_compile.h \
+	vcc_namespace.h \
 	vcc_token_defs.h \
 	vcc_acl.c \
 	vcc_action.c \
