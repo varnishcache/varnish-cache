@@ -49,7 +49,7 @@ vcc_act_call(struct vcc *tl, struct token *t, struct symbol *sym)
 	(void)t;
 	ExpectErr(tl, ID);
 	t0 = tl->t;
-	sym = VCC_SymbolGet(tl, SYM_SUB, SYMTAB_CREATE, XREF_REF);
+	sym = VCC_SymbolGet(tl, SYM_MAIN, SYM_SUB, SYMTAB_CREATE, XREF_REF);
 	if (sym != NULL) {
 		vcc_AddCall(tl, t0, sym);
 		VCC_GlobalSymbol(sym, SUB, "VGC_function");
@@ -124,7 +124,7 @@ vcc_act_set(struct vcc *tl, struct token *t, struct symbol *sym)
 	(void)t;
 	ExpectErr(tl, ID);
 	t = tl->t;
-	sym = VCC_SymbolGet(tl, SYM_VAR, SYMTAB_EXISTING, XREF_NONE);
+	sym = VCC_SymbolGet(tl, SYM_MAIN, SYM_VAR, SYMTAB_EXISTING, XREF_NONE);
 	ERRCHK(tl);
 	AN(sym);
 	vcc_AddUses(tl, t, tl->t, sym, XREF_WRITE);
@@ -162,7 +162,7 @@ vcc_act_unset(struct vcc *tl, struct token *t, struct symbol *sym)
 	/* XXX: Wrong, should use VCC_Expr(HEADER) */
 	ExpectErr(tl, ID);
 	t = tl->t;
-	sym = VCC_SymbolGet(tl, SYM_VAR, SYMTAB_EXISTING, XREF_NONE);
+	sym = VCC_SymbolGet(tl, SYM_MAIN, SYM_VAR, SYMTAB_EXISTING, XREF_NONE);
 	ERRCHK(tl);
 	AN(sym);
 	if (sym->u_methods == 0) {
@@ -281,7 +281,7 @@ vcc_act_return_vcl(struct vcc *tl)
 
 	SkipToken(tl, '(');
 	ExpectErr(tl, ID);
-	sym = VCC_SymbolGet(tl, SYM_VCL, SYMTAB_EXISTING, XREF_NONE);
+	sym = VCC_SymbolGet(tl, SYM_MAIN, SYM_VCL, SYMTAB_EXISTING, XREF_NONE);
 	ERRCHK(tl);
 	AN(sym);
 	if (sym->eval_priv == NULL) {
@@ -402,7 +402,8 @@ vcc_act_synthetic(struct vcc *tl, struct token *t, struct symbol *sym)
 #define ACT(name, func, mask)						\
 	do {								\
 		const char pp[] = #name;				\
-		sym = VCC_MkSym(tl, pp, SYM_ACTION, VCL_LOW, VCL_HIGH);	\
+		sym = VCC_MkSym(tl, pp, SYM_MAIN, SYM_ACTION, VCL_LOW,	\
+		    VCL_HIGH);						\
 		AN(sym);						\
 		sym->action = func;					\
 		sym->action_mask = (mask);				\

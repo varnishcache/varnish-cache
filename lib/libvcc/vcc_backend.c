@@ -444,7 +444,7 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 				vcc_NextToken(tl);
 				(void)vcc_default_probe(tl);
 			} else {
-				pb = VCC_SymbolGet(tl, SYM_PROBE,
+				pb = VCC_SymbolGet(tl, SYM_MAIN, SYM_PROBE,
 				    SYMTAB_EXISTING, XREF_REF);
 				ERRCHK(tl);
 				AN(pb);

@@ -70,7 +70,7 @@ vcc_stevedore(struct vcc *vcc, const char *stv_name)
 
 	CHECK_OBJ_NOTNULL(vcc, VCC_MAGIC);
 	bprintf(buf, "storage.%s", stv_name);
-	sym = VCC_MkSym(vcc, buf, SYM_VAR, VCL_LOW, VCL_41);
+	sym = VCC_MkSym(vcc, buf, SYM_MAIN, SYM_VAR, VCL_LOW, VCL_41);
 	AN(sym);
 	sym->type = STEVEDORE;
 	sym->eval = vcc_Eval_Var;

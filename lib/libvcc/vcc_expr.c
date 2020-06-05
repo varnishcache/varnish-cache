@@ -697,7 +697,8 @@ vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	switch (tl->t->tok) {
 	case ID:
 		t = tl->t;
-		sym = VCC_SymbolGet(tl, SYM_NONE, SYMTAB_PARTIAL, XREF_REF);
+		sym = VCC_SymbolGet(tl, SYM_MAIN, SYM_NONE, SYMTAB_PARTIAL,
+		    XREF_REF);
 		ERRCHK(tl);
 		AN(sym);
 		if (sym->kind == SYM_FUNC && sym->type == VOID) {
@@ -1070,7 +1071,7 @@ cmp_acl(struct vcc *tl, struct expr **e, const struct cmps *cp)
 
 	vcc_NextToken(tl);
 	vcc_ExpectVid(tl, "ACL");
-	sym = VCC_SymbolGet(tl, SYM_ACL, SYMTAB_CREATE, XREF_REF);
+	sym = VCC_SymbolGet(tl, SYM_MAIN, SYM_ACL, SYMTAB_CREATE, XREF_REF);
 	ERRCHK(tl);
 	AN(sym);
 	VCC_GlobalSymbol(sym, ACL, ACL_SYMBOL_PREFIX);
@@ -1483,31 +1484,31 @@ vcc_Expr_Init(struct vcc *tl)
 {
 	struct symbol *sym;
 
-	sym = VCC_MkSym(tl, "regsub", SYM_FUNC, VCL_LOW, VCL_HIGH);
+	sym = VCC_MkSym(tl, "regsub", SYM_MAIN, SYM_FUNC, VCL_LOW, VCL_HIGH);
 	AN(sym);
 	sym->type = STRING;
 	sym->eval = vcc_Eval_Regsub;
 	sym->eval_priv = NULL;
 
-	sym = VCC_MkSym(tl, "regsuball", SYM_FUNC, VCL_LOW, VCL_HIGH);
+	sym = VCC_MkSym(tl, "regsuball", SYM_MAIN, SYM_FUNC, VCL_LOW, VCL_HIGH);
 	AN(sym);
 	sym->type = STRING;
 	sym->eval = vcc_Eval_Regsub;
 	sym->eval_priv = sym;
 
-	sym = VCC_MkSym(tl, "true", SYM_FUNC, VCL_LOW, VCL_HIGH);
+	sym = VCC_MkSym(tl, "true", SYM_MAIN, SYM_FUNC, VCL_LOW, VCL_HIGH);
 	AN(sym);
 	sym->type = BOOL;
 	sym->eval = vcc_Eval_BoolConst;
 	sym->eval_priv = sym;
 
-	sym = VCC_MkSym(tl, "false", SYM_FUNC, VCL_LOW, VCL_HIGH);
+	sym = VCC_MkSym(tl, "false", SYM_MAIN, SYM_FUNC, VCL_LOW, VCL_HIGH);
 	AN(sym);
 	sym->type = BOOL;
 	sym->eval = vcc_Eval_BoolConst;
 	sym->eval_priv = NULL;
 
-	sym = VCC_MkSym(tl, "default", SYM_FUNC, VCL_LOW, VCL_HIGH);
+	sym = VCC_MkSym(tl, "default", SYM_MAIN, SYM_FUNC, VCL_LOW, VCL_HIGH);
 	AN(sym);
 	sym->type = BACKEND;	// ... can also (sometimes) deliver PROBE
 	sym->eval = vcc_Eval_Default;

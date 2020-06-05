@@ -132,6 +132,7 @@ struct type {
 #include "tbl/vcc_types.h"
 
 /*---------------------------------------------------------------------*/
+
 typedef const struct kind	*vcc_kind_t;
 
 struct kind {
@@ -143,6 +144,19 @@ struct kind {
 
 #define VCC_KIND(U,l)	extern const struct kind SYM_##U[1];
 #include "tbl/symbol_kind.h"
+
+/*---------------------------------------------------------------------*/
+
+typedef const struct vcc_namespace *const vcc_ns_t;
+
+#define VCC_NAMESPACE(U, l)	extern vcc_ns_t SYM_##U;
+#include "vcc_namespace.h"
+
+enum vcc_namespace_e {
+#define VCC_NAMESPACE(U, l)	VCC_NAMESPACE_##U,
+#include "vcc_namespace.h"
+	VCC_NAMESPACE__MAX
+};
 
 /*---------------------------------------------------------------------*/
 
@@ -241,7 +255,7 @@ struct vcc {
 #define MGT_VCC(t, n, cc) t n;
 #include <tbl/mgt_vcc.h>
 
-	struct symtab		*syms;
+	struct symtab		*syms[VCC_NAMESPACE__MAX];
 
 	struct inifinhead	inifin;
 	unsigned		ninifin;
@@ -369,7 +383,8 @@ void vcc_stevedore(struct vcc *vcc, const char *stv_name);
 
 /* vcc_symb.c */
 void VCC_PrintCName(struct vsb *vsb, const char *b, const char *e);
-struct symbol *VCC_MkSym(struct vcc *tl, const char *b, vcc_kind_t, int, int);
+struct symbol *VCC_MkSym(struct vcc *tl, const char *b, vcc_ns_t, vcc_kind_t,
+    int, int);
 
 struct symxref { const char *name; };
 extern const struct symxref XREF_NONE[1];
@@ -382,11 +397,11 @@ extern const struct symmode SYMTAB_CREATE[1];
 extern const struct symmode SYMTAB_EXISTING[1];
 extern const struct symmode SYMTAB_PARTIAL[1];
 
-struct symbol *VCC_SymbolGet(struct vcc *, vcc_kind_t,
+struct symbol *VCC_SymbolGet(struct vcc *, vcc_ns_t, vcc_kind_t,
     const struct symmode *, const struct symxref *);
 
 typedef void symwalk_f(struct vcc *tl, const struct symbol *s);
-void VCC_WalkSymbols(struct vcc *tl, symwalk_f *func, vcc_kind_t);
+void VCC_WalkSymbols(struct vcc *tl, symwalk_f *func, vcc_ns_t, vcc_kind_t);
 
 /* vcc_token.c */
 void vcc_Coord(const struct vcc *tl, struct vsb *vsb,
