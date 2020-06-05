@@ -39,6 +39,7 @@
 #include "cache/cache_varnishd.h"
 #include "cache/cache_filter.h"
 
+#include "vre.h"
 #include "vsa.h"
 #include "vtim.h"
 #include "vcc_if.h"
@@ -1144,4 +1145,20 @@ xyzzy_ok_rollback(VRT_CTX)
 
 	p->priv = NULL;
 	p->free = NULL;
+}
+
+VCL_STRING v_matchproto_(td_xyzzy_debug_re_quote)
+xyzzy_re_quote(VRT_CTX, VCL_STRING s)
+{
+	struct vsb vsb[1];
+	char *q;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->ws, WS_MAGIC);
+	WS_VSB_new(vsb, ctx->ws);
+	VRE_quote(vsb, s);
+	q = WS_VSB_finish(vsb, ctx->ws, NULL);
+	if (q == NULL)
+		WS_MarkOverflow(ctx->ws);
+	return (q);
 }

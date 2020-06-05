@@ -1,0 +1,33 @@
+varnishtest "VRT_re_quote() coverage"
+
+varnish v1 -vcl {
+	import debug;
+
+	backend be none;
+
+	sub vcl_recv {
+		return (synth(200));
+	}
+
+	sub vcl_synth {
+		set resp.http.sanity = regsub("\Q", "\Q\Q\E", "sane");
+		set resp.http.q0 = debug.re_quote("");
+		set resp.http.q1 = debug.re_quote("hello");
+		set resp.http.q2 = debug.re_quote("hello\E");
+		set resp.http.q3 = debug.re_quote("hello\Eworld");
+		set resp.http.q4 = debug.re_quote("\E");
+		set resp.http.q5 = debug.re_quote("\Q");
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.sanity == sane
+	expect resp.http.q0 == {}
+	expect resp.http.q1 == {\Qhello\E}
+	expect resp.http.q2 == {\Qhello\\EE}
+	expect resp.http.q3 == {\Qhello\\EE\Qworld\E}
+	expect resp.http.q4 == {\Q\\EE}
+	expect resp.http.q5 == {\Q\Q\E}
+} -run
