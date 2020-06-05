@@ -382,7 +382,7 @@ WS_Overflowed(const struct ws *ws)
  *
  *	WS_VSB_new(vsb, ctx->ws);
  *	VSB_printf(vsb, "blablabla");
- *	p = WS_VSB_finish(vsb, NULL);
+ *	p = WS_VSB_finish(vsb, ctx->ws, NULL);
  *	if (p == NULL)
  *		return (FAILURE);
  */
