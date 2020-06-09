@@ -554,7 +554,8 @@ mgt_reap_child(void)
 #ifdef WCOREDUMP
 	if (WCOREDUMP(status)) {
 		VSB_cat(vsb, " (core dumped)");
-		exit_status |= 0x80;
+		if (!MGT_FEATURE(FEATURE_NO_COREDUMP))
+			exit_status |= 0x80;
 		VSC_C_mgt->child_dump++;
 	}
 #endif
