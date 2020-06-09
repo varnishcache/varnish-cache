@@ -51,15 +51,17 @@ typedef void *objsetattr_f(struct worker *, struct objcore *,
 typedef void objtouch_f(struct worker *, struct objcore *, vtim_real now);
 
 struct obj_methods {
+	/* required */
 	objfree_f	*objfree;
 	objiterator_f	*objiterator;
 	objgetspace_f	*objgetspace;
 	objextend_f	*objextend;
+	objgetattr_f	*objgetattr;
+	objsetattr_f	*objsetattr;
+	/* optional */
 	objtrimstore_f	*objtrimstore;
 	objbocdone_f	*objbocdone;
 	objslim_f	*objslim;
-	objgetattr_f	*objgetattr;
-	objsetattr_f	*objsetattr;
 	objtouch_f	*objtouch;
 	objsetstate_f	*objsetstate;
 };

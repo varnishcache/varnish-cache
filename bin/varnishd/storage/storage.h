@@ -95,7 +95,9 @@ struct stevedore {
 	/* Called in MGT process */
 	storage_init_f		*init;
 
-	/* Called in cache process */
+	/* Called in cache process
+	 * only allocobj is required, other callbacks are optional
+	 */
 	storage_open_f		*open;
 	storage_close_f		*close;
 	storage_allocobj_f	*allocobj;
