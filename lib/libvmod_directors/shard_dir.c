@@ -129,7 +129,6 @@ shard_next(struct shard_state *state, VCL_INT skip, VCL_BOOL healthy)
 	struct shard_be_info *sbe;
 
 	AN(state);
-	assert(state->idx >= 0);
 	CHECK_OBJ_NOTNULL(state->shardd, SHARDDIR_MAGIC);
 
 	if (state->pickcount >= state->shardd->n_backend)
