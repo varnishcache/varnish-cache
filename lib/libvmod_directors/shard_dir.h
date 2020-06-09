@@ -43,6 +43,7 @@ struct shard_backend {
 		void		*freeptr;
 	};
 	VCL_DURATION		rampup;
+	uint32_t		replicas;
 };
 
 struct vmod_directors_shard_param;
@@ -68,7 +69,8 @@ struct sharddir {
 
 	VCL_DURATION				rampup_duration;
 	VCL_REAL				warmup;
-	VCL_INT					replicas;
+
+	uint32_t				n_points;
 };
 
 static inline VCL_BACKEND

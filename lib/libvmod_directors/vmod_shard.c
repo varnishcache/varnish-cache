@@ -305,6 +305,8 @@ VCL_BOOL v_matchproto_(td_directors_shard_add_backend)
 vmod_shard_add_backend(VRT_CTX, struct vmod_directors_shard *vshard,
     struct VARGS(shard_add_backend) *args)
 {
+	VCL_REAL weight = 1;
+
 	CHECK_OBJ_NOTNULL(vshard, VMOD_SHARD_SHARD_MAGIC);
 
 	if (args->backend == NULL) {
@@ -313,10 +315,14 @@ vmod_shard_add_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 		return (0);
 	}
 
+	if (args->valid_weight && args->weight > 1)
+		weight = args->weight;
+
 	return shardcfg_add_backend(ctx, args->arg1,
 	    vshard->shardd, args->backend,
 	    args->valid_ident ? args->ident : NULL,
-	    args->valid_rampup ? args->rampup : nan(""));
+	    args->valid_rampup ? args->rampup : nan(""),
+	    weight);
 }
 
 VCL_BOOL v_matchproto_(td_directors_shard_remove_backend)

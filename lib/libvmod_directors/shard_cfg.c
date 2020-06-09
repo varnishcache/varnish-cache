@@ -55,6 +55,7 @@ struct shard_change_task {
 #define SHARD_CHANGE_TASK_MAGIC			0x1e1168af
 	enum shard_change_task_e		task;
 	void					*priv;
+	VCL_REAL				weight;
 	VSTAILQ_ENTRY(shard_change_task)	list;
 };
 
@@ -127,7 +128,7 @@ shard_change_finish(struct shard_change *change)
 	VSTAILQ_INIT(&change->tasks);
 }
 
-static void
+static struct shard_change_task *
 shard_change_task_add(VRT_CTX, struct shard_change *change,
     enum shard_change_task_e task_e, void *priv)
 {
@@ -139,15 +140,17 @@ shard_change_task_add(VRT_CTX, struct shard_change *change,
 	if (task == NULL) {
 		shard_err0(ctx, change->shardd,
 		    "could not get workspace for task");
-		return;
+		return (NULL);
 	}
 	INIT_OBJ(task, SHARD_CHANGE_TASK_MAGIC);
 	task->task = task_e;
 	task->priv = priv;
 	VSTAILQ_INSERT_TAIL(&change->tasks, task, list);
+
+	return (task);
 }
 
-static inline VCL_BOOL
+static inline struct shard_change_task *
 shard_change_task_backend(VRT_CTX,
     struct vmod_priv *priv, const struct sharddir *shardd,
     enum shard_change_task_e task_e, VCL_BACKEND be, VCL_STRING ident,
@@ -161,22 +164,20 @@ shard_change_task_backend(VRT_CTX,
 
 	change = shard_change_get(ctx, priv, shardd);
 	if (change == NULL)
-		return (0);
+		return (NULL);
 
 	b = WS_Alloc(ctx->ws, sizeof(*b));
 	if (b == NULL) {
 		shard_err(ctx, shardd, ".%s_backend() WS_Alloc() failed",
 		    task_e == ADD_BE ? "add" : "remove");
-		return (0);
+		return (NULL);
 	}
 
 	b->backend = be;
 	b->ident = ident != NULL && *ident != '\0' ? ident : NULL;
 	b->rampup = rampup;
 
-	shard_change_task_add(ctx, change, task_e, b);
-
-	return (1);
+	return (shard_change_task_add(ctx, change, task_e, b));
 }
 
 /*
@@ -186,11 +187,21 @@ shard_change_task_backend(VRT_CTX,
 VCL_BOOL
 shardcfg_add_backend(VRT_CTX, struct vmod_priv *priv,
     const struct sharddir *shardd, VCL_BACKEND be, VCL_STRING ident,
-    VCL_DURATION rampup)
+    VCL_DURATION rampup, VCL_REAL weight)
 {
+	struct shard_change_task *task;
+
+	assert (weight >= 1);
 	AN(be);
-	return (shard_change_task_backend(ctx, priv, shardd, ADD_BE,
-	    be, ident, rampup));
+
+	task = shard_change_task_backend(ctx, priv, shardd, ADD_BE,
+	    be, ident, rampup);
+
+	if (task == NULL)
+		return (0);
+
+	task->weight = weight;
+	return (1);
 }
 
 VCL_BOOL
@@ -198,7 +209,7 @@ shardcfg_remove_backend(VRT_CTX, struct vmod_priv *priv,
     const struct sharddir *shardd, VCL_BACKEND be, VCL_STRING ident)
 {
 	return (shard_change_task_backend(ctx, priv, shardd, REMOVE_BE,
-	    be, ident, 0));
+	    be, ident, 0) != NULL);
 }
 
 VCL_BOOL
@@ -212,9 +223,7 @@ shardcfg_clear(VRT_CTX, struct vmod_priv *priv, const struct sharddir *shardd)
 	if (change == NULL)
 		return (0);
 
-	shard_change_task_add(ctx, change, CLEAR, NULL);
-
-	return (1);
+	return (shard_change_task_add(ctx, change, CLEAR, NULL) != NULL);
 }
 
 /*
@@ -232,9 +241,11 @@ circlepoint_compare(const struct shard_circlepoint *a,
 }
 
 static void
-shardcfg_hashcircle(struct sharddir *shardd, VCL_INT replicas)
+shardcfg_hashcircle(struct sharddir *shardd)
 {
-	int i, j;
+	const struct shard_backend *backends, *b;
+	int j, h;
+	uint32_t i, n_points, r, rmax;
 	const char *ident;
 	const int len = 12; // log10(UINT32_MAX) + 2;
 	char s[len];
@@ -245,49 +256,60 @@ shardcfg_hashcircle(struct sharddir *shardd, VCL_INT replicas)
 	AZ(shardd->hashcircle);
 
 	assert(shardd->n_backend > 0);
-	AN(shardd->backend);
+	backends=shardd->backend;
+	AN(backends);
 
-	shardd->hashcircle = calloc(shardd->n_backend * replicas,
-		sizeof(struct shard_circlepoint));
+	n_points = 0;
+	rmax = (UINT32_MAX - 1) / shardd->n_backend;
+	for (b = backends; b < backends + shardd->n_backend; b++) {
+		CHECK_OBJ_NOTNULL(b->backend, DIRECTOR_MAGIC);
+		r = b->replicas;
+		if (r > rmax)
+			r = rmax;
+		n_points += r;
+	}
+
+	assert(n_points < UINT32_MAX);
+
+	shardd->n_points = n_points;
+	shardd->hashcircle = calloc(n_points, sizeof(struct shard_circlepoint));
 	AN(shardd->hashcircle);
 
-	shardd->replicas = replicas;
-
-	for (i = 0; i < shardd->n_backend; i++) {
-		CHECK_OBJ_NOTNULL(shardd->backend[i].backend, DIRECTOR_MAGIC);
-
-		ident = shardd->backend[i].ident
-		    ? shardd->backend[i].ident
-		    : VRT_BACKEND_string(shardd->backend[i].backend);
+	i = 0;
+	for (h = 0, b = backends; h < shardd->n_backend; h++, b++) {
+		ident = b->ident ? b->ident : VRT_BACKEND_string(b->backend);
 
 		AN(ident);
 		assert(ident[0] != '\0');
 
-		for (j = 0; j < replicas; j++) {
+		r = b->replicas;
+		if (r > rmax)
+			r = rmax;
+
+		for (j = 0; j < r; j++) {
 			assert(snprintf(s, len, "%d", j) < len);
 			ss->n = 2;
 			ssp[0] = ident;
 			ssp[1] = s;
 			ss->p = ssp;
-			shardd->hashcircle[i * replicas + j].point =
-			    VRT_HashStrands32(ss);
-			shardd->hashcircle[i * replicas + j].host = i;
+			assert (i < n_points);
+			shardd->hashcircle[i].point = VRT_HashStrands32(ss);
+			shardd->hashcircle[i].host = h;
+			i++;
 		}
 	}
-	qsort( (void *) shardd->hashcircle, shardd->n_backend * replicas,
+	assert (i == n_points);
+	qsort( (void *) shardd->hashcircle, n_points,
 	    sizeof (struct shard_circlepoint), (compar) circlepoint_compare);
 
 	if ((shardd->debug_flags & SHDBG_CIRCLE) == 0)
 		return;
 
-	for (i = 0; i < shardd->n_backend; i++)
-		for (j = 0; j < replicas; j++)
-			SHDBG(SHDBG_CIRCLE, shardd,
-			    "hashcircle[%5jd] = "
-			    "{point = %8x, host = %2u}\n",
-			    (intmax_t)(i * replicas + j),
-			    shardd->hashcircle[i * replicas + j].point,
-			    shardd->hashcircle[i * replicas + j].host);
+	for (i = 0; i < n_points; i++)
+		SHDBG(SHDBG_CIRCLE, shardd,
+		    "hashcircle[%5jd] = {point = %8x, host = %2u}\n",
+		    (intmax_t)i, shardd->hashcircle[i].point,
+		    shardd->hashcircle[i].host);
 }
 
 /*
@@ -394,7 +416,7 @@ shardcfg_backend_expand(const struct backend_reconfig *re)
 
 static void
 shardcfg_backend_add(struct backend_reconfig *re,
-    const struct shard_backend *b)
+    const struct shard_backend *b, uint32_t replicas)
 {
 	unsigned i;
 	struct shard_backend *bb = re->shardd->backend;
@@ -419,6 +441,7 @@ shardcfg_backend_add(struct backend_reconfig *re,
 
 	re->shardd->n_backend++;
 	shardcfg_backend_copyin(&bb[i], b);
+	bb[i].replicas = replicas;
 }
 
 static void
@@ -499,10 +522,11 @@ shardcfg_backend_finalize(struct backend_reconfig *re)
 
 static void
 shardcfg_apply_change(VRT_CTX, struct sharddir *shardd,
-    const struct shard_change *change)
+    const struct shard_change *change, VCL_INT replicas)
 {
 	struct shard_change_task *task, *clear;
 	const struct shard_backend *b;
+	uint32_t b_replicas;
 
 	struct backend_reconfig re = {
 		.shardd = shardd,
@@ -550,7 +574,14 @@ shardcfg_apply_change(VRT_CTX, struct sharddir *shardd,
 			b = shardcfg_backend_lookup(&re, task->priv);
 
 			if (b == NULL) {
-				shardcfg_backend_add(&re, task->priv);
+				assert (task->weight >= 1);
+				if (replicas * task->weight > UINT32_MAX)
+					b_replicas = UINT32_MAX;
+				else
+					b_replicas = replicas * task->weight;
+
+				shardcfg_backend_add(&re, task->priv,
+				    b_replicas);
 				break;
 			}
 
@@ -599,7 +630,7 @@ shardcfg_reconfigure(VRT_CTX, struct vmod_priv *priv,
 
 	sharddir_wrlock(shardd);
 
-	shardcfg_apply_change(ctx, shardd, change);
+	shardcfg_apply_change(ctx, shardd, change, replicas);
 	shard_change_finish(change);
 
 	if (shardd->hashcircle)
@@ -612,7 +643,7 @@ shardcfg_reconfigure(VRT_CTX, struct vmod_priv *priv,
 		return (0);
 	}
 
-	shardcfg_hashcircle(shardd, replicas);
+	shardcfg_hashcircle(shardd);
 	sharddir_unlock(shardd);
 	return (1);
 }
