@@ -763,8 +763,6 @@ vmod_shard_list(VRT_CTX, VCL_BACKEND dir, struct vsb *vsb, int pflag, int jflag)
 			    sbe->ident ? sbe->ident : be->vcl_name);
 			VSB_printf(vsb, "\"health\": \"%s\",\n",
 			    h ? "healthy" : "sick");
-			VSB_printf(vsb, "\"canon_point\": %u,\n",
-			    sbe->canon_point);
 			VSB_printf(vsb, "\"rampup\": %f,\n", rampup_p);
 			VSB_printf(vsb, "\"rampup_remaining\": %.3f\n",
 			    rampup_d);

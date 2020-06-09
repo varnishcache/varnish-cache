@@ -43,7 +43,6 @@ struct shard_backend {
 		void		*freeptr;
 	};
 	VCL_DURATION		rampup;
-	uint32_t		canon_point;
 };
 
 struct vmod_directors_shard_param;

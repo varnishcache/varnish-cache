@@ -273,9 +273,6 @@ shardcfg_hashcircle(struct sharddir *shardd, VCL_INT replicas)
 			    VRT_HashStrands32(ss);
 			shardd->hashcircle[i * replicas + j].host = i;
 		}
-		/* not used in current interface */
-		shardd->backend[i].canon_point =
-		    shardd->hashcircle[i * replicas].point;
 	}
 	qsort( (void *) shardd->hashcircle, shardd->n_backend * replicas,
 	    sizeof (struct shard_circlepoint), (compar) circlepoint_compare);
@@ -313,7 +310,6 @@ shardcfg_backend_copyin(struct shard_backend *dst,
 	dst->backend = src->backend;
 	dst->ident = src->ident ? strdup(src->ident) : NULL;
 	dst->rampup = src->rampup;
-	dst->canon_point = 0xffffffff;
 }
 
 static int
