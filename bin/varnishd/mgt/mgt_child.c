@@ -43,6 +43,9 @@
 #include <string.h>
 #include <syslog.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 #include "mgt.h"
 
@@ -295,6 +298,7 @@ mgt_launch_child(struct cli *cli)
 	char *p;
 	struct vev *e;
 	int i, cp[2];
+	struct rlimit rl[1];
 
 	if (child_state != CH_STOPPED && child_state != CH_DIED)
 		return;
@@ -334,6 +338,12 @@ mgt_launch_child(struct cli *cli)
 		exit(1);		// XXX Harsh ?
 	}
 	if (pid == 0) {
+
+		if (MGT_FEATURE(FEATURE_NO_COREDUMP)) {
+			memset(rl, 0, sizeof *rl);
+			rl->rlim_cur = 0;
+			AZ(setrlimit(RLIMIT_CORE, rl));
+		}
 
 		/* Redirect stdin/out/err */
 		VFIL_null_fd(STDIN_FILENO);
@@ -463,10 +473,7 @@ kill_child(void)
 	int i, error;
 
 	VJ_master(JAIL_MASTER_KILL);
-	if (MGT_FEATURE(FEATURE_NO_COREDUMP))
-		i = kill(child_pid, SIGKILL);
-	else
-		i = kill(child_pid, SIGQUIT);
+	i = kill(child_pid, SIGQUIT);
 	error = errno;
 	VJ_master(JAIL_MASTER_LOW);
 	errno = error;

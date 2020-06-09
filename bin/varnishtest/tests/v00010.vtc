@@ -24,7 +24,10 @@ server s1 {
 	txresp -hdr "Foo: foo" -body "abcdef\n"
 } -start
 
-varnish v1 -arg "-sdefault,1m" -vcl+backend {
+varnish v1 -arg "-sdefault,1m"
+varnish v1 -cliok "param.set feature +no_coredump"
+
+varnish v1 -vcl+backend {
 	import vtc;
 	import debug;
 
@@ -49,7 +52,6 @@ varnish v1 -cliok "stop"
 varnish v1 -cliok "start"
 varnish v1 -wait-running
 varnish v1 -expect MGT.child_panic == 0
-varnish v1 -cliok "param.set feature +no_coredump"
 
 client c1 {
 	txreq -url "/"
@@ -92,4 +94,4 @@ client c1 {
 } -run
 
 varnish v1 -cliok "panic.clear -z"
-varnish v1 -expectexit 0x20
+varnish v1 -expectexit 0x40

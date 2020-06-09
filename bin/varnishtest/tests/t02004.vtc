@@ -5,6 +5,10 @@ server s1 {
 	txresp
 } -start
 
+varnish v1 -cliok "param.set feature +http2"
+varnish v1 -cliok "param.set feature +no_coredump"
+varnish v1 -cliok "param.set debug +syncvsl"
+
 varnish v1 -vcl+backend {
 	import vtc;
 
@@ -12,10 +16,6 @@ varnish v1 -vcl+backend {
 		vtc.panic("H2 panic");
 	}
 } -start
-
-varnish v1 -cliok "param.set feature +http2"
-varnish v1 -cliok "param.set feature +no_coredump"
-varnish v1 -cliok "param.set debug +syncvsl"
 
 client c1 {
 	stream 1 {
@@ -28,4 +28,4 @@ delay 2
 
 varnish v1 -cliok "panic.clear"
 
-varnish v1 -expectexit 0x20
+varnish v1 -expectexit 0x40

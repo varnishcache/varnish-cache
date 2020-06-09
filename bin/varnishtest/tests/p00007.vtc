@@ -80,4 +80,4 @@ client c1 {
 	expect resp.bodylen == 48
 } -run
 
-varnish v1 -expectexit 0x20
+varnish v1 -expectexit 0x40

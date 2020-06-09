@@ -60,7 +60,7 @@ client c1 {
 	rxresp
 } -run
 
-varnish v1 -expectexit 0x20
+varnish v1 -expectexit 0x40
 
 ####################
 
@@ -91,4 +91,4 @@ varnish v2 -clijson "panic.show -j"
 
 varnish v2 -cliok "panic.clear"
 
-varnish v2 -expectexit 0x20
+varnish v2 -expectexit 0x40

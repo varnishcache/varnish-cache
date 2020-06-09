@@ -3,7 +3,7 @@ varnishtest "Create a backend after a COLD event"
 server s1 -start
 
 varnish v1 -cliok "param.set feature +no_coredump"
-varnish v1 -expectexit 0x20
+varnish v1 -expectexit 0x40
 varnish v1 -vcl+backend {
 	import debug;
 	sub vcl_init {
