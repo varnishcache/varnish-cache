@@ -6,6 +6,7 @@ varnishtest "VMOD blob workspace overflow conditions"
 # will not result in a compilation failure.
 
 varnish v1 -cliok "param.set vcc_err_unref off"
+varnish v1 -cliok "param.set debug +syncvsl"
 
 shell {
 	cat >vrt_blob.vcl <<-EOF
