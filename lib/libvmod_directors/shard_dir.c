@@ -352,7 +352,6 @@ sharddir_pick_be_locked(VRT_CTX, const struct sharddir *shardd, uint32_t key,
 	validate_alt(ctx, shardd, &alt);
 
 	state->idx = shard_lookup(shardd, key);
-	assert(state->idx >= 0);
 
 	SHDBG(SHDBG_LOOKUP, shardd, "lookup key %x idx %d host %u",
 	    key, state->idx, shardd->hashcircle[state->idx].host);
