@@ -63,6 +63,10 @@
  *
  */
 
+#ifdef GCOVING
+    int __llvm_profile_write_file(void);
+#endif
+
 static struct vsb pan_vsb_storage, *pan_vsb;
 static pthread_mutex_t panicstr_mtx;
 
@@ -811,6 +815,9 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 	VSB_cat(pan_vsb, "\n");
 	VSB_putc(pan_vsb, '\0');	/* NUL termination */
 
+#ifdef GCOVING
+	__llvm_profile_write_file();
+#endif
 	abort();
 }
 

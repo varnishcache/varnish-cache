@@ -63,6 +63,10 @@ static const struct cli_cmd_desc *cmds[] = {
 #include "tbl/cli_cmds.h"
 };
 
+#ifdef GCOVING
+    int __llvm_profile_write_file(void);
+#endif
+
 static const int ncmds = sizeof cmds / sizeof cmds[0];
 
 static int		cli_i = -1, cli_o = -1;
@@ -108,6 +112,9 @@ mcf_panic(struct cli *cli, const char * const *av, void *priv)
 	(void)cli;
 	(void)av;
 	(void)priv;
+#ifdef GCOVING
+	__llvm_profile_write_file();
+#endif
 	AZ(strcmp("", "You asked for it"));
 	/* NOTREACHED */
 	abort();
