@@ -61,6 +61,7 @@ struct shard_backend {
 	};
 	VCL_DURATION		rampup;
 	uint32_t		canon_point;
+	uint32_t		replicas;
 };
 
 #define	SHDBG_LOOKUP	 1
@@ -84,7 +85,8 @@ struct sharddir {
 
 	VCL_DURATION				rampup_duration;
 	VCL_REAL				warmup;
-	VCL_INT					replicas;
+
+	uint32_t				n_points;
 };
 
 static inline VCL_BACKEND
