@@ -33,56 +33,45 @@
 
 /*lint -save -e525 -e539 */
 
-FEATURE_BIT(SHORT_PANIC,		short_panic,
-    "Short panic message.",
-    "Reduce level of detail for panic messages."
-)
-
-FEATURE_BIT(WAIT_SILO,			wait_silo,
-    "Wait for persistent silo.",
-    "Wait for persistent silos to load completely before serving requests."
-)
-
-FEATURE_BIT(NO_COREDUMP,		no_coredump,
-    "No coredumps.",
-    "Don't attempt to coredump child process on panics."
-)
-
-FEATURE_BIT(ESI_IGNORE_HTTPS,		esi_ignore_https,
-    "Treat HTTPS as HTTP in ESI:includes",
-    "Convert <esi:include src\"https://... to http://..."
-)
-
-FEATURE_BIT(ESI_DISABLE_XML_CHECK,	esi_disable_xml_check,
-    "Don't check of body looks like XML",
-    "Allow ESI processing on any kind of object"
-)
-
-FEATURE_BIT(ESI_IGNORE_OTHER_ELEMENTS,	esi_ignore_other_elements,
-    "Ignore non-esi XML-elements",
-    "Allows syntax errors in the XML"
-)
-
-FEATURE_BIT(ESI_REMOVE_BOM,		esi_remove_bom,
-    "Remove UTF-8 BOM",
-    "Remove UTF-8 BOM from front of object."
-    "Ignore and remove the UTF-8 BOM (0xeb 0xbb 0xbf) from front of object."
-)
-
-FEATURE_BIT(HTTPS_SCHEME,		https_scheme,
-    "Also split https URIs",
-    "Extract host from full URI in the request line if the scheme is https."
-)
-
 FEATURE_BIT(HTTP2,		http2,
-    "Support HTTP/2 protocol",
     "Enable HTTP/2 protocol support."
 )
 
+FEATURE_BIT(SHORT_PANIC,		short_panic,
+    "Short panic message."
+)
+
+FEATURE_BIT(NO_COREDUMP,		no_coredump,
+    "No coredumps.  Must be set before child process starts."
+)
+
+FEATURE_BIT(HTTPS_SCHEME,		https_scheme,
+    "Extract host from full URI in the HTTP/1 request line, if the scheme is https."
+)
+
 FEATURE_BIT(HTTP_DATE_POSTEL,	http_date_postel,
-    "Relax parsing of timestamps in HTTP headers",
-    "Tolerate non standards conforming variations of timestamp headers"
-    "like Date:, Last-Modified:, Expires: etc."
+    "Tolerate non compliant timestamp headers "
+    "like `Date`, `Last-Modified`, `Expires` etc."
+)
+
+FEATURE_BIT(ESI_IGNORE_HTTPS,		esi_ignore_https,
+    "Convert `<esi:include src\"https://...` to `http://...`"
+)
+
+FEATURE_BIT(ESI_DISABLE_XML_CHECK,	esi_disable_xml_check,
+    "Allow ESI processing on non-XML ESI bodies"
+)
+
+FEATURE_BIT(ESI_IGNORE_OTHER_ELEMENTS,	esi_ignore_other_elements,
+    "Ignore XML syntax errors in ESI bodies."
+)
+
+FEATURE_BIT(ESI_REMOVE_BOM,		esi_remove_bom,
+    "Ignore UTF-8 BOM in ESI bodies."
+)
+
+FEATURE_BIT(WAIT_SILO,			wait_silo,
+    "Wait for persistent silos to completely load before serving requests."
 )
 
 #undef FEATURE_BIT

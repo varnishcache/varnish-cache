@@ -208,7 +208,7 @@ tweak_debug(struct vsb *vsb, const struct parspec *par, const char *arg)
  */
 
 static const char * const feature_tags[] = {
-#  define FEATURE_BIT(U, l, d, ld) [FEATURE_##U] = #l,
+#  define FEATURE_BIT(U, l, d) [FEATURE_##U] = #l,
 #  include "tbl/feature_bits.h"
        NULL
 };
@@ -275,7 +275,7 @@ struct parspec VSL_parspec[] = {
 		"Enable/Disable various minor features.\n"
 		"\tnone\tDisable all features.\n\n"
 		"Use +/- prefix to enable/disable individual feature:"
-#define FEATURE_BIT(U, l, d, ld) "\n\t" #l "\t" d
+#define FEATURE_BIT(U, l, d) "\n\t" #l "\t" d
 #include "tbl/feature_bits.h"
 #undef FEATURE_BIT
 		},

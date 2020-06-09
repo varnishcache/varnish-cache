@@ -53,7 +53,7 @@ COM_DO_DEBUG(const volatile uint8_t *p, enum debug_bits x)
 }
 
 enum feature_bits {
-#define FEATURE_BIT(U, l, d, ld) FEATURE_##U,
+#define FEATURE_BIT(U, l, d) FEATURE_##U,
 #include "tbl/feature_bits.h"
        FEATURE_Reserved
 };
