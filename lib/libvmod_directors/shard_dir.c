@@ -60,7 +60,7 @@ struct shard_be_info {
 struct shard_state {
 	const struct vrt_ctx	*ctx;
 	struct sharddir	*shardd;
-	int			idx;
+	uint32_t		idx;
 
 	struct vbitmap		*picklist;
 	int			pickcount;
@@ -135,8 +135,10 @@ shard_lookup(const struct sharddir *shardd, const uint32_t key)
 {
 	CHECK_OBJ_NOTNULL(shardd, SHARDDIR_MAGIC);
 
-	const int n = shardd->n_backend * shardd->replicas;
-	int idx = -1, high = n, low = 0, i;
+	const uint32_t n = shardd->n_points;
+	uint32_t i, idx = UINT32_MAX, high = n, low = 0;
+
+	assert (n < idx);
 
 	do {
 	    i = (high + low) / 2 ;
@@ -154,7 +156,7 @@ shard_lookup(const struct sharddir *shardd, const uint32_t key)
 		    high = i;
 	    else
 		low = i;
-	} while (idx == -1);
+	} while (idx == UINT32_MAX);
 
 	return (idx);
 }
@@ -163,7 +165,6 @@ static int
 shard_next(struct shard_state *state, VCL_INT skip, VCL_BOOL healthy)
 {
 	int c, chosen = -1;
-	uint32_t ringsz;
 	VCL_BACKEND be;
 	vtim_real changed;
 	struct shard_be_info *sbe;
@@ -174,8 +175,6 @@ shard_next(struct shard_state *state, VCL_INT skip, VCL_BOOL healthy)
 
 	if (state->pickcount >= state->shardd->n_backend)
 		return (-1);
-
-	ringsz = state->shardd->n_backend * state->shardd->replicas;
 
 	while (state->pickcount < state->shardd->n_backend && skip >= 0) {
 
@@ -215,7 +214,7 @@ shard_next(struct shard_state *state, VCL_INT skip, VCL_BOOL healthy)
 				break;
 		}
 
-		if (++(state->idx) == ringsz)
+		if (++(state->idx) == state->shardd->n_points)
 			state->idx = 0;
 	}
 	return (chosen);

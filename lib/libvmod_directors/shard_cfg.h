@@ -28,7 +28,7 @@
 
 VCL_BOOL shardcfg_add_backend(VRT_CTX, struct vmod_priv *priv,
     const struct sharddir *shardd, VCL_BACKEND be, VCL_STRING ident,
-    VCL_DURATION rampup);
+    VCL_DURATION rampup, VCL_REAL weight);
 VCL_BOOL shardcfg_remove_backend(VRT_CTX, struct vmod_priv *priv,
     const struct sharddir *shardd, VCL_BACKEND be, VCL_STRING ident);
 VCL_BOOL shardcfg_clear(VRT_CTX, struct vmod_priv *priv,
