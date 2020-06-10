@@ -77,8 +77,8 @@ struct sharddir {
 
 	const char				*name;
 
-	int					n_backend;
-	int					l_backend;
+	unsigned				n_backend;
+	unsigned				l_backend;
 	struct shard_backend			*backend;
 
 	struct shard_circlepoint		*hashcircle;
