@@ -59,8 +59,8 @@ struct sharddir {
 
 	pthread_rwlock_t			mtx;
 
-	int					n_backend;
-	int					l_backend;
+	unsigned				n_backend;
+	unsigned				l_backend;
 	struct shard_backend			*backend;
 
 	const char				*name;
