@@ -1,0 +1,33 @@
+varnishtest "Conditional fetch with no previous response body"
+
+server s1 {
+	rxreq
+	txresp -hdr "ETag: 1234" -hdr "Last-Modified: Wed, 10 Jun 2020 16:00:00 GMT"
+
+	rxreq
+	txresp -status 304
+	expect req.http.If-None-Match == "1234"
+	expect req.http.If-Modified-Since == "Wed, 10 Jun 2020 16:00:00 GMT"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.ttl = 0.1s;
+		set beresp.grace = 0s;
+		set beresp.keep = 1h;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 0
+
+	delay 1.0
+
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 0
+} -run
