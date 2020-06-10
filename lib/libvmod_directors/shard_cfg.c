@@ -241,7 +241,7 @@ static void
 shardcfg_hashcircle(struct sharddir *shardd)
 {
 	const struct shard_backend *backends, *b;
-	int h;
+	unsigned h;
 	uint32_t i, j, n_points, r, rmax;
 	const char *ident;
 	const int len = 12; // log10(UINT32_MAX) + 2;
@@ -389,7 +389,7 @@ shardcfg_backend_lookup(const struct backend_reconfig *re,
 static void
 shardcfg_backend_expand(const struct backend_reconfig *re)
 {
-	int min = re->hint;
+	unsigned min = re->hint;
 
 	CHECK_OBJ_NOTNULL(re->shardd, SHARDDIR_MAGIC);
 
@@ -422,6 +422,7 @@ shardcfg_backend_add(struct backend_reconfig *re,
 		assert(re->shardd->n_backend < re->shardd->l_backend);
 		i = re->shardd->n_backend;
 	} else {
+		assert(re->hole_i != UINT_MAX);
 		do {
 			if (!bb[re->hole_i].backend)
 				break;
@@ -440,7 +441,7 @@ shardcfg_backend_add(struct backend_reconfig *re,
 static void
 shardcfg_backend_clear(struct sharddir *shardd)
 {
-	int i;
+	unsigned i;
 	for (i = 0; i < shardd->n_backend; i++)
 		shardcfg_backend_free(&shardd->backend[i]);
 	shardd->n_backend = 0;
@@ -525,7 +526,7 @@ shardcfg_apply_change(VRT_CTX, struct sharddir *shardd,
 		.shardd = shardd,
 		.hint = shardd->n_backend,
 		.hole_n = 0,
-		.hole_i = INT_MAX
+		.hole_i = UINT_MAX
 	};
 
 	// XXX assert sharddir_locked(shardd)
@@ -651,7 +652,7 @@ shardcfg_reconfigure(VRT_CTX, struct vmod_priv *priv,
 void
 shardcfg_delete(const struct sharddir *shardd)
 {
-	int i;
+	unsigned i;
 
 	for (i = 0; i < shardd->n_backend; i++)
 		shardcfg_backend_free(&shardd->backend[i]);
@@ -682,7 +683,7 @@ shardcfg_set_rampup(struct sharddir *shardd, VCL_DURATION duration)
 }
 
 VCL_DURATION
-shardcfg_get_rampup(const struct sharddir *shardd, int host)
+shardcfg_get_rampup(const struct sharddir *shardd, unsigned host)
 {
 	VCL_DURATION r;
 
