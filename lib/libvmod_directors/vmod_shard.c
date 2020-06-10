@@ -315,8 +315,13 @@ vmod_shard_add_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 		return (0);
 	}
 
-	if (args->valid_weight && args->weight > 1)
-		weight = args->weight;
+	if (args->valid_weight) {
+		if (args->weight >= 1)
+			weight = args->weight;
+		else
+			shard_err(ctx, vshard->shardd,
+			    ".add_backend(weight=%f) ignored", args->weight);
+	}
 
 	return shardcfg_add_backend(ctx, args->arg1,
 	    vshard->shardd, args->backend,
