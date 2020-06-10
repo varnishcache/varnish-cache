@@ -290,7 +290,7 @@ init_state(struct shard_state *state,
 
 	state->ctx = ctx;
 	state->shardd = shardd;
-	state->idx = -1;
+	state->idx = UINT32_MAX;
 	state->picklist = picklist;
 
 	/* healhy and changed only defined for hostid != -1 */
@@ -352,8 +352,9 @@ sharddir_pick_be_locked(VRT_CTX, const struct sharddir *shardd, uint32_t key,
 	validate_alt(ctx, shardd, &alt);
 
 	state->idx = shard_lookup(shardd, key);
+	assert(state->idx < UINT32_MAX);
 
-	SHDBG(SHDBG_LOOKUP, shardd, "lookup key %x idx %d host %u",
+	SHDBG(SHDBG_LOOKUP, shardd, "lookup key %x idx %u host %u",
 	    key, state->idx, shardd->hashcircle[state->idx].host);
 
 	if (alt > 0) {
