@@ -800,10 +800,10 @@ vmod_shard_list(VRT_CTX, VCL_BACKEND dir, struct vsb *vsb, int pflag, int jflag)
 		return;
 
 	if (jflag)
-		VSB_printf(vsb, "[%u, %d, \"%s\"]", nh, i,
+		VSB_printf(vsb, "[%u, %u, \"%s\"]", nh, i,
 		    nh ? "healthy" : "sick");
 	else
-		VSB_printf(vsb, "%u/%d\t%s", nh, i, nh ? "healthy" : "sick");
+		VSB_printf(vsb, "%u/%u\t%s", nh, i, nh ? "healthy" : "sick");
 }
 
 VCL_VOID v_matchproto_(td_directors_shard_backend)
