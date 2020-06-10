@@ -22,35 +22,39 @@ varnish v1 -vcl+backend {
 	}
 
 	sub vcl_recv {
+
 		std.log("-- invalid replicas");
 		if (!vd.reconfigure(replicas=0)) {
+			# continue intentionally
 			std.log("reconfigure failed");
 		}
 
 		std.log("-- no changes - no debug output");
 		if (!vd.reconfigure(replicas=25)) {
+			# continue intentionally
 			std.log("reconfigure failed");
 		}
 
 		std.log("-- no backends");
 		if (!vd.clear()) {
-			std.log("clear failed");
+			return(fail("clear failed"));
 		}
 		if (!vd.reconfigure(replicas=25)) {
+			# continue intentionally
 			std.log("reconfigure failed");
 		}
 
 		std.log("-- one backend");
 		if (!vd.add_backend(s1)) {
-			std.log("add s1 failed");
+			return(fail("add s1 failed"));
 		}
 		if (!vd.reconfigure(replicas=1)) {
-			std.log("reconfigure failed");
+			return(fail("reconfigure failed"));
 		}
 
 		std.log("-- no change - no output");
 		if (!vd.reconfigure(replicas=1)) {
-			std.log("reconfigure failed");
+			return(fail("reconfigure failed"));
 		}
 
 		std.log("-- change, clear, no backends");
@@ -62,6 +66,7 @@ varnish v1 -vcl+backend {
 		vd.add_backend(s2);
 		vd.clear();
 		if (!vd.reconfigure()) {
+			# continue intentionally
 			std.log("reconfigure failed");
 		}
 
@@ -71,7 +76,7 @@ varnish v1 -vcl+backend {
 		vd.add_backend(s2);
 		vd.add_backend(s1);
 		if (!vd.reconfigure(replicas=1)) {
-			std.log("reconfigure failed");
+			return(fail("reconfigure failed"));
 		}
 
 		std.log("-- duplicate add with idents");
@@ -84,19 +89,19 @@ varnish v1 -vcl+backend {
 		vd.add_backend(s2, ident="s1_1");
 		vd.add_backend(s2, ident="s1_2");
 		if (!vd.reconfigure(replicas=1)) {
-			std.log("reconfigure failed");
+			return(fail("reconfigure failed"));
 		}
 
 		std.log("-- remove s1_2 specifically");
 		vd.remove_backend(ident="s1_2");
 		if (!vd.reconfigure(replicas=1)) {
-			std.log("reconfigure failed");
+			return(fail("reconfigure failed"));
 		}
 
 		std.log("-- remove all instances of s1");
 		vd.remove_backend(s1);
 		if (!vd.reconfigure(replicas=1)) {
-			std.log("reconfigure failed");
+			return(fail("reconfigure failed"));
 		}
 
 		std.log("-- re-add some - no 2nd director");
@@ -112,23 +117,22 @@ varnish v1 -vcl+backend {
 		vd.add_backend(s3, "8");
 		vd.add_backend(s3, "9");
 		if (!vd.reconfigure(replicas=1)) {
-			std.log("reconfigure failed");
+			return(fail("reconfigure failed"));
 		}
 
 		std.log("-- remove second-last");
 		vd.remove_backend(ident="8");
 		if (!vd.reconfigure(replicas=1)) {
-			std.log("reconfigure failed");
+			return(fail("reconfigure failed"));
 		}
 
 		std.log("-- remove last");
 		vd.remove_backend(ident="9");
 		if (!vd.reconfigure(replicas=1)) {
-			std.log("reconfigure failed");
+			return(fail("reconfigure failed"));
 		}
 
 		std.log("-- END");
-
 		set req.backend_hint = vd.backend();
 		return(pass);
 	}
