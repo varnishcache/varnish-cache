@@ -42,13 +42,13 @@ all: link_srcdir
 html: sphinx_prereq
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
-	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
+	@echo "Build finished. The HTML pages are in $(subdir)/$(BUILDDIR)/html."
 
 linkcheck: sphinx_prereq
 	$(SPHINXBUILD) -b linkcheck $(ALLSPHINXOPTS) $(BUILDDIR)/linkcheck
 	@echo
 	@echo "Link check complete; look for any errors in the above output " \
-	      "or in $(BUILDDIR)/linkcheck/output.txt."
+	      "or in $(subdir)/$(BUILDDIR)/linkcheck/output.txt."
 
 EXTRA_DIST = \
 	conf.py \
