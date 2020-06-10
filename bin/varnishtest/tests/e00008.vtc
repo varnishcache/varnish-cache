@@ -83,19 +83,19 @@ logexpect l1 -v v1 -g vxid {
 	expect 0 = ESI_xmlerror {^ERR after 665 ESI 1.0 </esi:include> illegal end-tag$}
 	expect 0 = ESI_xmlerror {^ERR after 767 XML 1.0 Missing end attribute delimiter$}
 	expect 0 = ESI_xmlerror {^ERR after 843 ESI 1.0 <esi:include> has whitespace in src= attribute$}
-	expect 0 = BackendReuse
+	expect 0 = BackendClose
 } -start
 
 logexpect l2 -v v1 -g vxid {
 	expect * * BereqURL	{^/body$}
 	expect * = ESI_xmlerror {^ERR after 30 VEP ended inside a tag$}
-	expect 0 = BackendReuse
+	expect 0 = BackendClose
 } -start
 
 logexpect l3 -v v1 -g vxid {
 	expect * * BereqURL	{^/body2$}
 	expect * = ESI_xmlerror {^ERR after 39 VEP ended inside a tag$}
-	expect 0 = BackendReuse
+	expect 0 = BackendClose
 } -start
 
 varnish v1 -cliok "param.set debug +esi_chop"

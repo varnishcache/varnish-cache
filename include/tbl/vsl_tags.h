@@ -126,6 +126,7 @@ SLTM(BackendReuse, 0, "Backend connection put up for reuse",
 	"\t|  +- Backend display name\n"
 	"\t+---- Connection file descriptor\n"
 	"\n"
+	NOSUP_NOTICE
 )
 
 SLTM(BackendClose, 0, "Backend connection closed",

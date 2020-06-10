@@ -242,7 +242,7 @@ vbe_dir_finish(VRT_CTX, VCL_BACKEND d)
 		Lck_Lock(&bp->mtx);
 	} else {
 		assert (PFD_State(pfd) == PFD_STATE_USED);
-		VSLb(bo->vsl, SLT_BackendReuse, "%d %s", *PFD_Fd(pfd),
+		VSLb(bo->vsl, SLT_BackendClose, "%d %s", *PFD_Fd(pfd),
 		    VRT_BACKEND_string(bp->director));
 		Lck_Lock(&bp->mtx);
 		VSC_C_main->backend_recycle++;
