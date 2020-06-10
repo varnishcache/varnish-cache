@@ -243,8 +243,8 @@ static void
 shardcfg_hashcircle(struct sharddir *shardd)
 {
 	const struct shard_backend *backends, *b;
-	int j, h;
-	uint32_t i, n_points, r, rmax;
+	int h;
+	uint32_t i, j, n_points, r, rmax;
 	const char *ident;
 	const int len = 12; // log10(UINT32_MAX) + 2;
 	char s[len];
@@ -573,7 +573,8 @@ shardcfg_apply_change(VRT_CTX, struct sharddir *shardd,
 				if (replicas * task->weight > UINT32_MAX)
 					b_replicas = UINT32_MAX;
 				else
-					b_replicas = replicas * task->weight;
+					b_replicas = (uint32_t) // flint
+						(replicas * task->weight);
 
 				shardcfg_backend_add(&re, task->priv,
 				    b_replicas);
