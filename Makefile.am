@@ -56,6 +56,10 @@ LICENSE: all
 # before we try to run tests anywhere in the tree.
 check-recursive: all
 
+# XXX: This is the exact same hack since some parts of the documentation
+# are generated as regular targets but needed by the html special target.
+html-recursive: all
+
 cscope:
 	-rm -f cscope*
 	find . -name '*.[hcS]' > cscope.files
