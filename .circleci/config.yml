@@ -173,6 +173,7 @@ jobs:
                     automake \
                     build-essential \
                     ca-certificates \
+                    cpio \
                     graphviz \
                     libedit-dev \
                     libjemalloc-dev \
