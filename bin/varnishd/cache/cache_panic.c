@@ -64,7 +64,7 @@
  */
 
 #ifdef GCOVING
-    int __llvm_gcov_flush(void);
+    int __gcov_flush(void);
 #endif
 
 static struct vsb pan_vsb_storage, *pan_vsb;
@@ -816,7 +816,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 	VSB_putc(pan_vsb, '\0');	/* NUL termination */
 
 #ifdef GCOVING
-	__llvm_gcov_flush();
+	__gcov_flush();
 #endif
 	abort();
 }

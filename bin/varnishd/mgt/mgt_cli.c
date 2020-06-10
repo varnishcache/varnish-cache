@@ -64,7 +64,7 @@ static const struct cli_cmd_desc *cmds[] = {
 };
 
 #ifdef GCOVING
-    int __llvm_gcov_flush(void);
+    int __gcov_flush(void);
 #endif
 
 static const int ncmds = sizeof cmds / sizeof cmds[0];
@@ -113,7 +113,7 @@ mcf_panic(struct cli *cli, const char * const *av, void *priv)
 	(void)av;
 	(void)priv;
 #ifdef GCOVING
-	__llvm_gcov_flush();
+	__gcov_flush();
 #endif
 	AZ(strcmp("", "You asked for it"));
 	/* NOTREACHED */
