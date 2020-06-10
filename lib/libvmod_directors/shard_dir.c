@@ -308,9 +308,8 @@ unsigned
 sharddir_any_healthy(struct sharddir *shardd, const struct busyobj *bo,
     double *changed)
 {
-	unsigned retval = 0;
+	unsigned i, retval = 0;
 	VCL_BACKEND be;
-	int i;
 	vtim_real c;
 
 	CHECK_OBJ_NOTNULL(shardd, SHARDDIR_MAGIC);
@@ -399,10 +398,10 @@ sharddir_pick_be_locked(VRT_CTX, const struct sharddir *shardd, uint32_t key,
 	chosen_r = shardcfg_get_rampup(shardd, state->previous.hostid);
 	alt_r = shardcfg_get_rampup(shardd, state->last.hostid);
 
-	SHDBG(SHDBG_RAMPWARM, shardd, "chosen host %d rampup %f changed %f",
+	SHDBG(SHDBG_RAMPWARM, shardd, "chosen host %u rampup %f changed %f",
 	    state->previous.hostid, chosen_r,
 	    ctx->now - state->previous.changed);
-	SHDBG(SHDBG_RAMPWARM, shardd, "alt host %d rampup %f changed %f",
+	SHDBG(SHDBG_RAMPWARM, shardd, "alt host %u rampup %f changed %f",
 	    state->last.hostid, alt_r,
 	    ctx->now - state->last.changed);
 
