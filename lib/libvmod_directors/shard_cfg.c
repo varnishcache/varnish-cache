@@ -106,7 +106,7 @@ shard_change_get(VRT_CTX, struct vmod_priv *priv,
 
 	change = WS_Alloc(ctx->ws, sizeof(*change));
 	if (change == NULL) {
-		shard_err0(ctx, shardd, "could not get workspace");
+		VRT_fail(ctx, "could not get workspace");
 		return (NULL);
 	}
 
@@ -138,8 +138,7 @@ shard_change_task_add(VRT_CTX, struct shard_change *change,
 
 	task = WS_Alloc(ctx->ws, sizeof(*task));
 	if (task == NULL) {
-		shard_err0(ctx, change->shardd,
-		    "could not get workspace for task");
+		VRT_fail(ctx, "could not get workspace for task");
 		return (NULL);
 	}
 	INIT_OBJ(task, SHARD_CHANGE_TASK_MAGIC);
@@ -168,8 +167,7 @@ shard_change_task_backend(VRT_CTX,
 
 	b = WS_Alloc(ctx->ws, sizeof(*b));
 	if (b == NULL) {
-		shard_err(ctx, shardd, ".%s_backend() WS_Alloc() failed",
-		    task_e == ADD_BE ? "add" : "remove");
+		VRT_fail(ctx, "could not get workspace for change");
 		return (NULL);
 	}
 
