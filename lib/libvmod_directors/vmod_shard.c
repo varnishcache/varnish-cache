@@ -707,9 +707,8 @@ vmod_shard_list(VRT_CTX, VCL_BACKEND dir, struct vsb *vsb, int pflag, int jflag)
 	VCL_DURATION rampup_d, d;
 	VCL_BACKEND be;
 	VCL_BOOL h;
-	unsigned nh = 0;
+	unsigned i, nh = 0;
 	double rampup_p;
-	int i;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(dir, DIRECTOR_MAGIC);

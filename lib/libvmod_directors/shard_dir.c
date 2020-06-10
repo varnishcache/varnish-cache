@@ -37,6 +37,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
+#include <limits.h>
 
 #include "cache/cache.h"
 
@@ -47,7 +48,7 @@
 #include "shard_dir.h"
 
 struct shard_be_info {
-	int		hostid;
+	unsigned	hostid;
 	unsigned	healthy;
 	double		changed;	// when
 };
@@ -63,7 +64,7 @@ struct shard_state {
 	uint32_t		idx;
 
 	struct vbitmap		*picklist;
-	int			pickcount;
+	unsigned		pickcount;
 
 	struct shard_be_info	previous;
 	struct shard_be_info	last;
@@ -159,7 +160,7 @@ shard_next(struct shard_state *state, VCL_INT skip, VCL_BOOL healthy)
 				sbe = &state->last;
 			}
 			if (sbe == &state->last &&
-			    state->last.hostid != -1)
+			    state->last.hostid != UINT_MAX)
 				memcpy(&state->previous, &state->last,
 				    sizeof(state->previous));
 
@@ -262,9 +263,9 @@ init_state(struct shard_state *state,
 	state->idx = UINT32_MAX;
 	state->picklist = picklist;
 
-	/* healhy and changed only defined for hostid != -1 */
-	state->previous.hostid = -1;
-	state->last.hostid = -1;
+	/* healhy and changed only defined for valid hostids */
+	state->previous.hostid = UINT_MAX;
+	state->last.hostid = UINT_MAX;
 }
 
 /* basically same as vdir_any_healthy
@@ -327,7 +328,7 @@ sharddir_pick_be_locked(VRT_CTX, const struct sharddir *shardd, uint32_t key,
 	if (alt > 0) {
 		if (shard_next(state, alt - 1,
 		    healthy == VENUM(ALL) ? 1 : 0) == -1) {
-			if (state->previous.hostid != -1) {
+			if (state->previous.hostid != UINT_MAX) {
 				be = sharddir_backend(shardd,
 				    state->previous.hostid);
 				AN(be);
@@ -338,7 +339,7 @@ sharddir_pick_be_locked(VRT_CTX, const struct sharddir *shardd, uint32_t key,
 	}
 
 	if (shard_next(state, 0, healthy == VENUM(IGNORE) ? 0 : 1) == -1) {
-		if (state->previous.hostid != -1) {
+		if (state->previous.hostid != UINT_MAX) {
 			be = sharddir_backend(shardd, state->previous.hostid);
 			AN(be);
 			return (be);
@@ -358,8 +359,8 @@ sharddir_pick_be_locked(VRT_CTX, const struct sharddir *shardd, uint32_t key,
 		return (be);
 
 	assert(alt == 0);
-	assert(state->previous.hostid >= 0);
-	assert(state->last.hostid >= 0);
+	assert(state->previous.hostid != UINT_MAX);
+	assert(state->last.hostid != UINT_MAX);
 	assert(state->previous.hostid != state->last.hostid);
 	assert(be == sharddir_backend(shardd, state->previous.hostid));
 
