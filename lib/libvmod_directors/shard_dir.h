@@ -90,9 +90,8 @@ struct sharddir {
 };
 
 static inline VCL_BACKEND
-sharddir_backend(const struct sharddir *shardd, int id)
+sharddir_backend(const struct sharddir *shardd, unsigned id)
 {
-	assert(id >= 0);
 	assert(id < shardd->n_backend);
 	return (shardd->backend[id].backend);
 }
@@ -130,4 +129,4 @@ VCL_BACKEND sharddir_pick_be(VRT_CTX, struct sharddir *, uint32_t, VCL_INT,
 
 /* in shard_cfg.c */
 void shardcfg_delete(const struct sharddir *shardd);
-VCL_DURATION shardcfg_get_rampup(const struct sharddir *shardd, int host);
+VCL_DURATION shardcfg_get_rampup(const struct sharddir *shardd, unsigned host);
