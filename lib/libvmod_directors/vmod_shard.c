@@ -310,8 +310,8 @@ vmod_shard_add_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 	CHECK_OBJ_NOTNULL(vshard, VMOD_SHARD_SHARD_MAGIC);
 
 	if (args->backend == NULL) {
-		shard_err0(ctx, vshard->shardd,
-		    ".backend_add() NULL backend given");
+		VRT_fail(ctx, "%s: NULL backend cannot be added",
+			 vshard->shardd->name);
 		return (0);
 	}
 
@@ -335,10 +335,10 @@ vmod_shard_remove_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 	CHECK_OBJ_NOTNULL(vshard, VMOD_SHARD_SHARD_MAGIC);
 
 	if (be == NULL && ident == NULL) {
-		shard_err0(ctx, vshard->shardd,
-		    ".backend_remove() at least one of backend "
-		    "and ident must be given");
-		return 0;
+		VRT_fail(ctx, "%s.backend_remove(): "
+		    "either backend or ident are required",
+		    vshard->shardd->name);
+		return (0);
 	}
 
 	return shardcfg_remove_backend(ctx, args->arg1, vshard->shardd,
