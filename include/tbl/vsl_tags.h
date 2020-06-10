@@ -106,14 +106,15 @@ SLTM(SessClose, 0, "Client connection closed",
 SLTM(BackendOpen, 0, "Backend connection opened",
 	"Logged when a new backend connection is opened.\n\n"
 	"The format is::\n\n"
-	"\t%d %s %s %s %s %s\n"
-	"\t|  |  |  |  |  |\n"
-	"\t|  |  |  |  |  +- Local port\n"
-	"\t|  |  |  |  +---- Local address\n"
-	"\t|  |  |  +------- Remote port\n"
-	"\t|  |  +---------- Remote address\n"
-	"\t|  +------------- Backend display name\n"
-	"\t+---------------- Connection file descriptor\n"
+	"\t%d %s %s %s %s %s %s\n"
+	"\t|  |  |  |  |  |  |\n"
+	"\t|  |  |  |  |  |  +- \"connect\" or \"reuse\"\n"
+	"\t|  |  |  |  |  +---- Local port\n"
+	"\t|  |  |  |  +------- Local address\n"
+	"\t|  |  |  +---------- Remote port\n"
+	"\t|  |  +------------- Remote address\n"
+	"\t|  +---------------- Backend display name\n"
+	"\t+------------------- Connection file descriptor\n"
 	"\n"
 )
 
@@ -132,11 +133,12 @@ SLTM(BackendReuse, 0, "Backend connection put up for reuse",
 SLTM(BackendClose, 0, "Backend connection closed",
 	"Logged when a backend connection is closed.\n\n"
 	"The format is::\n\n"
-	"\t%d %s [ %s ]\n"
-	"\t|  |    |\n"
-	"\t|  |    +- Optional reason\n"
-	"\t|  +------ Backend display name\n"
-	"\t+--------- Connection file descriptor\n"
+	"\t%d %s %s [ %s ]\n"
+	"\t|  |  |    |\n"
+	"\t|  |  |    +- Optional reason\n"
+	"\t|  |  +------ \"close\" or \"recycle\"\n"
+	"\t|  +--------- Backend display name\n"
+	"\t+------------ Connection file descriptor\n"
 	"\n"
 )
 

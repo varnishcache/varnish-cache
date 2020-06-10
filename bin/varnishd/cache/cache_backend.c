@@ -202,8 +202,9 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, struct backend *bp,
 
 	PFD_LocalName(pfd, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
 	PFD_RemoteName(pfd, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
-	VSLb(bo->vsl, SLT_BackendOpen, "%d %s %s %s %s %s",
-	    *fdp, VRT_BACKEND_string(bp->director), abuf2, pbuf2, abuf1, pbuf1);
+	VSLb(bo->vsl, SLT_BackendOpen, "%d %s %s %s %s %s %s",
+	    *fdp, VRT_BACKEND_string(bp->director), abuf2, pbuf2, abuf1, pbuf1,
+	    PFD_State(pfd) == PFD_STATE_STOLEN ? "reuse" : "connect");
 
 	INIT_OBJ(bo->htc, HTTP_CONN_MAGIC);
 	bo->htc->priv = pfd;
@@ -235,14 +236,14 @@ vbe_dir_finish(VRT_CTX, VCL_BACKEND d)
 		assert(bo->htc->doclose == SC_TX_PIPE ||
 		    bo->htc->doclose == SC_RX_TIMEOUT);
 	if (bo->htc->doclose != SC_NULL || bp->proxy_header != 0) {
-		VSLb(bo->vsl, SLT_BackendClose, "%d %s", *PFD_Fd(pfd),
+		VSLb(bo->vsl, SLT_BackendClose, "%d %s close", *PFD_Fd(pfd),
 		    VRT_BACKEND_string(bp->director));
 		VTP_Close(&pfd);
 		AZ(pfd);
 		Lck_Lock(&bp->mtx);
 	} else {
 		assert (PFD_State(pfd) == PFD_STATE_USED);
-		VSLb(bo->vsl, SLT_BackendClose, "%d %s", *PFD_Fd(pfd),
+		VSLb(bo->vsl, SLT_BackendClose, "%d %s recycle", *PFD_Fd(pfd),
 		    VRT_BACKEND_string(bp->director));
 		Lck_Lock(&bp->mtx);
 		VSC_C_main->backend_recycle++;
