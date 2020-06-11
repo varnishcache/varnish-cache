@@ -23,7 +23,7 @@ else
 fi
 
 rm -f configure
-(cd $SRCDIR && . ./autogen.sh 2>&1 | egrep -v "(subdir-objects|is in a subdirectory)")
+(cd $SRCDIR && autoreconf -i 2>&1 | egrep -v "(subdir-objects|is in a subdirectory)")
 
 # autoconf prior to 2.62 has issues with zsh 4.2 and newer
 CONFIG_SHELL=/bin/sh
