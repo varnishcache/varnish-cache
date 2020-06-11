@@ -57,6 +57,12 @@
 #include "vtim.h"
 #include "vapi/vsig.h"
 
+#if 0
+#define AC(x) assert((x) != ERR)
+#else
+#define AC(x) x
+#endif
+
 #define HIST_N 2000		/* how far back we remember */
 #define HIST_RES 100		/* bucket resolution */
 
@@ -146,7 +152,7 @@ update(void)
 	int i, j;
 	unsigned k, l;
 
-	erase();
+	AC(erase());
 
 	/* Draw horizontal axis */
 	for (k = 0; k < n; ++k)
@@ -199,7 +205,7 @@ update(void)
 			(void)mvaddch((LINES - 3) - l, k, '|');
 	}
 
-	refresh();
+	AC(refresh());
 }
 
 inline static void
@@ -380,12 +386,12 @@ do_curses(void *arg)
 	(void)arg;
 
 	initscr();
-	raw();
-	noecho();
-	nonl();
-	intrflush(stdscr, FALSE);
-	curs_set(0);
-	erase();
+	AC(raw());
+	AC(noecho());
+	AC(nonl());
+	AC(intrflush(stdscr, FALSE));
+	AC(curs_set(0));
+	AC(erase());
 	while (!VSIG_int && !VSIG_term && !VSIG_hup) {
 		AZ(pthread_mutex_lock(&mtx));
 		update();
@@ -398,16 +404,16 @@ do_curses(void *arg)
 			break;
 #ifdef KEY_RESIZE
 		case KEY_RESIZE:
-			erase();
+			AC(erase());
 			break;
 #endif
 		case '\014':	/* Ctrl-L */
 		case '\024':	/* Ctrl-T */
 			redrawwin(stdscr);
-			refresh();
+			AC(refresh());
 			break;
 		case '\032':	/* Ctrl-Z */
-			endwin();
+			AC(endwin());
 			AZ(raise(SIGTSTP));
 			break;
 		case '\003':	/* Ctrl-C */
@@ -441,7 +447,7 @@ do_curses(void *arg)
 			/* see below */
 			break;
 		default:
-			beep();
+			AC(beep());
 			break;
 		}
 
@@ -459,7 +465,7 @@ do_curses(void *arg)
 			AZ(pthread_mutex_unlock(&mtx));
 		}
 	}
-	endwin();
+	AC(endwin());
 	return (NULL);
 }
 
