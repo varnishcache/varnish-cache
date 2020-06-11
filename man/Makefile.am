@@ -24,8 +24,9 @@ dist_man_MANS = \
 	vmod_unix.3 \
 	vmod_proxy.3
 
-CLEANFILES = $(dist_man_MANS)
+MAINTAINERCLEANFILES = $(dist_man_MANS)
 
+if MAINTAINER_MODE
 RST2ANY_FLAGS = --halt=2
 
 BUILD_MAN = $(AM_V_GEN) $(RST2MAN) $(RST2ANY_FLAGS)
@@ -120,3 +121,4 @@ vmod_proxy.3: $(top_builddir)/lib/libvmod_proxy/vmod_proxy.man.rst
 	$(BUILD_MAN) $? $@
 
 .NOPATH: $(dist_man_MANS)
+endif # MAINTAINER_MODE
