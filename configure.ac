@@ -37,7 +37,6 @@ CC="$PTHREAD_CC"
 
 AC_PROG_INSTALL
 
-AM_COND_IF([MAINTAINER_MODE], [dnl
 AC_ARG_WITH([rst2man],
   AS_HELP_STRING([--with-rst2man=PATH], [Location of rst2man (auto)]),
   [RST2MAN="$withval"],
@@ -48,7 +47,6 @@ if test "x$RST2MAN" = "xno"; then
   AC_MSG_ERROR(
     [rst2man is needed to build Varnish, please install python3-docutils.])
 fi
-])dnl AM_COND_IF MAINTAINER_MODE
 
 AC_ARG_WITH([sphinx-build],
   AS_HELP_STRING([--with-sphinx-build=PATH], [Location of sphinx-build (auto)]),
