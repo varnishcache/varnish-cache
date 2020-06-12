@@ -97,7 +97,7 @@ shard_change_get(VRT_CTX, struct vmod_priv *priv,
 			shard_err0(ctx, shardd,
 			    "cannot change more than one shard director "
 			    "at a time");
-			return NULL;
+			return (NULL);
 		}
 		return (change);
 	}
@@ -105,7 +105,7 @@ shard_change_get(VRT_CTX, struct vmod_priv *priv,
 	change = WS_Alloc(ctx->ws, sizeof(*change));
 	if (change == NULL) {
 		shard_err0(ctx, shardd, "could not get workspace");
-		return NULL;
+		return (NULL);
 	}
 
 	INIT_OBJ(change, SHARD_CHANGE_MAGIC);
@@ -160,13 +160,13 @@ shard_change_task_backend(VRT_CTX,
 
 	change = shard_change_get(ctx, priv, shardd);
 	if (change == NULL)
-		return 0;
+		return (0);
 
 	b = WS_Alloc(ctx->ws, sizeof(*b));
 	if (b == NULL) {
 		shard_err(ctx, shardd, ".%s_backend() WS_Alloc() failed",
 		    task_e == ADD_BE ? "add" : "remove");
-		return 0;
+		return (0);
 	}
 
 	b->backend = be;
@@ -175,7 +175,7 @@ shard_change_task_backend(VRT_CTX,
 
 	shard_change_task_add(ctx, change, task_e, b);
 
-	return 1;
+	return (1);
 }
 
 /*
@@ -188,16 +188,16 @@ shardcfg_add_backend(VRT_CTX, struct vmod_priv *priv,
     VCL_DURATION rampup)
 {
 	AN(be);
-	return shard_change_task_backend(ctx, priv, shardd, ADD_BE,
-	    be, ident, rampup);
+	return (shard_change_task_backend(ctx, priv, shardd, ADD_BE,
+	    be, ident, rampup));
 }
 
 VCL_BOOL
 shardcfg_remove_backend(VRT_CTX, struct vmod_priv *priv,
     const struct sharddir *shardd, VCL_BACKEND be, VCL_STRING ident)
 {
-	return shard_change_task_backend(ctx, priv, shardd, REMOVE_BE,
-	    be, ident, 0);
+	return (shard_change_task_backend(ctx, priv, shardd, REMOVE_BE,
+	    be, ident, 0));
 }
 
 VCL_BOOL
@@ -209,11 +209,11 @@ shardcfg_clear(VRT_CTX, struct vmod_priv *priv, const struct sharddir *shardd)
 
 	change = shard_change_get(ctx, priv, shardd);
 	if (change == NULL)
-		return 0;
+		return (0);
 
 	shard_change_task_add(ctx, change, CLEAR, NULL);
 
-	return 1;
+	return (1);
 }
 
 /*
@@ -227,7 +227,7 @@ static int
 circlepoint_compare(const struct shard_circlepoint *a,
     const struct shard_circlepoint *b)
 {
-	return (a->point == b->point) ? 0 : ((a->point > b->point) ? 1 : -1);
+	return ((a->point == b->point) ? 0 : ((a->point > b->point) ? 1 : -1));
 }
 
 static void
@@ -322,7 +322,7 @@ shardcfg_backend_cmp(const struct shard_backend *a,
 
 	/* vcl_names are unique, so we can compare the backend pointers */
 	if (ai == NULL && bi == NULL)
-		return a->backend != b->backend;
+		return (a->backend != b->backend);
 
 	if (ai == NULL)
 		ai = a->backend->vcl_name;
@@ -330,7 +330,7 @@ shardcfg_backend_cmp(const struct shard_backend *a,
 	if (bi == NULL)
 		bi = b->backend->vcl_name;
 
-	return strcmp(ai, bi);
+	return (strcmp(ai, bi));
 }
 
 /* for removal, we delete all instances if the backend matches */
@@ -341,9 +341,9 @@ shardcfg_backend_del_cmp(const struct shard_backend *task,
 	assert(task->backend || task->ident);
 
 	if (task->ident == NULL)
-		return task->backend != b->backend;
+		return (task->backend != b->backend);
 
-	return shardcfg_backend_cmp(task, b);
+	return (shardcfg_backend_cmp(task, b));
 }
 
 static const struct shard_backend *
@@ -360,9 +360,9 @@ shardcfg_backend_lookup(const struct backend_reconfig *re,
 		if (bb[i].backend == NULL)
 			continue;	// hole
 		if (!shardcfg_backend_cmp(b, &bb[i]))
-			return &bb[i];
+			return (&bb[i]);
 	}
-	return NULL;
+	return (NULL);
 }
 
 static void
@@ -585,15 +585,15 @@ shardcfg_reconfigure(VRT_CTX, struct vmod_priv *priv,
 	if (replicas <= 0) {
 		shard_err(ctx, shardd,
 		    ".reconfigure() invalid replicas argument %ld", replicas);
-		return 0;
+		return (0);
 	}
 
 	change = shard_change_get(ctx, priv, shardd);
 	if (change == NULL)
-		return 0;
+		return (0);
 
 	if (VSTAILQ_FIRST(&change->tasks) == NULL)
-		return 1;
+		return (1);
 
 	sharddir_wrlock(shardd);
 
@@ -607,7 +607,7 @@ shardcfg_reconfigure(VRT_CTX, struct vmod_priv *priv,
 	if (shardd->n_backend == 0) {
 		shard_err0(ctx, shardd, ".reconfigure() no backends");
 		sharddir_unlock(shardd);
-		return 0;
+		return (0);
 	}
 
 	shardcfg_hashcircle(shardd, replicas);

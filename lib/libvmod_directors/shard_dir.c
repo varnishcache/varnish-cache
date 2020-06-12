@@ -156,7 +156,7 @@ shard_lookup(const struct sharddir *shardd, const uint32_t key)
 		low = i;
 	} while (idx == -1);
 
-	return idx;
+	return (idx);
 }
 
 static int
@@ -173,7 +173,7 @@ shard_next(struct shard_state *state, VCL_INT skip, VCL_BOOL healthy)
 	CHECK_OBJ_NOTNULL(state->shardd, SHARDDIR_MAGIC);
 
 	if (state->pickcount >= state->shardd->n_backend)
-		return -1;
+		return (-1);
 
 	ringsz = state->shardd->n_backend * state->shardd->replicas;
 
@@ -218,7 +218,7 @@ shard_next(struct shard_state *state, VCL_INT skip, VCL_BOOL healthy)
 		if (++(state->idx) == ringsz)
 			state->idx = 0;
 	}
-	return chosen;
+	return (chosen);
 }
 
 void
