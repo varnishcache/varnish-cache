@@ -191,6 +191,7 @@ jobs:
                     automake \
                     build-base \
                     ca-certificates \
+                    cpio \
                     gzip \
                     libedit-dev \
                     libtool \
