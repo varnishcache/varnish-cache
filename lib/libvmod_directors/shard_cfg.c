@@ -42,7 +42,7 @@
 
 /*lint -esym(749,  shard_change_task_e::*) */
 enum shard_change_task_e {
-	_INVALID = 0,
+	_SHARD_TASK_E_INVALID = 0,
 	CLEAR,
 	ADD_BE,
 	REMOVE_BE,
