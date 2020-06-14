@@ -1,4 +1,4 @@
-varnishtest "VRT_re_quote() coverage"
+varnishtest "VRE_quote() coverage"
 
 varnish v1 -vcl {
 	import debug;
