@@ -57,7 +57,7 @@
 #include "vtim.h"
 #include "vapi/vsig.h"
 
-#if 0
+#if 1
 #define AC(x) assert((x) != ERR)
 #else
 #define AC(x) x
