@@ -35,3 +35,28 @@ EXTRA_DIST = $(srcdir)/vmod.vcc automake_boilerplate.am
 CLEANFILES = $(builddir)/vcc_if.c $(builddir)/vcc_if.h \
 	$(builddir)/vmod_blob.rst \
 	$(builddir)/vmod_blob.man.rst
+
+TESTS = \
+	tests/blob_b00000.vtc \
+	tests/blob_b00001.vtc \
+	tests/blob_b00002.vtc \
+	tests/blob_b00003.vtc \
+	tests/blob_b00004.vtc \
+	tests/blob_b00005.vtc \
+	tests/blob_b00006.vtc \
+	tests/blob_b00007.vtc \
+	tests/blob_b00008.vtc \
+	tests/blob_b00009.vtc \
+	tests/blob_b00010.vtc \
+	tests/blob_b00011.vtc \
+	tests/blob_b00012.vtc \
+	tests/blob_b00013.vtc \
+	tests/blob_c00000.vtc
+
+EXTRA_DIST += $(TESTS)
+
+vtc-refresh-tests:
+	@PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/vmod.vcc
+	@cd $(top_builddir) && ./config.status --file=$(subdir)/Makefile
+
+include $(top_srcdir)/vtc.am
