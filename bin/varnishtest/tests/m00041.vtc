@@ -414,145 +414,32 @@ varnish v1 -vcl+backend {
 
 	sub vcl_deliver {
 		set req.http.foo = "AAA=";
-		if (req.url == "/1") {
-			set resp.http.bad
-			    = blob.transcode(HEX, IDENTITY, encoded="0x123456");
-		}
-		elsif (req.url == "/2") {
-			set resp.http.bad
-			    = blob.transcode(BASE64, IDENTITY,
-					     encoded="-_-_" + req.http.foo);
-		}
-		elsif (req.url == "/3") {
-			set resp.http.bad
-			    = blob.transcode(BASE64URL, IDENTITY,
-					     encoded="+/+/" + req.http.foo);
-		}
-		elsif (req.url == "/4") {
-			set resp.http.bad
-			    = blob.transcode(BASE64URLNOPAD, IDENTITY,
-					     encoded="TWFu" + req.http.foo);
-		}
-		elsif (req.url == "/5") {
-			set resp.http.bad
-			    = blob.transcode(BASE64, BASE64,
-					     encoded="_-_-" + req.http.foo);
-		}
-		elsif (req.url == "/6") {
-			set resp.http.bad
-			    = blob.transcode(BASE64URL, BASE64URL,
-					     encoded="/+/+" + req.http.foo);
-		}
-		elsif (req.url == "/7") {
-			set resp.http.bad
-			    = blob.transcode(BASE64URLNOPAD, BASE64URLNOPAD,
-					     encoded="Zm9v" + req.http.foo);
-		}
-		elsif (req.url == "/8") {
-			set resp.http.bad
-			    = blob.transcode(URL, IDENTITY, encoded="%");
-		}
-		elsif (req.url == "/9") {
-			set resp.http.bad
-			    = blob.transcode(URL, IDENTITY, encoded="%2");
-		}
-		elsif (req.url == "/10") {
-			set resp.http.bad
-			    = blob.transcode(URL, IDENTITY, encoded="%q");
-		}
-		elsif (req.url == "/11") {
-			set resp.http.bad
-			    = blob.transcode(URL, IDENTITY, encoded="%2q");
-		}
+		set resp.http.res = "";
+		set resp.http.res += blob.transcode(HEX, IDENTITY,
+		    encoded="0x123456");
+		set resp.http.res += blob.transcode(BASE64, IDENTITY,
+		    encoded="-_-_" + req.http.foo);
+		set resp.http.res += blob.transcode(BASE64URL, IDENTITY,
+		    encoded="+/+/" + req.http.foo);
+		set resp.http.res += blob.transcode(BASE64URLNOPAD, IDENTITY,
+		    encoded="TWFu" + req.http.foo);
+		set resp.http.res += blob.transcode(BASE64, BASE64,
+		    encoded="_-_-" + req.http.foo);
+		set resp.http.res += blob.transcode(BASE64URL, BASE64URL,
+		    encoded="/+/+" + req.http.foo);
+		set resp.http.res += blob.transcode(BASE64URLNOPAD,
+		    BASE64URLNOPAD, encoded="Zm9v" + req.http.foo);
+		set resp.http.res += blob.transcode(URL, IDENTITY, encoded="%");
+		set resp.http.res += blob.transcode(URL, IDENTITY, encoded="%2");
+		set resp.http.res += blob.transcode(URL, IDENTITY, encoded="%q");
+		set resp.http.res += blob.transcode(URL, IDENTITY, encoded="%2q");
 	}
 }
 
 client c1 {
-	txreq -url /1
+	txreq
 	rxresp
-	expect resp.status == 503
-	expect resp.reason == "VCL failed"
-	expect resp.http.bad == <undef>
-} -run
-
-client c1 {
-	txreq -url /2
-	rxresp
-	expect resp.status == 503
-	expect resp.reason == "VCL failed"
-	expect resp.http.bad == <undef>
-} -run
-
-client c1 {
-	txreq -url /3
-	rxresp
-	expect resp.status == 503
-	expect resp.reason == "VCL failed"
-	expect resp.http.bad == <undef>
-} -run
-
-client c1 {
-	txreq -url /4
-	rxresp
-	expect resp.status == 503
-	expect resp.reason == "VCL failed"
-	expect resp.http.bad == <undef>
-} -run
-
-client c1 {
-	txreq -url /5
-	rxresp
-	expect resp.status == 503
-	expect resp.reason == "VCL failed"
-	expect resp.http.bad == <undef>
-} -run
-
-client c1 {
-	txreq -url /6
-	rxresp
-	expect resp.status == 503
-	expect resp.reason == "VCL failed"
-	expect resp.http.bad == <undef>
-} -run
-
-client c1 {
-	txreq -url /7
-	rxresp
-	expect resp.status == 503
-	expect resp.reason == "VCL failed"
-	expect resp.http.bad == <undef>
-} -run
-
-client c1 {
-	txreq -url /8
-	rxresp
-	expect resp.status == 503
-	expect resp.reason == "VCL failed"
-	expect resp.http.bad == <undef>
-} -run
-
-client c1 {
-	txreq -url /9
-	rxresp
-	expect resp.status == 503
-	expect resp.reason == "VCL failed"
-	expect resp.http.bad == <undef>
-} -run
-
-client c1 {
-	txreq -url /10
-	rxresp
-	expect resp.status == 503
-	expect resp.reason == "VCL failed"
-	expect resp.http.bad == <undef>
-} -run
-
-client c1 {
-	txreq -url /11
-	rxresp
-	expect resp.status == 503
-	expect resp.reason == "VCL failed"
-	expect resp.http.bad == <undef>
+	expect resp.http.res == ""
 } -run
 
 logexpect l1 -v v1 -d 1 -g vxid -q "VCL_Error" {

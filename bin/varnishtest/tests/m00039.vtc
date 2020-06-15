@@ -291,56 +291,24 @@ varnish v1 -vcl+backend {
 	import blob;
 
 	sub vcl_deliver {
-		if (req.url == "/percent") {
-			set resp.http.bad
-			    = blob.encode(URL, UPPER, blob.decode(URL,
-								  encoded="%"));
-		}
-		elsif (req.url == "/percent-two") {
-			set resp.http.bad = blob.encode(URL, UPPER,
-					    blob.decode(URL, encoded="%2"));
-		}
-		elsif (req.url == "/percent-q") {
-			set resp.http.bad = blob.encode(URL, UPPER,
-					    blob.decode(URL, encoded="%q"));
-		}
-		elsif (req.url == "/percent-two-q") {
-			set resp.http.bad = blob.encode(URL, UPPER,
-					    blob.decode(URL, encoded="%2q"));
-		}
+		set resp.http.percent =
+		    blob.encode(URL, UPPER, blob.decode(URL, encoded="%"));
+		set resp.http.percent-two =
+		    blob.encode(URL, UPPER, blob.decode(URL, encoded="%2"));
+		set resp.http.percent-q =
+		    blob.encode(URL, UPPER, blob.decode(URL, encoded="%q"));
+		set resp.http.percent-two-q =
+		    blob.encode(URL, UPPER, blob.decode(URL, encoded="%2q"));
 	}
 }
 
 client c1 {
-	txreq -url /percent
+	txreq
 	rxresp
-	expect resp.status == 503
-	expect resp.reason == "VCL failed"
-	expect resp.http.bad == <undef>
-} -run
-
-client c1 {
-	txreq -url /percent-two
-	rxresp
-	expect resp.status == 503
-	expect resp.reason == "VCL failed"
-	expect resp.http.bad == <undef>
-} -run
-
-client c1 {
-	txreq -url /percent-q
-	rxresp
-	expect resp.status == 503
-	expect resp.reason == "VCL failed"
-	expect resp.http.bad == <undef>
-} -run
-
-client c1 {
-	txreq -url /percent-two-q
-	rxresp
-	expect resp.status == 503
-	expect resp.reason == "VCL failed"
-	expect resp.http.bad == <undef>
+	expect resp.http.percent == ""
+	expect resp.http.percent-two == ""
+	expect resp.http.percent-q == ""
+	expect resp.http.percent-two-q == ""
 } -run
 
 logexpect l1 -v v1 -d 1 -g vxid -q "VCL_Error" {

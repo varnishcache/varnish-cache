@@ -269,7 +269,7 @@ client c1 {
 
 # Decode failures
 
-server s1 -repeat 3 {
+server s1 {
 	rxreq
 	txresp
 } -start
@@ -278,52 +278,32 @@ varnish v1 -vcl+backend {
 	import blob;
 
 	sub vcl_deliver {
-	  set req.http.foo = "AAA=";
-	  if (req.url == "/base64") {
+		set req.http.foo = "AAA=";
 		set resp.http.bad64 = blob.encode(IDENTITY,
 		    blob=blob.decode(BASE64, encoded="-_-_" + req.http.foo));
-	  }
-	  elsif (req.url == "/base64url") {
 		set resp.http.badurl = blob.encode(IDENTITY,
 		    blob=blob.decode(BASE64URL, encoded="+/+/" + req.http.foo));
-	  }
-	  elsif (req.url == "/base64urlnopad") {
 		set resp.http.badpad = blob.encode(IDENTITY,
 		    blob=blob.decode(BASE64URLNOPAD,
-				     encoded="TWFu" + req.http.foo));
-	  }
+		    encoded="TWFu" + req.http.foo));
 	}
 }
 
-client c1 {
-	txreq -url /base64
-	rxresp
-	expect resp.status == 503
-	expect resp.reason == "VCL failed"
-	expect resp.http.bad64 == <undef>
-} -run
-
-client c1 {
-	txreq -url /base64url
-	rxresp
-	expect resp.status == 503
-	expect resp.reason == "VCL failed"
-	expect resp.http.badurl == <undef>
-} -run
-
-client c1 {
-	txreq -url /base64urlnopad
-	rxresp
-	expect resp.status == 503
-	expect resp.reason == "VCL failed"
-	expect resp.http.badpad == <undef>
-} -run
-
-logexpect l1 -v v1 -d 1 -g vxid -q "VCL_Error" {
+logexpect l1 -v v1 -g vxid -q "VCL_Error" {
 	expect * * VCL_Error {^vmod blob error: cannot decode, illegal encoding beginning with "-_-_"$}
 	expect * * VCL_Error {^vmod blob error: cannot decode, illegal encoding beginning with "././"$}
 	expect * * VCL_Error {^vmod blob error: cannot decode, illegal encoding beginning with "TWFu"$}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.bad64 == ""
+	expect resp.http.badurl == ""
+	expect resp.http.badpad == ""
 } -run
+
+logexpect l1 -wait
 
 # Require case=DEFAULT
 

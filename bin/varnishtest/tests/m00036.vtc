@@ -189,26 +189,23 @@ varnish v1 -vcl+backend {
 	import blob;
 
 	sub vcl_deliver {
-	  set req.http.foo = "123";
-	  set resp.http.badhex = blob.encode(HEX, UPPER,
-				 blob.decode(HEX, 2,
-					     encoded="g" + req.http.foo));
+		set req.http.foo = "123";
+		set resp.http.badhex = blob.encode(HEX, UPPER,
+		    blob.decode(HEX, 2, encoded="g" + req.http.foo));
 	}
 }
 
-client c1 {
-	txreq
-	rxresp
-	expect resp.status == 503
-	expect resp.reason == "VCL failed"
-	expect resp.http.badhex == <undef>
-} -run
-
-logexpect l1 -v v1 -d 1 -g vxid -q "VCL_Error" {
+logexpect l1 -v v1 -g vxid -q "VCL_Error" {
 	expect 0 * Begin req
 	expect * = VCL_Error "^vmod blob error: cannot decode, illegal encoding beginning with \"g\"$"
 #"
 	expect * = End
 } -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.badhex == ""
+} -run
 
 logexpect l1 -wait

@@ -68,8 +68,18 @@ struct vmod_blob_blob {
 	VRT_fail((ctx), "vmod blob error: " fmt, __VA_ARGS__)
 
 #define ERRINVAL(ctx, enc) \
-	VERR((ctx), "cannot decode, illegal encoding beginning with \"%s\"", \
-	     (enc))
+	do {								\
+		if ((ctx)->vsl != NULL)					\
+			VSLb((ctx)->vsl, SLT_VCL_Error,			\
+			    "vmod blob error: cannot decode,"		\
+			    " illegal encoding beginning with \"%s\"",	\
+			    (enc));					\
+		else							\
+			VSL(SLT_VCL_Error, 0,				\
+			    "vmod blob error: cannot decode,"		\
+			    " illegal encoding beginning with \"%s\"",	\
+			    (enc));					\
+	} while (0)
 
 #define VERRNOMEM(ctx, fmt, ...) \
 	VERR((ctx), fmt ", out of space", __VA_ARGS__)
@@ -343,8 +353,8 @@ vmod_decode(VRT_CTX, VCL_ENUM decs, VCL_INT length, VCL_STRANDS strings)
 	len = dec->decode(dec, buf, space, length, strings);
 
 	if (len == -1) {
-		err_decode(ctx, strings->p[0]);
 		WS_Release(ctx->ws, 0);
+		err_decode(ctx, strings->p[0]);
 		return (NULL);
 	}
 	if (len == 0) {

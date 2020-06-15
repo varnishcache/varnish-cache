@@ -414,153 +414,113 @@ client c1 {
 
 # Decode failures
 
-server s1 -repeat 11 -keepalive {
-	rxreq
-	txresp
-} -start
-
 varnish v1 -vcl+backend {
 	import blob;
 
-	sub vcl_deliver {
+	backend be none;
+
+	sub vcl_recv {
+		return (synth(200));
+	}
+
+	sub vcl_synth {
 		set req.http.foo = "AAA=";
 		if (req.url == "/1") {
-			set resp.http.good
-			    = blob.transcode(URL, IDENTITY, length=3,
-					     encoded="%2c%q");
+			set resp.http.res = blob.transcode(URL,
+			    IDENTITY, length=3, encoded="%2c%q");
 		}
 		elsif (req.url == "/2") {
-			set resp.http.good
-			    = blob.transcode(URL, IDENTITY, length=3,
-					     encoded="%3a%2q");
+			set resp.http.res = blob.transcode(URL,
+			    IDENTITY, length=3, encoded="%3a%2q");
 		}
 		elsif (req.url == "/3") {
-			set resp.http.bad
-			    = blob.transcode(HEX, IDENTITY, length=8,
-					     encoded="0x123456");
+			set resp.http.res = blob.transcode(HEX,
+			    IDENTITY, length=8, encoded="0x123456");
 		}
 		elsif (req.url == "/4") {
-			set resp.http.bad
-			    = blob.transcode(BASE64, IDENTITY, length=4,
-					     encoded="-_-_" + req.http.foo);
+			set resp.http.res = blob.transcode(BASE64,
+			    IDENTITY, length=4, encoded="-_-_" + req.http.foo);
 		}
 		elsif (req.url == "/5") {
-			set resp.http.bad
-			    = blob.transcode(BASE64URL, IDENTITY, length=4,
-					     encoded="+/+/" + req.http.foo);
+			set resp.http.res = blob.transcode(BASE64URL,
+			    IDENTITY, length=4, encoded="+/+/" + req.http.foo);
 		}
 		elsif (req.url == "/6") {
-			set resp.http.bad
-			    = blob.transcode(BASE64URLNOPAD, IDENTITY, length=8,
-					     encoded="TWFu" + req.http.foo);
+			set resp.http.res = blob.transcode(BASE64URLNOPAD,
+			    IDENTITY, length=8, encoded="TWFu" + req.http.foo);
 		}
 		elsif (req.url == "/7") {
-			set resp.http.bad
-			    = blob.transcode(BASE64, BASE64, length=4,
-					     encoded="_-_-" + req.http.foo);
+			set resp.http.res = blob.transcode(BASE64,
+			    BASE64, length=4, encoded="_-_-" + req.http.foo);
 		}
 		elsif (req.url == "/8") {
-			set resp.http.bad
-			    = blob.transcode(BASE64URL, BASE64URL, length=4,
-					     encoded="/+/+" + req.http.foo);
+			set resp.http.res = blob.transcode(BASE64URL,
+			    BASE64URL, length=4, encoded="/+/+" + req.http.foo);
 		}
 		elsif (req.url == "/9") {
-			set resp.http.bad
-			    = blob.transcode(BASE64URLNOPAD,
-					     BASE64URLNOPAD, length=8,
-					     encoded="Zm9v" + req.http.foo);
+			set resp.http.res = blob.transcode(BASE64URLNOPAD,
+			    BASE64URLNOPAD, length=8,
+			    encoded="Zm9v" + req.http.foo);
 		}
 		elsif (req.url == "/10") {
-			set resp.http.bad
-			    = blob.transcode(URL, IDENTITY, length=1,
-					     encoded="%20");
+			set resp.http.res = blob.transcode(URL,
+			    IDENTITY, length=1, encoded="%20");
 		}
 		elsif (req.url == "/11") {
-			set resp.http.bad
-			    = blob.transcode(URL, IDENTITY, length=2,
-					     encoded="%20");
+			set resp.http.res = blob.transcode(URL,
+			    IDENTITY, length=2, encoded="%20");
 		}
+		if (resp.http.res == "") {
+			unset resp.http.res;
+		}
+		return (deliver);
 	}
 }
 
 client c1 {
 	txreq -url /1
 	rxresp
-	expect resp.status == 200
-	expect resp.http.good == ","
+	expect resp.http.res == ","
+
 	txreq -url /2
 	rxresp
-	expect resp.status == 200
-	expect resp.http.good == ":"
+	expect resp.http.res == ":"
+
 	txreq -url /3
 	rxresp
-	expect resp.status == 503
-	expect resp.reason == "VCL failed"
-	expect resp.http.bad == <undef>
-} -run
+	expect resp.http.res == <undef>
 
-client c1 {
 	txreq -url /4
 	rxresp
-	expect resp.status == 503
-	expect resp.reason == "VCL failed"
-	expect resp.http.bad == <undef>
-} -run
+	expect resp.http.res == <undef>
 
-client c1 {
 	txreq -url /5
 	rxresp
-	expect resp.status == 503
-	expect resp.reason == "VCL failed"
-	expect resp.http.bad == <undef>
-} -run
+	expect resp.http.res == <undef>
 
-client c1 {
 	txreq -url /6
 	rxresp
-	expect resp.status == 503
-	expect resp.reason == "VCL failed"
-	expect resp.http.bad == <undef>
-} -run
+	expect resp.http.res == <undef>
 
-client c1 {
 	txreq -url /7
 	rxresp
-	expect resp.status == 503
-	expect resp.reason == "VCL failed"
-	expect resp.http.bad == <undef>
-} -run
+	expect resp.http.res == <undef>
 
-client c1 {
 	txreq -url /8
 	rxresp
-	expect resp.status == 503
-	expect resp.reason == "VCL failed"
-	expect resp.http.bad == <undef>
-} -run
+	expect resp.http.res == <undef>
 
-client c1 {
 	txreq -url /9
 	rxresp
-	expect resp.status == 503
-	expect resp.reason == "VCL failed"
-	expect resp.http.bad == <undef>
-} -run
+	expect resp.http.res == <undef>
 
-client c1 {
 	txreq -url /10
 	rxresp
-	expect resp.status == 503
-	expect resp.reason == "VCL failed"
-	expect resp.http.bad == <undef>
-} -run
+	expect resp.http.res == <undef>
 
-client c1 {
 	txreq -url /11
 	rxresp
-	expect resp.status == 503
-	expect resp.reason == "VCL failed"
-	expect resp.http.bad == <undef>
+	expect resp.http.res == <undef>
 } -run
 
 logexpect l1 -v v1 -d 1 -g vxid -q "VCL_Error" {
