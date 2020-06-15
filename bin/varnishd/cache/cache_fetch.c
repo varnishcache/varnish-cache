@@ -106,6 +106,11 @@ void Bereq_Rollback(struct busyobj *bo)
 {
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
+	if (bo->htc != NULL &&
+	    bo->htc->body_status != BS_NONE &&
+	    bo->htc->body_status != BS_TAKEN)
+		bo->htc->doclose = SC_RESP_CLOSE;
+
 	vbf_cleanup(bo);
 	VCL_TaskLeave(bo->privs);
 	VCL_TaskEnter(bo->privs);

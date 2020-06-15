@@ -1,0 +1,33 @@
+varnishtest "Test rollback and retry"
+
+server s1 {
+	rxreq
+	txresp -nolen -hdr "Content-Length: 3"
+	expect_close
+	accept
+
+	rxreq
+	txresp -body xxx
+} -start
+
+varnish v1 -vcl+backend {
+	import std;
+
+	sub vcl_backend_response {
+		if (bereq.retries == 0) {
+			std.rollback(bereq);
+		}
+	}
+
+	sub vcl_backend_error {
+		if (bereq.retries == 0) {
+			return (retry);
+		}
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run
