@@ -24,7 +24,7 @@ jobs:
             - libpcre3-dev
       before_script:
         - ./autogen.sh
-        - ./configure --with-unwind
+        - ./configure --enable-maintainer-mode --with-unwind
       script: &script-common
         - |
           if [[ "$TRAVIS_PULL_REQUEST" != "false" ]]; then
@@ -38,13 +38,13 @@ jobs:
       compiler: gcc
       before_script:
         - ./autogen.sh
-        - ./configure
+        - ./configure --enable-maintainer-mode
     - <<: *test-linux
       compiler: gcc
       arch: arm64
       before_script:
         - ./autogen.sh
-        - ./configure
+        - ./configure --enable-maintainer-mode
     - <<: *test-linux
       env: WITNESS=1
       script: make -j8 witness
@@ -72,7 +72,7 @@ jobs:
           export UBSAN_OPTIONS=halt_on_error=1,print_stacktrace=1,use_sigaltstack=0,suppressions=$(pwd)/tools/ubsan.suppr
           export CC=clang-9
         - ./autogen.sh
-        - ./configure --with-unwind --enable-developer-warnings --enable-debugging-symbols --disable-stack-protector --with-persistent-storage --enable-asan --enable-ubsan
+        - ./configure --enable-maintainer-mode --with-unwind --enable-developer-warnings --enable-debugging-symbols --disable-stack-protector --with-persistent-storage --enable-asan --enable-ubsan
     - stage: test
       os: osx
       osx_image: xcode11.4
@@ -86,8 +86,8 @@ jobs:
           update: true
       before_script:
         - export PATH="/usr/local/opt/sphinx-doc/bin:$PATH"
-        - autoreconf -i
-        - ./configure
+        - ./autogen.sh
+        - ./configure --enable-maintainer-mode
       script: *script-common
     - <<: *test-linux
       stage: coverity
@@ -102,7 +102,7 @@ jobs:
         - export PATH=$PATH:$(echo $(pwd)/cov-analysis-*/bin)
       script:
         - ./autogen.sh
-        - ./configure --with-unwind
+        - ./configure --enable-maintainer-mode --with-unwind
         - cov-build --dir cov-int make
         - tar cfz varnish.tgz cov-int
         - curl --form token="$COVTOKEN"

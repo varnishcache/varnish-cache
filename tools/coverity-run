@@ -37,7 +37,7 @@ test "`basename $PWD`" = "devscripts" && cd ..
 
 make distclean || true
 test -f configure || ./autogen.sh
-./configure
+./configure --enable-maintainer-mode
 
 cov-build --dir cov-int make
 
