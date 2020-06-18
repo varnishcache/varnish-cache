@@ -26,6 +26,8 @@ you can either::
 
 	pkg install automake pkgconf py36-sphinx py36-docutils pcre libtool
 
+.. XXX does cpio need to be installed on FreeBSD?
+
 And optionally, to be able to run all the testcases::
 
 	pkg install haproxy nghttp2 vttest
@@ -55,7 +57,8 @@ them (replace ``sudo apt-get install`` if needed)::
 	libtool \
 	pkg-config \
 	python3-docutils \
-	python3-sphinx
+	python3-sphinx \
+	cpio
 
 Optionally, to rebuild the svg files::
 
@@ -104,7 +107,8 @@ packages::
 	ncurses-devel \
 	pcre-devel \
 	pkgconfig \
-	python3-docutils
+	python3-docutils \
+	cpio
 
 Optionally, to rebuild the svg files::
 
