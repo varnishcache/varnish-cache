@@ -81,7 +81,7 @@ VDI_Ahealth(const struct director *d)
 /* Resolve director --------------------------------------------------*/
 
 VCL_BACKEND
-VRT_VDI_Resolve(VRT_CTX, VCL_BACKEND d)
+VRT_DirectorResolve(VRT_CTX, VCL_BACKEND d)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
@@ -116,7 +116,7 @@ VDI_Resolve(VRT_CTX)
 	}
 
 	CHECK_OBJ(bo->director_req, DIRECTOR_MAGIC);
-	d = VRT_VDI_Resolve(ctx, bo->director_req);
+	d = VRT_DirectorResolve(ctx, bo->director_req);
 	if (d != NULL)
 		return (d);
 
