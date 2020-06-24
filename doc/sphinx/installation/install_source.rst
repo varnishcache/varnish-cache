@@ -37,6 +37,8 @@ Or if you want the built from sources::
 	cd /usr/ports/www/varnish6
 	make depends clean
 
+Then continue `Compiling Varnish`_
+
 Build dependencies on Debian / Ubuntu
 --------------------------------------
 
@@ -71,6 +73,8 @@ Recommended, in particular if you plan on building custom vmods::
 Optionally, to pull from a repository::
 
     sudo apt-get install git
+
+Then continue `Compiling Varnish`_
 
 Build dependencies on Red Hat / CentOS
 --------------------------------------
@@ -120,6 +124,32 @@ Optionally, to pull from a repository::
 
 .. XXX autoconf-archive ? is this any helpful on the notoriously
    outdated Redhats?
+
+Then continue `Compiling Varnish`_
+
+Build dependencies on MacOS
+---------------------------
+
+To compile varnish on MacOS, these steps should install the required
+dependencies:
+
+* Install ``xcode`` via the App Store
+
+* Install dependencies via `brew`::
+
+    brew install \
+	autoconf \
+	automake \
+	pkg-config \
+	libtool \
+	docutils \
+	sphinx-doc
+
+* Add sphinx to PATH as advised by the installer::
+
+    PATH="/usr/local/opt/sphinx-doc/bin:$PATH"
+
+Then continue `Compiling Varnish`_
 
 Build dependencies on a SmartOS Zone
 ------------------------------------
