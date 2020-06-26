@@ -1,6 +1,6 @@
 varnishtest "Test VMOD BLOBS"
 
-varnish v1 -errvcl {BLOBs can only be used as arguments to VMOD functions.} {
+varnish v1 -errvcl {Cannot convert BLOB to STRING.} {
 
 	backend b1 {.host = "${bad_backend}";}
 
@@ -9,13 +9,10 @@ varnish v1 -errvcl {BLOBs can only be used as arguments to VMOD functions.} {
 	}
 }
 
-varnish v1 -errvcl {Expression has type STRING, expected BLOB} {
-
-	backend b1 {.host = "${bad_backend}";}
-
+varnish v1 -errvcl {Expression has type HTTP, expected BLOB} {
 	import blob;
-
+	backend be none;
 	sub vcl_deliver {
-		blob.encode(blob = "blob");
+		blob.encode(blob = req);
 	}
 }

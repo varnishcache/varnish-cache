@@ -135,6 +135,7 @@ vcc_delete_expr(struct expr *e)
  *	\vs  insert subexpression 2(STRINGS) as STRING
  *	\vT  insert subexpression 1(STRINGS) as STRANDS
  *	\vt  insert subexpression 2(STRINGS) as STRANDS
+ *	\vB  insert subexpression 1(STRINGS) as BLOB
  *	\v+  increase indentation
  *	\v-  decrease indentation
  *	anything else is literal
@@ -191,8 +192,14 @@ vcc_expr_edit(struct vcc *tl, vcc_type_t fmt, const char *p, struct expr *e1,
 			    "VPI_BundleStrands(%d, &strs_%u_a, strs_%u_s,"
 			    "\v+\n%s,\nvrt_magic_string_end\v-\n)",
 			    e3->nstr, tl->unique, tl->unique,
-			VSB_data(e3->vsb));
+			    VSB_data(e3->vsb));
 			tl->unique++;
+			break;
+		case 'B':
+			assert(e1->fmt == STRING);
+			AZ(e2);
+			VSB_printf(e->vsb,
+			    "VPI_blob(ctx, %s)", VSB_data(e1->vsb));
 			break;
 		case '1':
 			VSB_cat(e->vsb, VSB_data(e1->vsb));
@@ -291,15 +298,8 @@ vcc_expr_tostring(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		(*e)->constant = constant;
 		(*e)->nstr = 1;
 	} else {
-		if ((*e)->fmt == BLOB)
-			VSB_cat(tl->sb,
-			    "Wrong use of BLOB value.\n"
-			    "BLOBs can only be used as arguments to VMOD"
-			    " functions.\n");
-		else
-			VSB_printf(tl->sb,
-			    "Cannot convert %s to STRING.\n",
-			    vcc_utype((*e)->fmt));
+		VSB_printf(tl->sb, "Cannot convert %s to STRING.\n",
+		    vcc_utype((*e)->fmt));
 		vcc_ErrWhere2(tl, (*e)->t1, tl->t);
 	}
 }
@@ -1346,7 +1346,7 @@ vcc_expr0(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	if ((*e)->fmt == fmt)
 		return;
 
-	if ((*e)->fmt != STRINGS && fmt->stringform)
+	if ((*e)->fmt != STRINGS && fmt->stringcast)
 		vcc_expr_tostring(tl, e, STRINGS);
 
 	if ((*e)->fmt->stringform) {
@@ -1357,20 +1357,21 @@ vcc_expr0(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		return;
 	}
 
-	if ((*e)->fmt == STRINGS && fmt->stringform) {
-		if (fmt == STRING_LIST)
+	if ((*e)->fmt == STRINGS && fmt->stringcast) {
+		if (fmt == STRING_LIST) {
 			(*e)->fmt = STRING_LIST;
-		else if (fmt == STRING)
+			*e = vcc_expr_edit(tl, STRING_LIST,
+			    "\n\v1,\nvrt_magic_string_end", *e, NULL);
+		} else if (fmt == STRING) {
 			*e = vcc_expr_edit(tl, STRING, "\vS", *e, NULL);
-		else if (fmt == STRANDS)
-			*e = vcc_expr_edit(tl, STRANDS, "\vT", (*e), NULL);
-		else
-			WRONG("Unhandled stringform");
+		} else if (fmt == BLOB) {
+			*e = vcc_expr_edit(tl, STRING, "\vS", *e, NULL);
+			*e = vcc_expr_edit(tl, BLOB, "\vB", *e, NULL);
+		} else if (fmt == STRANDS) {
+			*e = vcc_expr_edit(tl, STRANDS, "\vT", *e, NULL);
+		} else
+			WRONG("Unhandled stringcast");
 	}
-
-	if ((*e)->fmt == STRING_LIST)
-		*e = vcc_expr_edit(tl, STRING_LIST,
-		    "\n\v1,\nvrt_magic_string_end", *e, NULL);
 
 	if (fmt == BOOL) {
 		vcc_expr_tobool(tl, e);

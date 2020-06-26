@@ -190,7 +190,8 @@ $Function STRING fileread(PRIV_CALL, STRING)
 Reads a file and returns a string with the content. The result is
 cached indefinitely per filename.
 
-This function should not be used for reading binary files.
+This function should not be used for reading binary files, use
+std.blobread() instead.
 
 Example::
 
@@ -203,6 +204,15 @@ case, you may need to modify the string, for example with
 ``regsub()`` (see :ref:`vcl(7)`)::
 
   set beresp.http.served-by = regsub(std.fileread("/etc/hostname"), "\R$", "");
+
+$Function BLOB blobread(PRIV_CALL, STRING)
+
+Reads a file and returns a blob with the content. The result is
+cached indefinitely per filename.
+
+Example::
+
+	set resp.body = std.blobread("/path/to/logo.png");
 
 $Function BOOL file_exists(STRING path)
 

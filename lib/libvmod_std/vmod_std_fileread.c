@@ -54,7 +54,7 @@ struct frfile {
 	unsigned			magic;
 #define CACHED_FILE_MAGIC 0xa8e9d87a
 	char				*file_name;
-	char				*contents;
+	struct vrt_blob			contents[1];
 	int				refcount;
 	VTAILQ_ENTRY(frfile)		list;
 };
@@ -76,20 +76,19 @@ free_frfile(void *ptr)
 		VTAILQ_REMOVE(&frlist, frf, list);
 	AZ(pthread_mutex_unlock(&frmtx));
 	if (frf != NULL) {
-		free(frf->contents);
+		free(TRUST_ME(frf->contents->blob));
 		free(frf->file_name);
 		FREE_OBJ(frf);
 	}
 }
 
-VCL_STRING v_matchproto_(td_std_fileread)
-vmod_fileread(VRT_CTX, struct vmod_priv *priv,
-    VCL_STRING file_name)
+static struct frfile *
+find_frfile(struct vmod_priv *priv, VCL_STRING file_name)
 {
 	struct frfile *frf = NULL;
 	char *s;
+	ssize_t sz;
 
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(priv);
 
 	if (file_name == NULL)
@@ -98,7 +97,7 @@ vmod_fileread(VRT_CTX, struct vmod_priv *priv,
 	if (priv->priv != NULL) {
 		CAST_OBJ_NOTNULL(frf, priv->priv, CACHED_FILE_MAGIC);
 		if (!strcmp(file_name, frf->file_name))
-			return (frf->contents);
+			return (frf);
 	}
 
 	AZ(pthread_mutex_lock(&frmtx));
@@ -114,22 +113,51 @@ vmod_fileread(VRT_CTX, struct vmod_priv *priv,
 	if (frf != NULL) {
 		priv->free = free_frfile;
 		priv->priv = frf;
-		return (frf->contents);
+		return (frf);
 	}
 
-	s = VFIL_readfile(NULL, file_name, NULL);
+	s = VFIL_readfile(NULL, file_name, &sz);
 	if (s != NULL) {
+		assert(sz > 0);
 		ALLOC_OBJ(frf, CACHED_FILE_MAGIC);
 		AN(frf);
-		frf->file_name = strdup(file_name);
-		AN(frf->file_name);
+		REPLACE(frf->file_name, file_name);
 		frf->refcount = 1;
-		frf->contents = s;
+		frf->contents->blob = s;
+		frf->contents->len = (size_t)sz;
 		priv->free = free_frfile;
 		priv->priv = frf;
 		AZ(pthread_mutex_lock(&frmtx));
 		VTAILQ_INSERT_HEAD(&frlist, frf, list);
 		AZ(pthread_mutex_unlock(&frmtx));
 	}
-	return (s);
+	return (frf);
+}
+
+VCL_STRING v_matchproto_(td_std_fileread)
+vmod_fileread(VRT_CTX, struct vmod_priv *priv, VCL_STRING file_name)
+{
+	struct frfile *frf;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(priv);
+
+	frf = find_frfile(priv, file_name);
+	if (frf == NULL)
+		return (NULL);
+	return (frf->contents->blob);
+}
+
+VCL_BLOB v_matchproto_(td_std_blobread)
+vmod_blobread(VRT_CTX, struct vmod_priv *priv, VCL_STRING file_name)
+{
+	struct frfile *frf;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(priv);
+
+	frf = find_frfile(priv, file_name);
+	if (frf == NULL)
+		return (NULL);
+	return (frf->contents);
 }
