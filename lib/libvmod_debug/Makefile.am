@@ -17,7 +17,7 @@ libvmod_debug_la_LDFLAGS = \
 
 
 # not --strict
-vmodtoolargs = --boilerplate
+vmodtoolargs = --boilerplate -o vcc_debug_if
 
 .vsc.c:
 	$(PYTHON) $(top_srcdir)/lib/libvcc/vsctool.py -ch $<

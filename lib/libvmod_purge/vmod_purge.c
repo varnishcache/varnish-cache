@@ -38,7 +38,7 @@
 #include "miniobj.h"
 #include "vrt.h"
 
-#include "vcc_if.h"
+#include "vcc_purge_if.h"
 
 VCL_INT v_matchproto_(td_purge_hard)
 vmod_hard(VRT_CTX)

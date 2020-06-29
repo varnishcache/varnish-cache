@@ -38,7 +38,7 @@
 #include "common/heritage.h"
 
 #include "cred_compat.h"
-#include "vcc_if.h"
+#include "vcc_unix_if.h"
 
 #define FAIL(ctx, msg) \
 	VRT_fail((ctx), "vmod unix failure: " msg)

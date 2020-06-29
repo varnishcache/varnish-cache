@@ -42,7 +42,7 @@
 #include "vre.h"
 #include "vsa.h"
 #include "vtim.h"
-#include "vcc_if.h"
+#include "vcc_debug_if.h"
 #include "VSC_debug.h"
 
 struct priv_vcl {

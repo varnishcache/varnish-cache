@@ -48,7 +48,7 @@
 
 #include "vfil.h"
 
-#include "vcc_if.h"
+#include "vcc_std_if.h"
 
 struct frfile {
 	unsigned			magic;

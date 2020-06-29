@@ -73,8 +73,8 @@ cscope.*out
 # Misc. generated files for included vmods.
 /lib/libvmod_*/VSC_*.c
 /lib/libvmod_*/VSC_*.h
-/lib/libvmod_*/vcc_if.c
-/lib/libvmod_*/vcc_if.h
+/lib/libvmod_*/vcc_*_if.c
+/lib/libvmod_*/vcc_*_if.h
 /lib/libvmod_*/vmod_*.rst
 
 # Man-files and binaries

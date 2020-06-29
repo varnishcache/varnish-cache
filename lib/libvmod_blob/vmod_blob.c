@@ -33,7 +33,7 @@
 
 #include "cache/cache.h"
 
-#include "vcc_if.h"
+#include "vcc_blob_if.h"
 #include "vmod_blob.h"
 
 #define VMOD_BLOB_TYPE 0xfade4faa

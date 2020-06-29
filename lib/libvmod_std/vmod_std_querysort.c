@@ -35,7 +35,7 @@
 
 #include "cache/cache.h"
 
-#include "vcc_if.h"
+#include "vcc_std_if.h"
 
 static int
 compa(const void *a, const void *b)

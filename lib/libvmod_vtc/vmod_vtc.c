@@ -41,7 +41,7 @@
 #include "vtcp.h"
 #include "vtim.h"
 
-#include "vcc_if.h"
+#include "vcc_vtc_if.h"
 
 VCL_VOID v_matchproto_(td_vtc_barrier_sync)
 vmod_barrier_sync(VRT_CTX, VCL_STRING addr, VCL_DURATION tmo)

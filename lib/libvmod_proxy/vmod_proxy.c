@@ -40,7 +40,7 @@
 
 #include "proxy/cache_proxy.h"
 
-#include "vcc_if.h"
+#include "vcc_proxy_if.h"
 
 
 struct pp2_tlv_ssl {

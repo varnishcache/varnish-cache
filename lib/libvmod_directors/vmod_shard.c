@@ -39,7 +39,7 @@
 
 #include "vend.h"
 
-#include "vcc_if.h"
+#include "vcc_directors_if.h"
 #include "shard_dir.h"
 #include "shard_cfg.h"
 #include "vsb.h"

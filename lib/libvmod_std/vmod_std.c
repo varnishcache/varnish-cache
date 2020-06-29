@@ -49,7 +49,7 @@
 #include "vtim.h"
 #include "vcl.h"
 
-#include "vcc_if.h"
+#include "vcc_std_if.h"
 
 VCL_VOID v_matchproto_(td_std_set_ip_tos)
 vmod_set_ip_tos(VRT_CTX, VCL_INT tos)

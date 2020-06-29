@@ -8,7 +8,7 @@ AM_CPPFLAGS = \
 	-I$(top_builddir)/include
 
 vmodtool = $(top_srcdir)/lib/libvcc/vmodtool.py
-vmodtoolargs ?= --strict --boilerplate -o vcc_if
+vmodtoolargs ?= --strict --boilerplate -o vcc_proxy_if
 
 vmod_LTLIBRARIES = libvmod_proxy.la
 
@@ -21,17 +21,17 @@ libvmod_proxy_la_LDFLAGS = \
 	$(VMOD_LDFLAGS) \
 	@SAN_LDFLAGS@
 
-nodist_libvmod_proxy_la_SOURCES = vcc_if.c vcc_if.h
+nodist_libvmod_proxy_la_SOURCES = vcc_proxy_if.c vcc_proxy_if.h
 
-$(libvmod_proxy_la_OBJECTS): vcc_if.h
+$(libvmod_proxy_la_OBJECTS): vcc_proxy_if.h
 
-vcc_if.h vmod_proxy.rst vmod_proxy.man.rst: vcc_if.c
+vcc_proxy_if.h vmod_proxy.rst vmod_proxy.man.rst: vcc_proxy_if.c
 
-vcc_if.c: $(vmodtool) $(srcdir)/vmod.vcc
-	@PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/vmod.vcc
+vcc_proxy_if.c: $(vmodtool) $(srcdir)/vmod_proxy.vcc
+	@PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/vmod_proxy.vcc
 
-EXTRA_DIST = $(srcdir)/vmod.vcc automake_boilerplate.am
+EXTRA_DIST = $(srcdir)/vmod_proxy.vcc automake_boilerplate.am
 
-CLEANFILES = $(builddir)/vcc_if.c $(builddir)/vcc_if.h \
+CLEANFILES = $(builddir)/vcc_proxy_if.c $(builddir)/vcc_proxy_if.h \
 	$(builddir)/vmod_proxy.rst \
 	$(builddir)/vmod_proxy.man.rst

@@ -39,7 +39,7 @@
 
 #include "vdir.h"
 
-#include "vcc_if.h"
+#include "vcc_directors_if.h"
 
 struct vmod_directors_random {
 	unsigned				magic;

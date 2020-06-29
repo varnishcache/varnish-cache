@@ -44,7 +44,7 @@
 #include "vbm.h"
 #include "vrnd.h"
 
-#include "vcc_if.h"
+#include "vcc_directors_if.h"
 #include "shard_dir.h"
 
 struct shard_be_info {

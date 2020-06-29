@@ -34,7 +34,7 @@
 #include "vrt.h"
 #include "vcl.h"
 
-#include "vcc_if.h"
+#include "vcc_directors_if.h"
 
 VCL_BACKEND
 VPFX(lookup)(VRT_CTX, VCL_STRING name)
