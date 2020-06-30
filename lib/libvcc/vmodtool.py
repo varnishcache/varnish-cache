@@ -63,10 +63,10 @@ vmodtoolargs ?= --strict --boilerplate -o PFX
 
 vmod_LTLIBRARIES = libvmod_XXX.la
 
-libvmod_XXX_la_CFLAGS = \\
+libvmod_XXX_la_CFLAGS ?= \\
 \t@SAN_CFLAGS@
 
-libvmod_XXX_la_LDFLAGS = \\
+libvmod_XXX_la_LDFLAGS ?= \\
 \t-export-symbols-regex 'Vmod_XXX_Data' \\
 \t$(AM_LDFLAGS) \\
 \t$(VMOD_LDFLAGS) \\
