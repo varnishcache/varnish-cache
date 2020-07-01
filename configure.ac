@@ -19,7 +19,7 @@ AC_CANONICAL_SYSTEM
 AC_LANG(C)
 
 AM_MAINTAINER_MODE([disable])
-AM_INIT_AUTOMAKE([1.11 foreign color-tests parallel-tests])
+AM_INIT_AUTOMAKE([1.11 foreign color-tests parallel-tests subdir-objects])
 AM_SILENT_RULES([yes])
 AC_DISABLE_STATIC
 AC_PROG_LIBTOOL
