@@ -22,8 +22,8 @@ else
 	DST="--prefix=/opt/varnish --mandir=/opt/varnish/man"
 fi
 
-rm -f configure
-(cd $SRCDIR && . ./autogen.sh 2>&1 | egrep -v "(subdir-objects|is in a subdirectory)")
+rm -f $SRCDIR/configure
+(cd $SRCDIR && . ./autogen.sh 2>&1)
 
 # autoconf prior to 2.62 has issues with zsh 4.2 and newer
 export CONFIG_SHELL=/bin/sh
