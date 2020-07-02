@@ -2,7 +2,7 @@
 #
 # Use this when doing code development
 
-SRCDIR=${SRCDIR:-.}
+SRCDIR=${SRCDIR:-$(dirname "$0")}
 
 set -ex
 
