@@ -319,7 +319,10 @@ hashing circular data structure gets built from the last 32 bits of
 SHA256 hash values of *<ident>*\ *<n>* (default *ident* being the
 backend name) for each backend and for a running number *n* from 1 to
 *replicas*. Hashing creates the seemingly random order for placement
-of backends on the consistent hashing ring.
+of backends on the consistent hashing ring. When
+`xshard.add_backend()`_ was called with a *weight* argument,
+*replicas* is scaled by that weight to add proportionally more copies
+of the that backend on the ring.
 
 When `xshard.backend()`_ is called, a load balancing key
 gets generated unless provided. The smallest hash value in the circle
