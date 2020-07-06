@@ -38,6 +38,9 @@ NEXT (scheduled 2020-09-15)
   argument which allows to extend the effective privilege set of the
   worker process.
 
+* The shard director and shard director parameter objects should now
+  work in ``vcl_pipe {}`` like in ``vcl_backend_* {}`` subs.
+
 ================================
 Varnish Cache 6.4.0 (2020-03-16)
 ================================

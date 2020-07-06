@@ -1,16 +1,16 @@
 varnishtest "shard director LAZY - d18.vtc"
 
-server s1 {
+server s1 -repeat 3 {
 	rxreq
 	txresp -body "ech3Ooj"
 } -start
 
-server s2 {
+server s2 -repeat 3 {
 	rxreq
 	txresp -body "ieQu2qua"
 } -start
 
-server s3 {
+server s3 -repeat 3 {
 	rxreq
 	txresp -body "xiuFi3Pe"
 } -start
@@ -45,10 +45,13 @@ varnish v1 -vcl+backend {
 	}
 
 	sub vcl_recv {
+	    if (req.http.pipe) {
+		return (pipe);
+	    }
 	    return(pass);
 	}
 
-	sub vcl_backend_fetch {
+	sub shard_be {
 	    set bereq.backend=vd.backend(resolve=LAZY);
 
 	    if (bereq.url == "/1") {
@@ -62,6 +65,14 @@ varnish v1 -vcl+backend {
 		# backend override association
 		vd.backend(resolve=LAZY, param=p3.use());
 	    }
+	}
+
+	sub vcl_backend_fetch {
+	    call shard_be;
+	}
+
+	sub vcl_pipe {
+	    call shard_be;
 	}
 
 	sub vcl_backend_response {
@@ -85,4 +96,20 @@ client c1 {
 	rxresp
 	expect resp.body == "xiuFi3Pe"
 	expect resp.http.backend == "vd"
+
+	txreq -url /1 -hdr "pipe: true"
+	rxresp
+	expect resp.body == "ech3Ooj"
+} -run
+
+client c1 {
+	txreq -url /2 -hdr "pipe: true"
+	rxresp
+	expect resp.body == "ieQu2qua"
+} -run
+
+client c1 {
+	txreq -url /3 -hdr "pipe: true"
+	rxresp
+	expect resp.body == "xiuFi3Pe"
 } -run

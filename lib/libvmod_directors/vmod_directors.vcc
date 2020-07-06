@@ -462,10 +462,11 @@ is _not_ the order given when backends are added.
 
   * ``HASH``:
 
-    * when called in backend context: Use the varnish hash value as
-      set by ``vcl_hash{}``
+    * when called in backend context and in ``vcl_pipe {}``: Use the
+      varnish hash value as set by ``vcl_hash{}``
 
-    * when called in client context: hash ``req.url``
+    * when called in client context other than ``vcl_pipe {}``: hash
+      ``req.url``
 
   * ``URL``: hash req.url / bereq.url
 
@@ -556,9 +557,10 @@ is _not_ the order given when backends are added.
     In ``vcl_init{}`` and on the client side, ``LAZY`` mode can not be
     used with any other argument.
 
-    On the backend side, parameters from arguments or an associated
-    parameter set affect the shard director instance for the backend
-    request irrespective of where it is referenced.
+    On the backend side and in ``vcl_pipe {}``, parameters from
+    arguments or an associated parameter set affect the shard director
+    instance for the backend request irrespective of where it is
+    referenced.
 
 * *param*
 
@@ -607,10 +609,11 @@ Parameter sets have two scopes:
 * per backend request scope
 
 The per-VCL scope defines defaults for the per backend scope. Any
-changes to a parameter set in backend context only affect the
-respective backend request.
+changes to a parameter set in backend context and in ``vcl_pipe {}``
+only affect the respective backend request.
 
-Parameter sets can not be used in client context.
+Parameter sets can not be used in client context except for
+``vcl_pipe {}``.
 
 The following example is a typical use case: A parameter set is
 associated with several directors. Director choice happens on the
@@ -649,11 +652,11 @@ $Method VOID .clear()
 Reset the parameter set to default values as documented for
 `xshard.backend()`_.
 
-* in ``vcl_init{}``, resets the parameter set default for this VCL
-* in backend context, resets the parameter set for this backend
-  request to the VCL defaults
+* in ``vcl_init{}``, resets the parameter set default for this VCL in
+* backend context and in ``vcl_pipe {}``, resets the parameter set for
+  this backend request to the VCL defaults
 
-This method may not be used in client context
+This method may not be used in client context other than ``vcl_pipe {}``.
 
 $Method VOID .set(
 	[ ENUM {HASH, URL, KEY, BLOB} by ],
@@ -669,11 +672,11 @@ Change the given parameters of a parameter set as documented for
 
 * in ``vcl_init{}``, changes the parameter set default for this VCL
 
-* in backend context, changes the parameter set for this backend
-  request, keeping the defaults set for this VCL for unspecified
-  arguments.
+* in backend context and in ``vcl_pipe {}``, changes the parameter set
+  for this backend request, keeping the defaults set for this VCL for
+  unspecified arguments.
 
-This method may not be used in client context
+This method may not be used in client context other than ``vcl_pipe {}``.
 
 $Method STRING .get_by()
 
@@ -709,7 +712,7 @@ shard director using this parameter object would use. See
 
 $Method BLOB .use()
 
-This method may only be used in backend context.
+This method may only be used in backend context and in ``vcl_pipe {}``.
 
 For use with the *param* argument of `xshard.backend()`_
 to associate this shard parameter set with a shard director.
