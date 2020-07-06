@@ -165,6 +165,9 @@ vmod_shard_param_read(VRT_CTX, const void *id,
     const struct vmod_directors_shard_param *p,
     struct vmod_directors_shard_param *pstk, const char *who);
 
+// XXX #3329 #3330 revisit - for now, treat pipe like backend
+#define SHARD_VCL_TASK_REQ (VCL_MET_TASK_C & ~VCL_MET_PIPE)
+#define SHARD_VCL_TASK_BEREQ (VCL_MET_TASK_B | VCL_MET_PIPE)
 /* -------------------------------------------------------------------------
  * shard vmod interface
  */
@@ -667,14 +670,14 @@ vmod_shard_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 			return (vshard->dir);
 		}
 
-		if ((ctx->method & VCL_MET_TASK_B) == 0) {
+		if ((ctx->method & SHARD_VCL_TASK_BEREQ) == 0) {
 			VRT_fail(ctx, "shard .backend resolve=LAZY with other "
-				 "parameters can only be used in backend "
+				 "parameters can only be used in backend/pipe "
 				 "context");
 			return (NULL);
 		}
 
-		assert(ctx->method & VCL_MET_TASK_B);
+		assert(ctx->method & SHARD_VCL_TASK_BEREQ);
 
 		pp = shard_param_task(ctx, vshard, vshard->param);
 		if (pp == NULL)
@@ -884,11 +887,11 @@ shard_param_prep(VRT_CTX, struct vmod_directors_shard_param *p,
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(p, VMOD_SHARD_SHARD_PARAM_MAGIC);
 
-	if (ctx->method & VCL_MET_TASK_C) {
+	if (ctx->method & SHARD_VCL_TASK_REQ) {
 		VRT_fail(ctx, "%s may only be used "
-			 "in vcl_init and in backend context", who);
+			 "in vcl_init and in backend/pipe context", who);
 		return (NULL);
-	} else if (ctx->method & VCL_MET_TASK_B)
+	} else if (ctx->method & SHARD_VCL_TASK_BEREQ)
 		p = shard_param_task(ctx, p, p);
 	else
 		assert(ctx->method & VCL_MET_TASK_H);
@@ -933,7 +936,7 @@ vmod_shard_param_read(VRT_CTX, const void *id,
 	CHECK_OBJ_NOTNULL(p, VMOD_SHARD_SHARD_PARAM_MAGIC);
 	(void) who; // XXX
 
-	if (ctx->method & VCL_MET_TASK_B)
+	if (ctx->method == 0 || (ctx->method & SHARD_VCL_TASK_BEREQ))
 		p = shard_param_task(ctx, id, p);
 
 	if (p == NULL)
