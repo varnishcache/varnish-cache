@@ -91,7 +91,7 @@ struct token {
 	unsigned		tok;
 	const char		*b;
 	const char		*e;
-	struct source		*src;
+	const struct source	*src;
 	VTAILQ_ENTRY(token)	list;
 	unsigned		cnt;
 	char			*dec;
@@ -249,7 +249,6 @@ struct vcc {
 	struct tokenhead	tokens;
 	VTAILQ_HEAD(, source)	sources;
 	unsigned		nsources;
-	struct source		*src;
 	struct token		*t;
 	int			indent;
 	int			hindent;
@@ -404,12 +403,10 @@ void vcc_Warn(struct vcc *);
 void vcc__Expect(struct vcc *tl, unsigned tok, unsigned line);
 int vcc_IdIs(const struct token *t, const char *p);
 void vcc_ExpectVid(struct vcc *tl, const char *what);
-void vcc_Lexer(struct vcc *tl, struct source *sp);
+void vcc_Lexer(struct vcc *tl, const struct source *sp, int eoi);
 void vcc_NextToken(struct vcc *tl);
 void vcc__ErrInternal(struct vcc *tl, const char *func,
     unsigned line);
-void vcc_AddToken(struct vcc *tl, unsigned tok, const char *b,
-    const char *e);
 
 /* vcc_types.c */
 vcc_type_t VCC_Type(const char *p);

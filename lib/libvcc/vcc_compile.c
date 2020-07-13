@@ -251,7 +251,7 @@ EmitCoordinates(const struct vcc *tl, struct vsb *vsb)
 {
 	struct token *t;
 	unsigned lin, pos;
-	struct source *sp;
+	const struct source *sp;
 	const char *p;
 
 	VSB_cat(vsb, "/* ---===### Source Code ###===---*/\n");
@@ -610,7 +610,7 @@ vcc_resolve_includes(struct vcc *tl)
 		VTAILQ_INSERT_TAIL(&tl->sources, sp, list);
 		sp->idx = tl->nsources++;
 		tl->t = t2;
-		vcc_Lexer(tl, sp);
+		vcc_Lexer(tl, sp, 0);
 
 		VTAILQ_REMOVE(&tl->tokens, t, list);
 		VTAILQ_REMOVE(&tl->tokens, t1, list);
@@ -654,7 +654,7 @@ vcc_CompileSource(struct vcc *tl, struct source *sp, const char *jfile)
 	/* Register and lex the main source */
 	VTAILQ_INSERT_TAIL(&tl->sources, sp, list);
 	sp->idx = tl->nsources++;
-	vcc_Lexer(tl, sp);
+	vcc_Lexer(tl, sp, 0);
 	if (tl->err)
 		return (NULL);
 
@@ -663,12 +663,7 @@ vcc_CompileSource(struct vcc *tl, struct source *sp, const char *jfile)
 	assert(sp != NULL);
 	VTAILQ_INSERT_TAIL(&tl->sources, sp, list);
 	sp->idx = tl->nsources++;
-	vcc_Lexer(tl, sp);
-	if (tl->err)
-		return (NULL);
-
-	/* Add "END OF INPUT" token */
-	vcc_AddToken(tl, EOI, sp->e, sp->e);
+	vcc_Lexer(tl, sp, 1);
 	if (tl->err)
 		return (NULL);
 

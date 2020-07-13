@@ -362,8 +362,9 @@ vcc_decstr(struct vcc *tl)
  * Add a token to the token list.
  */
 
-void
-vcc_AddToken(struct vcc *tl, unsigned tok, const char *b, const char *e)
+static void
+vcc_addtoken(struct vcc *tl, unsigned tok,
+    const struct source *sp, const char *b, const char *e)
 {
 	struct token *t;
 
@@ -372,7 +373,7 @@ vcc_AddToken(struct vcc *tl, unsigned tok, const char *b, const char *e)
 	t->tok = tok;
 	t->b = b;
 	t->e = e;
-	t->src = tl->src;
+	t->src = sp;
 	if (tl->t != NULL)
 		VTAILQ_INSERT_AFTER(&tl->tokens, tl->t, t, list);
 	else
@@ -385,12 +386,11 @@ vcc_AddToken(struct vcc *tl, unsigned tok, const char *b, const char *e)
  */
 
 void
-vcc_Lexer(struct vcc *tl, struct source *sp)
+vcc_Lexer(struct vcc *tl, const struct source *sp, int eoi)
 {
 	const char *p, *q;
 	unsigned u;
 
-	tl->src = sp;
 	for (p = sp->b; p < sp->e; ) {
 
 		/* Skip any whitespace */
@@ -412,9 +412,9 @@ vcc_Lexer(struct vcc *tl, struct source *sp)
 				if (*q == '/' && q[1] == '*') {
 					VSB_cat(tl->sb,
 					    "/* ... */ comment contains /*\n");
-					vcc_AddToken(tl, EOI, p, p + 2);
+					vcc_addtoken(tl, EOI, sp, p, p + 2);
 					vcc_ErrWhere(tl, tl->t);
-					vcc_AddToken(tl, EOI, q, q + 2);
+					vcc_addtoken(tl, EOI, sp, q, q + 2);
 					vcc_ErrWhere(tl, tl->t);
 					return;
 				}
@@ -425,7 +425,7 @@ vcc_Lexer(struct vcc *tl, struct source *sp)
 			}
 			if (q < sp->e)
 				continue;
-			vcc_AddToken(tl, EOI, p, p + 2);
+			vcc_addtoken(tl, EOI, sp, p, p + 2);
 			VSB_cat(tl->sb,
 			    "Unterminated /* ... */ comment, starting at\n");
 			vcc_ErrWhere(tl, tl->t);
@@ -443,7 +443,7 @@ vcc_Lexer(struct vcc *tl, struct source *sp)
 		if (*p == 'C' && p[1] == '{') {
 			for (q = p + 2; q < sp->e; q++) {
 				if (*q == '}' && q[1] == 'C') {
-					vcc_AddToken(tl, CSRC, p, q + 2);
+					vcc_addtoken(tl, CSRC, sp, p, q + 2);
 					break;
 				}
 			}
@@ -451,7 +451,7 @@ vcc_Lexer(struct vcc *tl, struct source *sp)
 				p = q + 2;
 				continue;
 			}
-			vcc_AddToken(tl, EOI, p, p + 2);
+			vcc_addtoken(tl, EOI, sp, p, p + 2);
 			VSB_cat(tl->sb,
 			    "Unterminated inline C source, starting at\n");
 			vcc_ErrWhere(tl, tl->t);
@@ -462,7 +462,7 @@ vcc_Lexer(struct vcc *tl, struct source *sp)
 		if (*p == '{' && p[1] == '"') {
 			for (q = p + 2; q < sp->e; q++) {
 				if (*q == '"' && q[1] == '}') {
-					vcc_AddToken(tl, CSTR, p, q + 2);
+					vcc_addtoken(tl, CSTR, sp, p, q + 2);
 					break;
 				}
 			}
@@ -476,7 +476,7 @@ vcc_Lexer(struct vcc *tl, struct source *sp)
 				tl->t->dec[u] = '\0';
 				continue;
 			}
-			vcc_AddToken(tl, EOI, p, p + 2);
+			vcc_addtoken(tl, EOI, sp, p, p + 2);
 			VSB_cat(tl->sb,
 			    "Unterminated long-string, starting at\n");
 			vcc_ErrWhere(tl, tl->t);
@@ -486,7 +486,7 @@ vcc_Lexer(struct vcc *tl, struct source *sp)
 		/* Match for the fixed tokens (see generate.py) */
 		u = vcl_fixed_token(p, &q);
 		if (u != 0) {
-			vcc_AddToken(tl, u, p, q);
+			vcc_addtoken(tl, u, sp, p, q);
 			p = q;
 			continue;
 		}
@@ -499,14 +499,14 @@ vcc_Lexer(struct vcc *tl, struct source *sp)
 					break;
 				}
 				if (*q == '\r' || *q == '\n') {
-					vcc_AddToken(tl, EOI, p, q);
+					vcc_addtoken(tl, EOI, sp, p, q);
 					VSB_cat(tl->sb,
 					    "Unterminated string at\n");
 					vcc_ErrWhere(tl, tl->t);
 					return;
 				}
 			}
-			vcc_AddToken(tl, CSTR, p, q);
+			vcc_addtoken(tl, CSTR, sp, p, q);
 			if (vcc_decstr(tl))
 				return;
 			p = q;
@@ -518,7 +518,7 @@ vcc_Lexer(struct vcc *tl, struct source *sp)
 			for (q = p; q < sp->e; q++)
 				if (!vct_isident(*q))
 					break;
-			vcc_AddToken(tl, ID, p, q);
+			vcc_addtoken(tl, ID, sp, p, q);
 			p = q;
 			continue;
 		}
@@ -529,20 +529,22 @@ vcc_Lexer(struct vcc *tl, struct source *sp)
 				if (!vct_isdigit(*q))
 					break;
 			if (*q != '.') {
-				vcc_AddToken(tl, CNUM, p, q);
+				vcc_addtoken(tl, CNUM, sp, p, q);
 				p = q;
 				continue;
 			}
 			for (++q; q < sp->e; q++)
 				if (!vct_isdigit(*q))
 					break;
-			vcc_AddToken(tl, FNUM, p, q);
+			vcc_addtoken(tl, FNUM, sp, p, q);
 			p = q;
 			continue;
 		}
-		vcc_AddToken(tl, EOI, p, p + 1);
+		vcc_addtoken(tl, EOI, sp, p, p + 1);
 		VSB_cat(tl->sb, "Syntax error at\n");
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}
+	if (eoi)
+		vcc_addtoken(tl, EOI, sp, sp->e, sp->e);
 }
