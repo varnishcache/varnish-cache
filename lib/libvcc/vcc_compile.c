@@ -553,6 +553,7 @@ vcc_resolve_includes(struct vcc *tl)
 {
 	struct token *t, *t1, *t2;
 	struct source *sp;
+	const struct source *sp1;
 	struct vsb *vsb;
 	const char *p;
 
@@ -607,6 +608,22 @@ vcc_resolve_includes(struct vcc *tl)
 			vcc_ErrWhere(tl, t1);
 			return;
 		}
+
+		for (sp1 = t->src; sp1 != NULL; sp1 = sp1->parent)
+			if (!strcmp(sp1->name, sp->name))
+				break;
+		if (sp1 != NULL) {
+			VSB_printf(tl->sb,
+			    "Recursive include of \"%s\"\n\n", sp->name);
+			vcc_ErrWhere(tl, t1);
+			for (sp1 = t->src; sp1 != NULL; sp1 = sp1->parent) {
+				if (sp1->parent_tok)
+					vcc_ErrWhere(tl, sp1->parent_tok);
+			}
+			return;
+		}
+		sp->parent = t->src;
+		sp->parent_tok = t1;
 		VTAILQ_INSERT_TAIL(&tl->sources, sp, list);
 		sp->idx = tl->nsources++;
 		tl->t = t2;

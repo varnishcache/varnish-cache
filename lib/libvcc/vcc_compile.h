@@ -85,6 +85,8 @@ struct source {
 	const char		*e;
 	unsigned		idx;
 	char			*freeit;
+	const struct source	*parent;
+	const struct token	*parent_tok;
 };
 
 struct token {
