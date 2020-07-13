@@ -5,3 +5,5 @@
 -esym(755, VCL_40)	// Not used (right now)
 
 -esym(768, token)	// FLINTBUG: global struct member 'token' not ref
+
+-efile(451, vcc_namespace.h)	// No include guard
