@@ -100,6 +100,9 @@ AC_SUBST(NET_LIBS, "${SOCKET_LIBS} ${NSL_LIBS}")
 # Userland slab allocator from Solaris, ported to other systems
 AC_CHECK_HEADERS([umem.h])
 
+# More portable vmb.h
+AC_CHECK_HEADERS([stdatomic.h])
+
 # XXX: This _may_ be for OS/X
 AC_CHECK_LIBM
 AC_SUBST(LIBM)
