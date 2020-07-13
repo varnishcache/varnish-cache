@@ -388,7 +388,7 @@ vcc_addtoken(struct vcc *tl, unsigned tok,
 void
 vcc_Lexer(struct vcc *tl, const struct source *sp, int eoi)
 {
-	const char *p, *q;
+	const char *p, *q, *r;
 	unsigned u;
 
 	for (p = sp->b; p < sp->e; ) {
@@ -479,6 +479,49 @@ vcc_Lexer(struct vcc *tl, const struct source *sp, int eoi)
 			vcc_addtoken(tl, EOI, sp, p, p + 2);
 			VSB_cat(tl->sb,
 			    "Unterminated long-string, starting at\n");
+			vcc_ErrWhere(tl, tl->t);
+			return;
+		}
+
+		/* Recognize BLOB (= SF-binary) */
+		if (*p == ':') {
+			r = NULL;
+			for (q = p + 1; q < sp->e && vct_isbase64(*q); q++) {
+				if (r == NULL && *q == '=')
+					r = q;
+			}
+			if (q == sp->e || *q != ':') {
+				VSB_cat(tl->sb,
+				    "Illegal BLOB character:\n");
+				vcc_addtoken(tl, EOI, sp, q, q+1);
+				vcc_ErrWhere(tl, tl->t);
+				return;
+			}
+			if ((q - p) % 3 != 1) {
+				u = ((q - 1) - p) / 3;
+				vcc_addtoken(tl, EOI, sp, p + u * 3 + 1, q);
+				VSB_cat(tl->sb,
+				    "BLOB must have n*3 base64 characters\n");
+				vcc_ErrWhere(tl, tl->t);
+				return;
+			}
+			if (r == NULL) {
+				/* No padding; */
+			} else if (r + 1 == q) {
+				/* One pad char */
+			} else if (r + 2 == q && r[1] == '=') {
+				/* Two (valid) pad chars */
+			} else {
+				VSB_cat(tl->sb,
+				    "Wrong padding ('=') in BLOB:\n");
+				vcc_addtoken(tl, EOI, sp, r, r+1);
+				vcc_ErrWhere(tl, tl->t);
+				return;
+			}
+			p = q + 1;
+			vcc_addtoken(tl, EOI, sp, p, q);
+			VSB_cat(tl->sb,
+			    "BLOB is not supported yet.\n");
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}

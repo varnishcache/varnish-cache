@@ -22,6 +22,7 @@ Naming scheme
 	id ~ ^f		--> Security related tests
 	id ~ ^g		--> GZIP tests
 	id ~ ^h		--> HAproxy tests
+	id ~ ^i		--> Interoperability and standards compliance
 	id ~ ^j		--> JAIL tests
 	id ~ ^l		--> VSL tests
 	id ~ ^m		--> VMOD tests excluding director
