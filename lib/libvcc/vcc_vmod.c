@@ -74,10 +74,10 @@ vcc_path_dlopen(void *priv, const char *fn)
 }
 
 static void vcc_VmodObject(struct vcc *tl, struct symbol *sym);
-static void vcc_VmodSymbols(struct vcc *tl, struct symbol *sym);
+static void vcc_VmodSymbols(struct vcc *tl, const struct symbol *sym);
 
 static void
-func_sym(struct vcc *tl, vcc_kind_t kind, struct symbol *psym,
+func_sym(struct vcc *tl, vcc_kind_t kind, const struct symbol *psym,
     const struct vjsn_val *v)
 {
 	struct symbol *sym;
@@ -168,7 +168,7 @@ vcc_json_always(struct vcc *tl, const struct vjsn *vj, const char *vmod_name)
 }
 
 static const struct vmod_data *
-vcc_VmodSanity(struct vcc *tl, void *hdl, struct token *mod, char *fnp)
+vcc_VmodSanity(struct vcc *tl, void *hdl, const struct token *mod, char *fnp)
 {
 	char buf[256];
 	const struct vmod_data *vmd;
@@ -263,7 +263,7 @@ vcc_VmodObject(struct vcc *tl, struct symbol *sym)
 }
 
 static void
-vcc_VmodSymbols(struct vcc *tl, struct symbol *sym)
+vcc_VmodSymbols(struct vcc *tl, const struct symbol *sym)
 {
 	const struct vjsn *vj;
 	const struct vjsn_val *vv, *vv1, *vv2;
