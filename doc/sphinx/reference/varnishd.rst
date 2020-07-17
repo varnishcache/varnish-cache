@@ -501,10 +501,6 @@ flags are:
 
   The VCL programs must be reloaded for this parameter to take effect.
 
-* `experimental`
-
-  We're not really sure about this parameter, tell us what you find.
-
 * `wizard`
 
   Do not touch unless you *really* know what you're doing.
