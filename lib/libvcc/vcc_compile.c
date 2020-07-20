@@ -523,6 +523,23 @@ vcc_new_source(const char *b, const char *e, const char *name)
 
 /*--------------------------------------------------------------------*/
 
+static void
+vcc_destroy_source(struct source **spp)
+{
+	struct source *sp;
+
+	AN(spp);
+	sp = *spp;
+	*spp = NULL;
+
+	AN(sp);
+	free(sp->name);
+	free(sp->freeit);
+	free(sp);
+}
+
+/*--------------------------------------------------------------------*/
+
 static struct source *
 vcc_file_source(const struct vcc *tl, const char *fn)
 {
@@ -620,6 +637,7 @@ vcc_resolve_includes(struct vcc *tl)
 				if (sp1->parent_tok)
 					vcc_ErrWhere(tl, sp1->parent_tok);
 			}
+			vcc_destroy_source(&sp);
 			return;
 		}
 		sp->parent = t->src;
