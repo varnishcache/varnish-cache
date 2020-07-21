@@ -34,7 +34,6 @@
 #include "config.h"
 
 #include <sys/types.h>
-#include <sys/wait.h>
 
 #include <poll.h>
 #include <signal.h>
@@ -48,6 +47,8 @@
 #include <sys/resource.h>
 
 #include "mgt.h"
+
+#include "vapi/vsig.h"
 
 #include "vbm.h"
 #include "vcli_serve.h"

@@ -39,4 +39,14 @@
 
 #include "tbl/vsig_list.h"
 
+#include <sys/wait.h>
+
+#ifndef WCOREDUMP
+#  ifdef WIFCORED
+#    define WCOREDUMP(s) WIFCORED(s)
+#  else
+#    define WCOREDUMP(s) (-1)
+#  endif
+#endif
+
 #endif /* VAPI_VSC_H_INCLUDED */

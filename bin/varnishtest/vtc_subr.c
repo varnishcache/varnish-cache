@@ -36,7 +36,6 @@
 #include <string.h>
 #include <stdint.h>
 #include <unistd.h>
-#include <sys/wait.h>
 #include <sys/resource.h>
 
 #include "vtc.h"
@@ -44,6 +43,9 @@
 #include "vct.h"
 #include "vnum.h"
 #include "vre.h"
+
+#include "vapi/voptget.h"
+#include "vapi/vsig.h"
 
 struct vsb *
 vtc_hex_to_bin(struct vtclog *vl, const char *arg)
@@ -144,10 +146,6 @@ vtc_expect(struct vtclog *vl,
  * if allow_core > 0, a coredump is allowed, but not required.
  * otherwise, the process must die on exit(expect_status)
  */
-
-#ifndef WCOREDUMP
-#  define WCOREDUMP(s) (-1)
-#endif
 
 void
 vtc_wait4(struct vtclog *vl, long pid,
