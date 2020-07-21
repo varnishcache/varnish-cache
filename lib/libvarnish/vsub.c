@@ -46,6 +46,8 @@
 
 #include "vdef.h"
 
+#include "vapi/vsig.h"
+
 #include "vas.h"
 #include "vfil.h"
 #include "vlu.h"
