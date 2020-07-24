@@ -765,9 +765,16 @@ http_DoConnection(struct http *hp)
 #include "tbl/http_headers.h"
 /*lint -restore */
 
-		v = http_findhdr(hp, u, b);
-		if (v > 0)
+		for (v = HTTP_HDR_FIRST; v < hp->nhd; v++) {
+			Tcheck(hp->hd[v]);
+			if (hp->hd[v].e < hp->hd[v].b + u + 1)
+				continue;
+			if (hp->hd[v].b[u] != ':')
+				continue;
+			if (strncasecmp(b, hp->hd[v].b, u))
+				continue;
 			hp->hdf[v] |= HDF_FILTER;
+		}
 	}
 	return (retval);
 }

@@ -42,3 +42,27 @@ client c1 {
 	rxresp
 	expect resp.status == 400
 } -run
+
+server s1 {
+	rxreq
+	expect req.http.baa == ""
+	expect req.http.baax == <undef>
+	txresp -hdr "Foox: 1" -hdr "foox: 2" -hdr "Connection: foox"
+}  -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_fetch {
+		set bereq.http.baa = bereq.http.baax;
+	}
+	sub vcl_deliver {
+		set resp.http.foo = resp.http.foox;
+	}
+} 
+
+client c1 {
+	txreq -hdr "Baax: 1" -hdr "Baax: 2" -hdr "Connection: baax"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.foo == ""
+	expect resp.http.foox == <undef>
+} -run
