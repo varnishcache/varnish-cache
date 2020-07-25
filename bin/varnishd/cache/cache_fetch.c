@@ -233,7 +233,6 @@ vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo)
 			http_ForceHeader(bo->bereq0, H_Accept_Encoding, "gzip");
 	}
 	http_ForceField(bo->bereq0, HTTP_HDR_PROTO, "HTTP/1.1");
-	http_CopyHome(bo->bereq0);
 
 	if (bo->stale_oc != NULL &&
 	    ObjCheckFlag(bo->wrk, bo->stale_oc, OF_IMSCAND) &&
@@ -249,6 +248,7 @@ vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo)
 			    "If-None-Match: %s", q);
 	}
 
+	http_CopyHome(bo->bereq0);
 	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, SLT_BereqMethod);
 	bo->ws_bo = WS_Snapshot(bo->ws);
 	HTTP_Clone(bo->bereq, bo->bereq0);

@@ -291,12 +291,7 @@ http_PutField(struct http *to, int field, const char *string)
 		VSLb(to->vsl, SLT_LostHeader, "%s", string);
 		return;
 	}
-	to->hd[field].b = p;
-	to->hd[field].e = strchr(p, '\0');
-	to->hdf[field] = 0;
-	http_VSLH(to, field);
-	if (field == HTTP_HDR_PROTO)
-		http_Proto(to);
+	http_SetH(to, field, p);
 }
 
 /*--------------------------------------------------------------------*/
@@ -1139,29 +1134,6 @@ HTTP_Merge(struct worker *wrk, struct objcore *oc, struct http *to)
 /*--------------------------------------------------------------------*/
 
 static void
-http_filterfields(struct http *to, const struct http *fm, unsigned how)
-{
-	unsigned u;
-
-	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
-	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
-	to->nhd = HTTP_HDR_FIRST;
-	to->status = fm->status;
-	for (u = HTTP_HDR_FIRST; u < fm->nhd; u++) {
-		Tcheck(fm->hd[u]);
-		if (http_isfiltered(fm, u, how))
-			continue;
-		assert (to->nhd < to->shd);
-		to->hd[to->nhd] = fm->hd[u];
-		to->hdf[to->nhd] = 0;
-		http_VSLH(to, to->nhd);
-		to->nhd++;
-	}
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
 http_linkh(const struct http *to, const struct http *fm, unsigned n)
 {
 
@@ -1177,6 +1149,8 @@ http_linkh(const struct http *to, const struct http *fm, unsigned n)
 void
 http_FilterReq(struct http *to, const struct http *fm, unsigned how)
 {
+	unsigned u;
+
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
 
@@ -1184,7 +1158,19 @@ http_FilterReq(struct http *to, const struct http *fm, unsigned how)
 	http_linkh(to, fm, HTTP_HDR_URL);
 	http_linkh(to, fm, HTTP_HDR_PROTO);
 	to->protover = fm->protover;
-	http_filterfields(to, fm, how);
+	to->status = fm->status;
+
+	to->nhd = HTTP_HDR_FIRST;
+	for (u = HTTP_HDR_FIRST; u < fm->nhd; u++) {
+		Tcheck(fm->hd[u]);
+		if (http_isfiltered(fm, u, how))
+			continue;
+		assert (to->nhd < to->shd);
+		to->hd[to->nhd] = fm->hd[u];
+		to->hdf[to->nhd] = 0;
+		http_VSLH(to, to->nhd);
+		to->nhd++;
+	}
 }
 
 /*--------------------------------------------------------------------
@@ -1267,11 +1253,7 @@ http_PrintfHeader(struct http *to, const char *fmt, ...)
 		http_fail(to);
 		VSLbv(to->vsl, SLT_LostHeader, fmt, ap2);
 	} else {
-		to->hd[to->nhd].b = p;
-		to->hd[to->nhd].e = p + sz;
-		to->hdf[to->nhd] = 0;
-		http_VSLH(to, to->nhd);
-		to->nhd++;
+		http_SetH(to, to->nhd++, p);
 	}
 	va_end(ap);
 	va_end(ap2);
@@ -1296,11 +1278,7 @@ http_TimeHeader(struct http *to, const char *fmt, vtim_real now)
 	}
 	strcpy(p, fmt);
 	VTIM_format(now, strchr(p, '\0'));
-	to->hd[to->nhd].b = p;
-	to->hd[to->nhd].e = strchr(p, '\0');
-	to->hdf[to->nhd] = 0;
-	http_VSLH(to, to->nhd);
-	to->nhd++;
+	http_SetH(to, to->nhd++, p);
 }
 
 /*--------------------------------------------------------------------*/
