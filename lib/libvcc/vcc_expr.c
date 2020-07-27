@@ -515,6 +515,9 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 		vvp = VTAILQ_FIRST(&vv->children);
 		if (!memcmp(vvp->value, "PRIV_", 5)) {
 			fa->result = vcc_priv_arg(tl, vvp->value, sym);
+			vvp = VTAILQ_NEXT(vvp, list);
+			if (vvp != NULL)
+				fa->name = vvp->value;
 			continue;
 		}
 		fa->type = VCC_Type(vvp->value);

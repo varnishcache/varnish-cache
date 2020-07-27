@@ -1162,3 +1162,14 @@ xyzzy_re_quote(VRT_CTX, VCL_STRING s)
 		WS_MarkOverflow(ctx->ws);
 	return (q);
 }
+
+VCL_STRING v_matchproto_(td_xyzzy_priv_task_with_option)
+xyzzy_priv_task_with_option(VRT_CTX, struct VARGS(priv_task_with_option) *args)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(args->priv);
+	if (args->priv->priv == NULL && args->valid_opt)
+		args->priv->priv = WS_Copy(ctx->ws, args->opt, -1);
+	return (args->priv->priv);
+}

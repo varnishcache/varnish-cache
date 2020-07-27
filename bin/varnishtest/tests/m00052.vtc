@@ -1,0 +1,21 @@
+varnishtest "priv_task with [optional] argument"
+
+varnish v1 -vcl {
+	import debug;
+
+	backend be none;
+
+	sub vcl_deliver {
+		set resp.http.none = debug.priv_task_with_option();
+		set resp.http.one = debug.priv_task_with_option("one");
+		set resp.http.two = debug.priv_task_with_option("two");
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.none == ""
+	expect resp.http.one == one
+	expect resp.http.two == one
+} -run

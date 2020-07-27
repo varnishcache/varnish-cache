@@ -304,3 +304,7 @@ Allow rollbacks. Must be called before the end of the task.
 $Function STRING re_quote(STRING)
 
 Quote an input string to be usable for an exact match in a regular expression.
+
+$Function STRING priv_task_with_option(PRIV_TASK priv, [STRING opt])
+
+A function mixing a named PRIV_TASK with optional parameters.
