@@ -138,15 +138,6 @@ vslc_vsm_next(const struct VSL_cursor *cursor)
 		t = *(volatile const uint32_t *)c->next.ptr;
 		AN(t);
 
-		if (t == VSL_WRAPMARKER) {
-			/* Wrap around not possible at front */
-			assert(c->next.ptr != c->head->log);
-			c->next.ptr = c->head->log;
-			while (c->next.priv % VSL_SEGMENTS)
-				c->next.priv++;
-			continue;
-		}
-
 		if (t == VSL_ENDMARKER) {
 			if (VSM_StillValid(c->vsm, &c->vf) != VSM_valid)
 				return (vsl_e_abandon);
@@ -154,6 +145,19 @@ vslc_vsm_next(const struct VSL_cursor *cursor)
 				return (vsl_e_eof);
 			/* No new records available */
 			return (vsl_end);
+		}
+
+		/* New data observed. Ensure load ordering with the log
+		 * writer. */
+		VRMB();
+
+		if (t == VSL_WRAPMARKER) {
+			/* Wrap around not possible at front */
+			assert(c->next.ptr != c->head->log);
+			c->next.ptr = c->head->log;
+			while (c->next.priv % VSL_SEGMENTS)
+				c->next.priv++;
+			continue;
 		}
 
 		c->cursor.rec = c->next;
