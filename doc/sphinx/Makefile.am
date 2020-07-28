@@ -18,26 +18,25 @@ help:
 clean:
 	-rm -rf $(BUILDDIR)/* $(CLEANFILES)
 
-# use index.rst as an indicator if we have copied already
-.PHONY: link_srcdir
-link_srcdir:
-	if test "x$(srcdir)" != "x$(builddir)" && test ! -f index.rst; then \
-		s=`realpath $(srcdir)`; \
-		for f in `cd $$s && find . -type f`; do \
-			d=`dirname $$f`; \
-			test -d $$d || mkdir -p $$d; \
-			test -f $$f || ln -s $$s/$$f $$f; \
-		done \
-	fi
+# sphinx does not support include paths or anything comparable:
+# link source tree files for an out-of-tree build
+rstlinks = $(abs_builddir)/doc/sphinx/index.rst
+$(rstlinks):
+	s=`realpath $(srcdir)`; \
+	for f in `cd $$s && find . -type f`; do \
+		d=`dirname $$f`; \
+		test -d $$d || mkdir -p $$d; \
+		test -f $$f || ln -s $$s/$$f $$f; \
+	done
+
+BUILT_SOURCES = $(rstlinks)
 
 # work around for make html called within doc/sphinx
 .PHONY: graphviz
 graphviz:
 	cd ../graphviz && $(MAKE) html
 
-sphinx_prereq: link_srcdir graphviz conf.py
-
-all: link_srcdir
+sphinx_prereq: graphviz conf.py
 
 html: sphinx_prereq
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
@@ -77,12 +76,12 @@ distclean-local:
 include/cli.rst: $(top_builddir)/bin/varnishd/varnishd
 	$(top_builddir)/bin/varnishd/varnishd -x cli > ${@}_
 	mv ${@}_ ${@}
-BUILT_SOURCES = include/cli.rst
+RST_BUILT = include/cli.rst
 
 include/params.rst: $(top_builddir)/bin/varnishd/varnishd
 	$(top_builddir)/bin/varnishd/varnishd -x parameter > ${@}_
 	mv ${@}_ ${@}
-BUILT_SOURCES += include/params.rst
+RST_BUILT += include/params.rst
 
 COUNTERS = \
 	$(top_srcdir)/bin/varnishd/VSC_main.vsc \
@@ -101,7 +100,7 @@ include/counters.rst: $(top_srcdir)/lib/libvcc/vsctool.py $(COUNTERS)
 	done
 	mv ${@}_ ${@}
 
-BUILT_SOURCES += include/counters.rst
+RST_BUILT += include/counters.rst
 
 include/varnishncsa_options.rst: $(top_builddir)/bin/varnishncsa/varnishncsa
 	$(top_builddir)/bin/varnishncsa/varnishncsa --options > ${@}_
@@ -109,7 +108,7 @@ include/varnishncsa_options.rst: $(top_builddir)/bin/varnishncsa/varnishncsa
 include/varnishncsa_synopsis.rst: $(top_builddir)/bin/varnishncsa/varnishncsa
 	$(top_builddir)/bin/varnishncsa/varnishncsa --synopsis > ${@}_
 	mv ${@}_ ${@}
-BUILT_SOURCES += include/varnishncsa_options.rst \
+RST_BUILT += include/varnishncsa_options.rst \
 	include/varnishncsa_synopsis.rst
 
 include/varnishlog_options.rst: $(top_builddir)/bin/varnishlog/varnishlog
@@ -118,7 +117,7 @@ include/varnishlog_options.rst: $(top_builddir)/bin/varnishlog/varnishlog
 include/varnishlog_synopsis.rst: $(top_builddir)/bin/varnishlog/varnishlog
 	$(top_builddir)/bin/varnishlog/varnishlog --synopsis > ${@}_
 	mv ${@}_ ${@}
-BUILT_SOURCES += include/varnishlog_options.rst \
+RST_BUILT += include/varnishlog_options.rst \
 	include/varnishlog_synopsis.rst
 
 include/varnishtop_options.rst: $(top_builddir)/bin/varnishtop/varnishtop
@@ -127,7 +126,7 @@ include/varnishtop_options.rst: $(top_builddir)/bin/varnishtop/varnishtop
 include/varnishtop_synopsis.rst: $(top_builddir)/bin/varnishtop/varnishtop
 	$(top_builddir)/bin/varnishtop/varnishtop --synopsis > ${@}_
 	mv ${@}_ ${@}
-BUILT_SOURCES += include/varnishtop_options.rst \
+RST_BUILT += include/varnishtop_options.rst \
 	 include/varnishtop_synopsis.rst
 
 include/varnishhist_options.rst: $(top_builddir)/bin/varnishhist/varnishhist
@@ -136,7 +135,7 @@ include/varnishhist_options.rst: $(top_builddir)/bin/varnishhist/varnishhist
 include/varnishhist_synopsis.rst: $(top_builddir)/bin/varnishhist/varnishhist
 	$(top_builddir)/bin/varnishhist/varnishhist --synopsis > ${@}_
 	mv ${@}_ ${@}
-BUILT_SOURCES += include/varnishhist_options.rst \
+RST_BUILT += include/varnishhist_options.rst \
 	 include/varnishhist_synopsis.rst
 
 include/varnishstat_options.rst: $(top_builddir)/bin/varnishstat/varnishstat
@@ -148,14 +147,14 @@ include/varnishstat_synopsis.rst: $(top_builddir)/bin/varnishstat/varnishstat
 include/varnishstat_bindings.rst: $(top_builddir)/bin/varnishstat/varnishstat
 	$(top_builddir)/bin/varnishstat/varnishstat --bindings > ${@}_
 	mv ${@}_ ${@}
-BUILT_SOURCES += include/varnishstat_options.rst \
+RST_BUILT += include/varnishstat_options.rst \
 	 include/varnishstat_synopsis.rst \
 	 include/varnishstat_bindings.rst
 
 include/vsl-tags.rst: $(top_builddir)/lib/libvarnishapi/vsl2rst
 	$(top_builddir)/lib/libvarnishapi/vsl2rst > ${@}_
 	mv ${@}_ ${@}
-BUILT_SOURCES += include/vsl-tags.rst
+RST_BUILT += include/vsl-tags.rst
 
 VTCSYN_SRC = $(top_srcdir)/bin/varnishtest/vtc.c \
 	     $(top_srcdir)/bin/varnishtest/vtc_barrier.c \
@@ -170,43 +169,45 @@ VTCSYN_SRC = $(top_srcdir)/bin/varnishtest/vtc.c \
 include/vtc-syntax.rst: vtc-syntax.py $(VTCSYN_SRC)
 	$(AM_V_GEN) $(PYTHON) $(top_srcdir)/doc/sphinx/vtc-syntax.py $(VTCSYN_SRC) > ${@}_
 	@mv ${@}_ ${@}
-BUILT_SOURCES += include/vtc-syntax.rst
+RST_BUILT += include/vtc-syntax.rst
 
 # XXX copy/paste rules need some TLC
 
 include/vmod_std.generated.rst: $(top_builddir)/lib/libvmod_std/vmod_std.rst
 	cp $(top_builddir)/lib/libvmod_std/vmod_std.rst $@
-BUILT_SOURCES += include/vmod_std.generated.rst
+RST_BUILT += include/vmod_std.generated.rst
 
 include/vmod_directors.generated.rst: $(top_builddir)/lib/libvmod_directors/vmod_directors.rst
 	cp $(top_builddir)/lib/libvmod_directors/vmod_directors.rst $@
-BUILT_SOURCES += include/vmod_directors.generated.rst
+RST_BUILT += include/vmod_directors.generated.rst
 
 include/vmod_purge.generated.rst: $(top_builddir)/lib/libvmod_purge/vmod_purge.rst
 	cp $(top_builddir)/lib/libvmod_purge/vmod_purge.rst $@
-BUILT_SOURCES += include/vmod_purge.generated.rst
+RST_BUILT += include/vmod_purge.generated.rst
 
 include/vmod_vtc.generated.rst: $(top_builddir)/lib/libvmod_vtc/vmod_vtc.rst
 	cp $(top_builddir)/lib/libvmod_vtc/vmod_vtc.rst $@
-BUILT_SOURCES += include/vmod_vtc.generated.rst
+RST_BUILT += include/vmod_vtc.generated.rst
 
 include/vmod_blob.generated.rst: $(top_builddir)/lib/libvmod_blob/vmod_blob.rst
 	cp $(top_builddir)/lib/libvmod_blob/vmod_blob.rst $@
-BUILT_SOURCES += include/vmod_blob.generated.rst
+RST_BUILT += include/vmod_blob.generated.rst
 
 include/vmod_cookie.generated.rst: $(top_builddir)/lib/libvmod_cookie/vmod_cookie.rst
 	cp $(top_builddir)/lib/libvmod_cookie/vmod_cookie.rst $@
-BUILT_SOURCES += include/vmod_cookie.generated.rst
+RST_BUILT += include/vmod_cookie.generated.rst
 
 include/vmod_unix.generated.rst: $(top_builddir)/lib/libvmod_unix/vmod_unix.rst
 	cp $(top_builddir)/lib/libvmod_unix/vmod_unix.rst $@
-BUILT_SOURCES += include/vmod_unix.generated.rst
+RST_BUILT += include/vmod_unix.generated.rst
 
 include/vmod_proxy.generated.rst: $(top_builddir)/lib/libvmod_proxy/vmod_proxy.rst
 	cp $(top_builddir)/lib/libvmod_proxy/vmod_proxy.rst $@
-BUILT_SOURCES += include/vmod_proxy.generated.rst
+RST_BUILT += include/vmod_proxy.generated.rst
 
-EXTRA_DIST += $(BUILT_SOURCES)
-CLEANFILES = $(BUILT_SOURCES)
+EXTRA_DIST += $(RST_BUILT)
+BUILT_SOURCES += $(RST_BUILT)
+CLEANFILES = $(RST_BUILT)
+
 
 .NOPATH: $(BUILT_SOURCES)
