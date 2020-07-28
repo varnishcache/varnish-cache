@@ -208,6 +208,6 @@ RST_BUILT += include/vmod_proxy.generated.rst
 EXTRA_DIST += $(RST_BUILT)
 BUILT_SOURCES += $(RST_BUILT)
 CLEANFILES = $(RST_BUILT)
-
+$(RST_BUILT): $(rstlinks)
 
 .NOPATH: $(BUILT_SOURCES)
