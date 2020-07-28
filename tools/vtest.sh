@@ -217,6 +217,7 @@ do
 	i=$((i + 1))
 
 	(cd "${SRCDIR}" && git reset --hard > /dev/null 2>&1 || true)
+	(cd "${SRCDIR}" && git clean -df > /dev/null 2>&1 || true)
 	(cd "${SRCDIR}" && git pull > /dev/null 2>&1 || true)
 	rev=`cd "${SRCDIR}" && git show -s --pretty=format:%H`
 	if [ "${waitnext}" -gt 0 -a "x${rev}" = "x${orev}" ] ; then
@@ -235,7 +236,7 @@ do
 	rm -rf "${REPORTDIR}"
 	mkdir "${REPORTDIR}"
 
-	echo "VTEST 1.04" > ${VTEST_REPORT}
+	echo "VTEST 1.05" > ${VTEST_REPORT}
 	echo "DATE `date +%s`" >> ${VTEST_REPORT}
 	echo "BRANCH trunk" >> ${VTEST_REPORT}
 	echo "HOST `hostname`" >> ${VTEST_REPORT}
