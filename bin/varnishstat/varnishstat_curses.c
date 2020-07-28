@@ -38,7 +38,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <signal.h>
 #include <stdint.h>
 #include <math.h>
 

@@ -38,7 +38,6 @@
 #include <limits.h>
 #include <math.h>
 #include <pthread.h>
-#include <signal.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
@@ -52,10 +51,10 @@
 #include "vapi/vsl.h"
 #include "vapi/vsm.h"
 #include "vapi/voptget.h"
+#include "vapi/vsig.h"
 #include "vas.h"
 #include "vut.h"
 #include "vtim.h"
-#include "vapi/vsig.h"
 
 #if 1
 #define AC(x) assert((x) != ERR)

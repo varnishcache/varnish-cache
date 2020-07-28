@@ -40,7 +40,6 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
-#include <signal.h>
 #include <sys/stat.h> /* for MUSL */
 
 #include "compat/daemon.h"
@@ -55,10 +54,11 @@
 #include "vsb.h"
 #include "vfil.h"
 
-#include "vut.h"
-
 #include "vapi/voptget.h"
 #include "vapi/vsig.h"
+
+#include "vut.h"
+
 
 static int vut_synopsis(const struct vopt_spec *);
 static int vut_options(const struct vopt_spec *);

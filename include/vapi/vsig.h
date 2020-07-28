@@ -33,6 +33,7 @@
 #define VAPI_VSIG_H_INCLUDED
 
 #include <sys/wait.h>
+#include <signal.h>
 
 #define VSIG_SIGNAL(UPPER, lower)		\
 	extern sig_atomic_t VSIG_##lower;	\
