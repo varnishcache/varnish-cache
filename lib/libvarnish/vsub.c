@@ -33,8 +33,6 @@
 
 #include "config.h"
 
-#include <sys/wait.h>
-
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>		// Solaris closefrom(3c)

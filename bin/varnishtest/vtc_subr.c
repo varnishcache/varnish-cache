@@ -44,7 +44,6 @@
 #include "vnum.h"
 #include "vre.h"
 
-#include "vapi/voptget.h"
 #include "vapi/vsig.h"
 
 struct vsb *

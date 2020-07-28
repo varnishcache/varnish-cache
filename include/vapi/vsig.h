@@ -32,14 +32,14 @@
 #ifndef VAPI_VSIG_H_INCLUDED
 #define VAPI_VSIG_H_INCLUDED
 
+#include <sys/wait.h>
+
 #define VSIG_SIGNAL(UPPER, lower)		\
 	extern sig_atomic_t VSIG_##lower;	\
 	void VSIG_Got_##lower(int sig);		\
 	void VSIG_Arm_##lower(void);
 
 #include "tbl/vsig_list.h"
-
-#include <sys/wait.h>
 
 #ifndef WCOREDUMP
 #  ifdef WIFCORED
