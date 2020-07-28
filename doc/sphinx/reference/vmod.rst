@@ -156,7 +156,7 @@ Optional arguments
 The vmod.vcc declaration also allows for optional arguments in square
 brackets like so::
 
-	$Function VOID opt(PRIV_TASK, INT four = 4, [ STRING opt])
+	$Function VOID opt(PRIV_TASK priv, INT four = 4, [STRING opt])
 
 With any optional argument present, the C function prototype looks
 completely different:
@@ -184,9 +184,6 @@ declarations:
 	* unnamed (positional) arguments are passed as ``arg``\ `n`
 	  with `n` starting at 1 and incrementing with the argument's
 	  position.
-
-	  Note that in particular also ``PRIV_*`` arguments (which are
-	  unnamed by definition) are passed as ``arg``\ `n`
 
 .. _ref-vmod-vcl-c-objects:
 
