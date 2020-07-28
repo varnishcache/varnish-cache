@@ -58,6 +58,11 @@ struct binheap *binheap_new(void *priv, binheap_cmp_t, binheap_update_t);
 	 * 'priv' is passed to cmp and update functions.
 	 */
 
+void binheap_destroy(struct binheap **);
+	/*
+	 * Destroy an empty Binary tree
+	 */
+
 void binheap_insert(struct binheap *, void *);
 	/*
 	 * Insert an item

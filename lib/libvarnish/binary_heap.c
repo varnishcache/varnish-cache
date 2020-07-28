@@ -244,6 +244,21 @@ binheap_new(void *priv, binheap_cmp_t *cmp_f, binheap_update_t *update_f)
 	return (bh);
 }
 
+void
+binheap_destroy(struct binheap **bhp)
+{
+	struct binheap *bh;
+	unsigned u;
+
+	TAKE_OBJ_NOTNULL(bh, bhp, BINHEAP_MAGIC);
+	AZ(binheap_root(bh));
+
+	for (u = 0; u < bh->length; u += ROW_WIDTH)
+		free(ROW(bh, u));
+	free(bh->array);
+	free(bh);
+}
+
 static void
 binheap_update(const struct binheap *bh, unsigned u)
 {
@@ -634,6 +649,10 @@ main(void)
 		}
 		fprintf(stderr, "%d updates OK\n", M);
 	}
+	while ((fp = binheap_root(bh)) != NULL)
+		binheap_delete(bh, fp->idx);
+	binheap_destroy(&bh);
+	AZ(bh);
 	return (0);
 }
 #endif
