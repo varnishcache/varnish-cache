@@ -23,7 +23,7 @@ clean:
 rstlinks = $(abs_builddir)/doc/sphinx/index.rst
 $(rstlinks):
 	s=`realpath $(srcdir)`; \
-	for f in `cd $$s && find . -type f`; do \
+	for f in `cd $$s && find . -name \*.rst \! -name \*.generated.rst -type f`; do \
 		d=`dirname $$f`; \
 		test -d $$d || mkdir -p $$d; \
 		test -f $$f || ln -s $$s/$$f $$f; \
