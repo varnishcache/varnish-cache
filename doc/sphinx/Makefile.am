@@ -20,7 +20,7 @@ clean:
 
 # sphinx does not support include paths or anything comparable:
 # link source tree files for an out-of-tree build
-rstlinks = $(abs_builddir)/doc/sphinx/index.rst
+rstlinks = $(abs_builddir)/index.rst
 $(rstlinks):
 	s=`realpath $(srcdir)`; \
 	for f in `cd $$s && find . -name \*.rst \! -name \*.generated.rst -type f`; do \
