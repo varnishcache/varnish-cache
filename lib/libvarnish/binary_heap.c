@@ -42,6 +42,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include "miniobj.h"
 #include "vdef.h"
 #include "vas.h"
 #include "binary_heap.h"
@@ -214,7 +215,7 @@ binheap_new(void *priv, binheap_cmp_t *cmp_f, binheap_update_t *update_f)
 	struct binheap *bh;
 	unsigned u;
 
-	bh = calloc(1, sizeof *bh);
+	ALLOC_OBJ(bh, BINHEAP_MAGIC);
 	if (bh == NULL)
 		return (bh);
 	bh->priv = priv;
@@ -246,8 +247,7 @@ binheap_new(void *priv, binheap_cmp_t *cmp_f, binheap_update_t *update_f)
 static void
 binheap_update(const struct binheap *bh, unsigned u)
 {
-	assert(bh != NULL);
-	assert(bh->magic == BINHEAP_MAGIC);
+	CHECK_OBJ_NOTNULL(bh, BINHEAP_MAGIC);
 	assert(u < bh->next);
 	assert(A(bh, u) != NULL);
 	if (bh->update != NULL)
@@ -259,8 +259,7 @@ binhead_swap(const struct binheap *bh, unsigned u, unsigned v)
 {
 	void *p;
 
-	assert(bh != NULL);
-	assert(bh->magic == BINHEAP_MAGIC);
+	CHECK_OBJ_NOTNULL(bh, BINHEAP_MAGIC);
 	assert(u < bh->next);
 	assert(A(bh, u) != NULL);
 	assert(v < bh->next);
@@ -277,7 +276,7 @@ binheap_trickleup(const struct binheap *bh, unsigned u)
 {
 	unsigned v;
 
-	assert(bh != NULL); assert(bh->magic == BINHEAP_MAGIC);
+	CHECK_OBJ_NOTNULL(bh, BINHEAP_MAGIC);
 	assert(u < bh->next);
 	assert(A(bh, u) != NULL);
 
@@ -301,8 +300,7 @@ binheap_trickledown(const struct binheap *bh, unsigned u)
 {
 	unsigned v1, v2;
 
-	assert(bh != NULL);
-	assert(bh->magic == BINHEAP_MAGIC);
+	CHECK_OBJ_NOTNULL(bh, BINHEAP_MAGIC);
 	assert(u < bh->next);
 	assert(A(bh, u) != NULL);
 
@@ -337,8 +335,7 @@ binheap_insert(struct binheap *bh, void *p)
 {
 	unsigned u;
 
-	assert(bh != NULL);
-	assert(bh->magic == BINHEAP_MAGIC);
+	CHECK_OBJ_NOTNULL(bh, BINHEAP_MAGIC);
 	assert(bh->length >= bh->next);
 	if (bh->length == bh->next)
 		binheap_addrow(bh);
@@ -369,8 +366,7 @@ void *
 binheap_root(const struct binheap *bh)
 {
 
-	assert(bh != NULL);
-	assert(bh->magic == BINHEAP_MAGIC);
+	CHECK_OBJ_NOTNULL(bh, BINHEAP_MAGIC);
 #ifdef PARANOIA
 	chk(bh);
 #endif
@@ -405,8 +401,7 @@ void
 binheap_delete(struct binheap *bh, unsigned idx)
 {
 
-	assert(bh != NULL);
-	assert(bh->magic == BINHEAP_MAGIC);
+	CHECK_OBJ_NOTNULL(bh, BINHEAP_MAGIC);
 	assert(bh->next > ROOT_IDX);
 	assert(idx < bh->next);
 	assert(idx > 0);
@@ -448,8 +443,7 @@ void
 binheap_reorder(const struct binheap *bh, unsigned idx)
 {
 
-	assert(bh != NULL);
-	assert(bh->magic == BINHEAP_MAGIC);
+	CHECK_OBJ_NOTNULL(bh, BINHEAP_MAGIC);
 	assert(bh->next > ROOT_IDX);
 	assert(idx < bh->next);
 	assert(idx > 0);
@@ -470,7 +464,6 @@ binheap_reorder(const struct binheap *bh, unsigned idx)
 #include <string.h>
 
 #include "vrnd.h"
-#include "miniobj.h"
 
 /* Test driver -------------------------------------------------------*/
 
