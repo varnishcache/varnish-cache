@@ -168,17 +168,19 @@ int
 VRND_RandomCrypto(void *ptr, size_t len)
 {
 	int fd;
-	char *p;
+	char *p = ptr;
 	ssize_t l;
 
 	AN(ptr);
 	fd = open("/dev/urandom", O_RDONLY);
 	if (fd < 0)
 		return (-1);
-	for (p = ptr; len > 0; len--, p++) {
-		l = read(fd, p, 1);
-		if (l != 1)
+	while (len > 0) {
+		l = read(fd, p, len);
+		if (l < 0)
 			break;
+		p += l;
+		len -= l;
 	}
 	closefd(&fd);
 	return (len == 0 ? 0 : -1);
