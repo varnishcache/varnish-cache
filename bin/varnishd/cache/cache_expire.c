@@ -177,6 +177,7 @@ void
 EXP_Insert(struct worker *wrk, struct objcore *oc)
 {
 	unsigned remove_race = 0;
+	struct objcore *tmpoc;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
@@ -186,6 +187,8 @@ EXP_Insert(struct worker *wrk, struct objcore *oc)
 	if (!(oc->exp_flags & OC_EF_REFD))
 		return;
 
+	/* One ref held by the caller, and one that wil be owned by
+	 * expiry. */
 	assert(oc->refcnt >= 2);
 
 	ObjSendEvent(wrk, oc, OEV_INSERT);
@@ -204,8 +207,10 @@ EXP_Insert(struct worker *wrk, struct objcore *oc)
 
 	if (remove_race) {
 		ObjSendEvent(wrk, oc, OEV_EXPIRE);
-		(void)HSH_DerefObjCore(wrk, &oc, 0);
-		AZ(oc);
+		tmpoc = oc;
+		(void)HSH_DerefObjCore(wrk, &tmpoc, 0);
+		AZ(tmpoc);
+		assert(oc->refcnt >= 1); /* Silence coverity */
 	}
 }
 
