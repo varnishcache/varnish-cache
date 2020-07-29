@@ -44,9 +44,9 @@ export TMPDIR="${TMPDIR:-`pwd`/_vtest_tmp}"
 MESSAGE="${MESSAGE:-}"
 
 WAITPERIOD=60		# unit: Seconds
+WAITMIN=1		# unit: WAITPERIOD
+WAITMAX=60		# unit: WAITPERIOD
 
-WAITGOOD=60		# unit: WAITPERIOD
-WAITBAD=1		# unit: WAITPERIOD
 MAXRUNS="${MAXRUNS:-0}"
 
 #######################################################################
@@ -209,7 +209,8 @@ if $enable_gcov ; then
 fi
 
 orev=000
-waitnext=${WAITBAD}
+waitnext=0
+waitcur=${WAITMIN}
 i=0
 
 while [ $MAXRUNS -eq 0 ] || [ $i -lt $MAXRUNS ]
@@ -219,13 +220,23 @@ do
 	(cd "${SRCDIR}" && git reset --hard > /dev/null 2>&1 || true)
 	(cd "${SRCDIR}" && git clean -df > /dev/null 2>&1 || true)
 	(cd "${SRCDIR}" && git pull > /dev/null 2>&1 || true)
+	(cd "${SRCDIR}" && chmod -R +w varnish-trunk && rm -rf varnish-trunk > /dev/null 2>&1 || true)
 	rev=`cd "${SRCDIR}" && git show -s --pretty=format:%H`
-	if [ "${waitnext}" -gt 0 -a "x${rev}" = "x${orev}" ] ; then
+	if [ "x${rev}" != "x${orev}" ] ; then
+                waitcur=${WAITMIN}
+	elif [ "${waitnext}" -gt 0 ] ; then
 		sleep ${WAITPERIOD}
 		waitnext=`expr ${waitnext} - 1 || true`
 		continue
+	else 
+		waitcur=`expr ${waitcur} + 1`
+		if [ ${waitcur} -gt ${WAITMAX} ] ; then
+			waitcur=${WAITMAX}
+		fi
 	fi
-	waitnext=${WAITBAD}
+
+	waitnext=${waitcur}
+
 	orev=${rev}
 
 	if ! [ -d "${SRCDIR}" ] && ! mkdir -p "${SRCDIR}" ; then
@@ -265,7 +276,8 @@ do
 				mv ${SRCDIR}/_gcov ${REPORTDIR}/
 				echo "MAKEGCOV GOOD" >> ${VTEST_REPORT}
 				echo "MANIFEST _gcov" >> ${VTEST_REPORT}
-				waitnext=${WAITGOOD}
+				waitcur=${WAITMAX}
+				waitnext=${WAITMAX}
 			else
 				echo "MAKEGCOV BAD" >> ${VTEST_REPORT}
 				echo "MANIFEST _makegcov" >> ${VTEST_REPORT}
@@ -278,7 +290,8 @@ do
 			failedtests >> ${VTEST_REPORT}
 		else
 			echo "MAKEDISTCHECK GOOD" >> ${VTEST_REPORT}
-			waitnext=${WAITGOOD}
+			waitnext=${WAITMAX}
+			waitcur=${WAITMAX}
 		fi
 	fi
 	echo "VTEST END" >> ${VTEST_REPORT}
