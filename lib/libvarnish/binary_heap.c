@@ -538,14 +538,6 @@ vrnd_lock(void)
 {
 }
 
-#if defined(__SANITIZER) || __has_feature(address_sanitizer)
-int __lsan_is_turned_off(void);
-int __lsan_is_turned_off(void)
-{
-	return (1);
-}
-
-#endif
 int
 main(void)
 {
@@ -649,8 +641,10 @@ main(void)
 		}
 		fprintf(stderr, "%d updates OK\n", M);
 	}
-	while ((fp = binheap_root(bh)) != NULL)
+	while ((fp = binheap_root(bh)) != NULL) {
 		binheap_delete(bh, fp->idx);
+		FREE_OBJ(fp);
+	}
 	binheap_destroy(&bh);
 	AZ(bh);
 	return (0);
