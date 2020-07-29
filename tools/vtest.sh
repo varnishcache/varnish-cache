@@ -236,6 +236,9 @@ do
 	rm -rf "${REPORTDIR}"
 	mkdir "${REPORTDIR}"
 
+	# NB:  Only change the report version number when the format/content
+	# NB:  of the report changes.  Corresponding changes on the backend
+	# NB:  will be required.  Coordinate with phk@.
 	echo "VTEST 1.05" > ${VTEST_REPORT}
 	echo "DATE `date +%s`" >> ${VTEST_REPORT}
 	echo "BRANCH trunk" >> ${VTEST_REPORT}
