@@ -43,6 +43,7 @@ _*
 TAGS
 tags
 cscope.*out
+.dirstamp
 
 # Default vcl made from bin/varnishd/default.vcl
 /bin/varnishd/builtin_vcl.c
