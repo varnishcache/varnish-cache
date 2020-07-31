@@ -53,6 +53,7 @@ CMD_TOP(process)
 CMD_TOP(server)
 CMD_TOP(setenv)
 CMD_TOP(syslog)
+CMD_TOP(tunnel)
 #ifdef VTEST_WITH_VTC_VARNISH
 CMD_TOP(varnish)
 #endif

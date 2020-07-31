@@ -85,6 +85,7 @@ extern const char *default_listen_addr;
 
 void init_server(void);
 void init_syslog(void);
+void init_tunnel(void);
 
 /* Sessions */
 struct vtc_sess *Sess_New(struct vtclog *vl, const char *name);
@@ -146,6 +147,8 @@ void cmd_stream(CMD_ARGS);
 void start_h2(struct http *hp);
 void stop_h2(struct http *hp);
 void b64_settings(const struct http *hp, const char *s);
+
+cmd_f cmd_tunnel;
 
 /* vtc_gzip.c */
 void vtc_gzip(struct http *, const char *, char **, long *);

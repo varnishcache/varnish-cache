@@ -1,0 +1,49 @@
+varnishtest "tunnel basic coverage"
+
+barrier b1 cond 2 -cyclic
+barrier b2 sock 2 -cyclic
+barrier b3 sock 2 -cyclic
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import vtc;
+	sub vcl_recv {
+		vtc.barrier_sync("${b2_sock}");
+		vtc.barrier_sync("${b3_sock}");
+	}
+} -start
+
+tunnel t1 {
+	pause
+	barrier b1 sync
+	send 10
+	delay 0.1
+	send 15
+	resume
+	barrier b2 sync
+	pause
+	barrier b3 sync
+	recv 10
+	delay 0.1
+	recv 15
+	# automatic resumption here
+} -start
+
+client c1 -connect "${t1_sock}" {
+	barrier b1 sync
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run
+
+tunnel t1 -wait
+
+# Same scenario, but wait for c1 _after_ t1
+tunnel t1 -start
+client c1 -start
+tunnel t1 -wait
+client c1 -wait
