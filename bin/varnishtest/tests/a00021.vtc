@@ -1,0 +1,32 @@
+varnishtest "tunnel basic coverage"
+
+barrier b1 cond 2
+barrier b2 cond 2
+barrier b3 cond 2
+
+server s1 {
+	rxreq
+	barrier b2 sync
+	barrier b3 sync
+	txresp
+} -start
+
+tunnel t1 -connect "${s1_sock}" {
+	pause
+	barrier b1 sync
+	send 10
+	resume
+	barrier b2 sync
+	pause
+	barrier b3 sync
+	recv 10
+	resume
+} -start
+
+client c1 -connect "${t1_sock}" {
+	barrier b1 sync
+	txreq
+	rxresp
+} -run
+
+tunnel t1 -wait
