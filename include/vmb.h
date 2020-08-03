@@ -34,7 +34,7 @@
 #ifndef VMB_H_INCLUDED
 #define VMB_H_INCLUDED
 
-#if defined(HAVE_STDATOMIC_H)
+#if defined(HAVE_STDATOMIC_H) && !defined(__FLEXELINT__)
 
 #  include <stdatomic.h>
 #  define VWMB()	atomic_thread_fence(memory_order_release)
