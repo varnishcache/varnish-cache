@@ -15,7 +15,7 @@ vmod_LTLIBRARIES = libvmod_debug.la
 libvmod_debug_la_CFLAGS ?= \
 	@SAN_CFLAGS@
 
-libvmod_debug_la_LDFLAGS ?= \
+libvmod_debug_la_LDFLAGS = \
 	-export-symbols-regex 'Vmod_debug_Data' \
 	$(AM_LDFLAGS) \
 	$(VMOD_LDFLAGS) \

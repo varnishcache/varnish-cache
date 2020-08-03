@@ -15,7 +15,7 @@ vmod_LTLIBRARIES = libvmod_cookie.la
 libvmod_cookie_la_CFLAGS ?= \
 	@SAN_CFLAGS@
 
-libvmod_cookie_la_LDFLAGS ?= \
+libvmod_cookie_la_LDFLAGS = \
 	-export-symbols-regex 'Vmod_cookie_Data' \
 	$(AM_LDFLAGS) \
 	$(VMOD_LDFLAGS) \
