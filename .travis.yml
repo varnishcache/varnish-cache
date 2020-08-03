@@ -83,7 +83,6 @@ jobs:
             - docutils
             - nghttp2
             - sphinx-doc
-          update: true
       before_script:
         - export PATH="/usr/local/opt/sphinx-doc/bin:$PATH"
         - ./autogen.sh
