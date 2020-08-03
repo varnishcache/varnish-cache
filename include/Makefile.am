@@ -32,7 +32,6 @@ nobase_pkginclude_HEADERS = \
 	tbl/sess_close.h \
 	tbl/steps.h \
 	tbl/symbol_kind.h \
-	tbl/vcc_types.h \
 	tbl/vcl_returns.h \
 	tbl/vcl_states.h \
 	tbl/vhd_fsm.h \
@@ -122,7 +121,6 @@ vcl.h: \
 GEN_H = \
 	tbl/vrt_stv_var.h \
 	tbl/vcl_returns.h \
-	tbl/vcc_types.h \
 	vrt_obj.h
 
 $(GEN_H): vcl.h

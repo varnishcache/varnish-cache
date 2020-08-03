@@ -116,7 +116,7 @@ struct type {
 };
 
 #define VCC_TYPE(UC, lc)	extern const struct type UC[1];
-#include "tbl/vcc_types.h"
+#include "vcc_types.h"
 
 /*---------------------------------------------------------------------*/
 

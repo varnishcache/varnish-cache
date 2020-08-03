@@ -58,11 +58,11 @@ cscope.*out
 /include/vmod_abi.h
 /include/tbl/vcl_returns.h
 /include/tbl/vrt_stv_var.h
-/include/tbl/vcc_types.h
 /include/vcs_version.h
 /lib/libvcc/vcc_fixed_token.c
 /lib/libvcc/vcc_obj.c
 /lib/libvcc/vcc_token_defs.h
+/lib/libvcc/vcc_types.h
 /lib/libvarnishapi/vsl2rst
 /lib/libvarnishapi/vxp_fixed_token.c
 /lib/libvarnishapi/vxp_tokens.h

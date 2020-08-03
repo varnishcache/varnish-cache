@@ -15,6 +15,7 @@ libvcc_a_SOURCES = \
 	vcc_compile.h \
 	vcc_namespace.h \
 	vcc_token_defs.h \
+	vcc_types.h \
 	vcc_acl.c \
 	vcc_action.c \
 	vcc_backend.c \
@@ -56,6 +57,7 @@ vcc_obj.c: \
 GEN_H = \
 	vcc_fixed_token.c \
 	vcc_token_defs.h \
+	vcc_types.h \
 	tbl/vrt_stv_var.h
 
 $(GEN_H): vcc_obj.c

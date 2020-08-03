@@ -786,7 +786,7 @@ fo.write("\n}\n")
 fo.close()
 
 #######################################################################
-ft = open(join(buildroot, "include/tbl/vcc_types.h"), "w")
+ft = open(join(buildroot, "lib/libvcc/vcc_types.h"), "w")
 file_header(ft)
 
 lint_start(ft)

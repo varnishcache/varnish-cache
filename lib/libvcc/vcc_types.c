@@ -224,7 +224,7 @@ VCC_Type(const char *p)
 {
 
 #define VCC_TYPE(UC, lc)	if (!strcmp(p, #UC)) return (UC);
-#include "tbl/vcc_types.h"
+#include "vcc_types.h"
 	return (NULL);
 }
 
@@ -291,5 +291,5 @@ vcc_Type_Init(struct vcc *tl)
 {
 
 #define VCC_TYPE(UC, lc)	vcc_type_init(tl, UC);
-#include "tbl/vcc_types.h"
+#include "vcc_types.h"
 }
