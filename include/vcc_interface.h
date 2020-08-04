@@ -82,4 +82,5 @@ struct vcl_sub {
 	const char * const	name;
 	const struct VCL_conf	*vcl_conf;
 	vcl_func_f		*func;
+	unsigned		n;
 };
