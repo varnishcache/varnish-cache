@@ -362,7 +362,7 @@ vmod_proxy_header(VRT_CTX, VCL_ENUM venum, VCL_IP client, VCL_IP server,
 	VRT_Format_Proxy(vsb, version, client, server, authority);
 	l = VSB_len(vsb);
 	h = WS_Copy(ctx->ws, VSB_data(vsb), l);
-	VSB_delete(vsb);
+	VSB_destroy(&vsb);
 
 	if (h == NULL) {
 		VRT_fail(ctx, "proxy_header: out of workspace");
