@@ -159,7 +159,8 @@ vcc_EmitProc(struct vcc *tl, struct proc *p)
 	Fh(tl, 1, "\t.methods\t= 0x%x,\n", p->okmask);
 	Fh(tl, 1, "\t.name\t\t= \"%.*s\",\n", PF(p->name));
 	Fh(tl, 1, "\t.vcl_conf\t= &VCL_conf,\n");
-	Fh(tl, 1, "\t.func\t\t= %s\n", VSB_data(p->cname));
+	Fh(tl, 1, "\t.func\t\t= %s,\n", VSB_data(p->cname));
+	Fh(tl, 1, "\t.n\t\t= %d\n", tl->nsub++);
 	Fh(tl, 1, "}};\n");
 	/*
 	 * TODO: v_dont_optimize for custom subs called from vcl_init/fini only
@@ -503,6 +504,7 @@ EmitStruct(const struct vcc *tl)
 	Fc(tl, 0, "\t.ref = VGC_ref,\n");
 	Fc(tl, 0, "\t.nref = VGC_NREFS,\n");
 	Fc(tl, 0, "\t.nsrc = VGC_NSRCS,\n");
+	Fc(tl, 0, "\t.nsub = %d,\n", tl->nsub);
 	Fc(tl, 0, "\t.srcname = srcname,\n");
 	Fc(tl, 0, "\t.srcbody = srcbody,\n");
 	Fc(tl, 0, "\t.nvmod = %u,\n", tl->vmod_count);

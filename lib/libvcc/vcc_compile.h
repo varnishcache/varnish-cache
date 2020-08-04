@@ -265,6 +265,7 @@ struct vcc {
 						 */
 	struct vsb		*sb;
 	int			err;
+	unsigned		nsub;
 	struct proc		*curproc;
 	VTAILQ_HEAD(, proc)	procs;
 
