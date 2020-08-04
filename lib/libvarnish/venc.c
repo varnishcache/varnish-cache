@@ -34,6 +34,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <limits.h>
+#include <sys/types.h>
 
 #include "vdef.h"
 #include "vas.h"
