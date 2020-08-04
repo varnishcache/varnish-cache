@@ -51,8 +51,7 @@ __FBSDID("$FreeBSD: head/sys/kern/subr_vsb.c 222004 2011-05-17 06:36:32Z phk $")
 /*
  * Predicates
  */
-#define	VSB_ISDYNAMIC(s)	((s)->s_flags & VSB_DYNAMIC)
-#define	VSB_ISDYNSTRUCT(s)	((s)->s_flags & VSB_DYNSTRUCT)
+#define VSB_ISDYNAMIC(s)	((s)->s_flags & VSB_DYNAMIC)
 #define	VSB_HASROOM(s)		((s)->s_len < (s)->s_size - 1L)
 #define	VSB_FREESPACE(s)	((s)->s_size - ((s)->s_len + 1L))
 #define	VSB_CANEXTEND(s)	((s)->s_flags & VSB_AUTOEXTEND)
@@ -232,7 +231,7 @@ VSB_new(struct vsb *s, char *buf, int length, int flags)
 		SBFREE(s);
 		return (NULL);
 	}
-	VSB_SETFLAG(s, VSB_DYNSTRUCT);
+	s->s_alloced = s;
 	return (s);
 }
 
@@ -480,17 +479,17 @@ VSB_len(const struct vsb *s)
 void
 VSB_delete(struct vsb *s)
 {
-	int isdyn;
+	void *p;
 
 	assert_VSB_integrity(s);
 	/* don't care if it's finished or not */
 
 	if (VSB_ISDYNAMIC(s))
 		SBFREE(s->s_buf);
-	isdyn = VSB_ISDYNSTRUCT(s);
+	p = s->s_alloced;
 	memset(s, 0, sizeof(*s));
-	if (isdyn)
-		SBFREE(s);
+	if (p != NULL)
+		SBFREE(p);
 }
 
 void
