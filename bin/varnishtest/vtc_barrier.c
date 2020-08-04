@@ -306,7 +306,7 @@ barrier_sock_sync(struct barrier *b, struct vtclog *vl)
 		vtc_fatal(vl, "Barrier(%s) connection failed: %s",
 		    b->name, err);
 
-	VSB_delete(vsb);
+	VSB_destroy(&vsb);
 
 	/* emulate pthread_cond_wait's behavior */
 	AZ(pthread_mutex_unlock(&b->mtx));

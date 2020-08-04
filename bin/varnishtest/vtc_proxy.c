@@ -129,6 +129,6 @@ vtc_send_proxy(int fd, int version, const struct suckaddr *sac,
 
 	AZ(VSB_finish(vsb));
 	i = VSB_tofile(vsb, fd);
-	VSB_delete(vsb);
+	VSB_destroy(&vsb);
 	return (i);
 }
