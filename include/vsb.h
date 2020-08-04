@@ -48,9 +48,9 @@ struct vsb {
 #define	VSB_USRFLAGMSK	0x0000ffff	/* mask of flags the user may specify */
 #define	VSB_DYNAMIC	0x00010000	/* s_buf must be freed */
 #define	VSB_FINISHED	0x00020000	/* set by VSB_finish() */
-#define	VSB_DYNSTRUCT	0x00080000	/* vsb must be freed */
 	int		 s_flags;	/* flags */
 	int		 s_indent;	/* Ident level */
+	void		*s_alloced;	/* Ptr to free, if vsb is malloced */
 };
 
 #ifdef __cplusplus
