@@ -151,7 +151,7 @@
 -e441	//  for clause irregularity: loop variable '___' not found in 2nd for expression
 
 // from libvarnish
---emacro((835),BINHEAP_NOIDX)
+--emacro((835),VBH_NOIDX)
 --emacro((835),O_CLOEXEC)
 
 // Review all below this line ///////////////////////////////////////////////

@@ -8,5 +8,5 @@
 
 -dVARNISH_STATE_DIR="foo"
 
---emacro((835),BINHEAP_NOIDX)
+--emacro((835),VBH_NOIDX)
 --emacro((835),O_CLOEXEC)

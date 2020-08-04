@@ -39,7 +39,7 @@
 #include "cache_varnishd.h"
 #include "cache_objhead.h"
 
-#include "binary_heap.h"
+#include "vbh.h"
 #include "vtim.h"
 
 struct exp_priv {
@@ -53,7 +53,7 @@ struct exp_priv {
 	/* owned by exp thread */
 	struct worker			*wrk;
 	struct vsl_log			vsl;
-	struct binheap			*heap;
+	struct vbh			*heap;
 	pthread_t			thread;
 };
 
@@ -272,10 +272,10 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, unsigned flags)
 
 	if (flags & OC_EF_REMOVE) {
 		if (!(flags & OC_EF_INSERT)) {
-			assert(oc->timer_idx != BINHEAP_NOIDX);
-			binheap_delete(ep->heap, oc->timer_idx);
+			assert(oc->timer_idx != VBH_NOIDX);
+			VBH_delete(ep->heap, oc->timer_idx);
 		}
-		assert(oc->timer_idx == BINHEAP_NOIDX);
+		assert(oc->timer_idx == VBH_NOIDX);
 		assert(oc->refcnt > 0);
 		AZ(oc->exp_flags);
 		ObjSendEvent(ep->wrk, oc, OEV_EXPIRE);
@@ -298,13 +298,13 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, unsigned flags)
 	 */
 
 	if (flags & OC_EF_INSERT) {
-		assert(oc->timer_idx == BINHEAP_NOIDX);
-		binheap_insert(exphdl->heap, oc);
-		assert(oc->timer_idx != BINHEAP_NOIDX);
+		assert(oc->timer_idx == VBH_NOIDX);
+		VBH_insert(exphdl->heap, oc);
+		assert(oc->timer_idx != VBH_NOIDX);
 	} else if (flags & OC_EF_MOVE) {
-		assert(oc->timer_idx != BINHEAP_NOIDX);
-		binheap_reorder(exphdl->heap, oc->timer_idx);
-		assert(oc->timer_idx != BINHEAP_NOIDX);
+		assert(oc->timer_idx != VBH_NOIDX);
+		VBH_reorder(exphdl->heap, oc->timer_idx);
+		assert(oc->timer_idx != VBH_NOIDX);
 	} else {
 		WRONG("Objcore state wrong in inbox");
 	}
@@ -321,7 +321,7 @@ exp_expire(struct exp_priv *ep, vtim_real now)
 
 	CHECK_OBJ_NOTNULL(ep, EXP_PRIV_MAGIC);
 
-	oc = binheap_root(ep->heap);
+	oc = VBH_root(ep->heap);
 	if (oc == NULL)
 		return (now + 355./113.);
 	VSLb(&ep->vsl, SLT_ExpKill, "EXP_expire p=%p e=%.6f f=0x%x", oc,
@@ -348,9 +348,9 @@ exp_expire(struct exp_priv *ep, vtim_real now)
 			HSH_Kill(oc);
 
 		/* Remove from binheap */
-		assert(oc->timer_idx != BINHEAP_NOIDX);
-		binheap_delete(ep->heap, oc->timer_idx);
-		assert(oc->timer_idx == BINHEAP_NOIDX);
+		assert(oc->timer_idx != VBH_NOIDX);
+		VBH_delete(ep->heap, oc->timer_idx);
+		assert(oc->timer_idx == VBH_NOIDX);
 
 		CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
 		VSLb(&ep->vsl, SLT_ExpKill, "EXP_Expired x=%u t=%.0f",
@@ -366,7 +366,7 @@ exp_expire(struct exp_priv *ep, vtim_real now)
  * object expires, accounting also for graceability, it is killed.
  */
 
-static int v_matchproto_(binheap_cmp_t)
+static int v_matchproto_(vbh_cmp_t)
 object_cmp(void *priv, const void *a, const void *b)
 {
 	const struct objcore *aa, *bb;
@@ -377,7 +377,7 @@ object_cmp(void *priv, const void *a, const void *b)
 	return (aa->timer_when < bb->timer_when);
 }
 
-static void v_matchproto_(binheap_update_t)
+static void v_matchproto_(vbh_update_t)
 object_update(void *priv, void *p, unsigned u)
 {
 	struct objcore *oc;
@@ -398,7 +398,7 @@ exp_thread(struct worker *wrk, void *priv)
 	CAST_OBJ_NOTNULL(ep, priv, EXP_PRIV_MAGIC);
 	ep->wrk = wrk;
 	VSL_Setup(&ep->vsl, NULL, 0);
-	ep->heap = binheap_new(NULL, object_cmp, object_update);
+	ep->heap = VBH_new(NULL, object_cmp, object_update);
 	AN(ep->heap);
 	while (exp_shutdown == 0) {
 

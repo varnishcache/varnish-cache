@@ -46,7 +46,7 @@
 
 #include "cache_varnishd.h"
 
-#include "binary_heap.h"
+#include "vbh.h"
 #include "vcli_serve.h"
 #include "vsa.h"
 #include "vtcp.h"
@@ -89,7 +89,7 @@ struct vbp_target {
 
 static struct lock			vbp_mtx;
 static pthread_cond_t			vbp_cond;
-static struct binheap			*vbp_heap;
+static struct vbh			*vbp_heap;
 
 static const unsigned char vbp_proxy_local[] = {
 	0x0d, 0x0a, 0x0d, 0x0a, 0x00, 0x0d, 0x0a, 0x51,
@@ -417,8 +417,8 @@ static void
 vbp_heap_insert(struct vbp_target *vt)
 {
 	// Lck_AssertHeld(&vbp_mtx);
-	binheap_insert(vbp_heap, vt);
-	if (binheap_root(vbp_heap) == vt)
+	VBH_insert(vbp_heap, vt);
+	if (VBH_root(vbp_heap) == vt)
 		AZ(pthread_cond_signal(&vbp_cond));
 }
 
@@ -444,13 +444,13 @@ vbp_task(struct worker *wrk, void *priv)
 
 	Lck_Lock(&vbp_mtx);
 	if (vt->running < 0) {
-		assert(vt->heap_idx == BINHEAP_NOIDX);
+		assert(vt->heap_idx == VBH_NOIDX);
 		vbp_delete(vt);
 	} else {
 		vt->running = 0;
-		if (vt->heap_idx != BINHEAP_NOIDX) {
+		if (vt->heap_idx != VBH_NOIDX) {
 			vt->due = VTIM_real() + vt->interval;
-			binheap_delete(vbp_heap, vt->heap_idx);
+			VBH_delete(vbp_heap, vt->heap_idx);
 			vbp_heap_insert(vt);
 		}
 	}
@@ -472,7 +472,7 @@ vbp_thread(struct worker *wrk, void *priv)
 	Lck_Lock(&vbp_mtx);
 	while (1) {
 		now = VTIM_real();
-		vt = binheap_root(vbp_heap);
+		vt = VBH_root(vbp_heap);
 		if (vt == NULL) {
 			nxt = 8.192 + now;
 			(void)Lck_CondWait(&vbp_cond, &vbp_mtx, nxt);
@@ -481,7 +481,7 @@ vbp_thread(struct worker *wrk, void *priv)
 			vt = NULL;
 			(void)Lck_CondWait(&vbp_cond, &vbp_mtx, nxt);
 		} else {
-			binheap_delete(vbp_heap, vt->heap_idx);
+			VBH_delete(vbp_heap, vt->heap_idx);
 			vt->due = now + vt->interval;
 			if (!vt->running) {
 				vt->running = 1;
@@ -493,7 +493,7 @@ vbp_thread(struct worker *wrk, void *priv)
 				if (r)
 					vt->running = 0;
 			}
-			binheap_insert(vbp_heap, vt);
+			VBH_insert(vbp_heap, vt);
 		}
 	}
 	NEEDLESS(Lck_Unlock(&vbp_mtx));
@@ -654,12 +654,12 @@ VBP_Control(const struct backend *be, int enable)
 
 	Lck_Lock(&vbp_mtx);
 	if (enable) {
-		assert(vt->heap_idx == BINHEAP_NOIDX);
+		assert(vt->heap_idx == VBH_NOIDX);
 		vt->due = VTIM_real();
 		vbp_heap_insert(vt);
 	} else {
-		assert(vt->heap_idx != BINHEAP_NOIDX);
-		binheap_delete(vbp_heap, vt->heap_idx);
+		assert(vt->heap_idx != VBH_NOIDX);
+		VBH_delete(vbp_heap, vt->heap_idx);
 	}
 	Lck_Unlock(&vbp_mtx);
 }
@@ -713,14 +713,14 @@ VBP_Remove(struct backend *be)
 	}
 	Lck_Unlock(&vbp_mtx);
 	if (vt != NULL) {
-		assert(vt->heap_idx == BINHEAP_NOIDX);
+		assert(vt->heap_idx == VBH_NOIDX);
 		vbp_delete(vt);
 	}
 }
 
 /*-------------------------------------------------------------------*/
 
-static int v_matchproto_(binheap_cmp_t)
+static int v_matchproto_(vbh_cmp_t)
 vbp_cmp(void *priv, const void *a, const void *b)
 {
 	const struct vbp_target *aa, *bb;
@@ -739,7 +739,7 @@ vbp_cmp(void *priv, const void *a, const void *b)
 	return (aa->due < bb->due);
 }
 
-static void v_matchproto_(binheap_update_t)
+static void v_matchproto_(vbh_update_t)
 vbp_update(void *priv, void *p, unsigned u)
 {
 	struct vbp_target *vt;
@@ -757,7 +757,7 @@ VBP_Init(void)
 	pthread_t thr;
 
 	Lck_New(&vbp_mtx, lck_probe);
-	vbp_heap = binheap_new(NULL, vbp_cmp, vbp_update);
+	vbp_heap = VBH_new(NULL, vbp_cmp, vbp_update);
 	AN(vbp_heap);
 	AZ(pthread_cond_init(&vbp_cond, NULL));
 	WRK_BgThread(&thr, "backend-poller", vbp_thread, NULL);

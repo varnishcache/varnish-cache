@@ -32,7 +32,7 @@
  */
 
 struct waited;
-struct binheap;
+struct vbh;
 
 struct waiter {
 	unsigned			magic;
@@ -42,7 +42,7 @@ struct waiter {
 	VTAILQ_HEAD(,waited)		waithead;
 
 	void				*priv;
-	struct binheap			*heap;
+	struct vbh			*heap;
 };
 
 typedef void waiter_init_f(struct waiter *);

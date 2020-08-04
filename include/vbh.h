@@ -35,16 +35,16 @@
 
 /* Public Interface --------------------------------------------------*/
 
-struct binheap;
+struct vbh;
 
-typedef int binheap_cmp_t(void *priv, const void *a, const void *b);
+typedef int vbh_cmp_t(void *priv, const void *a, const void *b);
 	/*
 	 * Comparison function.
 	 * Should return true if item 'a' should be closer to the root
 	 * than item 'b'
 	 */
 
-typedef void binheap_update_t(void *priv, void *a, unsigned newidx);
+typedef void vbh_update_t(void *priv, void *a, unsigned newidx);
 	/*
 	 * Update function (optional)
 	 * When items move in the tree, this function gets called to
@@ -52,36 +52,36 @@ typedef void binheap_update_t(void *priv, void *a, unsigned newidx);
 	 * Only needed if deleting non-root items.
 	 */
 
-struct binheap *binheap_new(void *priv, binheap_cmp_t, binheap_update_t);
+struct vbh *VBH_new(void *priv, vbh_cmp_t, vbh_update_t);
 	/*
 	 * Create Binary tree
 	 * 'priv' is passed to cmp and update functions.
 	 */
 
-void binheap_destroy(struct binheap **);
+void VBH_destroy(struct vbh **);
 	/*
 	 * Destroy an empty Binary tree
 	 */
 
-void binheap_insert(struct binheap *, void *);
+void VBH_insert(struct vbh *, void *);
 	/*
 	 * Insert an item
 	 */
 
-void binheap_reorder(const struct binheap *, unsigned idx);
+void VBH_reorder(const struct vbh *, unsigned idx);
 	/*
 	 * Move an order after changing its key value.
 	 */
 
-void binheap_delete(struct binheap *, unsigned idx);
+void VBH_delete(struct vbh *, unsigned idx);
 	/*
 	 * Delete an item
 	 * The root item has 'idx' zero
 	 */
 
-void *binheap_root(const struct binheap *);
+void *VBH_root(const struct vbh *);
 	/*
 	 * Return the root item
 	 */
 
-#define BINHEAP_NOIDX	0
+#define VBH_NOIDX	0

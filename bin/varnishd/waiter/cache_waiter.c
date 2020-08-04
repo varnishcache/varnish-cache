@@ -36,13 +36,13 @@
 
 #include <stdlib.h>
 
-#include "binary_heap.h"
+#include "vbh.h"
 
 #include "waiter/waiter.h"
 #include "waiter/waiter_priv.h"
 #include "waiter/mgt_waiter.h"
 
-static int v_matchproto_(binheap_cmp_t)
+static int v_matchproto_(vbh_cmp_t)
 waited_cmp(void *priv, const void *a, const void *b)
 {
 	const struct waiter *ww;
@@ -55,7 +55,7 @@ waited_cmp(void *priv, const void *a, const void *b)
 	return (Wait_When(aa) < Wait_When(bb));
 }
 
-static void v_matchproto_(binheap_update_t)
+static void v_matchproto_(vbh_update_t)
 waited_update(void *priv, void *p, unsigned u)
 {
 	struct waited *pp;
@@ -74,7 +74,7 @@ Wait_Call(const struct waiter *w, struct waited *wp,
 	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
 	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
 	AN(wp->func);
-	assert(wp->idx == BINHEAP_NOIDX);
+	assert(wp->idx == VBH_NOIDX);
 	wp->func(wp, ev, now);
 }
 
@@ -85,8 +85,8 @@ Wait_HeapInsert(const struct waiter *w, struct waited *wp)
 {
 	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
 	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
-	assert(wp->idx == BINHEAP_NOIDX);
-	binheap_insert(w->heap, wp);
+	assert(wp->idx == VBH_NOIDX);
+	VBH_insert(w->heap, wp);
 }
 
 /*
@@ -102,9 +102,9 @@ Wait_HeapDelete(const struct waiter *w, const struct waited *wp)
 {
 	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
 	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
-	if (wp->idx == BINHEAP_NOIDX)
+	if (wp->idx == VBH_NOIDX)
 		return (0);
-	binheap_delete(w->heap, wp->idx);
+	VBH_delete(w->heap, wp->idx);
 	return (1);
 }
 
@@ -113,7 +113,7 @@ Wait_HeapDue(const struct waiter *w, struct waited **wpp)
 {
 	struct waited *wp;
 
-	wp = binheap_root(w->heap);
+	wp = VBH_root(w->heap);
 	CHECK_OBJ_ORNULL(wp, WAITED_MAGIC);
 	if (wp == NULL) {
 		if (wpp != NULL)
@@ -135,7 +135,7 @@ Wait_Enter(const struct waiter *w, struct waited *wp)
 	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
 	assert(wp->fd > 0);			// stdin never comes here
 	AN(wp->func);
-	wp->idx = BINHEAP_NOIDX;
+	wp->idx = VBH_NOIDX;
 	return (w->impl->enter(w->priv, wp));
 }
 
@@ -168,7 +168,7 @@ Waiter_New(void)
 	w->priv = (void*)(w + 1);
 	w->impl = waiter;
 	VTAILQ_INIT(&w->waithead);
-	w->heap = binheap_new(w, waited_cmp, waited_update);
+	w->heap = VBH_new(w, waited_cmp, waited_update);
 
 	waiter->init(w);
 
@@ -182,7 +182,7 @@ Waiter_Destroy(struct waiter **wp)
 
 	TAKE_OBJ_NOTNULL(w, wp, WAITER_MAGIC);
 
-	AZ(binheap_root(w->heap));
+	AZ(VBH_root(w->heap));
 	AN(w->impl->fini);
 	w->impl->fini(w);
 	FREE_OBJ(w);

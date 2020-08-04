@@ -15,7 +15,7 @@ libvarnish_la_CFLAGS = \
 	$(AM_CFLAGS)
 
 libvarnish_la_SOURCES = \
-	binary_heap.c \
+	vbh.c \
 	vas.c \
 	vav.c \
 	vcli_proto.c \
@@ -44,13 +44,13 @@ libvarnish_la_SOURCES = \
 	vtim.c \
 	vus.c
 
-TESTS = vjsn_test vnum_c_test binheap vsb_test
+TESTS = vjsn_test vnum_c_test vbh_test vsb_test
 
 noinst_PROGRAMS = ${TESTS}
 
-binheap_SOURCES	= binary_heap.c
-binheap_CFLAGS = $(AM_CFLAGS) -DTEST_DRIVER
-binheap_LDADD = $(AM_LDFLAGS) libvarnish.la
+vbh_test_SOURCES	= vbh.c
+vbh_test_CFLAGS = $(AM_CFLAGS) -DTEST_DRIVER
+vbh_test_LDADD = $(AM_LDFLAGS) libvarnish.la
 
 vnum_c_test_SOURCES = vnum.c
 vnum_c_test_CFLAGS = $(AM_CFLAGS) -DNUM_C_TEST

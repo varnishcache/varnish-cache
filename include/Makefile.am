@@ -58,7 +58,7 @@ nobase_pkginclude_HEADERS = \
 
 # Headers for use with vmods
 nobase_pkginclude_HEADERS += \
-	binary_heap.h \
+	vbh.h \
 	miniobj.h \
 	vas.h \
 	vav.h \

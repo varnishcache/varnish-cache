@@ -43,7 +43,7 @@
 #include "miniobj.h"
 #include "vas.h"
 
-#include "binary_heap.h"
+#include "vbh.h"
 #include "vev.h"
 #include "vtim.h"
 
@@ -71,7 +71,7 @@ struct vev_root {
 	struct vev		**pev;
 	unsigned		npfd;
 	unsigned		lpfd;
-	struct binheap		*binheap;
+	struct vbh		*binheap;
 	unsigned		psig;
 	pthread_t		thread;
 #ifdef DEBUG_EVENTS
@@ -93,7 +93,7 @@ struct vev_root {
 
 /*--------------------------------------------------------------------*/
 
-static void v_matchproto_(binheap_update_t)
+static void v_matchproto_(vbh_update_t)
 vev_bh_update(void *priv, void *a, unsigned u)
 {
 	struct vev_root *evb;
@@ -103,7 +103,7 @@ vev_bh_update(void *priv, void *a, unsigned u)
 	CAST_OBJ_NOTNULL(e, a, VEV_MAGIC);
 	assert(u < evb->lpfd);
 	e->__binheap_idx = u;
-	if (u != BINHEAP_NOIDX) {
+	if (u != VBH_NOIDX) {
 		evb->pev[u] = e;
 		evb->pfd[u].fd = e->fd;
 		evb->pfd[u].events =
@@ -111,7 +111,7 @@ vev_bh_update(void *priv, void *a, unsigned u)
 	}
 }
 
-static int v_matchproto_(binheap_cmp_t)
+static int v_matchproto_(vbh_cmp_t)
 vev_bh_cmp(void *priv, const void *a, const void *b)
 {
 	struct vev_root *evb;
@@ -196,13 +196,13 @@ VEV_New(void)
 	evb = calloc(1, sizeof *evb);
 	if (evb == NULL)
 		return (evb);
-	evb->lpfd = BINHEAP_NOIDX + 1;
+	evb->lpfd = VBH_NOIDX + 1;
 	if (vev_get_pfd(evb)) {
 		free(evb);
 		return (NULL);
 	}
 	evb->magic = VEV_BASE_MAGIC;
-	evb->binheap = binheap_new(evb, vev_bh_cmp, vev_bh_update);
+	evb->binheap = VBH_new(evb, vev_bh_cmp, vev_bh_update);
 	evb->thread = pthread_self();
 #ifdef DEBUG_EVENTS
 	evb->debug = fopen("/tmp/_.events", "w");
@@ -278,7 +278,7 @@ VEV_Start(struct vev_root *evb, struct vev *e)
 		es = NULL;
 	}
 
-	e->magic = VEV_MAGIC;	/* before binheap_insert() */
+	e->magic = VEV_MAGIC;	/* before VBH_insert() */
 
 	if (e->timeout != 0.0)
 		e->__when += VTIM_mono() + e->timeout;
@@ -286,8 +286,8 @@ VEV_Start(struct vev_root *evb, struct vev *e)
 		e->__when = 9e99;
 
 	evb->lpfd++;
-	binheap_insert(evb->binheap, e);
-	assert(e->__binheap_idx != BINHEAP_NOIDX);
+	VBH_insert(evb->binheap, e);
+	assert(e->__binheap_idx != VBH_NOIDX);
 
 	e->__vevb = evb;
 	e->__privflags = 0;
@@ -314,10 +314,10 @@ VEV_Stop(struct vev_root *evb, struct vev *e)
 	assert(evb->thread == pthread_self());
 	assert(evb->pev[e->__binheap_idx] == e);
 
-	assert(e->__binheap_idx != BINHEAP_NOIDX);
+	assert(e->__binheap_idx != VBH_NOIDX);
 	e->fd = -1;
-	binheap_delete(evb->binheap, e->__binheap_idx);
-	assert(e->__binheap_idx == BINHEAP_NOIDX);
+	VBH_delete(evb->binheap, e->__binheap_idx);
+	assert(e->__binheap_idx == VBH_NOIDX);
 	evb->lpfd--;
 
 	if (e->sig > 0) {
@@ -365,8 +365,8 @@ vev_sched_timeout(struct vev_root *evb, struct vev *e, vtim_mono t)
 		free(e);
 	} else {
 		e->__when = t + e->timeout;
-		binheap_delete(evb->binheap, e->__binheap_idx);
-		binheap_insert(evb->binheap, e);
+		VBH_delete(evb->binheap, e->__binheap_idx);
+		VBH_insert(evb->binheap, e);
 	}
 	return (1);
 }
@@ -413,10 +413,10 @@ VEV_Once(struct vev_root *evb)
 		return (vev_sched_signal(evb));
 
 	tmo = INFTIM;
-	e = binheap_root(evb->binheap);
+	e = VBH_root(evb->binheap);
 	if (e != NULL) {
 		CHECK_OBJ(e, VEV_MAGIC);
-		assert(e->__binheap_idx == BINHEAP_NOIDX + 1);
+		assert(e->__binheap_idx == VBH_NOIDX + 1);
 		t = VTIM_mono();
 		if (e->__when <= t)
 			return (vev_sched_timeout(evb, e, t));
@@ -426,7 +426,7 @@ VEV_Once(struct vev_root *evb)
 			tmo = 1;
 	}
 
-	if (tmo == INFTIM && evb->lpfd == BINHEAP_NOIDX + 1)
+	if (tmo == INFTIM && evb->lpfd == VBH_NOIDX + 1)
 		return (0);
 
 	i = poll(evb->pfd + 1, evb->lpfd - 1, tmo);
@@ -452,7 +452,7 @@ VEV_Once(struct vev_root *evb)
 
 	DBG(evb, "EVENTS %d\n", i);
 	while (i > 0) {
-		for (u = BINHEAP_NOIDX + 1; u < evb->lpfd; u++) {
+		for (u = VBH_NOIDX + 1; u < evb->lpfd; u++) {
 			e = evb->pev[u];
 			if (e->fd_events == 0)
 				continue;
