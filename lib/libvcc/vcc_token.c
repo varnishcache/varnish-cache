@@ -36,7 +36,9 @@
 
 #include "vcc_compile.h"
 
+#include "venc.h"
 #include "vct.h"
+#include "vsb.h"
 
 /*--------------------------------------------------------------------*/
 
@@ -390,6 +392,7 @@ vcc_Lexer(struct vcc *tl, const struct source *sp, int eoi)
 {
 	const char *p, *q, *r;
 	unsigned u;
+	struct vsb *vsb;
 
 	for (p = sp->b; p < sp->e; ) {
 
@@ -485,45 +488,50 @@ vcc_Lexer(struct vcc *tl, const struct source *sp, int eoi)
 
 		/* Recognize BLOB (= SF-binary) */
 		if (*p == ':') {
-			r = NULL;
-			for (q = p + 1; q < sp->e && vct_isbase64(*q); q++) {
-				if (r == NULL && *q == '=')
-					r = q;
-			}
-			if (q == sp->e || *q != ':') {
-				VSB_cat(tl->sb,
-				    "Illegal BLOB character:\n");
-				vcc_addtoken(tl, EOI, sp, q, q+1);
-				vcc_ErrWhere(tl, tl->t);
-				return;
-			}
-			if ((q - p) % 3 != 1) {
-				u = ((q - 1) - p) / 3;
-				vcc_addtoken(tl, EOI, sp, p + u * 3 + 1, q);
-				VSB_cat(tl->sb,
-				    "BLOB must have n*3 base64 characters\n");
-				vcc_ErrWhere(tl, tl->t);
-				return;
-			}
+			vsb = VSB_new_auto();
+			AN(vsb);
+			q = sp->e;
+			q -= (q - (p + 1)) % 4;
+			assert(q > p);
+			r = VENC_Decode_Base64(vsb, p + 1, q);
 			if (r == NULL) {
-				/* No padding; */
-			} else if (r + 1 == q) {
-				/* One pad char */
-			} else if (r + 2 == q && r[1] == '=') {
-				/* Two (valid) pad chars */
-			} else {
+				vcc_addtoken(tl, CBLOB, sp, p, q + 1);
+				VSB_cat(tl->sb,
+				    "Missing colon at end of BLOB:\n");
+				vcc_ErrWhere(tl, tl->t);
+				VSB_destroy(&vsb);
+				return;
+			}
+			vcc_addtoken(tl, CBLOB, sp, p, r + 1);
+			if (*r == ':' && ((r - p) % 4) != 1) {
+				VSB_cat(tl->sb,
+				    "BLOB must have n*4 base64 characters\n");
+				vcc_ErrWhere(tl, tl->t);
+				VSB_destroy(&vsb);
+				return;
+			}
+			if (*r == '=') {
 				VSB_cat(tl->sb,
 				    "Wrong padding ('=') in BLOB:\n");
-				vcc_addtoken(tl, EOI, sp, r, r+1);
 				vcc_ErrWhere(tl, tl->t);
+				VSB_destroy(&vsb);
 				return;
 			}
-			p = q + 1;
-			vcc_addtoken(tl, EOI, sp, p, q);
-			VSB_cat(tl->sb,
-			    "BLOB is not supported yet.\n");
+			if (*r != ':') {
+				VSB_cat(tl->sb, "Illegal BLOB character:\n");
+				vcc_ErrWhere(tl, tl->t);
+				VSB_destroy(&vsb);
+				return;
+			}
+			r++;
+			vcc_addtoken(tl, CBLOB, sp, p, r);
+			AZ(VSB_finish(vsb));
+			tl->t->val = vsb;
+			vsb = NULL;
+			p = r;
+			VSB_cat(tl->sb, "BLOB is not supported yet:\n");
 			vcc_ErrWhere(tl, tl->t);
-			return;
+			continue;
 		}
 
 		/* Match for the fixed tokens (see generate.py) */

@@ -1,10 +1,22 @@
-varnishtest "SF-blob parsing in VCL"
+varnishtest "SF-binary/BLOB parsing in VCL"
 
-varnish v1 -errvcl "BLOB must have n*3 base64 characters" { sub vcl_recv { :a: } }
-varnish v2 -errvcl "BLOB must have n*3 base64 characters" { sub vcl_recv { :aa: } }
-varnish v3 -errvcl "Illegal BLOB character:" { sub vcl_recv { :aa?: } }
-varnish v4 -errvcl "BLOB must have n*3 base64 characters" { sub vcl_recv { :aaaa: } }
-varnish v5 -errvcl "Wrong padding ('=') in BLOB" { sub vcl_recv { :aaa=aa: } }
-varnish v6 -errvcl "Wrong padding ('=') in BLOB" { sub vcl_recv { :aaa==a: } }
-varnish v7 -errvcl "Wrong padding ('=') in BLOB" { sub vcl_recv { :aaaa=a: } }
-varnish v8 -errvcl "BLOB is not supported yet" { sub vcl_recv { :aaaa==: } }
+varnish v1 -errvcl "BLOB must have n*4 base64 characters" { sub vcl_recv { :a: } }
+varnish v1 -errvcl "BLOB must have n*4 base64 characters" { sub vcl_recv { :bbbbaa: } }
+varnish v1 -errvcl "BLOB must have n*4 base64 characters" { sub vcl_recv { :bbbbccccaaa: } }
+varnish v1 -errvcl "Illegal BLOB character:" { sub vcl_recv { :aa?: } }
+varnish v1 -errvcl "Wrong padding ('=') in BLOB" { sub vcl_recv { :aaaa=aa: } }
+varnish v1 -errvcl "Wrong padding ('=') in BLOB" { sub vcl_recv { :aaaa==a: } }
+varnish v1 -errvcl "Wrong padding ('=') in BLOB" { sub vcl_recv { :aaaaa=a: } }
+varnish v1 -errvcl "Missing colon at end of BLOB" " sub vcl_recv { :aaaa"
+varnish v1 -errvcl "Missing colon at end of BLOB" " sub vcl_recv { :"
+
+# hint: the 'B' leaves bits in the second output byte
+varnish v1 -errvcl "Illegal BLOB character:" { sub vcl_recv { :AB==: } }
+
+varnish v1 -errvcl "BLOB is not supported yet:" {
+	import blob;
+
+	sub vcl_deliver {
+		set resp.http.foo = blob.encode(BASE64, blob=:AAAAAA==:);
+	}
+}

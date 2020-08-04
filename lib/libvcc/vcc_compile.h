@@ -97,6 +97,7 @@ struct token {
 	VTAILQ_ENTRY(token)	list;
 	unsigned		cnt;
 	char			*dec;
+	struct vsb		*val;
 };
 
 /*---------------------------------------------------------------------*/

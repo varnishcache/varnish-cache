@@ -73,8 +73,9 @@ tokens = {
     "CNUM":     None,
     "FNUM":     None,
     "CSTR":     None,
-    "EOI":      None,
     "CSRC":     None,
+    "CBLOB":    None,
+    "EOI":      None,
 }
 
 #######################################################################
