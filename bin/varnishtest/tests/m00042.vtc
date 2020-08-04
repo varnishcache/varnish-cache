@@ -225,10 +225,12 @@ varnish v1 -vcl {
 				   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef"
 				   + "ghijklmnopqrstuvwxyz0123456789+/");
 
+/*
 	  set resp.http.b64url2b64url =
 	    blob.transcode(BASE64URL, BASE64URL, length=34, encoded=
 				 "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef"
 				 + "ghijklmnopqrstuvwxyz0123456789-_");
+*/
 
 	  set resp.http.b64urlnopad2b64urlnopad =
 	    blob.transcode(BASE64URLNOPAD, BASE64URLNOPAD, length=34, encoded=

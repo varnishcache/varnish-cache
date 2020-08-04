@@ -269,7 +269,7 @@ client c1 {
 
 # Decode failures
 
-server s1 -repeat 3 {
+server s1 -repeat 4 {
 	rxreq
 	txresp
 } -start
@@ -279,7 +279,11 @@ varnish v1 -vcl+backend {
 
 	sub vcl_deliver {
 	  set req.http.foo = "AAA=";
-	  if (req.url == "/base64") {
+	  if (req.url == "/dribble-bits") {
+		set resp.http.dribble-bits = blob.encode(HEX,
+		    blob=blob.decode(BASE64, encoded="VB=="));
+	  }
+	  elsif (req.url == "/base64") {
 		set resp.http.bad64 = blob.encode(IDENTITY,
 		    blob=blob.decode(BASE64, encoded="-_-_" + req.http.foo));
 	  }
@@ -294,6 +298,14 @@ varnish v1 -vcl+backend {
 	  }
 	}
 }
+
+client c1 {
+	txreq -url /dribble-bits
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+	expect resp.http.driblle-bits == <undef>
+} -run
 
 client c1 {
 	txreq -url /base64
