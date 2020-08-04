@@ -208,6 +208,7 @@ EXP_Insert(struct worker *wrk, struct objcore *oc)
 	if (remove_race) {
 		ObjSendEvent(wrk, oc, OEV_EXPIRE);
 		tmpoc = oc;
+		assert(oc->refcnt >= 2); /* Silence coverity */
 		(void)HSH_DerefObjCore(wrk, &tmpoc, 0);
 		AZ(tmpoc);
 		assert(oc->refcnt >= 1); /* Silence coverity */
