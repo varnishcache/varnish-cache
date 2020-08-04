@@ -449,6 +449,8 @@ vcc_do_arg(struct vcc *tl, struct func_arg *fa)
 		vcc_do_enum(tl, fa, PF(tl->t));
 		SkipToken(tl, ID);
 	} else {
+		if (fa->type == SUB)
+			tl->subref++;
 		vcc_expr0(tl, &e2, fa->type);
 		ERRCHK(tl);
 		assert(e2->fmt == fa->type);
