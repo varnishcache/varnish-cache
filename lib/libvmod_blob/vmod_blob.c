@@ -213,7 +213,7 @@ vmod_blob__init(VRT_CTX, struct vmod_blob_blob **blobp, const char *vcl_name,
 
 	assert(len > 0);
 
-	buf = malloc(len);
+	buf = malloc(len + 1);
 	if (buf == NULL) {
 		VERRNOMEM(ctx, "cannot create blob %s", vcl_name);
 		return;
@@ -443,7 +443,7 @@ vmod_transcode(VRT_CTX, VCL_ENUM decs, VCL_ENUM encs, VCL_ENUM case_s,
 		return ("");
 
 	/* XXX: handle stack overflow? */
-	char buf[l];
+	char buf[l + 1];
 
 	if (length <= 0)
 		length = -1;

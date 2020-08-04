@@ -36,129 +36,26 @@
 
 #include "vmod_blob.h"
 
-#define ILL ((int8_t) 127)
-#define PAD ((int8_t) 126)
+#include "venc.h"
+#include "vsb.h"
 
 static const struct b64_alphabet {
 	const char b64[64];
-	const int8_t i64[256];
 	const int padding;
 } b64_alphabet[] = {
 	[BASE64] = {
 		"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef"
 		"ghijklmnopqrstuvwxyz0123456789+/",
-		{
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL,  62, ILL, ILL, ILL,  63, /* +, -    */
-			 52,  53,  54,  55,  56,  57,  58,  59, /* 0 - 7   */
-			 60,  61, ILL, ILL, ILL, PAD, ILL, ILL, /* 8, 9, = */
-			ILL,   0,   1,   2,   3,   4,   5,   6, /* A - G   */
-			  7,   8,   9,  10,  11,  12,  13,  14, /* H - O   */
-			 15,  16,  17,  18,  19,  20,  21,  22, /* P - W   */
-			 23,  24,  25, ILL, ILL, ILL, ILL, ILL, /* X, Y, Z */
-			ILL,  26,  27,  28,  29,  30,  31,  32, /* a - g   */
-			 33,  34,  35,  36,  37,  38,  39,  40, /* h - o   */
-			 41,  42,  43,  44,  45,  46,  47,  48, /* p - w   */
-			 49,  50,  51, ILL, ILL, ILL, ILL, ILL, /* x, y, z */
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-		},
 		'='
 	},
 	[BASE64URL] = {
 		"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef"
 		"ghijklmnopqrstuvwxyz0123456789-_",
-		{
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL,  62, ILL, ILL, /* -       */
-			 52,  53,  54,  55,  56,  57,  58,  59, /* 0 - 7   */
-			 60,  61, ILL, ILL, ILL, PAD, ILL, ILL, /* 8, 9, = */
-			ILL,   0,   1,   2,   3,   4,   5,   6, /* A - G   */
-			  7,   8,   9,  10,  11,  12,  13,  14, /* H - O   */
-			 15,  16,  17,  18,  19,  20,  21,  22, /* P - W   */
-			 23,  24,  25, ILL, ILL, ILL, ILL,  63, /* X-Z, _  */
-			ILL,  26,  27,  28,  29,  30,  31,  32, /* a - g   */
-			 33,  34,  35,  36,  37,  38,  39,  40, /* h - o   */
-			 41,  42,  43,  44,  45,  46,  47,  48, /* p - w   */
-			 49,  50,  51, ILL, ILL, ILL, ILL, ILL, /* x, y, z */
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-		},
 		'='
 	},
 	[BASE64URLNOPAD] = {
 		"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef"
 		"ghijklmnopqrstuvwxyz0123456789-_",
-		{
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL,  62, ILL, ILL, /* -       */
-			 52,  53,  54,  55,  56,  57,  58,  59, /* 0 - 7   */
-			 60,  61, ILL, ILL, ILL, ILL, ILL, ILL, /* 8, 9    */
-			ILL,   0,   1,   2,   3,   4,   5,   6, /* A - G   */
-			  7,   8,   9,  10,  11,  12,  13,  14, /* H - O   */
-			 15,  16,  17,  18,  19,  20,  21,  22, /* P - W   */
-			 23,  24,  25, ILL, ILL, ILL, ILL,  63, /* X-Z, _  */
-			ILL,  26,  27,  28,  29,  30,  31,  32, /* a - g   */
-			 33,  34,  35,  36,  37,  38,  39,  40, /* h - o   */
-			 41,  42,  43,  44,  45,  46,  47,  48, /* p - w   */
-			 49,  50,  51, ILL, ILL, ILL, ILL, ILL, /* x, y, z */
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
-		},
 		0
 	},
 };
@@ -180,30 +77,6 @@ size_t
 base64_decode_l(size_t l)
 {
 	return ((l * 3) >> 2);
-}
-
-static inline int
-decode(char *restrict *restrict dest, blob_src_t buf,
-    blob_len_t buflen, unsigned u, const int n)
-{
-	char *d;
-	int i;
-
-	if (n <= 1) {
-		errno = EINVAL;
-		return (-1);
-	}
-	d = *dest;
-	for (i = 0; i < n - 1; i++) {
-		if (d == buf + buflen) {
-			errno = ENOMEM;
-			return (-1);
-		}
-		*d++ = (u >> 16) & 0xff;
-		u <<= 8;
-	}
-	*dest += d - *dest;
-	return (1);
 }
 
 ssize_t
@@ -263,57 +136,34 @@ base64_decode(const enum encoding dec, blob_dest_t buf,
     blob_len_t buflen, ssize_t inlen, VCL_STRANDS strings)
 {
 	const struct b64_alphabet *alpha = &b64_alphabet[dec];
-	const char *s;
-	char *dest = buf;
-	unsigned u = 0, term = 0;
-	size_t len = SIZE_MAX;
-	int n = 0, i;
-	char b;
+	int i;
+	struct vsb vsb;
 
 	AN(buf);
 	AN(alpha);
 	AN(strings);
 
-	if (inlen >= 0)
-		len = inlen;
-
-	for (i = 0; len > 0 && i < strings->n; i++) {
-		s = strings->p[i];
-
-		if (s == NULL)
-			continue;
-		if (*s && term) {
-			errno = EINVAL;
-			return (-1);
-		}
-		while (*s && len) {
-			b = alpha->i64[(uint8_t)*s];
-			s++;
-			len--;
-			u <<= 6;
-			if (b == ILL) {
-				errno = EINVAL;
-				return (-1);
-			}
-			n++;
-			if (b == PAD) {
-				term++;
-				continue;
-			}
-			u |= (uint8_t)b;
-			if (n == 4) {
-				if (decode(&dest, buf, buflen, u, n-term) < 0)
-					return (-1);
-				n = 0;
-			}
-		}
+	if (buflen < 2) {
+		errno = ENOMEM;
+		return (-1);
 	}
-	if (n) {
-		if (!alpha->padding)
-			u <<= (6 * (4 - n));
-		if (decode(&dest, buf, buflen, u, n-term) < 0)
-			return (-1);
+	AN(VSB_new(&vsb, buf, buflen + 1, 0));
+	if (dec == BASE64) {
+		i = VENC_Decode_Base64_Strands(&vsb, strings, inlen);
+	} else if (dec == BASE64URL) {
+		i = VENC_Decode_Base64URL_Strands(&vsb, strings, inlen, 1);
+	} else if (dec == BASE64URLNOPAD) {
+		i = VENC_Decode_Base64URL_Strands(&vsb, strings, inlen, 0);
+	} else {
+		WRONG("wrong turn in base64_decode");
 	}
-
-	return (dest - buf);
+	if (i) {
+		errno = EINVAL;
+		return (-1);
+	}
+	if (VSB_finish(&vsb)) {
+		errno = ENOMEM;
+		return (-1);
+	}
+	return(VSB_len(&vsb));
 }
