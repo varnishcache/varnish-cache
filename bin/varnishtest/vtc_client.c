@@ -225,7 +225,7 @@ client_thread(void *priv)
 	vsb = macro_expand(vl, c->connect);
 	AN(vsb);
 #if !defined(__sun)
-	pthread_cleanup_push((void (*)(void *))VSB_delete, vsb);
+	pthread_cleanup_push((void (*)(void *))VSB_destroy, &vsb);
 #endif
 	c->addr = VSB_data(vsb);
 
@@ -252,7 +252,7 @@ client_thread(void *priv)
 	pthread_cleanup_pop(0);
 #endif
 	pthread_cleanup_pop(0);
-	VSB_delete(vsb);
+	VSB_destroy(&vsb);
 	vtc_logclose(vl);
 	return (NULL);
 }
