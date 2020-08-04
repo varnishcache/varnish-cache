@@ -44,7 +44,7 @@ main(int argc, char *argv[])
 		printf("\n");
 		VSB_clear(vsb);
 	}
-	VSB_delete(vsb);
+	VSB_destroy(&vsb);
 	printf("error is %i\n", err);
 	return (err);
 }

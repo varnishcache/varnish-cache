@@ -755,7 +755,7 @@ VPX_Send_Proxy(int fd, int version, const struct sess *sp)
 	    version == 2 ? VSB_QUOTE_HEX : 0);
 	AZ(VSB_finish(vsb2));
 	VSL(SLT_Debug, 999, "PROXY_HDR %s", VSB_data(vsb2));
-	VSB_delete(vsb2);
+	VSB_destroy(&vsb2);
 	return (r);
 }
 

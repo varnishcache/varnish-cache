@@ -738,7 +738,7 @@ MCF_ParamConf(enum mcf_which_e which, const char * const param,
 	va_end(ap);
 	AZ(VSB_finish(vsb));
 	mcf_dyn_vsb(which, pp, vsb);
-	VSB_delete(vsb);
+	VSB_destroy(&vsb);
 }
 
 /*--------------------------------------------------------------------*/
