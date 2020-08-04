@@ -39,6 +39,7 @@
 
 #include "vcl.h"
 #include "vtim.h"
+#include "vbm.h"
 
 #include "cache_director.h"
 #include "cache_vcl.h"
@@ -421,10 +422,13 @@ VRT_VCL_Allow_Discard(struct vclref **refp)
 
 static void
 vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
-    void *specific, unsigned method, vcl_func_f *func)
+    void *specific, unsigned method, vcl_func_f *func, unsigned track_call)
 {
-	uintptr_t aws;
+	uintptr_t rws = 0, aws;
 	struct vrt_ctx ctx;
+	struct vbitmap *vbm;
+	void *p;
+	size_t sz;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	INIT_OBJ(&ctx, VRT_CTX_MAGIC);
@@ -445,6 +449,15 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 	assert(ctx.now != 0);
 	ctx.specific = specific;
 	ctx.method = method;
+	if (track_call > 0) {
+		rws = WS_Snapshot(wrk->aws);
+		sz = VBITMAP_SZ(track_call);
+		p = WS_Alloc(wrk->aws, sz);
+		// No use to attempt graceful failure, all VCL calls will fail
+		AN(p);
+		vbm = vbit_init(p, sz);
+		ctx.called = vbm;
+	}
 	aws = WS_Snapshot(wrk->aws);
 	wrk->cur_method = method;
 	wrk->seen_methods |= method;
@@ -461,6 +474,8 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 	 * wrk->aws, but they can reserve and return from it.
 	 */
 	assert(aws == WS_Snapshot(wrk->aws));
+	if (rws != 0)
+		WS_Reset(wrk->aws, rws);
 }
 
 #define VCL_MET_MAC(func, upper, typ, bitmap)				\
@@ -473,7 +488,7 @@ VCL_##func##_method(struct vcl *vcl, struct worker *wrk,		\
 	CHECK_OBJ_NOTNULL(vcl->conf, VCL_CONF_MAGIC);			\
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);				\
 	vcl_call_method(wrk, req, bo, specific,				\
-	    VCL_MET_ ## upper, vcl->conf->func##_func);			\
+	    VCL_MET_ ## upper, vcl->conf->func##_func, vcl->conf->nsub);\
 	AN((1U << wrk->handling) & bitmap);				\
 }
 
@@ -482,76 +497,31 @@ VCL_##func##_method(struct vcl *vcl, struct worker *wrk,		\
 /*--------------------------------------------------------------------
  */
 
-/*
- * vrt_call_guard is dynamically put onto the workspace for each VRT_call().
- * we deliberately omit an additional magic value
- * - to save one pointer size worth of workspace
- * - because we magic-check both members
- */
-struct vrt_call_guard {
-	VRT_CTX;
-	VCL_SUB	sub;
-};
-
-static void
-no_rollback(void *priv)
-{
-	struct vrt_call_guard	*guard = priv;
-
-	CHECK_OBJ_NOTNULL(guard->ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(guard->sub, VCL_SUB_MAGIC);
-
-	VRT_fail(guard->ctx, "Rollback during dynamic call to \"sub %s{}\"",
-	    guard->sub->name);
-}
-
 VCL_VOID
 VRT_call(VRT_CTX, VCL_SUB sub)
 {
-	struct vmod_priv	*p;
-	struct vrt_call_guard	*guard;
+	struct vbitmap *vbm;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(sub, VCL_SUB_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->vcl, VCL_MAGIC);
 	assert(sub->vcl_conf == ctx->vcl->conf);
 
-	p = VRT_priv_task(ctx, (void *)sub->func);
-	if (p == NULL) {
-		VRT_fail(ctx, "No priv task in dynamic call to \"sub %s{}\"",
-		    sub->name);
+	if ((sub->methods & ctx->method) == 0) {
+		VRT_fail(ctx, "Dynamic call to \"sub %s{}\" not allowed "
+		     "from this context", sub->name);
 		return;
 	}
 
-	if (p->priv != NULL) {
-		guard = p->priv;
-		assert(guard->ctx == ctx);
-		assert(guard->sub == sub);
-		assert(p->free == no_rollback);
+	vbm = ctx->called;
+	AN(vbm);
+
+	if (vbit_test(vbm, sub->n)) {
 		VRT_fail(ctx, "Recursive dynamic call to \"sub %s{}\"",
 		    sub->name);
 		return;
 	}
-
-	guard = WS_Alloc(ctx->ws, sizeof *guard);
-	if (guard == NULL) {
-		VRT_fail(ctx, "Out of workspace in dynamic call to "
-		    "\"sub %s{}\"", sub->name);
-		return;
-	}
-
-	guard->ctx = ctx;
-	guard->sub = sub;
-
-	p->priv = guard;
-	p->free = no_rollback;
-
-	if (sub->methods & ctx->method)
-		sub->func(ctx);
-	else
-		VRT_fail(ctx, "Dynamic call to \"sub %s{}\" not allowed "
-		     "from this context", sub->name);
-
-	p->priv = NULL;
-	p->free = NULL;
+	vbit_set(vbm, sub->n);
+	sub->func(ctx);
+	vbit_clr(vbm, sub->n);
 }

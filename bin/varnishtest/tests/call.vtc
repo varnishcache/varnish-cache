@@ -61,18 +61,22 @@ varnish v1 -vcl {
 client c1 {
 	txreq -url "/foo"
 	rxresp
+	expect resp.status == 200
 	expect resp.http.it == "works"
 
 	txreq -url "/direct"
 	rxresp
+	expect resp.status == 200
 	expect resp.http.it == "works"
 
 	txreq -url "/indirect"
 	rxresp
+	expect resp.status == 200
 	expect resp.http.it == "works"
 
 	txreq -url "/callthenrollback"
 	rxresp
+	expect resp.status == 200
 	expect resp.http.rolledback == "true"
 	expect resp.http.it == "works"
 
@@ -92,6 +96,6 @@ client c1 {
 } -run
 client c1 {
 	txreq -url "/rollback"
-	# no 503 synth response from vcl_synth for VRT_fail()
-	expect_close
+	rxresp
+	expect resp.status == 200
 } -run
