@@ -34,3 +34,5 @@ struct vsb;
 const char *VENC_Decode_Base64(struct vsb *, const char *, const char *);
 
 void VENC_Encode_Base64(struct vsb*, const void *, size_t);
+int VENC_Decode_Base64_Strands(struct vsb *dst, VCL_STRANDS input, ssize_t ilen);
+int VENC_Decode_Base64URL_Strands(struct vsb *dst, VCL_STRANDS input, ssize_t ilen, int pad);

@@ -117,7 +117,6 @@ static const uint8_t base64_dec[256] = {
     BV, BV, BV, BV, BV, BV, BV, BV, BV, BV, BV, BV, BV, BV, BV, BV
 };
 
-#if 0 // pending #3376 decision
 static const uint8_t base64url_dec[256] = {
     BV, BV, BV, BV, BV, BV, BV, BV, BV, BV, BV, BV, BV, BV, BV, BV,
     BV, BV, BV, BV, BV, BV, BV, BV, BV, BV, BV, BV, BV, BV, BV, BV,
@@ -136,7 +135,6 @@ static const uint8_t base64url_dec[256] = {
     BV, BV, BV, BV, BV, BV, BV, BV, BV, BV, BV, BV, BV, BV, BV, BV,
     BV, BV, BV, BV, BV, BV, BV, BV, BV, BV, BV, BV, BV, BV, BV, BV
 };
-#endif
 
 struct venc_state {
 	unsigned		n;
@@ -224,4 +222,72 @@ VENC_Decode_Base64(struct vsb *dst, const char *b, const char *e)
 	if (ves.n)
 		return (e);
 	return (NULL);
+}
+
+/**********************************************************************
+ * VCL_STRANDS API section
+ */
+
+static int
+venc_feed_strands(struct venc_state *ves, VCL_STRANDS input, ssize_t ilen)
+{
+	const char *rv, *e;
+	int i;
+
+	AN(input);
+	if (ilen < 0)
+		ilen = SSIZE_MAX;
+
+	for(i = 0; ilen > 0 && i < input->n; i++) {
+		if (input->p[i] == NULL || *input->p[i] == '\0')
+			continue;
+		e = strchr(input->p[i], '\0');
+		AN(e);
+		assert(e >= input->p[i]);
+		if (e > input->p[i] + ilen)
+			e = input->p[i] + ilen;
+		ilen -= e - input->p[i];
+		assert(e >= input->p[i]);
+		rv = venc_decode_base64(ves, input->p[i], e);
+		if (rv)
+			return (-1);
+	}
+	return (0);
+}
+
+int
+VENC_Decode_Base64_Strands(struct vsb *dst, VCL_STRANDS input, ssize_t ilen)
+{
+	struct venc_state ves;
+	int rv;
+
+	memset(&ves, 0, sizeof ves);
+	ves.vsb = dst;
+	ves.tbl = base64_dec;
+
+	rv = venc_feed_strands(&ves, input, ilen);
+	if (rv < 0 || ves.n)
+		return (-1);
+	return (0);
+}
+
+int
+VENC_Decode_Base64URL_Strands(struct vsb *dst,
+    VCL_STRANDS input, ssize_t ilen, int pad)
+{
+	struct venc_state ves;
+	int rv;
+
+	memset(&ves, 0, sizeof ves);
+	ves.vsb = dst;
+	ves.tbl = base64url_dec;
+
+	rv = venc_feed_strands(&ves, input, ilen);
+	if (rv < 0)
+		return (-1);
+	if (!pad && ves.f)
+		return (-1);
+	if (pad && ves.n)
+		return (-1);
+	return (0);
 }
