@@ -1006,6 +1006,66 @@ mcf_vcl_label(struct cli *cli, const char * const *av, void *priv)
 	free(p);
 }
 
+static void v_matchproto_(cli_func_t)
+mcf_vcl_deps(struct cli *cli, const char * const *av, void *priv)
+{
+	struct vclprog *vp;
+	struct vcldep *vd;
+	struct vsb *vsb;
+
+	(void)av;
+	(void)priv;
+
+	vsb = VSB_new_auto();
+	AN(vsb);
+
+	VTAILQ_FOREACH(vp, &vclhead, list) {
+		if (VTAILQ_EMPTY(&vp->dfrom)) {
+			VSB_printf(vsb, "%s\n", vp->name);
+			continue;
+		}
+		VTAILQ_FOREACH(vd, &vp->dfrom, lfrom)
+			VSB_printf(vsb, "%s\t%s\n", vp->name, vd->to->name);
+	}
+	VCLI_VTE(cli, &vsb, 80);
+}
+
+static void v_matchproto_(cli_func_t)
+mcf_vcl_deps_json(struct cli *cli, const char * const *av, void *priv)
+{
+	struct vclprog *vp;
+	struct vcldep *vd;
+	const char *sepd, *sepa;
+
+	(void)priv;
+
+	VCLI_JSON_begin(cli, 1, av);
+
+	VTAILQ_FOREACH(vp, &vclhead, list) {
+		VCLI_Out(cli, ",\n");
+		VCLI_Out(cli, "{\n");
+		VSB_indent(cli->sb, 2);
+		VCLI_Out(cli, "\"name\": \"%s\",\n", vp->name);
+		VCLI_Out(cli, "\"deps\": [");
+		VSB_indent(cli->sb, 2);
+		sepd = "";
+		sepa = "";
+		VTAILQ_FOREACH(vd, &vp->dfrom, lfrom) {
+			VCLI_Out(cli, "%s\n", sepd);
+			VCLI_Out(cli, "\"%s\"", vd->to->name);
+			sepd = ",";
+			sepa = "\n";
+		}
+		VSB_indent(cli->sb, -2);
+		VCLI_Out(cli, "%s", sepa);
+		VCLI_Out(cli, "]\n");
+		VSB_indent(cli->sb, -2);
+		VCLI_Out(cli, "}");
+	}
+
+	VCLI_JSON_end(cli);
+}
+
 /*--------------------------------------------------------------------*/
 
 static int v_matchproto_(vev_cb_f)
@@ -1037,6 +1097,7 @@ static struct cli_proto cli_vcl[] = {
 	{ CLICMD_VCL_STATE,		"", mcf_vcl_state },
 	{ CLICMD_VCL_DISCARD,		"", mcf_vcl_discard },
 	{ CLICMD_VCL_LIST,		"", mcf_vcl_list, mcf_vcl_list_json },
+	{ CLICMD_VCL_DEPS,		"", mcf_vcl_deps, mcf_vcl_deps_json },
 	{ CLICMD_VCL_LABEL,		"", mcf_vcl_label },
 	{ CLICMD_DEBUG_VCL_SYMTAB,	"d", mcf_vcl_symtab },
 	{ NULL }

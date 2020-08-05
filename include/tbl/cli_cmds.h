@@ -125,6 +125,20 @@ CLI_CMD(VCL_LIST,
 	0, 0
 )
 
+CLI_CMD(VCL_DEPS,
+	"vcl.deps",
+	"vcl.deps [-j]",
+	"List all loaded configuration and their dependencies.",
+	"  Unless ``-j`` is specified for JSON output, the"
+	" output format is up to two columns of dynamic width"
+	" separated by white space with the fields:\n\n"
+	"  * VCL: a VCL program\n\n"
+	"  * Dependency: another VCL program it depends on\n\n"
+	"Only direct dependencies are listed, and VCLs with"
+	" multiple dependencies are listed multiple times.",
+	0, 0
+)
+
 CLI_CMD(VCL_SHOW,
 	"vcl.show",
 	"vcl.show [-v] <configname>",
