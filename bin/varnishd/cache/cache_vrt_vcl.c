@@ -522,6 +522,7 @@ VRT_call(VRT_CTX, VCL_SUB sub)
 		return;
 	}
 	vbit_set(vbm, sub->n);
+	AN(sub->func);
 	sub->func(ctx);
 	vbit_clr(vbm, sub->n);
 }
