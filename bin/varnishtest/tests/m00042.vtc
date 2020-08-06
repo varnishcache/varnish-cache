@@ -263,7 +263,7 @@ client c1 {
 	expect resp.http.hexmix2hexlc == resp.http.hexmix2hex
 	expect resp.http.hexparam == "0123456789"
 	expect resp.http.b642b64 == "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghij"
-	expect resp.http.b64url2b64url == "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefeQ=="
+	expect resp.http.b64url2b64url == "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefgg=="
 	expect resp.http.b64urlnopad2b64urlnopad == "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefgg"
 } -run
 
