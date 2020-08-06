@@ -309,7 +309,7 @@ base64_decode(const enum encoding dec, blob_dest_t buf,
 		}
 	}
 	if (n) {
-		if (!alpha->padding)
+		if (n - term != 0)
 			u <<= (6 * (4 - n));
 		if (decode(&dest, buf, buflen, u, n-term) < 0)
 			return (-1);
