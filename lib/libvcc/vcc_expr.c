@@ -825,6 +825,15 @@ vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		e1->constant = EXPR_CONST;
 		*e = e1;
 		return;
+	case CBLOB:
+		e1 = vcc_new_expr(BLOB);
+		VSB_printf(e1->vsb, "%s", tl->t->dec);
+		AZ(VSB_finish(e1->vsb));
+		e1->constant |= EXPR_STR_CONST;
+		e1->t1 = tl->t;
+		vcc_NextToken(tl);
+		*e = e1;
+		return;
 	default:
 		break;
 	}
