@@ -1,5 +1,4 @@
-/*-
- * Copyright (c) 2006 Verdens Gang AS
+/*- * Copyright (c) 2006 Verdens Gang AS
  * Copyright (c) 2006-2015 Varnish Software AS
  * All rights reserved.
  *
@@ -54,7 +53,8 @@
  * binary/load-time compatible, increment MAJOR version
  *
  * NEXT (2020-09-15)
- *	VRT_DirectorResolve() added
+ *	Added VRT_DirectorResolve()
+ *	Added VCL_STRING VRT_BLOB_string(VRT_CTX, VCL_BLOB)
  * 11.0 (2020-03-16)
  *	Changed type of vsa_suckaddr_len from int to size_t
  *	New prefix_{ptr|len} fields in vrt_backend
@@ -596,6 +596,7 @@ VCL_STRING VRT_UpperLowerStrands(VRT_CTX, VCL_STRANDS s, int up);
 
 VCL_STRING VRT_BACKEND_string(VCL_BACKEND);
 VCL_STRING VRT_BOOL_string(VCL_BOOL);
+VCL_STRING VRT_BLOB_string(VRT_CTX, VCL_BLOB);
 VCL_STRING VRT_CollectString(VRT_CTX, const char *p, ...);
 VCL_STRING VRT_INT_string(VRT_CTX, VCL_INT);
 VCL_STRING VRT_IP_string(VRT_CTX, VCL_IP);
