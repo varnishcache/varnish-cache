@@ -18,9 +18,9 @@ varnish v1 -vcl+backend {
 } -start
 
 client c1 {
-	txreq
+	txreq -hdr "Host: localhost"
 	rxresp
 	expect resp.http.req_hash ~ "[[:xdigit:]]{64}"
 	expect resp.http.req_hash == resp.http.bereq_hash
-	expect resp.http.req_hash-sf == ":d9gz676uHvX8wU6y/pTPI6fRK/XVgpJuGZtogIxniLA=:"
+	expect resp.http.req_hash-sf == ":3k0f0yRKtKt7akzkyNsTGSDOJAZOQowTwKWhu5+kIu0=:"
 } -run
