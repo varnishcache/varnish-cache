@@ -45,6 +45,12 @@ VDD
     Varnish (Core) Developer Day -- Quarterly invite-only meeting strictly
     for Varnish core (C) developers, packagers and VMOD hackers.
 
+VENC
+    Varnish ENCoding -- base64 functions
+
+VEND
+    Varnish ENDianess -- functions to marshall data in specified endianess
+
 VEV
     Varnish EVent -- library functions to implement a simple event-dispatcher.
 
