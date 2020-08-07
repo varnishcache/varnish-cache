@@ -39,6 +39,7 @@
 #include "vav.h"
 #include "vcl.h"
 #include "vct.h"
+#include "venc.h"
 #include "vend.h"
 #include "vrt_obj.h"
 #include "vsa.h"
@@ -757,6 +758,22 @@ VRT_BOOL_string(VCL_BOOL val)
 {
 
 	return (val ? "true" : "false");
+}
+
+VCL_STRING v_matchproto_()
+VRT_BLOB_string(VRT_CTX, VCL_BLOB val)
+{
+	struct vsb vsb[1];
+	const char *s;
+
+	if (val == NULL)
+		return (NULL);
+	WS_VSB_new(vsb, ctx->ws);
+	VSB_putc(vsb, ':');
+	VENC_Encode_Base64(vsb, val->blob, val->len);
+	VSB_putc(vsb, ':');
+	s = WS_VSB_finish(vsb, ctx->ws, NULL);
+	return (s);
 }
 
 /*--------------------------------------------------------------------*/

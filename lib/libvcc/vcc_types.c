@@ -76,6 +76,7 @@ const struct type BACKEND[1] = {{
 const struct type BLOB[1] = {{
 	.magic =		TYPE_MAGIC,
 	.name =			"BLOB",
+	.tostring =		"VRT_BLOB_string(ctx, \v1)",
 }};
 
 const struct type BODY[1] = {{
