@@ -185,6 +185,7 @@
 -esym(765, VSB_*)		// extern could be made static
 -esym(714, VSB_*)		// symb not ref
 -sem(VSB_new, @p == (1p ? 1p : malloc(1)))
+-sem(VSB_delete, custodial(1))
 
 // ignore retval
 -esym(534, VSB_cat)
