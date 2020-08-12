@@ -853,8 +853,7 @@ PAN_Init(void)
 	pan_vsb = &pan_vsb_storage;
 	AN(heritage.panic_str);
 	AN(heritage.panic_str_len);
-	AN(VSB_new(pan_vsb, heritage.panic_str, heritage.panic_str_len,
-	    VSB_FIXEDLEN));
+	AN(VSB_init(pan_vsb, heritage.panic_str, heritage.panic_str_len));
 	VSB_cat(pan_vsb, "This is a test\n");
 	AZ(VSB_finish(pan_vsb));
 	VSB_clear(pan_vsb);

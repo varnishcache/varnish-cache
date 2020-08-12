@@ -185,3 +185,13 @@ LIBVARNISHAPI_2.4 {	/* 2020-03-15 release */
     local:
 	*;
 };
+
+LIBVARNISHAPI_2.5 {	/* 2020-09-15 release */
+    global:
+	# vsb.c
+	VSB_init;
+	VSB_fini;
+	VSB_new_auto;
+    local:
+	*;
+};

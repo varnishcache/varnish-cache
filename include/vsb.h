@@ -59,9 +59,9 @@ extern "C" {
 /*
  * API functions
  */
-struct vsb	*VSB_new(struct vsb *, char *, int, int);
-#define		 VSB_new_auto()				\
-	VSB_new(NULL, NULL, 0, VSB_AUTOEXTEND)
+struct vsb	*VSB_new(struct vsb *, char *, int, int);	// DEPRECATED
+struct vsb	*VSB_init(struct vsb *, void *, ssize_t);
+struct vsb	*VSB_new_auto(void);
 void		 VSB_clear(struct vsb *);
 int		 VSB_bcat(struct vsb *, const void *, ssize_t);
 int		 VSB_cat(struct vsb *, const char *);
@@ -76,7 +76,8 @@ int		 VSB_error(const struct vsb *);
 int		 VSB_finish(struct vsb *);
 char		*VSB_data(const struct vsb *);
 ssize_t		 VSB_len(const struct vsb *);
-void		 VSB_delete(struct vsb *);
+void		 VSB_delete(struct vsb *);			// DEPRECATED
+void		 VSB_fini(struct vsb *);
 void		 VSB_destroy(struct vsb **);
 #define VSB_QUOTE_NONL		1
 #define VSB_QUOTE_JSON		2

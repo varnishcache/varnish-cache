@@ -69,7 +69,7 @@ VIN_n_Arg(const char *n_arg, char **dir)
 
 	/* Second: find the directory name */
 
-	AN(VSB_new(vsb, dn, sizeof dn, VSB_FIXEDLEN));
+	AN(VSB_init(vsb, dn, sizeof dn));
 
 	if (*nm == '/')
 		i = VSB_printf(vsb, "%s/", nm);
@@ -82,11 +82,11 @@ VIN_n_Arg(const char *n_arg, char **dir)
 	}
 
 	AZ(VSB_finish(vsb));
-	VSB_clear(vsb);
 
-	*dir = strdup(dn);
+	*dir = strdup(VSB_data(vsb));
 	if (*dir == NULL)
 		return (-1);
 
+	VSB_fini(vsb);
 	return (0);
 }

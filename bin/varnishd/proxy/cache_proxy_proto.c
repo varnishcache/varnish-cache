@@ -725,7 +725,7 @@ VPX_Send_Proxy(int fd, int version, const struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	assert(version == 1 || version == 2);
-	AN(VSB_new(vsb, buf, sizeof buf, VSB_FIXEDLEN));
+	AN(VSB_init(vsb, buf, sizeof buf));
 
 	AZ(SES_Get_server_addr(sp, &sas));
 	AN(sas);
@@ -756,6 +756,7 @@ VPX_Send_Proxy(int fd, int version, const struct sess *sp)
 	AZ(VSB_finish(vsb2));
 	VSL(SLT_Debug, 999, "PROXY_HDR %s", VSB_data(vsb2));
 	VSB_destroy(&vsb2);
+	VSB_fini(vsb);
 	return (r);
 }
 

@@ -236,6 +236,36 @@ VSB_new(struct vsb *s, char *buf, int length, int flags)
 	return (s);
 }
 
+struct vsb *
+VSB_init(struct vsb *s, void *buf, ssize_t length)
+{
+	AN(s);
+	AN(buf);
+
+	KASSERT(length >= 0,
+	    ("attempt to create an vsb of negative length (%zd)", length));
+	return (VSB_newbuf(s, buf, length, VSB_FIXEDLEN));
+}
+
+/*
+ * Allocate a dynamic vsb
+ */
+struct vsb *
+VSB_new_auto(void)
+{
+	struct vsb *s;
+
+	s = SBMALLOC(sizeof(*s));
+	if (s == NULL)
+		return (NULL);
+	if (VSB_newbuf(s, NULL, 0, VSB_AUTOEXTEND) == NULL) {
+		SBFREE(s);
+		return (NULL);
+	}
+	VSB_SETFLAG(s, VSB_DYNSTRUCT);
+	return (s);
+}
+
 /*
  * Clear an vsb and reset its position.
  */
@@ -494,9 +524,23 @@ VSB_delete(struct vsb *s)
 }
 
 void
+VSB_fini(struct vsb *s)
+{
+
+	assert_VSB_integrity(s);
+	assert(!VSB_ISDYNAMIC(s));
+	memset(s, 0, sizeof(*s));
+}
+
+void
 VSB_destroy(struct vsb **s)
 {
-	VSB_delete(*s);
+
+	AN(s);
+	assert_VSB_integrity(*s);
+	assert(VSB_ISDYNAMIC(*s));
+	memset(*s, 0, sizeof(**s));
+	SBFREE(*s);
 	*s = NULL;
 }
 

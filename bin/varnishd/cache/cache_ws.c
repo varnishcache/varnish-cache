@@ -393,12 +393,13 @@ WS_VSB_new(struct vsb *vsb, struct ws *ws)
 	unsigned u;
 	static char bogus[2];	// Smallest possible vsb
 
+	AN(vsb);
 	WS_Assert(ws);
 	u = WS_ReserveAll(ws);
 	if (WS_Overflowed(ws) || u < 2)
-		AN(VSB_new(vsb, bogus, sizeof bogus, VSB_FIXEDLEN));
+		AN(VSB_init(vsb, bogus, sizeof bogus));
 	else
-		AN(VSB_new(vsb, WS_Front(ws), u, VSB_FIXEDLEN));
+		AN(VSB_init(vsb, WS_Front(ws), u));
 }
 
 char *
@@ -406,6 +407,7 @@ WS_VSB_finish(struct vsb *vsb, struct ws *ws, size_t *szp)
 {
 	char *p;
 
+	AN(vsb);
 	WS_Assert(ws);
 	if (!VSB_finish(vsb)) {
 		p = VSB_data(vsb);
@@ -413,12 +415,12 @@ WS_VSB_finish(struct vsb *vsb, struct ws *ws, size_t *szp)
 			WS_Release(ws, VSB_len(vsb) + 1);
 			if (szp != NULL)
 				*szp = VSB_len(vsb);
-			VSB_delete(vsb);
+			VSB_fini(vsb);
 			return (p);
 		}
 	}
 	WS_MarkOverflow(ws);
-	VSB_delete(vsb);
+	VSB_fini(vsb);
 	WS_Release(ws, 0);
 	if (szp)
 		*szp = 0;

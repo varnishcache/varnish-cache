@@ -256,7 +256,7 @@ vbp_write_proxy_v1(struct vbp_target *vt, int *sock)
 	socklen_t l;
 
 	VTCP_myname(*sock, addr, sizeof addr, port, sizeof port);
-	AN(VSB_new(&vsb, buf, sizeof buf, VSB_FIXEDLEN));
+	AN(VSB_init(&vsb, buf, sizeof buf));
 
 	l = sizeof ss;
 	AZ(getsockname(*sock, (void *)&ss, &l));
@@ -268,7 +268,8 @@ vbp_write_proxy_v1(struct vbp_target *vt, int *sock)
 		VSB_cat(&vsb, "PROXY UNKNOWN\r\n");
 	AZ(VSB_finish(&vsb));
 
-	return (vbp_write(vt, sock, VSB_data(&vsb), VSB_len(&vsb)));
+	VSB_fini(&vsb);
+	return (vbp_write(vt, sock, buf, strlen(buf)));
 }
 
 static void
