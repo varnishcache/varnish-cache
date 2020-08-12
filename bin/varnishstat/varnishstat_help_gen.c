@@ -45,11 +45,12 @@ static const char help[] = "\n\n"
 int
 main(void)
 {
-	struct vsb vsb[1];
+	struct vsb *vsb;
 	const char *p, *n;
 	unsigned u;
 
-	AN(VSB_new(vsb, NULL, 0, VSB_AUTOEXTEND));
+	vsb = VSB_new_auto();
+	AN(vsb);
 	VSB_cat(vsb,
 	    "/*\n"
 	    " * NB:  This file is machine generated, DO NOT EDIT!\n"
@@ -83,6 +84,6 @@ main(void)
 	    "const int bindings_help_len = %u;\n", u);
 	AZ(VSB_finish(vsb));
 	AZ(VSB_tofile(vsb, STDOUT_FILENO));
-	VSB_delete(vsb);
+	VSB_destroy(&vsb);
 	return (0);
 }
