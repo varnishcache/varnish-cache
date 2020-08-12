@@ -425,9 +425,11 @@ ban_build_arg_operhelp(struct vsb *vsb, int arg)
 
 void
 BAN_Build_Init(void) {
-	struct vsb *vsb = VSB_new_auto();
+	struct vsb *vsb;
 	int i;
 
+	vsb = VSB_new_auto();
+	AN(vsb);
 	for (i = BANS_ARG_OFF_; i < BANS_ARG_LIM; i ++) {
 		VSB_clear(vsb);
 		ban_build_arg_operhelp(vsb, i);
@@ -438,7 +440,6 @@ BAN_Build_Init(void) {
 	}
 	arg_operhelp[BAN_ARGIDX(i)] = NULL;
 	VSB_destroy(&vsb);
-	AZ(vsb);
 }
 
 void
