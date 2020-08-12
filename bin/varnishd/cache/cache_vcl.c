@@ -536,6 +536,7 @@ vcl_print_refs(const struct vcl *vcl)
 
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	msg = VSB_new_auto();
+	AN(msg);
 
 	VSB_printf(msg, "VCL %s is waiting for:", vcl->loaded_name);
 	Lck_Lock(&vcl_mtx);
@@ -646,6 +647,7 @@ vcl_load(struct cli *cli,
 	AZ(vcl);
 
 	msg = VSB_new_auto();
+	AN(msg);
 	vcl = VCL_Open(fn, msg);
 	AZ(VSB_finish(msg));
 	if (vcl == NULL) {

@@ -251,6 +251,7 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 	struct vsb *vsb;
 
 	vsb = VSB_new_auto();
+	AN(vsb);
 	(void)priv;
 
 	if (av[2] != NULL && !strcmp(av[2], "changed"))
@@ -373,7 +374,9 @@ mcf_param_show_json(struct cli *cli, const char * const *av, void *priv)
 	}
 
 	vsb = VSB_new_auto();
+	AN(vsb);
 	def = VSB_new_auto();
+	AN(def);
 
 	n = 0;
 	VCLI_JSON_begin(cli, 2, av);
