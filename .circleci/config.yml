@@ -1,0 +1,13 @@
+version: 2.1
+
+jobs:
+  dummy:
+    docker:
+      - image: alpine:3
+    steps:
+      - run: echo ok 
+
+workflows:
+  build:
+    jobs:
+      - dummy
