@@ -1,0 +1,23 @@
+varnishtest "Use a priv in vcl_pipe"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import debug;
+
+	sub vcl_recv {
+		return (pipe);
+	}
+
+	sub vcl_pipe {
+		debug.test_priv_task();
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+} -run
