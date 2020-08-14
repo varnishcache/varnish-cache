@@ -353,11 +353,13 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 		VCL_Req2Ctx(&ctx, req);
 	}
 	if (bo != NULL) {
-		if (req)
-			assert(method == VCL_MET_PIPE);
 		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 		CHECK_OBJ_NOTNULL(bo->vcl, VCL_MAGIC);
 		VCL_Bo2Ctx(&ctx, bo);
+		if (req) {
+			assert(method == VCL_MET_PIPE);
+			ctx.ws = req->ws;
+		}
 	}
 	assert(ctx.now != 0);
 	ctx.syntax = ctx.vcl->conf->syntax;
