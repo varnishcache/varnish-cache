@@ -1,0 +1,18 @@
+varnishtest "Lost reason from pipe to synth"
+
+server s1 {} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		return (pipe);
+	}
+	sub vcl_pipe {
+		return (synth(505, req.http.foo + "/bar"));
+	}
+} -start
+
+client c1 {
+	txreq -hdr "foo: foo"
+	rxresp
+	expect resp.reason == "foo/bar"
+} -run
