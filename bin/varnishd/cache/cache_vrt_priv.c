@@ -204,7 +204,9 @@ VCL_TaskLeave(const struct vcl *vcl, struct vrt_privs *privs)
 	CHECK_OBJ_NOTNULL(privs, VRT_PRIVS_MAGIC);
 	VTAILQ_FOREACH_SAFE(vp, &privs->privs, list, vp1) {
 		VTAILQ_REMOVE(&privs->privs, vp, list);
+		CHECK_OBJ_NOTNULL(vp, VRT_PRIV_MAGIC);
 		VRT_priv_fini(vp->priv);
+		ZERO_OBJ(vp, sizeof *vp);
 	}
 	ZERO_OBJ(privs, sizeof *privs);
 }
