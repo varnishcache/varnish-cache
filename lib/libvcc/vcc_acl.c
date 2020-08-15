@@ -138,16 +138,16 @@ vcc_acl_chk(struct vcc *tl, const struct acl_e *ae, const int l,
 	AN(sa);
 	VTCP_name(sa, h, sizeof h, NULL, 0);
 	bprintf(t, "%s/%d", h, ae->mask);
+	VSB_printf(tl->sb, "Address/Netmask mismatch, ");
 	if (tl->acl_pedantic != 0)
-		VSB_printf(tl->sb, "Address/Netmask mismatch, need be %s\n", t);
+		VSB_printf(tl->sb, "need be %s\n", t);
 	else
-		VSB_printf(tl->sb, "Address/Netmask mismatch, changed to %s\n", t);
+		VSB_printf(tl->sb, "changed to %s\n", t);
 	vcc_ErrWhere(tl, ae->t_addr);
 	if (tl->acl_pedantic == 0)
 		vcc_Warn(tl);
 	return (strdup(t));
 }
-
 
 static void
 vcc_acl_add_entry(struct vcc *tl, const struct acl_e *ae, int l,
@@ -259,13 +259,36 @@ vcc_acl_try_getaddrinfo(struct vcc *tl, struct acl_e *ae)
 	for (res = res0; res != NULL; res = res->ai_next) {
 		switch (res->ai_family) {
 		case PF_INET:
+			i4++;
+			break;
+		case PF_INET6:
+			i6++;
+			break;
+		default:
+			VSB_printf(tl->sb,
+			    "Ignoring unknown protocol family (%d) for %.*s\n",
+				res->ai_family, PF(ae->t_addr));
+			continue;
+		}
+	}
+
+	if (ae->t_mask != NULL && i4 > 0 && i6 > 0) {
+		VSB_printf(tl->sb,
+		    "Mask (/%u) specified, but string resolves to"
+		    " both IPv4 and IPv6 addresses.\n", ae->mask);
+		vcc_ErrWhere(tl, ae->t_mask);
+		return;
+	}
+
+	for (res = res0; res != NULL; res = res->ai_next) {
+		switch (res->ai_family) {
+		case PF_INET:
 			assert(PF_INET < 256);
 			sin4 = (void*)res->ai_addr;
 			assert(sizeof(sin4->sin_addr) == 4);
 			u = (void*)&sin4->sin_addr;
 			if (ae->t_mask == NULL)
 				ae->mask = 32;
-			i4++;
 			vcc_acl_add_entry(tl, ae, 4, u, res->ai_family);
 			break;
 		case PF_INET6:
@@ -275,13 +298,9 @@ vcc_acl_try_getaddrinfo(struct vcc *tl, struct acl_e *ae)
 			u = (void*)&sin6->sin6_addr;
 			if (ae->t_mask == NULL)
 				ae->mask = 128;
-			i6++;
 			vcc_acl_add_entry(tl, ae, 16, u, res->ai_family);
 			break;
 		default:
-			VSB_printf(tl->sb,
-			    "Ignoring unknown protocol family (%d) for %.*s\n",
-				res->ai_family, PF(ae->t_addr));
 			continue;
 		}
 		if (tl->err)
@@ -290,13 +309,6 @@ vcc_acl_try_getaddrinfo(struct vcc *tl, struct acl_e *ae)
 	}
 	freeaddrinfo(res0);
 
-	if (ae->t_mask != NULL && i4 > 0 && i6 > 0) {
-		VSB_printf(tl->sb,
-		    "Mask (/%u) specified, but string resolves to"
-		    " both IPv4 and IPv6 addresses.\n", ae->mask);
-		vcc_ErrWhere(tl, ae->t_mask);
-		return;
-	}
 }
 
 /*--------------------------------------------------------------------
