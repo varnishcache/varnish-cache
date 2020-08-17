@@ -19,6 +19,7 @@ varnish v1 -vcl+backend {
 
 	sub vcl_deliver {
 	    set resp.http.foo = std.fileread("${tmpdir}" + req.url);
+	    set resp.http.fooblob = std.blobread("${tmpdir}" + req.url);
 	}
 } -start
 
@@ -27,17 +28,18 @@ client c1 {
 	txreq -url "/one"
 	rxresp
 	expect resp.http.foo == "File One"
+	expect resp.http.fooblob == :RmlsZSBPbmU=:
 
 	txreq -url "/two"
 	rxresp
 	expect resp.http.foo == "File Two"
+	expect resp.http.fooblob == :RmlsZSBUd28=:
 
 	txreq -url "/three"
 	rxresp
 	expect resp.http.foo == "File Three"
+	expect resp.http.fooblob == :RmlsZSBUaHJlZQ==:
 } -run
 
 client c1 -run
 client c1 -run
-
-
