@@ -759,7 +759,13 @@ vmod_shard_resolve(const struct director *dir, struct worker *wrk,
 	ctx->sp = bo->sp;
 	ctx->now = bo->t_prev;
 	ctx->ws = bo->ws;
-	ctx->method	= VCL_MET_BACKEND_FETCH;
+	if (bo->req) {
+		CHECK_OBJ_NOTNULL(bo->req, REQ_MAGIC);
+		if (bo->req->res_mode & RES_PIPE) {
+			ctx->req = bo->req;
+			ctx->ws = ctx->req->ws;
+		}
+	}
 
 	pp = vmod_shard_param_read(ctx, vshard,
 				   vshard->param, pstk, "shard_resolve");
