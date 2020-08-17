@@ -193,8 +193,11 @@ VDI_Http1Pipe(struct req *req, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
+	req->res_mode = RES_PIPE;
+
 	d = vdi_resolve(req->wrk, bo);
 	if (d == NULL || d->http1pipe == NULL) {
+		req->res_mode = 0;
 		VSLb(bo->vsl, SLT_VCL_Error, "Backend does not support pipe");
 		return (SC_TX_ERROR);
 	}

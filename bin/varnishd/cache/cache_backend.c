@@ -352,7 +352,7 @@ vbe_dir_http1pipe(const struct director *d, struct req *req, struct busyobj *bo)
 	v1a.req = req->acct.req_hdrbytes;
 	req->acct.req_hdrbytes = 0;
 
-	req->res_mode = RES_PIPE;
+	assert(req->res_mode & RES_PIPE);
 
 	pfd = vbe_dir_getfd(req->wrk, bp, bo, 0);
 
