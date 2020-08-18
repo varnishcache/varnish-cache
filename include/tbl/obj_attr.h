@@ -55,7 +55,7 @@
 #ifdef OBJ_FLAG
 /* upper, lower, val */
   OBJ_FLAG(GZIPED,	gziped,		(1<<1))
-  OBJ_FLAG(CHGCE,	chgce,		(1<<2))
+  OBJ_FLAG(CHGGZIP,	chggzip,	(1<<2))
   OBJ_FLAG(IMSCAND,	imscand,	(1<<3))
   OBJ_FLAG(ESIPROC,	esiproc,	(1<<4))
   #undef OBJ_FLAG

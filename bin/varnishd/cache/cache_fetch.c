@@ -291,7 +291,7 @@ vbf_304_logic(struct busyobj *bo)
 	if (bo->stale_oc != NULL &&
 	    ObjCheckFlag(bo->wrk, bo->stale_oc, OF_IMSCAND)) {
 		AZ(bo->stale_oc->flags & (OC_F_HFM|OC_F_PRIVATE));
-		if (ObjCheckFlag(bo->wrk, bo->stale_oc, OF_CHGCE)) {
+		if (ObjCheckFlag(bo->wrk, bo->stale_oc, OF_CHGGZIP)) {
 			/*
 			 * If a VFP changed C-E in the stored
 			 * object, then don't overwrite C-E from
