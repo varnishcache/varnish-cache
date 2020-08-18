@@ -1,0 +1,25 @@
+varnishtest "h/2 delivery double WS_Release"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -cliok "param.set feature +http2"
+
+varnish v1 -vcl+backend {
+	import vtc;
+
+	sub vcl_deliver {
+		vtc.workspace_alloc(client, -5);
+	}
+
+} -start
+
+client c1 {
+	stream 1 {
+		txreq
+		rxresp
+		expect resp.status == 500
+	} -run
+} -run
