@@ -123,6 +123,43 @@ struct vcf {
 	void			*priv;
 };
 
+/* HTTP bodies -------------------------------------------------------*/
+
+struct http_body_part;
+typedef int http_body_part_store_f(struct worker *, struct objcore *, void *);
+typedef void http_body_part_free_f(const struct http_body_part*);
+
+struct http_body_part_methods {
+	unsigned				magic;
+#define HTTP_BODY_PART_METHODS_MAGIC		0x6f7e9c53
+	http_body_part_store_f			*store;
+	http_body_part_free_f			*free;
+};
+
+struct http_body_part {
+	unsigned				magic;
+#define HTTP_BODY_PART_MAGIC			0x9cc6293d
+	void					*priv;
+	VTAILQ_ENTRY(http_body_part)		list;
+	const struct http_body_part_methods	*methods;
+};
+
+struct http_body {
+	unsigned				magic;
+#define HTTP_BODY_MAGIC				0x7e1c42e1
+	struct ws				*ws;
+	VTAILQ_HEAD(, http_body_part)		parts;
+};
+
+struct http_body *VRB_Alloc_Body(struct ws *);
+void VRB_Free_Body(struct http_body *);
+
+void VRB_Add_String(struct http_body *, const char *);
+void VRB_Add_Strands(struct http_body *, VCL_STRANDS);
+
+
+int VRB_Copy_To_ObjCore(struct worker *, struct http_body *, struct objcore *);
+
 /* Prototypes etc ----------------------------------------------------*/
 
 /* cache_acceptor.c */

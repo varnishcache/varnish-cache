@@ -39,6 +39,8 @@
 #include "cache_objhead.h"
 #include "cache_transport.h"
 
+#include "vrt_obj.h"
+
 #include "vtim.h"
 #include "storage/storage.h"
 #include "hash/hash_slinger.h"
@@ -317,3 +319,197 @@ VRB_Cache(struct req *req, ssize_t maxsize)
 
 	return (vrb_pull(req, maxsize, NULL, NULL));
 }
+
+/*----------------------------------------------------------------------
+ * Generic Body Methods
+ */
+
+struct http_body *
+VRB_Alloc_Body(struct ws *ws)
+{
+	struct http_body *hb;
+
+	hb = WS_Alloc(ws, sizeof *hb);
+	if (hb != NULL) {
+		INIT_OBJ(hb, HTTP_BODY_MAGIC);
+		hb->ws = ws;
+		VTAILQ_INIT(&hb->parts);
+	}
+	return (hb);
+}
+
+void
+VRB_Free_Body(struct http_body *hb)
+{
+	struct http_body_part *hbp, *hbp2;
+
+	CHECK_OBJ_NOTNULL(hb, HTTP_BODY_MAGIC);
+	VTAILQ_FOREACH_SAFE(hbp, &hb->parts, list, hbp2) {
+		CHECK_OBJ_NOTNULL(hbp, HTTP_BODY_PART_MAGIC);
+		CHECK_OBJ_NOTNULL(hbp->methods, HTTP_BODY_PART_METHODS_MAGIC);
+		if (hbp->methods->free != NULL)
+			hbp->methods->free(hbp->priv);
+		VTAILQ_REMOVE(&hb->parts, hbp, list);
+	}
+}
+
+int
+VRB_Copy_To_ObjCore(struct worker *wrk, struct http_body *hb, struct objcore *oc)
+{
+	struct http_body_part *hbp;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(hb, HTTP_BODY_MAGIC);
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+
+	AZ(oc->boc->len_so_far);
+	VTAILQ_FOREACH(hbp, &hb->parts, list) {
+		CHECK_OBJ_NOTNULL(hbp, HTTP_BODY_PART_MAGIC);
+		CHECK_OBJ_NOTNULL(hbp->methods, HTTP_BODY_PART_METHODS_MAGIC);
+		AN(hbp->methods->store);
+		if (hbp->methods->store(wrk, oc, hbp->priv) < 0)
+			return (-1);
+	}
+	AZ(ObjSetU64(wrk, oc, OA_LEN, oc->boc->len_so_far));
+	return (0);
+}
+
+/*--------------------------------------------------------------------*/
+
+static int
+vrb_store_strands(struct worker *wrk, struct objcore *oc, void *priv)
+{
+	int i;
+	VCL_STRANDS s;
+	ssize_t sz, ln;
+	uint8_t *ptr;
+	const char *p;
+
+	AN(wrk);
+	AN(oc);
+	AN(priv);
+	s = priv;
+	for (i = 0; i < s->n; i++) {
+		p = s->p[i];
+		if (p == NULL)
+			p = "(null)";
+		ln = strlen(p);
+		sz = ln;
+		if (!ObjGetSpace(wrk, oc, &sz, &ptr))
+			return (-1);
+		AN(ptr);
+		xxxassert(sz >= ln);
+		memcpy(ptr, p, ln);
+		ObjExtend(wrk, oc, ln);
+	}
+	return (0);
+}
+
+static const struct http_body_part_methods vrb_hbpm_strands = {
+	0x6f7e9c53,
+	vrb_store_strands,
+	NULL,
+};
+
+static struct strands *
+vrb_add_strands(struct http_body *hb, int n)
+{
+
+	struct http_body_part *hbp;
+	struct strands *s;
+
+	CHECK_OBJ_NOTNULL(hb, HTTP_BODY_MAGIC);
+	assert(n > 0);
+
+	s = VRT_AllocStrandsWS(hb->ws, n);
+	hbp = WS_Alloc(hb->ws, sizeof *hbp);
+	if (s == NULL || hbp == NULL)
+		return (NULL);
+	INIT_OBJ(hbp, HTTP_BODY_PART_MAGIC);
+	hbp->methods = &vrb_hbpm_strands;
+	hbp->priv = s;
+	VTAILQ_INSERT_TAIL(&hb->parts, hbp, list);
+	return (s);
+}
+
+void
+VRB_Add_Strands(struct http_body *hb, VCL_STRANDS s)
+{
+	struct strands *s2;
+	int i;
+
+	CHECK_OBJ_NOTNULL(hb, HTTP_BODY_MAGIC);
+	AN(s);
+	s2 = vrb_add_strands(hb, s->n);
+	if (s2 != NULL) {
+		for (i = 0; i < s->n; i++)
+			s2->p[i] = s->p[i];
+	}
+}
+
+void
+VRB_Add_String(struct http_body *hb, const char *str)
+{
+	struct strands *s;
+
+	CHECK_OBJ_NOTNULL(hb, HTTP_BODY_MAGIC);
+	s = vrb_add_strands(hb, 1);
+	if (s != NULL)
+		s->p[0] = str;
+}
+
+/*--------------------------------------------------------------------*/
+
+VCL_VOID
+VRT_synth_page(VRT_CTX, VCL_STRANDS s)
+{
+	VRB_Add_Strands(ctx->specific, s);
+}
+
+/*--------------------------------------------------------------------*/
+
+static VCL_VOID
+vrt_l_body(VRT_CTX, enum lbody_e type, const char *str, va_list ap)
+{
+	const char *p;
+	va_list ap2;
+	struct strands *s;
+	struct http_body *hb;
+	int n = 0;
+
+	CAST_OBJ_NOTNULL(hb, ctx->specific, HTTP_BODY_MAGIC);
+	assert(type == LBODY_SET || type == LBODY_ADD);
+	AN(str);
+	if (type == LBODY_SET)
+		VRB_Free_Body(ctx->specific);
+	va_copy(ap2, ap);
+	p = str;
+	while (p != vrt_magic_string_end) {
+		n++;
+		p = va_arg(ap2, const char *);
+	}
+	va_end(ap2);
+	s = vrb_add_strands(hb, n);
+	if (s != NULL) {
+		n = 0;
+		p = str;
+		while (p != vrt_magic_string_end) {
+			s->p[n++] = p;
+			p = va_arg(ap, const char *);
+		}
+	}
+}
+
+#define VRT_BODY_L(which)					\
+VCL_VOID							\
+VRT_l_##which##_body(VRT_CTX, enum lbody_e type,		\
+    const char *str, ...)					\
+{								\
+	va_list ap;						\
+	va_start(ap, str);					\
+	vrt_l_body(ctx, type, str, ap);				\
+	va_end(ap);						\
+}
+
+VRT_BODY_L(beresp)
+VRT_BODY_L(resp)

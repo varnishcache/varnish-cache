@@ -814,11 +814,9 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 static enum fetch_step
 vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 {
-	ssize_t l, ll, o;
 	vtim_real now;
-	uint8_t *ptr;
-	struct vsb *synth_body;
 	struct objcore *stale, *oc;
+	struct http_body *hb;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -874,20 +872,19 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 		oc->keep = 0;
 	}
 
-	synth_body = VSB_new_auto();
-	AN(synth_body);
-
-	VCL_backend_error_method(bo->vcl, wrk, NULL, bo, synth_body);
-
-	AZ(VSB_finish(synth_body));
-
-	if (wrk->handling == VCL_RET_ABANDON || wrk->handling == VCL_RET_FAIL) {
-		VSB_destroy(&synth_body);
+	hb = VRB_Alloc_Body(bo->ws);
+	if (hb == NULL)
 		return (F_STP_FAIL);
-	}
+
+	VCL_backend_error_method(bo->vcl, wrk, NULL, bo, hb);
+
+	if (wrk->handling != VCL_RET_DELIVER)
+		VRB_Free_Body(hb);
+
+	if (wrk->handling == VCL_RET_ABANDON || wrk->handling == VCL_RET_FAIL)
+		return (F_STP_FAIL);
 
 	if (wrk->handling == VCL_RET_RETRY) {
-		VSB_destroy(&synth_body);
 		if (bo->retries++ < cache_param->max_retries)
 			return (F_STP_RETRY);
 		VSLb(bo->vsl, SLT_VCL_Error, "Too many retries, failing");
@@ -902,26 +899,13 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	assert(bo->vfc->req == bo->bereq);
 
 	if (vbf_beresp2obj(bo)) {
-		VSB_destroy(&synth_body);
+		VRB_Free_Body(hb);
 		return (F_STP_FAIL);
 	}
 
-	ll = VSB_len(synth_body);
-	o = 0;
-	while (ll > 0) {
-		l = ll;
-		if (VFP_GetStorage(bo->vfc, &l, &ptr) != VFP_OK)
-			break;
-		if (l > ll)
-			l = ll;
-		memcpy(ptr, VSB_data(synth_body) + o, l);
-		VFP_Extend(bo->vfc, l);
-		ll -= l;
-		o += l;
-	}
-	AZ(ObjSetU64(wrk, oc, OA_LEN, o));
-	VSB_destroy(&synth_body);
+	xxxassert(VRB_Copy_To_ObjCore(bo->vfc->wrk, hb, bo->vfc->oc) >= 0);
 	ObjSetState(wrk, oc, BOS_PREP_STREAM);
+	VRB_Free_Body(hb);
 	HSH_Unbusy(wrk, oc);
 	if (stale != NULL && oc->ttl > 0)
 		HSH_Kill(stale);

@@ -801,24 +801,6 @@ VRT_Rollback(VRT_CTX, VCL_HTTP hp)
 /*--------------------------------------------------------------------*/
 
 VCL_VOID
-VRT_synth_page(VRT_CTX, VCL_STRANDS s)
-{
-	struct vsb *vsb;
-	int i;
-
-	CAST_OBJ_NOTNULL(vsb, ctx->specific, VSB_MAGIC);
-	AN(s);
-	for (i = 0; i < s->n; i++) {
-		if (s->p[i] != NULL)
-			VSB_cat(vsb, s->p[i]);
-		else
-			VSB_cat(vsb, "(null)");
-	}
-}
-
-/*--------------------------------------------------------------------*/
-
-VCL_VOID
 VRT_ban_string(VRT_CTX, VCL_STRING str)
 {
 	char *a1, *a2, *a3;
