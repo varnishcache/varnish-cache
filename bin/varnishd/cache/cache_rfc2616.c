@@ -220,6 +220,16 @@ RFC2616_Ttl(struct busyobj *bo, vtim_real now, vtim_real *t_origin,
 		*grace = rfc2616_time(p);
 	}
 
+	/*
+	 * The "must-revalidate" directive prohibits 
+	 * the cache from serving stale data.
+	 * This sets the grace to zero.
+	 */
+	if (*ttl >= 0 && http_GetHdrField(hp, H_Cache_Control,
+	    "must-revalidate", &p)) { // rfc7234,l,1303,1305
+		*grace = 0.;
+	}	
+
 	VSLb(bo->vsl, SLT_TTL,
 	    "RFC %.0f %.0f %.0f %.0f %.0f %.0f %.0f %u %s",
 	    *ttl, *grace, *keep, now,
