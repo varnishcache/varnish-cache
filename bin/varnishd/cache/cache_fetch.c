@@ -833,8 +833,10 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	now = W_TIM_real(wrk);
 	VSLb_ts_busyobj(bo, "Error", now);
 
-	if (oc->stobj->stevedore != NULL)
+	if (oc->stobj->stevedore != NULL) {
+		oc->boc->len_so_far = 0;
 		ObjFreeObj(bo->wrk, oc);
+	}
 
 	if (bo->storage == NULL)
 		bo->storage = STV_next();
