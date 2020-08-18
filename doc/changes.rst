@@ -27,6 +27,71 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
+Varnish Cache 6.0.7 (YYYY-MM-DD)
+================================
+
+* Add weighted backend to vmod_shard.
+
+* Fix an issue where the wrong workspace is used during `vcl_pipe`.
+  (3329_) (3361_) (3385_)
+
+* Fix an assert situation when running out of workspace during H2
+  delivery. (3382_)
+
+* Fix an issue where we can incorrectly re-use a req.body. This
+  introduces a new bereq body attribute: `bo->bereq_body`. (3093_)
+
+* Fix `send_timeout` for certain kinds of slow HTTP1 writes. (3189_)
+
+* Fix std.rollback() when not followed by a restart/retry. (3009_)
+
+* Fix an assert situation when running out of workspace during ESI
+  processing. (3253_)
+
+* Don't override Content-Encoding on 304 responses. (3169_)
+
+* Better thread creation signalling. (2942_)
+
+* Fix an error where when using a certain internal status code will
+  trigger an assert. (3301_)
+
+* Fix a situation where a closed connection is recycled. (3266_)
+
+* Fix an assert situation when doing a conditional fetch. (3273_)
+
+* Fix an issue where `varnishadm` improperly returns an empty 200 response
+  when you overflow. (3038_)
+
+* Add new VCL parameters to warn when too many VCLs are loaded:
+  `max_vcl` and `max_vcl_handling`. (2713_)
+
+* Fix an issue where we can use a streaming object in a conditional
+  fetch too soon. (3089_)
+
+* Fix an issue where the Age is dropped when passing. (3221_)
+
+* Expose the master and worker PIDs via the CLI: `varnishadm pid`. (3171_)
+
+.. _3385: https://github.com/varnishcache/varnish-cache/issues/3385
+.. _3361: https://github.com/varnishcache/varnish-cache/issues/3361
+.. _3329: https://github.com/varnishcache/varnish-cache/issues/3329
+.. _3382: https://github.com/varnishcache/varnish-cache/issues/3382
+.. _3093: https://github.com/varnishcache/varnish-cache/pull/3093
+.. _3189: https://github.com/varnishcache/varnish-cache/issues/3189
+.. _3009: https://github.com/varnishcache/varnish-cache/issues/3009
+.. _3253: https://github.com/varnishcache/varnish-cache/issues/3253
+.. _3169: https://github.com/varnishcache/varnish-cache/issues/3169
+.. _2942: https://github.com/varnishcache/varnish-cache/pull/2942
+.. _3301: https://github.com/varnishcache/varnish-cache/issues/3301
+.. _3266: https://github.com/varnishcache/varnish-cache/issues/3266
+.. _3273: https://github.com/varnishcache/varnish-cache/issues/3273
+.. _3038: https://github.com/varnishcache/varnish-cache/issues/3038
+.. _2713: https://github.com/varnishcache/varnish-cache/issues/2713
+.. _3089: https://github.com/varnishcache/varnish-cache/issues/3089
+.. _3221: https://github.com/varnishcache/varnish-cache/issues/3221
+.. _3171: https://github.com/varnishcache/varnish-cache/pull/3171
+
+================================
 Varnish Cache 6.0.6 (2020-02-04)
 ================================
 
