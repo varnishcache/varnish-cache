@@ -539,6 +539,7 @@ VSB_destroy(struct vsb **s)
 	AN(s);
 	assert_VSB_integrity(*s);
 	assert(VSB_ISDYNAMIC(*s));
+	SBFREE((*s)->s_buf);
 	memset(*s, 0, sizeof(**s));
 	SBFREE(*s);
 	*s = NULL;
