@@ -76,12 +76,12 @@ distclean-local:
 
 include/cli.rst: $(top_builddir)/bin/varnishd/varnishd
 	$(top_builddir)/bin/varnishd/varnishd -x cli > ${@}_
-	mv ${@}_ ${@}
+	mv -f ${@}_ ${@}
 BUILT_SOURCES = include/cli.rst
 
 include/params.rst: $(top_builddir)/bin/varnishd/varnishd
 	$(top_builddir)/bin/varnishd/varnishd -x parameter > ${@}_
-	mv ${@}_ ${@}
+	mv -f ${@}_ ${@}
 BUILT_SOURCES += include/params.rst
 
 COUNTERS = \
@@ -99,62 +99,62 @@ include/counters.rst: $(top_srcdir)/lib/libvcc/vsctool.py $(COUNTERS)
 	for i in $(COUNTERS); do \
 		$(PYTHON) $(top_srcdir)/lib/libvcc/vsctool.py -r $$i >> ${@}_ ; \
 	done
-	mv ${@}_ ${@}
+	mv -f ${@}_ ${@}
 
 BUILT_SOURCES += include/counters.rst
 
 include/varnishncsa_options.rst: $(top_builddir)/bin/varnishncsa/varnishncsa
 	$(top_builddir)/bin/varnishncsa/varnishncsa --options > ${@}_
-	mv ${@}_ ${@}
+	mv -f ${@}_ ${@}
 include/varnishncsa_synopsis.rst: $(top_builddir)/bin/varnishncsa/varnishncsa
 	$(top_builddir)/bin/varnishncsa/varnishncsa --synopsis > ${@}_
-	mv ${@}_ ${@}
+	mv -f ${@}_ ${@}
 BUILT_SOURCES += include/varnishncsa_options.rst \
 	include/varnishncsa_synopsis.rst
 
 include/varnishlog_options.rst: $(top_builddir)/bin/varnishlog/varnishlog
 	$(top_builddir)/bin/varnishlog/varnishlog --options > ${@}_
-	mv ${@}_ ${@}
+	mv -f ${@}_ ${@}
 include/varnishlog_synopsis.rst: $(top_builddir)/bin/varnishlog/varnishlog
 	$(top_builddir)/bin/varnishlog/varnishlog --synopsis > ${@}_
-	mv ${@}_ ${@}
+	mv -f ${@}_ ${@}
 BUILT_SOURCES += include/varnishlog_options.rst \
 	include/varnishlog_synopsis.rst
 
 include/varnishtop_options.rst: $(top_builddir)/bin/varnishtop/varnishtop
 	$(top_builddir)/bin/varnishtop/varnishtop --options > ${@}_
-	mv ${@}_ ${@}
+	mv -f ${@}_ ${@}
 include/varnishtop_synopsis.rst: $(top_builddir)/bin/varnishtop/varnishtop
 	$(top_builddir)/bin/varnishtop/varnishtop --synopsis > ${@}_
-	mv ${@}_ ${@}
+	mv -f ${@}_ ${@}
 BUILT_SOURCES += include/varnishtop_options.rst \
 	 include/varnishtop_synopsis.rst
 
 include/varnishhist_options.rst: $(top_builddir)/bin/varnishhist/varnishhist
 	$(top_builddir)/bin/varnishhist/varnishhist --options > ${@}_
-	mv ${@}_ ${@}
+	mv -f ${@}_ ${@}
 include/varnishhist_synopsis.rst: $(top_builddir)/bin/varnishhist/varnishhist
 	$(top_builddir)/bin/varnishhist/varnishhist --synopsis > ${@}_
-	mv ${@}_ ${@}
+	mv -f ${@}_ ${@}
 BUILT_SOURCES += include/varnishhist_options.rst \
 	 include/varnishhist_synopsis.rst
 
 include/varnishstat_options.rst: $(top_builddir)/bin/varnishstat/varnishstat
 	$(top_builddir)/bin/varnishstat/varnishstat --options > ${@}_
-	mv ${@}_ ${@}
+	mv -f ${@}_ ${@}
 include/varnishstat_synopsis.rst: $(top_builddir)/bin/varnishstat/varnishstat
 	$(top_builddir)/bin/varnishstat/varnishstat --synopsis > ${@}_
-	mv ${@}_ ${@}
+	mv -f ${@}_ ${@}
 include/varnishstat_bindings.rst: $(top_builddir)/bin/varnishstat/varnishstat
 	$(top_builddir)/bin/varnishstat/varnishstat --bindings > ${@}_
-	mv ${@}_ ${@}
+	mv -f ${@}_ ${@}
 BUILT_SOURCES += include/varnishstat_options.rst \
 	 include/varnishstat_synopsis.rst \
 	 include/varnishstat_bindings.rst
 
 include/vsl-tags.rst: $(top_builddir)/lib/libvarnishapi/vsl2rst
 	$(top_builddir)/lib/libvarnishapi/vsl2rst > ${@}_
-	mv ${@}_ ${@}
+	mv -f ${@}_ ${@}
 BUILT_SOURCES += include/vsl-tags.rst
 
 VTCSYN_SRC = $(top_srcdir)/bin/varnishtest/vtc.c \
@@ -169,7 +169,7 @@ VTCSYN_SRC = $(top_srcdir)/bin/varnishtest/vtc.c \
 	     $(top_srcdir)/bin/varnishtest/vtc_varnish.c
 include/vtc-syntax.rst: vtc-syntax.py $(VTCSYN_SRC)
 	$(AM_V_GEN) $(PYTHON) $(top_srcdir)/doc/sphinx/vtc-syntax.py $(VTCSYN_SRC) > ${@}_
-	@mv ${@}_ ${@}
+	@mv -f ${@}_ ${@}
 BUILT_SOURCES += include/vtc-syntax.rst
 
 # XXX copy/paste rules need some TLC
