@@ -38,100 +38,149 @@
 #include "vtc_http.h"
 #include "vgz.h"
 
-#define OVERHEAD 64L
-
 #ifdef VGZ_EXTENSIONS
 static void
-vtc_report_gz_bits(const struct http *hp, z_stream *vz)
+vtc_report_gz_bits(struct vtclog *vl, const z_stream *vz)
 {
-	vtc_log(hp->vl, 4, "startbit = %ju %ju/%ju",
+	vtc_log(vl, 4, "startbit = %ju %ju/%ju",
 	    (uintmax_t)vz->start_bit,
 	    (uintmax_t)vz->start_bit >> 3, (uintmax_t)vz->start_bit & 7);
-	vtc_log(hp->vl, 4, "lastbit = %ju %ju/%ju",
+	vtc_log(vl, 4, "lastbit = %ju %ju/%ju",
 	    (uintmax_t)vz->last_bit,
 	    (uintmax_t)vz->last_bit >> 3, (uintmax_t)vz->last_bit & 7);
-	vtc_log(hp->vl, 4, "stopbit = %ju %ju/%ju",
+	vtc_log(vl, 4, "stopbit = %ju %ju/%ju",
 	    (uintmax_t)vz->stop_bit,
 	    (uintmax_t)vz->stop_bit >> 3, (uintmax_t)vz->stop_bit & 7);
 }
 #endif
 
-void
-vtc_gzip(const struct http *hp, const char *input, char **body, long *bodylen)
+static struct vsb *
+vtc_gzip_vsb(struct vtclog *vl, int fatal, int gzip_level, const struct vsb *vin, int *residual)
 {
-	unsigned l;
 	z_stream vz;
-#ifdef VGZ_EXTENSIONS
+	struct vsb *vout;
 	int i;
-#endif
+	char buf[BUFSIZ];
 
+	AN(residual);
 	memset(&vz, 0, sizeof vz);
+	vout = VSB_new_auto();
+	AN(vout);
 
-	l = strlen(input);
-	*body = calloc(1, l + OVERHEAD);
-	AN(*body);
-
-	vz.next_in = TRUST_ME(input);
-	vz.avail_in = l;
-
-	vz.next_out = TRUST_ME(*body);
-	vz.avail_out = l + OVERHEAD;
+	vz.next_in = (void*)VSB_data(vin);
+	vz.avail_in = VSB_len(vin);
 
 	assert(Z_OK == deflateInit2(&vz,
-	    hp->gziplevel, Z_DEFLATED, 31, 9, Z_DEFAULT_STRATEGY));
-	assert(Z_STREAM_END == deflate(&vz, Z_FINISH));
-	*bodylen = vz.total_out;
+	    gzip_level, Z_DEFLATED, 31, 9, Z_DEFAULT_STRATEGY));
+
+	do {
+		vz.next_out = (void*)buf;
+		vz.avail_out = sizeof buf;
+		i = deflate(&vz, Z_FINISH);
+		if (vz.avail_out != sizeof buf)
+			VSB_bcat(vout, buf, sizeof buf - vz.avail_out);
+	} while (i == Z_OK || i == Z_BUF_ERROR);
+	if (i != Z_STREAM_END)
+		vtc_log(vl, fatal,
+		    "Gzip error = %d (%s) in:%jd out:%jd",
+		    i, vz.msg, (intmax_t)vz.total_in, (intmax_t)vz.total_out);
+	AZ(VSB_finish(vout));
 #ifdef VGZ_EXTENSIONS
-	i = vz.stop_bit & 7;
-	if (hp->gzipresidual >= 0 && hp->gzipresidual != i)
-		vtc_log(hp->vl, hp->fatal,
-		    "Wrong gzip residual got %d wanted %d",
-		    i, hp->gzipresidual);
-	vtc_report_gz_bits(hp, &vz);
+	*residual = vz.stop_bit & 7;
+	vtc_report_gz_bits(vl, &vz);
+#else
+	*residual = 0;
 #endif
 	assert(Z_OK == deflateEnd(&vz));
+	return (vout);
+}
+
+void
+vtc_gzip(struct http *hp, const char *input, char **body, long *bodylen)
+{
+	struct vsb *vin, *vout;
+	int res;
+
+	vin = VSB_new_auto();
+	AN(vin);
+	VSB_bcat(vin, input, strlen(input));
+	AZ(VSB_finish(vin));
+	vout = vtc_gzip_vsb(hp->vl, hp->fatal, hp->gziplevel, vin, &res);
+	VSB_destroy(&vin);
+
+#ifdef VGZ_EXTENSIONS
+	if (hp->gzipresidual >= 0 && hp->gzipresidual != res)
+		vtc_log(hp->vl, hp->fatal,
+		    "Wrong gzip residual got %d wanted %d",
+		    res, hp->gzipresidual);
+#endif
+	*body = malloc(VSB_len(vout) + 1);
+	AN(*body);
+	memcpy(*body, VSB_data(vout), VSB_len(vout) + 1);
+	*bodylen = VSB_len(vout);
+	VSB_destroy(&vout);
+	vtc_log(hp->vl, 3, "new bodylen %ld", *bodylen);
+	vtc_dump(hp->vl, 4, "body", *body, *bodylen);
+	bprintf(hp->bodylen, "%ld", *bodylen);
+}
+
+static struct vsb *
+vtc_gunzip_vsb(struct vtclog *vl, int fatal, const struct vsb *vin)
+{
+	z_stream vz;
+	struct vsb *vout;
+	int i;
+	char buf[BUFSIZ];
+
+	memset(&vz, 0, sizeof vz);
+	vout = VSB_new_auto();
+	AN(vout);
+
+	vz.next_in = (void*)VSB_data(vin);
+	vz.avail_in = VSB_len(vin);
+
+	assert(Z_OK == inflateInit2(&vz, 31));
+
+	do {
+		vz.next_out = (void*)buf;
+		vz.avail_out = sizeof buf;
+		i = inflate(&vz, Z_FINISH);
+		if (vz.avail_out != sizeof buf)
+			VSB_bcat(vout, buf, sizeof buf - vz.avail_out);
+	} while (i == Z_OK || i == Z_BUF_ERROR);
+	if (i != Z_STREAM_END)
+		vtc_log(vl, fatal,
+		    "Gunzip error = %d (%s) in:%jd out:%jd",
+		    i, vz.msg, (intmax_t)vz.total_in, (intmax_t)vz.total_out);
+	AZ(VSB_finish(vout));
+#ifdef VGZ_EXTENSIONS
+	vtc_report_gz_bits(vl, &vz);
+#endif
+	assert(Z_OK == inflateEnd(&vz));
+	return (vout);
 }
 
 void
 vtc_gunzip(struct http *hp, char *body, long *bodylen)
 {
-	z_stream vz;
-	char *p;
-	unsigned l;
-	int i;
-
-	memset(&vz, 0, sizeof vz);
+	struct vsb *vin, *vout;
 
 	AN(body);
 	if (body[0] != (char)0x1f || body[1] != (char)0x8b)
 		vtc_log(hp->vl, hp->fatal,
 		    "Gunzip error: body lacks gzip magic");
-	vz.next_in = TRUST_ME(body);
-	vz.avail_in = *bodylen;
 
-	l = *bodylen * 10;
-	p = calloc(1, l);
-	AN(p);
+	vin = VSB_new_auto();
+	AN(vin);
+	VSB_bcat(vin, body, *bodylen);
+	AZ(VSB_finish(vin));
+	vout = vtc_gunzip_vsb(hp->vl, hp->fatal, vin);
+	VSB_destroy(&vin);
 
-	vz.next_out = TRUST_ME(p);
-	vz.avail_out = l;
-
-	assert(Z_OK == inflateInit2(&vz, 31));
-	i = inflate(&vz, Z_FINISH);
-	assert(vz.total_out < l);
-	*bodylen = vz.total_out;
-	memcpy(body, p, *bodylen);
-	free(p);
+	memcpy(body, VSB_data(vout), VSB_len(vout) + 1);
+	*bodylen = VSB_len(vout);
+	VSB_destroy(&vout);
 	vtc_log(hp->vl, 3, "new bodylen %ld", *bodylen);
 	vtc_dump(hp->vl, 4, "body", body, *bodylen);
 	bprintf(hp->bodylen, "%ld", *bodylen);
-#ifdef VGZ_EXTENSIONS
-	vtc_report_gz_bits(hp, &vz);
-#endif
-	if (i != Z_STREAM_END)
-		vtc_log(hp->vl, hp->fatal,
-		    "Gunzip error = %d (%s) in:%jd out:%jd",
-		    i, vz.msg, (intmax_t)vz.total_in, (intmax_t)vz.total_out);
-	assert(Z_OK == inflateEnd(&vz));
-	body[*bodylen] = '\0';
 }
