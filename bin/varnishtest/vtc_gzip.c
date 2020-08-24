@@ -40,6 +40,21 @@
 
 #define OVERHEAD 64L
 
+#ifdef VGZ_EXTENSIONS
+static void
+vtc_report_gz_bits(const struct http *hp, z_stream *vz)
+{
+	vtc_log(hp->vl, 4, "startbit = %ju %ju/%ju",
+	    (uintmax_t)vz->start_bit,
+	    (uintmax_t)vz->start_bit >> 3, (uintmax_t)vz->start_bit & 7);
+	vtc_log(hp->vl, 4, "lastbit = %ju %ju/%ju",
+	    (uintmax_t)vz->last_bit,
+	    (uintmax_t)vz->last_bit >> 3, (uintmax_t)vz->last_bit & 7);
+	vtc_log(hp->vl, 4, "stopbit = %ju %ju/%ju",
+	    (uintmax_t)vz->stop_bit,
+	    (uintmax_t)vz->stop_bit >> 3, (uintmax_t)vz->stop_bit & 7);
+}
+#endif
 
 void
 vtc_gzip(const struct http *hp, const char *input, char **body, long *bodylen)
@@ -72,17 +87,9 @@ vtc_gzip(const struct http *hp, const char *input, char **body, long *bodylen)
 		vtc_log(hp->vl, hp->fatal,
 		    "Wrong gzip residual got %d wanted %d",
 		    i, hp->gzipresidual);
-	vtc_log(hp->vl, 4, "startbit = %ju %ju/%ju",
-	    (uintmax_t)vz.start_bit,
-	    (uintmax_t)vz.start_bit >> 3, (uintmax_t)vz.start_bit & 7);
-	vtc_log(hp->vl, 4, "lastbit = %ju %ju/%ju",
-	    (uintmax_t)vz.last_bit,
-	    (uintmax_t)vz.last_bit >> 3, (uintmax_t)vz.last_bit & 7);
-	vtc_log(hp->vl, 4, "stopbit = %ju %ju/%ju",
-	    (uintmax_t)vz.stop_bit,
-	    (uintmax_t)vz.stop_bit >> 3, (uintmax_t)vz.stop_bit & 7);
-	assert(Z_OK == deflateEnd(&vz));
+	vtc_report_gz_bits(hp, &vz);
 #endif
+	assert(Z_OK == deflateEnd(&vz));
 }
 
 void
@@ -119,15 +126,7 @@ vtc_gunzip(struct http *hp, char *body, long *bodylen)
 	vtc_dump(hp->vl, 4, "body", body, *bodylen);
 	bprintf(hp->bodylen, "%ld", *bodylen);
 #ifdef VGZ_EXTENSIONS
-	vtc_log(hp->vl, 4, "startbit = %ju %ju/%ju",
-	    (uintmax_t)vz.start_bit,
-	    (uintmax_t)vz.start_bit >> 3, (uintmax_t)vz.start_bit & 7);
-	vtc_log(hp->vl, 4, "lastbit = %ju %ju/%ju",
-	    (uintmax_t)vz.last_bit,
-	    (uintmax_t)vz.last_bit >> 3, (uintmax_t)vz.last_bit & 7);
-	vtc_log(hp->vl, 4, "stopbit = %ju %ju/%ju",
-	    (uintmax_t)vz.stop_bit,
-	    (uintmax_t)vz.stop_bit >> 3, (uintmax_t)vz.stop_bit & 7);
+	vtc_report_gz_bits(hp, &vz);
 #endif
 	if (i != Z_STREAM_END)
 		vtc_log(hp->vl, hp->fatal,
