@@ -22,7 +22,11 @@ shell -err "grep -q LCK.vbe.destroy ${p1_out}"
 process p2 {varnishstat -1 -n ${v1_name} -f ^*vbe.destroy -f *vbe* \
 	-f LCK.mempool.c* | tr '[1-9]' '0'} -run
 
+process p3 {varnishstat -1 -n ${v1_name} -X *vbe.destroy -I *vbe* \
+	-f LCK.mempool.c* | tr '[1-9]' '0'} -run
+
 shell "cmp -s ${p1_out} ${p2_out}"
+shell "cmp -s ${p1_out} ${p3_out}"
 
 shell -expect "MGT.uptime" \
 	"varnishstat -1 -n ${v1_name} -f ^MAIN*"

@@ -309,6 +309,8 @@ main(int argc, char * const *argv)
 		case 'j':
 			json = 1;
 			break;
+		case 'I':
+		case 'X':
 		case 'f':
 			AN(VSC_Arg(vsc, opt, optarg));
 			has_f = 1;
