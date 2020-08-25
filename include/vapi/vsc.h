@@ -116,6 +116,7 @@ int VSC_Arg(struct vsc *, char arg, const char *opt);
 	 * Handle standard stat-presenter arguments
 	 *	'I' - field inclusion glob
 	 *	'X' - field exclusion glob
+	 *	'R' - required field glob
 	 *	'f' - legacy field filter glob
 	 *
 	 * Return:
