@@ -57,10 +57,12 @@ struct vsc_sf_mode {
 	const char		*name;
 	unsigned		include;
 	unsigned		fail;
+	unsigned		append;
 };
 
-static struct vsc_sf_mode VSC_SF_INCLUDE[1] = {{"include", 1, 1}};
-static struct vsc_sf_mode VSC_SF_EXCLUDE[1] = {{"exclude", 0, 0}};
+static struct vsc_sf_mode VSC_SF_INCLUDE[1] = {{"include", 1, 1, 1}};
+static struct vsc_sf_mode VSC_SF_EXCLUDE[1] = {{"exclude", 0, 0, 1}};
+static struct vsc_sf_mode VSC_SF_REQUIRE[1] = {{"require", 1, 0, 0}};
 
 struct vsc_sf {
 	unsigned			magic;
@@ -150,7 +152,10 @@ vsc_sf_arg(struct vsc *vsc, const char *glob, const struct vsc_sf_mode *mode)
 	AN(sf);
 	REPLACE(sf->pattern, glob);
 	sf->mode = mode;
-	VTAILQ_INSERT_TAIL(&vsc->sf_list, sf, list);
+	if (mode->append)
+		VTAILQ_INSERT_TAIL(&vsc->sf_list, sf, list);
+	else
+		VTAILQ_INSERT_HEAD(&vsc->sf_list, sf, list);
 	return (1);
 }
 
@@ -177,6 +182,7 @@ VSC_Arg(struct vsc *vsc, char arg, const char *opt)
 	switch (arg) {
 	case 'I': return (vsc_sf_arg(vsc, opt, VSC_SF_INCLUDE));
 	case 'X': return (vsc_sf_arg(vsc, opt, VSC_SF_EXCLUDE));
+	case 'R': return (vsc_sf_arg(vsc, opt, VSC_SF_REQUIRE));
 	case 'f': return (vsc_f_arg(vsc, opt));
 	default: return (0);
 	}
