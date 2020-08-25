@@ -132,18 +132,17 @@ vsc_f_arg(struct vsc *vsc, const char *opt)
 	struct vsc_sf *sf;
 	unsigned exclude = 0;
 
+	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
 	AN(opt);
-
-	ALLOC_OBJ(sf, VSC_SF_MAGIC);
-	AN(sf);
 
 	if (opt[0] == '^') {
 		exclude = 1;
 		opt++;
 	}
 
-	sf->pattern = strdup(opt);
-	AN(sf->pattern);
+	ALLOC_OBJ(sf, VSC_SF_MAGIC);
+	AN(sf);
+	REPLACE(sf->pattern, opt);
 
 	if (exclude)
 		VTAILQ_INSERT_TAIL(&vsc->sf_list_exclude, sf, list);
