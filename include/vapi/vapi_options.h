@@ -132,6 +132,6 @@
 	    "Field inclusion glob."					\
 	    " Use backslash to escape characters. If the argument"	\
 	    " starts with '^' it is used as an exclusive glob."		\
-	    " Multiple -f arguments may be given. Inclusive globs"	\
-	    " are accumulative and are run before exclusive ones."	\
+	    " Multiple -f arguments may be given. Filtering globs"	\
+	    " are run in order on a first-match basis."			\
 	)

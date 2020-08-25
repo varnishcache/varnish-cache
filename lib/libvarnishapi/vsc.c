@@ -53,12 +53,23 @@
 #include "vapi/vsc.h"
 #include "vapi/vsm.h"
 
-struct vsc_sf {
-	unsigned		magic;
-#define VSC_SF_MAGIC		0x558478dd
-	VTAILQ_ENTRY(vsc_sf)	list;
-	char			*pattern;
+struct vsc_sf_mode {
+	const char		*name;
+	unsigned		include;
+	unsigned		fail;
 };
+
+static struct vsc_sf_mode VSC_SF_INCLUDE[1] = {{"include", 1, 1}};
+static struct vsc_sf_mode VSC_SF_EXCLUDE[1] = {{"exclude", 0, 0}};
+
+struct vsc_sf {
+	unsigned			magic;
+#define VSC_SF_MAGIC			0x558478dd
+	VTAILQ_ENTRY(vsc_sf)		list;
+	char				*pattern;
+	const struct vsc_sf_mode	*mode;
+};
+
 VTAILQ_HEAD(vsc_sf_head, vsc_sf);
 
 struct vsc_pt {
@@ -85,8 +96,7 @@ struct vsc {
 	unsigned		magic;
 #define VSC_MAGIC		0x3373554a
 
-	struct vsc_sf_head	sf_list_include;
-	struct vsc_sf_head	sf_list_exclude;
+	struct vsc_sf_head	sf_list;
 	VTAILQ_HEAD(,vsc_seg)	segs;
 
 	VSC_new_f		*fnew;
@@ -120,8 +130,7 @@ VSC_New(void)
 	ALLOC_OBJ(vsc, VSC_MAGIC);
 	if (vsc == NULL)
 		return (vsc);
-	VTAILQ_INIT(&vsc->sf_list_include);
-	VTAILQ_INIT(&vsc->sf_list_exclude);
+	VTAILQ_INIT(&vsc->sf_list);
 	VTAILQ_INIT(&vsc->segs);
 	return (vsc);
 }
@@ -132,7 +141,6 @@ static int
 vsc_f_arg(struct vsc *vsc, const char *opt)
 {
 	struct vsc_sf *sf;
-	unsigned exclude = 0;
 
 	AN(opt);
 
@@ -140,18 +148,14 @@ vsc_f_arg(struct vsc *vsc, const char *opt)
 	AN(sf);
 
 	if (opt[0] == '^') {
-		exclude = 1;
+		sf->mode = VSC_SF_EXCLUDE;
 		opt++;
+	} else {
+		sf->mode = VSC_SF_INCLUDE;
 	}
 
-	sf->pattern = strdup(opt);
-	AN(sf->pattern);
-
-	if (exclude)
-		VTAILQ_INSERT_TAIL(&vsc->sf_list_exclude, sf, list);
-	else
-		VTAILQ_INSERT_TAIL(&vsc->sf_list_include, sf, list);
-
+	REPLACE(sf->pattern, opt);
+	VTAILQ_INSERT_TAIL(&vsc->sf_list, sf, list);
 	return (1);
 }
 
@@ -177,17 +181,15 @@ static int
 vsc_filter(const struct vsc *vsc, const char *nm)
 {
 	struct vsc_sf *sf;
+	unsigned res = 0;
 
 	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
-	VTAILQ_FOREACH(sf, &vsc->sf_list_exclude, list)
+	VTAILQ_FOREACH(sf, &vsc->sf_list, list) {
 		if (!fnmatch(sf->pattern, nm, 0))
-			return (1);
-	if (VTAILQ_EMPTY(&vsc->sf_list_include))
-		return (0);
-	VTAILQ_FOREACH(sf, &vsc->sf_list_include, list)
-		if (!fnmatch(sf->pattern, nm, 0))
-			return (0);
-	return (1);
+			return (!sf->mode->include);
+		res |= sf->mode->fail;
+	}
+	return (res);
 }
 
 /*--------------------------------------------------------------------
@@ -516,29 +518,21 @@ VSC_ChangeLevel(const struct VSC_level_desc *old, int chg)
 
 /*--------------------------------------------------------------------*/
 
-static void
-vsc_delete_sf_list(struct vsc_sf_head *head)
-{
-	struct vsc_sf *sf;
-
-	while (!VTAILQ_EMPTY(head)) {
-		sf = VTAILQ_FIRST(head);
-		CHECK_OBJ_NOTNULL(sf, VSC_SF_MAGIC);
-		VTAILQ_REMOVE(head, sf, list);
-		free(sf->pattern);
-		FREE_OBJ(sf);
-	}
-}
-
 void
 VSC_Destroy(struct vsc **vscp, struct vsm *vsm)
 {
 	struct vsc *vsc;
+	struct vsc_sf *sf, *sf2;
 	struct vsc_seg *sp, *sp2;
 
 	TAKE_OBJ_NOTNULL(vsc, vscp, VSC_MAGIC);
-	vsc_delete_sf_list(&vsc->sf_list_include);
-	vsc_delete_sf_list(&vsc->sf_list_exclude);
+
+	VTAILQ_FOREACH_SAFE(sf, &vsc->sf_list, list, sf2) {
+		CHECK_OBJ_NOTNULL(sf, VSC_SF_MAGIC);
+		VTAILQ_REMOVE(&vsc->sf_list, sf, list);
+		free(sf->pattern);
+		FREE_OBJ(sf);
+	}
 	VTAILQ_FOREACH_SAFE(sp, &vsc->segs, list, sp2) {
 		VTAILQ_REMOVE(&vsc->segs, sp, list);
 		vsc_expose(vsc, sp, 1);

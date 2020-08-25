@@ -19,8 +19,8 @@ shell "grep -q vbe ${p1_out}"
 shell "grep -q LCK.mempool.creat ${p1_out}"
 shell -err "grep -q LCK.vbe.destroy ${p1_out}"
 
-process p2 {varnishstat -1 -n ${v1_name} -f *vbe* \
-	-f ^*vbe.destroy -f LCK.mempool.c* | tr '[1-9]' '0'} -run
+process p2 {varnishstat -1 -n ${v1_name} -f ^*vbe.destroy -f *vbe* \
+	-f LCK.mempool.c* | tr '[1-9]' '0'} -run
 
 shell "cmp -s ${p1_out} ${p2_out}"
 
