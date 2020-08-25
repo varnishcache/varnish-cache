@@ -6,4 +6,4 @@ varnish v1 -vcl+backend "" -start
 
 process p1 -dump {varnishstat -n ${v1_name}} -start
 process p1 -expect-text 0 0 "MAIN.pools"
-process p1 -screen_dump
+process p1 -screen_dump -write q -wait
