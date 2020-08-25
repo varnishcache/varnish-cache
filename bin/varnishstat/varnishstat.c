@@ -352,7 +352,7 @@ main(int argc, char * const *argv)
 	else if (f_list)
 		list_fields(vd, vsc);
 	else
-		assert(0);
+		WRONG("undefined varnishstat mode");
 
 	exit(0);
 }
