@@ -128,10 +128,32 @@
 /* VSC options */
 
 #define VSC_OPT_f							\
-	VOPT("f:", "[-f <glob>]", "Field inclusion glob",		\
-	    "Field inclusion glob."					\
+	VOPT("f:", "[-f <glob>]", "Legacy field filtering glob",	\
+	    "Legacy field filtering glob."				\
 	    " Use backslash to escape characters. If the argument"	\
 	    " starts with '^' it is used as an exclusive glob."		\
-	    " Multiple -f arguments may be given. Filtering globs"	\
-	    " are run in order on a first-match basis."			\
+	    " Multiple -f arguments may be given. Legacy filtering"	\
+	    " globs are run along with inclusion globs (-I arguments)"	\
+	    " and exclusion globs (-X arguments) in order on a"		\
+	    " first-match basis."					\
+	)
+
+#define VSC_OPT_I							\
+	VOPT("I:", "[-I <glob>]", "Field inclusion glob",		\
+	    "Field inclusion glob."					\
+	    " Use backslash to escape characters. Multiple -I "		\
+	    " arguments may be given. Exclusion globs are run in"	\
+	    " order along with exclusion globs (-X arguments) and"	\
+	    " legacy filtering globs (-f arguments) on a first-match"	\
+	    " basis."							\
+	)
+
+#define VSC_OPT_X							\
+	VOPT("X:", "[-X <glob>]", "Field exclusion glob",		\
+	    "Field exclusion glob."					\
+	    " Use backslash to escape characters. Multiple -X "		\
+	    " arguments may be given. Exclusion globs are run in"	\
+	    " order along with inclusion globs (-I arguments) and"	\
+	    " legacy filtering globs (-f arguments) on a first-match"	\
+	    " basis."							\
 	)
