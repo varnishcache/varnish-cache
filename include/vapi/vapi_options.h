@@ -124,3 +124,14 @@
 	    " taglist and regular expression. Applies to any tag if"	\
 	    " taglist is absent. Multiple -X options may be given.\n"	\
 	)
+
+/* VSC options */
+
+#define VSC_OPT_f							\
+	VOPT("f:", "[-f <glob>]", "Field inclusion glob",		\
+	    "Field inclusion glob."					\
+	    " Use backslash to escape characters. If the argument"	\
+	    " starts with '^' it is used as an exclusive glob."		\
+	    " Multiple -f arguments may be given. Inclusive globs"	\
+	    " are accumulative and are run before exclusive ones."	\
+	)
