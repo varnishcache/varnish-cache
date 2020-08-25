@@ -114,7 +114,9 @@ void VSC_Destroy(struct vsc **, struct vsm *);
 int VSC_Arg(struct vsc *, char arg, const char *opt);
 	/*
 	 * Handle standard stat-presenter arguments
-	 *	'f' - filter
+	 *	'I' - field inclusion glob
+	 *	'X' - field exclusion glob
+	 *	'f' - legacy field filter glob
 	 *
 	 * Return:
 	 *	-1 error, VSM_Error() returns diagnostic string
