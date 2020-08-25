@@ -36,14 +36,6 @@
 	    "Instead of presenting a continuously updated display,"	\
 	    " print the statistics to stdout."				\
 	)
-#define STAT_OPT_f							\
-	VOPT("f:", "[-f <glob>]", "Field inclusion glob",		\
-	    "Field inclusion glob."					\
-	    " Use backslash to escape characters. If the argument"	\
-	    " starts with '^' it is used as an exclusive glob."		\
-	    " Multiple -f arguments may be given. Inclusive globs"	\
-	    " are accumulative and are run before exclusive ones."	\
-	)
 #define STAT_OPT_j							\
 	VOPT("j", "[-j]", "Print statistics to stdout as JSON",		\
 	    "Print statistics to stdout as JSON."			\
@@ -59,7 +51,7 @@
 	)
 
 STAT_OPT_1
-STAT_OPT_f
+VSC_OPT_f
 VUT_OPT_h
 STAT_OPT_j
 STAT_OPT_l
