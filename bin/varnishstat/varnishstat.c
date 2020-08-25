@@ -165,8 +165,7 @@ do_once_cb_first(void *priv, const struct VSC_point * const pt)
 		return (0);
 	op = priv;
 	AZ(strcmp(pt->ctype, "uint64_t"));
-	if (strcmp(pt->name, "MAIN.uptime"))
-		return (0);
+	AZ(strcmp(pt->name, "MAIN.uptime"));
 	val = *(const volatile uint64_t*)pt->ptr;
 	op->up = (double)val;
 	return (1);
