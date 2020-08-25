@@ -138,25 +138,32 @@ VSC_New(void)
 /*--------------------------------------------------------------------*/
 
 static int
-vsc_f_arg(struct vsc *vsc, const char *opt)
+vsc_sf_arg(struct vsc *vsc, const char *glob, const struct vsc_sf_mode *mode)
 {
 	struct vsc_sf *sf;
 
-	AN(opt);
+	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
+	AN(glob);
+	AN(mode);
 
 	ALLOC_OBJ(sf, VSC_SF_MAGIC);
 	AN(sf);
-
-	if (opt[0] == '^') {
-		sf->mode = VSC_SF_EXCLUDE;
-		opt++;
-	} else {
-		sf->mode = VSC_SF_INCLUDE;
-	}
-
-	REPLACE(sf->pattern, opt);
+	REPLACE(sf->pattern, glob);
+	sf->mode = mode;
 	VTAILQ_INSERT_TAIL(&vsc->sf_list, sf, list);
 	return (1);
+}
+
+static int
+vsc_f_arg(struct vsc *vsc, const char *opt)
+{
+
+	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
+	AN(opt);
+
+	if (opt[0] == '^')
+		return (vsc_sf_arg(vsc, opt + 1, VSC_SF_EXCLUDE));
+	return (vsc_sf_arg(vsc, opt, VSC_SF_INCLUDE));
 }
 
 /*--------------------------------------------------------------------*/
@@ -168,6 +175,8 @@ VSC_Arg(struct vsc *vsc, char arg, const char *opt)
 	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
 
 	switch (arg) {
+	case 'I': return (vsc_sf_arg(vsc, opt, VSC_SF_INCLUDE));
+	case 'X': return (vsc_sf_arg(vsc, opt, VSC_SF_EXCLUDE));
 	case 'f': return (vsc_f_arg(vsc, opt));
 	default: return (0);
 	}
