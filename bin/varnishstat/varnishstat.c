@@ -336,10 +336,10 @@ main(int argc, char * const *argv)
 
 	if (curses) {
 		if (has_f) {
-			AN(VSC_Arg(vsc, 'f', "MGT.uptime"));
-			AN(VSC_Arg(vsc, 'f', "MAIN.uptime"));
-			AN(VSC_Arg(vsc, 'f', "MAIN.cache_hit"));
-			AN(VSC_Arg(vsc, 'f', "MAIN.cache_miss"));
+			AN(VSC_Arg(vsc, 'F', "MGT.uptime"));
+			AN(VSC_Arg(vsc, 'F', "MAIN.uptime"));
+			AN(VSC_Arg(vsc, 'F', "MAIN.cache_hit"));
+			AN(VSC_Arg(vsc, 'F', "MAIN.cache_miss"));
 		}
 		do_curses(vd, vsc);
 	}

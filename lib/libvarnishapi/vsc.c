@@ -85,6 +85,7 @@ struct vsc {
 	unsigned		magic;
 #define VSC_MAGIC		0x3373554a
 
+	struct vsc_sf_head	sf_list_force;
 	struct vsc_sf_head	sf_list_include;
 	struct vsc_sf_head	sf_list_exclude;
 	VTAILQ_HEAD(,vsc_seg)	segs;
@@ -120,6 +121,7 @@ VSC_New(void)
 	ALLOC_OBJ(vsc, VSC_MAGIC);
 	if (vsc == NULL)
 		return (vsc);
+	VTAILQ_INIT(&vsc->sf_list_force);
 	VTAILQ_INIT(&vsc->sf_list_include);
 	VTAILQ_INIT(&vsc->sf_list_exclude);
 	VTAILQ_INIT(&vsc->segs);
@@ -129,7 +131,7 @@ VSC_New(void)
 /*--------------------------------------------------------------------*/
 
 static int
-vsc_f_arg(struct vsc *vsc, const char *opt)
+vsc_f_arg(struct vsc *vsc, const char *opt, unsigned force)
 {
 	struct vsc_sf *sf;
 	unsigned exclude = 0;
@@ -142,11 +144,18 @@ vsc_f_arg(struct vsc *vsc, const char *opt)
 		opt++;
 	}
 
+	if (force && exclude) {
+		INCOMPL(); /* XXX: we lack access to vsm_diag() */
+		return (-1);
+	}
+
 	ALLOC_OBJ(sf, VSC_SF_MAGIC);
 	AN(sf);
 	REPLACE(sf->pattern, opt);
 
-	if (exclude)
+	if (force)
+		VTAILQ_INSERT_TAIL(&vsc->sf_list_force, sf, list);
+	else if (exclude)
 		VTAILQ_INSERT_TAIL(&vsc->sf_list_exclude, sf, list);
 	else
 		VTAILQ_INSERT_TAIL(&vsc->sf_list_include, sf, list);
@@ -163,8 +172,11 @@ VSC_Arg(struct vsc *vsc, char arg, const char *opt)
 	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
 
 	switch (arg) {
-	case 'f': return (vsc_f_arg(vsc, opt));
-	default: return (0);
+	case 'F':
+	case 'f':
+		return (vsc_f_arg(vsc, opt, arg == 'F'));
+	default:
+		  return (0);
 	}
 }
 
@@ -178,6 +190,9 @@ vsc_filter(const struct vsc *vsc, const char *nm)
 	struct vsc_sf *sf;
 
 	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
+	VTAILQ_FOREACH(sf, &vsc->sf_list_force, list)
+		if (!fnmatch(sf->pattern, nm, 0))
+			return (0);
 	VTAILQ_FOREACH(sf, &vsc->sf_list_exclude, list)
 		if (!fnmatch(sf->pattern, nm, 0))
 			return (1);
@@ -536,6 +551,7 @@ VSC_Destroy(struct vsc **vscp, struct vsm *vsm)
 	struct vsc_seg *sp, *sp2;
 
 	TAKE_OBJ_NOTNULL(vsc, vscp, VSC_MAGIC);
+	vsc_delete_sf_list(&vsc->sf_list_force);
 	vsc_delete_sf_list(&vsc->sf_list_include);
 	vsc_delete_sf_list(&vsc->sf_list_exclude);
 	VTAILQ_FOREACH_SAFE(sp, &vsc->segs, list, sp2) {
