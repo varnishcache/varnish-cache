@@ -390,8 +390,7 @@ struct busyobj {
 	 * All fields from retries and down are zeroed when the busyobj
 	 * is recycled.
 	 */
-	unsigned		retries;
-	enum req_body_state_e	initial_req_body_status;
+	int			retries;
 	struct req		*req;
 	struct sess		*sp;
 	struct worker		*wrk;
@@ -403,7 +402,6 @@ struct busyobj {
 	struct http		*bereq0;
 	struct http		*bereq;
 	struct http		*beresp;
-	struct objcore		*bereq_body;
 	struct objcore		*stale_oc;
 	struct objcore		*fetch_objcore;
 
@@ -439,6 +437,9 @@ struct busyobj {
 
 	uint16_t		err_code;
 	const char		*err_reason;
+
+	enum req_body_state_e	initial_req_body_status;
+	struct objcore		*bereq_body;
 };
 
 
