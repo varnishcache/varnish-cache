@@ -30,6 +30,54 @@ release process.
 NEXT (scheduled 2020-09-15)
 ===========================
 
+* ``varnishstat`` now has a help screen, available via the ``h`` key
+  in curses mode
+
+* The initial ``varnishstat`` verbosity has been changed to ensure any
+  fields specified by the ``-f`` argument are visible (2990_)
+
+* Fixed handling of out-of-workspace conditions after
+  ``vcl_backend_response`` and ``vcl_deliver`` during filter
+  initialization (3253_, 3241_)
+
+* ``PRIV_TOP`` is now thread-safe to support parallel ESI
+  implementations
+
+* ``varnishstat`` JSON format (``-j`` option) has been changed:
+
+  * on the top level, a ``version`` identifier has been introduced,
+    which will be used to mark breaking changes to the JSON
+    formatting. It will not be used to mark changes to the counters
+    themselves.
+
+    The new ``version`` is ``1``.
+
+  * All counters have been moved down one level to the ``counters``
+    object.
+
+* ``VSA_BuildFAP()`` has been added as a convenience function to
+  build a ``struct suckaddr``
+
+* Depending on the setting of the new ``vcc_acl_pedantic`` parameter,
+  VCC now either emits or warning or fails if network numbers used in
+  ACLs do not have an all-zero host part.
+
+  For ``vcc_acl_pedantic`` off, the host part is fixed to all-zero and
+  that fact logged with the ``ACL`` VSL tag.
+
+* Fixed error handling during object creation after
+  ``vcl_backend_response`` (3273_)
+
+* ``obj.can_esi`` has been added to identify if the response can be
+  ESI processed (See 3002_)
+
+* ``resp.filters`` now contains a correct value when the
+  auto-determined filter list is read (3002_)
+
+* It is now a VCL (runtime) error to write to ``resp.do`` and
+  ``beresp.do_`` fields which determine the filter list after setting
+  ``resp.filters`` and ``beresp.filters``, respectively
+
 * The Varnish Jail (least privileges) code for Solaris has been
   largely rewritten. It now reduces privileges even further and thus
   should improve the security of Varnish on Solaris even more.
@@ -40,6 +88,13 @@ NEXT (scheduled 2020-09-15)
 
 * The shard director and shard director parameter objects should now
   work in ``vcl_pipe {}`` like in ``vcl_backend_* {}`` subs.
+
+.. _2990: https://github.com/varnishcache/varnish-cache/issues/2990
+.. _3253
+.. _3241
+.. _3273
+.. _3002
+
 
 ================================
 Varnish Cache 6.4.0 (2020-03-16)
