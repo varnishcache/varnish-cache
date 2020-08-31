@@ -137,6 +137,19 @@
 	Count of misses. A cache miss indicates the object was fetched from
 	the backend before delivering it to the client.
 
+.. varnish_vsc:: beresp_uncacheable
+   :group: wrk
+   :oneliner: Uncacheable backend responses
+
+   Count of backend responses considered uncacheable.
+
+.. varnish_vsc:: beresp_shortlived
+   :group: wrk
+   :oneliner: Shortlived objects
+
+   Count of objects created with ttl+grace+keep shorter than the 'shortlived'
+   runtime parameter.
+
 .. varnish_vsc:: backend_conn
 	:oneliner:	Backend conn. success
 

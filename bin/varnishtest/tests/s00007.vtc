@@ -40,3 +40,4 @@ client c1 {
 	expect resp.body == "foo"
 } -run
 
+varnish v1 -expect beresp_shortlived == 1
