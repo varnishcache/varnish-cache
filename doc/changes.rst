@@ -90,10 +90,10 @@ NEXT (scheduled 2020-09-15)
   work in ``vcl_pipe {}`` like in ``vcl_backend_* {}`` subs.
 
 .. _2990: https://github.com/varnishcache/varnish-cache/issues/2990
-.. _3253
-.. _3241
-.. _3273
-.. _3002
+.. _3002: https://github.com/varnishcache/varnish-cache/issues/3002
+.. _3241: https://github.com/varnishcache/varnish-cache/issues/3241
+.. _3253: https://github.com/varnishcache/varnish-cache/issues/3253
+.. _3273: https://github.com/varnishcache/varnish-cache/issues/3273
 
 
 ================================
