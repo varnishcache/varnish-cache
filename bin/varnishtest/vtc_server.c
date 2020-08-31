@@ -50,16 +50,14 @@ struct server {
 	char			*name;
 	struct vtclog		*vl;
 	VTAILQ_ENTRY(server)	list;
+	struct vtc_sess		*vsp;
 	char			run;
 
-	int			repeat;
-	unsigned		keepalive;
 	char			*spec;
 
 	int			depth;
 	int			sock;
 	int			fd;
-	int			rcvbuf;
 	char			listen[256];
 	char			aaddr[32];
 	char			aport[32];
@@ -87,9 +85,10 @@ server_new(const char *name, struct vtclog *vl)
 	REPLACE(s->name, name);
 	s->vl = vtc_logopen(s->name);
 	AN(s->vl);
+	s->vsp = Sess_New(s->vl, name);
+	AN(s->vsp);
 
 	bprintf(s->listen, "%s", "127.0.0.1 0");
-	s->repeat = 1;
 	s->depth = 10;
 	s->sock = -1;
 	s->fd = -1;
@@ -108,6 +107,7 @@ server_delete(struct server *s)
 {
 
 	CHECK_OBJ_NOTNULL(s, SERVER_MAGIC);
+	Sess_Destroy(&s->vsp);
 	macro_undef(s->vl, s->name, "addr");
 	macro_undef(s->vl, s->name, "port");
 	macro_undef(s->vl, s->name, "sock");
@@ -219,56 +219,61 @@ server_listen(struct server *s)
  * Server thread
  */
 
-static void *
-server_thread(void *priv)
+static int
+server_conn(void *priv, struct vtclog *vl)
 {
 	struct server *s;
-	struct vtclog *vl;
-	int i, j, fd;
 	struct sockaddr_storage addr_s;
 	struct sockaddr *addr;
-	socklen_t l;
 	char abuf[VTCP_ADDRBUFSIZE];
 	char pbuf[VTCP_PORTBUFSIZE];
+	socklen_t l;
+	int fd;
 
 	CAST_OBJ_NOTNULL(s, priv, SERVER_MAGIC);
-	assert(s->sock >= 0);
 
-	vl = vtc_logopen(s->name);
-	pthread_cleanup_push(vtc_logclose, vl);
-
-	vtc_log(vl, 2, "Started on %s (%u iterations%s)", s->listen,
-		s->repeat, s->keepalive ? " using keepalive" : "");
-	for (i = 0; i < s->repeat; i++) {
-		addr = (void*)&addr_s;
-		l = sizeof addr_s;
-		fd = accept(s->sock, addr, &l);
-		if (fd < 0)
-			vtc_fatal(vl, "Accept failed: %s", strerror(errno));
-		if (*s->listen != '/') {
-			VTCP_hisname(fd, abuf, sizeof abuf, pbuf, sizeof pbuf);
-			vtc_log(vl, 3, "accepted fd %d %s %s", fd, abuf, pbuf);
-		} else
-			vtc_log(vl, 3, "accepted fd %d 0.0.0.0 0", fd);
-		if (! s->keepalive)
-			fd = http_process(vl, s->spec, fd, &s->sock, s->listen,
-			    s->rcvbuf);
-		else
-			while (fd >= 0 && i++ < s->repeat)
-				fd = http_process(vl, s->spec, fd,
-				    &s->sock, s->listen, s->rcvbuf);
-		vtc_log(vl, 3, "shutting fd %d", fd);
-		j = shutdown(fd, SHUT_WR);
-		if (!VTCP_Check(j))
-			vtc_fatal(vl, "Shutdown failed: %s", strerror(errno));
-		VTCP_close(&fd);
-	}
-	vtc_log(vl, 2, "Ending");
-	pthread_cleanup_pop(0);
-	vtc_logclose(vl);
-	return (NULL);
+	addr = (void*)&addr_s;
+	l = sizeof addr_s;
+	fd = accept(s->sock, addr, &l);
+	if (fd < 0)
+		vtc_fatal(vl, "Accept failed: %s", strerror(errno));
+	if (*s->listen != '/') {
+		VTCP_hisname(fd, abuf, sizeof abuf, pbuf, sizeof pbuf);
+		vtc_log(vl, 3, "accepted fd %d %s %s", fd, abuf, pbuf);
+	} else
+		vtc_log(vl, 3, "accepted fd %d 0.0.0.0 0", fd);
+	return (fd);
 }
 
+static void
+server_disc(void *priv, struct vtclog *vl, int *fdp)
+{
+	int j;
+	struct server *s;
+
+	CAST_OBJ_NOTNULL(s, priv, SERVER_MAGIC);
+	vtc_log(vl, 3, "shutting fd %d", *fdp);
+	j = shutdown(*fdp, SHUT_WR);
+	if (!VTCP_Check(j))
+		vtc_fatal(vl, "Shutdown failed: %s", strerror(errno));
+	VTCP_close(fdp);
+}
+
+static void
+server_start_thread(struct server *s)
+{
+
+	s->run = 1;
+	s->tp = Sess_Start_Thread(
+	    s,
+	    s->vsp,
+	    server_conn,
+	    server_disc,
+	    s->listen,
+	    &s->sock,
+	    s->spec
+	);
+}
 
 /**********************************************************************
  * Start the server thread
@@ -281,8 +286,7 @@ server_start(struct server *s)
 	vtc_log(s->vl, 2, "Starting server");
 	server_listen(s);
 	vtc_log(s->vl, 1, "Listen on %s", s->listen);
-	s->run = 1;
-	AZ(pthread_create(&s->tp, NULL, server_thread, s));
+	server_start_thread(s);
 }
 
 /**********************************************************************
@@ -304,7 +308,7 @@ server_dispatch_wrk(void *priv)
 	fd = s->fd;
 
 	vtc_log(vl, 3, "start with fd %d", fd);
-	fd = http_process(vl, s->spec, fd, &s->sock, s->listen, s->rcvbuf);
+	fd = sess_process(vl, s->vsp, s->spec, fd, &s->sock, s->listen);
 	vtc_log(vl, 3, "shutting fd %d", fd);
 	j = shutdown(fd, SHUT_WR);
 	if (!VTCP_Check(j))
@@ -530,24 +534,14 @@ cmd_server(CMD_ARGS)
 			server_wait(s);
 
 		AZ(s->run);
-		if (!strcmp(*av, "-repeat")) {
-			s->repeat = atoi(av[1]);
-			av++;
+
+		if (Sess_GetOpt(s->vsp, &av))
 			continue;
-		}
-		if (!strcmp(*av, "-keepalive")) {
-			s->keepalive = 1;
-			continue;
-		}
+
 		if (!strcmp(*av, "-listen")) {
 			if (s->sock >= 0)
 				VTCP_close(&s->sock);
 			bprintf(s->listen, "%s", av[1]);
-			av++;
-			continue;
-		}
-		if (!strcmp(*av, "-rcvbuf")) {
-			s->rcvbuf = atoi(av[1]);
 			av++;
 			continue;
 		}

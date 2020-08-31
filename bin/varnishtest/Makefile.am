@@ -47,6 +47,7 @@ varnishtest_SOURCES = \
 		vtc_process.c \
 		vtc_proxy.c \
 		vtc_server.c \
+		vtc_sess.c \
 		vtc_subr.c \
 		vtc_syslog.c \
 		vtc_varnish.c

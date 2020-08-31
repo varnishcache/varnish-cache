@@ -52,18 +52,15 @@ struct client {
 	char			*name;
 	struct vtclog		*vl;
 	VTAILQ_ENTRY(client)	list;
+	struct vtc_sess		*vsp;
 
 	char			*spec;
 
 	char			connect[256];
-	const char		*addr;
-	int			rcvbuf;
+	char			*addr;
 
 	char			*proxy_spec;
 	int			proxy_version;
-
-	int			repeat;
-	unsigned		keepalive;
 
 	unsigned		running;
 	pthread_t		tp;
@@ -207,54 +204,21 @@ client_connect(struct vtclog *vl, struct client *c)
  * Client thread
  */
 
-static void *
-client_thread(void *priv)
+static int
+client_conn(void *priv, struct vtclog *vl)
 {
 	struct client *c;
-	struct vtclog *vl;
-	int fd;
-	int i;
-	struct vsb *vsb;
 
 	CAST_OBJ_NOTNULL(c, priv, CLIENT_MAGIC);
-	AN(*c->connect);
+	return (client_connect(vl, c));
+}
 
-	vl = vtc_logopen(c->name);
-	pthread_cleanup_push(vtc_logclose, vl);
-
-	vsb = macro_expand(vl, c->connect);
-	AN(vsb);
-#if !defined(__sun)
-	pthread_cleanup_push((void (*)(void *))VSB_destroy, &vsb);
-#endif
-	c->addr = VSB_data(vsb);
-
-	if (c->repeat == 0)
-		c->repeat = 1;
-	if (c->repeat != 1)
-		vtc_log(vl, 2, "Started (%u iterations%s)", c->repeat,
-			c->keepalive ? " using keepalive" : "");
-	for (i = 0; i < c->repeat; i++) {
-		fd = client_connect(vl, c);
-
-		if (! c->keepalive)
-			fd = http_process(vl, c->spec, fd, NULL, c->addr,
-			    c->rcvbuf);
-		else
-			while (fd >= 0 && i++ < c->repeat)
-				fd = http_process(vl, c->spec, fd, NULL,
-				    c->addr, c->rcvbuf);
-		vtc_log(vl, 3, "closing fd %d", fd);
-		VTCP_close(&fd);
-	}
-	vtc_log(vl, 2, "Ending");
-#if !defined(__sun)
-	pthread_cleanup_pop(0);
-#endif
-	pthread_cleanup_pop(0);
-	VSB_destroy(&vsb);
-	vtc_logclose(vl);
-	return (NULL);
+static void
+client_disc(void *priv, struct vtclog *vl, int *fdp)
+{
+	(void)priv;
+	vtc_log(vl, 3, "closing fd %d", *fdp);
+	VTCP_close(fdp);
 }
 
 /**********************************************************************
@@ -271,6 +235,8 @@ client_new(const char *name)
 	REPLACE(c->name, name);
 	c->vl = vtc_logopen(name);
 	AN(c->vl);
+	c->vsp = Sess_New(c->vl, name);
+	AN(c->vsp);
 
 	bprintf(c->connect, "%s", "${v1_sock}");
 	VTAILQ_INSERT_TAIL(&clients, c, list);
@@ -286,9 +252,11 @@ client_delete(struct client *c)
 {
 
 	CHECK_OBJ_NOTNULL(c, CLIENT_MAGIC);
+	Sess_Destroy(&c->vsp);
 	vtc_logclose(c->vl);
 	free(c->spec);
 	free(c->name);
+	free(c->addr);
 	free(c->proxy_spec);
 	/* XXX: MEMLEAK (?)*/
 	FREE_OBJ(c);
@@ -301,11 +269,24 @@ client_delete(struct client *c)
 static void
 client_start(struct client *c)
 {
+	struct vsb *vsb;
 
 	CHECK_OBJ_NOTNULL(c, CLIENT_MAGIC);
 	vtc_log(c->vl, 2, "Starting client");
-	AZ(pthread_create(&c->tp, NULL, client_thread, c));
 	c->running = 1;
+	vsb = macro_expand(c->vl, c->connect);
+	AN(vsb);
+	REPLACE(c->addr, VSB_data(vsb));
+	VSB_destroy(&vsb);
+	c->tp = Sess_Start_Thread(
+	    c,
+	    c->vsp,
+	    client_conn,
+	    client_disc,
+	    c->addr,
+	    NULL,
+	    c->spec
+	);
 }
 
 /**********************************************************************
@@ -386,6 +367,10 @@ cmd_client(CMD_ARGS)
 		if (c->running)
 			client_wait(c);
 
+		AZ(c->running);
+		if (Sess_GetOpt(c->vsp, &av))
+			continue;
+
 		if (!strcmp(*av, "-connect")) {
 			bprintf(c->connect, "%s", av[1]);
 			av++;
@@ -400,20 +385,6 @@ cmd_client(CMD_ARGS)
 		if (!strcmp(*av, "-proxy2")) {
 			REPLACE(c->proxy_spec, av[1]);
 			c->proxy_version = 2;
-			av++;
-			continue;
-		}
-		if (!strcmp(*av, "-repeat")) {
-			c->repeat = atoi(av[1]);
-			av++;
-			continue;
-		}
-		if (!strcmp(*av, "-keepalive")) {
-			c->keepalive = 1;
-			continue;
-		}
-		if (!strcmp(*av, "-rcvbuf")) {
-			c->rcvbuf = atoi(av[1]);
 			av++;
 			continue;
 		}

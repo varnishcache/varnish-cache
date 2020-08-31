@@ -88,6 +88,27 @@ extern int ign_unknown_macro;
 void init_server(void);
 void init_syslog(void);
 
+/* Sessions */
+struct vtc_sess *Sess_New(struct vtclog *vl, const char *name);
+void Sess_Destroy(struct vtc_sess **spp);
+int Sess_GetOpt(struct vtc_sess *, char * const **);
+int sess_process(struct vtclog *vl, const struct vtc_sess *,
+    const char *spec, int sock, int *sfd, const char *addr);
+
+typedef int sess_conn_f(void *priv, struct vtclog *);
+typedef void sess_disc_f(void *priv, struct vtclog *, int *fd);
+pthread_t
+Sess_Start_Thread(
+    void *priv,
+    struct vtc_sess *vsp,
+    sess_conn_f *conn,
+    sess_disc_f *disc,
+    const char *listen_addr,
+    int *asocket,
+    const char *spec
+);
+
+
 int http_process(struct vtclog *vl, const char *spec, int sock, int *sfd,
     const char *addr, int rcvbuf);
 
