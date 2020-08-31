@@ -58,8 +58,14 @@ vbf_allocobj(struct busyobj *bo, unsigned l)
 
 	lifetime = oc->ttl + oc->grace + oc->keep;
 
-	if (bo->uncacheable || lifetime < cache_param->shortlived)
+	if (bo->uncacheable) {
 		stv = stv_transient;
+		bo->wrk->stats->beresp_uncacheable++;
+	}
+	else if (lifetime < cache_param->shortlived) {
+		stv = stv_transient;
+		bo->wrk->stats->beresp_shortlived++;
+	}
 	else
 		stv = bo->storage;
 
