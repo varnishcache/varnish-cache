@@ -68,6 +68,12 @@ VSLb_ts(struct vsl_log *l, const char *event, vtim_real first, vtim_real *pprev,
 	(void)now;
 }
 
+void
+WS_Assert(const struct ws *ws)
+{
+	(void)ws;
+}
+
 void *
 WS_Alloc(struct ws *ws, unsigned bytes)
 {
