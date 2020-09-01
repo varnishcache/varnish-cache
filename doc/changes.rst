@@ -195,12 +195,14 @@ NEXT (scheduled 2020-09-15)
   and ``varnishstat`` for inclusion, exclusion and required glob
   patterns on the statistic field names. (3394_)
 
-* [API] overhaul of the workspace API
+* Overhaul of the workspace API
 
   * The previously deprecated ``WS_Reserve()`` has been removed
-  * The signature of ``WS_Printf()`` has been changed
+  * The signature of ``WS_Printf()`` has been changed to return
+    ``const char *`` instead of ``void *`` (we do not consider this a
+    breaking change).
   * Add ``WS_ReservationSize()``
-  * ``WS_Front()`` replaced by ``WS_Reservation()``
+  * ``WS_Front()`` is now deprecated and replaced by ``WS_Reservation()``
   * Add ``WS_Id()``
 
 * Handle a workspace overflow in ``VRY_Validate()`` (3319_)

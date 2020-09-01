@@ -800,6 +800,15 @@ void WS_Id(const struct ws *ws, char *id);
 void WS_VSB_new(struct vsb *, struct ws *);
 char *WS_VSB_finish(struct vsb *, struct ws *, size_t *);
 
+/* REL_20210315 remove */
+static inline char* WS_Front(const struct ws *) v_deprecated_;
+static inline char*
+WS_Front(const struct ws *ws)
+{
+	AN(ws->r);
+	return ws->f;
+}
+
 static inline void *
 WS_Reservation(const struct ws *ws)
 {

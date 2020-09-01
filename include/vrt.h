@@ -58,7 +58,8 @@
  *	[cache.h] WS_Reserve() removed
  *	[cache.h] WS_Printf() changed
  *	[cache.h] WS_ReservationSize() added
- *	[cache.h] WS_Front() replaced by WS_Reservation()
+ *	[cache.h] WS_Front() deprecated
+ *	[cache.h] WS_Reservation() added
  *	[cache.h] WS_Id() added
  * 11.0 (2020-03-16)
  *	Changed type of vsa_suckaddr_len from int to size_t
