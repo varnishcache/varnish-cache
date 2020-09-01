@@ -30,6 +30,11 @@ release process.
 NEXT (scheduled 2020-09-15)
 ===========================
 
+[ABI] marks potentially breaking changes to binary compatibility.
+
+[API] marks potentially breaking changes to source compatibility
+(implies [ABI]).
+
 * ``varnishstat`` now has a help screen, available via the ``h`` key
   in curses mode
 
@@ -46,7 +51,7 @@ NEXT (scheduled 2020-09-15)
 * ``varnishstat`` JSON format (``-j`` option) has been changed:
 
   * on the top level, a ``version`` identifier has been introduced,
-    which will be used to mark breaking changes to the JSON
+    which will be used to mark future breaking changes to the JSON
     formatting. It will not be used to mark changes to the counters
     themselves.
 
@@ -59,7 +64,7 @@ NEXT (scheduled 2020-09-15)
   build a ``struct suckaddr``
 
 * Depending on the setting of the new ``vcc_acl_pedantic`` parameter,
-  VCC now either emits or warning or fails if network numbers used in
+  VCC now either emits a warning or fails if network numbers used in
   ACLs do not have an all-zero host part.
 
   For ``vcc_acl_pedantic`` off, the host part is fixed to all-zero and
@@ -69,7 +74,7 @@ NEXT (scheduled 2020-09-15)
   ``vcl_backend_response`` (3273_)
 
 * ``obj.can_esi`` has been added to identify if the response can be
-  ESI processed (See 3002_)
+  ESI processed (3002_)
 
 * ``resp.filters`` now contains a correct value when the
   auto-determined filter list is read (3002_)
@@ -77,6 +82,35 @@ NEXT (scheduled 2020-09-15)
 * It is now a VCL (runtime) error to write to ``resp.do`` and
   ``beresp.do_`` fields which determine the filter list after setting
   ``resp.filters`` and ``beresp.filters``, respectively
+
+* Behavior for 304 responses was changed not to update
+  the ``Content-Encoding`` response header of the stored object.
+
+* [ABI] ``struct vfp_entry`` and ``struct vdp_ctx`` changed
+
+* [API] VSB_QUOTE_GLOB, which was prematurely added to 6.4, has been
+  removed again.
+
+* [API] Add ``VDP_END`` action for delivery processors, which has to
+  be sent with or after the last buffer.
+
+* Respect the administrative health for "real" (VBE) backends (3299_)
+
+* Fixed handling of illegal (internal) four-digit response codes and
+  with HTTP/2 (3301_)
+
+* Fixed backend connection pooling of closed connections (3266_)
+
+* Added the ``.resolve`` method for the ``BACKEND`` type to resolve
+  (determine the "real" backend) a director.
+
+* Improved ``vmodtool`` support for out-of-tree builds
+
+* Added ``VJ_unlink()`` and ``VJ_rmdir()`` jail functions
+
+* Fixed workdir cleanup (3307_)
+
+* Added ``JAIL_MASTER_SYSTEM`` jail level
 
 * The Varnish Jail (least privileges) code for Solaris has been
   largely rewritten. It now reduces privileges even further and thus
@@ -89,12 +123,105 @@ NEXT (scheduled 2020-09-15)
 * The shard director and shard director parameter objects should now
   work in ``vcl_pipe {}`` like in ``vcl_backend_* {}`` subs.
 
+* For a failure in ``vcl_recv {}``, the VCL state engine now returns
+  right after return from that subroutine. (3303_)
+
+* The shard director now supports weights by scaling the number of
+  replicas of each backend on the consistent hashing ring
+
+* Fixed a race in the cache expiry code which could lead to a panic (2999_)
+
+* Added ``VRE_quote()`` to facilitate building literal string matches
+  with regular expressions.
+
+* The ``BackendReuse`` VSL (log) tag has been retired and replaced
+  with ``BackendClose``, which has been changed to contain either
+  ``close`` or ``recycle`` to signify whether the connection was
+  closed or returned to a pool for later reuse.
+
+* ``BackendOpen`` VSL entries have been changed to contain ``reuse``
+  or ``connect`` in the last column to signify whether the connection
+  was reused from a pool or newly opened.
+
+* ``std.rollback()`` of backend requests with ``return(retry)`` has
+  been fixed (3353_)
+
+* ``FetchError`` logs now differentiate between ``No backend`` and
+  "none resolved" as ``Director %s returned no backend``
+
+* Added ``VRT_DirectorResolve()`` to resolve a director
+
+* Improved VCC handling of symbols and, in particular, type methods
+
+* Fixed use of the shard director from ``vcl_pipe {}`` (3361_)
+
+* Handle recursive use of vcl ``include`` (3360_)
+
+* VCL: Added native support for BLOBs in structured fields notation
+  (``:<base64>:``)
+
+* Fixed handling of the ``Connection:`` header when multiple instances
+  of the named headers existed.
+
+* Added support for naming ``PRIV_`` arguments to vmod methods/functions
+
+* The varnish binary heap implementation has been renamed to use the
+  ``VBH_`` prefix, complemented with a destructor and added to header
+  files for use with vmods (via include of ``vbh.h``).
+
+* A bug in ``vmod_blob`` for base64 decoding with a ``length``
+  argument and non-padding decoding has been fixed (3378_)
+
+* Added ``VRT_BLOB_string()`` to ``vrt.h``
+
+* VSB support for dynamic vs. static allocations has been changed:
+
+  For dynamic allocations use::
+
+	VSB_new_auto() + VSB_destroy()
+
+  For preexisting buffers use::
+
+	VSB_init() + VSB_fini()
+
+  ``VSB_new()`` + ``VSB_delete()`` are now deprecated.
+
+* ``std.blobread()`` has been added
+
+* New ``main.beresp_uncacheable`` and ``main.beresp_shortlived``
+  counters have been added.
+
+* The ``I``, ``X`` and ``R`` arguments have been added to the VSC API
+  and ``varnishstat`` for inclusion, exclusion and required glob
+  patterns on the statistic field names. (3394_)
+
+* [API] overhaul of the workspace API
+
+  * The previously deprecated ``WS_Reserve()`` has been removed
+  * The signature of ``WS_Printf()`` has been changed
+  * Add ``WS_ReservationSize()``
+  * ``WS_Front()`` replaced by ``WS_Reservation()``
+  * Add ``WS_Id()``
+
+* Handle a workspace overflow in ``VRY_Validate()`` (3319_)
+
 .. _2990: https://github.com/varnishcache/varnish-cache/issues/2990
+.. _2999: https://github.com/varnishcache/varnish-cache/issues/2999
 .. _3002: https://github.com/varnishcache/varnish-cache/issues/3002
 .. _3241: https://github.com/varnishcache/varnish-cache/issues/3241
 .. _3253: https://github.com/varnishcache/varnish-cache/issues/3253
+.. _3266: https://github.com/varnishcache/varnish-cache/issues/3266
 .. _3273: https://github.com/varnishcache/varnish-cache/issues/3273
-
+.. _3299: https://github.com/varnishcache/varnish-cache/issues/3299
+.. _3301: https://github.com/varnishcache/varnish-cache/issues/3301
+.. _3303: https://github.com/varnishcache/varnish-cache/issues/3303
+.. _3307: https://github.com/varnishcache/varnish-cache/issues/3307
+.. _3319: https://github.com/varnishcache/varnish-cache/issues/3319
+.. _3353: https://github.com/varnishcache/varnish-cache/issues/3353
+.. _3360: https://github.com/varnishcache/varnish-cache/issues/3360
+.. _3361: https://github.com/varnishcache/varnish-cache/issues/3361
+.. _3378: https://github.com/varnishcache/varnish-cache/issues/3378
+.. _3394: https://github.com/varnishcache/varnish-cache/issues/3394
 
 ================================
 Varnish Cache 6.4.0 (2020-03-16)
