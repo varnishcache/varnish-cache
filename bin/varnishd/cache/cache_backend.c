@@ -235,7 +235,9 @@ vbe_dir_finish(VRT_CTX, VCL_BACKEND d)
 	if (PFD_State(pfd) != PFD_STATE_USED)
 		assert(bo->htc->doclose == SC_TX_PIPE ||
 		    bo->htc->doclose == SC_RX_TIMEOUT);
-	if (bo->htc->doclose != SC_NULL || bp->proxy_header != 0) {
+	if (bo->htc->doclose != SC_NULL || bp->proxy_header != 0 ||
+	    http_GetHdrField(bo->bereq, H_Connection, "close", NULL) ||
+	    http_GetHdrField(bo->beresp, H_Connection, "close", NULL)) {
 		VSLb(bo->vsl, SLT_BackendClose, "%d %s close", *PFD_Fd(pfd),
 		    VRT_BACKEND_string(bp->director));
 		VTP_Close(&pfd);
