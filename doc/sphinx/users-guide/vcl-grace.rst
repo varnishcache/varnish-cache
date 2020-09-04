@@ -91,30 +91,18 @@ If you do not define your own ``sub vcl_hit``, then the default one is
 used. It looks like this::
 
   sub vcl_hit {
-       if (obj.ttl >= 0s) {
-            // A pure unadulterated hit, deliver it
-            return (deliver);
-       }
-       if (obj.ttl + obj.grace > 0s) {
-            // Object is in grace, deliver it
-            // Automatically triggers a background fetch
-            return (deliver);
-       }
-       // fetch & deliver once we get the result
-       return (miss);
-  }
-
-The effect of the built-in VCL is in fact equivalent to the following::
-
-  sub vcl_hit {
        return (deliver);
   }
 
-This is because ``obj.ttl + obj.grace > 0s`` always will evaluate to
-true. However, the the VCL is as it is to show users how to
-differentiate between a pure hit and a `grace` hit. With the next
-major version of Varnish, the default VCL is planned to change to the
-latter, shorter version.
+Note that the condition ``obj.ttl + obj.grace > 0s`` will (in ``sub
+vcl_hit``) always evaluate to true. In earlier versions (6.0.0 and
+earlier), this was not the case, and a test in the builtin VCL was
+necessary to make sure that "keep objects" (objects in the cache where
+both TTL and grace had run out) would not be delivered to the clients.
+
+In the current version, when there are only "keep objects" available,
+``sub vcl_miss`` will be called, and a fetch for a new object will be
+initiated.
 
 Misbehaving servers
 ~~~~~~~~~~~~~~~~~~~
