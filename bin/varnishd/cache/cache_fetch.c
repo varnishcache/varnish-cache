@@ -96,11 +96,17 @@ static void
 vbf_cleanup(struct busyobj *bo)
 {
 	struct vfp_ctx *vfc;
+	struct vfp_entry *vfe;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	vfc = bo->vfc;
 	CHECK_OBJ_NOTNULL(vfc, VFP_CTX_MAGIC);
 
+	vfe = VTAILQ_LAST(&vfc->vfp, vfp_entry_s);
+	if (vfe != NULL) {
+		CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
+		bo->acct.beresp_bodybytes += vfe->bytes_out;
+	}
 	VFP_Close(vfc);
 	bo->filter_list = NULL;
 
@@ -553,7 +559,6 @@ vbf_stp_fetchbody(struct worker *wrk, struct busyobj *bo)
 		AZ(vfc->failed);
 		vfps = VFP_Suck(vfc, ptr, &l);
 		if (l > 0 && vfps != VFP_ERROR) {
-			bo->acct.beresp_bodybytes += l;
 			VFP_Extend(vfc, l);
 			if (est >= l)
 				est -= l;
