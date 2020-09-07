@@ -348,6 +348,7 @@ vbp_poke(struct vbp_target *vt)
 	while (1) {
 		pfd->events = POLLIN;
 		pfd->revents = 0;
+		t_now = VTIM_real();
 		tmo = (int)round((t_end - t_now) * 1e3);
 		if (tmo <= 0) {
 			bprintf(vt->resp_buf,
