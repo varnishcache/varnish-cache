@@ -134,6 +134,20 @@ can be loaded::
    200 14
    VCL compiled.
 
+A big difference with a shell here document is the handling of the ``<<``
+token. Just like command names can be quoted, the here document token keeps
+its meaning, even quoted::
+
+   vcl.inline test "<<" EOF
+   vcl 4.0;
+
+   backend be {
+           .host = "localhost";
+   }
+   EOF
+   200 14
+   VCL compiled.
+
 When using a front-end to the Varnish-CLI like ``varnishadm``, one must
 take into account the double expansion happening.  First in the shell
 launching the ``varnishadm`` command and then in the Varnish CLI itself.
@@ -165,6 +179,43 @@ multi-line argument::
    }
    EOF'
    VCL compiled.
+
+Another difference with a shell here document is that only one here document
+can be used on a single command line. For example, it is possible to do this
+in a shell script::
+
+   #!/bin/sh
+
+   cat << EOF1 ; cat << EOF2
+   hello
+   EOF1
+   world
+   EOF2
+
+The expected output is::
+
+   hello
+   world
+
+With the Varnish CLI, only the last parameter may use the here document form,
+which greatly restricts the number of commands that can effectively use them.
+Trying to use multiple here documents only takes the last one into account.
+
+For example::
+
+   command argument << EOF1 << EOF2
+   heredoc1
+   EOF1
+   heredoc2
+   EOF2
+
+This conceptually results in the following command line:
+
+- ``"command"``
+- ``"argument"``
+- ``"<<"``
+- ``"EOF1"``
+- ``"heredoc1\nEOF1\nheredoc2\n"``
 
 Other pitfalls include variable expansion of the shell invoking ``varnishadm``
 but this is not directly related to the Varnish CLI. If you get the quoting
