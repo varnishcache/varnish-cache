@@ -137,7 +137,7 @@ V1L_Close(struct worker *wrk, uint64_t *cnt)
 	wrk->v1l = NULL;
 	CHECK_OBJ_NOTNULL(v1l, V1L_MAGIC);
 	*cnt = v1l->cnt;
-	if (WS_Reservation(v1l->ws))
+	if (WS_IsReserved(v1l->ws))
 		WS_Release(v1l->ws, 0);
 	WS_Rollback(v1l->ws, v1l->res);
 	ZERO_OBJ(v1l, sizeof *v1l);

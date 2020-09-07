@@ -411,7 +411,7 @@ WS_VSB_finish(struct vsb *vsb, struct ws *ws, size_t *szp)
 	WS_Assert(ws);
 	if (!VSB_finish(vsb)) {
 		p = VSB_data(vsb);
-		if (p == WS_Reservation(ws)) {
+		if (p == ws->f) {
 			WS_Release(ws, VSB_len(vsb) + 1);
 			if (szp != NULL)
 				*szp = VSB_len(vsb);

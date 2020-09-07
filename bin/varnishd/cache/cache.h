@@ -814,7 +814,9 @@ WS_Reservation(const struct ws *ws)
 {
 
 	WS_Assert(ws);
-	return (ws->r != NULL ? ws->f : NULL);
+	AN(ws->r);
+	AN(ws->f);
+	return (ws->f);
 }
 
 static inline unsigned

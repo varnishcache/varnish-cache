@@ -84,7 +84,7 @@ http1_req(struct worker *wrk, void *arg)
 
 	THR_SetRequest(req);
 	req->transport = &HTTP1_transport;
-	AZ(WS_Reservation(wrk->aws));
+	assert(!WS_IsReserved(wrk->aws));
 	HTTP1_Session(wrk, req);
 	AZ(wrk->v1l);
 	WS_Assert(wrk->aws);
@@ -319,7 +319,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			    sp->t_idle + SESS_TMO(sp, timeout_idle),
 			    NAN,
 			    cache_param->http_req_size);
-			AZ(WS_Reservation(req->htc->ws));
+			assert(!WS_IsReserved(req->htc->ws));
 			if (hs < HTC_S_EMPTY) {
 				req->acct.req_hdrbytes +=
 				    req->htc->rxbuf_e - req->htc->rxbuf_b;
@@ -354,8 +354,8 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			if (H2_prism_complete(req->htc) == HTC_S_COMPLETE) {
 				if (!FEATURE(FEATURE_HTTP2)) {
 					SES_Close(req->sp, SC_REQ_HTTP20);
-					AZ(WS_Reservation(req->ws));
-					AZ(WS_Reservation(wrk->aws));
+					assert(!WS_IsReserved(req->ws));
+					assert(!WS_IsReserved(wrk->aws));
 					http1_setstate(sp, H1CLEANUP);
 					continue;
 				}
@@ -370,8 +370,8 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			if (i) {
 				assert(req->doclose > 0);
 				SES_Close(req->sp, req->doclose);
-				AZ(WS_Reservation(req->ws));
-				AZ(WS_Reservation(wrk->aws));
+				assert(!WS_IsReserved(req->ws));
+				assert(!WS_IsReserved(wrk->aws));
 				http1_setstate(sp, H1CLEANUP);
 				continue;
 			}
@@ -405,13 +405,13 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			AZ(req->top->vcl0);
 			req->task->func = NULL;
 			req->task->priv = NULL;
-			AZ(WS_Reservation(req->ws));
-			AZ(WS_Reservation(wrk->aws));
+			assert(!WS_IsReserved(req->ws));
+			assert(!WS_IsReserved(wrk->aws));
 			http1_setstate(sp, H1CLEANUP);
 		} else if (st == H1CLEANUP) {
 
-			AZ(WS_Reservation(wrk->aws));
-			AZ(WS_Reservation(req->ws));
+			assert(!WS_IsReserved(wrk->aws));
+			assert(!WS_IsReserved(req->ws));
 
 			if (sp->fd >= 0 && req->doclose != SC_NULL)
 				SES_Close(sp, req->doclose);

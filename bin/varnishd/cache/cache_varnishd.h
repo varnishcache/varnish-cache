@@ -465,6 +465,12 @@ void WRK_Init(void);
 
 /* cache_ws.c */
 void WS_Panic(const struct ws *ws, struct vsb *vsb);
+static inline int
+WS_IsReserved(const struct ws *ws)
+{
+
+	return (ws->r != NULL);
+}
 
 void WS_Rollback(struct ws *, uintptr_t);
 void *WS_AtOffset(const struct ws *ws, unsigned off, unsigned len);
