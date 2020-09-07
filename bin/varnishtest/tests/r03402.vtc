@@ -1,0 +1,24 @@
+varnishtest "probe dripping reads timeout"
+
+server s0 {
+	rxreq
+	delay 1
+	send "HTTP/1.1 200 OK\r\n"
+	delay 0.5
+	send "Server: s0\r\n"
+	delay 1
+	send "\r\n"
+} -dispatch
+
+varnish v1 -vcl+backend {
+	probe default {
+		.window = 1;
+		.threshold = 1;
+		.timeout = 2s;
+		.interval = 0.1s;
+	}
+} -start
+
+delay 5
+
+varnish v1 -cliexpect sick backend.list
