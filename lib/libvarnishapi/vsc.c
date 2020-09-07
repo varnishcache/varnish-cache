@@ -60,9 +60,9 @@ struct vsc_sf_mode {
 	unsigned		append;
 };
 
-static struct vsc_sf_mode VSC_SF_INCLUDE[1] = {{"include", 1, 1, 1}};
-static struct vsc_sf_mode VSC_SF_EXCLUDE[1] = {{"exclude", 0, 0, 1}};
-static struct vsc_sf_mode VSC_SF_REQUIRE[1] = {{"require", 1, 0, 0}};
+static const struct vsc_sf_mode VSC_SF_INCLUDE[1] = {{"include", 1, 1, 1}};
+static const struct vsc_sf_mode VSC_SF_EXCLUDE[1] = {{"exclude", 0, 0, 1}};
+static const struct vsc_sf_mode VSC_SF_REQUIRE[1] = {{"require", 1, 0, 0}};
 
 struct vsc_sf {
 	unsigned			magic;
