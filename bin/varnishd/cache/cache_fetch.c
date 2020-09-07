@@ -101,7 +101,7 @@ vbf_cleanup(struct busyobj *bo)
 	vfc = bo->vfc;
 	CHECK_OBJ_NOTNULL(vfc, VFP_CTX_MAGIC);
 
-	VFP_Close(vfc);
+	bo->acct.beresp_bodybytes += VFP_Close(vfc);
 	bo->filter_list = NULL;
 
 	if (bo->director_state != DIR_S_NULL)
@@ -553,7 +553,6 @@ vbf_stp_fetchbody(struct worker *wrk, struct busyobj *bo)
 		AZ(vfc->failed);
 		vfps = VFP_Suck(vfc, ptr, &l);
 		if (l > 0 && vfps != VFP_ERROR) {
-			bo->acct.beresp_bodybytes += l;
 			VFP_Extend(vfc, l);
 			if (est >= l)
 				est -= l;
