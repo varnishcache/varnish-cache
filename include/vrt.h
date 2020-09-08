@@ -60,7 +60,6 @@
  *	[cache.h] WS_ReservationSize() added
  *	[cache.h] WS_Front() deprecated
  *	[cache.h] WS_Reservation() added
- *	[cache.h] WS_Id() added
  * 11.0 (2020-03-16)
  *	Changed type of vsa_suckaddr_len from int to size_t
  *	New prefix_{ptr|len} fields in vrt_backend

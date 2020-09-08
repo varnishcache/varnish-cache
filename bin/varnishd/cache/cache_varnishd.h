@@ -464,6 +464,7 @@ void VMOD_Panic(struct vsb *);
 void WRK_Init(void);
 
 /* cache_ws.c */
+void WS_Id(const struct ws *ws, char *id);
 void WS_Panic(const struct ws *ws, struct vsb *vsb);
 static inline int
 WS_IsReserved(const struct ws *ws)

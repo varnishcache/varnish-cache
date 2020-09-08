@@ -67,6 +67,23 @@ varnishtest
 Changes for developers and VMOD authors
 =======================================
 
+The workspace API saw a number of changes in anticipation of a future
+inclusion in VRT. The deprecated ``WS_Reserve()`` function was finally
+removed, the functions ``WS_ReserveSize()`` and ``WS_ReserveAll()`` were
+introduced as a replacement.
+
+On the topic of workspace reservation, the ``WS_Front()`` function is
+now deprecated in favor of ``WS_Reservation()``. The two functions
+behave similarly, but the latter ensures that it is only ever called
+during a reservation. There was no legitimate reason to access the
+workspace's front outside of a reservation.
+
+In a scenario where a reservation is made in a part of the code, but
+used somewhere else, it is possible to later query the size with the
+new ``WS_ReservationSize()`` function.
+
+The return value for ``WS_Printf()`` is now a constant string.
+
 **XXX changes concerning VRT, the public APIs, source code organization,
 builds etc.**
 
