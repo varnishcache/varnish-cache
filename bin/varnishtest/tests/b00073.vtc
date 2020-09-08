@@ -1,0 +1,39 @@
+varnishtest "backend connection close"
+
+server s1 {
+	rxreq
+	expect req.http.beresp-connection ~ close
+	txresp
+	expect_close
+
+	accept
+	rxreq
+	expect req.http.beresp-connection !~ close
+	txresp -hdr "connection: close"
+	expect_close
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		return (pass);
+	}
+	sub vcl_backend_response {
+		# NB: this overrides unconditionally on purpose
+		set beresp.http.connection = bereq.http.beresp-connection;
+	}
+} -start
+
+client c1 {
+	txreq -hdr "beresp-connection: close, x-varnish"
+	rxresp
+	expect resp.status == 200
+
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run
+
+server s1 -wait
+
+varnish v1 -expect MAIN.backend_recycle == 0
+varnish v1 -expect VBE.vcl1.s1.conn == 0
