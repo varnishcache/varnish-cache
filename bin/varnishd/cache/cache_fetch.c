@@ -437,6 +437,10 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	VCL_backend_response_method(bo->vcl, wrk, NULL, bo, NULL);
 
+	if (bo->htc != NULL && bo->htc->doclose == SC_NULL &&
+	    http_GetHdrField(bo->beresp, H_Connection, "close", NULL))
+		bo->htc->doclose = SC_RESP_CLOSE;
+
 	if (wrk->handling == VCL_RET_ABANDON || wrk->handling == VCL_RET_FAIL ||
 	    wrk->handling == VCL_RET_ERROR) {
 		if (bo->htc)
