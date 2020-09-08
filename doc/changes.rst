@@ -207,6 +207,8 @@ NEXT (scheduled 2020-09-15)
 
 * Handle a workspace overflow in ``VRY_Validate()`` (3319_)
 
+* Fixed the backend probe ``.timeout`` handling for "dripping" responses (3402_)
+
 .. _2990: https://github.com/varnishcache/varnish-cache/issues/2990
 .. _2999: https://github.com/varnishcache/varnish-cache/issues/2999
 .. _3002: https://github.com/varnishcache/varnish-cache/issues/3002
@@ -224,6 +226,7 @@ NEXT (scheduled 2020-09-15)
 .. _3361: https://github.com/varnishcache/varnish-cache/issues/3361
 .. _3378: https://github.com/varnishcache/varnish-cache/issues/3378
 .. _3394: https://github.com/varnishcache/varnish-cache/issues/3394
+.. _3402: https://github.com/varnishcache/varnish-cache/issues/3402
 
 ================================
 Varnish Cache 6.4.0 (2020-03-16)
