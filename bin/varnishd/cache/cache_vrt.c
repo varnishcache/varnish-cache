@@ -561,7 +561,6 @@ VRT_UpperLowerStrands(VRT_CTX, VCL_STRANDS s, int up)
 			continue;
 		if (q != NULL)
 			copy = 1;
-		p = q = s->p[i];
 		for(p = q = s->p[i]; *p != '\0'; p++) {
 			if ((up && vct_islower(*p)) ||
 			    (!up && vct_isupper(*p))) {
