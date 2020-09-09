@@ -79,8 +79,8 @@ NEXT (scheduled 2020-09-15)
 * ``resp.filters`` now contains a correct value when the
   auto-determined filter list is read (3002_)
 
-* It is now a VCL (runtime) error to write to ``resp.do`` and
-  ``beresp.do_`` fields which determine the filter list after setting
+* It is now a VCL (runtime) error to write to ``resp.do_*`` and
+  ``beresp.do_*`` fields which determine the filter list after setting
   ``resp.filters`` and ``beresp.filters``, respectively
 
 * Behavior for 304 responses was changed not to update
@@ -203,7 +203,6 @@ NEXT (scheduled 2020-09-15)
     breaking change).
   * Add ``WS_ReservationSize()``
   * ``WS_Front()`` is now deprecated and replaced by ``WS_Reservation()``
-  * Add ``WS_Id()``
 
 * Handle a workspace overflow in ``VRY_Validate()`` (3319_)
 
