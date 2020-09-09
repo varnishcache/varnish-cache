@@ -57,7 +57,23 @@ varnishadm
 varnishstat
 ===========
 
-**XXX changes concerning varnishstat(1) and/or varnish-counters(7)**
+A help screen is now available in interactive mode via the ``h`` key.
+
+Again in interactive mode, verbosity is increased from the default value
+during startup when the filtering of counters would otherwise display
+nothing.
+
+Filtering using the ``-f`` option is now deprecated in favor of ``-I`` and
+``-X`` options that are treated in order. While still present, the ``-f``
+option now also work in order instead of exclusive filters first and then
+inclusive filters. It was also wrongly documented as inclusive first.
+
+The JSON output slightly changed to more easily be consumed with programming
+languages that may map JSON objects to types. See upgrade notes for more
+details.
+
+There are two new ``MAIN.beresp_uncacheable`` and ``MAIN.beresp_shortlived``
+counters.
 
 varnishtest
 ===========

@@ -30,4 +30,35 @@ to:**
 * Changes in public APIs that may require changes in VMODs or VAPI/VUT
   clients.
 
+varnishstat
+===========
+
+The JSON output (``-j`` option) changed to avoid having the ``timestamp``
+field mixed with the counters fields. As such the schema version was bumped
+from 0 to 1, and a ``version`` top-level field was added to keep track of
+future schema changes. Counters are in a new ``counters`` top-level field.
+
+Before::
+
+  {
+    "timestamp": "YYYY-mm-ddTHH:MM:SS",
+    "MGT.uptime": {
+      ...
+    },
+    ...
+  }
+
+After::
+
+  {
+    "version": 1,
+    "timestamp": "YYYY-mm-ddTHH:MM:SS",
+    "counters": {
+      "MGT.uptime": {
+        ...
+      },
+      ...
+    }
+  }
+
 *eof*
