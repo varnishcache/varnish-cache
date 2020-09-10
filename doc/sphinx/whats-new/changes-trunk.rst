@@ -47,7 +47,13 @@ VMODs
 varnishlog
 ==========
 
-**XXX changes concerning varnishlog(1) and/or vsl(7)**
+The ``BackendReuse`` log record has been retired. It was inconsistently named
+compared to other places like stat counters where we use the words reuse and
+recycle (it should have been named ``BackendRecycle`` if anything).
+
+The ``BackendOpen`` record can now tell whether the connection to the backend
+was opened or reused from the pool, and the ``BackendClose`` record will tell
+whether the connection was effectively closed or recycled into the pool.
 
 varnishadm
 ==========

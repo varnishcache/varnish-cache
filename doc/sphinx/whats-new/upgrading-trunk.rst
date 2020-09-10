@@ -61,4 +61,16 @@ After::
     }
   }
 
+VSL
+===
+
+If you need to build VSL queries that depend on ``BackendReuse`` you can
+now rely on ``BackendClose``, for example::
+
+    varnishlog -q 'BackendReuse[2] ~ www'
+
+The new query would be::
+
+    varnishlog -q 'BackendClose[2] ~ www and BackendClose[3] eq recycle'
+
 *eof*
