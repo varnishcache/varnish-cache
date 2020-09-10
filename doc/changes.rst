@@ -195,6 +195,11 @@ NEXT (scheduled 2020-09-15)
   and ``varnishstat`` for inclusion, exclusion and required glob
   patterns on the statistic field names. (3394_)
 
+  * Added the missing ``VSC_OPT_f`` macro and the new ``VSC_OPT_I`` and
+    ``VSC_OPT_X`` to libvarnishapi headers.
+
+  * Added ``-I`` and ``-X`` options to ``varnishstat``.
+
 * Overhaul of the workspace API
 
   * The previously deprecated ``WS_Reserve()`` has been removed

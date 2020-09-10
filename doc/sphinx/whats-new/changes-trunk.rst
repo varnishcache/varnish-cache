@@ -75,7 +75,7 @@ nothing.
 
 Filtering using the ``-f`` option is now deprecated in favor of ``-I`` and
 ``-X`` options that are treated in order. While still present, the ``-f``
-option now also work in order instead of exclusive filters first and then
+option now also works in order instead of exclusive filters first and then
 inclusive filters. It was also wrongly documented as inclusive first.
 
 The JSON output slightly changed to more easily be consumed with programming
