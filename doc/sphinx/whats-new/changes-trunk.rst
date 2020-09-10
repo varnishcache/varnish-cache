@@ -23,10 +23,14 @@ varnishd
 Parameters
 ~~~~~~~~~~
 
-**XXX changes in -p parameters**
+A new ``vcc_acl_pedantic`` parameter will turn warnings into errors for the
+case where an ACL entry includes a network prefix, but host bits aren't all
+zeroes.
 
 Other changes in varnishd
 ~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Some error messages improved in the VCL compiler.
 
 Changes to VCL
 ==============
