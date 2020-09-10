@@ -31,7 +31,7 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # varnish.m4 - Macros to build against Varnish.         -*- Autoconf -*-
-# serial 11 (varnish-7.0.0)
+# serial 11 (varnish-6.5.0)
 #
 # This collection of macros helps create VMODs or tools interacting with
 # Varnish Cache using the GNU build system (autotools). In order to work
@@ -380,9 +380,9 @@ AC_DEFUN([VARNISH_VMODS], [
 
 # VARNISH_VMODS_GENERATED(NAMES)
 # ------------------------------
-# Since: Varnish 7.0.0
+# Since: Varnish 6.5.0
 #
-# Varnish 7 adds the possibility to transparently work with a generated VCC
+# Varnish 6.5 adds the possibility to transparently work with a generated VCC
 # file. The VCC file would then be created in the build directory, which is
 # incompatible with how the VARNISH_VMODS macro operates.
 #

@@ -110,6 +110,10 @@ new ``WS_ReservationSize()`` function.
 
 The return value for ``WS_Printf()`` is now a constant string.
 
+VMOD authors who would like to generate VCC files can now use the
+``VARNISH_VMODS_GENERATED()`` macro from ``varnish.m4`` for autotools
+builds.
+
 **XXX changes concerning VRT, the public APIs, source code organization,
 builds etc.**
 

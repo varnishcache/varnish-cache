@@ -213,6 +213,8 @@ NEXT (scheduled 2020-09-15)
 
 * Fixed the backend probe ``.timeout`` handling for "dripping" responses (3402_)
 
+* New ``VARNISH_VMODS_GENERATED()`` macro in ``varnish.m4``.
+
 .. _2990: https://github.com/varnishcache/varnish-cache/issues/2990
 .. _2999: https://github.com/varnishcache/varnish-cache/issues/2999
 .. _3002: https://github.com/varnishcache/varnish-cache/issues/3002
