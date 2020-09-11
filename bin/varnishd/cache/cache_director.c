@@ -208,6 +208,7 @@ VDI_Http1Pipe(struct req *req, struct busyobj *bo)
 	INIT_OBJ(ctx, VRT_CTX_MAGIC);
 	VCL_Req2Ctx(ctx, req);
 	VCL_Bo2Ctx(ctx, bo);
+	ctx->ws = req->ws;
 
 	d = VDI_Resolve(ctx);
 	if (d == NULL || d->vdir->methods->http1pipe == NULL) {
