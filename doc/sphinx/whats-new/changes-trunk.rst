@@ -152,6 +152,9 @@ disruption.
 Changes for developers and VMOD authors
 =======================================
 
+VMODs
+~~~~~
+
 The workspace API saw a number of changes in anticipation of a future
 inclusion in VRT. The deprecated ``WS_Reserve()`` function was finally
 removed, the functions ``WS_ReserveSize()`` and ``WS_ReserveAll()`` were
@@ -169,9 +172,30 @@ new ``WS_ReservationSize()`` function.
 
 The return value for ``WS_Printf()`` is now a constant string.
 
+In general, accessing any field of ``struct ws`` is strongly discouraged
+and if the workspace API doesn't satisfy all your needs please bring
+that to our attention.
+
 VMOD authors who would like to generate VCC files can now use the
 ``VARNISH_VMODS_GENERATED()`` macro from ``varnish.m4`` for autotools
 builds.
+
+libvarnishapi
+~~~~~~~~~~~~~
+
+There are three new VSC arguments that can be set with the ``VSC_Arg()``
+function:
+
+- ``'I'`` to include counters matching a glob pattern
+- ``'X'`` to exclude counters matching a glob pattern
+- ``'R'`` to include required counters regardless of ``'I'`` and ``'X'``
+
+The ``'f'`` argument is now deprecated and emulated with ``'I'`` and ``'X'``.
+Filtering with ``'f'`` used to check exclusions first and then inclusions,
+they are all tested in order and the first to match determines the outcome.
+
+The ``'R'`` argument takes precedence over regular filtering and can be used
+to ensure that some counters are present regardless of user configuration.
 
 **XXX changes concerning VRT, the public APIs, source code organization,
 builds etc.**

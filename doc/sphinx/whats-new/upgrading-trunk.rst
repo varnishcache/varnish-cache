@@ -61,6 +61,9 @@ After::
     }
   }
 
+TODO: a word on ``varnishstat -f`` being deprecated and ``-{I,X}`` being
+order-sensitive.
+
 VSL
 ===
 
@@ -72,5 +75,10 @@ now rely on ``BackendClose``, for example::
 The new query would be::
 
     varnishlog -q 'BackendClose[2] ~ www and BackendClose[3] eq recycle'
+
+libvarnishapi
+=============
+
+TODO: a similar note as ``varnishstat -f`` for ``VSC_Arg('f')``.
 
 *eof*
