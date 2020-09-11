@@ -27,6 +27,10 @@ A new ``vcc_acl_pedantic`` parameter will turn warnings into errors for the
 case where an ACL entry includes a network prefix, but host bits aren't all
 zeroes.
 
+The ``solaris`` jail has been improved and can reduce privileges even further.
+There is now a new optional ``-j solaris,worker=...`` argument which allows to
+extend the effective privilege set of the worker (cache) process.
+
 Other changes in varnishd
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
