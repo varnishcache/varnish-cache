@@ -90,7 +90,12 @@ whether the connection was effectively closed or recycled into the pool.
 varnishadm
 ==========
 
-**XXX changes concerning varnishadm(1) and/or varnish-cli(7)**
+The ``backend.set_health`` command can be used to force a specific state
+between sick and healthy or restore the automatic behavior, which depends on
+the presence of a probe. While forcing a backend to be sick would prevent it
+from being selected by a director, a straight selection of the backend from
+VCL would still attempt a connection. This has been fixed, and the command's
+documentation was clarified.
 
 varnishstat
 ===========
