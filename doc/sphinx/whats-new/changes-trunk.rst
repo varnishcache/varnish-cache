@@ -121,7 +121,9 @@ counters.
 varnishtest
 ===========
 
-**XXX changes concerning varnishtest(1) and/or vtc(7)**
+The ``process -expect-text`` command will wait an order of magnitude longer
+for the text to appear. It used to be too sensitive to any kind of timing
+disruption.
 
 Changes for developers and VMOD authors
 =======================================
