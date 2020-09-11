@@ -220,12 +220,11 @@ VCL_TaskLeave(struct vrt_privs *privs)
 {
 	struct vrt_priv *vp, *vp1;
 
-	/*
-	 * NB: We don't bother removing entries as we finish them because it's
-	 * a costly operation. Instead we safely walk the whole tree and clear
-	 * the head at the very end.
-	 */
-	VRBT_FOREACH_SAFE(vp, vrt_privs, privs, vp1)
+	VRBT_FOREACH_SAFE(vp, vrt_privs, privs, vp1) {
+		CHECK_OBJ_NOTNULL(vp, VRT_PRIV_MAGIC);
+		VRBT_REMOVE(vrt_privs, privs, vp);
 		VRT_priv_fini(vp->priv);
+		ZERO_OBJ(vp, sizeof *vp);
+	}
 	ZERO_OBJ(privs, sizeof *privs);
 }
