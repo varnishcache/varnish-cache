@@ -65,7 +65,16 @@ Other changes to VCL
 VMODs
 =====
 
-**XXX changes in the bundled VMODs**
+A new ``std.blobread()`` function similar to ``std.fileread()`` was added to
+work with binary files.
+
+The shard director's ``.add_backend()`` method has a new optional ``weight``
+parameter. An error when a backend is added or removed now fails the
+transaction (or the ``vcl.load`` command in ``vcl_init``) but an invalid
+weight does not result into a hard failure.
+
+The shard director no longer outputs the (unused) ``canon_point`` property
+in ``backend.list`` commands.
 
 varnishlog
 ==========
