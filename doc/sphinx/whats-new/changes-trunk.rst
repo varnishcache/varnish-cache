@@ -38,6 +38,21 @@ Changes to VCL
 VCL variables
 ~~~~~~~~~~~~~
 
+A new ``obj.can_esi`` variable has been added to identify whether the response
+can be ESI processed.
+
+Once ``resp.filters`` is explicitly set, trying to set a ``resp.do_*`` field
+results in a VCL failure. The same rule applies to ``beresp.filters`` and
+``beresp.do_*`` fields.
+
+The ``BACKEND`` VCL type now has a ``.resolve()`` method to find the effective
+backend directly from VCL. When a director is selected, the resolution would
+otherwise be delayed until after returning from ``vcl_backend_fetch`` or
+``vcl_pipe``::
+
+    # eager backend selection
+    set bereq.backend = bereq.backend.resolve();
+
 It is now possible to manually set a ``Connection: close`` header in
 ``beresp`` to signal that the backend connection shouldn't be recycled.
 This might help dealing with backends that would under certain circumstances
@@ -57,10 +72,15 @@ header::
         }
     }
 
-**XXX new, deprecated or removed variables, or changed semantics**
-
 Other changes to VCL
 ~~~~~~~~~~~~~~~~~~~~
+
+A failure in ``vcl_recv`` could resume execution in ``vcl_hash`` before
+effectively ending the transaction, this has been corrected. A failure in
+``vcl_recv`` is now definitive.
+
+There is a new syntax for ``BLOB`` literals: ``:<base64>:``. This syntax is
+also used to automatically cast a blob into a string.
 
 VMODs
 =====
