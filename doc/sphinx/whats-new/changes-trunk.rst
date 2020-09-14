@@ -234,9 +234,8 @@ libvarnish
 * Added ``VRE_quote()`` to facilitate building literal string matches
   with regular expressions.
 
-* The varnish binary heap implementation has been added
-  ``VBH_`` prefix, complemented with a destructor and added to header
-  files for use with vmods (via include of ``vbh.h``).
+* The varnish binary heap implementation has been added with the
+  ``VBH_`` prefix for use with vmods (via include of ``vbh.h``).
 
 * VSB support for dynamic vs. static allocations has been changed:
 
