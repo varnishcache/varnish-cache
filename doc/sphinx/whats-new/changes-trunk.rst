@@ -94,6 +94,9 @@ effectively ending the transaction, this has been corrected. A failure in
 There is a new syntax for ``BLOB`` literals: ``:<base64>:``. This syntax is
 also used to automatically cast a blob into a string.
 
+Behavior for 304 responses was changed not to update the
+``Content-Encoding`` response header of the stored object.
+
 VMODs
 =====
 
@@ -161,8 +164,15 @@ disruption.
 Changes for developers and VMOD authors
 =======================================
 
-VMODs
-~~~~~
+Build System
+~~~~~~~~~~~~
+
+VMOD authors who would like to generate VCC files can now use the
+``VARNISH_VMODS_GENERATED()`` macro from ``varnish.m4`` for autotools
+builds.
+
+Workspace API
+~~~~~~~~~~~~~
 
 The workspace API saw a number of changes in anticipation of a future
 inclusion in VRT. The deprecated ``WS_Reserve()`` function was finally
@@ -185,9 +195,12 @@ In general, accessing any field of ``struct ws`` is strongly discouraged
 and if the workspace API doesn't satisfy all your needs please bring
 that to our attention.
 
-VMOD authors who would like to generate VCC files can now use the
-``VARNISH_VMODS_GENERATED()`` macro from ``varnish.m4`` for autotools
-builds.
+Other VRT / cache.h changes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Added ``VRT_DirectorResolve()`` to resolve a director
+
+* Added ``VRT_BLOB_string()`` for the default BLOB folding documented above
 
 libvarnishapi
 ~~~~~~~~~~~~~
@@ -206,7 +219,29 @@ they are all tested in order and the first to match determines the outcome.
 The ``'R'`` argument takes precedence over regular filtering and can be used
 to ensure that some counters are present regardless of user configuration.
 
-**XXX changes concerning VRT, the public APIs, source code organization,
-builds etc.**
+libvarnish
+~~~~~~~~~~
+
+* ``VSA_BuildFAP()`` has been added as a convenience function to
+  build a ``struct suckaddr`` (aka ``VCL_IP``).
+
+* Added ``VRE_quote()`` to facilitate building literal string matches
+  with regular expressions.
+
+* The varnish binary heap implementation has been added
+  ``VBH_`` prefix, complemented with a destructor and added to header
+  files for use with vmods (via include of ``vbh.h``).
+
+* VSB support for dynamic vs. static allocations has been changed:
+
+  For dynamic allocations use::
+
+        VSB_new_auto() + VSB_destroy()
+
+  For preexisting buffers use::
+
+        VSB_init() + VSB_fini()
+
+  ``VSB_new()`` + ``VSB_delete()`` are now deprecated.
 
 *eof*
