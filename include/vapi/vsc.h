@@ -117,7 +117,7 @@ int VSC_Arg(struct vsc *, char arg, const char *opt);
 	 *	'I' - field inclusion glob
 	 *	'X' - field exclusion glob
 	 *	'R' - required field glob
-	 *	'f' - legacy field filter glob
+	 *	'f' - legacy field filter glob (deprecated)
 	 *
 	 * Return:
 	 *	-1 error, VSM_Error() returns diagnostic string
