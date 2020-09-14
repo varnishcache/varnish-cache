@@ -108,7 +108,8 @@ vbf_cleanup(struct busyobj *bo)
 		VDI_Finish(bo);
 }
 
-void Bereq_Rollback(struct busyobj *bo)
+void
+Bereq_Rollback(struct busyobj *bo)
 {
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
