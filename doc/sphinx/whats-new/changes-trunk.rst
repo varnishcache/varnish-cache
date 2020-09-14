@@ -135,9 +135,9 @@ varnishstat
 
 A help screen is now available in interactive mode via the ``h`` key.
 
-Again in interactive mode, verbosity is increased from the default value
-during startup when the filtering of counters would otherwise display
-nothing.
+Again in interactive mode, the initial verbosity is now chosen such
+that fields selected via the ``-f`` or ``-I`` options are actually
+displayed without manually increasing the verbosity level.
 
 Filtering using the ``-f`` option is now deprecated in favor of ``-I`` and
 ``-X`` options that are treated in order. While still present, the ``-f``
