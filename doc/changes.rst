@@ -188,7 +188,7 @@ NEXT (scheduled 2020-09-15)
 
 * ``std.blobread()`` has been added
 
-* New ``main.beresp_uncacheable`` and ``main.beresp_shortlived``
+* New ``MAIN.beresp_uncacheable`` and ``MAIN.beresp_shortlived``
   counters have been added.
 
 * The ``I``, ``X`` and ``R`` arguments have been added to the VSC API
