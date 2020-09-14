@@ -215,6 +215,12 @@ NEXT (scheduled 2020-09-15)
 
 * New ``VARNISH_VMODS_GENERATED()`` macro in ``varnish.m4``.
 
+* Prevent pooling of a ``Connection: close`` backend response.
+
+  When this header is present, be it sent by the backend or added in
+  ``vcl_backend_response {}``, varnish closes the connection after the
+  current request. (3400_)
+
 .. _2990: https://github.com/varnishcache/varnish-cache/issues/2990
 .. _2999: https://github.com/varnishcache/varnish-cache/issues/2999
 .. _3002: https://github.com/varnishcache/varnish-cache/issues/3002
@@ -232,6 +238,7 @@ NEXT (scheduled 2020-09-15)
 .. _3361: https://github.com/varnishcache/varnish-cache/issues/3361
 .. _3378: https://github.com/varnishcache/varnish-cache/issues/3378
 .. _3394: https://github.com/varnishcache/varnish-cache/issues/3394
+.. _3400: https://github.com/varnishcache/varnish-cache/issues/3400
 .. _3402: https://github.com/varnishcache/varnish-cache/issues/3402
 
 ================================
