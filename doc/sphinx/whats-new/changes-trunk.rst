@@ -166,8 +166,8 @@ VMODs
 
 The workspace API saw a number of changes in anticipation of a future
 inclusion in VRT. The deprecated ``WS_Reserve()`` function was finally
-removed, the functions ``WS_ReserveSize()`` and ``WS_ReserveAll()`` were
-introduced as a replacement.
+removed, after the functions ``WS_ReserveSize()`` and
+``WS_ReserveAll()`` were introduced in Varnish Cache 6.3.0.
 
 On the topic of workspace reservation, the ``WS_Front()`` function is
 now deprecated in favor of ``WS_Reservation()``. The two functions
