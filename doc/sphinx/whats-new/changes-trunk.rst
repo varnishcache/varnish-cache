@@ -193,10 +193,6 @@ new ``WS_ReservationSize()`` function.
 
 The return value for ``WS_Printf()`` is now a constant string.
 
-In general, accessing any field of ``struct ws`` is strongly discouraged
-and if the workspace API doesn't satisfy all your needs please bring
-that to our attention.
-
 Other VRT / cache.h changes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -228,25 +224,28 @@ to ensure that some counters are present regardless of user configuration.
 libvarnish
 ~~~~~~~~~~
 
-* ``VSA_BuildFAP()`` has been added as a convenience function to
-  build a ``struct suckaddr`` (aka ``VCL_IP``).
+A ``VSA_BuildFAP()`` function has been added as a convenience to build a
+``struct suckaddr`` (aka ``VCL_IP``) from a Family, Address and Protocol
+components.
 
-* Added ``VRE_quote()`` to facilitate building literal string matches
-  with regular expressions.
+We added ``VRE_quote()`` to facilitate building literal string matches
+with regular expressions. It can be used to ensure that a user-defined
+string literal put inside a regular expression may not accidentally
+change the behavior of the overall expression.
 
-* The varnish binary heap implementation has been added with the
-  ``VBH_`` prefix for use with vmods (via include of ``vbh.h``).
+The varnish binary heap implementation has been added with the
+``VBH_`` prefix for use with VMODs (via include of ``vbh.h``).
 
-* VSB support for dynamic vs. static allocations has been changed:
+VSB support for dynamic vs. static allocations has been changed:
 
-  For dynamic allocations use::
+For dynamic allocations use::
 
-        VSB_new_auto() + VSB_destroy()
+      VSB_new_auto() + VSB_destroy()
 
-  For preexisting buffers use::
+For preexisting buffers use::
 
-        VSB_init() + VSB_fini()
+      VSB_init() + VSB_fini()
 
-  ``VSB_new()`` + ``VSB_delete()`` are now deprecated.
+``VSB_new()`` + ``VSB_delete()`` are now deprecated.
 
 *eof*

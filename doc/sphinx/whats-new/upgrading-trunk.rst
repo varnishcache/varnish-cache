@@ -8,28 +8,6 @@ released versions of Varnish, see:** :ref:`whats-new-index`
 Upgrading to Varnish **$NEXT_RELEASE**
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-**XXX: how to upgrade from previous deployments to this
-version. Limited to work that has to be done for an upgrade, new
-features are listed in "Changes". Explicitly mention what does *not*
-have to be changed, especially in VCL. May include, but is not limited
-to:**
-
-* Elements of VCL that have been removed or are deprecated, or whose
-  semantics have changed.
-
-* -p parameters that have been removed or are deprecated, or whose
-  semantics have changed.
-
-* Changes in the CLI.
-
-* Changes in the output or interpretation of stats or the log, including
-  changes affecting varnishncsa/-hist/-top.
-
-* Changes that may be necessary in VTCs or in the use of varnishtest.
-
-* Changes in public APIs that may require changes in VMODs or VAPI/VUT
-  clients.
-
 varnishstat
 ===========
 
@@ -62,9 +40,9 @@ After::
   }
 
 The filter option ``-f`` is now deprecated in favor of the ``-I`` and
-``-X`` options for field inclusions and exclusions,
-respectively. Tools using ``varnishstat`` should prepare for future
-removal and be changed accordingly.
+``-X`` options for field inclusions and exclusions, respectively. Tools
+using ``varnishstat`` should prepare for future removal and be changed
+accordingly.
 
 VSL
 ===
@@ -78,18 +56,44 @@ The new query would be::
 
     varnishlog -q 'BackendClose[2] ~ www and BackendClose[3] eq recycle'
 
-Changes relevant for VMODs and/or VAPI/VUT clients
-==================================================
+Changes for developers and VMOD authors
+=======================================
 
-* VMODs using the Workspace API might need minor adjustments, see
-  :ref:`whatsnew_changes_CURRENT_workspace`.
+VSB
+~~~
 
-* ``VSC_Arg('f')`` is now deprecated and should be rewritten to use
-  ``VSC_Arg('I')`` / ``VSC_Arg('X')``, see above note on
-  `varnishstat`_ and :ref:`whatsnew_changes_CURRENT_vsc`.
+VSB support for dynamic vs. static allocations has been changed and
+code using VSBs will need to be adjusted, see
+:ref:`whatsnew_changes_CURRENT_libvarnish`.
 
-* VSB support for dynamic vs. static allocations has been changed and
-  code using VSBs will need to be adjusted, see
-  :ref:`whatsnew_changes_CURRENT_libvarnish`.
+It should be noted that the VSB itself and the string buffer must be either
+both dynamic or both static. It is no longer possible for example to have
+a static ``struct`` with a dynamic buffer with the new API.
+
+Workspace API
+~~~~~~~~~~~~~
+
+VMODs using the Workspace API might need minor adjustments, see
+:ref:`whatsnew_changes_CURRENT_workspace`.
+
+In general, accessing any field of ``struct ws`` is strongly discouraged
+and if the workspace API doesn't satisfy all your needs please bring
+that to our attention.
+
+VSC
+~~~
+
+The ``'f'`` argument for ``VSC_Arg()`` is now deprecated as mentioned in
+the above note on `varnishstat`_ and :ref:`whatsnew_changes_CURRENT_vsc`.
+
+Otherwise you can use the ``'I'`` ans ``'X'`` arguments to respectively
+include or exclude counters, they work in a first-match fashion. Since
+``'f'`` is now emulated using the new arguments, its filtering behavior
+slightly changed from exclusions first to first match.
+
+If like ``varnishstat`` in curses mode, you have a utility that always
+needs some counters to be present the ``'R'`` argument takes a glob of
+required fields. Such counters are not affected by filtering from other
+``VSC_Arg()`` arguments.
 
 *eof*
