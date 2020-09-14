@@ -117,7 +117,7 @@ cscope.*out
 /include/_vrt_test
 /include/vrt_test
 /include/vbm_test
-/lib/libvarnish/binheap
+/lib/libvarnish/vbh_test
 /lib/libvarnish/vjsn_test
 /lib/libvarnish/vnum_c_test
 /lib/libvarnish/vsb_test
