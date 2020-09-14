@@ -61,8 +61,10 @@ After::
     }
   }
 
-TODO: a word on ``varnishstat -f`` being deprecated and ``-{I,X}`` being
-order-sensitive.
+The filter option ``-f`` is now deprecated in favor of the ``-I`` and
+``-X`` options for field inclusions and exclusions,
+respectively. Tools using ``varnishstat`` should prepare for future
+removal and be changed accordingly.
 
 VSL
 ===
@@ -76,9 +78,18 @@ The new query would be::
 
     varnishlog -q 'BackendClose[2] ~ www and BackendClose[3] eq recycle'
 
-libvarnishapi
-=============
+Changes relevant for VMODs and/or VAPI/VUT clients
+==================================================
 
-TODO: a similar note as ``varnishstat -f`` for ``VSC_Arg('f')``.
+* VMODs using the Workspace API might need minor adjustments, see
+  :ref:`whatsnew_changes_CURRENT_workspace`.
+
+* ``VSC_Arg('f')`` is now deprecated and should be rewritten to use
+  ``VSC_Arg('I')`` / ``VSC_Arg('X')``, see above note on
+  `varnishstat`_ and :ref:`whatsnew_changes_CURRENT_vsc`.
+
+* VSB support for dynamic vs. static allocations has been changed and
+  code using VSBs will need to be adjusted, see
+  :ref:`whatsnew_changes_CURRENT_libvarnish`.
 
 *eof*

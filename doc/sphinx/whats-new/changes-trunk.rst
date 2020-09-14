@@ -171,6 +171,8 @@ VMOD authors who would like to generate VCC files can now use the
 ``VARNISH_VMODS_GENERATED()`` macro from ``varnish.m4`` for autotools
 builds.
 
+.. _whatsnew_changes_CURRENT_workspace:
+
 Workspace API
 ~~~~~~~~~~~~~
 
@@ -202,6 +204,8 @@ Other VRT / cache.h changes
 
 * Added ``VRT_BLOB_string()`` for the default BLOB folding documented above
 
+.. _whatsnew_changes_CURRENT_vsc:
+
 libvarnishapi
 ~~~~~~~~~~~~~
 
@@ -218,6 +222,8 @@ they are all tested in order and the first to match determines the outcome.
 
 The ``'R'`` argument takes precedence over regular filtering and can be used
 to ensure that some counters are present regardless of user configuration.
+
+.. _whatsnew_changes_CURRENT_libvarnish:
 
 libvarnish
 ~~~~~~~~~~
