@@ -1,12 +1,8 @@
-**Note: This is a working document for a future release, with running
-updates for changes in the development branch. For changes in the
-released versions of Varnish, see:** :ref:`whats-new-index`
+.. _whatsnew_upgrading_6.5:
 
-.. _whatsnew_upgrading_CURRENT:
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Upgrading to Varnish **$NEXT_RELEASE**
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+Upgrading to Varnish 6.5.0
+%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 varnishstat
 ===========
@@ -64,7 +60,7 @@ VSB
 
 VSB support for dynamic vs. static allocations has been changed and
 code using VSBs will need to be adjusted, see
-:ref:`whatsnew_changes_CURRENT_libvarnish`.
+:ref:`whatsnew_changes_6.5_libvarnish`.
 
 It should be noted that the VSB itself and the string buffer must be either
 both dynamic or both static. It is no longer possible for example to have
@@ -74,7 +70,7 @@ Workspace API
 ~~~~~~~~~~~~~
 
 VMODs using the Workspace API might need minor adjustments, see
-:ref:`whatsnew_changes_CURRENT_workspace`.
+:ref:`whatsnew_changes_6.5_workspace`.
 
 In general, accessing any field of ``struct ws`` is strongly discouraged
 and if the workspace API doesn't satisfy all your needs please bring
@@ -84,7 +80,7 @@ VSC
 ~~~
 
 The ``'f'`` argument for ``VSC_Arg()`` is now deprecated as mentioned in
-the above note on `varnishstat`_ and :ref:`whatsnew_changes_CURRENT_vsc`.
+the above note on `varnishstat`_ and :ref:`whatsnew_changes_6.5_vsc`.
 
 Otherwise you can use the ``'I'`` ans ``'X'`` arguments to respectively
 include or exclude counters, they work in a first-match fashion. Since

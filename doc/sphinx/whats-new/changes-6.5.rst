@@ -1,15 +1,11 @@
-**Note: This is a working document for a future release, with running
-updates for changes in the development branch. For changes in the
-released versions of Varnish, see:** :ref:`whats-new-index`
+.. _whatsnew_changes_6.5:
 
-.. _whatsnew_changes_CURRENT:
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Changes in Varnish **$NEXT_RELEASE**
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%
+Changes in Varnish 6.5.0
+%%%%%%%%%%%%%%%%%%%%%%%%
 
 For information about updating your current Varnish deployment to the
-new version, see :ref:`whatsnew_upgrading_CURRENT`.
+new version, see :ref:`whatsnew_upgrading_6.5`.
 
 A more detailed and technical account of changes in Varnish, with
 links to issues that have been fixed and pull requests that have been
@@ -171,7 +167,7 @@ VMOD authors who would like to generate VCC files can now use the
 ``VARNISH_VMODS_GENERATED()`` macro from ``varnish.m4`` for autotools
 builds.
 
-.. _whatsnew_changes_CURRENT_workspace:
+.. _whatsnew_changes_6.5_workspace:
 
 Workspace API
 ~~~~~~~~~~~~~
@@ -200,7 +196,7 @@ Other VRT / cache.h changes
 
 * Added ``VRT_BLOB_string()`` for the default BLOB folding documented above
 
-.. _whatsnew_changes_CURRENT_vsc:
+.. _whatsnew_changes_6.5_vsc:
 
 libvarnishapi
 ~~~~~~~~~~~~~
@@ -219,7 +215,7 @@ they are all tested in order and the first to match determines the outcome.
 The ``'R'`` argument takes precedence over regular filtering and can be used
 to ensure that some counters are present regardless of user configuration.
 
-.. _whatsnew_changes_CURRENT_libvarnish:
+.. _whatsnew_changes_6.5_libvarnish:
 
 libvarnish
 ~~~~~~~~~~
