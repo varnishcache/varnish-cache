@@ -117,7 +117,7 @@ http_fail(const struct http *hp)
 	VSC_C_main->losthdr++;
 	WS_Id(hp->ws, id);
 	VSLb(hp->vsl, SLT_Error, "out of workspace (%s)", id);
-	assert(WS_Overflowed(hp->ws));
+	WS_MarkOverflow(hp->ws);
 }
 
 /*--------------------------------------------------------------------
