@@ -1,0 +1,48 @@
+varnishtest "lost header workspace overflow"
+
+server s1 {
+	rxreq
+	send "HTTP/1.1 200 OK\r\n"
+	send "Extra:  1\r\n"
+	send "Extra:  2\r\n"
+	send "Extra:  3\r\n"
+	send "Extra:  4\r\n"
+	send "Extra:  5\r\n"
+	send "Extra:  6\r\n"
+	send "Extra:  7\r\n"
+	send "Extra:  8\r\n"
+	send "Extra:  9\r\n"
+	send "Extra: 10\r\n"
+	send "Extra: 11\r\n"
+	send "Extra: 12\r\n"
+	send "Extra: 13\r\n"
+	send "Extra: 14\r\n"
+	send "Extra: 15\r\n"
+	send "Extra: 16\r\n"
+	send "Extra: 17\r\n"
+	send "Extra: 18\r\n"
+	send "Extra: 19\r\n"
+	send "Extra: 20\r\n"
+	send "Extra: 21\r\n"
+	send "Extra: 22\r\n"
+	send "Extra: 23\r\n"
+	send "Extra: 24\r\n"
+	send "Extra: 25\r\n"
+	send "Extra: 26\r\n"
+	# The start line consumes 5 header slots
+	send "\r\n"
+} -start
+
+varnish v1 -cliok "param.set http_max_hdr 32"
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		# This is one header too many
+		set beresp.http.Lost = "header";
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 500
+} -run
