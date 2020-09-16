@@ -66,7 +66,7 @@ struct v1l {
 	struct vsl_log		*vsl;
 	ssize_t			cnt;	/* Flushed byte count */
 	struct ws		*ws;
-	uintptr_t		res;
+	uintptr_t		ws_snap;
 };
 
 /*--------------------------------------------------------------------
@@ -80,7 +80,7 @@ V1L_Open(struct worker *wrk, struct ws *ws, int *fd, struct vsl_log *vsl,
 {
 	struct v1l *v1l;
 	unsigned u;
-	uintptr_t res;
+	uintptr_t ws_snap;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AZ(wrk->v1l);
@@ -91,7 +91,7 @@ V1L_Open(struct worker *wrk, struct ws *ws, int *fd, struct vsl_log *vsl,
 	if (niov != 0)
 		assert(niov >= 3);
 
-	res = WS_Snapshot(ws);
+	ws_snap = WS_Snapshot(ws);
 
 	v1l = WS_Alloc(ws, sizeof *v1l);
 	if (v1l == NULL)
@@ -99,7 +99,7 @@ V1L_Open(struct worker *wrk, struct ws *ws, int *fd, struct vsl_log *vsl,
 	INIT_OBJ(v1l, V1L_MAGIC);
 
 	v1l->ws = ws;
-	v1l->res = res;
+	v1l->ws_snap = ws_snap;
 
 	u = WS_ReserveLumps(ws, sizeof(struct iovec));
 	if (u < 3) {
@@ -139,7 +139,7 @@ V1L_Close(struct worker *wrk, uint64_t *cnt)
 	*cnt = v1l->cnt;
 	if (WS_IsReserved(v1l->ws))
 		WS_Release(v1l->ws, 0);
-	WS_Rollback(v1l->ws, v1l->res);
+	WS_Rollback(v1l->ws, v1l->ws_snap);
 	ZERO_OBJ(v1l, sizeof *v1l);
 	return (sc);
 }
