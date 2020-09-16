@@ -1,0 +1,39 @@
+varnishtest "Bench validhdr"
+
+varnish v1 -vcl {
+	backend proforma None;
+
+	import std;
+	import vtc;
+	import debug;
+
+	sub vcl_recv {
+		return (synth(200));
+	}
+
+	sub bench_vct {
+		debug.validhdr_vct(req.http.input);
+	}
+
+	sub bench_direct {
+		debug.validhdr_direct(req.http.input);
+	}
+
+	sub vcl_synth {
+		synthetic("");
+		std.log("bench " + req.url + " vct " +
+		    (vtc.benchmark(bench_vct) * 1000 * 1000) + "us");
+		std.log("bench " + req.url + " direct " +
+		    (vtc.benchmark(bench_direct) * 1000 * 1000) + "us");
+		return (deliver);
+	}
+} -start
+
+client c1 {
+	txreq -url /16 -hdr "input: 0123456789abcdef"
+	rxresp
+	txreq -url /256 -hdr "input: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+	rxresp
+	txreq -url /1024 -hdr "input: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+	rxresp
+} -run
