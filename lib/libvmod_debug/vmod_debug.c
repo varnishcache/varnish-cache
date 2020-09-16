@@ -1204,3 +1204,15 @@ xyzzy_total_recall(VRT_CTX)
 
 	return (wrong);
 }
+
+VCL_BOOL
+xyzzy_validhdr_vct(VRT_CTX, VCL_STRANDS s)
+{
+	return (VRT_ValidHdr_VCT(ctx, s));
+}
+
+VCL_BOOL
+xyzzy_validhdr_direct(VRT_CTX, VCL_STRANDS s)
+{
+	return (VRT_ValidHdr_Direct(ctx, s));
+}

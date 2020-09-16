@@ -593,7 +593,7 @@ VRT_UpperLowerStrands(VRT_CTX, VCL_STRANDS s, int up)
 // RFC7232, 3.2 without obsolete line folding:
 // ASCII VCHAR + TAB + obs-text (0x80-ff)
 static inline VCL_BOOL
-validhdr(const char *p)
+validhdr_vct(const char *p)
 {
 	AN(p);
 	for(;*p != '\0'; p++)
@@ -601,10 +601,20 @@ validhdr(const char *p)
 			return (0);
 	return (1);
 }
+#define vct_ishdrval(x) (((x) >= 0x20 && (x) != 0x7f) || (x) == 0x09)
+static inline VCL_BOOL
+validhdr_direct(const char *p)
+{
+	AN(p);
+	for(;*p != '\0'; p++)
+		if (! vct_ishdrval(*p))
+			return (0);
+	return (1);
+}
 
 /*--------------------------------------------------------------------*/
 VCL_BOOL
-VRT_ValidHdr(VRT_CTX, VCL_STRANDS s)
+VRT_ValidHdr_VCT(VRT_CTX, VCL_STRANDS s)
 {
 	int i;
 
@@ -613,7 +623,23 @@ VRT_ValidHdr(VRT_CTX, VCL_STRANDS s)
 	for (i = 0; i < s->n; i++) {
 		if (s->p[i] == NULL || s->p[i][0] == '\0')
 			continue;
-		if (! validhdr(s->p[i]))
+		if (! validhdr_vct(s->p[i]))
+			return (0);
+	}
+
+	return (1);
+}
+VCL_BOOL
+VRT_ValidHdr_Direct(VRT_CTX, VCL_STRANDS s)
+{
+	int i;
+
+	(void) ctx;
+
+	for (i = 0; i < s->n; i++) {
+		if (s->p[i] == NULL || s->p[i][0] == '\0')
+			continue;
+		if (! validhdr_direct(s->p[i]))
 			return (0);
 	}
 
