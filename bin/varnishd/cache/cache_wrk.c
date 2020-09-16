@@ -270,8 +270,8 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum task_prio how)
 	 * work is vital and needs do be done at the earliest
 	 */
 	if (how != TASK_QUEUE_REQ ||
-	    pp->lqueue < cache_param->wthread_max +
-	    cache_param->wthread_queue_limit + pp->nthr) {
+	    pp->lqueue + pp->nthr < cache_param->wthread_max +
+	    cache_param->wthread_queue_limit) {
 		pp->nqueued++;
 		pp->lqueue++;
 		VTAILQ_INSERT_TAIL(&pp->queues[how], task, list);
