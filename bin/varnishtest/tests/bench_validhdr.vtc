@@ -15,6 +15,10 @@ varnish v1 -vcl {
 		debug.validhdr_vct(req.http.input);
 	}
 
+	sub bench_vcthdrval {
+		debug.validhdr_vcthdrval(req.http.input);
+	}
+
 	sub bench_direct {
 		debug.validhdr_direct(req.http.input);
 	}
@@ -23,6 +27,8 @@ varnish v1 -vcl {
 		synthetic("");
 		std.log("bench " + req.url + " vct " +
 		    (vtc.benchmark(bench_vct) * 1000 * 1000) + "us");
+		std.log("bench " + req.url + " vcthdrval " +
+		    (vtc.benchmark(bench_vcthdrval) * 1000 * 1000) + "us");
 		std.log("bench " + req.url + " direct " +
 		    (vtc.benchmark(bench_direct) * 1000 * 1000) + "us");
 		return (deliver);

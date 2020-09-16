@@ -52,6 +52,7 @@
 #define VCT_SPACE		(VCT_LWS | VCT_VT)
 #define VCT_UPPER		(1<<13)
 #define VCT_LOWER		(1<<14)
+#define VCT_HDRVAL		(1<<15)
 
 extern const uint16_t vct_typtab[256];
 
@@ -84,6 +85,7 @@ vct_is(int x, uint16_t y)
 #define vct_isxmlnamestart(x) vct_is(x, VCT_XMLNAMESTART)
 #define vct_isxmlname(x) vct_is(x, VCT_XMLNAMESTART | VCT_XMLNAME)
 #define vct_istchar(x) vct_is(x, VCT_ALPHA | VCT_DIGIT | VCT_TCHAR)
+#define vct_ishdrval(x) vct_is(x, VCT_HDRVAL)
 
 static inline int
 vct_iscrlf(const char* p, const char* end)

@@ -322,4 +322,5 @@ $Function SUB total_recall()
 To test *WRONG* behavior
 
 $Function BOOL validhdr_vct(STRANDS)
+$Function BOOL validhdr_vcthdrval(STRANDS)
 $Function BOOL validhdr_direct(STRANDS)

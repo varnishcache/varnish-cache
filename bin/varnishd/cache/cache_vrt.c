@@ -601,13 +601,22 @@ validhdr_vct(const char *p)
 			return (0);
 	return (1);
 }
-#define vct_ishdrval(x) (((x) >= 0x20 && (x) != 0x7f) || (x) == 0x09)
+static inline VCL_BOOL
+validhdr_vcthdrval(const char *p)
+{
+	AN(p);
+	for(;*p != '\0'; p++)
+		if (! vct_ishdrval(*p))
+			return (0);
+	return (1);
+}
+#define vct_direct(x) (((x) >= 0x20 && (x) != 0x7f) || (x) == 0x09)
 static inline VCL_BOOL
 validhdr_direct(const char *p)
 {
 	AN(p);
 	for(;*p != '\0'; p++)
-		if (! vct_ishdrval(*p))
+		if (! vct_direct(*p))
 			return (0);
 	return (1);
 }
@@ -624,6 +633,22 @@ VRT_ValidHdr_VCT(VRT_CTX, VCL_STRANDS s)
 		if (s->p[i] == NULL || s->p[i][0] == '\0')
 			continue;
 		if (! validhdr_vct(s->p[i]))
+			return (0);
+	}
+
+	return (1);
+}
+VCL_BOOL
+VRT_ValidHdr_VCTHdrVal(VRT_CTX, VCL_STRANDS s)
+{
+	int i;
+
+	(void) ctx;
+
+	for (i = 0; i < s->n; i++) {
+		if (s->p[i] == NULL || s->p[i][0] == '\0')
+			continue;
+		if (! validhdr_vcthdrval(s->p[i]))
 			return (0);
 	}
 
