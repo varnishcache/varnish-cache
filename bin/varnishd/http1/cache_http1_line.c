@@ -120,8 +120,7 @@ V1L_Open(struct worker *wrk, struct ws *ws, int *fd, struct vsl_log *vsl,
 	v1l->vsl = vsl;
 	wrk->v1l = v1l;
 
-	if (niov != 0)
-		WS_Release(ws, u * sizeof(struct iovec));
+	WS_Release(ws, u * sizeof(struct iovec));
 }
 
 enum sess_close
@@ -137,8 +136,6 @@ V1L_Close(struct worker *wrk, uint64_t *cnt)
 	wrk->v1l = NULL;
 	CHECK_OBJ_NOTNULL(v1l, V1L_MAGIC);
 	*cnt = v1l->cnt;
-	if (WS_IsReserved(v1l->ws))
-		WS_Release(v1l->ws, 0);
 	WS_Rollback(v1l->ws, v1l->ws_snap);
 	ZERO_OBJ(v1l, sizeof *v1l);
 	return (sc);
