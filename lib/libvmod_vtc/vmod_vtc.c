@@ -35,7 +35,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "cache/cache.h"
+#include "cache/cache_varnishd.h" // VSL_Flush()
 
 #include "vsb.h"
 #include "vtcp.h"
@@ -393,6 +393,7 @@ vmod_benchmark(VRT_CTX, VCL_SUB sub, VCL_INT total, VCL_INT leg)
 		if (WS_Overflowed(ctx->ws))
 			break;
 		VRT_Rollback(ctx, where);
+		VSL_Flush(ctx->vsl, 1);
 		b = VTIM_mono();
 		for (i = 0; i < leg; i++)
 			VRT_call(ctx, sub);
