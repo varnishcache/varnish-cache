@@ -597,7 +597,7 @@ validhdr(const char *p)
 {
 	AN(p);
 	for(;*p != '\0'; p++)
-		if (vct_isctl(*p) && !vct_issp(*p))
+		if (! vct_ishdrval(*p))
 			return (0);
 	return (1);
 }
