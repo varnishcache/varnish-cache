@@ -84,6 +84,7 @@ vct_is(int x, uint16_t y)
 #define vct_isxmlnamestart(x) vct_is(x, VCT_XMLNAMESTART)
 #define vct_isxmlname(x) vct_is(x, VCT_XMLNAMESTART | VCT_XMLNAME)
 #define vct_istchar(x) vct_is(x, VCT_ALPHA | VCT_DIGIT | VCT_TCHAR)
+#define vct_ishdrval(x) (((x) >= 0x20 && (x) != 0x7f) || (x) == 0x09)
 
 static inline int
 vct_iscrlf(const char* p, const char* end)
