@@ -110,7 +110,7 @@ client.ip
 	Readable from: client, backend
 
 
-	The client's IP address, either the same as ``local.ip``
+	The client's IP address, either the same as ``remote.ip``
 	or what the PROXY protocol told us.
 
 client.identity
