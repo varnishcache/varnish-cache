@@ -1206,19 +1206,13 @@ xyzzy_total_recall(VRT_CTX)
 }
 
 VCL_BOOL
-xyzzy_validhdr_vct(VRT_CTX, VCL_STRANDS s)
-{
-	return (VRT_ValidHdr_VCT(ctx, s));
-}
-
-VCL_BOOL
-xyzzy_validhdr_vcthdrval(VRT_CTX, VCL_STRANDS s)
-{
-	return (VRT_ValidHdr_VCTHdrVal(ctx, s));
-}
-
-VCL_BOOL
 xyzzy_validhdr_direct(VRT_CTX, VCL_STRANDS s)
 {
 	return (VRT_ValidHdr_Direct(ctx, s));
+}
+
+VCL_BOOL
+xyzzy_validhdr_func(VRT_CTX, VCL_STRANDS s)
+{
+	return (VRT_ValidHdr_Func(ctx, s));
 }
