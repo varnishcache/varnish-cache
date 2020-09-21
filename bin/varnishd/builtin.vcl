@@ -109,6 +109,12 @@ sub vcl_miss {
 }
 
 sub vcl_deliver {
+    # Some misbehaving backends force Keep-Alive header which breaks
+    # clients like Safari and Curl.
+    if (req.proto ~ "HTTP/1") {
+        unset resp.http.keep-alive;
+    }
+
     return (deliver);
 }
 
