@@ -50,7 +50,6 @@
 #define S HTTPH_A_PASS
 #define H(s,e,f) HTTPH(s, e, f)
 
-H("Keep-Alive",		H_Keep_Alive,		P|F  |S)	// 2068
 H("Accept",		H_Accept,		0      )	// 2616 14.1
 H("Accept-Charset",	H_Accept_Charset,	0      )	// 2616 14.2
 H("Accept-Encoding",	H_Accept_Encoding,	0      )	// 2616 14.3
@@ -81,6 +80,7 @@ H("If-Modified-Since",	H_If_Modified_Since,	  F    )	// 2616 14.25
 H("If-None-Match",	H_If_None_Match,	  F    )	// 2616 14.26
 H("If-Range",		H_If_Range,		  F    )	// 2616 14.27
 H("If-Unmodified-Since",H_If_Unmodified_Since,	  F    )	// 2616 14.28
+H("Keep-Alive",		H_Keep_Alive,		P|F|I|S)	// 2616 13.5.1
 H("Last-Modified",	H_Last_Modified,	0      )	// 2616 14.29
 H("Location",		H_Location,		0      )	// 2616 14.30
 H("Max-Forwards",	H_Max_Forwards,		0      )	// 2616 14.31
