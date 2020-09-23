@@ -166,7 +166,7 @@
  *	vrt_acl type added
  */
 
-#define VRT_MAJOR_VERSION	11U
+#define VRT_MAJOR_VERSION	12U
 
 #define VRT_MINOR_VERSION	0U
 
