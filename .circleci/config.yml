@@ -12,7 +12,7 @@ parameters:
     default: "HEAD"
   pkg-commit:
     type: string
-    default: "master"
+    default: "6.5"
 jobs:
   dist:
     description: Builds varnish-x.y.z.tar.gz that is used later for the packaging jobs
@@ -252,43 +252,7 @@ jobs:
 
 workflows:
   version: 2
-  commit:
-    jobs:
-      - dist
-      - distcheck:
-          name: distcheck_centos_7
-          dist: centos
-          release: "7"
-          requires:
-            - dist
-      - distcheck:
-          name: distcheck_centos_8
-          dist: centos
-          release: "8"
-          requires:
-            - dist
-      - distcheck:
-          name: distcheck_debian_buster
-          dist: debian
-          release: buster
-          extra_conf: --enable-asan --enable-ubsan
-          requires:
-            - dist
-      - distcheck:
-          name: distcheck_alpine
-          dist: alpine
-          release: "latest"
-          #extra_conf: --without-jemalloc
-          requires:
-            - dist
-  nightly:
-    triggers:
-      - schedule:
-          cron: "0 4 * * *"
-          filters:
-            branches:
-              only:
-                - master
+  release:
     jobs:
       - dist
       - tar_pkg_tools
