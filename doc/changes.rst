@@ -26,9 +26,9 @@ http://varnish-cache.org/docs/trunk/whats-new/index.html and via
 individual releases. These documents are updated as part of the
 release process.
 
-===========================
-NEXT (scheduled 2020-09-15)
-===========================
+================================
+Varnish Cache 6.5.0 (2020-09-15)
+================================
 
 [ABI] marks potentially breaking changes to binary compatibility.
 
