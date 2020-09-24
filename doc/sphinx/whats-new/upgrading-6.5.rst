@@ -92,4 +92,18 @@ needs some counters to be present the ``'R'`` argument takes a glob of
 required fields. Such counters are not affected by filtering from other
 ``VSC_Arg()`` arguments.
 
+Official Packages related changes
+=================================
+
+* The default systemd `varnish.service` unit file now sets `varnishd` to
+  listen for PROXY protocol connections on port 8443. This corresponds
+  with the Hitch default configuration, making it easier to set up Varnish
+  using TLS.
+
+* The default systemd `varnish.service` unit file now enables the HTTP/2
+  feature of `varnishd`. This corresponds with the default ALPN token
+  advertisement in the Hitch default configuration, making it easier to
+  enable HTTP/2 in Varnish setups.
+
+
 *eof*
