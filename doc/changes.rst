@@ -27,6 +27,14 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
+Varnish Cache 6.5.1 (2020-09-25)
+================================
+
+* Bump the VRT_MAJOR_VERSION from 11 to 12, to reflect the API changes
+  that went into the 6.5.0 release. This step was forgotten for that
+  release.
+
+================================
 Varnish Cache 6.5.0 (2020-09-15)
 ================================
 
