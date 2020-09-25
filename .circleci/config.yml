@@ -13,6 +13,10 @@ parameters:
   pkg-commit:
     type: string
     default: "6.5"
+  dist-url:
+    type: string
+    default: ""
+
 jobs:
   dist:
     description: Builds varnish-x.y.z.tar.gz that is used later for the packaging jobs
@@ -33,19 +37,36 @@ jobs:
                 make \
                 pcre-devel \
                 python3 \
-                python-sphinx
+                python-sphinx \
+                curl
       - checkout
-      - run:
-          name: Create the dist tarball
-          command: |
-            git checkout << pipeline.parameters.vc-commit >>
-            # if version is "trunk", it's a weekly tarball, override the version
-            if grep 'AC_INIT.*trunk.*' ./configure.ac; then
-                sed -i -e "s/^AC_INIT.*trunk.*/AC_INIT([Varnish], [$(date +%Y%m%d)], [varnish-dev@varnish-cache.org])/" ./configure.ac
-                touch .is_weekly
-            fi
-            ./autogen.des --quiet
-            make dist -j 16
+      - when:
+          condition: << pipeline.parameters.dist-url >>
+          steps:
+            - run:
+                name: Download the dist tarball
+                command: |
+                  curl -s << pipeline.parameters.dist-url >> -o varnish-dist.tar.gz
+                  mkdir parse-version-tmp
+                  cd parse-version-tmp
+                  tar xzf ../varnish-dist.tar.gz
+                  VERSION=$(varnish-*/configure --version | awk 'NR == 1 {print $NF}')
+                  cd ..
+                  mv varnish-dist.tar.gz varnish-${VERSION}.tar.gz
+      - unless:
+          condition: << pipeline.parameters.dist-url >>
+          steps:
+            - run:
+                name: Create the dist tarball
+                command: |
+                  git checkout << pipeline.parameters.vc-commit >>
+                  # if version is "trunk", it's a weekly tarball, override the version
+                  if grep 'AC_INIT.*trunk.*' ./configure.ac; then
+                      sed -i -e "s/^AC_INIT.*trunk.*/AC_INIT([Varnish], [$(date +%Y%m%d)], [varnish-dev@varnish-cache.org])/" ./configure.ac
+                      touch .is_weekly
+                  fi
+                  ./autogen.des --quiet
+                  make dist -j 16
       - persist_to_workspace:
           root: .
           paths:
