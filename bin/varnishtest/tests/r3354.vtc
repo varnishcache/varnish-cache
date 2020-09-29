@@ -4,7 +4,13 @@ server s1 {
 	rxreq
 	txresp -hdr "Foo: bar" -bodylen 1000
 	rxreq
-	txresp -bodylen 500
+	txresp -nolen -hdr "Transfer-Encoding: chunked"
+	chunkedlen 100
+	chunkedlen 100
+	chunkedlen 100
+	chunkedlen 100
+	chunkedlen 100
+	chunkedlen 0
 } -start
 
 varnish v1 -vcl+backend {
