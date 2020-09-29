@@ -47,7 +47,7 @@ jobs:
         - ./configure --enable-maintainer-mode
     - <<: *test-linux
       env: WITNESS=1
-      script: make -j8 witness
+      script: make -j8 witness VERBOSE=1
     - <<: *test-linux
       stage: sanitizers
       addons:
