@@ -696,6 +696,19 @@ SLTM(Notice, 0, "Informational messages about request handling",
 	"\n"
 )
 
+SLTM(VdpAcct, 0, "Deliver filter accounting",
+	"Contains name of VDP and statistics.\n\n"
+	"The format is::\n\n"
+	"\t%s %d %d\n"
+	"\t|  |  |\n"
+	"\t|  |  +- Total bytes produced\n"
+	"\t|  +---- Number of calls made\n"
+	"\t+------- Name of filter\n"
+	"\n"
+	NODEF_NOTICE
+)
+
+
 #undef NOSUP_NOTICE
 #undef NODEF_NOTICE
 #undef SLTM

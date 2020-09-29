@@ -169,5 +169,5 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 		sc = SC_REM_CLOSE;
 	if (sc != SC_NULL)
 		Req_Fail(req, sc);
-	VDP_close(req);
+	(void)VDP_Close(req);
 }

@@ -128,6 +128,8 @@ struct vdp_entry {
 	const struct vdp	*vdp;
 	void			*priv;
 	VTAILQ_ENTRY(vdp_entry)	list;
+	uint64_t		calls;
+	uint64_t		bytes_in;
 };
 
 VTAILQ_HEAD(vdp_entry_s, vdp_entry);

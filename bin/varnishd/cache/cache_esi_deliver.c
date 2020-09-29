@@ -871,5 +871,5 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 	if (i && req->doclose == SC_NULL)
 		req->doclose = SC_REM_CLOSE;
 
-	VDP_close(req);
+	(void)VDP_Close(req);
 }

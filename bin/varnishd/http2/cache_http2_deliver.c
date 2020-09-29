@@ -331,5 +331,5 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 	}
 
 	AZ(req->wrk->v1l);
-	VDP_close(req);
+	(void)VDP_Close(req);
 }

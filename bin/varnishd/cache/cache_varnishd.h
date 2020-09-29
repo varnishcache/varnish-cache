@@ -223,7 +223,7 @@ void CLI_Run(void);
 void CLI_AddFuncs(struct cli_proto *p);
 
 /* cache_deliver_proc.c */
-void VDP_close(struct req *req);
+uint64_t VDP_Close(struct req *req);
 int VDP_DeliverObj(struct req *req);
 
 extern const struct vdp VDP_gunzip;
@@ -251,7 +251,7 @@ enum vfp_status VFP_GetStorage(struct vfp_ctx *, ssize_t *sz, uint8_t **ptr);
 void VFP_Extend(const struct vfp_ctx *, ssize_t sz);
 void VFP_Setup(struct vfp_ctx *vc, struct worker *wrk);
 int VFP_Open(struct vfp_ctx *bo);
-size_t VFP_Close(struct vfp_ctx *bo);
+uint64_t VFP_Close(struct vfp_ctx *bo);
 
 extern const struct vfp VFP_gunzip;
 extern const struct vfp VFP_gzip;

@@ -83,6 +83,8 @@ VDP_bytes(struct req *req, enum vdp_action act, const void *ptr, ssize_t len)
 
 	/* Call the present layer, while pointing to the next layer down */
 	vdc->nxt = VTAILQ_NEXT(vdpe, list);
+	vdpe->calls++;
+	vdpe->bytes_in += len;
 	retval = vdpe->vdp->bytes(req, act, &vdpe->priv, ptr, len);
 	if (retval && (vdc->retval == 0 || retval < vdc->retval))
 		vdc->retval = retval; /* Latch error value */
@@ -131,16 +133,20 @@ VDP_Push(struct req *req, const struct vdp *vdp, void *priv)
 	return (vdc->retval);
 }
 
-void
-VDP_close(struct req *req)
+uint64_t
+VDP_Close(struct req *req)
 {
 	struct vdp_entry *vdpe;
 	struct vdp_ctx *vdc;
+	uint64_t rv = 0;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	vdc = req->vdc;
 	while (!VTAILQ_EMPTY(&vdc->vdp)) {
 		vdpe = VTAILQ_FIRST(&vdc->vdp);
+		rv = vdpe->bytes_in;
+		VSLb(req->vsl, SLT_VdpAcct, "%s %ju %ju", vdpe->vdp->name,
+		    (uintmax_t)vdpe->calls, (uintmax_t)rv);
 		if (vdc->retval >= 0)
 			AN(vdpe);
 		if (vdpe != NULL) {
@@ -152,6 +158,7 @@ VDP_close(struct req *req)
 		}
 		vdc->nxt = VTAILQ_FIRST(&vdc->vdp);
 	}
+	return (rv);
 }
 
 /*--------------------------------------------------------------------*/

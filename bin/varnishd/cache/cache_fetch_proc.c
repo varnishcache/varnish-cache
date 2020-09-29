@@ -118,11 +118,11 @@ VFP_Setup(struct vfp_ctx *vc, struct worker *wrk)
  * Returns the number of bytes processed by the lowest VFP in the stack
  */
 
-size_t
+uint64_t
 VFP_Close(struct vfp_ctx *vc)
 {
 	struct vfp_entry *vfe, *tmp;
-	size_t rv = 0;
+	uint64_t rv = 0;
 
 	VTAILQ_FOREACH_SAFE(vfe, &vc->vfp, list, tmp) {
 		if (vfe->vfp->fini != NULL)
@@ -155,7 +155,7 @@ VFP_Open(struct vfp_ctx *vc)
 		if (vfe->closed != VFP_OK && vfe->closed != VFP_NULL) {
 			(void)VFP_Error(vc, "Fetch filter %s failed to open",
 			    vfe->vfp->name);
-			VFP_Close(vc);
+			(void)VFP_Close(vc);
 			return (-1);
 		}
 	}
