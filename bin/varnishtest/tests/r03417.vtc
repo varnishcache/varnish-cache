@@ -1,0 +1,14 @@
+varnishtest "Filter Keep-Alive out from beresp to resp"
+
+server s1 {
+	rxreq
+	txresp -hdr "Keep-Alive: timeout=5, max=1000"
+} -start
+
+varnish v1 -vcl+backend "" -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.Keep-Alive == <undef>
+} -run
