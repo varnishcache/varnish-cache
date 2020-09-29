@@ -27,6 +27,13 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
+Varnish Cache Next (2021-03-15)
+================================
+
+* counters MAIN.s_req_bodybytes and VBE.*.tools.beresp_bodybytes
+  are now always the number of bodybytes moved on the wire.
+
+================================
 Varnish Cache 6.5.1 (2020-09-25)
 ================================
 
