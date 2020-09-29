@@ -904,6 +904,13 @@ http_isfiltered(const struct http *fm, unsigned u, unsigned how)
 	return (0);
 }
 
+int
+http_IsFiltered(const struct http *fm, unsigned u, unsigned how)
+{
+
+	return (http_isfiltered(fm, u, how));
+}
+
 /*--------------------------------------------------------------------
  * Estimate how much workspace we need to Filter this header according
  * to 'how'.

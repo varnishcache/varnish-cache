@@ -651,11 +651,13 @@ int HTTP_IterHdrPack(struct worker *, struct objcore *, const char **);
 	 for ((ptr) = NULL; HTTP_IterHdrPack(wrk, oc, &(ptr));)
 const char *HTTP_GetHdrPack(struct worker *, struct objcore *, const char *hdr);
 enum sess_close http_DoConnection(struct http *hp);
+int http_IsFiltered(const struct http *hp, unsigned u, unsigned how);
 
-#define HTTPH_R_PASS	(1 << 0)	/* Request (c->b) in pass mode */
-#define HTTPH_R_FETCH	(1 << 1)	/* Request (c->b) for fetch */
-#define HTTPH_A_INS	(1 << 2)	/* Response (b->o) for insert */
-#define HTTPH_A_PASS	(1 << 3)	/* Response (b->o) for pass */
+#define HTTPH_R_PASS		(1 << 0)	/* Request (c->b) in pass mode */
+#define HTTPH_R_FETCH		(1 << 1)	/* Request (c->b) for fetch */
+#define HTTPH_A_INS		(1 << 2)	/* Response (b->o) for insert */
+#define HTTPH_A_PASS		(1 << 3)	/* Response (b->o) for pass */
+#define HTTPH_C_SPECIFIC	(1 << 4)	/* Connection-specific */
 
 #define HTTPH(a, b, c) extern char b[];
 #include "tbl/http_headers.h"
