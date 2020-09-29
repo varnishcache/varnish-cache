@@ -244,6 +244,9 @@ h2_build_headers(struct vsb *resp, struct req *req)
 		r = strchr(hp->hd[u].b, ':');
 		AN(r);
 
+		if (http_IsFiltered(hp, u, HTTPH_C_SPECIFIC))
+			continue; //rfc7540,l,2999,3006
+
 		hps = hp_idx[tolower(*hp->hd[u].b)];
 		sz = 1 + r - hp->hd[u].b;
 		assert(sz > 0);
@@ -297,6 +300,8 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	VSLb(req->vsl, SLT_RespProtocol, "HTTP/2.0");
+
+	(void)http_DoConnection(req->resp);
 
 	if (h2_build_headers(&resp, req)) {
 		// We ran out of workspace, return minimal 500
