@@ -8,6 +8,11 @@ server s1 {
 varnish v1 -cliok "param.set feature +http2"
 varnish v1 -vcl+backend "" -start
 
+logexpect l1 -v v1 -g request {
+	expect * 1001	ReqAcct "46 0 46 97 12345 12442"
+	expect * 1003	ReqAcct "46 0 46 102 1000 1102"
+} -start
+
 client c1 {
 	txpri
 
@@ -36,14 +41,4 @@ client c1 {
 	} -run
 } -run
 
-varnish v1 -vsl_catchup
-
-shell -match "^12345$" {
-	varnishncsa -n ${v1_name} -F '%{VSL:ReqAcct[5]}x' -d \
-		-q 'ReqHeader:stream == 1'
-}
-
-shell -match "^1000$" {
-	varnishncsa -n ${v1_name} -F '%{VSL:ReqAcct[5]}x' -d \
-		-q 'ReqHeader:stream == 3'
-}
+logexpect l1 -wait
