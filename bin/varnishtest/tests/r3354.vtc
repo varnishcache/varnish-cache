@@ -1,0 +1,35 @@
+varnishtest "Bodybytes is #bytes in bottom VFP"
+
+server s1 {
+	rxreq
+	txresp -hdr "Foo: bar" -bodylen 1000
+	rxreq
+	txresp -bodylen 500
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.do_gzip = true;
+		if (beresp.http.foo == "bar") {
+			set beresp.do_esi = true;
+		}
+	}
+} -start
+
+varnish v1 -cliok "param.set vsl_mask +VfpAcct"
+
+client c1 {
+	txreq -url /1
+	rxresp
+	expect resp.bodylen == 1000
+} -run
+
+varnish v1 -expect VBE.vcl1.s1.beresp_bodybytes == 1000
+
+client c1 {
+	txreq -url /2
+	rxresp
+	expect resp.bodylen == 500
+} -run
+
+varnish v1 -expect VBE.vcl1.s1.beresp_bodybytes == 1500

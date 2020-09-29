@@ -115,20 +115,24 @@ VFP_Setup(struct vfp_ctx *vc, struct worker *wrk)
 }
 
 /**********************************************************************
+ * Returns the number of bytes processed by the lowest VFP in the stack
  */
 
-void
+size_t
 VFP_Close(struct vfp_ctx *vc)
 {
 	struct vfp_entry *vfe, *tmp;
+	size_t rv = 0;
 
 	VTAILQ_FOREACH_SAFE(vfe, &vc->vfp, list, tmp) {
 		if (vfe->vfp->fini != NULL)
 			vfe->vfp->fini(vc, vfe);
+		rv = vfe->bytes_out;
 		VSLb(vc->wrk->vsl, SLT_VfpAcct, "%s %ju %ju", vfe->vfp->name,
-		    (uintmax_t)vfe->calls, (uintmax_t)vfe->bytes_out);
+		    (uintmax_t)vfe->calls, (uintmax_t)rv);
 		VTAILQ_REMOVE(&vc->vfp, vfe, list);
 	}
+	return (rv);
 }
 
 int

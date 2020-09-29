@@ -117,7 +117,6 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 		vfps = VFP_Suck(vfc, ptr, &l);
 		if (l > 0 && vfps != VFP_ERROR) {
 			req_bodybytes += l;
-			req->acct.req_bodybytes += l;
 			if (yet >= l)
 				yet -= l;
 			if (func != NULL) {
@@ -130,7 +129,7 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 		}
 
 	} while (vfps == VFP_OK);
-	VFP_Close(vfc);
+	req->acct.req_bodybytes += VFP_Close(vfc);
 	VSLb_ts_req(req, "ReqBody", VTIM_real());
 	if (func != NULL) {
 		HSH_DerefBoc(req->wrk, req->body_oc);
