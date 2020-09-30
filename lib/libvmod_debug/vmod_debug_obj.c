@@ -82,6 +82,14 @@ xyzzy_obj_enum(VRT_CTX, struct xyzzy_debug_obj *o, VCL_ENUM e)
 	assert(!strcmp(e, "martin"));
 }
 
+VCL_VOID v_matchproto_(td_xyzzy_obj_enum)
+xyzzy_obj_obj(VRT_CTX, struct xyzzy_debug_obj *o)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(o, VMOD_DEBUG_OBJ_MAGIC);
+}
+
 VCL_STRING v_matchproto_()
 xyzzy_obj_foo(VRT_CTX, struct xyzzy_debug_obj *o, VCL_STRING s)
 {

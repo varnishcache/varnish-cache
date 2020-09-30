@@ -36,6 +36,7 @@ varnish v1 -vcl+backend {
 
 	sub vcl_init {
 		new objx = dbg.obj();
+		objx.obj();
 		dbg.vsc_new();
 		call log;
 	}

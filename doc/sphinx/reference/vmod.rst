@@ -211,6 +211,13 @@ after the instantiation)::
 		foo.method(...);
 	}
 
+Nothing prevents a method to be named like the constructor and the
+meaning of such a method is up to the vmod author::
+
+	$Object foo(...)
+	$Method .bar(...)
+	$Method .foo(...)
+
 Object instances are represented as pointers to vmod-implemented C
 structs. Varnish only provides space to store the address of object
 instances and ensures that the right object address gets passed to C
