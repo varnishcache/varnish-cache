@@ -43,27 +43,27 @@ varnish v1 -vcl+backend {
 # Total:				93 bytes
 
 # Response body:
-# Chunk len				 5 bytes
+# Chunk len				 - bytes
 # 123					 3 bytes
-# Chunk end				 2 bytes
-# Chunk len				 5 bytes
+# Chunk end				 - bytes
+# Chunk len				 - bytes
 # abc					 3 bytes
-# Chunk end				 2 bytes
-# Chunk len				 5 bytes
+# Chunk end				 - bytes
+# Chunk len				 - bytes
 # 123					 3 bytes
-# Chunk end				 2 bytes
-# Chunk len				 5 bytes
+# Chunk end				 - bytes
+# Chunk len				 - bytes
 # def					 3 bytes
-# Chunk end				 2 bytes
-# Chunk len				 5 bytes
+# Chunk end				 - bytes
+# Chunk len				 - bytes
 # ghi					 3 bytes
-# Chunk end				 2 bytes
-# Chunked end				 5 bytes
-# Total:				55 bytes
+# Chunk end				 - bytes
+# Chunked end				 - bytes
+# Total:				15 bytes
 
 logexpect l1 -v v1 -g request {
 	expect 0 1001	Begin	"^req .* rxreq"
-	expect * =	ReqAcct		"^29 0 29 93 55 148$"
+	expect * =	ReqAcct		"^29 0 29 93 15 108$"
 	expect 0 =	End
 	expect * 1003	Begin		"^req .* esi"
 	expect * =	ReqAcct		"^0 0 0 0 12 12$"
@@ -88,4 +88,4 @@ logexpect l1 -wait
 varnish v1 -expect s_req_hdrbytes == 29
 varnish v1 -expect s_req_bodybytes == 0
 varnish v1 -expect s_resp_hdrbytes == 93
-varnish v1 -expect s_resp_bodybytes == 55
+varnish v1 -expect s_resp_bodybytes == 15

@@ -157,17 +157,11 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 	sc = V1L_Close(req->wrk, &bytes);
 	AZ(req->wrk->v1l);
 
-	/* Bytes accounting */
-	if (bytes < hdrbytes)
-		req->acct.resp_hdrbytes += bytes;
-	else {
-		req->acct.resp_hdrbytes += hdrbytes;
-		req->acct.resp_bodybytes += bytes - hdrbytes;
-	}
+	req->acct.resp_hdrbytes += hdrbytes;
+	req->acct.resp_bodybytes += VDP_Close(req);
 
 	if (sc == SC_NULL && err && req->sp->fd >= 0)
 		sc = SC_REM_CLOSE;
 	if (sc != SC_NULL)
 		Req_Fail(req, sc);
-	(void)VDP_Close(req);
 }

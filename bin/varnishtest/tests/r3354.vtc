@@ -22,20 +22,34 @@ varnish v1 -vcl+backend {
 	}
 } -start
 
-varnish v1 -cliok "param.set vsl_mask +VfpAcct"
+varnish v1 -cliok "param.set vsl_mask +VfpAcct,+VdpAcct"
+
+varnish v1 -cliok "param.set feature +esi_disable_xml_check"
 
 client c1 {
-	txreq -url /1
+	txreq -method POST -url /1 -bodylen 100
 	rxresp
 	expect resp.bodylen == 1000
 } -run
 
+varnish v1 -expect MAIN.s_req_bodybytes == 100
+varnish v1 -expect VBE.vcl1.s1.bereq_bodybytes == 100
 varnish v1 -expect VBE.vcl1.s1.beresp_bodybytes == 1000
+varnish v1 -expect MAIN.s_resp_bodybytes == 1000
+varnish v1 -vsc *bodyb*
 
 client c1 {
-	txreq -url /2
+	txreq -method POST -url /2 -nolen -hdr "Transfer-encoding: chunked"
+	chunkedlen 100
+	chunkedlen 100
+	chunkedlen 100
+	chunkedlen 0
 	rxresp
 	expect resp.bodylen == 500
 } -run
 
+varnish v1 -expect MAIN.s_req_bodybytes == 400
+varnish v1 -expect VBE.vcl1.s1.bereq_bodybytes >= 400
 varnish v1 -expect VBE.vcl1.s1.beresp_bodybytes == 1500
+varnish v1 -expect MAIN.s_resp_bodybytes == 1500
+varnish v1 -vsc *bodyb*

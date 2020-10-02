@@ -39,8 +39,7 @@ varnish v1 -vcl+backend {
 
 logexpect l1 -v v1 -g request {
 	expect 0 1001   Begin   "^req .* rxreq"
-	# ReqAcct body counts include chunked overhead
-	expect * =	ReqAcct	"^29 0 29 202 104 306$"
+	expect * =	ReqAcct	"^29 0 29 202 75 277$"
 	expect 0 =      End
 } -start
 
@@ -62,9 +61,8 @@ logexpect l4 -v v1 -g request {
 
 logexpect l5 -v v1 -g request {
 	expect * 1005   Begin   "^req .* rxreq"
-	# ReqAcct body counts include chunked overhead
 	# Header bytes is 5 larger than in l1 due to two item X-Varnish hdr
-	expect * =	ReqAcct	"^29 0 29 207 104 311$"
+	expect * =	ReqAcct	"^29 0 29 207 75 282$"
 	expect 0 =      End
 } -start
 
