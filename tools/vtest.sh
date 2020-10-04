@@ -57,6 +57,9 @@ enable_gcov=false
 
 SSH_DST="-p 203 vtest@varnish-cache.org"
 
+# make sure we use our own key
+unset SSH_AUTH_SOCK
+
 export REPORTDIR=`pwd`/_report
 export VTEST_REPORT="${REPORTDIR}/_log"
 
