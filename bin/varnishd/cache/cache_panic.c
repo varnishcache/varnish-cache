@@ -53,6 +53,7 @@
 #include "vtim.h"
 #include "vcs.h"
 #include "vtcp.h"
+#include "vsa.h"
 
 /*
  * The panic string is constructed in a VSB, then copied to the
@@ -540,6 +541,8 @@ pan_req(struct vsb *vsb, const struct req *req)
 		char p[VTCP_PORTBUFSIZE];				\
 									\
 		(void) SES_Get_##field##_addr((sp), &sa);		\
+		if (! VSA_Sane(sa))					\
+			break;						\
 		VTCP_name(sa, h, sizeof h, p, sizeof p);		\
 		VSB_printf((vsb), "%s.ip = %s:%s,\n", #field, h, p);	\
 	} while (0)
