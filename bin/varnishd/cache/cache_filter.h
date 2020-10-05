@@ -140,6 +140,7 @@ struct vdp_ctx {
 	unsigned		magic;
 #define VDP_CTX_MAGIC		0xee501df7
 	int			retval;
+	uint64_t		bytes_done;
 	struct vdp_entry_s	vdp;
 	struct vdp_entry	*nxt;
 	struct worker		*wrk;

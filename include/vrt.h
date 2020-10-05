@@ -52,6 +52,8 @@
  * Whenever something is deleted or changed in a way which is not
  * binary/load-time compatible, increment MAJOR version
  *
+ * 13.0 (2020-03-15)
+ *	Calling convention for VDP implementation changed
  * 12.0 (2020-09-15)
  *	Added VRT_DirectorResolve()
  *	Added VCL_STRING VRT_BLOB_string(VRT_CTX, VCL_BLOB)
@@ -166,7 +168,7 @@
  *	vrt_acl type added
  */
 
-#define VRT_MAJOR_VERSION	12U
+#define VRT_MAJOR_VERSION	13U
 
 #define VRT_MINOR_VERSION	0U
 

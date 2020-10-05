@@ -83,8 +83,9 @@ VDP_bytes(struct vdp_ctx *vdx, enum vdp_action act, const void *ptr, ssize_t len
 	/* Call the present layer, while pointing to the next layer down */
 	vdx->nxt = VTAILQ_NEXT(vdpe, list);
 	vdpe->calls++;
-	vdpe->bytes_in += len;
+	vdx->bytes_done = len;
 	retval = vdpe->vdp->bytes(vdx, act, &vdpe->priv, ptr, len);
+	vdpe->bytes_in += vdx->bytes_done;
 	if (retval && (vdx->retval == 0 || retval < vdx->retval))
 		vdx->retval = retval; /* Latch error value */
 	vdx->nxt = vdpe;

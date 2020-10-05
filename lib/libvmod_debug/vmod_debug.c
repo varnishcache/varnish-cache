@@ -111,17 +111,18 @@ xyzzy_rot13_init(struct req *req, void **priv)
 }
 
 static int v_matchproto_(vdp_bytes_f)
-xyzzy_rot13_bytes(struct req *req, enum vdp_action act, void **priv,
+xyzzy_rot13_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
 	char *q;
 	const char *pp;
 	int i, j, retval = 0;
 
+	CHECK_OBJ_NOTNULL(vdx, VDP_CTX_MAGIC);
 	AN(priv);
 	AN(*priv);
 	if (len <= 0)
-		return (VDP_bytes(req, act, ptr, len));
+		return (VDP_bytes(vdx, act, ptr, len));
 	AN(ptr);
 	if (act != VDP_END)
 		act = VDP_FLUSH;
@@ -136,14 +137,14 @@ xyzzy_rot13_bytes(struct req *req, enum vdp_action act, void **priv,
 		else
 			q[i] = pp[j];
 		if (i == ROT13_BUFSZ - 1) {
-			retval = VDP_bytes(req, act, q, ROT13_BUFSZ);
+			retval = VDP_bytes(vdx, act, q, ROT13_BUFSZ);
 			if (retval != 0)
 				return (retval);
 			i = -1;
 		}
 	}
 	if (i >= 0)
-		retval = VDP_bytes(req, act, q, i + 1L);
+		retval = VDP_bytes(vdx, act, q, i + 1L);
 	return (retval);
 }
 
