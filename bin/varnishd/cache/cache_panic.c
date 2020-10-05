@@ -52,6 +52,7 @@
 #include "vcli_serve.h"
 #include "vtim.h"
 #include "vcs.h"
+#include "vtcp.h"
 
 /*
  * The panic string is constructed in a VSB, then copied to the
@@ -533,6 +534,16 @@ pan_req(struct vsb *vsb, const struct req *req)
 
 /*--------------------------------------------------------------------*/
 
+#define pan_addr(vsb, sp, field) do {					\
+		struct suckaddr *sa;					\
+		char h[VTCP_ADDRBUFSIZE];				\
+		char p[VTCP_PORTBUFSIZE];				\
+									\
+		(void) SES_Get_##field##_addr((sp), &sa);		\
+		VTCP_name(sa, h, sizeof h, p, sizeof p);		\
+		VSB_printf((vsb), "%s.ip = %s:%s,\n", #field, h, p);	\
+	} while (0)
+
 static void
 pan_sess(struct vsb *vsb, const struct sess *sp)
 {
@@ -561,6 +572,7 @@ pan_sess(struct vsb *vsb, const struct sess *sp)
 		VSB_cat(vsb, "}");
 	}
 	VSB_cat(vsb, "\n");
+	// duplicated below, remove ?
 	ci = SES_Get_String_Attr(sp, SA_CLIENT_IP);
 	cp = SES_Get_String_Attr(sp, SA_CLIENT_PORT);
 	if (VALID_OBJ(sp->listen_sock, LISTEN_SOCK_MAGIC))
@@ -568,6 +580,17 @@ pan_sess(struct vsb *vsb, const struct sess *sp)
 			   sp->listen_sock->endpoint);
 	else
 		VSB_printf(vsb, "client = %s %s <unknown>\n", ci, cp);
+
+	if (VALID_OBJ(sp->listen_sock, LISTEN_SOCK_MAGIC)) {
+		VSB_printf(vsb, "local.endpoint = %s,\n",
+			   sp->listen_sock->endpoint);
+		VSB_printf(vsb, "local.socket = %s,\n",
+			   sp->listen_sock->name);
+	}
+	pan_addr(vsb, sp, local);
+	pan_addr(vsb, sp, remote);
+	pan_addr(vsb, sp, server);
+	pan_addr(vsb, sp, client);
 
 	VSB_indent(vsb, -2);
 	VSB_cat(vsb, "},\n");
