@@ -354,7 +354,7 @@ vdp_gunzip_fini(struct req *req, void **priv)
 }
 
 static int v_matchproto_(vdp_bytes_f)
-vdp_gunzip_bytes(struct req *req, enum vdp_action act, void **priv,
+vdp_gunzip_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
 	enum vgzret_e vr;
@@ -363,8 +363,8 @@ vdp_gunzip_bytes(struct req *req, enum vdp_action act, void **priv,
 	struct worker *wrk;
 	struct vgz *vg;
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	wrk = req->wrk;
+	CHECK_OBJ_NOTNULL(vdx, VDP_CTX_MAGIC);
+	wrk = vdx->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	(void)act;
 
@@ -386,8 +386,8 @@ vdp_gunzip_bytes(struct req *req, enum vdp_action act, void **priv,
 		if (vr < VGZ_OK)
 			return (-1);
 		if (vg->m_len == vg->m_sz || vr != VGZ_OK) {
-			if (VDP_bytes(req, VDP_FLUSH, vg->m_buf, vg->m_len))
-				return (req->vdc->retval);
+			if (VDP_bytes(vdx, VDP_FLUSH, vg->m_buf, vg->m_len))
+				return (vdx->retval);
 			vg->m_len = 0;
 			VGZ_Obuf(vg, vg->m_buf, vg->m_sz);
 		}

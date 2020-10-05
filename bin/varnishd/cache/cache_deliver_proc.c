@@ -58,17 +58,16 @@
  * r > 0:  Stop, breaks out early without error condition
  */
 int
-VDP_bytes(struct req *req, enum vdp_action act, const void *ptr, ssize_t len)
+VDP_bytes(struct vdp_ctx *vdx, enum vdp_action act, const void *ptr, ssize_t len)
 {
 	int retval;
 	struct vdp_entry *vdpe;
-	struct vdp_ctx *vdc;
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	vdc = req->vdc;
-	if (vdc->retval)
-		return (vdc->retval);
-	vdpe = vdc->nxt;
+	CHECK_OBJ_NOTNULL(vdx, VDP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vdx->req, REQ_MAGIC);
+	if (vdx->retval)
+		return (vdx->retval);
+	vdpe = vdx->nxt;
 	CHECK_OBJ_NOTNULL(vdpe, VDP_ENTRY_MAGIC);
 
 	/* at most one VDP_END call */
@@ -82,14 +81,14 @@ VDP_bytes(struct req *req, enum vdp_action act, const void *ptr, ssize_t len)
 		assert(act == VDP_FLUSH);
 
 	/* Call the present layer, while pointing to the next layer down */
-	vdc->nxt = VTAILQ_NEXT(vdpe, list);
+	vdx->nxt = VTAILQ_NEXT(vdpe, list);
 	vdpe->calls++;
 	vdpe->bytes_in += len;
-	retval = vdpe->vdp->bytes(req, act, &vdpe->priv, ptr, len);
-	if (retval && (vdc->retval == 0 || retval < vdc->retval))
-		vdc->retval = retval; /* Latch error value */
-	vdc->nxt = vdpe;
-	return (vdc->retval);
+	retval = vdpe->vdp->bytes(vdx, act, &vdpe->priv, ptr, len);
+	if (retval && (vdx->retval == 0 || retval < vdx->retval))
+		vdx->retval = retval; /* Latch error value */
+	vdx->nxt = vdpe;
+	return (vdx->retval);
 }
 
 int
@@ -177,11 +176,14 @@ VDP_DeliverObj(struct req *req)
 	int r, final;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	req->vdc->req = req;
+	req->vdc->vsl = req->vsl;
+	req->vdc->wrk = req->wrk;
 	final = req->objcore->flags & (OC_F_PRIVATE | OC_F_HFM | OC_F_HFP)
 	    ? 1 : 0;
-	r = ObjIterate(req->wrk, req->objcore, req, vdp_objiterator, final);
+	r = ObjIterate(req->wrk, req->objcore, req->vdc, vdp_objiterator, final);
 	if (r == 0)
-		r = VDP_bytes(req, VDP_END, NULL, 0);
+		r = VDP_bytes(req->vdc, VDP_END, NULL, 0);
 	if (r < 0)
 		return (r);
 	return (0);

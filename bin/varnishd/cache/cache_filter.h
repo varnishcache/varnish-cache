@@ -110,8 +110,10 @@ typedef int vdp_init_f(struct req *, void **priv);
  *	positive:	Don't push this VDP anyway
  */
 
+struct vdp_ctx;
+
 typedef int vdp_fini_f(struct req *, void **priv);
-typedef int vdp_bytes_f(struct req *, enum vdp_action, void **priv,
+typedef int vdp_bytes_f(struct vdp_ctx *, enum vdp_action, void **priv,
     const void *ptr, ssize_t len);
 
 struct vdp {
@@ -140,9 +142,12 @@ struct vdp_ctx {
 	int			retval;
 	struct vdp_entry_s	vdp;
 	struct vdp_entry	*nxt;
+	struct worker		*wrk;
+	struct vsl_log		*vsl;
+	struct req		*req;
 };
 
-int VDP_bytes(struct req *, enum vdp_action act, const void *ptr, ssize_t len);
+int VDP_bytes(struct vdp_ctx *, enum vdp_action act, const void *ptr, ssize_t len);
 int VDP_Push(struct req *, const struct vdp *, void *priv);
 void VRT_AddVDP(VRT_CTX, const struct vdp *);
 void VRT_RemoveVDP(VRT_CTX, const struct vdp *);
