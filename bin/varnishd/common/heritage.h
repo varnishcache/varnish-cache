@@ -89,6 +89,9 @@ struct heritage {
 
 	unsigned			min_vcl_version;
 	unsigned			max_vcl_version;
+
+	int				argc;
+	char * const *			argv;
 };
 
 extern struct heritage heritage;

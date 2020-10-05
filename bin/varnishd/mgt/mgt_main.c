@@ -489,6 +489,9 @@ main(int argc, char * const *argv)
 	struct vsb *vsb;
 	pid_t pid;
 
+	heritage.argc = argc;
+	heritage.argv = argv;
+
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
 

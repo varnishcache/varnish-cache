@@ -713,6 +713,22 @@ pan_threadattr(struct vsb *vsb)
 }
 #endif
 
+static void
+pan_argv(struct vsb *vsb)
+{
+	int i;
+
+	VSB_printf(pan_vsb, "argv = {\n");
+	VSB_indent(vsb, 2);
+	for (i = 0; i < heritage.argc; i++) {
+		VSB_printf(vsb, "[%d] = ", i);
+		VSB_quote(vsb, heritage.argv[i], -1, VSB_QUOTE_CSTR);
+		VSB_cat(vsb, ",\n");
+	}
+	VSB_cat(vsb, "}\n");
+	VSB_indent(vsb, -2);
+
+}
 /*--------------------------------------------------------------------*/
 
 static void __attribute__((__noreturn__))
@@ -780,6 +796,8 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 
 	if (err)
 		VSB_printf(pan_vsb, "errno = %d (%s)\n", err, vstrerror(err));
+
+	pan_argv(pan_vsb);
 
 	VSB_printf(pan_vsb, "pthread.self = %p\n", TRUST_ME(pthread_self()));
 
