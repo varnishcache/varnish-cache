@@ -559,12 +559,19 @@ pan_sess(struct vsb *vsb, const struct sess *sp)
 		return;
 	VSB_indent(vsb, 2);
 	PAN_CheckMagic(vsb, sp, SESS_MAGIC);
-	xp = XPORT_ByNumber(sp->sattr[SA_TRANSPORT]);
 	VSB_printf(vsb, "fd = %d, vxid = %u,\n",
 	    sp->fd, VXID(sp->vxid));
 	VSB_printf(vsb, "t_open = %f,\n", sp->t_open);
 	VSB_printf(vsb, "t_idle = %f,\n", sp->t_idle);
+
+	if (! VALID_OBJ(sp, SESS_MAGIC)) {
+		VSB_indent(vsb, -2);
+		VSB_cat(vsb, "},\n");
+		return;
+	}
+
 	WS_Panic(sp->ws, vsb);
+	xp = XPORT_ByNumber(sp->sattr[SA_TRANSPORT]);
 	VSB_printf(vsb, "transport = %s",
 	    xp == NULL ? "<none>" : xp->name);
 	if (xp != NULL && xp->sess_panic != NULL) {
@@ -575,6 +582,7 @@ pan_sess(struct vsb *vsb, const struct sess *sp)
 		VSB_cat(vsb, "}");
 	}
 	VSB_cat(vsb, "\n");
+
 	// duplicated below, remove ?
 	ci = SES_Get_String_Attr(sp, SA_CLIENT_IP);
 	cp = SES_Get_String_Attr(sp, SA_CLIENT_PORT);
