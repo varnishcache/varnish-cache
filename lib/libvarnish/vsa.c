@@ -357,8 +357,7 @@ VSA_Get_Proto(const struct suckaddr *sua)
 int
 VSA_Sane(const struct suckaddr *sua)
 {
-	CHECK_OBJ_NOTNULL(sua, SUCKADDR_MAGIC);
-	return (sua_len(&sua->sa) != 0);
+	return (VALID_OBJ(sua, SUCKADDR_MAGIC) && sua_len(&sua->sa) != 0);
 }
 
 int
