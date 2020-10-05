@@ -114,3 +114,4 @@ logexpect l1 -wait
 logexpect l2 -wait
 logexpect l3 -wait
 varnish v1 -expect esi_errors == 18
+varnish v1 -expect MAIN.s_resp_bodybytes == 472

@@ -35,6 +35,7 @@ client c1 {
 } -run
 
 logexpect l1 -wait
+varnish v1 -expect MAIN.s_resp_bodybytes == 57
 
 varnish v1  -cli "param.set feature +esi_disable_xml_check"
 
@@ -46,3 +47,4 @@ client c1 {
 	expect resp.http.transfer-encoding == "chunked"
 } -run
 varnish v1 -expect esi_errors == 0
+varnish v1 -expect MAIN.s_resp_bodybytes == 79

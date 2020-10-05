@@ -84,6 +84,7 @@ client c1 {
 
 client c1 -run
 varnish v1 -expect esi_errors == 0
+varnish v1 -expect MAIN.s_resp_bodybytes == 150
 
 logexpect l1 -wait
 logexpect l2 -wait

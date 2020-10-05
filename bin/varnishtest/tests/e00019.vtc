@@ -77,3 +77,4 @@ logexpect l1 -wait
 
 varnish v1 -expect esi_errors == 5
 varnish v1 -expect esi_warnings == 1
+varnish v1 -expect MAIN.s_resp_bodybytes == 65856

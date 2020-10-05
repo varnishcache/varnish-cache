@@ -475,7 +475,7 @@ static inline int
 ved_bytes(struct req *req, struct ecx *ecx, enum vdp_action act,
     const void *ptr, ssize_t len)
 {
-	req->acct.resp_bodybytes += len;
+	(void)req;
 	if (act == VDP_END)
 		act = VDP_FLUSH;
 	return (VDP_bytes(ecx->preq, act, ptr, len));
@@ -871,5 +871,5 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 	if (i && req->doclose == SC_NULL)
 		req->doclose = SC_REM_CLOSE;
 
-	(void)VDP_Close(req);
+	req->acct.resp_bodybytes += VDP_Close(req);
 }
