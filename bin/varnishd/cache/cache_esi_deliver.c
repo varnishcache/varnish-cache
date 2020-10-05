@@ -472,10 +472,9 @@ const struct vdp VDP_esi = {
  * Push bytes to preq
  */
 static inline int
-ved_bytes(struct req *req, struct ecx *ecx, enum vdp_action act,
+ved_bytes(struct ecx *ecx, enum vdp_action act,
     const void *ptr, ssize_t len)
 {
-	(void)req;
 	if (act == VDP_END)
 		act = VDP_FLUSH;
 	return (VDP_bytes(ecx->preq, act, ptr, len));
@@ -521,7 +520,7 @@ ved_pretend_gzip_bytes(struct req *req, enum vdp_action act, void **priv,
 
 	(void)priv;
 	if (l == 0)
-		return (ved_bytes(req, ecx, act, pv, l));
+		return (ved_bytes(ecx, act, pv, l));
 
 	p = pv;
 
@@ -537,23 +536,23 @@ ved_pretend_gzip_bytes(struct req *req, enum vdp_action act, void **priv,
 	while (l > 0) {
 		if (l >= 65535) {
 			lx = 65535;
-			if (ved_bytes(req, ecx, VDP_NULL, buf1, sizeof buf1))
+			if (ved_bytes(ecx, VDP_NULL, buf1, sizeof buf1))
 				return (-1);
 		} else {
 			lx = (uint16_t)l;
 			buf2[0] = 0;
 			vle16enc(buf2 + 1, lx);
 			vle16enc(buf2 + 3, ~lx);
-			if (ved_bytes(req, ecx, VDP_NULL, buf2, sizeof buf2))
+			if (ved_bytes(ecx, VDP_NULL, buf2, sizeof buf2))
 				return (-1);
 		}
-		if (ved_bytes(req, ecx, VDP_NULL, p, lx))
+		if (ved_bytes(ecx, VDP_NULL, p, lx))
 			return (-1);
 		l -= lx;
 		p += lx;
 	}
 	/* buf1 & buf2 is local, have to flush */
-	return (ved_bytes(req, ecx, VDP_FLUSH, NULL, 0));
+	return (ved_bytes(ecx, VDP_FLUSH, NULL, 0));
 }
 
 static const struct vdp ved_pretend_gz = {
@@ -623,6 +622,7 @@ ved_gzgz_bytes(struct req *req, enum vdp_action act, void **priv,
 	ssize_t dl;
 	ssize_t l;
 
+	(void)req;
 	CAST_OBJ_NOTNULL(foo, *priv, VED_FOO_MAGIC);
 	pp = ptr;
 	if (len > 0) {
@@ -643,7 +643,7 @@ ved_gzgz_bytes(struct req *req, enum vdp_action act, void **priv,
 		if (dl > 0) {
 			if (dl > len)
 				dl = len;
-			if (ved_bytes(req, foo->ecx, act, pp, dl))
+			if (ved_bytes(foo->ecx, act, pp, dl))
 				return(-1);
 			foo->ll += dl;
 			len -= dl;
@@ -654,7 +654,7 @@ ved_gzgz_bytes(struct req *req, enum vdp_action act, void **priv,
 		/* Remove the "LAST" bit */
 		foo->dbits[0] = *pp;
 		foo->dbits[0] &= ~(1U << (foo->last & 7));
-		if (ved_bytes(req, foo->ecx, act, foo->dbits, 1))
+		if (ved_bytes(foo->ecx, act, foo->dbits, 1))
 			return (-1);
 		foo->ll++;
 		len--;
@@ -666,7 +666,7 @@ ved_gzgz_bytes(struct req *req, enum vdp_action act, void **priv,
 		if (dl > 0) {
 			if (dl > len)
 				dl = len;
-			if (ved_bytes(req, foo->ecx, act, pp, dl))
+			if (ved_bytes(foo->ecx, act, pp, dl))
 				return (-1);
 			foo->ll += dl;
 			len -= dl;
@@ -728,7 +728,7 @@ ved_gzgz_bytes(struct req *req, enum vdp_action act, void **priv,
 		default:
 			WRONG("compiler must be broken");
 		}
-		if (ved_bytes(req, foo->ecx, act, foo->dbits + 1, foo->lpad))
+		if (ved_bytes(foo->ecx, act, foo->dbits + 1, foo->lpad))
 			return (-1);
 	}
 	if (len > 0) {
@@ -759,6 +759,7 @@ ved_gzgz_fini(struct req *req, void **priv)
 	uint32_t ilen;
 	struct ved_foo *foo;
 
+	(void)req;
 	CAST_OBJ_NOTNULL(foo, *priv, VED_FOO_MAGIC);
 	*priv = NULL;
 
@@ -768,7 +769,7 @@ ved_gzgz_fini(struct req *req, void **priv)
 	 *
 	 * Could rewrite use VDP_END
 	 */
-	(void)ved_bytes(req, foo->ecx, VDP_FLUSH, NULL, 0);
+	(void)ved_bytes(foo->ecx, VDP_FLUSH, NULL, 0);
 
 	icrc = vle32dec(foo->tailbuf);
 	ilen = vle32dec(foo->tailbuf + 4);
@@ -805,7 +806,7 @@ ved_vdp_bytes(struct req *req, enum vdp_action act, void **priv,
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CAST_OBJ_NOTNULL(ecx, *priv, ECX_MAGIC);
-	return (ved_bytes(req, ecx, act, ptr, len));
+	return (ved_bytes(ecx, act, ptr, len));
 }
 
 static const struct vdp ved_ved = {
