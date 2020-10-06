@@ -424,7 +424,6 @@ varnish_launch(struct varnish *v)
 	VSB_cat(vsb, " -l 2m");
 	VSB_cat(vsb, " -p auto_restart=off");
 	VSB_cat(vsb, " -p syslog_cli_traffic=off");
-	VSB_cat(vsb, " -p sigsegv_handler=on");
 	VSB_cat(vsb, " -p thread_pool_min=10");
 	VSB_cat(vsb, " -p debug=+vtc_mode");
 	VSB_cat(vsb, " -p vsl_mask=+Debug");
