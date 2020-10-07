@@ -65,7 +65,6 @@ nobase_pkginclude_HEADERS += \
 	vbm.h \
 	vcl.h \
 	vcs.h \
-	verrno.h \
 	vmod_abi.h \
 	vqueue.h \
 	vre.h \

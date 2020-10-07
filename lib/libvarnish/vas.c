@@ -41,6 +41,20 @@
 
 #include "vas.h"
 
+const char *
+vstrerror(int e)
+{
+	const char *p;
+	int oerrno = errno;
+
+	p = strerror(e);
+	if (p != NULL)
+		return (p);
+
+	errno = oerrno;
+	return ("strerror(3) returned NULL");
+}
+
 vas_f *VAS_Fail_Func v_noreturn_;
 
 void v_noreturn_
