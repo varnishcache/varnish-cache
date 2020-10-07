@@ -560,6 +560,8 @@ VTCP_Check(ssize_t a)
 {
 	if (a == 0)
 		return (1);
+	if (a > 0)
+		return (1);
 	if (errno == ECONNRESET || errno == ENOTCONN || errno == EPIPE)
 		return (1);
 	/* Accept EAGAIN (and EWOULDBLOCK in case they are not the same)
