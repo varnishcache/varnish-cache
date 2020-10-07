@@ -72,7 +72,7 @@ client c1 {
 	txreq -hdr "x-vtc-response-code: 451"
 	rxresp
 	expect resp.reason == "Unavailable For Legal Reasons"
-	
+
 	txreq -hdr "x-vtc-response-code: 506"
 	rxresp
 	expect resp.reason == "Variant Also Negotiates"

@@ -88,9 +88,9 @@ varnish v1 -vcl+backend {
 	sub vcl_backend_fetch {
 	    if (bereq.http.layered) {
 		call backend_fetch_layered;
-            } else if (bereq.http.resolve) {
-                call backend_fetch_layered;
-                set bereq.backend = bereq.backend.resolve();
+	    } else if (bereq.http.resolve) {
+		call backend_fetch_layered;
+		set bereq.backend = bereq.backend.resolve();
 	    } else {
 		call backend_fetch_direct;
 	    }

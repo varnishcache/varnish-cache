@@ -57,7 +57,7 @@ varnish v1 -vcl+backend {
 	sub vcl_deliver {
 		set resp.http.foo = resp.http.foox;
 	}
-} 
+}
 
 client c1 {
 	txreq -hdr "Baax: 1" -hdr "Baax: 2" -hdr "Connection: baax"

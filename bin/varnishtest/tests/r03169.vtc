@@ -21,9 +21,9 @@ server s1 {
 
 varnish v1 -vcl+backend {
     sub vcl_backend_response {
-        set beresp.ttl = 1s;
-        set beresp.grace = 0s;
-        set beresp.keep = 1d;
+	set beresp.ttl = 1s;
+	set beresp.grace = 0s;
+	set beresp.keep = 1d;
     }
 } -start
 

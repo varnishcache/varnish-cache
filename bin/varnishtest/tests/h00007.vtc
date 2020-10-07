@@ -45,7 +45,7 @@ varnish v1 -vcl+backend {
 		set resp.http.notstdip =
 		    std.ip("" + client.ip, resolve = false) !~ localhost;
 	}
-} 
+}
 
 client c1 -connect ${h1_fe1_sock} {
     txreq -url "/"
