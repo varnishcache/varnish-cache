@@ -620,7 +620,7 @@ VPX_Send_Proxy(int fd, int version, const struct sess *sp)
 	struct suckaddr *sac, *sas;
 	char ha[VTCP_ADDRBUFSIZE];
 	char pa[VTCP_PORTBUFSIZE];
-	int proto;
+	int proto, r;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	assert(version == 1 || version == 2);
@@ -667,7 +667,9 @@ VPX_Send_Proxy(int fd, int version, const struct sess *sp)
 		WRONG("Wrong proxy version");
 
 	AZ(VSB_finish(vsb));
-	(void)VSB_tofile(vsb, fd);	// XXX: Error handling ?
+	r = write(fd, VSB_data(vsb), VSB_len(vsb));
+	VTCP_Assert(r);
+
 	if (!DO_DEBUG(DBG_PROTOCOL)) {
 		VSB_delete(vsb);
 		return;
