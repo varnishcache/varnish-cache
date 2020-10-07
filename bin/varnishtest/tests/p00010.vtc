@@ -1,0 +1,101 @@
+varnishtest "status codes"
+
+server s1 {} -start
+
+varnish v1 -vcl+backend {
+	import std;
+	sub vcl_recv {
+		return (synth(std.integer(req.http.x-vtc-response-code, 999)));
+	}
+} -start
+
+client c1 {
+	txreq -hdr "x-vtc-response-code: 102"
+	rxresp
+	expect resp.reason == "Processing"
+
+	txreq -hdr "x-vtc-response-code: 103"
+	rxresp
+	expect resp.reason == "Early Hints"
+
+	txreq -hdr "x-vtc-response-code: 207"
+	rxresp
+	expect resp.reason == "Multi-Status"
+
+	txreq -hdr "x-vtc-response-code: 208"
+	rxresp
+	expect resp.reason == "Already Reported"
+
+	txreq -hdr "x-vtc-response-code: 226"
+	rxresp
+	expect resp.reason == "IM Used"
+
+	txreq -hdr "x-vtc-response-code: 308"
+	rxresp
+	expect resp.reason == "Permanent Redirect"
+
+	txreq -hdr "x-vtc-response-code: 421"
+	rxresp
+	expect resp.reason == "Misdirected Request"
+
+	txreq -hdr "x-vtc-response-code: 422"
+	rxresp
+	expect resp.reason == "Unprocessable Entity"
+
+	txreq -hdr "x-vtc-response-code: 423"
+	rxresp
+	expect resp.reason == "Locked"
+
+	txreq -hdr "x-vtc-response-code: 424"
+	rxresp
+	expect resp.reason == "Failed Dependency"
+
+	txreq -hdr "x-vtc-response-code: 425"
+	rxresp
+	expect resp.reason == "Too Early"
+
+	txreq -hdr "x-vtc-response-code: 426"
+	rxresp
+	expect resp.reason == "Upgrade Required"
+
+	txreq -hdr "x-vtc-response-code: 428"
+	rxresp
+	expect resp.reason == "Precondition Required"
+
+	txreq -hdr "x-vtc-response-code: 429"
+	rxresp
+	expect resp.reason == "Too Many Requests"
+
+	txreq -hdr "x-vtc-response-code: 431"
+	rxresp
+	expect resp.reason == "Request Header Fields Too Large"
+	txreq -hdr "x-vtc-response-code: 451"
+	rxresp
+	expect resp.reason == "Unavailable For Legal Reasons"
+	
+	txreq -hdr "x-vtc-response-code: 506"
+	rxresp
+	expect resp.reason == "Variant Also Negotiates"
+
+	txreq -hdr "x-vtc-response-code: 507"
+	rxresp
+	expect resp.reason == "Insufficient Storage"
+
+	txreq -hdr "x-vtc-response-code: 508"
+	rxresp
+	expect resp.reason == "Loop Detected"
+
+	txreq -hdr "x-vtc-response-code: 510"
+	rxresp
+	expect resp.reason == "Not Extended"
+
+	txreq -hdr "x-vtc-response-code: 511"
+	rxresp
+	expect resp.reason == "Network Authentication Required"
+
+	txreq -hdr "x-vtc-response-code: vtc"
+	rxresp
+	expect resp.status == 999
+	expect resp.reason == "Unknown HTTP Status"
+} -run
+
