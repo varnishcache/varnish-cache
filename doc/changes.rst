@@ -30,7 +30,9 @@ release process.
 Varnish Cache 6.0.7 (YYYY-MM-DD)
 ================================
 
-* Add weighted backend to vmod_shard.
+* Add support for more HTTP response code reasons (3428_).
+
+* Add weighted backends to vmod_shard.
 
 * Fix an issue where an undefined value is returned when converting
   a VCL_TIME to a string. (3308_)
@@ -75,6 +77,7 @@ Varnish Cache 6.0.7 (YYYY-MM-DD)
 
 * Expose the master and worker PIDs via the CLI: `varnishadm pid`. (3171_)
 
+.. _3428: https://github.com/varnishcache/varnish-cache/pull/3428
 .. _3308: https://github.com/varnishcache/varnish-cache/pull/3308
 .. _3385: https://github.com/varnishcache/varnish-cache/issues/3385
 .. _3361: https://github.com/varnishcache/varnish-cache/issues/3361
