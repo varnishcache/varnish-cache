@@ -35,7 +35,7 @@ struct suckaddr;
 #define VTCP_ADDRBUFSIZE		64
 #define VTCP_PORTBUFSIZE		16
 
-int VTCP_Check(int a);
+int VTCP_Check(ssize_t a);
 #define VTCP_Assert(a) assert(VTCP_Check(a))
 
 struct suckaddr *VTCP_my_suckaddr(int sock);
