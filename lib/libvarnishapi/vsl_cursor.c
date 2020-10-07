@@ -33,12 +33,15 @@
 
 #include "config.h"
 
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+
 #include <fcntl.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
 #include <unistd.h>
 
 #include "vdef.h"
@@ -399,9 +402,115 @@ static const struct vslc_tbl vslc_file_tbl = {
 	.check		= NULL,
 };
 
+struct vslc_mmap {
+	unsigned			magic;
+#define VSLC_MMAP_MAGIC			0x7de15f61
+	int				fd;
+	char				*b;
+	char				*e;
+	struct VSL_cursor		cursor;
+	struct VSLC_ptr			next;
+};
+
+static void
+vslc_mmap_delete(const struct VSL_cursor *cursor)
+{
+	struct vslc_mmap *c;
+
+	CAST_OBJ_NOTNULL(c, cursor->priv_data, VSLC_MMAP_MAGIC);
+	assert(&c->cursor == cursor);
+	AZ(munmap(c->b, c->e - c->b));
+	FREE_OBJ(c);
+}
+
+static enum vsl_status v_matchproto_(vslc_next_f)
+vslc_mmap_next(const struct VSL_cursor *cursor)
+{
+	struct vslc_mmap *c;
+	const char *t;
+
+	CAST_OBJ_NOTNULL(c, cursor->priv_data, VSLC_MMAP_MAGIC);
+	assert(&c->cursor == cursor);
+	c->cursor.rec = c->next;
+	t = TRUST_ME(c->cursor.rec.ptr);
+	if (t == c->e)
+		return (vsl_e_eof);
+	c->next.ptr = VSL_NEXT(c->next.ptr);
+	t = TRUST_ME(c->next.ptr);
+	if (t > c->e)
+		return (vsl_e_io);
+	return (vsl_more);
+}
+
+static enum vsl_status v_matchproto_(vslc_reset_f)
+vslc_mmap_reset(const struct VSL_cursor *cursor)
+{
+	struct vslc_mmap *c;
+
+	CAST_OBJ_NOTNULL(c, cursor->priv_data, VSLC_MMAP_MAGIC);
+	assert(&c->cursor == cursor);
+	return (vsl_e_eof);
+}
+
+static enum vsl_check v_matchproto_(vslc_check_f)
+vslc_mmap_check(const struct VSL_cursor *cursor, const struct VSLC_ptr *ptr)
+{
+	struct vslc_mmap *c;
+
+	CAST_OBJ_NOTNULL(c, cursor->priv_data, VSLC_MMAP_MAGIC);
+	assert(&c->cursor == cursor);
+	AN(ptr->ptr);
+	return (vsl_check_valid);
+}
+
+static const struct vslc_tbl vslc_mmap_tbl = {
+	.magic		= VSLC_TBL_MAGIC,
+	.delete		= vslc_mmap_delete,
+	.next		= vslc_mmap_next,
+	.reset		= vslc_mmap_reset,
+	.check		= vslc_mmap_check,
+};
+
+static struct VSL_cursor *
+vsl_cursor_mmap(struct VSL_data *vsl, int fd)
+{
+	struct vslc_mmap *c;
+	struct stat st[1];
+	void *p;
+
+	AZ(fstat(fd, st));
+	if ((st->st_mode & S_IFMT) != S_IFREG)
+		return (MAP_FAILED);
+
+	assert(st->st_size >= sizeof VSL_FILE_ID);
+	p = mmap(NULL, st->st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+	if (p == MAP_FAILED) {
+		vsl_diag(vsl, "Cannot mmap: %s", strerror(errno));
+		return (MAP_FAILED);
+	}
+
+	ALLOC_OBJ(c, VSLC_MMAP_MAGIC);
+	if (c == NULL) {
+		(void)munmap(p, st->st_size);
+		(void)close(fd);
+		vsl_diag(vsl, "Out of memory");
+		return (NULL);
+	}
+	c->cursor.priv_tbl = &vslc_mmap_tbl;
+	c->cursor.priv_data = c;
+
+	c->fd = fd;
+	c->b = p;
+	c->e = c->b + st->st_size;
+	c->next.ptr = TRUST_ME(c->b + sizeof VSL_FILE_ID);
+
+	return (&c->cursor);
+}
+
 struct VSL_cursor *
 VSL_CursorFile(struct VSL_data *vsl, const char *name, unsigned options)
 {
+	struct VSL_cursor *mc;
 	struct vslc_file *c;
 	int fd;
 	int close_fd = 0;
@@ -439,6 +548,12 @@ VSL_CursorFile(struct VSL_data *vsl, const char *name, unsigned options)
 		vsl_diag(vsl, "Not a VSL file: %s", name);
 		return (NULL);
 	}
+
+	mc = vsl_cursor_mmap(vsl, fd);
+	if (mc == NULL)
+		return (NULL);
+	if (mc != MAP_FAILED)
+		return (mc);
 
 	ALLOC_OBJ(c, VSLC_FILE_MAGIC);
 	if (c == NULL) {
