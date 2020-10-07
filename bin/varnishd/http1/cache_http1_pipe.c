@@ -37,6 +37,7 @@
 #include <stdio.h>
 
 #include "cache_http1.h"
+#include "vtcp.h"
 
 #include "VSC_vbe.h"
 
@@ -49,10 +50,12 @@ rdf(int fd0, int fd1, uint64_t *pcnt)
 	char buf[BUFSIZ], *p;
 
 	i = read(fd0, buf, sizeof buf);
+	VTCP_Assert(i);
 	if (i <= 0)
 		return (1);
 	for (p = buf; i > 0; i -= j, p += j) {
 		j = write(fd1, p, i);
+		VTCP_Assert(j);
 		if (j <= 0)
 			return (1);
 		*pcnt += j;
@@ -96,6 +99,7 @@ V1P_Process(const struct req *req, int fd, struct v1p_acct *v1a)
 	if (req->htc->pipeline_b != NULL) {
 		j = write(fd,  req->htc->pipeline_b,
 		    req->htc->pipeline_e - req->htc->pipeline_b);
+		VTCP_Assert(j);
 		if (j < 0)
 			return;
 		req->htc->pipeline_b = NULL;

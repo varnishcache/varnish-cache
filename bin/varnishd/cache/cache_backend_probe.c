@@ -228,6 +228,7 @@ vbp_write(struct vbp_target *vt, int *sock, const void *buf, size_t len)
 	int i;
 
 	i = write(*sock, buf, len);
+	VTCP_Assert(i);
 	if (i != len) {
 		if (i < 0) {
 			vt->err_xmit |= 1;
@@ -367,6 +368,7 @@ vbp_poke(struct vbp_target *vt)
 			    sizeof vt->resp_buf - rlen);
 		else
 			i = read(s, buf, sizeof buf);
+		VTCP_Assert(i);
 		if (i <= 0) {
 			if (i < 0)
 				bprintf(vt->resp_buf, "Read error %d (%s)",

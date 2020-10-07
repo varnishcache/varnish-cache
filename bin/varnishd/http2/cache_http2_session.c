@@ -39,6 +39,7 @@
 
 #include "vend.h"
 #include "vtim.h"
+#include "vtcp.h"
 
 static const char h2_resp_101[] =
 	"HTTP/1.1 101 Switching Protocols\r\n"
@@ -256,6 +257,7 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 	}
 
 	sz = write(h2->sess->fd, h2_resp_101, strlen(h2_resp_101));
+	VTCP_Assert(sz);
 	if (sz != strlen(h2_resp_101)) {
 		VSLb(h2->vsl, SLT_Debug, "H2: Upgrade: Error writing 101"
 		    " response: %s\n", strerror(errno));

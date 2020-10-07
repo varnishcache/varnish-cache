@@ -33,6 +33,8 @@
 #include "cache/cache_filter.h"
 #include "cache_http1.h"
 
+#include "vtcp.h"
+
 /*--------------------------------------------------------------------*/
 
 static int v_matchproto_(vdp_bytes_f)
@@ -74,7 +76,7 @@ v1d_error(struct req *req, const char *msg)
 	VSLb(req->vsl, SLT_RespReason, "Internal Server Error");
 
 	req->wrk->stats->client_resp_500++;
-	(void)write(req->sp->fd, r_500, sizeof r_500 - 1);
+	VTCP_Assert(write(req->sp->fd, r_500, sizeof r_500 - 1));
 	req->doclose = SC_TX_EOF;
 }
 
