@@ -97,7 +97,8 @@ static const struct vfp xyzzy_rot13 = {
 
 /**********************************************************************/
 
-#define ROT13_BUFSZ (1 << 13)
+// deliberately fragmenting the stream to make testing more interesting
+#define ROT13_BUFSZ 8
 
 static int v_matchproto_(vdp_init_f)
 xyzzy_rot13_init(struct req *req, void **priv)
@@ -136,8 +137,8 @@ xyzzy_rot13_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 			q[i] = (((pp[j] - 'a') + 13) % 26) + 'a';
 		else
 			q[i] = pp[j];
-		if (i == ROT13_BUFSZ - 1) {
-			retval = VDP_bytes(vdx, act, q, ROT13_BUFSZ);
+		if (i == ROT13_BUFSZ - 1 && j < len - 1) {
+			retval = VDP_bytes(vdx, VDP_FLUSH, q, ROT13_BUFSZ);
 			if (retval != 0)
 				return (retval);
 			i = -1;
