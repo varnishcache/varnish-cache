@@ -100,7 +100,7 @@ vfp_vep_callback(struct vfp_ctx *vc, void *priv, ssize_t l, enum vgz_flag flg)
 		VGZ_UpdateObj(vc, vef->vgz, VUA_UPDATE);
 		if (dl > 0) {
 			vef->tot += dl;
-			VFP_Extend(vc, dl);
+			VFP_Extend(vc, dl, VFP_OK);
 		}
 	} while (i != VGZ_ERROR &&
 	    (!VGZ_IbufEmpty(vef->vgz) || VGZ_ObufFull(vef->vgz)));

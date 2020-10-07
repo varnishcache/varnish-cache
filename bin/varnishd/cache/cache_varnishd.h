@@ -248,7 +248,7 @@ void Bereq_Rollback(struct busyobj *);
 /* cache_fetch_proc.c */
 void VFP_Init(void);
 enum vfp_status VFP_GetStorage(struct vfp_ctx *, ssize_t *sz, uint8_t **ptr);
-void VFP_Extend(const struct vfp_ctx *, ssize_t sz);
+void VFP_Extend(const struct vfp_ctx *, ssize_t sz, enum vfp_status);
 void VFP_Setup(struct vfp_ctx *vc, struct worker *wrk);
 int VFP_Open(struct vfp_ctx *bo);
 uint64_t VFP_Close(struct vfp_ctx *bo);
@@ -295,13 +295,12 @@ void ObjInit(void);
 struct objcore * ObjNew(const struct worker *);
 void ObjDestroy(const struct worker *, struct objcore **);
 int ObjGetSpace(struct worker *, struct objcore *, ssize_t *sz, uint8_t **ptr);
-void ObjExtend(struct worker *, struct objcore *, ssize_t l);
+void ObjExtend(struct worker *, struct objcore *, ssize_t l, int final);
 uint64_t ObjWaitExtend(const struct worker *, const struct objcore *,
     uint64_t l);
 void ObjSetState(struct worker *, const struct objcore *,
     enum boc_state_e next);
 void ObjWaitState(const struct objcore *, enum boc_state_e want);
-void ObjTrimStore(struct worker *, struct objcore *);
 void ObjTouch(struct worker *, struct objcore *, vtim_real now);
 void ObjFreeObj(struct worker *, struct objcore *);
 void ObjSlim(struct worker *, struct objcore *);

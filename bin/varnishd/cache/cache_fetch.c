@@ -517,7 +517,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
  */
 
 static enum fetch_step
-vbf_stp_fetchbody(struct worker *wrk, struct busyobj *bo)
+vbf_stp_fetchbody(const struct worker *wrk, struct busyobj *bo)
 {
 	ssize_t l;
 	uint8_t *ptr;
@@ -561,8 +561,8 @@ vbf_stp_fetchbody(struct worker *wrk, struct busyobj *bo)
 
 		AZ(vfc->failed);
 		vfps = VFP_Suck(vfc, ptr, &l);
-		if (l > 0 && vfps != VFP_ERROR) {
-			VFP_Extend(vfc, l);
+		if (l >= 0 && vfps != VFP_ERROR) {
+			VFP_Extend(vfc, l, vfps);
 			if (est >= l)
 				est -= l;
 			else
@@ -584,7 +584,6 @@ vbf_stp_fetchbody(struct worker *wrk, struct busyobj *bo)
 		}
 	}
 
-	ObjTrimStore(wrk, oc);
 	return (F_STP_FETCHEND);
 }
 
@@ -729,7 +728,7 @@ vbf_objiterator(void *priv, unsigned flush, const void *ptr, ssize_t len)
 		if (len < l)
 			l = len;
 		memcpy(pd, ps, l);
-		VFP_Extend(bo->vfc, l);
+		VFP_Extend(bo->vfc, l, l == len ? VFP_END : VFP_OK);
 		ps += l;
 		len -= l;
 	}
@@ -929,7 +928,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 		if (l > ll)
 			l = ll;
 		memcpy(ptr, VSB_data(synth_body) + o, l);
-		VFP_Extend(bo->vfc, l);
+		VFP_Extend(bo->vfc, l, l == ll ? VFP_END : VFP_OK);
 		ll -= l;
 		o += l;
 	}

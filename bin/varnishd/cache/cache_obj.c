@@ -47,7 +47,6 @@
  * 2	ObjGetSpace()	allocates space
  * 2	ObjExtend()	commits content
  * 2	ObjWaitExtend()	waits for content - used to implement ObjIterate())
- * 2	ObjTrimStore()	signals end of content addition
  *
  * 2	ObjSetAttr()
  * 2	  ObjCopyAttr()
@@ -212,23 +211,33 @@ ObjGetSpace(struct worker *wrk, struct objcore *oc, ssize_t *sz, uint8_t **ptr)
  *
  * This function extends the used part of the object a number of bytes
  * into the last space returned by ObjGetSpace()
+ *
+ * The final flag must be set on the last call, and it will release any
+ * surplus space allocated.
  */
 
 void
-ObjExtend(struct worker *wrk, struct objcore *oc, ssize_t l)
+ObjExtend(struct worker *wrk, struct objcore *oc, ssize_t l, int final)
 {
 	const struct obj_methods *om = obj_getmethods(oc);
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
-	assert(l > 0);
+	(void)final;
+	assert(l >= 0);
 
 	Lck_Lock(&oc->boc->mtx);
 	AN(om->objextend);
-	om->objextend(wrk, oc, l);
-	oc->boc->len_so_far += l;
+	if (l > 0) {
+		om->objextend(wrk, oc, l);
+		oc->boc->len_so_far += l;
+		AZ(pthread_cond_broadcast(&oc->boc->cond));
+	}
 	Lck_Unlock(&oc->boc->mtx);
-	AZ(pthread_cond_broadcast(&oc->boc->cond));
+
+	assert(oc->boc == NULL || oc->boc->state < BOS_FINISHED);
+	if (final && om->objtrimstore != NULL)
+		om->objtrimstore(wrk, oc);
 }
 
 /*====================================================================
@@ -318,26 +327,6 @@ ObjGetLen(struct worker *wrk, struct objcore *oc)
 
 	AZ(ObjGetU64(wrk, oc, OA_LEN, &len));
 	return (len);
-}
-
-/*====================================================================
- * ObjTrimStore()
- *
- * Release any surplus space allocated, we promise not to call ObjExtend()
- * any more.
- */
-
-void
-ObjTrimStore(struct worker *wrk, struct objcore *oc)
-{
-	const struct obj_methods *om = obj_getmethods(oc);
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-
-	assert(oc->boc == NULL || oc->boc->state < BOS_FINISHED);
-
-	if (om->objtrimstore != NULL)
-		om->objtrimstore(wrk, oc);
 }
 
 /*====================================================================

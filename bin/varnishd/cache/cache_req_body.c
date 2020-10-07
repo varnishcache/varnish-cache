@@ -124,7 +124,7 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 				if (r)
 					break;
 			} else {
-				ObjExtend(req->wrk, req->body_oc, l);
+				ObjExtend(req->wrk, req->body_oc, l, vfps == VFP_END);
 			}
 		}
 
@@ -142,7 +142,6 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 		return (r);
 	}
 
-	ObjTrimStore(req->wrk, req->body_oc);
 	AZ(ObjSetU64(req->wrk, req->body_oc, OA_LEN, req_bodybytes));
 	HSH_DerefBoc(req->wrk, req->body_oc);
 

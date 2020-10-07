@@ -95,11 +95,11 @@ VFP_GetStorage(struct vfp_ctx *vc, ssize_t *sz, uint8_t **ptr)
 }
 
 void
-VFP_Extend(const struct vfp_ctx *vc, ssize_t sz)
+VFP_Extend(const struct vfp_ctx *vc, ssize_t sz, enum vfp_status flg)
 {
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 
-	ObjExtend(vc->wrk, vc->oc, sz);
+	ObjExtend(vc->wrk, vc->oc, sz, flg == VFP_END);
 }
 
 /**********************************************************************
