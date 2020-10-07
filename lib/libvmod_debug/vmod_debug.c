@@ -144,7 +144,7 @@ xyzzy_rot13_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 		}
 	}
 	if (i >= 0)
-		retval = VDP_bytes(vdx, act, q, i + 1L);
+		retval = VDP_bytes(vdx, act, q, i);
 	return (retval);
 }
 
