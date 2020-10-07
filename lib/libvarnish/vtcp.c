@@ -613,5 +613,6 @@ VTCP_read(int fd, void *ptr, size_t len, vtim_dur tmo)
 			return (-2);
 	}
 	i = read(fd, ptr, len);
+	VTCP_Assert(i);
 	return (i < 0 ? -1 : i);
 }
