@@ -710,7 +710,7 @@ const void *ObjGetAttr(struct worker *, struct objcore *, enum obj_attr,
 typedef int objiterate_f(void *priv, unsigned flush,
     const void *ptr, ssize_t len);
 #define OBJ_ITER_FLUSH	0x01
-#define OBJ_ITER_FINAL	0x02
+#define OBJ_ITER_END	0x02
 
 int ObjIterate(struct worker *, struct objcore *,
     void *priv, objiterate_f *func, int final);

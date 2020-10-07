@@ -261,7 +261,7 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 		VTAILQ_FOREACH_SAFE(st, &obj->list, list, checkpoint) {
 			u = 0;
 			if (VTAILQ_NEXT(st, list) == NULL)
-				u |= OBJ_ITER_FINAL;
+				u |= OBJ_ITER_END;
 			if (final)
 				u |= OBJ_ITER_FLUSH;
 			if (ret == 0 && st->len > 0)
