@@ -43,6 +43,7 @@
 #include "cache_http1.h"
 
 #include "vct.h"
+#include "vtcp.h"
 
 /*--------------------------------------------------------------------
  * Read up to len bytes, returning pipelined data first.
@@ -75,7 +76,7 @@ v1f_read(const struct vfp_ctx *vc, struct http_conn *htc, void *d, ssize_t len)
 	if (len > 0) {
 		i = read(*htc->rfd, p, len);
 		if (i < 0) {
-			// XXX: VTCP_Assert(i); // but also: EAGAIN
+			VTCP_Assert(i);
 			VSLb(vc->wrk->vsl, SLT_FetchError,
 			    "%s", strerror(errno));
 			return (i);
