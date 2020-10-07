@@ -558,7 +558,7 @@ VTCP_check_hup(int sock)
  */
 
 int
-VTCP_Check(int a)
+VTCP_Check(ssize_t a)
 {
 	if (a == 0)
 		return (1);
