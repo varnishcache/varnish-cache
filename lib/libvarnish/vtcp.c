@@ -562,6 +562,14 @@ VTCP_Check(int a)
 		return (1);
 	if (errno == ECONNRESET || errno == ENOTCONN || errno == EPIPE)
 		return (1);
+	/* Accept EAGAIN (and EWOULDBLOCK in case they are not the same)
+	 * as errno values. Even though our sockets are all non-blocking,
+	 * when a SO_{SND|RCV}TIMEO expires, read() or write() on the
+	 * socket will return (-1) and errno set to EAGAIN. (This is not
+	 * documented in the read(2) and write(2) manpages, but is
+	 * described in the socket(7) manpage.) */
+	if (errno == EAGAIN || errno == EWOULDBLOCK)
+		return (1);
 #if (defined (__SVR4) && defined (__sun)) || defined (__NetBSD__)
 	/*
 	 * Solaris returns EINVAL if the other end unexpectedly reset the
