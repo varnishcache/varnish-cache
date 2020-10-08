@@ -397,6 +397,8 @@ ved_vdp_esi_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 			}
 			break;
 		case 2:
+			ptr = NULL;
+			len = 0;
 			if (ecx->isgzip && ecx->pecx == NULL) {
 				/*
 				 * We are bytealigned here, so simply emit
@@ -414,15 +416,14 @@ ved_vdp_esi_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 				/* MOD(2^32) length */
 				vle32enc(tailbuf + 9, ecx->l_crc);
 
-				retval = VDP_bytes(vdx, VDP_END, tailbuf, 13);
+				ptr = tailbuf;
+				len = 13;
 			} else if (ecx->pecx != NULL) {
 				ecx->pecx->crc = crc32_combine(ecx->pecx->crc,
 				    ecx->crc, ecx->l_crc);
 				ecx->pecx->l_crc += ecx->l_crc;
-				retval = VDP_bytes(vdx, VDP_FLUSH, NULL, 0);
-			} else {
-				retval = VDP_bytes(vdx, VDP_END, NULL, 0);
 			}
+			retval = VDP_bytes(vdx, VDP_END, ptr, len);
 			ecx->state = 99;
 			return (retval);
 		case 3:
