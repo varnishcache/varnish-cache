@@ -18,8 +18,14 @@ varnish v1 \
 	-cliok "param.set gzip_memlevel 1" \
 	-vcl+backend {
 
+	import debug;
+
 	sub vcl_backend_response {
 		set beresp.do_esi = true;
+	}
+
+	sub vcl_deliver {
+		set resp.filters += " debug.pedantic";
 	}
 } -start
 

@@ -386,7 +386,8 @@ vdp_gunzip_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 		if (vr < VGZ_OK)
 			return (-1);
 		if (vg->m_len == vg->m_sz || vr != VGZ_OK) {
-			if (VDP_bytes(vdx, VDP_FLUSH, vg->m_buf, vg->m_len))
+			if (VDP_bytes(vdx, vr == VGZ_END ? VDP_END : VDP_FLUSH,
+			    vg->m_buf, vg->m_len))
 				return (vdx->retval);
 			vg->m_len = 0;
 			VGZ_Obuf(vg, vg->m_buf, vg->m_sz);
