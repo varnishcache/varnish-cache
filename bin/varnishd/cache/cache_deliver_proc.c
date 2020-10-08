@@ -157,6 +157,11 @@ VDP_Close(struct req *req)
 			VTAILQ_REMOVE(&vdc->vdp, vdpe, list);
 		}
 		vdc->nxt = VTAILQ_FIRST(&vdc->vdp);
+#ifdef VDP_PEDANTIC_ARMED
+		// enable when we are confident to get VDP_END right
+		if (vdc->nxt == NULL && vdc->retval >= 0)
+			assert(vdpe->end == VDP_END);
+#endif
 	}
 	return (rv);
 }

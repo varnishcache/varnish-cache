@@ -166,6 +166,41 @@ static const struct vdp xyzzy_vdp_rot13 = {
 	.fini  = xyzzy_rot13_fini,
 };
 
+/**********************************************************************
+ * assert that we see a VDP_END
+ *
+ * note:
+ * we could lookup our own vdpe in _fini and check for vdpe->end == VDP_END
+ * yet that would cross the API
+ */
+
+void * end_marker = &end_marker;
+
+static int v_matchproto_(vdp_bytes_f)
+xyzzy_pedantic_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
+    const void *ptr, ssize_t len)
+{
+	AZ(*priv);
+	if (act == VDP_END)
+		*priv = end_marker;
+	return (VDP_bytes(vdx, act, ptr, len));
+}
+
+static int v_matchproto_(vdp_fini_f)
+xyzzy_pedantic_fini(struct req *req, void **priv)
+{
+	(void) req;
+	assert (*priv == end_marker);
+	*priv = NULL;
+	return (0);
+}
+
+static const struct vdp xyzzy_vdp_pedantic = {
+	.name  = "debug.pedantic",
+	.bytes = xyzzy_pedantic_bytes,
+	.fini  = xyzzy_pedantic_fini,
+};
+
 /**********************************************************************/
 
 VCL_STRING v_matchproto_(td_debug_author)
@@ -379,13 +414,10 @@ event_load(VRT_CTX, struct vmod_priv *priv)
 	priv->priv = priv_vcl;
 	priv->free = priv_vcl_free;
 
-	/*
-	 * NB: This is a proof of concept, until we decide what the real
-	 * API should look like, do NOT do this anywhere else.
-	 */
 	VRT_AddVFP(ctx, &xyzzy_rot13);
 
 	VRT_AddVDP(ctx, &xyzzy_vdp_rot13);
+	VRT_AddVDP(ctx, &xyzzy_vdp_pedantic);
 	return (0);
 }
 
@@ -544,6 +576,7 @@ event_discard(VRT_CTX, void *priv)
 
 	VRT_RemoveVFP(ctx, &xyzzy_rot13);
 	VRT_RemoveVDP(ctx, &xyzzy_vdp_rot13);
+	VRT_RemoveVDP(ctx, &xyzzy_vdp_pedantic);
 
 	if (--loads)
 		return (0);
