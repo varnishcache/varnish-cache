@@ -1,0 +1,135 @@
+varnishtest "ESI requests, gzip and custom VDPs"
+
+# XXX THIS TEST CASE IS NOT YET COMPLETE.
+#
+
+# To select the embedding vdps (gzgz / pretendgz), ESI currently only
+# looks at the cache object's ESI status. So for VDP-processing an
+# include of a gzip'ed ESI object, we need to restore the encoding
+# after filtering. Thus, we would currently need a gzip VDP to be able
+# to use `set resp.filters += " gunzip rot13 gzip"`
+#
+# Or we would need way to communicate down the VDP chain the current
+# Content-Encoding, such that ESI could determine which embedding vdps
+# to choose, which would make `set resp.filters += " gunzip rot13"`
+# possible.
+#
+# Pursuing that idea further, filters could specify which CEs they
+# have for input and output, allowing auto-config of the filter chain
+# with respect to encodings.
+
+server s1 {
+	rxreq
+	expect req.url == /esi_plain
+	txresp -body {
+		<html>
+		Before include
+		<esi:include src="/body_plain"/>
+		Between includes
+		<esi:include src="/body_gzip"/>
+	}
+
+	rxreq
+	expect req.url == "/body_plain"
+	txresp -body {
+		<pre>Included file</pre>
+	}
+
+	rxreq
+	expect req.url == "/body_gzip"
+	txresp -gzipbody {
+		<pre>Included file</pre>
+	}
+
+	rxreq
+	expect req.url == /esi_gzip
+	txresp -gzipbody {
+		<html>
+		Before include
+		<esi:include src="/body_plain"/>
+		Between includes
+		<esi:include src="/body_gzip"/>
+	}
+
+	rxreq
+	expect req.url == /recurse_plain
+	txresp -body {
+		<html>
+		TOP Before include
+		<esi:include src="/esi_plain"/>
+		TOP Between includes
+		<esi:include src="/esi_gzip"/>
+	}
+
+	rxreq
+	expect req.url == /recurse_gzip
+	txresp -gzipbody {
+		<html>
+		TOP Before include
+		<esi:include src="/esi_plain"/>
+		TOP Between includes
+		<esi:include src="/esi_gzip"/>
+	}
+} -start
+
+varnish v1 -syntax 4.1 -vcl+backend {
+	import debug;
+
+	sub vcl_deliver {
+		if (req.http.rot-level == "" + req.esi_level) {
+			if (resp.http.Content-Encoding == "gzip") {
+				# XXX no gzip vdp yet
+				# set resp.filters += " gunzip rot13 gzip";
+			} else {
+				set resp.filters += " rot13";
+			}
+		}
+	}
+	sub vcl_backend_response {
+		set beresp.do_esi = true;
+	}
+} -start
+
+# basic case
+client c1 {
+	txreq -url "/esi_plain"
+	rxresp
+	expect resp.bodylen == 111
+
+	txreq -url "/esi_gzip"
+	rxresp
+	expect resp.bodylen == 111
+
+	txreq -url "/recurse_plain"
+	rxresp
+	expect resp.bodylen == 283
+
+	txreq -url "/recurse_gzip"
+	rxresp
+	expect resp.bodylen == 283
+} -run
+
+# VDP for non-ESI includes
+client c2 {
+	txreq -url "/esi_plain" -hdr "rot-level: 1"
+	rxresp
+	expect resp.bodylen == 111
+
+	txreq -url "/esi_gzip" -hdr "rot-level: 1"
+	rxresp
+	expect resp.bodylen == 111
+} -start
+
+# VDP for ESI includes
+client c3 {
+	txreq -url "/recurse_plain" -hdr "rot-level: 1"
+	rxresp
+	expect resp.bodylen == 283
+
+	txreq -url "/recurse_gzip" -hdr "rot-level: 1"
+	rxresp
+	expect resp.bodylen == 283
+} -start
+
+client c2 -wait
+client c3 -wait
