@@ -456,10 +456,14 @@ static enum vsl_check v_matchproto_(vslc_check_f)
 vslc_mmap_check(const struct VSL_cursor *cursor, const struct VSLC_ptr *ptr)
 {
 	struct vslc_mmap *c;
+	const char *t;
 
 	CAST_OBJ_NOTNULL(c, cursor->priv_data, VSLC_MMAP_MAGIC);
 	assert(&c->cursor == cursor);
 	AN(ptr->ptr);
+	t = TRUST_ME(ptr->ptr);
+	assert(t > c->b);
+	assert(t <= c->e);
 	return (vsl_check_valid);
 }
 
