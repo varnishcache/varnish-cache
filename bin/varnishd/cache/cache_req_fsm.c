@@ -83,7 +83,7 @@ cnt_transport(struct worker *wrk, struct req *req)
 
 	AZ(req->err_code);
 
-	req->doclose = http_DoConnection(req->http);
+	req->doclose = http_DoConnection(req->http, SC_REQ_CLOSE);
 	if (req->doclose == SC_RX_BAD) {
 		(void)req->transport->minimal_response(req, 400);
 		return (REQ_FSM_DONE);

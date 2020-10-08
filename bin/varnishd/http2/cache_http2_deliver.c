@@ -298,7 +298,7 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 
 	VSLb(req->vsl, SLT_RespProtocol, "HTTP/2.0");
 
-	(void)http_DoConnection(req->resp);
+	(void)http_DoConnection(req->resp, SC_RESP_CLOSE);
 
 	ss = WS_Snapshot(req->ws);
 

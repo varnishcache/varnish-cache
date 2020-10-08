@@ -234,7 +234,7 @@ V1F_FetchRespHdr(struct busyobj *bo)
 		return (-1);
 	}
 
-	htc->doclose = http_DoConnection(hp);
+	htc->doclose = http_DoConnection(hp, SC_RESP_CLOSE);
 
 	/*
 	 * Figure out how the fetch is supposed to happen, before the
