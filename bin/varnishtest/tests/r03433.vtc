@@ -1,0 +1,41 @@
+varnishtest "req.body and restarts"
+
+server s1 -repeat 4 {
+	rxreq
+	txresp -bodylen 1000
+} -start
+
+varnish v1 -vcl+backend {
+	import std;
+	import vtc;
+
+	sub vcl_recv {
+		std.cache_req_body(1MB);
+		return (hash);
+	}
+
+	sub vcl_backend_response {
+		set beresp.ttl = 0.1s;
+	}
+
+	sub vcl_deliver {
+		if (!req.restarts) {
+			set req.url = "/2";
+			return (restart);
+		}
+	}
+} -start
+
+client c1 {
+	txreq -req PUT -url /1 -bodylen 250000
+	rxresp
+	expect resp.status == 200
+
+	delay 0.2
+
+	txreq -req PUT -url /1 -bodylen 250000
+	rxresp
+	expect resp.status == 200
+} -run
+
+delay 0.2

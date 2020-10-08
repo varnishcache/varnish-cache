@@ -259,17 +259,12 @@ VRB_Ignore(struct req *req)
 void
 VRB_Free(struct req *req)
 {
-	int r;
-
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 	if (req->body_oc == NULL)
 		return;
 
-	r = HSH_DerefObjCore(req->wrk, &req->body_oc, 0);
-
-	// a busyobj may have gained a reference
-	assert (r == 0 || r == 1);
+	(void) HSH_DerefObjCore(req->wrk, &req->body_oc, 0);
 }
 
 /*----------------------------------------------------------------------
