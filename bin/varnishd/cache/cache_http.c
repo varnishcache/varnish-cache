@@ -730,11 +730,14 @@ http_GetContentLength(const struct http *hp)
  */
 
 enum sess_close
-http_DoConnection(struct http *hp)
+http_DoConnection(struct http *hp, enum sess_close sc_close)
 {
 	const char *h, *b, *e;
 	enum sess_close retval;
 	unsigned u, v;
+
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+	assert(sc_close == SC_REQ_CLOSE || sc_close == SC_RESP_CLOSE);
 
 	if (hp->protover == 10)
 		retval = SC_REQ_HTTP10;
@@ -748,7 +751,7 @@ http_DoConnection(struct http *hp)
 	while (http_split(&h, NULL, ",", &b, &e)) {
 		u = pdiff(b, e);
 		if (u == 5 && !strncasecmp(b, "close", u))
-			retval = SC_REQ_CLOSE;
+			retval = sc_close;
 		if (u == 10 && !strncasecmp(b, "keep-alive", u))
 			retval = SC_NULL;
 

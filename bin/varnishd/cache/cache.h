@@ -650,7 +650,7 @@ int HTTP_IterHdrPack(struct worker *, struct objcore *, const char **);
 #define HTTP_FOREACH_PACK(wrk, oc, ptr) \
 	 for ((ptr) = NULL; HTTP_IterHdrPack(wrk, oc, &(ptr));)
 const char *HTTP_GetHdrPack(struct worker *, struct objcore *, const char *hdr);
-enum sess_close http_DoConnection(struct http *hp);
+enum sess_close http_DoConnection(struct http *hp, enum sess_close sc_close);
 int http_IsFiltered(const struct http *hp, unsigned u, unsigned how);
 
 #define HTTPH_R_PASS		(1 << 0)	/* Request (c->b) in pass mode */
