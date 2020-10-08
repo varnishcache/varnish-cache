@@ -201,23 +201,24 @@ Example::
 
 	new vdir = directors.hash();
 
-$Method VOID .add_backend(BACKEND, REAL)
+$Method VOID .add_backend(BACKEND, REAL weight = 1.0)
 
 Add a backend to the director with a certain weight.
 
-Weight is used as in the random director. Recommended value is 1.0
-unless you have special needs.
+Weight is used as in the random director. Recommended and default value
+is 1.0 unless you have special needs.
 
 Example::
 
-	vdir.add_backend(backend1, 1.0);
+	vdir.add_backend(normal_backend);
+	vdir.add_backend(larger_backend, 1.5);
 
 $Method VOID .remove_backend(BACKEND)
 
 Remove a backend from the director.
 
 Example::
-	vdir.remove_backend(backend1);
+	vdir.remove_backend(larger_backend);
 
 $Method BACKEND .backend(STRANDS)
 

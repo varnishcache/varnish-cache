@@ -26,7 +26,7 @@ varnish v1 -vcl+backend {
 
 	sub vcl_init {
 		new h1 = directors.hash();
-		h1.add_backend(s1, 1);
+		h1.add_backend(s1);
 		h1.add_backend(s2, 1);
 	}
 
