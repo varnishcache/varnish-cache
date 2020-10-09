@@ -63,7 +63,6 @@ struct shard_change {
 	unsigned				magic;
 #define SHARD_CHANGE_MAGIC			0xdff5c9a6
 	const struct sharddir			*shardd;
-	void					*space;
 	VSTAILQ_HEAD(,shard_change_task)	tasks;
 };
 
@@ -106,7 +105,6 @@ shard_change_get(VRT_CTX, const struct sharddir * const shardd)
 	}
 
 	INIT_OBJ(change, SHARD_CHANGE_MAGIC);
-	change->space = NULL;
 	change->shardd = shardd;
 	VSTAILQ_INIT(&change->tasks);
 	task->priv = change;
