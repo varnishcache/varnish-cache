@@ -182,12 +182,10 @@ varnish v1 -vcl+backend {
 		vd.add_backend(s2, "5");
 		vd.remove_backend(s1, "5");
 		vd.remove_backend(s1, "4");
-		vd.add_backend(s3, "4");
-		vd.add_backend(s3, "5");
-		if (!vd.reconfigure(replicas=1)) {
-			return(fail("reconfigure failed"));
-		}
+		vd.add_backend(s3, "4a");
+		vd.add_backend(s3, "5a");
 		vd.set_warmup(0);
+		# implicit .reconfigure() - checked via backend.list
 	}
 
 	sub vcl_recv {
@@ -220,14 +218,14 @@ logexpect l1 -v v1 -g raw -d 1 {
 	expect 0 0    VCL_Log {^reconfigure failed}
 
 	expect 0 0    VCL_Log {^-- duplicate add$}
-	expect 0 0    Error   {^shard vd: .notice. backend s1 already exists - skipping$}
+	expect 0 0    Notice  {^shard vd: backend s1 already exists - skipping$}
 	expect 0 0    Debug   {^shard:.*point = 6e040182, host =  1}
 	expect 0 0    Debug   {^shard:.*point = f08ad325, host =  0}
 
 	expect 0 0    VCL_Log {^-- duplicate add with idents$}
-	expect 0 0    Error   {^shard vd: .notice. backend s1 already exists - skipping}
-	expect 0 0    Error   {^shard vd: .notice. backend s1/s1_1 already exists - skipping}
-	expect 0 0    Error   {^shard vd: .notice. backend s1/s1_2 already exists - skipping}
+	expect 0 0    Notice  {^shard vd: backend s1 already exists - skipping}
+	expect 0 0    Notice  {^shard vd: backend s1/s1_1 already exists - skipping}
+	expect 0 0    Notice  {^shard vd: backend s1/s1_2 already exists - skipping}
 	expect 0 0    Debug   {^shard:.*point = 6e040182, host =  3}
 	expect 0 0    Debug   {^shard:.*point = 732c7bbe, host =  2}
 	expect 0 0    Debug   {^shard:.*point = bae80b0b, host =  1}
@@ -282,4 +280,4 @@ client c1 {
 
 logexpect l1 -wait
 
-varnish v1 -cliexpect {(?s)Ident.*s3 +1 +h.*s3 +2 +h.*s3 +4 +h.*s3 +5 +h.*s3 +6 +h.*s3 +7 +h} "backend.list -p"
+varnish v1 -cliexpect {(?s)Ident.*s3 +1 +h.*s3 +2 +h.*s3 +4a +h.*s3 +5a +h.*s3 +6 +h.*s3 +7 +h} "backend.list -p"

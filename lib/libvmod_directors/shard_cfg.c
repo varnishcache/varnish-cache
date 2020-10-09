@@ -62,7 +62,8 @@ struct shard_change_task {
 struct shard_change {
 	unsigned				magic;
 #define SHARD_CHANGE_MAGIC			0xdff5c9a6
-	const struct sharddir			*shardd;
+	struct vsl_log				*vsl;
+	struct sharddir				*shardd;
 	VSTAILQ_HEAD(,shard_change_task)	tasks;
 };
 
@@ -73,6 +74,10 @@ struct backend_reconfig {
 	unsigned		hole_i; // index hint on first hole
 };
 
+/* forward decl */
+static VCL_BOOL
+change_reconfigure(struct shard_change *change, VCL_INT replicas);
+
 /*
  * ============================================================
  * change / task list
@@ -81,8 +86,21 @@ struct backend_reconfig {
  * a PRIV_TASK state, which we work in reconfigure.
  */
 
+static void v_matchproto_(vmod_priv_free_f)
+shard_change_fini(void * priv)
+{
+	struct shard_change *change;
+
+	if (priv == NULL)
+		return;
+
+	CAST_OBJ_NOTNULL(change, priv, SHARD_CHANGE_MAGIC);
+
+	(void) change_reconfigure(change, 67);
+}
+
 static struct shard_change *
-shard_change_get(VRT_CTX, const struct sharddir * const shardd)
+shard_change_get(VRT_CTX, struct sharddir * const shardd)
 {
 	struct vmod_priv *task;
 	struct shard_change *change;
@@ -94,6 +112,7 @@ shard_change_get(VRT_CTX, const struct sharddir * const shardd)
 
 	if (task->priv != NULL) {
 		CAST_OBJ_NOTNULL(change, task->priv, SHARD_CHANGE_MAGIC);
+		assert (change->vsl == ctx->vsl);
 		assert (change->shardd == shardd);
 		return (change);
 	}
@@ -105,9 +124,11 @@ shard_change_get(VRT_CTX, const struct sharddir * const shardd)
 	}
 
 	INIT_OBJ(change, SHARD_CHANGE_MAGIC);
+	change->vsl = ctx->vsl;
 	change->shardd = shardd;
 	VSTAILQ_INIT(&change->tasks);
 	task->priv = change;
+	task->free = shard_change_fini;
 
 	return (change);
 }
@@ -142,7 +163,7 @@ shard_change_task_add(VRT_CTX, struct shard_change *change,
 }
 
 static inline struct shard_change_task *
-shard_change_task_backend(VRT_CTX, const struct sharddir *shardd,
+shard_change_task_backend(VRT_CTX, struct sharddir *shardd,
     enum shard_change_task_e task_e, VCL_BACKEND be, VCL_STRING ident,
     VCL_DURATION rampup)
 {
@@ -174,7 +195,7 @@ shard_change_task_backend(VRT_CTX, const struct sharddir *shardd,
  * director reconfiguration tasks
  */
 VCL_BOOL
-shardcfg_add_backend(VRT_CTX, const struct sharddir *shardd,
+shardcfg_add_backend(VRT_CTX, struct sharddir *shardd,
     VCL_BACKEND be, VCL_STRING ident, VCL_DURATION rampup, VCL_REAL weight)
 {
 	struct shard_change_task *task;
@@ -193,7 +214,7 @@ shardcfg_add_backend(VRT_CTX, const struct sharddir *shardd,
 }
 
 VCL_BOOL
-shardcfg_remove_backend(VRT_CTX, const struct sharddir *shardd,
+shardcfg_remove_backend(VRT_CTX, struct sharddir *shardd,
     VCL_BACKEND be, VCL_STRING ident)
 {
 	return (shard_change_task_backend(ctx, shardd, REMOVE_BE,
@@ -201,7 +222,7 @@ shardcfg_remove_backend(VRT_CTX, const struct sharddir *shardd,
 }
 
 VCL_BOOL
-shardcfg_clear(VRT_CTX, const struct sharddir *shardd)
+shardcfg_clear(VRT_CTX, struct sharddir *shardd)
 {
 	struct shard_change *change;
 
@@ -510,7 +531,7 @@ shardcfg_backend_finalize(struct backend_reconfig *re)
  */
 
 static void
-shardcfg_apply_change(VRT_CTX, struct sharddir *shardd,
+shardcfg_apply_change(struct vsl_log *vsl, struct sharddir *shardd,
     const struct shard_change *change, VCL_INT replicas)
 {
 	struct shard_change_task *task, *clear;
@@ -577,8 +598,8 @@ shardcfg_apply_change(VRT_CTX, struct sharddir *shardd,
 
 			const char * const ident = b->ident;
 
-			shard_err(ctx, shardd, "(notice) backend %s%s%s "
-			    "already exists - skipping",
+			sharddir_err(vsl, SLT_Notice, "shard %s: backend %s%s%s "
+			    "already exists - skipping", shardd->name,
 			    VRT_BACKEND_string(b->backend),
 			    ident ? "/" : "",
 			    ident ? ident : "");
@@ -598,28 +619,22 @@ shardcfg_apply_change(VRT_CTX, struct sharddir *shardd,
  * top reconfiguration function
  */
 
-VCL_BOOL
-shardcfg_reconfigure(VRT_CTX, struct sharddir *shardd, VCL_INT replicas)
+static VCL_BOOL
+change_reconfigure(struct shard_change *change, VCL_INT replicas)
 {
-	struct shard_change *change;
+	struct sharddir *shardd;
 
+	CHECK_OBJ_NOTNULL(change, SHARD_CHANGE_MAGIC);
+	assert (replicas > 0);
+	shardd = change->shardd;
 	CHECK_OBJ_NOTNULL(shardd, SHARDDIR_MAGIC);
-	if (replicas <= 0) {
-		shard_err(ctx, shardd,
-		    ".reconfigure() invalid replicas argument %ld", replicas);
-		return (0);
-	}
-
-	change = shard_change_get(ctx, shardd);
-	if (change == NULL)
-		return (0);
 
 	if (VSTAILQ_FIRST(&change->tasks) == NULL)
 		return (1);
 
 	sharddir_wrlock(shardd);
 
-	shardcfg_apply_change(ctx, shardd, change, replicas);
+	shardcfg_apply_change(change->vsl, shardd, change, replicas);
 	shard_change_finish(change);
 
 	if (shardd->hashcircle)
@@ -627,7 +642,8 @@ shardcfg_reconfigure(VRT_CTX, struct sharddir *shardd, VCL_INT replicas)
 	shardd->hashcircle = NULL;
 
 	if (shardd->n_backend == 0) {
-		shard_err0(ctx, shardd, ".reconfigure() no backends");
+		sharddir_err(change->vsl, SLT_Error, "shard %s: .reconfigure() "
+		    "no backends", shardd->name);
 		sharddir_unlock(shardd);
 		return (0);
 	}
@@ -635,6 +651,26 @@ shardcfg_reconfigure(VRT_CTX, struct sharddir *shardd, VCL_INT replicas)
 	shardcfg_hashcircle(shardd);
 	sharddir_unlock(shardd);
 	return (1);
+}
+
+VCL_BOOL
+shardcfg_reconfigure(VRT_CTX, struct sharddir *shardd, VCL_INT replicas)
+{
+	struct shard_change *change;
+
+	CHECK_OBJ_NOTNULL(shardd, SHARDDIR_MAGIC);
+	if (replicas <= 0) {
+		sharddir_err(ctx->vsl, SLT_Error,
+		    "shard %s: .reconfigure() invalid replicas argument %ld",
+		    shardd->name, replicas);
+		return (0);
+	}
+
+	change = shard_change_get(ctx, shardd);
+	if (change == NULL)
+		return (0);
+
+	return (change_reconfigure(change, replicas));
 }
 
 /*

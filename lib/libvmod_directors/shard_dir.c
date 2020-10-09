@@ -78,13 +78,13 @@ sharddir_debug(struct sharddir *shardd, const uint32_t flags)
 }
 
 void
-sharddir_err(VRT_CTX, enum VSL_tag_e tag,  const char *fmt, ...)
+sharddir_err(struct vsl_log *vsl, enum VSL_tag_e tag,  const char *fmt, ...)
 {
 	va_list ap;
 
 	va_start(ap, fmt);
-	if (ctx->vsl)
-		VSLbv(ctx->vsl, tag, fmt, ap);
+	if (vsl != NULL)
+		VSLbv(vsl, tag, fmt, ap);
 	else
 		VSLv(tag, 0, fmt, ap);
 	va_end(ap);

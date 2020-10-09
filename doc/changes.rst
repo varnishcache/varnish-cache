@@ -41,6 +41,13 @@ Varnish Cache Next (2021-03-15)
   backends) of several instances without any special ordering
   requirement.
 
+* Calling the shard director ``.reconfigure()`` method is now
+  optional. If not called explicitly, any shard director backend
+  changes are applied at the end of the current task.
+
+* Shard director ``Error`` log messages with ``(notice)`` have been
+  turned into ``Notice`` log messages.
+
 ================================
 Varnish Cache 6.5.1 (2020-09-25)
 ================================

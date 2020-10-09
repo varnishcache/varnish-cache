@@ -94,18 +94,18 @@ sharddir_backend(const struct sharddir *shardd, unsigned id)
 
 #define shard_err(ctx, shardd, fmt, ...)				\
 	do {								\
-		sharddir_err(ctx, SLT_Error, "shard %s: " fmt,		\
+		sharddir_err((ctx)->vsl, SLT_Error, "shard %s: " fmt,	\
 		    (shardd)->name, __VA_ARGS__);			\
 	} while (0)
 
 #define shard_err0(ctx, shardd, msg)					\
 	do {								\
-		sharddir_err(ctx, SLT_Error, "shard %s: %s",		\
+		sharddir_err((ctx)->vsl, SLT_Error, "shard %s: %s",	\
 		    (shardd)->name, (msg));				\
 	} while (0)
 
 void sharddir_debug(struct sharddir *shardd, const uint32_t flags);
-void sharddir_err(VRT_CTX, enum VSL_tag_e tag,  const char *fmt, ...);
+void sharddir_err(struct vsl_log *, enum VSL_tag_e tag,  const char *fmt, ...);
 void sharddir_new(struct sharddir **sharddp, const char *vcl_name,
     const struct vmod_directors_shard_param *param);
 void sharddir_set_param(struct sharddir *shardd,
