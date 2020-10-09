@@ -296,11 +296,19 @@ VRT_r_beresp_uncacheable(VRT_CTX)
 VCL_STRING
 VRT_r_client_identity(VRT_CTX)
 {
+	const char *id;
+
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	if (ctx->req->client_identity != NULL)
-		return (ctx->req->client_identity);
-	return (SES_Get_String_Attr(ctx->req->sp, SA_CLIENT_IP));
+	if (ctx->req != NULL) {
+		CHECK_OBJ(ctx->req, REQ_MAGIC);
+		id = ctx->req->client_identity;
+	} else {
+		CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+		id = ctx->bo->client_identity;
+	}
+	if (id != NULL)
+		return (id);
+	return (SES_Get_String_Attr(ctx->sp, SA_CLIENT_IP));
 }
 
 VCL_VOID

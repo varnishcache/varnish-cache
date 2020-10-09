@@ -132,6 +132,11 @@ VBO_GetBusyObj(struct worker *wrk, const struct req *req)
 
 	bo->do_stream = 1;
 
+	if (req->client_identity != NULL) {
+		bo->client_identity = WS_Copy(bo->ws, req->client_identity, -1);
+		XXXAN(bo->client_identity);
+	}
+
 	bo->director_req = req->director_hint;
 	bo->vcl = req->vcl;
 	VCL_Ref(bo->vcl);
