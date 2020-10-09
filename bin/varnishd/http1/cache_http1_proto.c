@@ -125,7 +125,7 @@ http1_dissect_hdrs(struct http *hp, char *p, struct http_conn *htc,
 		if (vct_iscrlf(p, htc->rxbuf_e))
 			break;
 		while (r < htc->rxbuf_e) {
-			if (!vct_isctl(*r) || vct_issp(*r)) {
+			if (vct_ishdrval(*r)) {
 				r++;
 				continue;
 			}
