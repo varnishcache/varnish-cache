@@ -37,6 +37,10 @@ Varnish Cache Next (2021-03-15)
   set headers are now validated to contain only characters allowed by
   RFC7230. A (runtime) VCL failure is triggered if not.
 
+* The shard director now supports reconfiguration (adding/removing
+  backends) of several instances without any special ordering
+  requirement.
+
 ================================
 Varnish Cache 6.5.1 (2020-09-25)
 ================================

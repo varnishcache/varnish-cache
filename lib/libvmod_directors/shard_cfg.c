@@ -80,27 +80,22 @@ struct backend_reconfig {
  *
  * for backend reconfiguration, we create a change list on the VCL workspace in
  * a PRIV_TASK state, which we work in reconfigure.
- *
- * for now, we allow to only reconfigure one shard director at a time.
  */
 
 static struct shard_change *
-shard_change_get(VRT_CTX, struct vmod_priv *priv,
-	const struct sharddir * const shardd)
+shard_change_get(VRT_CTX, const struct sharddir * const shardd)
 {
+	struct vmod_priv *task;
 	struct shard_change *change;
+	const void *id = (const char *)shardd + task_off_cfg;
 
-	if (priv->priv) {
-		CAST_OBJ_NOTNULL(change, priv->priv, SHARD_CHANGE_MAGIC);
-		if (change->shardd == NULL) {
-			change->shardd = shardd;
-			VSTAILQ_INIT(&change->tasks);
-		} else if (change->shardd != shardd) {
-			shard_err0(ctx, shardd,
-			    "cannot change more than one shard director "
-			    "at a time");
-			return (NULL);
-		}
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	task = VRT_priv_task(ctx, id);
+
+	if (task->priv != NULL) {
+		CAST_OBJ_NOTNULL(change, task->priv, SHARD_CHANGE_MAGIC);
+		assert (change->shardd == shardd);
 		return (change);
 	}
 
@@ -114,7 +109,7 @@ shard_change_get(VRT_CTX, struct vmod_priv *priv,
 	change->space = NULL;
 	change->shardd = shardd;
 	VSTAILQ_INIT(&change->tasks);
-	priv->priv = change;
+	task->priv = change;
 
 	return (change);
 }
@@ -124,7 +119,6 @@ shard_change_finish(struct shard_change *change)
 {
 	CHECK_OBJ_NOTNULL(change, SHARD_CHANGE_MAGIC);
 
-	change->shardd = NULL;
 	VSTAILQ_INIT(&change->tasks);
 }
 
@@ -150,8 +144,7 @@ shard_change_task_add(VRT_CTX, struct shard_change *change,
 }
 
 static inline struct shard_change_task *
-shard_change_task_backend(VRT_CTX,
-    struct vmod_priv *priv, const struct sharddir *shardd,
+shard_change_task_backend(VRT_CTX, const struct sharddir *shardd,
     enum shard_change_task_e task_e, VCL_BACKEND be, VCL_STRING ident,
     VCL_DURATION rampup)
 {
@@ -161,7 +154,7 @@ shard_change_task_backend(VRT_CTX,
 	CHECK_OBJ_NOTNULL(shardd, SHARDDIR_MAGIC);
 	assert(task_e == ADD_BE || task_e == REMOVE_BE);
 
-	change = shard_change_get(ctx, priv, shardd);
+	change = shard_change_get(ctx, shardd);
 	if (change == NULL)
 		return (NULL);
 
@@ -183,16 +176,15 @@ shard_change_task_backend(VRT_CTX,
  * director reconfiguration tasks
  */
 VCL_BOOL
-shardcfg_add_backend(VRT_CTX, struct vmod_priv *priv,
-    const struct sharddir *shardd, VCL_BACKEND be, VCL_STRING ident,
-    VCL_DURATION rampup, VCL_REAL weight)
+shardcfg_add_backend(VRT_CTX, const struct sharddir *shardd,
+    VCL_BACKEND be, VCL_STRING ident, VCL_DURATION rampup, VCL_REAL weight)
 {
 	struct shard_change_task *task;
 
 	assert (weight >= 1);
 	AN(be);
 
-	task = shard_change_task_backend(ctx, priv, shardd, ADD_BE,
+	task = shard_change_task_backend(ctx, shardd, ADD_BE,
 	    be, ident, rampup);
 
 	if (task == NULL)
@@ -203,21 +195,21 @@ shardcfg_add_backend(VRT_CTX, struct vmod_priv *priv,
 }
 
 VCL_BOOL
-shardcfg_remove_backend(VRT_CTX, struct vmod_priv *priv,
-    const struct sharddir *shardd, VCL_BACKEND be, VCL_STRING ident)
+shardcfg_remove_backend(VRT_CTX, const struct sharddir *shardd,
+    VCL_BACKEND be, VCL_STRING ident)
 {
-	return (shard_change_task_backend(ctx, priv, shardd, REMOVE_BE,
+	return (shard_change_task_backend(ctx, shardd, REMOVE_BE,
 	    be, ident, 0) != NULL);
 }
 
 VCL_BOOL
-shardcfg_clear(VRT_CTX, struct vmod_priv *priv, const struct sharddir *shardd)
+shardcfg_clear(VRT_CTX, const struct sharddir *shardd)
 {
 	struct shard_change *change;
 
 	CHECK_OBJ_NOTNULL(shardd, SHARDDIR_MAGIC);
 
-	change = shard_change_get(ctx, priv, shardd);
+	change = shard_change_get(ctx, shardd);
 	if (change == NULL)
 		return (0);
 
@@ -609,8 +601,7 @@ shardcfg_apply_change(VRT_CTX, struct sharddir *shardd,
  */
 
 VCL_BOOL
-shardcfg_reconfigure(VRT_CTX, struct vmod_priv *priv,
-    struct sharddir *shardd, VCL_INT replicas)
+shardcfg_reconfigure(VRT_CTX, struct sharddir *shardd, VCL_INT replicas)
 {
 	struct shard_change *change;
 
@@ -621,7 +612,7 @@ shardcfg_reconfigure(VRT_CTX, struct vmod_priv *priv,
 		return (0);
 	}
 
-	change = shard_change_get(ctx, priv, shardd);
+	change = shard_change_get(ctx, shardd);
 	if (change == NULL)
 		return (0);
 

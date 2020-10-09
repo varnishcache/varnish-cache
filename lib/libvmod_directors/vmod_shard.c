@@ -326,11 +326,10 @@ vmod_shard_add_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 			    ".add_backend(weight=%f) ignored", args->weight);
 	}
 
-	return shardcfg_add_backend(ctx, args->arg1,
-	    vshard->shardd, args->backend,
+	return (shardcfg_add_backend(ctx, vshard->shardd, args->backend,
 	    args->valid_ident ? args->ident : NULL,
 	    args->valid_rampup ? args->rampup : nan(""),
-	    weight);
+	    weight));
 }
 
 VCL_BOOL v_matchproto_(td_directors_shard_remove_backend)
@@ -349,23 +348,21 @@ vmod_shard_remove_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 		return (0);
 	}
 
-	return shardcfg_remove_backend(ctx, args->arg1, vshard->shardd,
-	    be, ident);
+	return (shardcfg_remove_backend(ctx, vshard->shardd, be, ident));
 }
 
 VCL_BOOL v_matchproto_(td_directors_shard_clear)
-vmod_shard_clear(VRT_CTX, struct vmod_directors_shard *vshard,
-    struct vmod_priv *priv)
+vmod_shard_clear(VRT_CTX, struct vmod_directors_shard *vshard)
 {
 	CHECK_OBJ_NOTNULL(vshard, VMOD_SHARD_SHARD_MAGIC);
-	return shardcfg_clear(ctx, priv, vshard->shardd);
+	return (shardcfg_clear(ctx, vshard->shardd));
 }
 
 VCL_BOOL v_matchproto_(td_directors_shard_reconfigure)
 vmod_shard_reconfigure(VRT_CTX, struct vmod_directors_shard *vshard,
-    struct vmod_priv *priv, VCL_INT replicas)
+    VCL_INT replicas)
 {
-	return shardcfg_reconfigure(ctx, priv, vshard->shardd, replicas);
+	return (shardcfg_reconfigure(ctx, vshard->shardd, replicas));
 }
 
 static inline uint32_t
@@ -878,12 +875,14 @@ shard_param_task(VRT_CTX, const void *id,
 {
 	struct vmod_directors_shard_param *p;
 	struct vmod_priv *task;
+	const void *task_id;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(pa, VMOD_SHARD_SHARD_PARAM_MAGIC);
 	assert(pa->scope > _SCOPE_INVALID);
 
-	task = VRT_priv_task(ctx, id);
+	task_id = (const char *)id + task_off_param;
+	task = VRT_priv_task(ctx, task_id);
 
 	if (task == NULL) {
 		VRT_fail(ctx, "no priv_task");

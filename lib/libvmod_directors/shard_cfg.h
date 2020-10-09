@@ -28,15 +28,11 @@
  * SUCH DAMAGE.
  */
 
-VCL_BOOL shardcfg_add_backend(VRT_CTX, struct vmod_priv *priv,
-    const struct sharddir *shardd, VCL_BACKEND be, VCL_STRING ident,
-    VCL_DURATION rampup, VCL_REAL weight);
-VCL_BOOL shardcfg_remove_backend(VRT_CTX, struct vmod_priv *priv,
-    const struct sharddir *shardd, VCL_BACKEND be, VCL_STRING ident);
-VCL_BOOL shardcfg_clear(VRT_CTX, struct vmod_priv *priv,
-    const struct sharddir *shardd);
-VCL_BOOL shardcfg_reconfigure(VRT_CTX, struct vmod_priv *priv,
-    struct sharddir *shardd, VCL_INT replicas);
+VCL_BOOL shardcfg_add_backend(VRT_CTX, const struct sharddir *shardd,
+    VCL_BACKEND be, VCL_STRING ident, VCL_DURATION rampup, VCL_REAL weight);
+VCL_BOOL shardcfg_remove_backend(VRT_CTX, const struct sharddir *shardd,
+    VCL_BACKEND be, VCL_STRING ident);
+VCL_BOOL shardcfg_clear(VRT_CTX, const struct sharddir *shardd);
+VCL_BOOL shardcfg_reconfigure(VRT_CTX, struct sharddir *shardd, VCL_INT);
 VCL_VOID shardcfg_set_warmup(struct sharddir *shardd, VCL_REAL ratio);
-VCL_VOID shardcfg_set_rampup(struct sharddir *shardd,
-    VCL_DURATION duration);
+VCL_VOID shardcfg_set_rampup(struct sharddir *shardd, VCL_DURATION duration);

@@ -376,7 +376,7 @@ association.
 The association can be changed per backend request using the *param*
 argument of `xshard.backend()`_.
 
-$Method BOOL .add_backend(PRIV_TASK, BACKEND backend,
+$Method BOOL .add_backend(BACKEND backend,
 	[STRING ident], [DURATION rampup], [REAL weight])
 
 Add a backend *backend* to the director.
@@ -399,28 +399,25 @@ effect of *weight* is also capped such that the total number of
 replicas does not exceed `UINT32_MAX`.
 
 NOTE: Backend changes need to be finalized with
-`xshard.reconfigure()`_ and are only supported on one
-shard director at a time.
+`xshard.reconfigure()`_.
 
-$Method BOOL .remove_backend(PRIV_TASK, [BACKEND backend=0], [STRING ident=0])
+$Method BOOL .remove_backend([BACKEND backend=0], [STRING ident=0])
 
 Remove backend(s) from the director. Either *backend* or *ident* must
 be specified. *ident* removes a specific instance. If *backend* is
 given without *ident*, all instances of this backend are removed.
 
 NOTE: Backend changes need to be finalized with
-`xshard.reconfigure()`_ and are only supported on one
-shard director at a time.
+`xshard.reconfigure()`_.
 
-$Method BOOL .clear(PRIV_TASK)
+$Method BOOL .clear()
 
 Remove all backends from the director.
 
 NOTE: Backend changes need to be finalized with
-`xshard.reconfigure()`_ and are only supported on one
-shard director at a time.
+`xshard.reconfigure()`_.
 
-$Method BOOL .reconfigure(PRIV_TASK, INT replicas=67)
+$Method BOOL .reconfigure(INT replicas=67)
 
 Reconfigure the consistent hashing ring to reflect backend changes.
 

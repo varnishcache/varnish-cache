@@ -107,6 +107,7 @@ varnish v1 -vcl+backend {
 		vd.add_backend(s3, "2");
 		vd.add_backend(s3, "3");
 		vd2.clear();
+		vd2.add_backend(s3, "4");
 		vd.add_backend(s3, "4");
 		vd.add_backend(s3, "5");
 		vd.add_backend(s3, "6");
@@ -241,7 +242,6 @@ logexpect l1 -v v1 -g raw -d 1 {
 	expect 0 0    Debug   {^shard:.*point = 6e040182, host =  0}
 
 	expect 0 0    VCL_Log {^-- re-add some - no 2nd director$}
-	expect 0 0    Error   {^shard vd2: cannot change more than}
 	expect 0 0    Debug   {^shard:.*point =  3d1fe97, host =  3}
 	expect 0 0    Debug   {^shard:.*point =  a25a43b, host =  6}
 	expect 0 0    Debug   {^shard:.*point = 2b20d9a2, host =  1}

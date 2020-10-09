@@ -73,6 +73,12 @@ struct sharddir {
 	uint32_t				n_points;
 };
 
+/* VRT_priv_task() id offsets */
+enum shard_task_off_e {
+	task_off_param = 0,
+	task_off_cfg = 1
+};
+
 static inline VCL_BACKEND
 sharddir_backend(const struct sharddir *shardd, unsigned id)
 {
