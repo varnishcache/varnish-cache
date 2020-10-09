@@ -35,6 +35,7 @@
 
 #include "cache/cache.h"
 
+#include "vrt_obj.h"
 #include "vdir.h"
 
 #include "vcc_directors_if.h"
@@ -107,14 +108,28 @@ vmod_hash_remove_backend(VRT_CTX,
 }
 
 VCL_BACKEND v_matchproto_()
-vmod_hash_backend(VRT_CTX, struct vmod_directors_hash *rr, VCL_STRANDS s)
+vmod_hash_backend(VRT_CTX, struct vmod_directors_hash *rr,
+    struct VARGS(hash_backend) *args)
 {
 	VCL_BACKEND be;
+	VCL_STRANDS s;
+	struct strands t;
+	const char *p;
 	double r;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_ORNULL(ctx->bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_HASH_MAGIC);
+
+
+	if (args->valid_key) {
+		s = args->key;
+	} else {
+		p = VRT_r_client_identity(ctx);
+		t.n = 1;
+		t.p = &p;
+		s = &t;
+	}
 	AN(s);
 
 	r = VRT_HashStrands32(s);

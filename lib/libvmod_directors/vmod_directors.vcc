@@ -220,15 +220,19 @@ Remove a backend from the director.
 Example::
 	vdir.remove_backend(larger_backend);
 
-$Method BACKEND .backend(STRANDS)
+$Method BACKEND .backend([STRANDS key])
 
-Pick a backend from the backend director.
-
-Use the string or list of strings provided to pick the backend.
+Pick a backend from the hash director using the ``key`` string. When
+``key`` is omitted the ``client.identity`` variable is used instead,
+turning a hash director into a simple client director.
 
 Example::
 	# pick a backend based on the cookie header from the client
 	set req.backend_hint = vdir.backend(req.http.cookie);
+
+	# the same as above, but indirectly
+	set client.identity = req.http.cookie;
+	set req.backend_hint = vdir.backend();
 
 $Object shard()
 
