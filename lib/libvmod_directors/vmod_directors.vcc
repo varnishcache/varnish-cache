@@ -623,12 +623,12 @@ implement retries on alternative backends::
 
     new dir_A = directors.shard();
     dir_A.add_backend(...);
-    dir_A.reconfigure(shard_param);
+    dir_A.reconfigure();
     dir_A.associate(shard_param.use());	# <-- !
 
     new dir_B = directors.shard();
     dir_B.add_backend(...);
-    dir_B.reconfigure(shard_param);
+    dir_B.reconfigure();
     dir_B.associate(shard_param.use());	# <-- !
   }
 
