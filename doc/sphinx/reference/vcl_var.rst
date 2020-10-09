@@ -117,7 +117,7 @@ client.identity
 
 	Type: STRING
 
-	Readable from: client
+	Readable from: client, backend
 
 	Writable from: client
 

@@ -441,6 +441,8 @@ struct busyobj {
 
 	uint16_t		err_code;
 	const char		*err_reason;
+
+	const char		*client_identity;
 };
 
 
