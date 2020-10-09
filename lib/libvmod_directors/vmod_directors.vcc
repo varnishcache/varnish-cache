@@ -222,7 +222,7 @@ Example::
 
 $Method BACKEND .backend(STRANDS)
 
-Pick a backend from the backend director.
+Pick a backend from the hash director.
 
 Use the string or list of strings provided to pick the backend.
 
