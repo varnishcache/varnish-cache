@@ -222,7 +222,12 @@ tweak_feature(struct vsb *vsb, const struct parspec *par, const char *arg)
 	(void)par;
 
 	if (arg != NULL && arg != JSON_FMT) {
-		if (!strcmp(arg, "none")) {
+		if (!strcmp(arg, "default")) {
+			memset(mgt_param.feature_bits,
+			    0, sizeof mgt_param.feature_bits);
+			(void)bit(mgt_param.feature_bits,
+			    FEATURE_VALIDATE_HEADERS, BSET);
+		} else if (!strcmp(arg, "none")) {
 			memset(mgt_param.feature_bits,
 			    0, sizeof mgt_param.feature_bits);
 		} else {
@@ -271,9 +276,10 @@ struct parspec VSL_parspec[] = {
 #undef DEBUG_BIT
 		},
 	{ "feature", tweak_feature, NULL,
-		NULL, NULL, "none",
+		NULL, NULL, "default",
 		NULL,
 		"Enable/Disable various minor features.\n"
+		"\tdefault\tSet default value\n"
 		"\tnone\tDisable all features.\n\n"
 		"Use +/- prefix to enable/disable individual feature:"
 #define FEATURE_BIT(U, l, d) "\n\t" #l "\t" d

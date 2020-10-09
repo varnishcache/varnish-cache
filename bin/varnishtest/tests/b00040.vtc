@@ -1,12 +1,22 @@
-varnishtest "test certain mailformed requests"
+varnishtest "test certain malformed requests and validate_headers"
 
 server s1 {
 	rxreq
 	expect req.url == /4
 	txresp
+	rxreq
+	expect req.url == /9
+	txresp
 } -start
 
-varnish v1 -vcl+backend { } -start
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		if (req.url == "/9") {
+			set req.http.foo = {"
+			"};
+		}
+	}
+} -start
 
 logexpect l1 -v v1 -g raw {
 	expect * 1001 BogoHeader {1st header has white space:.*}
@@ -16,6 +26,7 @@ logexpect l1 -v v1 -g raw {
 	expect * 1012 BogoHeader {Header has ctrl char 0x0d}
 	expect * 1014 BogoHeader {Header has ctrl char 0x0d}
 	expect * 1016 BogoHeader {Missing header name:.*}
+	expect * 1018 VCL_Error  {Bad header foo:}
 } -start
 
 client c1 {
@@ -80,5 +91,18 @@ client c1 {
 	expect resp.status == 400
 } -run
 
+client c1 {
+	txreq -url /9
+	rxresp
+	expect resp.status == 503
+} -run
+
 logexpect l1 -wait
 
+varnish v1 -cliok "param.set feature -validate_headers"
+
+client c1 {
+	txreq -url /9
+	rxresp
+	expect resp.status == 200
+} -run

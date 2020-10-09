@@ -74,6 +74,10 @@ FEATURE_BIT(WAIT_SILO,			wait_silo,
     "Wait for persistent silos to completely load before serving requests."
 )
 
+FEATURE_BIT(VALIDATE_HEADERS,		validate_headers,
+    "Validate all header set operations to conform to RFC7230."
+)
+
 #undef FEATURE_BIT
 
 /*lint -restore */

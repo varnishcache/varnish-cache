@@ -633,19 +633,23 @@ VRT_SetHdr(VRT_CTX , VCL_HEADER hs, const char *p, ...)
 	AN(hs->what);
 	hp = VRT_selecthttp(ctx, hs->where);
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-	va_start(ap, p);
 	if (p == vrt_magic_string_unset) {
 		http_Unset(hp, hs->what);
 	} else {
+		va_start(ap, p);
 		b = VRT_String(hp->ws, hs->what + 1, p, ap);
+		va_end(ap);
 		if (b == NULL) {
 			VSLb(ctx->vsl, SLT_LostHeader, "%s", hs->what + 1);
-		} else {
-			http_Unset(hp, hs->what);
-			http_SetHeader(hp, b);
+			return;
 		}
+		if (FEATURE(FEATURE_VALIDATE_HEADERS) && ! validhdr(b)) {
+			VRT_fail(ctx, "Bad header %s", b);
+			return;
+		}
+		http_Unset(hp, hs->what);
+		http_SetHeader(hp, b);
 	}
-	va_end(ap);
 }
 
 /*--------------------------------------------------------------------*/

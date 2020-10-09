@@ -33,6 +33,10 @@ Varnish Cache Next (2021-03-15)
 * counters MAIN.s_req_bodybytes and VBE.*.tools.beresp_bodybytes
   are now always the number of bodybytes moved on the wire.
 
+* Unless the new ``validate_headers`` feature is disabled, all newly
+  set headers are now validated to contain only characters allowed by
+  RFC7230. A (runtime) VCL failure is triggered if not.
+
 ================================
 Varnish Cache 6.5.1 (2020-09-25)
 ================================
