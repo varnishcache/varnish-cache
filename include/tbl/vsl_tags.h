@@ -683,7 +683,7 @@ SLTM(VCL_use, 0, "VCL in use",
 )
 
 SLTM(Notice, 0, "Informational messages about request handling",
-	"Informational log messages on events occured during request"
+	"Informational log messages on events occurred during request"
 	" handling.\n\n"
 	"The format is::\n\n"
 	"\t%s: %s\n"
