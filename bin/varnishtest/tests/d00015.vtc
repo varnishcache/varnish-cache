@@ -199,75 +199,75 @@ logexpect l1 -v v1 -g raw -d 1 {
 	expect 0 0    CLI     {^Rd vcl.load}
 
 	expect 0 0    VCL_Log {^-- invalid replicas$}
-	expect 0 0    Error   {^shard vd: .reconfigure.. invalid replicas argument 0}
+	expect 0 0    Error   {^vmod_directors shard vd: .reconfigure.. invalid replicas argument 0}
 	expect 0 0    VCL_Log {^reconfigure failed}
 
 	expect 0 0    VCL_Log {^-- no changes - no debug output$}
 
 	expect 0 0    VCL_Log {^-- no backends$}
-	expect 0 0    Error   {^shard vd: .reconfigure.. no backends}
+	expect 0 0    Error   {^vmod_directors shard vd: .reconfigure.. no backends}
 	expect 0 0    VCL_Log {^reconfigure failed}
 
 	expect 0 0    VCL_Log {^-- one backend$}
-	expect 0 0    Debug   {^shard:.*point = f08ad325, host =  0}
+	expect 0 0    Debug   {^vmod_directors shard:.*point = f08ad325, host =  0}
 
 	expect 0 0    VCL_Log {^-- no change - no output$}
 
 	expect 0 0    VCL_Log {^-- change, clear, no backends$}
-	expect 0 0    Error   {^shard vd: .reconfigure.. no backends}
+	expect 0 0    Error   {^vmod_directors shard vd: .reconfigure.. no backends}
 	expect 0 0    VCL_Log {^reconfigure failed}
 
 	expect 0 0    VCL_Log {^-- duplicate add$}
-	expect 0 0    Notice  {^shard vd: backend s1 already exists - skipping$}
-	expect 0 0    Debug   {^shard:.*point = 6e040182, host =  1}
-	expect 0 0    Debug   {^shard:.*point = f08ad325, host =  0}
+	expect 0 0    Notice  {^vmod_directors shard vd: backend s1 already exists - skipping$}
+	expect 0 0    Debug   {^vmod_directors shard:.*point = 6e040182, host =  1}
+	expect 0 0    Debug   {^vmod_directors shard:.*point = f08ad325, host =  0}
 
 	expect 0 0    VCL_Log {^-- duplicate add with idents$}
-	expect 0 0    Notice  {^shard vd: backend s1 already exists - skipping}
-	expect 0 0    Notice  {^shard vd: backend s1/s1_1 already exists - skipping}
-	expect 0 0    Notice  {^shard vd: backend s1/s1_2 already exists - skipping}
-	expect 0 0    Debug   {^shard:.*point = 6e040182, host =  3}
-	expect 0 0    Debug   {^shard:.*point = 732c7bbe, host =  2}
-	expect 0 0    Debug   {^shard:.*point = bae80b0b, host =  1}
-	expect 0 0    Debug   {^shard:.*point = f08ad325, host =  0}
+	expect 0 0    Notice  {^vmod_directors shard vd: backend s1 already exists - skipping}
+	expect 0 0    Notice  {^vmod_directors shard vd: backend s1/s1_1 already exists - skipping}
+	expect 0 0    Notice  {^vmod_directors shard vd: backend s1/s1_2 already exists - skipping}
+	expect 0 0    Debug   {^vmod_directors shard:.*point = 6e040182, host =  3}
+	expect 0 0    Debug   {^vmod_directors shard:.*point = 732c7bbe, host =  2}
+	expect 0 0    Debug   {^vmod_directors shard:.*point = bae80b0b, host =  1}
+	expect 0 0    Debug   {^vmod_directors shard:.*point = f08ad325, host =  0}
 
 	expect 0 0    VCL_Log {^-- remove s1_2 specifically$}
-	expect 0 0    Debug   {^shard:.*point = 6e040182, host =  2}
-	expect 0 0    Debug   {^shard:.*point = bae80b0b, host =  1}
-	expect 0 0    Debug   {^shard:.*point = f08ad325, host =  0}
+	expect 0 0    Debug   {^vmod_directors shard:.*point = 6e040182, host =  2}
+	expect 0 0    Debug   {^vmod_directors shard:.*point = bae80b0b, host =  1}
+	expect 0 0    Debug   {^vmod_directors shard:.*point = f08ad325, host =  0}
 
 	expect 0 0    VCL_Log {^-- remove all instances of s1$}
-	expect 0 0    Debug   {^shard:.*point = 6e040182, host =  0}
+	expect 0 0    Debug   {^vmod_directors shard:.*point = 6e040182, host =  0}
 
 	expect 0 0    VCL_Log {^-- re-add some - no 2nd director$}
-	expect 0 0    Debug   {^shard:.*point =  3d1fe97, host =  3}
-	expect 0 0    Debug   {^shard:.*point =  a25a43b, host =  6}
-	expect 0 0    Debug   {^shard:.*point = 2b20d9a2, host =  1}
-	expect 0 0    Debug   {^shard:.*point = 6337e62c, host =  8}
-	expect 0 0    Debug   {^shard:.*point = c9803f17, host =  5}
-	expect 0 0    Debug   {^shard:.*point = d51dafe6, host =  0}
-	expect 0 0    Debug   {^shard:.*point = eb74a7d5, host =  4}
-	expect 0 0    Debug   {^shard:.*point = f493ce58, host =  2}
-	expect 0 0    Debug   {^shard:.*point = fc1a5162, host =  7}
+	expect 0 0    Debug   {^vmod_directors shard:.*point =  3d1fe97, host =  3}
+	expect 0 0    Debug   {^vmod_directors shard:.*point =  a25a43b, host =  6}
+	expect 0 0    Debug   {^vmod_directors shard:.*point = 2b20d9a2, host =  1}
+	expect 0 0    Debug   {^vmod_directors shard:.*point = 6337e62c, host =  8}
+	expect 0 0    Debug   {^vmod_directors shard:.*point = c9803f17, host =  5}
+	expect 0 0    Debug   {^vmod_directors shard:.*point = d51dafe6, host =  0}
+	expect 0 0    Debug   {^vmod_directors shard:.*point = eb74a7d5, host =  4}
+	expect 0 0    Debug   {^vmod_directors shard:.*point = f493ce58, host =  2}
+	expect 0 0    Debug   {^vmod_directors shard:.*point = fc1a5162, host =  7}
 
 	expect 0 0    VCL_Log {^-- remove second-last$}
-	expect 0 0    Debug   {^shard:.*point =  3d1fe97, host =  3}
-	expect 0 0    Debug   {^shard:.*point =  a25a43b, host =  6}
-	expect 0 0    Debug   {^shard:.*point = 2b20d9a2, host =  1}
-	expect 0 0    Debug   {^shard:.*point = 6337e62c, host =  7}
-	expect 0 0    Debug   {^shard:.*point = c9803f17, host =  5}
-	expect 0 0    Debug   {^shard:.*point = d51dafe6, host =  0}
-	expect 0 0    Debug   {^shard:.*point = eb74a7d5, host =  4}
-	expect 0 0    Debug   {^shard:.*point = f493ce58, host =  2}
+	expect 0 0    Debug   {^vmod_directors shard:.*point =  3d1fe97, host =  3}
+	expect 0 0    Debug   {^vmod_directors shard:.*point =  a25a43b, host =  6}
+	expect 0 0    Debug   {^vmod_directors shard:.*point = 2b20d9a2, host =  1}
+	expect 0 0    Debug   {^vmod_directors shard:.*point = 6337e62c, host =  7}
+	expect 0 0    Debug   {^vmod_directors shard:.*point = c9803f17, host =  5}
+	expect 0 0    Debug   {^vmod_directors shard:.*point = d51dafe6, host =  0}
+	expect 0 0    Debug   {^vmod_directors shard:.*point = eb74a7d5, host =  4}
+	expect 0 0    Debug   {^vmod_directors shard:.*point = f493ce58, host =  2}
 
 	expect 0 0    VCL_Log {^-- remove last$}
-	expect 0 0    Debug   {^shard:.*point =  3d1fe97, host =  3}
-	expect 0 0    Debug   {^shard:.*point =  a25a43b, host =  6}
-	expect 0 0    Debug   {^shard:.*point = 2b20d9a2, host =  1}
-	expect 0 0    Debug   {^shard:.*point = c9803f17, host =  5}
-	expect 0 0    Debug   {^shard:.*point = d51dafe6, host =  0}
-	expect 0 0    Debug   {^shard:.*point = eb74a7d5, host =  4}
-	expect 0 0    Debug   {^shard:.*point = f493ce58, host =  2}
+	expect 0 0    Debug   {^vmod_directors shard:.*point =  3d1fe97, host =  3}
+	expect 0 0    Debug   {^vmod_directors shard:.*point =  a25a43b, host =  6}
+	expect 0 0    Debug   {^vmod_directors shard:.*point = 2b20d9a2, host =  1}
+	expect 0 0    Debug   {^vmod_directors shard:.*point = c9803f17, host =  5}
+	expect 0 0    Debug   {^vmod_directors shard:.*point = d51dafe6, host =  0}
+	expect 0 0    Debug   {^vmod_directors shard:.*point = eb74a7d5, host =  4}
+	expect 0 0    Debug   {^vmod_directors shard:.*point = f493ce58, host =  2}
 
 expect 0 0    VCL_Log {^-- END$}
 } -start

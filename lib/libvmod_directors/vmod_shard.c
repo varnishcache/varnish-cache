@@ -266,7 +266,7 @@ vmod_shard_set_warmup(VRT_CTX, struct vmod_directors_shard *vshard,
 {
 	CHECK_OBJ_NOTNULL(vshard, VMOD_SHARD_SHARD_MAGIC);
 	if (probability < 0 || probability >= 1) {
-		shard_err(ctx, vshard->shardd,
+		shard_notice(ctx->vsl, vshard->shardd->name,
 		    ".set_warmup(%f) ignored", probability);
 		return;
 	}
@@ -297,7 +297,8 @@ vmod_shard_associate(VRT_CTX,
 	ppt = shard_param_blob(b);
 
 	if (ppt == NULL) {
-		VRT_fail(ctx, "shard .associate param invalid");
+		shard_fail(ctx, vshard->shardd->name, "%s",
+		    "shard .associate param invalid");
 		return;
 	}
 
@@ -313,8 +314,8 @@ vmod_shard_add_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 	CHECK_OBJ_NOTNULL(vshard, VMOD_SHARD_SHARD_MAGIC);
 
 	if (args->backend == NULL) {
-		VRT_fail(ctx, "%s: NULL backend cannot be added",
-			 vshard->shardd->name);
+		shard_fail(ctx, vshard->shardd->name, "%s",
+		    "NULL backend cannot be added");
 		return (0);
 	}
 
@@ -322,7 +323,7 @@ vmod_shard_add_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 		if (args->weight >= 1)
 			weight = args->weight;
 		else
-			shard_err(ctx, vshard->shardd,
+			shard_notice(ctx->vsl, vshard->shardd->name,
 			    ".add_backend(weight=%f) ignored", args->weight);
 	}
 
@@ -342,9 +343,8 @@ vmod_shard_remove_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 	CHECK_OBJ_NOTNULL(vshard, VMOD_SHARD_SHARD_MAGIC);
 
 	if (be == NULL && ident == NULL) {
-		VRT_fail(ctx, "%s.backend_remove(): "
-		    "either backend or ident are required",
-		    vshard->shardd->name);
+		shard_fail(ctx, vshard->shardd->name, "%s",
+		    ".backend_remove(): either backend or ident are required");
 		return (0);
 	}
 
@@ -499,7 +499,7 @@ shard_param_set_mask(const struct VARGS(shard_param_set) * const a)
  */
 static struct vmod_directors_shard_param *
 shard_param_args(VRT_CTX,
-    struct vmod_directors_shard_param *p, const char *who,
+    struct vmod_directors_shard_param *p, const char *func,
     uint32_t args, VCL_ENUM by_s, VCL_INT key_int, VCL_BLOB key_blob,
     VCL_INT alt, VCL_REAL warmup, VCL_BOOL rampup, VCL_ENUM healthy_s)
 {
@@ -516,16 +516,15 @@ shard_param_args(VRT_CTX,
 	/* by_s / key_int / key_blob */
 	if (by_s == VENUM(KEY)) {
 		if ((args & arg_key) == 0) {
-			VRT_fail(ctx, "%s %s: "
-				 "missing key argument with by=%s",
-				 who, p->vcl_name, by_s);
+			shard_fail(ctx, p->vcl_name,
+			    "%s missing key argument with by=%s",
+			    func, by_s);
 			return (NULL);
 		}
 		if (key_int < 0 || key_int > UINT32_MAX) {
-			VRT_fail(ctx, "%s %s: "
-				 "invalid key argument %jd with by=%s",
-				 who, p->vcl_name,
-				 (intmax_t)key_int, by_s);
+			shard_fail(ctx, p->vcl_name,
+			    "%s invalid key argument %jd with by=%s",
+			    func, (intmax_t)key_int, by_s);
 			return (NULL);
 		}
 		assert(key_int >= 0);
@@ -533,26 +532,24 @@ shard_param_args(VRT_CTX,
 		p->key = (uint32_t)key_int;
 	} else if (by_s == VENUM(BLOB)) {
 		if ((args & arg_key_blob) == 0) {
-			VRT_fail(ctx, "%s %s: "
-				 "missing key_blob argument with by=%s",
-				 who, p->vcl_name, by_s);
+			shard_fail(ctx, p->vcl_name,
+			    "%s missing key_blob argument with by=%s",
+			    func, by_s);
 			return (NULL);
 		}
 		if (key_blob == NULL || key_blob->len == 0 ||
 		    key_blob->blob == NULL) {
-			sharddir_err(ctx->vsl, SLT_Error, "%s %s: "
-				     "by=BLOB but no or empty key_blob "
-				     "- using key 0",
-				     who, p->vcl_name);
+			shard_err(ctx->vsl, p->vcl_name,
+			    "%s by=BLOB but no or empty key_blob - using key 0",
+			    func);
 			p->key = 0;
 		} else
 			p->key = shard_blob_key(key_blob);
 	} else if (by_s == VENUM(HASH) || by_s == VENUM(URL)) {
 		if (args & (arg_key|arg_key_blob)) {
-			VRT_fail(ctx, "%s %s: "
-				 "key and key_blob arguments are "
-				 "invalid with by=%s",
-				 who, p->vcl_name, by_s);
+			shard_fail(ctx, p->vcl_name,
+			    "%s key and key_blob arguments are "
+			    "invalid with by=%s", func, by_s);
 			return (NULL);
 		}
 	} else {
@@ -562,9 +559,9 @@ shard_param_args(VRT_CTX,
 
 	if (args & arg_alt) {
 		if (alt < 0) {
-			VRT_fail(ctx, "%s %s: "
-				 "invalid alt argument %jd",
-				 who, p->vcl_name, (intmax_t)alt);
+			shard_fail(ctx, p->vcl_name,
+			    "%s invalid alt argument %jd",
+			    func, (intmax_t)alt);
 			return (NULL);
 		}
 		p->alt = alt;
@@ -572,9 +569,9 @@ shard_param_args(VRT_CTX,
 
 	if (args & arg_warmup) {
 		if ((warmup < 0 && warmup != -1) || warmup > 1) {
-			VRT_fail(ctx, "%s %s: "
-				 "invalid warmup argument %f",
-				 who, p->vcl_name, warmup);
+			shard_fail(ctx, p->vcl_name,
+			    "%s invalid warmup argument %f",
+			    func, warmup);
 			return (NULL);
 		}
 		p->warmup = warmup;
@@ -618,9 +615,10 @@ vmod_shard_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 		}
 
 		if ((ctx->method & SHARD_VCL_TASK_BEREQ) == 0) {
-			VRT_fail(ctx, "shard .backend resolve=LAZY with other "
-				 "parameters can only be used in backend/pipe "
-				 "context");
+			shard_fail(ctx, vshard->shardd->name, "%s",
+			    ".backend(resolve=LAZY) with other "
+			    "parameters can only be used in backend/pipe "
+			    "context");
 			return (NULL);
 		}
 
@@ -633,9 +631,9 @@ vmod_shard_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 		pp->vcl_name = vshard->shardd->name;
 	} else if (resolve == VENUM(NOW)) {
 		if (ctx->method & VCL_MET_TASK_H) {
-			VRT_fail(ctx,
-				 "shard .backend resolve=NOW can not be "
-				 "used in vcl_init{}/vcl_fini{}");
+			shard_fail(ctx, vshard->shardd->name, "%s",
+			    ".backend(resolve=NOW) can not be "
+			    "used in vcl_init{}/vcl_fini{}");
 			return (NULL);
 		}
 		pp = shard_param_stack(&pstk, vshard->shardd->param,
@@ -648,7 +646,8 @@ vmod_shard_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 	if (args & arg_param) {
 		ppt = shard_param_blob(a->param);
 		if (ppt == NULL) {
-			VRT_fail(ctx, "shard .backend param invalid");
+			shard_fail(ctx, vshard->shardd->name, "%s",
+			    ".backend(key_blob) param invalid");
 			return (NULL);
 		}
 		pp->defaults = ppt;
@@ -885,7 +884,7 @@ shard_param_task(VRT_CTX, const void *id,
 	task = VRT_priv_task(ctx, task_id);
 
 	if (task == NULL) {
-		VRT_fail(ctx, "no priv_task");
+		shard_fail(ctx, pa->vcl_name, "%s", "no priv_task");
 		return (NULL);
 	}
 
@@ -897,7 +896,7 @@ shard_param_task(VRT_CTX, const void *id,
 
 	p = WS_Alloc(ctx->ws, sizeof *p);
 	if (p == NULL) {
-		VRT_fail(ctx, "shard_param_task WS_Alloc failed");
+		shard_fail(ctx, pa->vcl_name, "%s", "WS_Alloc failed");
 		return (NULL);
 	}
 	task->priv = p;
@@ -921,8 +920,8 @@ shard_param_prep(VRT_CTX, struct vmod_directors_shard_param *p,
 	CHECK_OBJ_NOTNULL(p, VMOD_SHARD_SHARD_PARAM_MAGIC);
 
 	if (ctx->method & SHARD_VCL_TASK_REQ) {
-		VRT_fail(ctx, "%s may only be used "
-			 "in vcl_init and in backend/pipe context", who);
+		shard_fail(ctx, p->vcl_name, "%s may only be used "
+		    "in vcl_init and in backend/pipe context", who);
 		return (NULL);
 	} else if (ctx->method & SHARD_VCL_TASK_BEREQ)
 		p = shard_param_task(ctx, p, p);

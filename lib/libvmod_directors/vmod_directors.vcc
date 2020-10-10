@@ -344,12 +344,12 @@ Error Reporting
 Failing methods should report errors to VSL with the Error tag, so
 when configuring the shard director, you are advised to check::
 
-	varnishlog -I Error:^shard
+	varnishlog -I Error:^vmod_directors.shard
 
 Additional information may be provided as Notices, which can be
 checked using
 
-	varnishlog -I Notice:^shard
+	varnishlog -I Notice:^vmod_directors.shard
 
 $Method VOID .set_warmup(REAL probability=0.0)
 

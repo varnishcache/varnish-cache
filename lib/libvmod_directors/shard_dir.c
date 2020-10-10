@@ -78,7 +78,7 @@ sharddir_debug(struct sharddir *shardd, const uint32_t flags)
 }
 
 void
-sharddir_err(struct vsl_log *vsl, enum VSL_tag_e tag,  const char *fmt, ...)
+sharddir_log(struct vsl_log *vsl, enum VSL_tag_e tag,  const char *fmt, ...)
 {
 	va_list ap;
 
@@ -242,11 +242,11 @@ validate_alt(VRT_CTX, const struct sharddir *shardd, VCL_INT *alt)
 	const VCL_INT alt_max = shardd->n_backend - 1;
 
 	if (*alt < 0) {
-		shard_err(ctx, shardd,
+		shard_err(ctx->vsl, shardd->name,
 		    "invalid negative parameter alt=%ld, set to 0", *alt);
 		*alt = 0;
 	} else if (*alt > alt_max) {
-		shard_err(ctx, shardd,
+		shard_err(ctx->vsl, shardd->name,
 		    "parameter alt=%ld limited to %ld", *alt, alt_max);
 		*alt = alt_max;
 	}
@@ -408,7 +408,7 @@ sharddir_pick_be(VRT_CTX, struct sharddir *shardd, uint32_t key, VCL_INT alt,
 	sharddir_rdlock(shardd);
 
 	if (shardd->n_backend == 0) {
-		shard_err0(ctx, shardd, "no backends");
+		shard_err0(ctx->vsl, shardd->name, "no backends");
 		sharddir_unlock(shardd);
 		return (NULL);
 	}

@@ -119,7 +119,7 @@ shard_change_get(VRT_CTX, struct sharddir * const shardd)
 
 	change = WS_Alloc(ctx->ws, sizeof(*change));
 	if (change == NULL) {
-		VRT_fail(ctx, "could not get workspace");
+		shard_fail(ctx, shardd->name, "%s", "could not get workspace");
 		return (NULL);
 	}
 
@@ -151,7 +151,8 @@ shard_change_task_add(VRT_CTX, struct shard_change *change,
 
 	task = WS_Alloc(ctx->ws, sizeof(*task));
 	if (task == NULL) {
-		VRT_fail(ctx, "could not get workspace for task");
+		shard_fail(ctx, change->shardd->name, "%s",
+		    "could not get workspace for task");
 		return (NULL);
 	}
 	INIT_OBJ(task, SHARD_CHANGE_TASK_MAGIC);
@@ -179,7 +180,8 @@ shard_change_task_backend(VRT_CTX, struct sharddir *shardd,
 
 	b = WS_Alloc(ctx->ws, sizeof(*b));
 	if (b == NULL) {
-		VRT_fail(ctx, "could not get workspace for change");
+		shard_fail(ctx, change->shardd->name, "%s",
+		    "could not get workspace for task");
 		return (NULL);
 	}
 
@@ -598,8 +600,8 @@ shardcfg_apply_change(struct vsl_log *vsl, struct sharddir *shardd,
 
 			const char * const ident = b->ident;
 
-			sharddir_err(vsl, SLT_Notice, "shard %s: backend %s%s%s "
-			    "already exists - skipping", shardd->name,
+			shard_notice(vsl, shardd->name,
+			    "backend %s%s%s already exists - skipping",
 			    VRT_BACKEND_string(b->backend),
 			    ident ? "/" : "",
 			    ident ? ident : "");
@@ -642,8 +644,8 @@ change_reconfigure(struct shard_change *change, VCL_INT replicas)
 	shardd->hashcircle = NULL;
 
 	if (shardd->n_backend == 0) {
-		sharddir_err(change->vsl, SLT_Error, "shard %s: .reconfigure() "
-		    "no backends", shardd->name);
+		shard_err0(change->vsl, shardd->name,
+		    ".reconfigure() no backends");
 		sharddir_unlock(shardd);
 		return (0);
 	}
@@ -660,9 +662,8 @@ shardcfg_reconfigure(VRT_CTX, struct sharddir *shardd, VCL_INT replicas)
 
 	CHECK_OBJ_NOTNULL(shardd, SHARDDIR_MAGIC);
 	if (replicas <= 0) {
-		sharddir_err(ctx->vsl, SLT_Error,
-		    "shard %s: .reconfigure() invalid replicas argument %ld",
-		    shardd->name, replicas);
+		shard_err(ctx->vsl, shardd->name,
+		    ".reconfigure() invalid replicas argument %ld", replicas);
 		return (0);
 	}
 

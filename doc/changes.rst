@@ -48,6 +48,9 @@ Varnish Cache Next (2021-03-15)
 * Shard director ``Error`` log messages with ``(notice)`` have been
   turned into ``Notice`` log messages.
 
+* All shard ``Error`` and ``Notice`` messages now use the unified
+  prefix ``vmod_directors shard %s``.
+
 ================================
 Varnish Cache 6.5.1 (2020-09-25)
 ================================

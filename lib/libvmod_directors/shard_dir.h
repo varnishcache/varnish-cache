@@ -89,23 +89,25 @@ sharddir_backend(const struct sharddir *shardd, unsigned id)
 #define SHDBG(flag, shardd, ...)					\
 	do {								\
 		if ((shardd)->debug_flags & (flag))			\
-			VSL(SLT_Debug, 0, "shard: " __VA_ARGS__);	\
+			VSL(SLT_Debug, 0, "vmod_directors shard: "	\
+			    __VA_ARGS__);				\
 	} while (0)
 
-#define shard_err(ctx, shardd, fmt, ...)				\
-	do {								\
-		sharddir_err((ctx)->vsl, SLT_Error, "shard %s: " fmt,	\
-		    (shardd)->name, __VA_ARGS__);			\
-	} while (0)
+#define shard_log(vsl, tag, name, fmt, ...)				\
+	sharddir_log(vsl, tag, "vmod_directors shard %s: " fmt,		\
+	    name, __VA_ARGS__)
 
-#define shard_err0(ctx, shardd, msg)					\
-	do {								\
-		sharddir_err((ctx)->vsl, SLT_Error, "shard %s: %s",	\
-		    (shardd)->name, (msg));				\
-	} while (0)
+#define shard_fail(ctx, name, fmt, ...)				\
+	VRT_fail(ctx, "vmod_directors shard %s: " fmt, name, __VA_ARGS__)
+#define shard_err(vsl, name, fmt, ...)				\
+	shard_log(vsl, SLT_Error, name, fmt, __VA_ARGS__)
+#define shard_err0(vsl, name, msg)			\
+	shard_log(vsl, SLT_Error, name, "%s", msg)
+#define shard_notice(vsl, name, fmt, ...)		\
+	shard_log(vsl, SLT_Notice, name, fmt, __VA_ARGS__)
 
 void sharddir_debug(struct sharddir *shardd, const uint32_t flags);
-void sharddir_err(struct vsl_log *, enum VSL_tag_e tag,  const char *fmt, ...);
+void sharddir_log(struct vsl_log *, enum VSL_tag_e tag,  const char *fmt, ...);
 void sharddir_new(struct sharddir **sharddp, const char *vcl_name,
     const struct vmod_directors_shard_param *param);
 void sharddir_set_param(struct sharddir *shardd,

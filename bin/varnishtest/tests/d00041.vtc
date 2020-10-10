@@ -49,162 +49,162 @@ varnish v1 -vcl+backend {
 logexpect l1 -v v1 -g raw -d 1 {
 	expect 0 0    CLI   "^Rd vcl.load"
 
-	expect 0 =    Debug {^shard: hashcircle.* 0. = .point = *238d0ef, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 1. = .point = *321c598, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 2. = .point = *3b6b56a, host =  0.}
-	expect 0 =    Debug {^shard: hashcircle.* 3. = .point = *408ec1e, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 4. = .point = *66986a7, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 5. = .point = *7e41e30, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 6. = .point = *b749e7b, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 7. = .point = *e543430, host =  0.}
-	expect 0 =    Debug {^shard: hashcircle.* 8. = .point = *10136c05, host =  0.}
-	expect 0 =    Debug {^shard: hashcircle.* 9. = .point = *102d847f, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 10. = .point = *1112f910, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 11. = .point = *1119a7c7, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 12. = .point = *14d95c44, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 13. = .point = *150fea1f, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 14. = .point = *1643ecb6, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 15. = .point = *189ff2f2, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 16. = .point = *19cfe9f3, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 17. = .point = *1e1c78c3, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 18. = .point = *1fe0dea0, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 19. = .point = *22464ee9, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 20. = .point = *22b35675, host =  0.}
-	expect 0 =    Debug {^shard: hashcircle.* 21. = .point = *2363bebb, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 22. = .point = *24f827bb, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 23. = .point = *259eeccf, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 24. = .point = *26f0c3e7, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 25. = .point = *271874d4, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 26. = .point = *28340f35, host =  0.}
-	expect 0 =    Debug {^shard: hashcircle.* 27. = .point = *285e8475, host =  0.}
-	expect 0 =    Debug {^shard: hashcircle.* 28. = .point = *28ec7a6f, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 29. = .point = *299c6298, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 30. = .point = *2aedc3f7, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 31. = .point = *2b031742, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 32. = .point = *2da0e37b, host =  0.}
-	expect 0 =    Debug {^shard: hashcircle.* 33. = .point = *310bd2ca, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 34. = .point = *31e5f2df, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 35. = .point = *32d6b3ed, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 36. = .point = *33047373, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 37. = .point = *3392487a, host =  0.}
-	expect 0 =    Debug {^shard: hashcircle.* 38. = .point = *37597c4c, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 39. = .point = *3f6b2b89, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 40. = .point = *43cf6426, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 41. = .point = *46a58f28, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 42. = .point = *4b1f5b22, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 43. = .point = *523723f2, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 44. = .point = *539234db, host =  0.}
-	expect 0 =    Debug {^shard: hashcircle.* 45. = .point = *564ca84f, host =  0.}
-	expect 0 =    Debug {^shard: hashcircle.* 46. = .point = *58501380, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 47. = .point = *58704432, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 48. = .point = *5b1bcbbe, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 49. = .point = *5d2df428, host =  0.}
-	expect 0 =    Debug {^shard: hashcircle.* 50. = .point = *5fa294ee, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 51. = .point = *606fd878, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 52. = .point = *60dded53, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 53. = .point = *616cdb68, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 54. = .point = *6257bc27, host =  0.}
-	expect 0 =    Debug {^shard: hashcircle.* 55. = .point = *64014b25, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 56. = .point = *6918f467, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 57. = .point = *6a08c380, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 58. = .point = *6bfd5a2d, host =  0.}
-	expect 0 =    Debug {^shard: hashcircle.* 59. = .point = *6c0b607a, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 60. = .point = *6c74d296, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 61. = .point = *6e040182, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 62. = .point = *6e3819f7, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 63. = .point = *720ec1a4, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 64. = .point = *7232b381, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 65. = .point = *74c384ad, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 66. = .point = *76d47350, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 67. = .point = *791eb3a3, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 68. = .point = *7a048f20, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 69. = .point = *7f874929, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 70. = .point = *83ce71ce, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 71. = .point = *888b6447, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 72. = .point = *8997c018, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 73. = .point = *89b7d09c, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 74. = .point = *8aa6b5b4, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 75. = .point = *8ae34bde, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 76. = .point = *8b382e03, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 77. = .point = *8b47e6ac, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 78. = .point = *8bc76115, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 79. = .point = *8bc8bc11, host =  0.}
-	expect 0 =    Debug {^shard: hashcircle.* 80. = .point = *8e2d3849, host =  0.}
-	expect 0 =    Debug {^shard: hashcircle.* 81. = .point = *8e7e012c, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 82. = .point = *8f5b4c63, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 83. = .point = *94a94162, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 84. = .point = *99892987, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 85. = .point = *9a6f2f00, host =  0.}
-	expect 0 =    Debug {^shard: hashcircle.* 86. = .point = *9b970b49, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 87. = .point = *9e09a3a7, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 88. = .point = *9ef9125d, host =  0.}
-	expect 0 =    Debug {^shard: hashcircle.* 89. = .point = *9f33cd30, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 90. = .point = *9fc69b51, host =  0.}
-	expect 0 =    Debug {^shard: hashcircle.* 91. = .point = *a19f99eb, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 92. = .point = *a28b9595, host =  0.}
-	expect 0 =    Debug {^shard: hashcircle.* 93. = .point = *a3582038, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 94. = .point = *a4b6a3b9, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 95. = .point = *a66da9cb, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 96. = .point = *a8657c76, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 97. = .point = *a8afe9c4, host =  0.}
-	expect 0 =    Debug {^shard: hashcircle.* 98. = .point = *aa488703, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 99. = .point = *ac7b4454, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 100. = .point = *ad923ad3, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 101. = .point = *ae8946c6, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 102. = .point = *b197e339, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 103. = .point = *b3c305e6, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 104. = .point = *b4dab004, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 105. = .point = *b6bf43ea, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 106. = .point = *b9004d3d, host =  0.}
-	expect 0 =    Debug {^shard: hashcircle.* 107. = .point = *b96b6455, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 108. = .point = *b9a0edb9, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 109. = .point = *b9ec6465, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 110. = .point = *bb8eed4d, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 111. = .point = *bbcc0bad, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 112. = .point = *bcfea141, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 113. = .point = *be300622, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 114. = .point = *bf514d68, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 115. = .point = *c1afc7d2, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 116. = .point = *c2542a5d, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 117. = .point = *c6c43fa7, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 118. = .point = *c945958a, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 119. = .point = *c9f304a4, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 120. = .point = *cb896aa8, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 121. = .point = *cbd9198a, host =  0.}
-	expect 0 =    Debug {^shard: hashcircle.* 122. = .point = *ccd61dad, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 123. = .point = *d07e4431, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 124. = .point = *d21fe35f, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 125. = .point = *d4c93105, host =  0.}
-	expect 0 =    Debug {^shard: hashcircle.* 126. = .point = *d570b815, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 127. = .point = *d7de63b6, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 128. = .point = *d8634aef, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 129. = .point = *d92d916d, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 130. = .point = *d937a7df, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 131. = .point = *dac52229, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 132. = .point = *db7840f0, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 133. = .point = *dd5c6bef, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 134. = .point = *dded5798, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 135. = .point = *dfd5333b, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 136. = .point = *e183345a, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 137. = .point = *e2c71c27, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 138. = .point = *e49bf9d8, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 139. = .point = *e72bc224, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 140. = .point = *e8b27f41, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 141. = .point = *e991584c, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 142. = .point = *ea201c5e, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 143. = .point = *ec8891c5, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 144. = .point = *edcc8dd9, host =  1.}
-	expect 0 =    Debug {^shard: hashcircle.* 145. = .point = *ef6b4ab5, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 146. = .point = *f08ad325, host =  0.}
-	expect 0 =    Debug {^shard: hashcircle.* 147. = .point = *f3325ba2, host =  2.}
-	expect 0 =    Debug {^shard: hashcircle.* 148. = .point = *f6530dd1, host =  0.}
-	expect 0 =    Debug {^shard: hashcircle.* 149. = .point = *fc28e8d2, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 0. = .point = *238d0ef, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 1. = .point = *321c598, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 2. = .point = *3b6b56a, host =  0.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 3. = .point = *408ec1e, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 4. = .point = *66986a7, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 5. = .point = *7e41e30, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 6. = .point = *b749e7b, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 7. = .point = *e543430, host =  0.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 8. = .point = *10136c05, host =  0.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 9. = .point = *102d847f, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 10. = .point = *1112f910, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 11. = .point = *1119a7c7, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 12. = .point = *14d95c44, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 13. = .point = *150fea1f, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 14. = .point = *1643ecb6, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 15. = .point = *189ff2f2, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 16. = .point = *19cfe9f3, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 17. = .point = *1e1c78c3, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 18. = .point = *1fe0dea0, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 19. = .point = *22464ee9, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 20. = .point = *22b35675, host =  0.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 21. = .point = *2363bebb, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 22. = .point = *24f827bb, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 23. = .point = *259eeccf, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 24. = .point = *26f0c3e7, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 25. = .point = *271874d4, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 26. = .point = *28340f35, host =  0.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 27. = .point = *285e8475, host =  0.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 28. = .point = *28ec7a6f, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 29. = .point = *299c6298, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 30. = .point = *2aedc3f7, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 31. = .point = *2b031742, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 32. = .point = *2da0e37b, host =  0.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 33. = .point = *310bd2ca, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 34. = .point = *31e5f2df, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 35. = .point = *32d6b3ed, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 36. = .point = *33047373, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 37. = .point = *3392487a, host =  0.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 38. = .point = *37597c4c, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 39. = .point = *3f6b2b89, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 40. = .point = *43cf6426, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 41. = .point = *46a58f28, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 42. = .point = *4b1f5b22, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 43. = .point = *523723f2, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 44. = .point = *539234db, host =  0.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 45. = .point = *564ca84f, host =  0.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 46. = .point = *58501380, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 47. = .point = *58704432, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 48. = .point = *5b1bcbbe, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 49. = .point = *5d2df428, host =  0.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 50. = .point = *5fa294ee, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 51. = .point = *606fd878, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 52. = .point = *60dded53, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 53. = .point = *616cdb68, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 54. = .point = *6257bc27, host =  0.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 55. = .point = *64014b25, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 56. = .point = *6918f467, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 57. = .point = *6a08c380, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 58. = .point = *6bfd5a2d, host =  0.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 59. = .point = *6c0b607a, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 60. = .point = *6c74d296, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 61. = .point = *6e040182, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 62. = .point = *6e3819f7, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 63. = .point = *720ec1a4, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 64. = .point = *7232b381, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 65. = .point = *74c384ad, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 66. = .point = *76d47350, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 67. = .point = *791eb3a3, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 68. = .point = *7a048f20, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 69. = .point = *7f874929, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 70. = .point = *83ce71ce, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 71. = .point = *888b6447, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 72. = .point = *8997c018, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 73. = .point = *89b7d09c, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 74. = .point = *8aa6b5b4, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 75. = .point = *8ae34bde, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 76. = .point = *8b382e03, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 77. = .point = *8b47e6ac, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 78. = .point = *8bc76115, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 79. = .point = *8bc8bc11, host =  0.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 80. = .point = *8e2d3849, host =  0.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 81. = .point = *8e7e012c, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 82. = .point = *8f5b4c63, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 83. = .point = *94a94162, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 84. = .point = *99892987, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 85. = .point = *9a6f2f00, host =  0.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 86. = .point = *9b970b49, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 87. = .point = *9e09a3a7, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 88. = .point = *9ef9125d, host =  0.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 89. = .point = *9f33cd30, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 90. = .point = *9fc69b51, host =  0.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 91. = .point = *a19f99eb, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 92. = .point = *a28b9595, host =  0.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 93. = .point = *a3582038, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 94. = .point = *a4b6a3b9, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 95. = .point = *a66da9cb, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 96. = .point = *a8657c76, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 97. = .point = *a8afe9c4, host =  0.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 98. = .point = *aa488703, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 99. = .point = *ac7b4454, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 100. = .point = *ad923ad3, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 101. = .point = *ae8946c6, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 102. = .point = *b197e339, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 103. = .point = *b3c305e6, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 104. = .point = *b4dab004, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 105. = .point = *b6bf43ea, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 106. = .point = *b9004d3d, host =  0.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 107. = .point = *b96b6455, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 108. = .point = *b9a0edb9, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 109. = .point = *b9ec6465, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 110. = .point = *bb8eed4d, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 111. = .point = *bbcc0bad, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 112. = .point = *bcfea141, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 113. = .point = *be300622, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 114. = .point = *bf514d68, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 115. = .point = *c1afc7d2, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 116. = .point = *c2542a5d, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 117. = .point = *c6c43fa7, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 118. = .point = *c945958a, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 119. = .point = *c9f304a4, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 120. = .point = *cb896aa8, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 121. = .point = *cbd9198a, host =  0.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 122. = .point = *ccd61dad, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 123. = .point = *d07e4431, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 124. = .point = *d21fe35f, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 125. = .point = *d4c93105, host =  0.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 126. = .point = *d570b815, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 127. = .point = *d7de63b6, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 128. = .point = *d8634aef, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 129. = .point = *d92d916d, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 130. = .point = *d937a7df, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 131. = .point = *dac52229, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 132. = .point = *db7840f0, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 133. = .point = *dd5c6bef, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 134. = .point = *dded5798, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 135. = .point = *dfd5333b, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 136. = .point = *e183345a, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 137. = .point = *e2c71c27, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 138. = .point = *e49bf9d8, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 139. = .point = *e72bc224, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 140. = .point = *e8b27f41, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 141. = .point = *e991584c, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 142. = .point = *ea201c5e, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 143. = .point = *ec8891c5, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 144. = .point = *edcc8dd9, host =  1.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 145. = .point = *ef6b4ab5, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 146. = .point = *f08ad325, host =  0.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 147. = .point = *f3325ba2, host =  2.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 148. = .point = *f6530dd1, host =  0.}
+	expect 0 =    Debug {^vmod_directors shard: hashcircle.* 149. = .point = *fc28e8d2, host =  2.}
 
 	expect 0 =    CLI   Loaded
 
-	expect * =    Debug {^shard: lookup key 564ca84f idx 45 host 0}
-	expect * =    Debug {^shard: lookup key 19cfe9f3 idx 16 host 1}
-	expect * =    Debug {^shard: lookup key 46a58f28 idx 41 host 2}
+	expect * =    Debug {^vmod_directors shard: lookup key 564ca84f idx 45 host 0}
+	expect * =    Debug {^vmod_directors shard: lookup key 19cfe9f3 idx 16 host 1}
+	expect * =    Debug {^vmod_directors shard: lookup key 46a58f28 idx 41 host 2}
 } -start
 
 client c1 {
