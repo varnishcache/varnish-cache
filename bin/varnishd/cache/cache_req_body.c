@@ -268,8 +268,9 @@ VRB_Free(struct req *req)
 
 	r = HSH_DerefObjCore(req->wrk, &req->body_oc, 0);
 
-	// a busyobj may have gained a reference
-	assert (r == 0 || r == 1);
+
+	// each busyobj may have gained a reference
+	assert (r <= req->restarts + 1);
 }
 
 /*----------------------------------------------------------------------
