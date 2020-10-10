@@ -1,6 +1,11 @@
 varnishtest "req.body and restarts"
 
-server s1 -repeat 4 {
+server s1 -repeat 2 {
+	rxreq
+	txresp -bodylen 1000
+} -start
+
+server s2 -repeat 2 {
 	rxreq
 	txresp -bodylen 1000
 } -start
@@ -12,6 +17,14 @@ varnish v1 -vcl+backend {
 	sub vcl_recv {
 		std.cache_req_body(1MB);
 		return (hash);
+	}
+
+	sub vcl_backend_fetch {
+		if (bereq.url == "/1") {
+			set bereq.backend = s1;
+		} else {
+			set bereq.backend = s2;
+		}
 	}
 
 	sub vcl_backend_response {
