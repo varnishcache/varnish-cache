@@ -109,6 +109,10 @@ shard_change_get(VRT_CTX, struct sharddir * const shardd)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
 	task = VRT_priv_task(ctx, id);
+	if (task == NULL) {
+		shard_fail(ctx, shardd->name, "%s", "no priv_task");
+		return (NULL);
+	}
 
 	if (task->priv != NULL) {
 		CAST_OBJ_NOTNULL(change, task->priv, SHARD_CHANGE_MAGIC);
