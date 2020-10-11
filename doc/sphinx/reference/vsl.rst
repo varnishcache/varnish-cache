@@ -107,9 +107,9 @@ NOTICE MESSAGES
 
 Notice messages contain informational messages about the handling of a
 request. These can be exceptional circumstances encountered that causes
-deviation from the normal handling. The messages are prefixed with ``vsl``
+deviation from the normal handling. The messages are prefixed with ``vsl:``
 for core Varnish generated messages, and VMOD authors are encouraged to
-use ``vmod_<name>`` for their own notice messages. This matches the name
+use ``vmod_<name>:`` for their own notice messages. This matches the name
 of the manual page where detailed descriptions of notice messages are
 expected.
 
