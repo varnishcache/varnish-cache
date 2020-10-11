@@ -89,16 +89,16 @@ sharddir_backend(const struct sharddir *shardd, unsigned id)
 #define SHDBG(flag, shardd, ...)					\
 	do {								\
 		if ((shardd)->debug_flags & (flag))			\
-			VSL(SLT_Debug, 0, "vmod_directors shard: "	\
+			VSL(SLT_Debug, 0, "vmod_directors_ shard: "	\
 			    __VA_ARGS__);				\
 	} while (0)
 
 #define shard_log(vsl, tag, name, fmt, ...)				\
-	sharddir_log(vsl, tag, "vmod_directors shard %s: " fmt,		\
+	sharddir_log(vsl, tag, "vmod_directors: shard %s: " fmt,	\
 	    name, __VA_ARGS__)
 
 #define shard_fail(ctx, name, fmt, ...)				\
-	VRT_fail(ctx, "vmod_directors shard %s: " fmt, name, __VA_ARGS__)
+	VRT_fail(ctx, "vmod_directors: shard %s: " fmt, name, __VA_ARGS__)
 #define shard_err(vsl, name, fmt, ...)				\
 	shard_log(vsl, SLT_Error, name, fmt, __VA_ARGS__)
 #define shard_err0(vsl, name, msg)			\

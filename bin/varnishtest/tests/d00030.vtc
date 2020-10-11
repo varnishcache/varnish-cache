@@ -24,14 +24,14 @@ varnish v1 -vcl {
 
 logexpect l1 -v v1 -g raw -d 1 {
     expect 0 0    CLI       {^Rd vcl.load}
-    expect 0 0    Error     {vmod_directors shard p: shard_param.set.. by=BLOB but no or empty key_blob - using key 0}
+    expect 0 0    Error     {vmod_directors: shard p: shard_param.set.. by=BLOB but no or empty key_blob - using key 0}
 } -start -wait
 
 logexpect l2 -v v1 -g raw {
-    expect * 1001 VCL_Error {vmod_directors shard shard: .backend.key_blob. param invalid}
+    expect * 1001 VCL_Error {vmod_directors: shard shard: .backend.key_blob. param invalid}
 } -start
 logexpect l3 -v v1 -g raw {
-    expect * 1003 VCL_Error {vmod_directors shard p: shard_param.set.. may only be used in vcl_init and in backend/pipe context}
+    expect * 1003 VCL_Error {vmod_directors: shard p: shard_param.set.. may only be used in vcl_init and in backend/pipe context}
 } -start
 
 client c1 {
@@ -159,7 +159,7 @@ varnish v1 -errvcl {invalid warmup argument 1.1} {
     }
 }
 
-varnish v1 -errvcl {vmod_directors shard shard: .backend(resolve=LAZY) with other parameters can only be used in backend/pipe context} {
+varnish v1 -errvcl {vmod_directors: shard shard: .backend(resolve=LAZY) with other parameters can only be used in backend/pipe context} {
     import directors;
     import blob;
 
@@ -172,7 +172,7 @@ varnish v1 -errvcl {vmod_directors shard shard: .backend(resolve=LAZY) with othe
     }
 }
 
-varnish v1 -errvcl {vmod_directors shard shard: .backend(resolve=NOW) can not be used in vcl_init{}/vcl_fini{}} {
+varnish v1 -errvcl {vmod_directors: shard shard: .backend(resolve=NOW) can not be used in vcl_init{}/vcl_fini{}} {
     import directors;
     import blob;
 
