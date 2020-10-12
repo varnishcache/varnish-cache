@@ -653,43 +653,16 @@ mcf_vcl_use(struct cli *cli, const char * const *av, void *priv)
 	free(p);
 }
 
-static void v_matchproto_(cli_func_t)
-mcf_vcl_discard(struct cli *cli, const char * const *av, void *priv)
+static void
+mgt_vcl_discard(struct cli *cli, struct vclprog *vp)
 {
-	unsigned status;
 	char *p = NULL;
-	struct vclprog *vp;
-	struct vcldep *vd;
-	int n;
+	unsigned status;
 
-	(void)priv;
-	vp = mcf_find_vcl(cli, av[2]);
-	if (vp == NULL)
-		return;
-	if (vp == active_vcl) {
-		VCLI_SetResult(cli, CLIS_CANT);
-		VCLI_Out(cli, "Cannot discard active VCL program\n");
-		return;
-	}
-	if (!VTAILQ_EMPTY(&vp->dto)) {
-		VCLI_SetResult(cli, CLIS_CANT);
-		AN(vp->warm);
-		if (!mcf_is_label(vp))
-			VCLI_Out(cli, "Cannot discard labeled VCL program.\n");
-		else
-			VCLI_Out(cli,
-			    "Cannot discard this VCL label, "
-			    "other VCLs depend on it.\n");
-		n = 0;
-		VTAILQ_FOREACH(vd, &vp->dto, lto) {
-			if (n++ == 5) {
-				VCLI_Out(cli, "\t[...]");
-				break;
-			}
-			VCLI_Out(cli, "\t%s\n", vd->from->name);
-		}
-		return;
-	}
+	AN(vp);
+	assert(vp != active_vcl);
+	assert(VTAILQ_EMPTY(&vp->dto));
+
 	if (mcf_is_label(vp)) {
 		AN(vp->warm);
 		vp->warm = 0;
@@ -698,11 +671,64 @@ mcf_vcl_discard(struct cli *cli, const char * const *av, void *priv)
 	}
 	if (MCH_Running()) {
 		AZ(vp->warm);
-		if (mgt_cli_askchild(&status, &p, "vcl.discard %s\n", av[2]))
+		if (mgt_cli_askchild(&status, &p, "vcl.discard %s\n", vp->name))
 			assert(status == CLIS_OK || status == CLIS_COMMS);
 		free(p);
 	}
 	mgt_vcl_del(vp);
+}
+
+static struct vclprog *
+mgt_vcl_can_discard(struct cli *cli, const char * const *av)
+{
+	struct vclprog *vp;
+	struct vcldep *vd;
+	int n;
+
+	AN(cli);
+	AN(av);
+	AN(*av);
+
+	vp = mcf_find_vcl(cli, *av);
+	if (vp == NULL)
+		return (NULL);
+	if (vp == active_vcl) {
+		VCLI_SetResult(cli, CLIS_CANT);
+		VCLI_Out(cli, "Cannot discard active VCL program\n");
+		return (NULL);
+	}
+	if (VTAILQ_EMPTY(&vp->dto))
+		return (vp);
+
+	VCLI_SetResult(cli, CLIS_CANT);
+	AN(vp->warm);
+	if (!mcf_is_label(vp))
+		VCLI_Out(cli, "Cannot discard labeled VCL program.\n");
+	else
+		VCLI_Out(cli,
+		    "Cannot discard this VCL label, "
+		    "other VCLs depend on it.\n");
+	n = 0;
+	VTAILQ_FOREACH(vd, &vp->dto, lto) {
+		if (n++ == 5) {
+			VCLI_Out(cli, "\t[...]");
+			break;
+		}
+		VCLI_Out(cli, "\t%s\n", vd->from->name);
+	}
+	return (NULL);
+}
+
+static void v_matchproto_(cli_func_t)
+mcf_vcl_discard(struct cli *cli, const char * const *av, void *priv)
+{
+	struct vclprog *vp;
+
+	(void)priv;
+	vp = mgt_vcl_can_discard(cli, av + 2);
+	if (vp == NULL)
+		return;
+	mgt_vcl_discard(cli, vp);
 }
 
 static void v_matchproto_(cli_func_t)
