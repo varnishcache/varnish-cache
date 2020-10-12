@@ -128,7 +128,7 @@ mcf_find_vcl(struct cli *cli, const char *name)
 	vp = mcf_vcl_byname(name);
 	if (vp == NULL) {
 		VCLI_SetResult(cli, CLIS_PARAM);
-		VCLI_Out(cli, "No VCL named %s known.", name);
+		VCLI_Out(cli, "No VCL named %s known\n", name);
 	}
 	return (vp);
 }
@@ -694,7 +694,8 @@ mgt_vcl_can_discard(struct cli *cli, const char * const *av)
 		return (NULL);
 	if (vp == active_vcl) {
 		VCLI_SetResult(cli, CLIS_CANT);
-		VCLI_Out(cli, "Cannot discard active VCL program\n");
+		VCLI_Out(cli, "Cannot discard active VCL program %s\n",
+		    vp->name);
 		return (NULL);
 	}
 	if (VTAILQ_EMPTY(&vp->dto))
@@ -703,11 +704,12 @@ mgt_vcl_can_discard(struct cli *cli, const char * const *av)
 	VCLI_SetResult(cli, CLIS_CANT);
 	AN(vp->warm);
 	if (!mcf_is_label(vp))
-		VCLI_Out(cli, "Cannot discard labeled VCL program.\n");
+		VCLI_Out(cli, "Cannot discard labeled VCL program %s:\n",
+		    vp->name);
 	else
 		VCLI_Out(cli,
-		    "Cannot discard this VCL label, "
-		    "other VCLs depend on it.\n");
+		    "Cannot discard VCL label %s, other VCLs depend on it:\n",
+		    vp->name);
 	n = 0;
 	VTAILQ_FOREACH(vd, &vp->dto, lto) {
 		if (n++ == 5) {
