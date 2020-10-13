@@ -678,28 +678,15 @@ mgt_vcl_discard(struct cli *cli, struct vclprog *vp)
 	mgt_vcl_del(vp);
 }
 
-static struct vclprog *
-mgt_vcl_can_discard(struct cli *cli, const char * const *av)
+static void
+mgt_vcl_discard_depfail(struct cli *cli, struct vclprog *vp)
 {
-	struct vclprog *vp;
 	struct vcldep *vd;
 	int n;
 
 	AN(cli);
-	AN(av);
-	AN(*av);
-
-	vp = mcf_find_vcl(cli, *av);
-	if (vp == NULL)
-		return (NULL);
-	if (vp == active_vcl) {
-		VCLI_SetResult(cli, CLIS_CANT);
-		VCLI_Out(cli, "Cannot discard active VCL program %s\n",
-		    vp->name);
-		return (NULL);
-	}
-	if (VTAILQ_EMPTY(&vp->dto))
-		return (vp);
+	AN(vp);
+	assert(!VTAILQ_EMPTY(&vp->dto));
 
 	VCLI_SetResult(cli, CLIS_CANT);
 	AN(vp->warm);
@@ -718,19 +705,114 @@ mgt_vcl_can_discard(struct cli *cli, const char * const *av)
 		}
 		VCLI_Out(cli, "\t%s\n", vd->from->name);
 	}
-	return (NULL);
+}
+
+static struct vclprog **
+mgt_vcl_discard_depcheck(struct cli *cli, const char * const *names,
+    unsigned *lp)
+{
+	struct vclprog **res, *vp;
+	struct vcldep *vd;
+	const char * const *s;
+	unsigned i, j, l;
+
+	l = 0;
+	s = names;
+	while (*s != NULL) {
+		l++;
+		s++;
+	}
+	AN(l);
+
+	res = calloc(l, sizeof *res);
+	AN(res);
+
+	/* NB: Build a list of VCL programs and labels to discard. A null
+	 * pointer in the array is a VCL program that no longer needs to be
+	 * discarded.
+	 */
+	for (i = 0; i < l; i++) {
+		vp = mcf_find_vcl(cli, names[i]);
+		if (vp == NULL)
+			break;
+		if (vp == active_vcl) {
+			VCLI_SetResult(cli, CLIS_CANT);
+			VCLI_Out(cli, "Cannot discard active VCL program %s\n",
+			    vp->name);
+			break;
+		}
+		for (j = 0; j < i; j++)
+			if (vp == res[j])
+				break;
+		if (j < i)
+			continue; /* skip duplicates */
+		res[i] = vp;
+	}
+
+	if (i < l) {
+		free(res);
+		return (NULL);
+	}
+
+	/* NB: Check that all direct dependent VCL programs and labels belong
+	 * to the list of VCLs to be discarded. This mechanically ensures that
+	 * indirect dependent VCLs also belong.
+	 */
+	for (i = 0; i < l; i++) {
+		if (res[i] == NULL || VTAILQ_EMPTY(&res[i]->dto))
+			continue;
+		VTAILQ_FOREACH(vd, &res[i]->dto, lto) {
+			for (j = 0; j < l; j++)
+				if (res[j] == vd->from)
+					break;
+			if (j == l)
+				break;
+		}
+		if (vd != NULL)
+			break;
+	}
+
+	if (i < l) {
+		mgt_vcl_discard_depfail(cli, res[i]);
+		free(res);
+		return (NULL);
+	}
+
+	*lp = l;
+	return (res);
 }
 
 static void v_matchproto_(cli_func_t)
 mcf_vcl_discard(struct cli *cli, const char * const *av, void *priv)
 {
-	struct vclprog *vp;
+	struct vclprog **vp;
+	unsigned i, l, done;
 
 	(void)priv;
-	vp = mgt_vcl_can_discard(cli, av + 2);
+	vp = mgt_vcl_discard_depcheck(cli, av + 2, &l);
 	if (vp == NULL)
 		return;
-	mgt_vcl_discard(cli, vp);
+
+	/* NB: discard VCLs in topological order. At this point it
+	 * can only succeed, but the loop ensures that it eventually
+	 * completes even if the dependency check is ever broken.
+	 */
+	AN(l);
+	do {
+		done = 0;
+		for (i = 0; i < l; i++) {
+			if (vp[i] == NULL || vp[i]->nto > 0)
+				continue;
+			mgt_vcl_discard(cli, vp[i]);
+			vp[i] = NULL;
+			done++;
+		}
+	} while (done > 0);
+
+	for (i = 0; i < l; i++)
+		if (vp[i] != NULL)
+			WRONG(vp[i]->name);
+	free(vp);
 }
 
 static void v_matchproto_(cli_func_t)

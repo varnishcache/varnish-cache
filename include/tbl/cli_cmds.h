@@ -99,10 +99,12 @@ CLI_CMD(VCL_STATE,
 
 CLI_CMD(VCL_DISCARD,
 	"vcl.discard",
-	"vcl.discard <configname|label>",
-	"Unload the named configuration (when possible).",
-	"",
-	1, 1
+	"vcl.discard <configname|label>...", /* XXX: allow globs */
+	"Unload the named configurations (if possible).",
+	" If more than one named configuration is specified the command"
+	" is equivalent to individual commands in the right order with"
+	" respect to configurations dependencies.",
+	1, -1
 )
 
 CLI_CMD(VCL_LIST,

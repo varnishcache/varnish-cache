@@ -64,15 +64,5 @@ varnish v1 -clierr 106 "vcl.label vclA vcl3"
 
 varnish v1 -cliok "vcl.symtab"
 
-varnish v1 -cliok "vcl.discard vcl3"
-varnish v1 -cliok "vcl.discard vcl4"
-varnish v1 -cliok "vcl.discard vcl5"
-varnish v1 -cliok "vcl.discard vcl6"
-varnish v1 -cliok "vcl.discard vcl7"
-
-varnish v1 -cliok "vcl.discard vclB"
-varnish v1 -cliok "vcl.discard vcl2"
-varnish v1 -cliok "vcl.discard vclA"
-varnish v1 -cliok "vcl.discard vcl1"
-
-
+varnish v1 -clierr 300 "vcl.discard vcl1 vcl2 vcl3 vcl4 vcl5 vcl6 vcl7"
+varnish v1 -cliok "vcl.discard vcl1 vcl2 vcl3 vcl4 vcl5 vcl6 vcl7 vclA vclB"
