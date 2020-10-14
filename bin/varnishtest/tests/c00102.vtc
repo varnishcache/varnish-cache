@@ -23,4 +23,4 @@ delay 1
 
 varnish v1 -cliexpect "wssan_Assert" panic.show
 varnish v1 -cliok panic.clear
-varnish v1 -expectexit 0x20
+varnish v1 -expectexit 0x40
