@@ -174,7 +174,7 @@ static const struct vdp xyzzy_vdp_rot13 = {
  * yet that would cross the API
  */
 
-void * end_marker = &end_marker;
+static void * end_marker = &end_marker;
 
 static int v_matchproto_(vdp_bytes_f)
 xyzzy_pedantic_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,

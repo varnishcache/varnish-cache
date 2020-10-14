@@ -486,7 +486,7 @@ vsl_cursor_mmap(struct VSL_data *vsl, int fd)
 	if ((st->st_mode & S_IFMT) != S_IFREG)
 		return (MAP_FAILED);
 
-	assert(st->st_size >= sizeof VSL_FILE_ID);
+	assert(st->st_size >= (off_t)(sizeof VSL_FILE_ID));
 	p = mmap(NULL, st->st_size, PROT_READ, MAP_PRIVATE, fd, 0);
 	if (p == MAP_FAILED) {
 		vsl_diag(vsl, "Cannot mmap: %s", strerror(errno));

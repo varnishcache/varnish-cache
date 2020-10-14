@@ -99,7 +99,7 @@ VFP_Extend(const struct vfp_ctx *vc, ssize_t sz, enum vfp_status flg)
 {
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 
-	ObjExtend(vc->wrk, vc->oc, sz, flg == VFP_END);
+	ObjExtend(vc->wrk, vc->oc, sz, flg == VFP_END ? 1 : 0);
 }
 
 /**********************************************************************

@@ -124,7 +124,8 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 				if (r)
 					break;
 			} else {
-				ObjExtend(req->wrk, req->body_oc, l, vfps == VFP_END);
+				ObjExtend(req->wrk, req->body_oc, l,
+				    vfps == VFP_END ? 1 : 0);
 			}
 		}
 
