@@ -586,6 +586,8 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 	struct vcl *vcl;
 	const struct vrt_backend_probe *vbp;
 	const struct vdi_methods *m;
+	const struct suckaddr *sa;
+	char abuf[VTCP_ADDRBUFSIZE];
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vrt, VRT_BACKEND_MAGIC);
@@ -612,6 +614,19 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 	VRT_BACKEND_HANDLE();
 #undef DA
 #undef DN
+
+	if (be->hosthdr == NULL) {
+		if (vrt->path != NULL)
+			sa = bogo_ip;
+		else if (cache_param->prefer_ipv6 && vrt->ipv6_suckaddr != NULL)
+			sa = vrt->ipv6_suckaddr;
+		else if (vrt->ipv4_suckaddr != NULL)
+			sa = vrt->ipv4_suckaddr;
+		else
+			sa = vrt->ipv6_suckaddr;
+		VTCP_name(sa, abuf, sizeof abuf, NULL, 0);
+		REPLACE(be->hosthdr, abuf);
+	}
 
 	be->vsc = VSC_vbe_New(vc, &be->vsc_seg,
 	    "%s.%s", VCL_Name(ctx->vcl), vrt->vcl_name);
