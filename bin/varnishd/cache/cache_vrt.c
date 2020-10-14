@@ -590,7 +590,7 @@ VRT_UpperLowerStrands(VRT_CTX, VCL_STRANDS s, int up)
 	return (r);
 }
 
-// RFC7232, 3.2 without obsolete line folding:
+// rfc7230,l,1243,1244
 // ASCII VCHAR + TAB + obs-text (0x80-ff)
 static inline VCL_BOOL
 validhdr(const char *p)
