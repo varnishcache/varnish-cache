@@ -1208,3 +1208,10 @@ xyzzy_priv_task_with_option(VRT_CTX, struct VARGS(priv_task_with_option) *args)
 		args->priv->priv = WS_Copy(ctx->ws, args->opt, -1);
 	return (args->priv->priv);
 }
+
+VCL_BOOL v_matchproto_(td_xyzzy_validhdr)
+xyzzy_validhdr(VRT_CTX, VCL_STRANDS s)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	return (VRT_ValidHdr(ctx, s));
+}

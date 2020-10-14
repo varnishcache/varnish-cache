@@ -37,6 +37,11 @@ Varnish Cache Next (2021-03-15)
   set headers are now validated to contain only characters allowed by
   RFC7230. A (runtime) VCL failure is triggered if not.
 
+* ``VRT_ValidHdr()`` has been added for vmods to conduct the same
+  check as the ``validate_headers`` feature, for example when headers
+  are set by vmods using the ``cache_http.c`` Functions like
+  ``http_ForceHeader()`` from untrusted input.
+
 * The shard director now supports reconfiguration (adding/removing
   backends) of several instances without any special ordering
   requirement.

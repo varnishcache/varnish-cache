@@ -10,10 +10,19 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
+	import debug;
+
 	sub vcl_recv {
 		if (req.url == "/9") {
 			set req.http.foo = {"
 			"};
+		}
+	}
+	sub vcl_deliver {
+		if (req.url == "/9") {
+			set resp.http.valid1 = debug.validhdr({"
+			"});
+			set resp.http.valid2 = debug.validhdr("a");
 		}
 	}
 } -start
@@ -105,4 +114,6 @@ client c1 {
 	txreq -url /9
 	rxresp
 	expect resp.status == 200
+	expect resp.http.valid1 == false
+	expect resp.http.valid2 == true
 } -run
