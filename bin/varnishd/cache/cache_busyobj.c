@@ -169,6 +169,7 @@ VBO_ReleaseBusyObj(struct worker *wrk, struct busyobj **pbo)
 
 	if (WS_Overflowed(bo->ws))
 		wrk->stats->ws_backend_overflow++;
+	WS_Rollback(bo->ws, 0);
 
 	if (bo->fetch_objcore != NULL) {
 		(void)HSH_DerefObjCore(wrk, &bo->fetch_objcore,

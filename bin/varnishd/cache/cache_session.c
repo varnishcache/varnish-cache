@@ -582,6 +582,7 @@ SES_Delete(struct sess *sp, enum sess_close reason, vtim_real now)
 	VSL(SLT_End, sp->vxid, "%s", "");
 	if (WS_Overflowed(sp->ws))
 		VSC_C_main->ws_session_overflow++;
+	WS_Rollback(sp->ws, 0);
 	SES_Rel(sp);
 }
 

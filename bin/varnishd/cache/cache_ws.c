@@ -1,9 +1,10 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2011 Varnish Software AS
+ * Copyright (c) 2006-2020 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
+ * Author: Dridi Boukelmoune <dridi.boukelmoune@gmail.com>
  *
  * SPDX-License-Identifier: BSD-2-Clause
  *
@@ -35,14 +36,470 @@
 #include "cache_varnishd.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
+#define WS_REDZONE_BEFORE	'\xfa'
+#define WS_REDZONE_AFTER	'\xfb'
+#define WS_REDZONE_ALIGN	'\xfc'
 #define WS_REDZONE_END		'\x15'
+#define WS_RESERVE_ALIGN	(sizeof(void *))
+
+#ifndef WS_REDZONE_SIZE
+#  define WS_REDZONE_SIZE	16
+#endif
+
+#define WS_REDZONE_PSIZE	PRNDUP(WS_REDZONE_SIZE)
+
+struct ws_alloc {
+	unsigned		magic;
+#define WS_ALLOC_MAGIC		0x22e7fd05
+	char			*ptr;
+	unsigned		len;
+	unsigned		align;
+	VTAILQ_ENTRY(ws_alloc)	list;
+};
+
+struct wssan {
+	unsigned		magic;
+#define WSSAN_MAGIC		0x1c89b6ab
+	struct ws		*ws;
+	unsigned		end_len;
+	VTAILQ_HEAD(, ws_alloc)	head;
+};
 
 static const uintptr_t snap_overflowed = (uintptr_t)&snap_overflowed;
+
+/*---------------------------------------------------------------------*/
+
+static int
+ws_generic_inside(const char *dst_b, const char *dst_e,
+    const char *src_b, const char *src_e)
+{
+
+	AN(dst_b);
+	AN(dst_e);
+	AN(src_b);
+	assert(dst_b <= dst_e);
+
+	if (src_b < dst_b || src_b >= dst_e)
+		return (0);
+	if (src_e != NULL && (src_e < src_b || src_e > dst_e))
+		return (0);
+	return (1);
+}
+
+/*---------------------------------------------------------------------
+ * Workspace sanitizer-aware management
+ *
+ * The functions in this section manage the workspace sanitizer (wssan)
+ * itself or implement workspace management for both cases: when wssan
+ * is either disabled or enabled.
+ *
+ * Let's consider the following statement:
+ *
+ *     WS_Printf(ws, "hello world");
+ *
+ * Without wssan this results in a pointer-aligned allocation inside
+ * the workspace:
+ *
+ *     'h' 'e' 'l' 'l' 'o' ' ' 'w' 'o'
+ *     'r' 'l' 'd' %00 ??? ??? ??? ???
+ *
+ * To guarantee that the next allocation will also be pointer-aligned
+ * the allocation size is rounded up, leaving in this example 4 bytes
+ * with undefined contents.
+ *
+ * With wssan we add 2 red zones before and after the allocation, and
+ * the alignment overhead is also used as a canary:
+ *
+ *     %fa %fa %fa %fa %fa %fa %fa %fa
+ *     %fa %fa %fa %fa %fa %fa %fa %fa
+ *     'h' 'e' 'l' 'l' 'o' ' ' 'w' 'o'
+ *     'r' 'l' 'd' %00 %fc %fc %fc %fc
+ *     %fb %fb %fb %fb %fb %fb %fb %fb
+ *     %fb %fb %fb %fb %fb %fb %fb %fb
+ *
+ * Whenever a workspace operation happens wssan will check the red
+ * zones and assert that they weren't altered. When wssan is enabled
+ * it is allocated at the very beginning of the workspace and keep
+ * track of allocations on the heap.
+ *
+ * Ongoing workspace reservations have an alignment of pointer size,
+ * even though they would work fine with regular alignment rules. This
+ * adds one more layer of assertions when wssan is in use.
+ *
+ * Whether wssan is enabled or not, a red zone is systematically
+ * added at the end of the workspace. Subsequently we only check the
+ * first byte since we don't keep track of the original size, except
+ * with wssan that checks the entire red zone.
+ */
+
+static void
+wssan_Init(struct ws *ws, unsigned end_len)
+{
+	struct wssan *san;
+
+	AN(end_len);
+	if (!DO_DEBUG(DBG_WSSAN) || ws->f != ws->s)
+		return;
+
+	san = WS_Alloc(ws, sizeof *san);
+	assert((uintptr_t)san == (uintptr_t)ws->s);
+	INIT_OBJ(san, WSSAN_MAGIC);
+	VTAILQ_INIT(&san->head);
+	san->ws = ws;
+	san->end_len = end_len;
+}
+
+static void
+wssan_AssertContiguous(const struct ws_alloc *wa, const struct ws_alloc *wa2)
+{
+	const char *p, *p2;
+
+	AN(wa);
+	if (wa2 == NULL)
+		return;
+
+	p = wa->ptr + wa->len + wa->align + WS_REDZONE_PSIZE;
+	p2 = wa2->ptr - WS_REDZONE_PSIZE;
+	assert(p == p2);
+}
+
+static void
+wssan_Assert(const struct wssan *san, const struct ws_alloc *wa)
+{
+	const struct ws_alloc *wa2;
+	uintptr_t ps, pa;
+	char *c;
+	unsigned u;
+
+	CHECK_OBJ_NOTNULL(san, WSSAN_MAGIC);
+	if (wa == NULL) {
+		wa2 = NULL;
+		VTAILQ_FOREACH(wa, &san->head, list) {
+			wssan_Assert(san, wa);
+			wssan_AssertContiguous(wa, wa2);
+			wa2 = wa;
+		}
+		if (wa2 != NULL) {
+			ps = (uintptr_t)(san + 1);
+			pa = (uintptr_t)wa2->ptr - WS_REDZONE_PSIZE;
+			assert(ps == pa);
+		}
+		for (c = san->ws->e, u = san->end_len; u > 0; c++, u--)
+			assert(*c == WS_REDZONE_END);
+		return;
+	}
+
+	CHECK_OBJ(wa, WS_ALLOC_MAGIC);
+	AN(wa->ptr);
+	AN(wa->len);
+	assert(wa->align <= WS_RESERVE_ALIGN);
+
+	c = wa->ptr - WS_REDZONE_PSIZE;
+	for (u = 0; u < WS_REDZONE_PSIZE; u++, c++)
+		assert(*c == WS_REDZONE_BEFORE);
+	c += wa->len;
+	for (u = 0; u < wa->align; u++, c++)
+		assert(*c == WS_REDZONE_ALIGN);
+	for (u = 0; u < WS_REDZONE_PSIZE; u++, c++)
+		assert(*c == WS_REDZONE_AFTER);
+}
+
+static void
+wssan_Clear(struct wssan *san)
+{
+	struct ws *ws;
+
+	ws = san->ws;
+	assert(ws->f == ws->s + sizeof *san);
+	ZERO_OBJ(san, sizeof *san);
+	ws->f = ws->s;
+}
+
+static void
+wssan_Unwind(struct wssan *san)
+{
+	struct ws_alloc *wa;
+	struct ws *ws;
+	unsigned b;
+
+	ws = san->ws;
+	wa = VTAILQ_FIRST(&san->head);
+	if (wa == NULL) {
+		wssan_Clear(san);
+		return;
+	}
+
+	CHECK_OBJ(wa, WS_ALLOC_MAGIC);
+	assert(wa->align < WS_RESERVE_ALIGN);
+
+	wssan_Assert(san, wa);
+	b = wa->len + wa->align + WS_REDZONE_PSIZE;
+	assert(wa->ptr + b == ws->f);
+
+	ws->f = wa->ptr - WS_REDZONE_PSIZE;
+	assert(ws->f >= ws->s + sizeof *san);
+
+	VTAILQ_REMOVE(&san->head, wa, list);
+	FREE_OBJ(wa);
+}
+
+static void
+wssan_Mark(const struct ws_alloc *wa)
+{
+	char *c;
+
+	CHECK_OBJ_NOTNULL(wa, WS_ALLOC_MAGIC);
+	AN(wa->ptr);
+	AN(wa->len);
+	assert(wa->align <= WS_RESERVE_ALIGN);
+
+	c = wa->ptr - WS_REDZONE_PSIZE;
+	memset(c, WS_REDZONE_BEFORE, WS_REDZONE_PSIZE);
+	c = wa->ptr + wa->len;
+	memset(c, WS_REDZONE_ALIGN, wa->align);
+	c += wa->align;
+	memset(c, WS_REDZONE_AFTER, WS_REDZONE_PSIZE);
+}
+
+static int
+wssan_Allocated(const struct wssan *san, const char *b, const char *e)
+{
+	const struct ws_alloc *wa;
+
+	VTAILQ_FOREACH(wa, &san->head, list)
+		if (ws_generic_inside(wa->ptr, wa->ptr + wa->len, b, e))
+			return (1);
+	return (0);
+}
+
+static struct wssan *
+ws_Sanitizer(const struct ws *ws)
+{
+	struct wssan *san;
+
+	if (ws->s + sizeof *san > ws->f)
+		return (NULL);
+
+	san = TRUST_ME(ws->s);
+	if (VALID_OBJ(san, WSSAN_MAGIC) && san->ws == ws)
+		return (san);
+
+	return (NULL);
+}
+
+static int
+ws_Inside(const struct ws *ws, const char *b, const char *e)
+{
+	struct wssan *san;
+
+	san = ws_Sanitizer(ws);
+	if (san == NULL)
+		return (ws_generic_inside(ws->s, ws->e, b, e));
+
+	if (wssan_Allocated(san, b, e))
+		return (1);
+	/* NB: not allocated? last chance in the remaining space */
+	return (ws_generic_inside(ws->f, ws->e, b, e));
+}
+
+static void
+ws_Assert_Allocated(const struct ws *ws, const char *b, const char *e)
+{
+	struct wssan *san;
+
+	san = ws_Sanitizer(ws);
+	if (san == NULL)
+		assert(ws_generic_inside(ws->s, ws->f, b, e));
+	else
+		assert(wssan_Allocated(san, b, e));
+}
+
+
+static void *
+ws_Alloc(struct ws *ws, unsigned bytes)
+{
+	struct wssan *san;
+	struct ws_alloc *wa;
+	void *r;
+
+	AZ(ws->r);
+
+	san = ws_Sanitizer(ws);
+	if (san == NULL) {
+		bytes = PRNDUP(bytes);
+		if (ws->f + bytes > ws->e) {
+			WS_MarkOverflow(ws);
+			return (NULL);
+		}
+		r = ws->f;
+		ws->f += bytes;
+		return (r);
+	}
+
+	ALLOC_OBJ(wa, WS_ALLOC_MAGIC);
+	AN(wa);
+	wa->len = bytes;
+	wa->align = PRNDUP(bytes) - bytes;
+	assert(wa->align < WS_RESERVE_ALIGN);
+	wa->ptr = ws->f + WS_REDZONE_PSIZE;
+	bytes = wa->len + wa->align + WS_REDZONE_PSIZE * 2;
+
+	if (ws->f + bytes > ws->e) {
+		FREE_OBJ(wa);
+		WS_MarkOverflow(ws);
+		return (NULL);
+	}
+
+	VTAILQ_INSERT_HEAD(&san->head, wa, list);
+	ws->f += bytes;
+	r = wa->ptr;
+	wssan_Mark(wa);
+	return (r);
+}
+
+static unsigned
+ws_Reserve(struct ws *ws, unsigned bytes)
+{
+	struct wssan *san;
+	struct ws_alloc *wa;
+	unsigned max, b2;
+
+	AZ(ws->r);
+
+	max = pdiff(ws->f, ws->e);
+	if (bytes == 0)
+		ws->r = ws->f; /* failsafe */
+
+	san = ws_Sanitizer(ws);
+	if (san == NULL) {
+		if (bytes == 0)
+			bytes = max;
+		if (bytes > max)
+			return (0);
+		ws->r = ws->f + bytes;
+		return (bytes);
+	}
+
+	ALLOC_OBJ(wa, WS_ALLOC_MAGIC);
+	AN(wa);
+	wa->align = WS_RESERVE_ALIGN;
+	b2 = wa->align + WS_REDZONE_PSIZE * 2;
+
+	if (b2 > max) {
+		FREE_OBJ(wa);
+		return (0);
+	}
+	if (bytes == 0)
+		bytes = max - b2;
+	if (bytes == 0 || bytes + b2 > max) {
+		FREE_OBJ(wa);
+		return (0);
+	}
+
+	ws->f += WS_REDZONE_PSIZE;
+	ws->r = ws->f + bytes;
+	wa->ptr = ws->f;
+	wa->len = bytes;
+	VTAILQ_INSERT_HEAD(&san->head, wa, list);
+	wssan_Mark(wa);
+
+	return (bytes);
+}
+
+static void
+ws_Release(struct ws *ws, unsigned bytes)
+{
+	struct wssan *san;
+	struct ws_alloc *wa;
+
+	AN(ws->r);
+	assert(bytes <= ws->r - ws->f);
+
+	san = ws_Sanitizer(ws);
+	wa = NULL;
+
+	if (san == NULL) {
+		bytes = PRNDUP(bytes);
+		assert(bytes <= ws->e - ws->f);
+	} else if (ws->r != ws->f) {
+		wa = VTAILQ_FIRST(&san->head);
+		CHECK_OBJ_NOTNULL(wa, WS_ALLOC_MAGIC);
+		assert(wa->align == WS_RESERVE_ALIGN);
+		wssan_Assert(san, wa);
+		if (bytes == 0) {
+			/* NB: ws->f is already past WS_REDZONE_BEFORE */
+			ws->f -= WS_REDZONE_PSIZE;
+			VTAILQ_REMOVE(&san->head, wa, list);
+			FREE_OBJ(wa);
+		}
+	}
+
+	if (wa != NULL) {
+		wa->len = bytes;
+		wa->align = PRNDUP(bytes) - bytes;
+		assert(wa->align < WS_RESERVE_ALIGN);
+		/* NB: ws->f is already past WS_REDZONE_BEFORE */
+		bytes = wa->len + wa->align + WS_REDZONE_PSIZE;
+		wssan_Mark(wa);
+	}
+
+	ws->f += bytes;
+	ws->r = NULL;
+}
+
+static void
+ws_Reset(struct ws *ws, uintptr_t pp)
+{
+	struct wssan *san;
+	const char *tmp;
+	char *p;
+
+	AZ(ws->r);
+
+	p = (char *)pp;
+	assert(p >= ws->s);
+	assert(p <= ws->f);
+	assert(p <= ws->e);
+
+	san = ws_Sanitizer(ws);
+	if (san == NULL) {
+		ws->f = p;
+		return;
+	}
+
+	while (p < ws->f) {
+		tmp = ws->f;
+		wssan_Unwind(san);
+		assert(ws->f < tmp);
+	}
+
+	assert(p == ws->f);
+}
+
+static unsigned
+ws_EndZoneLength(const struct ws *ws)
+{
+	const struct wssan *san;
+
+	san = ws_Sanitizer(ws);
+	return (san != NULL ? san->end_len : 1);
+}
+
+/*---------------------------------------------------------------------
+ * Workspace management
+ *
+ * Most of the functions below are part of the workspace API, and they
+ * essentially assert before using a workspace and after modifying it,
+ * provide debug logs and otherwise offload the logic to wssan-aware
+ * functions.
+ */
 
 void
 WS_Assert(const struct ws *ws)
 {
+	const struct wssan *san;
 
 	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
 	DSL(DBG_WORKSPACE, 0, "WS(%p) = (%s, %p %u %u %u)",
@@ -60,23 +517,20 @@ WS_Assert(const struct ws *ws)
 	if (ws->r) {
 		assert(ws->r > ws->s);
 		assert(ws->r <= ws->e);
-		assert(PAOK(ws->r));
 	}
 	assert(*ws->e == WS_REDZONE_END);
+
+	san = ws_Sanitizer(ws);
+	if (san != NULL)
+		wssan_Assert(san, NULL);
 }
 
 int
-WS_Inside(const struct ws *ws, const void *bb, const void *ee)
+WS_Inside(const struct ws *ws, const void *b, const void *e)
 {
-	const char *b = bb;
-	const char *e = ee;
 
 	WS_Assert(ws);
-	if (b < ws->s || b >= ws->e)
-		return (0);
-	if (e != NULL && (e < b || e > ws->e))
-		return (0);
-	return (1);
+	return (ws_Inside(ws, b, e));
 }
 
 void
@@ -87,7 +541,7 @@ WS_Assert_Allocated(const struct ws *ws, const void *ptr, ssize_t len)
 	WS_Assert(ws);
 	if (len < 0)
 		len = strlen(p) + 1;
-	assert(p >= ws->s && (p + len) <= ws->f);
+	ws_Assert_Allocated(ws, p, p + len);
 }
 
 /*
@@ -112,6 +566,7 @@ WS_Init(struct ws *ws, const char *id, void *space, unsigned len)
 	ws->f = ws->s;
 	assert(id[0] & 0x20);		// cheesy islower()
 	bstrcpy(ws->id, id);
+	wssan_Init(ws, len - l);
 	WS_Assert(ws);
 }
 
@@ -153,7 +608,6 @@ ws_ClearOverflow(struct ws *ws)
 void
 WS_Reset(struct ws *ws, uintptr_t pp)
 {
-	char *p;
 
 	WS_Assert(ws);
 	AN(pp);
@@ -162,12 +616,8 @@ WS_Reset(struct ws *ws, uintptr_t pp)
 		AN(WS_Overflowed(ws));
 		return;
 	}
-	p = (char *)pp;
-	DSL(DBG_WORKSPACE, 0, "WS_Reset(%p, %p)", ws, p);
-	assert(ws->r == NULL);
-	assert(p >= ws->s);
-	assert(p <= ws->e);
-	ws->f = p;
+	DSL(DBG_WORKSPACE, 0, "WS_Reset(%p, %ju)", ws, pp);
+	ws_Reset(ws, pp);
 	WS_Assert(ws);
 }
 
@@ -180,13 +630,16 @@ WS_Reset(struct ws *ws, uintptr_t pp)
 void
 WS_Rollback(struct ws *ws, uintptr_t pp)
 {
-	WS_Assert(ws);
+	unsigned l;
 
+	WS_Assert(ws);
 	if (pp == 0)
 		pp = (uintptr_t)ws->s;
 
+	l = ws_EndZoneLength(ws);
 	ws_ClearOverflow(ws);
 	WS_Reset(ws, pp);
+	wssan_Init(ws, l);
 }
 
 void *
@@ -195,17 +648,12 @@ WS_Alloc(struct ws *ws, unsigned bytes)
 	char *r;
 
 	WS_Assert(ws);
-	bytes = PRNDUP(bytes);
 
-	assert(ws->r == NULL);
-	if (ws->f + bytes > ws->e) {
-		WS_MarkOverflow(ws);
-		return (NULL);
+	r = ws_Alloc(ws, bytes);
+	if (r != NULL) {
+		DSL(DBG_WORKSPACE, 0, "WS_Alloc(%p, %u) = %p", ws, bytes, r);
+		WS_Assert(ws);
 	}
-	r = ws->f;
-	ws->f += bytes;
-	DSL(DBG_WORKSPACE, 0, "WS_Alloc(%p, %u) = %p", ws, bytes, r);
-	WS_Assert(ws);
 	return (r);
 }
 
@@ -213,25 +661,19 @@ void *
 WS_Copy(struct ws *ws, const void *str, int len)
 {
 	char *r;
-	unsigned bytes;
 
 	WS_Assert(ws);
-	assert(ws->r == NULL);
 
 	if (len == -1)
 		len = strlen(str) + 1;
 	assert(len >= 0);
 
-	bytes = PRNDUP((unsigned)len);
-	if (ws->f + bytes > ws->e) {
-		WS_MarkOverflow(ws);
-		return (NULL);
+	r = ws_Alloc(ws, len);
+	if (r != NULL) {
+		memcpy(r, str, len);
+		DSL(DBG_WORKSPACE, 0, "WS_Copy(%p, %d) = %p", ws, len, r);
+		WS_Assert(ws);
 	}
-	r = ws->f;
-	ws->f += bytes;
-	memcpy(r, str, len);
-	DSL(DBG_WORKSPACE, 0, "WS_Copy(%p, %d) = %p", ws, len, r);
-	WS_Assert(ws);
 	return (r);
 }
 
@@ -262,7 +704,7 @@ WS_Snapshot(struct ws *ws)
 {
 
 	WS_Assert(ws);
-	assert(ws->r == NULL);
+	AZ(ws->r);
 	if (WS_Overflowed(ws)) {
 		DSL(DBG_WORKSPACE, 0, "WS_Snapshot(%p) = overflowed", ws);
 		return (snap_overflowed);
@@ -280,11 +722,8 @@ WS_ReserveAll(struct ws *ws)
 	unsigned b;
 
 	WS_Assert(ws);
-	assert(ws->r == NULL);
-
-	ws->r = ws->e;
-	b = pdiff(ws->f, ws->r);
-
+	b = ws_Reserve(ws, 0);
+	AN(ws->r);
 	WS_Assert(ws);
 	DSL(DBG_WORKSPACE, 0, "WS_ReserveAll(%p) = %u", ws, b);
 
@@ -297,30 +736,29 @@ WS_ReserveAll(struct ws *ws)
 unsigned
 WS_ReserveSize(struct ws *ws, unsigned bytes)
 {
-	unsigned b2;
+	unsigned b;
 
 	WS_Assert(ws);
-	assert(ws->r == NULL);
-	assert(bytes > 0);
-
-	b2 = PRNDDN(ws->e - ws->f);
-	if (bytes < b2)
-		b2 = PRNDUP(bytes);
-
-	if (bytes > b2) {
+	AN(bytes);
+	b = ws_Reserve(ws, bytes);
+	if (b == 0) {
+		AZ(ws->r);
 		WS_MarkOverflow(ws);
 		return (0);
 	}
-	ws->r = ws->f + b2;
+	AN(ws->r);
+	assert(b == bytes);
 	DSL(DBG_WORKSPACE, 0, "WS_ReserveSize(%p, %u/%u) = %u",
-	    ws, b2, bytes, pdiff(ws->f, ws->r));
+	    ws, bytes, pdiff(ws->f, ws->e), pdiff(ws->f, ws->r));
 	WS_Assert(ws);
-	return (pdiff(ws->f, ws->r));
+	return (b);
 }
 
 unsigned
 WS_ReserveLumps(struct ws *ws, size_t sz)
 {
+
+	AN(sz);
 	return (WS_ReserveAll(ws) / sz);
 }
 
@@ -328,13 +766,9 @@ void
 WS_Release(struct ws *ws, unsigned bytes)
 {
 	WS_Assert(ws);
-	bytes = PRNDUP(bytes);
-	assert(bytes <= ws->e - ws->f);
 	DSL(DBG_WORKSPACE, 0, "WS_Release(%p, %u)", ws, bytes);
-	assert(ws->r != NULL);
-	assert(ws->f + bytes <= ws->r);
-	ws->f += bytes;
-	ws->r = NULL;
+	ws_Release(ws, bytes);
+	AZ(ws->r);
 	WS_Assert(ws);
 }
 
@@ -342,12 +776,11 @@ void
 WS_ReleaseP(struct ws *ws, const char *ptr)
 {
 	WS_Assert(ws);
-	DSL(DBG_WORKSPACE, 0, "WS_ReleaseP(%p, %p (%zd))", ws, ptr, ptr - ws->f);
-	assert(ws->r != NULL);
 	assert(ptr >= ws->f);
 	assert(ptr <= ws->r);
-	ws->f += PRNDUP(ptr - ws->f);
-	ws->r = NULL;
+	DSL(DBG_WORKSPACE, 0, "WS_ReleaseP(%p, %p (%zd))", ws, ptr, ptr - ws->f);
+	ws_Release(ws, ptr - ws->f);
+	AZ(ws->r);
 	WS_Assert(ws);
 }
 

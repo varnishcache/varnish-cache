@@ -312,3 +312,9 @@ Quote an input string to be usable for an exact match in a regular expression.
 $Function STRING priv_task_with_option(PRIV_TASK priv, [STRING opt])
 
 A function mixing a named PRIV_TASK with optional parameters.
+
+$Function VOID ws_overflow(STRING s)
+
+Allocate a copy of ``s`` in the task's workspace and catenate an extra
+character past the allocation space. The next workspace operation should
+panic if the workspace sanitizer is enabled.

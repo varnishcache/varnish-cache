@@ -119,6 +119,7 @@ http1_new_session(struct worker *wrk, void *arg)
 		 * and do not set a new task func, which will exit the
 		 * worker thread. */
 		VSL(SLT_Error, req->sp->vxid, "insufficient workspace");
+		WS_Release(req->ws, 0);
 		Req_Release(req);
 		SES_Delete(sp, SC_RX_JUNK, NAN);
 		return;
