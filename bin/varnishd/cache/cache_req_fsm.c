@@ -745,7 +745,7 @@ cnt_pipe(struct worker *wrk, struct req *req)
 	bo->sp = req->sp;
 	SES_Ref(bo->sp);
 
-	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, SLT_BereqMethod);
+	HTTP_Setup(bo->bereq, req->ws, bo->vsl, SLT_BereqMethod);
 	http_FilterReq(bo->bereq, req->http, 0);	// XXX: 0 ?
 	http_PrintfHeader(bo->bereq, "X-Varnish: %u", VXID(req->vsl->wid));
 	http_ForceHeader(bo->bereq, H_Connection, "close");
@@ -756,7 +756,10 @@ cnt_pipe(struct worker *wrk, struct req *req)
 	}
 
 	bo->wrk = wrk;
-	VCL_pipe_method(req->vcl, wrk, req, bo, NULL);
+	if (WS_Overflowed(req->ws))
+		wrk->handling = VCL_RET_FAIL;
+	else
+		VCL_pipe_method(req->vcl, wrk, req, bo, NULL);
 
 	switch (wrk->handling) {
 	case VCL_RET_SYNTH:
