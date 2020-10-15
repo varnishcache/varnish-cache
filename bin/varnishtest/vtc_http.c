@@ -1573,29 +1573,6 @@ cmd_http_accept(CMD_ARGS)
 	vtc_log(vl, 3, "Accepted socket fd is %d", hp->fd);
 }
 
-/* SECTION: client-server.spec.loop
- *
- * loop NUMBER STRING
- *         Process STRING as a specification, NUMBER times.
- */
-
-static void
-cmd_http_loop(CMD_ARGS)
-{
-	struct http *hp;
-	unsigned n, m;
-
-	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
-	AN(av[1]);
-	AN(av[2]);
-	AZ(av[3]);
-	n = strtoul(av[1], NULL, 0);
-	for (m = 1 ; m <= n; m++) {
-		vtc_log(vl, 4, "Loop #%u", m);
-		parse_string(av[2], cmd, hp, vl);
-	}
-}
-
 /* SECTION: client-server.spec.fatal
  *
  * fatal|non_fatal
@@ -1777,7 +1754,6 @@ const struct cmds http_cmds[] = {
 
 	/* spec */
 	CMD_HTTP(fatal)
-	CMD_HTTP(loop)
 	CMD_HTTP(non_fatal)
 
 	/* body */

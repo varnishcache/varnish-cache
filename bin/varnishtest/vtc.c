@@ -316,6 +316,7 @@ parse_string(const char *spec, const struct cmds *cmd, void *priv,
 	char *e, *p, *q, *f, *buf;
 	int nest_brace;
 	int tn;
+	unsigned n, m;
 	const struct cmds *cp;
 
 	AN(spec);
@@ -422,6 +423,24 @@ parse_string(const char *spec, const struct cmds *cmd, void *priv,
 				token_s[tn] = VSB_data(token_exp);
 				token_e[tn] = strchr(token_s[tn], '\0');
 			}
+		}
+
+
+/* SECTION: loop loop
+ *
+ * loop NUMBER STRING
+ *         Process STRING as a specification, NUMBER times.
+ *
+ * This works inside all specification strings
+ */
+
+		if (!strcmp(token_s[0], "loop")) {
+			n = strtoul(token_s[1], NULL, 0);
+			for (m = 0; m < n; m++) {
+				vtc_log(vl, 4, "Loop #%u", m);
+				parse_string(token_s[2], cmd, priv, vl);
+			}
+			continue;
 		}
 
 		for (cp = cmd; cp->name != NULL; cp++)
