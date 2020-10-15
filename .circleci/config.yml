@@ -1,13 +1,363 @@
 version: 2.1
 
+aliases:
+  pkg_req: &pkg_req
+    requires:
+      - dist
+      - tar_pkg_tools
+
+parameters:
+  vc-commit:
+    type: string
+    default: "HEAD"
+  pkg-commit:
+    type: string
+    default: ""
 jobs:
-  dummy:
+  dist:
+    description: Builds varnish-x.y.z.tar.gz that is used later for the packaging jobs
     docker:
-      - image: alpine:3
+      - image: centos:7
     steps:
-      - run: echo ok 
+      - run:
+          name: Install deps
+          command: |
+            yum install -y epel-release
+            yum install -y \
+                automake \
+                jemalloc-devel \
+                git \
+                libedit-devel \
+                libtool \
+                libunwind-devel \
+                make \
+                pcre-devel \
+                python \
+                python-sphinx
+      - checkout
+      - run:
+          name: Create the dist tarball
+          command: |
+            git checkout << pipeline.parameters.vc-commit >>
+            # if version is "trunk", it's a weekly tarball, override the version
+            if grep 'AC_INIT.*trunk.*' ./configure.ac; then
+                sed -i -e "s/^AC_INIT.*trunk.*/AC_INIT([Varnish], [$(date +%Y%m%d)], [varnish-dev@varnish-cache.org])/" ./configure.ac
+                touch .is_weekly
+            fi
+            ./autogen.des --quiet
+            make dist -j 16
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .is_weekly
+            - varnish*.tar.gz
+            - tools/*.suppr
+            - .circleci
+  tar_pkg_tools:
+    description: Builds archives with the packaging tools from https://github.com/varnishcache/pkg-varnish-cache
+    docker:
+      - image: centos:7
+    steps:
+      - add_ssh_keys:
+          fingerprints:
+            - "11:ed:57:75:32:81:9d:d0:a4:5e:af:15:4b:d8:74:27"
+      - run:
+          name: Grab the pkg repo
+          command: |
+            yum install -y git
+            mkdir -p ~/.ssh
+            ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+            echo ${CIRCLE_REPOSITORY_URL}
+            git clone https://github.com/varnishcache/pkg-varnish-cache.git .
+            git checkout << pipeline.parameters.pkg-commit >>
+            tar cvzf debian.tar.gz debian --dereference
+            tar cvzf redhat.tar.gz redhat --dereference
+            tar cvzf alpine.tar.gz alpine --dereference
+      - persist_to_workspace:
+          root: .
+          paths:
+            - debian.tar.gz
+            - redhat.tar.gz
+            - alpine.tar.gz
+  package:
+    parameters:
+      dist:
+        description: the Linux distribution (debian|ubuntu|centos)
+        type: string
+      release:
+        description: the release name (stretch|buster|xenial|bionic|7|8)
+        type: string
+      ext:
+        description: the package extension (deb|rpm|apk)
+        type: string
+      arch:
+        description: the architecture (x64|aarch64)
+        type: string
+      image:
+        description: the base Docker image for Dockerfile
+        type: string
+    machine:
+      image: ubuntu-1604:201903-01
+    steps:
+      - attach_workspace:
+          at: ~/project
+      - run: ls -la ~/project
+      - run:
+          name: Activate QEMU
+          command: |
+            sudo docker run -it --rm --privileged multiarch/qemu-user-static --reset --credential yes --persistent yes
+      - run:
+          name: Create Dockerfile
+          command: |
+            echo "FROM << parameters.image >>" > Dockerfile
+            echo "ADD make-<< parameters.ext >>-packages.sh /usr/bin/" >> Dockerfile
+            echo 'CMD ["make-<< parameters.ext >>-packages.sh"]' >> Dockerfile
+      - run:
+          name: Build << parameters.dist >> << parameters.release >> << parameters.arch >> << parameters.ext >>
+          command: |
+            mkdir -p packages
+            cp .circleci/make-<< parameters.ext >>-packages.sh .
+            docker build -t varnish-<< parameters.ext >>-package-build:<< parameters.arch >> .
+            docker run --rm -it -e PARAM_DIST=<< parameters.dist >> -e PARAM_RELEASE=<< parameters.release >> -v$(pwd):/varnish-cache varnish-<< parameters.ext >>-package-build:<< parameters.arch >>
+      - run:
+          name: List created packages
+          command: find ./packages -name "*.<< parameters.ext >>"
+      - persist_to_workspace:
+          root: .
+          paths:
+            - "packages"
+  distcheck:
+    parameters:
+      dist:
+        description: the Linux distribution (debian|ubuntu)
+        type: string
+      release:
+        description: the release name (stretch|buster|xenial|bionic)
+        type: string
+      extra_conf:
+        description: platform-specific configure arguments
+        default: ""
+        type: string
+    docker:
+      - image: << parameters.dist >>:<< parameters.release >>
+    working_directory: /workspace
+    steps:
+      - run:
+          name: Possible << parameters.dist >>:<< parameters.release >> extra repos
+          command: |
+            if [ << parameters.dist >> = centos ]; then
+                if [ << parameters.release >> = 8 ]; then
+                    dnf install -y 'dnf-command(config-manager)'
+                    yum config-manager --set-enabled PowerTools
+                    yum install -y diffutils python3-sphinx
+                else
+                    yum install -y python-sphinx
+                fi
+                yum install -y epel-release
+                yum install -y \
+                    automake \
+                    jemalloc-devel \
+                    libedit-devel \
+                    libtool \
+                    libunwind-devel \
+                    make \
+                    pcre-devel \
+                    python3 \
+                    sudo
+            elif [ << parameters.dist >> = debian -o << parameters.dist >> = ubuntu ]; then
+                export DEBIAN_FRONTEND=noninteractive
+                export DEBCONF_NONINTERACTIVE_SEEN=true
+                apt-get update
+                apt-get install -y \
+                    autoconf \
+                    automake \
+                    build-essential \
+                    ca-certificates \
+                    cpio \
+                    graphviz \
+                    libedit-dev \
+                    libjemalloc-dev \
+                    libncurses-dev \
+                    libpcre3-dev \
+                    libtool \
+                    libunwind-dev \
+                    pkg-config \
+                    python3-sphinx \
+                    sudo
+            elif [ << parameters.dist >> = alpine ]; then
+                apk update
+                apk add -q \
+                    autoconf \
+                    automake \
+                    build-base \
+                    ca-certificates \
+                    cpio \
+                    gzip \
+                    libedit-dev \
+                    libtool \
+                    libunwind-dev \
+                    linux-headers \
+                    pcre-dev \
+                    py-docutils \
+                    py3-sphinx \
+                    tar \
+                    sudo
+            fi
+      - attach_workspace:
+          at: /workspace
+      - run:
+          name: Extract and distcheck
+          command: |
+            tar xavf varnish-*.tar.gz --strip 1
+            if [ << parameters.dist >> = centos ]; then
+            	adduser varnish
+            else
+            	adduser --disabled-password --gecos "" varnish
+            fi
+
+            chown -R varnish:varnish .
+
+            export ASAN_OPTIONS=abort_on_error=1,detect_odr_violation=1,detect_leaks=1,detect_stack_use_after_return=1,detect_invalid_pointer_pairs=1,handle_segv=0,handle_sigbus=0,use_sigaltstack=0,disable_coredump=0
+            export LSAN_OPTIONS=abort_on_error=1,use_sigaltstack=0,suppressions=$(pwd)/tools/lsan.suppr
+            export TSAN_OPTIONS=abort_on_error=1,halt_on_error=1,use_sigaltstack=0,suppressions=$(pwd)/tools/tsan.suppr
+            export UBSAN_OPTIONS=halt_on_error=1,print_stacktrace=1,use_sigaltstack=0,suppressions=$(pwd)/tools/ubsan.suppr
+
+            sudo -u varnish ./configure \
+            	--quiet \
+            	--with-unwind \
+            	--enable-developer-warnings \
+            	--enable-debugging-symbols \
+            	--disable-stack-protector \
+            	--with-persistent-storage \
+            	<< parameters.extra_conf >>
+            sudo -u varnish \
+            	--preserve-env=ASAN_OPTIONS,LSAN_OPTIONS,TSAN_OPTIONS,UBSAN_OPTIONS \
+            	make distcheck VERBOSE=1 -j 12 -k
+
+  collect_packages:
+    docker:
+      - image: centos:7
+    steps:
+      - attach_workspace:
+          at: ~/project
+      - run: ls -la ~/project/
+      - run:
+          name: Tar the packages
+          command: |
+              tar cvzf packages.tar.gz packages
+      - store_artifacts:
+          destination: packages.tar.gz
+          path: packages.tar.gz
+
 
 workflows:
-  build:
+  version: 2
+  commit:
     jobs:
-      - dummy
+      - distcheck:
+          name: distcheck_centos_7
+          dist: centos
+          release: "7"
+          requires:
+            - dist
+      - distcheck:
+          name: distcheck_debian_buster
+          dist: debian
+          release: buster
+          extra_conf: --enable-asan --enable-ubsan
+          requires:
+            - dist
+      - dist
+      - tar_pkg_tools
+      - package:
+          name: aarch64-ubuntu-bionic
+          dist: ubuntu
+          release: bionic
+          arch: aarch64
+          image: arm64v8/ubuntu:bionic
+          ext: deb
+          <<: *pkg_req
+      - package:
+          name: x64-ubuntu-bionic
+          dist: ubuntu
+          release: bionic
+          arch: x64
+          image: ubuntu:bionic
+          ext: deb
+          <<: *pkg_req
+      - package:
+          name: aarch64-ubuntu-xenial
+          dist: ubuntu
+          release: xenial
+          arch: aarch64
+          image: arm64v8/ubuntu:xenial
+          ext: deb
+          <<: *pkg_req
+      - package:
+          name: x64-ubuntu-xenial
+          dist: ubuntu
+          release: xenial
+          arch: x64
+          image: ubuntu:xenial
+          ext: deb
+          <<: *pkg_req
+      - package:
+          name: aarch64-debian-buster
+          dist: debian
+          release: buster
+          arch: aarch64
+          image: arm64v8/debian:buster-slim
+          ext: deb
+          <<: *pkg_req
+      - package:
+          name: x64-debian-buster
+          dist: debian
+          release: buster
+          arch: x64
+          image: debian:buster-slim
+          ext: deb
+          <<: *pkg_req
+      - package:
+          name: aarch64-debian-stretch
+          dist: debian
+          release: stretch
+          arch: aarch64
+          image: arm64v8/debian:stretch-slim
+          ext: deb
+          <<: *pkg_req
+      - package:
+          name: x64-debian-stretch
+          dist: debian
+          release: stretch
+          arch: x64
+          image: debian:stretch-slim
+          ext: deb
+          <<: *pkg_req
+      - package:
+          name: aarch64-centos-7
+          dist: centos
+          release: "7"
+          arch: aarch64
+          image: arm64v8/centos:7
+          ext: rpm
+          <<: *pkg_req
+      - package:
+          name: x64-centos-7
+          dist: centos
+          release: "7"
+          arch: x64
+          image: centos:7
+          ext: rpm
+          <<: *pkg_req
+      - collect_packages:
+          requires:
+            - x64-ubuntu-xenial
+            - aarch64-ubuntu-xenial
+            - x64-ubuntu-bionic
+            - aarch64-ubuntu-bionic
+            - x64-debian-stretch
+            - aarch64-debian-stretch
+            - x64-debian-buster
+            - aarch64-debian-buster
+            - x64-centos-7
+            - aarch64-centos-7
