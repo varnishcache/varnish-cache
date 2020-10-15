@@ -540,6 +540,7 @@ main(int argc, char * const *argv)
 	int ntest = 1;			/* Run tests this many times */
 	uintmax_t bufsiz;
 	const char *p;
+	char buf[PATH_MAX];
 
 	argv0 = strrchr(argv[0], '/');
 	if (argv0 == NULL)
@@ -552,7 +553,7 @@ main(int argc, char * const *argv)
 	else
 		tmppath = strdup("/tmp");
 
-	cwd = getcwd(NULL, 0);
+	cwd = getcwd(buf, sizeof buf);
 	extmacro_def("pwd", "%s", cwd);
 
 	vmod_path = NULL;
