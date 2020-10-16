@@ -97,7 +97,7 @@ VCL_Refresh(struct vcl **vclp, struct worker *wrk)
 }
 
 static inline int
-vcl_cancache(const struct vcl *vcl)
+vcl_cacheable(const struct vcl *vcl)
 {
 	return (vcl == vcl_active || vcl->nlabels > 0);
 }
@@ -142,18 +142,18 @@ VCL_Rel(struct vcl **vclp, struct worker *wrk)
 
 	/* lockless case first */
 	if (wrk != NULL && wrk->vcl == NULL &&
-	    vcl_cancache(vcl)) {
+	    vcl_cacheable(vcl)) {
 		wrk->vcl = vcl;
 		return;
 	}
 
 	Lck_Lock(&vcl_mtx);
 
-	if (wrk == NULL || ! vcl_cancache(vcl))
+	if (wrk == NULL || ! vcl_cacheable(vcl))
 		vcl_rel(vcl);
 
 	if (wrk != NULL && wrk->vcl != NULL &&
-	    (vcl != NULL || ! vcl_cancache(wrk->vcl)))
+	    (vcl != NULL || ! vcl_cacheable(wrk->vcl)))
 		vcl_rel(wrk->vcl);
 
 	Lck_Unlock(&vcl_mtx);
