@@ -39,9 +39,11 @@
 
 #include "vcl.h"
 #include "vtim.h"
+#include "vbm.h"
 
 #include "cache_director.h"
 #include "cache_vcl.h"
+#include "vcc_interface.h"
 
 /*--------------------------------------------------------------------*/
 
@@ -444,10 +446,13 @@ VRT_VCL_Allow_Discard(struct vclref **refp)
 
 static void
 vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
-    void *specific, unsigned method, vcl_func_f *func)
+    void *specific, unsigned method, vcl_func_f *func, unsigned track_call)
 {
-	uintptr_t aws;
+	uintptr_t rws = 0, aws;
 	struct vrt_ctx ctx;
+	struct vbitmap *vbm;
+	void *p;
+	size_t sz;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	INIT_OBJ(&ctx, VRT_CTX_MAGIC);
@@ -468,6 +473,15 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 	assert(ctx.now != 0);
 	ctx.specific = specific;
 	ctx.method = method;
+	if (track_call > 0) {
+		rws = WS_Snapshot(wrk->aws);
+		sz = VBITMAP_SZ(track_call);
+		p = WS_Alloc(wrk->aws, sz);
+		// No use to attempt graceful failure, all VCL calls will fail
+		AN(p);
+		vbm = vbit_init(p, sz);
+		ctx.called = vbm;
+	}
 	aws = WS_Snapshot(wrk->aws);
 	wrk->cur_method = method;
 	wrk->seen_methods |= method;
@@ -484,6 +498,8 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 	 * wrk->aws, but they can reserve and return from it.
 	 */
 	assert(aws == WS_Snapshot(wrk->aws));
+	if (rws != 0)
+		WS_Reset(wrk->aws, rws);
 }
 
 #define VCL_MET_MAC(func, upper, typ, bitmap)				\
@@ -496,8 +512,41 @@ VCL_##func##_method(struct vcl *vcl, struct worker *wrk,		\
 	CHECK_OBJ_NOTNULL(vcl->conf, VCL_CONF_MAGIC);			\
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);				\
 	vcl_call_method(wrk, req, bo, specific,				\
-	    VCL_MET_ ## upper, vcl->conf->func##_func);			\
+	    VCL_MET_ ## upper, vcl->conf->func##_func, vcl->conf->nsub);\
 	AN((1U << wrk->handling) & bitmap);				\
 }
 
 #include "tbl/vcl_returns.h"
+
+/*--------------------------------------------------------------------
+ */
+
+VCL_VOID
+VRT_call(VRT_CTX, VCL_SUB sub)
+{
+	struct vbitmap *vbm;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(sub, VCL_SUB_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->vcl, VCL_MAGIC);
+	assert(sub->vcl_conf == ctx->vcl->conf);
+
+	if ((sub->methods & ctx->method) == 0) {
+		VRT_fail(ctx, "Dynamic call to \"sub %s{}\" not allowed "
+		     "from here", sub->name);
+		return;
+	}
+
+	vbm = ctx->called;
+	AN(vbm);
+
+	if (vbit_test(vbm, sub->n)) {
+		VRT_fail(ctx, "Recursive dynamic call to \"sub %s{}\"",
+		    sub->name);
+		return;
+	}
+	vbit_set(vbm, sub->n);
+	AN(sub->func);
+	sub->func(ctx);
+	vbit_clr(vbm, sub->n);
+}

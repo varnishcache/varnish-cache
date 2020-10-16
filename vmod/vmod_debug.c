@@ -1287,3 +1287,33 @@ xyzzy_just_return_regex(VRT_CTX, VCL_REGEX r)
 	AN(r);
 	return (r);
 }
+
+/*---------------------------------------------------------------------*/
+
+VCL_VOID v_matchproto_(td_xyzzy_call)
+xyzzy_call(VRT_CTX, VCL_SUB sub)
+{
+	VRT_call(ctx, sub);
+}
+
+/* the next two are to test WRONG vmod behavior:
+ * holding a VCL_SUB reference across vcls
+ */
+
+static VCL_SUB wrong = NULL;
+
+VCL_VOID v_matchproto_(td_xyzzy_bad_memory)
+xyzzy_bad_memory(VRT_CTX, VCL_SUB sub)
+{
+	(void) ctx;
+
+	wrong = sub;
+}
+
+VCL_SUB v_matchproto_(td_xyzzy_total_recall)
+xyzzy_total_recall(VRT_CTX)
+{
+	(void) ctx;
+
+	return (wrong);
+}

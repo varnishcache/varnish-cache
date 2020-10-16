@@ -115,6 +115,7 @@ CTYPES = {
     'STRANDS':     "VCL_STRANDS",
     'STRING':      "VCL_STRING",
     'STRING_LIST': "const char *, ...",
+    'SUB':         "VCL_SUB",
     'TIME':        "VCL_TIME",
     'VOID':        "VCL_VOID",
 }

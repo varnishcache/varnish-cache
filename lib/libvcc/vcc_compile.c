@@ -504,7 +504,7 @@ EmitStruct(const struct vcc *tl)
 	Fc(tl, 0, "\t.ref = VGC_ref,\n");
 	Fc(tl, 0, "\t.nref = VGC_NREFS,\n");
 	Fc(tl, 0, "\t.nsrc = VGC_NSRCS,\n");
-	Fc(tl, 0, "\t.nsub = %d,\n", tl->nsub);
+	Fc(tl, 0, "\t.nsub = %d,\n", tl->subref > 0 ? tl->nsub : 0);
 	Fc(tl, 0, "\t.srcname = srcname,\n");
 	Fc(tl, 0, "\t.srcbody = srcbody,\n");
 	Fc(tl, 0, "\t.nvmod = %u,\n", tl->vmod_count);

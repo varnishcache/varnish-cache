@@ -65,6 +65,7 @@
  *	VRT_re_fini removed
  *	VRT_re_match signature changed
  *	VRT_regsub signature changed
+ *	VRT_call() added
  * 12.0 (2020-09-15)
  *	Added VRT_DirectorResolve()
  *	Added VCL_STRING VRT_BLOB_string(VRT_CTX, VCL_BLOB)
@@ -344,6 +345,8 @@ struct vrt_ctx {
 	 *    synth+error:	struct vsb *
 	 */
 	void				*specific;
+	/* if present, vbitmap of called subs */
+	void				*called;
 };
 
 #define VRT_CTX		const struct vrt_ctx *ctx
@@ -650,3 +653,7 @@ void VRT_VCL_Allow_Cold(struct vclref **);
 
 struct vclref * VRT_VCL_Prevent_Discard(VRT_CTX, const char *);
 void VRT_VCL_Allow_Discard(struct vclref **);
+
+/* VCL_SUB */
+
+VCL_VOID VRT_call(VRT_CTX, VCL_SUB);

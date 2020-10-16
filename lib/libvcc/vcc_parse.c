@@ -251,7 +251,7 @@ vcc_ParseFunction(struct vcc *tl)
 		VCC_GlobalSymbol(sym, SUB, "VGC_function");
 		p = vcc_NewProc(tl, sym);
 		p->name = t;
-		VSB_printf(p->cname, "%s", sym->rname);
+		VSB_printf(p->cname, "%s", sym->lname);
 	} else if (p->method == NULL) {
 		VSB_printf(tl->sb, "Subroutine '%s' redefined\n", sym->name);
 		vcc_ErrWhere(tl, t);
