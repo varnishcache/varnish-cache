@@ -1,7 +1,5 @@
 varnishtest "H2 Huge response headers"
 
-barrier b1 sock 2
-
 server s1 {
 	rxreq
 	expect req.proto == HTTP/1.1
@@ -25,14 +23,7 @@ varnish v1 -cliok "param.set feature +http2"
 varnish v1 -cliok "param.set debug +syncvsl"
 varnish v1 -cliok "param.set debug +h2_nocheck"
 
-varnish v1 -vcl+backend {
-	import vtc;
-	sub vcl_deliver {
-		if (req.url == "/1") {
-			vtc.barrier_sync("${b1_sock}");
-		}
-	}
-} -start
+varnish v1 -vcl+backend {} -start
 
 client c1 {
 	stream 0 {
@@ -61,8 +52,6 @@ client c1 {
 		txdata \
 			-data request
 
-		rxwinup
-		barrier b1 sync
 		rxresp
 		expect resp.status == 200
 		expect resp.http.content-Type == "text/plain"

@@ -1,13 +1,10 @@
 varnishtest "H2 POST w/ 100 Continue"
 
-barrier b1 cond 2
-
 server s1 {
 	rxreq
 	expect req.http.content-length == <undef>
 	expect req.http.transfer-encoding == chunked
 	expect req.proto == HTTP/1.1
-	barrier b1 sync
 	txresp -hdr "Content-Type: text/plain" -body response
 } -start
 
@@ -31,8 +28,6 @@ client c1 {
 		txdata \
 			-data request
 
-		rxwinup
-		barrier b1 sync
 		rxresp
 		expect resp.status == 200
 		expect resp.http.content-Type == "text/plain"

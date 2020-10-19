@@ -16,6 +16,7 @@ varnish v1 -vcl+backend {
 
 varnish v1 -cliok "param.set feature +http2"
 varnish v1 -cliok "param.set h2_rx_window_low_water 65535"
+varnish v1 -cliok "param.reset h2_initial_window_size"
 
 client c1 {
 	stream 1 {

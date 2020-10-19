@@ -1,7 +1,5 @@
 varnishtest "H2 POST"
 
-barrier b1 cond 2
-
 barrier b2 sock 2
 barrier b3 sock 2
 
@@ -9,7 +7,6 @@ server s1 {
 	rxreq
 	expect req.http.content-length == 7
 	expect req.http.transfer-encoding == <undef>
-	barrier b1 sync
 	txresp -hdr "Content-Type: text/plain" -body response
 
 	rxreq
@@ -30,7 +27,7 @@ varnish v1 -cliok "param.set debug +syncvsl"
 
 logexpect l1 -v v1 -g raw {
 	expect	* 1001 ReqAcct	"80 7 87 106 8 114"
-	expect	* 1000 ReqAcct	"45 8 53 72 22 94"
+	expect	* 1000 ReqAcct	"45 8 53 54 20 74"
 } -start
 
 client c1 {
@@ -38,14 +35,8 @@ client c1 {
 		txping
 		rxping
 	} -run
-	stream 0 {
-		rxwinup
-	} -start
 	stream 1 {
 		txreq -req POST -hdr content-type text/plain -hdr content-length 7 -body request
-
-		rxwinup
-		barrier b1 sync
 		# First, HTTP checks
 		rxresp
 		expect resp.http.content-Type == "text/plain"
@@ -53,21 +44,18 @@ client c1 {
 		# Then, payload checks
 		expect resp.body == response
 	} -run
-	stream 0 -wait
 } -run
 
-client c1 {
+client c2 {
 	stream 0 {
 		barrier b2 sync
 		delay 1
 		barrier b3 sync
-		rxwinup
 	} -start
 	stream 1 {
 		txreq -url "/a" -req POST -nostrend
 		txdata -datalen 100
 		rxresp
-		rxwinup
 		expect resp.status == 503
 	} -run
 	stream 3 {
