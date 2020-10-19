@@ -33,6 +33,7 @@ client c1 {
 } -run
 
 varnish v1 -cliok "param.set feature +http2"
+varnish v1 -cliok "param.reset h2_initial_window_size"
 
 client c1 {
 	stream 1 {
@@ -67,8 +68,10 @@ varnish v1 -expect MEMPOOL.sess1.live == 0
 
 process p1 -stop
 # shell {cat ${tmpdir}/vlog}
-shell -match {1001 H2TxHdr        c \[000006040000000000\]} \
-	{cat ${tmpdir}/vlog}
+# SETTINGS with default initial window size
+shell -match {1001 H2TxHdr        c \[000006040000000000\]} {
+	cat ${tmpdir}/vlog
+}
 
 # While we're here, test sess.xid over H2 as well
 

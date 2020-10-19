@@ -1,7 +1,6 @@
 varnishtest "#2305: h/2 reembark with a request body"
 
 barrier b1 cond 2
-barrier b2 sock 2
 
 server s1 {
 	rxreq
@@ -16,14 +15,8 @@ varnish v1 -cliok "param.set debug +syncvsl"
 varnish v1 -cliok "param.set debug +waitinglist"
 
 varnish v1 -vcl+backend {
-	import vtc;
 	sub vcl_recv {
 		return (hash);
-	}
-	sub vcl_deliver {
-		if (req.http.sync) {
-			vtc.barrier_sync("${b2_sock}");
-		}
 	}
 } -start
 
@@ -35,11 +28,7 @@ client c1 {
 	} -start
 	stream 3 {
 		barrier b1 sync
-		txreq -req POST -hdr sync 1 -body "foo"
-		rxwinup
-		# barrier b2 is here to make HEADERS vs WINDOW_UPDATE
-		# less racy
-		barrier b2 sync
+		txreq -req POST -body "foo"
 		rxresp
 		expect resp.status == 200
 	} -run
