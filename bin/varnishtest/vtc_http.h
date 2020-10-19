@@ -30,11 +30,23 @@
 
 #define MAX_HDR		50
 
+struct vtc_sess {
+	unsigned		magic;
+#define VTC_SESS_MAGIC		0x932bd565
+	struct vtclog		*vl;
+	char			*name;
+	int			repeat;
+	int			keepalive;
+	int			fd;
+
+	ssize_t			rcvbuf;
+};
+
 struct http {
 	unsigned		magic;
 #define HTTP_MAGIC		0x2f02169c
-	int			fd;
 	int			*sfd;
+	struct vtc_sess		*sess;
 	int			timeout;
 	struct vtclog		*vl;
 
@@ -76,3 +88,7 @@ struct http {
 	uint64_t		iws;
 	int64_t			ws;
 };
+
+int http_process(struct vtclog *vl, struct vtc_sess *vsp, const char *spec,
+    int sock, int *sfd, const char *addr, int rcvbuf);
+

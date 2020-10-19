@@ -37,17 +37,7 @@
 #include <string.h>
 
 #include "vtc.h"
-
-struct vtc_sess {
-	unsigned		magic;
-#define VTC_SESS_MAGIC		0x932bd565
-	struct vtclog		*vl;
-	char			*name;
-	int			repeat;
-	int			keepalive;
-
-	ssize_t			rcvbuf;
-};
+#include "vtc_http.h"
 
 struct thread_arg {
 	unsigned		magic;
@@ -113,14 +103,14 @@ Sess_GetOpt(struct vtc_sess *vsp, char * const **avp)
 }
 
 int
-sess_process(struct vtclog *vl, const struct vtc_sess *vsp,
+sess_process(struct vtclog *vl, struct vtc_sess *vsp,
     const char *spec, int sock, int *sfd, const char *addr)
 {
 	int rv;
 
 	CHECK_OBJ_NOTNULL(vsp, VTC_SESS_MAGIC);
 
-	rv = http_process(vl, spec, sock, sfd, addr, vsp->rcvbuf);
+	rv = http_process(vl, vsp, spec, sock, sfd, addr, vsp->rcvbuf);
 	return (rv);
 }
 

@@ -217,7 +217,7 @@ http_write(const struct http *hp, int lvl, const char *pfx)
 
 	AZ(VSB_finish(hp->vsb));
 	vtc_dump(hp->vl, lvl, pfx, VSB_data(hp->vsb), VSB_len(hp->vsb));
-	if (VSB_tofile(hp->vsb, hp->fd))
+	if (VSB_tofile(hp->vsb, hp->sess->fd))
 		vtc_log(hp->vl, hp->fatal, "Write failed: %s",
 		    strerror(errno));
 }
@@ -495,7 +495,7 @@ http_rxchar(struct http *hp, int n, int eof)
 	struct pollfd pfd[1];
 
 	while (n > 0) {
-		pfd[0].fd = hp->fd;
+		pfd[0].fd = hp->sess->fd;
 		pfd[0].events = POLLIN;
 		pfd[0].revents = 0;
 		i = poll(pfd, 1, hp->timeout);
@@ -504,34 +504,34 @@ http_rxchar(struct http *hp, int n, int eof)
 		if (i == 0) {
 			vtc_log(hp->vl, hp->fatal,
 			    "HTTP rx timeout (fd:%d %u ms)",
-			    hp->fd, hp->timeout);
+			    hp->sess->fd, hp->timeout);
 			continue;
 		}
 		if (i < 0) {
 			vtc_log(hp->vl, hp->fatal,
 			    "HTTP rx failed (fd:%d poll: %s)",
-			    hp->fd, strerror(errno));
+			    hp->sess->fd, strerror(errno));
 			continue;
 		}
 		assert(i > 0);
 		assert(hp->rx_p + n < hp->rx_e);
-		i = read(hp->fd, hp->rx_p, n);
+		i = read(hp->sess->fd, hp->rx_p, n);
 		if (!(pfd[0].revents & POLLIN))
 			vtc_log(hp->vl, 4,
 			    "HTTP rx poll (fd:%d revents: %x n=%d, i=%d)",
-			    hp->fd, pfd[0].revents, n, i);
+			    hp->sess->fd, pfd[0].revents, n, i);
 		if (i == 0 && eof)
 			return (i);
 		if (i == 0) {
 			vtc_log(hp->vl, hp->fatal,
 			    "HTTP rx EOF (fd:%d read: %s) %d",
-			    hp->fd, strerror(errno), n);
+			    hp->sess->fd, strerror(errno), n);
 			return (-1);
 		}
 		if (i < 0) {
 			vtc_log(hp->vl, hp->fatal,
 			    "HTTP rx failed (fd:%d read: %s)",
-			    hp->fd, strerror(errno));
+			    hp->sess->fd, strerror(errno));
 			return (-1);
 		}
 		hp->rx_p += i;
@@ -1271,7 +1271,7 @@ cmd_http_recv(CMD_ARGS)
 	AZ(av[2]);
 	n = strtoul(av[1], NULL, 0);
 	while (n > 0) {
-		i = read(hp->fd, u, n > 32 ? 32 : n);
+		i = read(hp->sess->fd, u, n > 32 ? 32 : n);
 		if (i > 0)
 			vtc_dump(hp->vl, 4, "recv", u, i);
 		else
@@ -1299,7 +1299,7 @@ cmd_http_send(CMD_ARGS)
 	AN(av[1]);
 	AZ(av[2]);
 	vtc_dump(hp->vl, 4, "send", av[1], -1);
-	i = write(hp->fd, av[1], strlen(av[1]));
+	i = write(hp->sess->fd, av[1], strlen(av[1]));
 	if (i != strlen(av[1]))
 		vtc_log(hp->vl, hp->fatal, "Write error in http_send(): %s",
 		    strerror(errno));
@@ -1327,7 +1327,7 @@ cmd_http_send_n(CMD_ARGS)
 		vtc_dump(hp->vl, 4, "send_n", av[2], -1);
 	l = strlen(av[2]);
 	while (n--) {
-		i = write(hp->fd, av[2], l);
+		i = write(hp->sess->fd, av[2], l);
 		if (i != l)
 			vtc_log(hp->vl, hp->fatal,
 			    "Write error in http_send(): %s",
@@ -1353,7 +1353,7 @@ cmd_http_send_urgent(CMD_ARGS)
 	AN(av[1]);
 	AZ(av[2]);
 	vtc_dump(hp->vl, 4, "send_urgent", av[1], -1);
-	i = send(hp->fd, av[1], strlen(av[1]), MSG_OOB);
+	i = send(hp->sess->fd, av[1], strlen(av[1]), MSG_OOB);
 	if (i != strlen(av[1]))
 		vtc_log(hp->vl, hp->fatal,
 		    "Write error in http_send_urgent(): %s", strerror(errno));
@@ -1381,7 +1381,7 @@ cmd_http_sendhex(CMD_ARGS)
 	vsb = vtc_hex_to_bin(hp->vl, av[1]);
 	assert(VSB_len(vsb) >= 0);
 	vtc_hexdump(hp->vl, 4, "sendhex", VSB_data(vsb), VSB_len(vsb));
-	if (VSB_tofile(vsb, hp->fd))
+	if (VSB_tofile(vsb, hp->sess->fd))
 		vtc_log(hp->vl, hp->fatal, "Write failed: %s",
 		    strerror(errno));
 	VSB_destroy(&vsb);
@@ -1493,11 +1493,11 @@ cmd_http_expect_close(CMD_ARGS)
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	AZ(av[1]);
 
-	vtc_log(vl, 4, "Expecting close (fd = %d)", hp->fd);
+	vtc_log(vl, 4, "Expecting close (fd = %d)", hp->sess->fd);
 	if (hp->h2)
 		stop_h2(hp);
 	while (1) {
-		fds[0].fd = hp->fd;
+		fds[0].fd = hp->sess->fd;
 		fds[0].events = POLLIN;
 		fds[0].revents = 0;
 		i = poll(fds, 1, hp->timeout);
@@ -1509,7 +1509,7 @@ cmd_http_expect_close(CMD_ARGS)
 			vtc_log(vl, hp->fatal,
 			    "Expected close: poll = %d, revents = 0x%x",
 			    i, fds[0].revents);
-		i = read(hp->fd, &c, 1);
+		i = read(hp->sess->fd, &c, 1);
 		if (VTCP_Check(i))
 			break;
 		if (i == 1 && vct_islws(c))
@@ -1517,7 +1517,7 @@ cmd_http_expect_close(CMD_ARGS)
 		vtc_log(vl, hp->fatal,
 		    "Expecting close: read = %d, c = 0x%02x", i, c);
 	}
-	vtc_log(vl, 4, "fd=%d EOF, as expected", hp->fd);
+	vtc_log(vl, 4, "fd=%d EOF, as expected", hp->sess->fd);
 }
 
 /* SECTION: client-server.spec.close
@@ -1540,7 +1540,7 @@ cmd_http_close(CMD_ARGS)
 	assert(*hp->sfd >= 0);
 	if (hp->h2)
 		stop_h2(hp);
-	VTCP_close(&hp->fd);
+	VTCP_close(&hp->sess->fd);
 	vtc_log(vl, 4, "Closed");
 }
 
@@ -1564,13 +1564,13 @@ cmd_http_accept(CMD_ARGS)
 	assert(*hp->sfd >= 0);
 	if (hp->h2)
 		stop_h2(hp);
-	if (hp->fd >= 0)
-		VTCP_close(&hp->fd);
+	if (hp->sess->fd >= 0)
+		VTCP_close(&hp->sess->fd);
 	vtc_log(vl, 4, "Accepting");
-	hp->fd = accept(*hp->sfd, NULL, NULL);
-	if (hp->fd < 0)
+	hp->sess->fd = accept(*hp->sfd, NULL, NULL);
+	if (hp->sess->fd < 0)
 		vtc_log(vl, hp->fatal, "Accepted failed: %s", strerror(errno));
-	vtc_log(vl, 3, "Accepted socket fd is %d", hp->fd);
+	vtc_log(vl, 3, "Accepted socket fd is %d", hp->sess->fd);
 }
 
 /* SECTION: client-server.spec.fatal
@@ -1619,12 +1619,12 @@ cmd_http_txpri(CMD_ARGS)
 
 	vtc_dump(hp->vl, 4, "txpri", PREFACE, sizeof(PREFACE));
 	/* Dribble out the preface */
-	l = write(hp->fd, PREFACE, 18);
+	l = write(hp->sess->fd, PREFACE, 18);
 	if (l != 18)
 		vtc_log(vl, hp->fatal, "Write failed: (%zd vs %zd) %s",
 		    l, sizeof(PREFACE), strerror(errno));
 	usleep(10000);
-	l = write(hp->fd, PREFACE + 18, sizeof(PREFACE) - 18);
+	l = write(hp->sess->fd, PREFACE + 18, sizeof(PREFACE) - 18);
 	if (l != sizeof(PREFACE) - 18)
 		vtc_log(vl, hp->fatal, "Write failed: (%zd vs %zd) %s",
 		    l, sizeof(PREFACE), strerror(errno));
@@ -1808,8 +1808,8 @@ http_process_cleanup(void *arg)
 }
 
 int
-http_process(struct vtclog *vl, const char *spec, int sock, int *sfd,
-    const char *addr, int rcvbuf)
+http_process(struct vtclog *vl, struct vtc_sess *vsp, const char *spec,
+    int sock, int *sfd, const char *addr, int rcvbuf)
 {
 	struct http *hp;
 	int retval, oldbuf;
@@ -1818,7 +1818,8 @@ http_process(struct vtclog *vl, const char *spec, int sock, int *sfd,
 	(void)sfd;
 	ALLOC_OBJ(hp, HTTP_MAGIC);
 	AN(hp);
-	hp->fd = sock;
+	hp->sess = vsp;
+	hp->sess->fd = sock;
 	hp->timeout = vtc_maxdur * 1000 / 2;
 
 	if (rcvbuf) {
@@ -1827,12 +1828,12 @@ http_process(struct vtclog *vl, const char *spec, int sock, int *sfd,
 		hp->rcvbuf = rcvbuf;
 
 		oldbuf = 0;
-		AZ(getsockopt(hp->fd, SOL_SOCKET, SO_RCVBUF, &oldbuf, &intlen));
-		AZ(setsockopt(hp->fd, SOL_SOCKET, SO_RCVBUF, &rcvbuf, intlen));
-		AZ(getsockopt(hp->fd, SOL_SOCKET, SO_RCVBUF, &rcvbuf, &intlen));
+		AZ(getsockopt(hp->sess->fd, SOL_SOCKET, SO_RCVBUF, &oldbuf, &intlen));
+		AZ(setsockopt(hp->sess->fd, SOL_SOCKET, SO_RCVBUF, &rcvbuf, intlen));
+		AZ(getsockopt(hp->sess->fd, SOL_SOCKET, SO_RCVBUF, &rcvbuf, &intlen));
 
 		vtc_log(vl, 3, "-rcvbuf fd=%d old=%d new=%d actual=%d",
-		    hp->fd, oldbuf, hp->rcvbuf, rcvbuf);
+		    hp->sess->fd, oldbuf, hp->rcvbuf, rcvbuf);
 	}
 
 	hp->nrxbuf = 2048*1024;
@@ -1868,7 +1869,7 @@ http_process(struct vtclog *vl, const char *spec, int sock, int *sfd,
 	}
 	pthread_cleanup_push(http_process_cleanup, hp);
 	parse_string(spec, http_cmds, hp, vl);
-	retval = hp->fd;
+	retval = hp->sess->fd;
 	pthread_cleanup_pop(0);
 	http_process_cleanup(hp);
 	return (retval);

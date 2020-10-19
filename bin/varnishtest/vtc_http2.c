@@ -156,7 +156,7 @@ http_write(const struct http *hp, int lvl,
 	AN(pfx);
 
 	vtc_dump(hp->vl, lvl, pfx, buf, s);
-	l = write(hp->fd, buf, s);
+	l = write(hp->sess->fd, buf, s);
 	if (l != s)
 		vtc_log(hp->vl, hp->fatal, "Write failed: (%zd vs %d) %s",
 		    l, s, strerror(errno));
@@ -172,7 +172,7 @@ get_bytes(const struct http *hp, char *buf, int n)
 	AN(buf);
 
 	while (n > 0) {
-		pfd[0].fd = hp->fd;
+		pfd[0].fd = hp->sess->fd;
 		pfd[0].events = POLLIN;
 		pfd[0].revents = 0;
 		i = poll(pfd, 1, hp->timeout);
@@ -181,26 +181,26 @@ get_bytes(const struct http *hp, char *buf, int n)
 		if (i == 0)
 			vtc_log(hp->vl, 3,
 			    "HTTP2 rx timeout (fd:%d %u ms)",
-			    hp->fd, hp->timeout);
+			    hp->sess->fd, hp->timeout);
 		if (i < 0)
 			vtc_log(hp->vl, 3,
 			    "HTTP2 rx failed (fd:%d poll: %s)",
-			    hp->fd, strerror(errno));
+			    hp->sess->fd, strerror(errno));
 		if (i <= 0)
 			return (i);
-		i = read(hp->fd, buf, n);
+		i = read(hp->sess->fd, buf, n);
 		if (!(pfd[0].revents & POLLIN))
 			vtc_log(hp->vl, 4,
 			    "HTTP2 rx poll (fd:%d revents: %x n=%d, i=%d)",
-			    hp->fd, pfd[0].revents, n, i);
+			    hp->sess->fd, pfd[0].revents, n, i);
 		if (i == 0)
 			vtc_log(hp->vl, 3,
 			    "HTTP2 rx EOF (fd:%d read: %s)",
-			    hp->fd, strerror(errno));
+			    hp->sess->fd, strerror(errno));
 		if (i < 0)
 			vtc_log(hp->vl, 3,
 			    "HTTP2 rx failed (fd:%d read: %s)",
-			    hp->fd, strerror(errno));
+			    hp->sess->fd, strerror(errno));
 		if (i <= 0)
 			return (i);
 		n -= i;
@@ -334,14 +334,14 @@ write_frame(struct http *hp, const struct frame *f, const unsigned lock)
 
 	if (lock)
 		AZ(pthread_mutex_lock(&hp->mtx));
-	l = write(hp->fd, hdr, sizeof(hdr));
+	l = write(hp->sess->fd, hdr, sizeof(hdr));
 	if (l != sizeof(hdr))
 		vtc_log(hp->vl, hp->fatal, "Write failed: (%zd vs %zd) %s",
 		    l, sizeof(hdr), strerror(errno));
 
 	if (f->size) {
 		AN(f->data);
-		l = write(hp->fd, f->data, f->size);
+		l = write(hp->sess->fd, f->data, f->size);
 		if (l != f->size)
 			vtc_log(hp->vl, hp->fatal,
 					"Write failed: (%zd vs %d) %s",
