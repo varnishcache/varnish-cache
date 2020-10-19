@@ -69,7 +69,6 @@ cmd_vtest(CMD_ARGS)
 {
 
 	(void)priv;
-	(void)cmd;
 	(void)vl;
 
 	if (av == NULL)
@@ -91,7 +90,6 @@ cmd_varnishtest(CMD_ARGS)
 {
 
 	(void)priv;
-	(void)cmd;
 	(void)vl;
 
 	if (av == NULL)
@@ -215,7 +213,6 @@ cmd_shell(CMD_ARGS)
 	int ok = 0;
 
 	(void)priv;
-	(void)cmd;
 
 	if (av == NULL)
 		return;
@@ -262,7 +259,6 @@ void v_matchproto_(cmd_f)
 cmd_err_shell(CMD_ARGS)
 {
 	(void)priv;
-	(void)cmd;
 
 	if (av == NULL)
 		return;
@@ -295,7 +291,6 @@ cmd_setenv(CMD_ARGS)
 	int force;
 
 	(void)priv;
-	(void)cmd;
 
 	if (av == NULL)
 		return;
@@ -330,7 +325,6 @@ cmd_delay(CMD_ARGS)
 	double f;
 
 	(void)priv;
-	(void)cmd;
 	if (av == NULL)
 		return;
 	AN(av[1]);
@@ -420,7 +414,6 @@ cmd_feature(CMD_ARGS)
 	int good;
 
 	(void)priv;
-	(void)cmd;
 
 	if (av == NULL)
 		return;

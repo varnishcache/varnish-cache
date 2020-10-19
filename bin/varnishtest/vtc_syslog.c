@@ -387,7 +387,6 @@ cmd_syslog_expect(CMD_ARGS)
 	char *cmp, *spec;
 
 	(void)vl;
-	(void)cmd;
 	CAST_OBJ_NOTNULL(s, priv, SYSLOG_SRV_MAGIC);
 	AZ(strcmp(av[0], "expect"));
 	av++;
@@ -423,7 +422,6 @@ cmd_syslog_recv(CMD_ARGS)
 	struct syslog_srv *s;
 
 	CAST_OBJ_NOTNULL(s, priv, SYSLOG_SRV_MAGIC);
-	(void)cmd;
 	(void)vl;
 	AZ(strcmp(av[0], "recv"));
 	av++;
@@ -555,7 +553,6 @@ cmd_syslog(CMD_ARGS)
 	struct syslog_srv *s;
 
 	(void)priv;
-	(void)cmd;
 
 	if (av == NULL) {
 		/* Reset and free */

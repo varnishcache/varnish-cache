@@ -357,7 +357,6 @@ cmd_http_expect(CMD_ARGS)
 	char *cmp;
 	const char *rhs;
 
-	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	AZ(strcmp(av[0], "expect"));
@@ -381,7 +380,6 @@ cmd_http_expect_pattern(CMD_ARGS)
 	struct http *hp;
 	char t = '0';
 
-	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	AZ(strcmp(av[0], "expect_pattern"));
@@ -692,7 +690,6 @@ cmd_http_rxresp(CMD_ARGS)
 	struct http *hp;
 	int has_obj = 1;
 
-	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	ONLY_CLIENT(hp, av);
@@ -734,7 +731,6 @@ cmd_http_rxresphdrs(CMD_ARGS)
 {
 	struct http *hp;
 
-	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	ONLY_CLIENT(hp, av);
@@ -761,7 +757,6 @@ cmd_http_gunzip(CMD_ARGS)
 	struct http *hp;
 
 	(void)av;
-	(void)cmd;
 	(void)vl;
 
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
@@ -965,7 +960,6 @@ cmd_http_txresp(CMD_ARGS)
 	const char *reason = "OK";
 	char* body = NULL;
 
-	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	ONLY_SERVER(hp, av);
@@ -1007,7 +1001,6 @@ cmd_http_upgrade(CMD_ARGS)
 	char *h;
 	struct http *hp;
 
-	(void)cmd;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	ONLY_SERVER(hp, av);
 	AN(hp->sfd);
@@ -1059,7 +1052,6 @@ cmd_http_rxreq(CMD_ARGS)
 {
 	struct http *hp;
 
-	(void)cmd;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	ONLY_SERVER(hp, av);
 	AZ(strcmp(av[0], "rxreq"));
@@ -1086,7 +1078,6 @@ cmd_http_rxreqhdrs(CMD_ARGS)
 {
 	struct http *hp;
 
-	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	AZ(strcmp(av[0], "rxreqhdrs"));
@@ -1111,7 +1102,6 @@ cmd_http_rxreqbody(CMD_ARGS)
 {
 	struct http *hp;
 
-	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	ONLY_SERVER(hp, av);
@@ -1138,7 +1128,6 @@ cmd_http_rxrespbody(CMD_ARGS)
 	struct http *hp;
 	int max = 0;
 
-	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	ONLY_CLIENT(hp, av);
@@ -1169,7 +1158,6 @@ cmd_http_rxchunk(CMD_ARGS)
 	struct http *hp;
 	int ll, i;
 
-	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	ONLY_CLIENT(hp, av);
@@ -1197,7 +1185,6 @@ cmd_http_txreq(CMD_ARGS)
 	const char *up = NULL;
 	unsigned nohost;
 
-	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	ONLY_CLIENT(hp, av);
@@ -1272,7 +1259,6 @@ cmd_http_recv(CMD_ARGS)
 	int i, n;
 	char u[32];
 
-	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	AN(av[1]);
@@ -1301,7 +1287,6 @@ cmd_http_send(CMD_ARGS)
 	struct http *hp;
 	int i;
 
-	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	AN(av[1]);
@@ -1325,7 +1310,6 @@ cmd_http_send_n(CMD_ARGS)
 	struct http *hp;
 	int i, n, l;
 
-	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	AN(av[1]);
@@ -1355,7 +1339,6 @@ cmd_http_send_urgent(CMD_ARGS)
 	struct http *hp;
 	int i;
 
-	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	AN(av[1]);
@@ -1381,7 +1364,6 @@ cmd_http_sendhex(CMD_ARGS)
 	struct vsb *vsb;
 	struct http *hp;
 
-	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	AN(av[1]);
@@ -1406,7 +1388,6 @@ cmd_http_chunked(CMD_ARGS)
 {
 	struct http *hp;
 
-	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	AN(av[1]);
@@ -1432,7 +1413,6 @@ cmd_http_chunkedlen(CMD_ARGS)
 	char buf[16384];
 	struct http *hp;
 
-	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	AN(av[1]);
@@ -1472,7 +1452,6 @@ cmd_http_timeout(CMD_ARGS)
 	struct http *hp;
 	double d;
 
-	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	AN(av[1]);
@@ -1496,7 +1475,6 @@ cmd_http_expect_close(CMD_ARGS)
 	char c;
 	int i;
 
-	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	AZ(av[1]);
@@ -1539,7 +1517,6 @@ cmd_http_close(CMD_ARGS)
 {
 	struct http *hp;
 
-	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	ONLY_SERVER(hp, av);
@@ -1563,7 +1540,6 @@ cmd_http_accept(CMD_ARGS)
 {
 	struct http *hp;
 
-	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	ONLY_SERVER(hp, av);
@@ -1593,13 +1569,14 @@ cmd_http_fatal(CMD_ARGS)
 	struct http *hp;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 
+	(void)vl;
 	AZ(av[1]);
-	if (!strcmp(av[0], "fatal"))
+	if (!strcmp(av[0], "fatal")) {
 		hp->fatal = 0;
-	else if (!strcmp(av[0], "non_fatal"))
+	} else {
+		assert(!strcmp(av[0], "non_fatal"));
 		hp->fatal = -1;
-	else
-		vtc_fatal(vl, "XXX: fatal %s", cmd->name);
+	}
 }
 
 #define cmd_http_non_fatal cmd_http_fatal
@@ -1621,7 +1598,7 @@ cmd_http_txpri(CMD_ARGS)
 {
 	size_t l;
 	struct http *hp;
-	(void)cmd;
+
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	ONLY_CLIENT(hp, av);
 
@@ -1651,7 +1628,7 @@ static void
 cmd_http_rxpri(CMD_ARGS)
 {
 	struct http *hp;
-	(void)cmd;
+
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	ONLY_SERVER(hp, av);
 
@@ -1677,7 +1654,6 @@ cmd_http_settings(CMD_ARGS)
 	char *p;
 	struct http *hp;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
-	(void)cmd;
 
 	if (!hp->h2)
 		vtc_fatal(hp->vl, "Only possible in H/2 mode");
@@ -1718,7 +1694,7 @@ cmd_http_stream(CMD_ARGS)
 		    "} -run\n"
 		);
 	}
-	cmd_stream(av, hp, cmd, vl);
+	cmd_stream(av, hp, vl);
 }
 
 /* SECTION: client-server.spec.write_body
@@ -1734,7 +1710,6 @@ cmd_http_write_body(CMD_ARGS)
 {
 	struct http *hp;
 
-	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	AN(av[0]);

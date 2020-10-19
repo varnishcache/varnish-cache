@@ -458,7 +458,7 @@ parse_string(struct vtclog *vl, void *priv, const char *spec)
 			vtc_fatal(vl, "Unknown command: \"%s\"", token_s[0]);
 
 		assert(cp->cmd != NULL);
-		cp->cmd(token_s, priv, vl->cmds, vl);
+		cp->cmd(token_s, priv, vl);
 	}
 }
 
@@ -471,7 +471,7 @@ reset_cmds(const struct cmds *cmd)
 {
 
 	for (; cmd->name != NULL; cmd++)
-		cmd->cmd(NULL, NULL, NULL, NULL);
+		cmd->cmd(NULL, NULL, NULL);
 }
 
 /**********************************************************************

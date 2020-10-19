@@ -929,7 +929,6 @@ cmd_process(CMD_ARGS)
 	int spec_set = 0;
 
 	(void)priv;
-	(void)cmd;
 
 	if (av == NULL) {
 		/* Reset and free */

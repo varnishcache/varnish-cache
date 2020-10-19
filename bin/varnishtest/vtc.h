@@ -54,11 +54,9 @@
 	} while (0)
 
 struct vtclog;
-struct cmds;
 struct suckaddr;
 
-#define CMD_ARGS \
-    char * const *av, void *priv, const struct cmds *cmd, struct vtclog *vl
+#define CMD_ARGS char * const *av, void *priv, struct vtclog *vl
 
 typedef void cmd_f(CMD_ARGS);
 

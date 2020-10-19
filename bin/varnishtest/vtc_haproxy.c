@@ -200,7 +200,6 @@ cmd_haproxy_cli_send(CMD_ARGS)
 	struct haproxy_cli *hc;
 	int j;
 
-	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(hc, priv, HAPROXY_CLI_MAGIC);
 	AZ(strcmp(av[0], "send"));
@@ -302,7 +301,6 @@ cmd_haproxy_cli_expect(CMD_ARGS)
 	int erroroffset, i, ret;
 	char *cmp, *spec;
 
-	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(hc, priv, HAPROXY_CLI_MAGIC);
 	AZ(strcmp(av[0], "expect"));
@@ -1012,7 +1010,6 @@ cmd_haproxy(CMD_ARGS)
 	struct haproxy *h, *h2;
 
 	(void)priv;
-	(void)cmd;
 
 	if (av == NULL) {
 		/* Reset and free */

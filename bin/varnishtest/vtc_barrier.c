@@ -400,7 +400,6 @@ cmd_barrier(CMD_ARGS)
 	int r;
 
 	(void)priv;
-	(void)cmd;
 
 	if (av == NULL) {
 		/* Reset and free */

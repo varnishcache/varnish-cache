@@ -1249,7 +1249,6 @@ cmd_sendhex(CMD_ARGS)
 	struct stream *s;
 	struct vsb *vsb;
 
-	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
 	CAST_OBJ_NOTNULL(hp, s->hp, HTTP_MAGIC);
@@ -1417,7 +1416,6 @@ cmd_tx11obj(CMD_ARGS)
 	struct hpk_hdr hdr;
 	char *cmd_str = *av;
 	char *b, *p;
-	(void)cmd;
 
 	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
 	INIT_FRAME(f, CONTINUATION, 0, s->id, END_HEADERS);
@@ -1692,7 +1690,6 @@ cmd_txdata(CMD_ARGS)
 	struct frame f;
 	char *body = NULL;
 	char *data = NULL;
-	(void)cmd;
 
 	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
 
@@ -1767,7 +1764,7 @@ cmd_txrst(CMD_ARGS)
 	char *p;
 	uint32_t err = 0;
 	struct frame f;
-	(void)cmd;
+
 	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
 
 	INIT_FRAME(f, RST_STREAM, 4, s->id, 0);
@@ -1821,7 +1818,6 @@ cmd_txprio(CMD_ARGS)
 	uint32_t exclusive = 0;
 	uint8_t buf[5];
 
-	(void)cmd;
 	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
 
 	INIT_FRAME(f, PRIORITY, 5, s->id, 0);
@@ -1898,7 +1894,6 @@ cmd_txsettings(CMD_ARGS)
 	char buf[512];
 	char *cursor = buf;
 
-	(void)cmd;
 	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
 	CAST_OBJ_NOTNULL(hp, s->hp, HTTP_MAGIC);
 
@@ -1968,7 +1963,6 @@ cmd_txping(CMD_ARGS)
 	struct frame f;
 	char buf[8];
 
-	(void)cmd;
 	memset(buf, 0, 8);
 	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
 	INIT_FRAME(f, PING, 8, s->id, 0);
@@ -2020,7 +2014,6 @@ cmd_txgoaway(CMD_ARGS)
 	uint32_t ls = 0;
 	struct frame f;
 
-	(void)cmd;
 	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
 
 	INIT_FRAME(f, GOAWAY, 8, s->id, 0);
@@ -2080,7 +2073,6 @@ cmd_txwinup(CMD_ARGS)
 	char buf[8];
 	uint32_t size = 0;
 
-	(void)cmd;
 	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
 	CAST_OBJ_NOTNULL(hp, s->hp, HTTP_MAGIC);
 	memset(buf, 0, 8);
@@ -2170,7 +2162,6 @@ cmd_rxhdrs(CMD_ARGS)
 	unsigned rcv = 0;
 	enum h2_type expect = TYPE_HEADERS;
 
-	(void)cmd;
 	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
 
 	while (*++av) {
@@ -2208,7 +2199,6 @@ cmd_rxcont(CMD_ARGS)
 	unsigned long int times = 1;
 	unsigned rcv = 0;
 
-	(void)cmd;
 	(void)av;
 	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
 
@@ -2259,7 +2249,6 @@ cmd_rxdata(CMD_ARGS)
 	unsigned long int times = 1;
 	unsigned rcv = 0;
 
-	(void)cmd;
 	(void)av;
 	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
 
@@ -2305,7 +2294,6 @@ cmd_rxmsg(CMD_ARGS)
 	int end_stream;
 	int rcv = 0;
 
-	(void)cmd;
 	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
 
 	if (!strcmp(av[0], "rxreq"))
@@ -2364,7 +2352,6 @@ cmd_rxpush(CMD_ARGS)
 	unsigned rcv = 0;
 	enum h2_type expect = TYPE_PUSH_PROMISE;
 
-	(void)cmd;
 	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
 
 	while (*++av) {
@@ -2396,7 +2383,6 @@ cmd_rxpush(CMD_ARGS)
 	static void \
 	cmd_rx ## lctype(CMD_ARGS) { \
 		struct stream *s; \
-		(void)cmd; \
 		(void)av; \
 		CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC); \
 		s->frame = rxstuff(s); \
@@ -2452,7 +2438,7 @@ static void
 cmd_rxframe(CMD_ARGS)
 {
 	struct stream *s;
-	(void)cmd;
+
 	(void)vl;
 	(void)av;
 	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
@@ -2470,7 +2456,6 @@ cmd_expect(CMD_ARGS)
 	const char *rhs;
 	char buf[20];
 
-	(void)cmd;
 	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
 	hp = s->hp;
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
@@ -2501,7 +2486,6 @@ cmd_gunzip(CMD_ARGS)
 	struct stream *s;
 
 	(void)av;
-	(void)cmd;
 	(void)vl;
 
 	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
@@ -2521,7 +2505,6 @@ cmd_write_body(CMD_ARGS)
 {
 	struct stream *s;
 
-	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
 	AN(av[0]);
@@ -2752,7 +2735,6 @@ cmd_stream(CMD_ARGS)
 	struct stream *s;
 	struct http *h;
 
-	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(h, priv, HTTP_MAGIC);
 

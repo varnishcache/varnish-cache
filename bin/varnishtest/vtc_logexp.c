@@ -452,7 +452,6 @@ cmd_logexp_expect(CMD_ARGS)
 	struct logexp_test *test;
 	char *end;
 
-	(void)cmd;
 	CAST_OBJ_NOTNULL(le, priv, LOGEXP_MAGIC);
 	if (av[1] == NULL || av[2] == NULL || av[3] == NULL)
 		vtc_fatal(vl, "Syntax error");
@@ -525,7 +524,6 @@ cmd_logexpect(CMD_ARGS)
 	int i;
 
 	(void)priv;
-	(void)cmd;
 
 	if (av == NULL) {
 		/* Reset and free */

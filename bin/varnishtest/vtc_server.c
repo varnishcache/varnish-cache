@@ -474,7 +474,6 @@ cmd_server(CMD_ARGS)
 	struct server *s;
 
 	(void)priv;
-	(void)cmd;
 
 	if (av == NULL) {
 		/* Reset and free */

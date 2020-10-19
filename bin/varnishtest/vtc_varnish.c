@@ -1074,7 +1074,6 @@ cmd_varnish(CMD_ARGS)
 	struct varnish *v, *v2;
 
 	(void)priv;
-	(void)cmd;
 
 	if (av == NULL) {
 		/* Reset and free */
