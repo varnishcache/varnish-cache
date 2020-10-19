@@ -40,6 +40,7 @@ varnishtest_SOURCES = \
 		vtc_http.c \
 		vtc_http.h \
 		vtc_http2.c \
+		vtc_log.h \
 		vtc_log.c \
 		vtc_logexp.c \
 		vtc_misc.c \
