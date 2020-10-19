@@ -515,7 +515,7 @@ logexp_spec(struct logexp *le, const char *spec)
 
 	logexp_delete_tests(le);
 
-	parse_string(spec, logexp_cmds, le, le->vl);
+	parse_string(le->vl, le, spec);
 }
 
 void

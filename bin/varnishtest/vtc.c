@@ -40,6 +40,7 @@
 #include <unistd.h>
 
 #include "vtc.h"
+#include "vtc_log.h"
 
 #include "vav.h"
 #include "vrnd.h"
@@ -308,8 +309,7 @@ macro_expand(struct vtclog *vl, const char *text)
 
 
 void
-parse_string(const char *spec, const struct cmds *cmd, void *priv,
-    struct vtclog *vl)
+parse_string(struct vtclog *vl, void *priv, const char *spec)
 {
 	char *token_s[MAX_TOKENS], *token_e[MAX_TOKENS];
 	struct vsb *token_exp;
@@ -319,7 +319,6 @@ parse_string(const char *spec, const struct cmds *cmd, void *priv,
 	unsigned n, m;
 	const struct cmds *cp;
 
-	vtc_log_chk_cmd(vl, cmd);
 	AN(spec);
 	buf = strdup(spec);
 	AN(buf);
@@ -439,12 +438,13 @@ parse_string(const char *spec, const struct cmds *cmd, void *priv,
 			n = strtoul(token_s[1], NULL, 0);
 			for (m = 0; m < n; m++) {
 				vtc_log(vl, 4, "Loop #%u", m);
-				parse_string(token_s[2], cmd, priv, vl);
+				parse_string(vl, priv, token_s[2]);
 			}
 			continue;
 		}
 
-		for (cp = cmd; cp->name != NULL; cp++)
+		AN(vl->cmds);
+		for (cp = vl->cmds; cp->name != NULL; cp++)
 			if (!strcmp(token_s[0], cp->name))
 				break;
 
@@ -458,7 +458,7 @@ parse_string(const char *spec, const struct cmds *cmd, void *priv,
 			vtc_fatal(vl, "Unknown command: \"%s\"", token_s[0]);
 
 		assert(cp->cmd != NULL);
-		cp->cmd(token_s, priv, cmd, vl);
+		cp->cmd(token_s, priv, vl->cmds, vl);
 	}
 }
 
@@ -566,6 +566,6 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 	vtc_stop = 0;
 
 	vtc_thread = pthread_self();
-	parse_string(script, top_cmds, NULL, vltop);
+	parse_string(vltop, NULL, script);
 	return (fail_out());
 }

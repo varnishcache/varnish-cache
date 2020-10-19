@@ -452,7 +452,7 @@ syslog_thread(void *priv)
 	for (i = 0; i < s->repeat; i++) {
 		if (s->repeat > 1)
 			vtc_log(s->vl, 3, "Iteration %d", i);
-		parse_string(s->spec, syslog_cmds, s, s->vl);
+		parse_string(s->vl, s, s->spec);
 		vtc_log(s->vl, 3, "shutting fd %d", s->sock);
 	}
 	VUDP_close(&s->sock);

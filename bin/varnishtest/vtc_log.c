@@ -37,6 +37,7 @@
 #include <string.h>
 
 #include "vtc.h"
+#include "vtc_log.h"
 
 #include "vtim.h"
 
@@ -44,30 +45,14 @@ static pthread_mutex_t	vtclog_mtx;
 static char		*vtclog_buf;
 static unsigned		vtclog_left;
 
-struct vtclog {
-	unsigned	magic;
-#define VTCLOG_MAGIC	0x82731202
-	char		*id;
-	struct vsb	*vsb;
-	pthread_mutex_t	mtx;
-	int		act;
-	const void	*cmds;
-};
-
 static pthread_key_t log_key;
 static double t0;
 
 void
-vtc_log_set_cmd(struct vtclog *vl, const void *cmds)
+vtc_log_set_cmd(struct vtclog *vl, const struct cmds *cmds)
 {
+	AN(cmds);
 	vl->cmds = cmds;
-}
-
-void
-vtc_log_chk_cmd(struct vtclog *vl, const void *cmds)
-{
-	if (vl->cmds != cmds)
-		vtc_log(vl, 4, "LOGCMDS mismatch %p vs %p", vl->cmds, cmds);
 }
 
 /**********************************************************************/

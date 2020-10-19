@@ -2579,7 +2579,7 @@ stream_thread(void *priv)
 	struct stream *s;
 
 	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
-	parse_string(s->spec, stream_cmds, s, s->vl);
+	parse_string(s->vl, s, s->spec);
 	vtc_log(s->vl, 2, "Ending stream %u", s->id);
 	return (NULL);
 }

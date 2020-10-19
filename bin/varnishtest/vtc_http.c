@@ -1007,6 +1007,7 @@ cmd_http_upgrade(CMD_ARGS)
 	char *h;
 	struct http *hp;
 
+	(void)cmd;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	ONLY_SERVER(hp, av);
 	AN(hp->sfd);
@@ -1024,21 +1025,24 @@ cmd_http_upgrade(CMD_ARGS)
 	if (!h)
 		vtc_fatal(vl, "Req misses \"HTTP2-Settings\" header");
 
-
-	parse_string("txresp -status 101 "
-				"-hdr \"Connection: Upgrade\" "
-				"-hdr \"Upgrade: h2c\"\n", cmd, hp, vl);
+	parse_string(vl, hp,
+	    "txresp -status 101"
+	    " -hdr \"Connection: Upgrade\""
+	    " -hdr \"Upgrade: h2c\"\n"
+	);
 
 	b64_settings(hp, h);
 
-	parse_string("rxpri\n"
-			"stream 0 {\n"
-			"txsettings\n"
-			"rxsettings\n"
-			"txsettings -ack\n"
-			"rxsettings\n"
-			"expect settings.ack == true\n"
-			"} -start\n", cmd, hp, vl);
+	parse_string(vl, hp,
+	    "rxpri\n"
+	    "stream 0 {\n"
+	    "    txsettings\n"
+	    "    rxsettings\n"
+	    "    txsettings -ack\n"
+	    "    rxsettings\n"
+	    "    expect settings.ack == true\n"
+	    "} -start\n"
+	);
 }
 
 /**********************************************************************
@@ -1235,19 +1239,23 @@ cmd_http_txreq(CMD_ARGS)
 	http_write(hp, 4, "txreq");
 
 	if (up) {
-		parse_string("rxresp\n"
-				"expect resp.status == 101\n"
-				"expect resp.http.connection == Upgrade\n"
-				"expect resp.http.upgrade == h2c\n"
-				"txpri\n", http_cmds, hp, vl);
+		parse_string(vl, hp,
+		    "rxresp\n"
+		    "expect resp.status == 101\n"
+		    "expect resp.http.connection == Upgrade\n"
+		    "expect resp.http.upgrade == h2c\n"
+		    "txpri\n"
+		);
 		b64_settings(hp, up);
-		parse_string("stream 0 {\n"
-				"txsettings\n"
-				"rxsettings\n"
-				"txsettings -ack\n"
-				"rxsettings\n"
-				"expect settings.ack == true"
-			     "} -start\n", http_cmds, hp, vl);
+		parse_string(vl, hp,
+		    "stream 0 {\n"
+		    "    txsettings\n"
+		    "    rxsettings\n"
+		    "    txsettings -ack\n"
+		    "    rxsettings\n"
+		    "    expect settings.ack == true"
+		    "} -start\n"
+		);
 	}
 }
 
@@ -1697,16 +1705,18 @@ cmd_http_stream(CMD_ARGS)
 	if (!hp->h2) {
 		vtc_log(hp->vl, 4, "Not in H/2 mode, do what's needed");
 		if (hp->sfd)
-			parse_string("rxpri", http_cmds, hp, vl);
+			parse_string(vl, hp, "rxpri");
 		else
-			parse_string("txpri", http_cmds, hp, vl);
-		parse_string("stream 0 {\n"
-				"txsettings\n"
-				"rxsettings\n"
-				"txsettings -ack\n"
-				"rxsettings\n"
-				"expect settings.ack == true"
-			     "} -run\n", http_cmds, hp, vl);
+			parse_string(vl, hp, "txpri");
+		parse_string(vl, hp,
+		    "stream 0 {\n"
+		    "    txsettings\n"
+		    "    rxsettings\n"
+		    "    txsettings -ack\n"
+		    "    rxsettings\n"
+		    "    expect settings.ack == true"
+		    "} -run\n"
+		);
 	}
 	cmd_stream(av, hp, cmd, vl);
 }
@@ -1870,7 +1880,7 @@ http_process(struct vtclog *vl, struct vtc_sess *vsp, const char *spec,
 		hp->rem_path = strdup(addr);
 	}
 	pthread_cleanup_push(http_process_cleanup, hp);
-	parse_string(spec, http_cmds, hp, vl);
+	parse_string(vl, hp, spec);
 	retval = hp->sess->fd;
 	pthread_cleanup_pop(0);
 	http_process_cleanup(hp);

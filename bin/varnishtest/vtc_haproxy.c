@@ -366,7 +366,7 @@ haproxy_cli_thread(void *priv)
 		    "CLI failed to open %s: %s", VSB_data(vsb), err);
 	VTCP_blocking(fd);
 	hc->sock = fd;
-	parse_string(hc->spec, haproxy_cli_cmds, hc, hc->vl);
+	parse_string(hc->vl, hc, hc->spec);
 	vtc_log(hc->vl, 2, "CLI ending");
 	VSB_destroy(&vsb);
 	return (NULL);
