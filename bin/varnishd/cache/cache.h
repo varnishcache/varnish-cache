@@ -90,7 +90,6 @@ enum {
 struct VSC_lck;
 struct VSC_main;
 struct VSC_main_wrk;
-struct backend;
 struct ban;
 struct ban_proto;
 struct cli;
