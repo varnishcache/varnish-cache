@@ -171,6 +171,13 @@ struct logexp {
 static VTAILQ_HEAD(, logexp)		logexps =
 	VTAILQ_HEAD_INITIALIZER(logexps);
 
+static cmd_f cmd_logexp_expect;
+
+static const struct cmds logexp_cmds[] = {
+	{ "expect",		cmd_logexp_expect },
+	{ NULL,			NULL },
+};
+
 static void
 logexp_delete_tests(struct logexp *le)
 {
@@ -215,6 +222,7 @@ logexp_new(const char *name, const char *varg)
 	AN(le);
 	REPLACE(le->name, name);
 	le->vl = vtc_logopen("%s", name);
+	vtc_log_set_cmd(le->vl, logexp_cmds);
 	VTAILQ_INIT(&le->tests);
 
 	le->d_arg = 0;
@@ -499,11 +507,6 @@ cmd_logexp_expect(CMD_ARGS)
 	test->vre = vre;
 	VTAILQ_INSERT_TAIL(&le->tests, test, list);
 }
-
-static const struct cmds logexp_cmds[] = {
-	{ "expect",		cmd_logexp_expect },
-	{ NULL,			NULL },
-};
 
 static void
 logexp_spec(struct logexp *le, const char *spec)

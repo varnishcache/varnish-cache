@@ -478,6 +478,7 @@ haproxy_cli_new(struct haproxy *h)
 	AN(hc);
 
 	hc->vl = h->vl;
+	vtc_log_set_cmd(hc->vl, haproxy_cli_cmds);
 	hc->sock = -1;
 	bprintf(hc->connect, "${%s_cli_sock}", h->name);
 
@@ -500,6 +501,7 @@ haproxy_mcli_new(struct haproxy *h)
 	AN(hc);
 
 	hc->vl = h->vl;
+	vtc_log_set_cmd(hc->vl, haproxy_cli_cmds);
 	hc->sock = -1;
 	bprintf(hc->connect, "${%s_mcli_sock}", h->name);
 
@@ -566,6 +568,7 @@ haproxy_new(const char *name)
 	h->args = VSB_new_auto();
 
 	h->vl = vtc_logopen("%s", name);
+	vtc_log_set_cmd(h->vl, haproxy_cli_cmds);
 	AN(h->vl);
 
 	h->filename = getenv(HAPROXY_PROGRAM_ENV_VAR);

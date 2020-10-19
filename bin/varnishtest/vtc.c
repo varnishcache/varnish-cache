@@ -89,7 +89,7 @@ static const struct cmds global_cmds[] = {
 	{ NULL, NULL }
 };
 
-static const struct cmds cmds[] = {
+static const struct cmds top_cmds[] = {
 #define CMD_TOP(n) { #n, cmd_##n },
 #include "cmds.h"
 	{ NULL, NULL }
@@ -319,6 +319,7 @@ parse_string(const char *spec, const struct cmds *cmd, void *priv,
 	unsigned n, m;
 	const struct cmds *cp;
 
+	vtc_log_chk_cmd(vl, cmd);
 	AN(spec);
 	buf = strdup(spec);
 	AN(buf);
@@ -492,7 +493,7 @@ fail_out(void)
 		vtc_stop = 1;
 	vtc_log(vltop, 1, "RESETTING after %s", tfn);
 	reset_cmds(global_cmds);
-	reset_cmds(cmds);
+	reset_cmds(top_cmds);
 	vtc_error |= old_err;
 
 	if (vtc_error)
@@ -525,6 +526,7 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 	vtc_loginit(logbuf, loglen);
 	vltop = vtc_logopen("top");
 	AN(vltop);
+	vtc_log_set_cmd(vltop, top_cmds);
 
 	vtc_log(vltop, 1, "TEST %s starting", fn);
 
@@ -564,6 +566,6 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 	vtc_stop = 0;
 
 	vtc_thread = pthread_self();
-	parse_string(script, cmds, NULL, vltop);
+	parse_string(script, top_cmds, NULL, vltop);
 	return (fail_out());
 }

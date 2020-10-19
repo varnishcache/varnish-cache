@@ -114,6 +114,8 @@ char * synth_body(const char *len, int rnd);
 void cmd_server_gen_vcl(struct vsb *vsb);
 void cmd_server_gen_haproxy_conf(struct vsb *vsb);
 
+void vtc_log_set_cmd(struct vtclog *vl, const void *cmds);
+void vtc_log_chk_cmd(struct vtclog *vl, const void *cmds);
 void vtc_loginit(char *buf, unsigned buflen);
 struct vtclog *vtc_logopen(const char *id, ...) v_printflike_(1, 2);
 void vtc_logclose(void *arg);

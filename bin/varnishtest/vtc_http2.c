@@ -2601,6 +2601,7 @@ stream_new(const char *name, struct http *h)
 	VTAILQ_INIT(&s->fq);
 	s->ws = h->iws;
 	s->vl = vtc_logopen("%s.%s", h->sess->name, name);
+	vtc_log_set_cmd(s->vl, stream_cmds);
 
 	s->weight = 16;
 	s->dependency = 0;

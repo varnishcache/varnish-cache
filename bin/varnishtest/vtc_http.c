@@ -1822,6 +1822,7 @@ http_process(struct vtclog *vl, struct vtc_sess *vsp, const char *spec,
 	hp->sess->fd = sock;
 	hp->timeout = vtc_maxdur * 1000 / 2;
 
+
 	if (rcvbuf) {
 		// XXX setsockopt() too late on SunOS
 		// https://github.com/varnishcache/varnish-cache/pull/2980#issuecomment-486214661
@@ -1855,6 +1856,7 @@ http_process(struct vtclog *vl, struct vtc_sess *vsp, const char *spec,
 	AN(hp->rem_port);
 
 	hp->vl = vl;
+	vtc_log_set_cmd(hp->vl, http_cmds);
 	hp->gziplevel = 0;
 	hp->gzipresidual = -1;
 

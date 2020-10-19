@@ -51,10 +51,24 @@ struct vtclog {
 	struct vsb	*vsb;
 	pthread_mutex_t	mtx;
 	int		act;
+	const void	*cmds;
 };
 
 static pthread_key_t log_key;
 static double t0;
+
+void
+vtc_log_set_cmd(struct vtclog *vl, const void *cmds)
+{
+	vl->cmds = cmds;
+}
+
+void
+vtc_log_chk_cmd(struct vtclog *vl, const void *cmds)
+{
+	if (vl->cmds != cmds)
+		vtc_log(vl, 4, "LOGCMDS mismatch %p vs %p", vl->cmds, cmds);
+}
 
 /**********************************************************************/
 
@@ -323,4 +337,3 @@ vtc_loginit(char *buf, unsigned buflen)
 	AZ(pthread_mutex_init(&vtclog_mtx, NULL));
 	AZ(pthread_key_create(&log_key, NULL));
 }
-

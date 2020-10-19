@@ -72,6 +72,21 @@ static pthread_mutex_t			syslog_mtx;
 static VTAILQ_HEAD(, syslog_srv)	syslogs =
     VTAILQ_HEAD_INITIALIZER(syslogs);
 
+#define SYSLOGCMDS \
+	CMD_SYSLOG(expect) \
+	CMD_SYSLOG(recv)
+
+#define CMD_SYSLOG(nm) static cmd_f cmd_syslog_##nm;
+SYSLOGCMDS
+#undef CMD_SYSLOG
+
+static const struct cmds syslog_cmds[] = {
+#define CMD_SYSLOG(n) { #n, cmd_syslog_##n },
+SYSLOGCMDS
+#undef CMD_SYSLOG
+	{ NULL, NULL }
+};
+
 static const char * const syslog_levels[] = {
 	"emerg",
 	"alert",
@@ -248,6 +263,7 @@ syslog_new(const char *name, struct vtclog *vl)
 	REPLACE(s->name, name);
 	s->vl = vtc_logopen("%s", s->name);
 	AN(s->vl);
+	vtc_log_set_cmd(s->vl, syslog_cmds);
 
 	bprintf(s->bind, "%s", "127.0.0.1 0");
 	s->repeat = 1;
@@ -418,15 +434,6 @@ cmd_syslog_recv(CMD_ARGS)
 
 	syslog_rx(s, lvl);
 }
-
-static const struct cmds syslog_cmds[] = {
-#define CMD_SYSLOG(n) { #n, cmd_syslog_##n },
-	/* session */
-	CMD_SYSLOG(expect)
-	CMD_SYSLOG(recv)
-#undef CMD_SYSLOG
-	{ NULL, NULL }
-};
 
 /**********************************************************************
  * Syslog server thread
