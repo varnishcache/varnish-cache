@@ -17,6 +17,7 @@ varnish v1 -vcl+backend {
 
 varnish v1 -cliok "param.set debug +syncvsl"
 varnish v1 -cliok "param.set feature +http2"
+varnish v1 -cliok "param.reset h2_initial_window_size"
 
 client c1 {
 	stream 0 {
