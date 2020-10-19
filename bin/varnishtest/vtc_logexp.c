@@ -214,7 +214,7 @@ logexp_new(const char *name, const char *varg)
 	ALLOC_OBJ(le, LOGEXP_MAGIC);
 	AN(le);
 	REPLACE(le->name, name);
-	le->vl = vtc_logopen(name);
+	le->vl = vtc_logopen("%s", name);
 	VTAILQ_INIT(&le->tests);
 
 	le->d_arg = 0;

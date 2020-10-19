@@ -83,7 +83,7 @@ server_new(const char *name, struct vtclog *vl)
 	ALLOC_OBJ(s, SERVER_MAGIC);
 	AN(s);
 	REPLACE(s->name, name);
-	s->vl = vtc_logopen(s->name);
+	s->vl = vtc_logopen("%s", s->name);
 	AN(s->vl);
 	s->vsp = Sess_New(s->vl, name);
 	AN(s->vsp);
@@ -302,7 +302,7 @@ server_dispatch_wrk(void *priv)
 	CAST_OBJ_NOTNULL(s, priv, SERVER_MAGIC);
 	assert(s->sock < 0);
 
-	vl = vtc_logopen(s->name);
+	vl = vtc_logopen("%s", s->name);
 	pthread_cleanup_push(vtc_logclose, vl);
 
 	fd = s->fd;
@@ -334,7 +334,7 @@ server_dispatch_thread(void *priv)
 	CAST_OBJ_NOTNULL(s, priv, SERVER_MAGIC);
 	assert(s->sock >= 0);
 
-	vl = vtc_logopen(s->name);
+	vl = vtc_logopen("%s", s->name);
 	pthread_cleanup_push(vtc_logclose, vl);
 
 	vtc_log(vl, 2, "Dispatch started on %s", s->listen);

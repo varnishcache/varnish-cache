@@ -137,7 +137,7 @@ barrier_sock_thread(void *priv)
 
 	AZ(pthread_mutex_lock(&b->mtx));
 
-	vl = vtc_logopen(b->name);
+	vl = vtc_logopen("%s", b->name);
 	pthread_cleanup_push(vtc_logclose, vl);
 
 	sock = VTCP_listen_on("127.0.0.1:0", NULL, b->expected, &err);

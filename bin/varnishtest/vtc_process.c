@@ -386,7 +386,7 @@ process_new(const char *name)
 	REPLACE(p->name, name);
 	AZ(pthread_mutex_init(&p->mtx, NULL));
 
-	p->vl = vtc_logopen(name);
+	p->vl = vtc_logopen("%s", name);
 	AN(p->vl);
 
 	PROCESS_EXPAND(dir, "${tmpdir}/%s", name);

@@ -47,7 +47,7 @@ static unsigned		vtclog_left;
 struct vtclog {
 	unsigned	magic;
 #define VTCLOG_MAGIC	0x82731202
-	const char	*id;
+	char		*id;
 	struct vsb	*vsb;
 	pthread_mutex_t	mtx;
 	int		act;
@@ -77,13 +77,19 @@ static double t0;
 
 
 struct vtclog *
-vtc_logopen(const char *id)
+vtc_logopen(const char *fmt, ...)
 {
 	struct vtclog *vl;
+	va_list ap;
+	char buf[BUFSIZ];
+
+	va_start(ap, fmt);
+	vbprintf(buf, fmt, ap);
+	va_end(ap);
 
 	ALLOC_OBJ(vl, VTCLOG_MAGIC);
 	AN(vl);
-	vl->id = id;
+	REPLACE(vl->id, buf);
 	vl->vsb = VSB_new_auto();
 	AZ(pthread_mutex_init(&vl->mtx, NULL));
 	AZ(pthread_setspecific(log_key, vl));
@@ -100,6 +106,7 @@ vtc_logclose(void *arg)
 		AZ(pthread_setspecific(log_key, NULL));
 	VSB_destroy(&vl->vsb);
 	AZ(pthread_mutex_destroy(&vl->mtx));
+	REPLACE(vl->id, NULL);
 	FREE_OBJ(vl);
 }
 
@@ -130,7 +137,7 @@ vtc_leadinv(const struct vtclog *vl, int lvl, const char *fmt, va_list ap)
 
 	assert(lvl < (int)NLEAD);
 	assert(lvl >= 0);
-	VSB_printf(vl->vsb, "%s %-4s ",
+	VSB_printf(vl->vsb, "%s %-5s ",
 	    lead[lvl < 0 ? 1: lvl], vl->id);
 	if (fmt != NULL)
 		(void)VSB_vprintf(vl->vsb, fmt, ap);
@@ -162,7 +169,7 @@ vtc_log_emit(const struct vtclog *vl)
 	if (t_last != t_this) {
 		assert(vtclog_left > 25);
 		i = snprintf(vtclog_buf, vtclog_left,
-		    "**** dT   %d.%03d\n", t_this / 1000, t_this % 1000);
+		    "**** dT    %d.%03d\n", t_this / 1000, t_this % 1000);
 		t_last = t_this;
 		vtclog_buf += i;
 		vtclog_left -= i;
@@ -224,7 +231,7 @@ vtc_dump(struct vtclog *vl, int lvl, const char *pfx, const char *str, int len)
 	if (str == NULL)
 		vtc_leadin(vl, lvl, "%s(null)\n", pfx);
 	else {
-		bprintf(buf, "%s %-4s %s|",
+		bprintf(buf, "%s %-5s %s|",
 		    lead[lvl < 0 ? 1: lvl], vl->id, pfx);
 		if (len < 0)
 			len = strlen(str);

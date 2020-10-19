@@ -128,7 +128,7 @@ sess_thread(void *priv)
 
 	vsp = ta.vsp;
 	CHECK_OBJ_NOTNULL(vsp, VTC_SESS_MAGIC);
-	vl = vtc_logopen(vsp->name);
+	vl = vtc_logopen("%s", vsp->name);
 	pthread_cleanup_push(vtc_logclose, vl);
 
 	assert(vsp->repeat > 0);

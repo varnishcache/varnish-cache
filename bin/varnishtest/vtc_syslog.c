@@ -246,7 +246,7 @@ syslog_new(const char *name, struct vtclog *vl)
 	ALLOC_OBJ(s, SYSLOG_SRV_MAGIC);
 	AN(s);
 	REPLACE(s->name, name);
-	s->vl = vtc_logopen(s->name);
+	s->vl = vtc_logopen("%s", s->name);
 	AN(s->vl);
 
 	bprintf(s->bind, "%s", "127.0.0.1 0");
@@ -255,7 +255,7 @@ syslog_new(const char *name, struct vtclog *vl)
 	s->lvl = -1;
 	s->timeout = vtc_maxdur * .5;		// XXX
 
-	vl = vtc_logopen(s->name);
+	vl = vtc_logopen("%s", s->name);
 	AN(vl);
 
 	s->rxbuf_sz = s->rxbuf_left = 2048*1024;

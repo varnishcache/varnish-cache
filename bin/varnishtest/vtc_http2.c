@@ -93,6 +93,7 @@ struct stream {
 	unsigned		magic;
 #define STREAM_MAGIC		0x63f1fac2
 	uint32_t		id;
+	struct vtclog		*vl;
 	char			*spec;
 	char			*name;
 	VTAILQ_ENTRY(stream)    list;
@@ -134,14 +135,14 @@ clean_headers(struct hpk_hdr *h)
 #define ONLY_H2_CLIENT(hp, av)						\
 	do {								\
 		if (hp->sfd != NULL)					\
-			vtc_fatal(hp->vl,				\
+			vtc_fatal(s->vl,				\
 			    "\"%s\" only possible in client", av[0]);	\
 	} while (0)
 
 #define ONLY_H2_SERVER(hp, av)						\
 	do {								\
 		if (hp->sfd == NULL)					\
-			vtc_fatal(hp->vl,				\
+			vtc_fatal(s->vl,				\
 			    "\"%s\" only possible in server", av[0]);	\
 	} while (0)
 
@@ -316,17 +317,20 @@ clean_frame(struct frame **fp)
 }
 
 static void
-write_frame(struct http *hp, const struct frame *f, const unsigned lock)
+write_frame(const struct stream *sp, const struct frame *f, const unsigned lock)
 {
+	struct http *hp;
 	ssize_t l;
 	char hdr[9];
 
+	CHECK_OBJ_NOTNULL(sp, STREAM_MAGIC);
+	hp = sp->hp;
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(f, FRAME_MAGIC);
 
 	writeFrameHeader(hdr, f);
 
-	vtc_log(hp->vl, 3, "tx: stream: %d, type: %s (%d), "
+	vtc_log(sp->vl, 3, "tx: stream: %d, type: %s (%d), "
 			"flags: 0x%02x, size: %d",
 			f->stid,
 			f->type < TYPE_MAX ? h2_types[f->type] : "?",
@@ -336,14 +340,14 @@ write_frame(struct http *hp, const struct frame *f, const unsigned lock)
 		AZ(pthread_mutex_lock(&hp->mtx));
 	l = write(hp->sess->fd, hdr, sizeof(hdr));
 	if (l != sizeof(hdr))
-		vtc_log(hp->vl, hp->fatal, "Write failed: (%zd vs %zd) %s",
+		vtc_log(sp->vl, hp->fatal, "Write failed: (%zd vs %zd) %s",
 		    l, sizeof(hdr), strerror(errno));
 
 	if (f->size) {
 		AN(f->data);
 		l = write(hp->sess->fd, f->data, f->size);
 		if (l != f->size)
-			vtc_log(hp->vl, hp->fatal,
+			vtc_log(sp->vl, hp->fatal,
 					"Write failed: (%zd vs %d) %s",
 					l, f->size, strerror(errno));
 	}
@@ -401,7 +405,7 @@ parse_data(struct stream *s, struct frame *f)
 	if (f->flags & PADDED) {
 		f->md.padded = *((uint8_t *)data);
 		if (f->md.padded >= size) {
-			vtc_log(hp->vl, hp->fatal,
+			vtc_log(s->vl, hp->fatal,
 					"invalid padding: %d reported,"
 					"but size is only %d",
 					f->md.padded, size);
@@ -410,7 +414,7 @@ parse_data(struct stream *s, struct frame *f)
 		}
 		data++;
 		size -= f->md.padded + 1;
-		vtc_log(hp->vl, 4, "padding: %3d", f->md.padded);
+		vtc_log(s->vl, 4, "padding: %3d", f->md.padded);
 	}
 
 	if (s->id)
@@ -420,7 +424,7 @@ parse_data(struct stream *s, struct frame *f)
 
 	if (!size) {
 		AZ(data);
-		vtc_log(hp->vl, 4, "s%u - no data", s->id);
+		vtc_log(s->vl, 4, "s%u - no data", s->id);
 		return;
 	}
 
@@ -491,7 +495,7 @@ parse_hdr(struct stream *s, struct frame *f, struct vsb *vsb)
 	if (f->flags & PADDED && f->type != TYPE_CONTINUATION) {
 		f->md.padded = *((uint8_t *)data);
 		if (f->md.padded >= size) {
-			vtc_log(hp->vl, hp->fatal,
+			vtc_log(s->vl, hp->fatal,
 					"invalid padding: %d reported,"
 					"but size is only %d",
 					f->md.padded, size);
@@ -500,7 +504,7 @@ parse_hdr(struct stream *s, struct frame *f, struct vsb *vsb)
 		}
 		shift += 1;
 		size -= f->md.padded;
-		vtc_log(hp->vl, 4, "padding: %3d", f->md.padded);
+		vtc_log(s->vl, 4, "padding: %3d", f->md.padded);
 	}
 
 	if (f->type == TYPE_HEADERS && f->flags & PRIORITY){
@@ -513,8 +517,8 @@ parse_hdr(struct stream *s, struct frame *f, struct vsb *vsb)
 		if (exclusive)
 			exclusive_stream_dependency(s);
 
-		vtc_log(hp->vl, 4, "stream->dependency: %u", s->dependency);
-		vtc_log(hp->vl, 4, "stream->weight: %u", s->weight);
+		vtc_log(s->vl, 4, "stream->dependency: %u", s->dependency);
+		vtc_log(s->vl, 4, "stream->weight: %u", s->weight);
 	} else if (f->type == TYPE_PUSH_PROMISE){
 		shift += 4;
 		n = vbe32dec(f->data);
@@ -536,7 +540,7 @@ parse_prio(struct stream *s, struct frame *f)
 	CAST_OBJ_NOTNULL(hp, s->hp, HTTP_MAGIC);;
 
 	if (f->size != 5)
-		vtc_fatal(hp->vl, "Size should be 5, but isn't (%d)", f->size);
+		vtc_fatal(s->vl, "Size should be 5, but isn't (%d)", f->size);
 
 	buf = f->data;
 	AN(buf);
@@ -554,8 +558,8 @@ parse_prio(struct stream *s, struct frame *f)
 	f->md.prio.weight = *buf;
 	s->weight = f->md.prio.weight;
 
-	vtc_log(hp->vl, 3, "prio->stream: %u", f->md.prio.stream);
-	vtc_log(hp->vl, 3, "prio->weight: %u", f->md.prio.weight);
+	vtc_log(s->vl, 3, "prio->stream: %u", f->md.prio.stream);
+	vtc_log(s->vl, 3, "prio->weight: %u", f->md.prio.weight);
 }
 
 static void
@@ -569,17 +573,17 @@ parse_rst(const struct stream *s, struct frame *f)
 	CAST_OBJ_NOTNULL(hp, s->hp, HTTP_MAGIC);;
 
 	if (f->size != 4)
-		vtc_fatal(hp->vl, "Size should be 4, but isn't (%d)", f->size);
+		vtc_fatal(s->vl, "Size should be 4, but isn't (%d)", f->size);
 
 	err = vbe32dec(f->data);
 	f->md.rst_err = err;
 
-	vtc_log(hp->vl, 2, "ouch");
+	vtc_log(s->vl, 2, "ouch");
 	if (err <= ERR_MAX)
 		buf = h2_errs[err];
 	else
 		buf = "unknown";
-	vtc_log(hp->vl, 4, "rst->err: %s (%d)", buf, err);
+	vtc_log(s->vl, 4, "rst->err: %s (%d)", buf, err);
 
 }
 
@@ -596,7 +600,7 @@ parse_settings(const struct stream *s, struct frame *f)
 	CAST_OBJ_NOTNULL(hp, s->hp, HTTP_MAGIC);;
 
 	if (f->size % 6)
-		vtc_fatal(hp->vl,
+		vtc_fatal(s->vl,
 		    "Size should be a multiple of 6, but isn't (%d)", f->size);
 
 	for (u = 0; u <= SETTINGS_MAX; u++)
@@ -618,7 +622,7 @@ parse_settings(const struct stream *s, struct frame *f)
 			assert(r == hpk_done);
 		}
 
-		vtc_log(hp->vl, 4, "settings->%s (%u): %d", buf, t, v);
+		vtc_log(s->vl, 4, "settings->%s (%u): %d", buf, t, v);
 	}
 
 }
@@ -631,12 +635,12 @@ parse_ping(const struct stream *s, struct frame *f)
 	CHECK_OBJ_NOTNULL(s, STREAM_MAGIC);
 	CAST_OBJ_NOTNULL(hp, s->hp, HTTP_MAGIC);;
 	if (f->size != 8)
-		vtc_fatal(hp->vl, "Size should be 8, but isn't (%d)", f->size);
+		vtc_fatal(s->vl, "Size should be 8, but isn't (%d)", f->size);
 	f->md.ping.ack = f->flags & ACK;
 	memcpy(f->md.ping.data, f->data, 8);
 	f->md.ping.data[8] = '\0';
 
-	vtc_log(hp->vl, 4, "ping->data: %s", f->md.ping.data);
+	vtc_log(s->vl, 4, "ping->data: %s", f->md.ping.data);
 
 }
 
@@ -651,10 +655,10 @@ parse_goaway(const struct stream *s, struct frame *f)
 	CAST_OBJ_NOTNULL(hp, s->hp, HTTP_MAGIC);;
 
 	if (f->size < 8)
-		vtc_fatal(hp->vl,
+		vtc_fatal(s->vl,
 		    "Size should be at least 8, but isn't (%d)", f->size);
 	if (f->data[0] & (1<<7))
-		vtc_fatal(hp->vl,
+		vtc_fatal(s->vl,
 		    "First bit of data is reserved and should be 0");
 
 	stid = vbe32dec(f->data);
@@ -675,10 +679,10 @@ parse_goaway(const struct stream *s, struct frame *f)
 		memcpy(f->md.goaway.debug, f->data + 8, f->size - 8);
 	}
 
-	vtc_log(hp->vl, 3, "goaway->laststream: %d", stid);
-	vtc_log(hp->vl, 3, "goaway->err: %s (%d)", err_buf, err);
+	vtc_log(s->vl, 3, "goaway->laststream: %d", stid);
+	vtc_log(s->vl, 3, "goaway->err: %s (%d)", err_buf, err);
 	if (f->md.goaway.debug)
-		vtc_log(hp->vl, 3, "goaway->debug: %s", f->md.goaway.debug);
+		vtc_log(s->vl, 3, "goaway->debug: %s", f->md.goaway.debug);
 }
 
 static void
@@ -691,15 +695,15 @@ parse_winup(const struct stream *s, struct frame *f)
 	CAST_OBJ_NOTNULL(hp, s->hp, HTTP_MAGIC);;
 
 	if (f->size != 4)
-		vtc_fatal(hp->vl, "Size should be 4, but isn't (%d)", f->size);
+		vtc_fatal(s->vl, "Size should be 4, but isn't (%d)", f->size);
 	if (f->data[0] & (1<<7))
-		vtc_log(hp->vl, s->hp->fatal,
+		vtc_log(s->vl, s->hp->fatal,
 		    "First bit of data is reserved and should be 0");
 
 	size = vbe32dec(f->data);
 	f->md.winup_size = size;
 
-	vtc_log(hp->vl, 3, "winup->size: %d", size);
+	vtc_log(s->vl, 3, "winup->size: %d", size);
 }
 
 /* read a frame and queue it in the relevant stream, wait if not present yet.
@@ -780,9 +784,10 @@ receive_frame(void *priv)
 		}
 		AZ(pthread_mutex_unlock(&hp->mtx));
 
+		AN(s);
 		if (expect_cont &&
 		    (f->type != TYPE_CONTINUATION || expect_cont != s->id))
-			vtc_fatal(hp->vl, "Expected CONTINUATION frame for "
+			vtc_fatal(s->vl, "Expected CONTINUATION frame for "
 			    "stream %u", expect_cont);
 
 		/* parse the frame according to it type, and fill the metada */
@@ -875,7 +880,7 @@ do {									\
 
 #define CHECK_LAST_FRAME(TYPE) \
 	if (!f || f->type != TYPE_ ## TYPE) {				   \
-		vtc_fatal(s->hp->vl, "Last frame was not of type " #TYPE); \
+		vtc_fatal(s->vl, "Last frame was not of type " #TYPE); \
 	}
 
 #define RETURN_SETTINGS(idx) \
@@ -1080,7 +1085,7 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 	if (!strncmp(spec, "frame.", 6)) {
 		spec += 6;
 		if (!f)
-			vtc_fatal(s->hp->vl, "No frame received yet.");
+			vtc_fatal(s->vl, "No frame received yet.");
 		if (!strcmp(spec, "data"))   { return (f->data); }
 		else if (!strcmp(spec, "type"))   { RETURN_BUFFED(f->type); }
 		else if (!strcmp(spec, "size"))	  { RETURN_BUFFED(f->size); }
@@ -1089,7 +1094,7 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 			if (f->type != TYPE_DATA &&
 					f->type != TYPE_HEADERS &&
 					f->type != TYPE_PUSH_PROMISE)
-				vtc_fatal(s->hp->vl,
+				vtc_fatal(s->vl,
 						"Last frame was not of type "
 						"DATA, HEADERS or PUSH");
 			RETURN_BUFFED(f->md.padded);
@@ -1645,7 +1650,7 @@ cmd_tx11obj(CMD_ARGS)
 		f.size += 4;
 	f.data = buf;
 	HPK_FreeIter(iter);
-	write_frame(s->hp, &f, 1);
+	write_frame(s, &f, 1);
 	free(buf);
 
 	if (!body)
@@ -1654,7 +1659,7 @@ cmd_tx11obj(CMD_ARGS)
 	INIT_FRAME(f, DATA, bodylen, s->id, END_STREAM);
 	f.data = body;
 
-	write_frame(s->hp, &f, 1);
+	write_frame(s, &f, 1);
 	free(body);
 }
 
@@ -1739,7 +1744,7 @@ cmd_txdata(CMD_ARGS)
 		f.size = strlen(body);
 		f.data = body;
 	}
-	write_frame(s->hp, &f, 1);
+	write_frame(s, &f, 1);
 	free(body);
 	free(pad);
 	free(data);
@@ -1787,7 +1792,7 @@ cmd_txrst(CMD_ARGS)
 
 	err = htonl(err);
 	f.data = (void *)&err;
-	write_frame(s->hp, &f, 1);
+	write_frame(s, &f, 1);
 }
 
 /* SECTION: stream.spec.prio_txprio txprio
@@ -1842,7 +1847,7 @@ cmd_txprio(CMD_ARGS)
 
 	vbe32enc(buf, (stid | exclusive));
 	buf[4] = s->weight;
-	write_frame(s->hp, &f, 1);
+	write_frame(s, &f, 1);
 }
 
 #define PUT_KV(av, vl, name, val, code) \
@@ -1941,7 +1946,8 @@ cmd_txsettings(CMD_ARGS)
 	if (*av != NULL)
 		vtc_fatal(vl, "Unknown txsettings spec: %s\n", *av);
 
-	write_frame(hp, &f, 0);
+	AN(s->hp);
+	write_frame(s, &f, 0);
 	AZ(pthread_mutex_unlock(&hp->mtx));
 }
 
@@ -1984,7 +1990,7 @@ cmd_txping(CMD_ARGS)
 		vtc_fatal(vl, "Unknown txping spec: %s\n", *av);
 	if (!f.data)
 		f.data = buf;
-	write_frame(s->hp, &f, 1);
+	write_frame(s, &f, 1);
 }
 
 /*
@@ -2052,7 +2058,7 @@ cmd_txgoaway(CMD_ARGS)
 	}
 	vbe32enc(f.data, ls);
 	vbe32enc(f.data + 4, err);
-	write_frame(s->hp, &f, 1);
+	write_frame(s, &f, 1);
 	free(f.data);
 }
 
@@ -2101,7 +2107,7 @@ cmd_txwinup(CMD_ARGS)
 
 	size = htonl(size);
 	f.data = (void *)&size;
-	write_frame(hp, &f, 1);
+	write_frame(s, &f, 1);
 }
 
 static struct frame *
@@ -2451,7 +2457,7 @@ cmd_rxframe(CMD_ARGS)
 	(void)av;
 	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
 	if (rxstuff(s) == NULL)
-		vtc_fatal(s->hp->vl, "No frame received");
+		vtc_fatal(s->vl, "No frame received");
 }
 
 static void
@@ -2523,7 +2529,7 @@ cmd_write_body(CMD_ARGS)
 	AZ(av[2]);
 	AZ(strcmp(av[0], "write_body"));
 	if (VFIL_writefile(NULL, av[1], s->body, s->bodylen) != 0)
-		vtc_fatal(s->hp->vl, "failed to write body: %s (%d)",
+		vtc_fatal(s->vl, "failed to write body: %s (%d)",
 		    strerror(errno), errno);
 }
 
@@ -2573,8 +2579,8 @@ stream_thread(void *priv)
 	struct stream *s;
 
 	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
-	parse_string(s->spec, stream_cmds, s, s->hp->vl);
-	vtc_log(s->hp->vl, 2, "Ending stream %u", s->id);
+	parse_string(s->spec, stream_cmds, s, s->vl);
+	vtc_log(s->vl, 2, "Ending stream %u", s->id);
 	return (NULL);
 }
 /**********************************************************************
@@ -2591,16 +2597,17 @@ stream_new(const char *name, struct http *h)
 	AN(s);
 	AZ(pthread_cond_init(&s->cond, NULL));
 	REPLACE(s->name, name);
-	AN(name);
+	AN(s->name);
 	VTAILQ_INIT(&s->fq);
 	s->ws = h->iws;
+	s->vl = vtc_logopen("%s.%s", h->sess->name, name);
 
 	s->weight = 16;
 	s->dependency = 0;
 
-	STRTOU32(s->id, name, p, h->vl, "stream");
+	STRTOU32(s->id, name, p, s->vl, "stream");
 	if (s->id & (1U << 31))
-		vtc_fatal(h->vl, "Stream id must be a 31-bits integer "
+		vtc_fatal(s->vl, "Stream id must be a 31-bits integer "
 		    "(found %s)", name);
 
 	CHECK_OBJ_NOTNULL(h, HTTP_MAGIC);
@@ -2628,6 +2635,7 @@ stream_delete(struct stream *s)
 		VTAILQ_REMOVE(&s->fq, f, list);
 		clean_frame(&f);
 	}
+	vtc_logclose(s->vl);
 	clean_headers(s->req);
 	clean_headers(s->resp);
 	AZ(s->frame);
@@ -2645,7 +2653,7 @@ static void
 stream_start(struct stream *s)
 {
 	CHECK_OBJ_NOTNULL(s, STREAM_MAGIC);
-	vtc_log(s->hp->vl, 2, "Starting stream %p", s);
+	vtc_log(s->hp->vl, 2, "Starting stream %s (%p)", s->name, s);
 	AZ(pthread_create(&s->tp, NULL, stream_thread, s));
 	s->running = 1;
 }

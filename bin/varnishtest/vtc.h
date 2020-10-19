@@ -115,7 +115,7 @@ void cmd_server_gen_vcl(struct vsb *vsb);
 void cmd_server_gen_haproxy_conf(struct vsb *vsb);
 
 void vtc_loginit(char *buf, unsigned buflen);
-struct vtclog *vtc_logopen(const char *id);
+struct vtclog *vtc_logopen(const char *id, ...) v_printflike_(1, 2);
 void vtc_logclose(void *arg);
 void vtc_log(struct vtclog *vl, int lvl, const char *fmt, ...)
     v_printflike_(3, 4);

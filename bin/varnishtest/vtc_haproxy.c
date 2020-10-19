@@ -565,7 +565,7 @@ haproxy_new(const char *name)
 
 	h->args = VSB_new_auto();
 
-	h->vl = vtc_logopen(name);
+	h->vl = vtc_logopen("%s", name);
 	AN(h->vl);
 
 	h->filename = getenv(HAPROXY_PROGRAM_ENV_VAR);

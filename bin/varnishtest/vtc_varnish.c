@@ -320,7 +320,7 @@ varnish_new(const char *name)
 
 	REPLACE(v->jail, "");
 
-	v->vl = vtc_logopen(name);
+	v->vl = vtc_logopen("%s", name);
 	AN(v->vl);
 
 	vsb = macro_expandf(v->vl, "${tmpdir}/%s", name);
