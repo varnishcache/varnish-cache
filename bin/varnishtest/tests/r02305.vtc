@@ -1,12 +1,14 @@
 varnishtest "#2305: h/2 reembark with a request body"
 
 barrier b1 cond 2
+barrier b2 cond 2
+barrier b3 cond 2
 
 server s1 {
 	rxreq
 	expect req.url == "/"
 	barrier b1 sync
-	delay 2
+	barrier b2 sync
 	txresp
 } -start
 
@@ -25,10 +27,13 @@ client c1 {
 		txreq
 		rxresp
 		expect resp.status == 200
+		barrier b3 sync
 	} -start
 	stream 3 {
 		barrier b1 sync
 		txreq -req POST -body "foo"
+		barrier b2 sync
+		barrier b3 sync
 		rxresp
 		expect resp.status == 200
 	} -run
