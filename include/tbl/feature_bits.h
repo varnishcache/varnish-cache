@@ -78,6 +78,10 @@ FEATURE_BIT(VALIDATE_HEADERS,		validate_headers,
     "Validate all header set operations to conform to RFC7230."
 )
 
+FEATURE_BIT(BUSY_STATS_RATE,	busy_stats_rate,
+    "Make busy workers comply with thread_stats_rate."
+)
+
 #undef FEATURE_BIT
 
 /*lint -restore */

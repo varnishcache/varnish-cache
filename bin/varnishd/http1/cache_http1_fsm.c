@@ -426,6 +426,8 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			HTC_RxInit(req->htc, req->ws);
 			if (req->htc->rxbuf_e != req->htc->rxbuf_b)
 				wrk->stats->sess_readahead++;
+			if (FEATURE(FEATURE_BUSY_STATS_RATE))
+				WRK_AddStat(wrk);
 			http1_setstate(sp, H1NEWREQ);
 		} else {
 			WRONG("Wrong H1 session state");

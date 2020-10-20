@@ -477,6 +477,7 @@ void VMOD_Panic(struct vsb *);
 
 /* cache_wrk.c */
 void WRK_Init(void);
+void WRK_AddStat(struct worker *);
 
 /* cache_ws.c */
 void WS_Id(const struct ws *ws, char *id);
