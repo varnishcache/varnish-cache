@@ -1,0 +1,65 @@
+varnishtest "failure in vcl_synth"
+
+barrier b1 sock 2 -cyclic
+
+varnish v1 -cliok "param.set feature +http2"
+varnish v1 -vcl {
+	import vtc;
+
+	backend be none;
+
+	sub vcl_recv {
+		if (req.method == "FAIL") {
+			return (synth(501));
+		}
+		return (synth(200));
+	}
+
+	sub vcl_synth {
+		if (req.method == "FAIL") {
+			vtc.barrier_sync("${b1_sock}");
+			return (fail);
+		}
+	}
+} -start
+
+client c1 {
+	txreq -method FAIL
+	barrier b1 sync
+	rxresp
+	expect resp.status == 500
+
+	txreq -method FAIL -hdr "Transfer-Encoding: chunked"
+	barrier b1 sync
+	delay 0.1
+	chunkedlen 1024
+	chunkedlen 0
+	rxresp
+	expect resp.status == 500
+
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run
+
+client c2 {
+	stream 1 {
+		txreq -method FAIL
+		barrier b1 sync
+		rxresp
+		expect resp.status == 500
+	} -run
+	stream 3 {
+		txreq -method FAIL -hdr content-length 1024 -nostrend
+		barrier b1 sync
+		delay 0.1
+		txdata -datalen 1024
+		rxresp
+		expect resp.status == 500
+	} -run
+	stream 5 {
+		txreq
+		rxresp
+		expect resp.status == 200
+	} -run
+} -run
