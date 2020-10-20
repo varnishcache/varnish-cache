@@ -169,6 +169,25 @@ pool_addstat(struct VSC_main_wrk *dst, struct VSC_main_wrk *src)
 	memset(src, 0, sizeof *src);
 }
 
+void
+WRK_AddStat(struct worker *wrk)
+{
+	struct pool *pp;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	pp = wrk->pool;
+	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
+	if (++wrk->stats->summs >= cache_param->wthread_stats_rate) {
+		Lck_Lock(&pp->mtx);
+		pool_addstat(pp->a_stat, wrk->stats);
+		Lck_Unlock(&pp->mtx);
+	}
+}
+
+/*--------------------------------------------------------------------
+ * Pool reserve calculation
+ */
+
 static unsigned
 pool_reserve(void)
 {
