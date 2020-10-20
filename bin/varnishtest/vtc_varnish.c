@@ -862,7 +862,7 @@ do_stat_dump_cb(void *priv, const struct VSC_point * const pt)
 
 	if (strcmp(pt->ctype, "uint64_t"))
 		return (0);
-	u = *pt->ptr;
+	u = VSC_Value(pt);
 
 	if (strcmp(dp->arg, "*")) {
 		if (fnmatch(dp->arg, pt->name, 0))
@@ -924,7 +924,7 @@ do_expect_cb(void *priv, const struct VSC_point * const pt)
 	if (!sp->lhs.good && stat_match(sp->lhs.pattern, pt->name) == 0) {
 		AZ(strcmp(pt->ctype, "uint64_t"));
 		AN(pt->ptr);
-		sp->lhs.val = *pt->ptr;
+		sp->lhs.val = VSC_Value(pt);
 		sp->lhs.good = 1;
 	}
 
@@ -934,7 +934,7 @@ do_expect_cb(void *priv, const struct VSC_point * const pt)
 	    stat_match(sp->rhs.pattern, pt->name) == 0) {
 		AZ(strcmp(pt->ctype, "uint64_t"));
 		AN(pt->ptr);
-		sp->rhs.val = *pt->ptr;
+		sp->rhs.val = VSC_Value(pt);
 		sp->rhs.good = 1;
 	}
 

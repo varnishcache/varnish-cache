@@ -67,7 +67,7 @@ do_xml_cb(void *priv, const struct VSC_point * const pt)
 	if (pt == NULL)
 		return (0);
 	AZ(strcmp(pt->ctype, "uint64_t"));
-	val = *(const volatile uint64_t*)pt->ptr;
+	val = VSC_Value(pt);
 
 	printf("\t<stat>\n");
 	printf("\t\t<name>%s</name>\n", pt->name);
@@ -106,7 +106,7 @@ do_json_cb(void *priv, const struct VSC_point * const pt)
 		return (0);
 
 	AZ(strcmp(pt->ctype, "uint64_t"));
-	val = (uintmax_t)*(const volatile uint64_t*)pt->ptr;
+	val = (uintmax_t)VSC_Value(pt);
 
 	sep = priv;
 
@@ -167,7 +167,7 @@ do_once_cb_first(void *priv, const struct VSC_point * const pt)
 	AZ(strcmp(pt->ctype, "uint64_t"));
 	if (strcmp(pt->name, "MAIN.uptime"))
 		return (0);
-	val = *(const volatile uint64_t*)pt->ptr;
+	val = VSC_Value(pt);
 	op->up = (double)val;
 	return (1);
 }
@@ -183,7 +183,7 @@ do_once_cb(void *priv, const struct VSC_point * const pt)
 		return (0);
 	op = priv;
 	AZ(strcmp(pt->ctype, "uint64_t"));
-	val = *(const volatile uint64_t*)pt->ptr;
+	val = VSC_Value(pt);
 	i = 0;
 	i += printf("%s", pt->name);
 	if (i >= op->pad)
