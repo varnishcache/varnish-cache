@@ -256,7 +256,7 @@ sample_points(void)
 	VTAILQ_FOREACH(pt, &ptlist, list) {
 		AN(pt->vpt);
 		AN(pt->vpt->ptr);
-		v = *pt->vpt->ptr;
+		v = VSC_Value(pt->vpt);
 		if (v == 0 && !pt->seen)
 			continue;
 		if (!pt->seen) {
@@ -1104,7 +1104,7 @@ newpt(void *priv, const struct VSC_point *const vpt)
 	rebuild |= REBUILD_NEXT;
 	AN(pt);
 	pt->vpt = vpt;
-	pt->last = *pt->vpt->ptr;
+	pt->last = VSC_Value(vpt);
 	pt->ma_10.nmax = 10;
 	pt->ma_100.nmax = 100;
 	pt->ma_1000.nmax = 1000;

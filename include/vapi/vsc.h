@@ -159,4 +159,15 @@ const struct VSC_level_desc *VSC_ChangeLevel(const struct VSC_level_desc*, int);
 	 * Change a level up or down.
 	 */
 
+static inline uint64_t
+VSC_Value(const struct VSC_point * const pt)
+{
+	uint64_t val;
+
+	val = *pt->ptr;
+	if (pt->semantics == 'g' && val > INT64_MAX)
+		val = 0;
+	return (val);
+}
+
 #endif /* VAPI_VSC_H_INCLUDED */
