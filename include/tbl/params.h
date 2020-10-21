@@ -1349,7 +1349,48 @@ PARAM_VCC(
 	"Allow 'import ... from ...'."
 )
 
+/*--------------------------------------------------------------------
+ * PCRE parameters
+ */
+
+#  define PARAM_PCRE(nm, pv, min, def, descr)			\
+	PARAM(, nm, tweak_uint, &mgt_param.vre_limits.pv,	\
+	    min, NULL, def, NULL, descr)
+
+PARAM_PCRE(
+	/* name */	pcre_match_limit,
+	/* priv */	match,
+	/* min */	"1",
+	/* def */	"10000",
+	/* descr */
+	"The limit for the number of calls to the internal match()"
+	" function in pcre_exec().\n\n"
+	"(See: PCRE_EXTRA_MATCH_LIMIT in pcre docs.)\n\n"
+	"This parameter limits how much CPU time"
+	" regular expression matching can soak up."
+)
+
+PARAM_PCRE(
+	/* name */	pcre_match_limit_recursion,
+	/* priv */	match_recursion,
+	/* min */	"1",
+	/* def */	"20",
+	/* descr */
+	"The recursion depth-limit for the internal match() function"
+	" in a pcre_exec().\n\n"
+	"(See: PCRE_EXTRA_MATCH_LIMIT_RECURSION in pcre docs.)\n\n"
+	"This puts an upper limit on the amount of stack used"
+	" by PCRE for certain classes of regular expressions.\n\n"
+	"We have set the default value low in order to"
+	" prevent crashes, at the cost of possible regexp"
+	" matching failures.\n\n"
+	"Matching failures will show up in the log as VCL_Error"
+	" messages with regexp errors -27 or -21.\n\n"
+	"Testcase r01576 can be useful when tuning this parameter."
+)
+
 #  undef PARAM_ALL
+#  undef PARAM_PCRE
 #  undef PARAM_STRING
 #  undef PARAM_VCC
 #endif /* defined(PARAM_ALL) */
@@ -1406,32 +1447,6 @@ PARAM(
 	"	esi_disable_xml_check	Don't check of body looks like XML\n"
 	"	esi_ignore_other_elements	Ignore non-esi XML-elements\n"
 	"	esi_remove_bom	Remove UTF-8 BOM"
-)
-
-/* actual location mgt_param_tbl.c */
-PARAM(
-	/* name */	pcre_match_limit,
-	/* type */	uint,
-	/* min */	"1",
-	/* max */	NULL,
-	/* def */	"1.000",
-	/* units */	NULL,
-	/* descr */
-	"The limit for the  number of internal matching function calls in "
-	"a pcre_exec() execution."
-)
-
-/* actual location mgt_param_tbl.c */
-PARAM(
-	/* name */	pcre_match_limit_recursion,
-	/* type */	uint,
-	/* min */	"1",
-	/* max */	NULL,
-	/* def */	"1.000",
-	/* units */	NULL,
-	/* descr */
-	"The limit for the  number of internal matching function "
-	"recursions in a pcre_exec() execution."
 )
 
 /* actual location mgt_pool.c */
