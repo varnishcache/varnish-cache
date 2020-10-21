@@ -38,12 +38,6 @@
 #include "mgt/mgt_param.h"
 
 
-#define MEMPOOL_TEXT							\
-	"The three numbers are:\n"					\
-	"\tmin_pool\tminimum size of free pool.\n"			\
-	"\tmax_pool\tmaximum size of free pool.\n"			\
-	"\tmax_age\tmax age of free element."
-
 struct parspec mgt_parspec[] = {
 #define PARAM(nm, ty, ...) { #nm, tweak_##ty, &mgt_param.nm, __VA_ARGS__ },
 #include "tbl/params.h"
@@ -122,21 +116,6 @@ struct parspec mgt_parspec[] = {
 		"Matching failures will show up in the log as VCL_Error"
 		" messages with regexp errors -27 or -21.\n\n"
 		"Testcase r01576 can be useful when tuning this parameter." },
-	{ "pool_req", tweak_poolparam, &mgt_param.req_pool,
-		NULL, NULL, "10,100,10",
-		NULL,
-		"Parameters for per worker pool request memory pool.\n\n"
-		MEMPOOL_TEXT },
-	{ "pool_sess", tweak_poolparam, &mgt_param.sess_pool,
-		NULL, NULL, "10,100,10",
-		NULL,
-		"Parameters for per worker pool session memory pool.\n\n"
-		MEMPOOL_TEXT },
-	{ "pool_vbo", tweak_poolparam, &mgt_param.vbo_pool,
-		NULL, NULL, "10,100,10",
-		NULL,
-		"Parameters for backend object fetch memory pool.\n\n"
-		MEMPOOL_TEXT },
 
 	{ NULL, NULL, NULL }
 };

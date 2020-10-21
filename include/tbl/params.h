@@ -1209,6 +1209,50 @@ PARAM(
 	"HTTP2 maximum size of an uncompressed header list."
 )
 
+#define MEMPOOL_TEXT							\
+	"The three numbers are:\n"					\
+	"\tmin_pool\tminimum size of free pool.\n"			\
+	"\tmax_pool\tmaximum size of free pool.\n"			\
+	"\tmax_age\tmax age of free element."
+
+PARAM(
+	/* name */	pool_req,
+	/* type */	poolparam,
+	/* min */	NULL,
+	/* max */	NULL,
+	/* def */	"10,100,10",
+	/* units */	NULL,
+	/* descr */
+	"Parameters for per worker pool request memory pool.\n"
+	MEMPOOL_TEXT
+)
+
+PARAM(
+	/* name */	pool_sess,
+	/* type */	poolparam,
+	/* min */	NULL,
+	/* max */	NULL,
+	/* def */	"10,100,10",
+	/* units */	NULL,
+	/* descr */
+	"Parameters for per worker pool session memory pool.\n"
+	MEMPOOL_TEXT
+)
+
+PARAM(
+	/* name */	pool_vbo,
+	/* type */	poolparam,
+	/* min */	NULL,
+	/* max */	NULL,
+	/* def */	"10,100,10",
+	/* units */	NULL,
+	/* descr */
+	"Parameters for backend object fetch memory pool.\n"
+	MEMPOOL_TEXT
+)
+
+#undef MEMPOOL_TEXT
+
 #if 0 /* NOT ACTUALLY DEFINED HERE */
 /* actual location mgt_param_bits.c*/
 /* see tbl/debug_bits.h */
@@ -1284,45 +1328,6 @@ PARAM(
 	/* descr */
 	"The limit for the  number of internal matching function "
 	"recursions in a pcre_exec() execution."
-)
-
-/* actual location mgt_param_tbl.c */
-PARAM(
-	/* name */	pool_req,
-	/* type */	poolparam,
-	/* min */	NULL,
-	/* max */	NULL,
-	/* def */	"10,100,10",
-	/* units */	NULL,
-	/* descr */
-	"Parameters for per worker pool request memory pool.\n"
-	MEMPOOL_TEXT
-)
-
-/* actual location mgt_param_tbl.c */
-PARAM(
-	/* name */	pool_sess,
-	/* type */	poolparam,
-	/* min */	NULL,
-	/* max */	NULL,
-	/* def */	"10,100,10",
-	/* units */	NULL,
-	/* descr */
-	"Parameters for per worker pool session memory pool.\n"
-	MEMPOOL_TEXT
-)
-
-/* actual location mgt_param_tbl.c */
-PARAM(
-	/* name */	pool_vbo,
-	/* type */	poolparam,
-	/* min */	NULL,
-	/* max */	NULL,
-	/* def */	"10,100,10",
-	/* units */	NULL,
-	/* descr */
-	"Parameters for backend object fetch memory pool.\n"
-	MEMPOOL_TEXT
 )
 
 /* actual location mgt_pool.c */
