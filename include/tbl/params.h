@@ -1217,49 +1217,39 @@ PARAM_SIMPLE(
 	"HTTP2 maximum size of an uncompressed header list."
 )
 
-#define MEMPOOL_TEXT							\
-	"The three numbers are:\n"					\
-	"\tmin_pool\tminimum size of free pool.\n"			\
-	"\tmax_pool\tmaximum size of free pool.\n"			\
-	"\tmax_age\tmax age of free element."
+/*--------------------------------------------------------------------
+ * Memory pool parameters
+ */
 
-PARAM_SIMPLE(
-	/* name */	pool_req,
-	/* type */	poolparam,
-	/* min */	NULL,
-	/* max */	NULL,
-	/* def */	"10,100,10",
-	/* units */	NULL,
-	/* descr */
-	"Parameters for per worker pool request memory pool.\n"
-	MEMPOOL_TEXT
+#define PARAM_MEMPOOL(nm, def, descr)					\
+	PARAM(poolparam, nm, nm, tweak_poolparam, &mgt_param.nm,	\
+	    NULL, NULL, def, NULL,					\
+	    descr							\
+	    "The three numbers are:\n"					\
+	    "\tmin_pool\tminimum size of free pool.\n"			\
+	    "\tmax_pool\tmaximum size of free pool.\n"			\
+	    "\tmax_age\tmax age of free element.")
+
+PARAM_MEMPOOL(
+		/* name */	pool_req,
+		/* def */	"10,100,10",
+		/* descr */
+		"Parameters for per worker pool request memory pool.\n\n"
 )
 
-PARAM_SIMPLE(
-	/* name */	pool_sess,
-	/* type */	poolparam,
-	/* min */	NULL,
-	/* max */	NULL,
-	/* def */	"10,100,10",
-	/* units */	NULL,
-	/* descr */
-	"Parameters for per worker pool session memory pool.\n"
-	MEMPOOL_TEXT
+PARAM_MEMPOOL(
+		/* name */	pool_sess,
+		/* def */	"10,100,10",
+		/* descr */
+		"Parameters for per worker pool session memory pool.\n\n"
 )
 
-PARAM_SIMPLE(
-	/* name */	pool_vbo,
-	/* type */	poolparam,
-	/* min */	NULL,
-	/* max */	NULL,
-	/* def */	"10,100,10",
-	/* units */	NULL,
-	/* descr */
-	"Parameters for backend object fetch memory pool.\n"
-	MEMPOOL_TEXT
+PARAM_MEMPOOL(
+		/* name */	pool_vbo,
+		/* def */	"10,100,10",
+		/* descr */
+		"Parameters for backend object fetch memory pool.\n\n"
 )
-
-#undef MEMPOOL_TEXT
 
 /*--------------------------------------------------------------------
  * Thread pool parameters
@@ -1675,6 +1665,7 @@ PARAM_PCRE(
 #  undef PARAM_VCC
 #endif /* defined(PARAM_ALL) */
 
+#undef PARAM_MEMPOOL
 #undef PARAM_SIMPLE
 #undef PARAM_THREAD
 #undef PARAM
