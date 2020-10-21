@@ -160,28 +160,39 @@ WRK_Thread(struct pool *qp, size_t stacksize, unsigned thread_workspace)
  * Summing of stats into pool counters
  */
 
-static void
-pool_addstat(struct VSC_main_wrk *dst, struct VSC_main_wrk *src)
-{
-
-	dst->summs++;
-	VSC_main_Summ_wrk_wrk(dst, src);
-	memset(src, 0, sizeof *src);
-}
-
-void
-WRK_AddStat(struct worker *wrk)
+static unsigned
+wrk_addstat(struct worker *wrk, const struct pool_task *tp, unsigned locked)
 {
 	struct pool *pp;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	pp = wrk->pool;
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
-	if (++wrk->stats->summs >= cache_param->wthread_stats_rate) {
-		Lck_Lock(&pp->mtx);
-		pool_addstat(pp->a_stat, wrk->stats);
-		Lck_Unlock(&pp->mtx);
+	if (locked)
+		Lck_AssertHeld(&pp->mtx);
+
+	if ((tp == NULL && wrk->stats->summs > 0) ||
+	    (wrk->stats->summs >= cache_param->wthread_stats_rate)) {
+		if (!locked)
+			Lck_Lock(&pp->mtx);
+
+		pp->a_stat->summs++;
+		VSC_main_Summ_wrk_wrk(pp->a_stat, wrk->stats);
+		memset(wrk->stats, 0, sizeof *wrk->stats);
+
+		if (!locked)
+			Lck_Unlock(&pp->mtx);
 	}
+
+	return (tp == NULL ? 0 : 1);
+}
+
+void
+WRK_AddStat(struct worker *wrk)
+{
+
+	(void)wrk_addstat(wrk, wrk->task, 0);
+	wrk->stats->summs++;
 }
 
 /*--------------------------------------------------------------------
@@ -385,11 +396,7 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 			}
 		}
 
-		if ((tp == NULL && wrk->stats->summs > 0) ||
-		    (wrk->stats->summs >= cache_param->wthread_stats_rate))
-			pool_addstat(pp->a_stat, wrk->stats);
-
-		if (tp != NULL) {
+		if (wrk_addstat(wrk, tp, 1)) {
 			wrk->stats->summs++;
 		} else if (pp->b_stat != NULL && pp->a_stat->summs) {
 			/* Nothing to do, push pool stats into global pool */
