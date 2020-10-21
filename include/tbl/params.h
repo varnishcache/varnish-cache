@@ -27,13 +27,20 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * PARAM(nm, ty, ...)
+ * PARAM(type, ...)
  *
- * Variable arguments refer to struct parspec fields from min to
- * dyn_def_reason.
+ * Variable arguments refer to struct parspec fields, except non-const
+ * strings.
  */
 
 /*lint -save -e525 -e539 */
+
+/*--------------------------------------------------------------------
+ *  * Simple parameters
+ *   */
+
+#define PARAM_SIMPLE(nm, ty, ...) \
+	PARAM(ty, nm, tweak_##ty, &mgt_param.nm, __VA_ARGS__)
 
 #if defined(XYZZY)
   #error "Temporary macro XYZZY already defined"
@@ -44,7 +51,7 @@
 #else
   #define XYZZY NOT_IMPLEMENTED
 #endif
-PARAM(
+PARAM_SIMPLE(
 	/* name */	accept_filter,
 	/* type */	bool,
 	/* min */	NULL,
@@ -65,7 +72,7 @@ PARAM(
 )
 #undef XYZZY
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	acceptor_sleep_decay,
 	/* type */	double,
 	/* min */	"0",
@@ -80,7 +87,7 @@ PARAM(
 	/* flags */	EXPERIMENTAL
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	acceptor_sleep_incr,
 	/* type */	timeout,
 	/* min */	"0",
@@ -95,7 +102,7 @@ PARAM(
 	/* flags */	EXPERIMENTAL
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	acceptor_sleep_max,
 	/* type */	timeout,
 	/* min */	"0",
@@ -110,7 +117,7 @@ PARAM(
 	/* flags */	EXPERIMENTAL
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	auto_restart,
 	/* type */	bool,
 	/* min */	NULL,
@@ -121,7 +128,7 @@ PARAM(
 	"Automatically restart the child/worker process if it dies."
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	ban_dups,
 	/* type */	bool,
 	/* min */	NULL,
@@ -135,7 +142,7 @@ PARAM(
 	"identical."
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	ban_cutoff,
 	/* type */	uint,
 	/* min */	"0",
@@ -165,7 +172,7 @@ PARAM(
 	/* flags */	EXPERIMENTAL
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	ban_lurker_age,
 	/* type */	timeout,
 	/* min */	"0",
@@ -181,7 +188,7 @@ PARAM(
 	"This should be set to the approximate time which a ban-burst takes."
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	ban_lurker_batch,
 	/* type */	uint,
 	/* min */	"1",
@@ -194,7 +201,7 @@ PARAM(
 	"  Use this to pace the ban-lurker if it eats too many resources."
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	ban_lurker_sleep,
 	/* type */	timeout,
 	/* min */	"0",
@@ -208,7 +215,7 @@ PARAM(
 	"A value of zero will disable the ban lurker entirely."
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	ban_lurker_holdoff,
 	/* type */	timeout,
 	/* min */	"0",
@@ -221,7 +228,7 @@ PARAM(
 	/* flags */	EXPERIMENTAL
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	first_byte_timeout,
 	/* type */	timeout,
 	/* min */	"0",
@@ -236,7 +243,7 @@ PARAM(
 	"This parameter does not apply to pipe'ed requests."
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	between_bytes_timeout,
 	/* type */	timeout,
 	/* min */	"0",
@@ -250,7 +257,7 @@ PARAM(
 	"This parameter does not apply to pipe'ed requests."
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	backend_idle_timeout,
 	/* type */	timeout,
 	/* min */	"1",
@@ -261,7 +268,7 @@ PARAM(
 	"Timeout before we close unused backend connections."
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	backend_local_error_holddown,
 	/* type */	timeout,
 	/* min */	"0.000",
@@ -279,7 +286,7 @@ PARAM(
 	/* flags */	EXPERIMENTAL
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	backend_remote_error_holddown,
 	/* type */	timeout,
 	/* min */	"0.000",
@@ -296,7 +303,7 @@ PARAM(
 	/* flags */	EXPERIMENTAL
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	cli_limit,
 	/* type */	bytes_u,
 	/* min */	"128b",
@@ -309,7 +316,7 @@ PARAM(
 	"line will indicate the truncation."
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	cli_timeout,
 	/* type */	timeout,
 	/* min */	"0.000",
@@ -321,7 +328,7 @@ PARAM(
 	"mgt_param."
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	clock_skew,
 	/* type */	uint,
 	/* min */	"0",
@@ -333,7 +340,7 @@ PARAM(
 	"and our own clock."
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	clock_step,
 	/* type */	timeout,
 	/* min */	"0.000",
@@ -345,7 +352,7 @@ PARAM(
 	"we panic."
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	connect_timeout,
 	/* type */	timeout,
 	/* min */	"0.000",
@@ -359,7 +366,7 @@ PARAM(
 	"request."
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	critbit_cooloff,
 	/* type */	timeout,
 	/* min */	"60.000",
@@ -372,7 +379,7 @@ PARAM(
 	/* flags */	WIZARD
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	default_grace,
 	/* type */	timeout,
 	/* min */	"0.000",
@@ -386,7 +393,7 @@ PARAM(
 	/* flags */	OBJ_STICKY
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	default_keep,
 	/* type */	timeout,
 	/* min */	"0.000",
@@ -401,7 +408,7 @@ PARAM(
 	/* flags */	OBJ_STICKY
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	default_ttl,
 	/* type */	timeout,
 	/* min */	"0.000",
@@ -414,7 +421,7 @@ PARAM(
 	/* flags */	OBJ_STICKY
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	http1_iovs,
 	/* type */	uint,
 	/* min */	"5",
@@ -428,7 +435,7 @@ PARAM(
 	/* flags */	WIZARD
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	fetch_chunksize,
 	/* type */	bytes,
 	/* min */	"4k",
@@ -443,7 +450,7 @@ PARAM(
 	/* flags */	EXPERIMENTAL
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	fetch_maxchunksize,
 	/* type */	bytes,
 	/* min */	"64k",
@@ -456,7 +463,7 @@ PARAM(
 	/* flags */	EXPERIMENTAL
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	gzip_buffer,
 	/* type */	bytes_u,
 	/* min */	"2k",
@@ -472,7 +479,7 @@ PARAM(
 	/* flags */	EXPERIMENTAL
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	gzip_level,
 	/* type */	uint,
 	/* min */	"0",
@@ -483,7 +490,7 @@ PARAM(
 	"Gzip compression level: 0=debug, 1=fast, 9=best"
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	gzip_memlevel,
 	/* type */	uint,
 	/* min */	"1",
@@ -495,7 +502,7 @@ PARAM(
 	"Memory impact is 1=1k, 2=2k, ... 9=256k."
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	http_gzip_support,
 	/* type */	bool,
 	/* min */	NULL,
@@ -519,7 +526,7 @@ PARAM(
 	/* XXX: what about the effect on beresp.filters? */
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	http_max_hdr,
 	/* type */	uint,
 	/* min */	"32",
@@ -534,7 +541,7 @@ PARAM(
 	"Note that the first line occupies five header lines."
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	http_range_support,
 	/* type */	bool,
 	/* min */	NULL,
@@ -546,7 +553,7 @@ PARAM(
 	/* XXX: what about the effect on beresp.filters? */
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	http_req_hdr_len,
 	/* type */	bytes_u,
 	/* min */	"40b",
@@ -558,7 +565,7 @@ PARAM(
 	"The limit is inclusive its continuation lines."
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	http_req_size,
 	/* type */	bytes_u,
 	/* min */	"0.25k",
@@ -574,7 +581,7 @@ PARAM(
 	"that the request is allowed to take up."
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	http_resp_hdr_len,
 	/* type */	bytes_u,
 	/* min */	"40b",
@@ -586,7 +593,7 @@ PARAM(
 	" The limit is inclusive its continuation lines."
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	http_resp_size,
 	/* type */	bytes_u,
 	/* min */	"0.25k",
@@ -611,7 +618,7 @@ PARAM(
 #else
   #define XYZZY NOT_IMPLEMENTED
 #endif
-PARAM(
+PARAM_SIMPLE(
 	/* name */	idle_send_timeout,
 	/* type */	timeout,
 	/* min */	"0.000",
@@ -628,7 +635,7 @@ PARAM(
 )
 #undef XYZZY
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	listen_depth,
 	/* type */	uint,
 	/* min */	"0",
@@ -640,7 +647,7 @@ PARAM(
 	/* flags */	MUST_RESTART
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	lru_interval,
 	/* type */	timeout,
 	/* min */	"0.000",
@@ -656,7 +663,7 @@ PARAM(
 	/* flags */	EXPERIMENTAL
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	max_esi_depth,
 	/* type */	uint,
 	/* min */	"0",
@@ -667,7 +674,7 @@ PARAM(
 	"Maximum depth of esi:include processing."
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	max_restarts,
 	/* type */	uint,
 	/* min */	"0",
@@ -678,7 +685,7 @@ PARAM(
 	"Upper limit on how many times a request can restart."
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	max_retries,
 	/* type */	uint,
 	/* min */	"0",
@@ -689,7 +696,7 @@ PARAM(
 	"Upper limit on how many times a backend fetch can retry."
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	nuke_limit,
 	/* type */	uint,
 	/* min */	"0",
@@ -702,7 +709,7 @@ PARAM(
 	/* flags */	EXPERIMENTAL
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	ping_interval,
 	/* type */	uint,
 	/* min */	"0",
@@ -716,7 +723,7 @@ PARAM(
 	/* flags */	MUST_RESTART
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	pipe_sess_max,
 	/* type */	uint,
 	/* min */	"0",
@@ -727,7 +734,7 @@ PARAM(
 	"Maximum number of sessions dedicated to pipe transactions."
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	pipe_timeout,
 	/* type */	timeout,
 	/* min */	"0.000",
@@ -739,7 +746,7 @@ PARAM(
 	"either direction for this many seconds, the session is closed."
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	prefer_ipv6,
 	/* type */	bool,
 	/* min */	NULL,
@@ -751,7 +758,7 @@ PARAM(
 	"IPv4 and IPv6 addresses."
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	rush_exponent,
 	/* type */	uint,
 	/* min */	"2",
@@ -775,7 +782,7 @@ PARAM(
 #else
   #define XYZZY NOT_IMPLEMENTED
 #endif
-PARAM(
+PARAM_SIMPLE(
 	/* name */	send_timeout,
 	/* type */	timeout,
 	/* min */	"0.000",
@@ -793,7 +800,7 @@ PARAM(
 )
 #undef XYZZY
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	shortlived,
 	/* type */	timeout,
 	/* min */	"0.000",
@@ -805,7 +812,7 @@ PARAM(
 	"always put in transient storage."
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	sigsegv_handler,
 	/* type */	bool,
 	/* min */	NULL,
@@ -818,7 +825,7 @@ PARAM(
 	/* flags */	MUST_RESTART
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	syslog_cli_traffic,
 	/* type */	bool,
 	/* min */	NULL,
@@ -834,7 +841,7 @@ PARAM(
 #else
   #define XYZZY NOT_IMPLEMENTED
 #endif
-PARAM(
+PARAM_SIMPLE(
 	/* name */	tcp_fastopen,
 	/* type */	bool,
 	/* min */	NULL,
@@ -852,7 +859,7 @@ PARAM(
 #else
   #define XYZZY	NOT_IMPLEMENTED
 #endif
-PARAM(
+PARAM_SIMPLE(
 	/* name */	tcp_keepalive_intvl,
 	/* type */	timeout,
 	/* min */	"1",
@@ -868,7 +875,7 @@ PARAM(
 	/* dyn_def_reason */	"platform dependent"
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	tcp_keepalive_probes,
 	/* type */	uint,
 	/* min */	"1",
@@ -885,7 +892,7 @@ PARAM(
 	/* dyn_def_reason */	"platform dependent"
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	tcp_keepalive_time,
 	/* type */	timeout,
 	/* min */	"1",
@@ -912,7 +919,7 @@ PARAM(
 #else
   #define XYZZY NOT_IMPLEMENTED
 #endif
-PARAM(
+PARAM_SIMPLE(
 	/* name */	timeout_idle,
 	/* type */	timeout,
 	/* min */	"0.000",
@@ -930,7 +937,7 @@ PARAM(
 )
 #undef XYZZY
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	timeout_linger,
 	/* type */	timeout,
 	/* min */	"0.000",
@@ -948,7 +955,7 @@ PARAM(
 	/* flags */	EXPERIMENTAL
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	vcl_cooldown,
 	/* type */	timeout,
 	/* min */	"1.000",
@@ -960,7 +967,7 @@ PARAM(
 	"active VCL (granularity approximately 30 seconds)."
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	max_vcl_handling,
 	/* type */	uint,
 	/* min */	"0",
@@ -974,7 +981,7 @@ PARAM(
 	"\n*  2 - Refuse loading VCLs."
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	max_vcl,
 	/* type */	uint,
 	/* min */	"0",
@@ -986,7 +993,7 @@ PARAM(
 	"  Parameter max_vcl_handling determines behaviour."
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	vsm_free_cooldown,
 	/* type */	timeout,
 	/* min */	"10.000",
@@ -998,7 +1005,7 @@ PARAM(
 	"(granularity approximately 2 seconds)."
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	vsl_buffer,
 	/* type */	vsl_buffer,
 	/* min */	"267",
@@ -1017,7 +1024,7 @@ PARAM(
 	/* dyn_min_reason */	"vsl_reclen + 12 bytes"
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	vsl_reclen,
 	/* type */	vsl_reclen,
 	/* min */	"16b",
@@ -1031,7 +1038,7 @@ PARAM(
 	/* dyn_max_reason */	"vsl_buffer - 12 bytes"
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	vsl_space,
 	/* type */	bytes,
 	/* min */	"1M",
@@ -1046,7 +1053,7 @@ PARAM(
 	/* flags */	MUST_RESTART
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	vsm_space,
 	/* type */	bytes,
 	/* min */	"1M",
@@ -1058,7 +1065,7 @@ PARAM(
 	"There is no global limit on amount of shared memory now."
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	workspace_backend,
 	/* type */	bytes_u,
 	/* min */	"1k",
@@ -1071,7 +1078,7 @@ PARAM(
 	/* flags */	DELAYED_EFFECT
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	workspace_client,
 	/* type */	bytes_u,
 	/* min */	"9k",
@@ -1088,7 +1095,7 @@ PARAM(
 	/* flags */	DELAYED_EFFECT
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	workspace_session,
 	/* type */	bytes_u,
 	/* min */	"0.25k",
@@ -1102,7 +1109,7 @@ PARAM(
 	/* flags */	DELAYED_EFFECT
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	workspace_thread,
 	/* type */	bytes_u,
 	/* min */	"0.25k",
@@ -1122,7 +1129,7 @@ PARAM(
 	/* flags */	DELAYED_EFFECT
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	h2_rx_window_low_water,
 	/* type */	bytes_u,
 	/* min */	"65535",
@@ -1136,7 +1143,7 @@ PARAM(
 	/* flags */	WIZARD
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	h2_rx_window_increment,
 	/* type */	bytes_u,
 	/* min */	"1M",
@@ -1150,7 +1157,7 @@ PARAM(
 	/* flags */	WIZARD
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	h2_header_table_size,
 	/* type */	bytes_u,
 	/* min */	"0b",
@@ -1163,7 +1170,7 @@ PARAM(
 	"decoding table."
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	h2_max_concurrent_streams,
 	/* type */	uint,
 	/* min */	"0",
@@ -1176,7 +1183,7 @@ PARAM(
 	"at the same time for a single HTTP2 connection."
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	h2_initial_window_size,
 	/* type */	bytes_u,
 	/* min */	"0",
@@ -1187,7 +1194,7 @@ PARAM(
 	"HTTP2 initial flow control window size."
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	h2_max_frame_size,
 	/* type */	bytes_u,
 	/* min */	"16k",
@@ -1198,7 +1205,7 @@ PARAM(
 	"HTTP2 maximum per frame payload size we are willing to accept."
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	h2_max_header_list_size,
 	/* type */	bytes_u,
 	/* min */	"0b",
@@ -1215,7 +1222,7 @@ PARAM(
 	"\tmax_pool\tmaximum size of free pool.\n"			\
 	"\tmax_age\tmax age of free element."
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	pool_req,
 	/* type */	poolparam,
 	/* min */	NULL,
@@ -1227,7 +1234,7 @@ PARAM(
 	MEMPOOL_TEXT
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	pool_sess,
 	/* type */	poolparam,
 	/* min */	NULL,
@@ -1239,7 +1246,7 @@ PARAM(
 	MEMPOOL_TEXT
 )
 
-PARAM(
+PARAM_SIMPLE(
 	/* name */	pool_vbo,
 	/* type */	poolparam,
 	/* min */	NULL,
@@ -1630,6 +1637,7 @@ PARAM(
 )
 #endif /* NOT ACTUALLY DEFINED HERE */
 
+#undef PARAM_SIMPLE
 #undef PARAM
 
 /*lint -restore */

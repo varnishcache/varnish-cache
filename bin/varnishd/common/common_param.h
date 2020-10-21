@@ -82,7 +82,7 @@ struct params {
 #define	ptyp_uint	unsigned
 #define	ptyp_vsl_buffer	unsigned
 #define	ptyp_vsl_reclen	unsigned
-#define PARAM(nm, ty, ...)		\
+#define PARAM(ty, nm, ...)		\
 	ptyp_##ty		nm;
 #include <tbl/params.h>
 #undef ptyp_bool
