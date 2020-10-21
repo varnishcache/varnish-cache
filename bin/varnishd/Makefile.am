@@ -88,7 +88,6 @@ varnishd_SOURCES = \
 	mgt/mgt_param_tbl.c \
 	mgt/mgt_param_tcp.c \
 	mgt/mgt_param_tweak.c \
-	mgt/mgt_pool.c \
 	mgt/mgt_shmem.c \
 	mgt/mgt_symtab.c \
 	mgt/mgt_util.c \
