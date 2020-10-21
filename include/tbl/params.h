@@ -1304,8 +1304,54 @@ PARAM_STRING(
 	"where VMODs are to be found."
 )
 
+/*--------------------------------------------------------------------
+ * VCC parameters
+ */
+
+#  define PARAM_VCC(nm, def, descr) \
+	PARAM(, nm, tweak_bool, &mgt_ ## nm, NULL, NULL, def, "bool", descr)
+
+PARAM_VCC(
+	/* name */	vcc_err_unref,
+	/* def */	"on",
+	/* descr */
+	"Unreferenced VCL objects result in error."
+)
+
+PARAM_VCC(
+	/* name */	vcc_acl_pedantic,
+	/* def */	"off",
+	/* descr */
+	"Insist that network numbers used in ACLs have an "
+	"all-zero host part, e.g. make 1.2.3.4/24 an error.\n"
+	"With this option set to off (the default), the host "
+	"part of network numbers is being fixed to all-zeroes "
+	"(e.g. the above changed to 1.2.3.0/24), a warning is "
+	"output during VCL compilation and any ACL entry hits "
+	"are logged with the fixed address as \"fixed: ...\" "
+	"after the original VCL entry.\n"
+	"With this option set to on, any ACL entries with non-zero "
+	"host parts cause VCL compilation to fail."
+)
+
+PARAM_VCC(
+	/* name */	vcc_allow_inline_c,
+	/* def */	"off",
+	/* descr */
+	"Allow inline C code in VCL."
+)
+
+PARAM_VCC(
+	/* name */	vcc_unsafe_path,
+	/* def */	"on",
+	/* descr */
+	"Allow '/' in vmod & include paths.\n"
+	"Allow 'import ... from ...'."
+)
+
 #  undef PARAM_ALL
 #  undef PARAM_STRING
+#  undef PARAM_VCC
 #endif /* defined(PARAM_ALL) */
 
 #undef PARAM_SIMPLE
@@ -1612,63 +1658,6 @@ PARAM(
 	"thread may handle, before it is forced to dump its accumulated "
 	"stats into the global counters.",
 	/* flags */	EXPERIMENTAL
-)
-
-/* actual location mgt_param_tbl.c */
-PARAM(
-	/* name */	vcc_acl_pedantic,
-	/* type */	bool,
-	/* min */	NULL,
-	/* max */	NULL,
-	/* def */	"off",	// XXX change to on in 7.x ?
-	/* units */	"bool",
-	/* descr */
-	"Insist that network numbers used in ACLs have an all-zero host part, "
-	"e.g. make 1.2.3.4/24 an error.\n"
-	"With this option set to off (the default), the host part of network "
-	"numbers is being fixed to all-zeroes (e.g. the above changed to "
-	"1.2.3.0/24), a warning is output during VCL compilation and any ACL "
-	"entry hits are logged with the fixed address as \"fixed: ...\" "
-	"after the original VCL entry.\n"
-	"With this option set to on, any ACL entries with non-zero host parts "
-	"cause VCL compilation to fail."
-)
-
-/* actual location mgt_param_tbl.c */
-PARAM(
-	/* name */	vcc_allow_inline_c,
-	/* type */	bool,
-	/* min */	NULL,
-	/* max */	NULL,
-	/* def */	"off",
-	/* units */	"bool",
-	/* descr */
-	"Allow inline C code in VCL."
-)
-
-/* actual location mgt_param_tbl.c */
-PARAM(
-	/* name */	vcc_err_unref,
-	/* type */	bool,
-	/* min */	NULL,
-	/* max */	NULL,
-	/* def */	"on",
-	/* units */	"bool",
-	/* descr */
-	"Unreferenced VCL objects result in error."
-)
-
-/* actual location mgt_param_tbl.c */
-PARAM(
-	/* name */	vcc_unsafe_path,
-	/* type */	bool,
-	/* min */	NULL,
-	/* max */	NULL,
-	/* def */	"on",
-	/* units */	"bool",
-	/* descr */
-	"Allow '/' in vmod & include paths.\n"
-	"Allow 'import ... from ...'."
 )
 
 /* actual location mgt_param_bits.c*/
