@@ -39,33 +39,10 @@
 
 
 struct parspec mgt_parspec[] = {
+#define PARAM_ALL
 #define PARAM(ty, nm, ...) { #nm, __VA_ARGS__ },
 #include "tbl/params.h"
 
-	{ "cc_command", tweak_string, &mgt_cc_cmd,
-		NULL, NULL, VCC_CC,
-		NULL,
-		"Command used for compiling the C source code to a "
-		"dlopen(3) loadable object.  Any occurrence of %s in "
-		"the string will be replaced with the source file name, "
-		"and %o will be replaced with the output file name.",
-		MUST_RELOAD,
-		NULL, NULL, "defined when Varnish is built" },
-	{ "vcl_path", tweak_string, &mgt_vcl_path,
-		NULL, NULL, VARNISH_VCL_DIR,
-		NULL,
-		"Directory (or colon separated list of directories) "
-		"from which relative VCL filenames (vcl.load and "
-		"include) are to be found.  By default Varnish searches "
-		"VCL files in both the system configuration and shared "
-		"data directories to allow packages to drop their VCL "
-		"files in a standard location where relative includes "
-		"would work." },
-	{ "vmod_path", tweak_string, &mgt_vmod_path,
-		NULL, NULL, VARNISH_VMOD_DIR,
-		NULL,
-		"Directory (or colon separated list of directories) "
-		"where VMODs are to be found." },
 	{ "vcc_err_unref", tweak_bool, &mgt_vcc_err_unref,
 		NULL, NULL, "on",
 		"bool",

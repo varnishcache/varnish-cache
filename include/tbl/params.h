@@ -1260,6 +1260,57 @@ PARAM_SIMPLE(
 
 #undef MEMPOOL_TEXT
 
+#if defined(PARAM_ALL)
+
+/*--------------------------------------------------------------------
+ * String parameters
+ */
+
+#  define PARAM_STRING(nm, pv, def, ...) \
+	PARAM(, nm, tweak_string, pv, NULL, NULL, def, NULL, __VA_ARGS__)
+
+PARAM_STRING(
+	/* name */	cc_command,
+	/* priv */	&mgt_cc_cmd,
+	/* def */	VCC_CC,
+	/* descr */
+	"Command used for compiling the C source code to a "
+	"dlopen(3) loadable object.  Any occurrence of %s in "
+	"the string will be replaced with the source file name, "
+	"and %o will be replaced with the output file name.",
+	/* flags */	MUST_RELOAD
+)
+
+PARAM_STRING(
+	/* name */	vcl_path,
+	/* priv */	&mgt_vcl_path,
+	/* def */	VARNISH_VCL_DIR,
+	/* descr */
+	"Directory (or colon separated list of directories) "
+	"from which relative VCL filenames (vcl.load and "
+	"include) are to be found.  By default Varnish searches "
+	"VCL files in both the system configuration and shared "
+	"data directories to allow packages to drop their VCL "
+	"files in a standard location where relative includes "
+	"would work."
+)
+
+PARAM_STRING(
+	/* name */	vmod_path,
+	/* priv */	&mgt_vmod_path,
+	/* def */	VARNISH_VMOD_DIR,
+	/* descr */
+	"Directory (or colon separated list of directories) "
+	"where VMODs are to be found."
+)
+
+#  undef PARAM_ALL
+#  undef PARAM_STRING
+#endif /* defined(PARAM_ALL) */
+
+#undef PARAM_SIMPLE
+#undef PARAM
+
 #if 0 /* NOT ACTUALLY DEFINED HERE */
 /* actual location mgt_param_bits.c*/
 /* see tbl/debug_bits.h */
@@ -1636,8 +1687,5 @@ PARAM(
 	"individual VSL messages."
 )
 #endif /* NOT ACTUALLY DEFINED HERE */
-
-#undef PARAM_SIMPLE
-#undef PARAM
 
 /*lint -restore */
