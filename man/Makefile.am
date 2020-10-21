@@ -30,70 +30,70 @@ RST2ANY_FLAGS = --halt=2
 
 BUILD_MAN = $(AM_V_GEN) $(RST2MAN) $(RST2ANY_FLAGS)
 
-varnish-cli.7: $(top_builddir)/doc/sphinx/reference/varnish-cli.rst \
+varnish-cli.7: $(top_srcdir)/doc/sphinx/reference/varnish-cli.rst \
 	$(top_builddir)/doc/sphinx/include/cli.rst
-	$(BUILD_MAN) $(top_builddir)/doc/sphinx/reference/varnish-cli.rst $@
+	$(BUILD_MAN) $(top_srcdir)/doc/sphinx/reference/varnish-cli.rst $@
 
-varnish-counters.7: $(top_builddir)/doc/sphinx/reference/varnish-counters.rst \
+varnish-counters.7: $(top_srcdir)/doc/sphinx/reference/varnish-counters.rst \
 	$(top_builddir)/doc/sphinx/include/counters.rst
-	$(BUILD_MAN) $(top_builddir)/doc/sphinx/reference/varnish-counters.rst $@
+	$(BUILD_MAN) $(top_srcdir)/doc/sphinx/reference/varnish-counters.rst $@
 
-vcl.7: $(top_builddir)/doc/sphinx/reference/vcl.rst \
-	$(top_builddir)/doc/sphinx/reference/vcl_var.rst \
+vcl.7: $(top_srcdir)/doc/sphinx/reference/vcl.rst \
+	$(top_srcdir)/doc/sphinx/reference/vcl_var.rst \
 	$(top_srcdir)/bin/varnishd/builtin.vcl
-	$(BUILD_MAN) $(top_builddir)/doc/sphinx/reference/vcl.rst $@
+	$(BUILD_MAN) $(top_srcdir)/doc/sphinx/reference/vcl.rst $@
 
-vsl.7: $(top_builddir)/doc/sphinx/reference/vsl.rst \
+vsl.7: $(top_srcdir)/doc/sphinx/reference/vsl.rst \
 	$(top_builddir)/doc/sphinx/include/vsl-tags.rst
-	$(BUILD_MAN) $(top_builddir)/doc/sphinx/reference/vsl.rst $@
+	$(BUILD_MAN) $(top_srcdir)/doc/sphinx/reference/vsl.rst $@
 
-vsl-query.7: $(top_builddir)/doc/sphinx/reference/vsl-query.rst
-	$(BUILD_MAN) $(top_builddir)/doc/sphinx/reference/vsl-query.rst $@
+vsl-query.7: $(top_srcdir)/doc/sphinx/reference/vsl-query.rst
+	$(BUILD_MAN) $(top_srcdir)/doc/sphinx/reference/vsl-query.rst $@
 
-varnishadm.1: $(top_builddir)/doc/sphinx/reference/varnishadm.rst
-	$(BUILD_MAN) $(top_builddir)/doc/sphinx/reference/varnishadm.rst $@
+varnishadm.1: $(top_srcdir)/doc/sphinx/reference/varnishadm.rst
+	$(BUILD_MAN) $(top_srcdir)/doc/sphinx/reference/varnishadm.rst $@
 
 varnishd.1: \
-	$(top_builddir)/doc/sphinx/reference/varnishd.rst \
+	$(top_srcdir)/doc/sphinx/reference/varnishd.rst \
 	$(top_builddir)/doc/sphinx/include/params.rst
-	$(BUILD_MAN) $(top_builddir)/doc/sphinx/reference/varnishd.rst $@
+	$(BUILD_MAN) $(top_srcdir)/doc/sphinx/reference/varnishd.rst $@
 
 varnishncsa.1: \
-	$(top_builddir)/doc/sphinx/reference/varnishncsa.rst \
+	$(top_srcdir)/doc/sphinx/reference/varnishncsa.rst \
 	$(top_builddir)/doc/sphinx/include/varnishncsa_options.rst \
 	$(top_builddir)/doc/sphinx/include/varnishncsa_synopsis.rst
-	$(BUILD_MAN) $(top_builddir)/doc/sphinx/reference/varnishncsa.rst $@
+	$(BUILD_MAN) $(top_srcdir)/doc/sphinx/reference/varnishncsa.rst $@
 
 varnishlog.1: \
-	$(top_builddir)/doc/sphinx/reference/varnishlog.rst \
+	$(top_srcdir)/doc/sphinx/reference/varnishlog.rst \
 	$(top_builddir)/doc/sphinx/include/varnishlog_options.rst \
 	$(top_builddir)/doc/sphinx/include/varnishlog_synopsis.rst
-	$(BUILD_MAN) $(top_builddir)/doc/sphinx/reference/varnishlog.rst $@
+	$(BUILD_MAN) $(top_srcdir)/doc/sphinx/reference/varnishlog.rst $@
 
-varnishstat.1: $(top_builddir)/doc/sphinx/reference/varnishstat.rst \
+varnishstat.1: $(top_srcdir)/doc/sphinx/reference/varnishstat.rst \
 	$(top_builddir)/doc/sphinx/include/varnishstat_options.rst \
 	$(top_builddir)/doc/sphinx/include/varnishstat_synopsis.rst \
 	$(top_builddir)/doc/sphinx/include/varnishstat_bindings.rst
-	$(BUILD_MAN) $(top_builddir)/doc/sphinx/reference/varnishstat.rst $@
+	$(BUILD_MAN) $(top_srcdir)/doc/sphinx/reference/varnishstat.rst $@
 
-varnishtest.1: $(top_builddir)/doc/sphinx/reference/varnishtest.rst
-	$(BUILD_MAN) $(top_builddir)/doc/sphinx/reference/varnishtest.rst $@
+varnishtest.1: $(top_srcdir)/doc/sphinx/reference/varnishtest.rst
+	$(BUILD_MAN) $(top_srcdir)/doc/sphinx/reference/varnishtest.rst $@
 
-vtc.7: $(top_builddir)/doc/sphinx/reference/vtc.rst \
+vtc.7: $(top_srcdir)/doc/sphinx/reference/vtc.rst \
 	$(top_builddir)/doc/sphinx/include/vtc-syntax.rst
-	$(BUILD_MAN) $(top_builddir)/doc/sphinx/reference/vtc.rst $@
+	$(BUILD_MAN) $(top_srcdir)/doc/sphinx/reference/vtc.rst $@
 
 varnishtop.1: \
-	$(top_builddir)/doc/sphinx/reference/varnishtop.rst \
+	$(top_srcdir)/doc/sphinx/reference/varnishtop.rst \
 	$(top_builddir)/doc/sphinx/include/varnishtop_options.rst \
 	$(top_builddir)/doc/sphinx/include/varnishtop_synopsis.rst
-	$(BUILD_MAN) $(top_builddir)/doc/sphinx/reference/varnishtop.rst $@
+	$(BUILD_MAN) $(top_srcdir)/doc/sphinx/reference/varnishtop.rst $@
 
 varnishhist.1: \
-	$(top_builddir)/doc/sphinx/reference/varnishhist.rst \
+	$(top_srcdir)/doc/sphinx/reference/varnishhist.rst \
 	$(top_builddir)/doc/sphinx/include/varnishhist_options.rst \
 	$(top_builddir)/doc/sphinx/include/varnishhist_synopsis.rst
-	$(BUILD_MAN) $(top_builddir)/doc/sphinx/reference/varnishhist.rst $@
+	$(BUILD_MAN) $(top_srcdir)/doc/sphinx/reference/varnishhist.rst $@
 
 vmod_cookie.3: $(top_builddir)/lib/libvmod_cookie/vmod_cookie.man.rst
 	$(BUILD_MAN) $? $@
