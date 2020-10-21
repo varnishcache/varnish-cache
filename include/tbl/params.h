@@ -27,10 +27,11 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * PARAM(type, ...)
+ * PARAM(typ, fld, ...)
  *
- * Variable arguments refer to struct parspec fields, except non-const
- * strings.
+ * typ: parameter type
+ * fld: struct params field name
+ * ...: struct parspec fields, except the non-const string fields
  */
 
 /*lint -save -e525 -e539 */
@@ -39,8 +40,8 @@
  *  * Simple parameters
  *   */
 
-#define PARAM_SIMPLE(nm, ty, ...) \
-	PARAM(ty, nm, tweak_##ty, &mgt_param.nm, __VA_ARGS__)
+#define PARAM_SIMPLE(nm, typ, ...) \
+	PARAM(typ, nm, nm, tweak_##typ, &mgt_param.nm, __VA_ARGS__)
 
 #if defined(XYZZY)
   #error "Temporary macro XYZZY already defined"
@@ -1260,6 +1261,285 @@ PARAM_SIMPLE(
 
 #undef MEMPOOL_TEXT
 
+/*--------------------------------------------------------------------
+ * Thread pool parameters
+ */
+
+#define PARAM_THREAD(nm, fld, typ, ...)			\
+	PARAM(typ, wthread_ ## fld, nm, tweak_ ## typ,	\
+	    &mgt_param.wthread_ ## fld, __VA_ARGS__)
+
+PARAM_THREAD(
+	/* name */	thread_pools,
+	/* field */	pools,
+	/* type */	uint,
+	/* min */	"1",
+	/* max */	NULL,
+	/* def */	"2",
+	/* units */	"pools",
+	/* descr */
+	"Number of worker thread pools.\n"
+	"\n"
+	"Increasing the number of worker pools decreases lock "
+	"contention. Each worker pool also has a thread accepting "
+	"new connections, so for very high rates of incoming new "
+	"connections on systems with many cores, increasing the "
+	"worker pools may be required.\n"
+	"\n"
+	"Too many pools waste CPU and RAM resources, and more than one "
+	"pool for each CPU is most likely detrimental to performance.\n"
+	"\n"
+	"Can be increased on the fly, but decreases require a "
+	"restart to take effect, unless the drop_pools experimental "
+	"debug flag is set.",
+	/* flags */	EXPERIMENTAL | DELAYED_EFFECT
+)
+
+PARAM_THREAD(
+	/* name */	thread_pool_max,
+	/* field */	max,
+	/* type */	thread_pool_max,
+	/* min */	NULL,
+	/* max */	NULL,
+	/* def */	"5000",
+	/* units */	"threads",
+	/* descr */
+	"The maximum number of worker threads in each pool.\n"
+	"\n"
+	"Do not set this higher than you have to, since excess "
+	"worker threads soak up RAM and CPU and generally just get "
+	"in the way of getting work done.",
+	/* flags */	DELAYED_EFFECT,
+	/* dyn_min_reason */	"thread_pool_min"
+)
+
+PARAM_THREAD(
+	/* name */	thread_pool_min,
+	/* field */	min,
+	/* type */	thread_pool_min,
+	/* min */	"5" /* TASK_QUEUE__END */,
+	/* max */	NULL,
+	/* def */	"100",
+	/* units */	"threads",
+	/* descr */
+	"The minimum number of worker threads in each pool.\n"
+	"\n"
+	"Increasing this may help ramp up faster from low load "
+	"situations or when threads have expired.\n"
+	"\n"
+	"Technical minimum is 5 threads, but this parameter is "
+	/*                    ^ TASK_QUEUE__END */
+	"strongly recommended to be at least 10",
+	/*               2 * TASK_QUEUE__END ^^ */
+	/* flags */	DELAYED_EFFECT,
+	/* dyn_min_reason */	NULL,
+	/* dyn_max_reason */	"thread_pool_max"
+)
+
+PARAM_THREAD(
+	/* name */	thread_pool_reserve,
+	/* field */	reserve,
+	/* type */	uint,
+	/* min */	NULL,
+	/* max */	NULL,
+	/* def */	"0",
+	/* units */	"threads",
+	/* descr */
+	"The number of worker threads reserved for vital tasks "
+	"in each pool.\n"
+	"\n"
+	"Tasks may require other tasks to complete (for example, "
+	"client requests may require backend requests, http2 sessions "
+	"require streams, which require requests). This reserve is to "
+	"ensure that lower priority tasks do not prevent higher "
+	"priority tasks from running even under high load.\n"
+	"\n"
+	"The effective value is at least 5 (the number of internal "
+	/*                               ^ TASK_QUEUE__END */
+	"priority classes), irrespective of this parameter.",
+	/* flags */	DELAYED_EFFECT,
+	/* dyn_min_reason */	NULL,
+	/* dyn_max_reason */	"95% of thread_pool_min",
+	/* dyn_def_reason */	"0 (auto-tune: 5% of thread_pool_min)"
+)
+
+PARAM_THREAD(
+	/* name */	thread_pool_timeout,
+	/* field */	timeout,
+	/* type */	timeout,
+	/* min */	"10",
+	/* max */	NULL,
+	/* def */	"300",
+	/* units */	"seconds",
+	/* descr */
+	"Thread idle threshold.\n"
+	"\n"
+	"Threads in excess of thread_pool_min, which have been idle "
+	"for at least this long, will be destroyed.",
+	/* flags */	EXPERIMENTAL | DELAYED_EFFECT
+)
+
+PARAM_THREAD(
+	/* name */	thread_pool_watchdog,
+	/* field */	watchdog,
+	/* type */	timeout,
+	/* min */	"0.1",
+	/* max */	NULL,
+	/* def */	"60",
+	/* units */	"seconds",
+	/* descr */
+	"Thread queue stuck watchdog.\n"
+	"\n"
+	"If no queued work have been released for this long,"
+	" the worker process panics itself.",
+	/* flags */	EXPERIMENTAL
+)
+
+PARAM_THREAD(
+	/* name */	thread_pool_destroy_delay,
+	/* field */	destroy_delay,
+	/* type */	timeout,
+	/* min */	"0.01",
+	/* max */	NULL,
+	/* def */	"1",
+	/* units */	"seconds",
+	/* descr */
+	"Wait this long after destroying a thread.\n"
+	"\n"
+	"This controls the decay of thread pools when idle(-ish).",
+	/* flags */	EXPERIMENTAL | DELAYED_EFFECT
+)
+
+PARAM_THREAD(
+	/* name */	thread_pool_add_delay,
+	/* field */	add_delay,
+	/* type */	timeout,
+	/* min */	"0",
+	/* max */	NULL,
+	/* def */	"0",
+	/* units */	"seconds",
+	/* descr */
+	"Wait at least this long after creating a thread.\n"
+	"\n"
+	"Some (buggy) systems may need a short (sub-second) "
+	"delay between creating threads.\n"
+	"Set this to a few milliseconds if you see the "
+	"'threads_failed' counter grow too much.\n"
+	"\n"
+	"Setting this too high results in insufficient worker threads.",
+	/* flags */	EXPERIMENTAL
+)
+
+PARAM_THREAD(
+	/* name */	thread_pool_fail_delay,
+	/* field */	fail_delay,
+	/* type */	timeout,
+	/* min */	"10e-3",
+	/* max */	NULL,
+	/* def */	"0.2",
+	/* units */	"seconds",
+	/* descr */
+	"Wait at least this long after a failed thread creation "
+	"before trying to create another thread.\n"
+	"\n"
+	"Failure to create a worker thread is often a sign that "
+	" the end is near, because the process is running out of "
+	"some resource.  "
+	"This delay tries to not rush the end on needlessly.\n"
+	"\n"
+	"If thread creation failures are a problem, check that "
+	"thread_pool_max is not too high.\n"
+	"\n"
+	"It may also help to increase thread_pool_timeout and "
+	"thread_pool_min, to reduce the rate at which treads are "
+	"destroyed and later recreated.",
+	/* flags */	EXPERIMENTAL
+)
+
+PARAM_THREAD(
+	/* name */	thread_stats_rate,
+	/* field */	stats_rate,
+	/* type */	uint,
+	/* min */	"0",
+	/* max */	NULL,
+	/* def */	"10",
+	/* units */	"requests",
+	/* descr */
+	"Worker threads accumulate statistics, and dump these into "
+	"the global stats counters if the lock is free when they "
+	"finish a job (request/fetch etc.)\n"
+	"This parameters defines the maximum number of jobs "
+	"a worker thread may handle, before it is forced to dump "
+	"its accumulated stats into the global counters.",
+	/* flags */	EXPERIMENTAL
+)
+
+PARAM_THREAD(
+	/* name */	thread_queue_limit,
+	/* field */	queue_limit,
+	/* type */	uint,
+	/* min */	"0",
+	/* max */	NULL,
+	/* def */	"20",
+	/* units */	"requests",
+	/* descr */
+	"Permitted request queue length per thread-pool.\n"
+	"\n"
+	"This sets the number of requests we will queue, waiting "
+	"for an available thread.  Above this limit sessions will "
+	"be dropped instead of queued.",
+	/* flags */	EXPERIMENTAL
+)
+
+PARAM_THREAD(
+	/* name */	thread_pool_stack,
+	/* field */	stacksize,
+	/* type */	bytes,
+	/* min */	NULL,
+	/* max */	NULL,
+	/* def */	NULL,	/* default set in mgt_param.c */
+	/* units */	"bytes",
+	/* descr */
+	"Worker thread stack size.\n"
+	"This will likely be rounded up to a multiple of 4k"
+	" (or whatever the page_size might be) by the kernel.\n"
+	"\n"
+	"The required stack size is primarily driven by the"
+	" depth of the call-tree. The most common relevant"
+	" determining factors in varnish core code are GZIP"
+	" (un)compression, ESI processing and regular"
+	" expression matches. VMODs may also require"
+	" significant amounts of additional stack. The"
+	" nesting depth of VCL subs is another factor,"
+	" although typically not predominant.\n"
+	"\n"
+	"The stack size is per thread, so the maximum total"
+	" memory required for worker thread stacks is in the"
+	" order of size = thread_pools x thread_pool_max x"
+	" thread_pool_stack.\n"
+	"\n"
+	"Thus, in particular for setups with many threads,"
+	" keeping the stack size at a minimum helps reduce"
+	" the amount of memory required by Varnish.\n"
+	"\n"
+	"On the other hand, thread_pool_stack must be large"
+	" enough under all circumstances, otherwise varnish"
+	" will crash due to a stack overflow. Usually, a"
+	" stack overflow manifests itself as a segmentation"
+	" fault (aka segfault / SIGSEGV) with the faulting"
+	" address being near the stack pointer (sp).\n"
+	"\n"
+	"Unless stack usage can be reduced,"
+	" thread_pool_stack must be increased when a stack"
+	" overflow occurs. Setting it in 150%-200%"
+	" increments is recommended until stack overflows"
+	" cease to occur.",
+	/* flags */	DELAYED_EFFECT,
+	/* dyn_min_reason */	NULL,
+	/* dyn_max_reason */	NULL,
+	/* dyn_def_reason */	"sysconf(_SC_THREAD_STACK_MIN)"
+)
+
 #if defined(PARAM_ALL)
 
 /*--------------------------------------------------------------------
@@ -1267,7 +1547,7 @@ PARAM_SIMPLE(
  */
 
 #  define PARAM_STRING(nm, pv, def, ...) \
-	PARAM(, nm, tweak_string, pv, NULL, NULL, def, NULL, __VA_ARGS__)
+	PARAM(, , nm, tweak_string, pv, NULL, NULL, def, NULL, __VA_ARGS__)
 
 PARAM_STRING(
 	/* name */	cc_command,
@@ -1309,7 +1589,7 @@ PARAM_STRING(
  */
 
 #  define PARAM_VCC(nm, def, descr) \
-	PARAM(, nm, tweak_bool, &mgt_ ## nm, NULL, NULL, def, "bool", descr)
+	PARAM(, , nm, tweak_bool, &mgt_ ## nm, NULL, NULL, def, "bool", descr)
 
 PARAM_VCC(
 	/* name */	vcc_err_unref,
@@ -1354,7 +1634,7 @@ PARAM_VCC(
  */
 
 #  define PARAM_PCRE(nm, pv, min, def, descr)			\
-	PARAM(, nm, tweak_uint, &mgt_param.vre_limits.pv,	\
+	PARAM(, , nm, tweak_uint, &mgt_param.vre_limits.pv,	\
 	    min, NULL, def, NULL, descr)
 
 PARAM_PCRE(
@@ -1396,6 +1676,7 @@ PARAM_PCRE(
 #endif /* defined(PARAM_ALL) */
 
 #undef PARAM_SIMPLE
+#undef PARAM_THREAD
 #undef PARAM
 
 #if 0 /* NOT ACTUALLY DEFINED HERE */
@@ -1447,232 +1728,6 @@ PARAM(
 	"	esi_disable_xml_check	Don't check of body looks like XML\n"
 	"	esi_ignore_other_elements	Ignore non-esi XML-elements\n"
 	"	esi_remove_bom	Remove UTF-8 BOM"
-)
-
-/* actual location mgt_pool.c */
-PARAM(
-	/* name */	thread_pool_add_delay,
-	/* type */	timeout,
-	/* min */	"0.000",
-	/* max */	NULL,
-	/* def */	"0.000",
-	/* units */	"seconds",
-	/* descr */
-	"Wait at least this long after creating a thread.\n"
-	"\n"
-	"Some (buggy) systems may need a short (sub-second) delay between "
-	"creating threads.\n"
-	"Set this to a few milliseconds if you see the 'threads_failed' "
-	"counter grow too much.\n"
-	"Setting this too high results in insufficient worker threads.",
-	/* flags */	EXPERIMENTAL
-)
-
-/* actual location mgt_pool.c */
-PARAM(
-	/* name */	thread_pool_watchdog,
-	/* type */	timeout,
-	/* min */	"0.1",
-	/* max */	NULL,
-	/* def */	"60.000",
-	/* units */	"seconds",
-	/* descr */
-	"Thread queue stuck watchdog.\n"
-	"\n"
-	"If no queued work have been released for this long,"
-	" the worker process panics itself.",
-	/* flags */	EXPERIMENTAL
-)
-
-/* actual location mgt_pool.c */
-PARAM(
-	/* name */	thread_pool_destroy_delay,
-	/* type */	timeout,
-	/* min */	"0.010",
-	/* max */	NULL,
-	/* def */	"1.000",
-	/* units */	"seconds",
-	/* descr */
-	"Wait this long after destroying a thread.\n"
-	"This controls the decay of thread pools when idle(-ish).",
-	/* flags */	DELAYED_EFFECT| EXPERIMENTAL
-)
-
-/* actual location mgt_pool.c */
-PARAM(
-	/* name */	thread_pool_fail_delay,
-	/* type */	timeout,
-	/* min */	"0.010",
-	/* max */	NULL,
-	/* def */	"0.200",
-	/* units */	"seconds",
-	/* descr */
-	"Wait at least this long after a failed thread creation before "
-	"trying to create another thread.\n"
-	"\n"
-	"Failure to create a worker thread is often a sign that  the end "
-	"is near, because the process is running out of some resource.  "
-	"This delay tries to not rush the end on needlessly.\n"
-	"\n"
-	"If thread creation failures are a problem, check that "
-	"thread_pool_max is not too high.\n"
-	"\n"
-	"It may also help to increase thread_pool_timeout and "
-	"thread_pool_min, to reduce the rate at which treads are destroyed "
-	"and later recreated.",
-	/* flags */	EXPERIMENTAL
-)
-
-/* actual location mgt_pool.c */
-PARAM(
-	/* name */	thread_pool_max,
-	/* type */	thread_pool_max,
-	/* min */	"100",
-	/* max */	NULL,
-	/* def */	"5000",
-	/* units */	"threads",
-	/* descr */
-	"The maximum number of worker threads in each pool.\n"
-	"\n"
-	"Do not set this higher than you have to, since excess worker "
-	"threads soak up RAM and CPU and generally just get in the way of "
-	"getting work done.",
-	/* flags */	DELAYED_EFFECT
-)
-
-/* actual location mgt_pool.c */
-PARAM(
-	/* name */	thread_pool_min,
-	/* type */	thread_pool_min,
-	/* min */	NULL,
-	/* max */	"5000",
-	/* def */	"100",
-	/* units */	"threads",
-	/* descr */
-	"The minimum number of worker threads in each pool.\n"
-	"\n"
-	"Increasing this may help ramp up faster from low load situations "
-	"or when threads have expired."
-	"Minimum is 10 threads.",
-	/* flags */	DELAYED_EFFECT
-)
-
-/* actual location mgt_pool.c */
-PARAM(
-	/* name */	thread_pool_reserve,
-	/* type */	thread_pool_reserve,
-	/* min */	NULL,
-	/* max */	NULL,
-	/* def */	"0",
-	/* units */	"threads",
-	/* descr */
-	"The number of worker threads reserved for vital tasks "
-	"in each pool.\n"
-	"\n"
-	"Tasks may require other tasks to complete (for example, "
-	"client requests may require backend requests). This reserve "
-	"is to ensure that such tasks still get to run even under high "
-	"load.\n"
-	"\n"
-	"Increasing the reserve may help setups with a high number of "
-	"backend requests at the expense of client performance. "
-	"Setting it too high will waste resources by keeping threads "
-	"unused.\n"
-	"\n"
-	"Default is 0 to auto-tune (currently 5% of thread_pool_min).\n"
-	"Minimum is 1 otherwise, maximum is 95% of thread_pool_min.",
-	/* flags */	DELAYED_EFFECT| EXPERIMENTAL
-)
-
-/* actual location mgt_pool.c */
-PARAM(
-	/* name */	thread_pool_stack,
-	/* type */	bytes,
-	/* min */	"2k",
-	/* max */	NULL,
-	/* def */	"56k",
-	/* units */	"bytes",
-	/* descr */
-	"Worker thread stack size.\n"
-	"This will likely be rounded up to a multiple of 4k (or whatever "
-	"the page_size might be) by the kernel.",
-	/* flags */	EXPERIMENTAL
-)
-
-/* actual location mgt_pool.c */
-PARAM(
-	/* name */	thread_pool_timeout,
-	/* type */	timeout,
-	/* min */	"10.000",
-	/* max */	NULL,
-	/* def */	"300.000",
-	/* units */	"seconds",
-	/* descr */
-	"Thread idle threshold.\n"
-	"\n"
-	"Threads in excess of thread_pool_min, which have been idle for at "
-	"least this long, will be destroyed.",
-	/* flags */	DELAYED_EFFECT| EXPERIMENTAL
-)
-
-/* actual location mgt_pool.c */
-PARAM(
-	/* name */	thread_pools,
-	/* type */	uint,
-	/* min */	"1",
-	/* max */	NULL,
-	/* def */	"2",
-	/* units */	"pools",
-	/* descr */
-	"Number of worker thread pools.\n"
-	"\n"
-	"Increasing the number of worker pools decreases lock "
-	"contention. Each worker pool also has a thread accepting "
-	"new connections, so for very high rates of incoming new "
-	"connections on systems with many cores, increasing the "
-	"worker pools may be required.\n"
-	"\n"
-	"Too many pools waste CPU and RAM resources, and more than one "
-	"pool for each CPU is most likely detrimental to performance.\n"
-	"\n"
-	"Can be increased on the fly, but decreases require a restart to "
-	"take effect.",
-	/* flags */	DELAYED_EFFECT| EXPERIMENTAL
-)
-
-/* actual location mgt_pool.c */
-PARAM(
-	/* name */	thread_queue_limit,
-	/* type */	uint,
-	/* min */	"0",
-	/* max */	NULL,
-	/* def */	"20",
-	/* units */	NULL,
-	/* descr */
-	"Permitted request queue length per thread-pool.\n"
-	"\n"
-	"This sets the number of requests we will queue, waiting for an "
-	"available thread.  Above this limit sessions will be dropped "
-	"instead of queued.",
-	/* flags */	EXPERIMENTAL
-)
-
-/* actual location mgt_pool.c */
-PARAM(
-	/* name */	thread_stats_rate,
-	/* type */	uint,
-	/* min */	"0",
-	/* max */	NULL,
-	/* def */	"10",
-	/* units */	"requests",
-	/* descr */
-	"Worker threads accumulate statistics, and dump these into the "
-	"global stats counters if the lock is free when they finish a job "
-	"(request/fetch etc).\n"
-	"This parameters defines the maximum number of jobs a worker "
-	"thread may handle, before it is forced to dump its accumulated "
-	"stats into the global counters.",
-	/* flags */	EXPERIMENTAL
 )
 
 /* actual location mgt_param_bits.c*/

@@ -71,6 +71,8 @@ tweak_t tweak_bytes_u;
 tweak_t tweak_double;
 tweak_t tweak_poolparam;
 tweak_t tweak_string;
+tweak_t tweak_thread_pool_min;
+tweak_t tweak_thread_pool_max;
 tweak_t tweak_timeout;
 tweak_t tweak_uint;
 tweak_t tweak_vsl_buffer;

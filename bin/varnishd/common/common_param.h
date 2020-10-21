@@ -73,23 +73,27 @@ struct poolparam {
 
 struct params {
 
-#define	ptyp_bool	unsigned
-#define	ptyp_bytes	ssize_t
-#define	ptyp_bytes_u	unsigned
-#define	ptyp_double	double
-#define	ptyp_poolparam	struct poolparam
-#define	ptyp_timeout	double
-#define	ptyp_uint	unsigned
-#define	ptyp_vsl_buffer	unsigned
-#define	ptyp_vsl_reclen	unsigned
-#define PARAM(ty, nm, ...)		\
-	ptyp_##ty		nm;
+#define ptyp_bool		unsigned
+#define ptyp_bytes		ssize_t
+#define ptyp_bytes_u		unsigned
+#define ptyp_double		double
+#define ptyp_poolparam		struct poolparam
+#define ptyp_thread_pool_max	unsigned
+#define ptyp_thread_pool_min	unsigned
+#define ptyp_timeout		double
+#define ptyp_uint		unsigned
+#define ptyp_vsl_buffer		unsigned
+#define ptyp_vsl_reclen		unsigned
+#define PARAM(typ, fld, nm, ...)		\
+	ptyp_##typ		fld;
 #include <tbl/params.h>
 #undef ptyp_bool
 #undef ptyp_bytes
 #undef ptyp_bytes_u
 #undef ptyp_double
 #undef ptyp_poolparam
+#undef ptyp_thread_pool_max
+#undef ptyp_thread_pool_min
 #undef ptyp_timeout
 #undef ptyp_uint
 #undef ptyp_vsl_buffer
@@ -98,20 +102,6 @@ struct params {
 	/* Unprivileged user / group */
 	uid_t			uid;
 	gid_t			gid;
-
-	/* Worker threads and pool */
-	unsigned		wthread_min;
-	unsigned		wthread_max;
-	unsigned		wthread_reserve;
-	double			wthread_timeout;
-	unsigned		wthread_pools;
-	double			wthread_add_delay;
-	double			wthread_fail_delay;
-	double			wthread_destroy_delay;
-	double			wthread_watchdog;
-	unsigned		wthread_stats_rate;
-	ssize_t			wthread_stacksize;
-	unsigned		wthread_queue_limit;
 
 	struct vre_limits	vre_limits;
 
