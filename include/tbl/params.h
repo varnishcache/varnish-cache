@@ -843,7 +843,7 @@ PARAM_SIMPLE(
 	/* units */	"bool",
 	/* descr */
 	"Enable TCP Fast Open extension.",
-	/* flags */	PLATFORM_FLAGS
+	/* flags */	PLATFORM_DEPENDENT | PLATFORM_FLAGS
 )
 #undef PLATFORM_FLAGS
 
@@ -922,7 +922,7 @@ PARAM_SIMPLE(
 	"This parameter is particularly relevant for HTTP1 keepalive "
 	" connections which are closed unless the next request is received"
 	" before this timeout is reached.",
-	/* flags */	PLATFORM_FLAGS
+	/* flags */	PLATFORM_DEPENDENT | PLATFORM_FLAGS
 )
 #undef PLATFORM_FLAGS
 
