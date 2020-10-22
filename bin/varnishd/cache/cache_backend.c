@@ -168,6 +168,7 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, struct backend *bp,
 		return (NULL);
 	}
 
+	VSLb_ts_busyobj(bo, "Connected", W_TIM_real(wrk));
 	fdp = PFD_Fd(pfd);
 	AN(fdp);
 	assert(*fdp >= 0);
