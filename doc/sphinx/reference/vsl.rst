@@ -98,6 +98,9 @@ Bereq
 Beresp
 	Backend response headers received.
 
+Process
+	Processing finished, ready to fetch the response body.
+
 BerespBody
 	Backend response body received.
 

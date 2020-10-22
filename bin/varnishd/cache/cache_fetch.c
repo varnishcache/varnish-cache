@@ -518,6 +518,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 		return (F_STP_ERROR);
 	}
 
+	VSLb_ts_busyobj(bo, "Process", W_TIM_real(wrk));
 	assert(oc->boc->state <= BOS_REQ_DONE);
 	if (oc->boc->state != BOS_REQ_DONE) {
 		bo->req = NULL;
