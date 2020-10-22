@@ -71,6 +71,11 @@ struct poolparam {
 	double			max_age;
 };
 
+
+typedef uint8_t vsl_mask_t[256>>3];
+typedef uint8_t debug_t[(DBG_Reserved+7)>>3];
+typedef uint8_t feature_t[(FEATURE_Reserved+7)>>3];
+
 struct params {
 
 #define ptyp_bool		unsigned
@@ -105,7 +110,7 @@ struct params {
 
 	struct vre_limits	vre_limits;
 
-	uint8_t			vsl_mask[256>>3];
-	uint8_t			debug_bits[(DBG_Reserved+7)>>3];
-	uint8_t			feature_bits[(FEATURE_Reserved+7)>>3];
+	vsl_mask_t		vsl_mask;
+	debug_t			debug_bits;
+	feature_t		feature_bits;
 };
