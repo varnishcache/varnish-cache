@@ -86,6 +86,9 @@ Backend fetch timestamps
 Start
 	Start of the backend fetch processing.
 
+Connected
+	Successfully established or reused a backend connection.
+
 Bereq
 	Backend request sent.
 
