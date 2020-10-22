@@ -382,11 +382,10 @@ The authenticator is calculated by applying the SHA256 function to the
 following byte sequence:
 
 * Challenge string
-* Newline (0x0a) character
+* Newline (0x0a) character.
 * Contents of the secret file
-* Newline (0x0a) character
 * Challenge string
-* Newline (0x0a) character
+* Newline (0x0a) character.
 
 and dumping the resulting digest in lower-case hex.
 
