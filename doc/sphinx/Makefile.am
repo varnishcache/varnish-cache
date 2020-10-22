@@ -20,7 +20,7 @@ clean:
 
 # use index.rst as an indicator if we have copied already
 .PHONY: link_srcdir
-link_srcdir:
+link_srcdir: graphviz conf.py $(BUILT_SOURCES)
 	if test "x$(srcdir)" != "x$(builddir)" && test ! -f index.rst; then \
 		s=`realpath $(srcdir)`; \
 		for f in `cd $$s && find . -type f`; do \
@@ -35,7 +35,7 @@ link_srcdir:
 graphviz:
 	cd ../graphviz && $(MAKE) html
 
-sphinx_prereq: link_srcdir graphviz conf.py
+sphinx_prereq: link_srcdir
 
 all: link_srcdir
 
