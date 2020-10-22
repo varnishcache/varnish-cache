@@ -5,9 +5,8 @@
 SPHINXOPTS    =
 SPHINXBUILD   = $(SPHINX) -W -q -N
 BUILDDIR      = build
-SRCDIR        = build-rst
 
-ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(SPHINXOPTS) $(SRCDIR)
+ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(SPHINXOPTS) $(builddir)
 
 .PHONY: help clean html linkcheck doctest
 
@@ -17,23 +16,28 @@ help:
 	@echo "  linkcheck to check all external links for integrity"
 
 clean:
-	-rm -rf $(SRCDIR)/* $(BUILDDIR)/* $(CLEANFILES)
+	-rm -rf $(BUILDDIR)/* $(CLEANFILES)
 
-.PHONY: build_srcdir
-build_srcdir: graphviz $(BUILT_SOURCES)
-	rm -rf $(SRCDIR)
-	$(srcdir)/build_srcdir.sh $(SRCDIR) \
-		$(builddir) $(srcdir)/. \
-		$(builddir)/../graphviz $(srcdir)/../graphviz
+# use index.rst as an indicator if we have copied already
+.PHONY: link_srcdir
+link_srcdir:
+	if test "x$(srcdir)" != "x$(builddir)" && test ! -f index.rst; then \
+		s=`realpath $(srcdir)`; \
+		for f in `cd $$s && find . -type f`; do \
+			d=`dirname $$f`; \
+			test -d $$d || mkdir -p $$d; \
+			test -f $$f || ln -s $$s/$$f $$f; \
+		done \
+	fi
 
 # work around for make html called within doc/sphinx
 .PHONY: graphviz
 graphviz:
 	cd ../graphviz && $(MAKE) html
 
-sphinx_prereq: build_srcdir conf.py
+sphinx_prereq: link_srcdir graphviz conf.py
 
-all: build_srcdir
+all: link_srcdir
 
 html: sphinx_prereq
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
@@ -45,8 +49,6 @@ linkcheck: sphinx_prereq
 	@echo
 	@echo "Link check complete; look for any errors in the above output " \
 	      "or in $(subdir)/$(BUILDDIR)/linkcheck/output.txt."
-
-dist_noinst_SCRIPTS = build_srcdir.sh
 
 EXTRA_DIST = \
 	conf.py \
@@ -70,7 +72,7 @@ dist-hook:
 	rm $(distdir)/../html/.buildinfo $(distdir)/../html/*.inv
 
 distclean-local:
-	rm -rf $(SRCDIR) $(BUILDDIR)
+	rm -rf $(BUILDDIR)
 
 include/cli.rst: $(top_builddir)/bin/varnishd/varnishd
 	$(top_builddir)/bin/varnishd/varnishd -x cli > ${@}_
