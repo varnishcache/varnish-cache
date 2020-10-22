@@ -20,6 +20,7 @@ varnish v1 -vcl+backend {
 
 logexpect l1 -v v1 -q "vxid == 1004" {
 	expect * 1004 VCL_return      {^fetch}
+	expect 0 1004 Timestamp       {^Fetch:}
 	expect 0 1004 Timestamp       {^Connected:}
 	expect 0 1004 BackendOpen     {^\d+ s1}
 	expect 0 1004 Timestamp       {^Bereq:}
