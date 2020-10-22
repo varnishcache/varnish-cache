@@ -395,6 +395,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	if (wrk->handling == VCL_RET_ERROR)
 		return (F_STP_ERROR);
 
+	VSLb_ts_busyobj(bo, "Fetch", W_TIM_real(wrk));
 	i = VDI_GetHdr(bo);
 
 	now = W_TIM_real(wrk);

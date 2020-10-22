@@ -86,6 +86,9 @@ Backend fetch timestamps
 Start
 	Start of the backend fetch processing.
 
+Fetch
+	Came off vcl_backend_fetch ready to send the backend request.
+
 Connected
 	Successfully established or reused a backend connection.
 
