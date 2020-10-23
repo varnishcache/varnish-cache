@@ -391,7 +391,7 @@ following byte sequence:
 
 and dumping the resulting digest in lower-case hex.
 
-In the above example, the secret file contains `foo\\n` and thus:
+In the above example, the secret file contains ``foo\\n`` and thus:
 
 .. code-block:: text
 
