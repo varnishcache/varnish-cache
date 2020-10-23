@@ -60,7 +60,7 @@ rpmbuild() {
         --define "_srcrpmdir $CUR_DIR/${RESULT_DIR}" \
         --define "_rpmdir $CUR_DIR/${RESULT_DIR}" \
         --define "versiontag ${RPMVERSION}" \
-        --define "releasetag 0.0" \
+        --define "releasetag 1" \
         --define "srcname $DIST_DIR" \
         --define "nocheck 1" \
         "$@"
