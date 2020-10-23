@@ -346,7 +346,9 @@ file on the fly.
 
 Use the unix file permissions to control access to the file.
 
-An authenticated session looks like this::
+An authenticated session looks like this:
+
+.. code-block:: text
 
    critter phk> telnet localhost 1234
    Trying ::1...
@@ -363,8 +365,8 @@ An authenticated session looks like this::
    -----------------------------
    Varnish Cache CLI 1.0
    -----------------------------
-   Linux,4.4.0-1-amd64,x86_64,-jnone,-smalloc,-smalloc,-hcritbit
-   varnish-trunk revision dc360a4
+   FreeBSD,13.0-CURRENT,amd64,-jnone,-sdefault,-sdefault,-hcritbit
+   varnish-trunk revision 89a558e56390d425c52732a6c94087eec9083115
 
    Type 'help' for command list.
    Type 'quit' to close CLI session.
@@ -389,23 +391,28 @@ following byte sequence:
 
 and dumping the resulting digest in lower-case hex.
 
-In the above example, the secret file contained foo\n and thus::
+In the above example, the secret file contains `foo\\n` and thus:
 
-   critter phk> cat > _
+.. code-block:: text
+
+   critter phk> hexdump secret
+   00000000  66 6f 6f 0a                                       |foo.|
+   00000004
+   critter phk> cat > tmpfile
    ixslvvxrgkjptxmcgnnsdxsvdmvfympg
    foo
    ixslvvxrgkjptxmcgnnsdxsvdmvfympg
    ^D
-   critter phk> hexdump -C _
+   critter phk> hexdump -C tmpfile
    00000000  69 78 73 6c 76 76 78 72  67 6b 6a 70 74 78 6d 63  |ixslvvxrgkjptxmc|
    00000010  67 6e 6e 73 64 78 73 76  64 6d 76 66 79 6d 70 67  |gnnsdxsvdmvfympg|
    00000020  0a 66 6f 6f 0a 69 78 73  6c 76 76 78 72 67 6b 6a  |.foo.ixslvvxrgkj|
    00000030  70 74 78 6d 63 67 6e 6e  73 64 78 73 76 64 6d 76  |ptxmcgnnsdxsvdmv|
    00000040  66 79 6d 70 67 0a                                 |fympg.|
    00000046
-   critter phk> sha256 _
+   critter phk> sha256 tmpfile
    SHA256 (_) = 455ce847f0073c7ab3b1465f74507b75d3dc064c1e7de3b71e00de9092fdc89a
-   critter phk> openssl dgst -sha256 < _
+   critter phk> openssl dgst -sha256 < tmpfile
    455ce847f0073c7ab3b1465f74507b75d3dc064c1e7de3b71e00de9092fdc89a
 
 The sourcefile lib/libvarnish/cli_auth.c contains a useful function
