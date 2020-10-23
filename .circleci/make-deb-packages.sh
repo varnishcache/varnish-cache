@@ -38,8 +38,8 @@ if [ -e .is_weekly ]; then
 else
     WEEKLY=
 fi
-VERSION=$(./configure --version | awk 'NR == 1 {print $NF}')$WEEKLY~$PARAM_RELEASE
-sed -i -e "s|@VERSION@|$VERSION-1|"  "debian/changelog"
+VERSION=$(./configure --version | awk 'NR == 1 {print $NF}')$WEEKLY-1~$PARAM_RELEASE
+sed -i -e "s|@VERSION@|$VERSION|"  "debian/changelog"
 
 echo "Install Build-Depends packages..."
 yes | mk-build-deps --install debian/control || true
