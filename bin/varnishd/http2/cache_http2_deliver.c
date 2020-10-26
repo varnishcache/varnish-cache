@@ -75,10 +75,12 @@ V2D_Init(void)
 /**********************************************************************/
 
 static int v_matchproto_(vdp_init_f)
-h2_init(struct req *req, void **priv)
+h2_init(struct vdp_ctx *vdc, void **priv)
 {
 
-	*priv = req->transport_priv;
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc->req, REQ_MAGIC);
+	*priv = vdc->req->transport_priv;
 	return (0);
 }
 

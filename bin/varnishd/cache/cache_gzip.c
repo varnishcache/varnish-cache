@@ -288,15 +288,18 @@ VGZ_Gzip(struct vgz *vg, const void **pptr, ssize_t *plen, enum vgz_flag flags)
  */
 
 static int v_matchproto_(vdp_init_f)
-vdp_gunzip_init(struct req *req, void **priv)
+vdp_gunzip_init(struct vdp_ctx *vdp, void **priv)
 {
 	struct vgz *vg;
 	struct boc *boc;
+	struct req *req;
 	enum boc_state_e bos;
 	const char *p;
 	ssize_t dl;
 	uint64_t u;
 
+	CHECK_OBJ_NOTNULL(vdp, VDP_CTX_MAGIC);
+	req = vdp->req;
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 

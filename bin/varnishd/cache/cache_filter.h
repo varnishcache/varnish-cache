@@ -102,7 +102,7 @@ enum vdp_action {
 	VDP_END,		/* Last buffer or after, implies VDP_FLUSH */
 };
 
-typedef int vdp_init_f(struct req *, void **priv);
+typedef int vdp_init_f(struct vdp_ctx *, void **priv);
 /*
  * Return value:
  *	negative:	Error - abandon delivery

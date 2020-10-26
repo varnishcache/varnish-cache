@@ -141,7 +141,7 @@ VDP_Push(struct req *req, const struct vdp *vdp, void *priv)
 
 	AZ(vdc->retval);
 	if (vdpe->vdp->init != NULL)
-		vdc->retval = vdpe->vdp->init(req, &vdpe->priv);
+		vdc->retval = vdpe->vdp->init(vdc, &vdpe->priv);
 	if (vdc->retval > 0) {
 		VTAILQ_REMOVE(&vdc->vdp, vdpe, list);
 		vdc->nxt = VTAILQ_FIRST(&vdc->vdp);

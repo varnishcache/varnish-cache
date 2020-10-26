@@ -243,29 +243,31 @@ vrg_ifrange(struct req *req)
 }
 
 static int v_matchproto_(vdp_init_f)
-vrg_range_init(struct req *req, void **priv)
+vrg_range_init(struct vdp_ctx *vdc, void **priv)
 {
 	const char *r;
 	const char *err;
 
-	assert(http_GetHdr(req->http, H_Range, &r));
-	if (!vrg_ifrange(req))	// rfc7233,l,455,456
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc->req, REQ_MAGIC);
+	assert(http_GetHdr(vdc->req->http, H_Range, &r));
+	if (!vrg_ifrange(vdc->req))	// rfc7233,l,455,456
 		return (1);
-	err = vrg_dorange(req, r, priv);
+	err = vrg_dorange(vdc->req, r, priv);
 	if (err == NULL)
 		return (*priv == NULL ? 1 : 0);
 
-	VSLb(req->vsl, SLT_Debug, "RANGE_FAIL %s", err);
-	if (req->resp_len >= 0)
-		http_PrintfHeader(req->resp,
+	VSLb(vdc->vsl, SLT_Debug, "RANGE_FAIL %s", err);
+	if (vdc->req->resp_len >= 0)
+		http_PrintfHeader(vdc->req->resp,
 		    "Content-Range: bytes */%jd",
-		    (intmax_t)req->resp_len);
-	http_PutResponse(req->resp, "HTTP/1.1", 416, NULL);
+		    (intmax_t)vdc->req->resp_len);
+	http_PutResponse(vdc->req->resp, "HTTP/1.1", 416, NULL);
 	/*
 	 * XXX: We ought to produce a body explaining things.
 	 * XXX: That really calls for us to hit vcl_synth{}
 	 */
-	req->resp_len = 0;
+	vdc->req->resp_len = 0;
 	return (1);
 }
 

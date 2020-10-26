@@ -254,15 +254,18 @@ ved_decode_len(struct vsl_log *vsl, const uint8_t **pp)
  */
 
 static int v_matchproto_(vdp_init_f)
-ved_vdp_esi_init(struct req *req, void **priv)
+ved_vdp_esi_init(struct vdp_ctx *vdc, void **priv)
 {
 	struct ecx *ecx;
+	struct req *req;
 
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+	req = vdc->req;
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	AN(priv);
 	AZ(*priv);
 
-	if (!ObjHasAttr(req->wrk, req->objcore, OA_ESIDATA))
+	if (!ObjHasAttr(vdc->wrk, req->objcore, OA_ESIDATA))
 		return (1);
 
 	ALLOC_OBJ(ecx, ECX_MAGIC);
@@ -584,26 +587,29 @@ struct ved_foo {
 };
 
 static int v_matchproto_(vdp_fini_f)
-ved_gzgz_init(struct req *req, void **priv)
+ved_gzgz_init(struct vdp_ctx *vdc, void **priv)
 {
 	ssize_t l;
 	const char *p;
 	struct ved_foo *foo;
+	struct req *req;
 
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+	req = vdc->req;
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CAST_OBJ_NOTNULL(foo, *priv, VED_FOO_MAGIC);
 
 	memset(foo->tailbuf, 0xdd, sizeof foo->tailbuf);
 
-	AN(ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED));
+	AN(ObjCheckFlag(vdc->wrk, req->objcore, OF_GZIPED));
 
-	p = ObjGetAttr(req->wrk, req->objcore, OA_GZIPBITS, &l);
+	p = ObjGetAttr(vdc->wrk, req->objcore, OA_GZIPBITS, &l);
 	AN(p);
 	assert(l == 32);
 	foo->start = vbe64dec(p);
 	foo->last = vbe64dec(p + 8);
 	foo->stop = vbe64dec(p + 16);
-	foo->olen = ObjGetLen(req->wrk, req->objcore);
+	foo->olen = ObjGetLen(vdc->wrk, req->objcore);
 	assert(foo->start > 0 && foo->start < foo->olen * 8);
 	assert(foo->last > 0 && foo->last < foo->olen * 8);
 	assert(foo->stop > 0 && foo->stop < foo->olen * 8);
