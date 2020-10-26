@@ -425,6 +425,7 @@ cnt_transmit(struct worker *wrk, struct req *req)
 		sendbody = 1;
 	}
 
+	VDP_Init(req->vdc);
 	if (req->filter_list == NULL)
 		req->filter_list = resp_Get_Filter_List(req);
 	if (req->filter_list == NULL ||

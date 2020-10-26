@@ -131,7 +131,7 @@ Req_New(const struct worker *wrk, struct sess *sp)
 	p = (void*)PRNDUP(p + sizeof(*req->htc));
 
 	req->vdc = (void*)p;
-	VDP_Init(req->vdc);
+	memset(req->vdc, 0, sizeof *req->vdc);
 	p = (void*)PRNDUP(p + sizeof(*req->vdc));
 
 	req->htc = (void*)p;
