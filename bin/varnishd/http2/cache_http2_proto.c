@@ -525,10 +525,6 @@ h2_do_req(struct worker *wrk, void *priv)
 	CAST_OBJ_NOTNULL(r2, req->transport_priv, H2_REQ_MAGIC);
 	THR_SetRequest(req);
 	CNT_Embark(wrk, req);
-	if (req->req_step == R_STP_TRANSPORT) {
-		VCL_TaskEnter(req->privs);
-		VCL_TaskEnter(req->top->privs);
-	}
 
 	wrk->stats->client_req++;
 	if (CNT_Request(req) != REQ_FSM_DISEMBARK) {
@@ -598,6 +594,8 @@ h2_end_headers(struct worker *wrk, struct h2_sess *h2,
 	AN(req->http->hd[HTTP_HDR_PROTO].b);
 
 	assert(req->req_step == R_STP_TRANSPORT);
+	VCL_TaskEnter(req->privs);
+	VCL_TaskEnter(req->top->privs);
 	req->task->func = h2_do_req;
 	req->task->priv = req;
 	r2->scheduled = 1;

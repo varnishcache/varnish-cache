@@ -389,17 +389,15 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 					return;
 				}
 			}
-			req->req_step = R_STP_TRANSPORT;
+			assert(req->req_step == R_STP_TRANSPORT);
+			VCL_TaskEnter(req->privs);
+			VCL_TaskEnter(req->top->privs);
 			http1_setstate(sp, H1PROC);
 		} else if (st == H1PROC) {
 			req->task->func = http1_req;
 			req->task->priv = req;
 			wrk->stats->client_req++;
 			CNT_Embark(wrk, req);
-			if (req->req_step == R_STP_TRANSPORT) {
-				VCL_TaskEnter(req->privs);
-				VCL_TaskEnter(req->top->privs);
-			}
 			if (CNT_Request(req) == REQ_FSM_DISEMBARK)
 				return;
 			AZ(req->top->vcl0);

@@ -187,10 +187,10 @@ ved_include(struct req *preq, const char *src, const char *host,
 	req->transport = &VED_transport;
 	req->transport_priv = ecx;
 
-	CNT_Embark(wrk, req);
 	VCL_TaskEnter(req->privs);
 
 	while (1) {
+		CNT_Embark(wrk, req);
 		ecx->woken = 0;
 		s = CNT_Request(req);
 		if (s == REQ_FSM_DONE)
@@ -204,7 +204,6 @@ ved_include(struct req *preq, const char *src, const char *host,
 			    &ecx->preq->wrk->cond, &sp->mtx, 0);
 		Lck_Unlock(&sp->mtx);
 		AZ(req->wrk);
-		CNT_Embark(wrk, req);
 	}
 
 	VCL_Rel(&req->vcl);
