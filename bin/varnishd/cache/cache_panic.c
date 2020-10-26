@@ -391,8 +391,8 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 
 	if (bo->vfc != NULL)
 		pan_vfp(vsb, bo->vfc);
-	if (bo->filter_list != NULL)
-		VSB_printf(vsb, "filter_list = \"%s\",\n", bo->filter_list);
+	if (bo->vfp_filter_list != NULL)
+		VSB_printf(vsb, "filter_list = \"%s\",\n", bo->vfp_filter_list);
 
 	WS_Panic(bo->ws, vsb);
 	VSB_printf(vsb, "ws_bo = %p,\n", (void *)bo->ws_bo);

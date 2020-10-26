@@ -382,7 +382,7 @@ struct busyobj {
 	struct worker		*wrk;
 
 	struct vfp_ctx		*vfc;
-	const char		*filter_list;
+	const char		*vfp_filter_list;
 
 	struct ws		ws[1];
 	uintptr_t		ws_bo;

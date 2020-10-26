@@ -386,14 +386,14 @@ resp_Get_Filter_List(struct req *req)
 
 /*--------------------------------------------------------------------*/
 
-#define FILTER_VAR(vcl, in, func)					\
+#define FILTER_VAR(vcl, in, func, fld)					\
 	VCL_STRING							\
 	VRT_r_##vcl##_filters(VRT_CTX)					\
 	{								\
 									\
 		CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
-		if (ctx->in->filter_list != NULL)			\
-			return(ctx->in->filter_list);			\
+		if (ctx->in->fld != NULL)				\
+			return(ctx->in->fld);				\
 		return (func(ctx->in));					\
 	}								\
 									\
@@ -410,8 +410,8 @@ resp_Get_Filter_List(struct req *req)
 		if (b == NULL)						\
 			WS_MarkOverflow(ctx->in->ws);			\
 		else							\
-			ctx->in->filter_list = b;			\
+			ctx->in->fld = b;				\
 	}
 
-FILTER_VAR(beresp, bo, VBF_Get_Filter_List)
-FILTER_VAR(resp, req, resp_Get_Filter_List)
+FILTER_VAR(beresp, bo, VBF_Get_Filter_List, vfp_filter_list)
+FILTER_VAR(resp, req, resp_Get_Filter_List, filter_list)

@@ -189,9 +189,10 @@ VRT_r_obj_reason(VRT_CTX)
 static inline int
 beresp_filter_fixed(VRT_CTX, const char *s)
 {
-	if (ctx->bo->filter_list == NULL)
+	if (ctx->bo->vfp_filter_list == NULL)
 		return (0);
-	VRT_fail(ctx, "beresp.filters are already fixed, beresp.%s is undefined", s);
+	VRT_fail(ctx,
+	    "beresp.filters are already fixed, beresp.%s is undefined", s);
 	return (1);
 }
 

@@ -127,7 +127,7 @@ vbf_cleanup(struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(vfc, VFP_CTX_MAGIC);
 
 	bo->acct.beresp_bodybytes += VFP_Close(vfc);
-	bo->filter_list = NULL;
+	bo->vfp_filter_list = NULL;
 
 	if (bo->director_state != DIR_S_NULL)
 		VDI_Finish(bo);
@@ -147,7 +147,7 @@ Bereq_Rollback(struct busyobj *bo)
 	VCL_TaskLeave(bo->privs);
 	VCL_TaskEnter(bo->privs);
 	HTTP_Clone(bo->bereq, bo->bereq0);
-	bo->filter_list = NULL;
+	bo->vfp_filter_list = NULL;
 	bo->err_reason = NULL;
 	WS_Rollback(bo->bereq->ws, bo->ws_bo);
 	WS_Rollback(bo->ws, bo->ws_bo);
@@ -635,13 +635,13 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 		http_Unset(bo->beresp, H_Content_Encoding);
 		bo->do_gzip = bo->do_gunzip = 0;
 		bo->do_stream = 0;
-		bo->filter_list = "";
-	} else if (bo->filter_list == NULL) {
-		bo->filter_list = VBF_Get_Filter_List(bo);
+		bo->vfp_filter_list = "";
+	} else if (bo->vfp_filter_list == NULL) {
+		bo->vfp_filter_list = VBF_Get_Filter_List(bo);
 	}
 
-	if (bo->filter_list == NULL ||
-	    VCL_StackVFP(bo->vfc, bo->vcl, bo->filter_list)) {
+	if (bo->vfp_filter_list == NULL ||
+	    VCL_StackVFP(bo->vfc, bo->vcl, bo->vfp_filter_list)) {
 		(bo)->htc->doclose = SC_OVERLOAD;
 		vbf_cleanup(bo);
 		return (F_STP_ERROR);
