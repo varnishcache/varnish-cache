@@ -454,7 +454,6 @@ pan_top(struct vsb *vsb, const struct reqtop *top)
 static void
 pan_req(struct vsb *vsb, const struct req *req)
 {
-	const char *stp;
 	const struct transport *xp;
 
 	VSB_printf(vsb, "req = %p {\n", req);
@@ -474,15 +473,10 @@ pan_req(struct vsb *vsb, const struct req *req)
 		VSB_cat(vsb, "}");
 	}
 	VSB_cat(vsb, "\n");
-	switch (req->req_step) {
-#define REQ_STEP(l, u, arg) case R_STP_##u: stp = "R_STP_" #u; break;
-#include "tbl/steps.h"
-		default: stp = NULL;
-	}
-	if (stp != NULL)
-		VSB_printf(vsb, "step = %s,\n", stp);
+	if (req->req_step == NULL)
+		VSB_cat(vsb, "step = R_STP_TRANSPORT\n");
 	else
-		VSB_printf(vsb, "step = 0x%x,\n", req->req_step);
+		VSB_printf(vsb, "step = %s\n", req->req_step->name);
 
 	VSB_printf(vsb, "req_body = %s,\n",
 	    req->req_body_status ? req->req_body_status->name : "NULL");

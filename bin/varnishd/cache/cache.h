@@ -103,6 +103,7 @@ struct transport;
 struct worker;
 struct listen_sock;
 struct vcf;
+struct req_step;
 
 #define DIGEST_LEN		32
 
@@ -112,14 +113,6 @@ typedef struct {
 	const char		*b;
 	const char		*e;
 } txt;
-
-/*--------------------------------------------------------------------*/
-
-enum req_step {
-	R_STP_NONE = 0,
-#define REQ_STEP(l, u, arg)	R_STP_##u,
-#include "tbl/steps.h"
-};
 
 /*--------------------------------------------------------------------*/
 
@@ -451,13 +444,19 @@ struct reqtop {
 
 struct req {
 	unsigned		magic;
-#define REQ_MAGIC		0x2751aaa1
+#define REQ_MAGIC		0xfb4abf6d
 
-	enum req_step		req_step;
 	body_status_t		req_body_status;
 	enum sess_close		doclose;
 	unsigned		restarts;
 	unsigned		esi_level;
+
+	/* Delivery mode */
+	unsigned		res_mode;
+#define RES_ESI			(1<<4)
+#define RES_PIPE		(1<<7)
+
+	const struct req_step	*req_step;
 	struct reqtop		*top;	/* esi_level == 0 request */
 
 #define REQ_FLAG(l, r, w, d) unsigned	l:1;
@@ -521,11 +520,6 @@ struct req {
 	/* Deliver pipeline */
 	struct vdp_ctx		*vdc;
 	const char		*filter_list;
-
-	/* Delivery mode */
-	unsigned		res_mode;
-#define RES_ESI			(1<<4)
-#define RES_PIPE		(1<<7)
 
 	/* Transaction VSL buffer */
 	struct vsl_log		vsl[1];

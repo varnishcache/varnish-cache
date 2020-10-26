@@ -53,11 +53,35 @@
 #include "vsha256.h"
 #include "vtim.h"
 
+#define REQ_STEPS \
+  REQ_STEP(transport,           TRANSPORT,	) \
+  REQ_STEP(restart,             RESTART,	static) \
+  REQ_STEP(recv,                RECV,		) \
+  REQ_STEP(pipe,                PIPE,		static) \
+  REQ_STEP(pass,                PASS,		static) \
+  REQ_STEP(lookup,              LOOKUP,		static) \
+  REQ_STEP(purge,               PURGE,		static) \
+  REQ_STEP(miss,                MISS,		static) \
+  REQ_STEP(fetch,               FETCH,		static) \
+  REQ_STEP(deliver,             DELIVER,	static) \
+  REQ_STEP(vclfail,             VCLFAIL,	static) \
+  REQ_STEP(synth,               SYNTH,		static) \
+  REQ_STEP(transmit,            TRANSMIT,	static)
+
+#define REQ_STEP(l, U, priv) \
+    static req_state_f cnt_##l; \
+    priv const struct req_step R_STP_##U[1] = {{ \
+	.name = "Fetch Step" #l, \
+	.func = cnt_##l, \
+    }};
+REQ_STEPS
+#undef REQ_STEP
+
 /*--------------------------------------------------------------------
  * Handle "Expect:" and "Connection:" on incoming request
  */
 
-static enum req_fsm_nxt
+static enum req_fsm_nxt v_matchproto_(req_state_f)
 cnt_transport(struct worker *wrk, struct req *req)
 {
 	const char *p;
@@ -177,7 +201,7 @@ Resp_Setup_Synth(struct req *req)
 		http_SetHeader(h, "Connection: close");
 }
 
-static enum req_fsm_nxt
+static enum req_fsm_nxt v_matchproto_(req_state_f)
 cnt_deliver(struct worker *wrk, struct req *req)
 {
 
@@ -239,8 +263,8 @@ cnt_deliver(struct worker *wrk, struct req *req)
  * VCL failed, die horribly
  */
 
-static enum req_fsm_nxt
-cnt_vclfail(const struct worker *wrk, struct req *req)
+static enum req_fsm_nxt v_matchproto_(req_state_f)
+cnt_vclfail(struct worker *wrk, struct req *req)
 {
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -263,7 +287,7 @@ cnt_vclfail(const struct worker *wrk, struct req *req)
  * Emit a synthetic response
  */
 
-static enum req_fsm_nxt
+static enum req_fsm_nxt v_matchproto_(req_state_f)
 cnt_synth(struct worker *wrk, struct req *req)
 {
 	struct vsb *synth_body;
@@ -365,7 +389,7 @@ cnt_synth(struct worker *wrk, struct req *req)
  * The mechanics of sending a response (from deliver or synth)
  */
 
-static enum req_fsm_nxt
+static enum req_fsm_nxt v_matchproto_(req_state_f)
 cnt_transmit(struct worker *wrk, struct req *req)
 {
 	struct boc *boc;
@@ -458,7 +482,7 @@ cnt_transmit(struct worker *wrk, struct req *req)
  * Initiated a fetch (pass/miss) which we intend to deliver
  */
 
-static enum req_fsm_nxt
+static enum req_fsm_nxt v_matchproto_(req_state_f)
 cnt_fetch(struct worker *wrk, struct req *req)
 {
 
@@ -487,7 +511,7 @@ cnt_fetch(struct worker *wrk, struct req *req)
  * this state if we get suspended on a busy objhdr.
  */
 
-static enum req_fsm_nxt
+static enum req_fsm_nxt v_matchproto_(req_state_f)
 cnt_lookup(struct worker *wrk, struct req *req)
 {
 	struct objcore *oc, *busy;
@@ -614,7 +638,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
  * Cache miss.
  */
 
-static enum req_fsm_nxt
+static enum req_fsm_nxt v_matchproto_(req_state_f)
 cnt_miss(struct worker *wrk, struct req *req)
 {
 
@@ -659,7 +683,7 @@ cnt_miss(struct worker *wrk, struct req *req)
  * Pass processing
  */
 
-static enum req_fsm_nxt
+static enum req_fsm_nxt v_matchproto_(req_state_f)
 cnt_pass(struct worker *wrk, struct req *req)
 {
 
@@ -697,7 +721,7 @@ cnt_pass(struct worker *wrk, struct req *req)
  * Pipe mode
  */
 
-static enum req_fsm_nxt
+static enum req_fsm_nxt v_matchproto_(req_state_f)
 cnt_pipe(struct worker *wrk, struct req *req)
 {
 	struct busyobj *bo;
@@ -769,7 +793,7 @@ cnt_pipe(struct worker *wrk, struct req *req)
  * Handle restart events
  */
 
-static enum req_fsm_nxt
+static enum req_fsm_nxt v_matchproto_(req_state_f)
 cnt_restart(struct worker *wrk, struct req *req)
 {
 
@@ -803,7 +827,7 @@ cnt_restart(struct worker *wrk, struct req *req)
  * - remove duplicatation with Req_Cleanup()
  */
 
-static void
+static void v_matchproto_(req_state_f)
 cnt_recv_prep(struct req *req, const char *ci)
 {
 	const char *xff;
@@ -849,7 +873,7 @@ cnt_recv_prep(struct req *req, const char *ci)
  * a interior request during ESI delivery.
  */
 
-static enum req_fsm_nxt
+static enum req_fsm_nxt v_matchproto_(req_state_f)
 cnt_recv(struct worker *wrk, struct req *req)
 {
 	unsigned recv_handling;
@@ -986,7 +1010,7 @@ cnt_recv(struct worker *wrk, struct req *req)
  * In VCL, a restart is necessary to get a new object
  */
 
-static enum req_fsm_nxt
+static enum req_fsm_nxt v_matchproto_(req_state_f)
 cnt_purge(struct worker *wrk, struct req *req)
 {
 	struct objcore *oc, *boc;
@@ -1037,7 +1061,7 @@ cnt_purge(struct worker *wrk, struct req *req)
  *
  */
 
-static void
+static void v_matchproto_(req_state_f)
 cnt_diag(struct req *req, const char *state)
 {
 
@@ -1102,17 +1126,12 @@ CNT_Request(struct req *req)
 		CHECK_OBJ_ORNULL(wrk->nobjhead, OBJHEAD_MAGIC);
 		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-		switch (req->req_step) {
-#define REQ_STEP(l,u,arg) \
-		    case R_STP_##u: \
-			if (DO_DEBUG(DBG_REQ_STATE)) \
-				cnt_diag(req, #u); \
-			nxt = cnt_##l arg; \
-			break;
-#include "tbl/steps.h"
-		default:
-			WRONG("State engine misfire");
-		}
+		AN(req->req_step);
+		AN(req->req_step->name);
+		AN(req->req_step->func);
+		if (DO_DEBUG(DBG_REQ_STATE))
+			cnt_diag(req, req->req_step->name);
+		nxt = req->req_step->func(wrk, req);
 		CHECK_OBJ_ORNULL(wrk->nobjhead, OBJHEAD_MAGIC);
 	}
 	wrk->vsl = NULL;

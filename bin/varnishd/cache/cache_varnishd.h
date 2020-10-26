@@ -47,11 +47,22 @@
 #  include "VSC_main.h"
 #endif
 
-/* -------------------------------------------------------------------*/
+/*--------------------------------------------------------------------*/
 
 struct vfp;
 struct cli_proto;
 struct poolparam;
+
+/*--------------------------------------------------------------------*/
+
+typedef enum req_fsm_nxt req_state_f(struct worker *, struct req *);
+struct req_step {
+	const char	*name;
+	req_state_f	*func;
+};
+
+extern const struct req_step R_STP_TRANSPORT[1];
+extern const struct req_step R_STP_RECV[1];
 
 /*--------------------------------------------------------------------
  * HTTP Protocol connection structure
