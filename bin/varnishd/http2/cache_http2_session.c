@@ -277,7 +277,7 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 	/* Start req thread */
 	r2 = h2_new_req(wrk, h2, 1, req);
 	req->transport = &H2_transport;
-	req->req_step = R_STP_TRANSPORT;
+	assert(req->req_step == R_STP_TRANSPORT);
 	req->task->func = h2_do_req;
 	req->task->priv = req;
 	r2->scheduled = 1;

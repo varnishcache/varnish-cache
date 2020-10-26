@@ -597,7 +597,7 @@ h2_end_headers(struct worker *wrk, struct h2_sess *h2,
 	}
 	AN(req->http->hd[HTTP_HDR_PROTO].b);
 
-	req->req_step = R_STP_TRANSPORT;
+	assert(req->req_step == R_STP_TRANSPORT);
 	req->task->func = h2_do_req;
 	req->task->priv = req;
 	r2->scheduled = 1;

@@ -181,7 +181,7 @@ ved_include(struct req *preq, const char *src, const char *host,
 		req->vcl = preq->vcl;
 	VCL_Ref(req->vcl);
 
-	req->req_step = R_STP_TRANSPORT;
+	assert(req->req_step == R_STP_TRANSPORT);
 	req->t_req = preq->t_req;
 
 	req->transport = &VED_transport;
