@@ -270,6 +270,22 @@ workflows:
       - dist
       - tar_pkg_tools
       - package:
+          name: aarch64-ubuntu-focal
+          dist: ubuntu
+          release: focal
+          arch: aarch64
+          image: arm64v8/ubuntu:focal
+          ext: deb
+          <<: *pkg_req
+      - package:
+          name: x64-ubuntu-focal
+          dist: ubuntu
+          release: focal
+          arch: x64
+          image: ubuntu:focal
+          ext: deb
+          <<: *pkg_req
+      - package:
           name: aarch64-ubuntu-bionic
           dist: ubuntu
           release: bionic
@@ -334,6 +350,22 @@ workflows:
           ext: deb
           <<: *pkg_req
       - package:
+          name: aarch64-centos-8
+          dist: centos
+          release: "8"
+          arch: aarch64
+          image: arm64v8/centos:8
+          ext: rpm
+          <<: *pkg_req
+      - package:
+          name: x64-centos-8
+          dist: centos
+          release: "8"
+          arch: x64
+          image: centos:8
+          ext: rpm
+          <<: *pkg_req
+      - package:
           name: aarch64-centos-7
           dist: centos
           release: "7"
@@ -355,9 +387,13 @@ workflows:
             - aarch64-ubuntu-xenial
             - x64-ubuntu-bionic
             - aarch64-ubuntu-bionic
+            - x64-ubuntu-focal
+            - aarch64-ubuntu-focal
             - x64-debian-stretch
             - aarch64-debian-stretch
             - x64-debian-buster
             - aarch64-debian-buster
+            - x64-centos-8
+            - aarch64-centos-8
             - x64-centos-7
             - aarch64-centos-7
