@@ -83,18 +83,19 @@ h2_init(struct req *req, void **priv)
 }
 
 static int v_matchproto_(vdp_fini_f)
-h2_fini(struct req *req, void **priv)
+h2_fini(struct vdp_ctx *vdc, void **priv)
 {
 	struct h2_req *r2;
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc->wrk, WORKER_MAGIC);
 	TAKE_OBJ_NOTNULL(r2, priv, H2_REQ_MAGIC);
 
 	if (r2->error)
 		return (0);
 
-	H2_Send_Get(req->wrk, r2->h2sess, r2);
-	H2_Send(req->wrk, r2, H2_F_DATA, H2FF_DATA_END_STREAM, 0, "", NULL);
+	H2_Send_Get(vdc->wrk, r2->h2sess, r2);
+	H2_Send(vdc->wrk, r2, H2_F_DATA, H2FF_DATA_END_STREAM, 0, "", NULL);
 	H2_Send_Rel(r2->h2sess, r2);
 	return (0);
 }

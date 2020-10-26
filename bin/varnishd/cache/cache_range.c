@@ -48,14 +48,15 @@ struct vrg_priv {
 };
 
 static int v_matchproto_(vdp_fini_f)
-vrg_range_fini(struct req *req, void **priv)
+vrg_range_fini(struct vdp_ctx *vdc, void **priv)
 {
 	struct vrg_priv *vrg_priv;
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc->req, REQ_MAGIC);
 	CAST_OBJ_NOTNULL(vrg_priv, *priv, VRG_PRIV_MAGIC);
 	if (vrg_priv->range_off < vrg_priv->range_high)
-		Req_Fail(req, SC_RANGE_SHORT);
+		Req_Fail(vdc->req, SC_RANGE_SHORT);
 	*priv = NULL;	/* struct on ws, no need to free */
 	return (0);
 }

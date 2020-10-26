@@ -150,9 +150,9 @@ xyzzy_rot13_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 }
 
 static int v_matchproto_(vdp_fini_f)
-xyzzy_rot13_fini(struct req *req, void **priv)
+xyzzy_rot13_fini(struct vdp_ctx *vdc, void **priv)
 {
-	(void)req;
+	(void)vdc;
 	AN(priv);
 	free(*priv);
 	*priv = NULL;
@@ -187,9 +187,9 @@ xyzzy_pedantic_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 }
 
 static int v_matchproto_(vdp_fini_f)
-xyzzy_pedantic_fini(struct req *req, void **priv)
+xyzzy_pedantic_fini(struct vdp_ctx *vdc, void **priv)
 {
-	(void) req;
+	(void) vdc;
 	assert (*priv == end_marker);
 	*priv = NULL;
 	return (0);

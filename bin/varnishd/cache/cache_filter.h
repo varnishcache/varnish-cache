@@ -112,7 +112,7 @@ typedef int vdp_init_f(struct req *, void **priv);
 
 struct vdp_ctx;
 
-typedef int vdp_fini_f(struct req *, void **priv);
+typedef int vdp_fini_f(struct vdp_ctx *, void **priv);
 typedef int vdp_bytes_f(struct vdp_ctx *, enum vdp_action, void **priv,
     const void *ptr, ssize_t len);
 

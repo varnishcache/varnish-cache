@@ -341,11 +341,11 @@ vdp_gunzip_init(struct req *req, void **priv)
 }
 
 static int v_matchproto_(vdp_fini_f)
-vdp_gunzip_fini(struct req *req, void **priv)
+vdp_gunzip_fini(struct vdp_ctx *vdc, void **priv)
 {
 	struct vgz *vg;
 
-	(void)req;
+	(void)vdc;
 	CAST_OBJ_NOTNULL(vg, *priv, VGZ_MAGIC);
 	AN(vg->m_buf);
 	(void)VGZ_Destroy(&vg);

@@ -160,7 +160,7 @@ VDP_Close(struct req *req)
 		if (vdpe != NULL) {
 			CHECK_OBJ(vdpe, VDP_ENTRY_MAGIC);
 			if (vdpe->vdp->fini != NULL)
-				AZ(vdpe->vdp->fini(req, &vdpe->priv));
+				AZ(vdpe->vdp->fini(vdc, &vdpe->priv));
 			AZ(vdpe->priv);
 			VTAILQ_REMOVE(&vdc->vdp, vdpe, list);
 		}

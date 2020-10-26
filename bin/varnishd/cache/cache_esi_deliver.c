@@ -286,11 +286,11 @@ ved_vdp_esi_init(struct req *req, void **priv)
 }
 
 static int v_matchproto_(vdp_fini_f)
-ved_vdp_esi_fini(struct req *req, void **priv)
+ved_vdp_esi_fini(struct vdp_ctx *vdc, void **priv)
 {
 	struct ecx *ecx;
 
-	(void)req;
+	(void)vdc;
 	AN(priv);
 	CAST_OBJ_NOTNULL(ecx, *priv, ECX_MAGIC);
 	FREE_OBJ(ecx);
@@ -500,9 +500,9 @@ ved_bytes(struct ecx *ecx, enum vdp_action act,
  */
 
 static int v_matchproto_(vdp_fini_f)
-ved_pretend_gzip_fini(struct req *req, void **priv)
+ved_pretend_gzip_fini(struct vdp_ctx *vdc, void **priv)
 {
-	(void)req;
+	(void)vdc;
 	*priv = NULL;
 	return (0);
 }
@@ -755,13 +755,13 @@ ved_gzgz_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 }
 
 static int v_matchproto_(vdp_fini_f)
-ved_gzgz_fini(struct req *req, void **priv)
+ved_gzgz_fini(struct vdp_ctx *vdc, void **priv)
 {
 	uint32_t icrc;
 	uint32_t ilen;
 	struct ved_foo *foo;
 
-	(void)req;
+	(void)vdc;
 	CAST_OBJ_NOTNULL(foo, *priv, VED_FOO_MAGIC);
 	*priv = NULL;
 
@@ -793,9 +793,9 @@ static const struct vdp ved_gzgz = {
  */
 
 static int v_matchproto_(vdp_fini_f)
-ved_vdp_fini(struct req *req, void **priv)
+ved_vdp_fini(struct vdp_ctx *vdc, void **priv)
 {
-	(void)req;
+	(void)vdc;
 	*priv = NULL;
 	return (0);
 }
