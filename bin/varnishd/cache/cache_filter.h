@@ -155,7 +155,7 @@ extern const struct vdp VDP_range;
 void VDP_Init(struct vdp_ctx *vdx, struct worker *wrk, struct vsl_log *vsl,
     struct req *req);
 
-uint64_t VDP_Close(struct req *req);
+uint64_t VDP_Close(struct vdp_ctx *);
 int VDP_DeliverObj(struct vdp_ctx *vdc, struct objcore *oc);
 
 int VDP_bytes(struct vdp_ctx *, enum vdp_action act, const void *ptr, ssize_t len);

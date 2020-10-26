@@ -149,18 +149,16 @@ VDP_Push(struct vdp_ctx *vdc, struct ws *ws, const struct vdp *vdp, void *priv)
 }
 
 uint64_t
-VDP_Close(struct req *req)
+VDP_Close(struct vdp_ctx *vdc)
 {
 	struct vdp_entry *vdpe;
-	struct vdp_ctx *vdc;
 	uint64_t rv = 0;
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	vdc = req->vdc;
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
 	while (!VTAILQ_EMPTY(&vdc->vdp)) {
 		vdpe = VTAILQ_FIRST(&vdc->vdp);
 		rv = vdpe->bytes_in;
-		VSLb(req->vsl, SLT_VdpAcct, "%s %ju %ju", vdpe->vdp->name,
+		VSLb(vdc->vsl, SLT_VdpAcct, "%s %ju %ju", vdpe->vdp->name,
 		    (uintmax_t)vdpe->calls, (uintmax_t)rv);
 		if (vdc->retval >= 0)
 			AN(vdpe);

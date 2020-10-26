@@ -339,5 +339,5 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 	}
 
 	AZ(req->wrk->v1l);
-	req->acct.resp_bodybytes += VDP_Close(req);
+	req->acct.resp_bodybytes += VDP_Close(req->vdc);
 }
