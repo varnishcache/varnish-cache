@@ -114,7 +114,7 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 				req->doclose = SC_TX_EOF;
 			}
 		}
-		if (VDP_Push(req, &v1d_vdp, NULL)) {
+		if (VDP_Push(req->vdc, req->ws, &v1d_vdp, NULL)) {
 			v1d_error(req, "workspace_thread overflow");
 			AZ(req->wrk->v1l);
 			return;

@@ -159,6 +159,6 @@ uint64_t VDP_Close(struct req *req);
 int VDP_DeliverObj(struct vdp_ctx *vdc, struct objcore *oc);
 
 int VDP_bytes(struct vdp_ctx *, enum vdp_action act, const void *ptr, ssize_t len);
-int VDP_Push(struct req *, const struct vdp *, void *priv);
+int VDP_Push(struct vdp_ctx *, struct ws *, const struct vdp *, void *priv);
 void VRT_AddVDP(VRT_CTX, const struct vdp *);
 void VRT_RemoveVDP(VRT_CTX, const struct vdp *);

@@ -238,7 +238,7 @@ VCL_StackVDP(struct req *req, const struct vcl *vcl, const char *fl)
 			    "Filter '...%s' not found", fl);
 			return (-1);
 		}
-		if (VDP_Push(req, vp->vdp, NULL))
+		if (VDP_Push(req->vdc, req->ws, vp->vdp, NULL))
 			return (-1);
 	}
 }

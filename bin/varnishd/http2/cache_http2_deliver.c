@@ -334,7 +334,7 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 
 	/* XXX someone into H2 please add appropriate error handling */
 	if (sendbody) {
-		if (!VDP_Push(req, &h2_vdp, NULL))
+		if (!VDP_Push(req->vdc, req->ws, &h2_vdp, NULL))
 			(void)VDP_DeliverObj(req->vdc, req->objcore);
 	}
 

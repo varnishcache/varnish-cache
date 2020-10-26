@@ -81,7 +81,6 @@ VDP_bytes(struct vdp_ctx *vdx, enum vdp_action act, const void *ptr, ssize_t len
 	struct vdp_entry *vdpe;
 
 	CHECK_OBJ_NOTNULL(vdx, VDP_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(vdx->req, REQ_MAGIC);
 	if (vdx->retval)
 		return (vdx->retval);
 	vdpe = vdx->nxt;
@@ -110,13 +109,12 @@ VDP_bytes(struct vdp_ctx *vdx, enum vdp_action act, const void *ptr, ssize_t len
 }
 
 int
-VDP_Push(struct req *req, const struct vdp *vdp, void *priv)
+VDP_Push(struct vdp_ctx *vdc, struct ws *ws, const struct vdp *vdp, void *priv)
 {
 	struct vdp_entry *vdpe;
-	struct vdp_ctx *vdc;
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	vdc = req->vdc;
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+	AN(ws);
 	AN(vdp);
 	AN(vdp->name);
 	AN(vdp->bytes);
@@ -125,9 +123,9 @@ VDP_Push(struct req *req, const struct vdp *vdp, void *priv)
 		return (vdc->retval);
 
 	if (DO_DEBUG(DBG_PROCESSORS))
-		VSLb(req->vsl, SLT_Debug, "VDP_push(%s)", vdp->name);
+		VSLb(vdc->vsl, SLT_Debug, "VDP_push(%s)", vdp->name);
 
-	vdpe = WS_Alloc(req->ws, sizeof *vdpe);
+	vdpe = WS_Alloc(ws, sizeof *vdpe);
 	if (vdpe == NULL) {
 		AZ(vdc->retval);
 		vdc->retval = -1;
