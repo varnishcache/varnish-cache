@@ -49,18 +49,4 @@
   #undef REQ_STEP
 #endif
 
-#ifdef FETCH_STEP
-  FETCH_STEP(mkbereq,		MKBEREQ,	(wrk, bo))
-  FETCH_STEP(retry,		RETRY,		(wrk, bo))
-  FETCH_STEP(startfetch,	STARTFETCH,	(wrk, bo))
-  FETCH_STEP(condfetch,		CONDFETCH,	(wrk, bo))
-  FETCH_STEP(fetch,		FETCH,		(wrk, bo))
-  FETCH_STEP(fetchbody,		FETCHBODY,	(wrk, bo))
-  FETCH_STEP(fetchend,		FETCHEND,	(wrk, bo))
-  FETCH_STEP(error,		ERROR,		(wrk, bo))
-  FETCH_STEP(fail,		FAIL,		(wrk, bo))
-  FETCH_STEP(done,		DONE,		())
-  #undef FETCH_STEP
-#endif
-
 /*lint -restore */

@@ -46,7 +46,7 @@
 #include "vdef.h"
 #include "vrt.h"
 
-#define CACHE_H_INCLUDED
+#define CACHE_H_INCLUDED	// After vrt.h include.
 
 #include "miniobj.h"
 #include "vas.h"
@@ -118,12 +118,6 @@ typedef struct {
 enum req_step {
 	R_STP_NONE = 0,
 #define REQ_STEP(l, u, arg)	R_STP_##u,
-#include "tbl/steps.h"
-};
-
-enum fetch_step {
-	F_STP_NONE = 0,
-#define FETCH_STEP(l, U, arg)	F_STP_##U,
 #include "tbl/steps.h"
 };
 

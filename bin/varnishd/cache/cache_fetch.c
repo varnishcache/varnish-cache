@@ -39,6 +39,31 @@
 #include "vcl.h"
 #include "vtim.h"
 
+#define FETCH_STEPS \
+	FETCH_STEP(mkbereq,           MKBEREQ) \
+	FETCH_STEP(retry,             RETRY) \
+	FETCH_STEP(startfetch,        STARTFETCH) \
+	FETCH_STEP(condfetch,         CONDFETCH) \
+	FETCH_STEP(fetch,             FETCH) \
+	FETCH_STEP(fetchbody,         FETCHBODY) \
+	FETCH_STEP(fetchend,          FETCHEND) \
+	FETCH_STEP(error,             ERROR) \
+	FETCH_STEP(fail,              FAIL) \
+	FETCH_STEP(done,              DONE)
+
+typedef const struct fetch_step *vbf_state_f(struct worker *, struct busyobj *);
+
+struct fetch_step {
+	const char	*name;
+	vbf_state_f	*func;
+};
+
+#define FETCH_STEP(l, U) \
+    static vbf_state_f vbf_stp_##l; \
+    static const struct fetch_step F_STP_##U[1] = {{ .name = "Fetch Step" #l, .func = vbf_stp_##l, }};
+FETCH_STEPS
+#undef FETCH_STEP
+
 /*--------------------------------------------------------------------
  * Allocate an object, with fall-back to Transient.
  * XXX: This somewhat overlaps the stuff in stevedore.c
@@ -213,7 +238,7 @@ vbf_beresp2obj(struct busyobj *bo)
  * Copy req->bereq and release req if no body
  */
 
-static enum fetch_step
+static const struct fetch_step * v_matchproto_(vbf_state_f)
 vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo)
 {
 	const char *q;
@@ -278,7 +303,7 @@ vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo)
  * Prepare the busyobj and fetch processors
  */
 
-static enum fetch_step
+static const struct fetch_step * v_matchproto_(vbf_state_f)
 vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 {
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -352,7 +377,7 @@ vbf_304_logic(struct busyobj *bo)
  * Setup bereq from bereq0, run vcl_backend_fetch
  */
 
-static enum fetch_step
+static const struct fetch_step * v_matchproto_(vbf_state_f)
 vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 {
 	int i;
@@ -516,8 +541,8 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 /*--------------------------------------------------------------------
  */
 
-static enum fetch_step
-vbf_stp_fetchbody(const struct worker *wrk, struct busyobj *bo)
+static const struct fetch_step * v_matchproto_(vbf_state_f)
+vbf_stp_fetchbody(struct worker *wrk, struct busyobj *bo)
 {
 	ssize_t l;
 	uint8_t *ptr;
@@ -587,7 +612,7 @@ vbf_stp_fetchbody(const struct worker *wrk, struct busyobj *bo)
 	return (F_STP_FETCHEND);
 }
 
-static enum fetch_step
+static const struct fetch_step * v_matchproto_(vbf_state_f)
 vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 {
 	struct objcore *oc;
@@ -673,7 +698,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	return (F_STP_FETCHEND);
 }
 
-static enum fetch_step
+static const struct fetch_step * v_matchproto_(vbf_state_f)
 vbf_stp_fetchend(struct worker *wrk, struct busyobj *bo)
 {
 
@@ -735,7 +760,7 @@ vbf_objiterator(void *priv, unsigned flush, const void *ptr, ssize_t len)
 	return (0);
 }
 
-static enum fetch_step
+static const struct fetch_step * v_matchproto_(vbf_state_f)
 vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 {
 	struct boc *stale_boc;
@@ -824,7 +849,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
  * default true)
  */
 
-static enum fetch_step
+static const struct fetch_step * v_matchproto_(vbf_state_f)
 vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 {
 	ssize_t l, ll, o;
@@ -945,8 +970,8 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 /*--------------------------------------------------------------------
  */
 
-static enum fetch_step
-vbf_stp_fail(struct worker *wrk, const struct busyobj *bo)
+static const struct fetch_step * v_matchproto_(vbf_state_f)
+vbf_stp_fail(struct worker *wrk, struct busyobj *bo)
 {
 	struct objcore *oc;
 
@@ -966,9 +991,12 @@ vbf_stp_fail(struct worker *wrk, const struct busyobj *bo)
 /*--------------------------------------------------------------------
  */
 
-static enum fetch_step
-vbf_stp_done(void)
+static const struct fetch_step * v_matchproto_(vbf_state_f)
+vbf_stp_done(struct worker *wrk, struct busyobj *bo)
 {
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	WRONG("Just plain wrong");
 	NEEDLESS(return (F_STP_DONE));
 }
@@ -978,7 +1006,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 {
 	struct busyobj *bo;
 	struct objcore *oc;
-	enum fetch_step stp;
+	const struct fetch_step *stp;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
@@ -1012,15 +1040,10 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 			AN(bo->req);
 		else
 			AZ(bo->req);
-		switch (stp) {
-#define FETCH_STEP(l, U, arg)						\
-		case F_STP_##U:						\
-			stp = vbf_stp_##l arg;				\
-			break;
-#include "tbl/steps.h"
-		default:
-			WRONG("Illegal fetch_step");
-		}
+		AN(stp);
+		AN(stp->name);
+		AN(stp->func);
+		stp = stp->func(wrk, bo);
 	}
 
 	assert(bo->director_state == DIR_S_NULL);
