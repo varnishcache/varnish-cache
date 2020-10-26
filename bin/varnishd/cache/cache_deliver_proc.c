@@ -35,10 +35,19 @@
 #include "cache_filter.h"
 
 void
-VDP_Init(struct vdp_ctx *vdx)
+VDP_Init(struct vdp_ctx *vdc, struct worker *wrk, struct vsl_log *vsl,
+    struct req *req)
 {
-	INIT_OBJ(vdx, VDP_CTX_MAGIC);
-	VTAILQ_INIT(&vdx->vdp);
+	AN(vdc);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	AN(vsl);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
+	INIT_OBJ(vdc, VDP_CTX_MAGIC);
+	VTAILQ_INIT(&vdc->vdp);
+	vdc->wrk = wrk;
+	vdc->vsl = vsl;
+	vdc->req = req;
 }
 
 /* VDP_bytes
@@ -184,21 +193,16 @@ vdp_objiterator(void *priv, unsigned flush, const void *ptr, ssize_t len)
 }
 
 
-int VDP_DeliverObj(struct vdp_ctx *vdc, struct objcore *oc, struct worker *wrk,
-    struct vsl_log *vsl, struct req *req)
+int VDP_DeliverObj(struct vdp_ctx *vdc, struct objcore *oc)
 {
 	int r, final;
 
 	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	AN(vsl);
-	CHECK_OBJ_ORNULL(req, REQ_MAGIC);
-	vdc->vsl = vsl;
-	vdc->wrk = wrk;
-	vdc->req = req;
+	CHECK_OBJ_NOTNULL(vdc->wrk, WORKER_MAGIC);
+	AN(vdc->vsl);
 	final = oc->flags & (OC_F_PRIVATE | OC_F_HFM | OC_F_HFP) ? 1 : 0;
-	r = ObjIterate(wrk, oc, vdc, vdp_objiterator, final);
+	r = ObjIterate(vdc->wrk, oc, vdc, vdp_objiterator, final);
 	if (r == 0)
 		r = VDP_bytes(vdc, VDP_END, NULL, 0);
 	if (r < 0)

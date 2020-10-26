@@ -865,8 +865,7 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 	}
 
 	if (i == 0) {
-		i = VDP_DeliverObj(
-		    req->vdc, req->objcore, req->wrk, req->vsl, req);
+		i = VDP_DeliverObj(req->vdc, req->objcore);
 	} else {
 		VSLb(req->vsl, SLT_Error, "Failure to push ESI processors");
 		req->doclose = SC_OVERLOAD;
