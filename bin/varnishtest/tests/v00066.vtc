@@ -1,0 +1,22 @@
+varnishtest "long string coverage"
+
+varnish v1 -vcl {
+	backend default none;
+
+	sub vcl_recv {
+		return (synth(200));
+	}
+
+	sub vcl_synth {
+                set resp.body = """{"key":"value"}""";
+                return (deliver);
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+        expect resp.bodylen == 15
+	expect resp.body == {{"key":"value"}}
+} -run
