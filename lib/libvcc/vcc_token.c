@@ -462,7 +462,7 @@ vcc_Lexer(struct vcc *tl, const struct source *sp, int eoi)
 			return;
 		}
 
-		/* Recognize long-strings */
+		/* Recognize long-strings {" "} */
 		if (*p == '{' && p[1] == '"') {
 			for (q = p + 2; q < sp->e; q++) {
 				if (*q == '"' && q[1] == '}') {
@@ -481,6 +481,31 @@ vcc_Lexer(struct vcc *tl, const struct source *sp, int eoi)
 				continue;
 			}
 			vcc_addtoken(tl, EOI, sp, p, p + 2);
+			VSB_cat(tl->sb,
+			    "Unterminated long-string, starting at\n");
+			vcc_ErrWhere(tl, tl->t);
+			return;
+		}
+
+		/* Recognize long-strings """ """ */
+		if (*p == '"' && p[1] == '"' && p[2] == '"') {
+			for (q = p + 3; q < sp->e; q++) {
+				if (*q == '"' && q[1] == '"' && q[2] == '"') {
+					vcc_addtoken(tl, CSTR, sp, p, q + 3);
+					break;
+				}
+			}
+			if (q < sp->e) {
+				p = q + 3;
+				u = tl->t->e - tl->t->b;
+				u -= 6;		/* """ ... """ */
+				tl->t->dec = TlAlloc(tl, u + 1 );
+				AN(tl->t->dec);
+				memcpy(tl->t->dec, tl->t->b + 3, u);
+				tl->t->dec[u] = '\0';
+				continue;
+			}
+			vcc_addtoken(tl, EOI, sp, p, p + 3);
 			VSB_cat(tl->sb,
 			    "Unterminated long-string, starting at\n");
 			vcc_ErrWhere(tl, tl->t);
