@@ -233,14 +233,6 @@ void CLI_Init(void);
 void CLI_Run(void);
 void CLI_AddFuncs(struct cli_proto *p);
 
-/* cache_deliver_proc.c */
-uint64_t VDP_Close(struct req *req);
-int VDP_DeliverObj(struct req *req);
-
-extern const struct vdp VDP_gunzip;
-extern const struct vdp VDP_esi;
-extern const struct vdp VDP_range;
-
 /* cache_expire.c */
 void EXP_Init(void);
 void EXP_Shutdown(void);

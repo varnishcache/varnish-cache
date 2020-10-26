@@ -149,7 +149,8 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 			(void)V1L_Flush(req->wrk);
 		if (chunked)
 			V1L_Chunked(req->wrk);
-		err = VDP_DeliverObj(req);
+		err = VDP_DeliverObj(
+		    req->vdc, req->objcore, req->wrk, req->vsl, req);
 		if (!err && chunked)
 			V1L_EndChunk(req->wrk);
 	}

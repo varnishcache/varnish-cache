@@ -148,6 +148,14 @@ struct vdp_ctx {
 	struct req		*req;
 };
 
+extern const struct vdp VDP_gunzip;
+extern const struct vdp VDP_esi;
+extern const struct vdp VDP_range;
+
+uint64_t VDP_Close(struct req *req);
+int VDP_DeliverObj(struct vdp_ctx *vdc, struct objcore *oc, struct worker *wrk,
+    struct vsl_log *vsl, struct req *req);
+
 void VDP_Init(struct vdp_ctx *vdx);
 int VDP_bytes(struct vdp_ctx *, enum vdp_action act, const void *ptr, ssize_t len);
 int VDP_Push(struct req *, const struct vdp *, void *priv);

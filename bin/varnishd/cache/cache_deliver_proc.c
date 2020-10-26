@@ -184,20 +184,23 @@ vdp_objiterator(void *priv, unsigned flush, const void *ptr, ssize_t len)
 }
 
 
-int
-VDP_DeliverObj(struct req *req)
+int VDP_DeliverObj(struct vdp_ctx *vdc, struct objcore *oc, struct worker *wrk,
+    struct vsl_log *vsl, struct req *req)
 {
 	int r, final;
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	req->vdc->req = req;
-	req->vdc->vsl = req->vsl;
-	req->vdc->wrk = req->wrk;
-	final = req->objcore->flags & (OC_F_PRIVATE | OC_F_HFM | OC_F_HFP)
-	    ? 1 : 0;
-	r = ObjIterate(req->wrk, req->objcore, req->vdc, vdp_objiterator, final);
+	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	AN(vsl);
+	CHECK_OBJ_ORNULL(req, REQ_MAGIC);
+	vdc->vsl = vsl;
+	vdc->wrk = wrk;
+	vdc->req = req;
+	final = oc->flags & (OC_F_PRIVATE | OC_F_HFM | OC_F_HFP) ? 1 : 0;
+	r = ObjIterate(wrk, oc, vdc, vdp_objiterator, final);
 	if (r == 0)
-		r = VDP_bytes(req->vdc, VDP_END, NULL, 0);
+		r = VDP_bytes(vdc, VDP_END, NULL, 0);
 	if (r < 0)
 		return (r);
 	return (0);
