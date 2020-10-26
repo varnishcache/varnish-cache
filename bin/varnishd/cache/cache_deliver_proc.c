@@ -34,6 +34,13 @@
 #include "cache_varnishd.h"
 #include "cache_filter.h"
 
+void
+VDP_Init(struct vdp_ctx *vdx)
+{
+	INIT_OBJ(vdx, VDP_CTX_MAGIC);
+	VTAILQ_INIT(&vdx->vdp);
+}
+
 /* VDP_bytes
  *
  * Pushes len bytes at ptr down the delivery processor list.
@@ -57,6 +64,7 @@
  * r == 0: Continue
  * r > 0:  Stop, breaks out early without error condition
  */
+
 int
 VDP_bytes(struct vdp_ctx *vdx, enum vdp_action act, const void *ptr, ssize_t len)
 {

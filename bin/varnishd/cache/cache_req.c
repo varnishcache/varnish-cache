@@ -131,8 +131,7 @@ Req_New(const struct worker *wrk, struct sess *sp)
 	p = (void*)PRNDUP(p + sizeof(*req->htc));
 
 	req->vdc = (void*)p;
-	INIT_OBJ(req->vdc, VDP_CTX_MAGIC);
-	VTAILQ_INIT(&req->vdc->vdp);
+	VDP_Init(req->vdc);
 	p = (void*)PRNDUP(p + sizeof(*req->vdc));
 
 	req->htc = (void*)p;
