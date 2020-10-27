@@ -153,6 +153,8 @@ vcc_expr_edit(struct vcc *tl, vcc_type_t fmt, const char *p, struct expr *e1,
 	struct expr *e, *e3;
 	int nl = 1;
 
+	(void) tl;
+
 	AN(e1);
 	e = vcc_new_expr(fmt);
 	while (*p != '\0') {
@@ -184,16 +186,10 @@ vcc_expr_edit(struct vcc *tl, vcc_type_t fmt, const char *p, struct expr *e1,
 		case 't':
 			e3 = (*p == 'T' ? e1 : e2);
 			AN(e3);
-			VSB_printf(tl->curproc->prologue,
-			    "  struct strands strs_%u_a;\n"
-			    "  const char * strs_%u_s[%d];\n",
-			    tl->unique, tl->unique, e3->nstr);
 			VSB_printf(e->vsb,
-			    "VPI_BundleStrands(%d, &strs_%u_a, strs_%u_s,"
-			    "\v+\n%s,\nvrt_magic_string_end\v-\n)",
-			    e3->nstr, tl->unique, tl->unique,
-			VSB_data(e3->vsb));
-			tl->unique++;
+			    "&(struct strands){.n = %d, .p = "
+			    "(const char *[%d]){\n%s\n}}",
+			    e3->nstr, e3->nstr, VSB_data(e3->vsb));
 			break;
 		case '1':
 			VSB_cat(e->vsb, VSB_data(e1->vsb));

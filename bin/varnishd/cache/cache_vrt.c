@@ -223,27 +223,6 @@ VRT_AllocStrandsWS(struct ws *ws, int n)
 }
 
 /*--------------------------------------------------------------------
- * Build STRANDS from what is essentially a STRING_LIST
- */
-
-VCL_STRANDS
-VPI_BundleStrands(int n, struct strands *s, char const **d, const char *f, ...)
-{
-	va_list ap;
-
-	assert(n > 0);
-	s->n = n;
-	s->p = d;
-	*d++ = f;
-	va_start(ap, f);
-	while(--n)
-		*d++ = va_arg(ap, const char *);
-	assert(va_arg(ap, const char *) == vrt_magic_string_end);
-	va_end(ap);
-	return (s);
-}
-
-/*--------------------------------------------------------------------
  * Compare two STRANDS
  */
 
