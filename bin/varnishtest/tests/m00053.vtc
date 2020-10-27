@@ -9,6 +9,9 @@ varnish v1 -vcl {
 	sub foo {
 		set resp.http.it = "works";
 	}
+	sub bar {
+		set beresp.http.it = "works";
+	}
 	sub indirect {
 		debug.call(foo);
 	}
@@ -53,6 +56,9 @@ varnish v1 -vcl {
 				set resp.http.rolledback = true;
 			}
 			debug.call(foo);
+		} else if (req.url == "/checkwrong") {
+			synthetic(debug.check_call(bar));
+			set resp.status = 500;
 		}
 		return (deliver);
 	}
@@ -99,6 +105,12 @@ client c4 {
 	rxresp
 	expect resp.status == 200
 } -start
+client c5 {
+	txreq -url "/checkwrong"
+	rxresp
+	expect resp.status == 500
+	expect resp.body == {Dynamic call to "sub bar{}" not allowed from here}
+} -start
 
 varnish v1 -errvcl {Impossible Subroutine('<vcl.inline>' Line 8 Pos 13)} {
 	import std;
@@ -120,3 +132,4 @@ client c1 -wait
 client c2 -wait
 client c3 -wait
 client c4 -wait
+client c5 -wait

@@ -521,30 +521,55 @@ VCL_##func##_method(struct vcl *vcl, struct worker *wrk,		\
 /*--------------------------------------------------------------------
  */
 
-VCL_VOID
-VRT_call(VRT_CTX, VCL_SUB sub)
+VCL_STRING
+VRT_check_call(VRT_CTX, VCL_SUB sub)
 {
 	struct vbitmap *vbm;
+	VCL_STRING err = NULL;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(sub, VCL_SUB_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->vcl, VCL_MAGIC);
 	assert(sub->vcl_conf == ctx->vcl->conf);
+	vbm = ctx->called;
+	AN(vbm);
 
 	if ((sub->methods & ctx->method) == 0) {
-		VRT_fail(ctx, "Dynamic call to \"sub %s{}\" not allowed "
-		     "from here", sub->name);
+		err = WS_Printf(ctx->ws, "Dynamic call to \"sub %s{}\""
+		    " not allowed from here", sub->name);
+		if (err == NULL)
+			err = "Dynamic call not allowed and workspace overflow";
+		return (err);
+	}
+
+	if (vbit_test(vbm, sub->n)) {
+		err = WS_Printf(ctx->ws, "Recursive dynamic call to"
+		    " \"sub %s{}\"", sub->name);
+		if (err == NULL)
+			err = "Recursive dynamic call and workspace overflow";
+	}
+
+	return (err);
+}
+
+VCL_VOID
+VRT_call(VRT_CTX, VCL_SUB sub)
+{
+	struct vbitmap *vbm;
+	VCL_STRING err;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(sub, VCL_SUB_MAGIC);
+
+	err = VRT_check_call(ctx, sub);
+	if (err != NULL) {
+		VRT_fail(ctx, "%s", err);
 		return;
 	}
 
 	vbm = ctx->called;
 	AN(vbm);
 
-	if (vbit_test(vbm, sub->n)) {
-		VRT_fail(ctx, "Recursive dynamic call to \"sub %s{}\"",
-		    sub->name);
-		return;
-	}
 	vbit_set(vbm, sub->n);
 	AN(sub->func);
 	sub->func(ctx);

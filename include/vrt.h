@@ -66,6 +66,7 @@
  *	VRT_re_match signature changed
  *	VRT_regsub signature changed
  *	VRT_call() added
+ *	VRT_check_call() added
  * 12.0 (2020-09-15)
  *	Added VRT_DirectorResolve()
  *	Added VCL_STRING VRT_BLOB_string(VRT_CTX, VCL_BLOB)
@@ -656,4 +657,5 @@ void VRT_VCL_Allow_Discard(struct vclref **);
 
 /* VCL_SUB */
 
+VCL_STRING VRT_check_call(VRT_CTX, VCL_SUB);
 VCL_VOID VRT_call(VRT_CTX, VCL_SUB);

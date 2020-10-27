@@ -1296,6 +1296,12 @@ xyzzy_call(VRT_CTX, VCL_SUB sub)
 	VRT_call(ctx, sub);
 }
 
+VCL_STRING v_matchproto_(td_xyzzy_check_call)
+xyzzy_check_call(VRT_CTX, VCL_SUB sub)
+{
+	return (VRT_check_call(ctx, sub));
+}
+
 /* the next two are to test WRONG vmod behavior:
  * holding a VCL_SUB reference across vcls
  */

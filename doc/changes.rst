@@ -66,6 +66,13 @@ Varnish Cache Next (2021-03-15)
   happens for the second dynamic call. This implementation detail is
   subject to change and must not be relied on.
 
+* ``VRT_check_call()`` can be used to check if a ``VRT_call()`` would
+  succeed in order to avoid the potential VCL failure in case it would
+  not.
+
+  It returns ``NULL`` if ``VRT_call()`` would make the call or an
+  error string why not.
+
 ================================
 Varnish Cache 6.5.1 (2020-09-25)
 ================================
