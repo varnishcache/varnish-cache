@@ -455,6 +455,7 @@ SLTM(Backend_health, 0, "Backend health check",
 	"\n"
 
 	"Probe window bits are::\n\n"
+	"\t" "'-'" ": " "Could not connect" "\n"
 	"\t" "'4'" ": " "Good IPv4" "\n"
 	"\t" "'6'" ": " "Good IPv6" "\n"
 	"\t" "'U'" ": " "Good UNIX" "\n"
@@ -463,6 +464,9 @@ SLTM(Backend_health, 0, "Backend health check",
 	"\t" "'r'" ": " "Error Recv" "\n"
 	"\t" "'R'" ": " "Good Recv" "\n"
 	"\t" "'H'" ": " "Happy" "\n"
+	"\n"
+	"When the backend is just created, the window bits for health check\n"
+	"slots that haven't run yet appear as '-' like failures to connect.\n"
 	"\n"
 )
 
