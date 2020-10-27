@@ -35,6 +35,33 @@
 #include "cache_filter.h"
 
 void
+VDP_Panic(struct vsb *vsb, const struct vdp_ctx *vdc)
+{
+	struct vdp_entry *vde;
+
+	VSB_printf(vsb, "vdc = %p {\n", vdc);
+	VSB_indent(vsb, 2);
+	PAN_CheckMagic(vsb, vdc, VDP_CTX_MAGIC);
+	VSB_printf(vsb, "nxt = %p,\n", vdc->nxt);
+	VSB_printf(vsb, "retval = %d,\n", vdc->retval);
+
+	if (!VTAILQ_EMPTY(&vdc->vdp)) {
+		VSB_cat(vsb, "filters = {\n");
+		VSB_indent(vsb, 2);
+		VTAILQ_FOREACH(vde, &vdc->vdp, list)
+			VSB_printf(vsb, "%s = %p { priv = %p }\n",
+			    vde->vdp->name, vde, vde->priv);
+		VSB_indent(vsb, -2);
+		VSB_cat(vsb, "},\n");
+	}
+
+	VSB_indent(vsb, -2);
+	VSB_cat(vsb, "},\n");
+}
+
+
+
+void
 VDP_Init(struct vdp_ctx *vdc, struct worker *wrk, struct vsl_log *vsl,
     struct req *req)
 {

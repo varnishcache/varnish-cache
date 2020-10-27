@@ -173,6 +173,9 @@ void VDI_Panic(const struct director *, struct vsb *, const char *nm);
 void VDI_Event(const struct director *d, enum vcl_event_e ev);
 void VDI_Init(void);
 
+/* cache_deliver_proc.c */
+void VDP_Panic(struct vsb *vsb, const struct vdp_ctx *vdc);
+
 /* cache_exp.c */
 vtim_real EXP_Ttl(const struct req *, const struct objcore *);
 vtim_real EXP_Ttl_grace(const struct req *, const struct objcore *oc);
