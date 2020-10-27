@@ -32,6 +32,7 @@
 struct req;
 struct vfp_entry;
 struct vfp_ctx;
+struct vdp_ctx;
 
 /* Fetch processors --------------------------------------------------*/
 
@@ -87,7 +88,6 @@ struct vfp_ctx {
 	unsigned		obj_flags;
 };
 
-struct vfp_entry *VFP_Push(struct vfp_ctx *, const struct vfp *);
 enum vfp_status VFP_Suck(struct vfp_ctx *, void *p, ssize_t *lp);
 enum vfp_status VFP_Error(struct vfp_ctx *, const char *fmt, ...)
     v_printflike_(2, 3);
@@ -109,8 +109,6 @@ typedef int vdp_init_f(struct vdp_ctx *, void **priv);
  *	zero:		OK
  *	positive:	Don't push this VDP anyway
  */
-
-struct vdp_ctx;
 
 typedef int vdp_fini_f(struct vdp_ctx *, void **priv);
 typedef int vdp_bytes_f(struct vdp_ctx *, enum vdp_action, void **priv,
@@ -148,17 +146,6 @@ struct vdp_ctx {
 	struct req		*req;
 };
 
-extern const struct vdp VDP_gunzip;
-extern const struct vdp VDP_esi;
-extern const struct vdp VDP_range;
-
-void VDP_Init(struct vdp_ctx *vdx, struct worker *wrk, struct vsl_log *vsl,
-    struct req *req);
-
-uint64_t VDP_Close(struct vdp_ctx *);
-int VDP_DeliverObj(struct vdp_ctx *vdc, struct objcore *oc);
-
-int VDP_bytes(struct vdp_ctx *, enum vdp_action act, const void *ptr, ssize_t len);
-int VDP_Push(struct vdp_ctx *, struct ws *, const struct vdp *, void *priv);
+int VDP_bytes(struct vdp_ctx *, enum vdp_action act, const void *, ssize_t);
 void VRT_AddVDP(VRT_CTX, const struct vdp *);
 void VRT_RemoveVDP(VRT_CTX, const struct vdp *);
