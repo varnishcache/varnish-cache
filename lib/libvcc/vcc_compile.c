@@ -149,6 +149,7 @@ vcc_NewProc(struct vcc *tl, struct symbol *sym)
 static void
 vcc_EmitProc(struct vcc *tl, struct proc *p)
 {
+	AN(p->okmask);
 	AZ(VSB_finish(p->cname));
 	AZ(VSB_finish(p->prologue));
 	AZ(VSB_finish(p->body));

@@ -246,6 +246,17 @@ varnish v1 -errvcl {Not available in subroutine 'vcl_recv'.} {
 	}
 }
 
+varnish v1 -cliok "param.set vcc_err_unref off"
+
+varnish v1 -errvcl {Impossible Subroutine} {
+	backend b { .host = "127.0.0.1"; }
+	sub foo {
+		set req.http.foo = 100 + beresp.status;
+	}
+}
+
+varnish v1 -cliok "param.set vcc_err_unref on"
+
 varnish v1 -errvcl {
 ('<vcl.inline>' Line 4 Pos 44) -- (Pos 49)
         sub foo { set req.http.foo = 100 + beresp.status; }

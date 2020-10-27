@@ -6,9 +6,6 @@ varnish v1 -vcl {
 
 	backend dummy None;
 
-	sub impossible {
-		set req.http.impossible = beresp.reason;
-	}
 	sub foo {
 		set resp.http.it = "works";
 	}
@@ -29,9 +26,6 @@ varnish v1 -vcl {
 	}
 
 	sub vcl_recv {
-		if (req.url == "/impossible") {
-			debug.call(impossible);
-		}
 		if (req.url == "/wrong") {
 			debug.call(foo);
 		}
@@ -101,17 +95,28 @@ client c3 {
 	expect resp.status == 503
 } -start
 client c4 {
-	txreq -url "/impossible"
-	rxresp
-	expect resp.status == 503
-} -start
-client c5 {
 	txreq -url "/rollback"
 	rxresp
 	expect resp.status == 200
 } -start
+
+varnish v1 -errvcl {Impossible Subroutine('<vcl.inline>' Line 8 Pos 13)} {
+	import std;
+	import debug;
+
+	backend dummy None;
+
+	sub impossible {
+		set req.http.impossible = beresp.reason;
+	}
+	sub vcl_recv {
+		if (req.url == "/impossible") {
+			debug.call(impossible);
+		}
+	}
+}
+
 client c1 -wait
 client c2 -wait
 client c3 -wait
 client c4 -wait
-client c5 -wait
