@@ -673,10 +673,10 @@ ccf_listen_address(struct cli *cli, const char * const *av, void *priv)
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
 		if (!ls->uds) {
 			VTCP_myname(ls->sock, h, sizeof h, p, sizeof p);
-			VCLI_Out(cli, "%s %s\n", h, p);
+			VCLI_Out(cli, "%s %s %s\n", ls->name, h, p);
 		}
 		else
-			VCLI_Out(cli, "%s -\n", ls->endpoint);
+			VCLI_Out(cli, "%s %s -\n", ls->name, ls->endpoint);
 	}
 	AZ(pthread_mutex_unlock(&shut_mtx));
 }

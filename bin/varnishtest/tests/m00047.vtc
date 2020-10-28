@@ -123,7 +123,7 @@ varnish v2 -arg "-a ${tmpdir}/v2.sock" -vcl+backend {
 # Check the log output for the response header values to see how this
 # worked on your platform.
 
-client c2 -connect "${v2_addr}" {
+client c2 -connect "${v2_sock}" {
 	txreq
 	rxresp
 	expect resp.status ~ "^(200|503)$"

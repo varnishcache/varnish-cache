@@ -5,7 +5,7 @@ server s1 -listen "${tmpdir}/s1.sock" {
 	txresp -body "012345\n"
 } -start
 
-varnish v1 -arg "-a ${tmpdir}/v1.sock" -vcl+backend {
+varnish v1 -arg "-a ${tmpdir}/v1.sock -a ${localhost}:0" -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.do_stream = false;
 	}
@@ -19,7 +19,7 @@ varnish v1 -expect sess_conn == 0
 varnish v1 -expect client_req == 0
 varnish v1 -expect cache_miss == 0
 
-client c1 -connect "${tmpdir}/v1.sock" {
+client c1 -connect "${v1_sock}" {
 	txreq -url "/"
 	rxresp
 	expect resp.status == 200
@@ -56,13 +56,25 @@ varnish v3 -vcl {
 		set resp.http.addr = "${v1_addr}";
 		set resp.http.port = "${v1_port}";
 		set resp.http.sock = "${v1_sock}";
+		set resp.http.a0_addr = "${v1_a0_addr}";
+		set resp.http.a0_port = "${v1_a0_port}";
+		set resp.http.a0_sock = "${v1_a0_sock}";
+		set resp.http.a1_addr = "${v1_a1_addr}";
+		set resp.http.a1_port = "${v1_a1_port}";
+		set resp.http.a1_sock = "${v1_a1_sock}";
 	}
 } -start
 
 client c1 -connect ${v3_sock} {
 	txreq
 	rxresp
-	expect resp.http.addr == "${tmpdir}/v1.sock"
-	expect resp.http.port == "-"
-	expect resp.http.sock == "${tmpdir}/v1.sock -"
+	expect resp.http.addr == "0.0.0.0"
+	expect resp.http.port == "0"
+	expect resp.http.sock == "${tmpdir}/v1.sock"
+	expect resp.http.a0_addr == "0.0.0.0"
+	expect resp.http.a0_port == "0"
+	expect resp.http.a0_sock == "${tmpdir}/v1.sock"
+	expect resp.http.a1_addr != "0.0.0.0"
+	expect resp.http.a1_port != "0"
+	expect resp.http.a1_sock ~ "[^ ]+ [^ ]+"
 } -run

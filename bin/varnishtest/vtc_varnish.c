@@ -545,10 +545,68 @@ varnish_launch(struct varnish *v)
  */
 
 static void
+varnish_listen(struct varnish *v, char *la)
+{
+	const char *a, *p, *n, *n2;
+	char m[64], s[256];
+	unsigned first;
+
+	n2 = "";
+	first = 1;
+
+	while (*la != '\0') {
+		n = la;
+		la = strchr(n, ' ');
+		AN(la);
+		*la = '\0';
+		a = la + 1;
+		la = strchr(a, ' ');
+		AN(la);
+		*la = '\0';
+		p = la + 1;
+		la = strchr(p, '\n');
+		AN(la);
+		*la = '\0';
+		la++;
+
+		AN(*n);
+		AN(*a);
+		AN(*p);
+
+		if (*p != '-') {
+			bprintf(s, "%s %s", a, p);
+		} else {
+			bprintf(s, "%s", a);
+			a = "0.0.0.0";
+			p = "0";
+		}
+
+		if (first) {
+			vtc_log(v->vl, 2, "Listen on %s %s", a, p);
+			macro_def(v->vl, v->name, "addr", "%s", a);
+			macro_def(v->vl, v->name, "port", "%s", p);
+			macro_def(v->vl, v->name, "sock", "%s", s);
+			first = 0;
+		}
+
+		if (!strcmp(n, n2))
+			continue;
+
+		bprintf(m, "%s_addr", n);
+		macro_def(v->vl, v->name, m, "%s", a);
+		bprintf(m, "%s_port", n);
+		macro_def(v->vl, v->name, m, "%s", p);
+		bprintf(m, "%s_sock", n);
+		macro_def(v->vl, v->name, m, "%s", s);
+		n2 = n;
+	}
+}
+
+static void
 varnish_start(struct varnish *v)
 {
 	enum VCLI_status_e u;
-	char *resp = NULL, *h, *p;
+	char *resp = NULL;
 
 	if (v->cli_fd < 0)
 		varnish_launch(v);
@@ -577,17 +635,7 @@ varnish_start(struct varnish *v)
 	if (u != CLIS_OK)
 		vtc_fatal(v->vl,
 		    "CLI debug.listen_address command failed: %u %s", u, resp);
-	h = resp;
-	p = strchr(h, '\n');
-	if (p != NULL)
-		*p = '\0';
-	p = strchr(h, ' ');
-	AN(p);
-	*p++ = '\0';
-	vtc_log(v->vl, 2, "Listen on %s %s", h, p);
-	macro_def(v->vl, v->name, "addr", "%s", h);
-	macro_def(v->vl, v->name, "port", "%s", p);
-	macro_def(v->vl, v->name, "sock", "%s %s", h, p);
+	varnish_listen(v, resp);
 	free(resp);
 	/* Wait for vsl logging to get underway */
 	while (v->vsl_rec == 0)
@@ -1017,6 +1065,12 @@ varnish_expect(const struct varnish *v, char * const *av)
  *
  * \-start
  *         Start the child process.
+ *
+ *         Once successfully started, the following macros are available for
+ *         the default listen address: ``${vNAME_addr}``, ``${vNAME_port}``
+ *         and ``${vNAME_sock}``. Additional macros are available, including
+ *         the listen address name for each address vNAME listens to, like for
+ *         example: ``${vNAME_a0_addr}``.
  *
  * \-stop
  *         Stop the child process.

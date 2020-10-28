@@ -47,7 +47,7 @@ varnish v2 -arg "-a ${tmpdir}/v2.sock,PROXY,mode=0777" -vcl {
 
 varnish v3 -vcl {
 	backend bp {
-		.path = "${v2_addr}";
+		.path = "${v2_sock}";
 		.host_header = "v2";
 		.proxy_header = 2;
 

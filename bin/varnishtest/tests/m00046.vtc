@@ -11,21 +11,21 @@ varnish v2 -arg "-a ${tmpdir}/v2.sock" -vcl {
 	}
 
 	sub vcl_synth {
-		set resp.http.v1_addr = std.ip("${v1_addr}", client.ip);
+		set resp.http.v1_addr = std.ip("${v1_sock}", client.ip);
 	}
 } -start
 
-client c1 -connect "${tmpdir}/v2.sock" {
+client c1 -connect "${v2_sock}" {
 	txreq
 	rxresp
 	expect resp.http.v1_addr == "0.0.0.0"
 } -run
 
-varnish v2 -errvcl {Cannot convert to an IP address: '"${v1_addr}"'} {
+varnish v2 -errvcl {Cannot convert to an IP address: '"${v1_sock}"'} {
 	import std;
 
 	sub vcl_recv {
-		set resp.http.v1_port = std.port("${v1_addr}");
+		set resp.http.v1_port = std.port("${v1_sock}");
 	}
 }
 
@@ -40,7 +40,7 @@ varnish v2 -vcl {
 	}
 }
 
-client c1 -connect "${tmpdir}/v2.sock" {
+client c1 -connect "${v2_sock}" {
 	txreq
 	rxresp
 	expect resp.status == 200
