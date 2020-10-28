@@ -431,7 +431,7 @@ chunk_shm_to_buf(struct VSLQ *vslq, struct chunk *chunk)
 }
 
 /* Append a set of records to a vtx structure */
-static void
+static enum vsl_status
 vtx_append(struct VSLQ *vslq, struct vtx *vtx, const struct VSLC_ptr *start,
     size_t len)
 {
@@ -443,6 +443,9 @@ vtx_append(struct VSLQ *vslq, struct vtx *vtx, const struct VSLC_ptr *start,
 	AN(start);
 
 	i = VSL_Check(vslq->c, start);
+	if (i == vsl_check_e_inval)
+		return (vsl_e_overrun);
+
 	if (i == vsl_check_valid && !VTAILQ_EMPTY(&vtx->shmchunks_free)) {
 		/* Shmref it */
 		chunk = VTAILQ_FIRST(&vtx->shmchunks_free);
@@ -457,7 +460,6 @@ vtx_append(struct VSLQ *vslq, struct vtx *vtx, const struct VSLC_ptr *start,
 		/* Append to shmref list */
 		VTAILQ_INSERT_TAIL(&vslq->shmrefs, chunk, shm.shmref);
 	} else {
-		assert(i != vsl_check_e_inval);
 		/* Buffer it */
 		chunk = VTAILQ_LAST(&vtx->chunks, chunkhead);
 		CHECK_OBJ_ORNULL(chunk, CHUNK_MAGIC);
@@ -472,6 +474,7 @@ vtx_append(struct VSLQ *vslq, struct vtx *vtx, const struct VSLC_ptr *start,
 		}
 	}
 	vtx->len += len;
+	return (vsl_more);
 }
 
 /* Allocate a new vtx structure */
@@ -1314,8 +1317,9 @@ vslq_next(struct VSLQ *vslq)
 		AN(vtx);
 	}
 	if (vtx != NULL) {
-		vtx_append(vslq, vtx, &c->rec, len);
-		vtx_scan(vslq, vtx);
+		r = vtx_append(vslq, vtx, &c->rec, len);
+		if (r == vsl_more)
+			vtx_scan(vslq, vtx);
 	}
 
 	return (r);
