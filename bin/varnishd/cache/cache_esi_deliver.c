@@ -321,7 +321,7 @@ ved_vdp_esi_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 	while (1) {
 		switch (ecx->state) {
 		case 0:
-			ecx->p = ObjGetAttr(vdx->wrk, vdx->req->objcore,
+			ecx->p = ObjGetAttr(vdx->wrk, ecx->preq->objcore,
 			    OA_ESIDATA, &l);
 			AN(ecx->p);
 			assert(l > 0);
@@ -386,7 +386,7 @@ ved_vdp_esi_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 					break;
 				}
 				Debug("INCL [%s][%s] BEGIN\n", q, ecx->p);
-				ved_include(vdx->req,
+				ved_include(ecx->preq,
 				    (const char*)q, (const char*)ecx->p, ecx);
 				Debug("INCL [%s][%s] END\n", q, ecx->p);
 				ecx->p = r + 1;
@@ -520,7 +520,6 @@ ved_pretend_gzip_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 	struct ecx *ecx;
 
 	CHECK_OBJ_NOTNULL(vdx, VDP_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(vdx->req, REQ_MAGIC);
 	CAST_OBJ_NOTNULL(ecx, *priv, ECX_MAGIC);
 
 	(void)priv;
