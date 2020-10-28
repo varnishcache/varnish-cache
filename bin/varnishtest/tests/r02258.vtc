@@ -48,4 +48,4 @@ client c1 {
 	} -run
 } -run
 
-
+varnish v1 -expect MAIN.sc_range_short == 1
