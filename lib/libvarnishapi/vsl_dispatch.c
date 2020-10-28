@@ -435,8 +435,7 @@ vtx_append(struct VSLQ *vslq, struct vtx *vtx, const struct VSLC_ptr *start,
 	enum vsl_check i;
 
 	AN(vtx);
-	if (len == 0)
-		return;
+	AN(len);
 	AN(start);
 
 	i = VSL_Check(vslq->c, start);
