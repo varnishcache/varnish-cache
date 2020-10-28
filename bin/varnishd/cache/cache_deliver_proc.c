@@ -224,6 +224,7 @@ int VDP_DeliverObj(struct vdp_ctx *vdc, struct objcore *oc)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(vdc->wrk, WORKER_MAGIC);
 	AN(vdc->vsl);
+	vdc->req = NULL;
 	final = oc->flags & (OC_F_PRIVATE | OC_F_HFM | OC_F_HFP) ? 1 : 0;
 	r = ObjIterate(vdc->wrk, oc, vdc, vdp_objiterator, final);
 	if (r == 0)
