@@ -28,9 +28,9 @@ jobs:
       script: &script-common
         - |
           if [[ "$TRAVIS_PULL_REQUEST" != "false" ]]; then
-            make -j8 distcheck VERBOSE=1
+            make -j12 distcheck VERBOSE=1
           else
-            make -j8 check VERBOSE=1
+            make -j16 check VERBOSE=1
           fi
     - <<: *test-linux
       arch: arm64
@@ -47,7 +47,7 @@ jobs:
         - ./configure --enable-maintainer-mode
     - <<: *test-linux
       env: WITNESS=1
-      script: make -j8 witness VERBOSE=1
+      script: make -j16 witness VERBOSE=1
     - <<: *test-linux
       stage: sanitizers
       addons:
