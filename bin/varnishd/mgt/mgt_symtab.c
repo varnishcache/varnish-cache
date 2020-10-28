@@ -137,7 +137,6 @@ mgt_vcl_import_vmod(struct vclprog *vp, const struct vjsn_val *vv)
 		ALLOC_OBJ(vf, VMODFILE_MAGIC);
 		AN(vf);
 		REPLACE(vf->fname, v_dst);
-		AN(vf->fname);
 		VTAILQ_INIT(&vf->vcls);
 		AZ(mgt_vcl_cache_vmod(v_name, v_file, v_dst));
 		VTAILQ_INSERT_TAIL(&vmodhead, vf, list);

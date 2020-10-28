@@ -1122,7 +1122,6 @@ main(int argc, char * const *argv)
 			if (format != NULL)
 				VUT_Error(vut, 1, "Format already set");
 			REPLACE(format, optarg);
-			AN(format);
 			break;
 		case 'f':
 			if (format != NULL)

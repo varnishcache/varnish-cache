@@ -10,3 +10,10 @@ expression ptr, val;
 - ptr = strdup(val);
 - AN(ptr);
 + REPLACE(ptr, val);
+
+@@
+expression ptr, val;
+@@
+
+REPLACE(ptr, val);
+- AN(ptr);

@@ -246,7 +246,6 @@ vsmw_delseg(struct vsmw *vsmw, struct vsmwseg *seg)
 	} else {
 		vsmw_mkent(vsmw, vsmw->idx);
 		REPLACE(t, VSB_data(vsmw->vsb));
-		AN(t);
 		fd = openat(vsmw->vdirfd,
 		    t, O_WRONLY|O_CREAT|O_EXCL, vsmw->mode);
 		assert(fd >= 0);
