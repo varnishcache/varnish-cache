@@ -23,10 +23,10 @@ varnish v1 \
 # >thread_pool_timeout to allow for any over-bred workers to be kissed
 # to death.
 # NB: This is important for to avoid mis-ordering of the workers.
-
 delay 11
 
-varnish v1 -expect MAIN.threads == 10
+# But all in all, the delay does not fully prevent over-breeding.
+varnish v1 -expect MAIN.threads >= 10
 
 client c1 {
 	txreq -url "/bar"
