@@ -70,7 +70,7 @@ vmod_integer(VRT_CTX, VCL_STRING p, VCL_INT i)
 		return (i);
 
 	r = trunc(r);
-	if (r > LONG_MAX || r < LONG_MIN)
+	if (r > (double)LONG_MAX || r < (double)LONG_MIN)
 		return (i);
 
 	return ((VCL_INT)r);
@@ -147,7 +147,7 @@ vmod_real2integer(VRT_CTX, VCL_REAL r, VCL_INT i)
 	if (!isfinite(r))
 		return (i);
 	r = round(r);
-	if (r > LONG_MAX || r < LONG_MIN)
+	if (r > (double)LONG_MAX || r < (double)LONG_MIN)
 		return(i);
 	return ((VCL_INT)r);
 }
@@ -171,7 +171,7 @@ vmod_time2integer(VRT_CTX, VCL_TIME t, VCL_INT i)
 	if (!isfinite(t))
 		return (i);
 	t = round(t);
-	if (t > LONG_MAX || t < LONG_MIN)
+	if (t > (double)LONG_MAX || t < (double)LONG_MIN)
 		return(i);
 	return ((VCL_INT)t);
 }
