@@ -578,6 +578,7 @@ struct ved_foo {
 	unsigned		magic;
 #define VED_FOO_MAGIC		0x6a5a262d
 	struct ecx		*ecx;
+	struct objcore		*objcore;
 	uint64_t		start, last, stop, lpad;
 	ssize_t			ll;
 	uint64_t		olen;
@@ -597,18 +598,19 @@ ved_gzgz_init(struct vdp_ctx *vdc, void **priv)
 	req = vdc->req;
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CAST_OBJ_NOTNULL(foo, *priv, VED_FOO_MAGIC);
+	CHECK_OBJ_NOTNULL(foo->objcore, OBJCORE_MAGIC);
 
 	memset(foo->tailbuf, 0xdd, sizeof foo->tailbuf);
 
-	AN(ObjCheckFlag(vdc->wrk, req->objcore, OF_GZIPED));
+	AN(ObjCheckFlag(vdc->wrk, foo->objcore, OF_GZIPED));
 
-	p = ObjGetAttr(vdc->wrk, req->objcore, OA_GZIPBITS, &l);
+	p = ObjGetAttr(vdc->wrk, foo->objcore, OA_GZIPBITS, &l);
 	AN(p);
 	assert(l == 32);
 	foo->start = vbe64dec(p);
 	foo->last = vbe64dec(p + 8);
 	foo->stop = vbe64dec(p + 16);
-	foo->olen = ObjGetLen(vdc->wrk, req->objcore);
+	foo->olen = ObjGetLen(vdc->wrk, foo->objcore);
 	assert(foo->start > 0 && foo->start < foo->olen * 8);
 	assert(foo->last > 0 && foo->last < foo->olen * 8);
 	assert(foo->stop > 0 && foo->stop < foo->olen * 8);
@@ -859,6 +861,7 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 
 		INIT_OBJ(foo, VED_FOO_MAGIC);
 		foo->ecx = ecx;
+		foo->objcore = req->objcore;
 		i = VDP_Push(req->vdc, req->ws, &ved_gzgz, foo);
 
 	} else if (ecx->isgzip && !i) {
