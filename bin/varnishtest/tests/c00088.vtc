@@ -1,6 +1,16 @@
-varnishtest "Dropping polling of a backend that listens at UDS"
+varnishtest "Change UDS backend: change path, drop poll"
 
 server s1 -listen "${tmpdir}/s1.sock" {
+	non_fatal
+	timeout 3
+	loop 40 {
+		rxreq
+		txresp
+		accept
+	}
+} -start
+
+server s2 -listen "${tmpdir}/s2.sock" {
 	non_fatal
 	timeout 3
 	loop 40 {
@@ -18,13 +28,31 @@ varnish v1 -vcl {
 		.interval = 0.1s;
 	}
 	backend s1 {
-		.path = "${s1_sock}";
+		.path = "${s2_sock}";
 	}
 } -start
 
 delay 1
 
-varnish v1 -vcl+backend { } -cliok "vcl.use vcl2" -cliok "vcl.discard vcl1"
+varnish v1 -vcl {
+	probe default {
+		.window = 8;
+		.initial = 7;
+		.threshold = 8;
+		.interval = 0.1s;
+	}
+	backend s1 {
+		.path = "${s1_sock}";
+	}
+} -cliok "vcl.use vcl2" -cliok "vcl.discard vcl1"
+
+delay 1
+
+varnish v1 -vcl {
+	backend s1 {
+		.path = "${s1_sock}";
+	}
+} -cliok "vcl.use vcl3" -cliok "vcl.discard vcl2"
 
 delay 1
 
