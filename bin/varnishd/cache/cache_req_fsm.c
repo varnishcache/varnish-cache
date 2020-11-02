@@ -860,7 +860,6 @@ cnt_recv_prep(struct req *req, const char *ci)
 		req->storage = NULL;
 	}
 
-	req->vdc->retval = 0;
 	req->is_hit = 0;
 	req->is_hitmiss = 0;
 	req->is_hitpass = 0;
