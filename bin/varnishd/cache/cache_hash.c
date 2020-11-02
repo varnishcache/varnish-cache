@@ -975,7 +975,7 @@ HSH_DerefBoc(struct worker *wrk, struct objcore *oc)
  * Returns zero if target was destroyed.
  */
 
-unsigned
+int
 HSH_DerefObjCore(struct worker *wrk, struct objcore **ocp, int rushmax)
 {
 	struct objcore *oc;

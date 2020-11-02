@@ -260,7 +260,7 @@ VRB_Ignore(struct req *req)
 void
 VRB_Free(struct req *req)
 {
-	unsigned r;
+	int r;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
@@ -268,6 +268,7 @@ VRB_Free(struct req *req)
 		return;
 
 	r = HSH_DerefObjCore(req->wrk, &req->body_oc, 0);
+
 
 	// each busyobj may have gained a reference
 	assert (r <= req->restarts + 1);
