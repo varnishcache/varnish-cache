@@ -288,7 +288,7 @@ VGZ_Gzip(struct vgz *vg, const void **pptr, ssize_t *plen, enum vgz_flag flags)
  */
 
 static int v_matchproto_(vdp_init_f)
-vdp_gunzip_init(struct vdp_ctx *vdp, void **priv)
+vdp_gunzip_init(struct vdp_ctx *vdp, void **priv, struct objcore *oc)
 {
 	struct vgz *vg;
 	struct boc *boc;
@@ -299,9 +299,9 @@ vdp_gunzip_init(struct vdp_ctx *vdp, void **priv)
 	uint64_t u;
 
 	CHECK_OBJ_NOTNULL(vdp, VDP_CTX_MAGIC);
+	CHECK_OBJ_ORNULL(oc, OBJCORE_MAGIC);
 	req = vdp->req;
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 
 	vg = VGZ_NewGunzip(req->vsl, "U D -");
 	AN(vg);
@@ -317,27 +317,22 @@ vdp_gunzip_init(struct vdp_ctx *vdp, void **priv)
 
 	req->resp_len = -1;
 
-	boc = HSH_RefBoc(req->objcore);
+	if (oc == NULL)
+		return (0);
+
+	boc = HSH_RefBoc(oc);
 	if (boc != NULL) {
 		CHECK_OBJ(boc, BOC_MAGIC);
 		bos = boc->state;
-		HSH_DerefBoc(req->wrk, req->objcore);
-	} else
-		bos = BOS_FINISHED;
+		HSH_DerefBoc(req->wrk, oc);
+		if (bos < BOS_FINISHED)
+			return (0); /* OA_GZIPBITS is not stable yet */
+	}
 
-	/* OA_GZIPBITS is not stable yet */
-	if (bos < BOS_FINISHED)
-		return (0);
-
-	p = ObjGetAttr(req->wrk, req->objcore, OA_GZIPBITS, &dl);
+	p = ObjGetAttr(req->wrk, oc, OA_GZIPBITS, &dl);
 	if (p != NULL && dl == 32) {
 		u = vbe64dec(p + 24);
-		/*
-		 * If the size is non-zero AND we are the top VDP
-		 * (ie: no ESI), we know what size the output will be.
-		 */
-		if (u != 0 &&
-		    VTAILQ_FIRST(&req->vdc->vdp)->vdp == &VDP_gunzip)
+		if (u != 0)
 			req->resp_len = u;
 	}
 	return (0);

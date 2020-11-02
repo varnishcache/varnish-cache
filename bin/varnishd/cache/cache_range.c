@@ -244,13 +244,14 @@ vrg_ifrange(struct req *req)
 }
 
 static int v_matchproto_(vdp_init_f)
-vrg_range_init(struct vdp_ctx *vdc, void **priv)
+vrg_range_init(struct vdp_ctx *vdc, void **priv, struct objcore *oc)
 {
 	const char *r;
 	const char *err;
 	struct req *req;
 
 	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+	(void)oc;
 	req = vdc->req;
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	assert(http_GetHdr(req->http, H_Range, &r));

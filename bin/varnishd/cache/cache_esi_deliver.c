@@ -254,19 +254,20 @@ ved_decode_len(struct vsl_log *vsl, const uint8_t **pp)
  */
 
 static int v_matchproto_(vdp_init_f)
-ved_vdp_esi_init(struct vdp_ctx *vdc, void **priv)
+ved_vdp_esi_init(struct vdp_ctx *vdc, void **priv, struct objcore *oc)
 {
 	struct ecx *ecx;
 	struct req *req;
 
 	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+	CHECK_OBJ_ORNULL(oc, OBJCORE_MAGIC);
+	if (oc == NULL || !ObjHasAttr(vdc->wrk, oc, OA_ESIDATA))
+		return (1);
+
 	req = vdc->req;
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	AN(priv);
 	AZ(*priv);
-
-	if (!ObjHasAttr(vdc->wrk, req->objcore, OA_ESIDATA))
-		return (1);
 
 	ALLOC_OBJ(ecx, ECX_MAGIC);
 	AN(ecx);
@@ -587,7 +588,7 @@ struct ved_foo {
 };
 
 static int v_matchproto_(vdp_fini_f)
-ved_gzgz_init(struct vdp_ctx *vdc, void **priv)
+ved_gzgz_init(struct vdp_ctx *vdc, void **priv, struct objcore *oc)
 {
 	ssize_t l;
 	const char *p;
@@ -595,6 +596,7 @@ ved_gzgz_init(struct vdp_ctx *vdc, void **priv)
 	struct req *req;
 
 	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+	(void)oc;
 	req = vdc->req;
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CAST_OBJ_NOTNULL(foo, *priv, VED_FOO_MAGIC);

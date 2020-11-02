@@ -166,8 +166,14 @@ VDP_Push(struct vdp_ctx *vdc, struct ws *ws, const struct vdp *vdp, void *priv)
 	vdc->nxt = VTAILQ_FIRST(&vdc->vdp);
 
 	AZ(vdc->retval);
-	if (vdpe->vdp->init != NULL)
-		vdc->retval = vdpe->vdp->init(vdc, &vdpe->priv);
+	if (vdpe->vdp->init == NULL)
+		return (vdc->retval);
+
+	vdc->retval = vdpe->vdp->init(
+	    vdc,
+	    &vdpe->priv,
+	    vdpe == vdc->nxt ? vdc->req->objcore : NULL
+	);
 	if (vdc->retval > 0) {
 		VTAILQ_REMOVE(&vdc->vdp, vdpe, list);
 		vdc->nxt = VTAILQ_FIRST(&vdc->vdp);
