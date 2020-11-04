@@ -485,11 +485,13 @@ struct req {
 	void			*transport_priv;
 
 	VTAILQ_ENTRY(req)	w_list;
+	VTAILQ_ENTRY(req)	t_list;
 
 	struct objcore		*body_oc;
 
-	/* The busy objhead we sleep on */
+	/* The busy objhead we sleep on, referenced up to twice */
 	struct objhead		*hash_objhead;
+	struct objhead		*transport_objhead;
 
 	/* Built Vary string == workspace reservation */
 	uint8_t			*vary_b;

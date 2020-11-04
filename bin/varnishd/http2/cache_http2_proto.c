@@ -159,6 +159,7 @@ h2_new_req(struct h2_sess *h2, unsigned stream, struct req *req)
 	r2->r_window = h2->local_settings.initial_window_size;
 	r2->t_window = h2->remote_settings.initial_window_size;
 	req->transport_priv = r2;
+	VTAILQ_INIT(&r2->waitinglist);
 	Lck_Lock(&h2->sess->mtx);
 	if (stream)
 		h2->open_streams++;
@@ -182,6 +183,7 @@ h2_del_req(struct worker *wrk, struct h2_req *r2)
 	ASSERT_RXTHR(h2);
 	sp = h2->sess;
 	Lck_Lock(&sp->mtx);
+	assert(VTAILQ_EMPTY(&r2->waitinglist));
 	assert(h2->refcnt > 0);
 	--h2->refcnt;
 	/* XXX: PRIORITY reshuffle */

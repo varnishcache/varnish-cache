@@ -36,6 +36,7 @@
 #include <stdio.h>
 
 #include "cache/cache_transport.h"
+#include "cache/cache_objhead.h"
 #include "http2/cache_http2.h"
 
 #include "vend.h"
@@ -438,6 +439,67 @@ h2_new_session(struct worker *wrk, void *arg)
 	wrk->vsl = NULL;
 }
 
+/**********************************************************************
+ */
+
+static void
+h2_top_waitlist(struct worker *wrk, struct req *req)
+{
+	struct objhead *oh;
+	struct h2_req *r2;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	oh = req->hash_objhead;
+	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+	CAST_OBJ_NOTNULL(r2, req->top->topreq->transport_priv, H2_REQ_MAGIC);
+
+	if (DO_DEBUG(DBG_WAITINGLIST))
+		VSLb(req->vsl, SLT_Debug, "on h2 waiting list <%p>", r2);
+
+	Lck_AssertHeld(&oh->mtx);
+	AN(req->waitinglist);
+	AZ(req->wrk);
+
+	assert(oh->refcnt > 0);
+	oh->refcnt++;
+
+	Lck_Lock(&r2->h2sess->sess->mtx);
+	AZ(req->transport_objhead);
+	req->transport_objhead = oh;
+	VTAILQ_INSERT_TAIL(&r2->waitinglist, req, t_list);
+	Lck_Unlock(&r2->h2sess->sess->mtx);
+}
+
+static void
+h2_top_reembark(struct worker *wrk, struct req *req)
+{
+	struct objhead *oh;
+	struct h2_req *r2;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CAST_OBJ_NOTNULL(r2, req->top->topreq->transport_priv, H2_REQ_MAGIC);
+
+	if (DO_DEBUG(DBG_WAITINGLIST))
+		VSLb(req->vsl, SLT_Debug, "off h2 waiting list <%p>", r2);
+
+	Lck_Lock(&r2->h2sess->sess->mtx);
+	VTAILQ_REMOVE(&r2->waitinglist, req, t_list);
+	oh = req->transport_objhead;
+	req->transport_objhead = NULL;
+	Lck_Unlock(&r2->h2sess->sess->mtx);
+
+	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+	Lck_Lock(&oh->mtx);
+	AN(req->hash_objhead);
+	AZ(req->waitinglist);
+	AZ(req->wrk);
+	assert(oh->refcnt > 1);
+	oh->refcnt--;
+	Lck_Unlock(&oh->mtx);
+}
+
 struct transport HTTP2_transport = {
 	.name =			"HTTP/2",
 	.magic =		TRANSPORT_MAGIC,
@@ -447,4 +509,6 @@ struct transport HTTP2_transport = {
 	.req_body =		h2_req_body,
 	.req_fail =		h2_req_fail,
 	.sess_panic =		h2_sess_panic,
+	.top_waitlist =		h2_top_waitlist,
+	.top_reembark =		h2_top_reembark,
 };

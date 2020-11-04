@@ -134,6 +134,7 @@ struct h2_req {
 	int				counted;
 	struct h2_sess			*h2sess;
 	struct req			*req;
+	VTAILQ_HEAD(, req)		waitinglist;
 	double				t_send;
 	double				t_winupd;
 	pthread_cond_t			*cond;
