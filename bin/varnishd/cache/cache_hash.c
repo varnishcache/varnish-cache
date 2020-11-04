@@ -358,6 +358,63 @@ hsh_insert_busyobj(const struct worker *wrk, struct objhead *oh)
 /*---------------------------------------------------------------------
  */
 
+static void
+hsh_waitlist(struct worker *wrk, struct req *req, struct objhead *oh)
+{
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+	Lck_AssertHeld(&oh->mtx);
+	AZ(req->hash_ignore_busy);
+	AZ(req->hash_objhead);
+
+	DSLb(DBG_WAITINGLIST, "on waiting list <%p>", oh);
+
+	/*
+	 * The objhead reference transfers to the sess, we get it
+	 * back when the sess comes off the waiting list and
+	 * calls us again
+	 */
+	req->hash_objhead = oh;
+	req->wrk = NULL;
+	req->waitinglist = 1;
+
+	if (req->top->topreq->transport->top_waitlist != NULL)
+		req->top->topreq->transport->top_waitlist(wrk, req);
+}
+
+static void
+hsh_reembark(struct worker *wrk, struct req *req)
+{
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
+	if (DO_DEBUG(DBG_WAITINGLIST))
+		VSLb(req->vsl, SLT_Debug, "off waiting list");
+
+	if (req->top->topreq->transport->top_reembark != NULL)
+		req->top->topreq->transport->top_reembark(wrk, req);
+
+	if (req->transport->reembark != NULL) {
+		// For ESI includes
+		req->transport->reembark(wrk, req);
+		return;
+	}
+
+	/*
+	 * We ignore the queue limits which apply to new
+	 * requests because if we fail to reschedule there
+	 * may be vmod_privs to cleanup and we need a proper
+	 * worker thread for that.
+	 */
+	AZ(Pool_Task(req->sp->pool, req->task, TASK_QUEUE_RUSH));
+}
+
+/*---------------------------------------------------------------------
+ */
+
 enum lookup_e
 HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 {
@@ -577,21 +634,11 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 
 	/* There are one or more busy objects, wait for them */
 	VTAILQ_INSERT_TAIL(&oh->waitinglist, req, w_list);
+	hsh_waitlist(wrk, req, oh);
 
-	AZ(req->hash_ignore_busy);
-
-	/*
-	 * The objhead reference transfers to the sess, we get it
-	 * back when the sess comes off the waiting list and
-	 * calls us again
-	 */
-	req->hash_objhead = oh;
-	req->wrk = NULL;
-	req->waitinglist = 1;
-
-	if (DO_DEBUG(DBG_WAITINGLIST))
-		VSLb(req->vsl, SLT_Debug, "on waiting list <%p>", oh);
-
+	/* NOTE OBS: We are going on the waitinglist. No changing of
+	 * anything on struct req after releasing the mutex, as we may be
+	 * rescheduled immediately. */
 	Lck_Unlock(&oh->mtx);
 
 	wrk->stats->busy_sleep++;
@@ -648,19 +695,7 @@ hsh_rush2(struct worker *wrk, struct rush *r)
 		req = VTAILQ_FIRST(&r->reqs);
 		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 		VTAILQ_REMOVE(&r->reqs, req, w_list);
-		DSL(DBG_WAITINGLIST, req->vsl->wid, "off waiting list");
-		if (req->transport->reembark != NULL) {
-			// For ESI includes
-			req->transport->reembark(wrk, req);
-		} else {
-			/*
-			 * We ignore the queue limits which apply to new
-			 * requests because if we fail to reschedule there
-			 * may be vmod_privs to cleanup and we need a proper
-			 * workerthread for that.
-			 */
-			AZ(Pool_Task(req->sp->pool, req->task, TASK_QUEUE_RUSH));
-		}
+		hsh_reembark(wrk, req);
 	}
 }
 
