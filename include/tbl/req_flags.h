@@ -40,6 +40,7 @@ REQ_FLAG(is_hit,		0, 0, "")
 REQ_FLAG(waitinglist,		0, 0, "")
 REQ_FLAG(want100cont,		0, 0, "")
 REQ_FLAG(late100cont,		0, 0, "")
+REQ_FLAG(walkaway,		0, 0, "")
 #define REQ_BEREQ_FLAG(lower, vcl_r, vcl_w, doc) \
 	REQ_FLAG(lower, vcl_r, vcl_w, doc)
 #include "tbl/req_bereq_flags.h"

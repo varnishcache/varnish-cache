@@ -319,10 +319,11 @@
 	Number of requests taken off the busy object sleep list and rescheduled.
 
 .. varnish_vsc:: busy_killed
+	:group: wrk
 	:oneliner:	Number of requests killed after sleep on busy objhdr
 
 	Number of requests killed from the busy object sleep list due to
-	lack of resources.
+	the client going away.
 
 .. varnish_vsc:: sess_queued
 	:oneliner:	Sessions queued for thread

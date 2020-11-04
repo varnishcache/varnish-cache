@@ -562,6 +562,21 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		had_objhead = 1;
 	wrk->strangelove = 0;
 	lr = HSH_Lookup(req, &oc, &busy);
+	if (lr == HSH_WALKAWAY) {
+		VRY_Finish(req, DISCARD);
+		AZ(req->objcore);
+		AZ(req->stale_oc);
+		VSLb_ts_req(req, "Waitinglist", W_TIM_real(wrk));
+		VSLb(req->vsl, SLT_Error, "The client is going away");
+		if (req->esi_level > 0) {
+			/* NB: Interrupt delivery upwards to avoid engaging
+			 * new sub-request tasks.
+			 */
+			req->req_step = R_STP_VCLFAIL;
+			return (REQ_FSM_MORE);
+		}
+		return (REQ_FSM_DONE);
+	}
 	if (lr == HSH_BUSY) {
 		/*
 		 * We lost the session to a busy object, disembark the

@@ -464,6 +464,12 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 	Lck_AssertHeld(&oh->mtx);
 
+	if (req->walkaway) {
+		assert(oh->refcnt > 0);
+		(void)hsh_deref_objhead_unlock(wrk, &oh, 0);
+		return (HSH_WALKAWAY);
+	}
+
 	if (req->hash_always_miss) {
 		/* XXX: should we do predictive Vary in this case ? */
 		/* Insert new objcore in objecthead and release mutex */
@@ -696,6 +702,42 @@ hsh_rush2(struct worker *wrk, struct rush *r)
 		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 		VTAILQ_REMOVE(&r->reqs, req, w_list);
 		hsh_reembark(wrk, req);
+	}
+}
+
+void
+HSH_WalkAway(struct worker *wrk, struct objhead **ohp, struct req *req)
+{
+	struct objhead *oh;
+	struct rush r[1];
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	TAKE_OBJ_NOTNULL(oh, ohp, OBJHEAD_MAGIC);
+
+	INIT_OBJ(r, RUSH_MAGIC);
+	VTAILQ_INIT(&r->reqs);
+
+	if (DO_DEBUG(DBG_WAITINGLIST))
+		VSLb(req->vsl, SLT_Debug, "walking away <%p>", oh);
+
+	Lck_Lock(&oh->mtx);
+	if (req->waitinglist) {
+		assert(oh == req->hash_objhead);
+		assert(oh->refcnt > 1);
+		oh->refcnt--;
+		VTAILQ_REMOVE(&oh->waitinglist, req, w_list);
+		VTAILQ_INSERT_TAIL(&r->reqs, req, w_list);
+		Lck_Unlock(&oh->mtx);
+
+		wrk->stats->busy_killed++;
+		AZ(req->walkaway);
+		req->walkaway = 1;
+		hsh_rush2(wrk, r);
+	} else {
+		AZ(req->hash_objhead);
+		assert(oh->refcnt > 0);
+		(void)hsh_deref_objhead_unlock(wrk, &oh, 0);
 	}
 }
 
