@@ -95,6 +95,7 @@ static h2_error
 h2h_addhdr(struct http *hp, char *b, size_t namelen, size_t len)
 {
 	/* XXX: This might belong in cache/cache_http.c */
+	const char *b0;
 	unsigned n;
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
@@ -107,6 +108,7 @@ h2h_addhdr(struct http *hp, char *b, size_t namelen, size_t len)
 		return (H2SE_ENHANCE_YOUR_CALM);
 	}
 
+	b0 = b;
 	if (b[0] == ':') {
 		/* Match H/2 pseudo headers */
 		/* XXX: Should probably have some include tbl for
@@ -145,8 +147,8 @@ h2h_addhdr(struct http *hp, char *b, size_t namelen, size_t len)
 		/* Check for duplicate pseudo-header */
 		if (hp->hd[n].b != NULL) {
 			VSLb(hp->vsl, SLT_BogoHeader,
-			    "Duplicate pseudo-header: %.*s",
-			    (int)(len > 20 ? 20 : len), b);
+			    "Duplicate pseudo-header %.*s%.*s",
+			    (int)namelen, b0, (int)(len > 20 ? 20 : len), b);
 			return (H2SE_PROTOCOL_ERROR);	// rfc7540,l,3158,3162
 		}
 	} else {
