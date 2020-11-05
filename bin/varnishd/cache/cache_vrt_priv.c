@@ -106,19 +106,30 @@ vrt_priv_dyncmp(const struct vrt_priv *vp1, const struct vrt_priv *vp2)
 VRBT_GENERATE_STATIC(vrt_privs, vrt_priv, entry, vrt_priv_dyncmp)
 
 static struct vmod_priv *
-vrt_priv_dynamic(struct ws *ws, struct vrt_privs *privs, uintptr_t vmod_id)
+vrt_priv_dynamic_lookup(struct vrt_privs *privs, uintptr_t vmod_id)
 {
 	struct vrt_priv *vp;
 	const struct vrt_priv needle = {.vmod_id = vmod_id};
 
-	AN(vmod_id);
-
 	vp = VRBT_FIND(vrt_privs, privs, &needle);
-	if (vp) {
-		CHECK_OBJ(vp, VRT_PRIV_MAGIC);
-		assert(vp->vmod_id == vmod_id);
-		return (vp->priv);
-	}
+	if (vp == NULL)
+		return (NULL);
+
+	CHECK_OBJ(vp, VRT_PRIV_MAGIC);
+	assert(vp->vmod_id == vmod_id);
+	return (vp->priv);
+}
+
+static struct vmod_priv *
+vrt_priv_dynamic(struct ws *ws, struct vrt_privs *privs, uintptr_t vmod_id)
+{
+	struct vrt_priv *vp;
+	struct vmod_priv *r;
+
+	AN(vmod_id);
+	r = vrt_priv_dynamic_lookup(privs, vmod_id);
+	if (r != NULL)
+		return (r);
 
 	vp = WS_Alloc(ws, sizeof *vp);
 	if (vp == NULL)
