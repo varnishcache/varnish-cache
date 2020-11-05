@@ -430,23 +430,13 @@ enum vry_finish_flag { KEEP, DISCARD };
 void VRY_Finish(struct req *req, enum vry_finish_flag);
 
 /* cache_vcl.c */
-VCL_BACKEND VCL_DefaultDirector(const struct vcl *);
-const struct vrt_backend_probe *VCL_DefaultProbe(const struct vcl *);
-void VCL_Init(void);
-void VCL_Panic(struct vsb *, const char *nm, const struct vcl *);
-void VCL_Poll(void);
-void VCL_Ref(struct vcl *);
-void VCL_Refresh(struct vcl **);
-void VCL_Recache(struct worker *, struct vcl **);
-void VCL_Rel(struct vcl **);
-void VCL_TaskEnter(struct vrt_privs *);
-void VCL_TaskLeave(struct vrt_privs *);
-const char *VCL_Return_Name(unsigned);
-const char *VCL_Method_Name(unsigned);
 void VCL_Bo2Ctx(struct vrt_ctx *, struct busyobj *);
 void VCL_Req2Ctx(struct vrt_ctx *, struct req *);
 struct vrt_ctx *VCL_Get_CliCtx(int);
 struct vsb *VCL_Rel_CliCtx(struct vrt_ctx **);
+void VCL_Panic(struct vsb *, const char *nm, const struct vcl *);
+void VCL_Poll(void);
+void VCL_Init(void);
 
 #define VCL_MET_MAC(l,u,t,b) \
     void VCL_##l##_method(struct vcl *, struct worker *, struct req *, \
@@ -458,9 +448,6 @@ typedef int vcl_be_func(struct cli *, struct director *, void *);
 
 int VCL_IterDirector(struct cli *, const char *, vcl_be_func *, void *);
 
-/* cache_vcl_vrt.c */
-void VCL_VRT_Init(void);
-
 /* cache_vrt.c */
 void pan_privs(struct vsb *, const struct vrt_privs *);
 
@@ -468,9 +455,22 @@ void pan_privs(struct vsb *, const struct vrt_privs *);
 int VCL_StackVFP(struct vfp_ctx *, const struct vcl *, const char *);
 int VCL_StackVDP(struct req *, const struct vcl *, const char *);
 const char *resp_Get_Filter_List(struct req *req);
+void VCL_VRT_Init(void);
+
+/* cache_vrt_vcl.c */
+const char *VCL_Return_Name(unsigned);
+const char *VCL_Method_Name(unsigned);
+void VCL_Refresh(struct vcl **);
+void VCL_Recache(struct worker *, struct vcl **);
+void VCL_Ref(struct vcl *);
+void VCL_Rel(struct vcl **);
+VCL_BACKEND VCL_DefaultDirector(const struct vcl *);
+const struct vrt_backend_probe *VCL_DefaultProbe(const struct vcl *);
 
 /* cache_vrt_priv.c */
 extern struct vrt_privs cli_task_privs[1];
+void VCL_TaskEnter(struct vrt_privs *);
+void VCL_TaskLeave(struct vrt_privs *);
 
 /* cache_vrt_vmod.c */
 void VMOD_Init(void);
