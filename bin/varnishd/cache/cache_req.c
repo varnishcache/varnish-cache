@@ -196,6 +196,7 @@ Req_Rollback(struct req *req)
 		VCL_TaskLeave(req->top->privs);
 	VCL_TaskLeave(req->privs);
 	VCL_TaskEnter(req->privs);
+	req->privs_copy = NULL;
 	if (IS_TOPREQ(req))
 		VCL_TaskEnter(req->top->privs);
 	HTTP_Clone(req->http, req->http0);
