@@ -589,6 +589,11 @@ void VRT_priv_fini(const struct vmod_priv *p);
 struct vmod_priv *VRT_priv_task(VRT_CTX, const void *vmod_id);
 struct vmod_priv *VRT_priv_top(VRT_CTX, const void *vmod_id);
 
+typedef void vmod_priv_copy_f(VRT_CTX,
+    struct vmod_priv *p, const void *vmod_id);
+void VRT_priv_register_copy(VRT_CTX, const void *vmod_id,
+    vmod_priv_copy_f *func);
+
 /* Stevedore related functions */
 int VRT_Stv(const char *nm);
 VCL_STEVEDORE VRT_stevedore(const char *nm);

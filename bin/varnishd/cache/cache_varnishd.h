@@ -471,6 +471,8 @@ const struct vrt_backend_probe *VCL_DefaultProbe(const struct vcl *);
 extern struct vrt_privs cli_task_privs[1];
 void VCL_TaskEnter(struct vrt_privs *);
 void VCL_TaskLeave(struct vrt_privs *);
+void VCL_privs_copy(VRT_CTX,
+    struct vrt_privs *privs, struct vrt_privs_copy *jobs);
 
 /* cache_vrt_vmod.c */
 void VMOD_Init(void);

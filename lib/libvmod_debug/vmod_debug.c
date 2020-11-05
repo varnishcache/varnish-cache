@@ -42,6 +42,8 @@
 #include "vre.h"
 #include "vsa.h"
 #include "vtim.h"
+#include "vcl.h"
+
 #include "vcc_debug_if.h"
 #include "VSC_debug.h"
 
@@ -995,6 +997,52 @@ xyzzy_get_ip(VRT_CTX)
 	assert(VSA_Sane(ip));
 	return (ip);
 }
+
+static void v_matchproto_(vmod_priv_copy_f)
+copy_ip(VRT_CTX, struct vmod_priv *priv, const void *vmod_id)
+{
+	struct vmod_priv *newpriv;
+	VCL_IP from;
+	struct suckaddr *to;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(priv);
+	AN(vmod_id);
+
+	from = priv->priv;
+	assert(VSA_Sane(from));
+
+	newpriv = VRT_priv_task(ctx, &store_ip_token);
+	if (newpriv == NULL) {
+		VRT_fail(ctx, "copy_ip workspace overflow (task)");
+		return;
+	}
+
+	if (newpriv->priv != NULL)
+		return;
+
+	to = WS_Alloc(ctx->ws, vsa_suckaddr_len);
+	if (to == NULL) {
+		VRT_fail(ctx, "copy_ip workspace overflow (ip)");
+		return;
+	}
+
+	memcpy(to, from, vsa_suckaddr_len);
+	newpriv->priv = TRUST_ME(to);
+}
+
+VCL_VOID
+xyzzy_inherit_ip(VRT_CTX)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	if (ctx->method != VCL_MET_RECV) {
+		VRT_fail(ctx, "debug.inherit_ip may only be called "
+		    "from vcl_recv {}");
+		return;
+	}
+	VRT_priv_register_copy(ctx, &store_ip_token, copy_ip);
+}
+
 
 /**********************************************************************
  * For testing import code on bad vmod files (m00003.vtc)

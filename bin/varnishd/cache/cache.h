@@ -190,6 +190,7 @@ struct vxid_pool {
 /*--------------------------------------------------------------------*/
 
 VRBT_HEAD(vrt_privs, vrt_priv);
+VSTAILQ_HEAD(vrt_privs_copy, vrt_priv_copy);
 
 /* Worker pool stuff -------------------------------------------------*/
 
@@ -528,6 +529,7 @@ struct req {
 	struct acct_req		acct;
 
 	struct vrt_privs	privs[1];
+	struct vrt_privs_copy	*privs_copy;
 
 	struct vcf		*vcf;
 };

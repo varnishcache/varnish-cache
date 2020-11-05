@@ -283,6 +283,13 @@ $Function IP get_ip()
 Get the IP address previously stored by ``debug.store_ip()`` in the same
 transaction.
 
+$Function VOID inherit_ip()
+
+Mark the IP address stored by ``debug.store_ip()`` to be inherited by
+the backend side.
+
+Can only be called from ``vcl_recv {}``.
+
 $Object director()
 
 $Method BACKEND .fail()

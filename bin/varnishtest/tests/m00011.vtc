@@ -1,6 +1,11 @@
-varnishtest "Test std.ip()"
+varnishtest "Test std.ip() and debug.inherit_ip()"
 
 server s1 {
+	rxreq
+	txresp
+} -start
+
+server s2 {
 	rxreq
 	txresp
 } -start
@@ -8,6 +13,23 @@ server s1 {
 varnish v1 -vcl+backend {
 	import std;
 	import debug;
+
+	sub vcl_recv {
+		if (req.url == "/inherit") {
+			set req.backend_hint = s2;
+			debug.inherit_ip();
+			debug.store_ip(server.ip);
+			return (pass);
+		}
+	}
+
+	sub vcl_backend_response {
+		if (bereq.url == "/inherit") {
+			set beresp.http.inherited = debug.get_ip();
+		} else {
+			# hits assertion debug.get_ip() assertion
+		}
+	}
 
 	sub vcl_deliver {
 		std.timestamp("t0");
@@ -90,6 +112,8 @@ client c1 {
 	timeout 60
 	txreq
 	rxresp
+	expect resp.http.inherited == <undef>
+
 	expect resp.http.ip0 == ${localhost}
 	expect resp.http.port0 != 0
 	expect resp.http.port0 != 80
@@ -117,4 +141,42 @@ client c1 {
 	expect resp.http.port11 == 80
 	expect resp.http.ip12 == ${v1_addr}
 	expect resp.http.port12 == ${v1_port}
-} -run
+} -start
+
+client c2 {
+	timeout 60
+	txreq -url "/inherit"
+	rxresp
+	expect resp.http.inherited == ${v1_addr}
+
+	expect resp.http.ip0 == ${localhost}
+	expect resp.http.port0 != 0
+	expect resp.http.port0 != 80
+	expect resp.http.ip1 == ${v1_addr}
+	expect resp.http.port1 == ${v1_port}
+	expect resp.http.ip2 == 127.0.0.2
+	expect resp.http.port2 == 80
+	expect resp.http.ip3 == 1.2.3.5
+	expect resp.http.port3 == 80
+	expect resp.http.ip4 == 2001:db8::
+	expect resp.http.port4 == 80
+	expect resp.http.ip5 == ::1
+	expect resp.http.port5 == 80
+	expect resp.http.ip6 == 0.0.0.0
+	expect resp.http.port6 == 80
+	expect resp.http.ip7 == 1.2.3.4
+	expect resp.http.port7 == 80
+	expect resp.http.ip8 == 1.2.3.4
+	expect resp.http.port8 == 8080
+	expect resp.http.ip9 == 1.2.3.4
+	expect resp.http.port9 == 443
+	expect resp.http.ip10 == ${s1_addr}
+	expect resp.http.port10 == ${s1_port}
+	expect resp.http.ip11 == 1.2.3.4
+	expect resp.http.port11 == 80
+	expect resp.http.ip12 == ${v1_addr}
+	expect resp.http.port12 == ${v1_port}
+} -start
+
+client c1 -wait
+client c2 -wait

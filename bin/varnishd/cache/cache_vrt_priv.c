@@ -54,6 +54,14 @@ static inline int vrt_priv_dyncmp(const struct vrt_priv *,
 
 VRBT_PROTOTYPE_STATIC(vrt_privs, vrt_priv, entry, vrt_priv_dyncmp)
 
+struct vrt_priv_copy {
+	unsigned			magic;
+#define VRT_PRIV_COPY_MAGIC		0xdef6a7a6
+	VSTAILQ_ENTRY(vrt_priv_copy)	list;
+	uintptr_t			vmod_id;
+	vmod_priv_copy_f		*func;
+};
+
 /*--------------------------------------------------------------------
  */
 
@@ -239,4 +247,64 @@ VCL_TaskLeave(struct vrt_privs *privs)
 	VRBT_FOREACH_SAFE(vp, vrt_privs, privs, vp1)
 		VRT_priv_fini(vp->priv);
 	ZERO_OBJ(privs, sizeof *privs);
+}
+
+/*--------------------------------------------------------------------
+ * register and call functions to copy privs from req to bereq
+ *
+ * It is up to the callback to call VRT_priv_task() to get a new dymaic priv
+ * in the destination context if needed.
+ */
+
+void
+VRT_priv_register_copy(VRT_CTX, const void *vmod_id,
+    vmod_priv_copy_f *func)
+{
+	struct vrt_priv_copy *copy;
+	struct req *req;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(vmod_id);
+	AN(func);
+	req = ctx->req;
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
+	if (req->privs_copy == NULL) {
+		req->privs_copy = WS_Alloc(ctx->ws, sizeof *req->privs_copy);
+		if (req->privs_copy == NULL) {
+			VRT_fail(ctx, "Workspace overflow");
+			return;
+		}
+		VSTAILQ_INIT(req->privs_copy);
+	}
+
+	copy = WS_Alloc(ctx->ws, sizeof *copy);
+	if (copy == NULL) {
+		VRT_fail(ctx, "Workspace overflow");
+		return;
+	}
+	INIT_OBJ(copy, VRT_PRIV_COPY_MAGIC);
+	copy->vmod_id = (uintptr_t)vmod_id;
+	copy->func = func;
+	VSTAILQ_INSERT_TAIL(req->privs_copy, copy, list);
+}
+
+void
+VCL_privs_copy(VRT_CTX, struct vrt_privs *privs, struct vrt_privs_copy *jobs)
+{
+	struct vrt_priv_copy *copy;
+	struct vmod_priv *priv;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(privs);
+	AN(jobs);
+
+	VSTAILQ_FOREACH(copy, jobs, list) {
+		AN(copy->vmod_id);
+		AN(copy->func);
+		priv = vrt_priv_dynamic_lookup(privs, copy->vmod_id);
+		if (priv == NULL)
+			continue;
+		copy->func(ctx, priv, (const void *)copy->vmod_id);
+	}
 }

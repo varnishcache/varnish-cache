@@ -235,6 +235,31 @@ vbf_beresp2obj(struct busyobj *bo)
 }
 
 /*--------------------------------------------------------------------
+ * Copy privs req->bereq
+ *
+ */
+static void
+vbf_privs_copy(struct worker *wrk, struct busyobj *bo)
+{
+	uintptr_t aws;
+	struct vrt_ctx ctx;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(bo->req, REQ_MAGIC);
+
+	if (bo->req->privs_copy == NULL)
+		return;
+
+	INIT_OBJ(&ctx, VRT_CTX_MAGIC);
+	VCL_Bo2Ctx(&ctx, bo);
+
+	aws = WS_Snapshot(wrk->aws);
+	VCL_privs_copy(&ctx, bo->req->privs, bo->req->privs_copy);
+	assert(aws == WS_Snapshot(wrk->aws));
+}
+
+/*--------------------------------------------------------------------
  * Copy req->bereq and release req if no body
  */
 
@@ -285,6 +310,11 @@ vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo)
 	bo->ws_bo = WS_Snapshot(bo->ws);
 	HTTP_Clone(bo->bereq, bo->bereq0);
 
+	wrk->handling = 0;
+	vbf_privs_copy(wrk, bo);
+	if (wrk->handling == VCL_RET_ABANDON || wrk->handling == VCL_RET_FAIL)
+		return (F_STP_FAIL);
+
 	if (bo->req->req_body_status->avail == 0) {
 		bo->req = NULL;
 		ObjSetState(bo->wrk, oc, BOS_REQ_DONE);
@@ -295,6 +325,7 @@ vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo)
 		bo->req = NULL;
 		ObjSetState(bo->wrk, oc, BOS_REQ_DONE);
 	}
+
 	return (F_STP_STARTFETCH);
 }
 
