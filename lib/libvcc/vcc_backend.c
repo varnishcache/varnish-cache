@@ -34,6 +34,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #include "vcc_compile.h"
 
@@ -85,6 +86,46 @@ Emit_Sockaddr(struct vcc *tl, const struct token *t_host,
 	Fb(tl, 0, "\t.port = \"%s\",\n", pa);
 	Fb(tl, 0, "\t.path = (void *) 0,\n");
 }
+
+/*
+ * For UDS, we do not create a VSA. Check if it's an absolute path, can
+ * be accessed, and is a socket. If so, just emit the path field and set
+ * the IP suckaddrs to NULL.
+ */
+static void
+Emit_UDS_Path(struct vcc *tl, const struct token *t_path, const char *errid)
+{
+	struct stat st;
+
+	AN(t_path);
+	AN(t_path->dec);
+
+	if (*t_path->dec != '/') {
+		VSB_printf(tl->sb,
+			   "%s: Must be an absolute path:\n", errid);
+		vcc_ErrWhere(tl, t_path);
+		return;
+	}
+	errno = 0;
+	if (stat(t_path->dec, &st) != 0) {
+		int err = errno;
+		VSB_printf(tl->sb, "%s: Cannot stat: %s\n", errid,
+			   strerror(errno));
+		vcc_ErrWhere(tl, t_path);
+		if (err == ENOENT || err == EACCES)
+			vcc_Warn(tl);
+		else
+			return;
+	} else if (!S_ISSOCK(st.st_mode)) {
+		VSB_printf(tl->sb, "%s: Not a socket:\n", errid);
+		vcc_ErrWhere(tl, t_path);
+		return;
+	}
+	Fb(tl, 0, "\t.path = \"%s\",\n", t_path->dec);
+	Fb(tl, 0, "\t.ipv4_suckaddr = (void *) 0,\n");
+	Fb(tl, 0, "\t.ipv6_suckaddr = (void *) 0,\n");
+}
+
 
 /*--------------------------------------------------------------------
  * Disallow mutually exclusive field definitions
