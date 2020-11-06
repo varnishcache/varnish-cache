@@ -12,7 +12,7 @@ parameters:
     default: "HEAD"
   pkg-commit:
     type: string
-    default: ""
+    default: "6.0-lts"
   dist-url:
     type: string
     default: ""
