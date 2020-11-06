@@ -27,7 +27,7 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
-Varnish Cache 6.0.7 (YYYY-MM-DD)
+Varnish Cache 6.0.7 (2020-11-06)
 ================================
 
 * Add support for more HTTP response code reasons (3428_).
