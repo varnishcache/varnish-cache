@@ -522,10 +522,13 @@ cooldown_thread(void *priv)
 static VCL_BACKEND
 create_cold_backend(VRT_CTX)
 {
+	struct vrt_endpoint vep[1];
 	struct vrt_backend be[1];
 
+	INIT_OBJ(vep, VRT_ENDPOINT_MAGIC);
+	vep->uds_path = "/";
 	INIT_OBJ(be, VRT_BACKEND_MAGIC);
-	be->path = "/";
+	be->endpoint = vep;
 	be->vcl_name = "doomed";
 	return (VRT_new_backend(ctx, be));
 }

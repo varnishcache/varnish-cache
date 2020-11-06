@@ -65,13 +65,16 @@ dyn_dir_init(VRT_CTX, struct xyzzy_debug_dyn *dyn,
 {
 	struct suckaddr *sa;
 	VCL_BACKEND dir, dir2;
+	struct vrt_endpoint vep;
 	struct vrt_backend vrt;
 
 	CHECK_OBJ_NOTNULL(dyn, VMOD_DEBUG_DYN_MAGIC);
 	XXXAN(addr);
 	XXXAN(port);
 
+	INIT_OBJ(&vep, VRT_ENDPOINT_MAGIC);
 	INIT_OBJ(&vrt, VRT_BACKEND_MAGIC);
+	vrt.endpoint = &vep;
 	vrt.port = port;
 	vrt.vcl_name = dyn->vcl_name;
 	vrt.hosthdr = addr;
@@ -81,10 +84,10 @@ dyn_dir_init(VRT_CTX, struct xyzzy_debug_dyn *dyn,
 	AN(sa);
 	if (VSA_Get_Proto(sa) == AF_INET) {
 		vrt.ipv4_addr = addr;
-		vrt.ipv4_suckaddr = sa;
+		vep.ipv4 = sa;
 	} else if (VSA_Get_Proto(sa) == AF_INET6) {
 		vrt.ipv6_addr = addr;
-		vrt.ipv6_suckaddr = sa;
+		vep.ipv6 = sa;
 	} else
 		WRONG("Wrong proto family");
 
@@ -171,6 +174,7 @@ static int
 dyn_uds_init(VRT_CTX, struct xyzzy_debug_dyn_uds *uds, VCL_STRING path)
 {
 	VCL_BACKEND dir, dir2;
+	struct vrt_endpoint vep;
 	struct vrt_backend vrt;
 	struct stat st;
 
@@ -197,12 +201,14 @@ dyn_uds_init(VRT_CTX, struct xyzzy_debug_dyn_uds *uds, VCL_STRING path)
 		return (-1);
 	}
 
+	INIT_OBJ(&vep, VRT_ENDPOINT_MAGIC);
 	INIT_OBJ(&vrt, VRT_BACKEND_MAGIC);
-	vrt.path = path;
+	vrt.endpoint = &vep;
+	vep.uds_path = path;
 	vrt.vcl_name = uds->vcl_name;
 	vrt.hosthdr = "localhost";
-	vrt.ipv4_suckaddr = NULL;
-	vrt.ipv6_suckaddr = NULL;
+	vep.ipv4 = NULL;
+	vep.ipv6 = NULL;
 
 	if ((dir = VRT_new_backend(ctx, &vrt)) == NULL)
 		return (-1);

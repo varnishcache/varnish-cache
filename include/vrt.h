@@ -380,20 +380,27 @@ extern const void * const vrt_magic_string_unset;
  * One of those things...
  */
 
+struct vrt_endpoint {
+	unsigned			magic;
+#define VRT_ENDPOINT_MAGIC		0xcc419347
+	VCL_IP				ipv4;
+	VCL_IP				ipv6;
+	const char			*uds_path;
+	const void			*ident;
+	int				ident_len;
+};
+
 #define VRT_BACKEND_FIELDS(rigid)				\
 	rigid char			*vcl_name;		\
 	rigid char			*ipv4_addr;		\
 	rigid char			*ipv6_addr;		\
 	rigid char			*port;			\
-	rigid char			*path;			\
 	rigid char			*hosthdr;		\
 	vtim_dur			connect_timeout;	\
 	vtim_dur			first_byte_timeout;	\
 	vtim_dur			between_bytes_timeout;	\
 	unsigned			max_connections;	\
-	unsigned			proxy_header;		\
-	void				*prefix_ptr;		\
-	unsigned			prefix_len;
+	unsigned			proxy_header;
 
 #define VRT_BACKEND_HANDLE()			\
 	do {					\
@@ -401,7 +408,6 @@ extern const void * const vrt_magic_string_unset;
 		DA(ipv4_addr);			\
 		DA(ipv6_addr);			\
 		DA(port);			\
-		DA(path);			\
 		DA(hosthdr);			\
 		DN(connect_timeout);		\
 		DN(first_byte_timeout);		\
@@ -413,9 +419,8 @@ extern const void * const vrt_magic_string_unset;
 struct vrt_backend {
 	unsigned			magic;
 #define VRT_BACKEND_MAGIC		0x4799ce6c
+	const struct vrt_endpoint	*endpoint;
 	VRT_BACKEND_FIELDS(const)
-	VCL_IP				ipv4_suckaddr;
-	VCL_IP				ipv6_suckaddr;
 	VCL_PROBE			probe;
 };
 

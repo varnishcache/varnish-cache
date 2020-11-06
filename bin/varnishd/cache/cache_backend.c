@@ -560,21 +560,22 @@ VRT_backend_vsm_need(VRT_CTX)
 }
 
 static uint64_t
-vrt_hash_be(const struct vrt_backend *vrt)
+vrt_hash_be(const struct vrt_endpoint *vep)
 {
 	struct VSHA256Context cx[1];
 	unsigned char ident[VSHA256_DIGEST_LENGTH];
 
+	CHECK_OBJ_NOTNULL(vep, VRT_ENDPOINT_MAGIC);
 	VSHA256_Init(cx);
 	VSHA256_Update(cx, vbe_proto_ident, strlen(vbe_proto_ident));
-	if (vrt->ipv4_suckaddr != NULL)
-		VSHA256_Update(cx, vrt->ipv4_suckaddr, vsa_suckaddr_len);
-	if (vrt->ipv6_suckaddr != NULL)
-		VSHA256_Update(cx, vrt->ipv6_suckaddr, vsa_suckaddr_len);
-	if (vrt->path != NULL)
-		VSHA256_Update(cx, vrt->path, strlen(vrt->path));
-	if (vrt->prefix_ptr != NULL)
-		VSHA256_Update(cx, vrt->prefix_ptr, vrt->prefix_len);
+	if (vep->ipv4 != NULL)
+		VSHA256_Update(cx, vep->ipv4, vsa_suckaddr_len);
+	if (vep->ipv6 != NULL)
+		VSHA256_Update(cx, vep->ipv6, vsa_suckaddr_len);
+	if (vep->uds_path != NULL)
+		VSHA256_Update(cx, vep->uds_path, strlen(vep->uds_path));
+	if (vep->ident != NULL)
+		VSHA256_Update(cx, vep->ident, vep->ident_len);
 	VSHA256_Final(ident, cx);
 	return (vbe64dec(ident));
 }
@@ -586,20 +587,22 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 	struct backend *be;
 	struct vcl *vcl;
 	const struct vrt_backend_probe *vbp;
+	const struct vrt_endpoint *vep;
 	const struct vdi_methods *m;
 	const struct suckaddr *sa;
 	char abuf[VTCP_ADDRBUFSIZE];
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vrt, VRT_BACKEND_MAGIC);
-	if (vrt->path == NULL) {
-		if (vrt->ipv4_suckaddr == NULL && vrt->ipv6_suckaddr == NULL) {
+	vep = vrt->endpoint;
+	CHECK_OBJ_NOTNULL(vep, VRT_ENDPOINT_MAGIC);
+	if (vep->uds_path == NULL) {
+		if (vep->ipv4 == NULL && vep->ipv6 == NULL) {
 			VRT_fail(ctx, "%s: Illegal IP", __func__);
 			return (NULL);
 		}
 	} else
-		assert(vrt->ipv4_suckaddr == NULL &&
-		    vrt->ipv6_suckaddr == NULL);
+		assert(vep->ipv4== NULL && vep->ipv6== NULL);
 
 	vcl = ctx->vcl;
 	AN(vcl);
@@ -617,14 +620,14 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 #undef DN
 
 	if (be->hosthdr == NULL) {
-		if (vrt->path != NULL)
+		if (vrt->endpoint->uds_path != NULL)
 			sa = bogo_ip;
-		else if (cache_param->prefer_ipv6 && vrt->ipv6_suckaddr != NULL)
-			sa = vrt->ipv6_suckaddr;
-		else if (vrt->ipv4_suckaddr != NULL)
-			sa = vrt->ipv4_suckaddr;
+		else if (cache_param->prefer_ipv6 && vep->ipv6 != NULL)
+			sa = vep->ipv6;
+		else if (vep->ipv4!= NULL)
+			sa = vep->ipv4;
 		else
-			sa = vrt->ipv6_suckaddr;
+			sa = vep->ipv6;
 		VTCP_name(sa, abuf, sizeof abuf, NULL, 0);
 		REPLACE(be->hosthdr, abuf);
 	}
@@ -633,8 +636,8 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 	    "%s.%s", VCL_Name(ctx->vcl), vrt->vcl_name);
 	AN(be->vsc);
 
-	be->tcp_pool = VTP_Ref(vrt->ipv4_suckaddr, vrt->ipv6_suckaddr,
-	    vrt->path, vrt_hash_be(vrt));
+	be->tcp_pool = VTP_Ref(vep->ipv4, vep->ipv6,
+	    vep->uds_path, vrt_hash_be(vrt->endpoint));
 	AN(be->tcp_pool);
 
 	vbp = vrt->probe;
@@ -670,6 +673,7 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 VCL_BACKEND
 VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
 {
+	CHECK_OBJ_NOTNULL(vrt->endpoint, VRT_ENDPOINT_MAGIC);
 	return (VRT_new_backend_clustered(ctx, NULL, vrt));
 }
 

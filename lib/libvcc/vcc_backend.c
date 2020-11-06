@@ -58,11 +58,11 @@ vcc_default_probe(struct vcc *tl)
  */
 
 static void
-Emit_Sockaddr(struct vcc *tl, const struct token *t_host,
+Emit_Sockaddr(struct vcc *tl, struct vsb *vsb1, const struct token *t_host,
     const struct token *t_port)
 {
 	const char *ipv4, *ipv4a, *ipv6, *ipv6a, *pa;
-	char buf[256];
+	char buf[BUFSIZ];
 
 	AN(t_host->dec);
 
@@ -74,17 +74,19 @@ Emit_Sockaddr(struct vcc *tl, const struct token *t_host,
 	    &ipv4, &ipv4a, &ipv6, &ipv6a, &pa, 2, t_host, "Backend host");
 	ERRCHK(tl);
 	if (ipv4 != NULL) {
-		Fb(tl, 0, "\t.ipv4_suckaddr = (const struct suckaddr *)%s,\n",
+		VSB_printf(vsb1,
+		    "\t.ipv4 = (const struct suckaddr *)%s,\n",
 		    ipv4);
 		Fb(tl, 0, "\t.ipv4_addr = \"%s\",\n", ipv4a);
 	}
 	if (ipv6 != NULL) {
-		Fb(tl, 0, "\t.ipv6_suckaddr = (const struct suckaddr *)%s,\n",
+		VSB_printf(vsb1,
+		    "\t.ipv6 = (const struct suckaddr *)%s,\n",
 		    ipv6);
 		Fb(tl, 0, "\t.ipv6_addr = \"%s\",\n", ipv6a);
 	}
 	Fb(tl, 0, "\t.port = \"%s\",\n", pa);
-	Fb(tl, 0, "\t.path = (void *) 0,\n");
+	VSB_printf(vsb1, "\t.uds_path = (void *) 0,\n");
 }
 
 /*
@@ -93,7 +95,8 @@ Emit_Sockaddr(struct vcc *tl, const struct token *t_host,
  * the IP suckaddrs to NULL.
  */
 static void
-Emit_UDS_Path(struct vcc *tl, const struct token *t_path, const char *errid)
+Emit_UDS_Path(struct vcc *tl, struct vsb *vsb1,
+    const struct token *t_path, const char *errid)
 {
 	struct stat st;
 
@@ -121,11 +124,10 @@ Emit_UDS_Path(struct vcc *tl, const struct token *t_path, const char *errid)
 		vcc_ErrWhere(tl, t_path);
 		return;
 	}
-	Fb(tl, 0, "\t.path = \"%s\",\n", t_path->dec);
-	Fb(tl, 0, "\t.ipv4_suckaddr = (void *) 0,\n");
-	Fb(tl, 0, "\t.ipv6_suckaddr = (void *) 0,\n");
+	VSB_printf(vsb1, "\t.uds_path = \"%s\",\n", t_path->dec);
+	VSB_printf(vsb1, "\t.ipv4 = (void *) 0,\n");
+	VSB_printf(vsb1, "\t.ipv6 = (void *) 0,\n");
 }
-
 
 /*--------------------------------------------------------------------
  * Disallow mutually exclusive field definitions
@@ -346,7 +348,7 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 	struct token *t_did = NULL;
 	struct fld_spec *fs;
 	struct inifin *ifp;
-	struct vsb *vsb;
+	struct vsb *vsb1, *vsb2;
 	char *p;
 	unsigned u;
 	double t;
@@ -364,9 +366,11 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 	    "?proxy_header",
 	    NULL);
 
-	vsb = VSB_new_auto();
-	AN(vsb);
-	tl->fb = vsb;
+	vsb1 = VSB_new_auto();
+	AN(vsb1);
+	vsb2 = VSB_new_auto();
+	AN(vsb2);
+	tl->fb = vsb2;
 
 	if (tl->t->tok == ID &&
 	    (vcc_IdIs(tl->t, "none") || vcc_IdIs(tl->t, "None"))) {
@@ -381,10 +385,16 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 
 	SkipToken(tl, '{');
 
+	VSB_printf(vsb1,
+	    "\nstatic const struct vrt_endpoint vgc_dir_ep_%s = {\n",
+	    vgcname);
+	VSB_printf(vsb1, "\t.magic = VRT_ENDPOINT_MAGIC,\n");
+
 	Fb(tl, 0, "\nstatic const struct vrt_backend vgc_dir_priv_%s = {\n",
 	    vgcname);
 
 	Fb(tl, 0, "\t.magic = VRT_BACKEND_MAGIC,\n");
+	Fb(tl, 0, "\t.endpoint = &vgc_dir_ep_%s,\n", vgcname);
 	Fb(tl, 0, "\t.vcl_name = \"%.*s", PF(t_be));
 	Fb(tl, 0, "\",\n");
 
@@ -517,10 +527,10 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 	assert(t_host != NULL || t_path != NULL);
 	if (t_host != NULL)
 		/* Check that the hostname makes sense */
-		Emit_Sockaddr(tl, t_host, t_port);
+		Emit_Sockaddr(tl, vsb1, t_host, t_port);
 	else
 		/* Check that the path can be a legal UDS */
-		Emit_UDS_Path(tl, t_path, "Backend path");
+		Emit_UDS_Path(tl, vsb1, t_path, "Backend path");
 	ERRCHK(tl);
 
 	ExpectErr(tl, '}');
@@ -543,10 +553,15 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 
 	vcc_NextToken(tl);
 
+	VSB_printf(vsb1, "};\n");
+	AZ(VSB_finish(vsb1));
+	Fh(tl, 0, "%s", VSB_data(vsb1));
+	VSB_destroy(&vsb1);
+
 	tl->fb = NULL;
-	AZ(VSB_finish(vsb));
-	Fh(tl, 0, "%s", VSB_data(vsb));
-	VSB_destroy(&vsb);
+	AZ(VSB_finish(vsb2));
+	Fh(tl, 0, "%s", VSB_data(vsb2));
+	VSB_destroy(&vsb2);
 
 	ifp = New_IniFin(tl);
 	VSB_printf(ifp->ini,
