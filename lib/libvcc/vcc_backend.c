@@ -348,7 +348,7 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 	struct token *t_did = NULL;
 	struct fld_spec *fs;
 	struct inifin *ifp;
-	struct vsb *vsb1, *vsb2;
+	struct vsb *vsb1;
 	char *p;
 	unsigned u;
 	double t;
@@ -366,15 +366,9 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 	    "?proxy_header",
 	    NULL);
 
-	vsb1 = VSB_new_auto();
-	AN(vsb1);
-	vsb2 = VSB_new_auto();
-	AN(vsb2);
-	tl->fb = vsb2;
 
 	if (tl->t->tok == ID &&
 	    (vcc_IdIs(tl->t, "none") || vcc_IdIs(tl->t, "None"))) {
-		Fb(tl, 0, "\n\t%s = (NULL);\n", vgcname);
 		vcc_NextToken(tl);
 		SkipToken(tl, ';');
 		ifp = New_IniFin(tl);
@@ -384,19 +378,6 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 	}
 
 	SkipToken(tl, '{');
-
-	VSB_printf(vsb1,
-	    "\nstatic const struct vrt_endpoint vgc_dir_ep_%s = {\n",
-	    vgcname);
-	VSB_printf(vsb1, "\t.magic = VRT_ENDPOINT_MAGIC,\n");
-
-	Fb(tl, 0, "\nstatic const struct vrt_backend vgc_dir_priv_%s = {\n",
-	    vgcname);
-
-	Fb(tl, 0, "\t.magic = VRT_BACKEND_MAGIC,\n");
-	Fb(tl, 0, "\t.endpoint = &vgc_dir_ep_%s,\n", vgcname);
-	Fb(tl, 0, "\t.vcl_name = \"%.*s", PF(t_be));
-	Fb(tl, 0, "\",\n");
 
 	/* Check for old syntax */
 	if (tl->t->tok == ID && vcc_IdIs(tl->t, "set")) {
@@ -409,6 +390,17 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}
+
+	tl->fb = VSB_new_auto();
+	AN(tl->fb);
+
+	Fb(tl, 0, "\nstatic const struct vrt_backend vgc_dir_priv_%s = {\n",
+	    vgcname);
+
+	Fb(tl, 0, "\t.magic = VRT_BACKEND_MAGIC,\n");
+	Fb(tl, 0, "\t.endpoint = &vgc_dir_ep_%s,\n", vgcname);
+	Fb(tl, 0, "\t.vcl_name = \"%.*s", PF(t_be));
+	Fb(tl, 0, "\",\n");
 
 	while (tl->t->tok != '}') {
 
@@ -436,6 +428,7 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 				vcc_ErrToken(tl, tl->t);
 				VSB_cat(tl->sb, " at ");
 				vcc_ErrWhere(tl, tl->t);
+				VSB_destroy(&tl->fb);
 				return;
 			}
 			vcc_Redef(tl, "Address", &t_did, t_field);
@@ -482,6 +475,7 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 				VSB_cat(tl->sb,
 				    ".proxy_header must be 1 or 2\n");
 				vcc_ErrWhere(tl, t_val);
+				VSB_destroy(&tl->fb);
 				return;
 			}
 			SkipToken(tl, ';');
@@ -507,9 +501,11 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 			vcc_ErrToken(tl, tl->t);
 			VSB_cat(tl->sb, " at\n");
 			vcc_ErrWhere(tl, tl->t);
+			VSB_destroy(&tl->fb);
 			return;
 		} else {
 			ErrInternal(tl);
+			VSB_destroy(&tl->fb);
 			return;
 		}
 
@@ -518,11 +514,21 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 	vcc_FieldsOk(tl, fs);
 	ERRCHK(tl);
 
+	ExpectErr(tl, '}');
+
 	if (t_host == NULL && t_path == NULL) {
 		VSB_cat(tl->sb, "Expected .host or .path.\n");
 		vcc_ErrWhere(tl, t_be);
+		VSB_destroy(&tl->fb);
 		return;
 	}
+
+	vsb1 = VSB_new_auto();
+	AN(vsb1);
+	VSB_printf(vsb1,
+	    "\nstatic const struct vrt_endpoint vgc_dir_ep_%s = {\n",
+	    vgcname);
+	VSB_printf(vsb1, "\t.magic = VRT_ENDPOINT_MAGIC,\n");
 
 	assert(t_host != NULL || t_path != NULL);
 	if (t_host != NULL)
@@ -533,9 +539,10 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 		Emit_UDS_Path(tl, vsb1, t_path, "Backend path");
 	ERRCHK(tl);
 
-	ExpectErr(tl, '}');
-
-	/* We have parsed it all, emit the ident string */
+	VSB_printf(vsb1, "};\n");
+	AZ(VSB_finish(vsb1));
+	Fh(tl, 0, "%s", VSB_data(vsb1));
+	VSB_destroy(&vsb1);
 
 	/* Emit the hosthdr field, fall back to .host if not specified */
 	/* If .path is specified, set "0.0.0.0". */
@@ -553,15 +560,9 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 
 	vcc_NextToken(tl);
 
-	VSB_printf(vsb1, "};\n");
-	AZ(VSB_finish(vsb1));
-	Fh(tl, 0, "%s", VSB_data(vsb1));
-	VSB_destroy(&vsb1);
-
-	tl->fb = NULL;
-	AZ(VSB_finish(vsb2));
-	Fh(tl, 0, "%s", VSB_data(vsb2));
-	VSB_destroy(&vsb2);
+	AZ(VSB_finish(tl->fb));
+	Fh(tl, 0, "%s", VSB_data(tl->fb));
+	VSB_destroy(&tl->fb);
 
 	ifp = New_IniFin(tl);
 	VSB_printf(ifp->ini,
