@@ -76,6 +76,7 @@ client c1 {
 }
 
 client c1 -run
+varnish v1 -expect esi_req == 2
 varnish v1 -expect esi_errors == 0
 
 logexpect l1 -wait

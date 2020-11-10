@@ -122,6 +122,8 @@ ved_include(struct req *preq, const char *src, const char *host,
 	req->vsl->wid = VXID_Get(wrk, VSL_CLIENTMARKER);
 	VSLb(req->vsl, SLT_Begin, "req %u esi", VXID(preq->vsl->wid));
 	VSLb(preq->vsl, SLT_Link, "req %u esi", VXID(req->vsl->wid));
+
+	wrk->stats->esi_req++;
 	req->esi_level = preq->esi_level + 1;
 
 	if (preq->esi_level == 0)
