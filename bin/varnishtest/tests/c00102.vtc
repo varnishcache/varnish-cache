@@ -1,0 +1,47 @@
+varnishtest "hash_always_pass"
+
+server s1 {
+	rxreq
+	txresp -body "1"
+
+	rxreq
+	txresp -body "2"
+
+	rxreq
+	txresp -body "3"
+} -start
+
+varnish v1 -syntax 4.0 -arg "-smysteve=malloc,1m" -vcl+backend {
+	sub vcl_recv {
+		if (req.http.hap) {
+			set req.hash_always_pass = true;
+		}
+	}
+} -start
+
+client c1 {
+	# insert object in cache
+	txreq
+	rxresp
+	expect resp.body == "1"
+
+	# hit the cached object
+	txreq
+	rxresp
+	expect resp.body == "1"
+
+	# bypass the cache
+	txreq -hdr "hap: true"
+	rxresp
+	expect resp.body == "2"
+
+	# again
+	txreq -hdr "hap: true"
+	rxresp
+	expect resp.body == "3"
+
+	# hit the cached object
+	txreq
+	rxresp
+	expect resp.body == "1"
+} -run

@@ -35,6 +35,7 @@
 REQ_FLAG(disable_esi,		0, 0, "")
 REQ_FLAG(hash_ignore_busy,	1, 1, "")
 REQ_FLAG(hash_always_miss,	1, 1, "")
+REQ_FLAG(hash_always_pass,	1, 1, "")
 REQ_FLAG(is_hit,		0, 0, "")
 REQ_FLAG(is_hitmiss,		1, 0, "")
 REQ_FLAG(is_hitpass,		1, 0, "")

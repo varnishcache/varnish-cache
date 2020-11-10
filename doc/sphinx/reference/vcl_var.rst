@@ -391,6 +391,22 @@ req.hash_always_miss
 	This is useful to force-update the cache without invalidating
 	existing entries in case the fetch fails.
 
+req.hash_always_pass
+
+	Type: BOOL
+
+	Readable from: client
+
+	Writable from: client
+
+	Default: ``false``.
+
+	Force a cache pass for this request, even if perfectly
+	good matching objects are in the cache.
+
+        This allows to flag a request as uncacheable in ``vcl_recv`` without
+        immediately returning from the subroutine.
+
 req.is_hitmiss
 
 	Type: BOOL

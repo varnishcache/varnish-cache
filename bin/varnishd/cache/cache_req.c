@@ -246,6 +246,7 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	req->req_body_status = NULL;
 
 	req->hash_always_miss = 0;
+	req->hash_always_pass = 0;
 	req->hash_ignore_busy = 0;
 	req->esi_level = 0;
 	req->is_hit = 0;
