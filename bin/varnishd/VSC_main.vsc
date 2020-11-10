@@ -97,6 +97,12 @@
 
 	The count of parseable client requests seen.
 
+.. varnish_vsc:: esi_req
+	:group: wrk
+	:oneliner:	ESI subrequests
+
+	Number of ESI subrequests made.
+
 .. varnish_vsc:: cache_hit
 	:group: wrk
 	:oneliner:	Cache hits

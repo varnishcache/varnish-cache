@@ -139,6 +139,7 @@ ved_include(struct req *preq, const char *src, const char *host,
 
 	VSLb_ts_req(req, "Start", W_TIM_real(wrk));
 
+	wrk->stats->esi_req++;
 	req->esi_level = preq->esi_level + 1;
 
 	memset(req->top, 0, sizeof *req->top);
