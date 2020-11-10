@@ -575,6 +575,8 @@ VTCP_Check(ssize_t a)
 	if (errno == EAGAIN || errno == EWOULDBLOCK)
 		return (1);
 #if (defined (__SVR4) && defined (__sun))
+	if (errno == ECONNREFUSED)	// in r02702.vtc
+		return (1);
 	if (errno == EPROTO)
 		return (1);
 #endif
