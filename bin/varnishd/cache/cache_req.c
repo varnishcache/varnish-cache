@@ -282,6 +282,7 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	req->t_req = NAN;
 	req->req_body_status = NULL;
 
+	req->uncacheable = 0;
 	req->hash_always_miss = 0;
 	req->hash_ignore_busy = 0;
 	req->hash_ignore_vary = 0;

@@ -790,6 +790,21 @@ VRT_r_req_##field(VRT_CTX)						\
 	VREQW##w(l)
 #include "tbl/req_flags.h"
 
+VCL_VOID
+VRT_l_req_uncacheable(VRT_CTX, VCL_BOOL a)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+
+	if (ctx->req->uncacheable && !a) {
+		VSLb(ctx->vsl, SLT_VCL_Error,
+		    "Ignoring attempt to reset req.uncacheable");
+	} else if (a) {
+		ctx->req->uncacheable = 1;
+	}
+}
+
 /*--------------------------------------------------------------------*/
 
 #define GIP(fld)						\

@@ -393,6 +393,27 @@ req.hash_always_miss
 	This is useful to force-update the cache without invalidating
 	existing entries in case the fetch fails.
 
+req.uncacheable
+
+	Type: BOOL
+
+	Readable from: client
+
+	Writable from: client
+
+	Default: ``false``.
+
+	Force a cache pass for this request, even if perfectly
+	good matching objects are in the cache.
+
+	This allows to mark a request as uncacheable in ``vcl_recv``
+	without immediately returning from the subroutine with a
+	``pass`` transition.
+
+	Clearing the variable has no effect and will log the warning
+	"Ignoring attempt to reset req.uncacheable".
+
+
 req.is_hitmiss
 
 	Type: BOOL
@@ -593,9 +614,9 @@ bereq.uncacheable
 	Readable from: backend
 
 
-	Indicates whether this request is uncacheable due to a
-	`pass` in the client side or a hit on an hit-for-pass object.
-
+	Indicates whether this request is uncacheable due to a ``pass``
+	transition or ``req.uncacheable`` being set on the client side
+	or a hit on an hit-for-pass object.
 
 bereq.connect_timeout
 
@@ -1125,8 +1146,8 @@ obj.uncacheable
 
 	Readable from: vcl_deliver
 
-	Whether the object is uncacheable (pass, hit-for-pass or
-	hit-for-miss).
+	Whether the object is uncacheable (pass, ``req.uncacheable``,
+	hit-for-pass or hit-for-miss).
 
 
 obj.storage

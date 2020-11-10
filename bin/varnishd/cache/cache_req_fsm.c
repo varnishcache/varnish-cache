@@ -880,6 +880,7 @@ cnt_recv_prep(struct req *req, const char *ci)
 		req->storage = NULL;
 	}
 
+	req->uncacheable = 0;
 	req->is_hit = 0;
 	req->is_hitmiss = 0;
 	req->is_hitpass = 0;
@@ -954,6 +955,9 @@ cnt_recv(struct worker *wrk, struct req *req)
 		req->doclose = SC_RX_BODY;
 		return (REQ_FSM_DONE);
 	}
+
+	if (wrk->handling == VCL_RET_HASH && req->uncacheable)
+		wrk->handling = VCL_RET_PASS;
 
 	recv_handling = wrk->handling;
 

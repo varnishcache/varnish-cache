@@ -1,0 +1,46 @@
+varnishtest "req.uncacheable"
+
+server s1 {
+	loop 3 {
+		rxreq
+		txresp
+	}
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		if (req.http.uncacheable) {
+			set req.uncacheable = true;
+			if (req.http.uncacheable == "restart") {
+				unset req.http.uncacheable;
+				return (restart);
+			}
+		}
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.X-Varnish == 1001
+
+	txreq
+	rxresp
+	expect resp.http.X-Varnish == "1003 1002"
+
+	txreq -hdr "uncacheable: true"
+	rxresp
+	expect resp.http.X-Varnish == 1004
+
+	txreq -hdr "uncacheable: true"
+	rxresp
+	expect resp.http.X-Varnish == 1006
+
+	txreq -hdr "uncacheable: restart"
+	rxresp
+	expect resp.http.X-Varnish == "1009 1002"
+} -run
+
+varnish v1 -expect cache_miss == 1
+varnish v1 -expect cache_hit == 2
+varnish v1 -expect s_pass == 2
