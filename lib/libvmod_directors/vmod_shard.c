@@ -608,6 +608,14 @@ vmod_shard_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 	else
 		resolve = VENUM(NOW);
 
+	if (ctx->method & SHARD_VCL_TASK_BEREQ) {
+		pp = shard_param_task(ctx, vshard->shardd,
+		    vshard->shardd->param);
+		if (pp == NULL)
+			return (NULL);
+		pp->vcl_name = vshard->shardd->name;
+	}
+
 	if (resolve == VENUM(LAZY)) {
 		if ((args & ~arg_resolve) == 0) {
 			AN(vshard->dir);
@@ -621,14 +629,6 @@ vmod_shard_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 			    "context");
 			return (NULL);
 		}
-
-		assert(ctx->method & SHARD_VCL_TASK_BEREQ);
-
-		pp = shard_param_task(ctx, vshard->shardd,
-				      vshard->shardd->param);
-		if (pp == NULL)
-			return (NULL);
-		pp->vcl_name = vshard->shardd->name;
 	} else if (resolve == VENUM(NOW)) {
 		if (ctx->method & VCL_MET_TASK_H) {
 			shard_fail(ctx, vshard->shardd->name, "%s",
@@ -636,8 +636,9 @@ vmod_shard_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 			    "used in vcl_init{}/vcl_fini{}");
 			return (NULL);
 		}
-		pp = shard_param_stack(&pstk, vshard->shardd->param,
-				       vshard->shardd->name);
+		pp = shard_param_stack(&pstk,
+		    pp != NULL ? pp : vshard->shardd->param,
+		    vshard->shardd->name);
 	} else {
 		WRONG("resolve enum");
 	}

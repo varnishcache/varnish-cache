@@ -97,8 +97,9 @@ varnish v1 -vcl+backend {
 	}
 
 	sub vcl_backend_response {
-	    if (bereq.http.layered) {
+	    if (bereq.http.layered || bereq.http.resolve) {
 		set beresp.http.healthy = std.healthy(ll.backend());
+		set beresp.http.backend-now = l.backend(resolve=NOW);
 	    } else {
 		set beresp.http.healthy = std.healthy(
 		  vd.backend(resolve=LAZY, by=KEY, key=1));
@@ -137,6 +138,7 @@ client c1 {
 	expect resp.http.healthy == "true"
 	expect resp.http.director == "ll"
 	expect resp.http.backend == "s1"
+	expect resp.http.backend == resp.http.backend-now
 
 	txreq -url /2 -hdr "layered: true"
 	rxresp
@@ -144,6 +146,7 @@ client c1 {
 	expect resp.http.healthy == "true"
 	expect resp.http.director == "ll"
 	expect resp.http.backend == "s2"
+	expect resp.http.backend == resp.http.backend-now
 
 	txreq -url /3 -hdr "layered: true"
 	rxresp
@@ -151,6 +154,7 @@ client c1 {
 	expect resp.http.healthy == "true"
 	expect resp.http.director == "ll"
 	expect resp.http.backend == "s3"
+	expect resp.http.backend == resp.http.backend-now
 
 	txreq -url /1 -hdr "resolve: true"
 	rxresp
@@ -158,6 +162,7 @@ client c1 {
 	expect resp.http.healthy == "true"
 	expect resp.http.director == "s1"
 	expect resp.http.backend == "s1"
+	expect resp.http.backend == resp.http.backend-now
 
 	txreq -url /2 -hdr "resolve: true"
 	rxresp
@@ -165,6 +170,7 @@ client c1 {
 	expect resp.http.healthy == "true"
 	expect resp.http.director == "s2"
 	expect resp.http.backend == "s2"
+	expect resp.http.backend == resp.http.backend-now
 
 	txreq -url /3 -hdr "resolve: true"
 	rxresp
@@ -172,4 +178,5 @@ client c1 {
 	expect resp.http.healthy == "true"
 	expect resp.http.director == "s3"
 	expect resp.http.backend == "s3"
+	expect resp.http.backend == resp.http.backend-now
 } -run
