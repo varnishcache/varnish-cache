@@ -390,7 +390,7 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 	VSB_cat(vsb, "flags = {");
 	p = "";
 /*lint -save -esym(438,p) -e539 */
-#define BO_FLAG(l, r, w, f, d)					\
+#define BO_FLAG(l, r, rr, rw, f, d)				\
 	if (bo->l) { VSB_printf(vsb, "%s" #l, p); p = ", "; }
 #include "tbl/bo_flags.h"
 /*lint -restore */

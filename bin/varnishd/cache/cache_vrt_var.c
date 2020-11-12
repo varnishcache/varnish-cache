@@ -230,9 +230,20 @@ VRT_r_beresp_##field(VRT_CTX)						\
 	return (ctx->bo->field);					\
 }
 
-#define BO_FLAG(l, r, w, f, d)			\
-	VBERESPR##r(l, #l, f)			\
-	VBERESPW##w(l, #l, f)
+#define VBEREQR0(field, str, fltchk)
+#define VBEREQR1(field, str, fltchk)					\
+VCL_BOOL								\
+VRT_r_bereq_##field(VRT_CTX)						\
+{									\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);			\
+	return (ctx->bo->field);					\
+}
+
+#define BO_FLAG(l, r, rr, rw, f, d)		\
+	VBEREQR##r(l, #l, f)			\
+	VBERESPR##rr(l, #l, f)			\
+	VBERESPW##rw(l, #l, f)
 #include "tbl/bo_flags.h"
 
 #undef VBERESPWF0
@@ -245,14 +256,6 @@ VRT_r_beresp_##field(VRT_CTX)						\
 #undef VBERESPR0
 #undef VBERESPR1
 /*--------------------------------------------------------------------*/
-
-VCL_BOOL
-VRT_r_bereq_is_bgfetch(VRT_CTX)
-{
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
-	return (ctx->bo->is_bgfetch);
-}
 
 VCL_BOOL
 VRT_r_bereq_uncacheable(VRT_CTX)
