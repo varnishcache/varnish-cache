@@ -547,8 +547,8 @@ varnish_launch(struct varnish *v)
 static void
 varnish_listen(const struct varnish *v, char *la)
 {
-	const char *a, *p, *n2;
-	char *n, m[64], s[256];
+	const char *a, *p, *n, *n2;
+	char m[64], s[256];
 	unsigned first;
 
 	n2 = "";
@@ -556,15 +556,15 @@ varnish_listen(const struct varnish *v, char *la)
 
 	while (*la != '\0') {
 		n = la;
-		la = strchr(n, ' ');
+		la = strchr(la, ' ');
 		AN(la);
 		*la = '\0';
-		a = la + 1;
-		la = strchr(a, ' ');
+		a = ++la;
+		la = strchr(la, ' ');
 		AN(la);
 		*la = '\0';
-		p = la + 1;
-		la = strchr(p, '\n');
+		p = ++la;
+		la = strchr(la, '\n');
 		AN(la);
 		*la = '\0';
 		la++;
