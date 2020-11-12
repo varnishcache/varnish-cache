@@ -545,10 +545,10 @@ varnish_launch(struct varnish *v)
  */
 
 static void
-varnish_listen(struct varnish *v, char *la)
+varnish_listen(const struct varnish *v, char *la)
 {
-	const char *a, *p, *n, *n2;
-	char m[64], s[256];
+	const char *a, *p, *n2;
+	char *n, m[64], s[256];
 	unsigned first;
 
 	n2 = "";
