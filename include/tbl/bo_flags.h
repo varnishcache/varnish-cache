@@ -43,6 +43,8 @@ BO_FLAG(do_pass,	0, 0, 0, 0, "")
 BO_FLAG(uncacheable,	0, 0, 0, 0, "")
 BO_FLAG(was_304,	0, 1, 0, 0, "")
 BO_FLAG(is_bgfetch,	1, 0, 0, 0, "")
+BO_FLAG(is_hitmiss,	1, 0, 0, 0, "")
+BO_FLAG(is_hitpass,	1, 0, 0, 0, "")
 #undef BO_FLAG
 
 /*lint -restore */

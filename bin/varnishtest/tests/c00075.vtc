@@ -53,6 +53,8 @@ server s1 {
 varnish v1 \
 	-arg "-s default,1m" -vcl+backend {
 	sub vcl_backend_response {
+		set beresp.http.be-hitmiss = bereq.is_hitmiss;
+		set beresp.http.be-hitpass = bereq.is_hitpass;
 		if (bereq.url == "/hfp") {
 			return (pass(10m));
 		}
@@ -75,6 +77,8 @@ client c1 {
 	expect resp.bodylen == 65536
 	expect resp.http.is-hitmiss == false
 	expect resp.http.is-hitpass == false
+	expect resp.http.be-hitmiss == resp.http.is-hitmiss
+	expect resp.http.be-hitpass == resp.http.is-hitpass
 	expect_pattern
 } -start
 
@@ -98,6 +102,8 @@ client c1 {
 	expect resp.bodylen == 65536
 	expect resp.http.is-hitmiss == true
 	expect resp.http.is-hitpass == false
+	expect resp.http.be-hitmiss == resp.http.is-hitmiss
+	expect resp.http.be-hitpass == resp.http.is-hitpass
 	expect_pattern
 } -start
 
@@ -122,6 +128,8 @@ client c1 {
 	expect resp.bodylen == 65536
 	expect resp.http.is-hitmiss == false
 	expect resp.http.is-hitpass == false
+	expect resp.http.be-hitmiss == resp.http.is-hitmiss
+	expect resp.http.be-hitpass == resp.http.is-hitpass
 	expect_pattern
 } -start
 
@@ -145,6 +153,8 @@ client c1 {
 	expect resp.bodylen == 65536
 	expect resp.http.is-hitmiss == false
 	expect resp.http.is-hitpass == true
+	expect resp.http.be-hitmiss == resp.http.is-hitmiss
+	expect resp.http.be-hitpass == resp.http.is-hitpass
 	expect_pattern
 } -start
 

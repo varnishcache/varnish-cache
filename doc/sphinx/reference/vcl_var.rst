@@ -650,6 +650,22 @@ bereq.is_bgfetch
 	grace, and this fetch was kicked of in the background to get
 	a fresh copy.
 
+bereq.is_hitmiss
+
+	Type: BOOL
+
+	Readable from: backend
+
+	If this backend request was caused by a hitmiss.
+
+bereq.is_hitpass
+
+	Type: BOOL
+
+	Readable from: backend
+
+	If this backend request was caused by a hitpass.
+
 beresp
 ~~~~~~
 

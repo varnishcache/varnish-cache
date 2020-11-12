@@ -1114,6 +1114,9 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 		WRONG("Wrong fetch mode");
 	}
 
+	bo->is_hitpass = req->is_hitpass;
+	bo->is_hitmiss = req->is_hitmiss;
+
 	VSLb(bo->vsl, SLT_Begin, "bereq %u %s", VXID(req->vsl->wid), how);
 	VSLb(bo->vsl, SLT_VCL_use, "%s", VCL_Name(bo->vcl));
 	VSLb(req->vsl, SLT_Link, "bereq %u %s", VXID(bo->vsl->wid), how);
