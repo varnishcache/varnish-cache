@@ -70,13 +70,13 @@
 	    " backend requests will trigger log lines."			\
 	)
 #define NCSA_OPT_c							\
-	VOPT("c", "[-c]", "Client mode",					\
+	VOPT("c", "[-c]", "Client mode",				\
 	    "Log client requests. This is the default. If -b is"	\
 	    " specified, then -c is needed to also log client requests"	\
 	)
 #define NCSA_OPT_E							\
-	VOPT("E", "[-E]", "Show ESI request",				\
-	    "Show ESI request."	\
+	VOPT("E", "[-E]", "Show ESI requests",				\
+	    "Show ESI requests, implies client mode."			\
 	)
 
 NCSA_OPT_a
