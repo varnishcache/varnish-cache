@@ -1276,15 +1276,54 @@ vslq_shmref_check(struct VSLQ *vslq)
 	return (vsl_more);
 }
 
+static unsigned
+vslq_candidate(struct VSLQ *vslq, const uint32_t *ptr)
+{
+	enum VSL_transaction_e type;
+	enum VSL_reason_e reason;
+	struct VSL_data *vsl;
+	enum VSL_tag_e tag;
+	unsigned p_vxid;
+	int i;
+
+	CHECK_OBJ_NOTNULL(vslq, VSLQ_MAGIC);
+	AN(ptr);
+
+	assert(vslq->grouping != VSL_g_raw);
+	if (vslq->grouping != VSL_g_vxid)
+		return (1);
+
+	vsl = vslq->vsl;
+	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
+	if (!vsl->c_opt && !vsl->b_opt)
+		return (1);
+
+	tag = VSL_TAG(ptr);
+	assert(tag == SLT_Begin);
+	i = vtx_parse_link(VSL_CDATA(ptr), &type, &p_vxid, &reason);
+
+	if (i != 3 || type == VSL_t_unknown)
+		return (0);
+	if (vsl->c_opt && !vsl->b_opt && !VSL_CLIENT(ptr))
+		return (0);
+	if (vsl->b_opt && !vsl->c_opt && !VSL_BACKEND(ptr))
+		return (0);
+	if (type == VSL_t_sess)
+		return (0);
+
+	return (1);
+}
+
 /* Process next input record */
 static enum vsl_status
 vslq_next(struct VSLQ *vslq)
 {
+	const uint32_t *ptr;
 	struct VSL_cursor *c;
 	enum vsl_status r;
 	enum VSL_tag_e tag;
 	ssize_t len;
-	unsigned vxid;
+	unsigned vxid, keep;
 	struct vtx *vtx;
 
 	c = vslq->c;
@@ -1301,10 +1340,12 @@ vslq_next(struct VSLQ *vslq)
 		    c->rec.ptr;
 		if (len == 0)
 			return (r);
-		tag = (enum VSL_tag_e)VSL_TAG(VSL_NEXT(c->rec.ptr));
+		ptr = VSL_NEXT(c->rec.ptr);
+		tag = (enum VSL_tag_e)VSL_TAG(ptr);
 	} else {
 		vxid = VSL_ID(c->rec.ptr);
 		len = VSL_NEXT(c->rec.ptr) - c->rec.ptr;
+		ptr = c->rec.ptr;
 	}
 	assert(len > 0);
 	if (vxid == 0)
@@ -1312,11 +1353,13 @@ vslq_next(struct VSLQ *vslq)
 		return (r);
 
 	vtx = vtx_lookup(vslq, vxid);
-	if (vtx == NULL && tag == SLT_Begin) {
+	keep = tag != SLT_Begin || vslq_candidate(vslq, ptr);
+	if (vtx == NULL && tag == SLT_Begin && keep) {
 		vtx = vtx_add(vslq, vxid);
 		AN(vtx);
 	}
 	if (vtx != NULL) {
+		AN(keep);
 		r = vtx_append(vslq, vtx, &c->rec, len);
 		if (r == vsl_more)
 			vtx_scan(vslq, vtx);
