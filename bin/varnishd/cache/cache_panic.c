@@ -702,8 +702,8 @@ pan_argv(struct vsb *vsb)
 		VSB_quote(vsb, heritage.argv[i], -1, VSB_QUOTE_CSTR);
 		VSB_cat(vsb, ",\n");
 	}
-	VSB_cat(vsb, "}\n");
 	VSB_indent(vsb, -2);
+	VSB_cat(vsb, "}\n");
 
 }
 /*--------------------------------------------------------------------*/
