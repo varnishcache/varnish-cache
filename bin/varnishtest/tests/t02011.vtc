@@ -32,7 +32,7 @@ varnish v1 -vcl+backend {
 
 	sub vcl_recv {
 		if (req.http.should == "reset") {
-			return (fail);
+			vtc.panic("Expected stream reset REFUSED_STREAM");
 		}
 	}
 
