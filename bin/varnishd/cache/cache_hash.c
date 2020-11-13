@@ -981,7 +981,7 @@ HSH_DerefObjCore(struct worker *wrk, struct objcore **ocp, int rushmax)
 	struct objcore *oc;
 	struct objhead *oh;
 	struct rush rush;
-	unsigned r;
+	int r;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	TAKE_OBJ_NOTNULL(oc, ocp, OBJCORE_MAGIC);
