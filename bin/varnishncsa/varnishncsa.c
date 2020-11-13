@@ -1157,7 +1157,7 @@ main(int argc, char * const *argv)
 		}
 	}
 	/* default is client mode: */
-	if (!CTX.b_opt)
+	if (!CTX.b_opt || CTX.E_opt)
 		CTX.c_opt = 1;
 
 	if (optind != argc)
