@@ -1160,6 +1160,12 @@ main(int argc, char * const *argv)
 	if (!CTX.b_opt || CTX.E_opt)
 		CTX.c_opt = 1;
 
+	if (CTX.b_opt)
+		AN(VUT_Arg(vut, 'b', NULL));
+
+	if (CTX.c_opt)
+		AN(VUT_Arg(vut, 'c', NULL));
+
 	if (optind != argc)
 		VUT_Usage(vut, &vopt_spec, 1);
 
