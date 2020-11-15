@@ -635,29 +635,9 @@ VRT_r_req_##field(VRT_CTX)				\
 
 GIP(local)
 GIP(remote)
+GIP(client)
 GIP(server)
 #undef GIP
-
-VCL_IP
-VRT_r_client_ip(VRT_CTX)
-{
-  struct suckaddr *sa;
-  CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-  CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-  CHECK_OBJ_NOTNULL(ctx->req->sp, SESS_MAGIC);
-  if (ctx->req->real_ip_addr != NULL){
-    return ctx->req->real_ip_addr;
-  }
-  AZ(SES_Get_client_addr(ctx->req->sp, &sa));
-  return (sa);
-}
-
-void VRT_l_client_ip(VRT_CTX, VCL_IP addr) {
-  CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-  CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-  AN(addr);
-  ctx->req->real_ip_addr = addr;
-}
 
 /*--------------------------------------------------------------------*/
 

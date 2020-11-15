@@ -169,7 +169,7 @@ sp_variables = [
 	('client.ip',
 		'IP',
 		( 'client',),
-		( 'client',), """
+		( ), """
 		The client's IP address.
 		"""
 	),
