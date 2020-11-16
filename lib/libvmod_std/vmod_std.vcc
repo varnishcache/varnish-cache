@@ -538,12 +538,14 @@ Example::
 
 $Function VOID set_ip_tos(INT tos)
 
-Sets the IP type-of-service (TOS) field for the current session to
-*tos*. Silently ignored if the listen address is a Unix domain socket.
+Sets the Differentiated Services Codepoint (DSCP) / IPv4 Type of
+Service (TOS) / IPv6 Traffic Class (TCLASS) byte for the current
+session to *tos*. Silently ignored if the listen address is a Unix
+domain socket.
 
-Please note that the TOS field is not removed by the end of the
-request so probably want to set it on every request should you utilize
-it.
+Please note that setting the traffic class affects all requests on the
+same http1.1 / http2 TCP connection and, in particular, is not removed
+at the end of the request.
 
 Example::
 

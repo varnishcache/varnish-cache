@@ -55,15 +55,26 @@ VCL_VOID v_matchproto_(td_std_set_ip_tos)
 vmod_set_ip_tos(VRT_CTX, VCL_INT tos)
 {
 	struct suckaddr *sa;
-	int itos = tos;
+	int fam, itos = tos;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AZ(SES_Get_local_addr(ctx->req->sp, &sa));
 	/* Silently ignore for non-IP addresses. */
 	if (VSA_Compare(sa, bogo_ip) == 0)
 		return;
-	VTCP_Assert(setsockopt(ctx->req->sp->fd,
-	    IPPROTO_IP, IP_TOS, &itos, sizeof(itos)));
+	fam = VSA_Get_Proto(sa);
+	switch (fam) {
+	case PF_INET:
+		VTCP_Assert(setsockopt(ctx->req->sp->fd,
+		    IPPROTO_IP, IP_TOS, &itos, sizeof(itos)));
+		break;
+	case PF_INET6:
+		VTCP_Assert(setsockopt(ctx->req->sp->fd,
+		    IPPROTO_IPV6, IPV6_TCLASS, &itos, sizeof(itos)));
+		break;
+	default:
+		INCOMPL();
+	}
 }
 
 static const char *
