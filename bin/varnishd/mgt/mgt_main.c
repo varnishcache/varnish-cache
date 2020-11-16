@@ -787,6 +787,10 @@ main(int argc, char * const *argv)
 		ARGV_ERR("Cannot create working directory (%s): %s\n",
 		    workdir, vstrerror(errno));
 
+	VJ_master(JAIL_MASTER_FILE);
+	AZ(system("rm -rf vmod_cache"));
+	VJ_master(JAIL_MASTER_LOW);
+
 	if (VJ_make_subdir("vmod_cache", "VMOD cache", NULL)) {
 		ARGV_ERR(
 		    "Cannot create vmod directory (%s/vmod_cache): %s\n",
