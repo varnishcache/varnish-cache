@@ -295,6 +295,7 @@ VSL_CursorVSM(struct VSL_data *vsl, struct vsm *vsm, unsigned options)
 
 	r = vslc_vsm_reset(&c->cursor);
 	if (r != vsl_end) {
+		AZ(VSM_Unmap(vsm, &vf));
 		(void)vsl_diag(vsl, "Cursor initialization failure (%d)", r);
 		FREE_OBJ(c);
 		return (NULL);
