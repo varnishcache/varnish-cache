@@ -34,6 +34,7 @@
 #include "config.h"
 
 #include <ctype.h>
+#include <math.h>
 #include <stdint.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -382,12 +383,34 @@ VUT_Fini(struct VUT **vutp)
 	FREE_OBJ(vut);
 }
 
+static void
+vut_CursorError(struct VUT *vut, vtim_mono *last)
+{
+	const char *diag;
+	vtim_mono now;
+
+	CHECK_OBJ_NOTNULL(vut, VUT_MAGIC);
+	AN(vut->vsl);
+	AN(last);
+
+	diag = VSL_Error(vut->vsl);
+	if (diag == NULL)
+		diag = "Missing diagnostic";
+
+	now = VTIM_mono();
+	if (isnan(*last) || *last + 1 < now) {
+		fprintf(stderr, "Failed to acquire log: %s\n", diag);
+		*last = now;
+	}
+}
+
 int
 VUT_Main(struct VUT *vut)
 {
 	struct VSL_cursor *c;
 	int i = -1;
 	int hascursor = -1;
+	vtim_mono t_failcursor = NAN;
 
 	CHECK_OBJ_NOTNULL(vut, VUT_MAGIC);
 	AN(vut->vslq);
@@ -442,6 +465,7 @@ VUT_Main(struct VUT *vut)
 			    (vut->d_opt ? VSL_COPT_TAILSTOP : VSL_COPT_TAIL)
 			    | VSL_COPT_BATCH);
 			if (c == NULL) {
+				vut_CursorError(vut, &t_failcursor);
 				VSL_ResetError(vut->vsl);
 				continue;
 			}
