@@ -34,7 +34,7 @@
  * ...: struct parspec fields, except the non-const string fields
  */
 
-/*lint -save -e525 -e539 */
+/*lint -save -e525 -e539 -e835 */
 
 /*--------------------------------------------------------------------
  *  * Simple parameters
