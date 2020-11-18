@@ -119,6 +119,7 @@ vcc_AddUses(struct vcc *tl, const struct token *t1, const struct token *t2,
 	AN(pu);
 	AN(sym);
 	AN(use);
+	AN(use->name);
 	pu->t1 = t1;
 	pu->t2 = t2;
 	if (pu->t2 == NULL)

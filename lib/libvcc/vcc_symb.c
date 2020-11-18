@@ -264,6 +264,7 @@ VCC_SymbolGet(struct vcc *tl, vcc_ns_t ns, vcc_kind_t kind,
 
 	AN(tl);
 	CHECK_OBJ_NOTNULL(ns, VCC_NAMESPACE_MAGIC);
+	AN(ns->name);
 	CHECK_OBJ_NOTNULL(kind, KIND_MAGIC);
 	AN(e);
 	AN(x);
