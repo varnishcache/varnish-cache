@@ -502,28 +502,48 @@ specified.
 
 This structure contains three members::
 
-	typedef void vmod_priv_free_f(void *);
 	struct vmod_priv {
-		void                    *priv;
-		int			len;
-		vmod_priv_free_f        *free;
+		void				*priv;
+		long				len;
+		const struct vmod_priv_methods  *methods;
 	};
 
-The "priv" and "len" elements can be used for whatever the vmod
-code wants to use them for, and the "free" element provides a
-callback to clean them up.
+The ``.priv`` and ``.len`` elements can be used for whatever the vmod
+code wants to use them for.
 
-If both the "priv" and "free" pointers are non-NULL when the scope
-ends, the "free" function will be called with the "priv" pointer
-as its only argument.
+``.methods`` can be an optional pointer to a struct of callbacks::
+
+	typedef void vmod_priv_fini_f(void *);
+
+	struct vmod_priv_methods {
+		unsigned			magic;
+		const char			*type;
+		vmod_priv_fini_f		*fini;
+	};
+
+``.magic`` has to be initialized to
+``VMOD_PRIV_METHODS_MAGIC``. ``.type`` should be a descriptive name to
+help debugging.
+
+``.fini`` will be called for a non-NULL ``.priv`` of the ``struct
+vmod_priv`` when the scope ends with that ``.priv`` pointer as its
+only argument.
 
 In the common case where a private data structure is allocated with
 malloc(3) would look like this::
 
+	static const struct vmod_priv_methods mymethods[1] = {{
+		.magic = VMOD_PRIV_METHODS_MAGIC,
+		.type = "mystate",
+		.fini = free	/* free(3) */
+	}};
+
+	// ....
+
 	if (priv->priv == NULL) {
 		priv->priv = calloc(1, sizeof(struct myfoo));
 		AN(priv->priv);
-		priv->free = free;	/* free(3) */
+		priv->methods = mymethods;
 		mystate = priv->priv;
 		mystate->foo = 21;
 		...

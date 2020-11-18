@@ -225,6 +225,12 @@ xyzzy_author(VRT_CTX, VCL_ENUM person, VCL_ENUM someone)
 	WRONG("Illegal VMOD enum");
 }
 
+static const struct vmod_priv_methods xyzzy_test_priv_call_methods[1] = {{
+		.magic = VMOD_PRIV_METHODS_MAGIC,
+		.type = "debug_test_priv_call",
+		.fini = free
+}};
+
 VCL_VOID v_matchproto_(td_debug_test_priv_call)
 xyzzy_test_priv_call(VRT_CTX, struct vmod_priv *priv)
 {
@@ -232,7 +238,7 @@ xyzzy_test_priv_call(VRT_CTX, struct vmod_priv *priv)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	if (priv->priv == NULL) {
 		priv->priv = strdup("BAR");
-		priv->free = free;
+		priv->methods = xyzzy_test_priv_call_methods;
 	} else {
 		assert(!strcmp(priv->priv, "BAR"));
 	}
@@ -246,6 +252,12 @@ priv_task_free(void *ptr)
 	free(ptr);
 }
 
+static const struct vmod_priv_methods xyzzy_test_priv_task_methods[1] = {{
+		.magic = VMOD_PRIV_METHODS_MAGIC,
+		.type = "debug_test_priv_task",
+		.fini = priv_task_free
+}};
+
 VCL_STRING v_matchproto_(td_debug_test_priv_task)
 xyzzy_test_priv_task(VRT_CTX, struct vmod_priv *priv, VCL_STRING s)
 {
@@ -256,7 +268,7 @@ xyzzy_test_priv_task(VRT_CTX, struct vmod_priv *priv, VCL_STRING s)
 		    priv, priv->priv);
 	} else if (priv->priv == NULL) {
 		priv->priv = strdup(s);
-		priv->free = priv_task_free;
+		priv->methods = xyzzy_test_priv_task_methods;
 		VSL(SLT_Debug, 0, "test_priv_task(%p) = %p (new)",
 		    priv, priv->priv);
 	} else {
@@ -271,9 +283,15 @@ xyzzy_test_priv_task(VRT_CTX, struct vmod_priv *priv, VCL_STRING s)
 		    priv, priv->priv);
 	}
 	if (priv->priv != NULL)
-		assert(priv->free == priv_task_free);
+		assert(priv->methods == xyzzy_test_priv_task_methods);
 	return (priv->priv);
 }
+
+static const struct vmod_priv_methods xyzzy_test_priv_top_methods[1] = {{
+		.magic = VMOD_PRIV_METHODS_MAGIC,
+		.type = "debug_test_priv_top",
+		.fini = free
+}};
 
 VCL_STRING v_matchproto_(td_debug_test_priv_top)
 xyzzy_test_priv_top(VRT_CTX, struct vmod_priv *priv, VCL_STRING s)
@@ -282,7 +300,7 @@ xyzzy_test_priv_top(VRT_CTX, struct vmod_priv *priv, VCL_STRING s)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	if (priv->priv == NULL) {
 		priv->priv = strdup(s);
-		priv->free = free;
+		priv->methods = xyzzy_test_priv_top_methods;
 	}
 	return (priv->priv);
 }
@@ -376,7 +394,7 @@ xyzzy_fail2(VRT_CTX)
 	return (1);
 }
 
-static void v_matchproto_(vmod_priv_free_f)
+static void v_matchproto_(vmod_priv_fini_f)
 priv_vcl_free(void *priv)
 {
 	struct priv_vcl *priv_vcl;
@@ -393,6 +411,12 @@ priv_vcl_free(void *priv)
 	FREE_OBJ(priv_vcl);
 	AZ(priv_vcl);
 }
+
+static const struct vmod_priv_methods priv_vcl_methods[1] = {{
+		.magic = VMOD_PRIV_METHODS_MAGIC,
+		.type = "debug_priv_vcl_free",
+		.fini = priv_vcl_free
+}};
 
 static int
 event_load(VRT_CTX, struct vmod_priv *priv)
@@ -413,7 +437,7 @@ event_load(VRT_CTX, struct vmod_priv *priv)
 	priv_vcl->foo = strdup("FOO");
 	AN(priv_vcl->foo);
 	priv->priv = priv_vcl;
-	priv->free = priv_vcl_free;
+	priv->methods = priv_vcl_methods;
 
 	VRT_AddVFP(ctx, &xyzzy_rot13);
 
@@ -977,7 +1001,7 @@ xyzzy_store_ip(VRT_CTX, VCL_IP ip)
 		return;
 	}
 
-	AZ(priv->free);
+	AZ(priv->methods);
 	assert(VSA_Sane(ip));
 	priv->priv = TRUST_ME(ip);
 }
@@ -992,7 +1016,7 @@ xyzzy_get_ip(VRT_CTX)
 
 	priv = VRT_priv_task(ctx, &store_ip_token);
 	AN(priv);
-	AZ(priv->free);
+	AZ(priv->methods);
 
 	ip = priv->priv;
 	assert(VSA_Sane(ip));
@@ -1146,6 +1170,12 @@ fail_f(void *priv)
 	VRT_fail(ctx, "thou shalt not rollet back");
 }
 
+static const struct vmod_priv_methods xyzzy_fail_rollback_methods[1] = {{
+		.magic = VMOD_PRIV_METHODS_MAGIC,
+		.type = "debug_fail_rollback",
+		.fini = fail_f
+}};
+
 VCL_VOID v_matchproto_(td_xyzzy_debug_fail_rollback)
 xyzzy_fail_rollback(VRT_CTX)
 {
@@ -1161,12 +1191,12 @@ xyzzy_fail_rollback(VRT_CTX)
 
 	if (p->priv != NULL) {
 		assert(p->priv == ctx);
-		assert(p->free == fail_f);
+		assert(p->methods == xyzzy_fail_rollback_methods);
 		return;
 	}
 
 	p->priv = TRUST_ME(ctx);
-	p->free = fail_f;
+	p->methods = xyzzy_fail_rollback_methods;
 }
 
 VCL_VOID v_matchproto_(td_xyzzy_debug_ok_rollback)
@@ -1183,7 +1213,7 @@ xyzzy_ok_rollback(VRT_CTX)
 	}
 
 	p->priv = NULL;
-	p->free = NULL;
+	p->methods = NULL;
 }
 
 VCL_STRING v_matchproto_(td_xyzzy_debug_re_quote)
