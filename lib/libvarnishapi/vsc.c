@@ -152,6 +152,7 @@ vsc_sf_arg(struct vsc *vsc, const char *glob, const struct vsc_sf_mode *mode)
 	AN(sf);
 	REPLACE(sf->pattern, glob);
 	sf->mode = mode;
+	AN(mode->name);
 	if (mode->append)
 		VTAILQ_INSERT_TAIL(&vsc->sf_list, sf, list);
 	else
