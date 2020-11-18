@@ -86,7 +86,7 @@ change_reconfigure(struct shard_change *change, VCL_INT replicas);
  * a PRIV_TASK state, which we work in reconfigure.
  */
 
-static void v_matchproto_(vmod_priv_free_f)
+static void v_matchproto_(vmod_priv_fini_f)
 shard_change_fini(void * priv)
 {
 	struct shard_change *change;
@@ -98,6 +98,12 @@ shard_change_fini(void * priv)
 
 	(void) change_reconfigure(change, 67);
 }
+
+static const struct vmod_priv_methods shard_change_priv_methods[1] = {{
+		.magic = VMOD_PRIV_METHODS_MAGIC,
+		.type = "vmod_directors_shard_cfg",
+		.fini = shard_change_fini
+}};
 
 static struct shard_change *
 shard_change_get(VRT_CTX, struct sharddir * const shardd)
@@ -132,7 +138,7 @@ shard_change_get(VRT_CTX, struct sharddir * const shardd)
 	change->shardd = shardd;
 	VSTAILQ_INIT(&change->tasks);
 	task->priv = change;
-	task->free = shard_change_fini;
+	task->methods = shard_change_priv_methods;
 
 	return (change);
 }

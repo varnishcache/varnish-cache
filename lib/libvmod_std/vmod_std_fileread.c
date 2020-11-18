@@ -83,6 +83,12 @@ free_frfile(void *ptr)
 	}
 }
 
+static const struct vmod_priv_methods frfile_methods[1] = {{
+		.magic = VMOD_PRIV_METHODS_MAGIC,
+		.type = "vmod_std_fileread",
+		.fini = free_frfile
+}};
+
 static struct frfile *
 find_frfile(struct vmod_priv *priv, VCL_STRING file_name)
 {
@@ -112,7 +118,7 @@ find_frfile(struct vmod_priv *priv, VCL_STRING file_name)
 	}
 	AZ(pthread_mutex_unlock(&frmtx));
 	if (frf != NULL) {
-		priv->free = free_frfile;
+		priv->methods = frfile_methods;
 		priv->priv = frf;
 		return (frf);
 	}
@@ -127,7 +133,7 @@ find_frfile(struct vmod_priv *priv, VCL_STRING file_name)
 		frf->contents = s;
 		frf->blob->blob = s;
 		frf->blob->len = (size_t)sz;
-		priv->free = free_frfile;
+		priv->methods = frfile_methods;
 		priv->priv = frf;
 		AZ(pthread_mutex_lock(&frmtx));
 		VTAILQ_INSERT_HEAD(&frlist, frf, list);

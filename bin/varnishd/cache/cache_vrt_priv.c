@@ -61,6 +61,8 @@ void
 pan_privs(struct vsb *vsb, const struct vrt_privs *privs)
 {
 	struct vrt_priv *vp;
+	const struct vmod_priv *p;
+	const struct vmod_priv_methods *m;
 
 	VSB_printf(vsb, "privs = %p {\n", privs);
 	if (PAN_already(vsb, privs))
@@ -69,11 +71,18 @@ pan_privs(struct vsb *vsb, const struct vrt_privs *privs)
 	if (privs != NULL) {
 		VRBT_FOREACH(vp, vrt_privs, privs) {
 			PAN_CheckMagic(vsb, vp, VRT_PRIV_MAGIC);
+			p = vp->priv;
+			if (p == NULL) {
+				// should never happen
+				VSB_printf(vsb, "priv NULL vmod %jx\n",
+				    (uintmax_t)vp->vmod_id);
+				continue;
+			}
+			m = p->methods;
 			VSB_printf(vsb,
-			    "priv {p %p l %ld f %p} vmod %jx\n",
-			    vp->priv->priv,
-			    vp->priv->len,
-			    vp->priv->free,
+			    "priv {p %p l %ld m %p t \"%s\"} vmod %jx\n",
+			    p->priv, p->len, m,
+			    m != NULL ? m->type : "",
 			    (uintmax_t)vp->vmod_id
 			);
 		}
@@ -201,9 +210,17 @@ VRT_priv_top(VRT_CTX, const void *vmod_id)
 void
 VRT_priv_fini(const struct vmod_priv *p)
 {
+	const struct vmod_priv_methods *m;
 
-	if (p->priv != NULL && p->free != NULL)
-		p->free(p->priv);
+	m = p->methods;
+	if (m == NULL)
+		return;
+
+	CHECK_OBJ(m, VMOD_PRIV_METHODS_MAGIC);
+	if (p->priv == NULL || m->fini == NULL)
+		return;
+
+	m->fini(p->priv);
 }
 
 /*--------------------------------------------------------------------*/

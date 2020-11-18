@@ -84,6 +84,12 @@ cobj_free(void *p)
 	FREE_OBJ(vcp);
 }
 
+static const struct vmod_priv_methods cookie_cobj_priv_methods[1] = {{
+		.magic = VMOD_PRIV_METHODS_MAGIC,
+		.type = "vmod_cookie_cobj",
+		.fini = cobj_free
+}};
+
 static struct vmod_cookie *
 cobj_get(struct vmod_priv *priv)
 {
@@ -94,7 +100,7 @@ cobj_get(struct vmod_priv *priv)
 		AN(vcp);
 		VTAILQ_INIT(&vcp->cookielist);
 		priv->priv = vcp;
-		priv->free = cobj_free;
+		priv->methods = cookie_cobj_priv_methods;
 	} else
 		CAST_OBJ_NOTNULL(vcp, priv->priv, VMOD_COOKIE_MAGIC);
 
@@ -258,6 +264,12 @@ free_re(void *priv)
 	AZ(vre);
 }
 
+static const struct vmod_priv_methods cookie_re_priv_methods[1] = {{
+		.magic = VMOD_PRIV_METHODS_MAGIC,
+		.type = "vmod_cookie_re",
+		.fini = free_re
+}};
+
 VCL_STRING
 vmod_get_re(VRT_CTX, struct vmod_priv *priv, struct vmod_priv *priv_call,
     VCL_STRING expression)
@@ -281,7 +293,7 @@ vmod_get_re(VRT_CTX, struct vmod_priv *priv, struct vmod_priv *priv_call,
 		}
 
 		priv_call->priv = vre;
-		priv_call->free = free_re;
+		priv_call->methods = cookie_re_priv_methods;
 		AZ(pthread_mutex_unlock(&mtx));
 	}
 
@@ -431,7 +443,7 @@ re_filter(VRT_CTX, struct vmod_priv *priv, struct vmod_priv *priv_call,
 		}
 
 		priv_call->priv = vre;
-		priv_call->free = free_re;
+		priv_call->methods = cookie_re_priv_methods;
 		AZ(pthread_mutex_unlock(&mtx));
 	}
 

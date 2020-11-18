@@ -55,6 +55,8 @@
  * 13.0 (2021-03-15)
  *	Calling convention for VDP implementation changed
  *	Added VRT_ValidHdr()
+ *	struct vmod_priv_methods added
+ *	struct vmod_priv free member replaced with methods
  * 12.0 (2020-09-15)
  *	Added VRT_DirectorResolve()
  *	Added VCL_STRING VRT_BLOB_string(VRT_CTX, VCL_BLOB)
@@ -583,11 +585,20 @@ void VRT_Format_Proxy(struct vsb *, VCL_INT, VCL_IP, VCL_IP, VCL_STRING);
 
 typedef int vmod_event_f(VRT_CTX, struct vmod_priv *, enum vcl_event_e);
 
-typedef void vmod_priv_free_f(void *);
+/* vmod_priv related */
+typedef void vmod_priv_fini_f(void *);
+
+struct vmod_priv_methods {
+	unsigned			magic;
+#define VMOD_PRIV_METHODS_MAGIC	0xcea5ff99
+	const char			*type;
+	vmod_priv_fini_f		*fini;
+};
+
 struct vmod_priv {
-	void			*priv;
-	long			len;
-	vmod_priv_free_f	*free;
+	void				*priv;
+	long				len;
+	const struct vmod_priv_methods	*methods;
 };
 
 void VRT_priv_fini(const struct vmod_priv *p);
