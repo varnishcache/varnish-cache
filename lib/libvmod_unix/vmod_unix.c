@@ -123,16 +123,16 @@ VCL_STRING							\
 vmod_##func(VRT_CTX)						\
 {								\
 	struct type *s;						\
-	id##_t i;						\
+	VCL_INT ret;						\
 	VCL_STRING name;					\
 								\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
-	i = (id##_t) vmod_##id(ctx);				\
-	if (i == -1)						\
+	ret = vmod_##id(ctx);					\
+	if (ret == -1)						\
 		return (NULL);					\
 								\
 	errno = 0;						\
-	s = get(i);						\
+	s = get((id##_t) ret);					\
 	if (s == NULL) {					\
 		ERRNOCREDS(ctx);				\
 		return (NULL);					\
