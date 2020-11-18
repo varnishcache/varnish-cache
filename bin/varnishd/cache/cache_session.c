@@ -35,6 +35,7 @@
  * sess fields, for instance ->fd being negative ->reason.
  *
  */
+//lint -e{766}
 
 #include "config.h"
 
