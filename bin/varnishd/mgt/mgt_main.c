@@ -787,7 +787,7 @@ main(int argc, char * const *argv)
 		ARGV_ERR("Cannot create working directory (%s): %s\n",
 		    workdir, vstrerror(errno));
 
-	VJ_master(JAIL_MASTER_FILE);
+	VJ_master(JAIL_MASTER_SYSTEM);
 	AZ(system("rm -rf vmod_cache"));
 	VJ_master(JAIL_MASTER_LOW);
 
