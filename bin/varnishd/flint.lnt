@@ -162,3 +162,18 @@
 -e778   // Constant expression evaluates to 0 in operation '___'
 -e736	// Loss of precision (___) (___ bits to ___ bits)
 -e655	// bitwise compatible enums
+
+// cache_session.c
+-esym(528, ses_set_attr)	// Not referenced
+// cache_vrt_var.c
+-esym(528, beresp_filter_fixed) // Not referenced
+
+-esym(714, Lck_DestroyClass)	// Not referenced
+-esym(759, HTTP_IterHdrPack)	// Could be moved to module
+-esym(759, ObjGetU32)		// Could be moved to module
+-esym(759, Lck_DestroyClass)	// Could be moved to module
+-esym(759, SYMTAB_NOERR)	// Could be moved to module
+-esym(765, HTTP_IterHdrPack)	// Could be made static
+-esym(765, ObjGetU32)		// Could be made static
+-esym(765, Lck_DestroyClass)	// Could be made static
+-esym(765, SYMTAB_NOERR)	// Could be made static
