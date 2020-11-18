@@ -125,7 +125,6 @@
 -e850	// for loop index variable '___' whose type category is '___'
 	// is modified in body of the for loop that began at '___'
 
--esym(570, chown)	   // loss of sign for unchanged argument
 -esym(765, vcc_ProcAction) // could be made static
 -esym(759, vcc_ProcAction) // could be moved to module
 -esym(714, vcc_ProcAction) // not ref.
