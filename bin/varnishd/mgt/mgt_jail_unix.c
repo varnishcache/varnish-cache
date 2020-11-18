@@ -283,9 +283,8 @@ vju_make_workdir(const char *dname, const char *what, struct vsb *vsb)
 		    dname, vstrerror(errno));
 		return (1);
 	}
-/*lint -save -e570 */
+	//lint -e{570}
 	AZ(chown(dname, -1, vju_gid));
-/*lint -restore */
 	AZ(seteuid(vju_uid));
 	return (0);
 }

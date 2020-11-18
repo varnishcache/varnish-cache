@@ -174,4 +174,4 @@
 -esym(765, HTTP_IterHdrPack)	// Could be made static
 -esym(765, ObjGetU32)		// Could be made static
 -esym(765, Lck_DestroyClass)	// Could be made static
--esum(769, obj_attr::OA__MAX)	// Not referenced
+-esym(769, obj_attr::OA__MAX)	// Not referenced
