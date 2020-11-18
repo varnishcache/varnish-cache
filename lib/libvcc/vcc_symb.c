@@ -27,6 +27,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
+/*lint -save -esym(759, SYMTAB_NOERR) -esym(765, SYMTAB_NOERR)*/
 
 #include "config.h"
 
@@ -534,3 +535,4 @@ VCC_HandleSymbol(struct vcc *tl, vcc_type_t fmt, const char *pfx)
 		sym->def_b = t;
 	return (sym);
 }
+/*lint -restore */

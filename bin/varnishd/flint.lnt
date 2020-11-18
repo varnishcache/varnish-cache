@@ -172,9 +172,7 @@
 -esym(759, HTTP_IterHdrPack)	// Could be moved to module
 -esym(759, ObjGetU32)		// Could be moved to module
 -esym(759, Lck_DestroyClass)	// Could be moved to module
--esym(759, SYMTAB_NOERR)	// Could be moved to module
 -esym(765, HTTP_IterHdrPack)	// Could be made static
 -esym(765, ObjGetU32)		// Could be made static
 -esym(765, Lck_DestroyClass)	// Could be made static
--esym(765, SYMTAB_NOERR)	// Could be made static
 -esum(769, obj_attr::OA__MAX)	// Not referenced
