@@ -254,6 +254,10 @@ req.http.*
 	The RFCs allow multiple headers with the same name, and both
 	``set`` and ``unset`` will remove *all* headers with the name given.
 
+	The header name ``*`` is a VCL symbol and as such cannot, for
+	example, start with a numeral. Custom VMODs exist for handling
+	of such header names.
+
 
 req.restarts
 
@@ -438,6 +442,8 @@ req_top.http.*
 	HTTP headers of the top-level request in a tree of ESI requests.
 	Identical to req.http. in non-ESI requests.
 
+	See ``req.http.*`` for general notes.
+
 
 req_top.proto
 
@@ -580,6 +586,7 @@ bereq.http.*
 
 	The headers to be sent to the backend.
 
+	See ``req.http.*`` for general notes.
 
 bereq.uncacheable
 
@@ -741,6 +748,8 @@ beresp.http.*
 	Unsetable from: vcl_backend_response, vcl_backend_error
 
 	The HTTP headers returned from the server.
+
+	See ``req.http.*`` for general notes.
 
 beresp.do_esi
 
@@ -1071,6 +1080,7 @@ obj.http.*
 
 	The HTTP headers stored in the object.
 
+	See ``req.http.*`` for general notes.
 
 obj.ttl
 
@@ -1234,10 +1244,9 @@ resp.http.*
 
 	Unsetable from: vcl_deliver, vcl_synth
 
-
 	The HTTP headers that will be returned.
 
-.. XXX does vcl_synth make any sense?
+	See ``req.http.*`` for general notes.
 
 resp.do_esi	``VCL >= 4.1``
 
