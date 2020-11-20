@@ -301,7 +301,7 @@ vbe_dir_gethdrs(VRT_CTX, VCL_BACKEND d)
 			    bo->htc->first_byte_timeout) != 0) {
 				bo->htc->doclose = SC_RX_TIMEOUT;
 				VSLb(bo->vsl, SLT_FetchError,
-				     "Timed out reusing backend connection");
+				     "first byte timeout (reused connection)");
 				extrachance = 0;
 			}
 		}
