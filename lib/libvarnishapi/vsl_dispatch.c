@@ -1310,6 +1310,8 @@ vslq_candidate(struct VSLQ *vslq, const uint32_t *ptr)
 		return (0);
 	if (type == VSL_t_sess)
 		return (0);
+	if (reason == VSL_r_esi && !vsl->E_opt)
+		return (0);
 
 	return (1);
 }

@@ -1166,6 +1166,9 @@ main(int argc, char * const *argv)
 	if (CTX.c_opt)
 		AN(VUT_Arg(vut, 'c', NULL));
 
+	if (CTX.E_opt)
+		AN(VUT_Arg(vut, 'E', NULL));
+
 	if (optind != argc)
 		VUT_Usage(vut, &vopt_spec, 1);
 
