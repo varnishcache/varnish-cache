@@ -93,6 +93,44 @@ logexpect l4 -wait
 logexpect l5 -wait
 
 shell {
+	varnishncsa -n ${v1_name} -d \
+		-F '%{Varnish:vxid}x %{Varnish:side}x %{VSL:Begin[3]}x' |
+	sort > ncsa.txt
+
+	cat >expected.txt <<-EOF
+	1001 c rxreq
+	1005 c rxreq
+	EOF
+	diff -u expected.txt ncsa.txt
+}
+
+shell {
+	varnishncsa -n ${v1_name} -d -b \
+		-F '%{Varnish:vxid}x %{Varnish:side}x %{VSL:Begin[3]}x' |
+	sort > ncsa.txt
+
+	cat >expected.txt <<-EOF
+	1002 b fetch
+	1004 b fetch
+	EOF
+	diff -u expected.txt ncsa.txt
+}
+
+shell {
+	varnishncsa -n ${v1_name} -d -E \
+		-F '%{Varnish:vxid}x %{Varnish:side}x %{VSL:Begin[3]}x' |
+	sort > ncsa.txt
+
+	cat >expected.txt <<-EOF
+	1001 c rxreq
+	1003 c esi
+	1005 c rxreq
+	1006 c esi
+	EOF
+	diff -u expected.txt ncsa.txt
+}
+
+shell {
 	varnishncsa -n ${v1_name} -d -b -E \
 		-F '%{Varnish:vxid}x %{Varnish:side}x %{VSL:Begin[3]}x' |
 	sort > ncsa.txt

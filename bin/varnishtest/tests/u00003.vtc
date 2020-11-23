@@ -159,3 +159,5 @@ process p2 {varnishncsa -t 5 -n nonexistent} -start
 delay 1
 process p2 -expect-exit 1 -kill INT -wait
 shell {grep -q "VSM: Attach interrupted" ${p2_err}}
+
+# ESI coverage in e00003.vtc

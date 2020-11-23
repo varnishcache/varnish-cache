@@ -164,3 +164,5 @@ shell -err -expect "Cannot open ${tmpdir}/foo: " \
 shell "echo foobar > ${tmpdir}/foo"
 shell -err -expect "Not a VSL file: ${tmpdir}/foo" \
 	"varnishlog -r ${tmpdir}/foo"
+
+# ESI coverage in e00003.vtc
