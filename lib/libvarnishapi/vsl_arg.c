@@ -361,6 +361,10 @@ VSL_Arg(struct VSL_data *vsl, int opt, const char *arg)
 		/* Caseless regular expressions */
 		vsl->C_opt = 1;
 		return (1);
+	case 'E':
+		vsl->E_opt = 1;
+		vsl->c_opt = 1;
+		return (1);
 	case 'i': case 'x': return (vsl_ix_arg(vsl, opt, arg));
 	case 'I': case 'X': return (vsl_IX_arg(vsl, opt, arg));
 	case 'L':

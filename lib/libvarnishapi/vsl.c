@@ -346,6 +346,8 @@ VSL_PrintTransactions(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			case VSL_t_req:
 				if (!vsl->c_opt)
 					continue;
+				if (t->reason == VSL_r_esi && !vsl->E_opt)
+					continue;
 				break;
 			case VSL_t_bereq:
 				if (!vsl->b_opt)
