@@ -44,6 +44,12 @@
 	    " data in ascii format."					\
 	)
 
+#define LOG_OPT_u							\
+	VOPT("u", "[-u]", "Unbuffered output",				\
+	    "When writing output to a file with the -w option, output"	\
+	    " data is not buffered."					\
+	)
+
 #define LOG_OPT_w							\
 	VOPT("w:", "[-w <filename>]", "Output filename",		\
 	    "Redirect output to file. The file will be overwritten"	\
@@ -77,6 +83,7 @@ VUT_OPT_r
 VSL_OPT_R
 VUT_OPT_t
 VSL_OPT_T
+LOG_OPT_u
 VSL_OPT_v
 VUT_GLOBAL_OPT_V
 LOG_OPT_w
