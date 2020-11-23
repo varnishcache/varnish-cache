@@ -479,8 +479,8 @@ VUT_Main(struct VUT *vut)
 		do
 			i = VSLQ_Dispatch(vut->vslq, vut_dispatch, vut);
 		while (i == vsl_more &&
-		       VSIG_usr1 == vut->last_sigusr1 &&
-		       VSIG_hup == vut->last_sighup);
+		    VSIG_usr1 == vut->last_sigusr1 &&
+		    VSIG_hup == vut->last_sighup);
 
 		if (i == vsl_more)
 			continue;
