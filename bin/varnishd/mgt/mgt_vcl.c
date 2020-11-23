@@ -746,6 +746,7 @@ mgt_vcl_discard_depcheck(struct cli *cli, const char * const *names,
 				break;
 		if (j < i)
 			continue; /* skip duplicates */
+		//lint -e{661}
 		res[i] = vp;
 	}
 
