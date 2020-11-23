@@ -60,6 +60,7 @@ static struct log {
 	/* Options */
 	int		a_opt;
 	int		A_opt;
+	int		u_opt;
 	char		*w_arg;
 
 	/* State */
@@ -74,7 +75,7 @@ openout(int append)
 	if (LOG.A_opt)
 		LOG.fo = fopen(LOG.w_arg, append ? "a" : "w");
 	else
-		LOG.fo = VSL_WriteOpen(vut->vsl, LOG.w_arg, append, 0);
+		LOG.fo = VSL_WriteOpen(vut->vsl, LOG.w_arg, append, LOG.u_opt);
 	if (LOG.fo == NULL)
 		VUT_Error(vut, 2, "Cannot open output file (%s)",
 		    LOG.A_opt ? strerror(errno) : VSL_Error(vut->vsl));
@@ -127,6 +128,10 @@ main(int argc, char * const *argv)
 		case 'h':
 			/* Usage help */
 			VUT_Usage(vut, &vopt_spec, 0);
+		case 'u':
+			/* Unbuffered output */
+			LOG.u_opt = 1;
+			break;
 		case 'w':
 			/* Write to file */
 			REPLACE(LOG.w_arg, optarg);
