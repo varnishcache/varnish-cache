@@ -520,7 +520,7 @@ haproxy_create_mcli(struct haproxy *h)
 	const char *err;
 	char buf[128], addr[128], port[128];
 
-	sock = VTCP_listen_on("localhost:0", NULL, 100, &err);
+	sock = VTCP_listen_on("127.0.0.1:0", NULL, 100, &err);
 	if (err != NULL)
 		vtc_fatal(h->vl,
 			  "Create listen socket failed: %s", err);
@@ -592,7 +592,7 @@ haproxy_new(const char *name)
 	 * May be useful to simulate an unreachable server.
 	 */
 	bprintf(h->closed_sock, "%s_closed", h->name);
-	closed_sock = VTCP_listen_on("localhost:0", NULL, 100, &err);
+	closed_sock = VTCP_listen_on("127.0.0.1:0", NULL, 100, &err);
 	if (err != NULL)
 		vtc_fatal(h->vl,
 			"Create listen socket failed: %s", err);
@@ -848,7 +848,7 @@ haproxy_build_backends(struct haproxy *h, const char *vsb_data)
 			break;
 
 		*q++ = '\0';
-		sock = VTCP_listen_on("localhost:0", NULL, 100, &err);
+		sock = VTCP_listen_on("127.0.0.1:0", NULL, 100, &err);
 		if (err != NULL)
 			vtc_fatal(h->vl,
 			    "Create listen socket failed: %s", err);
