@@ -506,18 +506,17 @@ EmitStruct(const struct vcc *tl)
 /*--------------------------------------------------------------------*/
 
 static struct source *
-vcc_new_source(const char *b, const char *e, const char *name)
+vcc_new_source(const char *src, const char *name)
 {
 	struct source *sp;
 
-	if (e == NULL)
-		e = strchr(b, '\0');
+	AN(src);
+	AN(name);
 	sp = calloc(1, sizeof *sp);
-	assert(sp != NULL);
-	sp->name = strdup(name);
-	AN(sp->name);
-	sp->b = b;
-	sp->e = e;
+	AN(sp);
+	REPLACE(sp->name, name);
+	sp->b = src;
+	sp->e = strchr(src, '\0');
 	return (sp);
 }
 
@@ -557,7 +556,7 @@ vcc_file_source(const struct vcc *tl, const char *fn)
 		free(fnp);
 		return (NULL);
 	}
-	sp = vcc_new_source(f, NULL, fnp);
+	sp = vcc_new_source(f, fnp);
 	free(fnp);
 	sp->freeit = f;
 	return (sp);
@@ -694,7 +693,7 @@ vcc_CompileSource(struct vcc *tl, struct source *sp, const char *jfile)
 		return (NULL);
 
 	/* Register and lex the builtin VCL */
-	sp = vcc_new_source(tl->builtin_vcl, NULL, "Builtin");
+	sp = vcc_new_source(tl->builtin_vcl, "Builtin");
 	assert(sp != NULL);
 	VTAILQ_INSERT_TAIL(&tl->sources, sp, list);
 	sp->idx = tl->nsources++;
@@ -818,7 +817,7 @@ VCC_Compile(struct vcc *tl, struct vsb **sb,
 	AN(ofile);
 	AN(jfile);
 	if (vclsrc != NULL)
-		sp = vcc_new_source(vclsrc, NULL, vclsrcfile);
+		sp = vcc_new_source(vclsrc, vclsrcfile);
 	else
 		sp = vcc_file_source(tl, vclsrcfile);
 
