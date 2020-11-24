@@ -23,10 +23,10 @@ to do the "count-the-backslashes" polka::
 
   regsub("barf", "(b)(a)(r)(f)", "\4\3\2p") -> "frap"
 
-Long strings are enclosed in {" ... "} or """ ... """. They may contain any character
-including ", newline and other control characters except for the NUL
-(0x00) character. If you really want NUL characters in a string there
-is a VMOD that makes it possible to create such strings.
+Long strings are enclosed in {" ... "} or """ ... """. They may contain
+any character including ", newline and other control characters except
+for the NUL (0x00) character. If you really want NUL characters in a
+string there is a VMOD that makes it possible to create such strings.
 
 .. _vcl_syntax_acl:
 

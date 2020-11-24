@@ -84,9 +84,9 @@ Strings
 
 Basic strings are enclosed in double quotes ``"``\ *...*\ ``"``, and
 may not contain newlines. Long strings are enclosed in
-``{"``\ *...*\ ``"}`` or ``"""``\ *...*\ ``"""``. They may contain any character including single
-double quotes ``"``, newline and other control characters except for the
-*NUL* (0x00) character.
+``{"``\ *...*\ ``"}`` or ``"""``\ *...*\ ``"""``. They may contain any
+character including single double quotes ``"``, newline and other control
+characters except for the *NUL* (0x00) character.
 
 Booleans
 ~~~~~~~~
@@ -511,9 +511,9 @@ ban(STRING)
 
       Either a literal string or a regular expression. Note that
       *<arg>* does not use any of the string delimiters like ``"`` or
-      ``{"``\ *...*\ ``"}`` or ``"""``\ *...*\ ``"""`` used elsewhere in varnish. To match
-      against strings containing whitespace, regular expressions
-      containing ``\s`` can be used.
+      ``{"``\ *...*\ ``"}`` or ``"""``\ *...*\ ``"""`` used elsewhere
+      in varnish. To match against strings containing whitespace,
+      regular expressions containing ``\s`` can be used.
 
     * for duration fields:
 
