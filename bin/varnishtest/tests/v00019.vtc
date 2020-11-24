@@ -23,7 +23,7 @@ varnish v1 -errvcl {Unterminated long-string, starting at} {
 	""" ""
 }
 
-varnish v1 -errvcl {Unterminated string at} {
+varnish v1 -errvcl {Unterminated string, starting at} {
 	backend b { .host = "127.0.0.1"; }
 	"
 }

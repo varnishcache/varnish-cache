@@ -344,20 +344,19 @@ vcc_ExpectVid(struct vcc *tl, const char *what)
  * Decode a string
  */
 
-static int
-vcc_decstr(struct vcc *tl)
+static void
+vcc_decstr(struct vcc *tl, unsigned sep)
 {
 	char *q;
 	unsigned int l;
 
 	assert(tl->t->tok == CSTR);
-	l = (tl->t->e - tl->t->b) - 2;
+	l = (tl->t->e - tl->t->b) - (sep * 2);
 	tl->t->dec = TlAlloc(tl, l + 1);
-	assert(tl->t->dec != NULL);
+	AN(tl->t->dec);
 	q = tl->t->dec;
-	memcpy(q, tl->t->b + 1, l);
+	memcpy(q, tl->t->b + sep, l);
 	q[l] = '\0';
-	return (0);
 }
 
 /*--------------------------------------------------------------------
@@ -381,6 +380,64 @@ vcc_addtoken(struct vcc *tl, unsigned tok,
 	else
 		VTAILQ_INSERT_TAIL(&tl->tokens, t, list);
 	tl->t = t;
+}
+
+/*--------------------------------------------------------------------
+ * Find a delimited token
+ */
+
+static const struct delim_def {
+	const char	*name;
+	const char	*b;
+	const char	*e;
+	unsigned	len;	/* NB: must be the same for both delimiters */
+	unsigned	crlf;
+	unsigned	tok;
+} delim_defs[] = {
+#define DELIM_DEF(nm, l, r, c, t)		\
+	{ nm, l, r, sizeof (l) - 1, c, t }
+	DELIM_DEF("long-string", "\"\"\"", "\"\"\"", 1, CSTR),	/* """...""" */
+	DELIM_DEF("long-string", "{\"", "\"}", 1, CSTR),	/*  {"..."}  */
+	DELIM_DEF("string", "\"", "\"", 0, CSTR),		/*   "..."   */
+	DELIM_DEF("inline C source", "C{", "}C", 1, CSRC),	/*  C{...}C  */
+#undef DELIM_DEF
+	{ NULL }
+};
+
+static unsigned
+vcc_delim_token(struct vcc *tl, const struct source *sp, const char *p,
+    const char **qp)
+{
+	const struct delim_def *dd;
+	const char *q, *r;
+
+	for (dd = delim_defs; dd->name != NULL; dd++)
+		if (!strncmp(p, dd->b, dd->len))
+			break;
+
+	if (dd->name == NULL)
+		return (0);
+
+	q = strstr(p + dd->len, dd->e);
+	if (q != NULL && !dd->crlf) {
+		r = strpbrk(p + dd->len, "\r\n");
+		if (r != NULL && r < q)
+			q = NULL;
+	}
+
+	if (q == NULL) {
+		vcc_addtoken(tl, EOI, sp, p, p + dd->len);
+		VSB_printf(tl->sb, "Unterminated %s, starting at\n", dd->name);
+		vcc_ErrWhere(tl, tl->t);
+		return (0);
+	}
+
+	assert(q < sp->e);
+	vcc_addtoken(tl, dd->tok, sp, p, q + dd->len);
+	if (dd->tok == CSTR)
+		vcc_decstr(tl, dd->len);
+	*qp = q + dd->len;
+	return (1);
 }
 
 /*--------------------------------------------------------------------
@@ -441,75 +498,6 @@ vcc_Lexer(struct vcc *tl, const struct source *sp, int eoi)
 			while (p < sp->e && *p != '\n')
 				p++;
 			continue;
-		}
-
-		/* Recognize inline C-code */
-		if (*p == 'C' && p[1] == '{') {
-			for (q = p + 2; q < sp->e; q++) {
-				if (*q == '}' && q[1] == 'C') {
-					vcc_addtoken(tl, CSRC, sp, p, q + 2);
-					break;
-				}
-			}
-			if (q < sp->e) {
-				p = q + 2;
-				continue;
-			}
-			vcc_addtoken(tl, EOI, sp, p, p + 2);
-			VSB_cat(tl->sb,
-			    "Unterminated inline C source, starting at\n");
-			vcc_ErrWhere(tl, tl->t);
-			return;
-		}
-
-		/* Recognize long-strings {" "} */
-		if (*p == '{' && p[1] == '"') {
-			for (q = p + 2; q < sp->e; q++) {
-				if (*q == '"' && q[1] == '}') {
-					vcc_addtoken(tl, CSTR, sp, p, q + 2);
-					break;
-				}
-			}
-			if (q < sp->e) {
-				p = q + 2;
-				u = tl->t->e - tl->t->b;
-				u -= 4;		/* {" ... "} */
-				tl->t->dec = TlAlloc(tl, u + 1 );
-				AN(tl->t->dec);
-				memcpy(tl->t->dec, tl->t->b + 2, u);
-				tl->t->dec[u] = '\0';
-				continue;
-			}
-			vcc_addtoken(tl, EOI, sp, p, p + 2);
-			VSB_cat(tl->sb,
-			    "Unterminated long-string, starting at\n");
-			vcc_ErrWhere(tl, tl->t);
-			return;
-		}
-
-		/* Recognize long-strings """ """ */
-		if (*p == '"' && p[1] == '"' && p[2] == '"') {
-			for (q = p + 3; q < sp->e; q++) {
-				if (*q == '"' && q[1] == '"' && q[2] == '"') {
-					vcc_addtoken(tl, CSTR, sp, p, q + 3);
-					break;
-				}
-			}
-			if (q < sp->e) {
-				p = q + 3;
-				u = tl->t->e - tl->t->b;
-				u -= 6;		/* """ ... """ */
-				tl->t->dec = TlAlloc(tl, u + 1 );
-				AN(tl->t->dec);
-				memcpy(tl->t->dec, tl->t->b + 3, u);
-				tl->t->dec[u] = '\0';
-				continue;
-			}
-			vcc_addtoken(tl, EOI, sp, p, p + 3);
-			VSB_cat(tl->sb,
-			    "Unterminated long-string, starting at\n");
-			vcc_ErrWhere(tl, tl->t);
-			return;
 		}
 
 		/* Recognize BLOB (= SF-binary) */
@@ -574,32 +562,17 @@ vcc_Lexer(struct vcc *tl, const struct source *sp, int eoi)
 			continue;
 		}
 
+		/* Match delimited tokens */
+		if (vcc_delim_token(tl, sp, p, &q) != 0) {
+			p = q;
+			continue;
+		}
+		ERRCHK(tl);
+
 		/* Match for the fixed tokens (see generate.py) */
 		u = vcl_fixed_token(p, &q);
 		if (u != 0) {
 			vcc_addtoken(tl, u, sp, p, q);
-			p = q;
-			continue;
-		}
-
-		/* Match strings */
-		if (*p == '"') {
-			for (q = p + 1; q < sp->e; q++) {
-				if (*q == '"') {
-					q++;
-					break;
-				}
-				if (*q == '\r' || *q == '\n') {
-					vcc_addtoken(tl, EOI, sp, p, q);
-					VSB_cat(tl->sb,
-					    "Unterminated string at\n");
-					vcc_ErrWhere(tl, tl->t);
-					return;
-				}
-			}
-			vcc_addtoken(tl, CSTR, sp, p, q);
-			if (vcc_decstr(tl))
-				return;
 			p = q;
 			continue;
 		}
