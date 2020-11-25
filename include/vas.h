@@ -88,4 +88,17 @@ do {									\
 	    "", VAS_INCOMPLETE);					\
 } while (0)
 
+/*
+ * A normal pointer difference is signed, but when we don't want a negative
+ * value this little tool will make sure we don't get that.
+ */
+
+static inline size_t
+pdiff(const void *b, const void *e)
+{
+
+	assert(b <= e);
+	return ((size_t)((const char *)e - (const char *)b));
+}
+
 #endif

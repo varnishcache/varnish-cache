@@ -39,7 +39,7 @@ WS_Assert(const struct ws *ws)
 {
 
 	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
-	DSL(DBG_WORKSPACE, 0, "WS(%p) = (%s, %p %u %u %u)",
+	DSL(DBG_WORKSPACE, 0, "WS(%p) = (%s, %p %zu %zu %zu)",
 	    ws, ws->id, ws->s, pdiff(ws->s, ws->f),
 	    ws->r == NULL ? 0 : pdiff(ws->f, ws->r),
 	    pdiff(ws->s, ws->e));
@@ -268,7 +268,7 @@ WS_ReserveSize(struct ws *ws, unsigned bytes)
 		return (0);
 	}
 	ws->r = ws->f + b2;
-	DSL(DBG_WORKSPACE, 0, "WS_ReserveSize(%p, %u/%u) = %u",
+	DSL(DBG_WORKSPACE, 0, "WS_ReserveSize(%p, %u/%u) = %zu",
 	    ws, b2, bytes, pdiff(ws->f, ws->r));
 	WS_Assert(ws);
 	return (pdiff(ws->f, ws->r));
@@ -294,7 +294,7 @@ WS_Reserve(struct ws *ws, unsigned bytes)
 		return (0);
 	}
 	ws->r = ws->f + b2;
-	DSL(DBG_WORKSPACE, 0, "WS_Reserve(%p, %u/%u) = %u",
+	DSL(DBG_WORKSPACE, 0, "WS_Reserve(%p, %u/%u) = %zu",
 	    ws, b2, bytes, pdiff(ws->f, ws->r));
 	WS_Assert(ws);
 	return (pdiff(ws->f, ws->r));
