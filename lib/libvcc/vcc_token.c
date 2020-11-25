@@ -351,7 +351,7 @@ vcc_decstr(struct vcc *tl, unsigned sep)
 	unsigned int l;
 
 	assert(tl->t->tok == CSTR);
-	l = (tl->t->e - tl->t->b) - (sep * 2);
+	l = pdiff(tl->t->b + sep, tl->t->e - sep);
 	tl->t->dec = TlAlloc(tl, l + 1);
 	AN(tl->t->dec);
 	q = tl->t->dec;
