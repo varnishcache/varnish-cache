@@ -824,20 +824,6 @@ int RFC2616_Do_Cond(const struct req *sp);
 void RFC2616_Weaken_Etag(struct http *hp);
 void RFC2616_Vary_AE(struct http *hp);
 
-/*
- * A normal pointer difference is signed, but we never want a negative value
- * so this little tool will make sure we don't get that.
- */
-
-static inline unsigned
-pdiff(const void *b, const void *e)
-{
-
-	assert(b <= e);
-	return
-	    ((unsigned)((const unsigned char *)e - (const unsigned char *)b));
-}
-
 #define Tcheck(t) do {						\
 		AN((t).b);					\
 		AN((t).e);					\
