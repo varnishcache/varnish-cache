@@ -40,6 +40,10 @@
 
 #define VSM_CLASS_PARAM		"Params"
 
+#ifdef __MACH__
+#undef bool
+#endif
+
 enum debug_bits {
 #define DEBUG_BIT(U, l, d) DBG_##U,
 #include "tbl/debug_bits.h"
