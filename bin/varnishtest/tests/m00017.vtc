@@ -3,6 +3,8 @@ varnishtest "Test std.rollback"
 # bug regressions:
 # - #3009
 # - #3083
+# - #3329
+# - #3385
 
 server s1 {
 	rxreq
@@ -335,3 +337,40 @@ client c6 {
 } -run
 
 server s1 -wait
+
+# this could work, but would need additional coding to save
+# the right snapshot of the bereq on the req ws
+varnish v1 -errvcl {Not available in subroutine 'vcl_pipe'} {
+	import std;
+
+	backend proforma None;
+
+	sub vcl_pipe {
+		std.rollback(bereq);
+	}
+}
+
+# vcl_pipe { std.rollback(req); } cannot work unless it also implied
+# rolling back the bereq first.
+# We would want to remove req from vcl_pipe, but that could break
+# vmods, so we fail specifically at runtime
+
+varnish v1 -vcl {
+	import std;
+
+	backend proforma None;
+
+	sub vcl_recv {
+		return (pipe);
+	}
+	sub vcl_pipe {
+		std.rollback(req);
+	}
+}
+
+client c7 {
+	txreq -url /
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+} -run
