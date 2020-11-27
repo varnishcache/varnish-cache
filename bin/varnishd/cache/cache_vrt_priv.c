@@ -144,12 +144,8 @@ vrt_priv_task_context(VRT_CTX)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	/*
-	 * XXX when coming from VRT_DirectorResolve() in pipe mode
-	 * (ctx->method == 0), both req and bo are set.
-	 * see #3329 #3330: we should make up our mind where
-	 * pipe objects live
-	 */
+
+	/* In pipe mode, both req and bo are set. We use req */
 
 	assert(ctx->req == NULL || ctx->bo == NULL ||
 	    ctx->method == VCL_MET_PIPE || ctx->method == 0);
