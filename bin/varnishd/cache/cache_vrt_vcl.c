@@ -451,21 +451,19 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	INIT_OBJ(&ctx, VRT_CTX_MAGIC);
+	if (bo != NULL) {
+		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+		CHECK_OBJ_NOTNULL(bo->vcl, VCL_MAGIC);
+		VCL_Bo2Ctx(&ctx, bo);
+	}
 	if (req != NULL) {
+		if (bo != NULL)
+			assert(method == VCL_MET_PIPE);
 		CHECK_OBJ(req, REQ_MAGIC);
 		CHECK_OBJ_NOTNULL(req->sp, SESS_MAGIC);
 		CHECK_OBJ_NOTNULL(req->vcl, VCL_MAGIC);
 		CHECK_OBJ_NOTNULL(req->top, REQTOP_MAGIC);
 		VCL_Req2Ctx(&ctx, req);
-	}
-	if (bo != NULL) {
-		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-		CHECK_OBJ_NOTNULL(bo->vcl, VCL_MAGIC);
-		VCL_Bo2Ctx(&ctx, bo);
-		if (req) {
-			assert(method == VCL_MET_PIPE);
-			ctx.ws = req->ws;
-		}
 	}
 	assert(ctx.now != 0);
 	ctx.specific = specific;

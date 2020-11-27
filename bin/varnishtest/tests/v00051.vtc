@@ -158,9 +158,6 @@ logexpect l2 -v v1 -g vxid -q "vxid == 1012" {
 	expect 0 =	BereqHeader	{^X-Forwarded-For: }
 	expect 0 =	BereqHeader	{^X-Varnish: 1011}
 	expect 0 =	BereqHeader	{^Connection: close}
-	expect 0 =	VCL_call	{^PIPE}
-	expect 0 =	VCL_Error	{^Forced failure}
-	expect 0 =	VCL_return	{^fail}
 	expect 0 =	BereqAcct	{^0 0 0 0 0 0}
 	expect 0 =	End
 } -start
@@ -182,6 +179,9 @@ logexpect l3 -v v1 -g vxid -q "vxid == 1011" {
 	expect 0 =	VCL_call        {^HASH}
 	expect 0 =	VCL_return      {^lookup}
 	expect 0 =	Link            {^bereq 1012 pipe}
+	expect 0 =	VCL_call	{^PIPE}
+	expect 0 =	VCL_Error	{^Forced failure}
+	expect 0 =	VCL_return	{^fail}
 	expect 0 =	RespProtocol    {^HTTP/1.1}
 	expect 0 =	RespStatus      {^503}
 	expect 0 =	RespReason      {^VCL failed}
