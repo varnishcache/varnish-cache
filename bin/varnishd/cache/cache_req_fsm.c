@@ -597,6 +597,8 @@ cnt_lookup(struct worker *wrk, struct req *req)
 			CHECK_OBJ_NOTNULL(busy->boc, BOC_MAGIC);
 			// XXX: shouldn't we go to miss?
 			VBF_Fetch(wrk, req, busy, oc, VBF_BACKGROUND);
+			wrk->stats->s_fetch++;
+			wrk->stats->s_bgfetch++;
 		} else {
 			(void)VRB_Ignore(req);// XXX: handle err
 		}

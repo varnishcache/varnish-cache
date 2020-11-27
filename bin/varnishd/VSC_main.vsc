@@ -434,6 +434,12 @@
 	:group: wrk
 	:oneliner:	Total backend fetches initiated
 
+	Total backend fetches initiated, including background fetches.
+
+.. varnish_vsc:: s_bgfetch
+	:group: wrk
+	:oneliner:	Total backend background fetches initiated
+
 
 .. varnish_vsc:: s_synth
 	:group: wrk
