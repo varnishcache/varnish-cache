@@ -195,16 +195,6 @@ wait_running(const struct varnish *v)
  * Varnishlog gatherer thread
  */
 
-static void
-vsl_catchup(const struct varnish *v)
-{
-	int vsl_idle;
-
-	vsl_idle = v->vsl_idle;
-	while (!vtc_error && vsl_idle == v->vsl_idle)
-		VTIM_sleep(0.1);
-}
-
 static void *
 varnishlog_thread(void *priv)
 {
@@ -1033,6 +1023,16 @@ varnish_expect(const struct varnish *v, char * const *av)
 		vtc_fatal(v->vl, "Not true: %s (%ju) %s %s (%ju)",
 		    av[0], sp.lhs.val, av[1], av[2], sp.rhs.val);
 	}
+}
+
+static void
+vsl_catchup(const struct varnish *v)
+{
+	int vsl_idle;
+
+	vsl_idle = v->vsl_idle;
+	while (!vtc_error && vsl_idle == v->vsl_idle)
+		VTIM_sleep(0.1);
 }
 
 /* SECTION: varnish varnish
