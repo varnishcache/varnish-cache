@@ -465,6 +465,19 @@ PARAM_SIMPLE(
 )
 
 PARAM_SIMPLE(
+	/* name */	pass_prefetch,
+	/* type */	bytes,
+	/* min */	"4k",
+	/* max */	NULL,
+	/* def */	"1M",
+	/* units */	"bytes",
+	/* descr */
+	"The default prefetch amount used during a single private transaction.\n"
+	"Enabling this will prevent running out of memory when "
+	"there are big streaming transfers going on."
+)
+
+PARAM_SIMPLE(
 	/* name */	gzip_buffer,
 	/* type */	bytes_u,
 	/* min */	"2k",

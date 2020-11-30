@@ -1,0 +1,26 @@
+varnishtest "Pass buffering normal operation"
+
+server s1 {
+	rxreq
+	txresp -bodylen 2000000
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		return (pass);
+	}
+	sub vcl_backend_response {
+		set beresp.pass_prefetch = 1KB;
+	}
+} -start
+
+client c1 -connect "${v1_sock}" {
+	txreq
+	rxresp
+	expect resp.bodylen == 2000000
+} -start
+
+varnish v1 -expect VBE.vcl1.s1.beresp_bodybytes < 100000
+
+# Make sure request finishes OK
+client c1 -wait

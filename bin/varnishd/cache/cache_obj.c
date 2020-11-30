@@ -88,6 +88,7 @@
 #include "cache_obj.h"
 #include "vend.h"
 #include "storage/storage.h"
+#include "vtim.h"
 
 static const struct obj_methods *
 obj_getmethods(const struct objcore *oc)
@@ -109,6 +110,7 @@ obj_newboc(void)
 	Lck_New(&boc->mtx, lck_busyobj);
 	AZ(pthread_cond_init(&boc->cond, NULL));
 	boc->refcount = 1;
+	boc->pass_prefetch = cache_param->pass_prefetch;
 	return (boc);
 }
 
@@ -220,6 +222,7 @@ void
 ObjExtend(struct worker *wrk, struct objcore *oc, ssize_t l, int final)
 {
 	const struct obj_methods *om = obj_getmethods(oc);
+	AN(om->objextend);
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
@@ -227,10 +230,25 @@ ObjExtend(struct worker *wrk, struct objcore *oc, ssize_t l, int final)
 	assert(l >= 0);
 
 	Lck_Lock(&oc->boc->mtx);
-	AN(om->objextend);
 	if (l > 0) {
+		if (oc->boc->pass_prefetch > 0) {
+			assert(oc->flags & (OC_F_PRIVATE | OC_F_HFM | OC_F_HFP));
+			/* delivered_so_far will be re-read due to memory clobber
+			   from the CondWait opaque function call */
+			while (!(oc->flags & OC_F_ABANDON) &&
+				oc->boc->fetched_so_far > oc->boc->delivered_so_far + oc->boc->pass_prefetch) {
+				/* The client is too far behind, wait for it to catch up and
+				   signal the condvar on the clients part, avoiding deadlocks. */
+				(void)Lck_CondWait(&oc->boc->cond, &oc->boc->mtx, VTIM_real() + 0.1);
+				/* Fallback: Check if we are alone waiting on this object */
+				if (oc->refcnt == 1)
+					break;
+			}
+		}
+
+		/* Fill more bytes */
 		om->objextend(wrk, oc, l);
-		oc->boc->len_so_far += l;
+		oc->boc->fetched_so_far += l;
 		AZ(pthread_cond_broadcast(&oc->boc->cond));
 	}
 	Lck_Unlock(&oc->boc->mtx);
@@ -253,13 +271,19 @@ ObjWaitExtend(const struct worker *wrk, const struct objcore *oc, uint64_t l)
 	CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
 	Lck_Lock(&oc->boc->mtx);
 	while (1) {
-		rv = oc->boc->len_so_far;
+		rv = oc->boc->fetched_so_far;
 		assert(l <= rv || oc->boc->state == BOS_FAILED);
+		if (oc->boc->pass_prefetch > 0) {
+			assert(oc->flags & (OC_F_PRIVATE | OC_F_HFM | OC_F_HFP));
+			/* Signal the new client position */
+			oc->boc->delivered_so_far = l;
+			AZ(pthread_cond_signal(&oc->boc->cond));
+		}
 		if (rv > l || oc->boc->state >= BOS_FINISHED)
 			break;
 		(void)Lck_CondWait(&oc->boc->cond, &oc->boc->mtx, 0);
 	}
-	rv = oc->boc->len_so_far;
+	rv = oc->boc->fetched_so_far;
 	Lck_Unlock(&oc->boc->mtx);
 	return (rv);
 }

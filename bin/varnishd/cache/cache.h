@@ -286,7 +286,9 @@ struct boc {
 	void			*stevedore_priv;
 	enum boc_state_e	state;
 	uint8_t			*vary;
-	uint64_t		len_so_far;
+	uint64_t		fetched_so_far;
+	uint64_t		delivered_so_far;
+	uint64_t		pass_prefetch;
 };
 
 /* Object core structure ---------------------------------------------

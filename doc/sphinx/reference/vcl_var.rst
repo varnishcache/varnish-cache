@@ -1024,6 +1024,18 @@ beresp.filters
 	After beresp.filters is set, using any of the beforementioned
 	``beresp.do_*`` switches is a VCL error.
 
+beresp.pass_prefetch
+
+	Type: BYTES
+
+	Readable from: vcl_backend_response
+
+	Writable from: vcl_backend_response
+
+	Set the maximum number of bytes the client can be ahead of the
+	backend during a streaming pass.
+
+
 obj
 ~~~
 
