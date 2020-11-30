@@ -313,6 +313,30 @@ VCL_DefaultProbe(const struct vcl *vcl)
 
 /*--------------------------------------------------------------------*/
 
+void
+VRT_CTX_Assert(VRT_CTX)
+{
+	CHECK_OBJ_ORNULL(ctx, VRT_CTX_MAGIC);
+
+	if (ctx->msg != NULL)
+		CHECK_OBJ(ctx->msg, VSB_MAGIC);
+	else
+		AN(ctx->vsl);
+	CHECK_OBJ_NOTNULL(ctx->vcl, VCL_MAGIC);
+	WS_Assert(ctx->ws);
+
+	CHECK_OBJ_ORNULL(ctx->sp, SESS_MAGIC);
+
+	CHECK_OBJ_ORNULL(ctx->req, REQ_MAGIC);
+	CHECK_OBJ_ORNULL(ctx->http_req, HTTP_MAGIC);
+	CHECK_OBJ_ORNULL(ctx->http_req_top, HTTP_MAGIC);
+	CHECK_OBJ_ORNULL(ctx->http_resp, HTTP_MAGIC);
+
+	CHECK_OBJ_ORNULL(ctx->bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_ORNULL(ctx->http_bereq, HTTP_MAGIC);
+	CHECK_OBJ_ORNULL(ctx->http_beresp, HTTP_MAGIC);
+}
+
 struct vclref *
 VRT_VCL_Prevent_Cold(VRT_CTX, const char *desc)
 {

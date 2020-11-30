@@ -57,6 +57,7 @@
  *	Added VRT_ValidHdr()
  *	struct vmod_priv_methods added
  *	struct vmod_priv free member replaced with methods
+ *	VRT_CTX_Assert() added
  * 12.0 (2020-09-15)
  *	Added VRT_DirectorResolve()
  *	Added VCL_STRING VRT_BLOB_string(VRT_CTX, VCL_BLOB)
@@ -637,6 +638,8 @@ void VRT_VSC_Destroy(const char *, struct vsc_seg *);
 void VRT_VSC_Hide(const struct vsc_seg *);
 void VRT_VSC_Reveal(const struct vsc_seg *);
 size_t VRT_VSC_Overhead(size_t);
+
+void VRT_CTX_Assert(VRT_CTX);
 
 /*
  * API to restrict the VCL in various ways
