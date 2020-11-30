@@ -273,6 +273,9 @@ VRT_priv_fini(VRT_CTX, const struct vmod_priv *p)
 	if (p->priv == NULL || m->fini == NULL)
 		return;
 
+	// XXX remove me after soak in
+	VRT_CTX_Assert(ctx);
+
 	m->fini(ctx, p->priv);
 }
 
