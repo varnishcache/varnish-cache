@@ -316,7 +316,7 @@ VCL_DefaultProbe(const struct vcl *vcl)
 void
 VRT_CTX_Assert(VRT_CTX)
 {
-	CHECK_OBJ_ORNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
 	if (ctx->msg != NULL)
 		CHECK_OBJ(ctx->msg, VSB_MAGIC);
