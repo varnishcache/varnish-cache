@@ -72,6 +72,7 @@ pan_privs(struct vsb *vsb, const struct vrt_privs *privs)
 		VRBT_FOREACH(vp, vrt_privs, privs) {
 			PAN_CheckMagic(vsb, vp, VRT_PRIV_MAGIC);
 			p = vp->priv;
+			//lint -e{774}
 			if (p == NULL) {
 				// should never happen
 				VSB_printf(vsb, "priv NULL vmod %jx\n",
