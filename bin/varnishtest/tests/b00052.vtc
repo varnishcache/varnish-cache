@@ -1,23 +1,27 @@
 varnishtest "The cache_hit_grace counter"
 
 server s1 {
-	# normal fetch
 	rxreq
 	expect req.url == "/1"
+	expect req.http.bgfetch == false
 	txresp -hdr "Age: 1" -hdr "Cache-Control: max-age=2" -body "1"
 
-	# background fetch:
 	rxreq
 	expect req.url == "/1"
+	expect req.http.bgfetch == true
 	txresp -body "2"
 
-	# normal fetch
 	rxreq
 	expect req.url == "/2"
+	expect req.http.bgfetch == false
 	txresp
 } -start
 
-varnish v1 -vcl+backend { } -start
+varnish v1 -vcl+backend {
+	sub vcl_backend_fetch {
+		set bereq.http.bgfetch = bereq.is_bgfetch;
+	}
+} -start
 
 client c1 {
 	txreq -url "/1"
@@ -35,6 +39,8 @@ client c2 {
 	expect resp.body == "1"
 } -run
 
+varnish v1 -expect cache_hit >= cache_hit_grace
+
 delay 2
 
 client c3 {
@@ -44,6 +50,8 @@ client c3 {
 	rxresp
 	expect resp.body == "2"
 } -run
+
+varnish v1 -expect cache_hit >= cache_hit_grace
 
 # Check that counters are correct:
 

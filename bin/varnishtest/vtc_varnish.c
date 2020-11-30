@@ -910,11 +910,28 @@ varnish_vsc(const struct varnish *v, const char *arg)
  * Check statistics
  */
 
-struct stat_priv {
-	char target_pattern[256];
-	uintmax_t val;
-	const struct varnish *v;
+struct stat_arg {
+	const char	*pattern;
+	uintmax_t	val;
+	unsigned	good;
 };
+
+struct stat_priv {
+	struct stat_arg	lhs;
+	struct stat_arg	rhs;
+};
+
+static int
+stat_match(const char *pattern, const char *name)
+{
+
+	if (strchr(pattern, '.') == NULL) {
+		if (fnmatch("MAIN.*", name, 0))
+			return (FNM_NOMATCH);
+		name += 5;
+	}
+	return (fnmatch(pattern, name, 0));
+}
 
 static int
 do_expect_cb(void *priv, const struct VSC_point * const pt)
@@ -924,13 +941,24 @@ do_expect_cb(void *priv, const struct VSC_point * const pt)
 	if (pt == NULL)
 		return (0);
 
-	if (fnmatch(sp->target_pattern, pt->name, 0))
-		return (0);
+	if (!sp->lhs.good && stat_match(sp->lhs.pattern, pt->name) == 0) {
+		AZ(strcmp(pt->ctype, "uint64_t"));
+		AN(pt->ptr);
+		sp->lhs.val = *pt->ptr;
+		sp->lhs.good = 1;
+	}
 
-	AZ(strcmp(pt->ctype, "uint64_t"));
-	AN(pt->ptr);
-	sp->val = *pt->ptr;
-	return (1);
+	if (sp->rhs.pattern == NULL) {
+		sp->rhs.good = 1;
+	} else if (!sp->rhs.good &&
+	    stat_match(sp->rhs.pattern, pt->name) == 0) {
+		AZ(strcmp(pt->ctype, "uint64_t"));
+		AN(pt->ptr);
+		sp->rhs.val = *pt->ptr;
+		sp->rhs.good = 1;
+	}
+
+	return (sp->lhs.good && sp->rhs.good);
 }
 
 /**********************************************************************
@@ -939,55 +967,49 @@ do_expect_cb(void *priv, const struct VSC_point * const pt)
 static void
 varnish_expect(const struct varnish *v, char * const *av)
 {
-	uint64_t ref;
-	int good;
-	char *r;
-	char *p;
-	int i, not = 0;
 	struct stat_priv sp;
+	int good, i, not;
+	uintmax_t u;
+	char *l, *p;
 
-	r = av[0];
-	if (r[0] == '!') {
-		not = 1;
-		r++;
+	ZERO_OBJ(&sp, sizeof sp);
+	l = av[0];
+	not = (*l == '!');
+	if (not) {
+		l++;
 		AZ(av[1]);
 	} else {
 		AN(av[1]);
 		AN(av[2]);
-	}
-	p = strrchr(r, '.');
-	if (p == NULL) {
-		bprintf(sp.target_pattern, "MAIN.%s", r);
-	} else {
-		bprintf(sp.target_pattern, "%s", r);
+		u = strtoumax(av[2], &p, 0);
+		if (u != UINTMAX_MAX && *p == '\0')
+			sp.rhs.val = u;
+		else
+			sp.rhs.pattern = av[2];
 	}
 
-	sp.val = 0;
-	sp.v = v;
-	ref = 0;
-	good = 0;
+	sp.lhs.pattern = l;
+
 	for (i = 0; i < 50; i++, (void)usleep(100000)) {
 		(void)VSM_Status(v->vsm_vsc);
+		sp.lhs.good = sp.rhs.good = 0;
 		good = VSC_Iter(v->vsc, v->vsm_vsc, do_expect_cb, &sp);
-		if (!good) {
+		if (!good)
 			good = -2;
+		if (good < 0)
 			continue;
-		}
 
 		if (not)
-			vtc_fatal(v->vl, "Found (not expected): %s", av[0]+1);
+			vtc_fatal(v->vl, "Found (not expected): %s", l);
 
-		good = 0;
-		ref = strtoumax(av[2], &p, 0);
-		if (ref == UINTMAX_MAX || *p)
-			vtc_fatal(v->vl, "Syntax error in number (%s)", av[2]);
-		if      (!strcmp(av[1], "==")) { if (sp.val == ref) good = 1; }
-		else if (!strcmp(av[1], "!=")) { if (sp.val != ref) good = 1; }
-		else if (!strcmp(av[1], ">"))  { if (sp.val > ref)  good = 1; }
-		else if (!strcmp(av[1], "<"))  { if (sp.val < ref)  good = 1; }
-		else if (!strcmp(av[1], ">=")) { if (sp.val >= ref) good = 1; }
-		else if (!strcmp(av[1], "<=")) { if (sp.val <= ref) good = 1; }
-		else
+		good = -1;
+		if (!strcmp(av[1], "==")) good = (sp.lhs.val == sp.rhs.val);
+		if (!strcmp(av[1], "!=")) good = (sp.lhs.val != sp.rhs.val);
+		if (!strcmp(av[1], ">" )) good = (sp.lhs.val >  sp.rhs.val);
+		if (!strcmp(av[1], "<" )) good = (sp.lhs.val <  sp.rhs.val);
+		if (!strcmp(av[1], ">=")) good = (sp.lhs.val >= sp.rhs.val);
+		if (!strcmp(av[1], "<=")) good = (sp.lhs.val <= sp.rhs.val);
+		if (good == -1)
 			vtc_fatal(v->vl, "comparison %s unknown", av[1]);
 		if (good)
 			break;
@@ -997,19 +1019,19 @@ varnish_expect(const struct varnish *v, char * const *av)
 	}
 	if (good == -2) {
 		if (not) {
-			vtc_log(v->vl, 2, "not found (as expected): %s",
-			    av[0] + 1);
+			vtc_log(v->vl, 2, "not found (as expected): %s", l);
 			return;
 		}
-		vtc_fatal(v->vl, "stats field %s unknown", av[0]);
+		vtc_fatal(v->vl, "stats field %s unknown",
+		    sp.lhs.good ? sp.rhs.pattern : sp.lhs.pattern);
 	}
 
 	if (good == 1) {
-		vtc_log(v->vl, 2, "as expected: %s (%ju) %s %s",
-		    av[0], sp.val, av[1], av[2]);
+		vtc_log(v->vl, 2, "as expected: %s (%ju) %s %s (%ju)",
+		    av[0], sp.lhs.val, av[1], av[2], sp.rhs.val);
 	} else {
 		vtc_fatal(v->vl, "Not true: %s (%ju) %s %s (%ju)",
-		    av[0], (uintmax_t)sp.val, av[1], av[2], (uintmax_t)ref);
+		    av[0], sp.lhs.val, av[1], av[2], sp.rhs.val);
 	}
 }
 
@@ -1091,11 +1113,14 @@ varnish_expect(const struct varnish *v, char * const *av)
  *         Once Varnish is stopped, clean everything after it. This is only used
  *         in very few tests and you should never need it.
  *
+ * \-expectexit NUMBER
+ *         Expect varnishd to exit(3) with this value
+ *
  * Once Varnish is started, you can talk to it (as you would through
  * ``varnishadm``) with these additional switches::
  *
  *         varnish vNAME [-cli STRING] [-cliok STRING] [-clierr STRING]
- *                       [-clijson STRING] [-expect STRING OP NUMBER]
+ *                       [-clijson STRING]
  *
  * \-cli STRING|-cliok STRING|-clierr STATUS STRING|-cliexpect REGEXP STRING
  *         All four of these will send STRING to the CLI, the only difference
@@ -1107,14 +1132,22 @@ varnish_expect(const struct varnish *v, char * const *av)
  *	   Send STRING to the CLI, expect success (CLIS_OK/200) and check
  *	   that the response is parsable JSON.
  *
- * \-expect PATTERN OP NUMBER
+ * It is also possible to interact with its shared memory (as you would
+ * through tools like ``varnishstat``) with additional switches:
+ *
+ * \-expect \!PATTERN|PATTERN OP NUMBER|PATTERN OP PATTERN
  *         Look into the VSM and make sure the first VSC counter identified by
  *         PATTERN has a correct value. OP can be ==, >, >=, <, <=. For
  *         example::
  *
  *                 varnish v1 -expect SM?.s1.g_space > 1000000
- * \-expectexit NUMBER
- *	   Expect varnishd to exit(3) with this value
+ *                 varnish v1 -expect cache_hit >= cache_hit_grace
+ *
+ *         In the \! form the test fails if a counter matches PATTERN.
+ *
+ *         The ``MAIN.`` namespace can be omitted from PATTERN.
+ *
+ *         The test takes up to 5 seconds before timing out.
  *
  * \-vsc PATTERN
  *         Dump VSC counters matching PATTERN.

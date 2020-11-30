@@ -44,4 +44,5 @@ client c1 {
 
 delay 1
 
+varnish v1 -expect s_fetch > s_bgfetch
 varnish v1 -expect n_objectcore == 1
