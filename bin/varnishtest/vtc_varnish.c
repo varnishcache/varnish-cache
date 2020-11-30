@@ -530,6 +530,15 @@ varnish_launch(struct varnish *v)
 	AZ(pthread_create(&v->tp_vsl, NULL, varnishlog_thread, v));
 }
 
+#define VARNISH_LAUNCH(v)				\
+	do {						\
+		CHECK_OBJ_NOTNULL(v, VARNISH_MAGIC);	\
+		if (v->cli_fd < 0)			\
+			varnish_launch(v);		\
+		if (vtc_error)				\
+			return;				\
+	} while (0)
+
 /**********************************************************************
  * Start a Varnish
  */
@@ -598,10 +607,7 @@ varnish_start(struct varnish *v)
 	enum VCLI_status_e u;
 	char *resp = NULL;
 
-	if (v->cli_fd < 0)
-		varnish_launch(v);
-	if (vtc_error)
-		return;
+	VARNISH_LAUNCH(v);
 	vtc_log(v->vl, 2, "Start");
 	u = varnish_ask_cli(v, "start", &resp);
 	if (vtc_error)
@@ -639,10 +645,8 @@ varnish_start(struct varnish *v)
 static void
 varnish_stop(struct varnish *v)
 {
-	if (v->cli_fd < 0)
-		varnish_launch(v);
-	if (vtc_error)
-		return;
+
+	VARNISH_LAUNCH(v);
 	vtc_log(v->vl, 2, "Stop");
 	(void)varnish_ask_cli(v, "stop", NULL);
 	wait_stopped(v);
@@ -713,10 +717,7 @@ varnish_cli_json(struct varnish *v, const char *cli)
 	const char *errptr;
 	struct vjsn *vj;
 
-	if (v->cli_fd < 0)
-		varnish_launch(v);
-	if (vtc_error)
-		return;
+	VARNISH_LAUNCH(v);
 	u = varnish_ask_cli(v, cli, &resp);
 	vtc_log(v->vl, 2, "CLI %03u <%s>", u, cli);
 	if (u != CLIS_OK)
@@ -742,17 +743,11 @@ varnish_cli(struct varnish *v, const char *cli, unsigned exp, const char *re)
 	const char *errptr;
 	int err;
 
+	VARNISH_LAUNCH(v);
 	if (re != NULL) {
 		vre = VRE_compile(re, 0, &errptr, &err);
 		if (vre == NULL)
 			vtc_fatal(v->vl, "Illegal regexp");
-	}
-	if (v->cli_fd < 0)
-		varnish_launch(v);
-	if (vtc_error) {
-		if (vre != NULL)
-			VRE_free(&vre);
-		return;
 	}
 	u = varnish_ask_cli(v, cli, &resp);
 	vtc_log(v->vl, 2, "CLI %03u <%s>", u, cli);
@@ -777,10 +772,7 @@ varnish_vcl(struct varnish *v, const char *vcl, int fail, char **resp)
 	struct vsb *vsb;
 	enum VCLI_status_e u;
 
-	if (v->cli_fd < 0)
-		varnish_launch(v);
-	if (vtc_error)
-		return;
+	VARNISH_LAUNCH(v);
 	vsb = VSB_new_auto();
 	AN(vsb);
 
@@ -816,10 +808,7 @@ varnish_vclbackend(struct varnish *v, const char *vcl)
 	struct vsb *vsb, *vsb2;
 	enum VCLI_status_e u;
 
-	if (v->cli_fd < 0)
-		varnish_launch(v);
-	if (vtc_error)
-		return;
+	VARNISH_LAUNCH(v);
 	vsb = VSB_new_auto();
 	AN(vsb);
 
@@ -885,10 +874,11 @@ do_stat_dump_cb(void *priv, const struct VSC_point * const pt)
 }
 
 static void
-varnish_vsc(const struct varnish *v, const char *arg)
+varnish_vsc(struct varnish *v, const char *arg)
 {
 	struct dump_priv dp;
 
+	VARNISH_LAUNCH(v);
 	memset(&dp, 0, sizeof dp);
 	dp.v = v;
 	dp.arg = arg;
@@ -955,13 +945,14 @@ do_expect_cb(void *priv, const struct VSC_point * const pt)
  */
 
 static void
-varnish_expect(const struct varnish *v, char * const *av)
+varnish_expect(struct varnish *v, char * const *av)
 {
 	struct stat_priv sp;
 	int good, i, not;
 	uintmax_t u;
 	char *l, *p;
 
+	VARNISH_LAUNCH(v);
 	ZERO_OBJ(&sp, sizeof sp);
 	l = av[0];
 	not = (*l == '!');
@@ -1026,10 +1017,11 @@ varnish_expect(const struct varnish *v, char * const *av)
 }
 
 static void
-vsl_catchup(const struct varnish *v)
+vsl_catchup(struct varnish *v)
 {
 	int vsl_idle;
 
+	VARNISH_LAUNCH(v);
 	vsl_idle = v->vsl_idle;
 	while (!vtc_error && vsl_idle == v->vsl_idle)
 		VTIM_sleep(0.1);
