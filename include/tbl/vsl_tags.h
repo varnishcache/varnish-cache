@@ -389,7 +389,7 @@ SLTM(ExpKill, 0, "Object expiry event",
 	"\tEXP_When p=%p e=%f f=0x%x\n"
 	"\tEXP_Expired x=%u t=%f\n"
 	"\tLRU_Cand p=%p f=0x%x r=%d\n"
-	"\tLRU x=%u\n"
+	"\tLRU vxid=%u\n"
 	"\tLRU_Fail\n"
 	"\t\n"
 	"\tLegend:\n"
