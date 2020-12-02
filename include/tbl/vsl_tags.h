@@ -399,7 +399,7 @@ SLTM(ExpKill, 0, "Object expiry event",
 	"\tE=%f         Old expiry time (unix epoch)\n"
 	"\tf=0x%x       Objcore flags\n"
 	"\tr=%d         Objcore refcount\n"
-	"\tx=%u         Object VXID\n"
+	"\tvxid=%u      Object VXID\n"
 	"\n"
 )
 
