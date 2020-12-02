@@ -113,6 +113,18 @@ vclset_free(struct vclset **setp)
 	free(set);
 }
 
+static int
+vclset_contains(const struct vclset *set, struct vclprog *vp)
+{
+	unsigned u;
+
+	for (u = 0; u < set->n; u++)
+		if (set->a[u] == vp)
+			return (1);
+
+	return (0);
+}
+
 /*--------------------------------------------------------------------*/
 
 
@@ -802,13 +814,9 @@ mgt_vcl_discard_depcheck(struct cli *cli, const char * const *names)
 		vp = set->a[i];
 		if (vp == NULL || VTAILQ_EMPTY(&vp->dto))
 			continue;
-		VTAILQ_FOREACH(vd, &vp->dto, lto) {
-			for (j = 0; j < set->n; j++)
-				if (set->a[j] == vd->from)
-					break;
-			if (j == set->n)
+		VTAILQ_FOREACH(vd, &vp->dto, lto)
+			if (! vclset_contains(set, vd->from))
 				break;
-		}
 		if (vd != NULL)
 			break;
 	}
