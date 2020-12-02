@@ -799,9 +799,10 @@ mgt_vcl_discard_depcheck(struct cli *cli, const char * const *names)
 	 * indirect dependent VCLs also belong.
 	 */
 	for (i = 0; i < set->n; i++) {
-		if (set->a[i] == NULL || VTAILQ_EMPTY(&set->a[i]->dto))
+		vp = set->a[i];
+		if (vp == NULL || VTAILQ_EMPTY(&vp->dto))
 			continue;
-		VTAILQ_FOREACH(vd, &set->a[i]->dto, lto) {
+		VTAILQ_FOREACH(vd, &vp->dto, lto) {
 			for (j = 0; j < set->n; j++)
 				if (set->a[j] == vd->from)
 					break;
@@ -813,7 +814,7 @@ mgt_vcl_discard_depcheck(struct cli *cli, const char * const *names)
 	}
 
 	if (i < set->n) {
-		mgt_vcl_discard_depfail(cli, set->a[i]);
+		mgt_vcl_discard_depfail(cli, vp);
 		vclset_free(&set);
 		return (NULL);
 	}
