@@ -338,7 +338,7 @@ vjs_init(char **args)
 					    e);
 				continue;
 			}
-			ARGV_ERR("-jsolrais: unknown sub-argument '%s'\n",
+			ARGV_ERR("-jsolaris: unknown sub-argument '%s'\n",
 			    *args);
 		}
 	}
