@@ -45,6 +45,7 @@
 #include "vcli_serve.h"
 #include "vct.h"
 #include "vev.h"
+#include "vav.h"
 #include "vtim.h"
 
 struct vclstate {
@@ -69,6 +70,52 @@ static int mgt_vcl_setstate(struct cli *, struct vclprog *,
 static int mgt_vcl_settemp(struct cli *, struct vclprog *, unsigned);
 static int mgt_vcl_askchild(struct cli *, struct vclprog *, unsigned);
 static void mgt_vcl_set_cooldown(struct vclprog *, vtim_mono);
+
+/*--------------------------------------------------------------------*/
+
+/*
+ * An array of VCL programs and labels to work on.
+ *
+ * A null pointer in the array is a VCL program that no longer needs to be
+ * discarded.
+ */
+
+struct vclset {
+	unsigned		magic;
+#define VCLSET_MAGIC		0x94471d69
+	unsigned		n;
+	struct vclprog		**a;
+};
+
+static struct vclset *
+vclset_alloc(unsigned n)
+{
+	struct vclset *set;
+
+	ALLOC_OBJ(set, VCLSET_MAGIC);
+	AN(set);
+
+	set->a = calloc(n, sizeof *set->a);
+	AN(set->a);
+	set->n = n;
+
+	return (set);
+}
+
+static void
+vclset_free(struct vclset **setp)
+{
+	struct vclset *set;
+
+	TAKE_OBJ_NOTNULL(set, setp, VCLSET_MAGIC);
+
+	free(set->a);
+	free(set);
+}
+
+/*--------------------------------------------------------------------*/
+
+
 
 /*--------------------------------------------------------------------*/
 
@@ -707,31 +754,23 @@ mgt_vcl_discard_depfail(struct cli *cli, struct vclprog *vp)
 	}
 }
 
-static struct vclprog **
-mgt_vcl_discard_depcheck(struct cli *cli, const char * const *names,
-    unsigned *lp)
+static struct vclset *
+mgt_vcl_discard_depcheck(struct cli *cli, const char * const *names)
 {
-	struct vclprog **res, *vp;
+	struct vclset *set;
+	struct vclprog *vp;
 	struct vcldep *vd;
-	const char * const *s;
-	unsigned i, j, l;
+	unsigned i, j;
 
-	l = 0;
-	s = names;
-	while (*s != NULL) {
-		l++;
-		s++;
-	}
-	AN(l);
-
-	res = calloc(l, sizeof *res);
-	AN(res);
+	set = vclset_alloc(VAV_Count(names));
+	AN(set);
+	AN(set->n);
 
 	/* NB: Build a list of VCL programs and labels to discard. A null
 	 * pointer in the array is a VCL program that no longer needs to be
 	 * discarded.
 	 */
-	for (i = 0; i < l; i++) {
+	for (i = 0; i < set->n; i++) {
 		vp = mcf_find_vcl(cli, names[i]);
 		if (vp == NULL)
 			break;
@@ -742,16 +781,16 @@ mgt_vcl_discard_depcheck(struct cli *cli, const char * const *names,
 			break;
 		}
 		for (j = 0; j < i; j++)
-			if (vp == res[j])
+			if (vp == set->a[j])
 				break;
 		if (j < i)
 			continue; /* skip duplicates */
 		//lint -e{661}
-		res[i] = vp;
+		set->a[i] = vp;
 	}
 
-	if (i < l) {
-		free(res);
+	if (i < set->n) {
+		vclset_free(&set);
 		return (NULL);
 	}
 
@@ -759,61 +798,60 @@ mgt_vcl_discard_depcheck(struct cli *cli, const char * const *names,
 	 * to the list of VCLs to be discarded. This mechanically ensures that
 	 * indirect dependent VCLs also belong.
 	 */
-	for (i = 0; i < l; i++) {
-		if (res[i] == NULL || VTAILQ_EMPTY(&res[i]->dto))
+	for (i = 0; i < set->n; i++) {
+		if (set->a[i] == NULL || VTAILQ_EMPTY(&set->a[i]->dto))
 			continue;
-		VTAILQ_FOREACH(vd, &res[i]->dto, lto) {
-			for (j = 0; j < l; j++)
-				if (res[j] == vd->from)
+		VTAILQ_FOREACH(vd, &set->a[i]->dto, lto) {
+			for (j = 0; j < set->n; j++)
+				if (set->a[j] == vd->from)
 					break;
-			if (j == l)
+			if (j == set->n)
 				break;
 		}
 		if (vd != NULL)
 			break;
 	}
 
-	if (i < l) {
-		mgt_vcl_discard_depfail(cli, res[i]);
-		free(res);
+	if (i < set->n) {
+		mgt_vcl_discard_depfail(cli, set->a[i]);
+		vclset_free(&set);
 		return (NULL);
 	}
 
-	*lp = l;
-	return (res);
+	return (set);
 }
 
 static void v_matchproto_(cli_func_t)
 mcf_vcl_discard(struct cli *cli, const char * const *av, void *priv)
 {
-	struct vclprog **vp;
-	unsigned i, l, done;
+	struct vclset *set;
+	unsigned i, done;
 
 	(void)priv;
-	vp = mgt_vcl_discard_depcheck(cli, av + 2, &l);
-	if (vp == NULL)
+	set = mgt_vcl_discard_depcheck(cli, av + 2);
+	if (set == NULL)
 		return;
 
 	/* NB: discard VCLs in topological order. At this point it
 	 * can only succeed, but the loop ensures that it eventually
 	 * completes even if the dependency check is ever broken.
 	 */
-	AN(l);
+	AN(set->n);
 	do {
 		done = 0;
-		for (i = 0; i < l; i++) {
-			if (vp[i] == NULL || vp[i]->nto > 0)
+		for (i = 0; i < set->n; i++) {
+			if (set->a[i] == NULL || set->a[i]->nto > 0)
 				continue;
-			mgt_vcl_discard(cli, vp[i]);
-			vp[i] = NULL;
+			mgt_vcl_discard(cli, set->a[i]);
+			set->a[i] = NULL;
 			done++;
 		}
 	} while (done > 0);
 
-	for (i = 0; i < l; i++)
-		if (vp[i] != NULL)
-			WRONG(vp[i]->name);
-	free(vp);
+	for (i = 0; i < set->n; i++)
+		if (set->a[i] != NULL)
+			WRONG(set->a[i]->name);
+	vclset_free(&set);
 }
 
 static void v_matchproto_(cli_func_t)

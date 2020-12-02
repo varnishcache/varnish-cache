@@ -224,6 +224,17 @@ VAV_Free(char **argv)
 	free(argv);
 }
 
+unsigned
+VAV_Count(const char * const *av)
+{
+	unsigned n = 0;
+
+	for (; *av != NULL; av++)
+		n++;
+
+	return (n);
+}
+
 #ifdef TESTPROG
 
 #include <printf.h>
