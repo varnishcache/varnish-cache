@@ -154,10 +154,13 @@ Then continue `Compiling Varnish`_
 Build dependencies on a SmartOS Zone
 ------------------------------------
 
-As of SmartOS pkgsrc 2017Q1, install the following packages::
+As of SmartOS pkgsrc 2019Q4, install the following packages::
 
-	pkgin in autoconf automake libedit libtool ncurses \
-		 pcre py27-sphinx python27 gmake gcc49 pkg-config
+	pkgin in autoconf automake editline libtool ncurses \
+		 pcre python37 py37-sphinx py37-docutils gmake gcc8 pkg-config
+
+*Note:* you will probably need to add ``/opt/local/gcc8/bin`` to
+``PATH`` in order to have ``gcc`` available.
 
 Optionally, to rebuild the svg files::
 
