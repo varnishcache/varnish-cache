@@ -179,10 +179,17 @@ AC_CHECK_HEADERS([edit/readline/readline.h],
 	LIBEDIT_LIBS="-ledit"],
 
 	[PKG_CHECK_MODULES([LIBEDIT], [libedit],
+		[
 		# having the module does not imply having the header
-		[AC_CHECK_HEADERS([editline/readline.h],
+		AC_SUBST(LIBEDIT_CFLAGS)
+		AC_SUBST(LIBEDIT_LIBS)
+		save_CFLAGS="${CFLAGS}"
+		CFLAGS="${CFLAGS} ${LIBEDIT_CFLAGS}"
+		AC_CHECK_HEADERS([editline/readline.h],
 				  [AC_DEFINE([HAVE_LIBEDIT], [1], [Define if we have libedit])],
-				  [AC_MSG_ERROR([Found libedit, but header file is missing. Hint: Install dev package?])])],
+				  [AC_MSG_ERROR([Found libedit, but header file is missing. Hint: Install dev package?])])
+		CFLAGS="${save_CFLAGS}"
+		],
 		[
 		 # AX_LIB_READLINE overwrites LIBS which leads to every binary getting
 		 # linked against libreadline uselessly. So we re-use LIBEDIT_LIBS which
