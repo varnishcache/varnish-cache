@@ -2,7 +2,8 @@
 
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/include \
-	-I$(top_builddir)/include
+	-I$(top_builddir)/include \
+	@CURSES_CFLAGS@
 
 bin_PROGRAMS = varnishhist
 

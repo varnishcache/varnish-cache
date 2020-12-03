@@ -218,9 +218,13 @@ CURSES_LIBS="$CURSES_LIB"
 		])
 	])
 ])
+AC_SUBST([CURSES_CFLAGS])
 AC_SUBST([CURSES_LIBS])
 
+save_CFLAGS="${CFLAGS}"
+CFLAGS="${CFLAGS} ${CURSES_CFLAGS}"
 AC_CHECK_HEADERS([ncursesw/curses.h ncursesw.h ncurses/curses.h ncurses.h curses.h])
+CFLAGS="${save_CFLAGS}"
 
 # Checks for header files.
 AC_HEADER_STDC
