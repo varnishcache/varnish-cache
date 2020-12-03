@@ -69,14 +69,16 @@ vmod_rr_resolve(const struct director *dir, struct worker *wrk,
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CAST_OBJ_NOTNULL(rr, dir->priv, VMOD_DIRECTORS_ROUND_ROBIN_MAGIC);
 	vdir_rdlock(rr->vd);
+	nxt = rr->nxt;
 	for (u = 0; u < rr->vd->n_backend; u++) {
-		nxt = rr->nxt % rr->vd->n_backend;
-		rr->nxt = nxt + 1;
 		be = rr->vd->backend[nxt];
+		nxt++;
+		nxt %= rr->vd->n_backend;
 		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
 		if (be->healthy(be, bo, NULL))
 			break;
 	}
+	rr->nxt = nxt;
 	vdir_unlock(rr->vd);
 	if (u == rr->vd->n_backend)
 		be = NULL;
