@@ -430,14 +430,11 @@ WS_VSB_finish(struct vsb *vsb, struct ws *ws, size_t *szp)
 /*--------------------------------------------------------------------*/
 
 void
-WS_Panic(const struct ws *ws, struct vsb *vsb)
+WS_Panic(struct vsb *vsb, const struct ws *ws)
 {
 
-	VSB_printf(vsb, "ws = %p {\n", ws);
-	if (PAN_already(vsb, ws))
+	if (PAN_dump_struct(vsb, ws, WS_MAGIC, "ws"))
 		return;
-	VSB_indent(vsb, 2);
-	PAN_CheckMagic(vsb, ws, WS_MAGIC);
 	if (ws->id[0] != '\0' && (!(ws->id[0] & 0x20)))	// cheesy islower()
 		VSB_cat(vsb, "OVERFLOWED ");
 	VSB_printf(vsb, "id = \"%s\",\n", ws->id);

@@ -110,23 +110,39 @@ static const void *already_list[N_ALREADY];
 static int already_idx;
 
 int
-PAN_already(struct vsb *vsb, const void *ptr)
+PAN_dump_struct2(struct vsb *vsb, const void *ptr,
+    const char *smagic, unsigned magic, const char *fmt, ...)
 {
+	va_list ap;
+	const unsigned *uptr;
 	int i;
 
+	AN(vsb);
+	va_start(ap, fmt);
+	VSB_vprintf(vsb, fmt, ap);
+	va_end(ap);
 	if (ptr == NULL) {
-		VSB_cat(vsb, "},\n");
-		return (1);
+		VSB_printf(vsb, " = NULL\n");
+		return (-1);
 	}
+	VSB_printf(vsb, " = %p {\n", ptr);
 	for (i = 0; i < already_idx; i++) {
 		if (already_list[i] == ptr) {
 			VSB_cat(vsb, "  [Already dumped, see above]\n");
 			VSB_cat(vsb, "},\n");
-			return (1);
+			return (-2);
 		}
 	}
 	if (already_idx < N_ALREADY)
 		already_list[already_idx++] = ptr;
+	uptr = ptr;
+	if (*uptr != magic) {
+		VSB_printf(vsb, "  .magic = 0x%08x", *uptr);
+		VSB_printf(vsb, " EXPECTED: %s=0x%08x\n", smagic, magic);
+		VSB_printf(vsb, "}\n");
+		return (-3);
+	}
+	VSB_indent(vsb, 2);
 	return (0);
 }
 
@@ -136,15 +152,12 @@ static void
 pan_htc(struct vsb *vsb, const struct http_conn *htc)
 {
 
-	VSB_printf(vsb, "http_conn = %p {\n", htc);
-	if (PAN_already(vsb, htc))
+	if (PAN_dump_struct(vsb, htc, HTTP_CONN_MAGIC, "http_conn"))
 		return;
-	VSB_indent(vsb, 2);
-	PAN_CheckMagic(vsb, htc, HTTP_CONN_MAGIC);
 	if (htc->rfd != NULL)
 		VSB_printf(vsb, "fd = %d (@%p),\n", *htc->rfd, htc->rfd);
 	VSB_printf(vsb, "doclose = %s,\n", sess_close_2str(htc->doclose, 0));
-	WS_Panic(htc->ws, vsb);
+	WS_Panic(vsb, htc->ws);
 	VSB_printf(vsb, "{rxbuf_b, rxbuf_e} = {%p, %p},\n",
 	    htc->rxbuf_b, htc->rxbuf_e);
 	VSB_printf(vsb, "{pipeline_b, pipeline_e} = {%p, %p},\n",
@@ -168,12 +181,9 @@ pan_http(struct vsb *vsb, const char *id, const struct http *h)
 {
 	int i;
 
-	VSB_printf(vsb, "http[%s] = %p {\n", id, h);
-	if (PAN_already(vsb, h))
+	if (PAN_dump_struct(vsb, h, HTTP_MAGIC, "http[%s]", id))
 		return;
-	VSB_indent(vsb, 2);
-	PAN_CheckMagic(vsb, h, HTTP_MAGIC);
-	WS_Panic(h->ws, vsb);
+	WS_Panic(vsb, h->ws);
 	VSB_cat(vsb, "hdrs {\n");
 	VSB_indent(vsb, 2);
 	for (i = 0; i < h->nhd; ++i) {
@@ -189,14 +199,12 @@ pan_http(struct vsb *vsb, const char *id, const struct http *h)
 }
 
 /*--------------------------------------------------------------------*/
+
 static void
 pan_boc(struct vsb *vsb, const struct boc *boc)
 {
-	VSB_printf(vsb, "boc = %p {\n", boc);
-	if (PAN_already(vsb, boc))
+	if (PAN_dump_struct(vsb, boc, BOC_MAGIC, "boc"))
 		return;
-	VSB_indent(vsb, 2);
-	PAN_CheckMagic(vsb, boc, BOC_MAGIC);
 	VSB_printf(vsb, "refcnt = %u,\n", boc->refcount);
 	VSB_printf(vsb, "state = %s,\n", boc_state_2str(boc->state));
 	VSB_printf(vsb, "vary = %p,\n", boc->vary);
@@ -212,11 +220,8 @@ pan_objcore(struct vsb *vsb, const char *typ, const struct objcore *oc)
 {
 	const char *p;
 
-	VSB_printf(vsb, "objcore[%s] = %p {\n", typ, oc);
-	if (PAN_already(vsb, oc))
+	if (PAN_dump_struct(vsb, oc, OBJCORE_MAGIC, "objcore[%s]", typ))
 		return;
-	VSB_indent(vsb, 2);
-	PAN_CheckMagic(vsb, oc, OBJCORE_MAGIC);
 	VSB_printf(vsb, "refcnt = %d,\n", oc->refcnt);
 	VSB_cat(vsb, "flags = {");
 
@@ -267,12 +272,9 @@ pan_wrk(struct vsb *vsb, const struct worker *wrk)
 	unsigned m, u;
 	const char *p;
 
-	VSB_printf(vsb, "worker = %p {\n", wrk);
-	if (PAN_already(vsb, wrk))
+	if (PAN_dump_struct(vsb, wrk, WORKER_MAGIC, "worker"))
 		return;
-	VSB_indent(vsb, 2);
-	PAN_CheckMagic(vsb, wrk, WORKER_MAGIC);
-	WS_Panic(wrk->aws, vsb);
+	WS_Panic(vsb, wrk->aws);
 
 	m = wrk->cur_method;
 	VSB_cat(vsb, "VCL::method = ");
@@ -314,9 +316,8 @@ pan_vfp(struct vsb *vsb, const struct vfp_ctx *vfc)
 {
 	struct vfp_entry *vfe;
 
-	VSB_printf(vsb, "vfc = %p {\n", vfc);
-	VSB_indent(vsb, 2);
-	PAN_CheckMagic(vsb, vfc, VFP_CTX_MAGIC);
+	if (PAN_dump_struct(vsb, vfc, VFP_CTX_MAGIC, "vfc"))
+		return;
 	VSB_printf(vsb, "failed = %d,\n", vfc->failed);
 	VSB_printf(vsb, "req = %p,\n", vfc->req);
 	VSB_printf(vsb, "resp = %p,\n", vfc->resp);
@@ -349,11 +350,8 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 {
 	const char *p;
 
-	VSB_printf(vsb, "busyobj = %p {\n", bo);
-	if (PAN_already(vsb, bo))
+	if (PAN_dump_struct(vsb, bo, BUSYOBJ_MAGIC, "busyobj"))
 		return;
-	VSB_indent(vsb, 2);
-	PAN_CheckMagic(vsb, bo, BUSYOBJ_MAGIC);
 	VSB_printf(vsb, "end = %p,\n", bo->end);
 	VSB_printf(vsb, "retries = %u,\n", bo->retries);
 
@@ -369,7 +367,7 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 	if (bo->vfp_filter_list != NULL)
 		VSB_printf(vsb, "filter_list = \"%s\",\n", bo->vfp_filter_list);
 
-	WS_Panic(bo->ws, vsb);
+	WS_Panic(vsb, bo->ws);
 	VSB_printf(vsb, "ws_bo = %p,\n", (void *)bo->ws_bo);
 
 	// bereq0 left out
@@ -413,10 +411,8 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 static void
 pan_top(struct vsb *vsb, const struct reqtop *top)
 {
-	VSB_printf(vsb, "top = %p {\n", top);
-	if (PAN_already(vsb, top))
+	if (PAN_dump_struct(vsb, top, REQ_MAGIC, "top"))
 		return;
-	VSB_indent(vsb, 2);
 	pan_req(vsb, top->topreq);
 	pan_privs(vsb, top->privs);
 	VCL_Panic(vsb, "vcl0", top->vcl0);
@@ -431,11 +427,8 @@ pan_req(struct vsb *vsb, const struct req *req)
 {
 	const struct transport *xp;
 
-	VSB_printf(vsb, "req = %p {\n", req);
-	if (PAN_already(vsb, req))
+	if (PAN_dump_struct(vsb, req, REQ_MAGIC, "req"))
 		return;
-	VSB_indent(vsb, 2);
-	PAN_CheckMagic(vsb, req, REQ_MAGIC);
 	xp = req->transport;
 	VSB_printf(vsb, "vxid = %u, transport = %s", VXID(req->vsl->wid),
 	    xp == NULL ? "NULL" : xp->name);
@@ -470,7 +463,7 @@ pan_req(struct vsb *vsb, const struct req *req)
 	if (req->wrk != NULL)
 		pan_wrk(vsb, req->wrk);
 
-	WS_Panic(req->ws, vsb);
+	WS_Panic(vsb, req->ws);
 	if (VALID_OBJ(req->htc, HTTP_CONN_MAGIC))
 		pan_htc(vsb, req->htc);
 	pan_http(vsb, "req", req->http);
@@ -523,11 +516,8 @@ pan_sess(struct vsb *vsb, const struct sess *sp)
 	const char *cp;
 	const struct transport *xp;
 
-	VSB_printf(vsb, "sp = %p {\n", sp);
-	if (PAN_already(vsb, sp))
+	if (PAN_dump_struct(vsb, sp, SESS_MAGIC, "sess"))
 		return;
-	VSB_indent(vsb, 2);
-	PAN_CheckMagic(vsb, sp, SESS_MAGIC);
 	VSB_printf(vsb, "fd = %d, vxid = %u,\n",
 	    sp->fd, VXID(sp->vxid));
 	VSB_printf(vsb, "t_open = %f,\n", sp->t_open);
@@ -539,7 +529,7 @@ pan_sess(struct vsb *vsb, const struct sess *sp)
 		return;
 	}
 
-	WS_Panic(sp->ws, vsb);
+	WS_Panic(vsb, sp->ws);
 	xp = XPORT_ByNumber(sp->sattr[SA_TRANSPORT]);
 	VSB_printf(vsb, "transport = %s",
 	    xp == NULL ? "<none>" : xp->name);

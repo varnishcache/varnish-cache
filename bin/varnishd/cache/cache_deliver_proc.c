@@ -39,9 +39,8 @@ VDP_Panic(struct vsb *vsb, const struct vdp_ctx *vdc)
 {
 	struct vdp_entry *vde;
 
-	VSB_printf(vsb, "vdc = %p {\n", vdc);
-	VSB_indent(vsb, 2);
-	PAN_CheckMagic(vsb, vdc, VDP_CTX_MAGIC);
+	if (PAN_dump_struct(vsb, vdc, VDP_CTX_MAGIC, "vdc"))
+		return;
 	VSB_printf(vsb, "nxt = %p,\n", vdc->nxt);
 	VSB_printf(vsb, "retval = %d,\n", vdc->retval);
 

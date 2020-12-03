@@ -45,12 +45,14 @@ h2_sess_panic(struct vsb *vsb, const struct sess *sp)
 
 	AZ(SES_Get_proto_priv(sp, &up));
 
+	AN(up);
 	h2 = (void*)*up;
-	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
-	VSB_cat(vsb, "streams {\n");
-	VSB_indent(vsb, 2);
+	if (PAN_dump_struct(vsb, h2, H2_SESS_MAGIC, "h2_sess"))
+		return;
+	h2 = (void*)*up;
 	VTAILQ_FOREACH(r2, &h2->streams, list) {
-		PAN_CheckMagic(vsb, r2, H2_REQ_MAGIC);
+		if (PAN_dump_struct(vsb, r2, H2_REQ_MAGIC, "stream"))
+			continue;
 		VSB_printf(vsb, "0x%08x", r2->stream);
 		switch (r2->state) {
 #define H2_STREAM(U,sd,d) case H2_S_##U: VSB_printf(vsb, " %-6s", sd); break;
@@ -59,8 +61,9 @@ h2_sess_panic(struct vsb *vsb, const struct sess *sp)
 			VSB_printf(vsb, " State %d", r2->state);
 			break;
 		}
-		VSB_cat(vsb, "\n");
+		VSB_cat(vsb, "},\n");
+		VSB_indent(vsb, -2);
 	}
+	VSB_cat(vsb, "},\n");
 	VSB_indent(vsb, -2);
-	VSB_cat(vsb, "}\n");
 }

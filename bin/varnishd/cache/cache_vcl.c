@@ -251,48 +251,48 @@ vcl_find(const char *name)
 
 /*--------------------------------------------------------------------*/
 
+static void
+vcl_panic_conf(struct vsb *vsb, const struct VCL_conf *conf)
+{
+	int i;
+	const struct vpi_ii *ii;
+
+	if (PAN_dump_struct(vsb, conf, VCL_CONF_MAGIC, "conf"))
+		return;
+	VSB_printf(vsb, "syntax = \"%u\",\n", conf->syntax);
+	VSB_cat(vsb, "srcname = {\n");
+	VSB_indent(vsb, 2);
+	for (i = 0; i < conf->nsrc; ++i)
+		VSB_printf(vsb, "\"%s\",\n", conf->srcname[i]);
+	VSB_indent(vsb, -2);
+	VSB_cat(vsb, "},\n");
+	VSB_cat(vsb, "instances = {\n");
+	VSB_indent(vsb, 2);
+	ii = conf->instance_info;
+	while (ii != NULL && ii->p != NULL) {
+		VSB_printf(vsb, "\"%s\" = %p,\n", ii->name,
+		    (const void *)*(const uintptr_t *)ii->p);
+		ii++;
+	}
+	VSB_indent(vsb, -2);
+	VSB_cat(vsb, "},\n");
+	VSB_indent(vsb, -2);
+	VSB_cat(vsb, "},\n");
+}
+
 void
 VCL_Panic(struct vsb *vsb, const char *nm, const struct vcl *vcl)
 {
-	const struct vpi_ii *ii;
-	int i;
 
 	AN(vsb);
-	if (vcl == NULL)
+	if (PAN_dump_struct(vsb, vcl, VCL_MAGIC, "vcl[%s]", nm))
 		return;
-	VSB_printf(vsb, "%s = {\n", nm);
-	VSB_indent(vsb, 2);
-	PAN_CheckMagic(vsb, vcl, VCL_MAGIC);
 	VSB_printf(vsb, "name = \"%s\",\n", vcl->loaded_name);
 	VSB_printf(vsb, "busy = %u,\n", vcl->busy);
 	VSB_printf(vsb, "discard = %u,\n", vcl->discard);
 	VSB_printf(vsb, "state = %s,\n", vcl->state);
 	VSB_printf(vsb, "temp = %s,\n", vcl->temp ? vcl->temp->name : "(null)");
-	VSB_cat(vsb, "conf = {\n");
-	VSB_indent(vsb, 2);
-	if (vcl->conf == NULL) {
-		VSB_cat(vsb, "conf = NULL\n");
-	} else {
-		PAN_CheckMagic(vsb, vcl->conf, VCL_CONF_MAGIC);
-		VSB_printf(vsb, "syntax = \"%u\",\n", vcl->conf->syntax);
-		VSB_cat(vsb, "srcname = {\n");
-		VSB_indent(vsb, 2);
-		for (i = 0; i < vcl->conf->nsrc; ++i)
-			VSB_printf(vsb, "\"%s\",\n", vcl->conf->srcname[i]);
-		VSB_indent(vsb, -2);
-		VSB_cat(vsb, "instances = {\n");
-		VSB_indent(vsb, 2);
-		ii = vcl->conf->instance_info;
-		while (ii != NULL && ii->p != NULL) {
-			VSB_printf(vsb, "\"%s\" = %p,\n", ii->name,
-			    (const void *)*(const uintptr_t *)ii->p);
-			ii++;
-		}
-		VSB_indent(vsb, -2);
-		VSB_cat(vsb, "},\n");
-	}
-	VSB_indent(vsb, -2);
-	VSB_cat(vsb, "},\n");
+	vcl_panic_conf(vsb, vcl->conf);
 	VSB_indent(vsb, -2);
 	VSB_cat(vsb, "},\n");
 }

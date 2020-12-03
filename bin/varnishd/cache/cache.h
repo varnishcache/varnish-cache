@@ -848,10 +848,9 @@ Tlen(const txt t)
  */
 #define W_TIM_real(w) ((w)->lastused = VTIM_real())
 
-#define PAN_CheckMagic(vsb, ptr, exp)					\
-	do {								\
-		if ((ptr)->magic != (exp))				\
-			VSB_printf((vsb),				\
-			    "MAGIC at %p is 0x%08x (Should be: %s/0x%08x)\n", \
-			    ptr, (ptr)->magic, #exp, exp);		\
-	} while(0)
+int PAN_dump_struct2(struct vsb *vsb, const void *ptr,
+    const char *smagic, unsigned magic, const char *fmt, ...)
+    v_printflike_(5,6);
+
+#define PAN_dump_struct(vsb, ptr, magic, ...) \
+    PAN_dump_struct2(vsb, ptr, #magic, magic, __VA_ARGS__)

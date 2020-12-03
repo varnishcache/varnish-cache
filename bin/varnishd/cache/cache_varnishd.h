@@ -350,7 +350,6 @@ void ObjUnsubscribeEvents(uintptr_t *);
 
 /* cache_panic.c */
 void PAN_Init(void);
-int PAN_already(struct vsb *, const void *);
 const char *sess_close_2str(enum sess_close sc, int want_desc);
 
 /* cache_pool.c */
@@ -481,7 +480,7 @@ void WRK_Init(void);
 
 /* cache_ws.c */
 void WS_Id(const struct ws *ws, char *id);
-void WS_Panic(const struct ws *ws, struct vsb *vsb);
+void WS_Panic(struct vsb *, const struct ws *);
 static inline int
 WS_IsReserved(const struct ws *ws)
 {
