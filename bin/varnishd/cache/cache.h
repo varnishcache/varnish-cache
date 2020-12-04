@@ -543,7 +543,6 @@ struct req {
 	const char		*err_reason;
 
 	struct sess		*sp;
-  const struct suckaddr *real_ip_addr;
 	struct worker		*wrk;
 	struct pool_task	task;
 
