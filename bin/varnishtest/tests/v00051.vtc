@@ -165,6 +165,28 @@ logexpect l2 -v v1 -g vxid -q "vxid == 1012" {
 	expect 0 =	End
 } -start
 
+logexpect l3 -v v1 -g vxid -q "vxid == 1011" {
+	expect 0 1011	Begin           {^req 1010 rxreq}
+	expect 0 =	Timestamp       {^Start: }
+	expect 0 =	Timestamp       {^Req: }
+	expect 0 =	VCL_use         {^vcl4}
+	expect 0 =	ReqStart
+	expect 0 =	ReqMethod       {^GET}
+	expect 0 =	ReqURL          {^/}
+	expect 0 =	ReqProtocol     {^HTTP/1.1}
+	expect 0 =	ReqHeader       {^foo: pipe}
+	expect 0 =	ReqHeader       {^Host: }
+	expect 0 =	ReqHeader       {^X-Forwarded-For: }
+	expect 0 =	VCL_call        {^RECV}
+	expect 0 =	VCL_return      {^pipe}
+	expect 0 =	VCL_call        {^HASH}
+	expect 0 =	VCL_return      {^lookup}
+	expect 0 =	Link            {^bereq 1012 pipe}
+	expect 0 =	RespProtocol    {^HTTP/1.1}
+	expect 0 =	RespStatus      {^503}
+	expect 0 =	RespReason      {^VCL failed}
+} -start
+
 client c1 {
 	txreq -hdr "foo: pipe"
 	rxresp
@@ -176,6 +198,7 @@ varnish v1 -expect vcl_fail == 5
 varnish v1 -expect sc_vcl_failure == 5
 
 logexpect l2 -wait
+logexpect l3 -wait
 
 #######################################################################
 # Fail in vcl_pass, no handling in vcl_synth
