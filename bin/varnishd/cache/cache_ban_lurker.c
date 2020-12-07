@@ -371,7 +371,7 @@ ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 	d = VTIM_real() - cache_param->ban_lurker_age;
 	bd = NULL;
 	VTAILQ_INIT(&obans);
-	for (; b != NULL; b = VTAILQ_NEXT(b, list)) {
+	for (; b != NULL; b = VTAILQ_NEXT(b, list), count++) {
 		if (bd != NULL)
 			ban_lurker_test_ban(wrk, vsl, b, &obans, bd,
 			    count > cutoff ? 1 : 0);
@@ -383,7 +383,6 @@ ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 				bd = VTAILQ_NEXT(b, list);
 			continue;
 		}
-		count++;
 		n = ban_time(b->spec) - d;
 		if (n < 0) {
 			VTAILQ_INSERT_TAIL(&obans, b, l_list);
