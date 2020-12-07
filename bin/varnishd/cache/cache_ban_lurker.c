@@ -377,8 +377,7 @@ ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 			    count > cutoff ? 1 : 0);
 		if (b->flags & BANS_FLAG_COMPLETED)
 			continue;
-		if (b->flags & BANS_FLAG_REQ &&
-		    count <= cutoff) {
+		if (b->flags & BANS_FLAG_REQ && count <= cutoff) {
 			if (bd != NULL)
 				bd = VTAILQ_NEXT(b, list);
 			continue;
