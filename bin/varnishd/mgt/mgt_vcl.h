@@ -68,6 +68,8 @@ struct vclprog {
 	int			nto;
 	int			loaded;
 	VTAILQ_HEAD(, vmoddep)	vmods;
+	unsigned		discard;
+	VTAILQ_ENTRY(vclprog)	discard_list;
 };
 
 struct vmodfile {
