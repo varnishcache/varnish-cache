@@ -66,4 +66,4 @@ varnish v1 -cliok "vcl.symtab"
 
 varnish v1 -clierr 300 "vcl.discard vcl*"
 varnish v1 -clierr 300 "vcl.discard vcl[1-7]"
-varnish v1 -cliok "vcl.discard vcl[1-7A-B]"
+varnish v1 -cliok "vcl.discard vcl[1-7] vcl[A-B]"
