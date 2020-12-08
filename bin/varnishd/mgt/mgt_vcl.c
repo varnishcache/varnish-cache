@@ -33,6 +33,7 @@
 
 #include "config.h"
 
+#include <fnmatch.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -686,13 +687,13 @@ mgt_vcl_discard(struct cli *cli, struct vclproghead *vh, struct vclprog *vp)
 }
 
 static int
-mgt_vcl_discard_mark(struct cli *cli, struct vclproghead *vh, const char *name)
+mgt_vcl_discard_mark(struct cli *cli, struct vclproghead *vh, const char *glob)
 {
 	struct vclprog *vp;
 	unsigned marked = 0;
 
 	VTAILQ_FOREACH(vp, &vclhead, list) {
-		if (strcmp(name, vp->name))
+		if (fnmatch(glob, vp->name, 0))
 			continue;
 		if (vp == active_vcl) {
 			VCLI_SetResult(cli, CLIS_CANT);
@@ -708,7 +709,7 @@ mgt_vcl_discard_mark(struct cli *cli, struct vclproghead *vh, const char *name)
 
 	if (marked == 0) {
 		VCLI_SetResult(cli, CLIS_PARAM);
-		VCLI_Out(cli, "No VCL named %s known\n", name);
+		VCLI_Out(cli, "No VCL name matches %s\n", glob);
 	}
 
 	return (marked);

@@ -99,11 +99,13 @@ CLI_CMD(VCL_STATE,
 
 CLI_CMD(VCL_DISCARD,
 	"vcl.discard",
-	"vcl.discard <configname|label>...", /* XXX: allow globs */
+	"vcl.discard <configname|label>...",
 	"Unload the named configurations (if possible).",
-	" If more than one named configuration is specified the command"
+	"The configname or label arguments are matched as glob patterns."
+	" If more than one configuration matches patterns the command"
 	" is equivalent to individual commands in the right order with"
-	" respect to configurations dependencies.",
+	" respect to configurations dependencies."
+	" All individual patterns must match at least one configuration.",
 	1, -1
 )
 
