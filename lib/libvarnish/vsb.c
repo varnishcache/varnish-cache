@@ -338,6 +338,8 @@ VSB_bcat(struct vsb *s, const void *buf, ssize_t len)
 int
 VSB_cat(struct vsb *s, const char *str)
 {
+	const char *nl;
+	size_t l;
 
 	assert_VSB_integrity(s);
 	assert_VSB_state(s, 0);
@@ -347,12 +349,15 @@ VSB_cat(struct vsb *s, const char *str)
 	if (s->s_error != 0)
 		return (-1);
 
-	while (*str != '\0') {
-		VSB_put_byte(s, *str++);
-		if (s->s_error != 0)
+	while (s->s_indent > 0 && (nl = strchr(str, '\n')) != NULL) {
+		l = nl - str + 1;
+		if (VSB_bcat(s, str, l) < 0)
 			return (-1);
+		str += l;
 	}
-	return (0);
+
+	l = strlen(str);
+	return (VSB_bcat(s, str, l));
 }
 
 /*
