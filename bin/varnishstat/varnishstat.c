@@ -315,6 +315,9 @@ main(int argc, char * const *argv)
 			AN(VSC_Arg(vsc, opt, optarg));
 			has_f = 1;
 			break;
+		case 'r':
+			AN(VSC_Arg(vsc, opt, optarg));
+			break;
 		case 'V':
 			AN(VUT_Arg(vut, opt, optarg));
 			break;
