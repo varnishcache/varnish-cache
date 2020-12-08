@@ -61,6 +61,7 @@ static const struct vclstate VCL_STATE_LABEL[1] = {{ "label" }};
 static unsigned vcl_count;
 
 struct vclproghead vclhead = VTAILQ_HEAD_INITIALIZER(vclhead);
+struct vclproghead discardhead = VTAILQ_HEAD_INITIALIZER(discardhead);
 struct vmodfilehead vmodhead = VTAILQ_HEAD_INITIALIZER(vmodhead);
 static struct vclprog		*active_vcl;
 static struct vev *e_poker;
@@ -658,7 +659,7 @@ mcf_vcl_use(struct cli *cli, const char * const *av, void *priv)
 }
 
 static void
-mgt_vcl_discard(struct cli *cli, struct vclproghead *vh, struct vclprog *vp)
+mgt_vcl_discard(struct cli *cli, struct vclprog *vp)
 {
 	char *p = NULL;
 	unsigned status;
@@ -668,7 +669,7 @@ mgt_vcl_discard(struct cli *cli, struct vclproghead *vh, struct vclprog *vp)
 	assert(vp != active_vcl);
 
 	while (!VTAILQ_EMPTY(&vp->dto))
-		mgt_vcl_discard(cli, vh, VTAILQ_FIRST(&vp->dto)->from);
+		mgt_vcl_discard(cli, VTAILQ_FIRST(&vp->dto)->from);
 
 	if (mcf_is_label(vp)) {
 		AN(vp->warm);
@@ -682,12 +683,12 @@ mgt_vcl_discard(struct cli *cli, struct vclproghead *vh, struct vclprog *vp)
 			assert(status == CLIS_OK || status == CLIS_COMMS);
 		free(p);
 	}
-	VTAILQ_REMOVE(vh, vp, discard_list);
+	VTAILQ_REMOVE(&discardhead, vp, discard_list);
 	mgt_vcl_del(vp);
 }
 
 static int
-mgt_vcl_discard_mark(struct cli *cli, struct vclproghead *vh, const char *glob)
+mgt_vcl_discard_mark(struct cli *cli, const char *glob)
 {
 	struct vclprog *vp;
 	unsigned marked = 0;
@@ -702,7 +703,7 @@ mgt_vcl_discard_mark(struct cli *cli, struct vclproghead *vh, const char *glob)
 			return (-1);
 		}
 		if (!vp->discard)
-			VTAILQ_INSERT_TAIL(vh, vp, discard_list);
+			VTAILQ_INSERT_TAIL(&discardhead, vp, discard_list);
 		vp->discard = 1;
 		marked++;
 	}
@@ -745,12 +746,12 @@ mgt_vcl_discard_depfail(struct cli *cli, struct vclprog *vp)
 }
 
 static int
-mgt_vcl_discard_depcheck(struct cli *cli, struct vclproghead *vh)
+mgt_vcl_discard_depcheck(struct cli *cli)
 {
 	struct vclprog *vp;
 	struct vcldep *vd;
 
-	VTAILQ_FOREACH(vp, vh, list) {
+	VTAILQ_FOREACH(vp, &discardhead, list) {
 		VTAILQ_FOREACH(vd, &vp->dto, lto)
 			if (!vd->from->discard) {
 				mgt_vcl_discard_depfail(cli, vp);
@@ -762,37 +763,36 @@ mgt_vcl_discard_depcheck(struct cli *cli, struct vclproghead *vh)
 }
 
 static void
-mgt_vcl_discard_clear(struct vclproghead *vh)
+mgt_vcl_discard_clear(void)
 {
 	struct vclprog *vp, *vp2;
 
-	VTAILQ_FOREACH_SAFE(vp, vh, discard_list, vp2) {
+	VTAILQ_FOREACH_SAFE(vp, &discardhead, discard_list, vp2) {
 		AN(vp->discard);
 		vp->discard = 0;
-		VTAILQ_REMOVE(vh, vp, discard_list);
+		VTAILQ_REMOVE(&discardhead, vp, discard_list);
 	}
 }
 
 static void v_matchproto_(cli_func_t)
 mcf_vcl_discard(struct cli *cli, const char * const *av, void *priv)
 {
-	struct vclproghead vh[1];
 
 	(void)priv;
 
-	VTAILQ_INIT(vh);
+	assert(VTAILQ_EMPTY(&discardhead));
 	for (av += 2; *av != NULL; av++) {
-		if (mgt_vcl_discard_mark(cli, vh, *av) <= 0) {
-			mgt_vcl_discard_clear(vh);
+		if (mgt_vcl_discard_mark(cli, *av) <= 0) {
+			mgt_vcl_discard_clear();
 			break;
 		}
 	}
 
-	if (mgt_vcl_discard_depcheck(cli, vh) != 0)
-		mgt_vcl_discard_clear(vh);
+	if (mgt_vcl_discard_depcheck(cli) != 0)
+		mgt_vcl_discard_clear();
 
-	while (!VTAILQ_EMPTY(vh))
-		mgt_vcl_discard(cli, vh, VTAILQ_FIRST(vh));
+	while (!VTAILQ_EMPTY(&discardhead))
+		mgt_vcl_discard(cli, VTAILQ_FIRST(&discardhead));
 }
 
 static void v_matchproto_(cli_func_t)
