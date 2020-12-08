@@ -47,6 +47,10 @@
 	    "Lists the available fields to use with the -f option",	\
 	    "Lists the available fields to use with the -f option."	\
 	)
+#define STAT_OPT_r							\
+	VOPT("r", "[-r]", "Toggle raw or adjusted gauges",		\
+	    "Toggle raw or adjusted gauges, adjusted is the default."	\
+	)
 #define STAT_OPT_x							\
 	VOPT("x", "[-x]", "Print statistics to stdout as XML",		\
 	    "Print statistics to stdout as XML."			\
@@ -59,6 +63,7 @@ VSC_OPT_I
 STAT_OPT_j
 STAT_OPT_l
 VUT_OPT_n
+STAT_OPT_r
 VUT_OPT_t
 VUT_GLOBAL_OPT_V
 VSC_OPT_X
