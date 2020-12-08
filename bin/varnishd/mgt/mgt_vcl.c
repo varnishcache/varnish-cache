@@ -777,10 +777,14 @@ mgt_vcl_discard_clear(void)
 static void v_matchproto_(cli_func_t)
 mcf_vcl_discard(struct cli *cli, const char * const *av, void *priv)
 {
+	const struct vclprog *vp;
 
 	(void)priv;
 
 	assert(VTAILQ_EMPTY(&discardhead));
+	VTAILQ_FOREACH(vp, &vclhead, list)
+		AZ(vp->discard);
+
 	for (av += 2; *av != NULL; av++) {
 		if (mgt_vcl_discard_mark(cli, *av) <= 0) {
 			mgt_vcl_discard_clear();
