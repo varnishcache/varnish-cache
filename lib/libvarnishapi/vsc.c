@@ -98,6 +98,7 @@ struct vsc {
 	unsigned		magic;
 #define VSC_MAGIC		0x3373554a
 
+	unsigned		raw;
 	struct vsc_sf_head	sf_list;
 	VTAILQ_HEAD(,vsc_seg)	segs;
 
@@ -185,6 +186,7 @@ VSC_Arg(struct vsc *vsc, char arg, const char *opt)
 	case 'X': return (vsc_sf_arg(vsc, opt, VSC_SF_EXCLUDE));
 	case 'R': return (vsc_sf_arg(vsc, opt, VSC_SF_REQUIRE));
 	case 'f': return (vsc_f_arg(vsc, opt));
+	case 'r': vsc->raw = !vsc->raw; return (1);
 	default: return (0);
 	}
 }
@@ -299,6 +301,7 @@ vsc_fill_point(const struct vsc *vsc, const struct vsc_seg *seg,
 	AN(vt);
 
 	point->point.ptr = (volatile void*)(seg->body + atoi(vt->value));
+	point->point.raw = vsc->raw;
 }
 
 static void

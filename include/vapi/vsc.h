@@ -69,6 +69,7 @@ struct VSC_point {
 	const char *sdesc;		/* short description		*/
 	const char *ldesc;		/* long description		*/
 	void *priv;			/* return val from VSC_new_f	*/
+	unsigned raw;			/* adjusted or raw value	*/
 };
 
 /*---------------------------------------------------------------------
@@ -118,6 +119,7 @@ int VSC_Arg(struct vsc *, char arg, const char *opt);
 	 *	'X' - field exclusion glob
 	 *	'R' - required field glob
 	 *	'f' - legacy field filter glob (deprecated)
+	 *	'r' - toggle raw gauges
 	 *
 	 * Return:
 	 *	-1 error, VSM_Error() returns diagnostic string
@@ -165,7 +167,7 @@ VSC_Value(const struct VSC_point * const pt)
 	uint64_t val;
 
 	val = *pt->ptr;
-	if (pt->semantics == 'g' && val > INT64_MAX)
+	if (!pt->raw && pt->semantics == 'g' && val > INT64_MAX)
 		val = 0;
 	return (val);
 }
