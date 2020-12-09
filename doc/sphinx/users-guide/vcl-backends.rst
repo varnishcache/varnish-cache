@@ -31,41 +31,41 @@ Varnish can have several backends defined you can even join
 several backends together into clusters of backends for load balancing
 purposes.
 
-The "None" backend
+The "none" backend
 ------------------
 
-Backends can also be declared as ``None`` with the following syntax:::
+Backends can also be declared as ``none`` with the following syntax:::
 
-    backend default None;
+    backend default none;
 
-``None`` backends are special:
+``none`` backends are special:
 
-* All backends declared ``None`` compare equal::
+* All backends declared ``none`` compare equal::
 
-    backend a None;
-    backend b None;
+    backend a none;
+    backend b none;
 
     sub vcl_recv {
-	set req.backend_hint = a;
-	if (req.backend_hint == b) {
-		return (synth(200, "this is true"));
-	}
-   }
+        set req.backend_hint = a;
+        if (req.backend_hint == b) {
+            return (synth(200, "this is true"));
+        }
+    }
 
-* The ``None`` backend evaluates to ``false`` when used in a boolean
+* The ``none`` backend evaluates to ``false`` when used in a boolean
   context::
 
-    backend nil None;
+    backend nil none;
 
     sub vcl_recv {
-	set req.backend_hint = nil;
-	if (! req.backend_hint) {
-		return (synth(200, "We get here"));
-	}
-   }
+        set req.backend_hint = nil;
+        if (! req.backend_hint) {
+            return (synth(200, "We get here"));
+        }
+    }
 
 * When directors find no healthy backend, they typically return the
-  ``None`` backend
+  ``none`` backend
 
 Multiple backends
 -----------------
