@@ -148,7 +148,7 @@ jobs:
             if [ << parameters.dist >> = centos ]; then
                 if [ << parameters.release >> = 8 ]; then
                     dnf install -y 'dnf-command(config-manager)'
-                    yum config-manager --set-enabled PowerTools
+                    yum config-manager --set-enabled powertools
                     yum install -y diffutils python3-sphinx
                 else
                     yum install -y python-sphinx
