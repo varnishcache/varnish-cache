@@ -42,6 +42,7 @@
 
 
 #include <errno.h>
+#include <stddef.h>	// size_t
 
 const char * vstrerror(int e);
 
