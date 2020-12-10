@@ -161,6 +161,11 @@ const struct VSC_level_desc *VSC_ChangeLevel(const struct VSC_level_desc*, int);
 	 * Change a level up or down.
 	 */
 
+unsigned VSC_IsRaw(const struct vsc *);
+	/*
+	 * Returns zero if gauges are adjusted by VSC_Value().
+	 */
+
 static inline uint64_t
 VSC_Value(const struct VSC_point * const pt)
 {

@@ -191,6 +191,13 @@ VSC_Arg(struct vsc *vsc, char arg, const char *opt)
 	}
 }
 
+unsigned
+VSC_IsRaw(const struct vsc *vsc)
+{
+
+	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
+	return (vsc->raw);
+}
 
 /*--------------------------------------------------------------------
  */
