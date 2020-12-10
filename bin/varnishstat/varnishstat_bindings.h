@@ -72,6 +72,14 @@ BINDING(UNSEEN,
     "\tof varnishstat. Defaults to hide unseen counters."
 )
 
+BINDING_KEY('r', "r",)
+BINDING(RAW,
+    "\tToggle between showing raw and adjusted gauges. When a gauge\n"
+    "\tis decremented faster than it is incremented, it may appear as\n"
+    "\ta large integer with its most significant bit set. By default\n"
+    "\tsuch values are adjusted to zero."
+)
+
 BINDING_KEY('e', "e",)
 BINDING(SCALE, "\tToggle scaling of values.")
 

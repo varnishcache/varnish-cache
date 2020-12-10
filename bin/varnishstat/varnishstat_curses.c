@@ -935,7 +935,7 @@ handle_common_keypress(enum kb_e kb)
 }
 
 static void
-handle_points_keypress(enum kb_e kb)
+handle_points_keypress(struct vsc *vsc, enum kb_e kb)
 {
 
 	switch (kb) {
@@ -971,6 +971,10 @@ handle_points_keypress(enum kb_e kb)
 		break;
 	case KB_UNSEEN:
 		hide_unseen = 1 - hide_unseen;
+		rebuild = REBUILD_NEXT;
+		break;
+	case KB_RAW:
+		VSC_Arg(vsc, 'r', NULL);
 		rebuild = REBUILD_NEXT;
 		break;
 	case KB_SCALE:
@@ -1046,6 +1050,7 @@ handle_help_keypress(enum kb_e kb)
 		help_line = bindings_help_len;
 		break;
 	case KB_UNSEEN:
+	case KB_RAW:
 	case KB_SCALE:
 	case KB_ACCEL:
 	case KB_DECEL:
@@ -1072,7 +1077,7 @@ handle_help_keypress(enum kb_e kb)
 }
 
 static void
-handle_keypress(int ch)
+handle_keypress(struct vsc *vsc, int ch)
 {
 	enum kb_e kb;
 
@@ -1091,7 +1096,7 @@ handle_keypress(int ch)
 	if (show_help)
 		handle_help_keypress(kb);
 	else
-		handle_points_keypress(kb);
+		handle_points_keypress(vsc, kb);
 }
 
 static void * v_matchproto_(VSC_new_f)
@@ -1201,7 +1206,7 @@ do_curses(struct vsm *vsm, struct vsc *vsc)
 			break;
 #endif
 		default:
-			handle_keypress(ch);
+			handle_keypress(vsc, ch);
 			break;
 		}
 	}
