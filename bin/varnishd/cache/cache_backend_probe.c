@@ -695,7 +695,6 @@ VBP_Insert(struct backend *b, const struct vrt_backend_probe *vp,
 	vbp_build_req(vt, vp, b);
 
 	vbp_reset(vt);
-	VBP_Update_Backend(vt);
 }
 
 void
