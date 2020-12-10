@@ -123,6 +123,7 @@ static int show_help = 0;
 static int help_line = 0;
 static int keep_running = 1;
 static int hide_unseen = 1;
+static int raw_vsc = 0;
 static int page_start = 0;
 static int current = 0;
 static int rebuild = 0;
@@ -869,8 +870,12 @@ draw_bar_b(void)
 		    verbosity->label);
 		X -= strlen(verbosity->label) + 2;
 	}
-	if (!hide_unseen)
+	if (!hide_unseen) {
 		mvwprintw(w_bar_b, 0, X - 6, "%s", "UNSEEN");
+		X -= 8;
+	}
+	if (raw_vsc)
+		mvwprintw(w_bar_b, 0, X - 3, "%s", "RAW");
 
 	wnoutrefresh(w_bar_b);
 }
@@ -975,6 +980,7 @@ handle_points_keypress(struct vsc *vsc, enum kb_e kb)
 		break;
 	case KB_RAW:
 		VSC_Arg(vsc, 'r', NULL);
+		raw_vsc = VSC_IsRaw(vsc);
 		rebuild = REBUILD_NEXT;
 		break;
 	case KB_SCALE:
@@ -1171,6 +1177,7 @@ do_curses(struct vsm *vsm, struct vsc *vsc)
 
 	VSC_State(vsc, newpt, delpt, NULL);
 
+	raw_vsc = VSC_IsRaw(vsc);
 	rebuild |= REBUILD_FIRST;
 	(void)VSC_Iter(vsc, vsm, NULL, NULL);
 	build_pt_array();
