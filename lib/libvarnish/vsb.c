@@ -350,7 +350,7 @@ VSB_cat(struct vsb *s, const char *str)
 		return (-1);
 
 	while (s->s_indent > 0 && (nl = strchr(str, '\n')) != NULL) {
-		l = nl - str + 1;
+		l = (nl - str) + 1;
 		if (VSB_bcat(s, str, l) < 0)
 			return (-1);
 		str += l;
