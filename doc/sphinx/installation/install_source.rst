@@ -87,10 +87,10 @@ Install sphinx
 
 * On Red Hat / CentOS 8, sphinx is not included in the default
   repositories, so execute these steps to include it from the
-  PowerTools repository::
+  powertools repository::
 
     sudo dnf install -y 'dnf-command(config-manager)'
-    sudo yum config-manager --set-enabled PowerTools
+    sudo yum config-manager --set-enabled powertools
     sudo yum install -y diffutils python3-sphinx
 
 * On Red Hat / CentOS <= 7, install sphinx::
