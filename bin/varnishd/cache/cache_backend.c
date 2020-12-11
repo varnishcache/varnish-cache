@@ -635,6 +635,8 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 	be->vsc = VSC_vbe_New(vc, &be->vsc_seg,
 	    "%s.%s", VCL_Name(ctx->vcl), vrt->vcl_name);
 	AN(be->vsc);
+	if (! vcl->temp->is_warm)
+		VRT_VSC_Hide(be->vsc_seg);
 
 	be->tcp_pool = VTP_Ref(vep->ipv4, vep->ipv6,
 	    vep->uds_path, vrt_hash_be(vrt->endpoint));
