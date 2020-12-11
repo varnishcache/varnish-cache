@@ -487,6 +487,7 @@ vbp_thread(struct worker *wrk, void *priv)
 		} else {
 			VBH_delete(vbp_heap, vt->heap_idx);
 			vt->due = now + vt->interval;
+			VBH_insert(vbp_heap, vt);
 			if (!vt->running) {
 				vt->running = 1;
 				vt->task->func = vbp_task;
@@ -497,7 +498,6 @@ vbp_thread(struct worker *wrk, void *priv)
 				if (r)
 					vt->running = 0;
 			}
-			VBH_insert(vbp_heap, vt);
 		}
 	}
 	NEEDLESS(Lck_Unlock(&vbp_mtx));
