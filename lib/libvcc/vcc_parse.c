@@ -219,7 +219,7 @@ vcc_Compound(struct vcc *tl)
 static void
 vcc_ParseFunction(struct vcc *tl)
 {
-	struct symbol *sym;
+	struct symbol *sym, *bsym;
 	struct token *t;
 	struct proc *p;
 
@@ -231,9 +231,20 @@ vcc_ParseFunction(struct vcc *tl)
 	sym = VCC_SymbolGet(tl, SYM_MAIN, SYM_SUB, SYMTAB_CREATE, XREF_DEF);
 	ERRCHK(tl);
 	AN(sym);
+
+	if (vcc_builtin != NULL) {
+		vcc_builtin->t = t;
+		bsym = VCC_SymbolGet(vcc_builtin, SYM_MAIN, SYM_SUB,
+		    SYMTAB_NOERR, XREF_NONE);
+		AZ(vcc_builtin->err);
+	}
+	else
+		bsym = NULL;
+
 	p = sym->proc;
 	if (p == NULL) {
-		if ((t->b[0] == 'v'|| t->b[0] == 'V') &&
+		if (vcc_builtin != NULL && bsym == NULL &&
+		    (t->b[0] == 'v'|| t->b[0] == 'V') &&
 		    (t->b[1] == 'c'|| t->b[1] == 'C') &&
 		    (t->b[2] == 'l'|| t->b[2] == 'L') &&
 		    (t->b[3] == '_')) {
@@ -252,7 +263,7 @@ vcc_ParseFunction(struct vcc *tl)
 		p = vcc_NewProc(tl, sym);
 		p->name = t;
 		VSB_printf(p->cname, "%s", sym->rname);
-	} else if (p->method == NULL) {
+	} else if (p->method == NULL && bsym == NULL) {
 		VSB_printf(tl->sb, "Subroutine '%s' redefined\n", sym->name);
 		vcc_ErrWhere(tl, t);
 		VSB_printf(tl->sb, "Previously defined here:\n");
@@ -260,7 +271,6 @@ vcc_ParseFunction(struct vcc *tl)
 		return;
 	} else {
 		/* Add to VCL sub */
-		AN(p->method);
 		if (p->name == NULL)
 			p->name = t;
 	}
