@@ -65,11 +65,19 @@ sub vcl_recv {
 		# We only deal with GET and HEAD by default
 		return (pass);
 	}
-	if (req.http.Authorization || req.http.Cookie) {
+	if (req.http.Authorization) {
 		# Not cacheable by default
 		return (pass);
 	}
+	call vcl_req_cookie;
 	return (hash);
+}
+
+sub vcl_req_cookie {
+	if (req.http.Cookie) {
+		# Risky to cache by default
+		return (pass);
+	}
 }
 
 sub vcl_pipe {
