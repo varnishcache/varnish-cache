@@ -72,6 +72,8 @@ static const struct method method_tab[] = {
 	{ NULL, 0U, 0}
 };
 
+struct vcc *vcc_builtin;
+
 /*--------------------------------------------------------------------*/
 
 void * v_matchproto_(TlAlloc)
@@ -686,11 +688,14 @@ vcc_CompileSource(struct vcc *tl, struct source *sp, const char *jfile)
 	Fh(tl, 0, "\nextern const struct VCL_conf VCL_conf;\n");
 
 	/* Register and lex the main source */
-	VTAILQ_INSERT_TAIL(&tl->sources, sp, list);
-	sp->idx = tl->nsources++;
-	vcc_Lexer(tl, sp, 0);
-	if (tl->err)
-		return (NULL);
+	if (sp != NULL) {
+		AN(vcc_builtin);
+		VTAILQ_INSERT_TAIL(&tl->sources, sp, list);
+		sp->idx = tl->nsources++;
+		vcc_Lexer(tl, sp, 0);
+		if (tl->err)
+			return (NULL);
+	}
 
 	/* Register and lex the builtin VCL */
 	sp = vcc_new_source(tl->builtin_vcl, "Builtin");
@@ -712,15 +717,6 @@ vcc_CompileSource(struct vcc *tl, struct source *sp, const char *jfile)
 	if (tl->err)
 		return (NULL);
 
-	/* Check if we have any backends at all */
-	if (tl->default_director == NULL) {
-		VSB_cat(tl->sb,
-		    "No backends or directors found in VCL program, "
-		    "at least one is necessary.\n");
-		tl->err = 1;
-		return (NULL);
-	}
-
 	/* Check for orphans */
 	if (vcc_CheckReferences(tl))
 		return (NULL);
@@ -732,6 +728,18 @@ vcc_CompileSource(struct vcc *tl, struct source *sp, const char *jfile)
 	/* Check that all variable uses are legal */
 	if (vcc_CheckUses(tl) || tl->err)
 		return (NULL);
+
+	if (vcc_builtin == NULL)
+		return (NULL);
+
+	/* Check if we have any backends at all */
+	if (tl->default_director == NULL) {
+		VSB_cat(tl->sb,
+		    "No backends or directors found in VCL program, "
+		    "at least one is necessary.\n");
+		tl->err = 1;
+		return (NULL);
+	}
 
 	/* Tie vcl_init/fini in */
 	ifp = New_IniFin(tl);
@@ -785,6 +793,19 @@ vcc_CompileSource(struct vcc *tl, struct source *sp, const char *jfile)
 	return (vsb);
 }
 
+static struct vcc *
+vcc_ParseBuiltin(struct vcc *tl)
+{
+	struct vcc *tl_builtin;
+
+	CHECK_OBJ_NOTNULL(tl, VCC_MAGIC);
+	tl_builtin = VCC_New();
+	AN(tl_builtin);
+	VCC_Builtin_VCL(tl_builtin, tl->builtin_vcl);
+	AZ(vcc_CompileSource(tl_builtin, NULL, NULL));
+	return (tl_builtin);
+}
+
 /*--------------------------------------------------------------------
  * Report the range of VCL language we support
  */
@@ -817,6 +838,16 @@ VCC_Compile(struct vcc *tl, struct vsb **sb,
 	AN(vclsrcfile);
 	AN(ofile);
 	AN(jfile);
+
+	AZ(vcc_builtin);
+	vcc_builtin = vcc_ParseBuiltin(tl);
+	AN(vcc_builtin);
+	if (vcc_builtin->err) {
+		AZ(VSB_finish(vcc_builtin->sb));
+		*sb = vcc_builtin->sb;
+		return (-1);
+	}
+
 	if (vclsrc != NULL)
 		sp = vcc_new_source(vclsrc, vclsrcfile);
 	else
