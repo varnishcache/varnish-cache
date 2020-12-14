@@ -288,6 +288,8 @@ struct vcc {
 	unsigned		vmod_count;
 };
 
+extern struct vcc *vcc_builtin;
+
 struct method {
 	const char		*name;
 	unsigned		ret_bitmap;
