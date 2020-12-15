@@ -142,12 +142,12 @@ shell -match {^\d+.\d{6} miss miss c 1001 quuz
 %{Varnish:vxid}x %{VCL_Log:quux}x"}
 
 # %{VSL:..}x
-shell -match {^req (\d+) rxreq \1 \d{10}\.\d{6} (\d+\.\d{6}) \d+\.\d{6} \2 -
-req (\d+) rxreq \3 \d{10}\.\d{6} (\d+\.\d{6}) \d+\.\d{6} \4 -
-req (\d+) rxreq \5 - - -$} \
+shell -match {^req (\d+) rxreq \1 \d{10}\.\d{6} (\d+\.\d{6}) \d+\.\d{6} \2 - -
+req (\d+) rxreq \3 \d{10}\.\d{6} (\d+\.\d{6}) \d+\.\d{6} \4 - -
+req (\d+) rxreq \5 - - - -$} \
 	{varnishncsa -n ${v1_name} -d -F "%{VSL:Begin}x \
 %{VSL:Begin[2]}x %{VSL:Timestamp:Resp}x \
-%{VSL:Timestamp:Resp[2]}x %{VSL:Timestamp:foo}x"}
+%{VSL:Timestamp:Resp[2]}x %{VSL:Timestamp:foo}x %{VSL:ReqURL[2]}x"}
 
 process p1 -stop -screen-dump
 process p1 -expect-text 1 0 {/1?foo=bar HTTP/1.1" 200 100 "-" "-"}

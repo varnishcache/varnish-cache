@@ -797,7 +797,8 @@ frag_fields(int force, const char *b, const char *e, ...)
 			n++;
 		}
 		assert(p != NULL && q != NULL);
-		assert(p < e && q > p);
+		if (p >= e || q <= p)
+			continue;
 		if (frag->gen != CTX.gen || force) {
 			/* We only grab the same matching field once */
 			frag->gen = CTX.gen;
