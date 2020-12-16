@@ -49,6 +49,7 @@
 #include "vtim.h"
 
 #define HAPROXY_PROGRAM_ENV_VAR	"HAPROXY_PROGRAM"
+#define HAPROXY_ARGS_ENV_VAR	"HAPROXY_ARGS"
 #define HAPROXY_OPT_WORKER	"-W"
 #define HAPROXY_OPT_MCLI	"-S"
 #define HAPROXY_OPT_DAEMON	"-D"
@@ -566,6 +567,7 @@ haproxy_new(const char *name)
 	int closed_sock;
 	char addr[128], port[128];
 	const char *err;
+	const char *env_args;
 	char vsabuf[vsa_suckaddr_len];
 	struct suckaddr *sua;
 
@@ -574,6 +576,11 @@ haproxy_new(const char *name)
 	REPLACE(h->name, name);
 
 	h->args = VSB_new_auto();
+	env_args = getenv(HAPROXY_ARGS_ENV_VAR);
+	if (env_args) {
+		VSB_cat(h->args, env_args);
+		VSB_cat(h->args, " ");
+	}
 
 	h->vl = vtc_logopen("%s", name);
 	vtc_log_set_cmd(h->vl, haproxy_cli_cmds);
