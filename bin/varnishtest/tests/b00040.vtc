@@ -99,6 +99,7 @@ client c1 {
 	rxresp
 	expect resp.status == 400
 } -run
+delay .1
 
 client c1 {
 	txreq -url /9
