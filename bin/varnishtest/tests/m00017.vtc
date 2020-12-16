@@ -130,7 +130,7 @@ varnish v1 -vcl+backend {
 	}
 }
 
-server s1 -repeat 2 {
+server s1 -repeat 2 -keepalive {
 	rxreq
 	expect req.url == "/2"
 	txresp
@@ -172,7 +172,7 @@ varnish v1 -vcl+backend {
 	}
 }
 
-server s1 -repeat 5 {
+server s1 -repeat 5 -keepalive {
 	rxreq
 	txresp
 } -start
@@ -225,7 +225,7 @@ varnish v1 -vcl+backend {
 }
 
 # XXX server keeps params, so we need to reset previous -repeat 5
-server s1 -repeat 3 {
+server s1 -repeat 3 -keepalive {
 	rxreq
 	expect req.url ~ "^/6"
 	txresp
@@ -307,7 +307,7 @@ varnish v1 -vcl+backend {
 	}
 }
 
-server s1 -repeat 3 {
+server s1 -repeat 3 -keepalive {
 	rxreq
 	txresp
 } -start
