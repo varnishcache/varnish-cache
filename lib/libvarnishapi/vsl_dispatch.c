@@ -1290,27 +1290,31 @@ vslq_candidate(struct VSLQ *vslq, const uint32_t *ptr)
 	AN(ptr);
 
 	assert(vslq->grouping != VSL_g_raw);
-	if (vslq->grouping != VSL_g_vxid)
-		return (1);
+	if (vslq->grouping == VSL_g_session)
+		return (1); /* All are needed */
 
 	vsl = vslq->vsl;
 	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
-	if (!vsl->c_opt && !vsl->b_opt)
-		return (1);
+	if (vslq->grouping == VSL_g_vxid) {
+		if (!vsl->c_opt && !vsl->b_opt)
+			return (1); /* Implies also !vsl->E_opt */
+		if (!vsl->b_opt && !VSL_CLIENT(ptr))
+			return (0);
+		if (!vsl->c_opt && !VSL_BACKEND(ptr))
+			return (0);
+		/* Need to parse the Begin tag - fallthrough to below */
+	}
 
 	tag = VSL_TAG(ptr);
 	assert(tag == SLT_Begin);
 	i = vtx_parse_link(VSL_CDATA(ptr), &type, &p_vxid, &reason);
-
 	if (i != 3 || type == VSL_t_unknown)
 		return (0);
-	if (vsl->c_opt && !vsl->b_opt && !VSL_CLIENT(ptr))
-		return (0);
-	if (vsl->b_opt && !vsl->c_opt && !VSL_BACKEND(ptr))
-		return (0);
+
 	if (type == VSL_t_sess)
 		return (0);
-	if (reason == VSL_r_esi && !vsl->E_opt)
+
+	if (vslq->grouping == VSL_g_vxid && reason == VSL_r_esi && !vsl->E_opt)
 		return (0);
 
 	return (1);
