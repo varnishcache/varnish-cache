@@ -829,7 +829,7 @@ VRT_synth_page(VRT_CTX, VCL_STRANDS s)
 
 /*--------------------------------------------------------------------*/
 
-static VCL_VOID
+static VCL_STRING
 vrt_ban_error(VRT_CTX, VCL_STRING err)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -837,77 +837,83 @@ vrt_ban_error(VRT_CTX, VCL_STRING err)
 	AN(err);
 
 	VSLb(ctx->vsl, SLT_VCL_Error, "ban(): %s", err);
+	return (err);
 }
 
-VCL_VOID
+VCL_STRING
 VRT_ban_string(VRT_CTX, VCL_STRING str)
 {
 	char *a1, *a2, *a3;
 	char **av;
 	struct ban_proto *bp;
-	const char *err;
+	const char *err = NULL, *berr = NULL;
 	int i;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
-	if (str == NULL) {
-		vrt_ban_error(ctx, "Null argument");
-		return;
-	}
+	if (str == NULL)
+		return (vrt_ban_error(ctx, "Null argument"));
 
 	bp = BAN_Build();
-	if (bp == NULL) {
-		vrt_ban_error(ctx, "Out of Memory");
-		return;
-	}
+	if (bp == NULL)
+		return (vrt_ban_error(ctx, "Out of Memory"));
+
 	av = VAV_Parse(str, NULL, ARGV_NOESC);
 	AN(av);
 	if (av[0] != NULL) {
-		vrt_ban_error(ctx, av[0]);
+		err = av[0];
 		VAV_Free(av);
 		BAN_Abandon(bp);
-		return;
+		return (vrt_ban_error(ctx, err));
 	}
 	for (i = 0; ;) {
 		a1 = av[++i];
 		if (a1 == NULL) {
-			vrt_ban_error(ctx, "No ban conditions found.");
+			err = "No ban conditions found.";
 			break;
 		}
 		a2 = av[++i];
 		if (a2 == NULL) {
-			vrt_ban_error(ctx, "Expected comparison operator.");
+			err = "Expected comparison operator.";
 			break;
 		}
 		a3 = av[++i];
 		if (a3 == NULL) {
-			vrt_ban_error(ctx, "Expected second operand.");
+			err = "Expected second operand.";
 			break;
 		}
-		err = BAN_AddTest(bp, a1, a2, a3);
-		if (err != NULL) {
-			vrt_ban_error(ctx, err);
+		berr = BAN_AddTest(bp, a1, a2, a3);
+		if (berr != NULL)
 			break;
-		}
+
 		if (av[++i] == NULL) {
-			err = BAN_Commit(bp);
-			if (err == NULL)
+			berr = BAN_Commit(bp);
+			if (berr == NULL)
 				bp = NULL;
-			else
-				vrt_ban_error(ctx, err);
 			break;
 		}
 		if (strcmp(av[i], "&&")) {
-			// XXX refactoring pending via PR
-			VSLb(ctx->vsl, SLT_VCL_Error,
-			    "ban(): Expected && between conditions,"
-			    " found \"%s\"", av[i]);
+			err = WS_Printf(ctx->ws, "Expected && between "
+			    "conditions, found \"%s\"", av[i]);
+			if (err == NULL)
+				err = "Expected && between conditions "
+				    "(workspace overflow)";
 			break;
 		}
+	}
+	if (berr != NULL) {
+		AZ(err);
+		err = WS_Copy(ctx->ws, berr, -1);
+		if (err == NULL)
+			err = "Unknown error (workspace overflow)";
+		berr = NULL;
 	}
 	if (bp != NULL)
 		BAN_Abandon(bp);
 	VAV_Free(av);
+	if (err == NULL)
+		return (NULL);
+	return (vrt_ban_error(ctx, err));
 }
 
 VCL_BYTES

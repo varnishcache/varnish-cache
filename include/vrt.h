@@ -58,6 +58,7 @@
  *	struct vmod_priv_methods added
  *	struct vmod_priv free member replaced with methods
  *	VRT_CTX_Assert() added
+ *	VRT_ban_string() signature changed
  * 12.0 (2020-09-15)
  *	Added VRT_DirectorResolve()
  *	Added VCL_STRING VRT_BLOB_string(VRT_CTX, VCL_BLOB)
@@ -494,7 +495,7 @@ VCL_BYTES VRT_CacheReqBody(VRT_CTX, VCL_BYTES maxsize);
 /* Regexp related */
 
 const char *VRT_regsub(VRT_CTX, int all, const char *, void *, const char *);
-VCL_VOID VRT_ban_string(VRT_CTX, VCL_STRING);
+VCL_STRING VRT_ban_string(VRT_CTX, VCL_STRING);
 VCL_INT VRT_purge(VRT_CTX, VCL_DURATION, VCL_DURATION, VCL_DURATION);
 VCL_VOID VRT_synth(VRT_CTX, VCL_INT, VCL_STRING);
 VCL_VOID VRT_hit_for_pass(VRT_CTX, VCL_DURATION);

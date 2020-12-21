@@ -1,5 +1,7 @@
 varnishtest "Test vcl ban()"
 
+# see also v00009.vtc
+
 server s1 {
 	rxreq
 	txresp -body "foo"

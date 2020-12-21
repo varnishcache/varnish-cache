@@ -311,3 +311,51 @@ vmod_fnmatch(VRT_CTX, VCL_STRING pattern, VCL_STRING subject,
 		flags |= FNM_PERIOD;
 	return (fnmatch(pattern, subject, flags) != FNM_NOMATCH);
 }
+
+static const void * const priv_task_id_ban = &priv_task_id_ban;
+
+VCL_BOOL v_matchproto_(td_std_ban)
+vmod_ban(VRT_CTX, VCL_STRING s)
+{
+	struct vmod_priv *priv_task;
+	VCL_STRING r;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	priv_task = VRT_priv_task(ctx, priv_task_id_ban);
+	if (priv_task == NULL) {
+		VRT_fail(ctx, "std.ban(): no priv_task (out of workspace?)");
+		return (0);
+	}
+
+	r = VRT_ban_string(ctx, s);
+
+	/*
+	 * TRUST_ME: the ban error is const. We save it in the un-const priv
+	 * pointer, but promise to only ever return it as a (const) VCL_STRING
+	 */
+	priv_task->priv = TRUST_ME(r);
+
+	return (r == NULL);
+}
+
+VCL_STRING v_matchproto_(td_std_ban_error)
+vmod_ban_error(VRT_CTX)
+{
+	struct vmod_priv *priv_task;
+	VCL_STRING r;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	priv_task = VRT_priv_task(ctx, priv_task_id_ban);
+	if (priv_task == NULL) {
+		VRT_fail(ctx, "std.ban_error():"
+		    " no priv_task (out of workspace?)");
+		return ("no priv_task");
+	}
+
+	r = priv_task->priv;
+	if (r == NULL)
+		r = "";
+	return (r);
+}

@@ -1,0 +1,104 @@
+varnishtest "Test std.ban()"
+
+# see also v00011.vtc
+
+server s1 {
+	rxreq
+	txresp -body "foo"
+
+	rxreq
+	txresp -body "foo"
+} -start
+
+varnish v1 -vcl+backend {
+	import std;
+
+	sub vcl_synth {
+		set resp.http.b1 = std.ban(req.http.doesntexist);
+		set resp.http.b1e = std.ban_error();
+		set resp.http.b2 = std.ban("");
+		set resp.http.b2e = std.ban_error();
+		set resp.http.b3 = std.ban("req.url");
+		set resp.http.b3e = std.ban_error();
+		set resp.http.b4 = std.ban("req.url //");
+		set resp.http.b4e = std.ban_error();
+		set resp.http.b5 = std.ban("req.url // bar");
+		set resp.http.b5e = std.ban_error();
+		set resp.http.b6 = std.ban("req.url == bar //");
+		set resp.http.b6e = std.ban_error();
+		set resp.http.b7 = std.ban("foo == bar //");
+		set resp.http.b7e = std.ban_error();
+		set resp.http.b8 = std.ban("obj.age == 4");
+		set resp.http.b8e = std.ban_error();
+		set resp.http.b9 = std.ban("obj.age // 4d");
+		set resp.http.b9e = std.ban_error();
+		set resp.http.b10 = std.ban("obj.http.foo > 4d");
+		set resp.http.b10e = std.ban_error();
+		set resp.http.b11 = std.ban("req.url ~ ^/$");
+		set resp.http.b11e = std.ban_error();
+	}
+	sub vcl_recv {
+		if (req.method == "BAN") {
+			return (synth(209,"foo"));
+		}
+	}
+
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.X-Varnish == "1001"
+} -run
+
+logexpect l1 -v v1 -d 1 -g vxid {
+	expect * 1004	VCL_Error {ban[(][)]: Null argument}
+	expect * 1004	VCL_Error {ban[(][)]: No ban conditions found[.]}
+	expect * 1004	VCL_Error {ban[(][)]: Expected comparison operator[.]}
+	expect * 1004	VCL_Error {ban[(][)]: Expected second operand[.]}
+	expect * 1004	VCL_Error {ban[(][)]: expected conditional [(]==, !=, ~ or !~[)] got "//"}
+	expect * 1004	VCL_Error {ban[(][)]: Expected && between conditions, found "//"}
+	expect * 1004	VCL_Error {ban[(][)]: Unknown or unsupported field "foo"}
+	expect * 1004	VCL_Error {ban[(][)]: expected duration <n.nn>.ms|s|m|h|d|w|y. got "4"}
+	expect * 1004	VCL_Error {ban[(][)]: expected conditional [(]==, !=, >, >=, < or <=[)] got "//"}
+	expect * 1004	VCL_Error {ban[(][)]: expected conditional [(]==, !=, ~ or !~[)] got ">"}
+
+
+} -start
+
+client c1 {
+	txreq -req "BAN"
+	rxresp
+	expect resp.http.X-Varnish == "1004"
+	expect resp.status == 209
+	expect resp.http.b1 == false
+	expect resp.http.b1e == {Null argument}
+	expect resp.http.b2 == false
+	expect resp.http.b2e == {No ban conditions found.}
+	expect resp.http.b3 == false
+	expect resp.http.b3e == {Expected comparison operator.}
+	expect resp.http.b4 == false
+	expect resp.http.b4e == {Expected second operand.}
+	expect resp.http.b5 == false
+	expect resp.http.b5e == {expected conditional (==, !=, ~ or !~) got "//"}
+	expect resp.http.b6 == false
+	expect resp.http.b6e == {Expected && between conditions, found "//"}
+	expect resp.http.b7 == false
+	expect resp.http.b7e == {Unknown or unsupported field "foo"}
+	expect resp.http.b8 == false
+	expect resp.http.b8e == {expected duration <n.nn>[ms|s|m|h|d|w|y] got "4"}
+	expect resp.http.b9 == false
+	expect resp.http.b9e == {expected conditional (==, !=, >, >=, < or <=) got "//"}
+	expect resp.http.b10 == false
+	expect resp.http.b10e == {expected conditional (==, !=, ~ or !~) got ">"}
+	expect resp.http.b11 == true
+	expect resp.http.b11e == {}
+} -run
+
+logexpect l1 -wait
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.X-Varnish == "1006"
+} -run
