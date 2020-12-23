@@ -277,6 +277,7 @@ vcc_acl_try_getaddrinfo(struct vcc *tl, struct acl_e *ae)
 		    "Mask (/%u) specified, but string resolves to"
 		    " both IPv4 and IPv6 addresses.\n", ae->mask);
 		vcc_ErrWhere(tl, ae->t_mask);
+		freeaddrinfo(res0);
 		return;
 	}
 
