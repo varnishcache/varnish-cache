@@ -361,6 +361,7 @@ void Pool_Sumstat(const struct worker *w);
 int Pool_TrySumstat(const struct worker *wrk);
 void Pool_PurgeStat(unsigned nobj);
 int Pool_Task_Any(struct pool_task *task, enum task_prio prio);
+void pan_pool(struct vsb *);
 
 /* cache_req.c */
 struct req *Req_New(const struct worker *, struct sess *);

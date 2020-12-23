@@ -788,6 +788,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 		if (bo != NULL)
 			VSL_Flush(bo->vsl, 0);
 		VMOD_Panic(pan_vsb);
+		pan_pool(pan_vsb);
 	} else {
 		VSB_cat(pan_vsb, "Feature short panic suppressed details.\n");
 	}

@@ -240,6 +240,27 @@ pool_poolherder(void *priv)
 }
 
 /*--------------------------------------------------------------------*/
+void
+pan_pool(struct vsb *vsb)
+{
+	struct pool *pp;
+
+	VSB_printf(vsb, "pools = {\n");
+	VSB_indent(vsb, 2);
+	VTAILQ_FOREACH(pp, &pools, list) {
+		if (PAN_dump_struct(vsb, pp, POOL_MAGIC, "pool"))
+			continue;
+		VSB_printf(vsb, "nidle = %u,\n", pp->nidle);
+		VSB_printf(vsb, "nthr = %u,\n", pp->nthr);
+		VSB_printf(vsb, "lqueue = %u\n", pp->lqueue);
+		VSB_indent(vsb, -2);
+		VSB_printf(vsb, "},\n");
+	}
+	VSB_indent(vsb, -2);
+	VSB_printf(vsb, "},\n");
+}
+
+/*--------------------------------------------------------------------*/
 
 void
 Pool_Init(void)
