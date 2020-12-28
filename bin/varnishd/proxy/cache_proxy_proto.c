@@ -45,6 +45,9 @@
 #include "vss.h"
 #include "vtcp.h"
 
+// max. PROXY payload length (excl. sig) - XXX parameter?
+#define VPX_MAX_LEN 1024
+
 struct vpx_tlv {
 	unsigned		magic;
 #define VPX_TLV_MAGIC		0xdeb9a4a5
@@ -532,9 +535,8 @@ vpx_new_session(struct worker *wrk, void *arg)
 	assert(sizeof vpx2_sig == 12);
 
 	HTC_RxInit(req->htc, req->ws);
-	hs = HTC_RxStuff(req->htc, vpx_complete,
-	    NULL, NULL, NAN, sp->t_idle + cache_param->timeout_idle, NAN,
-	    1024);			// XXX ?
+	hs = HTC_RxStuff(req->htc, vpx_complete, NULL, NULL, NAN,
+	    sp->t_idle + cache_param->timeout_idle, NAN, VPX_MAX_LEN);
 	if (hs != HTC_S_COMPLETE) {
 		Req_Release(req);
 		SES_DeleteHS(sp, hs, NAN);
