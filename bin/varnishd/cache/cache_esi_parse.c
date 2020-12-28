@@ -225,6 +225,7 @@ vep_match(const struct vep_state *vep, const char *b, const char *e)
 	struct vep_match *vm;
 	const char *q, *r;
 
+	AN(vep->match);
 	for (vm = vep->match; vm->match != NULL; vm++) {
 		assert(strlen(vm->match) <= sizeof (vep->tag));
 		r = b;
