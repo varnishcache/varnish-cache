@@ -586,6 +586,34 @@ SES_Delete(struct sess *sp, enum sess_close reason, vtim_real now)
 	SES_Rel(sp);
 }
 
+void
+SES_DeleteHS(struct sess *sp, enum htc_status_e hs, vtim_real now)
+{
+	enum sess_close reason;
+
+	switch (hs) {
+	case HTC_S_JUNK:
+		reason = SC_RX_JUNK;
+		break;
+	case HTC_S_CLOSE:
+		reason = SC_REM_CLOSE;
+		break;
+	case HTC_S_TIMEOUT:
+		reason = SC_RX_TIMEOUT;
+		break;
+	case HTC_S_OVERFLOW:
+		reason = SC_RX_OVERFLOW;
+		break;
+	case HTC_S_EOF:
+		reason = SC_REM_CLOSE;
+		break;
+	default:
+		WRONG("htc_status (bad)");
+	}
+	SES_Delete(sp, reason, now);
+}
+
+
 /*--------------------------------------------------------------------
  */
 

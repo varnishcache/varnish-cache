@@ -325,22 +325,8 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 				    req->htc->rxbuf_e - req->htc->rxbuf_b;
 				Req_AcctLogCharge(wrk->stats, req);
 				Req_Release(req);
-				switch (hs) {
-				case HTC_S_CLOSE:
-					SES_Delete(sp, SC_REM_CLOSE, NAN);
-					return;
-				case HTC_S_TIMEOUT:
-					SES_Delete(sp, SC_RX_TIMEOUT, NAN);
-					return;
-				case HTC_S_OVERFLOW:
-					SES_Delete(sp, SC_RX_OVERFLOW, NAN);
-					return;
-				case HTC_S_EOF:
-					SES_Delete(sp, SC_REM_CLOSE, NAN);
-					return;
-				default:
-					WRONG("htc_status (bad)");
-				}
+				SES_DeleteHS(sp, hs, NAN);
+				return;
 			}
 			if (hs == HTC_S_IDLE) {
 				wrk->stats->sess_herd++;
