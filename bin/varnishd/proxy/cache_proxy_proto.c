@@ -335,7 +335,8 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 	char pb[VTCP_PORTBUFSIZE];
 	struct vpx_tlv_iter vpi[1], vpi2[1];
 	struct vpx_tlv *tlv;
-	unsigned l, hdr_len, flen, alen;
+	uint16_t l;
+	unsigned hdr_len, flen, alen;
 	unsigned const plen = 2, aoff = 16;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -344,6 +345,7 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 
 	assert(req->htc->rxbuf_e - req->htc->rxbuf_b >= 16L);
 	l = vbe16dec(req->htc->rxbuf_b + 14);
+	assert(l <= VPX_MAX_LEN); // vpx_complete()
 	hdr_len = l + 16L;
 	assert(req->htc->rxbuf_e >= req->htc->rxbuf_b + hdr_len);
 	HTC_RxPipeline(req->htc, req->htc->rxbuf_b + hdr_len);
@@ -479,7 +481,7 @@ static enum htc_status_e v_matchproto_(htc_complete_f)
 vpx_complete(struct http_conn *htc)
 {
 	size_t z, l;
-	unsigned j;
+	uint16_t j;
 	char *p, *q;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
@@ -508,6 +510,8 @@ vpx_complete(struct http_conn *htc)
 			if (l < 16)
 				return (HTC_S_MORE);
 			j = vbe16dec(p + 14);
+			if (j > VPX_MAX_LEN)
+				return (HTC_S_OVERFLOW);
 			if (l < 16L + j)
 				return (HTC_S_MORE);
 			return (HTC_S_COMPLETE);
