@@ -537,7 +537,7 @@ vpx_new_session(struct worker *wrk, void *arg)
 	    1024);			// XXX ?
 	if (hs != HTC_S_COMPLETE) {
 		Req_Release(req);
-		SES_Delete(sp, SC_RX_JUNK, NAN);
+		SES_DeleteHS(sp, hs, NAN);
 		return;
 	}
 	p = req->htc->rxbuf_b;

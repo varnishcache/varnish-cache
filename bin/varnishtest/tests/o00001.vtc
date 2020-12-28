@@ -73,6 +73,8 @@ logexpect l1 -v v1 -g raw {
 	expect * 1013	ProxyGarbage	"PROXY2: Ignoring short IPv6 addresses \\(35\\)"
 	expect * 1016	Proxy		"2 1.2.3.4 2314 5.6.7.8 2828"
 	expect * 1019	Proxy		"2 102:304:506::d0e:f10 2314 8182:8384:8586::8d8e:8f80 2828"
+	expect * 1022	Begin		"^sess 0 PROXY"
+	expect 1 1022	SessClose	"^RX_OVERFLOW"
 } -start
 
 client c1 {
@@ -193,6 +195,19 @@ client c1 \
 	expect resp.http.li == "${v1_addr}"
 	expect resp.http.lp == "${v1_port}"
 	expect resp.http.ri != "102:304:506::d0e:f10"
+} -run
+
+delay .1
+
+client c2 {
+	# max length with garbage
+	sendhex "0d 0a 0d 0a 00 0d 0a 51 55 49 54 0a"
+	# annouce 1025 bytes
+	sendhex "20 00 04 01"
+	# 1024 bytes implicit proxy hdr limit
+	send_n 64 "0123456789abcdef"
+	timeout 8
+	expect_close
 } -run
 
 delay .1
