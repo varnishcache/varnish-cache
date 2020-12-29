@@ -226,14 +226,17 @@ mgt_vcl_del(struct vclprog *vp)
 	char *p;
 	struct vmoddep *vd;
 	struct vmodfile *vf;
+	struct vcldep *dep;
 
 	CHECK_OBJ_NOTNULL(vp, VCLPROG_MAGIC);
 	assert(VTAILQ_EMPTY(&vp->dto));
 
 	mgt_vcl_symtab_clean(vp);
 
-	while (!VTAILQ_EMPTY(&vp->dfrom))
-		mgt_vcl_dep_del(VTAILQ_FIRST(&vp->dfrom));
+	while ((dep = VTAILQ_FIRST(&vp->dfrom)) != NULL) {
+		assert(dep->from == vp);
+		mgt_vcl_dep_del(dep);
+	}
 
 	VTAILQ_REMOVE(&vclhead, vp, list);
 	if (vp->state != VCL_STATE_LABEL)
