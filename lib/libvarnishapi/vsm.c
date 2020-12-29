@@ -304,6 +304,7 @@ static void
 vsm_delset(struct vsm_set **p)
 {
 	struct vsm_set *vs;
+	struct vsm_seg *vg;
 
 	AN(p);
 	vs = *p;
@@ -312,10 +313,14 @@ vsm_delset(struct vsm_set **p)
 		closefd(&vs->fd);
 	if (vs->dfd >= 0)
 		closefd(&vs->dfd);
-	while (!VTAILQ_EMPTY(&vs->stale))
-		vsm_delseg(VTAILQ_FIRST(&vs->stale), 0);
-	while (!VTAILQ_EMPTY(&vs->segs))
-		vsm_delseg(VTAILQ_FIRST(&vs->segs), 0);
+	while ((vg = VTAILQ_FIRST(&vs->stale)) != NULL) {
+		AN(vg->flags & VSM_FLAG_STALE);
+		vsm_delseg(vg, 0);
+	}
+	while ((vg = VTAILQ_FIRST(&vs->segs)) != NULL) {
+		AZ(vg->flags & VSM_FLAG_STALE);
+		vsm_delseg(vg, 0);
+	}
 	assert(VTAILQ_EMPTY(&vs->clusters));
 	VLU_Destroy(&vs->vlu);
 	FREE_OBJ(vs);
