@@ -33,8 +33,6 @@
 
 #include "cache/cache_varnishd.h"
 
-#include <netinet/in.h>
-
 #include <ctype.h>
 #include <stdio.h>
 
