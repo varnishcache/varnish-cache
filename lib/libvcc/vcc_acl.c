@@ -200,6 +200,7 @@ vcc_acl_add_entry(struct vcc *tl, const struct acl_e *ae, int l,
 			vcc_ErrWhere(tl, ae2->t_addr);
 			VSB_cat(tl->sb, "vs:\n");
 			vcc_ErrWhere(tl, aen->t_addr);
+			free(aen);
 			return;
 		}
 		/*
@@ -387,12 +388,14 @@ vcc_acl_entry(struct vcc *tl)
 		if (*e != '\0') {
 			VSB_cat(tl->sb, ".../mask is not numeric.\n");
 			vcc_ErrWhere(tl, ae->t_addr);
+			free(ae);
 			return;
 		}
 		ae->t_mask = ae->t_addr;
 		if (tl->t->tok == '/') {
 			VSB_cat(tl->sb, "/mask only allowed once.\n");
 			vcc_ErrWhere(tl, tl->t);
+			free(ae);
 			return;
 		}
 	} else if (tl->t->tok == '/') {

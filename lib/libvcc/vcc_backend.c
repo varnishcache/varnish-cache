@@ -261,6 +261,7 @@ vcc_ParseProbeSpec(struct vcc *tl, const struct symbol *sym, char **name)
 
 		SkipToken(tl, ';');
 	}
+	free(fs);
 
 	if (t_threshold != NULL || t_window != NULL) {
 		if (t_threshold == NULL && t_window != NULL) {
@@ -353,20 +354,6 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 	unsigned u;
 	double t;
 
-	fs = vcc_FldSpec(tl,
-	    "?host",
-	    "?port",
-	    "?path",
-	    "?host_header",
-	    "?connect_timeout",
-	    "?first_byte_timeout",
-	    "?between_bytes_timeout",
-	    "?probe",
-	    "?max_connections",
-	    "?proxy_header",
-	    NULL);
-
-
 	if (tl->t->tok == ID &&
 	    (vcc_IdIs(tl->t, "none") || vcc_IdIs(tl->t, "None"))) {
 		vcc_NextToken(tl);
@@ -390,6 +377,19 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}
+
+	fs = vcc_FldSpec(tl,
+	    "?host",
+	    "?port",
+	    "?path",
+	    "?host_header",
+	    "?connect_timeout",
+	    "?first_byte_timeout",
+	    "?between_bytes_timeout",
+	    "?probe",
+	    "?max_connections",
+	    "?proxy_header",
+	    NULL);
 
 	tl->fb = VSB_new_auto();
 	AN(tl->fb);
@@ -512,6 +512,7 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 	}
 
 	vcc_FieldsOk(tl, fs);
+	free(fs);
 	ERRCHK(tl);
 
 	ExpectErr(tl, '}');
