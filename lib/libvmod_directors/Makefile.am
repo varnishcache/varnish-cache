@@ -15,4 +15,4 @@ libvmod_directors_la_SOURCES = \
 	shard_dir.h
 
 # Use vmodtool.py generated automake boilerplate
-include $(srcdir)/automake_boilerplate.am
+include $(srcdir)/automake_boilerplate_directors.am

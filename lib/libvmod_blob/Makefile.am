@@ -12,4 +12,4 @@ libvmod_blob_la_SOURCES = \
 	tbl_case.h
 
 # Use vmodtool.py generated automake boilerplate
-include $(srcdir)/automake_boilerplate.am
+include $(srcdir)/automake_boilerplate_blob.am

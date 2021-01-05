@@ -6,7 +6,7 @@ libvmod_debug_la_SOURCES = \
 	vmod_debug_dyn.c
 
 
-include $(srcdir)/automake_boilerplate.am
+include $(srcdir)/automake_boilerplate_debug.am
 
 # Allow Vmod_wrong*_Data to be exported
 libvmod_debug_la_LDFLAGS = \

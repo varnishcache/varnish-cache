@@ -81,7 +81,7 @@ PFX.h vmod_XXX.rst vmod_XXX.man.rst: PFX.c
 PFX.c: $(vmodtool) $(srcdir)/VCC
 \t@PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/VCC
 
-EXTRA_DIST = $(srcdir)/VCC automake_boilerplate.am
+EXTRA_DIST = $(srcdir)/VCC automake_boilerplate_XXX.am
 
 CLEANFILES = $(builddir)/PFX.c $(builddir)/PFX.h \\
 \t$(builddir)/vmod_XXX.rst \\
@@ -987,7 +987,8 @@ class vcc(object):
     def amboilerplate(self):
         ''' Produce boilplate for autocrap tools '''
         vcc = os.path.basename(self.inputfile)
-        fo = self.openfile("automake_boilerplate.am")
+        fn = "automake_boilerplate_" + self.modname + ".am"
+        fo = self.openfile(fn)
         fo.write(AMBOILERPLATE.replace("XXX", self.modname)
                  .replace("VCC", vcc)
                  .replace("PFX", self.pfx))

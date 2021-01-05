@@ -30,7 +30,7 @@ vcc_vtc_if.h vmod_vtc.rst vmod_vtc.man.rst: vcc_vtc_if.c
 vcc_vtc_if.c: $(vmodtool) $(srcdir)/vmod_vtc.vcc
 	@PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/vmod_vtc.vcc
 
-EXTRA_DIST = $(srcdir)/vmod_vtc.vcc automake_boilerplate.am
+EXTRA_DIST = $(srcdir)/vmod_vtc.vcc automake_boilerplate_vtc.am
 
 CLEANFILES = $(builddir)/vcc_vtc_if.c $(builddir)/vcc_vtc_if.h \
 	$(builddir)/vmod_vtc.rst \

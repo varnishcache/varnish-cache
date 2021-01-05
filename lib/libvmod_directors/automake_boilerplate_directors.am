@@ -30,7 +30,7 @@ vcc_directors_if.h vmod_directors.rst vmod_directors.man.rst: vcc_directors_if.c
 vcc_directors_if.c: $(vmodtool) $(srcdir)/vmod_directors.vcc
 	@PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/vmod_directors.vcc
 
-EXTRA_DIST = $(srcdir)/vmod_directors.vcc automake_boilerplate.am
+EXTRA_DIST = $(srcdir)/vmod_directors.vcc automake_boilerplate_directors.am
 
 CLEANFILES = $(builddir)/vcc_directors_if.c $(builddir)/vcc_directors_if.h \
 	$(builddir)/vmod_directors.rst \

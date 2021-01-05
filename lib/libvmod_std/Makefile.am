@@ -7,4 +7,4 @@ libvmod_std_la_SOURCES = \
 	vmod_std_querysort.c
 
 # Use vmodtool.py generated automake boilerplate
-include $(srcdir)/automake_boilerplate.am
+include $(srcdir)/automake_boilerplate_std.am

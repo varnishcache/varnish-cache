@@ -30,7 +30,7 @@ vcc_purge_if.h vmod_purge.rst vmod_purge.man.rst: vcc_purge_if.c
 vcc_purge_if.c: $(vmodtool) $(srcdir)/vmod_purge.vcc
 	@PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/vmod_purge.vcc
 
-EXTRA_DIST = $(srcdir)/vmod_purge.vcc automake_boilerplate.am
+EXTRA_DIST = $(srcdir)/vmod_purge.vcc automake_boilerplate_purge.am
 
 CLEANFILES = $(builddir)/vcc_purge_if.c $(builddir)/vcc_purge_if.h \
 	$(builddir)/vmod_purge.rst \

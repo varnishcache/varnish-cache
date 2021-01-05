@@ -5,4 +5,4 @@ libvmod_unix_la_SOURCES = \
 	cred_compat.h
 
 # Use vmodtool.py generated automake boilerplate
-include $(srcdir)/automake_boilerplate.am
+include $(srcdir)/automake_boilerplate_unix.am

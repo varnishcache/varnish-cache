@@ -30,7 +30,7 @@ vcc_proxy_if.h vmod_proxy.rst vmod_proxy.man.rst: vcc_proxy_if.c
 vcc_proxy_if.c: $(vmodtool) $(srcdir)/vmod_proxy.vcc
 	@PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/vmod_proxy.vcc
 
-EXTRA_DIST = $(srcdir)/vmod_proxy.vcc automake_boilerplate.am
+EXTRA_DIST = $(srcdir)/vmod_proxy.vcc automake_boilerplate_proxy.am
 
 CLEANFILES = $(builddir)/vcc_proxy_if.c $(builddir)/vcc_proxy_if.h \
 	$(builddir)/vmod_proxy.rst \

@@ -30,7 +30,7 @@ vcc_debug_if.h vmod_debug.rst vmod_debug.man.rst: vcc_debug_if.c
 vcc_debug_if.c: $(vmodtool) $(srcdir)/vmod_debug.vcc
 	@PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/vmod_debug.vcc
 
-EXTRA_DIST = $(srcdir)/vmod_debug.vcc automake_boilerplate.am
+EXTRA_DIST = $(srcdir)/vmod_debug.vcc automake_boilerplate_debug.am
 
 CLEANFILES = $(builddir)/vcc_debug_if.c $(builddir)/vcc_debug_if.h \
 	$(builddir)/vmod_debug.rst \
