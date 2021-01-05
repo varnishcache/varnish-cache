@@ -2,9 +2,6 @@
 
 TESTS = @VTC_TESTS@
 
-vtc-refresh-tests:
-	@cd $(top_builddir) && ./config.status --recheck
-
 include $(top_srcdir)/vtc.am
 
 DISTCLEANFILES = _.ok

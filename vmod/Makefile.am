@@ -1,5 +1,9 @@
 #
 
+TESTS = @VMOD_TESTS@
+
+include $(top_srcdir)/vtc.am
+
 AM_LDFLAGS  = $(AM_LT_LDFLAGS)
 
 AM_CPPFLAGS = \
@@ -81,7 +85,7 @@ libvmod_vtc_la_SOURCES = \
 #
 
 vmod_LTLIBRARIES =
-EXTRA_DIST = $(libvmod_debug_extra_sources)
+EXTRA_DIST = $(libvmod_debug_extra_sources) $(TESTS)
 CLEANFILES = $(libvmod_debug_built_sources)
 BUILT_SOURCES = $(libvmod_debug_built_sources)
 
@@ -110,33 +114,3 @@ vmod_debug_symbols_regex = 'Vmod_.*_Data'
 
 # not --strict
 vmodtoolargs_debug = --boilerplate -o vcc_debug_if
-
-#
-# Manage the vmod test suite
-#
-
-TESTS = \
-	tests/cookie_b00000.vtc \
-	tests/cookie_b00001.vtc \
-	tests/cookie_b00002.vtc \
-	tests/cookie_b00003.vtc \
-	tests/cookie_b00004.vtc \
-	tests/cookie_b00005.vtc \
-	tests/cookie_b00006.vtc \
-	tests/cookie_b00007.vtc \
-	tests/cookie_b00008.vtc \
-	tests/cookie_b00009.vtc \
-	tests/cookie_b00010.vtc \
-	tests/cookie_b00011.vtc \
-	tests/cookie_b00012.vtc \
-	tests/cookie_b00013.vtc \
-	tests/cookie_r00028.vtc \
-	tests/cookie_v00000.vtc \
-	tests/std_b00001.vtc
-
-EXTRA_DIST += $(TESTS)
-
-vtc-refresh-tests:
-	@cd $(top_builddir) && ./config.status --file=$(subdir)/Makefile
-
-include $(top_srcdir)/vtc.am

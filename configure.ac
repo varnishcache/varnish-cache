@@ -842,6 +842,10 @@ VTC_TESTS="$(cd $srcdir/bin/varnishtest && echo tests/*.vtc)"
 AC_SUBST(VTC_TESTS)
 AM_SUBST_NOTMAKE(VTC_TESTS)
 
+VMOD_TESTS="$(cd $srcdir/vmod && echo tests/*.vtc)"
+AC_SUBST(VMOD_TESTS)
+AM_SUBST_NOTMAKE(VMOD_TESTS)
+
 VSC_SRC="$(cd $srcdir/bin/varnishd && echo *.vsc)"
 VSC_GEN_C="$(echo $VSC_SRC | sed 's:\.vsc:.c:g')"
 VSC_GEN_H="$(echo $VSC_SRC | sed 's:\.vsc:.h:g')"

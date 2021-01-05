@@ -17,5 +17,5 @@ vtc-check-tests:
 	@mkdir -p tests ; \
 	LC_ALL=C; \
 	if [ "$$(cd $(srcdir) && echo tests/*.vtc)" != "$(TESTS)" ]; then \
-		$(MAKE) $(AM_MAKEFLAGS) vtc-refresh-tests ; \
+		cd $(top_builddir) && ./config.status --recheck ; \
 	fi
