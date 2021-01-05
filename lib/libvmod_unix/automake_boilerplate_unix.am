@@ -12,11 +12,13 @@ vmodtoolargs ?= --strict --boilerplate -o vcc_unix_if
 
 vmod_LTLIBRARIES = libvmod_unix.la
 
-libvmod_unix_la_CFLAGS ?= \
+libvmod_unix_la_CFLAGS = \
 	@SAN_CFLAGS@
 
+vmod_unix_symbols_regex ?= Vmod_unix_Data
+
 libvmod_unix_la_LDFLAGS = \
-	-export-symbols-regex 'Vmod_unix_Data' \
+	-export-symbols-regex $(vmod_unix_symbols_regex) \
 	$(AM_LDFLAGS) \
 	$(VMOD_LDFLAGS) \
 	@SAN_LDFLAGS@

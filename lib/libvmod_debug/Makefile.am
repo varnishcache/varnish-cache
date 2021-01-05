@@ -5,16 +5,10 @@ libvmod_debug_la_SOURCES = \
 	vmod_debug_obj.c \
 	vmod_debug_dyn.c
 
-
 include $(srcdir)/automake_boilerplate_debug.am
 
 # Allow Vmod_wrong*_Data to be exported
-libvmod_debug_la_LDFLAGS = \
-	-export-symbols-regex 'Vmod_.*_Data' \
-	$(AM_LDFLAGS) \
-	$(VMOD_LDFLAGS) \
-	@SAN_LDFLAGS@
-
+vmod_debug_symbols_regex = 'Vmod_.*_Data'
 
 # not --strict
 vmodtoolargs = --boilerplate -o vcc_debug_if
