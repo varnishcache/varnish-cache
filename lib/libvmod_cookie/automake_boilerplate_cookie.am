@@ -8,7 +8,7 @@ AM_CPPFLAGS = \
 	-I$(top_builddir)/include
 
 vmodtool = $(top_srcdir)/lib/libvcc/vmodtool.py
-vmodtoolargs ?= --strict --boilerplate -o vcc_cookie_if
+vmodtoolargs_cookie ?= --strict --boilerplate -o vcc_cookie_if
 
 vmod_LTLIBRARIES = libvmod_cookie.la
 
@@ -30,7 +30,7 @@ $(libvmod_cookie_la_OBJECTS): vcc_cookie_if.h
 vcc_cookie_if.h vmod_cookie.rst vmod_cookie.man.rst: vcc_cookie_if.c
 
 vcc_cookie_if.c: $(vmodtool) $(srcdir)/vmod_cookie.vcc
-	@PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/vmod_cookie.vcc
+	@PYTHON@ $(vmodtool) $(vmodtoolargs_cookie) $(srcdir)/vmod_cookie.vcc
 
 EXTRA_DIST = $(srcdir)/vmod_cookie.vcc automake_boilerplate_cookie.am
 

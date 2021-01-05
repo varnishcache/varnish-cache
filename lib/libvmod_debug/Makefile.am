@@ -11,7 +11,7 @@ include $(srcdir)/automake_boilerplate_debug.am
 vmod_debug_symbols_regex = 'Vmod_.*_Data'
 
 # not --strict
-vmodtoolargs = --boilerplate -o vcc_debug_if
+vmodtoolargs_debug = --boilerplate -o vcc_debug_if
 
 .vsc.c:
 	$(PYTHON) $(top_srcdir)/lib/libvcc/vsctool.py -ch $<

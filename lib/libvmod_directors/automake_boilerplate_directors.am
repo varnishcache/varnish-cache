@@ -8,7 +8,7 @@ AM_CPPFLAGS = \
 	-I$(top_builddir)/include
 
 vmodtool = $(top_srcdir)/lib/libvcc/vmodtool.py
-vmodtoolargs ?= --strict --boilerplate -o vcc_directors_if
+vmodtoolargs_directors ?= --strict --boilerplate -o vcc_directors_if
 
 vmod_LTLIBRARIES = libvmod_directors.la
 
@@ -30,7 +30,7 @@ $(libvmod_directors_la_OBJECTS): vcc_directors_if.h
 vcc_directors_if.h vmod_directors.rst vmod_directors.man.rst: vcc_directors_if.c
 
 vcc_directors_if.c: $(vmodtool) $(srcdir)/vmod_directors.vcc
-	@PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/vmod_directors.vcc
+	@PYTHON@ $(vmodtool) $(vmodtoolargs_directors) $(srcdir)/vmod_directors.vcc
 
 EXTRA_DIST = $(srcdir)/vmod_directors.vcc automake_boilerplate_directors.am
 

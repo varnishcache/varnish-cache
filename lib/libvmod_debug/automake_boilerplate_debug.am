@@ -8,7 +8,7 @@ AM_CPPFLAGS = \
 	-I$(top_builddir)/include
 
 vmodtool = $(top_srcdir)/lib/libvcc/vmodtool.py
-vmodtoolargs ?= --strict --boilerplate -o vcc_debug_if
+vmodtoolargs_debug ?= --strict --boilerplate -o vcc_debug_if
 
 vmod_LTLIBRARIES = libvmod_debug.la
 
@@ -30,7 +30,7 @@ $(libvmod_debug_la_OBJECTS): vcc_debug_if.h
 vcc_debug_if.h vmod_debug.rst vmod_debug.man.rst: vcc_debug_if.c
 
 vcc_debug_if.c: $(vmodtool) $(srcdir)/vmod_debug.vcc
-	@PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/vmod_debug.vcc
+	@PYTHON@ $(vmodtool) $(vmodtoolargs_debug) $(srcdir)/vmod_debug.vcc
 
 EXTRA_DIST = $(srcdir)/vmod_debug.vcc automake_boilerplate_debug.am
 

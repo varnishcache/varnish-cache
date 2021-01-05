@@ -8,7 +8,7 @@ AM_CPPFLAGS = \
 	-I$(top_builddir)/include
 
 vmodtool = $(top_srcdir)/lib/libvcc/vmodtool.py
-vmodtoolargs ?= --strict --boilerplate -o vcc_purge_if
+vmodtoolargs_purge ?= --strict --boilerplate -o vcc_purge_if
 
 vmod_LTLIBRARIES = libvmod_purge.la
 
@@ -30,7 +30,7 @@ $(libvmod_purge_la_OBJECTS): vcc_purge_if.h
 vcc_purge_if.h vmod_purge.rst vmod_purge.man.rst: vcc_purge_if.c
 
 vcc_purge_if.c: $(vmodtool) $(srcdir)/vmod_purge.vcc
-	@PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/vmod_purge.vcc
+	@PYTHON@ $(vmodtool) $(vmodtoolargs_purge) $(srcdir)/vmod_purge.vcc
 
 EXTRA_DIST = $(srcdir)/vmod_purge.vcc automake_boilerplate_purge.am
 

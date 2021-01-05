@@ -8,7 +8,7 @@ AM_CPPFLAGS = \
 	-I$(top_builddir)/include
 
 vmodtool = $(top_srcdir)/lib/libvcc/vmodtool.py
-vmodtoolargs ?= --strict --boilerplate -o vcc_unix_if
+vmodtoolargs_unix ?= --strict --boilerplate -o vcc_unix_if
 
 vmod_LTLIBRARIES = libvmod_unix.la
 
@@ -30,7 +30,7 @@ $(libvmod_unix_la_OBJECTS): vcc_unix_if.h
 vcc_unix_if.h vmod_unix.rst vmod_unix.man.rst: vcc_unix_if.c
 
 vcc_unix_if.c: $(vmodtool) $(srcdir)/vmod_unix.vcc
-	@PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/vmod_unix.vcc
+	@PYTHON@ $(vmodtool) $(vmodtoolargs_unix) $(srcdir)/vmod_unix.vcc
 
 EXTRA_DIST = $(srcdir)/vmod_unix.vcc automake_boilerplate_unix.am
 

@@ -59,7 +59,7 @@ AM_CPPFLAGS = \\
 \t-I$(top_builddir)/include
 
 vmodtool = $(top_srcdir)/lib/libvcc/vmodtool.py
-vmodtoolargs ?= --strict --boilerplate -o PFX
+vmodtoolargs_XXX ?= --strict --boilerplate -o PFX
 
 vmod_LTLIBRARIES = libvmod_XXX.la
 
@@ -81,7 +81,7 @@ $(libvmod_XXX_la_OBJECTS): PFX.h
 PFX.h vmod_XXX.rst vmod_XXX.man.rst: PFX.c
 
 PFX.c: $(vmodtool) $(srcdir)/VCC
-\t@PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/VCC
+\t@PYTHON@ $(vmodtool) $(vmodtoolargs_XXX) $(srcdir)/VCC
 
 EXTRA_DIST = $(srcdir)/VCC automake_boilerplate_XXX.am
 
