@@ -88,19 +88,6 @@ CLEANFILES = $(builddir)/PFX.c $(builddir)/PFX.h \\
 \t$(builddir)/vmod_XXX.man.rst
 '''
 
-AMBOILERPLATE_CHECK = '''
-TESTS = \\
-\tVTC
-
-EXTRA_DIST += $(TESTS)
-
-vtc-refresh-tests:
-\t@PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/VCC
-\t@cd $(top_builddir) && ./config.status --file=$(subdir)/Makefile
-
-include $(top_srcdir)/vtc.am
-'''
-
 PRIVS = {
     'PRIV_CALL':   "struct vmod_priv *",
     'PRIV_VCL':    "struct vmod_priv *",
@@ -992,11 +979,6 @@ class vcc(object):
         fo.write(AMBOILERPLATE.replace("XXX", self.modname)
                  .replace("VCC", vcc)
                  .replace("PFX", self.pfx))
-        tests = glob.glob("tests/*.vtc")
-        if len(tests) > 0:
-            tests.sort()
-            fo.write(AMBOILERPLATE_CHECK.replace("VCC", vcc).
-                    replace("VTC", " \\\n\t".join(tests)))
         fo.close()
 
     def mkdefs(self, fo):

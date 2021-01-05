@@ -35,14 +35,3 @@ EXTRA_DIST = $(srcdir)/vmod_std.vcc automake_boilerplate_std.am
 CLEANFILES = $(builddir)/vcc_std_if.c $(builddir)/vcc_std_if.h \
 	$(builddir)/vmod_std.rst \
 	$(builddir)/vmod_std.man.rst
-
-TESTS = \
-	tests/std_b00001.vtc
-
-EXTRA_DIST += $(TESTS)
-
-vtc-refresh-tests:
-	@PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/vmod_std.vcc
-	@cd $(top_builddir) && ./config.status --file=$(subdir)/Makefile
-
-include $(top_srcdir)/vtc.am
