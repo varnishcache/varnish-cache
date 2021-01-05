@@ -1,3 +1,19 @@
+/*
+ * vmod_{blob,directors}
+ */
+
+-efile(451, "tbl_*.h")		// No include guard
+
+/*
+ * vmod_blob
+ */
+
+-e784	// Nul character truncated from string
+
+/*
+ * vmod_debug
+ */
+
 -esym(759, xyzzy_enum_*)         // header declaration for symbol '___' defined at (___)
 -esym(765, xyzzy_enum_*)         // external '___' (___) could be made static
 

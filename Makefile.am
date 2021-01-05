@@ -1,6 +1,6 @@
 ACLOCAL_AMFLAGS = -I m4 -I .
 
-SUBDIRS = include lib bin etc doc man
+SUBDIRS = include lib bin vmod etc doc man
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = varnishapi.pc

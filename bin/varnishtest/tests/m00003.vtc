@@ -9,11 +9,11 @@ server s1 {
 
 shell {
 	echo "vcl 4.1; import std; backend dummy None;" >${tmpdir}/test.vcl
-	varnishd -pvmod_path=${topbuild}/lib/libvmod_std/.libs \
+	varnishd -pvmod_path=${topbuild}/vmod/.libs \
 		 -C -f ${tmpdir}/test.vcl 2>/dev/null
 }
 
-varnish v1 -arg "-pvmod_path=${topbuild}/lib/libvmod_std/.libs/" -vcl+backend {
+varnish v1 -arg "-pvmod_path=${topbuild}/vmod/.libs/" -vcl+backend {
 	import std;
 } -start
 
@@ -23,7 +23,7 @@ varnish v1 -errvcl {Could not find VMOD std} {
 	import std;
 }
 
-varnish v1 -cliok "param.set vmod_path ${topbuild}/lib/libvmod_std/.libs/"
+varnish v1 -cliok "param.set vmod_path ${topbuild}/vmod/.libs/"
 
 varnish v1 -vcl+backend {
 	import std;
@@ -38,7 +38,7 @@ varnish v1 -errvcl {Could not open VMOD wrong} {
 }
 
 shell {
-	cp ${topbuild}/lib/libvmod_debug/.libs/libvmod_debug.so \
+	cp ${topbuild}/vmod/.libs/libvmod_debug.so \
 	   ${tmpdir}/libvmod_wrong.so
 }
 

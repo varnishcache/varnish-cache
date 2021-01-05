@@ -100,28 +100,28 @@ varnishhist.1: \
 	$(top_builddir)/doc/sphinx/include/varnishhist_synopsis.rst
 	$(BUILD_MAN) $(top_builddir)/doc/sphinx/reference/varnishhist.rst $@
 
-vmod_cookie.3: $(top_builddir)/lib/libvmod_cookie/vmod_cookie.man.rst
+vmod_cookie.3: $(top_builddir)/vmod/vmod_cookie.man.rst
 	$(BUILD_MAN) $? $@
 
-vmod_directors.3: $(top_builddir)/lib/libvmod_directors/vmod_directors.man.rst
+vmod_directors.3: $(top_builddir)/vmod/vmod_directors.man.rst
 	$(BUILD_MAN) $? $@
 
-vmod_purge.3: $(top_builddir)/lib/libvmod_purge/vmod_purge.man.rst
+vmod_purge.3: $(top_builddir)/vmod/vmod_purge.man.rst
 	$(BUILD_MAN) $? $@
 
-vmod_std.3: $(top_builddir)/lib/libvmod_std/vmod_std.man.rst
+vmod_std.3: $(top_builddir)/vmod/vmod_std.man.rst
 	$(BUILD_MAN) $? $@
 
-vmod_vtc.3: $(top_builddir)/lib/libvmod_vtc/vmod_vtc.man.rst
+vmod_vtc.3: $(top_builddir)/vmod/vmod_vtc.man.rst
 	$(BUILD_MAN) $? $@
 
-vmod_blob.3: $(top_builddir)/lib/libvmod_blob/vmod_blob.man.rst
+vmod_blob.3: $(top_builddir)/vmod/vmod_blob.man.rst
 	$(BUILD_MAN) $? $@
 
-vmod_unix.3: $(top_builddir)/lib/libvmod_unix/vmod_unix.man.rst
+vmod_unix.3: $(top_builddir)/vmod/vmod_unix.man.rst
 	$(BUILD_MAN) $? $@
 
-vmod_proxy.3: $(top_builddir)/lib/libvmod_proxy/vmod_proxy.man.rst
+vmod_proxy.3: $(top_builddir)/vmod/vmod_proxy.man.rst
 	$(BUILD_MAN) $? $@
 
 .NOPATH: $(dist_man_MANS)

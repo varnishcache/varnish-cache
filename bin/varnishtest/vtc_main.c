@@ -559,7 +559,7 @@ i_mode(void)
 	 */
 
 	VSB_clear(vsb);
-	build_path(topbuild, "lib", "libvmod_", "/.libs", vsb);
+	build_path(topbuild, "vmod", ".libs", "", vsb);
 	AZ(VSB_finish(vsb));
 	vmod_path = strdup(VSB_data(vsb));
 	AN(vmod_path);

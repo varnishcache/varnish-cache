@@ -174,36 +174,36 @@ BUILT_SOURCES += include/vtc-syntax.rst
 
 # XXX copy/paste rules need some TLC
 
-include/vmod_std.generated.rst: $(top_builddir)/lib/libvmod_std/vmod_std.rst
-	cp $(top_builddir)/lib/libvmod_std/vmod_std.rst $@
+include/vmod_std.generated.rst: $(top_builddir)/vmod/vmod_std.rst
+	cp $(top_builddir)/vmod/vmod_std.rst $@
 BUILT_SOURCES += include/vmod_std.generated.rst
 
-include/vmod_directors.generated.rst: $(top_builddir)/lib/libvmod_directors/vmod_directors.rst
-	cp $(top_builddir)/lib/libvmod_directors/vmod_directors.rst $@
+include/vmod_directors.generated.rst: $(top_builddir)/vmod/vmod_directors.rst
+	cp $(top_builddir)/vmod/vmod_directors.rst $@
 BUILT_SOURCES += include/vmod_directors.generated.rst
 
-include/vmod_purge.generated.rst: $(top_builddir)/lib/libvmod_purge/vmod_purge.rst
-	cp $(top_builddir)/lib/libvmod_purge/vmod_purge.rst $@
+include/vmod_purge.generated.rst: $(top_builddir)/vmod/vmod_purge.rst
+	cp $(top_builddir)/vmod/vmod_purge.rst $@
 BUILT_SOURCES += include/vmod_purge.generated.rst
 
-include/vmod_vtc.generated.rst: $(top_builddir)/lib/libvmod_vtc/vmod_vtc.rst
-	cp $(top_builddir)/lib/libvmod_vtc/vmod_vtc.rst $@
+include/vmod_vtc.generated.rst: $(top_builddir)/vmod/vmod_vtc.rst
+	cp $(top_builddir)/vmod/vmod_vtc.rst $@
 BUILT_SOURCES += include/vmod_vtc.generated.rst
 
-include/vmod_blob.generated.rst: $(top_builddir)/lib/libvmod_blob/vmod_blob.rst
-	cp $(top_builddir)/lib/libvmod_blob/vmod_blob.rst $@
+include/vmod_blob.generated.rst: $(top_builddir)/vmod/vmod_blob.rst
+	cp $(top_builddir)/vmod/vmod_blob.rst $@
 BUILT_SOURCES += include/vmod_blob.generated.rst
 
-include/vmod_cookie.generated.rst: $(top_builddir)/lib/libvmod_cookie/vmod_cookie.rst
-	cp $(top_builddir)/lib/libvmod_cookie/vmod_cookie.rst $@
+include/vmod_cookie.generated.rst: $(top_builddir)/vmod/vmod_cookie.rst
+	cp $(top_builddir)/vmod/vmod_cookie.rst $@
 BUILT_SOURCES += include/vmod_cookie.generated.rst
 
-include/vmod_unix.generated.rst: $(top_builddir)/lib/libvmod_unix/vmod_unix.rst
-	cp $(top_builddir)/lib/libvmod_unix/vmod_unix.rst $@
+include/vmod_unix.generated.rst: $(top_builddir)/vmod/vmod_unix.rst
+	cp $(top_builddir)/vmod/vmod_unix.rst $@
 BUILT_SOURCES += include/vmod_unix.generated.rst
 
-include/vmod_proxy.generated.rst: $(top_builddir)/lib/libvmod_proxy/vmod_proxy.rst
-	cp $(top_builddir)/lib/libvmod_proxy/vmod_proxy.rst $@
+include/vmod_proxy.generated.rst: $(top_builddir)/vmod/vmod_proxy.rst
+	cp $(top_builddir)/vmod/vmod_proxy.rst $@
 BUILT_SOURCES += include/vmod_proxy.generated.rst
 
 EXTRA_DIST += $(BUILT_SOURCES)

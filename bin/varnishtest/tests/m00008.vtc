@@ -30,11 +30,11 @@ varnish v1 -cliok "param.set vcc_unsafe_path off"
 
 varnish v1 -errvcl {'import ... from path ...' is unsafe.} {
 	backend default { .host = "${s1_sock}"; }
-	import std from "${topbuild}/lib/libvmod_std/.libs/";
+	import std from "${topbuild}/vmod/.libs/";
 }
 
 varnish v1 \
-    -cliok "param.set vmod_path /nowhere:${topbuild}/lib/libvmod_std/.libs/"
+    -cliok "param.set vmod_path /nowhere:${topbuild}/vmod/.libs/"
 
 varnish v1 -vcl+backend {
 	import std;
@@ -45,10 +45,10 @@ varnish v1 -cliok "param.set vcc_unsafe_path on"
 varnish v1 -cliok "param.set vmod_path /nowhere:/else"
 
 varnish v1 -vcl+backend {
-	import std from "${topbuild}/lib/libvmod_std/.libs/";
+	import std from "${topbuild}/vmod/.libs/";
 }
 
 varnish v1 -errvcl {Malformed VMOD std} {
 	backend default { .host = "${s1_sock}"; }
-	import std from "${topbuild}/lib/libvmod_debug/.libs/libvmod_debug.so";
+	import std from "${topbuild}/vmod/.libs/libvmod_debug.so";
 }
