@@ -139,8 +139,8 @@ vrt_priv_dynamic(struct ws *ws, struct vrt_privs *privs, uintptr_t vmod_id)
 	return (vp->priv);
 }
 
-struct vmod_priv *
-VRT_priv_task(VRT_CTX, const void *vmod_id)
+static struct vrt_privs *
+vrt_priv_task_context(VRT_CTX)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -156,27 +156,26 @@ VRT_priv_task(VRT_CTX, const void *vmod_id)
 
 	if (ctx->req) {
 		CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-		return (vrt_priv_dynamic(
-		    ctx->ws,
-		    ctx->req->privs,
-		    (uintptr_t)vmod_id
-		));
+		return (ctx->req->privs);
 	}
 	if (ctx->bo) {
 		CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
-		return (vrt_priv_dynamic(
-		    ctx->ws,
-		    ctx->bo->privs,
-		    (uintptr_t)vmod_id
-		));
+		return (ctx->bo->privs);
 	}
 	ASSERT_CLI();
+	return (cli_task_privs);
+}
+
+struct vmod_priv *
+VRT_priv_task(VRT_CTX, const void *vmod_id)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
 	return (vrt_priv_dynamic(
 	    ctx->ws,
-	    cli_task_privs,
-	    (uintptr_t)vmod_id
-	));
+	    vrt_priv_task_context(ctx),
+	    (uintptr_t)vmod_id));
 }
 
 struct vmod_priv *
