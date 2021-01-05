@@ -817,6 +817,33 @@ VTP_getip(struct pfd *pfd)
 /*--------------------------------------------------------------------*/
 
 void
+VTP_panic(struct vsb *vsb, struct tcp_pool *tp)
+{
+	char h[VTCP_ADDRBUFSIZE];
+	char p[VTCP_PORTBUFSIZE];
+
+	if (PAN_dump_struct(vsb, tp, TCP_POOL_MAGIC, "tcp_pool"))
+		return;
+	VSB_printf(vsb, "id = 0x%jx,\n", tp->cp->id);
+	if (tp->uds)
+		VSB_printf(vsb, "uds = %s,\n", tp->uds);
+	if (tp->ip4 && VSA_Sane(tp->ip4)) {
+		VTCP_name(tp->ip4, h, sizeof h, p, sizeof p);
+		VSB_printf(vsb, "ipv4 = %s, ", h);
+		VSB_printf(vsb, "port = %s,\n", p);
+	}
+	if (tp->ip6 && VSA_Sane(tp->ip6)) {
+		VTCP_name(tp->ip4, h, sizeof h, p, sizeof p);
+		VSB_printf(vsb, "ipv6 = %s, ", h);
+		VSB_printf(vsb, "port = %s,\n", p);
+	}
+	VSB_indent(vsb, -2);
+	VSB_cat(vsb, "},\n");
+}
+
+/*--------------------------------------------------------------------*/
+
+void
 VTP_Init(void)
 {
 	Lck_New(&conn_pools_mtx, lck_tcp_pool);

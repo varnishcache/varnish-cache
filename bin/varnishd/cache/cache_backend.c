@@ -464,11 +464,7 @@ vbe_panic(const struct director *d, struct vsb *vsb)
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
 
-	if (bp->ipv4_addr != NULL)
-		VSB_printf(vsb, "ipv4 = %s,\n", bp->ipv4_addr);
-	if (bp->ipv6_addr != NULL)
-		VSB_printf(vsb, "ipv6 = %s,\n", bp->ipv6_addr);
-	VSB_printf(vsb, "port = %s,\n", bp->port);
+	VTP_panic(vsb, bp->tcp_pool);
 	VSB_printf(vsb, "hosthdr = %s,\n", bp->hosthdr);
 	VSB_printf(vsb, "n_conn = %u,\n", bp->n_conn);
 }
