@@ -54,13 +54,12 @@ void PFD_RemoteName(const struct pfd *, char *, unsigned, char *, unsigned);
 
 struct VSC_vbe;
 
-struct tcp_pool *VTP_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6,
-    const char *uds, uintmax_t id);
+struct tcp_pool *VTP_Ref(const struct vrt_endpoint *, const char *ident);
 	/*
-	 * Get a reference to a TCP pool. Either one or both of ip4 or
-	 * ip6 arg must be non-NULL, or uds must be non-NULL. If recycling
-	 * is to be used, the id pointer distinguishes the pool per
-	 * protocol.
+	 * Get a reference to a TCP pool. Either one or both of ipv4 or
+	 * ipv6 arg must be non-NULL, or uds must be non-NULL. If recycling
+	 * is to be used, the ident pointer distinguishes the pool from
+	 * other pools with same {ipv4, ipv6, uds}.
 	 */
 
 void VTP_AddRef(struct tcp_pool *);

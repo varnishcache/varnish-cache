@@ -37,7 +37,9 @@
 
 #include "cache_varnishd.h"
 
+#include "vend.h"
 #include "vsa.h"
+#include "vsha256.h"
 #include "vtcp.h"
 #include "vus.h"
 #include "vtim.h"
@@ -85,7 +87,7 @@ struct conn_pool {
 
 	const struct cp_methods			*methods;
 
-	uintmax_t				id;
+	char					ident[VSHA256_DIGEST_LENGTH];
 	void					*priv;
 
 	VTAILQ_ENTRY(conn_pool)			list;
@@ -201,14 +203,14 @@ vcp_handle(struct waited *w, enum wait_event ev, vtim_real now)
  */
 
 static struct conn_pool *
-VCP_Ref(uintmax_t id)
+VCP_Ref(const uint8_t *ident)
 {
 	struct conn_pool *cp;
 
 	Lck_Lock(&conn_pools_mtx);
 	VTAILQ_FOREACH(cp, &conn_pools, list) {
 		assert(cp->refcnt > 0);
-		if (cp->id != id)
+		if (memcmp(ident, cp->ident, sizeof cp->ident))
 			continue;
 		cp->refcnt++;
 		Lck_Unlock(&conn_pools_mtx);
@@ -222,8 +224,8 @@ VCP_Ref(uintmax_t id)
  */
 
 static void *
-VCP_New(struct conn_pool *cp, uintmax_t id, void *priv,
-    const struct cp_methods *cm)
+VCP_New(struct conn_pool *cp, uint8_t ident[VSHA256_DIGEST_LENGTH],
+    void *priv, const struct cp_methods *cm)
 {
 
 	AN(cp);
@@ -232,7 +234,7 @@ VCP_New(struct conn_pool *cp, uintmax_t id, void *priv,
 	AN(cm->close);
 
 	INIT_OBJ(cp, CONN_POOL_MAGIC);
-	cp->id = id;
+	memcpy(cp->ident, ident, sizeof cp->ident);
 	cp->priv = priv;
 	cp->methods = cm;
 	cp->refcnt = 1;
@@ -672,31 +674,41 @@ static const struct cp_methods vus_methods = {
  */
 
 struct tcp_pool *
-VTP_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6, const char *uds,
-	uintmax_t id)
+VTP_Ref(const struct vrt_endpoint *vep, const char *ident)
 {
 	struct tcp_pool *tp;
 	struct conn_pool *cp;
 	const struct cp_methods *methods;
+	struct VSHA256Context cx[1];
+	unsigned char digest[VSHA256_DIGEST_LENGTH];
 
-	assert((uds != NULL && ip4 == NULL && ip6 == NULL) ||
-	    (uds == NULL && (ip4 != NULL || ip6 != NULL)));
-
-	cp = VCP_Ref(id);
-	if (cp != NULL) {
-		tp = cp->priv;
-		CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
-
-		if (uds != NULL) {
-			AN(tp->uds);
-			AZ(strcmp(tp->uds, uds));
+	CHECK_OBJ_NOTNULL(vep, VRT_ENDPOINT_MAGIC);
+	AN(ident);
+	VSHA256_Init(cx);
+	VSHA256_Update(cx, ident, strlen(ident) + 1); // include \0
+	if (vep->uds_path != NULL) {
+		AZ(vep->ipv4);
+		AZ(vep->ipv6);
+		VSHA256_Update(cx, "UDS", 4); // include \0
+		VSHA256_Update(cx, vep->uds_path, strlen(vep->uds_path));
+	} else {
+		assert(vep->ipv4 != NULL || vep->ipv6 != NULL);
+		if (vep->ipv4 != NULL) {
+			assert(VSA_Sane(vep->ipv4));
+			VSHA256_Update(cx, "IP4", 4); // include \0
+			VSHA256_Update(cx, vep->ipv4, vsa_suckaddr_len);
 		}
-		if (ip4 != NULL)
-			AZ(VSA_Compare(tp->ip4, ip4));
-		if (ip6 != NULL)
-			AZ(VSA_Compare(tp->ip6, ip6));
-		return (cp->priv);
+		if (vep->ipv6 != NULL) {
+			assert(VSA_Sane(vep->ipv6));
+			VSHA256_Update(cx, "IP6", 4); // include \0
+			VSHA256_Update(cx, vep->ipv6, vsa_suckaddr_len);
+		}
 	}
+	VSHA256_Final(digest, cx);
+
+	cp = VCP_Ref(digest);
+	if (cp != NULL)
+		return (cp->priv);
 
 	/*
 	 * this is racy - we could end up with additional pools on the same id
@@ -704,18 +716,19 @@ VTP_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6, const char *uds,
 	 */
 	ALLOC_OBJ(tp, TCP_POOL_MAGIC);
 	AN(tp);
-	if (uds != NULL) {
+	if (vep->uds_path != NULL) {
 		methods = &vus_methods;
-		tp->uds = strdup(uds);
+		tp->uds = strdup(vep->uds_path);
+		AN(tp->uds);
 	}
 	else {
 		methods = &vtp_methods;
-		if (ip4 != NULL)
-			tp->ip4 = VSA_Clone(ip4);
-		if (ip6 != NULL)
-			tp->ip6 = VSA_Clone(ip6);
+		if (vep->ipv4 != NULL)
+			tp->ip4 = VSA_Clone(vep->ipv4);
+		if (vep->ipv6 != NULL)
+			tp->ip6 = VSA_Clone(vep->ipv6);
 	}
-	return (VCP_New(tp->cp, id, tp, methods));
+	return (VCP_New(tp->cp, digest, tp, methods));
 }
 
 /*--------------------------------------------------------------------
@@ -824,7 +837,9 @@ VTP_panic(struct vsb *vsb, struct tcp_pool *tp)
 
 	if (PAN_dump_struct(vsb, tp, TCP_POOL_MAGIC, "tcp_pool"))
 		return;
-	VSB_printf(vsb, "id = 0x%jx,\n", tp->cp->id);
+	VSB_printf(vsb, "ident = ");
+	VSB_quote(vsb, tp->cp->ident, VSHA256_DIGEST_LENGTH, VSB_QUOTE_HEX);
+	VSB_printf(vsb, ",\n");
 	if (tp->uds)
 		VSB_printf(vsb, "uds = %s,\n", tp->uds);
 	if (tp->ip4 && VSA_Sane(tp->ip4)) {
