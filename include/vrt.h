@@ -59,6 +59,7 @@
  *	struct vmod_priv free member replaced with methods
  *	VRT_CTX_Assert() added
  *	VRT_ban_string() signature changed
+ *	VRT_priv_task_get() added
  * 12.0 (2020-09-15)
  *	Added VRT_DirectorResolve()
  *	Added VCL_STRING VRT_BLOB_string(VRT_CTX, VCL_BLOB)
@@ -597,6 +598,7 @@ struct vmod_priv {
 
 void VRT_priv_fini(const struct vmod_priv *p);
 struct vmod_priv *VRT_priv_task(VRT_CTX, const void *vmod_id);
+struct vmod_priv *VRT_priv_task_get(VRT_CTX, const void *vmod_id);
 struct vmod_priv *VRT_priv_top(VRT_CTX, const void *vmod_id);
 
 /* Stevedore related functions */

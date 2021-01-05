@@ -56,6 +56,10 @@ $Function VOID test_priv_vcl(PRIV_VCL)
 
 Test function for VCL private pointers
 
+$Function VOID test_priv_task_get()
+
+Assert that the priv_task for the NULL pointer is NULL.
+
 $Function STRING test_priv_task(PRIV_TASK, STRING s="")
 
 Test function for TASK private pointers

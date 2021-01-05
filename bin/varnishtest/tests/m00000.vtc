@@ -47,6 +47,7 @@ varnish v1 -vcl+backend {
 	}
 
 	sub priv_task {
+		debug.test_priv_task_get();
 		debug.test_priv_task("foo");
 	}
 

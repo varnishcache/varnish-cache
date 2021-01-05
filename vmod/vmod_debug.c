@@ -243,6 +243,14 @@ xyzzy_test_priv_call(VRT_CTX, struct vmod_priv *priv)
 	}
 }
 
+VCL_VOID v_matchproto_(td_debug_test_priv_task_get)
+xyzzy_test_priv_task_get(VRT_CTX)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AZ(VRT_priv_task_get(ctx, NULL));
+}
+
 static void
 priv_task_free(void *ptr)
 {
@@ -848,7 +856,7 @@ xyzzy_priv_perf(VRT_CTX, VCL_INT size, VCL_INT rounds)
 	t0 = VTIM_mono();
 	for (r = 0; r < rounds; r++) {
 		for (s = 1; s <= size; s++) {
-			p = VRT_priv_task(ctx, (void *)(uintptr_t)s);
+			p = VRT_priv_task_get(ctx, (void *)(uintptr_t)s);
 			AN(p);
 			check += (uintptr_t)p->priv;
 			p->priv = (void *)(uintptr_t)(s * rounds + r);
@@ -1035,7 +1043,7 @@ xyzzy_get_ip(VRT_CTX)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
-	priv = VRT_priv_task(ctx, &store_ip_token);
+	priv = VRT_priv_task_get(ctx, &store_ip_token);
 	AN(priv);
 	AZ(priv->methods);
 
