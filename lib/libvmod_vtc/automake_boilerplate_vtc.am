@@ -7,14 +7,12 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/bin/varnishd \
 	-I$(top_builddir)/include
 
-vmodtool = $(top_srcdir)/lib/libvcc/vmodtool.py
-vmodtoolargs_vtc ?= --strict --boilerplate -o vcc_vtc_if
-
 vmod_LTLIBRARIES = libvmod_vtc.la
 
 libvmod_vtc_la_CFLAGS = \
 	@SAN_CFLAGS@
 
+vmodtoolargs_vtc ?= --strict --boilerplate -o vcc_vtc_if
 vmod_vtc_symbols_regex ?= Vmod_vtc_Data
 
 libvmod_vtc_la_LDFLAGS = \

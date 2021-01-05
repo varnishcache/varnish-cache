@@ -58,14 +58,12 @@ AM_CPPFLAGS = \\
 \t-I$(top_srcdir)/bin/varnishd \\
 \t-I$(top_builddir)/include
 
-vmodtool = $(top_srcdir)/lib/libvcc/vmodtool.py
-vmodtoolargs_XXX ?= --strict --boilerplate -o PFX
-
 vmod_LTLIBRARIES = libvmod_XXX.la
 
 libvmod_XXX_la_CFLAGS = \\
 \t@SAN_CFLAGS@
 
+vmodtoolargs_XXX ?= --strict --boilerplate -o PFX
 vmod_XXX_symbols_regex ?= Vmod_XXX_Data
 
 libvmod_XXX_la_LDFLAGS = \\
