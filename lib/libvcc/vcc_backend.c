@@ -77,15 +77,12 @@ Emit_Sockaddr(struct vcc *tl, struct vsb *vsb1, const struct token *t_host,
 		VSB_printf(vsb1,
 		    "\t.ipv4 = (const struct suckaddr *)%s,\n",
 		    ipv4);
-		Fb(tl, 0, "\t.ipv4_addr = \"%s\",\n", ipv4a);
 	}
 	if (ipv6 != NULL) {
 		VSB_printf(vsb1,
 		    "\t.ipv6 = (const struct suckaddr *)%s,\n",
 		    ipv6);
-		Fb(tl, 0, "\t.ipv6_addr = \"%s\",\n", ipv6a);
 	}
-	Fb(tl, 0, "\t.port = \"%s\",\n", pa);
 	VSB_printf(vsb1, "\t.uds_path = (void *) 0,\n");
 }
 

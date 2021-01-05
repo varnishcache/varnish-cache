@@ -75,20 +75,17 @@ dyn_dir_init(VRT_CTX, struct xyzzy_debug_dyn *dyn,
 	INIT_OBJ(&vep, VRT_ENDPOINT_MAGIC);
 	INIT_OBJ(&vrt, VRT_BACKEND_MAGIC);
 	vrt.endpoint = &vep;
-	vrt.port = port;
 	vrt.vcl_name = dyn->vcl_name;
 	vrt.hosthdr = addr;
 	vrt.probe = probe;
 
 	sa = VSS_ResolveOne(NULL, addr, port, AF_UNSPEC, SOCK_STREAM, 0);
 	AN(sa);
-	if (VSA_Get_Proto(sa) == AF_INET) {
-		vrt.ipv4_addr = addr;
+	if (VSA_Get_Proto(sa) == AF_INET)
 		vep.ipv4 = sa;
-	} else if (VSA_Get_Proto(sa) == AF_INET6) {
-		vrt.ipv6_addr = addr;
+	else if (VSA_Get_Proto(sa) == AF_INET6)
 		vep.ipv6 = sa;
-	} else
+	else
 		WRONG("Wrong proto family");
 
 	dir = VRT_new_backend(ctx, &vrt);

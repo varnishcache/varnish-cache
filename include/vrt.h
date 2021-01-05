@@ -395,9 +395,6 @@ struct vrt_endpoint {
 
 #define VRT_BACKEND_FIELDS(rigid)				\
 	rigid char			*vcl_name;		\
-	rigid char			*ipv4_addr;		\
-	rigid char			*ipv6_addr;		\
-	rigid char			*port;			\
 	rigid char			*hosthdr;		\
 	vtim_dur			connect_timeout;	\
 	vtim_dur			first_byte_timeout;	\
@@ -408,9 +405,6 @@ struct vrt_endpoint {
 #define VRT_BACKEND_HANDLE()			\
 	do {					\
 		DA(vcl_name);			\
-		DA(ipv4_addr);			\
-		DA(ipv6_addr);			\
-		DA(port);			\
 		DA(hosthdr);			\
 		DN(connect_timeout);		\
 		DN(first_byte_timeout);		\
