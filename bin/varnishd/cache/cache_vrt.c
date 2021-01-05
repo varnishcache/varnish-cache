@@ -830,7 +830,7 @@ VRT_synth_page(VRT_CTX, VCL_STRANDS s)
 /*--------------------------------------------------------------------*/
 
 static VCL_VOID
-ban_error(VRT_CTX, VCL_STRING err)
+vrt_ban_error(VRT_CTX, VCL_STRING err)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(ctx->vsl);
@@ -851,19 +851,19 @@ VRT_ban_string(VRT_CTX, VCL_STRING str)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
 	if (str == NULL) {
-		ban_error(ctx, "Null argument");
+		vrt_ban_error(ctx, "Null argument");
 		return;
 	}
 
 	bp = BAN_Build();
 	if (bp == NULL) {
-		ban_error(ctx, "Out of Memory");
+		vrt_ban_error(ctx, "Out of Memory");
 		return;
 	}
 	av = VAV_Parse(str, NULL, ARGV_NOESC);
 	AN(av);
 	if (av[0] != NULL) {
-		ban_error(ctx, av[0]);
+		vrt_ban_error(ctx, av[0]);
 		VAV_Free(av);
 		BAN_Abandon(bp);
 		return;
@@ -871,22 +871,22 @@ VRT_ban_string(VRT_CTX, VCL_STRING str)
 	for (i = 0; ;) {
 		a1 = av[++i];
 		if (a1 == NULL) {
-			ban_error(ctx, "No ban conditions found.");
+			vrt_ban_error(ctx, "No ban conditions found.");
 			break;
 		}
 		a2 = av[++i];
 		if (a2 == NULL) {
-			ban_error(ctx, "Expected comparison operator.");
+			vrt_ban_error(ctx, "Expected comparison operator.");
 			break;
 		}
 		a3 = av[++i];
 		if (a3 == NULL) {
-			ban_error(ctx, "Expected second operand.");
+			vrt_ban_error(ctx, "Expected second operand.");
 			break;
 		}
 		err = BAN_AddTest(bp, a1, a2, a3);
 		if (err != NULL) {
-			ban_error(ctx, err);
+			vrt_ban_error(ctx, err);
 			break;
 		}
 		if (av[++i] == NULL) {
@@ -894,7 +894,7 @@ VRT_ban_string(VRT_CTX, VCL_STRING str)
 			if (err == NULL)
 				bp = NULL;
 			else
-				ban_error(ctx, err);
+				vrt_ban_error(ctx, err);
 			break;
 		}
 		if (strcmp(av[i], "&&")) {
