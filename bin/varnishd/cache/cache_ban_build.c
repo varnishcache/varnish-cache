@@ -109,6 +109,7 @@ BAN_Build(void)
 	return (bp);
 }
 
+// TODO: change to (struct ban_proto **)
 void
 BAN_Abandon(struct ban_proto *bp)
 {
