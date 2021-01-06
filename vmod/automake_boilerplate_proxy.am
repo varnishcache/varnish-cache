@@ -16,6 +16,10 @@ libvmod_proxy_la_LDFLAGS = \
 
 nodist_libvmod_proxy_la_SOURCES = vcc_proxy_if.c vcc_proxy_if.h
 
+EXTRA_libvmod_proxy_la_DEPENDENCIES = $(nodist_libvmod_proxy_la_SOURCES)
+
+EXTRA_DIST += $(srcdir)/vmod_proxy.vcc automake_boilerplate_proxy.am
+
 $(libvmod_proxy_la_OBJECTS): vcc_proxy_if.h
 
 vcc_proxy_if.h vmod_proxy.rst vmod_proxy.man.rst: vcc_proxy_if.c
@@ -23,8 +27,8 @@ vcc_proxy_if.h vmod_proxy.rst vmod_proxy.man.rst: vcc_proxy_if.c
 vcc_proxy_if.c: $(vmodtool) $(srcdir)/vmod_proxy.vcc
 	@PYTHON@ $(vmodtool) $(vmodtoolargs_proxy) $(srcdir)/vmod_proxy.vcc
 
-EXTRA_DIST += $(srcdir)/vmod_proxy.vcc automake_boilerplate_proxy.am
+clean-local: clean-vmod-proxy
 
-CLEANFILES += $(builddir)/vcc_proxy_if.c $(builddir)/vcc_proxy_if.h \
-	$(builddir)/vmod_proxy.rst \
-	$(builddir)/vmod_proxy.man.rst
+clean-vmod-proxy:
+	rm -f $(nodist_libvmod_proxy_la_SOURCES)
+	rm -f vmod_proxy.rst vmod_proxy.man.rst

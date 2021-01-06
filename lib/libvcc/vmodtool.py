@@ -67,6 +67,10 @@ libvmod_XXX_la_LDFLAGS = \\
 
 nodist_libvmod_XXX_la_SOURCES = PFX.c PFX.h
 
+EXTRA_libvmod_XXX_la_DEPENDENCIES = $(nodist_libvmod_XXX_la_SOURCES)
+
+EXTRA_DIST += $(srcdir)/VCC automake_boilerplate_XXX.am
+
 $(libvmod_XXX_la_OBJECTS): PFX.h
 
 PFX.h vmod_XXX.rst vmod_XXX.man.rst: PFX.c
@@ -74,11 +78,11 @@ PFX.h vmod_XXX.rst vmod_XXX.man.rst: PFX.c
 PFX.c: $(vmodtool) $(srcdir)/VCC
 \t@PYTHON@ $(vmodtool) $(vmodtoolargs_XXX) $(srcdir)/VCC
 
-EXTRA_DIST += $(srcdir)/VCC automake_boilerplate_XXX.am
+clean-local: clean-vmod-XXX
 
-CLEANFILES += $(builddir)/PFX.c $(builddir)/PFX.h \\
-\t$(builddir)/vmod_XXX.rst \\
-\t$(builddir)/vmod_XXX.man.rst
+clean-vmod-XXX:
+	rm -f $(nodist_libvmod_XXX_la_SOURCES)
+	rm -f vmod_XXX.rst vmod_XXX.man.rst
 '''
 
 PRIVS = {

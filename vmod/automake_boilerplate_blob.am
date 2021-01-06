@@ -16,6 +16,10 @@ libvmod_blob_la_LDFLAGS = \
 
 nodist_libvmod_blob_la_SOURCES = vcc_blob_if.c vcc_blob_if.h
 
+EXTRA_libvmod_blob_la_DEPENDENCIES = $(nodist_libvmod_blob_la_SOURCES)
+
+EXTRA_DIST += $(srcdir)/vmod_blob.vcc automake_boilerplate_blob.am
+
 $(libvmod_blob_la_OBJECTS): vcc_blob_if.h
 
 vcc_blob_if.h vmod_blob.rst vmod_blob.man.rst: vcc_blob_if.c
@@ -23,8 +27,8 @@ vcc_blob_if.h vmod_blob.rst vmod_blob.man.rst: vcc_blob_if.c
 vcc_blob_if.c: $(vmodtool) $(srcdir)/vmod_blob.vcc
 	@PYTHON@ $(vmodtool) $(vmodtoolargs_blob) $(srcdir)/vmod_blob.vcc
 
-EXTRA_DIST += $(srcdir)/vmod_blob.vcc automake_boilerplate_blob.am
+clean-local: clean-vmod-blob
 
-CLEANFILES += $(builddir)/vcc_blob_if.c $(builddir)/vcc_blob_if.h \
-	$(builddir)/vmod_blob.rst \
-	$(builddir)/vmod_blob.man.rst
+clean-vmod-blob:
+	rm -f $(nodist_libvmod_blob_la_SOURCES)
+	rm -f vmod_blob.rst vmod_blob.man.rst

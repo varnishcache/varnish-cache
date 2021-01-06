@@ -16,6 +16,10 @@ libvmod_std_la_LDFLAGS = \
 
 nodist_libvmod_std_la_SOURCES = vcc_std_if.c vcc_std_if.h
 
+EXTRA_libvmod_std_la_DEPENDENCIES = $(nodist_libvmod_std_la_SOURCES)
+
+EXTRA_DIST += $(srcdir)/vmod_std.vcc automake_boilerplate_std.am
+
 $(libvmod_std_la_OBJECTS): vcc_std_if.h
 
 vcc_std_if.h vmod_std.rst vmod_std.man.rst: vcc_std_if.c
@@ -23,8 +27,8 @@ vcc_std_if.h vmod_std.rst vmod_std.man.rst: vcc_std_if.c
 vcc_std_if.c: $(vmodtool) $(srcdir)/vmod_std.vcc
 	@PYTHON@ $(vmodtool) $(vmodtoolargs_std) $(srcdir)/vmod_std.vcc
 
-EXTRA_DIST += $(srcdir)/vmod_std.vcc automake_boilerplate_std.am
+clean-local: clean-vmod-std
 
-CLEANFILES += $(builddir)/vcc_std_if.c $(builddir)/vcc_std_if.h \
-	$(builddir)/vmod_std.rst \
-	$(builddir)/vmod_std.man.rst
+clean-vmod-std:
+	rm -f $(nodist_libvmod_std_la_SOURCES)
+	rm -f vmod_std.rst vmod_std.man.rst

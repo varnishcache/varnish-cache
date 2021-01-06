@@ -4,6 +4,8 @@ TESTS = @VMOD_TESTS@
 
 include $(top_srcdir)/vtc.am
 
+EXTRA_DIST = $(TESTS)
+
 AM_LDFLAGS  = $(AM_LT_LDFLAGS)
 
 AM_CPPFLAGS = \
@@ -28,19 +30,6 @@ libvmod_blob_la_SOURCES = \
 
 libvmod_cookie_la_SOURCES = \
 	vmod_cookie.c
-
-.vsc.c:
-	$(PYTHON) $(top_srcdir)/lib/libvcc/vsctool.py -c $<
-
-.vsc.h:
-	$(PYTHON) $(top_srcdir)/lib/libvcc/vsctool.py -h $<
-
-libvmod_debug_extra_sources = \
-	VSC_debug.vsc
-
-libvmod_debug_built_sources = \
-	VSC_debug.c \
-	VSC_debug.h
 
 libvmod_debug_la_SOURCES = \
 	vmod_debug.c \
@@ -81,17 +70,10 @@ libvmod_vtc_la_SOURCES = \
 	vmod_vtc.c
 
 #
-# Prepare build variables
+# Use vmodtool.py generated automake boilerplate
 #
 
 vmod_LTLIBRARIES =
-EXTRA_DIST = $(libvmod_debug_extra_sources) $(TESTS)
-CLEANFILES = $(libvmod_debug_built_sources)
-BUILT_SOURCES = $(libvmod_debug_built_sources)
-
-#
-# Use vmodtool.py generated automake boilerplate
-#
 
 include $(srcdir)/automake_boilerplate_blob.am
 include $(srcdir)/automake_boilerplate_cookie.am
@@ -107,7 +89,16 @@ include $(srcdir)/automake_boilerplate_vtc.am
 # Post-boilerplate tweaks
 #
 
-nodist_libvmod_debug_la_SOURCES += $(libvmod_debug_built_sources)
+.vsc.c:
+	$(PYTHON) $(top_srcdir)/lib/libvcc/vsctool.py -c $<
+
+.vsc.h:
+	$(PYTHON) $(top_srcdir)/lib/libvcc/vsctool.py -h $<
+
+EXTRA_DIST += VSC_debug.vsc
+nodist_libvmod_debug_la_SOURCES += \
+	VSC_debug.c \
+	VSC_debug.h
 
 # Allow Vmod_wrong*_Data to be exported
 vmod_debug_symbols_regex = 'Vmod_.*_Data'

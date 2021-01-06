@@ -16,6 +16,10 @@ libvmod_cookie_la_LDFLAGS = \
 
 nodist_libvmod_cookie_la_SOURCES = vcc_cookie_if.c vcc_cookie_if.h
 
+EXTRA_libvmod_cookie_la_DEPENDENCIES = $(nodist_libvmod_cookie_la_SOURCES)
+
+EXTRA_DIST += $(srcdir)/vmod_cookie.vcc automake_boilerplate_cookie.am
+
 $(libvmod_cookie_la_OBJECTS): vcc_cookie_if.h
 
 vcc_cookie_if.h vmod_cookie.rst vmod_cookie.man.rst: vcc_cookie_if.c
@@ -23,8 +27,8 @@ vcc_cookie_if.h vmod_cookie.rst vmod_cookie.man.rst: vcc_cookie_if.c
 vcc_cookie_if.c: $(vmodtool) $(srcdir)/vmod_cookie.vcc
 	@PYTHON@ $(vmodtool) $(vmodtoolargs_cookie) $(srcdir)/vmod_cookie.vcc
 
-EXTRA_DIST += $(srcdir)/vmod_cookie.vcc automake_boilerplate_cookie.am
+clean-local: clean-vmod-cookie
 
-CLEANFILES += $(builddir)/vcc_cookie_if.c $(builddir)/vcc_cookie_if.h \
-	$(builddir)/vmod_cookie.rst \
-	$(builddir)/vmod_cookie.man.rst
+clean-vmod-cookie:
+	rm -f $(nodist_libvmod_cookie_la_SOURCES)
+	rm -f vmod_cookie.rst vmod_cookie.man.rst

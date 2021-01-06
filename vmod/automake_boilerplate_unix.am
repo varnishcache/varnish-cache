@@ -16,6 +16,10 @@ libvmod_unix_la_LDFLAGS = \
 
 nodist_libvmod_unix_la_SOURCES = vcc_unix_if.c vcc_unix_if.h
 
+EXTRA_libvmod_unix_la_DEPENDENCIES = $(nodist_libvmod_unix_la_SOURCES)
+
+EXTRA_DIST += $(srcdir)/vmod_unix.vcc automake_boilerplate_unix.am
+
 $(libvmod_unix_la_OBJECTS): vcc_unix_if.h
 
 vcc_unix_if.h vmod_unix.rst vmod_unix.man.rst: vcc_unix_if.c
@@ -23,8 +27,8 @@ vcc_unix_if.h vmod_unix.rst vmod_unix.man.rst: vcc_unix_if.c
 vcc_unix_if.c: $(vmodtool) $(srcdir)/vmod_unix.vcc
 	@PYTHON@ $(vmodtool) $(vmodtoolargs_unix) $(srcdir)/vmod_unix.vcc
 
-EXTRA_DIST += $(srcdir)/vmod_unix.vcc automake_boilerplate_unix.am
+clean-local: clean-vmod-unix
 
-CLEANFILES += $(builddir)/vcc_unix_if.c $(builddir)/vcc_unix_if.h \
-	$(builddir)/vmod_unix.rst \
-	$(builddir)/vmod_unix.man.rst
+clean-vmod-unix:
+	rm -f $(nodist_libvmod_unix_la_SOURCES)
+	rm -f vmod_unix.rst vmod_unix.man.rst

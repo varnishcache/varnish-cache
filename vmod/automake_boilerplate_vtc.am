@@ -16,6 +16,10 @@ libvmod_vtc_la_LDFLAGS = \
 
 nodist_libvmod_vtc_la_SOURCES = vcc_vtc_if.c vcc_vtc_if.h
 
+EXTRA_libvmod_vtc_la_DEPENDENCIES = $(nodist_libvmod_vtc_la_SOURCES)
+
+EXTRA_DIST += $(srcdir)/vmod_vtc.vcc automake_boilerplate_vtc.am
+
 $(libvmod_vtc_la_OBJECTS): vcc_vtc_if.h
 
 vcc_vtc_if.h vmod_vtc.rst vmod_vtc.man.rst: vcc_vtc_if.c
@@ -23,8 +27,8 @@ vcc_vtc_if.h vmod_vtc.rst vmod_vtc.man.rst: vcc_vtc_if.c
 vcc_vtc_if.c: $(vmodtool) $(srcdir)/vmod_vtc.vcc
 	@PYTHON@ $(vmodtool) $(vmodtoolargs_vtc) $(srcdir)/vmod_vtc.vcc
 
-EXTRA_DIST += $(srcdir)/vmod_vtc.vcc automake_boilerplate_vtc.am
+clean-local: clean-vmod-vtc
 
-CLEANFILES += $(builddir)/vcc_vtc_if.c $(builddir)/vcc_vtc_if.h \
-	$(builddir)/vmod_vtc.rst \
-	$(builddir)/vmod_vtc.man.rst
+clean-vmod-vtc:
+	rm -f $(nodist_libvmod_vtc_la_SOURCES)
+	rm -f vmod_vtc.rst vmod_vtc.man.rst

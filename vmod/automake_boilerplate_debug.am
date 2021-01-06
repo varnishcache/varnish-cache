@@ -16,6 +16,10 @@ libvmod_debug_la_LDFLAGS = \
 
 nodist_libvmod_debug_la_SOURCES = vcc_debug_if.c vcc_debug_if.h
 
+EXTRA_libvmod_debug_la_DEPENDENCIES = $(nodist_libvmod_debug_la_SOURCES)
+
+EXTRA_DIST += $(srcdir)/vmod_debug.vcc automake_boilerplate_debug.am
+
 $(libvmod_debug_la_OBJECTS): vcc_debug_if.h
 
 vcc_debug_if.h vmod_debug.rst vmod_debug.man.rst: vcc_debug_if.c
@@ -23,8 +27,8 @@ vcc_debug_if.h vmod_debug.rst vmod_debug.man.rst: vcc_debug_if.c
 vcc_debug_if.c: $(vmodtool) $(srcdir)/vmod_debug.vcc
 	@PYTHON@ $(vmodtool) $(vmodtoolargs_debug) $(srcdir)/vmod_debug.vcc
 
-EXTRA_DIST += $(srcdir)/vmod_debug.vcc automake_boilerplate_debug.am
+clean-local: clean-vmod-debug
 
-CLEANFILES += $(builddir)/vcc_debug_if.c $(builddir)/vcc_debug_if.h \
-	$(builddir)/vmod_debug.rst \
-	$(builddir)/vmod_debug.man.rst
+clean-vmod-debug:
+	rm -f $(nodist_libvmod_debug_la_SOURCES)
+	rm -f vmod_debug.rst vmod_debug.man.rst
