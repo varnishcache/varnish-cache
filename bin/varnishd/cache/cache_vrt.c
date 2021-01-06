@@ -908,6 +908,7 @@ VRT_ban_string(VRT_CTX, VCL_STRING str)
 			err = "Unknown error (workspace overflow)";
 		berr = NULL;
 	}
+	AZ(berr);
 	if (bp != NULL)
 		BAN_Abandon(bp);
 	VAV_Free(av);
