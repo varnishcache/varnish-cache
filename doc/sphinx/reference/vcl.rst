@@ -118,6 +118,8 @@ execution of a VCL state subroutine (``vcl_* {}``), including all
 user-defined subroutines being called, ``now`` always returns the
 same value.
 
+.. _vcl(7)_durations:
+
 Durations
 ~~~~~~~~~
 
@@ -456,76 +458,10 @@ The following built-in functions are available:
 ban(STRING)
 ~~~~~~~~~~~
 
-  Invalidates all objects in cache that match the given expression with the
-  ban mechanism.
+  Deprecated. See :ref:`std.ban()`.
 
-  The format of *STRING* is::
-
-	<field> <operator> <arg> [&& <field> <oper> <arg> ...]
-
-  * *<field>*:
-
-    * string fields:
-
-      * ``req.url``: The request url
-      * ``req.http.*``: Any request header
-      * ``obj.status``: The cache object status
-      * ``obj.http.*``: Any cache object header
-
-      ``obj.status`` is treated as a string despite the fact that it
-      is actually an integer.
-
-    * duration fields:
-
-      * ``obj.ttl``: Remaining ttl at the time the ban is issued
-      * ``obj.age``: Object age at the time the ban is issued
-      * ``obj.grace``: The grace time of the object
-      * ``obj.keep``: The keep time of the object
-
-
-  * *<operator>*:
-
-    * for all fields:
-
-      * ``==``: *<field>* and *<arg>* are equal
-      * ``!=``: *<field>* and *<arg>* are unequal
-
-      strings are compared case sensitively
-
-    * for string fields:
-
-      * ``~``: *<field>* matches the regular expression *<arg>*
-      * ``!~``:*<field>* does not match the regular expression *<arg>*
-
-    * for duration fields:
-
-      * ``>``: *<field>* is greater than *<arg>*
-      * ``>=``: *<field>* is greater than or equal to *<arg>*
-      * ``<``: *<field>* is less than *<arg>*
-      * ``<=``: *<field>* is less than or equal to *<arg>*
-
-
-  * *<arg>*:
-
-    * for string fields:
-
-      Either a literal string or a regular expression. Note that
-      *<arg>* does not use any of the string delimiters like ``"`` or
-      ``{"``\ *...*\ ``"}`` or ``"""``\ *...*\ ``"""`` used elsewhere
-      in varnish. To match against strings containing whitespace,
-      regular expressions containing ``\s`` can be used.
-
-    * for duration fields:
-
-      A VCL duration like ``10s``, ``5m`` or ``1h``, see `Durations`_
-
-  Expressions can be chained using the *and* operator ``&&``. For *or*
-  semantics, use several bans.
-
-  The unset *<field>* is not equal to any string, such that, for a
-  non-existing header, the operators ``==`` and ``~`` always evaluate
-  as false, while the operators ``!=`` and ``!~`` always evaluate as
-  true, respectively, for any value of *<arg>*.
+  The ``ban()`` function is identical to :ref:`std.ban()`, but does
+  not provide error reporting.
 
 hash_data(input)
 ~~~~~~~~~~~~~~~~

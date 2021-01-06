@@ -75,7 +75,7 @@ the following command from the shell::
 
   varnishadm ban req.http.host == example.com '&&' req.url '~' '\\.png$'
 
-See :ref:`vcl(7)_ban` for details on the syntax of ban expressions. In
+See :ref:`std.ban()` for details on the syntax of ban expressions. In
 particular, note that in the example given above, the quotes are
 required for execution from the shell and escaping the backslash in
 the regular expression is required by the Varnish cli interface.
@@ -99,18 +99,21 @@ impact CPU usage and thereby performance.
 
 You can also add bans to Varnish via HTTP. Doing so requires a bit of VCL::
 
+  import std;
+
   sub vcl_recv {
 	  if (req.method == "BAN") {
-                  # Same ACL check as above:
+		  # Same ACL check as above:
 		  if (!client.ip ~ purge) {
 			  return(synth(403, "Not allowed."));
 		  }
-		  ban("req.http.host == " + req.http.host +
-		        " && req.url == " + req.url);
-
-		  # Throw a synthetic page so the
-                  # request won't go to the backend.
-		  return(synth(200, "Ban added"));
+		  if (std.ban("req.http.host == " + req.http.host +
+		      " && req.url == " + req.url)) {
+			  return(synth(200, "Ban added"));
+		  } else {
+			  # return ban error in 400 response
+			  return(synth(400, std.ban_error()));
+		  }
 	  }
   }
 
@@ -123,21 +126,30 @@ object is not available in the `ban lurker` thread.
 
 You can use the following template to write `ban lurker` friendly bans::
 
+  import std;
+
   sub vcl_backend_response {
-    set beresp.http.url = bereq.url;
+	  set beresp.http.url = bereq.url;
   }
 
   sub vcl_deliver {
-    unset resp.http.url; # Optional
+	  unset resp.http.url; # Optional
   }
 
   sub vcl_recv {
-    if (req.method == "PURGE") {
-      if (client.ip !~ purge) {
-        return(synth(403, "Not allowed"));
-      }
-      ban("obj.http.url ~ " + req.url); # Assumes req.url is a regex. This might be a bit too simple
-    }
+	  if (req.method == "BAN") {
+		  # Same ACL check as above:
+		  if (!client.ip ~ purge) {
+			  return(synth(403, "Not allowed."));
+		  }
+		  # Assumes req.url is a regex. This might be a bit too simple
+		  if (std.ban("obj.http.url ~ " + req.url)) {
+			  return(synth(200, "Ban added"));
+		  } else {
+			  # return ban error in 400 response
+			  return(synth(400, std.ban_error()));
+		  }
+	  }
   }
 
 To inspect the current ban list, issue the ``ban.list`` command in the CLI. This

@@ -8,8 +8,10 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
+	import std;
+
 	sub vcl_recv {
-		ban("req.url == / && obj.http.foo ~ bar1");
+		std.ban("req.url == / && obj.http.foo ~ bar1");
 	}
 } -start
 

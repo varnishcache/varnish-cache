@@ -18,15 +18,27 @@ server s1 {
 	txresp -hdr "foo: bar8" -body "1111111\n"
 } -start
 
+# code from purging.rst
 varnish v1 -vcl+backend {
+	import std;
+
 	sub vcl_recv {
 		if (req.method == "BAN") {
-			ban ("req.url == " + req.url);
-			return (synth(410));
+			if (std.ban("req.http.host == " + req.http.host +
+				    " && req.url == " + req.url)) {
+				return(synth(204, "Ban added"));
+			} else {
+				# return ban error in 400 response
+				return(synth(400, std.ban_error()));
+			}
 		}
 		if (req.method == "BANSTR") {
-			ban ("" + req.http.ban);
-			return (synth(410));
+			if (std.ban(req.http.ban)) {
+				return(synth(204, "Ban added"));
+			} else {
+				# return ban error in 400 response
+				return(synth(400, std.ban_error()));
+			}
 		}
 	}
 } -start
@@ -44,7 +56,7 @@ client c1 {
 client c1 {
 	txreq -req BAN -url /foox
 	rxresp
-	expect resp.status == 410
+	expect resp.status == 204
 } -run
 varnish v1 -cliok "ban.list"
 
@@ -61,7 +73,7 @@ client c1 {
 client c1 {
 	txreq -req BAN -url /foo
 	rxresp
-	expect resp.status == 410
+	expect resp.status == 204
 } -run
 varnish v1 -cliok "ban.list"
 
@@ -78,7 +90,7 @@ client c1 {
 client c1 {
 	txreq -req BANSTR -hdr "ban: req.url != /foo"
 	rxresp
-	expect resp.status == 410
+	expect resp.status == 204
 } -run
 varnish v1 -cliok "ban.list"
 
@@ -95,7 +107,7 @@ client c1 {
 client c1 {
 	txreq -req BANSTR -hdr "Ban: obj.http.foo == bar6"
 	rxresp
-	expect resp.status == 410
+	expect resp.status == 204
 } -run
 varnish v1 -cliok "ban.list"
 
@@ -112,7 +124,7 @@ client c1 {
 client c1 {
 	txreq -req BANSTR -hdr "Ban: obj.http.foo == bar6"
 	rxresp
-	expect resp.status == 410
+	expect resp.status == 204
 } -run
 
 varnish v1 -cliok "ban.list"
@@ -130,7 +142,7 @@ client c1 {
 client c1 {
 	txreq -req BANSTR -hdr "Ban: req.http.foo == barcheck"
 	rxresp
-	expect resp.status == 410
+	expect resp.status == 204
 } -run
 varnish v1 -cliok "ban.list"
 
@@ -146,7 +158,7 @@ client c1 {
 client c1 {
 	txreq -req BANSTR -hdr "Ban: obj.http.foo == barcheck"
 	rxresp
-	expect resp.status == 410
+	expect resp.status == 204
 } -run
 varnish v1 -cliok "ban.list"
 varnish v1 -clijson "ban.list -j"
@@ -157,4 +169,12 @@ client c1 {
 	expect resp.status == 200
 	expect resp.http.foo == bar8
 	expect resp.bodylen == 8
+} -run
+
+# Error
+client c1 {
+	txreq -req BANSTR -hdr "Ban: xobj.http.foo == barcheck"
+	rxresp
+	expect resp.status == 400
+	expect resp.reason == {Unknown or unsupported field "xobj.http.foo"}
 } -run
