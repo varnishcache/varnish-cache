@@ -31,7 +31,6 @@
 /* vrt.h must be included before this header (for struct strands). */
 
 #include <stdlib.h>
-#include <sys/types.h>
 
 enum encoding {
 	__INVALID_ENCODING = 0,
