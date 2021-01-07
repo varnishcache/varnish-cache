@@ -72,12 +72,14 @@ struct pfd {
 typedef int cp_open_f(const struct conn_pool *, vtim_dur tmo, VCL_IP *ap);
 typedef void cp_close_f(struct pfd *);
 typedef void cp_name_f(const struct pfd *, char *, unsigned, char *, unsigned);
+typedef void cp_free_f(void *);
 
 struct cp_methods {
 	cp_open_f				*open;
 	cp_close_f				*close;
 	cp_name_f				*local_name;
 	cp_name_f				*remote_name;
+	cp_free_f				*free;
 };
 
 struct conn_pool {
@@ -103,16 +105,6 @@ struct conn_pool {
 
 	vtim_mono				holddown;
 	int					holddown_errno;
-};
-
-struct tcp_pool {
-	unsigned				magic;
-#define TCP_POOL_MAGIC				0x28b0e42a
-
-	struct suckaddr				*ip4;
-	struct suckaddr				*ip6;
-	char					*uds;
-	struct conn_pool			cp[1];
 };
 
 static struct lock		conn_pools_mtx;
@@ -268,7 +260,7 @@ VCP_AddRef(struct conn_pool *cp)
  * Release Conn pool, destroy if last reference.
  */
 
-static int
+static void
 VCP_Rel(struct conn_pool *cp)
 {
 	struct pfd *pfd, *pfd2;
@@ -279,7 +271,7 @@ VCP_Rel(struct conn_pool *cp)
 	assert(cp->refcnt > 0);
 	if (--cp->refcnt > 0) {
 		Lck_Unlock(&conn_pools_mtx);
-		return (1);
+		return;
 	}
 	AZ(cp->n_used);
 	VTAILQ_REMOVE(&conn_pools, cp, list);
@@ -304,7 +296,7 @@ VCP_Rel(struct conn_pool *cp)
 	Lck_Delete(&cp->mtx);
 	AZ(cp->n_conn);
 	AZ(cp->n_kill);
-	return (0);
+	cp->methods->free(cp->priv);
 }
 
 /*--------------------------------------------------------------------
@@ -564,6 +556,28 @@ VCP_Wait(struct worker *wrk, struct pfd *pfd, vtim_real tmo)
 /*--------------------------------------------------------------------
  */
 
+struct tcp_pool {
+	unsigned				magic;
+#define TCP_POOL_MAGIC				0x28b0e42a
+
+	struct suckaddr				*ip4;
+	struct suckaddr				*ip6;
+	char					*uds;
+	struct conn_pool			cp[1];
+};
+
+static void v_matchproto_(cp_free_f)
+vtp_free(void *priv)
+{
+	struct tcp_pool *tp;
+
+	TAKE_OBJ_NOTNULL(tp, &priv, TCP_POOL_MAGIC);
+	free(tp->ip4);
+	free(tp->ip6);
+	free(tp->uds);
+	FREE_OBJ(tp);
+}
+
 static inline int
 tmo2msec(vtim_dur tmo)
 {
@@ -627,6 +641,7 @@ static const struct cp_methods vtp_methods = {
 	.close = vtp_close,
 	.local_name = vtp_local_name,
 	.remote_name = vtp_remote_name,
+	.free = vtp_free,
 };
 
 /*--------------------------------------------------------------------
@@ -665,6 +680,7 @@ static const struct cp_methods vus_methods = {
 	.close = vtp_close,
 	.local_name = vus_name,
 	.remote_name = vus_name,
+	.free = vtp_free,
 };
 
 /*--------------------------------------------------------------------
@@ -751,13 +767,7 @@ VTP_Rel(struct tcp_pool **tpp)
 	struct tcp_pool *tp;
 
 	TAKE_OBJ_NOTNULL(tp, tpp, TCP_POOL_MAGIC);
-	if (VCP_Rel(tp->cp))
-		return;
-
-	free(tp->ip4);
-	free(tp->ip6);
-	free(tp->uds);
-	FREE_OBJ(tp);
+	VCP_Rel(tp->cp);
 }
 
 /*--------------------------------------------------------------------
