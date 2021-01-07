@@ -6,15 +6,27 @@ if [ "x$1" = "x-ok" -a -f _.fl ] ; then
 	exit 0
 fi
 
+d=$(dirname $0)
+l=1
+if [ $d = ../../tools ] ; then
+    l=2
+fi
+
 flexelint \
 	-D__FLEXELINT__ \
-	../../flint.lnt \
+	$(if [ $l -eq 2 ] ; then echo ../../flint.lnt ; fi) \
 	../flint.lnt \
 	flint.lnt \
 	-zero \
 	-I. \
-	-I../../include \
-	-I../.. \
+	$(if [ $l -eq 2 ] ; then
+	      echo -I../../include
+	      echo -I../..
+	  else
+	      echo -I../include
+	      echo -I..
+	  fi
+	) \
 	-I/usr/local/include \
 	$FLOPS \
 	2>&1 | tee _.fl

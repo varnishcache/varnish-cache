@@ -21,6 +21,4 @@ FLOPS='
 	../../lib/libvcc/*.c
 	../../vmod/flint.lnt
 	../../vmod/*.c
-'
-
-. ../../tools/flint_skel.sh
+' ../../tools/flint_skel.sh

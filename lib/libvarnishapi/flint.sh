@@ -2,6 +2,4 @@
 
 FLOPS='
 	*.c
-'
-
-. ../../tools/flint_skel.sh
+' ../../tools/flint_skel.sh
