@@ -23,4 +23,4 @@ FLOPS='
 	../../vmod/vcc_debug_if.c
 	../../vmod/vmod_debug*.c
 	../../vmod/VSC_debug*.c
-' ../../tools/flint_skel.sh
+' ../../tools/flint_skel.sh $*
