@@ -285,7 +285,7 @@ vbp_poke(struct vbp_target *vt)
 	t_start = t_now = VTIM_real();
 	t_end = t_start + vt->timeout;
 
-	s = VTP_Open(vt->tcp_pool, t_end - t_now, (const void **)&sa, &err);
+	s = VTP_Open(vt->tcp_pool, t_end - t_now, &sa, &err);
 	if (s < 0) {
 		bprintf(vt->resp_buf, "Open error %d (%s)", err, vstrerror(err));
 		Lck_Lock(&vbp_mtx);

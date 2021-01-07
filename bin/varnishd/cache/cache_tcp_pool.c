@@ -58,7 +58,7 @@ struct pfd {
 #define PFD_MAGIC		0x0c5e6593
 	int			fd;
 	VTAILQ_ENTRY(pfd)	list;
-	const void		*priv;
+	VCL_IP			addr;
 	uint8_t			state;
 	struct waited		waited[1];
 	struct conn_pool	*conn_pool;
@@ -69,8 +69,7 @@ struct pfd {
 /*--------------------------------------------------------------------
  */
 
-typedef int cp_open_f(const struct conn_pool *, vtim_dur tmo,
-    const void **privp);
+typedef int cp_open_f(const struct conn_pool *, vtim_dur tmo, VCL_IP *ap);
 typedef void cp_close_f(struct pfd *);
 typedef void cp_name_f(const struct pfd *, char *, unsigned, char *, unsigned);
 
@@ -374,7 +373,7 @@ VCP_Recycle(const struct worker *wrk, struct pfd **pfdp)
  */
 
 static int
-VCP_Open(struct conn_pool *cp, vtim_dur tmo, const void **privp, int *err)
+VCP_Open(struct conn_pool *cp, vtim_dur tmo, VCL_IP *ap, int *err)
 {
 	int r;
 	vtim_mono h;
@@ -401,7 +400,7 @@ VCP_Open(struct conn_pool *cp, vtim_dur tmo, const void **privp, int *err)
 		return (-1);
 	}
 
-	r = cp->methods->open(cp, tmo, privp);
+	r = cp->methods->open(cp, tmo, ap);
 
 	*err = errno;
 
@@ -518,7 +517,7 @@ VCP_Get(struct conn_pool *cp, vtim_dur tmo, struct worker *wrk,
 	INIT_OBJ(pfd->waited, WAITED_MAGIC);
 	pfd->state = PFD_STATE_USED;
 	pfd->conn_pool = cp;
-	pfd->fd = VCP_Open(cp, tmo, &pfd->priv, err);
+	pfd->fd = VCP_Open(cp, tmo, &pfd->addr, err);
 	if (pfd->fd < 0) {
 		FREE_OBJ(pfd);
 		Lck_Lock(&cp->mtx);
@@ -572,7 +571,7 @@ tmo2msec(vtim_dur tmo)
 }
 
 static int v_matchproto_(cp_open_f)
-vtp_open(const struct conn_pool *cp, vtim_dur tmo, const void **privp)
+vtp_open(const struct conn_pool *cp, vtim_dur tmo, VCL_IP *ap)
 {
 	int s;
 	int msec;
@@ -583,17 +582,17 @@ vtp_open(const struct conn_pool *cp, vtim_dur tmo, const void **privp)
 
 	msec = tmo2msec(tmo);
 	if (cache_param->prefer_ipv6) {
-		*privp = tp->ip6;
+		*ap = tp->ip6;
 		s = VTCP_connect(tp->ip6, msec);
 		if (s >= 0)
 			return (s);
 	}
-	*privp = tp->ip4;
+	*ap = tp->ip4;
 	s = VTCP_connect(tp->ip4, msec);
 	if (s >= 0)
 		return (s);
 	if (!cache_param->prefer_ipv6) {
-		*privp = tp->ip6;
+		*ap = tp->ip6;
 		s = VTCP_connect(tp->ip6, msec);
 	}
 	return (s);
@@ -634,7 +633,7 @@ static const struct cp_methods vtp_methods = {
  */
 
 static int v_matchproto_(cp_open_f)
-vus_open(const struct conn_pool *cp, vtim_dur tmo, const void **privp)
+vus_open(const struct conn_pool *cp, vtim_dur tmo, VCL_IP *ap)
 {
 	int s;
 	int msec;
@@ -645,7 +644,7 @@ vus_open(const struct conn_pool *cp, vtim_dur tmo, const void **privp)
 	AN(tp->uds);
 
 	msec = tmo2msec(tmo);
-	*privp = bogo_ip;
+	*ap = bogo_ip;
 	s = VUS_connect(tp->uds, msec);
 	return (s);
 }
@@ -766,9 +765,9 @@ VTP_Rel(struct tcp_pool **tpp)
  */
 
 int
-VTP_Open(struct tcp_pool *tp, vtim_dur tmo, const void **privp, int *err)
+VTP_Open(struct tcp_pool *tp, vtim_dur tmo, VCL_IP *ap, int *err)
 {
-	return (VCP_Open(tp->cp, tmo, privp, err));
+	return (VCP_Open(tp->cp, tmo, ap, err));
 }
 
 /*--------------------------------------------------------------------
@@ -817,14 +816,12 @@ VTP_Wait(struct worker *wrk, struct pfd *pfd, vtim_real tmo)
 /*--------------------------------------------------------------------
  */
 
-const struct suckaddr *
-VTP_getip(struct pfd *pfd)
+VCL_IP
+VTP_GetIp(struct pfd *pfd)
 {
-	struct tcp_pool *tp;
 
 	CHECK_OBJ_NOTNULL(pfd, PFD_MAGIC);
-	CAST_OBJ_NOTNULL(tp, pfd->conn_pool->priv, TCP_POOL_MAGIC);
-	return (pfd->priv);
+	return (pfd->addr);
 }
 
 /*--------------------------------------------------------------------*/

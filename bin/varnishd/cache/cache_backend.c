@@ -341,7 +341,7 @@ vbe_dir_getip(VRT_CTX, VCL_BACKEND d)
 	CHECK_OBJ_NOTNULL(ctx->bo->htc, HTTP_CONN_MAGIC);
 	pfd = ctx->bo->htc->priv;
 
-	return (VTP_getip(pfd));
+	return (VTP_GetIp(pfd));
 }
 
 /*--------------------------------------------------------------------*/

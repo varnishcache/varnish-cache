@@ -73,7 +73,7 @@ void VTP_Rel(struct tcp_pool **);
 	 * the pool is destroyed and all cached connections closed.
 	 */
 
-int VTP_Open(struct tcp_pool *, vtim_dur tmo, const void **, int*);
+int VTP_Open(struct tcp_pool *, vtim_dur tmo, VCL_IP *, int*);
 	/*
 	 * Open a new connection and return the address used.
 	 * errno will be returned in the last argument.
@@ -104,5 +104,5 @@ int VTP_Wait(struct worker *, struct pfd *, vtim_real tmo);
 
 void VTP_panic(struct vsb *, struct tcp_pool *);
 
-const struct suckaddr *VTP_getip(struct pfd *);
+VCL_IP VTP_GetIp(struct pfd *);
 
