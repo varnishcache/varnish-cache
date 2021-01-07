@@ -155,7 +155,7 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, struct backend *bp,
 	bo->htc->doclose = SC_NULL;
 
 	FIND_TMO(connect_timeout, tmod, bo, bp);
-	pfd = VTP_Get(bp->tcp_pool, tmod, wrk, force_fresh, &err);
+	pfd = VCP_Get(bp->conn_pool, tmod, wrk, force_fresh, &err);
 	if (pfd == NULL) {
 		VBE_Connect_Error(bp->vsc, err);
 		VSLb(bo->vsl, SLT_FetchError,
@@ -188,7 +188,7 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, struct backend *bp,
 		// account as if connect failed - good idea?
 		VSC_C_main->backend_fail++;
 		bo->htc = NULL;
-		VTP_Close(&pfd);
+		VCP_Close(&pfd);
 		AZ(pfd);
 		Lck_Lock(&bp->mtx);
 		bp->n_conn--;
@@ -237,7 +237,7 @@ vbe_dir_finish(VRT_CTX, VCL_BACKEND d)
 	if (bo->htc->doclose != SC_NULL || bp->proxy_header != 0) {
 		VSLb(bo->vsl, SLT_BackendClose, "%d %s close", *PFD_Fd(pfd),
 		    VRT_BACKEND_string(bp->director));
-		VTP_Close(&pfd);
+		VCP_Close(&pfd);
 		AZ(pfd);
 		Lck_Lock(&bp->mtx);
 	} else {
@@ -246,7 +246,7 @@ vbe_dir_finish(VRT_CTX, VCL_BACKEND d)
 		    VRT_BACKEND_string(bp->director));
 		Lck_Lock(&bp->mtx);
 		VSC_C_main->backend_recycle++;
-		VTP_Recycle(bo->wrk, &pfd);
+		VCP_Recycle(bo->wrk, &pfd);
 	}
 	assert(bp->n_conn > 0);
 	bp->n_conn--;
@@ -295,7 +295,7 @@ vbe_dir_gethdrs(VRT_CTX, VCL_BACKEND d)
 				&bo->acct.bereq_bodybytes);
 
 		if (PFD_State(pfd) != PFD_STATE_USED) {
-			if (VTP_Wait(wrk, pfd, VTIM_real() +
+			if (VCP_Wait(wrk, pfd, VTIM_real() +
 			    bo->htc->first_byte_timeout) != 0) {
 				bo->htc->doclose = SC_RX_TIMEOUT;
 				VSLb(bo->vsl, SLT_FetchError,
@@ -341,7 +341,7 @@ vbe_dir_getip(VRT_CTX, VCL_BACKEND d)
 	CHECK_OBJ_NOTNULL(ctx->bo->htc, HTTP_CONN_MAGIC);
 	pfd = ctx->bo->htc->priv;
 
-	return (VTP_GetIp(pfd));
+	return (VCP_GetIp(pfd));
 }
 
 /*--------------------------------------------------------------------*/
@@ -430,7 +430,7 @@ vbe_free(struct backend *be)
 	else
 		VTAILQ_REMOVE(&backends, be, list);
 	VSC_C_main->n_backend--;
-	VTP_Rel(&be->tcp_pool);
+	VCP_Rel(&be->conn_pool);
 	Lck_Unlock(&backends_mtx);
 
 #define DA(x)	do { if (be->x != NULL) free(be->x); } while (0)
@@ -462,7 +462,7 @@ vbe_panic(const struct director *d, struct vsb *vsb)
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
 
-	VTP_Panic(vsb, bp->tcp_pool);
+	VCP_Panic(vsb, bp->conn_pool);
 	VSB_printf(vsb, "hosthdr = %s,\n", bp->hosthdr);
 	VSB_printf(vsb, "n_conn = %u,\n", bp->n_conn);
 }
@@ -611,15 +611,15 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 	if (! vcl->temp->is_warm)
 		VRT_VSC_Hide(be->vsc_seg);
 
-	be->tcp_pool = VTP_Ref(vep, vbe_proto_ident);
-	AN(be->tcp_pool);
+	be->conn_pool = VTP_Ref(vep, vbe_proto_ident);
+	AN(be->conn_pool);
 
 	vbp = vrt->probe;
 	if (vbp == NULL)
 		vbp = VCL_DefaultProbe(vcl);
 
 	if (vbp != NULL) {
-		VBP_Insert(be, vbp, be->tcp_pool);
+		VBP_Insert(be, vbp, be->conn_pool);
 		m = vbe_methods;
 	} else {
 		be->sick = 0;

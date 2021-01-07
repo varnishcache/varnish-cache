@@ -42,7 +42,7 @@
 struct vbp_target;
 struct vrt_ctx;
 struct vrt_backend_probe;
-struct tcp_pool;
+struct conn_pool;
 
 /*--------------------------------------------------------------------
  * An instance of a backend from a VCL program.
@@ -67,7 +67,7 @@ struct backend {
 	struct vsc_seg		*vsc_seg;
 	struct VSC_vbe		*vsc;
 
-	struct tcp_pool		*tcp_pool;
+	struct conn_pool	*conn_pool;
 
 	VCL_BACKEND		director;
 
@@ -84,7 +84,7 @@ void VBE_SetHappy(const struct backend *, uint64_t);
 /* cache_backend_probe.c */
 void VBP_Update_Backend(struct vbp_target *vt);
 void VBP_Insert(struct backend *b, struct vrt_backend_probe const *p,
-    struct tcp_pool *);
+    struct conn_pool *);
 void VBP_Remove(struct backend *b);
 void VBP_Control(const struct backend *b, int stop);
 void VBP_Status(struct vsb *, const struct backend *, int details, int json);

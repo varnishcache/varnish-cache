@@ -28,11 +28,11 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Outgoing TCP connection pools
+ * Outgoing TCP|UDS connection pools
  *
  */
 
-struct tcp_pool;
+struct conn_pool;
 struct pfd;
 #define PFD_STATE_AVAIL		(1<<0)
 #define PFD_STATE_USED		(1<<1)
@@ -48,13 +48,12 @@ void PFD_LocalName(const struct pfd *, char *, unsigned, char *, unsigned);
 void PFD_RemoteName(const struct pfd *, char *, unsigned, char *, unsigned);
 
 /*---------------------------------------------------------------------
-
  * Prototypes
  */
 
 struct VSC_vbe;
 
-struct tcp_pool *VTP_Ref(const struct vrt_endpoint *, const char *ident);
+struct conn_pool *VTP_Ref(const struct vrt_endpoint *, const char *ident);
 	/*
 	 * Get a reference to a TCP pool. Either one or both of ipv4 or
 	 * ipv6 arg must be non-NULL, or uds must be non-NULL. If recycling
@@ -62,47 +61,47 @@ struct tcp_pool *VTP_Ref(const struct vrt_endpoint *, const char *ident);
 	 * other pools with same {ipv4, ipv6, uds}.
 	 */
 
-void VTP_AddRef(struct tcp_pool *);
+void VCP_AddRef(struct conn_pool *);
 	/*
 	 * Get another reference to an already referenced TCP pool.
 	 */
 
-void VTP_Rel(struct tcp_pool **);
+void VCP_Rel(struct conn_pool **);
 	/*
 	 * Release reference to a TCP pool.  When last reference is released
 	 * the pool is destroyed and all cached connections closed.
 	 */
 
-int VTP_Open(struct tcp_pool *, vtim_dur tmo, VCL_IP *, int*);
+int VCP_Open(struct conn_pool *, vtim_dur tmo, VCL_IP *, int*);
 	/*
 	 * Open a new connection and return the address used.
 	 * errno will be returned in the last argument.
 	 */
 
-void VTP_Close(struct pfd **);
+void VCP_Close(struct pfd **);
 	/*
 	 * Close a connection.
 	 */
 
-void VTP_Recycle(const struct worker *, struct pfd **);
+void VCP_Recycle(const struct worker *, struct pfd **);
 	/*
 	 * Recycle an open connection.
 	 */
 
-struct pfd *VTP_Get(struct tcp_pool *, vtim_dur tmo, struct worker *,
+struct pfd *VCP_Get(struct conn_pool *, vtim_dur tmo, struct worker *,
     unsigned force_fresh, int *err);
 	/*
 	 * Get a (possibly) recycled connection.
 	 * errno will be stored in err
 	 */
 
-int VTP_Wait(struct worker *, struct pfd *, vtim_real tmo);
+int VCP_Wait(struct worker *, struct pfd *, vtim_real tmo);
 	/*
 	 * If the connection was recycled (state != VTP_STATE_USED) call this
 	 * function before attempting to receive on the connection.
 	 */
 
-void VTP_Panic(struct vsb *, struct tcp_pool *);
+void VCP_Panic(struct vsb *, struct conn_pool *);
 
-VCL_IP VTP_GetIp(struct pfd *);
+VCL_IP VCP_GetIp(struct pfd *);
 

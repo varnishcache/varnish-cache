@@ -27,7 +27,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * TCP connection pools.
+ * (TCP|UDS) connection pools.
  *
  */
 
@@ -216,7 +216,7 @@ VCP_Ref(const uint8_t *ident)
 /*--------------------------------------------------------------------
  */
 
-static void *
+static struct conn_pool *
 VCP_New(struct conn_pool *cp, uint8_t ident[VSHA256_DIGEST_LENGTH],
     void *priv, const struct cp_methods *cm)
 {
@@ -240,14 +240,13 @@ VCP_New(struct conn_pool *cp, uint8_t ident[VSHA256_DIGEST_LENGTH],
 	VTAILQ_INSERT_HEAD(&conn_pools, cp, list);
 	Lck_Unlock(&conn_pools_mtx);
 
-	return (priv);
+	return (cp);
 }
-
 
 /*--------------------------------------------------------------------
  */
 
-static void
+void
 VCP_AddRef(struct conn_pool *cp)
 {
 	CHECK_OBJ_NOTNULL(cp, CONN_POOL_MAGIC);
@@ -262,12 +261,13 @@ VCP_AddRef(struct conn_pool *cp)
  * Release Conn pool, destroy if last reference.
  */
 
-static void
-VCP_Rel(struct conn_pool *cp)
+void
+VCP_Rel(struct conn_pool **cpp)
 {
+	struct conn_pool *cp;
 	struct pfd *pfd, *pfd2;
 
-	CHECK_OBJ_NOTNULL(cp, CONN_POOL_MAGIC);
+	TAKE_OBJ_NOTNULL(cp, cpp, CONN_POOL_MAGIC);
 
 	Lck_Lock(&conn_pools_mtx);
 	assert(cp->refcnt > 0);
@@ -305,7 +305,7 @@ VCP_Rel(struct conn_pool *cp)
  * Recycle a connection.
  */
 
-static void
+void
 VCP_Recycle(const struct worker *wrk, struct pfd **pfdp)
 {
 	struct pfd *pfd;
@@ -366,7 +366,7 @@ VCP_Recycle(const struct worker *wrk, struct pfd **pfdp)
  * Open a new connection from pool.
  */
 
-static int
+int
 VCP_Open(struct conn_pool *cp, vtim_dur tmo, VCL_IP *ap, int *err)
 {
 	int r;
@@ -440,7 +440,7 @@ VCP_Open(struct conn_pool *cp, vtim_dur tmo, VCL_IP *ap, int *err)
  * Close a connection.
  */
 
-static void
+void
 VCP_Close(struct pfd **pfdp)
 {
 	struct pfd *pfd;
@@ -474,7 +474,7 @@ VCP_Close(struct pfd **pfdp)
  * Get a connection, possibly recycled
  */
 
-static struct pfd *
+struct pfd *
 VCP_Get(struct conn_pool *cp, vtim_dur tmo, struct worker *wrk,
     unsigned force_fresh, int *err)
 {
@@ -526,7 +526,7 @@ VCP_Get(struct conn_pool *cp, vtim_dur tmo, struct worker *wrk,
 /*--------------------------------------------------------------------
  */
 
-static int
+int
 VCP_Wait(struct worker *wrk, struct pfd *pfd, vtim_real tmo)
 {
 	struct conn_pool *cp;
@@ -557,6 +557,40 @@ VCP_Wait(struct worker *wrk, struct pfd *pfd, vtim_real tmo)
 
 /*--------------------------------------------------------------------
  */
+
+VCL_IP
+VCP_GetIp(struct pfd *pfd)
+{
+
+	CHECK_OBJ_NOTNULL(pfd, PFD_MAGIC);
+	return (pfd->addr);
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+VCP_Panic(struct vsb *vsb, struct conn_pool *cp)
+{
+
+	if (PAN_dump_struct(vsb, cp, CONN_POOL_MAGIC, "conn_pool"))
+		return;
+	VSB_printf(vsb, "ident = ");
+	VSB_quote(vsb, cp->ident, VSHA256_DIGEST_LENGTH, VSB_QUOTE_HEX);
+	VSB_printf(vsb, ",\n");
+	cp->methods->panic(vsb, cp->priv);
+	VSB_indent(vsb, -2);
+	VSB_cat(vsb, "},\n");
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+VCP_Init(void)
+{
+	Lck_New(&conn_pools_mtx, lck_tcp_pool);
+}
+
+/**********************************************************************/
 
 struct tcp_pool {
 	unsigned				magic;
@@ -643,25 +677,6 @@ vtp_panic(struct vsb *vsb, const void *priv)
 
 /*--------------------------------------------------------------------*/
 
-void
-VTP_Panic(struct vsb *vsb, struct tcp_pool *tp)
-{
-	struct conn_pool *cp;
-
-	cp = tp->cp;
-
-	if (PAN_dump_struct(vsb, cp, CONN_POOL_MAGIC, "conn_pool"))
-		return;
-	VSB_printf(vsb, "ident = ");
-	VSB_quote(vsb, cp->ident, VSHA256_DIGEST_LENGTH, VSB_QUOTE_HEX);
-	VSB_printf(vsb, ",\n");
-	cp->methods->panic(vsb, cp->priv);
-	VSB_indent(vsb, -2);
-	VSB_cat(vsb, "},\n");
-}
-
-/*--------------------------------------------------------------------*/
-
 static void v_matchproto_(cp_close_f)
 vtp_close(struct pfd *pfd)
 {
@@ -740,7 +755,7 @@ static const struct cp_methods vus_methods = {
  * it doesn't exist already.
  */
 
-struct tcp_pool *
+struct conn_pool *
 VTP_Ref(const struct vrt_endpoint *vep, const char *ident)
 {
 	struct tcp_pool *tp;
@@ -775,7 +790,7 @@ VTP_Ref(const struct vrt_endpoint *vep, const char *ident)
 
 	cp = VCP_Ref(digest);
 	if (cp != NULL)
-		return (cp->priv);
+		return (cp);
 
 	/*
 	 * this is racy - we could end up with additional pools on the same id
@@ -796,101 +811,4 @@ VTP_Ref(const struct vrt_endpoint *vep, const char *ident)
 			tp->ip6 = VSA_Clone(vep->ipv6);
 	}
 	return (VCP_New(tp->cp, digest, tp, methods));
-}
-
-/*--------------------------------------------------------------------
- * Add a reference to a tcp_pool
- */
-
-void
-VTP_AddRef(struct tcp_pool *tp)
-{
-	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
-	VCP_AddRef(tp->cp);
-}
-
-/*--------------------------------------------------------------------
- * Release TCP pool, destroy if last reference.
- */
-
-void
-VTP_Rel(struct tcp_pool **tpp)
-{
-	struct tcp_pool *tp;
-
-	TAKE_OBJ_NOTNULL(tp, tpp, TCP_POOL_MAGIC);
-	VCP_Rel(tp->cp);
-}
-
-/*--------------------------------------------------------------------
- * Open a new connection from pool.
- */
-
-int
-VTP_Open(struct tcp_pool *tp, vtim_dur tmo, VCL_IP *ap, int *err)
-{
-	return (VCP_Open(tp->cp, tmo, ap, err));
-}
-
-/*--------------------------------------------------------------------
- * Recycle a connection.
- */
-
-void
-VTP_Recycle(const struct worker *wrk, struct pfd **pfdp)
-{
-
-	VCP_Recycle(wrk, pfdp);
-}
-
-/*--------------------------------------------------------------------
- * Close a connection.
- */
-
-void
-VTP_Close(struct pfd **pfdp)
-{
-
-	VCP_Close(pfdp);
-}
-
-/*--------------------------------------------------------------------
- * Get a connection
- */
-
-struct pfd *
-VTP_Get(struct tcp_pool *tp, vtim_dur tmo, struct worker *wrk,
-	unsigned force_fresh, int *err)
-{
-
-	return (VCP_Get(tp->cp, tmo, wrk, force_fresh, err));
-}
-
-/*--------------------------------------------------------------------
- */
-
-int
-VTP_Wait(struct worker *wrk, struct pfd *pfd, vtim_real tmo)
-{
-	return (VCP_Wait(wrk, pfd, tmo));
-}
-
-/*--------------------------------------------------------------------
- */
-
-VCL_IP
-VTP_GetIp(struct pfd *pfd)
-{
-
-	CHECK_OBJ_NOTNULL(pfd, PFD_MAGIC);
-	return (pfd->addr);
-}
-
-
-/*--------------------------------------------------------------------*/
-
-void
-VTP_Init(void)
-{
-	Lck_New(&conn_pools_mtx, lck_tcp_pool);
 }

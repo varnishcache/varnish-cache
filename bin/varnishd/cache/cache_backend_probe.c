@@ -64,7 +64,7 @@ struct vbp_target {
 	VRT_BACKEND_PROBE_FIELDS()
 
 	struct backend			*backend;
-	struct tcp_pool			*tcp_pool;
+	struct conn_pool		*conn_pool;
 
 	char				*req;
 	int				req_len;
@@ -103,7 +103,7 @@ vbp_delete(struct vbp_target *vt)
 #define DN(x)	/**/
 	VRT_BACKEND_PROBE_HANDLE();
 #undef DN
-	VTP_Rel(&vt->tcp_pool);
+	VCP_Rel(&vt->conn_pool);
 	free(vt->req);
 	FREE_OBJ(vt);
 }
@@ -285,7 +285,7 @@ vbp_poke(struct vbp_target *vt)
 	t_start = t_now = VTIM_real();
 	t_end = t_start + vt->timeout;
 
-	s = VTP_Open(vt->tcp_pool, t_end - t_now, &sa, &err);
+	s = VCP_Open(vt->conn_pool, t_end - t_now, &sa, &err);
 	if (s < 0) {
 		bprintf(vt->resp_buf, "Open error %d (%s)", err, vstrerror(err));
 		Lck_Lock(&vbp_mtx);
@@ -673,7 +673,7 @@ VBP_Control(const struct backend *be, int enable)
 
 void
 VBP_Insert(struct backend *b, const struct vrt_backend_probe *vp,
-    struct tcp_pool *tp)
+    struct conn_pool *tp)
 {
 	struct vbp_target *vt;
 
@@ -685,8 +685,8 @@ VBP_Insert(struct backend *b, const struct vrt_backend_probe *vp,
 	ALLOC_OBJ(vt, VBP_TARGET_MAGIC);
 	XXXAN(vt);
 
-	vt->tcp_pool = tp;
-	VTP_AddRef(vt->tcp_pool);
+	vt->conn_pool = tp;
+	VCP_AddRef(vt->conn_pool);
 	vt->backend = b;
 	b->probe = vt;
 
