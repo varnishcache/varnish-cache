@@ -53,6 +53,9 @@ AMBOILERPLATE = '''\
 
 vmod_LTLIBRARIES += libvmod_XXX.la
 
+libvmod_XXX_la_SOURCES = \\
+\tSRC
+
 libvmod_XXX_la_CFLAGS = \\
 \t@SAN_CFLAGS@
 
@@ -971,11 +974,14 @@ class vcc(object):
     def amboilerplate(self):
         ''' Produce boilplate for autocrap tools '''
         vcc = os.path.basename(self.inputfile)
+        src = glob.glob("vmod_" + self.modname + "*.[ch]")
+        src.sort()
         fn = "automake_boilerplate_" + self.modname + ".am"
         fo = self.openfile(fn)
         fo.write(AMBOILERPLATE.replace("XXX", self.modname)
                  .replace("VCC", vcc)
-                 .replace("PFX", self.pfx))
+                 .replace("PFX", self.pfx)
+                 .replace("SRC", " \\\n\t".join(src)))
         fo.close()
 
     def mkdefs(self, fo):

@@ -2,6 +2,19 @@
 
 vmod_LTLIBRARIES += libvmod_directors.la
 
+libvmod_directors_la_SOURCES = \
+	vmod_directors.c \
+	vmod_directors.h \
+	vmod_directors_fall_back.c \
+	vmod_directors_hash.c \
+	vmod_directors_random.c \
+	vmod_directors_round_robin.c \
+	vmod_directors_shard.c \
+	vmod_directors_shard_cfg.c \
+	vmod_directors_shard_cfg.h \
+	vmod_directors_shard_dir.c \
+	vmod_directors_shard_dir.h
+
 libvmod_directors_la_CFLAGS = \
 	@SAN_CFLAGS@
 

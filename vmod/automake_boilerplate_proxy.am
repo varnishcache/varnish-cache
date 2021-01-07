@@ -2,6 +2,9 @@
 
 vmod_LTLIBRARIES += libvmod_proxy.la
 
+libvmod_proxy_la_SOURCES = \
+	vmod_proxy.c
+
 libvmod_proxy_la_CFLAGS = \
 	@SAN_CFLAGS@
 
