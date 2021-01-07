@@ -38,8 +38,6 @@
 
 #include "vmod_blob.h"
 
-#include "hex.h"
-
 const char hex_alphabet[][16] = {
 	"0123456789abcdef",
 	"0123456789ABCDEF"
@@ -50,7 +48,7 @@ const char hex_alphabet[][16] = {
  * hex digits with their binary values. This fits all of the hex digits
  * into 55 bytes (cacheline friendly).
  */
-const uint8_t nibble[] = {
+const uint8_t hex_nibble[] = {
 	0,   1,   2,   3,   4,   5,   6,   7,   8,   9,
 	ILL, ILL, ILL, ILL, ILL, ILL, ILL, 10,  11,  12,
 	13,  14,  15,  ILL, ILL, ILL, ILL, ILL, ILL, ILL,
@@ -74,7 +72,7 @@ hex_decode_l(size_t l)
 static inline char
 hex2byte(const unsigned char hi, const unsigned char lo)
 {
-	return ((nibble[hi - '0'] << 4) | nibble[lo - '0']);
+	return ((hex_nibble[hi - '0'] << 4) | hex_nibble[lo - '0']);
 }
 
 ssize_t

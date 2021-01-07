@@ -91,6 +91,11 @@ ssize_t encode_f(const enum encoding enc, const enum case_e kase,
 		 blob_dest_t buf, blob_len_t buflen,
 		 blob_src_t in, blob_len_t inlen);
 
+/* Special lookup characters */
+
+#define ILL ((int8_t) 127)
+#define PAD ((int8_t) 126)
+
 /*
  * General interface for a decoder: decode the concatenation of strings
  * (obtained from STRANDS) into buf, and return the length of decoded
@@ -134,6 +139,9 @@ len_f		hex_encode_l;
 len_f		hex_decode_l;
 encode_f	hex_encode;
 decode_f	hex_decode;
+
+extern const char	hex_alphabet[][16];
+extern const uint8_t	hex_nibble[];
 
 /* url.c */
 len_f		url_encode_l;

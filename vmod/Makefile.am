@@ -22,7 +22,6 @@ libvmod_blob_la_SOURCES = \
 	vmod_blob.h \
 	id.c \
 	base64.c \
-	hex.h \
 	hex.c \
 	url.c \
 	tbl_encodings.h \

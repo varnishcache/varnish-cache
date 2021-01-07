@@ -36,8 +36,6 @@
 
 #include "vmod_blob.h"
 
-#include "hex.h"
-
 /* Decoder states */
 enum state_e {
 	NORMAL,
@@ -155,7 +153,7 @@ url_decode(const enum encoding dec, blob_dest_t buf,
 				break;
 			case PERCENT:
 				if (isoutofrange(*s) ||
-				    (nib = nibble[*s - '0']) == ILL) {
+				    (nib = hex_nibble[*s - '0']) == ILL) {
 					errno = EINVAL;
 					return (-1);
 				}
@@ -167,7 +165,7 @@ url_decode(const enum encoding dec, blob_dest_t buf,
 					return (-1);
 				}
 				if (isoutofrange(*s) ||
-				    (nib2 = nibble[*s - '0']) == ILL) {
+				    (nib2 = hex_nibble[*s - '0']) == ILL) {
 					errno = EINVAL;
 					return (-1);
 				}
