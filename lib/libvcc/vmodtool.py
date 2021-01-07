@@ -1097,7 +1097,6 @@ class vcc(object):
         self.mkdefs(fx);
 
         fo.write('#include "config.h"\n')
-        fo.write('#include <stdio.h>\n')
         for i in ["vdef", "vrt", self.pfx, "vmod_abi"]:
             fo.write('#include "%s.h"\n' % i)
         fo.write("\n")
