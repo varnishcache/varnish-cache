@@ -44,6 +44,8 @@ nodist_libvmod_debug_la_SOURCES += \
 	VSC_debug.c \
 	VSC_debug.h
 
+vmod_debug.c: VSC_debug.c
+
 # Allow Vmod_wrong*_Data to be exported
 vmod_debug_symbols_regex = 'Vmod_.*_Data'
 
