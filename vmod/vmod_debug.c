@@ -39,7 +39,6 @@
 #include "cache/cache_varnishd.h"
 #include "cache/cache_filter.h"
 
-#include "vre.h"
 #include "vsa.h"
 #include "vtim.h"
 #include "vcc_debug_if.h"
