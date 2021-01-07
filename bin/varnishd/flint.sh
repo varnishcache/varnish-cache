@@ -19,6 +19,4 @@ FLOPS='
 	../../lib/libvarnish/*.c
 	../../lib/libvcc/flint.lnt
 	../../lib/libvcc/*.c
-	../../vmod/flint.lnt
-	../../vmod/*.c
 ' ../../tools/flint_skel.sh
