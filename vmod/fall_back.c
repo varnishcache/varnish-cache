@@ -37,7 +37,7 @@
 
 #include "vcc_directors_if.h"
 
-#include "vdir.h"
+#include "vmod_directors.h"
 #include "vsb.h"
 #include "vbm.h"
 

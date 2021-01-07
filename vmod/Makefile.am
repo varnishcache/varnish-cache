@@ -36,11 +36,10 @@ libvmod_debug_la_SOURCES = \
 	vmod_debug_dyn.c
 
 libvmod_directors_la_SOURCES = \
-	vdir.c \
-	vdir.h \
+	vmod_directors.c \
+	vmod_directors.h \
 	fall_back.c \
 	hash.c \
-	misc.c \
 	random.c \
 	round_robin.c \
 	vmod_shard.c \

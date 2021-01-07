@@ -1,8 +1,10 @@
 /*-
  * Copyright (c) 2013-2015 Varnish Software AS
+ * Copyright 2019 UPLEX - Nils Goroll Systemoptimierung
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@FreeBSD.org>
+ * Author: Nils Goroll <nils.goroll@uplex.de>
  *
  * SPDX-License-Identifier: BSD-2-Clause
  *
@@ -36,9 +38,24 @@
 #include "cache/cache.h"
 
 #include "vbm.h"
+#include "vcl.h"
 #include "vsb.h"
 
-#include "vdir.h"
+#include "vcc_directors_if.h"
+
+#include "vmod_directors.h"
+
+VCL_BACKEND
+VPFX(lookup)(VRT_CTX, VCL_STRING name)
+{
+	if ((ctx->method & VCL_MET_TASK_H) == 0) {
+		VRT_fail(ctx,
+		    "lookup() may only be called from vcl_init / vcl_fini");
+		return (NULL);
+	}
+
+	return (VRT_LookupDirector(ctx, name));
+}
 
 static void
 vdir_expand(struct vdir *vd, unsigned n)
