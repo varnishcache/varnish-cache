@@ -505,8 +505,15 @@ event_warm(VRT_CTX, const struct vmod_priv *priv)
 {
 	struct priv_vcl *priv_vcl;
 	char buf[32];
+	const char *p[2];
+	struct strands msg[1];
 
-	VSL(SLT_Debug, 0, "%s: VCL_EVENT_WARM", VCL_Name(ctx->vcl));
+	// Using VSLs for coverage
+	msg->n = 2;
+	msg->p = p;
+	p[0] = VCL_Name(ctx->vcl);
+	p[1] = ": VCL_EVENT_WARM";
+	VSLs(SLT_Debug, 0, msg);
 
 	AN(ctx->msg);
 	if (cache_param->max_esi_depth == 42) {
@@ -805,6 +812,20 @@ xyzzy_sethdr(VRT_CTX, VCL_HEADER hs, VCL_STRANDS s)
 	}
 }
 
+// coverage
+static void
+mylog(struct vsl_log *vsl, enum VSL_tag_e tag,  const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	if (vsl != NULL)
+		VSLbv(vsl, tag, fmt, ap);
+	else
+		VSLv(tag, 0, fmt, ap);
+	va_end(ap);
+}
+
 VCL_DURATION
 xyzzy_priv_perf(VRT_CTX, VCL_INT size, VCL_INT rounds)
 {
@@ -838,7 +859,7 @@ xyzzy_priv_perf(VRT_CTX, VCL_INT size, VCL_INT rounds)
 
 	d = (t1 - t0) * 1e9 / ((double)size * (double)rounds);
 
-	VSLb(ctx->vsl, SLT_Debug,
+	mylog(ctx->vsl, SLT_Debug,
 	     "perf size %jd rounds %jd time %.1fns check %jd",
 	     (intmax_t)size, (intmax_t)rounds, d, (uintmax_t)check);
 
@@ -850,6 +871,7 @@ xyzzy_return_strands(VRT_CTX, VCL_STRANDS strand)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	VSLbs(ctx->vsl, SLT_Debug, strand);
 	return (strand);
 }
 
