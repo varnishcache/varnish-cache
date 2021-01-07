@@ -462,7 +462,7 @@ vbe_panic(const struct director *d, struct vsb *vsb)
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
 
-	VTP_panic(vsb, bp->tcp_pool);
+	VTP_Panic(vsb, bp->tcp_pool);
 	VSB_printf(vsb, "hosthdr = %s,\n", bp->hosthdr);
 	VSB_printf(vsb, "n_conn = %u,\n", bp->n_conn);
 }

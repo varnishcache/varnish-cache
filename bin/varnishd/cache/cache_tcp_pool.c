@@ -73,6 +73,7 @@ typedef int cp_open_f(const struct conn_pool *, vtim_dur tmo, VCL_IP *ap);
 typedef void cp_close_f(struct pfd *);
 typedef void cp_name_f(const struct pfd *, char *, unsigned, char *, unsigned);
 typedef void cp_free_f(void *);
+typedef void cp_panic_f(struct vsb *, const void *);
 
 struct cp_methods {
 	cp_open_f				*open;
@@ -80,6 +81,7 @@ struct cp_methods {
 	cp_name_f				*local_name;
 	cp_name_f				*remote_name;
 	cp_free_f				*free;
+	cp_panic_f				*panic;
 };
 
 struct conn_pool {
@@ -612,6 +614,54 @@ vtp_open(const struct conn_pool *cp, vtim_dur tmo, VCL_IP *ap)
 	return (s);
 }
 
+static void
+vtp_panic(struct vsb *vsb, const void *priv)
+{
+	const struct tcp_pool *tp;
+
+	char h[VTCP_ADDRBUFSIZE];
+	char p[VTCP_PORTBUFSIZE];
+
+	tp = priv;
+	if (PAN_dump_struct(vsb, tp, TCP_POOL_MAGIC, "tcp_pool"))
+		return;
+	if (tp->uds)
+		VSB_printf(vsb, "uds = %s,\n", tp->uds);
+	if (tp->ip4 && VSA_Sane(tp->ip4)) {
+		VTCP_name(tp->ip4, h, sizeof h, p, sizeof p);
+		VSB_printf(vsb, "ipv4 = %s, ", h);
+		VSB_printf(vsb, "port = %s,\n", p);
+	}
+	if (tp->ip6 && VSA_Sane(tp->ip6)) {
+		VTCP_name(tp->ip6, h, sizeof h, p, sizeof p);
+		VSB_printf(vsb, "ipv6 = %s, ", h);
+		VSB_printf(vsb, "port = %s,\n", p);
+	}
+	VSB_indent(vsb, -2);
+	VSB_cat(vsb, "},\n");
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+VTP_Panic(struct vsb *vsb, struct tcp_pool *tp)
+{
+	struct conn_pool *cp;
+
+	cp = tp->cp;
+
+	if (PAN_dump_struct(vsb, cp, CONN_POOL_MAGIC, "conn_pool"))
+		return;
+	VSB_printf(vsb, "ident = ");
+	VSB_quote(vsb, cp->ident, VSHA256_DIGEST_LENGTH, VSB_QUOTE_HEX);
+	VSB_printf(vsb, ",\n");
+	cp->methods->panic(vsb, cp->priv);
+	VSB_indent(vsb, -2);
+	VSB_cat(vsb, "},\n");
+}
+
+/*--------------------------------------------------------------------*/
+
 static void v_matchproto_(cp_close_f)
 vtp_close(struct pfd *pfd)
 {
@@ -642,6 +692,7 @@ static const struct cp_methods vtp_methods = {
 	.local_name = vtp_local_name,
 	.remote_name = vtp_remote_name,
 	.free = vtp_free,
+	.panic = vtp_panic,
 };
 
 /*--------------------------------------------------------------------
@@ -681,6 +732,7 @@ static const struct cp_methods vus_methods = {
 	.local_name = vus_name,
 	.remote_name = vus_name,
 	.free = vtp_free,
+	.panic = vtp_panic,
 };
 
 /*--------------------------------------------------------------------
@@ -834,34 +886,6 @@ VTP_GetIp(struct pfd *pfd)
 	return (pfd->addr);
 }
 
-/*--------------------------------------------------------------------*/
-
-void
-VTP_panic(struct vsb *vsb, struct tcp_pool *tp)
-{
-	char h[VTCP_ADDRBUFSIZE];
-	char p[VTCP_PORTBUFSIZE];
-
-	if (PAN_dump_struct(vsb, tp, TCP_POOL_MAGIC, "tcp_pool"))
-		return;
-	VSB_printf(vsb, "ident = ");
-	VSB_quote(vsb, tp->cp->ident, VSHA256_DIGEST_LENGTH, VSB_QUOTE_HEX);
-	VSB_printf(vsb, ",\n");
-	if (tp->uds)
-		VSB_printf(vsb, "uds = %s,\n", tp->uds);
-	if (tp->ip4 && VSA_Sane(tp->ip4)) {
-		VTCP_name(tp->ip4, h, sizeof h, p, sizeof p);
-		VSB_printf(vsb, "ipv4 = %s, ", h);
-		VSB_printf(vsb, "port = %s,\n", p);
-	}
-	if (tp->ip6 && VSA_Sane(tp->ip6)) {
-		VTCP_name(tp->ip6, h, sizeof h, p, sizeof p);
-		VSB_printf(vsb, "ipv6 = %s, ", h);
-		VSB_printf(vsb, "port = %s,\n", p);
-	}
-	VSB_indent(vsb, -2);
-	VSB_cat(vsb, "},\n");
-}
 
 /*--------------------------------------------------------------------*/
 

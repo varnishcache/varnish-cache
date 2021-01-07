@@ -102,7 +102,7 @@ int VTP_Wait(struct worker *, struct pfd *, vtim_real tmo);
 	 * function before attempting to receive on the connection.
 	 */
 
-void VTP_panic(struct vsb *, struct tcp_pool *);
+void VTP_Panic(struct vsb *, struct tcp_pool *);
 
 VCL_IP VTP_GetIp(struct pfd *);
 
