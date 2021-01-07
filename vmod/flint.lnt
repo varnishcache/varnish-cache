@@ -1,8 +1,11 @@
+/* we always want config.h included even where not actually required */
+-efile(766, config.h)
+
 /*
  * vmod_{blob,directors}
  */
-
 -efile(451, "vmod_*_tbl_*.h")	// No include guard
+-efile(537, "vmod_*_tbl_*.h")	// Repeated include
 
 /*
  * vmod_blob
