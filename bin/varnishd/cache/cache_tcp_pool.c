@@ -607,7 +607,7 @@ vtp_free(void *priv)
 {
 	struct tcp_pool *tp;
 
-	TAKE_OBJ_NOTNULL(tp, &priv, TCP_POOL_MAGIC);
+	CAST_OBJ_NOTNULL(tp, priv, TCP_POOL_MAGIC);
 	free(tp->ip4);
 	free(tp->ip6);
 	free(tp->uds);
