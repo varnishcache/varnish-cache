@@ -23,3 +23,6 @@
 -esym(765, Vmod_wrong*_Data)	// external '___' (___) could be made static
 -esym(714, Vmod_wrong*_Data)	// external '___' (___) could be made static
 -esym(754, foo::bar)		// local struct member not referenced
+// TODO - don't understand why this pops up now
+-esym(526, VSC_*)		// Symbol ... not defined
+-esym(755, VSC_*)		// global macro '___' (___) not referenced
