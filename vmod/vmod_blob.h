@@ -36,7 +36,7 @@
 enum encoding {
 	__INVALID_ENCODING = 0,
 #define VMODENUM(x) x,
-#include "tbl_encodings.h"
+#include "vmod_blob_tbl_encodings.h"
 	__MAX_ENCODING
 };
 
@@ -48,7 +48,7 @@ enum encoding {
  */
 enum case_e {
 #define VMODENUM(x) x,
-#include "tbl_case.h"
+#include "vmod_blob_tbl_case.h"
 };
 
 typedef const size_t			blob_len_t;

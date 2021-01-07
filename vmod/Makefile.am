@@ -20,12 +20,12 @@ AM_CPPFLAGS = \
 libvmod_blob_la_SOURCES = \
 	vmod_blob.c \
 	vmod_blob.h \
-	id.c \
-	base64.c \
-	hex.c \
-	url.c \
-	tbl_encodings.h \
-	tbl_case.h
+	vmod_blob_id.c \
+	vmod_blob_base64.c \
+	vmod_blob_hex.c \
+	vmod_blob_url.c \
+	vmod_blob_tbl_encodings.h \
+	vmod_blob_tbl_case.h
 
 libvmod_cookie_la_SOURCES = \
 	vmod_cookie.c
@@ -38,15 +38,15 @@ libvmod_debug_la_SOURCES = \
 libvmod_directors_la_SOURCES = \
 	vmod_directors.c \
 	vmod_directors.h \
-	fall_back.c \
-	hash.c \
-	random.c \
-	round_robin.c \
-	vmod_shard.c \
-	shard_cfg.c \
-	shard_cfg.h \
-	shard_dir.c \
-	shard_dir.h
+	vmod_directors_fall_back.c \
+	vmod_directors_hash.c \
+	vmod_directors_random.c \
+	vmod_directors_round_robin.c \
+	vmod_directors_shard.c \
+	vmod_directors_shard_cfg.c \
+	vmod_directors_vmod_directors_shard_cfg.h \
+	vmod_directors_shard_dir.c \
+	vmod_directors_shard_dir.h
 
 libvmod_proxy_la_SOURCES = \
 	vmod_proxy.c
@@ -62,7 +62,7 @@ libvmod_std_la_SOURCES = \
 
 libvmod_unix_la_SOURCES = \
 	vmod_unix.c \
-	cred_compat.h
+	vmod_unix_cred_compat.h
 
 libvmod_vtc_la_SOURCES = \
 	vmod_vtc.c

@@ -121,7 +121,7 @@ static enum encoding
 parse_encoding(VCL_ENUM e)
 {
 #define VMODENUM(n) if (e == VENUM(n)) return (n);
-#include "tbl_encodings.h"
+#include "vmod_blob_tbl_encodings.h"
 	WRONG("illegal encoding enum");
 }
 
@@ -129,7 +129,7 @@ static enum case_e
 parse_case(VCL_ENUM e)
 {
 #define VMODENUM(n) if (e == VENUM(n)) return (n);
-#include "tbl_case.h"
+#include "vmod_blob_tbl_case.h"
 	WRONG("illegal case enum");
 }
 

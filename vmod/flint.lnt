@@ -2,7 +2,7 @@
  * vmod_{blob,directors}
  */
 
--efile(451, "tbl_*.h")		// No include guard
+-efile(451, "vmod_*_tbl_*.h")	// No include guard
 
 /*
  * vmod_blob

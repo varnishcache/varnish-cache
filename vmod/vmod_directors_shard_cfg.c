@@ -38,8 +38,8 @@
 
 #include "cache/cache.h"
 
-#include "shard_dir.h"
-#include "shard_cfg.h"
+#include "vmod_directors_shard_dir.h"
+#include "vmod_directors_shard_cfg.h"
 
 /*lint -esym(749,  shard_change_task_e::*) */
 enum shard_change_task_e {

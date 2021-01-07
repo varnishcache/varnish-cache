@@ -40,8 +40,8 @@
 #include "vend.h"
 
 #include "vcc_directors_if.h"
-#include "shard_dir.h"
-#include "shard_cfg.h"
+#include "vmod_directors_shard_dir.h"
+#include "vmod_directors_shard_cfg.h"
 #include "vsb.h"
 
 /* -------------------------------------------------------------------------

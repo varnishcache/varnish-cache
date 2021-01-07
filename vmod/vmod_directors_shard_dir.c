@@ -45,7 +45,7 @@
 #include "vrnd.h"
 
 #include "vcc_directors_if.h"
-#include "shard_dir.h"
+#include "vmod_directors_shard_dir.h"
 
 struct shard_be_info {
 	unsigned	hostid;

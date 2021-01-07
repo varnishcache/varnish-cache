@@ -37,7 +37,7 @@
 #include "vcl.h"
 #include "common/heritage.h"
 
-#include "cred_compat.h"
+#include "vmod_unix_cred_compat.h"
 #include "vcc_unix_if.h"
 
 #define FAIL(ctx, msg) \
