@@ -848,7 +848,7 @@ VTP_panic(struct vsb *vsb, struct tcp_pool *tp)
 		VSB_printf(vsb, "port = %s,\n", p);
 	}
 	if (tp->ip6 && VSA_Sane(tp->ip6)) {
-		VTCP_name(tp->ip4, h, sizeof h, p, sizeof p);
+		VTCP_name(tp->ip6, h, sizeof h, p, sizeof p);
 		VSB_printf(vsb, "ipv6 = %s, ", h);
 		VSB_printf(vsb, "port = %s,\n", p);
 	}

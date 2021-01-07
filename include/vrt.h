@@ -390,8 +390,6 @@ struct vrt_endpoint {
 	VCL_IP				ipv4;
 	VCL_IP				ipv6;
 	const char			*uds_path;
-	const void			*ident;
-	int				ident_len;
 };
 
 #define VRT_BACKEND_FIELDS(rigid)				\
