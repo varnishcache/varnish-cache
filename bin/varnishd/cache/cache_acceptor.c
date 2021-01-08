@@ -315,8 +315,10 @@ vca_mk_tcp(const struct wrk_accept *wa,
     struct sess *sp, char *laddr, char *lport, char *raddr, char *rport)
 {
 	struct suckaddr *sa;
+	ssize_t sz;
 
-	AN(SES_Reserve_remote_addr(sp, &sa));
+	AN(SES_Reserve_remote_addr(sp, &sa, &sz));
+	assert(sz == vsa_suckaddr_len);
 	AN(VSA_Build(sa, &wa->acceptaddr, wa->acceptaddrlen));
 	sp->sattr[SA_CLIENT_ADDR] = sp->sattr[SA_REMOTE_ADDR];
 
@@ -325,8 +327,8 @@ vca_mk_tcp(const struct wrk_accept *wa,
 	AN(SES_Set_String_Attr(sp, SA_CLIENT_PORT, rport));
 
 
-	AN(SES_Reserve_local_addr(sp, &sa));
-	AN(VSA_getsockname(sp->fd, sa, vsa_suckaddr_len));
+	AN(SES_Reserve_local_addr(sp, &sa, &sz));
+	AN(VSA_getsockname(sp->fd, sa, sz));
 	sp->sattr[SA_SERVER_ADDR] = sp->sattr[SA_LOCAL_ADDR];
 	VTCP_name(sa, laddr, VTCP_ADDRBUFSIZE, lport, VTCP_PORTBUFSIZE);
 }
@@ -336,9 +338,11 @@ vca_mk_uds(struct wrk_accept *wa, struct sess *sp, char *laddr, char *lport,
 	   char *raddr, char *rport)
 {
 	struct suckaddr *sa;
+	ssize_t sz;
 
 	(void) wa;
-	AN(SES_Reserve_remote_addr(sp, &sa));
+	AN(SES_Reserve_remote_addr(sp, &sa, &sz));
+	assert(sz == vsa_suckaddr_len);
 	AZ(SES_Set_remote_addr(sp, bogo_ip));
 	sp->sattr[SA_CLIENT_ADDR] = sp->sattr[SA_REMOTE_ADDR];
 	sp->sattr[SA_LOCAL_ADDR] = sp->sattr[SA_REMOTE_ADDR];

@@ -115,14 +115,17 @@ ses_set_attr(const struct sess *sp, enum sess_attr a, const void *src, int sz)
 }
 
 static int
-ses_res_attr(struct sess *sp, enum sess_attr a, void **dst, int sz)
+ses_res_attr(struct sess *sp, enum sess_attr a, void **dst, ssize_t *szp)
 {
 	unsigned o;
+	ssize_t sz;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	assert(a < SA_LAST);
-	assert(sz >= 0);
 	AN(dst);
+	sz = *szp;
+	*szp = 0;
+	assert(sz >= 0);
 	if (WS_ReserveSize(sp->ws, sz) == 0)
 		return (0);
 	o = WS_ReservationOffset(sp->ws);
@@ -131,6 +134,7 @@ ses_res_attr(struct sess *sp, enum sess_attr a, void **dst, int sz)
 		return (0);
 	}
 	*dst = WS_Reservation(sp->ws);
+	*szp = sz;
 	sp->sattr[a] = (uint16_t)o;
 	WS_Release(sp->ws, sz);
 	return (1);
@@ -152,10 +156,12 @@ ses_res_attr(struct sess *sp, enum sess_attr a, void **dst, int sz)
 	}								\
 									\
 	int								\
-	SES_Reserve_##low(struct sess *sp, typ **dst)			\
+	SES_Reserve_##low(struct sess *sp, typ **dst, ssize_t *sz)	\
 	{								\
 		assert(len > 0);					\
-		return (ses_res_attr(sp, SA_##UP, (void**)dst, len));	\
+		AN(sz);							\
+		*sz = len;						\
+		return (ses_res_attr(sp, SA_##UP, (void**)dst, sz));	\
 	}
 
 #include "tbl/sess_attr.h"
@@ -164,6 +170,7 @@ int
 SES_Set_String_Attr(struct sess *sp, enum sess_attr a, const char *src)
 {
 	void *q;
+	ssize_t l, sz;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	AN(src);
@@ -172,8 +179,10 @@ SES_Set_String_Attr(struct sess *sp, enum sess_attr a, const char *src)
 	if (strcmp(sess_attr[a].type, "char"))
 		WRONG("wrong sess_attr: not char");
 
-	if (! ses_res_attr(sp, a, &q, strlen(src) + 1))
+	l = sz = strlen(src) + 1;
+	if (! ses_res_attr(sp, a, &q, &sz))
 		return (0);
+	assert(l == sz);
 	strcpy(q, src);
 	return (1);
 }

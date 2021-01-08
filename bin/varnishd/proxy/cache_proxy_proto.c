@@ -75,6 +75,7 @@ vpx_proto1(const struct worker *wrk, const struct req *req)
 	int i;
 	char *p, *q;
 	struct suckaddr *sa;
+	ssize_t sz;
 	int pfam = -1;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -121,8 +122,9 @@ vpx_proto1(const struct worker *wrk, const struct req *req)
 		return (-1);
 	}
 
-	if (! SES_Reserve_client_addr(req->sp, &sa))
+	if (! SES_Reserve_client_addr(req->sp, &sa, &sz))
 		return (vpx_ws_err(req));
+	assert (sz == vsa_suckaddr_len);
 
 	if (VSS_ResolveOne(sa, fld[1], fld[3],
 	    pfam, SOCK_STREAM, AI_NUMERICHOST | AI_NUMERICSERV) == NULL) {
@@ -135,8 +137,9 @@ vpx_proto1(const struct worker *wrk, const struct req *req)
 	if (! SES_Set_String_Attr(req->sp, SA_CLIENT_PORT, fld[3]))
 		return (vpx_ws_err(req));
 
-	if (! SES_Reserve_server_addr(req->sp, &sa))
+	if (! SES_Reserve_server_addr(req->sp, &sa, &sz))
 		return (vpx_ws_err(req));
+	assert (sz == vsa_suckaddr_len);
 
 	if (VSS_ResolveOne(sa, fld[2], fld[4],
 	    pfam, SOCK_STREAM, AI_NUMERICHOST | AI_NUMERICSERV) == NULL) {
@@ -329,6 +332,7 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 	char *d, *tlv_start;
 	sa_family_t pfam = 0xff;
 	struct suckaddr *sa = NULL;
+	ssize_t sz;
 	char ha[VTCP_ADDRBUFSIZE];
 	char pa[VTCP_PORTBUFSIZE];
 	char hb[VTCP_ADDRBUFSIZE];
@@ -414,8 +418,9 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 	pp = ap + 2 * alen;
 
 	/* src/client */
-	if (! SES_Reserve_client_addr(req->sp, &sa))
+	if (! SES_Reserve_client_addr(req->sp, &sa, &sz))
 		return (vpx_ws_err(req));
+	assert(sz == vsa_suckaddr_len);
 	AN(VSA_BuildFAP(sa, pfam, ap, alen, pp, plen));
 	VTCP_name(sa, hb, sizeof hb, pb, sizeof pb);
 
@@ -423,8 +428,9 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 	pp += plen;
 
 	/* dst/server */
-	if (! SES_Reserve_server_addr(req->sp, &sa))
+	if (! SES_Reserve_server_addr(req->sp, &sa, &sz))
 		return (vpx_ws_err(req));
+	assert(sz == vsa_suckaddr_len);
 	AN(VSA_BuildFAP(sa, pfam, ap, alen, pp, plen));
 	VTCP_name(sa, ha, sizeof ha, pa, sizeof pa);
 
@@ -467,8 +473,9 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 	INIT_OBJ(tlv, VPX_TLV_MAGIC);
 	tlv->len = tlv_len;
 	memcpy(tlv->tlv, tlv_start, tlv_len);
-	if (! SES_Reserve_proxy_tlv(req->sp, &up))
+	if (! SES_Reserve_proxy_tlv(req->sp, &up, &sz))
 		return (vpx_ws_err(req));
+	assert(sz == sizeof up);
 	*up = (uintptr_t)tlv;
 	return (0);
 }

@@ -107,6 +107,7 @@ http1_new_session(struct worker *wrk, void *arg)
 	struct sess *sp;
 	struct req *req;
 	uintptr_t *u;
+	ssize_t sz;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(req, arg, REQ_MAGIC);
@@ -114,7 +115,7 @@ http1_new_session(struct worker *wrk, void *arg)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	HTC_RxInit(req->htc, req->ws);
-	if (!SES_Reserve_proto_priv(sp, &u)) {
+	if (!SES_Reserve_proto_priv(sp, &u, &sz)) {
 		/* Out of session workspace. Free the req, close the sess,
 		 * and do not set a new task func, which will exit the
 		 * worker thread. */
@@ -123,6 +124,7 @@ http1_new_session(struct worker *wrk, void *arg)
 		SES_Delete(sp, SC_RX_JUNK, NAN);
 		return;
 	}
+	assert(sz == sizeof u);
 	http1_setstate(sp, H1NEWREQ);
 	wrk->task->func = http1_req;
 	wrk->task->priv = req;
