@@ -771,6 +771,10 @@ vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 			ERRCHK(tl);
 			e1 = vcc_mk_expr(IP, "%s", ip);
 			ERRCHK(tl);
+		} else if (fmt == REGEX) {
+			e1 = vcc_new_expr(REGEX);
+			vcc_regexp(tl, e1->vsb);
+			AZ(VSB_finish(e1->vsb));
 		} else {
 			e1 = vcc_new_expr(STRINGS);
 			EncToken(e1->vsb, tl->t);
@@ -1075,20 +1079,15 @@ cmp_simple(struct vcc *tl, struct expr **e, const struct cmps *cp)
 static void v_matchproto_(cmp_f)
 cmp_regexp(struct vcc *tl, struct expr **e, const struct cmps *cp)
 {
+	struct expr *e2;
 	char buf[128];
-	struct vsb vsb;
 
 	*e = vcc_expr_edit(tl, STRING, "\vS", *e, NULL);
 	vcc_NextToken(tl);
-	ExpectErr(tl, CSTR);
-	AN(VSB_init(&vsb, buf, sizeof buf));
-	VSB_printf(&vsb, "%sVRT_re_match(ctx, \v1, ", cp->emit);
-	vcc_regexp(tl, &vsb);
+	vcc_expr0(tl, &e2, REGEX);
 	ERRCHK(tl);
-	VSB_cat(&vsb, ")");
-	AZ(VSB_finish(&vsb));
-	*e = vcc_expr_edit(tl, BOOL, VSB_data(&vsb), *e, NULL);
-	VSB_fini(&vsb);
+	bprintf(buf, "%sVRT_re_match(ctx, \v1, \v2)", cp->emit);
+	*e = vcc_expr_edit(tl, BOOL, buf, *e, e2);
 }
 
 static void v_matchproto_(cmp_f)
@@ -1342,6 +1341,8 @@ vcc_expr0(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	t1 = tl->t;
 	if (fmt->stringform)
 		vcc_expr_cor(tl, e, STRINGS);
+	else if (fmt == REGEX)
+		vcc_expr4(tl, e, REGEX);
 	else
 		vcc_expr_cor(tl, e, fmt);
 	ERRCHK(tl);
@@ -1457,10 +1458,9 @@ static void v_matchproto_(sym_expr_t)
 vcc_Eval_Regsub(struct vcc *tl, struct expr **e, struct token *t,
     struct symbol *sym, vcc_type_t fmt)
 {
-	struct expr *e2;
+	struct expr *e2, *e3;
 	int all = sym->eval_priv == NULL ? 0 : 1;
 	char buf[128];
-	struct vsb vsb;
 
 	(void)t;
 	(void)fmt;
@@ -1468,15 +1468,11 @@ vcc_Eval_Regsub(struct vcc *tl, struct expr **e, struct token *t,
 	vcc_expr0(tl, &e2, STRING);
 	ERRCHK(tl);
 	SkipToken(tl, ',');
-	ExpectErr(tl, CSTR);
-
-	AN(VSB_init(&vsb, buf, sizeof buf));
-	VSB_printf(&vsb, "VRT_regsub(ctx, %d,\v+\n\v1,\n", all);
-	vcc_regexp(tl, &vsb);
+	vcc_expr0(tl, &e3, REGEX);
 	ERRCHK(tl);
-	AZ(VSB_finish(&vsb));
-	*e = vcc_expr_edit(tl, STRING, VSB_data(&vsb), e2, NULL);
-	VSB_fini(&vsb);
+
+	bprintf(buf, "VRT_regsub(ctx, %d,\v+\n\v1,\n\v2", all);
+	*e = vcc_expr_edit(tl, STRING, buf, e2, e3);
 	SkipToken(tl, ',');
 	vcc_expr0(tl, &e2, STRING);
 	ERRCHK(tl);

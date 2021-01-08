@@ -57,9 +57,8 @@ vcc_regexp(struct vcc *tl, struct vsb *vgc_name)
 	int erroroffset;
 	struct inifin *ifp;
 
-	Expect(tl, CSTR);
-	if (tl->err)
-		return;
+	assert(tl->t->tok == CSTR);
+
 	t = VRE_compile(tl->t->dec, 0, &error, &erroroffset);
 	if (t == NULL) {
 		VSB_printf(tl->sb,
@@ -78,7 +77,6 @@ vcc_regexp(struct vcc *tl, struct vsb *vgc_name)
 	EncToken(ifp->ini, tl->t);
 	VSB_cat(ifp->ini, ");");
 	VSB_printf(ifp->fin, "\t\tVRT_re_fini(%s);", buf);
-	vcc_NextToken(tl);
 }
 
 /*

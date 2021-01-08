@@ -273,6 +273,7 @@ typedef int64_t					VCL_INT;
 typedef const struct suckaddr *			VCL_IP;
 typedef const struct vrt_backend_probe *	VCL_PROBE;
 typedef double					VCL_REAL;
+typedef const struct vre *			VCL_REGEX;
 typedef const struct stevedore *		VCL_STEVEDORE;
 typedef const struct strands *			VCL_STRANDS;
 typedef const char *				VCL_STRING;
