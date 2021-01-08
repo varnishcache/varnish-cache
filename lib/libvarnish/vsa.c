@@ -172,7 +172,7 @@ struct suckaddr {
 		struct sockaddr		sa;
 		struct sockaddr_in	sa4;
 		struct sockaddr_in6	sa6;
-	};
+	} u;
 };
 
 const size_t vsa_suckaddr_len = sizeof(struct suckaddr);
@@ -204,15 +204,15 @@ VSA_GetPtr(const struct suckaddr *sua, const unsigned char ** dst)
 		return (-1);
 	CHECK_OBJ_NOTNULL(sua, SUCKADDR_MAGIC);
 
-	switch (sua->sa.sa_family) {
+	switch (sua->u.sa.sa_family) {
 	case PF_INET:
-		assert(sua->sa.sa_family == sua->sa4.sin_family);
-		*dst = (const unsigned char *)&sua->sa4.sin_addr;
-		return (sua->sa4.sin_family);
+		assert(sua->u.sa.sa_family == sua->u.sa4.sin_family);
+		*dst = (const unsigned char *)&sua->u.sa4.sin_addr;
+		return (sua->u.sa4.sin_family);
 	case PF_INET6:
-		assert(sua->sa.sa_family == sua->sa6.sin6_family);
-		*dst = (const unsigned char *)&sua->sa6.sin6_addr;
-		return (sua->sa6.sin6_family);
+		assert(sua->u.sa.sa_family == sua->u.sa6.sin6_family);
+		*dst = (const unsigned char *)&sua->u.sa6.sin6_addr;
+		return (sua->u.sa6.sin6_family);
 	default:
 		*dst = NULL;
 		return (-1);
@@ -317,17 +317,17 @@ VSA_Build(void *d, const void *s, unsigned sal)
 
 	INIT_OBJ(sua, SUCKADDR_MAGIC);
 	switch (l) {
-	case sizeof sua->sa4:
-		memcpy(&sua->sa4, s, l);
+	case sizeof sua->u.sa4:
+		memcpy(&sua->u.sa4, s, l);
 		break;
-	case sizeof sua->sa6:
-		memcpy(&sua->sa6, s, l);
+	case sizeof sua->u.sa6:
+		memcpy(&sua->u.sa6, s, l);
 		break;
 	default:
 		WRONG("VSA protocol vs. size");
 	}
 #ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
-	sua->sa.sa_len = (unsigned char)l;
+	sua->u.sa.sa_len = (unsigned char)l;
 #endif
 	return (sua);
 }
@@ -339,11 +339,11 @@ VSA_Get_Sockaddr(const struct suckaddr *sua, socklen_t *slp)
 
 	CHECK_OBJ_NOTNULL(sua, SUCKADDR_MAGIC);
 	AN(slp);
-	sl = sua_len(&sua->sa);
+	sl = sua_len(&sua->u.sa);
 	if (sl == 0)
 		return (NULL);
 	*slp = sl;
-	return (&sua->sa);
+	return (&sua->u.sa);
 }
 
 int
@@ -351,13 +351,13 @@ VSA_Get_Proto(const struct suckaddr *sua)
 {
 
 	CHECK_OBJ_NOTNULL(sua, SUCKADDR_MAGIC);
-	return (sua->sa.sa_family);
+	return (sua->u.sa.sa_family);
 }
 
 int
 VSA_Sane(const struct suckaddr *sua)
 {
-	return (VALID_OBJ(sua, SUCKADDR_MAGIC) && sua_len(&sua->sa) != 0);
+	return (VALID_OBJ(sua, SUCKADDR_MAGIC) && sua_len(&sua->u.sa) != 0);
 }
 
 int
@@ -376,16 +376,16 @@ VSA_Compare_IP(const struct suckaddr *sua1, const struct suckaddr *sua2)
 	assert(VSA_Sane(sua1));
 	assert(VSA_Sane(sua2));
 
-	if (sua1->sa.sa_family != sua2->sa.sa_family)
+	if (sua1->u.sa.sa_family != sua2->u.sa.sa_family)
 		return (-1);
 
-	switch (sua1->sa.sa_family) {
+	switch (sua1->u.sa.sa_family) {
 	case PF_INET:
-		return (memcmp(&sua1->sa4.sin_addr,
-		    &sua2->sa4.sin_addr, sizeof(struct in_addr)));
+		return (memcmp(&sua1->u.sa4.sin_addr,
+		    &sua2->u.sa4.sin_addr, sizeof(struct in_addr)));
 	case PF_INET6:
-		return (memcmp(&sua1->sa6.sin6_addr,
-		    &sua2->sa6.sin6_addr, sizeof(struct in6_addr)));
+		return (memcmp(&sua1->u.sa6.sin6_addr,
+		    &sua2->u.sa6.sin6_addr, sizeof(struct in6_addr)));
 	default:
 		WRONG("Just plain insane");
 	}
@@ -409,11 +409,11 @@ VSA_Port(const struct suckaddr *sua)
 {
 
 	CHECK_OBJ_NOTNULL(sua, SUCKADDR_MAGIC);
-	switch (sua->sa.sa_family) {
+	switch (sua->u.sa.sa_family) {
 	case PF_INET:
-		return (ntohs(sua->sa4.sin_port));
+		return (ntohs(sua->u.sa4.sin_port));
 	case PF_INET6:
-		return (ntohs(sua->sa6.sin6_port));
+		return (ntohs(sua->u.sa6.sin6_port));
 	default:
 		return (0);
 	}
@@ -436,8 +436,8 @@ VSA_get ## which ## name(int fd, void *d, size_t l)	\
 	sua = d;					\
 							\
 	INIT_OBJ(sua, SUCKADDR_MAGIC);			\
-	sl = sizeof(sua->sa);				\
-	r = get ## which ## name(fd, &sua->sa, &sl);	\
+	sl = sizeof(sua->u);				\
+	r = get ## which ## name(fd, &sua->u.sa, &sl);	\
 							\
 	return (r == 0 ? sua : NULL);			\
 }							\
