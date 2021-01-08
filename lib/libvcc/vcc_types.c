@@ -151,6 +151,11 @@ const struct type REAL[1] = {{
 	.multype =		REAL,
 }};
 
+const struct type REGEX[1] = {{
+	.magic =		TYPE_MAGIC,
+	.name =			"REGEX",
+}};
+
 static const struct vcc_method stevedore_methods[] = {
 #define VRTSTVVAR(nm, vtype, ctype, dval) \
 	{ VCC_METHOD_MAGIC, vtype, #nm, "VRT_stevedore_" #nm "(\v1)", 0},

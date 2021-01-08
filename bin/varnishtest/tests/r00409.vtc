@@ -1,10 +1,28 @@
 varnishtest "Regression test for ticket 409"
 
-varnish v1 -errvcl {Expected CSTR got '!'} {
-	backend b { .host = "${localhost}"; }
+varnish v1 -errvcl {Unknown token '!' when looking for REGEX} {
+	backend be none;
 	sub vcl_recv {
 		if ( req.url ~ ! "\.(png|jpg|gif|js|css)$" ) {
 			return (pass);
 		}
+	}
+}
+
+varnish v1 -errvcl {Expression has type STRING, expected REGEX} {
+	backend be none;
+	sub vcl_recv {
+		set req.http.regex = "\.(png|jpg|gif|js|css)$";
+		if (req.url ~ req.http.regex) {
+			return (pass);
+		}
+	}
+}
+
+varnish v1 -errvcl {Expression has type STRING, expected REGEX} {
+	backend be none;
+	sub vcl_recv {
+		set req.http.regex = "\?.*";
+		set req.url = regsub(req.url, req.http.regex, "");
 	}
 }
