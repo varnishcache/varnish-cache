@@ -126,12 +126,12 @@ VTCP_myname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen)
 void
 VTCP_hisname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen)
 {
-	struct sockaddr_storage addr_s;
-	socklen_t l;
+	char buf[vsa_suckaddr_len];
+	struct suckaddr *sua;
 
-	l = sizeof addr_s;
-	if (!getpeername(sock, (void*)&addr_s, &l))
-		vtcp_sa_to_ascii(&addr_s, l, abuf, alen, pbuf, plen);
+	sua = VSA_getpeername(sock, buf, sizeof buf);
+	if (sua != NULL)
+		VTCP_name(sua, abuf, alen, pbuf, plen);
 	else {
 		(void)snprintf(abuf, alen, "<none>");
 		(void)snprintf(pbuf, plen, "<none>");
