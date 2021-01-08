@@ -251,20 +251,22 @@ vbp_write_proxy_v1(struct vbp_target *vt, int *sock)
 	char buf[105]; /* maximum size for a TCP6 PROXY line with null char */
 	char addr[VTCP_ADDRBUFSIZE];
 	char port[VTCP_PORTBUFSIZE];
-	struct sockaddr_storage ss;
+	char vsabuf[vsa_suckaddr_len];
+	struct suckaddr *sua;
+	int proto;
 	struct vsb vsb;
-	socklen_t l;
 
-	VTCP_myname(*sock, addr, sizeof addr, port, sizeof port);
+	sua = VSA_getsockname(*sock, vsabuf, sizeof vsabuf);
+	AN(sua);
+	VTCP_name(sua, addr, sizeof addr, port, sizeof port);
 	AN(VSB_init(&vsb, buf, sizeof buf));
 
-	l = sizeof ss;
-	AZ(getsockname(*sock, (void *)&ss, &l));
-	if (ss.ss_family == AF_INET || ss.ss_family == AF_INET6) {
+	proto = VSA_Get_Proto(sua);
+	if (proto == AF_INET || proto == AF_INET6)
 		VSB_printf(&vsb, "PROXY %s %s %s %s %s\r\n",
-		    ss.ss_family == AF_INET ? "TCP4" : "TCP6",
+		    proto == AF_INET ? "TCP4" : "TCP6",
 		    addr, addr, port, port);
-	} else
+	else
 		VSB_cat(&vsb, "PROXY UNKNOWN\r\n");
 	AZ(VSB_finish(&vsb));
 

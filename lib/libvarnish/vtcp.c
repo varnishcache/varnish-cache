@@ -48,6 +48,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdlib.h>
 
 #include "vdef.h"
 #include "vas.h"
@@ -105,12 +106,8 @@ VTCP_name(const struct suckaddr *addr, char *abuf, unsigned alen,
 struct suckaddr *
 VTCP_my_suckaddr(int sock)
 {
-	struct sockaddr_storage addr_s;
-	socklen_t l;
-
-	l = sizeof addr_s;
-	AZ(getsockname(sock, (void *)&addr_s, &l));
-	return (VSA_Malloc(&addr_s, l));
+	return (VSA_getsockname(sock,
+	    malloc(vsa_suckaddr_len), vsa_suckaddr_len));
 }
 
 /*--------------------------------------------------------------------*/
@@ -118,12 +115,10 @@ VTCP_my_suckaddr(int sock)
 void
 VTCP_myname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen)
 {
-	struct sockaddr_storage addr_s;
-	socklen_t l;
+	char buf[vsa_suckaddr_len];
 
-	l = sizeof addr_s;
-	AZ(getsockname(sock, (void *)&addr_s, &l));
-	vtcp_sa_to_ascii(&addr_s, l, abuf, alen, pbuf, plen);
+	VTCP_name(VSA_getsockname(sock, buf, sizeof buf),
+		  abuf, alen, pbuf, plen);
 }
 
 /*--------------------------------------------------------------------*/
