@@ -1,7 +1,5 @@
 #!/bin/sh
 
-set -x
-
 if [ "x$1" = "x-ok" -a -f _.fl ] ; then
 	echo "Saved as reference"
 	mv _.fl _.fl.old
