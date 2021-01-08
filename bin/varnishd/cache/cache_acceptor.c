@@ -315,8 +315,6 @@ vca_mk_tcp(const struct wrk_accept *wa,
     struct sess *sp, char *laddr, char *lport, char *raddr, char *rport)
 {
 	struct suckaddr *sa;
-	struct sockaddr_storage ss;
-	socklen_t sl;
 
 	AN(SES_Reserve_remote_addr(sp, &sa));
 	AN(VSA_Build(sa, &wa->acceptaddr, wa->acceptaddrlen));
@@ -326,10 +324,9 @@ vca_mk_tcp(const struct wrk_accept *wa,
 	AN(SES_Set_String_Attr(sp, SA_CLIENT_IP, raddr));
 	AN(SES_Set_String_Attr(sp, SA_CLIENT_PORT, rport));
 
-	sl = sizeof ss;
-	AZ(getsockname(sp->fd, (void*)&ss, &sl));
+
 	AN(SES_Reserve_local_addr(sp, &sa));
-	AN(VSA_Build(sa, &ss, sl));
+	AN(VSA_getsockname(sp->fd, sa, vsa_suckaddr_len));
 	sp->sattr[SA_SERVER_ADDR] = sp->sattr[SA_LOCAL_ADDR];
 	VTCP_name(sa, laddr, VTCP_ADDRBUFSIZE, lport, VTCP_PORTBUFSIZE);
 }
