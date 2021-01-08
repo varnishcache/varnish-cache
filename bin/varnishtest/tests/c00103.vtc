@@ -1,0 +1,32 @@
+varnishtest "REGEX expressions in VCL"
+
+varnish v1 -vcl {
+	import debug;
+	backend be none;
+	sub vcl_recv {
+		# NB: the REGEX expression below is needlessly complicated
+		# on purpose to ensure we don't treat REGEX expressions
+		# differently.
+		if (req.url ~ (debug.just_return_regex(
+		    debug.just_return_regex("hello")))) {
+			return (synth(200));
+		}
+		return (synth(500));
+	}
+	sub vcl_synth {
+		set resp.reason = regsub(resp.reason,
+		    debug.just_return_regex("OK"), "world");
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 500
+	expect resp.reason == "Internal Server Error"
+
+	txreq -url "/hello"
+	rxresp
+	expect resp.status == 200
+	expect resp.reason == world
+} -run
