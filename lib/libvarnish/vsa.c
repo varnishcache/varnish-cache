@@ -419,25 +419,29 @@ VSA_Port(const struct suckaddr *sua)
 	}
 }
 
-/* VSA_Build from socket name of a file descriptor */
-struct suckaddr *
-VSA_getsockname(int fd, void *d, size_t l)
-{
-	struct suckaddr *sua;
-	socklen_t sl;
-	int r;
+#define VSA_getname(which)				\
+struct suckaddr *					\
+VSA_get ## which ## name(int fd, void *d, size_t l)	\
+{							\
+	struct suckaddr *sua;				\
+	socklen_t sl;					\
+	int r;						\
+							\
+	AN(d);						\
+	if (l != vsa_suckaddr_len) {			\
+		errno = EINVAL;				\
+		return (NULL);				\
+	}						\
+							\
+	sua = d;					\
+							\
+	INIT_OBJ(sua, SUCKADDR_MAGIC);			\
+	sl = sizeof(sua->sa);				\
+	r = get ## which ## name(fd, &sua->sa, &sl);	\
+							\
+	return (r == 0 ? sua : NULL);			\
+}							\
 
-	AN(d);
-	if (l != vsa_suckaddr_len) {
-		errno = EINVAL;
-		return (NULL);
-	}
-
-	sua = d;
-
-	INIT_OBJ(sua, SUCKADDR_MAGIC);
-	sl = sizeof(sua->sa);
-	r = getsockname(fd, &sua->sa, &sl);
-
-	return (r == 0 ? sua : NULL);
-}
+VSA_getname(sock)
+VSA_getname(peer)
+#undef VSA_getname
