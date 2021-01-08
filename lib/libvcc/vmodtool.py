@@ -110,6 +110,7 @@ CTYPES = {
     'IP':          "VCL_IP",
     'PROBE':       "VCL_PROBE",
     'REAL':        "VCL_REAL",
+    'REGEX':       "VCL_REGEX",
     'STEVEDORE':   "VCL_STEVEDORE",
     'STRANDS':     "VCL_STRANDS",
     'STRING':      "VCL_STRING",

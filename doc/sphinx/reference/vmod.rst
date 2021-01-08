@@ -381,6 +381,11 @@ REAL
 
 	A floating point value.
 
+REGEX
+	C-type: ``const struct vre *``
+
+	This is an opaque type for regular expressions with a VCL scope.
+
 STRING
 	C-type: ``const char *``
 

@@ -1278,3 +1278,12 @@ xyzzy_validhdr(VRT_CTX, VCL_STRANDS s)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	return (VRT_ValidHdr(ctx, s));
 }
+
+VCL_REGEX v_matchproto_(td_xyzzy_regex)
+xyzzy_just_return_regex(VRT_CTX, VCL_REGEX r)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(r);
+	return (r);
+}
