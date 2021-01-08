@@ -3,7 +3,7 @@ varnishtest "test if our default paramers make sense ..."
 feature 64bit
 
 # Skip this test in GCOV mode, 68xx bytes extra per level makes it fail
-feature cmd {[ -n "$GCOV_PROG" ]}
+feature cmd {test -z "$GCOV_PROG"}
 
 # ... for our definition of a standard use case:
 # - 2019 header madness
