@@ -22,7 +22,7 @@ haproxy h1 -D -conf {
 
     listen ssloff
 	bind "fd@${fe1}"
-	server v1 ${v1_addr}:${v1_port} send-proxy-v2
+	server v1 ${v1_sock} send-proxy-v2
 } -start
 
 varnish v1 -vcl+backend {
@@ -32,6 +32,7 @@ varnish v1 -vcl+backend {
 		"localhost";
 		"127.0.0.1";
 		"::1";
+		"${localhost}";
 		"${s1_addr}";		# Jail IPv4 address
 		"${h1_fe1_addr}";	# Jail IPv6 address
 	}

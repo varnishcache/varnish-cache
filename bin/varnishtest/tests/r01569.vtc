@@ -5,7 +5,7 @@ varnish v1 -errvcl {Name 'debug' already defined.} {
 	import debug;
 
 	backend debug {
-		.host = "127.0.0.1";
+		.host = "${localhost}";
 		.port = "80";
 	}
 

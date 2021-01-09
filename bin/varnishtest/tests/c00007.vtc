@@ -1,5 +1,5 @@
 varnishtest "Test banning a hash"
 
-varnish v1 -arg "-b 127.0.0.1:80" -start
+varnish v1 -arg "-b None" -start
 
 varnish v1 -clierr 101 "ban.hash foo"

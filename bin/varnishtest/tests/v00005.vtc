@@ -3,7 +3,7 @@ varnishtest "VCL: test backend probe syntax"
 # Check status definition
 varnish v1 -vcl {
 	backend b1 {
-		.host = "127.0.0.1";
+		.host = "${localhost}";
 		.probe = {
 			.expected_response = 204;
 		}
@@ -13,7 +13,7 @@ varnish v1 -vcl {
 # Check url definition
 varnish v1 -vcl {
 	backend b1 {
-		.host = "127.0.0.1";
+		.host = "${localhost}";
 		.probe = {
 			.url = "/";
 		}
@@ -23,7 +23,7 @@ varnish v1 -vcl {
 # Check request definition
 varnish v1 -vcl {
 	backend b1 {
-		.host = "127.0.0.1";
+		.host = "${localhost}";
 		.probe = {
 			.request =
 			    "GET / HTTP/1.1"
@@ -35,7 +35,7 @@ varnish v1 -vcl {
 # Check redefinition
 varnish v1 -errvcl {Probe request redefinition at:} {
 	backend b1 {
-		.host = "127.0.0.1";
+		.host = "${localhost}";
 		.probe = {
 			.url = "/";
 			.request =
@@ -48,7 +48,7 @@ varnish v1 -errvcl {Probe request redefinition at:} {
 # Check redefinition the other way
 varnish v1 -errvcl {Probe request redefinition at:} {
 	backend b1 {
-		.host = "127.0.0.1";
+		.host = "${localhost}";
 		.probe = {
 			.request =
 			    "GET / HTTP/1.1"
@@ -60,7 +60,7 @@ varnish v1 -errvcl {Probe request redefinition at:} {
 
 varnish v1 -errvcl {Expected CNUM got '"120s"'} {
 	backend default {
-		.host = "127.0.0.1";
+		.host = "${localhost}";
 		.probe = {
 			.timeout = "120s";
 		}

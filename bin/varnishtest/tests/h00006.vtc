@@ -30,6 +30,7 @@ varnish v1 -arg "-a ${tmpdir}/v1.sock,PROXY" -vcl+backend {
 		"localhost";
 		"127.0.0.1";
 		"::1";
+		"${localhost}";
 		"${s1_addr}";		// Jails IPv4 address
 		"${h1_fe1_addr}";	// Jails IPv6 address
 	}

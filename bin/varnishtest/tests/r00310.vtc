@@ -1,7 +1,7 @@
 varnishtest "Test obj.http.x-cache in vcl_hit"
 
 varnish v1 -errvcl {Variable is read only.} {
-	backend foo { .host = "127.0.0.1"; }
+	backend foo { .host = "${localhost}"; }
 
 	sub vcl_hit {
 		set obj.http.x-cache = "hit";

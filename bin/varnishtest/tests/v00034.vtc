@@ -8,25 +8,25 @@ server s1 {
 varnish v1 -vcl+backend { } -start
 
 varnish v1 -errvcl {Subroutine 'c1' redefined} {
-	backend foo { .host = "127.0.0.1"; }
+	backend foo { .host = "${localhost}"; }
 	sub c1 { }
 	sub c1 { }
 	sub vcl_recv { call c1; }
 }
 
 varnish v1 -errvcl {Backend 's1' redefined} {
-	backend s1 { .host = "127.0.0.1"; }
-	backend s1 { .host = "127.0.0.1"; }
+	backend s1 { .host = "${localhost}"; }
+	backend s1 { .host = "${localhost}"; }
 }
 
 varnish v1 -errvcl {Probe 'p1' redefined} {
 	probe p1 { }
 	probe p1 { }
-	backend s1 { .host = "127.0.0.1"; .probe = p1;}
+	backend s1 { .host = "${localhost}"; .probe = p1;}
 }
 
 varnish v1 -errvcl {Expected '(' got ';'} {
-	backend s1 { .host = "127.0.0.1"; }
+	backend s1 { .host = "${localhost}"; }
 	sub vcl_recv { return; }
 }
 

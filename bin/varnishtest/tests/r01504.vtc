@@ -6,10 +6,10 @@ varnish v1 -arg "-p vcc_err_unref=off" -vcl {
 		.host = "${bad_backend}";
 	}
 	acl foo {
-		"127.0.0.1";
+		"${localhost}";
 	}
 	acl bar {
-		"127.0.0.1";
+		"${localhost}";
 	}
 	sub vcl_recv {
 		if (vtc.no_ip() ~ bar) {

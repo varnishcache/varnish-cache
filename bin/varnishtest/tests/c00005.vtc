@@ -19,7 +19,7 @@ varnish v1 -errvcl {Name acl1 must have type 'acl'.} {
 	}
 
 	backend acl1 {
-		.host = "127.0.0.1";
+		.host = "${localhost}";
 	}
 }
 

@@ -1,121 +1,121 @@
 varnishtest "VCL compiler coverage test: vcc_action.c"
 
 varnish v1 -vcl {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	sub vcl_miss { return(synth(100,req.url)); }
 	sub vcl_hit { return(synth(100,"the butter please")); }
 	sub vcl_deliver { return(synth(resp.status, resp.reason)); }
 }
 
 varnish v1 -errvcl {Variable is read only.} {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	sub vcl_miss { set now = 1000; }
 }
 
 varnish v1 -vcl {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	sub vcl_backend_response { set beresp.ttl /= 2; }
 }
 
 varnish v1 -errvcl {Expected '=' got '>>'} {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	sub vcl_backend_response { set beresp.ttl >>= 2; }
 }
 
 varnish v1 -errvcl {Expected '=' got '+='} {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	sub vcl_backend_fetch { set bereq.backend += b; }
 }
 
 varnish v1 -errvcl {Expected ';' got 'if'} {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	/* XXX: This should not really be an synth */
 	sub vcl_recv { set req.url = "foo" if "bar"; }
 }
 
 varnish v1 -errvcl {Unknown property 'foo' for type HTTP} {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	sub vcl_hash { hash_data(req.foo); }
 }
 
 varnish v1 -vcl {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	sub vcl_recv { set req.url = 1; }
 }
 
 varnish v1 -errvcl {Expected '=' got '+='} {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	sub vcl_backend_response { set beresp.do_gzip += 1; }
 }
 
 varnish v1 -vcl {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	sub vcl_backend_response { set beresp.do_gzip = true; }
 }
 
 varnish v1 -vcl {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	sub vcl_backend_response { set beresp.do_gzip = false; }
 }
 
 varnish v1 -errvcl {Symbol not found: 'mu'} {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	sub vcl_backend_response { set beresp.do_gzip = mu; }
 }
 
 varnish v1 -errvcl {Variable cannot be unset} {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	sub vcl_backend_response { unset beresp.do_gzip; }
 }
 
 varnish v1 -errvcl {Variable cannot be set.} {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	sub vcl_backend_fetch { set bereq.body = "foo"; }
 }
 
 varnish v1 -errvcl {Unknown token '<<' when looking for STRING} {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	sub vcl_recv { ban (<<); }
 }
 
 varnish v1 -errvcl {Symbol not found} {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	sub vcl_recv { ban_hash (if); }
 }
 
 varnish v1 -vcl {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	sub vcl_recv { ban ("req.url ~ foo"); }
 }
 
 varnish v1 -errvcl "Symbol not found" {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	sub vcl_recv { kluf ; }
 }
 
 varnish v1 -errvcl {Unknown token '<<' when looking for STRING} {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	sub vcl_synth { synthetic( << "foo"; }
 }
 
 varnish v1 -errvcl {Missing argument.} {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	sub vcl_recv { return(synth); }
 }
 
 varnish v1 -errvcl {Arguments not allowed.} {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	sub vcl_recv { return(pipe(XXX); }
 }
 
 varnish v1 -errvcl {Expected return action name.} {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	sub vcl_recv { return(foobar); }
 }
 
 # issue #936
 varnish v1 -errvcl {Not a valid action in subroutine 'vcl_recv'} {
-	backend foo { .host = "127.0.0.1"; }
+	backend foo { .host = "${localhost}"; }
 	sub vcl_recv {
 		synthetic("XXX");
 		return (synth(503));

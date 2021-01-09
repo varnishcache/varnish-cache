@@ -3,19 +3,23 @@ varnishtest "Check that we fail to start with erroneous -a/-b arguments"
 # Duplicate -a arguments
 # XXX: this cannot be tested reliably, we tolerate port collision
 shell -err -match "have same address|already in use|Address in use" {
-	varnishd -d -a 127.0.0.1:38484 -a 127.0.0.1:38484 -b localhost:80
+	if echo "${localhost}" | grep ":" >/dev/null ; then
+		varnishd -d -a "[${localhost}]":38484 -a "[${localhost}]":38484 -b None
+	else
+		varnishd -d -a ${localhost}:38484 -a ${localhost}:38484 -b None
+	fi
 }
 
 shell -err -match "have same address|already in use|Address in use" {
-	varnishd -d -a ${tmpdir}/vtc.sock -a ${tmpdir}/vtc.sock -b localhost:80
+	varnishd -d -a ${tmpdir}/vtc.sock -a ${tmpdir}/vtc.sock -b None
 }
 
 # -a bad protocol specs
 shell -err -expect "Too many protocol sub-args" {
-	varnishd -a 127.0.0.1:80000,PROXY,FOO -d
+	varnishd -a ${localhost}:80000,PROXY,FOO -d
 }
 shell -err -expect "Too many protocol sub-args" {
-	varnishd -a 127.0.0.1:80000,HTTP,FOO -d
+	varnishd -a ${localhost}:80000,HTTP,FOO -d
 }
 
 # -a UDS path too long
@@ -30,15 +34,15 @@ shell -err -expect "Unix domain socket addresses must be absolute paths" {
 
 # -a args for UDS permissions not permitted with IP addresses
 shell -err -expect "Invalid sub-arg user=u for IP addresses" {
-	varnishd -a 127.0.0.1:80000,user=u -d
+	varnishd -a ${localhost}:80000,user=u -d
 }
 
 shell -err -expect "Invalid sub-arg group=g for IP addresses" {
-	varnishd -a 127.0.0.1:80000,group=g -d
+	varnishd -a ${localhost}:80000,group=g -d
 }
 
 shell -err -expect "Invalid sub-arg mode=660 for IP addresses" {
-	varnishd -a 127.0.0.1:80000,mode=660 -d
+	varnishd -a ${localhost}:80000,mode=660 -d
 }
 
 # Illegal mode sub-args
@@ -123,5 +127,5 @@ shell -err -expect "Error: Could not get socket" {
 
 # old style address list
 shell -err -expect "Unknown protocol" {
-	varnishd -F -a "127.0.0.1:0,${bad_ip}:0" -b '***' -n ${tmpdir}
+	varnishd -F -a "${listen_addr},${bad_ip}:0" -b '***' -n ${tmpdir}
 }

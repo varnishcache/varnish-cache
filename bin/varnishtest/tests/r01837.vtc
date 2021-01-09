@@ -2,7 +2,7 @@ varnishtest "Test VCC errors out if probe is used before it is defined"
 
 varnish v1 -errvcl "Symbol not found: 'p'" {
 	backend b {
-		.host = "127.0.0.1";
+		.host = "${localhost}";
 		.probe = p;
 	}
 	probe p {

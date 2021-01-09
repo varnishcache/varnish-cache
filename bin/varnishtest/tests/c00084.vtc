@@ -6,7 +6,7 @@ varnish v1 \
 	-vcl {
 	import directors;
 
-	acl my-acl { "127.0.0.1"; }
+	acl my-acl { "${localhost}"; }
 
 	probe my-pb { }
 	backend my-be {

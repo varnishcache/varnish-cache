@@ -5,7 +5,7 @@ server s1 -listen "${tmpdir}/s1.sock" {
 	txresp -body "012345\n"
 } -start
 
-varnish v1 -arg "-a ${tmpdir}/v1.sock -a ${localhost}:0" -vcl+backend {
+varnish v1 -arg "-a ${tmpdir}/v1.sock -a ${listen_addr}" -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.do_stream = false;
 	}

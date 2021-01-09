@@ -9,7 +9,7 @@ varnish v1 -vcl {
 
 	sub vcl_backend_fetch {
 		# avoid LostHeader      b Host: %s
-		set bereq.http.Host = "127.0.0.1";
+		set bereq.http.Host = "${localhost}";
 		vtc.workspace_alloc(backend, vtc.workspace_free(backend));
 	}
 

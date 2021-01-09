@@ -173,7 +173,7 @@ varnish v1 -errvcl {Symbol not found: 'obj'} {
 varnish v1 -errvcl {Failed initialization} {
 	import debug;
 	import directors;
-	backend default { .host = "127.0.0.1"; }
+	backend default { .host = "${localhost}"; }
 	sub vcl_init {
 		return (fail);
 		# uninitialized objects coverage

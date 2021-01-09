@@ -1,6 +1,6 @@
 varnishtest "Test varnishadm and the Telnet CLI"
 
-varnish v1 -vcl {backend foo { .host = "127.0.0.1"; } } -start
+varnish v1 -vcl {backend foo { .host = "${localhost}"; } } -start
 
 shell -err -expect {Usage: varnishadm} \
 	"varnishadm -7"
@@ -16,7 +16,7 @@ server s1 {
 } -start
 
 shell -err -expect {Rejected 400} \
-	{varnishadm -T ${s1_addr}:${s1_port} -S /etc/group}
+	{varnishadm -T ${s1_sock} -S /etc/group}
 
 server s1 {
 	send "107 59      \n"
@@ -26,7 +26,7 @@ server s1 {
 } -start
 
 shell -err -expect {Authentication required} \
-	{varnishadm -T ${s1_addr}:${s1_port}}
+	{varnishadm -T ${s1_sock}}
 
 server s1 {
 	send "107 59      \n"
@@ -36,7 +36,7 @@ server s1 {
 } -start
 
 shell -err -expect {Cannot open } \
-	{varnishadm -T ${s1_addr}:${s1_port} -S ${v1_name}/_.nonexistent}
+	{varnishadm -T ${s1_sock} -S ${v1_name}/_.nonexistent}
 
 server s1 {
 	send "107 59      \n"
@@ -50,7 +50,7 @@ server s1 {
 } -start
 
 shell -err -expect {Rejected 599} \
-	{varnishadm -T ${s1_addr}:${s1_port} -S ${v1_name}/_.secret}
+	{varnishadm -T ${s1_sock} -S ${v1_name}/_.secret}
 
 server s1 {
 	send "107 59      \n"
@@ -66,7 +66,7 @@ server s1 {
 } -start
 
 shell -err -expect {No pong received from server} \
-	{varnishadm -T ${s1_addr}:${s1_port} -S ${v1_name}/_.secret}
+	{varnishadm -T ${s1_sock} -S ${v1_name}/_.secret}
 
 server s1 {
 	send "107 59      \n"
@@ -90,6 +90,6 @@ server s1 {
 } -start
 
 shell -expect {Tested} \
-	{varnishadm -T ${s1_addr}:${s1_port} -S ${v1_name}/_.secret test}
+	{varnishadm -T ${s1_sock} -S ${v1_name}/_.secret test}
 
 shell "varnishadm -n ${v1_name} help > /dev/null"

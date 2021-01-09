@@ -29,7 +29,7 @@ shell {
 		-w ${tmpdir}/ncsa.log -R 100/s
 }
 
-process p1 -winsz 25 132 {varnishncsa -n ${v1_name}} -start
+process p1 -winsz 25 200 {varnishncsa -n ${v1_name}} -start
 
 delay 1
 
@@ -125,11 +125,11 @@ ${localhost} -$} \
 # -f and standard formatters
 shell {echo "%b %D %H %h %I %{baz}i %l %m %{Age}o %O %q %s %t %{%Y}t \
 %T %U %u" > ${tmpdir}/format}
-shell -match {^100 \d+ HTTP/1.1 \d+.\d+.\d+.\d+ \d+ - - GET 0 \d+ (?#
+shell -match {^100 \d+ HTTP/1.1 (?:\d+.\d+.\d+.\d+|[a-f0-9:]+) \d+ - - GET 0 \d+ (?#
 )\?foo=bar 200 \[../.../(20[1-9][0-9]):..:..:.. [+-]....\] \1 \d+ /1 user
-\d+ \d+ HTTP/1.1 \d+.\d+.\d+.\d+ \d+ qux - GET - \d+ (?#
+\d+ \d+ HTTP/1.1 (?:\d+.\d+.\d+.\d+|[a-f0-9:]+) \d+ qux - GET - \d+ (?#
 )\?foo=bar 404 \[../.../(20[1-9][0-9]):..:..:.. [+-]....\] \1 \d+ /1 -
-- \d+ HTTP/1.1 \d+.\d+.\d+.\d+ \d+ - - GET - \d+ (?#
+- \d+ HTTP/1.1 (?:\d+.\d+.\d+.\d+|[a-f0-9:]+) \d+ - - GET - \d+ (?#
 ) - \[../.../(20[1-9][0-9]):..:..:.. [+-]....\] \1 \d+ /2 -$} \
 	{varnishncsa -n ${v1_name} -d -f ${tmpdir}/format}
 

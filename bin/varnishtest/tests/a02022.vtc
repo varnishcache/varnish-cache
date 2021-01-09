@@ -20,4 +20,4 @@ server s1 {
 
 } -start
 
-shell { nghttp http://${s1_addr}:${s1_port} -nu }
+shell { nghttp http://${s1_sock} -nu }

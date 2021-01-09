@@ -1,7 +1,7 @@
 varnishtest "VCL compiler coverage test: vcc_parse.c & vcc_expr.c"
 
 varnish v1 -cliok "param.set vcc_allow_inline_c true" -vcl {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	C{
 	#include <stdio.h>
 	}C
@@ -57,7 +57,7 @@ varnish v1 -errvcl {BOOL + BOOL not possible.} {
 }
 
 varnish v1 -vcl {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	sub vcl_recv {
 		set req.http.foo = "foo" + "bar";
 		set req.http.foo = "foo" + 1;
@@ -225,7 +225,7 @@ varnish v1 -errvcl {Function returns VOID} {
 
 varnish v1 -errvcl {Not available in subroutine 'vcl_recv'.} {
 	import blob;
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	sub vcl_recv {
 		blob.encode(HEX, LOWER, req.hash);
 	}
@@ -233,14 +233,14 @@ varnish v1 -errvcl {Not available in subroutine 'vcl_recv'.} {
 
 varnish v1 -errvcl {Not available in subroutine 'vcl_hash'.} {
 	import blob;
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	sub vcl_hash {
 		blob.encode(HEX, LOWER, req.hash);
 	}
 }
 
 varnish v1 -errvcl {Not available in subroutine 'vcl_recv'.} {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	sub vcl_recv {
 		set req.http.foo = 100 + beresp.status;
 	}
@@ -264,7 +264,7 @@ Not available from subroutine 'vcl_recv'.
         sub vcl_recv { call foo; }
 ----------------------------###---
 } {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	sub foo { set req.http.foo = 100 + beresp.status; }
 	sub vcl_recv { call foo; }
 }
@@ -293,7 +293,7 @@ Not available from subroutine 'vcl_recv'.
         sub vcl_recv { call bar; }
 ----------------------------###---
 } {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	sub foo { set req.http.foo = 100 + beresp.status; }
 	sub bar { call foo; }
 	sub vcl_recv { call bar; }

@@ -2,7 +2,7 @@ varnishtest "#1212 - Vmod with HEADER argument given a STRING asserts the VCL co
 
 varnish v1 -errvcl {Expression has type STRING, expected HEADER} {
 	import std;
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	sub vcl_recv {
 		std.collect("foo");
 	}

@@ -6,7 +6,7 @@ server s1 {
 } -start
 
 
-varnish v1 -arg "-a foo=127.0.0.1:0,PROXY"
+varnish v1 -arg "-a foo=${listen_addr},PROXY"
 varnish v1 -arg "-p thread_pools=1"
 varnish v1 -vcl+backend "" -start
 

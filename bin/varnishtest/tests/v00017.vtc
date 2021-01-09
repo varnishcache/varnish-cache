@@ -1,19 +1,19 @@
 varnishtest "VCL compiler coverage test: vcc_acl.c"
 
 varnish v1 -errvcl {Too wide mask (/33) for IPv4 address} {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	acl a { "10.1.2.3"/33; }
 	sub vcl_recv { if (client.ip ~ a) { return(pass); } }
 }
 
 varnish v1 -errvcl {Too wide mask (/129) for IPv6 address} {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	acl a { "1::2"/129; }
 	sub vcl_recv { if (client.ip ~ a) { return(pass); } }
 }
 
 varnish v1 -vcl {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	acl a {
 		"1.2.3.4"/31;
 		"1.2.3.4"/31;
@@ -22,7 +22,7 @@ varnish v1 -vcl {
 }
 
 varnish v1 -errvcl {Conflicting ACL entries:} {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	acl a {
 		"1.2.3.4";
 		!"1.2.3.4";
@@ -31,31 +31,31 @@ varnish v1 -errvcl {Conflicting ACL entries:} {
 }
 
 varnish v1 -errvcl {DNS lookup(...com): } {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	acl a { "...com"; }
 	sub vcl_recv { if (client.ip ~ a) { return(pass); } }
 }
 
 varnish v1 -errvcl {DNS lookup(10.1..2): } {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	acl a { "10.1..2"; }
 	sub vcl_recv { if (client.ip ~ a) { return(pass); } }
 }
 
 varnish v1 -errvcl {Expected ')' got ';'} {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	acl a { ( "10.1.2"; }
 	sub vcl_recv { if (client.ip ~ a) { return(pass); } }
 }
 
 varnish v1 -errvcl {Expected ';' got ')'} {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	acl a { "10.1.2" ); }
 	sub vcl_recv { if (client.ip ~ a) { return(pass); } }
 }
 
 varnish v1 -vcl {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	acl a {
 		! "10.1.3";
 		("...com" / 22);
@@ -65,12 +65,12 @@ varnish v1 -vcl {
 }
 
 varnish v1 -errvcl {Operator > not possible on IP} {
-	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv { if (client.ip > "127.0.0.1") { return(pass); } }
+	backend b { .host = "${localhost}"; }
+	sub vcl_recv { if (client.ip > "${localhost}") { return(pass); } }
 }
 
 varnish v1 -vcl {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	acl a {
 		"10.1.1"/25;
 		"10.1.3"/26;
@@ -86,7 +86,7 @@ varnish v1 -vcl {
 }
 
 varnish v1 -errvcl {.../mask is not numeric.} {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	acl a {
 		"10.0.1.0/1bc";
 	}
@@ -94,7 +94,7 @@ varnish v1 -errvcl {.../mask is not numeric.} {
 }
 
 varnish v1 -errvcl {/mask only allowed once} {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	acl a {
 		"10.0.1.0/22" / 22;
 	}

@@ -51,31 +51,31 @@ varnish v1 -vcl+backend {
 } -start
 
 client c1 {
-	txreq -url /1
+	txreq -url /1 -hdr "Host: 127.0.0.1"
 	rxresp
 	expect resp.http.foo == "1"
 
-	txreq -url /3
+	txreq -url /3 -hdr "Host: 127.0.0.1"
 	rxresp
 	expect resp.http.foo == "2"
 
-	txreq -url /13
+	txreq -url /13 -hdr "Host: 127.0.0.1"
 	rxresp
 	expect resp.http.foo == "3"
 
-	txreq -url /8
+	txreq -url /8 -hdr "Host: 127.0.0.1"
 	rxresp
 	expect resp.http.foo == "4"
 
-	txreq -url "/emptystring"
+	txreq -url "/emptystring" -hdr "Host: 127.0.0.1"
 	rxresp
 	expect resp.http.foo == "6"
 
-	txreq -url "/nohdr"
+	txreq -url "/nohdr" -hdr "Host: 127.0.0.1"
 	rxresp
 	expect resp.http.foo == "8"
 
-	txreq -url "/ip"
+	txreq -url "/ip" -hdr "Host: 127.0.0.1"
 	rxresp
 	expect resp.http.foo == "9"
 } -run
@@ -83,19 +83,19 @@ client c1 {
 server s2 -start
 
 client c1 {
-	txreq -req "DELETE"
+	txreq -req "DELETE" -hdr "Host: 127.0.0.1"
 	rxresp
 	expect resp.status == 204
 
-	txreq
+	txreq -hdr "Host: 127.0.0.1"
 	rxresp
 	expect resp.http.foo == "1"
 
-	txreq
+	txreq -hdr "Host: 127.0.0.1"
 	rxresp
 	expect resp.http.foo == "4"
 
-	txreq
+	txreq -hdr "Host: 127.0.0.1"
 	rxresp
 	expect resp.http.foo == "9"
 } -run

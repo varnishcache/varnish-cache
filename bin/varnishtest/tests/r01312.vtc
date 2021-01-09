@@ -17,8 +17,8 @@ varnish v1 -vcl+backend {
 		"127.0.1"/19;
 	}
 	sub vcl_deliver {
-		set resp.http.ACLfoo = std.ip("127.0.0.1", client.ip) ~ foo;
-		set resp.http.ACLbar = std.ip("127.0.0.1", client.ip) ~ bar;
+		set resp.http.ACLfoo = std.ip("${localhost}", client.ip) ~ foo;
+		set resp.http.ACLbar = std.ip("${localhost}", client.ip) ~ bar;
 	}
 } -start
 

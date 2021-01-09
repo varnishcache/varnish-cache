@@ -11,10 +11,10 @@ server s1 {
 varnish v1 -vcl+backend {
 
 sub vcl_recv {
-	if (client.ip == "${s1_addr}" || client.ip == "127.0.0.1") {
+	if (client.ip == "${s1_addr}" || client.ip == "${localhost}") {
 		set req.http.foo1 = "Match";
 	}
-	if (client.ip == "127.0.0.1" || client.ip == "${s1_addr}") {
+	if (client.ip == "${localhost}" || client.ip == "${s1_addr}") {
 		set req.http.foo2 = "Match";
 	}
 }

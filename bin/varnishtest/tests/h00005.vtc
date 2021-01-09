@@ -8,7 +8,7 @@ server s1 {
 	txresp
 } -start
 
-syslog S1 -level notice -bind "127.0.0.1:0" {
+syslog S1 -level notice -bind "${listen_addr}" {
 	recv
 	recv
 	recv info
@@ -17,7 +17,7 @@ syslog S1 -level notice -bind "127.0.0.1:0" {
 
 haproxy h1 -conf {
     global
-	log ${S1_addr}:${S1_port} local0
+	log ${S1_sock} local0
 
     defaults
 	log global
@@ -32,7 +32,7 @@ haproxy h1 -conf {
 	default_backend    be1
 
     backend be1
-	server srv1 ${s1_addr}:${s1_port}
+	server srv1 ${s1_sock}
 } -start
 
 client c1 -connect ${h1_fe_1_sock} {
@@ -42,4 +42,3 @@ client c1 -connect ${h1_fe_1_sock} {
 } -run
 
 syslog S1 -wait
-

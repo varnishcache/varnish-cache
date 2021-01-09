@@ -1,7 +1,7 @@
 varnishtest "Regression test for ticket 409"
 
 varnish v1 -errvcl {Expected CSTR got '!'} {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	sub vcl_recv {
 		if ( req.url ~ ! "\.(png|jpg|gif|js|css)$" ) {
 			return (pass);

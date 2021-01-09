@@ -24,7 +24,7 @@ server s4 {
 
 varnish v1 -errvcl {Name of VCL object, 'rr1.xx', contains illegal character '.'} {
 	import directors;
-	backend b1 { .host = "127.0.0.1"; .port = "8080";}
+	backend b1 { .host = "${localhost}"; .port = "8080";}
 	sub vcl_init {
 		new rr1.xx = directors.round_robin();
 	}

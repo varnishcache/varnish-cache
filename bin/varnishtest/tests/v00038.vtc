@@ -14,7 +14,7 @@ varnish v1 -errvcl "IPv6 address has wrong port separator" {
 
 varnish v1 -errvcl "with exactly three digits" {
 	backend b1 {
-		.host = "127.0.0.1";
+		.host = "${localhost}";
 		.probe = {
 			.expected_response = 1000;
 		}
@@ -23,7 +23,7 @@ varnish v1 -errvcl "with exactly three digits" {
 
 varnish v1 -errvcl "Must specify .threshold with .window" {
 	backend b1 {
-		.host = "127.0.0.1";
+		.host = "${localhost}";
 		.probe = {
 			.window = 32;
 		}
@@ -32,7 +32,7 @@ varnish v1 -errvcl "Must specify .threshold with .window" {
 
 varnish v1 -errvcl "Threshold must be 64 or less" {
 	backend b1 {
-		.host = "127.0.0.1";
+		.host = "${localhost}";
 		.probe = {
 			.threshold = 65;
 		}
@@ -41,7 +41,7 @@ varnish v1 -errvcl "Threshold must be 64 or less" {
 
 varnish v1 -errvcl "Window must be 64 or less" {
 	backend b1 {
-		.host = "127.0.0.1";
+		.host = "${localhost}";
 		.probe = {
 			.window = 65;
 			.threshold = 64;
@@ -51,7 +51,7 @@ varnish v1 -errvcl "Window must be 64 or less" {
 
 varnish v1 -errvcl "Threshold can not be greater than window" {
 	backend b1 {
-		.host = "127.0.0.1";
+		.host = "${localhost}";
 		.probe = {
 			.window = 63;
 			.threshold = 64;
@@ -61,20 +61,20 @@ varnish v1 -errvcl "Threshold can not be greater than window" {
 
 varnish v1 -errvcl "NB: Backend Syntax has changed:" {
 	backend b1 {
-		set .host = "127.0.0.1";
+		set .host = "${localhost}";
 	}
 }
 
 varnish v1 -errvcl "Expected '{' or name of probe, got" {
 	backend b1 {
-		.host = "127.0.0.1";
+		.host = "${localhost}";
 		.probe = "NONE";
 	}
 }
 
 varnish v1 -errvcl "Field 'port' redefined at:" {
 	backend b1 {
-		.host = "127.0.0.1";
+		.host = "${localhost}";
 		.port = "NONE";
 		.port = "NONE";
 	}
@@ -82,7 +82,7 @@ varnish v1 -errvcl "Field 'port' redefined at:" {
 
 varnish v1 -errvcl "Unknown field:" {
 	backend b1 {
-		.host = "127.0.0.1";
+		.host = "${localhost}";
 		.fourscoreandsevenyearsago = "NONE";
 	}
 }
@@ -100,19 +100,19 @@ varnish v1 -errvcl "No default probe defined" {
 }
 
 varnish v1 -errvcl "Only one default director possible." {
-	backend b1 { .host = "127.0.0.1"; }
-	backend default { .host = "127.0.0.1"; }
-	backend default { .host = "127.0.0.1"; }
+	backend b1 { .host = "${localhost}"; }
+	backend default { .host = "${localhost}"; }
+	backend default { .host = "${localhost}"; }
 }
 
 varnish v1 -errvcl "Unused backend b1, defined:" {
-	backend b1 { .host = "127.0.0.1"; }
-	backend default { .host = "127.0.0.1"; }
+	backend b1 { .host = "${localhost}"; }
+	backend default { .host = "${localhost}"; }
 }
 
 varnish v1 -errvcl "Address redefinition at:" {
 	backend b1 {
-		.host = "127.0.0.1";
+		.host = "${localhost}";
 		.path = "/path/to/uds";
 	}
 }

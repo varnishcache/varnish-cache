@@ -11,7 +11,7 @@ varnish v1 -errvcl {Instance 'first' redefined.} {
 varnish v1 -errvcl {Name 'first' already defined.} {
 	import debug;
 
-	backend first { .host = "127.0.0.1"; }
+	backend first { .host = "${localhost}"; }
 
 	sub vcl_init {
 		new first = debug.obj("FOO");

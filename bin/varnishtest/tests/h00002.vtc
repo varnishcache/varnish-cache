@@ -17,7 +17,7 @@ haproxy h1 -D -conf {
 	timeout client          30s
 
     backend be1
-	server srv1 ${s1_addr}:${s1_port}
+	server srv1 ${s1_sock}
 
     frontend http1
 	use_backend be1

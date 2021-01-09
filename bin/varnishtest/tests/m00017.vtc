@@ -313,21 +313,21 @@ server s1 -repeat 3 -keepalive {
 } -start
 
 client c6 {
-	txreq -url /8
+	txreq -url /8 -hdr "Host: 127.0.0.1"
 	rxresp
 	expect resp.status == 200
 	expect resp.http.fetch == "Fetch value 1"
 	expect resp.http.response == "123"
 	expect resp.http.response2 == "Another response"
 
-	txreq -url /9
+	txreq -url /9 -hdr "Host: 127.0.0.1"
 	rxresp
 	expect resp.status == 200
 	expect resp.http.fetch == "Fetch value 1"
 	expect resp.http.response == "123"
 	expect resp.http.response2 == "Another response"
 
-	txreq -url /10
+	txreq -url /10 -hdr "Host: 127.0.0.1"
 	rxresp
 	expect resp.status == 200
 	expect resp.http.fetch == "Fetch value 1"

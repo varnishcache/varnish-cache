@@ -1,6 +1,6 @@
 varnishtest "param edge cases"
 
-varnish v1 -vcl {backend foo {.host = "127.0.0.1";}} -start
+varnish v1 -vcl {backend foo {.host = "${localhost}";}} -start
 
 
 varnish v1 -clierr "106" "param.set default_ttl -1"

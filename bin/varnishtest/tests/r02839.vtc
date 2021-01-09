@@ -10,7 +10,7 @@ varnish v1 -vcl+backend "" -start
 varnish v1 -errvcl "Object nullobj not initialized" {
 	import debug;
 
-	backend default { .host = "127.0.0.1"; }
+	backend default { .host = "${localhost}"; }
 
 	sub vcl_init {
 		if (false) {
@@ -22,7 +22,7 @@ varnish v1 -errvcl "Object nullobj not initialized" {
 varnish v1 -vcl {
 	import debug;
 
-	backend default { .host = "127.0.0.1"; }
+	backend default { .host = "${localhost}"; }
 
 	sub vcl_init {
 		if (false) {

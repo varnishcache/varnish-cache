@@ -25,7 +25,7 @@ varnish v1 -clierr 300 "vcl.discard vcl1"
 
 varnish v1 -clierr 106 "vcl.discard vcl0"
 
-varnish v1 -clierr 106 {vcl.inline vcl2 "vcl 4.0; backend foo {.host = \"127.0.0.1\";} "}
+varnish v1 -clierr 106 {vcl.inline vcl2 "vcl 4.0; backend foo {.host = \"${localhost}\";} "}
 
 varnish v1 -clierr 106 {vcl.load vcl3 ./nonexistent.vcl}
 

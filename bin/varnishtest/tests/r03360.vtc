@@ -5,11 +5,11 @@ shell {echo include '"_recurse2.vcl";' > ${tmpdir}/_recurse1.vcl}
 shell {echo include '"_recurse1.vcl";' > ${tmpdir}/_recurse2.vcl}
 
 varnish v1 -arg "-p vcl_path=${tmpdir}" -errvcl "Recursive include of" {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	include "_recurse.vcl" ;
 }
 
 varnish v2 -arg "-p vcl_path=${tmpdir}" -errvcl "Recursive include of" {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	include "_recurse1.vcl" ;
 }

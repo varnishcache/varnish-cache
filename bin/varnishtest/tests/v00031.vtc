@@ -1,20 +1,20 @@
 varnishtest "param vcc_err_unref"
 
 varnish v1 -errvcl {Unused backend c, defined:} {
-	backend b { .host = "127.0.0.1"; }
-	backend c { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
+	backend c { .host = "${localhost}"; }
 }
 
 varnish v1 -cliok "param.set vcc_err_unref false"
 
 varnish v1 -vcl {
-	backend b { .host = "127.0.0.1"; }
-	backend c { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
+	backend c { .host = "${localhost}"; }
 }
 
 varnish v1 -cliok "param.set vcc_err_unref true"
 
 varnish v1 -errvcl {Unused backend c, defined:} {
-	backend b { .host = "127.0.0.1"; }
-	backend c { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
+	backend c { .host = "${localhost}"; }
 }

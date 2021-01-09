@@ -8,7 +8,7 @@ varnishtest "Check timeout_linger"
 #
 
 varnish v1 -arg "-p timeout_linger=1"	\
-	   -arg "-a 127.0.0.1:0"	\
+	   -arg "-a ${listen_addr}"	\
 	   -arg "-a ${tmpdir}/v1.sock"	\
 	   -vcl {
 	import std;

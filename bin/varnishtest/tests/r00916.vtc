@@ -6,7 +6,7 @@ server s1 {
 } -start
 
 varnish v1 -errvcl {Symbol not found: 's-1'} {
-	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "${localhost}"; }
 	sub s1 {
 	}
 	sub vcl_backend_response {
