@@ -73,7 +73,9 @@ vtcp_sa_to_ascii(const void *sa, socklen_t l, char *abuf, unsigned alen,
 		 * XXX this printf is shitty, but we may not have space
 		 * for the gai_strerror in the bufffer :-(
 		 */
-		printf("getnameinfo = %d %s\n", i, gai_strerror(i));
+		fprintf(stderr, "getnameinfo = %d %s\n", i, gai_strerror(i));
+		if (i == EAI_SYSTEM)
+			fprintf(stderr, "errno = %d %s\n", errno, vstrerror(errno));
 		if (abuf != NULL)
 			(void)snprintf(abuf, alen, "Conversion");
 		if (pbuf != NULL)
