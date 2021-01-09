@@ -81,6 +81,7 @@ extern char *vmod_path;
 extern struct vsb *params_vsb;
 extern int leave_temp;
 extern int ign_unknown_macro;
+extern const char *default_listen_addr;
 
 void init_server(void);
 void init_syslog(void);

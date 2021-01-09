@@ -265,7 +265,7 @@ syslog_new(const char *name, struct vtclog *vl)
 	AN(s->vl);
 	vtc_log_set_cmd(s->vl, syslog_cmds);
 
-	bprintf(s->bind, "%s", "127.0.0.1 0");
+	bprintf(s->bind, "%s", default_listen_addr);
 	s->repeat = 1;
 	s->sock = -1;
 	s->lvl = -1;
@@ -358,6 +358,8 @@ syslog_bind(struct syslog_srv *s)
 	const char *err;
 	char aaddr[VTCP_ADDRBUFSIZE];
 	char aport[VTCP_PORTBUFSIZE];
+	char buf[vsa_suckaddr_len];
+	struct suckaddr *sua;
 
 	CHECK_OBJ_NOTNULL(s, SYSLOG_SRV_MAGIC);
 
@@ -369,10 +371,15 @@ syslog_bind(struct syslog_srv *s)
 		    "Syslog server bind address (%s) cannot be resolved: %s",
 		    s->bind, err);
 	assert(s->sock > 0);
-	VTCP_myname(s->sock, aaddr, sizeof aaddr, aport, sizeof aport);
+	sua = VSA_getsockname(s->sock, buf, sizeof buf);
+	AN(sua);
+	VTCP_name(sua, aaddr, sizeof aaddr, aport, sizeof aport);
 	macro_def(s->vl, s->name, "addr", "%s", aaddr);
 	macro_def(s->vl, s->name, "port", "%s", aport);
-	macro_def(s->vl, s->name, "sock", "%s %s", aaddr, aport);
+	if (VSA_Get_Proto(sua) == AF_INET)
+		macro_def(s->vl, s->name, "sock", "%s:%s", aaddr, aport);
+	else
+		macro_def(s->vl, s->name, "sock", "[%s]:%s", aaddr, aport);
 	/* Record the actual port, and reuse it on subsequent starts */
 	bprintf(s->bind, "%s %s", aaddr, aport);
 }

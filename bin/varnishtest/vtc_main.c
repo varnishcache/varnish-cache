@@ -51,6 +51,7 @@
 #include "vnum.h"
 #include "vrnd.h"
 #include "vss.h"
+#include "vsa.h"
 #include "vsub.h"
 #include "vtcp.h"
 #include "vtim.h"
@@ -116,6 +117,7 @@ static int bad_backend_fd;
 
 static int cleaner_fd = -1;
 static pid_t cleaner_pid;
+const char *default_listen_addr;
 
 static struct buf *
 get_buf(void)
@@ -594,8 +596,13 @@ ip_magic(void)
 	sa = VSS_ResolveOne(NULL, "127.0.0.1", "0", 0, SOCK_STREAM, 0);
 	AN(sa);
 	bad_backend_fd = VTCP_bind(sa, NULL);
+	if (bad_backend_fd < 0) {
+		free(sa);
+		sa = VSS_ResolveFirst(NULL, "localhost", "0", 0, SOCK_STREAM, 0);
+		AN(sa);
+		bad_backend_fd = VTCP_bind(sa, NULL);
+	}
 	assert(bad_backend_fd >= 0);
-	free(sa);
 	VTCP_myname(bad_backend_fd, abuf, sizeof abuf, pbuf, sizeof(pbuf));
 	extmacro_def("localhost", "%s", abuf);
 
@@ -609,7 +616,21 @@ ip_magic(void)
 #endif
 
 	/* Expose a backend that is forever down. */
-	extmacro_def("bad_backend", "%s %s", abuf, pbuf);
+	if (VSA_Get_Proto(sa) == AF_INET)
+		extmacro_def("bad_backend", "%s:%s", abuf, pbuf);
+	else
+		extmacro_def("bad_backend", "[%s]:%s", abuf, pbuf);
+
+	/* our default bind/listen address */
+	if (VSA_Get_Proto(sa) == AF_INET)
+		bprintf(abuf, "%s:0", macro_get("localhost", NULL));
+	else
+		bprintf(abuf, "[%s]:0", macro_get("localhost", NULL));
+
+	extmacro_def("listen_addr", "%s", abuf);
+	default_listen_addr = strdup(abuf);
+	AN(default_listen_addr);
+	free(sa);
 
 	/*
 	 * We need an IP number which will not repond, ever, and that is a

@@ -41,6 +41,7 @@
 
 #include "vtc.h"
 #include "vtcp.h"
+#include "vsa.h"
 
 enum barrier_e {
 	BARRIER_NONE = 0,
@@ -128,7 +129,10 @@ barrier_sock_thread(void *priv)
 	struct barrier *b;
 	struct vtclog *vl;
 	const char *err;
-	char abuf[16], pbuf[6];
+	char buf[vsa_suckaddr_len];
+	struct suckaddr *sua;
+
+	char abuf[VTCP_ADDRBUFSIZE], pbuf[VTCP_PORTBUFSIZE];
 	int i, sock, *conns;
 	struct pollfd pfd[1];
 
@@ -140,7 +144,7 @@ barrier_sock_thread(void *priv)
 	vl = vtc_logopen("%s", b->name);
 	pthread_cleanup_push(vtc_logclose, vl);
 
-	sock = VTCP_listen_on("127.0.0.1:0", NULL, b->expected, &err);
+	sock = VTCP_listen_on(default_listen_addr, NULL, b->expected, &err);
 	if (sock < 0) {
 		AZ(pthread_cond_signal(&b->cond));
 		AZ(pthread_mutex_unlock(&b->mtx));
@@ -149,11 +153,16 @@ barrier_sock_thread(void *priv)
 	}
 	assert(sock > 0);
 	VTCP_nonblocking(sock);
-	VTCP_myname(sock, abuf, sizeof abuf, pbuf, sizeof pbuf);
+	sua = VSA_getsockname(sock, buf, sizeof buf);
+	AN(sua);
+	VTCP_name(sua, abuf, sizeof abuf, pbuf, sizeof pbuf);
 
 	macro_def(vl, b->name, "addr", "%s", abuf);
 	macro_def(vl, b->name, "port", "%s", pbuf);
-	macro_def(vl, b->name, "sock", "%s:%s", abuf, pbuf);
+	if (VSA_Get_Proto(sua) == AF_INET)
+		macro_def(vl, b->name, "sock", "%s:%s", abuf, pbuf);
+	else
+		macro_def(vl, b->name, "sock", "[%s]:%s", abuf, pbuf);
 
 	AZ(pthread_cond_signal(&b->cond));
 	AZ(pthread_mutex_unlock(&b->mtx));

@@ -392,7 +392,7 @@ varnish_launch(struct varnish *v)
 	char *r = NULL;
 
 	/* Create listener socket */
-	v->cli_fd = VTCP_listen_on("127.0.0.1:0", NULL, 1, &err);
+	v->cli_fd = VTCP_listen_on(default_listen_addr, NULL, 1, &err);
 	if (err != NULL)
 		vtc_fatal(v->vl, "Create CLI listen socket failed: %s", err);
 	assert(v->cli_fd > 0);
@@ -420,7 +420,7 @@ varnish_launch(struct varnish *v)
 	VSB_cat(vsb, " -p h2_initial_window_size=1m");
 	VSB_cat(vsb, " -p h2_rx_window_low_water=64k");
 	if (!v->has_a_arg) {
-		VSB_printf(vsb, " -a '%s'", "127.0.0.1:0");
+		VSB_printf(vsb, " -a '%s'", default_listen_addr);
 		if (v->proto != NULL)
 			VSB_printf(vsb, ",%s", v->proto);
 	}
@@ -572,12 +572,14 @@ varnish_listen(const struct varnish *v, char *la)
 		AN(*a);
 		AN(*p);
 
-		if (*p != '-') {
-			bprintf(s, "%s %s", a, p);
-		} else {
+		if (*p == '-') {
 			bprintf(s, "%s", a);
 			a = "0.0.0.0";
 			p = "0";
+		} else if (strchr(a, ':')) {
+			bprintf(s, "[%s]:%s", a, p);
+		} else {
+			bprintf(s, "%s:%s", a, p);
 		}
 
 		if (first) {

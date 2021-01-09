@@ -76,5 +76,5 @@ client c1 -connect ${v3_sock} {
 	expect resp.http.a0_sock == "${tmpdir}/v1.sock"
 	expect resp.http.a1_addr != "0.0.0.0"
 	expect resp.http.a1_port != "0"
-	expect resp.http.a1_sock ~ "[^ ]+ [^ ]+"
+	expect resp.http.a1_sock ~ "[^ ]+:[^ ]+"
 } -run

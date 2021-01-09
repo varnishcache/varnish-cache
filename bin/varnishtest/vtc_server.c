@@ -39,6 +39,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "vsa.h"
 #include "vtc.h"
 
 #include "vtcp.h"
@@ -59,8 +60,8 @@ struct server {
 	int			sock;
 	int			fd;
 	char			listen[256];
-	char			aaddr[32];
-	char			aport[32];
+	char			aaddr[VTCP_ADDRBUFSIZE];
+	char			aport[VTCP_PORTBUFSIZE];
 
 	pthread_t		tp;
 };
@@ -88,7 +89,7 @@ server_new(const char *name, struct vtclog *vl)
 	s->vsp = Sess_New(s->vl, name);
 	AN(s->vsp);
 
-	bprintf(s->listen, "%s", "127.0.0.1 0");
+	bprintf(s->listen, "%s", default_listen_addr);
 	s->depth = 10;
 	s->sock = -1;
 	s->fd = -1;
@@ -183,17 +184,27 @@ server_listen_uds(struct server *s, const char **errp)
 static void
 server_listen_tcp(struct server *s, const char **errp)
 {
+	char buf[vsa_suckaddr_len];
+	struct suckaddr *sua;
+
 	s->sock = VTCP_listen_on(s->listen, "0", s->depth, errp);
 	if (*errp != NULL)
 		return;
 	assert(s->sock > 0);
-	VTCP_myname(s->sock, s->aaddr, sizeof s->aaddr,
+	sua = VSA_getsockname(s->sock, buf, sizeof buf);
+	AN(sua);
+	VTCP_name(sua, s->aaddr, sizeof s->aaddr,
 	    s->aport, sizeof s->aport);
+
+	/* Record the actual port, and reuse it on subsequent starts */
+	if (VSA_Get_Proto(sua) == AF_INET)
+		bprintf(s->listen, "%s:%s", s->aaddr, s->aport);
+	else
+		bprintf(s->listen, "[%s]:%s", s->aaddr, s->aport);
+
 	macro_def(s->vl, s->name, "addr", "%s", s->aaddr);
 	macro_def(s->vl, s->name, "port", "%s", s->aport);
-	macro_def(s->vl, s->name, "sock", "%s %s", s->aaddr, s->aport);
-	/* Record the actual port, and reuse it on subsequent starts */
-	bprintf(s->listen, "%s %s", s->aaddr, s->aport);
+	macro_def(s->vl, s->name, "sock", "%s", s->listen);
 }
 
 static void

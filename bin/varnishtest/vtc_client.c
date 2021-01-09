@@ -106,7 +106,7 @@ client_tcp_connect(struct vtclog *vl, const char *addr, double tmo,
 		   const char **errp)
 {
 	int fd;
-	char mabuf[32], mpbuf[32];
+	char mabuf[VTCP_ADDRBUFSIZE], mpbuf[VTCP_PORTBUFSIZE];
 
 	AN(addr);
 	AN(errp);
