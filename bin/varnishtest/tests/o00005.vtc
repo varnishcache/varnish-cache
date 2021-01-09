@@ -1,5 +1,9 @@
 varnishtest "PROXY v2 TLV test"
 
+# XXX this does does not work with IPv6, the workspace overflow test
+#     is too brittle
+feature cmd {test "${localhost}" = "127.0.0.1"}
+
 server s1 {
 	rxreq
 	txresp
