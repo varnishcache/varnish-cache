@@ -102,6 +102,7 @@ usage(void)
 	printf(FMT, "", "Proto can be \"PROXY\" or \"HTTP\" (default)");
 	printf(FMT, "", "user, group and mode set permissions for");
 	printf(FMT, "", "  a Unix domain socket.");
+	printf(FMT, "-b none", "No backend");
 	printf(FMT, "-b [addr[:port]|path]", "Backend address and port");
 	printf(FMT, "", "  or socket file path");
 	printf(FMT, "", "  default: \":80\"");
@@ -626,14 +627,15 @@ main(int argc, char * const *argv)
 			vsb = VSB_new_auto();
 			AN(vsb);
 			VSB_cat(vsb, "vcl 4.1;\n");
-			VSB_cat(vsb, "backend default {\n");
-			if (*optarg != '/')
-				VSB_printf(vsb, "    .host = \"%s\";\n",
-					   optarg);
+			VSB_cat(vsb, "backend default ");
+			if (! strcasecmp(optarg, "none"))
+				VSB_cat(vsb, "none;\n");
+			else if (*optarg != '/')
+				VSB_printf(vsb, "{\n    .host = \"%s\";\n}\n",
+				    optarg);
 			else
-				VSB_printf(vsb, "    .path = \"%s\";\n",
-					   optarg);
-			VSB_cat(vsb, "}\n");
+				VSB_printf(vsb, "{\n    .path = \"%s\";\n}\n",
+				    optarg);
 			AZ(VSB_finish(vsb));
 			fa->src = strdup(VSB_data(vsb));
 			AN(fa->src);
