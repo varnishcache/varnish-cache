@@ -654,7 +654,7 @@ static void v_matchproto_(cli_func_t)
 ccf_listen_address(struct cli *cli, const char * const *av, void *priv)
 {
 	struct listen_sock *ls;
-	char h[32], p[32];
+	char h[VTCP_ADDRBUFSIZE], p[VTCP_PORTBUFSIZE];
 
 	(void)cli;
 	(void)av;
