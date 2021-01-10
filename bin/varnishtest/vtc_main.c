@@ -585,6 +585,7 @@ ip_magic(void)
 	struct suckaddr *sa;
 	char abuf[VTCP_ADDRBUFSIZE];
 	char pbuf[VTCP_PORTBUFSIZE];
+	char *s;
 
 	/*
 	 * In FreeBSD jails localhost/127.0.0.1 becomes the jails IP#
@@ -622,10 +623,13 @@ ip_magic(void)
 		extmacro_def("bad_backend", "[%s]:%s", abuf, pbuf);
 
 	/* our default bind/listen address */
+	s = macro_get("localhost", NULL);
+	AN(s);
 	if (VSA_Get_Proto(sa) == AF_INET)
-		bprintf(abuf, "%s:0", macro_get("localhost", NULL));
+		bprintf(abuf, "%s:0", s);
 	else
-		bprintf(abuf, "[%s]:0", macro_get("localhost", NULL));
+		bprintf(abuf, "[%s]:0", s);
+	free(s);
 
 	extmacro_def("listen_addr", "%s", abuf);
 	default_listen_addr = strdup(abuf);
