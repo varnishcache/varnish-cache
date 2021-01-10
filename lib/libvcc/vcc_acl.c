@@ -194,8 +194,10 @@ vcc_acl_add_entry(struct vcc *tl, const struct acl_e *ae, int l,
 			 * If the two rules agree, silently ignore it
 			 * XXX: is that counter intuitive ?
 			 */
-			if (aen->not == ae2->not)
+			if (aen->not == ae2->not) {
+				free(aen);
 				return;
+			}
 			VSB_cat(tl->sb, "Conflicting ACL entries:\n");
 			vcc_ErrWhere(tl, ae2->t_addr);
 			VSB_cat(tl->sb, "vs:\n");

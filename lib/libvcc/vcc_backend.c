@@ -149,15 +149,15 @@ vcc_Redef(struct vcc *tl, const char *redef, struct token **t_did,
  */
 
 static void
-vcc_ParseProbeSpec(struct vcc *tl, const struct symbol *sym, char **name)
+vcc_ParseProbeSpec(struct vcc *tl, const struct symbol *sym, char **namep)
 {
 	struct fld_spec *fs;
 	struct token *t_field;
 	struct token *t_did = NULL, *t_window = NULL, *t_threshold = NULL;
 	struct token *t_initial = NULL;
-	struct vsb *vsb;
-	char *retval;
 	unsigned window, threshold, initial, status;
+	char buf[32];
+	const char *name;
 	double t;
 
 	fs = vcc_FldSpec(tl,
@@ -173,25 +173,21 @@ vcc_ParseProbeSpec(struct vcc *tl, const struct symbol *sym, char **name)
 
 	SkipToken(tl, '{');
 
-	vsb = VSB_new_auto();
-	AN(vsb);
-	if (sym != NULL)
-		VSB_cat(vsb, sym->rname);
-	else
-		VSB_printf(vsb, "vgc_probe__%d", tl->nprobe++);
-	AZ(VSB_finish(vsb));
-	retval = TlDup(tl, VSB_data(vsb));
-	AN(retval);
-	VSB_destroy(&vsb);
-	if (name != NULL)
-		*name = retval;
+	if (sym != NULL) {
+		name = sym->rname;
+	} else {
+		bprintf(buf, "vgc_probe__%d", tl->nprobe++);
+		name = buf;
+	}
+	Fh(tl, 0, "static const struct vrt_backend_probe %s[] = {{\n", name);
+	Fh(tl, 0, "\t.magic = VRT_BACKEND_PROBE_MAGIC,\n");
+	if (namep != NULL)
+		*namep = TlDup(tl, name);
 
 	window = 0;
 	threshold = 0;
 	initial = 0;
 	status = 0;
-	Fh(tl, 0, "static const struct vrt_backend_probe %s[] = {{\n", retval);
-	Fh(tl, 0, "\t.magic = VRT_BACKEND_PROBE_MAGIC,\n");
 	while (tl->t->tok != '}') {
 
 		vcc_IsField(tl, &t_field, fs);
@@ -323,7 +319,7 @@ vcc_ParseProbe(struct vcc *tl)
 		sym = VCC_HandleSymbol(tl, PROBE, "vgc_probe");
 		ERRCHK(tl);
 		AN(sym);
-		vcc_ParseProbeSpec(tl, sym, &p);
+		vcc_ParseProbeSpec(tl, sym, NULL);
 	}
 }
 
@@ -480,6 +476,7 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 		} else if (vcc_IdIs(t_field, "probe") && tl->t->tok == '{') {
 			vcc_ParseProbeSpec(tl, NULL, &p);
 			Fb(tl, 0, "\t.probe = %s,\n", p);
+			free(p);
 			ERRCHK(tl);
 		} else if (vcc_IdIs(t_field, "probe") && tl->t->tok == ID) {
 			if (vcc_IdIs(tl->t, "default")) {
