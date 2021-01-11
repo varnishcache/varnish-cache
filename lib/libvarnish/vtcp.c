@@ -100,6 +100,7 @@ VTCP_name(const struct suckaddr *addr, char *abuf, unsigned alen,
 	socklen_t sl;
 
 	sa = VSA_Get_Sockaddr(addr, &sl);
+	AN(sa);
 	vtcp_sa_to_ascii(sa, sl, abuf, alen, pbuf, plen);
 }
 

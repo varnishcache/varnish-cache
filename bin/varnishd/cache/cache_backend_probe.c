@@ -258,16 +258,17 @@ vbp_write_proxy_v1(struct vbp_target *vt, int *sock)
 
 	sua = VSA_getsockname(*sock, vsabuf, sizeof vsabuf);
 	AN(sua);
-	VTCP_name(sua, addr, sizeof addr, port, sizeof port);
 	AN(VSB_init(&vsb, buf, sizeof buf));
 
 	proto = VSA_Get_Proto(sua);
-	if (proto == AF_INET || proto == AF_INET6)
+	if (proto == AF_INET || proto == AF_INET6) {
+		VTCP_name(sua, addr, sizeof addr, port, sizeof port);
 		VSB_printf(&vsb, "PROXY %s %s %s %s %s\r\n",
 		    proto == AF_INET ? "TCP4" : "TCP6",
 		    addr, addr, port, port);
-	else
+	} else {
 		VSB_cat(&vsb, "PROXY UNKNOWN\r\n");
+	}
 	AZ(VSB_finish(&vsb));
 
 	VSB_fini(&vsb);
