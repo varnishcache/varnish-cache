@@ -159,7 +159,7 @@ shard_param_stack(struct vmod_directors_shard_param *p,
     const struct vmod_directors_shard_param *pa, const char *who);
 
 static struct vmod_directors_shard_param *
-shard_param_task(VRT_CTX, const void *id,
+shard_param_task_l(VRT_CTX, const void *id,
     const struct vmod_directors_shard_param *pa);
 
 static const struct vmod_directors_shard_param *
@@ -609,7 +609,7 @@ vmod_shard_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 		resolve = VENUM(NOW);
 
 	if (ctx->method & SHARD_VCL_TASK_BEREQ) {
-		pp = shard_param_task(ctx, vshard->shardd,
+		pp = shard_param_task_l(ctx, vshard->shardd,
 		    vshard->shardd->param);
 		if (pp == NULL)
 			return (NULL);
@@ -870,7 +870,7 @@ shard_param_stack(struct vmod_directors_shard_param *p,
  * if id != pa and pa has VCL scope, also get a task scoped param struct for pa
  */
 static struct vmod_directors_shard_param *
-shard_param_task(VRT_CTX, const void *id,
+shard_param_task_l(VRT_CTX, const void *id,
    const struct vmod_directors_shard_param *pa)
 {
 	struct vmod_directors_shard_param *p;
@@ -908,7 +908,7 @@ shard_param_task(VRT_CTX, const void *id,
 	if (id == pa || pa->scope != SCOPE_VCL)
 		p->defaults = pa;
 	else
-		p->defaults = shard_param_task(ctx, pa, pa);
+		p->defaults = shard_param_task_l(ctx, pa, pa);
 
 	return (p);
 }
@@ -925,7 +925,7 @@ shard_param_prep(VRT_CTX, struct vmod_directors_shard_param *p,
 		    "in vcl_init and in backend/pipe context", who);
 		return (NULL);
 	} else if (ctx->method & SHARD_VCL_TASK_BEREQ)
-		p = shard_param_task(ctx, p, p);
+		p = shard_param_task_l(ctx, p, p);
 	else
 		assert(ctx->method & VCL_MET_TASK_H);
 
@@ -970,7 +970,7 @@ vmod_shard_param_read(VRT_CTX, const void *id,
 	(void) who; // XXX
 
 	if (ctx->method == 0 || (ctx->method & SHARD_VCL_TASK_BEREQ))
-		p = shard_param_task(ctx, id, p);
+		p = shard_param_task_l(ctx, id, p);
 
 	if (p == NULL)
 		return (NULL);
