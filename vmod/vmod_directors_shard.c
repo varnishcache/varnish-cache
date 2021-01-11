@@ -59,7 +59,7 @@
  *  not defined.
  *
  *  Actual resolution of the various parameter objects does not happen before
- *  they are used, which enabled changing them independently (ie, shard
+ *  they are used, which enables changing them independently (ie, shard
  *  .backend() parameters have precedence over an associated parameter object,
  *  which by itself can be overridden).
  *
@@ -157,6 +157,10 @@ static const struct vmod_directors_shard_param shard_param_default = {
 static struct vmod_directors_shard_param *
 shard_param_stack(struct vmod_directors_shard_param *p,
     const struct vmod_directors_shard_param *pa, const char *who);
+
+static const struct vmod_directors_shard_param *
+shard_param_task_r(VRT_CTX, const void *id,
+    const struct vmod_directors_shard_param *pa);
 
 static struct vmod_directors_shard_param *
 shard_param_task_l(VRT_CTX, const void *id,
@@ -608,14 +612,6 @@ vmod_shard_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 	else
 		resolve = VENUM(NOW);
 
-	if (ctx->method & SHARD_VCL_TASK_BEREQ) {
-		pp = shard_param_task_l(ctx, vshard->shardd,
-		    vshard->shardd->param);
-		if (pp == NULL)
-			return (NULL);
-		pp->vcl_name = vshard->shardd->name;
-	}
-
 	if (resolve == VENUM(LAZY)) {
 		if ((args & ~arg_resolve) == 0) {
 			AN(vshard->dir);
@@ -643,7 +639,16 @@ vmod_shard_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 		WRONG("resolve enum");
 	}
 
+	if (ctx->method & SHARD_VCL_TASK_BEREQ) {
+		pp = shard_param_task_l(ctx, vshard->shardd,
+		    vshard->shardd->param);
+		if (pp == NULL)
+			return (NULL);
+		pp->vcl_name = vshard->shardd->name;
+	}
+
 	AN(pp);
+
 	if (args & arg_param) {
 		ppt = shard_param_blob(a->param);
 		if (ppt == NULL) {
@@ -865,6 +870,34 @@ shard_param_stack(struct vmod_directors_shard_param *p,
 
 	return (p);
 }
+
+const static struct vmod_directors_shard_param *
+shard_param_task_r(VRT_CTX, const void *id,
+   const struct vmod_directors_shard_param *pa)
+{
+	const struct vmod_directors_shard_param *p;
+	const struct vmod_priv *task;
+	const void *task_id;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(pa, VMOD_SHARD_SHARD_PARAM_MAGIC);
+	assert(pa->scope > _SCOPE_INVALID);
+
+	task_id = (const char *)id + task_off_param;
+	task = VRT_priv_task_get(ctx, task_id);
+
+	if (task) {
+		CAST_OBJ_NOTNULL(p, task->priv, VMOD_SHARD_SHARD_PARAM_MAGIC);
+		assert(p->scope == SCOPE_TASK);
+		return (p);
+	}
+
+	if (id == pa || pa->scope != SCOPE_VCL)
+		return (pa);
+
+	return (shard_param_task_r(ctx, pa, pa));
+}
+
 /*
  * get a task scoped param struct for id defaulting to pa
  * if id != pa and pa has VCL scope, also get a task scoped param struct for pa
@@ -970,10 +1003,7 @@ vmod_shard_param_read(VRT_CTX, const void *id,
 	(void) who; // XXX
 
 	if (ctx->method == 0 || (ctx->method & SHARD_VCL_TASK_BEREQ))
-		p = shard_param_task_l(ctx, id, p);
-
-	if (p == NULL)
-		return (NULL);
+		p = shard_param_task_r(ctx, id, p);
 
 	pp = shard_param_stack(pstk, p, p->vcl_name);
 	AN(pp);
