@@ -699,9 +699,8 @@ vmod_shard_resolve(VRT_CTX, VCL_BACKEND dir)
 	CAST_OBJ_NOTNULL(shardd, dir->priv, SHARDDIR_MAGIC);
 
 	pp = vmod_shard_param_read(ctx, shardd, shardd->param,
-				   pstk, "shard_resolve");
-	if (pp == NULL)
-		return (NULL);
+	    pstk, "shard_resolve");
+	CHECK_OBJ_NOTNULL(pp, VMOD_SHARD_SHARD_PARAM_MAGIC);
 
 	return (sharddir_pick_be(ctx, shardd,
 				 shard_get_key(ctx, pp), pp->alt, pp->warmup,
@@ -1005,8 +1004,8 @@ vmod_shard_param_read(VRT_CTX, const void *id,
 	if (ctx->method == 0 || (ctx->method & SHARD_VCL_TASK_BEREQ))
 		p = shard_param_task_r(ctx, id, p);
 
+	CHECK_OBJ_NOTNULL(p, VMOD_SHARD_SHARD_PARAM_MAGIC);
 	pp = shard_param_stack(pstk, p, p->vcl_name);
-	AN(pp);
 	shard_param_merge(pp, p);
 	return (pp);
 }
@@ -1019,8 +1018,7 @@ vmod_shard_param_get_by(VRT_CTX,
 	const struct vmod_directors_shard_param *pp;
 
 	pp = vmod_shard_param_read(ctx, p, p, &pstk, "shard_param.get_by()");
-	if (pp == NULL)
-		return (NULL);
+	CHECK_OBJ_NOTNULL(pp, VMOD_SHARD_SHARD_PARAM_MAGIC);
 	return (default_by(pp->by));
 }
 
@@ -1032,8 +1030,7 @@ vmod_shard_param_get_key(VRT_CTX,
 	const struct vmod_directors_shard_param *pp;
 
 	pp = vmod_shard_param_read(ctx, p, p, &pstk, "shard_param.get_key()");
-	if (pp == NULL)
-		return (-1);
+	CHECK_OBJ_NOTNULL(pp, VMOD_SHARD_SHARD_PARAM_MAGIC);
 	return ((VCL_INT)shard_get_key(ctx, pp));
 }
 VCL_INT v_matchproto_(td_directors_shard_param_get_alt)
@@ -1043,10 +1040,8 @@ vmod_shard_param_get_alt(VRT_CTX,
 	struct vmod_directors_shard_param pstk;
 	const struct vmod_directors_shard_param *pp;
 
-	pp = vmod_shard_param_read(ctx, p, p, &pstk,
-				   "shard_param.get_alt()");
-	if (pp == NULL)
-		return (-1);
+	pp = vmod_shard_param_read(ctx, p, p, &pstk, "shard_param.get_alt()");
+	CHECK_OBJ_NOTNULL(pp, VMOD_SHARD_SHARD_PARAM_MAGIC);
 	return (pp->alt);
 }
 
@@ -1058,9 +1053,8 @@ vmod_shard_param_get_warmup(VRT_CTX,
 	const struct vmod_directors_shard_param *pp;
 
 	pp = vmod_shard_param_read(ctx, p, p, &pstk,
-				   "shard_param.get_warmup()");
-	if (pp == NULL)
-		return (-2);
+	    "shard_param.get_warmup()");
+	CHECK_OBJ_NOTNULL(pp, VMOD_SHARD_SHARD_PARAM_MAGIC);
 	return (pp->warmup);
 }
 
@@ -1072,9 +1066,8 @@ vmod_shard_param_get_rampup(VRT_CTX,
 	const struct vmod_directors_shard_param *pp;
 
 	pp = vmod_shard_param_read(ctx, p, p, &pstk,
-				   "shard_param.get_rampup()");
-	if (pp == NULL)
-		return (0);
+	    "shard_param.get_rampup()");
+	CHECK_OBJ_NOTNULL(pp, VMOD_SHARD_SHARD_PARAM_MAGIC);
 	return (pp->rampup);
 }
 
@@ -1086,9 +1079,8 @@ vmod_shard_param_get_healthy(VRT_CTX,
 	const struct vmod_directors_shard_param *pp;
 
 	pp = vmod_shard_param_read(ctx, p, p, &pstk,
-				   "shard_param.get_healthy()");
-	if (pp == NULL)
-		return (NULL);
+	    "shard_param.get_healthy()");
+	CHECK_OBJ_NOTNULL(pp, VMOD_SHARD_SHARD_PARAM_MAGIC);
 	return (default_healthy(pp->healthy));
 }
 
