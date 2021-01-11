@@ -161,7 +161,7 @@ WRK_Thread(struct pool *qp, size_t stacksize, unsigned thread_workspace)
  */
 
 static unsigned
-wrk_addstat(struct worker *wrk, const struct pool_task *tp, unsigned locked)
+wrk_addstat(const struct worker *wrk, const struct pool_task *tp, unsigned locked)
 {
 	struct pool *pp;
 
@@ -188,7 +188,7 @@ wrk_addstat(struct worker *wrk, const struct pool_task *tp, unsigned locked)
 }
 
 void
-WRK_AddStat(struct worker *wrk)
+WRK_AddStat(const struct worker *wrk)
 {
 
 	(void)wrk_addstat(wrk, wrk->task, 0);
