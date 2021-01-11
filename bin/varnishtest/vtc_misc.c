@@ -397,6 +397,10 @@ ipvx_works(const char *target)
  *        The SO_RCVTIMEO socket option is working
  * 64bit
  *        The environment is 64 bits
+ * ipv4
+ *	  127.0.0.1 work
+ * ipv6
+ *	  [::1] work
  * dns
  *        DNS lookups are working
  * topbuild
@@ -414,7 +418,6 @@ ipvx_works(const char *target)
  * ignore_unknown_macro
  *        Do not fail the test if a string of the form ${...} is not
  *        recognized as a macro.
- *
  * persistent_storage
  *        Varnish was built with the deprecated persistent storage.
  *
