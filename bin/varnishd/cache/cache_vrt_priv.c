@@ -152,7 +152,7 @@ vrt_priv_dynamic(struct ws *ws, struct vrt_privs *privs, uintptr_t vmod_id)
 		return (NULL);
 	INIT_OBJ(vp, VRT_PRIV_MAGIC);
 	vp->vmod_id = vmod_id;
-	VRBT_INSERT(vrt_privs, privs, vp);
+	AZ(VRBT_INSERT(vrt_privs, privs, vp));
 	return (vp->priv);
 }
 
