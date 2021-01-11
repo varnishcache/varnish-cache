@@ -20,6 +20,7 @@ varnish v1 -vcl+backend {
 		if (req.url == "/2") {
 			set bereq.http.connection = req.http.connection;
 		}
+		set bereq.http.xid = bereq.xid;
 	}
 } -start
 

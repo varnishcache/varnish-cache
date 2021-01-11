@@ -480,7 +480,7 @@ bereq.xid
 
 	Type: STRING
 
-	Readable from: backend
+	Readable from: vcl_pipe, backend
 
 	Unique ID of this request.
 
