@@ -151,6 +151,45 @@ dependencies:
 
 Then continue `Compiling Varnish`_
 
+Build dependencies on Alpine Linux
+----------------------------------
+
+As of Alpine 3, these steps should install the required dependencies:
+
+* Add the `Alpine Community Repository`_
+
+* Install dependencies::
+
+	apk add -q \
+	    autoconf \
+	    automake \
+	    build-base \
+	    ca-certificates \
+	    cpio \
+	    gzip \
+	    libedit-dev \
+	    libtool \
+	    libunwind-dev \
+	    linux-headers \
+	    pcre-dev \
+	    py-docutils \
+	    py3-sphinx \
+	    tar \
+	    sudo
+
+Optionally, to rebuild the svg files::
+
+    apk add -q graphviz
+
+Optionally, to pull from a repository::
+
+    apk add -q git
+
+Then continue `Compiling Varnish`_, using the ``--with-unwind``
+``configure`` option.
+
+.. _Alpine Community Repository: https://wiki.alpinelinux.org/wiki/Enable_Community_Repository
+
 Build dependencies on a SmartOS Zone
 ------------------------------------
 
