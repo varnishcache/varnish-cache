@@ -398,6 +398,7 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 
 		if (wrk_addstat(wrk, tp, 1)) {
 			wrk->stats->summs++;
+			AN(tp);
 		} else if (pp->b_stat != NULL && pp->a_stat->summs) {
 			/* Nothing to do, push pool stats into global pool */
 			tps.func = pool_stat_summ;
