@@ -365,6 +365,28 @@ dns_works(void)
 	return (0);
 }
 
+/**********************************************************************
+ * Test if IPv4/IPv6 works
+ */
+
+static int
+ipvx_works(const char *target)
+{
+	struct suckaddr *sa;
+	int fd;
+
+	sa = VSS_ResolveOne(NULL, target, "0", 0, SOCK_STREAM, 0);
+	if (sa == NULL)
+		return (0);
+	fd = VTCP_bind(sa, NULL);
+	free(sa);
+	if (fd >= 0) {
+		VTCP_close(&fd);
+		return (1);
+	}
+        return(0);
+}
+
 /* SECTION: feature feature
  *
  * Test that the required feature(s) for a test are available, and skip
@@ -439,6 +461,8 @@ cmd_feature(CMD_ARGS)
 #endif
 		}
 
+		FEATURE("ipv4", ipvx_works("127.0.0.1"));
+		FEATURE("ipv6", ipvx_works("[::1]"));
 		FEATURE("pcre_jit", VRE_has_jit);
 		FEATURE("64bit", sizeof(void*) == 8);
 		FEATURE("dns", dns_works());

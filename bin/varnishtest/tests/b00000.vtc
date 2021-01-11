@@ -1,6 +1,9 @@
 varnishtest "Does anything get through at all ?"
 
-server s1 {
+feature ipv4
+feature ipv6
+
+server s1 -listen 127.0.0.1:0 {
 	rxreq
 	txresp -body "012345\n"
 } -start
