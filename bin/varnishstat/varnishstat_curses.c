@@ -979,7 +979,7 @@ handle_points_keypress(struct vsc *vsc, enum kb_e kb)
 		rebuild = REBUILD_NEXT;
 		break;
 	case KB_RAW:
-		VSC_Arg(vsc, 'r', NULL);
+		AN(VSC_Arg(vsc, 'r', NULL));
 		raw_vsc = VSC_IsRaw(vsc);
 		rebuild = REBUILD_NEXT;
 		break;
