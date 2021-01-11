@@ -322,13 +322,19 @@ vmod_ban(VRT_CTX, VCL_STRING s)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
-	priv_task = VRT_priv_task(ctx, priv_task_id_ban);
+	r = VRT_ban_string(ctx, s);
+	priv_task = VRT_priv_task_get(ctx, priv_task_id_ban);
+
+	if (r == NULL && priv_task == NULL)
+		return (1);
+
+	if (priv_task == NULL)
+		priv_task = VRT_priv_task(ctx, priv_task_id_ban);
+
 	if (priv_task == NULL) {
 		VRT_fail(ctx, "std.ban(): no priv_task (out of workspace?)");
 		return (0);
 	}
-
-	r = VRT_ban_string(ctx, s);
 
 	/*
 	 * TRUST_ME: the ban error is const. We save it in the un-const priv
@@ -347,12 +353,9 @@ vmod_ban_error(VRT_CTX)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
-	priv_task = VRT_priv_task(ctx, priv_task_id_ban);
-	if (priv_task == NULL) {
-		VRT_fail(ctx, "std.ban_error():"
-		    " no priv_task (out of workspace?)");
-		return ("no priv_task");
-	}
+	priv_task = VRT_priv_task_get(ctx, priv_task_id_ban);
+	if (priv_task == NULL)
+		return ("");
 
 	r = priv_task->priv;
 	if (r == NULL)
