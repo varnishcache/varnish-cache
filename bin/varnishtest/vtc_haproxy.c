@@ -45,10 +45,10 @@
 #include "vpf.h"
 #include "vre.h"
 #include "vtcp.h"
-#include "vsa.h"
 #include "vtim.h"
 
 #define HAPROXY_PROGRAM_ENV_VAR	"HAPROXY_PROGRAM"
+#define HAPROXY_ARGS_ENV_VAR	"HAPROXY_ARGS"
 #define HAPROXY_OPT_WORKER	"-W"
 #define HAPROXY_OPT_MCLI	"-S"
 #define HAPROXY_OPT_DAEMON	"-D"
@@ -174,7 +174,7 @@ haproxy_cli_tcp_connect(struct vtclog *vl, const char *addr, double tmo,
     const char **errp)
 {
 	int fd;
-	char mabuf[VTCP_ADDRBUFSIZE], mpbuf[VTCP_PORTBUFSIZE];
+	char mabuf[32], mpbuf[32];
 
 	AN(addr);
 	AN(errp);
@@ -520,23 +520,16 @@ haproxy_create_mcli(struct haproxy *h)
 	int sock;
 	const char *err;
 	char buf[128], addr[128], port[128];
-	char vsabuf[vsa_suckaddr_len];
-	struct suckaddr *sua;
 
-	sock = VTCP_listen_on(default_listen_addr, NULL, 100, &err);
+	sock = VTCP_listen_on("127.0.0.1:0", NULL, 100, &err);
 	if (err != NULL)
 		vtc_fatal(h->vl,
 			  "Create listen socket failed: %s", err);
 	assert(sock > 0);
-	sua = VSA_getsockname(sock, vsabuf, sizeof vsabuf);
-	AN(sua);
 
-	VTCP_name(sua, addr, sizeof addr, port, sizeof port);
+	VTCP_myname(sock, addr, sizeof addr, port, sizeof port);
 	bprintf(buf, "%s_mcli", h->name);
-	if (VSA_Get_Proto(sua) == AF_INET)
-		macro_def(h->vl, buf, "sock", "%s:%s", addr, port);
-	else
-		macro_def(h->vl, buf, "sock", "[%s]:%s", addr, port);
+	macro_def(h->vl, buf, "sock", "%s %s", addr, port);
 	macro_def(h->vl, buf, "addr", "%s", addr);
 	macro_def(h->vl, buf, "port", "%s", port);
 
@@ -566,14 +559,18 @@ haproxy_new(const char *name)
 	int closed_sock;
 	char addr[128], port[128];
 	const char *err;
-	char vsabuf[vsa_suckaddr_len];
-	struct suckaddr *sua;
+	const char *env_args;
 
 	ALLOC_OBJ(h, HAPROXY_MAGIC);
 	AN(h);
 	REPLACE(h->name, name);
 
 	h->args = VSB_new_auto();
+	env_args = getenv(HAPROXY_ARGS_ENV_VAR);
+	if (env_args) {
+		VSB_cat(h->args, env_args);
+		VSB_cat(h->args, " ");
+	}
 
 	h->vl = vtc_logopen("%s", name);
 	vtc_log_set_cmd(h->vl, haproxy_cli_cmds);
@@ -607,13 +604,8 @@ haproxy_new(const char *name)
 		vtc_fatal(h->vl,
 			"Create listen socket failed: %s", err);
 	assert(closed_sock > 0);
-	sua = VSA_getsockname(closed_sock, vsabuf, sizeof vsabuf);
-	AN(sua);
-	VTCP_name(sua, addr, sizeof addr, port, sizeof port);
-	if (VSA_Get_Proto(sua) == AF_INET)
-		macro_def(h->vl, h->closed_sock, "sock", "%s:%s", addr, port);
-	else
-		macro_def(h->vl, h->closed_sock, "sock", "[%s]:%s", addr, port);
+	VTCP_myname(closed_sock, addr, sizeof addr, port, sizeof port);
+	macro_def(h->vl, h->closed_sock, "sock", "%s %s", addr, port);
 	macro_def(h->vl, h->closed_sock, "addr", "%s", addr);
 	macro_def(h->vl, h->closed_sock, "port", "%s", port);
 	VTCP_close(&closed_sock);
@@ -851,8 +843,6 @@ haproxy_build_backends(struct haproxy *h, const char *vsb_data)
 		int sock;
 		char buf[128], addr[128], port[128];
 		const char *err;
-		char vsabuf[vsa_suckaddr_len];
-		struct suckaddr *sua;
 
 		p = strstr(p, HAPROXY_BE_FD_STR);
 		if (!p)
@@ -870,15 +860,10 @@ haproxy_build_backends(struct haproxy *h, const char *vsb_data)
 			vtc_fatal(h->vl,
 			    "Create listen socket failed: %s", err);
 		assert(sock > 0);
-		sua = VSA_getsockname(sock, vsabuf, sizeof vsabuf);
-		AN(sua);
 
-		VTCP_name(sua, addr, sizeof addr, port, sizeof port);
+		VTCP_myname(sock, addr, sizeof addr, port, sizeof port);
 		bprintf(buf, "%s_%s", h->name, p);
-		if (VSA_Get_Proto(sua) == AF_INET)
-			macro_def(h->vl, buf, "sock", "%s:%s", addr, port);
-		else
-			macro_def(h->vl, buf, "sock", "[%s]:%s", addr, port);
+		macro_def(h->vl, buf, "sock", "%s %s", addr, port);
 		macro_def(h->vl, buf, "addr", "%s", addr);
 		macro_def(h->vl, buf, "port", "%s", port);
 

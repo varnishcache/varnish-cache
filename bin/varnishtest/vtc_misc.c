@@ -384,7 +384,7 @@ ipvx_works(const char *target)
 		VTCP_close(&fd);
 		return (1);
 	}
-        return(0);
+	return(0);
 }
 
 /* SECTION: feature feature
