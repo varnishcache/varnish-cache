@@ -116,7 +116,7 @@ vrt_priv_dyncmp(const struct vrt_priv *vp1, const struct vrt_priv *vp2)
 VRBT_GENERATE_STATIC(vrt_privs, vrt_priv, entry, vrt_priv_dyncmp)
 
 static struct vmod_priv *
-vrt_priv_dynamic_get(struct vrt_privs *privs, uintptr_t vmod_id)
+vrt_priv_dynamic_get(const struct vrt_privs *privs, uintptr_t vmod_id)
 {
 	struct vrt_priv *vp;
 
