@@ -134,26 +134,24 @@ vrt_priv_dynamic_get(struct vrt_privs *privs, uintptr_t vmod_id)
 static struct vmod_priv *
 vrt_priv_dynamic(struct ws *ws, struct vrt_privs *privs, uintptr_t vmod_id)
 {
-	struct vrt_priv *vp;
-	static struct vmod_priv *r;
+	struct vrt_priv *vp, *ovp;
 
 	AN(vmod_id);
 
-	/*
-	 * TODO: for insert == 1, we can avoid the VRBT_FIND:
-	 * call only VRT_INSERT and reset the ws if the element existed
-	 */
-	r = vrt_priv_dynamic_get(privs, vmod_id);
-	if (r)
-		return (r);
+	/* even if ws is full, return any existing priv */
+	if (WS_ReserveSize(ws, sizeof *vp) == 0)
+		return (vrt_priv_dynamic_get(privs, vmod_id));
 
-	vp = WS_Alloc(ws, sizeof *vp);
-	if (vp == NULL)
-		return (NULL);
+	vp = WS_Reservation(ws);
 	INIT_OBJ(vp, VRT_PRIV_MAGIC);
 	vp->vmod_id = vmod_id;
-	AZ(VRBT_INSERT(vrt_privs, privs, vp));
-	return (vp->priv);
+	ovp = VRBT_INSERT(vrt_privs, privs, vp);
+	if (ovp == NULL) {
+		WS_Release(ws, sizeof *vp);
+		return (vp->priv);
+	}
+	WS_Release(ws, 0);
+	return (ovp->priv);
 }
 
 static struct vrt_privs *
