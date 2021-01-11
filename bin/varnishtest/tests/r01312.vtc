@@ -1,7 +1,7 @@
 varnishtest "acl miscompile"
 
-# XXX this test only works if we know a network prefix of localhost
-feature cmd {test "${localhost}" = "127.0.0.1"}
+# this test only works if we know a network prefix of localhost
+feature ipv4
 
 server s1 {
 	rxreq
