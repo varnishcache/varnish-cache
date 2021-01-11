@@ -568,7 +568,7 @@ convenient yet unofficial interface which was not originally intended
 for this purpose and will likely be replaced with a more suitable
 interface.
 
-
+.. XXX add VRT_priv_task_get() and make it official?
 
 .. _ref-vmod-event-functions:
 
