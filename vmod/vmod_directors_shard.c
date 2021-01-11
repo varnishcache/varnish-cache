@@ -869,7 +869,7 @@ shard_param_stack(struct vmod_directors_shard_param *p,
 	return (p);
 }
 
-const static struct vmod_directors_shard_param *
+static const struct vmod_directors_shard_param *
 shard_param_task_r(VRT_CTX, const void *id,
    const struct vmod_directors_shard_param *pa)
 {
