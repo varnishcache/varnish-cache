@@ -172,7 +172,7 @@ shard_param_blob(VCL_BLOB blob);
 static const struct vmod_directors_shard_param *
 vmod_shard_param_read(VRT_CTX, const void *id,
     const struct vmod_directors_shard_param *p,
-    struct vmod_directors_shard_param *pstk, const char *who);
+    struct vmod_directors_shard_param *pstk);
 
 // XXX #3329 #3330 revisit - for now, treat pipe like backend
 #define SHARD_VCL_TASK_REQ (VCL_MET_TASK_C & ~VCL_MET_PIPE)
@@ -698,8 +698,7 @@ vmod_shard_resolve(VRT_CTX, VCL_BACKEND dir)
 	CHECK_OBJ_NOTNULL(dir, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(shardd, dir->priv, SHARDDIR_MAGIC);
 
-	pp = vmod_shard_param_read(ctx, shardd, shardd->param,
-	    pstk, "shard_resolve");
+	pp = vmod_shard_param_read(ctx, shardd, shardd->param, pstk);
 	CHECK_OBJ_NOTNULL(pp, VMOD_SHARD_SHARD_PARAM_MAGIC);
 
 	return (sharddir_pick_be(ctx, shardd,
@@ -993,13 +992,12 @@ vmod_shard_param_clear(VRT_CTX,
 static const struct vmod_directors_shard_param *
 vmod_shard_param_read(VRT_CTX, const void *id,
     const struct vmod_directors_shard_param *p,
-    struct vmod_directors_shard_param *pstk, const char *who)
+    struct vmod_directors_shard_param *pstk)
 {
 	struct vmod_directors_shard_param *pp;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(p, VMOD_SHARD_SHARD_PARAM_MAGIC);
-	(void) who; // XXX
 
 	if (ctx->method == 0 || (ctx->method & SHARD_VCL_TASK_BEREQ))
 		p = shard_param_task_r(ctx, id, p);
@@ -1017,7 +1015,7 @@ vmod_shard_param_get_by(VRT_CTX,
 	struct vmod_directors_shard_param pstk;
 	const struct vmod_directors_shard_param *pp;
 
-	pp = vmod_shard_param_read(ctx, p, p, &pstk, "shard_param.get_by()");
+	pp = vmod_shard_param_read(ctx, p, p, &pstk);
 	CHECK_OBJ_NOTNULL(pp, VMOD_SHARD_SHARD_PARAM_MAGIC);
 	return (default_by(pp->by));
 }
@@ -1029,7 +1027,7 @@ vmod_shard_param_get_key(VRT_CTX,
 	struct vmod_directors_shard_param pstk;
 	const struct vmod_directors_shard_param *pp;
 
-	pp = vmod_shard_param_read(ctx, p, p, &pstk, "shard_param.get_key()");
+	pp = vmod_shard_param_read(ctx, p, p, &pstk);
 	CHECK_OBJ_NOTNULL(pp, VMOD_SHARD_SHARD_PARAM_MAGIC);
 	return ((VCL_INT)shard_get_key(ctx, pp));
 }
@@ -1040,7 +1038,7 @@ vmod_shard_param_get_alt(VRT_CTX,
 	struct vmod_directors_shard_param pstk;
 	const struct vmod_directors_shard_param *pp;
 
-	pp = vmod_shard_param_read(ctx, p, p, &pstk, "shard_param.get_alt()");
+	pp = vmod_shard_param_read(ctx, p, p, &pstk);
 	CHECK_OBJ_NOTNULL(pp, VMOD_SHARD_SHARD_PARAM_MAGIC);
 	return (pp->alt);
 }
@@ -1052,8 +1050,7 @@ vmod_shard_param_get_warmup(VRT_CTX,
 	struct vmod_directors_shard_param pstk;
 	const struct vmod_directors_shard_param *pp;
 
-	pp = vmod_shard_param_read(ctx, p, p, &pstk,
-	    "shard_param.get_warmup()");
+	pp = vmod_shard_param_read(ctx, p, p, &pstk);
 	CHECK_OBJ_NOTNULL(pp, VMOD_SHARD_SHARD_PARAM_MAGIC);
 	return (pp->warmup);
 }
@@ -1065,8 +1062,7 @@ vmod_shard_param_get_rampup(VRT_CTX,
 	struct vmod_directors_shard_param pstk;
 	const struct vmod_directors_shard_param *pp;
 
-	pp = vmod_shard_param_read(ctx, p, p, &pstk,
-	    "shard_param.get_rampup()");
+	pp = vmod_shard_param_read(ctx, p, p, &pstk);
 	CHECK_OBJ_NOTNULL(pp, VMOD_SHARD_SHARD_PARAM_MAGIC);
 	return (pp->rampup);
 }
@@ -1078,8 +1074,7 @@ vmod_shard_param_get_healthy(VRT_CTX,
 	struct vmod_directors_shard_param pstk;
 	const struct vmod_directors_shard_param *pp;
 
-	pp = vmod_shard_param_read(ctx, p, p, &pstk,
-	    "shard_param.get_healthy()");
+	pp = vmod_shard_param_read(ctx, p, p, &pstk);
 	CHECK_OBJ_NOTNULL(pp, VMOD_SHARD_SHARD_PARAM_MAGIC);
 	return (default_healthy(pp->healthy));
 }
