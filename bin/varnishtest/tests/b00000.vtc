@@ -5,7 +5,19 @@ server s1 {
 	txresp -body "012345\n"
 } -start
 
+server s2 -listen [::1]:0 {
+	rxreq
+	txresp -body "012345\n"
+} -start
+
 varnish v1 -vcl+backend {
+	sub vcl_recv {
+		if (req.url == "/1") {
+			set req.backend_hint = s1;
+		} else {
+			set req.backend_hint = s2;
+		}
+	}
 	sub vcl_backend_response {
 		set beresp.do_stream = false;
 	}
@@ -14,7 +26,7 @@ varnish v1 -vcl+backend {
 varnish v1 -cliok "param.set debug +workspace"
 varnish v1 -cliok "param.set debug +witness"
 
-varnish v1 -vsc *
+#varnish v1 -vsc *
 
 varnish v1 -expect MAIN.n_object == 0
 varnish v1 -expect MAIN.sess_conn == 0
@@ -22,7 +34,7 @@ varnish v1 -expect MAIN.client_req == 0
 varnish v1 -expect MAIN.cache_miss == 0
 
 client c1 {
-	txreq -url "/"
+	txreq -url "/1"
 	rxresp
 	expect resp.status == 200
 } -run
@@ -34,3 +46,18 @@ varnish v1 -expect cache_miss == 1
 varnish v1 -expect s_sess == 1
 varnish v1 -expect s_resp_bodybytes == 7
 varnish v1 -expect s_resp_hdrbytes == 178
+
+client c1 {
+	txreq -url "/2"
+	rxresp
+	expect resp.status == 200
+} -run
+
+# varnish v1 -vsc *
+varnish v1 -expect n_object == 2
+varnish v1 -expect sess_conn == 2
+varnish v1 -expect client_req == 2
+varnish v1 -expect cache_miss == 2
+varnish v1 -expect s_sess == 2
+varnish v1 -expect s_resp_bodybytes == 14
+varnish v1 -expect s_resp_hdrbytes == 356
