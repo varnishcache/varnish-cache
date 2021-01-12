@@ -268,32 +268,36 @@ static int
 logexp_match(struct logexp *le, const char *data, int vxid, int tag,
     int type, int len)
 {
+	struct logexp_test *test;
 	const char *legend;
 	int ok = 1, skip = 0;
 
-	if (le->test->vxid == LE_LAST) {
+	test = le->test;
+	AN(test);
+
+	if (test->vxid == LE_LAST) {
 		if (le->vxid_last != vxid)
 			ok = 0;
-	} else if (le->test->vxid >= 0) {
-		if (le->test->vxid != vxid)
+	} else if (test->vxid >= 0) {
+		if (test->vxid != vxid)
 			ok = 0;
 	}
-	if (le->test->tag == LE_LAST) {
+	if (test->tag == LE_LAST) {
 		if (le->tag_last != tag)
 			ok = 0;
-	} else if (le->test->tag >= 0) {
-		if (le->test->tag != tag)
+	} else if (test->tag >= 0) {
+		if (test->tag != tag)
 			ok = 0;
 	}
-	if (le->test->vre &&
-	    le->test->tag >= 0 &&
-	    le->test->tag == tag &&
-	    VRE_ERROR_NOMATCH == VRE_exec(le->test->vre, data,
+	if (test->vre &&
+	    test->tag >= 0 &&
+	    test->tag == tag &&
+	    VRE_ERROR_NOMATCH == VRE_exec(test->vre, data,
 		len, 0, 0, NULL, 0, NULL))
 		ok = 0;
 
-	if (!ok && (le->test->skip_max == LE_ANY ||
-		    le->test->skip_max > le->skip_cnt))
+	if (!ok && (test->skip_max == LE_ANY ||
+		    test->skip_max > le->skip_cnt))
 		skip = 1;
 
 	if (ok)
