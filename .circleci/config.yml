@@ -204,11 +204,9 @@ jobs:
                     sudo
             elif [ << parameters.dist >> = archlinux ]; then
                 pacman -Sy --noconfirm \
-                    autoconf \
-                    automake \
+                    base-devel \
                     ca-certificates \
                     cpio \
-                    gzip \
                     libedit \
                     libtool \
                     libunwind \
@@ -216,8 +214,7 @@ jobs:
                     pcre \
                     python-docutils \
                     python-sphinx \
-                    tar \
-                    sudo
+                    tar
             fi
       - attach_workspace:
           at: /workspace
