@@ -140,6 +140,14 @@ logexpect l0 -v v1 -g raw -d 1 -m -q "vxid == 0 and not ExpKill" {
 	expect ? =    Debug		{^priv_task_free}
 	expect ? =    Debug		{^obj_priv_task_fini.*"d1001"}
 
+	# 1003, but need to include in our alt to tolerate race
+	expect ? =    Debug		{^test_priv_task.*new.$}
+	expect ? =    Debug		{^test_priv_task.*exists.$}
+	expect ? =    Debug		{^test_priv_task.*update.$}
+	expect ? =    Debug		{^test_priv_task.*new.$}
+	expect ? =    Debug		{^test_priv_task.*update.$}
+	expect ? =    Debug		{^test_priv_task.*exists.$}
+
 	# ...
 	# 1006 pipe
 	expect * =    Debug		{^obj_priv_task_fini.*"p1006"}
