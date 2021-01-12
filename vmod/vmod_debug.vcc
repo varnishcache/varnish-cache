@@ -112,12 +112,9 @@ Test method for VCL private pointers
 Objects share the ``PRIV_*`` state with other objects and methods from
 the same vmod - IOW the ``PRIV_*`` state is per vmod, not per object.
 
-$Method STRING .test_priv_task(PRIV_TASK, STRING s="")
+$Method STRING .test_priv_task(STRING s="")
 
-Test method for TASK private pointers
-
-Objects share the ``PRIV_*`` state with other objects and methods from
-the same vmod - IOW the ``PRIV_*`` state is per vmod, not per object.
+Test per-object priv_task via VRT_priv_task() / VRT_priv_get()
 
 $Method STRING .test_priv_top(PRIV_TOP, STRING)
 

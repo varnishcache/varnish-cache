@@ -37,12 +37,16 @@
 
 #include "vcc_debug_if.h"
 
+// vmod_debug.c
+extern void mylog(struct vsl_log *vsl, enum VSL_tag_e tag,  const char *fmt, ...);
+
 struct xyzzy_debug_obj {
 	unsigned		magic;
 #define VMOD_DEBUG_OBJ_MAGIC	0xccbd9b77
 	int			foobar;
 	const char		*string;
 	const char		*number;
+	VCL_STRING		vcl_name;
 };
 
 VCL_VOID
@@ -52,7 +56,6 @@ xyzzy_obj__init(VRT_CTX, struct xyzzy_debug_obj **op,
 	struct xyzzy_debug_obj *o;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	(void)vcl_name;
 	AN(op);
 	AZ(*op);
 	ALLOC_OBJ(o, VMOD_DEBUG_OBJ_MAGIC);
@@ -61,6 +64,7 @@ xyzzy_obj__init(VRT_CTX, struct xyzzy_debug_obj **op,
 	o->foobar = 42;
 	o->string = s;
 	o->number = e;
+	o->vcl_name = vcl_name;
 	AN(*op);
 }
 
@@ -147,12 +151,55 @@ xyzzy_obj_test_priv_vcl(VRT_CTX,
 	xyzzy_test_priv_vcl(ctx, priv);
 }
 
-VCL_STRING v_matchproto_()
-xyzzy_obj_test_priv_task(VRT_CTX,
-    struct xyzzy_debug_obj *o, struct vmod_priv *priv, VCL_STRING s)
+static void
+obj_priv_task_fini(void *ptr)
 {
-	(void)o;
-	return (xyzzy_test_priv_task(ctx, priv, s));
+	AN(ptr);
+	VSL(SLT_Debug, 0, "obj_priv_task_fini(%p = \"%s\")", ptr, ptr);
+}
+
+static const struct vmod_priv_methods xyzzy_obj_test_priv_task_methods[1] = {{
+		.magic = VMOD_PRIV_METHODS_MAGIC,
+		.type = "debug_onk_test_priv_task",
+		.fini = obj_priv_task_fini
+}};
+
+VCL_STRING v_matchproto_()
+xyzzy_obj_test_priv_task(VRT_CTX, struct xyzzy_debug_obj *o, VCL_STRING s)
+{
+	struct vmod_priv *p;
+
+	if (s == NULL || *s == '\0') {
+		p = VRT_priv_task_get(ctx, o);
+		if (p == NULL) {
+			mylog(ctx->vsl, SLT_Debug, "%s.priv_task() = NULL",
+			    o->vcl_name);
+			return ("");
+		}
+		mylog(ctx->vsl, SLT_Debug,
+		    "%s.priv_task() = %p .priv = %p (\"%s\")",
+		    o->vcl_name, p, p->priv, p->priv);
+		return (p->priv);
+	}
+
+	p = VRT_priv_task(ctx, o);
+
+	if (p == NULL) {
+		mylog(ctx->vsl, SLT_Debug, "%s.priv_task() = NULL [err]",
+		    o->vcl_name);
+		VRT_fail(ctx, "no priv task - out of ws?");
+		return ("");
+	}
+
+	mylog(ctx->vsl, SLT_Debug,
+	    "%s.priv_task() = %p .priv = %p (\"%s\") [%s]",
+	    o->vcl_name, p, s, s, p->priv ? "update" : "new");
+
+	/* minimum scope of s and priv is the task - no need to copy */
+	p->priv = TRUST_ME(s);
+	p->methods = xyzzy_obj_test_priv_task_methods;
+
+	return (p->priv);
 }
 
 VCL_STRING v_matchproto_()

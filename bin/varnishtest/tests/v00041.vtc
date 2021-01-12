@@ -20,35 +20,51 @@ varnish v1 -arg "-p debug=+vclrel -p workspace_client=1m" -vcl+backend {
 	import std;
 
 	sub vcl_init {
-		new objx = debug.obj();
+		new objc = debug.obj();
+		new objb = debug.obj();
+	}
+
+	sub log_obj {
+		std.log("objc "  + objc.test_priv_task());
+		std.log("objb "  + objb.test_priv_task());
 	}
 
 	sub vcl_init {
 		debug.test_priv_task("something");
 		debug.test_priv_task("to remember");
 		std.log("func " + debug.test_priv_task());
-		std.log("obj "  + objx.test_priv_task());
+		objc.test_priv_task("initX");
+		objb.test_priv_task("initY");
+		call log_obj;
 	}
 
 	sub vcl_recv {
 		if (req.url == "/perf") {
 			return (synth(200));
 		}
-		if (req.url == "/pipe") {
-			return (pipe);
-		}
 		debug.test_priv_task(req.url);
 		set req.http.x0 = debug.test_priv_task();
 		debug.test_priv_task("bazz");
+		call log_obj;
+		objc.test_priv_task("c" + req.xid);
+		if (req.url == "/pipe") {
+			return (pipe);
+		}
 	}
 
 	sub vcl_pipe {
+		call log_obj;
+		objc.test_priv_task("p" + req.xid);
+
 		debug.test_priv_task(req.url);
 		set req.http.x0 = debug.test_priv_task();
 		debug.test_priv_task("bazz");
 	}
 
 	sub vcl_synth {
+		call log_obj;
+		objc.test_priv_task("s" + req.xid);
+
 		std.log("discard 1000 " + debug.priv_perf(1000));
 		std.log("perf    1 " + debug.priv_perf(1));
 		std.log("perf   10 " + debug.priv_perf(10));
@@ -58,66 +74,156 @@ varnish v1 -arg "-p debug=+vclrel -p workspace_client=1m" -vcl+backend {
 	}
 
 	sub vcl_deliver {
+		call log_obj;
+		objc.test_priv_task("d" + req.xid);
+
 		set resp.http.x0 = req.http.x0;
 		set resp.http.x1 = debug.test_priv_task();
-		set resp.http.o1 = objx.test_priv_task();
+		set resp.http.objc = objc.test_priv_task();
 	}
 
 	sub vcl_backend_fetch {
-		objx.test_priv_task("b");
-		std.log("foo");
+		call log_obj;
+		objb.test_priv_task("f" + bereq.xid);
+
+		debug.test_priv_task("b");
 		set bereq.http.bx0 = debug.test_priv_task(bereq.url);
-		std.log("bar");
 	}
 
 	sub vcl_backend_response {
+		call log_obj;
+		objb.test_priv_task("r" + bereq.xid);
+
 		set beresp.http.bx0 = bereq.http.bx0;
 		set beresp.http.bx1 = debug.test_priv_task("");
-		set beresp.http.bo1 = objx.test_priv_task("");
+		set beresp.http.objb = objb.test_priv_task("");
 	}
 
 	sub vcl_fini {
 		debug.test_priv_task("cleaning");
 		debug.test_priv_task("up");
 		std.log("func " + debug.test_priv_task());
-		std.log("obj "  + objx.test_priv_task());
+		std.log("obj "  + objc.test_priv_task());
 	}
 
 } -start
 
-logexpect l1 -v v1 -g raw -d 1 {
+logexpect l0 -v v1 -g raw -d 1 -q "vxid == 0 and not ExpKill" {
 	expect 0 0    CLI		{^Rd vcl.load}
 	expect 0 =    Debug		{^test_priv_task.*new.$}
 	expect 0 =    Debug		{^test_priv_task.*update.$}
 	expect 0 =    Debug		{^test_priv_task.*exists.$}
 	expect 0 =    VCL_Log		{^func something to remember}
+	expect 0 =    Debug		{^objc.priv_task.. = .*"initX". .new.}
+	expect 0 =    Debug		{^objb.priv_task.. = .*"initY". .new.}
+	expect 0 =    Debug		{^objc.priv_task.. = .*"initX"}
+	expect 0 =    VCL_Log		{^objc initX}
+	expect 0 =    Debug		{^objb.priv_task.. = .*"initY"}
+	expect 0 =    VCL_Log		{^objb initY}
+	expect 0 =    Debug		{^priv_task_free}
+	expect 0 =    Debug		{^obj_priv_task_fini.*"initX"}
+	expect 0 =    Debug		{^obj_priv_task_fini.*"initY"}
+	expect 0 =    Debug		{^vcl1: VCL_EVENT_WARM}
+
+	# 1001/1002
+	expect * =    Debug		{^test_priv_task.*new.$}
 	expect 0 =    Debug		{^test_priv_task.*exists.$}
-	expect 0 =    VCL_Log		{^obj something to remember}
-
-	expect * 1002 Begin		fetch$
-	expect * =    VCL_call		^BACKEND_FETCH
-	expect 0 =    VCL_Log		^foo
-	expect 0 =    BereqHeader	{^bx0: b /foobar}
-	expect 0 =    VCL_Log		^bar
-
-	expect * 1004 Begin		fetch$
-	expect * =    VCL_call		^BACKEND_FETCH
-	expect 0 =    VCL_Log		^foo
-	expect 0 =    BereqHeader	{^bx0: b /snafu}
-	expect 0 =    VCL_Log		^bar
-
-	# this is not the order of events because std.log logs
-	# into the CLI ctx->vsl, while vmod_debug VSL() goes straight
-	# to the log.
-	expect * 0    Debug		{^vcl1: VCL_EVENT_COLD}
-	expect * 0    CLI		{^Rd vcl.discard}
+	expect 0 =    Debug		{^test_priv_task.*update.$}
 	expect 0 =    Debug		{^test_priv_task.*new.$}
 	expect 0 =    Debug		{^test_priv_task.*update.$}
 	expect 0 =    Debug		{^test_priv_task.*exists.$}
+	expect 0 =    Debug		{^priv_task_free}
+	expect 0 =    Debug		{^obj_priv_task_fini.*"r1002"}
+	expect 0 =    Debug		{^test_priv_task.*exists}
+	expect 0 =    Debug		{^priv_task_free}
+	expect 0 =    Debug		{^obj_priv_task_fini.*"d1001"}
+
+	# ...
+	# 1006 pipe
+	expect * =    Debug		{^obj_priv_task_fini.*"p1006"}
+
+	# vcl_fini
+	expect * =    Debug		{^vcl1: VCL_EVENT_COLD}
+	expect 0 =    CLI		{^Wr 200 0 }
+	expect 0 =    CLI		{^Rd vcl.discard vcl1}
+	expect 0 =    Debug		{^test_priv_task.*new.$}
+	expect 0 =    Debug		{^test_priv_task.*update.$}
 	expect 0 =    Debug		{^test_priv_task.*exists.$}
 	expect 0 =    Debug		{^priv_task_free}
-	expect * =    VCL_Log		{^func cleaning up}
-	expect 0 =    VCL_Log		{^obj cleaning up}
+	expect 0 =    VCL_Log		{^func cleaning up}
+	expect 0 =    Debug		{^objc.priv_task.. = NULL}
+	expect 0 =    VCL_Log		{^obj }
+	expect 0 =    CLI		{^Wr 200 0 }
+} -start
+
+logexpect l1001 -v v1 -g vxid -q "vxid == 1001" {
+	expect * 1001 VCL_call		{^RECV}
+	expect 0 =    ReqHeader		{^x0: /foobar}
+	expect 0 =    Debug		{^objc.priv_task.. = NULL}
+	expect 0 =    VCL_Log		{^objc }
+	expect 0 =    Debug		{^objb.priv_task.. = NULL}
+	expect 0 =    VCL_Log		{^objb }
+	expect 0 =    Debug		{^objc.priv_task.. =.*"c1001". .new.}
+
+	expect * =    VCL_call		{^DELIVER}
+	expect 0 =    Debug		{^objc.priv_task.. =.*"c1001".}
+	expect 0 =    VCL_Log		{^objc c1001}
+	expect 0 =    Debug		{^objb.priv_task.. = NULL}
+	expect 0 =    VCL_Log		{^objb }
+	expect 0 =    Debug		{^objc.priv_task.. =.*"d1001". .update.}
+	expect 0 =    RespHeader	{^x0: /foobar}
+	expect 0 =    RespHeader	{^x1: /foobar bazz}
+	expect 0 =    Debug		{^objc.priv_task.. =.*"d1001".}
+	expect 0 =    RespHeader	{^objc: d1001}
+	expect 0 =    VCL_return	{^deliver}
+} -start
+
+logexpect l1002 -v v1 -g vxid -q "vxid == 1002" {
+	expect * 1002 VCL_call		{^BACKEND_FETCH}
+	expect 0 =    Debug		{^objc.priv_task.. = NULL}
+	expect 0 =    VCL_Log		{^objc }
+	expect 0 =    Debug		{^objb.priv_task.. = NULL}
+	expect 0 =    VCL_Log		{^objb }
+	expect 0 =    Debug		{^objb.priv_task.. =.*"f1002". .new.}
+	expect 0 =    BereqHeader	{^bx0: b /foobar}
+	expect 0 =    VCL_return	{^fetch}
+
+	expect * =    VCL_call		{^BACKEND_RESPONSE}
+	expect 0 =    Debug		{^objc.priv_task.. = NULL}
+	expect 0 =    VCL_Log		{^objc }
+	expect 0 =    Debug		{^objb.priv_task.. =.*"f1002".}
+	expect 0 =    VCL_Log		{^objb f1002}
+	expect 0 =    Debug		{^objb.priv_task.. =.*"r1002". .update.}
+	expect 0 =    BerespHeader	{^bx0: b /foobar}
+	expect 0 =    BerespHeader	{^bx1: b /foobar}
+	expect 0 =    Debug		{^objb.priv_task.. =.*"r1002".}
+	expect 0 =    BerespHeader	{^objb: r1002}
+	expect 0 =    VCL_return	{^deliver}
+} -start
+
+logexpect l1006 -v v1 -g vxid -q "vxid == 1006" {
+	expect * 1006 VCL_call		{^RECV}
+	expect 0 =    ReqHeader		{^x0: /pipe}
+	expect 0 =    Debug		{^objc.priv_task.. = NULL}
+	expect 0 =    VCL_Log		{^objc }
+	expect 0 =    Debug		{^objb.priv_task.. = NULL}
+	expect 0 =    VCL_Log		{^objb }
+	expect 0 =    Debug		{^objc.priv_task.. =.*"c1006". .new.}
+	expect 0 =    VCL_return	{^pipe}
+
+	expect 0 =    VCL_call		{^HASH}
+	expect 0 =    VCL_return	{^lookup}
+
+	expect 0 =    Link		{^bereq 1007 pipe}
+	expect 0 =    VCL_call		{^PIPE}
+	expect 0 =    Debug		{^objc.priv_task.. =.*"c1006".}
+	expect 0 =    VCL_Log		{^objc c1006}
+	expect 0 =    Debug		{^objb.priv_task.. = NULL}
+	expect 0 =    VCL_Log		{^objb }
+	expect 0 =    Debug		{^objc.priv_task.. =.*"p1006". .update.}
+	expect 0 =    ReqUnset		{^x0: /pipe}
+	expect 0 =    ReqHeader		{^x0: /pipe bazz /pipe}
+	expect 0 =    VCL_return	{^pipe}
 } -start
 
 client c1 {
@@ -125,19 +231,19 @@ client c1 {
 	rxresp
 	expect resp.http.x0 == /foobar
 	expect resp.http.x1 == "/foobar bazz"
-	expect resp.http.o1 == "/foobar bazz"
+	expect resp.http.objc == "d1001"
 	expect resp.http.bx0 == "b /foobar"
 	expect resp.http.bx1 == "b /foobar"
-	expect resp.http.bo1 == "b /foobar"
+	expect resp.http.objb == "r1002"
 
 	txreq -url /snafu
 	rxresp
 	expect resp.http.x0 == /snafu
 	expect resp.http.x1 == "/snafu bazz"
-	expect resp.http.o1 == "/snafu bazz"
+	expect resp.http.objc == "d1003"
 	expect resp.http.bx0 == "b /snafu"
 	expect resp.http.bx1 == "b /snafu"
-	expect resp.http.bo1 == "b /snafu"
+	expect resp.http.objb == "r1004"
 
 	txreq -url /perf
 	rxresp
@@ -161,4 +267,7 @@ client c1 {
 
 varnish v1 -cliok "vcl.list"
 
-logexpect l1 -wait
+logexpect l0 -wait
+logexpect l1001 -wait
+logexpect l1002 -wait
+logexpect l1006 -wait

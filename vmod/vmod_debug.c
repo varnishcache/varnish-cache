@@ -64,6 +64,7 @@ static struct VSC_debug *vsc = NULL;
 static int loads;
 static const int store_ip_token;
 static const int fail_rollback_token;
+extern void mylog(struct vsl_log *vsl, enum VSL_tag_e tag,  const char *fmt, ...);
 
 /**********************************************************************/
 
@@ -819,8 +820,7 @@ xyzzy_sethdr(VRT_CTX, VCL_HEADER hs, VCL_STRANDS s)
 	}
 }
 
-// coverage
-static void
+void
 mylog(struct vsl_log *vsl, enum VSL_tag_e tag,  const char *fmt, ...)
 {
 	va_list ap;
