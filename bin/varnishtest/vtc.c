@@ -139,9 +139,12 @@ extmacro_def(const char *name, const char *fmt, ...)
 
 /**********************************************************************
  * Below this point is run inside the testing child-process.
+ *
+ * XXX: This is no longer the case for macro_get() that is currently
+ * used in the main process.
  */
 
-static pthread_mutex_t		macro_mtx;
+static pthread_mutex_t macro_mtx = PTHREAD_MUTEX_INITIALIZER;
 
 static void
 init_macro(void)
@@ -151,8 +154,6 @@ init_macro(void)
 	/* Dump the extmacros for completeness */
 	VTAILQ_FOREACH(m, &macro_list, list)
 		vtc_log(vltop, 4, "extmacro def %s=%s", m->name, m->val);
-
-	AZ(pthread_mutex_init(&macro_mtx, NULL));
 }
 
 void
