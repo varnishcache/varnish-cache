@@ -108,7 +108,7 @@ varnish v1 -arg "-p debug=+vclrel -p workspace_client=1m" -vcl+backend {
 
 } -start
 
-logexpect l0 -v v1 -g raw -d 1 -q "vxid == 0 and not ExpKill" {
+logexpect l0 -v v1 -g raw -d 1 -m -q "vxid == 0 and not ExpKill" {
 	expect 0 0    CLI		{^Rd vcl.load}
 	expect 0 =    Debug		{^test_priv_task.*new.$}
 	expect 0 =    Debug		{^test_priv_task.*update.$}
@@ -120,9 +120,9 @@ logexpect l0 -v v1 -g raw -d 1 -q "vxid == 0 and not ExpKill" {
 	expect 0 =    VCL_Log		{^objc initX}
 	expect 0 =    Debug		{^objb.priv_task.. = .*"initY"}
 	expect 0 =    VCL_Log		{^objb initY}
-	expect 0 =    Debug		{^priv_task_free}
-	expect 0 =    Debug		{^obj_priv_task_fini.*"initX"}
-	expect 0 =    Debug		{^obj_priv_task_fini.*"initY"}
+	expect ? =    Debug		{^priv_task_free}
+	expect ? =    Debug		{^obj_priv_task_fini.*"initX"}
+	expect ? =    Debug		{^obj_priv_task_fini.*"initY"}
 	expect 0 =    Debug		{^vcl1: VCL_EVENT_WARM}
 
 	# 1001/1002
@@ -132,11 +132,13 @@ logexpect l0 -v v1 -g raw -d 1 -q "vxid == 0 and not ExpKill" {
 	expect 0 =    Debug		{^test_priv_task.*new.$}
 	expect 0 =    Debug		{^test_priv_task.*update.$}
 	expect 0 =    Debug		{^test_priv_task.*exists.$}
-	expect 0 =    Debug		{^priv_task_free}
-	expect 0 =    Debug		{^obj_priv_task_fini.*"r1002"}
-	expect 0 =    Debug		{^test_priv_task.*exists}
-	expect 0 =    Debug		{^priv_task_free}
-	expect 0 =    Debug		{^obj_priv_task_fini.*"d1001"}
+	# client task can race with backend fini, so all of these are
+	# in any order (? = alternatives)
+	expect ? =    Debug		{^priv_task_free}
+	expect ? =    Debug		{^obj_priv_task_fini.*"r1002"}
+	expect ? =    Debug		{^test_priv_task.*exists}
+	expect ? =    Debug		{^priv_task_free}
+	expect ? =    Debug		{^obj_priv_task_fini.*"d1001"}
 
 	# ...
 	# 1006 pipe
