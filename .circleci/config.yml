@@ -209,7 +209,9 @@ jobs:
           name: Extract and distcheck
           command: |
             tar xavf varnish-*.tar.gz --strip 1
-            if [ << parameters.dist >> = centos ]; then
+            if [ << parameters.dist >> = archlinux ]; then
+                useradd varnish
+            elif [ << parameters.dist >> = centos ]; then
             	adduser varnish
             else
             	adduser --disabled-password --gecos "" varnish
@@ -282,7 +284,7 @@ workflows:
           requires:
             - dist
       - distcheck:
-          name: distcheck_arch
+          name: distcheck_archlinux
           dist: archlinux
           release: "latest"
           requires:
