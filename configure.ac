@@ -40,9 +40,9 @@ AC_PROG_INSTALL
 AC_ARG_WITH([rst2man],
   AS_HELP_STRING([--with-rst2man=PATH], [Location of rst2man (auto)]),
   [RST2MAN="$withval"],
-  AC_CHECK_PROGS(RST2MAN,
+  [AC_CHECK_PROGS(RST2MAN,
     [rst2man-3.6 rst2man-3 rst2man rst2man.py],
-    [no]))
+    [no])])
 if test "x$RST2MAN" = "xno"; then
   AC_MSG_ERROR(
     [rst2man is needed to build Varnish, please install python3-docutils.])
@@ -51,9 +51,9 @@ fi
 AC_ARG_WITH([sphinx-build],
   AS_HELP_STRING([--with-sphinx-build=PATH], [Location of sphinx-build (auto)]),
   [SPHINX="$withval"],
-  AC_CHECK_PROGS(SPHINX,
+  [AC_CHECK_PROGS(SPHINX,
     [sphinx-build-3.6 sphinx-build-3 sphinx-build],
-    [no]))
+    [no])])
 if test "x$SPHINX" = "xno"; then
   AC_MSG_ERROR(
     [sphinx-build is needed to build Varnish, please install python3-sphinx.])
@@ -62,10 +62,11 @@ fi
 AC_ARG_WITH([rst2html],
   AS_HELP_STRING([--with-rst2html=PATH], [Location of rst2html (auto)]),
   [RST2HTML="$withval"],
-  AC_CHECK_PROGS(RST2HTML,
+  [AC_CHECK_PROGS(RST2HTML,
      [rst2html-3.6 rst2html-3 rst2html rst2html.py],
-     "no"))
+     "no")])
 AM_CONDITIONAL(HAVE_RST2HTML,[test "x$RST2HTML" != "xno"])
+
 if test "x$RST2HTML" = "xno"; then
    AC_MSG_ERROR(
      [rst2html not found - (Weird, we found rst2man?!)])
