@@ -202,7 +202,7 @@ jobs:
                     py3-sphinx \
                     tar \
                     sudo
-            elif [ << parameters.dist >> = alpine ]; then
+            elif [ << parameters.dist >> = archlinux ]; then
                 pacman -Sy --noconfirm \
                     autoconf \
                     automake \
