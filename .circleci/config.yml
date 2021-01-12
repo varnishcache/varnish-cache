@@ -224,17 +224,17 @@ jobs:
             export TSAN_OPTIONS=abort_on_error=1,halt_on_error=1,use_sigaltstack=0,suppressions=$(pwd)/tools/tsan.suppr
             export UBSAN_OPTIONS=halt_on_error=1,print_stacktrace=1,use_sigaltstack=0,suppressions=$(pwd)/tools/ubsan.suppr
 
-            su varnish -c './configure \
+            sudo -u varnish ./configure \
             	--quiet \
             	--with-unwind \
             	--enable-developer-warnings \
             	--enable-debugging-symbols \
             	--disable-stack-protector \
             	--with-persistent-storage \
-            	<< parameters.extra_conf >>'
-            su varnish \
-            	--whitelist-environment=ASAN_OPTIONS,LSAN_OPTIONS,TSAN_OPTIONS,UBSAN_OPTIONS \
-                -c 'make distcheck VERBOSE=1 -j 12 -k'
+            	<< parameters.extra_conf >>
+            sudo -u varnish \
+            	--preserve-env=ASAN_OPTIONS,LSAN_OPTIONS,TSAN_OPTIONS,UBSAN_OPTIONS \
+            	make distcheck VERBOSE=1 -j 12 -k
 
   collect_packages:
     docker:
