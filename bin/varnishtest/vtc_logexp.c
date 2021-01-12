@@ -264,16 +264,78 @@ logexp_next(struct logexp *le)
 		vtc_log(le->vl, 3, "expecting| %s", VSB_data(le->test->str));
 }
 
+static int
+logexp_match(struct logexp *le, const char *data, int vxid, int tag,
+    int type, int len)
+{
+	const char *legend;
+	int ok = 1, skip = 0;
+
+	if (le->test->vxid == LE_LAST) {
+		if (le->vxid_last != vxid)
+			ok = 0;
+	} else if (le->test->vxid >= 0) {
+		if (le->test->vxid != vxid)
+			ok = 0;
+	}
+	if (le->test->tag == LE_LAST) {
+		if (le->tag_last != tag)
+			ok = 0;
+	} else if (le->test->tag >= 0) {
+		if (le->test->tag != tag)
+			ok = 0;
+	}
+	if (le->test->vre &&
+	    le->test->tag >= 0 &&
+	    le->test->tag == tag &&
+	    VRE_ERROR_NOMATCH == VRE_exec(le->test->vre, data,
+		len, 0, 0, NULL, 0, NULL))
+		ok = 0;
+
+	if (!ok && (le->test->skip_max == LE_ANY ||
+		    le->test->skip_max > le->skip_cnt))
+		skip = 1;
+
+	if (ok)
+		legend = "match";
+	else if (skip && le->m_arg)
+		legend = "miss";
+	else if (skip)
+		legend = NULL;
+	else
+		legend = "err";
+
+	if (legend != NULL)
+		vtc_log(le->vl, 4, "%-5s| %10u %-15s %c %.*s",
+		    legend, vxid, VSL_tags[tag], type, len,
+		    data);
+
+	if (ok) {
+		le->vxid_last = vxid;
+		le->tag_last = tag;
+		le->skip_cnt = 0;
+		logexp_next(le);
+		if (le->test == NULL)
+			/* End of test script */
+			return (1);
+	} else if (skip)
+		le->skip_cnt++;
+	else {
+		/* Signal fail */
+		return (2);
+	}
+	return (0);
+}
+
 static int v_matchproto_(VSLQ_dispatch_f)
 logexp_dispatch(struct VSL_data *vsl, struct VSL_transaction * const pt[],
     void *priv)
 {
 	struct logexp *le;
 	struct VSL_transaction *t;
-	int i;
-	int ok, skip;
+	int i, r;
 	int vxid, tag, type, len;
-	const char *legend, *data;
+	const char *data;
 
 	CAST_OBJ_NOTNULL(le, priv, LOGEXP_MAGIC);
 
@@ -284,71 +346,20 @@ logexp_dispatch(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 
 			CHECK_OBJ_NOTNULL(le->test, LOGEXP_TEST_MAGIC);
 			AN(t->c->rec.ptr);
-			vxid = VSL_ID(t->c->rec.ptr);
 			tag = VSL_TAG(t->c->rec.ptr);
-			data = VSL_CDATA(t->c->rec.ptr);
-			len = VSL_LEN(t->c->rec.ptr) - 1;
 
 			if (tag == SLT__Batch || tag == SLT_Witness)
 				continue;
 
-			ok = 1;
-			if (le->test->vxid == LE_LAST) {
-				if (le->vxid_last != vxid)
-					ok = 0;
-			} else if (le->test->vxid >= 0) {
-				if (le->test->vxid != vxid)
-					ok = 0;
-			}
-			if (le->test->tag == LE_LAST) {
-				if (le->tag_last != tag)
-					ok = 0;
-			} else if (le->test->tag >= 0) {
-				if (le->test->tag != tag)
-					ok = 0;
-			}
-			if (le->test->vre &&
-			    le->test->tag >= 0 &&
-			    le->test->tag == tag &&
-			    VRE_ERROR_NOMATCH == VRE_exec(le->test->vre, data,
-				len, 0, 0, NULL, 0, NULL))
-				ok = 0;
-
-			skip = 0;
-			if (!ok && (le->test->skip_max == LE_ANY ||
-				le->test->skip_max > le->skip_cnt))
-				skip = 1;
-
-			if (ok)
-				legend = "match";
-			else if (skip && le->m_arg)
-				legend = "miss";
-			else if (skip)
-				legend = NULL;
-			else
-				legend = "err";
+			vxid = VSL_ID(t->c->rec.ptr);
+			data = VSL_CDATA(t->c->rec.ptr);
+			len = VSL_LEN(t->c->rec.ptr) - 1;
 			type = VSL_CLIENT(t->c->rec.ptr) ? 'c' :
 			    VSL_BACKEND(t->c->rec.ptr) ? 'b' : '-';
 
-			if (legend != NULL)
-				vtc_log(le->vl, 4, "%-5s| %10u %-15s %c %.*s",
-				    legend, vxid, VSL_tags[tag], type, len,
-				    data);
-
-			if (ok) {
-				le->vxid_last = vxid;
-				le->tag_last = tag;
-				le->skip_cnt = 0;
-				logexp_next(le);
-				if (le->test == NULL)
-					/* End of test script */
-					return (1);
-			} else if (skip)
-				le->skip_cnt++;
-			else {
-				/* Signal fail */
-				return (2);
-			}
+			r = logexp_match(le, data, vxid, tag, type, len);
+			if (r)
+				return (r);
 		}
 	}
 
