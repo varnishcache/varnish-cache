@@ -210,6 +210,7 @@ jobs:
           command: |
             tar xavf varnish-*.tar.gz --strip 1
             if [ << parameters.dist >> = archlinux ]; then
+                pacman -Sy vim --noconfirm sudo
                 useradd varnish
             elif [ << parameters.dist >> = centos ]; then
             	adduser varnish
