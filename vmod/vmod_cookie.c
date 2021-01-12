@@ -42,7 +42,6 @@
 #include <cache/cache.h>
 
 #include <vsb.h>
-#include <vre.h>
 
 #include "vcc_cookie_if.h"
 
@@ -52,8 +51,6 @@ enum filter_action {
 	blacklist,
 	whitelist
 };
-
-static pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
 
 struct cookie {
 	unsigned		magic;
@@ -237,76 +234,23 @@ vmod_get(VRT_CTX, struct vmod_priv *priv, VCL_STRING name)
 }
 
 
-static vre_t *
-compile_re(VRT_CTX, VCL_STRING expression)
-{
-	vre_t *vre;
-	const char *error;
-	int erroroffset;
-
-	vre = VRE_compile(expression, 0, &error, &erroroffset);
-	if (vre == NULL) {
-		VSLb(ctx->vsl, SLT_Error,
-		    "cookie: PCRE compile error at char %i: %s",
-		    erroroffset, error);
-	}
-	return (vre);
-}
-
-static void
-free_re(void *priv)
-{
-	vre_t *vre;
-
-	AN(priv);
-	vre = priv;
-	VRE_free(&vre);
-	AZ(vre);
-}
-
-static const struct vmod_priv_methods cookie_re_priv_methods[1] = {{
-		.magic = VMOD_PRIV_METHODS_MAGIC,
-		.type = "vmod_cookie_re",
-		.fini = free_re
-}};
-
 VCL_STRING
-vmod_get_re(VRT_CTX, struct vmod_priv *priv, struct vmod_priv *priv_call,
-    VCL_STRING expression)
+vmod_get_re(VRT_CTX, struct vmod_priv *priv, VCL_REGEX re)
 {
 	struct vmod_cookie *vcp = cobj_get(priv);
-	int i, ovector[VRE_MAX_GROUPS];
 	struct cookie *cookie = NULL;
 	struct cookie *current;
-	vre_t *vre = NULL;
+	unsigned match;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	if (expression == NULL || *expression == '\0')
-		return (NULL);
-
-	if (priv_call->priv == NULL) {
-		AZ(pthread_mutex_lock(&mtx));
-		vre = compile_re(ctx, expression);
-		if (vre == NULL) {
-			AZ(pthread_mutex_unlock(&mtx));
-			return (NULL);
-		}
-
-		priv_call->priv = vre;
-		priv_call->methods = cookie_re_priv_methods;
-		AZ(pthread_mutex_unlock(&mtx));
-	}
+	AN(re);
 
 	VTAILQ_FOREACH(current, &vcp->cookielist, list) {
 		CHECK_OBJ_NOTNULL(current, VMOD_COOKIE_ENTRY_MAGIC);
 		VSLb(ctx->vsl, SLT_Debug, "cookie: checking %s", current->name);
-		i = VRE_exec(vre, current->name, strlen(current->name), 0, 0,
-		    ovector, VRE_MAX_GROUPS, NULL);
-		if (i < 0)
+		match = VRT_re_match(ctx, current->name, re);
+		if (!match)
 			continue;
-
-		VSLb(ctx->vsl, SLT_Debug, "cookie: %s is a match for regex '%s'",
-		    current->name, expression);
 		cookie = current;
 		break;
 	}
@@ -425,37 +369,23 @@ vmod_filter(VRT_CTX, struct vmod_priv *priv, VCL_STRING blacklist_s)
 }
 
 static VCL_VOID
-re_filter(VRT_CTX, struct vmod_priv *priv, struct vmod_priv *priv_call,
-    VCL_STRING expression, enum filter_action mode)
+re_filter(VRT_CTX, struct vmod_priv *priv, VCL_REGEX re, enum filter_action mode)
 {
 	struct vmod_cookie *vcp = cobj_get(priv);
 	struct cookie *current, *safeptr;
-	int i, ovector[VRE_MAX_GROUPS];
-	vre_t *vre;
+	unsigned match;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	if (priv_call->priv == NULL) {
-		AZ(pthread_mutex_lock(&mtx));
-		vre = compile_re(ctx, expression);
-		if (vre == NULL) {
-			AZ(pthread_mutex_unlock(&mtx));
-			return;   // Not much else to do, error already logged.
-		}
-
-		priv_call->priv = vre;
-		priv_call->methods = cookie_re_priv_methods;
-		AZ(pthread_mutex_unlock(&mtx));
-	}
+	AN(re);
 
 	VTAILQ_FOREACH_SAFE(current, &vcp->cookielist, list, safeptr) {
 		CHECK_OBJ_NOTNULL(current, VMOD_COOKIE_ENTRY_MAGIC);
 
-		i = VRE_exec(priv_call->priv, current->name,
-		    strlen(current->name), 0, 0, ovector, VRE_MAX_GROUPS, NULL);
+		match = VRT_re_match(ctx, current->name, re);
 
 		switch (mode) {
 		case blacklist:
-			if (i < 0)
+			if (!match)
 				continue;
 			VSLb(ctx->vsl, SLT_Debug,
 			    "Removing matching cookie %s (value: %s)",
@@ -463,12 +393,8 @@ re_filter(VRT_CTX, struct vmod_priv *priv, struct vmod_priv *priv_call,
 			VTAILQ_REMOVE(&vcp->cookielist, current, list);
 			break;
 		case whitelist:
-			if (i >= 0) {
-				VSLb(ctx->vsl, SLT_Debug,
-				    "Cookie %s matches expression '%s'",
-				    current->name, expression);
+			if (match)
 				continue;
-			}
 
 			VSLb(ctx->vsl, SLT_Debug,
 			    "Removing cookie %s (value: %s)",
@@ -483,22 +409,20 @@ re_filter(VRT_CTX, struct vmod_priv *priv, struct vmod_priv *priv_call,
 
 
 VCL_VOID
-vmod_keep_re(VRT_CTX, struct vmod_priv *priv, struct vmod_priv *priv_call,
-    VCL_STRING expression)
+vmod_keep_re(VRT_CTX, struct vmod_priv *priv, VCL_REGEX re)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	re_filter(ctx, priv, priv_call, expression, whitelist);
+	re_filter(ctx, priv, re, whitelist);
 }
 
 
 VCL_VOID
-vmod_filter_re(VRT_CTX, struct vmod_priv *priv, struct vmod_priv *priv_call,
-    VCL_STRING expression)
+vmod_filter_re(VRT_CTX, struct vmod_priv *priv, VCL_REGEX re)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	re_filter(ctx, priv, priv_call, expression, blacklist);
+	re_filter(ctx, priv, re, blacklist);
 }
 
 
