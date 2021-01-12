@@ -128,6 +128,8 @@
 
 #define LE_ANY  (-1)
 #define LE_LAST (-2)
+#define LE_ALT  (-3)
+#define LE_SEEN (-4)
 
 struct logexp_test {
 	unsigned			magic;
@@ -141,6 +143,8 @@ struct logexp_test {
 	int				skip_max;
 };
 
+VTAILQ_HEAD(tests_head,logexp_test);
+
 struct logexp {
 	unsigned			magic;
 #define LOGEXP_MAGIC			0xE81D9F1B
@@ -150,7 +154,7 @@ struct logexp {
 	char				*vname;
 	struct vtclog			*vl;
 	char				run;
-	VTAILQ_HEAD(,logexp_test)	tests;
+	struct tests_head		tests;
 
 	struct logexp_test		*test;
 	int				skip_cnt;
@@ -249,18 +253,56 @@ logexp_new(const char *name, const char *varg)
 }
 
 static void
+logexp_clean(const struct tests_head *head)
+{
+	struct logexp_test *test;
+
+	VTAILQ_FOREACH(test, head, list)
+		if (test->skip_max == LE_SEEN)
+			test->skip_max = LE_ALT;
+}
+
+static struct logexp_test *
+logexp_alt(struct logexp_test *test)
+{
+	assert(test->skip_max == LE_ALT);
+
+	do
+		test = VTAILQ_NEXT(test, list);
+	while (test != NULL && test->skip_max == LE_SEEN);
+
+	if (test == NULL || test->skip_max != LE_ALT)
+		return (NULL);
+
+	return (test);
+}
+
+static void
 logexp_next(struct logexp *le)
 {
 	CHECK_OBJ_NOTNULL(le, LOGEXP_MAGIC);
 
-	if (le->test) {
+	if (le->test && le->test->skip_max == LE_ALT) {
+		/*
+		 * if an alternative was not seen, continue at this expection
+		 * with the next vsl
+		 */
+		(void)0;
+	} else if (le->test) {
 		CHECK_OBJ_NOTNULL(le->test, LOGEXP_TEST_MAGIC);
 		le->test = VTAILQ_NEXT(le->test, list);
-	} else
+	} else {
+		logexp_clean(&le->tests);
 		le->test = VTAILQ_FIRST(&le->tests);
+	}
 
-	CHECK_OBJ_ORNULL(le->test, LOGEXP_TEST_MAGIC);
-	if (le->test)
+	if (le->test == NULL)
+		return;
+
+	CHECK_OBJ(le->test, LOGEXP_TEST_MAGIC);
+	if (le->test->skip_max == LE_SEEN)
+		logexp_next(le);
+	else
 		vtc_log(le->vl, 3, "expecting| %s", VSB_data(le->test->str));
 }
 
@@ -275,10 +317,11 @@ logexp_match(const struct logexp *le, struct logexp_test *test,
     const char *data, int vxid, int tag, int type, int len)
 {
 	const char *legend;
-	int ok = 1, skip = 0;
+	int ok = 1, skip = 0, alt = 0;
 
 	AN(le);
 	AN(test);
+	assert(test->skip_max != LE_SEEN);
 
 	if (test->vxid == LE_LAST) {
 		if (le->vxid_last != vxid)
@@ -301,7 +344,10 @@ logexp_match(const struct logexp *le, struct logexp_test *test,
 		len, 0, 0, NULL, 0, NULL))
 		ok = 0;
 
-	if (!ok && (test->skip_max == LE_ANY ||
+	if (test->skip_max == LE_ALT)
+		alt = 1;
+
+	if (!ok && !alt && (test->skip_max == LE_ANY ||
 		    test->skip_max > le->skip_cnt))
 		skip = 1;
 
@@ -309,7 +355,7 @@ logexp_match(const struct logexp *le, struct logexp_test *test,
 		legend = "match";
 	else if (skip && le->m_arg)
 		legend = "miss";
-	else if (skip)
+	else if (skip || alt)
 		legend = NULL;
 	else
 		legend = "err";
@@ -319,8 +365,18 @@ logexp_match(const struct logexp *le, struct logexp_test *test,
 		    legend, vxid, VSL_tags[tag], type, len,
 		    data);
 
-	if (ok)
+	if (ok) {
+		if (alt)
+			test->skip_max = LE_SEEN;
 		return (LEM_OK);
+	}
+	if (alt) {
+		test = logexp_alt(test);
+		if (test == NULL)
+			return (LEM_FAIL);
+		vtc_log(le->vl, 3, "alt      | %s", VSB_data(test->str));
+		return (logexp_match(le, test, data, vxid, tag, type, len));
+	}
 	if (skip)
 		return (LEM_SKIP);
 	return (LEM_FAIL);
@@ -485,6 +541,8 @@ cmd_logexp_expect(CMD_ARGS)
 
 	if (!strcmp(av[1], "*"))
 		skip_max = LE_ANY;
+	else if (!strcmp(av[1], "?"))
+		skip_max = LE_ALT;
 	else {
 		skip_max = (int)strtol(av[1], &end, 10);
 		if (*end != '\0' || skip_max < 0)
