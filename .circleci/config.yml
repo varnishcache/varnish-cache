@@ -281,6 +281,12 @@ workflows:
           #extra_conf: --without-jemalloc
           requires:
             - dist
+      - distcheck:
+          name: distcheck_arch
+          dist: archlinux
+          release: "latest"
+          requires:
+            - dist
   nightly:
     triggers:
       - schedule:
