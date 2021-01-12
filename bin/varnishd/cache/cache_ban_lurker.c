@@ -420,8 +420,6 @@ ban_lurker(struct worker *wrk, void *priv)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AZ(priv);
 
-	THR_SetName("ban_lurker");
-
 	VSL_Setup(&vsl, NULL, 0);
 
 	while (!ban_shutdown) {
