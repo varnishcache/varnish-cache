@@ -220,7 +220,7 @@ macro_get(const char *b, const char *e)
 
 	if (l == 4 && !memcmp(b, "date", l)) {
 		double t = VTIM_real();
-		retval = malloc(64);
+		retval = malloc(VTIM_FORMAT_SIZE);
 		AN(retval);
 		VTIM_format(t, retval);
 		return (retval);
