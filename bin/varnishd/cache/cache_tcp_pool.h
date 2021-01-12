@@ -34,6 +34,7 @@
 
 struct conn_pool;
 struct pfd;
+
 #define PFD_STATE_AVAIL		(1<<0)
 #define PFD_STATE_USED		(1<<1)
 #define PFD_STATE_STOLEN	(1<<2)
@@ -50,8 +51,6 @@ void PFD_RemoteName(const struct pfd *, char *, unsigned, char *, unsigned);
 /*---------------------------------------------------------------------
  * Prototypes
  */
-
-struct VSC_vbe;
 
 struct conn_pool *VTP_Ref(const struct vrt_endpoint *, const char *ident);
 	/*
@@ -100,8 +99,6 @@ int VCP_Wait(struct worker *, struct pfd *, vtim_real tmo);
 	 * If the connection was recycled (state != VTP_STATE_USED) call this
 	 * function before attempting to receive on the connection.
 	 */
-
-void VCP_Panic(struct vsb *, struct conn_pool *);
 
 VCL_IP VCP_GetIp(struct pfd *);
 

@@ -574,8 +574,9 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 			VRT_fail(ctx, "%s: Illegal IP", __func__);
 			return (NULL);
 		}
-	} else
+	} else {
 		assert(vep->ipv4== NULL && vep->ipv6== NULL);
+	}
 
 	vcl = ctx->vcl;
 	AN(vcl);
@@ -583,7 +584,8 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 
 	/* Create new backend */
 	ALLOC_OBJ(be, BACKEND_MAGIC);
-	XXXAN(be);
+	if (be == NULL)
+		return (NULL);
 	Lck_New(&be->mtx, lck_backend);
 
 #define DA(x)	do { if (vrt->x != NULL) REPLACE((be->x), (vrt->x)); } while (0)

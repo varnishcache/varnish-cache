@@ -145,10 +145,6 @@ void VCA_Shutdown(void);
 void VBE_InitCfg(void);
 void VBE_Poll(void);
 
-/* cache_tcp_pool.c */
-void VCP_Init(void);
-
-/* cache_backend_poll.c */
 void VBP_Init(void);
 
 /* cache_ban.c */
@@ -420,6 +416,13 @@ void VSL_ChgId(struct vsl_log *vsl, const char *typ, const char *why,
     uint32_t vxid);
 void VSL_End(struct vsl_log *vsl);
 void VSL_Flush(struct vsl_log *, int overflow);
+
+/* cache_tcp_pool.c */
+struct conn_pool;
+void VCP_Init(void);
+void VCP_Panic(struct vsb *, struct conn_pool *);
+
+/* cache_backend_poll.c */
 
 /* cache_vary.c */
 int VRY_Create(struct busyobj *bo, struct vsb **psb);

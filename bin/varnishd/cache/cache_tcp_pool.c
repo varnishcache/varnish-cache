@@ -109,7 +109,8 @@ struct conn_pool {
 	int					holddown_errno;
 };
 
-static struct lock		conn_pools_mtx;
+static struct lock conn_pools_mtx;
+
 static VTAILQ_HEAD(, conn_pool)	conn_pools =
     VTAILQ_HEAD_INITIALIZER(conn_pools);
 
@@ -488,9 +489,9 @@ VCP_Get(struct conn_pool *cp, vtim_dur tmo, struct worker *wrk,
 	Lck_Lock(&cp->mtx);
 	pfd = VTAILQ_FIRST(&cp->connlist);
 	CHECK_OBJ_ORNULL(pfd, PFD_MAGIC);
-	if (force_fresh || pfd == NULL || pfd->state == PFD_STATE_STOLEN)
+	if (force_fresh || pfd == NULL || pfd->state == PFD_STATE_STOLEN) {
 		pfd = NULL;
-	else {
+	} else {
 		assert(pfd->conn_pool == cp);
 		assert(pfd->state == PFD_STATE_AVAIL);
 		VTAILQ_REMOVE(&cp->connlist, pfd, list);
