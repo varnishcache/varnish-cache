@@ -1,12 +1,14 @@
 varnishtest "TCP pool teardown with open connection"
 
+feature ipv6
+
 # when c1's request has gotten to s1
 barrier b1 cond 3
 
 # when vcls have been swizzled
 barrier b2 cond 3
 
-server s1 {
+server s1 -listen "::1" {
 	rxreq
 	expect req.url == "/s1"
 	barrier b1 sync
@@ -33,7 +35,9 @@ client c1 {
 
 barrier b1 sync
 
-server s2 {
+varnish v1 -cliok "param.set debug +vclrel"
+
+server s2 -listen "::1" {
 	rxreq
 	expect req.url == "/s2"
 	txresp -hdr "Host: s2"
