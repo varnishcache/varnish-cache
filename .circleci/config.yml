@@ -156,6 +156,7 @@ jobs:
                 yum install -y epel-release
                 yum install -y \
                     automake \
+                    git \
                     jemalloc-devel \
                     libedit-devel \
                     libtool \
@@ -174,6 +175,7 @@ jobs:
                     build-essential \
                     ca-certificates \
                     cpio \
+                    git \
                     graphviz \
                     libedit-dev \
                     libjemalloc-dev \
@@ -192,6 +194,7 @@ jobs:
                     build-base \
                     ca-certificates \
                     cpio \
+                    git \
                     gzip \
                     libedit-dev \
                     libtool \
@@ -207,6 +210,7 @@ jobs:
                     base-devel \
                     ca-certificates \
                     cpio \
+                    git \
                     libedit \
                     libtool \
                     libunwind \
@@ -216,12 +220,10 @@ jobs:
                     python-sphinx \
                     tar
             fi
-      - attach_workspace:
-          at: /workspace
+      - checkout
       - run:
           name: Extract and distcheck
           command: |
-            tar xavf varnish-*.tar.gz --strip 1
             if [ << parameters.dist >> = archlinux ]; then
                 useradd varnish
             elif [ << parameters.dist >> = centos ]; then
@@ -237,7 +239,10 @@ jobs:
             export TSAN_OPTIONS=abort_on_error=1,halt_on_error=1,use_sigaltstack=0,suppressions=$(pwd)/tools/tsan.suppr
             export UBSAN_OPTIONS=halt_on_error=1,print_stacktrace=1,use_sigaltstack=0,suppressions=$(pwd)/tools/ubsan.suppr
 
-            sudo -u varnish ./configure \
+            sudo -u varnish \
+                autoreconf -i -v
+            sudo -u varnish \
+                ./configure \
             	--quiet \
             	--with-unwind \
             	--enable-developer-warnings \
@@ -274,34 +279,24 @@ workflows:
           name: distcheck_centos_7
           dist: centos
           release: "7"
-          requires:
-            - dist
       - distcheck:
           name: distcheck_centos_8
           dist: centos
           release: "8"
-          requires:
-            - dist
       - distcheck:
           name: distcheck_debian_buster
           dist: debian
           release: buster
           extra_conf: --enable-asan --enable-ubsan
-          requires:
-            - dist
       - distcheck:
           name: distcheck_alpine
           dist: alpine
           release: "latest"
           #extra_conf: --without-jemalloc
-          requires:
-            - dist
       - distcheck:
           name: distcheck_archlinux
           dist: archlinux
           release: "latest"
-          requires:
-            - dist
   nightly:
     triggers:
       - schedule:
