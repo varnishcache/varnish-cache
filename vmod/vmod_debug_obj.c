@@ -155,7 +155,7 @@ static void
 obj_priv_task_fini(void *ptr)
 {
 	AN(ptr);
-	VSL(SLT_Debug, 0, "obj_priv_task_fini(%p = \"%s\")", ptr, ptr);
+	VSL(SLT_Debug, 0, "obj_priv_task_fini(%p = \"%s\")", ptr, (char *)ptr);
 }
 
 static const struct vmod_priv_methods xyzzy_obj_test_priv_task_methods[1] = {{
