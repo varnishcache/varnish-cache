@@ -61,7 +61,7 @@ static const struct vclstate VCL_STATE_LABEL[1] = {{ "label" }};
 static unsigned vcl_count;
 
 struct vclproghead vclhead = VTAILQ_HEAD_INITIALIZER(vclhead);
-struct vclproghead discardhead = VTAILQ_HEAD_INITIALIZER(discardhead);
+static struct vclproghead discardhead = VTAILQ_HEAD_INITIALIZER(discardhead);
 struct vmodfilehead vmodhead = VTAILQ_HEAD_INITIALIZER(vmodhead);
 static struct vclprog		*active_vcl;
 static struct vev *e_poker;
