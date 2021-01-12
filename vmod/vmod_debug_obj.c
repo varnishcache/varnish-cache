@@ -161,7 +161,7 @@ obj_priv_task_fini(void *ptr)
 
 static const struct vmod_priv_methods xyzzy_obj_test_priv_task_methods[1] = {{
 		.magic = VMOD_PRIV_METHODS_MAGIC,
-		.type = "debug_onk_test_priv_task",
+		.type = "debug_obj_test_priv_task",
 		.fini = obj_priv_task_fini
 }};
 

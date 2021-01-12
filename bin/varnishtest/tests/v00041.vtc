@@ -132,8 +132,8 @@ logexpect l0 -v v1 -g raw -d 1 -q "vxid == 0 and not ExpKill" {
 	expect 0 =    Debug		{^test_priv_task.*new.$}
 	expect 0 =    Debug		{^test_priv_task.*update.$}
 	expect 0 =    Debug		{^test_priv_task.*exists.$}
-	expect 0 =    Debug		{^priv_task_free}
-	expect 0 =    Debug		{^obj_priv_task_fini.*"r1002"}
+	expect 0 =    Debug		{^priv_task_free|^obj_priv_task_fini.*"r1002"}
+	expect 0 =    Debug		{^priv_task_free|^obj_priv_task_fini.*"r1002"}
 	expect 0 =    Debug		{^test_priv_task.*exists}
 	expect 0 =    Debug		{^priv_task_free|^obj_priv_task_fini.*"d1001"}
 	expect 0 =    Debug		{^priv_task_free|^obj_priv_task_fini.*"d1001"}
