@@ -71,12 +71,12 @@ vcc_regexp(struct vcc *tl, struct vsb *vgc_name)
 	if (vgc_name)
 		VSB_cat(vgc_name, buf);
 
-	Fh(tl, 0, "static void *%s;\n", buf);
+	Fh(tl, 0, "static struct vre *%s;\n", buf);
 	ifp = New_IniFin(tl);
-	VSB_printf(ifp->ini, "\tVRT_re_init(&%s, ",buf);
+	VSB_printf(ifp->ini, "\tVPI_re_init(&%s, ",buf);
 	EncToken(ifp->ini, tl->t);
 	VSB_cat(ifp->ini, ");");
-	VSB_printf(ifp->fin, "\t\tVRT_re_fini(%s);", buf);
+	VSB_printf(ifp->fin, "\t\tVPI_re_fini(%s);", buf);
 }
 
 /*

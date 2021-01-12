@@ -71,3 +71,8 @@ struct vpi_ii {
 	const void *			p;
 	const char * const		name;
 };
+
+/* Compile time regexp */
+
+void VPI_re_init(struct vre **, const char *);
+void VPI_re_fini(struct vre *);

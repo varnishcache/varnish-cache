@@ -61,6 +61,10 @@
  *	VRT_ban_string() signature changed
  *	VRT_priv_task_get() added
  *	VRT_priv_top_get() added
+ *	VRT_re_init removed
+ *	VRT_re_fini removed
+ *	VRT_re_match signature changed
+ *	VRT_regsub signature changed
  * 12.0 (2020-09-15)
  *	Added VRT_DirectorResolve()
  *	Added VCL_STRING VRT_BLOB_string(VRT_CTX, VCL_BLOB)
@@ -459,14 +463,6 @@ void VRT_acl_log(VRT_CTX, const char *);
 int VRT_acl_match(VRT_CTX, VCL_ACL, VCL_IP);
 
 /***********************************************************************
- * Compile time regexp
- */
-
-void VRT_re_init(void **, const char *);
-void VRT_re_fini(void *);
-int VRT_re_match(VRT_CTX, const char *, void *);
-
-/***********************************************************************
  * Getting hold of the various struct http
  */
 
@@ -495,7 +491,8 @@ VCL_BYTES VRT_CacheReqBody(VRT_CTX, VCL_BYTES maxsize);
 
 /* Regexp related */
 
-const char *VRT_regsub(VRT_CTX, int all, const char *, void *, const char *);
+VCL_BOOL VRT_re_match(VRT_CTX, VCL_STRING, VCL_REGEX);
+VCL_STRING VRT_regsub(VRT_CTX, int all, VCL_STRING, VCL_REGEX, VCL_STRING);
 VCL_STRING VRT_ban_string(VRT_CTX, VCL_STRING);
 VCL_INT VRT_purge(VRT_CTX, VCL_DURATION, VCL_DURATION, VCL_DURATION);
 VCL_VOID VRT_synth(VRT_CTX, VCL_INT, VCL_STRING);

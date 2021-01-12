@@ -36,6 +36,7 @@
 #include <ctype.h>
 
 #include "cache_varnishd.h"
+#include "vcc_interface.h"
 
 static void
 Tadd(char **b, char *e, const char *p, int l)
@@ -52,7 +53,7 @@ Tadd(char **b, char *e, const char *p, int l)
 }
 
 void
-VRT_re_init(void **rep, const char *re)
+VPI_re_init(vre_t **rep, const char *re)
 {
 	vre_t *t;
 	const char *error;
@@ -65,7 +66,7 @@ VRT_re_init(void **rep, const char *re)
 }
 
 void
-VRT_re_fini(void *rep)
+VPI_re_fini(vre_t *rep)
 {
 	vre_t *vv;
 
@@ -74,18 +75,16 @@ VRT_re_fini(void *rep)
 		VRE_free(&vv);
 }
 
-int
-VRT_re_match(VRT_CTX, const char *s, void *re)
+VCL_BOOL
+VRT_re_match(VRT_CTX, const char *s, VCL_REGEX re)
 {
-	vre_t *t;
 	int i;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	if (s == NULL)
 		s = "";
 	AN(re);
-	t = re;
-	i = VRE_exec(t, s, strlen(s), 0, 0, NULL, 0, &cache_param->vre_limits);
+	i = VRE_exec(re, s, strlen(s), 0, 0, NULL, 0, &cache_param->vre_limits);
 	if (i >= 0)
 		return (1);
 	if (i < VRE_ERROR_NOMATCH )
@@ -93,12 +92,11 @@ VRT_re_match(VRT_CTX, const char *s, void *re)
 	return (0);
 }
 
-const char *
-VRT_regsub(VRT_CTX, int all, const char *str, void *re,
-    const char *sub)
+VCL_STRING
+VRT_regsub(VRT_CTX, int all, VCL_STRING str, VCL_REGEX re,
+    VCL_STRING sub)
 {
 	int ovector[30];
-	vre_t *t;
 	int i, l;
 	char *res_b;
 	char *res_e;
@@ -115,10 +113,9 @@ VRT_regsub(VRT_CTX, int all, const char *str, void *re,
 		str = "";
 	if (sub == NULL)
 		sub = "";
-	t = re;
 	memset(ovector, 0, sizeof(ovector));
 	len = strlen(str);
-	i = VRE_exec(t, str, len, 0, options, ovector, 30,
+	i = VRE_exec(re, str, len, 0, options, ovector, 30,
 	    &cache_param->vre_limits);
 
 	/* If it didn't match, we can return the original string */
@@ -158,7 +155,7 @@ VRT_regsub(VRT_CTX, int all, const char *str, void *re,
 			break;
 		memset(ovector, 0, sizeof(ovector));
 		options |= VRE_NOTEMPTY;
-		i = VRE_exec(t, str, len, offset, options, ovector, 30,
+		i = VRE_exec(re, str, len, offset, options, ovector, 30,
 		    &cache_param->vre_limits);
 		if (i < VRE_ERROR_NOMATCH ) {
 			WS_Release(ctx->ws, 0);
