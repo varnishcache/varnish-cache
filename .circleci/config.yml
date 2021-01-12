@@ -206,7 +206,6 @@ jobs:
                 pacman -Sy --noconfirm \
                     autoconf \
                     automake \
-                    build-base \
                     ca-certificates \
                     cpio \
                     gzip \
