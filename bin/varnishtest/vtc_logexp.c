@@ -264,15 +264,20 @@ logexp_next(struct logexp *le)
 		vtc_log(le->vl, 3, "expecting| %s", VSB_data(le->test->str));
 }
 
-static int
-logexp_match(struct logexp *le, const char *data, int vxid, int tag,
-    int type, int len)
+enum le_match_e {
+	LEM_OK,
+	LEM_SKIP,
+	LEM_FAIL
+};
+
+static enum le_match_e
+logexp_match(const struct logexp *le, struct logexp_test *test,
+    const char *data, int vxid, int tag, int type, int len)
 {
-	struct logexp_test *test;
 	const char *legend;
 	int ok = 1, skip = 0;
 
-	test = le->test;
+	AN(le);
 	AN(test);
 
 	if (test->vxid == LE_LAST) {
@@ -314,21 +319,11 @@ logexp_match(struct logexp *le, const char *data, int vxid, int tag,
 		    legend, vxid, VSL_tags[tag], type, len,
 		    data);
 
-	if (ok) {
-		le->vxid_last = vxid;
-		le->tag_last = tag;
-		le->skip_cnt = 0;
-		logexp_next(le);
-		if (le->test == NULL)
-			/* End of test script */
-			return (1);
-	} else if (skip)
-		le->skip_cnt++;
-	else {
-		/* Signal fail */
-		return (2);
-	}
-	return (0);
+	if (ok)
+		return (LEM_OK);
+	if (skip)
+		return (LEM_SKIP);
+	return (LEM_FAIL);
 }
 
 static int v_matchproto_(VSLQ_dispatch_f)
@@ -337,7 +332,8 @@ logexp_dispatch(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 {
 	struct logexp *le;
 	struct VSL_transaction *t;
-	int i, r;
+	int i;
+	enum le_match_e r;
 	int vxid, tag, type, len;
 	const char *data;
 
@@ -361,9 +357,22 @@ logexp_dispatch(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			type = VSL_CLIENT(t->c->rec.ptr) ? 'c' :
 			    VSL_BACKEND(t->c->rec.ptr) ? 'b' : '-';
 
-			r = logexp_match(le, data, vxid, tag, type, len);
-			if (r)
+			r = logexp_match(le, le->test,
+			    data, vxid, tag, type, len);
+			if (r == LEM_FAIL)
 				return (r);
+			if (r == LEM_SKIP) {
+				le->skip_cnt++;
+				continue;
+			}
+			assert(r == LEM_OK);
+			le->vxid_last = vxid;
+			le->tag_last = tag;
+			le->skip_cnt = 0;
+			logexp_next(le);
+			if (le->test == NULL)
+				/* End of test script */
+				return (1);
 		}
 	}
 
