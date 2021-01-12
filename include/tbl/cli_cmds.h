@@ -99,13 +99,16 @@ CLI_CMD(VCL_STATE,
 
 CLI_CMD(VCL_DISCARD,
 	"vcl.discard",
-	"vcl.discard <configname|label>...",
-	"Unload the named configurations (if possible).",
-	"The configname or label arguments are matched as glob patterns."
-	" If more than one configuration matches patterns the command"
-	" is equivalent to individual commands in the right order with"
-	" respect to configurations dependencies."
-	" All individual patterns must match at least one configuration.",
+	"vcl.discard <name_pattern>...",
+	"Unload the named configurations (when possible).",
+	"Unload the named configurations and labels matching at least"
+	" one name pattern. All matching configurations and labels"
+	" are discarded in the correct order with respect to potential"
+	" dependencies. If one configuration or label could not be"
+	" discarded because one of its dependencies would remain,"
+	" nothing is discarded."
+	" Each individual name pattern must match at least one named"
+	" configuration or label.",
 	1, -1
 )
 
