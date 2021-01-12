@@ -202,6 +202,23 @@ jobs:
                     py3-sphinx \
                     tar \
                     sudo
+            elif [ << parameters.dist >> = alpine ]; then
+                pacman -Sy --noconfirm \
+                    autoconf \
+                    automake \
+                    build-base \
+                    ca-certificates \
+                    cpio \
+                    gzip \
+                    libedit \
+                    libtool \
+                    libunwind \
+                    linux-headers \
+                    pcre \
+                    python-docutils \
+                    python-sphinx \
+                    tar \
+                    sudo
             fi
       - attach_workspace:
           at: /workspace
@@ -210,7 +227,6 @@ jobs:
           command: |
             tar xavf varnish-*.tar.gz --strip 1
             if [ << parameters.dist >> = archlinux ]; then
-                pacman -Sy vim --noconfirm sudo
                 useradd varnish
             elif [ << parameters.dist >> = centos ]; then
             	adduser varnish
