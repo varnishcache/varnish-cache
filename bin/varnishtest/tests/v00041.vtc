@@ -149,9 +149,9 @@ logexpect l0 -v v1 -g raw -d 1 -q "vxid == 0 and not ExpKill" {
 	expect 0 =    Debug		{^test_priv_task.*new.$}
 	expect 0 =    Debug		{^test_priv_task.*update.$}
 	expect 0 =    Debug		{^test_priv_task.*exists.$}
+	expect 0 =    Debug		{^objc.priv_task.. = NULL}
 	expect 0 =    Debug		{^priv_task_free}
 	expect 0 =    VCL_Log		{^func cleaning up}
-	expect 0 =    Debug		{^objc.priv_task.. = NULL}
 	expect 0 =    VCL_Log		{^obj }
 	expect 0 =    CLI		{^Wr 200 0 }
 } -start

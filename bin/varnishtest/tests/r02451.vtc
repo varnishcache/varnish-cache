@@ -25,6 +25,7 @@ varnish v1 -vcl+backend {
 		new vd = directors.shard();
 		debug.test_priv_task("something");
 		debug.test_priv_task("to remember");
+		objx.test_priv_task(debug.test_priv_task());
 
 		vd.add_backend(s1);
 		vd.add_backend(s2);
@@ -44,8 +45,18 @@ varnish v1 -vcl+backend {
 
 logexpect l1 -v v1 -g raw -d 1 {
 	expect 0 0    CLI		{^Rd vcl.load}
-	expect 4 =    VCL_Log		{^func something to remember}
-	expect 2 =    VCL_Log		{^obj something to remember}
+	expect 0 *    Debug             {^test_priv_task.*new}
+	expect 0 *    Debug             {^test_priv_task.*update}
+	expect 0 *    Debug             {^test_priv_task.*exists}
+	expect 0 *    Debug             {^objx.priv_task.*"something to remember".*new}
+	expect 0 *    Debug             {^test_priv_task.*exists}
+	expect 0 *    VCL_Log           {^func something to remember}
+	expect 0 *    Debug             {^objx.priv_task.*"something to remember".$}
+	expect 0 *    VCL_Log           {^obj something to remember}
+	expect 0 *    Debug             {^priv_task_free}
+	# string stored in obj priv_task has already been freed
+	expect 0 *    Debug             {^obj_priv_task_fini}
+	expect 0 *    Debug             {^vcl1: VCL_EVENT_WARM}
 } -start
 
 client c1 {

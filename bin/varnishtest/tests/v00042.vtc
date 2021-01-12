@@ -42,6 +42,7 @@ varnish v1 -vcl+backend {
 
 	sub vcl_recv {
 		set req.http.x0 = debug.test_priv_task(req.url + req.esi_level);
+		o.test_priv_task(req.url + req.esi_level);
 	}
 
 	sub vcl_miss {

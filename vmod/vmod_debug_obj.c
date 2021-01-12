@@ -34,6 +34,7 @@
 #include <string.h>
 
 #include "cache/cache.h"
+#include "vcl.h"
 
 #include "vcc_debug_if.h"
 
@@ -168,15 +169,23 @@ VCL_STRING v_matchproto_()
 xyzzy_obj_test_priv_task(VRT_CTX, struct xyzzy_debug_obj *o, VCL_STRING s)
 {
 	struct vmod_priv *p;
+	struct vsl_log *vsl;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	if (ctx->method & VCL_MET_TASK_H)
+		vsl = NULL;
+	else
+		vsl = ctx->vsl;
 
 	if (s == NULL || *s == '\0') {
 		p = VRT_priv_task_get(ctx, o);
 		if (p == NULL) {
-			mylog(ctx->vsl, SLT_Debug, "%s.priv_task() = NULL",
+			mylog(vsl, SLT_Debug, "%s.priv_task() = NULL",
 			    o->vcl_name);
 			return ("");
 		}
-		mylog(ctx->vsl, SLT_Debug,
+		mylog(vsl, SLT_Debug,
 		    "%s.priv_task() = %p .priv = %p (\"%s\")",
 		    o->vcl_name, p, p->priv, p->priv);
 		return (p->priv);
@@ -185,13 +194,13 @@ xyzzy_obj_test_priv_task(VRT_CTX, struct xyzzy_debug_obj *o, VCL_STRING s)
 	p = VRT_priv_task(ctx, o);
 
 	if (p == NULL) {
-		mylog(ctx->vsl, SLT_Debug, "%s.priv_task() = NULL [err]",
+		mylog(vsl, SLT_Debug, "%s.priv_task() = NULL [err]",
 		    o->vcl_name);
 		VRT_fail(ctx, "no priv task - out of ws?");
 		return ("");
 	}
 
-	mylog(ctx->vsl, SLT_Debug,
+	mylog(vsl, SLT_Debug,
 	    "%s.priv_task() = %p .priv = %p (\"%s\") [%s]",
 	    o->vcl_name, p, s, s, p->priv ? "update" : "new");
 
