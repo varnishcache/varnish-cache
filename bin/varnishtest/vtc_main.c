@@ -606,6 +606,8 @@ ip_magic(void)
 	assert(bad_backend_fd >= 0);
 	VTCP_myname(bad_backend_fd, abuf, sizeof abuf, pbuf, sizeof(pbuf));
 	extmacro_def("localhost", "%s", abuf);
+	s = strdup(abuf);
+	AN(s);
 
 #if defined (__APPLE__)
 	/*
@@ -623,8 +625,6 @@ ip_magic(void)
 		extmacro_def("bad_backend", "[%s]:%s", abuf, pbuf);
 
 	/* our default bind/listen address */
-	s = macro_get("localhost", NULL);
-	AN(s);
 	if (VSA_Get_Proto(sa) == AF_INET)
 		bprintf(abuf, "%s:0", s);
 	else
