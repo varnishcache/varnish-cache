@@ -95,7 +95,7 @@
  *
  * And the arguments of the specifications lines are:
  *
- * skip: [uint|*]
+ * skip: [uint|*|?]
  *         Max number of record to skip
  *
  * vxid: [uint|*|=]
@@ -108,7 +108,9 @@
  *         regular expression to match against (optional)
  *
  * For skip, vxid and tag, '*' matches anything, '=' expects the value of the
- * previous matched record.
+ * previous matched record. The '?' marker is equivalent to zero, expecting a
+ * match on the next record. The difference is that '?' can be used when the
+ * order of individual consecutive logs is not deterministic.
  */
 
 #include "config.h"
