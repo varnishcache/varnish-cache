@@ -492,12 +492,16 @@ The VCL compiler supports the following private pointers:
   These private pointers live only for the duration of their top
   level request
 
+  .. XXX BROKEN https://github.com/varnishcache/varnish-cache/issues/3498
+
 * ``PRIV_VCL`` "per vcl" private pointers are useful for such global
   state that applies to all calls in this VCL, for instance flags that
   determine if regular expressions are case-sensitive in this vmod or
   similar. The ``PRIV_VCL`` object is the same object that is passed
   to the VMOD's event function.
   This private pointer lives for the duration of the loaded VCL.
+
+  The ``PRIV_CALL`` vmod_privs are finalized before ``PRIV_VCL``.
 
 The way it works in the vmod code, is that a ``struct vmod_priv *`` is
 passed to the functions where one of the ``PRIV_*`` argument types is
@@ -532,7 +536,7 @@ help debugging.
 vmod_priv`` when the scope ends with that ``.priv`` pointer as its
 only argument.
 
-In the common case where a private data structure is allocated with
+The common case where a private data structure is allocated with
 malloc(3) would look like this::
 
 	static const struct vmod_priv_methods mymethods[1] = {{
@@ -557,21 +561,88 @@ malloc(3) would look like this::
 		...
 	}
 
-Note on use with objects:
+Private Pointers Memory Management
+----------------------------------
 
-The per-call vmod_privs are freed before the per-vcl vmod_priv.
+The generic malloc(3) / free(3) approach documented above works for
+all private pointers. It is the simplest and less error prone (as long
+as allocated memory is properly freed though the fini callback), but
+comes at the cost of calling into the heap memory allocator.
 
-``PRIV_TASK`` and ``PRIV_TOP`` arguments are not per object instance,
-but still per vmod as for ordinary vmod functions. Thus, vmods
+Per-vmod constant data structures can be assigned to any private
+pointer type, but, obviously, free(3) must not be used on them.
+
+Dynamic data stored in ``PRIV_TASK`` and ``PRIV_TOP`` pointers can
+also come from the workspace:
+
+* For ``PRIV_TASK``, any allocation from ``ctx->ws`` works, like so::
+
+	if (priv->priv == NULL) {
+		priv->priv = WS_Alloc(ctx->ws, sizeof(struct myfoo));
+		if (priv->priv == NULL) {
+			VRT_fail(ctx, "WS_Alloc failed");
+			return (...);
+		}
+		priv->methods = mymethods;
+		mystate = priv->priv;
+		mystate->foo = 21;
+		...
+
+* For ``PRIV_TOP``, first of all keep in mind that it must only be
+  used from the client context, so vmod code should error out for
+  ``ctx->req == NULL``.
+
+  For dynamic data, the *top request's* workspace must be used, which
+  complicates things a bit::
+
+	if (priv->priv == NULL) {
+		struct ws *ws;
+
+		CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+		CHECK_OBJ_NOTNULL(ctx->req->top, REQTOP_MAGIC);
+		CHECK_OBJ_NOTNULL(ctx->req->top->topreq, REQ_MAGIC);
+		ws = ctx->req->top->topreq->ws;
+
+		priv->priv = WS_Alloc(ws, sizeof(struct myfoo));
+		// ... same as above for PRIV_TASK
+
+Notice that allocations on the workspace do not need to be freed,
+their lifetime is the respective task.
+
+Private Pointers and Objects
+----------------------------
+
+``PRIV_TASK`` and ``PRIV_TOP`` arguments to methods are not per object
+instance, but per vmod as for ordinary vmod functions. Thus, vmods
 requiring per-task / per top-request state for object instances need
 to implement other means to associate storage with object instances.
 
-Using ``VRT_priv_task()`` to maintain per object instance state is a
-convenient yet unofficial interface which was not originally intended
-for this purpose and will likely be replaced with a more suitable
-interface.
+This is what ``VRT_priv_task()`` / ``VRT_priv_task_get()`` and
+``VRT_priv_top()`` / ``VRT_priv_top_get()`` are for:
 
-.. XXX add VRT_priv_task_get() and make it official?
+The non-get functions either return an existing ``PRIV_TASK`` /
+``PRIV_TOP`` for a given ``void *`` argument or create one. They
+return ``NULL`` in case of an allocation failure.
+
+The ``_get()`` functions do not create a ``PRIV_*``, but return either
+an existing one or ``NULL``.
+
+By convention, private pointers for object instance are created on the
+address of the object, as in this example for a ``PRIV_TASK``::
+
+  VCL_VOID
+  myvmod_obj_method(VRT_CTX, struct myvmod_obj *o)
+  {
+      struct vmod_priv *p;
+
+      p = VRT_priv_task(ctx, o);
+
+      // ... see above
+
+The ``PRIV_TOP`` case looks identical except for calling
+``VRT_priv_top(ctx, o)`` in place of ``VRT_priv_task(ctx, o)``, but be
+reminded that the ``VRT_priv_top*()`` functions must only be called
+from client context (if ``ctx->req != NULL``).
 
 .. _ref-vmod-event-functions:
 
