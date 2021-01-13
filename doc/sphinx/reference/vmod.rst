@@ -442,6 +442,9 @@ STRANDS
 	* ``int n``: the number of strings
 	* ``const char **p``: the array of strings with `n` elements
 
+	A VMOD should never hold onto strands beyond a function or method
+	execution. See ``include/vrt.h`` for the details.
+
 TIME
 	C-type: ``double``
 
