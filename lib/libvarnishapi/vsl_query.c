@@ -122,7 +122,7 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 	const struct vex_rhs *rhs;
 	long long lhs_int = 0;
 	double lhs_float = 0.;
-	const char *b, *e, *q;
+	const char *b, *e, *q, *t;
 	char *p;
 	int i, dq;
 
@@ -209,6 +209,16 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 		switch (rhs->type) {
 		case VEX_INT:
 			lhs_int = strtoll(b, &p, 0);
+			if (*p == '.' || *p == 'e') {
+				t = ""; /* assume valid float */
+				lhs_float = VNUMpfx(b, &q);
+				if (isnan(lhs_float))
+					return (0);
+				if (q != NULL)
+					t = (q > p) ? q - 1 : q;
+				p = TRUST_ME(t);
+				lhs_int = trunc(lhs_float);
+			}
 			if (*p != '\0' && !isspace(*p))
 				return (0); /* Can't parse - no match */
 			break;
