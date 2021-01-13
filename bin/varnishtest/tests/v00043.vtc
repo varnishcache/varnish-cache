@@ -44,6 +44,7 @@ varnish v1 -cliok "param.set debug +syncvsl" -vcl+backend {
 
 	sub vcl_recv {
 		set req.http.x0 = debug.test_priv_top(req.url + req.esi_level);
+		o.test_priv_top(req.url + req.esi_level);
 	}
 
 	sub vcl_miss {

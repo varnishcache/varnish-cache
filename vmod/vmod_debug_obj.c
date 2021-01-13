@@ -211,12 +211,30 @@ xyzzy_obj_test_priv_task(VRT_CTX, struct xyzzy_debug_obj *o, VCL_STRING s)
 	return (p->priv);
 }
 
+static const struct vmod_priv_methods xyzzy_obj_test_priv_top_methods[1] = {{
+		.magic = VMOD_PRIV_METHODS_MAGIC,
+		.type = "debug_obj_test_priv_top",
+		.fini = free
+}};
+
 VCL_STRING v_matchproto_()
-xyzzy_obj_test_priv_top(VRT_CTX,
-    struct xyzzy_debug_obj *o, struct vmod_priv *priv, VCL_STRING s)
+xyzzy_obj_test_priv_top(VRT_CTX, struct xyzzy_debug_obj *o, VCL_STRING s)
 {
-	(void)o;
-	return (xyzzy_test_priv_top(ctx, priv, s));
+	struct vmod_priv *p;
+
+	p = VRT_priv_top(ctx, o);
+
+	if (p == NULL) {
+		VRT_fail(ctx, "no priv task - out of ws?");
+		return ("");
+	}
+
+	if (p->priv == NULL) {
+		p->priv = strdup(s);
+		p->methods = xyzzy_obj_test_priv_top_methods;
+	}
+	assert (p->methods == xyzzy_obj_test_priv_top_methods);
+	return (p->priv);
 }
 
 /* ----------------------------------------------------------------------------

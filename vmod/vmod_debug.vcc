@@ -116,7 +116,9 @@ $Method STRING .test_priv_task(STRING s="")
 
 Test per-object priv_task via VRT_priv_task() / VRT_priv_get()
 
-$Method STRING .test_priv_top(PRIV_TOP, STRING)
+$Method STRING .test_priv_top(STRING s="")
+
+Test per-object priv_top via VRT_priv_top()
 
 $Function VOID rot52(HTTP hdr)
 
