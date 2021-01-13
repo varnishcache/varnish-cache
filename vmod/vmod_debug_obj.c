@@ -185,6 +185,7 @@ xyzzy_obj_test_priv_task(VRT_CTX, struct xyzzy_debug_obj *o, VCL_STRING s)
 			    o->vcl_name);
 			return ("");
 		}
+		assert(p->methods == xyzzy_obj_test_priv_task_methods);
 		mylog(vsl, SLT_Debug,
 		    "%s.priv_task() = %p .priv = %p (\"%s\")",
 		    o->vcl_name, p, p->priv, p->priv);
@@ -204,9 +205,13 @@ xyzzy_obj_test_priv_task(VRT_CTX, struct xyzzy_debug_obj *o, VCL_STRING s)
 	    "%s.priv_task() = %p .priv = %p (\"%s\") [%s]",
 	    o->vcl_name, p, s, s, p->priv ? "update" : "new");
 
+	if (p->priv == NULL)
+		p->methods = xyzzy_obj_test_priv_task_methods;
+	else
+		assert(p->methods == xyzzy_obj_test_priv_task_methods);
+
 	/* minimum scope of s and priv is the task - no need to copy */
 	p->priv = TRUST_ME(s);
-	p->methods = xyzzy_obj_test_priv_task_methods;
 
 	return (p->priv);
 }
