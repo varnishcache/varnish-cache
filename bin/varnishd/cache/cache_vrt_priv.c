@@ -199,6 +199,23 @@ VRT_priv_task(VRT_CTX, const void *vmod_id)
 	    (uintptr_t)vmod_id));
 }
 
+#define VRT_PRIV_TOP_PREP(ctx, req, sp, top)	do {			\
+		CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
+		req = (ctx)->req;					\
+		if (req == NULL) {					\
+			WRONG("PRIV_TOP is only accessible "		\
+			    "in client VCL context");			\
+			NEEDLESS(return (NULL));			\
+		}							\
+		CHECK_OBJ(req, REQ_MAGIC);				\
+		sp = (ctx)->sp;						\
+		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			\
+		top = (req)->top;					\
+		CHECK_OBJ_NOTNULL(top, REQTOP_MAGIC);			\
+		req = (top)->topreq;					\
+		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);			\
+	} while(0)
+
 struct vmod_priv *
 VRT_priv_top(VRT_CTX, const void *vmod_id)
 {
@@ -207,19 +224,7 @@ VRT_priv_top(VRT_CTX, const void *vmod_id)
 	struct reqtop *top;
 	struct vmod_priv *priv;
 
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	req = ctx->req;
-	if (req == NULL) {
-		WRONG("PRIV_TOP is only accessible in client VCL context");
-		NEEDLESS(return (NULL));
-	}
-	CHECK_OBJ(req, REQ_MAGIC);
-	sp = ctx->sp;
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	top = req->top;
-	CHECK_OBJ_NOTNULL(top, REQTOP_MAGIC);
-	req = top->topreq;
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	VRT_PRIV_TOP_PREP(ctx, req, sp, top);
 
 	Lck_Lock(&sp->mtx);
 	priv = vrt_priv_dynamic(req->ws, top->privs, (uintptr_t)vmod_id);
