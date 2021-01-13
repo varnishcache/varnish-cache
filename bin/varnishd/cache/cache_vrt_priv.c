@@ -218,6 +218,8 @@ VRT_priv_top(VRT_CTX, const void *vmod_id)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	top = req->top;
 	CHECK_OBJ_NOTNULL(top, REQTOP_MAGIC);
+	req = top->topreq;
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 	Lck_Lock(&sp->mtx);
 	priv = vrt_priv_dynamic(req->ws, top->privs, (uintptr_t)vmod_id);
