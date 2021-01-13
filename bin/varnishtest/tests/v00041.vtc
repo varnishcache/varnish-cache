@@ -108,7 +108,7 @@ varnish v1 -arg "-p debug=+vclrel -p workspace_client=1m" -vcl+backend {
 
 } -start
 
-logexpect l0 -v v1 -g raw -d 1 -m -q "vxid == 0 and not ExpKill" {
+logexpect l0 -v v1 -g raw -d 1 -m -q "vxid == 0" {
 	expect 0 0    CLI		{^Rd vcl.load}
 	expect 0 =    Debug		{^test_priv_task.*new.$}
 	expect 0 =    Debug		{^test_priv_task.*update.$}

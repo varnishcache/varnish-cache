@@ -5,7 +5,9 @@ server s1 -repeat 12 {
 	txresp
 } -start
 
-varnish v1 -arg "-p thread_pools=1" -vcl+backend {
+varnish v1 -cliok "param.set thread_pools 1"
+varnish v1 -cliok "param.set vsl_mask +ExpKill"
+varnish v1 -vcl+backend {
 	import purge;
 	import vtc;
 

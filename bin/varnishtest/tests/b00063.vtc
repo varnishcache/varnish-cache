@@ -31,6 +31,7 @@ server s1 {
 	txresp -body "4"
 } -start
 
+varnish v1 -cliok "param.set vsl_mask +ExpKill"
 varnish v1 -vcl+backend {
 	sub vcl_backend_response {
 		if (beresp.status >= 500 && bereq.is_bgfetch) {
