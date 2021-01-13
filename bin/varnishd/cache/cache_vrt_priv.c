@@ -217,6 +217,22 @@ VRT_priv_task(VRT_CTX, const void *vmod_id)
 	} while(0)
 
 struct vmod_priv *
+VRT_priv_top_get(VRT_CTX, const void *vmod_id)
+{
+	struct req *req;
+	struct sess *sp;
+	struct reqtop *top;
+	struct vmod_priv *priv;
+
+	VRT_PRIV_TOP_PREP(ctx, req, sp, top);
+
+	Lck_Lock(&sp->mtx);
+	priv = vrt_priv_dynamic_get(top->privs, (uintptr_t)vmod_id);
+	Lck_Unlock(&sp->mtx);
+	return (priv);
+}
+
+struct vmod_priv *
 VRT_priv_top(VRT_CTX, const void *vmod_id)
 {
 	struct req *req;
