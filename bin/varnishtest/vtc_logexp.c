@@ -110,7 +110,9 @@
  * For skip, vxid and tag, '*' matches anything, '=' expects the value of the
  * previous matched record. The '?' marker is equivalent to zero, expecting a
  * match on the next record. The difference is that '?' can be used when the
- * order of individual consecutive logs is not deterministic.
+ * order of individual consecutive logs is not deterministic. In other words,
+ * lines from a block of alternatives marked by '?' can be matched in any order,
+ * but all need to match eventually.
  */
 
 #include "config.h"
