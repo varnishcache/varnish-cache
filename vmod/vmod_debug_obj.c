@@ -211,29 +211,80 @@ xyzzy_obj_test_priv_task(VRT_CTX, struct xyzzy_debug_obj *o, VCL_STRING s)
 	return (p->priv);
 }
 
+static void
+obj_priv_top_fini(void *ptr)
+{
+	AN(ptr);
+	VSL(SLT_Debug, 0, "obj_priv_top_fini(%p = \"%s\")", ptr, (char *)ptr);
+}
+
 static const struct vmod_priv_methods xyzzy_obj_test_priv_top_methods[1] = {{
 		.magic = VMOD_PRIV_METHODS_MAGIC,
 		.type = "debug_obj_test_priv_top",
-		.fini = free
+		.fini = obj_priv_top_fini
 }};
 
 VCL_STRING v_matchproto_()
 xyzzy_obj_test_priv_top(VRT_CTX, struct xyzzy_debug_obj *o, VCL_STRING s)
 {
 	struct vmod_priv *p;
+	struct req *req;
+	struct ws *ws;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	req = ctx->req;
+	if (req == NULL) {
+		VRT_fail(ctx, "%s.priv_top() can only be used "
+		    "in client VCL context", o->vcl_name);
+		return ("");
+	}
+	CHECK_OBJ(req, REQ_MAGIC);
+
+	if (s == NULL || *s == '\0') {
+		p = VRT_priv_top_get(ctx, o);
+		if (p == NULL) {
+			VSLb(ctx->vsl, SLT_Debug, "%s.priv_top() = NULL",
+			    o->vcl_name);
+			return ("");
+		}
+		assert(p->methods == xyzzy_obj_test_priv_top_methods);
+		VSLb(ctx->vsl, SLT_Debug,
+		    "%s.priv_top() = %p .priv = %p (\"%s\")",
+		    o->vcl_name, p, p->priv, p->priv);
+		return (p->priv);
+	}
 
 	p = VRT_priv_top(ctx, o);
+	if (p == NULL)
+		VSLb(ctx->vsl, SLT_Debug, "%s.priv_top() = NULL [err]",
+		    o->vcl_name);
 
-	if (p == NULL) {
-		VRT_fail(ctx, "no priv task - out of ws?");
+	CHECK_OBJ_NOTNULL(req->top, REQTOP_MAGIC);
+	req = req->top->topreq;
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	ws = req->ws;
+
+	/* copy to top req's workspace if need to */
+	if (ctx->ws != ws && WS_Inside(ctx->ws, s, NULL))
+		s = WS_Copy(ws, s, -1);
+
+	if (p == NULL || s == NULL) {
+		VRT_fail(ctx, "out of ws?");
 		return ("");
 	}
 
-	if (p->priv == NULL) {
-		p->priv = strdup(s);
+	VSLb(ctx->vsl, SLT_Debug,
+	    "%s.priv_top() = %p .priv = %p (\"%s\") [%s]",
+	    o->vcl_name, p, s, s, p->priv ? "update" : "new");
+
+	if (p->priv == NULL)
 		p->methods = xyzzy_obj_test_priv_top_methods;
-	}
-	assert (p->methods == xyzzy_obj_test_priv_top_methods);
+	else
+		assert(p->methods == xyzzy_obj_test_priv_top_methods);
+
+	p->priv = TRUST_ME(s);
+
 	return (p->priv);
 }
 

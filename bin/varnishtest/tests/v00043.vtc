@@ -8,6 +8,7 @@ server s1 {
 	expect req.http.x0 == "/a0"
 	expect req.http.x1 == "/a0"
 	expect req.http.o1 == <undef>
+	expect req.http.o2 == "/a0"
 	txresp -body {
 		<html>
 		<esi:include src="/foo1"/>
@@ -19,6 +20,7 @@ server s1 {
 	expect req.http.x0 == "/a0"
 	expect req.http.x1 == "/a0"
 	expect req.http.o1 == "/foo11"
+	expect req.http.o2 == "/a0"
 	txresp -body {
 		<html>
 		<esi:include src="/bar"/>
@@ -29,6 +31,7 @@ server s1 {
 	expect req.http.x0 == "/a0"
 	expect req.http.x1 == "/a0"
 	expect req.http.o1 == "/foo11"
+	expect req.http.o2 == "/a0"
 	txresp
 
 	rxreq
@@ -36,6 +39,7 @@ server s1 {
 	expect req.http.x0 == "/a0"
 	expect req.http.x1 == "/a0"
 	expect req.http.o1 == "/foo11"
+	expect req.http.o2 == "/a0"
 	txresp -body {
 		<html>
 		<esi:include src="/bar"/>
@@ -46,6 +50,7 @@ server s1 {
 	expect req.http.x0 == "/b0"
 	expect req.http.x1 == "/b0"
 	expect req.http.o1 == <undef>
+	expect req.http.o2 == "/b0"
 
 	txresp
 } -start
@@ -62,16 +67,16 @@ varnish v1 -cliok "param.set debug +syncvsl" -vcl+backend {
 		set req.http.x0 = debug.test_priv_top(req.url + req.esi_level);
 		if (req.url == "/foo1") {
 			o.test_priv_top(req.url + req.esi_level);
-		} else {
+		}
+		if (req.esi_level == 0) {
 			o2.test_priv_top(req.url + req.esi_level);
 		}
 	}
 
 	sub vcl_miss {
 		set req.http.x1 = debug.test_priv_top("");
-		if (req.esi_level > 0) {
-			set req.http.o1 = o.test_priv_top("");
-		}
+		set req.http.o1 = o.test_priv_top("");
+		set req.http.o2 = o2.test_priv_top("");
 	}
 
 	sub vcl_backend_response {
