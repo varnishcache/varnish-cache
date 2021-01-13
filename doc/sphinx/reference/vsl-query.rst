@@ -246,13 +246,15 @@ The following types of operands are available:
 
   A number without any fractional part, valid for the numerical
   comparison operators. The integer type is used when the operand does
-  not contain any period (.) characters.
+  not contain any period (.) nor exponent (e) characters. However if
+  the record evaluates as a float, only its integral part is used for
+  the comparison.
 
 * Float
 
   A number with a fractional part, valid for the numerical comparison
   operators. The float type is used when the operand does contain a
-  period (.) character.
+  period (.) or exponent (e) character.
 
 * String
 
@@ -329,7 +331,8 @@ QUERY EXPRESSION EXAMPLES
 HISTORY
 =======
 
-This document was written by Martin Blix Grydeland.
+This document was initially written by Martin Blix Grydeland and amended
+by others.
 
 
 COPYRIGHT
