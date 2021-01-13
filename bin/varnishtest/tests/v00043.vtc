@@ -7,7 +7,7 @@ server s1 {
 	expect req.url == "/a"
 	expect req.http.x0 == "/a0"
 	expect req.http.x1 == "/a0"
-	expect req.http.o1 == <undef>
+	expect req.http.o1 == ""
 	expect req.http.o2 == "/a0"
 	txresp -body {
 		<html>
@@ -49,7 +49,7 @@ server s1 {
 	expect req.url == "/b"
 	expect req.http.x0 == "/b0"
 	expect req.http.x1 == "/b0"
-	expect req.http.o1 == <undef>
+	expect req.http.o1 == ""
 	expect req.http.o2 == "/b0"
 
 	txresp
