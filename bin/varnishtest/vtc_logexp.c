@@ -43,6 +43,8 @@
  *                 [vsl arguments] {
  *                         expect <skip> <vxid> <tag> <regex>
  *                         expect <skip> <vxid> <tag> <regex>
+ *                         fail add <vxid> <tag> <regex>
+ *                         fail clear
  *                         ...
  *                 } [-start|-wait]
  *
@@ -93,7 +95,7 @@
  * \-T <seconds>
  *         Transaction end timeout
  *
- * And the arguments of the specifications lines are:
+ * expect specification:
  *
  * skip: [uint|*|?]
  *         Max number of record to skip
@@ -113,6 +115,26 @@
  * order of individual consecutive logs is not deterministic. In other words,
  * lines from a block of alternatives marked by '?' can be matched in any order,
  * but all need to match eventually.
+ *
+ * fail specification:
+ *
+ * add: Add to the fail list
+ *
+ *      Arguments are equivalent to expect, except for skip missing
+ *
+ * clear: Clear the fail list
+ *
+ * Any number of fail specifications can be active during execution of
+ * a logexpect. All active fail specifications are matched against every
+ * log line and, if any match, the logexpect fails immediately.
+ *
+ * For transactional vsls (-g <session|request|vxid>), a fail list can be used
+ * without limitation: When the transaction ends, the logexpect ends
+ * successfully if no specification from the fail list matched.
+ *
+ * For raw mode (-g raw), however, the log never ends, so for a logexpect to
+ * finish successfully, a "fail clear" is required after some match which
+ * determines that no further negative matching is required.
  */
 
 #include "config.h"
@@ -185,9 +207,11 @@ static VTAILQ_HEAD(, logexp)		logexps =
 	VTAILQ_HEAD_INITIALIZER(logexps);
 
 static cmd_f cmd_logexp_expect;
+static cmd_f cmd_logexp_fail;
 
 static const struct cmds logexp_cmds[] = {
 	{ "expect",		cmd_logexp_expect },
+	{ "fail",		cmd_logexp_fail },
 	{ NULL,			NULL },
 };
 
@@ -667,6 +691,40 @@ cmd_logexp_expect(CMD_ARGS)
 			vtc_fatal(vl, "Not a positive integer: '%s'", av[1]);
 	}
 	cmd_logexp_common(le, vl, skip_max, av);
+}
+
+static void
+cmd_logexp_fail(CMD_ARGS)
+{
+	struct logexp *le;
+	struct logexp_test *test;
+
+	CAST_OBJ_NOTNULL(le, priv, LOGEXP_MAGIC);
+
+	if (av[1] == NULL)
+		vtc_fatal(vl, "Syntax error");
+
+	if (!strcmp(av[1], "clear")) {
+		ALLOC_OBJ(test, LOGEXP_TEST_MAGIC);
+		AN(test);
+		test->skip_max = LE_CLEAR;
+		test->str = VSB_new_auto();
+		AN(test->str);
+		AZ(VSB_printf(test->str, "%s %s",
+		    av[0], av[1]));
+		AZ(VSB_finish(test->str));
+
+		VTAILQ_INSERT_TAIL(&le->tests, test, list);
+		return;
+	}
+
+	if (strcmp(av[1], "add"))
+		vtc_fatal(vl, "Unknown fail argument '%s'", av[1]);
+
+	if (av[2] == NULL || av[3] == NULL)
+		vtc_fatal(vl, "Syntax error");
+
+	cmd_logexp_common(le, vl, LE_FAIL, av);
 }
 
 static void
