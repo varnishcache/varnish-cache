@@ -132,13 +132,13 @@
  * a logexpect. All active fail specifications are matched against every
  * log line and, if any match, the logexpect fails immediately.
  *
- * For transactional vsls (-g <session|request|vxid>), a fail list can be used
- * without limitation: When the transaction ends, the logexpect ends
- * successfully if no specification from the fail list matched.
+ * For a logexpect to end successfully, there must be no specs on the fail list,
+ * so logexpects should always end with
  *
- * For raw mode (-g raw), however, the log never ends, so for a logexpect to
- * finish successfully, a "fail clear" is required after some match which
- * determines that no further negative matching is required.
+ *      expect <skip> <vxid> <tag> <termination-condition>
+ *      fail clear
+ *
+ * XXX can we come up with a better solution which is still safe?
  */
 
 #include "config.h"
@@ -526,10 +526,6 @@ logexp_dispatch(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				return (1);
 		}
 	}
-	// transaction end
-	if (le->g_arg != VSL_g_raw)
-		VTAILQ_INIT(&le->fail);
-
 	return (0);
 }
 

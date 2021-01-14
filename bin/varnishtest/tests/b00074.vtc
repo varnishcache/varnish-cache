@@ -27,6 +27,8 @@ varnish v1 -vcl {
 logexpect l1 -v v1 -g vxid -q "vxid == 1001" {
 	fail add *	Error		"out of workspace"
 	fail add *	VCL_Error	"Workspace overflow"
+	expect * 1001	End
+	fail clear
 } -start
 
 logexpect l2 -v v1 -err -g vxid -q "vxid == 1001" {
@@ -46,8 +48,6 @@ client c1 {
 	rxresp
 } -run
 
-# -g raw needs an explicit expect and "fail clear" at the end
-# because the raw transaction never ends
 logexpect l4 -v v1 -d 1 -g raw {
 	fail add *	VCL_Log	^i2
 	expect * 0	VCL_Log	^i0
