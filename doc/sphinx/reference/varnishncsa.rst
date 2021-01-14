@@ -84,7 +84,7 @@ Supported formatters are:
 %D
   In client mode, time taken to serve the request, in microseconds.
   In backend mode, time from the request was sent to the entire body
-  had been received.
+  had been received. This is equivalent to %{us}T.
 
 %H
   The request protocol. Defaults to HTTP/1.0 if not known.
@@ -138,7 +138,13 @@ Supported formatters are:
 %T
   In client mode, time taken to serve the request, in seconds.  In
   backend mode, time from the request was sent to the entire body had
-  been received.
+  been received. This is equivalent to %{s}T.
+
+%{X}T
+  In client mode, time taken to serve the request, in the format
+  specified by X.  In backend mode, time from the request was sent to
+  the entire body had been received. The time specification format can
+  be one of the following: s (same as %T), ms or us (same as %D).
 
 %U
   The request URL without the query string. Defaults to '-' if not
