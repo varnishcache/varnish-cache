@@ -348,10 +348,6 @@ format_time(const struct format *format)
 		t_end = t_start;
 
 	switch (format->time_type) {
-	case 'D':
-		AZ(VSB_printf(CTX.vsb, "%d",
-		    (int)((t_end - t_start) * 1e6)));
-		break;
 	case 't':
 		AN(format->time_fmt);
 		t = t_start;
@@ -360,7 +356,16 @@ format_time(const struct format *format)
 		AZ(VSB_cat(CTX.vsb, buf));
 		break;
 	case 'T':
-		AZ(VSB_printf(CTX.vsb, "%d", (int)(t_end - t_start)));
+		AN(format->time_fmt);
+		if (!strcmp(format->time_fmt, "s")) /* same as %T */
+			t = t_end - t_start;
+		else if (!strcmp(format->time_fmt, "ms"))
+			t = (t_end - t_start) * 1e3;
+		else if (!strcmp(format->time_fmt, "us")) /* same as %D */
+			t = (t_end - t_start) * 1e6;
+		else
+			WRONG("Unreachable branch");
+		AZ(VSB_printf(CTX.vsb, "%d", (int)t));
 		break;
 	default:
 		WRONG("Time format specifier");
@@ -498,12 +503,16 @@ addf_time(char type, const char *fmt)
 
 	ALLOC_OBJ(f, FORMAT_MAGIC);
 	AN(f);
+	AN(fmt);
 	f->func = format_time;
 	f->time_type = type;
-	if (fmt != NULL) {
-		f->time_fmt = strdup(fmt);
-		AN(f->time_fmt);
-	}
+	f->time_fmt = strdup(fmt);
+	AN(f->time_fmt);
+
+	if (f->time_type == 'T' && strcmp(f->time_fmt, "s") &&
+	    strcmp(f->time_fmt, "ms") && strcmp(f->time_fmt, "us"))
+		VUT_Error(vut, 1, "Unknown specifier: %%{%s}T", f->time_fmt);
+
 	VTAILQ_INSERT_TAIL(&CTX.format, f, list);
 }
 
@@ -719,7 +728,7 @@ parse_format(const char *format)
 			addf_fragment(&CTX.frag[F_b], "-");
 			break;
 		case 'D':	/* Float request time */
-			addf_time(*p, NULL);
+			addf_time('T', "us");
 			break;
 		case 'h':	/* Client host name / IP Address */
 			addf_fragment(&CTX.frag[F_h], "-");
@@ -752,7 +761,7 @@ parse_format(const char *format)
 			addf_time(*p, TIME_FMT);
 			break;
 		case 'T':	/* Int request time */
-			addf_time(*p, NULL);
+			addf_time(*p, "s");
 			break;
 		case 'u':	/* Remote user from auth */
 			addf_auth();
@@ -780,6 +789,9 @@ parse_format(const char *format)
 				addf_hdr(&CTX.watch_resphdr, buf);
 				break;
 			case 't':
+				addf_time(*q, buf);
+				break;
+			case 'T':
 				addf_time(*q, buf);
 				break;
 			case 'x':
