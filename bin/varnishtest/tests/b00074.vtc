@@ -1,0 +1,67 @@
+varnishtest "Test logexpect fail command"
+
+# NOTE: this is a test of varnishtest itself, so it would fall under
+# the "a" category, but has been filed under the "b" category because
+# it needs varnishd
+
+varnish v1 -vcl {
+	import std;
+
+	backend proforma None;
+
+	sub vcl_init {
+		std.log("i0");
+		std.log("i1");
+		std.log("i2");
+		std.log("i3");
+	}
+
+	sub vcl_recv {
+		std.log("r0");
+		std.log("r1");
+		std.log("r2");
+		std.log("r3");
+	}
+} -start
+
+logexpect l1 -v v1 -g vxid -q "vxid == 1001" {
+	fail add *	Error		"out of workspace"
+	fail add *	VCL_Error	"Workspace overflow"
+} -start
+
+logexpect l2 -v v1 -err -g vxid -q "vxid == 1001" {
+	fail add *	VCL_Log	^r2
+} -start
+
+logexpect l3 -v v1 -g vxid -q "vxid == 1001" {
+	fail add *	VCL_Log	^r2
+	expect * 1001	VCL_Log	^r0
+	expect 0 =	VCL_Log	^r1
+	fail clear
+	expect 1 =	VCL_Log	^r3
+} -start
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+# -g raw needs an explicit expect and "fail clear" at the end
+# because the raw transaction never ends
+logexpect l4 -v v1 -d 1 -g raw {
+	fail add *	VCL_Log	^i2
+	expect * 0	VCL_Log	^i0
+	expect 0 =	VCL_Log	^i1
+	fail clear
+	expect 1 =	VCL_Log	^i3
+	fail add *	Error		"out of workspace"
+	fail add *	VCL_Error	"Workspace overflow"
+	expect * 1000	End
+	fail clear
+} -start
+
+
+logexpect l1 -wait
+logexpect l2 -wait
+logexpect l3 -wait
+logexpect l4 -wait
