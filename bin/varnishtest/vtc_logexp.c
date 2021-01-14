@@ -75,6 +75,10 @@
  * \-m
  *         Also emit log records for misses (only for debugging)
  *
+ * \-err
+ *         Invert the meaning of success. Usually called once to expect the
+ *         logexpect to fail
+ *
  * \-start
  *         Start the logexpect thread in the background.
  *
@@ -193,6 +197,7 @@ struct logexp {
 	struct tests_head		fail;
 
 	int				m_arg;
+	int				err_arg;
 	int				d_arg;
 	enum VSL_grouping_e		g_arg;
 	char				*query;
@@ -546,6 +551,10 @@ logexp_thread(void *priv)
 	logexp_next(le);
 	while (! logexp_done(le)) {
 		i = VSLQ_Dispatch(le->vslq, logexp_dispatch, le);
+		if (i == 2 && le->err_arg) {
+			vtc_log(le->vl, 4, "end| failed as expected");
+			return (NULL);
+		}
 		if (i == 2)
 			vtc_fatal(le->vl, "bad| expectation failed");
 		else if (i < 0)
@@ -827,6 +836,10 @@ cmd_logexpect(CMD_ARGS)
 		}
 		if (!strcmp(*av, "-m")) {
 			le->m_arg = !le->m_arg;
+			continue;
+		}
+		if (!strcmp(*av, "-err")) {
+			le->err_arg = !le->err_arg;
 			continue;
 		}
 		if (!strcmp(*av, "-start")) {
