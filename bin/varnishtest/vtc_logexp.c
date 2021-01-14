@@ -130,15 +130,18 @@
 #include "vtim.h"
 #include "vre.h"
 
-#define LE_ANY  (-1)
-#define LE_LAST (-2)
-#define LE_ALT  (-3)
-#define LE_SEEN (-4)
+#define LE_ANY   (-1)
+#define LE_LAST  (-2)
+#define LE_ALT   (-3)
+#define LE_SEEN  (-4)
+#define LE_FAIL  (-5)
+#define LE_CLEAR (-6)	// clear fail list
 
 struct logexp_test {
 	unsigned			magic;
 #define LOGEXP_TEST_MAGIC		0x6F62B350
 	VTAILQ_ENTRY(logexp_test)	list;
+	VTAILQ_ENTRY(logexp_test)	faillist;
 
 	struct vsb			*str;
 	int				vxid;
@@ -164,6 +167,8 @@ struct logexp {
 	int				skip_cnt;
 	int				vxid_last;
 	int				tag_last;
+
+	struct tests_head		fail;
 
 	int				m_arg;
 	int				d_arg;
@@ -297,6 +302,7 @@ logexp_next(struct logexp *le)
 		le->test = VTAILQ_NEXT(le->test, list);
 	} else {
 		logexp_clean(&le->tests);
+		VTAILQ_INIT(&le->fail);
 		le->test = VTAILQ_FIRST(&le->tests);
 	}
 
@@ -304,10 +310,24 @@ logexp_next(struct logexp *le)
 		return;
 
 	CHECK_OBJ(le->test, LOGEXP_TEST_MAGIC);
-	if (le->test->skip_max == LE_SEEN)
+
+	switch (le->test->skip_max) {
+	case LE_SEEN:
 		logexp_next(le);
-	else
+		return;
+	case LE_CLEAR:
+		vtc_log(le->vl, 3, "condition| fail clear");
+		VTAILQ_INIT(&le->fail);
+		logexp_next(le);
+		return;
+	case LE_FAIL:
+		vtc_log(le->vl, 3, "condition| %s", VSB_data(le->test->str));
+		VTAILQ_INSERT_TAIL(&le->fail, le->test, faillist);
+		logexp_next(le);
+		return;
+	default:
 		vtc_log(le->vl, 3, "expecting| %s", VSB_data(le->test->str));
+	}
 }
 
 enum le_match_e {
@@ -321,11 +341,12 @@ logexp_match(const struct logexp *le, struct logexp_test *test,
     const char *data, int vxid, int tag, int type, int len)
 {
 	const char *legend;
-	int ok = 1, skip = 0, alt = 0;
+	int ok = 1, skip = 0, alt, fail;
 
 	AN(le);
 	AN(test);
 	assert(test->skip_max != LE_SEEN);
+	assert(test->skip_max != LE_CLEAR);
 
 	if (test->vxid == LE_LAST) {
 		if (le->vxid_last != vxid)
@@ -348,14 +369,22 @@ logexp_match(const struct logexp *le, struct logexp_test *test,
 		len, 0, 0, NULL, 0, NULL))
 		ok = 0;
 
-	if (test->skip_max == LE_ALT)
-		alt = 1;
+	alt = (test->skip_max == LE_ALT);
+	fail = (test->skip_max == LE_FAIL);
 
 	if (!ok && !alt && (test->skip_max == LE_ANY ||
 		    test->skip_max > le->skip_cnt))
 		skip = 1;
 
-	if (ok)
+	if (fail) {
+		if (ok)
+			legend = "fail";
+		else if (le->m_arg)
+			legend = "fmiss";
+		else
+			legend = NULL;
+	}
+	else if (ok)
 		legend = "match";
 	else if (skip && le->m_arg)
 		legend = "miss";
@@ -386,6 +415,31 @@ logexp_match(const struct logexp *le, struct logexp_test *test,
 	return (LEM_FAIL);
 }
 
+static enum le_match_e
+logexp_failchk(const struct logexp *le,
+    const char *data, int vxid, int tag, int type, int len)
+{
+	struct logexp_test *test;
+	static enum le_match_e r;
+
+	if (VTAILQ_FIRST(&le->fail) == NULL)
+		return (LEM_SKIP);
+
+	VTAILQ_FOREACH(test, &le->fail, faillist) {
+		r = logexp_match(le, test, data, vxid, tag, type, len);
+		if (r == LEM_OK)
+			return (LEM_FAIL);
+		assert (r == LEM_FAIL);
+	}
+	return (LEM_OK);
+}
+
+static int
+logexp_done(const struct logexp *le)
+{
+	return ((VTAILQ_FIRST(&le->fail) == NULL) && le->test == NULL);
+}
+
 static int v_matchproto_(VSLQ_dispatch_f)
 logexp_dispatch(struct VSL_data *vsl, struct VSL_transaction * const pt[],
     void *priv)
@@ -404,7 +458,6 @@ logexp_dispatch(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			if (!VSL_Match(vsl, t->c))
 				continue;
 
-			CHECK_OBJ_NOTNULL(le->test, LOGEXP_TEST_MAGIC);
 			AN(t->c->rec.ptr);
 			tag = VSL_TAG(t->c->rec.ptr);
 
@@ -416,6 +469,16 @@ logexp_dispatch(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			len = VSL_LEN(t->c->rec.ptr) - 1;
 			type = VSL_CLIENT(t->c->rec.ptr) ? 'c' :
 			    VSL_BACKEND(t->c->rec.ptr) ? 'b' : '-';
+
+			r = logexp_failchk(le, data, vxid, tag, type, len);
+			if (r == LEM_FAIL)
+				return (r);
+			if (le->test == NULL) {
+				assert (r == LEM_OK);
+				continue;
+			}
+
+			CHECK_OBJ_NOTNULL(le->test, LOGEXP_TEST_MAGIC);
 
 			r = logexp_match(le, le->test,
 			    data, vxid, tag, type, len);
@@ -430,11 +493,13 @@ logexp_dispatch(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			le->tag_last = tag;
 			le->skip_cnt = 0;
 			logexp_next(le);
-			if (le->test == NULL)
-				/* End of test script */
+			if (logexp_done(le))
 				return (1);
 		}
 	}
+	// transaction end
+	if (le->g_arg != VSL_g_raw)
+		VTAILQ_INIT(&le->fail);
 
 	return (0);
 }
@@ -455,13 +520,13 @@ logexp_thread(void *priv)
 	if (le->query != NULL)
 		vtc_log(le->vl, 4, "qry| %s", le->query);
 	logexp_next(le);
-	while (le->test) {
+	while (! logexp_done(le)) {
 		i = VSLQ_Dispatch(le->vslq, logexp_dispatch, le);
 		if (i == 2)
 			vtc_fatal(le->vl, "bad| expectation failed");
 		else if (i < 0)
 			vtc_fatal(le->vl, "bad| dispatch failed (%d)", i);
-		else if (i == 0 && le->test)
+		else if (i == 0 && ! logexp_done(le))
 			VTIM_sleep(0.01);
 	}
 	vtc_log(le->vl, 4, "end|");
