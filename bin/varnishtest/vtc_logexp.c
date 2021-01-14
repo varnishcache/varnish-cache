@@ -588,11 +588,12 @@ logexp_wait(struct logexp *le)
 	le->run = 0;
 }
 
+/* shared by expect and fail: parse from av[2] (vxid) onwards */
+
 static void
-cmd_logexp_expect(CMD_ARGS)
+cmd_logexp_common(struct logexp *le, struct vtclog *vl,
+    int skip_max, char * const *av)
 {
-	struct logexp *le;
-	int skip_max;
 	int vxid;
 	int tag;
 	vre_t *vre;
@@ -601,22 +602,6 @@ cmd_logexp_expect(CMD_ARGS)
 	struct logexp_test *test;
 	char *end;
 
-	CAST_OBJ_NOTNULL(le, priv, LOGEXP_MAGIC);
-	if (av[1] == NULL || av[2] == NULL || av[3] == NULL)
-		vtc_fatal(vl, "Syntax error");
-
-	if (av[4] != NULL && av[5] != NULL)
-		vtc_fatal(vl, "Syntax error");
-
-	if (!strcmp(av[1], "*"))
-		skip_max = LE_ANY;
-	else if (!strcmp(av[1], "?"))
-		skip_max = LE_ALT;
-	else {
-		skip_max = (int)strtol(av[1], &end, 10);
-		if (*end != '\0' || skip_max < 0)
-			vtc_fatal(vl, "Not a positive integer: '%s'", av[1]);
-	}
 	if (!strcmp(av[2], "*"))
 		vxid = LE_ANY;
 	else if (!strcmp(av[2], "="))
@@ -656,6 +641,32 @@ cmd_logexp_expect(CMD_ARGS)
 	test->tag = tag;
 	test->vre = vre;
 	VTAILQ_INSERT_TAIL(&le->tests, test, list);
+}
+
+static void
+cmd_logexp_expect(CMD_ARGS)
+{
+	struct logexp *le;
+	int skip_max;
+	char *end;
+
+	CAST_OBJ_NOTNULL(le, priv, LOGEXP_MAGIC);
+	if (av[1] == NULL || av[2] == NULL || av[3] == NULL)
+		vtc_fatal(vl, "Syntax error");
+
+	if (av[4] != NULL && av[5] != NULL)
+		vtc_fatal(vl, "Syntax error");
+
+	if (!strcmp(av[1], "*"))
+		skip_max = LE_ANY;
+	else if (!strcmp(av[1], "?"))
+		skip_max = LE_ALT;
+	else {
+		skip_max = (int)strtol(av[1], &end, 10);
+		if (*end != '\0' || skip_max < 0)
+			vtc_fatal(vl, "Not a positive integer: '%s'", av[1]);
+	}
+	cmd_logexp_common(le, vl, skip_max, av);
 }
 
 static void
