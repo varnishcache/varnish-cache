@@ -9,7 +9,7 @@ varnish v1 -vcl {
 
 varnish v1 -errvcl {Variable is read only.} {
 	backend b { .host = "${localhost}"; }
-	sub vcl_miss { set now = 1000; }
+	sub vcl_miss { set now += 1s; }
 }
 
 varnish v1 -vcl {
