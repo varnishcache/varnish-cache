@@ -385,6 +385,9 @@ REGEX
 	C-type: ``const struct vre *``
 
 	This is an opaque type for regular expressions with a VCL scope.
+	The REGEX type is only meant for regular expression literals
+	managed by the VCL compiler. For dynamic regular expressions or
+	complex usage see the API from the ``include/vre.h`` file.
 
 STRING
 	C-type: ``const char *``
