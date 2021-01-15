@@ -45,8 +45,6 @@
 
 #include "vcc_cookie_if.h"
 
-#define VRE_MAX_GROUPS 8
-
 enum filter_action {
 	blacklist,
 	whitelist
