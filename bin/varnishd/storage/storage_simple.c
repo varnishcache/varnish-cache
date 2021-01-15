@@ -243,7 +243,7 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 	const struct stevedore *stv;
 	ssize_t checkpoint_len = 0;
 	ssize_t len = 0;
-	int ret = 0;
+	int ret = 0, ret2;
 	ssize_t ol;
 	ssize_t nl;
 	ssize_t sl;
@@ -343,8 +343,11 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 			break;
 	}
 	HSH_DerefBoc(wrk, oc);
-	if ((u & OBJ_ITER_END) == 0)
-		func(priv, OBJ_ITER_END, NULL, 0);
+	if ((u & OBJ_ITER_END) == 0) {
+		ret2 = func(priv, OBJ_ITER_END, NULL, 0);
+		if (ret == 0)
+			ret = ret2;
+	}
 	return (ret);
 }
 
