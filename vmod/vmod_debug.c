@@ -280,12 +280,12 @@ xyzzy_test_priv_task(VRT_CTX, struct vmod_priv *priv, VCL_STRING s)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	if (s == NULL || *s == '\0') {
-		VSL(SLT_Debug, 0, "test_priv_task(%p) = %p (exists)",
+		mylog(ctx->vsl, SLT_Debug, "test_priv_task(%p) = %p (exists)",
 		    priv, priv->priv);
 	} else if (priv->priv == NULL) {
 		priv->priv = strdup(s);
 		priv->methods = xyzzy_test_priv_task_methods;
-		VSL(SLT_Debug, 0, "test_priv_task(%p) = %p (new)",
+		mylog(ctx->vsl, SLT_Debug, "test_priv_task(%p) = %p (new)",
 		    priv, priv->priv);
 	} else {
 		char *n = realloc(priv->priv,
@@ -295,7 +295,7 @@ xyzzy_test_priv_task(VRT_CTX, struct vmod_priv *priv, VCL_STRING s)
 		strcat(n, " ");
 		strcat(n, s);
 		priv->priv = n;
-		VSL(SLT_Debug, 0, "test_priv_task(%p) = %p (update)",
+		mylog(ctx->vsl, SLT_Debug, "test_priv_task(%p) = %p (update)",
 		    priv, priv->priv);
 	}
 	if (priv->priv != NULL)

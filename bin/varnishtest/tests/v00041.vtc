@@ -125,28 +125,17 @@ logexpect l0 -v v1 -g raw -d 1 -m -q "vxid == 0" {
 	expect ? =    Debug		{^obj_priv_task_fini.*"initY"}
 	expect 0 =    Debug		{^vcl1: VCL_EVENT_WARM}
 
+	# need an anchor for the ? expects to begin
+	expect * =    CLI               {^Rd debug.xid}
+	expect 0 =    CLI               {^Wr 200}
+	expect 0 =    CLI               {^Rd debug.listen_address}
+	expect 0 =    CLI               {^Wr 200}
+
 	# 1001/1002
-	expect * =    Debug		{^test_priv_task.*new.$}
-	expect 0 =    Debug		{^test_priv_task.*exists.$}
-	expect 0 =    Debug		{^test_priv_task.*update.$}
-	expect 0 =    Debug		{^test_priv_task.*new.$}
-	expect 0 =    Debug		{^test_priv_task.*update.$}
-	expect 0 =    Debug		{^test_priv_task.*exists.$}
-	# client task can race with backend fini, so all of these are
-	# in any order (? = alternatives)
 	expect ? =    Debug		{^priv_task_fini}
 	expect ? =    Debug		{^obj_priv_task_fini.*"r1002"}
-	expect ? =    Debug		{^test_priv_task.*exists}
 	expect ? =    Debug		{^priv_task_fini}
 	expect ? =    Debug		{^obj_priv_task_fini.*"d1001"}
-
-	# 1003, but need to include in our alt to tolerate race
-	expect ? =    Debug		{^test_priv_task.*new.$}
-	expect ? =    Debug		{^test_priv_task.*exists.$}
-	expect ? =    Debug		{^test_priv_task.*update.$}
-	expect ? =    Debug		{^test_priv_task.*new.$}
-	expect ? =    Debug		{^test_priv_task.*update.$}
-	expect ? =    Debug		{^test_priv_task.*exists.$}
 
 	# ...
 	# 1006 pipe
@@ -156,19 +145,22 @@ logexpect l0 -v v1 -g raw -d 1 -m -q "vxid == 0" {
 	expect * =    Debug		{^vcl1: VCL_EVENT_COLD}
 	expect 0 =    CLI		{^Wr 200 0 }
 	expect 0 =    CLI		{^Rd vcl.discard vcl1}
-	expect 0 =    Debug		{^test_priv_task.*new.$}
-	expect 0 =    Debug		{^test_priv_task.*update.$}
-	expect 0 =    Debug		{^test_priv_task.*exists.$}
-	expect 0 =    Debug		{^objc.priv_task.. = NULL}
-	expect 0 =    Debug		{^priv_task_fini}
-	expect 0 =    VCL_Log		{^func cleaning up}
-	expect 0 =    VCL_Log		{^obj }
+	expect ? =    Debug		{^test_priv_task.*new.$}
+	expect ? =    Debug		{^test_priv_task.*update.$}
+	expect ? =    Debug		{^test_priv_task.*exists.$}
+	expect ? =    Debug		{^objc.priv_task.. = NULL}
+	expect ? =    Debug		{^priv_task_fini}
+	expect ? =    VCL_Log		{^func cleaning up}
+	expect ? =    VCL_Log		{^obj }
 	expect 0 =    CLI		{^Wr 200 0 }
 } -start
 
 logexpect l1001 -v v1 -g vxid -q "vxid == 1001" {
 	expect * 1001 VCL_call		{^RECV}
+	expect 0 =    Debug		{^test_priv_task.*new.$}
+	expect 0 =    Debug		{^test_priv_task.*exists.$}
 	expect 0 =    ReqHeader		{^x0: /foobar}
+	expect 0 =    Debug		{^test_priv_task.*update.$}
 	expect 0 =    Debug		{^objc.priv_task.. = NULL}
 	expect 0 =    VCL_Log		{^objc }
 	expect 0 =    Debug		{^objb.priv_task.. = NULL}
@@ -182,6 +174,7 @@ logexpect l1001 -v v1 -g vxid -q "vxid == 1001" {
 	expect 0 =    VCL_Log		{^objb }
 	expect 0 =    Debug		{^objc.priv_task.. =.*"d1001". .update.}
 	expect 0 =    RespHeader	{^x0: /foobar}
+	expect 0 =    Debug		{^test_priv_task.*exists.$}
 	expect 0 =    RespHeader	{^x1: /foobar bazz}
 	expect 0 =    Debug		{^objc.priv_task.. =.*"d1001".}
 	expect 0 =    RespHeader	{^objc: d1001}
@@ -195,6 +188,8 @@ logexpect l1002 -v v1 -g vxid -q "vxid == 1002" {
 	expect 0 =    Debug		{^objb.priv_task.. = NULL}
 	expect 0 =    VCL_Log		{^objb }
 	expect 0 =    Debug		{^objb.priv_task.. =.*"f1002". .new.}
+	expect 0 =    Debug		{^test_priv_task.*new.$}
+	expect 0 =    Debug		{^test_priv_task.*update.$}
 	expect 0 =    BereqHeader	{^bx0: b /foobar}
 	expect 0 =    VCL_return	{^fetch}
 
@@ -205,6 +200,7 @@ logexpect l1002 -v v1 -g vxid -q "vxid == 1002" {
 	expect 0 =    VCL_Log		{^objb f1002}
 	expect 0 =    Debug		{^objb.priv_task.. =.*"r1002". .update.}
 	expect 0 =    BerespHeader	{^bx0: b /foobar}
+	expect 0 =    Debug		{^test_priv_task.*exists.$}
 	expect 0 =    BerespHeader	{^bx1: b /foobar}
 	expect 0 =    Debug		{^objb.priv_task.. =.*"r1002".}
 	expect 0 =    BerespHeader	{^objb: r1002}
@@ -213,7 +209,10 @@ logexpect l1002 -v v1 -g vxid -q "vxid == 1002" {
 
 logexpect l1006 -v v1 -g vxid -q "vxid == 1006" {
 	expect * 1006 VCL_call		{^RECV}
+	expect 0 =    Debug		{^test_priv_task.*new.$}
+	expect 0 =    Debug		{^test_priv_task.*exists.$}
 	expect 0 =    ReqHeader		{^x0: /pipe}
+	expect 0 =    Debug		{^test_priv_task.*update.$}
 	expect 0 =    Debug		{^objc.priv_task.. = NULL}
 	expect 0 =    VCL_Log		{^objc }
 	expect 0 =    Debug		{^objb.priv_task.. = NULL}
@@ -231,8 +230,11 @@ logexpect l1006 -v v1 -g vxid -q "vxid == 1006" {
 	expect 0 =    Debug		{^objb.priv_task.. = NULL}
 	expect 0 =    VCL_Log		{^objb }
 	expect 0 =    Debug		{^objc.priv_task.. =.*"p1006". .update.}
+	expect 0 =    Debug		{^test_priv_task.*update.$}
+	expect 0 =    Debug		{^test_priv_task.*exists.$}
 	expect 0 =    ReqUnset		{^x0: /pipe}
 	expect 0 =    ReqHeader		{^x0: /pipe bazz /pipe}
+	expect 0 =    Debug		{^test_priv_task.*update.$}
 	expect 0 =    VCL_return	{^pipe}
 } -start
 
