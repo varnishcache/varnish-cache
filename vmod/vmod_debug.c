@@ -234,7 +234,7 @@ priv_ ## name ## _fini(void *ptr)					\
 	const char * const fmt = "priv_" #name "_fini(%p)";		\
 									\
 	AN ## assert (ptr);						\
-	VSL(SLT_Debug, 0, fmt, ptr);					\
+	VSL(SLT_Debug, 0, fmt, (char *)ptr);				\
 	free(ptr);							\
 }									\
 									\

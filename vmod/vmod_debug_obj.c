@@ -159,7 +159,7 @@ obj_priv_ ## name ## _fini(void *ptr)					\
 	const char * const fmt = "obj_priv_" #name "_fini(%p = \"%s\")"; \
 									\
 	AN(ptr);							\
-	VSL(SLT_Debug, 0, fmt, ptr, ptr);				\
+	VSL(SLT_Debug, 0, fmt, ptr, (char *)ptr);			\
 }									\
 									\
 static const struct vmod_priv_methods					\
