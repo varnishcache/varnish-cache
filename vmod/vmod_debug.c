@@ -260,6 +260,7 @@ xyzzy_test_priv_call(VRT_CTX, struct vmod_priv *priv)
 		priv->priv = strdup("BAR");
 		priv->methods = xyzzy_test_priv_call_methods;
 	} else {
+		assert(priv->methods == xyzzy_test_priv_call_methods);
 		assert(!strcmp(priv->priv, "BAR"));
 	}
 }
@@ -309,6 +310,8 @@ xyzzy_test_priv_top(VRT_CTX, struct vmod_priv *priv, VCL_STRING s)
 	if (priv->priv == NULL) {
 		priv->priv = strdup(s);
 		priv->methods = xyzzy_test_priv_top_methods;
+	} else {
+		assert(priv->methods == xyzzy_test_priv_top_methods);
 	}
 	return (priv->priv);
 }
