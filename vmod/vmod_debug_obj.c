@@ -39,7 +39,8 @@
 #include "vcc_debug_if.h"
 
 // vmod_debug.c
-extern void mylog(struct vsl_log *vsl, enum VSL_tag_e tag,  const char *fmt, ...);
+extern void mylog(struct vsl_log *vsl, enum VSL_tag_e tag,
+    const char *fmt, ...) v_printflike_(3,4);
 
 struct xyzzy_debug_obj {
 	unsigned		magic;

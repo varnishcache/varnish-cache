@@ -64,7 +64,8 @@ static struct VSC_debug *vsc = NULL;
 static int loads;
 static const int store_ip_token;
 static const int fail_rollback_token;
-extern void mylog(struct vsl_log *vsl, enum VSL_tag_e tag,  const char *fmt, ...);
+extern void mylog(struct vsl_log *vsl, enum VSL_tag_e tag,
+    const char *fmt, ...) v_printflike_(3,4);
 
 /**********************************************************************/
 
