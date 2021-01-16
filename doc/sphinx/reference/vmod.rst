@@ -528,7 +528,7 @@ code wants to use them for.
 
 ``.methods`` can be an optional pointer to a struct of callbacks::
 
-	typedef void vmod_priv_fini_f(void *);
+	typedef void vmod_priv_fini_f(VRT_CTX, void *);
 
 	struct vmod_priv_methods {
 		unsigned			magic;
@@ -542,15 +542,22 @@ help debugging.
 
 ``.fini`` will be called for a non-NULL ``.priv`` of the ``struct
 vmod_priv`` when the scope ends with that ``.priv`` pointer as its
-only argument.
+second argument besides a ``VRT_CTX``.
 
 The common case where a private data structure is allocated with
 malloc(3) would look like this::
 
+	static void
+	myfree(VRT_CTX, void *p)
+	{
+		CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+		free (p);
+	}
+
 	static const struct vmod_priv_methods mymethods[1] = {{
 		.magic = VMOD_PRIV_METHODS_MAGIC,
 		.type = "mystate",
-		.fini = free	/* free(3) */
+		.fini = myfree
 	}};
 
 	// ....

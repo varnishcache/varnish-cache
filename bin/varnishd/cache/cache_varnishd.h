@@ -255,7 +255,7 @@ enum vbf_fetch_mode_e {
 void VBF_Fetch(struct worker *wrk, struct req *req,
     struct objcore *oc, struct objcore *oldoc, enum vbf_fetch_mode_e);
 const char *VBF_Get_Filter_List(struct busyobj *);
-void Bereq_Rollback(struct busyobj *);
+void Bereq_Rollback(VRT_CTX);
 
 /* cache_fetch_proc.c */
 void VFP_Init(void);
@@ -362,7 +362,7 @@ void pan_pool(struct vsb *);
 /* cache_req.c */
 struct req *Req_New(const struct worker *, struct sess *);
 void Req_Release(struct req *);
-void Req_Rollback(struct req *req);
+void Req_Rollback(VRT_CTX);
 void Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req);
 void Req_Fail(struct req *req, enum sess_close reason);
 void Req_AcctLogCharge(struct VSC_main_wrk *, struct req *);
@@ -473,7 +473,7 @@ const struct vrt_backend_probe *VCL_DefaultProbe(const struct vcl *);
 /* cache_vrt_priv.c */
 extern struct vrt_privs cli_task_privs[1];
 void VCL_TaskEnter(struct vrt_privs *);
-void VCL_TaskLeave(struct vrt_privs *);
+void VCL_TaskLeave(VRT_CTX, struct vrt_privs *);
 
 /* cache_vrt_vmod.c */
 void VMOD_Init(void);

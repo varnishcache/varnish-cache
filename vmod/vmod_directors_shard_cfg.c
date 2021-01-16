@@ -76,7 +76,7 @@ struct backend_reconfig {
 
 /* forward decl */
 static VCL_BOOL
-change_reconfigure(struct shard_change *change, VCL_INT replicas);
+change_reconfigure(VRT_CTX, struct shard_change *change, VCL_INT replicas);
 
 /*
  * ============================================================
@@ -87,7 +87,7 @@ change_reconfigure(struct shard_change *change, VCL_INT replicas);
  */
 
 static void v_matchproto_(vmod_priv_fini_f)
-shard_change_fini(void * priv)
+shard_change_fini(VRT_CTX, void * priv)
 {
 	struct shard_change *change;
 
@@ -96,7 +96,7 @@ shard_change_fini(void * priv)
 
 	CAST_OBJ_NOTNULL(change, priv, SHARD_CHANGE_MAGIC);
 
-	(void) change_reconfigure(change, 67);
+	(void) change_reconfigure(ctx, change, 67);
 }
 
 static const struct vmod_priv_methods shard_change_priv_methods[1] = {{
@@ -632,7 +632,7 @@ shardcfg_apply_change(struct vsl_log *vsl, struct sharddir *shardd,
  */
 
 static VCL_BOOL
-change_reconfigure(struct shard_change *change, VCL_INT replicas)
+change_reconfigure(VRT_CTX, struct shard_change *change, VCL_INT replicas)
 {
 	struct sharddir *shardd;
 
@@ -646,7 +646,7 @@ change_reconfigure(struct shard_change *change, VCL_INT replicas)
 
 	sharddir_wrlock(shardd);
 
-	shardcfg_apply_change(change->vsl, shardd, change, replicas);
+	shardcfg_apply_change(ctx->vsl, shardd, change, replicas);
 	shard_change_finish(change);
 
 	if (shardd->hashcircle)
@@ -654,7 +654,7 @@ change_reconfigure(struct shard_change *change, VCL_INT replicas)
 	shardd->hashcircle = NULL;
 
 	if (shardd->n_backend == 0) {
-		shard_err0(change->vsl, shardd->name,
+		shard_err0(ctx->vsl, shardd->name,
 		    ".reconfigure() no backends");
 		sharddir_unlock(shardd);
 		return (0);
@@ -681,7 +681,7 @@ shardcfg_reconfigure(VRT_CTX, struct sharddir *shardd, VCL_INT replicas)
 	if (change == NULL)
 		return (0);
 
-	return (change_reconfigure(change, replicas));
+	return (change_reconfigure(ctx, change, replicas));
 }
 
 /*

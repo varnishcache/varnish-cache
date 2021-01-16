@@ -165,7 +165,7 @@ VPI_Vmod_Init(VRT_CTX, struct vmod **hdl, unsigned nbr, void *ptr, int len,
 }
 
 void
-VPI_Vmod_Unload(struct vmod **hdl)
+VPI_Vmod_Unload(VRT_CTX, struct vmod **hdl)
 {
 	struct vmod *v;
 
@@ -173,7 +173,7 @@ VPI_Vmod_Unload(struct vmod **hdl)
 
 	TAKE_OBJ_NOTNULL(v, hdl, VMOD_MAGIC);
 
-	VCL_TaskLeave(cli_task_privs);
+	VCL_TaskLeave(ctx, cli_task_privs);
 	VCL_TaskEnter(cli_task_privs);
 
 #ifndef DONT_DLCLOSE_VMODS

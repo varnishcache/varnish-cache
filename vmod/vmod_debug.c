@@ -230,12 +230,13 @@ xyzzy_author(VRT_CTX, VCL_ENUM person, VCL_ENUM someone)
 #define AN1(x) AN(x)
 #define PRIV_FINI(name, assert)						\
 static void v_matchproto_(vmod_priv_fini_f)				\
-priv_ ## name ## _fini(void *ptr)					\
+priv_ ## name ## _fini(VRT_CTX, void *ptr)				\
 {									\
 	const char * const fmt = "priv_" #name "_fini(%p)";		\
 									\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
 	AN ## assert (ptr);						\
-	VSL(SLT_Debug, 0, fmt, (char *)ptr);				\
+	mylog(ctx->vsl, SLT_Debug, fmt, (char *)ptr);			\
 	free(ptr);							\
 }									\
 									\
@@ -407,7 +408,7 @@ xyzzy_fail2(VRT_CTX)
 }
 
 static void v_matchproto_(vmod_priv_fini_f)
-priv_vcl_fini(void *priv)
+priv_vcl_fini(VRT_CTX, void *priv)
 {
 	struct priv_vcl *priv_vcl;
 
@@ -416,7 +417,7 @@ priv_vcl_fini(void *priv)
 	free(priv_vcl->foo);
 	if (priv_vcl->obj_cb != 0) {
 		ObjUnsubscribeEvents(&priv_vcl->obj_cb);
-		VSL(SLT_Debug, 0, "Unsubscribed from Object Events");
+		VSLb(ctx->vsl, SLT_Debug, "Unsubscribed from Object Events");
 	}
 	AZ(priv_vcl->vclref_discard);
 	AZ(priv_vcl->vclref_cold);
@@ -1194,12 +1195,15 @@ xyzzy_client_port(VRT_CTX)
 	return (SES_Get_String_Attr(ctx->sp, SA_CLIENT_PORT));
 }
 
-static void
-fail_f(void *priv)
-{
-	VRT_CTX;
+void * fail_magic = &fail_magic;
 
-	CAST_OBJ_NOTNULL(ctx, priv, VRT_CTX_MAGIC);
+static void
+fail_f(VRT_CTX, void *priv)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	assert(priv == fail_magic);
+
 	VRT_fail(ctx, "thou shalt not rollet back");
 }
 
@@ -1223,12 +1227,12 @@ xyzzy_fail_rollback(VRT_CTX)
 	}
 
 	if (p->priv != NULL) {
-		assert(p->priv == ctx);
+		assert(p->priv == fail_magic);
 		assert(p->methods == xyzzy_fail_rollback_methods);
 		return;
 	}
 
-	p->priv = TRUST_ME(ctx);
+	p->priv = fail_magic;
 	p->methods = xyzzy_fail_rollback_methods;
 }
 

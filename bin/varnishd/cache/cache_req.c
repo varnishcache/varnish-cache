@@ -190,11 +190,17 @@ Req_Release(struct req *req)
  */
 
 void
-Req_Rollback(struct req *req)
+Req_Rollback(VRT_CTX)
 {
+	struct req *req;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	req = ctx->req;
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
 	if (IS_TOPREQ(req))
-		VCL_TaskLeave(req->top->privs);
-	VCL_TaskLeave(req->privs);
+		VCL_TaskLeave(ctx, req->top->privs);
+	VCL_TaskLeave(ctx, req->privs);
 	VCL_TaskEnter(req->privs);
 	if (IS_TOPREQ(req))
 		VCL_TaskEnter(req->top->privs);

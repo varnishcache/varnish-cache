@@ -801,14 +801,13 @@ VRT_Rollback(VRT_CTX, VCL_HTTP hp)
 	}
 	if (hp == ctx->http_req) {
 		CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-		Req_Rollback(ctx->req);
+		Req_Rollback(ctx);
 		if (ctx->method & VCL_MET_DELIVER)
 			XXXAZ(Resp_Setup_Deliver(ctx->req));
 		if (ctx->method & VCL_MET_SYNTH)
 			Resp_Setup_Synth(ctx->req);
 	} else if (hp == ctx->http_bereq) {
-		CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
-		Bereq_Rollback(ctx->bo);
+		Bereq_Rollback(ctx);
 	} else
 		WRONG("VRT_Rollback 'hp' invalid");
 }

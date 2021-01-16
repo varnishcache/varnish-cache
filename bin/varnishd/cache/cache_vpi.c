@@ -101,7 +101,7 @@ VPI_vcl_select(VRT_CTX, VCL_VCL vcl)
 	if (! IS_TOPREQ(req))
 		assert(req->vcl == req->top->vcl0);
 
-	Req_Rollback(req);
+	Req_Rollback(ctx);
 
 	if (IS_TOPREQ(req)) {
 		AN(req->top);

@@ -64,10 +64,11 @@ static VTAILQ_HEAD(, frfile)	frlist = VTAILQ_HEAD_INITIALIZER(frlist);
 static pthread_mutex_t		frmtx = PTHREAD_MUTEX_INITIALIZER;
 
 static void
-free_frfile(void *ptr)
+fini_frfile(VRT_CTX, void *ptr)
 {
 	struct frfile *frf;
 
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CAST_OBJ_NOTNULL(frf, ptr, CACHED_FILE_MAGIC);
 
 	AZ(pthread_mutex_lock(&frmtx));
@@ -86,7 +87,7 @@ free_frfile(void *ptr)
 static const struct vmod_priv_methods frfile_methods[1] = {{
 		.magic = VMOD_PRIV_METHODS_MAGIC,
 		.type = "vmod_std_fileread",
-		.fini = free_frfile
+		.fini = fini_frfile
 }};
 
 static struct frfile *

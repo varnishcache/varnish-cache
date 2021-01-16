@@ -259,9 +259,11 @@ VRT_priv_top(VRT_CTX, const void *vmod_id)
  */
 
 void
-VRT_priv_fini(const struct vmod_priv *p)
+VRT_priv_fini(VRT_CTX, const struct vmod_priv *p)
 {
 	const struct vmod_priv_methods *m;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
 	m = p->methods;
 	if (m == NULL)
@@ -271,7 +273,7 @@ VRT_priv_fini(const struct vmod_priv *p)
 	if (p->priv == NULL || m->fini == NULL)
 		return;
 
-	m->fini(p->priv);
+	m->fini(ctx, p->priv);
 }
 
 /*--------------------------------------------------------------------*/
@@ -284,7 +286,7 @@ VCL_TaskEnter(struct vrt_privs *privs)
 }
 
 void
-VCL_TaskLeave(struct vrt_privs *privs)
+VCL_TaskLeave(VRT_CTX, struct vrt_privs *privs)
 {
 	struct vrt_priv *vp, *vp1;
 
@@ -295,7 +297,7 @@ VCL_TaskLeave(struct vrt_privs *privs)
 	 */
 	VRBT_FOREACH_SAFE(vp, vrt_privs, privs, vp1) {
 		CHECK_OBJ(vp, VRT_PRIV_MAGIC);
-		VRT_priv_fini(vp->priv);
+		VRT_priv_fini(ctx, vp->priv);
 	}
 	ZERO_OBJ(privs, sizeof *privs);
 }

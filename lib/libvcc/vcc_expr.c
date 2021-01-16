@@ -368,7 +368,7 @@ vcc_priv_arg(struct vcc *tl, const char *p, const struct symbol *sym)
 		bprintf(buf, "vmod_priv_%u", tl->unique++);
 		ifp = New_IniFin(tl);
 		Fh(tl, 0, "static struct vmod_priv %s;\n", buf);
-		VSB_printf(ifp->fin, "\tVRT_priv_fini(&%s);", buf);
+		VSB_printf(ifp->fin, "\tVRT_priv_fini(ctx, &%s);", buf);
 		return (vcc_mk_expr(VOID, "&%s", buf));
 	}
 

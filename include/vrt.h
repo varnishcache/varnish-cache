@@ -580,7 +580,7 @@ void VRT_Format_Proxy(struct vsb *, VCL_INT, VCL_IP, VCL_IP, VCL_STRING);
 typedef int vmod_event_f(VRT_CTX, struct vmod_priv *, enum vcl_event_e);
 
 /* vmod_priv related */
-typedef void vmod_priv_fini_f(void *);
+typedef void vmod_priv_fini_f(VRT_CTX, void *);
 
 struct vmod_priv_methods {
 	unsigned			magic;
@@ -595,7 +595,7 @@ struct vmod_priv {
 	const struct vmod_priv_methods	*methods;
 };
 
-void VRT_priv_fini(const struct vmod_priv *p);
+void VRT_priv_fini(VRT_CTX, const struct vmod_priv *p);
 struct vmod_priv *VRT_priv_task(VRT_CTX, const void *vmod_id);
 struct vmod_priv *VRT_priv_task_get(VRT_CTX, const void *vmod_id);
 struct vmod_priv *VRT_priv_top(VRT_CTX, const void *vmod_id);

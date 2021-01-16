@@ -266,6 +266,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 static enum req_fsm_nxt v_matchproto_(req_state_f)
 cnt_vclfail(struct worker *wrk, struct req *req)
 {
+	struct vrt_ctx ctx[1];
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -273,7 +274,10 @@ cnt_vclfail(struct worker *wrk, struct req *req)
 	AZ(req->objcore);
 	AZ(req->stale_oc);
 
-	Req_Rollback(req);
+	INIT_OBJ(ctx, VRT_CTX_MAGIC);
+	VCL_Req2Ctx(ctx, req);
+
+	Req_Rollback(ctx);
 
 	req->err_code = 503;
 	req->err_reason = "VCL failed";
@@ -1100,6 +1104,7 @@ CNT_Embark(struct worker *wrk, struct req *req)
 enum req_fsm_nxt
 CNT_Request(struct req *req)
 {
+	struct vrt_ctx ctx[1];
 	struct worker *wrk;
 	enum req_fsm_nxt nxt;
 
@@ -1141,12 +1146,14 @@ CNT_Request(struct req *req)
 	}
 	wrk->vsl = NULL;
 	if (nxt == REQ_FSM_DONE) {
+		INIT_OBJ(ctx, VRT_CTX_MAGIC);
+		VCL_Req2Ctx(ctx, req);
 		if (IS_TOPREQ(req)) {
-			VCL_TaskLeave(req->top->privs);
+			VCL_TaskLeave(ctx, req->top->privs);
 			if (req->top->vcl0 != NULL)
 				VCL_Rel(&req->top->vcl0);
 		}
-		VCL_TaskLeave(req->privs);
+		VCL_TaskLeave(ctx, req->privs);
 		AN(req->vsl->wid);
 		VRB_Free(req);
 		req->wrk = NULL;

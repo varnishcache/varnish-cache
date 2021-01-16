@@ -71,10 +71,11 @@ struct vmod_cookie {
 };
 
 static void
-cobj_free(void *p)
+cobj_free(VRT_CTX, void *p)
 {
 	struct vmod_cookie *vcp;
 
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CAST_OBJ_NOTNULL(vcp, p, VMOD_COOKIE_MAGIC);
 	FREE_OBJ(vcp);
 }

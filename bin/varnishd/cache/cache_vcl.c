@@ -215,7 +215,7 @@ vcl_send_event(struct vcl *vcl, enum vcl_event_e ev, struct vsb **msg)
 
 	VCL_TaskEnter(cli_task_privs);
 	r = ctx->vcl->conf->event_vcl(ctx, ev);
-	VCL_TaskLeave(cli_task_privs);
+	VCL_TaskLeave(ctx, cli_task_privs);
 
 	/* if the warm event did not get to vcl_init, vcl_fini
 	 * won't be run, so handling may be zero */

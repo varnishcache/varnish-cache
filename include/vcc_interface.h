@@ -55,7 +55,7 @@ void VPI_count(VRT_CTX, unsigned);
 
 int VPI_Vmod_Init(VRT_CTX, struct vmod **hdl, unsigned nbr, void *ptr, int len,
     const char *nm, const char *path, const char *file_id, const char *backup);
-void VPI_Vmod_Unload(struct vmod **hdl);
+void VPI_Vmod_Unload(VRT_CTX, struct vmod **hdl);
 
 typedef int acl_match_f(VRT_CTX, const VCL_IP);
 

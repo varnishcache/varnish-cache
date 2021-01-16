@@ -131,15 +131,8 @@ logexpect l0 -v v1 -g raw -d 1 -m -q "vxid == 0" {
 	expect 0 =    CLI               {^Rd debug.listen_address}
 	expect 0 =    CLI               {^Wr 200}
 
-	# 1001/1002
-	expect ? =    Debug		{^priv_task_fini}
-	expect ? =    Debug		{^obj_priv_task_fini.*"r1002"}
-	expect ? =    Debug		{^priv_task_fini}
-	expect ? =    Debug		{^obj_priv_task_fini.*"d1001"}
-
 	# ...
 	# 1006 pipe
-	expect * =    Debug		{^obj_priv_task_fini.*"p1006"}
 
 	# vcl_fini
 	expect * =    Debug		{^vcl1: VCL_EVENT_COLD}
@@ -179,6 +172,9 @@ logexpect l1001 -v v1 -g vxid -q "vxid == 1001" {
 	expect 0 =    Debug		{^objc.priv_task.. =.*"d1001".}
 	expect 0 =    RespHeader	{^objc: d1001}
 	expect 0 =    VCL_return	{^deliver}
+	expect 9 =    Timestamp	{^Resp}
+	expect ? =    Debug		{^priv_task_fini}
+	expect ? =    Debug		{^obj_priv_task_fini.*"d1001"}
 } -start
 
 logexpect l1002 -v v1 -g vxid -q "vxid == 1002" {
@@ -205,6 +201,9 @@ logexpect l1002 -v v1 -g vxid -q "vxid == 1002" {
 	expect 0 =    Debug		{^objb.priv_task.. =.*"r1002".}
 	expect 0 =    BerespHeader	{^objb: r1002}
 	expect 0 =    VCL_return	{^deliver}
+	expect 9 =    Timestamp	{^BerespBody}
+	expect ? =    Debug		{^priv_task_fini}
+	expect ? =    Debug		{^obj_priv_task_fini.*"r1002"}
 } -start
 
 logexpect l1006 -v v1 -g vxid -q "vxid == 1006" {
@@ -236,6 +235,9 @@ logexpect l1006 -v v1 -g vxid -q "vxid == 1006" {
 	expect 0 =    ReqHeader		{^x0: /pipe bazz /pipe}
 	expect 0 =    Debug		{^test_priv_task.*update.$}
 	expect 0 =    VCL_return	{^pipe}
+	expect 4 =    PipeAcct
+	expect ? =    Debug		{^priv_task_fini}
+	expect ? =    Debug		{^obj_priv_task_fini.*"p1006"}
 } -start
 
 client c1 {

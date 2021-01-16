@@ -134,8 +134,12 @@ vbf_cleanup(struct busyobj *bo)
 }
 
 void
-Bereq_Rollback(struct busyobj *bo)
+Bereq_Rollback(VRT_CTX)
 {
+	struct busyobj *bo;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	bo = ctx->bo;
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
 	if (bo->htc != NULL &&
@@ -144,7 +148,7 @@ Bereq_Rollback(struct busyobj *bo)
 		bo->htc->doclose = SC_RESP_CLOSE;
 
 	vbf_cleanup(bo);
-	VCL_TaskLeave(bo->privs);
+	VCL_TaskLeave(ctx, bo->privs);
 	VCL_TaskEnter(bo->privs);
 	HTTP_Clone(bo->bereq, bo->bereq0);
 	bo->vfp_filter_list = NULL;
@@ -1006,6 +1010,7 @@ vbf_stp_done(struct worker *wrk, struct busyobj *bo)
 static void v_matchproto_(task_func_t)
 vbf_fetch_thread(struct worker *wrk, void *priv)
 {
+	struct vrt_ctx ctx[1];
 	struct busyobj *bo;
 	struct objcore *oc;
 	const struct fetch_step *stp;
@@ -1050,7 +1055,9 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 
 	assert(bo->director_state == DIR_S_NULL);
 
-	VCL_TaskLeave(bo->privs);
+	INIT_OBJ(ctx, VRT_CTX_MAGIC);
+	VCL_Bo2Ctx(ctx, bo);
+	VCL_TaskLeave(ctx, bo->privs);
 	http_Teardown(bo->bereq);
 	http_Teardown(bo->beresp);
 	// can not make assumptions about the number of references here #3434
