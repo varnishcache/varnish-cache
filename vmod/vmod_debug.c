@@ -225,11 +225,31 @@ xyzzy_author(VRT_CTX, VCL_ENUM person, VCL_ENUM someone)
 	WRONG("Illegal VMOD enum");
 }
 
-static const struct vmod_priv_methods xyzzy_test_priv_call_methods[1] = {{
-		.magic = VMOD_PRIV_METHODS_MAGIC,
-		.type = "debug_test_priv_call",
-		.fini = free
-}};
+#define AN0(x) (void) 0
+#define AN1(x) AN(x)
+#define PRIV_FINI(name, assert)						\
+static void v_matchproto_(vmod_priv_fini_f)				\
+priv_ ## name ## _fini(void *ptr)					\
+{									\
+	const char * const fmt = "priv_" #name "_fini(%p)";		\
+									\
+	AN ## assert (ptr);						\
+	VSL(SLT_Debug, 0, fmt, ptr);					\
+	free(ptr);							\
+}									\
+									\
+static const struct vmod_priv_methods					\
+xyzzy_test_priv_ ## name ## _methods[1] = {{				\
+		.magic = VMOD_PRIV_METHODS_MAGIC,			\
+		.type = "debug_test_priv_" #name,			\
+		.fini = priv_ ## name ## _fini				\
+	}};
+PRIV_FINI(call, 0)
+PRIV_FINI(task, 1)
+PRIV_FINI(top, 1)
+#undef PRIV_FINI
+#undef AN0
+#undef AN1
 
 VCL_VOID v_matchproto_(td_debug_test_priv_call)
 xyzzy_test_priv_call(VRT_CTX, struct vmod_priv *priv)
@@ -251,20 +271,6 @@ xyzzy_test_priv_task_get(VRT_CTX)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AZ(VRT_priv_task_get(ctx, NULL));
 }
-
-static void
-priv_task_free(void *ptr)
-{
-	AN(ptr);
-	VSL(SLT_Debug, 0, "priv_task_free(%p)", ptr);
-	free(ptr);
-}
-
-static const struct vmod_priv_methods xyzzy_test_priv_task_methods[1] = {{
-		.magic = VMOD_PRIV_METHODS_MAGIC,
-		.type = "debug_test_priv_task",
-		.fini = priv_task_free
-}};
 
 VCL_STRING v_matchproto_(td_debug_test_priv_task)
 xyzzy_test_priv_task(VRT_CTX, struct vmod_priv *priv, VCL_STRING s)
@@ -294,12 +300,6 @@ xyzzy_test_priv_task(VRT_CTX, struct vmod_priv *priv, VCL_STRING s)
 		assert(priv->methods == xyzzy_test_priv_task_methods);
 	return (priv->priv);
 }
-
-static const struct vmod_priv_methods xyzzy_test_priv_top_methods[1] = {{
-		.magic = VMOD_PRIV_METHODS_MAGIC,
-		.type = "debug_test_priv_top",
-		.fini = free
-}};
 
 VCL_STRING v_matchproto_(td_debug_test_priv_top)
 xyzzy_test_priv_top(VRT_CTX, struct vmod_priv *priv, VCL_STRING s)
@@ -403,7 +403,7 @@ xyzzy_fail2(VRT_CTX)
 }
 
 static void v_matchproto_(vmod_priv_fini_f)
-priv_vcl_free(void *priv)
+priv_vcl_fini(void *priv)
 {
 	struct priv_vcl *priv_vcl;
 
@@ -422,8 +422,8 @@ priv_vcl_free(void *priv)
 
 static const struct vmod_priv_methods priv_vcl_methods[1] = {{
 		.magic = VMOD_PRIV_METHODS_MAGIC,
-		.type = "debug_priv_vcl_free",
-		.fini = priv_vcl_free
+		.type = "debug_priv_vcl_fini",
+		.fini = priv_vcl_fini
 }};
 
 static int

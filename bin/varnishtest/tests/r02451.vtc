@@ -54,7 +54,7 @@ logexpect l1 -v v1 -g raw -d 1 {
 	expect 0 *    Debug             {^objx.priv_task.*"something to remember".$}
 	expect 0 *    VCL_Log           {^obj something to remember}
 	# string stored in obj priv_task has already been freed
-	expect ? *    Debug             {^priv_task_free}
+	expect ? *    Debug             {^priv_task_fini}
 	expect ? *    Debug             {^obj_priv_task_fini}
 	expect 0 *    Debug             {^vcl1: VCL_EVENT_WARM}
 } -start

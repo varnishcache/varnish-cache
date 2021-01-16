@@ -152,18 +152,25 @@ xyzzy_obj_test_priv_vcl(VRT_CTX,
 	xyzzy_test_priv_vcl(ctx, priv);
 }
 
-static void
-obj_priv_task_fini(void *ptr)
-{
-	AN(ptr);
-	VSL(SLT_Debug, 0, "obj_priv_task_fini(%p = \"%s\")", ptr, (char *)ptr);
-}
-
-static const struct vmod_priv_methods xyzzy_obj_test_priv_task_methods[1] = {{
-		.magic = VMOD_PRIV_METHODS_MAGIC,
-		.type = "debug_obj_test_priv_task",
-		.fini = obj_priv_task_fini
-}};
+#define PRIV_FINI(name)						\
+static void v_matchproto_(vmod_priv_fini_f)				\
+obj_priv_ ## name ## _fini(void *ptr)					\
+{									\
+	const char * const fmt = "obj_priv_" #name "_fini(%p = \"%s\")"; \
+									\
+	AN(ptr);							\
+	VSL(SLT_Debug, 0, fmt, ptr, ptr);				\
+}									\
+									\
+static const struct vmod_priv_methods					\
+xyzzy_obj_test_priv_ ## name ## _methods[1] = {{			\
+		.magic = VMOD_PRIV_METHODS_MAGIC,			\
+		.type = "debug_obj_test_priv_" #name,			\
+		.fini = obj_priv_ ## name ## _fini			\
+	}};
+PRIV_FINI(task)
+PRIV_FINI(top)
+#undef PRIV_FINI
 
 VCL_STRING v_matchproto_()
 xyzzy_obj_test_priv_task(VRT_CTX, struct xyzzy_debug_obj *o, VCL_STRING s)
@@ -215,19 +222,6 @@ xyzzy_obj_test_priv_task(VRT_CTX, struct xyzzy_debug_obj *o, VCL_STRING s)
 
 	return (p->priv);
 }
-
-static void
-obj_priv_top_fini(void *ptr)
-{
-	AN(ptr);
-	VSL(SLT_Debug, 0, "obj_priv_top_fini(%p = \"%s\")", ptr, (char *)ptr);
-}
-
-static const struct vmod_priv_methods xyzzy_obj_test_priv_top_methods[1] = {{
-		.magic = VMOD_PRIV_METHODS_MAGIC,
-		.type = "debug_obj_test_priv_top",
-		.fini = obj_priv_top_fini
-}};
 
 VCL_STRING v_matchproto_()
 xyzzy_obj_test_priv_top(VRT_CTX, struct xyzzy_debug_obj *o, VCL_STRING s)
