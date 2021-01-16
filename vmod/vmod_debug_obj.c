@@ -196,7 +196,7 @@ xyzzy_obj_test_priv_task(VRT_CTX, struct xyzzy_debug_obj *o, VCL_STRING s)
 		assert(p->methods == xyzzy_obj_test_priv_task_methods);
 		mylog(vsl, SLT_Debug,
 		    "%s.priv_task() = %p .priv = %p (\"%s\")",
-		    o->vcl_name, p, p->priv, p->priv);
+		    o->vcl_name, p, p->priv, (char *)p->priv);
 		return (p->priv);
 	}
 
