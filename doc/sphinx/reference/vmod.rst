@@ -460,6 +460,29 @@ TIME
 
 	An absolute time, as in 1284401161.
 
+VCL_SUB
+	C-type: ``const struct vcl_sub *``
+
+	Opaque handle on a VCL subroutine.
+
+	References to subroutines can be passed into VMODs as
+	arguments and called later through ``VRT_call()``. The scope
+	strictly is the VCL: vmods must ensure that ``VCL_SUB``
+	references never be called from a different VCL.
+
+	``VRT_call()`` fails the VCL for recursive calls and when the
+	``VCL_SUB`` can not be called from the current context
+	(e.g. calling a subroutine accessing ``req`` from the backend
+	side). Note that, for performance reasons, recursive call
+	detection only happens for the second dynamic call. This
+	implementation detail is subject to change and must not be
+	relied on.
+
+	``VRT_check_call()`` can be used to check if a ``VRT_call()``
+	would succeed in order to avoid the potential VCL failure.  It
+	returns ``NULL`` if ``VRT_call()`` would make the call or an
+	error string why not.
+
 VOID
 	C-type: ``void``
 
