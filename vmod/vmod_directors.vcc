@@ -636,7 +636,7 @@ implement retries on alternative backends::
 
   sub vcl_backend_fetch {
     # changes dir_A and dir_B behaviour
-    shard_param.set(alt=bereq.retries);
+    shard_param.set(alt=bereq.retries, by=URL);
   }
 
 $Method VOID .clear()
