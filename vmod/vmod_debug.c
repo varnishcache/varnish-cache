@@ -1195,7 +1195,7 @@ xyzzy_client_port(VRT_CTX)
 	return (SES_Get_String_Attr(ctx->sp, SA_CLIENT_PORT));
 }
 
-void * fail_magic = &fail_magic;
+static void * fail_magic = &fail_magic;
 
 static void
 fail_f(VRT_CTX, void *priv)
