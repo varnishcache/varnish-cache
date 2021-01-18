@@ -261,6 +261,7 @@ format_time(const struct format *format)
 	char *p;
 	char buf[64];
 	time_t t;
+	long l;
 	struct tm tm;
 
 	CHECK_OBJ_NOTNULL(format, FORMAT_MAGIC);
@@ -297,14 +298,14 @@ format_time(const struct format *format)
 	case 'T':
 		AN(format->time_fmt);
 		if (!strcmp(format->time_fmt, "s")) /* same as %T */
-			t = t_end - t_start;
+			l = (long)(t_end - t_start);
 		else if (!strcmp(format->time_fmt, "ms"))
-			t = (t_end - t_start) * 1e3;
+			l = (long)((t_end - t_start) * 1e3);
 		else if (!strcmp(format->time_fmt, "us")) /* same as %D */
-			t = (t_end - t_start) * 1e6;
+			l = (long)((t_end - t_start) * 1e6);
 		else
 			WRONG("Unreachable branch");
-		AZ(VSB_printf(CTX.vsb, "%d", (int)t));
+		AZ(VSB_printf(CTX.vsb, "%ld", l));
 		break;
 	default:
 		WRONG("Time format specifier");
