@@ -70,6 +70,10 @@ varnish v1 -vcl+backend {
 		set bereq.backend =
 		  vd.backend(resolve=LAZY, by=KEY, key=4294967295);
 	    }
+	    set bereq.http.bereq-now-1 = vd.backend(resolve=NOW);
+	    set bereq.http.bereq-now-mod =
+		vd.backend(resolve=NOW, alt=1);
+	    set bereq.http.bereq-now-2 = vd.backend(resolve=NOW);
 	}
 
 	sub backend_fetch_layered {
@@ -83,6 +87,10 @@ varnish v1 -vcl+backend {
 	    if (bereq.url == "/3") {
 		lp.set(by=KEY, key=4294967295);
 	    }
+	    set bereq.http.bereq-now-1 = l.backend(resolve=NOW);
+	    set bereq.http.bereq-now-mod =
+		l.backend(resolve=NOW, alt=1);
+	    set bereq.http.bereq-now-2 = l.backend(resolve=NOW);
 	}
 
 	sub vcl_backend_fetch {
@@ -106,6 +114,9 @@ varnish v1 -vcl+backend {
 	    }
 	    set beresp.http.director = bereq.backend;
 	    set beresp.http.backend = beresp.backend;
+	    set beresp.http.bereq-now-1 = bereq.http.bereq-now-1;
+	    set beresp.http.bereq-now-mod = bereq.http.bereq-now-mod;
+	    set beresp.http.bereq-now-2 = bereq.http.bereq-now-2;
 	}
 } -start
 
@@ -117,6 +128,9 @@ client c1 {
 	expect resp.http.healthy == "true"
 	expect resp.http.director == "vd"
 	expect resp.http.backend == "s1"
+	expect resp.http.backend == resp.http.bereq-now-1
+	expect resp.http.backend != resp.http.bereq-now-mod
+	expect resp.http.backend == resp.http.bereq-now-2
 
 	txreq -url /2
 	rxresp
@@ -124,6 +138,9 @@ client c1 {
 	expect resp.http.healthy == "true"
 	expect resp.http.director == "vd"
 	expect resp.http.backend == "s2"
+	expect resp.http.backend == resp.http.bereq-now-1
+	expect resp.http.backend != resp.http.bereq-now-mod
+	expect resp.http.backend == resp.http.bereq-now-2
 
 	txreq -url /3
 	rxresp
@@ -131,6 +148,9 @@ client c1 {
 	expect resp.http.healthy == "true"
 	expect resp.http.director == "vd"
 	expect resp.http.backend == "s3"
+	expect resp.http.backend == resp.http.bereq-now-1
+	expect resp.http.backend != resp.http.bereq-now-mod
+	expect resp.http.backend == resp.http.bereq-now-2
 
 	txreq -url /1 -hdr "layered: true"
 	rxresp
@@ -139,6 +159,9 @@ client c1 {
 	expect resp.http.director == "ll"
 	expect resp.http.backend == "s1"
 	expect resp.http.backend == resp.http.backend-now
+	expect resp.http.backend == resp.http.bereq-now-1
+	expect resp.http.backend != resp.http.bereq-now-mod
+	expect resp.http.backend == resp.http.bereq-now-2
 
 	txreq -url /2 -hdr "layered: true"
 	rxresp
@@ -147,6 +170,9 @@ client c1 {
 	expect resp.http.director == "ll"
 	expect resp.http.backend == "s2"
 	expect resp.http.backend == resp.http.backend-now
+	expect resp.http.backend == resp.http.bereq-now-1
+	expect resp.http.backend != resp.http.bereq-now-mod
+	expect resp.http.backend == resp.http.bereq-now-2
 
 	txreq -url /3 -hdr "layered: true"
 	rxresp
@@ -155,6 +181,9 @@ client c1 {
 	expect resp.http.director == "ll"
 	expect resp.http.backend == "s3"
 	expect resp.http.backend == resp.http.backend-now
+	expect resp.http.backend == resp.http.bereq-now-1
+	expect resp.http.backend != resp.http.bereq-now-mod
+	expect resp.http.backend == resp.http.bereq-now-2
 
 	txreq -url /1 -hdr "resolve: true"
 	rxresp
@@ -163,6 +192,9 @@ client c1 {
 	expect resp.http.director == "s1"
 	expect resp.http.backend == "s1"
 	expect resp.http.backend == resp.http.backend-now
+	expect resp.http.backend == resp.http.bereq-now-1
+	expect resp.http.backend != resp.http.bereq-now-mod
+	expect resp.http.backend == resp.http.bereq-now-2
 
 	txreq -url /2 -hdr "resolve: true"
 	rxresp
@@ -171,6 +203,9 @@ client c1 {
 	expect resp.http.director == "s2"
 	expect resp.http.backend == "s2"
 	expect resp.http.backend == resp.http.backend-now
+	expect resp.http.backend == resp.http.bereq-now-1
+	expect resp.http.backend != resp.http.bereq-now-mod
+	expect resp.http.backend == resp.http.bereq-now-2
 
 	txreq -url /3 -hdr "resolve: true"
 	rxresp
@@ -179,4 +214,7 @@ client c1 {
 	expect resp.http.director == "s3"
 	expect resp.http.backend == "s3"
 	expect resp.http.backend == resp.http.backend-now
+	expect resp.http.backend == resp.http.bereq-now-1
+	expect resp.http.backend != resp.http.bereq-now-mod
+	expect resp.http.backend == resp.http.bereq-now-2
 } -run
