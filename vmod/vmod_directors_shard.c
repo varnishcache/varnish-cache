@@ -945,6 +945,9 @@ shard_param_task_l(VRT_CTX, const void *id, const char *who,
 	else
 		p->defaults = shard_param_task_l(ctx, pa, pa->vcl_name, pa);
 
+	if (p->defaults == NULL)
+		return (NULL);
+
 	return (p);
 }
 
