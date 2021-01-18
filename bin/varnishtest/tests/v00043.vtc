@@ -65,6 +65,8 @@ varnish v1 -cliok "param.set debug +syncvsl" -vcl+backend {
 
 	sub vcl_recv {
 		set req.http.x0 = debug.test_priv_top(req.url + req.esi_level);
+		# coverage
+		set req.http.x0 = debug.test_priv_top(req.url + req.esi_level);
 		if (req.url == "/foo1") {
 			o.test_priv_top(req.url + req.esi_level);
 		}
@@ -79,9 +81,28 @@ varnish v1 -cliok "param.set debug +syncvsl" -vcl+backend {
 		set req.http.o2 = o2.test_priv_top("");
 	}
 
+	# XXX because PRIV_TOP arguments get initialized in the
+	# function preamble, the mere presence of a vmod call with a
+	# PRIV_TOP argument in a SUB will trigger the failure if that
+	# sub is called at all.
+	#
+	# So to test #3498, we need to fence test_priv_top into its
+	# own sub
+	sub callingmewill503 {
+		debug.test_priv_top("only works on client side");
+	}
+
+	sub vcl_backend_fetch {
+		if (bereq.url == "/fail") {
+			call callingmewill503;
+		}
+		if (bereq.url == "/failo") {
+			o2.test_priv_top("only works on client side");
+		}
+	}
+
 	sub vcl_backend_response {
 		set beresp.do_esi = true;
-
 	}
 
 	sub vcl_deliver {
@@ -101,3 +122,18 @@ client c1 {
 } -run
 
 varnish v1 -expect client_req == 2
+
+client c1 {
+	txreq -url /fail
+	rxresp
+	expect resp.status == 503
+} -start
+
+client c2 {
+	txreq -url /failo
+	rxresp
+	expect resp.status == 503
+} -start
+
+client c1 -wait
+client c2 -wait

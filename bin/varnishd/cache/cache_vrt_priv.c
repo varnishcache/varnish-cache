@@ -199,13 +199,20 @@ VRT_priv_task(VRT_CTX, const void *vmod_id)
 	    (uintptr_t)vmod_id));
 }
 
+/*
+ * XXX #3498 on VRT_fail(): Would be better to move the PRIV_TOP check to VCC
+ *
+ * This will fail in the preamble of any VCL SUB containing a call to a vmod
+ * function with a PRIV_TOP argument, which might not exactly be pola
+ */
+
 #define VRT_PRIV_TOP_PREP(ctx, req, sp, top)	do {			\
 		CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
 		req = (ctx)->req;					\
 		if (req == NULL) {					\
-			WRONG("PRIV_TOP is only accessible "		\
+			VRT_fail(ctx, "PRIV_TOP is only accessible "	\
 			    "in client VCL context");			\
-			NEEDLESS(return (NULL));			\
+			return (NULL);					\
 		}							\
 		CHECK_OBJ(req, REQ_MAGIC);				\
 		sp = (ctx)->sp;						\

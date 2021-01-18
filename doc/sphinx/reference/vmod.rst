@@ -496,11 +496,11 @@ The VCL compiler supports the following private pointers:
 * ``PRIV_TOP`` "per top-request" private pointers live for the
   duration of one request and all its ESI-includes. They are only
   defined for the client side. When used from backend VCL subs, a NULL
-  pointer will be passed.
+  pointer will potentially be passed and a VCL failure triggered.
   These private pointers live only for the duration of their top
   level request
 
-  .. XXX BROKEN https://github.com/varnishcache/varnish-cache/issues/3498
+  .. PRIV_TOP see #3498
 
 * ``PRIV_VCL`` "per vcl" private pointers are useful for such global
   state that applies to all calls in this VCL, for instance flags that
