@@ -29,6 +29,9 @@ varnish v1 -vcl+backend {
 		if (!vd.add_backend(s2, weight=2)) {
 			return(fail("add s2 failed"));
 		}
+		# weight ignored
+		vd.add_backend(s3, weight=0.3);
+		vd.remove_backend(s3);
 		if (!vd.add_backend(s3, weight=3)) {
 			return(fail("add s3 failed"));
 		}
@@ -49,6 +52,7 @@ varnish v1 -vcl+backend {
 logexpect l1 -v v1 -g raw -d 1 {
 	expect 0 0    CLI   "^Rd vcl.load"
 
+	expect 0 =   Notice {^\Qvmod_directors: shard vd: .add_backend(weight=0.300000) ignored\E$}
 	expect 0 =    Debug {^vmod_directors: shard: hashcircle.* 0. = .point = *238d0ef, host =  2.}
 	expect 0 =    Debug {^vmod_directors: shard: hashcircle.* 1. = .point = *321c598, host =  2.}
 	expect 0 =    Debug {^vmod_directors: shard: hashcircle.* 2. = .point = *3b6b56a, host =  0.}

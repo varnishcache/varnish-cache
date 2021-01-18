@@ -85,6 +85,7 @@ varnish v1 -vcl+backend {
 	    if (bereq.url ~ "^/b/c/hash/") {
 		set beresp.http.override = bereq.url;
 		p_def.set(by=HASH, alt=7);
+		p_hash.clear();
 		p_hash.set(by=HASH, alt=8);
 		p_url.set(by=HASH, alt=9);
 		p_key.set(by=HASH, alt=10);

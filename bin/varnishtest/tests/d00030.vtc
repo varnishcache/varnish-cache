@@ -4,7 +4,7 @@ varnish v1 -vcl {
     import directors;
     import blob;
 
-    backend dummy { .host = "${bad_backend}"; }
+    backend dummy None;
 
     sub vcl_init {
 	new shard = directors.shard();
@@ -55,7 +55,7 @@ varnish v1 -errvcl {shard .associate param invalid} {
     import directors;
     import blob;
 
-    backend dummy { .host = "${bad_backend}"; }
+    backend dummy None;
 
     sub vcl_init {
 	new shard = directors.shard();
@@ -67,7 +67,7 @@ varnish v1 -errvcl {missing key argument with by=KEY} {
     import directors;
     import blob;
 
-    backend dummy { .host = "${bad_backend}"; }
+    backend dummy None;
 
     sub vcl_init {
 	new p = directors.shard_param();
@@ -79,7 +79,7 @@ varnish v1 -errvcl {invalid key argument -5 with by=KEY} {
     import directors;
     import blob;
 
-    backend dummy { .host = "${bad_backend}"; }
+    backend dummy None;
 
     sub vcl_init {
 	new p = directors.shard_param();
@@ -91,7 +91,7 @@ varnish v1 -errvcl {missing key_blob argument with by=BLOB} {
     import directors;
     import blob;
 
-    backend dummy { .host = "${bad_backend}"; }
+    backend dummy None;
 
     sub vcl_init {
 	new p = directors.shard_param();
@@ -103,7 +103,7 @@ varnish v1 -errvcl {key and key_blob arguments are invalid with by=URL} {
     import directors;
     import blob;
 
-    backend dummy { .host = "${bad_backend}"; }
+    backend dummy None;
 
     sub vcl_init {
 	new p = directors.shard_param();
@@ -115,7 +115,7 @@ varnish v1 -errvcl {key and key_blob arguments are invalid with by=HASH} {
     import directors;
     import blob;
 
-    backend dummy { .host = "${bad_backend}"; }
+    backend dummy None;
 
     sub vcl_init {
 	new p = directors.shard_param();
@@ -127,7 +127,7 @@ varnish v1 -errvcl {invalid alt argument -1} {
     import directors;
     import blob;
 
-    backend dummy { .host = "${bad_backend}"; }
+    backend dummy None;
 
     sub vcl_init {
 	new p = directors.shard_param();
@@ -139,7 +139,7 @@ varnish v1 -errvcl {invalid warmup argument -0.5} {
     import directors;
     import blob;
 
-    backend dummy { .host = "${bad_backend}"; }
+    backend dummy None;
 
     sub vcl_init {
 	new p = directors.shard_param();
@@ -151,7 +151,7 @@ varnish v1 -errvcl {invalid warmup argument 1.1} {
     import directors;
     import blob;
 
-    backend dummy { .host = "${bad_backend}"; }
+    backend dummy None;
 
     sub vcl_init {
 	new p = directors.shard_param();
@@ -163,7 +163,7 @@ varnish v1 -errvcl {vmod_directors: shard shard: .backend(resolve=LAZY) with oth
     import directors;
     import blob;
 
-    backend dummy { .host = "${bad_backend}"; }
+    backend dummy None;
 
     sub vcl_init {
 	new shard = directors.shard();
@@ -176,11 +176,33 @@ varnish v1 -errvcl {vmod_directors: shard shard: .backend(resolve=NOW) can not b
     import directors;
     import blob;
 
-    backend dummy { .host = "${bad_backend}"; }
+    backend dummy None;
 
     sub vcl_init {
 	new shard = directors.shard();
 	new rr = directors.round_robin();
 	rr.add_backend(shard.backend(resolve=NOW));
+    }
+}
+
+varnish v1 -errvcl {vmod_directors: shard shard: NULL backend cannot be added}{
+    import directors;
+
+    backend dummy None;
+
+    sub vcl_init {
+	new shard = directors.shard();
+	shard.add_backend(dummy);
+    }
+}
+
+varnish v1 -errvcl {vmod_directors: shard shard: .remove_backend(): either backend or ident are required}{
+    import directors;
+
+    backend dummy None;
+
+    sub vcl_init {
+	new shard = directors.shard();
+	shard.remove_backend();
     }
 }

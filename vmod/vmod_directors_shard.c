@@ -348,7 +348,7 @@ vmod_shard_remove_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 
 	if (be == NULL && ident == NULL) {
 		shard_fail(ctx, vshard->shardd->name, "%s",
-		    ".backend_remove(): either backend or ident are required");
+		    ".remove_backend(): either backend or ident are required");
 		return (0);
 	}
 

@@ -130,6 +130,9 @@ varnish v1 -vcl+backend {
 			return(fail("reconfigure failed"));
 		}
 
+		vd.set_warmup(1);
+		vd.set_warmup(-0.001);
+
 		std.log("-- END");
 
 		## gcov - semantic testing via the client request & .list
@@ -268,8 +271,10 @@ logexpect l1 -v v1 -g raw -d 1 {
 	expect 0 0    Debug   {^vmod_directors: shard:.*point = d51dafe6, host =  0}
 	expect 0 0    Debug   {^vmod_directors: shard:.*point = eb74a7d5, host =  4}
 	expect 0 0    Debug   {^vmod_directors: shard:.*point = f493ce58, host =  2}
+	expect 0 0    Notice  {^\Qvmod_directors: shard vd: .set_warmup(1.000000) ignored\E$}
+	expect 0 0    Notice  {^\Qvmod_directors: shard vd: .set_warmup(-0.001000) ignored\E$}
 
-expect 0 0    VCL_Log {^-- END$}
+	expect 0 0    VCL_Log {^-- END$}
 } -start
 
 client c1 {

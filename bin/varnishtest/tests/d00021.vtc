@@ -36,6 +36,7 @@ varnish v1 -vcl+backend {
 
 	    new l = directors.shard();
 	    new lp = directors.shard_param();
+	    l.associate();
 	    l.associate(lp.use());
 	    if (!l.add_backend(s1)) {
 		return(fail("add s1 failed"));
