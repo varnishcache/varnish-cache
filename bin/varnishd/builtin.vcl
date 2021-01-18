@@ -1,35 +1,34 @@
-/*-
- * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2015 Varnish Software AS
- * All rights reserved.
- *
- * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
- *
- * SPDX-License-Identifier: BSD-2-Clause
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL AUTHOR OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- *
- * This is the builtin VCL code
- */
+#-
+# Copyright (c) 2006 Verdens Gang AS
+# Copyright (c) 2006-2015 Varnish Software AS
+# All rights reserved.
+#
+# Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
+#
+# SPDX-License-Identifier: BSD-2-Clause
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+# This is the builtin VCL code
 
 vcl 4.0;
 
@@ -41,13 +40,13 @@ sub vcl_recv {
         set req.http.host = req.http.host.lower();
     }
     if (req.method == "PRI") {
-        /* This will never happen in properly formed traffic (see: RFC7540) */
+        # This will never happen in properly formed traffic (see: RFC7540)
         return (synth(405));
     }
     if (!req.http.host &&
       req.esi_level == 0 &&
       req.proto ~ "^(?i)HTTP/1.1") {
-        /* In HTTP/1.1, Host is required. */
+        # In HTTP/1.1, Host is required.
         return (synth(400));
     }
     if (req.method != "GET" &&
@@ -58,16 +57,16 @@ sub vcl_recv {
       req.method != "OPTIONS" &&
       req.method != "DELETE" &&
       req.method != "PATCH") {
-        /* Non-RFC2616 or CONNECT which is weird. */
+        # Non-RFC2616 or CONNECT which is weird.
         return (pipe);
     }
 
     if (req.method != "GET" && req.method != "HEAD") {
-        /* We only deal with GET and HEAD by default */
+        # We only deal with GET and HEAD by default
         return (pass);
     }
     if (req.http.Authorization || req.http.Cookie) {
-        /* Not cacheable by default */
+        # Not cacheable by default
         return (pass);
     }
     return (hash);
@@ -112,9 +111,9 @@ sub vcl_deliver {
     return (deliver);
 }
 
-/*
- * We can come here "invisibly" with the following errors: 500 & 503
- */
+#
+# We can come here "invisibly" with the following errors: 500 & 503
+#
 sub vcl_synth {
     set resp.http.Content-Type = "text/html; charset=utf-8";
     set resp.http.Retry-After = "5";
