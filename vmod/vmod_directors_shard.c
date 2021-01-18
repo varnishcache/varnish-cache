@@ -319,7 +319,7 @@ vmod_shard_add_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 
 	if (args->backend == NULL) {
 		shard_fail(ctx, vshard->shardd->name, "%s",
-		    "NULL backend cannot be added");
+		    "None backend cannot be added");
 		return (0);
 	}
 

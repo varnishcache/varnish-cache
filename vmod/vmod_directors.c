@@ -137,7 +137,7 @@ vdir_add_backend(VRT_CTX, struct vdir *vd, VCL_BACKEND be, double weight)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vd, VDIR_MAGIC);
 	if (be == NULL) {
-		VRT_fail(ctx, "%s: NULL backend cannot be added",
+		VRT_fail(ctx, "%s: None backend cannot be added",
 		    VRT_BACKEND_string(vd->dir));
 		return;
 	}
@@ -160,7 +160,7 @@ vdir_remove_backend(VRT_CTX, struct vdir *vd, VCL_BACKEND be, unsigned *cur)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vd, VDIR_MAGIC);
 	if (be == NULL) {
-		VRT_fail(ctx, "%s: NULL backend cannot be removed",
+		VRT_fail(ctx, "%s: None backend cannot be removed",
 		    VRT_BACKEND_string(vd->dir));
 		return;
 	}

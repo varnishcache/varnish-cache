@@ -7,7 +7,7 @@ server s1 {
 
 varnish v1 -vcl+backend {} -start
 
-varnish v1 -errvcl "NULL backend cannot be added" {
+varnish v1 -errvcl "None backend cannot be added" {
 	import directors;
 
 	probe cacheprobe {

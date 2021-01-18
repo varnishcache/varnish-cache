@@ -185,7 +185,7 @@ varnish v1 -errvcl {vmod_directors: shard shard: .backend(resolve=NOW) can not b
     }
 }
 
-varnish v1 -errvcl {vmod_directors: shard shard: NULL backend cannot be added}{
+varnish v1 -errvcl {vmod_directors: shard shard: None backend cannot be added}{
     import directors;
 
     backend dummy None;

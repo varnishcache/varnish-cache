@@ -1,4 +1,4 @@
-varnishtest "NULL backend allowed"
+varnishtest "None backend allowed"
 
 server s1 {
 	rxreq
