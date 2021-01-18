@@ -595,6 +595,7 @@ VCL_BACKEND v_matchproto_(td_directors_shard_backend)
 vmod_shard_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 		   struct VARGS(shard_backend) *a)
 {
+	struct sharddir *shardd;
 	struct vmod_directors_shard_param pstk;
 	struct vmod_directors_shard_param *pp = NULL;
 	const struct vmod_directors_shard_param *ppt;
@@ -603,6 +604,8 @@ vmod_shard_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vshard, VMOD_SHARD_SHARD_MAGIC);
+	shardd = vshard->shardd;
+	CHECK_OBJ_NOTNULL(shardd, SHARDDIR_MAGIC);
 	assert((args & ~arg_mask_) == 0);
 
 	if (args & arg_resolve)
@@ -619,7 +622,7 @@ vmod_shard_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 		}
 
 		if ((ctx->method & SHARD_VCL_TASK_BEREQ) == 0) {
-			shard_fail(ctx, vshard->shardd->name, "%s",
+			shard_fail(ctx, shardd->name, "%s",
 			    ".backend(resolve=LAZY) with other "
 			    "parameters can only be used in backend/pipe "
 			    "context");
@@ -627,24 +630,23 @@ vmod_shard_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 		}
 	} else if (resolve == VENUM(NOW)) {
 		if (ctx->method & VCL_MET_TASK_H) {
-			shard_fail(ctx, vshard->shardd->name, "%s",
+			shard_fail(ctx, shardd->name, "%s",
 			    ".backend(resolve=NOW) can not be "
 			    "used in vcl_init{}/vcl_fini{}");
 			return (NULL);
 		}
 		pp = shard_param_stack(&pstk,
-		    pp != NULL ? pp : vshard->shardd->param,
-		    vshard->shardd->name);
+		    pp != NULL ? pp : shardd->param,
+		    shardd->name);
 	} else {
 		WRONG("resolve enum");
 	}
 
 	if (ctx->method & SHARD_VCL_TASK_BEREQ) {
-		pp = shard_param_task_l(ctx, vshard->shardd,
-		    vshard->shardd->param);
+		pp = shard_param_task_l(ctx, shardd, shardd->param);
 		if (pp == NULL)
 			return (NULL);
-		pp->vcl_name = vshard->shardd->name;
+		pp->vcl_name = shardd->name;
 	}
 
 	AN(pp);
@@ -652,7 +654,7 @@ vmod_shard_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 	if (args & arg_param) {
 		ppt = shard_param_blob(a->param);
 		if (ppt == NULL) {
-			shard_fail(ctx, vshard->shardd->name, "%s",
+			shard_fail(ctx, shardd->name, "%s",
 			    ".backend(key_blob) param invalid");
 			return (NULL);
 		}
@@ -671,9 +673,8 @@ vmod_shard_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 
 	assert(resolve == VENUM(NOW));
 	shard_param_merge(pp, pp->defaults);
-	return (sharddir_pick_be(ctx, vshard->shardd,
-				 shard_get_key(ctx, pp), pp->alt, pp->warmup,
-				 pp->rampup, pp->healthy));
+	return (sharddir_pick_be(ctx, shardd, shard_get_key(ctx, pp),
+	    pp->alt, pp->warmup, pp->rampup, pp->healthy));
 }
 
 static VCL_BOOL v_matchproto_(vdi_healthy)
