@@ -625,6 +625,10 @@ for i in sorted(task.keys()):
     fo.write(tbl40("#define VCL_MET_TASK_%s" % i.upper(),
                    "( " + (" | \\\n\t\t\t\t\t  ").join(task[i]) + " )\n"))
 
+fo.write("\n")
+fo.write(tbl40("#define VCL_MET_TASK_ALL", "( VCL_MET_TASK_"))
+fo.write(" | \\\n\t\t\t\t\t  VCL_MET_TASK_".join(map(str.upper, task.keys())))
+fo.write(" )")
 
 fo.write("\n/* VCL Returns */\n")
 n = 1
