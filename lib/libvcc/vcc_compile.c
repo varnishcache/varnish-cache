@@ -266,7 +266,7 @@ EmitCoordinates(const struct vcc *tl, struct vsb *vsb)
 	}
 	VSB_cat(vsb, "};\n");
 
-	VSB_printf(vsb, "\nstatic const char *srcbody[%u] = {\n", tl->nsources);
+	VSB_cat(vsb, "\nstatic const char *srcbody[VGC_NSRCS] = {\n");
 	VTAILQ_FOREACH(sp, &tl->sources, list) {
 		VSB_cat(vsb, "    /* ");
 		VSB_quote(vsb, sp->name, -1, VSB_QUOTE_CSTR);
@@ -274,6 +274,30 @@ EmitCoordinates(const struct vcc *tl, struct vsb *vsb)
 		VSB_quote_pfx(vsb, "\t", sp->b, sp->e - sp->b, VSB_QUOTE_CSTR);
 		VSB_cat(vsb, ",\n");
 	}
+	VSB_cat(vsb, "};\n\n");
+
+	VSB_cat(vsb, "/* ---===### Doc Comments ###===---*/\n");
+
+	pos = 0;
+	VTAILQ_FOREACH(sp, &tl->sources, list) {
+		VSB_printf(vsb,
+		    "\nstatic const struct vcl_docs srcdocs_%u[] = {\n", pos);
+		VSB_cat(vsb, "    /* ");
+		VSB_quote(vsb, sp->name, -1, VSB_QUOTE_CSTR);
+		VSB_cat(vsb, " */\n");
+		VTAILQ_FOREACH(t, &sp->docs, list) {
+			VSB_printf(vsb, "\t{ %zu, %zu },\n",
+			    pdiff(sp->b, t->b), pdiff(t->b, t->e));
+		}
+		VSB_cat(vsb, "\t{ -1, -1 }\n");
+		VSB_cat(vsb, "};\n\n");
+		pos++;
+	}
+
+	VSB_cat(vsb, "\nstatic const struct vcl_docs *srcdocs[VGC_NSRCS] = {\n");
+	pos = 0;
+	VTAILQ_FOREACH(sp, &tl->sources, list)
+		VSB_printf(vsb, "\tsrcdocs_%u,\n", pos++);
 	VSB_cat(vsb, "};\n\n");
 
 	VSB_cat(vsb, "/* ---===### Location Counters ###===---*/\n");
@@ -495,6 +519,7 @@ EmitStruct(const struct vcc *tl)
 	Fc(tl, 0, "\t.nsrc = VGC_NSRCS,\n");
 	Fc(tl, 0, "\t.srcname = srcname,\n");
 	Fc(tl, 0, "\t.srcbody = srcbody,\n");
+	Fc(tl, 0, "\t.srcdocs = srcdocs,\n");
 	Fc(tl, 0, "\t.nvmod = %u,\n", tl->vmod_count);
 #define VCL_MET_MAC(l,u,t,b) \
 	Fc(tl, 0, "\t." #l "_func = VGC_function_vcl_" #l ",\n");

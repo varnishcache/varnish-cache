@@ -646,6 +646,11 @@ typedef int vcl_init_f(VRT_CTX);
 typedef void vcl_fini_f(VRT_CTX);
 typedef void vcl_func_f(VRT_CTX);
 
+struct vcl_docs {
+	int			offset;
+	int			len;
+};
+
 struct VCL_conf {
 	unsigned		magic;
 #define VCL_CONF_MAGIC		0x7406c509      /* from /dev/random */
@@ -659,6 +664,7 @@ struct VCL_conf {
 	int			nsrc;
 	const char		**srcname;
 	const char		**srcbody;
+	const struct vcl_docs	**srcdocs;
 
 	int			nvmod;
 	const struct vpi_ii	*instance_info;
