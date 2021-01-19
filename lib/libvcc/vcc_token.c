@@ -383,6 +383,43 @@ vcc_addtoken(struct vcc *tl, unsigned tok,
 }
 
 /*--------------------------------------------------------------------
+ * Track doc comments: lines starting with "##[ \n]" (tolerate CRLF).
+ */
+
+static unsigned
+vcc_isdoctoken(const struct source *sp, const char *p)
+{
+
+	if (p > sp->b && p[-1] != '\n')
+		return (0);
+	if (p[1] != '#')
+		return (0);
+	if (p[2] != ' ' && p[2] != '\r' && p[2] != '\n')
+		return (0);
+	if (p[2] == '\r' && p[3] != '\n')
+		return (0);
+	return (1);
+}
+
+static void
+vcc_doctoken(struct source *sp, const char *b, const char *e)
+{
+	struct token *t;
+
+	assert(*e == '\0'|| *e == '\n');
+	if (*e == '\n')
+		e++;
+
+	t = calloc(1, sizeof *t);
+	AN(t);
+	t->tok = '#';
+	t->b = b;
+	t->e = e;
+	t->src = sp;
+	VTAILQ_INSERT_TAIL(&sp->docs, t, list);
+}
+
+/*--------------------------------------------------------------------
  * Find a delimited token
  */
 
@@ -445,7 +482,7 @@ vcc_delim_token(struct vcc *tl, const struct source *sp, const char *p,
  */
 
 void
-vcc_Lexer(struct vcc *tl, const struct source *sp, int eoi)
+vcc_Lexer(struct vcc *tl, struct source *sp, int eoi)
 {
 	const char *p, *q, *r;
 	unsigned u;
@@ -462,8 +499,11 @@ vcc_Lexer(struct vcc *tl, const struct source *sp, int eoi)
 
 		/* Skip '#.*\n' comments */
 		if (*p == '#') {
+			q = p;
 			while (p < sp->e && *p != '\n')
 				p++;
+			if (vcc_isdoctoken(sp, q))
+				vcc_doctoken(sp, q, p);
 			continue;
 		}
 

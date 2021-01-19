@@ -78,8 +78,11 @@ struct vjsn_val;
 struct symbol;
 struct vmod_obj;
 
+VTAILQ_HEAD(tokenhead, token);
+
 struct source {
 	VTAILQ_ENTRY(source)	list;
+	struct tokenhead	docs;
 	char			*name;
 	const char		*b;
 	const char		*e;
@@ -195,7 +198,6 @@ struct symbol {
 	unsigned			u_methods;
 };
 
-VTAILQ_HEAD(tokenhead, token);
 VTAILQ_HEAD(procprivhead, procpriv);
 
 struct proc {
@@ -403,7 +405,7 @@ void vcc_Warn(struct vcc *);
 void vcc__Expect(struct vcc *tl, unsigned tok, unsigned line);
 int vcc_IdIs(const struct token *t, const char *p);
 void vcc_ExpectVid(struct vcc *tl, const char *what);
-void vcc_Lexer(struct vcc *tl, const struct source *sp, int eoi);
+void vcc_Lexer(struct vcc *tl, struct source *sp, int eoi);
 void vcc_NextToken(struct vcc *tl);
 void vcc__ErrInternal(struct vcc *tl, const char *func,
     unsigned line);

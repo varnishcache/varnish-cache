@@ -517,6 +517,7 @@ vcc_new_source(const char *src, const char *name)
 	REPLACE(sp->name, name);
 	sp->b = src;
 	sp->e = strchr(src, '\0');
+	VTAILQ_INIT(&sp->docs);
 	return (sp);
 }
 
