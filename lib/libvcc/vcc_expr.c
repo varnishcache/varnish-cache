@@ -455,14 +455,14 @@ vcc_do_arg(struct vcc *tl, struct func_arg *fa)
 
 static void
 vcc_func(struct vcc *tl, struct expr **e, const void *priv,
-    const char *extra, const struct symbol *sym)
+    const char *extra, struct symbol *sym)
 {
 	vcc_type_t rfmt;
 	const char *cfunc;
 	struct expr *e1;
 	struct func_arg *fa, *fa2;
 	VTAILQ_HEAD(,func_arg) head;
-	struct token *t1;
+	struct token *tf, *t1;
 	const struct vjsn_val *vv, *vvp;
 	const char *sa, *extra_sep;
 	char ssa[64];
@@ -492,6 +492,7 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 		AN((*e)->instance);
 		extra = (*e)->instance->rname;
 	}
+	tf = VTAILQ_PREV(tl->t, tokenhead, list);
 	SkipToken(tl, '(');
 	if (extra == NULL) {
 		extra = "";
@@ -631,6 +632,7 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 		*e = vcc_expr_edit(tl, e1->fmt, "\v1\v-\n)", e1, NULL);
 	}
 	SkipToken(tl, ')');
+	vcc_AddUses(tl, tf, NULL, sym, XREF_READ);
 }
 
 

@@ -97,6 +97,7 @@ func_sym(struct vcc *tl, vcc_kind_t kind, const struct symbol *psym,
 	if (kind == SYM_OBJECT) {
 		sym->eval_priv = v;
 		sym->vmod_name = psym->vmod_name;
+		sym->r_methods = VCL_MET_INIT;
 		vcc_VmodObject(tl, sym);
 		vcc_VmodSymbols(tl, sym);
 		return;
@@ -118,6 +119,7 @@ func_sym(struct vcc *tl, vcc_kind_t kind, const struct symbol *psym,
 	assert(v->type == VJSN_STRING);
 	sym->type = VCC_Type(v->value);
 	AN(sym->type);
+	sym->r_methods = VCL_MET_TASK_C|VCL_MET_TASK_B|VCL_MET_TASK_H;
 }
 
 static void
