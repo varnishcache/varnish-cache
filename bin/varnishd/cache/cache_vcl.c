@@ -945,11 +945,43 @@ vcl_cli_use(struct cli *cli, const char * const *av, void *priv)
 	Lck_Unlock(&vcl_mtx);
 }
 
+static const struct vcl_docs show_docs[1] = {{ -1, -1 }};
+
+static void
+vcl_show_src(struct cli *cli, const struct VCL_conf *vc, unsigned nsrc,
+    int docs, int verbose)
+{
+	const struct vcl_docs *vd;
+	const char *b, *p;
+	unsigned o;
+
+	if (verbose)
+		INCOMPL();
+
+	assert(nsrc < vc->nsrc);
+	vd = vc->srcdocs[nsrc];
+	b = vc->srcbody[nsrc];
+
+	if (docs)
+		vd = show_docs;
+
+	p = b;
+	while (vd->offset >= 0) {
+		o = pdiff(b, p);
+		if (o < vd->offset)
+			VCLI_Out(cli, "%.*s", vd->offset - (int)o, p);
+		p = b + vd->offset + vd->len;
+		vd++;
+	}
+
+	VCLI_Out(cli, "%s", p);
+}
+
 static void v_matchproto_(cli_func_t)
 vcl_cli_show(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vcl *vcl;
-	int verbose = 0;
+	int verbose = 0, docs = 0;
 	int i;
 
 	ASSERT_CLI();
@@ -988,7 +1020,7 @@ vcl_cli_show(struct cli *cli, const char * const *av, void *priv)
 			    vcl->conf->srcname[i],
 			    vcl->conf->srcbody[i]);
 	} else {
-		VCLI_Out(cli, "%s", vcl->conf->srcbody[0]);
+		vcl_show_src(cli, vcl->conf, 0, docs, verbose);
 	}
 }
 
