@@ -351,7 +351,7 @@ vcc_Eval_Var(struct vcc *tl, struct expr **e, struct token *t,
  */
 
 static struct expr *
-vcc_priv_arg(struct vcc *tl, const char *p, const struct symbol *sym)
+vcc_priv_arg(struct vcc *tl, const char *p, struct symbol *sym)
 {
 	char buf[64];
 	struct inifin *ifp;
@@ -377,6 +377,7 @@ vcc_priv_arg(struct vcc *tl, const char *p, const struct symbol *sym)
 		marklist = &tl->curproc->priv_tasks;
 	} else if (!strcmp(p, "PRIV_TOP")) {
 		f = "top";
+		sym->r_methods &= VCL_MET_TASK_C;
 		marklist = &tl->curproc->priv_tops;
 	} else {
 		WRONG("Wrong PRIV_ type");
@@ -641,7 +642,7 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 
 void
 vcc_Eval_Func(struct vcc *tl, const struct vjsn_val *spec,
-    const char *extra, const struct symbol *sym)
+    const char *extra, struct symbol *sym)
 {
 	struct expr *e = NULL;
 
