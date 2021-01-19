@@ -55,6 +55,22 @@ server s1 {
 	txresp
 } -start
 
+varnish v1 -errvcl "Not available in subroutine 'vcl_backend_fetch'" {
+	import debug;
+	backend be none;
+	sub vcl_backend_fetch {
+		debug.test_priv_top("only works on client side");
+	}
+}
+
+varnish v1 -errvcl "Not available in subroutine 'vcl_init'" {
+	import debug;
+	backend be none;
+	sub vcl_init {
+		debug.test_priv_top("only works on client side");
+	}
+}
+
 varnish v1 -cliok "param.set debug +syncvsl" -vcl+backend {
 	import debug;
 
@@ -81,22 +97,9 @@ varnish v1 -cliok "param.set debug +syncvsl" -vcl+backend {
 		set req.http.o2 = o2.test_priv_top("");
 	}
 
-	# XXX because PRIV_TOP arguments get initialized in the
-	# function preamble, the mere presence of a vmod call with a
-	# PRIV_TOP argument in a SUB will trigger the failure if that
-	# sub is called at all.
-	#
-	# So to test #3498, we need to fence test_priv_top into its
-	# own sub
-	sub callingmewill503 {
-		debug.test_priv_top("only works on client side");
-	}
-
 	sub vcl_backend_fetch {
 		if (bereq.url == "/fail") {
-			call callingmewill503;
-		}
-		if (bereq.url == "/failo") {
+			# dynamic priv not checked at compile time
 			o2.test_priv_top("only works on client side");
 		}
 	}
@@ -123,17 +126,8 @@ client c1 {
 
 varnish v1 -expect client_req == 2
 
-client c1 {
+client c2 {
 	txreq -url /fail
 	rxresp
 	expect resp.status == 503
-} -start
-
-client c2 {
-	txreq -url /failo
-	rxresp
-	expect resp.status == 503
-} -start
-
-client c1 -wait
-client c2 -wait
+} -run

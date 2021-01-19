@@ -341,7 +341,7 @@ sym_expr_t vcc_Eval_Handle;
 sym_expr_t vcc_Eval_SymFunc;
 sym_expr_t vcc_Eval_TypeMethod;
 void vcc_Eval_Func(struct vcc *, const struct vjsn_val *,
-    const char *, const struct symbol *);
+    const char *, struct symbol *);
 void VCC_GlobalSymbol(struct symbol *, vcc_type_t fmt, const char *pfx);
 struct symbol *VCC_HandleSymbol(struct vcc *, vcc_type_t , const char *);
 void VCC_SymName(struct vsb *, const struct symbol *);
