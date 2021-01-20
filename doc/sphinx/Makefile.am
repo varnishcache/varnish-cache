@@ -7,7 +7,7 @@ SPHINXBUILD   = sphinx-build -W -q -N
 PAPER         = a4
 BUILDDIR      = build
 
-ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees -D latex_paper_size=$(PAPER) $(SPHINXOPTS) $(builddir)
+ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(SPHINXOPTS) $(builddir)
 
 .PHONY: help clean html dirhtml pickle json htmlhelp qthelp latex changes linkcheck doctest
 

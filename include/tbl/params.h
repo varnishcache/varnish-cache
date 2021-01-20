@@ -638,10 +638,10 @@ PARAM(
 	/* s-text */
 	"Maximum number of bytes of HTTP backend response we will deal "
 	"with.  This is a limit on all bytes up to the double blank line "
-	"which ends the HTTP request.\n"
-	"The memory for the request is allocated from the backend workspace "
+	"which ends the HTTP response.\n"
+	"The memory for the response is allocated from the backend workspace "
 	"(param: workspace_backend) and this parameter limits how much "
-	"of that the request is allowed to take up.",
+	"of that the response is allowed to take up.",
 	/* l-text */	"",
 	/* func */	NULL
 )

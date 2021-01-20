@@ -1,0 +1,51 @@
+varnishtest "No vcl_hit when grace has run out, with working IMS"
+
+server s1 {
+	rxreq
+	txresp -hdr {Etag: "Foo"} -body "1"
+
+	rxreq
+	txresp -status 304
+
+	rxreq
+	expect req.url == "/2"
+	txresp -body "3"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.ttl = 1ms;
+		set beresp.grace = 0s;
+		set beresp.keep = 1m;
+		if (bereq.http.Hit) {
+			set beresp.http.Hit = bereq.http.Hit;
+		}
+	}
+	sub vcl_hit {
+		set req.http.Hit = "HIT";
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.Hit == <undef>
+	expect resp.http.Etag == {"Foo"}
+	expect resp.status == 200
+	expect resp.body == "1"
+	delay .2
+	txreq
+	rxresp
+	expect resp.http.Hit == <undef>
+	expect resp.http.Etag == {"Foo"}
+	expect resp.status == 200
+	expect resp.body == "1"
+} -run
+
+client c2 {
+	txreq -url "/2"
+	rxresp
+	expect resp.http.Hit == <undef>
+	expect resp.body == "3"
+} -run
+

@@ -1,0 +1,97 @@
+varnishtest "Abandon background fetch when backend serves 5xx"
+
+barrier b1 cond 2
+barrier b2 cond 3
+
+server s1 {
+	# This is what we want to get to all client requests below
+	rxreq
+	expect req.url == "/1"
+	txresp -body "1"
+
+	# 503s will be abandoned when we have a bgfetch
+	rxreq
+	expect req.url == "/1"
+	txresp -status 503 -body "2"
+
+	# varnish will disconnect on a 503
+	accept
+	rxreq
+	expect req.url == "/1"
+	# wait until varnish has delivered 200 before replying
+	# with the 404
+	barrier b2 sync
+	delay .1
+	# this response will not be abandoned
+	txresp -status 404 -reason "Not Found" -body "3"
+
+	# some other resource at the end
+	rxreq
+	expect req.url == "/2"
+	txresp -body "4"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		if (beresp.status >= 500 && bereq.is_bgfetch) {
+			return (abandon);
+		}
+		if (beresp.status >= 400) {
+			set beresp.ttl = 1m;
+		} else {
+			set beresp.ttl = 1ms;
+		}
+		set beresp.grace = 1m;
+	}
+} -start
+
+logexpect l1 -v v1 -g raw {
+	expect * *	ExpKill		EXP_Rearm
+} -start
+
+client c1 {
+	txreq -url "/1"
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "1"
+	delay .2
+	txreq -url "/1"
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "1"
+	delay .2
+	barrier b1 sync
+	txreq -url "/1"
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "1"
+	barrier b2 sync
+} -start
+
+client c2 {
+	barrier b1 sync
+	txreq -url "/1"
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "1"
+	barrier b2 sync
+} -start
+
+client c1 -wait
+client c2 -wait
+
+# Make sure the expiry has happened
+logexpect l1 -wait
+
+client c3 {
+	delay .1
+	# We should now get a HIT on the 404:
+	txreq -url "/1"
+	rxresp
+	expect resp.status == 404
+	expect resp.body == "3"
+	# do a different resource to make sure we got the right number of reqs to /1
+	txreq -url "/2"
+	rxresp
+	expect resp.body == "4"
+} -run

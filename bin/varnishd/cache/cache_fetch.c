@@ -125,8 +125,12 @@ vbf_beresp2obj(struct busyobj *bo)
 	if (bo->uncacheable)
 		bo->fetch_objcore->flags |= OC_F_PASS;
 
-	if (!vbf_allocobj(bo, l))
+	if (!vbf_allocobj(bo, l)) {
+		if (vary != NULL)
+			VSB_destroy(&vary);
+		AZ(vary);
 		return (-1);
+	}
 
 	if (vary != NULL) {
 		b = ObjSetattr(bo->wrk, bo->fetch_objcore, OA_VARY, varyl,
@@ -232,6 +236,7 @@ vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 	bo->storage_hint = NULL;
 	bo->do_esi = 0;
 	bo->do_stream = 1;
+	bo->was_304 = 0;
 
 	/* reset fetch processors */
 	VFP_Setup(vfc);
@@ -491,8 +496,8 @@ vbf_fetch_body_helper(struct busyobj *bo)
 			 * objects to be created.
 			 */
 			AN(vfc->oc->flags & OC_F_PASS);
-			VSLb(vfc->wrk->vsl, SLT_FetchError,
-			    "Pass delivery abandoned");
+			VSLb(vfc->wrk->vsl, SLT_Debug,
+			    "Fetch: Pass delivery abandoned");
 			vfps = VFP_END;
 			bo->htc->doclose = SC_RX_BODY;
 			break;

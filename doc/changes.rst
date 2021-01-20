@@ -1,5 +1,35 @@
 =================================
-Varnish Cache 4.1.10 (unreleased)
+Varnish Cache 4.1.11 (2019-02-11)
+=================================
+
+Changes since 4.1.10:
+
+* Reintroduce the req.grace variable, change keep behavior. The use of
+  req.grace is documented on the same page as grace_ is documented.
+
+.. _grace: http://varnish-cache.org/docs/4.1/users-guide/vcl-grace.html
+
+Bugs fixed
+----------
+
+* On startup, tell what Varnish version this is (2661_)
+* Ban lurker should back off on seeing a busy object (2681_)
+* Fix http_resp_size documentation (2684_)
+* Panic on return (retry) of a conditional fetch (2700_)
+* Set the task arguments under the lock (2719_)
+* Stabilize the test case b000064.vtc for real (2751_)
+* New counter added: cache_hit_grace (2831_)
+
+.. _2661: https://github.com/varnishcache/varnish-cache/issues/2661
+.. _2681: https://github.com/varnishcache/varnish-cache/issues/2681
+.. _2684: https://github.com/varnishcache/varnish-cache/issues/2684
+.. _2700: https://github.com/varnishcache/varnish-cache/issues/2700
+.. _2719: https://github.com/varnishcache/varnish-cache/issues/2719
+.. _2751: https://github.com/varnishcache/varnish-cache/issues/2751
+.. _2831: https://github.com/varnishcache/varnish-cache/issues/2831
+
+=================================
+Varnish Cache 4.1.10 (2018-04-25)
 =================================
 
 Changes since 4.1.9:
@@ -21,17 +51,21 @@ Bugs fixed
 
 * 1772_ - Honor first_byte_timeout for recycled backend connections
 * 2135_ - Limit Backend Connection retries to a single retry
+* 2450_ - Pass delivery abandoned does not qualify as an error
 * 2495_ - Avoid leaking an OH ref on reembark failure
 * 2502_ - objcore reference count leak
 * 2530_ - Varnish shouldn't test gunzip for range responses
 * 2582_ - Assert error in http1_minimal_response()
+* 2609_ - Fix memory leak of vary string on stevedore alloc fail
 
 .. _1772: https://github.com/varnishcache/varnish-cache/issues/1772
 .. _2135: https://github.com/varnishcache/varnish-cache/pull/2135
+.. _2450: https://github.com/varnishcache/varnish-cache/pull/2450
 .. _2495: https://github.com/varnishcache/varnish-cache/issues/2495
 .. _2502: https://github.com/varnishcache/varnish-cache/issues/2502
 .. _2530: https://github.com/varnishcache/varnish-cache/issues/2530
 .. _2582: https://github.com/varnishcache/varnish-cache/issues/2582
+.. _2609: https://github.com/varnishcache/varnish-cache/pull/2609
 
 ================================
 Varnish Cache 4.1.9 (2017-11-14)
