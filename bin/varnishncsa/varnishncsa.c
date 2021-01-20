@@ -897,7 +897,8 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 		} else if (t->type == VSL_t_bereq) {
 			CTX.side = "b";
 		} else
-			WRONG("unexpected");
+			continue;
+
 		CTX.hitmiss = "-";
 		CTX.handling = "-";
 		CTX.vxid = t->vxid;
