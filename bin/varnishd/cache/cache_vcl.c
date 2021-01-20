@@ -996,30 +996,43 @@ vcl_cli_show(struct cli *cli, const char * const *av, void *priv)
 
 	ASSERT_CLI();
 	AZ(priv);
-	if (!strcmp(av[2], "-v") && av[3] == NULL) {
+	AN(av[2]);
+	/* XXX: this currently tolerates duplicate options. */
+	for (u = 2; av[u] != NULL; u++) {
+		if (!strcmp(av[u], "-d")) {
+			docs = 1;
+			continue;
+		}
+		if (!strcmp(av[u], "-v")) {
+			verbose = 1;
+			continue;
+		}
+		break;
+	}
+
+	if (av[u] == NULL) {
 		VCLI_Out(cli, "Too few parameters");
 		VCLI_SetResult(cli, CLIS_TOOFEW);
 		return;
-	} else if (strcmp(av[2], "-v") && av[3] != NULL) {
+	}
+
+	if (av[u+1] != NULL) {
 		VCLI_Out(cli, "Unknown options '%s'", av[2]);
 		VCLI_SetResult(cli, CLIS_PARAM);
 		return;
-	} else if (av[3] != NULL) {
-		verbose = 1;
-		vcl = vcl_find(av[3]);
-	} else
-		vcl = vcl_find(av[2]);
+	}
 
+	vcl = vcl_find(av[u]);
 	if (vcl == NULL) {
-		VCLI_Out(cli, "No VCL named '%s'",
-		    av[3] == NULL ? av[2] : av[3]);
+		VCLI_Out(cli, "No VCL named '%s'", av[u]);
 		VCLI_SetResult(cli, CLIS_PARAM);
 		return;
 	}
-	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
-	if (vcl->label) {
+
+	CHECK_OBJ(vcl, VCL_MAGIC);
+	if (vcl->label != NULL) {
 		vcl = vcl->label;
-		CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
+		CHECK_OBJ(vcl, VCL_MAGIC);
 		AZ(vcl->label);
 	}
 
