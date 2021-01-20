@@ -215,10 +215,10 @@ varnish v1 -vcl+backend {
 
 	sub vcl_deliver {
 		if (req.url ~ "/veto") {
-			debug.fail_rollback();
+			debug.fail_task_fini();
 		}
 		if (req.url ~ "/ok") {
-			debug.ok_rollback();
+			debug.ok_task_fini();
 		}
 		std.rollback(req);
 		set resp.http.test = req.http.test;

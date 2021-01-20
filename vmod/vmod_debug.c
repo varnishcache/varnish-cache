@@ -63,7 +63,7 @@ static struct vsc_seg *vsc_seg = NULL;
 static struct VSC_debug *vsc = NULL;
 static int loads;
 static const int store_ip_token;
-static const int fail_rollback_token;
+static const int fail_task_fini_token;
 extern void mylog(struct vsl_log *vsl, enum VSL_tag_e tag,
     const char *fmt, ...) v_printflike_(3,4);
 
@@ -1204,23 +1204,23 @@ fail_f(VRT_CTX, void *priv)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	assert(priv == fail_magic);
 
-	VRT_fail(ctx, "thou shalt not rollet back");
+	VRT_fail(ctx, "thou shalt not fini");
 }
 
-static const struct vmod_priv_methods xyzzy_fail_rollback_methods[1] = {{
+static const struct vmod_priv_methods xyzzy_fail_task_fini_methods[1] = {{
 		.magic = VMOD_PRIV_METHODS_MAGIC,
-		.type = "debug_fail_rollback",
+		.type = "debug_fail_task_fini",
 		.fini = fail_f
 }};
 
-VCL_VOID v_matchproto_(td_xyzzy_debug_fail_rollback)
-xyzzy_fail_rollback(VRT_CTX)
+VCL_VOID v_matchproto_(td_xyzzy_debug_fail_task_fini)
+xyzzy_fail_task_fini(VRT_CTX)
 {
 	struct vmod_priv *p;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
-	p = VRT_priv_task(ctx, &fail_rollback_token);
+	p = VRT_priv_task(ctx, &fail_task_fini_token);
 	if (p == NULL) {
 		VRT_fail(ctx, "no priv task - out of ws?");
 		return;
@@ -1228,22 +1228,22 @@ xyzzy_fail_rollback(VRT_CTX)
 
 	if (p->priv != NULL) {
 		assert(p->priv == fail_magic);
-		assert(p->methods == xyzzy_fail_rollback_methods);
+		assert(p->methods == xyzzy_fail_task_fini_methods);
 		return;
 	}
 
 	p->priv = fail_magic;
-	p->methods = xyzzy_fail_rollback_methods;
+	p->methods = xyzzy_fail_task_fini_methods;
 }
 
-VCL_VOID v_matchproto_(td_xyzzy_debug_ok_rollback)
-xyzzy_ok_rollback(VRT_CTX)
+VCL_VOID v_matchproto_(td_xyzzy_debug_ok_task_fini)
+xyzzy_ok_task_fini(VRT_CTX)
 {
 	struct vmod_priv *p;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
-	p = VRT_priv_task(ctx, &fail_rollback_token);
+	p = VRT_priv_task(ctx, &fail_task_fini_token);
 	if (p == NULL) {
 		VRT_fail(ctx, "no priv task - out of ws?");
 		return;

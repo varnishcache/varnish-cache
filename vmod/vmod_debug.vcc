@@ -300,13 +300,13 @@ $Function STRING client_port()
 
 Get the stringified client port from the session attr
 
-$Function VOID fail_rollback()
+$Function VOID fail_task_fini()
 
-fail any rollback before ok_rollback() is called
+fail any task fini before ok_task_fini() is called
 
-$Function VOID ok_rollback()
+$Function VOID ok_task_fini()
 
-Allow rollbacks. Must be called before the end of the task.
+Allow task_fini. Must be called before the end of the task.
 
 $Function STRING re_quote(STRING)
 
