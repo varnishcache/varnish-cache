@@ -62,6 +62,26 @@ VPI_count(VRT_CTX, unsigned u)
 		    ctx->vcl->conf->ref[u].line, ctx->vcl->conf->ref[u].pos);
 }
 
+/*
+ * After vcl_fini {} == VGC_function_vcl_fini() is called from VGC_Discard(),
+ * handling must either be OK from VCL "return (ok)" or FAIL from VRT_fail().
+ *
+ * replace OK with 0 for _fini callbacks because that handling has meaning only
+ * when returning from VCL subs
+ */
+
+void
+VPI_vcl_fini(VRT_CTX)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(ctx->handling);
+
+	if (*ctx->handling == VCL_RET_FAIL)
+		return;
+	assert(*ctx->handling == VCL_RET_OK);
+	*ctx->handling = 0;
+}
+
 VCL_VCL
 VPI_vcl_get(VRT_CTX, const char *name)
 {

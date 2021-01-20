@@ -364,10 +364,10 @@ EmitInitFini(const struct vcc *tl)
 	Fc(tl, 0, "\n");
 	Fc(tl, 0, "\tif (*ctx->handling != VCL_RET_OK)\n");
 	Fc(tl, 0, "\t\treturn(1);\n");
+	Fc(tl, 0, "\t*ctx->handling = 0;\n");
 
 	VTAILQ_FOREACH(sy, &tl->sym_objects, sideways) {
 		Fc(tl, 0, "\tif (!%s) {\n", sy->rname);
-		Fc(tl, 0, "\t\t*ctx->handling = 0;\n");
 		Fc(tl, 0, "\t\tVRT_fail(ctx, "
 		    "\"Object %s not initialized\");\n" , sy->name);
 		Fc(tl, 0, "\t\treturn(1);\n");
@@ -741,7 +741,7 @@ vcc_CompileSource(struct vcc *tl, struct source *sp, const char *jfile)
 	 * must always be called, also on failure.
 	 */
 	ifp->ignore_errors = 1;
-	VSB_cat(ifp->fin, "\t\tVGC_function_vcl_fini(ctx);");
+	VSB_cat(ifp->fin, "\t\tVGC_function_vcl_fini(ctx);VPI_vcl_fini(ctx);");
 
 	/* Emit method functions */
 	Fh(tl, 1, "\n");
