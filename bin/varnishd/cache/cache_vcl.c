@@ -172,6 +172,39 @@ VCL_Rel_CliCtx(struct vrt_ctx **ctx)
 
 /*--------------------------------------------------------------------*/
 
+/* VRT_fail() can be called
+ * - from the vcl sub via a vmod
+ * - via a PRIV_TASK .fini callback
+ *
+ * if this happens during init, we fail it
+ * if during fini, we ignore, because otherwise VMOD authors would be forced to
+ * handle VCL_MET_FINI specifically everywhere.
+ */
+
+static int
+vcl_event_handling(VRT_CTX)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	if (*ctx->handling == 0)
+		return (0);
+
+	assert(*ctx->handling == VCL_RET_FAIL);
+
+	if (ctx->method == VCL_MET_INIT)
+		return (1);
+
+	/*
+	 * EVENT_WARM / EVENT_COLD: method == 0
+	 * must not set handling
+	 */
+	assert(ctx->method == VCL_MET_FINI);
+
+	*ctx->handling = 0;
+	VRT_fail(ctx, "VRT_fail() from vcl_fini{} has no effect");
+	return (0);
+}
+
 static int
 vcl_send_event(struct vcl *vcl, enum vcl_event_e ev, struct vsb **msg)
 {
@@ -216,13 +249,7 @@ vcl_send_event(struct vcl *vcl, enum vcl_event_e ev, struct vsb **msg)
 	VCL_TaskEnter(cli_task_privs);
 	r = ctx->vcl->conf->event_vcl(ctx, ev);
 	VCL_TaskLeave(ctx, cli_task_privs);
-
-	/* if the warm event did not get to vcl_init, vcl_fini
-	 * won't be run, so handling may be zero */
-	if (method && *ctx->handling && *ctx->handling != VCL_RET_OK) {
-		assert(ev == VCL_EVENT_LOAD);
-		r = 1;
-	}
+	r |= vcl_event_handling(ctx);
 
 	*msg = VCL_Rel_CliCtx(&ctx);
 

@@ -488,3 +488,71 @@ varnish v1 -expect vcl_fail == 14
 varnish v1 -expect sc_vcl_failure == 11
 
 logexpect l1 -wait
+
+#######################################################################
+# Fail in vcl_init with direct VRT_fail()
+
+varnish v1 -errvcl {Forced failure} {
+	import debug;
+	backend proforma none;
+	sub vcl_init {
+		debug.fail();
+	}
+}
+
+#######################################################################
+# Fail in vcl_init via fini callback
+
+varnish v1 -errvcl {thou shalt not fini} {
+	import debug;
+	backend proforma none;
+	sub vcl_init {
+		debug.fail_task_fini();
+	}
+}
+
+#######################################################################
+# Fail in vcl_fini with direct VRT_fail()
+
+varnish v1 -vcl {
+	import debug;
+	backend proforma none;
+	sub vcl_fini {
+		debug.fail();
+	}
+}
+
+varnish v1 -vcl+backend {
+}
+
+logexpect l1 -v v1 -g raw {
+	expect * 0	CLI		"^Rd vcl.state vcl16 0cold"
+	expect 3 0	VCL_Error	"^Forced failure"
+	expect 0 0	VCL_Error	{^\QVRT_fail() from vcl_fini{} has no effect\E$}
+} -start
+
+varnish v1 -cliok "vcl.discard vcl16"
+logexpect l1 -wait
+
+#######################################################################
+# Fail in vcl_fini via fini callback - ignored but logged as VMOD BUG
+
+varnish v1 -vcl {
+	import debug;
+	backend proforma none;
+	sub vcl_fini {
+		debug.fail_task_fini();
+	}
+}
+
+varnish v1 -vcl+backend {
+}
+
+logexpect l1 -v v1 -g raw {
+	expect * 0	CLI		"^Rd vcl.state vcl18 0cold"
+	expect 3 0	VCL_Error	"^thou shalt not fini"
+	expect 0 0	VCL_Error	{^\QVRT_fail() from vcl_fini{} has no effect\E$}
+} -start
+
+varnish v1 -cliok "vcl.discard vcl18"
+logexpect l1 -wait
