@@ -217,7 +217,7 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 				if (q != NULL)
 					t = (q > p) ? q - 1 : q;
 				p = TRUST_ME(t);
-				lhs_int = trunc(lhs_float);
+				lhs_int = (long long)lhs_float;
 			}
 			if (*p != '\0' && !isspace(*p))
 				return (0); /* Can't parse - no match */
