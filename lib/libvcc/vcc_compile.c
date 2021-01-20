@@ -741,7 +741,8 @@ vcc_CompileSource(struct vcc *tl, struct source *sp, const char *jfile)
 	 * must always be called, also on failure.
 	 */
 	ifp->ignore_errors = 1;
-	VSB_cat(ifp->fin, "\t\tVGC_function_vcl_fini(ctx);VPI_vcl_fini(ctx);");
+	VSB_cat(ifp->fin, "\t\tVGC_function_vcl_fini(ctx);\n");
+	VSB_cat(ifp->fin, "\t\t\tVPI_vcl_fini(ctx);");
 
 	/* Emit method functions */
 	Fh(tl, 1, "\n");
