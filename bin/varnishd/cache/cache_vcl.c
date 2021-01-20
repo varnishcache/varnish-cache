@@ -952,18 +952,26 @@ vcl_show_src(struct cli *cli, const struct VCL_conf *vc, unsigned nsrc,
     int docs, int verbose)
 {
 	const struct vcl_docs *vd;
-	const char *b, *p;
-	unsigned o;
-
-	if (verbose)
-		INCOMPL();
+	const char *b, *p, *n;
+	unsigned o, l;
 
 	assert(nsrc < vc->nsrc);
-	vd = vc->srcdocs[nsrc];
+	vd = docs ? show_docs : vc->srcdocs[nsrc];
+	n = vc->srcname[nsrc];
 	b = vc->srcbody[nsrc];
+	l = strlen(b);
 
 	if (docs)
 		vd = show_docs;
+
+	if (verbose) {
+		while (vd->offset >= 0) {
+			l -= vd->len;
+			vd++;
+		}
+		vd = docs ? show_docs : vc->srcdocs[nsrc];
+		VCLI_Out(cli, "// VCL.SHOW %u %u %s\n", nsrc, l, n);
+	}
 
 	p = b;
 	while (vd->offset >= 0) {
@@ -975,6 +983,8 @@ vcl_show_src(struct cli *cli, const struct VCL_conf *vc, unsigned nsrc,
 	}
 
 	VCLI_Out(cli, "%s", p);
+	if (verbose)
+		VCLI_Out(cli, "\n");
 }
 
 static void v_matchproto_(cli_func_t)
@@ -982,7 +992,7 @@ vcl_cli_show(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vcl *vcl;
 	int verbose = 0, docs = 0;
-	int i;
+	unsigned nsrc, u;
 
 	ASSERT_CLI();
 	AZ(priv);
@@ -1012,16 +1022,11 @@ vcl_cli_show(struct cli *cli, const char * const *av, void *priv)
 		CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 		AZ(vcl->label);
 	}
+
 	CHECK_OBJ_NOTNULL(vcl->conf, VCL_CONF_MAGIC);
-	if (verbose) {
-		for (i = 0; i < vcl->conf->nsrc; i++)
-			VCLI_Out(cli, "// VCL.SHOW %d %zd %s\n%s\n",
-			    i, strlen(vcl->conf->srcbody[i]),
-			    vcl->conf->srcname[i],
-			    vcl->conf->srcbody[i]);
-	} else {
-		vcl_show_src(cli, vcl->conf, 0, docs, verbose);
-	}
+	nsrc = verbose ? vcl->conf->nsrc : 1;
+	for (u = 0; u < nsrc; u++)
+		vcl_show_src(cli, vcl->conf, u, docs, verbose);
 }
 
 /*--------------------------------------------------------------------*/
