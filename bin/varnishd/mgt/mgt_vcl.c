@@ -423,7 +423,7 @@ mgt_vcl_setstate(struct cli *cli, struct vclprog *vp, const struct vclstate *vs)
 
 static void
 mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
-    const char *vclsrcfile, const char *state, int C_flag)
+    const char *vclsrcfile, const char *state, enum mgt_vcl_out_e out)
 {
 	unsigned status;
 	char *lib, *p;
@@ -449,13 +449,13 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 		return;
 
 	vp = mgt_vcl_add(vclname, vs);
-	lib = mgt_VccCompile(cli, vp, vclname, vclsrc, vclsrcfile, C_flag);
+	lib = mgt_VccCompile(cli, vp, vclname, vclsrc, vclsrcfile, out);
 	if (lib == NULL) {
 		mgt_vcl_del(vp);
 		return;
 	}
 
-	AZ(C_flag);
+	AZ(out);
 	vp->fname = lib;
 
 	if (active_vcl == NULL)
@@ -489,7 +489,7 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 
 void
 mgt_vcl_startup(struct cli *cli, const char *vclsrc, const char *vclname,
-    const char *origin, int C_flag)
+    const char *origin, enum mgt_vcl_out_e out)
 {
 	char buf[20];
 	static int n = 0;
@@ -501,7 +501,7 @@ mgt_vcl_startup(struct cli *cli, const char *vclsrc, const char *vclname,
 		vclname = buf;
 	}
 	active_vcl = NULL;
-	mgt_new_vcl(cli, vclname, vclsrc, origin, NULL, C_flag);
+	mgt_new_vcl(cli, vclname, vclsrc, origin, NULL, out);
 }
 
 /*--------------------------------------------------------------------*/
@@ -571,7 +571,7 @@ mcf_vcl_inline(struct cli *cli, const char * const *av, void *priv)
 	if (!mcf_find_no_vcl(cli, av[2]))
 		return;
 
-	mgt_new_vcl(cli, av[2], av[3], "<vcl.inline>", av[4], 0);
+	mgt_new_vcl(cli, av[2], av[3], "<vcl.inline>", av[4], MGT_VCL_OUT_NONE);
 }
 
 static void v_matchproto_(cli_func_t)
@@ -582,7 +582,7 @@ mcf_vcl_load(struct cli *cli, const char * const *av, void *priv)
 	if (!mcf_find_no_vcl(cli, av[2]))
 		return;
 
-	mgt_new_vcl(cli, av[2], NULL, av[3], av[4], 0);
+	mgt_new_vcl(cli, av[2], NULL, av[3], av[4], MGT_VCL_OUT_NONE);
 }
 
 

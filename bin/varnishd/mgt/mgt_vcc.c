@@ -60,6 +60,7 @@ struct vcc_priv {
 	struct vsb	*csrcfile;
 	struct vsb	*libfile;
 	struct vsb	*symfile;
+	struct vsb	*docsfile;
 };
 
 char *mgt_cc_cmd;
@@ -71,6 +72,7 @@ const char *mgt_vmod_path;
 #define VGC_SRC		"vgc.c"
 #define VGC_LIB		"vgc.so"
 #define VGC_SYM		"vgc.sym"
+#define VGC_DOC		"vgc.txt"
 
 /*--------------------------------------------------------------------*/
 
@@ -116,6 +118,35 @@ run_vcc(void *priv)
 			VCC_Predef(vcc, "VCL_VCL", vpg->name);
 	i = VCC_Compile(vcc, &sb, vp->vclsrc, vp->vclsrcfile,
 	    VGC_SRC, VGC_SYM);
+	if (VSB_len(sb))
+		printf("%s", VSB_data(sb));
+	VSB_destroy(&sb);
+	exit(i == 0 ? 0 : 2);
+}
+
+static void v_noreturn_ v_matchproto_(vsub_func_f)
+run_vcldoc(void *priv)
+{
+	struct vsb *sb = NULL;
+	struct vcc_priv *vp;
+	struct vcc *vcc;
+	int i;
+
+	VJ_subproc(JAIL_SUBPROC_VCC);
+	CAST_OBJ_NOTNULL(vp, priv, VCC_PRIV_MAGIC);
+
+	AZ(chdir(VSB_data(vp->dir)));
+
+	vcc = VCC_New();
+	AN(vcc);
+
+	VCC_VCL_path(vcc, mgt_vcl_path);
+
+#define MGT_VCC(type, name, camelcase)			\
+	VCC_ ## camelcase (vcc, mgt_vcc_ ## name);
+#include "tbl/mgt_vcc.h"
+
+	i = VCC_VclDoc(vcc, &sb, vp->vclsrcfile, VGC_DOC);
 	if (VSB_len(sb))
 		printf("%s", VSB_data(sb));
 	VSB_destroy(&sb);
@@ -261,6 +292,35 @@ mgt_vcc_compile(struct vcc_priv *vp, struct vsb *sb, int C_flag)
 	return (subs);
 }
 
+/*--------------------------------------------------------------------
+ * Perform lexical analysis of a VCL program and extract doc comments.
+ */
+
+static unsigned
+mgt_vcc_vcldoc(struct vcc_priv *vp, struct vsb *sb)
+{
+	char *docs;
+	unsigned subs;
+
+	AN(sb);
+	VSB_clear(sb);
+	if (mgt_vcc_touchfile(VSB_data(vp->docsfile), sb))
+		return (2);
+
+	VJ_master(JAIL_MASTER_SYSTEM);
+	subs = VSUB_run(sb, run_vcldoc, vp, "vcldoc", -1);
+	VJ_master(JAIL_MASTER_LOW);
+	if (subs)
+		return (subs);
+
+	docs = VFIL_readfile(NULL, VSB_data(vp->docsfile), NULL);
+	AN(docs);
+	VSB_cat(sb, docs);
+	free(docs);
+	VJ_unlink(VSB_data(vp->docsfile));
+	return (0);
+}
+
 /*--------------------------------------------------------------------*/
 
 static void
@@ -273,14 +333,19 @@ mgt_vcc_init_vp(struct vcc_priv *vp)
 	AN(vp->libfile);
 	vp->symfile = VSB_new_auto();
 	AN(vp->symfile);
+	vp->docsfile = VSB_new_auto();
+	AN(vp->docsfile);
 	vp->dir = VSB_new_auto();
 	AN(vp->dir);
 }
 
 static void
-mgt_vcc_fini_vp(struct vcc_priv *vp, int leave_lib)
+mgt_vcc_fini_vp(struct vcc_priv *vp, int dir_only, int leave_lib)
 {
-	if (!MGT_DO_DEBUG(DBG_VCL_KEEP)) {
+	if (dir_only) {
+		AZ(leave_lib);
+		VJ_rmdir(VSB_data(vp->dir));
+	} else if (!MGT_DO_DEBUG(DBG_VCL_KEEP)) {
 		VJ_unlink(VSB_data(vp->csrcfile));
 		VJ_unlink(VSB_data(vp->symfile));
 		if (!leave_lib) {
@@ -291,16 +356,18 @@ mgt_vcc_fini_vp(struct vcc_priv *vp, int leave_lib)
 	VSB_destroy(&vp->csrcfile);
 	VSB_destroy(&vp->libfile);
 	VSB_destroy(&vp->symfile);
+	VSB_destroy(&vp->docsfile);
 	VSB_destroy(&vp->dir);
 }
 
 char *
 mgt_VccCompile(struct cli *cli, struct vclprog *vcl, const char *vclname,
-    const char *vclsrc, const char *vclsrcfile, int C_flag)
+    const char *vclsrc, const char *vclsrcfile, enum mgt_vcl_out_e out)
 {
 	struct vcc_priv vp[1];
 	struct vsb *sb;
 	unsigned status;
+	int dir_only;
 	char *p;
 
 	AN(cli);
@@ -357,22 +424,40 @@ mgt_VccCompile(struct cli *cli, struct vclprog *vcl, const char *vclname,
 	VSB_printf(vp->symfile, "%s/%s", VSB_data(vp->dir), VGC_SYM);
 	AZ(VSB_finish(vp->symfile));
 
+	VSB_printf(vp->docsfile, "%s/%s", VSB_data(vp->dir), VGC_DOC);
+	AZ(VSB_finish(vp->docsfile));
+
+	dir_only = (out == MGT_VCL_OUT_DOCS);
+
 	if (VJ_make_subdir(VSB_data(vp->dir), "VCL", cli->sb)) {
-		mgt_vcc_fini_vp(vp, 0);
+		mgt_vcc_fini_vp(vp, dir_only, 0);
 		VSB_destroy(&sb);
 		VCLI_Out(cli, "VCL compilation failed");
 		VCLI_SetResult(cli, CLIS_PARAM);
 		return (NULL);
 	}
 
-	status = mgt_vcc_compile(vp, sb, C_flag);
+	switch (out) {
+	case MGT_VCL_OUT_NONE:
+		status = mgt_vcc_compile(vp, sb, 0);
+		break;
+	case MGT_VCL_OUT_CSRC:
+		status = mgt_vcc_compile(vp, sb, 1);
+		break;
+	case MGT_VCL_OUT_DOCS:
+		status = mgt_vcc_vcldoc(vp, sb);
+		break;
+	default:
+		WRONG("VCL output mode");
+	}
+
 	AZ(VSB_finish(sb));
 	if (VSB_len(sb) > 0)
 		VCLI_Out(cli, "%s", VSB_data(sb));
 	VSB_destroy(&sb);
 
-	if (status || C_flag) {
-		mgt_vcc_fini_vp(vp, 0);
+	if (status || out) {
+		mgt_vcc_fini_vp(vp, dir_only, 0);
 		if (status) {
 			VCLI_Out(cli, "VCL compilation failed");
 			VCLI_SetResult(cli, CLIS_PARAM);
@@ -387,6 +472,6 @@ mgt_VccCompile(struct cli *cli, struct vclprog *vcl, const char *vclname,
 	VCLI_Out(cli, "VCL compiled.\n");
 
 	REPLACE(p, VSB_data(vp->libfile));
-	mgt_vcc_fini_vp(vp, 1);
+	mgt_vcc_fini_vp(vp, dir_only, 1);
 	return (p);
 }

@@ -15,7 +15,7 @@ HTTP accelerator daemon
 SYNOPSIS
 ========
 
-varnishd [-a [name=][address][:port][,PROTO][,user=<user>][,group=<group>][,mode=<mode>]] [-b [host[:port]|path]] [-C] [-d] [-F] [-f config] [-h type[,options]] [-I clifile] [-i identity] [-j jail[,jailoptions]] [-l vsl] [-M address:port] [-n name] [-P file] [-p param=value] [-r param[,param...]] [-S secret-file] [-s [name=]kind[,options]] [-T address[:port]] [-t TTL] [-V] [-W waiter]
+varnishd [-a [name=][address][:port][,PROTO][,user=<user>][,group=<group>][,mode=<mode>]] [-b [host[:port]|path]] [-C] [-D] [-d] [-F] [-f config] [-h type[,options]] [-I clifile] [-i identity] [-j jail[,jailoptions]] [-l vsl] [-M address:port] [-n name] [-P file] [-p param=value] [-r param[,param...]] [-S secret-file] [-s [name=]kind[,options]] [-T address[:port]] [-t TTL] [-V] [-W waiter]
 
 varnishd [-x parameter|vsl|cli|builtin|optstring]
 
@@ -154,7 +154,7 @@ Operations options
 -F
 
   Do not fork, run in the foreground. Only one of -F or -d can be
-  specified, and -F cannot be used together with -C.
+  specified, and -F cannot be used together with -C or -D.
 
 -T <address[:port]>
 
@@ -251,13 +251,18 @@ Advanced, development and debugging options
   process will also terminate the child.
 
   Only one of -d or -F can be specified, and -d cannot be used together
-  with -C.
+  with -C or -D.
 
 -C
 
   Print VCL code compiled to C language and exit. Specify the VCL file
   to compile with the -f option. Either -f or -b must be used with -C,
   and -C cannot be used with -F or -d.
+
+-D
+
+  Print vcldoc comments and exit. Specify the VCL file to process with
+  the -f option. It cannot be used with -b, -C, -d or -F.
 
 -V
 

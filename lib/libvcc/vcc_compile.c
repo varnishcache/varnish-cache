@@ -825,7 +825,7 @@ VCC_VCL_Range(unsigned *lo, unsigned *hi)
 }
 
 /*--------------------------------------------------------------------
- * Compile the VCL code in the argument.  Error messages, if any are
+ * Compile the VCL code in the argument.  Error messages, if any, are
  * formatted into the vsb.
  */
 
@@ -857,6 +857,52 @@ VCC_Compile(struct vcc *tl, struct vsb **sb,
 	} else {
 		retval = -1;
 	}
+	AZ(VSB_finish(tl->sb));
+	*sb = tl->sb;
+	return (retval);
+}
+
+/*--------------------------------------------------------------------
+ * Extract doc comments contents from the VCL code in the argument.
+ * Error messages, if any, are formatted into the vsb.
+ */
+
+int
+VCC_VclDoc(struct vcc *tl, struct vsb **sb,
+    const char *vclsrcfile, const char *ofile)
+{
+	struct source *sp;
+	struct token *t;
+	struct vsb *r = NULL;
+	unsigned l;
+	int retval;
+
+	CHECK_OBJ_NOTNULL(tl, VCC_MAGIC);
+	AN(sb);
+	AN(vclsrcfile);
+	AN(ofile);
+	sp = vcc_file_source(tl, vclsrcfile);
+
+	if (sp != NULL)
+		vcc_Lexer(tl, sp, 0);
+
+	if (tl->err) {
+		AZ(VSB_finish(tl->sb));
+		*sb = tl->sb;
+		return (-1);
+	}
+
+	r = VSB_new_auto();
+	AN(r);
+	VTAILQ_FOREACH(t, &sp->docs, list) {
+		l = pdiff(t->b, t->e);
+		if (l > 3)
+			VSB_bcat(r, t->b + 3, l - 3);
+		else
+			VSB_putc(r, '\n');
+	}
+	VSB_finish(r);
+	retval = TLWriteVSB(tl, ofile, r, "VCL docs");
 	AZ(VSB_finish(tl->sb));
 	*sb = tl->sb;
 	return (retval);

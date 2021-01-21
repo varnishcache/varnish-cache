@@ -221,13 +221,19 @@ void STV_Config(const char *spec);
 void STV_Config_Transient(void);
 
 /* mgt_vcc.c */
+enum mgt_vcl_out_e {
+	MGT_VCL_OUT_NONE,
+	MGT_VCL_OUT_CSRC,
+	MGT_VCL_OUT_DOCS,
+};
+
 void mgt_DumpBuiltin(void);
 char *mgt_VccCompile(struct cli *, struct vclprog *, const char *vclname,
-    const char *vclsrc, const char *vclsrcfile, int C_flag);
+    const char *vclsrc, const char *vclsrcfile, enum mgt_vcl_out_e);
 
 void mgt_vcl_init(void);
 void mgt_vcl_startup(struct cli *, const char *vclsrc, const char *origin,
-    const char *vclname, int Cflag);
+    const char *vclname, enum mgt_vcl_out_e);
 int mgt_push_vcls(struct cli *, unsigned *status, char **p);
 int mgt_has_vcl(void);
 extern char *mgt_cc_cmd;

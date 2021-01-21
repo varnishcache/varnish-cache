@@ -45,3 +45,4 @@ void VCC_VCL_Range(unsigned *, unsigned *);
 
 int VCC_Compile(struct vcc *, struct vsb **,
     const char *, const char *, const char *, const char *);
+int VCC_VclDoc(struct vcc *, struct vsb **, const char *, const char *);

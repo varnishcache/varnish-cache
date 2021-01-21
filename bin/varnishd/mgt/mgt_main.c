@@ -79,7 +79,7 @@ static struct vpf_fh *pfh2 = NULL;
 static struct vfil_path *vcl_path = NULL;
 static VTAILQ_HEAD(,f_arg) f_args = VTAILQ_HEAD_INITIALIZER(f_args);
 
-static const char opt_spec[] = "a:b:Cdf:Fh:i:I:j:l:M:n:P:p:r:S:s:T:t:VW:x:";
+static const char opt_spec[] = "a:b:CDdf:Fh:i:I:j:l:M:n:P:p:r:S:s:T:t:VW:x:";
 
 int optreset;	// Some has it, some doesn't.  Cheaper than auto*
 
@@ -168,6 +168,7 @@ usage(void)
 	printf(FMT, "-d", "debug mode");
 	printf(FMT, "", "Stay in foreground, CLI on stdin.");
 	printf(FMT, "-C", "Output VCL code compiled to C language");
+	printf(FMT, "-D", "Output VCL documentation");
 	printf(FMT, "-V", "version");
 	printf(FMT, "-h kind[,options]", "Hash specification");
 	printf(FMT, "-W waiter", "Waiter implementation");
@@ -245,7 +246,7 @@ make_secret(const char *dirname)
 }
 
 static void
-mgt_Cflag_atexit(void)
+mgt_vcl_out_atexit(void)
 {
 
 	/* Only master process */
@@ -464,7 +465,9 @@ int
 main(int argc, char * const *argv)
 {
 	int o, eric_fd = -1;
+	enum mgt_vcl_out_e out = MGT_VCL_OUT_NONE;
 	unsigned C_flag = 0;
+	unsigned D_flag = 0;
 	unsigned f_flag = 0;
 	unsigned F_flag = 0;
 	const char *b_arg = NULL;
@@ -534,6 +537,11 @@ main(int argc, char * const *argv)
 			break;
 		case 'C':
 			C_flag = 1;
+			out = MGT_VCL_OUT_CSRC;
+			break;
+		case 'D':
+			D_flag = 1;
+			out = MGT_VCL_OUT_DOCS;
 			break;
 		case 'd':
 			d_flag++;
@@ -565,6 +573,15 @@ main(int argc, char * const *argv)
 	if (C_flag && b_arg == NULL && !f_flag)
 		ARGV_ERR("-C needs either -b <backend> or -f <vcl_file>\n");
 
+	if (D_flag && !f_flag)
+		ARGV_ERR("-D needs -f <vcl_file>\n");
+
+	if (D_flag && b_arg != NULL)
+		ARGV_ERR("-D makes no sense with -b\n");
+
+	if (D_flag && C_flag)
+		ARGV_ERR("-D makes no sense with -C\n");
+
 	if (d_flag && C_flag)
 		ARGV_ERR("-d makes no sense with -C\n");
 
@@ -584,7 +601,7 @@ main(int argc, char * const *argv)
 	/*
 	 * Have Eric Daemonize us if need be
 	 */
-	if (!C_flag && !d_flag && !F_flag) {
+	if (!out && !d_flag && !F_flag) {
 		eric_fd = mgt_eric();
 		MCH_TrackHighFd(eric_fd);
 		heritage.mgt_pid = getpid();
@@ -612,6 +629,7 @@ main(int argc, char * const *argv)
 	while ((o = getopt(argc, argv, opt_spec)) != -1) {
 		switch (o) {
 		case 'C':
+		case 'D':
 		case 'd':
 		case 'F':
 		case 'j':
@@ -742,7 +760,7 @@ main(int argc, char * const *argv)
 
 	assert(d_flag == 0 || F_flag == 0);
 
-	if (C_flag) {
+	if (out) {
 		if (n_arg == NULL) {
 			vsb = VSB_new_auto();
 			AN(vsb);
@@ -799,8 +817,8 @@ main(int argc, char * const *argv)
 		    workdir, vstrerror(errno));
 	}
 
-	if (C_flag)
-		AZ(atexit(mgt_Cflag_atexit));
+	if (out)
+		AZ(atexit(mgt_vcl_out_atexit));
 
 	pfh1 = create_pid_file(&pid, "%s/_.pid", workdir);
 
@@ -822,8 +840,8 @@ main(int argc, char * const *argv)
 		VTAILQ_REMOVE(&f_args, fa, list);
 		mgt_vcl_startup(cli, fa->src,
 		    VTAILQ_EMPTY(&f_args) ? "boot" : NULL,
-		    fa->farg, C_flag);
-		if (C_flag) {
+		    fa->farg, out);
+		if (out) {
 			if (cli->result != CLIS_OK &&
 			    cli->result != CLIS_TRUNCATED)
 				u = 2;
@@ -837,7 +855,7 @@ main(int argc, char * const *argv)
 		free(fa->src);
 		FREE_OBJ(fa);
 	}
-	if (C_flag)
+	if (out)
 		exit(u);
 
 	if (VTAILQ_EMPTY(&heritage.socks))
