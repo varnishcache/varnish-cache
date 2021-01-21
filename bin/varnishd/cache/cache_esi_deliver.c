@@ -627,6 +627,16 @@ ved_gzgz_init(struct vdp_ctx *vdc, void **priv, struct objcore *oc)
 	return (0);
 }
 
+/*
+ * XXX: for act == VDP_END || act == VDP_FLUSH, we send a flush more often than
+ * we need. The VDP_END case would trip our "at most one VDP_END call" assertion
+ * in VDP_bytes(), but ved_bytes() covers it.
+ *
+ * To avoid unnecessary chunks downstream, it would be nice to re-structure the
+ * code to intendify the last block, send VDP_END/VDP_FLUSH for that one and
+ * VDP_NULL for anything before it.
+ */
+
 static int v_matchproto_(vdp_bytes_f)
 ved_gzgz_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
