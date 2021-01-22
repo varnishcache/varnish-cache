@@ -263,8 +263,8 @@ struct vfp_entry *VFP_Push(struct vfp_ctx *, const struct vfp *);
 enum vfp_status VFP_GetStorage(struct vfp_ctx *, ssize_t *sz, uint8_t **ptr);
 void VFP_Extend(const struct vfp_ctx *, ssize_t sz, enum vfp_status);
 void VFP_Setup(struct vfp_ctx *vc, struct worker *wrk);
-int VFP_Open(struct vfp_ctx *bo);
-uint64_t VFP_Close(struct vfp_ctx *bo);
+int VFP_Open(struct vfp_ctx *);
+uint64_t VFP_Close(struct vfp_ctx *);
 
 extern const struct vfp VFP_gunzip;
 extern const struct vfp VFP_gzip;
