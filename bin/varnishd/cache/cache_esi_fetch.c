@@ -120,6 +120,11 @@ vfp_esi_end(struct vfp_ctx *vc, struct vef_priv *vef,
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vef, VEF_MAGIC);
 
+	if (retval == VFP_ERROR)
+		vef->error = errno ? errno : EINVAL;
+	else
+		assert(retval == VFP_END);
+
 	vsb = VEP_Finish(vef->vep);
 
 	if (vsb != NULL) {
@@ -137,7 +142,8 @@ vfp_esi_end(struct vfp_ctx *vc, struct vef_priv *vef,
 	}
 
 	if (vef->vgz != NULL) {
-		VGZ_UpdateObj(vc, vef->vgz, VUA_END_GZIP);
+		if (retval == VFP_END)
+			VGZ_UpdateObj(vc, vef->vgz, VUA_END_GZIP);
 		if (VGZ_Destroy(&vef->vgz) != VGZ_END)
 			retval = VFP_Error(vc,
 			    "ESI+Gzip Failed at the very end");
@@ -292,8 +298,13 @@ vfp_esi_fini(struct vfp_ctx *vc, struct vfp_entry *vfe)
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
 
-	if (vfe->priv1 != NULL)
-		(void)vfp_esi_end(vc, vfe->priv1, VFP_ERROR);
+	if (vfe->priv1 == NULL)
+		return;
+
+	if (vc->oc->stobj->stevedore == NULL)
+		errno = ENOMEM;
+
+	(void)vfp_esi_end(vc, vfe->priv1, VFP_ERROR);
 	vfe->priv1 = NULL;
 }
 

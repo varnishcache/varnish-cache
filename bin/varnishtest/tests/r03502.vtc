@@ -1,0 +1,56 @@
+varnishtest "#3502 Panic in VEP_Finish() for out-of-storage in vbf_beresp2obj()"
+
+server s1 {
+	# First consume (almost) all of the storage - the value
+	# is brittle, see l1 fail
+	rxreq
+	expect req.url == /url1
+	txresp -bodylen 1048336
+
+	rxreq
+	expect req.http.accept-encoding == gzip
+	txresp -bodylen 1
+} -start
+
+varnish v1 -arg "-sTransient=default,1M -p debug=+syncvsl -p nuke_limit=0" -vcl+backend {
+	sub vcl_recv {
+		if (req.url == "/") {
+			return (pass);
+		}
+	}
+	sub vcl_backend_response {
+		set beresp.http.free = storage.Transient.free_space;
+		if (bereq.url == "/") {
+			set beresp.do_gzip = true;
+			set beresp.do_esi = true;
+		}
+	}
+} -start
+
+logexpect l1 -v v1 -g vxid -q "vxid == 1004" {
+	expect 25 1004	VCL_call        {^BACKEND_RESPONSE}
+	expect 0  =	BerespHeader    {^free:}
+	expect 0  =	VCL_return      {^deliver}
+	expect 0  =	Timestamp       {^Process}
+	expect 0  =	Filters         {^ esi_gzip}
+	expect 0  =	BerespUnset     {^Content-Length: 1}
+	expect 0  =	BerespHeader    {^Content-Encoding: gzip}
+	expect 0  =	BerespHeader    {^Vary: Accept-Encoding}
+	# Ensure the FetchError is in vbf_beresp2obj()
+	# not later in the VFP. Otherwise we have too much free_space
+	fail add  =	Storage
+	expect 0  =	FetchError      {^Could not get storage}
+	fail clear
+} -start
+
+client c1 {
+	txreq -url /url1
+	rxresp
+	expect resp.status == 200
+
+	txreq -hdr "Accept-Encoding: gzip"
+	# no storage for synth either
+	expect_close
+} -run
+
+logexpect l1 -wait
