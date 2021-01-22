@@ -846,7 +846,7 @@ main(int argc, char * const *argv)
 			    cli->result != CLIS_TRUNCATED)
 				u = 2;
 			AZ(VSB_finish(cli->sb));
-			fprintf(stderr, "%s\n", VSB_data(cli->sb));
+			fprintf(stdout, "%s\n", VSB_data(cli->sb));
 			VSB_clear(cli->sb);
 		} else {
 			cli_check(cli);

@@ -1,15 +1,15 @@
 varnishtest "Code coverage of mgt_main, (VCL compiler and RSTdump etc)"
 
-shell "varnishd -b None -C 2> ${tmpdir}/_.c"
+shell "varnishd -b None -C > ${tmpdir}/_.c"
 
 shell {
-	varnishd -n ${tmpdir}/no_keep -C -b None 2> no_keep.c
+	varnishd -n ${tmpdir}/no_keep -C -b None > no_keep.c
 	test -s no_keep.c && ! test -d no_keep || \
 	    (test -f no_keep/*/vgc.gcda || test -d no_keep/*/vgc.so.dSYM)
 }
 
 shell {
-	varnishd -n ${tmpdir}/keep -p debug=+vcl_keep -C -b None 2> keep.c
+	varnishd -n ${tmpdir}/keep -p debug=+vcl_keep -C -b None > keep.c
 	test -s keep.c && test -d keep
 }
 

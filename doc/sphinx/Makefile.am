@@ -87,7 +87,7 @@ BUILT_SOURCES += include/params.rst
 # varnishd already depends on builtin.vcl
 include/vcl_builtin.rst: $(top_builddir)/bin/varnishd/varnishd
 	$(top_builddir)/bin/varnishd/varnishd \
-		-D -f $(abs_top_srcdir)/bin/varnishd/builtin.vcl 2> ${@}_
+		-D -f $(abs_top_srcdir)/bin/varnishd/builtin.vcl > ${@}_
 	mv -f ${@}_ ${@}
 BUILT_SOURCES += include/vcl_builtin.rst
 

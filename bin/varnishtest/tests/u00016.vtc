@@ -51,7 +51,7 @@ shell {
 	set -e
 	varnishadm -n ${v1_name} vcl.show -d test >show.vcl
 	varnishadm -n ${v1_name} vcl.show test >show_stripped.vcl
-	varnishd -D -f ${tmpdir}/test.vcl 2>dump_docs.txt
+	varnishd -D -f ${tmpdir}/test.vcl >dump_docs.txt
 
 	# NB: the cli prints an extra newline
 	printf '\n' >>test.vcl
