@@ -1,5 +1,7 @@
 varnishtest "#3502 Panic in VEP_Finish() for out-of-storage in vbf_beresp2obj()"
 
+# see also r01637 for failure case in VFP
+
 server s1 {
 	# First consume (almost) all of the storage - the value
 	# is brittle, see l1 fail

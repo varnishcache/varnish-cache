@@ -1,57 +1,53 @@
-varnishtest "do_esi + do_gzip + out of storage: #1637"
+varnishtest "do_esi + do_gzip + out of storage in VFP: #1637"
+
+# see also r03502 for failure case in vbf_beresp2obj()
 
 server s1 {
 	# First consume (almost) all of the storage
 	rxreq
 	expect req.url == /url1
-	txresp -bodylen 260000
+	txresp -bodylen 1040000
 
 	rxreq
-	expect req.url == /url2
-	txresp -bodylen 260000
-
-	rxreq
-	expect req.url == /url3
-	txresp -bodylen 260000
-
-	rxreq
-	expect req.url == /url4
-	txresp -bodylen 260000
-
-	rxreq
-	expect req.url == /url5
+	expect req.url == /
 	txresp -bodylen 9000
 } -start
 
 varnish v1  -arg "-sdefault,1M" -arg "-p nuke_limit=0 -p gzip_level=0" \
     -vcl+backend {
 	sub vcl_backend_response {
-		if (bereq.url == "/url5") {
+		set beresp.http.free = storage.s0.free_space;
+		if (bereq.url == "/") {
 			set beresp.do_esi = true;
 			set beresp.do_gzip = true;
 		}
 	}
 } -start
 
+logexpect l1 -v v1 -g vxid -q "vxid == 1004" {
+	expect 25 1004	VCL_call        {^BACKEND_RESPONSE}
+	expect 0  =	BerespHeader    {^free:}
+	expect 0  =	VCL_return      {^deliver}
+	expect 0  =	Timestamp       {^Process}
+	expect 0  =	Filters         {^ esi_gzip}
+	expect 0  =	BerespUnset     {^Content-Length:}
+	expect 0  =	BerespHeader    {^Content-Encoding: gzip}
+	expect 0  =	BerespHeader    {^Vary: Accept-Encoding}
+	expect 0  =	Storage         { s0$}
+	expect 0  =	Fetch_Body
+	expect 0  =	FetchError      {^Could not get storage}
+	expect 0  =	Gzip
+	expect 0  =	BackendClose
+} -start
 
 client c1 {
 	txreq -url /url1
 	rxresp
 	expect resp.status == 200
 
-	txreq -url /url2
-	rxresp
-	expect resp.status == 200
-
-	txreq -url /url3
-	rxresp
-	expect resp.status == 200
-
-	txreq -url /url4
-	rxresp
-	expect resp.status == 200
-
-	txreq -url /url5
+	txreq
 	rxresp
 	expect resp.status == 503
 } -run
+
+logexpect l1 -wait
