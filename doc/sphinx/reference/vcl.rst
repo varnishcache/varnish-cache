@@ -463,6 +463,16 @@ The ongoing ``vcl_*`` subroutine execution ends when a
 The *<action>* specifies how execution should proceed. The context
 defines which actions are available.
 
+It is possible to exit a subroutine that is not part of the built-in ones
+with a simple ``return`` statement::
+
+    sub filter_cookies {
+        if (!req.http.cookie) {
+            return;
+        }
+        # complex cookie filtering
+    }
+
 Multiple subroutines
 ~~~~~~~~~~~~~~~~~~~~
 
@@ -471,7 +481,6 @@ they are concatenated in the order in which they appear in the source.
 
 The built-in VCL distributed with Varnish will be implicitly concatenated
 when the VCL is compiled.
-
 
 
 .. include:: vcl_var.rst
@@ -548,6 +557,9 @@ unless these set their own VCL syntax version.
 
 The version of Varnish this file belongs to supports syntax 4.0 and 4.1.
 
+.. _builtin_vcl:
+
+.. include:: ../include/vcl_builtin.rst
 
 EXAMPLES
 ========
@@ -567,7 +579,7 @@ HISTORY
 VCL was developed by Poul-Henning Kamp in cooperation with Verdens
 Gang AS, Redpill Linpro and Varnish Software.  This manual page is
 written by Per Buer, Poul-Henning Kamp, Martin Blix Grydeland,
-Kristian Lyngstøl, Lasse Karstensen and possibly others.
+Kristian Lyngstøl, Lasse Karstensen and others.
 
 COPYRIGHT
 =========

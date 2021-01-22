@@ -84,6 +84,13 @@ include/params.rst: $(top_builddir)/bin/varnishd/varnishd
 	mv -f ${@}_ ${@}
 BUILT_SOURCES += include/params.rst
 
+# varnishd already depends on builtin.vcl
+include/vcl_builtin.rst: $(top_builddir)/bin/varnishd/varnishd
+	$(top_builddir)/bin/varnishd/varnishd \
+		-D -f $(abs_top_srcdir)/bin/varnishd/builtin.vcl 2> ${@}_
+	mv -f ${@}_ ${@}
+BUILT_SOURCES += include/vcl_builtin.rst
+
 COUNTERS = \
 	$(top_srcdir)/bin/varnishd/VSC_main.vsc \
 	$(top_srcdir)/bin/varnishd/VSC_mgt.vsc \
