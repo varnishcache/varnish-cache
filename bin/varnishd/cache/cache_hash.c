@@ -594,18 +594,31 @@ hsh_rush_clean(struct worker *wrk, struct rush *r)
 		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 		VTAILQ_REMOVE(&r->reqs, req, w_list);
 		wrk->stats->busy_killed++;
-		AN (req->vcl);
-		VCL_Rel(&req->vcl);
+
+		DSL(DBG_WAITINGLIST, req->vsl->wid,
+		    "kill from waiting list");
+
+		/* ESI/ES subrequests would have been picked up by the
+		 * ->reembark transport function above, and should not be
+		 * here */
+		AZ(req->esi_level);
+		assert(req->top == req);
+
 		sp = req->sp;
 		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-		CNT_AcctLogCharge(wrk->stats, req);
+		VRTPRIV_dynamic_kill(sp->privs, (uintptr_t)req);
+		VRTPRIV_dynamic_kill(sp->privs, (uintptr_t)&req->top);
+
 		CHECK_OBJ_NOTNULL(req->hash_objhead, OBJHEAD_MAGIC);
 		AN(HSH_DerefObjHead(wrk, &req->hash_objhead));
 		AZ(req->hash_objhead);
+
+		AN(req->vcl);
+		VCL_Rel(&req->vcl);
+
+		CNT_AcctLogCharge(wrk->stats, req);
 		Req_Release(req);
 		SES_Delete(sp, SC_OVERLOAD, NAN);
-		DSL(DBG_WAITINGLIST, req->vsl->wid,
-		    "kill from waiting list");
 	}
 
 }
