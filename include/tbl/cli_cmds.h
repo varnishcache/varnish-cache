@@ -148,7 +148,11 @@ CLI_CMD(VCL_SHOW,
 	"vcl.show",
 	"vcl.show [-d] [-v] <configname>",
 	"Display the source code for the specified configuration.",
-	"",
+	"Only the main VCL is printed by default, stripped of its "
+	"vcldoc comments. The -d option includes vcldoc comments "
+	"in the output, and the -v option prints VCL includes after "
+	"the main one. If configname is a label, the underlying VCL "
+	"program is displayed.",
 	1, 3
 )
 

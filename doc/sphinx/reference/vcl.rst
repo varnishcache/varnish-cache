@@ -214,6 +214,35 @@ Example::
         */
     }
 
+vcldoc
+------
+
+A special kind of comments called vcldoc comments is treated differently.
+The vcldoc comments are lines starting with a ``##`` delimiter followed by
+a space and free-form text. If only the ``##`` delimiter is present it is
+interpreted as an empty vcldoc line.
+
+The vcldoc comments are omitted by default from the :ref:`ref_cli_vcl_show`
+output and can be extracted from a VCL file using the ``-D`` option for
+:ref:`varnishd(1)`.
+
+Example::
+
+    ## This is the documentation for some_subroutine.
+    ##
+    ## It doesn't do much.
+    sub some_subroutine {
+    }
+
+The vcldoc for this VCL is::
+
+    This is the documentation for some_subroutine.
+
+    It doesn't do much.
+
+The contents of vcldoc comments are arbitrary and can for example be used
+to generate documentation in a specific format up to the VCL author.
+
 .. _backend_definition:
 
 Backend definition
