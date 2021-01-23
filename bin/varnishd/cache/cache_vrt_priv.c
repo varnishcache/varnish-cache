@@ -96,9 +96,13 @@ VRTPRIV_init(struct vrt_privs *privs)
 static inline int
 vrt_priv_dyncmp(const struct vrt_priv *vp1, const struct vrt_priv *vp2)
 {
-	if (vp1->vmod_id < vp2->vmod_id || vp1->id < vp2->id)
+	if (vp1->vmod_id < vp2->vmod_id)
 		return (-1);
-	if (vp1->vmod_id > vp2->vmod_id || vp1->id > vp2->id)
+	if (vp1->vmod_id > vp2->vmod_id)
+		return (1);
+	if (vp1->id < vp2->id)
+		return (-1);
+	if (vp1->id > vp2->id)
 		return (1);
 	return (0);
 }
