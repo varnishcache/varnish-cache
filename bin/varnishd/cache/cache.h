@@ -848,9 +848,12 @@ Tlen(const txt t)
  */
 #define W_TIM_real(w) ((w)->lastused = VTIM_real())
 
-int PAN_dump_struct2(struct vsb *vsb, const void *ptr,
+int PAN_dump_struct2(struct vsb *vsb, int block, const void *ptr,
     const char *smagic, unsigned magic, const char *fmt, ...)
-    v_printflike_(5,6);
+    v_printflike_(6,7);
 
-#define PAN_dump_struct(vsb, ptr, magic, ...) \
-    PAN_dump_struct2(vsb, ptr, #magic, magic, __VA_ARGS__)
+#define PAN_dump_struct(vsb, ptr, magic, ...)		\
+    PAN_dump_struct2(vsb, 1, ptr, #magic, magic, __VA_ARGS__)
+
+#define PAN_dump_oneline(vsb, ptr, magic, ...)		\
+    PAN_dump_struct2(vsb, 0, ptr, #magic, magic, __VA_ARGS__)
