@@ -71,25 +71,23 @@ pan_privs(struct vsb *vsb, const struct vrt_privs *privs)
 	VSB_printf(vsb, "privs = %p {\n", privs);
 	VSB_indent(vsb, 2);
 	VRBT_FOREACH(vp, vrt_privs, privs) {
-		if (PAN_dump_struct(vsb, vp, VRT_PRIV_MAGIC, "priv"))
+		if (PAN_dump_oneline(vsb, vp, VRT_PRIV_MAGIC, "priv"))
 			continue;
 		p = vp->priv;
 		//lint -e{774}
 		if (p == NULL) {
 			// should never happen
-			VSB_printf(vsb, "NULL vmod %jx\n",
+			VSB_printf(vsb, "NULL vmod %jx},\n",
 			    (uintmax_t)vp->vmod_id);
-		} else {
-			m = p->methods;
-			VSB_printf(vsb,
-			    "{p %p l %ld m %p t \"%s\"} vmod %jx\n",
-			    p->priv, p->len, m,
-			    m != NULL ? m->type : "",
-			    (uintmax_t)vp->vmod_id
-			);
+			continue;
 		}
-		VSB_indent(vsb, -2);
-		VSB_cat(vsb, "},\n");
+		m = p->methods;
+		VSB_printf(vsb,
+		    "{p %p l %ld m %p t \"%s\"} vmod %jx},\n",
+		    p->priv, p->len, m,
+		    m != NULL ? m->type : "",
+		    (uintmax_t)vp->vmod_id
+		);
 	}
 	VSB_indent(vsb, -2);
 	VSB_cat(vsb, "},\n");
