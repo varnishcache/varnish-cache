@@ -120,10 +120,12 @@ vfp_esi_end(struct vfp_ctx *vc, struct vef_priv *vef,
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vef, VEF_MAGIC);
 
-	if (retval == VFP_ERROR)
-		vef->error = errno ? errno : EINVAL;
-	else
+	if (retval == VFP_ERROR) {
+		if (vef->error == 0)
+			vef->error = errno ? errno : EINVAL;
+	} else {
 		assert(retval == VFP_END);
+	}
 
 	vsb = VEP_Finish(vef->vep);
 
