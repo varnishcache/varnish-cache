@@ -411,7 +411,7 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 static void
 pan_top(struct vsb *vsb, const struct reqtop *top)
 {
-	if (PAN_dump_struct(vsb, top, REQ_MAGIC, "top"))
+	if (PAN_dump_struct(vsb, top, REQTOP_MAGIC, "top"))
 		return;
 	pan_req(vsb, top->topreq);
 	pan_privs(vsb, top->privs);
