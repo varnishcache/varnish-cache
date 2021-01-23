@@ -9,12 +9,89 @@ server s1 {
 varnish v1 -vcl+backend {
 	import debug;
 	sub vcl_recv {
+		# vxid 1009, 1018, 1020, 1022
+		if (req.http.foo ~ "^(deliver|hit|miss|hash)") {
+			return(hash);
+		}
+		# vxid 1016
+		if (req.http.foo == "purge") {
+			return(purge);
+		}
+		# vxid 1014
+		if (req.http.foo == "pass") {
+			return(pass);
+		}
+		# vxid 1012
+		if (req.http.foo == "pipe") {
+			return(pipe);
+		}
+		# vxid 1007
+		if (req.http.foo == "synth") {
+			return(synth(748));
+		}
+		# vxid 1001, 1003
 		if (req.restarts == 0) {
 			debug.fail();
 			set req.http.not = "Should not happen";
 		}
 	}
+	sub vcl_hash {
+		# vxid 1009
+		if (req.http.foo == "hash") {
+			debug.fail();
+			set req.http.not = "Should not happen";
+		}
+		# vxid 1018, 1020, 1022 default lookup
+	}
+	sub vcl_hit {
+		# vxid 1020
+		if (req.http.foo == "hit") {
+			debug.fail();
+			set req.http.not = "Should not happen";
+		}
+	}
+	sub vcl_miss {
+		# vxid 1018
+		if (req.http.foo == "miss") {
+			debug.fail();
+			set req.http.not = "Should not happen";
+		}
+	}
+	sub vcl_pass {
+		# vxid 1014
+		if (req.http.foo == "pass") {
+			debug.fail();
+			set req.http.not = "Should not happen";
+		}
+	}
+	sub vcl_pipe {
+		# vxid 1012
+		if (req.http.foo == "pipe") {
+			debug.fail();
+			set req.http.not = "Should not happen";
+		}
+	}
+	sub vcl_purge {
+		# vxid 1016
+		if (req.http.foo == "purge") {
+			debug.fail();
+			set req.http.not = "Should not happen";
+		}
+	}
+	sub vcl_deliver {
+		# vxid 1022
+		if (req.http.foo == "deliver") {
+			debug.fail();
+			set req.http.not = "Should not happen";
+		}
+	}
 	sub vcl_synth {
+		# vxid 1007
+		if (resp.status == 748) {
+			debug.fail();
+			set req.http.not = "Should not happen";
+		}
+		# vxid 1001, 1003
 		if (req.restarts == 0 && req.http.foo == "restart") {
 			return (restart);
 		}
@@ -24,7 +101,7 @@ varnish v1 -vcl+backend {
 #######################################################################
 # Fail in vcl_recv
 
-logexpect l1 -v v1 -g raw {
+logexpect l1001 -v v1 -g raw {
 	expect * 1001	VCL_call	"RECV"
 	expect 0 1001	VCL_Error	"Forced failure"
 	expect 0 1001	VCL_return	"fail"
@@ -40,12 +117,10 @@ client c1 {
 varnish v1 -expect vcl_fail == 1
 varnish v1 -expect sc_vcl_failure == 1
 
-logexpect l1 -wait
-
 #######################################################################
 # Fail in vcl_recv, vcl_synth restarts successfully
 
-logexpect l1 -v v1 -g raw {
+logexpect l1003 -v v1 -g raw {
 	expect * 1003	VCL_call	"RECV"
 	expect 0 1003	VCL_Error	"Forced failure"
 	expect 0 1003	VCL_return	"fail"
@@ -64,27 +139,10 @@ varnish v1 -expect vcl_fail == 2
 # NB: This is correct, req->doclose = SC_VCL_FAILURE latches
 varnish v1 -expect sc_vcl_failure == 2
 
-logexpect l1 -wait
-
 #######################################################################
 # Fail in vcl_synth
 
-varnish v1 -vcl+backend {
-	import debug;
-	sub vcl_recv {
-		if (req.http.foo == "synth") {
-			return(synth(748));
-		}
-	}
-	sub vcl_synth {
-		if (resp.status == 748) {
-			debug.fail();
-			set req.http.not = "Should not happen";
-		}
-	}
-}
-
-logexpect l1 -v v1 -g raw {
+logexpect l1007 -v v1 -g raw {
 	expect * 1007	VCL_call	"SYNTH"
 	expect * 1007	VCL_Error	"Forced failure"
 	expect 0 1007	VCL_return	"fail"
@@ -98,22 +156,10 @@ client c1 {
 varnish v1 -expect vcl_fail == 3
 varnish v1 -expect sc_vcl_failure == 3
 
-logexpect l1 -wait
-
 #######################################################################
 # Fail in vcl_hash
 
-varnish v1 -vcl+backend {
-	import debug;
-	sub vcl_hash {
-		if (req.http.foo == "hash") {
-			debug.fail();
-			set req.http.not = "Should not happen";
-		}
-	}
-}
-
-logexpect l1 -v v1 -g raw {
+logexpect l1009 -v v1 -g raw {
 	expect * 1009	VCL_call	"HASH"
 	expect 0 1009	VCL_Error	"Forced failure"
 	expect 0 1009	VCL_return	"fail"
@@ -129,26 +175,10 @@ client c1 {
 varnish v1 -expect vcl_fail == 4
 varnish v1 -expect sc_vcl_failure == 4
 
-logexpect l1 -wait
-
 #######################################################################
 # Fail in vcl_pipe
 
-varnish v1 -vcl+backend {
-	import debug;
-	sub vcl_recv {
-		if (req.http.foo == "pipe") { return(pipe); }
-	}
-	sub vcl_pipe {
-		if (req.http.foo == "pipe") {
-			debug.fail();
-			set req.http.not = "Should not happen";
-		}
-	}
-}
-
-
-logexpect l2 -v v1 -g vxid -q "vxid == 1012" {
+logexpect l1012 -v v1 -g vxid -q "vxid == 1012" {
 	expect 0 1012	Begin		{^bereq 1011 pipe}
 	expect 0 =	BereqMethod	{^GET}
 	expect 0 =	BereqURL	{^/}
@@ -162,11 +192,11 @@ logexpect l2 -v v1 -g vxid -q "vxid == 1012" {
 	expect 0 =	End
 } -start
 
-logexpect l3 -v v1 -g vxid -q "vxid == 1011" {
+logexpect l1011 -v v1 -g vxid -q "vxid == 1011" {
 	expect 0 1011	Begin           {^req 1010 rxreq}
 	expect 0 =	Timestamp       {^Start: }
 	expect 0 =	Timestamp       {^Req: }
-	expect 0 =	VCL_use         {^vcl4}
+	expect 0 =	VCL_use         {^vcl1}
 	expect 0 =	ReqStart
 	expect 0 =	ReqMethod       {^GET}
 	expect 0 =	ReqURL          {^/}
@@ -197,26 +227,10 @@ client c1 {
 varnish v1 -expect vcl_fail == 5
 varnish v1 -expect sc_vcl_failure == 5
 
-logexpect l2 -wait
-logexpect l3 -wait
-
 #######################################################################
 # Fail in vcl_pass, no handling in vcl_synth
 
-varnish v1 -vcl+backend {
-	import debug;
-	sub vcl_recv {
-		if (req.http.foo == "pass") { return(pass); }
-	}
-	sub vcl_pass {
-		if (req.http.foo == "pass") {
-			debug.fail();
-			set req.http.not = "Should not happen";
-		}
-	}
-}
-
-logexpect l1 -v v1 -g raw {
+logexpect l1014 -v v1 -g raw {
 	expect * 1014	VCL_call	"PASS"
 	expect 0 1014	VCL_Error	"Forced failure"
 	expect 0 1014	VCL_return	"fail"
@@ -232,25 +246,10 @@ client c1 {
 varnish v1 -expect vcl_fail == 6
 varnish v1 -expect sc_vcl_failure == 6
 
-logexpect l1 -wait
-
 #######################################################################
 # Fail in vcl_purge
 
-varnish v1 -vcl+backend {
-	import debug;
-	sub vcl_recv {
-		if (req.http.foo == "purge") { return(purge); }
-	}
-	sub vcl_purge {
-		if (req.http.foo == "purge") {
-			debug.fail();
-			set req.http.not = "Should not happen";
-		}
-	}
-}
-
-logexpect l1 -v v1 -g raw {
+logexpect l1016 -v v1 -g raw {
 	expect * 1016	VCL_call	"PURGE"
 	expect 0 1016	VCL_Error	"Forced failure"
 	expect 0 1016	VCL_return	"fail"
@@ -266,22 +265,10 @@ client c1 {
 varnish v1 -expect vcl_fail == 7
 varnish v1 -expect sc_vcl_failure == 7
 
-logexpect l1 -wait
-
 #######################################################################
 # Fail in vcl_miss
 
-varnish v1 -vcl+backend {
-	import debug;
-	sub vcl_miss {
-		if (req.http.foo == "miss") {
-			debug.fail();
-			set req.http.not = "Should not happen";
-		}
-	}
-}
-
-logexpect l1 -v v1 -g raw {
+logexpect l1018 -v v1 -g raw {
 	expect * 1018	VCL_call	"MISS"
 	expect 0 1018	VCL_Error	"Forced failure"
 	expect 0 1018	VCL_return	"fail"
@@ -297,22 +284,10 @@ client c1 {
 varnish v1 -expect vcl_fail == 8
 varnish v1 -expect sc_vcl_failure == 8
 
-logexpect l1 -wait
-
 #######################################################################
 # Fail in vcl_hit
 
-varnish v1 -vcl+backend {
-	import debug;
-	sub vcl_hit {
-		if (req.http.foo == "hit") {
-			debug.fail();
-			set req.http.not = "Should not happen";
-		}
-	}
-}
-
-logexpect l1 -v v1 -g raw {
+logexpect l1020 -v v1 -g raw {
 	expect * 1020	VCL_call	"HIT"
 	expect 0 1020	VCL_Error	"Forced failure"
 	expect 0 1020	VCL_return	"fail"
@@ -328,22 +303,10 @@ client c1 {
 varnish v1 -expect vcl_fail == 9
 varnish v1 -expect sc_vcl_failure == 9
 
-logexpect l1 -wait
-
 #######################################################################
 # Fail in vcl_deliver
 
-varnish v1 -vcl+backend {
-	import debug;
-	sub vcl_deliver {
-		if (req.http.foo == "deliver") {
-			debug.fail();
-			set req.http.not = "Should not happen";
-		}
-	}
-}
-
-logexpect l1 -v v1 -g raw {
+logexpect l1022 -v v1 -g raw {
 	expect * 1022	VCL_call	"DELIVER"
 	expect 0 1022	VCL_Error	"Forced failure"
 	expect 0 1022	VCL_return	"fail"
@@ -359,7 +322,21 @@ client c1 {
 varnish v1 -expect vcl_fail == 10
 varnish v1 -expect sc_vcl_failure == 10
 
-logexpect l1 -wait
+#######################################################################
+#wait for all client side logexpects
+#######################################################################
+
+logexpect l1001 -wait
+logexpect l1003 -wait
+logexpect l1007 -wait
+logexpect l1009 -wait
+logexpect l1012 -wait
+logexpect l1011 -wait
+logexpect l1014 -wait
+logexpect l1016 -wait
+logexpect l1018 -wait
+logexpect l1020 -wait
+logexpect l1022 -wait
 
 #######################################################################
 # Fail in vcl_backend_fetch
@@ -526,12 +503,12 @@ varnish v1 -vcl+backend {
 }
 
 logexpect l1 -v v1 -g raw {
-	expect * 0	CLI		"^Rd vcl.state vcl16 0cold"
+	expect * 0	CLI		"^Rd vcl.state vcl8 0cold"
 	expect 3 0	VCL_Error	"^Forced failure"
 	expect 0 0	VCL_Error	{^\QVRT_fail() from vcl_fini{} has no effect\E$}
 } -start
 
-varnish v1 -cliok "vcl.discard vcl16"
+varnish v1 -cliok "vcl.discard vcl8"
 logexpect l1 -wait
 
 #######################################################################
@@ -549,10 +526,10 @@ varnish v1 -vcl+backend {
 }
 
 logexpect l1 -v v1 -g raw {
-	expect * 0	CLI		"^Rd vcl.state vcl18 0cold"
+	expect * 0	CLI		"^Rd vcl.state vcl10 0cold"
 	expect 3 0	VCL_Error	"^thou shalt not fini"
 	expect 0 0	VCL_Error	{^\QVRT_fail() from vcl_fini{} has no effect\E$}
 } -start
 
-varnish v1 -cliok "vcl.discard vcl18"
+varnish v1 -cliok "vcl.discard vcl10"
 logexpect l1 -wait
