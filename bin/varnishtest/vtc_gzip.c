@@ -54,6 +54,13 @@ vtc_report_gz_bits(struct vtclog *vl, const z_stream *vz)
 }
 #endif
 
+static size_t
+APOS(ssize_t sz)
+{
+	assert(sz >= 0);
+	return (sz);
+}
+
 static struct vsb *
 vtc_gzip_vsb(struct vtclog *vl, int fatal, int gzip_level, const struct vsb *vin, int *residual)
 {
@@ -68,7 +75,7 @@ vtc_gzip_vsb(struct vtclog *vl, int fatal, int gzip_level, const struct vsb *vin
 	AN(vout);
 
 	vz.next_in = (void*)VSB_data(vin);
-	vz.avail_in = VSB_len(vin);
+	vz.avail_in = APOS(VSB_len(vin));
 
 	assert(Z_OK == deflateInit2(&vz,
 	    gzip_level, Z_DEFLATED, 31, 9, Z_DEFAULT_STRATEGY));
@@ -114,10 +121,10 @@ vtc_gzip(struct http *hp, const char *input, char **body, long *bodylen)
 		    "Wrong gzip residual got %d wanted %d",
 		    res, hp->gzipresidual);
 #endif
-	*body = malloc(VSB_len(vout) + 1);
+	*body = malloc(APOS(VSB_len(vout) + 1));
 	AN(*body);
-	memcpy(*body, VSB_data(vout), VSB_len(vout) + 1);
-	*bodylen = VSB_len(vout);
+	memcpy(*body, VSB_data(vout), APOS(VSB_len(vout) + 1));
+	*bodylen = APOS(VSB_len(vout));
 	VSB_destroy(&vout);
 	vtc_log(hp->vl, 3, "new bodylen %ld", *bodylen);
 	vtc_dump(hp->vl, 4, "body", *body, *bodylen);
@@ -137,7 +144,7 @@ vtc_gunzip_vsb(struct vtclog *vl, int fatal, const struct vsb *vin)
 	AN(vout);
 
 	vz.next_in = (void*)VSB_data(vin);
-	vz.avail_in = VSB_len(vin);
+	vz.avail_in = APOS(VSB_len(vin));
 
 	assert(Z_OK == inflateInit2(&vz, 31));
 
@@ -177,8 +184,8 @@ vtc_gunzip(struct http *hp, char *body, long *bodylen)
 	vout = vtc_gunzip_vsb(hp->vl, hp->fatal, vin);
 	VSB_destroy(&vin);
 
-	memcpy(body, VSB_data(vout), VSB_len(vout) + 1);
-	*bodylen = VSB_len(vout);
+	memcpy(body, VSB_data(vout), APOS(VSB_len(vout) + 1));
+	*bodylen = APOS(VSB_len(vout));
 	VSB_destroy(&vout);
 	vtc_log(hp->vl, 3, "new bodylen %ld", *bodylen);
 	vtc_dump(hp->vl, 4, "body", body, *bodylen);
