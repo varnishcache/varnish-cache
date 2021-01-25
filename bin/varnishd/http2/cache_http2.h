@@ -42,15 +42,15 @@ struct h2_error_s {
 	uint32_t			val;
 	int				stream;
 	int				connection;
+	enum sess_close			reason;
 };
 
 typedef const struct h2_error_s *h2_error;
 
-#define H2EC0(U,v,d)
-#define H2EC1(U,v,d) extern const struct h2_error_s H2CE_##U[1];
-#define H2EC2(U,v,d) extern const struct h2_error_s H2SE_##U[1];
-#define H2EC3(U,v,d) H2EC1(U,v,d) H2EC2(U,v,d)
-#define H2_ERROR(NAME, val, sc, desc) H2EC##sc(NAME, val, desc)
+#define H2EC1(U,v,r,d) extern const struct h2_error_s H2CE_##U[1];
+#define H2EC2(U,v,r,d) extern const struct h2_error_s H2SE_##U[1];
+#define H2EC3(U,v,r,d) H2EC1(U,v,r,d) H2EC2(U,v,r,d)
+#define H2_ERROR(NAME, val, sc, reason, desc) H2EC##sc(NAME, val, reason, desc)
 #include "tbl/h2_error.h"
 #undef H2EC1
 #undef H2EC2
