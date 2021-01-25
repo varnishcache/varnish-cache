@@ -43,10 +43,10 @@
 #include "vtcp.h"
 #include "vtim.h"
 
-#define H2EC1(U,v,d) const struct h2_error_s H2CE_##U[1] = {{#U,d,v,0,1}};
-#define H2EC2(U,v,d) const struct h2_error_s H2SE_##U[1] = {{#U,d,v,1,0}};
-#define H2EC3(U,v,d) H2EC1(U,v,d) H2EC2(U,v,d)
-#define H2_ERROR(NAME, val, sc, desc) H2EC##sc(NAME, val, desc)
+#define H2EC1(U,v,r,d) const struct h2_error_s H2CE_##U[1] = {{#U,d,v,0,1,r}};
+#define H2EC2(U,v,r,d) const struct h2_error_s H2SE_##U[1] = {{#U,d,v,1,0,r}};
+#define H2EC3(U,v,r,d) H2EC1(U,v,r,d) H2EC2(U,v,r,d)
+#define H2_ERROR(NAME, val, sc, reason, desc) H2EC##sc(NAME, val, reason, desc)
 #include "tbl/h2_error.h"
 #undef H2EC1
 #undef H2EC2
@@ -57,7 +57,8 @@ static const struct h2_error_s H2NN_ERROR[1] = {{
 	"Unknown error number",
 	0xffffffff,
 	1,
-	1
+	1,
+	SC_RX_JUNK
 }};
 
 enum h2frame {
@@ -84,10 +85,10 @@ h2_framename(enum h2frame h2f)
  */
 
 static const h2_error stream_errors[] = {
-#define H2EC1(U,v,d)
-#define H2EC2(U,v,d) [v] = H2SE_##U,
-#define H2EC3(U,v,d) H2EC1(U,v,d) H2EC2(U,v,d)
-#define H2_ERROR(NAME, val, sc, desc) H2EC##sc(NAME, val, desc)
+#define H2EC1(U,v,r,d)
+#define H2EC2(U,v,r,d) [v] = H2SE_##U,
+#define H2EC3(U,v,r,d) H2EC1(U,v,r,d) H2EC2(U,v,r,d)
+#define H2_ERROR(NAME, val, sc, reason, desc) H2EC##sc(NAME, val, reason, desc)
 #include "tbl/h2_error.h"
 #undef H2EC1
 #undef H2EC2
@@ -109,10 +110,10 @@ h2_streamerror(uint32_t u)
  */
 
 static const h2_error conn_errors[] = {
-#define H2EC1(U,v,d) [v] = H2CE_##U,
-#define H2EC2(U,v,d)
-#define H2EC3(U,v,d) H2EC1(U,v,d) H2EC2(U,v,d)
-#define H2_ERROR(NAME, val, sc, desc) H2EC##sc(NAME, val, desc)
+#define H2EC1(U,v,r,d) [v] = H2CE_##U,
+#define H2EC2(U,v,r,d)
+#define H2EC3(U,v,r,d) H2EC1(U,v,r,d) H2EC2(U,v,r,d)
+#define H2_ERROR(NAME, val, sc, reason, desc) H2EC##sc(NAME, val, reason, desc)
 #include "tbl/h2_error.h"
 #undef H2EC1
 #undef H2EC2

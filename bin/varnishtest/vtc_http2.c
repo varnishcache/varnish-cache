@@ -51,7 +51,7 @@
 #define BUF_SIZE	(1024*2048)
 
 static const char *const h2_errs[] = {
-#define H2_ERROR(n,v,sc,t) [v] = #n,
+#define H2_ERROR(n,v,sc,r,t) [v] = #n,
 #include <tbl/h2_error.h>
 	NULL
 };
@@ -1204,7 +1204,7 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 		else
 			return (NULL);
 	}
-#define H2_ERROR(U,v,sc,t) \
+#define H2_ERROR(U,v,sc,r,t) \
 	if (!strcmp(spec, #U)) { return (#v); }
 #include "tbl/h2_error.h"
 	return (spec);
