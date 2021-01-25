@@ -145,6 +145,7 @@ h2_del_sess(struct worker *wrk, struct h2_sess *h2, enum sess_close reason)
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
 	AZ(h2->refcnt);
 	assert(VTAILQ_EMPTY(&h2->streams));
+	AN(reason);
 
 	VHT_Fini(h2->dectbl);
 	AZ(pthread_cond_destroy(h2->winupd_cond));
@@ -432,8 +433,7 @@ h2_new_session(struct worker *wrk, void *arg)
 	h2->cond = NULL;
 	assert(h2->refcnt == 1);
 	h2_del_req(wrk, h2->req0);
-	/* TODO: proper sess close reason */
-	h2_del_sess(wrk, h2, SC_RX_JUNK);
+	h2_del_sess(wrk, h2, h2->error->reason);
 }
 
 struct transport H2_transport = {
