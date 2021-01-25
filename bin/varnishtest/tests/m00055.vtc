@@ -1,0 +1,53 @@
+varnishtest "VCL_SUB and compile time checking"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import debug;
+
+	sub foo {
+		set req.http.test = "works";
+	}
+
+	sub vcl_recv {
+		debug.call(foo);
+	}
+
+	sub vcl_deliver {
+		set resp.http.test = req.http.test;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.test == "works"
+	expect resp.status == 200
+} -run
+
+varnish v1 -errvcl {Cannot be set from subroutine 'vcl_recv'} {
+	import debug;
+
+	backend default none;
+
+	sub foo {
+		set bereq.http.test = "bereq is a compile time error here";
+	}
+
+	sub vcl_recv {
+		debug.call(foo);
+	}
+}
+
+varnish v1 -errvcl {Expression has type SUB_DYNAMIC, expected SUB} {
+	import debug;
+
+	backend default none;
+
+	sub vcl_recv {
+		debug.call(debug.total_recall());
+	}
+}

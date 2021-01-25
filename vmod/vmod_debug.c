@@ -1296,6 +1296,12 @@ xyzzy_call_dynamic(VRT_CTX, VCL_SUB_DYNAMIC sub)
 	VRT_call(ctx, sub);
 }
 
+VCL_VOID v_matchproto_(td_xyzzy_call)
+xyzzy_call(VRT_CTX, VCL_SUB sub)
+{
+	VRT_call(ctx, sub);
+}
+
 VCL_STRING v_matchproto_(td_xyzzy_check_call)
 xyzzy_check_call(VRT_CTX, VCL_SUB_DYNAMIC sub)
 {

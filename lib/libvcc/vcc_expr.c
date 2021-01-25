@@ -740,6 +740,9 @@ vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 				vcc_expr_tostring(tl, e, STRINGS);
 				ERRCHK(tl);
 			}
+			if (fmt == SUB) {
+				vcc_AddCall(tl, tl->t, sym);
+			}
 			return;
 		}
 		VSB_printf(tl->sb,
@@ -1343,8 +1346,8 @@ vcc_expr0(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	t1 = tl->t;
 	if (fmt->stringform)
 		vcc_expr_cor(tl, e, STRINGS);
-	else if (fmt == REGEX)
-		vcc_expr4(tl, e, REGEX);
+	else if (fmt == REGEX || fmt == SUB)
+		vcc_expr4(tl, e, fmt);
 	else
 		vcc_expr_cor(tl, e, fmt);
 	ERRCHK(tl);

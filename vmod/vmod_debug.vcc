@@ -331,6 +331,10 @@ string saying why not.
 
 $Function VOID call_dynamic(SUB_DYNAMIC)
 
+Call a dynamic sub
+
+$Function VOID call(SUB)
+
 Call a sub
 
 $Function VOID bad_memory(SUB_DYNAMIC)
