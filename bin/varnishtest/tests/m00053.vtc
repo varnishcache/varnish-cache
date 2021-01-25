@@ -1,4 +1,4 @@
-varnishtest "VCL_SUB type basics"
+varnishtest "VCL_SUB_DYNAMIC type basics"
 
 varnish v1 -vcl {
 	import std;
@@ -13,16 +13,16 @@ varnish v1 -vcl {
 		set beresp.http.it = "works";
 	}
 	sub indirect {
-		debug.call(foo);
+		debug.call_dynamic(foo);
 	}
 	sub direct {
 		call foo;
 	}
 	sub recursive {
-		debug.call(recursive);
+		debug.call_dynamic(recursive);
 	}
 	sub recursive_indirect {
-		debug.call(recursive_indirect);
+		debug.call_dynamic(recursive_indirect);
 	}
 	sub rollback {
 		std.rollback(req);
@@ -30,10 +30,10 @@ varnish v1 -vcl {
 
 	sub vcl_recv {
 		if (req.url == "/wrong") {
-			debug.call(foo);
+			debug.call_dynamic(foo);
 		}
 		if (req.url == "/recursive") {
-			debug.call(recursive);
+			debug.call_dynamic(recursive);
 		}
 		if (req.url == "/recursive_indirect") {
 			call recursive_indirect;
@@ -42,20 +42,20 @@ varnish v1 -vcl {
 	}
 	sub vcl_synth {
 		if (req.url == "/foo") {
-			debug.call(foo);
+			debug.call_dynamic(foo);
 		} else if (req.url == "/direct") {
-			debug.call(direct);
+			debug.call_dynamic(direct);
 		} else if (req.url == "/indirect") {
-			debug.call(indirect);
+			debug.call_dynamic(indirect);
 		} else if (req.url == "/rollback") {
-			debug.call(rollback);
+			debug.call_dynamic(rollback);
 		} else if (req.url == "/callthenrollback") {
-			debug.call(foo);
+			debug.call_dynamic(foo);
 			call rollback;
 			if (! resp.http.it) {
 				set resp.http.rolledback = true;
 			}
-			debug.call(foo);
+			debug.call_dynamic(foo);
 		} else if (req.url == "/checkwrong") {
 			synthetic(debug.check_call(bar));
 			set resp.status = 500;
@@ -123,7 +123,7 @@ varnish v1 -errvcl {Impossible Subroutine('<vcl.inline>' Line 8 Pos 13)} {
 	}
 	sub vcl_recv {
 		if (req.url == "/impossible") {
-			debug.call(impossible);
+			debug.call_dynamic(impossible);
 		}
 	}
 }

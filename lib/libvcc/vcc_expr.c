@@ -445,7 +445,7 @@ vcc_do_arg(struct vcc *tl, struct func_arg *fa)
 		vcc_do_enum(tl, fa, PF(tl->t));
 		SkipToken(tl, ID);
 	} else {
-		if (fa->type == SUB)
+		if (fa->type == SUB || fa->type == SUB_DYNAMIC)
 			tl->subref++;
 		vcc_expr0(tl, &e2, fa->type);
 		ERRCHK(tl);
@@ -1382,6 +1382,9 @@ vcc_expr0(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		vcc_expr_tobool(tl, e);
 		ERRCHK(tl);
 	}
+
+	if ((*e)->fmt == SUB && fmt == SUB_DYNAMIC)
+		(*e)->fmt = SUB_DYNAMIC;
 
 	if (fmt != (*e)->fmt)  {
 		VSB_printf(tl->sb, "Expression has type %s, expected %s\n",

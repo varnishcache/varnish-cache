@@ -209,6 +209,11 @@ const struct type SUB[1] = {{
 	.name =			"SUB",
 }};
 
+const struct type SUB_DYNAMIC[1] = {{
+	.magic =		TYPE_MAGIC,
+	.name =			"SUB_DYNAMIC",
+}};
+
 const struct type TIME[1] = {{
 	.magic =		TYPE_MAGIC,
 	.name =			"TIME",

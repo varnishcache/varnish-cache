@@ -285,6 +285,7 @@ typedef const struct stevedore *		VCL_STEVEDORE;
 typedef const struct strands *			VCL_STRANDS;
 typedef const char *				VCL_STRING;
 typedef const struct vcl_sub *			VCL_SUB;
+typedef const struct vcl_sub *			VCL_SUB_DYNAMIC;
 typedef vtim_real				VCL_TIME;
 typedef struct vcl *				VCL_VCL;
 typedef void					VCL_VOID;

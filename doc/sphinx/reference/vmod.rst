@@ -463,10 +463,11 @@ TIME
 VCL_SUB
 	C-type: ``const struct vcl_sub *``
 
-	Opaque handle on a VCL subroutine.
+	Opaque handle to a VCL subroutine with both compile time
+	and runtime context checking.
 
 	References to subroutines can be passed into VMODs as
-	arguments and called later through ``VRT_call()``. The scope
+	arguments and called through ``VRT_call()``. The scope
 	strictly is the VCL: vmods must ensure that ``VCL_SUB``
 	references never be called from a different VCL.
 
@@ -482,6 +483,19 @@ VCL_SUB
 	would succeed in order to avoid the potential VCL failure.  It
 	returns ``NULL`` if ``VRT_call()`` would make the call or an
 	error string why not.
+
+	This type can only be used when referencing an actual VCL based
+	``sub``. Cannot be used as a VMOD return type.
+
+	This type can automatically cast into a ``VCL_SUB_DYNAMIC``.
+
+VCL_SUB_DYNAMIC
+	C-type: ``const struct vcl_sub *``
+
+	Opaque handle to a VCL subroutine with only runtime context
+	checking. Interchangable with ``VCL_SUB`` when used in a ``VRT_*``
+	call. Can be used as a VMOD return type. This type cannot cast
+	into a ``VCL_SUB``.
 
 VOID
 	C-type: ``void``

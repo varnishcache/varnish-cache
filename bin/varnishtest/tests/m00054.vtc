@@ -19,7 +19,7 @@ varnish v1 -vcl {
 	backend dummy None;
 
 	sub vcl_recv {
-		debug.call(debug.total_recall());
+		debug.call_dynamic(debug.total_recall());
 	}
 
 }

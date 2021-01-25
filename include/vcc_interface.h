@@ -77,7 +77,7 @@ struct vpi_ii {
 void VPI_re_init(struct vre **, const char *);
 void VPI_re_fini(struct vre *);
 
-/* VCL_SUB type */
+/* VCL_SUB and VCL_SUB_DYNAMIC types */
 
 struct vcl_sub {
 	unsigned		magic;
