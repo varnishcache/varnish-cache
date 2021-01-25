@@ -30,6 +30,7 @@
  * RFC7540 section 11.4
  *
  * Types: conn=1|stream=2
+ * Reason: enum sess_close
  */
 
 /*lint -save -e525 -e539 */
@@ -38,6 +39,7 @@ H2_ERROR(
 	/* name */	NO_ERROR,
 	/* val */	0,
 	/* types */	3,
+	/* reason */	SC_REM_CLOSE,
 	/* descr */	"Graceful shutdown"
 )
 
@@ -45,6 +47,7 @@ H2_ERROR(
 	/* name */	PROTOCOL_ERROR,
 	/* val */	1,
 	/* types */	3,
+	/* reason */	SC_RX_JUNK,
 	/* descr */	"Protocol error detected"
 )
 
@@ -52,6 +55,7 @@ H2_ERROR(
 	/* name */	INTERNAL_ERROR,
 	/* val */	2,
 	/* types */	3,
+	/* reason */	SC_VCL_FAILURE,
 	/* descr */	"Implementation fault"
 )
 
@@ -59,6 +63,7 @@ H2_ERROR(
 	/* name */	FLOW_CONTROL_ERROR,
 	/* val */	3,
 	/* types */	3,
+	/* reason */	SC_OVERLOAD,
 	/* descr */	"Flow-control limits exceeded"
 )
 
@@ -66,6 +71,7 @@ H2_ERROR(
 	/* name */	SETTINGS_TIMEOUT,
 	/* val */	4,
 	/* types */	1,
+	/* reason */	SC_RX_TIMEOUT,
 	/* descr */	"Settings not acknowledged"
 )
 
@@ -73,6 +79,7 @@ H2_ERROR(
 	/* name */	STREAM_CLOSED,
 	/* val */	5,
 	/* types */	2,
+	/* reason */	SC_NULL,
 	/* descr */	"Frame received for closed stream"
 )
 
@@ -80,6 +87,7 @@ H2_ERROR(
 	/* name */	FRAME_SIZE_ERROR,
 	/* val */	6,
 	/* types */	3,
+	/* reason */	SC_RX_JUNK,
 	/* descr */	"Frame size incorrect"
 )
 
@@ -87,6 +95,7 @@ H2_ERROR(
 	/* name */	REFUSED_STREAM,
 	/* val */	7,
 	/* types */	2,
+	/* reason */	SC_NULL,
 	/* descr */	"Stream not processed"
 )
 
@@ -94,6 +103,7 @@ H2_ERROR(
 	/* name */	CANCEL,
 	/* val */	8,
 	/* types */	2,
+	/* reason */	SC_NULL,
 	/* descr */	"Stream cancelled"
 )
 
@@ -101,6 +111,7 @@ H2_ERROR(
 	/* name */	COMPRESSION_ERROR,
 	/* val */	9,
 	/* types */	1,
+	/* reason */	SC_RX_JUNK,
 	/* descr */	"Compression state not updated"
 )
 
@@ -108,6 +119,7 @@ H2_ERROR(
 	/* name */	CONNECT_ERROR,
 	/* val */	10,
 	/* types */	2,
+	/* reason */	SC_NULL,
 	/* descr */	"TCP connection error for CONNECT method"
 )
 
@@ -115,6 +127,7 @@ H2_ERROR(
 	/* name */	ENHANCE_YOUR_CALM,
 	/* val */	11,
 	/* types */	3,
+	/* reason */	SC_OVERLOAD,
 	/* descr */	"Processing capacity exceeded"
 )
 
@@ -122,6 +135,7 @@ H2_ERROR(
 	/* name */	INADEQUATE_SECURITY,
 	/* val */	12,
 	/* types */	1,
+	/* reason */	SC_RX_JUNK,
 	/* descr */	"Negotiated TLS parameters not acceptable"
 )
 
@@ -129,6 +143,7 @@ H2_ERROR(
 	/* name */	HTTP_1_1_REQUIRED,
 	/* val */	13,
 	/* types */	1,
+	/* reason */	SC_REQ_HTTP20,
 	/* descr */	"Use HTTP/1.1 for the request"
 )
 
