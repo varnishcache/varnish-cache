@@ -720,8 +720,10 @@ vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 			(*e)->instance = sym;
 			return;
 		}
-		if (sym->kind == SYM_FUNC && sym->type == VOID) {
-			VSB_cat(tl->sb, "Function returns VOID:\n");
+		if (sym->kind == SYM_FUNC && (sym->type == VOID ||
+		    sym->type == SUB)) {
+			VSB_printf(tl->sb, "Function returns %s:\n",
+			    sym->type->name);
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}

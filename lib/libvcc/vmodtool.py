@@ -720,6 +720,9 @@ class FunctionStanza(Stanza):
 
     def parse(self):
         self.proto = ProtoType(self)
+        if self.proto.retval.vt == 'SUB':
+            err("SUB cannot be used as a return type, please use SUB_DYNAMIC",
+                warn=False)
         self.rstlbl = '%s.%s()' % (self.vcc.modname, self.proto.name)
         self.vcc.contents.append(self)
 
