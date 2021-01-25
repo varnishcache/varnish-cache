@@ -29,25 +29,108 @@
  *
  * RFC7540 section 11.4
  *
- * Fields: Upper, value, conn=1|stream=2, description
+ * Types: conn=1|stream=2
  */
 
 /*lint -save -e525 -e539 */
 
-H2_ERROR(NO_ERROR,	       0,3, "Graceful shutdown")
-H2_ERROR(PROTOCOL_ERROR,       1,3, "Protocol error detected")
-H2_ERROR(INTERNAL_ERROR,       2,3, "Implementation fault")
-H2_ERROR(FLOW_CONTROL_ERROR,   3,3, "Flow-control limits exceeded")
-H2_ERROR(SETTINGS_TIMEOUT,     4,1, "Settings not acknowledged")
-H2_ERROR(STREAM_CLOSED,	       5,2, "Frame received for closed stream")
-H2_ERROR(FRAME_SIZE_ERROR,     6,3, "Frame size incorrect")
-H2_ERROR(REFUSED_STREAM,       7,2, "Stream not processed")
-H2_ERROR(CANCEL,	       8,2, "Stream cancelled")
-H2_ERROR(COMPRESSION_ERROR,    9,1, "Compression state not updated")
-H2_ERROR(CONNECT_ERROR,	      10,2, "TCP connection error for CONNECT method")
-H2_ERROR(ENHANCE_YOUR_CALM,   11,3, "Processing capacity exceeded")
-H2_ERROR(INADEQUATE_SECURITY, 12,1, "Negotiated TLS parameters not acceptable")
-H2_ERROR(HTTP_1_1_REQUIRED,   13,1, "Use HTTP/1.1 for the request")
-#undef H2_ERROR
+H2_ERROR(
+	/* name */	NO_ERROR,
+	/* val */	0,
+	/* types */	3,
+	/* descr */	"Graceful shutdown"
+)
 
+H2_ERROR(
+	/* name */	PROTOCOL_ERROR,
+	/* val */	1,
+	/* types */	3,
+	/* descr */	"Protocol error detected"
+)
+
+H2_ERROR(
+	/* name */	INTERNAL_ERROR,
+	/* val */	2,
+	/* types */	3,
+	/* descr */	"Implementation fault"
+)
+
+H2_ERROR(
+	/* name */	FLOW_CONTROL_ERROR,
+	/* val */	3,
+	/* types */	3,
+	/* descr */	"Flow-control limits exceeded"
+)
+
+H2_ERROR(
+	/* name */	SETTINGS_TIMEOUT,
+	/* val */	4,
+	/* types */	1,
+	/* descr */	"Settings not acknowledged"
+)
+
+H2_ERROR(
+	/* name */	STREAM_CLOSED,
+	/* val */	5,
+	/* types */	2,
+	/* descr */	"Frame received for closed stream"
+)
+
+H2_ERROR(
+	/* name */	FRAME_SIZE_ERROR,
+	/* val */	6,
+	/* types */	3,
+	/* descr */	"Frame size incorrect"
+)
+
+H2_ERROR(
+	/* name */	REFUSED_STREAM,
+	/* val */	7,
+	/* types */	2,
+	/* descr */	"Stream not processed"
+)
+
+H2_ERROR(
+	/* name */	CANCEL,
+	/* val */	8,
+	/* types */	2,
+	/* descr */	"Stream cancelled"
+)
+
+H2_ERROR(
+	/* name */	COMPRESSION_ERROR,
+	/* val */	9,
+	/* types */	1,
+	/* descr */	"Compression state not updated"
+)
+
+H2_ERROR(
+	/* name */	CONNECT_ERROR,
+	/* val */	10,
+	/* types */	2,
+	/* descr */	"TCP connection error for CONNECT method"
+)
+
+H2_ERROR(
+	/* name */	ENHANCE_YOUR_CALM,
+	/* val */	11,
+	/* types */	3,
+	/* descr */	"Processing capacity exceeded"
+)
+
+H2_ERROR(
+	/* name */	INADEQUATE_SECURITY,
+	/* val */	12,
+	/* types */	1,
+	/* descr */	"Negotiated TLS parameters not acceptable"
+)
+
+H2_ERROR(
+	/* name */	HTTP_1_1_REQUIRED,
+	/* val */	13,
+	/* types */	1,
+	/* descr */	"Use HTTP/1.1 for the request"
+)
+
+#undef H2_ERROR
 /*lint -restore */
