@@ -57,6 +57,8 @@ struct backend {
 	VTAILQ_ENTRY(backend)	list;
 	struct lock		mtx;
 
+	struct vrt_endpoint	*endpoint;
+
 	VRT_BACKEND_FIELDS()
 
 	unsigned		sick;

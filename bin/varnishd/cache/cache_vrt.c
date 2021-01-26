@@ -33,6 +33,8 @@
 
 #include "config.h"
 
+#include <stdlib.h>
+
 #include "cache_varnishd.h"
 
 #include "cache_objhead.h"
@@ -1060,4 +1062,48 @@ VRT_Format_Proxy(struct vsb *vsb, VCL_INT version, VCL_IP sac, VCL_IP sas,
     VCL_STRING auth)
 {
 	VPX_Format_Proxy(vsb, (int)version, sac, sas, auth);
+}
+
+/*
+ * Clone a struct vrt_endpoint in a single malloc() allocation
+ */
+
+struct vrt_endpoint *
+VRT_Endpoint_Clone(const struct vrt_endpoint *vep)
+{
+	size_t sz;
+	struct vrt_endpoint *nvep;
+	struct suckaddr *sa;
+	char *p;
+
+	CHECK_OBJ_NOTNULL(vep, VRT_ENDPOINT_MAGIC);
+	sz = sizeof *nvep;
+	if (vep->ipv4)
+		sz += vsa_suckaddr_len;
+	if (vep->ipv6)
+		sz += vsa_suckaddr_len;
+	if (vep->uds_path != NULL)
+		sz += strlen(vep->uds_path) + 1;
+	p = malloc(sz);
+	AN(p);
+	nvep = (void*)p;
+	p += sizeof *nvep;
+	INIT_OBJ(nvep, VRT_ENDPOINT_MAGIC);
+	if (vep->ipv4) {
+		sa = (void*)p; //lint !e826
+		memcpy(sa, vep->ipv4, vsa_suckaddr_len); //lint !e826
+		nvep->ipv4 = sa;
+		p += vsa_suckaddr_len;
+	}
+	if (vep->ipv6) {
+		sa = (void*)p; //lint !e826
+		memcpy(sa, vep->ipv6, vsa_suckaddr_len); //lint !e826
+		nvep->ipv6 = sa;
+		p += vsa_suckaddr_len;
+	}
+	if (vep->uds_path != NULL) {
+		strcpy(p, vep->uds_path);
+		nvep->uds_path = p;
+	}
+	return (nvep);
 }

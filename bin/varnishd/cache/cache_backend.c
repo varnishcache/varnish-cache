@@ -438,6 +438,7 @@ vbe_free(struct backend *be)
 	VRT_BACKEND_HANDLE();
 #undef DA
 #undef DN
+	free(be->endpoint);
 
 	Lck_Delete(&be->mtx);
 	FREE_OBJ(be);
@@ -588,6 +589,8 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 		return (NULL);
 	Lck_New(&be->mtx, lck_backend);
 
+	be->endpoint = VRT_Endpoint_Clone(vrt->endpoint);
+	vep = be->endpoint;
 #define DA(x)	do { if (vrt->x != NULL) REPLACE((be->x), (vrt->x)); } while (0)
 #define DN(x)	do { be->x = vrt->x; } while (0)
 	VRT_BACKEND_HANDLE();

@@ -53,8 +53,9 @@
  * binary/load-time compatible, increment MAJOR version
  *
  * 13.0 (2021-03-15)
+ *	VRT_Endpoint_Clone() added.
  *	Calling convention for VDP implementation changed
- *	Added VRT_ValidHdr()
+ *	VRT_ValidHdr() added.
  *	struct vmod_priv_methods added
  *	struct vmod_priv free member replaced with methods
  *	VRT_CTX_Assert() added
@@ -521,6 +522,7 @@ VCL_BACKEND VRT_new_backend_clustered(VRT_CTX,
     struct vsmw_cluster *, const struct vrt_backend *);
 size_t VRT_backend_vsm_need(VRT_CTX);
 void VRT_delete_backend(VRT_CTX, VCL_BACKEND *);
+struct vrt_endpoint *VRT_Endpoint_Clone(const struct vrt_endpoint *vep);
 
 /* VSM related */
 struct vsmw_cluster *VRT_VSM_Cluster_New(VRT_CTX, size_t);
