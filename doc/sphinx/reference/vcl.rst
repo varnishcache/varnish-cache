@@ -434,6 +434,17 @@ The ongoing ``vcl_*`` subroutine execution ends when a
 The *<action>* specifies how execution should proceed. The context
 defines which actions are available.
 
+It is possible to exit a subroutine that is not part of the built-in ones
+using a simple ``return`` statement without specifying an action. It exits
+the subroutine without transitioning to a different state::
+
+    sub filter_cookies {
+        if (!req.http.cookie) {
+            return;
+        }
+        # complex cookie filtering
+    }
+
 Multiple subroutines
 ~~~~~~~~~~~~~~~~~~~~
 
@@ -538,7 +549,7 @@ HISTORY
 VCL was developed by Poul-Henning Kamp in cooperation with Verdens
 Gang AS, Redpill Linpro and Varnish Software.  This manual page is
 written by Per Buer, Poul-Henning Kamp, Martin Blix Grydeland,
-Kristian Lyngstøl, Lasse Karstensen and possibly others.
+Kristian Lyngstøl, Lasse Karstensen and others.
 
 COPYRIGHT
 =========
