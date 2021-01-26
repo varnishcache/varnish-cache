@@ -36,18 +36,29 @@ vcl 4.0;
 # Client side
 
 sub vcl_recv {
+	call vcl_req_host;
+	call vcl_req_method;
+	call vcl_req_authorization;
+	call vcl_req_cookie;
+	return (hash);
+}
+
+sub vcl_req_host {
 	if (req.http.host) {
 		set req.http.host = req.http.host.lower();
-	}
-	if (req.method == "PRI") {
-		# This will never happen in properly formed traffic (see: RFC7540)
-		return (synth(405));
 	}
 	if (!req.http.host &&
 	    req.esi_level == 0 &&
 	    req.proto ~ "^(?i)HTTP/1.1") {
 		# In HTTP/1.1, Host is required.
 		return (synth(400));
+	}
+}
+
+sub vcl_req_method {
+	if (req.method == "PRI") {
+		# This will never happen in properly formed traffic.
+		return (synth(405));
 	}
 	if (req.method != "GET" &&
 	    req.method != "HEAD" &&
@@ -60,22 +71,22 @@ sub vcl_recv {
 		# Non-RFC2616 or CONNECT which is weird.
 		return (pipe);
 	}
-
 	if (req.method != "GET" && req.method != "HEAD") {
-		# We only deal with GET and HEAD by default
+		# We only deal with GET and HEAD by default.
 		return (pass);
 	}
+}
+
+sub vcl_req_authorization {
 	if (req.http.Authorization) {
-		# Not cacheable by default
+		# Not cacheable by default.
 		return (pass);
 	}
-	call vcl_req_cookie;
-	return (hash);
 }
 
 sub vcl_req_cookie {
 	if (req.http.Cookie) {
-		# Risky to cache by default
+		# Risky to cache by default.
 		return (pass);
 	}
 }
