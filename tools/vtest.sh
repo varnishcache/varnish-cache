@@ -66,11 +66,11 @@ export VTEST_REPORT="${REPORTDIR}/_log"
 #######################################################################
 # Establish TMPDIR
 
-mkdir -p ${TMPDIR}
-rm -rf ${TMPDIR}/*
+mkdir -p "${TMPDIR}"
+rm -rf "${TMPDIR:?}"/*
 
 # Try to make varnish own TMPDIR, in case we run as root
-chown varnish ${TMPDIR} > /dev/null 2>&1 || true
+chown varnish "${TMPDIR}" > /dev/null 2>&1 || true
 
 #######################################################################
 # Establish the SRCDIR we build/run/test
@@ -91,7 +91,7 @@ if [ ! -f vt_key.pub ] ; then
 fi
 
 pack () (
-	cd ${REPORTDIR}
+	cd "${REPORTDIR}"
 	tar czf - _log \
 	    `grep '^MANIFEST ' _log | sort -u | sed 's/^MANIFEST *//'` \
 )
@@ -104,15 +104,15 @@ submit () (
 		-o NumberOfPasswordPrompts=0 \
 		-o RequestTTY=no \
 		-i vt_key \
-		${SSH_DST} \
+		"${SSH_DST}" \
 		true \
-		< ${1}
+		< "${1}"
 )
 
-rm -f ${TMPDIR}/_report.tgz
-touch ${TMPDIR}/_report.tgz
+rm -f "${TMPDIR}"/_report.tgz
+touch "${TMPDIR}"/_report.tgz
 
-if ! submit ${TMPDIR}/_report.tgz; then
+if ! submit "${TMPDIR}"/_report.tgz; then
 	echo "Test submit failed"
 	echo
 	echo "You probably need to email this VTEST specific ssh-key"
@@ -193,7 +193,7 @@ failedtests () (
 	grep -l ':test-result: FAIL' "$LOGDIR"/*.trs |
 	while read trs
 	do
-		name=`basename $trs .trs`
+		name=`basename "${trs}" .trs`
 		vtc="${name}.vtc"
 		log="${name}.log"
 		rev=`git log -n 1 --pretty=format:%H "${VTCDIR}/${vtc}"`
@@ -226,12 +226,12 @@ do
 	(cd "${SRCDIR}" && chmod -R +w varnish-trunk && rm -rf varnish-trunk > /dev/null 2>&1 || true)
 	rev=`cd "${SRCDIR}" && git show -s --pretty=format:%H`
 	if [ "x${rev}" != "x${orev}" ] ; then
-                waitcur=${WAITMIN}
+		waitcur=${WAITMIN}
 	elif [ "${waitnext}" -gt 0 ] ; then
 		sleep ${WAITPERIOD}
 		waitnext=`expr ${waitnext} - 1 || true`
 		continue
-	else 
+	else
 		waitcur=`expr ${waitcur} + 1`
 		if [ ${waitcur} -gt ${WAITMAX} ] ; then
 			waitcur=${WAITMAX}
@@ -253,55 +253,55 @@ do
 	# NB:  Only change the report version number when the format/content
 	# NB:  of the report changes.  Corresponding changes on the backend
 	# NB:  will be required.  Coordinate with phk@.
-	echo "VTEST 1.05" > ${VTEST_REPORT}
-	echo "DATE `date +%s`" >> ${VTEST_REPORT}
-	echo "BRANCH trunk" >> ${VTEST_REPORT}
-	echo "HOST `hostname`" >> ${VTEST_REPORT}
-	echo "UNAME `uname -a`" >> ${VTEST_REPORT}
-	echo "UGID `id`" >> ${VTEST_REPORT}
+	echo "VTEST 1.05" > "${VTEST_REPORT}"
+	echo "DATE `date +%s`" >> "${VTEST_REPORT}"
+	echo "BRANCH trunk" >> "${VTEST_REPORT}"
+	echo "HOST `hostname`" >> "${VTEST_REPORT}"
+	echo "UNAME `uname -a`" >> "${VTEST_REPORT}"
+	echo "UGID `id`" >> "${VTEST_REPORT}"
 	if [ -x /usr/bin/lsb_release ] ; then
-		echo "LSB `lsb_release -d`" >> ${VTEST_REPORT}
+		echo "LSB `lsb_release -d`" >> "${VTEST_REPORT}"
 	else
-		echo "LSB none" >> ${VTEST_REPORT}
+		echo "LSB none" >> "${VTEST_REPORT}"
 	fi
-	echo "MESSAGE ${MESSAGE}" >> ${VTEST_REPORT}
-	echo "GITREV $rev" >> ${VTEST_REPORT}
+	echo "MESSAGE ${MESSAGE}" >> "${VTEST_REPORT}"
+	echo "GITREV $rev" >> "${VTEST_REPORT}"
 
 	find . -name '*.gc??' -print | xargs rm -f
 
-	if ! autogen >> ${REPORTDIR}/_autogen 2>&1 ; then
-		echo "AUTOGEN BAD" >> ${VTEST_REPORT}
-		echo "MANIFEST _autogen" >> ${VTEST_REPORT}
+	if ! autogen >> "${REPORTDIR}"/_autogen 2>&1 ; then
+		echo "AUTOGEN BAD" >> "${VTEST_REPORT}"
+		echo "MANIFEST _autogen" >> "${VTEST_REPORT}"
 	else
-		echo "AUTOGEN GOOD" >> ${VTEST_REPORT}
+		echo "AUTOGEN GOOD" >> "${VTEST_REPORT}"
 		if $enable_gcov ; then
-			if makegcov >> ${REPORTDIR}/_makegcov 2>&1 ; then
-				mv ${SRCDIR}/_gcov ${REPORTDIR}/
-				echo "MAKEGCOV GOOD" >> ${VTEST_REPORT}
-				echo "MANIFEST _gcov" >> ${VTEST_REPORT}
+			if makegcov >> "${REPORTDIR}"/_makegcov 2>&1 ; then
+				mv ${SRCDIR}/_gcov "${REPORTDIR}"/
+				echo "MAKEGCOV GOOD" >> "${VTEST_REPORT}"
+				echo "MANIFEST _gcov" >> "${VTEST_REPORT}"
 				waitcur=${WAITMAX}
 				waitnext=${WAITMAX}
 			else
-				echo "MAKEGCOV BAD" >> ${VTEST_REPORT}
-				echo "MANIFEST _makegcov" >> ${VTEST_REPORT}
-				failedtests >> ${VTEST_REPORT}
+				echo "MAKEGCOV BAD" >> "${VTEST_REPORT}"
+				echo "MANIFEST _makegcov" >> "${VTEST_REPORT}"
+				failedtests >> "${VTEST_REPORT}"
 			fi
-		elif ! makedistcheck >> ${REPORTDIR}/_makedistcheck 2>&1 ; then
-			echo "MAKEDISTCHECK BAD" >> ${VTEST_REPORT}
-			echo "MANIFEST _autogen" >> ${VTEST_REPORT}
-			echo "MANIFEST _makedistcheck" >> ${VTEST_REPORT}
-			failedtests >> ${VTEST_REPORT}
+		elif ! makedistcheck >> "${REPORTDIR}"/_makedistcheck 2>&1 ; then
+			echo "MAKEDISTCHECK BAD" >> "${VTEST_REPORT}"
+			echo "MANIFEST _autogen" >> "${VTEST_REPORT}"
+			echo "MANIFEST _makedistcheck" >> "${VTEST_REPORT}"
+			failedtests >> "${VTEST_REPORT}"
 		else
-			echo "MAKEDISTCHECK GOOD" >> ${VTEST_REPORT}
+			echo "MAKEDISTCHECK GOOD" >> "${VTEST_REPORT}"
 			waitnext=${WAITMAX}
 			waitcur=${WAITMAX}
 		fi
 	fi
-	echo "VTEST END" >> ${VTEST_REPORT}
-	pack > ${TMPDIR}/_report.tgz
+	echo "VTEST END" >> "${VTEST_REPORT}"
+	pack > "${TMPDIR}"/_report.tgz
 
-	submit ${TMPDIR}/_report.tgz || \
+	submit "${TMPDIR}"/_report.tgz || \
 		sleep 300 || \
-		submit ${TMPDIR}/_report.tgz || \
+		submit "${TMPDIR}"/_report.tgz || \
 		true
 done
