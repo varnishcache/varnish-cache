@@ -252,10 +252,10 @@ vcc_ParseFunction(struct vcc *tl)
 			    " are reserved for subroutines.\n");
 			vcc_ErrWhere(tl, t);
 			VSB_printf(tl->sb, "Valid vcl_* subroutines are:\n");
-			VTAILQ_FOREACH(p, &tl->procs, list) {
-				if (p->method != NULL)
-					VSB_printf(tl->sb, "\t%s\n",
-					    p->method->name);
+			VTAILQ_FOREACH(p, &vcc_builtin->procs, list) {
+				t = p->name;
+				VSB_printf(tl->sb, "\t%.*s\n",
+				    (int)pdiff(t->b, t->e), t->b);
 			}
 			return;
 		}
