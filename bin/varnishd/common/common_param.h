@@ -40,10 +40,6 @@
 
 #define VSM_CLASS_PARAM		"Params"
 
-#ifdef __MACH__
-#undef bool
-#endif
-
 enum debug_bits {
 #define DEBUG_BIT(U, l, d) DBG_##U,
 #include "tbl/debug_bits.h"
@@ -82,7 +78,7 @@ typedef uint8_t feature_t[(FEATURE_Reserved+7)>>3];
 
 struct params {
 
-#define ptyp_bool		unsigned
+#define ptyp_boolean		unsigned
 #define ptyp_bytes		ssize_t
 #define ptyp_bytes_u		unsigned
 #define ptyp_double		double
@@ -96,7 +92,7 @@ struct params {
 #define PARAM(typ, fld, nm, ...)		\
 	ptyp_##typ		fld;
 #include <tbl/params.h>
-#undef ptyp_bool
+#undef ptyp_boolean
 #undef ptyp_bytes
 #undef ptyp_bytes_u
 #undef ptyp_double

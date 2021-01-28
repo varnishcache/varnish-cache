@@ -122,7 +122,7 @@ tweak_double(struct vsb *vsb, const struct parspec *par, const char *arg)
 /*--------------------------------------------------------------------*/
 
 int
-tweak_bool(struct vsb *vsb, const struct parspec *par, const char *arg)
+tweak_boolean(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	volatile unsigned *dest;
 

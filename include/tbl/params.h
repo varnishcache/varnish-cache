@@ -54,7 +54,7 @@
 #endif
 PARAM_SIMPLE(
 	/* name */	accept_filter,
-	/* type */	bool,
+	/* type */	boolean,
 	/* min */	NULL,
 	/* max */	NULL,
 	/* def */	"on",	/* default adjusted in mgt_param.c */
@@ -120,7 +120,7 @@ PARAM_SIMPLE(
 
 PARAM_SIMPLE(
 	/* name */	auto_restart,
-	/* type */	bool,
+	/* type */	boolean,
 	/* min */	NULL,
 	/* max */	NULL,
 	/* def */	"on",
@@ -131,7 +131,7 @@ PARAM_SIMPLE(
 
 PARAM_SIMPLE(
 	/* name */	ban_dups,
-	/* type */	bool,
+	/* type */	boolean,
 	/* min */	NULL,
 	/* max */	NULL,
 	/* def */	"on",
@@ -505,7 +505,7 @@ PARAM_SIMPLE(
 
 PARAM_SIMPLE(
 	/* name */	http_gzip_support,
-	/* type */	bool,
+	/* type */	boolean,
 	/* min */	NULL,
 	/* max */	NULL,
 	/* def */	"on",
@@ -544,7 +544,7 @@ PARAM_SIMPLE(
 
 PARAM_SIMPLE(
 	/* name */	http_range_support,
-	/* type */	bool,
+	/* type */	boolean,
 	/* min */	NULL,
 	/* max */	NULL,
 	/* def */	"on",
@@ -745,7 +745,7 @@ PARAM_SIMPLE(
 
 PARAM_SIMPLE(
 	/* name */	prefer_ipv6,
-	/* type */	bool,
+	/* type */	boolean,
 	/* min */	NULL,
 	/* max */	NULL,
 	/* def */	"off",
@@ -807,7 +807,7 @@ PARAM_SIMPLE(
 
 PARAM_SIMPLE(
 	/* name */	sigsegv_handler,
-	/* type */	bool,
+	/* type */	boolean,
 	/* min */	NULL,
 	/* max */	NULL,
 	/* def */	"on",
@@ -820,7 +820,7 @@ PARAM_SIMPLE(
 
 PARAM_SIMPLE(
 	/* name */	syslog_cli_traffic,
-	/* type */	bool,
+	/* type */	boolean,
 	/* min */	NULL,
 	/* max */	NULL,
 	/* def */	"on",
@@ -836,7 +836,7 @@ PARAM_SIMPLE(
 #endif
 PARAM_SIMPLE(
 	/* name */	tcp_fastopen,
-	/* type */	bool,
+	/* type */	boolean,
 	/* min */	NULL,
 	/* max */	NULL,
 	/* def */	"off",
@@ -1567,7 +1567,7 @@ PARAM_STRING(
  */
 
 #  define PARAM_VCC(nm, def, descr) \
-	PARAM(, , nm, tweak_bool, &mgt_ ## nm, NULL, NULL, def, "bool", descr)
+	PARAM(, , nm, tweak_boolean, &mgt_ ## nm, NULL, NULL, def, "bool", descr)
 
 PARAM_VCC(
 	/* name */	vcc_err_unref,
