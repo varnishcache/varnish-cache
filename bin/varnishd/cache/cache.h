@@ -710,6 +710,11 @@ int ObjGetDouble(struct worker *, struct objcore *, enum obj_attr, double *);
 int ObjGetU32(struct worker *, struct objcore *, enum obj_attr, uint32_t *);
 int ObjGetU64(struct worker *, struct objcore *, enum obj_attr, uint64_t *);
 int ObjCheckFlag(struct worker *, struct objcore *, enum obj_flags of);
+
+/* cache_req_body.c */
+ssize_t VRB_Iterate(struct worker *, struct vsl_log *, struct req *,
+    objiterate_f *func, void *priv);
+
 /* cache_session.c [SES] */
 
 #define SESS_ATTR(UP, low, typ, len)					\

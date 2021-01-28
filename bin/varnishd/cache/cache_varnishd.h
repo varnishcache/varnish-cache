@@ -370,8 +370,6 @@ void Req_AcctLogCharge(struct VSC_main_wrk *, struct req *);
 /* cache_req_body.c */
 int VRB_Ignore(struct req *);
 ssize_t VRB_Cache(struct req *, ssize_t maxsize);
-ssize_t VRB_Iterate(struct worker *, struct vsl_log *, struct req *,
-    objiterate_f *func, void *priv);
 void VRB_Free(struct req *);
 
 /* cache_req_fsm.c [CNT] */
