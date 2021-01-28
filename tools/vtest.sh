@@ -104,7 +104,7 @@ submit () (
 		-o NumberOfPasswordPrompts=0 \
 		-o RequestTTY=no \
 		-i vt_key \
-		"${SSH_DST}" \
+		${SSH_DST} \
 		true \
 		< "${1}"
 )
