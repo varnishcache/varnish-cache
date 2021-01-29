@@ -43,7 +43,7 @@
 #include "vtim.h"
 
 #include "cache_backend.h"
-#include "cache_tcp_pool.h"
+#include "cache_conn_pool.h"
 #include "cache_transport.h"
 #include "cache_vcl.h"
 #include "http1/cache_http1.h"
@@ -616,7 +616,7 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 	if (! vcl->temp->is_warm)
 		VRT_VSC_Hide(be->vsc_seg);
 
-	be->conn_pool = VTP_Ref(vep, vbe_proto_ident);
+	be->conn_pool = VCP_Ref(vep, vbe_proto_ident);
 	AN(be->conn_pool);
 
 	vbp = vrt->probe;

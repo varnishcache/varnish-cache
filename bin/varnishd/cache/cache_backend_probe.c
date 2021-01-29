@@ -52,7 +52,7 @@
 #include "vtim.h"
 
 #include "cache_backend.h"
-#include "cache_tcp_pool.h"
+#include "cache_conn_pool.h"
 
 /* Default averaging rate, we want something pretty responsive */
 #define AVG_RATE			4

@@ -49,16 +49,16 @@ varnish v1 -vcl {
 	}
 }
 
-varnish v1 -vsc LCK.tcp_pool.*
+varnish v1 -vsc LCK.conn_pool.*
 varnish v1 -cliok "vcl.discard vcl1"
 varnish v1 -cliok "vcl.list"
-varnish v1 -vsc LCK.tcp_pool.*
-varnish v1 -expect LCK.tcp_pool.destroy == 0
+varnish v1 -vsc LCK.conn_pool.*
+varnish v1 -expect LCK.conn_pool.destroy == 0
 
 barrier b2 sync
 
 client c1 -wait
 varnish v1 -cliok "vcl.list"
 server s1 -wait
-varnish v1 -vsc LCK.tcp_pool.*
-varnish v1 -expect LCK.tcp_pool.destroy == 1
+varnish v1 -vsc LCK.conn_pool.*
+varnish v1 -expect LCK.conn_pool.destroy == 1

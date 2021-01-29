@@ -45,7 +45,7 @@
 #include "vtim.h"
 #include "waiter/waiter.h"
 
-#include "cache_tcp_pool.h"
+#include "cache_conn_pool.h"
 #include "cache_pool.h"
 
 struct conn_pool;
@@ -72,16 +72,12 @@ struct pfd {
 typedef int cp_open_f(const struct conn_pool *, vtim_dur tmo, VCL_IP *ap);
 typedef void cp_close_f(struct pfd *);
 typedef void cp_name_f(const struct pfd *, char *, unsigned, char *, unsigned);
-typedef void cp_free_f(void *);
-typedef void cp_panic_f(struct vsb *, const void *);
 
 struct cp_methods {
 	cp_open_f				*open;
 	cp_close_f				*close;
 	cp_name_f				*local_name;
 	cp_name_f				*remote_name;
-	cp_free_f				*free;
-	cp_panic_f				*panic;
 };
 
 struct conn_pool {
@@ -90,8 +86,8 @@ struct conn_pool {
 
 	const struct cp_methods			*methods;
 
+	struct vrt_endpoint			*endpoint;
 	char					ident[VSHA256_DIGEST_LENGTH];
-	void					*priv;
 
 	VTAILQ_ENTRY(conn_pool)			list;
 	int					refcnt;
@@ -113,6 +109,7 @@ static struct lock conn_pools_mtx;
 
 static VTAILQ_HEAD(, conn_pool)	conn_pools =
     VTAILQ_HEAD_INITIALIZER(conn_pools);
+
 
 /*--------------------------------------------------------------------
  */
@@ -193,56 +190,6 @@ vcp_handle(struct waited *w, enum wait_event ev, vtim_real now)
 	Lck_Unlock(&cp->mtx);
 }
 
-/*--------------------------------------------------------------------
- */
-
-static struct conn_pool *
-VCP_Ref(const uint8_t *ident)
-{
-	struct conn_pool *cp;
-
-	Lck_Lock(&conn_pools_mtx);
-	VTAILQ_FOREACH(cp, &conn_pools, list) {
-		assert(cp->refcnt > 0);
-		if (memcmp(ident, cp->ident, sizeof cp->ident))
-			continue;
-		cp->refcnt++;
-		Lck_Unlock(&conn_pools_mtx);
-		return (cp);
-	}
-	Lck_Unlock(&conn_pools_mtx);
-	return (NULL);
-}
-
-/*--------------------------------------------------------------------
- */
-
-static struct conn_pool *
-VCP_New(struct conn_pool *cp, uint8_t ident[VSHA256_DIGEST_LENGTH],
-    void *priv, const struct cp_methods *cm)
-{
-
-	AN(cp);
-	AN(cm);
-	AN(cm->open);
-	AN(cm->close);
-
-	INIT_OBJ(cp, CONN_POOL_MAGIC);
-	memcpy(cp->ident, ident, sizeof cp->ident);
-	cp->priv = priv;
-	cp->methods = cm;
-	cp->refcnt = 1;
-	cp->holddown = 0;
-	Lck_New(&cp->mtx, lck_tcp_pool);
-	VTAILQ_INIT(&cp->connlist);
-	VTAILQ_INIT(&cp->killlist);
-
-	Lck_Lock(&conn_pools_mtx);
-	VTAILQ_INSERT_HEAD(&conn_pools, cp, list);
-	Lck_Unlock(&conn_pools_mtx);
-
-	return (cp);
-}
 
 /*--------------------------------------------------------------------
  */
@@ -299,7 +246,8 @@ VCP_Rel(struct conn_pool **cpp)
 	Lck_Delete(&cp->mtx);
 	AZ(cp->n_conn);
 	AZ(cp->n_kill);
-	cp->methods->free(cp->priv);
+	free(cp->endpoint);
+	free(cp);
 }
 
 /*--------------------------------------------------------------------
@@ -569,6 +517,30 @@ VCP_GetIp(struct pfd *pfd)
 
 /*--------------------------------------------------------------------*/
 
+static void
+vcp_panic_endpoint(struct vsb *vsb, const struct vrt_endpoint *vep)
+{
+	char h[VTCP_ADDRBUFSIZE];
+	char p[VTCP_PORTBUFSIZE];
+
+	if (PAN_dump_struct(vsb, vep, VRT_ENDPOINT_MAGIC, "vrt_endpoint"))
+		return;
+	if (vep->uds_path)
+		VSB_printf(vsb, "uds_path = %s,\n", vep->uds_path);
+	if (vep->ipv4 && VSA_Sane(vep->ipv4)) {
+		VTCP_name(vep->ipv4, h, sizeof h, p, sizeof p);
+		VSB_printf(vsb, "ipv4 = %s, ", h);
+		VSB_printf(vsb, "port = %s,\n", p);
+	}
+	if (vep->ipv6 && VSA_Sane(vep->ipv6)) {
+		VTCP_name(vep->ipv6, h, sizeof h, p, sizeof p);
+		VSB_printf(vsb, "ipv6 = %s, ", h);
+		VSB_printf(vsb, "port = %s,\n", p);
+	}
+	VSB_indent(vsb, -2);
+	VSB_cat(vsb, "},\n");
+}
+
 void
 VCP_Panic(struct vsb *vsb, struct conn_pool *cp)
 {
@@ -578,7 +550,7 @@ VCP_Panic(struct vsb *vsb, struct conn_pool *cp)
 	VSB_printf(vsb, "ident = ");
 	VSB_quote(vsb, cp->ident, VSHA256_DIGEST_LENGTH, VSB_QUOTE_HEX);
 	VSB_printf(vsb, ",\n");
-	cp->methods->panic(vsb, cp->priv);
+	vcp_panic_endpoint(vsb, cp->endpoint);
 	VSB_indent(vsb, -2);
 	VSB_cat(vsb, "},\n");
 }
@@ -588,32 +560,10 @@ VCP_Panic(struct vsb *vsb, struct conn_pool *cp)
 void
 VCP_Init(void)
 {
-	Lck_New(&conn_pools_mtx, lck_tcp_pool);
+	Lck_New(&conn_pools_mtx, lck_conn_pool);
 }
 
 /**********************************************************************/
-
-struct tcp_pool {
-	unsigned				magic;
-#define TCP_POOL_MAGIC				0x28b0e42a
-
-	struct suckaddr				*ip4;
-	struct suckaddr				*ip6;
-	char					*uds;
-	struct conn_pool			cp[1];
-};
-
-static void v_matchproto_(cp_free_f)
-vtp_free(void *priv)
-{
-	struct tcp_pool *tp;
-
-	CAST_OBJ_NOTNULL(tp, priv, TCP_POOL_MAGIC);
-	free(tp->ip4);
-	free(tp->ip6);
-	free(tp->uds);
-	FREE_OBJ(tp);
-}
 
 static inline int
 tmo2msec(vtim_dur tmo)
@@ -626,55 +576,27 @@ vtp_open(const struct conn_pool *cp, vtim_dur tmo, VCL_IP *ap)
 {
 	int s;
 	int msec;
-	struct tcp_pool *tp;
 
 	CHECK_OBJ_NOTNULL(cp, CONN_POOL_MAGIC);
-	CAST_OBJ_NOTNULL(tp, cp->priv, TCP_POOL_MAGIC);
 
 	msec = tmo2msec(tmo);
 	if (cache_param->prefer_ipv6) {
-		*ap = tp->ip6;
-		s = VTCP_connect(tp->ip6, msec);
+		*ap = cp->endpoint->ipv6;
+		s = VTCP_connect(*ap, msec);
 		if (s >= 0)
 			return (s);
 	}
-	*ap = tp->ip4;
-	s = VTCP_connect(tp->ip4, msec);
+	*ap = cp->endpoint->ipv4;
+	s = VTCP_connect(*ap, msec);
 	if (s >= 0)
 		return (s);
 	if (!cache_param->prefer_ipv6) {
-		*ap = tp->ip6;
-		s = VTCP_connect(tp->ip6, msec);
+		*ap = cp->endpoint->ipv6;
+		s = VTCP_connect(*ap, msec);
 	}
 	return (s);
 }
 
-static void
-vtp_panic(struct vsb *vsb, const void *priv)
-{
-	const struct tcp_pool *tp;
-
-	char h[VTCP_ADDRBUFSIZE];
-	char p[VTCP_PORTBUFSIZE];
-
-	tp = priv;
-	if (PAN_dump_struct(vsb, tp, TCP_POOL_MAGIC, "tcp_pool"))
-		return;
-	if (tp->uds)
-		VSB_printf(vsb, "uds = %s,\n", tp->uds);
-	if (tp->ip4 && VSA_Sane(tp->ip4)) {
-		VTCP_name(tp->ip4, h, sizeof h, p, sizeof p);
-		VSB_printf(vsb, "ipv4 = %s, ", h);
-		VSB_printf(vsb, "port = %s,\n", p);
-	}
-	if (tp->ip6 && VSA_Sane(tp->ip6)) {
-		VTCP_name(tp->ip6, h, sizeof h, p, sizeof p);
-		VSB_printf(vsb, "ipv6 = %s, ", h);
-		VSB_printf(vsb, "port = %s,\n", p);
-	}
-	VSB_indent(vsb, -2);
-	VSB_cat(vsb, "},\n");
-}
 
 /*--------------------------------------------------------------------*/
 
@@ -707,8 +629,6 @@ static const struct cp_methods vtp_methods = {
 	.close = vtp_close,
 	.local_name = vtp_local_name,
 	.remote_name = vtp_remote_name,
-	.free = vtp_free,
-	.panic = vtp_panic,
 };
 
 /*--------------------------------------------------------------------
@@ -719,15 +639,13 @@ vus_open(const struct conn_pool *cp, vtim_dur tmo, VCL_IP *ap)
 {
 	int s;
 	int msec;
-	struct tcp_pool *tp;
 
 	CHECK_OBJ_NOTNULL(cp, CONN_POOL_MAGIC);
-	CAST_OBJ_NOTNULL(tp, cp->priv, TCP_POOL_MAGIC);
-	AN(tp->uds);
+	AN(cp->endpoint->uds_path);
 
 	msec = tmo2msec(tmo);
 	*ap = bogo_ip;
-	s = VUS_connect(tp->uds, msec);
+	s = VUS_connect(cp->endpoint->uds_path, msec);
 	return (s);
 }
 
@@ -747,8 +665,6 @@ static const struct cp_methods vus_methods = {
 	.close = vtp_close,
 	.local_name = vus_name,
 	.remote_name = vus_name,
-	.free = vtp_free,
-	.panic = vtp_panic,
 };
 
 /*--------------------------------------------------------------------
@@ -757,11 +673,9 @@ static const struct cp_methods vus_methods = {
  */
 
 struct conn_pool *
-VTP_Ref(const struct vrt_endpoint *vep, const char *ident)
+VCP_Ref(const struct vrt_endpoint *vep, const char *ident)
 {
-	struct tcp_pool *tp;
-	struct conn_pool *cp;
-	const struct cp_methods *methods;
+	struct conn_pool *cp, *cp2;
 	struct VSHA256Context cx[1];
 	unsigned char digest[VSHA256_DIGEST_LENGTH];
 
@@ -789,27 +703,51 @@ VTP_Ref(const struct vrt_endpoint *vep, const char *ident)
 	}
 	VSHA256_Final(digest, cx);
 
-	cp = VCP_Ref(digest);
-	if (cp != NULL)
-		return (cp);
-
 	/*
-	 * this is racy - we could end up with additional pools on the same id
-	 * with just a single connection
+	 * In heavy use of dynamic backends, traversing this list
+	 * can become expensive.  In order to not do so twice we
+	 * pessimistically create the necessary pool, and discard
+	 * it on a hit. (XXX: Consider hash or tree ?)
 	 */
-	ALLOC_OBJ(tp, TCP_POOL_MAGIC);
-	AN(tp);
-	if (vep->uds_path != NULL) {
-		methods = &vus_methods;
-		tp->uds = strdup(vep->uds_path);
-		AN(tp->uds);
+
+	ALLOC_OBJ(cp, CONN_POOL_MAGIC);
+	AN(cp);
+	cp->refcnt = 1;
+	cp->holddown = 0;
+	cp->endpoint = VRT_Endpoint_Clone(vep);
+	memcpy(cp->ident, digest, sizeof cp->ident);
+	if (vep->uds_path != NULL)
+		cp->methods = &vus_methods;
+	else
+		cp->methods = &vtp_methods;
+	Lck_New(&cp->mtx, lck_conn_pool);
+	VTAILQ_INIT(&cp->connlist);
+	VTAILQ_INIT(&cp->killlist);
+
+	CHECK_OBJ_NOTNULL(cp, CONN_POOL_MAGIC);
+	Lck_Lock(&conn_pools_mtx);
+	VTAILQ_FOREACH(cp2, &conn_pools, list) {
+		CHECK_OBJ_NOTNULL(cp2, CONN_POOL_MAGIC);
+		assert(cp2->refcnt > 0);
+		if (!memcmp(digest, cp2->ident, sizeof cp2->ident))
+			break;
 	}
-	else {
-		methods = &vtp_methods;
-		if (vep->ipv4 != NULL)
-			tp->ip4 = VSA_Clone(vep->ipv4);
-		if (vep->ipv6 != NULL)
-			tp->ip6 = VSA_Clone(vep->ipv6);
+	if (cp2 == NULL)
+		VTAILQ_INSERT_HEAD(&conn_pools, cp, list);
+	else
+		cp2->refcnt++;
+	Lck_Unlock(&conn_pools_mtx);
+
+	if (cp2 == NULL) {
+		CHECK_OBJ_NOTNULL(cp, CONN_POOL_MAGIC);
+		return (cp);
 	}
-	return (VCP_New(tp->cp, digest, tp, methods));
+
+	Lck_Delete(&cp->mtx);
+	AZ(cp->n_conn);
+	AZ(cp->n_kill);
+	FREE_OBJ(cp->endpoint);
+	FREE_OBJ(cp);
+	CHECK_OBJ_NOTNULL(cp2, CONN_POOL_MAGIC);
+	return (cp2);
 }

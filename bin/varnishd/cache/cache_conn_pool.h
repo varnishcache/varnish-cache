@@ -52,9 +52,9 @@ void PFD_RemoteName(const struct pfd *, char *, unsigned, char *, unsigned);
  * Prototypes
  */
 
-struct conn_pool *VTP_Ref(const struct vrt_endpoint *, const char *ident);
+struct conn_pool *VCP_Ref(const struct vrt_endpoint *, const char *ident);
 	/*
-	 * Get a reference to a TCP pool. Either one or both of ipv4 or
+	 * Get a reference to a connection pool. Either one or both of ipv4 or
 	 * ipv6 arg must be non-NULL, or uds must be non-NULL. If recycling
 	 * is to be used, the ident pointer distinguishes the pool from
 	 * other pools with same {ipv4, ipv6, uds}.
@@ -62,13 +62,14 @@ struct conn_pool *VTP_Ref(const struct vrt_endpoint *, const char *ident);
 
 void VCP_AddRef(struct conn_pool *);
 	/*
-	 * Get another reference to an already referenced TCP pool.
+	 * Get another reference to an already referenced connection pool.
 	 */
 
 void VCP_Rel(struct conn_pool **);
 	/*
-	 * Release reference to a TCP pool.  When last reference is released
-	 * the pool is destroyed and all cached connections closed.
+	 * Release reference to a connection pool.  When last reference
+	 * is released the pool is destroyed and all cached connections
+	 * closed.
 	 */
 
 int VCP_Open(struct conn_pool *, vtim_dur tmo, VCL_IP *, int*);
@@ -96,7 +97,7 @@ struct pfd *VCP_Get(struct conn_pool *, vtim_dur tmo, struct worker *,
 
 int VCP_Wait(struct worker *, struct pfd *, vtim_real tmo);
 	/*
-	 * If the connection was recycled (state != VTP_STATE_USED) call this
+	 * If the connection was recycled (state != VCP_STATE_USED) call this
 	 * function before attempting to receive on the connection.
 	 */
 

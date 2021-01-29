@@ -415,7 +415,7 @@ void VSL_ChgId(struct vsl_log *vsl, const char *typ, const char *why,
 void VSL_End(struct vsl_log *vsl);
 void VSL_Flush(struct vsl_log *, int overflow);
 
-/* cache_tcp_pool.c */
+/* cache_conn_pool.c */
 struct conn_pool;
 void VCP_Init(void);
 void VCP_Panic(struct vsb *, struct conn_pool *);

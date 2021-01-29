@@ -17,6 +17,7 @@ varnishd_SOURCES = \
 	cache/cache_ban_lurker.c \
 	cache/cache_busyobj.c \
 	cache/cache_cli.c \
+	cache/cache_conn_pool.c \
 	cache/cache_deliver_proc.c \
 	cache/cache_director.c \
 	cache/cache_esi_deliver.c \
@@ -41,7 +42,6 @@ varnishd_SOURCES = \
 	cache/cache_rfc2616.c \
 	cache/cache_session.c \
 	cache/cache_shmlog.c \
-	cache/cache_tcp_pool.c \
 	cache/cache_vary.c \
 	cache/cache_vcl.c \
 	cache/cache_vpi.c \
@@ -123,11 +123,11 @@ nodist_varnishd_SOURCES = \
 
 noinst_HEADERS = \
 	cache/cache_ban.h \
+	cache/cache_conn_pool.h \
 	cache/cache_esi.h \
 	cache/cache_obj.h \
 	cache/cache_objhead.h \
 	cache/cache_pool.h \
-	cache/cache_tcp_pool.h \
 	cache/cache_transport.h \
 	cache/cache_vcl.h \
 	cache/cache_vgz.h \
