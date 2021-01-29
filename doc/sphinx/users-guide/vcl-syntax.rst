@@ -87,13 +87,15 @@ down for, uhm, examples.
 Built in subroutines
 ~~~~~~~~~~~~~~~~~~~~
 
-Varnish has quite a few built in subroutines that are called for each
-transaction as it flows through Varnish. These builtin subroutines are all
-named ``vcl_*`` and are explained in :ref:`vcl-built-in-subs`.
+Varnish has quite a few built-in subroutines that are called for each
+transaction as it flows through Varnish. These built-in subroutines are
+all named ``vcl_*`` and are explained in :ref:`vcl-built-in-subs`.
 
-Processing in built in subroutines ends with ``return (<action>)``
+Processing in built-in subroutines ends with ``return (<action>)``
 (see :ref:`user-guide-vcl_actions`).
 
+The :ref:`vcl-built-in-code` also contains custom assistant subroutines
+called by the built-in subroutines, also prefixed with ``vcl_``.
 
 Custom subroutines
 ~~~~~~~~~~~~~~~~~~
