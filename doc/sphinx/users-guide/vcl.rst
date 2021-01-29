@@ -36,6 +36,7 @@ code commented out in the file `builtin.vcl` that ships with Varnish Cache.
 
    vcl-syntax
    vcl-built-in-subs
+   vcl-built-in-code
    vcl-variables
    vcl-actions
    vcl-backends

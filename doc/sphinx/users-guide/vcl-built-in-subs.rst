@@ -1,6 +1,6 @@
 .. _vcl-built-in-subs:
 
-Built in subroutines
+Built-in subroutines
 ====================
 
 Various built-in subroutines are called during processing of client-
@@ -20,6 +20,8 @@ Common actions are documented in
 :ref:`user-guide-vcl_actions`. Actions specific to only one or some
 subroutines are documented herein.
 
+A default behavior is provided for all :ref:`reference-states` in the
+:ref:`vcl-built-in-code` code.
 
 client side
 -----------
