@@ -161,6 +161,7 @@ vcc_NewProc(struct vcc *tl, struct symbol *sym)
 	p->cname = VSB_new_auto();
 	AN(p->cname);
 	sym->proc = p;
+	p->sym = sym;
 	return (p);
 }
 

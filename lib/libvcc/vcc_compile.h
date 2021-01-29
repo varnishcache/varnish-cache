@@ -215,6 +215,7 @@ struct proc {
 	struct vsb		*cname;
 	struct vsb		*prologue;
 	struct vsb		*body;
+	struct symbol		*sym;
 };
 
 struct inifin {
