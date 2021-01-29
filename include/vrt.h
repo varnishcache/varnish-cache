@@ -398,6 +398,7 @@ struct vrt_endpoint {
 	VCL_IP				ipv4;
 	VCL_IP				ipv6;
 	const char			*uds_path;
+	const struct vrt_blob		*preamble;
 };
 
 #define VRT_BACKEND_FIELDS(rigid)				\

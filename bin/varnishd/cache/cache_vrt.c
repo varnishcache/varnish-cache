@@ -1068,13 +1068,17 @@ VRT_Format_Proxy(struct vsb *vsb, VCL_INT version, VCL_IP sac, VCL_IP sas,
  * Clone a struct vrt_endpoint in a single malloc() allocation
  */
 
+//lint -e{662}  Possible of out-of-bounds pointer (___ beyond end of data)
+//lint -e{826}  Suspicious pointer-to-pointer conversion (area to o small
 struct vrt_endpoint *
-VRT_Endpoint_Clone(const struct vrt_endpoint *vep)
+VRT_Endpoint_Clone(const struct vrt_endpoint * const vep)
 {
 	size_t sz;
 	struct vrt_endpoint *nvep;
+	struct vrt_blob *blob = NULL;
 	struct suckaddr *sa;
-	char *p;
+	size_t uds_len = 0;
+	char *p, *e;
 
 	CHECK_OBJ_NOTNULL(vep, VRT_ENDPOINT_MAGIC);
 	sz = sizeof *nvep;
@@ -1082,28 +1086,47 @@ VRT_Endpoint_Clone(const struct vrt_endpoint *vep)
 		sz += vsa_suckaddr_len;
 	if (vep->ipv6)
 		sz += vsa_suckaddr_len;
-	if (vep->uds_path != NULL)
-		sz += strlen(vep->uds_path) + 1;
-	p = malloc(sz);
+	if (vep->uds_path != NULL) {
+		uds_len = strlen(vep->uds_path) + 1;
+		sz += uds_len;
+	}
+	if (vep->preamble != NULL && vep->preamble->len) {
+		sz += sizeof(*blob);
+		sz += vep->preamble->len;
+	}
+	p = calloc(1, sz);
 	AN(p);
+	e = p + sz;
 	nvep = (void*)p;
 	p += sizeof *nvep;
 	INIT_OBJ(nvep, VRT_ENDPOINT_MAGIC);
 	if (vep->ipv4) {
-		sa = (void*)p; //lint !e826
-		memcpy(sa, vep->ipv4, vsa_suckaddr_len); //lint !e826
+		sa = (void*)p;
+		memcpy(sa, vep->ipv4, vsa_suckaddr_len);
 		nvep->ipv4 = sa;
 		p += vsa_suckaddr_len;
 	}
 	if (vep->ipv6) {
-		sa = (void*)p; //lint !e826
-		memcpy(sa, vep->ipv6, vsa_suckaddr_len); //lint !e826
+		sa = (void*)p;
+		memcpy(sa, vep->ipv6, vsa_suckaddr_len);
 		nvep->ipv6 = sa;
 		p += vsa_suckaddr_len;
 	}
-	if (vep->uds_path != NULL) {
-		strcpy(p, vep->uds_path);
-		nvep->uds_path = p;
+	if (vep->preamble != NULL && vep->preamble->len) {
+		/* Before uds because we need p to be aligned still */
+		blob = (void*)p;
+		p += sizeof(*blob);
+		nvep->preamble = blob;
+		memcpy(p, vep->preamble->blob, vep->preamble->len);
+		blob->len = vep->preamble->len;
+		blob->blob = p;
+		p += vep->preamble->len;
 	}
+	if (uds_len) {
+		memcpy(p, vep->uds_path, uds_len);
+		nvep->uds_path = p;
+		p += uds_len;
+	}
+	assert(p == e);
 	return (nvep);
 }
