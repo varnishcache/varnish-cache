@@ -343,9 +343,20 @@ VCP_Open(struct conn_pool *cp, vtim_dur tmo, VCL_IP *ap, int *err)
 		return (-1);
 	}
 
+	*err = errno = 0;
 	r = cp->methods->open(cp, tmo, ap);
 
-	*err = errno;
+	if (r >= 0 && errno == 0 && cp->endpoint->preamble != NULL &&
+	     cp->endpoint->preamble->len > 0) {
+		if (write(r, cp->endpoint->preamble->blob,
+		    cp->endpoint->preamble->len) !=
+		    cp->endpoint->preamble->len) {
+			*err = errno;
+			closefd(&r);
+		}
+	} else {
+		*err = errno;
+	}
 
 	if (r >= 0)
 		return (r);
@@ -700,6 +711,10 @@ VCP_Ref(const struct vrt_endpoint *vep, const char *ident)
 			VSHA256_Update(cx, "IP6", 4); // include \0
 			VSHA256_Update(cx, vep->ipv6, vsa_suckaddr_len);
 		}
+	}
+	if (vep->preamble != NULL && vep->preamble->len > 0) {
+		VSHA256_Update(cx, "PRE", 4); // include \0
+		VSHA256_Update(cx, vep->preamble->blob, vep->preamble->len);
 	}
 	VSHA256_Final(digest, cx);
 

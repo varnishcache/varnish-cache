@@ -1,0 +1,27 @@
+varnishtest "Test backend preamble"
+
+server s1 {
+	rxreq
+	expect req.method == "POST"
+	expect req.url == "/preamble"
+	expect req.proto == "HTTP/7.3"
+	expect req.http.Header == "42"
+	rxreq
+	expect req.method == "GET"
+	expect req.url == "/"
+	expect req.proto == "HTTP/1.1"
+	txresp
+} -start
+
+varnish v1 -vcl {
+	backend s1 {
+		.host = "${s1_sock}";
+		.preamble = :UE9TVCAvcHJlYW1ibGUgSFRUUC83LjMKSGVhZGVyOiA0MgoKCg==: ;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run

@@ -339,6 +339,7 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 	const struct token *t_path = NULL;
 	const struct token *t_hosthdr = NULL;
 	const struct token *t_did = NULL;
+	const struct token *t_preamble = NULL;
 	struct symbol *pb;
 	struct fld_spec *fs;
 	struct inifin *ifp;
@@ -382,6 +383,7 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 	    "?probe",
 	    "?max_connections",
 	    "?proxy_header",
+	    "?preamble",
 	    NULL);
 
 	tl->fb = VSB_new_auto();
@@ -497,6 +499,11 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 			vcc_ErrWhere(tl, tl->t);
 			VSB_destroy(&tl->fb);
 			return;
+		} else if (vcc_IdIs(t_field, "preamble")) {
+			ExpectErr(tl, CBLOB);
+			t_preamble = tl->t;
+			vcc_NextToken(tl);
+			SkipToken(tl, ';');
 		} else {
 			ErrInternal(tl);
 			VSB_destroy(&tl->fb);
@@ -533,6 +540,9 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 		/* Check that the path can be a legal UDS */
 		Emit_UDS_Path(tl, vsb1, t_path, "Backend path");
 	ERRCHK(tl);
+
+	if (t_preamble != NULL)
+		VSB_printf(vsb1, "\t.preamble = %s,\n", t_preamble->dec);
 
 	VSB_printf(vsb1, "};\n");
 	AZ(VSB_finish(vsb1));
