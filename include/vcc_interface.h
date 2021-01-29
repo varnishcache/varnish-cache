@@ -92,4 +92,6 @@ struct vcl_sub {
 	const struct VCL_conf	*vcl_conf;
 	vcl_func_f		*func;
 	unsigned		n;
+	unsigned		nref;
+	unsigned		called;
 };

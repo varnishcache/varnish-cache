@@ -176,6 +176,7 @@ vcc_EmitProc(struct vcc *tl, struct proc *p)
 	AZ(VSB_finish(p->cname));
 	AZ(VSB_finish(p->prologue));
 	AZ(VSB_finish(p->body));
+	AN(p->sym);
 
 	Fh(tl, 1, "vcl_func_f %s;\n", VSB_data(p->cname));
 	Fh(tl, 1, "const struct vcl_sub sub_%s[1] = {{\n",
@@ -185,7 +186,9 @@ vcc_EmitProc(struct vcc *tl, struct proc *p)
 	Fh(tl, 1, "\t.name\t\t= \"%.*s\",\n", PF(p->name));
 	Fh(tl, 1, "\t.vcl_conf\t= &VCL_conf,\n");
 	Fh(tl, 1, "\t.func\t\t= %s,\n", VSB_data(p->cname));
-	Fh(tl, 1, "\t.n\t\t= %d\n", tl->nsub++);
+	Fh(tl, 1, "\t.n\t\t= %d,\n", tl->nsub++);
+	Fh(tl, 1, "\t.nref\t\t= %d,\n", p->sym->nref);
+	Fh(tl, 1, "\t.called\t\t= %d\n", p->called);
 	Fh(tl, 1, "}};\n");
 	/*
 	 * TODO: v_dont_optimize for custom subs called from vcl_init/fini only

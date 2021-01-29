@@ -203,6 +203,7 @@ vcc_CheckActionRecurse(struct vcc *tl, struct proc *p, unsigned bitmap)
 			vcc_ErrWhere(tl, pc->t);
 			return (1);
 		}
+		pc->sym->proc->called++;
 		if (vcc_CheckActionRecurse(tl, pc->sym->proc, bitmap)) {
 			VSB_printf(tl->sb, "\n...called from \"%.*s\"\n",
 			    PF(p->name));
@@ -212,7 +213,6 @@ vcc_CheckActionRecurse(struct vcc *tl, struct proc *p, unsigned bitmap)
 		p->okmask &= pc->sym->proc->okmask;
 	}
 	p->active = 0;
-	p->called++;
 	return (0);
 }
 
