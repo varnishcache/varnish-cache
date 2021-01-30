@@ -74,6 +74,25 @@ static const struct method method_tab[] = {
 
 /*--------------------------------------------------------------------*/
 
+static void
+vcc_vcl_met2c(struct vsb *vsb, unsigned method)
+{
+	int d = 0;
+
+#define VCL_MET_MAC(l,U,t,b)			\
+	if (method & VCL_MET_##U) {		\
+		if (d)				\
+			VSB_putc(vsb, '|');	\
+		VSB_cat(vsb, "VCL_MET_" #U);	\
+		d = 1;				\
+	}
+#include "tbl/vcl_returns.h"
+	AN(d);
+}
+
+
+/*--------------------------------------------------------------------*/
+
 void * v_matchproto_(TlAlloc)
 TlAlloc(struct vcc *tl, unsigned len)
 {
@@ -147,9 +166,20 @@ vcc_NewProc(struct vcc *tl, struct symbol *sym)
 static void
 vcc_EmitProc(struct vcc *tl, struct proc *p)
 {
+	struct vsb *vsbm;
+
 	AZ(VSB_finish(p->cname));
 	AZ(VSB_finish(p->prologue));
 	AZ(VSB_finish(p->body));
+
+	vsbm = VSB_new_auto();
+	if (p->method) {
+		VSB_cat(vsbm, "  // assert(ctx->method == (");
+		vcc_vcl_met2c(vsbm, p->method->bitval);
+		VSB_cat(vsbm, "));\n");
+	}
+	AZ(VSB_finish(vsbm));
+
 	Fh(tl, 1, "vcl_func_f %s;\n", VSB_data(p->cname));
 	/*
 	 * TODO: v_dont_optimize for custom subs called from vcl_init/fini only
@@ -162,10 +192,12 @@ vcc_EmitProc(struct vcc *tl, struct proc *p)
 	   p->method && p->method->bitval & VCL_MET_TASK_H ?
 	   "v_dont_optimize " : "");
 	Fc(tl, 1, "%s(VRT_CTX)\n", VSB_data(p->cname));
-	Fc(tl, 1, "{\n%s\n%s}\n", VSB_data(p->prologue), VSB_data(p->body));
+	Fc(tl, 1, "{\n%s%s\n%s}\n", VSB_data(vsbm), VSB_data(p->prologue),
+	    VSB_data(p->body));
 	VSB_destroy(&p->body);
 	VSB_destroy(&p->prologue);
 	VSB_destroy(&p->cname);
+	VSB_destroy(&vsbm);
 }
 
 /*--------------------------------------------------------------------*/
