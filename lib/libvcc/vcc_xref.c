@@ -195,6 +195,10 @@ vcc_CheckActionRecurse(struct vcc *tl, struct proc *p, unsigned bitmap)
 		vcc_ErrWhere(tl, p->name);
 		return (1);
 	}
+
+	// more references than calls -> sub is referenced for dynamic calls
+	u = (p->sym->nref > p->called);
+
 	p->active = 1;
 	VTAILQ_FOREACH(pc, &p->calls, list) {
 		if (pc->sym->proc == NULL) {
@@ -204,6 +208,7 @@ vcc_CheckActionRecurse(struct vcc *tl, struct proc *p, unsigned bitmap)
 			return (1);
 		}
 		pc->sym->proc->called++;
+		pc->sym->nref += u;
 		if (vcc_CheckActionRecurse(tl, pc->sym->proc, bitmap)) {
 			VSB_printf(tl->sb, "\n...called from \"%.*s\"\n",
 			    PF(p->name));
