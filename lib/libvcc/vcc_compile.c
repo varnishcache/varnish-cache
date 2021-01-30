@@ -189,7 +189,7 @@ vcc_EmitProc(struct vcc *tl, struct proc *p)
 		AN(vsbm);
 		vcc_vcl_met2c(vsbm, p->method->bitval);
 		AZ(VSB_finish(vsbm));
-		Fc(tl, 1, "  // assert(ctx->method == (%s));\n",
+		Fc(tl, 1, "  assert(ctx->method == (%s));\n",
 		   VSB_data(vsbm));
 		VSB_destroy(&vsbm);
 	}

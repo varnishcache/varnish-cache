@@ -788,6 +788,7 @@ emit_file(fo, srcroot, "include/vrt.h")
 emit_file(fo, buildroot, "include/vcl.h")
 emit_file(fo, buildroot, "include/vrt_obj.h")
 emit_file(fo, srcroot, "include/vcc_interface.h")
+emit_file(fo, srcroot, "include/vcc_assert.h")
 
 fo.write("\n}\n")
 fo.close()

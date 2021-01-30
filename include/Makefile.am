@@ -83,6 +83,7 @@ nobase_noinst_HEADERS = \
 	compat/daemon.h \
 	vfl.h \
 	libvcc.h \
+	vcc_assert.h \
 	vcc_interface.h \
 	vcli_serve.h \
 	vcs_version.h \
@@ -109,6 +110,7 @@ nobase_noinst_HEADERS = \
 ## keep in sync with lib/libvcc/Makefile.am
 vcl.h: \
 	    $(top_srcdir)/lib/libvcc/generate.py \
+	    $(top_srcdir)/include/vcc_assert.h \
 	    $(top_srcdir)/include/vcc_interface.h \
 	    $(top_srcdir)/include/vdef.h \
 	    $(top_srcdir)/include/vrt.h \

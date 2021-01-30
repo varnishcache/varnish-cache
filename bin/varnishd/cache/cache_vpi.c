@@ -133,3 +133,10 @@ VPI_vcl_select(VRT_CTX, VCL_VCL vcl)
 	VSLb(ctx->req->vsl, SLT_VCL_use, "%s via %s",
 	    req->vcl->loaded_name, vcl->loaded_name);
 }
+
+void v_noreturn_
+VPI_Fail(const char *func, const char *file, int line,
+    const char *cond)
+{
+	VAS_Fail(func, file, line, cond, VAS_ASSERT);
+}

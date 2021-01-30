@@ -38,6 +38,8 @@
 VCL_VCL VPI_vcl_get(VRT_CTX, const char *);
 void VPI_vcl_rel(VRT_CTX, VCL_VCL);
 void VPI_vcl_select(VRT_CTX, VCL_VCL);
+void v_noreturn_ VPI_Fail(const char *func, const char *file, int line,
+    const char *cond);
 
 /***********************************************************************
  * VPI_count() refers to this structure for coordinates into the VCL source.
