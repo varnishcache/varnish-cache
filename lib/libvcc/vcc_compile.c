@@ -171,12 +171,22 @@ static void
 vcc_EmitProc(struct vcc *tl, struct proc *p)
 {
 	struct vsb *vsbm;
+	unsigned mask;
+	const char *maskcmp;
 
 	AN(p->okmask);
 	AZ(VSB_finish(p->cname));
 	AZ(VSB_finish(p->prologue));
 	AZ(VSB_finish(p->body));
 	AN(p->sym);
+
+	if (p->method) {
+		mask = p->method->bitval;
+		maskcmp = "==";
+	} else {
+		mask = p->okmask;
+		maskcmp = "&";
+	}
 
 	Fh(tl, 1, "vcl_func_f %s;\n", VSB_data(p->cname));
 	Fh(tl, 1, "const struct vcl_sub sub_%s[1] = {{\n",
@@ -201,15 +211,12 @@ vcc_EmitProc(struct vcc *tl, struct proc *p)
 	   p->method && p->method->bitval & VCL_MET_TASK_H ?
 	   "v_dont_optimize " : "");
 	Fc(tl, 1, "%s(VRT_CTX)\n{\n", VSB_data(p->cname));
-	if (p->method) {
-		vsbm = VSB_new_auto();
-		AN(vsbm);
-		vcc_vcl_met2c(vsbm, p->method->bitval);
-		AZ(VSB_finish(vsbm));
-		Fc(tl, 1, "  assert(ctx->method == (%s));\n",
-		   VSB_data(vsbm));
-		VSB_destroy(&vsbm);
-	}
+	vsbm = VSB_new_auto();
+	AN(vsbm);
+	vcc_vcl_met2c(vsbm, mask);
+	AZ(VSB_finish(vsbm));
+	Fc(tl, 1, "  assert(ctx->method %s (%s));\n", maskcmp, VSB_data(vsbm));
+	VSB_destroy(&vsbm);
 	Fc(tl, 1, "%s\n%s}\n", VSB_data(p->prologue), VSB_data(p->body));
 	VSB_destroy(&p->body);
 	VSB_destroy(&p->prologue);
