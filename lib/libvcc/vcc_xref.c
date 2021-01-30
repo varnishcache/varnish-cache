@@ -227,25 +227,33 @@ static void
 vcc_checkaction(struct vcc *tl, const struct symbol *sym)
 {
 	struct proc *p;
+	unsigned bitmap;
 
 	p = sym->proc;
 	AN(p);
 	AN(p->name);
+
+	if (p->method == NULL)
+		bitmap = ~0U;
+	else
+		bitmap = p->method->ret_bitmap;
+
+	if (! vcc_CheckActionRecurse(tl, p, bitmap))
+		return;
+
+	tl->err = 1;
 	if (p->method == NULL)
 		return;
-	if (vcc_CheckActionRecurse(tl, p, p->method->ret_bitmap)) {
-		VSB_printf(tl->sb,
-		    "\n...which is the \"%s\" subroutine\n", p->method->name);
-		VSB_cat(tl->sb, "Legal returns are:");
+
+	VSB_printf(tl->sb,
+		   "\n...which is the \"%s\" subroutine\n", p->method->name);
+	VSB_cat(tl->sb, "Legal returns are:");
 #define VCL_RET_MAC(l, U, B)						\
-		if (p->method->ret_bitmap & ((1 << VCL_RET_##U)))	\
-			VSB_printf(tl->sb, " \"%s\"", #l);
+	if (p->method->ret_bitmap & ((1 << VCL_RET_##U)))		\
+		VSB_printf(tl->sb, " \"%s\"", #l);
 
 #include "tbl/vcl_returns.h"
-		VSB_cat(tl->sb, "\n");
-		tl->err = 1;
-	}
-
+	VSB_cat(tl->sb, "\n");
 }
 
 int

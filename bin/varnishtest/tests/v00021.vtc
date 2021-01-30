@@ -49,11 +49,6 @@ Subroutine recurses on
         sub foo { call foo; }
 -----------------------###---
 
-
-...called from "vcl_recv"
-('<vcl.inline>' Line 6 Pos 29)
-        sub vcl_recv { call foo; }
-----------------------------###---
 } {
 	backend b { .host = "${localhost}"; }
 
@@ -62,16 +57,9 @@ Subroutine recurses on
 }
 
 varnish v1 -errvcl {
-Subroutine recurses on
-('<vcl.inline>' Line 6 Pos 13)
-        sub foo { call bar; }
-------------###--------------
-
-
-...called from "bar"
-('<vcl.inline>' Line 5 Pos 24)
+('<vcl.inline>' Line 5 Pos 13)
         sub bar { call foo; }
------------------------###---
+------------###--------------
 
 
 ...called from "foo"
@@ -80,10 +68,11 @@ Subroutine recurses on
 -----------------------###---
 
 
-...called from "vcl_recv"
-('<vcl.inline>' Line 7 Pos 29)
-        sub vcl_recv { call foo; }
-----------------------------###---
+...called from "bar"
+('<vcl.inline>' Line 5 Pos 24)
+        sub bar { call foo; }
+-----------------------###---
+
 } {
 	backend b { .host = "${localhost}"; }
 
