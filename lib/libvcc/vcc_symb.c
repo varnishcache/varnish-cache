@@ -445,6 +445,7 @@ vcc_walksymbols(struct vcc *tl, const struct symtab *root,
 			assert(strcasecmp(st1->name, st2->name) >= 0);
 		st2 = st1;
 		vcc_walksymbols(tl, st1, func, kind);
+		ERRCHK(tl);
 	}
 }
 
