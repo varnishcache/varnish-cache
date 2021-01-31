@@ -186,6 +186,7 @@ vcc_EmitProc(struct vcc *tl, struct proc *p)
 	Fc(tl, 1, "%s(VRT_CTX)\n{\n", VSB_data(p->cname));
 	if (p->method) {
 		vsbm = VSB_new_auto();
+		AN(vsbm);
 		vcc_vcl_met2c(vsbm, p->method->bitval);
 		AZ(VSB_finish(vsbm));
 		Fc(tl, 1, "  // assert(ctx->method == (%s));\n",
