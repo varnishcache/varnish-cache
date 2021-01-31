@@ -200,15 +200,8 @@ vcc_EmitProc(struct vcc *tl, struct proc *p)
 	Fh(tl, 1, "\t.nref\t\t= %d,\n", p->sym->nref);
 	Fh(tl, 1, "\t.called\t\t= %d\n", p->called);
 	Fh(tl, 1, "}};\n");
-	/*
-	 * TODO: v_dont_optimize for custom subs called from vcl_init/fini only
-	 *
-	 * Needs infrastructure similar to that in #3163 : custom subs need a
-	 * mask containing the builtin subs calling the custom sub. If that is
-	 * no larger than VCL_MET_TASK_H, we can enable v_dont_optimize
-	 */
 	Fc(tl, 1, "\nvoid %sv_matchproto_(vcl_func_f)\n",
-	   p->method && p->method->bitval & VCL_MET_TASK_H ?
+	   ((mask & VCL_MET_TASK_H) && (mask & ~VCL_MET_TASK_H) == 0) ?
 	   "v_dont_optimize " : "");
 	Fc(tl, 1, "%s(VRT_CTX)\n{\n", VSB_data(p->cname));
 	vsbm = VSB_new_auto();
