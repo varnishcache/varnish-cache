@@ -172,14 +172,6 @@ vcc_EmitProc(struct vcc *tl, struct proc *p)
 	AZ(VSB_finish(p->prologue));
 	AZ(VSB_finish(p->body));
 
-	vsbm = VSB_new_auto();
-	if (p->method) {
-		VSB_cat(vsbm, "  // assert(ctx->method == (");
-		vcc_vcl_met2c(vsbm, p->method->bitval);
-		VSB_cat(vsbm, "));\n");
-	}
-	AZ(VSB_finish(vsbm));
-
 	Fh(tl, 1, "vcl_func_f %s;\n", VSB_data(p->cname));
 	/*
 	 * TODO: v_dont_optimize for custom subs called from vcl_init/fini only
@@ -191,13 +183,19 @@ vcc_EmitProc(struct vcc *tl, struct proc *p)
 	Fc(tl, 1, "\nvoid %sv_matchproto_(vcl_func_f)\n",
 	   p->method && p->method->bitval & VCL_MET_TASK_H ?
 	   "v_dont_optimize " : "");
-	Fc(tl, 1, "%s(VRT_CTX)\n", VSB_data(p->cname));
-	Fc(tl, 1, "{\n%s%s\n%s}\n", VSB_data(vsbm), VSB_data(p->prologue),
-	    VSB_data(p->body));
+	Fc(tl, 1, "%s(VRT_CTX)\n{\n", VSB_data(p->cname));
+	if (p->method) {
+		vsbm = VSB_new_auto();
+		vcc_vcl_met2c(vsbm, p->method->bitval);
+		AZ(VSB_finish(vsbm));
+		Fc(tl, 1, "  // assert(ctx->method == (%s));\n",
+		   VSB_data(vsbm));
+		VSB_destroy(&vsbm);
+	}
+	Fc(tl, 1, "%s\n%s}\n", VSB_data(p->prologue), VSB_data(p->body));
 	VSB_destroy(&p->body);
 	VSB_destroy(&p->prologue);
 	VSB_destroy(&p->cname);
-	VSB_destroy(&vsbm);
 }
 
 /*--------------------------------------------------------------------*/
