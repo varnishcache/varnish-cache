@@ -35,6 +35,7 @@
 #include "cache_varnishd.h"
 
 #include "vcl.h"
+#include "vbm.h"
 
 #include "vcc_interface.h"
 
@@ -139,4 +140,49 @@ VPI_Fail(const char *func, const char *file, int line,
     const char *cond)
 {
 	VAS_Fail(func, file, line, cond, VAS_ASSERT);
+}
+
+enum vcl_func_fail_e
+VPI_Call_Check(VRT_CTX, const struct VCL_conf *conf,
+    unsigned methods, unsigned n)
+{
+	struct vbitmap *vbm;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->vcl, VCL_MAGIC);
+
+	assert(conf == ctx->vcl->conf);
+
+	vbm = ctx->called;
+	AN(vbm);
+
+	if ((methods & ctx->method) == 0)
+		return (VSUB_E_METHOD);
+
+	if (vbit_test(vbm, n))
+		return (VSUB_E_RECURSE);
+
+	return (VSUB_E_OK);
+}
+
+void
+VPI_Call_Begin(VRT_CTX, unsigned n)
+{
+	struct vbitmap *vbm;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	vbm = ctx->called;
+	AN(vbm);
+	vbit_set(vbm, n);
+}
+
+void
+VPI_Call_End(VRT_CTX, unsigned n)
+{
+	struct vbitmap *vbm;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	vbm = ctx->called;
+	AN(vbm);
+	vbit_clr(vbm, n);
 }

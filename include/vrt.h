@@ -339,6 +339,12 @@ struct vrt_ctx {
 #define VRT_CTX		const struct vrt_ctx *ctx
 void VRT_CTX_Assert(VRT_CTX);
 
+enum vcl_func_fail_e {
+	VSUB_E_OK,
+	VSUB_E_RECURSE, // call would recurse
+	VSUB_E_METHOD	// can not be called from this method
+};
+
 typedef void vcl_func_f(VRT_CTX);
 
 /***********************************************************************
