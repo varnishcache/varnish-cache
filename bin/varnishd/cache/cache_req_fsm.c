@@ -965,9 +965,13 @@ cnt_recv(struct worker *wrk, struct req *req)
 		assert(wrk->handling == VCL_RET_LOOKUP);
 	VSHA256_Final(req->digest, &sha256ctx);
 
-	if (recv_handling == VCL_RET_HASH)
+	if (recv_handling == VCL_RET_HASH) {
 		VCL_lookup_method(req->vcl, wrk, req, NULL, NULL);
-	else
+		assert(wrk->handling == VCL_RET_LOOKUP ||
+		    wrk->handling == VCL_RET_FAIL ||
+		    wrk->handling == VCL_RET_RESTART ||
+		    wrk->handling == VCL_RET_SYNTH);
+	} else
 		wrk->handling = recv_handling;
 
 	switch (wrk->handling) {
