@@ -1,0 +1,32 @@
+varnishtest "Built-in split subroutine"
+
+server s1 {
+	rxreq
+	txresp -hdr "age: 12" \
+	    -hdr "cache-control: public, max-age=10, stale-while-revalidate=20"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_req_cookie {
+		return; # trust beresp headers
+	}
+
+	sub vcl_beresp_stale {
+		if (beresp.ttl + beresp.grace > 0s) {
+			return; # cache stale responses
+		}
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+
+	txreq -hdr "cookie: unrelated=analytics"
+	rxresp
+	expect resp.status == 200
+} -run
+
+varnish v1 -expect cache_hit == 1
+varnish v1 -expect cache_hit == cache_hit_grace

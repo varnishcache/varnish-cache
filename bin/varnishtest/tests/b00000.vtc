@@ -21,9 +21,6 @@ varnish v1 -vcl+backend {
 			set req.backend_hint = s2;
 		}
 	}
-	sub vcl_req_cookie {
-		return;
-	}
 	sub vcl_backend_response {
 		set beresp.do_stream = false;
 	}
@@ -53,7 +50,7 @@ varnish v1 -expect s_sess == 1
 varnish v1 -expect s_resp_bodybytes == 7
 varnish v1 -expect s_resp_hdrbytes == 178
 
-client c2 {
+client c1 {
 	txreq -url "/2"
 	rxresp
 	expect resp.status == 200
@@ -67,11 +64,3 @@ varnish v1 -expect cache_miss == 2
 varnish v1 -expect s_sess == 2
 varnish v1 -expect s_resp_bodybytes == 14
 varnish v1 -expect s_resp_hdrbytes == 356
-
-client c3 {
-	txreq -url "/" -hdr "Cookie: abc=123"
-	rxresp
-	expect resp.status == 200
-} -run
-
-varnish v1 -expect cache_hit == 1
