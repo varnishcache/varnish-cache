@@ -1,5 +1,20 @@
 varnishtest "VCL/VRT: url/request/proto/reason/status"
 
+varnish v1 -errvcl "Variable is read only" {
+	sub vcl_deliver { set req.proto = "HTTP/1.2"; }
+}
+
+varnish v1 -errvcl "Variable is read only" {
+	sub vcl_deliver { set resp.proto = "HTTP/1.2"; }
+}
+
+varnish v1 -errvcl "Variable is read only" {
+	sub vcl_backend_response { set bereq.proto = "HTTP/1.2"; }
+}
+
+varnish v1 -errvcl "Variable is read only" {
+	sub vcl_backend_response { set beresp.proto = "HTTP/1.2"; }
+}
 
 server s1 {
 	rxreq

@@ -1191,8 +1191,6 @@ resp.proto	``VCL >= 4.1``
 
 	Readable from: vcl_deliver, vcl_synth
 
-	Writable from: vcl_deliver, vcl_synth
-
 	The HTTP protocol version to use for the response.
 
 resp.status
