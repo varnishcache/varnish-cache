@@ -52,7 +52,7 @@ if ! HAVE_DOT
 	@echo ==================================================
 	@false
 else
-	@DOT@ -Tpdf -Gsize=$(SIZE) -Grotate=90 $< >$@
+	$(AM_V_GEN) @DOT@ -Tpdf -Gsize=$(SIZE) -Grotate=90 $< >$@
 endif
 
 .dot.pdf:
@@ -62,7 +62,7 @@ if ! HAVE_DOT
 	@echo ==================================================
 	@false
 else
-	@DOT@ -Tpdf -Gsize=$(SIZE) $< >$@
+	$(AM_V_GEN) @DOT@ -Tpdf -Gsize=$(SIZE) $< >$@
 endif
 
 .dot.svg:
@@ -72,5 +72,5 @@ if ! HAVE_DOT
 	@echo ==================================================
 	@false
 else
-	@DOT@ -Tsvg $< >$@
+	$(AM_V_GEN) @DOT@ -Tsvg $< >$@
 endif
