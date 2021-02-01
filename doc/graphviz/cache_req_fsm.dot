@@ -103,7 +103,7 @@ digraph cache_req_fsm {
 		FETCH_FAIL
 	}
 
-	lookup2:deliver:s -> BGFETCH [label="parallel\nif obj expired",
+	hit:deliver:s -> BGFETCH [label="parallel\nif obj expired",
 				      color=green]
 	FETCH_FAIL -> synth [color=purple]
 
@@ -113,27 +113,27 @@ digraph cache_req_fsm {
 	FETCH -> FETCH_FAIL [style=dotted]
 	/* cnt_lookup() */
 	subgraph xcluster_lookup {
-		lookup [
+		_lookup [
 			shape=record
 			color=grey
 			fontcolor=grey
 			label="{<top>cnt_lookup:|hash lookup|{<h>hit?|<miss>miss?|<hfm>hit-for-miss?|<hfp>hit-for-pass?|<busy>busy?}}"
 		]
-		lookup2 [
+		hit [
 			 shape=record
 			 label="{<top>cnt_lookup:|{vcl_hit\{\}|{req.*|obj.*}}|{fail|<deliver>deliver|<pass>pass|restart|synth}}"
 		]
 	}
-	lookup:busy:s -> lookup:top:ne [label=" waitinglist",
+	_lookup:busy:s -> _lookup:top:ne [label=" waitinglist",
 				       color=grey,
 				       fontcolor=grey]
-	lookup:miss:s -> miss [style=bold,color=blue]
-	lookup:hfm:s -> miss [style=bold,color=blue,label=" req.\n is_hitmiss"]
-	lookup:hfp:s -> pass [style=bold,color=red,label=" req.\n is_hitpass"]
-	lookup:h:s -> lookup2 [style=bold,color=green]
+	_lookup:miss:s -> miss [style=bold,color=blue]
+	_lookup:hfm:s -> miss [style=bold,color=blue,label=" req.\n is_hitmiss"]
+	_lookup:hfp:s -> pass [style=bold,color=red,label=" req.\n is_hitpass"]
+	_lookup:h:s -> hit [style=bold,color=green]
 
-	lookup2:deliver:s -> deliver:n [style=bold,color=green]
-	lookup2:pass:s -> pass [style=bold,color=red]
+	hit:deliver:s -> deliver:n [style=bold,color=green]
+	hit:pass:s -> pass [style=bold,color=red]
 
 	/* cnt_miss */
 	subgraph xcluster_miss {
@@ -196,7 +196,7 @@ digraph cache_req_fsm {
 	}
 	recv:pipe -> hash [style=bold,color=orange]
 	recv:pass -> hash [style=bold,color=red]
-	hash:lookup:w -> lookup [style=bold,color=green]
+	hash:lookup:w -> _lookup [style=bold,color=green]
 	hash:lookup:s -> purge:top:n [style=bold,color=purple]
 	hash:lookup:s -> pass [style=bold,color=red]
 	hash:lookup:e -> pipe [style=bold,color=orange]
