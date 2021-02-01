@@ -310,9 +310,9 @@ struct vrt_ctx {
 #define VRT_CTX_MAGIC			0x6bb8f0db
 
 	unsigned			syntax;
+	unsigned			vclver;
 	unsigned			method;
 	unsigned			*handling;
-	unsigned			vclver;
 
 	/*
 	 * msg is for error messages and exists only for
