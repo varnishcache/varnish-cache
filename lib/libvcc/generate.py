@@ -91,6 +91,10 @@ returns = (
      "C",
      ('fail', 'synth', 'restart', 'pass', 'pipe', 'hash', 'purge', 'vcl')
     ),
+    ('lookup',
+     "C",
+     ('fail', 'synth', 'restart', 'lookup')
+    ),
     ('pipe',
      "C",
      ('fail', 'synth', 'pipe',)

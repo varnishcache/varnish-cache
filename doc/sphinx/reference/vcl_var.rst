@@ -197,7 +197,7 @@ req.hash
 
 	Type: BLOB
 
-	Readable from: vcl_hit, vcl_miss, vcl_pass, vcl_purge, vcl_deliver
+	Readable from: vcl_lookup, vcl_hit, vcl_miss, vcl_pass, vcl_purge, vcl_deliver
 
 
 	The hash key of this request.

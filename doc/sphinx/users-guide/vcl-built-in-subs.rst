@@ -139,13 +139,45 @@ of the following keywords:
     see  :ref:`fail`
 
   ``lookup``
-    Look up the object in cache.
+    Control passes to :ref:`vcl_lookup` when coming from a ``hash``
+    return in `vcl_recv`.
+
+    Control passes to :ref:`vcl_pass` when coming from a ``pass``
+    return in `vcl_recv`.
+
+    Control passes to :ref:`vcl_pipe` when coming from a ``pipe``
+    return in `vcl_recv`.
 
     Control passes to :ref:`vcl_purge` when coming from a ``purge``
     return in `vcl_recv`.
 
-    Otherwise control passes to the next subroutine depending on the
-    result of the cache lookup:
+.. _vcl_lookup:
+
+vcl_lookup
+~~~~~~~~~~
+
+Called after `vcl_hash` if `vcl_recv` terminated with the ``hash`` action.
+This is the last occasion to make modifications to ``req`` before an object
+is effectively looked up in the cache. The difference is that ``req.hash``
+can be read at this point and used to make decisions.
+
+The `vcl_hash` subroutine may terminate with calling ``return()`` with one
+of the following keywords:
+
+  ``fail``
+    see  :ref:`fail`
+
+  ``synth(status code, reason)``
+    see :ref:`synth`
+
+  ``restart``
+    see :ref:`restart`
+
+  ``lookup``
+    Look up the object in cache.
+
+    Control passes to the next subroutine depending on the result of the
+    cache lookup:
 
     * a hit: pass to :ref:`vcl_hit`
 

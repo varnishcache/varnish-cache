@@ -1,0 +1,33 @@
+varnishtest vcl_lookup
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import blob;
+
+	sub vcl_hash {
+		if (req.http.skip == "hash") {
+			return (lookup);
+		}
+	}
+
+	sub vcl_lookup {
+		if (blob.equal(req.hash,
+		    :47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=:)) {
+			return (synth(500, "Missing request hash"));
+		}
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+
+	txreq -hdr "skip: hash"
+	rxresp
+	expect resp.status == 500
+} -run

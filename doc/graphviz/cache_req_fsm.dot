@@ -193,10 +193,15 @@ digraph cache_req_fsm {
 		      shape=record
 		      label="{cnt_recv:|{vcl_hash\{\}|req.*}|{fail|<lookup>lookup}}"
 		      ]
+		hash:lookup -> lookup [style=bold,color=green]
+		lookup [
+		      shape=record
+		      label="{cnt_recv:|{vcl_lookup\{\}|req.*}|{fail|<lookup>lookup|restart|synth}}"
+		      ]
 	}
 	recv:pipe -> hash [style=bold,color=orange]
 	recv:pass -> hash [style=bold,color=red]
-	hash:lookup:w -> _lookup [style=bold,color=green]
+	lookup:lookup:s -> _lookup [style=bold,color=green]
 	hash:lookup:s -> purge:top:n [style=bold,color=purple]
 	hash:lookup:s -> pass [style=bold,color=red]
 	hash:lookup:e -> pipe [style=bold,color=orange]

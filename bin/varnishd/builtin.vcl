@@ -100,6 +100,10 @@ sub vcl_purge {
     return (synth(200, "Purged"));
 }
 
+sub vcl_lookup {
+    return (lookup);
+}
+
 sub vcl_hit {
     return (deliver);
 }

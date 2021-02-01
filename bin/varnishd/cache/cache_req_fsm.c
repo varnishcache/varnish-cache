@@ -965,7 +965,12 @@ cnt_recv(struct worker *wrk, struct req *req)
 		assert(wrk->handling == VCL_RET_LOOKUP);
 	VSHA256_Final(req->digest, &sha256ctx);
 
-	switch (recv_handling) {
+	if (recv_handling == VCL_RET_HASH)
+		VCL_lookup_method(req->vcl, wrk, req, NULL, NULL);
+	else
+		wrk->handling = recv_handling;
+
+	switch (wrk->handling) {
 	case VCL_RET_VCL:
 		VSLb(req->vsl, SLT_VCL_Error,
 		    "Illegal return(vcl): %s",
@@ -977,7 +982,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 	case VCL_RET_PURGE:
 		req->req_step = R_STP_PURGE;
 		break;
-	case VCL_RET_HASH:
+	case VCL_RET_LOOKUP:
 		req->req_step = R_STP_LOOKUP;
 		break;
 	case VCL_RET_PIPE:
@@ -1008,7 +1013,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 		req->req_step = R_STP_VCLFAIL;
 		break;
 	default:
-		WRONG("Illegal return from vcl_recv{}");
+		WRONG("Illegal return from vcl_recv, vcl_hash or vcl_lookup");
 	}
 	return (REQ_FSM_MORE);
 }
