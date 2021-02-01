@@ -524,6 +524,10 @@ void WRK_Init(void);
 void WRK_AddStat(const struct worker *);
 void WRK_Log(enum VSL_tag_e, const char *, ...);
 
+/* cache_vpi.c */
+extern const size_t vpi_wrk_len;
+void VPI_wrk_init(struct worker *, void *, size_t);
+
 /* cache_ws.c */
 void WS_Panic(struct vsb *, const struct ws *);
 static inline int

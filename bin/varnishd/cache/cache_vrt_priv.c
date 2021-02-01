@@ -38,6 +38,7 @@
 
 #include "cache_varnishd.h"
 #include "vcl.h"
+#include "vcc_interface.h"
 
 struct vrt_priv {
 	unsigned			magic;

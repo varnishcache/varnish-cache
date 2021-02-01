@@ -583,7 +583,7 @@ VCL_##func##_method(struct vcl *vcl, struct worker *wrk,		\
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);				\
 	vcl_call_method(wrk, req, bo, specific,				\
 	    VCL_MET_ ## upper, vcl->conf->func##_func, vcl->conf->nsub);\
-	AN((1U << wrk->handling) & bitmap);				\
+	AN((1U << wrk->vpi->handling) & bitmap);			\
 }
 
 #include "tbl/vcl_returns.h"

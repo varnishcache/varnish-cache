@@ -53,6 +53,14 @@ struct vpi_ref {
 	const char	*token;
 };
 
+/* VPI's private part of the worker */
+struct wrk_vpi {
+	unsigned	magic;
+#define WRK_VPI_MAGIC	0xaa3d3df3
+	unsigned	handling;
+};
+
+
 void VPI_count(VRT_CTX, unsigned);
 void VPI_vcl_fini(VRT_CTX);
 

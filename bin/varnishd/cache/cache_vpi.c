@@ -45,6 +45,20 @@
  * Private & exclusive interfaces between VCC and varnishd
  */
 
+const size_t vpi_wrk_len = sizeof(struct wrk_vpi);
+
+void
+VPI_wrk_init(struct worker *wrk, void *p, size_t spc)
+{
+	struct wrk_vpi *vpi = p;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	AN(vpi);
+	assert(spc >= sizeof *vpi);
+	INIT_OBJ(vpi, WRK_VPI_MAGIC);
+	wrk->vpi = vpi;
+}
+
 void
 VPI_count(VRT_CTX, unsigned u)
 {

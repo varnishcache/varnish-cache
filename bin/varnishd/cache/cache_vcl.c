@@ -68,7 +68,7 @@ struct lock		vcl_mtx;
 struct vcl		*vcl_active; /* protected by vcl_mtx */
 
 static struct vrt_ctx ctx_cli;
-static unsigned handling_cli;
+static struct wrk_vpi wrk_vpi_cli;
 static struct ws ws_cli;
 static uintptr_t ws_snapshot_cli;
 static struct vsl_log vsl_cli;
@@ -125,10 +125,9 @@ VCL_Get_CliCtx(int msg)
 {
 
 	ASSERT_CLI();
-	AZ(ctx_cli.handling);
 	INIT_OBJ(&ctx_cli, VRT_CTX_MAGIC);
-	handling_cli = 0;
-	ctx_cli.handling = &handling_cli;
+	INIT_OBJ(&wrk_vpi_cli, WRK_VPI_MAGIC);
+	ctx_cli.vpi = &wrk_vpi_cli;
 	ctx_cli.now = VTIM_real();
 	if (msg) {
 		ctx_cli.msg = VSB_new_auto();
@@ -156,7 +155,7 @@ VCL_Rel_CliCtx(struct vrt_ctx **ctx)
 
 	ASSERT_CLI();
 	assert(*ctx == &ctx_cli);
-	AN((*ctx)->handling);
+	AN((*ctx)->vpi);
 	if (ctx_cli.msg) {
 		TAKE_OBJ_NOTNULL(r, &ctx_cli.msg, VSB_MAGIC);
 		AZ(VSB_finish(r));

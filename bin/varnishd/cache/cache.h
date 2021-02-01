@@ -244,7 +244,8 @@ struct worker {
 
 	unsigned		cur_method;
 	unsigned		seen_methods;
-	unsigned		handling;
+
+	struct wrk_vpi		*vpi;
 };
 
 /* Stored object -----------------------------------------------------

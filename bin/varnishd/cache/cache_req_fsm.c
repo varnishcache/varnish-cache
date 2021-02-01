@@ -44,6 +44,7 @@
 #include "cache_filter.h"
 #include "cache_objhead.h"
 #include "cache_transport.h"
+#include "vcc_interface.h"
 
 #include "hash/hash_slinger.h"
 #include "http1/cache_http1.h"

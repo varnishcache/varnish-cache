@@ -43,6 +43,7 @@
 
 #include "cache_varnishd.h"
 #include "cache_transport.h"
+#include "vcc_interface.h"
 
 #include "cache_filter.h"
 #include "common/heritage.h"

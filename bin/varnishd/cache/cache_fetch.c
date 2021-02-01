@@ -38,6 +38,7 @@
 #include "storage/storage.h"
 #include "vcl.h"
 #include "vtim.h"
+#include "vcc_interface.h"
 
 #define FETCH_STEPS \
 	FETCH_STEP(mkbereq,           MKBEREQ) \
