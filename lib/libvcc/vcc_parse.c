@@ -336,6 +336,14 @@ vcc_ParseVcl(struct vcc *tl)
 		vcc_ErrWhere2(tl, tok0, tl->t);
 		ERRCHK(tl);
 	}
+	if (syntax < tl->syntax && (syntax / 10) != (tl->syntax / 10)) {
+		VSB_printf(tl->sb,
+		    "VCL version %.1f cannot be included from %.1f.\n",
+		    .1 * syntax, .1 * tl->syntax);
+		vcc_ErrWhere2(tl, tok0, tl->t);
+		ERRCHK(tl);
+	}
+	tl->esyntax = syntax;
 }
 
 /*--------------------------------------------------------------------
@@ -385,6 +393,7 @@ vcc_Parse(struct vcc *tl)
 	vcc_ParseVcl(tl);
 	ERRCHK(tl);
 	AN(tl->syntax);
+	assert(tl->esyntax == tl->syntax);
 	while (tl->t->tok != EOI) {
 		ERRCHK(tl);
 		switch (tl->t->tok) {

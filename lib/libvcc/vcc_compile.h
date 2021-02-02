@@ -244,6 +244,7 @@ struct vcc {
 	unsigned		magic;
 #define VCC_MAGIC		0x24ad719d
 	int			syntax;
+	int			esyntax;	/* effective syntax */
 
 	char			*builtin_vcl;
 	struct vfil_path	*vcl_path;
