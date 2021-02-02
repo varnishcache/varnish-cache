@@ -1017,7 +1017,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 		req->req_step = R_STP_VCLFAIL;
 		break;
 	default:
-		WRONG("Illegal return from vcl_recv, vcl_hash or vcl_lookup");
+		WRONG("Illegal return from vcl_recv{}");
 	}
 	return (REQ_FSM_MORE);
 }
