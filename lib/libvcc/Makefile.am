@@ -44,7 +44,6 @@ dist_pkgdata_SCRIPTS = \
 ## keep in sync with include/Makefile.am
 vcc_obj.c: \
 	    $(top_srcdir)/lib/libvcc/generate.py \
-	    $(top_srcdir)/include/vcc_assert.h \
 	    $(top_srcdir)/include/vcc_interface.h \
 	    $(top_srcdir)/include/vdef.h \
 	    $(top_srcdir)/include/vrt.h \
