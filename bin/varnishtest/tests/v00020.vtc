@@ -360,7 +360,7 @@ varnish v1 -errvcl {'||' must be preceeded by BOOL, found REAL.} {
 	sub vcl_recv { if (std.random(0,1) || 0) { } }
 }
 
-varnish v1 -errvcl {Symbol 'acl' has wrong type (reserved):} {
+varnish v1 -errvcl {Symbol 'acl' has wrong type (reserved), expected sub:} {
 	import std;
 	sub vcl_recv { call acl; }
 }

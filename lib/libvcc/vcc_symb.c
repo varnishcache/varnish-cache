@@ -338,7 +338,8 @@ VCC_SymbolGet(struct vcc *tl, vcc_ns_t ns, vcc_kind_t kind,
 		VSB_cat(tl->sb, "Symbol '");
 		for (tn1 = t0; tn1 != tl->t; tn1 = VTAILQ_NEXT(tn1, list))
 			VSB_printf(tl->sb, "%.*s", PF(tn1));
-		VSB_printf(tl->sb, "' has wrong type (%s): ", sym->kind->name);
+		VSB_printf(tl->sb, "' has wrong type (%s), expected %s:",
+		    sym->kind->name, kind->name);
 		VSB_cat(tl->sb, "\nAt: ");
 		vcc_ErrWhere2(tl, t0, tl->t);
 		if (sym->def_b != NULL) {

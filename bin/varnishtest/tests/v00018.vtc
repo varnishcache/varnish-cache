@@ -122,7 +122,7 @@ varnish v1 -errvcl {Not a valid action in subroutine 'vcl_recv'} {
 	}
 }
 
-varnish v1 -errvcl {Symbol 'vcl_recv' has wrong type (sub):} {
+varnish v1 -errvcl {Symbol 'vcl_recv' has wrong type (sub), expected vcl:} {
 	sub vcl_recv {
 		return (vcl(vcl_recv));
 	}

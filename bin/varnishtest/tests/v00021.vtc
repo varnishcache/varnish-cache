@@ -149,7 +149,7 @@ varnish v1 -errvcl {Symbol not found: 'req.foobar'} {
 	sub vcl_recv { set req.foobar = 3; }
 }
 
-varnish v1 -errvcl {Symbol 'anacl' has wrong type (acl):} {
+varnish v1 -errvcl {Symbol 'anacl' has wrong type (acl), expected sub:} {
 	sub vcl_recv {
 		if (client.ip ~ anacl) { }
 	}
@@ -162,7 +162,7 @@ varnish v1 -errvcl {Symbols named 'vcl_*' are reserved.} {
 	}
 }
 
-varnish v1 -errvcl {Symbol 'true' has wrong type (func):} {
+varnish v1 -errvcl {Symbol 'true' has wrong type (func), expected acl:} {
 	sub vcl_recv {
 		if (client.ip ~ true) { }
 	}
