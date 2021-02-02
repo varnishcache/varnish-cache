@@ -431,21 +431,16 @@ def emit_vcl_tnames(fo, tokens):
 
 
 #######################################################################
-def emit_file(fo, fd, bn):
-    "Read a C-source file and spit out code that outputs it with VSB_cat()"
-    fn = join(fd, bn)
+def emit_strings(fo, name, fc):
+    "spit out code that outputs the fc iterable with VSB_cat()"
 
-    fi = open(fn)
-    fc = fi.read()
-    fi.close()
-
-    w = 66      # Width of lines, after white space prefix
+    w = 66          # Width of lines, after white space prefix
     maxlen = 10240  # Max length of string literal
 
     x = 0
     l = 0
-    fo.write("\n\t/* %s */\n\n" % fn)
-    fo.write('\tVSB_cat(sb, "/* ---===### %s ###===--- */\\n\\n");\n' % bn)
+
+    fo.write('\tVSB_cat(sb, "/* ---===### %s ###===--- */\\n\\n");\n' % name)
     for c in fc:
         if l == 0:
             fo.write("\tVSB_cat(sb, \"")
@@ -487,6 +482,18 @@ def emit_file(fo, fd, bn):
     if l != 0:
         fo.write("\t);\n")
     fo.write('\tVSB_cat(sb, "\\n");\n')
+
+
+def emit_file(fo, fd, bn):
+    "Read a C-source file and spit out code that outputs it with VSB_cat()"
+    fn = join(fd, bn)
+
+    fi = open(fn)
+    fc = fi.read()
+    fi.close()
+
+    fo.write("\n\t/* %s */\n\n" % fn)
+    emit_strings(fo, bn, fc)
 
 #######################################################################
 
