@@ -32,7 +32,7 @@
  *	Parse a command like line into an argv[]
  *	Index zero contains NULL or an error message
  *	(The error message is a static const char* and does not
- * 	need saving or copying.)
+ *	need saving or copying.)
  *	"double quotes" and backslash substitution is handled.
  *
  * void VAV_Free(const char **argv)
