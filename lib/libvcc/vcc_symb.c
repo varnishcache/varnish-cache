@@ -185,6 +185,7 @@ vcc_new_symbol(struct vcc *tl, struct symtab *st,
 {
 	struct symbol *sym;
 
+	assert(vlo <= vhi);
 	sym = TlAlloc(tl, sizeof *sym);
 	INIT_OBJ(sym, SYMBOL_MAGIC);
 	AN(sym);
@@ -205,6 +206,7 @@ vcc_sym_in_tab(struct vcc *tl, struct symtab *st,
 	const struct symtab *pst;
 	struct symbol *sym, *psym;
 
+	assert(vlo <= vhi);
 	VTAILQ_FOREACH(sym, &st->symbols, list) {
 		if (sym->lorev > vhi || sym->hirev < vlo)
 			continue;
