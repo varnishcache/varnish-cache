@@ -455,36 +455,50 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 		}
 	}
 
+	if (exp_oc != NULL && EXP_Ttl_grace(req, &exp_oc->exp) < req->t_req) {
+		/* the newest object is out of grace */
+		if (!busy_found) {
+			/*
+			 * here we get to insert the busy object. This
+			 * translates to a MISS with a 304 candidate.
+			 */
+			assert(oh->refcnt > 1);
+			assert(exp_oc->objhead == oh);
+			exp_oc->refcnt++;
+			/* Insert objcore in objecthead and release mutex */
+			*bocp = hsh_insert_busyobj(wrk, oh);
+			/* NB: no deref of objhead, new object inherits reference */
+			Lck_Unlock(&oh->mtx);
+			*ocp = exp_oc;
+			return (HSH_MISS);
+		} else {
+			/* we have no use for this very expired object */
+			exp_oc = NULL;
+		}
+	}
 	if (exp_oc != NULL) {
+		/*
+		 * here the object is within grace, so we expect it to
+		 * be delivered
+		 */
 		assert(oh->refcnt > 1);
 		assert(exp_oc->objhead == oh);
+		exp_oc->refcnt++;
 
 		if (!busy_found) {
 			*bocp = hsh_insert_busyobj(wrk, oh);
 			retval = HSH_EXPBUSY;
 		} else {
 			AZ(req->hash_ignore_busy);
-			/*
-			 * here we have a busy object, but if the stale object
-			 * is not under grace we go to the waiting list
-			 * instead of returning the stale object
-			 */
-			if (EXP_Ttl(req, &exp_oc->exp) + exp_oc->exp.grace < req->t_req)
-				retval = HSH_BUSY;
-			else
-				retval = HSH_EXP;
+			retval = HSH_EXP;
 		}
-		if (retval != HSH_BUSY) {
-			exp_oc->refcnt++;
-
-			if (exp_oc->hits < LONG_MAX)
-				exp_oc->hits++;
-			Lck_Unlock(&oh->mtx);
-			if (retval == HSH_EXP)
-				assert(HSH_DerefObjHead(wrk, &oh));
-			*ocp = exp_oc;
-			return (retval);
-		}
+		if (exp_oc->hits < LONG_MAX)
+			exp_oc->hits++;
+		Lck_Unlock(&oh->mtx);
+		if (*bocp == NULL)
+			assert(HSH_DerefObjHead(wrk, &oh));
+		*ocp = exp_oc;
+		return (retval);
 	}
 
 	if (!busy_found) {

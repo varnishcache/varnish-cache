@@ -268,6 +268,12 @@ sp_variables = [
 		( 'client',), """
 		"""
 	),
+	('req.grace',
+		'DURATION',
+		( 'client',),
+		( 'client',), """
+		"""
+	),
 	('req.xid',
 		'STRING',
 		( 'client',),

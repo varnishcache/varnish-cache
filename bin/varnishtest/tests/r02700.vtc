@@ -1,0 +1,47 @@
+varnishtest "#2700: IMS and return (retry)"
+
+server s1 {
+	rxreq
+	txresp -hdr {Etag: "foo"} -body "1"
+
+	rxreq
+	expect req.http.If-None-Match == {"foo"}
+	expect req.http.retries == "0"
+	txresp -status 304
+
+	rxreq
+	expect req.http.retries == "1"
+	expect req.http.If-None-Match == {"foo"}
+	txresp -status 304
+} -start
+
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_fetch {
+		set bereq.http.retries = bereq.retries;
+	}
+	sub vcl_backend_response {
+		set beresp.ttl = 1ms;
+		set beresp.grace = 0s;
+		set beresp.keep = 1h;
+
+		if (beresp.was_304 && bereq.retries == 0) {
+			return (retry);
+		}
+
+		set beresp.http.was-304 = beresp.was_304;
+        }
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.was-304 == "false"
+
+	delay 0.1
+
+	txreq
+	rxresp
+	expect resp.http.was-304 == "true"
+} -run

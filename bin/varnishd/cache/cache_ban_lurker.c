@@ -108,7 +108,7 @@ ban_lurker_getfirst(struct vsl_log *vsl, struct ban *bt)
 		oh = oc->objhead;
 		CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 		if (!Lck_Trylock(&oh->mtx)) {
-			if (oc->refcnt == 0) {
+			if (oc->refcnt == 0 || oc->flags & OC_F_BUSY) {
 				Lck_Unlock(&oh->mtx);
 			} else {
 				/*

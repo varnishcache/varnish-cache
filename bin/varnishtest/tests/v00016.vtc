@@ -127,3 +127,24 @@ varnish v1 -errvcl {Backend not found: 'c'} {
 		}
 	}
 }
+
+varnish v1 -errvcl {Regexp compilation error:} {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_recv {
+		if (req.url ~ "[a") {}
+	}
+}
+
+varnish v1 -errvcl {Undefined acl foo} {
+	import ${vmod_directors};
+	backend b { .host = "127.0.0.1"; }
+
+	sub vcl_init {
+		new foo = directors.round_robin();
+	}
+	sub vcl_recv {
+		if (client.ip ~ foo) {
+			return (synth(200));
+		}
+	}
+}
