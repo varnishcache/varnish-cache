@@ -51,6 +51,7 @@
 #include <stdlib.h>
 
 #include "vdef.h"
+#include "miniobj.h"
 #include "vas.h"
 #include "vsa.h"
 #include "vss.h"
@@ -371,25 +372,50 @@ VTCP_set_read_timeout(int s, vtim_dur seconds)
 /*--------------------------------------------------------------------
  */
 
+struct vto_priv {
+	unsigned		magic;
+#define VTO_PRIV_MAGIC		0xca70b0e7
+	int			latest_errno;
+	int			fd;
+	double			timeout;
+};
+
 static int v_matchproto_(vss_resolved_f)
 vtcp_open_callback(void *priv, const struct suckaddr *sa)
 {
-	/* XXX: vtim_dur? */
-	double *p = priv;
+	struct vto_priv *vto;
+	int fd;
 
-	return (VTCP_connect(sa, (int)floor(*p * 1e3)));
+	CAST_OBJ_NOTNULL(vto, priv, VTO_PRIV_MAGIC);
+
+	errno = 0;
+	fd = VTCP_connect(sa, (int)floor(vto->timeout * 1e3));
+	if (fd > 0) {
+		vto->fd = fd;
+		vto->latest_errno = 0;
+		return (1);
+	}
+	vto->latest_errno = errno;
+	return (0);
 }
 
 int
 VTCP_open(const char *addr, const char *def_port, vtim_dur timeout,
     const char **errp)
 {
+	struct vto_priv vto[1];
 
 	AN(errp);
 	assert(timeout >= 0);
+	INIT_OBJ(vto, VTO_PRIV_MAGIC);
+	vto->fd = -1;
+	vto->timeout = timeout;
 
-	return (VSS_resolver(addr, def_port, vtcp_open_callback,
-	    &timeout, errp));
+	if (VSS_resolver(addr, def_port, vtcp_open_callback, vto, errp) < 0)
+		return (-1);
+	if (vto->fd < 0)
+		*errp = strerror(vto->latest_errno);
+	return (vto->fd);
 }
 
 /*--------------------------------------------------------------------
