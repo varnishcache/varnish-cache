@@ -45,10 +45,38 @@ static void v_matchproto_(sym_act_f)
 vcc_act_call(struct vcc *tl, struct token *t, struct symbol *sym)
 {
 	struct token *t0;
+	unsigned u;
 
 	(void)t;
 	ExpectErr(tl, ID);
 	t0 = tl->t;
+	sym = VCC_SymbolGet(tl, SYM_MAIN, SYM_NONE, SYMTAB_NOERR, XREF_NONE);
+	tl->t = t0;
+	// only functions/methods may evaluate to SUB
+	if (sym != NULL && (sym->kind == SYM_FUNC || sym->kind == SYM_METHOD)) {
+		u = tl->unique++;
+
+		Fb(tl, 1, "{\n");
+		tl->indent += INDENT;
+		Fb(tl, 2, "VCL_SUB call_%u =\n", u);
+		tl->indent += INDENT;
+		vcc_Expr(tl, SUB);
+		Fb(tl, 2, ";\n\n");
+		SkipToken(tl, ';');
+		tl->indent -= INDENT;
+		Fb(tl, 2, "if (call_%u == NULL) {\n", u);
+		Fb(tl, 2, "  VRT_fail(ctx, \"Tried to call NULL SUB near"
+		    " source %%u line %%u\",\n");
+		Fb(tl, 2, "    VGC_ref[%u].source,\n", tl->cnt);
+		Fb(tl, 2, "    VGC_ref[%u].line);\n", tl->cnt);
+		Fb(tl, 2, "  END_;\n");
+		Fb(tl, 2, "}\n");
+		Fb(tl, 2, "call_%u->func(ctx, VSUB_STATIC, NULL);\n", u);
+		tl->indent -= INDENT;
+		Fb(tl, 1, "}\n");
+		return;
+	}
+
 	sym = VCC_SymbolGet(tl, SYM_MAIN, SYM_SUB, SYMTAB_CREATE, XREF_REF);
 	if (sym != NULL) {
 		vcc_AddCall(tl, t0, sym);
