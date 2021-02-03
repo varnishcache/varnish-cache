@@ -89,7 +89,7 @@ varnish v1 -errvcl {resolves to too many addresses} {
 	}
 }
 
-varnish v1 -errvcl {Symbol 'foo' has wrong type (instance):} {
+varnish v1 -errvcl {Symbol 'foo' has wrong type (instance)} {
 	import directors;
 	backend b { .host = "${localhost}"; }
 
