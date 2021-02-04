@@ -79,6 +79,7 @@ vcc_vcl_met2c(struct vsb *vsb, unsigned method)
 {
 	int d = 0;
 
+	//lint -e{774} Boolean within 'if' always evaluates to False
 #define VCL_MET_MAC(l,U,t,b)			\
 	if (method & VCL_MET_##U) {		\
 		if (d)				\
