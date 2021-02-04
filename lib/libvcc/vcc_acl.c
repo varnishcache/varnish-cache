@@ -445,7 +445,7 @@ vcc_acl_emit(struct vcc *tl, const char *name, const char *rname, int anon)
 	Fh(tl, 0, "\n");
 	Fh(tl, 0, "\tfam = VRT_VSA_GetPtr(ctx, p, &a);\n");
 	Fh(tl, 0, "\tif (fam < 0) {\n");
-	Fh(tl, 0, "\t\tVRT_acl_log(ctx, \"NO_FAM %s\");\n", name);
+	Fh(tl, 0, "\t\tVPI_acl_log(ctx, \"NO_FAM %s\");\n", name);
 	Fh(tl, 0, "\t\treturn(0);\n");
 	Fh(tl, 0, "\t}\n\n");
 	if (!tl->err_unref && !anon) {
@@ -499,7 +499,7 @@ vcc_acl_emit(struct vcc *tl, const char *name, const char *rname, int anon)
 		i = ((int)ae->mask + 7) / 8;
 
 		if (!anon) {
-			Fh(tl, 0, "\t%*sVRT_acl_log(ctx, \"%sMATCH %s \" ",
+			Fh(tl, 0, "\t%*sVPI_acl_log(ctx, \"%sMATCH %s \" ",
 			    -i, "", ae->not ? "NEG_" : "", name);
 			t = ae->t_addr;
 			do {
@@ -529,7 +529,7 @@ vcc_acl_emit(struct vcc *tl, const char *name, const char *rname, int anon)
 
 	/* Deny by default */
 	if (!anon)
-		Fh(tl, 0, "\tVRT_acl_log(ctx, \"NO_MATCH %s\");\n", name);
+		Fh(tl, 0, "\tVPI_acl_log(ctx, \"NO_MATCH %s\");\n", name);
 	Fh(tl, 0, "\treturn (0);\n}\n");
 
 	if (!anon) {

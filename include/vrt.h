@@ -461,7 +461,6 @@ VCL_BACKEND VRT_DirectorResolve(VRT_CTX, VCL_BACKEND);
  * Implementation details of ACLs
  */
 
-void VRT_acl_log(VRT_CTX, const char *);
 int VRT_acl_match(VRT_CTX, VCL_ACL, VCL_IP);
 
 /***********************************************************************

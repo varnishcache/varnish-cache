@@ -101,7 +101,7 @@ VRT_synth(VRT_CTX, VCL_INT code, VCL_STRING reason)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_acl_log(VRT_CTX, const char *msg)
+VPI_acl_log(VRT_CTX, const char *msg)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
