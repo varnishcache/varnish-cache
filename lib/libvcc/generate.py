@@ -646,6 +646,17 @@ for i in sorted(rets.keys()):
 fo.write("\n" + tbl40("#define VCL_RET_MAX", "%d\n" % n))
 
 fo.write("\n/* VCL Types */\n")
+fo.write('''
+struct vrt_type {
+\tunsigned\t\tmagic;
+#define VRT_TYPE_MAGIC\t\t0xa943bc32
+\tconst char\t\t*lname;
+\tconst char\t\t*uname;
+\tconst char\t\t*ctype;
+\tsize_t\t\t\tszof;
+};
+
+''')
 for vcltype in sorted(vcltypes.keys()):
     fo.write("extern const struct vrt_type VCL_TYPE_%s[1];\n" % vcltype)
 

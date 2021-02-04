@@ -53,6 +53,8 @@
  * binary/load-time compatible, increment MAJOR version
  *
  * 13.0 (2021-03-15)
+ *	struct vrt_type now produced by generate.py
+ *	VRT_acl_log() moved to VPI_acl_log()
  *	VRT_Endpoint_Clone() added.
  *	Calling convention for VDP implementation changed
  *	VRT_ValidHdr() added.
@@ -285,15 +287,6 @@ typedef const char *				VCL_STRING;
 typedef vtim_real				VCL_TIME;
 typedef struct vcl *				VCL_VCL;
 typedef void					VCL_VOID;
-
-struct vrt_type {
-	unsigned			magic;
-#define VRT_TYPE_MAGIC			0xa943bc32
-	const char			*lname;
-	const char			*uname;
-	const char			*ctype;
-	size_t				szof;
-};
 
 enum lbody_e {
 	LBODY_SET,
