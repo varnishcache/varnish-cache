@@ -191,7 +191,6 @@
 #include <stddef.h>		// NULL, size_t
 #include <stdint.h>		// [u]int%d_t
 
-struct VCL_conf;
 struct busyobj;
 struct director;
 struct http;
@@ -199,30 +198,32 @@ struct req;
 struct stevedore;
 struct suckaddr;
 struct vcl;
+struct vcldir;
+struct VCL_conf;
 struct vmod;
 struct vmod_priv;
 struct vrt_acl;
 struct vsb;
-struct vsc_seg;
-struct vsmw_cluster;
-struct vsl_log;
-struct ws;
 struct VSC_main;
+struct vsc_seg;
+struct vsl_log;
+struct vsmw_cluster;
+struct ws;
 
-/*
+/***********************************************************************
  * VCL_STRANDS:
  *
- * An argc+argv type of data structure where n indicates the number of strings
- * in the p array. Individual components of a strands may be null.
+ * An argc+argv type of data structure where n indicates the number of
+ * strings in the p array. Individual components of a strands may be null.
  *
- * A STRANDS allows you to work on a strings concatenation with the option to
- * collect it into a single STRING, or if possible work directly on individual
- * parts.
+ * A STRANDS allows you to work on a strings concatenation with the
+ * option to collect it into a single STRING, or if possible work
+ * directly on individual parts.
  *
- * The memory management is very strict: a VMOD function receiving a STRANDS
- * argument should keep no reference after the function returns. Retention of
- * a STRANDS further in the ongoing task is undefined behavior and may result
- * in a panic or data corruption.
+ * The memory management is very strict: a VMOD function receiving a
+ * STRANDS argument should keep no reference after the function returns.
+ * Retention of a STRANDS further in the ongoing task is undefined
+ * behavior and may result in a panic or data corruption.
  */
 
 struct strands {
@@ -230,23 +231,19 @@ struct strands {
 	const char	**p;
 };
 
-struct strands * VRT_AllocStrandsWS(struct ws *, int);
-
-
-/*
+/***********************************************************************
  * VCL_BLOB:
  *
- * Opaque, immutable data (pointer + length), minimum lifetime is the VCL task.
+ * Opaque, immutable data (pointer + length), minimum lifetime is the
+ * VCL task.
  *
- * Type (optional) is owned by the creator of the blob. blob consumers may use
- * it for checks, but should not assert on it.
+ * Type (optional) is owned by the creator of the blob. blob consumers
+ * may use it for checks, but should not assert on it.
  *
- * The data behind the blob pointer is assumed to be immutable for the blob's
- * lifetime.
+ * The data behind the blob pointer is assumed to be immutable for the
+ * blob's lifetime.
  *
- * Memory management is either implicit or up to the vmod:
- *
- * - memory for shortlived blobs should come from the respective workspace
+ * - memory for shortlived blobs can be put on the tasks workspace
  *
  * - management of memory for longer lived blobs is up to the vmod
  *   (in which case the blob will probably be embedded in an object or
@@ -262,7 +259,7 @@ struct vrt_blob {
 /***********************************************************************
  * This is the central definition of the mapping from VCL types to
  * C-types.  The python scripts read these from here.
- * (alphabetic order)
+ * (keep alphabetic order)
  */
 
 typedef const struct vrt_acl *			VCL_ACL;
@@ -288,14 +285,9 @@ typedef vtim_real				VCL_TIME;
 typedef struct vcl *				VCL_VCL;
 typedef void					VCL_VOID;
 
-enum lbody_e {
-	LBODY_SET,
-	LBODY_ADD,
-};
-
 /***********************************************************************
- * This is the composite argument we pass to compiled VCL and VRT
- * functions.
+ * This is the composite "context" argument for compiled VCL, VRT and
+ * VMOD functions.
  */
 
 struct vrt_ctx {
@@ -339,9 +331,11 @@ struct vrt_ctx {
 };
 
 #define VRT_CTX		const struct vrt_ctx *ctx
+void VRT_CTX_Assert(VRT_CTX);
 
 /***********************************************************************
  * This is the interface structure to a compiled VMOD
+ * (produced by vmodtool.py)
  */
 
 struct vmod_data {
@@ -360,7 +354,7 @@ struct vmod_data {
 };
 
 /***********************************************************************
- * Enum for events sent to compiled VCL and from there to Vmods
+ * VCL events sent to VMODs
  */
 
 enum vcl_event_e {
@@ -370,10 +364,59 @@ enum vcl_event_e {
 	VCL_EVENT_DISCARD,
 };
 
-/***********************************************************************/
+typedef int vmod_event_f(VRT_CTX, struct vmod_priv *, enum vcl_event_e);
 
-extern const void * const vrt_magic_string_end;
-extern const void * const vrt_magic_string_unset;
+/***********************************************************************
+ * Utility functions operating on VCL_types
+ * (alphabetic by type-ish)
+ */
+
+/* VCL_ACL */
+int VRT_acl_match(VRT_CTX, VCL_ACL, VCL_IP);
+
+/* VCL_BACKEND */
+VCL_BACKEND VRT_DirectorResolve(VRT_CTX, VCL_BACKEND);
+
+/* VCL_BLOB */
+VCL_BLOB VRT_blob(VRT_CTX, const char *, const void *, size_t, unsigned);
+
+/* VCL_IP */
+int VRT_VSA_GetPtr(VRT_CTX, VCL_IP sua, const unsigned char ** dst);
+VCL_BOOL VRT_ipcmp(VRT_CTX, VCL_IP, VCL_IP);
+void VRT_Format_Proxy(struct vsb *, VCL_INT, VCL_IP, VCL_IP, VCL_STRING);
+
+/* VCL_REGEX */
+VCL_BOOL VRT_re_match(VRT_CTX, VCL_STRING, VCL_REGEX);
+VCL_STRING VRT_regsub(VRT_CTX, int all, VCL_STRING, VCL_REGEX, VCL_STRING);
+
+/* VCL_STEVEDORE */
+VCL_STEVEDORE VRT_stevedore(const char *nm);
+
+/* VCL_STRANDS */
+struct strands * VRT_AllocStrandsWS(struct ws *, int);
+int VRT_CompareStrands(VCL_STRANDS a, VCL_STRANDS b);
+VCL_BOOL VRT_Strands2Bool(VCL_STRANDS);
+uint32_t VRT_HashStrands32(VCL_STRANDS);
+char *VRT_Strands(char *, size_t, VCL_STRANDS);
+VCL_STRING VRT_StrandsWS(struct ws *, const char *, VCL_STRANDS);
+VCL_STRING VRT_CollectStrands(VRT_CTX, VCL_STRANDS);
+VCL_STRING VRT_UpperLowerStrands(VRT_CTX, VCL_STRANDS s, int up);
+
+/* Functions to turn types into canonical strings */
+
+VCL_STRING VRT_BACKEND_string(VCL_BACKEND);
+VCL_STRING VRT_BOOL_string(VCL_BOOL);
+VCL_STRING VRT_BLOB_string(VRT_CTX, VCL_BLOB);
+VCL_STRING VRT_CollectString(VRT_CTX, const char *p, ...);
+VCL_STRING VRT_INT_string(VRT_CTX, VCL_INT);
+VCL_STRING VRT_IP_string(VRT_CTX, VCL_IP);
+VCL_STRING VRT_REAL_string(VRT_CTX, VCL_REAL);
+VCL_STRING VRT_STEVEDORE_string(VCL_STEVEDORE);
+VCL_STRING VRT_TIME_string(VRT_CTX, VCL_TIME);
+
+/* historical */
+int VRT_strcmp(const char *s1, const char *s2);
+void VRT_memmove(void *dst, const void *src, unsigned len);
 
 /***********************************************************************
  * We want the VCC to spit this structs out as const, but when VMODs
@@ -448,13 +491,14 @@ struct vrt_backend_probe {
 	VRT_BACKEND_PROBE_FIELDS(const)
 };
 
-VCL_BACKEND VRT_DirectorResolve(VRT_CTX, VCL_BACKEND);
+/* Backend related */
+VCL_BACKEND VRT_new_backend(VRT_CTX, const struct vrt_backend *);
+VCL_BACKEND VRT_new_backend_clustered(VRT_CTX,
+    struct vsmw_cluster *, const struct vrt_backend *);
+size_t VRT_backend_vsm_need(VRT_CTX);
+void VRT_delete_backend(VRT_CTX, VCL_BACKEND *);
+struct vrt_endpoint *VRT_Endpoint_Clone(const struct vrt_endpoint *vep);
 
-/***********************************************************************
- * Implementation details of ACLs
- */
-
-int VRT_acl_match(VRT_CTX, VCL_ACL, VCL_IP);
 
 /***********************************************************************
  * Getting hold of the various struct http
@@ -481,12 +525,13 @@ VCL_STRING VRT_GetHdr(VRT_CTX, VCL_HEADER);
  * req related
  */
 
+enum lbody_e {
+	LBODY_SET,
+	LBODY_ADD,
+};
+
 VCL_BYTES VRT_CacheReqBody(VRT_CTX, VCL_BYTES maxsize);
 
-/* Regexp related */
-
-VCL_BOOL VRT_re_match(VRT_CTX, VCL_STRING, VCL_REGEX);
-VCL_STRING VRT_regsub(VRT_CTX, int all, VCL_STRING, VCL_REGEX, VCL_STRING);
 VCL_STRING VRT_ban_string(VRT_CTX, VCL_STRING);
 VCL_INT VRT_purge(VRT_CTX, VCL_DURATION, VCL_DURATION, VCL_DURATION);
 VCL_VOID VRT_synth(VRT_CTX, VCL_INT, VCL_STRING);
@@ -498,30 +543,14 @@ VCL_VOID VRT_handling(VRT_CTX, unsigned hand);
 VCL_VOID VRT_fail(VRT_CTX, const char *fmt, ...) v_printflike_(2,3);
 VCL_VOID VRT_hashdata(VRT_CTX, VCL_STRANDS);
 
-/* Simple stuff */
-int VRT_strcmp(const char *s1, const char *s2);
-void VRT_memmove(void *dst, const void *src, unsigned len);
-VCL_BOOL VRT_ipcmp(VRT_CTX, VCL_IP, VCL_IP);
-VCL_BLOB VRT_blob(VRT_CTX, const char *, const void *, size_t, unsigned);
-
 VCL_VOID VRT_Rollback(VRT_CTX, VCL_HTTP);
 
 /* Synthetic pages */
 VCL_VOID VRT_synth_page(VRT_CTX, VCL_STRANDS);
 
-/* Backend related */
-VCL_BACKEND VRT_new_backend(VRT_CTX, const struct vrt_backend *);
-VCL_BACKEND VRT_new_backend_clustered(VRT_CTX,
-    struct vsmw_cluster *, const struct vrt_backend *);
-size_t VRT_backend_vsm_need(VRT_CTX);
-void VRT_delete_backend(VRT_CTX, VCL_BACKEND *);
-struct vrt_endpoint *VRT_Endpoint_Clone(const struct vrt_endpoint *vep);
-
-/* VSM related */
-struct vsmw_cluster *VRT_VSM_Cluster_New(VRT_CTX, size_t);
-void VRT_VSM_Cluster_Destroy(VRT_CTX, struct vsmw_cluster **);
-
-/* VDI - Director API */
+/***********************************************************************
+ * VDI - Director API
+ */
 typedef VCL_BOOL vdi_healthy_f(VRT_CTX, VCL_BACKEND, VCL_TIME *);
 typedef VCL_BACKEND vdi_resolve_f(VRT_CTX, VCL_BACKEND);
 typedef int vdi_gethdrs_f(VRT_CTX, VCL_BACKEND);
@@ -549,8 +578,6 @@ struct vdi_methods {
 	vdi_list_f			*list;
 };
 
-struct vcldir;
-
 struct director {
 	unsigned			magic;
 #define DIRECTOR_MAGIC			0x3336351d
@@ -567,14 +594,9 @@ void VRT_DisableDirector(VCL_BACKEND);
 VCL_BACKEND VRT_LookupDirector(VRT_CTX, VCL_STRING);
 void VRT_DelDirector(VCL_BACKEND *);
 
-/* Suckaddr related */
-int VRT_VSA_GetPtr(VRT_CTX, VCL_IP sua, const unsigned char ** dst);
-/* transitional interface */
-void VRT_Format_Proxy(struct vsb *, VCL_INT, VCL_IP, VCL_IP, VCL_STRING);
-
-typedef int vmod_event_f(VRT_CTX, struct vmod_priv *, enum vcl_event_e);
-
-/* vmod_priv related */
+/***********************************************************************
+ * vmod_priv related
+ */
 typedef void vmod_priv_fini_f(VRT_CTX, void *);
 
 struct vmod_priv_methods {
@@ -596,29 +618,12 @@ struct vmod_priv *VRT_priv_task_get(VRT_CTX, const void *vmod_id);
 struct vmod_priv *VRT_priv_top(VRT_CTX, const void *vmod_id);
 struct vmod_priv *VRT_priv_top_get(VRT_CTX, const void *vmod_id);
 
-/* Stevedore related functions */
-int VRT_Stv(const char *nm);
-VCL_STEVEDORE VRT_stevedore(const char *nm);
+/***********************************************************************
+ * VSM and VSC
+ */
 
-/* Convert things to string */
-
-int VRT_CompareStrands(VCL_STRANDS a, VCL_STRANDS b);
-VCL_BOOL VRT_Strands2Bool(VCL_STRANDS);
-uint32_t VRT_HashStrands32(VCL_STRANDS);
-char *VRT_Strands(char *, size_t, VCL_STRANDS);
-VCL_STRING VRT_StrandsWS(struct ws *, const char *, VCL_STRANDS);
-VCL_STRING VRT_CollectStrands(VRT_CTX, VCL_STRANDS);
-VCL_STRING VRT_UpperLowerStrands(VRT_CTX, VCL_STRANDS s, int up);
-
-VCL_STRING VRT_BACKEND_string(VCL_BACKEND);
-VCL_STRING VRT_BOOL_string(VCL_BOOL);
-VCL_STRING VRT_BLOB_string(VRT_CTX, VCL_BLOB);
-VCL_STRING VRT_CollectString(VRT_CTX, const char *p, ...);
-VCL_STRING VRT_INT_string(VRT_CTX, VCL_INT);
-VCL_STRING VRT_IP_string(VRT_CTX, VCL_IP);
-VCL_STRING VRT_REAL_string(VRT_CTX, VCL_REAL);
-VCL_STRING VRT_STEVEDORE_string(VCL_STEVEDORE);
-VCL_STRING VRT_TIME_string(VRT_CTX, VCL_TIME);
+struct vsmw_cluster *VRT_VSM_Cluster_New(VRT_CTX, size_t);
+void VRT_VSM_Cluster_Destroy(VRT_CTX, struct vsmw_cluster **);
 
 #ifdef va_start	// XXX: hackish
 void *VRT_VSC_Alloc(struct vsmw_cluster *, struct vsc_seg **,
@@ -629,9 +634,7 @@ void VRT_VSC_Hide(const struct vsc_seg *);
 void VRT_VSC_Reveal(const struct vsc_seg *);
 size_t VRT_VSC_Overhead(size_t);
 
-void VRT_CTX_Assert(VRT_CTX);
-
-/*
+/***********************************************************************
  * API to restrict the VCL in various ways
  */
 
@@ -641,3 +644,11 @@ void VRT_VCL_Allow_Cold(struct vclref **);
 
 struct vclref * VRT_VCL_Prevent_Discard(VRT_CTX, const char *);
 void VRT_VCL_Allow_Discard(struct vclref **);
+
+/***********************************************************************
+ * Deprecated interfaces, do not use
+ */
+
+extern const void * const vrt_magic_string_end;
+extern const void * const vrt_magic_string_unset;
+int VRT_Stv(const char *nm);
