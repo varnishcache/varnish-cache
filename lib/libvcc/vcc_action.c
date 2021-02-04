@@ -387,7 +387,7 @@ vcc_act_synthetic(struct vcc *tl, struct token *t, struct symbol *sym)
 	ERRCHK(tl);
 	vcc_NextToken(tl);
 
-	Fb(tl, 1, "VRT_synth_page(ctx, ");
+	Fb(tl, 1, "VRT_synth_strands(ctx, ");
 	vcc_Expr(tl, STRANDS);
 	ERRCHK(tl);
 	Fb(tl, 1, ");\n");

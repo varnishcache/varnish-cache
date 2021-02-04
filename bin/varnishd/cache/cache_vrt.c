@@ -817,7 +817,7 @@ VRT_Rollback(VRT_CTX, VCL_HTTP hp)
 /*--------------------------------------------------------------------*/
 
 VCL_VOID
-VRT_synth_page(VRT_CTX, VCL_STRANDS s)
+VRT_synth_strands(VRT_CTX, VCL_STRANDS s)
 {
 	struct vsb *vsb;
 	int i;
@@ -830,6 +830,22 @@ VRT_synth_page(VRT_CTX, VCL_STRANDS s)
 		else
 			VSB_cat(vsb, "(null)");
 	}
+}
+
+VCL_VOID
+VRT_synth_blob(VRT_CTX, VCL_BLOB b)
+{
+	struct vsb *vsb;
+	CAST_OBJ_NOTNULL(vsb, ctx->specific, VSB_MAGIC);
+
+	if (b->len > 0 && b->blob != NULL)
+		VSB_bcat(vsb, b->blob, b->len);
+}
+
+VCL_VOID
+VRT_synth_page(VRT_CTX, VCL_STRANDS s)
+{
+	VRT_synth_strands(ctx, s);
 }
 
 /*--------------------------------------------------------------------*/
