@@ -332,6 +332,8 @@ struct vrt_ctx {
 	 *    synth+error:	struct vsb *
 	 */
 	void				*specific;
+	/* if present, vbitmap of called subs */
+	void				*called;
 };
 
 #define VRT_CTX		const struct vrt_ctx *ctx
