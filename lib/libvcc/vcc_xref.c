@@ -140,10 +140,6 @@ vcc_AddUses(struct vcc *tl, const struct token *t1, const struct token *t2,
 		WRONG("wrong xref use");
 
 	VTAILQ_INSERT_TAIL(&tl->curproc->uses, pu, list);
-
-	if (pu->mask == 0)
-		if (vcc_CheckUses(tl))
-			AN(tl->err);
 }
 
 void
@@ -355,11 +351,34 @@ vcc_checkuses(struct vcc *tl, const struct symbol *sym)
 	}
 }
 
+/*
+ * Used from a second symbol walk because vcc_checkuses is more precise for
+ * subroutines called from methods. We catch here subs used for dynamic calls
+ * and with vcc_err_unref = off
+ */
+static void
+vcc_checkpossible(struct vcc *tl, const struct symbol *sym)
+{
+	struct proc *p;
+
+	p = sym->proc;
+	AN(p);
+
+	if (p->okmask != 0)
+		return;
+
+	VSB_cat(tl->sb, "Impossible Subroutine");
+	vcc_ErrWhere(tl, p->name);
+}
+
 int
 vcc_CheckUses(struct vcc *tl)
 {
 
 	VCC_WalkSymbols(tl, vcc_checkuses, SYM_MAIN, SYM_SUB);
+	if (tl->err)
+		return (tl->err);
+	VCC_WalkSymbols(tl, vcc_checkpossible, SYM_MAIN, SYM_SUB);
 	return (tl->err);
 }
 
