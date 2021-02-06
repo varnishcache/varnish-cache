@@ -1,0 +1,36 @@
+varnishtest "VCL_SUB wrong vmod behavior"
+
+varnish v1 -arg "-p feature=+no_coredump" -vcl {
+	import debug;
+
+	backend dummy None;
+
+	sub foo {
+		set resp.http.it = "works";
+	}
+
+	sub vcl_init {
+		debug.bad_memory(foo);
+	}
+} -start
+
+varnish v1 -vcl {
+	import debug;
+	backend dummy None;
+
+	sub vcl_recv {
+		debug.call(debug.total_recall());
+	}
+
+}
+
+client c1 {
+	txreq -url "/foo"
+	expect_close
+} -run
+
+varnish v1 -wait-stopped
+varnish v1 -cliexpect "Assert error in VPI_Call_Check" "panic.show"
+varnish v1 -cliok "panic.clear"
+varnish v1 -expect MGT.child_panic == 1
+varnish v1 -expectexit 0x40
