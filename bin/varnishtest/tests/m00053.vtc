@@ -1,0 +1,194 @@
+varnishtest "VCL_SUB type basics"
+
+varnish v1 -vcl {
+	import std;
+	import debug;
+
+	backend dummy None;
+
+	# call: 1 ref: 5 + 1
+	sub foo {
+		set resp.http.it = "works";
+	}
+	# call: 1 ref: 1 + 1 (from bar walk)
+	sub barbar {
+		# called from bar only, must be marked dynamic
+		call barbarbar;
+	}
+	# call: 2 (1 from bar walk, 1 from barbar walk)
+	# ref: 2 + 1
+	sub barbarbar {
+		# 2nd level call from dynamic
+	}
+	# call: 0 ref: 1
+	sub bar {
+		set beresp.http.it = "works";
+		call barbar;
+	}
+	# call: 0 ref: 1
+	sub indirect {
+		debug.call(foo);
+	}
+	# call: 0 ref: 1
+	sub direct {
+		call foo;
+	}
+	# call: 0 ref: 2
+	sub recursive {
+		std.log("recursive called");
+		debug.call(recursive);
+	}
+	# call: 1 ref: 1
+	sub recursive_indirect {
+		std.log("recursive_indirect called");
+		debug.call(recursive_indirect);
+	}
+	# call: 1 ref: 1
+	sub rollback {
+		std.rollback(req);
+	}
+	# call: 0 ref: 1
+	sub priv_top {
+		debug.test_priv_top("only works on client side");
+	}
+
+	sub vcl_recv {
+		if (req.url == "/wrong") {
+			debug.call(foo);
+		}
+		if (req.url == "/recursive") {
+			debug.call(recursive);
+		}
+		if (req.url == "/recursive_indirect") {
+			call recursive_indirect;
+		}
+		if (req.url == "/priv_top") {
+			return (pass);
+		}
+		return (synth(200));
+	}
+	sub vcl_synth {
+		if (req.url == "/foo") {
+			debug.call(foo);
+		} else if (req.url == "/direct") {
+			debug.call(direct);
+		} else if (req.url == "/indirect") {
+			debug.call(indirect);
+		} else if (req.url == "/rollback") {
+			debug.call(rollback);
+		} else if (req.url == "/callthenrollback") {
+			debug.call(foo);
+			call rollback;
+			if (! resp.http.it) {
+				set resp.http.rolledback = true;
+			}
+			debug.call(foo);
+		} else if (req.url == "/checkwrong") {
+			synthetic(debug.check_call(bar));
+			set resp.status = 500;
+		}
+		return (deliver);
+	}
+	sub vcl_backend_fetch {
+		debug.call(priv_top);
+	}
+	sub vcl_backend_error {
+		# falling through to None backend would be success
+		set beresp.status = 200;
+		return (deliver);
+	}
+} -start
+
+client c1 {
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.it == "works"
+
+	txreq -url "/direct"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.it == "works"
+
+	txreq -url "/indirect"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.it == "works"
+
+	txreq -url "/callthenrollback"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.rolledback == "true"
+	expect resp.http.it == "works"
+
+	txreq -url "/wrong"
+	rxresp
+	expect resp.status == 503
+} -start
+logexpect l2 -v v1 -g vxid -q {ReqURL ~ "^/recursive$"} {
+	expect *  *	VCL_Log	"^recursive called"
+	fail add  *	VCL_Log	"^recursive called"
+	expect 0  =	VCL_Error	{^Recursive call to "sub recursive..}
+	expect 0  =	VCL_return	"^fail"
+	expect *  =	End
+	fail clear
+} -start
+client c2 {
+	txreq -url "/recursive"
+	rxresp
+	expect resp.status == 503
+} -start
+logexpect l3 -v v1 -g vxid -q {ReqURL ~ "^/recursive_indirect$"} {
+	expect *  *	VCL_Log	"^recursive_indirect called"
+	fail add  *	VCL_Log	"^recursive_indirect called"
+	expect 0  =	VCL_Error	{^Recursive call to "sub recursive_indirect..}
+	expect 0  =	VCL_return	"^fail"
+	expect *  =	End
+	fail clear
+} -start
+client c3 {
+	txreq -url "/recursive_indirect"
+	rxresp
+	expect resp.status == 503
+} -start
+client c4 {
+	txreq -url "/rollback"
+	rxresp
+	expect resp.status == 200
+} -start
+client c5 {
+	txreq -url "/checkwrong"
+	rxresp
+	expect resp.status == 500
+	expect resp.body == {Dynamic call to "sub bar{}" not allowed from here}
+} -start
+client c6 {
+	txreq -url "/priv_top"
+	rxresp
+	expect resp.status == 503
+} -start
+
+varnish v1 -errvcl {Impossible Subroutine('<vcl.inline>' Line 8 Pos 13)} {
+	import std;
+	import debug;
+
+	backend dummy None;
+
+	sub impossible {
+		set req.http.impossible = beresp.reason;
+	}
+	sub vcl_recv {
+		if (req.url == "/impossible") {
+			debug.call(impossible);
+		}
+	}
+}
+
+client c1 -wait
+client c2 -wait
+logexpect l2 -wait
+client c3 -wait
+logexpect l3 -wait
+client c4 -wait
+client c5 -wait
+client c6 -wait

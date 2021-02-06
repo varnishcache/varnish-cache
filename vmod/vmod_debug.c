@@ -1295,3 +1295,17 @@ xyzzy_just_return_regex(VRT_CTX, VCL_REGEX r)
 	AN(r);
 	return (r);
 }
+
+/*---------------------------------------------------------------------*/
+
+VCL_VOID v_matchproto_(td_xyzzy_call)
+xyzzy_call(VRT_CTX, VCL_SUB sub)
+{
+	VRT_call(ctx, sub);
+}
+
+VCL_STRING v_matchproto_(td_xyzzy_check_call)
+xyzzy_check_call(VRT_CTX, VCL_SUB sub)
+{
+	return (VRT_check_call(ctx, sub));
+}

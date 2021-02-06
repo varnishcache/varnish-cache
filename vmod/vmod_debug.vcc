@@ -323,3 +323,12 @@ Test if the argument is a valid header according to RFC7230 section 3.2.
 $Function REGEX just_return_regex(REGEX)
 
 Take a REGEX argument and return it.
+
+$Function STRING check_call(SUB)
+
+Check if a sub can be called. Returns the NULL string if yes, or a
+string saying why not.
+
+$Function VOID call(SUB)
+
+Call a sub
