@@ -53,7 +53,8 @@ vcc_act_call(struct vcc *tl, struct token *t, struct symbol *sym)
 	if (sym != NULL) {
 		vcc_AddCall(tl, t0, sym);
 		VCC_GlobalSymbol(sym, SUB, "VGC_function");
-		Fb(tl, 1, "%s(ctx);\n", sym->lname);
+
+		Fb(tl, 1, "%s(ctx, VSUB_STATIC, NULL);\n", sym->lname);
 		SkipToken(tl, ';');
 	}
 }

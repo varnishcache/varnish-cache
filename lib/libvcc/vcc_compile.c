@@ -171,8 +171,10 @@ static void
 vcc_EmitProc(struct vcc *tl, struct proc *p)
 {
 	struct vsb *vsbm;
-	unsigned mask;
+	unsigned mask, nsub;
 	const char *maskcmp;
+	const char *cc_adv;
+	int dyn = (p->sym->nref > p->called);
 
 	AN(p->okmask);
 	AZ(VSB_finish(p->cname));
@@ -188,6 +190,13 @@ vcc_EmitProc(struct vcc *tl, struct proc *p)
 		maskcmp = "&";
 	}
 
+	if ((mask & VCL_MET_TASK_H) && (mask & ~VCL_MET_TASK_H) == 0)
+		cc_adv = "v_dont_optimize ";
+	else
+		cc_adv = "";
+
+	nsub = tl->nsub++;
+
 	Fh(tl, 1, "vcl_func_f %s;\n", VSB_data(p->cname));
 	Fh(tl, 1, "const struct vcl_sub sub_%s[1] = {{\n",
 	   VSB_data(p->cname));
@@ -196,14 +205,23 @@ vcc_EmitProc(struct vcc *tl, struct proc *p)
 	Fh(tl, 1, "\t.name\t\t= \"%.*s\",\n", PF(p->name));
 	Fh(tl, 1, "\t.vcl_conf\t= &VCL_conf,\n");
 	Fh(tl, 1, "\t.func\t\t= %s,\n", VSB_data(p->cname));
-	Fh(tl, 1, "\t.n\t\t= %d,\n", tl->nsub++);
+	Fh(tl, 1, "\t.n\t\t= %d,\n", nsub);
 	Fh(tl, 1, "\t.nref\t\t= %d,\n", p->sym->nref);
 	Fh(tl, 1, "\t.called\t\t= %d\n", p->called);
 	Fh(tl, 1, "}};\n");
-	Fc(tl, 1, "\nvoid %sv_matchproto_(vcl_func_f)\n",
-	   ((mask & VCL_MET_TASK_H) && (mask & ~VCL_MET_TASK_H) == 0) ?
-	   "v_dont_optimize " : "");
-	Fc(tl, 1, "%s(VRT_CTX)\n{\n", VSB_data(p->cname));
+
+	if (dyn) {
+		Fc(tl, 1, "\nstatic inline void %s\n", cc_adv);
+		Fc(tl, 1, "%s_checked(VRT_CTX)\n{\n", VSB_data(p->cname));
+	} else {
+		Fc(tl, 1, "\nvoid %sv_matchproto_(vcl_func_f)\n", cc_adv);
+		Fc(tl, 1, "%s(VRT_CTX, enum vcl_func_call_e call,\n",
+		    VSB_data(p->cname));
+		Fc(tl, 1, "    enum vcl_func_fail_e *failp)\n{\n");
+		Fc(tl, 1, "  assert(call == VSUB_STATIC);\n");
+		Fc(tl, 1, "  assert(failp == NULL);\n");
+	}
+
 	vsbm = VSB_new_auto();
 	AN(vsbm);
 	vcc_vcl_met2c(vsbm, mask);
@@ -213,6 +231,36 @@ vcc_EmitProc(struct vcc *tl, struct proc *p)
 	Fc(tl, 1, "%s\n%s}\n", VSB_data(p->prologue), VSB_data(p->body));
 	VSB_destroy(&p->body);
 	VSB_destroy(&p->prologue);
+
+	if (! dyn) {
+		VSB_destroy(&p->cname);
+		return;
+	}
+
+	/* wrapper to call the actual (_checked) function */
+	Fc(tl, 1, "\nvoid v_matchproto_(vcl_func_f)\n");
+	Fc(tl, 1, "%s(VRT_CTX, enum vcl_func_call_e call,\n",
+	    VSB_data(p->cname));
+	Fc(tl, 1, "    enum vcl_func_fail_e *failp)\n{\n");
+	Fc(tl, 1, "  enum vcl_func_fail_e fail;\n\n");
+	Fc(tl, 1, "  fail = VPI_Call_Check(ctx, &VCL_conf, 0x%x, %d);\n",
+	    mask, nsub);
+	Fc(tl, 1, "  if (failp)\n");
+	Fc(tl, 1, "    *failp = fail;\n");
+	Fc(tl, 1, "  else if (fail == VSUB_E_METHOD)\n");
+	Fc(tl, 1, "    VRT_fail(ctx, \"call to \\\"sub %.*s{}\\\""
+	    " not allowed from here\");\n", PF(p->name));
+	Fc(tl, 1, "  else if (fail == VSUB_E_RECURSE)\n");
+	Fc(tl, 1, "    VRT_fail(ctx, \"Recursive call to "
+	    "\\\"sub %.*s{}\\\"\");\n", PF(p->name));
+	Fc(tl, 1, "  else\n");
+	Fc(tl, 1, "    assert (fail == VSUB_E_OK);\n");
+	Fc(tl, 1, "  if (fail != VSUB_E_OK || call == VSUB_CHECK)\n");
+	Fc(tl, 1, "    return;\n");
+	Fc(tl, 1, "  VPI_Call_Begin(ctx, %d);\n", nsub);
+	Fc(tl, 1, "  %s_checked(ctx);\n", VSB_data(p->cname));
+	Fc(tl, 1, "  VPI_Call_End(ctx, %d);\n", nsub);
+	Fc(tl, 1, "}\n");
 	VSB_destroy(&p->cname);
 }
 
@@ -784,13 +832,13 @@ vcc_CompileSource(struct vcc *tl, struct source *sp, const char *jfile)
 
 	/* Tie vcl_init/fini in */
 	ifp = New_IniFin(tl);
-	VSB_cat(ifp->ini, "\tVGC_function_vcl_init(ctx);\n");
+	VSB_cat(ifp->ini, "\tVGC_function_vcl_init(ctx, VSUB_STATIC, NULL);\n");
 	/*
 	 * Because the failure could be half way into vcl_init{} so vcl_fini{}
 	 * must always be called, also on failure.
 	 */
 	ifp->ignore_errors = 1;
-	VSB_cat(ifp->fin, "\t\tVGC_function_vcl_fini(ctx);\n");
+	VSB_cat(ifp->fin, "\t\tVGC_function_vcl_fini(ctx, VSUB_STATIC, NULL);\n");
 	VSB_cat(ifp->fin, "\t\t\tVPI_vcl_fini(ctx);");
 
 	/* Emit method functions */

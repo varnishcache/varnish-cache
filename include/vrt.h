@@ -70,6 +70,8 @@
  *	VRT_re_fini removed
  *	VRT_re_match signature changed
  *	VRT_regsub signature changed
+ *	VRT_call() added
+ *	VRT_check_call() added
  * 12.0 (2020-09-15)
  *	Added VRT_DirectorResolve()
  *	Added VCL_STRING VRT_BLOB_string(VRT_CTX, VCL_BLOB)
@@ -339,13 +341,19 @@ struct vrt_ctx {
 #define VRT_CTX		const struct vrt_ctx *ctx
 void VRT_CTX_Assert(VRT_CTX);
 
+enum vcl_func_call_e {
+	VSUB_STATIC,	// VCL "call" action, only allowed from VCC
+	VSUB_DYNAMIC,	// VRT_call()
+	VSUB_CHECK	// VRT_check_call()
+};
+
 enum vcl_func_fail_e {
 	VSUB_E_OK,
 	VSUB_E_RECURSE, // call would recurse
 	VSUB_E_METHOD	// can not be called from this method
 };
 
-typedef void vcl_func_f(VRT_CTX);
+typedef void vcl_func_f(VRT_CTX, enum vcl_func_call_e, enum vcl_func_fail_e *);
 
 /***********************************************************************
  * This is the interface structure to a compiled VMOD
@@ -415,6 +423,10 @@ char *VRT_Strands(char *, size_t, VCL_STRANDS);
 VCL_STRING VRT_StrandsWS(struct ws *, const char *, VCL_STRANDS);
 VCL_STRING VRT_CollectStrands(VRT_CTX, VCL_STRANDS);
 VCL_STRING VRT_UpperLowerStrands(VRT_CTX, VCL_STRANDS s, int up);
+
+/* VCL_SUB */
+VCL_STRING VRT_check_call(VRT_CTX, VCL_SUB);
+VCL_VOID VRT_call(VRT_CTX, VCL_SUB);
 
 /* Functions to turn types into canonical strings */
 
