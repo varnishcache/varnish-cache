@@ -59,7 +59,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <limits.h>
 
 #include "vcc_compile.h"
 

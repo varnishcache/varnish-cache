@@ -332,11 +332,12 @@ vcc_act_return(struct vcc *tl, struct token *t, struct symbol *sym)
 
 	hand = VCL_RET_MAX;
 	h = NULL;
+	mask = 0;
 #define VCL_RET_MAC(l, U, B)				\
 		if (vcc_IdIs(tl->t, #l)) {		\
 			hand = VCL_RET_ ## U;		\
 			h = #U;				\
-			mask = B;			\
+			mask = (B);			\
 		}
 #include "tbl/vcl_returns.h"
 	if (h == NULL) {
@@ -345,6 +346,7 @@ vcc_act_return(struct vcc *tl, struct token *t, struct symbol *sym)
 		ERRCHK(tl);
 	}
 	assert(hand < VCL_RET_MAX);
+	AN(mask);
 
 	vcc_ProcAction(tl->curproc, hand, mask, tl->t);
 	vcc_NextToken(tl);
