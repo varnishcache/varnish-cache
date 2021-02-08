@@ -62,7 +62,9 @@ Varnish Cache Next (2021-03-15)
   subroutine accessing ``req`` from the backend side) and recursive
   calls fail the VCL.
 
-  See :ref:`ref-vmod` for details.
+  See `VMOD - Varnish Modules`_ in the Reference Manual.
+
+.. _VMOD - Varnish Modules: https://varnish-cache.org/docs/trunk/reference/vmod.html
 
 * ``VRT_check_call()`` can be used to check if a ``VRT_call()`` would
   succeed in order to avoid the potential VCL failure in case it would
