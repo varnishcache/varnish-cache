@@ -48,8 +48,8 @@ Bugs, issues, feature requests & VIPs
 
 Bugs, issues and feature requests start out as github issues.
 
-Monday at 13:00-14:00 (EU time) we "bug-wash" on IRC to
-decide who and how issues are dealt with.
+Monday at 15:00-16:00 (EU time) we "bug-wash" on IRC (#varnish-hacking
+on irc.linpro.no) to decide who and how issues are dealt with.
 
 Issues we cannot do anything about are closed.
 
