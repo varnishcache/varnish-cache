@@ -648,6 +648,14 @@ VRT_handling(VRT_CTX, unsigned hand)
 	*ctx->handling = hand;
 }
 
+unsigned
+VRT_handled(VRT_CTX)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(ctx->handling);
+	return (*ctx->handling);
+}
+
 /*--------------------------------------------------------------------*/
 
 VCL_VOID

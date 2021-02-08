@@ -562,6 +562,7 @@ VRT_call(VRT_CTX, VCL_SUB sub)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(sub, VCL_SUB_MAGIC);
 
+	AZ(VRT_handled(ctx));
 	AN(sub->func);
 	sub->func(ctx, VSUB_DYNAMIC, NULL);
 }

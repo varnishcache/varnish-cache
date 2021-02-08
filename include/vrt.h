@@ -72,6 +72,7 @@
  *	VRT_regsub signature changed
  *	VRT_call() added
  *	VRT_check_call() added
+ *	VRT_handled() added
  * 12.0 (2020-09-15)
  *	Added VRT_DirectorResolve()
  *	Added VCL_STRING VRT_BLOB_string(VRT_CTX, VCL_BLOB)
@@ -566,6 +567,7 @@ VCL_VOID VRT_hit_for_pass(VRT_CTX, VCL_DURATION);
 VCL_BOOL VRT_ValidHdr(VRT_CTX, VCL_STRANDS);
 VCL_VOID VRT_SetHdr(VRT_CTX, VCL_HEADER, const char *, ...);
 VCL_VOID VRT_handling(VRT_CTX, unsigned hand);
+unsigned VRT_handled(VRT_CTX);
 VCL_VOID VRT_fail(VRT_CTX, const char *fmt, ...) v_printflike_(2,3);
 VCL_VOID VRT_hashdata(VRT_CTX, VCL_STRANDS);
 

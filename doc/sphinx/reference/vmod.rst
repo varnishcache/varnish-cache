@@ -475,6 +475,14 @@ VCL_SUB
 	(e.g. calling a subroutine accessing ``req`` from the backend
 	side).
 
+	For more than one invocation of ``VRT_call()``, VMODs *must*
+	check if ``VRT_handled()`` returns non-zero inbetween calls:
+	The called SUB may have returned with an action (any
+	``return(x)`` other than plain ``return``) or may have failed
+	the VCL, and in both cases the calling VMOD *must* return
+	also, possibly after having conducted some cleanup. Note that
+	undoing the handling through ``VRT_handling()`` is a bug.
+
 	``VRT_check_call()`` can be used to check if a ``VRT_call()``
 	would succeed in order to avoid the potential VCL failure.  It
 	returns ``NULL`` if ``VRT_call()`` would make the call or an
