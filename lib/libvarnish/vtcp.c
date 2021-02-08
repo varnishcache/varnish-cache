@@ -390,7 +390,7 @@ vtcp_open_callback(void *priv, const struct suckaddr *sa)
 
 	errno = 0;
 	fd = VTCP_connect(sa, (int)floor(vto->timeout * 1e3));
-	if (fd > 0) {
+	if (fd >= 0) {
 		vto->fd = fd;
 		vto->latest_errno = 0;
 		return (1);
