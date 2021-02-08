@@ -12,7 +12,6 @@ The VCL language
 
 	VCL - Varnish Configuration Language <vcl>
 	states.rst
-	vmod.rst
 
 Bundled VMODs
 -------------
@@ -83,7 +82,8 @@ For Developers
 .. toctree::
 	:maxdepth: 1
 
-	VSM - Shared memory use <vsm.rst>
+	VMODS - Extensions to VCL <vmod>
+	VSM - Shared memory use <vsm>
 	VDIR - Backends & Directors <directors>
 
 .. Vmod_debug ?
