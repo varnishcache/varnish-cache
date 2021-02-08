@@ -4,21 +4,22 @@
 The Varnish Reference Manual
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-.. toctree::
-	:maxdepth: 2
+The VCL language
+----------------
 
-	vcl.rst
+.. toctree::
+	:maxdepth: 1
+
+	VCL - Varnish Configuration Language <vcl>
 	states.rst
-	varnish-cli.rst
-	varnishadm.rst
-	varnishd.rst
-	varnishhist.rst
-	varnishlog.rst
-	varnishncsa.rst
-	varnishstat.rst
-	varnishtest.rst
-	varnishtop.rst
-	vsm.rst
+	vmod.rst
+
+Bundled VMODs
+-------------
+
+.. toctree::
+	:maxdepth: 1
+
 	vmod_blob.rst
 	vmod_cookie.rst
 	vmod_directors.rst
@@ -26,50 +27,77 @@ The Varnish Reference Manual
 	vmod_purge.rst
 	vmod_std.rst
 	vmod_unix.rst
+
+The CLI interface
+-----------------
+
+.. toctree::
+	:maxdepth: 1
+
+	VarnishAdm - Control program for Varnish <varnishadm>
+	VCLI - The commands varnish understands <varnish-cli>
+
+Logging and monitoring
+----------------------
+
+.. toctree::
+	:maxdepth: 1
+
+	VSL - The log records Varnish generates <vsl>
+	VSLQ - Filter/Query expressions for VSL <vsl-query>
+	VarnishLog - Logging raw VSL <varnishlog>
+	VarnishNCSA - Logging in NCSA format <varnishncsa>
+	VarnishHist - Realtime reponse histogram display <varnishhist>
+	VarnishTop - Realtime activity display <varnishtop>
+	
+Counters and statistics
+-----------------------
+
+.. toctree::
+	:maxdepth: 1
+
+	VSC - The statistics Varnish collects <varnish-counters>
+	VarnishStat - Watching and logging statistics <varnishstat>
+
+The Varnishd program
+--------------------
+
+.. toctree::
+	:maxdepth: 1
+
+	VarnishD - The program which does the actual work <varnishd>
+
+Varnishtest
+-----------
+
+.. toctree::
+	:maxdepth: 1
+
+	VTC - Language for writing test cases <vtc>
+	VarnishTest - execute test cases <varnishtest>
 	vmod_vtc.rst
-	vmod.rst
-	directors.rst
-	varnish-counters.rst
-	vsl.rst
-	vsl-query.rst
-	vtc.rst
+
+For Developers
+--------------
+
+.. toctree::
+	:maxdepth: 1
+
+	VSM - Shared memory use <vsm.rst>
+	VDIR - Backends & Directors <directors>
+
+.. Vmod_debug ?
+
+.. Libvarnishapi
+
+.. VRT
+
+.. VRT compat levels
+
+Code-book
+---------
+
+.. toctree::
+	:maxdepth: 1
+
 	vtla.rst
-
-.. vmod_debug left out deliberately ?
-
-.. todo::
-	The programs:
-	. varnishd manual page
-	. varnishstat
-	. - counters explained
-	. common filtering options for shmlog tools
-	. varnishlog ..
-	. varnishtop ..
-	. varnishncsa ..
-	. varnishhist ..
-	The CLI:
-	. connections: -T -S -M
-	. varnishadm
-	. CLI commands and what they do
-	. - vcl.load
-	. - stop
-	. - start
-	. - ...
-	VCL language
-	. The subroutines:
-	. - vcl_recv
-	. - vcl_miss
-	. ---
-	. The things you can do
-	. - set
-	. - unset
-	. - esi
-	. - rollback
-	Varnishtest
-	. syntax etc.
-	Shared Memory
-	. internals
-	. Log records
-	Libvarnishapi
-	. function descriptions
-
