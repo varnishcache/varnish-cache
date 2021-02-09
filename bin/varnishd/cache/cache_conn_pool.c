@@ -247,7 +247,7 @@ VCP_Rel(struct conn_pool **cpp)
 	AZ(cp->n_conn);
 	AZ(cp->n_kill);
 	free(cp->endpoint);
-	free(cp);
+	FREE_OBJ(cp);
 }
 
 /*--------------------------------------------------------------------

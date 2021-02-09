@@ -41,6 +41,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "miniobj.h"
 #include "vdef.h"
@@ -256,7 +257,7 @@ VBH_destroy(struct vbh **bhp)
 	for (u = 0; u < bh->length; u += ROW_WIDTH)
 		free(ROW(bh, u));
 	free(bh->array);
-	free(bh);
+	FREE_OBJ(bh);
 }
 
 static void

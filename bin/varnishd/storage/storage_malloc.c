@@ -150,7 +150,7 @@ sma_free(struct storage *s)
 		sma_sc->stats->g_space += sma->sz;
 	Lck_Unlock(&sma_sc->sma_mtx);
 	free(sma->s.ptr);
-	free(sma);
+	FREE_OBJ(sma);
 }
 
 static VCL_BYTES v_matchproto_(stv_var_used_space)
