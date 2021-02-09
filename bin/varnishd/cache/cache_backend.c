@@ -589,8 +589,7 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 		return (NULL);
 	Lck_New(&be->mtx, lck_backend);
 
-	be->endpoint = VRT_Endpoint_Clone(vrt->endpoint);
-	vep = be->endpoint;
+	vep = be->endpoint = VRT_Endpoint_Clone(vep);
 #define DA(x)	do { if (vrt->x != NULL) REPLACE((be->x), (vrt->x)); } while (0)
 #define DN(x)	do { be->x = vrt->x; } while (0)
 	VRT_BACKEND_HANDLE();
