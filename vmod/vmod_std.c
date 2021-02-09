@@ -224,7 +224,7 @@ vmod_timestamp(VRT_CTX, VCL_STRING label)
 		VSLb_ts_busyobj(ctx->bo, label, VTIM_real());
 	} else if (ctx->req != NULL) {
 		/* Called from request vcl methods */
-		CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+		CHECK_OBJ(ctx->req, REQ_MAGIC);
 		VSLb_ts_req(ctx->req, label, VTIM_real());
 	}
 }

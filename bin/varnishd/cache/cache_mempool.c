@@ -191,7 +191,7 @@ mpl_guard(void *priv)
 		if (mi == NULL) {
 			mi = VTAILQ_FIRST(&mpl->surplus);
 			if (mi != NULL) {
-				CHECK_OBJ_NOTNULL(mi, MEMITEM_MAGIC);
+				CHECK_OBJ(mi, MEMITEM_MAGIC);
 				VTAILQ_REMOVE(&mpl->surplus, mi, list);
 				mpl_slp = .01;	// random
 			}

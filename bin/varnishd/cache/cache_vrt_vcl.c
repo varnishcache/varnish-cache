@@ -457,7 +457,7 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	INIT_OBJ(&ctx, VRT_CTX_MAGIC);
 	if (bo != NULL) {
-		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+		CHECK_OBJ(bo, BUSYOBJ_MAGIC);
 		CHECK_OBJ_NOTNULL(bo->vcl, VCL_MAGIC);
 		VCL_Bo2Ctx(&ctx, bo);
 	}

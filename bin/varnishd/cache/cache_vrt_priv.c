@@ -166,11 +166,11 @@ vrt_priv_task_context(VRT_CTX)
 	    ctx->method == VCL_MET_PIPE || ctx->method == 0);
 
 	if (ctx->req) {
-		CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+		CHECK_OBJ(ctx->req, REQ_MAGIC);
 		return (ctx->req->privs);
 	}
 	if (ctx->bo) {
-		CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+		CHECK_OBJ(ctx->bo, BUSYOBJ_MAGIC);
 		return (ctx->bo->privs);
 	}
 	ASSERT_CLI();
