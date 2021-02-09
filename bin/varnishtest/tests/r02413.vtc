@@ -1,11 +1,11 @@
-varnishtest "Test vcl_trace"
+varnishtest "Test vcc_feature trace"
 
 server s1 {
 	rxreq
 	txresp
 } -start
 
-varnish v1 -arg "-p vsl_mask=+VCL_trace" -vcl+backend {
+varnish v1 -arg "-p vcc_feature=+trace" -vcl+backend {
 	sub vcl_deliver {
 		set resp.http.vcl = "vclA";
 	}

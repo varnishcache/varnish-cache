@@ -62,14 +62,13 @@ VPI_wrk_init(struct worker *wrk, void *p, size_t spc)
 }
 
 void
-VPI_count(VRT_CTX, unsigned u)
+VPI_trace(VRT_CTX, unsigned u)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->vcl, VCL_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->vcl->conf, VCL_CONF_MAGIC);
 	assert(u < ctx->vcl->conf->nref);
-	ctx->vpi->ref = u;
 	if (ctx->vsl != NULL)
 		VSLb(ctx->vsl, SLT_VCL_trace, "%s %u %u.%u.%u",
 		    ctx->vcl->loaded_name, u, ctx->vcl->conf->ref[u].source,

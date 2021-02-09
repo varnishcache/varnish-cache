@@ -45,6 +45,10 @@ VCC_FEATURE_BIT(UNSAFE_PATH,		unsafe_path,
     "Allow '/' in vmod & include paths. Allow 'import ... from ...'."
 )
 
+VCC_FEATURE_BIT(TRACE,			trace,
+    "Enable VCL tracing."
+)
+
 #undef VCC_FEATURE_BIT
 
 /*lint -restore */

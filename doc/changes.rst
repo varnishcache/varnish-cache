@@ -39,6 +39,16 @@ Varnish Cache NEXT (2022-09-15)
   semi-colon (``';'``) at the end of the string. This could break VCL relying
   on the previous incorrect behavior.
 
+* VCL tracing now needs to be explicitly activated by setting the
+  ``vcc_feature +trace`` parameter. Only then will ``VCL_trace`` log
+  records be generated for that VCL.
+
+  Consequently, ``VCL_trace`` has been removed from the default
+  ``vsl_mask``, so whenever a VCL compiled with the ``trace`` VCC
+  feature enabled runs, the log records will be emitted by
+  default. ``vsl_mask`` can still be used to filter ``VCL_trace``
+  records.
+
 ================================
 Varnish Cache 7.1.0 (2022-03-15)
 ================================
