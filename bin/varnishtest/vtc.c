@@ -111,13 +111,11 @@ macro_def_int(const char *name, const char *fmt, va_list ap)
 		ALLOC_OBJ(m, MACRO_MAGIC);
 		AN(m);
 		REPLACE(m->name, name);
-		AN(m->name);
 		VTAILQ_INSERT_TAIL(&macro_list, m, list);
 	}
 	AN(m);
 	vbprintf(buf, fmt, ap);
 	REPLACE(m->val, buf);
-	AN(m->val);
 	return (m);
 }
 
