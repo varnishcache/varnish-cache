@@ -185,8 +185,7 @@ vcc_act_ban(struct vcc *tl, struct token *t, struct symbol *sym)
 	(void)t;
 	(void)sym;
 
-	ExpectErr(tl, '(');
-	vcc_NextToken(tl);
+	SkipToken(tl, '(');
 
 	Fb(tl, 1, "(void) VRT_ban_string(ctx, \n");
 	tl->indent += INDENT;
