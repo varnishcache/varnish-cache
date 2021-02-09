@@ -783,7 +783,7 @@ vcl_cli_list(struct cli *cli, const char * const *av, void *priv)
 			VSB_printf(vsb, "\t<-\t(%d label%s)",
 			    vcl->nlabels, vcl->nlabels > 1 ? "s" : "");
 		}
-		VSB_printf(vsb, "\n");
+		VSB_cat(vsb, "\n");
 	}
 	VCLI_VTE(cli, &vsb, 80);
 }

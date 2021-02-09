@@ -83,7 +83,7 @@ Emit_Sockaddr(struct vcc *tl, struct vsb *vsb1, const struct token *t_host,
 		    "\t.ipv6 = (const struct suckaddr *)%s,\n",
 		    ipv6);
 	}
-	VSB_printf(vsb1, "\t.uds_path = (void *) 0,\n");
+	VSB_cat(vsb1, "\t.uds_path = (void *) 0,\n");
 }
 
 /*
@@ -122,8 +122,8 @@ Emit_UDS_Path(struct vcc *tl, struct vsb *vsb1,
 		return;
 	}
 	VSB_printf(vsb1, "\t.uds_path = \"%s\",\n", t_path->dec);
-	VSB_printf(vsb1, "\t.ipv4 = (void *) 0,\n");
-	VSB_printf(vsb1, "\t.ipv6 = (void *) 0,\n");
+	VSB_cat(vsb1, "\t.ipv4 = (void *) 0,\n");
+	VSB_cat(vsb1, "\t.ipv6 = (void *) 0,\n");
 }
 
 /*--------------------------------------------------------------------
@@ -530,7 +530,7 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 	VSB_printf(vsb1,
 	    "\nstatic const struct vrt_endpoint vgc_dir_ep_%s = {\n",
 	    vgcname);
-	VSB_printf(vsb1, "\t.magic = VRT_ENDPOINT_MAGIC,\n");
+	VSB_cat(vsb1, "\t.magic = VRT_ENDPOINT_MAGIC,\n");
 
 	assert(t_host != NULL || t_path != NULL);
 	if (t_host != NULL)
@@ -544,7 +544,7 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 	if (t_preamble != NULL)
 		VSB_printf(vsb1, "\t.preamble = %s,\n", t_preamble->dec);
 
-	VSB_printf(vsb1, "};\n");
+	VSB_cat(vsb1, "};\n");
 	AZ(VSB_finish(vsb1));
 	Fh(tl, 0, "%s", VSB_data(vsb1));
 	VSB_destroy(&vsb1);

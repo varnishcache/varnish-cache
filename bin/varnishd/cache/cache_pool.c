@@ -245,7 +245,7 @@ pan_pool(struct vsb *vsb)
 {
 	struct pool *pp;
 
-	VSB_printf(vsb, "pools = {\n");
+	VSB_cat(vsb, "pools = {\n");
 	VSB_indent(vsb, 2);
 	VTAILQ_FOREACH(pp, &pools, list) {
 		if (PAN_dump_struct(vsb, pp, POOL_MAGIC, "pool"))
@@ -254,10 +254,10 @@ pan_pool(struct vsb *vsb)
 		VSB_printf(vsb, "nthr = %u,\n", pp->nthr);
 		VSB_printf(vsb, "lqueue = %u\n", pp->lqueue);
 		VSB_indent(vsb, -2);
-		VSB_printf(vsb, "},\n");
+		VSB_cat(vsb, "},\n");
 	}
 	VSB_indent(vsb, -2);
-	VSB_printf(vsb, "},\n");
+	VSB_cat(vsb, "},\n");
 }
 
 /*--------------------------------------------------------------------*/

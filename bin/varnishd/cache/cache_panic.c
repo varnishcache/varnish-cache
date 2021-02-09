@@ -122,7 +122,7 @@ PAN_dump_struct2(struct vsb *vsb, int block, const void *ptr,
 	VSB_vprintf(vsb, fmt, ap);
 	va_end(ap);
 	if (ptr == NULL) {
-		VSB_printf(vsb, " = NULL\n");
+		VSB_cat(vsb, " = NULL\n");
 		return (-1);
 	}
 	VSB_printf(vsb, " = %p {", ptr);
@@ -145,7 +145,7 @@ PAN_dump_struct2(struct vsb *vsb, int block, const void *ptr,
 		VSB_printf(vsb, " EXPECTED: %s=0x%08x", smagic, magic);
 		if (block)
 			VSB_putc(vsb, '\n');
-		VSB_printf(vsb, "}\n");
+		VSB_cat(vsb, "}\n");
 		return (-3);
 	}
 	if (block)
@@ -692,7 +692,7 @@ pan_argv(struct vsb *vsb)
 {
 	int i;
 
-	VSB_printf(pan_vsb, "argv = {\n");
+	VSB_cat(pan_vsb, "argv = {\n");
 	VSB_indent(vsb, 2);
 	for (i = 0; i < heritage.argc; i++) {
 		VSB_printf(vsb, "[%d] = ", i);

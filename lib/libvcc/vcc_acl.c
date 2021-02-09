@@ -138,7 +138,7 @@ vcc_acl_chk(struct vcc *tl, const struct acl_e *ae, const int l,
 	AN(sa);
 	VTCP_name(sa, h, sizeof h, NULL, 0);
 	bprintf(t, "%s/%d", h, ae->mask);
-	VSB_printf(tl->sb, "Address/Netmask mismatch, ");
+	VSB_cat(tl->sb, "Address/Netmask mismatch, ");
 	if (tl->acl_pedantic != 0)
 		VSB_printf(tl->sb, "need be %s\n", t);
 	else

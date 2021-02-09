@@ -275,7 +275,7 @@ vcc_illegal_write(struct vcc *tl, struct procuse *pu, const struct method *m)
 
 	if (pu->sym->r_methods == 0) {
 		vcc_ErrWhere2(tl, pu->t1, pu->t2);
-		VSB_printf(tl->sb, "Variable cannot be set.\n");
+		VSB_cat(tl->sb, "Variable cannot be set.\n");
 		return (NULL);
 	}
 
@@ -285,7 +285,7 @@ vcc_illegal_write(struct vcc *tl, struct procuse *pu, const struct method *m)
 	}
 
 	vcc_ErrWhere2(tl, pu->t1, pu->t2);
-	VSB_printf(tl->sb, "Variable is read only.\n");
+	VSB_cat(tl->sb, "Variable is read only.\n");
 	return (NULL);
 }
 

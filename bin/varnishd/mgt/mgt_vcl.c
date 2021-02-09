@@ -841,7 +841,7 @@ mcf_vcl_list(struct cli *cli, const char * const *av, void *priv)
 				VSB_printf(vsb, "\t<-\t(%d label%s)",
 				    vp->nto, vp->nto > 1 ? "s" : "");
 			}
-			VSB_printf(vsb, "\n");
+			VSB_cat(vsb, "\n");
 		}
 		VCLI_VTE(cli, &vsb, 80);
 	}

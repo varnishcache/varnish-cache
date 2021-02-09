@@ -65,7 +65,7 @@ pan_privs(struct vsb *vsb, const struct vrt_privs *privs)
 	const struct vmod_priv_methods *m;
 
 	if (privs == NULL) {
-		VSB_printf(vsb, "privs = NULL\n");
+		VSB_cat(vsb, "privs = NULL\n");
 		return;
 	}
 	VSB_printf(vsb, "privs = %p {\n", privs);

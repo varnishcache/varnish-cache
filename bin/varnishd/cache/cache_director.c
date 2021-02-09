@@ -354,7 +354,7 @@ do_list(struct cli *cli, struct director *d, void *priv)
 	if (la->p && d->vdir->methods->list != NULL)
 		d->vdir->methods->list(ctx, d, la->vsb, la->p, 0);
 
-	VSB_printf(la->vsb, "\n");
+	VSB_cat(la->vsb, "\n");
 	AZ(VCL_Rel_CliCtx(&ctx));
 	AZ(ctx);
 

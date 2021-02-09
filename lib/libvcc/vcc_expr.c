@@ -1433,7 +1433,7 @@ vcc_Act_Call(struct vcc *tl, struct token *t, struct symbol *sym)
 		SkipToken(tl, ';');
 		VSB_cat(tl->fb, ";\n");
 	} else if (t != tl->t) {
-		VSB_printf(tl->sb, "While compiling function call:\n\n");
+		VSB_cat(tl->sb, "While compiling function call:\n\n");
 		vcc_ErrWhere2(tl, t, tl->t);
 	}
 	vcc_delete_expr(e);
@@ -1518,8 +1518,7 @@ vcc_Eval_Default(struct vcc *tl, struct expr **e, struct token *t,
 	else if (fmt == BACKEND)
 		*e = vcc_mk_expr(BACKEND, "*(VCL_conf.default_director)");
 	else {
-		VSB_printf(tl->sb,
-		    "Symbol 'default' is a reserved word.\n");
+		VSB_cat(tl->sb, "Symbol 'default' is a reserved word.\n");
 		vcc_ErrWhere(tl, t);
 	}
 }
