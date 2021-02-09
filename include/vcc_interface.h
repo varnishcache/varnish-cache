@@ -58,6 +58,7 @@ struct wrk_vpi {
 	unsigned	magic;
 #define WRK_VPI_MAGIC	0xaa3d3df3
 	unsigned	handling;
+	unsigned	ref;	// index into (struct vpi_ref)[]
 };
 
 
