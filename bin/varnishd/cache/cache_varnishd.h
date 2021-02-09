@@ -527,6 +527,7 @@ void WRK_Log(enum VSL_tag_e, const char *, ...);
 /* cache_vpi.c */
 extern const size_t vpi_wrk_len;
 void VPI_wrk_init(struct worker *, void *, size_t);
+void VPI_Panic(struct vsb *, const struct wrk_vpi *, const struct vcl *);
 
 /* cache_ws.c */
 void WS_Panic(struct vsb *, const struct ws *);

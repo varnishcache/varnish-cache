@@ -291,7 +291,7 @@ vcl_panic_conf(struct vsb *vsb, const struct VCL_conf *conf)
 	VSB_cat(vsb, "srcname = {\n");
 	VSB_indent(vsb, 2);
 	for (i = 0; i < conf->nsrc; ++i)
-		VSB_printf(vsb, "\"%s\",\n", conf->srcname[i]);
+		VSB_printf(vsb, "[%d] = \"%s\",\n", i, conf->srcname[i]);
 	VSB_indent(vsb, -2);
 	VSB_cat(vsb, "},\n");
 	VSB_cat(vsb, "instances = {\n");

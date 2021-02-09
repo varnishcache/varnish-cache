@@ -32,6 +32,8 @@
 
 #include "config.h"
 
+#include <stdio.h>
+
 #include "cache_varnishd.h"
 
 #include "vcl.h"
@@ -76,6 +78,105 @@ VPI_count(VRT_CTX, unsigned u)
 		VSL(SLT_VCL_trace, 0, "%s %u %u.%u.%u",
 		    ctx->vcl->loaded_name, u, ctx->vcl->conf->ref[u].source,
 		    ctx->vcl->conf->ref[u].line, ctx->vcl->conf->ref[u].pos);
+}
+
+static void
+vpi_ref_panic(struct vsb *vsb, unsigned n, const struct vcl *vcl)
+{
+	const struct VCL_conf *conf = NULL;
+	const struct vpi_ref *ref;
+	const char *p, *src = NULL;
+	const int lim = 40;
+	const char *abbstr = "[...]";
+	char buf[lim + sizeof(abbstr)];
+	int w = 0;
+
+	AN(vsb);
+
+	if (vcl != NULL)
+		conf = vcl->conf;
+	if (conf != NULL && conf->magic != VCL_CONF_MAGIC)
+		conf = NULL;
+
+	if (conf == NULL) {
+		VSB_printf(vsb, "ref = %u, nref = ?,\n", n);
+		return;
+	}
+	if (n >= conf->nref) {
+		VSB_printf(vsb, "ref = %u *invalid*, nref = %u\n",
+		    n, conf->nref);
+		return;
+	}
+
+	VSB_printf(vsb, "ref = %u,\n", n);
+
+	ref = &conf->ref[n];
+	if (PAN_dump_struct(vsb, ref, VPI_REF_MAGIC, "vpi_ref"))
+		return;
+
+	if (ref->source < conf->nsrc) {
+		VSB_printf(vsb, "source = %u (\"%s\"),\n", ref->source,
+		    conf->srcname[ref->source]);
+		src = conf->srcbody[ref->source];
+	} else {
+		VSB_printf(vsb, "source = %u *invalid*,\n", ref->source);
+	}
+
+	if (src != NULL) {
+		w = strlen(src);
+		if (ref->offset >= w)
+			src = NULL;
+	}
+	if (src != NULL) {
+		src += ref->offset;
+		p = strchr(src, '\n');
+		if (p != NULL)
+			w = p - src;
+		else
+			w -= ref->offset;
+		if (w > lim) {
+			w = snprintf(buf, sizeof buf, "%.*s%s",
+			    lim, src, abbstr);
+			src = buf;
+		}
+	}
+
+	VSB_printf(vsb, "offset = %u,\n", ref->offset);
+	VSB_printf(vsb, "line = %u,\n", ref->line);
+	VSB_printf(vsb, "pos = %u,\n", ref->pos);
+	if (src != NULL) {
+		VSB_cat(vsb, "src = ");
+		VSB_quote(vsb, src, w, VSB_QUOTE_CSTR);
+		VSB_putc(vsb, '\n');
+	} else {
+		VSB_printf(vsb, "token = \"%s\"\n", ref->token);
+	}
+	VSB_indent(vsb, -2);
+	VSB_cat(vsb, "},\n");
+
+}
+void
+VPI_Panic(struct vsb *vsb, const struct wrk_vpi *vpi, const struct vcl *vcl)
+{
+	const char *hand;
+
+	AN(vsb);
+	if (PAN_dump_struct(vsb, vpi, WRK_VPI_MAGIC, "vpi"))
+		return;
+
+	hand = VCL_Return_Name(vpi->handling);
+	if (vpi->handling == 0)
+		hand = "none";
+	else if (hand == NULL)
+		hand = "*invalid*";
+
+	VSB_printf(vsb, "handling (VCL::return) = 0x%x (%s),\n",
+	    vpi->handling, hand);
+
+	vpi_ref_panic(vsb, vpi->ref, vcl);
+
+	VSB_indent(vsb, -2);
+	VSB_cat(vsb, "},\n");
 }
 
 /*
