@@ -10,4 +10,7 @@ Unless noted otherwise, all patches should work when invoked as::
 	       -I include/ -I bin/varnishd/ --dir . --in-place \
 	       --sp-file $COCCI
 
+The ``archive/`` directory contains patches which we used once and
+should not need again, but want to retain for reference.
+
 .. _coccinelle: http://coccinelle.lip6.fr/
