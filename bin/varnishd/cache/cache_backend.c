@@ -509,7 +509,7 @@ vbe_healthy(VRT_CTX, VCL_BACKEND d, VCL_TIME *t)
 	if (t != NULL)
 		*t = bp->changed;
 
-	return (! bp->sick);
+	return (!bp->sick);
 }
 
 

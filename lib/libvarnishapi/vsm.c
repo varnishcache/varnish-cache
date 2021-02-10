@@ -516,7 +516,7 @@ vsm_vlu_plus(struct vsm *vd, struct vsm_set *vs, const char *line)
 		(void)(vsm_diag(vd, "vsm_vlu_plus: bad index (%d/%s)",
 		    ac, av[0]));
 		VAV_Free(av);
-		return(-1);
+		return (-1);
 	}
 
 	vg = vs->vg;
@@ -564,7 +564,7 @@ vsm_vlu_minus(struct vsm *vd, const struct vsm_set *vs, const char *line)
 		(void)(vsm_diag(vd, "vsm_vlu_minus: bad index (%d/%s)",
 		    ac, av[0]));
 		VAV_Free(av);
-		return(-1);
+		return (-1);
 	}
 
 	/* Clustered segments cannot come before their cluster */
@@ -683,7 +683,7 @@ vsm_refresh_set(struct vsm *vd, struct vsm_set *vs)
 		vs->vg = VTAILQ_FIRST(&vs->segs);
 		vs->fd = openat(vs->dfd, "_.index", O_RDONLY);
 		if (vs->fd < 0)
-			return (vs->retval|vs->flag_restarted);
+			return (vs->retval | vs->flag_restarted);
 		VLU_Reset(vs->vlu);
 		AZ(fstat(vs->fd, &vs->fst));
 		vsm_readlines(vs);

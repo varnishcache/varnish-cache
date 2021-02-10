@@ -541,7 +541,7 @@ haproxy_create_mcli(struct haproxy *h)
 	macro_def(h->vl, buf, "addr", "%s", addr);
 	macro_def(h->vl, buf, "port", "%s", port);
 
-	return sock;
+	return (sock);
 }
 
 static void

@@ -115,8 +115,7 @@ tweak_double(struct vsb *vsb, const struct parspec *par, const char *arg)
 	volatile double *dest;
 
 	dest = par->priv;
-	return (tweak_generic_double(vsb, dest, arg,
-	    par->min, par->max, "%g"));
+	return (tweak_generic_double(vsb, dest, arg, par->min, par->max, "%g"));
 }
 
 /*--------------------------------------------------------------------*/

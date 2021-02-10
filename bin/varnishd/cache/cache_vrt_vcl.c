@@ -358,7 +358,7 @@ VRT_VCL_Prevent_Cold(VRT_CTX, const char *desc)
 	VTAILQ_INSERT_TAIL(&ctx->vcl->ref_list, ref, list);
 	Lck_Unlock(&vcl_mtx);
 
-	return(ref);
+	return (ref);
 }
 
 void

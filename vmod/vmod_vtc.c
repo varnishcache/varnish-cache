@@ -208,7 +208,7 @@ vmod_workspace_free(VRT_CTX, VCL_ENUM which)
 
 	ws = vtc_ws_find(ctx, which);
 	if (ws == NULL)
-		return(-1);
+		return (-1);
 	WS_Assert(ws);
 
 	u = WS_ReserveAll(ws);

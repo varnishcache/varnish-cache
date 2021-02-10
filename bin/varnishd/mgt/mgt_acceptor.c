@@ -191,7 +191,7 @@ mac_tcp(void *priv, const struct suckaddr *sa)
 	}
 	ls = mk_listen_sock(la, sa);
 	if (ls == NULL)
-		return(0);
+		return (0);
 	AZ(ls->uds);
 	if (VSA_Port(ls->addr) == 0) {
 		/*
@@ -226,7 +226,7 @@ mac_uds(void *priv, const struct sockaddr_un *uds)
 	}
 	ls = mk_listen_sock(la, bogo_ip);
 	if (ls == NULL)
-		return(0);
+		return (0);
 	AN(ls->uds);
 	VTAILQ_INSERT_TAIL(&la->socks, ls, arglist);
 	VTAILQ_INSERT_TAIL(&heritage.socks, ls, list);

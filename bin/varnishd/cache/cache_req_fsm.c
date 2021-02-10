@@ -171,7 +171,7 @@ Resp_Setup_Deliver(struct req *req)
 	    ObjCheckFlag(req->wrk, oc, OF_GZIPED) &&
 	    !RFC2616_Req_Gzip(req->http))
 		RFC2616_Weaken_Etag(h);
-	return(0);
+	return (0);
 }
 
 void

@@ -921,7 +921,7 @@ mcf_vcl_check_dag(struct cli *cli, struct vclprog *tree, struct vclprog *target)
 			    tree->name, vd->to->name);
 		return (1);
 	}
-	return(0);
+	return (0);
 }
 
 static void v_matchproto_(cli_func_t)

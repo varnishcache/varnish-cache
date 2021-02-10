@@ -258,8 +258,7 @@ BAN_AddTest(struct ban_proto *bp,
 	    ((1U << BAN_OPERIDX(op)) & arg_opervalid[BAN_ARGIDX(pv->tag)]) == 0)
 		return (ban_error(bp,
 		    "expected conditional (%s) got \"%s\"",
-		    arg_operhelp[BAN_ARGIDX(pv->tag)],
-		    a2));
+		    arg_operhelp[BAN_ARGIDX(pv->tag)], a2));
 
 	if ((pv->flag & BANS_FLAG_DURATION) == 0) {
 		assert(! BANS_HAS_ARG2_DOUBLE(pv->tag));

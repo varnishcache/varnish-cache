@@ -156,7 +156,7 @@ vwk_enter(void *priv, struct waited *wp)
 		assert(write(vwk->pipe[1], "X", 1) == 1);
 
 	Lck_Unlock(&vwk->mtx);
-	return(0);
+	return (0);
 }
 
 /*--------------------------------------------------------------------*/

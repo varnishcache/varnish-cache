@@ -232,17 +232,17 @@ vcc_sym_in_tab(struct vcc *tl, struct symtab *st,
 	}
 	pst = st->parent;
 	if (pst == NULL)
-		return(sym);
+		return (sym);
 	psym = VTAILQ_FIRST(&pst->symbols);
 	if (psym == NULL)
-		return(sym);
+		return (sym);
 	if (psym->wildcard == NULL)
-		return(sym);
+		return (sym);
 
 	sym = vcc_new_symbol(tl, st, kind, vlo, vhi);
 	psym->wildcard(tl, psym, sym);
 	if (tl->err)
-		return(NULL);
+		return (NULL);
 	return (sym);
 }
 

@@ -1037,7 +1037,7 @@ VRT_ipcmp(VRT_CTX, VCL_IP sua1, VCL_IP sua2)
 
 	if (sua1 == NULL || sua2 == NULL) {
 		VRT_fail(ctx, "%s: Illegal IP", __func__);
-		return(1);
+		return (1);
 	}
 	return (VSA_Compare_IP(sua1, sua2));
 }

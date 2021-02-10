@@ -335,8 +335,7 @@ vsl_R_arg(struct VSL_data *vsl, const char *arg)
 	strcat(buf, p);
 	vsl->R_opt_p = VNUM_duration(buf);
 	if (isnan(vsl->R_opt_p) || vsl->R_opt_p <= 0.0)
-		return (vsl_diag(vsl,
-			"-R: Syntax error: Invalid duration"));
+		return (vsl_diag(vsl, "-R: Syntax error: Invalid duration"));
 	return (1);
 }
 

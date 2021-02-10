@@ -560,7 +560,7 @@ vfp_gunzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 		if (!VGZ_IbufEmpty(vg) || vp == VFP_END) {
 			vr = VGZ_Gunzip(vg, &dp, &dl);
 			if (vr == VGZ_END && !VGZ_IbufEmpty(vg))
-				return(VFP_Error(vc, "Junk after gzip data"));
+				return (VFP_Error(vc, "Junk after gzip data"));
 			if (vr < VGZ_OK)
 				return (VFP_Error(vc,
 				    "Invalid Gzip data: %s", vgz_msg(vg)));
@@ -573,7 +573,7 @@ vfp_gunzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 		AN(VGZ_IbufEmpty(vg));
 	} while (vp == VFP_OK);
 	if (vr != VGZ_END)
-		return(VFP_Error(vc, "Gunzip error at the very end"));
+		return (VFP_Error(vc, "Gunzip error at the very end"));
 	return (vp);
 }
 
@@ -664,7 +664,7 @@ vfp_testgunzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 			VGZ_Obuf(vg, vg->m_buf, vg->m_sz);
 			vr = VGZ_Gunzip(vg, &dp, &dl);
 			if (vr == VGZ_END && !VGZ_IbufEmpty(vg))
-				return(VFP_Error(vc, "Junk after gzip data"));
+				return (VFP_Error(vc, "Junk after gzip data"));
 			if (vr < VGZ_OK)
 				return (VFP_Error(vc,
 				    "Invalid Gzip data: %s", vgz_msg(vg)));

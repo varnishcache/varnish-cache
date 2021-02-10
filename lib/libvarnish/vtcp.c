@@ -194,8 +194,7 @@ VTCP_filter_http(int sock)
 int
 VTCP_fastopen(int sock, int depth)
 {
-	return (setsockopt(sock, SOL_TCP, TCP_FASTOPEN,
-	    &depth, sizeof depth));
+	return (setsockopt(sock, SOL_TCP, TCP_FASTOPEN, &depth, sizeof depth));
 }
 
 #else

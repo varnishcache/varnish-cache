@@ -283,7 +283,7 @@ child_poker(const struct vev *e, int what)
 			MCH_Cli_Fail();
 	}
 	free(r);
-	return 0;
+	return (0);
 }
 
 /*=====================================================================

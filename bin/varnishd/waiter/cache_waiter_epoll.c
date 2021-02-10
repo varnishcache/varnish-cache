@@ -177,7 +177,7 @@ vwe_enter(void *priv, struct waited *wp)
 	if (Wait_When(wp) < vwe->next)
 		assert(write(vwe->pipe[1], "X", 1) == 1);
 	Lck_Unlock(&vwe->mtx);
-	return(0);
+	return (0);
 }
 
 /*--------------------------------------------------------------------*/

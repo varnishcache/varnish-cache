@@ -576,7 +576,7 @@ Marg_closer(void *priv)
 
 	(void)priv;
 	M_fd = -1;
-	return(0);
+	return (0);
 }
 
 static int v_matchproto_(vev_cb_f)
@@ -651,7 +651,7 @@ marg_cb(void *priv, const struct suckaddr *sa)
 	AN(ma);
 	ma->sa = VSA_Clone(sa);
 	VTAILQ_INSERT_TAIL(&m_addr_list, ma, list);
-	return(0);
+	return (0);
 }
 
 void

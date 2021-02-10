@@ -159,8 +159,8 @@ double
 VRND_RandomTestableDouble(void)
 {
 	return (
-		ldexp((double)VRND_RandomTestable(), -31) +
-		ldexp((double)VRND_RandomTestable(), -62)
+	    ldexp((double)VRND_RandomTestable(), -31) +
+	    ldexp((double)VRND_RandomTestable(), -62)
 	);
 }
 

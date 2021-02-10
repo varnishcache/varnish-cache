@@ -668,7 +668,7 @@ ved_gzgz_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 			if (dl > len)
 				dl = len;
 			if (ved_bytes(foo->ecx, act, pp, dl))
-				return(-1);
+				return (-1);
 			foo->ll += dl;
 			len -= dl;
 			pp += dl;

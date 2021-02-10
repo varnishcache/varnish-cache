@@ -141,8 +141,7 @@ tweak_vsl_mask(struct vsb *vsb, const struct parspec *par, const char *arg)
 			(void)bit(mgt_param.vsl_mask, SLT_ExpKill, BSET);
 		} else {
 			return (bit_tweak(vsb, mgt_param.vsl_mask,
-			    SLT__Reserved, arg, VSL_tags,
-			    "VSL tag", "-"));
+			    SLT__Reserved, arg, VSL_tags, "VSL tag", "-"));
 		}
 	} else {
 		if (arg == JSON_FMT)

@@ -68,19 +68,19 @@ tlv_ssl_flag(VRT_CTX, int flag)
 VCL_BOOL v_matchproto_(td_proxy_is_ssl)
 vmod_is_ssl(VRT_CTX)
 {
-	return tlv_ssl_flag(ctx, PP2_CLIENT_SSL);
+	return (tlv_ssl_flag(ctx, PP2_CLIENT_SSL));
 }
 
 VCL_BOOL v_matchproto_(td_proxy_client_has_cert_sess)
 vmod_client_has_cert_sess(VRT_CTX)
 {
-	return tlv_ssl_flag(ctx, PP2_CLIENT_CERT_SESS);
+	return (tlv_ssl_flag(ctx, PP2_CLIENT_CERT_SESS));
 }
 
 VCL_BOOL v_matchproto_(td_proxy_client_has_cert_conn)
 vmod_client_has_cert_conn(VRT_CTX)
 {
-	return tlv_ssl_flag(ctx, PP2_CLIENT_CERT_CONN);
+	return (tlv_ssl_flag(ctx, PP2_CLIENT_CERT_CONN));
 }
 
 /* return come from SSL_get_verify_result */
@@ -120,41 +120,41 @@ tlv_string(VRT_CTX, int tlv)
 VCL_STRING v_matchproto_(td_proxy_alpn)
 vmod_alpn(VRT_CTX)
 {
-	return tlv_string(ctx, PP2_TYPE_ALPN);
+	return (tlv_string(ctx, PP2_TYPE_ALPN));
 }
 
 VCL_STRING v_matchproto_(td_proxy_authority)
 vmod_authority(VRT_CTX)
 {
-	return tlv_string(ctx, PP2_TYPE_AUTHORITY);
+	return (tlv_string(ctx, PP2_TYPE_AUTHORITY));
 }
 
 VCL_STRING v_matchproto_(td_proxy_ssl_version)
 vmod_ssl_version(VRT_CTX)
 {
-	return tlv_string(ctx, PP2_SUBTYPE_SSL_VERSION);
+	return (tlv_string(ctx, PP2_SUBTYPE_SSL_VERSION));
 }
 
 VCL_STRING v_matchproto_(td_proxy_ssl_cipher)
 vmod_ssl_cipher(VRT_CTX)
 {
-	return tlv_string(ctx, PP2_SUBTYPE_SSL_CIPHER);
+	return (tlv_string(ctx, PP2_SUBTYPE_SSL_CIPHER));
 }
 
 VCL_STRING v_matchproto_(td_proxy_cert_sign)
 vmod_cert_sign(VRT_CTX)
 {
-	return tlv_string(ctx, PP2_SUBTYPE_SSL_SIG_ALG);
+	return (tlv_string(ctx, PP2_SUBTYPE_SSL_SIG_ALG));
 }
 
 VCL_STRING v_matchproto_(td_proxy_cert_key)
 vmod_cert_key(VRT_CTX)
 {
-	return tlv_string(ctx, PP2_SUBTYPE_SSL_KEY_ALG);
+	return (tlv_string(ctx, PP2_SUBTYPE_SSL_KEY_ALG));
 }
 
 VCL_STRING v_matchproto_(td_proxy_client_cert_cn)
 vmod_client_cert_cn(VRT_CTX)
 {
-	return tlv_string(ctx, PP2_SUBTYPE_SSL_CN);
+	return (tlv_string(ctx, PP2_SUBTYPE_SSL_CN));
 }

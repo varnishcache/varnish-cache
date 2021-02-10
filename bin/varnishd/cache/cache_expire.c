@@ -324,7 +324,7 @@ exp_expire(struct exp_priv *ep, vtim_real now)
 
 	oc = VBH_root(ep->heap);
 	if (oc == NULL)
-		return (now + 355./113.);
+		return (now + 355. / 113.);
 	VSLb(&ep->vsl, SLT_ExpKill, "EXP_expire p=%p e=%.6f f=0x%x", oc,
 	    oc->timer_when - now, oc->flags);
 

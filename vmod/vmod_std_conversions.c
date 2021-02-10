@@ -124,16 +124,16 @@ vmod_bytes(VRT_CTX, struct VARGS(bytes) *a)
 	if (a->valid_s &&
 	    VNUM_2bytes(a->s, &r, 0) == NULL &&
 	    r <= VCL_BYTES_MAX)
-		return((VCL_BYTES)r);
+		return ((VCL_BYTES)r);
 
 	if (a->valid_real && !isnan(a->real) && a->real >= 0) {
 		rr = trunc(a->real);
 		if (rr <= (VCL_REAL)VCL_BYTES_MAX)
-			return((VCL_BYTES)rr);
+			return ((VCL_BYTES)rr);
 	}
 
 	if (a->valid_integer && a->integer >= 0)
-		return((VCL_BYTES)a->integer);
+		return ((VCL_BYTES)a->integer);
 
 	if (a->valid_fallback)
 		return (a->fallback);
@@ -325,7 +325,7 @@ vmod_real2integer(VRT_CTX, VCL_REAL r, VCL_INT i)
 		return (i);
 	r = round(r);
 	if (r > VCL_INT_MAX || r < VCL_INT_MIN)
-		return(i);
+		return (i);
 	return ((VCL_INT)r);
 }
 
@@ -349,7 +349,7 @@ vmod_time2integer(VRT_CTX, VCL_TIME t, VCL_INT i)
 		return (i);
 	t = round(t);
 	if (t > VCL_INT_MAX || t < VCL_INT_MIN)
-		return(i);
+		return (i);
 	return ((VCL_INT)t);
 }
 
@@ -363,4 +363,3 @@ vmod_time2real(VRT_CTX, VCL_TIME t, VCL_REAL r)
 
 	return (t);
 }
-
