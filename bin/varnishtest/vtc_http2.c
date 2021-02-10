@@ -1547,8 +1547,8 @@ cmd_tx11obj(CMD_ARGS)
 		else if (CMD_IS("txreq") || CMD_IS("txresp")) {
 			if (AV_IS("-body")) {
 				AZ(body);
-				AN(av[1]);
 				REPLACE(body, av[1]);
+				AN(body);
 				bodylen = strlen(body);
 				f.flags &= ~END_STREAM;
 				av++;
@@ -2580,6 +2580,7 @@ stream_new(const char *name, struct http *h)
 	AN(s);
 	AZ(pthread_cond_init(&s->cond, NULL));
 	REPLACE(s->name, name);
+	AN(s->name);
 	VTAILQ_INIT(&s->fq);
 	s->ws = h->iws;
 	s->vl = vtc_logopen("%s.%s", h->sess->name, name);

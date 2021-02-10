@@ -805,9 +805,9 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
 	for (; *av != NULL; av++) {
 		if (!strcmp(*av, "-body")) {
 			assert(body == nullbody);
-			AN(av[1]);
 			REPLACE(body, av[1]);
 
+			AN(body);
 			av++;
 			bodylen = strlen(body);
 			for (b = body; *b != '\0'; b++) {
