@@ -54,6 +54,7 @@
  * binary/load-time compatible, increment MAJOR version
  *
  * 13.0 (2021-03-15)
+ *	VRT_hashdata() produces different hash-keys.
  *	Move VRT_synth_page() to deprecated status
  *	Add VRT_synth_strands() and VRT_synth_blob()
  *	struct vrt_type now produced by generate.py
