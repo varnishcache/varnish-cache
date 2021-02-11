@@ -579,6 +579,7 @@ pool_herder(void *priv)
 	unsigned wthread_min;
 	uintmax_t dq = (1ULL << 31);
 	vtim_mono dqt = 0;
+	int r = 0;
 
 	CAST_OBJ_NOTNULL(pp, priv, POOL_MAGIC);
 
@@ -680,11 +681,15 @@ pool_herder(void *priv)
 		if (pp->lqueue == 0) {
 			if (DO_DEBUG(DBG_VTC_MODE))
 				delay = 0.5;
-			(void)Lck_CondWait(&pp->herder_cond, &pp->mtx,
-				VTIM_real() + delay);
-		} else if (pp->nthr >= cache_param->wthread_max)
+			r = Lck_CondWait(&pp->herder_cond, &pp->mtx,
+			    VTIM_real() + delay);
+		} else if (pp->nthr >= cache_param->wthread_max) {
 			/* XXX: unsafe counters */
-			VSC_C_main->threads_limited++;
+			if (r != ETIMEDOUT)
+				VSC_C_main->threads_limited++;
+			r = Lck_CondWait(&pp->herder_cond, &pp->mtx,
+			    VTIM_real() + 1.0);
+		}
 		Lck_Unlock(&pp->mtx);
 	}
 	return (NULL);
