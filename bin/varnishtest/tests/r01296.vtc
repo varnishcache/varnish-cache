@@ -19,6 +19,8 @@ varnish v1 -vcl+backend {
 	}
 } -start
 
+varnish v1 -cliok "param.set vsl_mask +Hash"
+
 client c1 {
 	txreq -hdr "foo: 1"
 	rxresp
