@@ -33,6 +33,7 @@
 #include <sys/types.h>
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
 #include <unistd.h>
@@ -109,6 +110,18 @@ vtc_expect(struct vtclog *vl,
 		retval = strcmp(lhs, rhs) == 0;
 	} else if (!strcmp(cmp, "!=")) {
 		retval = strcmp(lhs, rhs) != 0;
+	} else if (!strcmp(cmp, "-lt")) {
+		retval = strtoul(lhs, NULL, 0) < strtoul(rhs, NULL, 0);
+	} else if (!strcmp(cmp, "-le")) {
+		retval = strtoul(lhs, NULL, 0) <= strtoul(rhs, NULL, 0);
+	} else if (!strcmp(cmp, "-eq")) {
+		retval = strtoul(lhs, NULL, 0) == strtoul(rhs, NULL, 0);
+	} else if (!strcmp(cmp, "-ne")) {
+		retval = strtoul(lhs, NULL, 0) != strtoul(rhs, NULL, 0);
+	} else if (!strcmp(cmp, "-ge")) {
+		retval = strtoul(lhs, NULL, 0) >= strtoul(rhs, NULL, 0);
+	} else if (!strcmp(cmp, "-gt")) {
+		retval = strtoul(lhs, NULL, 0) > strtoul(rhs, NULL, 0);
 	} else if (j) {
 		// fail inequality comparisons if either side is undef'ed
 		retval = 0;
