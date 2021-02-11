@@ -16,6 +16,11 @@ client c1 -connect ${s1_sock} {
 	expect resp.proto == HTTP/1.2
 	expect resp.status == 201
 	expect resp.reason == Foo
+	expect resp.status -lt 202
+	expect resp.status -le 201
+	expect resp.status -eq 201
+	expect resp.status -ge 201
+	expect resp.status -gt 0xc8
 }
 
 client c1 -run
