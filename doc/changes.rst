@@ -30,6 +30,15 @@ release process.
 Varnish Cache Next (2021-03-15)
 ================================
 
+* `hash_data()` can be called from `vcl_recv`, in which case
+  `vcl_hash` is not called.  This allows `vcl_recv` and 
+  backends to take the object identity into account, for
+  instance when choosing backend and grace periods.
+
+* `hash_data()` calculates the hash-key differently than previously.
+  This means that persistent storage will be lost, and it may break
+  very specific `*.vtc` test-scripts.
+
 * counters MAIN.s_req_bodybytes and VBE.*.tools.beresp_bodybytes
   are now always the number of bodybytes moved on the wire.
 
