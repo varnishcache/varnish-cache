@@ -420,7 +420,7 @@ vcc_Action_Init(struct vcc *tl)
 	ACT(ban,	vcc_act_ban,	0);
 	ACT(call,	vcc_act_call,	0);
 	ACT(hash_data,	vcc_act_hash_data,
-		VCL_MET_HASH);
+		VCL_MET_RECV | VCL_MET_HASH);
 	ACT(if,		vcc_Act_If,	0);
 	ACT(new,	vcc_Act_New,
 		VCL_MET_INIT);
