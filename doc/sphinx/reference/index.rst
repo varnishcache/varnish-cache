@@ -13,6 +13,14 @@ The VCL language
 	VCL - Varnish Configuration Language <vcl>
 	states.rst
 
+VCL Design Patterns
+-------------------
+
+.. toctree::
+	:maxdepth: 1
+
+	dp_vcl_recv_hash.rst
+
 Bundled VMODs
 -------------
 

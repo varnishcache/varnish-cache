@@ -29,3 +29,39 @@ client c1 {
 	expect resp.status == 200
 	expect resp.http.same == One
 } -run
+
+server s1 {
+	rxreq
+	txresp -hdr "Second: One"
+} -start
+
+varnish v1 -vcl+backend {
+    sub make_hash_key {
+        hash_data("Documented Design Pattern");
+        hash_data(req.url);
+    }
+    
+    sub vcl_hash {
+        call make_hash_key;
+        return (lookup);
+    }
+ 
+    sub vcl_recv {
+        if (req.http.early) {
+            call make_hash_key;
+        }
+    }
+}
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.second == One
+
+	txreq -hdr "early: yes"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.second == One
+} -run
+
