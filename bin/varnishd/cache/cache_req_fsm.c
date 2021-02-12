@@ -76,6 +76,14 @@
 REQ_STEPS
 #undef REQ_STEP
 
+/*
+ * In this specific context we use SHA256 only as a very good
+ * hashing function.  That renders most of the normal concerns
+ * about salting & seeding moot.  However, if for some reason
+ * you want to salt your hashes, this is where you do it.
+ */
+static const uint8_t initial_digest[DIGEST_LEN];
+
 /*--------------------------------------------------------------------
  * Handle "Expect:" and "Connection:" on incoming request
  */
@@ -914,6 +922,8 @@ cnt_recv(struct worker *wrk, struct req *req)
 		return (REQ_FSM_DONE);
 	}
 
+	memcpy(req->digest, initial_digest, sizeof req->digest);
+
 	VCL_recv_method(req->vcl, wrk, req, NULL, NULL);
 
 	if (wrk->handling == VCL_RET_FAIL) {
@@ -955,12 +965,13 @@ cnt_recv(struct worker *wrk, struct req *req)
 		}
 	}
 
-	memset(req->digest, 0, sizeof req->digest);
-	VCL_hash_method(req->vcl, wrk, req, NULL, NULL);
-	if (wrk->handling == VCL_RET_FAIL)
-		recv_handling = wrk->handling;
-	else
-		assert(wrk->handling == VCL_RET_LOOKUP);
+	if (!memcmp(req->digest, initial_digest, sizeof req->digest)) {
+		VCL_hash_method(req->vcl, wrk, req, NULL, NULL);
+		if (wrk->handling == VCL_RET_FAIL)
+			recv_handling = wrk->handling;
+		else
+			assert(wrk->handling == VCL_RET_LOOKUP);
+	}
 
 	switch (recv_handling) {
 	case VCL_RET_VCL:
