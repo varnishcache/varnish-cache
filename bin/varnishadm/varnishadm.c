@@ -75,6 +75,7 @@
 
 
 static const double timeout = 5;	// XXX should be settable by arg ?
+static int p_arg = 0;
 
 static void
 cli_write(int sock, const char *s)
@@ -254,7 +255,10 @@ pass_answer(int fd)
 		RL_EXIT(1);
 	}
 
-	printf("%u\n", status);
+	if (p_arg)
+		printf("%-3u %-8zu\n", status, strlen(answer));
+	else
+		printf("%u\n", status);
 	if (answer) {
 		printf("%s\n", answer);
 		free(answer);
@@ -441,13 +445,16 @@ main(int argc, char * const *argv)
 	 * The '+' stops that from happening
 	 * See #1496
 	 */
-	while ((opt = getopt(argc, argv, "+hn:S:T:t:")) != -1) {
+	while ((opt = getopt(argc, argv, "+hn:pS:T:t:")) != -1) {
 		switch (opt) {
 		case 'h':
 			/* Usage help */
 			usage(0);
 		case 'n':
 			n_arg = optarg;
+			break;
+		case 'p':
+			p_arg = 1;
 			break;
 		case 'S':
 			S_arg = optarg;
@@ -485,7 +492,7 @@ main(int argc, char * const *argv)
 		NEEDLESS(exit(0));
 	}
 
-	if (isatty(0))
+	if (isatty(0) && !p_arg)
 		interactive(sock);
 	else
 		pass(sock);

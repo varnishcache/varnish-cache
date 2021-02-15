@@ -38,6 +38,11 @@ OPTIONS
 -h
     Print program usage and exit.
 
+-p
+    Force `pass` mode and make the output follow the VCLI protocol.
+    This disables command-history/command-completion and makes it
+    easier for programs to parse the response(s).
+
 -n ident
     Connect to the instance of `varnishd` with this name.
 
