@@ -14,7 +14,7 @@ client c1 {
 
 varnish v1 -vsl_catchup
 
-process p1 -log {cat | varnishadm -p -n ${v1_name}} -start
+process p1 -log {varnishadm -p -n ${v1_name}} -start
 
 process p1 -write "ping\r"
 
