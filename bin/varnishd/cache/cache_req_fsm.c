@@ -543,6 +543,9 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	if (req->hash_objhead)
 		had_objhead = 1;
 	lr = HSH_Lookup(req, &oc, &busy);
+	if (wrk->strangelove >= 10)
+		VSLb(req->vsl, SLT_Notice, "vsl: High number of variants (%d)",
+		    wrk->strangelove);
 	if (lr == HSH_BUSY) {
 		/*
 		 * We lost the session to a busy object, disembark the

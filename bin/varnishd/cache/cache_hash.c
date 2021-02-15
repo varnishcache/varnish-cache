@@ -397,6 +397,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 	busy_found = 0;
 	exp_oc = NULL;
 	exp_t_origin = 0.0;
+	wrk->strangelove = 0;
 	VTAILQ_FOREACH(oc, &oh->objcs, hsh_list) {
 		/* Must be at least our own ref + the objcore we examine */
 		assert(oh->refcnt > 1);
@@ -415,8 +416,10 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 				continue;
 
 			if (oc->boc && oc->boc->vary != NULL &&
-			    !VRY_Match(req, oc->boc->vary))
+			    !VRY_Match(req, oc->boc->vary)) {
+				wrk->strangelove++;
 				continue;
+			}
 
 			busy_found = 1;
 			continue;
@@ -434,8 +437,10 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 		if (ObjHasAttr(wrk, oc, OA_VARY)) {
 			vary = ObjGetAttr(wrk, oc, OA_VARY, NULL);
 			AN(vary);
-			if (!VRY_Match(req, vary))
+			if (!VRY_Match(req, vary)) {
+				wrk->strangelove++;
 				continue;
+			}
 		}
 
 		if (req->vcf != NULL) {
