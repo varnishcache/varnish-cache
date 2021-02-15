@@ -945,6 +945,18 @@ PARAM_SIMPLE(
 )
 
 PARAM_SIMPLE(
+	/* name */	vary_notice,
+	/* type */	uint,
+	/* min */	"1",
+	/* max */	NULL,
+	/* def */	"10",
+	/* units */	"variants",
+	/* descr */
+	"How many variants need to be evaluated to log a Notice that there "
+	"might be too many variants."
+)
+
+PARAM_SIMPLE(
 	/* name */	vcl_cooldown,
 	/* type */	timeout,
 	/* min */	"1.000",
