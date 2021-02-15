@@ -134,6 +134,19 @@ it. The fetch is halted until the stale object is fully fetched, upon which
 the new object is created as normal. While waiting, any grace time on the
 stale object will be in effect.
 
+High number of variants
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Objects are primarily looked up from an index using the hash key computed from
+the ``hash_data()`` VCL function. When variants are involved, that is to say
+when a backend response was stored with a ``Vary`` header, a secondary lookup
+is performed but it is not indexed. As the number of variants for a given key
+increases, this can slow cache lookups down, and since this happens under a
+lock, this can greatly increase lock contention, even more so for frequently
+requested objects. Variants should therefore be used sparingly on cacheable
+responses, but since they can originate from either VCL or origin servers,
+this notice should help identify problematic resources.
+
 
 HISTORY
 =======

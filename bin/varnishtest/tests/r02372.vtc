@@ -13,10 +13,16 @@ varnish v1 -arg "-p workspace_thread=512" -vcl+backend {
 	}
 } -start
 
+logexpect l1 -v v1 {
+	expect * * Notice "High number of variants .71."
+} -start
+
 client c1 -repeat 72 -keepalive {
 	txreq
 	rxresp
 } -run
+
+logexpect l1 -wait
 
 client c2 {
 	txreq -req "PURGE"
