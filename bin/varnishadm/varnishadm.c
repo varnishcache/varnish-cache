@@ -156,12 +156,42 @@ cli_sock(const char *T_arg, const char *S_arg)
 	return (sock);
 }
 
+static unsigned
+pass_answer(int fd)
+{
+	unsigned u, status;
+	char *answer = NULL;
+
+	u = VCLI_ReadResult(fd, &status, &answer, timeout);
+	if (u) {
+		if (status == CLIS_COMMS)
+			RL_EXIT(0);
+		if (answer)
+			fprintf(stderr, "%s\n", answer);
+		RL_EXIT(1);
+	}
+
+	if (p_arg && answer != NULL) {
+		printf("%-3u %-8zu\n%s", status, strlen(answer), answer);
+	} else if (p_arg) {
+		printf("%-3u %-8u\n", status, 0U);
+	} else {
+		printf("%u\n", status);
+		if (answer != NULL)
+			printf("%s\n", answer);
+		if (status == CLIS_TRUNCATED)
+			printf("[response was truncated]\n");
+	}
+	free(answer);
+	(void)fflush(stdout);
+	return (status);
+}
+
 static void v_noreturn_
 do_args(int sock, int argc, char * const *argv)
 {
 	int i;
 	unsigned status;
-	char *answer = NULL;
 
 	for (i = 0; i < argc; i++) {
 		/* XXX: We should really CLI-quote these */
@@ -170,20 +200,12 @@ do_args(int sock, int argc, char * const *argv)
 		cli_write(sock, argv[i]);
 	}
 	cli_write(sock, "\n");
-
-	(void)VCLI_ReadResult(sock, &status, &answer, 2000);
-
-	/* XXX: AZ() ? */
-	(void)close(sock);
-
-	printf("%s\n", answer);
-	if (status == CLIS_OK)
+	status = pass_answer(sock);
+	closefd(&sock);
+	if (status == CLIS_OK || status == CLIS_TRUNCATED)
 		exit(0);
-	if (status == CLIS_TRUNCATED) {
-		printf("[response was truncated]\n");
-		exit(0);
-	}
-	fprintf(stderr, "Command failed with error code %u\n", status);
+	if (!p_arg)
+		fprintf(stderr, "Command failed with error code %u\n", status);
 	exit(1);
 }
 
@@ -240,33 +262,6 @@ varnishadm_completion (const char *text, int start, int end)
 	return (matches);
 }
 
-static void
-pass_answer(int fd)
-{
-	unsigned u, status;
-	char *answer = NULL;
-
-	u = VCLI_ReadResult(fd, &status, &answer, timeout);
-	if (u) {
-		if (status == CLIS_COMMS)
-			RL_EXIT(0);
-		if (answer)
-			fprintf(stderr, "%s\n", answer);
-		RL_EXIT(1);
-	}
-
-	if (p_arg)
-		printf("%-3u %-8zu\n", status, strlen(answer));
-	else
-		printf("%u\n", status);
-	if (answer) {
-		printf("%s\n", answer);
-		free(answer);
-	}
-	if (status == CLIS_TRUNCATED)
-		printf("[response was truncated]\n");
-	(void)fflush(stdout);
-}
 
 /*
  * No arguments given, simply pass bytes on stdin/stdout and CLI socket
@@ -327,7 +322,7 @@ interactive(int sock)
 		if (fds[0].revents & POLLIN) {
 			/* Get rid of the prompt, kinda hackish */
 			printf("\r           \r");
-			pass_answer(fds[0].fd);
+			(void)pass_answer(fds[0].fd);
 			rl_forced_update_display();
 		}
 		if (fds[1].revents & POLLIN) {
@@ -358,7 +353,7 @@ pass(int sock)
 		}
 		assert(i > 0);
 		if (fds[0].revents & POLLIN)
-			pass_answer(fds[0].fd);
+			(void)pass_answer(fds[0].fd);
 		if (fds[1].revents & POLLIN || fds[1].revents & POLLHUP) {
 			n = read(fds[1].fd, buf, sizeof buf - 1);
 			if (n == 0) {
