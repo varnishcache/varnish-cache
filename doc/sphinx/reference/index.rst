@@ -42,7 +42,7 @@ The CLI interface
 	:maxdepth: 1
 
 	VarnishAdm - Control program for Varnish <varnishadm>
-	VCLI - The commands varnish understands <varnish-cli>
+	CLI - The commands varnish understands <varnish-cli>
 
 Logging and monitoring
 ----------------------
@@ -93,6 +93,7 @@ For Developers
 	VMODS - Extensions to VCL <vmod>
 	VSM - Shared memory use <vsm>
 	VDIR - Backends & Directors <directors>
+	VCLI - CLI protocol API <cli_protocol>
 
 .. Vmod_debug ?
 
