@@ -902,7 +902,7 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 /*--------------------------------------------------------------------
  * SYNTAX:
  *    ExprMul:
- *      Expr4 { {'*'|'/'} Expr4 } *
+ *      Expr4 { {'*'|'/'|'%'} Expr4 } *
  */
 
 static void
