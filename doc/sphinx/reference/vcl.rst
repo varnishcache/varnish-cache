@@ -214,157 +214,10 @@ Example::
         */
     }
 
-.. _backend_definition:
+Backends and health probes
+--------------------------
 
-Backend definition
-------------------
-
-A backend declaration creates and initialises a named backend object. A
-declaration start with the keyword ``backend`` followed by the name of the
-backend. The actual declaration is in curly brackets, in a key/value fashion.::
-
-    backend name {
-        .attribute = "value";
-    }
-
-One of the attributes ``.host`` or ``.path`` is mandatory (but not
-both). The attributes will inherit their defaults from the global
-parameters. The following attributes are available:
-
-  ``.host``
-    The host to be used. IP address or a hostname that resolves to a
-    single IP address. This attribute is mandatory, unless ``.path``
-    is declared.
-
-  ``.path``	(``VCL >= 4.1``)
-
-    The absolute path of a Unix domain socket at which a backend is
-    listening. If the file at that path does not exist or is not
-    accessible to Varnish at VCL load time, then the VCL compiler
-    issues a warning, but does not fail. This makes it possible to
-    start the UDS-listening peer, or set the socket file's
-    permissions, after starting Varnish or loading VCL with a UDS
-    backend.  But the socket file must exist and have necessary
-    permissions before the first connection is attempted, otherwise
-    fetches will fail. If the file does exist and is accessible, then
-    it must be a socket; otherwise the VCL load fails. One of
-    ``.path`` or ``.host`` must be declared (but not both). ``.path``
-    may only be used in VCL since version 4.1.
-
-  ``.port``
-    The port on the backend that Varnish should connect to. Ignored if
-    a Unix domain socket is declared in ``.path``.
-
-  ``.host_header``
-    A host header to add to probes and regular backend requests if they have no
-    such header.
-
-  ``.connect_timeout``
-    Timeout for connections.
-
-    Default: ``connect_timeout`` parameter, see :ref:`varnishd(1)`
-
-  ``.first_byte_timeout``
-    Timeout for first byte.
-
-    Default: ``first_byte_timeout`` parameter, see :ref:`varnishd(1)`
-
-  ``.between_bytes_timeout``
-    Timeout between bytes.
-
-    Default: ``between_bytes_timeout`` parameter, see :ref:`varnishd(1)`
-
-  ``.probe``
-    Attach a probe to the backend. See `Probes`_
-
-  ``.proxy_header``
-    The PROXY protocol version Varnish should use when connecting to
-    this backend. Allowed values are ``1`` and ``2``.
-
-    *Notice* this setting will lead to backend connections being used
-    for a single request only (subject to future improvements). Thus,
-    extra care should be taken to avoid running into failing backend
-    connections with EADDRNOTAVAIL due to no local ports being
-    available. Possible options are:
-
-    * Use additional backend connections to extra IP addresses or TCP
-      ports
-
-    * Increase the number of available ports (Linux sysctl
-      ``net.ipv4.ip_local_port_range``)
-
-    * Reuse backend connection ports early (Linux sysctl
-      ``net.ipv4.tcp_tw_reuse``)
-
-  ``.max_connections``
-    Maximum number of open connections towards this backend. If
-    Varnish reaches the maximum Varnish it will start failing
-    connections.
-
-Empty backends can also be defined using the following syntax.::
-
-  backend name none;
-
-An empty backend will always return status code 503 as if it is sick.
-
-Backends can be used with *directors*. Please see the
-:ref:`vmod_directors(3)` man page for more information.
-
-.. _reference-vcl_probes:
-
-Probes
-------
-
-Probes will query the backend for status on a regular basis and mark
-the backend as down it they fail. A probe is defined as this::
-
-    probe name {
-        .attribute = "value";
-    }
-
-The probe named ``default`` is special and will be used for all backends
-which do not explicitly reference a probe.
-
-There are no mandatory options. These are the options you can set:
-
-  ``.url``
-    The URL to query. Defaults to ``/``.
-    Mutually exclusive with ``.request``
-
-  ``.request``
-    Specify a full HTTP request using multiple strings. ``.request`` will
-    have ``\r\n`` automatically inserted after every string.
-    Mutually exclusive with ``.url``.
-
-    *Note* that probes require the backend to complete sending the
-    response and close the connection within the specified timeout, so
-    ``.request`` will, for ``HTTP/1.1``, most likely need to contain a
-    ``"Connection: close"`` string.
-
-  ``.expected_response``
-    The expected HTTP response code. Defaults to ``200``.
-
-  ``.timeout``
-    The timeout for the probe. Default is ``2s``.
-
-  ``.interval``
-    How often the probe is run. Default is ``5s``.
-
-  ``.initial``
-    How many of the polls in ``.window`` are considered good when Varnish
-    starts. Defaults to the value of ``.threshold`` - 1. In this case, the
-    backend starts as sick and requires one single poll to be
-    considered healthy.
-
-  ``.window``
-    How many of the latest polls we examine to determine backend health.
-    Defaults to ``8``.
-
-  ``.threshold``
-    How many of the polls in ``.window`` must have succeeded to
-    consider the backend to be healthy.
-    Defaults to ``3``.
-
+Please see :ref:`vcl-backend(7)` and :ref:`vcl-probe(7)`
 
 Access Control List (ACL)
 -------------------------
@@ -542,6 +395,8 @@ SEE ALSO
 ========
 
 * :ref:`varnishd(1)`
+* :ref:`vcl-backend(7)`
+* :ref:`vcl-probe(7)`
 * :ref:`vmod_directors(3)`
 * :ref:`vmod_std(3)`
 

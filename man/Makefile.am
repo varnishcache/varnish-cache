@@ -4,6 +4,8 @@ dist_man_MANS = \
 	varnish-cli.7 \
 	varnish-counters.7 \
 	vcl.7 \
+	vcl-backend.7 \
+	vcl-probe.7 \
 	vsl.7 \
 	vsl-query.7 \
 	varnishadm.1 \
@@ -47,6 +49,12 @@ vcl.7: $(top_builddir)/doc/sphinx/reference/vcl.rst \
 	$(top_builddir)/doc/sphinx/reference/vcl_var.rst \
 	$(top_srcdir)/bin/varnishd/builtin.vcl
 	$(BUILD_MAN) $(top_builddir)/doc/sphinx/reference/vcl.rst $@
+
+vcl-backend.7: $(top_builddir)/doc/sphinx/reference/vcl-backend.rst
+	$(BUILD_MAN) $(top_builddir)/doc/sphinx/reference/vcl-backend.rst $@
+
+vcl-probe.7: $(top_builddir)/doc/sphinx/reference/vcl-probe.rst
+	$(BUILD_MAN) $(top_builddir)/doc/sphinx/reference/vcl-probe.rst $@
 
 vsl.7: $(top_builddir)/doc/sphinx/reference/vsl.rst \
 	$(top_builddir)/doc/sphinx/include/vsl-tags.rst

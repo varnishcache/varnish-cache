@@ -10,7 +10,9 @@ The VCL language
 .. toctree::
 	:maxdepth: 1
 
-	VCL - Varnish Configuration Language <vcl>
+	VCL - The Varnish Configuration Language <vcl>
+	VCL backend configuration <vcl-backend>
+	VCL backend health probe <vcl-probe>
 	states.rst
 
 VCL Design Patterns
