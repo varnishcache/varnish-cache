@@ -123,6 +123,7 @@ varnish v1 -vcl+backend {
 	    }
 	    set resp.status = 22302;
 	    set resp.reason = "Wrong Postcode";
+	    set resp.http.residual = resp.status % 10000;
 	    return (deliver);
 	}
 } -start
@@ -159,6 +160,7 @@ client c1 {
 	txreq -url "/synth"
 	rxresp
 	expect resp.status == 302
+	expect resp.http.residual == 2302
 	expect resp.reason == "Wrong Postcode"
 } -run
 

@@ -56,6 +56,13 @@ varnish v1 -errvcl {BOOL + BOOL not possible.} {
 	}
 }
 
+varnish v1 -errvcl {Operator % only possible on INT} {
+	sub vcl_recv {
+		if (req.ttl % 1000) {
+		}
+	}
+}
+
 varnish v1 -vcl {
 	backend b { .host = "${localhost}"; }
 	sub vcl_recv {

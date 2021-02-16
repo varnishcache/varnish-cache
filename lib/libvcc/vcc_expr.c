@@ -911,13 +911,20 @@ vcc_expr_mul(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	struct expr *e2;
 	vcc_type_t f2;
 	struct token *tk;
+	char buf[24];
 
 	*e = NULL;
 	vcc_expr4(tl, e, fmt);
 	ERRCHK(tl);
 	AN(*e);
 
-	while (tl->t->tok == '*' || tl->t->tok == '/') {
+	while (tl->t->tok == '*' || tl->t->tok == '/' || tl->t->tok == '%') {
+		if (tl->t->tok == '%' && ((*e)->fmt != INT)) {
+			VSB_printf(tl->sb,
+			    "Operator %% only possible on INT.\n");
+			vcc_ErrWhere(tl, tl->t);
+			return;
+		}
 		f2 = (*e)->fmt->multype;
 		if (f2 == NULL) {
 			VSB_printf(tl->sb,
@@ -936,10 +943,8 @@ vcc_expr_mul(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 			vcc_ErrWhere(tl, tk);
 			return;
 		}
-		if (tk->tok == '*')
-			*e = vcc_expr_edit(tl, (*e)->fmt, "(\v1*\v2)", *e, e2);
-		else
-			*e = vcc_expr_edit(tl, (*e)->fmt, "(\v1/\v2)", *e, e2);
+		bprintf(buf, "(\v1%c\v2)", tk->tok);
+		*e = vcc_expr_edit(tl, (*e)->fmt, buf, *e, e2);
 	}
 }
 
