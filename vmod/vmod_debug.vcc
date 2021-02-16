@@ -340,3 +340,9 @@ To test *WRONG* behavior
 $Function SUB total_recall()
 
 To test *WRONG* behavior
+
+$Object caller(SUB)
+
+$Method VOID .call()
+
+$Method SUB .xsub()

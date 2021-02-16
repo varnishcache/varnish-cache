@@ -50,8 +50,8 @@ vcc_act_call(struct vcc *tl, struct token *t, struct symbol *sym)
 	(void)t;
 	ExpectErr(tl, ID);
 	t0 = tl->t;
-	sym = VCC_SymbolGet(tl, SYM_MAIN, SYM_NONE, SYMTAB_NOERR, XREF_REF);
-
+	sym = VCC_SymbolGet(tl, SYM_MAIN, SYM_NONE, SYMTAB_PARTIAL_NOERR,
+	    XREF_REF);
 	if (sym == NULL)
 		sym = VCC_SymbolGet(tl, SYM_MAIN, SYM_SUB, SYMTAB_CREATE,
 		    XREF_REF);

@@ -1331,3 +1331,62 @@ xyzzy_total_recall(VRT_CTX)
 
 	return (wrong);
 }
+
+/*---------------------------------------------------------------------*/
+
+struct VPFX(debug_caller) {
+       unsigned        magic;
+#define DEBUG_CALLER_MAGIC 0xb47f3449
+       VCL_SUB         sub;
+};
+
+VCL_VOID v_matchproto_(td_xyzzy_debug_caller__init)
+xyzzy_caller__init(VRT_CTX, struct VPFX(debug_caller) **callerp,
+    const char *name, VCL_SUB sub)
+{
+	struct VPFX(debug_caller) *caller;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(callerp);
+	AZ(*callerp);
+	AN(name);
+	AN(sub);
+
+	ALLOC_OBJ(caller, DEBUG_CALLER_MAGIC);
+	AN(caller);
+	*callerp = caller;
+	caller->sub = sub;
+}
+
+VCL_VOID v_matchproto_(td_xyzzy_debug_caller__fini)
+xyzzy_caller__fini(struct VPFX(debug_caller) **callerp)
+{
+	struct VPFX(debug_caller) *caller;
+
+	if (callerp == NULL || *callerp == NULL)
+		return;
+	CHECK_OBJ(*callerp, DEBUG_CALLER_MAGIC);
+	caller = *callerp;
+	*callerp = NULL;
+	FREE_OBJ(caller);
+}
+
+VCL_VOID v_matchproto_(td_xyzzy_debug_caller_call)
+xyzzy_caller_call(VRT_CTX, struct VPFX(debug_caller) *caller)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(caller, DEBUG_CALLER_MAGIC);
+	AN(caller->sub);
+
+	VRT_call(ctx, caller->sub);
+}
+
+VCL_SUB v_matchproto_(td_xyzzy_debug_caller_sub)
+xyzzy_caller_xsub(VRT_CTX, struct VPFX(debug_caller) *caller)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(caller, DEBUG_CALLER_MAGIC);
+	AN(caller->sub);
+
+	return (caller->sub);
+}

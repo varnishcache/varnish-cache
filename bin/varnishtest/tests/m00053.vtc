@@ -192,3 +192,46 @@ logexpect l3 -wait
 client c4 -wait
 client c5 -wait
 client c6 -wait
+
+varnish v1 -vcl {
+	import debug;
+	backend b None;
+
+	sub foo {
+		set resp.http.Foo = "Called";
+	}
+
+	sub vcl_init {
+		new c = debug.caller(foo);
+	}
+
+	sub vcl_recv {
+		return (synth(200));
+	}
+
+	sub vcl_synth {
+		if (req.url == "/call") {
+			call c.xsub();
+		} else {
+			c.call();
+		}
+		return (deliver);
+	}
+}
+
+client c1 {
+	txreq -url "/call"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.Foo == "Called"
+} -start
+
+client c2 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.Foo == "Called"
+} -start
+
+client c1 -wait
+client c2 -wait
