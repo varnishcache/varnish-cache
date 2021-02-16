@@ -1,37 +1,5 @@
 .. _vcl_variables:
 
-VCL Variables
--------------
-
-Variables provide read, write and delete access to almost all aspects
-of the work at hand.
-
-Reading a variable is done simply by using its name in VCL::
-
-    if (client.ip ~ bad_guys) {
-	return (synth(400));
-    }
-
-Writing a variable, where this is possible, is done with a ``set``
-statement::
-
-    set resp.http.never = "Let You Down";
-
-Similarly, deleting a variable, for the few variables where this is
-possible, is done with a ``unset`` statement::
-
-    unset req.http.cookie;
-
-Which operations are possible on each variable is described below,
-often with the shorthand "backend" which covers the ``vcl_backend_* {}``
-subroutines and "client" which covers the rest, except ``vcl_init {}``
-and ``vcl_fini {}``.
-
-When setting a variable, the right hand side of the equal sign
-must have the variables type, you cannot assign a STRING to
-a variable of type NUMBER, even if the string is ``"42"``.
-(Explicit conversion functions can be found in
-:ref:`vmod_std(3)`).
 
 local, server, remote and client
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1403,29 +1371,3 @@ storage.<name>.happy
 	Health status for the named stevedore. Not available in any of the
 	current stevedores.
 
-HTTP response status
---------------------
-
-A status code normally has 3 digits XYZ where X must be between 1 and 5
-included. Since it is not uncommon to see HTTP clients or servers relying
-on non-standard or even invalid status codes Varnish tolerates any status
-between 100 and 999.
-
-With VCL code it is possible to use status codes in the form XXYZZ where the
-overall value is lower than 65536 and the Y digit is between 1 and 9 included.
-Only the YZZ part is sent to the client.
-
-The XXYZZ form of status codes can be set on ``resp.status`` and
-``beresp.status`` or passed via ``return(synth(...))`` and
-``return(error(...))`` transitions.
-
-XX can be therefore be used to pass information around inside VCL, for
-instance ``return(synth(22404))`` from ``vcl_recv{}`` to ``vcl_synth{}``.
-
-The ``obj.status`` variable will inherit the XXYZZ form, but in a ban
-expresion only the YZZ part will be available. The XXYZZ form is strictly
-limited to VCL execution.
-
-Assigning an HTTP standardized code to ``resp.status`` or ``beresp.status``
-will also set ``resp.reason`` or ``beresp.reason``  to the corresponding
-status message.

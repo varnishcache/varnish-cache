@@ -6,6 +6,7 @@ dist_man_MANS = \
 	vcl.7 \
 	vcl-backend.7 \
 	vcl-probe.7 \
+	vcl-var.7 \
 	vsl.7 \
 	vsl-query.7 \
 	varnishadm.1 \
@@ -55,6 +56,9 @@ vcl-backend.7: $(top_builddir)/doc/sphinx/reference/vcl-backend.rst
 
 vcl-probe.7: $(top_builddir)/doc/sphinx/reference/vcl-probe.rst
 	$(BUILD_MAN) $(top_builddir)/doc/sphinx/reference/vcl-probe.rst $@
+
+vcl-var.7: $(top_builddir)/doc/sphinx/reference/vcl-var.rst
+	$(BUILD_MAN) $(top_builddir)/doc/sphinx/reference/vcl-var.rst $@
 
 vsl.7: $(top_builddir)/doc/sphinx/reference/vsl.rst \
 	$(top_builddir)/doc/sphinx/include/vsl-tags.rst

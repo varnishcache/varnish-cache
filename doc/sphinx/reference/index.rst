@@ -11,6 +11,7 @@ The VCL language
 	:maxdepth: 1
 
 	VCL - The Varnish Configuration Language <vcl>
+	VCL Variables <vcl-var>
 	VCL backend configuration <vcl-backend>
 	VCL backend health probe <vcl-probe>
 	states.rst

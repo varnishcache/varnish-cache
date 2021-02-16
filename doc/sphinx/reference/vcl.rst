@@ -40,10 +40,16 @@ The following operators are available in VCL:
   ``=``
     Assignment operator.
 
+  ``+``, ``-``, ``*``, ``/``, ``%``
+    Basic math on numerical values.
+
   ``+=``, ``-=``, ``*=``, ``/=``
     Assign and increment/decrement/multiply/divide operator.
 
     For strings, ``+=`` appends.
+
+  ``(``, ``)``
+    Evaluate separately.
 
   ``==``, ``!=``, ``<``, ``>``, ``<=``, ``>=``
     Comparisons
@@ -67,16 +73,34 @@ implemented with the ``elseif`` statement (``elsif``\ /\ ``elif``\ /\
 
 Note that there are no loops or iterators of any kind in VCL.
 
+Variables
+---------
 
-Strings, booleans, time, duration, integers and real numbers
-------------------------------------------------------------
+VCL does most of the work by examining, ``set``'ing and ``unset``'ing
+variables::
 
-These are the data types in Varnish. You can ``set`` or ``unset`` these.
+    if (req.url == "/mistyped_url.html") {
+        set req.url = "/correct_url.html";
+        unset req.http.cookie;
+    }
 
-Example::
+There are obvious limitations to what can be done, for instance it
+makes no sense to ``unset req.url;`` - a request must have some kind
+of URL to be valid, and likewise trying to manipulate a backend reponse
+when there is none (yet) makes no sense.
+The VCL compiler will detect such errors.
 
-  set req.http.User-Agent = "unknown";
-  unset req.http.Range;
+Variables have types.  Most of them a STRINGS, and anything in
+VCL can be turned into a STRING, but some variables have types like
+``DURATION``, ``IP`` etc.
+
+When setting a such variables, the right hand side of the equal
+sign must have the correct variables type, you cannot assign a
+STRING to a variable of type NUMBER, even if the string is ``"42"``.
+
+Explicit conversion functions are available in :ref:`vmod_std(3)`.
+
+For the complete album of VCL variables see: :ref:`vcl-var(7)`.
 
 
 Strings
@@ -306,11 +330,6 @@ they are concatenated in the order in which they appear in the source.
 
 The built-in VCL distributed with Varnish will be implicitly concatenated
 when the VCL is compiled.
-
-
-
-.. include:: vcl_var.rst
-
 
 Functions
 ---------
