@@ -397,7 +397,6 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 	busy_found = 0;
 	exp_oc = NULL;
 	exp_t_origin = 0.0;
-	wrk->strangelove = 0;
 	VTAILQ_FOREACH(oc, &oh->objcs, hsh_list) {
 		/* Must be at least our own ref + the objcore we examine */
 		assert(oh->refcnt > 1);

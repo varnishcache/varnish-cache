@@ -542,8 +542,10 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	AZ(req->objcore);
 	if (req->hash_objhead)
 		had_objhead = 1;
+	wrk->strangelove = 0;
 	lr = HSH_Lookup(req, &oc, &busy);
-	if (wrk->strangelove >= cache_param->vary_notice)
+	assert(wrk->strangelove >= 0);
+	if ((unsigned)wrk->strangelove >= cache_param->vary_notice)
 		VSLb(req->vsl, SLT_Notice, "vsl: High number of variants (%d)",
 		    wrk->strangelove);
 	if (lr == HSH_BUSY) {
