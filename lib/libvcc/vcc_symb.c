@@ -250,11 +250,26 @@ vcc_sym_in_tab(struct vcc *tl, struct symtab *st,
 const struct symxref XREF_NONE[1] = {{"xref_none"}};
 const struct symxref XREF_DEF[1] = {{"xref_def"}};
 const struct symxref XREF_REF[1] = {{"xref_ref"}};
-const struct symmode SYMTAB_NOERR[1] = {{"sym_noerror"}};
-const struct symmode SYMTAB_CREATE[1] = {{"sym_create"}};
-const struct symmode SYMTAB_EXISTING[1] = {{"Symbol not found"}};
-const struct symmode SYMTAB_PARTIAL[1] = {{"Symbol not found"}};
-const struct symmode SYMTAB_PARTIAL_NOERR[1] = {{"Symbol not found"}};
+
+const struct symmode SYMTAB_NOERR[1] = {{
+		.name = "sym_noerror",
+		.noerr = 1
+	}};
+const struct symmode SYMTAB_CREATE[1] = {{
+		.name = "sym_create"
+	}};
+const struct symmode SYMTAB_EXISTING[1] = {{
+		.name = "Symbol not found"
+	}};
+const struct symmode SYMTAB_PARTIAL[1] = {{
+		.name = "Symbol not found",
+		.partial = 1
+	}};
+const struct symmode SYMTAB_PARTIAL_NOERR[1] = {{
+		.name = "Symbol not found",
+		.partial = 1,
+		.noerr = 1
+	}};
 
 struct symbol *
 VCC_SymbolGet(struct vcc *tl, vcc_ns_t ns, vcc_kind_t kind,
@@ -300,15 +315,15 @@ VCC_SymbolGet(struct vcc *tl, vcc_ns_t ns, vcc_kind_t kind,
 			break;
 		tn = tn1;
 	}
-	if (sym != NULL && sym->kind == SYM_VMOD && e == SYMTAB_PARTIAL)
+	if (sym != NULL && sym->kind == SYM_VMOD && e->partial)
 		e = SYMTAB_EXISTING;
-	if (sym != NULL && (e == SYMTAB_PARTIAL || e == SYMTAB_PARTIAL_NOERR)) {
+	if (sym != NULL && e->partial) {
 		st = st2;
 		tn = tn2;
 	} else if (st != st2) {
 		sym = NULL;
 	}
-	if (sym == NULL && (e == SYMTAB_NOERR || e == SYMTAB_PARTIAL_NOERR))
+	if (sym == NULL && e->noerr)
 		return (sym);
 	AN(st);
 	AN(tn);

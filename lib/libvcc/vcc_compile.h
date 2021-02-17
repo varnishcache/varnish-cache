@@ -382,7 +382,11 @@ extern const struct symxref XREF_NONE[1];
 extern const struct symxref XREF_DEF[1];
 extern const struct symxref XREF_REF[1];
 
-struct symmode { const char *name; };
+struct symmode {
+	const char	*name;
+	unsigned	noerr;
+	unsigned	partial;
+};
 extern const struct symmode SYMTAB_NOERR[1];
 extern const struct symmode SYMTAB_CREATE[1];
 extern const struct symmode SYMTAB_EXISTING[1];
