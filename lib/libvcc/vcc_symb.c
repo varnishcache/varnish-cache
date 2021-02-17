@@ -254,6 +254,7 @@ const struct symmode SYMTAB_NOERR[1] = {{"sym_noerror"}};
 const struct symmode SYMTAB_CREATE[1] = {{"sym_create"}};
 const struct symmode SYMTAB_EXISTING[1] = {{"Symbol not found"}};
 const struct symmode SYMTAB_PARTIAL[1] = {{"Symbol not found"}};
+const struct symmode SYMTAB_PARTIAL_NOERR[1] = {{"Symbol not found"}};
 
 struct symbol *
 VCC_SymbolGet(struct vcc *tl, vcc_ns_t ns, vcc_kind_t kind,
@@ -301,13 +302,13 @@ VCC_SymbolGet(struct vcc *tl, vcc_ns_t ns, vcc_kind_t kind,
 	}
 	if (sym != NULL && sym->kind == SYM_VMOD && e == SYMTAB_PARTIAL)
 		e = SYMTAB_EXISTING;
-	if (sym != NULL && e == SYMTAB_PARTIAL) {
+	if (sym != NULL && (e == SYMTAB_PARTIAL || e == SYMTAB_PARTIAL_NOERR)) {
 		st = st2;
 		tn = tn2;
 	} else if (st != st2) {
 		sym = NULL;
 	}
-	if (sym == NULL && e == SYMTAB_NOERR)
+	if (sym == NULL && (e == SYMTAB_NOERR || e == SYMTAB_PARTIAL_NOERR))
 		return (sym);
 	AN(st);
 	AN(tn);
