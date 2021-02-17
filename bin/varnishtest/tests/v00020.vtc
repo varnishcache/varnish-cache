@@ -37,6 +37,11 @@ varnish v1 -errvcl {Symbol 'vcl_recv' type (sub) can not be used in expression.}
 	}
 }
 
+varnish v1 -errvcl {Symbol 'acl' type (reserved) can not be used in expression.} {
+	import std;
+	sub vcl_recv { call acl; }
+}
+
 varnish v1 -errvcl {Operator * not possible on type STRING.} {
 	sub vcl_recv {
 		set req.http.foo = "bla" * "foo";
@@ -378,9 +383,9 @@ varnish v1 -errvcl {'||' must be preceeded by BOOL, found REAL.} {
 	sub vcl_recv { if (std.random(0,1) || 0) { } }
 }
 
-varnish v1 -errvcl {Symbol 'acl' has wrong type (reserved), expected sub:} {
+varnish v1 -errvcl {Symbol 'acl' has wrong type (reserved), expected acl:} {
 	import std;
-	sub vcl_recv { call acl; }
+	sub vcl_recv { if (client.ip ~ acl) {} }
 }
 
 server s1 {
