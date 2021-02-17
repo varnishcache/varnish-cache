@@ -20,8 +20,8 @@ server s1 {
 # at this point, so when we try to get a second stream, we fail.
 
 varnish v1 -cliok "param.set thread_pools 1"
-varnish v1 -cliok "param.set thread_pool_min 5"
-varnish v1 -cliok "param.set thread_pool_max 5"
+varnish v1 -cliok "param.set thread_pool_min 6"
+varnish v1 -cliok "param.set thread_pool_max 6"
 varnish v1 -cliok "param.set thread_queue_limit 0"
 varnish v1 -cliok "param.set thread_stats_rate 1"
 varnish v1 -cliok "param.set feature +http2"
@@ -66,10 +66,10 @@ client c1 {
 } -run
 
 # trigger an update of the stats
-varnish v1 -cliok "param.set thread_pool_max 6"
-varnish v1 -cliok "param.set thread_pool_min 6"
+varnish v1 -cliok "param.set thread_pool_max 7"
+varnish v1 -cliok "param.set thread_pool_min 7"
 delay 1
-varnish v1 -cliok "param.set thread_pool_min 5"
+varnish v1 -cliok "param.set thread_pool_min 6"
 delay 1
 varnish v1 -vsl_catchup
 varnish v1 -expect sess_drop == 0
