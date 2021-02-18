@@ -1,0 +1,24 @@
+varnishtest "Clear beresp status and reason on a retry"
+
+server s1 {
+	rxreq
+	txresp -status 500 -reason "my reason"
+} -start
+
+varnish v1 -arg "-p first_byte_timeout=0.2" -vcl+backend {
+	sub vcl_backend_response {
+		return (error(beresp.status, beresp.reason));
+	}
+	sub vcl_backend_error {
+		if (bereq.retries == 0) {
+			return (retry);
+		}
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "Backend fetch failed"
+} -run
