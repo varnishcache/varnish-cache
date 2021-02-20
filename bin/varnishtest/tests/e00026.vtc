@@ -25,13 +25,30 @@ server s1 {
 	expect req.http.accept-encoding == gzip
 	txresp -gzipbody {<esi:include src="/foo"/>}
 
+	rxreq
+	expect req.url == "/5"
+	expect req.http.accept-encoding == gzip
+	txresp -gzipbody {<esi:include src="/bar"/>}
+
+	rxreq
+	expect req.url == "/bar"
+	txresp -bodylen 500
 } -start
 
 varnish v1 -vcl+backend {
 	sub vcl_backend_response {
-		if (bereq.url != "/foo") {
+		if (bereq.url ~ "^/.$") {
 			set beresp.do_esi = true;
+		} else
+		if (bereq.url ~ "/bar") {
+			set beresp.do_gzip = true;
 		}
+	}
+	sub vcl_deliver {
+		if (req.esi_level > 0 && req.http.r3529) {
+			unset req.http.Accept-Encoding;
+		}
+		set resp.http.filters = resp.filters;
 	}
 } -start
 
@@ -74,6 +91,12 @@ client c1 {
 	expect resp.status == 200
 	expect resp.bodylen == 13
 
+	txreq -url /5 -hdr "Accept-Encoding: gzip" -hdr "r3529: 1"
+	rxresp
+	expect resp.http.content-encoding == gzip
+	gunzip
+	expect resp.status == 200
+	expect resp.bodylen == 500
 }
 
 client c1 -run

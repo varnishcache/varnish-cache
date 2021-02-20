@@ -844,7 +844,8 @@ static const struct vdp ved_ved = {
 static void v_matchproto_(vtr_deliver_f)
 ved_deliver(struct req *req, struct boc *boc, int wantbody)
 {
-	int i;
+	int i = 0;
+	const char *p;
 	struct ecx *ecx;
 	struct ved_foo foo[1];
 
@@ -860,7 +861,11 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 	if (boc == NULL && ObjGetLen(req->wrk, req->objcore) == 0)
 		return;
 
-	i = ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED);
+	if (http_GetHdr(req->resp, H_Content_Encoding, &p))
+		i = !strcasecmp(p, "gzip");
+	if (i)
+		i = ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED);
+
 	if (ecx->isgzip && i && !(req->res_mode & RES_ESI)) {
 		/* A gzip'ed include which is not ESI processed */
 
