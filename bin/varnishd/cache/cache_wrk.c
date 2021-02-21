@@ -681,7 +681,7 @@ pool_herder(void *priv)
 				delay = 0.5;
 			(void)Lck_CondWait(&pp->herder_cond, &pp->mtx,
 				VTIM_real() + delay);
-		} else
+		} else if (pp->nthr >= cache_param->wthread_max)
 			/* XXX: unsafe counters */
 			VSC_C_main->threads_limited++;
 		Lck_Unlock(&pp->mtx);
