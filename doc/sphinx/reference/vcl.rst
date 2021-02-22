@@ -416,6 +416,7 @@ SEE ALSO
 * :ref:`varnishd(1)`
 * :ref:`vcl-backend(7)`
 * :ref:`vcl-probe(7)`
+* :ref:`vcl-var(7)`
 * :ref:`vmod_directors(3)`
 * :ref:`vmod_std(3)`
 
