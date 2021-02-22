@@ -528,7 +528,8 @@ pool_breed(struct pool *qp)
 	AZ(pthread_attr_getstacksize(&tp_attr, &pi->stacksize));
 	pi->qp = qp;
 
-	if (pthread_create(&tp, &tp_attr, pool_thread, pi)) {
+	errno = pthread_create(&tp, &tp_attr, pool_thread, pi);
+	if (errno) {
 		FREE_OBJ(pi);
 		VSL(SLT_Debug, 0, "Create worker thread failed %d %s",
 		    errno, vstrerror(errno));
