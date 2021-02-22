@@ -600,6 +600,10 @@ VTCP_Check(ssize_t a)
 	 * described in the socket(7) manpage.) */
 	if (errno == EAGAIN || errno == EWOULDBLOCK)
 		return (1);
+	/* tcp(7): The other end didn't acknowledge retransmitted data after
+	 * some time. */
+	if (errno == ETIMEDOUT)
+		return (1);
 #if (defined (__SVR4) && defined (__sun))
 	if (errno == ECONNREFUSED)	// in r02702.vtc
 		return (1);
