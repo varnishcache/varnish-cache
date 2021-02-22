@@ -218,7 +218,7 @@ Lck_CondWait(pthread_cond_t *cond, struct lock *lck, vtim_real when)
 		assert(when > 1e9);
 		ts.tv_nsec = (long)(modf(when, &t) * 1e9);
 		ts.tv_sec = (long)t;
-		assert(ts.tv_nsec >= 0 && ts.tv_nsec < 999999999);
+		assert(ts.tv_nsec >= 0 && ts.tv_nsec <= 999999999);
 		errno = pthread_cond_timedwait(cond, &ilck->mtx, &ts);
 #if defined (__APPLE__)
 		if (errno == EINVAL && when > VTIM_real()) {
