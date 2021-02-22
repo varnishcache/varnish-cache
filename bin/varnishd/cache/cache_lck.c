@@ -221,7 +221,7 @@ Lck_CondWait(pthread_cond_t *cond, struct lock *lck, vtim_real when)
 		assert(ts.tv_nsec >= 0 && ts.tv_nsec <= 999999999);
 		errno = pthread_cond_timedwait(cond, &ilck->mtx, &ts);
 #if defined (__APPLE__)
-		if (errno == EINVAL && when > VTIM_real()) {
+		if (errno == EINVAL && when <= VTIM_real()) {
 			/*
 			 * Most kernels treat this as honest error,
 			 * recognizing that a thread has no way to
