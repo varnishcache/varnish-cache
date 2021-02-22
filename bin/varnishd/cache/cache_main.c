@@ -350,7 +350,7 @@ child_main(int sigmagic, size_t altstksz)
 
 	AZ(pthread_key_create(&req_key, NULL));
 	AZ(pthread_key_create(&bo_key, NULL));
-	AZ(pthread_key_create(&witness_key, NULL));
+	AZ(pthread_key_create(&witness_key, free));
 	AZ(pthread_key_create(&name_key, NULL));
 
 	THR_SetName("cache-main");
