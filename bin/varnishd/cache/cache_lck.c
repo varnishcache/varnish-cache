@@ -154,7 +154,11 @@ Lck__Unlock(struct lock *lck, const char *p, int l)
 	 * implementations of pthread.
 	 * #endif
 	 */
+#ifdef PTHREAD_NULL
+	ilck->owner = PTHREAD_NULL;
+#else
 	memset(&ilck->owner, 0, sizeof ilck->owner);
+#endif
 	AZ(pthread_mutex_unlock(&ilck->mtx));
 	if (DO_DEBUG(DBG_WITNESS))
 		Lck_Witness_Unlock(ilck);
