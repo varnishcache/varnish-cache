@@ -490,6 +490,11 @@ main(int argc, char * const *argv)
 	struct vsb *vsb;
 	pid_t pid;
 
+	if (argc == 2 && !strcmp(argv[1], "--optstring")) {
+		printf("%s\n", opt_spec);
+		exit(0);
+	}
+
 	heritage.argc = argc;
 	heritage.argv = argv;
 

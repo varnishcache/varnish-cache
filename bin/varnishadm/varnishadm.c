@@ -423,6 +423,8 @@ n_arg_sock(const char *n_arg, const char *t_arg)
 	return (sock);
 }
 
+#define OPTARG "hn:pS:T:t:"
+
 int
 main(int argc, char * const *argv)
 {
@@ -432,6 +434,10 @@ main(int argc, char * const *argv)
 	const char *t_arg = NULL;
 	int opt, sock;
 
+	if (argc == 2 && !strcmp(argv[1], "--optstring")) {
+		printf(OPTARG "\n");
+		exit(0);
+	}
 	/*
 	 * By default linux::getopt(3) mangles the argv order, such that
 	 *	varnishadm -n bla param.set foo -bar
@@ -440,7 +446,7 @@ main(int argc, char * const *argv)
 	 * The '+' stops that from happening
 	 * See #1496
 	 */
-	while ((opt = getopt(argc, argv, "+hn:pS:T:t:")) != -1) {
+	while ((opt = getopt(argc, argv, "+" OPTARG)) != -1) {
 		switch (opt) {
 		case 'h':
 			/* Usage help */

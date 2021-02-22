@@ -65,7 +65,9 @@ To load new VCL program::
 	varnish> vcl.load some_name some_filename
 
 Loading will read the VCL program from the file, and compile it. If
-the compilation fails, you will get an error messages::
+the compilation fails, you will get an error messages:
+
+.. code-block:: text
 
 	.../mask is not numeric.
 	('input' Line 4 Pos 17)
@@ -105,7 +107,9 @@ But sometimes it is useful to be able to throw things out of cache
 without having an exact list of what to throw out.
 
 Imagine for instance that the company logo changed and now you need
-Varnish to stop serving the old logo out of the cache::
+Varnish to stop serving the old logo out of the cache:
+
+.. code-block:: text
 
 	varnish> ban req.url ~ "logo.*[.]png"
 
@@ -130,7 +134,9 @@ Change parameters
 ^^^^^^^^^^^^^^^^^
 
 Parameters can be set on the command line with the '-p' argument,
-but they can also be examined and changed on the fly from the CLI::
+but they can also be examined and changed on the fly from the CLI:
+
+.. code-block:: text
 
 	varnish> param.show prefer_ipv6
 	200
@@ -169,47 +175,3 @@ always need to start the child process explicitly.
 
 Should the child process die, the master process will automatically
 restart it, but you can disable that with the 'auto_restart' parameter.
-
-The shell, the other CLI
-------------------------
-
-Besides accessing the CLI via its interface or via ``varnishadm`` there
-is the matter of actually running the ``varnishd`` command line, usually
-via a shell. See :ref:`run_security` for security concerns around the
-``varnishd`` command line. See also :ref:`ref_syntax` about the CLI
-syntax and quoting pitfalls when using ``varnishadm``.
-
-The programs shipped with Varnish can expose their *optstring* in order
-to help writing wrapper scripts, in particular to get an opportunity to
-hook a task before a program daemonizes. With the exception of
-``varnishtest`` and ``varnishadm``, you can write Shell wrappers for
-``varnishd`` using the ``-x`` option and other programs using the
-``--optstring`` long option.
-
-This way, when writing a wrapper script you don't need to maintain the
-*optstring* in sync when you only need a subset of the options, usually
-``-n`` or ``-P``::
-
-    optstring=$(varnishd -x optstring)
-
-    while getopts "$optstring" opt
-    do
-        case $opt in
-        n)
-            # handle $OPTARG
-            ;;
-        # handle other options
-        *)
-            # ignore unneeded options
-            ;;
-        esac
-    done
-
-    varnishd "$@"
-
-    # do something with the options
-
-You can for example write a wrapper script that blocks until the shared
-memory is ready or when the child is started if you need that kind of
-synchronization. You can also prevent ``varnishd`` from starting if the
-``-S`` option is inadvertently set to not challenge access to the CLI.

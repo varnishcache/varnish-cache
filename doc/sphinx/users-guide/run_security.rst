@@ -199,7 +199,7 @@ system, but if `varnishd` is not started as root/superuser, this is
 not possible. No, don't ask me why you have to be superuser to
 lower the privilege of a child process...
 
-Inline-C is disabled by default starting with Varnish version 4, so unless
+Inline-C is disabled by default since Varnish version 4, so unless
 you enable it, you don't have to worry about it.
 
 The parameters mentioned above can restrict the loading of VMODs to only

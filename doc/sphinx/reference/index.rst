@@ -88,12 +88,13 @@ Varnishtest
 	VarnishTest - execute test cases <varnishtest>
 	vmod_vtc.rst
 
-For Developers
---------------
+For Developers & DevOps
+-----------------------
 
 .. toctree::
 	:maxdepth: 1
 
+	Shell tricks <shell_tricks>
 	VMODS - Extensions to VCL <vmod>
 	VSM - Shared memory use <vsm>
 	VDIR - Backends & Directors <directors>
