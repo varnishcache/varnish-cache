@@ -3,46 +3,54 @@
 CLI - bossing Varnish around
 ============================
 
-Once ``varnishd`` is started, you can control it using the command line
-interface.
-
-The easiest way to do this, is using ``varnishadm`` on the
-same machine as ``varnishd`` is running::
+Once ``varnishd`` is started, you can control it using the ``varnishadm``
+program and the command line interface::
 
 	varnishadm help
 
-If you want to run ``varnishadm`` from a remote system, you can do it
-two ways.
+If you want to run ``varnishadm`` from a remote system, we recommend
+you use ``ssh`` into the system where ``varnishd`` runs. (But see also:
+:ref:`Local and remote CLI connections <ref_remote_cli>`)
 
 You can SSH into the ``varnishd`` computer and run ``varnishadm``::
 
-	ssh $http_front_end varnishadm help
+	ssh $hostname varnishadm help
 
-But you can also configure ``varnishd`` to accept remote CLI connections
-(using the '-T' and '-S' arguments)::
+If you give no command arguments, ``varnishadm`` runs in interactive mode
+with command-completion, command-history and other comforts:
 
-	varnishd -T :6082 -S /etc/varnish_secret
+.. code-block:: text
 
-And then on the remote system run ``varnishadm``::
+    critter phk> ./varnishadm 
+    200        
+    -----------------------------
+    Varnish Cache CLI 1.0
+    -----------------------------
+    FreeBSD,13.0-CURRENT,amd64,-jnone,-sdefault,-sdefault,-hcritbit
+    varnish-trunk revision 2bd5d2adfc407216ebaa653fae882d3c8d47f5e1
+    
+    Type 'help' for command list.
+    Type 'quit' to close CLI session.
+    Type 'start' to launch worker process.
+    
+    varnish> 
 
-	varnishadm -T $http_front_end -S /etc/copy_of_varnish_secret help
+The CLI always returns a three digit status code to tell how things went.
 
-but as you can see, SSH is much more convenient.
+200 and 201 means *OK*, anything else means that some kind of trouble
+prevented the execution of the command.
 
-If you run ``varnishadm`` without arguments, it will read CLI commands from
-``stdin``, if you give it arguments, it will treat those as the single
-CLI command to execute.
+(If you get 201, it means that the output was truncated,
+See the :ref:`ref_param_cli_limit` parameter.)
 
-The CLI always returns a status code to tell how it went:  '200'
-means OK, anything else means there were some kind of trouble.
-
-``varnishadm`` will exit with status 1 and print the status code on
-standard error if it is not 200.
+When commands are given as arguments to ``varnishadm``, a status
+different than 200 or 201 will cause it to exit with status 1
+and print the status code on standard error.
 
 What can you do with the CLI
 ----------------------------
 
-The CLI gives you almost total control over ``varnishd`` some of the more important tasks you can perform are:
+From the CLI you can:
 
 * load/use/discard VCL programs
 * ban (invalidate) cache content
@@ -91,19 +99,18 @@ The switch is instantaneous, all new requests will start using the
 VCL you activated right away. The requests currently being processed complete
 using whatever VCL they started with.
 
-It is good idea to design an emergency-VCL before you need it,
-and always have it loaded, so you can switch to it with a single
-vcl.use command.
+We highly recommend you design an emergency-VCL, and always keep
+it loaded, so it can be activated with ::
 
-.. XXX:Should above have a clearer admonition like a NOTE:? benc
+	vcl.use emergency
 
 Ban cache content
 ^^^^^^^^^^^^^^^^^
 
-Varnish offers "purges" to remove things from cache, provided that
-you know exactly what they are.
+Varnish offers "purges" to remove things from cache, but that
+requires you to know exactly what they are.
 
-But sometimes it is useful to be able to throw things out of cache
+Sometimes it is useful to be able to throw things out of cache
 without having an exact list of what to throw out.
 
 Imagine for instance that the company logo changed and now you need
@@ -116,14 +123,13 @@ Varnish to stop serving the old logo out of the cache:
 should do that, and yes, that is a regular expression.
 
 We call this "banning" because the objects are still in the cache,
-but they are banned from delivery.
+but they are now banned from delivery, while all the rest of the
+cache is unaffected.
 
-Instead of checking each and every cached object right away, we
-test each object against the regular expression only if and when
-an HTTP request asks for it.
+Even when you want to throw out *all* the cached content, banning is
+both faster and less disruptive that a restart::
 
-Banning stuff is much cheaper than restarting Varnish to get rid
-of wronly cached content.
+	varnish> ban obj.http.date ~ .*
 
 .. In addition to handling such special occasions, banning can be used
 .. in many creative ways to keep the cache up to date, more about
@@ -134,7 +140,8 @@ Change parameters
 ^^^^^^^^^^^^^^^^^
 
 Parameters can be set on the command line with the '-p' argument,
-but they can also be examined and changed on the fly from the CLI:
+but almost all parameters can be examined and changed on the fly
+from the CLI:
 
 .. code-block:: text
 
@@ -153,10 +160,10 @@ have a good reason, such as performance tuning or security configuration.
 
 .. XXX: Natural delay of some duration sounds vague. benc
 
-Most parameters will take effect instantly, or with a natural delay
-of some duration, but a few of them requires you to restart the
-child process before they take effect. This is always noted in the
-description of the parameter.
+Most parameters will take effect instantly, or with a short delay,
+but a few of them requires you to restart the child process before
+they take effect. This is always mentioned in the description of
+the parameter.
 
 Starting and stopping the worker process
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -174,4 +181,5 @@ If you start ``varnishd`` with the '-d' (debugging) argument, you will
 always need to start the child process explicitly.
 
 Should the child process die, the master process will automatically
-restart it, but you can disable that with the 'auto_restart' parameter.
+restart it, but you can disable that with the
+:ref:`ref_param_auto_restart` parameter.

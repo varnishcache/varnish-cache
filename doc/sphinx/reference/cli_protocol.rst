@@ -10,15 +10,15 @@ The Varnish CLI has a few bells&whistles when used as an API.
 
 First: `vcli.h` contains magic numbers.
 
-Second: If you use `varnishadm` to connect to `varnishd` use the
-`-p` argument to get "pass" mode.
+Second: If you use `varnishadm` to connect to `varnishd` for
+API purposes, use the `-p` argument to get "pass" mode.
 
 In "pass" mode, or with direct CLI connections (more below), the
 first line of responses is always exactly 13 bytes long, including
 the NL, and it contains two numbers:  The status code and the count
-of bytes in the remainder of the response::
+of bytes in the "body" of the response::
 
-    200␣19␤
+    200␣19␣␣␣␣␣␣␤
     PONG␣1613397488␣1.0
 
 This makes parsing the response unambiguous, even in cases like this
@@ -27,23 +27,63 @@ where the response does not end with a NL.
 The varnishapi library contains functions to implement the basics of
 the CLI protocol, for more, see the `vcli.h` include file.
 
+.. _ref_remote_cli:
+
+Local and remote CLI connections
+--------------------------------
+
+The ``varnishd`` process receives the CLI commands via TCP connections
+which require PSK authentication (see below), but which provide no secrecy.
+
+"No secrecy" means that if you configure these TCP connections to run
+across a network, anybody who can sniff packets can see your CLI
+commands.  If you need secrecy, use ``ssh`` to run ``varnishadm`` or
+to tunnel the TCP connection.
+
+By default `varnishd` binds to ``localhost`` and ask the kernel to
+assign a random port number.  The resulting listen address is
+stored in the shared memory, where the ``varnishadm`` program finds it.
+
+You can configure ``varnishd`` to listen to a specific address with
+the ``-T`` argument, this will also be written to shared memory, so
+``varnishadm`` keeps working::
+
+	# Bind to internal network
+	varnishd -T 192.168.10.21:3245
+
+You can also configure ``varnishd`` to actively open a TCP connection
+to another "controller" program, with the ``-M`` argument.
+
+Finally, when run in "debug mode" with the ``-d`` argument, ``varnishd``
+will stay in the foreground and turn stdin/stdout into a CLI connection.
+
 .. _ref_psk_auth:
 
 Authentication CLI connections
 ------------------------------
 
 CLI connections to `varnishd` are authenticated with a "pre-shared-key"
-authentication scheme, where the other end must prove they know the
-contents of a particular file, either by being able to access it on
-the machine `varnishd` runs on, usually via information in `VSM` or
-by having a local copy of the file on another machine.
+authentication scheme, where the other end must prove they know
+*the contents of* the secret file ``varnishd`` uses.
 
-The precise filename can be configured with the `-S` option to `varnishd`
-and regular file system permissions control access to it.
+They do not have to read the precise same file on that specific
+computer, they could read an entirely different file on a different
+computer or fetch the secret from a server.
 
-The file is only read at the time the `auth` CLI command is issued
-and the contents is not cached in `varnishd`, so it is possible to
-change the contents of the file while `varnishd` is running.
+The name of the file can be configured with the ``-S`` option, and
+``varnishd`` records the name in shared memory, so ``varnishadm``
+can find it.
+
+As a bare minimum ``varnishd`` needs to be able to read the file,
+but other than that, it can be restricted any way you want.
+
+Since it is not the file, but only the content of it that matter,
+you can make the file unreadable by everybody, and instead place
+a copy of the file in the home directories of the authorized users.
+
+The file is read only at the moment when the `auth` CLI command is
+issued and the contents is not cached in `varnishd`, so you can
+change it as often as you want.
 
 An authenticated session looks like this:
 
@@ -77,7 +117,7 @@ first 32 characters of the response text is the challenge
 connection, and changes each time a 107 is emitted.
 
 The most recently emitted challenge must be used for calculating the
-authenticator "455c...c89a".
+authenticator "455c…c89a".
 
 The authenticator is calculated by applying the SHA256 function to the
 following byte sequence:
@@ -110,7 +150,7 @@ In the above example, the secret file contains ``foo\n`` and thus:
    00000040  66 79 6d 70 67 0a                                 |fympg.|
    00000046
    critter phk> sha256 tmpfile
-   SHA256 (_) = 455ce847f0073c7ab3b1465f74507b75d3dc064c1e7de3b71e00de9092fdc89a
+   SHA256 (tmpfile) = 455ce847f0073c7ab3b1465f74507b75d3dc064c1e7de3b71e00de9092fdc89a
    critter phk> openssl dgst -sha256 < tmpfile
    455ce847f0073c7ab3b1465f74507b75d3dc064c1e7de3b71e00de9092fdc89a
 

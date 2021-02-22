@@ -1,7 +1,7 @@
 .. _users-guide-command-line:
 
-Important command line arguments
---------------------------------
+Required command line arguments
+-------------------------------
 
 There a two command line arguments you have to set when starting Varnish, these are:
 * what TCP port to serve HTTP from, and
@@ -44,7 +44,6 @@ it to another port number first.
 '-f' *VCL-file* or '-b' *backend*
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-
 Varnish needs to know where to find the HTTP server it is caching for.
 You can either specify it with the '-b' argument, or you can put it in your own VCL file, specified with the '-f' argument.
 
@@ -57,37 +56,17 @@ Using '-b' is a quick way to get started::
 Notice that if you specify a name, it can at most resolve to one IPv4
 *and* one IPv6 address.
 
-If you go with '-f', you can start with a VCL file containing just::
+For more advanced use, you will want to specify a VCL program with ``-f``,
+but you can start with as little as just::
 
 	backend default {
 		.host = "localhost:81";
 	}
 
-which is exactly what '-b' does.
+which is, by the way, *precisely* what '-b' does.
 
-.. XXX:What happens if I start with -b and then have the backend defined in my VCL? benc
+Optional arguments
+^^^^^^^^^^^^^^^^^^
 
-In both cases the built-in VCL code is appended.
-
-Other options
-^^^^^^^^^^^^^
-
-Varnish comes with an abundance of useful command line arguments. We recommend that you study them but not necessary use them all, but to get started, the above will be sufficient.
-
-By default Varnish will use 100 megabytes of virtual memory (malloc(3)
-or libumem(3lib)) storage for caching objects, if you want to cache
-more than that, you should look at the '-s' argument.
-
-.. XXX: 3? benc
-
-If you run a really big site, you may want to tune the number of
-worker threads and other parameters with the '-p' argument,
-but we generally advice not to do that unless you need to.
-
-Before you go into production, you may also want to revisit the
-chapter
-:ref:`run_security` to see if you need to partition administrative
-privileges.
-
-For a complete list of the command line parameters please see
-:ref:`ref-varnishd-options`.
+For a complete list of the command line arguments please see
+:ref:`varnishd(1) options <ref-varnishd-options>`.
