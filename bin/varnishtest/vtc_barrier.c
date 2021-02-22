@@ -77,7 +77,7 @@ barrier_new(const char *name, struct vtclog *vl)
 
 	ALLOC_OBJ(b, BARRIER_MAGIC);
 	AN(b);
-	if (pthread_self() != vtc_thread)
+	if (!pthread_equal(pthread_self(), vtc_thread))
 		vtc_fatal(vl,
 		    "Barrier %s can only be created on the top thread", name);
 	REPLACE(b->name, name);

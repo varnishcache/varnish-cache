@@ -221,7 +221,7 @@ VEV_Destroy(struct vev_root **evbp)
 	struct vev_root *evb;
 
 	TAKE_OBJ_NOTNULL(evb, evbp, VEV_BASE_MAGIC);
-	assert(evb->thread == pthread_self());
+	assert(pthread_equal(evb->thread, pthread_self()));
 	free(evb->pfd);
 	free(evb->pev);
 	/* XXX: destroy evb->binheap */
@@ -255,7 +255,7 @@ VEV_Start(struct vev_root *evb, struct vev *e)
 	assert(e->sig >= 0);
 	assert(e->timeout >= 0.0);
 	assert(e->fd < 0 || e->fd_flags);
-	assert(evb->thread == pthread_self());
+	assert(pthread_equal(evb->thread, pthread_self()));
 	DBG(evb, "ev_add(%p) fd = %d\n", e, e->fd);
 
 	if (vev_get_pfd(evb))
@@ -311,7 +311,7 @@ VEV_Stop(struct vev_root *evb, struct vev *e)
 	CHECK_OBJ_NOTNULL(e, VEV_MAGIC);
 	DBG(evb, "ev_del(%p) fd = %d i=%u L=%d\n", e, e->fd, e->__binheap_idx, evb->lpfd);
 	assert(evb == e->__vevb);
-	assert(evb->thread == pthread_self());
+	assert(pthread_equal(evb->thread, pthread_self()));
 	assert(evb->pev[e->__binheap_idx] == e);
 
 	assert(e->__binheap_idx != VBH_NOIDX);
@@ -344,7 +344,7 @@ VEV_Loop(struct vev_root *evb)
 	int i;
 
 	CHECK_OBJ_NOTNULL(evb, VEV_BASE_MAGIC);
-	assert(evb->thread == pthread_self());
+	assert(pthread_equal(evb->thread, pthread_self()));
 	do
 		i = VEV_Once(evb);
 	while (i == 1);
@@ -406,7 +406,7 @@ VEV_Once(struct vev_root *evb)
 	unsigned u;
 
 	CHECK_OBJ_NOTNULL(evb, VEV_BASE_MAGIC);
-	assert(evb->thread == pthread_self());
+	assert(pthread_equal(evb->thread, pthread_self()));
 	assert(evb->lpfd < evb->npfd);
 
 	if (evb->psig)

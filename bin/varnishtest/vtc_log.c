@@ -114,7 +114,7 @@ vtc_logfail(void)
 {
 
 	vtc_error = 2;
-	if (pthread_self() != vtc_thread)
+	if (!pthread_equal(pthread_self(), vtc_thread))
 		pthread_exit(NULL);
 	else
 		exit(fail_out());
