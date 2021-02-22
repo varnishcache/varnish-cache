@@ -576,18 +576,20 @@ VTCP_Check(ssize_t a)
 	 * some time. */
 	if (errno == ETIMEDOUT)
 		return (1);
-#if (defined (__SVR4) && defined (__sun)) || defined (__NetBSD__)
-	/*
-	 * Solaris returns EINVAL if the other end unexpectedly reset the
-	 * connection.
-	 * This is a bug in Solaris and documented behaviour on NetBSD.
-	 */
-	if (errno == EINVAL || errno == ETIMEDOUT)
+#if (defined (__SVR4) && defined (__sun))
+	if (errno == ECONNREFUSED)	// in r02702.vtc
 		return (1);
-#elif defined (__APPLE__)
+	if (errno == EPROTO)
+		return (1);
+#endif
+#if (defined (__SVR4) && defined (__sun)) ||		\
+    defined (__NetBSD__) ||				\
+    defined (__APPLE__)
 	/*
-	 * MacOS returns EINVAL if the other end unexpectedly reset
+	 * Solaris and MacOS returns EINVAL if the other end unexpectedly reset
 	 * the connection.
+	 *
+	 * On NetBSD it is documented behaviour.
 	 */
 	if (errno == EINVAL)
 		return (1);
