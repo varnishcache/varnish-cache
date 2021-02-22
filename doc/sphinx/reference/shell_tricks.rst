@@ -8,7 +8,7 @@ All the varnish programs can be invoked with the single
 argument ``--optstring`` to request their `getopt()`
 specification, which simplifies wrapper scripts:
 
-.. code-block:: shell
+.. code-block:: text
 
     optstring=$(varnishfoo --optstring)
 
