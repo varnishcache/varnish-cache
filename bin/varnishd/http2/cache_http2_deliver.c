@@ -95,6 +95,14 @@ h2_fini(struct vdp_ctx *vdc, void **priv)
 	if (r2->error)
 		return (0);
 
+	if (vdc->retval) {
+		r2->error = H2SE_INTERNAL_ERROR; /* XXX: proper error? */
+		H2_Send_Get(vdc->wrk, r2->h2sess, r2);
+		H2_Send_RST(vdc->wrk, r2->h2sess, r2, r2->stream, r2->error);
+		H2_Send_Rel(r2->h2sess, r2);
+		return (0);
+	}
+
 	H2_Send_Get(vdc->wrk, r2->h2sess, r2);
 	H2_Send(vdc->wrk, r2, H2_F_DATA, H2FF_DATA_END_STREAM, 0, "", NULL);
 	H2_Send_Rel(r2->h2sess, r2);
