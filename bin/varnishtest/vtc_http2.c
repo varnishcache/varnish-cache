@@ -2254,6 +2254,7 @@ cmd_rxdata(CMD_ARGS)
 
 	while (*++av)
 		if (!strcmp(*av, "-some")) {
+			av++;
 			STRTOU32(times, *av, p, vl, "-some");
 			if (!times)
 				vtc_fatal(vl, "-some argument must be more"
