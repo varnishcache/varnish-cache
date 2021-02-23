@@ -864,7 +864,7 @@ receive_frame(void *priv)
 	do {								\
 		n = strtoul(ss, &p, 0);					\
 		if (*p != '\0')						\
-			vtc_fatal(v, "%s takes an integer as argument"	\
+			vtc_fatal(v, "%s takes an integer as argument "	\
 				"(found %s)", c, ss);			\
 	} while (0)
 
