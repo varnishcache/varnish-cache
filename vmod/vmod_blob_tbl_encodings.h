@@ -1,3 +1,8 @@
+/*
+ * This file is in the public domain.
+ *
+ */
+
 VMODENUM(BASE64)
 VMODENUM(BASE64URL)
 VMODENUM(BASE64URLNOPAD)

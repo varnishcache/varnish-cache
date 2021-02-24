@@ -1,6 +1,7 @@
 /*-
  * For Copyright information see RFC7541 [BSD3]
  */
+
 STAT_HDRS(1,   ":authority",                   "")
 STAT_HDRS(2,   ":method",                      "GET")
 STAT_HDRS(3,   ":method",                      "POST")
