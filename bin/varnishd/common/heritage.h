@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 2006 Verdens Gang AS
  * Copyright (c) 2006-2011 Varnish Software AS

@@ -1,5 +1,5 @@
 /*-
- * Copyright 2015-2017 UPLEX - Nils Goroll Systemoptimierung
+ * Copyright (c) 2015-2017 UPLEX - Nils Goroll Systemoptimierung
  * All rights reserved.
  *
  * Authors: Nils Goroll <nils.goroll@uplex.de>

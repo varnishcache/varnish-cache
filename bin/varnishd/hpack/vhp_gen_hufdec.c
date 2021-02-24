@@ -246,7 +246,8 @@ main(int argc, const char **argv)
 		    huf[u].code, huf[u].blen, huf[u].chr);
 
 	printf("/*\n");
-	printf(" * NB: This file is machine generated, DO NOT EDIT!\n");
+	printf(" * NB:  This file is machine generated, DO NOT EDIT!\n");
+	printf(" *\n");
 	printf(" */\n\n");
 
 	printf("#define HUFDEC_LEN %u\n", idx);

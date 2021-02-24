@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2005-2008 Poul-Henning Kamp <phk@freebsd.org>
+ * Copyright (c) 2005-2008 Poul-Henning Kamp <phk@FreeBSD.org>
  * All rights reserved.
  *
  * SPDX-License-Identifier: BSD-2-Clause

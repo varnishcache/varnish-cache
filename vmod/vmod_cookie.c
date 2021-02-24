@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2012-2020 Varnish Software
+ * Copyright (c) 2012-2020 Varnish Software AS
  *
  * Author: Lasse Karstensen <lasse.karstensen@gmail.com>
  * Author: Lasse Karstensen <lkarsten@varnish-software.com>

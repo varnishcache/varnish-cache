@@ -3,7 +3,7 @@
  * Copyright (c) 2006 Varnish Software AS
  * Copyright (c) 2007 OmniTI Computer Consulting, Inc.
  * Copyright (c) 2007 Theo Schlossnagle
- * Copyright (c) 2010-2016 UPLEX, Nils Goroll
+ * Copyright (c) 2010-2016 UPLEX - Nils Goroll Systemoptimierung
  * All rights reserved.
  *
  * SPDX-License-Identifier: BSD-2-Clause
