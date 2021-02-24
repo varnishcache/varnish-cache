@@ -1,3 +1,7 @@
+// Copyright (c) 2010-2018 Varnish Software AS
+// SPDX-License-Identifier: BSD-2-Clause
+// See LICENSE file for full text of license
+
 -efile(451, "varnishtop_options.h")
 
 -e712	// 14      Info    712     Loss of precision (___) (___ to ___)

@@ -1,3 +1,7 @@
+// Copyright (c) 2021 Varnish Software AS
+// SPDX-License-Identifier: BSD-2-Clause
+// See LICENSE file for full text of license
+
 /* we always want config.h included even where not actually required */
 -efile(766, config.h)
 

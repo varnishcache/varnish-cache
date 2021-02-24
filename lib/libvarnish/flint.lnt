@@ -1,3 +1,7 @@
+// Copyright (c) 2008-2020 Varnish Software AS
+// SPDX-License-Identifier: BSD-2-Clause
+// See LICENSE file for full text of license
+
 -efunc(835, VSHA256_Transform)	// A zero has been given as ___ argument to operator '___'
 -efunc(778, VSHA256_Transform)	// Constant expression evaluates to 0 in operation '___'
 -efunc(661, VSHA256_Transform)	// Possible access of out-of-bounds pointer

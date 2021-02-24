@@ -1,3 +1,7 @@
+// Copyright (c) 2017 Varnish Software AS
+// SPDX-License-Identifier: BSD-2-Clause
+// See LICENSE file for full text of license
+
 +fan
 
 -esym(759, VJSN_*)			// could be moved hdr->mod

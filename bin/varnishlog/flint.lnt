@@ -1,3 +1,7 @@
+// Copyright (c) 2010-2018 Varnish Software AS
+// SPDX-License-Identifier: BSD-2-Clause
+// See LICENSE file for full text of license
+
 -e712	// 14      Info    712     Loss of precision (___) (___ to ___)
 -e747	// 16      Info    747     Significant prototype coercion (___) ___ to ___
 
