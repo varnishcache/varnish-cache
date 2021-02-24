@@ -12,6 +12,10 @@
 	:level:	info
 	:oneliner:	Happy health probes
 
+	Represents the last probe results as a bitmap. Happy probes are bits set
+	to 1, and the unhappy ones are set to 0. The highest bits represent the
+	oldest probes.
+
 .. varnish_vsc:: bereq_hdrbytes
 	:type:	counter
 	:level:	info
