@@ -1,3 +1,8 @@
+..
+	Copyright (c) 2012-2017 Varnish Software AS
+	SPDX-License-Identifier: BSD-2-Clause
+	See LICENSE file for full text of licens
+
 
 
 Parameters

@@ -1,3 +1,8 @@
+..
+	Copyright (c) 2016-2017 Varnish Software AS
+	SPDX-License-Identifier: BSD-2-Clause
+	See LICENSE file for full text of licens
+
 .. _whatsnew_relnote_5.0:
 
 Varnish 5.0 Release Note

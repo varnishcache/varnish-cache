@@ -1,3 +1,8 @@
+..
+	Copyright (c) 2019 Varnish Software AS
+	SPDX-License-Identifier: BSD-2-Clause
+	See LICENSE file for full text of licens
+
 .. _vdd19q3:
 
 Varnish Developer Day 2019Q3

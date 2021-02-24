@@ -1,3 +1,8 @@
+..
+	Copyright (c) 2011-2014 Varnish Software AS
+	SPDX-License-Identifier: BSD-2-Clause
+	See LICENSE file for full text of licens
+
 .. _phk_ssl:
 
 ============

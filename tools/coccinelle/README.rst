@@ -1,3 +1,8 @@
+..
+	Copyright (c) 2019-2021 Varnish Software AS
+	SPDX-License-Identifier: BSD-2-Clause
+	See LICENSE file for full text of licens
+
 This directory contains `coccinelle`_ semantic patches to facilitate code
 maintenance.
 
