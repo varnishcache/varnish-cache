@@ -864,7 +864,7 @@ receive_frame(void *priv)
 	do {								\
 		n = strtoul(ss, &p, 0);					\
 		if (*p != '\0')						\
-			vtc_fatal(v, "%s takes an integer as argument"	\
+			vtc_fatal(v, "%s takes an integer as argument "	\
 				"(found %s)", c, ss);			\
 	} while (0)
 
@@ -2254,6 +2254,7 @@ cmd_rxdata(CMD_ARGS)
 
 	while (*++av)
 		if (!strcmp(*av, "-some")) {
+			av++;
 			STRTOU32(times, *av, p, vl, "-some");
 			if (!times)
 				vtc_fatal(vl, "-some argument must be more"

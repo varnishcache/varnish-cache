@@ -23,29 +23,23 @@ client c1 {
 	expect_close
 } -run
 
-delay .3
+varnish v1 -expect MAIN.sc_range_short == 1
 
-server s1 {
-	rxreq
-	txresp -nolen -hdr "Content-length: 9"
-	delay 1
-	send "BLA"
-	delay .4
-	send "BLA"
-	delay .3
-	send "BL"
-} -start
+delay .3
 
 varnish v1 -cliok "param.set feature +http2"
 
-client c1 {
+server s1 -start
+
+client c2 {
 	stream 1 {
 		txreq -hdr "range" "bytes=0-16"
 		rxhdrs
 		expect resp.status == 206
 		expect resp.http.content-length == 9
-		rxdata -all
+		rxdata -some 3
+		expect resp.body == BLABLABL
+		rxrst
+		expect rst.err == INTERNAL_ERROR
 	} -run
 } -run
-
-varnish v1 -expect MAIN.sc_range_short == 1
