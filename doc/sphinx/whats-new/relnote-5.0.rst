@@ -1,7 +1,7 @@
 ..
 	Copyright (c) 2016-2017 Varnish Software AS
 	SPDX-License-Identifier: BSD-2-Clause
-	See LICENSE file for full text of licens
+	See LICENSE file for full text of license
 
 .. _whatsnew_relnote_5.0:
 

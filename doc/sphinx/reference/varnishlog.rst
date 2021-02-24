@@ -1,7 +1,7 @@
 ..
 	Copyright (c) 2010-2019 Varnish Software AS
 	SPDX-License-Identifier: BSD-2-Clause
-	See LICENSE file for full text of licens
+	See LICENSE file for full text of license
 
 .. role:: ref(emphasis)
 

@@ -1,7 +1,7 @@
 ..
 	Copyright (c) 2012-2020 Varnish Software AS
 	SPDX-License-Identifier: BSD-2-Clause
-	See LICENSE file for full text of licens
+	See LICENSE file for full text of license
 
 .. _users-guide-backend_servers:
 
