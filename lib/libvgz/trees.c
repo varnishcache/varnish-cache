@@ -823,7 +823,7 @@ local int build_bl_tree(s)
     Tracev((stderr, "\ndyn trees: dyn %ld, stat %ld",
             s->opt_len, s->static_len));
 
-    return (max_blindex);
+    return max_blindex;
 }
 
 /* ===========================================================================
@@ -1062,10 +1062,10 @@ int ZLIB_INTERNAL _tr_tally (s, dist, lc)
         Tracev((stderr,"\nlast_lit %u, in %ld, out ~%ld(%ld%%) ",
                s->last_lit, in_length, out_length,
                100L - out_length*100L/in_length));
-        if (s->matches < s->last_lit/2 && out_length < in_length/2) return (1);
+        if (s->matches < s->last_lit/2 && out_length < in_length/2) return 1;
     }
 #endif
-    return (s->last_lit == s->lit_bufsize - 1);
+    return (s->last_lit == s->lit_bufsize-1);
     /* We avoid equality with lit_bufsize because of wraparound at 64K
      * on 16 bit machines and because stored blocks are restricted to
      * 64K-1 bytes.
@@ -1148,20 +1148,20 @@ local int detect_data_type(s)
     /* Check for non-textual ("black-listed") bytes. */
     for (n = 0; n <= 31; n++, black_mask >>= 1)
         if ((black_mask & 1) && (s->dyn_ltree[n].Freq != 0))
-            return (Z_BINARY);
+            return Z_BINARY;
 
     /* Check for textual ("white-listed") bytes. */
     if (s->dyn_ltree[9].Freq != 0 || s->dyn_ltree[10].Freq != 0
             || s->dyn_ltree[13].Freq != 0)
-        return (Z_TEXT);
+        return Z_TEXT;
     for (n = 32; n < LITERALS; n++)
         if (s->dyn_ltree[n].Freq != 0)
-            return (Z_TEXT);
+            return Z_TEXT;
 
     /* There are no "black-listed" or "white-listed" bytes:
      * this stream either is empty or has tolerated ("gray-listed") bytes only.
      */
-    return (Z_BINARY);
+    return Z_BINARY;
 }
 
 /* ===========================================================================

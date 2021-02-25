@@ -27,7 +27,7 @@ z_const char * const z_errmsg[10] = {
 
 const char * ZEXPORT zlibVersion()
 {
-    return (ZLIB_VERSION);
+    return ZLIB_VERSION;
 }
 
 uLong ZEXPORT zlibCompileFlags()
@@ -110,7 +110,7 @@ uLong ZEXPORT zlibCompileFlags()
 #    endif
 #  endif
 #endif
-    return (flags);
+    return flags;
 }
 
 #ifdef ZLIB_DEBUG
@@ -134,7 +134,7 @@ void ZLIB_INTERNAL z_error (m)
 const char * ZEXPORT zError(err)
     int err;
 {
-    return (ERR_MSG(err));
+    return ERR_MSG(err);
 }
 
 #if defined(_WIN32_WCE)
@@ -166,9 +166,9 @@ int ZLIB_INTERNAL zmemcmp(s1, s2, len)
     uInt j;
 
     for (j = 0; j < len; j++) {
-        if (s1[j] != s2[j]) return (2 * (s1[j] > s2[j]) - 1);
+        if (s1[j] != s2[j]) return 2*(s1[j] > s2[j])-1;
     }
-    return (0);
+    return 0;
 }
 
 void ZLIB_INTERNAL zmemzero(dest, len)
@@ -229,18 +229,18 @@ voidpf ZLIB_INTERNAL zcalloc (voidpf opaque, unsigned items, unsigned size)
      */
     if (bsize < 65520L) {
         buf = farmalloc(bsize);
-        if (*(ush*)&buf != 0) return (buf);
+        if (*(ush*)&buf != 0) return buf;
     } else {
         buf = farmalloc(bsize + 16L);
     }
-    if (buf == NULL || next_ptr >= MAX_PTR) return (NULL);
+    if (buf == NULL || next_ptr >= MAX_PTR) return NULL;
     table[next_ptr].org_ptr = buf;
 
     /* Normalize the pointer to seg:0 */
     *((ush*)&buf+1) += ((ush)((uch*)buf-0) + 15) >> 4;
     *(ush*)&buf = 0;
     table[next_ptr++].new_ptr = buf;
-    return (buf);
+    return buf;
 }
 
 void ZLIB_INTERNAL zcfree (voidpf opaque, voidpf ptr)
@@ -283,7 +283,7 @@ void ZLIB_INTERNAL zcfree (voidpf opaque, voidpf ptr)
 voidpf ZLIB_INTERNAL zcalloc (voidpf opaque, uInt items, uInt size)
 {
     (void)opaque;
-    return (_halloc((long)items, size));
+    return _halloc((long)items, size);
 }
 
 void ZLIB_INTERNAL zcfree (voidpf opaque, voidpf ptr)

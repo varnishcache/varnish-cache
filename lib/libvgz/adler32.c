@@ -137,7 +137,7 @@ uLong ZEXPORT adler32(adler, buf, len)
     const Bytef *buf;
     uInt len;
 {
-    return (adler32_z(adler, buf, len));
+    return adler32_z(adler, buf, len);
 }
 
 /* ========================================================================= */
@@ -152,7 +152,7 @@ local uLong adler32_combine_(adler1, adler2, len2)
 
     /* for negative len, return invalid adler32 as a clue for debugging */
     if (len2 < 0)
-        return (0xffffffffUL);
+        return 0xffffffffUL;
 
     /* the derivation of this formula is left as an exercise for the reader */
     MOD63(len2);                /* assumes len2 >= 0 */
@@ -166,7 +166,7 @@ local uLong adler32_combine_(adler1, adler2, len2)
     if (sum1 >= BASE) sum1 -= BASE;
     if (sum2 >= ((unsigned long)BASE << 1)) sum2 -= ((unsigned long)BASE << 1);
     if (sum2 >= BASE) sum2 -= BASE;
-    return (sum1 | (sum2 << 16));
+    return sum1 | (sum2 << 16);
 }
 
 /* ========================================================================= */
@@ -175,7 +175,7 @@ uLong ZEXPORT adler32_combine(adler1, adler2, len2)
     uLong adler2;
     z_off_t len2;
 {
-    return (adler32_combine_(adler1, adler2, len2));
+    return adler32_combine_(adler1, adler2, len2);
 }
 
 uLong ZEXPORT adler32_combine64(adler1, adler2, len2)
@@ -183,7 +183,7 @@ uLong ZEXPORT adler32_combine64(adler1, adler2, len2)
     uLong adler2;
     z_off64_t len2;
 {
-    return (adler32_combine_(adler1, adler2, len2));
+    return adler32_combine_(adler1, adler2, len2);
 }
 #else
 uLong ZEXPORT adler32(adler, buf, len)

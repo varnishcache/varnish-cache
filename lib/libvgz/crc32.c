@@ -191,7 +191,7 @@ const z_crc_t FAR * ZEXPORT get_crc_table()
     if (crc_table_empty)
         make_crc_table();
 #endif /* DYNAMIC_CRC_TABLE */
-    return ((const z_crc_t FAR *)crc_table);
+    return (const z_crc_t FAR *)crc_table;
 }
 
 /* ========================================================================= */
@@ -204,7 +204,7 @@ unsigned long ZEXPORT crc32_z(crc, buf, len)
     const unsigned char FAR *buf;
     z_size_t len;
 {
-    if (buf == Z_NULL) return (0UL);
+    if (buf == Z_NULL) return 0UL;
 
 #ifdef DYNAMIC_CRC_TABLE
     if (crc_table_empty)
@@ -217,9 +217,9 @@ unsigned long ZEXPORT crc32_z(crc, buf, len)
 
         endian = 1;
         if (*((unsigned char *)(&endian)))
-            return (crc32_little(crc, buf, len));
+            return crc32_little(crc, buf, len);
         else
-            return (crc32_big(crc, buf, len));
+            return crc32_big(crc, buf, len);
     }
 #endif /* BYFOUR */
     crc = crc ^ 0xffffffffUL;
@@ -230,7 +230,7 @@ unsigned long ZEXPORT crc32_z(crc, buf, len)
     if (len) do {
         DO1;
     } while (--len);
-    return (crc ^ 0xffffffffUL);
+    return crc ^ 0xffffffffUL;
 }
 
 /* ========================================================================= */
@@ -239,7 +239,7 @@ unsigned long ZEXPORT crc32(crc, buf, len)
     const unsigned char FAR *buf;
     uInt len;
 {
-    return (crc32_z(crc, buf, len));
+    return crc32_z(crc, buf, len);
 }
 
 #ifdef BYFOUR
@@ -381,7 +381,7 @@ local uLong crc32_combine_(crc1, crc2, len2)
 
     /* degenerate case (also disallow negative lengths) */
     if (len2 <= 0)
-        return (crc1);
+        return crc1;
 
     /* put operator for one zero bit in odd */
     odd[0] = 0xedb88320UL;          /* CRC-32 polynomial */
@@ -421,7 +421,7 @@ local uLong crc32_combine_(crc1, crc2, len2)
 
     /* return combined crc */
     crc1 ^= crc2;
-    return (crc1);
+    return crc1;
 }
 
 /* ========================================================================= */
@@ -430,7 +430,7 @@ uLong ZEXPORT crc32_combine(crc1, crc2, len2)
     uLong crc2;
     z_off_t len2;
 {
-    return (crc32_combine_(crc1, crc2, len2));
+    return crc32_combine_(crc1, crc2, len2);
 }
 
 uLong ZEXPORT crc32_combine64(crc1, crc2, len2)
@@ -438,5 +438,5 @@ uLong ZEXPORT crc32_combine64(crc1, crc2, len2)
     uLong crc2;
     z_off64_t len2;
 {
-    return (crc32_combine_(crc1, crc2, len2));
+    return crc32_combine_(crc1, crc2, len2);
 }
