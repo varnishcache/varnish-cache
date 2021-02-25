@@ -864,6 +864,70 @@ http_GetContentLength(const struct http *hp)
 	return (cl);
 }
 
+ssize_t
+http_GetContentRange(const struct http *hp, ssize_t *lo, ssize_t *hi)
+{
+	ssize_t tmp, cl;
+	const char *b;
+
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+
+	if (lo == NULL)
+		lo = &tmp;
+	if (hi == NULL)
+		hi = &tmp;
+
+	*lo = *hi = -1;
+
+	if (!http_GetHdr(hp, H_Content_Range, &b))
+		return (-1);
+
+	if (strncasecmp("bytes", b, strlen("bytes")))
+		return (-1);		// Unknown range unit, ignore
+	b += strlen("bytes");
+
+	if (!vct_islws(*b))
+		return (-1);		// Unknown range unit, ignore
+	while (vct_islws(*b))
+		b++;
+	if (*b == '*') {		// Content-Range: bytes */123
+		*lo = *hi = -1;
+		b++;
+	} else {			// Content-Range: bytes 1-2/3
+		*lo = http_parse_uint(b, &b);
+		if (*lo < 0)
+			return (-2);
+		if (*b != '-')
+			return (-2);
+		*hi = http_parse_uint(b + 1, &b);
+		if (*hi < 0)
+			return (-2);
+	}
+	if (*b != '/')
+		return (-2);
+	if (b[1] == '*') {		// Content-Range: bytes 1-2/*
+		cl = -1;
+		b += 2;
+	} else {
+		cl = http_parse_uint(b + 1, &b);
+		if (cl <= 0)
+			return (-2);
+	}
+	while (vct_islws(*b))
+		b++;
+	if (*b != '\0')
+		return (-2);
+	if (*lo > *hi)
+		return (-2);
+	assert(cl >= -1);
+	if (cl == -1)
+		return (-1);
+	if (*lo >= cl || *hi >= cl)
+		return (-2);
+	AN(cl);
+	return (cl);
+}
+
 /*--------------------------------------------------------------------
  */
 
