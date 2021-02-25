@@ -532,7 +532,9 @@ pool_herder(void *priv)
 		 * Instead we implement a watchdog and kill the worker if
 		 * nothing has been dequeued for that long.
 		 */
-		if (pp->lqueue == 0) {
+		if (VTAILQ_EMPTY(&pp->queues[TASK_QUEUE_HIGHEST_PRIORITY])) {
+			/* Watchdog only applies to no movement on the
+			 * highest priority queue (TASK_QUEUE_BO) */
 			dq = pp->ndequeued + 1;
 		} else if (dq != pp->ndequeued) {
 			dq = pp->ndequeued;

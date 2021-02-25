@@ -233,6 +233,7 @@ enum task_prio {
 	TASK_QUEUE__END
 };
 
+#define TASK_QUEUE_HIGHEST_PRIORITY TASK_QUEUE_BO
 #define TASK_QUEUE_CLIENT(prio) \
 	(prio == TASK_QUEUE_REQ || prio == TASK_QUEUE_STR)
 
