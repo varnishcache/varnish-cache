@@ -821,29 +821,42 @@ http_GetHdrField(const struct http *hp, hdr_t hdr,
 
 /*--------------------------------------------------------------------*/
 
+static ssize_t
+http_parse_uint(const char *b, const char **e)
+{
+	ssize_t u;
+	unsigned n;
+
+	u = 0;
+	if (!vct_isdigit(*b))
+		return (-1);
+	for (; vct_isdigit(*b); b++) {
+		if (u > (SSIZE_MAX / 10))
+			return (-1);
+		u *= 10;
+		n = *b - '0';
+		if (u > (SSIZE_MAX - n))
+			return (-1);
+		u += n;
+	}
+
+	*e = b;
+	return (u);
+}
+
 ssize_t
 http_GetContentLength(const struct http *hp)
 {
 	ssize_t cl;
 	const char *b;
-	unsigned n;
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 
 	if (!http_GetHdr(hp, H_Content_Length, &b))
 		return (-1);
-	cl = 0;
-	if (!vct_isdigit(*b))
+	cl = http_parse_uint(b, &b);
+	if (cl < 0)
 		return (-2);
-	for (; vct_isdigit(*b); b++) {
-		if (cl > (SSIZE_MAX / 10))
-			return (-2);
-		cl *= 10;
-		n = *b - '0';
-		if (cl > (SSIZE_MAX - n))
-			return (-2);
-		cl += n;
-	}
 	while (vct_islws(*b))
 		b++;
 	if (*b != '\0')
