@@ -69,7 +69,7 @@ main(void)
 	do {
 		p = n + 1;
 		n = strchr(p, '\n');
-		if (n != NULL) {
+		if (n != NULL && n > p) {
 			VSB_putc(vsb, '\t');
 			VSB_quote(vsb, p, (int)(n - p), VSB_QUOTE_CSTR);
 			VSB_cat(vsb, ",\n");
