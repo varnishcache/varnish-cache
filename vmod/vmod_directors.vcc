@@ -2,6 +2,8 @@
 # This document is licensed under the same licence as Varnish
 # itself. See LICENCE for details.
 #
+# SPDX-License-Identifier: BSD-2-Clause
+#
 # Copyright (c) 2013-2015 Varnish Software AS
 # Copyright 2009-2020 UPLEX - Nils Goroll Systemoptimierung
 # All rights reserved.

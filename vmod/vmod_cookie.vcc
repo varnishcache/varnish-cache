@@ -1,3 +1,9 @@
+#-
+# This document is licensed under the same conditions as Varnish itself.
+# See LICENSE for details.
+#
+# SPDX-License-Identifier: BSD-2-Clause
+
 $Module cookie 3 "Varnish Cookie Module"
 
 DESCRIPTION

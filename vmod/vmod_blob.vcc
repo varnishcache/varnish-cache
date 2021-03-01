@@ -2,6 +2,8 @@
 # This document is licensed under the same conditions as Varnish itself.
 # See LICENSE for details.
 #
+# SPDX-License-Identifier: BSD-2-Clause
+#
 # Authors: Nils Goroll <nils.goroll@uplex.de>
 #          Geoffrey Simmons <geoffrey.simmons@uplex.de>
 #
