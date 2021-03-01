@@ -555,71 +555,100 @@ VSB_destroy(struct vsb **s)
 /*
  * Quote a string
  */
+
+static void
+vsb_quote_hex(struct vsb *s, const uint8_t *u, size_t len)
+{
+	const uint8_t *w;
+
+	VSB_cat(s, "0x");
+	for (w = u; w < u + len; w++)
+		if (*w != 0x00)
+			break;
+	if (w == u + len && len > 4) {
+		VSB_cat(s, "0...0");
+	} else {
+		for (w = u; w < u + len; w++)
+			VSB_printf(s, "%02x", *w);
+	}
+}
+
 void
 VSB_quote_pfx(struct vsb *s, const char *pfx, const void *v, int len, int how)
 {
-	const char *p;
-	const char *q;
+	const uint8_t *p = v;
+	const uint8_t *q;
 	int quote = 0;
-	int nl = 0;
-	const unsigned char *u, *w;
+	int nl;
 
-	assert(v != NULL);
+	nl = how &
+	    (VSB_QUOTE_JSON|VSB_QUOTE_HEX|VSB_QUOTE_CSTR|VSB_QUOTE_UNSAFE);
+	AZ(nl & (nl - 1)); // Only one bit can be set
+
+	if (how & VSB_QUOTE_ESCHEX)
+		AZ(how & (VSB_QUOTE_JSON|VSB_QUOTE_HEX));
+
+	if (how & VSB_QUOTE_UNSAFE)
+		how |= VSB_QUOTE_NONL;
+
+	assert(p != NULL);
 	if (len == -1)
 		len = strlen(v);
 
 	if (len == 0 && (how & VSB_QUOTE_CSTR)) {
 		VSB_printf(s, "%s\"\"", pfx);
-		return;
-	} else if (len == 0)
+		if ((how & VSB_QUOTE_NONL))
+			VSB_putc(s, '\n');
+	}
+
+	if (len == 0)
 		return;
 
 	VSB_cat(s, pfx);
 
 	if (how & VSB_QUOTE_HEX) {
-		u = v;
-		for (w = u; w < u + len; w++)
-			if (*w != 0x00)
-				break;
-		VSB_cat(s, "0x");
-		if (w == u + len && len > 4) {
-			VSB_cat(s, "0...0");
-		} else {
-			for (w = u; w < u + len; w++)
-				VSB_printf(s, "%02x", *w);
-		}
-		return;
-	}
-	p = v;
-
-	for (q = p; q < p + len; q++) {
-		if (!isgraph(*q) || *q == '"' || *q == '\\') {
-			quote++;
-			break;
-		}
-	}
-	if (!quote && !(how & (VSB_QUOTE_JSON|VSB_QUOTE_CSTR))) {
-		(void)VSB_bcat(s, p, len);
-		if ((how & (VSB_QUOTE_UNSAFE|VSB_QUOTE_NONL)) &&
-		    p[len-1] != '\n')
-			(void)VSB_putc(s, '\n');
+		vsb_quote_hex(s, v, len);
+		if (how & VSB_QUOTE_NONL)
+			VSB_putc(s, '\n');
 		return;
 	}
 
 	if (how & VSB_QUOTE_CSTR)
-		(void)VSB_putc(s, '"');
+		VSB_putc(s, '"');
 
+	for (q = p; q < p + len; q++) {
+		if (
+		    *q < 0x20 ||
+		    *q == '"' ||
+		    *q == '\\' ||
+		    (*q == '?' && (how & VSB_QUOTE_CSTR)) ||
+		    (*q > 0x7e && !(how & VSB_QUOTE_JSON))
+		) {
+			quote++;
+			break;
+		}
+	}
+
+	if (!quote) {
+		VSB_bcat(s, p, len);
+		if ((how & VSB_QUOTE_NONL) &&
+		    p[len-1] != '\n')
+			(void)VSB_putc(s, '\n');
+		if (how & VSB_QUOTE_CSTR)
+			VSB_putc(s, '"');
+		return;
+	}
+
+	nl = 0;
 	for (q = p; q < p + len; q++) {
 		if (nl)
 			VSB_cat(s, pfx);
 		nl = 0;
 		switch (*q) {
 		case '?':
-			if (how & VSB_QUOTE_CSTR)
+			/* Avoid C Trigraph insanity */
+			if (how & VSB_QUOTE_CSTR && !(how & VSB_QUOTE_JSON))
 				(void)VSB_putc(s, '\\');
-			(void)VSB_putc(s, *q);
-			break;
-		case ' ':
 			(void)VSB_putc(s, *q);
 			break;
 		case '\\':
@@ -630,38 +659,43 @@ VSB_quote_pfx(struct vsb *s, const char *pfx, const void *v, int len, int how)
 			break;
 		case '\n':
 			if (how & VSB_QUOTE_CSTR) {
-				(void)VSB_printf(s, "\\n\"\n%s\"", pfx);
-			} else if (how & (VSB_QUOTE_NONL|VSB_QUOTE_UNSAFE)) {
-				(void)VSB_printf(s, "\n");
+				VSB_printf(s, "\\n\"\n%s\"", pfx);
+			} else if (how & VSB_QUOTE_JSON) {
+				VSB_printf(s, "\\n");
+			} else if (how & VSB_QUOTE_NONL) {
+				VSB_putc(s, *q);
 				nl = 1;
 			} else {
-				(void)VSB_printf(s, "\\n");
+				VSB_printf(s, "\\n");
 			}
 			break;
 		case '\r':
-			(void)VSB_cat(s, "\\r");
+			VSB_cat(s, "\\r");
 			break;
 		case '\t':
-			(void)VSB_cat(s, "\\t");
+			VSB_cat(s, "\\t");
 			break;
 		case '\v':
-			(void)VSB_cat(s, "\\v");
+			VSB_cat(s, "\\v");
 			break;
 		default:
-			/* XXX: Implement VSB_QUOTE_JSON */
-			if (isgraph(*q))
-				(void)VSB_putc(s, *q);
+			if (0x20 <= *q && *q <= 0x7e)
+				VSB_putc(s, *q);
+			else if (*q > 0x7e && (how & VSB_QUOTE_JSON))
+				VSB_putc(s, *q);
+			else if (how & VSB_QUOTE_JSON)
+				VSB_printf(s, "\\u%04x", *q);
 			else if (how & VSB_QUOTE_ESCHEX)
-				(void)VSB_printf(s, "\\x%02x", *q & 0xff);
+				VSB_printf(s, "\\x%02x", *q);
 			else
-				(void)VSB_printf(s, "\\%03o", *q & 0xff);
+				VSB_printf(s, "\\%03o", *q);
 			break;
 		}
 	}
 	if (how & VSB_QUOTE_CSTR)
-		(void)VSB_putc(s, '"');
-	if ((how & (VSB_QUOTE_NONL|VSB_QUOTE_UNSAFE)) && !nl)
-		(void)VSB_putc(s, '\n');
+		VSB_putc(s, '"');
+	if ((how & VSB_QUOTE_NONL) && !nl)
+		VSB_putc(s, '\n');
 }
 
 void

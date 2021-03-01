@@ -79,12 +79,52 @@ ssize_t		 VSB_len(const struct vsb *);
 void		 VSB_delete(struct vsb *) v_deprecated_;
 void		 VSB_fini(struct vsb *);
 void		 VSB_destroy(struct vsb **);
-#define VSB_QUOTE_NONL		1
+
+/*
+ * VSB_quote[_pfx] has four major modes, and two modifiers
+ */
+
+#define VSB_QUOTE_PLAIN		0
+	/*
+	 * Basic "show me the string" mode
+	 * All output is a single line
+	 */
 #define VSB_QUOTE_JSON		2
+	/*
+	 * Output suitable for inclusion between "..." in JSON
+	 * Uses JSON \u%04x quoting.
+	 * Anything above 0x7e had better be UTF-8
+	 */
 #define VSB_QUOTE_HEX		4
+	/*
+	 * Hex dump, single line.
+	 * All zero data is compressed to "0x0...0"
+	 */
 #define VSB_QUOTE_CSTR		8
+	/*
+	 * C lanuage source code literal string(s)
+	 * Breaks strings at \n (expecting string concatenation)
+	 */
 #define VSB_QUOTE_UNSAFE	16
+	/*
+	 * For general display applications
+	 * " and \ are not quoted
+	 * Splits output to new line at '\n'
+	 * Implies VSB_QUOTE_NONL
+	 */
+
+#define VSB_QUOTE_NONL		1
+	/*
+	 * If the output does not end in \n, append \n
+	 * Can be combined with all other modes.
+	 */
+
 #define VSB_QUOTE_ESCHEX	32
+	/*
+	 * Use \x%02x instead of \%03o
+	 * Not valid with VSB_QUOTE_JSON and VSB_QUOTE_HEX
+	 */
+
 void		 VSB_quote_pfx(struct vsb *, const char*, const void *,
 		     int len, int how);
 void		 VSB_quote(struct vsb *, const void *, int len, int how);
