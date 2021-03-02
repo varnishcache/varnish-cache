@@ -355,9 +355,7 @@ hash_data(input)
 ~~~~~~~~~~~~~~~~
 
   Adds an input to the hash input. In the built-in VCL ``hash_data()``
-  is called on the host and URL of the request.
-  Available in ``vcl_hash`` or ``vcl_recv``.  If used in ``vcl_recv``
-  ``vcl_hash`` will not be called.
+  is called on the host and URL of the request. Available in ``vcl_hash``.
 
 synthetic(STRING)
 ~~~~~~~~~~~~~~~~~

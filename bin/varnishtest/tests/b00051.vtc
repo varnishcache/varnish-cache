@@ -22,5 +22,5 @@ client c1 {
 	rxresp
 	expect resp.http.req_hash ~ "[[:xdigit:]]{64}"
 	expect resp.http.req_hash == resp.http.bereq_hash
-	expect resp.http.req_hash-sf == ":0jkH41nfmD0PRFsKpM1m7ucOApnxFc62B//mQWxOnmQ=:"
+	expect resp.http.req_hash-sf == ":3k0f0yRKtKt7akzkyNsTGSDOJAZOQowTwKWhu5+kIu0=:"
 } -run

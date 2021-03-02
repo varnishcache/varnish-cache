@@ -134,9 +134,8 @@ of the following keywords:
 vcl_hash
 ~~~~~~~~
 
-Called after `vcl_recv` to create a hash value for the request,
-unless `vcl_recv` already did that.
-This is used as the key to store and look up objects in the cache.
+Called after `vcl_recv` to create a hash value for the request. This is
+used as a key to look up the object in Varnish.
 
 The `vcl_hash` subroutine may terminate with calling ``return()`` with one
 of the following keywords:

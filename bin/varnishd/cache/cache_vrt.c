@@ -689,29 +689,19 @@ VRT_fail(VRT_CTX, const char *fmt, ...)
 VCL_VOID
 VRT_hashdata(VRT_CTX, VCL_STRANDS s)
 {
-	struct VSHA256Context sha256ctx;
 	int i;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	AZ(ctx->specific);
-	VSHA256_Init(&sha256ctx);
-	VSHA256_Update(&sha256ctx, ctx->req->digest, sizeof ctx->req->digest);
+	AN(ctx->specific);
 	AN(s);
-	for (i = 0; i < s->n; i++) {
-		if (s->p[i] != NULL) {
-			VSHA256_Update(&sha256ctx, s->p[i], strlen(s->p[i]));
-			VSLb(ctx->req->vsl, SLT_Hash, "%s", s->p[i]);
-		} else {
-			VSHA256_Update(&sha256ctx, "", 1);
-		}
-	}
+	for (i = 0; i < s->n; i++)
+		HSH_AddString(ctx->req, ctx->specific, s->p[i]);
 	/*
 	 * Add a 'field-separator' to make it more difficult to
 	 * manipulate the hash.
 	 */
-	VSHA256_Update(&sha256ctx, "", 1);
-	VSHA256_Final(ctx->req->digest, &sha256ctx);
+	HSH_AddString(ctx->req, ctx->specific, NULL);
 }
 
 /*--------------------------------------------------------------------*/

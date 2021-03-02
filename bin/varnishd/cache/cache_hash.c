@@ -183,6 +183,19 @@ HSH_DeleteObjHead(const struct worker *wrk, struct objhead *oh)
 	FREE_OBJ(oh);
 }
 
+void
+HSH_AddString(struct req *req, void *ctx, const char *str)
+{
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	AN(ctx);
+	if (str != NULL) {
+		VSHA256_Update(ctx, str, strlen(str));
+		VSLb(req->vsl, SLT_Hash, "%s", str);
+	} else
+		VSHA256_Update(ctx, &str, 1);
+}
+
 /*---------------------------------------------------------------------
  * This is a debugging hack to enable testing of boundary conditions
  * in the hash algorithm.

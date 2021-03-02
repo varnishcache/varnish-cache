@@ -27,7 +27,6 @@ VCL Design Patterns
 .. toctree::
 	:maxdepth: 1
 
-	dp_vcl_recv_hash.rst
 	dp_vcl_resp_status.rst
 
 Bundled VMODs
