@@ -604,6 +604,13 @@ VTCP_Check(ssize_t a)
 	 * some time. */
 	if (errno == ETIMEDOUT)
 		return (1);
+	/* #3539 various errnos documented on linux as POSIX.1 */
+	if (errno == ENETDOWN || errno == ENETUNREACH || errno == ENETRESET ||
+	    errno == ECONNABORTED || /* ECONNRESET see above */
+	    errno == EHOSTUNREACH || errno == EHOSTDOWN) {
+		return (1);
+	}
+
 #if (defined (__SVR4) && defined (__sun))
 	if (errno == ECONNREFUSED)	// in r02702.vtc
 		return (1);
