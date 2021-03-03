@@ -44,7 +44,7 @@ sub vcl_recv {
 }
 
 sub vcl_req_host {
-	if (req.http.host) {
+	if (req.http.host ~ "[[:upper:]]") {
 		set req.http.host = req.http.host.lower();
 	}
 	if (!req.http.host &&
