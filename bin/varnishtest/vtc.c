@@ -102,7 +102,7 @@ static struct macro *
 macro_def_int(const char *name, const char *fmt, va_list ap)
 {
 	struct macro *m;
-	char buf[256];
+	char buf[512];
 
 	VTAILQ_FOREACH(m, &macro_list, list)
 		if (!strcmp(name, m->name))
