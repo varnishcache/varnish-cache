@@ -191,3 +191,23 @@ client c1 {
 	gunzip
 	expect resp.bodylen == 100
 } -run
+
+# Test partial range with http2
+
+server s1 {
+	rxreq
+	txresp -hdr "Content-length: 3" -body "BLA"
+} -start
+
+varnish v1 -cliok "param.set feature +http2"
+varnish v1 -vcl+backend ""
+
+client c2 {
+	stream 1 {
+		txreq -hdr "range" "bytes=0-1"
+		rxresp
+		expect resp.status == 206
+		expect resp.http.content-length == 2
+		expect resp.body == BL
+	} -run
+} -run

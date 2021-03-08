@@ -55,8 +55,10 @@ vrg_range_fini(struct vdp_ctx *vdc, void **priv)
 
 	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
 	CAST_OBJ_NOTNULL(vrg_priv, *priv, VRG_PRIV_MAGIC);
-	if (vrg_priv->range_off < vrg_priv->range_high)
+	if (vrg_priv->range_off < vrg_priv->range_high) {
 		Req_Fail(vrg_priv->req, SC_RANGE_SHORT);
+		vrg_priv->req->vdc->retval = -1;
+	}
 	*priv = NULL;	/* struct on ws, no need to free */
 	return (0);
 }
