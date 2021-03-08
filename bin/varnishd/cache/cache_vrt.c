@@ -85,6 +85,14 @@ VRT_synth(VRT_CTX, VCL_INT code, VCL_STRING reason)
 		return;
 	}
 
+	if (reason && !WS_Inside(ctx->ws, reason, NULL)) {
+		reason = WS_Copy(ctx->ws, reason, -1);
+		if (!reason) {
+			VRT_fail(ctx, "Workspace overflow");
+			return;
+		}
+	}
+
 	if (ctx->req == NULL) {
 		CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
 		ctx->bo->err_code = (uint16_t)code;
