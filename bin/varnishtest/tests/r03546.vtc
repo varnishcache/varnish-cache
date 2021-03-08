@@ -1,0 +1,21 @@
+varnishtest "Synth resp.reason race"
+
+varnish v1 -vcl {
+	backend default none;
+
+	sub vcl_backend_error {
+		set beresp.status = 500;
+		set beresp.reason = "VCL";
+	}
+
+	sub vcl_deliver {
+		return (synth(resp.status, resp.reason));
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 500
+	expect resp.reason == "VCL"
+} -run
