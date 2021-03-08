@@ -204,7 +204,7 @@ varnish v1 -vcl+backend ""
 
 client c2 {
 	stream 1 {
-		txreq -hdr "range" "bytes=0-1"
+		txreq -url /3 -hdr "range" "bytes=0-1"
 		rxresp
 		expect resp.status == 206
 		expect resp.http.content-length == 2
