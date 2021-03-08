@@ -36,11 +36,15 @@ vcl 4.0;
 # Client side
 
 sub vcl_recv {
+	call vcl_builtin_recv;
+	return (hash);
+}
+
+sub vcl_builtin_recv {
 	call vcl_req_host;
 	call vcl_req_method;
 	call vcl_req_authorization;
 	call vcl_req_cookie;
-	return (hash);
 }
 
 sub vcl_req_host {
@@ -92,6 +96,7 @@ sub vcl_req_cookie {
 }
 
 sub vcl_pipe {
+	call vcl_builtin_pipe;
 	# By default "Connection: close" is set on all piped requests, to stop
 	# connection reuse from sending future requests directly to the
 	# (potentially) wrong backend. If you do want this to happen, you can
@@ -100,40 +105,68 @@ sub vcl_pipe {
 	return (pipe);
 }
 
+sub vcl_builtin_pipe {
+}
+
 sub vcl_pass {
+	call vcl_builtin_pass;
 	return (fetch);
 }
 
+sub vcl_builtin_pass {
+}
+
 sub vcl_hash {
+	call vcl_builtin_hash;
+	return (lookup);
+}
+
+sub vcl_builtin_hash {
 	hash_data(req.url);
 	if (req.http.host) {
 		hash_data(req.http.host);
 	} else {
 		hash_data(server.ip);
 	}
-	return (lookup);
 }
 
 sub vcl_purge {
+	call vcl_builtin_purge;
 	return (synth(200, "Purged"));
 }
 
+sub vcl_builtin_purge {
+}
+
 sub vcl_hit {
+	call vcl_builtin_hit;
 	return (deliver);
+}
+
+sub vcl_builtin_hit {
 }
 
 sub vcl_miss {
+	call vcl_builtin_miss;
 	return (fetch);
 }
 
+sub vcl_builtin_miss {
+}
+
 sub vcl_deliver {
+	call vcl_builtin_deliver;
 	return (deliver);
+}
+
+sub vcl_builtin_deliver {
 }
 
 #
 # We can come here "invisibly" with the following errors: 500 & 503
 #
 sub vcl_synth {
+	call vcl_builtin_synth;
 	set resp.http.Content-Type = "text/html; charset=utf-8";
 	set resp.http.Retry-After = "5";
 	set resp.body = {"<!DOCTYPE html>
@@ -154,17 +187,29 @@ sub vcl_synth {
 	return (deliver);
 }
 
+sub vcl_builtin_synth {
+}
+
 #######################################################################
 # Backend Fetch
 
 sub vcl_backend_fetch {
-	if (bereq.method == "GET") {
-		unset bereq.body;
-	}
+	call vcl_builtin_backend_fetch;
 	return (fetch);
 }
 
+sub vcl_builtin_backend_fetch {
+	if (bereq.method == "GET") {
+		unset bereq.body;
+	}
+}
+
 sub vcl_backend_response {
+	call vcl_builtin_backend_response;
+	return (deliver);
+}
+
+sub vcl_builtin_backend_response {
 	if (bereq.uncacheable) {
 		return (deliver);
 	}
@@ -172,7 +217,6 @@ sub vcl_backend_response {
 	call vcl_beresp_cookie;
 	call vcl_beresp_control;
 	call vcl_beresp_vary;
-	return (deliver);
 }
 
 sub vcl_beresp_stale {
@@ -208,6 +252,7 @@ sub vcl_beresp_hitmiss {
 }
 
 sub vcl_backend_error {
+	call vcl_builtin_backend_error;
 	set beresp.http.Content-Type = "text/html; charset=utf-8";
 	set beresp.http.Retry-After = "5";
 	set beresp.body = {"<!DOCTYPE html>
@@ -226,6 +271,9 @@ sub vcl_backend_error {
 </html>
 "};
 	return (deliver);
+}
+
+sub vcl_builtin_backend_error {
 }
 
 #######################################################################
