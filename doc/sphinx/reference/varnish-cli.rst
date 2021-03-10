@@ -312,9 +312,9 @@ active until all its transactions are over.
 
 Over time, if you often refresh your VCL and keep the previous
 versions around, resource consumption will increase, you can't escape
-that. However, most of the time you want only one to pay the price only
-for the active VCL and keep older VCLs in case you'd need to rollback
-to a previous version.
+that. However, most of the time you want to pay the price only for the
+active VCL and keep older VCLs in case you'd need to rollback to a
+previous version.
 
 The VCL temperature allows you to minimize the footprint of inactive
 VCLs. Once a VCL becomes cold, Varnish will release all the resources
