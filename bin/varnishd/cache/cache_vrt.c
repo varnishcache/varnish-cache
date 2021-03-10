@@ -56,6 +56,10 @@
 
 const void * const vrt_magic_string_end = &vrt_magic_string_end;
 const void * const vrt_magic_string_unset = &vrt_magic_string_unset;
+const struct strands *vrt_null_strands = &(struct strands){
+	.n = 0,
+	.p = (const char *[1]){NULL}
+};
 
 /*--------------------------------------------------------------------*/
 
