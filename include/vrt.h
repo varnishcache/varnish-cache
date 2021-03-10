@@ -238,6 +238,11 @@ struct strands {
 	const char	**p;
 };
 
+/*
+ * A VCL_STRANDS return value must never be NULL. Use this instead
+ */
+extern const struct strands *vrt_null_strands;
+
 /***********************************************************************
  * VCL_BLOB:
  *
