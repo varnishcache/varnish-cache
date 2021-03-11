@@ -167,6 +167,10 @@ sub vcl_builtin_deliver {
 #
 sub vcl_synth {
 	call vcl_builtin_synth;
+	return (deliver);
+}
+
+sub vcl_builtin_synth {
 	set resp.http.Content-Type = "text/html; charset=utf-8";
 	set resp.http.Retry-After = "5";
 	set resp.body = {"<!DOCTYPE html>
@@ -184,10 +188,6 @@ sub vcl_synth {
   </body>
 </html>
 "};
-	return (deliver);
-}
-
-sub vcl_builtin_synth {
 }
 
 #######################################################################
@@ -253,6 +253,10 @@ sub vcl_beresp_hitmiss {
 
 sub vcl_backend_error {
 	call vcl_builtin_backend_error;
+	return (deliver);
+}
+
+sub vcl_builtin_backend_error {
 	set beresp.http.Content-Type = "text/html; charset=utf-8";
 	set beresp.http.Retry-After = "5";
 	set beresp.body = {"<!DOCTYPE html>
@@ -270,10 +274,6 @@ sub vcl_backend_error {
   </body>
 </html>
 "};
-	return (deliver);
-}
-
-sub vcl_builtin_backend_error {
 }
 
 #######################################################################
