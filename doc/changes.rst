@@ -40,14 +40,21 @@ Varnish Cache Next (2021-03-15)
   overhead like HTTP/1 chunked encoding or HTTP/2 framing.
 
   This change affects counters like
+
   - ``MAIN.s_req_bodybytes``,
+
   - ``MAIN.s_resp_bodybytes``,
+
   - ``VBE.*.*.bereq_bodybytes`` and
+
   - ``VBE.*.*.beresp_bodybytes``
 
   as well as the VSL records
+
   - ``ReqAcct``,
+
   - ``PipeAcct`` and
+
   - ``BereqAcct``.
 
 * ``VdpAcct`` log records have been added to output delivery filter
@@ -55,9 +62,13 @@ Varnish Cache Next (2021-03-15)
   tags are masked by default.
 
 * Many filter (VDP/VFP) related signatures have been changed:
+
   - ``vdp_init_f``
+
   - ``vdp_fini_f``
+
   - ``vdp_bytes_f``
+
   - ``VDP_bytes()``
 
   as well as ``struct vdp_entry`` and ``struct vdp_ctx``
