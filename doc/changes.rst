@@ -84,9 +84,12 @@ Varnish Cache Next (2021-03-15)
 * Handling of hop-by-hop headers has been fixed for HTTP/2 (3416_).
 
 * The stevedore API has been changed:
+
   - ``OBJ_ITER_FINAL`` has been renamed to ``OBJ_ITER_END``
+
   - ``ObjExtend()`` signature has been changed to also cover the
     ``ObjTrimStore()`` use case and
+
   - ``ObjTrimStore()`` has been removed.
 
 * The ``verrno.h`` header file has been removed and merged into
@@ -434,6 +437,38 @@ Varnish Cache Next (2021-03-15)
 
   This allows for better integration of custom VCL and the built-in
   VCL and better reuse.
+
+.. _2942: https://github.com/varnishcache/varnish-cache/issues/2942
+.. _3067: https://github.com/varnishcache/varnish-cache/issues/3067
+.. _3243: https://github.com/varnishcache/varnish-cache/issues/3243
+.. _3329: https://github.com/varnishcache/varnish-cache/issues/3329
+.. _3330: https://github.com/varnishcache/varnish-cache/issues/3330
+.. _3358: https://github.com/varnishcache/varnish-cache/issues/3358
+.. _3362: https://github.com/varnishcache/varnish-cache/issues/3362
+.. _3385: https://github.com/varnishcache/varnish-cache/issues/3385
+.. _3392: https://github.com/varnishcache/varnish-cache/issues/3392
+.. _3393: https://github.com/varnishcache/varnish-cache/issues/3393
+.. _3400: https://github.com/varnishcache/varnish-cache/issues/3400
+.. _3405: https://github.com/varnishcache/varnish-cache/issues/3405
+.. _3407: https://github.com/varnishcache/varnish-cache/issues/3407
+.. _3416: https://github.com/varnishcache/varnish-cache/issues/3416
+.. _3417: https://github.com/varnishcache/varnish-cache/issues/3417
+.. _3433: https://github.com/varnishcache/varnish-cache/issues/3433
+.. _3434: https://github.com/varnishcache/varnish-cache/issues/3434
+.. _3436: https://github.com/varnishcache/varnish-cache/issues/3436
+.. _3442: https://github.com/varnishcache/varnish-cache/issues/3442
+.. _3463: https://github.com/varnishcache/varnish-cache/issues/3463
+.. _3473: https://github.com/varnishcache/varnish-cache/issues/3473
+.. _3485: https://github.com/varnishcache/varnish-cache/issues/3485
+.. _3496: https://github.com/varnishcache/varnish-cache/issues/3496
+.. _3498: https://github.com/varnishcache/varnish-cache/issues/3498
+.. _3501: https://github.com/varnishcache/varnish-cache/issues/3501
+.. _3502: https://github.com/varnishcache/varnish-cache/issues/3502
+.. _3509: https://github.com/varnishcache/varnish-cache/issues/3509
+.. _3510: https://github.com/varnishcache/varnish-cache/issues/3510
+.. _3525: https://github.com/varnishcache/varnish-cache/issues/3525
+.. _3529: https://github.com/varnishcache/varnish-cache/issues/3529
+.. _3531: https://github.com/varnishcache/varnish-cache/issues/3531
 
 ================================
 Varnish Cache 6.5.1 (2020-09-25)
