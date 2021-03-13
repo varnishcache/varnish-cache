@@ -35,14 +35,70 @@ release process.
 Varnish Cache Next (2021-03-15)
 ================================
 
-* counters MAIN.s_req_bodybytes and VBE.*.tools.beresp_bodybytes
-  are now always the number of bodybytes moved on the wire.
+* Body bytes accounting has been fixed to always represent the number
+  of bodybytes moved on the wire, exclusive of protocol-specific
+  overhead like HTTP/1 chunked encoding or HTTP/2 framing.
 
-  .. 36e2bfe7d34fdbf75ccf67a1263f8f7bac6c4788
+  This change affects counters like
+  - ``MAIN.s_req_bodybytes``,
+  - ``MAIN.s_resp_bodybytes``,
+  - ``VBE.*.*.bereq_bodybytes`` and
+  - ``VBE.*.*.beresp_bodybytes``
+
+  as well as the VSL records
+  - ``ReqAcct``,
+  - ``PipeAcct`` and
+  - ``BereqAcct``.
+
+* ``VdpAcct`` log records have been added to output delivery filter
+  (VDP) accounting details analogous to the existing ``VfpAcct``. Both
+  tags are masked by default.
+
+* Many filter (VDP/VFP) related signatures have been changed:
+  - ``vdp_init_f``
+  - ``vdp_fini_f``
+  - ``vdp_bytes_f``
+  - ``VDP_bytes()``
+
+  as well as ``struct vdp_entry`` and ``struct vdp_ctx``
+
+  ``VFP_Push()`` and ``VDP_Push()`` are no longer intended for VMOD
+  use and have been removed from the API.
+
+* The VDP code is now more strict about ``VDP_END``, which must be
+  sent down the filter chain at most once.
+
+* Core code has been changed to ensure for most cases that ``VDP_END``
+  gets signaled with the object's last bytes, rather than with an
+  extra zero-data call.
+
+* Reason phrases for more HTTP Status codes have been added to core
+  code.
+
+* Connection pooling behavior has been improved with respect to
+  ``Connection: close`` (3400_, 3405_).
+
+* Handling of the ``Keep-Alive`` HTTP header as hop-by-hop has been
+  fixed (3417_).
+
+* Handling of hop-by-hop headers has been fixed for HTTP/2 (3416_).
+
+* The stevedore API has been changed:
+  - ``OBJ_ITER_FINAL`` has been renamed to ``OBJ_ITER_END``
+  - ``ObjExtend()`` signature has been changed to also cover the
+    ``ObjTrimStore()`` use case and
+  - ``ObjTrimStore()`` has been removed.
+
+* The ``verrno.h`` header file has been removed and merged into
+  ``vas.h``
+
+* The connection close reason has been fixed to properly report
+  ``SC_RESP_CLOSE`` / ``resp_close`` where previously only
+  ``SC_REQ_CLOSE`` / ``req_close`` was reported.
 
 * Unless the new ``validate_headers`` feature is disabled, all newly
   set headers are now validated to contain only characters allowed by
-  RFC7230. A (runtime) VCL failure is triggered if not.
+  RFC7230. A (runtime) VCL failure is triggered if not (3407_).
 
 * ``VRT_ValidHdr()`` has been added for vmods to conduct the same
   check as the ``validate_headers`` feature, for example when headers
@@ -63,6 +119,259 @@ Varnish Cache Next (2021-03-15)
 * All shard ``Error`` and ``Notice`` messages now use the unified
   prefix ``vmod_directors: shard %s``.
 
+* In the shard director, use of parameter sets with ``resolve=NOW``
+  has been fixed.
+
+* Performance of log-processing tools like ``varnishlog`` has been
+  improved by using ``mmap()`` if possible when reading from log
+  files.
+
+* An assertion failure has been fixed which could be triggered when a
+  request body was used with restarts (3433_, 3434_).
+
+* A signal handling bug in the Varnish Utility API (VUT) has been
+  fixed which caused log-processing utilities to perform poorly after
+  a signal had been received (3436_).
+
+* The ``client.identity`` variable is now accessible on the backend
+  side.
+
+* Client and backend finite state machine internals (``enum req_step``
+  and ``enum fetch_step``) have been removed from ``cache.h``.
+
+* Three new ``Timestamp`` VSL records have been added to backend
+  request processing:
+
+  - The ``Process`` timestamp after ``return(deliver)`` or
+    ``return(pass(x))`` from ``vcl_backend_response``,
+
+  - the ``Fetch`` timestamp before a backend connection is requested
+    and
+
+  - the ``Connected`` timestamp when a connection to a regular backend
+    (VBE) is established.
+
+* The VRT backend interface has been changed:
+
+  - ``struct vrt_endpoint`` has been added describing a UDS or TCP
+    endpoint for a backend to connect to.
+
+    Endpoints also support a preamble to be sent with every new
+    connection.
+
+  - This structure needs to be passed via the ``endpoint`` member of
+    ``struct vrt_backend`` when creating backends with
+    ``VRT_new_backend()`` or ``VRT_new_backend_clustered()``.
+
+* ``VRT_Endpoint_Clone()`` has been added to facilitate working with
+  endpoints.
+
+* The variables ``bereq.is_hitpass`` and ``bereq.is_hitmiss`` have
+  been added to the backend side matching ``req.is_hitpass`` and
+  ``req.is_hitmiss`` on the client side.
+
+* The ``set_ip_tos()`` function from the bundled ``std`` vmod now sets
+  the IPv6 Taffic Class (TCLASS) when used on an IPv6 connection.
+
+* A bug has been fixed which could lead to varnish failing to start
+  after updates due to outdated content of the ``vmod_cache``
+  directory (3243_).
+
+* An issue has been addressed where using VCL with a high number of
+  literal strings could lead to prolonged c-compiler runtimes since
+  Varnish-Cache 6.3 (3392_).
+
+* The ``MAIN.esi_req`` counter has been added as a statistic of the
+  number of ESI sub requests created.
+
+* The ``vcl.discard`` CLI command can now be used to discard more than
+  one VCL with a single command, which succeeds only if all given VCLs
+  could be discarded (atomic behavior).
+
+* The ``vcl.discard`` CLI command now supports glob patterns for vcl names.
+
+* The ``vcl.deps`` CLI command has been added to output dependencies
+  between VCLs (because of labels and ``return(vcl)`` statements).
+
+* The ``FetchError`` log message ``Timed out reusing backend
+  connection`` has been renamed to ``first byte timeout (reused
+  connection)`` to clarify that it is emit for effectively the same
+  reason as ``first byte timeout``.
+
+* Long strings in VCL can now also be denoted using ``""" ... """`` in
+  addition to the existing ``{" ... "}``.
+
+* The ``pdiff()`` function declaration has been moved from ``cache.h``
+  to ``vas.h``.
+
+* The interface for private pointers in VMODs has been changed:
+
+  - The ``free`` pointer in ``struct vmod_priv`` has been replaced
+    with a pointer to ``struct vmod_priv_methods``, to where the
+    pointer to the former free callback has been moved as the ``fini``
+    member.
+
+  - The former free callback type has been renamed from
+    ``vmod_priv_free_f`` to ``vmod_priv_fini_f`` and as gained a
+    ``VRT_CTX`` argument
+
+* The ``MAIN.s_bgfetch`` counter has been added as a statistic on the
+  number of background fetches issues.
+
+* Various improvements have been made to the ``varnishtest`` facility:
+
+  - the ``loop`` keyword now works everywhere
+
+  - HTTP/2 logging has been improved
+
+  - Default HTTP/2 parameters have been tweaked (3442_)
+
+  - Varnish listen address information is now available by default in
+    the macros ``${vNAME_addr}``, ``${vNAME_port}`` and
+    ``${vNAME_sock}``. Macros by the names ``${vNAME_SOCKET_*}``
+    contain the address information for each listen socket as created
+    with the ``-a`` argument to ``varnishd``.
+
+  - Synchronization points for counters (VSCs) have been added as
+    ``varnish vNAME -expect PATTERN OP PATTERN``
+
+  - varnishtest now also works with IPv6 setups
+
+  - ``feature ipv4`` and ``feature ipv6`` can be used to control
+    execution of test cases which require one or the other protocol.
+
+  - haproxy arguments can now be externally provided through the
+    ``HAPROXY_ARGS`` variable.
+
+  - logexpect now supports alternatives with the ``expect ? ...`` syntax
+    and negative matches with the ``fail add ...`` and ``fail clear``
+    syntax.
+
+  - The overall logexpect match expectation can now be inverted using
+    the ``-err`` argument.
+
+  - Numeric comparisons for HTTP headers have been added: ``-lt``,
+    ``-le``, ``-eq``, ``-ne``, ``-ge``, ``-gt``
+
+  - ``rxdata -some`` has been fixed.
+
+* The ``ban_cutoff`` parameter now refers to the overall length of the
+  ban list, including completed bans, where before only non-completed
+  ("active") bans were counted towards ``ban_cutoff``.
+
+* A race in the round-robin director has been fixed which could lead
+  to backend requests failing when backends in the director were sick
+  (3473_).
+
+* A race in the probe management has been fixed which could lead to a
+  panic when VCLs changed temperature in general and when
+  ``vcl.discard`` was used in particular (3362_).
+
+* A bug has been fixed which lead to counters (VSCs) of backends from
+  cold VCLs being presented (3358_).
+
+* A bug in ``varnishncsa`` has been fixed which could lead to it
+  crashing when header fields were referenced which did not exist in
+  the processed logs (3485_).
+
+* For failing PROXY connections, ``SessClose`` now provides more
+  detailed information on the cause of the failure.
+
+* The ``std.ban()`` and ``std.ban_error()`` functions have been added
+  to the ``std`` vmod, allowing VCL to check for ban errors.
+
+* Use of the ``ban()`` built-in VCL command is now deprecated.
+
+* The source tree has been reorganized with all vmods now moved to a
+  single ``vmod`` directory.
+
+* ``vmodtool.py`` has been improved to simplify Makefiles when many
+  VMODs are built in a single directory.
+
+* The ``VSA_getsockname()`` and ``VSA_getpeername()`` functions have
+  been added to get address information of file descriptors.
+
+* ``varnishd`` now supports the ``-b None`` argument to start with
+  only the builtin VCL and no backend at all (3067_).
+
+* Some corner cases of IPv6 support in ``varnishd`` have been fixed.
+
+* ``vcl_pipe {}``: ``return(synth)`` and vmod private state support
+  have been fixed. Trying to use ``std.rollback()`` from ``vcl_pipe``
+  now results in VCL failure (3329_, 3330_, 3385_).
+
+* The ``bereq.xid`` variable is now also available in ``vcl_pipe {}``
+
+* The ``VRT_priv_task_get()`` and ``VRT_priv_top_get()`` functions
+  have been added to VRT to allow vmods to retrieve existing
+  ``PRIV_TASK`` / ``PRIV_TOP`` private pointers without creating any.
+
+* ``varnishstat`` now avoids display errors of gauges which previously
+  could underflow to negative values, being displayed as extremely
+  high positive values.
+
+  The ``-r`` option and the ``r`` key binding have been added to
+  return to the previous behavior. When raw mode is active in
+  ``varnishstat`` interactive (curses) mode, the word ``RAW`` is
+  displayed at the right hand side in the lower status line.
+
+* The ``VSC_IsRaw()`` function has been added to ``libvarnishapi`` to
+  query if a gauge is being returned raw or adjusted.
+
+* The ``busy_stats_rate`` feature flag has been added to ensure
+  statistics updates (as configured using the ``thread_stats_rate``
+  parameter) even on a fully loaded system, which would otherwise
+  delay statistics updates in order to reduce lock contention.
+
+* ``ExpKill`` log (VSL) records are now masked by default. See the
+  ``vsl_mask`` parameter.
+
+* A bug has been fixed which could lead to panics when ESI was used
+  with ESI-aware VMODs were used because ``PRIV_TOP`` vmod private
+  state was created on a wrong workspace (3496_).
+
+* The ``VCL_REGEX`` data type is now supported for VMODs, allowing
+  them to use regular expression literals checked and compiled by the
+  VCL compiler infrastructure.
+
+  Consequently, the ``VRT_re_init()`` and ``VRT_re_fini()`` functions
+  have been removed, because they are not required and their use was
+  probably wrong anyway.
+
+* The ``%{X}T`` format has been added to ``varnishncsa``, which
+  generalizes ``%D`` and ``%T``, but also support milliseconds
+  (``ms``) output.
+
+* Error handling has been fixed when vmod functions/methods with
+  ``PRIV_TASK`` arguments were wrongly called from the backend side
+  (3498_).
+
+* The ``varnishncsa`` ``-E`` argument to show ESI requests has been
+  changed to imply ``-c`` (client mode).
+
+* Error handling and performance of the VSL (shared log) client code
+  in ``libvarnishapi`` have been improved (3501_).
+
+* ``varnishlog`` now supports the ``-u`` option to write to a file
+  specified with ``-w`` unbuffered.
+
+* Comparisons of numbers in VSL queries have been improved to match
+  better the behavior which is likely expected by users who have not
+  read the documentation in all detail (3463_).
+
+* A bug in the ESI code has been fixed which could trigger a panic
+  when no storage space was available (3502_).
+
+* The ``resp.proto`` variable is now read-only as it should have been
+  for long.
+
+* ``VTCP_open()`` has been fixed to try all possible addresses from
+  the resolver before giving up (3509_). This bug could cause
+  confusing error messages (3510_).
+
+* ``VRT_synth_blob()`` and ``VRT_synth_strands()`` have been
+  added. The latter should now be used instead of ``VRT_synth_page()``.
+
 * The ``VCL_SUB`` data type is now supported for VMODs to save
   references to subroutines to be called later using
   ``VRT_call()``. Calls from a wrong context (e.g. calling a
@@ -73,12 +382,58 @@ Varnish Cache Next (2021-03-15)
 
 .. _VMOD - Varnish Modules: https://varnish-cache.org/docs/trunk/reference/vmod.html
 
+  VMOD functions can also return the ``VCL_SUB`` data type for calls
+  from VCL as in ``call vmod.returning_sub();``.
+
 * ``VRT_check_call()`` can be used to check if a ``VRT_call()`` would
   succeed in order to avoid the potential VCL failure in case it would
   not.
 
   It returns ``NULL`` if ``VRT_call()`` would make the call or an
   error string why not.
+
+* ``VRT_handled()`` has been added, which is now to be used instead of
+  access to the ``handling`` member of ``VRT_CTX``.
+
+* The session close reason logging/statistics for HTTP/2 connections
+  have been improved (3393_)
+
+* ``varnishadm`` now has the ``-p`` option to disable readline support
+  for use in scripts and as a generic CLI connector.
+
+* A log (VSL) ``Notice`` record is now emitted whenever more than
+  ``vary_notice`` variants are encountered in the cache for a specific
+  hash. The new ``vary_notice`` parameter defaults to 10.
+
+* The modulus operator ``%`` has been added to VCL.
+
+* ``return(retry)`` from ``vcl_backend_error {}`` now correctly resets
+  ``beresp.status`` and ``beresp.reason`` (3525_).
+
+* Handling of the ``gunzip`` filter with ESI has been fixed (3529_).
+
+* A bug where the ``threads_limited`` counter could be increased
+  without reason has been fixed (3531_).
+
+* All varnish tools using the VUT library utilities for argument
+  processing now support the ``--optstring`` argument to return a
+  string suitable for use with ``getopts`` from shell scripts.
+
+* An issue with high CPU consumption when the maximum number of
+  threads was reached has been fixed (2942_, 3531_)
+
+* HTTP/2 streams are now reset for filter chain (VDP) errors.
+
+* The task priority of incoming connections has been fixed.
+
+* An issue has been addressed where the watchdog facility could
+  misfire when tasks are queued.
+
+* The builtin VCL has been reworked: VCL code has been split into
+  small subroutines, which custom VCL can prepend custom code to.
+
+  This allows for better integration of custom VCL and the built-in
+  VCL and better reuse.
 
 ================================
 Varnish Cache 6.5.1 (2020-09-25)
