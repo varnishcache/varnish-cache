@@ -352,6 +352,16 @@ Varnish Cache Next (2021-03-15)
   have been removed, because they are not required and their use was
   probably wrong anyway.
 
+* The ``filter_re``, ``keep_re`` and ``get_re`` functions from the
+  bundled ``cookie`` vmod have been changed to take the ``VCL_REGEX``
+  type. This implies that their regular expression arguments now need
+  to be literal, whereas before they could be taken from some other
+  variable or function returning ``VCL_STRING``.
+
+  Note that these functions never actually handled _dynamic_ regexen,
+  the string passed with the first call was compiled to a regex, which
+  was then used for the lifetime of the respective VCL.
+
 * The ``%{X}T`` format has been added to ``varnishncsa``, which
   generalizes ``%D`` and ``%T``, but also support milliseconds
   (``ms``) output.
