@@ -3,36 +3,69 @@
 	SPDX-License-Identifier: BSD-2-Clause
 	See LICENSE file for full text of license
 
-**Note: This is a working document for a future release, with running
-updates for changes in the development branch. For changes in the
-released versions of Varnish, see:** :ref:`whats-new-index`
-
 .. _whatsnew_upgrading_CURRENT:
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Upgrading to Varnish **$NEXT_RELEASE**
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-**XXX: how to upgrade from previous deployments to this
-version. Limited to work that has to be done for an upgrade, new
-features are listed in "Changes". Explicitly mention what does *not*
-have to be changed, especially in VCL. May include, but is not limited
-to:**
+In general, this release should not come with relevant incompatibilies
+to the previous release 6.5.
 
-* Elements of VCL that have been removed or are deprecated, or whose
-  semantics have changed.
+VCL should continue to work as before except when rather exotic,
+partly unintended and/or undocumented features are used.
 
-* -p parameters that have been removed or are deprecated, or whose
-  semantics have changed.
+Header Validation
+=================
 
-* Changes in the CLI.
+Varnish now validates any headers set from VCL to contain only
+characters allowed by RFC7230. A (runtime) VCL failure is triggered if
+not. Such VCL failures, which result in ``503`` responses, should be
+investigated. As a last resort, the ``validate_headers`` parameter can
+be set to ``false`` to avoid these VCL failures.
 
-* Changes in the output or interpretation of stats or the log, including
-  changes affecting varnishncsa/-hist/-top.
+BAN changes
+===========
 
-* Changes that may be necessary in VTCs or in the use of varnishtest.
+* The ``ban_cutoff`` parameter now refers to the overall length of the
+  ban list, including completed bans, where before only non-completed
+  ("active") bans were counted towards ``ban_cutoff``.
 
-* Changes in public APIs that may require changes in VMODs or VAPI/VUT
-  clients.
+* The ``ban()`` VCL builtin is now deprecated and should be replaced
+  with :ref:`whatsnew_changes_CURRENT_ban`
+
+Accounting Changes
+==================
+
+Accounting statistics and Log records have changed. See
+:ref:`whatsnew_changes_CURRENT_accounting` for details.
+
+VMOD ``cookie`` functions
+=========================
+
+The regular expression arguments taken by various functions from the
+``cookie`` VMOD now need to be literal. See
+:ref:`whatsnew_changes_CURRENT_cookie` for details.
+
+
+Other VCL Changes
+=================
+
+* The ``resp.proto`` variable is now read-only as it should have been
+  for long.
+
+  Changing the protocol is an error and should not be required.
+
+* Trying to use ``std.rollback()`` from ``vcl_pipe`` now results in
+  VCL failure.
+
+* ``return(retry)`` from ``vcl_backend_error {}`` now correctly resets
+  ``beresp.status`` and ``beresp.reason``.
+
+Changes to VMODs
+================
+
+Many VMODs will need minor adjustments to work with this release. See
+:ref:`whatsnew_changes_CURRENT_vmod` for details.
 
 *eof*

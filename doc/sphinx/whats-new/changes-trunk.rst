@@ -3,10 +3,6 @@
 	SPDX-License-Identifier: BSD-2-Clause
 	See LICENSE file for full text of license
 
-**Note: This is a working document for a future release, with running
-updates for changes in the development branch. For changes in the
-released versions of Varnish, see:** :ref:`whats-new-index`
-
 .. _whatsnew_changes_CURRENT:
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -195,6 +191,8 @@ usage pattern with the new interface is::
     return(synth(400, std.ban_error()));
   }
 
+.. _whatsnew_changes_CURRENT_cookie:
+
 ``cookie`` functions
 ~~~~~~~~~~~~~~~~~~~~
 
@@ -344,6 +342,7 @@ All varnish tools using the VUT library utilities for argument
 processing now support the ``--optstring`` argument to return a string
 suitable for use with ``getopts`` from shell scripts.
 
+.. _whatsnew_changes_CURRENT_vmod:
 
 Developer: Changes for VMOD authors
 ===================================
