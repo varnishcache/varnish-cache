@@ -1,16 +1,16 @@
 varnishtest "shard director LAZY - d18.vtc"
 
-server s1 -repeat 3 {
+server s1 -repeat 2 {
 	rxreq
 	txresp -body "ech3Ooj"
 } -start
 
-server s2 -repeat 3 {
+server s2 -repeat 2 {
 	rxreq
 	txresp -body "ieQu2qua"
 } -start
 
-server s3 -repeat 3 {
+server s3 -repeat 2 {
 	rxreq
 	txresp -body "xiuFi3Pe"
 } -start
