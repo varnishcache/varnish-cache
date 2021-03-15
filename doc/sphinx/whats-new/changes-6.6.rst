@@ -3,14 +3,14 @@
 	SPDX-License-Identifier: BSD-2-Clause
 	See LICENSE file for full text of license
 
-.. _whatsnew_changes_CURRENT:
+.. _whatsnew_changes_6.6:
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Changes in Varnish **$NEXT_RELEASE**
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%
+Changes in Varnish 6.6
+%%%%%%%%%%%%%%%%%%%%%%
 
 For information about updating your current Varnish deployment to the
-new version, see :ref:`whatsnew_upgrading_CURRENT`.
+new version, see :ref:`whatsnew_upgrading_6.6`.
 
 A more detailed and technical account of changes in Varnish, with
 links to issues that have been fixed and pull requests that have been
@@ -31,7 +31,7 @@ Parameters
 ~~~~~~~~~~
 
 * The ``validate_headers`` parameter has been added to control
-  `header validation <whatsnew_changes_CURRENT_header_validation_>`_.
+  `header validation <whatsnew_changes_6.6_header_validation_>`_.
 
 * The ``ban_cutoff`` parameter now refers to the overall length of the
   ban list, including completed bans, where before only non-completed
@@ -39,7 +39,7 @@ Parameters
 
 * The ``vary_notice`` parameter has been added to control the
   threshold for the new `Vary Notice
-  <whatsnew_changes_CURRENT_vary_notice_>`_.
+  <whatsnew_changes_6.6_vary_notice_>`_.
 
 ``feature`` Flags
 ~~~~~~~~~~~~~~~~~
@@ -49,7 +49,7 @@ Parameters
   parameter) even in scenarios where worker threads never run out
   of tasks and may remain forever busy.
 
-.. _whatsnew_changes_CURRENT_accounting:
+.. _whatsnew_changes_6.6_accounting:
 
 Accounting
 ~~~~~~~~~~
@@ -76,7 +76,7 @@ as well as the VSL records
 
 - ``BereqAcct``.
 
-.. _whatsnew_changes_CURRENT_sc_close:
+.. _whatsnew_changes_6.6_sc_close:
 
 Session Close Reasons
 ~~~~~~~~~~~~~~~~~~~~~
@@ -91,7 +91,7 @@ detailed information on the cause of the failure.
 The session close reason logging/statistics for HTTP/2 connections
 have been improved.
 
-.. _whatsnew_changes_CURRENT_vary_notice:
+.. _whatsnew_changes_6.6_vary_notice:
 
 Vary Notice
 ~~~~~~~~~~~
@@ -103,7 +103,7 @@ hash. The new ``vary_notice`` parameter defaults to 10.
 Changes to VCL
 ==============
 
-.. _whatsnew_changes_CURRENT_header_validation:
+.. _whatsnew_changes_6.6_header_validation:
 
 Header Validation
 ~~~~~~~~~~~~~~~~~
@@ -134,7 +134,7 @@ Other changes to VCL
   addition to the existing ``{" ... "}``.
 
 * The ``ban()`` builtin is now deprecated and should be replaced with
-  `std.ban() <whatsnew_changes_CURRENT_ban_>`_.
+  `std.ban() <whatsnew_changes_6.6_ban_>`_.
 
 * Trying to use ``std.rollback()`` from ``vcl_pipe`` now results in
   VCL failure.
@@ -176,7 +176,7 @@ VMODs
 The ``set_ip_tos()`` function from the bundled ``std`` vmod now sets
 the IPv6 Taffic Class (TCLASS) when used on an IPv6 connection.
 
-.. _whatsnew_changes_CURRENT_ban:
+.. _whatsnew_changes_6.6_ban:
 
 ``std.ban()`` and ``std.ban_error()``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -191,7 +191,7 @@ usage pattern with the new interface is::
     return(synth(400, std.ban_error()));
   }
 
-.. _whatsnew_changes_CURRENT_cookie:
+.. _whatsnew_changes_6.6_cookie:
 
 ``cookie`` functions
 ~~~~~~~~~~~~~~~~~~~~
@@ -210,10 +210,10 @@ was then used for the lifetime of the respective VCL.
 varnishlog
 ==========
 
-* See `Accounting <whatsnew_changes_CURRENT_accounting_>`_ for changes
+* See `Accounting <whatsnew_changes_6.6_accounting_>`_ for changes
   to accounting-related VSL records.
 
-* See `Session Close Reasons <whatsnew_changes_CURRENT_sc_close_>`_
+* See `Session Close Reasons <whatsnew_changes_6.6_sc_close_>`_
   for a change affecting ``SessClose``.
 
 * Three new ``Timestamp`` VSL records have been added to backend
@@ -241,7 +241,7 @@ varnishlog
   better the behavior which is likely expected by users who have not
   read the documentation in all detail.
 
-* See `Vary Notice <whatsnew_changes_CURRENT_vary_notice_>`_ for
+* See `Vary Notice <whatsnew_changes_6.6_vary_notice_>`_ for
   information on a newly added ``Notice`` log (VSL) record.
 
 varnishncsa
@@ -274,10 +274,10 @@ varnishadm
 varnishstat
 ===========
 
-* See `Accounting <whatsnew_changes_CURRENT_accounting_>`_ for changes
+* See `Accounting <whatsnew_changes_6.6_accounting_>`_ for changes
   to accounting-related counters.
 
-* See `Session Close Reasons <whatsnew_changes_CURRENT_sc_close_>`_
+* See `Session Close Reasons <whatsnew_changes_6.6_sc_close_>`_
   for a change affecting ``MAIN.sc_*`` counters.
 
 * The ``MAIN.esi_req`` counter has been added as a statistic of the
@@ -286,7 +286,7 @@ varnishstat
 * The ``MAIN.s_bgfetch`` counter has been added as a statistic on the
   number of background fetches issued.
 
-.. _whatsnew_changes_CURRENT_varnishstat_raw:
+.. _whatsnew_changes_6.6_varnishstat_raw:
 
 * ``varnishstat`` now avoids display errors of gauges which previously
   could underflow to negative values, being displayed as extremely
@@ -344,7 +344,7 @@ All varnish tools using the VUT library utilities for argument
 processing now support the ``--optstring`` argument to return a string
 suitable for use with ``getopts`` from shell scripts.
 
-.. _whatsnew_changes_CURRENT_vmod:
+.. _whatsnew_changes_6.6_vmod:
 
 Developer: Changes for VMOD authors
 ===================================
@@ -390,7 +390,7 @@ General API
 ~~~~~~~~~~~
 
 * ``VRT_ValidHdr()`` has been added for VMODs to conduct the same
-  check as the `whatsnew_changes_CURRENT_header_validation`_ feature,
+  check as the `whatsnew_changes_6.6_header_validation`_ feature,
   for example when headers are set by VMODs using the ``cache_http.c``
   Functions like ``http_ForceHeader()`` from untrusted input.
 
@@ -488,6 +488,6 @@ libvarnishapi
 
 * The ``VSC_IsRaw()`` function has been added to ``libvarnishapi`` to
   query if a gauge is being returned raw or adjusted (see
-  `varnishstat -r option <whatsnew_changes_CURRENT_varnishstat_raw_>`_).
+  `varnishstat -r option <whatsnew_changes_6.6_varnishstat_raw_>`_).
 
 *eof*
