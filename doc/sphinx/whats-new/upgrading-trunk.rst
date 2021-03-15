@@ -52,7 +52,7 @@ Other VCL Changes
 =================
 
 * The ``resp.proto`` variable is now read-only as it should have been
-  for long.
+  for long, like the other ``*.proto`` variables.
 
   Changing the protocol is an error and should not be required.
 

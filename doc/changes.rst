@@ -163,7 +163,8 @@ Varnish Cache Next (2021-03-15)
     and
 
   - the ``Connected`` timestamp when a connection to a regular backend
-    (VBE) is established.
+    (VBE) is established, or when a recycled connection was selected for
+    reuse.
 
 * The VRT backend interface has been changed:
 
@@ -305,7 +306,7 @@ Varnish Cache Next (2021-03-15)
 * The ``VSA_getsockname()`` and ``VSA_getpeername()`` functions have
   been added to get address information of file descriptors.
 
-* ``varnishd`` now supports the ``-b None`` argument to start with
+* ``varnishd`` now supports the ``-b none`` argument to start with
   only the builtin VCL and no backend at all (3067_).
 
 * Some corner cases of IPv6 support in ``varnishd`` have been fixed.
@@ -334,8 +335,8 @@ Varnish Cache Next (2021-03-15)
 
 * The ``busy_stats_rate`` feature flag has been added to ensure
   statistics updates (as configured using the ``thread_stats_rate``
-  parameter) even on a fully loaded system, which would otherwise
-  delay statistics updates in order to reduce lock contention.
+  parameter) even in scenarios where worker threads never run out
+  of tasks and may remain forever busy.
 
 * ``ExpKill`` log (VSL) records are now masked by default. See the
   ``vsl_mask`` parameter.

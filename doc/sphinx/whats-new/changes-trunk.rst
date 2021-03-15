@@ -24,7 +24,7 @@ varnishd
 Arguments
 ~~~~~~~~~
 
-* ``varnishd`` now supports the ``-b None`` argument to start with
+* ``varnishd`` now supports the ``-b none`` argument to start with
   only the builtin VCL and no backend at all.
 
 Parameters
@@ -46,8 +46,8 @@ Parameters
 
 * The ``busy_stats_rate`` feature flag has been added to ensure
   statistics updates (as configured using the ``thread_stats_rate``
-  parameter) even on a fully loaded system, which would otherwise
-  delay statistics updates in order to reduce lock contention.
+  parameter) even in scenarios where worker threads never run out
+  of tasks and may remain forever busy.
 
 .. _whatsnew_changes_CURRENT_accounting:
 
@@ -55,7 +55,7 @@ Accounting
 ~~~~~~~~~~
 
 Body bytes accounting has been fixed to always represent the number of
-bodybytes moved on the wire, exclusive of protocol-specific overhead
+body bytes moved on the wire, exclusive of protocol-specific overhead
 like HTTP/1 chunked encoding or HTTP/2 framing.
 
 This change affects counters like
@@ -125,7 +125,7 @@ VCL variables
 * The ``bereq.xid`` variable is now also available in ``vcl_pipe {}``
 
 * The ``resp.proto`` variable is now read-only as it should have been
-  for long.
+  for long, like the other ``*.proto`` variables.
 
 Other changes to VCL
 ~~~~~~~~~~~~~~~~~~~~
@@ -226,7 +226,8 @@ varnishlog
     and
 
   - the ``Connected`` timestamp when a connection to a regular backend
-    (VBE) is established.
+    (VBE) is established, or when a recycled connection was selected for
+    reuse.
 
 * The ``FetchError`` log message ``Timed out reusing backend
   connection`` has been renamed to ``first byte timeout (reused
@@ -251,7 +252,8 @@ varnishncsa
   (``ms``) output.
 
 * The ``varnishncsa`` ``-E`` argument to show ESI requests has been
-  changed to imply ``-c`` (client mode).
+  changed to imply ``-c`` (client mode). This behavior is now shared
+  by all log utilities, and ``-c`` no longer includes ESI requests.
 
 
 varnishadm
@@ -317,7 +319,7 @@ Various improvements have been made to the ``varnishtest`` facility:
 
 - varnishtest now also works with IPv6 setups
 
-- ``feature ipqv4`` and ``feature ipv6`` can be used to control
+- ``feature ipv4`` and ``feature ipv6`` can be used to control
   execution of test cases which require one or the other protocol.
 
 - haproxy arguments can now be externally provided through the
@@ -387,9 +389,9 @@ VMOD/VCL interface
 General API
 ~~~~~~~~~~~
 
-* ``VRT_ValidHdr()`` has been added for vmods to conduct the same
+* ``VRT_ValidHdr()`` has been added for VMODs to conduct the same
   check as the `whatsnew_changes_CURRENT_header_validation`_ feature,
-  for example when headers are set by vmods using the ``cache_http.c``
+  for example when headers are set by VMODs using the ``cache_http.c``
   Functions like ``http_ForceHeader()`` from untrusted input.
 
 * Client and backend finite state machine internals (``enum req_step``
