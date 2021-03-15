@@ -40,13 +40,24 @@ Accounting Changes
 Accounting statistics and Log records have changed. See
 :ref:`whatsnew_changes_CURRENT_accounting` for details.
 
+VSL changes
+===========
+
+The ``-c`` option of log utilities no longer includes ESI requests. A
+new ``-E`` option is now available for ESI requests and it implies ``-c``
+too. This brings all log utilities on par with ``varnishncsa`` where the
+``-E`` option was initially introduced.
+
+If you use ``-c`` to collect both client and ESI requests, you should
+use ``-E`` instead. If you use ``-c`` and a VSL query to exclude ESI
+requests, the query should no longer be needed.
+
 VMOD ``cookie`` functions
 =========================
 
 The regular expression arguments taken by various functions from the
 ``cookie`` VMOD now need to be literal. See
 :ref:`whatsnew_changes_CURRENT_cookie` for details.
-
 
 Other VCL Changes
 =================
