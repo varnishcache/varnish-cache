@@ -3,11 +3,11 @@
 	SPDX-License-Identifier: BSD-2-Clause
 	See LICENSE file for full text of license
 
-.. _whatsnew_upgrading_CURRENT:
+.. _whatsnew_upgrading_6.6:
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Upgrading to Varnish **$NEXT_RELEASE**
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%
+Upgrading to Varnish 6.6
+%%%%%%%%%%%%%%%%%%%%%%%%
 
 In general, this release should not come with relevant incompatibilies
 to the previous release 6.5.
