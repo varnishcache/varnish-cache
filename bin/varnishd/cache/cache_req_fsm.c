@@ -165,7 +165,7 @@ Resp_Setup_Deliver(struct req *req)
 	http_PrintfHeader(h, "Age: %.0f",
 	    floor(fmax(0., req->t_prev - oc->t_origin)));
 
-	http_SetHeader(h, "Via: 1.1 varnish (Varnish/6.5)");
+	http_SetHeader(h, "Via: 1.1 varnish (Varnish/6.6)");
 
 	if (cache_param->http_gzip_support &&
 	    ObjCheckFlag(req->wrk, oc, OF_GZIPED) &&
