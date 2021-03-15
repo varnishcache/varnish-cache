@@ -32,13 +32,13 @@ BAN changes
   ("active") bans were counted towards ``ban_cutoff``.
 
 * The ``ban()`` VCL builtin is now deprecated and should be replaced
-  with :ref:`whatsnew_changes_CURRENT_ban`
+  with :ref:`whatsnew_changes_6.6_ban`
 
 Accounting Changes
 ==================
 
 Accounting statistics and Log records have changed. See
-:ref:`whatsnew_changes_CURRENT_accounting` for details.
+:ref:`whatsnew_changes_6.6_accounting` for details.
 
 VSL changes
 ===========
@@ -57,7 +57,7 @@ VMOD ``cookie`` functions
 
 The regular expression arguments taken by various functions from the
 ``cookie`` VMOD now need to be literal. See
-:ref:`whatsnew_changes_CURRENT_cookie` for details.
+:ref:`whatsnew_changes_6.6_cookie` for details.
 
 Other VCL Changes
 =================
@@ -77,6 +77,6 @@ Changes to VMODs
 ================
 
 Many VMODs will need minor adjustments to work with this release. See
-:ref:`whatsnew_changes_CURRENT_vmod` for details.
+:ref:`whatsnew_changes_6.6_vmod` for details.
 
 *eof*
