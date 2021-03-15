@@ -32,7 +32,7 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
-Varnish Cache Next (2021-03-15)
+Varnish Cache 6.6.0 (2021-03-15)
 ================================
 
 * Body bytes accounting has been fixed to always represent the number
