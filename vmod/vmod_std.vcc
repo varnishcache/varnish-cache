@@ -659,6 +659,16 @@ Returns a textual error description of the last `std.ban()`_ call from
 the same task or the empty string if there either was no error or no
 `std.ban()`_ call.
 
+$Function TIME now()
+
+Returns the current time. In contrast to the ``now`` built-in
+variable, every call returns a new value.
+
+$Function DURATION timed_call(SUB)
+
+Call the given SUB and return a high precision measurement of the
+execution time.
+
 DEPRECATED functions
 ====================
 

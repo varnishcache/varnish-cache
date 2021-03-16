@@ -370,3 +370,22 @@ vmod_ban_error(VRT_CTX)
 		r = "";
 	return (r);
 }
+
+VCL_TIME v_matchproto_(td_std_now)
+vmod_now(VRT_CTX)
+{
+
+	(void) ctx;
+	return (VTIM_real());
+}
+
+VCL_DURATION v_matchproto_(td_std_timed_call)
+vmod_timed_call(VRT_CTX, VCL_SUB sub)
+{
+	vtim_mono b;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	b = VTIM_mono();
+	VRT_call(ctx, sub);
+	return (VTIM_mono() - b);
+}

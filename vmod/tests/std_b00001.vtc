@@ -1,4 +1,4 @@
-varnishtest "Test std.random()"
+varnishtest "Test std.random(), std.now(), std.timed_call()"
 
 server s1 {
 	rxreq
@@ -6,13 +6,21 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
+	import vtc;
 	import std;
 
-	sub vcl_deliver {
+	sub dice {
 		set resp.http.rnd1 = std.random(0, 1);
 		set resp.http.rnd2 = std.random(0, 10);
 		set resp.http.rnd3 = std.random(8, 10);
 		set resp.http.rnd4 = std.random(99, 100);
+	}
+
+	sub vcl_deliver {
+		set resp.http.t0 = std.integer(time=std.now());
+		vtc.sleep(1s);
+		set resp.http.rolling-us = std.timed_call(dice) * 1000 * 1000;
+		set resp.http.t1 = std.integer(time=std.now());
 	}
 } -start
 
@@ -25,4 +33,6 @@ client c1 {
 	expect resp.http.rnd2 == 0.390
 	expect resp.http.rnd3 == 8.585
 	expect resp.http.rnd4 == 99.636
+	expect resp.http.t1 -gt resp.http.t0
+	expect resp.http.rolling-us -gt 1
 } -run
