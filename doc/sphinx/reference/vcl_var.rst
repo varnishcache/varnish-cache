@@ -1417,6 +1417,15 @@ now
 	When converted to STRING in expressions it returns
 	a formatted timestamp like ``Tue, 20 Feb 2018 09:30:31 GMT``
 
+	``now`` remains stable for the duration of any built-in VCL
+	subroutine to make time-based calculations predictable and
+	avoid edge cases.
+
+	In other words, even if considerable amounts of time are spent
+	in VCL, ``now`` will always represent the point in time when
+	the respective built-in VCL subroutine was entered. ``now`` is
+	thus not suitable for any kind of time measurements. See
+	:ref:`std.timestamp()` in :ref:`vmod_std(3)`.
 
 sess
 ~~~~
