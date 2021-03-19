@@ -433,7 +433,7 @@ smp_sml_getobj(struct worker *wrk, struct objcore *oc)
 
 		bad = 0;
 		l = 0;
-		VTAILQ_FOREACH(st, &o->list, list) {
+		VSTQ_FOREACH(st, &o->list, list) {
 			bad |= smp_loaded_st(sg->sc, sg, st);
 			if (bad)
 				break;

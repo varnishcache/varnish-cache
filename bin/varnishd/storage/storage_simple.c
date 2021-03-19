@@ -114,7 +114,7 @@ SML_MkObject(const struct stevedore *stv, struct objcore *oc, void *ptr)
 	o = ptr;
 	INIT_OBJ(o, OBJECT_MAGIC);
 
-	VTAILQ_INIT(&o->list);
+	VSTQ_INIT(&o->list);
 
 	oc->stobj->stevedore = stv;
 	oc->stobj->priv = o;
@@ -203,9 +203,9 @@ sml_slim(struct worker *wrk, struct objcore *oc)
 	}
 #include "tbl/obj_attr.h"
 
-	VTAILQ_FOREACH_SAFE(st, &o->list, list, stn) {
+	VSTQ_FOREACH_SAFE(st, &o->list, list, stn) {
 		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
-		VTAILQ_REMOVE(&o->list, st, list);
+		VSTQ_REMOVE(&o->list, st, list);
 		sml_stv_free(stv, st);
 	}
 }
@@ -259,16 +259,16 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 	boc = HSH_RefBoc(oc);
 
 	if (boc == NULL) {
-		VTAILQ_FOREACH_SAFE(st, &obj->list, list, checkpoint) {
+		VSTQ_FOREACH_SAFE(st, &obj->list, list, checkpoint) {
 			u = 0;
-			if (VTAILQ_NEXT(st, list) == NULL)
+			if (VSTQ_NEXT(st, list) == NULL)
 				u |= OBJ_ITER_END;
 			if (final)
 				u |= OBJ_ITER_FLUSH;
 			if (ret == 0 && st->len > 0)
 				ret = func(priv, u, st->ptr, st->len);
 			if (final) {
-				VTAILQ_REMOVE(&obj->list, st, list);
+				VSTQ_REMOVE(&obj->list, st, list);
 				sml_stv_free(stv, st);
 			} else if (ret)
 				break;
@@ -293,9 +293,9 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 			continue;
 		}
 		Lck_Lock(&boc->mtx);
-		AZ(VTAILQ_EMPTY(&obj->list));
+		AZ(VSTQ_EMPTY(&obj->list));
 		if (checkpoint == NULL) {
-			st = VTAILQ_FIRST(&obj->list);
+			st = VSTQ_FIRST(&obj->list);
 			sl = 0;
 		} else {
 			st = checkpoint;
@@ -314,10 +314,10 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 			nl -= st->len;
 			assert(nl > 0);
 			sl += st->len;
-			st = VTAILQ_NEXT(st, list);
-			if (VTAILQ_NEXT(st, list) != NULL) {
+			st = VSTQ_NEXT(st, list);
+			if (VSTQ_NEXT(st, list) != NULL) {
 				if (final && checkpoint != NULL) {
-					VTAILQ_REMOVE(&obj->list,
+					VSTQ_REMOVE(&obj->list,
 					    checkpoint, list);
 					sml_stv_free(stv, checkpoint);
 				}
@@ -327,7 +327,7 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 		}
 		CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
-		st = VTAILQ_NEXT(st, list);
+		st = VSTQ_NEXT(st, list);
 		if (st != NULL && st->len == 0)
 			st = NULL;
 		state = boc->state;
@@ -402,7 +402,7 @@ sml_getspace(struct worker *wrk, struct objcore *oc, ssize_t *sz,
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
 
-	st = VTAILQ_LAST(&o->list, storagehead);
+	st = VSTQ_LAST(&o->list);
 	if (st != NULL && st->len < st->space) {
 		*sz = st->space - st->len;
 		*ptr = st->ptr + st->len;
@@ -417,7 +417,7 @@ sml_getspace(struct worker *wrk, struct objcore *oc, ssize_t *sz,
 
 	CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
 	Lck_Lock(&oc->boc->mtx);
-	VTAILQ_INSERT_TAIL(&o->list, st, list);
+	VSTQ_INSERT_TAIL(&o->list, st, list);
 	Lck_Unlock(&oc->boc->mtx);
 
 	*sz = st->space - st->len;
@@ -437,7 +437,7 @@ sml_extend(struct worker *wrk, struct objcore *oc, ssize_t l)
 
 	o = sml_getobj(wrk, oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	st = VTAILQ_LAST(&o->list, storagehead);
+	st = VSTQ_LAST(&o->list);
 	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 	assert(st->len + l <= st->space);
 	st->len += l;
@@ -462,14 +462,14 @@ sml_trimstore(struct worker *wrk, struct objcore *oc)
 
 	o = sml_getobj(wrk, oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	st = VTAILQ_LAST(&o->list, storagehead);
+	st = VSTQ_LAST(&o->list);
 
 	if (st == NULL)
 		return;
 
 	if (st->len == 0) {
 		Lck_Lock(&oc->boc->mtx);
-		VTAILQ_REMOVE(&o->list, st, list);
+		VSTQ_REMOVE(&o->list, st, list);
 		Lck_Unlock(&oc->boc->mtx);
 		sml_stv_free(stv, st);
 		return;
@@ -486,8 +486,8 @@ sml_trimstore(struct worker *wrk, struct objcore *oc)
 	memcpy(st1->ptr, st->ptr, st->len);
 	st1->len = st->len;
 	Lck_Lock(&oc->boc->mtx);
-	VTAILQ_REMOVE(&o->list, st, list);
-	VTAILQ_INSERT_TAIL(&o->list, st1, list);
+	VSTQ_REMOVE(&o->list, st, list);
+	VSTQ_INSERT_TAIL(&o->list, st1, list);
 	Lck_Unlock(&oc->boc->mtx);
 	/* sml_bocdone frees this */
 	AZ(oc->boc->stevedore_priv);
@@ -686,7 +686,7 @@ SML_panic(struct vsb *vsb, const struct objcore *oc)
 
 #include "tbl/obj_attr.h"
 
-	VTAILQ_FOREACH(st, &o->list, list) {
+	VSTQ_FOREACH(st, &o->list, list) {
 		sml_panic_st(vsb, "Body", st);
 	}
 }

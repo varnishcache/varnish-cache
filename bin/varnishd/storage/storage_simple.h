@@ -35,7 +35,7 @@
 
 /* Object ------------------------------------------------------------*/
 
-VTAILQ_HEAD(storagehead, storage);
+VSTQ_HEAD(storagehead, storage);
 
 struct object {
 	unsigned		magic;

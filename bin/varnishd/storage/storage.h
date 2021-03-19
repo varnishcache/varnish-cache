@@ -33,6 +33,8 @@
  *
  */
 
+#include "vstq.h"
+
 struct stevedore;
 struct sess;
 struct objcore;
@@ -54,7 +56,7 @@ struct storage {
 #define STORAGE_MAGIC		0x1a4e51c0
 
 
-	VTAILQ_ENTRY(storage)	list;
+	VSTQ_ENTRY(storage)	list;
 	void			*priv;
 
 	unsigned char		*ptr;
