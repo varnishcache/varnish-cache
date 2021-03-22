@@ -1,0 +1,60 @@
+varnishtest "Failed post-streaming revalidation"
+
+barrier b1 cond 2
+barrier b2 sock 2
+barrier b3 sock 2
+
+server s1 {
+	rxreq
+	txresp -nolen -hdr {Etag: "abc"} -hdr "Content-Length: 100"
+	barrier b1 sync
+	barrier b2 sync
+} -start
+
+server s2 {
+	rxreq
+	expect req.http.If-None-Match == {"abc"}
+	txresp -status 304 -nolen -hdr {Etag: "abc"} -hdr "Content-Length: 100"
+} -start
+
+varnish v1 -vcl+backend {
+	import directors;
+	import vtc;
+
+	sub vcl_recv {
+		if (req.http.backend == "s2") {
+			set req.backend_hint = s2;
+		}
+	}
+
+	sub vcl_backend_response {
+		if (beresp.was_304) {
+			vtc.barrier_sync("${b2_sock}");
+			vtc.barrier_sync("${b3_sock}");
+		}
+		set beresp.ttl = 1ms;
+	}
+} -start
+
+client c1 {
+	txreq -hdr "backend: s1"
+	rxresphdrs
+	expect resp.status == 200
+	expect_close
+} -start
+
+barrier b1 sync
+
+# ensure stale_oc
+delay 0.01
+
+client c2 {
+	txreq -hdr "backend: s2"
+	rxresphdrs
+	expect resp.status == 200
+	expect_close
+} -start
+
+client c1 -wait
+barrier b3 sync
+client c2 -wait
