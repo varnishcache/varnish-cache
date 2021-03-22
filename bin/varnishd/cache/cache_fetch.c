@@ -789,13 +789,18 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 		HSH_DerefBoc(bo->wrk, bo->stale_oc);
 		stale_boc = NULL;
 		if (stale_state != BOS_FINISHED) {
-			(void)VFP_Error(bo->vfc, "Template object failed");
-			VDI_Finish(bo->wrk, bo);
-			wrk->stats->fetch_failed++;
-			return (F_STP_FAIL);
+			assert(stale_state == BOS_FAILED);
+			AN(bo->stale_oc->flags & OC_F_FAILED);
 		}
 	}
-	AZ(bo->stale_oc->flags & OC_F_FAILED);
+
+	AZ(stale_boc);
+	if (bo->stale_oc->flags & OC_F_FAILED) {
+		(void)VFP_Error(bo->vfc, "Template object failed");
+		vbf_cleanup(bo);
+		wrk->stats->fetch_failed++;
+		return (F_STP_FAIL);
+	}
 
 	if (vbf_beresp2obj(bo)) {
 		(void)VFP_Error(bo->vfc, "Could not get storage");
