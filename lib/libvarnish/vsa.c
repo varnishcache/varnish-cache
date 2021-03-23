@@ -188,7 +188,7 @@ static struct suckaddr bogo_ip6_vsa;
 const struct suckaddr *bogo_ip6 = &bogo_ip6_vsa;
 
 void
-VSA_Init()
+VSA_Init(void)
 {
 	AN(VSA_BuildFAP(&bogo_ip_vsa, PF_INET, NULL, 0, NULL, 0));
 	AN(VSA_BuildFAP(&bogo_ip6_vsa, PF_INET6, NULL, 0, NULL, 0));
