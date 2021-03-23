@@ -183,7 +183,7 @@ static struct suckaddr bogo_ip_vsa;
 const struct suckaddr *bogo_ip = &bogo_ip_vsa;
 
 void
-VSA_Init()
+VSA_Init(void)
 {
 	struct addrinfo hints, *res = NULL;
 

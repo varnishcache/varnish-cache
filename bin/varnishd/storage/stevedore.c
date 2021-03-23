@@ -49,7 +49,7 @@ static pthread_mutex_t stv_mtx;
  */
 
 const struct stevedore *
-STV_next()
+STV_next(void)
 {
 	static struct stevedore *stv;
 	struct stevedore *r;
