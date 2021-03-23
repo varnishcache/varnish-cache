@@ -333,10 +333,10 @@ struct {								\
  * that the left or right child of the tree node is "red".
  */
 #define VRBT_UP(elm, field)		(elm)->field.rbe_parent
-#define VRBT_BITS(elm, field)		(*(__uintptr_t *)&VRBT_UP(elm, field))
-#define VRBT_RED_L			((__uintptr_t)1)
-#define VRBT_RED_R			((__uintptr_t)2)
-#define VRBT_RED_MASK			((__uintptr_t)3)
+#define VRBT_BITS(elm, field)		(*(uintptr_t *)&VRBT_UP(elm, field))
+#define VRBT_RED_L			((uintptr_t)1)
+#define VRBT_RED_R			((uintptr_t)2)
+#define VRBT_RED_MASK			((uintptr_t)3)
 #define VRBT_FLIP_LEFT(elm, field)	(VRBT_BITS(elm, field) ^= VRBT_RED_L)
 #define VRBT_FLIP_RIGHT(elm, field)	(VRBT_BITS(elm, field) ^= VRBT_RED_R)
 #define VRBT_RED_LEFT(elm, field)		((VRBT_BITS(elm, field) & VRBT_RED_L) != 0)
@@ -348,7 +348,7 @@ struct {								\
 
 #define VRBT_SET_PARENT(dst, src, field) do {				\
 	VRBT_BITS(dst, field) &= VRBT_RED_MASK;				\
-	VRBT_BITS(dst, field) |= (__uintptr_t)src;			\
+	VRBT_BITS(dst, field) |= (uintptr_t)src;			\
 } while (/*CONSTCOND*/ 0)
 
 #define VRBT_SET(elm, parent, field) do {					\

@@ -19,6 +19,7 @@ sed -E '
 485a\
 		AN(parent);			\\
 s/_SYS_TREE_H_/_VTREE_H_/
+s/__uintptr_t/uintptr_t/g
 s/SPLAY/VSPLAY/g
 s/RB_/VRBT_/g
 /(VRBT_FIND|VRBT_NFIND|VRBT_MINMAX)/{
