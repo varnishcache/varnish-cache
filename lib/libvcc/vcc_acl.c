@@ -422,7 +422,7 @@ vcc_acl_entry(struct vcc *tl)
  */
 
 static void
-vcc_acl_emit(struct vcc *tl, const char *name, const char *rname, int anon)
+vcc_acl_emit(struct vcc *tl, const char *name, const char *rname)
 {
 	struct acl_e *ae;
 	int depth, l, m, i;
@@ -433,7 +433,7 @@ vcc_acl_emit(struct vcc *tl, const char *name, const char *rname, int anon)
 
 	func = VSB_new_auto();
 	AN(func);
-	VSB_printf(func, "match_acl_%s_", anon ? "anon" : "named");
+	VSB_printf(func, "match_acl_");
 	VCC_PrintCName(func, name, NULL);
 	AZ(VSB_finish(func));
 
@@ -448,7 +448,7 @@ vcc_acl_emit(struct vcc *tl, const char *name, const char *rname, int anon)
 	Fh(tl, 0, "\t\tVPI_acl_log(ctx, \"NO_FAM %s\");\n", name);
 	Fh(tl, 0, "\t\treturn(0);\n");
 	Fh(tl, 0, "\t}\n\n");
-	if (!tl->err_unref && !anon) {
+	if (!tl->err_unref) {
 		ifp = New_IniFin(tl);
 		VSB_printf(ifp->ini,
 			"\tif (0) %s(0, 0);\n", VSB_data(func));
@@ -498,27 +498,25 @@ vcc_acl_emit(struct vcc *tl, const char *name, const char *rname, int anon)
 
 		i = ((int)ae->mask + 7) / 8;
 
-		if (!anon) {
-			Fh(tl, 0, "\t%*sVPI_acl_log(ctx, \"%sMATCH %s \" ",
-			    -i, "", ae->not ? "NEG_" : "", name);
-			t = ae->t_addr;
-			do {
-				if (t->tok == CSTR) {
-					Fh(tl, 0, " \"\\\"\" ");
-					EncToken(tl->fh, t);
-					Fh(tl, 0, " \"\\\"\" ");
-				} else
-					Fh(tl, 0, " \"%.*s\"", PF(t));
-				if (t == ae->t_mask)
-					break;
-				t = VTAILQ_NEXT(t, list);
-				AN(t);
-			} while (ae->t_mask != NULL);
-			if (ae->fixed)
-				Fh(tl, 0, "\" fixed: %s\"",
-				   ae->fixed);
-			Fh(tl, 0, ");\n");
-		}
+		Fh(tl, 0, "\t%*sVPI_acl_log(ctx, \"%sMATCH %s \" ",
+		    -i, "", ae->not ? "NEG_" : "", name);
+		t = ae->t_addr;
+		do {
+			if (t->tok == CSTR) {
+				Fh(tl, 0, " \"\\\"\" ");
+				EncToken(tl->fh, t);
+				Fh(tl, 0, " \"\\\"\" ");
+			} else
+				Fh(tl, 0, " \"%.*s\"", PF(t));
+			if (t == ae->t_mask)
+				break;
+			t = VTAILQ_NEXT(t, list);
+			AN(t);
+		} while (ae->t_mask != NULL);
+		if (ae->fixed)
+			Fh(tl, 0, "\" fixed: %s\"",
+			   ae->fixed);
+		Fh(tl, 0, ");\n");
 
 		Fh(tl, 0, "\t%*sreturn (%d);\n", -i, "", ae->not ? 0 : 1);
 	}
@@ -528,18 +526,15 @@ vcc_acl_emit(struct vcc *tl, const char *name, const char *rname, int anon)
 		Fh(tl, 0, "\t%*.*s}\n", depth, depth, "");
 
 	/* Deny by default */
-	if (!anon)
-		Fh(tl, 0, "\tVPI_acl_log(ctx, \"NO_MATCH %s\");\n", name);
+	Fh(tl, 0, "\tVPI_acl_log(ctx, \"NO_MATCH %s\");\n", name);
 	Fh(tl, 0, "\treturn (0);\n}\n");
 
-	if (!anon) {
-		/* Emit the struct that will be referenced */
-		Fh(tl, 0, "\nconst struct vrt_acl %s[] = {{\n", rname);
-		Fh(tl, 0, "\t.magic = VRT_ACL_MAGIC,\n");
-		Fh(tl, 0, "\t.match = &%s,\n", VSB_data(func));
-		Fh(tl, 0, "\t.name = \"%s\",\n", name);
-		Fh(tl, 0, "}};\n\n");
-	}
+	/* Emit the struct that will be referenced */
+	Fh(tl, 0, "\nconst struct vrt_acl %s[] = {{\n", rname);
+	Fh(tl, 0, "\t.magic = VRT_ACL_MAGIC,\n");
+	Fh(tl, 0, "\t.match = &%s,\n", VSB_data(func));
+	Fh(tl, 0, "\t.name = \"%s\",\n", name);
+	Fh(tl, 0, "}};\n\n");
 	VSB_destroy(&func);
 }
 
@@ -566,5 +561,5 @@ vcc_ParseAcl(struct vcc *tl)
 	}
 	SkipToken(tl, '}');
 
-	vcc_acl_emit(tl, sym->name, sym->rname, 0);
+	vcc_acl_emit(tl, sym->name, sym->rname);
 }
