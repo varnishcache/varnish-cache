@@ -327,7 +327,6 @@ varnish_new(const char *name)
 	v->cli_fd = -1;
 	VTAILQ_INSERT_TAIL(&varnishes, v, list);
 
-
 	return (v);
 }
 
@@ -384,19 +383,19 @@ static void
 varnish_launch(struct varnish *v)
 {
 	struct vsb *vsb, *vsb1;
-	int i, nfd;
+	int i, nfd, asock;
 	char abuf[128], pbuf[128];
-	struct pollfd fd[2];
+	struct pollfd fd[3];
 	enum VCLI_status_e u;
 	const char *err;
 	char *r = NULL;
 
 	/* Create listener socket */
-	v->cli_fd = VTCP_listen_on(default_listen_addr, NULL, 1, &err);
+	asock = VTCP_listen_on(default_listen_addr, NULL, 1, &err);
 	if (err != NULL)
 		vtc_fatal(v->vl, "Create CLI listen socket failed: %s", err);
-	assert(v->cli_fd > 0);
-	VTCP_myname(v->cli_fd, abuf, sizeof abuf, pbuf, sizeof pbuf);
+	assert(asock > 0);
+	VTCP_myname(asock, abuf, sizeof abuf, pbuf, sizeof pbuf);
 
 	AZ(VSB_finish(v->args));
 	vtc_log(v->vl, 2, "Launch");
@@ -465,26 +464,26 @@ varnish_launch(struct varnish *v)
 
 	/* Wait for the varnish to call home */
 	memset(fd, 0, sizeof fd);
-	fd[0].fd = v->cli_fd;
+	fd[0].fd = asock;
 	fd[0].events = POLLIN;
 	fd[1].fd = v->fds[1];
 	fd[1].events = POLLIN;
+	fd[2].fd = v->fds[2];
+	fd[2].events = POLLIN;
 	i = poll(fd, 2, vtc_maxdur * 1000 / 3);
-	vtc_log(v->vl, 4, "CLIPOLL %d 0x%x 0x%x",
-	    i, fd[0].revents, fd[1].revents);
+	vtc_log(v->vl, 4, "CLIPOLL %d 0x%x 0x%x 0x%x",
+	    i, fd[0].revents, fd[1].revents, fd[2].revents);
 	if (i == 0)
 		vtc_fatal(v->vl, "FAIL timeout waiting for CLI connection");
 	if (fd[1].revents & POLLHUP)
 		vtc_fatal(v->vl, "FAIL debug pipe closed");
 	if (!(fd[0].revents & POLLIN))
 		vtc_fatal(v->vl, "FAIL CLI connection wait failure");
-	nfd = accept(v->cli_fd, NULL, NULL);
-	if (nfd < 0) {
-		closefd(&v->cli_fd);
+	nfd = accept(asock, NULL, NULL);
+	closefd(&asock);
+	if (nfd < 0)
 		vtc_fatal(v->vl, "FAIL no CLI connection accepted");
-	}
 
-	closefd(&v->cli_fd);
 	v->cli_fd = nfd;
 
 	vtc_log(v->vl, 3, "CLI connection fd = %d", v->cli_fd);
