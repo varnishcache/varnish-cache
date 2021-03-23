@@ -665,17 +665,6 @@ xyzzy_vcl_discard_delay(VRT_CTX, struct vmod_priv *priv, VCL_DURATION delay)
 	priv_vcl->vcl_discard_delay = delay;
 }
 
-VCL_BOOL v_matchproto_(td_debug_match_acl)
-xyzzy_match_acl(VRT_CTX, VCL_ACL acl, VCL_IP ip)
-{
-
-	CHECK_OBJ_ORNULL(ctx, VRT_CTX_MAGIC);
-	AN(acl);
-	assert(VSA_Sane(ip));
-
-	return (VRT_acl_match(ctx, acl, ip));
-}
-
 VCL_VOID v_matchproto_(td_debug_test_probe)
 xyzzy_test_probe(VRT_CTX, VCL_PROBE probe, VCL_PROBE same)
 {

@@ -178,6 +178,22 @@ $Function BOOL match_acl(ACL acl, IP ip)
 
 Perform an IP match against a named ACL.
 
+$Function BLOB sweep_acl(ACL acl, IP ip0, IP ip1, INT step = 1)
+
+Sweep `acl` through IP#s `ip0` ... `ip1` and return a hash-signature
+of the results.
+
+VSL_Debug lines will be emitted for every 64 addresses (you probably want:
+`-p vsl_mask=+Debug,-VCL_acl`
+
+Only the lower 64 bits of IPv4 addresses are stepped.
+
+$Function DURATION time_acl(ACL acl, IP ip0, IP ip1, INT step = 1, INT rounds = 1000)
+
+Time `rounds` sweeps from `ip0` to `ip1` through `acl`.
+
+Consider: `-p vsl_mask=-VCL_acl`
+
 $Function VOID test_probe(PROBE probe, PROBE same = 0)
 
 Only here to make sure probe definitions are passed properly.
