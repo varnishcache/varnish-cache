@@ -52,7 +52,11 @@ struct vrt_privs cli_task_privs[1];
 static inline int vrt_priv_dyncmp(const struct vrt_priv *,
     const struct vrt_priv *);
 
-VRBT_PROTOTYPE_STATIC(vrt_privs, vrt_priv, entry, vrt_priv_dyncmp)
+VRBT_GENERATE_INSERT_COLOR(vrt_privs, vrt_priv, entry, static)
+VRBT_GENERATE_FIND(vrt_privs, vrt_priv, entry, vrt_priv_dyncmp, static)
+VRBT_GENERATE_INSERT(vrt_privs, vrt_priv, entry, vrt_priv_dyncmp, static)
+VRBT_GENERATE_MINMAX(vrt_privs, vrt_priv, entry, static)
+VRBT_GENERATE_NEXT(vrt_privs, vrt_priv, entry, static)
 
 /*--------------------------------------------------------------------
  */
@@ -112,8 +116,6 @@ vrt_priv_dyncmp(const struct vrt_priv *vp1, const struct vrt_priv *vp2)
 		return (1);
 	return (0);
 }
-
-VRBT_GENERATE_STATIC(vrt_privs, vrt_priv, entry, vrt_priv_dyncmp)
 
 static struct vmod_priv *
 vrt_priv_dynamic_get(const struct vrt_privs *privs, uintptr_t vmod_id)

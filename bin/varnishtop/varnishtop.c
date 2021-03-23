@@ -110,10 +110,18 @@ cmp_order(const struct top *a, const struct top *b)
 	return (cmp_key(a, b));
 }
 
-VRBT_PROTOTYPE_STATIC(t_order, top, e_order, cmp_order)
-VRBT_GENERATE_STATIC(t_order, top, e_order, cmp_order)
-VRBT_PROTOTYPE_STATIC(t_key, top, e_key, cmp_key)
-VRBT_GENERATE_STATIC(t_key, top, e_key, cmp_key)
+VRBT_GENERATE_INSERT_COLOR(t_order, top, e_order, static)
+VRBT_GENERATE_INSERT(t_order, top, e_order, cmp_order, static)
+VRBT_GENERATE_REMOVE_COLOR(t_order, top, e_order, static)
+VRBT_GENERATE_MINMAX(t_order, top, e_order, static)
+VRBT_GENERATE_NEXT(t_order, top, e_order, static)
+VRBT_GENERATE_REMOVE(t_order, top, e_order, static)
+
+VRBT_GENERATE_INSERT_COLOR(t_key, top, e_key, static)
+VRBT_GENERATE_REMOVE_COLOR(t_key, top, e_key, static)
+VRBT_GENERATE_INSERT(t_key, top, e_key, cmp_key, static)
+VRBT_GENERATE_REMOVE(t_key, top, e_key, static)
+VRBT_GENERATE_FIND(t_key, top, e_key, cmp_key, static)
 
 static int v_matchproto_(VSLQ_dispatch_f)
 accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],

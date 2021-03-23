@@ -228,8 +228,11 @@ vtx_keycmp(const struct vtx_key *a, const struct vtx_key *b)
 	return (0);
 }
 
-VRBT_PROTOTYPE_STATIC(vtx_tree, vtx_key, entry, vtx_keycmp)
-VRBT_GENERATE_STATIC(vtx_tree, vtx_key, entry, vtx_keycmp)
+VRBT_GENERATE_REMOVE_COLOR(vtx_tree, vtx_key, entry, static)
+VRBT_GENERATE_REMOVE(vtx_tree, vtx_key, entry, static)
+VRBT_GENERATE_INSERT_COLOR(vtx_tree, vtx_key, entry, static)
+VRBT_GENERATE_INSERT(vtx_tree, vtx_key, entry, vtx_keycmp, static)
+VRBT_GENERATE_FIND(vtx_tree, vtx_key, entry, vtx_keycmp, static)
 
 static enum vsl_status v_matchproto_(vslc_next_f)
 vslc_raw_next(const struct VSL_cursor *cursor)
