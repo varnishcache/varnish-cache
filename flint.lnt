@@ -202,7 +202,10 @@
 ///////////////////////////////////////////////////////////////////////
 // <vtree.h>
 
--emacro(801, VRBT_*)		// goto considered bad
+// -emacro(801, VRBT_*)		// goto considered bad
+-emacro(527, VRBT_*)		// unreachable code
+-emacro(740, VRBT_*)		// unusual pointer cast
+-emacro(438, VRBT_*)		// last value assigned not used
 -esym(534, *_VRBT_REMOVE)	// ignore retval
 -esym(534, *_VRBT_INSERT)	// ignore retval
 
