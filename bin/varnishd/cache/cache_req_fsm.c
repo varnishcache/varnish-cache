@@ -417,7 +417,7 @@ cnt_transmit(struct worker *wrk, struct req *req)
 	status = http_GetStatus(req->resp);
 	head = !strcmp(req->http0->hd[HTTP_HDR_METHOD].b, "HEAD");
 
-	if (boc != NULL)
+	if (boc != NULL || (req->objcore->flags & (OC_F_FAILED)))
 		req->resp_len = clval;
 	else
 		req->resp_len = ObjGetLen(req->wrk, req->objcore);
@@ -471,6 +471,11 @@ cnt_transmit(struct worker *wrk, struct req *req)
 	VSLb_ts_req(req, "Resp", W_TIM_real(wrk));
 
 	HSH_Cancel(wrk, req->objcore, boc);
+
+	if (!req->doclose && (req->objcore->flags & OC_F_FAILED))
+		/* The object we delivered failed due to a streaming error.
+		 * Fail the request. */
+		req->doclose = SC_TX_ERROR;
 
 	if (boc != NULL)
 		HSH_DerefBoc(wrk, req->objcore);
