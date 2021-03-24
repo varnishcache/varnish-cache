@@ -37,6 +37,7 @@ endif
 
 libvarnishapi_la_CFLAGS = \
 	-DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"' \
+	@vtree_extra_cflags@ \
 	@SAN_CFLAGS@
 
 libvarnishapi_la_LIBADD = \

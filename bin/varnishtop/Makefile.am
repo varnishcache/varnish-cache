@@ -13,6 +13,7 @@ varnishtop_SOURCES = \
 
 
 varnishtop_CFLAGS = \
+	@vtree_extra_cflags@ \
 	@SAN_CFLAGS@
 
 varnishtop_LDADD = \
