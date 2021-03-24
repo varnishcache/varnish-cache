@@ -282,7 +282,7 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 		i = V1F_SendReq(wrk, bo, &bo->acct.bereq_hdrbytes,
 				&bo->acct.bereq_bodybytes, 0, abuf, pbuf);
 
-		if (PFD_State(pfd) != PFD_STATE_USED) {
+		if (i == 0 && PFD_State(pfd) != PFD_STATE_USED) {
 			if (VTP_Wait(wrk, pfd, VTIM_real() +
 			    bo->htc->first_byte_timeout) != 0) {
 				bo->htc->doclose = SC_RX_TIMEOUT;
