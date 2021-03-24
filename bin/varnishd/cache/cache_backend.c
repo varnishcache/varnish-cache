@@ -292,7 +292,7 @@ vbe_dir_gethdrs(VRT_CTX, VCL_BACKEND d)
 			extrachance = 0;
 
 		i = V1F_SendReq(wrk, bo, &bo->acct.bereq_hdrbytes,
-				&bo->acct.bereq_bodybytes);
+		    &bo->acct.bereq_bodybytes);
 
 		if (PFD_State(pfd) != PFD_STATE_USED) {
 			if (VCP_Wait(wrk, pfd, VTIM_real() +
