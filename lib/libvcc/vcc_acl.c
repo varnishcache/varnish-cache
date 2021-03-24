@@ -418,6 +418,35 @@ vcc_acl_entry(struct vcc *tl)
 }
 
 /*********************************************************************
+ * Emit the tokens making up an entry as C-strings
+ */
+
+static void
+vcc_acl_emit_tokens(const struct vcc *tl, const struct acl_e *ae)
+{
+	struct token *t;
+	const char *sep = "";
+
+	t = ae->t_addr;
+	do {
+		if (t->tok == CSTR) {
+			Fh(tl, 0, "%s\"\\\"\" ", sep);
+			EncToken(tl->fh, t);
+			Fh(tl, 0, " \"\\\"\"");
+		} else {
+			Fh(tl, 0, "%s\"%.*s\"", sep, PF(t));
+		}
+		if (t == ae->t_mask)
+			break;
+		t = VTAILQ_NEXT(t, list);
+		AN(t);
+		sep = " ";
+	} while (ae->t_mask != NULL);
+	if (ae->fixed)
+		Fh(tl, 0, "\" fixed: %s\"", ae->fixed);
+}
+
+/*********************************************************************
  * Emit a function to match the ACL we have collected
  */
 
@@ -427,7 +456,6 @@ vcc_acl_emit(struct vcc *tl, const char *name, const char *rname)
 	struct acl_e *ae;
 	int depth, l, m, i;
 	unsigned at[ACL_MAXADDR];
-	struct token *t;
 	struct inifin *ifp = NULL;
 	struct vsb *func;
 
@@ -500,22 +528,7 @@ vcc_acl_emit(struct vcc *tl, const char *name, const char *rname)
 
 		Fh(tl, 0, "\t%*sVPI_acl_log(ctx, \"%sMATCH %s \" ",
 		    -i, "", ae->not ? "NEG_" : "", name);
-		t = ae->t_addr;
-		do {
-			if (t->tok == CSTR) {
-				Fh(tl, 0, " \"\\\"\" ");
-				EncToken(tl->fh, t);
-				Fh(tl, 0, " \"\\\"\" ");
-			} else
-				Fh(tl, 0, " \"%.*s\"", PF(t));
-			if (t == ae->t_mask)
-				break;
-			t = VTAILQ_NEXT(t, list);
-			AN(t);
-		} while (ae->t_mask != NULL);
-		if (ae->fixed)
-			Fh(tl, 0, "\" fixed: %s\"",
-			   ae->fixed);
+		vcc_acl_emit_tokens(tl, ae);
 		Fh(tl, 0, ");\n");
 
 		Fh(tl, 0, "\t%*sreturn (%d);\n", -i, "", ae->not ? 0 : 1);
