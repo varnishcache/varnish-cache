@@ -409,7 +409,7 @@ cnt_transmit(struct worker *wrk, struct req *req)
 	head = !strcmp(req->http0->hd[HTTP_HDR_METHOD].b, "HEAD");
 	err = 0;
 
-	if (boc != NULL)
+	if (boc != NULL || (req->objcore->flags & (OC_F_FAILED)))
 		req->resp_len = clval;
 	else
 		req->resp_len = ObjGetLen(req->wrk, req->objcore);
@@ -481,6 +481,11 @@ cnt_transmit(struct worker *wrk, struct req *req)
 		}
 		ObjSlim(wrk, req->objcore);
 	}
+
+	if (!req->doclose && (req->objcore->flags & OC_F_FAILED))
+		/* The object we delivered failed due to a streaming error.
+		 * Fail the request. */
+		req->doclose = SC_TX_ERROR;
 
 	if (boc != NULL)
 		HSH_DerefBoc(wrk, req->objcore);
