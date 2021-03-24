@@ -461,4 +461,4 @@ const char *vcc_MarkPriv(struct vcc *, struct procprivhead *,
 #define SkipToken(a, b) \
     do { vcc__Expect(a, b, __LINE__); ERRCHK(a); vcc_NextToken(a); } while (0)
 
-#define ACL_SYMBOL_PREFIX "vrt_acl_named"
+#define ACL_SYMBOL_PREFIX "vrt_acl"

@@ -199,8 +199,9 @@ vcc_EmitProc(struct vcc *tl, struct proc *p)
 	nsub = tl->nsub++;
 
 	Fh(tl, 1, "vcl_func_f %s;\n", VSB_data(p->cname));
-	Fh(tl, 1, "const struct vcl_sub sub_%s[1] = {{\n",
-	   VSB_data(p->cname));
+	Fh(tl, 1, "extern const struct vcl_sub sub_%s[1];\n",
+	    VSB_data(p->cname));
+	Fh(tl, 1, "const struct vcl_sub sub_%s[1] = {{\n", VSB_data(p->cname));
 	Fh(tl, 1, "\t.magic\t\t= VCL_SUB_MAGIC,\n");
 	Fh(tl, 1, "\t.methods\t= 0x%x,\n", p->okmask);
 	Fh(tl, 1, "\t.name\t\t= \"%.*s\",\n", PF(p->name));

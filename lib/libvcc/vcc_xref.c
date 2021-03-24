@@ -411,7 +411,7 @@ vcc_instance_info(struct vcc *tl, const struct symbol *sym)
 void
 VCC_InstanceInfo(struct vcc *tl)
 {
-	Fc(tl, 0, "\nconst struct vpi_ii VGC_instance_info[] = {\n");
+	Fc(tl, 0, "\nstatic const struct vpi_ii VGC_instance_info[] = {\n");
 	VCC_WalkSymbols(tl, vcc_instance_info, SYM_MAIN, SYM_INSTANCE);
 	Fc(tl, 0, "\t{ .p = NULL, .name = \"\" }\n");
 	Fc(tl, 0, "};\n");

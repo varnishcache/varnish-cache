@@ -495,7 +495,7 @@ struct foo {
 #define N 131101	/* Number of items */
 #define R -1		/* Random modulus */
 
-struct foo *ff[N];
+static struct foo *ff[N];
 
 static int v_matchproto_(vbh_cmp_t)
 cmp(void *priv, const void *a, const void *b)

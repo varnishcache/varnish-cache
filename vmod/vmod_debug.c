@@ -1052,12 +1052,14 @@ xyzzy_get_ip(VRT_CTX)
 
 //lint -save -e9075 external symbol '...' defined without a prior declaration
 
+extern const struct vmod_data Vmod_wrong0_Data;
 const struct vmod_data Vmod_wrong0_Data = {
 	.vrt_major =    0,
 	.vrt_minor =    0,
 };
 
 //lint -save -e835 A zero has been given as left argument to operatorp'+'
+extern const struct vmod_data Vmod_wrong1_Data;
 const struct vmod_data Vmod_wrong1_Data = {
 	.vrt_major =    VRT_MAJOR_VERSION,
 	.vrt_minor =    VRT_MINOR_VERSION + 1,
@@ -1068,6 +1070,7 @@ static const struct foo {
 	int bar;
 } foo_struct[1];
 
+extern const struct vmod_data Vmod_wrong2_Data;
 const struct vmod_data Vmod_wrong2_Data = {
 	.vrt_major =    VRT_MAJOR_VERSION,
 	.vrt_minor =    VRT_MINOR_VERSION,
@@ -1078,6 +1081,7 @@ const struct vmod_data Vmod_wrong2_Data = {
 	.proto =	"blablabla",
 };
 
+extern const struct vmod_data Vmod_wrong3_Data;
 const struct vmod_data Vmod_wrong3_Data = {
 	.vrt_major =    VRT_MAJOR_VERSION,
 	.vrt_minor =    VRT_MINOR_VERSION,

@@ -541,7 +541,8 @@ vcc_Lexer(struct vcc *tl, const struct source *sp, int eoi)
 			AZ(VSB_finish(vsb));
 
 			bprintf(namebuf, "blob_%u", tl->unique++);
-			Fh(tl, 0, "\nconst unsigned char %s_data[%zd] = {\n",
+			Fh(tl, 0,
+			    "\nstatic const unsigned char %s_data[%zd] = {\n",
 			    namebuf, VSB_len(vsb));
 			for (u = 0; u < VSB_len(vsb); u++) {
 				Fh(tl, 0, "\t0x%02x,", VSB_data(vsb)[u] & 0xff);
@@ -551,7 +552,8 @@ vcc_Lexer(struct vcc *tl, const struct source *sp, int eoi)
 			if ((u & 7) != 7)
 				Fh(tl, 0, "\n");
 			Fh(tl, 0, "};\n");
-			Fh(tl, 0, "\nconst struct vrt_blob %s[1] = {{\n",
+			Fh(tl, 0,
+			    "\nstatic const struct vrt_blob %s[1] = {{\n",
 			    namebuf);
 			Fh(tl, 0, "\t.len =\t%zd,\n", VSB_len(vsb));
 			Fh(tl, 0, "\t.blob =\t%s_data,\n", namebuf);

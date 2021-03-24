@@ -23,7 +23,7 @@ static void _accessor(volatile char *p) {
      p[0] = 'V'; p[1] = '\0';
      fprintf(stderr, "%p %s\n", p, p);
 }
-void (*accessor)(volatile char *p) = _accessor;
+static void (*accessor)(volatile char *p) = _accessor;
 
 }C
 	sub vcl_recv { C{

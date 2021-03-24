@@ -530,11 +530,15 @@ vcc_acl_emit(struct vcc *tl, const char *name, const char *rname)
 	Fh(tl, 0, "\treturn (0);\n}\n");
 
 	/* Emit the struct that will be referenced */
-	Fh(tl, 0, "\nconst struct vrt_acl %s[] = {{\n", rname);
+	Fh(tl, 0, "\nstatic const struct vrt_acl %s[] = {{\n", rname);
 	Fh(tl, 0, "\t.magic = VRT_ACL_MAGIC,\n");
 	Fh(tl, 0, "\t.match = &%s,\n", VSB_data(func));
 	Fh(tl, 0, "\t.name = \"%s\",\n", name);
 	Fh(tl, 0, "}};\n\n");
+	if (!tl->err_unref) {
+		AN(ifp);
+		VSB_printf(ifp->ini, "\t(void)%s;\n", rname);
+	}
 	VSB_destroy(&func);
 }
 

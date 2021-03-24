@@ -46,7 +46,9 @@
 
 int LLVMFuzzerTestOneInput(const uint8_t *, size_t);
 
+extern struct VSC_main *VSC_C_main;
 struct VSC_main *VSC_C_main;
+extern struct params *cache_param;
 struct params *cache_param;
 
 void
