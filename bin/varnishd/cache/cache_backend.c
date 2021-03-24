@@ -215,9 +215,15 @@ vbe_dir_finish(const struct director *d, struct worker *wrk,
 	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
 	pfd = bo->htc->priv;
 	bo->htc->priv = NULL;
-	if (PFD_State(pfd) != PFD_STATE_USED)
-		assert(bo->htc->doclose == SC_TX_PIPE ||
-		    bo->htc->doclose == SC_RX_TIMEOUT);
+	if (PFD_State(pfd) != PFD_STATE_USED) {
+		AN(bo->htc->doclose);
+		if (bo->htc->doclose != SC_TX_PIPE) {
+#define SESS_CLOSE(U, l, err, desc)				\
+			if (bo->htc->doclose == SC_ ## U)	\
+				AN(err);
+#include "tbl/sess_close.h"
+		}
+	}
 	if (bo->htc->doclose != SC_NULL || bp->proxy_header != 0) {
 		VSLb(bo->vsl, SLT_BackendClose, "%d %s", *PFD_Fd(pfd),
 		    bp->director->display_name);
