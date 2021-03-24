@@ -39,6 +39,7 @@
 #include "vrt.h"
 #include "vcl.h"
 #include "vqueue.h"
+#include "vtree.h"
 #include "vsb.h"
 
 #include "vcc_token_defs.h"
@@ -233,6 +234,8 @@ struct inifin {
 
 VTAILQ_HEAD(inifinhead, inifin);
 
+VRBT_HEAD(acl_tree, acl_e);
+
 struct vcc {
 	unsigned		magic;
 #define VCC_MAGIC		0x24ad719d
@@ -271,7 +274,7 @@ struct vcc {
 	struct proc		*curproc;
 	VTAILQ_HEAD(, proc)	procs;
 
-	VTAILQ_HEAD(, acl_e)	acl;
+	struct acl_tree		acl_tree;
 
 	int			nprobe;
 

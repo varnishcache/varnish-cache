@@ -46,7 +46,7 @@
 #define ACL_MAXADDR	(sizeof(struct in6_addr) + 1)
 
 struct acl_e {
-	VTAILQ_ENTRY(acl_e)	list;
+	VRBT_ENTRY(acl_e)	branch;
 	unsigned char		data[ACL_MAXADDR];
 	unsigned		mask;
 	unsigned		not;
@@ -93,6 +93,12 @@ vcl_acl_cmp(const struct acl_e *ae1, const struct acl_e *ae2)
 
 	return (0);
 }
+
+VRBT_GENERATE_INSERT_COLOR(acl_tree, acl_e, branch, static)
+VRBT_GENERATE_FIND(acl_tree, acl_e, branch, vcl_acl_cmp, static)
+VRBT_GENERATE_INSERT(acl_tree, acl_e, branch, vcl_acl_cmp, static)
+VRBT_GENERATE_MINMAX(acl_tree, acl_e, branch, static)
+VRBT_GENERATE_NEXT(acl_tree, acl_e, branch, static)
 
 static char *
 vcc_acl_chk(struct vcc *tl, const struct acl_e *ae, const int l,
@@ -154,7 +160,6 @@ vcc_acl_add_entry(struct vcc *tl, const struct acl_e *ae, int l,
     unsigned char *u, int fam)
 {
 	struct acl_e *ae2, *aen;
-	int i;
 
 	if (fam == PF_INET && ae->mask > 32) {
 		VSB_printf(tl->sb,
@@ -187,40 +192,18 @@ vcc_acl_add_entry(struct vcc *tl, const struct acl_e *ae, int l,
 	assert(l + 1UL <= sizeof aen->data);
 	memcpy(aen->data + 1L, u, l);
 
-	VTAILQ_FOREACH(ae2, &tl->acl, list) {
-		i = vcl_acl_cmp(aen, ae2);
-		if (i == 0) {
-			/*
-			 * If the two rules agree, silently ignore it
-			 * XXX: is that counter intuitive ?
-			 */
-			if (aen->not == ae2->not) {
-				free(aen);
-				return;
-			}
+	ae2 = VRBT_FIND(acl_tree, &tl->acl_tree, aen);
+	if (ae2 != NULL) {
+		if (ae2->not != aen->not) {
 			VSB_cat(tl->sb, "Conflicting ACL entries:\n");
 			vcc_ErrWhere(tl, ae2->t_addr);
 			VSB_cat(tl->sb, "vs:\n");
 			vcc_ErrWhere(tl, aen->t_addr);
-			free(aen);
-			return;
 		}
-		/*
-		 * We could eliminate pointless rules here, for instance in:
-		 *	"10.1.0.1";
-		 *	"10.1";
-		 * The first rule is clearly pointless, as the second one
-		 * covers it.
-		 *
-		 * We do not do this however, because the shmlog may
-		 * be used to gather statistics.
-		 */
-		if (i < 0) {
-			VTAILQ_INSERT_BEFORE(ae2, aen, list);
-			return;
-		}
+		free(aen);
+		return;
 	}
-	VTAILQ_INSERT_TAIL(&tl->acl, aen, list);
+	VRBT_INSERT(acl_tree, &tl->acl_tree, aen);
 }
 
 static void
@@ -483,7 +466,7 @@ vcc_acl_emit(struct vcc *tl, const char *name, const char *rname)
 	}
 	depth = -1;
 	at[0] = 256;
-	VTAILQ_FOREACH(ae, &tl->acl, list) {
+	VRBT_FOREACH(ae, acl_tree, &tl->acl_tree) {
 
 		/* Find how much common prefix we have */
 		for (l = 0; l <= depth && l * 8 < (int)ae->mask - 7; l++) {
@@ -561,7 +544,7 @@ vcc_ParseAcl(struct vcc *tl)
 	struct symbol *sym;
 
 	vcc_NextToken(tl);
-	VTAILQ_INIT(&tl->acl);
+	VRBT_INIT(&tl->acl_tree);
 
 	vcc_ExpectVid(tl, "ACL");
 	ERRCHK(tl);
