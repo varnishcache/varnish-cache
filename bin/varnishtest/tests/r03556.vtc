@@ -1,0 +1,34 @@
+varnishtest "#3556"
+
+server s1 {
+	rxreq
+	txresp
+
+	non_fatal
+	rxreq
+} -start
+
+varnish v1 -cliok "param.set first_byte_timeout 10"
+varnish v1 -vcl+backend {} -start
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+logexpect l2 -v v1 -q "ReqMethod eq POST" {
+	expect * * End
+} -start
+
+client c2 {
+	txreq -req POST \
+	    -hdr "Content-Length: 10" \
+	    -hdr "Content-Type: text/plain"
+	send incompl
+} -run
+
+logexpect l2 -wait
+
+shell -expect POST {
+	exec varnishncsa -d -n ${v1_name} -q 'Timestamp:Process[2] < 10.0'
+}
