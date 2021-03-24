@@ -64,6 +64,21 @@ varnish v1 -vcl+backend {
 
 		set resp.http.ACLfoo = std.ip("127.0.0.1", client.ip) ~ foo;
 		set resp.http.ACLbar = std.ip("127.0.0.1", client.ip) ~ bar;
+
+		// For coverage of vmod_debug_acl.c
+		debug.sweep_acl(
+		    block,
+		    std.ip("::"),
+		    std.ip("::02ff"),
+		    8
+		);
+		debug.time_acl(
+		    block,
+		    std.ip("::"),
+		    std.ip("::02ff"),
+		    8,
+		    1000
+		);
 	}
 } -start
 
