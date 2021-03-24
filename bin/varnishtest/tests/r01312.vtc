@@ -1,4 +1,4 @@
-varnishtest "acl miscompile"
+varnishtest "acl functional (& historic miscompile)"
 
 server s1 {
 	rxreq
@@ -7,6 +7,7 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	import std;
+	import debug;
 
 	acl foo {
 		"127.0.0.2";
@@ -16,10 +17,62 @@ varnish v1 -vcl+backend {
 		"127.0.1.2";
 		"127.0.1"/19;
 	}
+
+	acl block {
+		# Tests all boundary conditions
+		  "192.168.8.0" / 21;
+		! "192.168.16" / 21;
+		  "192.168.8.0" / 23;
+		! "192.168.14.0" / 23;
+		  "192.168.16.0" / 23;
+		! "192.168.22.0" / 23;
+		! "192.168.8.0" / 24;
+		! "192.168.11.0" / 24;
+		  "192.168.15.0" / 24;
+		! "192.168.16.0" / 24;
+		  "192.168.19.0" / 24;
+		  "192.168.23.0" / 24;
+
+		# Same pattern, but split across bytes
+		  "::0080" / 121;
+		! "::0100" / 121;
+		  "::0080" / 123;
+		! "::00e0" / 123;
+		  "::0100" / 123;
+		! "::0160" / 123;
+		! "::0080" / 124;
+		! "::00b0" / 124;
+		  "::00f0" / 124;
+		! "::0100" / 124;
+		  "::0130" / 124;
+		  "::0170" / 124;
+	}
+
 	sub vcl_deliver {
+		set resp.http.acl4 = debug.sweep_acl(
+		    block,
+		    std.ip("192.168.0.0"),
+		    std.ip("192.168.32.255"),
+		    256
+		);
+		set resp.http.acl6 = debug.sweep_acl(
+		    block,
+		    std.ip("::"),
+		    std.ip("::0200"),
+		    16
+		);
+
 		set resp.http.ACLfoo = std.ip("127.0.0.1", client.ip) ~ foo;
 		set resp.http.ACLbar = std.ip("127.0.0.1", client.ip) ~ bar;
 	}
+} -start
+
+varnish v1 -cliok "param.set vsl_mask +Debug,-VCL_acl"
+varnish v1 -cliok "param.set debug +syncvsl"
+
+logexpect l1 -v v1 -g raw {
+	expect * 1001 Debug {Sweep: 192.168.0.0    ---------XX-XX-X-X-X---X---------}
+	expect * 1001 Debug {Sweep: ::             ---------XX-XX-X-X-X---X---------}
 } -start
 
 client c1 {
@@ -27,4 +80,8 @@ client c1 {
 	rxresp
 	expect resp.http.aclfoo == true
 	expect resp.http.aclbar == true
+	expect resp.http.acl4 == ":4thASR0O18ZxnoKtc4zd8KuO25rPvwvMQyAvRfilz6o=:"
+	expect resp.http.acl6 == ":NSi+7wpvQe7XJj8DPbESjpYPGnIzvjOsA5QCyCnW3kc=:"
 } -run
+
+logexpect l1 -wait
