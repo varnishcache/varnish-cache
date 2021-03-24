@@ -68,9 +68,9 @@ struct acl_e {
 	} while (0)
 
 static int
-vcl_acl_cmp(struct acl_e *ae1, struct acl_e *ae2)
+vcl_acl_cmp(const struct acl_e *ae1, const struct acl_e *ae2)
 {
-	unsigned char *p1, *p2;
+	const unsigned char *p1, *p2;
 	unsigned m;
 
 	p1 = ae1->data;
@@ -428,7 +428,7 @@ vcc_acl_emit(struct vcc *tl, const char *name, const char *rname)
 	int depth, l, m, i;
 	unsigned at[ACL_MAXADDR];
 	struct token *t;
-	struct inifin *ifp;
+	struct inifin *ifp = NULL;
 	struct vsb *func;
 
 	func = VSB_new_auto();
