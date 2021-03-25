@@ -70,6 +70,7 @@ ENUM values for an encoding scheme can be one of:
 * ``BASE64``
 * ``BASE64URL``
 * ``BASE64URLNOPAD``
+* ``BASE64CF``
 * ``HEX``
 * ``URL``
 
@@ -141,6 +142,11 @@ The ``BASE64URLNOPAD`` encoding uses the same alphabet as
 ``BASE6URL``, but leaves out the padding. Thus the length of an
 encoding with this scheme is not necessarily a multiple of four.
 
+The ``BASE64CF` is similar to ``BASE64URL``, with the following
+changes to ``BASE64``: ``+`` replaced with ``-``, ``/`` replaced with
+``~`` and ``_`` as the padding character. It is used by a certain CDN
+provider who also inspired the name.
+
 The *case* ENUM MUST be set to ``DEFAULT`` for for all of the
 ``BASE64*`` encodings.
 
@@ -176,8 +182,8 @@ The ``URL`` encoding implements "percent encoding" as per RFC3986. The
 affect alphabetic characters that are not percent-encoded.
 
 $Function BLOB decode(ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD,
-			    HEX, URL} decoding="IDENTITY", INT length=0,
-		      STRANDS encoded)
+			    BASE64CF, HEX, URL} decoding="IDENTITY",
+			    INT length=0, STRANDS encoded)
 
 Returns the BLOB derived from the string *encoded* according to the
 scheme specified by *decoding*.
@@ -201,7 +207,7 @@ Example::
 
 
 $Function STRING encode(ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD,
-			      HEX, URL} encoding="IDENTITY",
+			      BASE64CF, HEX, URL} encoding="IDENTITY",
 			ENUM {LOWER, UPPER, DEFAULT} case="DEFAULT", BLOB blob)
 
 Returns a string representation of the BLOB *blob* as specified by
@@ -230,9 +236,9 @@ Example::
 	    = blob.encode(blob=blob.decode(encoded="foo"));
 
 $Function STRING transcode(ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD,
-				 HEX, URL} decoding="IDENTITY",
+				 BASE64CF, HEX, URL} decoding="IDENTITY",
 			   ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD,
-				 HEX, URL} encoding="IDENTITY",
+				 BASE64CF, HEX, URL} encoding="IDENTITY",
 			   ENUM {LOWER, UPPER, DEFAULT} case="DEFAULT",
 			   INT length=0, STRANDS encoded)
 
@@ -303,8 +309,8 @@ default value of *offset* is ``0B``.
 ``offset + length`` requires more bytes than are available in the
 BLOB.
 
-$Object blob(ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD, HEX,
-		   URL} decoding="IDENTITY",
+$Object blob(ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD, BASE64CF,
+		   HEX, URL} decoding="IDENTITY",
 	     STRANDS encoded)
 
 Creates an object that contains the BLOB derived from the string
@@ -335,8 +341,8 @@ Example::
 	set resp.http.The-Stringblob =
 	    blob.encode(blob=stringblob.get());
 
-$Method STRING .encode(ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD, HEX,
-			     URL} encoding="IDENTITY",
+$Method STRING .encode(ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD,
+			     BASE64CF, HEX,URL} encoding="IDENTITY",
 		       ENUM {LOWER, UPPER, DEFAULT} case="DEFAULT")
 
 Returns an encoding of BLOB created by the constructor, according to

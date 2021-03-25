@@ -76,6 +76,10 @@ static const struct vmod_blob_fptr {
 		B64_FUNCS,
 		.encode_l	= base64nopad_encode_l
 	},
+	[BASE64CF] = {
+		B64_FUNCS,
+		.encode_l	= base64_encode_l
+	},
 	[HEX] = {
 		.decode_l	= hex_decode_l,
 		.decode		= hex_decode,

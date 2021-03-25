@@ -96,6 +96,14 @@ varnish v1 -vcl {
 	    set resp.http.b64urlnopadxcode =
 	      blob.transcode(IDENTITY, BASE64URLNOPAD,
 			     encoded=req.url + "Hello world" + req.url);
+
+	    set resp.http.b64cfxcodeout =
+	      blob.transcode(BASE64, BASE64CF,
+			     encoded="+/Y=");
+
+	    set resp.http.b64cfxcodein =
+	      blob.transcode(BASE64CF, BASE64,
+			     encoded="-~Y_");
 	}
 } -start
 
@@ -122,6 +130,8 @@ client c1 {
 	expect resp.http.b64xcode == "L0hlbGxvIHdvcmxkLw=="
 	expect resp.http.b64urlxcode == "L0hlbGxvIHdvcmxkLw=="
 	expect resp.http.b64urlnopadxcode == "L0hlbGxvIHdvcmxkLw"
+	expect resp.http.b64cfxcodeout == "-~Y_"
+	expect resp.http.b64cfxcodein == "+/Y="
 } -run
 
 varnish v1 -vcl {
