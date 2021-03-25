@@ -427,7 +427,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	VSLb_ts_busyobj(bo, "Fetch", W_TIM_real(wrk));
 	i = VDI_GetHdr(bo);
 
-	now = W_TIM_real(wrk);
+	bo->t_resp = now = W_TIM_real(wrk);
 	VSLb_ts_busyobj(bo, "Beresp", now);
 
 	if (i) {

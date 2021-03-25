@@ -707,6 +707,25 @@ VRT_DO_EXP_R(beresp, ctx->bo->fetch_objcore, keep, 0)
 
 /*lint -restore */
 
+// XXX more assertions?
+#define VRT_DO_TIME_R(which, where, field)				\
+									\
+VCL_TIME								\
+VRT_r_##which##_time(VRT_CTX)						\
+{									\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
+	AN((ctx)->where);						\
+									\
+	return ((ctx)->where->field);					\
+}
+
+VRT_DO_TIME_R(req, req, t_req)
+VRT_DO_TIME_R(req_top, req->top->topreq, t_req)
+VRT_DO_TIME_R(resp, req, t_resp)
+VRT_DO_TIME_R(bereq, bo, t_first)
+VRT_DO_TIME_R(beresp, bo, t_resp)
+VRT_DO_TIME_R(obj, req->objcore, t_origin)
+
 /*--------------------------------------------------------------------
  */
 

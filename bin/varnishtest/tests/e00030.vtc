@@ -56,7 +56,11 @@ varnish v1 -vcl+backend {
 	sub vcl_recv {
 		if (req.esi_level > 0) {
 			set req.url = req.url + req.esi_level;
+			if (req_top.http.top-time != "" + req_top.time) {
+				return (fail);
+			}
 		} else {
+			set req.http.top-time = req_top.time;
 			set req.http.foo = "bar";
 		}
 

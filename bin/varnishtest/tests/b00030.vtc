@@ -7,68 +7,107 @@ varnishtest "Test timestamps"
 server s1 {
 	rxreq
 	txresp
+	rxreq
+	txresp
 } -start
 
 varnish v1 -vcl+backend {
 	import vtc;
+	import std;
 
 	sub recv_sub {
-		set req.http.recv_sub = now;
+		set req.http.now-recv_sub = now;
 	}
 	sub vcl_recv {
-		set req.http.recv = now;
+		if (req.restarts == 0) {
+			set req.http.req-time = req.time;
+		} else if (req.http.req-time != "" + req.time) {
+			return (fail);
+		}
+		set req.http.now-recv = now;
 		vtc.sleep(1s);
 		call recv_sub;
-		if (req.http.recv != req.http.recv_sub) {
+		if (req.http.now-recv != req.http.now-recv_sub) {
 			return (fail);
 		}
 	}
 	sub vcl_synth {
-		set resp.http.synth = now;
+		set resp.http.now-synth = now;
+		if (req.http.req-time != "" + req.time) {
+			return (fail);
+		}
+		set req.http.req-time = req.time;
+		set resp.http.resp-time = resp.time;
 	}
 
 	sub vcl_deliver {
-		set resp.http.deliver = now;
-		if (req.http.recv == req.http.deliver) {
+		if (req.http.req-time != "" + req.time) {
+			return (fail);
+		}
+		set resp.http.resp-time = resp.time;
+		set resp.http.obj-time = obj.time;
+		set resp.http.now-deliver = now;
+		if (req.http.now-recv == req.http.now-deliver) {
 			return (fail);
 		}
 
 		vtc.sleep(1s);
+		if (req.restarts == 0) {
+			return (restart);
+		}
 		return (synth(200));
 	}
 
 	sub bf_sub {
-		set bereq.http.bf_sub = now;
+		set bereq.http.now-bf_sub = now;
 	}
 	sub vcl_backend_fetch {
-		set bereq.http.bf = now;
+		if (bereq.retries == 0) {
+			set bereq.http.bereq-time = bereq.time;
+		} else if (bereq.http.bereq-time != "" + bereq.time) {
+			# bereq.time is identical for all retries
+			return (fail);
+		}
+		if (bereq.time <= std.time(bereq.http.req-time)) {
+			return (fail);
+		}
+		set bereq.http.now-bf = now;
 		vtc.sleep(1s);
 		call bf_sub;
-		if (bereq.http.bf != bereq.http.bf_sub) {
+		# now remains constant during built-in vcl sub
+		if (bereq.http.now-bf != bereq.http.now-bf_sub) {
 			return (fail);
 		}
 	}
 	sub br_sub {
-		set beresp.http.br_sub = now;
+		set beresp.http.now-br_sub = now;
 	}
 	sub vcl_backend_response {
-		set beresp.http.br = now;
+		if (bereq.http.bereq-time != "" + bereq.time) {
+			return (fail);
+		}
+		set beresp.http.beresp-time = beresp.time;
+		set beresp.http.now-br = now;
 		vtc.sleep(1s);
 		call br_sub;
-		if (beresp.http.br != beresp.http.br_sub) {
+		if (beresp.http.now-br != beresp.http.now-br_sub) {
 			return (fail);
 		}
-		if (bereq.http.bf == beresp.http.br) {
+		if (bereq.http.now-bf == beresp.http.now-br) {
 			return (fail);
+		}
+		if (bereq.retries == 0) {
+			return (retry);
 		}
 	}
-
-
+	sub vcl_backend_error {
+		call vcl_backend_response;
+	}
 } -start
 
 client c1 {
 	txreq
 	rxresp
 	expect resp.status == 200
-	expect resp.http.synth ~ "^..., .. ... .... ..:..:.. GMT"
+	expect resp.http.now-synth ~ "^..., .. ... .... ..:..:.. GMT"
 } -run
