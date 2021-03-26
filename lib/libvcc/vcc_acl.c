@@ -95,7 +95,6 @@ vcl_acl_cmp(const struct acl_e *ae1, const struct acl_e *ae2)
 }
 
 VRBT_GENERATE_INSERT_COLOR(acl_tree, acl_e, branch, static)
-VRBT_GENERATE_FIND(acl_tree, acl_e, branch, vcl_acl_cmp, static)
 VRBT_GENERATE_INSERT(acl_tree, acl_e, branch, vcl_acl_cmp, static)
 VRBT_GENERATE_MINMAX(acl_tree, acl_e, branch, static)
 VRBT_GENERATE_NEXT(acl_tree, acl_e, branch, static)
@@ -160,7 +159,7 @@ vcc_acl_insert_entry(struct vcc *tl, struct acl_e *aen)
 {
 	struct acl_e *ae2;
 
-	ae2 = VRBT_FIND(acl_tree, &tl->acl_tree, aen);
+	ae2 = VRBT_INSERT(acl_tree, &tl->acl_tree, aen);
 	if (ae2 != NULL) {
 		if (ae2->not != aen->not) {
 			VSB_cat(tl->sb, "Conflicting ACL entries:\n");
@@ -171,7 +170,6 @@ vcc_acl_insert_entry(struct vcc *tl, struct acl_e *aen)
 		free(aen);
 		return;
 	}
-	VRBT_INSERT(acl_tree, &tl->acl_tree, aen);
 }
 
 static void
