@@ -214,6 +214,8 @@ vcc_acl_add_entry(struct vcc *tl, const struct acl_e *ae, int l,
 	ALLOC_OBJ(aen, VCC_ACL_E_MAGIC);
 	AN(aen);
 	*aen = *ae;
+	aen->addr = strdup(ae->addr);
+	AN(aen->addr);
 
 	aen->fixed = vcc_acl_chk(tl, ae, l, u, fam);
 
@@ -385,8 +387,7 @@ vcc_acl_entry(struct vcc *tl)
 
 	ExpectErr(tl, CSTR);
 	ae->t_addr = tl->t;
-	ae->addr = strdup(ae->t_addr->dec);
-	AN(ae->addr);
+	ae->addr = ae->t_addr->dec;
 	vcc_NextToken(tl);
 
 	if (strchr(ae->t_addr->dec, '/') != NULL) {
