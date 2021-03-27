@@ -350,10 +350,10 @@ vcc_acl_try_netnotation(struct vcc *tl, struct acl_e *ae)
 static void
 vcc_acl_entry(struct vcc *tl)
 {
-	struct acl_e *ae;
+	struct acl_e ae[1];
 	char *sl, *e;
 
-	ALLOC_OBJ(ae, VCC_ACL_E_MAGIC);
+	INIT_OBJ(ae, VCC_ACL_E_MAGIC);
 
 	if (tl->t->tok == '!') {
 		ae->not = 1;
@@ -385,14 +385,12 @@ vcc_acl_entry(struct vcc *tl)
 		if (*e != '\0') {
 			VSB_cat(tl->sb, ".../mask is not numeric.\n");
 			vcc_ErrWhere(tl, ae->t_addr);
-			FREE_OBJ(ae);
 			return;
 		}
 		ae->t_mask = ae->t_addr;
 		if (tl->t->tok == '/') {
 			VSB_cat(tl->sb, "/mask only allowed once.\n");
 			vcc_ErrWhere(tl, tl->t);
-			FREE_OBJ(ae);
 			return;
 		}
 	} else if (tl->t->tok == '/') {
