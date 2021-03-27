@@ -46,6 +46,8 @@
 #define ACL_MAXADDR	(sizeof(struct in6_addr) + 1)
 
 struct acl_e {
+	unsigned		magic;
+#define VCC_ACL_E_MAGIC	0xcac81e23
 	VRBT_ENTRY(acl_e)	branch;
 	unsigned char		data[ACL_MAXADDR];
 	unsigned		mask;
@@ -72,6 +74,9 @@ vcl_acl_cmp(const struct acl_e *ae1, const struct acl_e *ae2)
 {
 	const unsigned char *p1, *p2;
 	unsigned m;
+
+	CHECK_OBJ_NOTNULL(ae1, VCC_ACL_E_MAGIC);
+	CHECK_OBJ_NOTNULL(ae2, VCC_ACL_E_MAGIC);
 
 	p1 = ae1->data;
 	p2 = ae2->data;
@@ -159,6 +164,7 @@ vcc_acl_insert_entry(struct vcc *tl, struct acl_e *aen)
 {
 	struct acl_e *ae2;
 
+	CHECK_OBJ_NOTNULL(aen, VCC_ACL_E_MAGIC);
 	ae2 = VRBT_INSERT(acl_tree, &tl->acl_tree, aen);
 	if (ae2 != NULL) {
 		if (ae2->not != aen->not) {
@@ -167,7 +173,7 @@ vcc_acl_insert_entry(struct vcc *tl, struct acl_e *aen)
 			VSB_cat(tl->sb, "vs:\n");
 			vcc_ErrWhere(tl, aen->t_addr);
 		}
-		free(aen);
+		FREE_OBJ(aen);
 		return;
 	}
 }
@@ -195,8 +201,7 @@ vcc_acl_add_entry(struct vcc *tl, const struct acl_e *ae, int l,
 	}
 
 	/* Make a copy from the template */
-	aen = TlAlloc(tl, sizeof *aen);
-	AN(aen);
+	ALLOC_OBJ(aen, VCC_ACL_E_MAGIC);
 	*aen = *ae;
 
 	aen->fixed = vcc_acl_chk(tl, ae, l, u, fam);
@@ -221,6 +226,7 @@ vcc_acl_try_getaddrinfo(struct vcc *tl, struct acl_e *ae)
 	unsigned char *u, i4, i6;
 	int error;
 
+	CHECK_OBJ_NOTNULL(ae, VCC_ACL_E_MAGIC);
 	memset(&hint, 0, sizeof hint);
 	hint.ai_family = PF_UNSPEC;
 	hint.ai_socktype = SOCK_STREAM;
@@ -319,6 +325,7 @@ vcc_acl_try_netnotation(struct vcc *tl, struct acl_e *ae)
 	unsigned u;
 	const char *p;
 
+	CHECK_OBJ_NOTNULL(ae, VCC_ACL_E_MAGIC);
 	memset(b, 0, sizeof b);
 	p = ae->addr;
 	for (i = 0; i < 4; i++) {
@@ -346,8 +353,7 @@ vcc_acl_entry(struct vcc *tl)
 	struct acl_e *ae;
 	char *sl, *e;
 
-	ae = TlAlloc(tl, sizeof *ae);
-	AN(ae);
+	ALLOC_OBJ(ae, VCC_ACL_E_MAGIC);
 
 	if (tl->t->tok == '!') {
 		ae->not = 1;
@@ -379,14 +385,14 @@ vcc_acl_entry(struct vcc *tl)
 		if (*e != '\0') {
 			VSB_cat(tl->sb, ".../mask is not numeric.\n");
 			vcc_ErrWhere(tl, ae->t_addr);
-			free(ae);
+			FREE_OBJ(ae);
 			return;
 		}
 		ae->t_mask = ae->t_addr;
 		if (tl->t->tok == '/') {
 			VSB_cat(tl->sb, "/mask only allowed once.\n");
 			vcc_ErrWhere(tl, tl->t);
-			free(ae);
+			FREE_OBJ(ae);
 			return;
 		}
 	} else if (tl->t->tok == '/') {
@@ -416,6 +422,7 @@ vcc_acl_emit_tokens(const struct vcc *tl, const struct acl_e *ae)
 	struct token *t;
 	const char *sep = "";
 
+	CHECK_OBJ_NOTNULL(ae, VCC_ACL_E_MAGIC);
 	t = ae->t_addr;
 	do {
 		if (t->tok == CSTR) {
