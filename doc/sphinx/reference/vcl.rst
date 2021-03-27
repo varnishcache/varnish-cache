@@ -299,6 +299,27 @@ individually:
   However, if the name resolves to both IPv4 and IPv6 you will still
   get an error.
 
+* `+fold` - Fold ACL supernets and adjacent networks.
+
+  With this parameter set to on, ACLs are optimized in that subnets
+  contained in other entries are skipped (e.g.  if 1.2.3.0/24 is part
+  of the ACL, an entry for 1.2.3.128/25 will not be added) and
+  adjacent entries get folded (e.g.  if both 1.2.3.0/25 and
+  1.2.3.128/25 are added, they will be folded to 1.2.3.0/24).
+
+  Skip and fold operations on VCL entries are output as warnings
+  during VCL compilation as entries from the VCL are processed in
+  order.
+
+  Logging under the ``VCL_acl`` tag can change with this parameter
+  enabled: Matches on skipped subnet entries are now logged as matches
+  on the respective supernet entry. Matches on folded entries are
+  logged with a shorter netmask which might not be contained in the
+  original ACL as defined in VCL. Such log entries are marked by
+  ``fixed: folded``.
+
+  Negated ACL entries are never folded.
+
 VCL objects
 -----------
 

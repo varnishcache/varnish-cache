@@ -86,6 +86,14 @@ varnish v1 -vcl {
 		"1.3.0.0"/21;
 		"1.4.7";
 		"1.4.6.0"/24;
+
+		# bad notation (confusing)
+		"affe::affe:0304"/120;
+		"affe::affe:0342"/122;
+
+		# more specific wins
+		"bad:cafe::"/32;
+		"bad:cafe::"/31;
 	}
 
 	sub vcl_recv {
@@ -110,6 +118,12 @@ varnish v1 -vcl {
 		set req.http.ip = "1.4.5.255";	call t;
 		set req.http.ip = "1.4.6.64";	call t;
 		set req.http.ip = "1.4.7.64";	call t;
+
+		set req.http.ip = "affe::affe:0300";	call t;
+		set req.http.ip = "affe::affe:033f";	call t;
+		set req.http.ip = "affe::affe:0340";	call t;
+
+		set req.http.ip = "0bad:cafe:1234::1";	call t;
 	}
 }
 
@@ -140,6 +154,15 @@ logexpect l1 -v v1 -g raw {
 	expect 0 =	VCL_acl	{^\QMATCH acl1 "1.4.6.0"/24\E$}
 	expect 1 =	ReqHeader	{^\Qip: 1.4.7.64\E$}
 	expect 0 =	VCL_acl	{^\QMATCH acl1 "1.4.7"\E$}
+
+	expect 1 =	ReqHeader	{^\Qip: affe::affe:0300\E$}
+	expect 0 =	VCL_acl	{^\QMATCH acl1 "affe::affe:0304"/120 fixed: affe::affe:300/120\E$}
+	expect 1 =	ReqHeader	{^\Qip: affe::affe:033f\E$}
+	expect 0 =	VCL_acl	{^\QMATCH acl1 "affe::affe:0304"/120 fixed: affe::affe:300/120\E$}
+	expect 1 =	ReqHeader	{^\Qip: affe::affe:0340\E$}
+	expect 0 =	VCL_acl	{^\QMATCH acl1 "affe::affe:0342"/122 fixed: affe::affe:340/122\E$}
+	expect 1 =	ReqHeader	{^\Qip: 0bad:cafe:1234::1\E$}
+	expect 0 =	VCL_acl	{^\QMATCH acl1 "bad:cafe::"/32\E$}
 } -start
 
 client c1 {
@@ -162,3 +185,192 @@ varnish v1 -errvcl {Non-zero bits in masked part} {
 		if (client.ip ~ acl1) {}
 	}
 }
+
+varnish v1 -errvcl {Non-zero bits in masked part} {
+	import std;
+
+	backend dummy None;
+
+	acl acl1 +pedantic {
+		"affe::affe:0304"/120;
+	}
+
+	sub vcl_recv {
+		if (client.ip ~ acl1) {}
+	}
+}
+
+# this is both an OK test for pedantic and fold
+varnish v1 -vcl {
+	import std;
+
+	backend dummy None;
+
+	acl acl1 +log +pedantic +fold {
+		# bad notation (confusing)
+		"1.2.3.0"/24;
+		"1.2.3.64"/26;
+
+		# all contained in 1.3.0.0/21 and 1.4.4.0/22
+		"1.4.4.0"/22;
+		"1.3.4.0"/23;
+		"1.3.5.0"/26;
+		"1.3.6.0"/25;
+		"1.3.6.128"/25;
+		"1.3.0.0"/21;
+		"1.4.7";
+		"1.4.6.0"/24;
+
+		# right,left adjacent
+		"2.3.2.0"/23;
+		"2.3.0.0"/23;
+		# left,right adjacent
+		"2.3.4.0"/23;
+		"2.3.6.0"/23;
+
+		# 12/14 folded, not 10
+		"2.10.0.0"/15;
+		"2.12.0.0"/15;
+		"2.14.0.0"/15;
+
+		# 226/227 folded, not 225
+		"2.225.0.0"/16;
+		"2.226.0.0"/16;
+		"2.227.0.0"/16;
+
+		# phks test case
+		"10.0.0.0"/23;
+		"10.0.2.0"/23;
+
+		"10.1.0.0"/24;
+		"10.1.1.0"/24;
+
+		"10.2.0.0"/25;
+		"10.2.0.128"/25;
+
+		# contained
+		"bad:cafe::"/32;
+		"bad:cafe::"/31;
+	}
+
+	sub vcl_recv {
+		return (synth(200));
+	}
+	sub t {
+		if (std.ip(req.http.ip) ~ acl1) { }
+	}
+	sub vcl_synth {
+		# variables would be nice, but not in core (yet?)
+		set req.http.ip = "1.2.3.0";	call t;
+		set req.http.ip = "1.2.3.63";	call t;
+		set req.http.ip = "1.2.3.64";	call t;
+
+		set req.http.ip = "1.3.4.255";	call t;
+		set req.http.ip = "1.3.5.0";	call t;
+		set req.http.ip = "1.3.5.255";	call t;
+		set req.http.ip = "1.3.6.0";	call t;
+		set req.http.ip = "1.3.6.140";	call t;
+		set req.http.ip = "1.3.7.255";	call t;
+
+		set req.http.ip = "1.4.5.255";	call t;
+		set req.http.ip = "1.4.6.64";	call t;
+		set req.http.ip = "1.4.7.64";	call t;
+
+		set req.http.ip = "2.3.0.0";	call t;
+		set req.http.ip = "2.3.5.255";	call t;
+
+		set req.http.ip = "2.2.255.255";call t;
+		set req.http.ip = "2.3.8.0";	call t;
+
+		set req.http.ip = "2.9.1.1";	call t;
+		set req.http.ip = "2.10.1.1";	call t;
+		set req.http.ip = "2.12.0.0";	call t;
+		set req.http.ip = "2.15.255.255";call t;
+		set req.http.ip = "2.16.1.1";	call t;
+
+		set req.http.ip = "2.224.1.1";	call t;
+		set req.http.ip = "2.225.1.1";	call t;
+		set req.http.ip = "2.226.1.1";	call t;
+		set req.http.ip = "2.227.1.1";	call t;
+
+		set req.http.ip = "10.0.3.255";	call t;
+		set req.http.ip = "10.1.1.255";	call t;
+		set req.http.ip = "10.2.0.255";	call t;
+
+		set req.http.ip = "0bad:cafe:1234::1";	call t;
+	}
+}
+
+logexpect l1 -v v1 -g raw {
+	expect * 1009	ReqHeader	{^\Qip: 1.2.3.0\E$}
+	expect 0 =	VCL_acl	{^\QMATCH acl1 "1.2.3.0"/24\E$}
+	expect 1 =	ReqHeader	{^\Qip: 1.2.3.63\E$}
+	expect 0 =	VCL_acl	{^\QMATCH acl1 "1.2.3.0"/24\E$}
+	expect 1 =	ReqHeader	{^\Qip: 1.2.3.64\E$}
+	expect 0 =	VCL_acl	{^\QMATCH acl1 "1.2.3.0"/24\E$}
+
+	expect 1 =	ReqHeader	{^\Qip: 1.3.4.255\E$}
+	expect 0 =	VCL_acl	{^\QMATCH acl1 "1.3.0.0"/21\E$}
+	expect 1 =	ReqHeader	{^\Qip: 1.3.5.0\E$}
+	expect 0 =	VCL_acl	{^\QMATCH acl1 "1.3.0.0"/21\E$}
+	expect 1 =	ReqHeader	{^\Qip: 1.3.5.255\E$}
+	expect 0 =	VCL_acl	{^\QMATCH acl1 "1.3.0.0"/21\E$}
+	expect 1 =	ReqHeader	{^\Qip: 1.3.6.0\E$}
+	expect 0 =	VCL_acl	{^\QMATCH acl1 "1.3.0.0"/21\E$}
+	expect 1 =	ReqHeader	{^\Qip: 1.3.6.140\E$}
+	expect 0 =	VCL_acl	{^\QMATCH acl1 "1.3.0.0"/21\E$}
+	expect 1 =	ReqHeader	{^\Qip: 1.3.7.255\E$}
+	expect 0 =	VCL_acl	{^\QMATCH acl1 "1.3.0.0"/21\E$}
+
+	expect 1 =	ReqHeader	{^\Qip: 1.4.5.255\E$}
+	expect 0 =	VCL_acl	{^\QMATCH acl1 "1.4.4.0"/22\E$}
+	expect 1 =	ReqHeader	{^\Qip: 1.4.6.64\E$}
+	expect 0 =	VCL_acl	{^\QMATCH acl1 "1.4.4.0"/22\E$}
+	expect 1 =	ReqHeader	{^\Qip: 1.4.7.64\E$}
+	expect 0 =	VCL_acl	{^\QMATCH acl1 "1.4.4.0"/22\E$}
+
+	expect 1 =	ReqHeader	{^\Qip: 2.3.0.0\E$}
+	expect 0 =	VCL_acl	{^\QMATCH acl1 "2.3.0.0"/21 fixed: folded\E}
+	expect 1 =	ReqHeader	{^\Qip: 2.3.5.255\E$}
+	expect 0 =	VCL_acl	{^\QMATCH acl1 "2.3.0.0"/21 fixed: folded\E}
+	expect 1 =	ReqHeader	{^\Qip: 2.2.255.255\E$$}
+	expect 0 =	VCL_acl	{^\QNO_MATCH acl1\E$}
+	expect 1 =	ReqHeader	{^\Qip: 2.3.8.0\E$}
+	expect 0 =	VCL_acl	{^\QNO_MATCH acl1\E$}
+
+	expect 1 =	ReqHeader	{^\Qip: 2.9.1.1\E$}
+	expect 0 =	VCL_acl	{^\QNO_MATCH acl1\E$}
+	expect 1 =	ReqHeader	{^\Qip: 2.10.1.1\E$}
+	expect 0 =	VCL_acl	{^\QMATCH acl1 "2.10.0.0"/15\E$}
+	expect 1 =	ReqHeader	{^\Qip: 2.12.0.0\E$}
+	expect 0 =	VCL_acl	{^\QMATCH acl1 "2.12.0.0"/14 fixed: folded\E}
+	expect 1 =	ReqHeader	{^\Qip: 2.15.255.255\E$}
+	expect 0 =	VCL_acl	{^\QMATCH acl1 "2.12.0.0"/14 fixed: folded\E}
+	expect 1 =	ReqHeader	{^\Qip: 2.16.1.1\E$}
+	expect 0 =	VCL_acl	{^\QNO_MATCH acl1\E}
+
+	expect 1 =	ReqHeader	{^\Qip: 2.224.1.1\E$}
+	expect 0 =	VCL_acl	{^\QNO_MATCH acl1\E$}
+	expect 1 =	ReqHeader	{^\Qip: 2.225.1.1\E$}
+	expect 0 =	VCL_acl	{^\QMATCH acl1 "2.225.0.0"/16\E$}
+	expect 1 =	ReqHeader	{^\Qip: 2.226.1.1\E$}
+	expect 0 =	VCL_acl	{^\QMATCH acl1 "2.226.0.0"/15 fixed: folded\E}
+	expect 1 =	ReqHeader	{^\Qip: 2.227.1.1\E$}
+	expect 0 =	VCL_acl	{^\QMATCH acl1 "2.226.0.0"/15 fixed: folded\E}
+
+	expect 1 =	ReqHeader	{^\Qip: 10.0.3.255\E$}
+	expect 0 =	VCL_acl	{^\QMATCH acl1 "10.0.0.0"/22 fixed: folded\E}
+	expect 1 =	ReqHeader	{^\Qip: 10.1.1.255\E$}
+	expect 0 =	VCL_acl	{^\QMATCH acl1 "10.1.0.0"/23 fixed: folded\E}
+	expect 1 =	ReqHeader	{^\Qip: 10.2.0.255\E$}
+	expect 0 =	VCL_acl	{^\QMATCH acl1 "10.2.0.0"/24 fixed: folded\E}
+	expect 1 =	ReqHeader	{^\Qip: 0bad:cafe:1234::1\E$}
+	expect 0 =	VCL_acl	{^\QMATCH acl1 "bad:cafe::"/31}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+logexpect l1 -wait

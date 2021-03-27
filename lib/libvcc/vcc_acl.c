@@ -53,6 +53,7 @@ struct acl {
 #define VCC_ACL_MAGIC		0xb9fb3cd0
 
 	int			flag_log;
+	int			flag_fold;
 	int			flag_pedantic;
 	int			flag_table;
 
@@ -74,19 +75,26 @@ struct acl_e {
 	struct token		*t_mask;
 };
 
+enum acl_cmp_e {
+	ACL_EQ = 0,
+	ACL_LT = -1,		// a < b
+	ACL_GT = 1,		// b > a
+	ACL_CONTAINED = -2,	// b contains a
+	ACL_CONTAINS = 2,	// a contains b
+	ACL_LEFT = -3,		// a + 1 == b
+	ACL_RIGHT = 3		// a == b + 1
+};
+
+static void vcc_acl_insert_entry(struct vcc *, struct acl_e **);
+
 /*
- * Compare two acl rules for ordering
- * returns:
- * 0	same
- * -1/1	strictly less/greater
- * -2/2	b contains a / a contains b
- * -3/3	a left of b / b left of a
+ * Compare two acl rules for relation
  */
 
 #define CMP(n, a, b)							\
 	do {								\
 		if ((a) < (b))						\
-			return (-n);					\
+			return (enum acl_cmp_e)(-n);			\
 		else if ((b) < (a))					\
 			return (n);					\
 	} while (0)
@@ -94,9 +102,9 @@ struct acl_e {
 #define CMPA(a, b)							\
 	do {								\
 		if (((a) | 1) == (b))					\
-			return (-3);					\
+			return (ACL_LEFT);				\
 		else if (((b) | 1) == (a))				\
-			return (3);					\
+			return (ACL_RIGHT);				\
 	} while (0)
 
 static void
@@ -109,7 +117,7 @@ vcl_acl_free(struct acl_e **aep)
 	FREE_OBJ(a);
 }
 
-static int
+static enum acl_cmp_e
 vcl_acl_cmp(const struct acl_e *ae1, const struct acl_e *ae2)
 {
 	const unsigned char *p1, *p2;
@@ -123,7 +131,9 @@ vcl_acl_cmp(const struct acl_e *ae1, const struct acl_e *ae2)
 	p2 = ae2->data;
 	m = vmin_t(unsigned, ae1->mask, ae2->mask);
 	for (; m >= 8; m -= 8) {
-		CMP(1, *p1, *p2);
+		if (m == 8 && ae1->mask == ae2->mask)
+			CMPA(*p1, *p2);
+		CMP(ACL_GT, *p1, *p2);
 		p1++;
 		p2++;
 	}
@@ -133,14 +143,14 @@ vcl_acl_cmp(const struct acl_e *ae1, const struct acl_e *ae2)
 		a2 = *p2 >> (8 - m);
 		if (ae1->mask == ae2->mask)
 			CMPA(a1, a2);
-		CMP(1, a1, a2);
+		CMP(ACL_GT, a1, a2);
 	} else if (ae1->mask == ae2->mask) {
 		CMPA(*p1, *p2);
 	}
 	/* Long mask is less than short mask */
-	CMP(2, ae2->mask, ae1->mask);
+	CMP(ACL_CONTAINS, ae2->mask, ae1->mask);
 
-	return (0);
+	return (ACL_EQ);
 }
 
 static int
@@ -156,14 +166,14 @@ vcl_acl_disjoint(const struct acl_e *ae1, const struct acl_e *ae2)
 	p2 = ae2->data;
 	m = vmin_t(unsigned, ae1->mask, ae2->mask);
 	for (; m >= 8; m -= 8) {
-		CMP(1, *p1, *p2);
+		CMP(ACL_GT, *p1, *p2);
 		p1++;
 		p2++;
 	}
 	if (m) {
 		m = 0xff00 >> m;
 		m &= 0xff;
-		CMP(1, *p1 & m, *p2 & m);
+		CMP(ACL_GT, *p1 & m, *p2 & m);
 	}
 	return (0);
 }
@@ -171,6 +181,8 @@ vcl_acl_disjoint(const struct acl_e *ae1, const struct acl_e *ae2)
 VRBT_GENERATE_INSERT_COLOR(acl_tree, acl_e, branch, static)
 VRBT_GENERATE_INSERT_FINISH(acl_tree, acl_e, branch, static)
 VRBT_GENERATE_INSERT(acl_tree, acl_e, branch, vcl_acl_cmp, static)
+VRBT_GENERATE_REMOVE_COLOR(acl_tree, acl_e, branch, static)
+VRBT_GENERATE_REMOVE(acl_tree, acl_e, branch, static)
 VRBT_GENERATE_MINMAX(acl_tree, acl_e, branch, static)
 VRBT_GENERATE_NEXT(acl_tree, acl_e, branch, static)
 VRBT_GENERATE_PREV(acl_tree, acl_e, branch, static)
@@ -230,9 +242,65 @@ vcc_acl_chk(struct vcc *tl, const struct acl_e *ae, const int l,
 }
 
 static void
+vcl_acl_fold(struct vcc *tl, struct acl_e **l, struct acl_e **r)
+{
+	enum acl_cmp_e cmp;
+
+	AN(l);
+	AN(r);
+	CHECK_OBJ_NOTNULL(*l, VCC_ACL_E_MAGIC);
+	CHECK_OBJ_NOTNULL(*r, VCC_ACL_E_MAGIC);
+
+	if ((*l)->not || (*r)->not)
+		return;
+
+	cmp = vcl_acl_cmp(*l, *r);
+
+	assert(cmp < 0);
+	if (cmp == ACL_LT)
+		return;
+
+	do {
+		switch (cmp) {
+		case ACL_CONTAINED:
+			VSB_cat(tl->sb, "ACL entry:\n");
+			vcc_ErrWhere(tl, (*r)->t_addr);
+			VSB_cat(tl->sb, "supersedes / removes:\n");
+			vcc_ErrWhere(tl, (*l)->t_addr);
+			vcc_Warn(tl);
+			VRBT_REMOVE(acl_tree, &tl->acl->acl_tree, *l);
+			FREE_OBJ(*l);
+			*l = VRBT_PREV(acl_tree, &tl->acl->acl_tree, *r);
+			break;
+		case ACL_LEFT:
+			(*l)->mask--;
+			(*l)->fixed = "folded";
+			VSB_cat(tl->sb, "ACL entry:\n");
+			vcc_ErrWhere(tl, (*l)->t_addr);
+			VSB_cat(tl->sb, "left of:\n");
+			vcc_ErrWhere(tl, (*r)->t_addr);
+			VSB_printf(tl->sb, "removing the latter and expanding "
+			    "mask of the former by one to /%d\n",
+			    (*l)->mask - 8);
+			vcc_Warn(tl);
+			VRBT_REMOVE(acl_tree, &tl->acl->acl_tree, *r);
+			FREE_OBJ(*r);
+			VRBT_REMOVE(acl_tree, &tl->acl->acl_tree, *l);
+			vcc_acl_insert_entry(tl, l);
+			return;
+		default:
+			INCOMPL();
+		}
+		if (*l == NULL || *r == NULL)
+			break;
+		cmp = vcl_acl_cmp(*l, *r);
+	} while (cmp != ACL_LT);
+}
+
+static void
 vcc_acl_insert_entry(struct vcc *tl, struct acl_e **aenp)
 {
-	struct acl_e *ae2;
+	struct acl_e *ae2, *l, *r;
 
 	CHECK_OBJ_NOTNULL(*aenp, VCC_ACL_E_MAGIC);
 	ae2 = VRBT_INSERT(acl_tree, &tl->acl->acl_tree, *aenp);
@@ -245,7 +313,24 @@ vcc_acl_insert_entry(struct vcc *tl, struct acl_e **aenp)
 		}
 		return;
 	}
+
+	r = *aenp;
 	*aenp = NULL;
+
+	if (tl->acl->flag_fold == 0)
+		return;
+
+	l = VRBT_PREV(acl_tree, &tl->acl->acl_tree, r);
+	if (l != NULL) {
+		vcl_acl_fold(tl, &l, &r);
+	}
+	if (r == NULL)
+		return;
+	l = r;
+	r = VRBT_NEXT(acl_tree, &tl->acl->acl_tree, l);
+	if (r == NULL)
+		return;
+	vcl_acl_fold(tl, &l, &r);
 }
 
 static void
@@ -748,6 +833,9 @@ vcc_ParseAcl(struct vcc *tl)
 			break;
 		if (vcc_IdIs(tl->t, "log")) {
 			acl->flag_log = sign;
+			vcc_NextToken(tl);
+		} else if (vcc_IdIs(tl->t, "fold")) {
+			acl->flag_fold = sign;
 			vcc_NextToken(tl);
 		} else if (vcc_IdIs(tl->t, "pedantic")) {
 			acl->flag_pedantic = sign;
