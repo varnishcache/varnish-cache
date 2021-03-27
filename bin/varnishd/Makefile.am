@@ -159,7 +159,6 @@ nobase_pkginclude_HEADERS = \
 vcldir=$(datarootdir)/$(PACKAGE)/vcl
 
 varnishd_CFLAGS = \
-	@vtree_extra_cflags@ \
 	@PCRE_CFLAGS@ \
 	@SAN_CFLAGS@ \
 	-DNOT_IN_A_VMOD \

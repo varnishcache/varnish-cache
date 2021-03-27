@@ -9,7 +9,6 @@ AM_CPPFLAGS = \
 noinst_LIBRARIES = libvcc.a
 
 libvcc_a_CFLAGS = \
-	@vtree_extra_cflags@ \
 	@SAN_CFLAGS@
 
 libvcc_a_SOURCES = \

@@ -291,8 +291,6 @@ CFLAGS="${save_CFLAGS}"
 if test "x$GCC" = "xyes"; then
 	libvgz_extra_cflags="${libvgz_extra_cflags} -Wno-unknown-warning-option -Wno-implicit-fallthrough"
 	AC_SUBST(libvgz_extra_cflags)
-	vtree_extra_cflags="-fno-strict-aliasing"
-	AC_SUBST(vtree_extra_cflags)
 fi
 
 SAN_CFLAGS=

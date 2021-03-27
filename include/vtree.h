@@ -32,6 +32,10 @@
 #ifndef	_VTREE_H_
 #define	_VTREE_H_
 
+/* XXX
+ * Enable -Wall with gcc -O2
+ */
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
 
 /*
  * This file defines data structures for different types of trees:
@@ -832,5 +836,4 @@ name##_VRBT_REINSERT(struct name *head, struct type *elm)			\
 	for ((x) = VRBT_MAX(name, head);					\
 	    ((x) != NULL) && ((y) = name##_VRBT_PREV(x), (x) != NULL);	\
 	     (x) = (y))
-
 #endif	/* _VTREE_H_ */
