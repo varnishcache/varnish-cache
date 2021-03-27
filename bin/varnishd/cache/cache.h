@@ -796,7 +796,7 @@ void WS_Assert_Allocated(const struct ws *ws, const void *ptr, ssize_t len);
 void WS_VSB_new(struct vsb *, struct ws *);
 char *WS_VSB_finish(struct vsb *, struct ws *, size_t *);
 
-/* REL_20210315 remove */
+/* REL_20210915 remove */
 static inline char*
 WS_Front(const struct ws *ws)
 {
