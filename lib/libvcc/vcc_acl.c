@@ -169,26 +169,26 @@ vcc_acl_chk(struct vcc *tl, const struct acl_e *ae, const int l,
 	return (strdup(t));
 }
 
-static struct acl_e *
-vcc_acl_insert_entry(struct vcc *tl, struct acl_e *aen)
+static void
+vcc_acl_insert_entry(struct vcc *tl, struct acl_e **aenp)
 {
 	struct acl_e *ae2;
 
-	CHECK_OBJ_NOTNULL(aen, VCC_ACL_E_MAGIC);
-	ae2 = VRBT_INSERT(acl_tree, &tl->acl_tree, aen);
+	CHECK_OBJ_NOTNULL(*aenp, VCC_ACL_E_MAGIC);
+	ae2 = VRBT_INSERT(acl_tree, &tl->acl_tree, *aenp);
 	if (ae2 != NULL) {
-		if (ae2->not != aen->not) {
+		if (ae2->not != (*aenp)->not) {
 			VSB_cat(tl->sb, "Conflicting ACL entries:\n");
 			vcc_ErrWhere(tl, ae2->t_addr);
 			VSB_cat(tl->sb, "vs:\n");
-			vcc_ErrWhere(tl, aen->t_addr);
+			vcc_ErrWhere(tl, (*aenp)->t_addr);
 		}
-		return (NULL);
+		return;
 	}
-	return (aen);
+	*aenp = NULL;
 }
 
-static struct acl_e *
+static void
 vcc_acl_add_entry(struct vcc *tl, const struct acl_e *ae, int l,
     unsigned char *u, int fam)
 {
@@ -201,13 +201,13 @@ vcc_acl_add_entry(struct vcc *tl, const struct acl_e *ae, int l,
 			vcc_ErrWhere(tl, ae->t_mask);
 		else
 			vcc_ErrWhere(tl, ae->t_addr);
-		return (NULL);
+		return;
 	}
 	if (fam == PF_INET6 && ae->mask > 128) {
 		VSB_printf(tl->sb,
 		    "Too wide mask (/%u) for IPv6 address\n", ae->mask);
 		vcc_ErrWhere(tl, ae->t_mask);
-		return (NULL);
+		return;
 	}
 
 	/* Make a copy from the template */
@@ -225,9 +225,9 @@ vcc_acl_add_entry(struct vcc *tl, const struct acl_e *ae, int l,
 	assert(l + 1UL <= sizeof aen->data);
 	memcpy(aen->data + 1L, u, l);
 
-	if (vcc_acl_insert_entry(tl, aen) == NULL)
+	vcc_acl_insert_entry(tl, &aen);
+	if (aen != NULL)
 		vcl_acl_free(&aen);
-	return (aen);
 }
 
 static void
@@ -301,7 +301,7 @@ vcc_acl_try_getaddrinfo(struct vcc *tl, struct acl_e *ae)
 			u = (void*)&sin4->sin_addr;
 			if (ae->t_mask == NULL)
 				ae->mask = 32;
-			(void) vcc_acl_add_entry(tl, ae, 4, u, res->ai_family);
+			vcc_acl_add_entry(tl, ae, 4, u, res->ai_family);
 			break;
 		case PF_INET6:
 			assert(PF_INET6 < 256);
@@ -310,7 +310,7 @@ vcc_acl_try_getaddrinfo(struct vcc *tl, struct acl_e *ae)
 			u = (void*)&sin6->sin6_addr;
 			if (ae->t_mask == NULL)
 				ae->mask = 128;
-			(void) vcc_acl_add_entry(tl, ae, 16, u, res->ai_family);
+			vcc_acl_add_entry(tl, ae, 16, u, res->ai_family);
 			break;
 		default:
 			continue;
@@ -356,7 +356,7 @@ vcc_acl_try_netnotation(struct vcc *tl, struct acl_e *ae)
 	}
 	if (ae->t_mask == NULL)
 		ae->mask = 8 + 8 * i;
-	(void) vcc_acl_add_entry(tl, ae, 4, b, AF_INET);
+	vcc_acl_add_entry(tl, ae, 4, b, AF_INET);
 	return (1);
 }
 
