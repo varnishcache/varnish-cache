@@ -47,7 +47,7 @@ __FBSDID("$FreeBSD: head/sys/kern/subr_vsb.c 222004 2011-05-17 06:36:32Z phk $")
 #define	SBMALLOC(size)		malloc(size)
 #define	SBFREE(buf)		free(buf)
 
-#define	roundup2(x, y)	(((x)+((y)-1))&(~((y)-1))) /* if y is powers of two */
+#define	rndup2(x, y)	(((x)+((y)-1))&(~((y)-1))) /* if y is powers of two */
 
 /*
  * Predicates
@@ -127,7 +127,7 @@ VSB_extendsize(ssize_t size)
 		while (newsize < size)
 			newsize *= 2;
 	} else {
-		newsize = roundup2(size, VSB_MAXEXTENDINCR);
+		newsize = rndup2(size, VSB_MAXEXTENDINCR);
 	}
 	KASSERT(newsize >= size, ("%s: %d < %d\n", __func__, newsize, size));
 	return (newsize);
