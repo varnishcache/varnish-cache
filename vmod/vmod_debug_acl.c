@@ -162,9 +162,6 @@ xyzzy_sweep_acl(VRT_CTX, VCL_ACL acl, VCL_IP ip0, VCL_IP ip1, VCL_INT step)
 	struct vrt_blob *b;
 	ssize_t sz;
 
-	vsb = VSB_new_auto();
-	AN(vsb);
-
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(acl);
 	AN(ip0);
@@ -172,6 +169,10 @@ xyzzy_sweep_acl(VRT_CTX, VCL_ACL acl, VCL_IP ip0, VCL_IP ip1, VCL_INT step)
 	assert(step > 0);
 	if (setup_sweep(ctx, asw, ip0, ip1, step))
 		return(NULL);
+
+	vsb = VSB_new_auto();
+	AN(vsb);
+
 	VSHA256_Init(vsha);
 	for (j = 0; ; j++) {
 		if ((j & 0x3f) == 0x00) {
