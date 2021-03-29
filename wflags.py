@@ -52,7 +52,6 @@ DESIRABLE_WFLAGS = [
     "-Wformat-zero-length",
     "-Wmissing-field-initializers",
     "-Wmissing-prototypes",
-    "-Wmissing-variable-declarations",
     "-Wnested-externs",
     "-Wpointer-arith",
     "-Wpointer-sign",
@@ -76,6 +75,7 @@ UNDESIRABLE_WFLAGS = [
     "-Wno-implicit-fallthrough", # Probably Fixable
     "-Wno-builtin-requires-header", # Complains about linux::pthread.h
     "-Wno-redundant-decls", # Complains about centos::stdio.h
+    "-Wno-missing-variable-declarations", # Complains about optreset
 ]
 
 def main():
