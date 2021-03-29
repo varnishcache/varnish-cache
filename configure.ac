@@ -288,11 +288,6 @@ if test "$ac_cv_have_viz" = no; then
 fi
 CFLAGS="${save_CFLAGS}"
 
-if test "x$GCC" = "xyes"; then
-	libvgz_extra_cflags="${libvgz_extra_cflags} -Wno-unknown-warning-option -Wno-implicit-fallthrough"
-	AC_SUBST(libvgz_extra_cflags)
-fi
-
 SAN_CFLAGS=
 SAN_LDFLAGS=
 UBSAN_CFLAGS=
@@ -723,31 +718,7 @@ AX_CHECK_COMPILE_FLAG([-Werror=unused-result],
       OCFLAGS="${OCFLAGS} -Wno-unused-result"])])
 
 # This corresponds to FreeBSD's WARNS level 6
-DEVELOPER_CFLAGS=" \
- -Werror \
- -Wno-format-y2k \
- -Wstrict-prototypes \
- -Wmissing-prototypes \
- -Wpointer-arith \
- -Wcast-qual \
- -Wwrite-strings \
- -Wshadow \
- -Wunused-parameter \
- -Wcast-align \
- -Wchar-subscripts \
- -Wnested-externs \
- -Wextra \
- -Wno-sign-compare \
-"
-
-# These are not compliable yet
-DEVELOPER_GCC_CFLAGS="-Wold-style-definition -Wredundant-decls "
-#DEVELOPER_CFLAGS="${DEVELOPER_CFLAGS} ${DEVELOPER_GCC_CFLAGS}"
-
-# These are compilable
-DEVELOPER_CLANG_CFLAGS="-Wmissing-variable-declarations -Wno-string-plus-int"
-# -Wno-empty-body
-#DEVELOPER_CFLAGS="${DEVELOPER_CFLAGS} ${DEVELOPER_CLANG_CFLAGS}"
+DEVELOPER_CFLAGS=`python3 wflags.py`
 
 # --enable-stack-protector
 AC_ARG_ENABLE(stack-protector,

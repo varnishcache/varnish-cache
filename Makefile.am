@@ -23,7 +23,8 @@ EXTRA_DIST = \
 	varnishapi.pc.in \
 	varnish.m4 \
 	varnish-legacy.m4 \
-	vtc.am
+	vtc.am \
+	wflags.py
 
 AM_DISTCHECK_CONFIGURE_FLAGS = \
     --enable-developer-warnings \
