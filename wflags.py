@@ -56,7 +56,6 @@ DESIRABLE_WFLAGS = [
     "-Wnested-externs",
     "-Wpointer-arith",
     "-Wpointer-sign",
-    "-Wredundant-decls",
     "-Wreturn-type",
     "-Wshadow",
     "-Wstrict-aliasing",
@@ -75,6 +74,8 @@ UNDESIRABLE_WFLAGS = [
     "-Wno-old-style-definition", # Does not like vgz
     "-Wno-sign-compare", # Fixable
     "-Wno-implicit-fallthrough", # Probably Fixable
+    "-Wno-builtin-requires-header", # Complains about linux::pthread.h
+    "-Wno-redundant-decls", # Complains about centos::stdio.h
 ]
 
 def main():
