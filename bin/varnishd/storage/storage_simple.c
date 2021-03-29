@@ -259,9 +259,11 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 	boc = HSH_RefBoc(oc);
 
 	if (boc == NULL) {
-		VTAILQ_FOREACH_SAFE(st, &obj->list, list, checkpoint) {
+		VTAILQ_FOREACH_REVERSE_SAFE(
+		    st, &obj->list, storagehead, list, checkpoint) {
+
 			u = 0;
-			if (VTAILQ_NEXT(st, list) == NULL)
+			if (VTAILQ_PREV(st, storagehead, list) == NULL)
 				u |= OBJ_ITER_END;
 			if (final)
 				u |= OBJ_ITER_FLUSH;
@@ -300,7 +302,7 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 		Lck_Lock(&boc->mtx);
 		AZ(VTAILQ_EMPTY(&obj->list));
 		if (checkpoint == NULL) {
-			st = VTAILQ_FIRST(&obj->list);
+			st = VTAILQ_LAST(&obj->list, storagehead);
 			sl = 0;
 		} else {
 			st = checkpoint;
@@ -319,8 +321,8 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 			nl -= st->len;
 			assert(nl > 0);
 			sl += st->len;
-			st = VTAILQ_NEXT(st, list);
-			if (VTAILQ_NEXT(st, list) != NULL) {
+			st = VTAILQ_PREV(st, storagehead, list);
+			if (VTAILQ_PREV(st, storagehead, list) != NULL) {
 				if (final && checkpoint != NULL) {
 					VTAILQ_REMOVE(&obj->list,
 					    checkpoint, list);
@@ -332,7 +334,7 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 		}
 		CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
-		st = VTAILQ_NEXT(st, list);
+		st = VTAILQ_PREV(st, storagehead, list);
 		if (st != NULL && st->len == 0)
 			st = NULL;
 		state = boc->state;
@@ -407,7 +409,7 @@ sml_getspace(struct worker *wrk, struct objcore *oc, ssize_t *sz,
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
 
-	st = VTAILQ_LAST(&o->list, storagehead);
+	st = VTAILQ_FIRST(&o->list);
 	if (st != NULL && st->len < st->space) {
 		*sz = st->space - st->len;
 		*ptr = st->ptr + st->len;
@@ -422,7 +424,7 @@ sml_getspace(struct worker *wrk, struct objcore *oc, ssize_t *sz,
 
 	CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
 	Lck_Lock(&oc->boc->mtx);
-	VTAILQ_INSERT_TAIL(&o->list, st, list);
+	VTAILQ_INSERT_HEAD(&o->list, st, list);
 	Lck_Unlock(&oc->boc->mtx);
 
 	*sz = st->space - st->len;
@@ -442,7 +444,7 @@ sml_extend(struct worker *wrk, struct objcore *oc, ssize_t l)
 
 	o = sml_getobj(wrk, oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	st = VTAILQ_LAST(&o->list, storagehead);
+	st = VTAILQ_FIRST(&o->list);
 	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 	assert(st->len + l <= st->space);
 	st->len += l;
@@ -467,7 +469,7 @@ sml_trimstore(struct worker *wrk, struct objcore *oc)
 
 	o = sml_getobj(wrk, oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	st = VTAILQ_LAST(&o->list, storagehead);
+	st = VTAILQ_FIRST(&o->list);
 
 	if (st == NULL)
 		return;
@@ -492,7 +494,7 @@ sml_trimstore(struct worker *wrk, struct objcore *oc)
 	st1->len = st->len;
 	Lck_Lock(&oc->boc->mtx);
 	VTAILQ_REMOVE(&o->list, st, list);
-	VTAILQ_INSERT_TAIL(&o->list, st1, list);
+	VTAILQ_INSERT_HEAD(&o->list, st1, list);
 	Lck_Unlock(&oc->boc->mtx);
 	/* sml_bocdone frees this */
 	AZ(oc->boc->stevedore_priv);
