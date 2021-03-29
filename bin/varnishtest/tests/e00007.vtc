@@ -1,17 +1,18 @@
 varnishtest "ESI spanning storage bits"
 
-# NB!  The layout of the body in the response is very carefully
-# NB!  tuned to give the desired code coverage.
-# NB!  It should look like this in the varnishlog:
-# NB!    7 Debug        c "Fetch 32 byte segments:"
-# NB!    7 Debug        c "%0a%09%09<html>filler%0a%09%09This is before"
-# NB!    7 Debug        c " the test%0a%09%09<![CDATA[foooooooooo"
-# NB!    7 Debug        c "ooooooooobar]]>%0a%09%09filler<esi:rem"
-# NB!    7 Debug        c "ove>%0a%09%09This is a test: Unseen Un"
-# NB!    7 Debug        c "iversity%0a%09%09Department of cruel a"
-# NB!    7 Debug        c "nd unjust geography%0a%09%09</esi:remo"
-# NB!    7 Debug        c "ve>%0a%09%09This is a test: Hello worl"
-# NB!    7 Debug        c "d%0a%09"
+# The layout of the body in the response is very carefully
+# tuned to give the desired code coverage.
+# The objects segments should have the following *precise* content
+#
+#     "Fetch 32 byte segments:"
+#     "%0a%09%09<html>filler%0a%09%09This is before"
+#     " the test%0a%09%09<![CDATA[foooooooooo"
+#     "ooooooooobar]]>%0a%09%09filler<esi:rem"
+#     "ove>%0a%09%09This is a test: Unseen Un"
+#     "iversity%0a%09%09Department of cruel a"
+#     "nd unjust geography%0a%09%09</esi:remo"
+#     "ve>%0a%09%09This is a test: Hello worl"
+#     "d%0a%09"
 
 server s1 {
 	rxreq
@@ -44,6 +45,7 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 120
+        expect resp.body == "\n\t\t<html>filler\n\t\tThis is before the test\n\t\t<![CDATA[fooooooooooooooooooobar]]>\n\t\tfiller\n\t\tThis is a test: Hello world\n\t"
 }
 
 client c1 -run
