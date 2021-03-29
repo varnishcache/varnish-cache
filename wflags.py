@@ -95,7 +95,8 @@ def main():
                 "-o", obj_file.name,
                 src_file.name,
             ],
-            capture_output=True,
+            stderr=subprocess.PIPE,
+            stdout=subprocess.PIPE,
         )
         if not j.returncode and not j.stdout and not j.stderr:
             use_flags.append(i)
