@@ -37,6 +37,8 @@
  * This file should always be the first non <...> include in a .c file.
  */
 
+#include <stddef.h>
+
 #ifdef VDEF_H_INCLUDED
 #  error "vdef.h included multiple times"
 #endif
