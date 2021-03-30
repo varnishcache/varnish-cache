@@ -13,6 +13,7 @@ You may or may not want to know what Poul-Henning thinks.
 .. toctree::
 	:maxdepth: 1
 
+	ip_address.rst
 	vdd19q3.rst
 	quic.rst
 	VSV00003.rst
