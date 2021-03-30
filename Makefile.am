@@ -26,6 +26,8 @@ EXTRA_DIST = \
 	vtc.am \
 	wflags.py
 
+CONFIGURE_DEPENDENCIES = wflags.py
+
 AM_DISTCHECK_CONFIGURE_FLAGS = \
     --enable-developer-warnings \
     --enable-debugging-symbols \
