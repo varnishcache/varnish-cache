@@ -74,6 +74,7 @@ UNDESIRABLE_WFLAGS = [
     "-Wno-sign-compare", # Fixable
     "-Wno-implicit-fallthrough", # Probably Fixable
     "-Wno-builtin-requires-header", # Complains about linux::pthread.h
+    "-Wno-incomplete-setjmp-declaration", # Clang complains about glibc pthread.h
     "-Wno-redundant-decls", # Complains about centos::stdio.h
     "-Wno-missing-variable-declarations", # Complains about optreset
 ]
