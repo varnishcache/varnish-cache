@@ -26,7 +26,7 @@ because TCP/IP was not, as today, the only protocol that mattered.
 In addition to TCP/IP, there were IBM's SNA, Digitals DecNet,
 ApolloRing, Banyan/VINES, Novell NetWare, X.21, X.25, X.75, and the
 whole CCITT-OSI-"Intelligent Network" telecom disaster that never
-got of the ground.
+got off the ground.
 
 This is why DNS packets have a `class` field which can be set to
 `Hesiod` or `CHAOS` in addition to `the Internet`:  The idea was
@@ -59,7 +59,7 @@ and the old A-, B- and C- class networks got dissolved into Classless
 Inter-Domain Routing or "CIDR" netmasks of any random size, getaddrinfo(3)
 did not grow to be able to translate "192.168.61/23" into something useful.
 
-I belive there were also some lilliputian dispute about the fact that
+I believe there were also some lilliputian dispute about the fact that
 `192.168.61` would return `192.168.0.61` to stay backwards compatible,
 whereas `192.168.61/23` would return `192.168.61.0 + 255.255.254.0`.
 
@@ -95,7 +95,7 @@ If and when the various UNIX-oid operating systems, and the smoking
 remains of the "serious UNIX industry", (IEEE ?  The Austin Group
 ?  The Open Group ?  Whatever they are called these days) get their
 act together, and renovate the `getaddrinfo(3)` API, Varnish will
-automatically pick that up an use it.
+automatically pick that up and use it.
 
 Should they, in a flash of enlightenment, also make `getaddrinfo(3)`
 useful for parsing these newfangled CIDR adresses we got in 1993,
