@@ -338,12 +338,14 @@ SLTM(ReqStart, 0, "Client request start",
 SLTM(Hit, 0, "Hit object in cache",
 	"Object looked up in cache.\n\n"
 	"The format is::\n\n"
-	"\t%u %f %f %f\n"
-	"\t|  |  |  |\n"
-	"\t|  |  |  +- Keep period\n"
-	"\t|  |  +---- Grace period\n"
-	"\t|  +------- Remaining TTL\n"
-	"\t+---------- VXID of the object\n"
+	"\t%u %f %f %f [%u [%u]]\n"
+	"\t|  |  |  |   |   |\n"
+	"\t|  |  |  |   |   +- Content length\n"
+	"\t|  |  |  |   +----- Fetched so far\n"
+	"\t|  |  |  +--------- Keep period\n"
+	"\t|  |  +------------ Grace period\n"
+	"\t|  +--------------- Remaining TTL\n"
+	"\t+------------------ VXID of the object\n"
 	"\n"
 )
 
