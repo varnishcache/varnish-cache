@@ -602,12 +602,6 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	req->objcore = oc;
 	AZ(oc->flags & OC_F_HFM);
 
-	VSLb(req->vsl, SLT_Hit, "%u %.6f %.6f %.6f",
-	    ObjGetXID(wrk, req->objcore),
-	    EXP_Dttl(req, req->objcore),
-	    req->objcore->grace,
-	    req->objcore->keep);
-
 	VCL_hit_method(req->vcl, wrk, req, NULL, NULL);
 
 	switch (wrk->handling) {
