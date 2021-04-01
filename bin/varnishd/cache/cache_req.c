@@ -72,6 +72,33 @@ Req_AcctLogCharge(struct VSC_main_wrk *ds, struct req *req)
 	memset(a, 0, sizeof *a);
 }
 
+void
+Req_LogHit(struct worker *wrk, struct req *req, struct objcore *oc,
+    intmax_t fetch_progress)
+{
+	const char *clen, *sep;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+
+	if (fetch_progress >= 0) {
+		clen = HTTP_GetHdrPack(wrk, oc, H_Content_Length);
+		if (clen == NULL)
+			clen = sep = "";
+		else
+			sep = " ";
+		VSLb(req->vsl, SLT_Hit, "%u %.6f %.6f %.6f %jd%s%s",
+		    ObjGetXID(wrk, oc), EXP_Dttl(req, oc),
+		    oc->grace, oc->keep,
+		    fetch_progress, sep, clen);
+	} else {
+		VSLb(req->vsl, SLT_Hit, "%u %.6f %.6f %.6f",
+		    ObjGetXID(wrk, oc), EXP_Dttl(req, oc),
+		    oc->grace, oc->keep);
+	}
+}
+
 /*--------------------------------------------------------------------
  * Alloc/Free a request
  */

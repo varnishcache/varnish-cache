@@ -403,6 +403,7 @@ void Req_Rollback(VRT_CTX);
 void Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req);
 void Req_Fail(struct req *req, enum sess_close reason);
 void Req_AcctLogCharge(struct VSC_main_wrk *, struct req *);
+void Req_LogHit(struct worker *, struct req *, struct objcore *, intmax_t);
 
 /* cache_req_body.c */
 int VRB_Ignore(struct req *);

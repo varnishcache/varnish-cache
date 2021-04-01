@@ -369,6 +369,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 	vtim_real exp_t_origin;
 	int busy_found;
 	const uint8_t *vary;
+	intmax_t boc_progress;
 	unsigned xid = 0;
 	float dttl = 0.0;
 
@@ -519,7 +520,9 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 			return (HSH_HITMISS);
 		}
 		oc->hits++;
+		boc_progress = oc->boc == NULL ? -1 : oc->boc->len_so_far;
 		AN(hsh_deref_objhead_unlock(wrk, &oh, HSH_RUSH_POLICY));
+		Req_LogHit(wrk, req, oc, boc_progress);
 		return (HSH_HIT);
 	}
 
@@ -539,6 +542,11 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 		return (HSH_HITMISS);
 	}
 
+	if (exp_oc != NULL && exp_oc->boc != NULL)
+		boc_progress = exp_oc->boc->len_so_far;
+	else
+		boc_progress = -1;
+
 	if (!busy_found) {
 		*bocp = hsh_insert_busyobj(wrk, oh);
 
@@ -548,6 +556,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 			if (EXP_Ttl_grace(req, exp_oc) >= req->t_req) {
 				exp_oc->hits++;
 				Lck_Unlock(&oh->mtx);
+				Req_LogHit(wrk, req, exp_oc, boc_progress);
 				return (HSH_GRACE);
 			}
 		}
@@ -562,6 +571,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 		*ocp = exp_oc;
 		exp_oc->hits++;
 		AN(hsh_deref_objhead_unlock(wrk, &oh, 0));
+		Req_LogHit(wrk, req, exp_oc, boc_progress);
 		return (HSH_GRACE);
 	}
 
