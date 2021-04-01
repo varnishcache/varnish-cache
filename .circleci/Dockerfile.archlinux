@@ -1,0 +1,16 @@
+FROM archlinux
+
+RUN set -e; \
+	pacman -Sy --noconfirm \
+	       base-devel \
+	       ca-certificates \
+	       cpio \
+	       git \
+	       libedit \
+	       libtool \
+	       libunwind \
+	       linux-headers \
+	       pcre \
+	       python-docutils \
+	       python-sphinx \
+	       tar
