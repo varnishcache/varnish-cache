@@ -315,7 +315,7 @@ parse_string(struct vtclog *vl, void *priv, const char *spec)
 	struct vsb *token_exp;
 	char *e, *p, *q, *f, *buf;
 	int nest_brace;
-	int tn;
+	int tn, ln = 0;
 	unsigned n, m;
 	const struct cmds *cp;
 
@@ -325,6 +325,7 @@ parse_string(struct vtclog *vl, void *priv, const char *spec)
 	e = strchr(buf, '\0');
 	AN(e);
 	for (p = buf; p < e; p++) {
+		ln++;
 		if (vtc_error || vtc_stop)
 			break;
 		/* Start of line */
@@ -345,9 +346,9 @@ parse_string(struct vtclog *vl, void *priv, const char *spec)
 		if (q == NULL)
 			q = strchr(p, '\0');
 		if (q - p > 60)
-			vtc_log(vl, 2, "=== %.60s...", p);
+			vtc_log(vl, 2, "=== l%d: %.60s...", ln, p);
 		else
-			vtc_log(vl, 2, "=== %.*s", (int)(q - p), p);
+			vtc_log(vl, 2, "=== l%d: %.*s", ln, (int)(q - p), p);
 
 		/* First content on line, collect tokens */
 		memset(token_s, 0, sizeof token_s);
@@ -365,6 +366,7 @@ parse_string(struct vtclog *vl, void *priv, const char *spec)
 				continue;
 			}
 			if (*p == '\\' && p[1] == '\n') { /* line-cont */
+				ln++;
 				p += 2;
 				continue;
 			}
@@ -398,7 +400,8 @@ parse_string(struct vtclog *vl, void *priv, const char *spec)
 					else if (*p == '}') {
 						if (--nest_brace == 0)
 							break;
-					}
+					} else if (*p == '\n')
+						ln++;
 				}
 				assert(*p == '}');
 				token_e[tn++] = p++;
