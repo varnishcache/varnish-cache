@@ -91,17 +91,8 @@ def main():
 
     use_flags = []
     for i in DESIRABLE_OPTIONS + DESIRABLE_WFLAGS + UNDESIRABLE_WFLAGS:
-        j = subprocess.run(
-            [
-                compiler,
-                "-c",
-                i,
-                "-o", obj_file.name,
-                src_file.name,
-            ],
-            stderr=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-        )
+        args = [compiler, "-c"] + use_flags + [i, "-o", obj_file.name, src_file.name]
+        j = subprocess.run(args, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
         if not j.returncode and not j.stdout and not j.stderr:
             use_flags.append(i)
         else:
