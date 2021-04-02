@@ -44,7 +44,6 @@ DESIRABLE_OPTIONS = [
 
 DESIRABLE_WFLAGS = [
     "-Wcast-align",
-    "-Wcast-qual",
     "-Wchar-subscripts",
     "-Wempty-body",
     "-Wextra",
@@ -69,6 +68,7 @@ DESIRABLE_WFLAGS = [
 ]
 
 UNDESIRABLE_WFLAGS = [
+    "-Wno-cast-qual", # GCC complains about musl::sched.h
     "-Wno-thread-safety", # Does not understand our mutexs are wrapped
     "-Wno-old-style-definition", # Does not like vgz
     "-Wno-sign-compare", # Fixable
