@@ -85,7 +85,18 @@ def main():
     compiler = os.environ.get("CC", "cc")
 
     src_file = tempfile.NamedTemporaryFile(suffix='.c')
-    src_file.write(b'int main(int argc, char **argv) {(void)argc;(void)argv;return(0);}\n')
+    src_file.write(b"""\
+#include <pthread.h>
+#include <stdio.h>
+
+int
+main(int argc, char **argv)
+{
+\t(void)argc;
+\t(void)argv;
+\treturn(0);
+}
+""")
     src_file.flush()
     obj_file = tempfile.NamedTemporaryFile(suffix='.o')
 
