@@ -511,11 +511,11 @@ mgt_reap_child(void)
 	XXXAN(vsb);
 
 	/* Wait for child to die */
-	for (i = 0; i < mgt_param.cli_timeout; i++) {
+	for (i = 0; i < mgt_param.cli_timeout * 10; i++) {
 		r = waitpid(child_pid, &status, WNOHANG);
 		if (r == child_pid)
 			break;
-		(void)sleep(1);
+		(void)usleep(100000);
 	}
 	if (r == 0) {
 		VSB_printf(vsb, "Child (%jd) not dying, killing", (intmax_t)r);
