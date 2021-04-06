@@ -124,7 +124,7 @@ Example::
 
 	sub vcl_recv {
 	    cookie.parse("cookie1: value1; cookie2: value2; cookie3: value3");
-	    cookie.keep_re("^cookie1,cookie2");
+	    cookie.keep_re("^cookie[12]$");
 	    # get_string() will now yield
 	    # "cookie1: value1; cookie2: value2;";
 	}
