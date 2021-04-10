@@ -74,7 +74,7 @@
 	} while (0)
 
 
-static const double timeout = 5;	// XXX should be settable by arg ?
+static double timeout = 5;
 static int p_arg = 0;
 
 static void
@@ -423,6 +423,21 @@ n_arg_sock(const char *n_arg, const char *t_arg)
 	return (sock);
 }
 
+static int
+t_arg_timeout(const char *t_arg)
+{
+	char *p = NULL;
+
+	AN(t_arg);
+	timeout = strtod(t_arg, &p);
+	if ((p != NULL && *p != '\0') ||
+	    !isfinite(timeout) || timeout < 0) {
+		fprintf(stderr, "-t: Invalid argument: %s", t_arg);
+		return (-1);
+	}
+	return (1);
+}
+
 #define OPTARG "hn:pS:T:t:"
 
 int
@@ -484,6 +499,9 @@ main(int argc, char * const *argv)
 		sock = n_arg_sock(n_arg, t_arg);
 	}
 	if (sock < 0)
+		exit(2);
+
+	if (t_arg != NULL && t_arg_timeout(t_arg) < 0)
 		exit(2);
 
 	if (argc > 0) {
