@@ -213,6 +213,7 @@ struct proc {
 	unsigned		called;
 	unsigned		active;
 	unsigned		okmask;
+	unsigned		calledfrom;
 	struct token		*return_tok[VCL_RET_MAX];
 	struct vsb		*cname;
 	struct vsb		*prologue;

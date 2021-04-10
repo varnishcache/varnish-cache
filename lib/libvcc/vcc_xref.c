@@ -207,6 +207,7 @@ vcc_CheckActionRecurse(struct vcc *tl, struct proc *p, unsigned bitmap)
 			vcc_ErrWhere(tl, pc->t);
 			return (1);
 		}
+		pc->sym->proc->calledfrom |= p->calledfrom;
 		pc->sym->proc->called++;
 		pc->sym->nref += u;
 		if (vcc_CheckActionRecurse(tl, pc->sym->proc, bitmap)) {
@@ -233,10 +234,12 @@ vcc_checkaction(struct vcc *tl, const struct symbol *sym)
 	AN(p);
 	AN(p->name);
 
-	if (p->method == NULL)
+	if (p->method == NULL) {
 		bitmap = ~0U;
-	else
+	} else {
 		bitmap = p->method->ret_bitmap;
+		p->calledfrom = p->method->bitval;
+	}
 
 	if (! vcc_CheckActionRecurse(tl, p, bitmap))
 		return;

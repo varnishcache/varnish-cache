@@ -191,7 +191,9 @@ vcc_EmitProc(struct vcc *tl, struct proc *p)
 		maskcmp = "&";
 	}
 
-	if ((mask & VCL_MET_TASK_H) && (mask & ~VCL_MET_TASK_H) == 0)
+	if (dyn == 0 &&
+	    (p->calledfrom &  VCL_MET_TASK_H) != 0 &&
+	    (p->calledfrom & ~VCL_MET_TASK_H) == 0)
 		cc_adv = "v_dont_optimize ";
 	else
 		cc_adv = "";
@@ -210,6 +212,7 @@ vcc_EmitProc(struct vcc *tl, struct proc *p)
 	Fh(tl, 1, "\t.n\t\t= %d,\n", nsub);
 	Fh(tl, 1, "\t.nref\t\t= %d,\n", p->sym->nref);
 	Fh(tl, 1, "\t.called\t\t= %d\n", p->called);
+	Fh(tl, 1, "\t// calledfrom\t  0x%x\n", p->calledfrom);
 	Fh(tl, 1, "}};\n");
 
 	if (dyn) {
