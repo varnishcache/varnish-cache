@@ -30,6 +30,7 @@
 
 #include "config.h"
 
+#include <inttypes.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -245,7 +246,7 @@ xyzzy_time_acl(VRT_CTX, VCL_ACL acl, VCL_IP ip0, VCL_IP ip1,
 	}
 	t1 = VTIM_mono();
 	VSLb(ctx->vsl, SLT_Debug,
-	    "Timed ACL: %.9f -> %.9f = %.9f %.9f/round, %.9f/IP %jd IPs",
+	    "Timed ACL: %.9f -> %.9f = %.9f %.9f/round, %.9f/IP %" PRIu64 " IPs",
 	    t0, t1, t1 - t0, (t1-t0) / turnus, (t1-t0) / asw->count, asw->count);
 	return ((t1 - t0) / asw->count);
 }
