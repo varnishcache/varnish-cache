@@ -78,6 +78,7 @@ UNDESIRABLE_WFLAGS = [
     "-Wno-redundant-decls", # Complains about centos::stdio.h
     "-Wno-missing-variable-declarations", # Complains about optreset
     "-Wno-parentheses", # GCC complains about musl::endian.h
+    "-Wno-nullability-completeness", # Barfs all over MacOSx
 ]
 
 def main():
