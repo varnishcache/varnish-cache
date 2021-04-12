@@ -83,7 +83,7 @@ SLTH(Header,	HTTP_HDR_FIRST,		1, 1, "header",
 	HEADER_NOTICE
 )
 
-SLTH(Unset,	HTTP_HDR_UNSET,		0, 0, "unset header",
+SLTH(Unset,	HTTP_HDR_UNSET,		1, 1, "unset header",
 	"HTTP header contents.\n\n"
 	"The format is::\n\n"
 	"\t%s: %s\n"
