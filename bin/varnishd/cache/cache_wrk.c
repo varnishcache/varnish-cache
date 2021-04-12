@@ -433,7 +433,7 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 				else
 					tmo =  wrk->lastused+60.;
 				i = Lck_CondWait(&wrk->cond, &pp->mtx, tmo);
-				if (i == ETIMEDOUT)
+				if (i == ETIMEDOUT && wrk->vcl != NULL)
 					VCL_Rel(&wrk->vcl);
 				if (wrk->task->func != NULL) {
 					/* We have been handed a new task */
