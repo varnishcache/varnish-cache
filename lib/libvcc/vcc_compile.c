@@ -191,9 +191,7 @@ vcc_EmitProc(struct vcc *tl, struct proc *p)
 		maskcmp = "&";
 	}
 
-	if (dyn == 0 &&
-	    (p->calledfrom &  VCL_MET_TASK_H) != 0 &&
-	    (p->calledfrom & ~VCL_MET_TASK_H) == 0)
+	if (dyn == 0 && (p->calledfrom & VCL_MET_TASK_H) == p->calledfrom)
 		cc_adv = "v_dont_optimize ";
 	else
 		cc_adv = "";
