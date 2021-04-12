@@ -52,6 +52,8 @@ struct acl {
 	unsigned		magic;
 #define VCC_ACL_MAGIC		0xb9fb3cd0
 
+	int			flag_log;
+
 	struct acl_tree		acl_tree;
 };
 
@@ -493,7 +495,8 @@ vcc_acl_emit(struct vcc *tl, const struct symbol *sym)
 	Fh(tl, 0, "\n");
 	Fh(tl, 0, "\tfam = VRT_VSA_GetPtr(ctx, p, &a);\n");
 	Fh(tl, 0, "\tif (fam < 0) {\n");
-	Fh(tl, 0, "\t\tVPI_acl_log(ctx, \"NO_FAM %s\");\n", sym->name);
+	if (tl->acl->flag_log)
+		Fh(tl, 0, "\t\tVPI_acl_log(ctx, \"NO_FAM %s\");\n", sym->name);
 	Fh(tl, 0, "\t\treturn(0);\n");
 	Fh(tl, 0, "\t}\n\n");
 	if (!tl->err_unref) {
@@ -546,10 +549,12 @@ vcc_acl_emit(struct vcc *tl, const struct symbol *sym)
 
 		i = ((int)ae->mask + 7) / 8;
 
-		Fh(tl, 0, "\t%*sVPI_acl_log(ctx, \"%sMATCH %s \" ",
-		    -i, "", ae->not ? "NEG_" : "", sym->name);
-		vcc_acl_emit_tokens(tl, ae);
-		Fh(tl, 0, ");\n");
+		if (tl->acl->flag_log) {
+			Fh(tl, 0, "\t%*sVPI_acl_log(ctx, \"%sMATCH %s \" ",
+			    -i, "", ae->not ? "NEG_" : "", sym->name);
+			vcc_acl_emit_tokens(tl, ae);
+			Fh(tl, 0, ");\n");
+		}
 
 		Fh(tl, 0, "\t%*sreturn (%d);\n", -i, "", ae->not ? 0 : 1);
 	}
@@ -559,7 +564,8 @@ vcc_acl_emit(struct vcc *tl, const struct symbol *sym)
 		Fh(tl, 0, "\t%*.*s}\n", depth, depth, "");
 
 	/* Deny by default */
-	Fh(tl, 0, "\tVPI_acl_log(ctx, \"NO_MATCH %s\");\n", sym->name);
+	if (tl->acl->flag_log)
+		Fh(tl, 0, "\tVPI_acl_log(ctx, \"NO_MATCH %s\");\n", sym->name);
 	Fh(tl, 0, "\treturn (0);\n}\n");
 
 	/* Emit the struct that will be referenced */
@@ -579,6 +585,7 @@ void
 vcc_ParseAcl(struct vcc *tl)
 {
 	struct symbol *sym;
+	struct token *sign;
 	struct acl acl[1];
 
 	INIT_OBJ(acl, VCC_ACL_MAGIC);
@@ -591,6 +598,24 @@ vcc_ParseAcl(struct vcc *tl)
 	sym = VCC_HandleSymbol(tl, ACL, ACL_SYMBOL_PREFIX);
 	ERRCHK(tl);
 	AN(sym);
+
+        while (tl->t->tok == '-' || tl->t->tok == '+') {
+		sign = tl->t;
+		vcc_NextToken(tl);
+		if (tl->t->b != sign->e) {
+			VSB_cat(tl->sb, "Expected ACL flag after:\n");
+			vcc_ErrWhere(tl, sign);
+			return;
+		}
+		if (vcc_IdIs(tl->t, "log")) {
+			acl->flag_log = sign->tok == '+';
+			vcc_NextToken(tl);
+		} else {
+			VSB_cat(tl->sb, "Unknown ACL flag:\n");
+			vcc_ErrWhere(tl, tl->t);
+			return;
+		}
+	}
 
 	SkipToken(tl, '{');
 

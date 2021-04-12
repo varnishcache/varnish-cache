@@ -32,6 +32,13 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
+Varnish Cache 7.x.x (2021-09-15)
+================================
+
+* ACLs no longer produce VSL `VCL_acl` records by default, this must be
+  explicitly enabled with `vcl <name> +log { ... }`.
+
+================================
 Varnish Cache 6.6.0 (2021-03-15)
 ================================
 

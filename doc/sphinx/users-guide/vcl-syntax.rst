@@ -59,6 +59,16 @@ To match an IP address against an ACL, simply use the match operator::
          return (pipe);
        }
 
+In Varnish versions before 7.0, ACLs would always emit a `VCL_acl`
+record in the VSL log, from 7.0 and forward, this must be explicitly
+enabled by specifying the `+log` flag::
+
+       acl local +log {
+         "localhost";         // myself
+         "192.0.2.0"/24;      // and everyone on the local network
+         ! "192.0.2.23";      // except for the dialin router
+       }
+
 Operators
 ~~~~~~~~~
 

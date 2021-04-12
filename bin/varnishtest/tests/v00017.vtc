@@ -100,3 +100,19 @@ varnish v1 -errvcl {/mask only allowed once} {
 	}
 	sub vcl_recv { if (client.ip ~ a) { return(pass); } }
 }
+
+varnish v1 -errvcl {Expected ACL flag after:} {
+	backend b { .host = "${localhost}"; }
+	acl a + foobar {
+		"10.0.1.0/22" / 22;
+	}
+	sub vcl_recv { if (client.ip ~ a) { return(pass); } }
+}
+
+varnish v1 -errvcl {Unknown ACL flag:} {
+	backend b { .host = "${localhost}"; }
+	acl a +foobar {
+		"10.0.1.0/22" / 22;
+	}
+	sub vcl_recv { if (client.ip ~ a) { return(pass); } }
+}

@@ -287,7 +287,7 @@ SLTM(Fetch_Body, 0, "Body fetched from backend",
 )
 
 SLTM(VCL_acl, 0, "VCL ACL check results",
-	"Logs VCL ACL evaluation results.\n\n"
+	"ACLs with the `+log` flag emits this record with the result.\n\n"
 	"The format is::\n\n"
 	"\t%s [%s [%s [fixed: %s]]]\n"
 	"\t|   |   |          |\n"
