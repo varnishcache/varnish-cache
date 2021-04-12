@@ -164,6 +164,7 @@ vcc_acl_chk(struct vcc *tl, const struct acl_e *ae, const int l,
 	char h[VTCP_ADDRBUFSIZE];
 	char t[VTCP_ADDRBUFSIZE + 10];
 	char s[vsa_suckaddr_len];
+	char *r = NULL;
 	struct suckaddr *sa;
 	unsigned m;
 	int ll, ret = 0;
@@ -208,7 +209,8 @@ vcc_acl_chk(struct vcc *tl, const struct acl_e *ae, const int l,
 	vcc_ErrWhere(tl, ae->t_addr);
 	if (tl->acl_pedantic == 0)
 		vcc_Warn(tl);
-	return (strdup(t));
+	REPLACE(r, t);
+	return (r);
 }
 
 static void
