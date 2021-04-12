@@ -4,6 +4,7 @@
 
 
 -sem(vcc_new_source, custodial(1))
+-sem(acl_tree_VRBT_INSERT, custodial(2))
 
 -emacro(835, EXPR_VAR)	// Info 835: A zero has been given as right argument to operator '<<'
 -esym(755, VCL_40)	// Not used (right now)
