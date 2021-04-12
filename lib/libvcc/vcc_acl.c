@@ -53,6 +53,7 @@ struct acl {
 #define VCC_ACL_MAGIC		0xb9fb3cd0
 
 	int			flag_log;
+	int			flag_table;
 
 	struct acl_tree		acl_tree;
 };
@@ -65,6 +66,7 @@ struct acl_e {
 	unsigned		mask;
 	unsigned		not;
 	unsigned		para;
+	unsigned		overlapped;
 	char			*addr;
 	const char		*fixed;
 	struct token		*t_addr;
@@ -121,10 +123,38 @@ vcl_acl_cmp(const struct acl_e *ae1, const struct acl_e *ae2)
 	return (0);
 }
 
+static int
+vcl_acl_disjoint(const struct acl_e *ae1, const struct acl_e *ae2)
+{
+	const unsigned char *p1, *p2;
+	unsigned m;
+
+	CHECK_OBJ_NOTNULL(ae1, VCC_ACL_E_MAGIC);
+	CHECK_OBJ_NOTNULL(ae2, VCC_ACL_E_MAGIC);
+
+	p1 = ae1->data;
+	p2 = ae2->data;
+	m = ae1->mask;
+	if (ae2->mask < m)
+		m = ae2->mask;
+	for (; m >= 8; m -= 8) {
+		CMP(*p1, *p2);
+		p1++;
+		p2++;
+	}
+	if (m) {
+		m = 0xff00 >> m;
+		m &= 0xff;
+		CMP(*p1 & m, *p2 & m);
+	}
+	return (0);
+}
+
 VRBT_GENERATE_INSERT_COLOR(acl_tree, acl_e, branch, static)
 VRBT_GENERATE_INSERT(acl_tree, acl_e, branch, vcl_acl_cmp, static)
 VRBT_GENERATE_MINMAX(acl_tree, acl_e, branch, static)
 VRBT_GENERATE_NEXT(acl_tree, acl_e, branch, static)
+VRBT_GENERATE_PREV(acl_tree, acl_e, branch, static)
 
 static char *
 vcc_acl_chk(struct vcc *tl, const struct acl_e *ae, const int l,
@@ -455,23 +485,96 @@ vcc_acl_emit_tokens(const struct vcc *tl, const struct acl_e *ae)
 }
 
 /*********************************************************************
+ * Emit ACL on table format
+ */
+
+static unsigned
+vcc_acl_emit_tables(const struct vcc *tl, unsigned n, const char *name)
+{
+	struct acl_e *ae;
+	unsigned rv = sizeof(ae->data) + 3;
+	unsigned nn = 0;
+	size_t sz;
+
+	Fh(tl, 0, "\nstatic unsigned char acl_tbl_%s[%u*%u] = {\n",
+	    name, n, rv);
+	VRBT_FOREACH(ae, acl_tree, &tl->acl->acl_tree) {
+		if (ae->overlapped)
+			continue;
+		Fh(tl, 0, "\t0x%02x,", ae->not ? 0 : 1);
+		Fh(tl, 0, "0x%02x,", (ae->mask >> 3) - 1);
+		Fh(tl, 0, "0x%02x,", (0xff00 >> (ae->mask & 7)) & 0xff);
+		for (sz = 0; sz < sizeof(ae->data); sz++)
+			Fh(tl, 0, "0x%02x,", ae->data[sz]);
+		for (; sz < rv - 3; sz++)
+			Fh(tl, 0, "0,");
+		Fh(tl, 0, "\n");
+		nn++;
+	}
+	assert(n == nn);
+	Fh(tl, 0, "};\n");
+	if (tl->acl->flag_log) {
+		Fh(tl, 0, "\nstatic const char *acl_str_%s[%d] = {\n",
+		    name, n);
+		VRBT_FOREACH(ae, acl_tree, &tl->acl->acl_tree) {
+			if (ae->overlapped)
+				continue;
+			Fh(tl, 0, "\t");
+			Fh(tl, 0, "\"%sMATCH %s \" ",
+			    ae->not ? "NEG_" : "", name);
+			vcc_acl_emit_tokens(tl, ae);
+			Fh(tl, 0, ",\n");
+		}
+		Fh(tl, 0, "};\n");
+	}
+	return  (rv);
+}
+
+/*********************************************************************
  * Emit a function to match the ACL we have collected
  */
 
 static void
 vcc_acl_emit(struct vcc *tl, const struct symbol *sym)
 {
-	struct acl_e *ae;
+	struct acl_e *ae, *ae2;
 	int depth, l, m, i;
 	unsigned at[ACL_MAXADDR];
 	struct inifin *ifp = NULL;
 	struct vsb *func;
+	unsigned n, no, nw = 0;
 
 	func = VSB_new_auto();
 	AN(func);
 	VSB_printf(func, "match_acl_");
 	VCC_PrintCName(func, sym->name, NULL);
 	AZ(VSB_finish(func));
+
+	depth = -1;
+	at[0] = 256;
+	ae2 = NULL;
+	n = no = 0;
+	VRBT_FOREACH_REVERSE(ae, acl_tree, &tl->acl->acl_tree) {
+		n++;
+		if (ae2 == NULL) {
+			ae2 = ae;
+		} else if (vcl_acl_disjoint(ae, ae2)) {
+			ae2 = ae;
+		} else {
+			no++;
+			ae->overlapped = 1;
+		}
+	}
+
+	Fh(tl, 0, "/* acl_n_%s n %u no %u */\n", sym->name, n, no);
+	if (n - no < (1<<1))
+		no = n;
+	else if (!tl->acl->flag_table)
+		no = n;
+
+	if (no < n)
+		nw = vcc_acl_emit_tables(tl, n - no, sym->name);
+
 
 	Fh(tl, 0, "\nstatic int v_matchproto_(acl_match_f)\n");
 	Fh(tl, 0, "%s(VRT_CTX, const VCL_IP p)\n", VSB_data(func));
@@ -490,9 +593,11 @@ vcc_acl_emit(struct vcc *tl, const struct symbol *sym)
 		VSB_printf(ifp->ini,
 			"\tif (0) %s(0, 0);\n", VSB_data(func));
 	}
-	depth = -1;
-	at[0] = 256;
+
 	VRBT_FOREACH(ae, acl_tree, &tl->acl->acl_tree) {
+
+		if (no < n && !ae->overlapped)
+			continue;
 
 		/* Find how much common prefix we have */
 		for (l = 0; l <= depth && l * 8 < (int)ae->mask - 7; l++) {
@@ -549,10 +654,24 @@ vcc_acl_emit(struct vcc *tl, const struct symbol *sym)
 	for (; 0 <= depth; depth--)
 		Fh(tl, 0, "\t%*.*s}\n", depth, depth, "");
 
-	/* Deny by default */
-	if (tl->acl->flag_log)
-		Fh(tl, 0, "\tVPI_acl_log(ctx, \"NO_MATCH %s\");\n", sym->name);
-	Fh(tl, 0, "\treturn (0);\n}\n");
+	if (no < n) {
+		Fh(tl, 0, "\treturn(\n\t    VPI_acl_table(ctx,\n");
+		Fh(tl, 0, "\t\tp,\n");
+		Fh(tl, 0, "\t\t%u, %u,\n", n - no, nw);
+		Fh(tl, 0, "\t\tacl_tbl_%s,\n", sym->name);
+		if (tl->acl->flag_log)
+			Fh(tl, 0, "\t\tacl_str_%s,\n", sym->name);
+		else
+			Fh(tl, 0, "\t\tNULL,\n");
+		Fh(tl, 0, "\t\t\"NO MATCH %s\"\n\t    )\n\t);\n", sym->name);
+	} else {
+		/* Deny by default */
+		if (tl->acl->flag_log)
+			Fh(tl, 0, "\tVPI_acl_log(ctx, \"NO_MATCH %s\");\n",
+			    sym->name);
+		Fh(tl, 0, "\treturn(0);\n");
+	}
+	Fh(tl, 0, "}\n");
 
 	/* Emit the struct that will be referenced */
 	Fh(tl, 0, "\nstatic const struct vrt_acl %s[] = {{\n", sym->rname);
@@ -595,6 +714,9 @@ vcc_ParseAcl(struct vcc *tl)
 		}
 		if (vcc_IdIs(tl->t, "log")) {
 			acl->flag_log = sign->tok == '+';
+			vcc_NextToken(tl);
+		} else if (vcc_IdIs(tl->t, "table")) {
+			acl->flag_table = sign->tok == '+';
 			vcc_NextToken(tl);
 		} else {
 			VSB_cat(tl->sb, "Unknown ACL flag:\n");

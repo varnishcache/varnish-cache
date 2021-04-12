@@ -1,24 +1,6 @@
 varnishtest "acl functional (& historic miscompile)"
 
-server s1 {
-	rxreq
-	txresp
-} -start
-
-varnish v1 -vcl+backend {
-	import std;
-	import debug;
-
-	acl foo {
-		"127.0.0.2";
-		"127.0.1"/19;
-	}
-	acl bar {
-		"127.0.1.2";
-		"127.0.1"/19;
-	}
-
-	acl block {
+shell {echo '
 		# Tests all boundary conditions
 		  "192.168.8.0" / 21;
 		! "192.168.16" / 21;
@@ -46,6 +28,29 @@ varnish v1 -vcl+backend {
 		! "::0100" / 124;
 		  "::0130" / 124;
 		  "::0170" / 124;
+' > ${tmpdir}/_acl.vcl 
+}
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import std;
+	import debug;
+
+	acl foo {
+		"127.0.0.2";
+		"127.0.1"/19;
+	}
+	acl bar {
+		"127.0.1.2";
+		"127.0.1"/19;
+	}
+
+	acl block {
+		include "${tmpdir}/_acl.vcl";
 	}
 
 	sub vcl_deliver {
@@ -100,3 +105,67 @@ client c1 {
 } -run
 
 logexpect l1 -wait
+
+varnish v1 -vcl+backend {
+	import std;
+	import debug;
+
+	acl block +table {
+		include "${tmpdir}/_acl.vcl";
+	}
+
+	sub vcl_deliver {
+		set resp.http.acl4 = debug.sweep_acl(
+		    block,
+		    std.ip("192.168.0.0"),
+		    std.ip("192.168.32.255"),
+		    256
+		);
+		set resp.http.acl6 = debug.sweep_acl(
+		    block,
+		    std.ip("::"),
+		    std.ip("::0200"),
+		    16
+		);
+	}
+}
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.acl4 == ":4thASR0O18ZxnoKtc4zd8KuO25rPvwvMQyAvRfilz6o=:"
+	expect resp.http.acl6 == ":NSi+7wpvQe7XJj8DPbESjpYPGnIzvjOsA5QCyCnW3kc=:"
+} -run
+
+varnish v1 -vcl+backend {
+	import std;
+	import debug;
+
+	acl block +log +table {
+		include "${tmpdir}/_acl.vcl";
+	}
+
+	sub vcl_deliver {
+		set resp.http.acl4 = debug.sweep_acl(
+		    block,
+		    std.ip("192.168.0.0"),
+		    std.ip("192.168.32.255"),
+		    256
+		);
+		set resp.http.acl6 = debug.sweep_acl(
+		    block,
+		    std.ip("::"),
+		    std.ip("::0200"),
+		    16
+		);
+	}
+}
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.acl4 == ":4thASR0O18ZxnoKtc4zd8KuO25rPvwvMQyAvRfilz6o=:"
+	expect resp.http.acl6 == ":NSi+7wpvQe7XJj8DPbESjpYPGnIzvjOsA5QCyCnW3kc=:"
+} -run
+
+shell {rm -f ${tmpdir}/_acl.vcl}

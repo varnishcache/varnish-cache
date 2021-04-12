@@ -61,6 +61,8 @@ int VPI_Vmod_Init(VRT_CTX, struct vmod **hdl, unsigned nbr, void *ptr, int len,
 void VPI_Vmod_Unload(VRT_CTX, struct vmod **hdl);
 
 typedef int acl_match_f(VRT_CTX, const VCL_IP);
+int VPI_acl_table(VRT_CTX, VCL_IP, unsigned n, unsigned m, const uint8_t *tbl,
+    const char * const *str, const char *fin);
 
 struct vrt_acl {
 	unsigned        magic;

@@ -138,6 +138,74 @@ VRT_acl_match(VRT_CTX, VCL_ACL acl, VCL_IP ip)
 	return (acl->match(ctx, ip));
 }
 
+static int
+acl_tbl_cmp(int fam, const uint8_t *key, const uint8_t *b)
+{
+	int rv;
+
+	rv = fam - (int)b[3];
+	if (rv == 0 && b[1] > 0)
+		rv = memcmp(key, b + 4, b[1]);
+	if (rv == 0 && b[2])
+		rv = (int)(key[b[1]] & b[2]) - (int)b[4 + b[1]];
+	return (rv);
+}
+
+static const uint8_t *
+bbsearch(int fam, const uint8_t *key, const uint8_t *base0,
+    size_t nmemb, size_t size)
+{
+        const uint8_t *base = base0;
+        size_t lim;
+        int cmp;
+        const uint8_t *p;
+
+        for (lim = nmemb; lim != 0; lim >>= 1) {
+                p = base + (lim >> 1) * size;
+                cmp = acl_tbl_cmp(fam, key, p);
+                if (cmp == 0)
+                        return (p);
+                if (cmp > 0) {
+			/* key > p: move right */
+                        base = p + size;
+                        lim--;
+                } /* else move left */
+        }
+        return (NULL);
+}
+
+int
+VPI_acl_table(VRT_CTX, VCL_IP p, unsigned n, unsigned m, const uint8_t *tbl,
+    const char * const *str, const char *fin)
+{
+	int fam;
+	const uint8_t *key;
+	const uint8_t *ptr;
+	size_t sz;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(p);
+	AN(n);
+	assert(m == 20);
+	AN(tbl);
+	AN(fin);
+
+	fam = VRT_VSA_GetPtr(ctx, p, &key);
+	ptr = bbsearch(fam, key, tbl, n, m);
+
+	if (ptr != NULL) {
+		sz = ptr - tbl;
+		AZ(sz % m);
+		sz /= m;
+		if (str != NULL)
+			VPI_acl_log(ctx, str[sz]);
+		return *ptr;
+	}
+	if (str != NULL)
+		VPI_acl_log(ctx, fin);
+	return (0);
+}
+
 /*--------------------------------------------------------------------*/
 
 VCL_VOID
