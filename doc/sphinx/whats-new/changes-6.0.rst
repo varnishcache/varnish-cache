@@ -50,6 +50,31 @@ this should make life simpler for everybody we hope.
 
 And it goes without saying that we have fixed a lot of bugs too.
 
+Changes to VCL
+==============
+
+VCL variables
+~~~~~~~~~~~~~
+
+It is now possible to manually set a ``Connection: close`` header in
+``beresp`` to signal that the backend connection shouldn't be recycled.
+This might help dealing with backends that would under certain circumstances
+have trouble managing their end of the connection, for example for certain
+kinds of resources.
+
+Care should be taken to preserve other headers listed in the connection
+header::
+
+    sub vcl_backend_response {
+        if (beresp.backend == faulty_backend) {
+            if (beresp.http.Connection) {
+                set beresp.http.Connection += ", close";
+            } else {
+                set beresp.http.Connection = "close";
+            }
+        }
+    }
+
 
 Under the hood (mostly for developers)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
