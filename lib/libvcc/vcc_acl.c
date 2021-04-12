@@ -41,9 +41,19 @@
 
 #include "vcc_compile.h"
 #include <vtcp.h>
+#include <vtree.h>
 #include <vsa.h>
 
 #define ACL_MAXADDR	(sizeof(struct in6_addr) + 1)
+
+VRBT_HEAD(acl_tree, acl_e);
+
+struct acl {
+	unsigned		magic;
+#define VCC_ACL_MAGIC		0xb9fb3cd0
+
+	struct acl_tree		acl_tree;
+};
 
 struct acl_e {
 	unsigned		magic;
@@ -175,7 +185,7 @@ vcc_acl_insert_entry(struct vcc *tl, struct acl_e **aenp)
 	struct acl_e *ae2;
 
 	CHECK_OBJ_NOTNULL(*aenp, VCC_ACL_E_MAGIC);
-	ae2 = VRBT_INSERT(acl_tree, &tl->acl_tree, *aenp);
+	ae2 = VRBT_INSERT(acl_tree, &tl->acl->acl_tree, *aenp);
 	if (ae2 != NULL) {
 		if (ae2->not != (*aenp)->not) {
 			VSB_cat(tl->sb, "Conflicting ACL entries:\n");
@@ -461,7 +471,7 @@ vcc_acl_emit_tokens(const struct vcc *tl, const struct acl_e *ae)
  */
 
 static void
-vcc_acl_emit(struct vcc *tl, const char *name, const char *rname)
+vcc_acl_emit(struct vcc *tl, const struct symbol *sym)
 {
 	struct acl_e *ae;
 	int depth, l, m, i;
@@ -472,7 +482,7 @@ vcc_acl_emit(struct vcc *tl, const char *name, const char *rname)
 	func = VSB_new_auto();
 	AN(func);
 	VSB_printf(func, "match_acl_");
-	VCC_PrintCName(func, name, NULL);
+	VCC_PrintCName(func, sym->name, NULL);
 	AZ(VSB_finish(func));
 
 	Fh(tl, 0, "\nstatic int v_matchproto_(acl_match_f)\n");
@@ -483,7 +493,7 @@ vcc_acl_emit(struct vcc *tl, const char *name, const char *rname)
 	Fh(tl, 0, "\n");
 	Fh(tl, 0, "\tfam = VRT_VSA_GetPtr(ctx, p, &a);\n");
 	Fh(tl, 0, "\tif (fam < 0) {\n");
-	Fh(tl, 0, "\t\tVPI_acl_log(ctx, \"NO_FAM %s\");\n", name);
+	Fh(tl, 0, "\t\tVPI_acl_log(ctx, \"NO_FAM %s\");\n", sym->name);
 	Fh(tl, 0, "\t\treturn(0);\n");
 	Fh(tl, 0, "\t}\n\n");
 	if (!tl->err_unref) {
@@ -493,7 +503,7 @@ vcc_acl_emit(struct vcc *tl, const char *name, const char *rname)
 	}
 	depth = -1;
 	at[0] = 256;
-	VRBT_FOREACH(ae, acl_tree, &tl->acl_tree) {
+	VRBT_FOREACH(ae, acl_tree, &tl->acl->acl_tree) {
 
 		/* Find how much common prefix we have */
 		for (l = 0; l <= depth && l * 8 < (int)ae->mask - 7; l++) {
@@ -537,7 +547,7 @@ vcc_acl_emit(struct vcc *tl, const char *name, const char *rname)
 		i = ((int)ae->mask + 7) / 8;
 
 		Fh(tl, 0, "\t%*sVPI_acl_log(ctx, \"%sMATCH %s \" ",
-		    -i, "", ae->not ? "NEG_" : "", name);
+		    -i, "", ae->not ? "NEG_" : "", sym->name);
 		vcc_acl_emit_tokens(tl, ae);
 		Fh(tl, 0, ");\n");
 
@@ -549,18 +559,18 @@ vcc_acl_emit(struct vcc *tl, const char *name, const char *rname)
 		Fh(tl, 0, "\t%*.*s}\n", depth, depth, "");
 
 	/* Deny by default */
-	Fh(tl, 0, "\tVPI_acl_log(ctx, \"NO_MATCH %s\");\n", name);
+	Fh(tl, 0, "\tVPI_acl_log(ctx, \"NO_MATCH %s\");\n", sym->name);
 	Fh(tl, 0, "\treturn (0);\n}\n");
 
 	/* Emit the struct that will be referenced */
-	Fh(tl, 0, "\nstatic const struct vrt_acl %s[] = {{\n", rname);
+	Fh(tl, 0, "\nstatic const struct vrt_acl %s[] = {{\n", sym->rname);
 	Fh(tl, 0, "\t.magic = VRT_ACL_MAGIC,\n");
 	Fh(tl, 0, "\t.match = &%s,\n", VSB_data(func));
-	Fh(tl, 0, "\t.name = \"%s\",\n", name);
+	Fh(tl, 0, "\t.name = \"%s\",\n", sym->name);
 	Fh(tl, 0, "}};\n\n");
 	if (!tl->err_unref) {
 		AN(ifp);
-		VSB_printf(ifp->ini, "\t(void)%s;\n", rname);
+		VSB_printf(ifp->ini, "\t(void)%s;\n", sym->rname);
 	}
 	VSB_destroy(&func);
 }
@@ -569,9 +579,12 @@ void
 vcc_ParseAcl(struct vcc *tl)
 {
 	struct symbol *sym;
+	struct acl acl[1];
 
+	INIT_OBJ(acl, VCC_ACL_MAGIC);
+	tl->acl = acl;
 	vcc_NextToken(tl);
-	VRBT_INIT(&tl->acl_tree);
+	VRBT_INIT(&acl->acl_tree);
 
 	vcc_ExpectVid(tl, "ACL");
 	ERRCHK(tl);
@@ -588,5 +601,5 @@ vcc_ParseAcl(struct vcc *tl)
 	}
 	SkipToken(tl, '}');
 
-	vcc_acl_emit(tl, sym->name, sym->rname);
+	vcc_acl_emit(tl, sym);
 }
