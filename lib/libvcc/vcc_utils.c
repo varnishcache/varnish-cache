@@ -357,3 +357,22 @@ vcc_ByteVal(struct vcc *tl, double *d)
 	vcc_NextToken(tl);
 	*d = v * sc;
 }
+
+/*--------------------------------------------------------------------*/
+
+int
+vcc_IsFlag(struct vcc *tl)
+{
+	struct token *sign;
+
+	if (tl->t->tok != '-' && tl->t->tok != '+')
+		return (-1);
+	sign = tl->t;
+	vcc_NextToken(tl);
+	if (tl->t->b != sign->e) {
+		VSB_cat(tl->sb, "Expected a flag at:\n");
+		vcc_ErrWhere(tl, sign);
+		return (-1);
+	}
+	return (sign->tok == '+' ? 1 : 0);
+}

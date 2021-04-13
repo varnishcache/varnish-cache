@@ -692,7 +692,7 @@ void
 vcc_ParseAcl(struct vcc *tl)
 {
 	struct symbol *sym;
-	struct token *sign;
+	int sign;
 	struct acl acl[1];
 
 	INIT_OBJ(acl, VCC_ACL_MAGIC);
@@ -706,19 +706,20 @@ vcc_ParseAcl(struct vcc *tl)
 	ERRCHK(tl);
 	AN(sym);
 
-	while (tl->t->tok == '-' || tl->t->tok == '+') {
-		sign = tl->t;
-		vcc_NextToken(tl);
-		if (tl->t->b != sign->e) {
-			VSB_cat(tl->sb, "Expected ACL flag after:\n");
-			vcc_ErrWhere(tl, sign);
+	while (1) {
+		sign = vcc_IsFlag(tl);
+		if (tl->err) {
+			VSB_cat(tl->sb,
+			    "Valid ACL flags are `log` and `table`:\n");
 			return;
 		}
+		if (sign < 0)
+			break;
 		if (vcc_IdIs(tl->t, "log")) {
-			acl->flag_log = sign->tok == '+';
+			acl->flag_log = sign;
 			vcc_NextToken(tl);
 		} else if (vcc_IdIs(tl->t, "table")) {
-			acl->flag_table = sign->tok == '+';
+			acl->flag_table = sign;
 			vcc_NextToken(tl);
 		} else {
 			VSB_cat(tl->sb, "Unknown ACL flag:\n");
