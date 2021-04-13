@@ -638,7 +638,7 @@ vcc_CompileSource(struct vcc *tl, struct source *sp, const char *jfile)
 		AN(vcc_builtin);
 		VTAILQ_INSERT_TAIL(&tl->sources, sp, list);
 		sp->idx = tl->nsources++;
-		vcc_Lexer(tl, sp, 0);
+		vcc_lex_source(tl, sp, 0);
 		if (tl->err)
 			return (NULL);
 	}
@@ -648,12 +648,11 @@ vcc_CompileSource(struct vcc *tl, struct source *sp, const char *jfile)
 	assert(sp != NULL);
 	VTAILQ_INSERT_TAIL(&tl->sources, sp, list);
 	sp->idx = tl->nsources++;
-	vcc_Lexer(tl, sp, 1);
+	vcc_lex_source(tl, sp, 1);
 	if (tl->err)
 		return (NULL);
 
 	/* Expand and lex any includes in the token string */
-	vcc_resolve_includes(tl);
 	if (tl->err)
 		return (NULL);
 

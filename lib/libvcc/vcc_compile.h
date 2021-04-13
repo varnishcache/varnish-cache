@@ -57,11 +57,18 @@
 /*---------------------------------------------------------------------*/
 
 struct acl;
-struct vsb;
-struct token;
-struct sockaddr_storage;
+struct acl_e;
+struct expr;
 struct method;
+struct proc;
+struct sockaddr_storage;
+struct symbol;
 struct symtab;
+struct token;
+struct vcc;
+struct vjsn_val;
+struct vmod_obj;
+struct vsb;
 
 unsigned vcl_fixed_token(const char *p, const char **q);
 extern const char * const vcl_tnames[256];
@@ -70,14 +77,6 @@ void vcl_output_lang_h(struct vsb *sb);
 #define PF(t)	(int)((t)->e - (t)->b), (t)->b
 
 #define INDENT		2
-
-struct acl_e;
-struct proc;
-struct expr;
-struct vcc;
-struct vjsn_val;
-struct symbol;
-struct vmod_obj;
 
 struct source {
 	VTAILQ_ENTRY(source)	list;
@@ -88,6 +87,7 @@ struct source {
 	char			*freeit;
 	const struct source	*parent;
 	const struct token	*parent_tok;
+	VTAILQ_HEAD(, token)	src_tokens;
 };
 
 struct token {
@@ -96,6 +96,7 @@ struct token {
 	const char		*e;
 	const struct source	*src;
 	VTAILQ_ENTRY(token)	list;
+	VTAILQ_ENTRY(token)	src_list;
 	unsigned		cnt;
 	char			*dec;
 };
@@ -365,7 +366,7 @@ sym_act_f vcc_Act_If;
 /* vcc_source.c */
 struct source * vcc_new_source(const char *src, const char *name);
 struct source *vcc_file_source(const struct vcc *tl, const char *fn);
-void vcc_resolve_includes(struct vcc *tl);
+void vcc_lex_source(struct vcc *tl, struct source *sp, int eoi);
 
 /* vcc_storage.c */
 void vcc_stevedore(struct vcc *vcc, const char *stv_name);
@@ -410,7 +411,7 @@ void vcc_Warn(struct vcc *);
 void vcc__Expect(struct vcc *tl, unsigned tok, unsigned line);
 int vcc_IdIs(const struct token *t, const char *p);
 void vcc_ExpectVid(struct vcc *tl, const char *what);
-void vcc_Lexer(struct vcc *tl, const struct source *sp, int eoi);
+void vcc_Lexer(struct vcc *tl, struct source *sp);
 void vcc_NextToken(struct vcc *tl);
 void vcc__ErrInternal(struct vcc *tl, const char *func,
     unsigned line);

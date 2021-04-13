@@ -51,6 +51,7 @@ vcc_new_source(const char *src, const char *name)
 	REPLACE(sp->name, name);
 	sp->b = src;
 	sp->e = strchr(src, '\0');
+	VTAILQ_INIT(&sp->src_tokens);
 	return (sp);
 }
 
@@ -98,93 +99,110 @@ vcc_file_source(const struct vcc *tl, const char *fn)
 
 /*--------------------------------------------------------------------*/
 
-void
-vcc_resolve_includes(struct vcc *tl)
+static struct source *
+vcc_include_file(struct vcc *tl, const struct source *src_sp,
+    const char *filename, const struct token *parent_token)
 {
-	struct token *t, *t1, *t2;
 	struct source *sp;
 	const struct source *sp1;
 	struct vsb *vsb;
 	const char *p;
 
-	VTAILQ_FOREACH(t, &tl->tokens, list) {
-		if (t->tok != ID || !vcc_IdIs(t, "include"))
-			continue;
+	if (filename[0] == '.' && filename[1] == '/') {
+		/*
+		 * Nested include filenames, starting with "./" are
+		 * resolved relative to the VCL file which contains
+		 * the include directive.
+		 */
+		if (src_sp->name[0] != '/') {
+			VSB_cat(tl->sb,
+			    "include \"./xxxxx\"; needs absolute "
+			    "filename of including file.\n");
+			return (NULL);
+		}
+		vsb = VSB_new_auto();
+		AN(vsb);
+		p = strrchr(src_sp->name, '/');
+		AN(p);
+		VSB_bcat(vsb, src_sp->name, p - src_sp->name);
+		VSB_cat(vsb, filename + 1);
+		AZ(VSB_finish(vsb));
+		sp = vcc_file_source(tl, VSB_data(vsb));
+		VSB_destroy(&vsb);
+	} else {
+		sp = vcc_file_source(tl, filename);
+	}
+	if (sp == NULL)
+		return (sp);
 
-		t1 = VTAILQ_NEXT(t, list);
+	for (sp1 = src_sp; sp1 != NULL; sp1 = sp1->parent)
+		if (!strcmp(sp1->name, sp->name))
+			break;
+	if (sp1 != NULL) {
+		VSB_printf(tl->sb,
+		    "Recursive include of \"%s\"\n\n", sp->name);
+		vcc_destroy_source(&sp);
+		return (NULL);
+	}
+	sp->parent = src_sp;
+	VTAILQ_INSERT_TAIL(&tl->sources, sp, list);
+	sp->idx = tl->nsources++;
+	sp->parent_tok = parent_token;
+	vcc_lex_source(tl, sp, 0);
+	return (sp);
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+vcc_lex_source(struct vcc *tl, struct source *src_sp, int eoi)
+{
+	struct token *t, *t1;
+	struct source *sp;
+	const struct source *sp1;
+
+	vcc_Lexer(tl, src_sp);
+	if (tl->err)
+		return;
+	VTAILQ_FOREACH(t, &src_sp->src_tokens, src_list) {
+		if (!eoi && t->tok == EOI)
+			break;
+
+		if (t->tok != ID || !vcc_IdIs(t, "include")) {
+			VTAILQ_INSERT_TAIL(&tl->tokens, t, list);
+			continue;
+		}
+
+		t1 = VTAILQ_NEXT(t, src_list);
 		AN(t1);			/* There's always an EOI */
 		if (t1->tok != CSTR) {
 			VSB_cat(tl->sb,
 			    "include not followed by string constant.\n");
+			/* Not vcc_ErrWhere2(): tokens not on final list */
 			vcc_ErrWhere(tl, t1);
 			return;
 		}
-		t2 = VTAILQ_NEXT(t1, list);
-		AN(t2);			/* There's always an EOI */
+		t = VTAILQ_NEXT(t1, src_list);
+		AN(t);			/* There's always an EOI */
 
-		if (t2->tok != ';') {
+		if (t->tok != ';') {
 			VSB_cat(tl->sb,
 			    "include <string> not followed by semicolon.\n");
+			/* Not vcc_ErrWhere2(): tokens not on final list */
 			vcc_ErrWhere(tl, t1);
 			return;
 		}
 
-		if (t1->dec[0] == '.' && t1->dec[1] == '/') {
-			/*
-			 * Nested include filenames, starting with "./" are
-			 * resolved relative to the VCL file which contains
-			 * the include directive.
-			 */
-			if (t1->src->name[0] != '/') {
-				VSB_cat(tl->sb,
-				    "include \"./xxxxx\"; needs absolute "
-				    "filename of including file.\n");
-				vcc_ErrWhere(tl, t1);
-				return;
-			}
-			vsb = VSB_new_auto();
-			AN(vsb);
-			p = strrchr(t1->src->name, '/');
-			AN(p);
-			VSB_bcat(vsb, t1->src->name, p - t1->src->name);
-			VSB_cat(vsb, t1->dec + 1);
-			AZ(VSB_finish(vsb));
-			sp = vcc_file_source(tl, VSB_data(vsb));
-			VSB_destroy(&vsb);
-		} else {
-			sp = vcc_file_source(tl, t1->dec);
-		}
+		sp = vcc_include_file(tl, src_sp, t1->dec, t1);
 		if (sp == NULL) {
 			vcc_ErrWhere(tl, t1);
-			return;
-		}
-
-		for (sp1 = t->src; sp1 != NULL; sp1 = sp1->parent)
-			if (!strcmp(sp1->name, sp->name))
-				break;
-		if (sp1 != NULL) {
-			VSB_printf(tl->sb,
-			    "Recursive include of \"%s\"\n\n", sp->name);
-			vcc_ErrWhere(tl, t1);
-			for (sp1 = t->src; sp1 != NULL; sp1 = sp1->parent) {
-				if (sp1->parent_tok)
-					vcc_ErrWhere(tl, sp1->parent_tok);
+			for (sp1 = src_sp; sp1 != NULL; sp1 = sp1->parent) {
+				if (sp1->parent_tok == NULL)
+					break;
+				vcc_ErrWhere(tl, sp1->parent_tok);
 			}
-			vcc_destroy_source(&sp);
-			return;
 		}
-		sp->parent = t->src;
-		sp->parent_tok = t1;
-		VTAILQ_INSERT_TAIL(&tl->sources, sp, list);
-		sp->idx = tl->nsources++;
-		tl->t = t2;
-		vcc_Lexer(tl, sp, 0);
-
-		VTAILQ_REMOVE(&tl->tokens, t, list);
-		VTAILQ_REMOVE(&tl->tokens, t1, list);
-		VTAILQ_REMOVE(&tl->tokens, t2, list);
-		if (!tl->err)
-			vcc_resolve_includes(tl);
-		return;
+		if (tl->err)
+			return;
 	}
 }

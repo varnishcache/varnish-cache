@@ -365,7 +365,7 @@ vcc_decstr(struct vcc *tl, unsigned sep)
 
 static void
 vcc_addtoken(struct vcc *tl, unsigned tok,
-    const struct source *sp, const char *b, const char *e)
+    struct source *sp, const char *b, const char *e)
 {
 	struct token *t;
 
@@ -375,10 +375,7 @@ vcc_addtoken(struct vcc *tl, unsigned tok,
 	t->b = b;
 	t->e = e;
 	t->src = sp;
-	if (tl->t != NULL)
-		VTAILQ_INSERT_AFTER(&tl->tokens, tl->t, t, list);
-	else
-		VTAILQ_INSERT_TAIL(&tl->tokens, t, list);
+	VTAILQ_INSERT_TAIL(&sp->src_tokens, t, src_list);
 	tl->t = t;
 }
 
@@ -405,7 +402,7 @@ static const struct delim_def {
 };
 
 static unsigned
-vcc_delim_token(struct vcc *tl, const struct source *sp, const char *p,
+vcc_delim_token(struct vcc *tl, struct source *sp, const char *p,
     const char **qp)
 {
 	const struct delim_def *dd;
@@ -445,7 +442,7 @@ vcc_delim_token(struct vcc *tl, const struct source *sp, const char *p,
  */
 
 void
-vcc_Lexer(struct vcc *tl, const struct source *sp, int eoi)
+vcc_Lexer(struct vcc *tl, struct source *sp)
 {
 	const char *p, *q, *r;
 	unsigned u;
@@ -611,6 +608,5 @@ vcc_Lexer(struct vcc *tl, const struct source *sp, int eoi)
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}
-	if (eoi)
-		vcc_addtoken(tl, EOI, sp, sp->e, sp->e);
+	vcc_addtoken(tl, EOI, sp, sp->e, sp->e);
 }
