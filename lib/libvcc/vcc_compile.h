@@ -362,16 +362,10 @@ void vcc_Parse(struct vcc *);
 void vcc_Parse_Init(struct vcc *);
 sym_act_f vcc_Act_If;
 
-/* vcc_utils.c */
-void vcc_regexp(struct vcc *tl, struct vsb *vgc_name);
-void Resolve_Sockaddr(struct vcc *tl, const char *host, const char *defport,
-    const char **ipv4, const char **ipv4_ascii, const char **ipv6,
-    const char **ipv6_ascii, const char **p_ascii, int maxips,
-    const struct token *t_err, const char *errid);
-double vcc_DurationUnit(struct vcc *);
-void vcc_ByteVal(struct vcc *, double *);
-void vcc_Duration(struct vcc *tl, double *);
-unsigned vcc_UintVal(struct vcc *tl);
+/* vcc_source.c */
+struct source * vcc_new_source(const char *src, const char *name);
+struct source *vcc_file_source(const struct vcc *tl, const char *fn);
+void vcc_resolve_includes(struct vcc *tl);
 
 /* vcc_storage.c */
 void vcc_stevedore(struct vcc *vcc, const char *stv_name);
@@ -425,6 +419,17 @@ void vcc__ErrInternal(struct vcc *tl, const char *func,
 vcc_type_t VCC_Type(const char *p);
 const char * VCC_Type_EvalMethod(struct vcc *, const struct symbol *);
 void vcc_Type_Init(struct vcc *tl);
+
+/* vcc_utils.c */
+void vcc_regexp(struct vcc *tl, struct vsb *vgc_name);
+void Resolve_Sockaddr(struct vcc *tl, const char *host, const char *defport,
+    const char **ipv4, const char **ipv4_ascii, const char **ipv6,
+    const char **ipv6_ascii, const char **p_ascii, int maxips,
+    const struct token *t_err, const char *errid);
+double vcc_DurationUnit(struct vcc *);
+void vcc_ByteVal(struct vcc *, double *);
+void vcc_Duration(struct vcc *tl, double *);
+unsigned vcc_UintVal(struct vcc *tl);
 
 /* vcc_var.c */
 sym_wildcard_t vcc_Var_Wildcard;
