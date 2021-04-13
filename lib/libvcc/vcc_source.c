@@ -31,6 +31,7 @@
 
 #include "config.h"
 
+#include <glob.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -99,41 +100,16 @@ vcc_file_source(const struct vcc *tl, const char *fn)
 
 /*--------------------------------------------------------------------*/
 
-static struct source *
+static int
 vcc_include_file(struct vcc *tl, const struct source *src_sp,
     const char *filename, const struct token *parent_token)
 {
 	struct source *sp;
 	const struct source *sp1;
-	struct vsb *vsb;
-	const char *p;
 
-	if (filename[0] == '.' && filename[1] == '/') {
-		/*
-		 * Nested include filenames, starting with "./" are
-		 * resolved relative to the VCL file which contains
-		 * the include directive.
-		 */
-		if (src_sp->name[0] != '/') {
-			VSB_cat(tl->sb,
-			    "include \"./xxxxx\"; needs absolute "
-			    "filename of including file.\n");
-			return (NULL);
-		}
-		vsb = VSB_new_auto();
-		AN(vsb);
-		p = strrchr(src_sp->name, '/');
-		AN(p);
-		VSB_bcat(vsb, src_sp->name, p - src_sp->name);
-		VSB_cat(vsb, filename + 1);
-		AZ(VSB_finish(vsb));
-		sp = vcc_file_source(tl, VSB_data(vsb));
-		VSB_destroy(&vsb);
-	} else {
-		sp = vcc_file_source(tl, filename);
-	}
+	sp = vcc_file_source(tl, filename);
 	if (sp == NULL)
-		return (sp);
+		return (-1);
 
 	for (sp1 = src_sp; sp1 != NULL; sp1 = sp1->parent)
 		if (!strcmp(sp1->name, sp->name))
@@ -142,24 +118,60 @@ vcc_include_file(struct vcc *tl, const struct source *src_sp,
 		VSB_printf(tl->sb,
 		    "Recursive include of \"%s\"\n\n", sp->name);
 		vcc_destroy_source(&sp);
-		return (NULL);
+		return (-1);
 	}
 	sp->parent = src_sp;
 	VTAILQ_INSERT_TAIL(&tl->sources, sp, list);
 	sp->idx = tl->nsources++;
 	sp->parent_tok = parent_token;
 	vcc_lex_source(tl, sp, 0);
-	return (sp);
+	return (0);
 }
 
 /*--------------------------------------------------------------------*/
+
+static int
+vcc_include_glob_file(struct vcc *tl, const struct source *src_sp,
+    const char *filename, const struct token *parent_token)
+{
+	glob_t	g[1];
+	int rv;
+	unsigned u;
+
+	memset(g, 0, sizeof g);
+	rv = glob(filename, 0, NULL, g);
+	switch (rv) {
+	case 0:
+		for (u = 0; rv == 0 && u < g->gl_pathc; u++) {
+			rv = vcc_include_file(
+			    tl, src_sp, g->gl_pathv[u], parent_token);
+		}
+		break;
+	case GLOB_NOMATCH:
+		VSB_printf(tl->sb, "glob pattern matched no files.\n");
+		break;
+	default:
+		VSB_printf(tl->sb, "glob(3) expansion failed (%d)\n", rv);
+		break;
+	}
+	globfree(g);
+	return (rv);
+}
+
+/*--------------------------------------------------------------------
+ * NB: We cannot use vcc_ErrWhere2() on tokens which are no on the
+ * NB: tl->tokens list.
+ */
 
 void
 vcc_lex_source(struct vcc *tl, struct source *src_sp, int eoi)
 {
 	struct token *t, *t1;
-	struct source *sp;
+	int i, glob_flag = 0;
 	const struct source *sp1;
+	struct vsb *vsb = NULL;
+	const char *filename;
+	const char *p;
 
 	vcc_Lexer(tl, src_sp);
 	if (tl->err)
@@ -174,27 +186,72 @@ vcc_lex_source(struct vcc *tl, struct source *src_sp, int eoi)
 		}
 
 		t1 = VTAILQ_NEXT(t, src_list);
-		AN(t1);			/* There's always an EOI */
+		AN(t1);
+
+		while (1) {
+			t = VTAILQ_NEXT(t1, src_list);
+			AN(t);
+			i = vcc_IsFlagRaw(tl, t1, t);
+			if (i < 0)
+				break;
+			if (vcc_IdIs(t, "glob")) {
+				glob_flag = i;
+			} else {
+				VSB_cat(tl->sb, "Unknown include flag:\n");
+				vcc_ErrWhere(tl, t);
+				return;
+			}
+			t1 = VTAILQ_NEXT(t, src_list);
+			AN(t1);
+		}
+
 		if (t1->tok != CSTR) {
 			VSB_cat(tl->sb,
 			    "include not followed by string constant.\n");
-			/* Not vcc_ErrWhere2(): tokens not on final list */
 			vcc_ErrWhere(tl, t1);
 			return;
 		}
 		t = VTAILQ_NEXT(t1, src_list);
-		AN(t);			/* There's always an EOI */
+		AN(t);
 
 		if (t->tok != ';') {
 			VSB_cat(tl->sb,
 			    "include <string> not followed by semicolon.\n");
-			/* Not vcc_ErrWhere2(): tokens not on final list */
 			vcc_ErrWhere(tl, t1);
 			return;
 		}
 
-		sp = vcc_include_file(tl, src_sp, t1->dec, t1);
-		if (sp == NULL) {
+		filename = t1->dec;
+
+		if (filename[0] == '.' && filename[1] == '/') {
+			/*
+			 * Nested include filenames, starting with "./" are
+			 * resolved relative to the VCL file which contains
+			 * the include directive.
+			 */
+			if (src_sp->name[0] != '/') {
+				VSB_cat(tl->sb,
+				    "include \"./xxxxx\"; needs absolute "
+				    "filename of including file.\n");
+				return;
+			}
+			vsb = VSB_new_auto();
+			AN(vsb);
+			p = strrchr(src_sp->name, '/');
+			AN(p);
+			VSB_bcat(vsb, src_sp->name, p - src_sp->name);
+			VSB_cat(vsb, filename + 1);
+			AZ(VSB_finish(vsb));
+			filename = VSB_data(vsb);
+		}
+
+		if (glob_flag)
+			i = vcc_include_glob_file(tl, src_sp, filename, t1);
+		else
+			i = vcc_include_file(tl, src_sp, filename, t1);
+		if (vsb != NULL)
+			VSB_destroy(&vsb);
+		if (i) {
 			vcc_ErrWhere(tl, t1);
 			for (sp1 = src_sp; sp1 != NULL; sp1 = sp1->parent) {
 				if (sp1->parent_tok == NULL)
