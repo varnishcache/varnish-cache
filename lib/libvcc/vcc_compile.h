@@ -432,6 +432,7 @@ void vcc_ByteVal(struct vcc *, double *);
 void vcc_Duration(struct vcc *tl, double *);
 unsigned vcc_UintVal(struct vcc *tl);
 int vcc_IsFlag(struct vcc *tl);
+int vcc_IsFlagRaw(struct vcc *, const struct token *, const struct token *);
 
 /* vcc_var.c */
 sym_wildcard_t vcc_Var_Wildcard;

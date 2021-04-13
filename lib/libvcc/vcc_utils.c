@@ -361,18 +361,27 @@ vcc_ByteVal(struct vcc *tl, double *d)
 /*--------------------------------------------------------------------*/
 
 int
-vcc_IsFlag(struct vcc *tl)
+vcc_IsFlagRaw(struct vcc *tl, const struct token *t1, const struct token *t2)
 {
-	struct token *sign;
 
-	if (tl->t->tok != '-' && tl->t->tok != '+')
+	if (t1->tok != '-' && t1->tok != '+')
 		return (-1);
-	sign = tl->t;
-	vcc_NextToken(tl);
-	if (tl->t->b != sign->e) {
+	if (t2->b != t1->e) {
 		VSB_cat(tl->sb, "Expected a flag at:\n");
-		vcc_ErrWhere(tl, sign);
+		vcc_ErrWhere(tl, t1);
 		return (-1);
 	}
-	return (sign->tok == '+' ? 1 : 0);
+	return (t1->tok == '+' ? 1 : 0);
+}
+
+int
+vcc_IsFlag(struct vcc *tl)
+{
+	int retval;
+
+
+	retval = vcc_IsFlagRaw(tl, tl->t, VTAILQ_NEXT(tl->t, list));
+	if (retval >= 0)
+		vcc_NextToken(tl);
+	return (retval);
 }
