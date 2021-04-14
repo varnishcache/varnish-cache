@@ -155,23 +155,23 @@ static const uint8_t *
 bbsearch(int fam, const uint8_t *key, const uint8_t *base0,
     size_t nmemb, size_t size)
 {
-        const uint8_t *base = base0;
-        size_t lim;
-        int cmp;
-        const uint8_t *p;
+	const uint8_t *base = base0;
+	size_t lim;
+	int cmp;
+	const uint8_t *p;
 
-        for (lim = nmemb; lim != 0; lim >>= 1) {
-                p = base + (lim >> 1) * size;
-                cmp = acl_tbl_cmp(fam, key, p);
-                if (cmp == 0)
-                        return (p);
-                if (cmp > 0) {
+	for (lim = nmemb; lim != 0; lim >>= 1) {
+		p = base + (lim >> 1) * size;
+		cmp = acl_tbl_cmp(fam, key, p);
+		if (cmp == 0)
+			return (p);
+		if (cmp > 0) {
 			/* key > p: move right */
-                        base = p + size;
-                        lim--;
-                } /* else move left */
-        }
-        return (NULL);
+			base = p + size;
+			lim--;
+		} /* else move left */
+	}
+	return (NULL);
 }
 
 int
