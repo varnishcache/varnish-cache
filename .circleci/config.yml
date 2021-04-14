@@ -36,7 +36,7 @@ jobs:
                 libunwind-devel \
                 make \
                 pcre-devel \
-                python \
+                python3 \
                 python-sphinx \
                 curl
       - checkout
