@@ -38,7 +38,7 @@ def parse_file(fn, cl, tl, sl):
     section = ""
     resec = re.compile("[ /]\* SECTION: ")
 
-    f = open(fn, "r")
+    f = open(fn, "r", encoding="UTF-8")
 
     for l in f:
         if "*/" in l:
