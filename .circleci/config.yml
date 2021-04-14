@@ -13,6 +13,14 @@ parameters:
   pkg-commit:
     type: string
     default: "master"
+  configure_args:
+    type: string
+    default: \
+        --with-unwind \
+        --enable-developer-warnings \
+        --enable-debugging-symbols \
+        --disable-stack-protector \
+        --with-persistent-storage
 jobs:
   dist:
     description: Builds varnish-x.y.z.tar.gz that is used later for the packaging jobs
@@ -247,16 +255,14 @@ jobs:
                 autoreconf -i -v
             sudo -u varnish \
                 ./configure \
-            	--quiet \
-            	--with-unwind \
-            	--enable-developer-warnings \
-            	--enable-debugging-symbols \
-            	--disable-stack-protector \
-            	--with-persistent-storage \
-            	<< parameters.extra_conf >>
+                --quiet \
+                << parameters.configure_args >> \
+                << parameters.extra_conf >>
             sudo -u varnish \
-            	--preserve-env=ASAN_OPTIONS,LSAN_OPTIONS,TSAN_OPTIONS,UBSAN_OPTIONS \
-            	make distcheck VERBOSE=1 -j 12 -k
+                --preserve-env=ASAN_OPTIONS,LSAN_OPTIONS,TSAN_OPTIONS,UBSAN_OPTIONS \
+                make distcheck VERBOSE=1 -j 12 -k \
+                DISTCHECK_CONFIGURE_FLAGS="<< parameters.configure_args >> \
+                << parameters.extra_conf >>"
 
   collect_packages:
     docker:
