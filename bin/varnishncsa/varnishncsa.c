@@ -146,6 +146,9 @@ static struct ctx {
 	struct vsb		*vsb;
 	unsigned		gen;
 	VTAILQ_HEAD(,format)	format;
+	int			quote_how;
+	char			*missing_string;
+	char			*missing_int;
 
 	/* State */
 	struct watch_head	watch_vcl_log;
@@ -199,9 +202,9 @@ vsb_fcat(struct vsb *vsb, const struct fragment *f, const char *dflt)
 {
 	if (f->gen == CTX.gen) {
 		assert(f->b <= f->e);
-		VSB_quote(vsb, f->b, f->e - f->b, VSB_QUOTE_ESCHEX);
+		VSB_quote(vsb, f->b, f->e - f->b, CTX.quote_how);
 	} else if (dflt)
-		VSB_quote(vsb, dflt, -1, VSB_QUOTE_ESCHEX);
+		VSB_quote(vsb, dflt, -1, CTX.quote_how);
 	else
 		return (-1);
 	return (0);
@@ -247,7 +250,7 @@ format_fragment(const struct format *format)
 	if (format->frag->gen != CTX.gen) {
 		if (format->string == NULL)
 			return (-1);
-		VSB_quote(CTX.vsb, format->string, -1, VSB_QUOTE_ESCHEX);
+		VSB_quote(CTX.vsb, format->string, -1, CTX.quote_how);
 		return (0);
 	}
 	AZ(vsb_fcat(CTX.vsb, format->frag, NULL));
@@ -363,13 +366,13 @@ format_auth(const struct format *format)
 	    CTX.frag[F_auth].e)) {
 		if (format->string == NULL)
 			return (-1);
-		VSB_quote(CTX.vsb, format->string, -1, VSB_QUOTE_ESCHEX);
+		VSB_quote(CTX.vsb, format->string, -1, CTX.quote_how);
 		return (0);
 	}
 	q = strchr(buf, ':');
 	if (q != NULL)
 		*q = '\0';
-	VSB_quote(CTX.vsb, buf, -1, VSB_QUOTE_ESCHEX);
+	VSB_quote(CTX.vsb, buf, -1, CTX.quote_how);
 	return (1);
 }
 
@@ -557,7 +560,7 @@ addf_hdr(struct watch_head *head, const char *key)
 	AN(f);
 	f->func = format_fragment;
 	f->frag = &w->frag;
-	f->string = strdup("-");
+	f->string = strdup(CTX.missing_string);
 	AN(f->string);
 	VTAILQ_INSERT_TAIL(&CTX.format, f, list);
 }
@@ -580,7 +583,7 @@ addf_vsl(enum VSL_tag_e tag, long i, const char *prefix)
 		assert(w->prefixlen > 0);
 	}
 	VTAILQ_INSERT_TAIL(&CTX.watch_vsl, w, list);
-	addf_fragment(&w->frag, "-");
+	addf_fragment(&w->frag, CTX.missing_string);
 }
 
 static void
@@ -716,28 +719,28 @@ parse_format(const char *format)
 		p++;
 		switch (*p) {
 		case 'b':	/* Body bytes sent */
-			addf_fragment(&CTX.frag[F_b], "-");
+			addf_fragment(&CTX.frag[F_b], CTX.missing_int);
 			break;
 		case 'D':	/* Float request time */
 			addf_time('T', "us");
 			break;
 		case 'h':	/* Client host name / IP Address */
-			addf_fragment(&CTX.frag[F_h], "-");
+			addf_fragment(&CTX.frag[F_h], CTX.missing_string);
 			break;
 		case 'H':	/* Protocol */
 			addf_fragment(&CTX.frag[F_H], "HTTP/1.0");
 			break;
 		case 'I':	/* Bytes received */
-			addf_fragment(&CTX.frag[F_I], "-");
+			addf_fragment(&CTX.frag[F_I], CTX.missing_int);
 			break;
 		case 'l':	/* Client user ID (identd) always '-' */
 			AZ(VSB_putc(vsb, '-'));
 			break;
 		case 'm':	/* Method */
-			addf_fragment(&CTX.frag[F_m], "-");
+			addf_fragment(&CTX.frag[F_m], CTX.missing_string);
 			break;
 		case 'O':	/* Bytes sent */
-			addf_fragment(&CTX.frag[F_O], "-");
+			addf_fragment(&CTX.frag[F_O], CTX.missing_int);
 			break;
 		case 'q':	/* Query string */
 			addf_fragment(&CTX.frag[F_q], "");
@@ -746,7 +749,7 @@ parse_format(const char *format)
 			addf_requestline();
 			break;
 		case 's':	/* Status code */
-			addf_fragment(&CTX.frag[F_s], "-");
+			addf_fragment(&CTX.frag[F_s], CTX.missing_int);
 			break;
 		case 't':	/* strftime */
 			addf_time(*p, TIME_FMT);
@@ -758,7 +761,7 @@ parse_format(const char *format)
 			addf_auth();
 			break;
 		case 'U':	/* URL */
-			addf_fragment(&CTX.frag[F_U], "-");
+			addf_fragment(&CTX.frag[F_U], CTX.missing_string);
 			break;
 		case '{':
 			p++;
@@ -1153,6 +1156,9 @@ main(int argc, char * const *argv)
 	CTX.vsb = VSB_new_auto();
 	AN(CTX.vsb);
 	VB64_init();
+	CTX.quote_how = VSB_QUOTE_ESCHEX;
+	REPLACE(CTX.missing_string, "-");
+	REPLACE(CTX.missing_int, "-");
 
 	tzset();		// We use localtime_r(3)
 
@@ -1183,6 +1189,11 @@ main(int argc, char * const *argv)
 		case 'h':
 			/* Usage help */
 			VUT_Usage(vut, &vopt_spec, 0);
+			break;
+		case 'j':
+			REPLACE(CTX.missing_string, "");
+			REPLACE(CTX.missing_int, "0");
+			CTX.quote_how = VSB_QUOTE_JSON;
 			break;
 		case 'w':
 			/* Write to file */

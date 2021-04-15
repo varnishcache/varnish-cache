@@ -1,0 +1,56 @@
+varnishtest "varnishncsa -j json escaping"
+
+feature cmd "python3 -c 'import json'"
+
+server s1 -repeat 3 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+client c1 {
+	txreq -hdr "x-request-id: YES" -hdr "test:ascii"
+	rxresp
+	txreq -hdr "x-request-id: ∃" -hdr "test:unicode"
+	rxresp
+	txreq -hdr "test:null"
+	rxresp
+} -run
+
+delay 1
+
+# ASCII string with -j is valid JSON
+shell -match "^YES$" {
+	varnishncsa -n ${v1_name} -d -q 'ReqHeader:test eq "ascii"' -j \
+		-F '{"xrid": "%{X-REQUEST-ID}i"}' |
+	python3 -c 'import sys, json; print(json.load(sys.stdin)["xrid"])'
+}
+
+# ∃ without -j is not valid JSON
+shell -err -expect "Invalid \\escape" {
+	varnishncsa -n ${v1_name} -d -q 'ReqHeader:test eq "unicode"' \
+		-F '{"xrid": "%{X-REQUEST-ID}i"}' |
+	python3 -c 'import sys, json; print(json.load(sys.stdin)["xrid"])'
+}
+
+# ∃ with -j is valid JSON
+shell -match "^∃$" {
+	varnishncsa -n ${v1_name} -d -q 'ReqHeader:test eq "unicode"' -j \
+		-F '{"xrid": "%{X-REQUEST-ID}i"}' |
+	python3 -c 'import sys, json; print(json.load(sys.stdin)["xrid"])'
+}
+
+# Empty strings are not replaced with "-"
+shell -match "" {
+	varnishncsa -n ${v1_name} -d -q 'ReqHeader:test eq "null"' -j \
+		-F '{"xrid": "%{X-REQUEST-ID}i"}' |
+	python3 -c 'import sys, json; print(json.load(sys.stdin)["xrid"])'
+}
+
+# Empty VCL_Log entries are not replaced with "-"
+shell -match "" {
+	varnishncsa -n ${v1_name} -d -q 'ReqHeader:test eq "null"' -j \
+		-F '{"xrid": "%{VCL_Log:varnishncsa}x"}' |
+	python3 -c 'import sys, json; print(json.load(sys.stdin)["xrid"])'
+}
