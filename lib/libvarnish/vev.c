@@ -219,12 +219,17 @@ void
 VEV_Destroy(struct vev_root **evbp)
 {
 	struct vev_root *evb;
+	struct vev *e;
 
 	TAKE_OBJ_NOTNULL(evb, evbp, VEV_BASE_MAGIC);
 	assert(pthread_equal(evb->thread, pthread_self()));
+	while ((e = VBH_root(evb->binheap)) != NULL) {
+		VEV_Stop(evb, e);
+		free(e);
+	}
+	VBH_destroy(&evb->binheap);
 	free(evb->pfd);
 	free(evb->pev);
-	/* XXX: destroy evb->binheap */
 	FREE_OBJ(evb);
 }
 
