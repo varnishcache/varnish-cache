@@ -256,7 +256,7 @@ jobs:
             sudo -u varnish \
                 ./configure \
                 --quiet \
-                << parameters.configure_args >> \
+                << pipeline.parameters.configure_args >> \
                 << parameters.extra_conf >>
             sudo -u varnish \
                 --preserve-env=ASAN_OPTIONS,LSAN_OPTIONS,TSAN_OPTIONS,UBSAN_OPTIONS \
