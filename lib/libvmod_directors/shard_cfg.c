@@ -290,7 +290,7 @@ shardcfg_hashcircle(struct sharddir *shardd)
 		}
 		/* not used in current interface */
 		shardd->backend[h].canon_point =
-		    shardd->hashcircle[i].point;
+		    shardd->hashcircle[i - j].point;
 	}
 	assert (i == n_points);
 	qsort( (void *) shardd->hashcircle, n_points,
