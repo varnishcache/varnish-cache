@@ -64,6 +64,10 @@
 		*(fdp) = -1;			\
 	} while (0)
 
+#if !defined(__has_feature)
+#  define __has_feature(x)	0
+#endif
+
 #ifndef __GNUC_PREREQ__
 # if defined __GNUC__ && defined __GNUC_MINOR__
 #  define __GNUC_PREREQ__(maj, min) \
