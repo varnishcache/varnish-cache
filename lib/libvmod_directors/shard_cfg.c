@@ -616,14 +616,19 @@ shardcfg_reconfigure(VRT_CTX, struct vmod_priv *priv,
 		return (0);
 	}
 
-	change = shard_change_get(ctx, priv, shardd);
-	if (change == NULL)
-		return (0);
-
-	if (VSTAILQ_FIRST(&change->tasks) == NULL)
-		return (1);
-
 	sharddir_wrlock(shardd);
+
+	change = shard_change_get(ctx, priv, shardd);
+	if (change == NULL) {
+		sharddir_unlock(shardd);
+		return (0);
+	}
+
+	if (VSTAILQ_FIRST(&change->tasks) == NULL) {
+		shard_change_finish(change);
+		sharddir_unlock(shardd);
+		return (1);
+	}
 
 	shardcfg_apply_change(ctx, shardd, change, replicas);
 	shard_change_finish(change);

@@ -1,0 +1,30 @@
+varnishtest "Empty shard reconfig"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import directors;
+
+	sub vcl_init {
+		new shard1 = directors.shard();
+		new shard2 = directors.shard();
+
+		shard1.reconfigure();
+
+		shard2.add_backend(s1);
+		shard2.reconfigure();
+	}
+
+	sub vcl_recv {
+		set req.backend_hint = shard2.backend();
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run
