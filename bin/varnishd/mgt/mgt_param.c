@@ -45,10 +45,6 @@
 #include "vav.h"
 #include "vcli_serve.h"
 
-#if !defined(__has_feature)
-#define __has_feature(x)	0
-#endif
-
 struct plist {
 	unsigned			magic;
 #define PLIST_MAGIC			0xbfc3ea16
