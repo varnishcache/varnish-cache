@@ -221,6 +221,7 @@ xyzzy_time_acl(VRT_CTX, VCL_ACL acl, VCL_IP ip0, VCL_IP ip1,
 {
 	struct acl_sweep asw[1];
 	vtim_mono t0, t1;
+	vtim_dur d;
 	VCL_INT cnt;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -244,9 +245,12 @@ xyzzy_time_acl(VRT_CTX, VCL_ACL acl, VCL_IP ip0, VCL_IP ip1,
 		} while (step_sweep(asw) <= 0);
 	}
 	t1 = VTIM_mono();
+	cnt = asw->count;
+	assert(cnt > 0);
+	d = (t1 - t0) / cnt;
 	VSLb(ctx->vsl, SLT_Debug,
 	    "Timed ACL: %.9f -> %.9f = %.9f %.9f/round, %.9f/IP %ju IPs",
-	    t0, t1, t1 - t0, (t1-t0) / turnus, (t1-t0) / asw->count,
-	    (uintmax_t)asw->count);
-	return ((t1 - t0) / asw->count);
+	    t0, t1, t1 - t0, (t1-t0) / turnus, d, (intmax_t)cnt);
+	cleanup_sweep(asw);
+	return (d);
 }
