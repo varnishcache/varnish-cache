@@ -20,7 +20,7 @@ parameters:
         --enable-developer-warnings \
         --enable-debugging-symbols \
         --disable-stack-protector \
-        --with-persistent-storage
+        --with-persistent-storage \
 jobs:
   dist:
     description: Builds varnish-x.y.z.tar.gz that is used later for the packaging jobs
