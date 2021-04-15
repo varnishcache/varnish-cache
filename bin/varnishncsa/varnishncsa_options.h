@@ -78,6 +78,15 @@
 	VOPT("E", "[-E]", "Show ESI requests",				\
 	    "Show ESI requests, implies client mode."			\
 	)
+#define NCSA_OPT_j							\
+	VOPT("j", "[-j]", "Make output JSON-compatible",		\
+	    "Make format-specifier replacements JSON-compatible. When"	\
+	    " escaping characters, use JSON-style \\\\uXXXX escape"	\
+	    " sequences instead of C-style \\\\xXX sequences. Empty"	\
+	    " strings will be replaced with \"\" instead of \"-\", and"	\
+	    " empty integers will be replaced with null. Use -F or -f"	\
+	    " in combination with -j to write JSON logs."		\
+	)
 
 NCSA_OPT_a
 NCSA_OPT_b
@@ -90,6 +99,7 @@ NCSA_OPT_F
 NCSA_OPT_f
 NCSA_OPT_g
 VUT_OPT_h
+NCSA_OPT_j
 VSL_OPT_L
 VUT_OPT_n
 VUT_GLOBAL_OPT_P

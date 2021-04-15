@@ -236,6 +236,11 @@ Log the entire Timestamp record associated with the processing length::
 
   varnishncsa -F "%{VSL:Timestamp:Process}x"
 
+Log in JSON, using the -j flag to ensure that the output is valid JSON
+for all inputs::
+
+  varnishncsa -j -F '{"size": %b, "time": "%t", "ua": "%{User-Agent}i"}'
+
 SEE ALSO
 ========
 
