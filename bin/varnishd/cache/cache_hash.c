@@ -735,7 +735,7 @@ HSH_Purge(struct worker *wrk, struct objhead *oh, vtim_real ttl_now,
  */
 
 void
-HSH_Fail(struct objcore *oc)
+HSH_Fail(struct objcore *oc, unsigned abandoned)
 {
 	struct objhead *oh;
 
@@ -752,6 +752,8 @@ HSH_Fail(struct objcore *oc)
 
 	Lck_Lock(&oh->mtx);
 	oc->flags |= OC_F_FAILED;
+	if (abandoned)
+		oc->flags |= OC_F_ABANDONED;
 	Lck_Unlock(&oh->mtx);
 }
 

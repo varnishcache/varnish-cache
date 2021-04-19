@@ -56,7 +56,7 @@ struct objhead {
 #define hoh_head _u.n.u_n_hoh_head
 };
 
-void HSH_Fail(struct objcore *);
+void HSH_Fail(struct objcore *, unsigned);
 void HSH_Kill(struct objcore *);
 void HSH_Insert(struct worker *, const void *hash, struct objcore *,
     struct ban *);

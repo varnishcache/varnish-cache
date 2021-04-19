@@ -38,6 +38,7 @@ OC_FLAG(ABANDON,	abandon,	(1<<4))
 OC_FLAG(PRIVATE,	private,	(1<<5))
 OC_FLAG(FAILED,		failed,		(1<<6))
 OC_FLAG(DYING,		dying,		(1<<7))
+OC_FLAG(ABANDONED,	abandoned,	(1<<8))
 #undef OC_FLAG
 
 /*lint -restore */

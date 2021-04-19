@@ -993,7 +993,7 @@ vbf_stp_fail(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 	assert(oc->boc->state < BOS_FINISHED);
-	HSH_Fail(oc);
+	HSH_Fail(oc, wrk->handling == VCL_RET_ABANDON);
 	if (!(oc->flags & OC_F_BUSY))
 		HSH_Kill(oc);
 	ObjSetState(wrk, oc, BOS_FAILED);
