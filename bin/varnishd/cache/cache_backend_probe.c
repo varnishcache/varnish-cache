@@ -181,9 +181,9 @@ VBP_Update_Backend(struct vbp_target *vt)
 	chg = (i != vt->backend->sick);
 	vt->backend->sick = i;
 
-	AN(dir->vcl_name);
+	AN(vt->backend->vcl_name);
 	VSL(SLT_Backend_health, 0, "%s %s %s %s %u %u %u %.6f %.6f \"%s\"",
-	    dir->vcl_name, chg ? "Went" : "Still",
+	    vt->backend->vcl_name, chg ? "Went" : "Still",
 	    i ? "sick" : "healthy", bits,
 	    vt->good, vt->threshold, vt->window,
 	    vt->last, vt->avg, vt->resp_buf);

@@ -257,15 +257,11 @@ VRT_Healthy(VRT_CTX, VCL_BACKEND d, VCL_TIME *changed)
 VCL_VOID
 VRT_SetChanged(VCL_BACKEND d, VCL_TIME changed)
 {
-	if (d == NULL)
-		return;
 
-	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	CHECK_OBJ_ORNULL(d, DIRECTOR_MAGIC);
 
-	if (changed <= d->vdir->health_changed)
-		return;
-
-	d->vdir->health_changed = changed;
+	if (d != NULL && changed > d->vdir->health_changed)
+		d->vdir->health_changed = changed;
 }
 
 /* Send Event ----------------------------------------------------------
