@@ -337,13 +337,11 @@ struct objcore {
 	float			grace;
 	float			keep;
 
-	uint8_t			flags;
-
+	unsigned		timer_idx;	// XXX 4Gobj limit
+	uint16_t		oa_present;
+	uint16_t		flags;
 	uint8_t			exp_flags;
 
-	uint16_t		oa_present;
-
-	unsigned		timer_idx;	// XXX 4Gobj limit
 	vtim_real		last_lru;
 	VTAILQ_ENTRY(objcore)	hsh_list;
 	VTAILQ_ENTRY(objcore)	lru_list;
