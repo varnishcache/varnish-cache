@@ -497,6 +497,20 @@ VRT_r_obj_can_esi(VRT_CTX)
 
 /*--------------------------------------------------------------------*/
 
+#define OBJ_FETCH_VAR(what)				\
+VCL_BOOL						\
+VRT_r_obj_fetch_ ## what(VRT_CTX)			\
+{							\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);		\
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);		\
+	return (ctx->req->fetch_ ## what);		\
+}
+
+OBJ_FETCH_VAR(failed)
+OBJ_FETCH_VAR(abandoned)
+
+/*--------------------------------------------------------------------*/
+
 #define REQ_VAR_L(nm, elem, type, extra)				\
 									\
 VCL_VOID								\

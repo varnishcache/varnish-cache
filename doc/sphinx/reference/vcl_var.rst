@@ -1121,6 +1121,23 @@ obj.can_esi
 	``vcl_deliver {}`` would cause the response body to be ESI
 	processed.
 
+obj.fetch_failed
+
+	Type: BOOL
+
+	Readable from: vcl_synth
+
+	Returns true when vcl_synth was reached because a fetch failed.
+
+obj.fetch_abandoned
+
+	Type: BOOL
+
+	Readable from: vcl_synth
+
+	Returns true when vcl_synth was reached because a fetch was
+	abandoned. This implies that the fetch was also failed.
+
 
 resp
 ~~~~

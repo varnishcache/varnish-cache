@@ -20,20 +20,30 @@ varnish v1 -arg "-pfirst_byte_timeout=0.1" -vcl+backend {
 	sub vcl_backend_error {
 		return (abandon);
 	}
+	sub vcl_synth {
+		set resp.http.failed = obj.fetch_failed;
+		set resp.http.abandoned = obj.fetch_abandoned;
+	}
 } -start
 
 client c1 {
 	txreq -url /foo
 	rxresp
 	expect resp.status == 503
+	expect resp.http.failed == true
+	expect resp.http.abandoned == true
 
 	txreq -url /bar
 	rxresp
 	expect resp.status == 503
+	expect resp.http.failed == true
+	expect resp.http.abandoned == true
 
 	txreq -url /baz
 	rxresp
 	expect resp.status == 503
+	expect resp.http.failed == true
+	expect resp.http.abandoned == true
 } -run
 
 varnish v1 -expect fetch_failed == 1
