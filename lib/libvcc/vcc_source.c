@@ -166,7 +166,7 @@ vcc_include_glob_file(struct vcc *tl, const struct source *src_sp,
 void
 vcc_lex_source(struct vcc *tl, struct source *src_sp, int eoi)
 {
-	struct token *t, *t1;
+	struct token *t, *tok1;
 	int i, glob_flag = 0;
 	const struct source *sp1;
 	struct vsb *vsb = NULL;
@@ -185,13 +185,13 @@ vcc_lex_source(struct vcc *tl, struct source *src_sp, int eoi)
 			continue;
 		}
 
-		t1 = VTAILQ_NEXT(t, src_list);
-		AN(t1);
+		tok1 = VTAILQ_NEXT(t, src_list);
+		AN(tok1);
 
 		while (1) {
-			t = VTAILQ_NEXT(t1, src_list);
+			t = VTAILQ_NEXT(tok1, src_list);
 			AN(t);
-			i = vcc_IsFlagRaw(tl, t1, t);
+			i = vcc_IsFlagRaw(tl, tok1, t);
 			if (i < 0)
 				break;
 			if (vcc_IdIs(t, "glob")) {
@@ -201,27 +201,27 @@ vcc_lex_source(struct vcc *tl, struct source *src_sp, int eoi)
 				vcc_ErrWhere(tl, t);
 				return;
 			}
-			t1 = VTAILQ_NEXT(t, src_list);
-			AN(t1);
+			tok1 = VTAILQ_NEXT(t, src_list);
+			AN(tok1);
 		}
 
-		if (t1->tok != CSTR) {
+		if (tok1->tok != CSTR) {
 			VSB_cat(tl->sb,
 			    "include not followed by string constant.\n");
-			vcc_ErrWhere(tl, t1);
+			vcc_ErrWhere(tl, tok1);
 			return;
 		}
-		t = VTAILQ_NEXT(t1, src_list);
+		t = VTAILQ_NEXT(tok1, src_list);
 		AN(t);
 
 		if (t->tok != ';') {
 			VSB_cat(tl->sb,
 			    "include <string> not followed by semicolon.\n");
-			vcc_ErrWhere(tl, t1);
+			vcc_ErrWhere(tl, tok1);
 			return;
 		}
 
-		filename = t1->dec;
+		filename = tok1->dec;
 
 		if (filename[0] == '.' && filename[1] == '/') {
 			/*
@@ -246,13 +246,13 @@ vcc_lex_source(struct vcc *tl, struct source *src_sp, int eoi)
 		}
 
 		if (glob_flag)
-			i = vcc_include_glob_file(tl, src_sp, filename, t1);
+			i = vcc_include_glob_file(tl, src_sp, filename, tok1);
 		else
-			i = vcc_include_file(tl, src_sp, filename, t1);
+			i = vcc_include_file(tl, src_sp, filename, tok1);
 		if (vsb != NULL)
 			VSB_destroy(&vsb);
 		if (i) {
-			vcc_ErrWhere(tl, t1);
+			vcc_ErrWhere(tl, tok1);
 			for (sp1 = src_sp; sp1 != NULL; sp1 = sp1->parent) {
 				if (sp1->parent_tok == NULL)
 					break;
