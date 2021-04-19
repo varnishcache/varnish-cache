@@ -14,7 +14,10 @@ varnish v1 -vcl {
 
 	backend dummy { .host = "${bad_backend}"; }
 
-	probe pr {}
+	probe pr {
+		.threshold = 8;
+		.initial = 8;
+	}
 
 	sub vcl_init {
 		new s1 = debug.dyn("0.0.0.0", "0");

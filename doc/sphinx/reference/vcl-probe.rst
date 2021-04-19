@@ -160,6 +160,11 @@ The default values are:
 
 * ``.initial`` = one less than ``.threshold``
 
+Note that the default ``.initial`` means that the backend will be marked
+unhealthy until the first probe response come back successful.
+This means that for backends created on demand (by vmods) cannot use the
+default value for ``.initial``, as the freshly created backend would very
+likely still be unhealthy when the backend request happens.
 
 SEE ALSO
 ========
