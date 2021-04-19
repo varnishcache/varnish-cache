@@ -502,6 +502,9 @@ cnt_fetch(struct worker *wrk, struct req *req)
 	if (req->objcore->flags & OC_F_FAILED) {
 		req->err_code = 503;
 		req->req_step = R_STP_SYNTH;
+		req->fetch_failed = 1;
+		if (req->objcore->flags & OC_F_ABANDONED)
+			req->fetch_abandoned = 1;
 		(void)HSH_DerefObjCore(wrk, &req->objcore, 1);
 		AZ(req->objcore);
 		return (REQ_FSM_MORE);
@@ -874,6 +877,8 @@ cnt_recv_prep(struct req *req, const char *ci)
 		req->storage = NULL;
 	}
 
+	req->fetch_failed = 0;
+	req->fetch_abandoned = 0;
 	req->is_hit = 0;
 	req->is_hitmiss = 0;
 	req->is_hitpass = 0;
