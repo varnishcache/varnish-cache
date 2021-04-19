@@ -28,7 +28,7 @@
  * SUCH DAMAGE.
  */
 
-#define MAX_HDR		50
+#define MAX_HDR		64
 
 struct vtc_sess {
 	unsigned		magic;
