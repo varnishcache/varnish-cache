@@ -113,7 +113,7 @@ VBE_Connect_Error(struct VSC_vbe *vsc, int err)
  */
 
 static struct pfd *
-vbe_dir_getfd(VRT_CTX, struct worker *wrk, struct backend *bp,
+vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
     unsigned force_fresh)
 {
 	struct busyobj *bo;
@@ -129,9 +129,9 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, struct backend *bp,
 	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
 	AN(bp->vsc);
 
-	if (! VRT_Healthy(ctx, bp->director, NULL)) {
+	if (! VRT_Healthy(ctx, dir, NULL)) {
 		VSLb(bo->vsl, SLT_FetchError,
-		     "backend %s: unhealthy", VRT_BACKEND_string(bp->director));
+		     "backend %s: unhealthy", VRT_BACKEND_string(dir));
 		bp->vsc->unhealthy++;
 		VSC_C_main->backend_unhealthy++;
 		return (NULL);
@@ -139,7 +139,7 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, struct backend *bp,
 
 	if (bp->max_connections > 0 && bp->n_conn >= bp->max_connections) {
 		VSLb(bo->vsl, SLT_FetchError,
-		     "backend %s: busy", VRT_BACKEND_string(bp->director));
+		     "backend %s: busy", VRT_BACKEND_string(dir));
 		bp->vsc->busy++;
 		VSC_C_main->backend_busy++;
 		return (NULL);
@@ -160,7 +160,7 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, struct backend *bp,
 		VBE_Connect_Error(bp->vsc, err);
 		VSLb(bo->vsl, SLT_FetchError,
 		     "backend %s: fail errno %d (%s)",
-		     VRT_BACKEND_string(bp->director), err, vstrerror(err));
+		     VRT_BACKEND_string(dir), err, vstrerror(err));
 		VSC_C_main->backend_fail++;
 		bo->htc = NULL;
 		return (NULL);
@@ -183,7 +183,7 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, struct backend *bp,
 	if (err < 0) {
 		VSLb(bo->vsl, SLT_FetchError,
 		     "backend %s: proxy write errno %d (%s)",
-		     VRT_BACKEND_string(bp->director),
+		     VRT_BACKEND_string(dir),
 		     errno, vstrerror(errno));
 		// account as if connect failed - good idea?
 		VSC_C_main->backend_fail++;
@@ -202,7 +202,7 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, struct backend *bp,
 	PFD_LocalName(pfd, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
 	PFD_RemoteName(pfd, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
 	VSLb(bo->vsl, SLT_BackendOpen, "%d %s %s %s %s %s %s",
-	    *fdp, VRT_BACKEND_string(bp->director), abuf2, pbuf2, abuf1, pbuf1,
+	    *fdp, VRT_BACKEND_string(dir), abuf2, pbuf2, abuf1, pbuf1,
 	    PFD_State(pfd) == PFD_STATE_STOLEN ? "reuse" : "connect");
 
 	INIT_OBJ(bo->htc, HTTP_CONN_MAGIC);
@@ -242,14 +242,14 @@ vbe_dir_finish(VRT_CTX, VCL_BACKEND d)
 	}
 	if (bo->htc->doclose != SC_NULL || bp->proxy_header != 0) {
 		VSLb(bo->vsl, SLT_BackendClose, "%d %s close", *PFD_Fd(pfd),
-		    VRT_BACKEND_string(bp->director));
+		    VRT_BACKEND_string(d));
 		VCP_Close(&pfd);
 		AZ(pfd);
 		Lck_Lock(&bp->mtx);
 	} else {
 		assert (PFD_State(pfd) == PFD_STATE_USED);
 		VSLb(bo->vsl, SLT_BackendClose, "%d %s recycle", *PFD_Fd(pfd),
-		    VRT_BACKEND_string(bp->director));
+		    VRT_BACKEND_string(d));
 		Lck_Lock(&bp->mtx);
 		VSC_C_main->backend_recycle++;
 		VCP_Recycle(bo->wrk, &pfd);
@@ -290,7 +290,7 @@ vbe_dir_gethdrs(VRT_CTX, VCL_BACKEND d)
 		http_PrintfHeader(bo->bereq, "Host: %s", bp->hosthdr);
 
 	do {
-		pfd = vbe_dir_getfd(ctx, wrk, bp, extrachance == 0 ? 1 : 0);
+		pfd = vbe_dir_getfd(ctx, wrk, d, bp, extrachance == 0 ? 1 : 0);
 		if (pfd == NULL)
 			return (-1);
 		AN(bo->htc);
@@ -375,7 +375,7 @@ vbe_dir_http1pipe(VRT_CTX, VCL_BACKEND d)
 
 	ctx->req->res_mode = RES_PIPE;
 
-	pfd = vbe_dir_getfd(ctx, ctx->req->wrk, bp, 0);
+	pfd = vbe_dir_getfd(ctx, ctx->req->wrk, d, bp, 0);
 
 	if (pfd == NULL) {
 		retval = SC_TX_ERROR;
