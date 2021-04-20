@@ -405,17 +405,15 @@ vbe_dir_event(const struct director *d, enum vcl_event_e ev)
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
 
-	if (ev == VCL_EVENT_WARM)
+	if (ev == VCL_EVENT_WARM) {
 		VRT_VSC_Reveal(bp->vsc_seg);
-
-	if (bp->probe != NULL && ev == VCL_EVENT_WARM)
-		VBP_Control(bp, 1);
-
-	if (bp->probe != NULL && ev == VCL_EVENT_COLD)
-		VBP_Control(bp, 0);
-
-	if (ev == VCL_EVENT_COLD)
+		if (bp->probe != NULL)
+			VBP_Control(bp, 1);
+	} else if (ev == VCL_EVENT_COLD) {
+		if (bp->probe != NULL)
+			VBP_Control(bp, 0);
 		VRT_VSC_Hide(bp->vsc_seg);
+	}
 }
 
 /*---------------------------------------------------------------------*/
