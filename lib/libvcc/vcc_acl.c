@@ -593,7 +593,7 @@ vcc_acl_emit(struct vcc *tl, const struct symbol *sym)
 	if (!tl->err_unref) {
 		ifp = New_IniFin(tl);
 		VSB_printf(ifp->ini,
-			"\tif (0) %s(0, 0);\n", VSB_data(func));
+			"\t(void)%s;\n", VSB_data(func));
 	}
 
 	VRBT_FOREACH(ae, acl_tree, &tl->acl->acl_tree) {
@@ -683,7 +683,7 @@ vcc_acl_emit(struct vcc *tl, const struct symbol *sym)
 	Fh(tl, 0, "}};\n\n");
 	if (!tl->err_unref) {
 		AN(ifp);
-		VSB_printf(ifp->ini, "\t(void)%s;\n", sym->rname);
+		VSB_printf(ifp->ini, "\t(void)%s;", sym->rname);
 	}
 	VSB_destroy(&func);
 }

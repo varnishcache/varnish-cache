@@ -353,8 +353,8 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 		vcc_NextToken(tl);
 		SkipToken(tl, ';');
 		ifp = New_IniFin(tl);
-		VSB_printf(ifp->ini, "\t(void)%s;\n", vgcname);
-		VSB_printf(ifp->fin, "\t\t(void)%s;\n", vgcname);
+		VSB_printf(ifp->ini, "\t(void)%s;", vgcname);
+		VSB_printf(ifp->fin, "\t\t(void)%s;", vgcname);
 		return;
 	}
 
