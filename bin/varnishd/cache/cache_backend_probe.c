@@ -54,6 +54,8 @@
 #include "cache_backend.h"
 #include "cache_conn_pool.h"
 
+#include "VSC_vbe.h"
+
 /* Default averaging rate, we want something pretty responsive */
 #define AVG_RATE			4
 
@@ -153,7 +155,6 @@ vbp_has_poked(struct vbp_target *vt)
 void
 VBP_Update_Backend(struct vbp_target *vt)
 {
-	const struct director *dir;
 	unsigned i = 0, chg;
 	char bits[10];
 
@@ -171,12 +172,6 @@ VBP_Update_Backend(struct vbp_target *vt)
 		return;
 	}
 
-	dir = vt->backend->director;
-	if (dir == NULL) {
-		Lck_Unlock(&vbp_mtx);
-		return;
-	}
-
 	i = (vt->good < vt->threshold);
 	chg = (i != vt->backend->sick);
 	vt->backend->sick = i;
@@ -187,12 +182,9 @@ VBP_Update_Backend(struct vbp_target *vt)
 	    i ? "sick" : "healthy", bits,
 	    vt->good, vt->threshold, vt->window,
 	    vt->last, vt->avg, vt->resp_buf);
-	VBE_SetHappy(vt->backend, vt->happy);
-
-	if (chg) {
+	vt->backend->vsc->happy = vt->happy;
+	if (chg)
 		vt->backend->changed = VTIM_real();
-		VRT_SetChanged(dir, vt->backend->changed);
-	}
 	Lck_Unlock(&vbp_mtx);
 }
 

@@ -688,17 +688,6 @@ VRT_delete_backend(VRT_CTX, VCL_BACKEND *dp)
 	// this is why we don't bust the director's magic number.
 }
 
-void
-VBE_SetHappy(const struct backend *be, uint64_t happy)
-{
-
-	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
-	Lck_Lock(&backends_mtx);
-	if (be->vsc != NULL)
-		be->vsc->happy = happy;
-	Lck_Unlock(&backends_mtx);
-}
-
 /*---------------------------------------------------------------------*/
 
 void
