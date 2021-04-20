@@ -157,7 +157,9 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 	FIND_TMO(connect_timeout, tmod, bo, bp);
 	pfd = VCP_Get(bp->conn_pool, tmod, wrk, force_fresh, &err);
 	if (pfd == NULL) {
+		Lck_Lock(bp->director->mtx);
 		VBE_Connect_Error(bp->vsc, err);
+		Lck_Unlock(bp->director->mtx);
 		VSLb(bo->vsl, SLT_FetchError,
 		     "backend %s: fail errno %d (%s)",
 		     VRT_BACKEND_string(dir), err, vstrerror(err));
