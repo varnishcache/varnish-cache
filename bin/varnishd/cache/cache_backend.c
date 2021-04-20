@@ -171,11 +171,11 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 	AN(fdp);
 	assert(*fdp >= 0);
 
-	Lck_Lock(&bp->mtx);
+	Lck_Lock(bp->director->mtx);
 	bp->n_conn++;
 	bp->vsc->conn++;
 	bp->vsc->req++;
-	Lck_Unlock(&bp->mtx);
+	Lck_Unlock(bp->director->mtx);
 
 	err = 0;
 	if (bp->proxy_header != 0)
@@ -190,11 +190,11 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 		bo->htc = NULL;
 		VCP_Close(&pfd);
 		AZ(pfd);
-		Lck_Lock(&bp->mtx);
+		Lck_Lock(bp->director->mtx);
 		bp->n_conn--;
 		bp->vsc->conn--;
 		bp->vsc->req--;
-		Lck_Unlock(&bp->mtx);
+		Lck_Unlock(bp->director->mtx);
 		return (NULL);
 	}
 	bo->acct.bereq_hdrbytes += err;
@@ -245,12 +245,12 @@ vbe_dir_finish(VRT_CTX, VCL_BACKEND d)
 		    VRT_BACKEND_string(d));
 		VCP_Close(&pfd);
 		AZ(pfd);
-		Lck_Lock(&bp->mtx);
+		Lck_Lock(bp->director->mtx);
 	} else {
 		assert (PFD_State(pfd) == PFD_STATE_USED);
 		VSLb(bo->vsl, SLT_BackendClose, "%d %s recycle", *PFD_Fd(pfd),
 		    VRT_BACKEND_string(d));
-		Lck_Lock(&bp->mtx);
+		Lck_Lock(bp->director->mtx);
 		VSC_C_main->backend_recycle++;
 		VCP_Recycle(bo->wrk, &pfd);
 	}
@@ -260,7 +260,7 @@ vbe_dir_finish(VRT_CTX, VCL_BACKEND d)
 	bp->vsc->conn--;
 #define ACCT(foo)	bp->vsc->foo += bo->acct.foo;
 #include "tbl/acct_fields_bereq.h"
-	Lck_Unlock(&bp->mtx);
+	Lck_Unlock(bp->director->mtx);
 	bo->htc = NULL;
 }
 
@@ -446,7 +446,7 @@ vbe_free(struct backend *be)
 #undef DN
 	free(be->endpoint);
 
-	Lck_Delete(&be->mtx);
+	Lck_Delete(be->director->mtx);
 	FREE_OBJ(be);
 }
 
@@ -593,7 +593,6 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 	ALLOC_OBJ(be, BACKEND_MAGIC);
 	if (be == NULL)
 		return (NULL);
-	Lck_New(&be->mtx, lck_backend);
 
 	vep = be->endpoint = VRT_Endpoint_Clone(vep);
 #define DA(x)	do { if (vrt->x != NULL) REPLACE((be->x), (vrt->x)); } while (0)
@@ -675,9 +674,9 @@ VRT_delete_backend(VRT_CTX, VCL_BACKEND *dp)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	TAKE_OBJ_NOTNULL(d, dp, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(be, d->priv, BACKEND_MAGIC);
-	Lck_Lock(&be->mtx);
+	Lck_Lock(be->director->mtx);
 	VRT_DisableDirector(be->director);
-	Lck_Unlock(&be->mtx);
+	Lck_Unlock(be->director->mtx);
 	Lck_Lock(&backends_mtx);
 	AZ(be->cooled);
 	be->cooled = VTIM_real() + 60.;

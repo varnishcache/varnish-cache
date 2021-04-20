@@ -31,10 +31,10 @@
 
 /*lint -save -e525 -e539 */
 
-LOCK(backend)
 LOCK(ban)
 LOCK(busyobj)
 LOCK(cli)
+LOCK(director)
 LOCK(exp)
 LOCK(hcb)
 LOCK(lru)

@@ -55,7 +55,6 @@ struct backend {
 	unsigned		n_conn;
 
 	VTAILQ_ENTRY(backend)	list;
-	struct lock		mtx;
 
 	struct vrt_endpoint	*endpoint;
 

@@ -142,6 +142,8 @@ static void
 vcldir_free(struct vcldir *vdir)
 {
 
+	CHECK_OBJ_NOTNULL(vdir, VCLDIR_MAGIC);
+	Lck_Delete(&vdir->dlck);
 	free(vdir->cli_name);
 	FREE_OBJ(vdir->dir);
 	FREE_OBJ(vdir);
@@ -191,6 +193,9 @@ VRT_AddDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
 	vdir->vcl = vcl;
 	vdir->admin_health = VDI_AH_AUTO;
 	vdir->health_changed = VTIM_real();
+
+	Lck_New(&vdir->dlck, lck_director);
+	vdir->dir->mtx = &vdir->dlck;
 
 	/* NB: at this point we look at the VCL temperature after getting
 	 * through the trouble of creating the director even though it might

@@ -202,6 +202,7 @@
 struct busyobj;
 struct director;
 struct http;
+struct lock;
 struct req;
 struct stevedore;
 struct suckaddr;
@@ -621,6 +622,7 @@ struct director {
 	void				*priv;
 	char				*vcl_name;
 	struct vcldir			*vdir;
+	struct lock			*mtx;
 };
 
 VCL_BOOL VRT_Healthy(VRT_CTX, VCL_BACKEND, VCL_TIME *);

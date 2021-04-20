@@ -36,6 +36,7 @@
 struct vcldir {
 	unsigned			magic;
 #define VCLDIR_MAGIC			0xbf726c7d
+	struct lock			dlck;
 	struct director			*dir;
 	struct vcl			*vcl;
 	const struct vdi_methods	*methods;
