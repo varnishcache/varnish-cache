@@ -208,6 +208,7 @@ struct suckaddr;
 struct vcl;
 struct vcldir;
 struct VCL_conf;
+struct vcl_sub;
 struct vmod;
 struct vmod_priv;
 struct vrt_acl;
@@ -217,7 +218,6 @@ struct vsc_seg;
 struct vsl_log;
 struct vsmw_cluster;
 struct ws;
-struct vcl_sub;
 
 /***********************************************************************
  * VCL_STRANDS:
