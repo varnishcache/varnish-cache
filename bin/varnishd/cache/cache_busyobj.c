@@ -137,7 +137,7 @@ VBO_GetBusyObj(struct worker *wrk, const struct req *req)
 		XXXAN(bo->client_identity);
 	}
 
-	bo->director_req = req->director_hint;
+	VRT_Assign_Backend(&bo->director_req, req->director_hint);
 	bo->vcl = req->vcl;
 	VCL_Ref(bo->vcl);
 
@@ -180,6 +180,8 @@ VBO_ReleaseBusyObj(struct worker *wrk, struct busyobj **pbo)
 		    HSH_RUSH_POLICY);
 	}
 
+	VRT_Assign_Backend(&bo->director_req, NULL);
+	VRT_Assign_Backend(&bo->director_resp, NULL);
 	VCL_Rel(&bo->vcl);
 
 	memset(&bo->retries, 0,

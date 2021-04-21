@@ -55,6 +55,7 @@
  *
  * NEXT (2021-09-15)
  *	vrt_null_strands added
+ *	VRT_Assign_Backend added
  * 13.0 (2021-03-15)
  *	Move VRT_synth_page() to deprecated status
  *	Add VRT_synth_strands() and VRT_synth_blob()
@@ -632,6 +633,7 @@ VCL_BACKEND VRT_AddDirector(VRT_CTX, const struct vdi_methods *,
 void VRT_DisableDirector(VCL_BACKEND);
 VCL_BACKEND VRT_LookupDirector(VRT_CTX, VCL_STRING);
 void VRT_DelDirector(VCL_BACKEND *);
+void VRT_Assign_Backend(VCL_BACKEND *dst, VCL_BACKEND src);
 
 /***********************************************************************
  * vmod_priv related
