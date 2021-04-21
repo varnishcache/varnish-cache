@@ -194,6 +194,7 @@ VRT_AddDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
 	vdir->admin_health = VDI_AH_AUTO;
 	vdir->health_changed = VTIM_real();
 
+	vdir->refcnt++;
 	Lck_New(&vdir->dlck, lck_director);
 	vdir->dir->mtx = &vdir->dlck;
 
@@ -235,6 +236,11 @@ VRT_DelDirector(VCL_BACKEND *bp)
 	vcl = vdir->vcl;
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 
+	Lck_Lock(d->mtx);
+	assert(vdir->refcnt == 1);
+	--vdir->refcnt;
+	Lck_Unlock(d->mtx);
+
 	Lck_Lock(&vcl_mtx);
 	temp = vcl->temp;
 	VTAILQ_REMOVE(&vcl->director_list, vdir, list);
@@ -253,6 +259,23 @@ VRT_Assign_Backend(VCL_BACKEND *dst, VCL_BACKEND src)
 {
 
 	AN(dst);
+	assert((uintptr_t)(*dst) != 0xa5a5a5a5a5a5a5a5);
+	CHECK_OBJ_ORNULL((*dst), DIRECTOR_MAGIC);
+	CHECK_OBJ_ORNULL(src, DIRECTOR_MAGIC);
+	if (*dst != NULL) {
+		CHECK_OBJ_NOTNULL((*dst)->vdir, VCLDIR_MAGIC);
+		Lck_Lock((*dst)->mtx);
+		assert((*dst)->vdir->refcnt > 0);
+		--(*dst)->vdir->refcnt;
+		Lck_Unlock((*dst)->mtx);
+	}
+	if (src != NULL) {
+		CHECK_OBJ_NOTNULL(src->vdir, VCLDIR_MAGIC);
+		Lck_Lock(src->mtx);
+		assert(src->vdir->refcnt > 0);
+		src->vdir->refcnt++;
+		Lck_Unlock(src->mtx);
+	}
 	*dst = src;
 }
 

@@ -36,6 +36,7 @@
 struct vcldir {
 	unsigned			magic;
 #define VCLDIR_MAGIC			0xbf726c7d
+	int				refcnt;
 	struct lock			dlck;
 	struct director			*dir;
 	struct vcl			*vcl;
