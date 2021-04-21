@@ -143,7 +143,6 @@ void VCA_Shutdown(void);
 
 /* cache_backend_cfg.c */
 void VBE_InitCfg(void);
-void VBE_Poll(void);
 
 void VBP_Init(void);
 

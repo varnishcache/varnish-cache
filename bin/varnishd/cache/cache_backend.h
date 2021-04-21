@@ -54,8 +54,6 @@ struct backend {
 
 	unsigned		n_conn;
 
-	VTAILQ_ENTRY(backend)	list;
-
 	struct vrt_endpoint	*endpoint;
 
 	VRT_BACKEND_FIELDS()
@@ -71,8 +69,6 @@ struct backend {
 	struct conn_pool	*conn_pool;
 
 	VCL_BACKEND		director;
-
-	vtim_real		cooled;
 };
 
 /*---------------------------------------------------------------------
