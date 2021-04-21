@@ -446,7 +446,6 @@ vbe_free(struct backend *be)
 #undef DN
 	free(be->endpoint);
 
-	Lck_Delete(be->director->mtx);
 	FREE_OBJ(be);
 }
 
