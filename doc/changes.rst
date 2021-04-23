@@ -27,6 +27,75 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
+Varnish Cache 6.0.8 (YYYY-MM-DD)
+================================
+
+* Fix an issue where a backend fetch can stall after a client has
+  disconnected. (3556_)
+
+* Fix an issue in `directors.shard()` where calling `reconfigure()` on
+  an empty director breaks subsequent shard directors. Also changed
+  an internal `canon_point` calculation. (3593_)
+
+* Address and fix various issues with H2 work priorities. (2796_, 3536_,
+  3537_)
+
+* Fix a panic situation in `ban_mark_completed()` when using bans. (2556_)
+
+* Fix an issue where an early backend error can trigger a valid zero
+  length response. (3560_)
+
+* Fix a panic situation when cooling a backend in `VBE_Poll()` and
+  `Lck_Delete()`. (3587_)
+
+* Complete source code migration to `python3`.
+
+* Fix an issue where `varnishd` will sleep for 1s when attempting to
+  shutdown. (3569_)
+
+* Fix a panic situation in `vbf_stp_condfetch()`. (3558_)
+
+* Fix a panic situation in `EXP_Insert()`. (2999_)
+
+* Fix a panic situation in `VRB_Free()` which can be triggered when
+  using `std.cache_req_body()`. (3433_)
+
+* Fix a panic situation in `http1_minimal_response()`. (3415_)
+
+* Fix an issue where a closed connection gets recycled for reuse. (3400_)
+
+* Fix an issue where `directors.round_robin()` can sometimes be empty
+  when a single backend is sick. (3474_)
+
+* Fix an issue where the wrong `Content-Length` is used when doing
+  gunzip on delivery. (3535_)
+
+* Fix an issue where `resp.reason` can race when used in `vcl_synth`.
+  (3546_)
+
+* Fix an issue where the `return(error)` status and reason are kept
+  when doing a backend retry. (3525_)
+
+.. _3556: https://github.com/varnishcache/varnish-cache/issues/3556
+.. _3593: https://github.com/varnishcache/varnish-cache/pull/3593
+.. _3537: https://github.com/varnishcache/varnish-cache/pull/3537
+.. _3536: https://github.com/varnishcache/varnish-cache/pull/3536
+.. _2796: https://github.com/varnishcache/varnish-cache/pull/2796
+.. _2556: https://github.com/varnishcache/varnish-cache/issues/2556
+.. _3560: https://github.com/varnishcache/varnish-cache/issues/3560
+.. _3587: https://github.com/varnishcache/varnish-cache/pull/3587
+.. _3569: https://github.com/varnishcache/varnish-cache/pull/3569
+.. _3558: https://github.com/varnishcache/varnish-cache/pull/3558
+.. _2999: https://github.com/varnishcache/varnish-cache/issues/2999
+.. _3433: https://github.com/varnishcache/varnish-cache/issues/3433
+.. _3415: https://github.com/varnishcache/varnish-cache/issues/3415
+.. _3400: https://github.com/varnishcache/varnish-cache/pull/3400
+.. _3474: https://github.com/varnishcache/varnish-cache/issues/3474
+.. _3535: https://github.com/varnishcache/varnish-cache/issues/3535
+.. _3546: https://github.com/varnishcache/varnish-cache/pull/3546
+.. _3525: https://github.com/varnishcache/varnish-cache/issues/3525
+
+================================
 Varnish Cache 6.0.7 (2020-11-06)
 ================================
 
