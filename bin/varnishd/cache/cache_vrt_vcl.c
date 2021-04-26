@@ -223,6 +223,19 @@ VRT_AddDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
 	return (vdir->dir);
 }
 
+void
+VRT_StaticDirector(VCL_BACKEND b)
+{
+	struct vcldir *vdir;
+
+	CHECK_OBJ_NOTNULL(b, DIRECTOR_MAGIC);
+	vdir = b->vdir;
+	CHECK_OBJ_NOTNULL(vdir, VCLDIR_MAGIC);
+	assert(vdir->refcnt == 1);
+	AZ(vdir->flags & VDIR_FLG_NOREFCNT);
+	vdir->flags |= VDIR_FLG_NOREFCNT;
+}
+
 static void
 retire_backend(VCL_BACKEND *bp)
 {
@@ -276,19 +289,23 @@ VRT_Assign_Backend(VCL_BACKEND *dst, VCL_BACKEND src)
 	CHECK_OBJ_ORNULL(src, DIRECTOR_MAGIC);
 	if (*dst != NULL) {
 		CHECK_OBJ_NOTNULL((*dst)->vdir, VCLDIR_MAGIC);
-		Lck_Lock((*dst)->mtx);
-		assert((*dst)->vdir->refcnt > 0);
-		busy = --(*dst)->vdir->refcnt;
-		Lck_Unlock((*dst)->mtx);
-		if (!busy)
-			retire_backend(dst);
+		if (!((*dst)->vdir->flags & VDIR_FLG_NOREFCNT)) {
+			Lck_Lock((*dst)->mtx);
+			assert((*dst)->vdir->refcnt > 0);
+			busy = --(*dst)->vdir->refcnt;
+			Lck_Unlock((*dst)->mtx);
+			if (!busy)
+				retire_backend(dst);
+		}
 	}
 	if (src != NULL) {
 		CHECK_OBJ_NOTNULL(src->vdir, VCLDIR_MAGIC);
-		Lck_Lock(src->mtx);
-		assert(src->vdir->refcnt > 0);
-		src->vdir->refcnt++;
-		Lck_Unlock(src->mtx);
+		if (!(src->vdir->flags & VDIR_FLG_NOREFCNT)) {
+			Lck_Lock(src->mtx);
+			assert(src->vdir->refcnt > 0);
+			src->vdir->refcnt++;
+			Lck_Unlock(src->mtx);
+		}
 	}
 	*dst = src;
 }

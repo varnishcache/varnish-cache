@@ -413,7 +413,7 @@ vbe_dir_event(const struct director *d, enum vcl_event_e ev)
 			VBP_Control(bp, 0);
 		VRT_VSC_Hide(bp->vsc_seg);
 	} else if (ev == VCL_EVENT_DISCARD) {
-		VRT_Assign_Backend(&bp->director, NULL);
+		VRT_DelDirector(&bp->director);
 	}
 }
 
