@@ -246,9 +246,6 @@ VUT_Init(const char *progname, int argc, char * const *argv,
 	VSIG_Arm_term();
 	VSIG_Arm_usr1();
 
-	ALLOC_OBJ(vut, VUT_MAGIC);
-	AN(vut);
-
 	if (argc == 2 && !strcmp(argv[1], "--synopsis"))
 		exit(vut_synopsis(voc));
 	if (argc == 2 && !strcmp(argv[1], "--options"))
@@ -258,6 +255,8 @@ VUT_Init(const char *progname, int argc, char * const *argv,
 		exit(0);
 	}
 
+	ALLOC_OBJ(vut, VUT_MAGIC);
+	AN(vut);
 	vut->progname = progname;
 	vut->g_arg = VSL_g_vxid;
 	vut->k_arg = -1;
