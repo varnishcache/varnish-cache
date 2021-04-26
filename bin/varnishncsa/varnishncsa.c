@@ -294,22 +294,22 @@ format_time(const struct format *format)
 		(void)localtime_r(&t, &tm);
 		AN(strftime(buf, sizeof buf, format->time_fmt, &tm));
 		AZ(VSB_cat(CTX.vsb, buf));
+		return (1);
+	case 's':
+		l = (long)(t_end - t_start);
 		break;
-	case 'T':
-		AN(format->time_fmt);
-		if (!strcmp(format->time_fmt, "s")) /* same as %T */
-			l = (long)(t_end - t_start);
-		else if (!strcmp(format->time_fmt, "ms"))
-			l = (long)((t_end - t_start) * 1e3);
-		else if (!strcmp(format->time_fmt, "us")) /* same as %D */
-			l = (long)((t_end - t_start) * 1e6);
-		else
-			WRONG("Unreachable branch");
-		AZ(VSB_printf(CTX.vsb, "%ld", l));
+	case 'm':
+		l = (long)((t_end - t_start) * 1e3);
+		break;
+	case 'u':
+		l = (long)((t_end - t_start) * 1e6);
 		break;
 	default:
 		WRONG("Time format specifier");
 	}
+
+	AN(format->time_fmt);
+	AZ(VSB_printf(CTX.vsb, format->time_fmt, l));
 
 	return (1);
 }
@@ -449,9 +449,18 @@ addf_time(char type, const char *fmt)
 	f->time_fmt = strdup(fmt);
 	AN(f->time_fmt);
 
-	if (f->time_type == 'T' && strcmp(f->time_fmt, "s") &&
-	    strcmp(f->time_fmt, "ms") && strcmp(f->time_fmt, "us"))
-		VUT_Error(vut, 1, "Unknown specifier: %%{%s}T", f->time_fmt);
+	if (f->time_type == 'T') {
+		if (!strcmp(f->time_fmt, "s"))
+			f->time_type = 's';
+		else if (!strcmp(f->time_fmt, "ms"))
+			f->time_type = 'm';
+		else if (!strcmp(f->time_fmt, "us"))
+			f->time_type = 'u';
+		else
+			VUT_Error(vut, 1, "Unknown specifier: %%{%s}T",
+			    f->time_fmt);
+		REPLACE(f->time_fmt, "%ld");
+	}
 
 	VTAILQ_INSERT_TAIL(&CTX.format, f, list);
 }
