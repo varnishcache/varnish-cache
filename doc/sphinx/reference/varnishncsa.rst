@@ -138,7 +138,17 @@ Supported formatters are:
 %{X}t
   In client mode, time when the request was received, in the format
   specified by X.  In backend mode, time when the request was sent.
-  The time specification format is the same as for strftime(3).
+  The time specification format is the same as for strftime(3) with
+  these extensions:
+
+  * ``%{sec}``: number of seconds since the Epoch
+  * ``%{msec}``: number of milliseconds since the Epoch
+  * ``%{usec}``: number of milliseconds since the Epoch
+  * ``%{msec_frac}``: millisecond fraction
+  * ``%{usec_frac}``: microsecond fraction
+
+  The extensions can not be combined with each other or strftime(3) in
+  the same specification. Use multiple ``%{X}t`` specifications instead.
 
 %T
   In client mode, time taken to serve the request, in seconds.  In

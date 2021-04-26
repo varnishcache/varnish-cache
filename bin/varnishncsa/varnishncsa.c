@@ -257,7 +257,7 @@ format_fragment(const struct format *format)
 static int v_matchproto_(format_f)
 format_time(const struct format *format)
 {
-	double t_start, t_end;
+	double t_start, t_end, d;
 	char *p;
 	char buf[64];
 	time_t t;
@@ -295,6 +295,21 @@ format_time(const struct format *format)
 		AN(strftime(buf, sizeof buf, format->time_fmt, &tm));
 		AZ(VSB_cat(CTX.vsb, buf));
 		return (1);
+	case '3':
+		l = (long)(modf(t_start, &d) * 1e3);
+		break;
+	case '6':
+		l = (long)(modf(t_start, &d) * 1e6);
+		break;
+	case 'S':
+		l = (long)t_start;
+		break;
+	case 'M':
+		l = (long)(t_start * 1e3);
+		break;
+	case 'U':
+		l = (long)(t_start * 1e6);
+		break;
 	case 's':
 		l = (long)(t_end - t_start);
 		break;
@@ -450,16 +465,39 @@ addf_time(char type, const char *fmt)
 	AN(f->time_fmt);
 
 	if (f->time_type == 'T') {
-		if (!strcmp(f->time_fmt, "s"))
+		if (!strcmp(fmt, "s"))
 			f->time_type = 's';
-		else if (!strcmp(f->time_fmt, "ms"))
+		else if (!strcmp(fmt, "ms"))
 			f->time_type = 'm';
-		else if (!strcmp(f->time_fmt, "us"))
+		else if (!strcmp(fmt, "us"))
 			f->time_type = 'u';
 		else
 			VUT_Error(vut, 1, "Unknown specifier: %%{%s}T",
-			    f->time_fmt);
+			    fmt);
 		REPLACE(f->time_fmt, "%ld");
+	} else if (f->time_type == 't') {
+		if (!strcmp(fmt, "sec")) {
+			f->time_type = 'S';
+			REPLACE(f->time_fmt, "%ld");
+		} else if (!strncmp(fmt, "msec", 4)) {
+			fmt += 4;
+			if (!strcmp(fmt, "_frac")) {
+				f->time_type = '3';
+				REPLACE(f->time_fmt, "%03ld");
+			} else if (*fmt == '\0') {
+				f->time_type = 'M';
+				REPLACE(f->time_fmt, "%ld");
+			}
+		} else if (!strncmp(fmt, "usec", 4)) {
+			fmt += 4;
+			if (!strcmp(fmt, "_frac")) {
+				f->time_type = '6';
+				REPLACE(f->time_fmt, "%06ld");
+			} else if (*fmt == '\0') {
+				f->time_type = 'U';
+				REPLACE(f->time_fmt, "%ld");
+			}
+		}
 	}
 
 	VTAILQ_INSERT_TAIL(&CTX.format, f, list);
