@@ -149,6 +149,11 @@ req (\d+) rxreq \5 - - - -$} \
 %{VSL:Begin[2]}x %{VSL:Timestamp:Resp}x \
 %{VSL:Timestamp:Resp[2]}x %{VSL:Timestamp:foo}x %{VSL:ReqURL[2]}x"}
 
+# times
+shell -match {^\{\d{4}-\d{2}-\d{2}\}T\{\d{2}:\d{2}:\d{2}\} \{\{\d{4}-\d{2}-\d{2}\T\d{2}:\d{2}:\d{2}\}\} \d+ \d+ \d+} \
+	{varnishncsa -n ${v1_name} -d -F "%{{%F}T{%T}}t %{{{%FT%T}}}t \
+%{s}T %{ms}T %{us}T"}
+
 process p1 -stop -screen-dump
 process p1 -expect-text 1 0 {/1?foo=bar HTTP/1.1" 200 100 "-" "-"}
 process p1 -expect-text 1 0 { - user [}

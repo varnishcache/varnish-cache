@@ -631,6 +631,7 @@ parse_format(const char *format)
 	const char *p, *q;
 	struct vsb *vsb;
 	char buf[256];
+	int b;
 
 	if (format == NULL)
 		format = FORMAT;
@@ -712,9 +713,16 @@ parse_format(const char *format)
 		case '{':
 			p++;
 			q = p;
-			while (*q && *q != '}')
+			b = 1;
+			while (*q) {
+				if (*q == '{')
+					b++;
+				else if (*q == '}')
+					if (--b == 0)
+						break;
 				q++;
-			if (!*q)
+			}
+			if (b > 0)
 				VUT_Error(vut, 1, "Unmatched bracket at: %s",
 				    p - 2);
 			assert((unsigned)(q - p) < sizeof buf - 1);
