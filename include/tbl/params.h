@@ -1832,10 +1832,14 @@ PARAM(
        /* func */      NULL
 )
 
+/* We have a strict min at the protocol default here. This is because we
+ * don't have the 'use settings only after peer ack' in place yet. If the
+ * value is lower than the protocol default, the very first stream could
+ * get a flow control error. */
 PARAM(
 	/* name */      h2_initial_window_size,
 	/* typ */       bytes_u,
-	/* min */       "0",
+	/* min */       "65535b",
 	/* max */       "2147483647b",
 	/* default */   "65535b",
 	/* units */     "bytes",
