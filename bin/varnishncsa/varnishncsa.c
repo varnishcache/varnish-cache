@@ -287,9 +287,10 @@ format_time(const struct format *format)
 	} else
 		t_end = t_start;
 
+	AN(format->time_fmt);
+
 	switch (format->time_type) {
 	case 't':
-		AN(format->time_fmt);
 		t = (long)floor(t_start);
 		(void)localtime_r(&t, &tm);
 		AN(strftime(buf, sizeof buf, format->time_fmt, &tm));
@@ -323,7 +324,6 @@ format_time(const struct format *format)
 		WRONG("Time format specifier");
 	}
 
-	AN(format->time_fmt);
 	AZ(VSB_printf(CTX.vsb, format->time_fmt, l));
 
 	return (1);
@@ -462,7 +462,6 @@ addf_time(char type, const char *fmt)
 	f->func = format_time;
 	f->time_type = type;
 	f->time_fmt = strdup(fmt);
-	AN(f->time_fmt);
 
 	if (f->time_type == 'T') {
 		if (!strcmp(fmt, "s"))
@@ -500,6 +499,7 @@ addf_time(char type, const char *fmt)
 		}
 	}
 
+	AN(f->time_fmt);
 	VTAILQ_INSERT_TAIL(&CTX.format, f, list);
 }
 
