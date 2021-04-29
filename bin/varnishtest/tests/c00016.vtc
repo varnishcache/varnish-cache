@@ -1,10 +1,15 @@
-varnishtest "Test Connection header handling"
+varnishtest "Test header filtering Table/Connection header"
 
 server s1 {
 	rxreq
 	expect req.url == "/foo"
 	expect req.http.Foo == "bar"
 	expect req.http.FromVCL == "123"
+	expect req.http.Proxy-Authenticate == "<undef>"
+	expect req.http.pROXY-aUTHENTICATE == "<undef>"
+	expect req.http.Proxy-Authenticat == "3"
+	expect req.http.Proxy-Authenticatd == "4"
+	expect req.http.Proxy-Authenticatef == "5"
 	txresp -hdr "Bar: foo" -body "foobar"
 
 	rxreq
@@ -23,7 +28,13 @@ varnish v1 -vcl+backend {
 } -start
 
 client c1 {
-	txreq -url "/foo" -hdr "Foo: bar"
+	txreq -url "/foo" -hdr "Foo: bar" \
+		-hdr "Proxy-Authenticate: 1" \
+		-hdr "pROXY-aUTHENTICATE: 2" \
+		-hdr "Proxy-Authenticat: 3" \
+		-hdr "Proxy-Authenticatd: 4" \
+		-hdr "Proxy-Authenticatef: 5"
+
 	rxresp
 	expect resp.http.Bar == "foo"
 

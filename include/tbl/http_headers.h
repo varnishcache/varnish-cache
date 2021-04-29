@@ -36,6 +36,9 @@
  *
  * see [RFC2616 13.5.1 End-to-end and Hop-by-hop Headers]
  *
+ * When fields with non-zero flags are added, the "perfect hash" at the
+ * top of cache_http.c will need to be reworked.  See the comments there
+ * for instructions.
  */
 
 /*lint -save -e525 -e539 */
