@@ -79,7 +79,7 @@ static struct vpf_fh *pfh2 = NULL;
 static struct vfil_path *vcl_path = NULL;
 static VTAILQ_HEAD(,f_arg) f_args = VTAILQ_HEAD_INITIALIZER(f_args);
 
-static const char opt_spec[] = "a:b:Cdf:Fh:i:I:j:l:M:n:P:p:r:S:s:T:t:VW:x:";
+static const char opt_spec[] = "?a:b:Cdf:Fh:i:I:j:l:M:n:P:p:r:S:s:T:t:VW:x:";
 
 int optreset;	// Some has it, some doesn't.  Cheaper than auto*
 
