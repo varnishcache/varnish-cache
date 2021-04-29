@@ -324,7 +324,9 @@ format_time(const struct format *format)
 		WRONG("Time format specifier");
 	}
 
+#ifdef __FreeBSD__
 	assert(fmtcheck(format->time_fmt, "%jd") == format->time_fmt);
+#endif
 	AZ(VSB_printf(CTX.vsb, format->time_fmt, l));
 
 	return (1);
