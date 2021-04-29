@@ -58,6 +58,131 @@ const char H__Proto[]	= "\007:proto:";
 const char H__Reason[]	= "\010:reason:";
 
 /*--------------------------------------------------------------------
+ * Perfect hash to rapidly recognize headers from tbl/http_headers.h
+ * which have non-zero flags.
+ *
+ * A suitable algorithm can be found with `gperf`:
+ *
+ *	tr '" ,' '   ' < include/tbl/http_headers.h |
+ *		awk '$1 == "H(" && $4 != "0" {print$2}' |
+ *		gperf --ignore-case
+ *
+ */
+
+static const unsigned char http_asso_values[256] = {
+	39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
+	39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
+	39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
+	39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
+	39, 39, 39, 39, 39, 25, 39,  0, 20,  5, 39, 39, 39, 15,  0, 39,
+	10, 39,  0, 39, 15, 10, 39, 39,  0, 39, 39, 39, 39, 39, 39, 39,
+	39, 39, 39, 39, 39, 25, 39,  0, 20,  5, 39, 39, 39, 15,  0, 39,
+	10, 39,  0, 39, 15, 10, 39, 39,  0, 39, 39, 39, 39, 39, 39, 39,
+	39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
+	39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
+	39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
+	39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
+	39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
+	39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
+	39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
+	39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39
+};
+
+static struct http_hdrflg {
+	char		*hdr;
+	unsigned	flag;
+} http_hdrflg[38 + 1] = {			// MAX_HASH_VALUE
+	{ NULL },
+	{ NULL },
+	{ H_TE },
+	{ H_Age },
+	{ NULL },
+	{ H_Range },
+	{ NULL },
+	{ H_Upgrade },
+	{ H_If_Range },
+	{ NULL },
+	{ H_Connection },
+	{ NULL },
+	{ H_Trailer },
+	{ H_If_None_Match },
+	{ NULL },
+	{ NULL },
+	{ NULL },
+	{ H_Transfer_Encoding },
+	{ H_Proxy_Authenticate },
+	{ H_Proxy_Authorization },
+	{ H_Keep_Alive },
+	{ NULL },
+	{ NULL },
+	{ H_If_Match },
+	{ H_HTTP2_Settings },
+	{ NULL },
+	{ NULL },
+	{ NULL },
+	{ H_Content_Range },
+	{ H_If_Unmodified_Since },
+	{ NULL },
+	{ NULL },
+	{ H_If_Modified_Since },
+	{ H_Cache_Control },
+	{ NULL },
+	{ NULL },
+	{ NULL },
+	{ NULL },
+	{ H_Accept_Ranges }
+};
+
+static struct http_hdrflg *
+http_hdr_flags(const char *b, const char *e)
+{
+	unsigned u;
+	struct http_hdrflg *retval;
+
+	if (e == NULL)
+		return(NULL);
+	assert(e > b);
+	u = (unsigned)(e - b);
+	assert(b + u == e);
+	if (u < 2 || u > 19)		// MIN_WORD_LENGTH & MAX_WORD_LENGTH
+		return(NULL);
+	if (u > 3)
+		u += http_asso_values[((const uint8_t*)b)[3]];
+	if (u > 38)			// MAX_HASH_VALUE
+		return(NULL);
+	retval = &http_hdrflg[u];
+	if (retval->hdr == NULL)
+		return(NULL);
+	if (strncasecmp(retval->hdr + 1, b, e - b))
+		return(NULL);
+	return(retval);
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+http_init_hdr(char *hdr, int flg)
+{
+	struct http_hdrflg *f;
+
+	hdr[0] = strlen(hdr + 1);
+	f = http_hdr_flags(hdr + 1, hdr + hdr[0]);
+	if (flg) {
+		AN(f);
+		assert(f->hdr == hdr);
+		f->flag = flg;
+	}
+}
+
+void
+HTTP_Init(void)
+{
+
+#define HTTPH(a, b, c) http_init_hdr(b, c);
+#include "tbl/http_headers.h"
+}
+
+/*--------------------------------------------------------------------
  * These two functions are in an incestuous relationship with the
  * order of macros in include/tbl/vsl_tags_http.h
  *
@@ -735,6 +860,7 @@ http_DoConnection(struct http *hp, enum sess_close sc_close)
 	const char *h, *b, *e;
 	enum sess_close retval;
 	unsigned u, v;
+	struct http_hdrflg *f;
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	assert(sc_close == SC_REQ_CLOSE || sc_close == SC_RESP_CLOSE);
@@ -756,13 +882,9 @@ http_DoConnection(struct http *hp, enum sess_close sc_close)
 			retval = SC_NULL;
 
 		/* Refuse removal of well-known-headers if they would pass. */
-/*lint -save -e506 [constant value boolean] */
-#define HTTPH(a, x, c)						\
-		if (!((c) & HTTPH_R_PASS) &&			\
-		    strlen(a) == u && !strncasecmp(a, b, u))	\
+		f = http_hdr_flags(b, e);
+		if (f != NULL && !(f->flag & HTTPH_R_PASS))
 			return (SC_RX_BAD);
-#include "tbl/http_headers.h"
-/*lint -restore */
 
 		for (v = HTTP_HDR_FIRST; v < hp->nhd; v++) {
 			Tcheck(hp->hd[v]);
@@ -898,13 +1020,16 @@ http_PutResponse(struct http *to, const char *proto, uint16_t status,
 static inline int
 http_isfiltered(const struct http *fm, unsigned u, unsigned how)
 {
+	const char *e;
+	const struct http_hdrflg *f;
+
 	if (fm->hdf[u] & HDF_FILTER)
 		return (1);
-#define HTTPH(a, b, c) \
-	if (((c) & how) && http_IsHdr(&fm->hd[u], (b))) \
-		return (1);
-#include "tbl/http_headers.h"
-	return (0);
+	e = strchr(fm->hd[u].b, ':');
+	if (e == NULL)
+		return (0);
+	f = http_hdr_flags(fm->hd[u].b, e);
+	return (f != NULL && f->flag & how);
 }
 
 int
@@ -1312,14 +1437,4 @@ http_Unset(struct http *hp, const char *hdr)
 		v++;
 	}
 	hp->nhd = v;
-}
-
-/*--------------------------------------------------------------------*/
-
-void
-HTTP_Init(void)
-{
-
-#define HTTPH(a, b, c) b[0] = (char)strlen(b + 1);
-#include "tbl/http_headers.h"
 }
