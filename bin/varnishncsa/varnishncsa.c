@@ -261,7 +261,7 @@ format_time(const struct format *format)
 	char *p;
 	char buf[64];
 	time_t t;
-	long l;
+	intmax_t l;
 	struct tm tm;
 
 	CHECK_OBJ_NOTNULL(format, FORMAT_MAGIC);
@@ -291,39 +291,40 @@ format_time(const struct format *format)
 
 	switch (format->time_type) {
 	case 't':
-		t = (long)floor(t_start);
+		t = (intmax_t)floor(t_start);
 		(void)localtime_r(&t, &tm);
 		AN(strftime(buf, sizeof buf, format->time_fmt, &tm));
 		AZ(VSB_cat(CTX.vsb, buf));
 		return (1);
 	case '3':
-		l = (long)(modf(t_start, &d) * 1e3);
+		l = (intmax_t)(modf(t_start, &d) * 1e3);
 		break;
 	case '6':
-		l = (long)(modf(t_start, &d) * 1e6);
+		l = (intmax_t)(modf(t_start, &d) * 1e6);
 		break;
 	case 'S':
-		l = (long)t_start;
+		l = (intmax_t)t_start;
 		break;
 	case 'M':
-		l = (long)(t_start * 1e3);
+		l = (intmax_t)(t_start * 1e3);
 		break;
 	case 'U':
-		l = (long)(t_start * 1e6);
+		l = (intmax_t)(t_start * 1e6);
 		break;
 	case 's':
-		l = (long)(t_end - t_start);
+		l = (intmax_t)(t_end - t_start);
 		break;
 	case 'm':
-		l = (long)((t_end - t_start) * 1e3);
+		l = (intmax_t)((t_end - t_start) * 1e3);
 		break;
 	case 'u':
-		l = (long)((t_end - t_start) * 1e6);
+		l = (intmax_t)((t_end - t_start) * 1e6);
 		break;
 	default:
 		WRONG("Time format specifier");
 	}
 
+	assert(fmtcheck(format->time_fmt, "%jd") == format->time_fmt);
 	AZ(VSB_printf(CTX.vsb, format->time_fmt, l));
 
 	return (1);
@@ -473,28 +474,28 @@ addf_time(char type, const char *fmt)
 		else
 			VUT_Error(vut, 1, "Unknown specifier: %%{%s}T",
 			    fmt);
-		REPLACE(f->time_fmt, "%ld");
+		REPLACE(f->time_fmt, "%jd");
 	} else if (f->time_type == 't') {
 		if (!strcmp(fmt, "sec")) {
 			f->time_type = 'S';
-			REPLACE(f->time_fmt, "%ld");
+			REPLACE(f->time_fmt, "%jd");
 		} else if (!strncmp(fmt, "msec", 4)) {
 			fmt += 4;
 			if (!strcmp(fmt, "_frac")) {
 				f->time_type = '3';
-				REPLACE(f->time_fmt, "%03ld");
+				REPLACE(f->time_fmt, "%03jd");
 			} else if (*fmt == '\0') {
 				f->time_type = 'M';
-				REPLACE(f->time_fmt, "%ld");
+				REPLACE(f->time_fmt, "%jd");
 			}
 		} else if (!strncmp(fmt, "usec", 4)) {
 			fmt += 4;
 			if (!strcmp(fmt, "_frac")) {
 				f->time_type = '6';
-				REPLACE(f->time_fmt, "%06ld");
+				REPLACE(f->time_fmt, "%06jd");
 			} else if (*fmt == '\0') {
 				f->time_type = 'U';
-				REPLACE(f->time_fmt, "%ld");
+				REPLACE(f->time_fmt, "%jd");
 			}
 		}
 	}
