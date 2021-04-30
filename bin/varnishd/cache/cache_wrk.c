@@ -532,7 +532,7 @@ pool_breed(struct pool *qp)
 	if (errno) {
 		FREE_OBJ(pi);
 		VSL(SLT_Debug, 0, "Create worker thread failed %d %s",
-		    errno, vstrerror(errno));
+		    errno, VAS_errtxt(errno));
 		Lck_Lock(&pool_mtx);
 		VSC_C_main->threads_failed++;
 		Lck_Unlock(&pool_mtx);

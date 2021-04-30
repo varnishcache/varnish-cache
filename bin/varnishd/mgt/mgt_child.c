@@ -629,7 +629,7 @@ MCH_Cli_Fail(void)
 		    " killed it.", (intmax_t)child_pid);
 	else
 		MGT_Complain(C_ERR, "Failed to kill child with PID %jd: %s",
-		    (intmax_t)child_pid, vstrerror(errno));
+		    (intmax_t)child_pid, VAS_errtxt(errno));
 }
 
 /*=====================================================================

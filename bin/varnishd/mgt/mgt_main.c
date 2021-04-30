@@ -232,7 +232,7 @@ make_secret(const char *dirname)
 	fdo = open(fn, O_RDWR|O_CREAT|O_TRUNC, 0640);
 	if (fdo < 0)
 		ARGV_ERR("Cannot create secret-file in %s (%s)\n",
-		    dirname, vstrerror(errno));
+		    dirname, VAS_errtxt(errno));
 
 	for (i = 0; i < 256; i++) {
 		AZ(VRND_RandomCrypto(&b, 1));
@@ -326,7 +326,7 @@ mgt_eric(void)
 
 	switch (fork()) {
 	case -1:
-		fprintf(stderr, "Fork() failed: %s\n", vstrerror(errno));
+		fprintf(stderr, "Fork() failed: %s\n", VAS_errtxt(errno));
 		exit(-1);
 	case 0:
 		closefd(&eric_pipes[0]);
@@ -426,7 +426,7 @@ mgt_f_read(const char *fn)
 	VFIL_setpath(&vcl_path, mgt_vcl_path);
 	if (VFIL_searchpath(vcl_path, NULL, &f, fn, &fnp) || f == NULL) {
 		ARGV_ERR("Cannot read -f file '%s' (%s)\n",
-		    fnp != NULL ? fnp : fn, vstrerror(errno));
+		    fnp != NULL ? fnp : fn, VAS_errtxt(errno));
 	}
 	free(fa->farg);
 	fa->farg = fnp;
@@ -454,7 +454,7 @@ create_pid_file(pid_t *ppid, const char *fmt, ...)
 		    (intmax_t)*ppid, VSB_data(vsb));
 	if (pfh == NULL)
 		ARGV_ERR("Could not open pid-file (%s): %s\n",
-		    VSB_data(vsb), vstrerror(errno));
+		    VSB_data(vsb), VAS_errtxt(errno));
 	VJ_master(JAIL_MASTER_LOW);
 	VSB_destroy(&vsb);
 	return (pfh);
@@ -667,7 +667,7 @@ main(int argc, char * const *argv)
 			I_fd = open(optarg, O_RDONLY);
 			if (I_fd < 0)
 				ARGV_ERR("\tCant open %s: %s\n",
-				    optarg, vstrerror(errno));
+				    optarg, VAS_errtxt(errno));
 			VJ_master(JAIL_MASTER_LOW);
 			break;
 		case 'l':
@@ -774,13 +774,13 @@ main(int argc, char * const *argv)
 		o = open(S_arg, O_RDONLY, 0);
 		if (o < 0)
 			ARGV_ERR("Cannot open -S file (%s): %s\n",
-			    S_arg, vstrerror(errno));
+			    S_arg, VAS_errtxt(errno));
 		closefd(&o);
 		VJ_master(JAIL_MASTER_LOW);
 	}
 
 	if (VIN_n_Arg(n_arg, &workdir) != 0)
-		ARGV_ERR("Invalid instance (-n) name: %s\n", vstrerror(errno));
+		ARGV_ERR("Invalid instance (-n) name: %s\n", VAS_errtxt(errno));
 
 	if (i_arg == NULL || *i_arg == '\0')
 		i_arg = mgt_HostName();
@@ -792,7 +792,7 @@ main(int argc, char * const *argv)
 
 	if (VJ_make_workdir(workdir))
 		ARGV_ERR("Cannot create working directory (%s): %s\n",
-		    workdir, vstrerror(errno));
+		    workdir, VAS_errtxt(errno));
 
 	VJ_master(JAIL_MASTER_SYSTEM);
 	AZ(system("rm -rf vmod_cache"));
@@ -801,7 +801,7 @@ main(int argc, char * const *argv)
 	if (VJ_make_subdir("vmod_cache", "VMOD cache", NULL)) {
 		ARGV_ERR(
 		    "Cannot create vmod directory (%s/vmod_cache): %s\n",
-		    workdir, vstrerror(errno));
+		    workdir, VAS_errtxt(errno));
 	}
 
 	if (C_flag)

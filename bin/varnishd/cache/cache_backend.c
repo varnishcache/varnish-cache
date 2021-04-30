@@ -162,7 +162,7 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 		Lck_Unlock(bp->director->mtx);
 		VSLb(bo->vsl, SLT_FetchError,
 		     "backend %s: fail errno %d (%s)",
-		     VRT_BACKEND_string(dir), err, vstrerror(err));
+		     VRT_BACKEND_string(dir), err, VAS_errtxt(err));
 		VSC_C_main->backend_fail++;
 		bo->htc = NULL;
 		return (NULL);
@@ -186,7 +186,7 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 		VSLb(bo->vsl, SLT_FetchError,
 		     "backend %s: proxy write errno %d (%s)",
 		     VRT_BACKEND_string(dir),
-		     errno, vstrerror(errno));
+		     errno, VAS_errtxt(errno));
 		// account as if connect failed - good idea?
 		VSC_C_main->backend_fail++;
 		bo->htc = NULL;

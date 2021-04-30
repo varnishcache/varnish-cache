@@ -151,18 +151,18 @@ VJ_make_workdir(const char *dname)
 		VJ_master(JAIL_MASTER_FILE);
 		if (mkdir(dname, 0755) < 0 && errno != EEXIST)
 			ARGV_ERR("Cannot create working directory '%s': %s\n",
-				 dname, vstrerror(errno));
+				 dname, VAS_errtxt(errno));
 	}
 
 	if (chdir(dname) < 0)
 		ARGV_ERR("Cannot change to working directory '%s': %s\n",
-		    dname, vstrerror(errno));
+		    dname, VAS_errtxt(errno));
 
 	i = open("_.testfile", O_RDWR|O_CREAT|O_EXCL, 0600);
 	if (i < 0)
 		ARGV_ERR("Cannot create test-file in %s (%s)\n"
 		    "Check permissions (or delete old directory)\n",
-		    dname, vstrerror(errno));
+		    dname, VAS_errtxt(errno));
 	closefd(&i);
 	AZ(unlink("_.testfile"));
 	VJ_master(JAIL_MASTER_LOW);
@@ -186,11 +186,11 @@ VJ_make_subdir(const char *dname, const char *what, struct vsb *vsb)
 		if (vsb != NULL) {
 			VSB_printf(vsb,
 			    "Cannot create %s directory '%s': %s\n",
-			    what, dname, vstrerror(e));
+			    what, dname, VAS_errtxt(e));
 		} else {
 			MGT_Complain(C_ERR,
 			    "Cannot create %s directory '%s': %s",
-			    what, dname, vstrerror(e));
+			    what, dname, VAS_errtxt(e));
 		}
 		return (1);
 	}

@@ -256,11 +256,11 @@ vju_make_subdir(const char *dname, const char *what, struct vsb *vsb)
 		if (vsb != NULL) {
 			VSB_printf(vsb,
 			    "Cannot create %s directory '%s': %s\n",
-			    what, dname, vstrerror(e));
+			    what, dname, VAS_errtxt(e));
 		} else {
 			MGT_Complain(C_ERR,
 			    "Cannot create %s directory '%s': %s",
-			    what, dname, vstrerror(e));
+			    what, dname, VAS_errtxt(e));
 		}
 		return (1);
 	}
@@ -280,7 +280,7 @@ vju_make_workdir(const char *dname, const char *what, struct vsb *vsb)
 
 	if (mkdir(dname, 0755) < 0 && errno != EEXIST) {
 		MGT_Complain(C_ERR, "Cannot create working directory '%s': %s",
-		    dname, vstrerror(errno));
+		    dname, VAS_errtxt(errno));
 		return (1);
 	}
 	//lint -e{570}

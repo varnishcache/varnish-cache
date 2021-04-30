@@ -233,7 +233,7 @@ V1L_Flush(const struct worker *wrk)
 		if (i <= 0) {
 			VSLb(v1l->vsl, SLT_Debug,
 			    "Write error, retval = %zd, len = %zd, errno = %s",
-			    i, v1l->liov, vstrerror(errno));
+			    i, v1l->liov, VAS_errtxt(errno));
 			AZ(v1l->werr);
 			if (errno == EPIPE)
 				v1l->werr = SC_REM_CLOSE;

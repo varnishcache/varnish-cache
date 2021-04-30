@@ -225,11 +225,11 @@ vbp_write(struct vbp_target *vt, int *sock, const void *buf, size_t len)
 		if (i < 0) {
 			vt->err_xmit |= 1;
 			bprintf(vt->resp_buf, "Write error %d (%s)",
-				errno, vstrerror(errno));
+				errno, VAS_errtxt(errno));
 		} else {
 			bprintf(vt->resp_buf,
 				"Short write (%d/%zu) error %d (%s)",
-				i, len, errno, vstrerror(errno));
+				i, len, errno, VAS_errtxt(errno));
 		}
 		VTCP_close(sock);
 		return (-1);
@@ -282,7 +282,7 @@ vbp_poke(struct vbp_target *vt)
 
 	s = VCP_Open(vt->conn_pool, t_end - t_now, &sa, &err);
 	if (s < 0) {
-		bprintf(vt->resp_buf, "Open error %d (%s)", err, vstrerror(err));
+		bprintf(vt->resp_buf, "Open error %d (%s)", err, VAS_errtxt(err));
 		Lck_Lock(&vbp_mtx);
 		if (vt->backend)
 			VBE_Connect_Error(vt->backend->vsc, err);
@@ -357,7 +357,7 @@ vbp_poke(struct vbp_target *vt)
 			if (!i)
 				errno = ETIMEDOUT;
 			bprintf(vt->resp_buf, "Poll error %d (%s)",
-			    errno, vstrerror(errno));
+			    errno, VAS_errtxt(errno));
 			i = -1;
 			break;
 		}
@@ -370,7 +370,7 @@ vbp_poke(struct vbp_target *vt)
 		if (i <= 0) {
 			if (i < 0)
 				bprintf(vt->resp_buf, "Read error %d (%s)",
-					errno, vstrerror(errno));
+					errno, VAS_errtxt(errno));
 			break;
 		}
 		rlen += i;

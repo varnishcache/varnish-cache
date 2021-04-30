@@ -76,7 +76,7 @@ vtcp_sa_to_ascii(const void *sa, socklen_t l, char *abuf, unsigned alen,
 		 */
 		fprintf(stderr, "getnameinfo = %d %s\n", i, gai_strerror(i));
 		if (i == EAI_SYSTEM)
-			fprintf(stderr, "errno = %d %s\n", errno, vstrerror(errno));
+			fprintf(stderr, "errno = %d %s\n", errno, VAS_errtxt(errno));
 		if (abuf != NULL)
 			(void)snprintf(abuf, alen, "Conversion");
 		if (pbuf != NULL)

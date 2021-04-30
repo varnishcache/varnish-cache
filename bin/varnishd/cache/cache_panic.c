@@ -769,7 +769,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 	pan_backtrace(pan_vsb);
 
 	if (err)
-		VSB_printf(pan_vsb, "errno = %d (%s)\n", err, vstrerror(err));
+		VSB_printf(pan_vsb, "errno = %d (%s)\n", err, VAS_errtxt(err));
 
 	pan_argv(pan_vsb);
 

@@ -260,7 +260,7 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 	VTCP_Assert(sz);
 	if (sz != strlen(h2_resp_101)) {
 		VSLb(h2->vsl, SLT_Debug, "H2: Upgrade: Error writing 101"
-		    " response: %s\n", vstrerror(errno));
+		    " response: %s\n", VAS_errtxt(errno));
 		return (h2_ou_rel(wrk, req));
 	}
 

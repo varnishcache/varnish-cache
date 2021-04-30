@@ -509,7 +509,7 @@ vca_accept_task(struct worker *wrk, void *arg)
 
 			VSL(SLT_SessError, 0, "%s %s %s %d %d \"%s\"",
 			    wa.acceptlsock->name, laddr, lport,
-			    ls->sock, i, vstrerror(i));
+			    ls->sock, i, VAS_errtxt(i));
 			(void)Pool_TrySumstat(wrk);
 			continue;
 		}
@@ -629,18 +629,18 @@ ccf_start(struct cli *cli, const char * const *av, void *priv)
 		    VTCP_fastopen(ls->sock, cache_param->listen_depth))
 			VSL(SLT_Error, 0,
 			    "Kernel TCP Fast Open: sock=%d, errno=%d %s",
-			    ls->sock, errno, vstrerror(errno));
+			    ls->sock, errno, VAS_errtxt(errno));
 		if (listen(ls->sock, cache_param->listen_depth)) {
 			VCLI_SetResult(cli, CLIS_CANT);
 			VCLI_Out(cli, "Listen failed on socket '%s': %s",
-			    ls->endpoint, vstrerror(errno));
+			    ls->endpoint, VAS_errtxt(errno));
 			return;
 		}
 		vca_tcp_opt_set(ls->sock, ls->uds, 1);
 		if (cache_param->accept_filter && VTCP_filter_http(ls->sock))
 			VSL(SLT_Error, 0,
 			    "Kernel filtering: sock=%d, errno=%d %s",
-			    ls->sock, errno, vstrerror(errno));
+			    ls->sock, errno, VAS_errtxt(errno));
 	}
 
 	need_test = 1;

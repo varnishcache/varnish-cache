@@ -103,7 +103,7 @@ STV_GetFile(const char *fn, int *fdp, const char **fnp, const char *ctx)
 		fd = mkstemp(buf);
 		if (fd < 0)
 			ARGV_ERR("(%s) \"%s\" mkstemp(%s) failed (%s)\n",
-			    ctx, fn, buf, vstrerror(errno));
+			    ctx, fn, buf, VAS_errtxt(errno));
 		AZ(unlink(buf));
 		*fnp = strdup(buf);
 		AN(*fnp);
@@ -112,7 +112,7 @@ STV_GetFile(const char *fn, int *fdp, const char **fnp, const char *ctx)
 		fd = open(fn, O_RDWR | O_LARGEFILE);
 		if (fd < 0)
 			ARGV_ERR("(%s) \"%s\" could not open (%s)\n",
-			    ctx, fn, vstrerror(errno));
+			    ctx, fn, VAS_errtxt(errno));
 		*fnp = fn;
 		retval = 0;
 	} else

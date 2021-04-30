@@ -134,7 +134,7 @@ MAC_reopen_sockets(void)
 			fail = err;
 		MGT_Complain(C_ERR,
 		    "Could not reopen listen socket %s: %s",
-		    ls->endpoint, vstrerror(err));
+		    ls->endpoint, VAS_errtxt(err));
 	}
 	return (fail);
 }
@@ -168,7 +168,7 @@ mk_listen_sock(const struct listen_arg *la, const struct suckaddr *sa)
 		FREE_OBJ(ls);
 		if (fail != EAFNOSUPPORT)
 			ARGV_ERR("Could not get socket %s: %s\n",
-			    la->endpoint, vstrerror(fail));
+			    la->endpoint, VAS_errtxt(fail));
 		return (NULL);
 	}
 	return (ls);
@@ -331,7 +331,7 @@ MAC_Arg(const char *spec)
 					 val);
 			if (errno)
 				ARGV_ERR("Cannot parse mode sub-arg %s in -a: "
-					 "%s\n", val, vstrerror(errno));
+					 "%s\n", val, VAS_errtxt(errno));
 			if (m <= 0 || m > 0777)
 				ARGV_ERR("Mode sub-arg %s out of range in -a\n",
 					 val);

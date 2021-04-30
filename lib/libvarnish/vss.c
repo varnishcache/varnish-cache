@@ -132,7 +132,7 @@ vss_resolve(const char *addr, const char *def_port, int family, int socktype,
 	free(p);
 
 	if (ret == EAI_SYSTEM)
-		*errp = vstrerror(errno);
+		*errp = VAS_errtxt(errno);
 	else if (ret != 0)
 		*errp = gai_strerror(ret);
 

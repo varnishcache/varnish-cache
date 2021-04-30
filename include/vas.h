@@ -44,7 +44,7 @@
 #include <errno.h>
 #include <stddef.h>	// size_t
 
-const char * vstrerror(int e);
+const char * VAS_errtxt(int e);
 
 enum vas_e {
 	VAS_WRONG,

@@ -42,7 +42,7 @@
 #include "vas.h"
 
 const char *
-vstrerror(int e)
+VAS_errtxt(int e)
 {
 	const char *p;
 	int oerrno = errno;
