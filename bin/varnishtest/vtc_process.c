@@ -304,7 +304,7 @@ term_expect_text(struct process *pp,
 	if (y < 0 || y > pp->nlin)
 		vtc_fatal(pp->vl, "YYY %d nlin %d", y, pp->nlin);
 	x = strtoul(col, NULL, 0);
-	for(l = 0; l < 10 && x > pp->ncol; l++)	// wait for screen change
+	for(l = 0; l <= 10 && x > pp->ncol; l++)	// wait for screen change
 		usleep(100000);
 	if (x < 0 || x > pp->ncol)
 		vtc_fatal(pp->vl, "XXX %d ncol %d", x, pp->ncol);
