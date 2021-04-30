@@ -301,7 +301,13 @@ term_expect_text(struct process *pp,
 	char *t;
 
 	y = strtoul(lin, NULL, 0);
+	if (y < 0 || y > pp->nlin)
+		vtc_fatal(pp->vl, "YYY %d nlin %d", y, pp->nlin);
 	x = strtoul(col, NULL, 0);
+	for(l = 0; l < 10 && x > pp->ncol; l++)	// wait for screen change
+		usleep(100000);
+	if (x < 0 || x > pp->ncol)
+		vtc_fatal(pp->vl, "XXX %d ncol %d", x, pp->ncol);
 	l = strlen(pat);
 	AZ(pthread_mutex_lock(&pp->mtx));
 	while (!term_match_text(pp, &x, &y, pat)) {
@@ -323,12 +329,18 @@ term_expect_text(struct process *pp,
 static void
 term_expect_cursor(const struct process *pp, const char *lin, const char *col)
 {
-	int x, y;
+	int x, y, l;
 	const teken_pos_t *pos;
 
 	pos = teken_get_cursor(pp->tek);
 	y = strtoul(lin, NULL, 0);
+	if (y < 0 || y > pp->nlin)
+		vtc_fatal(pp->vl, "YYY %d nlin %d", y, pp->nlin);
 	x = strtoul(col, NULL, 0);
+	for(l = 0; l < 10 && x > pp->ncol; l++)	// wait for screen change
+		usleep(100000);
+	if (x < 0 || x > pp->ncol)
+		vtc_fatal(pp->vl, "XXX %d ncol %d", x, pp->ncol);
 	if (y != 0 && (y-1) != pos->tp_row)
 		vtc_fatal(pp->vl, "Cursor on line %d (expected %d)",
 		    pos->tp_row + 1, y);
