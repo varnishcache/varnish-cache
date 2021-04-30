@@ -1,5 +1,7 @@
 varnishtest "Unformatable VCL_TIME"
 
+feature 64bit
+
 server s1 {
 	rxreq
 	txresp
