@@ -655,6 +655,8 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 VCL_BACKEND
 VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
 {
+
+	CHECK_OBJ_NOTNULL(vrt, VRT_BACKEND_MAGIC);
 	CHECK_OBJ_NOTNULL(vrt->endpoint, VRT_ENDPOINT_MAGIC);
 	return (VRT_new_backend_clustered(ctx, NULL, vrt));
 }
