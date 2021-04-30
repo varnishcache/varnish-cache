@@ -203,3 +203,11 @@ LIBVARNISHAPI_2.6 {	/* 2020-03-15 release */
     local:
 	*;
 };
+
+LIBVARNISHAPI_2.7 {	/* 2021-09-15 release */
+    global:
+	# vas.c
+	VAS_errtxt;
+    local:
+	*;
+};
