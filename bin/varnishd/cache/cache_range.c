@@ -68,7 +68,7 @@ vrg_range_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
 	int retval = 0;
-	ssize_t l;
+	ssize_t l = 0;
 	const char *p = ptr;
 	struct vrg_priv *vrg_priv;
 
@@ -76,20 +76,23 @@ vrg_range_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 	AN(priv);
 	CAST_OBJ_NOTNULL(vrg_priv, *priv, VRG_PRIV_MAGIC);
 
-	l = vrg_priv->range_low - vrg_priv->range_off;
-	if (l > 0) {
+	if (ptr != NULL) {
+		l = vrg_priv->range_low - vrg_priv->range_off;
+		if (l > 0) {
+			if (l > len)
+				l = len;
+			vrg_priv->range_off += l;
+			p += l;
+			len -= l;
+		}
+		l = vrg_priv->range_high - vrg_priv->range_off;
 		if (l > len)
 			l = len;
-		vrg_priv->range_off += l;
-		p += l;
-		len -= l;
+		vrg_priv->range_off += len;
+		if (vrg_priv->range_off >= vrg_priv->range_high)
+			act = VDP_END;
 	}
-	l = vrg_priv->range_high - vrg_priv->range_off;
-	if (l > len)
-		l = len;
-	vrg_priv->range_off += len;
-	if (vrg_priv->range_off >= vrg_priv->range_high)
-		act = VDP_END;
+
 	if (l > 0)
 		retval = VDP_bytes(vdx, act, p, l);
 	else if (l == 0 && act > VDP_NULL)
