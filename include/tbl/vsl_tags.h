@@ -289,16 +289,15 @@ SLTM(Fetch_Body, 0, "Body fetched from backend",
 SLTM(VCL_acl, 0, "VCL ACL check results",
 	"ACLs with the `+log` flag emits this record with the result.\n\n"
 	"The format is::\n\n"
-	"\t%s [%s [%s [fixed: %s]]]\n"
-	"\t|   |   |          |\n"
-	"\t|   |   |          +- Fixed entry (see vcc_acl_pedantic parameter)\n"
-	"\t|   |   +------------ Matching entry (only for MATCH)\n"
-	"\t|   +---------------- Name of the ACL for MATCH or NO_MATCH\n"
-	"\t+-------------------- MATCH, NO_MATCH or NO_FAM\n"
+	"\t%s %s [%s [fixed: %s]]\n"
+	"\t|  |   |          |\n"
+	"\t|  |   |          +- Fixed entry (see vcc_acl_pedantic parameter)\n"
+	"\t|  |   +------------ Matching entry (only for MATCH)\n"
+	"\t|  +---------------- Name of the ACL\n"
+	"\t+-------------------- MATCH or NO_MATCH\n"
 	"\n"
 	"MATCH denotes an ACL match\n"
 	"NO_MATCH denotes that a checked ACL has not matched\n"
-	"NO_FAM denotes a missing address family and should not occur.\n"
 	"\n"
 )
 

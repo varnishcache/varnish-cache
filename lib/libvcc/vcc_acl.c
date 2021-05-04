@@ -586,8 +586,8 @@ vcc_acl_emit(struct vcc *tl, const struct symbol *sym)
 	Fh(tl, 0, "\n");
 	Fh(tl, 0, "\tfam = VRT_VSA_GetPtr(ctx, p, &a);\n");
 	Fh(tl, 0, "\tif (fam < 0) {\n");
-	if (tl->acl->flag_log)
-		Fh(tl, 0, "\t\tVPI_acl_log(ctx, \"NO_FAM %s\");\n", sym->name);
+	Fh(tl, 0, "\t\tVRT_fail(ctx,");
+	Fh(tl, 0, " \"ACL %s: no protocol family\");\n", sym->name);
 	Fh(tl, 0, "\t\treturn(0);\n");
 	Fh(tl, 0, "\t}\n\n");
 	if (!tl->err_unref) {
