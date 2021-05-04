@@ -264,7 +264,8 @@ If an ACL entry specifies a host name which Varnish is unable to
 resolve, it will match any address it is compared to. Consequently,
 if it is preceded by a negation mark, it will reject any address it is
 compared to, which may not be what you intended. If the entry is
-enclosed in parentheses, however, it will simply be ignored.
+enclosed in parentheses, however, it will simply be ignored if the
+host name cannot be resolved.
 
 To match an IP address against an ACL, simply use the match operator::
 
@@ -272,6 +273,24 @@ To match an IP address against an ACL, simply use the match operator::
         return (pipe);
     }
 
+ACLs have feature flags which can be set or cleared for each ACL
+individually:
+
+* `+log` - Emit a `Acl` record in VSL to tell if a match was found
+  or not.
+
+* `+table` - Implement the ACL with a table instead of compiled code.
+  This runs a little bit slower, but compiles large ACLs much faster.
+
+* `-pedantic` - Allow masks to cover non-zero host-bits.
+  This allows the following to work::
+
+    acl foo -pedantic +log {
+        "firewall.example.com" / 24;
+    }
+
+  However, if the name resolves to both IPv4 and IPv6 you will still
+  get an error.
 
 VCL objects
 -----------

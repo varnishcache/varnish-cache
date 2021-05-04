@@ -53,6 +53,7 @@ struct acl {
 #define VCC_ACL_MAGIC		0xb9fb3cd0
 
 	int			flag_log;
+	int			flag_pedantic;
 	int			flag_table;
 
 	struct acl_tree		acl_tree;
@@ -201,14 +202,11 @@ vcc_acl_chk(struct vcc *tl, const struct acl_e *ae, const int l,
 	AN(sa);
 	VTCP_name(sa, h, sizeof h, NULL, 0);
 	bprintf(t, "%s/%d", h, ae->mask);
-	VSB_cat(tl->sb, "Address/Netmask mismatch, ");
-	if (tl->acl_pedantic != 0)
-		VSB_printf(tl->sb, "need be %s\n", t);
-	else
-		VSB_printf(tl->sb, "changed to %s\n", t);
-	vcc_ErrWhere(tl, ae->t_addr);
-	if (tl->acl_pedantic == 0)
-		vcc_Warn(tl);
+	if (tl->acl->flag_pedantic != 0) {
+		VSB_cat(tl->sb, "Non-zero bits in masked part, ");
+		VSB_printf(tl->sb, "(maybe use %s ?)\n", t);
+		vcc_ErrWhere(tl, ae->t_addr);
+	}
 	REPLACE(r, t);
 	return (r);
 }
@@ -697,6 +695,7 @@ vcc_ParseAcl(struct vcc *tl)
 
 	INIT_OBJ(acl, VCC_ACL_MAGIC);
 	tl->acl = acl;
+	acl->flag_pedantic = 1;
 	vcc_NextToken(tl);
 	VRBT_INIT(&acl->acl_tree);
 
@@ -717,6 +716,9 @@ vcc_ParseAcl(struct vcc *tl)
 			break;
 		if (vcc_IdIs(tl->t, "log")) {
 			acl->flag_log = sign;
+			vcc_NextToken(tl);
+		} else if (vcc_IdIs(tl->t, "pedantic")) {
+			acl->flag_pedantic = sign;
 			vcc_NextToken(tl);
 		} else if (vcc_IdIs(tl->t, "table")) {
 			acl->flag_table = sign;

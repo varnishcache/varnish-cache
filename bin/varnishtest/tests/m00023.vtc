@@ -12,7 +12,7 @@ varnish v1 -vcl+backend {
 		"127"/24;
 	}
 
-	acl locals {
+	acl locals -pedantic {
 		// We assume c1 and s1 comes from same address
 		"${s1_addr}"/24;
 	}

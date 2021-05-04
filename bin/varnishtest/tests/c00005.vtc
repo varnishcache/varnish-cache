@@ -72,7 +72,7 @@ varnish v1 -vcl {
 
 	backend dummy None;
 
-	acl acl1 +log {
+	acl acl1 +log -pedantic {
 		# bad notation (confusing)
 		"1.2.3.4"/24;
 		"1.2.3.66"/26;
@@ -149,14 +149,12 @@ client c1 {
 
 logexpect l1 -wait
 
-varnish v1 -cliok "param.set vcc_acl_pedantic on"
-
-varnish v1 -errvcl {Address/Netmask mismatch, need be 1.2.3.0/24} {
+varnish v1 -errvcl {Non-zero bits in masked part} {
 	import std;
 
 	backend dummy None;
 
-	acl acl1 {
+	acl acl1 +pedantic {
 		"1.2.3.4"/24;
 	}
 

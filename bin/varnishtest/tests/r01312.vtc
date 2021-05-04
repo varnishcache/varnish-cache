@@ -40,11 +40,11 @@ varnish v1 -vcl+backend {
 	import std;
 	import debug;
 
-	acl foo {
+	acl foo -pedantic {
 		"127.0.0.2";
 		"127.0.1"/19;
 	}
-	acl bar {
+	acl bar -pedantic {
 		"127.0.1.2";
 		"127.0.1"/19;
 	}
