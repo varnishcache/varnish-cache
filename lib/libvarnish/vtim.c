@@ -60,6 +60,7 @@
 #include <sys/time.h>
 
 #include <math.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -168,15 +169,20 @@ VTIM_format(vtim_real t, char *p)
 	time_t tt;
 
 	AN(p);
-	tt = (time_t) t;
-	if (gmtime_r(&tt, &tm) != NULL)
-		AN(snprintf(p, VTIM_FORMAT_SIZE,
-			"%s, %02d %s %4d %02d:%02d:%02d GMT",
-			weekday_name[tm.tm_wday],
-			tm.tm_mday, month_name[tm.tm_mon],
-			tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec));
-	else
-		*p = '\0';
+	*p = '\0';
+
+	if (t < (vtim_real)INTMAX_MIN || t > (vtim_real)INTMAX_MAX)
+		return;
+
+	tt = (time_t)(intmax_t)t;
+	if (gmtime_r(&tt, &tm) == NULL)
+		return;
+
+	AN(snprintf(p, VTIM_FORMAT_SIZE,
+	    "%s, %02d %s %4d %02d:%02d:%02d GMT",
+	    weekday_name[tm.tm_wday],
+	    tm.tm_mday, month_name[tm.tm_mon], tm.tm_year + 1900,
+	    tm.tm_hour, tm.tm_min, tm.tm_sec));
 }
 
 #ifdef TEST_DRIVER
