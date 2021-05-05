@@ -538,6 +538,10 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 		bo->uncacheable = 1;
 		wrk->handling = VCL_RET_DELIVER;
 	}
+	if (!bo->uncacheable || !bo->do_stream) {
+		/* Transit buffer should be disabled when not streaming. */
+		oc->boc->transit_buffer = 0;
+	}
 	if (bo->do_pass || bo->uncacheable)
 		oc->flags |= OC_F_HFM;
 
@@ -586,6 +590,12 @@ vbf_stp_fetchbody(struct worker *wrk, struct busyobj *bo)
 		}
 		AZ(vfc->failed);
 		l = est;
+		/* Limit fetches by pass readahead size */
+		oc = bo->fetch_objcore;
+		if (oc->boc->transit_buffer > 0 &&
+			l > oc->boc->transit_buffer) {
+			l = oc->boc->transit_buffer;
+		}
 		assert(l >= 0);
 		if (VFP_GetStorage(vfc, &l, &ptr) != VFP_OK) {
 			bo->htc->doclose = SC_RX_BODY;
@@ -658,7 +668,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (oc->flags & OC_F_PRIVATE)
 		AN(bo->uncacheable);
 
-	oc->boc->len_so_far = 0;
+	oc->boc->fetched_so_far = 0;
 
 	if (VFP_Open(bo->vfc)) {
 		(void)VFP_Error(bo->vfc, "Fetch pipeline failed to open");
@@ -723,7 +733,7 @@ vbf_stp_fetchend(struct worker *wrk, struct busyobj *bo)
 	   give predictable backend reuse behavior for varnishtest */
 	vbf_cleanup(bo);
 
-	AZ(ObjSetU64(wrk, oc, OA_LEN, oc->boc->len_so_far));
+	AZ(ObjSetU64(wrk, oc, OA_LEN, oc->boc->fetched_so_far));
 
 	if (bo->do_stream)
 		assert(oc->boc->state == BOS_STREAM);
@@ -884,7 +894,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	VSLb_ts_busyobj(bo, "Error", now);
 
 	if (oc->stobj->stevedore != NULL) {
-		oc->boc->len_so_far = 0;
+		oc->boc->fetched_so_far = 0;
 		ObjFreeObj(bo->wrk, oc);
 	}
 
@@ -955,6 +965,9 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 		VSB_destroy(&synth_body);
 		return (F_STP_FAIL);
 	}
+
+	/* Synthetics don't have any backend fetch to pace */
+	oc->boc->transit_buffer = 0;
 
 	ll = VSB_len(synth_body);
 	o = 0;

@@ -1,0 +1,22 @@
+varnishtest "LRU error without transit buffer"
+
+server s1 {
+    rxreq
+    txresp -bodylen 1850000
+} -start
+
+varnish v1 -arg "-s Transient=malloc,1m" -vcl+backend {
+    sub vcl_recv {
+        return (pass);
+    }
+    sub vcl_backend_response {
+        set beresp.transit_buffer = 4KB;
+    }
+} -start
+
+client c1 {
+    txreq
+    rxresp
+} -run
+
+varnish v1 -vsl_catchup

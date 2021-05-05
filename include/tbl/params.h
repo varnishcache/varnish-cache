@@ -465,6 +465,19 @@ PARAM_SIMPLE(
 )
 
 PARAM_SIMPLE(
+	/* name */	transit_buffer,
+	/* type */	bytes,
+	/* min */	"0k",
+	/* max */	NULL,
+	/* def */	"0k",
+	/* units */	"bytes",
+	/* descr */
+	"The default buffer amount used during a single private transaction.\n"
+	"Enabling this will prevent running out of memory when "
+	"there are big streaming transfers going on."
+)
+
+PARAM_SIMPLE(
 	/* name */	gzip_buffer,
 	/* type */	bytes_u,
 	/* min */	"2k",
