@@ -81,6 +81,7 @@ struct worker_priv {
 	struct objcore		*nobjcore;
 	void			*nhashpriv;
 	struct vxid_pool	vxid_pool[1];
+	struct vcl		*vcl;
 };
 
 /*--------------------------------------------------------------------
@@ -480,7 +481,7 @@ void VCL_VRT_Init(void);
 const char *VCL_Return_Name(unsigned);
 const char *VCL_Method_Name(unsigned);
 void VCL_Refresh(struct vcl **);
-void VCL_Recache(struct worker *, struct vcl **);
+void VCL_Recache(const struct worker *, struct vcl **);
 void VCL_Ref(struct vcl *);
 void VCL_Rel(struct vcl **);
 VCL_BACKEND VCL_DefaultDirector(const struct vcl *);

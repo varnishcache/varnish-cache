@@ -237,8 +237,6 @@ struct worker {
 
 	pthread_cond_t		cond;
 
-	struct vcl		*vcl;
-
 	struct ws		aws[1];
 
 	unsigned		cur_method;

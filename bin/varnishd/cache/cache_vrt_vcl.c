@@ -91,20 +91,20 @@ VCL_Refresh(struct vcl **vcc)
 }
 
 void
-VCL_Recache(struct worker *wrk, struct vcl **vclp)
+VCL_Recache(const struct worker *wrk, struct vcl **vclp)
 {
 
 	AN(wrk);
 	AN(vclp);
 	CHECK_OBJ_NOTNULL(*vclp, VCL_MAGIC);
 
-	if (*vclp != vcl_active || wrk->vcl == vcl_active) {
+	if (*vclp != vcl_active || wrk->wpriv->vcl == vcl_active) {
 		VCL_Rel(vclp);
 		return;
 	}
-	if (wrk->vcl != NULL)
-		VCL_Rel(&wrk->vcl);
-	wrk->vcl = *vclp;
+	if (wrk->wpriv->vcl != NULL)
+		VCL_Rel(&wrk->wpriv->vcl);
+	wrk->wpriv->vcl = *vclp;
 	*vclp = NULL;
 }
 

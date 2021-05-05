@@ -155,8 +155,8 @@ WRK_Thread(struct pool *qp, size_t stacksize, unsigned thread_workspace)
 	AZ(w->pool);
 
 	VSL(SLT_WorkThread, 0, "%p end", w);
-	if (w->vcl != NULL)
-		VCL_Rel(&w->vcl);
+	if (w->wpriv->vcl != NULL)
+		VCL_Rel(&w->wpriv->vcl);
 	AZ(pthread_cond_destroy(&w->cond));
 	HSH_Cleanup(w);
 	Pool_Sumstat(w);
@@ -433,7 +433,7 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 					 * so that we'll wake up and get a
 					 * chance to push stats. */
 					tmo = now + 1.;
-				else if (wrk->vcl == NULL)
+				else if (wrk->wpriv->vcl == NULL)
 					tmo = 0;
 				else if (DO_DEBUG(DBG_VTC_MODE))
 					tmo =  now + 1.;
@@ -468,8 +468,8 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 					// Presumably ETIMEDOUT but we do not
 					// assert this because pthread condvars
 					// are not airtight.
-					if (wrk->vcl)
-						VCL_Rel(&wrk->vcl);
+					if (wrk->wpriv->vcl)
+						VCL_Rel(&wrk->wpriv->vcl);
 					now = VTIM_real();
 				}
 			} while (tp == NULL);
@@ -483,8 +483,8 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 			memset(wrk->task, 0, sizeof wrk->task);
 			assert(wrk->pool == pp);
 			tp->func(wrk, tp->priv);
-			if (DO_DEBUG(DBG_VCLREL) && wrk->vcl != NULL)
-				VCL_Rel(&wrk->vcl);
+			if (DO_DEBUG(DBG_VCLREL) && wrk->wpriv->vcl != NULL)
+				VCL_Rel(&wrk->wpriv->vcl);
 			tpx = *wrk->task;
 			tp = &tpx;
 		} while (tp->func != NULL);
