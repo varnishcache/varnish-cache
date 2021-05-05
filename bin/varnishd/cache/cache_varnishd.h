@@ -65,6 +65,24 @@ struct req_step {
 extern const struct req_step R_STP_TRANSPORT[1];
 extern const struct req_step R_STP_RECV[1];
 
+struct vxid_pool {
+	uint32_t		next;
+	uint32_t		count;
+};
+
+/*--------------------------------------------------------------------
+ * Private part of worker threads
+ */
+
+struct worker_priv {
+	unsigned		magic;
+#define WORKER_PRIV_MAGIC	0x3047db99
+	struct objhead		*nobjhead;
+	struct objcore		*nobjcore;
+	void			*nhashpriv;
+	struct vxid_pool	vxid_pool[1];
+};
+
 /*--------------------------------------------------------------------
  * HTTP Protocol connection structure
  *
@@ -158,7 +176,7 @@ void BAN_RefBan(struct objcore *oc, struct ban *);
 vtim_real BAN_Time(const struct ban *ban);
 
 /* cache_busyobj.c */
-struct busyobj *VBO_GetBusyObj(struct worker *, const struct req *);
+struct busyobj *VBO_GetBusyObj(const struct worker *, const struct req *);
 void VBO_ReleaseBusyObj(struct worker *wrk, struct busyobj **busyobj);
 
 /* cache_director.c */

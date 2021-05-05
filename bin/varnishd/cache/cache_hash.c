@@ -115,15 +115,15 @@ hsh_prealloc(struct worker *wrk)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
-	if (wrk->nobjcore == NULL)
-		wrk->nobjcore = ObjNew(wrk);
-	CHECK_OBJ_NOTNULL(wrk->nobjcore, OBJCORE_MAGIC);
+	if (wrk->wpriv->nobjcore == NULL)
+		wrk->wpriv->nobjcore = ObjNew(wrk);
+	CHECK_OBJ_NOTNULL(wrk->wpriv->nobjcore, OBJCORE_MAGIC);
 
-	if (wrk->nobjhead == NULL) {
-		wrk->nobjhead = hsh_newobjhead();
+	if (wrk->wpriv->nobjhead == NULL) {
+		wrk->wpriv->nobjhead = hsh_newobjhead();
 		wrk->stats->n_objecthead++;
 	}
-	CHECK_OBJ_NOTNULL(wrk->nobjhead, OBJHEAD_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk->wpriv->nobjhead, OBJHEAD_MAGIC);
 
 	if (hash->prep != NULL)
 		hash->prep(wrk);
@@ -151,23 +151,26 @@ HSH_Private(const struct worker *wrk)
 }
 
 /*---------------------------------------------------------------------*/
+
 void
-HSH_Cleanup(struct worker *wrk)
+HSH_Cleanup(const struct worker *wrk)
 {
 
-	if (wrk->nobjcore != NULL)
-		ObjDestroy(wrk, &wrk->nobjcore);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk->wpriv, WORKER_PRIV_MAGIC);
+	if (wrk->wpriv->nobjcore != NULL)
+		ObjDestroy(wrk, &wrk->wpriv->nobjcore);
 
-	if (wrk->nobjhead != NULL) {
-		Lck_Delete(&wrk->nobjhead->mtx);
-		FREE_OBJ(wrk->nobjhead);
-		wrk->nobjhead = NULL;
+	if (wrk->wpriv->nobjhead != NULL) {
+		Lck_Delete(&wrk->wpriv->nobjhead->mtx);
+		FREE_OBJ(wrk->wpriv->nobjhead);
+		wrk->wpriv->nobjhead = NULL;
 		wrk->stats->n_objecthead--;
 	}
-	if (wrk->nhashpriv != NULL) {
+	if (wrk->wpriv->nhashpriv != NULL) {
 		/* XXX: If needed, add slinger method for this */
-		free(wrk->nhashpriv);
-		wrk->nhashpriv = NULL;
+		free(wrk->wpriv->nhashpriv);
+		wrk->wpriv->nhashpriv = NULL;
 	}
 }
 
@@ -285,6 +288,7 @@ HSH_Insert(struct worker *wrk, const void *digest, struct objcore *oc,
 	struct rush rush;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk->wpriv, WORKER_PRIV_MAGIC);
 	AN(digest);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AN(ban);
@@ -295,8 +299,8 @@ HSH_Insert(struct worker *wrk, const void *digest, struct objcore *oc,
 
 	hsh_prealloc(wrk);
 
-	AN(wrk->nobjhead);
-	oh = hash->lookup(wrk, digest, &wrk->nobjhead);
+	AN(wrk->wpriv->nobjhead);
+	oh = hash->lookup(wrk, digest, &wrk->wpriv->nobjhead);
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 	Lck_AssertHeld(&oh->mtx);
 	assert(oh->refcnt > 0);
@@ -329,15 +333,17 @@ HSH_Insert(struct worker *wrk, const void *digest, struct objcore *oc,
  */
 
 static struct objcore *
-hsh_insert_busyobj(struct worker *wrk, struct objhead *oh)
+hsh_insert_busyobj(const struct worker *wrk, struct objhead *oh)
 {
 	struct objcore *oc;
 
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk->wpriv, WORKER_PRIV_MAGIC);
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 	Lck_AssertHeld(&oh->mtx);
 
-	oc = wrk->nobjcore;
-	wrk->nobjcore = NULL;
+	oc = wrk->wpriv->nobjcore;
+	wrk->wpriv->nobjcore = NULL;
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 	AN(oc->flags & OC_F_BUSY);
@@ -372,6 +378,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	wrk = req->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk->wpriv, WORKER_PRIV_MAGIC);
 	CHECK_OBJ_NOTNULL(req->http, HTTP_MAGIC);
 	CHECK_OBJ_ORNULL(req->vcf, VCF_MAGIC);
 	AN(hash);
@@ -390,8 +397,8 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 		Lck_Lock(&oh->mtx);
 		req->hash_objhead = NULL;
 	} else {
-		AN(wrk->nobjhead);
-		oh = hash->lookup(wrk, req->digest, &wrk->nobjhead);
+		AN(wrk->wpriv->nobjhead);
+		oh = hash->lookup(wrk, req->digest, &wrk->wpriv->nobjhead);
 	}
 
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);

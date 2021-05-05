@@ -87,6 +87,7 @@ wrk_bgthread(void *arg)
 {
 	struct bgthread *bt;
 	struct worker wrk;
+	struct worker_priv wpriv[1];
 	struct VSC_main_wrk ds;
 	void *r;
 
@@ -94,6 +95,8 @@ wrk_bgthread(void *arg)
 	THR_SetName(bt->name);
 	THR_Init();
 	INIT_OBJ(&wrk, WORKER_MAGIC);
+	INIT_OBJ(wpriv, WORKER_PRIV_MAGIC);
+	wrk.wpriv = wpriv;
 	memset(&ds, 0, sizeof ds);
 	wrk.stats = &ds;
 
@@ -128,6 +131,7 @@ WRK_Thread(struct pool *qp, size_t stacksize, unsigned thread_workspace)
 	struct worker *w, ww;
 	struct VSC_main_wrk ds;
 	unsigned char ws[thread_workspace];
+	struct worker_priv wpriv[1];
 
 	AN(qp);
 	AN(stacksize);
@@ -136,6 +140,8 @@ WRK_Thread(struct pool *qp, size_t stacksize, unsigned thread_workspace)
 	THR_SetName("cache-worker");
 	w = &ww;
 	INIT_OBJ(w, WORKER_MAGIC);
+	INIT_OBJ(wpriv, WORKER_PRIV_MAGIC);
+	w->wpriv = wpriv;
 	w->lastused = NAN;
 	memset(&ds, 0, sizeof ds);
 	w->stats = &ds;

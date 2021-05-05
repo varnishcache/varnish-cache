@@ -87,23 +87,24 @@ enum {
 
 /*--------------------------------------------------------------------*/
 
-struct VSC_lck;
-struct VSC_main;
-struct VSC_main_wrk;
 struct ban;
 struct ban_proto;
 struct cli;
 struct http_conn;
+struct listen_sock;
 struct mempool;
 struct objcore;
 struct objhead;
 struct pool;
+struct req_step;
 struct sess;
 struct transport;
-struct worker;
-struct listen_sock;
 struct vcf;
-struct req_step;
+struct VSC_lck;
+struct VSC_main;
+struct VSC_main_wrk;
+struct worker;
+struct worker_priv;
 
 #define DIGEST_LEN		32
 
@@ -182,13 +183,6 @@ struct vsl_log {
 
 /*--------------------------------------------------------------------*/
 
-struct vxid_pool {
-	uint32_t		next;
-	uint32_t		count;
-};
-
-/*--------------------------------------------------------------------*/
-
 VRBT_HEAD(vrt_privs, vrt_priv);
 
 /* Worker pool stuff -------------------------------------------------*/
@@ -229,17 +223,15 @@ enum task_prio {
 struct worker {
 	unsigned		magic;
 #define WORKER_MAGIC		0x6391adcf
+	int			strangelove;
+	struct worker_priv	*wpriv;
 	struct pool		*pool;
-	struct objhead		*nobjhead;
-	struct objcore		*nobjcore;
-	void			*nhashpriv;
 	struct VSC_main_wrk	*stats;
 	struct vsl_log		*vsl;		// borrowed from req/bo
 
 	struct pool_task	task[1];
 
 	vtim_real		lastused;
-	int			strangelove;
 
 	struct v1l		*v1l;
 
@@ -248,8 +240,6 @@ struct worker {
 	struct vcl		*vcl;
 
 	struct ws		aws[1];
-
-	struct vxid_pool	vxid_pool;
 
 	unsigned		cur_method;
 	unsigned		seen_methods;
@@ -658,7 +648,7 @@ extern const char H__Reason[];
 
 /* cache_main.c */
 #define VXID(u) ((u) & VSL_IDENTMASK)
-uint32_t VXID_Get(struct worker *, uint32_t marker);
+uint32_t VXID_Get(const struct worker *, uint32_t marker);
 extern pthread_key_t witness_key;
 
 /* cache_lck.c */

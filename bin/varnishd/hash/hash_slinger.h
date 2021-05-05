@@ -66,7 +66,7 @@ void HSH_config(const char *);
 
 /* cache_hash.c */
 void HSH_Init(const struct hash_slinger *);
-void HSH_Cleanup(struct worker *);
+void HSH_Cleanup(const struct worker *);
 
 extern const struct hash_slinger hsl_slinger;
 extern const struct hash_slinger hcl_slinger;

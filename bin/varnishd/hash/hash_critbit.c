@@ -192,8 +192,8 @@ hcb_crit_bit(const uint8_t *digest, const struct objhead *oh2, struct hcb_y *y)
  */
 
 static struct objhead *
-hcb_insert(struct worker *wrk, struct hcb_root *root, const uint8_t *digest,
-    struct objhead **noh)
+hcb_insert(const struct worker *wrk, struct hcb_root *root,
+    const uint8_t *digest, struct objhead **noh)
 {
 	volatile uintptr_t *p;
 	uintptr_t pp;
@@ -242,8 +242,8 @@ hcb_insert(struct worker *wrk, struct hcb_root *root, const uint8_t *digest,
 
 	/* Insert */
 
-	CAST_OBJ_NOTNULL(y2, wrk->nhashpriv, HCB_Y_MAGIC);
-	wrk->nhashpriv = NULL;
+	CAST_OBJ_NOTNULL(y2, wrk->wpriv->nhashpriv, HCB_Y_MAGIC);
+	wrk->wpriv->nhashpriv = NULL;
 	(void)hcb_crit_bit(digest, oh2, y2);
 	s2 = (digest[y2->ptr] & y2->bitmask) != 0;
 	assert(s2 < 2);
@@ -405,7 +405,7 @@ hcb_lookup(struct worker *wrk, const void *digest, struct objhead **noh)
 
 	while (1) {
 		/* No luck, try with lock held, so we can modify tree */
-		CAST_OBJ_NOTNULL(y, wrk->nhashpriv, HCB_Y_MAGIC);
+		CAST_OBJ_NOTNULL(y, wrk->wpriv->nhashpriv, HCB_Y_MAGIC);
 		Lck_Lock(&hcb_mtx);
 		VSC_C_main->hcb_lock++;
 		oh = hcb_insert(wrk, &hcb_root, digest, noh);
@@ -440,10 +440,10 @@ hcb_prep(struct worker *wrk)
 {
 	struct hcb_y *y;
 
-	if (wrk->nhashpriv == NULL) {
+	if (wrk->wpriv->nhashpriv == NULL) {
 		ALLOC_OBJ(y, HCB_Y_MAGIC);
 		AN(y);
-		wrk->nhashpriv = y;
+		wrk->wpriv->nhashpriv = y;
 	}
 }
 

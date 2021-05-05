@@ -82,7 +82,7 @@ vbo_Free(struct busyobj **bop)
 }
 
 struct busyobj *
-VBO_GetBusyObj(struct worker *wrk, const struct req *req)
+VBO_GetBusyObj(const struct worker *wrk, const struct req *req)
 {
 	struct busyobj *bo;
 	uint16_t nhttp;

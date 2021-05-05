@@ -1138,7 +1138,8 @@ CNT_Request(struct req *req)
 		 * pointers still pointing to the things we expect.
 		 */
 		CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-		CHECK_OBJ_ORNULL(wrk->nobjhead, OBJHEAD_MAGIC);
+		CHECK_OBJ_NOTNULL(wrk->wpriv, WORKER_PRIV_MAGIC);
+		CHECK_OBJ_ORNULL(wrk->wpriv->nobjhead, OBJHEAD_MAGIC);
 		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 		AN(req->req_step);
@@ -1147,7 +1148,7 @@ CNT_Request(struct req *req)
 		if (DO_DEBUG(DBG_REQ_STATE))
 			cnt_diag(req, req->req_step->name);
 		nxt = req->req_step->func(wrk, req);
-		CHECK_OBJ_ORNULL(wrk->nobjhead, OBJHEAD_MAGIC);
+		CHECK_OBJ_ORNULL(wrk->wpriv->nobjhead, OBJHEAD_MAGIC);
 	}
 	wrk->vsl = NULL;
 	if (nxt == REQ_FSM_DONE) {
