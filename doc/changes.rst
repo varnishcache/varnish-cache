@@ -41,7 +41,7 @@ Varnish Cache 7.x.x (2021-09-15)
 * ACLs can be compiled into a table format, which runs a little bit
   slower, but compiles much faster for large ACLs.
 
-* ACLs default to `pedantic` which is no a per-ACL feature flag.
+* ACLs default to `pedantic` which is now a per-ACL feature flag.
 
 ================================
 Varnish Cache 6.6.0 (2021-03-15)
