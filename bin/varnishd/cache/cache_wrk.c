@@ -375,7 +375,7 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 {
 	struct pool_task *tp;
 	struct pool_task tpx, tps;
-	vtim_real tmo;
+	vtim_real tmo, now;
 	unsigned i, reserve;
 
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
@@ -420,6 +420,7 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 			wrk->task->priv = wrk;
 			VTAILQ_INSERT_HEAD(&pp->idle_queue, wrk->task, list);
 			pp->nidle++;
+			now = wrk->lastused;
 			do {
 				// see signaling_note at the top for explanation
 				if (DO_DEBUG(DBG_VCLREL) &&
@@ -431,16 +432,14 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 					 * stats. Set a 1 second timeout
 					 * so that we'll wake up and get a
 					 * chance to push stats. */
-					tmo = wrk->lastused + 1.;
+					tmo = now + 1.;
 				else if (wrk->vcl == NULL)
 					tmo = 0;
 				else if (DO_DEBUG(DBG_VTC_MODE))
-					tmo =  wrk->lastused+1.;
+					tmo =  now + 1.;
 				else
-					tmo =  wrk->lastused+60.;
+					tmo =  now + 60.;
 				i = Lck_CondWait(&wrk->cond, &pp->mtx, tmo);
-				if (i == ETIMEDOUT && wrk->vcl != NULL)
-					VCL_Rel(&wrk->vcl);
 				if (wrk->task->func != NULL) {
 					/* We have been handed a new task */
 					tpx = *wrk->task;
@@ -465,6 +464,13 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 					pp->a_stat = pp->b_stat;
 					pp->b_stat = NULL;
 					tp = &tps;
+				} else {
+					// Presumably ETIMEDOUT but we do not
+					// assert this because pthread condvars
+					// are not airtight.
+					if (wrk->vcl)
+						VCL_Rel(&wrk->vcl);
+					now = VTIM_real();
 				}
 			} while (tp == NULL);
 		}
