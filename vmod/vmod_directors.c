@@ -96,10 +96,13 @@ void
 vdir_delete(struct vdir **vdp)
 {
 	struct vdir *vd;
+	unsigned u;
 
 	TAKE_OBJ_NOTNULL(vd, vdp, VDIR_MAGIC);
 
 	AZ(vd->dir);
+	for (u = 0; u < vd->n_backend; u++)
+		VRT_Assign_Backend(&vd->backend[u], NULL);
 	free(vd->backend);
 	free(vd->weight);
 	AZ(pthread_rwlock_destroy(&vd->mtx));
@@ -147,7 +150,8 @@ vdir_add_backend(VRT_CTX, struct vdir *vd, VCL_BACKEND be, double weight)
 		vdir_expand(vd, vd->l_backend + 16);
 	assert(vd->n_backend < vd->l_backend);
 	u = vd->n_backend++;
-	vd->backend[u] = be;
+	vd->backend[u] = NULL;
+	VRT_Assign_Backend(&vd->backend[u], be);
 	vd->weight[u] = weight;
 	vdir_unlock(vd);
 }
@@ -173,6 +177,7 @@ vdir_remove_backend(VRT_CTX, struct vdir *vd, VCL_BACKEND be, unsigned *cur)
 		vdir_unlock(vd);
 		return;
 	}
+	VRT_Assign_Backend(&vd->backend[u], NULL);
 	n = (vd->n_backend - u) - 1;
 	memmove(&vd->backend[u], &vd->backend[u+1], n * sizeof(vd->backend[0]));
 	memmove(&vd->weight[u], &vd->weight[u+1], n * sizeof(vd->weight[0]));

@@ -140,7 +140,7 @@ VDI_GetHdr(struct busyobj *bo)
 
 	d = VDI_Resolve(ctx);
 	if (d != NULL) {
-		bo->director_resp = d;
+		VRT_Assign_Backend(&bo->director_resp, d);
 		AN(d->vdir->methods->gethdrs);
 		bo->director_state = DIR_S_HDRS;
 		i = d->vdir->methods->gethdrs(ctx, d);
@@ -214,7 +214,7 @@ VDI_Http1Pipe(struct req *req, struct busyobj *bo)
 		VSLb(bo->vsl, SLT_VCL_Error, "Backend does not support pipe");
 		return (SC_TX_ERROR);
 	}
-	bo->director_resp = d;
+	VRT_Assign_Backend(&bo->director_resp, d);
 	return (d->vdir->methods->http1pipe(ctx, d));
 }
 

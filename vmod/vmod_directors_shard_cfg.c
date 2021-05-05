@@ -195,7 +195,8 @@ shard_change_task_backend(VRT_CTX, struct sharddir *shardd,
 		return (NULL);
 	}
 
-	b->backend = be;
+	b->backend = NULL;
+	VRT_Assign_Backend(&b->backend, be);
 	b->ident = ident != NULL && *ident != '\0' ? ident : NULL;
 	b->rampup = rampup;
 
@@ -343,6 +344,7 @@ shardcfg_backend_free(struct shard_backend *f)
 {
 	if (f->freeptr)
 		free (f->freeptr);
+	VRT_Assign_Backend(&f->backend, NULL);
 	memset(f, 0, sizeof(*f));
 }
 
@@ -477,8 +479,7 @@ shardcfg_backend_clear(struct sharddir *shardd)
 
 
 static void
-shardcfg_backend_del(struct backend_reconfig *re,
-    const struct shard_backend *spec)
+shardcfg_backend_del(struct backend_reconfig *re, struct shard_backend *spec)
 {
 	unsigned i, max = re->shardd->n_backend + re->hole_n;
 	struct shard_backend * const bb = re->shardd->backend;
@@ -497,6 +498,7 @@ shardcfg_backend_del(struct backend_reconfig *re,
 				re->hole_i = i;
 		}
 	}
+	VRT_Assign_Backend(&spec->backend, NULL);
 }
 
 static void
