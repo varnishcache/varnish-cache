@@ -636,8 +636,6 @@ vcc_CompileSource(struct vcc *tl, struct source *sp, const char *jfile)
 	/* Register and lex the main source */
 	if (sp != NULL) {
 		AN(vcc_builtin);
-		VTAILQ_INSERT_TAIL(&tl->sources, sp, list);
-		sp->idx = tl->nsources++;
 		vcc_lex_source(tl, sp, 0);
 		if (tl->err)
 			return (NULL);
@@ -646,8 +644,6 @@ vcc_CompileSource(struct vcc *tl, struct source *sp, const char *jfile)
 	/* Register and lex the builtin VCL */
 	sp = vcc_new_source(tl->builtin_vcl, "Builtin");
 	assert(sp != NULL);
-	VTAILQ_INSERT_TAIL(&tl->sources, sp, list);
-	sp->idx = tl->nsources++;
 	vcc_lex_source(tl, sp, 1);
 	if (tl->err)
 		return (NULL);

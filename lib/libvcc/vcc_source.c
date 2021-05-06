@@ -121,8 +121,6 @@ vcc_include_file(struct vcc *tl, const struct source *src_sp,
 		return (-1);
 	}
 	sp->parent = src_sp;
-	VTAILQ_INSERT_TAIL(&tl->sources, sp, list);
-	sp->idx = tl->nsources++;
 	sp->parent_tok = parent_token;
 	vcc_lex_source(tl, sp, 0);
 	return (0);
@@ -257,6 +255,9 @@ void
 vcc_lex_source(struct vcc *tl, struct source *src_sp, int eoi)
 {
 	struct token *t;
+
+	VTAILQ_INSERT_TAIL(&tl->sources, src_sp, list);
+	src_sp->idx = tl->nsources++;
 
 	vcc_Lexer(tl, src_sp);
 	if (tl->err)
