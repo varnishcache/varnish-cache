@@ -97,29 +97,6 @@ vcl_cacheable(const struct vcl *vcl)
 }
 
 void
-VCL_Recache(const struct worker *wrk, struct vcl **vclp)
-{
-
-	AN(wrk);
-	AN(vclp);
-	CHECK_OBJ_NOTNULL(*vclp, VCL_MAGIC);
-
-	if (! vcl_cacheable(*vclp))
-		VCL_Rel(vclp);
-
-	if (wrk->wpriv->vcl != NULL &&
-	    (*vclp != NULL || ! vcl_cacheable(wrk->wpriv->vcl)))
-		VCL_Rel(&wrk->wpriv->vcl);
-
-	if (*vclp == NULL)
-		return;
-
-	AZ(wrk->wpriv->vcl);
-	wrk->wpriv->vcl = *vclp;
-	*vclp = NULL;
-}
-
-void
 VCL_Ref(struct vcl *vcl, const struct worker *wrk)
 {
 
@@ -138,21 +115,53 @@ VCL_Ref(struct vcl *vcl, const struct worker *wrk)
 	Lck_Unlock(&vcl_mtx);
 }
 
+/*
+ * We do not garbage collect discarded VCL's here, that happens in VCL_Poll()
+ * which is called from the CLI thread.
+ */
+
+#define vcl_rel(vcl) do {			\
+	assert((vcl)->busy > 0);		\
+	(vcl)->busy--;				\
+	(vcl) = NULL;				\
+	} while (0)
+
 void
-VCL_Rel(struct vcl **vcc)
+VCL_Rel(struct vcl **vclp, const struct worker *wrk)
 {
 	struct vcl *vcl;
 
-	TAKE_OBJ_NOTNULL(vcl, vcc, VCL_MAGIC);
+	CHECK_OBJ_ORNULL(wrk, WORKER_MAGIC);
+	TAKE_OBJ_NOTNULL(vcl, vclp, VCL_MAGIC);
+
+	/* lockless case first */
+	if (wrk != NULL && wrk->wpriv->vcl == NULL &&
+	    vcl_cacheable(vcl)) {
+		wrk->wpriv->vcl = vcl;
+		return;
+	}
+
 	Lck_Lock(&vcl_mtx);
-	assert(vcl->busy > 0);
-	vcl->busy--;
-	/*
-	 * We do not garbage collect discarded VCL's here, that happens
-	 * in VCL_Poll() which is called from the CLI thread.
-	 */
+
+	if (wrk == NULL || ! vcl_cacheable(vcl))
+		vcl_rel(vcl);
+
+	if (wrk != NULL && wrk->wpriv->vcl != NULL &&
+	    (vcl != NULL || ! vcl_cacheable(wrk->wpriv->vcl)))
+		vcl_rel(wrk->wpriv->vcl);
+
 	Lck_Unlock(&vcl_mtx);
+
+	if (wrk == NULL || vcl == NULL) {
+		AZ(vcl);
+		return;
+	}
+
+	AZ(wrk->wpriv->vcl);
+	wrk->wpriv->vcl = vcl;
 }
+
+#undef vcl_ref
 
 /*--------------------------------------------------------------------*/
 
@@ -399,7 +408,7 @@ VRT_VCL_Allow_Cold(struct vclref **refp)
 	VTAILQ_REMOVE(&vcl->ref_list, ref, list);
 	Lck_Unlock(&vcl_mtx);
 
-	VCL_Rel(&vcl);
+	VCL_Rel(&vcl, NULL);
 
 	REPLACE(ref->desc, NULL);
 	FREE_OBJ(ref);

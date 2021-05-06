@@ -481,9 +481,8 @@ void VCL_VRT_Init(void);
 const char *VCL_Return_Name(unsigned);
 const char *VCL_Method_Name(unsigned);
 void VCL_Refresh(struct vcl **);
-void VCL_Recache(const struct worker *, struct vcl **);
 void VCL_Ref(struct vcl *, const struct worker *);
-void VCL_Rel(struct vcl **);
+void VCL_Rel(struct vcl **, const struct worker *);
 VCL_BACKEND VCL_DefaultDirector(const struct vcl *);
 const struct vrt_backend_probe *VCL_DefaultProbe(const struct vcl *);
 

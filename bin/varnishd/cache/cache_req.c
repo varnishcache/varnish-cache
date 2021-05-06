@@ -230,7 +230,7 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	req->restarts = 0;
 
 	if (req->vcl != NULL)
-		VCL_Recache(wrk, &req->vcl);
+		VCL_Rel(&req->vcl, wrk);
 
 	/* Charge and log byte counters */
 	if (req->vsl->wid) {

@@ -180,7 +180,7 @@ VBO_ReleaseBusyObj(struct worker *wrk, struct busyobj **pbo)
 		    HSH_RUSH_POLICY);
 	}
 
-	VCL_Recache(wrk, &bo->vcl);
+	VCL_Rel(&bo->vcl, wrk);
 
 	memset(&bo->retries, 0,
 	    sizeof *bo - offsetof(struct busyobj, retries));
