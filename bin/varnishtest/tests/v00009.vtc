@@ -56,12 +56,12 @@ logexpect l1 -v v1 -d 1 -g vxid {
 	expect * 1004	VCL_Error {ban[(][)]: No ban conditions found[.]}
 	expect * 1004	VCL_Error {ban[(][)]: Expected comparison operator[.]}
 	expect * 1004	VCL_Error {ban[(][)]: Expected second operand[.]}
-	expect * 1004	VCL_Error {ban[(][)]: expected conditional [(]==, !=, ~ or !~[)] got "//"}
+	expect * 1004	VCL_Error {ban[(][)]: expected conditional [(]==, !=, ~, !~ or startswith[)] got "//"}
 	expect * 1004	VCL_Error {ban[(][)]: Expected && between conditions, found "//"}
 	expect * 1004	VCL_Error {ban[(][)]: Unknown or unsupported field "foo"}
 	expect * 1004	VCL_Error {ban[(][)]: expected duration <n.nn>.ms|s|m|h|d|w|y. got "4"}
 	expect * 1004	VCL_Error {ban[(][)]: expected conditional [(]==, !=, >, >=, < or <=[)] got "//"}
-	expect * 1004	VCL_Error {ban[(][)]: expected conditional [(]==, !=, ~ or !~[)] got ">"}
+	expect * 1004	VCL_Error {ban[(][)]: expected conditional [(]==, !=, ~, !~ or startswith[)] got ">"}
 
 
 } -start
@@ -80,7 +80,7 @@ client c1 {
 	expect resp.http.b4 == false
 	expect resp.http.b4e == {Expected second operand.}
 	expect resp.http.b5 == false
-	expect resp.http.b5e == {expected conditional (==, !=, ~ or !~) got "//"}
+	expect resp.http.b5e == {expected conditional (==, !=, ~, !~ or startswith) got "//"}
 	expect resp.http.b6 == false
 	expect resp.http.b6e == {Expected && between conditions, found "//"}
 	expect resp.http.b7 == false
@@ -90,7 +90,7 @@ client c1 {
 	expect resp.http.b9 == false
 	expect resp.http.b9e == {expected conditional (==, !=, >, >=, < or <=) got "//"}
 	expect resp.http.b10 == false
-	expect resp.http.b10e == {expected conditional (==, !=, ~ or !~) got ">"}
+	expect resp.http.b10e == {expected conditional (==, !=, ~, !~ or startswith) got ">"}
 	expect resp.http.b11 == true
 	expect resp.http.b11e == {}
 } -run

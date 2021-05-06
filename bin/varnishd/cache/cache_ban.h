@@ -83,10 +83,11 @@
 #define BANS_OPER_NEQ		0x11
 #define BANS_OPER_MATCH		0x12
 #define BANS_OPER_NMATCH	0x13
-#define BANS_OPER_GT		0x14
-#define BANS_OPER_GTE		0x15
-#define BANS_OPER_LT		0x16
-#define BANS_OPER_LTE		0x17
+#define BANS_OPER_START		0x14
+#define BANS_OPER_GT		0x15
+#define BANS_OPER_GTE		0x16
+#define BANS_OPER_LT		0x17
+#define BANS_OPER_LTE		0x18
 #define BANS_OPER_LIM_		(BANS_OPER_LTE + 1)
 
 #define BAN_OPERIDX(x) ((x) - BANS_OPER_OFF_)

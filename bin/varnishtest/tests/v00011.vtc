@@ -41,12 +41,12 @@ logexpect l1 -v v1 -d 1 -g vxid {
 	expect * 1004	VCL_Error {ban[(][)]: No ban conditions found[.]}
 	expect * 1004	VCL_Error {ban[(][)]: Expected comparison operator[.]}
 	expect * 1004	VCL_Error {ban[(][)]: Expected second operand[.]}
-	expect * 1004	VCL_Error {ban[(][)]: expected conditional [(]==, !=, ~ or !~[)] got "//"}
+	expect * 1004	VCL_Error {ban[(][)]: expected conditional [(]==, !=, ~, !~ or startswith[)] got "//"}
 	expect * 1004	VCL_Error {ban[(][)]: Expected && between conditions, found "//"}
 	expect * 1004	VCL_Error {ban[(][)]: Unknown or unsupported field "foo"}
 	expect * 1004	VCL_Error {ban[(][)]: expected duration <n.nn>.ms|s|m|h|d|w|y. got "4"}
 	expect * 1004	VCL_Error {ban[(][)]: expected conditional [(]==, !=, >, >=, < or <=[)] got "//"}
-	expect * 1004	VCL_Error {ban[(][)]: expected conditional [(]==, !=, ~ or !~[)] got ">"}
+	expect * 1004	VCL_Error {ban[(][)]: expected conditional [(]==, !=, ~, !~ or startswith[)] got ">"}
 
 
 } -start

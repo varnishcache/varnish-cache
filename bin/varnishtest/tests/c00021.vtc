@@ -16,6 +16,10 @@ server s1 {
 	rxreq
 	expect req.url == "/foo"
 	txresp -hdr "foo: bar8" -body "1111111\n"
+
+	rxreq
+	expect req.url == "/foo"
+	txresp -hdr "foo: bar9" -body "11111111\n"
 } -start
 
 varnish v1 -vcl+backend { } -start
@@ -120,4 +124,28 @@ client c1 {
 	expect resp.status == 200
 	expect resp.http.foo == bar8
 	expect resp.bodylen == 8
+} -run
+
+# startswith
+varnish v1 -cliok "ban req.url startswith /fo"
+varnish v1 -cliok "ban.list"
+
+client c1 {
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.foo == bar9
+	expect resp.bodylen == 9
+} -run
+
+# startswith, longer string
+varnish v1 -cliok "ban req.url startswith /foooo"
+varnish v1 -cliok "ban.list"
+
+client c1 {
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.foo == bar9
+	expect resp.bodylen == 9
 } -run

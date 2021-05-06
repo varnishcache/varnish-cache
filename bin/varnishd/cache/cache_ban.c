@@ -578,6 +578,12 @@ ban_evaluate(struct worker *wrk, const uint8_t *bsarg, struct objcore *oc,
 			    0, 0, NULL, 0) >= 0)
 				return (0);
 			break;
+		case BANS_OPER_START:
+			if (strlen(arg1) < strlen(bt.arg2) &&
+			    memcmp(arg1, bt.arg2, strlen(bt.arg2))) {
+				return (0);
+			}
+			break;
 		case BANS_OPER_GT:
 			AZ(arg1);
 			assert(! isnan(darg1));
