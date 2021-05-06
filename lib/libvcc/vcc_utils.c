@@ -385,3 +385,30 @@ vcc_IsFlag(struct vcc *tl)
 		vcc_NextToken(tl);
 	return (retval);
 }
+
+char *
+vcc_Dup_be(const char *b, const char *e)
+{
+	char *p;
+
+	AN(b);
+	if (e == NULL)
+		e = strchr(b, '\0');
+	AN(e);
+	assert(e >= b);
+
+	p = strndup(b, e - b);
+	AN(p);
+	return (p);
+}
+
+int
+vcc_Has_vcl_prefix(const char *b)
+{
+	return (
+	    (b[0] == 'v' || b[0] == 'V') &&
+	    (b[1] == 'c' || b[1] == 'C') &&
+	    (b[2] == 'l' || b[2] == 'L') &&
+	    (b[3] == '_')
+	);
+}

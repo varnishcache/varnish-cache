@@ -125,22 +125,6 @@ VCC_SymName(struct vsb *vsb, const struct symbol *sym)
 	vcc_symtabname(vsb, sym->symtab);
 }
 
-static char *
-vcc_dup_be(const char *b, const char *e)
-{
-	char *p;
-
-	AN(b);
-	if (e == NULL)
-		e = strchr(b, '\0');
-	AN(e);
-	assert(e >= b);
-
-	p = strndup(b, e - b);
-	AN(p);
-	return (p);
-}
-
 static struct symtab *
 vcc_symtab_new(const char *name)
 {
@@ -177,14 +161,14 @@ vcc_symtab_str(struct symtab *st, const char *b, const char *e)
 				continue;
 			if (i == 0 && l == st2->nlen)
 				break;
-			st3 = vcc_symtab_new(vcc_dup_be(b, q));
+			st3 = vcc_symtab_new(vcc_Dup_be(b, q));
 			st3->parent = st;
 			VTAILQ_INSERT_BEFORE(st2, st3, list);
 			st2 = st3;
 			break;
 		}
 		if (st2 == NULL) {
-			st2 = vcc_symtab_new(vcc_dup_be(b, q));
+			st2 = vcc_symtab_new(vcc_Dup_be(b, q));
 			st2->parent = st;
 			VTAILQ_INSERT_TAIL(&st->children, st2, list);
 		}
@@ -287,10 +271,7 @@ VCC_SymbolGet(struct vcc *tl, vcc_ns_t ns, vcc_kind_t kind,
 	AN(x);
 	AN(x->name);
 	if (tl->syntax >= VCL_41 && e == SYMTAB_CREATE && kind != SYM_SUB &&
-	    (tl->t->b[0] == 'v'|| tl->t->b[0] == 'V') &&
-	    (tl->t->b[1] == 'c'|| tl->t->b[1] == 'C') &&
-	    (tl->t->b[2] == 'l'|| tl->t->b[2] == 'L') &&
-	    (tl->t->b[3] == '_')) {
+	    vcc_Has_vcl_prefix(tl->t->b)) {
 		VSB_cat(tl->sb, "Symbols named 'vcl_*' are reserved.\nAt:");
 		vcc_ErrWhere(tl, tl->t);
 		return (NULL);

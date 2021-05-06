@@ -244,10 +244,7 @@ vcc_ParseFunction(struct vcc *tl)
 	p = sym->proc;
 	if (p == NULL) {
 		if (vcc_builtin != NULL && bsym == NULL &&
-		    (t->b[0] == 'v'|| t->b[0] == 'V') &&
-		    (t->b[1] == 'c'|| t->b[1] == 'C') &&
-		    (t->b[2] == 'l'|| t->b[2] == 'L') &&
-		    (t->b[3] == '_')) {
+		    vcc_Has_vcl_prefix(t->b)) {
 			VSB_printf(tl->sb,"The names 'vcl_*'"
 			    " are reserved for subroutines.\n");
 			vcc_ErrWhere(tl, t);

@@ -433,6 +433,8 @@ void vcc_Duration(struct vcc *tl, double *);
 unsigned vcc_UintVal(struct vcc *tl);
 int vcc_IsFlag(struct vcc *tl);
 int vcc_IsFlagRaw(struct vcc *, const struct token *, const struct token *);
+char *vcc_Dup_be(const char *b, const char *e);
+int vcc_Has_vcl_prefix(const char *b);
 
 /* vcc_var.c */
 sym_wildcard_t vcc_Var_Wildcard;
