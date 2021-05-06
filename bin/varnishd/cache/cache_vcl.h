@@ -71,6 +71,7 @@ extern struct lock		vcl_mtx;
 extern struct vcl		*vcl_active; /* protected by vcl_mtx */
 struct vcl *vcl_find(const char *);
 void VCL_Update(struct vcl **, struct vcl *);
+void vcldir_free(struct vcldir *);
 
 struct vcltemp {
 	const char * const	name;

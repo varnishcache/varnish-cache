@@ -457,11 +457,9 @@ vcl_KillBackends(struct vcl *vcl)
 		if (vdir == NULL)
 			break;
 		VTAILQ_REMOVE(&vcl->director_list, vdir, list);
-		REPLACE(vdir->cli_name, NULL);
 		AN(vdir->methods->destroy);
 		vdir->methods->destroy(vdir->dir);
-		FREE_OBJ(vdir->dir);
-		FREE_OBJ(vdir);
+		vcldir_free(vdir);
 	}
 	Lck_Unlock(&vcl_mtx);
 }
