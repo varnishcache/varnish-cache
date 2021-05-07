@@ -342,6 +342,13 @@ varnish v1 -errvcl {INT * BLOB not possible.} {
 	}
 }
 
+varnish v1 -errvcl {INT * BLOB not possible.} {
+	import blob;
+	sub vcl_deliver {
+		set resp.status = 100 * :4thASR0O18ZxnoKtc4zd8KuO25rPvwvMQyAvRfilz6o=:);
+	}
+}
+
 # XXX: should spot nonexistent storage
 varnish v1 -errvcl {Symbol not found: 'storage.foo'} {
 	sub vcl_backend_response {
