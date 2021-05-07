@@ -46,6 +46,8 @@ void v_noreturn_ VPI_Fail(const char *func, const char *file, int line,
  */
 
 struct vpi_ref {
+	unsigned	magic;
+#define VPI_REF_MAGIC	0xd955f567
 	unsigned	source;
 	unsigned	offset;
 	unsigned	line;
