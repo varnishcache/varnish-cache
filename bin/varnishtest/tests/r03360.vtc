@@ -4,12 +4,12 @@ shell {echo include '"_recurse.vcl";' > ${tmpdir}/_recurse.vcl}
 shell {echo include +glob '"${tmpdir}/_recurse[2].vcl";' > ${tmpdir}/_recurse1.vcl}
 shell {echo include '"_recurse1.vcl";' > ${tmpdir}/_recurse2.vcl}
 
-varnish v1 -arg "-p vcl_path=${tmpdir}" -errvcl "Recursive include of" {
+varnish v1 -arg "-p vcl_path=${tmpdir}" -errvcl "Recursive use of file" {
 	backend b { .host = "${localhost}"; }
 	include "_recurse.vcl" ;
 }
 
-varnish v2 -arg "-p vcl_path=${tmpdir}" -errvcl "Recursive include of" {
+varnish v2 -arg "-p vcl_path=${tmpdir}" -errvcl "Recursive use of file" {
 	backend b { .host = "${localhost}"; }
 	include "_recurse1.vcl" ;
 }

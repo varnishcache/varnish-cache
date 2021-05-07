@@ -79,12 +79,14 @@ void vcl_output_lang_h(struct vsb *sb);
 #define INDENT		2
 
 struct source {
+	unsigned		magic;
+#define SOURCE_MAGIC		0xf756fe82
 	VTAILQ_ENTRY(source)	list;
+	const char		*kind;
 	char			*name;
 	const char		*b;
 	const char		*e;
 	unsigned		idx;
-	char			*freeit;
 	const struct source	*parent;
 	const struct token	*parent_tok;
 	VTAILQ_HEAD(, token)	src_tokens;
@@ -364,8 +366,9 @@ void vcc_Parse_Init(struct vcc *);
 sym_act_f vcc_Act_If;
 
 /* vcc_source.c */
-struct source * vcc_new_source(const char *src, const char *name);
-struct source *vcc_file_source(const struct vcc *tl, const char *fn);
+struct source * vcc_new_source(const char *src, const char *kind,
+    const char *name);
+struct source *vcc_file_source(struct vcc *tl, const char *fn);
 void vcc_lex_source(struct vcc *tl, struct source *sp, int eoi);
 
 /* vcc_storage.c */

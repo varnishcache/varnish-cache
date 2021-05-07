@@ -41,15 +41,16 @@
 #include "vfil.h"
 
 struct source *
-vcc_new_source(const char *src, const char *name)
+vcc_new_source(const char *src, const char *kind, const char *name)
 {
 	struct source *sp;
 
 	AN(src);
 	AN(name);
-	sp = calloc(1, sizeof *sp);
+	ALLOC_OBJ(sp, SOURCE_MAGIC);
 	AN(sp);
 	REPLACE(sp->name, name);
+	sp->kind = kind;
 	sp->b = src;
 	sp->e = strchr(src, '\0');
 	VTAILQ_INIT(&sp->src_tokens);
@@ -58,31 +59,15 @@ vcc_new_source(const char *src, const char *name)
 
 /*--------------------------------------------------------------------*/
 
-static void
-vcc_destroy_source(struct source **spp)
-{
-	struct source *sp;
-
-	AN(spp);
-	sp = *spp;
-	*spp = NULL;
-
-	AN(sp);
-	free(sp->name);
-	free(sp->freeit);
-	free(sp);
-}
-
-/*--------------------------------------------------------------------*/
-
 struct source *
-vcc_file_source(const struct vcc *tl, const char *fn)
+vcc_file_source(struct vcc *tl, const char *fn)
 {
 	char *f, *fnp;
 	struct source *sp;
 
 	if (!tl->unsafe_path && strchr(fn, '/') != NULL) {
 		VSB_printf(tl->sb, "VCL filename '%s' is unsafe.\n", fn);
+		tl->err = 1;
 		return (NULL);
 	}
 	f = NULL;
@@ -90,70 +75,60 @@ vcc_file_source(const struct vcc *tl, const char *fn)
 		VSB_printf(tl->sb, "Cannot read file '%s' (%s)\n",
 		    fnp != NULL ? fnp : fn, strerror(errno));
 		free(fnp);
+		tl->err = 1;
 		return (NULL);
 	}
-	sp = vcc_new_source(f, fnp);
+	sp = vcc_new_source(f, "file", fnp);
 	free(fnp);
-	sp->freeit = f;
 	return (sp);
 }
 
 /*--------------------------------------------------------------------*/
 
-static int
+static void
 vcc_include_file(struct vcc *tl, const struct source *src_sp,
     const char *filename, const struct token *parent_token)
 {
 	struct source *sp;
-	const struct source *sp1;
 
 	sp = vcc_file_source(tl, filename);
 	if (sp == NULL)
-		return (-1);
+		return;
 
-	for (sp1 = src_sp; sp1 != NULL; sp1 = sp1->parent)
-		if (!strcmp(sp1->name, sp->name))
-			break;
-	if (sp1 != NULL) {
-		VSB_printf(tl->sb,
-		    "Recursive include of \"%s\"\n\n", sp->name);
-		vcc_destroy_source(&sp);
-		return (-1);
-	}
 	sp->parent = src_sp;
 	sp->parent_tok = parent_token;
 	vcc_lex_source(tl, sp, 0);
-	return (0);
 }
 
 /*--------------------------------------------------------------------*/
 
-static int
+static void
 vcc_include_glob_file(struct vcc *tl, const struct source *src_sp,
     const char *filename, const struct token *parent_token)
 {
 	glob_t	g[1];
-	int rv;
 	unsigned u;
+	int i;
 
 	memset(g, 0, sizeof g);
-	rv = glob(filename, 0, NULL, g);
-	switch (rv) {
+	i = glob(filename, 0, NULL, g);
+	switch (i) {
 	case 0:
-		for (u = 0; rv == 0 && u < g->gl_pathc; u++) {
-			rv = vcc_include_file(
+		for (u = 0; !tl->err && u < g->gl_pathc; u++) {
+			vcc_include_file(
 			    tl, src_sp, g->gl_pathv[u], parent_token);
 		}
 		break;
 	case GLOB_NOMATCH:
 		VSB_printf(tl->sb, "glob pattern matched no files.\n");
+		tl->err = 1;
 		break;
 	default:
-		VSB_printf(tl->sb, "glob(3) expansion failed (%d)\n", rv);
+		VSB_printf(tl->sb, "glob(3) expansion failed (%d)\n", i);
+		tl->err = 1;
 		break;
 	}
 	globfree(g);
-	return (rv);
 }
 
 /*--------------------------------------------------------------------
@@ -166,7 +141,6 @@ vcc_lex_include(struct vcc *tl, const struct source *src_sp, struct token *t)
 {
 	struct token *tok1;
 	int i, glob_flag = 0;
-	const struct source *sp1;
 	struct vsb *vsb = NULL;
 	const char *filename;
 	const char *p;
@@ -235,19 +209,13 @@ vcc_lex_include(struct vcc *tl, const struct source *src_sp, struct token *t)
 	}
 
 	if (glob_flag)
-		i = vcc_include_glob_file(tl, src_sp, filename, tok1);
+		vcc_include_glob_file(tl, src_sp, filename, tok1);
 	else
-		i = vcc_include_file(tl, src_sp, filename, tok1);
+		vcc_include_file(tl, src_sp, filename, tok1);
 	if (vsb != NULL)
 		VSB_destroy(&vsb);
-	if (i) {
+	if (tl->err)
 		vcc_ErrWhere(tl, tok1);
-		for (sp1 = src_sp; sp1 != NULL; sp1 = sp1->parent) {
-			if (sp1->parent_tok == NULL)
-				break;
-			vcc_ErrWhere(tl, sp1->parent_tok);
-		}
-	}
 	return (t);
 }
 
@@ -255,6 +223,20 @@ void
 vcc_lex_source(struct vcc *tl, struct source *src_sp, int eoi)
 {
 	struct token *t;
+	const struct source *sp1;
+
+	CHECK_OBJ_NOTNULL(src_sp, SOURCE_MAGIC);
+
+	for (sp1 = src_sp->parent; sp1 != NULL; sp1 = sp1->parent) {
+		if (!strcmp(sp1->name, src_sp->name) &&
+		    !strcmp(sp1->kind, src_sp->kind)) {
+			VSB_printf(tl->sb,
+			    "Recursive use of %s \"%s\"\n\n",
+			    src_sp->kind, src_sp->name);
+			tl->err = 1;
+			return;
+		}
+	}
 
 	VTAILQ_INSERT_TAIL(&tl->sources, src_sp, list);
 	src_sp->idx = tl->nsources++;

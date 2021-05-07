@@ -642,7 +642,7 @@ vcc_CompileSource(struct vcc *tl, struct source *sp, const char *jfile)
 	}
 
 	/* Register and lex the builtin VCL */
-	sp = vcc_new_source(tl->builtin_vcl, "Builtin");
+	sp = vcc_new_source(tl->builtin_vcl, "builtin", "<builtin>");
 	assert(sp != NULL);
 	vcc_lex_source(tl, sp, 1);
 	if (tl->err)
@@ -790,7 +790,7 @@ VCC_Compile(struct vcc *tl, struct vsb **sb,
 	}
 
 	if (vclsrc != NULL)
-		sp = vcc_new_source(vclsrc, vclsrcfile);
+		sp = vcc_new_source(vclsrc, "vcl.inline", vclsrcfile);
 	else
 		sp = vcc_file_source(tl, vclsrcfile);
 
