@@ -388,6 +388,10 @@ varnish v1 -errvcl {Symbol 'acl' has wrong type (reserved), expected acl:} {
 	sub vcl_recv { if (client.ip ~ acl) {} }
 }
 
+varnish v1 -errvcl {Cannot convert HTTP to STRING} {
+	sub vcl_synth { set resp.http.foo = resp; }
+}
+
 server s1 {
 	rxreq
 	txresp -hdr "bar: X"

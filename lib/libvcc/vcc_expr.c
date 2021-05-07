@@ -288,15 +288,9 @@ vcc_expr_tostring(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		(*e)->constant = constant;
 		(*e)->nstr = 1;
 	} else {
-		if ((*e)->fmt == BLOB)
-			VSB_cat(tl->sb,
-			    "Wrong use of BLOB value.\n"
-			    "BLOBs can only be used as arguments to VMOD"
-			    " functions.\n");
-		else
-			VSB_printf(tl->sb,
-			    "Cannot convert %s to STRING.\n",
-			    vcc_utype((*e)->fmt));
+		VSB_printf(tl->sb,
+		    "Cannot convert %s to STRING.\n",
+		    vcc_utype((*e)->fmt));
 		vcc_ErrWhere2(tl, (*e)->t1, tl->t);
 	}
 }
