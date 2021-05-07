@@ -121,8 +121,8 @@ logexpect l0 -v v1 -g raw -d 1 -m -q "vxid == 0" {
 	expect 0 =    Debug		{^objb.priv_task.. = .*"initY"}
 	expect 0 =    VCL_Log		{^objb initY}
 	expect ? =    Debug		{^priv_task_fini}
-	expect ? =    Debug		{^obj_priv_task_fini.*"initX"}
-	expect ? =    Debug		{^obj_priv_task_fini.*"initY"}
+	expect ? =    Debug		{^obj_priv_task_fini}
+	expect ? =    Debug		{^obj_priv_task_fini}
 	expect 0 =    Debug		{^vcl1: VCL_EVENT_WARM}
 
 	# need an anchor for the ? expects to begin
@@ -174,7 +174,7 @@ logexpect l1001 -v v1 -g vxid -q "vxid == 1001" {
 	expect 0 =    VCL_return	{^deliver}
 	expect 9 =    Timestamp	{^Resp}
 	expect ? =    Debug		{^priv_task_fini}
-	expect ? =    Debug		{^obj_priv_task_fini.*"d1001"}
+	expect ? =    Debug		{^obj_priv_task_fini}
 } -start
 
 logexpect l1002 -v v1 -g vxid -q "vxid == 1002" {
@@ -203,7 +203,7 @@ logexpect l1002 -v v1 -g vxid -q "vxid == 1002" {
 	expect 0 =    VCL_return	{^deliver}
 	expect 9 =    Timestamp	{^BerespBody}
 	expect ? =    Debug		{^priv_task_fini}
-	expect ? =    Debug		{^obj_priv_task_fini.*"r1002"}
+	expect ? =    Debug		{^obj_priv_task_fini}
 } -start
 
 logexpect l1006 -v v1 -g vxid -q "vxid == 1006" {
@@ -237,7 +237,7 @@ logexpect l1006 -v v1 -g vxid -q "vxid == 1006" {
 	expect 0 =    VCL_return	{^pipe}
 	expect 4 =    PipeAcct
 	expect ? =    Debug		{^priv_task_fini}
-	expect ? =    Debug		{^obj_priv_task_fini.*"p1006"}
+	expect ? =    Debug		{^obj_priv_task_fini}
 } -start
 
 client c1 {

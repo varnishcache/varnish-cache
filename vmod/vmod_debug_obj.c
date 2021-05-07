@@ -157,11 +157,11 @@ xyzzy_obj_test_priv_vcl(VRT_CTX,
 static void v_matchproto_(vmod_priv_fini_f)				\
 obj_priv_ ## name ## _fini(VRT_CTX, void *ptr)				\
 {									\
-	const char * const fmt = "obj_priv_" #name "_fini(%p = \"%s\")"; \
+	const char * const fmt = "obj_priv_" #name "_fini(%p)";		\
 									\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
 	AN(ptr);							\
-	mylog(ctx->vsl, SLT_Debug, fmt, ptr, (char *)ptr);		\
+	mylog(ctx->vsl, SLT_Debug, fmt, ptr);				\
 }									\
 									\
 static const struct vmod_priv_methods					\
