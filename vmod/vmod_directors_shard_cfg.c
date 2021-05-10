@@ -100,9 +100,9 @@ shard_change_fini(VRT_CTX, void * priv)
 }
 
 static const struct vmod_priv_methods shard_change_priv_methods[1] = {{
-		.magic = VMOD_PRIV_METHODS_MAGIC,
-		.type = "vmod_directors_shard_cfg",
-		.fini = shard_change_fini
+	.magic = VMOD_PRIV_METHODS_MAGIC,
+	.type = "vmod_directors_shard_cfg",
+	.fini = shard_change_fini
 }};
 
 static struct shard_change *

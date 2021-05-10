@@ -81,9 +81,9 @@ cobj_free(VRT_CTX, void *p)
 }
 
 static const struct vmod_priv_methods cookie_cobj_priv_methods[1] = {{
-		.magic = VMOD_PRIV_METHODS_MAGIC,
-		.type = "vmod_cookie_cobj",
-		.fini = cobj_free
+	.magic = VMOD_PRIV_METHODS_MAGIC,
+	.type = "vmod_cookie_cobj",
+	.fini = cobj_free
 }};
 
 static struct vmod_cookie *

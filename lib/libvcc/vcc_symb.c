@@ -236,24 +236,28 @@ const struct symxref XREF_DEF[1] = {{"xref_def"}};
 const struct symxref XREF_REF[1] = {{"xref_ref"}};
 
 const struct symmode SYMTAB_NOERR[1] = {{
-		.name = "sym_noerror",
-		.noerr = 1
-	}};
+	.name = "sym_noerror",
+	.noerr = 1
+}};
+
 const struct symmode SYMTAB_CREATE[1] = {{
-		.name = "sym_create"
-	}};
+	.name = "sym_create"
+}};
+
 const struct symmode SYMTAB_EXISTING[1] = {{
-		.name = "Symbol not found"
-	}};
+	.name = "Symbol not found"
+}};
+
 const struct symmode SYMTAB_PARTIAL[1] = {{
-		.name = "Symbol not found",
-		.partial = 1
-	}};
+	.name = "Symbol not found",
+	.partial = 1
+}};
+
 const struct symmode SYMTAB_PARTIAL_NOERR[1] = {{
-		.name = "Symbol not found",
-		.partial = 1,
-		.noerr = 1
-	}};
+	.name = "Symbol not found",
+	.partial = 1,
+	.noerr = 1
+}};
 
 struct symbol *
 VCC_SymbolGet(struct vcc *tl, vcc_ns_t ns, vcc_kind_t kind,

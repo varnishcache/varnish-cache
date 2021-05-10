@@ -242,10 +242,10 @@ priv_ ## name ## _fini(VRT_CTX, void *ptr)				\
 									\
 static const struct vmod_priv_methods					\
 xyzzy_test_priv_ ## name ## _methods[1] = {{				\
-		.magic = VMOD_PRIV_METHODS_MAGIC,			\
-		.type = "debug_test_priv_" #name,			\
-		.fini = priv_ ## name ## _fini				\
-	}};
+	.magic = VMOD_PRIV_METHODS_MAGIC,				\
+	.type = "debug_test_priv_" #name,				\
+	.fini = priv_ ## name ## _fini					\
+}};
 PRIV_FINI(call, 0)
 PRIV_FINI(task, 1)
 PRIV_FINI(top, 1)
@@ -426,9 +426,9 @@ priv_vcl_fini(VRT_CTX, void *priv)
 }
 
 static const struct vmod_priv_methods priv_vcl_methods[1] = {{
-		.magic = VMOD_PRIV_METHODS_MAGIC,
-		.type = "debug_priv_vcl_fini",
-		.fini = priv_vcl_fini
+	.magic = VMOD_PRIV_METHODS_MAGIC,
+	.type = "debug_priv_vcl_fini",
+	.fini = priv_vcl_fini
 }};
 
 static int
@@ -1201,9 +1201,9 @@ fail_f(VRT_CTX, void *priv)
 }
 
 static const struct vmod_priv_methods xyzzy_fail_task_fini_methods[1] = {{
-		.magic = VMOD_PRIV_METHODS_MAGIC,
-		.type = "debug_fail_task_fini",
-		.fini = fail_f
+	.magic = VMOD_PRIV_METHODS_MAGIC,
+	.type = "debug_fail_task_fini",
+	.fini = fail_f
 }};
 
 VCL_VOID v_matchproto_(td_xyzzy_debug_fail_task_fini)

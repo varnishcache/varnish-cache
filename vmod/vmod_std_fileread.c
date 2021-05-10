@@ -85,9 +85,9 @@ fini_frfile(VRT_CTX, void *ptr)
 }
 
 static const struct vmod_priv_methods frfile_methods[1] = {{
-		.magic = VMOD_PRIV_METHODS_MAGIC,
-		.type = "vmod_std_fileread",
-		.fini = fini_frfile
+	.magic = VMOD_PRIV_METHODS_MAGIC,
+	.type = "vmod_std_fileread",
+	.fini = fini_frfile
 }};
 
 static struct frfile *
