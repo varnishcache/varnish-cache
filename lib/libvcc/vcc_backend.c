@@ -338,12 +338,14 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 	const struct token *t_port = NULL;
 	const struct token *t_path = NULL;
 	const struct token *t_hosthdr = NULL;
+	const struct token *t_authority = NULL;
 	const struct token *t_did = NULL;
 	const struct token *t_preamble = NULL;
 	struct symbol *pb;
 	struct fld_spec *fs;
 	struct inifin *ifp;
 	struct vsb *vsb1;
+	struct symbol *via = NULL;
 	char *p;
 	unsigned u;
 	double t;
@@ -384,6 +386,8 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 	    "?max_connections",
 	    "?proxy_header",
 	    "?preamble",
+	    "?via",
+	    "?authority",
 	    NULL);
 
 	tl->fb = VSB_new_auto();
@@ -504,6 +508,19 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 			t_preamble = tl->t;
 			vcc_NextToken(tl);
 			SkipToken(tl, ';');
+		} else if (vcc_IdIs(t_field, "via")) {
+			via = VCC_SymbolGet(tl, SYM_MAIN, SYM_BACKEND,
+			    SYMTAB_EXISTING, XREF_REF);
+			ERRCHK(tl);
+			AN(via);
+			AN(via->rname);
+			SkipToken(tl, ';');
+		} else if (vcc_IdIs(t_field, "authority")) {
+			ExpectErr(tl, CSTR);
+			assert(tl->t->dec != NULL);
+			t_authority = tl->t;
+			vcc_NextToken(tl);
+			SkipToken(tl, ';');
 		} else {
 			ErrInternal(tl);
 			VSB_destroy(&tl->fb);
@@ -522,6 +539,12 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 		VSB_cat(tl->sb, "Expected .host or .path.\n");
 		vcc_ErrWhere(tl, t_be);
 		VSB_destroy(&tl->fb);
+		return;
+	}
+
+	if (via != NULL && t_path != NULL) {
+		VSB_printf(tl->sb, "Cannot set both .via and .path.\n");
+		vcc_ErrWhere(tl, t_be);
 		return;
 	}
 
@@ -560,6 +583,28 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 		Fb(tl, 0, "\"0.0.0.0\"");
 	Fb(tl, 0, ",\n");
 
+	/*
+	 * Emit the authority field, falling back to hosthdr, then host.
+	 *
+	 * When authority is "", sending the TLV is disabled.
+	 *
+	 * Falling back to host may result in an IP address in authority,
+	 * which is an illegal SNI HostName (RFC 4366 ch. 3.1). But we
+	 * document the potential error, rather than try to find out
+	 * whether or not Emit_Sockaddr() had to look up a name.
+	 */
+	if (via != NULL) {
+		AN(t_host);
+		Fb(tl, 0, "\t.authority = ");
+		if (t_authority != NULL)
+			EncToken(tl->fb, t_authority);
+		else if (t_hosthdr != NULL)
+			EncToken(tl->fb, t_hosthdr);
+		else
+			EncToken(tl->fb, t_host);
+		Fb(tl, 0, ",\n");
+	}
+
 	/* Close the struct */
 	Fb(tl, 0, "};\n");
 
@@ -572,8 +617,8 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 	ifp = New_IniFin(tl);
 	VSB_printf(ifp->ini,
 	    "\t%s =\n\t    VRT_new_backend_clustered(ctx, vsc_cluster,\n"
-	    "\t\t&vgc_dir_priv_%s);",
-	    vgcname, vgcname);
+	    "\t\t&vgc_dir_priv_%s, %s);",
+	    vgcname, vgcname, via ? via->rname : "NULL");
 	VSB_printf(ifp->fin, "\t\tVRT_delete_backend(ctx, &%s);", vgcname);
 }
 
