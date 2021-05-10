@@ -802,7 +802,7 @@ else
 		VCC_CC="exec cc $OCFLAGS -dynamiclib -Wl,-undefined,dynamic_lookup -o %o %s"
 		;;
 	*)
-		VCC_CC="exec $PTHREAD_CC $OCFLAGS $PTHREAD_CFLAGS -fpic -shared -Wl,-x -o %o %s"
+		VCC_CC="exec $PTHREAD_CC $OCFLAGS $PTHREAD_CFLAGS $SAN_CFLAGS -fpic -shared -Wl,-x -o %o %s"
 		;;
 	esac
 fi
