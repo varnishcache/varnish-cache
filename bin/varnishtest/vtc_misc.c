@@ -398,9 +398,9 @@ ipvx_works(const char *target)
  * 64bit
  *        The environment is 64 bits
  * ipv4
- *	  127.0.0.1 work
+ *        127.0.0.1 works
  * ipv6
- *	  [::1] work
+ *        [::1] works
  * dns
  *        DNS lookups are working
  * topbuild
