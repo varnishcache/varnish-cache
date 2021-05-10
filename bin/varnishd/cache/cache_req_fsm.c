@@ -223,7 +223,9 @@ cnt_deliver(struct worker *wrk, struct req *req)
 		return (REQ_FSM_MORE);
 	}
 
+	req->t_resp = W_TIM_real(wrk);
 	VCL_deliver_method(req->vcl, wrk, req, NULL, NULL);
+
 	VSLb_ts_req(req, "Process", W_TIM_real(wrk));
 
 	assert(req->restarts <= cache_param->max_restarts);
@@ -315,6 +317,7 @@ cnt_synth(struct worker *wrk, struct req *req)
 	synth_body = VSB_new_auto();
 	AN(synth_body);
 
+	req->t_resp = W_TIM_real(wrk);
 	VCL_synth_method(req->vcl, wrk, req, NULL, synth_body);
 
 	AZ(VSB_finish(synth_body));

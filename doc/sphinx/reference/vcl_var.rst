@@ -384,6 +384,14 @@ req.is_hitpass
 
 	If this request resulted in a hitpass
 
+req.time
+
+	Type: TIME
+
+	Readable from: client
+
+	The time when the request was fully received.
+
 req_top.method
 
 	Type: STRING
@@ -645,6 +653,14 @@ bereq.is_hitpass
 	Readable from: backend
 
 	If this backend request was caused by a hitpass.
+
+bereq.time
+
+	Type: TIME
+
+	Readable from: backend
+
+	The time when we started preparing the backend request.
 
 beresp
 ~~~~~~
@@ -997,6 +1013,16 @@ beresp.filters
 	After beresp.filters is set, using any of the beforementioned
 	``beresp.do_*`` switches is a VCL error.
 
+beresp.time
+
+	Type: TIME
+
+	Readable from: vcl_backend_response
+
+	When the backend headers were fully received just before
+	``vcl_backend_response {}`` was entered.
+
+
 obj
 ~~~
 
@@ -1121,6 +1147,15 @@ obj.can_esi
 	``vcl_deliver {}`` would cause the response body to be ESI
 	processed.
 
+obj.time
+
+	Type: TIME
+
+	Readable from: vcl_hit, vcl_deliver
+
+	The time the object was created from the perspective of the
+	server which generated it. This will roughly be equivalent to
+	``now`` - ``obj.age``.
 
 resp
 ~~~~
@@ -1263,6 +1298,15 @@ resp.filters
 	which otherwise determine the filter selection will have no
 	effiect. Using resp.do_esi is an error once resp.filters is
 	set.
+
+resp.time
+
+	Type: TIME
+
+	Readable from: vcl_deliver, vcl_synth
+
+	The time when we started preparing the response, just before
+	entering ``vcl_synth {}`` or ``vcl_deliver {}``.
 
 Special variables
 ~~~~~~~~~~~~~~~~~

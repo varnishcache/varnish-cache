@@ -16,6 +16,7 @@ varnish v1 -vcl+backend {
 		set req.http.recv_sub = now;
 	}
 	sub vcl_recv {
+		set req.http.time = req.time;
 		set req.http.recv = now;
 		vtc.sleep(1s);
 		call recv_sub;
@@ -25,9 +26,14 @@ varnish v1 -vcl+backend {
 	}
 	sub vcl_synth {
 		set resp.http.synth = now;
+		set req.http.time = req.time;
+		set resp.http.time = resp.time;
 	}
 
 	sub vcl_deliver {
+		set req.http.time = req.time;
+		set resp.http.time = resp.time;
+		set resp.http.objtime = obj.time;
 		set resp.http.deliver = now;
 		if (req.http.recv == req.http.deliver) {
 			return (fail);
@@ -41,6 +47,7 @@ varnish v1 -vcl+backend {
 		set bereq.http.bf_sub = now;
 	}
 	sub vcl_backend_fetch {
+		set bereq.http.time = bereq.time;
 		set bereq.http.bf = now;
 		vtc.sleep(1s);
 		call bf_sub;
@@ -52,6 +59,8 @@ varnish v1 -vcl+backend {
 		set beresp.http.br_sub = now;
 	}
 	sub vcl_backend_response {
+		set bereq.http.time = bereq.time;
+		set beresp.http.time = beresp.time;
 		set beresp.http.br = now;
 		vtc.sleep(1s);
 		call br_sub;
