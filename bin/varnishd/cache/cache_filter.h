@@ -34,6 +34,13 @@ struct vfp_entry;
 struct vfp_ctx;
 struct vdp_ctx;
 
+enum vrt_filter_err {
+	FLT_OK = 0,
+	FLT_DUPLICATE = -1,
+	FLT_CONFLICT = -2,	// name conflict
+	FLT_MISSING = -3
+};
+
 /* Fetch processors --------------------------------------------------*/
 
 enum vfp_status {
@@ -53,7 +60,7 @@ struct vfp {
 	vfp_init_f		*init;
 	vfp_pull_f		*pull;
 	vfp_fini_f		*fini;
-	const void		*priv1;
+	const void		*vfp_priv;
 };
 
 struct vfp_entry {
@@ -91,8 +98,8 @@ struct vfp_ctx {
 enum vfp_status VFP_Suck(struct vfp_ctx *, void *p, ssize_t *lp);
 enum vfp_status VFP_Error(struct vfp_ctx *, const char *fmt, ...)
     v_printflike_(2, 3);
-void VRT_AddVFP(VRT_CTX, const struct vfp *);
-void VRT_RemoveVFP(VRT_CTX, const struct vfp *);
+enum vrt_filter_err VRT_AddVFP(VRT_CTX, const struct vfp *);
+enum vrt_filter_err VRT_RemoveVFP(VRT_CTX, const struct vfp *);
 
 /* Deliver processors ------------------------------------------------*/
 
@@ -119,6 +126,7 @@ struct vdp {
 	vdp_init_f		*init;
 	vdp_bytes_f		*bytes;
 	vdp_fini_f		*fini;
+	const void		*vdp_priv;
 };
 
 struct vdp_entry {
@@ -147,5 +155,5 @@ struct vdp_ctx {
 };
 
 int VDP_bytes(struct vdp_ctx *, enum vdp_action act, const void *, ssize_t);
-void VRT_AddVDP(VRT_CTX, const struct vdp *);
-void VRT_RemoveVDP(VRT_CTX, const struct vdp *);
+enum vrt_filter_err VRT_AddVDP(VRT_CTX, const struct vdp *);
+enum vrt_filter_err VRT_RemoveVDP(VRT_CTX, const struct vdp *);
