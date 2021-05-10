@@ -790,7 +790,7 @@ VCC_Compile(struct vcc *tl, struct vsb **sb,
 	}
 
 	if (vclsrc != NULL)
-		sp = vcc_new_source(vclsrc, "vcl.inline", vclsrcfile);
+		sp = vcc_new_source(vclsrc, "", vclsrcfile);
 	else
 		sp = vcc_file_source(tl, vclsrcfile);
 
@@ -825,6 +825,7 @@ VCC_New(void)
 	VTAILQ_INIT(&tl->inifin);
 	VTAILQ_INIT(&tl->tokens);
 	VTAILQ_INIT(&tl->sources);
+	VTAILQ_INIT(&tl->macros);
 	VTAILQ_INIT(&tl->procs);
 	VTAILQ_INIT(&tl->sym_objects);
 	VTAILQ_INIT(&tl->sym_vmods);

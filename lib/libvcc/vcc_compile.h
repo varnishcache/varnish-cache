@@ -62,6 +62,7 @@ struct expr;
 struct method;
 struct proc;
 struct sockaddr_storage;
+struct source;
 struct symbol;
 struct symtab;
 struct token;
@@ -78,12 +79,16 @@ void vcl_output_lang_h(struct vsb *sb);
 
 #define INDENT		2
 
+typedef void src_ref_f(struct vcc *tl, struct source *src_sp);
+
 struct source {
 	unsigned		magic;
 #define SOURCE_MAGIC		0xf756fe82
 	VTAILQ_ENTRY(source)	list;
+	void			*priv;
 	const char		*kind;
 	char			*name;
+	src_ref_f		*ref_func;
 	const char		*b;
 	const char		*e;
 	unsigned		idx;
@@ -101,6 +106,17 @@ struct token {
 	VTAILQ_ENTRY(token)	src_list;
 	unsigned		cnt;
 	char			*dec;
+};
+
+struct macro {
+	unsigned		magic;
+#define MACRO_MAGIC		0x4304b8e3
+	char			*name;
+	struct token		*tdef;
+	const struct source	*source;
+	const char		*b;
+	const char		*e;
+	VTAILQ_ENTRY(macro)	macro_list;
 };
 
 /*---------------------------------------------------------------------*/
@@ -257,6 +273,7 @@ struct vcc {
 	/* Instance section */
 	struct tokenhead	tokens;
 	VTAILQ_HEAD(, source)	sources;
+	VTAILQ_HEAD(, macro)	macros;
 	unsigned		nsources;
 	struct token		*t;
 	int			indent;

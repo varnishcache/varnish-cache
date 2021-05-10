@@ -78,12 +78,20 @@ vcc_file_source(struct vcc *tl, const char *fn)
 		tl->err = 1;
 		return (NULL);
 	}
-	sp = vcc_new_source(f, "file", fnp);
+	sp = vcc_new_source(f, "", fnp);
 	free(fnp);
 	return (sp);
 }
 
 /*--------------------------------------------------------------------*/
+
+static void v_matchproto_(src_ref_f)
+vcc_include_ref(struct vcc *tl, struct source *src_sp)
+{
+
+	(void)src_sp;
+	VSB_printf(tl->sb, "Which was included from:\n");
+}
 
 static void
 vcc_include_file(struct vcc *tl, const struct source *src_sp,
@@ -97,6 +105,7 @@ vcc_include_file(struct vcc *tl, const struct source *src_sp,
 
 	sp->parent = src_sp;
 	sp->parent_tok = parent_token;
+	sp->ref_func = vcc_include_ref;
 	vcc_lex_source(tl, sp, 0);
 }
 
@@ -219,6 +228,117 @@ vcc_lex_include(struct vcc *tl, const struct source *src_sp, struct token *t)
 	return (t);
 }
 
+/*--------------------------------------------------------------------
+ * NB: We cannot use vcc_ErrWhere2() on tokens which are not on the
+ * NB: tl->tokens list.
+ */
+
+static void v_matchproto_(src_ref_f)
+vcc_macro_ref(struct vcc *tl, struct source *src_sp)
+{
+	struct macro *mc;
+
+	VSB_printf(tl->sb, "Macro %s was defined at:\n", src_sp->name);
+	CAST_OBJ_NOTNULL(mc, src_sp->priv, MACRO_MAGIC);
+	vcc_ErrWhere(tl, mc->tdef);
+	VSB_printf(tl->sb, "Macro %s was called at:\n", src_sp->name);
+}
+
+static struct token *
+vcc_lex_macro(struct vcc *tl, const struct source *src_sp, struct token *t)
+{
+	struct token *tok1, *tok2, *tname;
+	int depth = 0;
+	struct macro *mc;
+	char *name;
+
+	(void)src_sp;
+	assert(vcc_IdIs(t, "macro"));
+	tname = VTAILQ_NEXT(t, src_list);
+	if (tname->tok != ID) {
+		VSB_cat(tl->sb, "Macro name must be indentifier\n");
+		vcc_ErrWhere(tl, tname);
+		return (t);
+	}
+	name = vcc_Dup_be(tname->b, tname->e);
+	if (vcc_Has_vcl_prefix(name)) {
+		VSB_cat(tl->sb, "Macro name cannot begin with 'vcl_'\n");
+		vcc_ErrWhere(tl, tname);
+		return (t);
+	}
+	tok1 = VTAILQ_NEXT(tname, src_list);
+	if (tok1->tok != '{') {
+		VSB_cat(tl->sb,
+		     "macro definition must start with '{'\n");
+		vcc_ErrWhere(tl, tok1);
+		return (t);
+	}
+	tok2 = VTAILQ_NEXT(tok1, src_list);
+	while (1) {
+		if (tok2->tok == '{') {
+			depth++;
+		} else if (tok2->tok == '}') {
+			if (depth-- == 0)
+				break;
+		} else if (tok2->tok == EOI) {
+			VSB_cat(tl->sb,
+			     "Incomplete macro definition\n");
+			vcc_ErrWhere(tl, tname);
+			return (t);
+		}
+		tok2 = VTAILQ_NEXT(tok2, src_list);
+	}
+	VTAILQ_FOREACH(mc, &tl->macros, macro_list) {
+		if (vcc_IdIs(tname, mc->name))
+			break;
+	}
+	if (mc == NULL) {
+		ALLOC_OBJ(mc, MACRO_MAGIC);
+		AN(mc);
+		VTAILQ_INSERT_TAIL(&tl->macros, mc, macro_list);
+	}
+	mc->name = name;
+	mc->source = src_sp;
+	mc->b = tok1->e;
+	mc->e = tok2->b;
+	mc->tdef = tname;
+	return (tok2);
+}
+
+static int
+vcc_expand_macro(struct vcc *tl, const struct source *src_sp,
+    const struct token *tname)
+{
+	struct macro *mc;
+	struct source *mcsrc;
+	char *p;
+
+	assert(tname->tok == ID);
+
+	VTAILQ_FOREACH(mc, &tl->macros, macro_list) {
+		if (vcc_IdIs(tname, mc->name))
+			break;
+	}
+	if (mc == NULL)
+		return (0);
+	p = vcc_Dup_be(mc->b, mc->e);
+	AN(p);
+	mcsrc = vcc_new_source(p, "macro", mc->name);
+	mcsrc->priv = mc;
+	mcsrc->kind = "macro ";
+	mcsrc->parent = mc->source;
+	mcsrc->idx = tl->nsources++;
+	mcsrc->parent = src_sp;
+	mcsrc->parent_tok = tname;
+	mcsrc->ref_func = vcc_macro_ref;
+	VTAILQ_INSERT_TAIL(&tl->sources, mcsrc, list);
+	vcc_lex_source(tl, mcsrc, 0);
+	if (tl->err)
+		vcc_ErrWhere(tl, tname);
+	return (1);
+}
+
+
 void
 vcc_lex_source(struct vcc *tl, struct source *src_sp, int eoi)
 {
@@ -231,7 +351,7 @@ vcc_lex_source(struct vcc *tl, struct source *src_sp, int eoi)
 		if (!strcmp(sp1->name, src_sp->name) &&
 		    !strcmp(sp1->kind, src_sp->kind)) {
 			VSB_printf(tl->sb,
-			    "Recursive use of %s \"%s\"\n\n",
+			    "Recursive use of %s'%s' at:\n",
 			    src_sp->kind, src_sp->name);
 			tl->err = 1;
 			return;
@@ -248,12 +368,16 @@ vcc_lex_source(struct vcc *tl, struct source *src_sp, int eoi)
 		if (!eoi && t->tok == EOI)
 			break;
 
-		if (t->tok == ID && vcc_IdIs(t, "include")) {
+		if (t->tok == ID && vcc_IdIs(t, "include"))
 			t = vcc_lex_include(tl, src_sp, t);
-		} else {
+		else if (t->tok == ID && vcc_IdIs(t, "macro"))
+			t = vcc_lex_macro(tl, src_sp, t);
+		else if (t->tok != ID || !vcc_expand_macro(tl, src_sp, t))
 			VTAILQ_INSERT_TAIL(&tl->tokens, t, list);
-		}
-		if (tl->err)
+		if (tl->err) {
+			if (src_sp->ref_func)
+				src_sp->ref_func(tl, src_sp);
 			return;
+		}
 	}
 }

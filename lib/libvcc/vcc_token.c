@@ -109,8 +109,10 @@ vcc_icoord(struct vsb *vsb, const struct token *t, int tail)
 			pos++;
 	}
 	VSB_cat(vsb, "(");
-	if (tail < 2)
-		VSB_printf(vsb, "'%s' Line %u ", t->src->name, lin);
+	if (tail < 2) {
+		VSB_printf(vsb, "%s'%s' Line %u ",
+		    t->src->kind, t->src->name, lin);
+	}
 	VSB_printf(vsb, "Pos %u)", pos + 1);
 }
 

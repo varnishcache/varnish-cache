@@ -1,0 +1,37 @@
+varnishtest "VCL macros"
+
+varnish v1 -errvcl {Recursive use of macro 'bar'} {
+	macro foo {
+		bar
+	}
+	macro bar {
+		foo
+	}
+
+	backend bar;
+}
+
+server s1 {
+	rxreq
+	expect req.http.foo == 11234
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	macro m_foo {
+		1234
+	}
+
+	sub vcl_recv {
+		set req.http.foo = 10000 + m_foo;
+	}
+	sub vcl_deliver {
+		set resp.http.foo = 20000 + m_foo;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.foo == 21234
+} -run
