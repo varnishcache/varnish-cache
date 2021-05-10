@@ -440,6 +440,12 @@ static const unsigned no_sanitizer = 0;
 static const unsigned no_sanitizer = 1;
 #endif
 
+#ifdef SO_RCVTIMEO_WORKS
+static const unsigned so_rcvtimeo_works = 1;
+#else
+static const unsigned so_rcvtimeo_works = 0;
+#endif
+
 void v_matchproto_(cmd_f)
 cmd_feature(CMD_ARGS)
 {
@@ -464,13 +470,6 @@ cmd_feature(CMD_ARGS)
 
 	for (av++; *av != NULL; av++) {
 		good = 0;
-		if (!strcmp(*av, "SO_RCVTIMEO_WORKS")) {
-#ifdef SO_RCVTIMEO_WORKS
-			good = 1;
-#else
-			vtc_stop = 2;
-#endif
-		}
 
 		FEATURE("ipv4", ipvx_works("127.0.0.1"));
 		FEATURE("ipv6", ipvx_works("[::1]"));
@@ -484,6 +483,7 @@ cmd_feature(CMD_ARGS)
 		FEATURE("group_varnish", getgrnam("varnish") != NULL);
 		FEATURE("persistent_storage", with_persistent_storage);
 		FEATURE("no_sanitizer", no_sanitizer);
+		FEATURE("SO_RCVTIMEO_WORKS", so_rcvtimeo_works);
 
 		if (!strcmp(*av, "disable_aslr")) {
 			good = 1;
