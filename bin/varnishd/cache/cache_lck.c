@@ -115,6 +115,7 @@ Lck__Lock(struct lock *lck, const char *p, int l)
 	struct ilck *ilck;
 	int r = EINVAL;
 
+	AN(lck);
 	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC);
 	if (DO_DEBUG(DBG_WITNESS))
 		Lck_Witness_Lock(ilck, p, l, "");
@@ -140,6 +141,7 @@ Lck__Unlock(struct lock *lck, const char *p, int l)
 	(void)p;
 	(void)l;
 
+	AN(lck);
 	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC);
 	assert(pthread_equal(ilck->owner, pthread_self()));
 	AN(ilck->held);
@@ -170,6 +172,7 @@ Lck__Trylock(struct lock *lck, const char *p, int l)
 	struct ilck *ilck;
 	int r;
 
+	AN(lck);
 	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC);
 	if (DO_DEBUG(DBG_WITNESS))
 		Lck_Witness_Lock(ilck, p, l, "?");
@@ -190,6 +193,7 @@ Lck__Held(const struct lock *lck)
 {
 	struct ilck *ilck;
 
+	AN(lck);
 	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC);
 	return (ilck->held);
 }
@@ -199,6 +203,7 @@ Lck__Owned(const struct lock *lck)
 {
 	struct ilck *ilck;
 
+	AN(lck);
 	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC);
 	AN(ilck->held);
 	return (pthread_equal(ilck->owner, pthread_self()));
@@ -211,6 +216,7 @@ Lck_CondWait(pthread_cond_t *cond, struct lock *lck, vtim_real when)
 	struct timespec ts;
 	vtim_real t;
 
+	AN(lck);
 	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC);
 	AN(ilck->held);
 	assert(pthread_equal(ilck->owner, pthread_self()));
@@ -254,6 +260,7 @@ Lck__New(struct lock *lck, struct VSC_lck *st, const char *w)
 
 	AN(st);
 	AN(w);
+	AN(lck);
 	AZ(lck->priv);
 	ALLOC_OBJ(ilck, ILCK_MAGIC);
 	AN(ilck);
@@ -269,6 +276,7 @@ Lck_Delete(struct lock *lck)
 {
 	struct ilck *ilck;
 
+	AN(lck);
 	TAKE_OBJ_NOTNULL(ilck, &lck->priv, ILCK_MAGIC);
 	ilck->stat->destroy++;
 	AZ(pthread_mutex_destroy(&ilck->mtx));
