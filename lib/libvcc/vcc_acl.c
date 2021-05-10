@@ -209,10 +209,29 @@ vcc_acl_chk(struct vcc *tl, const struct acl_e *ae, const int l,
 }
 
 static void
+vcc_acl_insert_entry(struct vcc *tl, struct acl_e **aenp)
+{
+	struct acl_e *ae2;
+
+	CHECK_OBJ_NOTNULL(*aenp, VCC_ACL_E_MAGIC);
+	ae2 = VRBT_INSERT(acl_tree, &tl->acl->acl_tree, *aenp);
+	if (ae2 != NULL) {
+		if (ae2->not != (*aenp)->not) {
+			VSB_cat(tl->sb, "Conflicting ACL entries:\n");
+			vcc_ErrWhere(tl, ae2->t_addr);
+			VSB_cat(tl->sb, "vs:\n");
+			vcc_ErrWhere(tl, (*aenp)->t_addr);
+		}
+		return;
+	}
+	*aenp = NULL;
+}
+
+static void
 vcc_acl_add_entry(struct vcc *tl, const struct acl_e *ae, int l,
     unsigned char *u, int fam)
 {
-	struct acl_e *aen, *ae2;
+	struct acl_e *aen;
 
 	if (fam == PF_INET && ae->mask > 32) {
 		VSB_printf(tl->sb,
@@ -247,14 +266,9 @@ vcc_acl_add_entry(struct vcc *tl, const struct acl_e *ae, int l,
 	assert(l + 1UL <= sizeof aen->data);
 	memcpy(aen->data + 1L, u, l);
 
-	ae2 = VRBT_INSERT(acl_tree, &tl->acl->acl_tree, aen);
-	if (ae2 != NULL && ae2->not != aen->not) {
-		VSB_cat(tl->sb, "Conflicting ACL entries:\n");
-		vcc_ErrWhere(tl, ae2->t_addr);
-		VSB_cat(tl->sb, "vs:\n");
-		vcc_ErrWhere(tl, aen->t_addr);
+	vcc_acl_insert_entry(tl, &aen);
+	if (aen != NULL)
 		vcl_acl_free(&aen);
-	}
 }
 
 static void
