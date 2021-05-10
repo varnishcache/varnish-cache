@@ -120,8 +120,7 @@ xyzzy_dyn__init(VRT_CTX, struct xyzzy_debug_dyn **dynp,
 	AN(vcl_name);
 
 	if (*addr == '\0' || *port == '\0') {
-		AN(ctx->handling);
-		AZ(*ctx->handling);
+		AZ(VRT_handled(ctx));
 		VRT_fail(ctx, "Missing dynamic backend address or port");
 		return;
 	}

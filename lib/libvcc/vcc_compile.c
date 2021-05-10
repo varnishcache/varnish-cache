@@ -407,7 +407,7 @@ EmitCoordinates(const struct vcc *tl, struct vsb *vsb)
 				pos++;
 
 		}
-		VSB_printf(vsb, "  [%3u] = { %u, %8tu, %4u, %3u, ",
+		VSB_printf(vsb, "  [%3u] = { VPI_REF_MAGIC, %u, %8tu, %4u, %3u, ",
 		    t->cnt, sp->idx, t->b - sp->b, lin, pos + 1);
 		if (t->tok == CSRC)
 			VSB_cat(vsb, " \"C{\"},\n");
@@ -448,7 +448,7 @@ EmitInitFini(const struct vcc *tl)
 		if (VSB_len(p->ini))
 			Fc(tl, 0, "\t/* %u */\n%s\n", p->n, VSB_data(p->ini));
 		if (p->ignore_errors == 0) {
-			Fc(tl, 0, "\tif (*ctx->handling == VCL_RET_FAIL)\n");
+			Fc(tl, 0, "\tif (ctx->vpi->handling == VCL_RET_FAIL)\n");
 			Fc(tl, 0, "\t\treturn(1);\n");
 		}
 		Fc(tl, 0, "\tvgc_inistep = %u;\n\n", p->n);
@@ -461,9 +461,9 @@ EmitInitFini(const struct vcc *tl)
 
 	/* Handle failures from vcl_init */
 	Fc(tl, 0, "\n");
-	Fc(tl, 0, "\tif (*ctx->handling != VCL_RET_OK)\n");
+	Fc(tl, 0, "\tif (ctx->vpi->handling != VCL_RET_OK)\n");
 	Fc(tl, 0, "\t\treturn(1);\n");
-	Fc(tl, 0, "\t*ctx->handling = 0;\n");
+	Fc(tl, 0, "\tctx->vpi->handling = 0;\n");
 
 	VTAILQ_FOREACH(sy, &tl->sym_objects, sideways) {
 		Fc(tl, 0, "\tif (!%s) {\n", sy->rname);
@@ -617,7 +617,7 @@ vcc_CompileSource(struct vcc *tl, struct source *sp, const char *jfile)
 	Fh(tl, 0, "/* ---===### VCC generated .h code ###===---*/\n");
 	Fc(tl, 0, "\n/* ---===### VCC generated .c code ###===---*/\n");
 
-	Fc(tl, 0, "\n#define END_ if (*ctx->handling) return\n");
+	Fc(tl, 0, "\n#define END_ if (ctx->vpi->handling) return\n");
 
 	vcc_Parse_Init(tl);
 

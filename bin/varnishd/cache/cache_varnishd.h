@@ -500,6 +500,11 @@ void VMOD_Panic(struct vsb *);
 void WRK_Init(void);
 void WRK_AddStat(const struct worker *);
 
+/* cache_vpi.c */
+extern const size_t vpi_wrk_len;
+void VPI_wrk_init(struct worker *, void *, size_t);
+void VPI_Panic(struct vsb *, const struct wrk_vpi *, const struct vcl *);
+
 /* cache_ws.c */
 void WS_Id(const struct ws *ws, char *id);
 void WS_Panic(struct vsb *, const struct ws *);

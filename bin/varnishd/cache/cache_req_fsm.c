@@ -44,6 +44,7 @@
 #include "cache_filter.h"
 #include "cache_objhead.h"
 #include "cache_transport.h"
+#include "vcc_interface.h"
 
 #include "hash/hash_slinger.h"
 #include "http1/cache_http1.h"
@@ -228,12 +229,12 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 	assert(req->restarts <= cache_param->max_restarts);
 
-	if (wrk->handling != VCL_RET_DELIVER) {
+	if (wrk->vpi->handling != VCL_RET_DELIVER) {
 		HSH_Cancel(wrk, req->objcore, NULL);
 		(void)HSH_DerefObjCore(wrk, &req->objcore, HSH_RUSH_POLICY);
 		http_Teardown(req->resp);
 
-		switch (wrk->handling) {
+		switch (wrk->vpi->handling) {
 		case VCL_RET_RESTART:
 			req->req_step = R_STP_RESTART;
 			break;
@@ -250,7 +251,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 		return (REQ_FSM_MORE);
 	}
 
-	assert(wrk->handling == VCL_RET_DELIVER);
+	assert(wrk->vpi->handling == VCL_RET_DELIVER);
 
 	if (IS_TOPREQ(req) && RFC2616_Do_Cond(req))
 		http_PutResponse(req->resp, "HTTP/1.1", 304, NULL);
@@ -321,7 +322,7 @@ cnt_synth(struct worker *wrk, struct req *req)
 
 	VSLb_ts_req(req, "Process", W_TIM_real(wrk));
 
-	if (wrk->handling == VCL_RET_FAIL) {
+	if (wrk->vpi->handling == VCL_RET_FAIL) {
 		VSB_destroy(&synth_body);
 		req->doclose = SC_VCL_FAILURE;
 		VSLb_ts_req(req, "Resp", W_TIM_real(wrk));
@@ -329,11 +330,11 @@ cnt_synth(struct worker *wrk, struct req *req)
 		return (REQ_FSM_DONE);
 	}
 
-	if (wrk->handling == VCL_RET_RESTART &&
+	if (wrk->vpi->handling == VCL_RET_RESTART &&
 	    req->restarts > cache_param->max_restarts)
-		wrk->handling = VCL_RET_DELIVER;
+		wrk->vpi->handling = VCL_RET_DELIVER;
 
-	if (wrk->handling == VCL_RET_RESTART) {
+	if (wrk->vpi->handling == VCL_RET_RESTART) {
 		/*
 		 * XXX: Should we reset req->doclose = SC_VCL_FAILURE
 		 * XXX: If so, to what ?
@@ -343,7 +344,7 @@ cnt_synth(struct worker *wrk, struct req *req)
 		req->req_step = R_STP_RESTART;
 		return (REQ_FSM_MORE);
 	}
-	assert(wrk->handling == VCL_RET_DELIVER);
+	assert(wrk->vpi->handling == VCL_RET_DELIVER);
 
 	http_Unset(req->resp, H_Content_Length);
 	http_PrintfHeader(req->resp, "Content-Length: %zd",
@@ -599,7 +600,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 
 	VCL_hit_method(req->vcl, wrk, req, NULL, NULL);
 
-	switch (wrk->handling) {
+	switch (wrk->vpi->handling) {
 	case VCL_RET_DELIVER:
 		if (busy != NULL) {
 			AZ(oc->flags & OC_F_HFM);
@@ -661,7 +662,7 @@ cnt_miss(struct worker *wrk, struct req *req)
 	CHECK_OBJ_ORNULL(req->stale_oc, OBJCORE_MAGIC);
 
 	VCL_miss_method(req->vcl, wrk, req, NULL, NULL);
-	switch (wrk->handling) {
+	switch (wrk->vpi->handling) {
 	case VCL_RET_FETCH:
 		wrk->stats->cache_miss++;
 		VBF_Fetch(wrk, req, req->objcore, req->stale_oc, VBF_NORMAL);
@@ -706,7 +707,7 @@ cnt_pass(struct worker *wrk, struct req *req)
 	AZ(req->stale_oc);
 
 	VCL_pass_method(req->vcl, wrk, req, NULL, NULL);
-	switch (wrk->handling) {
+	switch (wrk->vpi->handling) {
 	case VCL_RET_FAIL:
 		req->req_step = R_STP_VCLFAIL;
 		break;
@@ -766,11 +767,11 @@ cnt_pipe(struct worker *wrk, struct req *req)
 
 	bo->wrk = wrk;
 	if (WS_Overflowed(req->ws))
-		wrk->handling = VCL_RET_FAIL;
+		wrk->vpi->handling = VCL_RET_FAIL;
 	else
 		VCL_pipe_method(req->vcl, wrk, req, bo, NULL);
 
-	switch (wrk->handling) {
+	switch (wrk->vpi->handling) {
 	case VCL_RET_SYNTH:
 		req->req_step = R_STP_SYNTH;
 		nxt = REQ_FSM_MORE;
@@ -923,12 +924,12 @@ cnt_recv(struct worker *wrk, struct req *req)
 
 	VCL_recv_method(req->vcl, wrk, req, NULL, NULL);
 
-	if (wrk->handling == VCL_RET_FAIL) {
+	if (wrk->vpi->handling == VCL_RET_FAIL) {
 		req->req_step = R_STP_VCLFAIL;
 		return (REQ_FSM_MORE);
 	}
 
-	if (wrk->handling == VCL_RET_VCL && req->restarts == 0) {
+	if (wrk->vpi->handling == VCL_RET_VCL && req->restarts == 0) {
 		// Req_Rollback has happened in VPI_vcl_select
 		assert(WS_Snapshot(req->ws) == req->ws_req);
 		cnt_recv_prep(req, ci);
@@ -949,7 +950,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 		return (REQ_FSM_DONE);
 	}
 
-	recv_handling = wrk->handling;
+	recv_handling = wrk->vpi->handling;
 
 	/* We wash the A-E header here for the sake of VRY */
 	if (cache_param->http_gzip_support &&
@@ -964,10 +965,10 @@ cnt_recv(struct worker *wrk, struct req *req)
 
 	VSHA256_Init(&sha256ctx);
 	VCL_hash_method(req->vcl, wrk, req, NULL, &sha256ctx);
-	if (wrk->handling == VCL_RET_FAIL)
-		recv_handling = wrk->handling;
+	if (wrk->vpi->handling == VCL_RET_FAIL)
+		recv_handling = wrk->vpi->handling;
 	else
-		assert(wrk->handling == VCL_RET_LOOKUP);
+		assert(wrk->vpi->handling == VCL_RET_LOOKUP);
 	VSHA256_Final(req->digest, &sha256ctx);
 
 	switch (recv_handling) {
@@ -1052,7 +1053,7 @@ cnt_purge(struct worker *wrk, struct req *req)
 	AZ(HSH_DerefObjCore(wrk, &boc, 1));
 
 	VCL_purge_method(req->vcl, wrk, req, NULL, NULL);
-	switch (wrk->handling) {
+	switch (wrk->vpi->handling) {
 	case VCL_RET_RESTART:
 		req->req_step = R_STP_RESTART;
 		break;

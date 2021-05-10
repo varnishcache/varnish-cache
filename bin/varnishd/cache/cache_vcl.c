@@ -68,7 +68,7 @@ struct lock		vcl_mtx;
 struct vcl		*vcl_active; /* protected by vcl_mtx */
 
 static struct vrt_ctx ctx_cli;
-static unsigned handling_cli;
+static struct wrk_vpi wrk_vpi_cli;
 static struct ws ws_cli;
 static uintptr_t ws_snapshot_cli;
 static struct vsl_log vsl_cli;
@@ -91,8 +91,8 @@ VCL_Bo2Ctx(struct vrt_ctx *ctx, struct busyobj *bo)
 	ctx->sp = bo->sp;
 	ctx->now = bo->t_prev;
 	ctx->ws = bo->ws;
-	ctx->handling = &bo->wrk->handling;
-	*ctx->handling = 0;
+	ctx->vpi = bo->wrk->vpi;
+	ctx->vpi->handling = 0;
 }
 
 void
@@ -113,8 +113,8 @@ VCL_Req2Ctx(struct vrt_ctx *ctx, struct req *req)
 	ctx->sp = req->sp;
 	ctx->now = req->t_prev;
 	ctx->ws = req->ws;
-	ctx->handling = &req->wrk->handling;
-	*ctx->handling = 0;
+	ctx->vpi = req->wrk->vpi;
+	ctx->vpi->handling = 0;
 }
 
 /*--------------------------------------------------------------------*/
@@ -124,10 +124,9 @@ VCL_Get_CliCtx(int msg)
 {
 
 	ASSERT_CLI();
-	AZ(ctx_cli.handling);
 	INIT_OBJ(&ctx_cli, VRT_CTX_MAGIC);
-	handling_cli = 0;
-	ctx_cli.handling = &handling_cli;
+	INIT_OBJ(&wrk_vpi_cli, WRK_VPI_MAGIC);
+	ctx_cli.vpi = &wrk_vpi_cli;
 	ctx_cli.now = VTIM_real();
 	if (msg) {
 		ctx_cli.msg = VSB_new_auto();
@@ -155,7 +154,7 @@ VCL_Rel_CliCtx(struct vrt_ctx **ctx)
 
 	ASSERT_CLI();
 	assert(*ctx == &ctx_cli);
-	AN((*ctx)->handling);
+	AN((*ctx)->vpi);
 	if (ctx_cli.msg) {
 		TAKE_OBJ_NOTNULL(r, &ctx_cli.msg, VSB_MAGIC);
 		AZ(VSB_finish(r));
@@ -186,10 +185,10 @@ vcl_event_handling(VRT_CTX)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
-	if (*ctx->handling == 0)
+	if (ctx->vpi->handling == 0)
 		return (0);
 
-	assert(*ctx->handling == VCL_RET_FAIL);
+	assert(ctx->vpi->handling == VCL_RET_FAIL);
 
 	if (ctx->method == VCL_MET_INIT)
 		return (1);
@@ -200,7 +199,7 @@ vcl_event_handling(VRT_CTX)
 	 */
 	assert(ctx->method == VCL_MET_FINI);
 
-	*ctx->handling = 0;
+	ctx->vpi->handling = 0;
 	VRT_fail(ctx, "VRT_fail() from vcl_fini{} has no effect");
 	return (0);
 }
@@ -238,8 +237,8 @@ vcl_send_event(struct vcl *vcl, enum vcl_event_e ev, struct vsb **msg)
 
 	ctx = VCL_Get_CliCtx(havemsg);
 
-	AN(ctx->handling);
-	AZ(*ctx->handling);
+	AN(ctx->vpi);
+	AZ(ctx->vpi->handling);
 	AN(ctx->ws);
 
 	ctx->vcl = vcl;
@@ -290,7 +289,7 @@ vcl_panic_conf(struct vsb *vsb, const struct VCL_conf *conf)
 	VSB_cat(vsb, "srcname = {\n");
 	VSB_indent(vsb, 2);
 	for (i = 0; i < conf->nsrc; ++i)
-		VSB_printf(vsb, "\"%s\",\n", conf->srcname[i]);
+		VSB_printf(vsb, "[%d] = \"%s\",\n", i, conf->srcname[i]);
 	VSB_indent(vsb, -2);
 	VSB_cat(vsb, "},\n");
 	VSB_cat(vsb, "instances = {\n");

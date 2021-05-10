@@ -493,9 +493,10 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 	AN(ctx.vsl);
 	VSLb(ctx.vsl, SLT_VCL_call, "%s", VCL_Method_Name(method));
 	func(&ctx, VSUB_STATIC, NULL);
-	VSLb(ctx.vsl, SLT_VCL_return, "%s", VCL_Return_Name(wrk->handling));
+	VSLb(ctx.vsl, SLT_VCL_return, "%s",
+	     VCL_Return_Name(wrk->vpi->handling));
 	wrk->cur_method |= 1;		// Magic marker
-	if (wrk->handling == VCL_RET_FAIL)
+	if (wrk->vpi->handling == VCL_RET_FAIL)
 		wrk->stats->vcl_fail++;
 
 	/*
@@ -518,7 +519,7 @@ VCL_##func##_method(struct vcl *vcl, struct worker *wrk,		\
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);				\
 	vcl_call_method(wrk, req, bo, specific,				\
 	    VCL_MET_ ## upper, vcl->conf->func##_func, vcl->conf->nsub);\
-	AN((1U << wrk->handling) & bitmap);				\
+	AN((1U << wrk->vpi->handling) & bitmap);			\
 }
 
 #include "tbl/vcl_returns.h"
