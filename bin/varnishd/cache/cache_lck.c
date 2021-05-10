@@ -269,9 +269,8 @@ Lck_Delete(struct lock *lck)
 {
 	struct ilck *ilck;
 
-	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC);
+	TAKE_OBJ_NOTNULL(ilck, &lck->priv, ILCK_MAGIC);
 	ilck->stat->destroy++;
-	lck->priv = NULL;
 	AZ(pthread_mutex_destroy(&ilck->mtx));
 	FREE_OBJ(ilck);
 }
