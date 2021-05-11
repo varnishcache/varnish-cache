@@ -26,12 +26,7 @@ jobs:
         - ./autogen.sh
         - ./configure --enable-maintainer-mode --with-unwind
       script: &script-common
-        - |
-          if [[ "$TRAVIS_PULL_REQUEST" != "false" ]]; then
-            make -j12 distcheck VERBOSE=1
-          else
-            make -j16 check VERBOSE=1
-          fi
+        - make -j16 check VERBOSE=1
     - <<: *test-linux
       arch: arm64
     - <<: *test-linux
