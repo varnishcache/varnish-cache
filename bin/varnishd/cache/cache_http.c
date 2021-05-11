@@ -390,12 +390,12 @@ http_Proto(struct http *to)
 /*--------------------------------------------------------------------*/
 
 void
-http_SetH(struct http *to, unsigned n, const char *fm)
+http_SetH(struct http *to, unsigned n, const char *header)
 {
 
 	assert(n < to->nhd);
-	AN(fm);
-	to->hd[n].b = TRUST_ME(fm);
+	AN(header);
+	to->hd[n].b = TRUST_ME(header);
 	to->hd[n].e = strchr(to->hd[n].b, '\0');
 	to->hdf[n] = 0;
 	http_VSLH(to, n);
@@ -423,7 +423,7 @@ http_PutField(struct http *to, int field, const char *string)
 /*--------------------------------------------------------------------*/
 
 static int
-http_IsHdr(const txt *hh, const char *hdr)
+http_IsHdr(const txt *hh, hdr_t hdr)
 {
 	unsigned l;
 
@@ -461,7 +461,7 @@ http_findhdr(const struct http *hp, unsigned l, const char *hdr)
  */
 
 unsigned
-http_CountHdr(const struct http *hp, const char *hdr)
+http_CountHdr(const struct http *hp, hdr_t hdr)
 {
 	unsigned retval = 0;
 	unsigned u;
@@ -482,7 +482,7 @@ http_CountHdr(const struct http *hp, const char *hdr)
  */
 
 void
-http_CollectHdr(struct http *hp, const char *hdr)
+http_CollectHdr(struct http *hp, hdr_t hdr)
 {
 
 	http_CollectHdrSep(hp, hdr, NULL);
@@ -495,7 +495,7 @@ http_CollectHdr(struct http *hp, const char *hdr)
  */
 
 void
-http_CollectHdrSep(struct http *hp, const char *hdr, const char *sep)
+http_CollectHdrSep(struct http *hp, hdr_t hdr, const char *sep)
 {
 	unsigned u, l, lsep, ml, f, x, d;
 	char *b = NULL, *e = NULL;
@@ -578,7 +578,7 @@ http_CollectHdrSep(struct http *hp, const char *hdr, const char *sep)
 /*--------------------------------------------------------------------*/
 
 int
-http_GetHdr(const struct http *hp, const char *hdr, const char **ptr)
+http_GetHdr(const struct http *hp, hdr_t hdr, const char **ptr)
 {
 	unsigned u, l;
 	const char *p;
@@ -705,7 +705,7 @@ http_istoken(const char **bp, const char *e, const char *token)
  */
 
 int
-http_GetHdrToken(const struct http *hp, const char *hdr,
+http_GetHdrToken(const struct http *hp, hdr_t hdr,
     const char *token, const char **pb, const char **pe)
 {
 	const char *h, *b, *e;
@@ -742,7 +742,7 @@ http_GetHdrToken(const struct http *hp, const char *hdr,
  */
 
 double
-http_GetHdrQ(const struct http *hp, const char *hdr, const char *field)
+http_GetHdrQ(const struct http *hp, hdr_t hdr, const char *field)
 {
 	const char *hb, *he, *b, *e;
 	int i;
@@ -791,7 +791,7 @@ http_GetHdrQ(const struct http *hp, const char *hdr, const char *field)
  */
 
 int
-http_GetHdrField(const struct http *hp, const char *hdr,
+http_GetHdrField(const struct http *hp, hdr_t hdr,
     const char *field, const char **ptr)
 {
 	const char *h;
@@ -903,7 +903,7 @@ http_DoConnection(struct http *hp, enum sess_close sc_close)
 /*--------------------------------------------------------------------*/
 
 int
-http_HdrIs(const struct http *hp, const char *hdr, const char *val)
+http_HdrIs(const struct http *hp, hdr_t hdr, const char *val)
 {
 	const char *p;
 
@@ -1183,7 +1183,7 @@ HTTP_IterHdrPack(struct worker *wrk, struct objcore *oc, const char **p)
 }
 
 const char *
-HTTP_GetHdrPack(struct worker *wrk, struct objcore *oc, const char *hdr)
+HTTP_GetHdrPack(struct worker *wrk, struct objcore *oc, hdr_t hdr)
 {
 	const char *ptr;
 	unsigned l;
@@ -1343,22 +1343,22 @@ http_CopyHome(const struct http *hp)
 /*--------------------------------------------------------------------*/
 
 void
-http_SetHeader(struct http *to, const char *hdr)
+http_SetHeader(struct http *to, const char *header)
 {
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	if (to->nhd >= to->shd) {
-		VSLb(to->vsl, SLT_LostHeader, "%s", hdr);
+		VSLb(to->vsl, SLT_LostHeader, "%s", header);
 		http_fail(to);
 		return;
 	}
-	http_SetH(to, to->nhd++, hdr);
+	http_SetH(to, to->nhd++, header);
 }
 
 /*--------------------------------------------------------------------*/
 
 void
-http_ForceHeader(struct http *to, const char *hdr, const char *val)
+http_ForceHeader(struct http *to, hdr_t hdr, const char *val)
 {
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
@@ -1420,7 +1420,7 @@ http_TimeHeader(struct http *to, const char *fmt, vtim_real now)
 /*--------------------------------------------------------------------*/
 
 void
-http_Unset(struct http *hp, const char *hdr)
+http_Unset(struct http *hp, hdr_t hdr)
 {
 	uint16_t u, v;
 
