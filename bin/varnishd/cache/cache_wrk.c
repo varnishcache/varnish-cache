@@ -439,7 +439,7 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 					tmo =  now + 1.;
 				else
 					tmo =  now + 60.;
-				i = Lck_CondWait(&wrk->cond, &pp->mtx, tmo);
+				(void)Lck_CondWait(&wrk->cond, &pp->mtx, tmo);
 				if (wrk->task->func != NULL) {
 					/* We have been handed a new task */
 					tpx = *wrk->task;
