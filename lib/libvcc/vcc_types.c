@@ -57,6 +57,7 @@ struct vcc_method {
 const struct type ACL[1] = {{
 	.magic =		TYPE_MAGIC,
 	.name =			"ACL",
+	.global_pfx =		"vrt_acl",
 	.tostring =		"((\v1)->name)",
 }};
 
@@ -70,6 +71,7 @@ const struct type BACKEND[1] = {{
 	.magic =		TYPE_MAGIC,
 	.name =			"BACKEND",
 	.methods =		backend_methods,
+	.global_pfx =		"vgc_backend",
 	.tostring =		"VRT_BACKEND_string(\v1)",
 }};
 
@@ -124,6 +126,7 @@ const struct type HTTP[1] = {{
 const struct type INSTANCE[1] = {{
 	.magic =		TYPE_MAGIC,
 	.name =			"INSTANCE",
+	.global_pfx =		"vo",
 }};
 
 const struct type INT[1] = {{
@@ -142,6 +145,7 @@ const struct type IP[1] = {{
 const struct type PROBE[1] = {{
 	.magic =		TYPE_MAGIC,
 	.name =			"PROBE",
+	.global_pfx =		"vgc_probe",
 }};
 
 const struct type REAL[1] = {{
@@ -207,6 +211,7 @@ const struct type STRING_LIST[1] = {{
 const struct type SUB[1] = {{
 	.magic =		TYPE_MAGIC,
 	.name =			"SUB",
+	.global_pfx =		"VGC_function",
 }};
 
 const struct type TIME[1] = {{

@@ -85,6 +85,7 @@ VCC_HandleKind(vcc_type_t fmt)
 	if (fmt == STEVEDORE)	return (SYM_STEVEDORE);
 	if (fmt == SUB)		return (SYM_SUB);
 	if (fmt == INSTANCE)	return (SYM_INSTANCE);
+	AZ(fmt->global_pfx);
 	return (SYM_NONE);
 }
 
@@ -460,16 +461,17 @@ VCC_WalkSymbols(struct vcc *tl, symwalk_f *func, vcc_ns_t ns, vcc_kind_t kind)
 }
 
 void
-VCC_GlobalSymbol(struct symbol *sym, vcc_type_t type, const char *pfx)
+VCC_GlobalSymbol(struct symbol *sym, vcc_type_t type)
 {
 	struct vsb *vsb;
 
 	CHECK_OBJ_NOTNULL(sym, SYMBOL_MAGIC);
-	AN(pfx);
+	AN(type);
+	AN(type->global_pfx);
 
 	vsb = VSB_new_auto();
 	AN(vsb);
-	VSB_printf(vsb, "%s_", pfx);
+	VSB_printf(vsb, "%s_", type->global_pfx);
 	VCC_PrintCName(vsb, sym->name, NULL);
 	AZ(VSB_finish(vsb));
 	sym->lname = strdup(VSB_data(vsb));
@@ -499,7 +501,7 @@ VCC_GlobalSymbol(struct symbol *sym, vcc_type_t type, const char *pfx)
 }
 
 struct symbol *
-VCC_HandleSymbol(struct vcc *tl, vcc_type_t fmt, const char *pfx)
+VCC_HandleSymbol(struct vcc *tl, vcc_type_t fmt)
 {
 	struct symbol *sym;
 	vcc_kind_t kind;
@@ -541,7 +543,7 @@ VCC_HandleSymbol(struct vcc *tl, vcc_type_t fmt, const char *pfx)
 		return (NULL);
 	AN(sym);
 	AZ(sym->ndef);
-	VCC_GlobalSymbol(sym, fmt, pfx);
+	VCC_GlobalSymbol(sym, fmt);
 	sym->ndef = 1;
 	if (sym->def_b == NULL)
 		sym->def_b = t;

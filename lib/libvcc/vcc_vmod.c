@@ -474,7 +474,7 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 	ExpectErr(tl, ID);
 	vcc_ExpectVid(tl, "VCL object");
 	ERRCHK(tl);
-	isym = VCC_HandleSymbol(tl, INSTANCE, "vo");
+	isym = VCC_HandleSymbol(tl, INSTANCE);
 	ERRCHK(tl);
 	AN(isym);
 	isym->noref = 1;
