@@ -5,7 +5,7 @@ server s1 {
 	txresp -body "FOO"
 } -start
 
-varnish v1 -errvcl {Symbol not found: 's-1'} {
+varnish v1 -errvcl {Undefined backend s-1, first reference:} {
 	backend b { .host = "${localhost}"; }
 	sub s1 {
 	}

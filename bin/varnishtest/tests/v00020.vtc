@@ -69,6 +69,10 @@ varnish v1 -errvcl {Operator % only possible on INT} {
 }
 
 varnish v1 -vcl {
+	sub vcl_recv {
+		# 3555 (define after use)
+		set req.backend_hint = b;
+	}
 	backend b { .host = "${localhost}"; }
 	sub vcl_recv {
 		set req.http.foo = "foo" + "bar";
@@ -217,6 +221,27 @@ varnish v1 -errvcl {Name of subroutine, 'foo.bar', contains illegal character '.
 	}
 	sub vcl_recv {
 		call foo.bar;
+	}
+}
+
+# 3555 (define after use)
+varnish v1 -vcl {
+	import debug;
+	backend be none;
+	sub caller {
+		debug.call(foo);
+	}
+	sub foo { }
+	sub vcl_recv {
+		call caller;
+		call foo;
+	}
+}
+
+# 3555 (don't launder partial symbols)
+varnish v1 -errvcl {Symbol not found: 'foo.bar'} {
+	sub vcl_recv {
+		set req.backend_hint = foo.bar;
 	}
 }
 

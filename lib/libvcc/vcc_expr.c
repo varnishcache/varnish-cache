@@ -719,7 +719,7 @@ vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 {
 	struct expr *e1, *e2;
 	const char *ip, *sign;
-	struct token *t;
+	struct token *t, *t1;
 	struct symbol *sym;
 
 	sign = "";
@@ -738,8 +738,19 @@ vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	switch (tl->t->tok) {
 	case ID:
 		t = tl->t;
-		sym = VCC_SymbolGet(tl, SYM_MAIN, SYM_NONE, SYMTAB_PARTIAL,
-		    XREF_REF);
+		t1 = vcc_PeekToken(tl);
+		ERRCHK(tl);
+		sym = VCC_SymbolGet(tl, SYM_MAIN, SYM_NONE,
+		    SYMTAB_PARTIAL_NOERR, XREF_REF);
+		if (sym == NULL && fmt->global_pfx != NULL && t1->tok != '.') {
+			sym = VCC_SymbolGet(tl, SYM_MAIN, SYM_NONE,
+			    SYMTAB_CREATE, XREF_REF);
+			AN(sym);
+			VCC_GlobalSymbol(sym, fmt);
+		}
+		if (sym == NULL)
+			AZ(VCC_SymbolGet(tl, SYM_MAIN, SYM_NONE,
+			    SYMTAB_PARTIAL, XREF_REF));
 		ERRCHK(tl);
 		AN(sym);
 		if (sym->kind == SYM_INSTANCE) {
