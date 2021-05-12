@@ -256,7 +256,7 @@ vcc_ParseFunction(struct vcc *tl)
 			}
 			return;
 		}
-		VCC_GlobalSymbol(sym, SUB, "VGC_function");
+		VCC_GlobalSymbol(sym, SUB);
 		p = vcc_NewProc(tl, sym);
 		p->name = t;
 		VSB_printf(p->cname, "%s", sym->lname);

@@ -114,6 +114,7 @@ struct type {
 	const char		*name;
 	const struct vcc_method	*methods;
 
+	const char		*global_pfx;
 	const char		*tostring;
 	vcc_type_t		multype;
 	int			stringform;
@@ -353,8 +354,8 @@ sym_expr_t vcc_Eval_SymFunc;
 sym_expr_t vcc_Eval_TypeMethod;
 void vcc_Eval_Func(struct vcc *, const struct vjsn_val *,
     const char *, struct symbol *);
-void VCC_GlobalSymbol(struct symbol *, vcc_type_t fmt, const char *pfx);
-struct symbol *VCC_HandleSymbol(struct vcc *, vcc_type_t , const char *);
+void VCC_GlobalSymbol(struct symbol *, vcc_type_t fmt);
+struct symbol *VCC_HandleSymbol(struct vcc *, vcc_type_t);
 void VCC_SymName(struct vsb *, const struct symbol *);
 
 /* vcc_obj.c */
@@ -475,5 +476,3 @@ const char *vcc_MarkPriv(struct vcc *, struct procprivhead *,
     do { vcc__Expect(a, b, __LINE__); ERRCHK(a);} while (0)
 #define SkipToken(a, b) \
     do { vcc__Expect(a, b, __LINE__); ERRCHK(a); vcc_NextToken(a); } while (0)
-
-#define ACL_SYMBOL_PREFIX "vrt_acl"

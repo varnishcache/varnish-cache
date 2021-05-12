@@ -701,7 +701,7 @@ vcc_ParseAcl(struct vcc *tl)
 
 	vcc_ExpectVid(tl, "ACL");
 	ERRCHK(tl);
-	sym = VCC_HandleSymbol(tl, ACL, ACL_SYMBOL_PREFIX);
+	sym = VCC_HandleSymbol(tl, ACL);
 	ERRCHK(tl);
 	AN(sym);
 

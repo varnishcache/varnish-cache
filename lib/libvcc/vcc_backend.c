@@ -316,7 +316,7 @@ vcc_ParseProbe(struct vcc *tl)
 		vcc_ParseProbeSpec(tl, NULL, &p);
 		tl->default_probe = p;
 	} else {
-		sym = VCC_HandleSymbol(tl, PROBE, "vgc_probe");
+		sym = VCC_HandleSymbol(tl, PROBE);
 		ERRCHK(tl);
 		AN(sym);
 		vcc_ParseProbeSpec(tl, sym, NULL);
@@ -612,7 +612,7 @@ vcc_ParseBackend(struct vcc *tl)
 		dn = "vgc_backend_default";
 		tl->default_director = dn;
 	} else {
-		sym = VCC_HandleSymbol(tl, BACKEND, "vgc_backend");
+		sym = VCC_HandleSymbol(tl, BACKEND);
 		ERRCHK(tl);
 		AN(sym);
 		dn = sym->rname;
