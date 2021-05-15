@@ -29,6 +29,8 @@
  * SUCH DAMAGE.
  */
 
+#include "cache_filter.h"
+
 const struct vdp VDP_range = {
 	.name =		"range",
 	.init =		vrg_range_init,
