@@ -29,6 +29,9 @@
  * SUCH DAMAGE.
  */
 
+#include "config.h"
+
+#include "cache_varnishd.h"
 #include "cache_filter.h"
 
 const struct vdp VDP_range = {
