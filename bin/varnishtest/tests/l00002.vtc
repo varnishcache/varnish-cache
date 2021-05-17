@@ -3,11 +3,11 @@ varnishtest "Test request byte counters"
 server s1 {
 	rxreq
 	expect req.url == "/1"
-	txresp -bodylen 1000
+	txresp -hdr "Accept-ranges: bytes" -bodylen 1000
 
 	rxreq
 	expect req.url == "/2"
-	txresp -bodylen 2000
+	txresp -hdr "Accept-ranges: bytes" -bodylen 2000
 } -start
 
 varnish v1 -vcl+backend {
@@ -89,16 +89,20 @@ logexpect l1 -v v1 -g session {
 client c1 {
 	txreq -method POST -url "/1" -hdr "Host: foo" -body "asdf"
 	rxresp
+	expect resp.http.accept-ranges == "bytes"
 	expect resp.status == 200
 
 	send "GET /2 HTTP/1.1\r\nHost: foo\r\n\r\nGET /2 HTTP/1.1\r\nHost: foo\r\n\r\n"
 	rxresp
+	expect resp.http.accept-ranges == "bytes"
 	expect resp.status == 200
 	rxresp
+	expect resp.http.accept-ranges == "bytes"
 	expect resp.status == 200
 
 	send "GET\r\n\r\n"
 	rxresp
+	expect resp.http.accept-ranges == "resp.http.accept-ranges"
 	expect resp.status == 400
 } -run
 
