@@ -83,6 +83,8 @@ UNDESIRABLE_WFLAGS = [
 
 def main():
     compiler = os.environ.get("CC", "cc")
+    cflags = os.environ.get("CFLAGS", "")
+    ldflags = os.environ.get("LDFLAGS", "")
 
     src_file = tempfile.NamedTemporaryFile(suffix='.c')
     src_file.write(b"""\
@@ -103,8 +105,8 @@ main(int argc, char **argv)
 
     use_flags = []
     for i in DESIRABLE_OPTIONS + DESIRABLE_WFLAGS + UNDESIRABLE_WFLAGS:
-        args = [compiler, "-c"] + use_flags + [i, "-o", obj_file.name, src_file.name]
-        j = subprocess.run(args, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+        args = [compiler, "-c"] + [cflags, ldflags] + use_flags + [i, "-o", obj_file.name, src_file.name]
+        j = subprocess.run(" ".join(args), stderr=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
         if not j.returncode and not j.stdout and not j.stderr:
             use_flags.append(i)
             sys.stderr.write(compiler + " accepted " + i + '\n')
