@@ -13,6 +13,9 @@ varnish v1 -arg "-sTransient=default,1m" -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.http.x-ttl = beresp.ttl;
 	}
+	sub vcl_deliver {
+		set resp.http.o_uncacheable = obj.uncacheable;
+	}
 } -start
 
 # check that there are no TTL LogTags between the
@@ -32,10 +35,8 @@ client c1 {
 	expect resp.status == 200
 	expect resp.http.connection == close
 	expect resp.http.x-ttl == 0.000
+	expect resp.http.o_uncacheable == true
 } -run
-
-# Give varnish a chance to update stats
-delay .1
 
 varnish v1 -expect n_object == 0
 varnish v1 -expect SM?.Transient.g_alloc == 0
