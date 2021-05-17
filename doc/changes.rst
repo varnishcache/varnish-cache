@@ -35,6 +35,9 @@ release process.
 Varnish Cache 7.x.x (2021-09-15)
 ================================
 
+* Accept-Ranges headers are no longer generated for passed objects,
+  but must either come from the backend or be created in `vcl_deliver{}`
+
 * ACLs no longer produce VSL `VCL_acl` records by default, this must be
   explicitly enabled with `vcl <name> +log { ... }`.
 

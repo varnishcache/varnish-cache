@@ -204,6 +204,7 @@ Resp_Setup_Synth(struct req *req)
 static enum req_fsm_nxt v_matchproto_(req_state_f)
 cnt_deliver(struct worker *wrk, struct req *req)
 {
+	unsigned status;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -222,6 +223,11 @@ cnt_deliver(struct worker *wrk, struct req *req)
 		req->req_step = R_STP_SYNTH;
 		return (REQ_FSM_MORE);
 	}
+
+	status = http_GetStatus(req->resp);
+	if (cache_param->http_range_support && status == 200 &&
+	    !(req->objcore->flags & OC_F_PRIVATE))
+		http_ForceHeader(req->resp, H_Accept_Ranges, "bytes");
 
 	VCL_deliver_method(req->vcl, wrk, req, NULL, NULL);
 	VSLb_ts_req(req, "Process", W_TIM_real(wrk));
@@ -437,9 +443,6 @@ cnt_transmit(struct worker *wrk, struct req *req)
 		VSLb(req->vsl, SLT_Error, "Failure to push processors");
 		req->doclose = SC_OVERLOAD;
 	} else {
-		if (cache_param->http_range_support && status == 200)
-			http_ForceHeader(req->resp, H_Accept_Ranges, "bytes");
-
 		if (status < 200 || status == 204) {
 			// rfc7230,l,1691,1695
 			http_Unset(req->resp, H_Content_Length);
@@ -465,8 +468,8 @@ cnt_transmit(struct worker *wrk, struct req *req)
 		}
 		if (req->resp_len == 0)
 			sendbody = 0;
+		req->transport->deliver(req, boc, sendbody);
 	}
-	req->transport->deliver(req, boc, sendbody);
 
 	VSLb_ts_req(req, "Resp", W_TIM_real(wrk));
 
