@@ -34,6 +34,7 @@ client c1 {
 	expect resp.http.o_ttl > -0.5
 	expect resp.http.o_grace == "0.000"
 	expect resp.http.o_keep == "0.000"
+	expect resp.http.o_uncacheable == "true"
 
 	txreq -url "/foo"
 	rxresp
@@ -46,6 +47,7 @@ client c1 {
 	expect resp.http.o_ttl > -0.5
 	expect resp.http.o_grace == "0.000"
 	expect resp.http.o_keep == "0.000"
+	expect resp.http.o_uncacheable == "true"
 }
 
 client c1 -run
