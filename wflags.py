@@ -86,7 +86,7 @@ def main():
 
     src_file = tempfile.NamedTemporaryFile(suffix='.c')
     src_file.write(b"""\
-#include <pthread.h>
+#include <sched.h>
 #include <stdio.h>
 
 int
