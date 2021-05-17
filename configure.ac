@@ -718,8 +718,8 @@ AX_CHECK_COMPILE_FLAG([-Werror=unused-result],
       OCFLAGS="${OCFLAGS} -Wno-unused-result"])])
 
 
-echo "CC=$CC"
-ls -l "$(command -v $CC)"
+echo "CC=$CC CFLAGS=$CFLAGS LDFLAGS=$LDFLAGS"
+ls -l "$(command -v cc)"
 
 # This corresponds to FreeBSD's WARNS level 6
 DEVELOPER_CFLAGS=`CC="$CC" $PYTHON $srcdir/wflags.py`
