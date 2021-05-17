@@ -107,6 +107,7 @@ main(int argc, char **argv)
         j = subprocess.run(args, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
         if not j.returncode and not j.stdout and not j.stderr:
             use_flags.append(i)
+            sys.stderr.write(compiler + " accepted " + i + '\n')
         else:
             sys.stderr.write(compiler + " cannot " + i + '\n')
             if b'error: unrecognized command line option' in j.stderr:
