@@ -259,9 +259,9 @@ vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo)
 
 	HTTP_Setup(bo->bereq0, bo->ws, bo->vsl, SLT_BereqMethod);
 	http_FilterReq(bo->bereq0, bo->req->http,
-	    bo->do_pass ? HTTPH_R_PASS : HTTPH_R_FETCH);
+	    bo->uncacheable ? HTTPH_R_PASS : HTTPH_R_FETCH);
 
-	if (bo->do_pass)
+	if (bo->uncacheable)
 		AZ(bo->stale_oc);
 	else {
 		http_ForceField(bo->bereq0, HTTP_HDR_METHOD, "GET");
@@ -366,7 +366,7 @@ vbf_304_logic(struct busyobj *bo)
 		HTTP_Merge(bo->wrk, bo->stale_oc, bo->beresp);
 		assert(http_IsStatus(bo->beresp, 200));
 		bo->was_304 = 1;
-	} else if (!bo->do_pass) {
+	} else if (!bo->uncacheable) {
 		/*
 		 * Backend sent unallowed 304
 		 */
@@ -397,7 +397,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 	AZ(bo->storage);
-	bo->storage = bo->do_pass ? stv_transient : STV_next();
+	bo->storage = bo->uncacheable ? stv_transient : STV_next();
 
 	if (bo->retries > 0)
 		http_Unset(bo->bereq, "\012X-Varnish:");
@@ -406,7 +406,6 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	VCL_backend_fetch_method(bo->vcl, wrk, NULL, bo, NULL);
 
-	bo->uncacheable = bo->do_pass;
 	if (wrk->handling == VCL_RET_ABANDON || wrk->handling == VCL_RET_FAIL)
 		return (F_STP_FAIL);
 
@@ -538,7 +537,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 		bo->uncacheable = 1;
 		wrk->handling = VCL_RET_DELIVER;
 	}
-	if (bo->do_pass || bo->uncacheable)
+	if (bo->uncacheable)
 		oc->flags |= OC_F_HFM;
 
 	assert(wrk->handling == VCL_RET_DELIVER);
@@ -1114,7 +1113,7 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	switch (mode) {
 	case VBF_PASS:
 		how = "pass";
-		bo->do_pass = 1;
+		bo->uncacheable = 1;
 		break;
 	case VBF_NORMAL:
 		how = "fetch";

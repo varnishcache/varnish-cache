@@ -262,7 +262,7 @@ VRT_r_bereq_uncacheable(VRT_CTX)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
-	return (ctx->bo->do_pass);
+	return (ctx->bo->uncacheable);
 }
 
 VCL_VOID
