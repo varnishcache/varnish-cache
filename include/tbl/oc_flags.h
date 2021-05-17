@@ -34,7 +34,7 @@ OC_FLAG(PURGED,		purged,		(1<<0))		//lint !e835
 OC_FLAG(BUSY,		busy,		(1<<1))
 OC_FLAG(HFM,		hfm,		(1<<2))
 OC_FLAG(HFP,		hfp,		(1<<3))
-OC_FLAG(ABANDON,	abandon,	(1<<4))
+OC_FLAG(CANCEL,		cancel,		(1<<4))
 OC_FLAG(PRIVATE,	private,	(1<<5))
 OC_FLAG(FAILED,		failed,		(1<<6))
 OC_FLAG(DYING,		dying,		(1<<7))

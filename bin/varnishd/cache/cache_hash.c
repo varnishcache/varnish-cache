@@ -763,11 +763,11 @@ HSH_Fail(struct objcore *oc)
 }
 
 /*---------------------------------------------------------------------
- * Abandon a fetch we will not need
+ * Mark a fetch we will not need as cancelled
  */
 
 static void
-hsh_abandon(struct objcore *oc)
+hsh_cancel(struct objcore *oc)
 {
 	struct objhead *oh;
 
@@ -776,7 +776,7 @@ hsh_abandon(struct objcore *oc)
 	CHECK_OBJ(oh, OBJHEAD_MAGIC);
 
 	Lck_Lock(&oh->mtx);
-	oc->flags |= OC_F_ABANDON;
+	oc->flags |= OC_F_CANCEL;
 	Lck_Unlock(&oh->mtx);
 }
 
@@ -807,7 +807,7 @@ HSH_Cancel(struct worker *wrk, struct objcore *oc, struct boc *boc)
 		AN(oc->flags & OC_F_HFM);
 
 	if (boc != NULL) {
-		hsh_abandon(oc);
+		hsh_cancel(oc);
 		ObjWaitState(oc, BOS_FINISHED);
 	}
 
