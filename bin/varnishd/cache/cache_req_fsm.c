@@ -201,8 +201,6 @@ Resp_Setup_Synth(struct req *req)
 		http_SetHeader(h, "Connection: close");
 }
 
-#include <stdio.h>
-
 static enum req_fsm_nxt v_matchproto_(req_state_f)
 cnt_deliver(struct worker *wrk, struct req *req)
 {
