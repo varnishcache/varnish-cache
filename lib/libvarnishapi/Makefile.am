@@ -4,8 +4,7 @@ AM_LDFLAGS  = $(AM_LT_LDFLAGS)
 
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/include \
-	-I$(top_builddir)/include \
-	@PCRE_CFLAGS@
+	-I$(top_builddir)/include
 
 lib_LTLIBRARIES = libvarnishapi.la
 
@@ -41,7 +40,7 @@ libvarnishapi_la_CFLAGS = \
 
 libvarnishapi_la_LIBADD = \
 	$(top_builddir)/lib/libvarnish/libvarnish.la \
-	@SAN_LDFLAGS@ @PCRE_LIBS@ ${NET_LIBS} ${RT_LIBS} ${LIBM}
+	@SAN_LDFLAGS@ ${NET_LIBS} ${RT_LIBS} ${LIBM}
 
 if HAVE_LD_VERSION_SCRIPT
 libvarnishapi_la_LDFLAGS += -Wl,--version-script=$(srcdir)/libvarnishapi.map
@@ -81,7 +80,8 @@ vxp_test_SOURCES = \
 vxp_test_CFLAGS = \
 	-DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"' \
 	-DVXP_DEBUG
-vxp_test_LDADD = @PCRE_LIBS@ \
+vxp_test_LDADD = \
+	$(top_builddir)/lib/libvarnish/libvarnish.la \
 	${RT_LIBS} ${LIBM} ${PTHREAD_LIBS}
 
 TESTS = vsl_glob_test
