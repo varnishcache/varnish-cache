@@ -1639,8 +1639,7 @@ PARAM_PCRE(
 	" prevent crashes, at the cost of possible regexp"
 	" matching failures.\n\n"
 	"Matching failures will show up in the log as VCL_Error"
-	" messages with regexp errors -27 or -21.\n\n"
-	"Testcase r01576 can be useful when tuning this parameter."
+	" messages with regexp errors -27 or -21."
 )
 
 #  undef PARAM_ALL

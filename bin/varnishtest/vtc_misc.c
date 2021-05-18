@@ -501,7 +501,6 @@ cmd_feature(CMD_ARGS)
 
 		FEATURE("ipv4", ipvx_works("127.0.0.1"));
 		FEATURE("ipv6", ipvx_works("[::1]"));
-		FEATURE("pcre_jit", VRE_has_jit);
 		FEATURE("64bit", sizeof(void*) == 8);
 		FEATURE("disable_aslr", addr_no_randomize_works());
 		FEATURE("dns", dns_works());

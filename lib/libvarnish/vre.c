@@ -48,8 +48,6 @@
 #define VRE_STUDY_JIT_COMPILE 0
 #endif
 
-const unsigned VRE_has_jit = VRE_STUDY_JIT_COMPILE;
-
 #if PCRE_MAJOR < 8 || (PCRE_MAJOR == 8 && PCRE_MINOR < 20)
 #  define pcre_free_study pcre_free
 #endif

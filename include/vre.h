@@ -51,7 +51,6 @@ typedef struct vre vre_t;
 #define VRE_ERROR_NOMATCH         (-1)
 
 /* And those to PCRE options */
-extern const unsigned VRE_has_jit;
 extern const unsigned VRE_CASELESS;
 extern const unsigned VRE_NOTEMPTY;
 
