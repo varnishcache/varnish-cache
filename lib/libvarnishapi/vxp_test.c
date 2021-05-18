@@ -58,7 +58,7 @@ main(int argc, char * const *argv)
 	struct vsb *vsb;
 	struct vex *vex;
 	char *q_arg = NULL;
-	char opt;
+	int opt;
 
 	while ((opt = getopt(argc, argv, "q:")) != -1) {
 		switch (opt) {
