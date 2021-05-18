@@ -70,6 +70,14 @@ struct vre {
 const unsigned VRE_CASELESS = PCRE_CASELESS;
 const unsigned VRE_NOTEMPTY = PCRE_NOTEMPTY;
 
+/*
+ * Even though we only have one for each case so far, keep track of masks
+ * to differentiate between compile and exec options and enfore the hard
+ * VRE linkage.
+ */
+#define VRE_MASK_COMPILE	PCRE_CASELESS
+#define VRE_MASK_EXEC		PCRE_NOTEMPTY
+
 vre_t *
 VRE_compile(const char *pattern, unsigned options,
     const char **errptr, int *erroffset)
@@ -82,6 +90,7 @@ VRE_compile(const char *pattern, unsigned options,
 		*errptr = "Out of memory for VRE";
 		return (NULL);
 	}
+	AZ(options & (~VRE_MASK_COMPILE));
 	v->re = pcre_compile(pattern, options, errptr, erroffset, NULL);
 	if (v->re == NULL) {
 		VRE_free(&v);
@@ -129,6 +138,7 @@ VRE_exec(const vre_t *code, const char *subject, int length,
 		code->re_extra->flags &= ~PCRE_EXTRA_MATCH_LIMIT_RECURSION;
 	}
 
+	AZ(options & (~VRE_MASK_EXEC));
 	return (pcre_exec(code->re, code->re_extra, subject, length,
 	    startoffset, options, ovector, ovecsize));
 }
