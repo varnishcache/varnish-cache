@@ -10,7 +10,7 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	sub vcl_backend_response {
-		set beresp.ttl = 0.0001s;
+		set beresp.ttl = 0.001s;
 		set beresp.grace = 0s;
 		set beresp.keep = 2s;
 	}

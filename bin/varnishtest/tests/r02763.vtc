@@ -29,7 +29,7 @@ varnish v1 -vcl+backend {
 		if (bereq.http.HFM) {
 			set beresp.uncacheable = true;
 		} else {
-			set beresp.ttl = 0.0001s;
+			set beresp.ttl = 0.001s;
 			set beresp.grace = 0s;
 			set beresp.keep = 1m;
 		}

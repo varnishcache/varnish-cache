@@ -17,7 +17,7 @@ varnish v1 -vcl+backend {
 	import std;
 
 	sub vcl_backend_response {
-		set beresp.ttl = 0.00001s;
+		set beresp.ttl = 0.001s;
 		set beresp.grace = 0.1s;
 		set beresp.keep = 9999s;
 	}

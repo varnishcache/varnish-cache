@@ -12,7 +12,7 @@ varnish v1 -vcl {
 			return (deliver);
 		}
 		set beresp.status = 200;
-		set beresp.ttl = 0.0001s;
+		set beresp.ttl = 0.001s;
 		set beresp.grace = 1h;
 		return (deliver);
 	}

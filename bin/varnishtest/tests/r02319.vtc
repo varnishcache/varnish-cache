@@ -8,7 +8,7 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	sub vcl_backend_fetch {
-		set bereq.between_bytes_timeout = 0.0001s;
+		set bereq.between_bytes_timeout = 0.001s;
 	}
 	sub vcl_backend_response {
 		set beresp.do_stream = false;
