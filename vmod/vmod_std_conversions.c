@@ -319,14 +319,16 @@ vmod_time(VRT_CTX, struct VARGS(time)* a)
 VCL_INT v_matchproto_(td_std_real2integer)
 vmod_real2integer(VRT_CTX, VCL_REAL r, VCL_INT i)
 {
+	VCL_INT retval;
+
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
-	if (!isfinite(r))
+	if (!VRT_REAL_is_valid(r))
 		return (i);
-	r = round(r);
-	if (r > VCL_INT_MAX || r < VCL_INT_MIN)
+	retval = round(r);
+	if (!VRT_INT_is_valid(r))
 		return (i);
-	return ((VCL_INT)r);
+	return (retval);
 }
 
 VCL_TIME v_matchproto_(td_std_real2time)

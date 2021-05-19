@@ -430,8 +430,8 @@ varnish v1 -vcl+backend {
 		set resp.http.bar = true == false;
 	}
 	sub vcl_deliver {
-		set resp.http.p = (0 + 9223372036854775807);
-		set resp.http.n = (0 - 9223372036854775807);
+		set resp.http.p = (0 + 999999999999999);
+		set resp.http.n = (0 - 999999999999999);
 		if (resp.status == -(-200)) {
 			set resp.http.o = -std.integer("-200");
 		}
@@ -444,8 +444,8 @@ client c1 {
 	expect resp.http.rst == "0"
 	expect resp.http.foo == "true"
 	expect resp.http.bar == "false"
-	expect resp.http.p == 9223372036854775807
-	expect resp.http.n == -9223372036854775807
+	expect resp.http.p == 999999999999999
+	expect resp.http.n == -999999999999999
 	expect resp.http.o == 200
 } -run
 

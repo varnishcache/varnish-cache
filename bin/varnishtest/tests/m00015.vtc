@@ -95,38 +95,31 @@ client c1 {
 	expect resp.http.converted == 0.000
 
 	# VCL_INT_MAX
-	txreq -hdr "foo: 9007199254740991" \
-	      -hdr "bytes: 9007199254740991b" \
-	      -hdr "duration: 9007199254740991s" \
-	      -hdr "integer: 9007199254740991" \
-	      -hdr "time: 9007199254740991"
+	txreq -hdr "foo: 999999999999.999" \
+	      -hdr "bytes: 999999999999b" \
+	      -hdr "duration: 999999999999.999s" \
+	      -hdr "integer: 999999999999.999" \
+	      -hdr "time: 999999999999.999"
 	rxresp
-	expect resp.http.converted == 9007199254740991.000
-	expect resp.http.bytes == 9007199254740991.000
-	expect resp.http.duration == 9007199254740991.000
-	expect resp.http.integer == 9007199254740991.000
-	expect resp.http.time == 9007199254740991.000
+	expect resp.http.converted == 999999999999.999
+	expect resp.http.bytes == 999999999999.000
+	expect resp.http.duration == 999999999999.999
+	expect resp.http.integer == 999999999999.000
+	expect resp.http.time == 999999999999.999
 
 	# VCL_INT_MIN
-	txreq -hdr "foo: -9007199254740991" \
-	      -hdr "duration: -9007199254740991s" \
-	      -hdr "integer: -9007199254740991"
+	txreq -hdr "foo: -999999999999.999" \
+	      -hdr "duration: -999999999999.999s" \
+	      -hdr "integer: -999999999999"
 	rxresp
-	expect resp.http.converted == -9007199254740991.000
-	expect resp.http.duration == -9007199254740991.000
-	expect resp.http.integer == -9007199254740991.000
+	expect resp.http.converted == -999999999999.999
+	expect resp.http.duration == -999999999999.999
+	expect resp.http.integer == -999999999999.000
 
 	txreq -hdr "foo: bar"
 	rxresp
 	expect resp.http.converted == 0.000
 
-	txreq -hdr "foo: 9007199254740992"
-	rxresp
-	expect resp.http.converted == 9007199254740992.000
-
-	txreq -hdr "foo: -9007199254740992"
-	rxresp
-	expect resp.http.converted == -9007199254740992.000
 } -run
 client c1 {
 	txreq -hdr "nofb: NAN"

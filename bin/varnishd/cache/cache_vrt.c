@@ -829,6 +829,9 @@ VRT_INT_string(VRT_CTX, VCL_INT num)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	if (!VRT_INT_is_valid(num))
+		VRT_fail(ctx, "INT overflow converting to string (%jX)",
+		    (intmax_t)num);
 	return (WS_Printf(ctx->ws, "%jd", (intmax_t)num));
 }
 
@@ -843,6 +846,8 @@ VRT_REAL_string(VRT_CTX, VCL_REAL num)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	if (!VRT_REAL_is_valid(num))
+		VRT_fail(ctx, "REAL overflow converting to string (%e)", num);
 	return (WS_Printf(ctx->ws, "%.3f", num));
 }
 

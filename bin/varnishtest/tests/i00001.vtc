@@ -1,0 +1,34 @@
+varnishtest "SF-decimal/SF-integer ranges"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_deliver {
+		if (req.http.foo) {
+			set resp.http.foo = obj.ttl * 10000000000;
+		}
+		if (req.http.bar) {
+			set resp.http.bar = storage.Transient.free_space * 1000000000000000;
+		}
+	}
+} -start
+
+logexpect l1 -v v1 -g raw {
+	expect * 1001	VCL_Error	"REAL overflow converting to string.*"
+	expect * 1004	VCL_Error	"INT overflow converting to string.*"
+} -start
+
+client c1 {
+	txreq -hdr "foo: 1"
+	rxresp
+} -run
+
+client c1 {
+	txreq -hdr "bar: 1"
+	rxresp
+} -run
+
+logexpect l1 -wait
