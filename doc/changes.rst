@@ -35,6 +35,11 @@ release process.
 Varnish Cache 7.x.x (2021-09-15)
 ================================
 
+* 'Scientific Notation' numbers like 6.62607004e-34 are no longer
+  supported in VCL.  (The preparation of RFC8941 made it clear that
+  there are neither reason nor any need to support scientific notation
+  in context of HTTP headers.
+
 * Accept-Ranges headers are no longer generated for passed objects,
   but must either come from the backend or be created in `vcl_deliver{}`
 

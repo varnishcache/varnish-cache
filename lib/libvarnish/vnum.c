@@ -83,15 +83,6 @@ VNUMpfx(const char *p, const char **t)
 	}
 	if (e > 0.0)
 		return (nan(""));		// No digits
-	if (*p == 'e' || *p == 'E') {
-		p++;
-		if (*p == '-' || *p == '+')
-			es = (*p++ == '-' ? -1.0 : 1.0);
-		if (!vct_isdigit(*p))
-			return (nan(""));
-		for (; vct_isdigit(*p); p++)
-			ee = ee * 10. + *p - '0';
-	}
 	while (vct_issp(*p))
 		p++;
 	if (*p != '\0')
@@ -245,7 +236,10 @@ VNUM_2bytes(const char *p, uintmax_t *r, uintmax_t rel)
 }
 
 #ifdef NUM_C_TEST
-/* Compile with: "cc -o foo -DNUM_C_TEST -I../.. -I../../include num.c -lm" */
+/*
+ * Compile with:
+ *     cc -o foo -DNUM_C_TEST -I../.. -I../../include vnum.c vas.c vct.c -lm
+ */
 
 static struct test_case {
 	const char *str;
@@ -315,11 +309,11 @@ static const char *vec[] = {
 	" 12.",
 	" 12.3",
 	" 12.34",
-	" 12.34e-3",
-	" 12.34e3",
-	" 12.34e+3",
-	" +12.34e-3",
-	" -12.34e3",
+	"N12.34e-3",
+	"N12.34e3",
+	"N12.34e+3",
+	"N+12.34e-3",
+	"N-12.34e3",
 	"N.",
 	"N.12.",
 	"N12..",
