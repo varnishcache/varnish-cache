@@ -30,9 +30,13 @@
 
 #include "config.h"
 
-#include <pcre.h>
+#if USE_PCRE2_JIT
+#  include <pthread.h>
+#endif
 #include <string.h>
 #include <unistd.h>
+
+#include <pcre2.h>
 
 #include "vdef.h"
 
@@ -42,44 +46,36 @@
 
 #include "vre.h"
 
-#if defined(USE_PCRE_JIT)
-#define VRE_STUDY_JIT_COMPILE PCRE_STUDY_JIT_COMPILE
-#else
-#define VRE_STUDY_JIT_COMPILE 0
-#endif
-
-#if PCRE_MAJOR < 8 || (PCRE_MAJOR == 8 && PCRE_MINOR < 20)
-#  define pcre_free_study pcre_free
-#endif
-
 struct vre {
 	unsigned		magic;
 #define VRE_MAGIC		0xe83097dc
-	pcre			*re;
-	pcre_extra		*re_extra;
-	int			my_extra;
+	pcre2_code		*re;
+	pcre2_match_context	*re_ctx;
+	PCRE2_UCHAR		err_buf[128];
 };
 
 /*
- * We don't want to spread or even expose the majority of PCRE options
- * so we establish our own options and implement hard linkage to PCRE
+ * We don't want to spread or even expose the majority of PCRE2 options
+ * so we establish our own options and implement hard linkage to PCRE2
  * here.
  */
-const unsigned VRE_CASELESS = PCRE_CASELESS;
-const unsigned VRE_NOTEMPTY = PCRE_NOTEMPTY;
+const unsigned VRE_CASELESS = PCRE2_CASELESS;
+const unsigned VRE_NOTEMPTY = PCRE2_NOTEMPTY;
 
 /*
  * Even though we only have one for each case so far, keep track of masks
  * to differentiate between compile and exec options and enfore the hard
  * VRE linkage.
  */
-#define VRE_MASK_COMPILE	PCRE_CASELESS
-#define VRE_MASK_EXEC		PCRE_NOTEMPTY
+#define VRE_MASK_COMPILE	PCRE2_CASELESS
+#define VRE_MASK_EXEC		PCRE2_NOTEMPTY
 
 vre_t *
 VRE_compile(const char *pattern, unsigned options,
     const char **errptr, int *erroffset)
 {
+	PCRE2_SIZE erroff;
+	int errcode = 0;
 	vre_t *v;
 	*errptr = NULL; *erroffset = 0;
 
@@ -89,25 +85,26 @@ VRE_compile(const char *pattern, unsigned options,
 		return (NULL);
 	}
 	AZ(options & (~VRE_MASK_COMPILE));
-	v->re = pcre_compile(pattern, options, errptr, erroffset, NULL);
+	v->re = pcre2_compile((PCRE2_SPTR8)pattern, PCRE2_ZERO_TERMINATED,
+	    options, &errcode, &erroff, NULL);
+	if (errcode) {
+		*erroffset = (int)erroff;
+		(void)pcre2_get_error_message(errcode, v->err_buf,
+		    sizeof(v->err_buf));
+		*errptr = (char *)v->err_buf;
+	}
 	if (v->re == NULL) {
 		VRE_free(&v);
 		return (NULL);
 	}
-	v->re_extra = pcre_study(v->re, VRE_STUDY_JIT_COMPILE, errptr);
-	if (*errptr != NULL) {
+#if USE_PCRE2_JIT
+	(void)pcre2_jit_compile(v->re, 0);
+#endif
+	v->re_ctx = pcre2_match_context_create(NULL);
+	if (v->re_ctx == NULL) {
+		*errptr = "Out of memory for pcre2_match_context";
 		VRE_free(&v);
 		return (NULL);
-	}
-	if (v->re_extra == NULL) {
-		/* allocate our own */
-		v->re_extra = calloc(1, sizeof(pcre_extra));
-		v->my_extra = 1;
-		if (v->re_extra == NULL) {
-			*errptr = "Out of memory for pcre_extra";
-			VRE_free(&v);
-			return (NULL);
-		}
 	}
 	return (v);
 }
@@ -117,28 +114,53 @@ VRE_exec(const vre_t *code, const char *subject, int length,
     int startoffset, int options, int *ovector, int ovecsize,
     const volatile struct vre_limits *lim)
 {
+	pcre2_match_data *data;
+	PCRE2_SIZE *rov;
+	int ov[30], rv, rsize;
+
 	CHECK_OBJ_NOTNULL(code, VRE_MAGIC);
-	int ov[30];
 
 	if (ovector == NULL) {
 		ovector = ov;
 		ovecsize = sizeof(ov)/sizeof(ov[0]);
 	}
 
+	/* XXX: how to allocate on the stack? */
+	data = pcre2_match_data_create(ovecsize, NULL);
+	XXXAN(data);
+
 	if (lim != NULL) {
 		/* XXX: not reentrant */
-		code->re_extra->match_limit = lim->match;
-		code->re_extra->flags |= PCRE_EXTRA_MATCH_LIMIT;
-		code->re_extra->match_limit_recursion = lim->match_recursion;
-		code->re_extra->flags |= PCRE_EXTRA_MATCH_LIMIT_RECURSION;
-	} else {
-		code->re_extra->flags &= ~PCRE_EXTRA_MATCH_LIMIT;
-		code->re_extra->flags &= ~PCRE_EXTRA_MATCH_LIMIT_RECURSION;
+		pcre2_set_match_limit(code->re_ctx, lim->match);
+#if HAVE_PCRE2_SET_DEPTH_LIMIT
+		pcre2_set_depth_limit(code->re_ctx, lim->depth);
+#else
+		pcre2_set_recursion_limit(code->re_ctx, lim->depth);
+#endif
 	}
 
 	AZ(options & (~VRE_MASK_EXEC));
-	return (pcre_exec(code->re, code->re_extra, subject, length,
-	    startoffset, options, ovector, ovecsize));
+	rv = pcre2_match(code->re, (PCRE2_SPTR)subject, length,
+	    startoffset, options, data, NULL);
+
+	rov = pcre2_get_ovector_pointer(data);
+	rsize = pcre2_get_ovector_count(data);
+	AN(rov);
+
+	while (ovecsize > 0) {
+		if (rsize > 0) {
+			*ovector = (int)*rov;
+			rov++;
+			rsize--;
+		} else {
+			*ov = 0;
+		}
+		ovector++;
+		ovecsize--;
+	}
+
+	pcre2_match_data_free(data);
+	return (rv);
 }
 
 void
@@ -148,14 +170,10 @@ VRE_free(vre_t **vv)
 
 	*vv = NULL;
 	CHECK_OBJ(v, VRE_MAGIC);
-	if (v->re_extra != NULL) {
-		if (v->my_extra)
-			free(v->re_extra);
-		else
-			pcre_free_study(v->re_extra);
-	}
+	if (v->re_ctx != NULL)
+		pcre2_match_context_free(v->re_ctx);
 	if (v->re != NULL)
-		pcre_free(v->re);
+		pcre2_code_free(v->re);
 	FREE_OBJ(v);
 }
 

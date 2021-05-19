@@ -1604,37 +1604,37 @@ PARAM_VCC(
 )
 
 /*--------------------------------------------------------------------
- * PCRE parameters
+ * PCRE2 parameters
  */
 
-#  define PARAM_PCRE(nm, pv, min, def, descr)			\
+#  define PARAM_PCRE2(nm, pv, min, def, descr)			\
 	PARAM(, , nm, tweak_uint, &mgt_param.vre_limits.pv,	\
 	    min, NULL, def, NULL, descr)
 
-PARAM_PCRE(
-	/* name */	pcre_match_limit,
+PARAM_PCRE2(
+	/* name */	pcre2_match_limit,
 	/* priv */	match,
 	/* min */	"1",
 	/* def */	"10000",
 	/* descr */
-	"The limit for the number of calls to the internal match()"
-	" function in pcre_exec().\n\n"
-	"(See: PCRE_EXTRA_MATCH_LIMIT in pcre docs.)\n\n"
+	"The limit for the number of calls to the internal match"
+	" logic in pcre2_match().\n\n"
+	"(See: pcre2_set_match_limit() in pcre2 docs.)\n\n"
 	"This parameter limits how much CPU time"
 	" regular expression matching can soak up."
 )
 
-PARAM_PCRE(
-	/* name */	pcre_match_limit_recursion,
-	/* priv */	match_recursion,
+PARAM_PCRE2(
+	/* name */	pcre2_depth_limit,
+	/* priv */	depth,
 	/* min */	"1",
 	/* def */	"20",
 	/* descr */
-	"The recursion depth-limit for the internal match() function"
-	" in a pcre_exec().\n\n"
-	"(See: PCRE_EXTRA_MATCH_LIMIT_RECURSION in pcre docs.)\n\n"
+	"The recursion depth-limit for the internal match logic"
+	" in a pcre2_match().\n\n"
+	"(See: pcre2_set_depth_limit() in pcre2 docs.)\n\n"
 	"This puts an upper limit on the amount of stack used"
-	" by PCRE for certain classes of regular expressions.\n\n"
+	" by PCRE2 for certain classes of regular expressions.\n\n"
 	"We have set the default value low in order to"
 	" prevent crashes, at the cost of possible regexp"
 	" matching failures.\n\n"
@@ -1643,7 +1643,7 @@ PARAM_PCRE(
 )
 
 #  undef PARAM_ALL
-#  undef PARAM_PCRE
+#  undef PARAM_PCRE2
 #  undef PARAM_STRING
 #  undef PARAM_VCC
 #endif /* defined(PARAM_ALL) */

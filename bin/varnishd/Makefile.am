@@ -159,7 +159,7 @@ nobase_pkginclude_HEADERS = \
 vcldir=$(datarootdir)/$(PACKAGE)/vcl
 
 varnishd_CFLAGS = \
-	@PCRE_CFLAGS@ \
+	@PCRE2_CFLAGS@ \
 	@SAN_CFLAGS@ \
 	-DNOT_IN_A_VMOD \
 	-DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"' \
@@ -174,7 +174,7 @@ varnishd_LDADD = \
 	$(top_builddir)/lib/libvgz/libvgz.a \
 	@SAN_LDFLAGS@ \
 	@JEMALLOC_LDADD@ \
-	@PCRE_LIBS@ \
+	@PCRE2_LIBS@ \
 	${DL_LIBS} ${PTHREAD_LIBS} ${NET_LIBS} ${RT_LIBS} ${LIBM}
 
 if WITH_UNWIND

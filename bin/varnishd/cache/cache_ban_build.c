@@ -32,7 +32,7 @@
 
 #include "config.h"
 
-#include <pcre.h>
+#include <pcre2.h>
 
 #include "cache_varnishd.h"
 #include "cache_ban.h"
@@ -187,18 +187,20 @@ ban_parse_http(const struct ban_proto *bp, const char *a1)
 static const char *
 ban_parse_regexp(struct ban_proto *bp, const char *a3)
 {
-	const char *error;
-	int erroroffset, rc;
+	const char *error = "TODO";
+	int errorcode, rc;
 	size_t sz;
-	pcre *re;
+	PCRE2_SIZE erroroffset;
+	pcre2_code *re;
 
-	re = pcre_compile(a3, 0, &error, &erroroffset, NULL);
+	re = pcre2_compile((PCRE2_SPTR)a3, PCRE2_ZERO_TERMINATED, 0,
+	    &errorcode, &erroroffset, NULL);
 	if (re == NULL)
 		return (ban_error(bp, "Regex compile error: %s", error));
-	rc = pcre_fullinfo(re, NULL, PCRE_INFO_SIZE, &sz);
+	rc = pcre2_pattern_info(re, PCRE2_INFO_SIZE, &sz);
 	AZ(rc);
 	ban_add_lump(bp, re, sz);
-	pcre_free(re);
+	pcre2_code_free(re);
 	return (0);
 }
 

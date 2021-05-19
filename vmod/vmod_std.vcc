@@ -137,7 +137,7 @@ following:
 
 * a bracket expression such as ``[abc]`` or ``[!0-9]`` is interpreted
   as a character class according to the rules of basic regular
-  expressions (*not* `pcre(3)` regexen), except that ``!`` is used for
+  expressions (*not* `pcre2(3)` regexen), except that ``!`` is used for
   character class negation instead of ``^``.
 
 If *pathname* is ``true``, then the forward slash character ``/`` is

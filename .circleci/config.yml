@@ -39,7 +39,7 @@ jobs:
                 libtool \
                 libunwind-devel \
                 make \
-                pcre-devel \
+                pcre2-devel \
                 python3 \
                 python-sphinx
       - checkout
@@ -170,7 +170,7 @@ jobs:
                     libtool \
                     libunwind-devel \
                     make \
-                    pcre-devel \
+                    pcre2-devel \
                     python3 \
                     sudo
             elif [ << parameters.dist >> = debian -o << parameters.dist >> = ubuntu ]; then
@@ -188,7 +188,7 @@ jobs:
                     libedit-dev \
                     libjemalloc-dev \
                     libncurses-dev \
-                    libpcre3-dev \
+                    libpcre2-dev \
                     libtool \
                     libunwind-dev \
                     pkg-config \
@@ -208,7 +208,7 @@ jobs:
                     libtool \
                     libunwind-dev \
                     linux-headers \
-                    pcre-dev \
+                    pcre2-dev \
                     py-docutils \
                     py3-sphinx \
                     tar \
@@ -227,7 +227,7 @@ jobs:
                     libtool \
                     libunwind \
                     linux-headers \
-                    pcre \
+                    pcre2 \
                     python-docutils \
                     python-sphinx \
                     tar

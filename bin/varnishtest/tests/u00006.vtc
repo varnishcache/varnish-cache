@@ -44,7 +44,7 @@ shell -err -expect {-I: "foo" matches zero tags} \
 	"varnishlog -I foo:bar"
 shell -err -expect {-I: "Resp" is ambiguous} \
 	"varnishlog -I Resp:bar"
-shell -err -expect {-I: Regex error at position 4 (missing ))} \
+shell -err -expect {-I: Regex error at position 4 (missing closing parenthesis)} \
 	{varnishlog -I "(foo"}
 shell -err -expect "-t: Invalid argument" \
 	"varnishlog -t -1"

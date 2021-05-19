@@ -10,7 +10,7 @@ RUN set -e; \
 	       libtool \
 	       libunwind \
 	       linux-headers \
-	       pcre \
+	       pcre2 \
 	       python-docutils \
 	       python-sphinx \
 	       tar

@@ -111,67 +111,50 @@ AC_SUBST(LIBM)
 m4_ifndef([PKG_PROG_PKG_CONFIG], [m4_fatal([pkg.m4 missing, please install pkg-config])])
 PKG_PROG_PKG_CONFIG
 if test -n $PKG_CONFIG; then
-   PKG_CHECK_MODULES([PCRE], [libpcre])
+   PKG_CHECK_MODULES([PCRE2], [libpcre2-8])
 else
-   AC_CHECK_PROG(PCRE_CONFIG, pcre-config, pcre-config)
-   AC_ARG_WITH(pcre-config,
-               AS_HELP_STRING([--with-pcre-config=PATH],
-                              [Location of PCRE pcre-config (auto)]),
-               [pcre_config="$withval"],
-               [pcre_config=""])
+   AC_CHECK_PROG(PCRE2_CONFIG, pcre2-config, pcre2-config)
+   AC_ARG_WITH(pcre2-config,
+               AS_HELP_STRING([--with-pcre2-config=PATH],
+                              [Location of PCRE2 pcre2-config (auto)]),
+               [pcre2_config="$withval"],
+               [pcre2_config=""])
 
-  if test "x$pcre_config" != "x" ; then
-    AC_MSG_CHECKING(for $pcre_config)
+  if test "x$pcre2_config" != "x" ; then
+    AC_MSG_CHECKING(for $pcre2_config)
 
-    if test -f $pcre_config ; then
-      PCRE_CONFIG=$pcre_config
+    if test -f $pcre2_config ; then
+      PCRE2_CONFIG=$pcre2_config
       AC_MSG_RESULT(yes)
     else
       AC_MSG_RESULT(no - searching PATH)
     fi
   fi
-  if test "x$PCRE_CONFIG" = "x"; then
-    AC_CHECK_PROGS(PCRE_CONFIG, pcre-config)
+  if test "x$PCRE2_CONFIG" = "x"; then
+    AC_CHECK_PROGS(PCRE2_CONFIG, pcre2-config)
   fi
-  PCRE_CFLAGS=`$PCRE_CONFIG --cflags`
-  PCRE_LIBS=`$PCRE_CONFIG --libs`
+  PCRE2_CFLAGS=`$PCRE2_CONFIG --cflags`
+  PCRE2_LIBS=`$PCRE2_CONFIG --libs8`
 fi
-AC_SUBST(PCRE_CFLAGS)
-AC_SUBST(PCRE_LIBS)
+AC_SUBST(PCRE2_CFLAGS)
+AC_SUBST(PCRE2_LIBS)
+AC_DEFINE([PCRE2_CODE_UNIT_WIDTH], [8], [Work with 8-bit characters for PCRE2])
 
-# --enable-pcre-jit
-AC_ARG_ENABLE(pcre-jit,
-  AS_HELP_STRING([--enable-pcre-jit],
-    [use the PCRE JIT compiler (default is YES)]),
+save_LIBS="${LIBS}"
+LIBS="${LIBS} ${PCRE2_LIBS}"
+AC_CHECK_FUNCS([pcre2_set_depth_limit_8], [
+  AC_DEFINE([HAVE_PCRE2_SET_DEPTH_LIMIT], [1], [Use pcre2_set_depth_limit()])
+])
+LIBS="${save_LIBS}"
+
+# --enable-pcre2-jit
+AC_ARG_ENABLE(pcre2-jit,
+  AS_HELP_STRING([--enable-pcre2-jit],
+    [use the PCRE2 JIT compiler (default is YES)]),
     [],
-    [enable_pcre_jit=yes])
-if test "$enable_pcre_jit" = yes; then
-  AC_MSG_CHECKING(for PCRE JIT usability)
-  save_CFLAGS="${CFLAGS}"
-  CFLAGS="${CFLAGS} ${PCRE_CFLAGS}"
-  save_LIBS="${LIBS}"
-  LIBS="${LIBS} ${PCRE_LIBS}"
-  AC_RUN_IFELSE(
-    [AC_LANG_PROGRAM([[
-#include <pcre.h>
-#if PCRE_MAJOR != 8 || PCRE_MINOR < 32
-#error no jit
-#endif
-    ]],[[
-const char *error;
-pcre *re;
-int erroroffset;
-re = pcre_compile(".", 0, &error, &erroroffset, NULL);
-if (!pcre_study(re, PCRE_STUDY_JIT_COMPILE, &error))
-  return (1);
-    ]])],
-    [AC_MSG_RESULT(yes)
-     AC_DEFINE([USE_PCRE_JIT], [1], [Use the PCRE JIT compiler])
-    ],
-    [AC_MSG_RESULT(no)]
-  )
-  CFLAGS="${save_CFLAGS}"
-  LIBS="${save_LIBS}"
+    [enable_pcre2_jit=yes])
+if test "$enable_pcre2_jit" = yes; then
+  AC_DEFINE([USE_PCRE2_JIT], [1], [Use the PCRE2 JIT compiler])
 fi
 
 
