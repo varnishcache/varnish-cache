@@ -685,7 +685,7 @@ pool_herder(void *priv)
 
 		if (pp->die) {
 			if (delay < 2)
-				delay = 10e-3;
+				delay = .01;
 			else
 				delay = 1;
 			VTIM_sleep(delay);

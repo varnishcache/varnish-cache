@@ -1424,7 +1424,7 @@ PARAM_THREAD(
 	/* name */	thread_pool_fail_delay,
 	/* field */	fail_delay,
 	/* type */	timeout,
-	/* min */	"10e-3",
+	/* min */	".01",
 	/* max */	NULL,
 	/* def */	"0.2",
 	/* units */	"seconds",

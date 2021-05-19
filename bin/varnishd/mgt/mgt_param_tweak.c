@@ -434,7 +434,7 @@ tweak_poolparam(struct vsb *vsb, const struct parspec *par, const char *arg)
 			if (retval)
 				break;
 			retval = tweak_generic_double(vsb,
-			    &px.max_age, av[3], "0", "1e6", "%.0f");
+			    &px.max_age, av[3], "0", "1000000", "%.0f");
 			if (retval)
 				break;
 			if (px.min_pool > px.max_pool) {
