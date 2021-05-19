@@ -325,8 +325,8 @@ vmod_real2integer(VRT_CTX, VCL_REAL r, VCL_INT i)
 
 	if (!VRT_REAL_is_valid(r))
 		return (i);
-	retval = round(r);
-	if (!VRT_INT_is_valid(r))
+	retval = (VCL_INT)round(r);
+	if (!VRT_INT_is_valid(retval))
 		return (i);
 	return (retval);
 }
