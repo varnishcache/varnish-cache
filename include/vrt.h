@@ -301,6 +301,16 @@ typedef vtim_real				VCL_TIME;
 typedef struct vcl *				VCL_VCL;
 typedef void					VCL_VOID;
 
+/*
+ * These limits track RFC8941
+ * We use hex notation because 999999999999.999 is not perfectly
+ * representable in ieee64 doubles.
+ */
+#define VRT_INTEGER_MAX 999999999999999
+#define VRT_INTEGER_MIN -999999999999999
+#define VRT_DECIMAL_MAX 0x1.d1a94a1fffff8p+39
+#define VRT_DECIMAL_MIN -0x1.d1a94a1fffff8p+39
+
 /***********************************************************************
  * This is the composite "context" argument for compiled VCL, VRT and
  * VMOD functions.
@@ -412,10 +422,16 @@ VCL_BACKEND VRT_DirectorResolve(VRT_CTX, VCL_BACKEND);
 /* VCL_BLOB */
 VCL_BLOB VRT_blob(VRT_CTX, const char *, const void *, size_t, unsigned);
 
+/* VCL_INT */
+int VRT_INT_is_valid(VCL_INT);
+
 /* VCL_IP */
 int VRT_VSA_GetPtr(VRT_CTX, VCL_IP sua, const unsigned char ** dst);
 VCL_BOOL VRT_ipcmp(VRT_CTX, VCL_IP, VCL_IP);
 void VRT_Format_Proxy(struct vsb *, VCL_INT, VCL_IP, VCL_IP, VCL_STRING);
+
+/* VCL_REAL */
+int VRT_REAL_is_valid(VCL_REAL);
 
 /* VCL_REGEX */
 VCL_BOOL VRT_re_match(VRT_CTX, VCL_STRING, VCL_REGEX);

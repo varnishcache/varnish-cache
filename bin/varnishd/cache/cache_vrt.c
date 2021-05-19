@@ -817,12 +817,25 @@ VRT_IP_string(VRT_CTX, VCL_IP ip)
 	return (p);
 }
 
+int
+VRT_INT_is_valid(VCL_INT arg)
+{
+	return (arg >= VRT_INTEGER_MIN && arg <= VRT_INTEGER_MAX);
+}
+
+
 VCL_STRING v_matchproto_()
 VRT_INT_string(VRT_CTX, VCL_INT num)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	return (WS_Printf(ctx->ws, "%jd", (intmax_t)num));
+}
+
+int
+VRT_REAL_is_valid(VCL_REAL arg)
+{
+	return (!isnan(arg) && arg >= VRT_DECIMAL_MIN && arg <= VRT_DECIMAL_MAX);
 }
 
 VCL_STRING v_matchproto_()
