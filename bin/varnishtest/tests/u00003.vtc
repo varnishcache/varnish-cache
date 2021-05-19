@@ -150,7 +150,7 @@ req (\d+) rxreq \5 - - - -$} \
 %{VSL:Timestamp:Resp[2]}x %{VSL:Timestamp:foo}x %{VSL:ReqURL[2]}x"}
 
 # times
-shell -match {^\{\d{4}-\d{2}-\d{2}\}T\{\d{2}:\d{2}:\d{2}\} \{\{\d{4}-\d{2}-\d{2}\T\d{2}:\d{2}:\d{2}\}\} \d+ \d+ \d+ \d{10,} \d{13,} \d{16,} \d{3} \d{6} usecx msecy} \
+shell -match {^\{\d{4}-\d{2}-\d{2}\}T\{\d{2}:\d{2}:\d{2}\} \{\{\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\}\} \d+ \d+ \d+ \d{10,} \d{13,} \d{16,} \d{3} \d{6} usecx msecy} \
 	{varnishncsa -n ${v1_name} -d -F "%{{%F}T{%T}}t %{{{%FT%T}}}t \
 %{s}T %{ms}T %{us}T %{sec}t %{msec}t %{usec}t %{msec_frac}t %{usec_frac}t \
 %{usecx}t %{msecy}t"}
