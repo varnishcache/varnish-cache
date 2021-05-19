@@ -333,7 +333,7 @@ vcc_Duration(struct vcc *tl, double *d)
 /*--------------------------------------------------------------------*/
 
 void
-vcc_ByteVal(struct vcc *tl, double *d)
+vcc_ByteVal(struct vcc *tl, VCL_INT *d)
 {
 	double v, sc;
 
@@ -355,7 +355,7 @@ vcc_ByteVal(struct vcc *tl, double *d)
 		return;
 	}
 	vcc_NextToken(tl);
-	*d = v * sc;
+	*d = (VCL_INT)round((v * sc));
 }
 
 /*--------------------------------------------------------------------*/

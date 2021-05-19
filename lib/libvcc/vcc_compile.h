@@ -431,7 +431,7 @@ void Resolve_Sockaddr(struct vcc *tl, const char *host, const char *defport,
     const char **ipv6_ascii, const char **p_ascii, int maxips,
     const struct token *t_err, const char *errid);
 double vcc_DurationUnit(struct vcc *);
-void vcc_ByteVal(struct vcc *, double *);
+void vcc_ByteVal(struct vcc *, VCL_INT *);
 void vcc_Duration(struct vcc *tl, double *);
 unsigned vcc_UintVal(struct vcc *tl);
 int vcc_IsFlag(struct vcc *tl);
