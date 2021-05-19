@@ -157,8 +157,9 @@ cmd_shell_engine(struct vtclog *vl, int ok, const char *cmd,
 	if (re != NULL) {
 		vre = VRE_compile(re, 0, &errptr, &err);
 		if (vre == NULL)
-			vtc_fatal(vl, "shell_match invalid regexp (\"%s\")",
-			    re);
+			vtc_fatal(vl,
+			    "shell_match invalid regexp (\"%s\" at %d)",
+			    errptr, err);
 	}
 	VSB_printf(vsb, "exec 2>&1 ; %s", cmd);
 	AZ(VSB_finish(vsb));
