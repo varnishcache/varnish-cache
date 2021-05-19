@@ -89,6 +89,20 @@ h2_sess_panic(struct vsb *vsb, const struct sess *sp)
 		VSB_printf(vsb, "t_window = %jd, r_window = %jd,\n",
 		    r2->t_window, r2->r_window);
 
+		VSB_printf(vsb, "rxbuf = %p", r2->rxbuf);
+		if (r2->rxbuf != NULL) {
+			VSB_printf(vsb, " {\n");
+			VSB_indent(vsb, 2);
+			PAN_CheckMagic(vsb, r2->rxbuf, H2_RXBUF_MAGIC);
+			VSB_printf(vsb, "stvbuf = %p,\n", r2->rxbuf->stvbuf);
+			VSB_printf(vsb,
+			    "{size, tail, head} = {%u, %ju, %ju},\n",
+			    r2->rxbuf->size, r2->rxbuf->tail, r2->rxbuf->head);
+			VSB_indent(vsb, -2);
+			VSB_printf(vsb, "}");
+		}
+		VSB_printf(vsb, ",\n");
+
 		VSB_indent(vsb, -2);
 		VSB_printf(vsb, "},\n");
 	}
