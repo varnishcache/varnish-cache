@@ -119,6 +119,7 @@ VRE_exec(const vre_t *code, const char *subject, int length,
 	}
 
 	if (lim != NULL) {
+		/* XXX: not reentrant */
 		code->re_extra->match_limit = lim->match;
 		code->re_extra->flags |= PCRE_EXTRA_MATCH_LIMIT;
 		code->re_extra->match_limit_recursion = lim->match_recursion;
