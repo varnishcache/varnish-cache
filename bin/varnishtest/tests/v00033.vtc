@@ -27,13 +27,13 @@ client c1 {
 	txreq
 	rxresp
 	expect resp.status == 200
-	expect resp.http.foo == 1100586419201.000
+	expect resp.http.foo == 1100586419201
 	expect resp.http.bar == false
 
 	txreq -url /foo
 	rxresp
 	expect resp.status == 200
-	expect resp.http.foo == 1100586419201.000
+	expect resp.http.foo == 1100586419201
 	expect resp.http.bar == true
 } -run
 

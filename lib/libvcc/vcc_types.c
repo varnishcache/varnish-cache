@@ -93,7 +93,7 @@ const struct type BOOL[1] = {{
 const struct type BYTES[1] = {{
 	.magic =		TYPE_MAGIC,
 	.name =			"BYTES",
-	.tostring =		"VRT_REAL_string(ctx, \v1)", // XXX: wrong
+	.tostring =		"VRT_INT_string(ctx, \v1)",
 	.multype =		REAL,	// XXX: wrong
 }};
 

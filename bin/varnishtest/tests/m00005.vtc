@@ -46,42 +46,42 @@ client c1 {
 	txreq -hdr "duration: 0.010s"
 	rxresp
 	expect resp.http.duration == 1000000.010
-	expect resp.http.bytes == 10752.000
+	expect resp.http.bytes == 10752
 
 	txreq -hdr "duration: 10ms" -hdr "bytes: 2k"
 	rxresp
 	expect resp.http.duration == 1000000.010
-	expect resp.http.bytes == 2560.000
+	expect resp.http.bytes == 2560
 
 	txreq -hdr "duration: 10.1s" -hdr "bytes: 3 m"
 	rxresp
 	expect resp.http.duration == 1000010.100
-	expect resp.http.bytes == 3146240.000
+	expect resp.http.bytes == 3146240
 
 	txreq -hdr "duration: 10m" -hdr "bytes:4.5 g"
 	rxresp
 	expect resp.http.duration == 1000600.000
-	expect resp.http.bytes == 4831838720.000
+	expect resp.http.bytes == 4831838720
 
 	txreq -hdr "duration: 10h" -hdr "bytes: 0.12 TB"
 	rxresp
 	expect resp.http.duration == 1036000.000
-	expect resp.http.bytes == 131941395845.000
+	expect resp.http.bytes == 131941395845
 
 	txreq -hdr "duration: 10d" -hdr "bytes: 0.25 PB"
 	rxresp
 	expect resp.http.duration == 1864000.000
-	expect resp.http.bytes == 281474976711168.000
+	expect resp.http.bytes == 281474976711168
 
 	txreq -hdr "duration: 10w" -hdr "bytes: 34%"
 	rxresp
 	expect resp.http.duration == 7048000.000
-	expect resp.http.bytes == 10752.000
+	expect resp.http.bytes == 10752
 
 	txreq -hdr "duration: 1y" -hdr "bytes: 34x"
 	rxresp
 	expect resp.http.duration == 32536000.000
-	expect resp.http.bytes == 10752.000
+	expect resp.http.bytes == 10752
 
 	txreq -hdr "duration: -100s"
 	rxresp
@@ -116,22 +116,22 @@ client c1 {
 	txreq -hdr "d-real: 0.010" -hdr "b-real: 2048.99999"
 	rxresp
 	expect resp.http.duration == 1000000.010
-	expect resp.http.bytes == 2560.000
+	expect resp.http.bytes == 2560
 
 	txreq -hdr "d-real: 10.1" -hdr "b-real: 3145728.9"
 	rxresp
 	expect resp.http.duration == 1000010.100
-	expect resp.http.bytes == 3146240.000
+	expect resp.http.bytes == 3146240
 
 	txreq -hdr "d-real: 600" -hdr "b-real: 4831838208.123"
 	rxresp
 	expect resp.http.duration == 1000600.000
-	expect resp.http.bytes == 4831838720.000
+	expect resp.http.bytes == 4831838720
 
 	txreq -hdr "d-real: 36000" -hdr "b-real: 131941395333.12"
 	rxresp
 	expect resp.http.duration == 1036000.000
-	expect resp.http.bytes == 131941395845.000
+	expect resp.http.bytes == 131941395845
 
 	txreq -hdr "d-real: -100"
 	rxresp
@@ -146,12 +146,12 @@ client c1 {
 	txreq -hdr "d-int: 600" -hdr "b-int: 4831838208"
 	rxresp
 	expect resp.http.duration == 1000600.000
-	expect resp.http.bytes == 4831838720.000
+	expect resp.http.bytes == 4831838720
 
 	txreq -hdr "d-int: 36000" -hdr "b-int: 131941395333"
 	rxresp
 	expect resp.http.duration == 1036000.000
-	expect resp.http.bytes == 131941395845.000
+	expect resp.http.bytes == 131941395845
 
 	txreq -hdr "d-int: -100"
 	rxresp
