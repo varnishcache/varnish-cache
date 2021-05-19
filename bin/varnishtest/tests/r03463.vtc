@@ -8,7 +8,7 @@ varnish v1 -vcl {
 			std.log("float1: 123.456");
 			std.log("float2: 123.");
 			std.log("float3: .456");
-			std.log("float4: 12.3e1");
+			std.log("float4: 123");
 			std.log("float5: e1");
 		}
 		return (synth(200));
