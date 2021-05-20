@@ -11,7 +11,10 @@ varnish v1 -vcl+backend {
 	import std;
 
 	sub vcl_deliver {
-		set resp.http.ts = std.real2time(std.real("10000000000000000000000", 0), now);
+		set resp.http.ts = std.real2time(
+		    std.real("999999999999.999", 0) *
+		    std.real("999999999999.999", 0),
+		    now);
 	}
 } -start
 

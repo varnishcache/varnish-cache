@@ -45,8 +45,105 @@
 #include "vct.h"
 
 static const char err_miss_num[] = "Missing number";
+static const char err_fatnum[] = "Too may digits";
 static const char err_invalid_num[] = "Invalid number";
 static const char err_invalid_suff[] = "Invalid suffix";
+
+#define BAIL(txt)						\
+	do {							\
+		if (errtxt != NULL)				\
+			*errtxt = (txt);			\
+		errno = EINVAL;					\
+		return (0);					\
+	} while (0)
+
+static int64_t
+sf_parse_int(const char **ipp, const char **errtxt, int maxdig)
+{
+	int64_t retval = 0;
+	int negative = 0, ndig = 0;
+
+	AN(ipp);
+	AN(*ipp);
+	errno = 0;
+	while (vct_isows(*(*ipp)))
+		(*ipp)++;
+	if(*(*ipp) == '-') {
+		negative = 1;
+		(*ipp)++;
+	}
+	while (vct_isdigit(*(*ipp))) {
+		ndig++;
+		if (ndig > maxdig)
+			BAIL(err_fatnum);
+		retval *= 10;
+		retval += *(*ipp)++ - 0x30;
+	}
+	if (ndig == 0)
+		BAIL(negative ? err_invalid_num : err_miss_num);
+	if (negative)
+		retval = -retval;
+	return (retval);
+}
+
+#if 0
+
+int64_t
+SF_Parse_Integer(const char **ipp, const char **errtxt)
+{
+
+	return(sf_parse_int(ipp, errtxt, 15));
+}
+
+double
+SF_Parse_Decimal(const char **ipp, const char **errtxt)
+{
+	double retval;
+
+	retval = (double)sf_parse_int(ipp, errtxt, 12);
+	if (*(*ipp) != '.')
+		return (retval);
+	(*ipp)++;
+	if (!vct_isdigit(*(*ipp)))
+		return (retval);
+	retval += .1 * (*(*ipp)++ - 0x30);
+	if (!vct_isdigit(*(*ipp)))
+		return (retval);
+	retval += .01 * (*(*ipp)++ - 0x30);
+	if (!vct_isdigit(*(*ipp)))
+		return (retval);
+	retval += .001 * (*(*ipp)++ - 0x30);
+	if (vct_isdigit(*(*ipp)))
+		BAIL(err_fatnum);
+	return (retval);
+}
+
+#endif
+
+double
+SF_Parse_Number(const char **ipp, const char **errtxt)
+{
+	double retval;
+
+	retval = (double)sf_parse_int(ipp, errtxt, 15);
+	if (*(*ipp) != '.')
+		return (retval);
+	if (retval < -999999999999 || retval > 999999999999)
+		BAIL(err_fatnum);
+	(*ipp)++;
+	if (!vct_isdigit(*(*ipp)))
+		return (retval);
+	retval += .1 * (*(*ipp)++ - 0x30);
+	if (!vct_isdigit(*(*ipp)))
+		return (retval);
+	retval += .01 * (*(*ipp)++ - 0x30);
+	if (!vct_isdigit(*(*ipp)))
+		return (retval);
+	retval += .001 * (*(*ipp)++ - 0x30);
+	if (vct_isdigit(*(*ipp)))
+		BAIL(err_fatnum);
+	return (retval);
+}
 
 /**********************************************************************
  * Convert (all of!) a string to a floating point number, and if we can
@@ -175,7 +272,7 @@ VNUM_duration(const char *p)
 double
 VNUM_bytes_unit(double r, const char *b, const char *e, uintmax_t rel)
 {
-	double sc = 1.0;
+	double sc = 1.0, tmp;
 
 	if (e == NULL)
 		e = strchr(b, '\0');
@@ -196,6 +293,8 @@ VNUM_bytes_unit(double r, const char *b, const char *e, uintmax_t rel)
 		case 't': case 'T': sc = exp2(40); b++; break;
 		case 'p': case 'P': sc = exp2(50); b++; break;
 		case 'b': case 'B':
+			if (modf(r, &tmp) != 0.0)
+				return (nan(""));
 			break;
 		default:
 			return (nan(""));
@@ -213,22 +312,26 @@ VNUM_bytes_unit(double r, const char *b, const char *e, uintmax_t rel)
 const char *
 VNUM_2bytes(const char *p, uintmax_t *r, uintmax_t rel)
 {
-	double fval;
-	const char *end;
+	double fval, tmp;
+	const char *errtxt;
 
 	if (p == NULL || *p == '\0')
 		return (err_miss_num);
 
-	fval = VNUMpfx(p, &end);
-	if (isnan(fval))
-		return (err_invalid_num);
+	fval = SF_Parse_Number(&p, &errtxt);
+	if (errno)
+		return(errtxt);
+	if (fval < 0)
+		return(err_invalid_num);
 
-	if (end == NULL) {
+	if (*p == '\0') {
+		if (modf(fval, &tmp) != 0.0)
+			return (err_invalid_num);
 		*r = (uintmax_t)fval;
 		return (NULL);
 	}
 
-	fval = VNUM_bytes_unit(fval, end, NULL, rel);
+	fval = VNUM_bytes_unit(fval, p, NULL, rel);
 	if (isnan(fval))
 		return (err_invalid_suff);
 	*r = (uintmax_t)round(fval);
@@ -250,20 +353,21 @@ static struct test_case {
 	{ "1",			(uintmax_t)0,	(uintmax_t)1 },
 	{ "1B",			(uintmax_t)0,	(uintmax_t)1<<0 },
 	{ "1 B",		(uintmax_t)0,	(uintmax_t)1<<0 },
-	{ "1.3B",		(uintmax_t)0,	(uintmax_t)1 },
-	{ "1.7B",		(uintmax_t)0,	(uintmax_t)2 },
+	{ "1.3B",		0,	0,	err_invalid_suff },
+	{ "1.7B",		0,	0,	err_invalid_suff },
 
 	{ "1024",		(uintmax_t)0,	(uintmax_t)1024 },
 	{ "1k",			(uintmax_t)0,	(uintmax_t)1<<10 },
 	{ "1kB",		(uintmax_t)0,	(uintmax_t)1<<10 },
+	{ "0.75kB",		(uintmax_t)0,	(uintmax_t)768 },
 	{ "1.3kB",		(uintmax_t)0,	(uintmax_t)1331 },
-	{ "1.7kB",		(uintmax_t)0,	(uintmax_t)1741 },
+	{ "1.70kB",		(uintmax_t)0,	(uintmax_t)1741 },
 
 	{ "1048576",		(uintmax_t)0,	(uintmax_t)1048576 },
 	{ "1M",			(uintmax_t)0,	(uintmax_t)1<<20 },
 	{ "1MB",		(uintmax_t)0,	(uintmax_t)1<<20 },
 	{ "1.3MB",		(uintmax_t)0,	(uintmax_t)1363149 },
-	{ "1.7MB",		(uintmax_t)0,	(uintmax_t)1782579 },
+	{ "1.700MB",		(uintmax_t)0,	(uintmax_t)1782579 },
 
 	{ "1073741824",		(uintmax_t)0,	(uintmax_t)1073741824 },
 	{ "1G",			(uintmax_t)0,	(uintmax_t)1<<30 },
@@ -277,24 +381,25 @@ static struct test_case {
 	{ "1.3TB",		(uintmax_t)0,	(uintmax_t)1429365116109ULL },
 	{ "1.7\tTB",		(uintmax_t)0,	(uintmax_t)1869169767219ULL },
 
-	{ "1125899906842624",	(uintmax_t)0,	(uintmax_t)1125899906842624ULL},
+	{ "999999999999999",	(uintmax_t)0,	(uintmax_t)999999999999999ULL},
+
+	{ "1125899906842624",	0,	0,	err_fatnum },
 	{ "1P\t",		(uintmax_t)0,	(uintmax_t)1125899906842624ULL},
 	{ "1PB ",		(uintmax_t)0,	(uintmax_t)1125899906842624ULL},
 	{ "1.3 PB",		(uintmax_t)0,	(uintmax_t)1463669878895411ULL},
 
-	// highest integers not rounded for double conversion
-	{ "9007199254740988",	(uintmax_t)0,	(uintmax_t)9007199254740988ULL},
-	{ "9007199254740989",	(uintmax_t)0,	(uintmax_t)9007199254740989ULL},
-	{ "9007199254740990",	(uintmax_t)0,	(uintmax_t)9007199254740990ULL},
-	{ "9007199254740991",	(uintmax_t)0,	(uintmax_t)9007199254740991ULL},
-
-	{ "1%",			(uintmax_t)1024,	(uintmax_t)10 },
+	{ "1.5%",		(uintmax_t)1024,	(uintmax_t)15 },
+	{ "1.501%",		(uintmax_t)1024,	(uintmax_t)15 },
 	{ "2%",			(uintmax_t)1024,	(uintmax_t)20 },
 	{ "3%",			(uintmax_t)1024,	(uintmax_t)31 },
 
 	/* Check the error checks */
 	{ "",			0,	0,	err_miss_num },
-	{ "m",			0,	0,	err_invalid_num },
+	{ "-1",			0,	0,	err_invalid_num },
+	{ "1.3",		0,	0,	err_invalid_num },
+	{ "1.5011%",		0,	0,	err_fatnum },
+	{ "-",			0,	0,	err_invalid_num },
+	{ "m",			0,	0,	err_miss_num },
 	{ "4%",			0,	0,	err_invalid_suff },
 	{ "3*",			0,	0,	err_invalid_suff },
 
@@ -340,6 +445,8 @@ main(int argc, char *argv[])
 
 	(void)argc;
 
+	setbuf(stdout, NULL);
+	setbuf(stderr, NULL);
 	for (p = vec; *p != NULL; p++) {
 		e = *p;
 		d1 = VNUM(e + 1);
