@@ -30,6 +30,8 @@ release process.
 Varnish Cache 6.0.8 (YYYY-MM-DD)
 ================================
 
+* Increase the default stack size to 64k. (3617_)
+
 * Fix an issue where a backend fetch can stall after a client has
   disconnected. (3556_)
 
@@ -76,6 +78,7 @@ Varnish Cache 6.0.8 (YYYY-MM-DD)
 * Fix an issue where the `return(error)` status and reason are kept
   when doing a backend retry. (3525_)
 
+.. _3617: https://github.com/varnishcache/varnish-cache/pull/3617
 .. _3556: https://github.com/varnishcache/varnish-cache/issues/3556
 .. _3593: https://github.com/varnishcache/varnish-cache/pull/3593
 .. _3537: https://github.com/varnishcache/varnish-cache/pull/3537
