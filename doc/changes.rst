@@ -27,6 +27,14 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
+Varnish Cache 6.0.9 (unreleased)
+================================
+
+* Increase the default stack size to 64k. (3617_)
+
+.. _3617: https://github.com/varnishcache/varnish-cache/pull/3617
+
+================================
 Varnish Cache 6.0.8 (2021-07-13)
 ================================
 

@@ -1329,7 +1329,7 @@ PARAM(
 	/* typ */	bytes,
 	/* min */	"2k",
 	/* max */	NULL,
-	/* default */	"48k",
+	/* default */	"64k",
 	/* units */	"bytes",
 	/* flags */	EXPERIMENTAL,
 	/* s-text */
