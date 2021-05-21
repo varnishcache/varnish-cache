@@ -22,9 +22,7 @@ varnish v1 -vcl+backend {
 		set resp.http.x-xyzzy = std.integer(
 		    std.real(req.http.foo, 2.0), 2);
 
-		# Representation of 9e99, which is larger than what fits in the
-		# 128bit integers on $exotic_platform.
-		set resp.http.x-int-fallback = std.real2integer(9000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000.000, 2);
+		set resp.http.x-int-fallback = std.real2integer(123456789012.345 * 1000.0 * 10, 2);
 	}
 } -start
 
