@@ -673,6 +673,38 @@ vcc_Eval_SymFunc(struct vcc *tl, struct expr **e, struct token *t,
 }
 
 /*--------------------------------------------------------------------
+ */
+
+static void
+vcc_number(struct vcc *tl, struct expr **e, vcc_type_t fmt, const char *sign)
+{
+	VCL_INT vi;
+	struct expr *e1;
+	struct token *t;
+
+	assert(fmt != VOID);
+	if (fmt == BYTES) {
+		vcc_ByteVal(tl, &vi);
+		ERRCHK(tl);
+		e1 = vcc_mk_expr(BYTES, "%ju", (intmax_t)vi);
+	} else {
+		t = tl->t;
+		vcc_NextToken(tl);
+		if (tl->t->tok == ID) {
+			e1 = vcc_mk_expr(DURATION, "(%s%.*s) * %g",
+			    sign, PF(t), vcc_DurationUnit(tl));
+			ERRCHK(tl);
+		} else if (fmt == REAL || t->tok == FNUM) {
+			e1 = vcc_mk_expr(REAL, "%s%.*s", sign, PF(t));
+		} else {
+			e1 = vcc_mk_expr(INT, "%s%.*s", sign, PF(t));
+		}
+	}
+	e1->constant = EXPR_CONST;
+	*e = e1;
+}
+
+/*--------------------------------------------------------------------
  * SYNTAX:
  *    Expr5:
  *	'(' ExprCor ')'
@@ -689,7 +721,6 @@ vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	const char *ip, *sign;
 	struct token *t;
 	struct symbol *sym;
-	VCL_INT vi;
 
 	sign = "";
 	*e = NULL;
@@ -803,26 +834,7 @@ vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		/* FALLTHROUGH */
 	case FNUM:
 	case CNUM:
-		assert(fmt != VOID);
-		if (fmt == BYTES) {
-			vcc_ByteVal(tl, &vi);
-			ERRCHK(tl);
-			e1 = vcc_mk_expr(BYTES, "%ju", (intmax_t)vi);
-		} else {
-			t = tl->t;
-			vcc_NextToken(tl);
-			if (tl->t->tok == ID) {
-				e1 = vcc_mk_expr(DURATION, "(%s%.*s) * %g",
-				    sign, PF(t), vcc_DurationUnit(tl));
-				ERRCHK(tl);
-			} else if (fmt == REAL || t->tok == FNUM) {
-				e1 = vcc_mk_expr(REAL, "%s%.*s", sign, PF(t));
-			} else {
-				e1 = vcc_mk_expr(INT, "%s%.*s", sign, PF(t));
-			}
-		}
-		e1->constant = EXPR_CONST;
-		*e = e1;
+		vcc_number(tl, e, fmt, sign);
 		return;
 	case CBLOB:
 		e1 = vcc_new_expr(BLOB);
