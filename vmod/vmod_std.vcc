@@ -435,6 +435,20 @@ Examples::
 		...
 	}
 
+$Function STRING strftime(TIME time, STRING format)
+
+Format the *time* argument with the *format* argument using
+`strftime(3)` and return the result for the UTC (historically GMT)
+timezone.
+
+The empty string is returned if formatting fails, but may also be
+returned as a valid result.
+
+Example::
+
+	set req.http.iso = std.strftime(now, "%Y%m%dT%H%M%SZ");
+	# e.g. 20210521T175241Z
+
 LOGGING functions
 =================
 
@@ -719,3 +733,4 @@ SEE ALSO
 * :ref:`varnishd(1)`
 * :ref:`vsl(7)`
 * `fnmatch(3)`
+* `strftime(3)`

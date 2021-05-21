@@ -326,6 +326,33 @@ vmod_time(VRT_CTX, struct VARGS(time)* a)
 	return (0);
 }
 
+VCL_STRING v_matchproto_(td_std_strftime)
+vmod_strftime(VRT_CTX, VCL_TIME t, VCL_STRING fmt)
+{
+	struct tm tm;
+	time_t tt;
+	size_t r;
+	unsigned spc;
+	char *s;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	tt = (time_t)(intmax_t)t;
+	if (gmtime_r(&tt, &tm) == NULL)
+		return ("");
+
+	spc = WS_ReserveAll(ctx->ws);
+	s = WS_Reservation(ctx->ws);
+	r = strftime(s, spc, fmt, &tm);
+	if (r == 0) {
+		WS_Release(ctx->ws, 0);
+		return ("");
+	}
+	r++;
+	WS_Release(ctx->ws, r);
+	return (s);
+}
+
 /* These functions are deprecated as of 2019-03-15 release */
 
 VCL_INT v_matchproto_(td_std_real2integer)
