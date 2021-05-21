@@ -281,39 +281,51 @@ vcc_DurationUnit(struct vcc *tl)
  * The tokenizer made sure we only get digits.
  */
 
-unsigned
+uint64_t
 vcc_UintVal(struct vcc *tl)
 {
-	unsigned d = 0;
-	const char *p;
+	const char *p, *errtxt;
+	int64_t retval;
 
 	if (tl->t->tok != CNUM) {
 		Expect(tl, CNUM);
-	} else {
-		for (p = tl->t->b; p < tl->t->e; p++) {
-			d *= 10;
-			d += *p - '0';
-		}
-		vcc_NextToken(tl);
+		return (0);
 	}
-	return (d);
+	p = tl->t->b;
+	retval = SF_Parse_Integer(&p, &errtxt);
+	if (errno) {
+		VSB_printf(tl->sb, "Bad UINT: %s\n", errtxt);
+		vcc_ErrWhere(tl, tl->t);
+		return (0);
+	}
+	if (retval < 0) {
+		VSB_printf(tl->sb, "UINT cannot be negative\n");
+		vcc_ErrWhere(tl, tl->t);
+		return (0);
+	}
+	vcc_NextToken(tl);
+	return (retval);
 }
 
 static double
 vcc_DoubleVal(struct vcc *tl)
 {
-	const size_t l = tl->t->e - tl->t->b;
-	char buf[l + 1];
+	const char *p, *errtxt;
+	double retval;
 
 	if (tl->t->tok != CNUM && tl->t->tok != FNUM) {
 		Expect(tl, CNUM);
 		return (0);
 	}
-	assert(tl->t->tok == CNUM || tl->t->tok == FNUM);
-	memcpy(buf, tl->t->b, l);
+	p = tl->t->b;
+	retval = SF_Parse_Decimal(&p, &errtxt);
+	if (errno) {
+		VSB_printf(tl->sb, "Bad REAL: %s\n", errtxt);
+		vcc_ErrWhere(tl, tl->t);
+		return (0);
+	}
 	vcc_NextToken(tl);
-	buf[l] = '\0';
-	return (strtod(buf, NULL));
+	return (retval);
 }
 
 /*--------------------------------------------------------------------*/

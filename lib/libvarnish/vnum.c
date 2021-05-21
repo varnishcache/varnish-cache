@@ -86,8 +86,6 @@ sf_parse_int(const char **ipp, const char **errtxt, int maxdig)
 	return (retval);
 }
 
-#if 0
-
 int64_t
 SF_Parse_Integer(const char **ipp, const char **errtxt)
 {
@@ -117,8 +115,6 @@ SF_Parse_Decimal(const char **ipp, const char **errtxt)
 		BAIL(err_fatnum);
 	return (retval);
 }
-
-#endif
 
 double
 SF_Parse_Number(const char **ipp, const char **errtxt)

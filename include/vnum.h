@@ -38,11 +38,8 @@ vtim_dur VNUM_duration(const char *p);
 double VNUM_bytes_unit(double r, const char *b, const char *e, uintmax_t rel);
 const char *VNUM_2bytes(const char *p, uintmax_t *r, uintmax_t rel);
 
-#if 0
 int64_t SF_Parse_Integer(const char **ipp, const char **errtxt);
 double SF_Parse_Decimal(const char **ipp, const char **errtxt);
-#endif
-
 double SF_Parse_Number(const char **ipp, const char **errtxt);
 
 #define VNUM_LEGAL_DURATION \
