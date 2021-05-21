@@ -43,7 +43,7 @@ varnish v1 -syntax 4.0 -errvcl {Expected BYTES unit (B, KB, MB...) got '"X"'} {
 		}
 	}
 }
-varnish v1 -syntax 4.0 -errvcl {Unknown BYTES unit 'X'} {
+varnish v1 -syntax 4.0 -errvcl {Unknown BYTES unit} {
 	sub vcl_recv {
 		if (storage.Transient.free_space > 4 X) {
 		}

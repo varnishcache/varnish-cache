@@ -347,10 +347,22 @@ vcc_Duration(struct vcc *tl, double *d)
 void
 vcc_ByteVal(struct vcc *tl, VCL_INT *d)
 {
-	double v, sc;
+	double v;
+	VCL_INT retval;
+	const char *p, *errtxt;
 
-	v = vcc_DoubleVal(tl);
-	ERRCHK(tl);
+	if (tl->t->tok != CNUM && tl->t->tok != FNUM) {
+		Expect(tl, CNUM);
+		return;
+	}
+	p = tl->t->b;
+	v = SF_Parse_Number(&p, &errtxt);
+	if (errno) {
+		VSB_printf(tl->sb, "Bad BYTES: %s\n", errtxt);
+		vcc_ErrWhere(tl, tl->t);
+		return;
+	}
+	vcc_NextToken(tl);
 	if (tl->t->tok != ID) {
 		VSB_cat(tl->sb, "Expected BYTES unit (B, KB, MB...) got ");
 		vcc_ErrToken(tl, tl->t);
@@ -358,16 +370,15 @@ vcc_ByteVal(struct vcc *tl, VCL_INT *d)
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}
-	sc = VNUM_bytes_unit(1.0, tl->t->b, tl->t->e, 0);
-	if (isnan(sc)) {
-		VSB_cat(tl->sb, "Unknown BYTES unit ");
+	retval = VNUM_bytes_unit(v, tl->t->b, tl->t->e, 0, &errtxt);
+	if (errno) {
+		VSB_cat(tl->sb, errtxt);
 		vcc_ErrToken(tl, tl->t);
-		VSB_printf(tl->sb, "\n%s\n", VNUM_LEGAL_BYTES);
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}
 	vcc_NextToken(tl);
-	*d = (VCL_INT)round((v * sc));
+	*d = retval;
 }
 
 /*--------------------------------------------------------------------*/

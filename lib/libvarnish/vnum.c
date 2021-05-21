@@ -47,7 +47,9 @@
 static const char err_miss_num[] = "Missing number";
 static const char err_fatnum[] = "Too may digits";
 static const char err_invalid_num[] = "Invalid number";
-static const char err_invalid_suff[] = "Invalid suffix";
+static const char err_unknown_bytes[] =
+    "Unknown BYTES unit of measurement ([KMGTP][B])";
+static const char err_fractional_bytes[] = "Fractional BYTES not allowed";
 
 #define BAIL(txt)						\
 	do {							\
@@ -265,18 +267,27 @@ VNUM_duration(const char *p)
 
 /**********************************************************************/
 
-double
-VNUM_bytes_unit(double r, const char *b, const char *e, uintmax_t rel)
+int64_t
+VNUM_bytes_unit(double r, const char *b, const char *e, uintmax_t rel,
+    const char **errtxt)
 {
 	double sc = 1.0, tmp;
 
+	AN(b);
+	AN(errtxt);
+	errno = 0;
 	if (e == NULL)
 		e = strchr(b, '\0');
 
 	while (b < e && vct_issp(*b))
 		b++;
-	if (b == e)
-		return (nan(""));
+	if (b == e) {
+		if (modf(r, &tmp) != 0.0) {
+			*errtxt = err_fractional_bytes;
+			errno = EINVAL;
+		}
+		return ((int64_t)trunc(sc * r));
+	}
 
 	if (rel != 0 && *b == '%') {
 		r *= rel * 0.01;
@@ -289,26 +300,34 @@ VNUM_bytes_unit(double r, const char *b, const char *e, uintmax_t rel)
 		case 't': case 'T': sc = exp2(40); b++; break;
 		case 'p': case 'P': sc = exp2(50); b++; break;
 		case 'b': case 'B':
-			if (modf(r, &tmp) != 0.0)
-				return (nan(""));
+			if (modf(r, &tmp) != 0.0) {
+				*errtxt = err_fractional_bytes;
+				errno = EINVAL;
+				return (0);
+			}
 			break;
 		default:
-			return (nan(""));
+			*errtxt = err_unknown_bytes;
+			errno = EINVAL;
+			return (0);
 		}
 		if (b < e && (*b == 'b' || *b == 'B'))
 			b++;
 	}
 	while (b < e && vct_issp(*b))
 		b++;
-	if (b < e)
-		return (nan(""));
-	return (sc * r);
+	if (b < e) {
+		*errtxt = err_unknown_bytes;
+		errno = EINVAL;
+		return (0);
+	}
+	return ((int64_t)trunc(sc * r));
 }
 
 const char *
 VNUM_2bytes(const char *p, uintmax_t *r, uintmax_t rel)
 {
-	double fval, tmp;
+	double fval;
 	const char *errtxt;
 
 	if (p == NULL || *p == '\0')
@@ -320,16 +339,9 @@ VNUM_2bytes(const char *p, uintmax_t *r, uintmax_t rel)
 	if (fval < 0)
 		return(err_invalid_num);
 
-	if (*p == '\0') {
-		if (modf(fval, &tmp) != 0.0)
-			return (err_invalid_num);
-		*r = (uintmax_t)fval;
-		return (NULL);
-	}
-
-	fval = VNUM_bytes_unit(fval, p, NULL, rel);
-	if (isnan(fval))
-		return (err_invalid_suff);
+	fval = VNUM_bytes_unit(fval, p, NULL, rel, &errtxt);
+	if (errno)
+		return (errtxt);
 	*r = (uintmax_t)round(fval);
 	return (NULL);
 }
@@ -349,32 +361,32 @@ static struct test_case {
 	{ "1",			(uintmax_t)0,	(uintmax_t)1 },
 	{ "1B",			(uintmax_t)0,	(uintmax_t)1<<0 },
 	{ "1 B",		(uintmax_t)0,	(uintmax_t)1<<0 },
-	{ "1.3B",		0,	0,	err_invalid_suff },
-	{ "1.7B",		0,	0,	err_invalid_suff },
+	{ "1.3B",		0,	0,	err_fractional_bytes },
+	{ "1.7B",		0,	0,	err_fractional_bytes },
 
 	{ "1024",		(uintmax_t)0,	(uintmax_t)1024 },
 	{ "1k",			(uintmax_t)0,	(uintmax_t)1<<10 },
 	{ "1kB",		(uintmax_t)0,	(uintmax_t)1<<10 },
 	{ "0.75kB",		(uintmax_t)0,	(uintmax_t)768 },
 	{ "1.3kB",		(uintmax_t)0,	(uintmax_t)1331 },
-	{ "1.70kB",		(uintmax_t)0,	(uintmax_t)1741 },
+	{ "1.70kB",		(uintmax_t)0,	(uintmax_t)1740 },
 
 	{ "1048576",		(uintmax_t)0,	(uintmax_t)1048576 },
 	{ "1M",			(uintmax_t)0,	(uintmax_t)1<<20 },
 	{ "1MB",		(uintmax_t)0,	(uintmax_t)1<<20 },
-	{ "1.3MB",		(uintmax_t)0,	(uintmax_t)1363149 },
+	{ "1.3MB",		(uintmax_t)0,	(uintmax_t)1363148 },
 	{ "1.700MB",		(uintmax_t)0,	(uintmax_t)1782579 },
 
 	{ "1073741824",		(uintmax_t)0,	(uintmax_t)1073741824 },
 	{ "1G",			(uintmax_t)0,	(uintmax_t)1<<30 },
 	{ "1GB",		(uintmax_t)0,	(uintmax_t)1<<30 },
 	{ "1.3GB",		(uintmax_t)0,	(uintmax_t)1395864371 },
-	{ "1.7GB",		(uintmax_t)0,	(uintmax_t)1825361101 },
+	{ "1.7GB",		(uintmax_t)0,	(uintmax_t)1825361100 },
 
 	{ "1099511627776",	(uintmax_t)0,	(uintmax_t)1099511627776ULL },
 	{ "1T",			(uintmax_t)0,	(uintmax_t)1<<40 },
 	{ "1TB",		(uintmax_t)0,	(uintmax_t)1<<40 },
-	{ "1.3TB",		(uintmax_t)0,	(uintmax_t)1429365116109ULL },
+	{ "1.3TB",		(uintmax_t)0,	(uintmax_t)1429365116108ULL },
 	{ "1.7\tTB",		(uintmax_t)0,	(uintmax_t)1869169767219ULL },
 
 	{ "999999999999999",	(uintmax_t)0,	(uintmax_t)999999999999999ULL},
@@ -387,17 +399,17 @@ static struct test_case {
 	{ "1.5%",		(uintmax_t)1024,	(uintmax_t)15 },
 	{ "1.501%",		(uintmax_t)1024,	(uintmax_t)15 },
 	{ "2%",			(uintmax_t)1024,	(uintmax_t)20 },
-	{ "3%",			(uintmax_t)1024,	(uintmax_t)31 },
+	{ "3%",			(uintmax_t)1024,	(uintmax_t)30 },
 
 	/* Check the error checks */
 	{ "",			0,	0,	err_miss_num },
 	{ "-1",			0,	0,	err_invalid_num },
-	{ "1.3",		0,	0,	err_invalid_num },
+	{ "1.3",		0,	0,	err_fractional_bytes},
 	{ "1.5011%",		0,	0,	err_fatnum },
 	{ "-",			0,	0,	err_invalid_num },
 	{ "m",			0,	0,	err_miss_num },
-	{ "4%",			0,	0,	err_invalid_suff },
-	{ "3*",			0,	0,	err_invalid_suff },
+	{ "4%",			0,	0,	err_unknown_bytes },
+	{ "3*",			0,	0,	err_unknown_bytes },
 
 	/* TODO: add more */
 

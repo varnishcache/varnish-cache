@@ -113,6 +113,7 @@ vmod_bytes(VRT_CTX, struct VARGS(bytes) *a)
 	uintmax_t r;
 	VCL_REAL rr;
 	int nargs;
+	const char *errtxt;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
@@ -121,10 +122,11 @@ vmod_bytes(VRT_CTX, struct VARGS(bytes) *a)
 	if (!onearg(ctx, "bytes", nargs))
 		return (0);
 
-	if (a->valid_s &&
-	    VNUM_2bytes(a->s, &r, 0) == NULL &&
-	    r <= VCL_BYTES_MAX)
-		return ((VCL_BYTES)r);
+	if (a->valid_s) {
+		errtxt = VNUM_2bytes(a->s, &r, 0);
+		if (errtxt == NULL && r <= VCL_BYTES_MAX)
+			return ((VCL_BYTES)r);
+	}
 
 	if (a->valid_real && !isnan(a->real) && a->real >= 0) {
 		rr = trunc(a->real);
