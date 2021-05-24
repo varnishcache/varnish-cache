@@ -260,7 +260,7 @@ jobs:
                 << parameters.extra_conf >>
             sudo -u varnish \
                 --preserve-env=ASAN_OPTIONS,LSAN_OPTIONS,TSAN_OPTIONS,UBSAN_OPTIONS \
-                make distcheck VERBOSE=1 -j 12 -k \
+                make distcheck VERBOSE=1 -j 4 -k \
                 DISTCHECK_CONFIGURE_FLAGS="<< pipeline.parameters.configure_args >> \
                 << parameters.extra_conf >>"
 
