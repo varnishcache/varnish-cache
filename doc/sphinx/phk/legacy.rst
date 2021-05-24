@@ -10,11 +10,12 @@ Legacy-.*
 =========
 
 In the middle of an otherwise pleaseant conversation recently, the
-other person suddenly burst out that "Varnish was part of our
-legacy software."
+other person suddenly burst out that *"Varnish was part of our
+legacy software."*
+
 That stung a bit.
 
-But fair enough:  They *have* been running varnish since 2009 or so.
+But fair enough:  They have been running varnish since 2009 or so.
 
 Neither Raymond's "New Hacker's Dictionary", nor the legacy publication
 it tried to replace, Kelly-Bootle's "The Devils DP Dictionary", define
@@ -33,32 +34,31 @@ modems, when dialing into a BBS or ISP in the 1990ies.
 
 I guess I should say "legacy-modems" ?  
 
-Big-endianess, storing they bytes the sensible way for hex-dumps, is
+Big-endianess, storing the bytes the sensible way for hex-dumps, is
 rapidly becoming legacy, as the final old HP and SUN irons are
 finally become eWaste.
 
 Objectively there is no difference of merit between little-endian
-and big-endian, the most successful computers of all time fall
-equally into one or the other, and the consolidation towards
-little-endian is more "It's not important" than anything
-else.
+and big-endian, the most successful computers architectures of all
+time picked equally one or the other, and the consolidation towards
+little-endian is driven more by *"It's actually not that important"*
+than by anything else.
 
 But we still have a bit of code which cares about endianess
 in Varnish, in particular in the imported `zlib` code.
 
 For a while I ran a CI client on a WLAN access point with a
 big-endian MIPS-processor.  But with only 128MB RAM the spurious
-error rate made too much noise.
+error rate caused too much noise.
 
-Nothing has been proclaimed "Legacy" more often and with more force
+Nothing has been proclaimed "Legacy" more often and with more force,
 than the IBM mainframe, but they are still around, keeping the books
-balanced, like they have for half a century.
+balanced, as they have for half a century.
 
 And because they were born with variable length data types, IBM
 mainframes are big-endian, and because we in Varnish care about
-portability, you can also run Varnish Cache on your IBM mainframe.
-
-Thanks mainly to Ingvar, there are "s390x" architecture Varnish
+portability, you can also run Varnish Cache on your IBM mainframe:
+Thanks to Ingvar, there are "s390x" architecture Varnish
 packages if you need them.
 
 So I reached out to IBM's FOSS-outreach people and asked if we could
