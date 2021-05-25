@@ -414,6 +414,8 @@ void vcc_Warn(struct vcc *);
 
 void vcc__Expect(struct vcc *tl, unsigned tok, unsigned line);
 int vcc_IdIs(const struct token *t, const char *p);
+void vcc_PrintTokens(struct vcc *tl, const struct token *tb,
+    const struct token *te);
 void vcc_ExpectVid(struct vcc *tl, const char *what);
 void vcc_Lexer(struct vcc *tl, struct source *sp);
 void vcc_NextToken(struct vcc *tl);

@@ -330,28 +330,44 @@ vcc_IdIs(const struct token *t, const char *p)
  */
 
 void
+vcc_PrintTokens(struct vcc *tl, const struct token *tb, const struct token *te)
+{
+
+	CHECK_OBJ_NOTNULL(tl, VCC_MAGIC);
+	AN(tb);
+	AN(te);
+	while (tb != te) {
+		VSB_printf(tl->sb, "%.*s", PF(tb));
+		tb = vcc_PeekTokenFrom(tl, tb);
+		AN(tb);
+	}
+}
+
+void
 vcc_ExpectVid(struct vcc *tl, const char *what)
 {
 	const char *bad = NULL;
-	struct token *t2, *t3;
+	struct token *t2;
 
 	ExpectErr(tl, ID);
 	ERRCHK(tl);
 
-	t2 = VTAILQ_NEXT(tl->t, list);
+	t2 = vcc_PeekToken(tl);
+	ERRCHK(tl);
 	while (t2->tok == '.') {
 		bad = ".";
-		t2 = VTAILQ_NEXT(t2, list);
+		t2 = vcc_PeekTokenFrom(tl, t2);
+		ERRCHK(tl);
 		if (t2->tok != ID)
 			break;
-		t2 = VTAILQ_NEXT(t2, list);
+		t2 = vcc_PeekTokenFrom(tl, t2);
+		ERRCHK(tl);
 	}
 	if (bad == NULL)
 		bad = VCT_invalid_name(tl->t->b, tl->t->e);
 	if (bad != NULL) {
 		VSB_printf(tl->sb, "Name of %s, '", what);
-		for (t3 = tl->t; t3 != t2; t3 = VTAILQ_NEXT(t3, list))
-			VSB_printf(tl->sb, "%.*s", PF(t3));
+		vcc_PrintTokens(tl, tl->t, t2);
 		VSB_printf(tl->sb,
 		    "', contains illegal character '%c'\n", *bad);
 		vcc_ErrWhere2(tl, tl->t, t2);

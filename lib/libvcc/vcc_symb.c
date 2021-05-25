@@ -318,8 +318,7 @@ VCC_SymbolGet(struct vcc *tl, vcc_ns_t ns, vcc_kind_t kind,
 	tl->t = VTAILQ_NEXT(tn, list);
 	if (sym == NULL) {
 		VSB_printf(tl->sb, "%s: '", e->name);
-		for (tn1 = t0; tn1 != tl->t; tn1 = VTAILQ_NEXT(tn1, list))
-			VSB_printf(tl->sb, "%.*s", PF(tn1));
+		vcc_PrintTokens(tl, t0, tl->t);
 		VSB_cat(tl->sb, "'");
 		sym = vcc_sym_in_tab(tl, st, kind, VCL_LOW, VCL_HIGH);
 		if (sym != NULL && sym->kind != SYM_OBJECT &&
@@ -338,8 +337,7 @@ VCC_SymbolGet(struct vcc *tl, vcc_ns_t ns, vcc_kind_t kind,
 	}
 	if (kind != SYM_NONE && kind != sym->kind) {
 		VSB_cat(tl->sb, "Symbol '");
-		for (tn1 = t0; tn1 != tl->t; tn1 = VTAILQ_NEXT(tn1, list))
-			VSB_printf(tl->sb, "%.*s", PF(tn1));
+		vcc_PrintTokens(tl, t0, tl->t);
 		VSB_printf(tl->sb, "' has wrong type (%s), expected %s:",
 		    sym->kind->name, kind->name);
 		VSB_cat(tl->sb, "\nAt: ");
