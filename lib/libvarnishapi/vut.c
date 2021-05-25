@@ -364,12 +364,15 @@ VUT_Main(struct VUT *vut)
 	AN(vut->vslq);
 
 	while (!vut->sigint) {
-		if (vut->sighup && vut->sighup_f) {
-			/* sighup callback */
+		if (vut->sighup) {
 			vut->sighup = 0;
-			i = vut->sighup_f(vut);
-			if (i)
-				break;
+
+			if (vut->sighup_f) {
+				/* sighup callback */
+				i = vut->sighup_f(vut);
+				if (i)
+					break;
+			}
 		}
 
 		if (vut->sigusr1) {
