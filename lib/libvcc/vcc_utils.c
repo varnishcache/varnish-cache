@@ -380,10 +380,13 @@ vcc_IsFlagRaw(struct vcc *tl, const struct token *t1, const struct token *t2)
 int
 vcc_IsFlag(struct vcc *tl)
 {
+	struct token *t;
 	int retval;
 
-
-	retval = vcc_IsFlagRaw(tl, tl->t, VTAILQ_NEXT(tl->t, list));
+	t = vcc_PeekToken(tl);
+	if (t == NULL)
+		return (-1);
+	retval = vcc_IsFlagRaw(tl, tl->t, t);
 	if (retval >= 0)
 		vcc_NextToken(tl);
 	return (retval);

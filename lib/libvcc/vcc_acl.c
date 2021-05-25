@@ -457,7 +457,7 @@ vcc_acl_entry(struct vcc *tl)
  */
 
 static void
-vcc_acl_emit_tokens(const struct vcc *tl, const struct acl_e *ae)
+vcc_acl_emit_tokens(struct vcc *tl, const struct acl_e *ae)
 {
 	struct token *t;
 	const char *sep = "";
@@ -476,7 +476,8 @@ vcc_acl_emit_tokens(const struct vcc *tl, const struct acl_e *ae)
 		}
 		if (t == ae->t_mask)
 			break;
-		t = VTAILQ_NEXT(t, list);
+		t = vcc_PeekTokenFrom(tl, t);
+		ERRCHK(tl);
 		AN(t);
 		sep = " ";
 	} while (ae->t_mask != NULL);
@@ -489,7 +490,7 @@ vcc_acl_emit_tokens(const struct vcc *tl, const struct acl_e *ae)
  */
 
 static unsigned
-vcc_acl_emit_tables(const struct vcc *tl, unsigned n, const char *name)
+vcc_acl_emit_tables(struct vcc *tl, unsigned n, const char *name)
 {
 	struct acl_e *ae;
 	unsigned rv = sizeof(ae->data) + 3;

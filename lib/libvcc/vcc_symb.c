@@ -293,11 +293,11 @@ VCC_SymbolGet(struct vcc *tl, vcc_ns_t ns, vcc_kind_t kind,
 			st2 = st;
 			tn2 = tn;
 		}
-		tn1 = VTAILQ_NEXT(tn, list);
-		if (tn1->tok != '.')
+		tn1 = vcc_PeekTokenFrom(tl, tn);
+		if (tn1 == NULL || tn1->tok != '.')
 			break;
-		tn1 = VTAILQ_NEXT(tn1, list);
-		if (tn1->tok != ID)
+		tn1 = vcc_PeekTokenFrom(tl, tn1);
+		if (tn1 == NULL || tn1->tok != ID)
 			break;
 		tn = tn1;
 	}
@@ -309,13 +309,15 @@ VCC_SymbolGet(struct vcc *tl, vcc_ns_t ns, vcc_kind_t kind,
 	} else if (st != st2) {
 		sym = NULL;
 	}
-	if (sym == NULL && e->noerr)
+	if (tl->err || (sym == NULL && e->noerr))
 		return (sym);
 	AN(st);
 	AN(tn);
 	if (sym == NULL && e == SYMTAB_CREATE)
 		sym = vcc_new_symbol(tl, st, kind, tl->syntax, tl->syntax);
-	tl->t = VTAILQ_NEXT(tn, list);
+	tl->t = vcc_PeekTokenFrom(tl, tn);
+	if (tl->err)
+		return (NULL);
 	if (sym == NULL) {
 		VSB_printf(tl->sb, "%s: '", e->name);
 		vcc_PrintTokens(tl, t0, tl->t);
