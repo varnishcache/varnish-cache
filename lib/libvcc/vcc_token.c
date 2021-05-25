@@ -263,18 +263,37 @@ vcc_ErrWhere(struct vcc *tl, const struct token *t)
 
 /*--------------------------------------------------------------------*/
 
-void
-vcc_NextToken(struct vcc *tl)
+struct token *
+vcc_PeekTokenFrom(struct vcc *tl, const struct token *t)
 {
+	struct token *tn;
 
-	tl->t = VTAILQ_NEXT(tl->t, list);
-	if (tl->t == NULL) {
+	CHECK_OBJ_NOTNULL(tl, VCC_MAGIC);
+	AN(t);
+	tn = VTAILQ_NEXT(t, list);
+	if (tn == NULL) {
 		VSB_cat(tl->sb,
 		    "Ran out of input, something is missing or"
 		    " maybe unbalanced (...) or {...}\n");
 		tl->err = 1;
-		return;
 	}
+	return (tn);
+}
+
+struct token *
+vcc_PeekToken(struct vcc *tl)
+{
+
+	CHECK_OBJ_NOTNULL(tl, VCC_MAGIC);
+	return (vcc_PeekTokenFrom(tl, tl->t));
+}
+
+void
+vcc_NextToken(struct vcc *tl)
+{
+
+	CHECK_OBJ_NOTNULL(tl, VCC_MAGIC);
+	tl->t = vcc_PeekTokenFrom(tl, tl->t);
 }
 
 void
