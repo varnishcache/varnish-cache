@@ -9,8 +9,6 @@ server s1 {
 } -start
 
 syslog S1 -level notice -bind "${listen_addr}" {
-	recv
-	recv
 	recv info
 	expect ~ \"dip\":\"${h1_fe_1_addr}\"
 } -start
