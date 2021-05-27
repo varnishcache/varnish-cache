@@ -416,7 +416,7 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 			vcc_NextToken(tl);
 			SkipToken(tl, ';');
 		} else if (vcc_IdIs(t_field, "path")) {
-			if (tl->syntax < VCL_41) {
+			if (tl->esyntax < VCL_41) {
 				VSB_cat(tl->sb,
 				    "Unix socket backends only supported"
 				    " in VCL4.1 and higher.\n");

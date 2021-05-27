@@ -289,7 +289,7 @@ VCC_SymbolGet(struct vcc *tl, vcc_ns_t ns, vcc_kind_t kind,
 	tn = tl->t;
 	while (1) {
 		st = vcc_symtab_str(st, tn->b, tn->e);
-		sym2 = vcc_sym_in_tab(tl, st, kind, tl->syntax, tl->syntax);
+		sym2 = vcc_sym_in_tab(tl, st, kind, tl->esyntax, tl->syntax);
 		if (sym2 != NULL) {
 			sym = sym2;
 			st2 = st;
@@ -316,7 +316,7 @@ VCC_SymbolGet(struct vcc *tl, vcc_ns_t ns, vcc_kind_t kind,
 	AN(st);
 	AN(tn);
 	if (sym == NULL && e == SYMTAB_CREATE)
-		sym = vcc_new_symbol(tl, st, kind, tl->syntax, tl->syntax);
+		sym = vcc_new_symbol(tl, st, kind, tl->esyntax, tl->syntax);
 	tl->t = vcc_NextTokenFrom(tl, tn);
 	if (tl->err)
 		return (NULL);

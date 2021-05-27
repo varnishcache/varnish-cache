@@ -168,6 +168,15 @@ varnish v1 -syntax 4.1 -errvcl {(Only available when VCL syntax <= 4.0)} {
 		set req.esi = false;
 	}
 }
+
+varnish v1 -syntax 4.1 -vcl {
+	backend be none;
+	vcl 4.0; # drop effective version for legacy symbol
+	sub vcl_recv {
+		set req.esi = false;
+	}
+}
+
 varnish v1 -syntax 4.0 -errvcl {(Only available when 4.1 <= VCL syntax)} {
 	sub vcl_deliver {
 		set resp.do_esi = false;

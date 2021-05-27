@@ -1,0 +1,27 @@
+varnishtest "include vcl 4.0 from vcl 4.1"
+
+shell {
+	cat >foo.vcl <<-EOF
+	vcl 4.0;
+
+	import std;
+
+	sub esi_status {
+		# this symbol is 4.0 only
+		std.log("ESI:" + req.esi);
+	}
+	EOF
+}
+
+varnish v1 -syntax 4.1 -errvcl {Variable is read only.} {
+	backend be none;
+
+	include "${tmpdir}/foo.vcl";
+
+	# should be in 4.1 syntax
+	sub vcl_recv {
+		call esi_status;
+		# this symbol is read only since 4.1
+		set req.proto = "HTTP/0.9";
+	}
+}
