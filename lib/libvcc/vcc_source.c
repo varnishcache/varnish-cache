@@ -257,3 +257,37 @@ vcc_lex_source(struct vcc *tl, struct source *src_sp, int eoi)
 			return;
 	}
 }
+
+/*--------------------------------------------------------------------*/
+
+void
+vcc_IncludePush(struct vcc *tl, struct token *t)
+{
+	struct syntax *s;
+
+	CHECK_OBJ_NOTNULL(tl, VCC_MAGIC);
+	AN(t);
+	assert(t->tok == INC_PUSH);
+
+	s = calloc(1, sizeof *s);
+	AN(s);
+	s->version = tl->esyntax;
+	s->src = t->src;
+	VTAILQ_INSERT_TAIL(&tl->vcl_syntax, s, list);
+}
+
+void
+vcc_IncludePop(struct vcc *tl, struct token *t)
+{
+	struct syntax *s;
+
+	CHECK_OBJ_NOTNULL(tl, VCC_MAGIC);
+	AN(t);
+	assert(t->tok == INC_POP);
+
+	s = VTAILQ_LAST(&tl->vcl_syntax, syntaxhead);
+	AN(s);
+	tl->esyntax = s->version;
+	VTAILQ_REMOVE(&tl->vcl_syntax, s, list);
+	free(s);
+}

@@ -240,9 +240,19 @@ struct inifin {
 
 VTAILQ_HEAD(inifinhead, inifin);
 
+struct syntax {
+#define SYNTAX_MAGIC		0x42397890
+	const struct source	*src;
+	int			version;
+	VTAILQ_ENTRY(syntax)	list;
+};
+
+VTAILQ_HEAD(syntaxhead, syntax);
+
 struct vcc {
 	unsigned		magic;
 #define VCC_MAGIC		0x24ad719d
+	struct syntaxhead	vcl_syntax;
 	int			syntax;
 	int			esyntax;	/* effective syntax */
 
@@ -373,6 +383,8 @@ struct source * vcc_new_source(const char *src, const char *kind,
     const char *name);
 struct source *vcc_file_source(struct vcc *tl, const char *fn);
 void vcc_lex_source(struct vcc *tl, struct source *sp, int eoi);
+void vcc_IncludePush(struct vcc *, struct token *);
+void vcc_IncludePop(struct vcc *, struct token *);
 
 /* vcc_storage.c */
 void vcc_stevedore(struct vcc *vcc, const char *stv_name);
@@ -416,13 +428,14 @@ void vcc_Warn(struct vcc *);
 
 void vcc__Expect(struct vcc *tl, unsigned tok, unsigned line);
 int vcc_IdIs(const struct token *t, const char *p);
-void vcc_PrintTokens(const struct vcc *tl, const struct token *tb,
+void vcc_PrintTokens(struct vcc *tl, const struct token *tb,
     const struct token *te);
 void vcc_ExpectVid(struct vcc *tl, const char *what);
 void vcc_Lexer(struct vcc *tl, struct source *sp);
 void vcc_NextToken(struct vcc *tl);
-struct token * vcc_PeekToken(const struct vcc *tl);
-struct token * vcc_PeekTokenFrom(const struct vcc *tl, const struct token *t);
+struct token * vcc_NextTokenFrom(struct vcc *tl, const struct token *t);
+struct token * vcc_PeekToken(struct vcc *tl);
+struct token * vcc_PeekTokenFrom(struct vcc *tl, const struct token *t);
 void vcc__ErrInternal(struct vcc *tl, const char *func,
     unsigned line);
 

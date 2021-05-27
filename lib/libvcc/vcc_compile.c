@@ -822,6 +822,7 @@ VCC_New(void)
 
 	ALLOC_OBJ(tl, VCC_MAGIC);
 	AN(tl);
+	VTAILQ_INIT(&tl->vcl_syntax);
 	VTAILQ_INIT(&tl->inifin);
 	VTAILQ_INIT(&tl->tokens);
 	VTAILQ_INIT(&tl->sources);
