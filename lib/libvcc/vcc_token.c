@@ -273,6 +273,11 @@ vcc_PeekTokenFrom(const struct vcc *tl, const struct token *t)
 	assert(t->tok != EOI);
 	t2 = VTAILQ_NEXT(t, list);
 	AN(t2);
+
+	while (t2->b == NULL) {
+		t2 = VTAILQ_NEXT(t2, list);
+		AN(t2);
+	}
 	return (t2);
 }
 
@@ -402,7 +407,7 @@ vcc_addtoken(struct vcc *tl, unsigned tok,
 	struct token *t;
 
 	t = TlAlloc(tl, sizeof *t);
-	assert(t != NULL);
+	AN(t);
 	t->tok = tok;
 	t->b = b;
 	t->e = e;
@@ -520,6 +525,9 @@ vcc_Lexer(struct vcc *tl, struct source *sp)
 	unsigned u;
 	struct vsb *vsb;
 	char namebuf[40];
+
+	if (sp->parent != NULL)
+		vcc_addtoken(tl, INC_PUSH, sp, NULL, NULL);
 
 	for (p = sp->b; p < sp->e; ) {
 
@@ -670,5 +678,8 @@ vcc_Lexer(struct vcc *tl, struct source *sp)
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}
+
+	if (sp->parent != NULL)
+		vcc_addtoken(tl, INC_POP, sp, NULL, NULL);
 	vcc_addtoken(tl, EOI, sp, sp->e, sp->e);
 }

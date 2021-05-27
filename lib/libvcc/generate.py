@@ -76,6 +76,10 @@ tokens = {
     "CSRC":     None,
     "CBLOB":    None,
 
+    # These are intrinsic tokens
+    "INC_PUSH": None,
+    "INC_POP":  None,
+
     # End of token list
     "EOI":      None,
 }
