@@ -101,6 +101,7 @@ struct token {
 	VTAILQ_ENTRY(token)	src_list;
 	unsigned		cnt;
 	char			*dec;
+	double			num;
 };
 
 /*---------------------------------------------------------------------*/

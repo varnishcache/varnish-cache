@@ -284,20 +284,13 @@ vcc_DurationUnit(struct vcc *tl)
 uint64_t
 vcc_UintVal(struct vcc *tl)
 {
-	const char *p, *errtxt;
 	int64_t retval;
 
 	if (tl->t->tok != CNUM) {
 		Expect(tl, CNUM);
 		return (0);
 	}
-	p = tl->t->b;
-	retval = SF_Parse_Integer(&p, &errtxt);
-	if (errno) {
-		VSB_printf(tl->sb, "Bad UINT: %s\n", errtxt);
-		vcc_ErrWhere(tl, tl->t);
-		return (0);
-	}
+	retval = (int64_t)round(tl->t->num);
 	if (retval < 0) {
 		VSB_printf(tl->sb, "UINT cannot be negative\n");
 		vcc_ErrWhere(tl, tl->t);
@@ -310,20 +303,13 @@ vcc_UintVal(struct vcc *tl)
 static double
 vcc_DoubleVal(struct vcc *tl)
 {
-	const char *p, *errtxt;
 	double retval;
 
 	if (tl->t->tok != CNUM && tl->t->tok != FNUM) {
 		Expect(tl, CNUM);
 		return (0);
 	}
-	p = tl->t->b;
-	retval = SF_Parse_Decimal(&p, &errtxt);
-	if (errno) {
-		VSB_printf(tl->sb, "Bad REAL: %s\n", errtxt);
-		vcc_ErrWhere(tl, tl->t);
-		return (0);
-	}
+	retval = tl->t->num;
 	vcc_NextToken(tl);
 	return (retval);
 }
@@ -349,19 +335,13 @@ vcc_ByteVal(struct vcc *tl, VCL_INT *d)
 {
 	double v;
 	VCL_INT retval;
-	const char *p, *errtxt;
+	const char *errtxt;
 
 	if (tl->t->tok != CNUM && tl->t->tok != FNUM) {
 		Expect(tl, CNUM);
 		return;
 	}
-	p = tl->t->b;
-	v = SF_Parse_Number(&p, &errtxt);
-	if (errno) {
-		VSB_printf(tl->sb, "Bad BYTES: %s\n", errtxt);
-		vcc_ErrWhere(tl, tl->t);
-		return;
-	}
+	v = tl->t->num;
 	vcc_NextToken(tl);
 	if (tl->t->tok != ID) {
 		VSB_cat(tl->sb, "Expected BYTES unit (B, KB, MB...) got ");

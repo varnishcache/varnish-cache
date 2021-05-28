@@ -446,6 +446,7 @@ static const char *
 vcc_lex_number(struct vcc *tl, struct source *sp, const char *p)
 {
 	const char *q, *r;
+	char *s;
 
 	for (q = p; q < sp->e; q++)
 		if (!vct_isdigit(*q))
@@ -457,6 +458,8 @@ vcc_lex_number(struct vcc *tl, struct source *sp, const char *p)
 			vcc_ErrWhere(tl, tl->t);
 			return (NULL);
 		}
+		tl->t->num = strtod(p, &s);
+		assert(s == tl->t->e);
 		return (q);
 	}
 	r = ++q;
@@ -469,6 +472,8 @@ vcc_lex_number(struct vcc *tl, struct source *sp, const char *p)
 		vcc_ErrWhere(tl, tl->t);
 		return(NULL);
 	}
+	tl->t->num = strtod(p, &s);
+	assert(s == tl->t->e);
 	return (r);
 }
 
