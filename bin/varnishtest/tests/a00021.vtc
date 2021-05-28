@@ -30,3 +30,17 @@ client c1 -connect "${t1_sock}" {
 } -run
 
 tunnel t1 -wait
+
+server s2 {
+	rxreq
+	txresp
+} -start
+
+tunnel t2 -connect "${s2_sock}" {
+	resume
+} -start+pause
+
+client c2 -connect "${t2_sock}" {
+	txreq
+	rxresp
+} -run
