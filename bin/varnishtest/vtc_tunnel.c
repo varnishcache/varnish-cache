@@ -290,7 +290,7 @@ cmd_tunnel_resume(CMD_ARGS)
 	AZ(pthread_mutex_unlock(&t->mtx));
 }
 
-const struct cmds tunnel_cmds[] = {
+static const struct cmds tunnel_cmds[] = {
 #define CMD_TUNNEL(n) { #n, cmd_tunnel_##n },
 	CMD_TUNNEL(pause)
 	CMD_TUNNEL(send)
@@ -305,7 +305,7 @@ const struct cmds tunnel_cmds[] = {
  */
 
 static void
-tunnel_read(struct tunnel *t, struct vtclog *vl, struct pollfd *pfd,
+tunnel_read(struct tunnel *t, struct vtclog *vl, const struct pollfd *pfd,
     struct tunnel_lane *lane)
 {
 	size_t len;
