@@ -386,10 +386,13 @@ tunnel_poll_thread(void *priv)
 	while (tunnel_is_open(t) && !vtc_stop) {
 		AZ(pthread_mutex_lock(&t->mtx));
 		/* NB: can be woken up by `tunnel tX -wait` */
-		while (t->state == TUNNEL_ACCEPT)
+		while (t->state == TUNNEL_ACCEPT && !vtc_stop)
 			AZ(pthread_cond_wait(&t->cond, &t->mtx));
 		state = t->state;
 		AZ(pthread_mutex_unlock(&t->mtx));
+
+		if (vtc_stop)
+			break;
 
 		assert(state < TUNNEL_POLL_DONE);
 
@@ -414,6 +417,9 @@ tunnel_poll_thread(void *priv)
 			AZ(pthread_cond_wait(&t->cond, &t->mtx));
 		}
 		AZ(pthread_mutex_unlock(&t->mtx));
+
+		if (vtc_stop)
+			break;
 
 		tunnel_write(t, vl, t->send_lane, "Sending");
 		tunnel_write(t, vl, t->recv_lane, "Receiving");
@@ -651,14 +657,10 @@ tunnel_wait(struct tunnel *t)
 	AZ(pthread_cond_signal(&t->cond));
 
 	AZ(pthread_join(t->tspec, &res));
-	if (res == PTHREAD_CANCELED && !vtc_stop)
-		vtc_fatal(t->vl, "Tunnel spec canceled");
 	if (res != NULL && !vtc_stop)
 		vtc_fatal(t->vl, "Tunnel spec returned \"%p\"", res);
 
 	AZ(pthread_join(t->tpoll, &res));
-	if (res == PTHREAD_CANCELED && !vtc_stop)
-		vtc_fatal(t->vl, "Tunnel poll canceled");
 	if (res != NULL && !vtc_stop)
 		vtc_fatal(t->vl, "Tunnel poll returned \"%p\"", res);
 
@@ -679,7 +681,6 @@ static void
 tunnel_reset(void)
 {
 	struct tunnel *t;
-	enum tunnel_state_e state;
 
 	while (1) {
 		AZ(pthread_mutex_lock(&tunnel_mtx));
@@ -691,15 +692,7 @@ tunnel_reset(void)
 		if (t == NULL)
 			break;
 
-		AZ(pthread_mutex_lock(&t->mtx));
-		state = t->state;
-		if (state < TUNNEL_POLL_DONE)
-			(void)pthread_cancel(t->tpoll);
-		if (state < TUNNEL_SPEC_DONE)
-			(void)pthread_cancel(t->tspec);
-		AZ(pthread_mutex_unlock(&t->mtx));
-
-		if (state != TUNNEL_STOPPED)
+		if (t->state != TUNNEL_STOPPED)
 			tunnel_wait(t);
 		tunnel_delete(t);
 	}
