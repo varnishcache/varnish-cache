@@ -362,7 +362,7 @@ tunnel_write(struct tunnel *t, struct vtclog *vl, struct tunnel_lane *lane,
 	AZ(pthread_mutex_lock(&t->mtx));
 	if (lane->wrk_len > 0 && lane->buf_len != -1) {
 		assert(lane->buf_len >= 0);
-		assert(lane->wrk_len >= lane->buf_len);
+		assert(lane->wrk_len >= (size_t)lane->buf_len);
 		lane->wrk_len -= lane->buf_len;
 	}
 	lane->buf_len = l;
