@@ -44,3 +44,5 @@ client c2 -connect "${t2_sock}" {
 	txreq
 	rxresp
 } -run
+
+tunnel t2 -wait
