@@ -43,6 +43,7 @@
 
 #include "vtc.h"
 
+#include "vsa.h"
 #include "vtcp.h"
 
 /* SECTION: tunnel tunnel
@@ -578,6 +579,8 @@ tunnel_delete(struct tunnel *t)
 static void
 tunnel_listen(struct tunnel *t)
 {
+	char buf[vsa_suckaddr_len];
+	struct suckaddr *sua;
 	const char *err;
 
 	if (t->lsock >= 0)
@@ -588,13 +591,20 @@ tunnel_listen(struct tunnel *t)
 		    "Tunnel listen address (%s) cannot be resolved: %s",
 		    t->listen, err);
 	assert(t->lsock > 0);
-	VTCP_myname(t->lsock, t->laddr, sizeof t->laddr,
+	sua = VSA_getsockname(t->lsock, buf, sizeof buf);
+	AN(sua);
+	VTCP_name(sua, t->laddr, sizeof t->laddr,
 	    t->lport, sizeof t->lport);
+
+	/* Record the actual port, and reuse it on subsequent starts */
+	if (VSA_Get_Proto(sua) == AF_INET)
+		bprintf(t->listen, "%s:%s", t->laddr, t->lport);
+	else
+		bprintf(t->listen, "[%s]:%s", t->laddr, t->lport);
+
 	macro_def(t->vl, t->name, "addr", "%s", t->laddr);
 	macro_def(t->vl, t->name, "port", "%s", t->lport);
 	macro_def(t->vl, t->name, "sock", "%s %s", t->laddr, t->lport);
-	/* Record the actual port, and reuse it on subsequent starts */
-	bprintf(t->listen, "%s %s", t->laddr, t->lport);
 }
 
 /**********************************************************************
