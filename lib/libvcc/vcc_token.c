@@ -438,6 +438,41 @@ vcc_delim_token(struct vcc *tl, struct source *sp, const char *p,
 }
 
 /*--------------------------------------------------------------------
+ * Lex a number, either CNUM or FNUM.
+ * We enforce the RFC8941 restrictions on number of digits here.
+ */
+
+static const char *
+vcc_lex_number(struct vcc *tl, struct source *sp, const char *p)
+{
+	const char *q, *r;
+
+	for (q = p; q < sp->e; q++)
+		if (!vct_isdigit(*q))
+			break;
+	if (*q != '.') {
+		vcc_addtoken(tl, CNUM, sp, p, q);
+		if (q - p > 15) {
+			VSB_cat(tl->sb, "Too many digits for integer.\n");
+			vcc_ErrWhere(tl, tl->t);
+			return (NULL);
+		}
+		return (q);
+	}
+	r = ++q;
+	for (; r < sp->e; r++)
+		if (!vct_isdigit(*r))
+			break;
+	vcc_addtoken(tl, FNUM, sp, p, r);
+	if (q - p > 13 || r - q > 3) {
+		VSB_cat(tl->sb, "Too many digits for real.\n");
+		vcc_ErrWhere(tl, tl->t);
+		return(NULL);
+	}
+	return (r);
+}
+
+/*--------------------------------------------------------------------
  * Lexical analysis and token generation
  */
 
@@ -588,19 +623,9 @@ vcc_Lexer(struct vcc *tl, struct source *sp)
 
 		/* Match numbers { [0-9]+ } */
 		if (vct_isdigit(*p)) {
-			for (q = p; q < sp->e; q++)
-				if (!vct_isdigit(*q))
-					break;
-			if (*q != '.') {
-				vcc_addtoken(tl, CNUM, sp, p, q);
-				p = q;
-				continue;
-			}
-			for (++q; q < sp->e; q++)
-				if (!vct_isdigit(*q))
-					break;
-			vcc_addtoken(tl, FNUM, sp, p, q);
-			p = q;
+			p = vcc_lex_number(tl, sp, p);
+			if (p == NULL)
+				return;
 			continue;
 		}
 		vcc_addtoken(tl, EOI, sp, p, p + 1);

@@ -1,17 +1,38 @@
 varnishtest "SF-decimal/SF-integer ranges"
 
+varnish v1 -errvcl {Too many digits for integer.} {
+	sub vcl_recv { set req.http.foo = 1234567890123456; }
+}
+
+varnish v1 -errvcl {Too many digits for real.} {
+	sub vcl_recv { set req.http.foo = 1234567890123.; }
+}
+
+varnish v1 -errvcl {Too many digits for real.} {
+	sub vcl_recv { set req.http.foo = 123456789012.1234; }
+}
+
+varnish v1 -errvcl {Too many digits for real.} {
+	sub vcl_recv { set req.http.foo = 0.1234; }
+}
+
 server s1 {
 	rxreq
 	txresp
 } -start
 
 varnish v1 -vcl+backend {
+	sub vcl_recv {
+		set req.http.foo1 = 123456789012345;
+		set req.http.foo2 = 123456789012.;
+		set req.http.foo3 = 123456789012.123;
+	}
 	sub vcl_deliver {
 		if (req.http.foo) {
 			set resp.http.foo = obj.ttl * 10000000000;
 		}
 		if (req.http.bar) {
-			set resp.http.bar = storage.Transient.free_space * 1000000000000000;
+			set resp.http.bar = storage.Transient.free_space * 10000000 * 100000000;
 		}
 	}
 } -start
