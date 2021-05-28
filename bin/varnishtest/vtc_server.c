@@ -165,7 +165,7 @@ server_listen_uds(struct server *s, const char **errp)
 	errno = 0;
 	if (unlink(s->listen) != 0 && errno != ENOENT)
 		vtc_fatal(s->vl, "Could not unlink %s before bind: %s",
-			  s->listen, strerror(errno));
+		    s->listen, strerror(errno));
 	/*
 	 * Temporarily set the umask to 0 to avoid issues with
 	 * permissions.
