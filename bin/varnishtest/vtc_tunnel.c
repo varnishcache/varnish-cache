@@ -132,7 +132,6 @@ struct tunnel {
 
 	char			connect[256];
 	int			csock;
-	const char		*caddr;
 
 	char			listen[256];
 	int			lsock;
