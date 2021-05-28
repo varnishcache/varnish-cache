@@ -536,7 +536,7 @@ tunnel_new(const char *name)
 
 	t->state = TUNNEL_STOPPED;
 	bprintf(t->connect, "%s", "${v1_sock}");
-	bprintf(t->listen, "%s", "127.0.0.1 0");
+	bprintf(t->listen, "%s", default_listen_addr);
 	t->csock = -1;
 	t->lsock = -1;
 	t->asock = -1;
