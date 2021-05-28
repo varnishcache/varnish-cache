@@ -64,6 +64,9 @@
  *        Start the tunnel in background, processing the last given
  *        specification.
  *
+ * \-start+pause
+ *        Start the tunnel, but already paused.
+ *
  * \-wait
  *        Block until the thread finishes.
  *
@@ -122,6 +125,7 @@ struct tunnel {
 	struct vtclog		*vl;
 	VTAILQ_ENTRY(tunnel)	list;
 	enum tunnel_state_e	state;
+	unsigned		start_paused;
 
 	char			*spec;
 
@@ -474,7 +478,11 @@ tunnel_accept(struct tunnel *t, struct vtclog *vl)
 	t->send_lane->wrk_len = 0;
 	t->recv_lane->buf_len = 0;
 	t->recv_lane->wrk_len = 0;
-	t->state = TUNNEL_RUNNING;
+	if (t->start_paused) {
+		t->state = TUNNEL_PAUSED;
+		t->start_paused = 0;
+	} else
+		t->state = TUNNEL_RUNNING;
 	AZ(pthread_cond_signal(&t->cond));
 	AZ(pthread_mutex_unlock(&t->mtx));
 }
@@ -614,6 +622,15 @@ tunnel_start(struct tunnel *t)
 	AZ(pthread_create(&t->tspec, NULL, tunnel_spec_thread, t));
 }
 
+static void
+tunnel_start_pause(struct tunnel *t)
+{
+
+	CHECK_OBJ_NOTNULL(t, TUNNEL_MAGIC);
+	t->start_paused = 1;
+	tunnel_start(t);
+}
+
 /**********************************************************************
  * Wait for tunnel thread to stop
  */
@@ -742,6 +759,10 @@ cmd_tunnel(CMD_ARGS)
 		}
 		if (!strcmp(*av, "-start")) {
 			tunnel_start(t);
+			continue;
+		}
+		if (!strcmp(*av, "-start+pause")) {
+			tunnel_start_pause(t);
 			continue;
 		}
 		if (**av == '-')
