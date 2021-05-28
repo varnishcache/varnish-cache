@@ -14,7 +14,10 @@ varnish v1 -errvcl {Symbol 'debug' has wrong type (sub), expected vmod:} {
 
 varnish v1 -errvcl {Another module already imported as foo} {
 	import debug as foo;
-	import directors as foo;
+	import
+	    directors
+		as
+		    foo;
 }
 
 server s1 {
