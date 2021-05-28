@@ -192,7 +192,6 @@ cmd_tunnel_pause(CMD_ARGS)
 	if (t->state == TUNNEL_PAUSED) {
 		AZ(pthread_mutex_unlock(&t->mtx));
 		vtc_fatal(vl, "Tunnel already paused");
-		WRONG("unreachable");
 	}
 	assert(t->state == TUNNEL_RUNNING);
 	t->state = TUNNEL_PAUSED;
@@ -230,7 +229,6 @@ cmd_tunnel_send(CMD_ARGS)
 	if (t->state == TUNNEL_RUNNING) {
 		AZ(pthread_mutex_unlock(&t->mtx));
 		vtc_fatal(vl, "Tunnel still running");
-		WRONG("unreachable");
 	}
 	assert(t->state == TUNNEL_PAUSED);
 	AZ(t->send_lane->wrk_len);
@@ -285,7 +283,6 @@ cmd_tunnel_resume(CMD_ARGS)
 	if (t->state == TUNNEL_RUNNING) {
 		AZ(pthread_mutex_unlock(&t->mtx));
 		vtc_fatal(vl, "Tunnel already running");
-		WRONG("unreachable");
 	}
 	assert(t->state == TUNNEL_PAUSED);
 	t->state = TUNNEL_RUNNING;
