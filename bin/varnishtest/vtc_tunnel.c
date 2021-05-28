@@ -136,8 +136,8 @@ struct tunnel {
 
 	char			listen[256];
 	int			lsock;
-	char			laddr[32];
-	char			lport[32];
+	char			laddr[VTCP_ADDRBUFSIZE];
+	char			lport[VTCP_PORTBUFSIZE];
 
 	int			asock;
 
@@ -593,8 +593,7 @@ tunnel_listen(struct tunnel *t)
 	assert(t->lsock > 0);
 	sua = VSA_getsockname(t->lsock, buf, sizeof buf);
 	AN(sua);
-	VTCP_name(sua, t->laddr, sizeof t->laddr,
-	    t->lport, sizeof t->lport);
+	VTCP_name(sua, t->laddr, sizeof t->laddr, t->lport, sizeof t->lport);
 
 	/* Record the actual port, and reuse it on subsequent starts */
 	if (VSA_Get_Proto(sua) == AF_INET)
