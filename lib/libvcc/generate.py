@@ -760,7 +760,7 @@ parse_var_doc(join(srcroot, "doc/sphinx/reference/vcl_var.rst"))
 fo.write("}\n")
 
 for i in stv_variables:
-    fh.write(vcltypes[i[1]].c + " VRT_stevedore_" + i[0] + "(VCL_STEVEDORE);\n")
+    fh.write("VCL_" + i[1] + " VRT_stevedore_" + i[0] + "(VCL_STEVEDORE);\n")
 
 fo.write("\n/* VCL type identifiers */\n")
 
