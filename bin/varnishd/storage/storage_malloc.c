@@ -50,8 +50,8 @@ struct sma_sc {
 	unsigned		magic;
 #define SMA_SC_MAGIC		0x1ac8a345
 	struct lock		sma_mtx;
-	size_t			sma_max;
-	size_t			sma_alloc;
+	VCL_BYTES		sma_max;
+	VCL_BYTES		sma_alloc;
 	struct VSC_sma		*stats;
 };
 
@@ -83,7 +83,7 @@ sma_alloc(const struct stevedore *st, size_t size)
 		sma_sc->stats->c_bytes += size;
 		sma_sc->stats->g_alloc++;
 		sma_sc->stats->g_bytes += size;
-		if (sma_sc->sma_max != SIZE_MAX)
+		if (sma_sc->sma_max != VRT_INTEGER_MAX)
 			sma_sc->stats->g_space -= size;
 	}
 	Lck_Unlock(&sma_sc->sma_mtx);
@@ -117,7 +117,7 @@ sma_alloc(const struct stevedore *st, size_t size)
 		sma_sc->stats->c_bytes -= size;
 		sma_sc->stats->g_alloc--;
 		sma_sc->stats->g_bytes -= size;
-		if (sma_sc->sma_max != SIZE_MAX)
+		if (sma_sc->sma_max != VRT_INTEGER_MAX)
 			sma_sc->stats->g_space += size;
 		Lck_Unlock(&sma_sc->sma_mtx);
 		return (NULL);
@@ -146,7 +146,7 @@ sma_free(struct storage *s)
 	sma_sc->stats->g_alloc--;
 	sma_sc->stats->g_bytes -= sma->sz;
 	sma_sc->stats->c_freed += sma->sz;
-	if (sma_sc->sma_max != SIZE_MAX)
+	if (sma_sc->sma_max != VRT_INTEGER_MAX)
 		sma_sc->stats->g_space += sma->sz;
 	Lck_Unlock(&sma_sc->sma_mtx);
 	free(sma->s.ptr);
@@ -181,8 +181,8 @@ sma_init(struct stevedore *parent, int ac, char * const *av)
 	ASSERT_MGT();
 	ALLOC_OBJ(sc, SMA_SC_MAGIC);
 	AN(sc);
-	sc->sma_max = SIZE_MAX;
-	assert(sc->sma_max == SIZE_MAX);
+	sc->sma_max = VRT_INTEGER_MAX;
+	assert(sc->sma_max == VRT_INTEGER_MAX);
 	parent->priv = sc;
 
 	AZ(av[ac]);
@@ -216,7 +216,7 @@ sma_open(struct stevedore *st)
 	CAST_OBJ_NOTNULL(sma_sc, st->priv, SMA_SC_MAGIC);
 	Lck_New(&sma_sc->sma_mtx, lck_sma);
 	sma_sc->stats = VSC_sma_New(NULL, NULL, st->ident);
-	if (sma_sc->sma_max != SIZE_MAX)
+	if (sma_sc->sma_max != VRT_INTEGER_MAX)
 		sma_sc->stats->g_space = sma_sc->sma_max;
 }
 
