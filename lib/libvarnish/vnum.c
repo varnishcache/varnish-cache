@@ -81,6 +81,8 @@ sf_parse_int(const char **ipp, const char **errtxt, int maxdig)
 		retval *= 10;
 		retval += *(*ipp)++ - 0x30;
 	}
+	while (vct_isows(*(*ipp)))
+		(*ipp)++;
 	if (ndig == 0)
 		BAIL(negative ? err_invalid_num : err_miss_num);
 	if (negative)
@@ -98,48 +100,56 @@ SF_Parse_Integer(const char **ipp, const char **errtxt)
 double
 SF_Parse_Decimal(const char **ipp, const char **errtxt)
 {
-	double retval;
+	double retval, scale = 1;
+	int ndig;
 
 	retval = (double)sf_parse_int(ipp, errtxt, 12);
-	if (*(*ipp) != '.')
-		return (retval);
-	(*ipp)++;
-	if (!vct_isdigit(*(*ipp)))
-		return (retval);
-	retval += .1 * (*(*ipp)++ - 0x30);
-	if (!vct_isdigit(*(*ipp)))
-		return (retval);
-	retval += .01 * (*(*ipp)++ - 0x30);
-	if (!vct_isdigit(*(*ipp)))
-		return (retval);
-	retval += .001 * (*(*ipp)++ - 0x30);
-	if (vct_isdigit(*(*ipp)))
-		BAIL(err_fatnum);
+	if (retval < 0)
+		scale = -scale;
+	do {
+		if (*(*ipp) != '.')
+			break;
+		(*ipp)++;
+		for(ndig = 0; ndig < 3; ndig++) {
+			scale *= .1;
+			if (!vct_isdigit(*(*ipp)))
+				break;
+			retval += scale * (*(*ipp)++ - 0x30);
+		}
+		if (vct_isdigit(*(*ipp)))
+			BAIL(err_fatnum);
+	} while (0);
+	while (vct_isows(*(*ipp)))
+		(*ipp)++;
 	return (retval);
 }
 
 double
 SF_Parse_Number(const char **ipp, const char **errtxt)
 {
-	double retval;
+	double retval, scale = 1;
+	int ndig;
 
 	retval = (double)sf_parse_int(ipp, errtxt, 15);
-	if (*(*ipp) != '.')
-		return (retval);
-	if (retval < -999999999999 || retval > 999999999999)
-		BAIL(err_fatnum);
-	(*ipp)++;
-	if (!vct_isdigit(*(*ipp)))
-		return (retval);
-	retval += .1 * (*(*ipp)++ - 0x30);
-	if (!vct_isdigit(*(*ipp)))
-		return (retval);
-	retval += .01 * (*(*ipp)++ - 0x30);
-	if (!vct_isdigit(*(*ipp)))
-		return (retval);
-	retval += .001 * (*(*ipp)++ - 0x30);
-	if (vct_isdigit(*(*ipp)))
-		BAIL(err_fatnum);
+	if (retval < 0)
+		scale = -scale;
+	do {
+		if (*(*ipp) != '.')
+			break;
+		if (retval < -999999999999 || retval > 999999999999)
+			BAIL(err_fatnum);
+		(*ipp)++;
+		for(ndig = 0; ndig < 3; ndig++) {
+			scale *= .1;
+			if (!vct_isdigit(*(*ipp)))
+				break;
+			retval += scale * (*(*ipp)++ - 0x30);
+		}
+		if (vct_isdigit(*(*ipp)))
+			BAIL(err_fatnum);
+	} while (0);
+	while (vct_isows(*(*ipp)))
+		(*ipp)++;
 	return (retval);
 }
 
