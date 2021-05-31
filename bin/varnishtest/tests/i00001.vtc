@@ -45,11 +45,13 @@ logexpect l1 -v v1 -g raw {
 client c1 {
 	txreq -hdr "foo: 1"
 	rxresp
+	expect resp.status == 503
 } -run
 
 client c1 {
 	txreq -hdr "bar: 1"
 	rxresp
+	expect resp.status == 503
 } -run
 
 logexpect l1 -wait
