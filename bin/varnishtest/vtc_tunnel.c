@@ -345,9 +345,7 @@ tunnel_write(struct tunnel *t, struct vtclog *vl, struct tunnel_lane *lane,
 	ssize_t res, l;
 
 	p = lane->buf;
-	AZ(pthread_mutex_lock(&t->mtx));
 	l = lane->buf_len;
-	AZ(pthread_mutex_unlock(&t->mtx));
 
 	if (l > 0)
 		vtc_log(vl, 3, "%s %zd bytes", action, l);
