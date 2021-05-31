@@ -75,7 +75,7 @@ sma_alloc(const struct stevedore *st, size_t size)
 	CAST_OBJ_NOTNULL(sma_sc, st->priv, SMA_SC_MAGIC);
 	Lck_Lock(&sma_sc->sma_mtx);
 	sma_sc->stats->c_req++;
-	if (sma_sc->sma_alloc + size > sma_sc->sma_max) {
+	if (sma_sc->sma_alloc + (VCL_BYTES)size > sma_sc->sma_max) {
 		sma_sc->stats->c_fail++;
 		size = 0;
 	} else {
