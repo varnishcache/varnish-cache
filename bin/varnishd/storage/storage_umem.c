@@ -58,8 +58,8 @@ struct smu_sc {
 	unsigned		magic;
 #define SMU_SC_MAGIC		0x7695f68e
 	struct lock		smu_mtx;
-	size_t			smu_max;
-	size_t			smu_alloc;
+	VCL_INT			smu_max;
+	VCL_INT			smu_alloc;
 	struct VSC_smu		*stats;
 	umem_cache_t		*smu_cache;
 };
@@ -151,7 +151,7 @@ smu_alloc(const struct stevedore *st, size_t size)
 	CAST_OBJ_NOTNULL(smu_sc, st->priv, SMU_SC_MAGIC);
 	Lck_Lock(&smu_sc->smu_mtx);
 	smu_sc->stats->c_req++;
-	if (smu_sc->smu_alloc + size > smu_sc->smu_max) {
+	if (smu_sc->smu_alloc + (int64_t)size > smu_sc->smu_max) {
 		smu_sc->stats->c_fail++;
 		size = 0;
 	} else {
@@ -159,7 +159,7 @@ smu_alloc(const struct stevedore *st, size_t size)
 		smu_sc->stats->c_bytes += size;
 		smu_sc->stats->g_alloc++;
 		smu_sc->stats->g_bytes += size;
-		if (smu_sc->smu_max != SIZE_MAX)
+		if (smu_sc->smu_max != VRT_INTEGER_MAX)
 			smu_sc->stats->g_space -= size;
 	}
 	Lck_Unlock(&smu_sc->smu_mtx);
@@ -194,7 +194,7 @@ smu_alloc(const struct stevedore *st, size_t size)
 		smu_sc->stats->c_bytes -= size;
 		smu_sc->stats->g_alloc--;
 		smu_sc->stats->g_bytes -= size;
-		if (smu_sc->smu_max != SIZE_MAX)
+		if (smu_sc->smu_max != VRT_INTEGER_MAX)
 			smu_sc->stats->g_space += size;
 		Lck_Unlock(&smu_sc->smu_mtx);
 		return (NULL);
@@ -224,7 +224,7 @@ smu_free(struct storage *s)
 	sc->stats->g_alloc--;
 	sc->stats->g_bytes -= smu->sz;
 	sc->stats->c_freed += smu->sz;
-	if (sc->smu_max != SIZE_MAX)
+	if (sc->smu_max != VRT_INTEGER_MAX)
 		sc->stats->g_space += smu->sz;
 	Lck_Unlock(&sc->smu_mtx);
 
@@ -300,8 +300,8 @@ smu_init(struct stevedore *parent, int ac, char * const *av)
 	ASSERT_MGT();
 	ALLOC_OBJ(sc, SMU_SC_MAGIC);
 	AN(sc);
-	sc->smu_max = SIZE_MAX;
-	assert(sc->smu_max == SIZE_MAX);
+	sc->smu_max = VRT_INTEGER_MAX;
+	assert(sc->smu_max == VRT_INTEGER_MAX);
 	parent->priv = sc;
 
 	AZ(av[ac]);
@@ -409,7 +409,7 @@ smu_open(struct stevedore *st)
 	CAST_OBJ_NOTNULL(smu_sc, st->priv, SMU_SC_MAGIC);
 	Lck_New(&smu_sc->smu_mtx, lck_smu);
 	smu_sc->stats = VSC_smu_New(NULL, NULL, st->ident);
-	if (smu_sc->smu_max != SIZE_MAX)
+	if (smu_sc->smu_max != VRT_INTEGER_MAX)
 		smu_sc->stats->g_space = smu_sc->smu_max;
 
 	smu_open_init();
