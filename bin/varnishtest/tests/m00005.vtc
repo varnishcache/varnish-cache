@@ -113,7 +113,7 @@ client c1 {
 
 	# ---
 
-	txreq -hdr "d-real: 0.010" -hdr "b-real: 2048.99999"
+	txreq -hdr "d-real: 0.010" -hdr "b-real: 2048.999"
 	rxresp
 	expect resp.http.duration == 1000000.010
 	expect resp.http.bytes == 2560
