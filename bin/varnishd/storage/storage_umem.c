@@ -58,8 +58,8 @@ struct smu_sc {
 	unsigned		magic;
 #define SMU_SC_MAGIC		0x7695f68e
 	struct lock		smu_mtx;
-	VCL_INT			smu_max;
-	VCL_INT			smu_alloc;
+	VCL_BYTES		smu_max;
+	VCL_BYTES		smu_alloc;
 	struct VSC_smu		*stats;
 	umem_cache_t		*smu_cache;
 };
