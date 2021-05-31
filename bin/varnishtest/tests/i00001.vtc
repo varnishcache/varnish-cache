@@ -32,7 +32,8 @@ varnish v1 -vcl+backend {
 			set resp.http.foo = obj.ttl * 10000000000;
 		}
 		if (req.http.bar) {
-			set resp.http.bar = storage.Transient.free_space * 10000000 * 100000000;
+			# unlimited malloc stevedore returns VCL_INT_MAX - epsilon
+			set resp.http.bar = storage.Transient.free_space * 10;
 		}
 	}
 } -start
