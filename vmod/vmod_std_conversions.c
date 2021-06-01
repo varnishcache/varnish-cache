@@ -147,8 +147,8 @@ vmod_bytes(VRT_CTX, struct VARGS(bytes) *a)
 VCL_INT v_matchproto_(td_std_integer)
 vmod_integer(VRT_CTX, struct VARGS(integer) *a)
 {
-	const char *e;
-	double r;
+	const char *p, *errtxt = NULL;
+	double r, tmp;
 	int nargs;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -167,9 +167,11 @@ vmod_integer(VRT_CTX, struct VARGS(integer) *a)
 		return (a->bytes);
 
 	if (a->valid_s && a->s != NULL) {
-		r = VNUMpfx(a->s, &e);
-		if (e != NULL)
-			r = NAN;
+		p = a->s;
+		r = SF_Parse_Number(&p, &errtxt);
+		if (!errno && *p == '\0' && modf(r, &tmp) == 0.0)
+			return (r);
+		r = NAN;
 	}
 
 	if (a->valid_duration)
@@ -190,7 +192,10 @@ vmod_integer(VRT_CTX, struct VARGS(integer) *a)
 	if (a->valid_fallback)
 		return (a->fallback);
 
-	VRT_fail(ctx, "std.integer: conversion failed");
+	if (errtxt != NULL)
+		VRT_fail(ctx, "std.integer: conversion failed: %s", errtxt);
+	else
+		VRT_fail(ctx, "std.integer: conversion failed");
 	return (0);
 }
 
@@ -234,6 +239,7 @@ VCL_REAL v_matchproto_(td_std_real)
 vmod_real(VRT_CTX, struct VARGS(real) *a)
 {
 	VCL_REAL r;
+	const char *p, *errtxt = NULL;
 	int nargs;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -260,15 +266,19 @@ vmod_real(VRT_CTX, struct VARGS(real) *a)
 		return ((VCL_REAL)a->time);
 
 	if (a->valid_s && a->s != NULL) {
-		r = VNUM(a->s);
-		if (!isnan(r))
+		p = a->s;
+		r = SF_Parse_Decimal(&p, &errtxt);
+		if (!errno && *p == '\0')
 			return (r);
 	}
 
 	if (a->valid_fallback)
 		return (a->fallback);
 
-	VRT_fail(ctx, "std.real: conversion failed");
+	if (errtxt != NULL)
+		VRT_fail(ctx, "std.real: conversion failed: %s", errtxt);
+	else
+		VRT_fail(ctx, "std.real: conversion failed");
 	return (0);
 }
 
