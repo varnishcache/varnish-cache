@@ -1,5 +1,7 @@
 varnishtest "Test priv_task"
 
+feature no_sanitizer
+
 server s1 {
 	rxreq
 	txresp
