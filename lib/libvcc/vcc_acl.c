@@ -457,7 +457,7 @@ vcc_acl_entry(struct vcc *tl)
  */
 
 static void
-vcc_acl_emit_tokens(struct vcc *tl, const struct acl_e *ae)
+vcc_acl_emit_tokens(const struct vcc *tl, const struct acl_e *ae)
 {
 	struct token *t;
 	const char *sep = "";
@@ -490,7 +490,7 @@ vcc_acl_emit_tokens(struct vcc *tl, const struct acl_e *ae)
  */
 
 static unsigned
-vcc_acl_emit_tables(struct vcc *tl, unsigned n, const char *name)
+vcc_acl_emit_tables(const struct vcc *tl, unsigned n, const char *name)
 {
 	struct acl_e *ae;
 	unsigned rv = sizeof(ae->data) + 3;

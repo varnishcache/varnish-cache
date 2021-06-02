@@ -264,24 +264,20 @@ vcc_ErrWhere(struct vcc *tl, const struct token *t)
 /*--------------------------------------------------------------------*/
 
 struct token *
-vcc_PeekTokenFrom(struct vcc *tl, const struct token *t)
+vcc_PeekTokenFrom(const struct vcc *tl, const struct token *t)
 {
-	struct token *tn;
+	struct token *t2;
 
 	CHECK_OBJ_NOTNULL(tl, VCC_MAGIC);
 	AN(t);
-	tn = VTAILQ_NEXT(t, list);
-	if (tn == NULL) {
-		VSB_cat(tl->sb,
-		    "Ran out of input, something is missing or"
-		    " maybe unbalanced (...) or {...}\n");
-		tl->err = 1;
-	}
-	return (tn);
+	assert(t->tok != EOI);
+	t2 = VTAILQ_NEXT(t, list);
+	AN(t2);
+	return (t2);
 }
 
 struct token *
-vcc_PeekToken(struct vcc *tl)
+vcc_PeekToken(const struct vcc *tl)
 {
 
 	CHECK_OBJ_NOTNULL(tl, VCC_MAGIC);
@@ -330,7 +326,8 @@ vcc_IdIs(const struct token *t, const char *p)
  */
 
 void
-vcc_PrintTokens(struct vcc *tl, const struct token *tb, const struct token *te)
+vcc_PrintTokens(const struct vcc *tl,
+    const struct token *tb, const struct token *te)
 {
 
 	CHECK_OBJ_NOTNULL(tl, VCC_MAGIC);

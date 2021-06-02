@@ -415,13 +415,13 @@ void vcc_Warn(struct vcc *);
 
 void vcc__Expect(struct vcc *tl, unsigned tok, unsigned line);
 int vcc_IdIs(const struct token *t, const char *p);
-void vcc_PrintTokens(struct vcc *tl, const struct token *tb,
+void vcc_PrintTokens(const struct vcc *tl, const struct token *tb,
     const struct token *te);
 void vcc_ExpectVid(struct vcc *tl, const char *what);
 void vcc_Lexer(struct vcc *tl, struct source *sp);
 void vcc_NextToken(struct vcc *tl);
-struct token * vcc_PeekToken(struct vcc *tl);
-struct token * vcc_PeekTokenFrom(struct vcc *tl, const struct token *t);
+struct token * vcc_PeekToken(const struct vcc *tl);
+struct token * vcc_PeekTokenFrom(const struct vcc *tl, const struct token *t);
 void vcc__ErrInternal(struct vcc *tl, const char *func,
     unsigned line);
 
