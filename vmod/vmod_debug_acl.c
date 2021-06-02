@@ -47,12 +47,27 @@
 #include "vtim.h"
 #include "vcc_debug_if.h"
 
+VCL_ACL v_matchproto_(td_debug_null_acl)
+xyzzy_null_acl(VRT_CTX)
+{
+
+	CHECK_OBJ_ORNULL(ctx, VRT_CTX_MAGIC);
+	return (NULL);
+}
+
+VCL_ACL v_matchproto_(td_debug_acl)
+xyzzy_acl(VRT_CTX, VCL_ACL acl)
+{
+
+	CHECK_OBJ_ORNULL(ctx, VRT_CTX_MAGIC);
+	return (acl);
+}
+
 VCL_BOOL v_matchproto_(td_debug_match_acl)
 xyzzy_match_acl(VRT_CTX, VCL_ACL acl, VCL_IP ip)
 {
 
 	CHECK_OBJ_ORNULL(ctx, VRT_CTX_MAGIC);
-	AN(acl);
 	assert(VSA_Sane(ip));
 
 	return (VRT_acl_match(ctx, acl, ip));
@@ -253,4 +268,45 @@ xyzzy_time_acl(VRT_CTX, VCL_ACL acl, VCL_IP ip0, VCL_IP ip1,
 	    t0, t1, t1 - t0, (t1-t0) / turnus, d, (intmax_t)cnt);
 	cleanup_sweep(asw);
 	return (d);
+}
+
+struct xyzzy_debug_aclobj {
+	unsigned			magic;
+#define VMOD_DEBUG_ACLOBJ_MAGIC	0xac10ac10
+	char *				vcl_name;
+	VCL_ACL			acl;
+};
+
+VCL_VOID v_matchproto_(td_xyzzy_debug_aclobj__init)
+xyzzy_aclobj__init(VRT_CTX, struct VPFX(debug_aclobj) **op,
+    const char *vcl_name, VCL_ACL acl)
+{
+	struct VPFX(debug_aclobj) *o;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(op);
+	AZ(*op);
+	ALLOC_OBJ(o, VMOD_DEBUG_ACLOBJ_MAGIC);
+	AN(o);
+	REPLACE(o->vcl_name, vcl_name);
+	o->acl = acl;
+	*op = o;
+}
+
+VCL_VOID v_matchproto_(td_xyzzy_debug_aclobj__fini)
+xyzzy_aclobj__fini(struct VPFX(debug_aclobj) **op)
+{
+	struct VPFX(debug_aclobj) *o;
+
+	TAKE_OBJ_NOTNULL(o, op, VMOD_DEBUG_ACLOBJ_MAGIC);
+	REPLACE(o->vcl_name, NULL);
+	FREE_OBJ(o);
+}
+
+VCL_ACL v_matchproto_(td_xyzzy_debug_aclobj_get)
+xyzzy_aclobj_get(VRT_CTX, struct VPFX(debug_aclobj) *o)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(o, VMOD_DEBUG_ACLOBJ_MAGIC);
+	return (o->acl);
 }

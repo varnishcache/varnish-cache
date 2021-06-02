@@ -151,13 +151,13 @@ varnish v1 -errvcl {Symbols named 'vcl_*' are reserved.} {
 	}
 }
 
-varnish v1 -errvcl {Symbol 'true' has wrong type (func), expected acl:} {
+varnish v1 -errvcl {Expression has type BOOL, expected ACL} {
 	sub vcl_recv {
 		if (client.ip ~ true) { }
 	}
 }
 
-varnish v1 -errvcl {Symbol 'default' has wrong type} {
+varnish v1 -errvcl {Symbol 'default' is a reserved word.} {
 	sub vcl_recv {
 		if (client.ip ~ default) { }
 	}

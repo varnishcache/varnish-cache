@@ -174,6 +174,14 @@ $Function VOID vcl_discard_delay(PRIV_VCL, DURATION)
 Hold a reference to the VCL when it goes cold preventing
 discard for the given delay.
 
+$Function ACL null_acl()
+
+Return no acl.
+
+$Function ACL acl(ACL acl)
+
+Return the argument.
+
 $Function BOOL match_acl(ACL acl, IP ip)
 
 Perform an IP match against a named ACL.
@@ -193,6 +201,10 @@ $Function DURATION time_acl(ACL acl, IP ip0, IP ip1, INT step = 1, INT rounds = 
 Time `rounds` sweeps from `ip0` to `ip1` through `acl`.
 
 Consider: `-p vsl_mask=-VCL_acl`
+
+$Object aclobj(ACL)
+
+$Method ACL .get()
 
 $Function VOID test_probe(PROBE probe, PROBE same = 0)
 

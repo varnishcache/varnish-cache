@@ -1121,17 +1121,14 @@ cmp_regexp(struct vcc *tl, struct expr **e, const struct cmps *cp)
 static void v_matchproto_(cmp_f)
 cmp_acl(struct vcc *tl, struct expr **e, const struct cmps *cp)
 {
-	struct symbol *sym;
+	struct expr *e2;
 	char buf[256];
 
 	vcc_NextToken(tl);
-	vcc_ExpectVid(tl, "ACL");
-	sym = VCC_SymbolGet(tl, SYM_MAIN, SYM_ACL, SYMTAB_CREATE, XREF_REF);
+	vcc_expr0(tl, &e2, ACL);
 	ERRCHK(tl);
-	AN(sym);
-	VCC_GlobalSymbol(sym, ACL);
-	bprintf(buf, "%sVRT_acl_match(ctx, %s, \v1)", cp->emit, sym->rname);
-	*e = vcc_expr_edit(tl, BOOL, buf, *e, NULL);
+	bprintf(buf, "%sVRT_acl_match(ctx, \v1, \v2)", cp->emit);
+	*e = vcc_expr_edit(tl, BOOL, buf, e2, *e);
 }
 
 static void v_matchproto_(cmp_f)

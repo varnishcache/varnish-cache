@@ -134,11 +134,12 @@ VRT_acl_match(VRT_CTX, VCL_ACL acl, VCL_IP ip)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(acl, VRT_ACL_MAGIC);
-	if (ip == NULL) {
-		VRT_fail(ctx, "Cannot match a null IP address");
+	if (acl == NULL || ip == NULL) {
+		VRT_fail(ctx, "Cannot match a null %s",
+			 acl == NULL ? "ACL" : "IP address");
 		return (0);
 	}
+	CHECK_OBJ(acl, VRT_ACL_MAGIC);
 	assert(VSA_Sane(ip));
 	return (acl->match(ctx, ip));
 }

@@ -21,13 +21,31 @@ varnish v1 -vcl+backend {
 		if (!debug.match_acl(loopback, "127.0.0.127")) {
 			debug.fail();
 		}
+		new o_locals = debug.aclobj(locals);
+		new o_null = debug.aclobj(debug.null_acl());
 	}
 
 	sub vcl_recv {
-		if (debug.match_acl(ip=client.ip, acl=locals)) {
-			return (hash);
+		if (req.url == "/null") {
+			if (client.ip ~ debug.null_acl()) {
+				return (synth(200));
+			}
 		}
-		return (synth(500));
+		if (req.url == "/nullo") {
+			if (client.ip ~ o_null.get()) {
+				return (synth(200));
+			}
+		}
+		if (! debug.match_acl(ip=client.ip, acl=locals)) {
+			return (synth(500, "match_acl"));
+		}
+		if (client.ip !~ debug.acl(locals)) {
+			return (synth(500, "~"));
+		}
+		if (client.ip !~ o_locals.get()) {
+			return (synth(500, "~"));
+		}
+		return (hash);
 	}
 } -start
 
@@ -35,4 +53,16 @@ client c1 {
 	txreq
 	rxresp
 	expect resp.status == 200
-} -run
+	txreq -url /null
+	rxresp
+	expect resp.status == 503
+} -start
+
+client c2 {
+	txreq -url /nullo
+	rxresp
+	expect resp.status == 503
+} -start
+
+client c1 -wait
+client c2 -wait
