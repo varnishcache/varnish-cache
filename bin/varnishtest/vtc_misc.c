@@ -387,6 +387,20 @@ ipvx_works(const char *target)
 	return (0);
 }
 
+/**********************************************************************/
+
+static int
+addr_no_randomize_works(void)
+{
+	int r = 0;
+
+#ifdef HAVE_SYS_PERSONALITY_H
+	r = personality(0xffffffff);
+	r = personality(r | ADDR_NO_RANDOMIZE);
+#endif
+	return (r >= 0);
+}
+
 /* SECTION: feature feature
  *
  * Test that the required feature(s) for a test are available, and skip
@@ -488,6 +502,7 @@ cmd_feature(CMD_ARGS)
 		FEATURE("ipv6", ipvx_works("[::1]"));
 		FEATURE("pcre_jit", VRE_has_jit);
 		FEATURE("64bit", sizeof(void*) == 8);
+		FEATURE("disable_aslr", addr_no_randomize_works());
 		FEATURE("dns", dns_works());
 		FEATURE("topbuild", iflg);
 		FEATURE("root", !geteuid());
@@ -498,16 +513,7 @@ cmd_feature(CMD_ARGS)
 		FEATURE("sanitizer", sanitizer);
 		FEATURE("SO_RCVTIMEO_WORKS", so_rcvtimeo_works);
 
-		if (!strcmp(feat, "disable_aslr")) {
-			good = 1;
-			skip = neg;
-#ifdef HAVE_SYS_PERSONALITY_H
-			r = personality(0xffffffff);
-			r = personality(r | ADDR_NO_RANDOMIZE);
-			if (r < 0)
-				skip = !neg;
-#endif
-		} else if (!strcmp(feat, "cmd")) {
+		if (!strcmp(feat, "cmd")) {
 			good = 1;
 			skip = neg;
 			av++;
