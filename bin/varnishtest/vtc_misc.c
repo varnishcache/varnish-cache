@@ -420,10 +420,10 @@ ipvx_works(const char *target)
  *        recognized as a macro.
  * persistent_storage
  *        Varnish was built with the deprecated persistent storage.
- * no_sanitizer
- *        Varnish was not built with a sanitizer.
+ * sanitizer
+ *        Varnish was built with a sanitizer.
  *
- * A feature name can be prepended with an exclamation mark (!) to skip a
+ * A feature name can be prefixed with an exclamation mark (!) to skip a
  * test if a feature is present.
  *
  * Be careful with ignore_unknown_macro, because it may cause a test with a
@@ -438,9 +438,9 @@ static const unsigned with_persistent_storage = 0;
 #endif
 
 #if __SANITIZER
-static const unsigned no_sanitizer = 0;
+static const unsigned sanitizer = 1;
 #else
-static const unsigned no_sanitizer = 1;
+static const unsigned sanitizer = 0;
 #endif
 
 #ifdef SO_RCVTIMEO_WORKS
@@ -495,7 +495,7 @@ cmd_feature(CMD_ARGS)
 		FEATURE("user_vcache", getpwnam("vcache") != NULL);
 		FEATURE("group_varnish", getgrnam("varnish") != NULL);
 		FEATURE("persistent_storage", with_persistent_storage);
-		FEATURE("no_sanitizer", no_sanitizer);
+		FEATURE("sanitizer", sanitizer);
 		FEATURE("SO_RCVTIMEO_WORKS", so_rcvtimeo_works);
 
 		if (!strcmp(feat, "disable_aslr")) {
