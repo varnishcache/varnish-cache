@@ -56,22 +56,24 @@ static const char err_fractional_bytes[] = "Fractional BYTES not allowed";
 		if (errtxt != NULL)				\
 			*errtxt = (txt);			\
 		errno = EINVAL;					\
-		return (0);					\
+		return (retval);				\
 	} while (0)
 
 static int64_t
-sf_parse_int(const char **ipp, const char **errtxt, int maxdig)
+sf_parse_int(const char **ipp, const char **errtxt, int *sign, int maxdig)
 {
 	int64_t retval = 0;
-	int negative = 0, ndig = 0;
+	int ndig = 0;
 
 	AN(ipp);
 	AN(*ipp);
+	*errtxt = NULL;
+	*sign = 1;
 	errno = 0;
 	while (vct_isows(*(*ipp)))
 		(*ipp)++;
 	if(*(*ipp) == '-') {
-		negative = 1;
+		*sign = -1;
 		(*ipp)++;
 	}
 	while (vct_isdigit(*(*ipp))) {
@@ -81,62 +83,36 @@ sf_parse_int(const char **ipp, const char **errtxt, int maxdig)
 		retval *= 10;
 		retval += *(*ipp)++ - 0x30;
 	}
+	if (ndig == 0)
+		BAIL(*sign < 0 ? err_invalid_num : err_miss_num);
 	while (vct_isows(*(*ipp)))
 		(*ipp)++;
-	if (ndig == 0)
-		BAIL(negative ? err_invalid_num : err_miss_num);
-	if (negative)
-		retval = -retval;
 	return (retval);
 }
 
 int64_t
 SF_Parse_Integer(const char **ipp, const char **errtxt)
 {
+	int64_t retval;
+	int sign;
 
-	return(sf_parse_int(ipp, errtxt, 15));
+	retval = sf_parse_int(ipp, errtxt, &sign, 15);
+	return(retval * sign);
 }
 
 double
-SF_Parse_Decimal(const char **ipp, const char **errtxt)
+SF_Parse_Number(const char **ipp, int strict, const char **errtxt)
 {
 	double retval, scale = 1;
-	int ndig;
+	int sign, ndig;
 
-	retval = (double)sf_parse_int(ipp, errtxt, 12);
-	if (retval < 0)
-		scale = -scale;
+	retval = (double)sf_parse_int(ipp, errtxt, &sign, 15);
+	if (strict && errno)
+		return (0);
 	do {
 		if (*(*ipp) != '.')
 			break;
-		(*ipp)++;
-		for(ndig = 0; ndig < 3; ndig++) {
-			scale *= .1;
-			if (!vct_isdigit(*(*ipp)))
-				break;
-			retval += scale * (*(*ipp)++ - 0x30);
-		}
-		if (vct_isdigit(*(*ipp)))
-			BAIL(err_fatnum);
-	} while (0);
-	while (vct_isows(*(*ipp)))
-		(*ipp)++;
-	return (retval);
-}
-
-double
-SF_Parse_Number(const char **ipp, const char **errtxt)
-{
-	double retval, scale = 1;
-	int ndig;
-
-	retval = (double)sf_parse_int(ipp, errtxt, 15);
-	if (retval < 0)
-		scale = -scale;
-	do {
-		if (*(*ipp) != '.')
-			break;
-		if (retval < -999999999999 || retval > 999999999999)
+		if (retval < VRT_DECIMAL_MIN || retval > VRT_DECIMAL_MAX)
 			BAIL(err_fatnum);
 		(*ipp)++;
 		for(ndig = 0; ndig < 3; ndig++) {
@@ -145,11 +121,26 @@ SF_Parse_Number(const char **ipp, const char **errtxt)
 				break;
 			retval += scale * (*(*ipp)++ - 0x30);
 		}
-		if (vct_isdigit(*(*ipp)))
+		if (strict && vct_isdigit(*(*ipp)))
 			BAIL(err_fatnum);
+		while (vct_isdigit(*(*ipp)))
+			(*ipp)++;
 	} while (0);
 	while (vct_isows(*(*ipp)))
 		(*ipp)++;
+	return (retval * sign);
+}
+
+double
+SF_Parse_Decimal(const char **ipp, int strict, const char **errtxt)
+{
+	double retval;
+
+	retval = SF_Parse_Number(ipp, strict, errtxt);
+	if (errno)
+		return(retval);
+	if (retval < VRT_DECIMAL_MIN || retval > VRT_DECIMAL_MAX)
+		BAIL(err_fatnum);
 	return (retval);
 }
 
@@ -343,7 +334,7 @@ VNUM_2bytes(const char *p, uintmax_t *r, uintmax_t rel)
 	if (p == NULL || *p == '\0')
 		return (err_miss_num);
 
-	fval = SF_Parse_Number(&p, &errtxt);
+	fval = SF_Parse_Number(&p, 1, &errtxt);
 	if (errno)
 		return(errtxt);
 	if (fval < 0)
@@ -361,6 +352,28 @@ VNUM_2bytes(const char *p, uintmax_t *r, uintmax_t rel)
  * Compile with:
  *     cc -o foo -DNUM_C_TEST -I../.. -I../../include vnum.c vas.c vct.c -lm
  */
+
+static const struct test_sf_parse_int {
+	const char *input;
+	int maxdig;
+	int64_t retval;
+	int consumed;
+	int sign;
+	const char *errtxt;
+} test_sf_parse_int[] = {
+	{ "1234",	3,  123, 3,  1, err_fatnum },
+	{ "1234",	4, 1234, 4,  1, NULL },
+	{ "1234",	5, 1234, 4,  1, NULL },
+	{ "-",		5,    0, 1, -1, err_invalid_num },
+	{ "-1234",	3,  123, 4, -1, err_fatnum },
+	{ "-1234",	4, 1234, 5, -1, NULL },
+	{ "-1234",	5, 1234, 5, -1, NULL },
+	{ " -1234",	5, 1234, 6, -1, NULL },
+	{ " -1234 ",	5, 1234, 7, -1, NULL },
+	{ " -12 34 ",	5,   12, 5, -1, NULL },
+	{ " - 12 34 ",	5,    0, 2, -1, err_invalid_num },
+	{ NULL},
+};
 
 static struct test_case {
 	const char *str;
@@ -460,11 +473,40 @@ main(int argc, char *argv[])
 	const char **p;
 	const char *e;
 	double d1, d2;
+	const struct test_sf_parse_int *tspi;
+	int64_t i64;
+	int sign, consumed;
+	const char *errtxt;
+	const char *input;
 
 	(void)argc;
 
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
+
+	for (tspi = test_sf_parse_int; tspi->input != NULL; tspi++) {
+		errtxt = "(unset)";
+		input = tspi->input;
+		i64 = sf_parse_int(&input, &errtxt, &sign, tspi->maxdig);
+		consumed = input - tspi->input;
+		if (i64 != tspi->retval ||
+		    sign != tspi->sign ||
+		    consumed != tspi->consumed ||
+		    errtxt != tspi->errtxt) {
+			ec++;
+			printf("sf_parse_int(%s, maxdig=%d) failed\n",
+			    tspi->input, tspi->maxdig);
+			printf("    retval\texpected %jd\tgot %jd\n",
+			    (intmax_t)tspi->retval, (intmax_t)i64);
+			printf("    sign\texpected %d\tgot %d\n",
+			    tspi->sign, sign);
+			printf("    consumed\texpected %d\tgot %d\n",
+			    tspi->consumed, consumed);
+			printf("    errtxt\texpected %s\tgot %s\n",
+			    tspi->errtxt, errtxt);
+		}
+	}
+
 	for (p = vec; *p != NULL; p++) {
 		e = *p;
 		d1 = VNUM(e + 1);
