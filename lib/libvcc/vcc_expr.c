@@ -745,6 +745,7 @@ vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		if (sym == NULL && fmt->global_pfx != NULL && t1->tok != '.') {
 			sym = VCC_SymbolGet(tl, SYM_MAIN, SYM_NONE,
 			    SYMTAB_CREATE, XREF_REF);
+			ERRCHK(tl);
 			AN(sym);
 			VCC_GlobalSymbol(sym, fmt);
 		}
