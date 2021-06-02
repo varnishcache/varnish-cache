@@ -55,6 +55,8 @@
  *
  * NEXT (2021-09-15)
  *	vrt_null_strands added
+ *	vrt_null_blob added
+ *	VRT_NULL_BLOB_TYPE added as the .type of vrt_null_blob
  * 13.0 (2021-03-15)
  *	Move VRT_synth_page() to deprecated status
  *	Add VRT_synth_strands() and VRT_synth_blob()
@@ -270,6 +272,9 @@ struct vrt_blob {
 	size_t		len;
 	const void	*blob;
 };
+
+#define VRT_NULL_BLOB_TYPE 0xfade4fa0
+extern const struct vrt_blob *vrt_null_blob;
 
 /***********************************************************************
  * This is the central definition of the mapping from VCL types to

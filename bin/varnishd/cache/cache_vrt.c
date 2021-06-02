@@ -60,6 +60,11 @@ const struct strands *vrt_null_strands = &(struct strands){
 	.n = 0,
 	.p = (const char *[1]){NULL}
 };
+const struct vrt_blob *vrt_null_blob = &(struct vrt_blob){
+	.type = VRT_NULL_BLOB_TYPE,
+	.len = 0,
+	.blob = "\0"
+};
 
 /*--------------------------------------------------------------------*/
 

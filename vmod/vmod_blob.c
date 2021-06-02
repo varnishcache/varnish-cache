@@ -114,13 +114,6 @@ static const struct vmod_blob_fptr {
 
 static char empty[1] = { '\0' };
 
-static const struct vrt_blob null_blob[1] = {{
-#define VMOD_BLOB_NULL_TYPE 0xfade4fa0
-	.type = VMOD_BLOB_NULL_TYPE,
-	.len = 0,
-	.blob = empty,
-}};
-
 static enum encoding
 parse_encoding(VCL_ENUM e)
 {
@@ -235,7 +228,7 @@ vmod_blob__init(VRT_CTX, struct vmod_blob_blob **blobp, const char *vcl_name,
 	}
 	if (len == 0) {
 		free(buf);
-		memcpy(&b->blob, null_blob, sizeof b->blob);
+		memcpy(&b->blob, vrt_null_blob, sizeof b->blob);
 		return;
 	}
 	b->blob.len = len;
@@ -359,7 +352,7 @@ vmod_decode(VRT_CTX, VCL_ENUM decs, VCL_INT length, VCL_STRANDS strings)
 	}
 	if (len == 0) {
 		WS_Release(ctx->ws, 0);
-		return (null_blob);
+		return (vrt_null_blob);
 	}
 	WS_Release(ctx->ws, len);
 
@@ -547,7 +540,7 @@ vmod_sub(VRT_CTX, VCL_BLOB b, VCL_BYTES n, VCL_BYTES off)
 	}
 
 	if (n == 0)
-		return (null_blob);
+		return (vrt_null_blob);
 
 
 	return (VRT_blob(ctx, "blob.sub",
