@@ -113,6 +113,18 @@
 #endif
 
 /*********************************************************************
+ * Fundamental numerical limits
+  * These limits track RFC8941
+ * We use hex notation because 999999999999.999 is not perfectly
+ * representable in ieee64 doubles.
+ */
+
+#define VRT_INTEGER_MAX 999999999999999
+#define VRT_INTEGER_MIN -999999999999999
+#define VRT_DECIMAL_MAX 0x1.d1a94a1fffff8p+39
+#define VRT_DECIMAL_MIN -0x1.d1a94a1fffff8p+39
+
+/*********************************************************************
  * Pointer alignment magic
  */
 
