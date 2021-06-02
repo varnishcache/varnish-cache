@@ -360,7 +360,8 @@ VNUM_2bytes(const char *p, uintmax_t *r, uintmax_t rel)
 #ifdef NUM_C_TEST
 /*
  * Compile with:
- *     cc -o foo -DNUM_C_TEST -I../.. -I../../include vnum.c vas.c vct.c -lm
+ *     cc -o foo -DNUM_C_TEST -DTEST_VERBOSE \
+ *	   -I../.. -I../../include vnum.c vas.c vct.c -lm
  */
 
 static const struct test_sf_parse_int {
@@ -546,6 +547,7 @@ main(int argc, char *argv[])
 			ec++;
 			printf("sf_parse_int(%s, maxdig=%d) failed\n",
 			    tspi->input, tspi->maxdig);
+#ifdef TEST_VERBOSE
 			printf("    retval\texpected %jd\tgot %jd\n",
 			    (intmax_t)tspi->retval, (intmax_t)i64);
 			printf("    sign\texpected %d\tgot %d\n",
@@ -556,6 +558,7 @@ main(int argc, char *argv[])
 			    tspi->errtxt, errtxt);
 			printf("    errtxt\texpected %s\tgot %s\n",
 			    tspi->errtxt, errtxt);
+#endif
 		}
 	}
 
@@ -572,6 +575,7 @@ main(int argc, char *argv[])
 			ec++;
 			printf("sf_parse_number(%s, strict=%d) failed\n",
 			    tspn->input, tspn->strict);
+#ifdef TEST_VERBOSE
 			printf("    retval\texpected %.4f\tgot %.4f\t(%e)\n",
 			    tspn->retval, dbl, dbl - tspn->retval);
 			printf("    retval\texpected %a\tgot %a\n",
@@ -586,6 +590,7 @@ main(int argc, char *argv[])
 			    tspn->errtxt, errtxt);
 			printf("    errtxt\texpected %s\tgot %s\n",
 			    tspn->errtxt, errtxt);
+#endif
 		}
 	}
 
