@@ -168,7 +168,7 @@ vmod_integer(VRT_CTX, struct VARGS(integer) *a)
 
 	if (a->valid_s && a->s != NULL) {
 		p = a->s;
-		r = SF_Parse_Number(&p, 1, &errtxt);
+		r = SF_Parse_Number(&p, 0, &errtxt);
 		if (!errno && *p == '\0' && modf(r, &tmp) == 0.0)
 			return (r);
 		r = NAN;
@@ -267,7 +267,7 @@ vmod_real(VRT_CTX, struct VARGS(real) *a)
 
 	if (a->valid_s && a->s != NULL) {
 		p = a->s;
-		r = SF_Parse_Decimal(&p, 1, &errtxt);
+		r = SF_Parse_Decimal(&p, 0, &errtxt);
 		if (!errno && *p == '\0')
 			return (r);
 	}

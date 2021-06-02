@@ -44,11 +44,15 @@
 #include "vas.h"
 #include "vct.h"
 
-static const char err_miss_num[] = "Missing number";
-static const char err_fatnum[] = "Too many digits";
+/* The distinction between these two is used internally */
 static const char err_invalid_num[] = "Invalid number";
+static const char err_no_digits[] = "Invalid number";
+
+static const char err_fatnum[] = "Too many digits";
+
 static const char err_unknown_bytes[] =
     "Unknown BYTES unit of measurement ([KMGTP][B])";
+
 static const char err_fractional_bytes[] = "Fractional BYTES not allowed";
 
 #define BAIL(txt)						\
@@ -84,7 +88,7 @@ sf_parse_int(const char **ipp, const char **errtxt, int *sign, int maxdig)
 		retval += *(*ipp)++ - 0x30;
 	}
 	if (ndig == 0)
-		BAIL(*sign < 0 ? err_invalid_num : err_miss_num);
+		BAIL(err_no_digits);
 	while (vct_isows(*(*ipp)))
 		(*ipp)++;
 	return (retval);
@@ -109,11 +113,15 @@ SF_Parse_Number(const char **ipp, int strict, const char **errtxt)
 	retval = (double)sf_parse_int(ipp, errtxt, &sign, 15);
 	if (strict && errno)
 		return (0);
+	if (*(*ipp) != '.')
+		return (retval * sign);
+	if (retval < VRT_DECIMAL_MIN || retval > VRT_DECIMAL_MAX)
+		BAIL(err_fatnum);
+	if (*errtxt == err_no_digits && (!vct_isdigit((*ipp)[1])))
+		BAIL(err_no_digits);
+	*errtxt = NULL;
+	errno = 0;
 	do {
-		if (*(*ipp) != '.')
-			break;
-		if (retval < VRT_DECIMAL_MIN || retval > VRT_DECIMAL_MAX)
-			BAIL(err_fatnum);
 		(*ipp)++;
 		for(ndig = 0; ndig < 3; ndig++) {
 			scale *= .1;
@@ -121,6 +129,8 @@ SF_Parse_Number(const char **ipp, int strict, const char **errtxt)
 				break;
 			retval += scale * (*(*ipp)++ - 0x30);
 		}
+		if (strict && ndig == 0)
+			BAIL(err_invalid_num);
 		if (strict && vct_isdigit(*(*ipp)))
 			BAIL(err_fatnum);
 		while (vct_isdigit(*(*ipp)))
@@ -332,7 +342,7 @@ VNUM_2bytes(const char *p, uintmax_t *r, uintmax_t rel)
 	const char *errtxt;
 
 	if (p == NULL || *p == '\0')
-		return (err_miss_num);
+		return (err_invalid_num);
 
 	fval = SF_Parse_Number(&p, 1, &errtxt);
 	if (errno)
@@ -364,14 +374,50 @@ static const struct test_sf_parse_int {
 	{ "1234",	3,  123, 3,  1, err_fatnum },
 	{ "1234",	4, 1234, 4,  1, NULL },
 	{ "1234",	5, 1234, 4,  1, NULL },
-	{ "-",		5,    0, 1, -1, err_invalid_num },
+	{ "-",		5,    0, 1, -1, err_no_digits },
+	{ "  ",		5,    0, 2,  1, err_no_digits },
 	{ "-1234",	3,  123, 4, -1, err_fatnum },
 	{ "-1234",	4, 1234, 5, -1, NULL },
 	{ "-1234",	5, 1234, 5, -1, NULL },
 	{ " -1234",	5, 1234, 6, -1, NULL },
 	{ " -1234 ",	5, 1234, 7, -1, NULL },
 	{ " -12 34 ",	5,   12, 5, -1, NULL },
-	{ " - 12 34 ",	5,    0, 2, -1, err_invalid_num },
+	{ " - 12 34 ",	5,    0, 2, -1, err_no_digits },
+	{ NULL},
+};
+
+static const struct test_sf_parse_number {
+	const char *input;
+	int strict;
+	double retval;
+	int consumed;
+	const char *errtxt;
+} test_sf_parse_number[] = {
+	{ "1234",		1,          1234.000,  4, NULL },
+	{ " 1234",		1,          1234.000,  5, NULL },
+	{ " 1234 ",		1,          1234.000,  6, NULL },
+	{ " 1234. ",		1,          1234.000,  6, err_invalid_num },
+	{ " 123456789012.0 ",	1,  123456789012.000, 16, NULL },
+	{ " 1234567890123.0 ",	1, 1234567890123.000, 14, err_fatnum },
+	{ " 123456789012.123 ",	1,  123456789012.123, 18, NULL },
+	{ " 123456789012.1234 ",1,  123456789012.123, 17, err_fatnum },
+	{ " -0.123456 ",	1,		.123,  7, err_fatnum },
+	{ " -.123456 ",		1,	       0.,     2, err_no_digits },
+	{ " .123456 ",		1,             0.,     1, err_no_digits },
+	{ " 0. ",		1,             0.,     3, err_invalid_num },
+	{ " .0 ",		1,             0.,     1, err_no_digits },
+
+	{ " 123456789012.1234 ",0,  123456789012.123, 19, NULL },
+	{ " -0.123456 ",	0,	       -.123, 11, NULL },
+	{ " -.123456 ",		0,	       -.123, 10, NULL },
+	{ " .123456 ",		0,		.123,  9, NULL },
+	{ " 0. ",		0,             0.,     4, NULL },
+	{ " .0 ",		0,             0.,     4, NULL },
+	{ " -0. ",		0,            -0.,     5, NULL },
+	{ " -.0 ",		0,            -0.,     5, NULL },
+	{ " - ",		0,            -0.,     2, err_no_digits },
+	{ " -. ",		0,             0.,     2, err_no_digits },
+	{ " . ",		0,             0.,     1, err_no_digits },
 	{ NULL},
 };
 
@@ -425,12 +471,12 @@ static struct test_case {
 	{ "3%",			(uintmax_t)1024,	(uintmax_t)30 },
 
 	/* Check the error checks */
-	{ "",			0,	0,	err_miss_num },
+	{ "",			0,	0,	err_invalid_num },
 	{ "-1",			0,	0,	err_invalid_num },
 	{ "1.3",		0,	0,	err_fractional_bytes},
 	{ "1.5011%",		0,	0,	err_fatnum },
-	{ "-",			0,	0,	err_invalid_num },
-	{ "m",			0,	0,	err_miss_num },
+	{ "-",			0,	0,	err_no_digits },
+	{ "m",			0,	0,	err_no_digits },
 	{ "4%",			0,	0,	err_unknown_bytes },
 	{ "3*",			0,	0,	err_unknown_bytes },
 
@@ -474,10 +520,14 @@ main(int argc, char *argv[])
 	const char *e;
 	double d1, d2;
 	const struct test_sf_parse_int *tspi;
+	const struct test_sf_parse_number *tspn;
 	int64_t i64;
+	volatile double dbl;
 	int sign, consumed;
 	const char *errtxt;
 	const char *input;
+	char buf1[30];
+	char buf2[30];
 
 	(void)argc;
 
@@ -502,8 +552,40 @@ main(int argc, char *argv[])
 			    tspi->sign, sign);
 			printf("    consumed\texpected %d\tgot %d\n",
 			    tspi->consumed, consumed);
+			printf("    errtxt\texpected %p\tgot %p\n",
+			    tspi->errtxt, errtxt);
 			printf("    errtxt\texpected %s\tgot %s\n",
 			    tspi->errtxt, errtxt);
+		}
+	}
+
+	for (tspn = test_sf_parse_number; tspn->input != NULL; tspn++) {
+		errtxt = "(unset)";
+		input = tspn->input;
+		dbl = SF_Parse_Number(&input, tspn->strict, &errtxt);
+		consumed = input - tspn->input;
+		bprintf(buf1, "%.4f", dbl);
+		bprintf(buf2, "%.4f", tspn->retval);
+		if (strcmp(buf1, buf2) ||
+		    consumed != tspn->consumed ||
+		    errtxt != tspn->errtxt) {
+			ec++;
+			printf("sf_parse_number(%s, strict=%d) failed\n",
+			    tspn->input, tspn->strict);
+			printf("    retval\texpected %.4f\tgot %.4f\t(%e)\n",
+			    tspn->retval, dbl, dbl - tspn->retval);
+			printf("    retval\texpected %a\tgot %a\n",
+			    tspn->retval, dbl);
+			printf("    retval\texpected %s\tgot %s\n",
+			    buf2, buf1);
+			printf("    retval\tdelta %e\n",
+			    dbl - tspn->retval);
+			printf("    consumed\texpected %d\tgot %d\n",
+			    tspn->consumed, consumed);
+			printf("    errtxt\texpected %p\tgot %p\n",
+			    tspn->errtxt, errtxt);
+			printf("    errtxt\texpected %s\tgot %s\n",
+			    tspn->errtxt, errtxt);
 		}
 	}
 
