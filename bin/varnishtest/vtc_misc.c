@@ -423,6 +423,9 @@ ipvx_works(const char *target)
  * no_sanitizer
  *        Varnish was not built with a sanitizer.
  *
+ * A feature name can be prepended with an exclamation mark (!) to skip a
+ * test if a feature is present.
+ *
  * Be careful with ignore_unknown_macro, because it may cause a test with a
  * misspelled macro to fail silently. You should only need it if you must
  * run a test with strings of the form "${...}".
@@ -449,8 +452,8 @@ static const unsigned so_rcvtimeo_works = 0;
 void v_matchproto_(cmd_f)
 cmd_feature(CMD_ARGS)
 {
-	int r;
-	int good;
+	const char *feat;
+	int r, good, skip, neg;
 
 	(void)priv;
 
@@ -459,17 +462,27 @@ cmd_feature(CMD_ARGS)
 
 #define FEATURE(nm, tst)				\
 	do {						\
-		if (!strcmp(*av, nm)) {			\
+		if (!strcmp(feat, nm)) {		\
+			good = 1;			\
 			if (tst) {			\
-				good = 1;		\
+				skip = neg;		\
 			} else {			\
-				vtc_stop = 2;		\
+				skip = !neg;		\
 			}				\
 		}					\
 	} while (0)
 
+	skip = 0;
+
 	for (av++; *av != NULL; av++) {
 		good = 0;
+		neg = 0;
+		feat = *av;
+
+		if (feat[0] == '!') {
+			neg = 1;
+			feat++;
+		}
 
 		FEATURE("ipv4", ipvx_works("127.0.0.1"));
 		FEATURE("ipv6", ipvx_works("[::1]"));
@@ -485,37 +498,41 @@ cmd_feature(CMD_ARGS)
 		FEATURE("no_sanitizer", no_sanitizer);
 		FEATURE("SO_RCVTIMEO_WORKS", so_rcvtimeo_works);
 
-		if (!strcmp(*av, "disable_aslr")) {
+		if (!strcmp(feat, "disable_aslr")) {
 			good = 1;
+			skip = neg;
 #ifdef HAVE_SYS_PERSONALITY_H
 			r = personality(0xffffffff);
 			r = personality(r | ADDR_NO_RANDOMIZE);
-			if (r < 0) {
-				good = 0;
-				vtc_stop = 2;
-			}
+			if (r < 0)
+				skip = !neg;
 #endif
-		} else if (!strcmp(*av, "cmd")) {
+		} else if (!strcmp(feat, "cmd")) {
+			good = 1;
+			skip = neg;
 			av++;
 			if (*av == NULL)
 				vtc_fatal(vl, "Missing the command-line");
 			r = system(*av);
-			if (WEXITSTATUS(r) == 0)
-				good = 1;
-			else
-				vtc_stop = 2;
-		} else if (!strcmp(*av, "ignore_unknown_macro")) {
+			if (WEXITSTATUS(r) != 0)
+				skip = !neg;
+		} else if (!strcmp(feat, "ignore_unknown_macro")) {
 			ign_unknown_macro = 1;
 			good = 1;
 		}
-		if (good)
+		if (!good)
+			vtc_fatal(vl, "FAIL test, unknown feature: %s", feat);
+
+		if (!skip)
 			continue;
 
-		if (!vtc_stop)
-			vtc_fatal(vl, "FAIL test, unknown feature: %s", *av);
+		vtc_stop = 2;
+		if (neg)
+			vtc_log(vl, 1,
+			    "SKIPPING test, conflicting feature: %s", feat);
 		else
 			vtc_log(vl, 1,
-			    "SKIPPING test, lacking feature: %s", *av);
+			    "SKIPPING test, lacking feature: %s", feat);
 		return;
 	}
 }
