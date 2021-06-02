@@ -789,26 +789,34 @@ xyzzy_collect(VRT_CTX, VCL_STRANDS s)
 
 /* cf. VRT_SetHdr() */
 VCL_VOID
-xyzzy_sethdr(VRT_CTX, VCL_HEADER hs, VCL_STRANDS s)
+xyzzy_sethdr(VRT_CTX, VCL_HEADER hdr, VCL_STRANDS s)
 {
 	struct http *hp;
 	const char *b;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	AN(hs);
-	AN(hs->what);
-	hp = VRT_selecthttp(ctx, hs->where);
+	if (hdr == NULL) {
+		VRT_fail(ctx, "debug.sethdr(): header argument is NULL");
+		return;
+	}
+	hp = VRT_selecthttp(ctx, hdr->where);
+	if (hp == NULL) {
+		VRT_fail(ctx, "debug.sethdr(): header argument "
+		    "can not be used here");
+		return;
+	}
+	AN(hdr->what);
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	if (s->n == 0) {
-		http_Unset(hp, hs->what);
+		http_Unset(hp, hdr->what);
 	} else {
-		b = VRT_StrandsWS(hp->ws, hs->what + 1, s);
+		b = VRT_StrandsWS(hp->ws, hdr->what + 1, s);
 		if (b == NULL) {
-			VSLb(ctx->vsl, SLT_LostHeader, "%s", hs->what + 1);
+			VSLb(ctx->vsl, SLT_LostHeader, "%s", hdr->what + 1);
 		} else {
 			if (*b != '\0')
 				WS_Assert_Allocated(hp->ws, b, strlen(b) + 1);
-			http_Unset(hp, hs->what);
+			http_Unset(hp, hdr->what);
 			http_SetHeader(hp, b);
 		}
 	}

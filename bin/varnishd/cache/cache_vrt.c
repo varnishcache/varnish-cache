@@ -257,6 +257,9 @@ VRT_selecthttp(VRT_CTX, enum gethdr_e where)
 	case HDR_RESP:
 		hp = ctx->http_resp;
 		break;
+	case HDR_OBJ:
+		hp = NULL;
+		break;
 	default:
 		WRONG("VRT_selecthttp 'where' invalid");
 	}

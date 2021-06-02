@@ -182,7 +182,16 @@ vmod_collect(VRT_CTX, VCL_HEADER hdr, VCL_STRING sep)
 	struct http *hp;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	if (hdr == NULL) {
+		VRT_fail(ctx, "std.collect(): header argument is NULL");
+		return;
+	}
 	hp = VRT_selecthttp(ctx, hdr->where);
+	if (hp == NULL) {
+		VRT_fail(ctx, "std.collect(): header argument "
+		    "can not be used here");
+		return;
+	}
 	http_CollectHdrSep(hp, hdr->what, sep);
 }
 

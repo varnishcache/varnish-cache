@@ -73,6 +73,8 @@ headers, with an additional whitespace for pretty printing.
 Care should be taken when collapsing headers. In particular collapsing
 ``Set-Cookie`` will lead to unexpected results on the browser side.
 
+Using *hdr* from ``obj.http`` triggers a VCL failure.
+
 Examples::
 
 	std.collect(req.http.accept);

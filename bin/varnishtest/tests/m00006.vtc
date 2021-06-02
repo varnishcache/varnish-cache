@@ -13,6 +13,15 @@ varnish v1 -vcl+backend {
 	sub vcl_recv {
 		std.collect(req.http.foo);
 	}
+	sub vcl_hash {
+		hash_data("/");
+		return (lookup);
+	}
+	sub vcl_hit {
+		if (req.url == "/obj") {
+			std.collect(obj.http.foo);
+		}
+	}
 	sub vcl_backend_fetch {
 		std.collect(bereq.http.baz);
 	}
@@ -29,4 +38,7 @@ client c1 {
 	rxresp
 	expect resp.http.bar == "a, b"
 	expect resp.http.qux == "c; d"
+	txreq -url "/obj"
+	rxresp
+	expect resp.status == 503
 } -run
