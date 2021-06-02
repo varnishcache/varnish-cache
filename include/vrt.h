@@ -57,6 +57,8 @@
  *	vrt_null_strands added
  *	vrt_null_blob added
  *	VRT_NULL_BLOB_TYPE added as the .type of vrt_null_blob
+ *	VRT_blob() changed to return vrt_null_blob for
+ *	    len == 0 or src == NULL arguments
  * 13.0 (2021-03-15)
  *	Move VRT_synth_page() to deprecated status
  *	Add VRT_synth_strands() and VRT_synth_blob()

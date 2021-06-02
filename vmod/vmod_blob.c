@@ -539,10 +539,6 @@ vmod_sub(VRT_CTX, VCL_BLOB b, VCL_BYTES n, VCL_BYTES off)
 		return (NULL);
 	}
 
-	if (n == 0)
-		return (vrt_null_blob);
-
-
 	return (VRT_blob(ctx, "blob.sub",
 	    (const char *)b->blob + off, n, b->type));
 }

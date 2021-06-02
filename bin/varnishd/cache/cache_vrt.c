@@ -1163,6 +1163,9 @@ VRT_blob(VRT_CTX, const char *err, const void *src, size_t len, unsigned type)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->ws, WS_MAGIC);
 
+	if (src == NULL || len == 0)
+		return (vrt_null_blob);
+
 	p = (void *)WS_Alloc(ctx->ws, sizeof *p);
 	if (p == NULL) {
 		VRT_fail(ctx, "Workspace overflow (%s)", err);
