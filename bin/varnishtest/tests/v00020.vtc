@@ -42,6 +42,14 @@ varnish v1 -errvcl {Symbol 'acl' type (reserved) can not be used in expression.}
 	sub vcl_recv { call acl; }
 }
 
+varnish v1 -errvcl {Symbols named 'vcl_*' are reserved.} {
+	import debug;
+
+	sub vcl_recv {
+		debug.test_probe(vcl_sub1, vcl_sub2);
+	}
+}
+
 varnish v1 -errvcl {Operator * not possible on type STRING.} {
 	sub vcl_recv {
 		set req.http.foo = "bla" * "foo";
