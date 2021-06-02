@@ -170,7 +170,7 @@ vmod_integer(VRT_CTX, struct VARGS(integer) *a)
 		p = a->s;
 		r = SF_Parse_Number(&p, 0, &errtxt);
 		if (!errno && *p == '\0' && modf(r, &tmp) == 0.0)
-			return (r);
+			return ((VCL_INT)r);
 		r = NAN;
 	}
 
