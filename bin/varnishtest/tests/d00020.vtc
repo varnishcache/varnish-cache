@@ -218,9 +218,9 @@ client c1 {
 client c2 {
 	txreq -url /b/def
 	rxresp
-	expect resp.http.hash		== "93d1c4ad76396c91dd97fa310f7f26445332662c89393dbeeb77fe49f9111ee4"
+	expect resp.http.hash		== "2e03d4fee2722154a84036faa3e4b6851e003830eadbe0d2874e3df09c8efe55"
 	expect resp.http.by		== "HASH"
-	expect resp.http.key		-eq 0x93d1c4ad
+	expect resp.http.key		-eq 0x2e03d4fe
 	expect resp.http.alt		== 0
 	expect resp.http.warmup	== "-1.000"
 	expect resp.http.rampup	== "true"
@@ -228,9 +228,9 @@ client c2 {
 
 	txreq -url /b/hash
 	rxresp
-	expect resp.http.hash		== "e47da20ea4db49d4f22acdadc69f02f445002be520a2865cd3351272add62540"
+	expect resp.http.hash		== "49f33e9019891091d3dcf6edab6d9433b756678bdf5202dd41b8a667c89887b1"
 	expect resp.http.by		== "HASH"
-	expect resp.http.key		-eq 0xe47da20e
+	expect resp.http.key		-eq 0x49f33e90
 	expect resp.http.alt		== 1
 	expect resp.http.warmup	== "-1.000"
 	expect resp.http.rampup	== "true"
@@ -268,9 +268,9 @@ client c2 {
 client c3 {
 	txreq -url /b/c/hash/def
 	rxresp
-	expect resp.http.hash		== "df9a465f8a0455c334b24c1638d3adda0f6e64fbe759029ab83602e3b9138884"
+	expect resp.http.hash		== "dd70dcbbf385c398ee3b53a849f12d0d846fc21292349fb45d37b2d9d8eca25e"
 	expect resp.http.by		== "HASH"
-	expect resp.http.key		-eq 0xdf9a465f
+	expect resp.http.key		-eq 0xdd70dcbb
 	expect resp.http.alt		== 7
 	expect resp.http.warmup	== "-1.000"
 	expect resp.http.rampup	== "true"
@@ -278,9 +278,9 @@ client c3 {
 
 	txreq -url /b/c/hash/hash
 	rxresp
-	expect resp.http.hash		== "0eb35bc1fab5aad5902fd1bac86540bd13d43aa31c6c46f54e776b43392e66e6"
+	expect resp.http.hash		== "41d09b9877cd0ac0eab888359b0ad54f0bf41da0ac03dc1b8ae12aff18465a8d"
 	expect resp.http.by		== "HASH"
-	expect resp.http.key		-eq 0x0eb35bc1
+	expect resp.http.key		-eq 0x41d09b98
 	expect resp.http.alt		== 8
 	expect resp.http.warmup	== "-1.000"
 	expect resp.http.rampup	== "true"
@@ -288,9 +288,9 @@ client c3 {
 
 	txreq -url /b/c/hash/url
 	rxresp
-	expect resp.http.hash		== "1eb67b701ea07151cac5bea1f11b6267b9de15a3ff83cec995590480cbc2c750"
+	expect resp.http.hash		== "dcac849e02b3322f5fd3dddf9b9f5fc26d295733e6f1c51b190dfb7239a56e28"
 	expect resp.http.by		== "HASH"
-	expect resp.http.key		-eq 0x1eb67b70
+	expect resp.http.key		-eq 0xdcac849e
 	expect resp.http.alt		== 9
 	expect resp.http.warmup	== "0.500"
 	expect resp.http.rampup	== "true"
@@ -298,9 +298,9 @@ client c3 {
 
 	txreq -url /b/c/hash/key
 	rxresp
-	expect resp.http.hash		== "a11b617e21aa7db22b6205d7612002e595b1b00d8c11602017f65456a1be3a35"
+	expect resp.http.hash		== "112393761506e85f0c700a5d669a48b54001c870eb2e8d95f4d2f6fdccbe80a3"
 	expect resp.http.by		== "HASH"
-	expect resp.http.key		-eq 0xa11b617e
+	expect resp.http.key		-eq 0x11239376
 	expect resp.http.alt		== 10
 	expect resp.http.warmup	== "-1.000"
 	expect resp.http.rampup	== "false"
@@ -308,9 +308,9 @@ client c3 {
 
 	txreq -url /b/c/hash/blob
 	rxresp
-	expect resp.http.hash		== "d7eecc0ac83e1727332dcd8c7c8ae9f3114123abb2bf7e3fb15ecea8c84bb239"
+	expect resp.http.hash		== "5ef050c1185ac02a66d9f79703b8cd5f0636abf3b1f15b9f22e0fe64df985d28"
 	expect resp.http.by		== "HASH"
-	expect resp.http.key		-eq 0xd7eecc0a
+	expect resp.http.key		-eq 0x5ef050c1
 	expect resp.http.alt		== 11
 	expect resp.http.warmup	== "-1.000"
 	expect resp.http.rampup	== "true"

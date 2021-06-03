@@ -50,7 +50,6 @@
 #include "storage/storage.h"
 #include "common/heritage.h"
 #include "vcl.h"
-#include "vsha256.h"
 #include "vtim.h"
 
 #define REQ_STEPS \
@@ -76,6 +75,16 @@
     }};
 REQ_STEPS
 #undef REQ_STEP
+
+/*
+ * In this specific context we use SHA256 only as a very good
+ * hashing function.  That renders most of the normal concerns
+ * about salting & seeding moot.  However, if for some reason
+ * you want to salt your hashes, this is where you do it.
+ *
+ * XXX: We might do it in vcl_recv too.
+ */
+static const uint8_t initial_digest[DIGEST_LEN];
 
 /*--------------------------------------------------------------------
  * Handle "Expect:" and "Connection:" on incoming request
@@ -894,7 +903,6 @@ static enum req_fsm_nxt v_matchproto_(req_state_f)
 cnt_recv(struct worker *wrk, struct req *req)
 {
 	unsigned recv_handling;
-	struct VSHA256Context sha256ctx;
 	const char *ci, *cp, *endpname;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -923,6 +931,9 @@ cnt_recv(struct worker *wrk, struct req *req)
 		req->doclose = SC_OVERLOAD;
 		return (REQ_FSM_DONE);
 	}
+
+	/* XXX: Changes to req->digest might survive a return(vcl(<label>)) */
+	memcpy(req->digest, initial_digest, sizeof req->digest);
 
 	VCL_recv_method(req->vcl, wrk, req, NULL, NULL);
 
@@ -965,13 +976,11 @@ cnt_recv(struct worker *wrk, struct req *req)
 		}
 	}
 
-	VSHA256_Init(&sha256ctx);
-	VCL_hash_method(req->vcl, wrk, req, NULL, &sha256ctx);
+	VCL_hash_method(req->vcl, wrk, req, NULL, NULL);
 	if (wrk->handling == VCL_RET_FAIL)
 		recv_handling = wrk->handling;
 	else
 		assert(wrk->handling == VCL_RET_LOOKUP);
-	VSHA256_Final(req->digest, &sha256ctx);
 
 	switch (recv_handling) {
 	case VCL_RET_VCL:
