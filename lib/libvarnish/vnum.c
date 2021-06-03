@@ -154,47 +154,7 @@ SF_Parse_Decimal(const char **ipp, int strict, const char **errtxt)
 	return (retval);
 }
 
-/**********************************************************************
- * Convert (all of!) a string to a floating point number, and if we can
- * not, return NAN.
- */
-
-double
-VNUMpfx(const char *p, const char **t)
-{
-	double m = 0., ee = 0.;
-	double ms = 1.0;
-	double es = 1.0, e = 1.0, ne = 0.0;
-
-	AN(p);
-	AN(t);
-	*t = NULL;
-	while (vct_issp(*p))
-		p++;
-
-	if (*p == '-' || *p == '+')
-		ms = (*p++ == '-' ? -1.0 : 1.0);
-
-	for (; *p != '\0'; p++) {
-		if (vct_isdigit(*p)) {
-			m *= 10.;
-			m += *p - '0';
-			e = ne;
-			if (e)
-				ne = e - 1.0;
-		} else if (*p == '.' && ne == 0.0) {
-			ne = -1.0;
-		} else
-			break;
-	}
-	if (e > 0.0)
-		return (nan(""));		// No digits
-	while (vct_issp(*p))
-		p++;
-	if (*p != '\0')
-		*t = p;
-	return (ms * m * pow(10., e + es * ee));
-}
+/**********************************************************************/
 
 double
 VNUM(const char *p)
@@ -202,8 +162,8 @@ VNUM(const char *p)
 	const char *t;
 	double r;
 
-	r = VNUMpfx(p, &t);
-	if (t != NULL)
+	r = SF_Parse_Number(&p, 0, &t);
+	if (errno || *p != '\0')
 		r = nan("");
 	return (r);
 }
@@ -268,12 +228,12 @@ VNUM_duration(const char *p)
 	if (p == NULL)
 		return (nan(""));
 
-	r = VNUMpfx(p, &t);
+	r = SF_Parse_Number(&p, 0, &t);
 
-	if (isnan(r) || t == NULL)
+	if (errno)
 		return (nan(""));
 
-	return (VNUM_duration_unit(r, t, NULL));
+	return (VNUM_duration_unit(r, p, NULL));
 }
 
 /**********************************************************************/
@@ -634,8 +594,9 @@ main(int argc, char *argv[])
 		++ec;
 	}
 	d1 = VNUM_duration(" 365.24219d ");
-	if (d1 < 31556925.2159 || d1 > 31556925.2161) {
-		printf("%s: VNUM_Duration() wrong: %g\n", *argv, d1);
+	if (d1 != 31556908.8) {
+		printf("%s: VNUM_Duration() wrong, %.3f delta = %e\n",
+		    *argv, d1, d1 - 31556908.8);
 		++ec;
 	}
 	/* TODO: test invalid strings */
