@@ -350,15 +350,15 @@ vcc_ExpectVid(struct vcc *tl, const char *what)
 	ERRCHK(tl);
 
 	t2 = vcc_PeekToken(tl);
-	ERRCHK(tl);
+	AN(t2);
 	while (t2->tok == '.') {
 		bad = ".";
 		t2 = vcc_PeekTokenFrom(tl, t2);
-		ERRCHK(tl);
+		AN(t2);
 		if (t2->tok != ID)
 			break;
 		t2 = vcc_PeekTokenFrom(tl, t2);
-		ERRCHK(tl);
+		AN(t2);
 	}
 	if (bad == NULL)
 		bad = VCT_invalid_name(tl->t->b, tl->t->e);

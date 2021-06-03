@@ -739,7 +739,7 @@ vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	case ID:
 		t = tl->t;
 		t1 = vcc_PeekToken(tl);
-		ERRCHK(tl);
+		AN(t1);
 		sym = VCC_SymbolGet(tl, SYM_MAIN, SYM_NONE,
 		    SYMTAB_PARTIAL_NOERR, XREF_REF);
 		if (sym == NULL && fmt->global_pfx != NULL && t1->tok != '.') {

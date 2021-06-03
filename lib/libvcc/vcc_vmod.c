@@ -316,7 +316,7 @@ vcc_ParseImport(struct vcc *tl)
 	ExpectErr(tl, ID);		/* "vmod_name" */
 	mod = tl->t;
 	tmod = vcc_PeekTokenFrom(tl, mod);
-	ERRCHK(tl);
+	AN(tmod);
 	if (tmod->tok == ID && vcc_IdIs(tmod, "as")) {
 		vcc_NextToken(tl);		/* "vmod_name" */
 		vcc_NextToken(tl);		/* "as" */

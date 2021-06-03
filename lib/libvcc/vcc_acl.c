@@ -477,7 +477,6 @@ vcc_acl_emit_tokens(const struct vcc *tl, const struct acl_e *ae)
 		if (t == ae->t_mask)
 			break;
 		t = vcc_PeekTokenFrom(tl, t);
-		ERRCHK(tl);
 		AN(t);
 		sep = " ";
 	} while (ae->t_mask != NULL);

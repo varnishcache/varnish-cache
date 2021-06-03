@@ -124,7 +124,7 @@ vcc_AddUses(struct vcc *tl, const struct token *t1, const struct token *t2,
 	pu->t2 = t2;
 	if (pu->t2 == NULL) {
 		pu->t2 = vcc_PeekTokenFrom(tl, t1);
-		ERRCHK(tl);
+		AN(pu->t2);
 	}
 	pu->sym = sym;
 	pu->use = use;
