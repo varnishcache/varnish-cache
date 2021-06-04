@@ -55,50 +55,54 @@ static int
 tweak_generic_double(struct vsb *vsb, volatile double *dest,
     const char *arg, const char *min, const char *max, const char *fmt)
 {
-	volatile double u, minv = 0, maxv = 0;
+	volatile double u, minv = VRT_DECIMAL_MIN, maxv = VRT_DECIMAL_MAX;
+	const char *p, *err;
 
 	if (arg != NULL && arg != JSON_FMT) {
 		if (min != NULL) {
-			minv = VNUM(min);
-			if (isnan(minv)) {
-				VSB_printf(vsb, "Illegal Min: %s\n", min);
+			p = min;
+			minv = SF_Parse_Decimal(&p, 0, &err);
+			if (errno) {
+				VSB_printf(vsb, "Min: %s (%s)\n", err, min);
 				return (-1);
 			}
 		}
 		if (max != NULL) {
-			maxv = VNUM(max);
-			if (isnan(maxv)) {
-				VSB_printf(vsb, "Illegal Max: %s\n", max);
+			p = max;
+			maxv = SF_Parse_Decimal(&p, 0, &err);
+			if (errno) {
+				VSB_printf(vsb, "Max: %s (%s)\n", err, max);
 				return (-1);
 			}
 		}
 
-		u = VNUM(arg);
-		if (isnan(u)) {
-			VSB_printf(vsb, "Not a number(%s)\n", arg);
+		p = arg;
+		u = SF_Parse_Decimal(&p, 0, &err);
+		if (errno) {
+			VSB_printf(vsb, "%s (%s)\n", err, arg);
 			return (-1);
 		}
-		if (min != NULL && u < minv) {
+		if (u < minv) {
 			VSB_printf(vsb,
 			    "Must be greater or equal to %s\n", min);
 			return (-1);
 		}
-		if (max != NULL && u > maxv) {
+		if (u > maxv) {
 			VSB_printf(vsb,
 			    "Must be less than or equal to %s\n", max);
 			return (-1);
 		}
 		*dest = u;
-	} else
+	} else {
 		VSB_printf(vsb, fmt, *dest);
+	}
 	return (0);
 }
 
 /*--------------------------------------------------------------------*/
 
-int
-tweak_timeout(struct vsb *vsb, const struct parspec *par,
-    const char *arg)
+int v_matchproto_(tweak_t)
+tweak_timeout(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	volatile double *dest;
 
@@ -109,7 +113,7 @@ tweak_timeout(struct vsb *vsb, const struct parspec *par,
 
 /*--------------------------------------------------------------------*/
 
-int
+int v_matchproto_(tweak_t)
 tweak_double(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	volatile double *dest;
@@ -120,7 +124,7 @@ tweak_double(struct vsb *vsb, const struct parspec *par, const char *arg)
 
 /*--------------------------------------------------------------------*/
 
-int
+int v_matchproto_(tweak_t)
 tweak_boolean(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	volatile unsigned *dest;
@@ -217,7 +221,7 @@ tweak_generic_uint(struct vsb *vsb, volatile unsigned *dest, const char *arg,
 
 /*--------------------------------------------------------------------*/
 
-int
+int v_matchproto_(tweak_t)
 tweak_uint(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	volatile unsigned *dest;
@@ -306,7 +310,7 @@ tweak_generic_bytes(struct vsb *vsb, volatile ssize_t *dest, const char *arg,
 
 /*--------------------------------------------------------------------*/
 
-int
+int v_matchproto_(tweak_t)
 tweak_bytes(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	volatile ssize_t *dest;
@@ -317,7 +321,7 @@ tweak_bytes(struct vsb *vsb, const struct parspec *par, const char *arg)
 
 /*--------------------------------------------------------------------*/
 
-int
+int v_matchproto_(tweak_t)
 tweak_bytes_u(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	volatile unsigned *d1;
@@ -335,7 +339,7 @@ tweak_bytes_u(struct vsb *vsb, const struct parspec *par, const char *arg)
  * vsl_buffer and vsl_reclen have dependencies.
  */
 
-int
+int v_matchproto_(tweak_t)
 tweak_vsl_buffer(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	volatile unsigned *d1;
@@ -350,7 +354,7 @@ tweak_vsl_buffer(struct vsb *vsb, const struct parspec *par, const char *arg)
 	return (0);
 }
 
-int
+int v_matchproto_(tweak_t)
 tweak_vsl_reclen(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	volatile unsigned *d1;
@@ -367,7 +371,7 @@ tweak_vsl_reclen(struct vsb *vsb, const struct parspec *par, const char *arg)
 
 /*--------------------------------------------------------------------*/
 
-int
+int v_matchproto_(tweak_t)
 tweak_string(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	char **p = TRUST_ME(par->priv);
@@ -388,7 +392,7 @@ tweak_string(struct vsb *vsb, const struct parspec *par, const char *arg)
 
 /*--------------------------------------------------------------------*/
 
-int
+int v_matchproto_(tweak_t)
 tweak_poolparam(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	volatile struct poolparam *pp, px;
@@ -458,7 +462,7 @@ tweak_poolparam(struct vsb *vsb, const struct parspec *par, const char *arg)
  * limit, so they don't end up crossing.
  */
 
-int
+int v_matchproto_(tweak_t)
 tweak_thread_pool_min(struct vsb *vsb, const struct parspec *par,
     const char *arg)
 {
@@ -472,7 +476,7 @@ tweak_thread_pool_min(struct vsb *vsb, const struct parspec *par,
 	return (0);
 }
 
-int
+int v_matchproto_(tweak_t)
 tweak_thread_pool_max(struct vsb *vsb, const struct parspec *par,
     const char *arg)
 {

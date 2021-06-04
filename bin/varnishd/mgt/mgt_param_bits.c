@@ -113,7 +113,7 @@ static const char * const VSL_tags[256] = {
 #  include "tbl/vsl_tags.h"
 };
 
-static int
+static int v_matchproto_(tweak_t)
 tweak_vsl_mask(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	unsigned j;
@@ -171,7 +171,7 @@ static const char * const debug_tags[] = {
        NULL
 };
 
-static int
+static int v_matchproto_(tweak_t)
 tweak_debug(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	const char *s;
@@ -214,7 +214,7 @@ static const char * const feature_tags[] = {
        NULL
 };
 
-static int
+static int v_matchproto_(tweak_t)
 tweak_feature(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	const char *s;
