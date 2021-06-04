@@ -27,7 +27,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Deal with numbers with data storage suffix scaling
+ * Deal with numbers.
+ *
  */
 
 #include "config.h"
@@ -63,6 +64,11 @@ static const char err_fractional_bytes[] = "Fractional BYTES not allowed";
 		return (retval);				\
 	} while (0)
 
+/*
+ * Internal function for parsing an integer with a limited
+ * number of digits.
+ */
+
 static int64_t
 sf_parse_int(const char **ipp, const char **errtxt, int *sign, int maxdig)
 {
@@ -71,7 +77,8 @@ sf_parse_int(const char **ipp, const char **errtxt, int *sign, int maxdig)
 
 	AN(ipp);
 	AN(*ipp);
-	*errtxt = NULL;
+	if (errtxt != NULL)
+		*errtxt = NULL;
 	*sign = 1;
 	errno = 0;
 	while (vct_isows(*(*ipp)))
@@ -94,6 +101,14 @@ sf_parse_int(const char **ipp, const char **errtxt, int *sign, int maxdig)
 	return (retval);
 }
 
+/**********************************************************************
+ * Parse a RFC8941 `sf-integer`.
+ *
+ * If `errno` is non-zero the conversion failed.
+ * If `errtxt` is provided it summarily tells why.
+ * The input argument points to the first character not consumed.
+ */
+
 int64_t
 SF_Parse_Integer(const char **ipp, const char **errtxt)
 {
@@ -103,6 +118,14 @@ SF_Parse_Integer(const char **ipp, const char **errtxt)
 	retval = sf_parse_int(ipp, errtxt, &sign, 15);
 	return(retval * sign);
 }
+
+/**********************************************************************
+ * Parse either a RFC8941 `sf-integer` or `sf-decimal`.
+ *
+ * If `errno` is non-zero the conversion failed.
+ * If `errtxt` is provided it summarily tells why.
+ * The input argument points to the first character not consumed.
+ */
 
 double
 SF_Parse_Number(const char **ipp, int strict, const char **errtxt)
@@ -141,6 +164,14 @@ SF_Parse_Number(const char **ipp, int strict, const char **errtxt)
 	return (retval * sign);
 }
 
+/**********************************************************************
+ * Parse a RFC8941 `sf-decimal`.
+ *
+ * If `errno` is non-zero the conversion failed.
+ * If `errtxt` is provided it summarily tells why.
+ * The input argument points to the first character not consumed.
+ */
+
 double
 SF_Parse_Decimal(const char **ipp, int strict, const char **errtxt)
 {
@@ -154,7 +185,12 @@ SF_Parse_Decimal(const char **ipp, int strict, const char **errtxt)
 	return (retval);
 }
 
-/**********************************************************************/
+/**********************************************************************
+ * Parse a "Varnish number".
+ *
+ * Varnish numbers are the union of RFC8941 sf-integer and sf-decimal.
+ * If `errno` is non-zero the conversion failed and NAN is returned.
+ */
 
 double
 VNUM(const char *p)
