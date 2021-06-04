@@ -54,6 +54,7 @@
  * binary/load-time compatible, increment MAJOR version
  *
  * NEXT (2021-09-15)
+ *	VNUMpfx() removed, SF_Parse_{Integer|Decimal|Number} added
  *	vrt_null_strands added
  *	vrt_null_blob added
  *	VRT_NULL_BLOB_TYPE added as the .type of vrt_null_blob
