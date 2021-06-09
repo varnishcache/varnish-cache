@@ -105,7 +105,7 @@ the Trac server was unreachable).  Somebody has exagerated the
 story along the way.
 
 However, this did prompt me to track down the precise timing:
-Varnish release 2.1.2, May 2010 has th elink, release 2.1.3 from
+Varnish release 2.1.2, May 2010 has the link, release 2.1.3 from
 July same year does not.)
 
 And that, my friends, is why the error message of last resort in
