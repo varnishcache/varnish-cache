@@ -9,7 +9,7 @@
 The 503's heard around the world
 ================================
 
-Yesterday, may 8th 2021, for about an hour, the world saw things like:
+Yesterday, june 8th 2021, for about an hour, the world saw things like:
 
 .. image:: fastly_503.png
 
@@ -97,6 +97,17 @@ And dDoS'ed the Varnish Cache project server.
 
 In fact, they effectively dDoS'ed Norway.
 
+
+(Update: I'm now being told by people from Norway that this did not
+dDoS that much.  As I live in Denmark I obviously only have this
+saga on second hand.  (The only effect I experienced myself was that
+the Trac server was unreachable).  Somebody has exagerated the
+story along the way.
+
+However, this did prompt me to track down the precise timing:
+Varnish release 2.1.2, May 2010 has th elink, release 2.1.3 from
+July same year does not.)
+
 And that, my friends, is why the error message of last resort in
 Varnish Cache does not even contain a link any more.
 
@@ -104,3 +115,4 @@ Varnish Cache does not even contain a link any more.
 
 PS: The title of this post is of course an homage to
 `John R. Garman's famous article <https://www5.in.tum.de/~huckle/space_.pdf>`_.
+
