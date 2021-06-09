@@ -81,7 +81,7 @@ A lot of chinese web-people learned about Varnish Cache that day.
 
 As did a lot of other chinese people, who instead of a train schedules
 and train tickets, got a few lines of english, which the vast
-majority of did not read or understand.
+majority of them did not read or understand.
 
 But there were also a link.
 
