@@ -28,7 +28,7 @@ never can have.
 
 When Varnish gets to the bottom of the `builtin.vcl` and errors
 out, we dont know where that Varnish instance runs, who it runs
-for, what information it servers, who it serves that information
+for, what information it serves, who it serves that information
 to and most crucially, what information can safely be shared with
 the clients.
 
