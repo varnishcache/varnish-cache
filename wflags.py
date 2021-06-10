@@ -81,6 +81,27 @@ UNDESIRABLE_WFLAGS = [
     "-Wno-nullability-completeness", # Barfs all over MacOSx
 ]
 
+
+def cc(compiler, opt, obj, src):
+    try:
+        j = subprocess.check_output(
+            [
+                compiler,
+                "-c",
+                opt,
+                "-o", obj,
+                src
+            ],
+            stderr=subprocess.STDOUT
+        )
+    except subprocess.CalledProcessError as err:
+        if err.output:
+            j = err.output
+        else:
+            j = ("Returncode %d" % err.returncode).encode('utf8')
+    return (j)
+
+
 def main():
     compiler = os.environ.get("CC", "cc")
 
@@ -91,29 +112,19 @@ def main():
 
     use_flags = []
     for i in DESIRABLE_OPTIONS + DESIRABLE_WFLAGS + UNDESIRABLE_WFLAGS:
-        j = subprocess.run(
-            [
-                compiler,
-                "-c",
-                i,
-                "-o", obj_file.name,
-                src_file.name,
-            ],
-            stderr=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-        )
-        if not j.returncode and not j.stdout and not j.stderr:
+        j = cc(compiler, i, obj_file.name, src_file.name)
+        if not j:
             use_flags.append(i)
         else:
             sys.stderr.write(compiler + " cannot " + i + '\n')
-            if b'error: unrecognized command line option' in j.stderr:
+            if b'error: unrecognized command line option' in j:
                 # LLVM
                 pass
-            elif b'warning: unknown warning option' in j.stderr:
+            elif b'warning: unknown warning option' in j:
                 # GCC
                 pass
             else:
-                sys.stderr.write("\n\t" + j.stderr.decode('utf8') + '\n')
+                sys.stderr.write("\n\t" + j.decode('utf8') + '\n')
     print(" ".join(use_flags))
 
 if __name__ == "__main__":
