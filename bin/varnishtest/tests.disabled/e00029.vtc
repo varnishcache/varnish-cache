@@ -1,5 +1,9 @@
 varnishtest "fun esi includes and ranges"
 
+# this does not work yet because the ESI VDP pushes data directly
+# to the next level up, which in turn is required to get the
+# anything-in-gzip case right
+
 server s1 {
 	rxreq
 	expect req.url == "/1"
