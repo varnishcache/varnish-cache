@@ -83,17 +83,13 @@ UNDESIRABLE_WFLAGS = [
 
 
 def cc(compiler, opt, obj, src):
+    a = [compiler, "-c"]
+    if opt is not None:
+        a.append(opt)
+    a += ["-o", obj, src]
+
     try:
-        j = subprocess.check_output(
-            [
-                compiler,
-                "-c",
-                opt,
-                "-o", obj,
-                src
-            ],
-            stderr=subprocess.STDOUT
-        )
+        j = subprocess.check_output(a, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as err:
         if err.output:
             j = err.output
@@ -109,6 +105,12 @@ def main():
     src_file.write(b'int main(int argc, char **argv) {(void)argc;(void)argv;return(0);}\n')
     src_file.flush()
     obj_file = tempfile.NamedTemporaryFile(suffix='.o')
+
+    j = cc(compiler, None, obj_file.name, src_file.name)
+    if j:
+        sys.stderr.write(compiler + " failed without flags\n\t" +
+                         j.decode('utf8') + '\n')
+        sys.exit(1)
 
     use_flags = []
     for i in DESIRABLE_OPTIONS + DESIRABLE_WFLAGS + UNDESIRABLE_WFLAGS:
