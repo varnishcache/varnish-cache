@@ -719,6 +719,9 @@ AX_CHECK_COMPILE_FLAG([-Werror=unused-result],
 
 # This corresponds to FreeBSD's WARNS level 6
 DEVELOPER_CFLAGS=`$PYTHON $srcdir/wflags.py`
+if test $? -ne 0 ; then
+  AC_MSG_ERROR([wflags.py failure])
+fi
 
 # --enable-stack-protector
 AC_ARG_ENABLE(stack-protector,
