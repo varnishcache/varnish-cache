@@ -48,8 +48,8 @@ DESIRABLE_WFLAGS = [
     "-Wchar-subscripts",
     "-Wempty-body",
     "-Wextra",
-    "-Wformat-y2k",
-    "-Wformat-zero-length",
+    "-Wformat -Wformat-y2k",
+    "-Wformat -Wformat-zero-length",
     "-Wmissing-field-initializers",
     "-Wmissing-prototypes",
     "-Wnested-externs",
@@ -85,7 +85,7 @@ UNDESIRABLE_WFLAGS = [
 def cc(compiler, opt, obj, src):
     a = [compiler, "-c"]
     if opt is not None:
-        a.append(opt)
+        a += opt.split()
     a += ["-o", obj, src]
 
     try:
