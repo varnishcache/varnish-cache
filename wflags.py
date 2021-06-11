@@ -83,7 +83,8 @@ UNDESIRABLE_WFLAGS = [
 
 
 def cc(compiler, opt, obj, src):
-    a = [compiler, "-c"]
+    a = compiler.split()
+    a += ["-c"]
     if opt is not None:
         a += opt.split()
     a += ["-o", obj, src]
