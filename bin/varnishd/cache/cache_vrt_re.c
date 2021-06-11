@@ -88,7 +88,7 @@ VRT_re_match(VRT_CTX, const char *s, VCL_REGEX re)
 	if (i >= 0)
 		return (1);
 	if (i < VRE_ERROR_NOMATCH )
-		VSLb(ctx->vsl, SLT_VCL_Error, "Regexp matching returned %d", i);
+		VRT_fail(ctx, "Regexp matching returned %d", i);
 	return (0);
 }
 
@@ -122,7 +122,7 @@ VRT_regsub(VRT_CTX, int all, VCL_STRING str, VCL_REGEX re,
 	if (i == VRE_ERROR_NOMATCH)
 		return (str);
 	if (i < VRE_ERROR_NOMATCH ) {
-		VSLb(ctx->vsl, SLT_VCL_Error, "Regexp matching returned %d", i);
+		VRT_fail(ctx, "Regexp matching returned %d", i);
 		return (str);
 	}
 
@@ -159,8 +159,7 @@ VRT_regsub(VRT_CTX, int all, VCL_STRING str, VCL_REGEX re,
 		    &cache_param->vre_limits);
 		if (i < VRE_ERROR_NOMATCH ) {
 			WS_Release(ctx->ws, 0);
-			VSLb(ctx->vsl, SLT_VCL_Error,
-			    "Regexp matching returned %d", i);
+			VRT_fail(ctx, "Regexp matching returned %d", i);
 			return (str);
 		}
 	} while (i != VRE_ERROR_NOMATCH);
