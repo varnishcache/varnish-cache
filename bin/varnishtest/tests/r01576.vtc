@@ -13,7 +13,8 @@ feature pcre_jit
 # Approximate formula for FreeBSD/amd64:
 #	pcre_match_limit_recursion = thread_pool_stack * 2 - 9
 
-varnish v1 -vcl+backend {
+# -p: use 64bit defaults also on 32bit
+varnish v1 -arg "-p workspace_client=64k -p http_req_size=32k" -vcl+backend {
 	backend proforma none;
 
 	sub vcl_recv {
