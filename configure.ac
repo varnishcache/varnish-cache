@@ -710,6 +710,14 @@ else
 	 OCFLAGS="${OCFLAGS} -Werror"])
 fi
 
+case $target in
+    *-*-darwin*)
+	AX_CHECK_COMPILE_FLAG([-Wno-expansion-to-defined],
+	[CFLAGS="${CFLAGS} -Wno-expansion-to-defined"
+	 OCFLAGS="${OCFLAGS} -Wno-expansion-to-defined"])
+	;;
+esac
+
 AX_CHECK_COMPILE_FLAG([-Werror=unused-result],
     [CFLAGS="${CFLAGS} -Wno-error=unused-result"
      OCFLAGS="${OCFLAGS} -Wno-error=unused-result"],
