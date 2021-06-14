@@ -1,0 +1,42 @@
+varnishtest req.hash_ignore_vary
+
+server s1 {
+	rxreq
+	expect req.http.cookie ~ ab=a
+	txresp -hdr "vary: cookie" -body a
+
+	rxreq
+	expect req.http.cookie ~ ab=b
+	txresp -hdr "vary: cookie" -body b
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		set req.hash_ignore_vary = req.http.user-agent ~ "bot";
+	}
+
+	sub vcl_req_cookie {
+		return;
+	}
+} -start
+
+client ca {
+	txreq -hdr "cookie: ab=a"
+	rxresp
+	expect resp.body == a
+} -run
+
+client cb {
+	txreq -hdr "cookie: ab=b"
+	rxresp
+	expect resp.body == b
+} -run
+
+client cbot {
+	txreq -hdr "user-agent: googlebot"
+	rxresp
+	expect resp.body == b
+} -run
+
+client ca -run
+client cb -run
