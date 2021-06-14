@@ -435,6 +435,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 				continue;
 
 			if (oc->boc && oc->boc->vary != NULL &&
+			    !req->hash_ignore_vary &&
 			    !VRY_Match(req, oc->boc->vary)) {
 				wrk->strangelove++;
 				continue;
@@ -453,7 +454,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 			continue;
 		}
 
-		if (ObjHasAttr(wrk, oc, OA_VARY)) {
+		if (!req->hash_ignore_vary && ObjHasAttr(wrk, oc, OA_VARY)) {
 			vary = ObjGetAttr(wrk, oc, OA_VARY, NULL);
 			AN(vary);
 			if (!VRY_Match(req, vary)) {

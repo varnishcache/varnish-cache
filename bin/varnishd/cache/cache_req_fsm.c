@@ -873,6 +873,7 @@ cnt_recv_prep(struct req *req, const char *ci)
 		req->disable_esi = 0;
 		req->hash_always_miss = 0;
 		req->hash_ignore_busy = 0;
+		req->hash_ignore_vary = 0;
 		req->client_identity = NULL;
 		req->storage = NULL;
 	}

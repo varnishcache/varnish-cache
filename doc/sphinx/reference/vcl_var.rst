@@ -352,6 +352,27 @@ req.hash_ignore_busy
 	up content sideways from each other to avoid deadlocks.
 
 
+req.hash_ignore_vary
+
+	Type: BOOL
+
+	Readable from: client
+
+	Writable from: client
+
+	Default: ``false``.
+
+	Ignore objects vary headers during cache lookup.
+
+	This returns the very first match regardless of the object
+	compatibility with the client request. This is useful when
+	variants are irrelevant to certain clients, and differences
+	in the way the resouce is presented don't change how the
+	client will interpret it.
+
+	Use with caution.
+
+
 req.hash_always_miss
 
 	Type: BOOL

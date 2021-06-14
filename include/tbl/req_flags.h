@@ -34,6 +34,7 @@
 /* lower, vcl_r, vcl_w, doc */
 REQ_FLAG(disable_esi,		0, 0, "")
 REQ_FLAG(hash_ignore_busy,	1, 1, "")
+REQ_FLAG(hash_ignore_vary,	1, 1, "")
 REQ_FLAG(hash_always_miss,	1, 1, "")
 REQ_FLAG(is_hit,		0, 0, "")
 REQ_FLAG(is_hitmiss,		1, 0, "")
