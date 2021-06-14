@@ -77,7 +77,7 @@ main(int argc, char * const *argv)
 	vex = vex_New(q_arg, vsb, 0);
 
 	if (vex == NULL) {
-		VSB_finish(vsb);
+		AZ(VSB_finish(vsb));
 		fprintf(stderr, "Error:\n%s", VSB_data(vsb));
 		VSB_destroy(&vsb);
 		free(q_arg);
