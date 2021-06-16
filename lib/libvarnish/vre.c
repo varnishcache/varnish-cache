@@ -46,6 +46,10 @@
 
 #include "vre.h"
 
+#if !HAVE_PCRE2_SET_DEPTH_LIMIT
+#  define pcre2_set_depth_limit(r, d) pcre2_set_recursion_limit(r, d)
+#endif
+
 struct vre {
 	unsigned		magic;
 #define VRE_MAGIC		0xe83097dc
@@ -109,6 +113,20 @@ VRE_compile(const char *pattern, unsigned options,
 	return (v);
 }
 
+static void
+vre_limit(const vre_t *code, const volatile struct vre_limits *lim)
+{
+
+	CHECK_OBJ_NOTNULL(code, VRE_MAGIC);
+
+	if (lim == NULL)
+		return;
+
+	/* XXX: not reentrant */
+	pcre2_set_match_limit(code->re_ctx, lim->match);
+	pcre2_set_depth_limit(code->re_ctx, lim->depth);
+}
+
 int
 VRE_exec(const vre_t *code, const char *subject, int length,
     int startoffset, int options, int *ovector, int ovecsize,
@@ -129,15 +147,7 @@ VRE_exec(const vre_t *code, const char *subject, int length,
 	data = pcre2_match_data_create(ovecsize, NULL);
 	XXXAN(data);
 
-	if (lim != NULL) {
-		/* XXX: not reentrant */
-		pcre2_set_match_limit(code->re_ctx, lim->match);
-#if HAVE_PCRE2_SET_DEPTH_LIMIT
-		pcre2_set_depth_limit(code->re_ctx, lim->depth);
-#else
-		pcre2_set_recursion_limit(code->re_ctx, lim->depth);
-#endif
-	}
+	vre_limit(code, lim);
 
 	AZ(options & (~VRE_MASK_EXEC));
 	rv = pcre2_match(code->re, (PCRE2_SPTR)subject, length,
