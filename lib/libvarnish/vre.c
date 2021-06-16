@@ -60,9 +60,11 @@ struct vre {
 
 /*
  * We don't want to spread or even expose the majority of PCRE2 options
- * so we establish our own options and implement hard linkage to PCRE2
- * here.
+ * and errors so we establish our own symbols and implement hard linkage
+ * to PCRE2 here.
  */
+const int VRE_ERROR_NOMATCH = PCRE2_ERROR_NOMATCH;
+
 const unsigned VRE_CASELESS = PCRE2_CASELESS;
 const unsigned VRE_NOTEMPTY = PCRE2_NOTEMPTY;
 
@@ -171,6 +173,34 @@ VRE_exec(const vre_t *code, const char *subject, int length,
 
 	pcre2_match_data_free(data);
 	return (rv);
+}
+
+int
+VRE_sub(const vre_t *code, const char *subject, const char *replacement,
+    void *buf, size_t *buf_len, const volatile struct vre_limits *lim, int all)
+{
+	uint32_t options;
+	int matches;
+
+	CHECK_OBJ(code, VRE_MAGIC);
+	AN(subject);
+	AN(replacement);
+	AN(buf);
+	AN(buf_len);
+	assert(*buf_len > 0);
+
+	vre_limit(code, lim);
+
+	options = PCRE2_SUBSTITUTE_EXTENDED|PCRE2_SUBSTITUTE_OVERFLOW_LENGTH;
+	if (all)
+		options |= PCRE2_SUBSTITUTE_GLOBAL;
+
+	matches = pcre2_substitute(code->re,
+	    (PCRE2_SPTR)subject, PCRE2_ZERO_TERMINATED, 0,
+	    options, NULL, code->re_ctx,
+	    (PCRE2_SPTR)replacement, PCRE2_ZERO_TERMINATED,
+	    buf, buf_len);
+	return (matches);
 }
 
 void

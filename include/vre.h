@@ -48,7 +48,7 @@ struct vre_limits {
 typedef struct vre vre_t;
 
 /* This maps to PCRE2 error codes */
-#define VRE_ERROR_NOMATCH         (-1)
+extern const int VRE_ERROR_NOMATCH;
 
 /* And those to PCRE2 options */
 extern const unsigned VRE_CASELESS;
@@ -58,6 +58,8 @@ vre_t *VRE_compile(const char *, unsigned, const char **, int *);
 int VRE_exec(const vre_t *code, const char *subject, int length,
     int startoffset, int options, int *ovector, int ovecsize,
     const volatile struct vre_limits *lim);
+int VRE_sub(const vre_t *code, const char *subject, const char *replacement,
+    void *buf, size_t *buf_len, const volatile struct vre_limits *lim, int all);
 void VRE_free(vre_t **);
 void VRE_quote(struct vsb *, const char *);
 
