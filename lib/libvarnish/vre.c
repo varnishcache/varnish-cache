@@ -66,7 +66,6 @@ struct vre {
 const int VRE_ERROR_NOMATCH = PCRE2_ERROR_NOMATCH;
 
 const unsigned VRE_CASELESS = PCRE2_CASELESS;
-const unsigned VRE_NOTEMPTY = PCRE2_NOTEMPTY;
 
 /*
  * Even though we only have one for each case so far, keep track of masks
@@ -74,7 +73,7 @@ const unsigned VRE_NOTEMPTY = PCRE2_NOTEMPTY;
  * VRE linkage.
  */
 #define VRE_MASK_COMPILE	PCRE2_CASELESS
-#define VRE_MASK_EXEC		PCRE2_NOTEMPTY
+#define VRE_MASK_EXEC		0
 
 vre_t *
 VRE_compile(const char *pattern, unsigned options,

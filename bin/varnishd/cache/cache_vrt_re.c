@@ -38,20 +38,6 @@
 #include "cache_varnishd.h"
 #include "vcc_interface.h"
 
-static void
-Tadd(char **b, char *e, const char *p, int l)
-{
-	assert((*b) <= e);
-
-	if (l <= 0) {
-	} if ((*b) + l < e) {
-		memcpy((*b), p, l);
-		(*b) += l;
-	} else {
-		(*b) = e;
-	}
-}
-
 void
 VPI_re_init(vre_t **rep, const char *re)
 {
@@ -96,16 +82,9 @@ VCL_STRING
 VRT_regsub(VRT_CTX, int all, VCL_STRING str, VCL_REGEX re,
     VCL_STRING sub)
 {
-	int ovector[30];
-	int i, l;
-	char *res_b;
-	char *res_e;
-	char *b0;
-	const char *s;
-	unsigned u, x;
-	int options = 0;
-	int offset = 0;
-	size_t len;
+	char *res;
+	size_t res_len;
+	int i;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(re);
@@ -113,65 +92,30 @@ VRT_regsub(VRT_CTX, int all, VCL_STRING str, VCL_REGEX re,
 		str = "";
 	if (sub == NULL)
 		sub = "";
-	memset(ovector, 0, sizeof(ovector));
-	len = strlen(str);
-	i = VRE_exec(re, str, len, 0, options, ovector, 30,
-	    &cache_param->vre_limits);
 
-	/* If it didn't match, we can return the original string */
-	if (i == VRE_ERROR_NOMATCH)
-		return (str);
-	if (i < VRE_ERROR_NOMATCH ) {
-		VRT_fail(ctx, "Regexp matching returned %d", i);
-		return (str);
-	}
-
-	u = WS_ReserveAll(ctx->ws);
-	res_e = res_b = b0 = WS_Reservation(ctx->ws);
-	res_e += u;
-
-	do {
-		/* Copy prefix to match */
-		Tadd(&res_b, res_e, str + offset, ovector[0] - offset);
-		for (s = sub ; *s != '\0'; s++ ) {
-			if (*s != '\\' || s[1] == '\0') {
-				if (res_b < res_e)
-					*res_b++ = *s;
-				continue;
-			}
-			s++;
-			if (isdigit(*s)) {
-				x = *s - '0';
-				l = ovector[2*x+1] - ovector[2*x];
-				Tadd(&res_b, res_e, str + ovector[2*x], l);
-				continue;
-			} else {
-				if (res_b < res_e)
-					*res_b++ = *s;
-			}
-		}
-		offset = ovector[1];
-		if (!all)
-			break;
-		memset(ovector, 0, sizeof(ovector));
-		options |= VRE_NOTEMPTY;
-		i = VRE_exec(re, str, len, offset, options, ovector, 30,
-		    &cache_param->vre_limits);
-		if (i < VRE_ERROR_NOMATCH ) {
-			WS_Release(ctx->ws, 0);
-			VRT_fail(ctx, "Regexp matching returned %d", i);
-			return (str);
-		}
-	} while (i != VRE_ERROR_NOMATCH);
-
-	/* Copy suffix to match */
-	Tadd(&res_b, res_e, str + offset, 1 + len - offset);
-	if (res_b >= res_e) {
+	res_len = WS_ReserveAll(ctx->ws);
+	if (res_len == 0) {
 		WS_MarkOverflow(ctx->ws);
 		WS_Release(ctx->ws, 0);
 		return (str);
 	}
-	assert(res_b <= res_e);
-	WS_ReleaseP(ctx->ws, res_b);
-	return (b0);
+
+	res_len--; /* for the null character */
+	res = WS_Reservation(ctx->ws);
+	i = VRE_sub(re, str, sub, res, &res_len,
+	    &cache_param->vre_limits, all);
+
+	if (i > 0) {
+		res[res_len] = '\0';
+		WS_Release(ctx->ws, res_len + 1);
+		return (res);
+	}
+
+	if (res_len > WS_ReservationSize(ctx->ws))
+		WS_MarkOverflow(ctx->ws);
+	WS_Release(ctx->ws, 0);
+
+	if (i < VRE_ERROR_NOMATCH)
+	    VRT_fail(ctx, "Regexp matching returned %d", i);
+	return (str);
 }
