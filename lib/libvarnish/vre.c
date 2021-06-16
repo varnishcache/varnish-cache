@@ -69,11 +69,11 @@ const unsigned VRE_CASELESS = PCRE2_CASELESS;
 
 /*
  * Even though we only have one for each case so far, keep track of masks
- * to differentiate between compile and exec options and enfore the hard
+ * to differentiate between compile and match options and enfore the hard
  * VRE linkage.
  */
 #define VRE_MASK_COMPILE	PCRE2_CASELESS
-#define VRE_MASK_EXEC		0
+#define VRE_MASK_MATCH		0
 
 vre_t *
 VRE_compile(const char *pattern, unsigned options,
@@ -129,49 +129,30 @@ vre_limit(const vre_t *code, const volatile struct vre_limits *lim)
 }
 
 int
-VRE_exec(const vre_t *code, const char *subject, int length,
-    int startoffset, int options, int *ovector, int ovecsize,
-    const volatile struct vre_limits *lim)
+VRE_match(const vre_t *code, const char *subject, size_t length,
+    int options, const volatile struct vre_limits *lim)
 {
 	pcre2_match_data *data;
-	PCRE2_SIZE *rov;
-	int ov[30], rv, rsize;
+	int matches;
 
 	CHECK_OBJ_NOTNULL(code, VRE_MAGIC);
+	AN(subject);
+	AZ(options & (~VRE_MASK_MATCH));
 
-	if (ovector == NULL) {
-		ovector = ov;
-		ovecsize = sizeof(ov)/sizeof(ov[0]);
-	}
-
-	/* XXX: how to allocate on the stack? */
-	data = pcre2_match_data_create(ovecsize, NULL);
-	XXXAN(data);
+	if (length == 0)
+		length = PCRE2_ZERO_TERMINATED;
 
 	vre_limit(code, lim);
 
-	AZ(options & (~VRE_MASK_EXEC));
-	rv = pcre2_match(code->re, (PCRE2_SPTR)subject, length,
-	    startoffset, options, data, NULL);
+	/* XXX: keep a dummy match_data around */
+	data = pcre2_match_data_create(30, NULL);
+	AN(data);
 
-	rov = pcre2_get_ovector_pointer(data);
-	rsize = pcre2_get_ovector_count(data);
-	AN(rov);
-
-	while (ovecsize > 0) {
-		if (rsize > 0) {
-			*ovector = (int)*rov;
-			rov++;
-			rsize--;
-		} else {
-			*ov = 0;
-		}
-		ovector++;
-		ovecsize--;
-	}
+	matches =  pcre2_match(code->re, (PCRE2_SPTR)subject, length, 0,
+	    options, data, NULL);
 
 	pcre2_match_data_free(data);
-	return (rv);
+	return (matches);
 }
 
 int

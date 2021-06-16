@@ -1001,7 +1001,10 @@ BAN_Init(void)
 	ban_mark_completed(VTAILQ_FIRST(&ban_head));
 	Lck_Unlock(&ban_mtx);
 
-	dummy_match_data = pcre2_match_data_create(0, NULL);
+	/* XXX: this is probably not thread-safe, but until the ban code
+	 * migrates to VRE it should be a good-enough transition.
+	 */
+	dummy_match_data = pcre2_match_data_create(30, NULL);
 	AN(dummy_match_data);
 }
 

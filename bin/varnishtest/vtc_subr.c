@@ -103,7 +103,7 @@ vtc_expect(struct vtclog *vl,
 		if (vre == NULL)
 			vtc_fatal(vl, "REGEXP error: %s (@%d) (%s)",
 			    error, erroroffset, rhs);
-		i = VRE_exec(vre, lhs, strlen(lhs), 0, 0, NULL, 0, 0);
+		i = VRE_match(vre, lhs, 0, 0, NULL);
 		retval = (i >= 0 && *cmp == '~') || (i < 0 && *cmp == '!');
 		VRE_free(&vre);
 	} else if (!strcmp(cmp, "==")) {

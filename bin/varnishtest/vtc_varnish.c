@@ -755,7 +755,7 @@ varnish_cli(struct varnish *v, const char *cli, unsigned exp, const char *re)
 	if (exp != 0 && exp != (unsigned)u)
 		vtc_fatal(v->vl, "FAIL CLI response %u expected %u", u, exp);
 	if (vre != NULL) {
-		err = VRE_exec(vre, resp, strlen(resp), 0, 0, NULL, 0, NULL);
+		err = VRE_match(vre, resp, 0, 0, NULL);
 		if (err < 1)
 			vtc_fatal(v->vl, "Expect failed (%d)", err);
 		VRE_free(&vre);

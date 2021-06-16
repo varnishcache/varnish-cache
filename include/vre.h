@@ -54,9 +54,8 @@ extern const int VRE_ERROR_NOMATCH;
 extern const unsigned VRE_CASELESS;
 
 vre_t *VRE_compile(const char *, unsigned, const char **, int *);
-int VRE_exec(const vre_t *code, const char *subject, int length,
-    int startoffset, int options, int *ovector, int ovecsize,
-    const volatile struct vre_limits *lim);
+int VRE_match(const vre_t *code, const char *subject, size_t length,
+    int options, const volatile struct vre_limits *lim);
 int VRE_sub(const vre_t *code, const char *subject, const char *replacement,
     void *buf, size_t *buf_len, const volatile struct vre_limits *lim, int all);
 void VRE_free(vre_t **);

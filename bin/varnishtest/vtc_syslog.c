@@ -411,7 +411,7 @@ cmd_syslog_expect(CMD_ARGS)
 		vtc_fatal(s->vl, "REGEXP error: '%s' (@%d) (%s)",
 		    error, erroroffset, spec);
 
-	i = VRE_exec(vre, s->rxbuf, strlen(s->rxbuf), 0, 0, NULL, 0, 0);
+	i = VRE_match(vre, s->rxbuf, 0, 0, NULL);
 
 	VRE_free(&vre);
 

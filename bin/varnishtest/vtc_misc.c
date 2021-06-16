@@ -193,10 +193,8 @@ cmd_shell_engine(struct vtclog *vl, int ok, const char *cmd,
 		else
 			vtc_log(vl, 4, "shell_expect found");
 	} else if (vre != NULL) {
-		if (VRE_exec(vre, VSB_data(vsb), VSB_len(vsb), 0, 0,
-		    NULL, 0, NULL) < 1)
-			vtc_fatal(vl,
-			    "shell_match failed: (\"%s\")", re);
+		if (VRE_match(vre, VSB_data(vsb), VSB_len(vsb), 0, NULL) < 1)
+			vtc_fatal(vl, "shell_match failed: (\"%s\")", re);
 		else
 			vtc_log(vl, 4, "shell_match succeeded");
 		VRE_free(&vre);

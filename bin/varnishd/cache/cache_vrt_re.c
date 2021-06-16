@@ -70,7 +70,7 @@ VRT_re_match(VRT_CTX, const char *s, VCL_REGEX re)
 	if (s == NULL)
 		s = "";
 	AN(re);
-	i = VRE_exec(re, s, strlen(s), 0, 0, NULL, 0, &cache_param->vre_limits);
+	i = VRE_match(re, s, 0, 0, &cache_param->vre_limits);
 	if (i >= 0)
 		return (1);
 	if (i < VRE_ERROR_NOMATCH )
