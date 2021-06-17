@@ -44,7 +44,6 @@
 
 #include "vav.h"
 #include "vrnd.h"
-#include "vtim.h"
 
 #define		MAX_TOKENS		200
 
@@ -237,17 +236,6 @@ macro_cat(struct vtclog *vl, struct vsb *vsb, const char *b, const char *e)
 		    (int)(e - b), b, *argv);
 
 	assert(argc >= 2);
-
-	if (!strcmp(argv[1], "date")) {
-		double t = VTIM_real();
-		retval = malloc(VTIM_FORMAT_SIZE);
-		AN(retval);
-		VTIM_format(t, retval);
-		VSB_cat(vsb, retval);
-		free(retval);
-		VAV_Free(argv);
-		return;
-	}
 
 	AZ(pthread_mutex_lock(&macro_mtx));
 	VTAILQ_FOREACH(m, &macro_list, list) {
