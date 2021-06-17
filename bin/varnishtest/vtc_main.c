@@ -623,6 +623,59 @@ macro_func_date(int argc, char *const *argv, const char **err)
 	return (s);
 }
 
+static char *
+macro_func_string_repeat(int argc, char *const *argv, const char **err)
+{
+	struct vsb vsb[1];
+	char *p, *res;
+	size_t l;
+	int i;
+
+	if (argc != 4) {
+		*err = "repeat takes 2 arguments";
+		return (NULL);
+	}
+
+	i = strtod(argv[2], &p);
+
+	if (p == argv[2] || *p != '\0' || i < 0) {
+		*err = "invalid number of repetitions";
+		return (NULL);
+	}
+
+	l = (strlen(argv[3]) * i) + 1;
+	res = malloc(l);
+	AN(res);
+	AN(VSB_new(vsb, res, l, VSB_FIXEDLEN));
+	while (i > 0) {
+		AZ(VSB_cat(vsb, argv[3]));
+		i--;
+	}
+	AZ(VSB_finish(vsb));
+	VSB_delete(vsb);
+	return (res);
+}
+
+static char *
+macro_func_string(int argc, char *const *argv, const char **err)
+{
+
+	assert(argc >= 2);
+	AN(argv);
+	AN(err);
+
+	if (argc == 2) {
+		*err = "missing action";
+		return (NULL);
+	}
+
+	if (!strcmp(argv[2], "repeat"))
+		return (macro_func_string_repeat(argc - 1, argv + 1, err));
+
+	*err = "unknown action";
+	return (NULL);
+}
+
 /**********************************************************************
  * Main
  */
@@ -703,6 +756,7 @@ main(int argc, char * const *argv)
 	extmacro_def("pwd", NULL, "%s", cwd);
 
 	extmacro_def("date", macro_func_date, NULL);
+	extmacro_def("string", macro_func_string, NULL);
 
 	vmod_path = NULL;
 
