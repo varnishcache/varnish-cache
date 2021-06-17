@@ -80,6 +80,7 @@ struct macro {
 	VTAILQ_ENTRY(macro)	list;
 	char			*name;
 	char			*val;
+	macro_f			*func;
 };
 
 static VTAILQ_HEAD(,macro) macro_list = VTAILQ_HEAD_INITIALIZER(macro_list);
@@ -99,7 +100,7 @@ static const struct cmds top_cmds[] = {
 /**********************************************************************/
 
 static struct macro *
-macro_def_int(const char *name, const char *fmt, va_list ap)
+macro_def_int(const char *name, macro_f *func, const char *fmt, va_list ap)
 {
 	struct macro *m;
 	char buf[512];
@@ -115,9 +116,15 @@ macro_def_int(const char *name, const char *fmt, va_list ap)
 		VTAILQ_INSERT_TAIL(&macro_list, m, list);
 	}
 	AN(m);
-	vbprintf(buf, fmt, ap);
-	REPLACE(m->val, buf);
-	AN(m->val);
+	if (func != NULL) {
+		AZ(fmt);
+		m->func = func;
+	} else {
+		AN(fmt);
+		vbprintf(buf, fmt, ap);
+		REPLACE(m->val, buf);
+		AN(m->val);
+	}
 	return (m);
 }
 
@@ -128,12 +135,12 @@ macro_def_int(const char *name, const char *fmt, va_list ap)
  */
 
 void
-extmacro_def(const char *name, const char *fmt, ...)
+extmacro_def(const char *name, macro_f *func, const char *fmt, ...)
 {
 	va_list ap;
 
 	va_start(ap, fmt);
-	(void)macro_def_int(name, fmt, ap);
+	(void)macro_def_int(name, func, fmt, ap);
 	va_end(ap);
 }
 
@@ -149,8 +156,13 @@ init_macro(void)
 	struct macro *m;
 
 	/* Dump the extmacros for completeness */
-	VTAILQ_FOREACH(m, &macro_list, list)
-		vtc_log(vltop, 4, "extmacro def %s=%s", m->name, m->val);
+	VTAILQ_FOREACH(m, &macro_list, list) {
+		if (m->val != NULL)
+			vtc_log(vltop, 4,
+			    "extmacro def %s=%s", m->name, m->val);
+		else
+			vtc_log(vltop, 4, "extmacro def %s(...)", m->name);
+	}
 
 	AZ(pthread_mutex_init(&macro_mtx, NULL));
 }
@@ -172,7 +184,7 @@ macro_def(struct vtclog *vl, const char *instance, const char *name,
 
 	AZ(pthread_mutex_lock(&macro_mtx));
 	va_start(ap, fmt);
-	m = macro_def_int(name, fmt, ap);
+	m = macro_def_int(name, NULL, fmt, ap);
 	va_end(ap);
 	vtc_log(vl, 4, "macro def %s=%s", name, m->val);
 	AZ(pthread_mutex_unlock(&macro_mtx));
@@ -208,34 +220,60 @@ void
 macro_cat(struct vtclog *vl, struct vsb *vsb, const char *b, const char *e)
 {
 	struct macro *m;
-	int l;
-	char *retval = NULL;
+	char **argv, *retval = NULL;
+	const char *err = NULL;
+	int argc;
 
 	AN(b);
 	if (e == NULL)
 		e = strchr(b, '\0');
 	AN(e);
-	l = e - b;
 
-	if (l == 4 && !memcmp(b, "date", l)) {
+	argv = VAV_ParseTxt(b, e, &argc, ARGV_COMMA);
+	AN(argv);
+
+	if (*argv != NULL)
+		vtc_fatal(vl, "Macro ${%.*s} parsing failed: %s",
+		    (int)(e - b), b, *argv);
+
+	assert(argc >= 2);
+
+	if (!strcmp(argv[1], "date")) {
 		double t = VTIM_real();
 		retval = malloc(VTIM_FORMAT_SIZE);
 		AN(retval);
 		VTIM_format(t, retval);
 		VSB_cat(vsb, retval);
 		free(retval);
+		VAV_Free(argv);
 		return;
 	}
 
 	AZ(pthread_mutex_lock(&macro_mtx));
 	VTAILQ_FOREACH(m, &macro_list, list) {
 		CHECK_OBJ_NOTNULL(m, MACRO_MAGIC);
-		if (!strncmp(b, m->name, l) && m->name[l] == '\0')
+		if (!strcmp(argv[1], m->name))
 			break;
 	}
-	if (m != NULL)
-		REPLACE(retval, m->val);
+	if (m != NULL) {
+		if (m->func != NULL) {
+			AZ(m->val);
+			retval = m->func(argc, argv, &err);
+			if (err == NULL)
+				AN(retval);
+		} else {
+			AN(m->val);
+			if (argc == 2)
+				REPLACE(retval, m->val);
+			else
+				err = "macro does not take arguments";
+		}
+	}
 	AZ(pthread_mutex_unlock(&macro_mtx));
+
+	if (err != NULL)
+		vtc_fatal(vl, "Macro ${%.*s} failed: %s",
+		    (int)(e - b), b, err);
 
 	if (retval == NULL) {
 		if (!ign_unknown_macro)
@@ -247,6 +285,7 @@ macro_cat(struct vtclog *vl, struct vsb *vsb, const char *b, const char *e)
 
 	VSB_cat(vsb, retval);
 	free(retval);
+	VAV_Free(argv);
 }
 
 struct vsb *
