@@ -83,6 +83,8 @@ vcc_utype(vcc_type_t t)
 
 static void vcc_expr0(struct vcc *tl, struct expr **e, vcc_type_t fmt);
 static void vcc_expr_cor(struct vcc *tl, struct expr **e, vcc_type_t fmt);
+static void vcc_expr_typecheck(struct vcc *tl, struct expr **e, vcc_type_t fmt,
+    struct token *t1);
 
 static struct expr *
 vcc_new_expr(vcc_type_t fmt)
@@ -1107,12 +1109,16 @@ cmp_simple(struct vcc *tl, struct expr **e, const struct cmps *cp)
 static void v_matchproto_(cmp_f)
 cmp_regexp(struct vcc *tl, struct expr **e, const struct cmps *cp)
 {
+	struct token *t1;
 	struct expr *e2;
 	char buf[128];
 
 	*e = vcc_expr_edit(tl, STRING, "\vS", *e, NULL);
 	vcc_NextToken(tl);
-	vcc_expr0(tl, &e2, REGEX);
+	t1 = tl->t;
+	vcc_expr4(tl, &e2, REGEX);
+	ERRCHK(tl);
+	vcc_expr_typecheck(tl, &e2, REGEX, t1);
 	ERRCHK(tl);
 	bprintf(buf, "%sVRT_re_match(ctx, \v1, \v2)", cp->emit);
 	*e = vcc_expr_edit(tl, BOOL, buf, *e, e2);
@@ -1121,11 +1127,15 @@ cmp_regexp(struct vcc *tl, struct expr **e, const struct cmps *cp)
 static void v_matchproto_(cmp_f)
 cmp_acl(struct vcc *tl, struct expr **e, const struct cmps *cp)
 {
+	struct token *t1;
 	struct expr *e2;
 	char buf[256];
 
 	vcc_NextToken(tl);
-	vcc_expr0(tl, &e2, ACL);
+	t1 = tl->t;
+	vcc_expr4(tl, &e2, ACL);
+	ERRCHK(tl);
+	vcc_expr_typecheck(tl, &e2, ACL, t1);
 	ERRCHK(tl);
 	bprintf(buf, "%sVRT_acl_match(ctx, \v1, \v2)", cp->emit);
 	*e = vcc_expr_edit(tl, BOOL, buf, e2, *e);
@@ -1366,8 +1376,6 @@ vcc_expr0(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	t1 = tl->t;
 	if (fmt->stringform)
 		vcc_expr_cor(tl, e, STRINGS);
-	else if (fmt == REGEX)
-		vcc_expr4(tl, e, REGEX);
 	else
 		vcc_expr_cor(tl, e, fmt);
 	ERRCHK(tl);
@@ -1406,11 +1414,21 @@ vcc_expr0(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		ERRCHK(tl);
 	}
 
+	vcc_expr_typecheck(tl, e, fmt, t1);
+}
+
+static void
+vcc_expr_typecheck(struct vcc *tl, struct expr **e, vcc_type_t fmt,
+    struct token *t1)
+{
+
+	assert(fmt != VOID);
+	assert(fmt != STRINGS);
+
 	if (fmt != (*e)->fmt)  {
 		VSB_printf(tl->sb, "Expression has type %s, expected %s\n",
 		    vcc_utype((*e)->fmt), vcc_utype(fmt));
 		vcc_ErrWhere2(tl, t1, tl->t);
-		return;
 	}
 }
 

@@ -151,6 +151,15 @@ varnish v1 -errvcl {Symbols named 'vcl_*' are reserved.} {
 	}
 }
 
+# 3628
+varnish v1 -vcl {
+	backend be none;
+	acl foo { }
+	sub vcl_recv {
+		if (client.ip ~ foo || server.ip ~ foo) { }
+	}
+}
+
 varnish v1 -errvcl {Expression has type BOOL, expected ACL} {
 	sub vcl_recv {
 		if (client.ip ~ true) { }
