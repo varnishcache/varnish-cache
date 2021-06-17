@@ -648,6 +648,32 @@ ip_magic(void)
 }
 
 /**********************************************************************
+ * Macros
+ */
+
+static char * v_matchproto_(macro_f)
+macro_func_date(int argc, char *const *argv, const char **err)
+{
+	double t;
+	char *s;
+
+	assert(argc >= 2);
+	AN(argv);
+	AN(err);
+
+	if (argc > 2) {
+		*err = "macro does not take arguments";
+		return (NULL);
+	}
+
+	t = VTIM_real();
+	s = malloc(VTIM_FORMAT_SIZE);
+	AN(s);
+	VTIM_format(t, s);
+	return (s);
+}
+
+/**********************************************************************
  * Main
  */
 
@@ -726,6 +752,8 @@ main(int argc, char * const *argv)
 
 	cwd = getcwd(buf, sizeof buf);
 	extmacro_def("pwd", NULL, "%s", cwd);
+
+	extmacro_def("date", macro_func_date, NULL);
 
 	vmod_path = NULL;
 
