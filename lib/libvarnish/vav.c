@@ -141,14 +141,13 @@ char **
 VAV_ParseTxt(const char *b, const char *e, int *argc, int flag)
 {
 	char **argv;
-	const char *s, *p;
+	const char *p;
 	int nargv, largv;
 	int i, quote;
 
 	AN(b);
 	if (e == NULL)
 		e = strchr(b, '\0');
-	s = b;
 	nargv = 1;
 	largv = 16;
 	argv = calloc(largv, sizeof *argv);
@@ -156,62 +155,62 @@ VAV_ParseTxt(const char *b, const char *e, int *argc, int flag)
 		return (NULL);
 
 	for (;;) {
-		if (s >= e)
+		if (b >= e)
 			break;
-		if (isspace(*s)) {
-			s++;
+		if (isspace(*b)) {
+			b++;
 			continue;
 		}
-		if ((flag & ARGV_COMMENT) && *s == '#')
+		if ((flag & ARGV_COMMENT) && *b == '#')
 			break;
-		if (*s == '"' && !(flag & ARGV_NOESC)) {
-			p = ++s;
+		if (*b == '"' && !(flag & ARGV_NOESC)) {
+			p = ++b;
 			quote = 1;
 		} else {
-			p = s;
+			p = b;
 			quote = 0;
 		}
 		while (1) {
-			if (*s == '\\' && !(flag & ARGV_NOESC)) {
-				i = VAV_BackSlash(s, NULL);
+			if (*b == '\\' && !(flag & ARGV_NOESC)) {
+				i = VAV_BackSlash(b, NULL);
 				if (i == 0) {
 					argv[0] = err_invalid_backslash;
 					return (argv);
 				}
-				s += i;
+				b += i;
 				continue;
 			}
 			if (!quote) {
-				if (s >= e || isspace(*s))
+				if (b >= e || isspace(*b))
 					break;
-				if ((flag & ARGV_COMMA) && *s == ',')
+				if ((flag & ARGV_COMMA) && *b == ',')
 					break;
-				s++;
+				b++;
 				continue;
 			}
-			if (*s == '"' && !(flag & ARGV_NOESC))
+			if (*b == '"' && !(flag & ARGV_NOESC))
 				break;
-			if (s >= e) {
+			if (b >= e) {
 				argv[0] = err_missing_quote;
 				return (argv);
 			}
-			s++;
+			b++;
 		}
 		if (nargv + 1 >= largv) {
 			argv = realloc(argv, sizeof (*argv) * (largv += largv));
 			assert(argv != NULL);
 		}
 		if (flag & ARGV_NOESC) {
-			argv[nargv] = malloc(1L + (s - p));
+			argv[nargv] = malloc(1L + (b - p));
 			assert(argv[nargv] != NULL);
-			memcpy(argv[nargv], p, s - p);
-			argv[nargv][s - p] = '\0';
+			memcpy(argv[nargv], p, b - p);
+			argv[nargv][b - p] = '\0';
 			nargv++;
 		} else {
-			argv[nargv++] = VAV_BackSlashDecode(p, s);
+			argv[nargv++] = VAV_BackSlashDecode(p, b);
 		}
-		if (s < e)
-			s++;
+		if (b < e)
+			b++;
 	}
 	argv[nargv] = NULL;
 	if (argc != NULL)
