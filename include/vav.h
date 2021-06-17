@@ -31,6 +31,7 @@
  */
 
 void VAV_Free(char **argv);
+char **VAV_ParseTxt(const char *b, const char *e, int *argc, int flag);
 char **VAV_Parse(const char *s, int *argc, int flag);
 char *VAV_BackSlashDecode(const char *s, const char *e);
 int VAV_BackSlash(const char *s, char *res);
