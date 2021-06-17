@@ -134,14 +134,17 @@ static char err_invalid_backslash[] = "Invalid backslash sequence";
 static char err_missing_quote[] = "Missing '\"'";
 
 char **
-VAV_Parse(const char *s, int *argc, int flag)
+VAV_ParseTxt(const char *b, const char *e, int *argc, int flag)
 {
 	char **argv;
-	const char *p;
+	const char *s, *p;
 	int nargv, largv;
 	int i, quote;
 
-	assert(s != NULL);
+	AN(b);
+	if (e == NULL)
+		e = strchr(b, '\0');
+	s = b;
 	nargv = 1;
 	largv = 16;
 	argv = calloc(largv, sizeof *argv);
@@ -149,7 +152,7 @@ VAV_Parse(const char *s, int *argc, int flag)
 		return (NULL);
 
 	for (;;) {
-		if (*s == '\0')
+		if (s >= e)
 			break;
 		if (isspace(*s)) {
 			s++;
@@ -175,7 +178,7 @@ VAV_Parse(const char *s, int *argc, int flag)
 				continue;
 			}
 			if (!quote) {
-				if (*s == '\0' || isspace(*s))
+				if (s >= e || isspace(*s))
 					break;
 				if ((flag & ARGV_COMMA) && *s == ',')
 					break;
@@ -184,7 +187,7 @@ VAV_Parse(const char *s, int *argc, int flag)
 			}
 			if (*s == '"' && !(flag & ARGV_NOESC))
 				break;
-			if (*s == '\0') {
+			if (s >= e) {
 				argv[0] = err_missing_quote;
 				return (argv);
 			}
@@ -203,13 +206,20 @@ VAV_Parse(const char *s, int *argc, int flag)
 		} else {
 			argv[nargv++] = VAV_BackSlashDecode(p, s);
 		}
-		if (*s != '\0')
+		if (s < e)
 			s++;
 	}
 	argv[nargv] = NULL;
 	if (argc != NULL)
 		*argc = nargv;
 	return (argv);
+}
+
+char **
+VAV_Parse(const char *s, int *argc, int flag)
+{
+
+	return (VAV_ParseTxt(s, NULL, argc, flag));
 }
 
 void
