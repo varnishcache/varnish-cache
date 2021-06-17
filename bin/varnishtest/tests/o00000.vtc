@@ -199,7 +199,7 @@ varnish v1 -vsl_catchup
 
 # Try with appended request (See also: #1728)
 client c2 {
-	send "PROXY TCP6 1:f::3 5:a::8 1234 5678\r\nGET /3 HTTP/1.1\r\nHost: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\r\n\r\n"
+	send "PROXY TCP6 1:f::3 5:a::8 1234 5678\r\nGET /3 HTTP/1.1\r\nHost: ${string,repeat,54,a}\r\n\r\n"
 	rxresp
 	expect resp.http.url == "/3"
 } -run
@@ -217,7 +217,7 @@ varnish v1 -vsl_catchup
 # Malformed, too long (106)
 # NB: Should check VSL for proper disposal
 client c2 {
-	send "PROXY TCP4 1.2.3.4 5.6.7.8 1234 5678                                                                     \r\n"
+	send "PROXY TCP4 1.2.3.4 5.6.7.8 1234 5678 ${string,repeat,68," "}\r\n"
 	expect_close
 } -run
 
@@ -226,7 +226,7 @@ varnish v1 -vsl_catchup
 # Malformed, too long (107)
 # NB: Should check VSL for proper disposal
 client c2 {
-	send "PROXY TCP4 1.2.3.4 5.6.7.8 1234 5678                                                                      \r\n"
+	send "PROXY TCP4 1.2.3.4 5.6.7.8 1234 5678 ${string,repeat,69," "}\r\n"
 	expect_close
 } -run
 
@@ -235,7 +235,7 @@ varnish v1 -vsl_catchup
 # Malformed, too long (108)
 # NB: Should check VSL for proper disposal
 client c2 {
-	send "PROXY TCP4 1.2.3.4 5.6.7.8 1234 5678                                                                       \r\n"
+	send "PROXY TCP4 1.2.3.4 5.6.7.8 1234 5678 ${string,repeat,70," "}\r\n"
 	expect_close
 } -run
 
