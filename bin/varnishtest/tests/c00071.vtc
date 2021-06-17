@@ -22,7 +22,7 @@ varnish v1 -arg "-p debug=+workspace" -vcl+backend {
 			vtc.workspace_alloc(client, -10);
 		}
 		else if (req.url ~ "/baz") {
-			set resp.http.x-foo = regsub(req.url, "baz", "baaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaz");
+			set resp.http.x-foo = regsub(req.url, "baz", "b${string,repeat,91,a}z");
 			std.log("dummy");
 			std.syslog(8 + 7, "vtc: " + 1 + 2);
 		}
