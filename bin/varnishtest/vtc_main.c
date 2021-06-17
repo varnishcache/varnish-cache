@@ -161,7 +161,7 @@ parse_D_opt(char *arg)
 	if (!q)
 		return (0);
 	*q++ = '\0';
-	extmacro_def(p, "%s", q);
+	extmacro_def(p, NULL, "%s", q);
 
 	return (1);
 }
@@ -504,7 +504,8 @@ i_mode(void)
 
 	}
 	AN(topbuild);
-	extmacro_def("topbuild", "%s", topbuild);
+	extmacro_def("topbuild", NULL, "%s", topbuild);
+
 	/*
 	 * Build $PATH which can find all programs in the build tree
 	 */
@@ -571,7 +572,7 @@ ip_magic(void)
 	fd = VTCP_bind(sa, NULL);
 	assert(fd >= 0);
 	VTCP_myname(fd, abuf, sizeof abuf, pbuf, sizeof(pbuf));
-	extmacro_def("localhost", "%s", abuf);
+	extmacro_def("localhost", NULL, "%s", abuf);
 
 #if defined (__APPLE__)
 	/*
@@ -583,7 +584,7 @@ ip_magic(void)
 #endif
 
 	/* Expose a backend that is forever down. */
-	extmacro_def("bad_backend", "%s %s", abuf, pbuf);
+	extmacro_def("bad_backend", NULL, "%s %s", abuf, pbuf);
 
 	/*
 	 * We need an IP number which will not repond, ever, and that is a
@@ -593,7 +594,7 @@ ip_magic(void)
 	 * check your /proc/sys/net/ipv4/ip_nonlocal_bind setting.
 	 */
 
-	extmacro_def("bad_ip", "%s", "192.0.2.255");
+	extmacro_def("bad_ip", NULL, "%s", "192.0.2.255");
 }
 
 /**********************************************************************
@@ -673,7 +674,7 @@ main(int argc, char * const *argv)
 		tmppath = strdup("/tmp");
 
 	cwd = getcwd(buf, sizeof buf);
-	extmacro_def("pwd", "%s", cwd);
+	extmacro_def("pwd", NULL, "%s", cwd);
 
 	vmod_path = NULL;
 
