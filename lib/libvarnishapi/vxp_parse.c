@@ -279,7 +279,7 @@ vxp_expr_regex(struct vxp *vxp, struct vex_rhs **prhs)
 	(*prhs)->type = VEX_REGEX;
 	(*prhs)->val_string = strdup(vxp->t->dec);
 	(*prhs)->val_regex = VRE_compile(vxp->t->dec, vxp->vre_options,
-	    &err, &erroff);
+	    &err, &erroff, 1);
 	if ((*prhs)->val_regex == NULL) {
 		AZ(VRE_error(err, errbuf));
 		VSB_printf(vxp->sb, "Regular expression error: %s ", errbuf);

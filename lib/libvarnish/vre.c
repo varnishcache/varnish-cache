@@ -76,7 +76,7 @@ const unsigned VRE_CASELESS = PCRE2_CASELESS;
 
 vre_t *
 VRE_compile(const char *pattern, unsigned options,
-    int *errptr, int *erroffset)
+    int *errptr, int *erroffset, unsigned jit)
 {
 	PCRE2_SIZE erroff;
 	vre_t *v;
@@ -101,15 +101,18 @@ VRE_compile(const char *pattern, unsigned options,
 		VRE_free(&v);
 		return (NULL);
 	}
-#if USE_PCRE2_JIT
-	(void)pcre2_jit_compile(v->re, 0);
-#endif
 	v->re_ctx = pcre2_match_context_create(NULL);
 	if (v->re_ctx == NULL) {
 		*errptr = PCRE2_ERROR_NOMEMORY;
 		VRE_free(&v);
 		return (NULL);
 	}
+#if USE_PCRE2_JIT
+	if (jit)
+		(void)pcre2_jit_compile(v->re, 0);
+#else
+	(void)jit;
+#endif
 	return (v);
 }
 

@@ -649,7 +649,7 @@ cmd_logexp_common(struct logexp *le, struct vtclog *vl,
 	}
 	vre = NULL;
 	if (av[4]) {
-		vre = VRE_compile(av[4], 0, &err, &pos);
+		vre = VRE_compile(av[4], 0, &err, &pos, 1);
 		if (vre == NULL) {
 			AZ(VRE_error(err, errbuf));
 			vtc_fatal(vl, "Regex error (%s): '%s' pos %d",

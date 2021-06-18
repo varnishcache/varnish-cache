@@ -405,7 +405,7 @@ cmd_syslog_expect(CMD_ARGS)
 
 	assert(!strcmp(cmp, "~") || !strcmp(cmp, "!~"));
 
-	vre = VRE_compile(spec, 0, &error, &erroroffset);
+	vre = VRE_compile(spec, 0, &error, &erroroffset, 1);
 	if (vre == NULL) {
 		AZ(VRE_error(error, errbuf));
 		vtc_fatal(s->vl, "REGEXP error: '%s' (@%d) (%s)",

@@ -745,7 +745,7 @@ varnish_cli(struct varnish *v, const char *cli, unsigned exp, const char *re)
 
 	VARNISH_LAUNCH(v);
 	if (re != NULL) {
-		vre = VRE_compile(re, 0, &err, &erroff);
+		vre = VRE_compile(re, 0, &err, &erroff, 1);
 		if (vre == NULL) {
 			AZ(VRE_error(err, errbuf));
 			vtc_fatal(v->vl, "Illegal regexp: %s (@%d)",

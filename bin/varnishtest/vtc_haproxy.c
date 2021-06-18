@@ -317,7 +317,7 @@ cmd_haproxy_cli_expect(CMD_ARGS)
 
 	haproxy_cli_recv(hc);
 
-	vre = VRE_compile(spec, 0, &error, &erroroffset);
+	vre = VRE_compile(spec, 0, &error, &erroroffset, 1);
 	if (vre == NULL) {
 		AZ(VRE_error(error, errbuf));
 		vtc_fatal(hc->vl, "CLI regexp error: '%s' (@%d) (%s)",

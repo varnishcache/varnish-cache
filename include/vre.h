@@ -55,7 +55,7 @@ extern const int VRE_ERROR_NOMATCH;
 /* And those to PCRE2 options */
 extern const unsigned VRE_CASELESS;
 
-vre_t *VRE_compile(const char *, unsigned, int *, int *);
+vre_t *VRE_compile(const char *, unsigned, int *, int *, unsigned);
 int VRE_error(int err, char *buf);
 int VRE_match(const vre_t *code, const char *subject, size_t length,
     int options, const volatile struct vre_limits *lim);
