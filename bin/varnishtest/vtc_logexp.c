@@ -394,8 +394,7 @@ logexp_match(const struct logexp *le, struct logexp_test *test,
 	if (test->vre &&
 	    test->tag >= 0 &&
 	    test->tag == tag &&
-	    VRE_ERROR_NOMATCH == VRE_exec(test->vre, data,
-		len, 0, 0, NULL, 0, NULL))
+	    VRE_ERROR_NOMATCH == VRE_match(test->vre, data, len, 0, NULL))
 		ok = 0;
 
 	alt = (test->skip_max == LE_ALT);

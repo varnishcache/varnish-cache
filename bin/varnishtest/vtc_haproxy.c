@@ -323,7 +323,7 @@ cmd_haproxy_cli_expect(CMD_ARGS)
 		vtc_fatal(hc->vl, "CLI regexp error: '%s' (@%d) (%s)",
 		    error, erroroffset, spec);
 
-	i = VRE_exec(vre, hc->rxbuf, strlen(hc->rxbuf), 0, 0, NULL, 0, 0);
+	i = VRE_match(vre, hc->rxbuf, 0, 0, NULL);
 
 	VRE_free(&vre);
 
