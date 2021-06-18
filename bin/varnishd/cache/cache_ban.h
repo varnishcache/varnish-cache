@@ -55,11 +55,6 @@
  *	4 bytes - be32: length
  *	n bytes - content
  *
- * In a perfect world, we should vector through VRE to get to PCRE,
- * but since we rely on PCRE's ability to encode the regexp into a
- * byte string, that would be a little bit artificial, so this is
- * the exception that confirms the rule.
- *
  */
 
 /*--------------------------------------------------------------------

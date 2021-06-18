@@ -32,7 +32,7 @@
 
 #include "config.h"
 
-#include <pcre.h>
+#include <stdlib.h>
 #include <stdio.h>
 
 #include "cache_varnishd.h"
@@ -495,6 +495,7 @@ ban_evaluate(struct worker *wrk, const uint8_t *bsarg, struct objcore *oc,
 	const char *p;
 	const char *arg1;
 	double darg1, darg2;
+	int rv;
 
 	/*
 	 * for ttl and age, fix the point in time such that banning refers to
@@ -567,15 +568,15 @@ ban_evaluate(struct worker *wrk, const uint8_t *bsarg, struct objcore *oc,
 			}
 			break;
 		case BANS_OPER_MATCH:
-			if (arg1 == NULL ||
-			    pcre_exec(bt.arg2_spec, NULL, arg1, strlen(arg1),
-			    0, 0, NULL, 0) < 0)
+			rv = VRE_match(bt.arg2_spec, arg1, 0, 0, NULL);
+			xxxassert(rv >= -1);
+			if (arg1 == NULL || rv < 0)
 				return (0);
 			break;
 		case BANS_OPER_NMATCH:
-			if (arg1 != NULL &&
-			    pcre_exec(bt.arg2_spec, NULL, arg1, strlen(arg1),
-			    0, 0, NULL, 0) >= 0)
+			rv = VRE_match(bt.arg2_spec, arg1, 0, 0, NULL);
+			xxxassert(rv >= -1);
+			if (arg1 == NULL || rv >= 0)
 				return (0);
 			break;
 		case BANS_OPER_GT:
