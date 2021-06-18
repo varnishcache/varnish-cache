@@ -32,7 +32,7 @@
 
 #include "config.h"
 
-#include <pcre2.h>
+#include <stdlib.h>
 
 #include "cache_varnishd.h"
 #include "cache_ban.h"
@@ -40,6 +40,7 @@
 #include "vend.h"
 #include "vtim.h"
 #include "vnum.h"
+#include "vre.h"
 
 void BAN_Build_Init(void);
 void BAN_Build_Fini(void);
@@ -187,20 +188,22 @@ ban_parse_http(const struct ban_proto *bp, const char *a1)
 static const char *
 ban_parse_regexp(struct ban_proto *bp, const char *a3)
 {
-	const char *error = "TODO";
-	int errorcode, rc;
+	char errbuf[VRE_ERROR_LEN];
+	int errorcode, erroroffset;
 	size_t sz;
-	PCRE2_SIZE erroroffset;
-	pcre2_code *re;
+	vre_t *re, *rex;
 
-	re = pcre2_compile((PCRE2_SPTR)a3, PCRE2_ZERO_TERMINATED, 0,
-	    &errorcode, &erroroffset, NULL);
-	if (re == NULL)
-		return (ban_error(bp, "Regex compile error: %s", error));
-	rc = pcre2_pattern_info(re, PCRE2_INFO_SIZE, &sz);
-	AZ(rc);
-	ban_add_lump(bp, re, sz);
-	pcre2_code_free(re);
+	re = VRE_compile(a3, 0, &errorcode, &erroroffset, 0);
+	if (re == NULL) {
+		AZ(VRE_error(errorcode, errbuf));
+		return (ban_error(bp, "Regex compile error: %s", errbuf));
+	}
+
+	rex = VRE_export(re, &sz);
+	AN(rex);
+	ban_add_lump(bp, rex, sz);
+	VRE_free(&rex);
+	VRE_free(&re);
 	return (0);
 }
 

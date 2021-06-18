@@ -32,7 +32,7 @@
 
 #include "config.h"
 
-#include <pcre2.h>
+#include <stdlib.h>
 #include <stdio.h>
 
 #include "cache_varnishd.h"
@@ -71,8 +71,6 @@ static const char * const arg_name[BAN_ARGARRSZ + 1] = {
 #include "tbl/ban_vars.h"
 	[BAN_ARGARRSZ] = NULL
 };
-
-static pcre2_match_data *dummy_match_data;
 
 /*--------------------------------------------------------------------
  * Storage handling of bans
@@ -570,17 +568,13 @@ ban_evaluate(struct worker *wrk, const uint8_t *bsarg, struct objcore *oc,
 			}
 			break;
 		case BANS_OPER_MATCH:
-			rv = pcre2_match(bt.arg2_spec, (PCRE2_SPTR)arg1,
-			    PCRE2_ZERO_TERMINATED, 0, 0, dummy_match_data,
-			    NULL);
+			rv = VRE_match(bt.arg2_spec, arg1, 0, 0, NULL);
 			xxxassert(rv >= -1);
 			if (arg1 == NULL || rv < 0)
 				return (0);
 			break;
 		case BANS_OPER_NMATCH:
-			rv = pcre2_match(bt.arg2_spec, (PCRE2_SPTR)arg1,
-			    PCRE2_ZERO_TERMINATED, 0, 0, dummy_match_data,
-			    NULL);
+			rv = VRE_match(bt.arg2_spec, arg1, 0, 0, NULL);
 			xxxassert(rv >= -1);
 			if (arg1 == NULL || rv >= 0)
 				return (0);
@@ -1000,12 +994,6 @@ BAN_Init(void)
 	Lck_Lock(&ban_mtx);
 	ban_mark_completed(VTAILQ_FIRST(&ban_head));
 	Lck_Unlock(&ban_mtx);
-
-	/* XXX: this is probably not thread-safe, but until the ban code
-	 * migrates to VRE it should be a good-enough transition.
-	 */
-	dummy_match_data = pcre2_match_data_create(30, NULL);
-	AN(dummy_match_data);
 }
 
 /*--------------------------------------------------------------------

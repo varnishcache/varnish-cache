@@ -193,7 +193,6 @@ VRE_match(const vre_t *code, const char *subject, size_t length,
 	re = vre_unpack(code);
 	vre_limit(code, lim);
 
-	/* XXX: keep a dummy match_data around */
 	data = pcre2_match_data_create_from_pattern(re, NULL);
 	AN(data);
 
