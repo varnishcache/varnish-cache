@@ -46,6 +46,7 @@
 #include "vnum.h"
 #include "vqueue.h"
 #include "vre.h"
+#include "vsb.h"
 
 #include "vapi/vsl.h"
 
@@ -245,11 +246,14 @@ vsl_ix_arg(struct VSL_data *vsl, int opt, const char *arg)
 static int
 vsl_IX_arg(struct VSL_data *vsl, int opt, const char *arg)
 {
-	int i, l, off;
-	const char *b, *e, *err;
+	int i, l, off, err;
+	const char *b, *e;
 	vre_t *vre;
+	struct vsb vsb[1];
 	struct vslf *vslf;
 	struct vbitmap *tags = NULL;
+	char errbuf[VRE_ERROR_LEN];
+
 
 	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
 	AN(arg);
@@ -283,8 +287,12 @@ vsl_IX_arg(struct VSL_data *vsl, int opt, const char *arg)
 	if (vre == NULL) {
 		if (tags)
 			vbit_destroy(tags);
+		AN(VSB_init(vsb, errbuf, sizeof errbuf));
+		AZ(VRE_error(vsb, err));
+		AZ(VSB_finish(vsb));
+		VSB_fini(vsb);
 		return (vsl_diag(vsl, "-%c: Regex error at position %d (%s)",
-		    (char)opt, off, err));
+		    (char)opt, off, errbuf));
 	}
 
 	ALLOC_OBJ(vslf, VSLF_MAGIC);

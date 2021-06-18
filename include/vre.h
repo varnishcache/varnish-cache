@@ -37,6 +37,8 @@
 #ifndef VRE_H_INCLUDED
 #define VRE_H_INCLUDED
 
+#define VRE_ERROR_LEN	128
+
 struct vre;
 struct vsb;
 
@@ -54,7 +56,8 @@ typedef struct vre vre_t;
 extern const unsigned VRE_has_jit;
 extern const unsigned VRE_CASELESS;
 
-vre_t *VRE_compile(const char *, unsigned, const char **, int *);
+vre_t *VRE_compile(const char *, unsigned, int *, int *);
+int VRE_error(struct vsb *, int err);
 int VRE_match(const vre_t *code, const char *subject, size_t length,
     int options, const volatile struct vre_limits *lim);
 int VRE_sub(const vre_t *code, const char *subject, const char *replacement,

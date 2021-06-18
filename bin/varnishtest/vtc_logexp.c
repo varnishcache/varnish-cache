@@ -624,13 +624,11 @@ static void
 cmd_logexp_common(struct logexp *le, struct vtclog *vl,
     int skip_max, char * const *av)
 {
-	int vxid;
-	int tag;
 	vre_t *vre;
-	const char *err;
-	int pos;
+	struct vsb vsb[1];
+	int err, pos, tag, vxid;
 	struct logexp_test *test;
-	char *end;
+	char *end, errbuf[VRE_ERROR_LEN];
 
 	if (!strcmp(av[2], "*"))
 		vxid = LE_ANY;
@@ -653,9 +651,14 @@ cmd_logexp_common(struct logexp *le, struct vtclog *vl,
 	vre = NULL;
 	if (av[4]) {
 		vre = VRE_compile(av[4], 0, &err, &pos);
-		if (vre == NULL)
+		if (vre == NULL) {
+			AN(VSB_init(vsb, errbuf, sizeof errbuf));
+			AZ(VRE_error(vsb, err));
+			AZ(VSB_finish(vsb));
+			VSB_fini(vsb);
 			vtc_fatal(vl, "Regex error (%s): '%s' pos %d",
-			    err, av[4], pos);
+			    errbuf, av[4], pos);
+		}
 	}
 
 	ALLOC_OBJ(test, LOGEXP_TEST_MAGIC);

@@ -42,8 +42,7 @@ void
 VPI_re_init(vre_t **rep, const char *re)
 {
 	vre_t *t;
-	const char *error;
-	int erroroffset;
+	int error, erroroffset;
 
 	/* This was already check-compiled by the VCL compiler */
 	t = VRE_compile(re, 0, &error, &erroroffset);
