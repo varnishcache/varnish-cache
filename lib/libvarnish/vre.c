@@ -55,7 +55,6 @@ struct vre {
 #define VRE_MAGIC		0xe83097dc
 	pcre2_code		*re;
 	pcre2_match_context	*re_ctx;
-	PCRE2_UCHAR		err_buf[128];
 };
 
 /*
@@ -77,27 +76,27 @@ const unsigned VRE_CASELESS = PCRE2_CASELESS;
 
 vre_t *
 VRE_compile(const char *pattern, unsigned options,
-    const char **errptr, int *erroffset)
+    int *errptr, int *erroffset)
 {
 	PCRE2_SIZE erroff;
-	int errcode = 0;
 	vre_t *v;
-	*errptr = NULL; *erroffset = 0;
+
+	AN(pattern);
+	AZ(options & (~VRE_MASK_COMPILE));
+	AN(errptr);
+	AN(erroffset);
+
+	*errptr = 0;
+	*erroffset = -1;
 
 	ALLOC_OBJ(v, VRE_MAGIC);
 	if (v == NULL) {
-		*errptr = "Out of memory for VRE";
+		*errptr = PCRE2_ERROR_NOMEMORY;
 		return (NULL);
 	}
-	AZ(options & (~VRE_MASK_COMPILE));
 	v->re = pcre2_compile((PCRE2_SPTR8)pattern, PCRE2_ZERO_TERMINATED,
-	    options, &errcode, &erroff, NULL);
-	if (errcode) {
-		*erroffset = (int)erroff;
-		(void)pcre2_get_error_message(errcode, v->err_buf,
-		    sizeof(v->err_buf));
-		*errptr = (char *)v->err_buf;
-	}
+	    options, errptr, &erroff, NULL);
+	*erroffset = erroff;
 	if (v->re == NULL) {
 		VRE_free(&v);
 		return (NULL);
@@ -107,11 +106,20 @@ VRE_compile(const char *pattern, unsigned options,
 #endif
 	v->re_ctx = pcre2_match_context_create(NULL);
 	if (v->re_ctx == NULL) {
-		*errptr = "Out of memory for pcre2_match_context";
+		*errptr = PCRE2_ERROR_NOMEMORY;
 		VRE_free(&v);
 		return (NULL);
 	}
 	return (v);
+}
+
+int
+VRE_error(int err, char *buf)
+{
+	int i;
+
+	i = pcre2_get_error_message(err, (PCRE2_UCHAR *)buf, VRE_ERROR_LEN);
+	return (i == PCRE2_ERROR_BADDATA ? -1 : 0);
 }
 
 static void

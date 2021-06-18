@@ -260,8 +260,8 @@ vxp_expr_str(struct vxp *vxp, struct vex_rhs **prhs)
 static void
 vxp_expr_regex(struct vxp *vxp, struct vex_rhs **prhs)
 {
-	const char *errptr;
-	int erroff;
+	int err, erroff;
+	char errbuf[VRE_ERROR_LEN];
 
 	/* XXX: Caseless option */
 
@@ -279,10 +279,10 @@ vxp_expr_regex(struct vxp *vxp, struct vex_rhs **prhs)
 	(*prhs)->type = VEX_REGEX;
 	(*prhs)->val_string = strdup(vxp->t->dec);
 	(*prhs)->val_regex = VRE_compile(vxp->t->dec, vxp->vre_options,
-	    &errptr, &erroff);
+	    &err, &erroff);
 	if ((*prhs)->val_regex == NULL) {
-		AN(errptr);
-		VSB_printf(vxp->sb, "Regular expression error: %s ", errptr);
+		AZ(VRE_error(err, errbuf));
+		VSB_printf(vxp->sb, "Regular expression error: %s ", errbuf);
 		vxp_ErrWhere(vxp, vxp->t, erroff);
 		return;
 	}

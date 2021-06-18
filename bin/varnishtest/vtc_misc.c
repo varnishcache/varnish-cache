@@ -146,20 +146,22 @@ cmd_shell_engine(struct vtclog *vl, int ok, const char *cmd,
 	struct vsb *vsb;
 	FILE *fp;
 	vre_t *vre = NULL;
-	const char *errptr;
 	int r, c;
-	int err;
+	int err, erroff;
+	char errbuf[VRE_ERROR_LEN];
 
 	AN(vl);
 	AN(cmd);
 	vsb = VSB_new_auto();
 	AN(vsb);
 	if (re != NULL) {
-		vre = VRE_compile(re, 0, &errptr, &err);
-		if (vre == NULL)
+		vre = VRE_compile(re, 0, &err, &erroff);
+		if (vre == NULL) {
+			AZ(VRE_error(err, errbuf));
 			vtc_fatal(vl,
 			    "shell_match invalid regexp (\"%s\" at %d)",
-			    errptr, err);
+			    errbuf, erroff);
+		}
 	}
 	VSB_printf(vsb, "exec 2>&1 ; %s", cmd);
 	AZ(VSB_finish(vsb));

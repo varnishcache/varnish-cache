@@ -389,9 +389,8 @@ cmd_syslog_expect(CMD_ARGS)
 {
 	struct syslog_srv *s;
 	vre_t *vre;
-	const char *error;
-	int erroroffset, i, ret;
-	char *cmp, *spec;
+	int error, erroroffset, i, ret;
+	char *cmp, *spec, errbuf[VRE_ERROR_LEN];
 
 	(void)vl;
 	CAST_OBJ_NOTNULL(s, priv, SYSLOG_SRV_MAGIC);
@@ -407,9 +406,11 @@ cmd_syslog_expect(CMD_ARGS)
 	assert(!strcmp(cmp, "~") || !strcmp(cmp, "!~"));
 
 	vre = VRE_compile(spec, 0, &error, &erroroffset);
-	if (!vre)
+	if (vre == NULL) {
+		AZ(VRE_error(error, errbuf));
 		vtc_fatal(s->vl, "REGEXP error: '%s' (@%d) (%s)",
-		    error, erroroffset, spec);
+		    errbuf, erroroffset, spec);
+	}
 
 	i = VRE_match(vre, s->rxbuf, 0, 0, NULL);
 

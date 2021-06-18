@@ -87,10 +87,10 @@ vtc_expect(struct vtclog *vl,
     const char *orhs, const char *rhs)
 {
 	vre_t *vre;
-	const char *error;
-	int erroroffset;
+	int error, erroroffset;
 	int i, j, retval = -1;
 	double fl, fr;
+	char errbuf[VRE_ERROR_LEN];
 
 	j = lhs == NULL || rhs == NULL;
 	if (lhs == NULL)
@@ -100,9 +100,11 @@ vtc_expect(struct vtclog *vl,
 
 	if (!strcmp(cmp, "~") || !strcmp(cmp, "!~")) {
 		vre = VRE_compile(rhs, 0, &error, &erroroffset);
-		if (vre == NULL)
+		if (vre == NULL) {
+			AZ(VRE_error(error, errbuf));
 			vtc_fatal(vl, "REGEXP error: %s (@%d) (%s)",
-			    error, erroroffset, rhs);
+			    errbuf, erroroffset, rhs);
+		}
 		i = VRE_match(vre, lhs, 0, 0, NULL);
 		retval = (i >= 0 && *cmp == '~') || (i < 0 && *cmp == '!');
 		VRE_free(&vre);

@@ -51,18 +51,18 @@
 void
 vcc_regexp(struct vcc *tl, struct vsb *vgc_name)
 {
-	char buf[BUFSIZ];
+	char buf[BUFSIZ], errbuf[VRE_ERROR_LEN];
 	vre_t *t;
-	const char *error;
-	int erroroffset;
+	int error, erroroffset;
 	struct inifin *ifp;
 
 	assert(tl->t->tok == CSTR);
 
 	t = VRE_compile(tl->t->dec, 0, &error, &erroroffset);
 	if (t == NULL) {
+		AZ(VRE_error(error, errbuf));
 		VSB_printf(tl->sb,
-		    "Regexp compilation error:\n\n%s\n\n", error);
+		    "Regexp compilation error:\n\n%s\n\n", errbuf);
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}
