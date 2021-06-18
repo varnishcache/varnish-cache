@@ -57,6 +57,7 @@ extern const unsigned VRE_has_jit;
 extern const unsigned VRE_CASELESS;
 
 vre_t *VRE_compile(const char *, unsigned, int *, int *, unsigned);
+vre_t *VRE_export(const vre_t *, size_t *);
 int VRE_error(struct vsb *, int err);
 int VRE_match(const vre_t *code, const char *subject, size_t length,
     int options, const volatile struct vre_limits *lim);

@@ -32,6 +32,7 @@
 
 #include <pcre.h>
 #include <ctype.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -55,6 +56,8 @@ const unsigned VRE_has_jit = VRE_STUDY_JIT_COMPILE;
 #if PCRE_MAJOR < 8 || (PCRE_MAJOR == 8 && PCRE_MINOR < 20)
 #  define pcre_free_study pcre_free
 #endif
+
+#define VRE_PACKED_RE		(pcre *)(-1)
 
 struct vre {
 	unsigned		magic;
@@ -138,27 +141,64 @@ VRE_error(struct vsb *vsb, int err)
 	return (0);
 }
 
+static pcre *
+vre_unpack(const vre_t *code)
+{
+
+	CHECK_OBJ_NOTNULL(code, VRE_MAGIC);
+	if (code->re == VRE_PACKED_RE) {
+		AZ(code->re_extra);
+		AZ(code->my_extra);
+		return (TRUST_ME(code + 1));
+	}
+	return (code->re);
+}
+
+vre_t *
+VRE_export(const vre_t *code, size_t *sz)
+{
+	pcre *re;
+	vre_t *exp;
+
+	CHECK_OBJ_NOTNULL(code, VRE_MAGIC);
+	re = vre_unpack(code);
+	AZ(pcre_fullinfo(re, NULL, PCRE_INFO_SIZE, sz));
+
+	exp = malloc(sizeof(*exp) + *sz);
+	if (exp == NULL)
+		return (NULL);
+
+	INIT_OBJ(exp, VRE_MAGIC);
+	exp->re = VRE_PACKED_RE;
+	memcpy(exp + 1, re, *sz);
+	*sz += sizeof(*exp);
+	return (exp);
+}
+
 static int
 vre_exec(const vre_t *code, const char *subject, int length,
     int startoffset, int options, int *ovector, int ovecsize,
     const volatile struct vre_limits *lim)
 {
+	pcre *re;
 
 	CHECK_OBJ_NOTNULL(code, VRE_MAGIC);
 	AN(ovector);
 
 	if (lim != NULL) {
 		/* XXX: not reentrant */
+		AN(code->re_extra);
 		code->re_extra->match_limit = lim->match;
 		code->re_extra->flags |= PCRE_EXTRA_MATCH_LIMIT;
 		code->re_extra->match_limit_recursion = lim->match_recursion;
 		code->re_extra->flags |= PCRE_EXTRA_MATCH_LIMIT_RECURSION;
-	} else {
+	} else if (code->re_extra != NULL) {
 		code->re_extra->flags &= ~PCRE_EXTRA_MATCH_LIMIT;
 		code->re_extra->flags &= ~PCRE_EXTRA_MATCH_LIMIT_RECURSION;
 	}
 
-	return (pcre_exec(code->re, code->re_extra, subject, length,
+	re = vre_unpack(code);
+	return (pcre_exec(re, code->re_extra, subject, length,
 	    startoffset, options, ovector, ovecsize));
 }
 
@@ -241,6 +281,13 @@ VRE_free(vre_t **vv)
 
 	*vv = NULL;
 	CHECK_OBJ(v, VRE_MAGIC);
+
+	if (v->re == VRE_PACKED_RE) {
+		v->re = NULL;
+		AZ(v->re_extra);
+		AZ(v->my_extra);
+	}
+
 	if (v->re_extra != NULL) {
 		if (v->my_extra)
 			free(v->re_extra);
