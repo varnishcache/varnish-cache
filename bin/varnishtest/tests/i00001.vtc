@@ -38,9 +38,9 @@ varnish v1 -vcl+backend {
 	}
 } -start
 
-logexpect l1 -v v1 -g raw {
-	expect * 1001	VCL_Error	"REAL overflow converting to string.*"
-	expect * 1004	VCL_Error	"INT overflow converting to string.*"
+logexpect l1 -v v1 -g raw -q VCL_Error {
+	expect ? 1001	VCL_Error	"REAL overflow converting to string.*"
+	expect ? 1004	VCL_Error	"INT overflow converting to string.*"
 } -start
 
 client c1 {
