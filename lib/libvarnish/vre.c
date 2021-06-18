@@ -69,15 +69,14 @@ struct vre {
  * here.
  */
 const unsigned VRE_CASELESS = PCRE_CASELESS;
-const unsigned VRE_NOTEMPTY = PCRE_NOTEMPTY;
 
 /*
  * Even though we only have one for each case so far, keep track of masks
- * to differentiate between compile and exec options and enfore the hard
+ * to differentiate between compile and match options and enfore the hard
  * VRE linkage.
  */
 #define VRE_MASK_COMPILE	PCRE_CASELESS
-#define VRE_MASK_EXEC		PCRE_NOTEMPTY
+#define VRE_MASK_MATCH		0
 
 vre_t *
 VRE_compile(const char *pattern, unsigned options,
@@ -115,18 +114,14 @@ VRE_compile(const char *pattern, unsigned options,
 	return (v);
 }
 
-int
-VRE_exec(const vre_t *code, const char *subject, int length,
+static int
+vre_exec(const vre_t *code, const char *subject, int length,
     int startoffset, int options, int *ovector, int ovecsize,
     const volatile struct vre_limits *lim)
 {
-	CHECK_OBJ_NOTNULL(code, VRE_MAGIC);
-	int ov[30];
 
-	if (ovector == NULL) {
-		ovector = ov;
-		ovecsize = sizeof(ov)/sizeof(ov[0]);
-	}
+	CHECK_OBJ_NOTNULL(code, VRE_MAGIC);
+	AN(ovector);
 
 	if (lim != NULL) {
 		/* XXX: not reentrant */
@@ -139,9 +134,25 @@ VRE_exec(const vre_t *code, const char *subject, int length,
 		code->re_extra->flags &= ~PCRE_EXTRA_MATCH_LIMIT_RECURSION;
 	}
 
-	AZ(options & (~VRE_MASK_EXEC));
 	return (pcre_exec(code->re, code->re_extra, subject, length,
 	    startoffset, options, ovector, ovecsize));
+}
+
+int
+VRE_match(const vre_t *code, const char *subject, size_t length,
+    int options, const volatile struct vre_limits *lim)
+{
+	int ovector[30];
+
+	CHECK_OBJ_NOTNULL(code, VRE_MAGIC);
+	AN(subject);
+	AZ(options & (~VRE_MASK_MATCH));
+
+	if (length == 0)
+		length = strlen(subject);
+
+	return (vre_exec(code, subject, length, 0, options,
+	    ovector, 30, lim));
 }
 
 int
@@ -152,7 +163,6 @@ VRE_sub(const vre_t *code, const char *subject, const char *replacement,
 	int i, l;
 	const char *s;
 	unsigned x;
-	int options = 0;
 	int offset = 0;
 	size_t len;
 
@@ -163,7 +173,7 @@ VRE_sub(const vre_t *code, const char *subject, const char *replacement,
 
 	memset(ovector, 0, sizeof(ovector));
 	len = strlen(subject);
-	i = VRE_exec(code, subject, len, 0, options, ovector, 30, lim);
+	i = vre_exec(code, subject, len, 0, 0, ovector, 30, lim);
 
 	if (i <= VRE_ERROR_NOMATCH)
 		return (i);
@@ -189,9 +199,8 @@ VRE_sub(const vre_t *code, const char *subject, const char *replacement,
 		if (!all)
 			break;
 		memset(ovector, 0, sizeof(ovector));
-		options |= VRE_NOTEMPTY;
-		i = VRE_exec(code, subject, len, offset, options, ovector, 30,
-		    lim);
+		i = vre_exec(code, subject, len, offset, PCRE_NOTEMPTY,
+		    ovector, 30, lim);
 		if (i < VRE_ERROR_NOMATCH )
 			return (i);
 	} while (i != VRE_ERROR_NOMATCH);

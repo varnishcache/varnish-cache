@@ -264,13 +264,13 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 		return (0);
 	case '~':		/* ~ */
 		assert(rhs->type == VEX_REGEX && rhs->val_regex != NULL);
-		i = VRE_exec(rhs->val_regex, b, e - b, 0, 0, NULL, 0, NULL);
+		i = VRE_match(rhs->val_regex, b, e - b, 0, NULL);
 		if (i != VRE_ERROR_NOMATCH)
 			return (1);
 		return (0);
 	case T_NOMATCH:		/* !~ */
 		assert(rhs->type == VEX_REGEX && rhs->val_regex != NULL);
-		i = VRE_exec(rhs->val_regex, b, e - b, 0, 0, NULL, 0, NULL);
+		i = VRE_match(rhs->val_regex, b, e - b, 0, NULL);
 		if (i == VRE_ERROR_NOMATCH)
 			return (1);
 		return (0);

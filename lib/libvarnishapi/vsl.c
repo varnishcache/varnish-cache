@@ -173,7 +173,7 @@ vsl_match_IX(struct VSL_data *vsl, const vslf_list *list,
 		CHECK_OBJ_NOTNULL(vslf, VSLF_MAGIC);
 		if (vslf->tags != NULL && !vbit_test(vslf->tags, tag))
 			continue;
-		if (VRE_exec(vslf->vre, cdata, len, 0, 0, NULL, 0, NULL) >= 0)
+		if (VRE_match(vslf->vre, cdata, len, 0, NULL) >= 0)
 			return (1);
 	}
 	return (0);
