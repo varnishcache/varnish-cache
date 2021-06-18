@@ -739,16 +739,22 @@ static void
 varnish_cli(struct varnish *v, const char *cli, unsigned exp, const char *re)
 {
 	enum VCLI_status_e u;
+	struct vsb vsb[1];
 	vre_t *vre = NULL;
-	char *resp = NULL;
-	const char *errptr;
-	int err;
+	char *resp = NULL, errbuf[VRE_ERROR_LEN];
+	int err, erroff;
 
 	VARNISH_LAUNCH(v);
 	if (re != NULL) {
-		vre = VRE_compile(re, 0, &errptr, &err);
-		if (vre == NULL)
-			vtc_fatal(v->vl, "Illegal regexp");
+		vre = VRE_compile(re, 0, &err, &erroff);
+		if (vre == NULL) {
+			AN(VSB_init(vsb, errbuf, sizeof errbuf));
+			AZ(VRE_error(vsb, err));
+			AZ(VSB_finish(vsb));
+			VSB_fini(vsb);
+			vtc_fatal(v->vl, "Illegal regexp: %s (@%d)",
+			    errbuf, erroff);
+		}
 	}
 	u = varnish_ask_cli(v, cli, &resp);
 	vtc_log(v->vl, 2, "CLI %03u <%s>", u, cli);
@@ -756,8 +762,13 @@ varnish_cli(struct varnish *v, const char *cli, unsigned exp, const char *re)
 		vtc_fatal(v->vl, "FAIL CLI response %u expected %u", u, exp);
 	if (vre != NULL) {
 		err = VRE_match(vre, resp, 0, 0, NULL);
-		if (err < 1)
-			vtc_fatal(v->vl, "Expect failed (%d)", err);
+		if (err < 1) {
+			AN(VSB_init(vsb, errbuf, sizeof errbuf));
+			AZ(VRE_error(vsb, err));
+			AZ(VSB_finish(vsb));
+			VSB_fini(vsb);
+			vtc_fatal(v->vl, "Expect failed (%s)", errbuf);
+		}
 		VRE_free(&vre);
 	}
 	free(resp);

@@ -32,6 +32,7 @@
 
 #include <pcre.h>
 #include <ctype.h>
+#include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -80,24 +81,34 @@ const unsigned VRE_CASELESS = PCRE_CASELESS;
 
 vre_t *
 VRE_compile(const char *pattern, unsigned options,
-    const char **errptr, int *erroffset)
+    int *errptr, int *erroffset)
 {
+	const char *errstr = NULL;
 	vre_t *v;
-	*errptr = NULL; *erroffset = 0;
+
+	AN(pattern);
+	AZ(options & (~VRE_MASK_COMPILE));
+	AN(errptr);
+	AN(erroffset);
+
+	*errptr = 0;
+	*erroffset = -1;
 
 	ALLOC_OBJ(v, VRE_MAGIC);
 	if (v == NULL) {
-		*errptr = "Out of memory for VRE";
+		*errptr = PCRE_ERROR_NOMEMORY;
 		return (NULL);
 	}
 	AZ(options & (~VRE_MASK_COMPILE));
-	v->re = pcre_compile(pattern, options, errptr, erroffset, NULL);
+	v->re = pcre_compile2(pattern, options, errptr, &errstr, erroffset,
+	    NULL);
 	if (v->re == NULL) {
 		VRE_free(&v);
 		return (NULL);
 	}
-	v->re_extra = pcre_study(v->re, VRE_STUDY_JIT_COMPILE, errptr);
-	if (*errptr != NULL) {
+	v->re_extra = pcre_study(v->re, VRE_STUDY_JIT_COMPILE, &errstr);
+	if (errstr != NULL) {
+		*errptr = PCRE_ERROR_INTERNAL;
 		VRE_free(&v);
 		return (NULL);
 	}
@@ -106,12 +117,21 @@ VRE_compile(const char *pattern, unsigned options,
 		v->re_extra = calloc(1, sizeof(pcre_extra));
 		v->my_extra = 1;
 		if (v->re_extra == NULL) {
-			*errptr = "Out of memory for pcre_extra";
+			*errptr = PCRE_ERROR_NOMEMORY;
 			VRE_free(&v);
 			return (NULL);
 		}
 	}
 	return (v);
+}
+
+int
+VRE_error(struct vsb *vsb, int err)
+{
+
+	CHECK_OBJ_NOTNULL(vsb, VSB_MAGIC);
+	VSB_printf(vsb, "pcre error %d", err);
+	return (0);
 }
 
 static int
