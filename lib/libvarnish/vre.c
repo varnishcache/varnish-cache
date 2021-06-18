@@ -125,6 +125,13 @@ VRE_error(int err, char *buf)
 	return (i == PCRE2_ERROR_BADDATA ? -1 : 0);
 }
 
+static pcre2_code *
+vre_unpack(const vre_t *code)
+{
+
+	return (code->re);
+}
+
 static void
 vre_limit(const vre_t *code, const volatile struct vre_limits *lim)
 {
@@ -135,6 +142,7 @@ vre_limit(const vre_t *code, const volatile struct vre_limits *lim)
 		return;
 
 	/* XXX: not reentrant */
+	AN(code->re_ctx);
 	pcre2_set_match_limit(code->re_ctx, lim->match);
 	pcre2_set_depth_limit(code->re_ctx, lim->depth);
 }
@@ -144,6 +152,7 @@ VRE_match(const vre_t *code, const char *subject, size_t length,
     int options, const volatile struct vre_limits *lim)
 {
 	pcre2_match_data *data;
+	pcre2_code *re;
 	int matches;
 
 	CHECK_OBJ_NOTNULL(code, VRE_MAGIC);
@@ -153,13 +162,14 @@ VRE_match(const vre_t *code, const char *subject, size_t length,
 	if (length == 0)
 		length = PCRE2_ZERO_TERMINATED;
 
+	re = vre_unpack(code);
 	vre_limit(code, lim);
 
 	/* XXX: keep a dummy match_data around */
-	data = pcre2_match_data_create_from_pattern(code->re, NULL);
+	data = pcre2_match_data_create_from_pattern(re, NULL);
 	AN(data);
 
-	matches =  pcre2_match(code->re, (PCRE2_SPTR)subject, length, 0,
+	matches =  pcre2_match(re, (PCRE2_SPTR)subject, length, 0,
 	    options, data, NULL);
 
 	pcre2_match_data_free(data);
@@ -170,6 +180,7 @@ int
 VRE_sub(const vre_t *code, const char *subject, const char *replacement,
     void *buf, size_t *buf_len, const volatile struct vre_limits *lim, int all)
 {
+	pcre2_code *re;
 	uint32_t options;
 	int matches;
 
@@ -180,13 +191,14 @@ VRE_sub(const vre_t *code, const char *subject, const char *replacement,
 	AN(buf_len);
 	assert(*buf_len > 0);
 
+	re = vre_unpack(code);
 	vre_limit(code, lim);
 
 	options = PCRE2_SUBSTITUTE_EXTENDED|PCRE2_SUBSTITUTE_OVERFLOW_LENGTH;
 	if (all)
 		options |= PCRE2_SUBSTITUTE_GLOBAL;
 
-	matches = pcre2_substitute(code->re,
+	matches = pcre2_substitute(re,
 	    (PCRE2_SPTR)subject, PCRE2_ZERO_TERMINATED, 0,
 	    options, NULL, code->re_ctx,
 	    (PCRE2_SPTR)replacement, PCRE2_ZERO_TERMINATED,
