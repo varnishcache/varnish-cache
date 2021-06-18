@@ -746,7 +746,7 @@ varnish_cli(struct varnish *v, const char *cli, unsigned exp, const char *re)
 
 	VARNISH_LAUNCH(v);
 	if (re != NULL) {
-		vre = VRE_compile(re, 0, &err, &erroff);
+		vre = VRE_compile(re, 0, &err, &erroff, 1);
 		if (vre == NULL) {
 			AN(VSB_init(vsb, errbuf, sizeof errbuf));
 			AZ(VRE_error(vsb, err));

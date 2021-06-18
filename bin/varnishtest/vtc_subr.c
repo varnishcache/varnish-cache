@@ -100,7 +100,7 @@ vtc_expect(struct vtclog *vl,
 		rhs = "<undef>";
 
 	if (!strcmp(cmp, "~") || !strcmp(cmp, "!~")) {
-		vre = VRE_compile(rhs, 0, &error, &erroroffset);
+		vre = VRE_compile(rhs, 0, &error, &erroroffset, 1);
 		if (vre == NULL) {
 			AN(VSB_init(vsb, errbuf, sizeof errbuf));
 			AZ(VRE_error(vsb, error));
