@@ -31,6 +31,7 @@
 #include "config.h"
 
 #include <pcre.h>
+#include <ctype.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -141,6 +142,63 @@ VRE_exec(const vre_t *code, const char *subject, int length,
 	AZ(options & (~VRE_MASK_EXEC));
 	return (pcre_exec(code->re, code->re_extra, subject, length,
 	    startoffset, options, ovector, ovecsize));
+}
+
+int
+VRE_sub(const vre_t *code, const char *subject, const char *replacement,
+    struct vsb *vsb, const volatile struct vre_limits *lim, int all)
+{
+	int ovector[30];
+	int i, l;
+	const char *s;
+	unsigned x;
+	int options = 0;
+	int offset = 0;
+	size_t len;
+
+	CHECK_OBJ_NOTNULL(code, VRE_MAGIC);
+	CHECK_OBJ_NOTNULL(vsb, VSB_MAGIC);
+	AN(subject);
+	AN(replacement);
+
+	memset(ovector, 0, sizeof(ovector));
+	len = strlen(subject);
+	i = VRE_exec(code, subject, len, 0, options, ovector, 30, lim);
+
+	if (i <= VRE_ERROR_NOMATCH)
+		return (i);
+
+	do {
+		/* Copy prefix to match */
+		VSB_bcat(vsb, subject + offset, ovector[0] - offset);
+		for (s = replacement; *s != '\0'; s++ ) {
+			if (*s != '\\' || s[1] == '\0') {
+				VSB_putc(vsb, *s);
+				continue;
+			}
+			s++;
+			if (isdigit(*s)) {
+				x = *s - '0';
+				l = ovector[2*x+1] - ovector[2*x];
+				VSB_bcat(vsb, subject + ovector[2*x], l);
+				continue;
+			}
+			VSB_putc(vsb, *s);
+		}
+		offset = ovector[1];
+		if (!all)
+			break;
+		memset(ovector, 0, sizeof(ovector));
+		options |= VRE_NOTEMPTY;
+		i = VRE_exec(code, subject, len, offset, options, ovector, 30,
+		    lim);
+		if (i < VRE_ERROR_NOMATCH )
+			return (i);
+	} while (i != VRE_ERROR_NOMATCH);
+
+	/* Copy suffix to match */
+	VSB_bcat(vsb, subject + offset, 1 + len - offset);
+	return (1);
 }
 
 void
