@@ -56,6 +56,7 @@ extern const int VRE_ERROR_NOMATCH;
 extern const unsigned VRE_CASELESS;
 
 vre_t *VRE_compile(const char *, unsigned, int *, int *, unsigned);
+vre_t *VRE_export(const vre_t *, size_t *);
 int VRE_error(int err, char *buf);
 int VRE_match(const vre_t *code, const char *subject, size_t length,
     int options, const volatile struct vre_limits *lim);

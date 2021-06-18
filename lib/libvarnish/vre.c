@@ -50,6 +50,8 @@
 #  define pcre2_set_depth_limit(r, d) pcre2_set_recursion_limit(r, d)
 #endif
 
+#define VRE_PACKED_RE		(pcre2_code *)(-1)
+
 struct vre {
 	unsigned		magic;
 #define VRE_MAGIC		0xe83097dc
@@ -129,6 +131,11 @@ static pcre2_code *
 vre_unpack(const vre_t *code)
 {
 
+	CHECK_OBJ_NOTNULL(code, VRE_MAGIC);
+	if (code->re == VRE_PACKED_RE) {
+		AZ(code->re_ctx);
+		return (TRUST_ME(code + 1));
+	}
 	return (code->re);
 }
 
@@ -145,6 +152,27 @@ vre_limit(const vre_t *code, const volatile struct vre_limits *lim)
 	AN(code->re_ctx);
 	pcre2_set_match_limit(code->re_ctx, lim->match);
 	pcre2_set_depth_limit(code->re_ctx, lim->depth);
+}
+
+vre_t *
+VRE_export(const vre_t *code, size_t *sz)
+{
+	pcre2_code *re;
+	vre_t *exp;
+
+	CHECK_OBJ_NOTNULL(code, VRE_MAGIC);
+	re = vre_unpack(code);
+	AZ(pcre2_pattern_info(re, PCRE2_INFO_SIZE, sz));
+
+	exp = malloc(sizeof(*exp) + *sz);
+	if (exp == NULL)
+		return (NULL);
+
+	INIT_OBJ(exp, VRE_MAGIC);
+	exp->re = VRE_PACKED_RE;
+	memcpy(exp + 1, re, *sz);
+	*sz += sizeof(*exp);
+	return (exp);
 }
 
 int
@@ -213,6 +241,12 @@ VRE_free(vre_t **vv)
 
 	*vv = NULL;
 	CHECK_OBJ(v, VRE_MAGIC);
+
+	if (v->re == VRE_PACKED_RE) {
+		v->re = NULL;
+		AZ(v->re_ctx);
+	}
+
 	if (v->re_ctx != NULL)
 		pcre2_match_context_free(v->re_ctx);
 	if (v->re != NULL)
