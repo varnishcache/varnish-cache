@@ -155,7 +155,7 @@ cmd_shell_engine(struct vtclog *vl, int ok, const char *cmd,
 	vsb = VSB_new_auto();
 	AN(vsb);
 	if (re != NULL) {
-		vre = VRE_compile(re, 0, &err, &erroff);
+		vre = VRE_compile(re, 0, &err, &erroff, 1);
 		if (vre == NULL) {
 			AN(VSB_init(re_vsb, errbuf, sizeof errbuf));
 			AZ(VRE_error(re_vsb, err));

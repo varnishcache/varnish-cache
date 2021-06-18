@@ -58,7 +58,7 @@ vcc_regexp(struct vcc *tl, struct vsb *vgc_name)
 
 	assert(tl->t->tok == CSTR);
 
-	t = VRE_compile(tl->t->dec, 0, &error, &erroroffset);
+	t = VRE_compile(tl->t->dec, 0, &error, &erroroffset, 0);
 	if (t == NULL) {
 		VSB_cat(tl->sb, "Regexp compilation error:\n\n");
 		AZ(VRE_error(tl->sb, error));

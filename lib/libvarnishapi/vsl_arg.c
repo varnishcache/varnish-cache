@@ -283,7 +283,7 @@ vsl_IX_arg(struct VSL_data *vsl, int opt, const char *arg)
 		b = e + 1;
 	}
 
-	vre = VRE_compile(b, vsl->C_opt ? VRE_CASELESS : 0, &err, &off);
+	vre = VRE_compile(b, vsl->C_opt ? VRE_CASELESS : 0, &err, &off, 1);
 	if (vre == NULL) {
 		if (tags)
 			vbit_destroy(tags);

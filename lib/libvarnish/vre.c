@@ -81,7 +81,7 @@ const unsigned VRE_CASELESS = PCRE_CASELESS;
 
 vre_t *
 VRE_compile(const char *pattern, unsigned options,
-    int *errptr, int *erroffset)
+    int *errptr, int *erroffset, unsigned jit)
 {
 	const char *errstr = NULL;
 	vre_t *v;
@@ -106,7 +106,11 @@ VRE_compile(const char *pattern, unsigned options,
 		VRE_free(&v);
 		return (NULL);
 	}
-	v->re_extra = pcre_study(v->re, VRE_STUDY_JIT_COMPILE, &errstr);
+
+	errstr = NULL;
+	if (jit)
+		v->re_extra = pcre_study(v->re, VRE_STUDY_JIT_COMPILE, &errstr);
+
 	if (errstr != NULL) {
 		*errptr = PCRE_ERROR_INTERNAL;
 		VRE_free(&v);

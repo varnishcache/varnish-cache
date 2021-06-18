@@ -406,7 +406,7 @@ cmd_syslog_expect(CMD_ARGS)
 
 	assert(!strcmp(cmp, "~") || !strcmp(cmp, "!~"));
 
-	vre = VRE_compile(spec, 0, &error, &erroroffset);
+	vre = VRE_compile(spec, 0, &error, &erroroffset, 1);
 	if (vre == NULL) {
 		AN(VSB_init(vsb, errbuf, sizeof errbuf));
 		AZ(VRE_error(vsb, error));
