@@ -707,6 +707,17 @@ PARAM_SIMPLE(
 )
 
 PARAM_SIMPLE(
+	/* name */	pcre_jit_compilation,
+	/* type */	boolean,
+	/* min */	NULL,
+	/* max */	NULL,
+	/* def */	"on",
+	/* units */	"bool",
+	/* descr */
+	"Use the pcre JIT compiler if available."
+)
+
+PARAM_SIMPLE(
 	/* name */	ping_interval,
 	/* type */	uint,
 	/* min */	"0",
