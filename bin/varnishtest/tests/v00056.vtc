@@ -26,7 +26,7 @@ varnish v1 -vcl {
 
 	probe foo {
 		.url = "/";
-		.timeout = 1s;
+		.timeout = 1m;
 		.interval = 1s;
 		.window = 3;
 		.threshold = 2;
@@ -56,8 +56,14 @@ client c1 {
 	expect resp.status == 500
 } -run
 
+logexpect l1 -v v1 -g raw -q Backend_health {
+	expect 0 0 Backend_health "default Still sick"
+} -start
+
 barrier b1 sync
 barrier b2 sync
+
+logexpect l1 -wait
 
 client c2 {
 	txreq
@@ -65,8 +71,14 @@ client c2 {
 	expect resp.status == 500
 } -run
 
+logexpect l2 -v v1 -g raw -q Backend_health {
+	expect 0 0 Backend_health "default Went healthy"
+} -start
+
 barrier b3 sync
 barrier b4 sync
+
+logexpect l2 -wait
 
 client c3 {
 	txreq
