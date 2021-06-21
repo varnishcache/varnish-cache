@@ -1,0 +1,31 @@
+varnishtest "SLT_Debug can be printed by varnishncsa -j"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import cookie;
+
+	sub vcl_recv {
+		cookie.parse("");
+	}
+} -start
+
+varnish v1 -cliok "param.show vsl_mask +Debug"
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+# Let's fist create a script to reduce in all the variants below.
+
+shell {
+	varnishncsa -d -n ${v1_name} -F '%{VSL:Debug}x' -j | grep "^cookie: nothing to parse\\\\u0000"
+}
+
+shell -err -expect "Tag Debug can contain control characters" {
+	varnishncsa -d -n ${v1_name} -F '%{VSL:Debug}x'
+}
