@@ -41,9 +41,6 @@
 
 #include "vapi/vsl_int.h"
 
-#define VSL_CLASS		"Log"
-#define VSL_SEGMENTS		8U	// power of two
-
 /*
  * Shared memory log format
  *
