@@ -1,0 +1,36 @@
+varnishtest "H/2 data frame padding exhaust window"
+
+server s1 {
+	rxreq
+	expect req.body == abcde
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+} -start
+
+varnish v1 -cliok "param.set feature +http2"
+varnish v1 -cliok "param.reset h2_initial_window_size"
+varnish v1 -cliok "param.reset h2_rx_window_low_water"
+
+client c1 {
+	stream 1 {
+		txreq -req POST -url /1 -hdr "content-length" "5" -nostrend
+
+		# Fill 65535 bytes of stream window using padding only
+		# Note that each frame consumes 256 bytes of window (padlen + 1)
+
+		loop 255 {
+			txdata -padlen 255 -nostrend
+		}
+		txdata -padlen 254 -nostrend
+
+		# Here the window have been exhausted, so we should receive
+		# a window update
+		rxwinup
+
+		txdata -data abcde
+		rxresp
+		expect resp.status == 200
+	} -run
+} -run
