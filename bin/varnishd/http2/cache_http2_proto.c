@@ -772,6 +772,7 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	char buf[4];
 	uint64_t l, l2, head;
 	const uint8_t *src;
+	unsigned len;
 
 	/* XXX: Shouldn't error handling, setting of r2->error and
 	 * r2->cond signalling be handled more generally at the end of
@@ -799,13 +800,31 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		return (h2->error ? h2->error : r2->error);
 	}
 
+	/* Check padding if present */
+	src = h2->rxf_data;
+	len = h2->rxf_len;
+	if (h2->rxf_flags & H2FF_DATA_PADDED) {
+		if (*src >= len) {
+			VSLb(h2->vsl, SLT_Debug,
+			    "H2: stream %u: Padding larger than frame length",
+			    h2->rxf_stream);
+			r2->error = H2CE_PROTOCOL_ERROR;
+			if (r2->cond)
+				AZ(pthread_cond_signal(r2->cond));
+			Lck_Unlock(&h2->sess->mtx);
+			return (H2CE_PROTOCOL_ERROR);
+		}
+		len -= 1 + *src;
+		src += 1;
+	}
+
 	/* Check against the Content-Length header if given */
 	if (r2->req->htc->content_length >= 0) {
 		if (r2->rxbuf)
 			l = r2->rxbuf->head;
 		else
 			l = 0;
-		l += h2->rxf_len;
+		l += len;
 		if (l > r2->req->htc->content_length ||
 		    ((h2->rxf_flags & H2FF_DATA_END_STREAM) &&
 		     l != r2->req->htc->content_length)) {
@@ -820,17 +839,8 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		}
 	}
 
-	/* Handle zero size frame before starting to allocate buffers */
-	if (h2->rxf_len == 0) {
-		if (h2->rxf_flags & H2FF_DATA_END_STREAM)
-			r2->state = H2_S_CLOS_REM;
-		if (r2->cond)
-			AZ(pthread_cond_signal(r2->cond));
-		Lck_Unlock(&h2->sess->mtx);
-		return (0);
-	}
-
-	/* Check and charge connection window */
+	/* Check and charge connection window. The entire frame including
+	 * padding (h2->rxf_len) counts towards the window. */
 	if (h2->rxf_len > h2->req0->r_window) {
 		VSLb(h2->vsl, SLT_Debug,
 		    "H2: stream %u: Exceeded connection receive window",
@@ -852,7 +862,8 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		Lck_Lock(&h2->sess->mtx);
 	}
 
-	/* Check stream window */
+	/* Check stream window. The entire frame including padding
+	 * (h2->rxf_len) counts towards the window. */
 	if (h2->rxf_len > r2->r_window) {
 		VSLb(h2->vsl, SLT_Debug,
 		    "H2: stream %u: Exceeded stream receive window",
@@ -864,6 +875,41 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		return (H2SE_FLOW_CONTROL_ERROR);
 	}
 
+	/* Handle zero size frame before starting to allocate buffers */
+	if (len == 0) {
+		r2->r_window -= h2->rxf_len;
+
+		/* Handle the specific corner case where the entire window
+		 * has been exhausted using nothing but padding
+		 * bytes. Since no bytes have been buffered, no bytes
+		 * would be consumed by the request thread and no stream
+		 * window updates sent. Unpaint ourselves from this corner
+		 * by sending a stream window update here. */
+		CHECK_OBJ_ORNULL(r2->rxbuf, H2_RXBUF_MAGIC);
+		if (r2->r_window == 0 &&
+		    (r2->rxbuf == NULL || r2->rxbuf->tail == r2->rxbuf->head)) {
+			if (r2->rxbuf)
+				l = r2->rxbuf->size;
+			else
+				l = h2->local_settings.initial_window_size;
+			r2->r_window += l;
+			Lck_Unlock(&h2->sess->mtx);
+			vbe32enc(buf, l);
+			H2_Send_Get(wrk, h2, h2->req0);
+			H2_Send_Frame(wrk, h2, H2_F_WINDOW_UPDATE, 0, 4,
+			    r2->stream, buf);
+			H2_Send_Rel(h2, h2->req0);
+			Lck_Lock(&h2->sess->mtx);
+		}
+
+		if (h2->rxf_flags & H2FF_DATA_END_STREAM)
+			r2->state = H2_S_CLOS_REM;
+		if (r2->cond)
+			AZ(pthread_cond_signal(r2->cond));
+		Lck_Unlock(&h2->sess->mtx);
+		return (0);
+	}
+
 	/* Make the buffer on demand */
 	if (r2->rxbuf == NULL) {
 		unsigned bufsize;
@@ -873,15 +919,20 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 
 		Lck_Unlock(&h2->sess->mtx);
 
-		bufsize = r2->r_window;
-		/* This is the first data frame, so r_window will be the
-		 * initial window size. */
+		bufsize = h2->local_settings.initial_window_size;
+		if (bufsize < r2->r_window) {
+			/* This will not happen because we do not have any
+			 * mechanism to change the initial window size on
+			 * a running session. But if we gain that ability,
+			 * this future proofs it. */
+			bufsize = r2->r_window;
+		}
 		assert(bufsize > 0);
 		if ((h2->rxf_flags & H2FF_DATA_END_STREAM) &&
-		    bufsize > h2->rxf_len)
+		    bufsize > len)
 			/* Cap the buffer size when we know this is the
 			 * single data frame. */
-			bufsize = h2->rxf_len;
+			bufsize = len;
 		stvbuf = STV_AllocBuf(wrk, stv_transient,
 		    bufsize + sizeof *rxbuf);
 		if (stvbuf == NULL) {
@@ -914,13 +965,11 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	l = r2->rxbuf->head - r2->rxbuf->tail;
 	assert(l <= r2->rxbuf->size);
 	l = r2->rxbuf->size - l;
-	assert(h2->rxf_len <= l); /* Stream window handling ensures
-				   * this */
+	assert(len <= l); /* Stream window handling ensures this */
 
 	Lck_Unlock(&h2->sess->mtx);
 
-	src = h2->rxf_data;
-	l = h2->rxf_len;
+	l = len;
 	head = r2->rxbuf->head;
 	do {
 		l2 = l;
@@ -934,9 +983,14 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	} while (l > 0);
 
 	Lck_Lock(&h2->sess->mtx);
-	/* Charge stream window */
+
+	/* Charge stream window. The entire frame including padding
+	 * (h2->rxf_len) counts towards the window. The used padding
+	 * bytes will be included in the next connection window update
+	 * sent when the buffer bytes are consumed because that is
+	 * calculated against the available buffer space. */
 	r2->r_window -= h2->rxf_len;
-	r2->rxbuf->head += h2->rxf_len;
+	r2->rxbuf->head += len;
 	assert(r2->rxbuf->tail <= r2->rxbuf->head);
 	if (h2->rxf_flags & H2FF_DATA_END_STREAM)
 		r2->state = H2_S_CLOS_REM;
