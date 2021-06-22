@@ -2243,9 +2243,11 @@ cmd_rxmsg(CMD_ARGS)
 	else
 		ONLY_H2_CLIENT(s->hp, av);
 
-	f = rxstuff(s);
-	if (!f)
-		return;
+	do {
+		f = rxstuff(s);
+		if (!f)
+			return;
+	} while (f->type == TYPE_WINDOW_UPDATE);
 
 	rcv++;
 	CHKFRAME(f->type, TYPE_HEADERS, rcv, *av);
