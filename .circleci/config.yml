@@ -302,7 +302,7 @@ workflows:
           name: distcheck_alpine
           dist: alpine
           release: "latest"
-          extra_conf: --disable-developer-warnings
+          extra_conf: --disable-developer-warnings --disable-dependency-tracking
       - distcheck:
           name: distcheck_archlinux
           dist: archlinux
