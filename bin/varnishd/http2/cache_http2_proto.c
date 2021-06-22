@@ -168,7 +168,7 @@ h2_new_req(const struct worker *wrk, struct h2_sess *h2,
 }
 
 void
-h2_del_req(struct worker *wrk, const struct h2_req *r2)
+h2_del_req(struct worker *wrk, struct h2_req *r2)
 {
 	struct h2_sess *h2;
 	struct sess *sp;
