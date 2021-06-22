@@ -1633,8 +1633,8 @@ cmd_tx11obj(CMD_ARGS)
 			exclusive_stream_dependency(s);
 	}
 	if (pad) {
-		if (strlen(pad) >= 128)
-			vtc_fatal(vl, "Padding is limited to 128 bytes");
+		if (strlen(pad) > 255)
+			vtc_fatal(vl, "Padding is limited to 255 bytes");
 		f.flags |= PADDED;
 		assert(f.size + strlen(pad) < BUF_SIZE);
 		memmove(buf + 1, buf, f.size);
@@ -1726,8 +1726,8 @@ cmd_txdata(CMD_ARGS)
 
 	if (pad) {
 		f.flags |= PADDED;
-		if (strlen(pad) >= 128)
-			vtc_fatal(vl, "Padding is limited to 128 bytes");
+		if (strlen(pad) > 255)
+			vtc_fatal(vl, "Padding is limited to 255 bytes");
 		data = malloc( 1 + strlen(body) + strlen(pad));
 		AN(data);
 		*((uint8_t *)data) = strlen(pad);
