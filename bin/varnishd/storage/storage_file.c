@@ -501,6 +501,8 @@ const struct stevedore smf_stevedore = {
 	.allocobj	=	SML_allocobj,
 	.panic		=	SML_panic,
 	.methods	=	&SML_methods,
+	.allocbuf	=	SML_AllocBuf,
+	.freebuf	=	SML_FreeBuf,
 };
 
 #ifdef INCLUDE_TEST_DRIVER
