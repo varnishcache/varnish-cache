@@ -230,4 +230,6 @@ const struct stevedore sma_stevedore = {
 	.methods	=	&SML_methods,
 	.var_free_space =	sma_free_space,
 	.var_used_space =	sma_used_space,
+	.allocbuf	=	SML_AllocBuf,
+	.freebuf	=	SML_FreeBuf,
 };
