@@ -33,6 +33,7 @@
 
 #include "cache/cache_varnishd.h"
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -946,6 +947,7 @@ h2_vfp_body(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr, ssize_t *lp)
 	uint64_t l, l2, tail;
 	uint8_t *dst;
 	char buf[4];
+	int i;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
@@ -980,8 +982,12 @@ h2_vfp_body(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr, ssize_t *lp)
 		if (retval != VFP_OK || l > 0)
 			break;
 
-		/* XXX: Timeout */
-		AZ(Lck_CondWait(r2->cond, &h2->sess->mtx, 0));
+		i = Lck_CondWait(r2->cond, &h2->sess->mtx,
+		    VTIM_real() + SESS_TMO(h2->sess, timeout_idle));
+		if (i == ETIMEDOUT) {
+			retval = VFP_ERROR;
+			break;
+		}
 	}
 	r2->cond = NULL;
 
