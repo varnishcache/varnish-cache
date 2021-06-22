@@ -27,10 +27,10 @@ varnish v1 -vcl+backend {
 		set resp.http.streaming = resp.is_streaming;
 	}
 	sub vcl_deliver {
+		set resp.http.streaming = resp.is_streaming;
 		if (obj.hits == 0) {
 			vtc.barrier_sync("${b2_sock}");
 		}
-		set resp.http.streaming = resp.is_streaming;
 	}
 } -start
 
