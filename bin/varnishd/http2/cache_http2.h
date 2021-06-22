@@ -115,6 +115,16 @@ enum h2_stream_e {
 #define H2_FRAME_FLAGS(l,u,v)   extern const uint8_t H2FF_##u;
 #include "tbl/h2_frames.h"
 
+struct h2_rxbuf {
+	unsigned			magic;
+#define H2_RXBUF_MAGIC			0x73f9fb27
+	unsigned			size;
+	uint64_t			tail;
+	uint64_t			head;
+	struct stv_buffer		*stvbuf;
+	uint8_t				data[];
+};
+
 struct h2_req {
 	unsigned			magic;
 #define H2_REQ_MAGIC			0x03411584
@@ -134,7 +144,7 @@ struct h2_req {
 	/* Where to wake this stream up */
 	struct worker			*wrk;
 
-	ssize_t				reqbody_bytes;
+	struct h2_rxbuf			*rxbuf;
 
 	VTAILQ_ENTRY(h2_req)		tx_list;
 	h2_error			error;
@@ -147,7 +157,6 @@ struct h2_sess {
 #define H2_SESS_MAGIC			0xa16f7e4b
 
 	pthread_t			rxthr;
-	struct h2_req			*mailcall;
 	pthread_cond_t			*cond;
 	pthread_cond_t			winupd_cond[1];
 
