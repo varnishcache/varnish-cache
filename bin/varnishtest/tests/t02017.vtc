@@ -1,0 +1,46 @@
+varnishtest "H/2 stream data head of line blocking"
+
+barrier b1 cond 2
+barrier b2 cond 2
+barrier b3 cond 2
+barrier b4 cond 2
+
+server s1 {
+	rxreq
+	barrier b4 sync
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		if (req.url == "/2") {
+			return (synth(700));
+		}
+	}
+} -start
+
+varnish v1 -cliok "param.set feature +http2"
+
+client c1 {
+	stream 1 {
+		txreq -req GET -url /1 -hdr "content-length" "1" -nostrend
+		barrier b1 sync
+		barrier b2 sync
+		txdata -data 1
+#		rxwinup
+		barrier b3 sync
+		rxresp
+		expect resp.status == 200
+	} -start
+	stream 3 {
+		barrier b1 sync
+		txreq -req GET -url /2 -hdr "content-length" "1" -nostrend
+		barrier b2 sync
+		barrier b3 sync
+		txdata -data 2
+#		rxwinup
+		rxresp
+		expect resp.status == 700
+		barrier b4 sync
+	} -start
+} -run
