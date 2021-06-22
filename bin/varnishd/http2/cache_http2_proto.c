@@ -554,6 +554,7 @@ h2_end_headers(struct worker *wrk, struct h2_sess *h2,
     struct req *req, struct h2_req *r2)
 {
 	h2_error h2e;
+	ssize_t cl;
 
 	ASSERT_RXTHR(h2);
 	assert(r2->state == H2_S_OPEN);
@@ -574,16 +575,24 @@ h2_end_headers(struct worker *wrk, struct h2_sess *h2,
 	// XXX: Have I mentioned H/2 Is hodge-podge ?
 	http_CollectHdrSep(req->http, H_Cookie, "; ");	// rfc7540,l,3114,3120
 
+	cl = http_GetContentLength(req->http);
+	assert(cl >= -2);
+	if (cl == -2) {
+		VSLb(h2->vsl, SLT_Debug, "Non-parseable Content-Length");
+		return (H2SE_PROTOCOL_ERROR);
+	}
+
 	if (req->req_body_status == NULL) {
-		if (!http_GetHdr(req->http, H_Content_Length, NULL))
+		if (cl == -1)
 			req->req_body_status = BS_EOF;
 		else
 			req->req_body_status = BS_LENGTH;
+		req->htc->content_length = cl;
 	} else {
 		/* A HEADER frame contained END_STREAM */
 		assert (req->req_body_status == BS_NONE);
 		r2->state = H2_S_CLOS_REM;
-		if (http_GetContentLength(req->http) > 0)
+		if (cl > 0)
 			return (H2CE_PROTOCOL_ERROR); //rfc7540,l,1838,1840
 	}
 
@@ -737,6 +746,7 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	int w1 = 0, w2 = 0;
 	char buf[4];
 	unsigned wi;
+	ssize_t cl;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	ASSERT_RXTHR(h2);
@@ -755,6 +765,23 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		Lck_Unlock(&h2->sess->mtx);
 		return (h2->error ? h2->error : r2->error);
 	}
+
+	r2->reqbody_bytes += h2->rxf_len;
+	if (h2->rxf_flags & H2FF_DATA_END_STREAM)
+		r2->state = H2_S_CLOS_REM;
+	cl = r2->req->htc->content_length;
+	if (cl >= 0 && (r2->reqbody_bytes > cl ||
+	      (r2->state >= H2_S_CLOS_REM && r2->reqbody_bytes != cl))) {
+		VSLb(h2->vsl, SLT_Debug,
+		    "H2: stream %u: Received data and Content-Length"
+		    " mismatch", h2->rxf_stream);
+		r2->error = H2SE_PROTOCOL_ERROR; // rfc7540,l,3150,3163
+		if (r2->cond)
+			AZ(pthread_cond_signal(r2->cond));
+		Lck_Unlock(&h2->sess->mtx);
+		return (H2SE_PROTOCOL_ERROR);
+	}
+
 	AZ(h2->mailcall);
 	h2->mailcall = r2;
 	h2->req0->r_window -= h2->rxf_len;
@@ -773,6 +800,8 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		r2->r_window += wi;
 		w2 = 1;
 	}
+
+
 	Lck_Unlock(&h2->sess->mtx);
 
 	if (w1 || w2) {
@@ -795,7 +824,7 @@ h2_vfp_body(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr, ssize_t *lp)
 	struct h2_req *r2;
 	struct h2_sess *h2;
 	unsigned l;
-	enum vfp_status retval = VFP_OK;
+	enum vfp_status retval;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
@@ -808,7 +837,6 @@ h2_vfp_body(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr, ssize_t *lp)
 	*lp = 0;
 
 	Lck_Lock(&h2->sess->mtx);
-	assert (r2->state == H2_S_OPEN);
 	r2->cond = &vc->wrk->cond;
 	while (h2->mailcall != r2 && h2->error == 0 && r2->error == 0)
 		AZ(Lck_CondWait(r2->cond, &h2->sess->mtx, 0));
@@ -831,12 +859,10 @@ h2_vfp_body(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr, ssize_t *lp)
 			Lck_Unlock(&h2->sess->mtx);
 			return (VFP_OK);
 		}
-		if (h2->rxf_len == 0) {
-			if (h2->rxf_flags & H2FF_DATA_END_STREAM) {
-				retval = VFP_END;
-				r2->state = H2_S_CLOS_REM;
-			}
-		}
+		if (h2->rxf_len == 0 && r2->state >= H2_S_CLOS_REM)
+			retval = VFP_END;
+		else
+			retval = VFP_OK;
 		h2->mailcall = NULL;
 		AZ(pthread_cond_signal(h2->cond));
 	}
