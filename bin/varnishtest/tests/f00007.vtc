@@ -62,6 +62,7 @@ client c3 {
 	stream 1 {
 		txreq -req POST -url /3 -hdr "content-length" "1" -nostrend
 		txdata -data "A" -nostrend
+		delay 0.5
 		txdata -data "GET /FAIL HTTP/1.1\r\n\r\n"
 		rxrst
 		expect rst.err == PROTOCOL_ERROR
