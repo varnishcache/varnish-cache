@@ -47,7 +47,11 @@
 /*-------------------------------------------------------------------*/
 
 static struct storage *
-sml_stv_alloc(const struct stevedore *stv, ssize_t size, int flags)
+objallocwithnuke(struct worker *, const struct stevedore *, ssize_t size,
+    int flags);
+
+static struct storage *
+sml_stv_alloc(const struct stevedore *stv, size_t size, int flags)
 {
 	struct storage *st;
 
@@ -159,6 +163,39 @@ SML_allocobj(struct worker *wrk, const struct stevedore *stv,
 	st->len = sizeof(*o);
 	o->objstore = st;
 	return (1);
+}
+
+void * v_matchproto_(storage_allocbuf_t)
+SML_AllocBuf(struct worker *wrk, const struct stevedore *stv, size_t size,
+    uintptr_t *ppriv)
+{
+	struct storage *st;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
+	AN(ppriv);
+
+	if (size > UINT_MAX)
+		return (NULL);
+	st = objallocwithnuke(wrk, stv, size, 0);
+	if (st == NULL)
+		return (NULL);
+	assert(st->space >= size);
+	st->len = size;
+	*ppriv = (uintptr_t)st;
+	return (st->ptr);
+}
+
+void v_matchproto_(storage_freebuf_t)
+SML_FreeBuf(struct worker *wrk, const struct stevedore *stv, uintptr_t priv)
+{
+	struct storage *st;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
+
+	CAST_OBJ_NOTNULL(st, (void *)priv, STORAGE_MAGIC);
+	sml_stv_free(stv, st);
 }
 
 /*---------------------------------------------------------------------
