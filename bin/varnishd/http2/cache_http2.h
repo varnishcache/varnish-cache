@@ -134,6 +134,8 @@ struct h2_req {
 	/* Where to wake this stream up */
 	struct worker			*wrk;
 
+	ssize_t				reqbody_bytes;
+
 	VTAILQ_ENTRY(h2_req)		tx_list;
 	h2_error			error;
 };
