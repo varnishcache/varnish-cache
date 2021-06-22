@@ -553,6 +553,11 @@ void STV_BanExport(const uint8_t *banlist, unsigned len);
 int STV_NewObject(struct worker *, struct objcore *,
     const struct stevedore *, unsigned len);
 
+struct stv_buffer;
+struct stv_buffer *STV_AllocBuf(struct worker *wrk, const struct stevedore *stv,
+    size_t size);
+void STV_FreeBuf(struct worker *wrk, struct stv_buffer **pstvbuf);
+void *STV_GetBufPtr(struct stv_buffer *stvbuf, size_t *psize);
 
 #if WITH_PERSISTENT_STORAGE
 /* storage_persistent.c */
