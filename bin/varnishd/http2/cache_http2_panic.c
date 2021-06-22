@@ -45,6 +45,20 @@ h2_panic_error(const struct h2_error_s *e)
 		return (e->name);
 }
 
+static void
+h2_panic_settings(struct vsb *vsb, const struct h2_settings *s)
+{
+	int cont = 0;
+
+#define H2_SETTING(U,l,...)			\
+	if (cont)				\
+		VSB_printf(vsb, ", ");		\
+	cont = 1;				\
+	VSB_printf(vsb, "0x%x", s->l);
+#include "tbl/h2_settings.h"
+#undef H2_SETTING
+}
+
 void
 h2_sess_panic(struct vsb *vsb, const struct sess *sp)
 {
@@ -64,6 +78,12 @@ h2_sess_panic(struct vsb *vsb, const struct sess *sp)
 	    "open_streams = %u, highest_stream = %u,"
 	    " goaway_last_stream = %u,\n",
 	    h2->open_streams, h2->highest_stream, h2->goaway_last_stream);
+	VSB_cat(vsb, "local_settings = {");
+	h2_panic_settings(vsb, &h2->local_settings);
+	VSB_cat(vsb, "},\n");
+	VSB_cat(vsb, "remote_settings = {");
+	h2_panic_settings(vsb, &h2->remote_settings);
+	VSB_cat(vsb, "},\n");
 	VSB_printf(vsb,
 	    "{rxf_len, rxf_type, rxf_flags, rxf_stream} ="
 	    " {%u, %u, 0x%x, %u},\n",
