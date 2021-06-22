@@ -1,0 +1,79 @@
+varnishtest "H/2 content length smuggling attack"
+
+server s1 {
+	rxreqhdrs
+	expect_close
+} -start
+
+server s2 {
+	rxreqhdrs
+	expect_close
+} -start
+
+server s3 {
+	rxreq
+	expect_close
+} -start
+
+server s4 {
+	rxreq
+	expect req.body == "A"
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import vtc;
+	sub vcl_backend_fetch {
+		if (bereq.url == "/1") {
+			set bereq.backend = s1;
+		} else if (bereq.url == "/2") {
+			set bereq.backend = s2;
+		} else if (bereq.url == "/3") {
+			set bereq.backend = s3;
+		} else {
+			set bereq.backend = s4;
+		}
+	}
+} -start
+
+varnish v1 -cliok "param.set feature +http2"
+varnish v1 -cliok "param.set debug +syncvsl"
+
+client c1 {
+	stream 1 {
+		txreq -req POST -url /1 -hdr "content-length" "1" -nostrend
+		txdata -data "AGET /FAIL HTTP/1.1\r\n\r\n"
+		rxrst
+		expect rst.err == PROTOCOL_ERROR
+	} -run
+} -run
+
+client c2 {
+	stream 1 {
+		txreq -req POST -url /2 -hdr "content-length" "1" -nostrend
+		txdata -data "AGET /FAIL HTTP/1.1\r\n\r\n" -nostrend
+		txdata
+		rxrst
+		expect rst.err == PROTOCOL_ERROR
+	} -run
+} -run
+
+client c3 {
+	stream 1 {
+		txreq -req POST -url /3 -hdr "content-length" "1" -nostrend
+		txdata -data "A" -nostrend
+		txdata -data "GET /FAIL HTTP/1.1\r\n\r\n"
+		rxrst
+		expect rst.err == PROTOCOL_ERROR
+	} -run
+} -run
+
+client c4 {
+	stream 1 {
+		txreq -req POST -url /4 -hdr "content-length" "1" -nostrend
+		txdata -data "A" -nostrend
+		txdata
+		rxresp
+		expect resp.status == 200
+	} -run
+} -run
