@@ -36,6 +36,15 @@
 #include "cache/cache_transport.h"
 #include "http2/cache_http2.h"
 
+static const char *
+h2_panic_error(const struct h2_error_s *e)
+{
+	if (e == NULL)
+		return ("(null)");
+	else
+		return (e->name);
+}
+
 void
 h2_sess_panic(struct vsb *vsb, const struct sess *sp)
 {
@@ -49,21 +58,38 @@ h2_sess_panic(struct vsb *vsb, const struct sess *sp)
 	h2 = (void*)*up;
 	if (PAN_dump_struct(vsb, h2, H2_SESS_MAGIC, "h2_sess"))
 		return;
-	h2 = (void*)*up;
+	VSB_printf(vsb, "refcnt = %d, bogosity = %d, error = %s\n",
+	    h2->refcnt, h2->bogosity, h2_panic_error(h2->error));
+	VSB_printf(vsb,
+	    "open_streams = %u, highest_stream = %u,"
+	    " goaway_last_stream = %u,\n",
+	    h2->open_streams, h2->highest_stream, h2->goaway_last_stream);
+	VSB_printf(vsb,
+	    "{rxf_len, rxf_type, rxf_flags, rxf_stream} ="
+	    " {%u, %u, 0x%x, %u},\n",
+	    h2->rxf_len, h2->rxf_type, h2->rxf_flags, h2->rxf_stream);
 	VTAILQ_FOREACH(r2, &h2->streams, list) {
 		if (PAN_dump_struct(vsb, r2, H2_REQ_MAGIC, "stream"))
 			continue;
-		VSB_printf(vsb, "0x%08x", r2->stream);
+		VSB_printf(vsb, "id = %u, state = ", r2->stream);
 		switch (r2->state) {
-#define H2_STREAM(U,sd,d) case H2_S_##U: VSB_printf(vsb, " %-6s", sd); break;
+#define H2_STREAM(U,sd,d) case H2_S_##U: VSB_printf(vsb, "%s", sd); break;
 #include <tbl/h2_stream.h>
 		default:
-			VSB_printf(vsb, " State %d", r2->state);
+			VSB_printf(vsb, " 0x%x", r2->state);
 			break;
 		}
-		VSB_cat(vsb, "},\n");
+		VSB_cat(vsb, ",\n");
+
+		VSB_printf(vsb, "h2_sess = %p, scheduled = %d, error = %s,\n",
+		    r2->h2sess, r2->scheduled, h2_panic_error(r2->error));
+		VSB_printf(vsb, "t_send = %f, t_winupd = %f,\n",
+		    r2->t_send, r2->t_winupd);
+		VSB_printf(vsb, "t_window = %jd, r_window = %jd,\n",
+		    r2->t_window, r2->r_window);
+
 		VSB_indent(vsb, -2);
+		VSB_cat(vsb, "},\n");
 	}
-	VSB_cat(vsb, "},\n");
 	VSB_indent(vsb, -2);
 }
