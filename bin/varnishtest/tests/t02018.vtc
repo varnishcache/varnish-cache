@@ -1,0 +1,36 @@
+varnishtest "H/2 stream multiple buffer exhaustion"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+} -start
+
+varnish v1 -cliok "param.set feature +http2"
+varnish v1 -cliok "param.reset h2_initial_window_size"
+varnish v1 -cliok "param.reset h2_rx_window_low_water"
+
+client c1 {
+	stream 1 {
+		txreq -req GET -url /1 -hdr "content-length" "131072" -nostrend
+		txdata -datalen 16384 -nostrend
+		rxwinup
+		txdata -datalen 16384 -nostrend
+		rxwinup
+		txdata -datalen 16384 -nostrend
+		rxwinup
+		txdata -datalen 16384 -nostrend
+		rxwinup
+		txdata -datalen 16384 -nostrend
+		rxwinup
+		txdata -datalen 16384 -nostrend
+		rxwinup
+		txdata -datalen 16384 -nostrend
+		rxwinup
+		txdata -datalen 16384
+		rxresp
+		expect resp.status == 200
+	} -start
+} -run
