@@ -2,13 +2,25 @@ varnishtest "Exercise h/2 sender flow control code"
 
 barrier b1 sock 3 -cyclic
 
-server s1 -repeat 2 {
+server s1 {
+	rxreq
+	txresp -bodylen 66300
+} -start
+
+server s2 {
+	non_fatal
 	rxreq
 	txresp -bodylen 66300
 } -start
 
 varnish v1 -vcl+backend {
 	import vtc;
+
+	sub vcl_backend_fetch {
+		if (bereq.method == "POST") {
+			set bereq.backend = s2;
+		}
+	}
 
 	sub vcl_deliver {
 		vtc.barrier_sync("${b1_sock}");
@@ -47,7 +59,7 @@ client c1 {
 	stream 0 -wait
 } -run
 
-client c1 {
+client c2 {
 	stream 0 {
 		barrier b1 sync
 	} -start
@@ -63,7 +75,7 @@ client c1 {
 	stream 0 -wait
 } -run
 
-client c1 {
+client c3 {
 	stream 0 {
 		barrier b1 sync
 		barrier b1 sync
@@ -79,7 +91,6 @@ client c1 {
 	stream 1 {
 		txreq -req "POST" -nostrend
 		txdata -data "ok"
-		rxwinup
 		txdata -data "fail"
 		rxrst
 		expect rst.err == STREAM_CLOSED
