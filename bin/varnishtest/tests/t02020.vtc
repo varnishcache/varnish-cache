@@ -1,0 +1,66 @@
+varnishtest "H/2 received data frames with padding"
+
+barrier b1 sock 2
+
+server s1 {
+	rxreq
+	expect req.url == /1
+	expect req.body == abcde
+	txresp
+	rxreq
+	txresp
+	rxreq
+	txresp
+	expect req.body == a
+} -start
+
+varnish v1 -vcl+backend {
+	import vtc;
+	sub vcl_recv {
+		if (req.url == "/3") {
+			vtc.barrier_sync("${b1_sock}");
+		}
+	}
+} -start
+
+varnish v1 -cliok "param.set feature +http2"
+varnish v1 -cliok "param.reset h2_initial_window_size"
+varnish v1 -cliok "param.reset h2_rx_window_low_water"
+varnish v1 -cliok "param.set debug +syncvsl"
+
+client c1 {
+	stream 1 {
+		txreq -req POST -url /1 -hdr "content-length" "5" -nostrend
+		txdata -data abcde -padlen 1
+		rxresp
+		expect resp.status == 200
+	} -run
+
+	stream 3 {
+		txreq -req POST -url /3 -hdr "content-length" "131072" -nostrend
+		txdata -datalen 16300 -padlen 83 -nostrend
+		txdata -datalen 16300 -padlen 83 -nostrend
+		txdata -datalen 16300 -padlen 83 -nostrend
+		txdata -datalen 16300 -padlen 82 -nostrend
+		barrier b1 sync
+		rxwinup
+		txdata -datalen 16300 -padlen 83 -nostrend
+		rxwinup
+		txdata -datalen 16300 -padlen 83 -nostrend
+		rxwinup
+		txdata -datalen 16300 -padlen 83 -nostrend
+		rxwinup
+		txdata -datalen 16300 -padlen 83 -nostrend
+		rxwinup
+		txdata -datalen 672
+		rxresp
+		expect resp.status == 200
+	} -run
+
+	stream 5 {
+		txreq -req POST -url /5 -nostrend
+		txdata -data a -padlen 255
+		rxresp
+		expect resp.status == 200
+	} -run
+} -run
