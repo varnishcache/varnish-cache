@@ -1,0 +1,29 @@
+varnishtest "A backend connection error gets returned as a valid short response"
+
+barrier b1 sock 2
+
+server s1 {
+	rxreq
+	txresp -nolen -hdr "Content-Length: 10"
+	barrier b1 sync
+	send "12345"
+	# Early connection close error
+} -start
+
+varnish v1 -vcl+backend {
+	import vtc;
+
+	sub vcl_deliver {
+		# Make sure we are streaming and give the backend time to error out
+		vtc.barrier_sync("${b1_sock}");
+		vtc.sleep(1s);
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresphdrs
+	expect resp.http.Content-Length == "10"
+	recv 5
+	expect_close
+} -run
