@@ -96,6 +96,74 @@ STV_NewObject(struct worker *wrk, struct objcore *oc,
 
 /*-------------------------------------------------------------------*/
 
+struct stv_buffer {
+	unsigned		magic;
+#define STV_BUFFER_MAGIC	0xf39cb6c2
+	const struct stevedore	*stv;
+	size_t			size;
+	uintptr_t		priv;
+};
+
+struct stv_buffer *
+STV_AllocBuf(struct worker *wrk, const struct stevedore *stv, size_t size)
+{
+	struct stv_buffer *stvbuf;
+	uint8_t *buf;
+	uintptr_t priv = 0;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
+
+	if (size == 0)
+		return (NULL);
+	if (stv->allocbuf == NULL)
+		return (NULL);
+
+	buf = stv->allocbuf(wrk, stv, size + PRNDUP(sizeof *stvbuf), &priv);
+	if (buf == NULL)
+		return (NULL);
+
+	assert(PAOK(buf));
+	stvbuf = (void *)buf;
+	INIT_OBJ(stvbuf, STV_BUFFER_MAGIC);
+	stvbuf->stv = stv;
+	stvbuf->priv = priv;
+	stvbuf->size = size;
+
+	return (stvbuf);
+}
+
+void
+STV_FreeBuf(struct worker *wrk, struct stv_buffer **pstvbuf)
+{
+	struct stv_buffer *stvbuf;
+	const struct stevedore *stv;
+	uintptr_t priv;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	TAKE_OBJ_NOTNULL(stvbuf, pstvbuf, STV_BUFFER_MAGIC);
+	CHECK_OBJ_NOTNULL(stvbuf->stv, STEVEDORE_MAGIC);
+
+	stv = stvbuf->stv;
+	priv = stvbuf->priv;
+	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
+	ZERO_OBJ(stvbuf, sizeof *stvbuf);
+
+	AN(stv->freebuf);
+	stv->freebuf(wrk, stv, priv);
+}
+
+void *
+STV_GetBufPtr(struct stv_buffer *stvbuf, size_t *psize)
+{
+	CHECK_OBJ_NOTNULL(stvbuf, STV_BUFFER_MAGIC);
+	if (psize)
+		*psize = stvbuf->size;
+	return (&stvbuf[1]);
+}
+
+/*-------------------------------------------------------------------*/
+
 void
 STV_open(void)
 {

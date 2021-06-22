@@ -75,6 +75,10 @@ typedef void storage_banexport_f(const struct stevedore *, const uint8_t *bans,
     unsigned len);
 typedef void storage_panic_f(struct vsb *vsb, const struct objcore *oc);
 
+typedef void *storage_allocbuf_f(struct worker *, const struct stevedore *,
+    size_t size, uintptr_t *ppriv);
+typedef void storage_freebuf_f(struct worker *, const struct stevedore *,
+    uintptr_t priv);
 
 typedef struct object *sml_getobj_f(struct worker *, struct objcore *);
 typedef struct storage *sml_alloc_f(const struct stevedore *, size_t size);
@@ -104,6 +108,8 @@ struct stevedore {
 	storage_baninfo_f	*baninfo;
 	storage_banexport_f	*banexport;
 	storage_panic_f		*panic;
+	storage_allocbuf_f	*allocbuf;
+	storage_freebuf_f	*freebuf;
 
 	/* Only if SML is used */
 	sml_alloc_f		*sml_alloc;
