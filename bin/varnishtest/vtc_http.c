@@ -1496,7 +1496,7 @@ cmd_http_expect_close(CMD_ARGS)
 			    "Expected close: poll = %d, revents = 0x%x",
 			    i, fds[0].revents);
 		i = read(hp->sess->fd, &c, 1);
-		if (VTCP_Check(i))
+		if (i <= 0 && VTCP_Check(i))
 			break;
 		if (i == 1 && vct_islws(c))
 			continue;
