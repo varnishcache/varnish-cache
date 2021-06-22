@@ -1,11 +1,5 @@
 version: 2.1
 
-aliases:
-  pkg_req: &pkg_req
-    requires:
-      - dist
-      - tar_pkg_tools
-
 parameters:
   vc-commit:
     type: string
@@ -89,47 +83,75 @@ jobs:
             - alpine.tar.gz
   package:
     parameters:
-      dist:
-        description: the Linux distribution (debian|ubuntu|centos)
+      platform:
+        description: the Linux distribution, with release, e.g. debian:buster, centos:7
         type: string
-      release:
-        description: the release name (stretch|buster|xenial|bionic|7|8)
-        type: string
-      ext:
-        description: the package extension (deb|rpm|apk)
-        type: string
-      arch:
-        description: the architecture (x64|aarch64)
-        type: string
-      image:
-        description: the base Docker image for Dockerfile
+      rclass:
+        description: the resource class to use, usuall arm.medium or medium
         type: string
     machine:
-      image: ubuntu-2004:202010-01
+      image: ubuntu-2004:202101-01
+    resource_class: << parameters.rclass >>
     steps:
       - attach_workspace:
           at: ~/project
-      - run: ls -la ~/project
+
+      - when:
+          condition:
+            matches:
+              pattern: ^alpine.*
+              value: << parameters.platform >>
+          steps:
+            - run:
+                # https://wiki.alpinelinux.org/wiki/Release_Notes_for_Alpine_3.14.0#faccessat2
+                name: grab the latest docker version
+                command: |
+                  # using https://docs.docker.com/engine/install/ubuntu/
+                  sudo apt-get update
+                  sudo apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release
+                  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+                  case "<< parameters.rclass >>" in
+                      arm.*)  ARCH=arm64;;
+                      *)      ARCH=amd64;;
+                  esac
+                  echo \
+                    "deb [signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
+                      $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+                  sudo apt-get update
+                  sudo apt-get install docker-ce docker-ce-cli containerd.io
       - run:
-          name: Activate QEMU
-          command: |
-            sudo docker run -it --rm --privileged multiarch/qemu-user-static --reset --credential yes --persistent yes
-      - run:
-          name: Create Dockerfile
-          command: |
-            echo "FROM << parameters.image >>" > Dockerfile
-            echo "ADD make-<< parameters.ext >>-packages.sh /usr/bin/" >> Dockerfile
-            echo 'CMD ["make-<< parameters.ext >>-packages.sh"]' >> Dockerfile
-      - run:
-          name: Build << parameters.dist >> << parameters.release >> << parameters.arch >> << parameters.ext >>
+          name: Build for << parameters.platform >> on << parameters.rclass >>
           command: |
             mkdir -p packages
-            cp .circleci/make-<< parameters.ext >>-packages.sh .
-            docker build -t varnish-<< parameters.ext >>-package-build:<< parameters.arch >> .
-            docker run --rm -it -e PARAM_DIST=<< parameters.dist >> -e PARAM_RELEASE=<< parameters.release >> -v$(pwd):/varnish-cache varnish-<< parameters.ext >>-package-build:<< parameters.arch >>
+            case "<< parameters.platform >>" in
+                debian:*|ubuntu:*)  EXT=deb ;;
+                centos:*)         EXT=rpm ;;
+                alpine:*)         EXT=apk ;;
+                *)
+                    echo "unrecognized platform: << parameters.platform >>"
+                    exit 1
+            esac
+
+            case "<< parameters.rclass >>" in
+                arm.*)
+                    IMG=arm64v8/<< parameters.platform >>
+                    ;;
+                *)
+                    IMG=<< parameters.platform >>
+                    ;;
+            esac
+
+            set -x
+            echo "FROM $IMG" > Dockerfile
+            echo "ADD make-$EXT-packages.sh /usr/bin/" >> Dockerfile
+            echo "CMD make-$EXT-packages.sh" >> Dockerfile
+
+            cp .circleci/make-$EXT-packages.sh .
+            docker build -t docker_img .
+            docker run --rm -it -e PARAM_DIST=$(echo "<< parameters.platform >>" | cut -d: -f1) -e PARAM_RELEASE=$(echo "<< parameters.platform >>" | cut -d: -f2) -v$(pwd):/varnish-cache docker_img
       - run:
           name: List created packages
-          command: find ./packages -name "*.<< parameters.ext >>"
+          command: find ./packages -type f
       - persist_to_workspace:
           root: .
           paths:
@@ -319,167 +341,24 @@ workflows:
       - dist
       - tar_pkg_tools
       - package:
-          name: aarch64-ubuntu-focal
-          dist: ubuntu
-          release: focal
-          arch: aarch64
-          image: arm64v8/ubuntu:focal
-          ext: deb
-          <<: *pkg_req
-      - package:
-          name: x64-ubuntu-focal
-          dist: ubuntu
-          release: focal
-          arch: x64
-          image: ubuntu:focal
-          ext: deb
-          <<: *pkg_req
-      - package:
-          name: aarch64-ubuntu-bionic
-          dist: ubuntu
-          release: bionic
-          arch: aarch64
-          image: arm64v8/ubuntu:bionic
-          ext: deb
-          <<: *pkg_req
-      - package:
-          name: x64-ubuntu-bionic
-          dist: ubuntu
-          release: bionic
-          arch: x64
-          image: ubuntu:bionic
-          ext: deb
-          <<: *pkg_req
-      - package:
-          name: aarch64-ubuntu-xenial
-          dist: ubuntu
-          release: xenial
-          arch: aarch64
-          image: arm64v8/ubuntu:xenial
-          ext: deb
-          <<: *pkg_req
-      - package:
-          name: x64-ubuntu-xenial
-          dist: ubuntu
-          release: xenial
-          arch: x64
-          image: ubuntu:xenial
-          ext: deb
-          <<: *pkg_req
-      - package:
-          name: aarch64-debian-bullseye
-          dist: debian
-          release: bullseye
-          arch: aarch64
-          image: arm64v8/debian:bullseye-slim
-          ext: deb
-          <<: *pkg_req
-      - package:
-          name: x64-debian-bullseye
-          dist: debian
-          release: bullseye
-          arch: x64
-          image: debian:bullseye-slim
-          ext: deb
-          <<: *pkg_req
-      - package:
-          name: aarch64-debian-buster
-          dist: debian
-          release: buster
-          arch: aarch64
-          image: arm64v8/debian:buster-slim
-          ext: deb
-          <<: *pkg_req
-      - package:
-          name: x64-debian-buster
-          dist: debian
-          release: buster
-          arch: x64
-          image: debian:buster-slim
-          ext: deb
-          <<: *pkg_req
-      - package:
-          name: aarch64-debian-stretch
-          dist: debian
-          release: stretch
-          arch: aarch64
-          image: arm64v8/debian:stretch-slim
-          ext: deb
-          <<: *pkg_req
-      - package:
-          name: x64-debian-stretch
-          dist: debian
-          release: stretch
-          arch: x64
-          image: debian:stretch-slim
-          ext: deb
-          <<: *pkg_req
-      - package:
-          name: aarch64-centos-7
-          dist: centos
-          release: "7"
-          arch: aarch64
-          image: arm64v8/centos:7
-          ext: rpm
-          <<: *pkg_req
-      - package:
-          name: x64-centos-7
-          dist: centos
-          release: "7"
-          arch: x64
-          image: centos:7
-          ext: rpm
-          <<: *pkg_req
-      - package:
-          name: aarch64-centos-8
-          dist: centos
-          release: "8"
-          arch: aarch64
-          image: arm64v8/centos:8
-          ext: rpm
-          <<: *pkg_req
-      - package:
-          name: x64-centos-8
-          dist: centos
-          release: "8"
-          arch: x64
-          image: centos:8
-          ext: rpm
-          <<: *pkg_req
-      - package:
-          name: x64-alpine-3
-          dist: alpine
-          release: "3"
-          arch: x64
-          image: alpine:3
-          ext: apk
-          <<: *pkg_req
-      - package:
-          name: aarch64-alpine-3
-          dist: alpine
-          release: "3"
-          arch: aarch64
-          image: arm64v8/alpine:3
-          ext: apk
-          <<: *pkg_req
+          name: << matrix.platform >> packages (<< matrix.rclass >>)
+          requires:
+            - dist
+            - tar_pkg_tools
+          matrix:
+            parameters:
+              platform:
+                - ubuntu:bionic
+                - ubuntu:xenial
+                - debian:bullseye
+                - debian:buster
+                - debian:stretch
+                - centos:7
+                - centos:8
+                - alpine:3
+              rclass:
+                - arm.medium
+                - medium
       - collect_packages:
           requires:
-            - x64-ubuntu-xenial
-            - aarch64-ubuntu-xenial
-            - x64-ubuntu-bionic
-            - aarch64-ubuntu-bionic
-            - x64-ubuntu-focal
-            - aarch64-ubuntu-focal
-            - x64-debian-stretch
-            - aarch64-debian-stretch
-            - x64-debian-buster
-            - aarch64-debian-buster
-            - x64-debian-bullseye
-            - aarch64-debian-bullseye
-            - x64-centos-7
-            - aarch64-centos-7
-            - x64-centos-8
-            - aarch64-centos-8
-            - x64-alpine-3
-            - aarch64-alpine-3
-
+            - package
