@@ -22,7 +22,7 @@ client c1 {
 # Give varnish a chance to update stats
 delay .1
 
-varnish v1 -expect sess_herd == 1
+varnish v1 -expect sess_herd >= 1
 varnish v1 -expect sess_conn == 1
 varnish v1 -expect cache_hit == 1
 varnish v1 -expect cache_miss == 1
