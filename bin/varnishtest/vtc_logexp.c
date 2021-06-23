@@ -545,7 +545,7 @@ logexp_thread(void *priv)
 	if (le->query != NULL)
 		vtc_log(le->vl, 4, "qry| %s", le->query);
 	logexp_next(le);
-	while (! logexp_done(le)) {
+	while (!logexp_done(le) && !vtc_stop && !vtc_error) {
 		i = VSLQ_Dispatch(le->vslq, logexp_dispatch, le);
 		if (i == 2 && le->err_arg) {
 			vtc_log(le->vl, 4, "end| failed as expected");
@@ -558,6 +558,8 @@ logexp_thread(void *priv)
 		else if (i == 0 && ! logexp_done(le))
 			VTIM_sleep(0.01);
 	}
+	if (!logexp_done(le))
+		vtc_fatal(le->vl, "bad| outstanding expectations");
 	vtc_log(le->vl, 4, "end|");
 
 	return (NULL);
