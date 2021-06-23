@@ -61,6 +61,7 @@ struct barrier {
 	int			waiters;
 	int			expected;
 	int			cyclic;
+	int			cycle;
 
 	enum barrier_e		type;
 	/* fields below are only for BARRIER_SOCK */
@@ -301,7 +302,7 @@ static void
 barrier_cond_sync(struct barrier *b, struct vtclog *vl)
 {
 	struct timespec ts;
-	int r, w;
+	int r, w, c;
 
 	CHECK_OBJ_NOTNULL(b, BARRIER_MAGIC);
 	assert(b->type == BARRIER_COND);
@@ -314,6 +315,8 @@ barrier_cond_sync(struct barrier *b, struct vtclog *vl)
 		w = -1;
 	else
 		b->waiters = ++w;
+
+	c = b->cycle;
 	AZ(pthread_mutex_unlock(&b->mtx));
 
 	if (w < 0)
@@ -324,6 +327,7 @@ barrier_cond_sync(struct barrier *b, struct vtclog *vl)
 	AZ(pthread_mutex_lock(&b->mtx));
 	if (w == b->expected) {
 		vtc_log(vl, 4, "Barrier(%s) wake %u", b->name, b->expected);
+		b->cycle++;
 		if (b->cyclic)
 			b->waiters = 0;
 		AZ(pthread_cond_broadcast(&b->cond));
@@ -334,7 +338,8 @@ barrier_cond_sync(struct barrier *b, struct vtclog *vl)
 			ts = VTIM_timespec(VTIM_real() + .1);
 			r = pthread_cond_timedwait(&b->cond, &b->mtx, &ts);
 			assert(r == 0 || r == ETIMEDOUT);
-		} while (!vtc_stop && !vtc_error && r == ETIMEDOUT);
+		} while (!vtc_stop && !vtc_error && r == ETIMEDOUT &&
+		    c == b->cycle);
 	}
 	AZ(pthread_mutex_unlock(&b->mtx));
 }
