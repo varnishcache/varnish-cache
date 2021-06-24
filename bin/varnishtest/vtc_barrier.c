@@ -61,13 +61,10 @@ struct barrier {
 	int			waiters;
 	int			expected;
 	int			cyclic;
-	int			cycle;
+	int			cycle;		/* BARRIER_COND only */
 
 	enum barrier_e		type;
-	/* fields below are only for BARRIER_SOCK */
-	pthread_t		thread;
-	volatile unsigned	active;
-	volatile unsigned	need_join;
+	pthread_t		thread;		/* BARRIER_SOCK only */
 };
 
 static VTAILQ_HEAD(, barrier)	barriers = VTAILQ_HEAD_INITIALIZER(barriers);
@@ -174,7 +171,7 @@ barrier_sock_thread(void *priv)
 	conns = calloc(b->expected, sizeof *conns);
 	AN(conns);
 
-	while (b->active && !vtc_stop && !vtc_error) {
+	while (!vtc_stop && !vtc_error) {
 		pfd[0].fd = sock;
 		pfd[0].events = POLLIN;
 
@@ -223,21 +220,17 @@ barrier_sock_thread(void *priv)
 		if (b->cyclic)
 			b->waiters = 0;
 		else
-			b->active = 0;
+			break;
 	}
 
-	if (vtc_stop || vtc_error) {
-		AN(b->active);
+	if (b->waiters % b->expected > 0) {
 		/* wake up outstanding waiters */
 		for (i = 0; i < b->waiters; i++)
 			closefd(&conns[i]);
-		b->waiters = 0;
-		b->active = 0;
+		if (!vtc_error)
+			vtc_fatal(vl, "Barrier(%s) has %u outstanding waiters",
+			    b->name, b->waiters);
 	}
-
-	if (b->cyclic && b->waiters > 0)
-		vtc_fatal(vl, "Barrier(%s) has %u outstanding waiters",
-		    b->name, b->waiters);
 
 	macro_undef(vl, b->name, "addr");
 	macro_undef(vl, b->name, "port");
@@ -257,8 +250,6 @@ barrier_sock(struct barrier *b, const char *av, struct vtclog *vl)
 	AZ(pthread_mutex_lock(&b->mtx));
 	barrier_expect(b, av, vl);
 	b->type = BARRIER_SOCK;
-	b->active = 1;
-	b->need_join = 1;
 
 	/* NB. We can use the BARRIER_COND's pthread_cond_t to wait until the
 	 *     socket is ready for convenience.
@@ -464,10 +455,7 @@ cmd_barrier(CMD_ARGS)
 			case BARRIER_COND:
 				break;
 			case BARRIER_SOCK:
-				if (b->need_join) {
-					AZ(pthread_join(b->thread, NULL));
-					b->need_join = 0;
-				}
+				AZ(pthread_join(b->thread, NULL));
 				break;
 			default:
 				WRONG("Wrong barrier type");
