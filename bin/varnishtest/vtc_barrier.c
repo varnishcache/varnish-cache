@@ -336,7 +336,7 @@ barrier_cond_sync(struct barrier *b, struct vtclog *vl)
 }
 
 static void
-barrier_sock_sync(struct barrier *b, struct vtclog *vl)
+barrier_sock_sync(const struct barrier *b, struct vtclog *vl)
 {
 	struct vsb *vsb;
 	const char *err;
