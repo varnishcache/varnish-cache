@@ -11,7 +11,7 @@ server s1 {
 	txresp -hdr "Foo: 8" -body "8"
 } -start
 
-server s2 {
+server s2 -repeat 2 -keepalive {
 	rxreq
 	txresp -hdr "Foo: 1" -body "1"
 	rxreq
@@ -79,8 +79,6 @@ client c1 {
 	rxresp
 	expect resp.http.foo == "9"
 } -run
-
-server s2 -start
 
 client c1 {
 	txreq -req "DELETE" -hdr "Host: 127.0.0.1"
