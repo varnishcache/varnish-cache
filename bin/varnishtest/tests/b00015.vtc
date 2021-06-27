@@ -2,6 +2,8 @@ varnishtest "Check synthetic error page caching"
 
 # First test that an internally generated error is not cached
 
+varnish v1 -cliok "param.set backend_remote_error_holddown 60"
+
 varnish v1 -vcl {
 	backend foo {
 		.host = "${bad_backend}";
@@ -13,18 +15,15 @@ client c1 {
 	rxresp
 	expect resp.status == 503
 	expect resp.http.X-varnish == "1001"
-} -run
 
-delay .1
-
-client c1 {
 	txreq -url "/"
 	rxresp
 	expect resp.status == 503
-	expect resp.http.X-varnish == "1004"
+	expect resp.http.X-varnish == "1003"
 } -run
 
-delay .1
+varnish v1 -expect VBE.vcl1.foo.fail_econnrefused > 0
+varnish v1 -expect VBE.vcl1.foo.helddown > 0
 
 # Then check that a cacheable error from the backend is
 
@@ -42,23 +41,19 @@ varnish v1 -vcl+backend {
 	}
 }
 
-client c1 {
+client c2 {
 	txreq -url "/"
 	rxresp
 	expect resp.status == 301
-	expect resp.http.X-varnish == "1007"
-} -run
+	expect resp.http.X-varnish == "1006"
 
-delay .1
-
-client c1 {
 	txreq -url "/"
 	rxresp
 	expect resp.status == 301
-	expect resp.http.X-varnish == "1010 1008"
+	expect resp.http.X-varnish == "1008 1007"
 } -run
 
-delay .1
+server s1 -wait
 
 # Then check that a non-cacheable error from the backend can be
 
@@ -66,8 +61,6 @@ server s1 {
 	rxreq
 	txresp -status 502
 } -start
-
-varnish v1 -cliok "param.set backend_remote_error_holddown 10"
 
 varnish v1 -vcl+backend {
 	sub vcl_backend_response {
@@ -77,23 +70,14 @@ varnish v1 -vcl+backend {
 	}
 }
 
-client c1 {
+client c3 {
 	txreq -url "/2"
 	rxresp
 	expect resp.status == 502
-	expect resp.http.X-varnish == "1012"
-} -run
+	expect resp.http.X-varnish == "1010"
 
-delay .1
-
-client c1 {
 	txreq -url "/2"
 	rxresp
 	expect resp.status == 502
-	expect resp.http.X-varnish == "1015 1013"
+	expect resp.http.X-varnish == "1012 1011"
 } -run
-
-delay .1
-
-varnish v1 -expect VBE.vcl1.foo.fail_econnrefused > 0
-varnish v1 -expect VBE.vcl1.foo.helddown > 0
