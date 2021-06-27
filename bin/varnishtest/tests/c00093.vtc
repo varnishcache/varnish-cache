@@ -1,13 +1,16 @@
 varnishtest "Test resp.is_streaming with a UDS backend"
 
+barrier b1 sock 2
+
 server s1 -listen "${tmpdir}/s1.sock" {
 	rxreq
 	txresp -nolen -hdr "Content-Length: 10"
-	delay 1
+	barrier b1 sync
 	send "1234567890"
 } -start
 
 varnish v1 -vcl+backend {
+	import vtc;
 	sub vcl_recv {
 		if (req.url == "/synth") {
 			return(synth(200, "OK"));
@@ -18,11 +21,14 @@ varnish v1 -vcl+backend {
 	}
 	sub vcl_deliver {
 		set resp.http.streaming = resp.is_streaming;
+		if (req.http.barrier) {
+			vtc.barrier_sync(req.http.barrier);
+		}
 	}
 } -start
 
 client c1 {
-	txreq
+	txreq -hdr "barrier: ${b1_sock}"
 	rxresp
 	expect resp.http.streaming == "true"
 
