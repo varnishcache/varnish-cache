@@ -29,7 +29,7 @@
  *
  * Regular expression support
  *
- * We wrap PCRE in VRE to make to make it feasible to use something else
+ * We wrap PCRE2 in VRE to make to make it feasible to use something else
  * without hunting down stuff through out the Varnish source code.
  *
  */
@@ -44,16 +44,15 @@ struct vsb;
 
 struct vre_limits {
 	unsigned	match;
-	unsigned	match_recursion;
+	unsigned	depth;
 };
 
 typedef struct vre vre_t;
 
-/* This maps to PCRE error codes */
-#define VRE_ERROR_NOMATCH         (-1)
+/* This maps to PCRE2 error codes */
+extern const int VRE_ERROR_NOMATCH;
 
-/* And those to PCRE options */
-extern const unsigned VRE_has_jit;
+/* And those to PCRE2 options */
 extern const unsigned VRE_CASELESS;
 
 vre_t *VRE_compile(const char *, unsigned, int *, int *, unsigned);

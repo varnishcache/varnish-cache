@@ -14,7 +14,7 @@ RUN set -e; \
 	    libtool \
 	    libunwind-dev \
 	    linux-headers \
-	    pcre-dev \
+	    pcre2-dev \
 	    py-docutils \
 	    py3-sphinx \
 	    tar

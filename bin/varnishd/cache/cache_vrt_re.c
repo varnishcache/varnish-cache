@@ -46,7 +46,7 @@ VPI_re_init(vre_t **rep, const char *re)
 
 	/* This was already check-compiled by the VCL compiler */
 	t = VRE_compile(re, 0, &error, &erroroffset,
-	    cache_param->pcre_jit_compilation);
+	    cache_param->pcre2_jit_compilation);
 	AN(t);
 	*rep = t;
 }

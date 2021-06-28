@@ -267,7 +267,7 @@ The following types of operands are available:
 
 * Regular expression
 
-  A PCRE regular expression. Valid for the regular expression
+  A PCRE2 regular expression. Valid for the regular expression
   operators.
 
 Boolean functions
