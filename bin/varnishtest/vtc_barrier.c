@@ -61,10 +61,12 @@ struct barrier {
 	int			waiters;
 	int			expected;
 	int			cyclic;
-	int			cycle;		/* BARRIER_COND only */
 
 	enum barrier_e		type;
-	pthread_t		thread;		/* BARRIER_SOCK only */
+	union {
+		int		cond_cycle;
+		pthread_t	sock_thread;
+	};
 };
 
 static VTAILQ_HEAD(, barrier)	barriers = VTAILQ_HEAD_INITIALIZER(barriers);
@@ -254,7 +256,7 @@ barrier_sock(struct barrier *b, const char *av, struct vtclog *vl)
 	/* NB. We can use the BARRIER_COND's pthread_cond_t to wait until the
 	 *     socket is ready for convenience.
 	 */
-	AZ(pthread_create(&b->thread, NULL, barrier_sock_thread, b));
+	AZ(pthread_create(&b->sock_thread, NULL, barrier_sock_thread, b));
 	AZ(pthread_cond_wait(&b->cond, &b->mtx));
 	AZ(pthread_mutex_unlock(&b->mtx));
 }
@@ -307,7 +309,7 @@ barrier_cond_sync(struct barrier *b, struct vtclog *vl)
 	else
 		b->waiters = ++w;
 
-	c = b->cycle;
+	c = b->cond_cycle;
 	AZ(pthread_mutex_unlock(&b->mtx));
 
 	if (w < 0)
@@ -318,7 +320,7 @@ barrier_cond_sync(struct barrier *b, struct vtclog *vl)
 	AZ(pthread_mutex_lock(&b->mtx));
 	if (w == b->expected) {
 		vtc_log(vl, 4, "Barrier(%s) wake %u", b->name, b->expected);
-		b->cycle++;
+		b->cond_cycle++;
 		if (b->cyclic)
 			b->waiters = 0;
 		AZ(pthread_cond_broadcast(&b->cond));
@@ -330,7 +332,7 @@ barrier_cond_sync(struct barrier *b, struct vtclog *vl)
 			r = pthread_cond_timedwait(&b->cond, &b->mtx, &ts);
 			assert(r == 0 || r == ETIMEDOUT);
 		} while (!vtc_stop && !vtc_error && r == ETIMEDOUT &&
-		    c == b->cycle);
+		    c == b->cond_cycle);
 	}
 	AZ(pthread_mutex_unlock(&b->mtx));
 }
@@ -455,7 +457,7 @@ cmd_barrier(CMD_ARGS)
 			case BARRIER_COND:
 				break;
 			case BARRIER_SOCK:
-				AZ(pthread_join(b->thread, NULL));
+				AZ(pthread_join(b->sock_thread, NULL));
 				break;
 			default:
 				WRONG("Wrong barrier type");
