@@ -3,7 +3,7 @@
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/include \
 	-I$(top_builddir)/include \
-	@PCRE_CFLAGS@
+	@PCRE2_CFLAGS@
 
 AM_CFLAGS   = $(AM_LT_CFLAGS)  @SAN_CFLAGS@
 AM_LDFLAGS  = $(AM_LT_LDFLAGS) @SAN_LDFLAGS@
@@ -44,7 +44,7 @@ libvarnish_la_SOURCES = \
 	vtim.c \
 	vus.c
 
-libvarnish_la_LIBADD = @PCRE_LIBS@
+libvarnish_la_LIBADD = @PCRE2_LIBS@
 
 TESTS = vav_test vjsn_test vnum_c_test vbh_test vsb_test
 

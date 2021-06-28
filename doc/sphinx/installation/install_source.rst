@@ -29,7 +29,7 @@ Build dependencies on FreeBSD
 To get the dependencies required to build varnish from source
 you can either::
 
-	pkg install automake pkgconf py36-sphinx py36-docutils pcre libtool
+	pkg install automake pkgconf py36-sphinx py36-docutils pcre2 libtool
 
 .. XXX does cpio need to be installed on FreeBSD?
 
@@ -60,7 +60,7 @@ them (replace ``sudo apt-get install`` if needed)::
 	libedit-dev \
 	libjemalloc-dev \
 	libncurses-dev \
-	libpcre3-dev \
+	libpcre2-dev \
 	libtool \
 	pkg-config \
 	python3-docutils \
@@ -114,7 +114,7 @@ packages::
 	libtool \
 	libunwind-devel \
 	ncurses-devel \
-	pcre-devel \
+	pcre2-devel \
 	pkgconfig \
 	python3-docutils \
 	cpio
@@ -176,7 +176,7 @@ As of Alpine 3, these steps should install the required dependencies:
 	    libtool \
 	    libunwind-dev \
 	    linux-headers \
-	    pcre-dev \
+	    pcre2-dev \
 	    py-docutils \
 	    py3-sphinx \
 	    tar \
@@ -195,24 +195,26 @@ Then continue `Compiling Varnish`_, using the ``--with-unwind``
 
 .. _Alpine Community Repository: https://wiki.alpinelinux.org/wiki/Enable_Community_Repository
 
-Build dependencies on a SmartOS Zone
-------------------------------------
-
-As of SmartOS pkgsrc 2019Q4, install the following packages::
-
-	pkgin in autoconf automake editline libtool ncurses \
-		 pcre python37 py37-sphinx py37-docutils gmake gcc8 pkg-config
-
-*Note:* you will probably need to add ``/opt/local/gcc8/bin`` to
-``PATH`` in order to have ``gcc`` available.
-
-Optionally, to rebuild the svg files::
-
-	pkgin in graphviz
-
-Optionally, to pull from a repository::
-
-	pkgin in git
+.. XXX: no pcre2 on SmartOS
+..
+.. Build dependencies on a SmartOS Zone
+.. ------------------------------------
+..
+.. As of SmartOS pkgsrc 2019Q4, install the following packages::
+..
+.. 	pkgin in autoconf automake editline libtool ncurses \
+.. 		 pcre python37 py37-sphinx py37-docutils gmake gcc8 pkg-config
+..
+.. *Note:* you will probably need to add ``/opt/local/gcc8/bin`` to
+.. ``PATH`` in order to have ``gcc`` available.
+..
+.. Optionally, to rebuild the svg files::
+..
+.. 	pkgin in graphviz
+..
+.. Optionally, to pull from a repository::
+..
+.. 	pkgin in git
 
 Building on Solaris and other Solaris-ish OSes
 ----------------------------------------------

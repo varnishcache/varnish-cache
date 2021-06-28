@@ -154,7 +154,7 @@ difficult. Unfortunately Varnish doesn't have good tools for
 manipulating the Cookies. We have to use regular expressions to do the
 work. If you are familiar with regular expressions you'll understand
 whats going on. If you aren't we recommend that you either pick up a book on
-the subject, read through the *pcrepattern* man page, or read through
+the subject, read through the *pcre2pattern* man page, or read through
 one of many online guides.
 
 Lets use the Varnish Software (VS) web as an example here. Very

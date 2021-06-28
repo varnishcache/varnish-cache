@@ -10,6 +10,6 @@ RUN set -e;\
 	    libtool \
 	    libunwind-devel \
 	    make \
-	    pcre-devel \
+	    pcre2-devel \
 	    python3 \
 	    python-sphinx

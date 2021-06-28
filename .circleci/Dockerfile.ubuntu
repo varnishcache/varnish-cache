@@ -15,7 +15,7 @@ RUN set -e; \
 	    libedit-dev \
 	    libjemalloc-dev \
 	    libncurses-dev \
-	    libpcre3-dev \
+	    libpcre2-dev \
 	    libtool \
 	    libunwind-dev \
 	    pkg-config \

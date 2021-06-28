@@ -90,7 +90,7 @@ to indicate that `libumem`_ will not only be used for storage. Likely
 reasons for this to be the case are:
 
 * some library ``varnishd`` is linked against was linked against
-  `libumem`_ (most likely ``libpcre``, check with ``ldd``)
+  `libumem`_ (most likely ``libpcre2-8``, check with ``ldd``)
 
 * ``LD_PRELOAD_64=/usr/lib/amd64/libumem.so.1``,
   ``LD_PRELOAD_32=/usr/lib/libumem.so.1`` or

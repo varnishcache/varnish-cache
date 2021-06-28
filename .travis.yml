@@ -21,7 +21,7 @@ jobs:
             - python3-docutils
             - python3-sphinx
             - libunwind-dev
-            - libpcre3-dev
+            - libpcre2-dev
       before_script:
         - ./autogen.sh
         - ./configure --enable-maintainer-mode --with-unwind

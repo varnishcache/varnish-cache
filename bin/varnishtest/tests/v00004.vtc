@@ -10,7 +10,7 @@ feature cmd {test -z "$GCOVPROG"}
 # - 2019 header madness
 # - 5 ESI levels down
 # - 10 VCL subs down
-# - PCRE regsub
+# - PCRE2 regsub
 
 server s1 {
 	rxreq
