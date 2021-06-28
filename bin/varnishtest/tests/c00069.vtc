@@ -13,7 +13,6 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	import vtc;
-
 	sub vcl_recv {
 		if (req.url == "/synth") {
 			return(synth(200, "OK"));
