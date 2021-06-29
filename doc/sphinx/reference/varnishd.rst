@@ -330,20 +330,20 @@ hit-for-pass.
 
 If no ``-s`` options are given, the default is::
 
-	-s malloc,100m
+	-s default,100m
 
 If no ``Transient`` storage is defined, the default is an unbound
-``malloc`` storage as if defined as::
+``default`` storage as if defined as::
 
-	-s Transient=malloc
+	-s Transient=default
 
 
 The following storage types and options are available:
 
 -s <default[,size]>
 
-  The default storage type resolves to umem where available and malloc
-  otherwise.
+  The default storage type resolves to ``umem`` where available and
+  ``malloc`` otherwise.
 
 -s <malloc[,size]>
 
