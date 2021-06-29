@@ -518,7 +518,7 @@ vtcp_lo_cb(void *priv, const struct suckaddr *sa)
 	struct helper *hp = priv;
 
 	sock = VTCP_listen(sa, hp->depth, hp->errp);
-	if (sock > 0) {
+	if (sock >= 0) {
 		*hp->errp = NULL;
 		return (sock);
 	}
