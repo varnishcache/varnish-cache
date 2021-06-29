@@ -200,7 +200,7 @@ varnish v1 -errvcl {INT + TIME not possible.} {
 	}
 }
 
-varnish v1 -errvcl {DURATION + INT not possible.} {
+varnish v1 -errvcl {Expected duration unit got ';'} {
 	sub vcl_recv {
 		set req.ttl = 1s + 1;
 	}

@@ -258,8 +258,8 @@ Resolve_Sockaddr(struct vcc *tl,
  * Recognize and convert units of duration, return seconds.
  */
 
-double
-vcc_DurationUnit(struct vcc *tl)
+static double
+vcc_duration_unit(struct vcc *tl)
 {
 	double sc;
 
@@ -324,41 +324,8 @@ vcc_Duration(struct vcc *tl, double *d)
 	v = vcc_DoubleVal(tl);
 	ERRCHK(tl);
 	ExpectErr(tl, ID);
-	sc = vcc_DurationUnit(tl);
+	sc = vcc_duration_unit(tl);
 	*d = v * sc;
-}
-
-/*--------------------------------------------------------------------*/
-
-void
-vcc_ByteVal(struct vcc *tl, VCL_INT *d)
-{
-	double v;
-	VCL_INT retval;
-	const char *errtxt;
-
-	if (tl->t->tok != CNUM && tl->t->tok != FNUM) {
-		Expect(tl, CNUM);
-		return;
-	}
-	v = tl->t->num;
-	vcc_NextToken(tl);
-	if (tl->t->tok != ID) {
-		VSB_cat(tl->sb, "Expected bytes unit got ");
-		vcc_ErrToken(tl, tl->t);
-		VSB_printf(tl->sb, "\n%s\n", VNUM_LEGAL_BYTES);
-		vcc_ErrWhere(tl, tl->t);
-		return;
-	}
-	retval = VNUM_bytes_unit(v, tl->t->b, tl->t->e, &errtxt);
-	if (errno) {
-		VSB_cat(tl->sb, errtxt);
-		vcc_ErrToken(tl, tl->t);
-		vcc_ErrWhere(tl, tl->t);
-		return;
-	}
-	vcc_NextToken(tl);
-	*d = retval;
 }
 
 /*--------------------------------------------------------------------*/
