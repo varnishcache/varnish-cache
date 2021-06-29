@@ -14,7 +14,7 @@ server s1 {
 } -start
 
 varnish v1 \
-	-arg "-s default,1m" -vcl+backend { } -start
+	-arg "-s default,1MiB" -vcl+backend { } -start
 
 client c1 {
 	txreq

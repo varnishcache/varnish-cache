@@ -4,7 +4,7 @@ server s1 {
 	accept
 } -start
 
-varnish v1 -arg "-s Transient=file,${tmpdir}/_.file,10m" -vcl+backend {
+varnish v1 -arg "-s Transient=file,${tmpdir}/_.file,10MiB" -vcl+backend {
 	sub vcl_backend_error {
 		set beresp.body = "foo";
 		return (deliver);

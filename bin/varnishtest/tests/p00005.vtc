@@ -10,7 +10,7 @@ server s1 {
 } -start
 
 varnish v1 \
-	-arg "-sdeprecated_persistent,${tmpdir}/_.per,5m" \
+	-arg "-sdeprecated_persistent,${tmpdir}/_.per,5MiB" \
 	-arg "-pban_lurker_sleep=0" \
 	-arg "-pshortlived=0" \
 	-vcl+backend {

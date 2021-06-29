@@ -36,7 +36,7 @@ varnish v1 -vcl+backend {
 			set resp.http.bytes = std.bytes(req.http.bytes-nf)
 			    + 512B;
 		} else {
-			set resp.http.bytes = std.bytes(req.http.bytes, 10K)
+			set resp.http.bytes = std.bytes(req.http.bytes, 10KiB)
 			    + 512B;
 		}
 	}
@@ -48,27 +48,27 @@ client c1 {
 	expect resp.http.duration == 1000000.010
 	expect resp.http.bytes == 10752
 
-	txreq -hdr "duration: 10ms" -hdr "bytes: 2k"
+	txreq -hdr "duration: 10ms" -hdr "bytes: 2KiB"
 	rxresp
 	expect resp.http.duration == 1000000.010
 	expect resp.http.bytes == 2560
 
-	txreq -hdr "duration: 10.1s" -hdr "bytes: 3 m"
+	txreq -hdr "duration: 10.1s" -hdr "bytes: 3 MiB"
 	rxresp
 	expect resp.http.duration == 1000010.100
 	expect resp.http.bytes == 3146240
 
-	txreq -hdr "duration: 10m" -hdr "bytes:4.5 g"
+	txreq -hdr "duration: 10m" -hdr "bytes:4.5 GiB"
 	rxresp
 	expect resp.http.duration == 1000600.000
 	expect resp.http.bytes == 4831838720
 
-	txreq -hdr "duration: 10h" -hdr "bytes: 0.12 TB"
+	txreq -hdr "duration: 10h" -hdr "bytes: 0.12 TiB"
 	rxresp
 	expect resp.http.duration == 1036000.000
 	expect resp.http.bytes == 131941395845
 
-	txreq -hdr "duration: 10d" -hdr "bytes: 0.25 PB"
+	txreq -hdr "duration: 10d" -hdr "bytes: 0.25 PiB"
 	rxresp
 	expect resp.http.duration == 1864000.000
 	expect resp.http.bytes == 281474976711168

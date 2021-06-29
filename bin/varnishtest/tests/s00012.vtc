@@ -34,7 +34,7 @@ varnish v1				\
 	}
 
 	sub vcl_deliver {
-		debug.sndbuf(128b);
+		debug.sndbuf(128B);
 	}
 } -start
 

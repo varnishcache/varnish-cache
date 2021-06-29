@@ -14,7 +14,7 @@ server s1 {
 	txresp -bodylen 1
 } -start
 
-varnish v1 -arg "-sTransient=default,1M -p debug=+syncvsl -p nuke_limit=0" -vcl+backend {
+varnish v1 -arg "-sTransient=default,1MiB -p debug=+syncvsl -p nuke_limit=0" -vcl+backend {
 	sub vcl_recv {
 		if (req.url == "/") {
 			return (pass);

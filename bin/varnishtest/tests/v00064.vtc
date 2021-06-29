@@ -16,8 +16,8 @@ server s1 {
 } -start
 
 varnish v1 \
- -arg "-s Transient=default,1m" \
- -arg "-s malloc,1m" \
+ -arg "-s Transient=default,1MiB" \
+ -arg "-s malloc,1MiB" \
  -arg "-p nuke_limit=0" \
  -syntax 4.0 \
  -vcl+backend {

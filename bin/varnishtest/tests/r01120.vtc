@@ -8,8 +8,8 @@ server s1 {
 } -start
 
 varnish v1 \
-	-cliok "param.set workspace_client 10k" \
-	-cliok "param.set workspace_backend 200k" \
+	-cliok "param.set workspace_client 10KiB" \
+	-cliok "param.set workspace_backend 200KiB" \
 	-vcl+backend {
 } -start
 

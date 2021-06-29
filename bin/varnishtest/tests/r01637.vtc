@@ -13,7 +13,7 @@ server s1 {
 	txresp -bodylen 9000
 } -start
 
-varnish v1  -arg "-sdefault,1M" -arg "-p nuke_limit=0 -p gzip_level=0" \
+varnish v1  -arg "-sdefault,1MiB" -arg "-p nuke_limit=0 -p gzip_level=0" \
     -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.http.free = storage.s0.free_space;

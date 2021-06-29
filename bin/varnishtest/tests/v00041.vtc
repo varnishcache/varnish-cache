@@ -17,7 +17,7 @@ server s1 {
 	txresp
 } -start
 
-varnish v1 -arg "-p debug=+vclrel -p workspace_client=1m" -vcl+backend {
+varnish v1 -arg "-p debug=+vclrel -p workspace_client=1MiB" -vcl+backend {
 	import debug;
 	import std;
 

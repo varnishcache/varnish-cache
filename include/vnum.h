@@ -42,5 +42,9 @@ int64_t SF_Parse_Integer(const char **ipp, const char **errtxt);
 double SF_Parse_Decimal(const char **ipp, int strict, const char **errtxt);
 double SF_Parse_Number(const char **ipp, int strict, const char **errtxt);
 
+#define VNUM_LEGAL_BYTES \
+	"Legal bytes units are 'B', 'kB', 'KiB', 'MB', 'MiB', 'GB', 'GiB'," \
+	" 'TB', 'TiB', 'PB' and 'PiB'"
+
 #define VNUM_LEGAL_DURATION \
 	"Legal duration units are 'ms', 's', 'm', 'h', 'd', 'w' and 'y'"

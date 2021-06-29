@@ -24,7 +24,7 @@ server s1 {
 	txresp -hdr "Foo: foo" -body "abcdef\n"
 } -start
 
-varnish v1 -arg "-sdefault,1m"
+varnish v1 -arg "-sdefault,1MiB"
 varnish v1 -cliok "param.set feature +no_coredump"
 
 varnish v1 -vcl+backend {

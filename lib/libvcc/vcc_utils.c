@@ -344,9 +344,9 @@ vcc_ByteVal(struct vcc *tl, VCL_INT *d)
 	v = tl->t->num;
 	vcc_NextToken(tl);
 	if (tl->t->tok != ID) {
-		VSB_cat(tl->sb, "Expected BYTES unit (B, KB, MB...) got ");
+		VSB_cat(tl->sb, "Expected bytes unit got ");
 		vcc_ErrToken(tl, tl->t);
-		VSB_cat(tl->sb, "\n");
+		VSB_printf(tl->sb, "\n%s\n", VNUM_LEGAL_BYTES);
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}

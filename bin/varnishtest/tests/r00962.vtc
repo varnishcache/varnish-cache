@@ -18,8 +18,8 @@ shell "rm -f ${tmpdir}/_.per?"
 
 varnish v1 \
 	-arg "-pfeature=+wait_silo" \
-	-arg "-sdeprecated_persistent,${tmpdir}/_.per1,5m" \
-	-arg "-sdeprecated_persistent,${tmpdir}/_.per2,5m" \
+	-arg "-sdeprecated_persistent,${tmpdir}/_.per1,5MiB" \
+	-arg "-sdeprecated_persistent,${tmpdir}/_.per2,5MiB" \
 	-syntax 4.0 \
 	-vcl+backend {
 	sub vcl_backend_response {
@@ -51,8 +51,8 @@ server s1 {
 
 varnish v2 \
 	-arg "-pfeature=+wait_silo" \
-	-arg "-sdeprecated_persistent,${tmpdir}/_.per2,5m" \
-	-arg "-sdeprecated_persistent,${tmpdir}/_.per1,5m" \
+	-arg "-sdeprecated_persistent,${tmpdir}/_.per2,5MiB" \
+	-arg "-sdeprecated_persistent,${tmpdir}/_.per1,5MiB" \
 	-vcl+backend { } -start
 
 client c1 -connect ${v2_sock} {

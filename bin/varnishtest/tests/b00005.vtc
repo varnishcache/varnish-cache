@@ -6,7 +6,7 @@ server s1 {
 } -start
 
 varnish v1 \
-	-arg "-s file,${tmpdir}/varnishtest_backing,10M" \
+	-arg "-s file,${tmpdir}/varnishtest_backing,10MiB" \
 	-vcl+backend {} -start
 
 client c1 {

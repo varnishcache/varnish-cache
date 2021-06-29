@@ -307,9 +307,9 @@ PARAM_SIMPLE(
 PARAM_SIMPLE(
 	/* name */	cli_limit,
 	/* type */	bytes_u,
-	/* min */	"128b",
-	/* max */	"99999999b",
-	/* def */	"48k",
+	/* min */	"128B",
+	/* max */	"99999999B",
+	/* def */	"48KiB",
 	/* units */	"bytes",
 	/* descr */
 	"Maximum size of CLI response.  If the response exceeds this "
@@ -439,24 +439,24 @@ PARAM_SIMPLE(
 PARAM_SIMPLE(
 	/* name */	fetch_chunksize,
 	/* type */	bytes,
-	/* min */	"4k",
+	/* min */	"4KiB",
 	/* max */	NULL,
-	/* def */	"16k",
+	/* def */	"16KiB",
 	/* units */	"bytes",
 	/* descr */
 	"The default chunksize used by fetcher. This should be bigger than "
 	"the majority of objects with short TTLs.\n"
 	"Internal limits in the storage_file module makes increases above "
-	"128kb a dubious idea.",
+	"128KiB a dubious idea.",
 	/* flags */	EXPERIMENTAL
 )
 
 PARAM_SIMPLE(
 	/* name */	fetch_maxchunksize,
 	/* type */	bytes,
-	/* min */	"64k",
+	/* min */	"64KiB",
 	/* max */	NULL,
-	/* def */	"0.25G",
+	/* def */	"0.25GiB",
 	/* units */	"bytes",
 	/* descr */
 	"The maximum chunksize we attempt to allocate from storage. Making "
@@ -467,9 +467,9 @@ PARAM_SIMPLE(
 PARAM_SIMPLE(
 	/* name */	gzip_buffer,
 	/* type */	bytes_u,
-	/* min */	"2k",
+	/* min */	"2KiB",
 	/* max */	NULL,
-	/* def */	"32k",
+	/* def */	"32KiB",
 	/* units */	"bytes",
 	/* descr */
 	"Size of malloc buffer used for gzip processing.\n"
@@ -557,9 +557,9 @@ PARAM_SIMPLE(
 PARAM_SIMPLE(
 	/* name */	http_req_hdr_len,
 	/* type */	bytes_u,
-	/* min */	"40b",
+	/* min */	"40B",
 	/* max */	NULL,
-	/* def */	"8k",
+	/* def */	"8KiB",
 	/* units */	"bytes",
 	/* descr */
 	"Maximum length of any HTTP client request header we will allow.  "
@@ -569,9 +569,9 @@ PARAM_SIMPLE(
 PARAM_SIMPLE(
 	/* name */	http_req_size,
 	/* type */	bytes_u,
-	/* min */	"0.25k",
+	/* min */	"0.25KiB",
 	/* max */	NULL,
-	/* def */	"32k",
+	/* def */	"32KiB",
 	/* units */	"bytes",
 	/* descr */
 	"Maximum number of bytes of HTTP client request we will deal with. "
@@ -585,9 +585,9 @@ PARAM_SIMPLE(
 PARAM_SIMPLE(
 	/* name */	http_resp_hdr_len,
 	/* type */	bytes_u,
-	/* min */	"40b",
+	/* min */	"40B",
 	/* max */	NULL,
-	/* def */	"8k",
+	/* def */	"8KiB",
 	/* units */	"bytes",
 	/* descr */
 	"Maximum length of any HTTP backend response header we will allow. "
@@ -597,9 +597,9 @@ PARAM_SIMPLE(
 PARAM_SIMPLE(
 	/* name */	http_resp_size,
 	/* type */	bytes_u,
-	/* min */	"0.25k",
+	/* min */	"0.25KiB",
 	/* max */	NULL,
-	/* def */	"32k",
+	/* def */	"32KiB",
 	/* units */	"bytes",
 	/* descr */
 	"Maximum number of bytes of HTTP backend response we will deal "
@@ -1011,7 +1011,7 @@ PARAM_SIMPLE(
 	/* type */	vsl_buffer,
 	/* min */	"267",
 	/* max */	NULL,
-	/* def */	"4k",
+	/* def */	"4KiB",
 	/* units */	"bytes",
 	/* descr */
 	"Bytes of (req-/backend-)workspace dedicated to buffering VSL "
@@ -1028,9 +1028,9 @@ PARAM_SIMPLE(
 PARAM_SIMPLE(
 	/* name */	vsl_reclen,
 	/* type */	vsl_reclen,
-	/* min */	"16b",
+	/* min */	"16B",
 	/* max */	NULL,
-	/* def */	"255b",
+	/* def */	"255B",
 	/* units */	"bytes",
 	/* descr */
 	"Maximum number of bytes in SHM log record.",
@@ -1042,9 +1042,9 @@ PARAM_SIMPLE(
 PARAM_SIMPLE(
 	/* name */	vsl_space,
 	/* type */	bytes,
-	/* min */	"1M",
-	/* max */	"4G",
-	/* def */	"80M",
+	/* min */	"1MiB",
+	/* max */	"4GiB",
+	/* def */	"80MiB",
 	/* units */	"bytes",
 	/* descr */
 	"The amount of space to allocate for the VSL fifo buffer in the "
@@ -1057,9 +1057,9 @@ PARAM_SIMPLE(
 PARAM_SIMPLE(
 	/* name */	vsm_space,
 	/* type */	bytes,
-	/* min */	"1M",
-	/* max */	"1G",
-	/* def */	"1M",
+	/* min */	"1MiB",
+	/* max */	"1GiB",
+	/* def */	"1MiB",
 	/* units */	"bytes",
 	/* descr */
 	"DEPRECATED: This parameter is ignored.\n"
@@ -1069,28 +1069,28 @@ PARAM_SIMPLE(
 PARAM_SIMPLE(
 	/* name */	workspace_backend,
 	/* type */	bytes_u,
-	/* min */	"1k",
+	/* min */	"1KiB",
 	/* max */	NULL,
-	/* def */	"64k",
+	/* def */	"64KiB",
 	/* units */	"bytes",
 	/* descr */
 	"Bytes of HTTP protocol workspace for backend HTTP req/resp.  If "
-	"larger than 4k, use a multiple of 4k for VM efficiency.",
+	"larger than 4KiB, use a multiple of 4KiB for VM efficiency.",
 	/* flags */	DELAYED_EFFECT
 )
 
 PARAM_SIMPLE(
 	/* name */	workspace_client,
 	/* type */	bytes_u,
-	/* min */	"9k",
+	/* min */	"9KiB",
 	/* max */	NULL,
-	/* def */	"64k",
+	/* def */	"64KiB",
 	/* units */	"bytes",
 	/* descr */
 	"Bytes of HTTP protocol workspace for clients HTTP req/resp.  Use a "
-	"multiple of 4k for VM efficiency.\n"
+	"multiple of 4KiB for VM efficiency.\n"
 	"For HTTP/2 compliance this must be at least 20k, in order to "
-	"receive fullsize (=16k) frames from the client.   That usually "
+	"receive fullsize (=16KiB) frames from the client.   That usually "
 	"happens only in POST/PUT bodies.  For other traffic-patterns "
 	"smaller values work just fine.",
 	/* flags */	DELAYED_EFFECT
@@ -1099,23 +1099,23 @@ PARAM_SIMPLE(
 PARAM_SIMPLE(
 	/* name */	workspace_session,
 	/* type */	bytes_u,
-	/* min */	"0.25k",
+	/* min */	"0.25KiB",
 	/* max */	NULL,
-	/* def */	"0.75k",
+	/* def */	"0.75KiB",
 	/* units */	"bytes",
 	/* descr */
 	"Allocation size for session structure and workspace.    The "
 	"workspace is primarily used for TCP connection addresses.  If "
-	"larger than 4k, use a multiple of 4k for VM efficiency.",
+	"larger than 4KiB, use a multiple of 4KiB for VM efficiency.",
 	/* flags */	DELAYED_EFFECT
 )
 
 PARAM_SIMPLE(
 	/* name */	workspace_thread,
 	/* type */	bytes_u,
-	/* min */	"0.25k",
-	/* max */	"8k",
-	/* def */	"2k",
+	/* min */	"0.25KiB",
+	/* max */	"8KiB",
+	/* def */	"2KiB",
 	/* units */	"bytes",
 	/* descr */
 	"Bytes of auxiliary workspace per thread.\n"
@@ -1124,7 +1124,7 @@ PARAM_SIMPLE(
 	"One use is for the IO-vectors used during delivery. Setting "
 	"this parameter too low may increase the number of writev() "
 	"syscalls, setting it too high just wastes space.  ~0.1k + "
-	"UIO_MAXIOV * sizeof(struct iovec) (typically = ~16k for 64bit) "
+	"UIO_MAXIOV * sizeof(struct iovec) (typically = ~16KiB for 64bit) "
 	"is considered the maximum sensible value under any known "
 	"circumstances (excluding exotic vmod use).",
 	/* flags */	DELAYED_EFFECT
@@ -1133,9 +1133,9 @@ PARAM_SIMPLE(
 PARAM_SIMPLE(
 	/* name */	h2_rx_window_low_water,
 	/* type */	bytes_u,
-	/* min */	"65535",
-	/* max */	"1G",
-	/* def */	"10M",
+	/* min */	"65535B",
+	/* max */	"1GiB",
+	/* def */	"10MiB",
 	/* units */	"bytes",
 	/* descr */
 	"HTTP2 Receive Window low water mark.\n"
@@ -1147,9 +1147,9 @@ PARAM_SIMPLE(
 PARAM_SIMPLE(
 	/* name */	h2_rx_window_increment,
 	/* type */	bytes_u,
-	/* min */	"1M",
-	/* max */	"1G",
-	/* def */	"1M",
+	/* min */	"1MiB",
+	/* max */	"1GiB",
+	/* def */	"1MiB",
 	/* units */	"bytes",
 	/* descr */
 	"HTTP2 Receive Window Increments.\n"
@@ -1161,9 +1161,9 @@ PARAM_SIMPLE(
 PARAM_SIMPLE(
 	/* name */	h2_header_table_size,
 	/* type */	bytes_u,
-	/* min */	"0b",
+	/* min */	"0B",
 	/* max */	NULL,
-	/* def */	"4k",
+	/* def */	"4KiB",
 	/* units */	"bytes",
 	/* descr */
 	"HTTP2 header table size.\n"
@@ -1188,8 +1188,8 @@ PARAM_SIMPLE(
 	/* name */	h2_initial_window_size,
 	/* type */	bytes_u,
 	/* min */	"0",
-	/* max */	"2147483647b",
-	/* def */	"65535b",
+	/* max */	"2147483647B",
+	/* def */	"65535B",
 	/* units */	"bytes",
 	/* descr */
 	"HTTP2 initial flow control window size."
@@ -1198,9 +1198,9 @@ PARAM_SIMPLE(
 PARAM_SIMPLE(
 	/* name */	h2_max_frame_size,
 	/* type */	bytes_u,
-	/* min */	"16k",
-	/* max */	"16777215b",
-	/* def */	"16k",
+	/* min */	"16KiB",
+	/* max */	"16777215B",
+	/* def */	"16KiB",
 	/* units */	"bytes",
 	/* descr */
 	"HTTP2 maximum per frame payload size we are willing to accept."
@@ -1209,9 +1209,9 @@ PARAM_SIMPLE(
 PARAM_SIMPLE(
 	/* name */	h2_max_header_list_size,
 	/* type */	bytes_u,
-	/* min */	"0b",
+	/* min */	"0B",
 	/* max */	NULL,
-	/* def */	"2147483647b",
+	/* def */	"2147483647B",
 	/* units */	"bytes",
 	/* descr */
 	"HTTP2 maximum size of an uncompressed header list."
@@ -1491,7 +1491,7 @@ PARAM_THREAD(
 	/* units */	"bytes",
 	/* descr */
 	"Worker thread stack size.\n"
-	"This will likely be rounded up to a multiple of 4k"
+	"This will likely be rounded up to a multiple of 4KiB"
 	" (or whatever the page_size might be) by the kernel.\n"
 	"\n"
 	"The required stack size is primarily driven by the"

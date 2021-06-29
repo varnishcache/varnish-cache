@@ -12,7 +12,7 @@ server s1 {
 
 varnish v1 \
 	-arg "-pfeature=+wait_silo" \
-	-arg "-sdeprecated_persistent,${tmpdir}/_.per,5m" \
+	-arg "-sdeprecated_persistent,${tmpdir}/_.per,5MiB" \
 	-arg "-pban_lurker_sleep=0.01" \
 	-vcl+backend { } -start
 

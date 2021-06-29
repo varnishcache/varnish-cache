@@ -410,14 +410,14 @@ varnish_launch(struct varnish *v)
 		VSB_cat(vsb, " -p debug=+vmod_so_keep");
 		VSB_cat(vsb, " -p debug=+vsm_keep");
 	}
-	VSB_cat(vsb, " -l 2m");
+	VSB_cat(vsb, " -l 2MiB");
 	VSB_cat(vsb, " -p auto_restart=off");
 	VSB_cat(vsb, " -p syslog_cli_traffic=off");
 	VSB_cat(vsb, " -p thread_pool_min=10");
 	VSB_cat(vsb, " -p debug=+vtc_mode");
 	VSB_cat(vsb, " -p vsl_mask=+Debug");
-	VSB_cat(vsb, " -p h2_initial_window_size=1m");
-	VSB_cat(vsb, " -p h2_rx_window_low_water=64k");
+	VSB_cat(vsb, " -p h2_initial_window_size=1MiB");
+	VSB_cat(vsb, " -p h2_rx_window_low_water=64KiB");
 	if (!v->has_a_arg) {
 		VSB_printf(vsb, " -a '%s'", default_listen_addr);
 		if (v->proto != NULL)

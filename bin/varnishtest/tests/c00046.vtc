@@ -6,9 +6,9 @@ server s1 {
 } -start
 
 varnish v1 \
-	-arg "-sdefault,1m" \
-	-arg "-sdefault,1m" \
-	-arg "-sdefault,1m" \
+	-arg "-sdefault,1MiB" \
+	-arg "-sdefault,1MiB" \
+	-arg "-sdefault,1MiB" \
 	-arg "-sTransient=default" \
 	-syntax 4.0 \
 	-vcl+backend {

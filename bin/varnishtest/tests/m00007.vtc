@@ -50,7 +50,7 @@ varnish v1 -vcl+backend {
 client c1 {
 	txreq -hdr "foo: 1" \
 	      -hdr "bool: whatever" \
-	      -hdr "bytes: 1b" \
+	      -hdr "bytes: 1B" \
 	      -hdr "duration: 1s" \
 	      -hdr "real: 1.9" \
 	      -hdr "time: Thu, 01 Jan 1970 00:00:01 GMT"
@@ -81,7 +81,7 @@ client c1 {
 
 	# VCL_INT_MAX
 	txreq -hdr "foo: 999999999999999" \
-	      -hdr "bytes: 999999999999999b" \
+	      -hdr "bytes: 999999999999999B" \
 	      -hdr "duration: 999999999999.999s" \
 	      -hdr "real: 999999999999.999" \
 	      -hdr "time: 999999999999.999"
