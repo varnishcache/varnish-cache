@@ -34,9 +34,9 @@
 double VNUM(const char *p);
 vtim_dur VNUM_duration_unit(vtim_dur r, const char *b, const char *e);
 vtim_dur VNUM_duration(const char *p);
-int64_t VNUM_bytes_unit(double r, const char *b, const char *e, uintmax_t rel,
+int64_t VNUM_bytes_unit(double r, const char *b, const char *e,
     const char **errtxt);
-const char *VNUM_2bytes(const char *p, uintmax_t *r, uintmax_t rel);
+const char *VNUM_2bytes(const char *p, uintmax_t *r);
 
 int64_t SF_Parse_Integer(const char **ipp, const char **errtxt);
 double SF_Parse_Decimal(const char **ipp, int strict, const char **errtxt);

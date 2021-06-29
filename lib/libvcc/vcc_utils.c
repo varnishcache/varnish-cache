@@ -350,7 +350,7 @@ vcc_ByteVal(struct vcc *tl, VCL_INT *d)
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}
-	retval = VNUM_bytes_unit(v, tl->t->b, tl->t->e, 0, &errtxt);
+	retval = VNUM_bytes_unit(v, tl->t->b, tl->t->e, &errtxt);
 	if (errno) {
 		VSB_cat(tl->sb, errtxt);
 		vcc_ErrToken(tl, tl->t);
