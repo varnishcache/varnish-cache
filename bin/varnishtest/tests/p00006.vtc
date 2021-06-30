@@ -13,7 +13,7 @@ server s1 {
 
 
 varnish v1 \
-	-arg "-sdeprecated_persistent,${tmpdir}/_.per,5m" \
+	-arg "-sdeprecated_persistent,${tmpdir}/_.per,5MiB" \
 	-arg "-pcli_timeout=60" \
 	-arg "-pban_lurker_sleep=0" \
 	-vcl+backend { } -start

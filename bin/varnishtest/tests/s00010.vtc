@@ -40,7 +40,7 @@ varnish v1 -vcl+backend {
 		return (pass);
 	}
 	sub vcl_deliver {
-		debug.sndbuf(256b);
+		debug.sndbuf(256B);
 	}
 } -start
 

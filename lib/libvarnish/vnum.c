@@ -51,10 +51,9 @@ static const char err_no_digits[] = "Invalid number";
 
 static const char err_fatnum[] = "Too many digits";
 
-static const char err_unknown_bytes[] =
-    "Unknown BYTES unit of measurement ([KMGTP][B])";
+static const char err_unknown_bytes[] = "Unknown bytes unit";
 
-static const char err_fractional_bytes[] = "Fractional BYTES not allowed";
+static const char err_fractional_bytes[] = "Fractional bytes not allowed";
 
 #define BAIL(txt)						\
 	do {							\
@@ -275,13 +274,14 @@ VNUM_duration(const char *p)
 /**********************************************************************/
 
 int64_t
-VNUM_bytes_unit(double r, const char *b, const char *e, uintmax_t rel,
-    const char **errtxt)
+VNUM_bytes_unit(double r, const char *b, const char *e, const char **errtxt)
 {
-	double sc = 1.0, tmp;
+	double sc = 1.0, si = 1.0, tmp;
+	char i = 'i';
 
 	AN(b);
 	AN(errtxt);
+	*errtxt = NULL;
 	errno = 0;
 	if (e == NULL)
 		e = strchr(b, '\0');
@@ -293,34 +293,43 @@ VNUM_bytes_unit(double r, const char *b, const char *e, uintmax_t rel,
 			*errtxt = err_fractional_bytes;
 			errno = EINVAL;
 		}
-		return ((int64_t)trunc(sc * r));
+		return ((int64_t)trunc(r));
 	}
 
-	if (rel != 0 && *b == '%') {
-		r *= rel * 0.01;
-		b++;
-	} else {
-		switch (*b) {
-		case 'k': case 'K': sc = exp2(10); b++; break;
-		case 'm': case 'M': sc = exp2(20); b++; break;
-		case 'g': case 'G': sc = exp2(30); b++; break;
-		case 't': case 'T': sc = exp2(40); b++; break;
-		case 'p': case 'P': sc = exp2(50); b++; break;
-		case 'b': case 'B':
-			if (modf(r, &tmp) != 0.0) {
-				*errtxt = err_fractional_bytes;
-				errno = EINVAL;
-				return (0);
-			}
-			break;
-		default:
-			*errtxt = err_unknown_bytes;
-			errno = EINVAL;
-			return (0);
-		}
-		if (b < e && (*b == 'b' || *b == 'B'))
-			b++;
+	switch (*b) {
+	case 'k': i = '\0'; /* fall through */
+	case 'K': si = 10; sc =  3; b++; break;
+	case 'M': si = 20; sc =  6; b++; break;
+	case 'G': si = 30; sc =  9; b++; break;
+	case 'T': si = 40; sc = 12; b++; break;
+	case 'P': si = 50; sc = 15; b++; break;
+	case 'B':
+		if (modf(r, &tmp) != 0.0)
+			*errtxt = err_fractional_bytes;
+		i = '\0';
+		sc = 0;
+		break;
+	default:
+		*errtxt = err_unknown_bytes;
 	}
+
+	if (b == e && *errtxt == NULL)
+		*errtxt = err_unknown_bytes;
+
+	if (*errtxt != NULL) {
+		errno = EINVAL;
+		return (0);
+	}
+
+	if (*b == i) {
+		sc = exp2(si);
+		b++;
+	} else
+		sc = pow(10, sc);
+
+	if (b < e && *b == 'B')
+		b++;
+
 	while (b < e && vct_issp(*b))
 		b++;
 	if (b < e) {
@@ -332,7 +341,7 @@ VNUM_bytes_unit(double r, const char *b, const char *e, uintmax_t rel,
 }
 
 const char *
-VNUM_2bytes(const char *p, uintmax_t *r, uintmax_t rel)
+VNUM_2bytes(const char *p, uintmax_t *r)
 {
 	double fval;
 	const char *errtxt;
@@ -346,7 +355,7 @@ VNUM_2bytes(const char *p, uintmax_t *r, uintmax_t rel)
 	if (fval < 0)
 		return(err_invalid_num);
 
-	fval = VNUM_bytes_unit(fval, p, NULL, rel, &errtxt);
+	fval = VNUM_bytes_unit(fval, p, NULL, &errtxt);
 	if (errno)
 		return (errtxt);
 	*r = (uintmax_t)round(fval);
@@ -420,62 +429,54 @@ static const struct test_sf_parse_number {
 
 static struct test_case {
 	const char *str;
-	uintmax_t rel;
 	uintmax_t val;
 	const char *err;
 } test_cases[] = {
-	{ "1",			(uintmax_t)0,	(uintmax_t)1 },
-	{ "1B",			(uintmax_t)0,	(uintmax_t)1<<0 },
-	{ "1 B",		(uintmax_t)0,	(uintmax_t)1<<0 },
-	{ "1.3B",		0,	0,	err_fractional_bytes },
-	{ "1.7B",		0,	0,	err_fractional_bytes },
+	{ "1",			(uintmax_t)1 },
+	{ "1B",			(uintmax_t)1<<0 },
+	{ "1 B",		(uintmax_t)1<<0 },
+	{ "1.3B",		0,	err_fractional_bytes },
+	{ "1.7B",		0,	err_fractional_bytes },
 
-	{ "1024",		(uintmax_t)0,	(uintmax_t)1024 },
-	{ "1k",			(uintmax_t)0,	(uintmax_t)1<<10 },
-	{ "1kB",		(uintmax_t)0,	(uintmax_t)1<<10 },
-	{ "0.75kB",		(uintmax_t)0,	(uintmax_t)768 },
-	{ "1.3kB",		(uintmax_t)0,	(uintmax_t)1331 },
-	{ "1.70kB",		(uintmax_t)0,	(uintmax_t)1740 },
+	{ "1024",		(uintmax_t)1024 },
+	{ "1KiB",		(uintmax_t)1<<10 },
+	{ "1kB",		(uintmax_t)1000 },
+	{ "0.75KiB",		(uintmax_t)768 },
+	{ "1.3KiB",		(uintmax_t)1331 },
+	{ "1.70KiB",		(uintmax_t)1740 },
 
-	{ "1048576",		(uintmax_t)0,	(uintmax_t)1048576 },
-	{ "1M",			(uintmax_t)0,	(uintmax_t)1<<20 },
-	{ "1MB",		(uintmax_t)0,	(uintmax_t)1<<20 },
-	{ "1.3MB",		(uintmax_t)0,	(uintmax_t)1363148 },
-	{ "1.700MB",		(uintmax_t)0,	(uintmax_t)1782579 },
+	{ "1048576",		(uintmax_t)1048576 },
+	{ "1MiB",		(uintmax_t)1<<20 },
+	{ "1MB",		(uintmax_t)1000000 },
+	{ "1.3MiB",		(uintmax_t)1363148 },
+	{ "1.700MiB",		(uintmax_t)1782579 },
 
-	{ "1073741824",		(uintmax_t)0,	(uintmax_t)1073741824 },
-	{ "1G",			(uintmax_t)0,	(uintmax_t)1<<30 },
-	{ "1GB",		(uintmax_t)0,	(uintmax_t)1<<30 },
-	{ "1.3GB",		(uintmax_t)0,	(uintmax_t)1395864371 },
-	{ "1.7GB",		(uintmax_t)0,	(uintmax_t)1825361100 },
+	{ "1073741824",		(uintmax_t)1073741824 },
+	{ "1GiB",		(uintmax_t)1<<30 },
+	{ "1GB",		(uintmax_t)1000000000 },
+	{ "1.3GiB",		(uintmax_t)1395864371 },
+	{ "1.7GiB",		(uintmax_t)1825361100 },
 
-	{ "1099511627776",	(uintmax_t)0,	(uintmax_t)1099511627776ULL },
-	{ "1T",			(uintmax_t)0,	(uintmax_t)1<<40 },
-	{ "1TB",		(uintmax_t)0,	(uintmax_t)1<<40 },
-	{ "1.3TB",		(uintmax_t)0,	(uintmax_t)1429365116108ULL },
-	{ "1.7\tTB",		(uintmax_t)0,	(uintmax_t)1869169767219ULL },
+	{ "1099511627776",	(uintmax_t)1099511627776ULL },
+	{ "1TiB",		(uintmax_t)1<<40 },
+	{ "1TB",		(uintmax_t)1000000000000ULL },
+	{ "1.3TiB",		(uintmax_t)1429365116108ULL },
+	{ "1.7\tTiB",		(uintmax_t)1869169767219ULL },
 
-	{ "999999999999999",	(uintmax_t)0,	(uintmax_t)999999999999999ULL},
+	{ "999999999999999",	(uintmax_t)999999999999999ULL },
 
-	{ "1125899906842624",	0,	0,	err_fatnum },
-	{ "1P\t",		(uintmax_t)0,	(uintmax_t)1125899906842624ULL},
-	{ "1PB ",		(uintmax_t)0,	(uintmax_t)1125899906842624ULL},
-	{ "1.3 PB",		(uintmax_t)0,	(uintmax_t)1463669878895411ULL},
-
-	{ "1.5%",		(uintmax_t)1024,	(uintmax_t)15 },
-	{ "1.501%",		(uintmax_t)1024,	(uintmax_t)15 },
-	{ "2%",			(uintmax_t)1024,	(uintmax_t)20 },
-	{ "3%",			(uintmax_t)1024,	(uintmax_t)30 },
+	{ "1125899906842624",	0,	err_fatnum },
+	{ "1PiB\t",		(uintmax_t)1125899906842624ULL },
+	{ "1PB",		(uintmax_t)1000000000000000ULL },
+	{ "1.3 PiB",		(uintmax_t)1463669878895411ULL },
 
 	/* Check the error checks */
-	{ "",			0,	0,	err_invalid_num },
-	{ "-1",			0,	0,	err_invalid_num },
-	{ "1.3",		0,	0,	err_fractional_bytes},
-	{ "1.5011%",		0,	0,	err_fatnum },
-	{ "-",			0,	0,	err_no_digits },
-	{ "m",			0,	0,	err_no_digits },
-	{ "4%",			0,	0,	err_unknown_bytes },
-	{ "3*",			0,	0,	err_unknown_bytes },
+	{ "",			0,	err_invalid_num },
+	{ "-1",			0,	err_invalid_num },
+	{ "1.3",		0,	err_fractional_bytes },
+	{ "-",			0,	err_no_digits },
+	{ "m",			0,	err_no_digits },
+	{ "3*",			0,	err_unknown_bytes },
 
 	/* TODO: add more */
 
@@ -612,14 +613,14 @@ main(int argc, char *argv[])
 	}
 
 	for (tc = test_cases; tc->str; ++tc) {
-		e = VNUM_2bytes(tc->str, &val, tc->rel);
+		e = VNUM_2bytes(tc->str, &val);
 		if (e != NULL)
 			val = 0;
 		if (e == tc->err && val == tc->val)
 			continue;
 		++ec;
-		printf("%s: VNUM_2bytes(\"%s\", %ju)\n",
-		   *argv, tc->str, tc->rel);
+		printf("%s: VNUM_2bytes(\"%s\")\n",
+		   *argv, tc->str);
 		printf("\tExpected:\tstatus %s - value %ju\n",
 		    tc->err ? tc->err : "Success", tc->val);
 		printf("\tGot:\t\tstatus %s - value %ju\n",

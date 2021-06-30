@@ -29,7 +29,7 @@ server s1 {
 	txresp -bodylen 48
 } -start
 
-varnish v1 -arg "-sdeprecated_persistent,${tmpdir}/_.per,5m" \
+varnish v1 -arg "-sdeprecated_persistent,${tmpdir}/_.per,5MiB" \
 	   -arg "-p feature=+no_coredump" \
 	-vcl+backend {} -start
 

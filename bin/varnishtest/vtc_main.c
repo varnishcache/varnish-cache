@@ -745,7 +745,7 @@ main(int argc, char * const *argv)
 	while ((ch = getopt(argc, argv, "b:CD:hij:kLln:p:qt:v")) != -1) {
 		switch (ch) {
 		case 'b':
-			if (VNUM_2bytes(optarg, &bufsiz, 0)) {
+			if (VNUM_2bytes(optarg, &bufsiz)) {
 				fprintf(stderr, "Cannot parse b opt '%s'\n",
 				    optarg);
 				exit(2);

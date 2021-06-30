@@ -18,9 +18,9 @@ server s1 {
 } -start
 
 varnish v1 \
-	-arg "-ss1=default,1m" \
-	-arg "-ss2=default,1m" \
-	-arg "-ss0=default,1m" \
+	-arg "-ss1=default,1MiB" \
+	-arg "-ss2=default,1MiB" \
+	-arg "-ss0=default,1MiB" \
 	-arg "-sTransient=default" \
 	-vcl+backend {
 	sub vcl_backend_response {

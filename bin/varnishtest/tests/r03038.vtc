@@ -16,7 +16,7 @@ varnish v1 -vcl+backend { }
 
 varnish v1 -expect n_vcl_avail == 10
 
-varnish v1 -cliok "param.set cli_limit 128b"
+varnish v1 -cliok "param.set cli_limit 128B"
 
 varnish v1 -clierr 201 "vcl.list"
 

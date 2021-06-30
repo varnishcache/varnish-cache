@@ -69,26 +69,26 @@ shell -err -expect {Error: -I file CLI command failed (104)} {
 	echo "vcl.list" > foo
 	echo "-foobar" >> foo
 	echo "vcl.load" >> foo
-	varnishd -f '' -I foo -n ${tmpdir}/v0 -a :0 -l 2m
+	varnishd -f '' -I foo -n ${tmpdir}/v0 -a :0 -l 2MiB
 }
 
 shell -err -expect {Error: -l ...: Missing '"'} {
-	varnishd -f '' -I foo -n ${tmpdir}/v0 -a :0 -l '2m,"'
+	varnishd -f '' -I foo -n ${tmpdir}/v0 -a :0 -l '2MiB,"'
 }
 
 shell -err -expect {Error: Too many sub arguments} {
-	varnishd -f '' -I foo -n ${tmpdir}/v0 -a :0 -l 2m,2m,2m
+	varnishd -f '' -I foo -n ${tmpdir}/v0 -a :0 -l 2MiB,2MiB,2MiB
 }
 
 shell -err -expect {Warning: Ignoring deprecated second subargument} {
-	varnishd -f '' -I foo -n ${tmpdir}/v0 -a :0 -l 2m,2m
+	varnishd -f '' -I foo -n ${tmpdir}/v0 -a :0 -l 2MiB,2MiB
 }
 
 # Code coverage of mgt_main, (VCL compiler and RSTdump etc) (former a00017)
 
 # Test -F mode with no VCL loaded
 
-process p1 "exec varnishd -n ${tmpdir}/v1 -F -f '' -a :0 -l2m,1m" -log -start
+process p1 "exec varnishd -n ${tmpdir}/v1 -F -f '' -a :0 -l2MiB,1MiB" -log -start
 
 delay 2
 
@@ -156,12 +156,12 @@ varnish v2 -stop -wait
 # Test multiple -f options with a bad VCL
 
 shell -err -expect {Cannot read -f file} {
-	exec varnishd -n ${tmpdir}/v0 -F -a :0 -l2m,3m -f ${tmpdir}/ok1 \
+	exec varnishd -n ${tmpdir}/v0 -F -a :0 -l2MiB,3MiB -f ${tmpdir}/ok1 \
 	    -f ${tmpdir}/ok2 -f ${tmpdir}/bad
 }
 
 shell -err -expect {Cannot read -f file} {
-	exec varnishd -n ${tmpdir}/v0 -F -a :0 -l2m,3m -f ${tmpdir}/ok1 \
+	exec varnishd -n ${tmpdir}/v0 -F -a :0 -l2MiB,3MiB -f ${tmpdir}/ok1 \
 	    -f ${tmpdir}/bad -f ${tmpdir}/ok2
 }
 

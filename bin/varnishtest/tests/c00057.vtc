@@ -12,7 +12,7 @@ server s1 {
 varnish v1 \
 	-arg "-p feature=+no_coredump" \
 	-arg "-p vcc_allow_inline_c=true" \
-	-arg "-p thread_pool_stack=128k" \
+	-arg "-p thread_pool_stack=128KiB" \
 	-vcl+backend {
 	C{
 #include <signal.h>

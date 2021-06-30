@@ -239,17 +239,17 @@ fmt_bytes(struct vsb *vsb, uintmax_t t)
 	const char *p;
 
 	if (t == 0 || t & 0xff) {
-		VSB_printf(vsb, "%jub", t);
+		VSB_printf(vsb, "%juB", t);
 		return;
 	}
-	for (p = "kMGTPEZY"; *p; p++) {
+	for (p = "KMGTP"; *p; p++) {
 		if (t & 0x300) {
-			VSB_printf(vsb, "%.2f%c", t / 1024.0, *p);
+			VSB_printf(vsb, "%.2f%ciB", t / 1024.0, *p);
 			return;
 		}
 		t /= 1024;
 		if (t & 0x0ff) {
-			VSB_printf(vsb, "%ju%c", t, *p);
+			VSB_printf(vsb, "%ju%ciB", t, *p);
 			return;
 		}
 	}
@@ -265,24 +265,24 @@ tweak_generic_bytes(struct vsb *vsb, volatile ssize_t *dest, const char *arg,
 
 	if (arg != NULL && arg != JSON_FMT) {
 		if (min != NULL) {
-			p = VNUM_2bytes(min, &rmin, 0);
+			p = VNUM_2bytes(min, &rmin);
 			if (p != NULL) {
 				VSB_printf(vsb, "Invalid min-val: %s\n", min);
 				return (-1);
 			}
 		}
 		if (max != NULL) {
-			p = VNUM_2bytes(max, &rmax, 0);
+			p = VNUM_2bytes(max, &rmax);
 			if (p != NULL) {
 				VSB_printf(vsb, "Invalid max-val: %s\n", max);
 				return (-1);
 			}
 		}
-		p = VNUM_2bytes(arg, &r, 0);
+		p = VNUM_2bytes(arg, &r);
 		if (p != NULL) {
 			VSB_cat(vsb, "Could not convert to bytes.\n");
 			VSB_printf(vsb, "%s\n", p);
-			VSB_cat(vsb, "  Try something like '80k' or '120M'\n");
+			VSB_cat(vsb, VNUM_LEGAL_BYTES);
 			return (-1);
 		}
 		if ((uintmax_t)((ssize_t)r) != r) {

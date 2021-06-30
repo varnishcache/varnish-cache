@@ -136,7 +136,7 @@ smf_init(struct stevedore *parent, int ac, char * const *av)
 		size = av[1];
 	if (ac > 2 && *av[2] != '\0') {
 
-		r = VNUM_2bytes(av[2], &page_size, 0);
+		r = VNUM_2bytes(av[2], &page_size);
 		if (r != NULL)
 			ARGV_ERR("(-sfile) granularity \"%s\": %s\n", av[2], r);
 	}

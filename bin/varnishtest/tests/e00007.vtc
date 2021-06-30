@@ -32,7 +32,7 @@ server s1 {
 	}
 } -start
 
-varnish v1 -arg "-sdefault,2m" -vcl+backend {
+varnish v1 -arg "-sdefault,2MiB" -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.do_esi = true;
 	}

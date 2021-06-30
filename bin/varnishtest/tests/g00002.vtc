@@ -12,7 +12,7 @@ server s1 {
 } -start
 
 varnish v1 \
-	-arg "-sdefault,2m" \
+	-arg "-sdefault,2MiB" \
 	-arg "-p feature=+esi_disable_xml_check" \
 	-cliok "param.set http_gzip_support true" \
 	-cliok "param.set gzip_memlevel 1" \
@@ -29,7 +29,7 @@ varnish v1 \
 	}
 } -start
 
-varnish v1 -cliok "param.set fetch_chunksize 4k"
+varnish v1 -cliok "param.set fetch_chunksize 4KiB"
 varnish v1 -cliok "param.set vsl_mask +VfpAcct"
 
 client c1 {

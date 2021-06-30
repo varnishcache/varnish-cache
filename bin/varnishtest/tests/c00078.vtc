@@ -6,9 +6,9 @@ server s1 -repeat 7 {
 } -start
 
 varnish v1 \
-    -arg "-ss1=default,1m" \
-    -arg "-ss2=default,1m" \
-    -arg "-ss0=default,1m" \
+    -arg "-ss1=default,1MiB" \
+    -arg "-ss2=default,1MiB" \
+    -arg "-ss0=default,1MiB" \
     -syntax 4.0 \
     -vcl+backend {
 	import vtc;

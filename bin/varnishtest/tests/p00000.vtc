@@ -18,7 +18,7 @@ shell "rm -f ${tmpdir}/_.per"
 
 varnish v1 \
 	-arg "-pfeature=+wait_silo" \
-	-arg "-sdeprecated_persistent,${tmpdir}/_.per,5m" \
+	-arg "-sdeprecated_persistent,${tmpdir}/_.per,5MiB" \
 	-vcl+backend { } -start
 
 varnish v1 -stop

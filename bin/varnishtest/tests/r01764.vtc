@@ -24,7 +24,7 @@ server s1 {
 	txresp -bodylen 1000000
 } -start
 
-varnish v1  -arg "-sdefault,1M" -arg "-p nuke_limit=1" -vcl+backend {
+varnish v1  -arg "-sdefault,1MiB" -arg "-p nuke_limit=1" -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.do_stream = false;
 	}

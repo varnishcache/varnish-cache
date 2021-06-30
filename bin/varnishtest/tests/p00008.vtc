@@ -18,8 +18,8 @@ server s1 {
 varnish v1 \
 	-arg "-pfeature=+wait_silo" \
 	-arg "-pban_lurker_sleep=0" \
-	-arg "-sper1=deprecated_persistent,${tmpdir}/_.per1,5m" \
-	-arg "-sper2=deprecated_persistent,${tmpdir}/_.per2,5m" \
+	-arg "-sper1=deprecated_persistent,${tmpdir}/_.per1,5MiB" \
+	-arg "-sper2=deprecated_persistent,${tmpdir}/_.per2,5MiB" \
 	-syntax 4.0 \
 	-vcl+backend {
 		sub vcl_backend_response {
@@ -48,7 +48,7 @@ server s1 -wait
 varnish v2 \
 	-arg "-pfeature=+wait_silo" \
 	-arg "-pban_lurker_sleep=0" \
-	-arg "-sdeprecated_persistent,${tmpdir}/_.per1,5m" \
+	-arg "-sdeprecated_persistent,${tmpdir}/_.per1,5MiB" \
 	-vcl+backend { } -start
 varnish v2 -cliok "ban obj.http.x-foo == foo"
 varnish v2 -cliok "ban.list"
@@ -59,8 +59,8 @@ varnish v2 -stop
 varnish v3 \
 	-arg "-pfeature=+wait_silo" \
 	-arg "-pban_lurker_sleep=0" \
-	-arg "-sdeprecated_persistent,${tmpdir}/_.per1,5m" \
-	-arg "-sdeprecated_persistent,${tmpdir}/_.per2,5m" \
+	-arg "-sdeprecated_persistent,${tmpdir}/_.per1,5MiB" \
+	-arg "-sdeprecated_persistent,${tmpdir}/_.per2,5MiB" \
 	-vcl+backend { } -start
 varnish v3 -cliok "ban.list"
 varnish v3 -stop
@@ -75,7 +75,7 @@ server s1 {
 varnish v4 \
 	-arg "-pfeature=+wait_silo" \
 	-arg "-pban_lurker_sleep=0" \
-	-arg "-sdeprecated_persistent,${tmpdir}/_.per2,5m" \
+	-arg "-sdeprecated_persistent,${tmpdir}/_.per2,5MiB" \
 	-vcl+backend { } -start
 client c1 -connect ${v4_sock} {
 	txreq -url "/silo2"

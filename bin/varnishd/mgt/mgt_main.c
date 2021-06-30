@@ -475,7 +475,7 @@ main(int argc, char * const *argv)
 	const char *n_arg = NULL;
 	const char *P_arg = NULL;
 	const char *S_arg = NULL;
-	const char *s_arg = "default,100m";
+	const char *s_arg = "default,100MiB";
 	const char *W_arg = NULL;
 	int s_arg_given = 0;
 	int novcl = 0;

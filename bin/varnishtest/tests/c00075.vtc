@@ -51,7 +51,7 @@ server s1 {
 } -start
 
 varnish v1 \
-	-arg "-s default,1m" -vcl+backend {
+	-arg "-s default,1MiB" -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.http.be-hitmiss = bereq.is_hitmiss;
 		set beresp.http.be-hitpass = bereq.is_hitpass;

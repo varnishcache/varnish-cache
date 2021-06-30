@@ -667,17 +667,17 @@ MCF_InitParams(struct cli *cli)
 		 *
 		 * Reflect changes in doc/sphinx/reference/varnishd.rst !
 		 */
-		MCF_ParamConf(MCF_DEFAULT, "workspace_client", "24k");
-		MCF_ParamConf(MCF_DEFAULT, "workspace_backend", "20k");
-		MCF_ParamConf(MCF_DEFAULT, "http_resp_size", "8k");
-		MCF_ParamConf(MCF_DEFAULT, "http_req_size", "12k");
-		MCF_ParamConf(MCF_DEFAULT, "gzip_buffer", "4k");
-		MCF_ParamConf(MCF_MAXIMUM, "vsl_space", "1G");
+		MCF_ParamConf(MCF_DEFAULT, "workspace_client", "24KiB");
+		MCF_ParamConf(MCF_DEFAULT, "workspace_backend", "20KiB");
+		MCF_ParamConf(MCF_DEFAULT, "http_resp_size", "8KiB");
+		MCF_ParamConf(MCF_DEFAULT, "http_req_size", "12KiB");
+		MCF_ParamConf(MCF_DEFAULT, "gzip_buffer", "4KiB");
+		MCF_ParamConf(MCF_MAXIMUM, "vsl_space", "1GiB");
 		def = 52 * 1024;
 	}
 
 	low = sysconf(_SC_THREAD_STACK_MIN);
-	MCF_ParamConf(MCF_MINIMUM, "thread_pool_stack", "%jdb", (intmax_t)low);
+	MCF_ParamConf(MCF_MINIMUM, "thread_pool_stack", "%jdB", (intmax_t)low);
 
 #if defined(__SANITIZER) || __has_feature(address_sanitizer) || defined(GCOVING)
 	def = 92 * 1024;
@@ -685,7 +685,7 @@ MCF_InitParams(struct cli *cli)
 
 	if (def < low)
 		def = low;
-	MCF_ParamConf(MCF_DEFAULT, "thread_pool_stack", "%jdb", (intmax_t)def);
+	MCF_ParamConf(MCF_DEFAULT, "thread_pool_stack", "%jdB", (intmax_t)def);
 
 #if !defined(MAX_THREAD_POOLS)
 #  define MAX_THREAD_POOLS 32

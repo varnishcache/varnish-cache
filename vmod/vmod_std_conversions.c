@@ -123,7 +123,7 @@ vmod_bytes(VRT_CTX, struct VARGS(bytes) *a)
 		return (0);
 
 	if (a->valid_s) {
-		errtxt = VNUM_2bytes(a->s, &r, 0);
+		errtxt = VNUM_2bytes(a->s, &r);
 		if (errtxt == NULL && r <= VCL_BYTES_MAX)
 			return ((VCL_BYTES)r);
 	}

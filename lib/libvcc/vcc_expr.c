@@ -39,6 +39,7 @@
 
 #include "vcc_compile.h"
 #include "vjsn.h"
+#include "vnum.h"
 
 struct expr {
 	unsigned	magic;
@@ -677,31 +678,107 @@ vcc_Eval_SymFunc(struct vcc *tl, struct expr **e, struct token *t,
 /*--------------------------------------------------------------------
  */
 
+static struct expr *
+vcc_number_bytes(struct vcc *tl, struct token *t, vcc_type_t fmt,
+    const char *sign)
+{
+	struct expr *e;
+	const char *err;
+	double v;
+
+	(void)sign; /* XXX? */
+
+	if (fmt == BYTES && tl->t->tok != ID) {
+		VSB_cat(tl->sb, "Expected bytes unit got ");
+		vcc_ErrToken(tl, tl->t);
+		VSB_printf(tl->sb, "\n%s\n", VNUM_LEGAL_BYTES);
+		vcc_ErrWhere(tl, tl->t);
+		return (NULL);
+	}
+
+	v = VNUM_bytes_unit(t->num, tl->t->b, tl->t->e, &err);
+
+	if (errno) {
+		if (fmt == BYTES && errno) {
+			VSB_cat(tl->sb, err);
+			VSB_printf(tl->sb, "\n%s\n", VNUM_LEGAL_BYTES);
+			vcc_ErrWhere2(tl, t, tl->t);
+		}
+		return (NULL);
+	}
+
+	e = vcc_mk_expr(BYTES, "%ju", (intmax_t)v);
+	vcc_NextToken(tl);
+	return (e);
+}
+
+static struct expr *
+vcc_number_duration(struct vcc *tl, struct token *t, vcc_type_t fmt,
+    const char *sign)
+{
+	struct expr *e;
+	double v;
+
+	if (fmt == DURATION && tl->t->tok != ID) {
+		VSB_cat(tl->sb, "Expected duration unit got ");
+		vcc_ErrToken(tl, tl->t);
+		VSB_printf(tl->sb, "\n%s\n", VNUM_LEGAL_DURATION);
+		vcc_ErrWhere(tl, tl->t);
+		return (NULL);
+	}
+
+	v = VNUM_duration_unit(1.0, tl->t->b, tl->t->e);
+
+	if (isnan(v)) {
+		if (fmt == DURATION) {
+			VSB_cat(tl->sb, "Unknown duration unit ");
+			vcc_ErrToken(tl, tl->t);
+			VSB_printf(tl->sb, "\n%s\n", VNUM_LEGAL_DURATION);
+			vcc_ErrWhere2(tl, t, tl->t);
+		}
+		return (NULL);
+	}
+
+	e = vcc_mk_expr(DURATION, "%s%.3f * %g", sign, t->num, v);
+	vcc_NextToken(tl);
+	return (e);
+}
+
 static void
 vcc_number(struct vcc *tl, struct expr **e, vcc_type_t fmt, const char *sign)
 {
-	VCL_INT vi;
-	struct expr *e1;
+	struct expr *e1 = NULL;
 	struct token *t;
 
 	assert(fmt != VOID);
-	if (fmt == BYTES) {
-		vcc_ByteVal(tl, &vi);
+	t = tl->t;
+	vcc_NextToken(tl);
+
+	e1 = vcc_number_bytes(tl, t, fmt, sign);
+	ERRCHK(tl);
+
+	if (e1 == NULL) {
+		e1 = vcc_number_duration(tl, t, fmt, sign);
 		ERRCHK(tl);
-		e1 = vcc_mk_expr(BYTES, "%ju", (intmax_t)vi);
-	} else {
-		t = tl->t;
-		vcc_NextToken(tl);
-		if (tl->t->tok == ID) {
-			e1 = vcc_mk_expr(DURATION, "%s%.3f * %g",
-			    sign, t->num, vcc_DurationUnit(tl));
-			ERRCHK(tl);
-		} else if (fmt == REAL || t->tok == FNUM) {
+	}
+
+	if (tl->t->tok == ID && e1 == NULL) {
+		VSB_cat(tl->sb, "Unknown unit ");
+		vcc_ErrToken(tl, tl->t);
+		VSB_printf(tl->sb, "\n%s.\n", VNUM_LEGAL_BYTES);
+		VSB_printf(tl->sb, "\n%s.\n", VNUM_LEGAL_DURATION);
+		vcc_ErrWhere(tl, tl->t);
+		return;
+	}
+
+	if (e1 == NULL) {
+		if (fmt == REAL || t->tok == FNUM) {
 			e1 = vcc_mk_expr(REAL, "%s%.3f", sign, t->num);
 		} else {
 			e1 = vcc_mk_expr(INT, "%s%.0f", sign, t->num);
 		}
 	}
+
 	e1->constant = EXPR_CONST;
 	*e = e1;
 }

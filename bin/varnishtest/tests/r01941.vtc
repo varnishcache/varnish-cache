@@ -22,9 +22,9 @@ server s1 {
 	txresp -body {fo}
 } -start
 
-varnish v1 -arg "-pfetch_chunksize=4k" \
+varnish v1 -arg "-pfetch_chunksize=4KiB" \
 	-arg "-p feature=+esi_disable_xml_check" \
-	-arg "-sdefault,1m" -vcl+backend {
+	-arg "-sdefault,1MiB" -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.do_esi = true;
 	}
