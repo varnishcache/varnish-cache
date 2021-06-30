@@ -1,0 +1,51 @@
+varnishtest "Non-symbolic HTTP headers names"
+
+varnish v1 -errvcl "Invalid character '\\n' in header name" {
+	backend be none;
+	sub vcl_recv {
+		set req.http.{"line
+break"} = "invalid";
+	}
+}
+
+varnish v1 -errvcl "Expected '=' got '.'" {
+	backend be none;
+	sub vcl_recv {
+		set req."http".wrong-quote = "invalid";
+	}
+}
+
+varnish v1 -syntax 4.0 -errvcl "Quoted headers are available for VCL >= 4.1" {
+	backend be none;
+	sub vcl_recv {
+		set req.http."quoted" = "invalid";
+	}
+}
+
+varnish v1 -vcl {
+	import std;
+	backend be none;
+	sub vcl_recv {
+		std.collect(req.http."...");
+		return (synth(200));
+	}
+	sub vcl_synth {
+		set resp.http."123" = "456";
+		set resp.http."456" = resp.http."123";
+		set resp.http.{"!!!"} = "???";
+		set resp.http."""resp.http.foo""" = "bar";
+		set resp.http.bar = resp.http."resp.http.foo".upper();
+		set resp.http."..." = req.http."...";
+	}
+} -start
+
+client c1 {
+	txreq -hdr "...: a" -hdr "...: b"
+	rxresp
+	expect resp.http.123 == 456
+	expect resp.http.456 == 456
+	expect resp.http.!!! == ???
+	expect resp.http.resp.http.foo == bar
+	expect resp.http.bar == BAR
+	expect resp.http.... == "a, b"
+} -run
