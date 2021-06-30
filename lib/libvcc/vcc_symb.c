@@ -294,10 +294,10 @@ VCC_SymbolGet(struct vcc *tl, vcc_ns_t ns, vcc_kind_t kind,
 			tn2 = tn;
 		}
 		tn1 = vcc_PeekTokenFrom(tl, tn);
-		if (tn1 == NULL || tn1->tok != '.')
+		if (tn1->tok != '.')
 			break;
 		tn1 = vcc_PeekTokenFrom(tl, tn1);
-		if (tn1 == NULL || tn1->tok != ID)
+		if (tn1->tok != ID)
 			break;
 		tn = tn1;
 	}
