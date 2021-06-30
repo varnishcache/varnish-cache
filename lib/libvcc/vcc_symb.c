@@ -141,21 +141,24 @@ vcc_symtab_new(const char *name)
 }
 
 static struct symtab *
-vcc_symtab_str(struct symtab *st, const char *b, const char *e)
+vcc_symtab_str(struct symtab *st, const char *b, const char *e, unsigned tok)
 {
 	struct symtab *st2, *st3;
 	size_t l;
 	int i;
 	const char *q;
 
+	assert(tok == ID || tok == CSTR);
 	if (e == NULL)
 		e = strchr(b, '\0');
+	q = e;
 
 	while (b < e) {
-		for (q = b; q < e && *q != '.'; q++)
-			continue;
-		AN(q);
-		l = q - b;
+		if (tok == ID) {
+			for (q = b; q < e && *q != '.'; q++)
+				continue;
+		}
+		l = pdiff(b, q);
 		VTAILQ_FOREACH(st2, &st->children, list) {
 			i = strncasecmp(st2->name, b, l);
 			if (i < 0)
@@ -208,10 +211,12 @@ vcc_sym_in_tab(struct vcc *tl, struct symtab *st,
 	VTAILQ_FOREACH(sym, &st->symbols, list) {
 		if (sym->lorev > vhi || sym->hirev < vlo)
 			continue;
-		if ((kind == SYM_NONE && kind == sym->kind))
+		if (kind == SYM_NONE && kind == sym->kind &&
+		    sym->wildcard == NULL)
 			continue;
 		if (tl->syntax < VCL_41 && strcmp(sym->name, "default") &&
-		     (kind != SYM_NONE && kind != sym->kind))
+		     kind != SYM_NONE && kind != sym->kind &&
+		     sym->wildcard == NULL)
 			continue;
 		return (sym);
 	}
@@ -285,8 +290,20 @@ VCC_SymbolGet(struct vcc *tl, vcc_ns_t ns, vcc_kind_t kind,
 	st = tl->syms[ns->id];
 	t0 = tl->t;
 	tn = tl->t;
+	assert(tn->tok == ID);
 	while (1) {
-		st = vcc_symtab_str(st, tn->b, tn->e);
+		assert(tn->tok == ID || tn->tok == CSTR);
+		if (tn->tok == CSTR && tl->syntax < VCL_41) {
+			VSB_cat(tl->sb,
+			    "Quoted headers are available for VCL >= 4.1.\n"
+			    "At:");
+			vcc_ErrWhere(tl, tn);
+			return (NULL);
+		}
+		if (tn->tok == ID)
+			st = vcc_symtab_str(st, tn->b, tn->e, tn->tok);
+		else
+			st = vcc_symtab_str(st, tn->dec, NULL, tn->tok);
 		sym2 = vcc_sym_in_tab(tl, st, kind, tl->syntax, tl->syntax);
 		if (sym2 != NULL) {
 			sym = sym2;
@@ -297,7 +314,11 @@ VCC_SymbolGet(struct vcc *tl, vcc_ns_t ns, vcc_kind_t kind,
 		if (tn1->tok != '.')
 			break;
 		tn1 = vcc_PeekTokenFrom(tl, tn1);
-		if (tn1->tok != ID)
+		if (tn1->tok == CSTR && sym == NULL)
+			break;
+		if (tn1->tok == CSTR && sym->wildcard == NULL)
+			break;
+		if (tn1->tok != CSTR && tn1->tok != ID)
 			break;
 		tn = tn1;
 	}
@@ -421,7 +442,7 @@ VCC_MkSym(struct vcc *tl, const char *b, vcc_ns_t ns, vcc_kind_t kind,
 
 	if (tl->syms[ns->id] == NULL)
 		tl->syms[ns->id] = vcc_symtab_new("");
-	st = vcc_symtab_str(tl->syms[ns->id], b, NULL);
+	st = vcc_symtab_str(tl->syms[ns->id], b, NULL, ID);
 	AN(st);
 	sym = vcc_sym_in_tab(tl, st, kind, vlo, vhi);
 	AZ(sym);
