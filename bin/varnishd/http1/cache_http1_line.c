@@ -222,9 +222,12 @@ V1L_Flush(const struct worker *wrk)
 			 * prevent slowloris attacks
 			 */
 
-			VSLb(v1l->vsl, SLT_Debug,
-			    "Hit idle send timeout, wrote = %zd/%zd; retrying",
-			    i, v1l->liov);
+			if (errno == EWOULDBLOCK) {
+				VSLb(v1l->vsl, SLT_Debug,
+				    "Hit idle send timeout, "
+				    "wrote = %zd/%zd; retrying",
+				    i, v1l->liov);
+			}
 
 			if (i > 0)
 				v1l_prune(v1l, i);
