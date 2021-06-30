@@ -714,6 +714,7 @@ vcc_number(struct vcc *tl, struct expr **e, vcc_type_t fmt, const char *sign)
  *	CNUM
  *	FNUM
  *	CSTR
+ *	CBLOB
  */
 
 static void
