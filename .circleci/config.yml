@@ -323,7 +323,8 @@ workflows:
       - distcheck:
           name: distcheck_alpine
           dist: alpine
-          release: "latest"
+          release: "3.13"
+          #release: "latest"
           extra_conf: --disable-developer-warnings --disable-dependency-tracking
       - distcheck:
           name: distcheck_archlinux
