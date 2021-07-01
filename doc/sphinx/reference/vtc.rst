@@ -57,6 +57,64 @@ being the command and the following ones being its arguments. To continue over
 to a new line without breaking the argument string, you can escape the newline
 character (\\n) with a backslash (\\).
 
+MACROS
+======
+
+When a string is processed, macro expansion is performed. Macros are in the
+form ``${<name>[,<args>...]}``, they have a name followed by an optional
+comma- or space-separated list of arguments. Leading and trailing spaces are
+ignored.
+
+The macros ``${foo,bar,baz}`` and ``${ foo bar baz }`` are equivalent. If an
+argument contains a space or a comma, arguments can be quoted. For example the
+macro ``${foo,"bar,baz"}`` gives one argument ``bar,baz`` to the macro called
+``foo``.
+
+Unless documented otherwise, all macros are simple macros that don't take
+arguments.
+
+Built-in macros
+---------------
+
+``${bad_backend}``
+	A socket address that will reliably never accept connections.
+
+``${bad_ip}``
+	An unlikely IPv4 address.
+
+``${date}``
+	The current date and time formatted for HTTP.
+
+``${listen_addr}``
+	The default listen address various components use, by default a random
+	port on localhost.
+
+``${localhost}``
+	The first IP address that resolves to "localhost".
+
+``${pwd}``
+	The working directory from which ``varnishtest`` was executed.
+
+``${string,<action>[,<args>...]}``
+	The ``string`` macro is the entry point for text generation, it takes
+	a specialized action with each its own set of arguments.
+
+``${string,repeat,<uint>,<str>}``
+	Repeat ``uint`` times the string ``str``.
+
+``${testdir}``
+	The directory containing the VTC script of the ongoing test case
+	execution.
+
+``${tmpdir}``
+	The dedicated working directory for the ongoing test case execution,
+	which happens to also be the current working directory. Useful when an
+	absolute path to the working directory is needed.
+
+``${topbuild}``
+	Only present when the ``-i`` option is used, to work on Varnish itself
+	instead of a regular installation.
+
 SYNTAX
 ======
 
