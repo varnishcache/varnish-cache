@@ -169,15 +169,24 @@ jobs:
         default: ""
         type: string
     docker:
-      - image: << parameters.dist >>:<< parameters.release >>
+      - image: centos:7
     working_directory: /workspace
     steps:
+      - setup_remote_docker:
+          version: 20.10.6
       - run:
-          name: Possible << parameters.dist >>:<< parameters.release >> extra repos
+          name: Install docker
+          command: yum install -y docker
+      - checkout
+      - run:
+          name: Extract and distcheck
           command: |
+            docker create --name workspace -v /workspace << parameters.dist >>:<< parameters.release >> /bin/true
+            docker cp /workspace workspace:/
+            docker run --volumes-from workspace -w /workspace << parameters.dist >>:<< parameters.release >> sh -c '
             if [ << parameters.dist >> = centos ]; then
                 if [ << parameters.release >> = 8 ]; then
-                    dnf install -y 'dnf-command(config-manager)'
+                    dnf install -y "dnf-command(config-manager)"
                     yum config-manager --set-enabled powertools
                     yum install -y diffutils python3-sphinx
                 else
@@ -254,10 +263,7 @@ jobs:
                     python-sphinx \
                     tar
             fi
-      - checkout
-      - run:
-          name: Extract and distcheck
-          command: |
+
             if [ << parameters.dist >> = archlinux ]; then
                 useradd varnish
             elif [ << parameters.dist >> = centos ]; then
@@ -285,6 +291,7 @@ jobs:
                 make distcheck VERBOSE=1 -j 4 -k \
                 DISTCHECK_CONFIGURE_FLAGS="<< pipeline.parameters.configure_args >> \
                 << parameters.extra_conf >>"
+            '
 
   collect_packages:
     docker:
@@ -323,8 +330,7 @@ workflows:
       - distcheck:
           name: distcheck_alpine
           dist: alpine
-          release: "3.13"
-          #release: "latest"
+          release: "latest"
           extra_conf: --disable-developer-warnings --disable-dependency-tracking
       - distcheck:
           name: distcheck_archlinux
