@@ -32,6 +32,14 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
+Varnish Cache 6.6.1 (unreleased)
+================================
+
+* Fix an HTTP/2.0 request smuggling vulnerability. (VSV00007_)
+
+.. _VSV00007: https://varnish-cache.org/security/VSV00007.html
+
+================================
 Varnish Cache 6.6.0 (2021-03-15)
 ================================
 
