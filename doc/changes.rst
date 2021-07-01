@@ -76,6 +76,8 @@ Varnish Cache 6.0.8 (YYYY-MM-DD)
 * Fix an issue where the `return(error)` status and reason are kept
   when doing a backend retry. (3525_)
 
+* Fix an HTTP/2.0 request smuggling vulnerability. (VSV00007_)
+
 .. _3556: https://github.com/varnishcache/varnish-cache/issues/3556
 .. _3593: https://github.com/varnishcache/varnish-cache/pull/3593
 .. _3537: https://github.com/varnishcache/varnish-cache/pull/3537
@@ -94,6 +96,7 @@ Varnish Cache 6.0.8 (YYYY-MM-DD)
 .. _3535: https://github.com/varnishcache/varnish-cache/issues/3535
 .. _3546: https://github.com/varnishcache/varnish-cache/pull/3546
 .. _3525: https://github.com/varnishcache/varnish-cache/issues/3525
+.. _VSV00007: https://varnish-cache.org/security/VSV00007.html
 
 ================================
 Varnish Cache 6.0.7 (2020-11-06)
