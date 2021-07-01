@@ -134,7 +134,7 @@ void macro_undef(struct vtclog *vl, const char *instance, const char *name);
 void macro_def(struct vtclog *vl, const char *instance, const char *name,
     const char *fmt, ...)
     v_printflike_(4, 5);
-char *macro_get(const char *, const char *);
+void macro_cat(struct vtclog *, struct vsb *, const char *, const char *);
 struct vsb *macro_expand(struct vtclog *vl, const char *text);
 struct vsb *macro_expandf(struct vtclog *vl, const char *, ...)
     v_printflike_(2, 3);
