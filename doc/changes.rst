@@ -27,7 +27,7 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
-Varnish Cache 6.0.8 (YYYY-MM-DD)
+Varnish Cache 6.0.8 (2021-07-13)
 ================================
 
 * Fix an issue where a backend fetch can stall after a client has
