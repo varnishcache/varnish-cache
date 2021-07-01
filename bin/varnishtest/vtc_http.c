@@ -849,11 +849,9 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
 	int bodylen = 0;
 	char *b, *c;
 	char *nullbody;
-	char *m;
 	int nolen = 0;
 	int l;
 
-	(void)vl;
 	nullbody = body;
 
 	for (; *av != NULL; av++) {
@@ -926,10 +924,9 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
 			break;
 	}
 	if (!nohost) {
-		m = macro_get("localhost", NULL);
-		AN(m);
-		VSB_printf(hp->vsb, "Host: %s%s", m, nl);
-		free(m);
+		VSB_cat(hp->vsb, "Host: ");
+		macro_cat(vl, hp->vsb, "localhost", NULL);
+		VSB_cat(hp->vsb, nl);
 	}
 	if (body != NULL && !nolen)
 		VSB_printf(hp->vsb, "Content-Length: %d%s", bodylen, nl);

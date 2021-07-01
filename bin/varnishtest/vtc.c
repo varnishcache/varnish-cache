@@ -187,8 +187,8 @@ macro_undef(struct vtclog *vl, const char *instance, const char *name)
 	AZ(pthread_mutex_unlock(&macro_mtx));
 }
 
-char *
-macro_get(const char *b, const char *e)
+void
+macro_cat(struct vtclog *vl, struct vsb *vsb, const char *b, const char *e)
 {
 	struct macro *m;
 	int l;
@@ -205,7 +205,9 @@ macro_get(const char *b, const char *e)
 		retval = malloc(64);
 		AN(retval);
 		VTIM_format(t, retval);
-		return (retval);
+		VSB_cat(vsb, retval);
+		free(retval);
+		return;
 	}
 
 	AZ(pthread_mutex_lock(&macro_mtx));
@@ -215,9 +217,19 @@ macro_get(const char *b, const char *e)
 			break;
 	}
 	if (m != NULL)
-		retval = strdup(m->val);
+		REPLACE(retval, m->val);
 	AZ(pthread_mutex_unlock(&macro_mtx));
-	return (retval);
+
+	if (retval == NULL) {
+		if (!ign_unknown_macro)
+			vtc_fatal(vl, "Macro ${%.*s} not found",
+			    (int)(e - b), b);
+		VSB_printf(vsb, "${%.*s}", (int)(e - b), b);
+		return;
+	}
+
+	VSB_cat(vsb, retval);
+	free(retval);
 }
 
 struct vsb *
@@ -242,7 +254,6 @@ macro_expand(struct vtclog *vl, const char *text)
 {
 	struct vsb *vsb;
 	const char *p, *q;
-	char *m;
 
 	vsb = VSB_new_auto();
 	AN(vsb);
@@ -262,19 +273,7 @@ macro_expand(struct vtclog *vl, const char *text)
 		assert(p[1] == '{');
 		assert(q[0] == '}');
 		p += 2;
-		m = macro_get(p, q);
-		if (m == NULL) {
-			if (!ign_unknown_macro) {
-				VSB_destroy(&vsb);
-				vtc_fatal(vl, "Macro ${%.*s} not found",
-					  (int)(q - p), p);
-				NEEDLESS(return (NULL));
-			}
-			VSB_printf(vsb, "${%.*s}", (int)(q - p), p);
-		} else {
-			VSB_printf(vsb, "%s", m);
-			free(m);
-		}
+		macro_cat(vl, vsb, p, q);
 		text = q + 1;
 	}
 	AZ(VSB_finish(vsb));
@@ -509,7 +508,6 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 	FILE *f;
 	struct vsb *vsb;
 	const char *p;
-	char *q;
 
 	(void)signal(SIGPIPE, SIG_IGN);
 
@@ -529,12 +527,8 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 
 	vsb = VSB_new_auto();
 	AN(vsb);
-	if (*fn != '/') {
-		q = macro_get("pwd", NULL);
-		AN(q);
-		VSB_cat(vsb, q);
-		free(q);
-	}
+	if (*fn != '/')
+		macro_cat(vltop, vsb, "pwd", NULL);
 	p = strrchr(fn, '/');
 	if (p != NULL) {
 		VSB_putc(vsb, '/');
