@@ -32,7 +32,7 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
-Varnish Cache 6.6.1 (unreleased)
+Varnish Cache 6.6.1 (2021-07-13)
 ================================
 
 * Fix an HTTP/2.0 request smuggling vulnerability. (VSV00007_)
