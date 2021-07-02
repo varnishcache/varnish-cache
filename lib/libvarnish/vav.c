@@ -143,12 +143,11 @@ VAV_ParseTxt(const char *b, const char *e, int *argc, int flag)
 	char **argv;
 	const char *p;
 	int nargv, largv;
-	int i, quote, more;
+	int i, quote;
 
 	AN(b);
 	if (e == NULL)
 		e = strchr(b, '\0');
-	more = 0;
 	nargv = 1;
 	largv = 16;
 	argv = calloc(largv, sizeof *argv);
@@ -162,7 +161,6 @@ VAV_ParseTxt(const char *b, const char *e, int *argc, int flag)
 		}
 		if ((flag & ARGV_COMMENT) && *b == '#')
 			break;
-		more = 0;
 		if (*b == '"' && !(flag & ARGV_NOESC)) {
 			p = ++b;
 			quote = 1;
@@ -187,10 +185,8 @@ VAV_ParseTxt(const char *b, const char *e, int *argc, int flag)
 			if (!quote) {
 				if (b >= e || isspace(*b))
 					break;
-				if ((flag & ARGV_COMMA) && *b == ',') {
-					more = 1;
+				if ((flag & ARGV_COMMA) && *b == ',')
 					break;
-				}
 				b++;
 				continue;
 			}
@@ -202,8 +198,7 @@ VAV_ParseTxt(const char *b, const char *e, int *argc, int flag)
 			argv[0] = err_missing_quote;
 			return (argv);
 		}
-		/* Ensure 1 slot for the new argument plus 1 more */
-		if (nargv + 2 >= largv) {
+		if (nargv + 1 >= largv) {
 			argv = realloc(argv, sizeof (*argv) * (largv += largv));
 			assert(argv != NULL);
 		}
@@ -218,12 +213,6 @@ VAV_ParseTxt(const char *b, const char *e, int *argc, int flag)
 		}
 		if (b < e)
 			b++;
-	}
-	if (more) {
-		AN(flag & ARGV_COMMA);
-		argv[nargv] = strdup("");
-		assert(argv[nargv] != NULL);
-		nargv++;
 	}
 	argv[nargv] = NULL;
 	if (argc != NULL)
