@@ -439,22 +439,6 @@ workflows:
           image: centos:8
           ext: rpm
           <<: *pkg_req
-      - package:
-          name: x64-alpine-3
-          dist: alpine
-          release: "3"
-          arch: x64
-          image: alpine:3
-          ext: apk
-          <<: *pkg_req
-      - package:
-          name: aarch64-alpine-3
-          dist: alpine
-          release: "3"
-          arch: aarch64
-          image: arm64v8/alpine:3
-          ext: apk
-          <<: *pkg_req
       - collect_packages:
           requires:
             - x64-ubuntu-xenial
@@ -473,6 +457,3 @@ workflows:
             - aarch64-centos-7
             - x64-centos-8
             - aarch64-centos-8
-            - x64-alpine-3
-            - aarch64-alpine-3
-
