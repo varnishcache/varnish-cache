@@ -172,6 +172,10 @@ VAV_ParseTxt(const char *b, const char *e, int *argc, int flag)
 		}
 		while (1) {
 			if (*b == '\\' && !(flag & ARGV_NOESC)) {
+				if (b + 1 >= e) {
+					argv[0] = err_invalid_backslash;
+					return (argv);
+				}
 				i = VAV_BackSlash(b, NULL);
 				if (i == 0) {
 					argv[0] = err_invalid_backslash;
@@ -333,6 +337,7 @@ static const struct test_case *tests[] = {
 	TEST_PASS(0    , "foo #bar", "foo", "#bar"),
 	TEST_PASS(K    , "foo #bar", "foo"),
 	TEST_PASS(    N, "\\", "\\"),
+	TEST_FAIL(0    , "\\", invalid_backslash),
 	TEST_FAIL(0    , "\"foo", missing_quote),
 	NULL
 #undef N
