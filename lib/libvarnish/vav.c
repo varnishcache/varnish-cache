@@ -190,11 +190,11 @@ VAV_ParseTxt(const char *b, const char *e, int *argc, int flag)
 			}
 			if (*b == '"' && !(flag & ARGV_NOESC))
 				break;
+			b++;
 			if (b >= e) {
 				argv[0] = err_missing_quote;
 				return (argv);
 			}
-			b++;
 		}
 		if (nargv + 1 >= largv) {
 			argv = realloc(argv, sizeof (*argv) * (largv += largv));
