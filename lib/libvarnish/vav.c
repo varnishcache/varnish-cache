@@ -303,3 +303,115 @@ main(int argc, char **argv)
 	return (0);
 }
 #endif
+
+#ifdef TEST_DRIVER
+#  include <stdio.h>
+
+struct test_case {
+	int		flag;
+	const char	*str;
+	const char	**argv;
+};
+
+static const struct test_case *tests[] = {
+#define TEST_PASS(flag, str, ...)					\
+	&(const struct test_case){flag, str,				\
+	    (const char **)&(const void *[]){NULL, __VA_ARGS__, NULL}}
+#define TEST_FAIL(flag, str, err)					\
+	&(const struct test_case){flag, str,				\
+	    (const char **)&(const void *[]){err_ ## err, NULL}}
+#define K ARGV_COMMENT
+#define C ARGV_COMMA
+#define N ARGV_NOESC
+	TEST_PASS(K|C|N, "", NULL),
+	TEST_PASS(0    , "foo", "foo"),
+	TEST_PASS(0    , "foo bar", "foo", "bar"),
+	TEST_PASS(  C  , "foo bar", "foo", "bar"),
+	TEST_PASS(  C  , "foo,bar", "foo", "bar"),
+	TEST_PASS(0    , "  foo  bar  ", "foo", "bar"),
+	TEST_PASS(0    , "foo \"bar baz\"", "foo", "bar baz"),
+	TEST_PASS(0    , "foo #bar", "foo", "#bar"),
+	TEST_PASS(K    , "foo #bar", "foo"),
+	TEST_PASS(    N, "\\", "\\"),
+	TEST_FAIL(0    , "\"foo", missing_quote),
+	NULL
+#undef N
+#undef C
+#undef K
+#undef TEST_FAIL
+#undef TEST_PASS
+};
+
+static char **
+test_run(const struct test_case *tc, int *ret)
+{
+	const char *exp, *act;
+	char **argv, *tmp;
+	int argc, i;
+
+	i = strlen(tc->str);
+	if (i == 0) {
+		argv = VAV_Parse(tc->str, &argc, tc->flag);
+	} else {
+		tmp = malloc(i); /* sanitizer-friendly */
+		AN(tmp);
+		memcpy(tmp, tc->str, i);
+		argv = VAV_ParseTxt(tmp, tmp + i, &argc, tc->flag);
+		free(tmp);
+	}
+	AN(argv);
+
+	if (tc->argv[0] != argv[0]) {
+		exp = tc->argv[0] != NULL ? tc->argv[0] : "success";
+		act = argv[0] != NULL ? argv[0] : "success";
+		printf(
+		    "ERROR: Parsing string <%s> with flags %x, "
+		    "expected <%s> got <%s>.\n",
+		    tc->str, tc->flag, exp, act);
+		*ret = 1;
+		return (argv);
+	}
+
+	for (i = 1; i < argc && tc->argv[i] != NULL && argv[i] != NULL; i++) {
+		if (!strcmp(tc->argv[i], argv[i]))
+			continue;
+		printf(
+		    "ERROR: Parsing string <%s> with flags %x, "
+		    "expected <%s> for argv[%d] got <%s>.\n",
+		    tc->str, tc->flag, tc->argv[i], i, argv[i]);
+		*ret = 1;
+		return (argv);
+	}
+
+	if (tc->argv[i] != NULL || argv[i] != NULL) {
+		act = i < argc ? "less" : "more";
+		printf(
+		    "ERROR: Parsing string <%s> with flags %x, "
+		    "got %s arguments (%d) than expected.\n",
+		    tc->str, tc->flag, act, argc);
+		*ret = 1;
+		return (argv);
+	}
+
+	exp = tc->argv[0] == NULL ? "PASS" : "FAIL";
+	printf("%s: <%s> with flags %x as expected.\n", exp, tc->str, tc->flag);
+	return (argv);
+}
+
+int
+main(int argc, char **argv)
+{
+	const struct test_case **tc;
+	int ret = 0;
+
+	(void)argc;
+	(void)argv;
+
+	for (tc = tests; ret == 0 && *tc != NULL; tc++) {
+		argv = test_run(*tc, &ret);
+		VAV_Free(argv);
+	}
+
+	return (0);
+}
+#endif /* TEST_DRIVER */
