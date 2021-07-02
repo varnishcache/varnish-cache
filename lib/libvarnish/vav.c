@@ -154,9 +154,7 @@ VAV_ParseTxt(const char *b, const char *e, int *argc, int flag)
 	if (argv == NULL)
 		return (NULL);
 
-	for (;;) {
-		if (b >= e)
-			break;
+	while (b < e) {
 		if (isspace(*b)) {
 			b++;
 			continue;
