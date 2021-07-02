@@ -168,7 +168,7 @@ VAV_ParseTxt(const char *b, const char *e, int *argc, int flag)
 			p = b;
 			quote = 0;
 		}
-		while (1) {
+		while (b < e) {
 			if (*b == '\\' && !(flag & ARGV_NOESC)) {
 				if (b + 1 >= e) {
 					argv[0] = err_invalid_backslash;
@@ -193,10 +193,10 @@ VAV_ParseTxt(const char *b, const char *e, int *argc, int flag)
 			if (*b == '"' && !(flag & ARGV_NOESC))
 				break;
 			b++;
-			if (b >= e) {
-				argv[0] = err_missing_quote;
-				return (argv);
-			}
+		}
+		if (b >= e && quote) {
+			argv[0] = err_missing_quote;
+			return (argv);
 		}
 		if (nargv + 1 >= largv) {
 			argv = realloc(argv, sizeof (*argv) * (largv += largv));
