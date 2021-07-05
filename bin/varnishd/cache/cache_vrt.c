@@ -94,7 +94,7 @@ VRT_synth(VRT_CTX, VCL_INT code, VCL_STRING reason)
 		return;
 	}
 
-	if (reason && !WS_Inside(ctx->ws, reason, NULL)) {
+	if (reason && !WS_Allocated(ctx->ws, reason, -1)) {
 		reason = WS_Copy(ctx->ws, reason, -1);
 		if (!reason) {
 			VRT_fail(ctx, "Workspace overflow");
@@ -445,14 +445,14 @@ VRT_String(struct ws *ws, const char *h, const char *p, va_list ap)
 	while (q == NULL || (q != vrt_magic_string_end && *q == '\0'));
 
 	if (h != NULL && p == NULL && q == vrt_magic_string_end &&
-	    WS_Inside(ws, h, NULL)) {
+	    WS_Allocated(ws, h, -1)) {
 		va_end(aq);
 		WS_Release(ws, 0);
 		return (h);
 	}
 
 	if (h == NULL && p != NULL && q == vrt_magic_string_end &&
-	    WS_Inside(ws, p, NULL)) {
+	    WS_Allocated(ws, p, -1)) {
 		va_end(aq);
 		WS_Release(ws, 0);
 		return (p);
@@ -467,7 +467,7 @@ VRT_String(struct ws *ws, const char *h, const char *p, va_list ap)
 		do
 			p = va_arg(aq, const char *);
 		while (p == NULL || (p != vrt_magic_string_end && *p == '\0'));
-		if (p == vrt_magic_string_end && WS_Inside(ws, q, NULL)) {
+		if (p == vrt_magic_string_end && WS_Allocated(ws, q, -1)) {
 			va_end(aq);
 			WS_Release(ws, 0);
 			return (q);
@@ -569,9 +569,9 @@ VRT_StrandsWS(struct ws *ws, const char *h, VCL_STRANDS s)
 	if (q == NULL) {
 		if (h == NULL)
 			return ("");
-		if (WS_Inside(ws, h, NULL))
+		if (WS_Allocated(ws, h, -1))
 			return (h);
-	} else if (h == NULL && WS_Inside(ws, q, NULL)) {
+	} else if (h == NULL && WS_Allocated(ws, q, -1)) {
 		for (i++; i < s->n; i++)
 			if (s->p[i] != NULL && *s->p[i] != '\0')
 				break;

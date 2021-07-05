@@ -60,6 +60,9 @@
  *	VRT_NULL_BLOB_TYPE added as the .type of vrt_null_blob
  *	VRT_blob() changed to return vrt_null_blob for
  *	    len == 0 or src == NULL arguments
+ *	[cache.h] WS_Inside() removed
+ *	[cache.h] WS_Assert_Allocated() removed
+ *	[cache.h] WS_Allocated() added
  * 13.0 (2021-03-15)
  *	Move VRT_synth_page() to deprecated status
  *	Add VRT_synth_strands() and VRT_synth_blob()
