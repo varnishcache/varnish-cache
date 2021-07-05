@@ -102,7 +102,8 @@ vav_backslash_txt(const char *s, const char *e, char *res)
 		}
 		break;
 	case 'x':
-		if (l >= 4 && sscanf(s + 1, "x%02x", &u) == 1) {
+		if (l >= 4 && isxdigit(s[2]) && isxdigit(s[3]) &&
+		    sscanf(s + 1, "x%02x", &u) == 1) {
 			AZ(u & ~0xff);
 			c = u;	/*lint !e734 loss of precision */
 			r = 4;
@@ -355,6 +356,7 @@ static const struct test_case *tests[] = {
 	TEST_FAIL(0    , "\\", invalid_backslash),
 	TEST_FAIL(0    , "\\x", invalid_backslash),
 	TEST_FAIL(0    , "\\x2", invalid_backslash),
+	TEST_FAIL(0    , "\\x2O", invalid_backslash),
 	TEST_PASS(0    , "\\x20", " "),
 	TEST_FAIL(0    , "\"foo", missing_quote),
 	NULL
