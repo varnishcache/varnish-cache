@@ -52,12 +52,20 @@
 #include "vas.h"
 #include "vav.h"
 
-int
-VAV_BackSlash(const char *s, char *res)
+static int
+vav_backslash_txt(const char *s, const char *e, char *res)
 {
-	int r;
+	int r, l;
 	char c;
 	unsigned u;
+
+	AN(s);
+	if (e == NULL)
+		e = strchr(s, '\0');
+
+	l = pdiff(s, e);
+	if (l < 2)
+		return (0);
 
 	assert(*s == '\\');
 	r = c = 0;
@@ -84,7 +92,7 @@ VAV_BackSlash(const char *s, char *res)
 		break;
 	case '0': case '1': case '2': case '3':
 	case '4': case '5': case '6': case '7':
-		for (r = 1; r < 4; r++) {
+		for (r = 1; r < 4 && r < l; r++) {
 			if (!isdigit(s[r]))
 				break;
 			if (s[r] - '0' > 7)
@@ -94,7 +102,7 @@ VAV_BackSlash(const char *s, char *res)
 		}
 		break;
 	case 'x':
-		if (1 == sscanf(s + 1, "x%02x", &u)) {
+		if (l >= 4 && sscanf(s + 1, "x%02x", &u) == 1) {
 			AZ(u & ~0xff);
 			c = u;	/*lint !e734 loss of precision */
 			r = 4;
@@ -106,6 +114,13 @@ VAV_BackSlash(const char *s, char *res)
 	if (res != NULL)
 		*res = c;
 	return (r);
+}
+
+int
+VAV_BackSlash(const char *s, char *res)
+{
+
+	return (vav_backslash_txt(s, NULL, res));
 }
 
 char *
@@ -126,7 +141,12 @@ VAV_BackSlashDecode(const char *s, const char *e)
 			*r++ = *q++;
 			continue;
 		}
-		i = VAV_BackSlash(q, r);
+		i = vav_backslash_txt(q, e, r);
+		if (i == 0) {
+			free(p);
+			errno = EINVAL;
+			return (NULL);
+		}
 		q += i;
 		r++;
 	}
@@ -170,11 +190,7 @@ VAV_ParseTxt(const char *b, const char *e, int *argc, int flag)
 		}
 		while (b < e) {
 			if (*b == '\\' && !(flag & ARGV_NOESC)) {
-				if (b + 1 >= e) {
-					argv[0] = err_invalid_backslash;
-					return (argv);
-				}
-				i = VAV_BackSlash(b, NULL);
+				i = vav_backslash_txt(b, e, NULL);
 				if (i == 0) {
 					argv[0] = err_invalid_backslash;
 					return (argv);
@@ -183,7 +199,7 @@ VAV_ParseTxt(const char *b, const char *e, int *argc, int flag)
 				continue;
 			}
 			if (!quote) {
-				if (b >= e || isspace(*b))
+				if (isspace(*b))
 					break;
 				if ((flag & ARGV_COMMA) && *b == ',')
 					break;
@@ -207,10 +223,11 @@ VAV_ParseTxt(const char *b, const char *e, int *argc, int flag)
 			assert(argv[nargv] != NULL);
 			memcpy(argv[nargv], p, b - p);
 			argv[nargv][b - p] = '\0';
-			nargv++;
 		} else {
-			argv[nargv++] = VAV_BackSlashDecode(p, b);
+			argv[nargv] = VAV_BackSlashDecode(p, b);
+			assert(argv[nargv] != NULL);
 		}
+		nargv++;
 		if (b < e)
 			b++;
 	}
@@ -336,6 +353,9 @@ static const struct test_case *tests[] = {
 	TEST_PASS(K    , "foo #bar", "foo"),
 	TEST_PASS(    N, "\\", "\\"),
 	TEST_FAIL(0    , "\\", invalid_backslash),
+	TEST_FAIL(0    , "\\x", invalid_backslash),
+	TEST_FAIL(0    , "\\x2", invalid_backslash),
+	TEST_PASS(0    , "\\x20", " "),
 	TEST_FAIL(0    , "\"foo", missing_quote),
 	NULL
 #undef N
