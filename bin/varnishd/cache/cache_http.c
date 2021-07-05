@@ -1325,10 +1325,11 @@ http_CopyHome(const struct http *hp)
 			assert(u < HTTP_HDR_FIRST);
 			continue;
 		}
-		if (WS_Inside(hp->ws, hp->hd[u].b, hp->hd[u].e))
-			continue;
 
 		l = Tlen(hp->hd[u]);
+		if (WS_Allocated(hp->ws, hp->hd[u].b, l))
+			continue;
+
 		p = WS_Copy(hp->ws, hp->hd[u].b, l + 1L);
 		if (p == NULL) {
 			http_fail(hp);
