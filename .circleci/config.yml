@@ -326,22 +326,6 @@ workflows:
           ext: deb
           <<: *pkg_req
       - package:
-          name: aarch64-debian-bullseye
-          dist: debian
-          release: bullseye
-          arch: aarch64
-          image: arm64v8/debian:bullseye-slim
-          ext: deb
-          <<: *pkg_req
-      - package:
-          name: x64-debian-bullseye
-          dist: debian
-          release: bullseye
-          arch: x64
-          image: debian:bullseye-slim
-          ext: deb
-          <<: *pkg_req
-      - package:
           name: aarch64-debian-buster
           dist: debian
           release: buster
@@ -417,8 +401,6 @@ workflows:
             - aarch64-debian-stretch
             - x64-debian-buster
             - aarch64-debian-buster
-            - x64-debian-bullseye
-            - aarch64-debian-bullseye
             - x64-centos-7
             - aarch64-centos-7
             - x64-centos-8
