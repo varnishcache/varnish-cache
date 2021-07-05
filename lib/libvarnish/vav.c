@@ -156,19 +156,23 @@ VAV_BackSlashDecode(const char *s, const char *e)
 }
 
 static char err_invalid_backslash[] = "Invalid backslash sequence";
+static char err_invalid_quote[] = "Invalid '\"'";
 static char err_missing_quote[] = "Missing '\"'";
+static char err_missing_separator[] = "Missing separator between arguments";
 
 char **
 VAV_ParseTxt(const char *b, const char *e, int *argc, int flag)
 {
 	char **argv;
-	const char *p;
+	const char *p, *sep;
 	int nargv, largv;
 	int i, quote;
 
 	AN(b);
 	if (e == NULL)
 		e = strchr(b, '\0');
+	sep = NULL;
+	quote = 0;
 	nargv = 1;
 	largv = 16;
 	argv = calloc(largv, sizeof *argv);
@@ -180,6 +184,17 @@ VAV_ParseTxt(const char *b, const char *e, int *argc, int flag)
 			b++;
 			continue;
 		}
+		if (sep != NULL && isspace(*sep) &&
+		    *b == ',' && (flag & ARGV_COMMA)) {
+			sep = NULL;
+			b++;
+			continue;
+		}
+		if (sep != NULL && *sep == '"' && *b == '"') {
+			argv[0] = err_missing_separator;
+			return (argv);
+		}
+		sep = NULL;
 		if ((flag & ARGV_COMMENT) && *b == '#')
 			break;
 		if (*b == '"' && !(flag & ARGV_NOESC)) {
@@ -200,22 +215,34 @@ VAV_ParseTxt(const char *b, const char *e, int *argc, int flag)
 				continue;
 			}
 			if (!quote) {
-				if (isspace(*b))
+				if (isspace(*b)) {
+					sep = b;
 					break;
-				if ((flag & ARGV_COMMA) && *b == ',')
+				}
+				if ((flag & ARGV_COMMA) && *b == ',') {
+					sep = b;
 					break;
+				}
+				if (!(flag & ARGV_NOESC) && *b == '"') {
+					argv[0] = err_invalid_quote;
+					return (argv);
+				}
 				b++;
 				continue;
 			}
-			if (*b == '"' && !(flag & ARGV_NOESC))
+			if (*b == '"' && !(flag & ARGV_NOESC)) {
+				sep = b;
+				quote = 0;
 				break;
+			}
 			b++;
 		}
-		if (b >= e && quote) {
+		if (sep == NULL && quote) {
 			argv[0] = err_missing_quote;
 			return (argv);
 		}
-		if (nargv + 1 >= largv) {
+		/* Ensure slots for 1 new arg plus 1 trailing arg */
+		if (nargv + 2 >= largv) {
 			argv = realloc(argv, sizeof (*argv) * (largv += largv));
 			assert(argv != NULL);
 		}
@@ -231,6 +258,11 @@ VAV_ParseTxt(const char *b, const char *e, int *argc, int flag)
 		nargv++;
 		if (b < e)
 			b++;
+	}
+	if (sep != NULL && *sep == ',') {
+		argv[nargv] = strdup("");
+		assert(argv[nargv] != NULL);
+		nargv++;
 	}
 	argv[nargv] = NULL;
 	if (argc != NULL)
@@ -349,9 +381,14 @@ static const struct test_case *tests[] = {
 	TEST_PASS(  C  , "foo bar", "foo", "bar"),
 	TEST_PASS(  C  , "foo,bar", "foo", "bar"),
 	TEST_PASS(0    , "  foo  bar  ", "foo", "bar"),
+	TEST_PASS(  C  , "  foo  ,  bar  ", "foo", "bar"),
+	TEST_PASS(  C  , "foo bar ", "foo", "bar"),
+	TEST_PASS(  C  , "foo,bar,", "foo", "bar", ""),
 	TEST_PASS(0    , "foo \"bar baz\"", "foo", "bar baz"),
 	TEST_PASS(0    , "foo #bar", "foo", "#bar"),
 	TEST_PASS(K    , "foo #bar", "foo"),
+	TEST_PASS(0    , "foo#bar", "foo#bar"),
+	TEST_PASS(K    , "foo#bar", "foo#bar"),
 	TEST_PASS(    N, "\\", "\\"),
 	TEST_FAIL(0    , "\\", invalid_backslash),
 	TEST_FAIL(0    , "\\x", invalid_backslash),
@@ -359,6 +396,11 @@ static const struct test_case *tests[] = {
 	TEST_FAIL(0    , "\\x2O", invalid_backslash),
 	TEST_PASS(0    , "\\x20", " "),
 	TEST_FAIL(0    , "\"foo", missing_quote),
+	TEST_PASS(    N, "foo\"bar", "foo\"bar"),
+	TEST_FAIL(0    , "foo\"bar", invalid_quote),
+	TEST_FAIL(0    , "foo\"bar", invalid_quote),
+	TEST_PASS(    N, "\"foo\"\"bar\"", "\"foo\"\"bar\""),
+	TEST_FAIL(0    , "\"foo\"\"bar\"", missing_separator),
 	NULL
 #undef N
 #undef C
@@ -396,6 +438,9 @@ test_run(const struct test_case *tc, int *ret)
 		*ret = 1;
 		return (argv);
 	}
+
+	if (tc->argv[0] != NULL)
+		return (argv);
 
 	for (i = 1; i < argc && tc->argv[i] != NULL && argv[i] != NULL; i++) {
 		if (!strcmp(tc->argv[i], argv[i]))
