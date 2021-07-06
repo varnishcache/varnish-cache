@@ -61,7 +61,6 @@ DESIRABLE_WFLAGS = [
     "-Wstrict-prototypes",
     "-Wstring-plus-int",
     "-Wswitch",
-    "-Wsystem-headers",
     "-Wunused-parameter",
     "-Wunused-parameters",
     "-Wunused-result",
@@ -69,15 +68,12 @@ DESIRABLE_WFLAGS = [
 ]
 
 UNDESIRABLE_WFLAGS = [
+    "-Wno-system-headers" # Outside of our control
     "-Wno-thread-safety", # Does not understand our mutexs are wrapped
     "-Wno-old-style-definition", # Does not like vgz
     "-Wno-sign-compare", # Fixable
     "-Wno-implicit-fallthrough", # Probably Fixable
-    "-Wno-builtin-requires-header", # Complains about linux::pthread.h
-    "-Wno-incomplete-setjmp-declaration", # Clang complains about glibc::pthread.h
-    "-Wno-redundant-decls", # Complains about centos::stdio.h
     "-Wno-missing-variable-declarations", # Complains about optreset
-    "-Wno-parentheses", # GCC complains about musl::endian.h
     "-Wno-nullability-completeness", # Barfs all over MacOSx
 ]
 
