@@ -181,6 +181,7 @@ WS_Alloc(struct ws *ws, unsigned bytes)
 	char *r;
 
 	WS_Assert(ws);
+	assert(bytes > 0);
 	bytes = PRNDUP(bytes);
 
 	assert(ws->r == NULL);
@@ -206,7 +207,7 @@ WS_Copy(struct ws *ws, const void *str, int len)
 
 	if (len == -1)
 		len = strlen(str) + 1;
-	assert(len >= 0);
+	assert(len > 0);
 
 	bytes = PRNDUP((unsigned)len);
 	if (ws->f + bytes > ws->e) {
