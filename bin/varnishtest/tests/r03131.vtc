@@ -22,7 +22,7 @@ varnish v1 -vcl {
 
 logexpect l1 -v v1 -g raw {
 	expect * * VCL_Log	{^\Qres(8) = 8\E$}
-	expect 0 = VCL_Log	{^\Qres(15) = 16\E$}
+	expect 0 = VCL_Log	{^\Qres(15) = 15\E$}
 	expect 0 = VCL_Log	{^\Qres(16) = 16\E$}
 
 	expect 0 = VCL_Log	{^\Qres(17) = 0\E$}

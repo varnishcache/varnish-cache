@@ -58,9 +58,8 @@ WS_Assert(const struct ws *ws)
 	assert(ws->f <= ws->e);
 	assert(PAOK(ws->f));
 	if (ws->r) {
-		assert(ws->r > ws->s);
+		assert(ws->r >= ws->f);
 		assert(ws->r <= ws->e);
-		assert(PAOK(ws->r));
 	}
 	assert(*ws->e == WS_REDZONE_END);
 }
@@ -284,25 +283,22 @@ WS_ReserveAll(struct ws *ws)
 unsigned
 WS_ReserveSize(struct ws *ws, unsigned bytes)
 {
-	unsigned b2;
+	unsigned l;
 
 	WS_Assert(ws);
 	assert(ws->r == NULL);
 	assert(bytes > 0);
 
-	b2 = PRNDDN(ws->e - ws->f);
-	if (bytes < b2)
-		b2 = PRNDUP(bytes);
-
-	if (bytes > b2) {
+	l = pdiff(ws->f, ws->e);
+	if (bytes > l) {
 		WS_MarkOverflow(ws);
 		return (0);
 	}
-	ws->r = ws->f + b2;
-	DSL(DBG_WORKSPACE, 0, "WS_ReserveSize(%p, %u/%u) = %zu",
-	    ws, b2, bytes, pdiff(ws->f, ws->r));
+	ws->r = ws->f + bytes;
+	DSL(DBG_WORKSPACE, 0, "WS_ReserveSize(%p, %u/%u) = %u",
+	    ws, bytes, l, bytes);
 	WS_Assert(ws);
-	return (pdiff(ws->f, ws->r));
+	return (bytes);
 }
 
 unsigned
@@ -315,12 +311,11 @@ void
 WS_Release(struct ws *ws, unsigned bytes)
 {
 	WS_Assert(ws);
-	bytes = PRNDUP(bytes);
 	assert(bytes <= ws->e - ws->f);
 	DSL(DBG_WORKSPACE, 0, "WS_Release(%p, %u)", ws, bytes);
 	assert(ws->r != NULL);
 	assert(ws->f + bytes <= ws->r);
-	ws->f += bytes;
+	ws->f += PRNDUP(bytes);
 	ws->r = NULL;
 	WS_Assert(ws);
 }
