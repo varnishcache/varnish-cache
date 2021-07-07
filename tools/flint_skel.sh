@@ -18,15 +18,6 @@ fi
 
 IARG="${IARG} -I/usr/local/include"
 
-# Flexelint do not grok the macro-stacking in pcre2.h
-# Solve it by running it through CPP first.
-
-echo '
-#include "config.h"
-#include <pcre2.h>
-' | cc $IARG -E - |
-    sed '/^# [0-9]/d' > pcre2.h
-
 flexelint \
 	-D__FLEXELINT__ \
 	$(if [ $l -eq 2 ] ; then echo ../../flint.lnt ; fi) \
@@ -37,8 +28,6 @@ flexelint \
         ${IARG} \
 	$FLOPS \
 	2>&1 | tee _.fl
-
-rm -f pcre2.h
 
 if [ -f _.fl.old ] ; then
 	diff -u _.fl.old _.fl

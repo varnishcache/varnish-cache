@@ -9,6 +9,8 @@
 //d__flexelint_v9__=1
 +fan
 
+-hm4
+
 ///////////////////////////////////////////////////////////////////////
 // electives
 //+e9*
@@ -60,7 +62,12 @@
 ///////////////////////////////////////////////////////////////////////
 
 
--emacro((835),*)	// A zero has been given as ___ argument to operator '___
+// This does not work with pcre2.h, the injected /* lint ... */ comments
+// interfere with macro argument concatenation.  Clear flexelint bug
+// because it does not happen when run with -p
+// -emacro((835),*)	// A zero has been given as ___ argument to operator '___
+
+-e835	// A zero has been given as ___ argument to operator '___
 
 ///////////////////////////////////////////////////////////////////////
 // build/config related
