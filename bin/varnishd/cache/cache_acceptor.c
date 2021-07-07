@@ -400,8 +400,6 @@ vca_make_session(struct worker *wrk, void *arg)
 	    raddr, rport, wa->acceptlsock->name, laddr, lport,
 	    sp->t_open, sp->fd);
 
-	WS_Release(wrk->aws, 0);
-
 	vca_pace_good();
 	wrk->stats->sess_conn++;
 
@@ -416,6 +414,7 @@ vca_make_session(struct worker *wrk, void *arg)
 	req->htc->rfd = &sp->fd;
 
 	SES_SetTransport(wrk, sp, req, wa->acceptlsock->transport);
+	WS_Release(wrk->aws, 0);
 }
 
 /*--------------------------------------------------------------------
