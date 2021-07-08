@@ -411,6 +411,50 @@ WS_VSB_finish(struct vsb *vsb, struct ws *ws, size_t *szp)
 
 /*--------------------------------------------------------------------*/
 
+unsigned
+WS_Dump(const struct ws *ws, char where, size_t off, void *buf, size_t len)
+{
+	char *b, *p;
+	size_t l;
+
+	WS_Assert(ws);
+	AN(buf);
+	AN(len);
+
+	switch (where) {
+	case 's': p = ws->s; break;
+	case 'f': p = ws->f; break;
+	case 'r': p = ws->r; break;
+	default:
+		errno = EINVAL;
+		return (0);
+	}
+
+	if (p == NULL) {
+		errno = EAGAIN;
+		return (0);
+	}
+
+	p += off;
+	if (p >= ws->e) {
+		errno = EFAULT;
+		return (0);
+	}
+
+	l = pdiff(p, ws->e);
+	if (len <= l) {
+		memcpy(buf, p, len);
+		return (len);
+	}
+
+	b = buf;
+	memcpy(b, p, l);
+	memset(b + l, WS_REDZONE_END, len - l);
+	return (l);
+}
+
+/*--------------------------------------------------------------------*/
+
 void
 WS_Panic(struct vsb *vsb, const struct ws *ws)
 {

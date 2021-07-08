@@ -781,6 +781,7 @@ uintptr_t WS_Snapshot(struct ws *ws);
 int WS_Overflowed(const struct ws *ws);
 const char *WS_Printf(struct ws *ws, const char *fmt, ...) v_printflike_(2, 3);
 int WS_Allocated(const struct ws *ws, const void *ptr, ssize_t len);
+unsigned WS_Dump(const struct ws *ws, char, size_t off, void *buf, size_t len);
 
 void WS_VSB_new(struct vsb *, struct ws *);
 char *WS_VSB_finish(struct vsb *, struct ws *, size_t *);

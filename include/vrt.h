@@ -64,6 +64,7 @@
  *	[cache.h] WS_Inside() removed
  *	[cache.h] WS_Assert_Allocated() removed
  *	[cache.h] WS_Allocated() added
+ *	[cache.h] WS_Dump() added
  * 13.0 (2021-03-15)
  *	Move VRT_synth_page() to deprecated status
  *	Add VRT_synth_strands() and VRT_synth_blob()
