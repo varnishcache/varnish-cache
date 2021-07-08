@@ -244,9 +244,10 @@ vmod_workspace_dump(VRT_CTX, VCL_ENUM which, VCL_ENUM where,
 	struct ws *ws;
 	VCL_BYTES l, maxlen = 1024;
 	unsigned char buf[maxlen];
-	const char *p;
+	const char *p, *err;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(where);
 
 	ws = vtc_ws_find(ctx, which);
 	if (ws == NULL)
@@ -259,32 +260,20 @@ vmod_workspace_dump(VRT_CTX, VCL_ENUM which, VCL_ENUM where,
 		return (NULL);
 	}
 
-	if (where == VENUM(s))
-		p = ws->s;
-	else if (where == VENUM(f))
-		p = ws->f;
-	else if (where == VENUM(r))
-		p = ws->r;
-	else
-		INCOMPL();
+	l = WS_Dump(ws, *where, off, buf, len);
 
-	if (p == NULL) {
-		VSLb(ctx->vsl, SLT_Error, "workspace_dump: NULL");
+	if (l == 0) {
+		switch (errno) {
+		case EINVAL: WRONG(where); break;
+		case EAGAIN: err = "NULL"; break;
+		case EFAULT: err = "off limit"; break;
+		default: err = "unknown error"; break;
+		}
+		VRT_fail(ctx, "workspace_dump: %s", err);
 		return (NULL);
 	}
-
-	p += off;
-	if (p >= ws->e) {
-		VSLb(ctx->vsl, SLT_Error, "workspace_dump: off limit");
-		return (NULL);
-	}
-
-	l = pdiff(p, ws->e);
-	if (len < l)
-		l = len;
 
 	assert(l < maxlen);
-	memcpy(buf, p, l);
 	p = WS_Copy(ctx->ws, buf, l);
 	if (p == NULL) {
 		VRT_fail(ctx, "workspace_dump: copy failed");
