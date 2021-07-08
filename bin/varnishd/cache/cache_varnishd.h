@@ -432,7 +432,7 @@ void SES_Rel(struct sess *sp);
 
 const char * HTC_Status(enum htc_status_e);
 void HTC_RxInit(struct http_conn *htc, struct ws *ws);
-void HTC_RxPipeline(struct http_conn *htc, void *);
+void HTC_RxPipeline(struct http_conn *htc, char *);
 enum htc_status_e HTC_RxStuff(struct http_conn *, htc_complete_f *,
     vtim_real *t1, vtim_real *t2, vtim_real ti, vtim_real tn, vtim_dur td,
     int maxbytes);

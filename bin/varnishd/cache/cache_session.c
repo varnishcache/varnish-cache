@@ -244,16 +244,16 @@ HTC_RxInit(struct http_conn *htc, struct ws *ws)
 }
 
 void
-HTC_RxPipeline(struct http_conn *htc, void *p)
+HTC_RxPipeline(struct http_conn *htc, char *p)
 {
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
-	if (p == NULL || (char*)p == htc->rxbuf_e) {
+	assert(p >= htc->rxbuf_b);
+	assert(p <= htc->rxbuf_e);
+	if (p == htc->rxbuf_e) {
 		htc->pipeline_b = NULL;
 		htc->pipeline_e = NULL;
 	} else {
-		assert((char*)p >= htc->rxbuf_b);
-		assert((char*)p < htc->rxbuf_e);
 		htc->pipeline_b = p;
 		htc->pipeline_e = htc->rxbuf_e;
 	}
