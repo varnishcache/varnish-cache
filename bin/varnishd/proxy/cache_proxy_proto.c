@@ -151,7 +151,6 @@ vpx_proto1(const struct worker *wrk, const struct req *req)
 	VSL(SLT_Proxy, req->sp->vxid, "1 %s %s %s %s",
 	    fld[1], fld[3], fld[2], fld[4]);
 	HTC_RxPipeline(req->htc, q);
-	WS_Rollback(req->htc->ws, 0);
 	return (0);
 }
 
@@ -353,7 +352,6 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 	hdr_len = l + 16L;
 	assert(req->htc->rxbuf_e >= req->htc->rxbuf_b + hdr_len);
 	HTC_RxPipeline(req->htc, req->htc->rxbuf_b + hdr_len);
-	WS_Rollback(req->ws, 0);
 	p = (const void *)req->htc->rxbuf_b;
 	d = req->htc->rxbuf_b + 16L;
 

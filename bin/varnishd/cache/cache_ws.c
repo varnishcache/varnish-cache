@@ -174,6 +174,34 @@ WS_Rollback(struct ws *ws, uintptr_t pp)
 	WS_Reset(ws, pp);
 }
 
+/*
+ * Make a reservation and optionally pipeline a memory region that may or
+ * may not originate from the same workspace. The presence of a pipeline
+ * implies a rollback.
+ */
+
+unsigned
+WS_Pipeline(struct ws *ws, const void *b, const void *e)
+{
+	unsigned r, l;
+
+	WS_Assert(ws);
+
+	if (b == NULL) {
+		AZ(e);
+		(void)WS_ReserveAll(ws);
+		return (0);
+	}
+
+	AN(e);
+	WS_Rollback(ws, 0);
+	r = WS_ReserveAll(ws);
+	l = pdiff(b, e);
+	assert(l <= r);
+	memmove(ws->f, b, l);
+	return (l);
+}
+
 void *
 WS_Alloc(struct ws *ws, unsigned bytes)
 {
