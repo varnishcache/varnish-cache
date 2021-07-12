@@ -145,6 +145,7 @@ WRK_Thread(struct pool *qp, size_t stacksize, unsigned thread_workspace)
 	w->lastused = NAN;
 	memset(&ds, 0, sizeof ds);
 	w->stats = &ds;
+	THR_SetWorker(w);
 	AZ(pthread_cond_init(&w->cond, NULL));
 
 	WS_Init(w->aws, "wrk", ws, thread_workspace);
