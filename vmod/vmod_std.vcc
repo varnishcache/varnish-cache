@@ -274,6 +274,7 @@ Only one of the *s*, *real* or *integer* arguments may be given or a VCL
 failure will be triggered.
 
 Examples::
+
 	set beresp.ttl = std.duration("1w", 3600s);
 	set beresp.ttl = std.duration(real=1.5);
 	set beresp.ttl = std.duration(integer=10);
@@ -300,6 +301,7 @@ Only one of the *s*, *real* or *integer* arguments may be given or a VCL
 failure will be triggered.
 
 Example::
+
 	std.cache_req_body(std.bytes(something.somewhere, 10K));
 	std.cache_req_body(std.bytes(integer=10*1024));
 	std.cache_req_body(std.bytes(real=10.0*1024));
