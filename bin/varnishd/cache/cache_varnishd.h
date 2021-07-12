@@ -367,6 +367,22 @@ void ObjUnsubscribeEvents(uintptr_t *);
 
 /* cache_panic.c */
 void PAN_Init(void);
+int PAN__DumpStruct(struct vsb *vsb, int block, int track, const void *ptr,
+    const char *smagic, unsigned magic, const char *fmt, ...)
+    v_printflike_(7,8);
+
+#define PAN_dump_struct(vsb, ptr, magic, ...)		\
+    PAN__DumpStruct(vsb, 1, 1, ptr, #magic, magic, __VA_ARGS__)
+
+#define PAN_dump_oneline(vsb, ptr, magic, ...)		\
+    PAN__DumpStruct(vsb, 0, 1, ptr, #magic, magic, __VA_ARGS__)
+
+#define PAN_dump_once(vsb, ptr, magic, ...)		\
+    PAN__DumpStruct(vsb, 1, 0, ptr, #magic, magic, __VA_ARGS__)
+
+#define PAN_dump_once_oneline(vsb, ptr, magic, ...)		\
+    PAN__DumpStruct(vsb, 0, 0, ptr, #magic, magic, __VA_ARGS__)
+
 const char *sess_close_2str(enum sess_close sc, int want_desc);
 
 /* cache_pool.c */
