@@ -346,6 +346,7 @@ child_main(int sigmagic, size_t altstksz)
 #if defined(__FreeBSD__) && __FreeBSD_version >= 1000000
 	malloc_message = child_malloc_fail;
 #endif
+	tzset();
 
 	cache_param = heritage.param;
 
