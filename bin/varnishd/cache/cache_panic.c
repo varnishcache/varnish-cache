@@ -712,6 +712,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 	const char *q;
 	struct req *req;
 	struct busyobj *bo;
+	struct worker *wrk;
 	struct sigaction sa;
 	int err = errno;
 
@@ -794,6 +795,9 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 		pan_busyobj(pan_vsb, bo);
 		if (bo != NULL)
 			VSL_Flush(bo->vsl, 0);
+		wrk = THR_GetWorker();
+		VSB_cat(pan_vsb, "thr.");
+		pan_wrk(pan_vsb, wrk);
 		VMOD_Panic(pan_vsb);
 		pan_pool(pan_vsb);
 	} else {
