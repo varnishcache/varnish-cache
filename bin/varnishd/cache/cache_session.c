@@ -223,30 +223,16 @@ HTC_Status(enum htc_status_e e)
 void
 HTC_RxInit(struct http_conn *htc, struct ws *ws)
 {
-	unsigned r;
-	ssize_t l;
+	unsigned l;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	htc->ws = ws;
 
-	if (!strcasecmp(ws->id, "req"))
-		WS_Rollback(ws, 0);
-	else
-		AZ(htc->pipeline_b);
-
-	r = WS_ReserveAll(htc->ws);
-	htc->rxbuf_b = htc->rxbuf_e = WS_Reservation(ws);
-	if (htc->pipeline_b != NULL) {
-		AN(htc->pipeline_e);
-		// assert(WS_Inside(ws, htc->pipeline_b, htc->pipeline_e));
-		l = htc->pipeline_e - htc->pipeline_b;
-		assert(l > 0);
-		assert(l <= r);
-		memmove(htc->rxbuf_b, htc->pipeline_b, l);
-		htc->rxbuf_e += l;
-		htc->pipeline_b = NULL;
-		htc->pipeline_e = NULL;
-	}
+	l = WS_ReqPipeline(htc->ws, htc->pipeline_b, htc->pipeline_e);
+	htc->rxbuf_b = WS_Reservation(ws);
+	htc->rxbuf_e = htc->rxbuf_b + l;
+	htc->pipeline_b = NULL;
+	htc->pipeline_e = NULL;
 }
 
 void
