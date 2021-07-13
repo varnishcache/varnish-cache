@@ -618,7 +618,11 @@ pan_backtrace(struct vsb *vsb)
 
 #else /* WITH_UNWIND */
 
-#define BACKTRACE_LEVELS	10
+#if __SANITIZER
+#  define BACKTRACE_LEVELS	20
+#else
+#  define BACKTRACE_LEVELS	10
+#endif
 
 static void
 pan_backtrace(struct vsb *vsb)
