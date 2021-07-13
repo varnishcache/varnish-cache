@@ -654,6 +654,7 @@ SES_Rel(struct sess *sp)
 	if (i)
 		return;
 	Lck_Delete(&sp->mtx);
+	WS_Rollback(sp->ws, 0);
 	MPL_Free(sp->pool->mpl_sess, sp);
 }
 
