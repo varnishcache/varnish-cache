@@ -47,6 +47,15 @@
 
 #define NKEV	256
 
+#if !defined(__NetBSD__)
+#define IS_VMK(kevdata, vmk) (kevdata == vmk)
+#define CAST_TO_WAITED(wp, kevdata) CAST_OBJ_NOTNULL(wp, kevdata, WAITED_MAGIC)
+#else
+// Normally temporary workaround until netbsd update the kevent data
+#define IS_VMK(kevdata, vmk) (kevdata == (intptr_t)vmk)
+#define CAST_TO_WAITED(wp, kevdata) CAST_OBJ_NOTNULL(wp, (struct waited *)(void *)kevdata, WAITED_MAGIC)
+#endif
+
 struct vwk {
 	unsigned		magic;
 #define VWK_MAGIC		0x1cc2acc2
@@ -113,11 +122,11 @@ vwk_thread(void *priv)
 		now = VTIM_real();
 		for (kp = ke, j = 0; j < n; j++, kp++) {
 			assert(kp->filter == EVFILT_READ);
-			if (ke[j].udata == vwk) {
+			if (IS_VMK(ke[j].udata, vwk)) {
 				assert(read(vwk->pipe[0], &c, 1) == 1);
 				continue;
 			}
-			CAST_OBJ_NOTNULL(wp, ke[j].udata, WAITED_MAGIC);
+			CAST_TO_WAITED(wp, ke[j].udata);
 			Lck_Lock(&vwk->mtx);
 			AN(Wait_HeapDelete(w, wp));
 			Lck_Unlock(&vwk->mtx);
