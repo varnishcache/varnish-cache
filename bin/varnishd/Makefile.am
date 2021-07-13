@@ -53,7 +53,6 @@ varnishd_SOURCES = \
 	cache/cache_vrt_vcl.c \
 	cache/cache_vrt_vmod.c \
 	cache/cache_wrk.c \
-	cache/cache_ws.c \
 	common/common_vsc.c \
 	common/common_vsmw.c \
 	hash/hash_classic.c \
@@ -109,6 +108,14 @@ varnishd_SOURCES = \
 	waiter/cache_waiter_poll.c \
 	waiter/cache_waiter_ports.c \
 	waiter/mgt_waiter.c
+
+if ENABLE_WORKSPACE_EMULATOR
+varnishd_SOURCES += \
+	cache/cache_ws_emu.c
+else
+varnishd_SOURCES += \
+	cache/cache_ws.c
+endif
 
 if WITH_PERSISTENT_STORAGE
 varnishd_SOURCES += \

@@ -440,6 +440,8 @@ addr_no_randomize_works(void)
  *        Varnish was built with the deprecated persistent storage.
  * sanitizer
  *        Varnish was built with a sanitizer.
+ * workspace_sanitizer
+ *        Varnish was built with its workspace sanitizer.
  *
  * A feature name can be prefixed with an exclamation mark (!) to skip a
  * test if a feature is present.
@@ -453,6 +455,12 @@ addr_no_randomize_works(void)
 static const unsigned with_persistent_storage = 1;
 #else
 static const unsigned with_persistent_storage = 0;
+#endif
+
+#if ENABLE_WORKSPACE_EMULATOR
+static const unsigned enable_workspace_emulator = 1;
+#else
+static const unsigned enable_workspace_emulator = 0;
 #endif
 
 #if __SANITIZER
@@ -515,6 +523,7 @@ cmd_feature(CMD_ARGS)
 		FEATURE("persistent_storage", with_persistent_storage);
 		FEATURE("sanitizer", sanitizer);
 		FEATURE("SO_RCVTIMEO_WORKS", so_rcvtimeo_works);
+		FEATURE("workspace_emulator", enable_workspace_emulator);
 
 		if (!strcmp(feat, "cmd")) {
 			good = 1;
