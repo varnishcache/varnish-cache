@@ -127,6 +127,8 @@ enum sess_close
 V1L_Close(struct worker *wrk, uint64_t *cnt)
 {
 	struct v1l *v1l;
+	struct ws *ws;
+	uintptr_t ws_snap;
 	enum sess_close sc;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -136,8 +138,10 @@ V1L_Close(struct worker *wrk, uint64_t *cnt)
 	wrk->v1l = NULL;
 	CHECK_OBJ_NOTNULL(v1l, V1L_MAGIC);
 	*cnt = v1l->cnt;
-	WS_Rollback(v1l->ws, v1l->ws_snap);
+	ws = v1l->ws;
+	ws_snap = v1l->ws_snap;
 	ZERO_OBJ(v1l, sizeof *v1l);
+	WS_Rollback(ws, ws_snap);
 	return (sc);
 }
 
