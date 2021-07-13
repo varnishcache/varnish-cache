@@ -331,6 +331,20 @@ if test "x$UBSAN_FLAGS$TSAN_FLAGS$ASAN_FLAGS$MSAN_FLAGS" != "x"; then
 	LDFLAGS="$LDFLAGS $SAN_LDFLAGS"
 fi
 
+AC_ARG_ENABLE(workspace-emulator,
+	AS_HELP_STRING([--enable-workspace-emulator],
+		[emulate workspace allocations (default is NO)]),
+    [], [enable_workspace_emulator=no])
+
+AM_CONDITIONAL([ENABLE_WORKSPACE_EMULATOR],
+	[test "$enable_workspace_emulator" = yes])
+
+AM_COND_IF([ENABLE_WORKSPACE_EMULATOR], [
+	AC_CHECK_HEADERS([sanitizer/asan_interface.h])
+	AC_DEFINE([ENABLE_WORKSPACE_EMULATOR], [1],
+              [Define to 1 if the workspace emulator is enabled])
+])
+
 # Use jemalloc on Linux
 JEMALLOC_LDADD=
 AC_ARG_WITH([jemalloc],
