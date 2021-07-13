@@ -181,6 +181,7 @@ VBO_ReleaseBusyObj(struct worker *wrk, struct busyobj **pbo)
 	}
 
 	VCL_Rel(&bo->vcl);
+	WS_Rollback(bo->ws, 0);
 
 	memset(&bo->retries, 0,
 	    sizeof *bo - offsetof(struct busyobj, retries));
