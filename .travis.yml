@@ -68,7 +68,7 @@ jobs:
           export UBSAN_OPTIONS=halt_on_error=1,print_stacktrace=1,use_sigaltstack=0,suppressions=$(pwd)/tools/ubsan.suppr
           export CC=clang-9
         - ./autogen.sh
-        - ./configure --enable-maintainer-mode --with-unwind --enable-debugging-symbols --disable-stack-protector --with-persistent-storage --enable-asan --enable-ubsan
+        - ./configure --enable-maintainer-mode --with-unwind --enable-debugging-symbols --disable-stack-protector --with-persistent-storage --enable-asan --enable-ubsan --enable-workspace-emulator
     - stage: test
       os: osx
       osx_image: xcode12.5
