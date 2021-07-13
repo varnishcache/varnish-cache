@@ -172,6 +172,7 @@ Req_Release(struct req *req)
 	AZ(req->vcl);
 	if (req->vsl->wid)
 		VSL_End(req->vsl);
+	WS_Rollback(req->ws, 0);
 	TAKE_OBJ_NOTNULL(sp, &req->sp, SESS_MAGIC);
 	pp = sp->pool;
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
@@ -261,7 +262,9 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	if (WS_Overflowed(req->ws))
 		wrk->stats->ws_client_overflow++;
 
-	WS_Rollback(req->ws, 0);
+	/* no snapshot for h2 stream 0 */
+	if (req->ws_req)
+		WS_Rollback(req->ws, req->ws_req);
 }
 
 /*----------------------------------------------------------------------
