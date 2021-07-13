@@ -326,7 +326,7 @@ workflows:
           name: distcheck_debian_buster
           dist: debian
           release: buster
-          extra_conf: --enable-asan --enable-ubsan
+          extra_conf: --enable-asan --enable-ubsan --enable-workspace-emulator
       - distcheck:
           name: distcheck_ubuntu_xenial
           dist: ubuntu
