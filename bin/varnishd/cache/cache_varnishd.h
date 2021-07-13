@@ -534,15 +534,8 @@ WS_IsReserved(const struct ws *ws)
 
 void WS_Rollback(struct ws *, uintptr_t);
 void *WS_AtOffset(const struct ws *ws, unsigned off, unsigned len);
+unsigned WS_ReservationOffset(const struct ws *ws);
 unsigned WS_ReqPipeline(struct ws *, const void *b, const void *e);
-
-static inline unsigned
-WS_ReservationOffset(const struct ws *ws)
-{
-
-	AN(ws->r);
-	return (ws->f - ws->s);
-}
 
 /* http1/cache_http1_pipe.c */
 void V1P_Init(void);

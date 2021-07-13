@@ -1,5 +1,8 @@
 varnishtest "Test rollback and retry"
 
+# ws_emu triggers #3550
+feature !workspace_emulator
+
 server s1 {
 	rxreq
 	txresp -nolen -hdr "Content-Length: 3"

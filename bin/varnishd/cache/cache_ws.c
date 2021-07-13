@@ -386,6 +386,14 @@ WS_AtOffset(const struct ws *ws, unsigned off, unsigned len)
 	return (ptr);
 }
 
+unsigned
+WS_ReservationOffset(const struct ws *ws)
+{
+
+	AN(ws->r);
+	return (ws->f - ws->s);
+}
+
 /*---------------------------------------------------------------------
  * Build a VSB on a workspace.
  * Usage pattern:

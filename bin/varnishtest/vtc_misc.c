@@ -450,6 +450,8 @@ addr_no_randomize_works(void)
  *        Varnish was built with the undefined behavior sanitizer.
  * sanitizer
  *        Varnish was built with a sanitizer.
+ * workspace_emulator
+ *        Varnish was built with its workspace emulator.
  *
  * A feature name can be prefixed with an exclamation mark (!) to skip a
  * test if a feature is present.
@@ -493,6 +495,12 @@ static const unsigned ubsan = 0;
 static const unsigned sanitizer = 1;
 #else
 static const unsigned sanitizer = 0;
+#endif
+
+#if ENABLE_WORKSPACE_EMULATOR
+static const unsigned workspace_emulator = 1;
+#else
+static const unsigned workspace_emulator = 0;
 #endif
 
 #if WITH_PERSISTENT_STORAGE
@@ -560,6 +568,7 @@ cmd_feature(CMD_ARGS)
 		FEATURE("ubsan", ubsan);
 		FEATURE("sanitizer", sanitizer);
 		FEATURE("SO_RCVTIMEO_WORKS", so_rcvtimeo_works);
+		FEATURE("workspace_emulator", workspace_emulator);
 
 		if (!strcmp(feat, "cmd")) {
 			good = 1;
