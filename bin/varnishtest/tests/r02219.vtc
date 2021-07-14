@@ -9,7 +9,10 @@ server s1 {
 	txresp
 } -start
 
-varnish v1 -arg "-p workspace_client=9k" -proto PROXY -vcl+backend {
+varnish v1 -arg "-p workspace_client=9k" \
+	   -arg "-p vsl_buffer=4k" \
+	   -proto PROXY \
+	   -vcl+backend {
 	import std;
 	import vtc;
 	sub vcl_recv {

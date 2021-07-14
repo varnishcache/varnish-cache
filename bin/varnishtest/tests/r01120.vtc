@@ -7,7 +7,7 @@ server s1 {
 	txresp -hdr "Vary: Foo" -body "yyyyy"
 } -start
 
-varnish v1 \
+varnish v1 -arg "-p vsl_buffer=4k" \
 	-cliok "param.set workspace_client 10k" \
 	-cliok "param.set workspace_backend 200k" \
 	-vcl+backend {
