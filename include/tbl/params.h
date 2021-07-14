@@ -1022,7 +1022,7 @@ PARAM_SIMPLE(
 	/* type */	vsl_buffer,
 	/* min */	"267",
 	/* max */	NULL,
-	/* def */	"4k",
+	/* def */	"16k",
 	/* units */	"bytes",
 	/* descr */
 	"Bytes of (req-/backend-)workspace dedicated to buffering VSL "
@@ -1082,7 +1082,7 @@ PARAM_SIMPLE(
 	/* type */	bytes_u,
 	/* min */	"1k",
 	/* max */	NULL,
-	/* def */	"64k",
+	/* def */	"96k",
 	/* units */	"bytes",
 	/* descr */
 	"Bytes of HTTP protocol workspace for backend HTTP req/resp.  If "
@@ -1095,7 +1095,7 @@ PARAM_SIMPLE(
 	/* type */	bytes_u,
 	/* min */	"9k",
 	/* max */	NULL,
-	/* def */	"64k",
+	/* def */	"96k",
 	/* units */	"bytes",
 	/* descr */
 	"Bytes of HTTP protocol workspace for clients HTTP req/resp.  Use a "
