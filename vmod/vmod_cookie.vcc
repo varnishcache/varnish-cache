@@ -194,8 +194,8 @@ particular cookie is present, like this::
 
 $Function STRING get_re(PRIV_TASK, REGEX expression)
 
-Get the value of the first cookie in internal vmod storage that matches
-regular expression ``expression``. If nothing matches, an empty string
+Get the value of the first cookie in internal vmod storage that matches the
+regular expression ``expression``. If nothing matches, the `NULL` string
 is returned.
 
 Example::
