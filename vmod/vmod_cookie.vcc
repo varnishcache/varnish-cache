@@ -150,8 +150,7 @@ Example::
 
 $Function STRING get(PRIV_TASK, STRING cookiename)
 
-Get the value of ``cookiename``, as stored in internal vmod storage. If
-``cookiename`` does not exist an empty string is returned.
+Get the value of ``cookiename``, as stored in internal vmod storage.
 
 Example::
 
@@ -159,6 +158,38 @@ Example::
 	sub vcl_recv {
 	    cookie.parse("cookie1: value1; cookie2: value2;");
 	    std.log("cookie1 value is: " + cookie.get("cookie1"));
+	}
+
+If ``cookiename`` does not exist, the `NULL` string is returned. Note
+that a `NULL` string is converted to an empty string when assigned to
+a header. This means that the following is correct::
+
+	if (req.http.Cookie) {
+		cookie.parse(req.http.Cookie);
+		set req.http.X-tmp = cookie.get("a_cookie");
+	} else {
+		set req.http.X-tmp = "";
+	}
+	if (req.http.X-tmp != "") {
+		// do something with the X-tmp header...
+	} else {
+		// fallback case
+	}
+
+However, using `cookie.isset()` is often a better way to check if a
+particular cookie is present, like this::
+
+	unset req.http.X-tmp; # unnecessary if no fallback is needed
+	if (req.http.Cookie) {
+		cookie.parse(req.http.Cookie);
+		if (cookie.isset("a_cookie")) {
+			set req.http.X-tmp = cookie.get("a_cookie");
+			# do something with the X-tmp header...
+		}
+	}
+	# if necessary, do something when a_cookie is not there
+	if (!req.http.X-tmp) {
+		# fallback case
 	}
 
 $Function STRING get_re(PRIV_TASK, REGEX expression)
