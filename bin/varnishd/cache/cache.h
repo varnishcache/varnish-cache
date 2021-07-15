@@ -780,19 +780,11 @@ void *WS_Copy(struct ws *ws, const void *str, int len);
 uintptr_t WS_Snapshot(struct ws *ws);
 int WS_Overflowed(const struct ws *ws);
 const char *WS_Printf(struct ws *ws, const char *fmt, ...) v_printflike_(2, 3);
-int WS_Inside(const struct ws *, const void *, const void *);
-void WS_Assert_Allocated(const struct ws *ws, const void *ptr, ssize_t len);
+int WS_Allocated(const struct ws *ws, const void *ptr, ssize_t len);
+unsigned WS_Dump(const struct ws *ws, char, size_t off, void *buf, size_t len);
 
 void WS_VSB_new(struct vsb *, struct ws *);
 char *WS_VSB_finish(struct vsb *, struct ws *, size_t *);
-
-/* REL_20210915 remove */
-static inline char*
-WS_Front(const struct ws *ws)
-{
-	AN(ws->r);
-	return ws->f;
-}
 
 static inline void *
 WS_Reservation(const struct ws *ws)
@@ -843,13 +835,3 @@ Tlen(const txt t)
  * extra timestamps in cache_pool.c.  Hide this detail with a macro
  */
 #define W_TIM_real(w) ((w)->lastused = VTIM_real())
-
-int PAN_dump_struct2(struct vsb *vsb, int block, const void *ptr,
-    const char *smagic, unsigned magic, const char *fmt, ...)
-    v_printflike_(6,7);
-
-#define PAN_dump_struct(vsb, ptr, magic, ...)		\
-    PAN_dump_struct2(vsb, 1, ptr, #magic, magic, __VA_ARGS__)
-
-#define PAN_dump_oneline(vsb, ptr, magic, ...)		\
-    PAN_dump_struct2(vsb, 0, ptr, #magic, magic, __VA_ARGS__)

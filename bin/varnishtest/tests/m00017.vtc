@@ -1,5 +1,8 @@
 varnishtest "Test std.rollback"
 
+# ws_emu triggers #3550
+feature !workspace_emulator
+
 # bug regressions:
 # - #3009
 # - #3083

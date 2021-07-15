@@ -309,6 +309,8 @@ void THR_SetBusyobj(const struct busyobj *);
 struct busyobj * THR_GetBusyobj(void);
 void THR_SetRequest(const struct req *);
 struct req * THR_GetRequest(void);
+void THR_SetWorker(const struct worker *);
+struct worker * THR_GetWorker(void);
 void THR_Init(void);
 
 /* cache_lck.c */
@@ -365,6 +367,22 @@ void ObjUnsubscribeEvents(uintptr_t *);
 
 /* cache_panic.c */
 void PAN_Init(void);
+int PAN__DumpStruct(struct vsb *vsb, int block, int track, const void *ptr,
+    const char *smagic, unsigned magic, const char *fmt, ...)
+    v_printflike_(7,8);
+
+#define PAN_dump_struct(vsb, ptr, magic, ...)		\
+    PAN__DumpStruct(vsb, 1, 1, ptr, #magic, magic, __VA_ARGS__)
+
+#define PAN_dump_oneline(vsb, ptr, magic, ...)		\
+    PAN__DumpStruct(vsb, 0, 1, ptr, #magic, magic, __VA_ARGS__)
+
+#define PAN_dump_once(vsb, ptr, magic, ...)		\
+    PAN__DumpStruct(vsb, 1, 0, ptr, #magic, magic, __VA_ARGS__)
+
+#define PAN_dump_once_oneline(vsb, ptr, magic, ...)		\
+    PAN__DumpStruct(vsb, 0, 0, ptr, #magic, magic, __VA_ARGS__)
+
 const char *sess_close_2str(enum sess_close sc, int want_desc);
 
 /* cache_pool.c */
@@ -414,7 +432,7 @@ void SES_Rel(struct sess *sp);
 
 const char * HTC_Status(enum htc_status_e);
 void HTC_RxInit(struct http_conn *htc, struct ws *ws);
-void HTC_RxPipeline(struct http_conn *htc, void *);
+void HTC_RxPipeline(struct http_conn *htc, char *);
 enum htc_status_e HTC_RxStuff(struct http_conn *, htc_complete_f *,
     vtim_real *t1, vtim_real *t2, vtim_real ti, vtim_real tn, vtim_dur td,
     int maxbytes);
@@ -512,14 +530,8 @@ WS_IsReserved(const struct ws *ws)
 
 void WS_Rollback(struct ws *, uintptr_t);
 void *WS_AtOffset(const struct ws *ws, unsigned off, unsigned len);
-
-static inline unsigned
-WS_ReservationOffset(const struct ws *ws)
-{
-
-	AN(ws->r);
-	return (ws->f - ws->s);
-}
+unsigned WS_ReservationOffset(const struct ws *ws);
+unsigned WS_Pipeline(struct ws *, const void *b, const void *e);
 
 /* http1/cache_http1_pipe.c */
 void V1P_Init(void);

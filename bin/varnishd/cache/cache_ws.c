@@ -58,36 +58,21 @@ WS_Assert(const struct ws *ws)
 	assert(ws->f <= ws->e);
 	assert(PAOK(ws->f));
 	if (ws->r) {
-		assert(ws->r > ws->s);
+		assert(ws->r >= ws->f);
 		assert(ws->r <= ws->e);
-		assert(PAOK(ws->r));
 	}
 	assert(*ws->e == WS_REDZONE_END);
 }
 
 int
-WS_Inside(const struct ws *ws, const void *bb, const void *ee)
-{
-	const char *b = bb;
-	const char *e = ee;
-
-	WS_Assert(ws);
-	if (b < ws->s || b >= ws->e)
-		return (0);
-	if (e != NULL && (e < b || e > ws->e))
-		return (0);
-	return (1);
-}
-
-void
-WS_Assert_Allocated(const struct ws *ws, const void *ptr, ssize_t len)
+WS_Allocated(const struct ws *ws, const void *ptr, ssize_t len)
 {
 	const char *p = ptr;
 
 	WS_Assert(ws);
 	if (len < 0)
 		len = strlen(p) + 1;
-	assert(p >= ws->s && (p + len) <= ws->f);
+	return (p >= ws->s && (p + len) <= ws->f);
 }
 
 /*
@@ -189,12 +174,41 @@ WS_Rollback(struct ws *ws, uintptr_t pp)
 	WS_Reset(ws, pp);
 }
 
+/*
+ * Make a reservation and optionally pipeline a memory region that may or
+ * may not originate from the same workspace. The presence of a pipeline
+ * implies a rollback.
+ */
+
+unsigned
+WS_Pipeline(struct ws *ws, const void *b, const void *e)
+{
+	unsigned r, l;
+
+	WS_Assert(ws);
+
+	if (b == NULL) {
+		AZ(e);
+		(void)WS_ReserveAll(ws);
+		return (0);
+	}
+
+	AN(e);
+	WS_Rollback(ws, 0);
+	r = WS_ReserveAll(ws);
+	l = pdiff(b, e);
+	assert(l <= r);
+	memmove(ws->f, b, l);
+	return (l);
+}
+
 void *
 WS_Alloc(struct ws *ws, unsigned bytes)
 {
 	char *r;
 
 	WS_Assert(ws);
+	assert(bytes > 0);
 	bytes = PRNDUP(bytes);
 
 	assert(ws->r == NULL);
@@ -220,7 +234,7 @@ WS_Copy(struct ws *ws, const void *str, int len)
 
 	if (len == -1)
 		len = strlen(str) + 1;
-	assert(len >= 0);
+	assert(len > 0);
 
 	bytes = PRNDUP((unsigned)len);
 	if (ws->f + bytes > ws->e) {
@@ -297,25 +311,22 @@ WS_ReserveAll(struct ws *ws)
 unsigned
 WS_ReserveSize(struct ws *ws, unsigned bytes)
 {
-	unsigned b2;
+	unsigned l;
 
 	WS_Assert(ws);
 	assert(ws->r == NULL);
 	assert(bytes > 0);
 
-	b2 = PRNDDN(ws->e - ws->f);
-	if (bytes < b2)
-		b2 = PRNDUP(bytes);
-
-	if (bytes > b2) {
+	l = pdiff(ws->f, ws->e);
+	if (bytes > l) {
 		WS_MarkOverflow(ws);
 		return (0);
 	}
-	ws->r = ws->f + b2;
-	DSL(DBG_WORKSPACE, 0, "WS_ReserveSize(%p, %u/%u) = %zu",
-	    ws, b2, bytes, pdiff(ws->f, ws->r));
+	ws->r = ws->f + bytes;
+	DSL(DBG_WORKSPACE, 0, "WS_ReserveSize(%p, %u/%u) = %u",
+	    ws, bytes, l, bytes);
 	WS_Assert(ws);
-	return (pdiff(ws->f, ws->r));
+	return (bytes);
 }
 
 unsigned
@@ -328,12 +339,11 @@ void
 WS_Release(struct ws *ws, unsigned bytes)
 {
 	WS_Assert(ws);
-	bytes = PRNDUP(bytes);
 	assert(bytes <= ws->e - ws->f);
 	DSL(DBG_WORKSPACE, 0, "WS_Release(%p, %u)", ws, bytes);
 	assert(ws->r != NULL);
 	assert(ws->f + bytes <= ws->r);
-	ws->f += bytes;
+	ws->f += PRNDUP(bytes);
 	ws->r = NULL;
 	WS_Assert(ws);
 }
@@ -369,8 +379,16 @@ WS_AtOffset(const struct ws *ws, unsigned off, unsigned len)
 
 	WS_Assert(ws);
 	ptr = ws->s + off;
-	WS_Assert_Allocated(ws, ptr, len);
+	AN(WS_Allocated(ws, ptr, len));
 	return (ptr);
+}
+
+unsigned
+WS_ReservationOffset(const struct ws *ws)
+{
+
+	AN(ws->r);
+	return (ws->f - ws->s);
 }
 
 /*---------------------------------------------------------------------
@@ -425,6 +443,50 @@ WS_VSB_finish(struct vsb *vsb, struct ws *ws, size_t *szp)
 	if (szp)
 		*szp = 0;
 	return (NULL);
+}
+
+/*--------------------------------------------------------------------*/
+
+unsigned
+WS_Dump(const struct ws *ws, char where, size_t off, void *buf, size_t len)
+{
+	char *b, *p;
+	size_t l;
+
+	WS_Assert(ws);
+	AN(buf);
+	AN(len);
+
+	switch (where) {
+	case 's': p = ws->s; break;
+	case 'f': p = ws->f; break;
+	case 'r': p = ws->r; break;
+	default:
+		errno = EINVAL;
+		return (0);
+	}
+
+	if (p == NULL) {
+		errno = EAGAIN;
+		return (0);
+	}
+
+	p += off;
+	if (p >= ws->e) {
+		errno = EFAULT;
+		return (0);
+	}
+
+	l = pdiff(p, ws->e);
+	if (len <= l) {
+		memcpy(buf, p, len);
+		return (len);
+	}
+
+	b = buf;
+	memcpy(b, p, l);
+	memset(b + l, WS_REDZONE_END, len - l);
+	return (l);
 }
 
 /*--------------------------------------------------------------------*/

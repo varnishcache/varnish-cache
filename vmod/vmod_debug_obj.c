@@ -267,7 +267,7 @@ xyzzy_obj_test_priv_top(VRT_CTX, struct xyzzy_debug_obj *o, VCL_STRING s)
 	ws = req->ws;
 
 	/* copy to top req's workspace if need to */
-	if (ctx->ws != ws && WS_Inside(ctx->ws, s, NULL))
+	if (ctx->ws != ws && WS_Allocated(ctx->ws, s, -1))
 		s = WS_Copy(ws, s, -1);
 
 	if (p == NULL || s == NULL) {

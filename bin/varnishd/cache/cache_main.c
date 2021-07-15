@@ -76,6 +76,7 @@ cache_vrnd_unlock(void)
 
 static pthread_key_t req_key;
 static pthread_key_t bo_key;
+static pthread_key_t wrk_key;
 pthread_key_t witness_key;
 
 void
@@ -104,6 +105,20 @@ THR_GetRequest(void)
 {
 
 	return (pthread_getspecific(req_key));
+}
+
+void
+THR_SetWorker(const struct worker *wrk)
+{
+
+	AZ(pthread_setspecific(wrk_key, wrk));
+}
+
+struct worker *
+THR_GetWorker(void)
+{
+
+	return (pthread_getspecific(wrk_key));
 }
 
 /*--------------------------------------------------------------------
@@ -351,6 +366,7 @@ child_main(int sigmagic, size_t altstksz)
 
 	AZ(pthread_key_create(&req_key, NULL));
 	AZ(pthread_key_create(&bo_key, NULL));
+	AZ(pthread_key_create(&wrk_key, NULL));
 	AZ(pthread_key_create(&witness_key, free));
 	AZ(pthread_key_create(&name_key, NULL));
 

@@ -110,7 +110,7 @@ static const void *already_list[N_ALREADY];
 static int already_idx;
 
 int
-PAN_dump_struct2(struct vsb *vsb, int block, const void *ptr,
+PAN__DumpStruct(struct vsb *vsb, int block, int track, const void *ptr,
     const char *smagic, unsigned magic, const char *fmt, ...)
 {
 	va_list ap;
@@ -128,17 +128,19 @@ PAN_dump_struct2(struct vsb *vsb, int block, const void *ptr,
 	VSB_printf(vsb, " = %p {", ptr);
 	if (block)
 		VSB_putc(vsb, '\n');
-	for (i = 0; i < already_idx; i++) {
-		if (already_list[i] == ptr) {
-			VSB_cat(vsb, "  [Already dumped, see above]");
-			if (block)
-				VSB_putc(vsb, '\n');
-			VSB_cat(vsb, "},\n");
-			return (-2);
+	if (track) {
+		for (i = 0; i < already_idx; i++) {
+			if (already_list[i] == ptr) {
+				VSB_cat(vsb, "  [Already dumped, see above]");
+				if (block)
+					VSB_putc(vsb, '\n');
+				VSB_cat(vsb, "},\n");
+				return (-2);
+			}
 		}
+		if (already_idx < N_ALREADY)
+			already_list[already_idx++] = ptr;
 	}
-	if (already_idx < N_ALREADY)
-		already_list[already_idx++] = ptr;
 	uptr = ptr;
 	if (*uptr != magic) {
 		VSB_printf(vsb, "  .magic = 0x%08x", *uptr);
@@ -616,7 +618,11 @@ pan_backtrace(struct vsb *vsb)
 
 #else /* WITH_UNWIND */
 
-#define BACKTRACE_LEVELS	10
+#if __SANITIZER
+#  define BACKTRACE_LEVELS	20
+#else
+#  define BACKTRACE_LEVELS	10
+#endif
 
 static void
 pan_backtrace(struct vsb *vsb)
@@ -712,6 +718,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 	const char *q;
 	struct req *req;
 	struct busyobj *bo;
+	struct worker *wrk;
 	struct sigaction sa;
 	int err = errno;
 
@@ -794,6 +801,9 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 		pan_busyobj(pan_vsb, bo);
 		if (bo != NULL)
 			VSL_Flush(bo->vsl, 0);
+		wrk = THR_GetWorker();
+		VSB_cat(pan_vsb, "thr.");
+		pan_wrk(pan_vsb, wrk);
 		VMOD_Panic(pan_vsb);
 		pan_pool(pan_vsb);
 	} else {
