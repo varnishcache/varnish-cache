@@ -58,6 +58,7 @@ jobs:
             - nghttp2
             - python3-docutils
             - python3-sphinx
+            - libpcre2-dev
       env: ASAN=1 UBSAN=1
       before_script:
         - |
@@ -70,7 +71,7 @@ jobs:
         - ./configure --enable-maintainer-mode --with-unwind --enable-debugging-symbols --disable-stack-protector --with-persistent-storage --enable-asan --enable-ubsan
     - stage: test
       os: osx
-      osx_image: xcode12
+      osx_image: xcode12.5
       compiler: clang
       addons:
         homebrew:
