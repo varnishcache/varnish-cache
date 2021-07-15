@@ -51,6 +51,8 @@ Varnish Cache 7.x.x (2021-09-15)
 
 * ACLs default to `pedantic` which is now a per-ACL feature flag.
 
+* `varnishncsa -j` won't refuse to print fields with control characters anymore.
+
 ================================
 Varnish Cache 6.6.0 (2021-03-15)
 ================================
