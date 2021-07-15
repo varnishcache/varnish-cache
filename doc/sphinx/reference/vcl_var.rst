@@ -225,11 +225,15 @@ req.http.*
 	The headers of request, things like ``req.http.date``.
 
 	The RFCs allow multiple headers with the same name, and both
-	``set`` and ``unset`` will remove *all* headers with the name given.
+	``set`` and ``unset`` will remove *all* headers with the name
+	given.
 
 	The header name ``*`` is a VCL symbol and as such cannot, for
-	example, start with a numeral. Custom VMODs exist for handling
-	of such header names.
+	example, start with a numeral. To work with valid header that
+	can't be represented as VCL symbols it is possible to quote the
+	name, like ``req.http."grammatically.valid"``. None of the HTTP
+	headers present in IANA registries need to be quoted, so the
+	quoted syntax is discouraged but available for interoperability.
 
 
 req.restarts
