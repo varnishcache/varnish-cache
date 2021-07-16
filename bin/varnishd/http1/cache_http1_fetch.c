@@ -240,7 +240,7 @@ V1F_FetchRespHdr(struct busyobj *bo)
 	 * Figure out how the fetch is supposed to happen, before the
 	 * headers are adultered by VCL
 	 */
-	if (!strcasecmp(http_GetMethod(bo->bereq), "head")) {
+	if (http_method_eq(http_GetMethod(bo->bereq), HEAD)) {
 		/*
 		 * A HEAD request can never have a body in the reply,
 		 * no matter what the headers might say.

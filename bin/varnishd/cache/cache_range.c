@@ -108,7 +108,7 @@ vrg_dorange(struct req *req, const char *r, void **priv)
 	ssize_t low, high, has_low, has_high, t;
 	struct vrg_priv *vrg_priv;
 
-	if (strncasecmp(r, "bytes=", 6))
+	if (!http_range_at(r, bytes=))
 		return ("Not Bytes");
 	r += 6;
 
@@ -214,6 +214,7 @@ vrg_ifrange(struct req *req)
 			return (0);
 		if ((e[0] == 'W' && e[1] == '/'))	// rfc7232,l,547,548
 			return (0);
+		/* XXX: should we also have http_etag_cmp() ? */
 		return (strcmp(p, e) == 0);		// rfc7232,l,548,548
 	}
 
