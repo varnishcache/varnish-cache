@@ -646,6 +646,36 @@ extern const char H__Status[];
 extern const char H__Proto[];
 extern const char H__Reason[];
 
+// rfc7233,l,1207,1208
+#define http_tok_eq(s1, s2)		(!strcasecmp(s1, s2))
+#define http_tok_at(s1, s2, l)		(!strncasecmp(s1, s2, l))
+#define http_ctok_at(s, cs)		(!strncasecmp(s, cs, sizeof(cs) - 1))
+
+// rfc7230,l,1037,1038
+#define http_scheme_at(str, tok)	http_ctok_at(str, #tok "://")
+
+// rfc7230,l,1144,1144
+// rfc7231,l,1156,1158
+#define http_method_eq(str, tok)	(!strcmp(str, #tok))
+
+// rfc7230,l,1222,1222
+// rfc7230,l,2848,2848
+// rfc7231,l,3883,3885
+// rfc7234,l,1339,1340
+// rfc7234,l,1418,1419
+#define http_hdr_eq(s1, s2)		http_tok_eq(s1, s2)
+#define http_hdr_at(s1, s2, l)		http_tok_at(s1, s2, l)
+
+// rfc7230,l,1952,1952
+// rfc7231,l,604,604
+#define http_coding_eq(str, tok)	http_tok_eq(str, #tok)
+
+// rfc7231,l,1864,1864
+#define http_expect_eq(str, tok)	http_tok_eq(str, #tok)
+
+// rfc7233,l,1207,1208
+#define http_range_at(str, tok)		http_ctok_at(str, #tok)
+
 /* cache_main.c */
 #define VXID(u) ((u) & VSL_IDENTMASK)
 uint32_t VXID_Get(const struct worker *, uint32_t marker);
