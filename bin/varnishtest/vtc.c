@@ -259,6 +259,8 @@ macro_cat(struct vtclog *vl, struct vsb *vsb, const char *b, const char *e)
 	}
 	AZ(pthread_mutex_unlock(&macro_mtx));
 
+	VAV_Free(argv);
+
 	if (err != NULL)
 		vtc_fatal(vl, "Macro ${%.*s} failed: %s",
 		    (int)(e - b), b, err);
@@ -273,7 +275,6 @@ macro_cat(struct vtclog *vl, struct vsb *vsb, const char *b, const char *e)
 
 	VSB_cat(vsb, retval);
 	free(retval);
-	VAV_Free(argv);
 }
 
 struct vsb *
