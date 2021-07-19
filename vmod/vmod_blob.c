@@ -117,7 +117,10 @@ static char empty[1] = { '\0' };
 static enum encoding
 parse_encoding(VCL_ENUM e)
 {
-#define VMODENUM(n) if (e == VENUM(n)) return (n);
+#define VMODENUM(n)				\
+	do {					\
+		if (e == VENUM(n)) return (n);	\
+	} while (0);
 #include "vmod_blob_tbl_encodings.h"
 	WRONG("illegal encoding enum");
 }
