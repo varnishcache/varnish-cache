@@ -196,11 +196,13 @@ sml_slim(struct worker *wrk, struct objcore *oc)
 	o = sml_getobj(wrk, oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 
-#define OBJ_AUXATTR(U, l)						\
-	if (o->aa_##l != NULL) {					\
-		sml_stv_free(stv, o->aa_##l);				\
-		o->aa_##l = NULL;					\
-	}
+#define OBJ_AUXATTR(U, l)					\
+	do {							\
+		if (o->aa_##l != NULL) {			\
+			sml_stv_free(stv, o->aa_##l);		\
+			o->aa_##l = NULL;			\
+		}						\
+	} while (0);
 #include "tbl/obj_attr.h"
 
 	VTAILQ_FOREACH_SAFE(st, &o->list, list, stn) {
@@ -688,8 +690,10 @@ SML_panic(struct vsb *vsb, const struct objcore *oc)
 	VSB_printf(vsb, "%s = {len=%u, ptr=%p},\n", \
 	    #U, o->va_##l##_len, o->va_##l);
 
-#define OBJ_AUXATTR(U, l) \
-	if (o->aa_##l != NULL) sml_panic_st(vsb, #U, o->aa_##l);
+#define OBJ_AUXATTR(U, l)						\
+        do {								\
+		if (o->aa_##l != NULL) sml_panic_st(vsb, #U, o->aa_##l);\
+	} while(0);
 
 #include "tbl/obj_attr.h"
 
