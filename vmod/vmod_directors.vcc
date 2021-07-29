@@ -137,6 +137,15 @@ Example::
 
 	vdir.remove_backend(backend1);
 
+$Method VOID .reset_stickiness()
+
+Reset director's internal stickiness cursor in order to start using
+any available higher-priority backend.
+
+Example::
+
+  vdir.reset_stickiness();
+
 $Method BACKEND .backend()
 
 Pick a backend from the director.
