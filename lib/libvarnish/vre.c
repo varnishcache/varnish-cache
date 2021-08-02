@@ -34,8 +34,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <pcre2.h>
-
 #include "vdef.h"
 
 #include "vas.h"	// XXX Flexelint "not used" - but req'ed for assert()
@@ -43,6 +41,7 @@
 #include "miniobj.h"
 
 #include "vre.h"
+#include "vre_pcre2.h"
 
 #if !HAVE_PCRE2_SET_DEPTH_LIMIT
 #  define pcre2_set_depth_limit(r, d) pcre2_set_recursion_limit(r, d)
@@ -132,8 +131,8 @@ VRE_error(struct vsb *vsb, int err)
 	return (0);
 }
 
-static pcre2_code *
-vre_unpack(const vre_t *code)
+pcre2_code *
+VRE_unpack(const vre_t *code)
 {
 
 	CHECK_OBJ_NOTNULL(code, VRE_MAGIC);
@@ -168,7 +167,7 @@ VRE_export(const vre_t *code, size_t *sz)
 	vre_t *exp;
 
 	CHECK_OBJ_NOTNULL(code, VRE_MAGIC);
-	re = vre_unpack(code);
+	re = VRE_unpack(code);
 	AZ(pcre2_pattern_info(re, PCRE2_INFO_SIZE, sz));
 
 	exp = malloc(sizeof(*exp) + *sz);
@@ -190,7 +189,7 @@ vre_match(const vre_t *code, const char *subject, size_t length, size_t offset,
 	pcre2_code *re;
 	int matches;
 
-	re = vre_unpack(code);
+	re = VRE_unpack(code);
 
 	if (datap != NULL && *datap != NULL) {
 		data = *datap;

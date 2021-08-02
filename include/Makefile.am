@@ -67,6 +67,7 @@ nobase_pkginclude_HEADERS += \
 	vmod_abi.h \
 	vqueue.h \
 	vre.h \
+	vre_pcre2.h \
 	vdef.h \
 	vrt.h \
 	vrt_obj.h \
