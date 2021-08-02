@@ -226,6 +226,55 @@ VRE_match(const vre_t *code, const char *subject, size_t length,
 }
 
 int
+VRE_exec(const vre_t *code, const char *subject, size_t length,
+    int startoffset, int options, int *arg_ovec, int arg_ovecsz,
+    const volatile struct vre_limits *lim)
+{
+	pcre2_match_data **datap, *data = NULL;
+	PCRE2_SIZE *ovec = NULL;
+	uint32_t nov = 0;
+	int r, i;
+
+	CHECK_OBJ_NOTNULL(code, VRE_MAGIC);
+	AN(subject);
+
+	if (length == 0)
+		length = PCRE2_ZERO_TERMINATED;
+	if (arg_ovec == NULL || arg_ovecsz == 0) {
+		// ? options &= ~VRE_MASK_MATCH
+		datap = NULL;
+	} else {
+		datap = &data;
+	}
+
+	vre_limit(code, lim);
+	r = vre_match(code, subject, length, startoffset, options, datap);
+
+	if (r <= VRE_ERROR_NOMATCH)
+		return (r);
+
+	if (datap) {
+		if (data) {
+			ovec = pcre2_get_ovector_pointer(data);
+			AN(ovec);
+			nov = pcre2_get_ovector_count(data);
+		}
+		AN(arg_ovec);
+		AN(arg_ovecsz);
+		if (2 * nov > arg_ovecsz)
+			nov = arg_ovecsz / 2;
+		for (i = 0; i < nov * 2; i++)
+			arg_ovec[i] = ovec[i];
+	}
+
+	// compatibility with existing code
+	if (r > arg_ovecsz / 2)
+		r = 0;
+
+	return (r);
+}
+
+int
 VRE_sub(const vre_t *code, const char *subject, const char *replacement,
     struct vsb *vsb, const volatile struct vre_limits *lim, int all)
 {

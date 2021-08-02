@@ -60,8 +60,12 @@ vre_t *VRE_export(const vre_t *, size_t *);
 int VRE_error(struct vsb *, int err);
 int VRE_match(const vre_t *code, const char *subject, size_t length,
     int options, const volatile struct vre_limits *lim);
+int VRE_exec(const vre_t *code, const char *subject, size_t length,
+    int startoffset, int options, int *ovector, int ovecsize,
+    const volatile struct vre_limits *lim);
 int VRE_sub(const vre_t *code, const char *subject, const char *replacement,
     struct vsb *vsb, const volatile struct vre_limits *lim, int all);
+
 void VRE_free(vre_t **);
 void VRE_quote(struct vsb *, const char *);
 
