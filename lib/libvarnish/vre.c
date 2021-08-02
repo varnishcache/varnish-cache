@@ -231,6 +231,7 @@ VRE_sub(const vre_t *code, const char *subject, const char *replacement,
 {
 	pcre2_match_data *data = NULL;
 	PCRE2_SIZE *ovector;
+	uint32_t nov;
 	int i, l;
 	const char *s;
 	unsigned x;
@@ -250,6 +251,7 @@ VRE_sub(const vre_t *code, const char *subject, const char *replacement,
 	do {
 		AN(data);
 		ovector = pcre2_get_ovector_pointer(data);
+		nov = pcre2_get_ovector_count(data);
 		AN(ovector);
 
 		/* Copy prefix to match */
@@ -262,6 +264,8 @@ VRE_sub(const vre_t *code, const char *subject, const char *replacement,
 			s++;
 			if (isdigit(*s)) {
 				x = *s - '0';
+				if (x >= nov)
+					continue;
 				l = ovector[2*x+1] - ovector[2*x];
 				VSB_bcat(vsb, subject + ovector[2*x], l);
 				continue;
