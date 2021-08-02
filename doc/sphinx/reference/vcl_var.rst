@@ -1172,14 +1172,6 @@ transactions may take place. It may comprise the traffic over an
 HTTP/1 keep-alive connection, or the multiplexed traffic over an
 HTTP/2 connection.
 
-sess.xid	``VCL >= 4.1``
-
-	Type: STRING
-
-	Readable from: client, backend
-
-	Unique ID of this session.
-
 sess.timeout_idle
 
 	Type: DURATION
@@ -1190,6 +1182,14 @@ sess.timeout_idle
 
 	Idle timeout for this session, defaults to the
 	``timeout_idle`` parameter, see :ref:`varnishd(1)`
+
+sess.xid	``VCL >= 4.1``
+
+	Type: STRING
+
+	Readable from: client, backend
+
+	Unique ID of this session.
 
 storage
 ~~~~~~~
