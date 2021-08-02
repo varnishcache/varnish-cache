@@ -4,7 +4,7 @@ varnishtest "haproxy tcp-mode, tcp, send-proxy-v2, client ip and acl"
 
 feature ignore_unknown_macro
 
-feature cmd {haproxy --version 2>&1 | grep -q 'HA-Proxy version'}
+feature cmd {haproxy --version 2>&1 | grep -q 'HA-*Proxy version'}
 
 server s1 {
     rxreq

@@ -2,7 +2,7 @@ varnishtest "Test -conf+backend"
 
 feature ignore_unknown_macro
 
-feature cmd {haproxy --version 2>&1 | grep -q 'HA-Proxy version'}
+feature cmd {haproxy --version 2>&1 | grep -q 'HA-*Proxy version'}
 
 haproxy h1 -conf-OK {
     defaults

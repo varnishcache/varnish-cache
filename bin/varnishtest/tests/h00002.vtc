@@ -2,7 +2,7 @@ varnishtest "Basic HAproxy test (daemon mode)"
 
 feature ignore_unknown_macro
 
-feature cmd {haproxy --version 2>&1 | grep -q 'HA-Proxy version'}
+feature cmd {haproxy --version 2>&1 | grep -q 'HA-*Proxy version'}
 
 server s1 {
     rxreq
