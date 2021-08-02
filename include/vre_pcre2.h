@@ -38,6 +38,8 @@
 #ifndef VRE_PCRE2_H_INCLUDED
 #define VRE_PCRE2_H_INCLUDED
 
+#define PCRE2_CODE_UNIT_WIDTH 8
+
 #include <pcre2.h>
 
 pcre2_code *VRE_unpack(const vre_t *code);

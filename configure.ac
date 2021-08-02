@@ -138,7 +138,6 @@ else
 fi
 AC_SUBST(PCRE2_CFLAGS)
 AC_SUBST(PCRE2_LIBS)
-AC_DEFINE([PCRE2_CODE_UNIT_WIDTH], [8], [Work with 8-bit characters for PCRE2])
 
 save_LIBS="${LIBS}"
 LIBS="${LIBS} ${PCRE2_LIBS}"
