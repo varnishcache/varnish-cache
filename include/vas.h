@@ -127,6 +127,8 @@ static inline size_t
 pdiff(const void *b, const void *e)
 {
 
+	AN(b);
+	AN(e);
 	assert(b <= e);
 	return ((size_t)((const char *)e - (const char *)b));
 }

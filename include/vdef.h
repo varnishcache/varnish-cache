@@ -184,3 +184,15 @@
 typedef double vtim_mono;
 typedef double vtim_real;
 typedef double vtim_dur;
+
+/**********************************************************************
+ * txt (vas.h needed for the macros)
+ */
+
+typedef struct {
+	const char		*b;
+	const char		*e;
+} txt;
+
+#define Tcheck(t)	do { (void)pdiff((t).b, (t).e); } while (0)
+#define Tlen(t)		(pdiff((t).b, (t).e))
