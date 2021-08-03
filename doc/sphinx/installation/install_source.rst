@@ -197,21 +197,21 @@ Then continue `Compiling Varnish`_, using the ``--with-unwind``
 
 Build dependencies on a SmartOS Zone
 ------------------------------------
-..
+
 As of SmartOS pkgsrc 2019Q4, install the following packages::
-..
+
 	pkgin in autoconf automake editline libtool ncurses \
 		 pcre2 python37 py37-sphinx py37-docutils gmake gcc8 pkg-config
-..
+
 *Note:* you will probably need to add ``/opt/local/gcc8/bin`` to
 ``PATH`` in order to have ``gcc`` available.
-..
+
 Optionally, to rebuild the svg files::
-..
+
 	pkgin in graphviz
-..
+
 Optionally, to pull from a repository::
-..
+
 	pkgin in git
 
 Building on Solaris and other Solaris-ish OSes
