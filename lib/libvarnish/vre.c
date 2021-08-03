@@ -245,6 +245,29 @@ VRE_match(const vre_t *code, const char *subject, size_t length,
 }
 
 int
+VRE_capture(vre_t *code, const char *subject, size_t length, int options,
+    txt *groups, size_t count, const volatile struct vre_limits *lim)
+{
+	int i;
+
+	CHECK_OBJ_NOTNULL(code, VRE_MAGIC);
+	AN(subject);
+	AZ(options & (~VRE_MASK_MATCH));
+	AN(groups);
+	AN(count);
+
+	if (length == 0)
+		length = PCRE2_ZERO_TERMINATED;
+	vre_limit(code, lim);
+	i = vre_capture(code, subject, length, 0, options,
+	    groups, &count, NULL);
+
+	if (i <= 0)
+		return (i);
+	return (count);
+}
+
+int
 VRE_sub(const vre_t *code, const char *subject, const char *replacement,
     struct vsb *vsb, const volatile struct vre_limits *lim, int all)
 {
