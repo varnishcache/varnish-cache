@@ -249,12 +249,11 @@ VRE_sub(const vre_t *code, const char *subject, const char *replacement,
     struct vsb *vsb, const volatile struct vre_limits *lim, int all)
 {
 	pcre2_match_data *data = NULL;
-	PCRE2_SIZE *ovector;
-	uint32_t nov;
-	int i, l;
+	txt groups[10];
+	size_t count;
+	int i, offset = 0;
 	const char *s;
 	unsigned x;
-	int offset = 0;
 
 	CHECK_OBJ_NOTNULL(code, VRE_MAGIC);
 	CHECK_OBJ_NOTNULL(vsb, VSB_MAGIC);
@@ -262,20 +261,22 @@ VRE_sub(const vre_t *code, const char *subject, const char *replacement,
 	AN(replacement);
 
 	vre_limit(code, lim);
+	count = 10;
 	i = vre_capture(code, subject, PCRE2_ZERO_TERMINATED, offset, 0,
-	    NULL, NULL, &data);
+	    groups, &count, &data);
 
-	if (i <= VRE_ERROR_NOMATCH)
+	if (i <= VRE_ERROR_NOMATCH) {
+		AZ(data);
 		return (i);
+	}
 
 	do {
-		AN(data);
-		ovector = pcre2_get_ovector_pointer(data);
-		nov = pcre2_get_ovector_count(data);
-		AN(ovector);
+		AN(data); /* check reuse across successful captures */
+		AN(count);
 
 		/* Copy prefix to match */
-		VSB_bcat(vsb, subject + offset, ovector[0] - offset);
+		s = subject + offset;
+		VSB_bcat(vsb, s, pdiff(s, groups[0].b));
 		for (s = replacement; *s != '\0'; s++ ) {
 			if (*s != '\\' || s[1] == '\0') {
 				VSB_putc(vsb, *s);
@@ -284,21 +285,24 @@ VRE_sub(const vre_t *code, const char *subject, const char *replacement,
 			s++;
 			if (isdigit(*s)) {
 				x = *s - '0';
-				if (x >= nov)
+				if (x >= count)
 					continue;
-				l = ovector[2*x+1] - ovector[2*x];
-				VSB_bcat(vsb, subject + ovector[2*x], l);
+				VSB_bcat(vsb, groups[x].b, Tlen(groups[x]));
 				continue;
 			}
 			VSB_putc(vsb, *s);
 		}
-		offset = ovector[1];
+		offset = pdiff(subject, groups[0].e);
 		if (!all)
 			break;
+		count = 10;
 		i = vre_capture(code, subject, PCRE2_ZERO_TERMINATED, offset,
-		    PCRE2_NOTEMPTY, NULL, NULL, &data);
-		if (i < VRE_ERROR_NOMATCH)
+		    PCRE2_NOTEMPTY, groups, &count, &data);
+
+		if (i < VRE_ERROR_NOMATCH) {
+			AZ(data);
 			return (i);
+		}
 	} while (i != VRE_ERROR_NOMATCH);
 
 	if (data != NULL) {
@@ -308,7 +312,7 @@ VRE_sub(const vre_t *code, const char *subject, const char *replacement,
 	}
 
 	/* Copy suffix to match */
-	VSB_cat(vsb, subject + offset);
+	VSB_cat(vsb, groups[0].e);
 	return (1);
 }
 
