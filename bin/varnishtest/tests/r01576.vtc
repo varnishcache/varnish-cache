@@ -41,7 +41,7 @@ client c1 {
 } -run
 
 logexpect l1 -v v1 {
-	expect * * VCL_Error "(match|depth) limit exceeded"
+	expect * * VCL_Error "(match|depth|recursion) limit exceeded"
 } -start
 
 # This should fail with default params and JIT/no-JIT
