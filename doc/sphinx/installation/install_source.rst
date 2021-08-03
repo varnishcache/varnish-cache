@@ -195,26 +195,24 @@ Then continue `Compiling Varnish`_, using the ``--with-unwind``
 
 .. _Alpine Community Repository: https://wiki.alpinelinux.org/wiki/Enable_Community_Repository
 
-.. XXX: no pcre2 on SmartOS
+Build dependencies on a SmartOS Zone
+------------------------------------
 ..
-.. Build dependencies on a SmartOS Zone
-.. ------------------------------------
+As of SmartOS pkgsrc 2019Q4, install the following packages::
 ..
-.. As of SmartOS pkgsrc 2019Q4, install the following packages::
+	pkgin in autoconf automake editline libtool ncurses \
+		 pcre2 python37 py37-sphinx py37-docutils gmake gcc8 pkg-config
 ..
-.. 	pkgin in autoconf automake editline libtool ncurses \
-.. 		 pcre python37 py37-sphinx py37-docutils gmake gcc8 pkg-config
+*Note:* you will probably need to add ``/opt/local/gcc8/bin`` to
+``PATH`` in order to have ``gcc`` available.
 ..
-.. *Note:* you will probably need to add ``/opt/local/gcc8/bin`` to
-.. ``PATH`` in order to have ``gcc`` available.
+Optionally, to rebuild the svg files::
 ..
-.. Optionally, to rebuild the svg files::
+	pkgin in graphviz
 ..
-.. 	pkgin in graphviz
+Optionally, to pull from a repository::
 ..
-.. Optionally, to pull from a repository::
-..
-.. 	pkgin in git
+	pkgin in git
 
 Building on Solaris and other Solaris-ish OSes
 ----------------------------------------------
