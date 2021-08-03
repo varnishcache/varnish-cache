@@ -112,13 +112,6 @@ struct worker_priv;
 
 /*--------------------------------------------------------------------*/
 
-typedef struct {
-	const char		*b;
-	const char		*e;
-} txt;
-
-/*--------------------------------------------------------------------*/
-
 struct lock { void *priv; };	// Opaque
 
 /*--------------------------------------------------------------------
@@ -832,24 +825,6 @@ unsigned RFC2616_Req_Gzip(const struct http *);
 int RFC2616_Do_Cond(const struct req *sp);
 void RFC2616_Weaken_Etag(struct http *hp);
 void RFC2616_Vary_AE(struct http *hp);
-
-#define Tcheck(t) do {						\
-		AN((t).b);					\
-		AN((t).e);					\
-		assert((t).b <= (t).e);				\
-	} while(0)
-
-/*
- * unsigned length of a txt
- */
-
-static inline unsigned
-Tlen(const txt t)
-{
-
-	Tcheck(t);
-	return ((unsigned)(t.e - t.b));
-}
 
 /*
  * We want to cache the most recent timestamp in wrk->lastused to avoid
