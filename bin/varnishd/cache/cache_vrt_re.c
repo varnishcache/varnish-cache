@@ -64,6 +64,8 @@ VPI_re_fini(vre_t *rep)
 VCL_BOOL
 VRT_re_match(VRT_CTX, const char *s, VCL_REGEX re)
 {
+	struct vsb vsb[1];
+	char errbuf[VRE_ERROR_LEN];
 	int i;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -73,8 +75,13 @@ VRT_re_match(VRT_CTX, const char *s, VCL_REGEX re)
 	i = VRE_match(re, s, 0, 0, &cache_param->vre_limits);
 	if (i >= 0)
 		return (1);
-	if (i < VRE_ERROR_NOMATCH )
-		VRT_fail(ctx, "Regexp matching returned %d", i);
+	if (i < VRE_ERROR_NOMATCH ) {
+		VSB_init(vsb, errbuf, sizeof errbuf);
+		AZ(VRE_error(vsb, i));
+		AZ(VSB_finish(vsb));
+		VSB_fini(vsb);
+		VRT_fail(ctx, "Regexp matching failed: %s", errbuf);
+	}
 	return (0);
 }
 
