@@ -1650,7 +1650,7 @@ PARAM_PCRE2(
 	" prevent crashes, at the cost of possible regexp"
 	" matching failures.\n\n"
 	"Matching failures will show up in the log as VCL_Error"
-	" messages with regexp errors -27 or -21."
+	" messages."
 )
 
 #  undef PARAM_ALL
