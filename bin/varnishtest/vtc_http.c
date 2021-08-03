@@ -795,7 +795,7 @@ cmd_http_gunzip(CMD_ARGS)
  */
 
 static void
-gzip_body(const struct http *hp, const char *txt, char **body, int *bodylen)
+gzip_body(const struct http *hp, const char *text, char **body, int *bodylen)
 {
 	int l;
 	z_stream vz;
@@ -805,11 +805,11 @@ gzip_body(const struct http *hp, const char *txt, char **body, int *bodylen)
 
 	memset(&vz, 0, sizeof vz);
 
-	l = strlen(txt);
+	l = strlen(text);
 	*body = calloc(1, l + OVERHEAD);
 	AN(*body);
 
-	vz.next_in = TRUST_ME(txt);
+	vz.next_in = TRUST_ME(text);
 	vz.avail_in = l;
 
 	vz.next_out = TRUST_ME(*body);

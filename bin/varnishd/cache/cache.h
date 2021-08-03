@@ -105,13 +105,6 @@ struct listen_sock;
 
 /*--------------------------------------------------------------------*/
 
-typedef struct {
-	const char		*b;
-	const char		*e;
-} txt;
-
-/*--------------------------------------------------------------------*/
-
 enum req_step {
 	R_STP_NONE = 0,
 #define REQ_STEP(l, u, arg)	R_STP_##u,
@@ -798,24 +791,6 @@ int RFC2616_Do_Cond(const struct req *sp);
 void RFC2616_Weaken_Etag(struct http *hp);
 void RFC2616_Vary_AE(struct http *hp);
 void RFC2616_Response_Body(const struct worker *, const struct busyobj *);
-
-#define Tcheck(t) do {						\
-		AN((t).b);					\
-		AN((t).e);					\
-		assert((t).b <= (t).e);				\
-	} while(0)
-
-/*
- * unsigned length of a txt
- */
-
-static inline unsigned
-Tlen(const txt t)
-{
-
-	Tcheck(t);
-	return ((unsigned)(t.e - t.b));
-}
 
 /*
  * We want to cache the most recent timestamp in wrk->lastused to avoid
