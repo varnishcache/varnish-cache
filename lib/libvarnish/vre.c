@@ -201,7 +201,7 @@ vre_match(const vre_t *code, const char *subject, size_t length, size_t offset,
 	}
 
 	matches =  pcre2_match(re, (PCRE2_SPTR)subject, length, offset,
-	    options, data, NULL);
+	    options, data, code->re_ctx);
 
 	if (datap != NULL && matches > VRE_ERROR_NOMATCH)
 		*datap = data;
