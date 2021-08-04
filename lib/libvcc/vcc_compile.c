@@ -504,7 +504,7 @@ static void
 vcc_resolve_includes(struct vcc *tl)
 {
 	struct token *t, *t1, *t2;
-	struct source *sp;
+	struct source *sp, *builtin_sp;
 	struct vsb *vsb;
 	const char *p;
 
@@ -559,7 +559,9 @@ vcc_resolve_includes(struct vcc *tl)
 			vcc_ErrWhere(tl, t1);
 			return;
 		}
-		VTAILQ_INSERT_TAIL(&tl->sources, sp, list);
+		builtin_sp = VTAILQ_LAST(&tl->sources, sourcehead);
+		AN(builtin_sp);
+		VTAILQ_INSERT_BEFORE(builtin_sp, sp, list);
 		sp->idx = tl->nsources++;
 		tl->t = t2;
 		vcc_Lexer(tl, sp);

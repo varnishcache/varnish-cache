@@ -208,6 +208,7 @@ struct inifin {
 };
 
 VTAILQ_HEAD(inifinhead, inifin);
+VTAILQ_HEAD(sourcehead, source);
 
 struct vcc {
 	unsigned		magic;
@@ -228,7 +229,7 @@ struct vcc {
 
 	/* Instance section */
 	struct tokenhead	tokens;
-	VTAILQ_HEAD(, source)	sources;
+	struct sourcehead	sources;
 	unsigned		nsources;
 	struct source		*src;
 	struct token		*t;
