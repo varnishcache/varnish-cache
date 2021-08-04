@@ -113,11 +113,11 @@ vwk_thread(void *priv)
 		now = VTIM_real();
 		for (kp = ke, j = 0; j < n; j++, kp++) {
 			assert(kp->filter == EVFILT_READ);
-			if (ke[j].udata == vwk) {
+			if ((uintptr_t)ke[j].udata == (uintptr_t)vwk) {
 				assert(read(vwk->pipe[0], &c, 1) == 1);
 				continue;
 			}
-			CAST_OBJ_NOTNULL(wp, ke[j].udata, WAITED_MAGIC);
+			CAST_OBJ_NOTNULL(wp, (void*)ke[j].udata, WAITED_MAGIC);
 			Lck_Lock(&vwk->mtx);
 			AN(Wait_HeapDelete(w, wp));
 			Lck_Unlock(&vwk->mtx);
