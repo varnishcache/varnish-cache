@@ -61,10 +61,13 @@
 
 #include "vdef.h"
 
+#include "vqueue.h"
+
 #include "vapi/vsig.h"
 #include "vapi/vsm.h"
 #include "vas.h"
 #include "vcli.h"
+#include "vjsn.h"
 #include "vtcp.h"
 
 #define RL_EXIT(status) \
@@ -76,6 +79,7 @@
 
 static double timeout = 5;
 static int p_arg = 0;
+static int line_sock;
 
 static void
 cli_write(int sock, const char *s)
@@ -212,13 +216,12 @@ do_args(int sock, int argc, char * const *argv)
 /* Callback for readline, doesn't take a private pointer, so we need
  * to have a global variable.
  */
-static int _line_sock;
 static void v_matchproto_()
 send_line(char *l)
 {
 	if (l) {
-		cli_write(_line_sock, l);
-		cli_write(_line_sock, "\n");
+		cli_write(line_sock, l);
+		cli_write(line_sock, "\n");
 		if (*l)
 			add_history(l);
 		rl_callback_handler_install("varnish> ", send_line);
@@ -227,27 +230,49 @@ send_line(char *l)
 	}
 }
 
-static char *commands[256];
 static char *
 command_generator (const char *text, int state)
 {
-	static int list_index, len;
-	const char *name;
+	static struct vjsn *jsn_cmds;
+	static const struct vjsn_val *jv;
+	struct vjsn_val *jv2;
+	unsigned u;
+	char *answer = NULL;
+	const char *err;
 
-	/* If this is a new word to complete, initialize now.  This
-	   includes saving the length of TEXT for efficiency, and
-	   initializing the index variable to 0. */
 	if (!state) {
-		list_index = 0;
-		len = strlen(text);
+		cli_write(line_sock, "help -j\n");
+		u = VCLI_ReadResult(line_sock, NULL, &answer, timeout);
+		if (u) {
+			free(answer);
+			return (NULL);
+		}
+		jsn_cmds = vjsn_parse(answer, &err);
+		if (err != NULL)
+			return (NULL);
+		free(answer);
+		AN(jsn_cmds);
+		AN(jsn_cmds->value);
+		assert (jsn_cmds->value->type == VJSN_ARRAY);
+		jv = VTAILQ_FIRST(&jsn_cmds->value->children);
+		assert (jv->type == VJSN_NUMBER);
+		jv = VTAILQ_NEXT(jv, list);
+		assert (jv->type == VJSN_ARRAY);
+		jv = VTAILQ_NEXT(jv, list);
+		assert (jv->type == VJSN_NUMBER);
+		jv = VTAILQ_NEXT(jv, list);
 	}
-
-	while ((name = commands[list_index]) != NULL) {
-		list_index++;
-		if (strncmp (name, text, len) == 0)
-			return (strdup(name));
+	while (jv != NULL) {
+		assert (jv->type == VJSN_OBJECT);
+		jv2 = VTAILQ_FIRST(&jv->children);
+		AN(jv2);
+		jv = VTAILQ_NEXT(jv, list);
+		assert (jv2->type == VJSN_STRING);
+		assert (!strcmp(jv2->name, "request"));
+		if (!strncmp(text, jv2->value, strlen(text)))
+			return (strdup(jv2->value));
 	}
-	/* If no names matched, then return NULL. */
+	vjsn_delete(&jsn_cmds);
 	return (NULL);
 }
 
@@ -272,9 +297,7 @@ interactive(int sock)
 {
 	struct pollfd fds[2];
 	int i;
-	char *answer = NULL;
-	unsigned u, status;
-	_line_sock = sock;
+	line_sock = sock;
 	rl_already_prompted = 1;
 	rl_callback_handler_install("varnish> ", send_line);
 	rl_attempted_completion_function = varnishadm_completion;
@@ -284,34 +307,6 @@ interactive(int sock)
 	fds[1].fd = 0;
 	fds[1].events = POLLIN;
 
-	/* Grab the commands, for completion */
-	cli_write(sock, "help\n");
-	u = VCLI_ReadResult(fds[0].fd, &status, &answer, timeout);
-	if (!u) {
-		char *t, c[128];
-		if (status == CLIS_COMMS) {
-			RL_EXIT(0);
-		}
-		t = answer;
-
-		i = 0;
-		while (*t) {
-			if (sscanf(t, "%127s", c) == 1) {
-				commands[i++] = strdup(c);
-				while (*t != '\n' && *t != '\0')
-					t++;
-				if (*t == '\n')
-					t++;
-			} else {
-				/* what? */
-				fprintf(stderr, "Unknown command '%s' parsing "
-					"help output. Tab completion may be "
-					"broken\n", t);
-				break;
-			}
-		}
-	}
-	free(answer);
 	cli_write(sock, "banner\n");
 	while (1) {
 		i = poll(fds, 2, -1);
