@@ -39,7 +39,6 @@ usage() {
 
 	cat <<-EOF
 	Usage: $SCRIPT [-b <rev>] [-g <rev>] [-j <jobs>] [<file>]
-	       $SCRIPT [-j <jobs>] -r <file>
 	       $SCRIPT -h
 
 	Automatically look for the change that introduced a regression with
@@ -50,7 +49,6 @@ usage() {
 	-b <rev>   : bad revision (defaults to HEAD)
 	-g <rev>   : good revision (defaults to latest tag before bad)
 	-j <jobs>  : number of jobs for make invocations (defaults to 8)
-	-r         : git-bisect(1) run mode
 
 	When <file> is empty or missing, bisect.vtc is expected to be found
 	at the root of the git repository. The current source tree is used
@@ -96,7 +94,7 @@ do
 	g) BISECT_GOOD=$OPTARG ;;
 	h) usage ;;
 	j) MAKE_JOBS=$OPTARG ;;
-	r) RUN_MODE=true ;;
+	r) RUN_MODE=true ;; # -r usage is strictly internal
 	*) usage "wrong usage" >&2 ;;
 	esac
 done
