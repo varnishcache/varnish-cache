@@ -31,6 +31,8 @@
 set -e
 set -u
 
+SCRIPT=$0
+
 usage() {
 	test $# -eq 1 &&
 	printf 'Error: %s.\n\n' "$1"
