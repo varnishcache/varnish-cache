@@ -156,8 +156,8 @@ vre_limit(const vre_t *code, const volatile struct vre_limits *lim)
 
 	/* XXX: not reentrant */
 	AN(code->re_ctx);
-	pcre2_set_match_limit(code->re_ctx, lim->match);
-	pcre2_set_depth_limit(code->re_ctx, lim->depth);
+	AZ(pcre2_set_match_limit(code->re_ctx, lim->match));
+	AZ(pcre2_set_depth_limit(code->re_ctx, lim->depth));
 }
 
 vre_t *
