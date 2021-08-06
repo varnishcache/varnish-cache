@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (c) 2019 Varnish Software AS
+# Copyright (c) 2019, 2021 Varnish Software AS
 # All rights reserved.
 #
 # Author: Dridi Boukelmoune <dridi.boukelmoune@gmail.com>
@@ -38,7 +38,7 @@ usage() {
 	printf 'Error: %s.\n\n' "$1"
 
 	cat <<-EOF
-	Usage: $SCRIPT [-b <rev>] [-g <rev>] [-j <jobs>] [<file>]
+	Usage: $SCRIPT [-b <rev>] [-g <rev>] [-i] [-j <jobs>] [<file>]
 	       $SCRIPT -h
 
 	Automatically look for the change that introduced a regression with
@@ -48,11 +48,16 @@ usage() {
 	-h         : show this help and exit
 	-b <rev>   : bad revision (defaults to HEAD)
 	-g <rev>   : good revision (defaults to latest tag before bad)
+	-i         : inverted mode, look for a bug fix instead
 	-j <jobs>  : number of jobs for make invocations (defaults to 8)
 
 	When <file> is empty or missing, bisect.vtc is expected to be found
 	at the root of the git repository. The current source tree is used
 	and VPATH setups are not supported.
+
+	The -i option inverses the bisection behavior: the test case is now
+	expected to fail on the good revision and pass on the bad revision.
+	This is useful to track a bug that was fixed without being noticed.
 
 	This script is expected to run from the root of the git repository
 	as well.
@@ -77,22 +82,29 @@ run() {
 		exit 125
 	fi
 
-	bin/varnishtest/varnishtest -i "$VTC_FILE"
+	if [ -n "$INVERSE" ]
+	then
+		! bin/varnishtest/varnishtest -i "$VTC_FILE"
+	else
+		bin/varnishtest/varnishtest -i "$VTC_FILE"
+	fi
 	exit $?
 }
 
 BISECT_GOOD=
 BISECT_BAD=
 MAKE_JOBS=
+INVERSE=
 RUN_MODE=false
 VTC_FILE=
 
-while getopts b:g:hj:r OPT
+while getopts b:g:hij:r OPT
 do
 	case $OPT in
 	b) BISECT_BAD=$OPTARG ;;
 	g) BISECT_GOOD=$OPTARG ;;
 	h) usage ;;
+	i) INVERSE=-i ;;
 	j) MAKE_JOBS=$OPTARG ;;
 	r) RUN_MODE=true ;; # -r usage is strictly internal
 	*) usage "wrong usage" >&2 ;;
@@ -128,5 +140,6 @@ cd "$ROOT_DIR"
 git bisect start
 git bisect good "$BISECT_GOOD"
 git bisect bad "$BISECT_BAD"
-git bisect run "$TMP_DIR"/vtc-bisect.sh -r -j "$MAKE_JOBS" "$TMP_DIR"/bisect.vtc
+git bisect run "$TMP_DIR"/vtc-bisect.sh -r -j "$MAKE_JOBS" $INVERSE \
+	"$TMP_DIR"/bisect.vtc
 git bisect reset
