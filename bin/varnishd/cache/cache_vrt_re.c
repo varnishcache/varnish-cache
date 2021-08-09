@@ -76,7 +76,7 @@ VRT_re_match(VRT_CTX, const char *s, VCL_REGEX re)
 	if (i >= 0)
 		return (1);
 	if (i < VRE_ERROR_NOMATCH ) {
-		VSB_init(vsb, errbuf, sizeof errbuf);
+		AN(VSB_init(vsb, errbuf, sizeof errbuf));
 		AZ(VRE_error(vsb, i));
 		AZ(VSB_finish(vsb));
 		VSB_fini(vsb);
