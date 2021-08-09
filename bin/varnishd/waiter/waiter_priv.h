@@ -63,7 +63,7 @@ struct waiter_impl {
 static inline double
 Wait_When(const struct waited *wp)
 {
-	CHECK_OBJ_ORNULL(wp, WAITED_MAGIC);
+	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
 	return (wp->idle + wp->tmo);
 }
 
