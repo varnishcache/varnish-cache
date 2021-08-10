@@ -49,6 +49,8 @@
 #include "vav.h"
 #include "vct.h"
 
+int complain_to_stderr;
+
 /*--------------------------------------------------------------------*/
 
 char *
@@ -170,7 +172,7 @@ MGT_Complain(const char *loud, const char *fmt, ...)
 	else
 		WRONG("Wrong complaint loudness");
 
-	if (loud != C_CLI)
+	if (complain_to_stderr && loud != C_CLI)
 		fprintf(stderr, "%s %s\n", loud, VSB_data(vsb));
 
 	if (!MGT_DO_DEBUG(DBG_VTC_MODE))

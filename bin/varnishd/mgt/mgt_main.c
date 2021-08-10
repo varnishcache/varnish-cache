@@ -579,6 +579,9 @@ main(int argc, char * const *argv)
 	if (!d_flag && b_arg == NULL && !f_flag)
 		ARGV_ERR("Neither -b nor -f given. (use -f '' to override)\n");
 
+	if (d_flag || F_flag)
+		complain_to_stderr = 1;
+
 	/*
 	 * Start out by closing all unwanted file descriptors we might
 	 * have inherited from sloppy process control daemons.

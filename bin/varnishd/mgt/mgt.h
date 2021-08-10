@@ -176,6 +176,7 @@ extern const char C_INFO[];	// Normal stuff, keep a record for later
 extern const char C_DEBUG[];	// More detail than you'd normally want
 extern const char C_SECURITY[];	// Security issues
 extern const char C_CLI[];	// CLI traffic between master and child
+extern int complain_to_stderr;
 
 /* mgt_param.c */
 void MCF_InitParams(struct cli *);
