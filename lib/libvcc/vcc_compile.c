@@ -83,14 +83,14 @@ vcc_vcl_met2c(struct vsb *vsb, unsigned method)
 
 	//lint -e{774} Boolean within 'if' always evaluates to False
 #define VCL_MET_MAC(l,U,t,b)				\
-        do {						\
+	do {						\
 		if (method & VCL_MET_##U) {		\
 			if (d)				\
 				VSB_putc(vsb, '|');	\
 			VSB_cat(vsb, "VCL_MET_" #U);	\
 			d = 1;				\
 		}					\
-        } while (0);
+	} while (0);
 #include "tbl/vcl_returns.h"
 	AN(d);
 }

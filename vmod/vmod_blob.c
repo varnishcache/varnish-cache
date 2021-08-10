@@ -128,7 +128,7 @@ parse_encoding(VCL_ENUM e)
 static enum case_e
 parse_case(VCL_ENUM e)
 {
-#define VMODENUM(n) 				\
+#define VMODENUM(n)				\
 	do {					\
 		if (e == VENUM(n)) return (n);	\
 	} while (0);

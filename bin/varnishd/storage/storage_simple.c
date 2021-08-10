@@ -691,7 +691,7 @@ SML_panic(struct vsb *vsb, const struct objcore *oc)
 	    #U, o->va_##l##_len, o->va_##l);
 
 #define OBJ_AUXATTR(U, l)						\
-        do {								\
+	do {								\
 		if (o->aa_##l != NULL) sml_panic_st(vsb, #U, o->aa_##l);\
 	} while(0);
 
