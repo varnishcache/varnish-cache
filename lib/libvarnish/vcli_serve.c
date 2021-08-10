@@ -638,16 +638,13 @@ VCLI_Out(struct cli *cli, const char *fmt, ...)
 {
 	va_list ap;
 
+	AN(cli);
 	va_start(ap, fmt);
-	if (cli != NULL) {
-		CHECK_OBJ_NOTNULL(cli, CLI_MAGIC);
-		if (VSB_len(cli->sb) < *cli->limit)
-			(void)VSB_vprintf(cli->sb, fmt, ap);
-		else if (cli->result == CLIS_OK)
-			cli->result = CLIS_TRUNCATED;
-	} else {
-		(void)vfprintf(stdout, fmt, ap);
-	}
+	CHECK_OBJ_NOTNULL(cli, CLI_MAGIC);
+	if (VSB_len(cli->sb) < *cli->limit)
+		(void)VSB_vprintf(cli->sb, fmt, ap);
+	else if (cli->result == CLIS_OK)
+		cli->result = CLIS_TRUNCATED;
 	va_end(ap);
 }
 
