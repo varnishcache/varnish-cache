@@ -672,6 +672,7 @@ MCF_InitParams(struct cli *cli)
 		MCF_ParamConf(MCF_DEFAULT, "http_resp_size", "8k");
 		MCF_ParamConf(MCF_DEFAULT, "http_req_size", "12k");
 		MCF_ParamConf(MCF_DEFAULT, "gzip_buffer", "4k");
+		MCF_ParamConf(MCF_DEFAULT, "vsl_buffer", "4k");
 		MCF_ParamConf(MCF_MAXIMUM, "vsl_space", "1G");
 		def = 52 * 1024;
 	}
