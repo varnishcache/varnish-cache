@@ -294,10 +294,9 @@ VRE_sub(const vre_t *code, const char *subject, const char *replacement,
 void
 VRE_free(vre_t **vv)
 {
-	vre_t *v = *vv;
+	vre_t *v;
 
-	*vv = NULL;
-	CHECK_OBJ(v, VRE_MAGIC);
+	TAKE_OBJ_NOTNULL(v, vv, VRE_MAGIC);
 
 	if (v->re == VRE_PACKED_RE) {
 		v->re = NULL;

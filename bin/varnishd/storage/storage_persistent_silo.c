@@ -96,6 +96,7 @@ smp_save_segs(struct smp_sc *sc)
 {
 	struct smp_seg *sg, *sg2;
 
+	CHECK_OBJ_NOTNULL(sc, SMP_SC_MAGIC);
 	Lck_AssertHeld(&sc->mtx);
 
 	/*
@@ -103,6 +104,8 @@ smp_save_segs(struct smp_sc *sc)
 	 * before we write the segments to disk.
 	 */
 	VTAILQ_FOREACH_SAFE(sg, &sc->segments, list, sg2) {
+		CHECK_OBJ_NOTNULL(sg, SMP_SEG_MAGIC);
+
 		if (sg->nobj > 0)
 			break;
 		if (sg == sc->cur_seg)
@@ -265,6 +268,7 @@ smp_close_seg(struct smp_sc *sc, struct smp_seg *sg)
 	uint64_t left, dst, len;
 	void *dp;
 
+	CHECK_OBJ_NOTNULL(sc, SMP_SC_MAGIC);
 	Lck_AssertHeld(&sc->mtx);
 
 	CHECK_OBJ_NOTNULL(sg, SMP_SEG_MAGIC);

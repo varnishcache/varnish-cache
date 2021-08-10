@@ -1777,7 +1777,9 @@ const struct cmds http_cmds[] = {
 static void
 http_process_cleanup(void *arg)
 {
-	struct http *hp = arg;
+	struct http *hp;
+
+	CAST_OBJ_NOTNULL(hp, arg, HTTP_MAGIC);
 
 	if (hp->h2)
 		stop_h2(hp);

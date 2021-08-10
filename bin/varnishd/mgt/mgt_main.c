@@ -827,6 +827,7 @@ main(int argc, char * const *argv)
 	u = 0;
 	while (!VTAILQ_EMPTY(&f_args)) {
 		fa = VTAILQ_FIRST(&f_args);
+		CHECK_OBJ_NOTNULL(fa, F_ARG_MAGIC);
 		VTAILQ_REMOVE(&f_args, fa, list);
 		mgt_vcl_startup(cli, fa->src,
 		    VTAILQ_EMPTY(&f_args) ? "boot" : NULL,

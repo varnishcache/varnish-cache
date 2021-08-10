@@ -79,6 +79,7 @@ vslc_vsm_delete(const struct VSL_cursor *cursor)
 {
 	struct vslc_vsm *c;
 
+	AN(cursor);
 	CAST_OBJ_NOTNULL(c, cursor->priv_data, VSLC_VSM_MAGIC);
 	AZ(VSM_Unmap(c->vsm, &c->vf));
 	assert(&c->cursor == cursor);
@@ -322,6 +323,7 @@ vslc_file_delete(const struct VSL_cursor *cursor)
 {
 	struct vslc_file *c;
 
+	AN(cursor);
 	CAST_OBJ_NOTNULL(c, cursor->priv_data, VSLC_FILE_MAGIC);
 	assert(&c->cursor == cursor);
 	if (c->close_fd)
@@ -418,6 +420,7 @@ vslc_mmap_delete(const struct VSL_cursor *cursor)
 {
 	struct vslc_mmap *c;
 
+	AN(cursor);
 	CAST_OBJ_NOTNULL(c, cursor->priv_data, VSLC_MMAP_MAGIC);
 	assert(&c->cursor == cursor);
 	AZ(munmap(c->b, c->e - c->b));

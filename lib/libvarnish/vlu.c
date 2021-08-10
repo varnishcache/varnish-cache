@@ -66,10 +66,8 @@ VLU_New(vlu_f *func, void *priv, unsigned bufsize)
 		l->priv = priv;
 		l->bufl = bufsize - 1;
 		l->buf = malloc(l->bufl + 1L);
-		if (l->buf == NULL) {
+		if (l->buf == NULL)
 			FREE_OBJ(l);
-			l = NULL;
-		}
 	}
 	return (l);
 }

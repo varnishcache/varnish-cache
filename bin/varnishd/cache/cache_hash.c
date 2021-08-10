@@ -162,9 +162,9 @@ HSH_Cleanup(const struct worker *wrk)
 		ObjDestroy(wrk, &wrk->wpriv->nobjcore);
 
 	if (wrk->wpriv->nobjhead != NULL) {
+		CHECK_OBJ(wrk->wpriv->nobjhead, OBJHEAD_MAGIC);
 		Lck_Delete(&wrk->wpriv->nobjhead->mtx);
 		FREE_OBJ(wrk->wpriv->nobjhead);
-		wrk->wpriv->nobjhead = NULL;
 		wrk->stats->n_objecthead--;
 	}
 	if (wrk->wpriv->nhashpriv != NULL) {
@@ -177,6 +177,8 @@ HSH_Cleanup(const struct worker *wrk)
 void
 HSH_DeleteObjHead(const struct worker *wrk, struct objhead *oh)
 {
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 
 	AZ(oh->refcnt);
 	assert(VTAILQ_EMPTY(&oh->objcs));

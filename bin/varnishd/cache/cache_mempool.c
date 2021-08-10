@@ -115,8 +115,8 @@ mpl_guard(void *priv)
 
 		if (mi != NULL && (mpl->n_pool > mpl->param->max_pool ||
 		    mi->size < *mpl->cur_size)) {
+			CHECK_OBJ(mi, MEMITEM_MAGIC);
 			FREE_OBJ(mi);
-			mi = NULL;
 		}
 
 		if (mi == NULL && mpl->n_pool < mpl->param->min_pool)
@@ -160,8 +160,8 @@ mpl_guard(void *priv)
 				}
 				if (mi == NULL)
 					break;
+				CHECK_OBJ(mi, MEMITEM_MAGIC);
 				FREE_OBJ(mi);
-				mi = NULL;
 			}
 			VSC_mempool_Destroy(&mpl->vsc_seg);
 			Lck_Unlock(&mpl->mtx);
@@ -172,7 +172,7 @@ mpl_guard(void *priv)
 
 		if (mpl->n_pool < mpl->param->min_pool &&
 		    mi != NULL && mi->size >= *mpl->cur_size) {
-			CHECK_OBJ_NOTNULL(mi, MEMITEM_MAGIC);
+			CHECK_OBJ(mi, MEMITEM_MAGIC);
 			mpl->vsc->pool = ++mpl->n_pool;
 			mi->touched = mpl->t_now;
 			VTAILQ_INSERT_HEAD(&mpl->list, mi, list);
@@ -215,8 +215,8 @@ mpl_guard(void *priv)
 		Lck_Unlock(&mpl->mtx);
 
 		if (mi != NULL) {
+			CHECK_OBJ(mi, MEMITEM_MAGIC);
 			FREE_OBJ(mi);
-			mi = NULL;
 		}
 	}
 	return (NULL);
@@ -288,7 +288,7 @@ MPL_Get(struct mempool *mpl, unsigned *size)
 			break;
 		}
 		mpl->vsc->pool = --mpl->n_pool;
-		CHECK_OBJ_NOTNULL(mi, MEMITEM_MAGIC);
+		CHECK_OBJ(mi, MEMITEM_MAGIC);
 		VTAILQ_REMOVE(&mpl->list, mi, list);
 		if (mi->size < *mpl->cur_size) {
 			mpl->vsc->toosmall++;
@@ -305,7 +305,7 @@ MPL_Get(struct mempool *mpl, unsigned *size)
 		mi = mpl_alloc(mpl);
 	*size = mi->size - sizeof *mi;
 
-	CHECK_OBJ_NOTNULL(mi, MEMITEM_MAGIC);
+	CHECK_OBJ(mi, MEMITEM_MAGIC);
 	/* Throw away sizeof info for FlexeLint: */
 	return ((void *)(uintptr_t)(mi + 1));
 }

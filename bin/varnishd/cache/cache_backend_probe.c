@@ -102,6 +102,8 @@ static const unsigned char vbp_proxy_local[] = {
 static void
 vbp_delete(struct vbp_target *vt)
 {
+	CHECK_OBJ_NOTNULL(vt, VBP_TARGET_MAGIC);
+
 #define DN(x)	/**/
 	VRT_BACKEND_PROBE_HANDLE();
 #undef DN

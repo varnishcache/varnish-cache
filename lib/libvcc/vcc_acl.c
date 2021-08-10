@@ -87,11 +87,11 @@ struct acl_e {
 static void
 vcl_acl_free(struct acl_e **aep)
 {
-	AN(aep);
-	CHECK_OBJ_NOTNULL(*aep, VCC_ACL_E_MAGIC);
-	if ((*aep)->addr != NULL)
-		free((*aep)->addr);
-	FREE_OBJ(*aep);
+	struct acl_e *a;
+
+	TAKE_OBJ_NOTNULL(a, aep, VCC_ACL_E_MAGIC);
+	free(a->addr);
+	FREE_OBJ(a);
 }
 
 static int

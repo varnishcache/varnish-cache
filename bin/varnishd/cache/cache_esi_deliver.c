@@ -296,10 +296,8 @@ ved_vdp_esi_fini(struct vdp_ctx *vdc, void **priv)
 	struct ecx *ecx;
 
 	(void)vdc;
-	AN(priv);
-	CAST_OBJ_NOTNULL(ecx, *priv, ECX_MAGIC);
+	TAKE_OBJ_NOTNULL(ecx, priv, ECX_MAGIC);
 	FREE_OBJ(ecx);
-	*priv = NULL;
 	return (0);
 }
 

@@ -332,6 +332,7 @@ VFIL_setpath(struct vfil_path **pp, const char *path)
 	REPLACE(vp->str, path);
 	while (!VTAILQ_EMPTY(&vp->paths)) {
 		vd = VTAILQ_FIRST(&vp->paths);
+		CHECK_OBJ_NOTNULL(vd, VFIL_DIR_MAGIC);
 		VTAILQ_REMOVE(&vp->paths, vd, list);
 		FREE_OBJ(vd);
 	}

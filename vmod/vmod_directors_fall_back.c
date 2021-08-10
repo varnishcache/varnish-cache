@@ -180,6 +180,7 @@ vmod_fallback_destroy(VCL_BACKEND dir)
 {
 	struct vmod_directors_fallback *fallback;
 
+	CHECK_OBJ_NOTNULL(dir, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(fallback, dir->priv, VMOD_DIRECTORS_FALLBACK_MAGIC);
 	vdir_delete(&fallback->vd);
 	FREE_OBJ(fallback);

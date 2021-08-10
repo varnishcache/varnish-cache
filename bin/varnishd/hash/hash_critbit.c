@@ -316,10 +316,12 @@ hcb_cleaner(struct worker *wrk, void *priv)
 	(void)priv;
 	while (1) {
 		VSTAILQ_FOREACH_SAFE(y, &dead_y, list, y2) {
+			CHECK_OBJ_NOTNULL(y, HCB_Y_MAGIC);
 			VSTAILQ_REMOVE_HEAD(&dead_y, list);
 			FREE_OBJ(y);
 		}
 		VTAILQ_FOREACH_SAFE(oh, &dead_h, hoh_list, oh2) {
+			CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 			VTAILQ_REMOVE(&dead_h, oh, hoh_list);
 			HSH_DeleteObjHead(wrk, oh);
 		}

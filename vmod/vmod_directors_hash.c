@@ -50,6 +50,7 @@ vmod_hash_destroy(VCL_BACKEND dir)
 {
 	struct vmod_directors_hash *rr;
 
+	CHECK_OBJ_NOTNULL(dir, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(rr, dir->priv, VMOD_DIRECTORS_HASH_MAGIC);
 	vdir_delete(&rr->vd);
 	FREE_OBJ(rr);

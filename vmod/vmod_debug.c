@@ -422,7 +422,6 @@ priv_vcl_fini(VRT_CTX, void *priv)
 	AZ(priv_vcl->vclref_discard);
 	AZ(priv_vcl->vclref_cold);
 	FREE_OBJ(priv_vcl);
-	AZ(priv_vcl);
 }
 
 static const struct vmod_priv_methods priv_vcl_methods[1] = {{
@@ -747,11 +746,10 @@ VCL_VOID
 xyzzy_concat__fini(struct xyzzy_debug_concat **concatp)
 {
 	struct xyzzy_debug_concat *concat;
-	void *p;
+
 
 	TAKE_OBJ_NOTNULL(concat, concatp, CONCAT_MAGIC);
-	p = TRUST_ME(concat->s);
-	free(p);
+	free(TRUST_ME(concat->s));
 	FREE_OBJ(concat);
 }
 
@@ -1366,9 +1364,7 @@ xyzzy_caller__fini(struct VPFX(debug_caller) **callerp)
 
 	if (callerp == NULL || *callerp == NULL)
 		return;
-	CHECK_OBJ(*callerp, DEBUG_CALLER_MAGIC);
-	caller = *callerp;
-	*callerp = NULL;
+	TAKE_OBJ_NOTNULL(caller, callerp, DEBUG_CALLER_MAGIC);
 	FREE_OBJ(caller);
 }
 

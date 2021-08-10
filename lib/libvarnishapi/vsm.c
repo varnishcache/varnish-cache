@@ -306,9 +306,8 @@ vsm_delset(struct vsm_set **p)
 	struct vsm_set *vs;
 	struct vsm_seg *vg;
 
-	AN(p);
-	vs = *p;
-	*p = NULL;
+	TAKE_OBJ_NOTNULL(vs, p, VSM_SET_MAGIC);
+
 	if (vs->fd >= 0)
 		closefd(&vs->fd);
 	if (vs->dfd >= 0)
