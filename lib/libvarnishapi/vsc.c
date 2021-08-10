@@ -319,7 +319,6 @@ vsc_del_seg(const struct vsc *vsc, struct vsm *vsm, struct vsc_seg **spp)
 	struct vsc_seg *sp;
 
 	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
-	AN(vsm);
 	TAKE_OBJ_NOTNULL(sp, spp, VSC_SEG_MAGIC);
 	AZ(VSM_Unmap(vsm, sp->fantom));
 	if (sp->vj != NULL) {
@@ -343,7 +342,6 @@ vsc_add_seg(const struct vsc *vsc, struct vsm *vsm, const struct vsm_fantom *fp)
 	struct vsc_pt *pp;
 
 	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
-	AN(vsm);
 
 	ALLOC_OBJ(sp, VSC_SEG_MAGIC);
 	AN(sp);

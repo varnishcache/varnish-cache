@@ -156,6 +156,7 @@ vcp_handle(struct waited *w, enum wait_event ev, vtim_real now)
 	struct pfd *pfd;
 	struct conn_pool *cp;
 
+	CHECK_OBJ_NOTNULL(w, WAITED_MAGIC);
 	CAST_OBJ_NOTNULL(pfd, w->priv1, PFD_MAGIC);
 	(void)ev;
 	(void)now;
@@ -730,6 +731,7 @@ VCP_Ref(const struct vrt_endpoint *vep, const char *ident)
 	cp->refcnt = 1;
 	cp->holddown = 0;
 	cp->endpoint = VRT_Endpoint_Clone(vep);
+	CHECK_OBJ_NOTNULL(cp->endpoint, VRT_ENDPOINT_MAGIC);
 	memcpy(cp->ident, digest, sizeof cp->ident);
 	if (vep->uds_path != NULL)
 		cp->methods = &vus_methods;

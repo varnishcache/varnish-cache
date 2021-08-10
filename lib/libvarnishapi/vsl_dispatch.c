@@ -375,12 +375,12 @@ chunk_newbuf(struct vtx *vtx, const uint32_t *ptr, size_t len)
 static void
 chunk_freebuf(struct chunk **pchunk)
 {
+	struct chunk *chunk;
 
-	CHECK_OBJ_NOTNULL(*pchunk, CHUNK_MAGIC);
-	assert((*pchunk)->type == chunk_t_buf);
-	free((*pchunk)->buf.data);
-	FREE_OBJ(*pchunk);
-	*pchunk = NULL;
+	TAKE_OBJ_NOTNULL(chunk, pchunk, CHUNK_MAGIC);
+	assert(chunk->type == chunk_t_buf);
+	free(chunk->buf.data);
+	FREE_OBJ(chunk);
 }
 
 /* Append a set of records to a chunk */
@@ -593,9 +593,9 @@ vtx_retire(struct VSLQ *vslq, struct vtx **pvtx)
 	if (vslq->n_cache < VTX_CACHE) {
 		VTAILQ_INSERT_HEAD(&vslq->cache, vtx, list_child);
 		vslq->n_cache++;
-	} else {
+	} else
 		FREE_OBJ(vtx);
-	}
+
 }
 
 /* Lookup a vtx by vxid from the managed list */
@@ -1166,6 +1166,7 @@ VSLQ_Delete(struct VSLQ **pvslq)
 	while (!VTAILQ_EMPTY(&vslq->cache)) {
 		AN(vslq->n_cache);
 		vtx = VTAILQ_FIRST(&vslq->cache);
+		CHECK_OBJ_NOTNULL(vtx, VTX_MAGIC);
 		VTAILQ_REMOVE(&vslq->cache, vtx, list_child);
 		vslq->n_cache--;
 		FREE_OBJ(vtx);

@@ -101,6 +101,7 @@ vmod_rr_destroy(VCL_BACKEND dir)
 {
 	struct vmod_directors_round_robin *rr;
 
+	CHECK_OBJ_NOTNULL(dir, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(rr, dir->priv, VMOD_DIRECTORS_ROUND_ROBIN_MAGIC);
 	vdir_delete(&rr->vd);
 	FREE_OBJ(rr);

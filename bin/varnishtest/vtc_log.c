@@ -98,9 +98,9 @@ vtc_logopen(const char *fmt, ...)
 void
 vtc_logclose(void *arg)
 {
-	struct vtclog *vl = arg;
+	struct vtclog *vl;
 
-	CHECK_OBJ_NOTNULL(vl, VTCLOG_MAGIC);
+	CAST_OBJ_NOTNULL(vl, arg, VTCLOG_MAGIC);
 	if (pthread_getspecific(log_key) == vl)
 		AZ(pthread_setspecific(log_key, NULL));
 	VSB_destroy(&vl->vsb);

@@ -339,9 +339,6 @@ xyzzy_obj_opt__fini(struct xyzzy_debug_obj_opt **op)
 {
 	struct xyzzy_debug_obj_opt *o;
 
-	AN(op);
-	AN(*op);
-
 	TAKE_OBJ_NOTNULL(o, op, VMOD_DEBUG_OBJ_OPT_MAGIC);
 
 	REPLACE(o->name, NULL);
@@ -350,7 +347,6 @@ xyzzy_obj_opt__fini(struct xyzzy_debug_obj_opt **op)
 		REPLACE(o->freeptr, NULL);
 	}
 	FREE_OBJ(o);
-	AZ(o);
 }
 
 VCL_STRING v_matchproto_()

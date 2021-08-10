@@ -517,9 +517,7 @@ VCL_Close(struct vcl **vclp)
 {
 	struct vcl *vcl;
 
-	CHECK_OBJ_NOTNULL(*vclp, VCL_MAGIC);
-	vcl = *vclp;
-	*vclp = NULL;
+	TAKE_OBJ_NOTNULL(vcl, vclp, VCL_MAGIC);
 	assert(VTAILQ_EMPTY(&vcl->vfps));
 	assert(VTAILQ_EMPTY(&vcl->vdps));
 	AZ(dlclose(vcl->dlh));
@@ -878,7 +876,7 @@ vcl_cli_discard(struct cli *cli, const char * const *av, void *priv)
 	(void)cli;
 	AZ(priv);
 	vcl = vcl_find(av[2]);
-	AN(vcl);			// MGT ensures this
+	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);		// MGT ensures this
 	Lck_Lock(&vcl_mtx);
 	assert (vcl != vcl_active);	// MGT ensures this
 	AZ(vcl->nlabels);		// MGT ensures this

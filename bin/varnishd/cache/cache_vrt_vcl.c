@@ -143,6 +143,7 @@ vcldir_free(struct vcldir *vdir)
 {
 
 	CHECK_OBJ_NOTNULL(vdir, VCLDIR_MAGIC);
+	CHECK_OBJ_NOTNULL(vdir->dir, DIRECTOR_MAGIC);
 	Lck_Delete(&vdir->dlck);
 	free(vdir->cli_name);
 	FREE_OBJ(vdir->dir);

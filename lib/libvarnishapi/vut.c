@@ -378,7 +378,6 @@ VUT_Fini(struct VUT **vutp)
 	if (vut->vsm)
 		VSM_Destroy(&vut->vsm);
 
-	memset(vut, 0, sizeof *vut);
 	FREE_OBJ(vut);
 }
 

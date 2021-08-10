@@ -573,31 +573,37 @@ vxp_Parse(struct vxp *vxp)
 void
 vex_Free(struct vex **pvex)
 {
+	struct vex *vex;
+	struct vex_lhs *lhs;
+	struct vex_rhs *rhs;
 
-	if ((*pvex)->lhs != NULL) {
-		if ((*pvex)->lhs->tags != NULL)
-			vbit_destroy((*pvex)->lhs->tags);
-		if ((*pvex)->lhs->prefix != NULL)
-			free((*pvex)->lhs->prefix);
-		FREE_OBJ((*pvex)->lhs);
+	TAKE_OBJ_NOTNULL(vex, pvex, VEX_MAGIC);
+
+	if (vex->lhs) {
+		CAST_OBJ(lhs, vex->lhs, VEX_LHS_MAGIC);
+		if (lhs->tags)
+			vbit_destroy(lhs->tags);
+		if (lhs->prefix)
+			free(lhs->prefix);
+		FREE_OBJ(lhs);
 	}
-	if ((*pvex)->rhs != NULL) {
-		if ((*pvex)->rhs->val_string)
-			free((*pvex)->rhs->val_string);
-		if ((*pvex)->rhs->val_regex)
-			VRE_free(&(*pvex)->rhs->val_regex);
-		FREE_OBJ((*pvex)->rhs);
+	if (vex->rhs) {
+		CAST_OBJ(rhs, vex->rhs, VEX_RHS_MAGIC);
+		if (rhs->val_string)
+			free(rhs->val_string);
+		if (rhs->val_regex)
+			VRE_free(&rhs->val_regex);
+		FREE_OBJ(rhs);
 	}
-	if ((*pvex)->a != NULL) {
-		vex_Free(&(*pvex)->a);
-		AZ((*pvex)->a);
+	if (vex->a) {
+		vex_Free(&vex->a);
+		AZ(vex->a);
 	}
-	if ((*pvex)->b != NULL) {
-		vex_Free(&(*pvex)->b);
-		AZ((*pvex)->b);
+	if (vex->b) {
+		vex_Free(&vex->b);
+		AZ(vex->b);
 	}
-	FREE_OBJ(*pvex);
-	*pvex = NULL;
+	FREE_OBJ(vex);
 }
 
 #ifdef VXP_DEBUG

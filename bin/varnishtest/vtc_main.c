@@ -296,6 +296,7 @@ tst_cb(const struct vev *ve, int what)
 	char *p;
 
 	CAST_OBJ_NOTNULL(jp, ve->priv, JOB_MAGIC);
+	CHECK_OBJ_NOTNULL(jp->tst, TST_MAGIC);
 
 	// printf("CB %p %s %d\n", ve, jp->tst->filename, what);
 	if (what == 0) {

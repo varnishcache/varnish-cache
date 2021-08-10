@@ -200,7 +200,7 @@ pool_poolherder(void *priv)
 				DO_DEBUG(DBG_DROP_POOLS)) {
 			Lck_Lock(&pool_mtx);
 			pp = VTAILQ_FIRST(&pools);
-			AN(pp);
+			CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 			VTAILQ_REMOVE(&pools, pp, list);
 			VTAILQ_INSERT_TAIL(&pools, pp, list);
 			if (!pp->die)
@@ -218,6 +218,8 @@ pool_poolherder(void *priv)
 		ppx = NULL;
 		Lck_Lock(&pool_mtx);
 		VTAILQ_FOREACH(pp, &pools, list) {
+			CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
+
 			if (pp->die && pp->nthr == 0)
 				ppx = pp;
 			u += pp->lqueue;

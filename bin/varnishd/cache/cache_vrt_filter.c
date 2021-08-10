@@ -80,6 +80,7 @@ VRT_AddVFP(VRT_CTX, const struct vfp *filter)
 	}
 	if (ctx != NULL) {
 		ASSERT_CLI();
+		CHECK_OBJ_NOTNULL(ctx->vcl, VCL_MAGIC);
 		hd = &ctx->vcl->vfps;
 		VTAILQ_FOREACH(vp, hd, list) {
 			xxxassert(vp->vfp != filter);
@@ -111,6 +112,7 @@ VRT_AddVDP(VRT_CTX, const struct vdp *filter)
 	}
 	if (ctx != NULL) {
 		ASSERT_CLI();
+		CHECK_OBJ_NOTNULL(ctx->vcl, VCL_MAGIC);
 		hd = &ctx->vcl->vdps;
 		VTAILQ_FOREACH(vp, hd, list) {
 			xxxassert(vp->vdp != filter);
@@ -129,15 +131,18 @@ void
 VRT_RemoveVFP(VRT_CTX, const struct vfp *filter)
 {
 	struct vfilter *vp;
-	struct vfilter_head *hd = &ctx->vcl->vfps;
+	struct vfilter_head *hd;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->vcl, VCL_MAGIC);
+	hd = &ctx->vcl->vfps;
 	AN(filter);
 	AN(filter->name);
 	AN(*filter->name);
 
 	ASSERT_CLI();
 	VTAILQ_FOREACH(vp, hd, list) {
+		CHECK_OBJ_NOTNULL(vp, VFILTER_MAGIC);
 		if (vp->vfp == filter)
 			break;
 	}
@@ -150,15 +155,18 @@ void
 VRT_RemoveVDP(VRT_CTX, const struct vdp *filter)
 {
 	struct vfilter *vp;
-	struct vfilter_head *hd = &ctx->vcl->vdps;
+	struct vfilter_head *hd;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->vcl, VCL_MAGIC);
+	hd = &ctx->vcl->vdps;
 	AN(filter);
 	AN(filter->name);
 	AN(*filter->name);
 
 	ASSERT_CLI();
 	VTAILQ_FOREACH(vp, hd, list) {
+		CHECK_OBJ_NOTNULL(vp, VFILTER_MAGIC);
 		if (vp->vdp == filter)
 			break;
 	}

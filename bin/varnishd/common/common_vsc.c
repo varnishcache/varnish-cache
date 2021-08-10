@@ -198,12 +198,11 @@ VRT_VSC_Destroy(const char *nm, struct vsc_seg *vsg)
 
 	AN(heritage.proc_vsmw);
 	CHECK_OBJ_NOTNULL(vsg, VSC_SEG_MAGIC);
+	CAST_OBJ_NOTNULL(dvsg, vsg->doc, VSC_SEG_MAGIC);
 	AZ(vsg->jp);
-	CHECK_OBJ_NOTNULL(vsg->doc, VSC_SEG_MAGIC);
 	assert(vsg->vsm == heritage.proc_vsmw);
 	assert(vsg->nm == nm);
 
-	dvsg = vsg->doc;
 	VSMW_Free(heritage.proc_vsmw, &vsg->seg);
 	VTAILQ_REMOVE(&vsc_seglist, vsg, list);
 	FREE_OBJ(vsg);
