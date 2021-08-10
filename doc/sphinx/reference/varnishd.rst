@@ -526,6 +526,7 @@ space:
 * http_resp_size: 8k
 * http_req_size: 12k
 * gzip_buffer: 4k
+* vsl_buffer: 4k
 * vsl_space: 1G (maximum)
 * thread_pool_stack: 52k
 
