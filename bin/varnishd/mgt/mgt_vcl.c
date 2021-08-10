@@ -421,7 +421,7 @@ mgt_vcl_setstate(struct cli *cli, struct vclprog *vp, const struct vclstate *vs)
 
 /*--------------------------------------------------------------------*/
 
-static void
+static int
 mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
     const char *vclsrcfile, const char *state, int C_flag)
 {
@@ -437,7 +437,7 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 		VCLI_Out(cli, "Too many (%d) VCLs already loaded\n", vcl_count);
 		VCLI_Out(cli, "(See max_vcl and max_vcl_handling parameters)");
 		VCLI_SetResult(cli, CLIS_CANT);
-		return;
+		return (0);
 	}
 
 	if (state == NULL)
@@ -446,13 +446,13 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 		vs = mcf_vcl_parse_state(cli, state);
 
 	if (vs == NULL)
-		return;
+		return (0);
 
 	vp = mgt_vcl_add(vclname, vs);
 	lib = mgt_VccCompile(cli, vp, vclname, vclsrc, vclsrcfile, C_flag);
 	if (lib == NULL) {
 		mgt_vcl_del(vp);
-		return;
+		return (0);
 	}
 
 	AZ(C_flag);
@@ -470,7 +470,7 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 	}
 
 	if (!MCH_Running())
-		return;
+		return (0);
 
 	if (mgt_cli_askchild(&status, &p, "vcl.load %s %s %d%s\n",
 	    vp->name, vp->fname, vp->warm, vp->state->name)) {
@@ -478,11 +478,12 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 		VCLI_Out(cli, "%s", p);
 		VCLI_SetResult(cli, status);
 		free(p);
-		return;
+		return (0);
 	}
 	free(p);
 
 	mgt_vcl_set_cooldown(vp, VTIM_mono());
+	return (1);
 }
 
 /*--------------------------------------------------------------------*/
@@ -501,7 +502,7 @@ mgt_vcl_startup(struct cli *cli, const char *vclsrc, const char *vclname,
 		vclname = buf;
 	}
 	active_vcl = NULL;
-	mgt_new_vcl(cli, vclname, vclsrc, origin, NULL, C_flag);
+	(void)mgt_new_vcl(cli, vclname, vclsrc, origin, NULL, C_flag);
 }
 
 /*--------------------------------------------------------------------*/
@@ -571,7 +572,8 @@ mcf_vcl_inline(struct cli *cli, const char * const *av, void *priv)
 	if (!mcf_find_no_vcl(cli, av[2]))
 		return;
 
-	mgt_new_vcl(cli, av[2], av[3], "<vcl.inline>", av[4], 0);
+	if (!mgt_new_vcl(cli, av[2], av[3], "<vcl.inline>", av[4], 0))
+		VCLI_Out(cli, "VCL compiled.\n");
 }
 
 static void v_matchproto_(cli_func_t)
@@ -582,7 +584,8 @@ mcf_vcl_load(struct cli *cli, const char * const *av, void *priv)
 	if (!mcf_find_no_vcl(cli, av[2]))
 		return;
 
-	mgt_new_vcl(cli, av[2], NULL, av[3], av[4], 0);
+	if (!mgt_new_vcl(cli, av[2], NULL, av[3], av[4], 0))
+		VCLI_Out(cli, "VCL compiled.\n");
 }
 
 

@@ -384,8 +384,6 @@ mgt_VccCompile(struct cli *cli, struct vclprog *vcl, const char *vclname,
 	AN(p);
 	mgt_vcl_symtab(vcl, p);
 
-	VCLI_Out(cli, "VCL compiled.\n");
-
 	REPLACE(p, VSB_data(vp->libfile));
 	mgt_vcc_fini_vp(vp, 1);
 	return (p);
