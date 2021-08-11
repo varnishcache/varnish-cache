@@ -1657,10 +1657,28 @@ PARAM_PCRE2(
 	" messages."
 )
 
+/*--------------------------------------------------------------------
+ * Custom parameters with separate tweak function
+ */
+
+#  define PARAM_CUSTOM(nm, pv, def, ...) \
+	PARAM(, , nm, tweak_ ## nm, pv, NULL, NULL, def, NULL, __VA_ARGS__)
+
+PARAM_CUSTOM(
+	/* name */	h2_rxbuf_storage,
+	/* priv */	&mgt_stv_h2_rxbuf,
+	/* def */	"Transient",
+	/* descr */
+	"The name of the storage backend that HTTP/2 receive buffers"
+	" should be allocated from.",
+	/* flags */	MUST_RESTART
+)
+
 #  undef PARAM_ALL
 #  undef PARAM_PCRE2
 #  undef PARAM_STRING
 #  undef PARAM_VCC
+#  undef PARAM_CUSTOM
 #endif /* defined(PARAM_ALL) */
 
 #undef PARAM_MEMPOOL

@@ -134,6 +134,7 @@ struct stevedore {
 };
 
 extern struct stevedore *stv_transient;
+extern struct stevedore *stv_h2_rxbuf;
 
 /*--------------------------------------------------------------------*/
 
