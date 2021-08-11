@@ -96,7 +96,8 @@ vsl_glob_test_LDADD = libvarnishapi.la @SAN_LDFLAGS@
 TESTS += vsl_glob_test_coverage
 
 vsl_glob_test_coverage:
-	echo './vsl_glob_test 1 2 3 2> /dev/null || true' > ${builddir}/_
+	echo '#!/bin/sh' > ${builddir}/_
+	echo './vsl_glob_test 1 2 3 2> /dev/null || true' >> ${builddir}/_
 	echo './vsl_glob_test "Req*" > /dev/null' >> ${builddir}/_
 	mv ${builddir}/_ ${builddir}/vsl_glob_test_coverage
 	chmod +x ${builddir}/vsl_glob_test_coverage

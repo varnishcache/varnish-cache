@@ -167,7 +167,7 @@ _vrt.c: Makefile.am vdef.h vrt.h
 	cat $(srcdir)/vdef.h $(srcdir)/vrt.h > $@
 
 vrt_test: _vrt.c
-	echo "exec ${CC} -c -o _vrt_test _vrt.c" > $@
+	echo -e "#!/bin/sh\nexec ${CC} -c -o _vrt_test _vrt.c" > $@
 	chmod +x $@
 
 test: ${TESTS}
