@@ -40,6 +40,7 @@
 #include "mgt/mgt.h"
 
 #include "mgt/mgt_param.h"
+#include "storage/storage.h"
 #include "vav.h"
 #include "vnum.h"
 
@@ -439,4 +440,44 @@ tweak_poolparam(struct vsb *vsb, const struct parspec *par, const char *arg)
 		VAV_Free(av);
 	}
 	return (retval);
+}
+
+/*--------------------------------------------------------------------
+ * Tweak 'h2_rxbuf_storage'
+ *
+ */
+
+int v_matchproto_(tweak_t)
+tweak_h2_rxbuf_storage(struct vsb *vsb, const struct parspec *par,
+    const char *arg)
+{
+	struct stevedore *stv;
+
+	/* XXX: If we want to remove the MUST_RESTART flag from the
+	 * h2_rxbuf_storage parameter, we could have a mechanism here
+	 * that when the child is running calls out through CLI to change
+	 * the stevedore being used. */
+
+	if (arg == NULL || arg == JSON_FMT)
+		return (tweak_string(vsb, par, arg));
+
+	if (!strcmp(arg, "Transient")) {
+		/* Always allow setting to the special name
+		 * "Transient". There will always be a stevedore with this
+		 * name, but it may not have been configured at the time
+		 * this is called. */
+	} else {
+		/* Only allow setting the value to a known configured
+		 * stevedore */
+		STV_Foreach(stv) {
+			CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
+			if (!strcmp(stv->ident, arg))
+				break;
+		}
+		if (stv == NULL) {
+			VSB_printf(vsb, "unknown storage backend '%s'", arg);
+			return (-1);
+		}
+	}
+	return (tweak_string(vsb, par, arg));
 }

@@ -41,6 +41,8 @@
 #include "storage/storage.h"
 #include "vrt_obj.h"
 
+extern const char *mgt_stv_h2_rxbuf;
+struct stevedore *stv_h2_rxbuf = NULL;
 
 static pthread_mutex_t stv_mtx;
 
@@ -171,13 +173,23 @@ STV_open(void)
 
 	ASSERT_CLI();
 	AZ(pthread_mutex_init(&stv_mtx, NULL));
+
+	/* This string was prepared for us before the fork, and should
+	 * point to a configured stevedore. */
+	AN(mgt_stv_h2_rxbuf);
+
+	stv_h2_rxbuf = NULL;
 	STV_Foreach(stv) {
+		CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 		bprintf(buf, "storage.%s", stv->ident);
 		stv->vclname = strdup(buf);
 		AN(stv->vclname);
 		if (stv->open != NULL)
 			stv->open(stv);
+		if (!strcmp(stv->ident, mgt_stv_h2_rxbuf))
+			stv_h2_rxbuf = stv;
 	}
+	AN(stv_h2_rxbuf);
 }
 
 void

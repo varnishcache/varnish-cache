@@ -1878,6 +1878,24 @@ PARAM(
 	/* func */      NULL
 )
 
+#if 0
+/* actual location mgt_param_tbl.c */
+PARAM(
+	/* name */	h2_rxbuf_storage,
+	/* typ */	h2_rxbuf_storage,
+	/* min */	NULL,
+	/* max */	NULL,
+	/* default */	"Transient",
+	/* units */	NULL,
+	/* flags */	MUST_RESTART,
+	/* s-text */
+	"The name of the storage backend that HTTP/2 receive buffers"
+	" should be allocated from.",
+	/* l-text */	"",
+	/* func */	NULL
+)
+#endif
+
 #undef PARAM
 
 /*lint -restore */
