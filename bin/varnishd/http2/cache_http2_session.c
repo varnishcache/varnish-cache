@@ -360,10 +360,14 @@ h2_new_session(struct worker *wrk, void *arg)
 	AZ(h2->htc->priv);
 	h2->htc->priv = h2;
 
+	AZ(wrk->vsl);
+	wrk->vsl = h2->vsl;
+
 	if (req->err_code == H2_OU_MARKER && !h2_ou_session(wrk, h2, req)) {
 		assert(h2->refcnt == 1);
 		h2_del_req(wrk, h2->req0);
 		h2_del_sess(wrk, h2, SC_RX_JUNK);
+		wrk->vsl = NULL;
 		return;
 	}
 	assert(HTC_S_COMPLETE == H2_prism_complete(h2->htc));
@@ -432,6 +436,7 @@ h2_new_session(struct worker *wrk, void *arg)
 	assert(h2->refcnt == 1);
 	h2_del_req(wrk, h2->req0);
 	h2_del_sess(wrk, h2, h2->error->reason);
+	wrk->vsl = NULL;
 }
 
 struct transport H2_transport = {
