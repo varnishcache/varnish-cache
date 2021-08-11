@@ -152,6 +152,12 @@ struct parspec mgt_parspec[] = {
 		0,
 		"255b",
 		"bytes" },
+	{ "h2_rxbuf_storage", tweak_h2_rxbuf_storage, &mgt_stv_h2_rxbuf,
+		NULL, NULL,
+		"The name of the storage backend that HTTP/2 receive buffers"
+		" should be allocated from.",
+		MUST_RESTART,
+		"Transient", "" },
 
 	{ NULL, NULL, NULL }
 };
