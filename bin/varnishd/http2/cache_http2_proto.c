@@ -924,7 +924,8 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 			/* Cap the buffer size when we know this is the
 			 * single data frame. */
 			bufsize = len;
-		stvbuf = STV_AllocBuf(wrk, stv_transient,
+		CHECK_OBJ_NOTNULL(stv_h2_rxbuf, STEVEDORE_MAGIC);
+		stvbuf = STV_AllocBuf(wrk, stv_h2_rxbuf,
 		    bufsize + sizeof *rxbuf);
 		if (stvbuf == NULL) {
 			VSLb(h2->vsl, SLT_Debug,

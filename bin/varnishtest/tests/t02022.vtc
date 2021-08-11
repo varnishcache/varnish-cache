@@ -1,0 +1,86 @@
+varnishtest "Test non-transient rxbuf stevedore with LRU nuking"
+
+barrier b1 sock 2 -cyclic
+
+server s1 {
+	rxreq
+	txresp -body asdf
+	rxreq
+	txresp -bodylen 1048000
+	rxreq
+	txresp -body ASDF
+} -start
+
+varnish v1 -arg "-srxbuf=malloc,1m -smain=malloc,1m" -vcl+backend {
+	import vtc;
+	sub vcl_recv {
+		if (req.url == "/1") {
+			vtc.barrier_sync("${b1_sock}");
+		}
+	}
+	sub vcl_backend_response {
+		if (bereq.url == "/2") {
+			set beresp.storage = storage.rxbuf;
+		} else {
+			set beresp.storage = storage.main;
+		}
+	}
+}
+
+varnish v1 -cliok "param.set feature +http2"
+varnish v1 -cliok "param.reset h2_initial_window_size"
+varnish v1 -cliok "param.reset h2_rx_window_low_water"
+varnish v1 -cliok "param.set h2_rxbuf_storage rxbuf"
+varnish v1 -cliok "param.set debug +syncvsl"
+
+varnish v1 -start
+
+client c1 {
+	stream 1 {
+		txreq -req POST -url /1 -hdr "content-length" "2048" -nostrend
+		txdata -datalen 2048
+		rxresp
+		expect resp.status == 200
+	} -start
+} -start
+
+varnish v1 -expect SMA.rxbuf.g_bytes >= 2048
+varnish v1 -expect SMA.Transient.g_bytes == 0
+varnish v1 -expect MAIN.n_lru_nuked == 0
+
+barrier b1 sync
+client c1 -wait
+
+varnish v1 -expect SMA.rxbuf.g_bytes == 0
+varnish v1 -expect SMA.Transient.g_bytes == 0
+varnish v1 -expect MAIN.n_lru_nuked == 0
+
+client c2 {
+	txreq -url /2
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 1048000
+} -run
+
+varnish v1 -expect SMA.rxbuf.g_bytes >= 1048000
+varnish v1 -expect MAIN.n_lru_nuked == 0
+
+client c3 {
+	stream 1 {
+		txreq -req POST -url /1 -hdr "content-length" "2048" -nostrend
+		txdata -datalen 2048
+		rxresp
+		expect resp.status == 200
+	} -start
+} -start
+
+varnish v1 -expect SMA.rxbuf.g_bytes >= 2048
+varnish v1 -expect SMA.rxbuf.g_bytes < 3000
+varnish v1 -expect SMA.Transient.g_bytes == 0
+varnish v1 -expect MAIN.n_lru_nuked == 1
+
+barrier b1 sync
+client c3 -wait
+
+varnish v1 -expect SMA.rxbuf.g_bytes == 0
+varnish v1 -expect SMA.Transient.g_bytes == 0

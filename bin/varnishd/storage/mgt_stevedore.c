@@ -54,6 +54,8 @@ static VTAILQ_HEAD(, stevedore) stevedores =
 
 struct stevedore *stv_transient;
 
+const char *mgt_stv_h2_rxbuf;
+
 /*--------------------------------------------------------------------*/
 
 int
@@ -247,7 +249,6 @@ STV_Config(const char *spec)
 void
 STV_Config_Transient(void)
 {
-
 	ASSERT_MGT();
 
 	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_stv);
