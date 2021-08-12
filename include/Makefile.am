@@ -162,7 +162,7 @@ noinst_PROGRAMS = vbm_test vrt_test
 vbm_test_SOURCES = vbm_test.c vbm.h
 
 vrt_test.c: vdef.h vrt.h
-	cat $(srcdir)/vdef.h $(srcdir)/vrt.h > $@
+	$(AM_V_GEN) cat $(srcdir)/vdef.h $(srcdir)/vrt.h > $@
 
 vrt_test_BUILT_SOURCES = vrt_test.c
 vrt_test_CFLAGS = -c
