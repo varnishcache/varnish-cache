@@ -157,15 +157,15 @@ CLEANFILES = \
 	_vrt_test \
 	_vrt.c
 
-TESTS = vbm_test vrt_test
-
-noinst_PROGRAMS = vbm_test
+noinst_PROGRAMS = vbm_test vrt_test
 
 vbm_test_SOURCES = vbm_test.c vbm.h
 
-_vrt.c: Makefile.am vdef.h vrt.h
+vrt_test.c: vdef.h vrt.h
 	cat $(srcdir)/vdef.h $(srcdir)/vrt.h > $@
 
-vrt_test: _vrt.c
-	echo "exec ${CC} -c -o _vrt_test _vrt.c" > $@
-	chmod +x $@
+vrt_test_BUILT_SOURCES = vrt_test.c
+vrt_test_CFLAGS = -c
+vrt_test_LINK = :
+
+TESTS = vbm_test
