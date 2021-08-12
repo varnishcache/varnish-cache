@@ -37,7 +37,7 @@ varnish v1 -vcl+backend {
 		set resp.http.port4 = std.port(debug.get_ip());
 		std.timestamp("2001:db8::");
 
-		debug.store_ip(std.ip("2001::db8::", "[::1]"));
+		debug.store_ip(std.ip("2001::db8::", "[::1]", resolve = false));
 		set resp.http.ip5 = debug.get_ip();
 		set resp.http.port5 = std.port(debug.get_ip());
 		std.timestamp("2001::db8::");
