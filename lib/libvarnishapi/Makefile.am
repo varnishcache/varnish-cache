@@ -85,20 +85,12 @@ vxp_test_LDADD = \
 	$(top_builddir)/lib/libvarnish/libvarnish.la \
 	${RT_LIBS} ${LIBM} ${PTHREAD_LIBS} ${SAN_LDFLAGS}
 
-TESTS = vsl_glob_test
-
 noinst_PROGRAMS += vsl_glob_test
 
 vsl_glob_test_SOURCES = vsl_glob_test.c
 vsl_glob_test_CFLAGS = @SAN_CFLAGS@
 vsl_glob_test_LDADD = libvarnishapi.la @SAN_LDFLAGS@
 
-TESTS += vsl_glob_test_coverage
+dist_noinst_SCRIPTS = vsl_glob_test_coverage
 
-vsl_glob_test_coverage:
-	echo './vsl_glob_test 1 2 3 2> /dev/null || true' > ${builddir}/_
-	echo './vsl_glob_test "Req*" > /dev/null' >> ${builddir}/_
-	mv ${builddir}/_ ${builddir}/vsl_glob_test_coverage
-	chmod +x ${builddir}/vsl_glob_test_coverage
-
-CLEANFILES += ${builddir}/vsl_glob_test_coverage
+TESTS = vsl_glob_test_coverage

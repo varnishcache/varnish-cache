@@ -123,7 +123,6 @@ cscope.*out
 /lib/libvarnish/vnum_c_test
 /lib/libvarnish/vsb_test
 /lib/libvarnishapi/vsl_glob_test
-/lib/libvarnishapi/vsl_glob_test_coverage
 /lib/libvarnishapi/vxp_test
 
 # vtc-bisect.sh default vtc
