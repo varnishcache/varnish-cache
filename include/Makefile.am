@@ -169,6 +169,3 @@ _vrt.c: Makefile.am vdef.h vrt.h
 vrt_test: _vrt.c
 	echo "exec ${CC} -c -o _vrt_test _vrt.c" > $@
 	chmod +x $@
-
-test: ${TESTS}
-	@for test in ${TESTS} ; do ./$${test} ; done
