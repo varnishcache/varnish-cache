@@ -21,12 +21,12 @@ client c1 {
 	expect resp.status == 200
 	expect resp.bodylen == 3
 	expect resp.http.x-varnish == "1001"
-	send "/bar HTTP/1.1\nHost: foo\n\nGET /bar "
+	send "/bar HTTP/1.1\r\nHost: foo\r\n\r\nGET /bar "
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 6
 	expect resp.http.x-varnish == "1003"
-	send "HTTP/1.1\nHost: foo\n\n"
+	send "HTTP/1.1\r\nHost: foo\r\n\r\n"
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 6

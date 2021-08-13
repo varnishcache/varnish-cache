@@ -9,18 +9,18 @@ server s1 {
 	# Nonzero chunked response is OK.
 	rxreq
 	expect req.url == "/1"
-	send "HTTP/1.1 200 OK\n"
-	send "Transfer-encoding: chunked\n"
-	send "\n"
+	send "HTTP/1.1 200 OK\r\n"
+	send "Transfer-encoding: chunked\r\n"
+	send "\r\n"
 	chunkedlen 20
 	chunkedlen 0
 
 	# Empty chunked response is not.
 	rxreq
 	expect req.url == "/2"
-	send "HTTP/1.1 200 OK\n"
-	send "Transfer-encoding: chunked\n"
-	send "\n"
+	send "HTTP/1.1 200 OK\r\n"
+	send "Transfer-encoding: chunked\r\n"
+	send "\r\n"
 	chunkedlen 0
 } -start
 

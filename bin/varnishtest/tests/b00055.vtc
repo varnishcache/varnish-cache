@@ -12,7 +12,7 @@ server s1 {
 varnish v1 -arg "-a ${tmpdir}/v1.sock" -vcl+backend {} -start
 
 client c1 -connect "${tmpdir}/v1.sock" {
-	send "GET /foo HTTP/1.1\nHost: foo\n\nGET /bar HTTP/1.1\nHost: foo\n\nGET /bar HTTP/1.1\nHost: foo\n\n"
+	send "GET /foo HTTP/1.1\r\nHost: foo\r\n\r\nGET /bar HTTP/1.1\r\nHost: foo\r\n\r\nGET /bar HTTP/1.1\r\nHost: foo\r\n\r\n"
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 3

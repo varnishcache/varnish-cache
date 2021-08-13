@@ -8,9 +8,9 @@ barrier b2 cond 2
 server s1 {
 	rxreq
 	expect req.url == "/1"
-	send "HTTP/1.1 200 OK\n"
-	send "Transfer-encoding: chunked\n"
-	send "\n"
+	send "HTTP/1.1 200 OK\r\n"
+	send "Transfer-encoding: chunked\r\n"
+	send "\r\n"
 	chunkedlen 32
 	# Tell top-level that it can sync the stevedore
 	barrier b1 sync

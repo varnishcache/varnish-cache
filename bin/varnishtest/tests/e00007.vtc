@@ -17,9 +17,9 @@ varnishtest "ESI spanning storage bits"
 server s1 {
 	rxreq
 	expect req.url == "/foo/bar"
-	send "HTTP/1.0 200 OK\n"
-	send "Connection: close\n"
-	send "\n"
+	send "HTTP/1.0 200 OK\r\n"
+	send "Connection: close\r\n"
+	send "\r\n"
 	send {
 		<html>filler
 		This is before the test

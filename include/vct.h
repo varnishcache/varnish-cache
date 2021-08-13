@@ -90,14 +90,11 @@ vct_is(int x, uint16_t y)
 static inline int
 vct_iscrlf(const char* p, const char* end)
 {
+
 	assert(p <= end);
-	if (p == end)
+	if (p + 2 > end || p[0] != 0x0d || p[1] != 0x0a)
 		return (0);
-	if ((p[0] == 0x0d && (p+1 < end) && p[1] == 0x0a)) // CR LF
-		return (2);
-	if (p[0] == 0x0a) // LF
-		return (1);
-	return (0);
+	return (2);
 }
 
 /* NB: VCT always operate in ASCII, don't replace 0x0d with \r etc. */

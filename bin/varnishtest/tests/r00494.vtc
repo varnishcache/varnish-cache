@@ -2,10 +2,10 @@ varnishtest "HTTP continuation lines"
 
 server s1 {
 	rxreq
-	txresp -hdr "Foo: bar,\n\tbarf: fail" -body "xxx"
+	txresp -hdr "Foo: bar,\r\n\tbarf: fail" -body "xxx"
 
 	rxreq
-	txresp -hdr "Foo: bar,\n \t\n\tbarf: fail" -body "xxx"
+	txresp -hdr "Foo: bar,\r\n \t\r\n\tbarf: fail" -body "xxx"
 } -start
 
 varnish v1 -vcl+backend {
@@ -18,13 +18,13 @@ varnish v1 -vcl+backend {
 client c1 {
 	txreq
 	rxresp
-	expect resp.http.bar == "bar,  barf: fail"
+	expect resp.http.bar == "bar,   barf: fail"
 	expect resp.http.barf == <undef>
 	expect resp.http.foo == <undef>
 
 	txreq -url /2
 	rxresp
-	expect resp.http.bar == "bar,     barf: fail"
+	expect resp.http.bar == "bar,       barf: fail"
 	expect resp.http.barf == <undef>
 	expect resp.http.foo == <undef>
 } -run

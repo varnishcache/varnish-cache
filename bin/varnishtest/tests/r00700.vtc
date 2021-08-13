@@ -2,7 +2,7 @@ varnishtest "check TAB in 3 header field"
 
 server s1 {
 	rxreq
-	send "HTTP/1.1 666 foo\tbar\n\nFOO"
+	send "HTTP/1.1 666 foo\tbar\r\n\r\nFOO"
 } -start
 
 varnish v1 -vcl+backend {} -start
