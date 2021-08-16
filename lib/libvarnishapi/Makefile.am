@@ -93,5 +93,5 @@ vsl_glob_test_LDADD = libvarnishapi.la @SAN_LDFLAGS@
 
 dist_noinst_SCRIPTS = vsl_glob_test_coverage.sh
 
-TESTS = vsl_glob_test_coverage.sh
+TESTS = vsl_glob_test_coverage.sh vxp_test_coverage.sh
 TEST_EXTENSIONS = .sh
