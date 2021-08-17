@@ -632,6 +632,10 @@ AC_CACHE_CHECK([for TCP_FASTOPEN socket option],
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <errno.h>
+
+#ifndef SOL_TCP
+#  define SOL_TCP IPPROTO_TCP
+#endif
     ]],[[
 int s = socket(AF_INET, SOCK_STREAM, 0);
 int i = 5;
