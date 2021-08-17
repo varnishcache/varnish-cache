@@ -13,7 +13,6 @@ varnish v1 \
     -arg "-s default,1MB" \
     -arg "-s default,1MB" \
     -arg "-s Transient=default" \
-    -arg "-p accept_filter=off" \
     -syntax 4.0 \
     -vcl+backend {
 	import std;
@@ -29,7 +28,12 @@ varnish v1 \
 	sub vcl_backend_response {
 		set beresp.storage = storage.s0;
 	}
-} -start
+}
+
+# -cli because accept_filter may not be supported
+varnish v1 -cli "param.set accept_filter off"
+
+varnish v1 -start
 
 client c1 {
 	txreq -url /0 -bodylen 100

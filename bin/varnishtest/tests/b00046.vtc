@@ -12,7 +12,9 @@ server s1 {
 	send_urgent " "
 } -start
 
-varnish v1 -cliok "param.set accept_filter off"
+# -cli because accept_filter may not be supported
+varnish v1 -cli "param.set accept_filter off"
+
 varnish v1 -vcl+backend {} -start
 
 client c1 {

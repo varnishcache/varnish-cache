@@ -16,7 +16,9 @@ server s1 {
 	send "line2\n"
 } -start
 
-varnish v1 -cliok "param.set accept_filter off"
+# -cli because accept_filter may not be supported
+varnish v1 -cli "param.set accept_filter off"
+
 varnish v1 -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.do_stream = false;
