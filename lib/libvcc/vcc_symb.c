@@ -314,9 +314,7 @@ VCC_SymbolGet(struct vcc *tl, vcc_ns_t ns, vcc_kind_t kind,
 		if (tn1->tok != '.')
 			break;
 		tn1 = vcc_PeekTokenFrom(tl, tn1);
-		if (tn1->tok == CSTR && sym == NULL)
-			break;
-		if (tn1->tok == CSTR && sym->wildcard == NULL)
+		if (tn1->tok == CSTR && (sym == NULL || sym->wildcard == NULL))
 			break;
 		if (tn1->tok != CSTR && tn1->tok != ID)
 			break;
