@@ -501,6 +501,14 @@ MCF_ParamSet(struct cli *cli, const char *param, const char *val)
 		VCLI_Out(cli, "Unknown parameter \"%s\".", param);
 		return;
 	}
+	if (pp->flags & NOT_IMPLEMENTED) {
+		VCLI_SetResult(cli, CLIS_CANT);
+		VCLI_Out(cli,
+		    "parameter \"%s\" is not available on this platform.",
+		    param
+		);
+		return;
+	}
 	if (pp->flags & PROTECTED) {
 		VCLI_SetResult(cli, CLIS_AUTH);
 		VCLI_Out(cli, "parameter \"%s\" is protected.", param);
