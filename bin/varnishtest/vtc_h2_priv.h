@@ -44,7 +44,7 @@ struct hpk_iter {
 	uint8_t			*end;
 };
 
-const struct txt * tbl_get_key(const struct hpk_ctx *ctx, uint32_t index);
+const struct hpk_txt * tbl_get_key(const struct hpk_ctx *ctx, uint32_t index);
 
-const struct txt * tbl_get_value(const struct hpk_ctx *ctx, uint32_t index);
+const struct hpk_txt * tbl_get_value(const struct hpk_ctx *ctx, uint32_t index);
 void push_header (struct hpk_ctx *ctx, const struct hpk_hdr *h);

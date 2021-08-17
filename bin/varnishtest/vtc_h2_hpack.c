@@ -227,7 +227,7 @@ num_encode(struct hpk_iter *iter, uint8_t prefix, uint32_t num)
 }
 
 static enum hpk_result
-str_encode(struct hpk_iter *iter, const struct txt *t)
+str_encode(struct hpk_iter *iter, const struct hpk_txt *t)
 {
 	int slen = huff_simulate(t->ptr, t->len, t->huff);
 	assert(iter->buf < iter->end);
@@ -252,7 +252,7 @@ str_encode(struct hpk_iter *iter, const struct txt *t)
 }
 
 static enum hpk_result
-str_decode(struct hpk_iter *iter, struct txt *t)
+str_decode(struct hpk_iter *iter, struct hpk_txt *t)
 {
 	uint32_t num;
 	int huff;
@@ -292,7 +292,7 @@ str_decode(struct hpk_iter *iter, struct txt *t)
 }
 
 static inline void
-txtcpy(struct txt *to, const struct txt *from)
+txtcpy(struct hpk_txt *to, const struct hpk_txt *from)
 {
 	//AZ(to->ptr);
 	to->ptr = malloc(from->len + 1L);
@@ -311,7 +311,7 @@ enum hpk_result
 HPK_DecHdr(struct hpk_iter *iter, struct hpk_hdr *header)
 {
 	int pref = 0;
-	const struct txt *t;
+	const struct hpk_txt *t;
 	uint32_t num;
 	int must_index = 0;
 	assert(iter);

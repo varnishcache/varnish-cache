@@ -179,7 +179,7 @@ HPK_ResizeTbl(struct hpk_ctx *ctx, uint32_t num)
 	return (hpk_done);
 }
 
-static const struct txt *
+static const struct hpk_txt *
 tbl_get_field(const struct hpk_ctx *ctx, uint32_t idx, int key)
 {
 	struct dynhdr *dh;
@@ -206,13 +206,13 @@ tbl_get_field(const struct hpk_ctx *ctx, uint32_t idx, int key)
 		return (NULL);
 }
 
-const struct txt *
+const struct hpk_txt *
 tbl_get_key(const struct hpk_ctx *ctx, uint32_t idx)
 {
 	return (tbl_get_field(ctx, idx, 1));
 }
 
-const struct txt *
+const struct hpk_txt *
 tbl_get_value(const struct hpk_ctx *ctx, uint32_t idx)
 {
 	return (tbl_get_field(ctx, idx, 0));

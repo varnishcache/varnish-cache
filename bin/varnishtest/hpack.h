@@ -44,15 +44,15 @@ enum hpk_indexed {
 	hpk_never,
 };
 
-struct txt {
+struct hpk_txt {
 	char *ptr;
 	int len;
 	int huff;
 };
 
 struct hpk_hdr {
-	struct txt key;
-	struct txt value;
+	struct hpk_txt key;
+	struct hpk_txt value;
 	enum hpk_indexed t;
 	unsigned i;
 };
