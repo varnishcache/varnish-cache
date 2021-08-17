@@ -580,7 +580,7 @@ vex_Free(struct vex **pvex)
 	TAKE_OBJ_NOTNULL(vex, pvex, VEX_MAGIC);
 
 	if (vex->lhs) {
-		CAST_OBJ(lhs, vex->lhs, VEX_LHS_MAGIC);
+		CAST_OBJ_NOTNULL(lhs, vex->lhs, VEX_LHS_MAGIC);
 		if (lhs->tags)
 			vbit_destroy(lhs->tags);
 		if (lhs->prefix)
@@ -588,7 +588,7 @@ vex_Free(struct vex **pvex)
 		FREE_OBJ(lhs);
 	}
 	if (vex->rhs) {
-		CAST_OBJ(rhs, vex->rhs, VEX_RHS_MAGIC);
+		CAST_OBJ_NOTNULL(rhs, vex->rhs, VEX_RHS_MAGIC);
 		if (rhs->val_string)
 			free(rhs->val_string);
 		if (rhs->val_regex)
