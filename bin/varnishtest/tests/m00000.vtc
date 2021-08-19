@@ -234,10 +234,12 @@ varnish v1 -vcl {
 		};
 
 		#define SETHDR(type)					\
-			VRT_SetHdr(ctx,					\
+			VRT_SetHdr(					\
+			    ctx,					\
 			    &VGC_HDR_RESP_ ## type ## _2d_sizeof,	\
 			    VRT_INT_string(ctx, sizeof(struct type)),	\
-			    vrt_magic_string_end)
+			    0						\
+			)
 	}C
 
 	sub vcl_recv {

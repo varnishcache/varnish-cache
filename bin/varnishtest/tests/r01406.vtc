@@ -15,7 +15,12 @@ varnish v1 -arg "-p vcc_allow_inline_c=true" -vcl+backend {
 
 	sub vcl_recv {
 		C{
-			VRT_SetHdr(ctx, &VGC_HDR_REQ_foo, 0, vrt_magic_string_end );
+			VRT_SetHdr(
+			    ctx,
+			    &VGC_HDR_REQ_foo,
+			    0,
+			    &(struct strands){.n = 0}
+			);
 		}C
 	}
 

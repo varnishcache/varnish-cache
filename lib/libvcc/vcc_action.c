@@ -119,8 +119,8 @@ static const struct assign {
 	{ DURATION,	0,		DURATION },
 	{ STRING,	T_INCR,		STRING_LIST, "\v,\n" },
 	{ STRING,	'=',		STRING_LIST },
-	{ HEADER,	T_INCR,		STRING_LIST, "VRT_GetHdr(ctx, \v),\n" },
-	{ HEADER,	'=',		STRING_LIST },
+	{ HEADER,	T_INCR,		STRANDS, "VRT_GetHdr(ctx, \v),\n" },
+	{ HEADER,	'=',		STRANDS, "NULL,\n" },
 	{ BODY,		'=',		STRING_LIST, "LBODY_SET,\n" },
 	{ BODY,		T_INCR,		STRING_LIST, "LBODY_ADD,\n" },
 	{ VOID,		'=',		VOID }
