@@ -108,7 +108,7 @@ VRE_compile(const char *pattern, unsigned options,
 	}
 #if USE_PCRE2_JIT
 	if (jit)
-		(void)pcre2_jit_compile(v->re, 0);
+		(void)pcre2_jit_compile(v->re, PCRE2_JIT_COMPLETE);
 #else
 	(void)jit;
 #endif
