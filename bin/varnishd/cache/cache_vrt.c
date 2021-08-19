@@ -704,28 +704,55 @@ VRT_UnsetHdr(VRT_CTX , VCL_HEADER hs)
 }
 
 VCL_VOID
-VRT_SetHdr(VRT_CTX , VCL_HEADER hs, const char *p, ...)
+VRT_SetHdr(VRT_CTX , VCL_HEADER hs, const char *pfx, VCL_STRANDS s)
 {
 	VCL_HTTP hp;
-	va_list ap;
-	const char *b;
+	unsigned u, l;
+	char *p, *b;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(hs);
 	AN(hs->what);
 	hp = VRT_selecthttp(ctx, hs->where);
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-	va_start(ap, p);
-	b = VRT_String(hp->ws, hs->what + 1, p, ap);
-	va_end(ap);
-	if (b == NULL) {
+
+	u = WS_ReserveAll(hp->ws);
+	l = hs->what[0] + 1;
+	if (pfx != NULL)
+		l += strlen(pfx);
+	if (u <= l) {
+		WS_Release(hp->ws, 0);
+		WS_MarkOverflow(hp->ws);
 		VSLb(ctx->vsl, SLT_LostHeader, "%s", hs->what + 1);
 		return;
 	}
-	if (FEATURE(FEATURE_VALIDATE_HEADERS) && ! validhdr(b)) {
+	b = WS_Reservation(hp->ws);
+	if (s != NULL) {
+		p = VRT_Strands(b + l, u - l, s);
+		if (p == NULL) {
+			WS_Release(hp->ws, 0);
+			WS_MarkOverflow(hp->ws);
+			VSLb(ctx->vsl, SLT_LostHeader, "%s", hs->what + 1);
+			return;
+		}
+	} else {
+		b[l] = '\0';
+	}
+	p = b;
+	memcpy(p, hs->what + 1, hs->what[0]);
+	p += hs->what[0];
+	*p++ = ' ';
+	if (pfx != NULL) {
+		l = strlen(pfx);
+		memcpy(p, pfx, l);
+		p += l;
+	}
+	if (FEATURE(FEATURE_VALIDATE_HEADERS) && !validhdr(b)) {
+		WS_Release(hp->ws, 0);
 		VRT_fail(ctx, "Bad header %s", b);
 		return;
 	}
+	WS_ReleaseP(hp->ws, strchr(p, '\0') + 1);
 	http_Unset(hp, hs->what);
 	http_SetHeader(hp, b);
 }
