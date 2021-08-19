@@ -1538,7 +1538,7 @@ PARAM_THREAD(
 	/* flags */	DELAYED_EFFECT,
 	/* dyn_min_reason */	"sysconf(_SC_THREAD_STACK_MIN)",
 	/* dyn_max_reason */	NULL,
-	/* dyn_def_reason */	NULL
+	/* dyn_def_reason */	"80k"
 )
 
 #if defined(PARAM_ALL)

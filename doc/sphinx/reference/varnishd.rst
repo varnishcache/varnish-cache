@@ -528,7 +528,7 @@ space:
 * gzip_buffer: 4k
 * vsl_buffer: 4k
 * vsl_space: 1G (maximum)
-* thread_pool_stack: 52k
+* thread_pool_stack: 64k
 
 .. _List of Parameters:
 

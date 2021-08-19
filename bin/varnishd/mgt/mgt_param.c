@@ -666,7 +666,7 @@ MCF_InitParams(struct cli *cli)
 
 	MCF_TcpParams();
 
-	def = 56 * 1024;
+	def = 80 * 1024;
 
 	if (sizeof(void *) < 8) {		/*lint !e506 !e774  */
 		/*
@@ -682,14 +682,14 @@ MCF_InitParams(struct cli *cli)
 		MCF_ParamConf(MCF_DEFAULT, "gzip_buffer", "4k");
 		MCF_ParamConf(MCF_DEFAULT, "vsl_buffer", "4k");
 		MCF_ParamConf(MCF_MAXIMUM, "vsl_space", "1G");
-		def = 52 * 1024;
+		def = 64 * 1024;
 	}
 
 	low = sysconf(_SC_THREAD_STACK_MIN);
 	MCF_ParamConf(MCF_MINIMUM, "thread_pool_stack", "%jdb", (intmax_t)low);
 
 #if defined(__SANITIZER) || __has_feature(address_sanitizer) || defined(GCOVING)
-	def = 92 * 1024;
+	def = 192 * 1024;
 #endif
 
 	if (def < low)
