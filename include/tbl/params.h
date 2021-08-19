@@ -1536,9 +1536,9 @@ PARAM_THREAD(
 	" increments is recommended until stack overflows"
 	" cease to occur.",
 	/* flags */	DELAYED_EFFECT,
-	/* dyn_min_reason */	NULL,
+	/* dyn_min_reason */	"sysconf(_SC_THREAD_STACK_MIN)",
 	/* dyn_max_reason */	NULL,
-	/* dyn_def_reason */	"sysconf(_SC_THREAD_STACK_MIN)"
+	/* dyn_def_reason */	NULL
 )
 
 #if defined(PARAM_ALL)
