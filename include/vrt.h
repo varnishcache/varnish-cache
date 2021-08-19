@@ -54,6 +54,8 @@
  * binary/load-time compatible, increment MAJOR version
  *
  * NEXT (2021-09-15)
+ *	VRT_UnsetHdr() added
+ *	vrt_magic_string_unset removed (use VRT_UnsetHdr() instead)
  *	VNUMpfx() removed, SF_Parse_{Integer|Decimal|Number} added
  *	vrt_null_strands added
  *	vrt_null_blob added
@@ -593,6 +595,7 @@ VCL_VOID VRT_synth(VRT_CTX, VCL_INT, VCL_STRING);
 VCL_VOID VRT_hit_for_pass(VRT_CTX, VCL_DURATION);
 
 VCL_BOOL VRT_ValidHdr(VRT_CTX, VCL_STRANDS);
+VCL_VOID VRT_UnsetHdr(VRT_CTX, VCL_HEADER);
 VCL_VOID VRT_SetHdr(VRT_CTX, VCL_HEADER, const char *, ...);
 VCL_VOID VRT_handling(VRT_CTX, unsigned hand);
 unsigned VRT_handled(VRT_CTX);
@@ -709,5 +712,4 @@ void VRT_VCL_Allow_Discard(struct vclref **);
 
 VCL_VOID VRT_synth_page(VRT_CTX, VCL_STRANDS);
 extern const void * const vrt_magic_string_end;
-extern const void * const vrt_magic_string_unset;
 int VRT_Stv(const char *nm);

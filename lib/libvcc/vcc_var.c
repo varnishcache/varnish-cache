@@ -93,8 +93,7 @@ vcc_Var_Wildcard(struct vcc *tl, struct symbol *parent, struct symbol *sym)
 	AZ(VSB_finish(vsb));
 	sym->lname = TlDup(tl, VSB_data(vsb));
 	VSB_clear(vsb);
-	VSB_printf(vsb, "VRT_SetHdr(ctx, %s, vrt_magic_string_unset)",
-	    sym->rname);
+	VSB_printf(vsb, "VRT_UnsetHdr(ctx, %s)", sym->rname);
 	AZ(VSB_finish(vsb));
 	sym->uname = TlDup(tl, VSB_data(vsb));
 	VSB_destroy(&vsb);

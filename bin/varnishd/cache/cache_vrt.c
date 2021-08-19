@@ -55,7 +55,6 @@
 #include "proxy/cache_proxy.h"
 
 const void * const vrt_magic_string_end = &vrt_magic_string_end;
-const void * const vrt_magic_string_unset = &vrt_magic_string_unset;
 const struct strands *vrt_null_strands = &(struct strands){
 	.n = 0,
 	.p = (const char *[1]){NULL}
@@ -692,6 +691,19 @@ VRT_ValidHdr(VRT_CTX, VCL_STRANDS s)
 /*--------------------------------------------------------------------*/
 
 VCL_VOID
+VRT_UnsetHdr(VRT_CTX , VCL_HEADER hs)
+{
+	VCL_HTTP hp;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(hs);
+	AN(hs->what);
+	hp = VRT_selecthttp(ctx, hs->where);
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+	http_Unset(hp, hs->what);
+}
+
+VCL_VOID
 VRT_SetHdr(VRT_CTX , VCL_HEADER hs, const char *p, ...)
 {
 	VCL_HTTP hp;
@@ -703,23 +715,19 @@ VRT_SetHdr(VRT_CTX , VCL_HEADER hs, const char *p, ...)
 	AN(hs->what);
 	hp = VRT_selecthttp(ctx, hs->where);
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-	if (p == vrt_magic_string_unset) {
-		http_Unset(hp, hs->what);
-	} else {
-		va_start(ap, p);
-		b = VRT_String(hp->ws, hs->what + 1, p, ap);
-		va_end(ap);
-		if (b == NULL) {
-			VSLb(ctx->vsl, SLT_LostHeader, "%s", hs->what + 1);
-			return;
-		}
-		if (FEATURE(FEATURE_VALIDATE_HEADERS) && ! validhdr(b)) {
-			VRT_fail(ctx, "Bad header %s", b);
-			return;
-		}
-		http_Unset(hp, hs->what);
-		http_SetHeader(hp, b);
+	va_start(ap, p);
+	b = VRT_String(hp->ws, hs->what + 1, p, ap);
+	va_end(ap);
+	if (b == NULL) {
+		VSLb(ctx->vsl, SLT_LostHeader, "%s", hs->what + 1);
+		return;
 	}
+	if (FEATURE(FEATURE_VALIDATE_HEADERS) && ! validhdr(b)) {
+		VRT_fail(ctx, "Bad header %s", b);
+		return;
+	}
+	http_Unset(hp, hs->what);
+	http_SetHeader(hp, b);
 }
 
 /*--------------------------------------------------------------------*/
