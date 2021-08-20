@@ -1135,9 +1135,11 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 		/* FALLTHROUGH */
 	default:
 		/* XXX: HTC_S_OVERFLOW / FRAME_SIZE_ERROR handling */
-#define HTC_STATUS(e, n, d, l)		\
-		if (hs == HTC_S_ ## e)	\
-			s = #e;
+#define HTC_STATUS(e, n, d, l)			\
+		do {				\
+			if (hs == HTC_S_ ## e)	\
+				s = #e;		\
+		} while (0);
 #include "tbl/htc.h"
 		Lck_Lock(&h2->sess->mtx);
 		VSLb(h2->vsl, SLT_Debug, "H2: No frame (hs=%s)", s);
