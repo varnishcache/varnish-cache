@@ -166,6 +166,6 @@ vrt_test.c: vdef.h vrt.h
 
 vrt_test_BUILT_SOURCES = vrt_test.c
 vrt_test_CFLAGS = -c
-vrt_test_LINK = cat >$@
+vrt_test_LINK = echo >$@
 
 TESTS = vbm_test
