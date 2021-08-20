@@ -117,12 +117,12 @@ static const struct assign {
 	{ DURATION,	T_DIV,		REAL, "\v / " },
 	{ DURATION,	'=',		DURATION },
 	{ DURATION,	0,		DURATION },
-	{ STRING,	T_INCR,		STRING_LIST, "\v,\n" },
-	{ STRING,	'=',		STRING_LIST },
+	{ STRING,	T_INCR,		STRANDS, "\v,\n" },
+	{ STRING,	'=',		STRANDS, "0,\n" },
 	{ HEADER,	T_INCR,		STRANDS, "VRT_GetHdr(ctx, \v),\n" },
-	{ HEADER,	'=',		STRANDS, "NULL,\n" },
-	{ BODY,		'=',		STRANDS, "LBODY_SET,\n" },
-	{ BODY,		T_INCR,		STRANDS, "LBODY_ADD,\n" },
+	{ HEADER,	'=',		STRANDS, "0,\n" },
+	{ BODY,		'=',		STRANDS, "LBODY_SET, 0,\n" },
+	{ BODY,		T_INCR,		STRANDS, "LBODY_ADD, 0,\n" },
 	{ VOID,		'=',		VOID }
 };
 

@@ -406,15 +406,13 @@ resp_Get_Filter_List(struct req *req)
 	}								\
 									\
 	VCL_VOID							\
-	VRT_l_##vcl##_filters(VRT_CTX, const char *str, ...)		\
+	VRT_l_##vcl##_filters(VRT_CTX, const char *str, VCL_STRANDS s)	\
 	{								\
-		va_list ap;						\
 		const char *b;						\
 									\
+		(void)str;						\
 		CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
-		va_start(ap, str);					\
-		b = VRT_String(ctx->in->ws, NULL, str, ap);		\
-		va_end(ap);						\
+		b = VRT_StrandsWS(ctx->in->ws, str, s);			\
 		if (b == NULL)						\
 			WS_MarkOverflow(ctx->in->ws);			\
 		else							\

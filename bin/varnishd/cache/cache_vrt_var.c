@@ -50,14 +50,14 @@ static char vrt_hostname[255] = "";
  */
 
 static void
-vrt_do_string(VRT_CTX, struct http *hp, int fld,
-    const char *err, const char *p, va_list ap)
+vrt_do_strands(VRT_CTX, struct http *hp, int fld,
+    const char *err, const char *str, VCL_STRANDS s)
 {
 	const char *b;
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 
-	b = VRT_String(hp->ws, NULL, p, ap);
+	b = VRT_StrandsWS(hp->ws, str, s);
 	if (b == NULL) {
 		VRT_fail(ctx, "Workspace overflow (%s)", err);
 		WS_MarkOverflow(hp->ws);
@@ -72,14 +72,11 @@ vrt_do_string(VRT_CTX, struct http *hp, int fld,
 
 #define VRT_HDR_L(obj, hdr, fld)					\
 VCL_VOID								\
-VRT_l_##obj##_##hdr(VRT_CTX, const char *p, ...)			\
+VRT_l_##obj##_##hdr(VRT_CTX, const char *str, VCL_STRANDS s)		\
 {									\
-	va_list ap;							\
 									\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
-	va_start(ap, p);						\
-	vrt_do_string(ctx, ctx->http_##obj, fld, #obj "." #hdr, p, ap);	\
-	va_end(ap);							\
+	vrt_do_strands(ctx, ctx->http_##obj, fld, #obj "." #hdr, str, s);	\
 }
 
 #define VRT_HDR_R(obj, hdr, fld)					\
@@ -316,16 +313,13 @@ VRT_r_client_identity(VRT_CTX)
 }
 
 VCL_VOID
-VRT_l_client_identity(VRT_CTX, const char *str, ...)
+VRT_l_client_identity(VRT_CTX, const char *str, VCL_STRANDS s)
 {
-	va_list ap;
 	const char *b;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	va_start(ap, str);
-	b = VRT_String(ctx->req->http->ws, NULL, str, ap);
-	va_end(ap);
+	b = VRT_StrandsWS(ctx->req->http->ws, str, s);
 	if (b == NULL) {
 		VSLb(ctx->vsl, SLT_LostHeader, "client.identity");
 		WS_MarkOverflow(ctx->req->http->ws);
@@ -441,24 +435,18 @@ VRT_r_beresp_storage_hint(VRT_CTX)
 }
 
 VCL_VOID
-VRT_l_beresp_storage_hint(VRT_CTX, const char *str, ...)
+VRT_l_beresp_storage_hint(VRT_CTX, const char *str, VCL_STRANDS s)
 {
 	const char *p;
-	va_list ap;
-	uintptr_t sn;
 	VCL_STEVEDORE stv;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
 
-	sn = WS_Snapshot(ctx->ws);
-	va_start(ap, str);
-	p = VRT_String(ctx->ws, NULL, str, ap);
-	va_end(ap);
+	p = VRT_StrandsWS(ctx->ws, str, s);
 
 	if (p == NULL) {
 		VSLb(ctx->vsl, SLT_LostHeader, "storage_hint");
-		WS_Reset(ctx->ws, sn);
 		WS_MarkOverflow(ctx->ws);
 		return;
 	}
@@ -466,8 +454,6 @@ VRT_l_beresp_storage_hint(VRT_CTX, const char *str, ...)
 	stv = VRT_stevedore(p);
 	if (stv != NULL)
 		ctx->bo->storage = stv;
-
-	WS_Reset(ctx->ws, sn);
 }
 
 /*--------------------------------------------------------------------*/
@@ -950,7 +936,8 @@ VRT_r_resp_do_esi(VRT_CTX)
 
 #define VRT_BODY_L(which)					\
 VCL_VOID							\
-VRT_l_##which##_body(VRT_CTX, enum lbody_e type, VCL_STRANDS s)	\
+VRT_l_##which##_body(VRT_CTX, enum lbody_e type,		\
+    const char *str, VCL_STRANDS s)				\
 {								\
 	int n;							\
 	struct vsb *vsb;					\
@@ -959,7 +946,9 @@ VRT_l_##which##_body(VRT_CTX, enum lbody_e type, VCL_STRANDS s)	\
 	assert(type == LBODY_SET || type == LBODY_ADD);		\
 	if (type == LBODY_SET)					\
 		VSB_clear(vsb);					\
-	for (n = 0; n < s->n; n++)				\
+	if (str != NULL)					\
+		VSB_cat(vsb, str);				\
+	for (n = 0; s != NULL && n < s->n; n++)			\
 		if (s->p[n] != NULL)				\
 			VSB_cat(vsb, s->p[n]);			\
 }

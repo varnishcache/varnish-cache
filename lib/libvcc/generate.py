@@ -217,10 +217,9 @@ class vardef(object):
             fo.write('\tsym->lname = "VRT_l_%s(ctx, ";\n' % cnam)
             s = "void VRT_l_%s(VRT_CTX, " % cnam
             if self.typ == "STRING":
-                s += ctyp.c + ", ...)"
+                s += ctyp.c + ", VCL_STRANDS)"
             elif self.typ == "BODY":
-                #s += "enum lbody_e, " + ctyp.c + ", VCL_STRANDS)"
-                s += "enum lbody_e, VCL_STRANDS)"
+                s += "enum lbody_e, " + ctyp.c + ", VCL_STRANDS)"
             else:
                 s += "VCL_" + self.typ + ")"
             varproto(s)
