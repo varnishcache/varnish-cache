@@ -950,26 +950,18 @@ VRT_r_resp_do_esi(VRT_CTX)
 
 #define VRT_BODY_L(which)					\
 VCL_VOID							\
-VRT_l_##which##_body(VRT_CTX, enum lbody_e type,		\
-    const char *str, ...)					\
+VRT_l_##which##_body(VRT_CTX, enum lbody_e type, VCL_STRANDS s)	\
 {								\
-	va_list ap;						\
-	const char *p;						\
+	int n;							\
 	struct vsb *vsb;					\
 								\
 	CAST_OBJ_NOTNULL(vsb, ctx->specific, VSB_MAGIC);	\
 	assert(type == LBODY_SET || type == LBODY_ADD);		\
 	if (type == LBODY_SET)					\
 		VSB_clear(vsb);					\
-	va_start(ap, str);					\
-	p = str;						\
-	while (p != vrt_magic_string_end) {			\
-		if (p == NULL)					\
-			p = "(null)";				\
-		VSB_cat(vsb, p);				\
-		p = va_arg(ap, const char *);			\
-	}							\
-	va_end(ap);						\
+	for (n = 0; n < s->n; n++)				\
+		if (s->p[n] != NULL)				\
+			VSB_cat(vsb, s->p[n]);			\
 }
 
 VRT_BODY_L(beresp)

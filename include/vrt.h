@@ -54,6 +54,7 @@
  * binary/load-time compatible, increment MAJOR version
  *
  * NEXT (2021-09-15)
+ *	VRT_l_{beresp|resp}_body() changed to takes STRANDS argument
  *	VRT_SetHdr() changed to take `const char*` & `STRANDS` arguments.
  *	VRT_UnsetHdr() added
  *	vrt_magic_string_unset removed (use VRT_UnsetHdr() instead)

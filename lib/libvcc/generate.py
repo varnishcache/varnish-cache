@@ -219,7 +219,8 @@ class vardef(object):
             if self.typ == "STRING":
                 s += ctyp.c + ", ...)"
             elif self.typ == "BODY":
-                s += "enum lbody_e, " + ctyp.c + ", ...)"
+                #s += "enum lbody_e, " + ctyp.c + ", VCL_STRANDS)"
+                s += "enum lbody_e, VCL_STRANDS)"
             else:
                 s += "VCL_" + self.typ + ")"
             varproto(s)
