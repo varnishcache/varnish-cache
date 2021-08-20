@@ -1115,6 +1115,7 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 	enum htc_status_e hs;
 	h2_frame h2f;
 	h2_error h2e;
+	const char *s = NULL;
 	char b[8];
 
 	ASSERT_RXTHR(h2);
@@ -1134,8 +1135,12 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 		/* FALLTHROUGH */
 	default:
 		/* XXX: HTC_S_OVERFLOW / FRAME_SIZE_ERROR handling */
+#define HTC_STATUS(e, n, d, l)		\
+		if (hs == HTC_S_ ## e)	\
+			s = #e;
+#include "tbl/htc.h"
 		Lck_Lock(&h2->sess->mtx);
-		VSLb(h2->vsl, SLT_Debug, "H2: No frame (hs=%d)", hs);
+		VSLb(h2->vsl, SLT_Debug, "H2: No frame (hs=%s)", s);
 		h2->error = H2CE_NO_ERROR;
 		Lck_Unlock(&h2->sess->mtx);
 		return (0);
