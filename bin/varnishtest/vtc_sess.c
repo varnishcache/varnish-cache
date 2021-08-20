@@ -120,7 +120,7 @@ sess_thread(void *priv)
 	struct vtclog *vl;
 	struct vtc_sess *vsp;
 	struct thread_arg ta, *tap;
-	int i, fd;
+	int i, fd = -1;
 
 	CAST_OBJ_NOTNULL(tap, priv, THREAD_ARG_MAGIC);
 	ta = *tap;
@@ -135,15 +135,15 @@ sess_thread(void *priv)
 	vtc_log(vl, 2, "Started on %s (%u iterations%s)", ta.listen_addr,
 		vsp->repeat, vsp->keepalive ? " using keepalive" : "");
 	for (i = 0; i < vsp->repeat; i++) {
-		fd = ta.conn_f(ta.priv, vl);
+		if (fd < 0)
+			fd = ta.conn_f(ta.priv, vl);
+		fd = sess_process(vl, ta.vsp, ta.spec, fd,
+		    ta.asocket, ta.listen_addr);
 		if (! vsp->keepalive)
-			fd = sess_process(vl, ta.vsp, ta.spec, fd, ta.asocket, ta.listen_addr);
-		else
-			while (fd >= 0 && i++ < vsp->repeat)
-				fd = sess_process(vl, ta.vsp, ta.spec, fd,
-				    ta.asocket, ta.listen_addr);
-		ta.disc_f(ta.priv, vl, &fd);
+			ta.disc_f(ta.priv, vl, &fd);
 	}
+	if (vsp->keepalive)
+		ta.disc_f(ta.priv, vl, &fd);
 	vtc_log(vl, 2, "Ending");
 	pthread_cleanup_pop(0);
 	vtc_logclose(vl);
