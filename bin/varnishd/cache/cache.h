@@ -748,15 +748,6 @@ VSLb_ts_busyobj(struct busyobj *bo, const char *event, vtim_real now)
 /* cache_vcl.c */
 const char *VCL_Name(const struct vcl *);
 
-/* cache_vrt.c */
-/*
- * These prototypes go here, because we do not want to pollute vrt.h
- * with va_list.  VCC never generates direct calls to them.
- * XXX: We should deprecate these (ref: STRANDS)
- */
-const char *VRT_String(struct ws *ws, const char *h, const char *p, va_list ap);
-char *VRT_StringList(char *d, unsigned dl, const char *p, va_list ap);
-
 /* cache_wrk.c */
 
 typedef void *bgthread_t(struct worker *, void *priv);

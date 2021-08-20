@@ -54,7 +54,6 @@
 #include "common/vsmw.h"
 #include "proxy/cache_proxy.h"
 
-const void * const vrt_magic_string_end = &vrt_magic_string_end;
 const struct strands *vrt_null_strands = &(struct strands){
 	.n = 0,
 	.p = (const char *[1]){NULL}
@@ -395,126 +394,6 @@ VRT_HashStrands32(VCL_STRANDS s)
 	return (vle32dec(sha256 + VSHA256_LEN - 4));
 }
 
-/*--------------------------------------------------------------------
- * Collapse a STRING_LIST in the space provided, or return NULL
- */
-
-char *
-VRT_StringList(char *d, unsigned dl, const char *p, va_list ap)
-{
-	char *b, *e;
-	unsigned x;
-
-	b = d;
-	e = b + dl;
-	while (p != vrt_magic_string_end && b < e) {
-		if (p != NULL && *p != '\0') {
-			x = strlen(p);
-			if (b + x < e)
-				memcpy(b, p, x);
-			b += x;
-		}
-		p = va_arg(ap, const char *);
-	}
-	if (b >= e)
-		return (NULL);
-	*b++ = '\0';
-	return (b);
-}
-
-/*--------------------------------------------------------------------
- * Copy and merge a STRING_LIST into a workspace.
- */
-
-const char *
-VRT_String(struct ws *ws, const char *h, const char *p, va_list ap)
-{
-	char *b, *e;
-	const char *q;
-	unsigned u, x;
-	va_list aq;
-
-	u = WS_ReserveAll(ws);
-	e = b = WS_Reservation(ws);
-	e += u;
-
-	va_copy(aq, ap);
-	do
-		q = va_arg(aq, const char *);
-	while (q == NULL || (q != vrt_magic_string_end && *q == '\0'));
-
-	if (h != NULL && p == NULL && q == vrt_magic_string_end &&
-	    WS_Allocated(ws, h, -1)) {
-		va_end(aq);
-		WS_Release(ws, 0);
-		return (h);
-	}
-
-	if (h == NULL && p != NULL && q == vrt_magic_string_end &&
-	    WS_Allocated(ws, p, -1)) {
-		va_end(aq);
-		WS_Release(ws, 0);
-		return (p);
-	}
-
-	if (h == NULL && p == NULL) {
-		if (q == vrt_magic_string_end) {
-			va_end(aq);
-			WS_Release(ws, 0);
-			return ("");
-		}
-		do
-			p = va_arg(aq, const char *);
-		while (p == NULL || (p != vrt_magic_string_end && *p == '\0'));
-		if (p == vrt_magic_string_end && WS_Allocated(ws, q, -1)) {
-			va_end(aq);
-			WS_Release(ws, 0);
-			return (q);
-		}
-		p = NULL;
-		va_end(aq);
-	}
-
-	if (h != NULL) {
-		x = strlen(h);
-		if (b + x < e)
-			memcpy(b, h, x);
-		b += x;
-		if (b < e)
-			*b = ' ';
-		b++;
-	}
-	b = VRT_StringList(b, e > b ? e - b : 0, p, ap);
-	if (b == NULL || b == e) {
-		WS_MarkOverflow(ws);
-		WS_Release(ws, 0);
-		return (NULL);
-	}
-	e = b;
-	b = WS_Reservation(ws);
-	WS_Release(ws, e - b);
-	return (b);
-}
-
-/*--------------------------------------------------------------------
- * Copy and merge a STRING_LIST on the current workspace
- */
-
-VCL_STRING
-VRT_CollectString(VRT_CTX, const char *p, ...)
-{
-	va_list ap;
-	const char *b;
-
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->ws, WS_MAGIC);
-	va_start(ap, p);
-	b = VRT_String(ctx->ws, NULL, p, ap);
-	va_end(ap);
-	if (b == NULL)
-		VRT_fail(ctx, "Workspace overflow");
-	return (b);
-}
 
 /*--------------------------------------------------------------------
  * Collapse STRANDS into the space provided, or return NULL

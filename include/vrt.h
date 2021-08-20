@@ -54,6 +54,8 @@
  * binary/load-time compatible, increment MAJOR version
  *
  * NEXT (2021-09-15)
+ *	VCL_STRINGLIST, vrt_magic_string_end removed
+ *	VRT_String(), VRT_StringList(), VRT_CollectString() removed
  *	VRT_CollectStrands() renamed to VRT_STRANDS_string()
  *	VRT_l_{beresp|resp}_body() changed to takes STRANDS argument
  *	VRT_SetHdr() changed to take `const char*` & `STRANDS` arguments.
@@ -714,5 +716,4 @@ void VRT_VCL_Allow_Discard(struct vclref **);
  */
 
 VCL_VOID VRT_synth_page(VRT_CTX, VCL_STRANDS);
-extern const void * const vrt_magic_string_end;
 int VRT_Stv(const char *nm);

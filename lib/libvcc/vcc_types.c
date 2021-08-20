@@ -202,12 +202,6 @@ const struct type STRINGS[1] = {{
 	.tostring =		"",
 }};
 
-const struct type STRING_LIST[1] = {{
-	.magic =		TYPE_MAGIC,
-	.name =			"STRING_LIST",
-	.stringform =		1,
-}};
-
 const struct type SUB[1] = {{
 	.magic =		TYPE_MAGIC,
 	.name =			"SUB",

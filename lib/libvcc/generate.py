@@ -327,7 +327,6 @@ class vcltype(object):
 
 
 vcltype("STRINGS", "void", True)
-vcltype("STRING_LIST", "void*", True)
 vcltype("SUB", "void*", True)
 
 fi = open(join(srcroot, "include/vrt.h"))

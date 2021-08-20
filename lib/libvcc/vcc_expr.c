@@ -48,7 +48,7 @@ struct expr {
 	uint8_t		constant;
 #define EXPR_VAR	(1<<0)
 #define EXPR_CONST	(1<<1)
-#define EXPR_STR_CONST	(1<<2)		// Last STRING_LIST elem is "..."
+#define EXPR_STR_CONST	(1<<2)		// Last string elem is "..."
 	struct token	*t1, *t2;
 	struct symbol	*instance;
 	int		nstr;
@@ -176,13 +176,18 @@ vcc_expr_edit(struct vcc *tl, vcc_type_t fmt, const char *p, struct expr *e1,
 			e3 = (*p == 'S' ? e1 : e2);
 			AN(e3);
 			assert(e1->fmt == STRINGS);
-			if (e3->nstr > 1)
+			if (e3->nstr > 1) {
 				VSB_cat(e->vsb,
-				    "\nVRT_CollectString(ctx,\v+\n");
-			VSB_cat(e->vsb, VSB_data(e3->vsb));
-			if (e3->nstr > 1)
+				    "\nVRT_STRANDS_string(ctx,\v+\n");
+				VSB_printf(e->vsb,
+				    "&(struct strands){.n = %d, .p = "
+				    "(const char *[%d]){\n%s\n}}",
+				    e3->nstr, e3->nstr, VSB_data(e3->vsb));
 				VSB_cat(e->vsb,
-				    ",\nvrt_magic_string_end)\v-\n");
+				    "\v-\n)\n");
+			} else {
+				VSB_cat(e->vsb, VSB_data(e3->vsb));
+			}
 			break;
 		case 'T':
 		case 't':
@@ -1396,19 +1401,13 @@ vcc_expr0(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	}
 
 	if ((*e)->fmt == STRINGS && fmt->stringform) {
-		if (fmt == STRING_LIST)
-			(*e)->fmt = STRING_LIST;
-		else if (fmt == STRING)
+		if (fmt == STRING)
 			*e = vcc_expr_edit(tl, STRING, "\vS", *e, NULL);
 		else if (fmt == STRANDS)
 			*e = vcc_expr_edit(tl, STRANDS, "\vT", (*e), NULL);
 		else
 			WRONG("Unhandled stringform");
 	}
-
-	if ((*e)->fmt == STRING_LIST)
-		*e = vcc_expr_edit(tl, STRING_LIST,
-		    "\n\v1,\nvrt_magic_string_end", *e, NULL);
 
 	if (fmt == BOOL) {
 		vcc_expr_tobool(tl, e);
