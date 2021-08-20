@@ -593,7 +593,7 @@ VRT_StrandsWS(struct ws *ws, const char *h, VCL_STRANDS s)
  */
 
 VCL_STRING
-VRT_CollectStrands(VRT_CTX, VCL_STRANDS s)
+VRT_STRANDS_string(VRT_CTX, VCL_STRANDS s)
 {
 	const char *b;
 

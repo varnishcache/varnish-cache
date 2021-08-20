@@ -184,7 +184,7 @@ const struct type STRANDS[1] = {{
 	.magic =		TYPE_MAGIC,
 	.name =			"STRANDS",
 	.stringform =		1,
-	.tostring =		"VRT_CollectStrands(ctx,\v+\n\v1\v-\n)",
+	.tostring =		"VRT_STRANDS_string(ctx,\v+\n\v1\v-\n)",
 }};
 
 static const struct vcc_method strings_methods[] = {

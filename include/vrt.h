@@ -54,6 +54,7 @@
  * binary/load-time compatible, increment MAJOR version
  *
  * NEXT (2021-09-15)
+ *	VRT_CollectStrands() renamed to VRT_STRANDS_string()
  *	VRT_l_{beresp|resp}_body() changed to takes STRANDS argument
  *	VRT_SetHdr() changed to take `const char*` & `STRANDS` arguments.
  *	VRT_UnsetHdr() added
@@ -454,7 +455,6 @@ VCL_BOOL VRT_Strands2Bool(VCL_STRANDS);
 uint32_t VRT_HashStrands32(VCL_STRANDS);
 char *VRT_Strands(char *, size_t, VCL_STRANDS);
 VCL_STRING VRT_StrandsWS(struct ws *, const char *, VCL_STRANDS);
-VCL_STRING VRT_CollectStrands(VRT_CTX, VCL_STRANDS);
 VCL_STRING VRT_UpperLowerStrands(VRT_CTX, VCL_STRANDS s, int up);
 
 /* VCL_SUB */
@@ -471,6 +471,7 @@ VCL_STRING VRT_INT_string(VRT_CTX, VCL_INT);
 VCL_STRING VRT_IP_string(VRT_CTX, VCL_IP);
 VCL_STRING VRT_REAL_string(VRT_CTX, VCL_REAL);
 VCL_STRING VRT_STEVEDORE_string(VCL_STEVEDORE);
+VCL_STRING VRT_STRANDS_string(VRT_CTX, VCL_STRANDS);
 VCL_STRING VRT_TIME_string(VRT_CTX, VCL_TIME);
 
 /* historical */

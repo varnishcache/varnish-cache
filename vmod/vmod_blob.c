@@ -470,7 +470,7 @@ vmod_transcode(VRT_CTX, VCL_ENUM decs, VCL_ENUM encs, VCL_ENUM case_s,
 		 * overflow. If there is only one string already in the
 		 * workspace, then it is re-used.
 		 */
-		return (VRT_CollectStrands(ctx, strings));
+		return (VRT_STRANDS_string(ctx, strings));
 
 	r = encode(ctx, enc, kase, &b);
 	return (r);

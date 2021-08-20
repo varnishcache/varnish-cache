@@ -779,7 +779,7 @@ xyzzy_collect(VRT_CTX, VCL_STRANDS s)
 	VCL_STRING r;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	r = VRT_CollectStrands(ctx, s);
+	r = VRT_STRANDS_string(ctx, s);
 	if (r != NULL && *r != '\0')
 		AN(WS_Allocated(ctx->ws, r, strlen(r) + 1));
 	return (r);
