@@ -273,8 +273,7 @@ VCL data types are targeted at the job, so for instance, we have data
 types like "DURATION" and "HEADER", but they all have some kind of C
 language representation.  Here is a description of them.
 
-All but the PRIV and STRING_LIST types have typedefs: VCL_INT, VCL_REAL,
-etc.
+All but the PRIV types have typedefs: VCL_INT, VCL_REAL, etc.
 
 Notice that most of the non-native (C pointer) types are ``const``,
 which, if returned by a vmod function/method, are assumed to be
@@ -411,46 +410,11 @@ STEVEDORE
 
 	A storage backend.
 
-STRING_LIST
-	C-type: ``const char *, ...``
-
-	`Notice: New vmod developments for 6.0 LTS and later must
-	use STRANDS instead of STRING_LIST, which is going away.`
-
-	A multi-component text-string.  We try very hard to avoid
-	doing text-processing in Varnish, and this is one way we
-	to avoid that, by not editing separate pieces of a string
-	together to one string, unless we have to.
-
-	Consider this contrived example::
-
-		set req.http.foo = std.toupper(req.http.foo + req.http.bar);
-
-	The usual way to do this, would be be to allocate memory for
-	the concatenated string, then pass that to ``toupper()`` which in
-	turn would return another freshly allocated string with the
-	modified result.  Remember: strings in VCL are ``const``, we
-	cannot just modify the string in place.
-
-	What we do instead, is declare that ``toupper()`` takes a "STRING_LIST"
-	as argument.  This makes the C function implementing ``toupper()``
-	a vararg function (see the prototype above) and responsible for
-	considering all the ``const char *`` arguments it finds, until the
-	magic marker "vrt_magic_string_end" is encountered.
-
-	Bear in mind that the individual strings in a STRING_LIST can be
-	NULL, as described under STRING, that is why we do not use NULL
-	as the terminator.
-
-	STRING_LIST must be the last argument to a function and the
-	function must not contain optional arguments.
-
 STRANDS
 	C-Type: ``const struct strands *``
 
-	Strands are like STRING_LIST, but without the drawbacks of
-	variable arguments: The list of strings gets passed in a
-	struct with the following members:
+	Strands are a list of strings that gets passed in a struct with the
+	following members:
 
 	* ``int n``: the number of strings
 	* ``const char **p``: the array of strings with `n` elements
