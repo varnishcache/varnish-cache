@@ -114,7 +114,6 @@ CTYPES = {
     'STEVEDORE':   "VCL_STEVEDORE",
     'STRANDS':     "VCL_STRANDS",
     'STRING':      "VCL_STRING",
-    'STRING_LIST': "const char *, ...",
     'SUB':         "VCL_SUB",
     'TIME':        "VCL_TIME",
     'VOID':        "VCL_VOID",
@@ -234,12 +233,6 @@ class CType(object):
         self.opt = False
 
         self.vt = wl.pop(0)
-        if self.vt == "STRING_LIST":
-            deprecated("STRING_LIST", '''
-STRING_LIST will be discontinued before the 2019-09-15 release
-
-Please switch to STRANDS
-''')
         self.ct = CTYPES.get(self.vt)
         if self.ct is None:
             err("Expected type got '%s'" % self.vt, warn=False)
@@ -275,7 +268,7 @@ Please switch to STRANDS
             assert w == ","
 
     def vcl(self, terse=False):
-        if self.vt in ("STRING_LIST", "STRANDS"):
+        if self.vt == "STRANDS":
             return "STRING"
         if terse:
             return self.vt
@@ -385,8 +378,6 @@ class ProtoType(object):
                 t = arg(wl, names, st.vcc.enums, ',')
             if t.vt == 'VOID':
                 err("arguments can not be of type '%s'" % t.vt, warn=False)
-            if t.vt == 'STRING_LIST' and len(wl) > 1:
-                err("'%s' must be the last argument" % t.vt, warn=False)
             if t.nm is None:
                 t.nm2 = "arg%d" % n
             else:
