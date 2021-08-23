@@ -16,7 +16,7 @@ varnish v1 -cliok "param.set http_range_support off"
 client c1 {
 	txreq -hdr "Range: bytes=0-9"
 	rxresp
-	expect resp.accept-ranges == "resp.accept-ranges"
+	expect resp.http.accept-ranges == <undef>
 	expect resp.status == 200
 	expect resp.bodylen == 100
 } -run
@@ -27,7 +27,7 @@ varnish v1 -vsl_catchup
 
 varnish v1 -cliok "param.set http_range_support on"
 
-client c1 {
+client c2 {
 	# Invalid range requests
 
 	txreq -hdr "Range: bytes =0-9"
@@ -78,7 +78,7 @@ varnish v1 -expect s_resp_bodybytes == 100
 
 varnish v1 -vsl_catchup
 
-client c1 {
+client c3 {
 	# Valid range requests
 
 	txreq -hdr "Range: bytes=0-49"
@@ -132,33 +132,21 @@ varnish v1 -vsl_catchup
 # Test Range streaming with streaming objects with C-L
 
 server s1 {
-	rxreq
-	txresp -nolen -hdr "Content-Length: 100"
-	send "0123456789"
-	send "0123456789"
-	send "0123456789"
-	send "0123456789"
-	send "0123456789"
-	send "0123456789"
-	send "0123456789"
-	send "0123456789"
-	send "0123456789"
-	delay 2
-	send "0123456789"
-
-	rxreq
-	txresp -nolen -hdr "Content-Length: 100"
-	send "0123456789"
-	send "0123456789"
-	send "0123456789"
-	send "0123456789"
-	send "0123456789"
-	send "0123456789"
-	send "0123456789"
-	send "0123456789"
-	send "0123456789"
-	delay 2
-	send "0123456789"
+	loop 2 {
+		rxreq
+		txresp -nolen -hdr "Content-Length: 100"
+		send "0123456789"
+		send "0123456789"
+		send "0123456789"
+		send "0123456789"
+		send "0123456789"
+		send "0123456789"
+		send "0123456789"
+		send "0123456789"
+		send "0123456789"
+		delay 2
+		send "0123456789"
+	}
 } -start
 
 varnish v1 -vcl+backend {
@@ -169,27 +157,31 @@ varnish v1 -vcl+backend {
 	}
 }
 
-client c1 {
+client c4 {
 	# Open ended range to force C-L usage
 	txreq -url /1 \
 		-hdr "Range: bytes=20-" \
 		-hdr "Connection: close"
-	rxresphdrs
+	rxresp
 	expect resp.status == 206
 	expect resp.http.Content-Range == "bytes 20-99/100"
-	recv 80
+	expect resp.http.Content-Length == 80
+	expect resp.bodylen == 80
 	expect_close
 } -run
 
 varnish v1 -vsl_catchup
 
-client c1 {
+client c5 {
 	# Closed C-L because we cannot use C-L
 	txreq -url /2 \
 		-hdr "Range: bytes=2-5" \
 		-hdr "Accept-encoding: gzip"
 	rxresp
 	expect resp.status == 200
+	expect resp.http.Content-Range == <undef>
+	expect resp.http.Content-Length == <undef>
+	expect resp.http.Content-Encoding == gzip
 	gunzip
 	expect resp.bodylen == 100
 } -run
@@ -204,7 +196,7 @@ server s1 {
 varnish v1 -cliok "param.set feature +http2"
 varnish v1 -vcl+backend ""
 
-client c2 {
+client c6 {
 	stream 1 {
 		txreq -url /3 -hdr "range" "bytes=0-1"
 		rxresp
@@ -232,13 +224,13 @@ varnish v1 -vcl+backend {
 	}
 }
 
-client c1 {
+client c7 {
 	txreq
 	rxresp
 	expect resp.http.foobar == ""
-	expect resp.http.accept-ranges == resp.http.accept-ranges
+	expect resp.http.accept-ranges == <undef>
 	txreq
 	rxresp
-	expect resp.http.foobar == "foobar"
+	expect resp.http.foobar == foobar
 	expect resp.http.accept-ranges == foobar
 } -run
