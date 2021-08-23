@@ -36,10 +36,14 @@ client c1 {
 	expect resp.status == 206
 	expect resp.http.Content-Length == 2
 	expect resp.http.X-Varnish == "1001"
+} -run
 
+varnish v1 -cliok "param.set http_range_support off"
+
+client c2 {
 	# NB: Deliberately bogus Range header
 	txreq -url "/bar" -hdr "Range: 200-300"
 	rxresp
 	expect resp.status == 206
-	expect resp.http.X-Varnish == "1003"
+	expect resp.http.X-Varnish == "1004"
 } -run

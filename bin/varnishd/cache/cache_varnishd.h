@@ -396,6 +396,9 @@ void Pool_PurgeStat(unsigned nobj);
 int Pool_Task_Any(struct pool_task *task, enum task_prio prio);
 void pan_pool(struct vsb *);
 
+/* cache_range.c */
+int VRG_CheckBo(struct busyobj *);
+
 /* cache_req.c */
 struct req *Req_New(const struct worker *, struct sess *);
 void Req_Release(struct req *);
