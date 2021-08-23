@@ -492,6 +492,11 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	    http_GetHdrField(bo->beresp, H_Connection, "close", NULL))
 		bo->htc->doclose = SC_RESP_CLOSE;
 
+	if (VRG_CheckBo(bo) < 0) {
+		VDI_Finish(bo);
+		return (F_STP_ERROR);
+	}
+
 	if (wrk->handling == VCL_RET_ABANDON || wrk->handling == VCL_RET_FAIL ||
 	    wrk->handling == VCL_RET_ERROR) {
 		/* do not count deliberately ending the backend connection as

@@ -255,3 +255,73 @@ const struct vdp VDP_range = {
 	.bytes =	vrg_range_bytes,
 	.fini =		vrg_range_fini,
 };
+
+/*--------------------------------------------------------------------*/
+
+int
+VRG_CheckBo(struct busyobj *bo)
+{
+	ssize_t rlo, rhi, crlo, crhi, crlen, clen;
+	const char *err;
+
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+
+	if (!cache_param->http_range_support)
+		return (0);
+
+	err = http_GetRange(bo->bereq0, &rlo, &rhi);
+	clen = http_GetContentLength(bo->beresp);
+	crlen = http_GetContentRange(bo->beresp, &crlo, &crhi);
+
+	if (err != NULL) {
+		VSLb(bo->vsl, SLT_Error, "Invalid range header (%s)", err);
+		return (-1);
+	}
+
+	if (crlen < -1) {
+		VSLb(bo->vsl, SLT_Error, "Invalid content-range header");
+		return (-1);
+	}
+
+	if (clen < -1) {
+		VSLb(bo->vsl, SLT_Error, "Invalid content-length header");
+		return (-1);
+	}
+
+	if (crlo < 0 || crhi < 0) {
+		AZ(http_GetHdr(bo->beresp, H_Content_Range, NULL));
+		return (0);
+	}
+
+	if (rlo < 0 && rhi < 0) {
+		VSLb(bo->vsl, SLT_Error, "Unexpected content-range header");
+		return (-1);
+	}
+
+#define RANGE_CHECK(val, op, crval, what)			\
+	do {							\
+		if (val >= 0 && !(val op crval)) {		\
+			VSLb(bo->vsl, SLT_Error,		\
+			    "Expected " what " %zd, got %zd",	\
+			    crval, val);			\
+			return (-1);				\
+		}						\
+	} while (0)
+
+	crlen = crhi - crlo + 1;
+	RANGE_CHECK(clen, ==, crlen, "content length");
+
+	/* NB: if the client didn't specify a low range the high range
+	 * was adjusted based on the resource length, and a high range
+	 * is allowed to be out of bounds so at this point there is
+	 * nothing left to check.
+	 */
+	if (rlo < 0)
+		return (0);
+
+	RANGE_CHECK(rlo, ==, crlo, "low range");
+	RANGE_CHECK(rhi, >=, crhi, "minimum high range");
+#undef RANGE_CHECK
+
+	return (0);
+}
