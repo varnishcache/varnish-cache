@@ -148,14 +148,12 @@ vmod_abi.h: vcs_version.h
 BUILT_SOURCES = \
 	$(GENERATED_H) \
 	vcs_version.h \
-	vmod_abi.h
+	vmod_abi.h \
+	vrt_test.c
 
 MAINTAINERCLEANFILES = $(GENERATED_H)
 
-CLEANFILES = \
-	vrt_test \
-	_vrt_test \
-	_vrt.c
+CLEANFILES = vrt_test.c
 
 noinst_PROGRAMS = vbm_test vrt_test
 
@@ -164,7 +162,6 @@ vbm_test_SOURCES = vbm_test.c vbm.h
 vrt_test.c: vdef.h vrt.h
 	$(AM_V_GEN) cat $(srcdir)/vdef.h $(srcdir)/vrt.h > $@
 
-vrt_test_BUILT_SOURCES = vrt_test.c
 vrt_test_CFLAGS = -c
 vrt_test_LINK = echo >$@
 
