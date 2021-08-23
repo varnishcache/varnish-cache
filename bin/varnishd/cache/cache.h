@@ -607,6 +607,7 @@ int http_GetHdrField(const struct http *hp, hdr_t,
 double http_GetHdrQ(const struct http *hp, hdr_t, const char *field);
 ssize_t http_GetContentLength(const struct http *hp);
 ssize_t http_GetContentRange(const struct http *hp, ssize_t *lo, ssize_t *hi);
+const char * http_GetRange(const struct http *hp, ssize_t *lo, ssize_t *hi);
 uint16_t http_GetStatus(const struct http *hp);
 int http_IsStatus(const struct http *hp, int);
 void http_SetStatus(struct http *to, uint16_t status, const char *reason);

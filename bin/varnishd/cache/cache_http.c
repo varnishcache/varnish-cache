@@ -832,11 +832,11 @@ http_parse_uint(const char *b, const char **e)
 		return (-1);
 	for (; vct_isdigit(*b); b++) {
 		if (u > (SSIZE_MAX / 10))
-			return (-1);
+			return (-2);
 		u *= 10;
 		n = *b - '0';
 		if (u > (SSIZE_MAX - n))
-			return (-1);
+			return (-2);
 		u += n;
 	}
 
@@ -926,6 +926,51 @@ http_GetContentRange(const struct http *hp, ssize_t *lo, ssize_t *hi)
 		return (-2);
 	AN(cl);
 	return (cl);
+}
+
+const char *
+http_GetRange(const struct http *hp, ssize_t *lo, ssize_t *hi)
+{
+	ssize_t tmp;
+	const char *b;
+
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+
+	if (lo == NULL)
+		lo = &tmp;
+	if (hi == NULL)
+		hi = &tmp;
+
+	*lo = *hi = -1;
+
+	if (!http_GetHdr(hp, H_Range, &b))
+		return (NULL);
+
+	if (!http_range_at(b, bytes=))
+		return ("Not Bytes");
+	b += strlen("bytes=");
+
+	*lo = http_parse_uint(b, &b);
+	if (*lo == -2)
+		return ("Low number too big");
+	if (*b++ != '-')
+		return ("Missing hyphen");
+
+	*hi = http_parse_uint(b, &b);
+	if (*hi == -2)
+		return ("High number too big");
+	if (*lo == -1 && *hi == -1)
+		return ("Neither high nor low");
+	if (*lo == -1 && *hi == 0)
+		return ("No low, high is zero");
+	if (*hi >= 0 && *hi < *lo)
+		return ("high smaller than low");
+
+	while (vct_islws(*b))
+		b++;
+	if (*b != '\0')
+		return ("Trailing stuff");
+	return (NULL);
 }
 
 /*--------------------------------------------------------------------

@@ -103,58 +103,30 @@ vrg_range_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 /*--------------------------------------------------------------------*/
 
 static const char *
-vrg_dorange(struct req *req, const char *r, void **priv)
+vrg_dorange(struct req *req, void **priv)
 {
-	ssize_t low, high, has_low, has_high, t;
+	ssize_t low, high;
 	struct vrg_priv *vrg_priv;
+	const char *err;
 
-	if (!http_range_at(r, bytes=))
-		return ("Not Bytes");
-	r += 6;
+	err = http_GetRange(req->http, &low, &high);
+	if (err != NULL)
+		return (err);
 
-	/* The low end of range */
-	has_low = low = 0;
-	while (vct_isdigit(*r)) {
-		has_low = 1;
-		t = low;
-		low *= 10;
-		low += *r++ - '0';
-		if (low < t)
-			return ("Low number too big");
-	}
+	assert(low >= -1);
+	assert(high >= -1);
 
-	if (*r++ != '-')
-		return ("Missing hyphen");
-
-	/* The high end of range */
-	has_high = high = 0;
-	while (vct_isdigit(*r)) {
-		has_high = 1;
-		t = high;
-		high *= 10;
-		high += *r++ - '0';
-		if (high < t)
-			return ("High number too big");
-	}
-
-	if (*r != '\0')
-		return ("Trailing stuff");
-
-	if (has_high + has_low == 0)
-		return ("Neither high nor low");
-
-	if (!has_low) {
+	if (low < 0) {
 		if (req->resp_len < 0)
 			return (NULL);		// Allow 200 response
-		if (high == 0)
-			return ("No low, high is zero");
+		assert(high > 0);
 		low = req->resp_len - high;
 		if (low < 0)
 			low = 0;
 		high = req->resp_len - 1;
-	} else if (req->resp_len >= 0 && (high >= req->resp_len || !has_high))
+	} else if (req->resp_len >= 0 && (high >= req->resp_len || high < 0))
 		high = req->resp_len - 1;
-	else if (!has_high || req->resp_len < 0)
+	else if (high < 0 || req->resp_len < 0)
 		return (NULL);			// Allow 200 response
 	/*
 	 * else (bo != NULL) {
@@ -162,9 +134,6 @@ vrg_dorange(struct req *req, const char *r, void **priv)
 	 *    that both low and high make sense.
 	 * }
 	 */
-
-	if (high < low)
-		return ("high smaller than low");
 
 	if (req->resp_len >= 0 && low >= req->resp_len)
 		return ("low range beyond object");
@@ -252,7 +221,6 @@ vrg_ifrange(struct req *req)
 static int v_matchproto_(vdp_init_f)
 vrg_range_init(struct vdp_ctx *vdc, void **priv, struct objcore *oc)
 {
-	const char *r;
 	const char *err;
 	struct req *req;
 
@@ -260,10 +228,10 @@ vrg_range_init(struct vdp_ctx *vdc, void **priv, struct objcore *oc)
 	(void)oc;
 	req = vdc->req;
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	assert(http_GetHdr(req->http, H_Range, &r));
+	assert(http_GetHdr(req->http, H_Range, NULL));
 	if (!vrg_ifrange(req))		// rfc7233,l,455,456
 		return (1);
-	err = vrg_dorange(req, r, priv);
+	err = vrg_dorange(req, priv);
 	if (err == NULL)
 		return (*priv == NULL ? 1 : 0);
 
