@@ -328,6 +328,11 @@ workflows:
           release: buster
           extra_conf: --enable-asan --enable-ubsan
       - distcheck:
+          name: distcheck_ubuntu_xenial
+          dist: ubuntu
+          release: xenial
+          extra_conf: CFLAGS='-g -O2 -m32'
+      - distcheck:
           name: distcheck_alpine
           dist: alpine
           release: "latest"
