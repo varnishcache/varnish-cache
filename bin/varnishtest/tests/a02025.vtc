@@ -1,17 +1,21 @@
 varnishtest "Test -bodyfrom"
 
+shell {printf helloworld >body.txt}
+
 server s1 {
 	stream 1 {
 		rxreq
-		expect req.bodylen == 286
-		txresp -bodyfrom ${testdir}/a02025.vtc
+		expect req.body == helloworld
+		txresp -bodyfrom body.txt
 	} -run
 } -start
 
 client c1 -connect ${s1_sock} {
 	stream 1 {
-		txreq -bodyfrom ${testdir}/a02025.vtc
+		txreq -bodyfrom body.txt
 		rxresp
-		expect resp.bodylen == 286
+		expect resp.body == helloworld
 	} -run
 } -run
+
+server s1 -wait

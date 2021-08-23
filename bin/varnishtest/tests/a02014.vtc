@@ -20,6 +20,7 @@ server s1 {
 		expect stream.dependency == 7
 	} -run
 } -start
+
 client c1 -connect ${s1_sock} {
 	stream 1 {
 		txreq -method GET -url /1 \
@@ -49,4 +50,5 @@ client c1 -connect ${s1_sock} {
 		expect stream.dependency == <undef>
 	} -run
 } -run
+
 server s1 -wait

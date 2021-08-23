@@ -21,3 +21,5 @@ server s1 {
 } -start
 
 shell { nghttp http://${s1_sock} -nu }
+
+server s1 -wait

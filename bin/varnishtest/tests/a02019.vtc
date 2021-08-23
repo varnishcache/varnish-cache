@@ -1,4 +1,5 @@
 varnishtest "Static table encoding"
+
 server s1 {
 	stream 1 {
 		rxreq

@@ -1806,7 +1806,6 @@ http_process(struct vtclog *vl, struct vtc_sess *vsp, const char *spec,
 	hp->sess->fd = sock;
 	hp->timeout = vtc_maxdur * 1000 / 2;
 
-
 	if (rcvbuf) {
 		// XXX setsockopt() too late on SunOS
 		// https://github.com/varnishcache/varnish-cache/pull/2980#issuecomment-486214661
@@ -1853,6 +1852,12 @@ http_process(struct vtclog *vl, struct vtc_sess *vsp, const char *spec,
 		strcpy(hp->rem_port, "0");
 		hp->rem_path = strdup(addr);
 	}
+	/* XXX: After an upgrade to HTTP/2 the cleanup of a server that is
+	 * not -wait'ed before the test resets is subject to a race where the
+	 * cleanup does not happen, so ASAN reports leaks despite the push
+	 * of a cleanup handler. To easily reproduce, remove the server wait
+	 * from a02022.vtc and run with ASAN enabled.
+	 */
 	pthread_cleanup_push(http_process_cleanup, hp);
 	parse_string(vl, hp, spec);
 	retval = hp->sess->fd;

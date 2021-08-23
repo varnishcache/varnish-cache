@@ -30,6 +30,7 @@ server s1 {
 	} -run
 
 } -start
+
 client c1 -connect ${s1_sock} {
 	stream 1 {
 		txreq

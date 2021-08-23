@@ -39,3 +39,5 @@ client c1 -connect ${s1_sock} {
 	} -run
 
 } -run
+
+server s1 -wait

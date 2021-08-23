@@ -15,3 +15,5 @@ client c1 -connect ${s1_sock} {
 		expect resp.bodylen == 7
 	} -run
 } -run
+
+server s1 -wait
