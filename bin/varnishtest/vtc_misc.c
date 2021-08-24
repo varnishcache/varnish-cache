@@ -440,6 +440,14 @@ addr_no_randomize_works(void)
  *        Varnish was built with the deprecated persistent storage.
  * coverage
  *        Varnish was built with code coverage enabled.
+ * asan
+ *        Varnish was built with the address sanitizer.
+ * msan
+ *        Varnish was built with the memory sanitizer.
+ * tsan
+ *        Varnish was built with the thread sanitizer.
+ * ubsan
+ *        Varnish was built with the undefined behavior sanitizer.
  * sanitizer
  *        Varnish was built with a sanitizer.
  *
@@ -455,6 +463,30 @@ addr_no_randomize_works(void)
 static const unsigned coverage = 1;
 #else
 static const unsigned coverage = 0;
+#endif
+
+#if ENABLE_ASAN
+static const unsigned asan = 1;
+#else
+static const unsigned asan = 0;
+#endif
+
+#if ENABLE_MSAN
+static const unsigned msan = 1;
+#else
+static const unsigned msan = 0;
+#endif
+
+#if ENABLE_TSAN
+static const unsigned tsan = 1;
+#else
+static const unsigned tsan = 0;
+#endif
+
+#if ENABLE_UBSAN
+static const unsigned ubsan = 1;
+#else
+static const unsigned ubsan = 0;
 #endif
 
 #if ENABLE_SANITIZER
@@ -522,6 +554,10 @@ cmd_feature(CMD_ARGS)
 		FEATURE("group_varnish", getgrnam("varnish") != NULL);
 		FEATURE("persistent_storage", with_persistent_storage);
 		FEATURE("coverage", coverage);
+		FEATURE("asan", asan);
+		FEATURE("msan", msan);
+		FEATURE("tsan", tsan);
+		FEATURE("ubsan", ubsan);
 		FEATURE("sanitizer", sanitizer);
 		FEATURE("SO_RCVTIMEO_WORKS", so_rcvtimeo_works);
 
