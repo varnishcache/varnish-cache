@@ -438,6 +438,8 @@ addr_no_randomize_works(void)
  *        recognized as a macro.
  * persistent_storage
  *        Varnish was built with the deprecated persistent storage.
+ * coverage
+ *        Varnish was built with code coverage enabled.
  * sanitizer
  *        Varnish was built with a sanitizer.
  *
@@ -448,6 +450,12 @@ addr_no_randomize_works(void)
  * misspelled macro to fail silently. You should only need it if you must
  * run a test with strings of the form "${...}".
  */
+
+#if ENABLE_COVERAGE
+static const unsigned coverage = 1;
+#else
+static const unsigned coverage = 0;
+#endif
 
 #if WITH_PERSISTENT_STORAGE
 static const unsigned with_persistent_storage = 1;
@@ -513,6 +521,7 @@ cmd_feature(CMD_ARGS)
 		FEATURE("user_vcache", getpwnam("vcache") != NULL);
 		FEATURE("group_varnish", getgrnam("varnish") != NULL);
 		FEATURE("persistent_storage", with_persistent_storage);
+		FEATURE("coverage", coverage);
 		FEATURE("sanitizer", sanitizer);
 		FEATURE("SO_RCVTIMEO_WORKS", so_rcvtimeo_works);
 
