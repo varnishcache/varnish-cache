@@ -270,9 +270,6 @@ if test "$ac_cv_have_viz" = no; then
 fi
 CFLAGS="${save_CFLAGS}"
 
-SAN_CFLAGS=
-SAN_LDFLAGS=
-
 AC_ARG_ENABLE(ubsan,
 	AS_HELP_STRING([--enable-ubsan],
 		[enable undefined behavior sanitizer (default is NO)]),
@@ -299,13 +296,18 @@ AC_ARG_ENABLE(msan,
 		[enable memory sanitizer (default is NO)]),
 	[MSAN_FLAGS=-fsanitize=memory])
 
+SAN_CFLAGS=
+SAN_LDFLAGS=
+
 if test "x$UBSAN_FLAGS$TSAN_FLAGS$ASAN_FLAGS$MSAN_FLAGS" != "x"; then
-	SAN_CFLAGS="-D__SANITIZER=1 ${UBSAN_FLAGS} ${TSAN_FLAGS} ${ASAN_FLAGS} ${MSAN_FLAGS} -fPIC -fPIE -fno-omit-frame-pointer"
-	SAN_LDFLAGS="${UBSAN_FLAGS} ${TSAN_FLAGS} ${ASAN_FLAGS} ${MSAN_FLAGS}"
-	save_CFLAGS="${CFLAGS}"
+	AC_DEFINE([__SANITIZER], [1], [Define to 1 if any sanitizer is enabled.])
+	SAN_FLAGS="$ASAN_FLAGS $UBSAN_FLAGS $TSAN_FLAGS $MSAN_FLAGS"
+	SAN_CFLAGS="$SAN_FLAGS -fPIC -fPIE -fno-omit-frame-pointer"
+	SAN_LDFLAGS=$SAN_FLAGS
+	save_CFLAGS=$CFLAGS
 	CFLAGS="${CFLAGS} -Werror=unused-command-line-argument"
-	AX_CHECK_LINK_FLAG([-pie], [SAN_LDFLAGS="${SAN_LDFLAGS} -pie"])
-	CFLAGS="${save_CFLAGS}"
+	AX_CHECK_LINK_FLAG([-pie], [SAN_LDFLAGS="$SAN_LDFLAGS -pie"])
+	CFLAGS=$save_CFLAGS
 	case $CC in
 	gcc*)
 		SAN_CFLAGS="${SAN_CFLAGS} -fuse-ld=gold"
