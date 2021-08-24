@@ -129,7 +129,7 @@ autogen () (
 	set -e
 	cd "${SRCDIR}"
 	nice make distclean > /dev/null 2>&1 || true
-	nice sh "${SRCDIR}"/autogen.des
+	nice sh "${SRCDIR}"/autogen.des $AUTOGEN_FLAGS
 )
 
 makedistcheck () (
@@ -207,7 +207,7 @@ if $enable_gcov ; then
 	#export CC=gcc6
 	#export CC=clang80
 	export GCOVPROG='llvm-cov gcov'
-	export CFLAGS="-fprofile-arcs -ftest-coverage -fstack-protector -DDONT_DLCLOSE_VMODS -DGCOVING"
+	export AUTOGEN_FLAGS='--enable-coverage --enable-stack-protector'
 	export MAKEFLAGS=-j1
 fi
 
