@@ -208,35 +208,6 @@ VSB_newbuf(struct vsb *s, char *buf, int length, int flags)
 	return (s);
 }
 
-/*
- * Initialize an vsb.
- * If buf is non-NULL, it points to a static or already-allocated string
- * big enough to hold at least length characters.
- */
-struct vsb *
-VSB_new(struct vsb *s, char *buf, int length, int flags)
-{
-
-	KASSERT(length >= 0,
-	    ("attempt to create an vsb of negative length (%d)", length));
-	KASSERT((flags & ~VSB_USRFLAGMSK) == 0,
-	    ("%s called with invalid flags", __func__));
-
-	flags &= VSB_USRFLAGMSK;
-	if (s != NULL)
-		return (VSB_newbuf(s, buf, length, flags));
-
-	s = SBMALLOC(sizeof(*s));
-	if (s == NULL)
-		return (NULL);
-	if (VSB_newbuf(s, buf, length, flags) == NULL) {
-		SBFREE(s);
-		return (NULL);
-	}
-	VSB_SETFLAG(s, VSB_DYNSTRUCT);
-	return (s);
-}
-
 struct vsb *
 VSB_init(struct vsb *s, void *buf, ssize_t length)
 {
@@ -508,25 +479,6 @@ VSB_len(const struct vsb *s)
 	if (s->s_error != 0)
 		return (-1);
 	return (s->s_len);
-}
-
-/*
- * Clear an vsb, free its buffer if necessary.
- */
-void
-VSB_delete(struct vsb *s)
-{
-	int isdyn;
-
-	assert_VSB_integrity(s);
-	/* don't care if it's finished or not */
-
-	if (VSB_ISDYNAMIC(s))
-		SBFREE(s->s_buf);
-	isdyn = VSB_ISDYNSTRUCT(s);
-	memset(s, 0, sizeof(*s));
-	if (isdyn)
-		SBFREE(s);
 }
 
 void

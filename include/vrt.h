@@ -54,6 +54,7 @@
  * binary/load-time compatible, increment MAJOR version
  *
  * NEXT (2021-09-15)
+ *	VSB_new() and VSB_delete() removed
  *	VCL_STRINGLIST, vrt_magic_string_end removed
  *	VRT_String(), VRT_StringList(), VRT_CollectString() removed
  *	VRT_CollectStrands() renamed to VRT_STRANDS_string()
