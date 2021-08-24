@@ -42,12 +42,11 @@
 #include "vin.h"
 #include "vsb.h"
 
-int
-VIN_n_Arg(const char *n_arg, char **dir)
+char *
+VIN_n_Arg(const char *n_arg)
 {
 	struct vsb *vsb;
-
-	AN(dir);
+	char *retval;
 
 	vsb = VSB_new_auto();
 	AN(vsb);
@@ -63,9 +62,7 @@ VIN_n_Arg(const char *n_arg, char **dir)
 	}
 	AZ(VSB_finish(vsb));
 
-	*dir = strdup(VSB_data(vsb));
+	retval = strdup(VSB_data(vsb));
 	VSB_destroy(&vsb);
-	if (*dir == NULL)
-		return (-1);
-	return (0);
+	return (retval);
 }

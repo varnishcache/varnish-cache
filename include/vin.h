@@ -34,5 +34,5 @@
 #define VIN_H_INCLUDED
 
 /* This function lives in both libvarnish and libvarnishapi */
-int VIN_n_Arg(const char *n_arg, char **dir);
+char *VIN_n_Arg(const char *n_arg);
 #endif

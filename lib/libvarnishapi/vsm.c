@@ -387,12 +387,12 @@ VSM_Arg(struct vsm *vd, char flag, const char *arg)
 		}
 		break;
 	case 'n':
-		if (VIN_n_Arg(arg, &p))
+		if (vd->wdname != NULL)
+			free(vd->wdname);
+		vd->wdname = VIN_n_Arg(arg);
+		if (vd->wdname == NULL)
 			return (vsm_diag(vd, "Invalid instance name: %s",
 			    strerror(errno)));
-		AN(p);
-		REPLACE(vd->wdname, p);
-		free(p);
 		break;
 	default:
 		return (vsm_diag(vd, "Unknown VSM_Arg('%c')", flag));
