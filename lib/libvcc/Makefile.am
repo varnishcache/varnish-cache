@@ -8,9 +8,6 @@ AM_CPPFLAGS = \
 
 noinst_LIBRARIES = libvcc.a
 
-libvcc_a_CFLAGS = \
-	@SAN_CFLAGS@
-
 libvcc_a_SOURCES = \
 	vcc_compile.h \
 	vcc_namespace.h \

@@ -8,11 +8,9 @@ bin_PROGRAMS = varnishadm
 
 varnishadm_SOURCES = varnishadm.c
 
-varnishadm_CFLAGS = @LIBEDIT_CFLAGS@ \
-	@SAN_CFLAGS@
+varnishadm_CFLAGS = @LIBEDIT_CFLAGS@
 
 varnishadm_LDADD = \
 	$(top_builddir)/lib/libvarnishapi/libvarnishapi.la \
 	$(top_builddir)/lib/libvarnish/libvarnish.la \
-	${PTHREAD_LIBS} ${RT_LIBS} ${NET_LIBS} @LIBEDIT_LIBS@ ${LIBM} \
-	@SAN_LDFLAGS@
+	${PTHREAD_LIBS} ${RT_LIBS} ${NET_LIBS} @LIBEDIT_LIBS@ ${LIBM}

@@ -5,8 +5,7 @@ vmod_LTLIBRARIES += libvmod_vtc.la
 libvmod_vtc_la_SOURCES = \
 	vmod_vtc.c
 
-libvmod_vtc_la_CFLAGS = \
-	@SAN_CFLAGS@
+libvmod_vtc_la_CFLAGS =
 
 vmodtoolargs_vtc ?= --strict --boilerplate -o vcc_vtc_if
 vmod_vtc_symbols_regex ?= Vmod_vtc_Data
@@ -14,8 +13,7 @@ vmod_vtc_symbols_regex ?= Vmod_vtc_Data
 libvmod_vtc_la_LDFLAGS = \
 	-export-symbols-regex $(vmod_vtc_symbols_regex) \
 	$(AM_LDFLAGS) \
-	$(VMOD_LDFLAGS) \
-	@SAN_LDFLAGS@
+	$(VMOD_LDFLAGS)
 
 nodist_libvmod_vtc_la_SOURCES = vcc_vtc_if.c vcc_vtc_if.h
 

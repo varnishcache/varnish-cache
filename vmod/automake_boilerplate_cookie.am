@@ -5,8 +5,7 @@ vmod_LTLIBRARIES += libvmod_cookie.la
 libvmod_cookie_la_SOURCES = \
 	vmod_cookie.c
 
-libvmod_cookie_la_CFLAGS = \
-	@SAN_CFLAGS@
+libvmod_cookie_la_CFLAGS =
 
 vmodtoolargs_cookie ?= --strict --boilerplate -o vcc_cookie_if
 vmod_cookie_symbols_regex ?= Vmod_cookie_Data
@@ -14,8 +13,7 @@ vmod_cookie_symbols_regex ?= Vmod_cookie_Data
 libvmod_cookie_la_LDFLAGS = \
 	-export-symbols-regex $(vmod_cookie_symbols_regex) \
 	$(AM_LDFLAGS) \
-	$(VMOD_LDFLAGS) \
-	@SAN_LDFLAGS@
+	$(VMOD_LDFLAGS)
 
 nodist_libvmod_cookie_la_SOURCES = vcc_cookie_if.c vcc_cookie_if.h
 

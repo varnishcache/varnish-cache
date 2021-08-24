@@ -28,14 +28,9 @@ varnishstat_curses_help.c: varnishstat_help_gen
 	$(AM_V_GEN) ./varnishstat_help_gen >$@_
 	@mv $@_ $@
 
-varnishstat_CFLAGS = \
-	@SAN_CFLAGS@
-
 varnishstat_LDADD = \
 	$(top_builddir)/lib/libvarnishapi/libvarnishapi.la \
-	@SAN_LDFLAGS@ \
 	@CURSES_LIBS@ ${RT_LIBS} ${LIBM} ${PTHREAD_LIBS}
 
 varnishstat_help_gen_LDADD = \
-	$(top_builddir)/lib/libvarnish/libvarnish.la \
-	@SAN_LDFLAGS@
+	$(top_builddir)/lib/libvarnish/libvarnish.la

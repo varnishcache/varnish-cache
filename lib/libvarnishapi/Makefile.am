@@ -35,12 +35,11 @@ libvarnishapi_la_SOURCES += daemon.c
 endif
 
 libvarnishapi_la_CFLAGS = \
-	-DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"' \
-	@SAN_CFLAGS@
+	-DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"'
 
 libvarnishapi_la_LIBADD = \
 	$(top_builddir)/lib/libvarnish/libvarnish.la \
-	@SAN_LDFLAGS@ ${NET_LIBS} ${RT_LIBS} ${LIBM}
+	${NET_LIBS} ${RT_LIBS} ${LIBM}
 
 if HAVE_LD_VERSION_SCRIPT
 libvarnishapi_la_LDFLAGS += -Wl,--version-script=$(srcdir)/libvarnishapi.map
@@ -79,17 +78,15 @@ vxp_test_SOURCES = \
 	vxp_test.c
 vxp_test_CFLAGS = \
 	-DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"' \
-	-DVXP_DEBUG \
-	${SAN_CFLAGS}
+	-DVXP_DEBUG
 vxp_test_LDADD = \
 	$(top_builddir)/lib/libvarnish/libvarnish.la \
-	${RT_LIBS} ${LIBM} ${PTHREAD_LIBS} ${SAN_LDFLAGS}
+	${RT_LIBS} ${LIBM} ${PTHREAD_LIBS}
 
 noinst_PROGRAMS += vsl_glob_test
 
 vsl_glob_test_SOURCES = vsl_glob_test.c
-vsl_glob_test_CFLAGS = @SAN_CFLAGS@
-vsl_glob_test_LDADD = libvarnishapi.la @SAN_LDFLAGS@
+vsl_glob_test_LDADD = libvarnishapi.la
 
 dist_noinst_SCRIPTS = vsl_glob_test_coverage.sh vxp_test_coverage.sh
 

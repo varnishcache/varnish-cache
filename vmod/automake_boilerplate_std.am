@@ -8,8 +8,7 @@ libvmod_std_la_SOURCES = \
 	vmod_std_fileread.c \
 	vmod_std_querysort.c
 
-libvmod_std_la_CFLAGS = \
-	@SAN_CFLAGS@
+libvmod_std_la_CFLAGS =
 
 vmodtoolargs_std ?= --strict --boilerplate -o vcc_std_if
 vmod_std_symbols_regex ?= Vmod_std_Data
@@ -17,8 +16,7 @@ vmod_std_symbols_regex ?= Vmod_std_Data
 libvmod_std_la_LDFLAGS = \
 	-export-symbols-regex $(vmod_std_symbols_regex) \
 	$(AM_LDFLAGS) \
-	$(VMOD_LDFLAGS) \
-	@SAN_LDFLAGS@
+	$(VMOD_LDFLAGS)
 
 nodist_libvmod_std_la_SOURCES = vcc_std_if.c vcc_std_if.h
 
