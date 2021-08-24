@@ -159,7 +159,6 @@ nobase_pkginclude_HEADERS = \
 vcldir=$(datarootdir)/$(PACKAGE)/vcl
 
 varnishd_CFLAGS = \
-	@SAN_CFLAGS@ \
 	-DNOT_IN_A_VMOD \
 	-DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"' \
 	-DVARNISH_VMOD_DIR='"${vmoddir}"' \
@@ -171,7 +170,6 @@ varnishd_LDADD = \
 	$(top_builddir)/lib/libvcc/libvcc.a \
 	$(top_builddir)/lib/libvarnish/libvarnish.la \
 	$(top_builddir)/lib/libvgz/libvgz.a \
-	@SAN_LDFLAGS@ \
 	@JEMALLOC_LDADD@ \
 	${DL_LIBS} ${PTHREAD_LIBS} ${NET_LIBS} ${RT_LIBS} ${LIBM}
 
@@ -182,31 +180,25 @@ endif
 
 noinst_PROGRAMS = vhp_gen_hufdec
 vhp_gen_hufdec_SOURCES = hpack/vhp_gen_hufdec.c
-vhp_gen_hufdec_CFLAGS = @SAN_CFLAGS@ \
-			-include config.h
-vhp_gen_hufdec_LDADD = \
-	$(top_builddir)/lib/libvarnish/libvarnish.la
+vhp_gen_hufdec_CFLAGS = -include config.h
+vhp_gen_hufdec_LDADD = $(top_builddir)/lib/libvarnish/libvarnish.la
 
 noinst_PROGRAMS += vhp_table_test
 vhp_table_test_SOURCES = hpack/vhp_table.c
-vhp_table_test_CFLAGS = @SAN_CFLAGS@ \
-			-DTABLE_TEST_DRIVER -include config.h
-vhp_table_test_LDADD = \
-	$(top_builddir)/lib/libvarnish/libvarnish.la
+vhp_table_test_CFLAGS = -DTABLE_TEST_DRIVER -include config.h
+vhp_table_test_LDADD = $(top_builddir)/lib/libvarnish/libvarnish.la
 
 noinst_PROGRAMS += vhp_decode_test
 vhp_decode_test_SOURCES = hpack/vhp_decode.c hpack/vhp_table.c
-vhp_decode_test_CFLAGS = @SAN_CFLAGS@ \
-			 -DDECODE_TEST_DRIVER -include config.h
-vhp_decode_test_LDADD = \
-	$(top_builddir)/lib/libvarnish/libvarnish.la
+vhp_decode_test_CFLAGS = -DDECODE_TEST_DRIVER -include config.h
+vhp_decode_test_LDADD = $(top_builddir)/lib/libvarnish/libvarnish.la
 
 noinst_PROGRAMS += esi_parse_fuzzer
 esi_parse_fuzzer_SOURCES = \
 	cache/cache_esi_parse.c \
 	fuzzers/esi_parse_fuzzer.c
 esi_parse_fuzzer_CFLAGS = \
-	@SAN_CFLAGS@ -DNOT_IN_A_VMOD -DTEST_DRIVER -include config.h
+	-DNOT_IN_A_VMOD -DTEST_DRIVER -include config.h
 esi_parse_fuzzer_LDADD = \
 	$(top_builddir)/lib/libvarnish/libvarnish.la \
 	$(top_builddir)/lib/libvgz/libvgz.a

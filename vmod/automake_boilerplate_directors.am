@@ -15,8 +15,7 @@ libvmod_directors_la_SOURCES = \
 	vmod_directors_shard_dir.c \
 	vmod_directors_shard_dir.h
 
-libvmod_directors_la_CFLAGS = \
-	@SAN_CFLAGS@
+libvmod_directors_la_CFLAGS =
 
 vmodtoolargs_directors ?= --strict --boilerplate -o vcc_directors_if
 vmod_directors_symbols_regex ?= Vmod_directors_Data
@@ -24,8 +23,7 @@ vmod_directors_symbols_regex ?= Vmod_directors_Data
 libvmod_directors_la_LDFLAGS = \
 	-export-symbols-regex $(vmod_directors_symbols_regex) \
 	$(AM_LDFLAGS) \
-	$(VMOD_LDFLAGS) \
-	@SAN_LDFLAGS@
+	$(VMOD_LDFLAGS)
 
 nodist_libvmod_directors_la_SOURCES = vcc_directors_if.c vcc_directors_if.h
 

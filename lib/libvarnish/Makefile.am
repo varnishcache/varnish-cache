@@ -5,8 +5,8 @@ AM_CPPFLAGS = \
 	-I$(top_builddir)/include \
 	@PCRE2_CFLAGS@
 
-AM_CFLAGS   = $(AM_LT_CFLAGS)  @SAN_CFLAGS@
-AM_LDFLAGS  = $(AM_LT_LDFLAGS) @SAN_LDFLAGS@
+AM_CFLAGS   = $(AM_LT_CFLAGS)
+AM_LDFLAGS  = $(AM_LT_LDFLAGS)
 
 noinst_LTLIBRARIES = libvarnish.la
 

@@ -12,8 +12,7 @@ libvmod_blob_la_SOURCES = \
 	vmod_blob_tbl_encodings.h \
 	vmod_blob_url.c
 
-libvmod_blob_la_CFLAGS = \
-	@SAN_CFLAGS@
+libvmod_blob_la_CFLAGS =
 
 vmodtoolargs_blob ?= --strict --boilerplate -o vcc_blob_if
 vmod_blob_symbols_regex ?= Vmod_blob_Data
@@ -21,8 +20,7 @@ vmod_blob_symbols_regex ?= Vmod_blob_Data
 libvmod_blob_la_LDFLAGS = \
 	-export-symbols-regex $(vmod_blob_symbols_regex) \
 	$(AM_LDFLAGS) \
-	$(VMOD_LDFLAGS) \
-	@SAN_LDFLAGS@
+	$(VMOD_LDFLAGS)
 
 nodist_libvmod_blob_la_SOURCES = vcc_blob_if.c vcc_blob_if.h
 

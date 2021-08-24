@@ -5,8 +5,7 @@ vmod_LTLIBRARIES += libvmod_purge.la
 libvmod_purge_la_SOURCES = \
 	vmod_purge.c
 
-libvmod_purge_la_CFLAGS = \
-	@SAN_CFLAGS@
+libvmod_purge_la_CFLAGS =
 
 vmodtoolargs_purge ?= --strict --boilerplate -o vcc_purge_if
 vmod_purge_symbols_regex ?= Vmod_purge_Data
@@ -14,8 +13,7 @@ vmod_purge_symbols_regex ?= Vmod_purge_Data
 libvmod_purge_la_LDFLAGS = \
 	-export-symbols-regex $(vmod_purge_symbols_regex) \
 	$(AM_LDFLAGS) \
-	$(VMOD_LDFLAGS) \
-	@SAN_LDFLAGS@
+	$(VMOD_LDFLAGS)
 
 nodist_libvmod_purge_la_SOURCES = vcc_purge_if.c vcc_purge_if.h
 

@@ -56,8 +56,7 @@ vmod_LTLIBRARIES += libvmod_XXX.la
 libvmod_XXX_la_SOURCES = \\
 \tSRC
 
-libvmod_XXX_la_CFLAGS = \\
-\t@SAN_CFLAGS@
+libvmod_XXX_la_CFLAGS =
 
 vmodtoolargs_XXX ?= --strict --boilerplate -o PFX
 vmod_XXX_symbols_regex ?= Vmod_XXX_Data
@@ -65,8 +64,7 @@ vmod_XXX_symbols_regex ?= Vmod_XXX_Data
 libvmod_XXX_la_LDFLAGS = \\
 \t-export-symbols-regex $(vmod_XXX_symbols_regex) \\
 \t$(AM_LDFLAGS) \\
-\t$(VMOD_LDFLAGS) \\
-\t@SAN_LDFLAGS@
+\t$(VMOD_LDFLAGS)
 
 nodist_libvmod_XXX_la_SOURCES = PFX.c PFX.h
 

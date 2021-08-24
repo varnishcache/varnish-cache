@@ -296,26 +296,23 @@ AC_ARG_ENABLE(msan,
 		[enable memory sanitizer (default is NO)]),
 	[MSAN_FLAGS=-fsanitize=memory])
 
-SAN_CFLAGS=
-SAN_LDFLAGS=
-
 if test "x$UBSAN_FLAGS$TSAN_FLAGS$ASAN_FLAGS$MSAN_FLAGS" != "x"; then
 	AC_DEFINE([__SANITIZER], [1], [Define to 1 if any sanitizer is enabled.])
 	SAN_FLAGS="$ASAN_FLAGS $UBSAN_FLAGS $TSAN_FLAGS $MSAN_FLAGS"
 	SAN_CFLAGS="$SAN_FLAGS -fPIC -fPIE -fno-omit-frame-pointer"
-	SAN_LDFLAGS=$SAN_FLAGS
+	SAN_LDFLAGS=
 	save_CFLAGS=$CFLAGS
 	CFLAGS="${CFLAGS} -Werror=unused-command-line-argument"
-	AX_CHECK_LINK_FLAG([-pie], [SAN_LDFLAGS="$SAN_LDFLAGS -pie"])
+	AX_CHECK_LINK_FLAG([-pie], [SAN_LDFLAGS=-pie])
 	CFLAGS=$save_CFLAGS
 	case $CC in
 	gcc*)
-		SAN_CFLAGS="${SAN_CFLAGS} -fuse-ld=gold"
+		SAN_CFLAGS="$SAN_CFLAGS -fuse-ld=gold"
 		;;
 	esac
+	CFLAGS="$CFLAGS $SAN_CFLAGS"
+	LDFLAGS="$LDFLAGS $SAN_LDFLAGS"
 fi
-AC_SUBST(SAN_CFLAGS)
-AC_SUBST(SAN_LDFLAGS)
 
 # Use jemalloc on Linux
 JEMALLOC_LDADD=

@@ -5,8 +5,7 @@ vmod_LTLIBRARIES += libvmod_proxy.la
 libvmod_proxy_la_SOURCES = \
 	vmod_proxy.c
 
-libvmod_proxy_la_CFLAGS = \
-	@SAN_CFLAGS@
+libvmod_proxy_la_CFLAGS =
 
 vmodtoolargs_proxy ?= --strict --boilerplate -o vcc_proxy_if
 vmod_proxy_symbols_regex ?= Vmod_proxy_Data
@@ -14,8 +13,7 @@ vmod_proxy_symbols_regex ?= Vmod_proxy_Data
 libvmod_proxy_la_LDFLAGS = \
 	-export-symbols-regex $(vmod_proxy_symbols_regex) \
 	$(AM_LDFLAGS) \
-	$(VMOD_LDFLAGS) \
-	@SAN_LDFLAGS@
+	$(VMOD_LDFLAGS)
 
 nodist_libvmod_proxy_la_SOURCES = vcc_proxy_if.c vcc_proxy_if.h
 
