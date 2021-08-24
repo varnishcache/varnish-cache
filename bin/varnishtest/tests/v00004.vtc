@@ -2,9 +2,7 @@ varnishtest "test if our default paramers make sense ..."
 
 feature 64bit
 feature !sanitizer
-
-# Skip this test in GCOV mode, 68xx bytes extra per level makes it fail
-feature cmd {test -z "$GCOVPROG"}
+feature !coverage
 
 # ... for our definition of a standard use case:
 # - 2019 header madness
