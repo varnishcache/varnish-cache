@@ -112,6 +112,19 @@
 #  define v_dont_optimize
 #endif
 
+#ifdef HAVE___GCOV_FLUSH
+#  define v_gcov_flush() __gcov_flush()
+int __gcov_flush(void);
+#elif defined HAVE___GCOV_DUMP
+#  define v_gcov_flush() __gcov_dump()
+void __gcov_dump(void);
+#elif defined HAVE___LLVM_GCOV_FLUSH
+#  define v_gcov_flush() __llvm_gcov_flush()
+int __llvm_gcov_flush(void);
+#else
+#  define v_gcov_flush() do { } while (0)
+#endif
+
 /*********************************************************************
  * Fundamental numerical limits
   * These limits track RFC8941

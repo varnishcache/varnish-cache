@@ -765,12 +765,38 @@ case $CFLAGS in
     ;;
 esac
 
+# --enable-coverage
+AC_ARG_ENABLE(coverage,
+	AS_HELP_STRING([--enable-coverage],
+		[enable coverage (implies debugging symbols, default is NO)]),
+	    [],
+	    [enable_coverage=no])
+
 # --enable-debugging-symbols
 AC_ARG_ENABLE(debugging-symbols,
 	AS_HELP_STRING([--enable-debugging-symbols],
 		[enable debugging symbols (default is NO)]),
 	    [],
 	    [enable_debugging_symbols=no])
+
+if test "$enable_coverage" != no; then
+	AC_DEFINE([GCOVING], [1], [Define to 1 if code coverage is enabled.])
+	save_CFLAGS=$CFLAGS
+	CFLAGS=
+	AX_CHECK_COMPILE_FLAG([--coverage],
+		[COV_FLAGS=--coverage],
+		[AX_CHECK_COMPILE_FLAG([-fprofile-arcs -ftest-coverage],
+			[COV_FLAGS="-fprofile-arcs -ftest-coverage"])])
+	AX_CHECK_COMPILE_FLAG([-fprofile-abs-path],
+		[COV_FLAGS="$COV_FLAGS -fprofile-abs-path"])
+	AX_CHECK_COMPILE_FLAG([-fPIC], [COV_FLAGS="$COV_FLAGS -fPIC"])
+	CFLAGS=$COV_FLAGS
+	AC_CHECK_FUNCS([__gcov_flush])
+	AC_CHECK_FUNCS([__gcov_dump])
+	AC_CHECK_FUNCS([__llvm_gcov_flush])
+	CFLAGS="$save_CFLAGS $COV_FLAGS"
+	enable_debugging_symbols=yes
+fi
 
 if test "$enable_debugging_symbols" != no; then
 	if test "x$SUNCC" = "xyes" ; then
