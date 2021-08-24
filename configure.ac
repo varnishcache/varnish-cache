@@ -780,7 +780,7 @@ AC_ARG_ENABLE(debugging-symbols,
 	    [enable_debugging_symbols=no])
 
 if test "$enable_coverage" != no; then
-	AC_DEFINE([GCOVING], [1], [Define to 1 if code coverage is enabled.])
+	AC_DEFINE([ENABLE_COVERAGE], [1], [Define to 1 if code coverage is enabled.])
 	save_CFLAGS=$CFLAGS
 	CFLAGS=
 	AX_CHECK_COMPILE_FLAG([--coverage],
