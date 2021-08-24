@@ -272,31 +272,32 @@ CFLAGS="${save_CFLAGS}"
 
 SAN_CFLAGS=
 SAN_LDFLAGS=
-UBSAN_CFLAGS=
-UBSAN_LDFLAGS=
+
 AC_ARG_ENABLE(ubsan,
-	AS_HELP_STRING([--enable-ubsan],[enable undefined behavior sanitizer (default is NO)]),
-	UBSAN_FLAGS="-fsanitize=undefined")
+	AS_HELP_STRING([--enable-ubsan],
+		[enable undefined behavior sanitizer (default is NO)]),
+	[UBSAN_FLAGS=-fsanitize=undefined])
 
-TSAN_CFLAGS=
-TSAN_LDFLAGS=
 AC_ARG_ENABLE(tsan,
-	AS_HELP_STRING([--enable-tsan],[enable thread sanitizer (default is NO)]),
-	TSAN_FLAGS="-fsanitize=thread")
+	AS_HELP_STRING([--enable-tsan],
+		[enable thread sanitizer (default is NO)]),
+	[TSAN_FLAGS=-fsanitize=thread])
 
-ASAN_CFLAGS=
-ASAN_LDFLAGS=
 AC_ARG_ENABLE(asan,
-	AS_HELP_STRING([--enable-asan],[enable address sanitizer (default is NO)]),
-	ASAN_FLAGS="-fsanitize=address"
-	AX_CHECK_COMPILE_FLAG([-fsanitize=address -fsanitize-address-use-after-scope],
-			      [ASAN_FLAGS="${ASAN_FLAGS} -fsanitize-address-use-after-scope"]))
+	AS_HELP_STRING([--enable-asan],
+		[enable address sanitizer (default is NO)]),
+	[ASAN_FLAGS=-fsanitize=address])
 
-MSAN_CFLAGS=
-MSAN_LDFLAGS=
+if test -n "$ASAN_FLAGS"; then
+	AX_CHECK_COMPILE_FLAG(
+		[$ASAN_FLAGS -fsanitize-address-use-after-scope],
+		[ASAN_FLAGS="$ASAN_FLAGS -fsanitize-address-use-after-scope"])
+fi
+
 AC_ARG_ENABLE(msan,
-	AS_HELP_STRING([--enable-msan],[enable memory sanitizer (default is NO)]),
-	MSAN_FLAGS="-fsanitize=memory")
+	AS_HELP_STRING([--enable-msan],
+		[enable memory sanitizer (default is NO)]),
+	[MSAN_FLAGS=-fsanitize=memory])
 
 if test "x$UBSAN_FLAGS$TSAN_FLAGS$ASAN_FLAGS$MSAN_FLAGS" != "x"; then
 	SAN_CFLAGS="-D__SANITIZER=1 ${UBSAN_FLAGS} ${TSAN_FLAGS} ${ASAN_FLAGS} ${MSAN_FLAGS} -fPIC -fPIE -fno-omit-frame-pointer"
