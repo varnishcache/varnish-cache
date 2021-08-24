@@ -514,6 +514,10 @@ void VCL_TaskLeave(VRT_CTX, struct vrt_privs *);
 void VMOD_Init(void);
 void VMOD_Panic(struct vsb *);
 
+#if defined(GCOVING) || defined(__SANITIZER)
+#  define DONT_DLCLOSE_VMODS
+#endif
+
 /* cache_wrk.c */
 void WRK_Init(void);
 void WRK_AddStat(const struct worker *);
