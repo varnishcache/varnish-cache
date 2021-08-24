@@ -42,6 +42,9 @@ install-data-local:
 	$(install_sh) -d -m 0755 $(DESTDIR)$(localstatedir)/varnish
 
 
+distclean-local:
+	find . '(' -name '*.gcda' -o -name '*.gcda' ')' -exec rm '{}' ';'
+
 distcleancheck_listfiles = \
 	find . -type f -exec sh -c 'test -f $(srcdir)/$$1 || echo $$1' \
 		sh '{}' ';'

@@ -125,6 +125,10 @@ cscope.*out
 /lib/libvarnishapi/vsl_glob_test
 /lib/libvarnishapi/vxp_test
 
+# GCOV droppings
+*.gcda
+*.gcno
+
 # vtc-bisect.sh default vtc
 /bisect.vtc
 
