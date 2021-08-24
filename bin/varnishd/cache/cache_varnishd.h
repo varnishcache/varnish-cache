@@ -514,7 +514,7 @@ void VCL_TaskLeave(VRT_CTX, struct vrt_privs *);
 void VMOD_Init(void);
 void VMOD_Panic(struct vsb *);
 
-#if defined(GCOVING) || defined(__SANITIZER)
+#if defined(ENABLE_COVERAGE) || defined(__SANITIZER)
 #  define DONT_DLCLOSE_VMODS
 #endif
 
