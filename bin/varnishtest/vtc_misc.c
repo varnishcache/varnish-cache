@@ -457,16 +457,16 @@ static const unsigned coverage = 1;
 static const unsigned coverage = 0;
 #endif
 
+#if ENABLE_SANITIZER
+static const unsigned sanitizer = 1;
+#else
+static const unsigned sanitizer = 0;
+#endif
+
 #if WITH_PERSISTENT_STORAGE
 static const unsigned with_persistent_storage = 1;
 #else
 static const unsigned with_persistent_storage = 0;
-#endif
-
-#if __SANITIZER
-static const unsigned sanitizer = 1;
-#else
-static const unsigned sanitizer = 0;
 #endif
 
 #ifdef SO_RCVTIMEO_WORKS
