@@ -297,7 +297,8 @@ AC_ARG_ENABLE(msan,
 	[MSAN_FLAGS=-fsanitize=memory])
 
 if test "x$UBSAN_FLAGS$TSAN_FLAGS$ASAN_FLAGS$MSAN_FLAGS" != "x"; then
-	AC_DEFINE([__SANITIZER], [1], [Define to 1 if any sanitizer is enabled.])
+	AC_DEFINE([ENABLE_SANITIZER], [1],
+		[Define to 1 if any sanitizer is enabled.])
 	SAN_FLAGS="$ASAN_FLAGS $UBSAN_FLAGS $TSAN_FLAGS $MSAN_FLAGS"
 	SAN_CFLAGS="$SAN_FLAGS -fPIC -fPIE -fno-omit-frame-pointer"
 	SAN_LDFLAGS=

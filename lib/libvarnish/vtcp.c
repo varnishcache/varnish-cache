@@ -626,7 +626,7 @@ VTCP_Check(ssize_t a)
 	if (errno == EINVAL)
 		return (1);
 #endif
-#if (defined(__SANITIZER) || __has_feature(address_sanitizer))
+#if defined(ENABLE_SANITIZER)
 	if (errno == EINTR)
 		return (1);
 #endif
