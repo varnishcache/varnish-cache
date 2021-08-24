@@ -28,9 +28,10 @@
  * SUCH DAMAGE.
  */
 
-LIBVARNISHAPI_2.0 {
+LIBVARNISHAPI_3.0 {	/* 2021-09-15 release */
     global:
 	# vas.c
+		VAS_errtxt;
 		VAS_Fail;
 		VAS_Fail_Func;
 
@@ -41,32 +42,50 @@ LIBVARNISHAPI_2.0 {
 
 	# vcs.c
 		VCS_Message;
+		VCS_String;
 
 	# vsb.c
 		VSB_bcat;
 		VSB_cat;
 		VSB_clear;
 		VSB_data;
-		VSB_delete;
 		VSB_destroy;
 		VSB_error;
+		VSB_fini;
 		VSB_finish;
 		VSB_indent;
+		VSB_init;
 		VSB_len;
-		VSB_new;
+		VSB_new_auto;
 		VSB_printf;
 		VSB_putc;
 		VSB_quote;
 		VSB_quote_pfx;
+		VSB_tofile;
 		VSB_vprintf;
 
 	# vsc.c
 		VSC_Arg;
 		VSC_ChangeLevel;
 		VSC_Destroy;
+		VSC_IsRaw;
 		VSC_Iter;
 		VSC_New;
 		VSC_State;
+
+	# vsig.c
+		VSIG_int;
+		VSIG_Got_int;
+		VSIG_Arm_int;
+		VSIG_hup;
+		VSIG_Got_hup;
+		VSIG_Arm_hup;
+		VSIG_term;
+		VSIG_Got_term;
+		VSIG_Arm_term;
+		VSIG_usr1;
+		VSIG_Got_usr1;
+		VSIG_Arm_usr1;
 
 	# vsl*.c
 		VSLQ_Delete;
@@ -138,76 +157,8 @@ LIBVARNISHAPI_2.0 {
 		VUT_Setup;
 		VUT_Signal;
 		VUT_Signaled;
+		VUT_Usage;
 
-    local:
-	*;
-};
-
-LIBVARNISHAPI_2.1 {
-    global:
-	# vut.c
-	VUT_Usage;
-    local:
-	*;
-};
-
-LIBVARNISHAPI_2.2 {
-    global:
-	# vsig.c
-	VSIG_int;
-	VSIG_Got_int;
-	VSIG_Arm_int;
-	VSIG_hup;
-	VSIG_Got_hup;
-	VSIG_Arm_hup;
-	VSIG_term;
-	VSIG_Got_term;
-	VSIG_Arm_term;
-	VSIG_usr1;
-	VSIG_Got_usr1;
-	VSIG_Arm_usr1;
-    local:
-	*;
-};
-
-LIBVARNISHAPI_2.3 {	/* 2019-09-15 release */
-    global:
-	# vcs.c
-	VCS_String;
-    local:
-	*;
-};
-
-LIBVARNISHAPI_2.4 {	/* 2020-03-15 release */
-    global:
-	# vsb.c
-	VSB_tofile;
-    local:
-	*;
-};
-
-LIBVARNISHAPI_2.5 {	/* 2020-09-15 release */
-    global:
-	# vsb.c
-	VSB_init;
-	VSB_fini;
-	VSB_new_auto;
-    local:
-	*;
-};
-
-LIBVARNISHAPI_2.6 {	/* 2020-03-15 release */
-    global:
-	# vsc.c
-	VSC_IsRaw;
-    local:
-	*;
-};
-
-LIBVARNISHAPI_2.7 {	/* 2021-09-15 release */
-    global:
-	# vas.c
-	VAS_errtxt;
     local:
 	*;
 };
