@@ -8,7 +8,7 @@ afterwards in order to update the shared library cache.
 If you obtained the sources directly from the Git repository, you will
 need to run autogen.sh first to create the configure script.
 
-Varnish will store run-time state in $localstatedir/varnish; you may
+Varnish will store run-time state in /var/run/varnish; you may
 want to tune this using configure's --localstatedir parameter.
 
 Additional configure options of interest:

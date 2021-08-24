@@ -654,7 +654,11 @@ fi
 LIBS="${save_LIBS}"
 
 # Run-time directory
-VARNISH_STATE_DIR='${localstatedir}/varnish'
+if test "${localstatedir}" = '${prefix}/var' ; then
+   VARNISH_STATE_DIR='/var/run'
+else
+   VARNISH_STATE_DIR='${localstatedir}/varnish'
+fi
 AC_SUBST(VARNISH_STATE_DIR)
 
 # Default configuration directory.

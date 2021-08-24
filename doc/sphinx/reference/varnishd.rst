@@ -20,7 +20,29 @@ HTTP accelerator daemon
 SYNOPSIS
 ========
 
-varnishd [-a [name=][address][:port][,PROTO][,user=<user>][,group=<group>][,mode=<mode>]] [-b [host[:port]|path]] [-C] [-d] [-F] [-f config] [-h type[,options]] [-I clifile] [-i identity] [-j jail[,jailoptions]] [-l vsl] [-M address:port] [-n name] [-P file] [-p param=value] [-r param[,param...]] [-S secret-file] [-s [name=]kind[,options]] [-T address[:port]] [-t TTL] [-V] [-W waiter]
+varnishd 
+    [-a [name=][listen_address[,PROTO]]
+    [-b [host[:port]|path]]
+    [-C]
+    [-d]
+    [-F]
+    [-f config]
+    [-h type[,options]]
+    [-I clifile]
+    [-i identity]
+    [-j jail[,jailoptions]]
+    [-l vsl]
+    [-M address:port]
+    [-n workdir]
+    [-P file]
+    [-p param=value]
+    [-r param[,param...]]
+    [-S secret-file]
+    [-s [name=]kind[,options]]
+    [-T address[:port]]
+    [-t TTL]
+    [-V]
+    [-W waiter]
 
 varnishd [-x parameter|vsl|cli|builtin|optstring]
 
@@ -41,32 +63,41 @@ OPTIONS
 Basic options
 -------------
 
--a <[name=][address][:port][,PROTO][,user=<user>][,group=<group>][,mode=<mode>]>
+-a <[name=][listen_address[,PROTO]]>
 
-  Listen for client requests on the specified address and port. The
-  address can be a host name ("localhost"), an IPv4 dotted-quad
-  ("127.0.0.1"), an IPv6 address enclosed in square brackets
-  ("[::1]"), or a path beginning with a '/' for a Unix domain socket
-  ("/path/to/listen.sock"). If address is not specified, `varnishd`
-  will listen on all available IPv4 and IPv6 interfaces. If port is
-  not specified, port 80 (http) is used. At least one of address or
-  port is required.
-
-  If a Unix domain socket is specified as the listen address, then the
-  user, group and mode sub-arguments may be used to specify the
-  permissions of the socket file -- use names for user and group, and
-  a 3-digit octal value for mode. These sub-arguments are not
-  permitted if an IP address is specified. When Unix domain socket
-  listeners are in use, all VCL configurations must have version >=
-  4.1.
+  Accept for client requests on the specified listen_address (see below).
 
   Name is referenced in logs. If name is not specified, "a0", "a1",
-  etc. is used. An additional protocol type can be set for the
-  listening socket with PROTO. Valid protocol types are: HTTP
-  (default), and PROXY.
+  etc. is used.
 
-  Multiple listening addresses can be specified by using different
-  -a arguments.
+  PROTO can be "HTTP" (the default) or "PROXY".  Both version 1
+  and 2 of the proxy protocol can be used.
+
+  Multiple -a arguments are allowed.
+
+  If no -a argument is given, the default `-a :80` will listen to
+  all IPv4 and IPv6 interfaces.
+
+-a <[name=][ip_address][:port][,PROTO]>
+
+  The ip_address can be a host name ("localhost"), an IPv4 dotted-quad
+  ("127.0.0.1") or an IPv6 address enclosed in square brackets
+  ("[::1]")
+
+  If port is not specified, port 80 (http) is used.
+
+  At least one of ip_address or port is required.
+
+-a <[name=][path][,PROTO][,user=name][,group=name][,mode=octal]>
+
+  (VCL4.1 and higher)
+
+  Accept connections on a Unix domain socket.  Path must be absolute
+  ("/path/to/listen.sock").
+
+  The user, group and mode sub-arguments may be used to specify the
+  permissions of the socket file -- use names for user and group, and
+  a 3-digit octal value for mode.
 
 -b <[host[:port]|path]>
 
@@ -111,12 +142,17 @@ Basic options
 
 .. _opt_n:
 
--n name
+-n workdir
 
-  Specify the name for this instance.  This name is used to construct
-  the name of the directory in which `varnishd` keeps temporary files
-  and persistent state. If the specified name begins with a forward slash,
-  it is interpreted as the absolute path to the directory.
+  Runtime directory for the shared memory, compiled VCLs etc.
+
+  In performance critical applications, this directory should be
+  on a RAM backed filesystem.
+
+  Relative paths will be appended to `/var/run/` (NB: Binary packages
+  of Varnish may have adjusted this to the platform.)
+
+  The default value is `/var/run/varnishd` (NB: as above.)
 
 Documentation options
 ---------------------

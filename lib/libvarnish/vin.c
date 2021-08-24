@@ -27,17 +27,14 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * XXX: NB: also used in libvarnishapi
+ * NB: also used in libvarnishapi
  */
 
 #include "config.h"
 
-#include <limits.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 #include "vdef.h"
 
@@ -48,45 +45,27 @@
 int
 VIN_n_Arg(const char *n_arg, char **dir)
 {
-	char nm[PATH_MAX];
-	char dn[PATH_MAX];
-	struct vsb vsb[1];
-	int i;
+	struct vsb *vsb;
 
 	AN(dir);
 
-	/* First: determine the name */
-
-	if (n_arg == NULL || *n_arg == '\0') {
-		if (gethostname(nm, sizeof nm) != 0)
-			return (-1);
-	} else if (strlen(n_arg) >= sizeof nm) {
-		/* preliminary length check to avoid overflowing nm */
-		errno = ENAMETOOLONG;
-		return (-1);
-	} else
-		bprintf(nm, "%s", n_arg);
-
-	/* Second: find the directory name */
-
-	AN(VSB_init(vsb, dn, sizeof dn));
-
-	if (*nm == '/')
-		i = VSB_printf(vsb, "%s/", nm);
-	else
-		i = VSB_printf(vsb, "%s/%s/", VARNISH_STATE_DIR, nm);
-
-	if (i != 0) {
-		errno = ENAMETOOLONG;
-		return (-1);
+	vsb = VSB_new_auto();
+	AN(vsb);
+	if (n_arg == NULL || n_arg[0] == '\0') {
+		VSB_cat(vsb, VARNISH_STATE_DIR);
+		VSB_cat(vsb, "/varnishd");
+	} else if (n_arg[0] == '/') {
+		VSB_cat(vsb, n_arg);
+	} else {
+		VSB_cat(vsb, VARNISH_STATE_DIR);
+		VSB_cat(vsb, "/");
+		VSB_cat(vsb, n_arg);
 	}
-
 	AZ(VSB_finish(vsb));
 
 	*dir = strdup(VSB_data(vsb));
+	VSB_destroy(&vsb);
 	if (*dir == NULL)
 		return (-1);
-
-	VSB_fini(vsb);
 	return (0);
 }
