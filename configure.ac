@@ -273,17 +273,29 @@ CFLAGS="${save_CFLAGS}"
 AC_ARG_ENABLE(ubsan,
 	AS_HELP_STRING([--enable-ubsan],
 		[enable undefined behavior sanitizer (default is NO)]),
-	[UBSAN_FLAGS=-fsanitize=undefined])
+	[
+		AC_DEFINE([ENABLE_UBSAN], [1],
+			[Define to 1 if UBSAN is enabled.])
+		UBSAN_FLAGS=-fsanitize=undefined
+	])
 
 AC_ARG_ENABLE(tsan,
 	AS_HELP_STRING([--enable-tsan],
 		[enable thread sanitizer (default is NO)]),
-	[TSAN_FLAGS=-fsanitize=thread])
+	[
+		AC_DEFINE([ENABLE_TSAN], [1],
+			[Define to 1 if TSAN is enabled.])
+		TSAN_FLAGS=-fsanitize=thread
+	])
 
 AC_ARG_ENABLE(asan,
 	AS_HELP_STRING([--enable-asan],
 		[enable address sanitizer (default is NO)]),
-	[ASAN_FLAGS=-fsanitize=address])
+	[
+		AC_DEFINE([ENABLE_ASAN], [1],
+			[Define to 1 if ASAN sanitizer is enabled.])
+		ASAN_FLAGS=-fsanitize=address
+	])
 
 if test -n "$ASAN_FLAGS"; then
 	AX_CHECK_COMPILE_FLAG(
@@ -294,7 +306,11 @@ fi
 AC_ARG_ENABLE(msan,
 	AS_HELP_STRING([--enable-msan],
 		[enable memory sanitizer (default is NO)]),
-	[MSAN_FLAGS=-fsanitize=memory])
+	[
+		AC_DEFINE([ENABLE_MSAN], [1],
+			[Define to 1 if MSAN is enabled.])
+		MSAN_FLAGS=-fsanitize=memory
+	])
 
 if test "x$UBSAN_FLAGS$TSAN_FLAGS$ASAN_FLAGS$MSAN_FLAGS" != "x"; then
 	AC_DEFINE([ENABLE_SANITIZER], [1],
