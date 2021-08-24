@@ -771,12 +771,18 @@ esac
 
 # --enable-debugging-symbols
 AC_ARG_ENABLE(debugging-symbols,
-	AS_HELP_STRING([--enable-debugging-symbols],[enable debugging symbols (default is NO)]),
+	AS_HELP_STRING([--enable-debugging-symbols],
+		[enable debugging symbols (default is NO)]),
+	    [],
+	    [enable_debugging_symbols=no])
+
+if test "$enable_debugging_symbols" != no; then
 	if test "x$SUNCC" = "xyes" ; then
 		CFLAGS="${CFLAGS} -O0 -g"
 	else
 		CFLAGS="${CFLAGS} -O0 -g -fno-inline"
-	fi)
+	fi
+fi
 
 AC_SUBST(AM_LT_LDFLAGS)
 
