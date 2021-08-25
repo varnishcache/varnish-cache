@@ -627,8 +627,8 @@ VRT_SetHdr(VRT_CTX , VCL_HEADER hs, const char *pfx, VCL_STRANDS s)
 		p += l;
 	}
 	if (FEATURE(FEATURE_VALIDATE_HEADERS) && !validhdr(b)) {
-		WS_Release(hp->ws, 0);
 		VRT_fail(ctx, "Bad header %s", b);
+		WS_Release(hp->ws, 0);
 		return;
 	}
 	WS_ReleaseP(hp->ws, strchr(p, '\0') + 1);
