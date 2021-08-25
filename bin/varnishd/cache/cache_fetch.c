@@ -153,7 +153,6 @@ Bereq_Rollback(VRT_CTX)
 	HTTP_Clone(bo->bereq, bo->bereq0);
 	bo->vfp_filter_list = NULL;
 	bo->err_reason = NULL;
-	WS_Rollback(bo->bereq->ws, bo->ws_bo);
 	WS_Rollback(bo->ws, bo->ws_bo);
 }
 

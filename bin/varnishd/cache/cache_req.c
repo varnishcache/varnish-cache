@@ -261,10 +261,6 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 
 	if (WS_Overflowed(req->ws))
 		wrk->stats->ws_client_overflow++;
-
-	/* no snapshot for h2 stream 0 */
-	if (req->ws_req)
-		WS_Rollback(req->ws, req->ws_req);
 }
 
 /*----------------------------------------------------------------------

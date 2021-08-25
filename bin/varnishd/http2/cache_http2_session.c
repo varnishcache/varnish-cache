@@ -368,7 +368,6 @@ h2_new_session(struct worker *wrk, void *arg)
 	}
 	assert(HTC_S_COMPLETE == H2_prism_complete(h2->htc));
 	HTC_RxPipeline(h2->htc, h2->htc->rxbuf_b + sizeof(H2_prism));
-	WS_Rollback(h2->ws, 0);
 	HTC_RxInit(h2->htc, h2->ws);
 	AN(WS_Reservation(h2->ws));
 	VSLb(h2->vsl, SLT_Debug, "H2: Got pu PRISM");
@@ -390,7 +389,6 @@ h2_new_session(struct worker *wrk, void *arg)
 	h2->cond = &wrk->cond;
 
 	while (h2_rxframe(wrk, h2)) {
-		WS_Rollback(h2->ws, 0);
 		HTC_RxInit(h2->htc, h2->ws);
 		if (WS_Overflowed(h2->ws)) {
 			VSLb(h2->vsl, SLT_Debug, "H2: Empty Rx Workspace");
