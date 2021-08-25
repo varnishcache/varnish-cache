@@ -715,7 +715,7 @@ mch_cli_server_start(struct cli *cli, const char * const *av, void *priv)
 			mgt_launch_child(cli);
 		} else {
 			VCLI_SetResult(cli, CLIS_CANT);
-			VCLI_Out(cli, "No VCL available");
+			VCLI_Out(cli, "No (warm) VCL available");
 		}
 	} else {
 		VCLI_SetResult(cli, CLIS_CANT);

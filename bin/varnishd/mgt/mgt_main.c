@@ -910,7 +910,7 @@ main(int argc, char * const *argv)
 	assert(I_fd == -1);
 
 	if (!d_flag && !mgt_has_vcl() && !novcl)
-		MGT_Complain(C_ERR, "No VCL loaded yet");
+		MGT_Complain(C_ERR, "No (warm) VCL loaded yet");
 
 	if (mgt_has_vcl() && ! d_flag)
 		u = MCH_Start_Child();

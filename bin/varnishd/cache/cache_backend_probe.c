@@ -437,6 +437,9 @@ vbp_task(struct worker *wrk, void *priv)
 	AN(vt->req);
 	assert(vt->req_len > 0);
 
+	if (DO_DEBUG(DBG_VCLREFRESH))
+		VCL_Refresh(&wrk->wpriv->vcl);
+
 	vbp_start_poke(vt);
 	vbp_poke(vt);
 	vbp_has_poked(vt);

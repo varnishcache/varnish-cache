@@ -1,0 +1,55 @@
+varnishtest "The active VCL must always be warm"
+
+server s1 { } -start
+
+shell {
+	cat >${tmpdir}/f1_good <<-EOF
+
+	vcl 4.1;
+	backend default none;
+
+	EOF
+}
+
+shell {
+	cat >${tmpdir}/f2_bad <<-EOF
+
+	vcl 4.1;
+	import debug;
+	backend default none;
+
+	probe p1 {
+		.interval = 1s;
+	}
+
+	sub vcl_init {
+		new d1 = debug.dyn("${s1_addr}", "${s1_port}", probe = p1);
+	}
+
+	EOF
+}
+
+shell {
+	cat >${tmpdir}/f3_ugly <<-EOF
+
+	vcl 4.1;
+	import debug;
+	backend default none;
+
+	EOF
+}
+
+varnish v1 -cliok "param.set debug +vclrefresh"
+varnish v1 -clierr 300 "start"
+
+varnish v1 -cliok "vcl.load vcl1 ${tmpdir}/f1_good cold"
+varnish v1 -clierr 300 "start"
+
+varnish v1 -cliok "vcl.load vcl2 ${tmpdir}/f2_bad warm"
+varnish v1 -cliok "start" -cliok "stop"
+
+varnish v1 -cliok "vcl.load debug_warm ${tmpdir}/f3_ugly warm"
+varnish v1 -clierr 300 "start"
+
+varnish v1 -cliok "vcl.discard debug_warm"
+varnish v1 -cliok "start" -cliok "stop"

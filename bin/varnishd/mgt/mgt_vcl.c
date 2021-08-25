@@ -285,7 +285,7 @@ int
 mgt_has_vcl(void)
 {
 
-	return (!VTAILQ_EMPTY(&vclhead));
+	return (!VTAILQ_EMPTY(&vclhead) && active_vcl != NULL);
 }
 
 /*
@@ -458,7 +458,7 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 	AZ(C_flag);
 	vp->fname = lib;
 
-	if (active_vcl == NULL)
+	if (active_vcl == NULL && vp->warm)
 		active_vcl = vp;
 
 	if ((cli->result == CLIS_OK || cli->result == CLIS_TRUNCATED) &&

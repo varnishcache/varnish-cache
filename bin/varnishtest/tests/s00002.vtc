@@ -43,7 +43,7 @@ varnish v1 -vcl {
 		.port = "${s1_port}";
 		.probe = {
 			.url = "/";
-			.timeout = 30ms;
+			.timeout = 1s;
 			.interval = 1s;
 			.window = 2;
 			.threshold = 1;

@@ -442,6 +442,9 @@ event_load(VRT_CTX, struct vmod_priv *priv)
 	if (cache_param->nuke_limit == 42) {
 		VSB_cat(ctx->msg, "nuke_limit is not the answer.");
 		return (-1);
+	} else if (!strcmp(VCL_Name(ctx->vcl), "debug_load")) {
+		VSB_printf(ctx->msg, "Failing VCL load.");
+		return (-1);
 	}
 
 	ALLOC_OBJ(priv_vcl, PRIV_VCL_MAGIC);
@@ -530,6 +533,9 @@ event_warm(VRT_CTX, const struct vmod_priv *priv)
 	AN(ctx->msg);
 	if (cache_param->max_esi_depth == 42) {
 		VSB_cat(ctx->msg, "max_esi_depth is not the answer.");
+		return (-1);
+	} else if (!strcmp(VCL_Name(ctx->vcl), "debug_warm")) {
+		VSB_printf(ctx->msg, "Failing VCL warmup.");
 		return (-1);
 	}
 
