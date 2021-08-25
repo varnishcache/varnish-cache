@@ -35,6 +35,12 @@ release process.
 Varnish Cache 7.x.x (2021-09-15)
 ================================
 
+* The minimum `session_workspace` is now 384 bytes
+
+* The default workdir (the default `-n` argument) is now `/var/run`
+  instead of `${prefix}/var`.
+  (Packages usually configure this to match local customs.)
+
 * 'Scientific Notation' numbers like 6.62607004e-34 are no longer
   supported in VCL.  (The preparation of RFC8941 made it clear that
   there are neither reason nor any need to support scientific notation
