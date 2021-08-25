@@ -1,0 +1,53 @@
+varnishtest "Session pipelining exceeding available workspace"
+
+server s1 {
+	loop 2 {
+		rxreq
+		expect req.bodylen == 32769
+		txresp
+	}
+
+	rxreq
+	expect req.bodylen == 32768
+	txresp
+} -start
+
+varnish v1 -cliok "param.set workspace_client 24k"
+varnish v1 -cliok "param.set http_req_size 1k"
+varnish v1 -cliok "param.set http_resp_size 1k"
+varnish v1 -cliok "param.set vsl_buffer 1k"
+varnish v1 -vcl+backend { } -start
+
+client c1 {
+	# Multi-line strings aren't escaped, the send argument
+	# below contains actual carriage returns. The extra body
+	# byte on top of the 32kB is a line feed.
+	send {
+POST / HTTP/1.1
+host: ${localhost}
+content-length: 32769
+
+${string,repeat,1024,abcdefghijklmnopqrstuvwxyz012345}
+POST / HTTP/1.1
+host: ${localhost}
+content-length: 32769
+
+${string,repeat,1024,abcdefghijklmnopqrstuvwxyz012345}
+}
+
+	loop 2 {
+		rxresp
+		expect resp.status == 200
+	}
+} -run
+
+varnish v1 -cliok "param.set feature +http2"
+
+client c2 {
+	stream 1 {
+		txreq -method POST -hdr content-length 32768 -nostrend
+		txdata -datalen 16384 -nostrend
+		txdata -datalen 16384
+		rxresp
+	} -run
+} -run
