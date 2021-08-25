@@ -329,7 +329,9 @@ cnt_synth(struct worker *wrk, struct req *req)
 
 	if (wrk->handling == VCL_RET_FAIL) {
 		VSB_destroy(&synth_body);
-		req->doclose = SC_VCL_FAILURE;
+		(void)VRB_Ignore(req);
+		(void)req->transport->minimal_response(req, 500);
+		req->doclose = SC_VCL_FAILURE; // XXX: Not necessary any more ?
 		VSLb_ts_req(req, "Resp", W_TIM_real(wrk));
 		http_Teardown(req->resp);
 		return (REQ_FSM_DONE);

@@ -35,6 +35,8 @@ client c1 {
 	expect resp.http.bar == "bar"
 
 	txreq -url "/empty"
+	rxresp
+	expect resp.status == 500
 	expect_close
 } -run
 

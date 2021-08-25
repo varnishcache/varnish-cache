@@ -154,6 +154,8 @@ client c1 {
 
 client c1 {
 	txreq -url synth
+	rxresp
+	expect resp.status == 500
 	expect_close
 } -run
 

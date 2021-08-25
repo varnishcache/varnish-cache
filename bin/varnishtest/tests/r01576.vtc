@@ -47,6 +47,8 @@ logexpect l1 -v v1 {
 # This should fail with default params and JIT/no-JIT
 client c1 {
 	txreq -url "/${string,repeat,8192,AB}"
+	rxresp
+	expect resp.status == 500
 	expect_close
 } -run
 

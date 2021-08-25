@@ -150,6 +150,8 @@ logexpect l1007 -v v1 -g raw {
 
 client c1 {
 	txreq -hdr "foo: synth"
+	rxresp
+	expect resp.status == 500
 	expect_close
 } -run
 
