@@ -707,10 +707,6 @@ vcl_load(struct cli *cli,
 
 	VCLI_Out(cli, "Loaded \"%s\" as \"%s\"", fn , name);
 	VTAILQ_INSERT_TAIL(&vcl_head, vcl, list);
-	Lck_Lock(&vcl_mtx);
-	if (vcl_active == NULL)
-		vcl_active = vcl;
-	Lck_Unlock(&vcl_mtx);
 	VSC_C_main->n_vcl++;
 	VSC_C_main->n_vcl_avail++;
 }
