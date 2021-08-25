@@ -216,8 +216,10 @@ logexpect l1 -wait
 # This value is fragile, ideally we would want something like
 # vtc.alloc(-x), yet there is no vcl code being run before we parse
 # proxy headers
+#
+# 20210825: Minimum possible seems to be 364, but param.min is 384 now.
 
-varnish v1 -cliok "param.set workspace_session 402"
+varnish v1 -cliok "param.set workspace_session 384"
 
 delay 1
 

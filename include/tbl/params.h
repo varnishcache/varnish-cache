@@ -1110,7 +1110,7 @@ PARAM_SIMPLE(
 PARAM_SIMPLE(
 	/* name */	workspace_session,
 	/* type */	bytes_u,
-	/* min */	"0.25k",
+	/* min */	"384b",
 	/* max */	NULL,
 	/* def */	"0.75k",
 	/* units */	"bytes",
