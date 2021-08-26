@@ -113,9 +113,7 @@ cscope.*out
 /bin/varnishd/vhp_decode_test
 /bin/varnishd/vhp_table_test
 /bin/varnishtest/tests/*.log-t
-/include/_vrt.c
-/include/_vrt_test
-/include/vrt_test
+/include/vrt_test*
 /include/vbm_test
 /lib/libvarnish/vav_test
 /lib/libvarnish/vbh_test
