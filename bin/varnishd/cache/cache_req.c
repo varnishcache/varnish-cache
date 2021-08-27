@@ -209,6 +209,7 @@ Req_Rollback(VRT_CTX)
 	req->filter_list = NULL;
 	if (WS_Overflowed(req->ws))
 		req->wrk->stats->ws_client_overflow++;
+	AN(req->ws_req);
 	WS_Rollback(req->ws, req->ws_req);
 }
 
