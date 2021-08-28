@@ -200,7 +200,7 @@ vry_cmp(const uint8_t *v1, const uint8_t *v2)
 		/* Different header */
 		retval = 1;
 	} else if (cache_param->http_gzip_support &&
-	    !strcasecmp(H_Accept_Encoding, (const char*) v1 + 2)) {
+	    http_hdr_eq(H_Accept_Encoding, (const char*) v1 + 2)) {
 		/*
 		 * If we do gzip processing, we do not vary on Accept-Encoding,
 		 * because we want everybody to get the gzip'ed object, and

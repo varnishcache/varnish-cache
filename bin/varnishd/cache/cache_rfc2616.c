@@ -265,6 +265,7 @@ rfc2616_strong_compare(const char *p, const char *e)
 	if ((p[0] == 'W' && p[1] == '/') ||
 	    (e[0] == 'W' && e[1] == '/'))
 		return (0);
+	/* XXX: should we also have http_etag_cmp() ? */
 	return (strcmp(p, e) == 0);
 }
 
@@ -276,6 +277,7 @@ rfc2616_weak_compare(const char *p, const char *e)
 		p += 2;
 	if (e[0] == 'W' && e[1] == '/')
 		e += 2;
+	/* XXX: should we also have http_etag_cmp() ? */
 	return (strcmp(p, e) == 0);
 }
 

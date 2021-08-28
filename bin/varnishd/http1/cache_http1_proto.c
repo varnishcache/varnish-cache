@@ -315,7 +315,7 @@ http1_body_status(const struct http *hp, struct http_conn *htc, int request)
 	if (cl == -2)
 		return (BS_ERROR);
 	if (http_GetHdr(hp, H_Transfer_Encoding, &b)) {
-		if (strcasecmp(b, "chunked"))
+		if (!http_coding_eq(b, chunked))
 			return (BS_ERROR);
 		if (cl != -1) {
 			/*
@@ -375,10 +375,10 @@ HTTP1_DissectRequest(struct http_conn *htc, struct http *hp)
 		return (400);
 
 	/* RFC2616, section 5.2, point 1 */
-	if (!strncasecmp(hp->hd[HTTP_HDR_URL].b, "http://", 7))
+	if (http_scheme_at(hp->hd[HTTP_HDR_URL].b, http))
 		b = hp->hd[HTTP_HDR_URL].b + 7;
 	else if (FEATURE(FEATURE_HTTPS_SCHEME) &&
-	    !strncasecmp(hp->hd[HTTP_HDR_URL].b, "https://", 8))
+	    http_scheme_at(hp->hd[HTTP_HDR_URL].b, https))
 		b = hp->hd[HTTP_HDR_URL].b + 8;
 	if (b) {
 		e = strchr(b, '/');
@@ -399,13 +399,13 @@ HTTP1_DissectRequest(struct http_conn *htc, struct http *hp)
 	if (htc->body_status == BS_EOF) {
 		assert(hp->protover == 10);
 		/* RFC1945 8.3 p32 and D.1.1 p58 */
-		if (!strcasecmp(p, "post") || !strcasecmp(p, "put"))
+		if (http_method_eq(p, POST) || http_method_eq(p, PUT))
 			return (400);
 		htc->body_status = BS_NONE;
 	}
 
 	/* HEAD with a body is a hard error */
-	if (htc->body_status != BS_NONE && !strcasecmp(p, "head"))
+	if (htc->body_status != BS_NONE && http_method_eq(p, HEAD))
 		return (400);
 
 	return (retval);

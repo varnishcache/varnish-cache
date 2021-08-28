@@ -153,7 +153,7 @@ http_hdr_flags(const char *b, const char *e)
 	retval = &http_hdrflg[u];
 	if (retval->hdr == NULL)
 		return(NULL);
-	if (strncasecmp(retval->hdr + 1, b, e - b))
+	if (!http_hdr_at(retval->hdr + 1, b, e - b))
 		return(NULL);
 	return(retval);
 }
@@ -433,7 +433,7 @@ http_IsHdr(const txt *hh, hdr_t hdr)
 	assert(l == strlen(hdr + 1));
 	assert(hdr[l] == ':');
 	hdr++;
-	return (!strncasecmp(hdr, hh->b, l));
+	return (http_hdr_at(hdr, hh->b, l));
 }
 
 /*--------------------------------------------------------------------*/
@@ -449,7 +449,7 @@ http_findhdr(const struct http *hp, unsigned l, const char *hdr)
 			continue;
 		if (hp->hd[u].b[l] != ':')
 			continue;
-		if (strncasecmp(hdr, hp->hd[u].b, l))
+		if (!http_hdr_at(hdr, hp->hd[u].b, l))
 			continue;
 		return (u);
 	}
@@ -654,7 +654,7 @@ http_split(const char **src, const char *stop, const char *sep,
  * Comparison rule for tokens:
  *	if target string starts with '"', we use memcmp() and expect closing
  *	double quote as well
- *	otherwise we use strncasecmp()
+ *	otherwise we use http_tok_at()
  *
  * On match we increment *bp past the token name.
  */
@@ -676,7 +676,7 @@ http_istoken(const char **bp, const char *e, const char *token)
 		*bp += fl + 2;
 		return (1);
 	}
-	if (b + fl <= e && !strncasecmp(b, token, fl) &&
+	if (b + fl <= e && http_tok_at(b, token, fl) &&
 	    (b + fl == e || !vct_istchar(b[fl]))) {
 		*bp += fl;
 		return (1);
@@ -876,9 +876,9 @@ http_DoConnection(struct http *hp, enum sess_close sc_close)
 	AN(h);
 	while (http_split(&h, NULL, ",", &b, &e)) {
 		u = pdiff(b, e);
-		if (u == 5 && !strncasecmp(b, "close", u))
+		if (u == 5 && http_hdr_at(b, "close", u))
 			retval = sc_close;
-		if (u == 10 && !strncasecmp(b, "keep-alive", u))
+		if (u == 10 && http_hdr_at(b, "keep-alive", u))
 			retval = SC_NULL;
 
 		/* Refuse removal of well-known-headers if they would pass. */
@@ -892,7 +892,7 @@ http_DoConnection(struct http *hp, enum sess_close sc_close)
 				continue;
 			if (hp->hd[v].b[u] != ':')
 				continue;
-			if (strncasecmp(b, hp->hd[v].b, u))
+			if (!http_hdr_at(b, hp->hd[v].b, u))
 				continue;
 			hp->hdf[v] |= HDF_FILTER;
 		}
@@ -910,7 +910,7 @@ http_HdrIs(const struct http *hp, hdr_t hdr, const char *val)
 	if (!http_GetHdr(hp, hdr, &p))
 		return (0);
 	AN(p);
-	if (!strcasecmp(p, val))
+	if (http_tok_eq(p, val))
 		return (1);
 	return (0);
 }
@@ -989,10 +989,14 @@ http_ForceField(struct http *to, unsigned n, const char *t)
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	assert(n < HTTP_HDR_FIRST);
+	assert(n == HTTP_HDR_METHOD || n == HTTP_HDR_PROTO);
 	AN(t);
+
+	/* NB: method names and protocol versions are case-sensitive. */
 	if (to->hd[n].b == NULL || strcmp(to->hd[n].b, t)) {
 		i = (HTTP_HDR_UNSET - HTTP_HDR_METHOD);
 		i += to->logtag;
+		/* XXX: this is a dead branch */
 		if (n >= HTTP_HDR_FIRST)
 			VSLbt(to->vsl, (enum VSL_tag_e)i, to->hd[n]);
 		http_SetH(to, n, t);
@@ -1204,6 +1208,7 @@ HTTP_GetHdrPack(struct worker *wrk, struct objcore *oc, hdr_t hdr)
 		AN(ptr);
 		ptr += 4;	/* Skip nhd and status */
 
+		/* XXX: should we also have h2_hdr_eq() ? */
 		if (!strcmp(hdr, ":proto:"))
 			return (ptr);
 		ptr = strchr(ptr, '\0') + 1;
@@ -1216,7 +1221,7 @@ HTTP_GetHdrPack(struct worker *wrk, struct objcore *oc, hdr_t hdr)
 	}
 
 	HTTP_FOREACH_PACK(wrk, oc, ptr) {
-		if (!strncasecmp(ptr, hdr, l)) {
+		if (http_hdr_at(ptr, hdr, l)) {
 			ptr += l;
 			while (vct_islws(*ptr))
 				ptr++;

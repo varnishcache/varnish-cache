@@ -53,7 +53,7 @@ sub vcl_req_host {
 	}
 	if (!req.http.host &&
 	    req.esi_level == 0 &&
-	    req.proto ~ "^(?i)HTTP/1.1") {
+	    req.proto == "HTTP/1.1") {
 		# In HTTP/1.1, Host is required.
 		return (synth(400));
 	}

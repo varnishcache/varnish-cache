@@ -1201,7 +1201,7 @@ cmd_http_txreq(CMD_ARGS)
 		} else if (!strcmp(*av, "-method") ||
 		    !strcmp(*av, "-req")) {
 			req = av[1];
-			hp->head_method = !strcasecmp(av[1], "HEAD") ;
+			hp->head_method = !strcmp(av[1], "HEAD") ;
 			av++;
 		} else if (!hp->sfd && !strcmp(*av, "-up")) {
 			up = av[1];
@@ -1216,7 +1216,7 @@ cmd_http_txreq(CMD_ARGS)
 				"Upgrade: h2c%s"
 				"HTTP2-Settings: %s%s", nl, nl, up, nl);
 
-	nohost = strcasecmp(proto, "HTTP/1.1") != 0;
+	nohost = strcmp(proto, "HTTP/1.1") != 0;
 	av = http_tx_parse_args(av, vl, hp, NULL, nohost);
 	if (*av != NULL)
 		vtc_fatal(hp->vl, "Unknown http txreq spec: %s\n", *av);

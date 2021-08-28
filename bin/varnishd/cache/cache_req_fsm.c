@@ -50,6 +50,7 @@
 #include "storage/storage.h"
 #include "common/heritage.h"
 #include "vcl.h"
+#include "vct.h"
 #include "vsha256.h"
 #include "vtim.h"
 
@@ -93,7 +94,7 @@ cnt_transport(struct worker *wrk, struct req *req)
 	AN(req->req_body_status);
 
 	if (http_GetHdr(req->http, H_Expect, &p)) {
-		if (strcasecmp(p, "100-continue")) {
+		if (!http_expect_eq(p, 100-continue)) {
 			req->doclose = SC_RX_JUNK;
 			(void)req->transport->minimal_response(req, 417);
 			wrk->stats->client_req_417++;
@@ -423,7 +424,7 @@ cnt_transmit(struct worker *wrk, struct req *req)
 	clval = http_GetContentLength(req->resp);
 	/* RFC 7230, 3.3.3 */
 	status = http_GetStatus(req->resp);
-	head = !strcmp(req->http0->hd[HTTP_HDR_METHOD].b, "HEAD");
+	head = http_method_eq(req->http0->hd[HTTP_HDR_METHOD].b, HEAD);
 
 	if (boc != NULL || (req->objcore->flags & (OC_F_FAILED)))
 		req->resp_len = clval;

@@ -40,6 +40,7 @@
 #include "cache_filter.h"
 #include "cache_vgz.h"
 
+#include "vct.h"
 #include "vtim.h"
 #include "cache_esi.h"
 #include "vend.h"
@@ -860,7 +861,7 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 		return;
 
 	if (http_GetHdr(req->resp, H_Content_Encoding, &p))
-		i = !strcasecmp(p, "gzip");
+		i = http_coding_eq(p, gzip);
 	if (i)
 		i = ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED);
 
