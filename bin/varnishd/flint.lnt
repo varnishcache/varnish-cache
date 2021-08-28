@@ -63,6 +63,12 @@
 -esym(714, Vmod_*_Data)
 -esym(765, Vmod_*_Data)
 
+-esym(755, PAN_dump_once)		// global macro not referenced
+-esym(755, PAN_dump_once_oneline)	// global macro not referenced
+-esym(714, WS_Dump)	// Info 714: sym not referenced
+-esym(759, WS_Dump)	// Info 759: header declaration could be moved to module
+-esym(765, WS_Dump)	// Info 765: external could be static
+
 
 //-sem (pthread_mutex_lock, thread_lock)
 -sem (pthread_mutex_trylock, thread_lock)

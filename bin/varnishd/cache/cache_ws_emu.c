@@ -31,6 +31,8 @@
 
 #include "config.h"
 
+#ifdef ENABLE_WORKSPACE_EMULATOR
+
 #if HAVE_SANITIZER_ASAN_INTERFACE_H
 #  include <sanitizer/asan_interface.h>
 #endif
@@ -722,3 +724,5 @@ WS_Panic(struct vsb *vsb, const struct ws *ws)
 	VSB_indent(vsb, -2);
 	VSB_cat(vsb, "},\n");
 }
+
+#endif /* ENABLE_WORKSPACE_EMULATOR */
