@@ -303,10 +303,15 @@ int
 main(int argc, char **argv)
 {
 	int i;
+	const char *p;
+
 	(void)argc;
 	(void)argv;
 
 	AN(setlocale(LC_ALL, "C"));
+
+	p = "";
+	assert(vct_iscrlf(p, p) == 0);
 
 	for (i = 0x20; i < 0x7f; i++)
 		assert(vct_lowertab[i] == tolower(i));
@@ -328,6 +333,10 @@ main(int argc, char **argv)
 	assert(vct_caselencmp("AZaz", "azAZ", 5) == 0);
 	assert(vct_caselencmp("AZaz ", "azAY", 5) > 0);
 	assert(vct_caselencmp("AZay ", "azAZ", 5) < 0);
+
+	assert(vct_caselencmp("AZaz", "azAZ1", 5) < 0);
+	assert(vct_caselencmp("AZaz1", "azAZ", 5) > 0);
+
 
 	assert(vct_caselencmp("A", "B", 0) == 0);
 
