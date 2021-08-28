@@ -8,6 +8,10 @@ server s1 {
 	txresp
 } -start
 
+varnish v1 
+varnish v1 -cliok vcl.list
+varnish v1 -clijson "vcl.list -j"
+
 varnish v1 -vcl+backend {}
 varnish v1 -vcl+backend {}
 

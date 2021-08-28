@@ -870,8 +870,8 @@ mcf_vcl_list_json(struct cli *cli, const char * const *av, void *priv)
 		free(p);
 	} else {
 		VCLI_JSON_begin(cli, 2, av);
-		VCLI_Out(cli, ",\n");
 		VTAILQ_FOREACH(vp, &vclhead, list) {
+			VCLI_Out(cli, ",\n");
 			VCLI_Out(cli, "{\n");
 			VSB_indent(cli->sb, 2);
 			VCLI_Out(cli, "\"status\": \"%s\",\n",
@@ -899,8 +899,6 @@ mcf_vcl_list_json(struct cli *cli, const char * const *av, void *priv)
 			}
 			VSB_indent(cli->sb, -2);
 			VCLI_Out(cli, "\n}");
-			if (VTAILQ_NEXT(vp, list) != NULL)
-				VCLI_Out(cli, ",\n");
 		}
 		VCLI_JSON_end(cli);
 	}
