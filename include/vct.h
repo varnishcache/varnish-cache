@@ -54,6 +54,7 @@
 #define VCT_LOWER		(1<<14)
 
 extern const uint16_t vct_typtab[256];
+extern const uint8_t vct_lowertab[256];
 
 const char *VCT_invalid_name(const char *b, const char *e);
 
@@ -105,4 +106,44 @@ static inline char*
 vct_skipcrlf(char* p, const char* end)
 {
 	return (p + vct_iscrlf(p, end));
+}
+
+static inline int
+vct_casecmp(const void *a, const void *b)
+{
+	const uint8_t *aa = a;
+	const uint8_t *bb = b;
+
+	while (*aa && vct_lowertab[*aa] == vct_lowertab[*bb]) {
+		aa++;
+		bb++;
+	}
+	if (!*aa && !*bb)
+		return (0);
+	if (!*aa)
+		return (-1);
+	if (!*bb)
+		return (1);
+	return ((int)vct_lowertab[*aa] - (int)vct_lowertab[*bb]);
+}
+
+static inline int
+vct_caselencmp(const void *a, const void *b, ssize_t sz)
+{
+	const uint8_t *aa = a;
+	const uint8_t *bb = b;
+
+	assert(sz >= 0);
+	while (sz > 0 && *aa && vct_lowertab[*aa] == vct_lowertab[*bb]) {
+		aa++;
+		bb++;
+		sz--;
+	}
+	if (!sz || (!*aa && !*bb))
+		return (0);
+	if (!*aa)
+		return (-1);
+	if (!*bb)
+		return (1);
+	return ((int)vct_lowertab[*aa] - (int)vct_lowertab[*bb]);
 }

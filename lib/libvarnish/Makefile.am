@@ -46,7 +46,7 @@ libvarnish_la_SOURCES = \
 
 libvarnish_la_LIBADD = @PCRE2_LIBS@
 
-TESTS = vav_test vjsn_test vnum_c_test vbh_test vsb_test
+TESTS = vav_test vbh_test vct_test vjsn_test vnum_c_test vsb_test
 
 noinst_PROGRAMS = ${TESTS}
 
@@ -57,6 +57,10 @@ vav_test_LDADD = $(AM_LDFLAGS) libvarnish.la
 vbh_test_SOURCES	= vbh.c
 vbh_test_CFLAGS = $(AM_CFLAGS) -DTEST_DRIVER
 vbh_test_LDADD = $(AM_LDFLAGS) libvarnish.la
+
+vct_test_SOURCES	= vct.c
+vct_test_CFLAGS = $(AM_CFLAGS) -DTEST_DRIVER
+vct_test_LDADD = $(AM_LDFLAGS) libvarnish.la
 
 vnum_c_test_SOURCES = vnum.c
 vnum_c_test_CFLAGS = $(AM_CFLAGS) -DNUM_C_TEST
