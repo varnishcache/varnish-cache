@@ -51,10 +51,12 @@ h2_panic_settings(struct vsb *vsb, const struct h2_settings *s)
 	int cont = 0;
 
 #define H2_SETTING(U,l,...)			\
-	if (cont)				\
-		VSB_printf(vsb, ", ");		\
-	cont = 1;				\
-	VSB_printf(vsb, "0x%x", s->l);
+	do {					\
+		if (cont)			\
+			VSB_printf(vsb, ", ");	\
+		cont = 1;			\
+		VSB_printf(vsb, "0x%x", s->l);	\
+	} while (0);
 #include "tbl/h2_settings.h"
 #undef H2_SETTING
 }
