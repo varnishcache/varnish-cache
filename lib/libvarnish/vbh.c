@@ -81,7 +81,7 @@
 
 struct vbh {
 	unsigned		magic;
-#define VBH_MAGIC		0xf581581aU	/* from /dev/random */
+#define VBH_MAGIC		0xf581581a	/* from /dev/random */
 	void			*priv;
 	vbh_cmp_t		*cmp;
 	vbh_update_t		*update;
