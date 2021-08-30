@@ -323,7 +323,7 @@ VPX_tlv(const struct req *req, int typ, void **dst, int *len)
 }
 
 static int
-vpx_proto2(const struct worker *wrk, struct req *req)
+vpx_proto2(const struct worker *wrk, const struct req *req)
 {
 	uintptr_t *up;
 	uint16_t tlv_len;
