@@ -17,6 +17,8 @@ server s2 {
 	txresp -status 304 -nolen -hdr {Etag: "abc"} -hdr "Content-Length: 100"
 } -start
 
+varnish v1 -cliok "param.set vsl_mask +ExpKill"
+
 varnish v1 -vcl+backend {
 	import directors;
 	import vtc;
@@ -36,6 +38,10 @@ varnish v1 -vcl+backend {
 	}
 } -start
 
+logexpect l1 -v v1 -g raw -q "ExpKill ~ EXP_expire" {
+	expect 0 0 ExpKill
+} -start
+
 client c1 {
 	txreq -hdr "backend: s1"
 	rxresphdrs
@@ -45,8 +51,7 @@ client c1 {
 
 barrier b1 sync
 
-# ensure stale_oc
-delay 0.01
+logexpect l1 -wait
 
 client c2 {
 	txreq -hdr "backend: s2"
