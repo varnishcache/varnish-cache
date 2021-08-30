@@ -32,6 +32,8 @@
 
 #include "config.h"
 
+#include <sys/types.h>
+
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
