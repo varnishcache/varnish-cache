@@ -2,6 +2,8 @@ ACLOCAL_AMFLAGS = -I m4 -I .
 
 SUBDIRS = include lib bin vmod etc doc man
 
+TESTS = tools/magic_check.sh
+
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = varnishapi.pc
 
@@ -16,6 +18,7 @@ CLEANFILES = \
 	witness.svg
 
 EXTRA_DIST = \
+	$(TESTS) \
 	README.rst \
 	README.Packaging \
 	LICENSE \
