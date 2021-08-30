@@ -244,7 +244,7 @@ VRE_match(const vre_t *code, const char *subject, size_t length,
 }
 
 int
-VRE_capture(vre_t *code, const char *subject, size_t length, int options,
+VRE_capture(const vre_t *code, const char *subject, size_t length, int options,
     txt *groups, size_t count, const volatile struct vre_limits *lim)
 {
 	int i;
