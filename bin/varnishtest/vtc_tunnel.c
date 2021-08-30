@@ -121,7 +121,7 @@ struct tunnel_lane {
 
 struct tunnel {
 	unsigned		magic;
-#define TUNNEL_MAGIC		0x55286619
+#define TUNNEL_MAGIC		0x7f59913d
 	char			*name;
 	struct vtclog		*vl;
 	VTAILQ_ENTRY(tunnel)	list;
