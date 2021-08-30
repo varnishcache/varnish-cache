@@ -51,7 +51,7 @@ objallocwithnuke(struct worker *, const struct stevedore *, ssize_t size,
     int flags);
 
 static struct storage *
-sml_stv_alloc(const struct stevedore *stv, size_t size, int flags)
+sml_stv_alloc(const struct stevedore *stv, ssize_t size, int flags)
 {
 	struct storage *st;
 
