@@ -465,6 +465,8 @@ const struct stevedore smu_stevedore = {
 	.methods	=	&SML_methods,
 	.var_free_space =	smu_free_space,
 	.var_used_space =	smu_used_space,
+	.allocbuf	=	SML_AllocBuf,
+	.freebuf	=	SML_FreeBuf,
 };
 
 #endif /* HAVE_UMEM_H */
