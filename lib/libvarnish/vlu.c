@@ -45,7 +45,7 @@
 
 struct vlu {
 	unsigned	magic;
-#define LINEUP_MAGIC	0x8286661
+#define LINEUP_MAGIC	0x08286661
 	char		*buf;
 	unsigned	bufl;
 	unsigned	bufp;
