@@ -203,7 +203,7 @@ VPI_acl_table(VRT_CTX, VCL_IP p, unsigned n, unsigned m, const uint8_t *tbl,
 		sz /= m;
 		if (str != NULL)
 			VPI_acl_log(ctx, str[sz]);
-		return *ptr;
+		return (*ptr);
 	}
 	if (str != NULL)
 		VPI_acl_log(ctx, fin);

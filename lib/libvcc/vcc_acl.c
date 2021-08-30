@@ -527,7 +527,7 @@ vcc_acl_emit_tables(const struct vcc *tl, unsigned n, const char *name)
 		}
 		Fh(tl, 0, "};\n");
 	}
-	return  (rv);
+	return (rv);
 }
 
 /*********************************************************************

@@ -102,7 +102,7 @@ vbit_init(void *p, size_t sz)
 	struct vbitmap *vb;
 
 	if (sz < sizeof(*vb))
-		return NULL;
+		return (NULL);
 
 	memset(p, 0, sz);
 	vb = p;

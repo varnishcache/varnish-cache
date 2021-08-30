@@ -75,7 +75,7 @@ h2_framename(enum h2frame h2f)
 {
 
 	switch (h2f) {
-#define H2_FRAME(l,u,t,f,...)	case H2F_##u: return #u;
+#define H2_FRAME(l,u,t,f,...)	case H2F_##u: return (#u);
 #include "tbl/h2_frames.h"
 	default:
 		return (NULL);
