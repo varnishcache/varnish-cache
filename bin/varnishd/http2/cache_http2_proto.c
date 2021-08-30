@@ -761,7 +761,8 @@ static h2_error v_matchproto_(h2_rxframe_f)
 h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
 	char buf[4];
-	uint64_t l, l2, head;
+	ssize_t l;
+	uint64_t l2, head;
 	const uint8_t *src;
 	unsigned len;
 
@@ -999,7 +1000,8 @@ h2_vfp_body(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr, ssize_t *lp)
 	struct h2_req *r2;
 	struct h2_sess *h2;
 	enum vfp_status retval;
-	uint64_t l, l2, tail;
+	ssize_t l, l2;
+	uint64_t tail;
 	uint8_t *dst;
 	char buf[4];
 	int i;
