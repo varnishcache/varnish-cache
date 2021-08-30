@@ -172,7 +172,9 @@ Req_Release(struct req *req)
 	AZ(req->vcl);
 	if (req->vsl->wid)
 		VSL_End(req->vsl);
+#ifdef ENABLE_WORKSPACE_EMULATOR
 	WS_Rollback(req->ws, 0);
+#endif
 	TAKE_OBJ_NOTNULL(sp, &req->sp, SESS_MAGIC);
 	pp = sp->pool;
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);

@@ -181,7 +181,9 @@ VBO_ReleaseBusyObj(struct worker *wrk, struct busyobj **pbo)
 	}
 
 	VCL_Rel(&bo->vcl);
+#ifdef ENABLE_WORKSPACE_EMULATOR
 	WS_Rollback(bo->ws, 0);
+#endif
 
 	memset(&bo->retries, 0,
 	    sizeof *bo - offsetof(struct busyobj, retries));

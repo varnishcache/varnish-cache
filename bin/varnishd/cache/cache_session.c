@@ -646,7 +646,9 @@ SES_Rel(struct sess *sp)
 	if (i)
 		return;
 	Lck_Delete(&sp->mtx);
+#ifdef ENABLE_WORKSPACE_EMULATOR
 	WS_Rollback(sp->ws, 0);
+#endif
 	MPL_Free(sp->pool->mpl_sess, sp);
 }
 

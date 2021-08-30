@@ -1,0 +1,46 @@
+varnishtest "SES_Reserve_proto_priv() overflow"
+
+feature ipv4
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -arg "-p pool_sess=0,0,0" -proto "PROXY" -vcl+backend {} -start
+
+logexpect l1 -v v1 -g raw {
+	expect 0 1000	Begin		"sess 0 PROXY"
+	expect 0 =	SessOpen
+	expect 0 =	Proxy		"2 217.70.181.33 60822 95.142.168.34 443"
+	expect 0 =	Error		{\Qinsufficient workspace (proto_priv)\E}
+	expect 0 =	SessClose	"RX_JUNK"
+} -start
+
+varnish v1 -cliok "param.set workspace_session 480"
+
+client c1 {
+	# PROXY2 with CRC32C TLV
+	sendhex {
+		0d 0a 0d 0a 00 0d 0a 51 55 49 54 0a
+		21 11 00 65
+		d9 46 b5 21
+		5f 8e a8 22
+		ed 96
+		01 bb
+		03 00 04  95 03 ee 75
+		01 00 02  68 32
+		02 00 0a  68 6f 63 64 65 74 2e 6e 65 74
+		20 00 3d
+		01 00 00 00 00
+		21 00 07  54 4c 53 76 31 2e 33
+		25 00 05  45 43 32 35 36
+		24 00 0a  52 53 41 2d 53 48 41 32 35 36
+		23 00 16  41 45 41 44 2d 41 45 53 31 32 38
+			  2d 47 43 4d 2d 53 48 41 32 35 36
+	}
+	txreq
+	expect_close
+} -run
+
+logexpect l1 -wait
