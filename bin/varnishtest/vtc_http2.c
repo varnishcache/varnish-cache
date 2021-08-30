@@ -2291,7 +2291,7 @@ static void
 cmd_rxmsg(CMD_ARGS)
 {
 	struct stream *s;
-	struct frame *f;
+	struct frame *f = NULL;
 	int end_stream;
 	int rcv = 0;
 
@@ -2303,8 +2303,9 @@ cmd_rxmsg(CMD_ARGS)
 		ONLY_H2_CLIENT(s->hp, av);
 
 	do {
-		f = rxstuff(s);
-		if (!f)
+		replace_frame(&f, rxstuff(s));
+		CHECK_OBJ_ORNULL(f, FRAME_MAGIC);
+		if (f == NULL)
 			return;
 	} while (f->type == TYPE_WINDOW_UPDATE);
 
@@ -2315,6 +2316,7 @@ cmd_rxmsg(CMD_ARGS)
 
 	while (!(f->flags & END_HEADERS)) {
 		replace_frame(&f, rxstuff(s));
+		CHECK_OBJ_ORNULL(f, FRAME_MAGIC);
 		if (f == NULL)
 			return;
 		rcv++;
@@ -2323,6 +2325,7 @@ cmd_rxmsg(CMD_ARGS)
 
 	while (!end_stream) {
 		replace_frame(&f, rxstuff(s));
+		CHECK_OBJ_ORNULL(f, FRAME_MAGIC);
 		if (f == NULL)
 			break;
 		rcv++;
