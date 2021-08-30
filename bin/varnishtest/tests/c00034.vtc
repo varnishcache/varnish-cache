@@ -274,3 +274,23 @@ client c8 {
 	rxresp
 	expect resp.status == 503
 } -run
+
+# range filter without a range header
+
+server s1 {
+	rxreq
+	txresp -bodylen 256
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_deliver {
+		set resp.filters = "range";
+	}
+}
+
+client c1 {
+	txreq -url /5
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 256
+} -run
