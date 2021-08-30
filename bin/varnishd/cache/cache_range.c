@@ -117,7 +117,7 @@ vrg_dorange(struct req *req, void **priv)
 	assert(high >= -1);
 
 	if (low < 0) {
-		if (req->resp_len < 0)
+		if (req->resp_len < 0 || high < 0)
 			return (NULL);		// Allow 200 response
 		assert(high > 0);
 		low = req->resp_len - high;
@@ -228,7 +228,6 @@ vrg_range_init(struct vdp_ctx *vdc, void **priv, struct objcore *oc)
 	(void)oc;
 	req = vdc->req;
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	assert(http_GetHdr(req->http, H_Range, NULL));
 	if (!vrg_ifrange(req))		// rfc7233,l,455,456
 		return (1);
 	err = vrg_dorange(req, priv);
