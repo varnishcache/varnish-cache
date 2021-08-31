@@ -307,7 +307,7 @@ VRG_CheckBo(struct busyobj *bo)
 		}						\
 	} while (0)
 
-	crlen = crhi - crlo + 1;
+	crlen = (crhi - crlo) + 1;
 	RANGE_CHECK(clen, ==, crlen, "content length");
 
 	/* NB: if the client didn't specify a low range the high range
