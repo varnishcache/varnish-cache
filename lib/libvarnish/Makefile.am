@@ -44,7 +44,7 @@ libvarnish_la_SOURCES = \
 	vtim.c \
 	vus.c
 
-libvarnish_la_LIBADD = @PCRE2_LIBS@
+libvarnish_la_LIBADD = @PCRE2_LIBS@ $(LIBM)
 
 TESTS = vav_test vbh_test vct_test vjsn_test vnum_c_test vsb_test
 
@@ -64,7 +64,7 @@ vct_test_LDADD = $(AM_LDFLAGS) libvarnish.la
 
 vnum_c_test_SOURCES = vnum.c
 vnum_c_test_CFLAGS = $(AM_CFLAGS) -DNUM_C_TEST
-vnum_c_test_LDADD = $(AM_LDFLAGS) libvarnish.la ${LIBM}
+vnum_c_test_LDADD = $(AM_LDFLAGS) libvarnish.la
 
 vjsn_test_SOURCES = vjsn.c
 vjsn_test_CFLAGS = $(AM_CFLAGS) -DVJSN_TEST
