@@ -1,7 +1,7 @@
 varnishtest "Varnishtest coverage"
 
 # Cover usage processing
-shell -err -expect {usage: varnishtest} {
+shell -err -expect {usage:} {
 	varnishtest -v -l
 }
 
