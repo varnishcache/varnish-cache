@@ -6,6 +6,7 @@ server s1 {
 	rxreq
 	txresp -body asdf
 	rxreq
+	expect req.http.X-Varnish == 1005
 	txresp -bodylen 1048000
 	rxreq
 	txresp -body ASDF
@@ -31,6 +32,7 @@ varnish v1 -cliok "param.set feature +http2"
 varnish v1 -cliok "param.reset h2_initial_window_size"
 varnish v1 -cliok "param.reset h2_rx_window_low_water"
 varnish v1 -cliok "param.set h2_rxbuf_storage rxbuf"
+varnish v1 -cliok "param.set vsl_mask +ExpKill"
 varnish v1 -cliok "param.set debug +syncvsl"
 
 varnish v1 -start
@@ -65,6 +67,10 @@ client c2 {
 varnish v1 -expect SM?.rxbuf.g_bytes >= 1048000
 varnish v1 -expect MAIN.n_lru_nuked == 0
 
+logexpect l1 -v v1 -g raw -q "Expkill ~ LRU" {
+	expect * * Expkill x=1005
+} -start
+
 client c3 {
 	stream 1 {
 		txreq -req POST -url /1 -hdr "content-length" "2048" -nostrend
@@ -73,6 +79,8 @@ client c3 {
 		expect resp.status == 200
 	} -start
 } -start
+
+logexpect l1 -wait
 
 varnish v1 -expect SM?.rxbuf.g_bytes >= 2048
 varnish v1 -expect SM?.rxbuf.g_bytes < 3000
