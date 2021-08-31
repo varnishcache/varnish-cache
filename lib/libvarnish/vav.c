@@ -43,6 +43,7 @@
 #include "config.h"
 
 #include <ctype.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -51,13 +52,14 @@
 
 #include "vas.h"
 #include "vav.h"
+#include "vnum.h"
 
 static int
 vav_backslash_txt(const char *s, const char *e, char *res)
 {
-	int r, l;
+	int r, l, i;
+	const char *p;
 	char c;
-	unsigned u;
 
 	AN(s);
 	if (e == NULL)
@@ -102,10 +104,10 @@ vav_backslash_txt(const char *s, const char *e, char *res)
 		}
 		break;
 	case 'x':
-		if (l >= 4 && isxdigit(s[2]) && isxdigit(s[3]) &&
-		    sscanf(s + 1, "x%02x", &u) == 1) {
-			AZ(u & ~0xff);
-			c = u;	/*lint !e734 loss of precision */
+		if (l >= 4 && (i = VNUM_hex(s + 2, s + 4, &p)) >= 0 &&
+		    p == s + 4) {
+			AZ(i & ~0xff);
+			c = i;	/*lint !e734 loss of precision */
 			r = 4;
 		}
 		break;
