@@ -36,8 +36,9 @@
 #include "cache_varnishd.h"
 #include <stdio.h>
 
-#include "vend.h"
 #include "vct.h"
+#include "vend.h"
+#include "vnum.h"
 #include "vtim.h"
 
 #define BODYSTATUS(U, l, n, a, k)				\
@@ -821,29 +822,6 @@ http_GetHdrField(const struct http *hp, hdr_t hdr,
 
 /*--------------------------------------------------------------------*/
 
-static ssize_t
-http_parse_uint(const char *b, const char **e)
-{
-	ssize_t u;
-	unsigned n;
-
-	u = 0;
-	if (!vct_isdigit(*b))
-		return (-1);
-	for (; vct_isdigit(*b); b++) {
-		if (u > (SSIZE_MAX / 10))
-			return (-2);
-		u *= 10;
-		n = *b - '0';
-		if (u > (SSIZE_MAX - n))
-			return (-2);
-		u += n;
-	}
-
-	*e = b;
-	return (u);
-}
-
 ssize_t
 http_GetContentLength(const struct http *hp)
 {
@@ -854,7 +832,7 @@ http_GetContentLength(const struct http *hp)
 
 	if (!http_GetHdr(hp, H_Content_Length, &b))
 		return (-1);
-	cl = http_parse_uint(b, &b);
+	cl = VNUM_uint(b, NULL, &b);
 	if (cl < 0)
 		return (-2);
 	while (vct_islws(*b))
@@ -894,12 +872,12 @@ http_GetContentRange(const struct http *hp, ssize_t *lo, ssize_t *hi)
 		*lo = *hi = -1;
 		b++;
 	} else {			// Content-Range: bytes 1-2/3
-		*lo = http_parse_uint(b, &b);
+		*lo = VNUM_uint(b, NULL, &b);
 		if (*lo < 0)
 			return (-2);
 		if (*b != '-')
 			return (-2);
-		*hi = http_parse_uint(b + 1, &b);
+		*hi = VNUM_uint(b + 1, NULL, &b);
 		if (*hi < 0)
 			return (-2);
 	}
@@ -909,7 +887,7 @@ http_GetContentRange(const struct http *hp, ssize_t *lo, ssize_t *hi)
 		cl = -1;
 		b += 2;
 	} else {
-		cl = http_parse_uint(b + 1, &b);
+		cl = VNUM_uint(b + 1, NULL, &b);
 		if (cl <= 0)
 			return (-2);
 	}
@@ -950,13 +928,13 @@ http_GetRange(const struct http *hp, ssize_t *lo, ssize_t *hi)
 		return ("Not Bytes");
 	b += strlen("bytes=");
 
-	*lo = http_parse_uint(b, &b);
+	*lo = VNUM_uint(b, NULL, &b);
 	if (*lo == -2)
 		return ("Low number too big");
 	if (*b++ != '-')
 		return ("Missing hyphen");
 
-	*hi = http_parse_uint(b, &b);
+	*hi = VNUM_uint(b, NULL, &b);
 	if (*hi == -2)
 		return ("High number too big");
 	if (*lo == -1 && *hi == -1)
