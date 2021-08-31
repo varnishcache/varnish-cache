@@ -120,6 +120,7 @@ STV_AllocBuf(struct worker *wrk, const struct stevedore *stv, size_t size)
 	if (stv->allocbuf == NULL)
 		return (NULL);
 
+	wrk->strangelove = cache_param->nuke_limit;
 	buf = stv->allocbuf(wrk, stv, size + PRNDUP(sizeof *stvbuf), &priv);
 	if (buf == NULL)
 		return (NULL);
