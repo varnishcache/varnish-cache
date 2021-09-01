@@ -32,32 +32,140 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
-Varnish Cache 7.x.x (2021-09-15)
+Varnish Cache 7.0.0 (2021-09-15)
 ================================
 
-* The minimum ``session_workspace`` is now 384 bytes
+* Added convenience ``vrt_null_strands`` and ``vrt_null_blob`` constants.
 
-* The default workdir (the default ``-n`` argument) is now ``/var/run``
-  instead of ``${prefix}/var``.
-  (Packages usually configure this to match local customs.)
-
-* 'Scientific Notation' numbers like 6.62607004e-34 are no longer
-  supported in VCL.  (The preparation of RFC8941 made it clear that
-  there are neither reason nor any need to support scientific notation
-  in context of HTTP headers.
-
-* Accept-Ranges headers are no longer generated for passed objects,
-  but must either come from the backend or be created in ``vcl_deliver{}``
+* New VCL flag syntax ``foo <name> +bar -baz { ... }``, starting with ACL
+  flags ``log``, ``pedantic`` and ``table``.
 
 * ACLs no longer produce VSL ``VCL_acl`` records by default, this must be
-  explicitly enabled with ``vcl <name> +log { ... }``.
+  explicitly enabled with ``acl <name> +log { ... }``.
 
 * ACLs can be compiled into a table format, which runs a little bit
   slower, but compiles much faster for large ACLs.
 
 * ACLs default to ``pedantic`` which is now a per-ACL feature flag.
 
-* ``varnishncsa -j`` will now accept to print fields with control characters.
+* New ``glob`` flag for VCL ``include`` (3193_).
+
+* The maximum number of headers for a request or a response in ``varnishtest``
+  was increased to 64.
+
+* The backend lock class from struct backend was moved to struct director and
+  renamed accordingly.
+
+* New ``%{sec,msec,usec,msec_frac,usec_frac}t`` formats in ``varnishncsa``.
+
+* ``vstrerror()`` was renamed to ``VAS_errtxt()``.
+
+* New ``varnishncsa -j`` option to format for JSON (3595_).
+
+* To skip a test in the *presence* of a feature instead of it absence, a new
+  ``feature !<name>`` syntax was added to ``varnishtest``.
+
+* Accept-Ranges headers are no longer generated for passed objects,
+  but must either come from the backend or be created in ``vcl_deliver{}``
+  (3251_).
+
+* The busyobj ``do_pass`` flag is gone in favor of ``uncacheable``.
+
+* The objcore flag ABANDON was renamed to CANCEL.
+
+* 'Scientific Notation' numbers like 6.62607004e-34 are no longer
+  supported in VCL.  (The preparation of RFC8941 made it clear that
+  there are neither reason nor any need to support scientific notation
+  in context of HTTP headers.
+
+* New ``tunnel`` command in ``varnishtest`` to gain the ability to
+  shape traffic between two peers without having to change their
+  implementation.
+
+* Global VCL symbols can be defined after use (3555_).
+
+* New ``req.hash_ignore_vary`` flag in VCL.
+
+* ``varnishtest`` can register macros backed by functions, which is the case
+  for ``${date}`` and the brand new ``${string,<action>[,<args>...]}`` macro
+  (3627_).
+
+* Migration to pcre2 with extensive changes to the VRE API, parameters renamed
+  to ``pcre2_match_limit`` and ``pcre2_depth_limit``, and the addition of a
+  new ``pcre2_jit_compilation`` parameter. The ``varnishtest`` undocumented
+  feature check ``pcre_jit`` is gone (3635_). This change is transparent at
+  the VRT layer and only affects direct VRE consumers.
+
+* New inverted mode in ``vtc-bisect.sh`` to find the opposite of regressions.
+
+* The default values for ``workspace_client``, ``workspace_backend`` and
+  ``vsl_buffer`` on 64bit systems were increased to respectively 96kB, 96kB
+  and 16kB (3648_).
+
+* The deprecated ``WS_Inside()`` was replaced with ``WS_Allocated()`` and
+  ``WS_Front()`` was removed.
+
+* VCL header names can be quoted, for example ``req.http."valid.name"``.
+
+* Added ``VRT_UnsetHdr()`` and removed ``vrt_magic_string_unset``.
+
+* Removed depcreated ``STRING_LIST`` in favor of ``STRANDS``. All functions
+  that previously took a ``STRING_LIST`` had ``const char *, ...`` arguments,
+  they now take ``const char *, VCL_STRANDS`` arguments. The magic cookie
+  ``vrt_magic_string_end`` is gone and ``VRT_CollectStrands()`` was renamed to
+  ``VRT_STRANDS_string()``.
+
+* The default value for ``thread_pool_stack`` was increased to 80kB for 64bit
+  systems and 64kB for 32bit to accomodate the PCRE2 jit compiler.
+
+* Removed deprecated ``VSB_new()`` and ``VSB_delete()``, which resulted in a
+  major soname bump of libvarnishapi to 3.0.0, instead of the 2.7.0 version
+  initially planned.
+
+* The default workdir (the default ``-n`` argument) is now ``/var/run``
+  instead of ``${prefix}/var`` (3672_). Packages usually configure this to
+  match local customs.
+
+* The minimum ``session_workspace`` is now 384 bytes
+
+* Emit minimal 500 response if ``vcl_synth`` fails (3441_).
+
+* New ``--enable-coverage`` configure flag, and renovated sanitizer setup.
+
+* New feature checks in ``varnishtest``: ``sanitizer``, ``asan``, ``lsan``,
+  ``msan``, ``ubsan`` and ``coverage``.
+
+* New ``--enable-workspace-emulator`` configure flag to swap the worksapce
+  implementation with a sparse one ideal for fuzzing (3644_).
+
+* Strict comparison of items from the HTTP grammar (3650_).
+
+* New request body h2 window handling using a buffer to avoid stalling an
+  entire h2 session until the relevant stream starts consuming DATA frames.
+  As a result the minimum value for ``h2_initial_window_size`` is now 65535B
+  to avoid running out of buffer with a negative window that was simpler to
+  not tolerate, and a new ``h2_rxbuf_storage`` parameter was added (3661_).
+
+* ``SLT_Hit`` now includes streaming progress when relevant.
+
+* The ``http_range_support`` adds consistency checks for pass transactions
+  (3673_).
+
+* New ``VNUM_uint()`` and ``VNUM_hex()`` functions geared at token parsing.
+
+.. _3193: https://github.com/varnishcache/varnish-cache/issues/3193
+.. _3251: https://github.com/varnishcache/varnish-cache/issues/3251
+.. _3441: https://github.com/varnishcache/varnish-cache/issues/3441
+.. _3555: https://github.com/varnishcache/varnish-cache/issues/3555
+.. _3595: https://github.com/varnishcache/varnish-cache/issues/3595
+.. _3627: https://github.com/varnishcache/varnish-cache/issues/3627
+.. _3635: https://github.com/varnishcache/varnish-cache/issues/3635
+.. _3644: https://github.com/varnishcache/varnish-cache/issues/3644
+.. _3648: https://github.com/varnishcache/varnish-cache/issues/3648
+.. _3650: https://github.com/varnishcache/varnish-cache/issues/3650
+.. _3661: https://github.com/varnishcache/varnish-cache/issues/3661
+.. _3672: https://github.com/varnishcache/varnish-cache/issues/3672
+.. _3673: https://github.com/varnishcache/varnish-cache/issues/3673
 
 ================================
 Varnish Cache 6.6.0 (2021-03-15)
