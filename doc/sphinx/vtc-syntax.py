@@ -36,7 +36,7 @@ import re
 def parse_file(fn, cl, tl, sl):
     p = False
     section = ""
-    resec = re.compile("[ /]\* SECTION: ")
+    resec = re.compile("\s*/\* SECTION: ")
 
     f = open(fn, "r", encoding="UTF-8")
 
@@ -50,13 +50,13 @@ def parse_file(fn, cl, tl, sl):
             cl[section] = []
             if len(a) > 3:
                 tl[section] = re.sub(
-                    r"^[\t ]*\/?\* SECTION: [^ ]+ +",
+                    r"^\s*/?\* SECTION: [^ ]+ +",
                     "", l)
             else:
                 tl[section] = ""
             p = 1
         elif p:
-            cl[section].append(re.sub(r"^ \* ?", "", l))
+            cl[section].append(re.sub(r"^\s*\* ?", "", l))
     f.close()
 
 if __name__ == "__main__":
