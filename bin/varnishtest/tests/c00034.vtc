@@ -246,6 +246,10 @@ server s1 {
 	txresp -status 206 -hdr "content-range: bytes 10-19/100" -bodylen 40
 
 	rxreq
+	expect req.http.range == "bytes=90-119"
+	txresp -status 416 -hdr "content-range: bytes */100" -bodylen 100
+
+	rxreq
 	expect req.url == "/?unexpected=content-range"
 	expect req.http.range == <undef>
 	txresp -hdr "content-range: bytes 0-49/100" -bodylen 40
@@ -278,6 +282,10 @@ client c8 {
 	txreq -hdr "range: bytes=10-19" -hdr "return: pass"
 	rxresp
 	expect resp.status == 503
+
+	txreq -hdr "range: bytes=90-119" -hdr "return: pass"
+	rxresp
+	expect resp.status == 416
 
 	txreq -url "/?unexpected=content-range"
 	rxresp

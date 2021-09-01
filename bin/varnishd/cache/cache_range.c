@@ -300,6 +300,8 @@ VRG_CheckBo(struct busyobj *bo)
 	if (crlo < 0) {		// Content-Range: bytes */123
 		assert(crhi < 0);
 		assert(crlen > 0);
+		if (http_GetStatus(bo->beresp) == 416)
+			return (0);
 		crlo = 0;
 		crhi = crlen - 1;
 	}
