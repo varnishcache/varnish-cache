@@ -607,7 +607,7 @@ parse_x_format(char *buf)
 	int slt;
 
 	if (!strcmp(buf, "Varnish:time_firstbyte")) {
-		addf_fragment(&CTX.frag[F_ttfb], "");
+		addf_fragment(&CTX.frag[F_ttfb], CTX.missing_int);
 		return;
 	}
 	if (!strcmp(buf, "Varnish:hitmiss")) {
