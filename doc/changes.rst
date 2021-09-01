@@ -35,10 +35,10 @@ release process.
 Varnish Cache 7.x.x (2021-09-15)
 ================================
 
-* The minimum `session_workspace` is now 384 bytes
+* The minimum ``session_workspace`` is now 384 bytes
 
-* The default workdir (the default `-n` argument) is now `/var/run`
-  instead of `${prefix}/var`.
+* The default workdir (the default ``-n`` argument) is now ``/var/run``
+  instead of ``${prefix}/var``.
   (Packages usually configure this to match local customs.)
 
 * 'Scientific Notation' numbers like 6.62607004e-34 are no longer
@@ -47,17 +47,17 @@ Varnish Cache 7.x.x (2021-09-15)
   in context of HTTP headers.
 
 * Accept-Ranges headers are no longer generated for passed objects,
-  but must either come from the backend or be created in `vcl_deliver{}`
+  but must either come from the backend or be created in ``vcl_deliver{}``
 
-* ACLs no longer produce VSL `VCL_acl` records by default, this must be
-  explicitly enabled with `vcl <name> +log { ... }`.
+* ACLs no longer produce VSL ``VCL_acl`` records by default, this must be
+  explicitly enabled with ``vcl <name> +log { ... }``.
 
 * ACLs can be compiled into a table format, which runs a little bit
   slower, but compiles much faster for large ACLs.
 
-* ACLs default to `pedantic` which is now a per-ACL feature flag.
+* ACLs default to ``pedantic`` which is now a per-ACL feature flag.
 
-* `varnishncsa -j` will now accept to print fields with control characters.
+* ``varnishncsa -j`` will now accept to print fields with control characters.
 
 ================================
 Varnish Cache 6.6.0 (2021-03-15)
