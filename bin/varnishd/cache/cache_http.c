@@ -898,8 +898,6 @@ http_GetContentRange(const struct http *hp, ssize_t *lo, ssize_t *hi)
 	if (*lo > *hi)
 		return (-2);
 	assert(cl >= -1);
-	if (cl == -1)
-		return (-1);
 	if (*lo >= cl || *hi >= cl)
 		return (-2);
 	AN(cl);
