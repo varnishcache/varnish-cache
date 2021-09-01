@@ -1,6 +1,6 @@
 varnishtest "H/2 received data frames with padding"
 
-barrier b1 sock 2
+barrier b1 sock 3
 
 server s1 {
 	rxreq
@@ -34,7 +34,26 @@ client c1 {
 		txdata -data abcde -padlen 1
 		rxresp
 		expect resp.status == 200
-	} -run
+	} -start
+} -run
+
+client c2 {
+	# This makes use of the fact that Varnish will always send a
+	# session window update immediately when receiving a data
+	# frame. The four rxwinup before barrier sync on stream 0 matches
+	# up with the four txdata frames sent early on the stream, and
+	# makes sure that the session thread has exhausted its send window
+	# completely before opening up and starting to consume rxbuf data
+	# by unblocking the client thread stuck in vcl_recv. From that
+	# point on window updates will also be sent on the stream.
+
+	stream 0 {
+		rxwinup
+		rxwinup
+		rxwinup
+		rxwinup
+		barrier b1 sync
+	} -start
 
 	stream 3 {
 		txreq -req POST -url /3 -hdr "content-length" "131072" -nostrend
@@ -55,12 +74,14 @@ client c1 {
 		txdata -datalen 672
 		rxresp
 		expect resp.status == 200
-	} -run
+	} -start
+} -run
 
+client c3 {
 	stream 5 {
 		txreq -req POST -url /5 -nostrend
 		txdata -data a -padlen 255
 		rxresp
 		expect resp.status == 200
-	} -run
+	} -start
 } -run
