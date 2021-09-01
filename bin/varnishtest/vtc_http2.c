@@ -937,6 +937,7 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 
 	n = 0;
 	/* SECTION: stream.spec.zexpect.ping PING specific
+	 *
 	 * ping.data
 	 *	The 8-bytes string of the PING frame payload.
 	 * ping.ack (PING)
@@ -952,6 +953,7 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 		return (buf);
 	}
 	/* SECTION: stream.spec.zexpect.winup WINDOW_UPDATE specific
+	 *
 	 * winup.size
 	 *	The size of the upgrade given by the WINDOW_UPDATE frame.
 	 */
@@ -960,6 +962,7 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 		RETURN_BUFFED(f->md.winup_size);
 	}
 	/* SECTION: stream.spec.zexpect.prio PRIORITY specific
+	 *
 	 * prio.stream
 	 *	The stream ID announced.
 	 *
@@ -983,6 +986,7 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 		RETURN_BUFFED(f->md.prio.weight);
 	}
 	/* SECTION: stream.spec.zexpect.rst RESET_STREAM specific
+	 *
 	 * rst.err
 	 *	The error code (as integer) of the RESET_STREAM frame.
 	 */
@@ -1037,6 +1041,7 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 		if (!strcmp(spec, "hdrsize"))    { RETURN_SETTINGS(6); }
 	}
 	/* SECTION: stream.spec.zexpect.push PUSH_PROMISE specific
+	 *
 	 * push.id
 	 *	The id of the promised stream.
 	 */
@@ -1045,6 +1050,7 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 		RETURN_BUFFED(f->md.promised);
 	}
 	/* SECTION: stream.spec.zexpect.goaway GOAWAY specific
+	 *
 	 * goaway.err
 	 *	The error code (as integer) of the GOAWAY frame.
 	 *
@@ -1066,6 +1072,7 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 			return (f->md.goaway.debug);
 	}
 	/* SECTION: stream.spec.zexpect.zframe Generic frame
+	 *
 	 * frame.data
 	 *	Payload of the last frame
 	 *
@@ -1101,6 +1108,7 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 		}
 	}
 	/* SECTION: stream.spec.zexpect.zstream Stream
+	 *
 	 * stream.window
 	 *	The current window size of the stream, or, if on stream 0,
 	 *	of the connection.
@@ -1131,6 +1139,7 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 			return (NULL);
 	}
 	/* SECTION: stream.spec.zexpect.ztable Index tables
+	 *
 	 * tbl.dec.size / tbl.enc.size
 	 *	Size (bytes) of the decoding/encoding table.
 	 *
