@@ -138,7 +138,7 @@
  *      expect <skip> <vxid> <tag> <termination-condition>
  *      fail clear
  *
- * XXX can we come up with a better solution which is still safe?
+ * .. XXX can we come up with a better solution which is still safe?
  */
 
 #include "config.h"
