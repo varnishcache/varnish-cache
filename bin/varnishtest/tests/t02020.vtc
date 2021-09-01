@@ -15,10 +15,12 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
+	import std;
 	import vtc;
 	sub vcl_recv {
 		if (req.url == "/3") {
 			vtc.barrier_sync("${b1_sock}");
+			std.cache_req_body(128k);
 		}
 	}
 } -start
@@ -26,6 +28,7 @@ varnish v1 -vcl+backend {
 varnish v1 -cliok "param.set feature +http2"
 varnish v1 -cliok "param.reset h2_initial_window_size"
 varnish v1 -cliok "param.reset h2_rx_window_low_water"
+varnish v1 -cliok "param.set fetch_chunksize 129k"
 varnish v1 -cliok "param.set debug +syncvsl"
 
 client c1 {
