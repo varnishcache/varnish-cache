@@ -188,7 +188,7 @@ vre_capture(const vre_t *code, const char *subject, size_t length,
 {
 	pcre2_match_data *data;
 	pcre2_code *re;
-	PCRE2_SIZE *ovector;
+	PCRE2_SIZE *ovector, b, e;
 	size_t nov, g;
 	int matches;
 
@@ -202,6 +202,11 @@ vre_capture(const vre_t *code, const char *subject, size_t length,
 		AN(data);
 	}
 
+	ovector = pcre2_get_ovector_pointer(data);
+	nov = 2 * pcre2_get_ovector_count(data);
+	for (g = 0; g < nov; g++)
+		ovector[g] = PCRE2_UNSET;
+
 	matches = pcre2_match(re, (PCRE2_SPTR)subject, length, offset,
 	    options, data, code->re_ctx);
 
@@ -213,8 +218,14 @@ vre_capture(const vre_t *code, const char *subject, size_t length,
 		if (nov > *count)
 			nov = *count;
 		for (g = 0; g < nov; g++) {
-			groups->b = subject + ovector[2 * g];
-			groups->e = subject + ovector[2 * g + 1];
+			b = ovector[2 * g];
+			e = ovector[2 * g + 1];
+			if (b == PCRE2_UNSET) {
+				groups->b = groups->e = "";
+			} else {
+				groups->b = subject + b;
+				groups->e = subject + e;
+			}
 			groups++;
 		}
 		*count = nov;
@@ -334,7 +345,7 @@ VRE_sub(const vre_t *code, const char *subject, const char *replacement,
 	}
 
 	/* Copy suffix to match */
-	VSB_cat(vsb, groups[0].e);
+	VSB_cat(vsb, subject + offset);
 	return (1);
 }
 
