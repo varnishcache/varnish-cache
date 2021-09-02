@@ -95,7 +95,8 @@ Fetch
 	Came off vcl_backend_fetch ready to send the backend request.
 
 Connected
-	Successfully established or reused a backend connection.
+	Successfully established a backend connection, or selected a recycled
+	connection from the pool.
 
 Bereq
 	Backend request sent.
