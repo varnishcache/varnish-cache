@@ -669,7 +669,7 @@ extern const char H__Reason[];
 #define http_expect_eq(str, tok)	http_tok_eq(str, #tok)
 
 // rfc7233,l,1207,1208
-#define http_range_at(str, tok)		http_ctok_at(str, #tok)
+#define http_range_at(str, tok, l)	http_tok_at(str, #tok, l)
 
 /* cache_main.c */
 #define VXID(u) ((u) & VSL_IDENTMASK)

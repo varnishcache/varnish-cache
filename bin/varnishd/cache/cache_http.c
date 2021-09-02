@@ -846,7 +846,7 @@ ssize_t
 http_GetContentRange(const struct http *hp, ssize_t *lo, ssize_t *hi)
 {
 	ssize_t tmp, cl;
-	const char *b;
+	const char *b, *t;
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 
@@ -860,14 +860,14 @@ http_GetContentRange(const struct http *hp, ssize_t *lo, ssize_t *hi)
 	if (!http_GetHdr(hp, H_Content_Range, &b))
 		return (-1);
 
-	if (strncasecmp("bytes", b, strlen("bytes")))
-		return (-1);		// Unknown range unit, ignore
-	b += strlen("bytes");
+	t = strchr(b, ' ');
+	if (t == NULL)
+		return (-2);		// Missing space after range unit
 
-	if (!vct_islws(*b))
+	if (!http_range_at(b, bytes, t - b))
 		return (-1);		// Unknown range unit, ignore
-	while (vct_islws(*b))
-		b++;
+	b = t + 1;
+
 	if (*b == '*') {		// Content-Range: bytes */123
 		*lo = *hi = -1;
 		b++;
@@ -908,7 +908,7 @@ const char *
 http_GetRange(const struct http *hp, ssize_t *lo, ssize_t *hi)
 {
 	ssize_t tmp;
-	const char *b;
+	const char *b, *t;
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 
@@ -922,9 +922,13 @@ http_GetRange(const struct http *hp, ssize_t *lo, ssize_t *hi)
 	if (!http_GetHdr(hp, H_Range, &b))
 		return (NULL);
 
-	if (!http_range_at(b, bytes=))
+	t = strchr(b, '=');
+	if (t == NULL)
+		return ("Missing '='");
+
+	if (!http_range_at(b, bytes, t - b))
 		return ("Not Bytes");
-	b += strlen("bytes=");
+	b = t + 1;
 
 	*lo = VNUM_uint(b, NULL, &b);
 	if (*lo == -2)

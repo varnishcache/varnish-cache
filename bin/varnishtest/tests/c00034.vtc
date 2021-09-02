@@ -260,6 +260,11 @@ server s1 {
 	txresp -hdr "content-range: bytes */100" -bodylen 100
 
 	rxreq
+	expect req.url == "/?invalid=content-range"
+	expect req.http.range == <undef>
+	txresp -hdr "content-range: bytes=0-99/100" -bodylen 100
+
+	rxreq
 	expect req.http.range == "bytes=0-0"
 	txresp -hdr "content-range: bytes */*" -bodylen 100
 } -start
@@ -292,6 +297,10 @@ client c8 {
 	expect resp.status == 503
 
 	txreq -url "/?unexpected=unsatisfied-range"
+	rxresp
+	expect resp.status == 503
+
+	txreq -url "/?invalid=content-range"
 	rxresp
 	expect resp.status == 503
 
