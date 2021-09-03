@@ -1551,11 +1551,12 @@ PARAM_THREAD(
  * String parameters
  */
 
-#  define PARAM_STRING(nm, pv, def, ...) \
-	PARAM(, , nm, tweak_string, pv, NULL, NULL, def, NULL, __VA_ARGS__)
+#  define PARAM_STRING(nm, tw, pv, def, ...) \
+	PARAM(, , nm, tw, pv, NULL, NULL, def, NULL, __VA_ARGS__)
 
 PARAM_STRING(
 	/* name */	cc_command,
+	/* tweak */	tweak_string,
 	/* priv */	&mgt_cc_cmd,
 	/* def */	VCC_CC,
 	/* descr */
@@ -1567,7 +1568,19 @@ PARAM_STRING(
 )
 
 PARAM_STRING(
+	/* name */	h2_rxbuf_storage,
+	/* tweak */	tweak_h2_rxbuf_storage,
+	/* priv */	&mgt_stv_h2_rxbuf,
+	/* def */	"Transient",
+	/* descr */
+	"The name of the storage backend that HTTP/2 receive buffers "
+	"should be allocated from.",
+	/* flags */	MUST_RESTART
+)
+
+PARAM_STRING(
 	/* name */	vcl_path,
+	/* tweak */	tweak_string,
 	/* priv */	&mgt_vcl_path,
 	/* def */	VARNISH_VCL_DIR,
 	/* descr */
@@ -1582,6 +1595,7 @@ PARAM_STRING(
 
 PARAM_STRING(
 	/* name */	vmod_path,
+	/* tweak */	tweak_string,
 	/* priv */	&mgt_vmod_path,
 	/* def */	VARNISH_VMOD_DIR,
 	/* descr */
@@ -1657,28 +1671,10 @@ PARAM_PCRE2(
 	" messages."
 )
 
-/*--------------------------------------------------------------------
- * Custom parameters with separate tweak function
- */
-
-#  define PARAM_CUSTOM(nm, pv, def, ...) \
-	PARAM(, , nm, tweak_ ## nm, pv, NULL, NULL, def, NULL, __VA_ARGS__)
-
-PARAM_CUSTOM(
-	/* name */	h2_rxbuf_storage,
-	/* priv */	&mgt_stv_h2_rxbuf,
-	/* def */	"Transient",
-	/* descr */
-	"The name of the storage backend that HTTP/2 receive buffers"
-	" should be allocated from.",
-	/* flags */	MUST_RESTART
-)
-
 #  undef PARAM_ALL
 #  undef PARAM_PCRE2
 #  undef PARAM_STRING
 #  undef PARAM_VCC
-#  undef PARAM_CUSTOM
 #endif /* defined(PARAM_ALL) */
 
 #undef PARAM_MEMPOOL
