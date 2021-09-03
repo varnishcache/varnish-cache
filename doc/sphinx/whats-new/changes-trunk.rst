@@ -31,8 +31,8 @@ regular expressions are used, like VCL, ban expressions, VSL queries etc.
 
 There were some parameters changes, see the upgrade notes for more details.
 
-Structured Fields
-=================
+Structured Fields numbers
+=========================
 
 TODO (probably deserves its own section too)
 
