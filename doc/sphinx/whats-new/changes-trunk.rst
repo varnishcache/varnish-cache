@@ -132,7 +132,7 @@ The ``acl`` keyword supports the following flags:
 
 For example::
 
-    acl +log -pedantic { ... }
+    acl <name> +log -pedantic { ... }
 
 The ``include`` keyword supports a ``glob`` flag.
 
