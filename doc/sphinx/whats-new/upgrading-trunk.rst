@@ -154,8 +154,105 @@ ACLs are optimized for runtime performance by default, which can increase
 significantly the VCL compilation time with very large ACLs. The ``table``
 flag improves compilation time at the expense of runtime performance.
 
-Changes for VMOD authors
-========================
+Changes for developers
+=======================
+
+Build
+-----
+
+There is a new ``--enable-workspace-emulator`` configure flag to replace the
+regular "packed allocation" workspace with a "sparse allocation" alternative.
+Combined with the Address Sanitizer it can help VMOD authors find memory
+handling issues like buffer overflows that could otherwise be missed on a
+regular workspace.
+
+Workspace API
+-------------
+
+The deprecated functions ``WS_Front()`` and ``WS_Inside()`` are gone, they
+were replaced by ``WS_Reservation()`` and ``WS_Allocated()``. For this reason
+``WS_Assert_Allocated()`` was removed despite not being deprecated, since it
+became redundant with ``assert(WS_Allocated(...))``. Accessing the workspace
+front pointer only makes sense during a reservation, that's why ``WS_Front()``
+was deprecated in a previous release.
+
+It should no longer be needed to access ``struct ws`` fields directly, and
+everything should be possible with the ``WS_*()`` functions. It even becomes
+mandatory when the workspace emulator is enabled, the ``struct ws`` fields
+have different semantics.
+
+``STRING_LIST``
+---------------
+
+VMOD authors can no longer take ``STRING_LIST`` arguments in functions or
+object methods. To work with string fragments, use ``VCL_STRANDS`` instead.
+
+As a result the following symbols are gone:
+
+- ``VRT_String()``
+- ``VRT_StringList()``
+- ``VRT_CollectString()``
+- ``vrt_magic_string_end``
+
+Functions that used to take a ``STRING_LIST`` in the form of a prototype
+ending with ``const char *, ...`` now take ``const char *, VCL_STRANDS``:
+
+- ``VRT_l_client_identity()``
+- ``VRT_l_req_method()``
+- ``VRT_l_req_url()``
+- ``VRT_l_req_proto()``
+- ``VRT_l_bereq_method()``
+- ``VRT_l_bereq_url()``
+- ``VRT_l_bereq_proto()``
+- ``VRT_l_beresp_body()``
+- ``VRT_l_beresp_proto()``
+- ``VRT_l_beresp_reason()``
+- ``VRT_l_beresp_storage_hint()``
+- ``VRT_l_beresp_filters()``
+- ``VRT_l_resp_body()``
+- ``VRT_l_resp_proto()``
+- ``VRT_l_resp_reason()``
+- ``VRT_l_resp_filters()``
+
+The ``VRT_SetHdr()`` function also used to take a ``STRING_LIST`` and now
+takes a ``const char *, VCL_STRANDS`` too. But, in addition to this change,
+it also no longer accepts the special ``vrt_magic_string_unset`` argument.
+
+Instead, a new ``VRT_UnsetHdr()`` function was added.
+
+The ``VRT_CollectStrands()`` function was renamed to ``VRT_STRANDS_string()``,
+which was its original intended name.
+
+Null sentinels
+--------------
+
+Two convenience sentinels ``vrt_null_strands`` and ``vrt_null_blob`` were
+added to avoid ``NULL`` usage. ``VRT_blob()`` returns ``vrt_null_blob`` when
+the source is null or the length is zero. The null blob has the type
+``VRT_NULL_BLOB_TYPE``.
+
+libvarnishapi
+-------------
+
+Deprecated functions ``VSB_new()`` and ``VSB_delete()`` were removed. Use
+``VSB_init()`` and ``VSB_fini()`` for static buffers and ``VSB_new_auto()``
+and ``VSB_destroy()`` for dynamic buffers.
+
+Their removal resulted in bumping the soname to 3.0.0 for libvarnishapi.
+
+libvarnish
+----------
+
+Other changes were made to libvarnish, those are only available to VMOD
+authors since they are not exposed by libvarnishapi.
+
+VNUM
+''''
+
+TODO
+
+VRE
+'''
 
 TODO
 

@@ -59,8 +59,24 @@
  *	VCL_STRINGLIST, vrt_magic_string_end removed
  *	VRT_String(), VRT_StringList(), VRT_CollectString() removed
  *	VRT_CollectStrands() renamed to VRT_STRANDS_string()
- *	VRT_l_{beresp|resp}_body() changed to takes STRANDS argument
- *	VRT_SetHdr() changed to take `const char*` & `STRANDS` arguments.
+ *	The following functions changed to take `const char *, STRANDS`:
+ *	- VRT_l_client_identity()
+ *	- VRT_l_req_method()
+ *	- VRT_l_req_url()
+ *	- VRT_l_req_proto()
+ *	- VRT_l_bereq_method()
+ *	- VRT_l_bereq_url()
+ *	- VRT_l_bereq_proto()
+ *	- VRT_l_beresp_body()
+ *	- VRT_l_beresp_proto()
+ *	- VRT_l_beresp_reason()
+ *	- VRT_l_beresp_storage_hint()
+ *	- VRT_l_beresp_filters()
+ *	- VRT_l_resp_body()
+ *	- VRT_l_resp_proto()
+ *	- VRT_l_resp_reason()
+ *	- VRT_l_resp_filters()
+ *	- VRT_SetHdr()
  *	VRT_UnsetHdr() added
  *	vrt_magic_string_unset removed (use VRT_UnsetHdr() instead)
  *	VNUMpfx() removed, SF_Parse_{Integer|Decimal|Number} added
