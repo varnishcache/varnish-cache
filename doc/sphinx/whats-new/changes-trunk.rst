@@ -50,7 +50,6 @@ There were changes to the parameters:
 - the default value increased to 96kB for ``workspace_backend``
 - the minimum value increased to 384B for ``workspace_session``
 - the minimum value increased to 65535B for ``h2_initial_window_size``
-- the minimum value increased to 10ms for ``thread_pool_fail_delay``
 - the default value increased to 80kB for ``thread_pool_stack``
 - the default value increased to 64kB for ``thread_pool_stack`` on 32bit
   systems
