@@ -1569,7 +1569,7 @@ PARAM_STRING(
 
 PARAM_STRING(
 	/* name */	h2_rxbuf_storage,
-	/* tweak */	tweak_h2_rxbuf_storage,
+	/* tweak */	tweak_storage,
 	/* priv */	&mgt_stv_h2_rxbuf,
 	/* def */	"Transient",
 	/* descr */

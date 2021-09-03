@@ -491,13 +491,12 @@ tweak_thread_pool_max(struct vsb *vsb, const struct parspec *par,
 }
 
 /*--------------------------------------------------------------------
- * Tweak 'h2_rxbuf_storage'
+ * Tweak storage
  *
  */
 
 int v_matchproto_(tweak_t)
-tweak_h2_rxbuf_storage(struct vsb *vsb, const struct parspec *par,
-    const char *arg)
+tweak_storage(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	struct stevedore *stv;
 

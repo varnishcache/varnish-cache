@@ -71,6 +71,7 @@ tweak_t tweak_bytes;
 tweak_t tweak_bytes_u;
 tweak_t tweak_double;
 tweak_t tweak_poolparam;
+tweak_t tweak_storage;
 tweak_t tweak_string;
 tweak_t tweak_thread_pool_min;
 tweak_t tweak_thread_pool_max;
@@ -78,7 +79,6 @@ tweak_t tweak_timeout;
 tweak_t tweak_uint;
 tweak_t tweak_vsl_buffer;
 tweak_t tweak_vsl_reclen;
-tweak_t tweak_h2_rxbuf_storage;
 
 extern struct parspec mgt_parspec[]; /* mgt_param_tbl.c */
 extern struct parspec VSL_parspec[]; /* mgt_param_vsl.c */
