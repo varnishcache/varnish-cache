@@ -254,6 +254,40 @@ TODO
 VRE
 '''
 
-TODO
+The VRE API completely changed in preparation for the PCRE2 migration, in
+order to funnel all PCRE usage in the Varnish source code through VRE.
+
+Similarly to how parameters were renamed, the ``match_recursion`` field from
+``struct vre_limits`` was renamed to ``depth``. It has otherwise the same
+meaning and purpose.
+
+Notable breaking changes:
+
+- ``VRE_compile()`` signature changed
+- ``VRE_exec()`` was replaced:
+  - ``VRE_match()`` does simple matching
+  - ``VRE_capture()`` captures matched groups in a ``txt`` array
+  - ``VRE_sub()`` substitute matches with a replacement in a VSB
+- ``VRE_error()`` prints an error message for all the functions above in a VSB
+- ``VRE_export()`` packs a usable ``vre_t`` that can be persisted as a byte
+  stream
+
+The ``VRE_ERROR_NOMATCH`` symbol is now hard-linked like ``VRE_CASELESS``, and
+``VRE_NOTEMPTY`` is no longer supported. There are no match options left in
+the VRE facade but the ``VRE_match()``, ``VRE_capture()`` and ``VRE_sub()``
+functions still take an ``options`` argument to keep the ability of allowing
+match options in the future.
+
+The ``VRE_ERROR_LEN`` gives a size that should be safe to avoid truncated
+error messages in a static buffer.
+
+To gain full access to PCRE2 features from a regular expression provided via
+``vre_t`` a backend-specific ``vre_pcre2.h`` contains a ``VRE_unpack()``
+function. This opens for example the door to ``pcre2_substitute()`` with the
+PCRE2 substitution syntax and named capture groups as an alternative to VCL's
+``regsub()`` syntax backed by ``VRE_sub()``.
+
+Ideally, ``vre_pcre2.h`` will be the only breaking change next time we move
+to a different regular expression engine. Hopefully not too soon.
 
 *eof*

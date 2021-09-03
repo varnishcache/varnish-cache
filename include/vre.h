@@ -52,7 +52,7 @@ typedef struct vre vre_t;
 /* This maps to PCRE2 error codes */
 extern const int VRE_ERROR_NOMATCH;
 
-/* And those to PCRE2 options */
+/* And those to PCRE2 compilation options */
 extern const unsigned VRE_CASELESS;
 
 vre_t *VRE_compile(const char *, unsigned, int *, int *, unsigned);
