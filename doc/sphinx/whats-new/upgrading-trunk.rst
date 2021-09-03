@@ -166,6 +166,21 @@ Combined with the Address Sanitizer it can help VMOD authors find memory
 handling issues like buffer overflows that could otherwise be missed on a
 regular workspace.
 
+``vdef.h``
+----------
+
+The ``vdef.h`` header is no longer self-contained, it includes ``stddef.h``.
+
+Since it is the first header that should be included when working with Varnish
+bindings, some definitions were promoted to ``vdef.h``:
+
+- a fallback for the ``__has_feature()`` macro in its absence
+- VRT macros for Structured Fields number limits
+- ``struct txt`` and its companion macros (the macros require ``vas.h`` too)
+
+This header is implicitly included by ``vrt.h`` and ``cache.h`` and should not
+concern VMOD authors.
+
 Workspace API
 -------------
 
