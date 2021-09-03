@@ -135,6 +135,10 @@ pcre2_code *
 VRE_unpack(const vre_t *code)
 {
 
+	/* XXX: The ban code ensures that regex "lumps" are pointer-aligned,
+	 * but coming for example from a VMOD there is no guarantee. Should
+	 * we formally require that code is properly aligned?
+	 */
 	CHECK_OBJ_NOTNULL(code, VRE_MAGIC);
 	if (code->re == VRE_PACKED_RE) {
 		AZ(code->re_ctx);

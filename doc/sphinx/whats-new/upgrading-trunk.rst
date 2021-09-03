@@ -287,6 +287,10 @@ Notable breaking changes:
 - ``VRE_export()`` packs a usable ``vre_t`` that can be persisted as a byte
   stream
 
+An exported regular expression takes the form of a byte stream of a given size
+that can be used as-is by the various matching functions. Care should be taken
+to always maintain pointer alignment of an exported ``vre_t``.
+
 The ``VRE_ERROR_NOMATCH`` symbol is now hard-linked like ``VRE_CASELESS``, and
 ``VRE_NOTEMPTY`` is no longer supported. There are no match options left in
 the VRE facade but the ``VRE_match()``, ``VRE_capture()`` and ``VRE_sub()``
