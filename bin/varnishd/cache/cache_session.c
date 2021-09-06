@@ -425,8 +425,7 @@ ses_handle(struct waited *wp, enum wait_event ev, vtim_real now)
 	CAST_OBJ_NOTNULL(xp, (const void*)wp->priv2, TRANSPORT_MAGIC);
 	AN(wp->priv2);
 	assert(WS_Reservation(sp->ws) == wp);
-	wp->magic = 0;
-	wp = NULL;
+	FINI_OBJ(wp);
 
 	/* The WS was reserved in SES_Wait() */
 	WS_Release(sp->ws, 0);

@@ -17,6 +17,12 @@
 		(to)->magic = (type_magic);				\
 	} while (0)
 
+#define FINI_OBJ(to)							\
+	do {								\
+		ZERO_OBJ(&(to)->magic, sizeof (to)->magic);		\
+		to = NULL;						\
+	} while (0)
+
 #define ALLOC_OBJ(to, type_magic)					\
 	do {								\
 		(to) = calloc(1, sizeof *(to));				\

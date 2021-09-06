@@ -216,7 +216,7 @@ h2h_decode_fini(const struct h2_sess *h2)
 		ret = H2CE_COMPRESSION_ERROR;
 	} else
 		ret = d->error;
-	d->magic = 0;
+	FINI_OBJ(d);
 	return (ret);
 }
 

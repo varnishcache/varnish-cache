@@ -337,8 +337,8 @@ VEV_Stop(struct vev_root *evb, struct vev *e)
 		es->happened = 0;
 	}
 
-	e->magic = 0;
 	e->__vevb = NULL;
+	FINI_OBJ(e);
 }
 
 /*--------------------------------------------------------------------*/
