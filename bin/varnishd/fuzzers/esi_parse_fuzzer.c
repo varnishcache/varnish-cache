@@ -36,22 +36,39 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "cache/cache.h"
+#include "cache/cache_varnishd.h"
 #include "cache/cache_vgz.h"		/* enum vgz_flag */
 #include "cache/cache_esi.h"
 #include "cache/cache_filter.h"		/* struct vfp_ctx */
-#include "common/common_param.h"	/* struct params */
 
-#include "VSC_main.h"
 #include "vfil.h"
-#include "vsb.h"
 
 int LLVMFuzzerTestOneInput(const uint8_t *, size_t);
 
-extern struct VSC_main *VSC_C_main;
 struct VSC_main *VSC_C_main;
-extern struct params *cache_param;
-struct params *cache_param;
+volatile struct params *cache_param;
+
+int
+PAN__DumpStruct(struct vsb *vsb, int block, int track, const void *ptr,
+        const char *smagic, unsigned magic, const char *fmt, ...)
+{
+	(void)vsb;
+	(void)block;
+	(void)track;
+	(void)ptr;
+	(void)smagic;
+	(void)magic;
+	(void)fmt;
+	return (0);
+}
+
+void
+VSL(enum VSL_tag_e tag, uint32_t vxid, const char *fmt, ...)
+{
+	(void)tag;
+	(void)vxid;
+	(void)fmt;
+}
 
 void
 VSLb(struct vsl_log *vsl, enum VSL_tag_e tag, const char *fmt, ...)
@@ -72,38 +89,20 @@ VSLb_ts(struct vsl_log *l, const char *event, vtim_real first, vtim_real *pprev,
 	(void)now;
 }
 
-void
-WS_Assert(const struct ws *ws)
-{
-	(void)ws;
-}
-
-void *
-WS_Alloc(struct ws *ws, unsigned bytes)
-{
-	(void)ws;
-	return (calloc(1, bytes));
-}
-
-unsigned
-WS_ReserveAll(struct ws *ws)
-{
-	(void)ws;
-	WRONG("Should not be called");
-}
-
 int
 LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
 	struct VSC_main __VSC_C_main;
 	struct params __cache_param;
-	struct http req = { .magic = HTTP_MAGIC };
-	struct http resp = { .magic = HTTP_MAGIC };
-	struct vfp_ctx vc = { .magic = VFP_CTX_MAGIC };
+	struct http req[1];
+	struct http resp[1];
+	struct vfp_ctx vc[1];
+	struct worker wrk[1];
+	struct ws ws[1];
 	struct vep_state *vep;
 	struct vsb *vsb;
-	struct worker wrk;
 	txt hd[HTTP_HDR_URL + 1];
+	char ws_buf[1024];
 
 	if (size < 1)
 		return (0);
@@ -125,21 +124,34 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 		BSET(__cache_param.feature_bits, FEATURE_ESI_REMOVE_BOM);
 #undef BSET
 
+	/* Setup ws */
+	WS_Init(ws, "req", ws_buf, sizeof ws_buf);
+
 	/* Setup req */
-	req.hd = hd;
-	req.hd[HTTP_HDR_URL].b = "/";
+	INIT_OBJ(req, HTTP_MAGIC);
+	req->hd = hd;
+	req->hd[HTTP_HDR_URL].b = "/";
+	req->ws = ws;
+
+	/* Setup resp */
+	INIT_OBJ(resp, HTTP_MAGIC);
+	resp->ws = ws;
+
+	/* Setup wrk */
+	INIT_OBJ(wrk, WORKER_MAGIC);
 
 	/* Setup vc */
-	vc.wrk = &wrk;
-	vc.resp = &resp;
+	INIT_OBJ(vc, VFP_CTX_MAGIC);
+	vc->wrk = wrk;
+	vc->resp = resp;
 
-	vep = VEP_Init(&vc, &req, NULL, NULL);
+	vep = VEP_Init(vc, req, NULL, NULL);
 	AN(vep);
 	VEP_Parse(vep, (const char *)data, size);
 	vsb = VEP_Finish(vep);
 	if (vsb != NULL)
 		VSB_destroy(&vsb);
-	free(vep);
+	WS_Rollback(ws, 0);
 
 	return (0);
 }
@@ -155,6 +167,7 @@ main(int argc, char **argv)
 	for (i = 1; i < argc; i++) {
 		len = 0;
 		buf = VFIL_readfile(NULL, argv[i], &len);
+		AN(buf);
 		LLVMFuzzerTestOneInput((uint8_t *)buf, len);
 		free(buf);
 	}
