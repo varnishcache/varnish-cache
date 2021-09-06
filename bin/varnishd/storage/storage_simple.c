@@ -252,18 +252,21 @@ sml_slim(struct worker *wrk, struct objcore *oc)
 static void v_matchproto_(objfree_f)
 sml_objfree(struct worker *wrk, struct objcore *oc)
 {
+	struct storage *st;
 	struct object *o;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	sml_slim(wrk, oc);
 	CAST_OBJ_NOTNULL(o, oc->stobj->priv, OBJECT_MAGIC);
-	o->magic = 0;
+	st = o->objstore;
+	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
+	FINI_OBJ(o);
 
 	if (oc->boc == NULL && oc->stobj->stevedore->lru != NULL)
 		LRU_Remove(oc);
 
-	sml_stv_free(oc->stobj->stevedore, o->objstore);
+	sml_stv_free(oc->stobj->stevedore, st);
 
 	memset(oc->stobj, 0, sizeof oc->stobj);
 

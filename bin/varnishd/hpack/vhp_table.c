@@ -122,7 +122,7 @@ vht_trim(struct vht_table *tbl, ssize_t max)
 			assert(e->offset == u);
 			u += ENTRYLEN(e);
 			v++;
-			e->magic = 0;
+			FINI_OBJ(e);
 		} else {
 			/* Fixup offset */
 			assert(e->offset >= u);
@@ -257,7 +257,7 @@ VHT_NewEntry_Indexed(struct vht_table *tbl, unsigned idx)
 	assert(e->offset == 0);
 	lname = e->namelen;
 	lentry = ENTRYLEN(e);
-	e->magic = 0;
+	FINI_OBJ(e);
 	memmove(TBLENTRY(tbl, 1), TBLENTRY(tbl, 0), (tbl->n - 1) * sizeof *e);
 	tbl->n--;
 
@@ -462,7 +462,7 @@ VHT_Init(struct vht_table *tbl, size_t protomax)
 	INIT_OBJ(tbl, VHT_TABLE_MAGIC);
 	r = VHT_SetProtoMax(tbl, protomax);
 	if (r) {
-		tbl->magic = 0;
+		FINI_OBJ(tbl);
 		return (r);
 	}
 	tbl->maxsize = tbl->protomax;
