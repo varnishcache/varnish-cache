@@ -119,15 +119,6 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 			bo->no_retry = "req.body not cached";
 
 		if (bo->req->req_body_status == BS_ERROR) {
-			/*
-			 * XXX: (#2332) We should test to see if the backend
-			 * XXX: sent us some headers explaining why.
-			 * XXX: This is hard because of the mistaken API split
-			 * XXX: between cache_backend.c and V1F, and therefore
-			 * XXX: Parked in this comment, pending renovation of
-			 * XXX: the VDI/backend-protocol API to allow non-H1
-			 * XXX: backends.
-			 */
 			assert(i < 0);
 			VSLb(bo->vsl, SLT_FetchError,
 			    "req.body read error: %d (%s)",
@@ -152,11 +143,25 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 		sc = SC_TX_ERROR;
 
 	if (sc != SC_NULL) {
-		VSLb(bo->vsl, SLT_FetchError, "backend write error: %d (%s)",
-		    errno, VAS_errtxt(errno));
 		VSLb_ts_busyobj(bo, "Bereq", W_TIM_real(wrk));
 		htc->doclose = sc;
-		return (-1);
+		/*
+		 * If the backend closed the connection, it might have sent some
+		 * headers explaining the situation
+		 */
+		if ((errno == ECONNRESET || errno == ENOTCONN || errno == EPIPE)
+			&& !V1F_FetchRespHdr(bo) && bo->beresp && bo->beresp->status) {
+			VSLb(bo->vsl, SLT_FetchError,
+				 "backend write error: %d (%s) but status received: %d",
+				 errno, VAS_errtxt(errno), bo->beresp->status);
+			return (0);
+		}
+		else
+		{
+			VSLb(bo->vsl, SLT_FetchError, "backend write error: %d (%s)",
+				 errno, VAS_errtxt(errno));
+			return (-1);
+		}
 	}
 	VSLb_ts_busyobj(bo, "Bereq", W_TIM_real(wrk));
 	return (0);

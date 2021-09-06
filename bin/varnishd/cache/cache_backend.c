@@ -312,6 +312,17 @@ vbe_dir_gethdrs(VRT_CTX, VCL_BACKEND d)
 			}
 		}
 
+		/*
+		 * If the backend closed the connection, but it sent
+		 * response with a status, use that as a response
+		 */
+		if (bo->beresp && bo->beresp->status)
+		{
+			AZ(bo->bereq_body);
+			AN(bo->htc->priv);
+			return (0);
+		}
+
 		if (bo->htc->doclose == SC_NULL) {
 			assert(PFD_State(pfd) == PFD_STATE_USED);
 			if (i == 0)
