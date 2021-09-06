@@ -527,7 +527,6 @@ void WRK_Init(void);
 void WRK_AddStat(const struct worker *);
 
 /* cache_ws.c */
-void WS_Id(const struct ws *ws, char *id);
 void WS_Panic(struct vsb *, const struct ws *);
 static inline int
 WS_IsReserved(const struct ws *ws)
@@ -536,10 +535,13 @@ WS_IsReserved(const struct ws *ws)
 	return (ws->r != NULL);
 }
 
-void WS_Rollback(struct ws *, uintptr_t);
 void *WS_AtOffset(const struct ws *ws, unsigned off, unsigned len);
 unsigned WS_ReservationOffset(const struct ws *ws);
 unsigned WS_ReqPipeline(struct ws *, const void *b, const void *e);
+
+/* cache_ws_common.c */
+void WS_Id(const struct ws *ws, char *id);
+void WS_Rollback(struct ws *, uintptr_t);
 
 /* http1/cache_http1_pipe.c */
 void V1P_Init(void);

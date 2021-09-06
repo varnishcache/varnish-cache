@@ -780,13 +780,10 @@ void WRK_BgThread(pthread_t *thr, const char *name, bgthread_t *func,
     void *priv);
 
 /* cache_ws.c */
-
 void WS_Init(struct ws *ws, const char *id, void *space, unsigned len);
 
 unsigned WS_ReserveSize(struct ws *, unsigned);
 unsigned WS_ReserveAll(struct ws *);
-unsigned WS_ReserveLumps(struct ws *ws, size_t sz);
-void WS_MarkOverflow(struct ws *ws);
 void WS_Release(struct ws *ws, unsigned bytes);
 void WS_ReleaseP(struct ws *ws, const char *ptr);
 void WS_Assert(const struct ws *ws);
@@ -794,13 +791,8 @@ void WS_Reset(struct ws *ws, uintptr_t);
 void *WS_Alloc(struct ws *ws, unsigned bytes);
 void *WS_Copy(struct ws *ws, const void *str, int len);
 uintptr_t WS_Snapshot(struct ws *ws);
-int WS_Overflowed(const struct ws *ws);
-const char *WS_Printf(struct ws *ws, const char *fmt, ...) v_printflike_(2, 3);
 int WS_Allocated(const struct ws *ws, const void *ptr, ssize_t len);
 unsigned WS_Dump(const struct ws *ws, char, size_t off, void *buf, size_t len);
-
-void WS_VSB_new(struct vsb *, struct ws *);
-char *WS_VSB_finish(struct vsb *, struct ws *, size_t *);
 
 static inline void *
 WS_Reservation(const struct ws *ws)
@@ -819,6 +811,23 @@ WS_ReservationSize(const struct ws *ws)
 	AN(ws->r);
 	return (ws->r - ws->f);
 }
+
+static inline unsigned
+WS_ReserveLumps(struct ws *ws, size_t sz)
+{
+
+	AN(sz);
+	return (WS_ReserveAll(ws) / sz);
+}
+
+/* cache_ws_common.c */
+void WS_MarkOverflow(struct ws *ws);
+int WS_Overflowed(const struct ws *ws);
+
+const char *WS_Printf(struct ws *ws, const char *fmt, ...) v_printflike_(2, 3);
+
+void WS_VSB_new(struct vsb *, struct ws *);
+char *WS_VSB_finish(struct vsb *, struct ws *, size_t *);
 
 /* cache_rfc2616.c */
 void RFC2616_Ttl(struct busyobj *, vtim_real now, vtim_real *t_origin,

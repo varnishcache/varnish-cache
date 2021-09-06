@@ -39,7 +39,6 @@
 
 #include "cache_varnishd.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 
 struct ws_alloc {
@@ -182,32 +181,6 @@ WS_Init(struct ws *ws, const char *id, void *space, unsigned len)
 	WS_Assert(ws);
 }
 
-void
-WS_Id(const struct ws *ws, char *id)
-{
-
-	WS_Assert(ws);
-	AN(id);
-	memcpy(id, ws->id, WS_ID_SIZE);
-	id[0] |= 0x20;			// cheesy tolower()
-}
-
-void
-WS_MarkOverflow(struct ws *ws)
-{
-	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
-
-	ws->id[0] &= ~0x20;		// cheesy toupper()
-}
-
-static void
-ws_ClearOverflow(struct ws *ws)
-{
-	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
-
-	ws->id[0] |= 0x20;		// cheesy tolower()
-}
-
 static void
 ws_alloc_free(struct ws_emu *we, struct ws_alloc **wap)
 {
@@ -246,18 +219,6 @@ WS_Reset(struct ws *ws, uintptr_t pp)
 		assert(p == ws->s);
 
 	WS_Assert(ws);
-}
-
-void
-WS_Rollback(struct ws *ws, uintptr_t pp)
-{
-
-	WS_Assert(ws);
-
-	if (pp == 0)
-		pp = (uintptr_t)ws->s;
-	ws_ClearOverflow(ws);
-	WS_Reset(ws, pp);
 }
 
 unsigned
@@ -375,28 +336,6 @@ WS_Copy(struct ws *ws, const void *str, int len)
 	return (NULL);
 }
 
-const char *
-WS_Printf(struct ws *ws, const char *fmt, ...)
-{
-	unsigned u, v;
-	va_list ap;
-	char *p;
-
-	u = WS_ReserveAll(ws);
-	p = ws->f;
-	va_start(ap, fmt);
-	v = vsnprintf(p, u, fmt, ap);
-	va_end(ap);
-	if (v >= u) {
-		WS_Release(ws, 0);
-		WS_MarkOverflow(ws);
-		p = NULL;
-	} else {
-		WS_Release(ws, v + 1);
-	}
-	return (p);
-}
-
 uintptr_t
 WS_Snapshot(struct ws *ws)
 {
@@ -464,12 +403,6 @@ WS_ReserveSize(struct ws *ws, unsigned bytes)
 	return (bytes);
 }
 
-unsigned
-WS_ReserveLumps(struct ws *ws, size_t sz)
-{
-	return (WS_ReserveAll(ws) / sz);
-}
-
 static void
 ws_release(struct ws *ws, unsigned bytes)
 {
@@ -520,17 +453,6 @@ WS_ReleaseP(struct ws *ws, const char *ptr)
 	DSL(DBG_WORKSPACE, 0, "WS_ReleaseP(%p, %p (%u))", ws, ptr, l);
 }
 
-int
-WS_Overflowed(const struct ws *ws)
-{
-	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
-	AN(ws->id[0]);
-
-	if (ws->id[0] & 0x20)		// cheesy islower()
-		return (0);
-	return (1);
-}
-
 void *
 WS_AtOffset(const struct ws *ws, unsigned off, unsigned len)
 {
@@ -564,46 +486,6 @@ WS_ReservationOffset(const struct ws *ws)
 	wa = VTAILQ_LAST(&we->head, ws_alloc_head);
 	AN(wa);
 	return (wa->off);
-}
-
-void
-WS_VSB_new(struct vsb *vsb, struct ws *ws)
-{
-	unsigned u;
-	static char bogus[2];	// Smallest possible vsb
-
-	AN(vsb);
-	WS_Assert(ws);
-	u = WS_ReserveAll(ws);
-	if (WS_Overflowed(ws) || u < 2)
-		AN(VSB_init(vsb, bogus, sizeof bogus));
-	else
-		AN(VSB_init(vsb, WS_Reservation(ws), u));
-}
-
-char *
-WS_VSB_finish(struct vsb *vsb, struct ws *ws, size_t *szp)
-{
-	char *p;
-
-	AN(vsb);
-	WS_Assert(ws);
-	if (!VSB_finish(vsb)) {
-		p = VSB_data(vsb);
-		if (p == ws->f) {
-			WS_Release(ws, VSB_len(vsb) + 1);
-			if (szp != NULL)
-				*szp = VSB_len(vsb);
-			VSB_fini(vsb);
-			return (p);
-		}
-	}
-	WS_MarkOverflow(ws);
-	VSB_fini(vsb);
-	WS_Release(ws, 0);
-	if (szp)
-		*szp = 0;
-	return (NULL);
 }
 
 unsigned

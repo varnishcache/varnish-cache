@@ -1,9 +1,10 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2011 Varnish Software AS
+ * Copyright (c) 2006-2021 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
+ * Author: Dridi Boukelmoune <dridi.boukelmoune@gmail.com>
  *
  * SPDX-License-Identifier: BSD-2-Clause
  *
@@ -33,8 +34,6 @@
 #include "config.h"
 
 #include "cache_varnishd.h"
-
-#include <stdio.h>
 
 #define WS_REDZONE_END		'\x15'
 
@@ -100,32 +99,6 @@ WS_Init(struct ws *ws, const char *id, void *space, unsigned len)
 	WS_Assert(ws);
 }
 
-void
-WS_Id(const struct ws *ws, char *id)
-{
-
-	WS_Assert(ws);
-	AN(id);
-	memcpy(id, ws->id, WS_ID_SIZE);
-	id[0] |= 0x20;			// cheesy tolower()
-}
-
-void
-WS_MarkOverflow(struct ws *ws)
-{
-	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
-
-	ws->id[0] &= ~0x20;		// cheesy toupper()
-}
-
-static void
-ws_ClearOverflow(struct ws *ws)
-{
-	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
-
-	ws->id[0] |= 0x20;		// cheesy tolower()
-}
-
 /*
  * Reset a WS to a cookie from WS_Snapshot
  *
@@ -154,24 +127,6 @@ WS_Reset(struct ws *ws, uintptr_t pp)
 	assert(p <= ws->e);
 	ws->f = p;
 	WS_Assert(ws);
-}
-
-/*
- * Reset the WS to a cookie or its start and clears any overflow
- *
- * for varnishd internal use only
- */
-
-void
-WS_Rollback(struct ws *ws, uintptr_t pp)
-{
-	WS_Assert(ws);
-
-	if (pp == 0)
-		pp = (uintptr_t)ws->s;
-
-	ws_ClearOverflow(ws);
-	WS_Reset(ws, pp);
 }
 
 /*
@@ -252,28 +207,6 @@ WS_Copy(struct ws *ws, const void *str, int len)
 	return (r);
 }
 
-const char *
-WS_Printf(struct ws *ws, const char *fmt, ...)
-{
-	unsigned u, v;
-	va_list ap;
-	char *p;
-
-	u = WS_ReserveAll(ws);
-	p = ws->f;
-	va_start(ap, fmt);
-	v = vsnprintf(p, u, fmt, ap);
-	va_end(ap);
-	if (v >= u) {
-		WS_Release(ws, 0);
-		WS_MarkOverflow(ws);
-		p = NULL;
-	} else {
-		WS_Release(ws, v + 1);
-	}
-	return (p);
-}
-
 uintptr_t
 WS_Snapshot(struct ws *ws)
 {
@@ -332,12 +265,6 @@ WS_ReserveSize(struct ws *ws, unsigned bytes)
 	return (bytes);
 }
 
-unsigned
-WS_ReserveLumps(struct ws *ws, size_t sz)
-{
-	return (WS_ReserveAll(ws) / sz);
-}
-
 void
 WS_Release(struct ws *ws, unsigned bytes)
 {
@@ -364,17 +291,6 @@ WS_ReleaseP(struct ws *ws, const char *ptr)
 	WS_Assert(ws);
 }
 
-int
-WS_Overflowed(const struct ws *ws)
-{
-	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
-	AN(ws->id[0]);
-
-	if (ws->id[0] & 0x20)		// cheesy islower()
-		return (0);
-	return (1);
-}
-
 void *
 WS_AtOffset(const struct ws *ws, unsigned off, unsigned len)
 {
@@ -392,60 +308,6 @@ WS_ReservationOffset(const struct ws *ws)
 
 	AN(ws->r);
 	return (ws->f - ws->s);
-}
-
-/*---------------------------------------------------------------------
- * Build a VSB on a workspace.
- * Usage pattern:
- *
- *	struct vsb vsb[1];
- *	char *p;
- *
- *	WS_VSB_new(vsb, ctx->ws);
- *	VSB_printf(vsb, "blablabla");
- *	p = WS_VSB_finish(vsb, ctx->ws, NULL);
- *	if (p == NULL)
- *		return (FAILURE);
- */
-
-void
-WS_VSB_new(struct vsb *vsb, struct ws *ws)
-{
-	unsigned u;
-	static char bogus[2];	// Smallest possible vsb
-
-	AN(vsb);
-	WS_Assert(ws);
-	u = WS_ReserveAll(ws);
-	if (WS_Overflowed(ws) || u < 2)
-		AN(VSB_init(vsb, bogus, sizeof bogus));
-	else
-		AN(VSB_init(vsb, WS_Reservation(ws), u));
-}
-
-char *
-WS_VSB_finish(struct vsb *vsb, struct ws *ws, size_t *szp)
-{
-	char *p;
-
-	AN(vsb);
-	WS_Assert(ws);
-	if (!VSB_finish(vsb)) {
-		p = VSB_data(vsb);
-		if (p == ws->f) {
-			WS_Release(ws, VSB_len(vsb) + 1);
-			if (szp != NULL)
-				*szp = VSB_len(vsb);
-			VSB_fini(vsb);
-			return (p);
-		}
-	}
-	WS_MarkOverflow(ws);
-	VSB_fini(vsb);
-	WS_Release(ws, 0);
-	if (szp)
-		*szp = 0;
-	return (NULL);
 }
 
 /*--------------------------------------------------------------------*/
