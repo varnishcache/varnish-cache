@@ -202,10 +202,12 @@ vhp_decode_test_LDADD = $(top_builddir)/lib/libvarnish/libvarnish.la
 
 noinst_PROGRAMS += esi_parse_fuzzer
 esi_parse_fuzzer_SOURCES = \
+	cache/cache_ws_emu.c \
+	cache/cache_ws_common.c \
 	cache/cache_esi_parse.c \
 	fuzzers/esi_parse_fuzzer.c
 esi_parse_fuzzer_CFLAGS = \
-	-DNOT_IN_A_VMOD
+	-DNOT_IN_A_VMOD -DENABLE_WORKSPACE_EMULATOR
 esi_parse_fuzzer_LDADD = \
 	$(top_builddir)/lib/libvarnish/libvarnish.la \
 	$(top_builddir)/lib/libvgz/libvgz.la
