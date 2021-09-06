@@ -85,6 +85,13 @@ WS_Alloc(struct ws *ws, unsigned bytes)
 	return (calloc(1, bytes));
 }
 
+unsigned
+WS_ReserveAll(struct ws *ws)
+{
+	(void)ws;
+	WRONG("Should not be called");
+}
+
 int
 LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
