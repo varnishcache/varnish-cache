@@ -97,7 +97,7 @@ static void
 vwp_add(struct vwp *vwp, struct waited *wp)
 {
 
-VSL(SLT_Debug, wp->fd, "ADD");
+	VSL(SLT_Debug, wp->fd, "ADD");
 	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
 	CHECK_OBJ_NOTNULL(vwp, VWP_MAGIC);
 	if (vwp->hpoll == vwp->npoll)
