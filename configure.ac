@@ -800,6 +800,8 @@ case $CFLAGS in
     ;;
 esac
 
+AC_SUBST(AM_LT_LDFLAGS)
+
 # --enable-coverage
 AC_ARG_ENABLE(coverage,
 	AS_HELP_STRING([--enable-coverage],
@@ -841,7 +843,6 @@ if test "$enable_debugging_symbols" != no; then
 	fi
 fi
 
-AC_SUBST(AM_LT_LDFLAGS)
 
 # Command line for compiling VCL code.  I wish there were a simple way
 # to figure this out dynamically without introducing a run-time
