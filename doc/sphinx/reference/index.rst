@@ -9,6 +9,8 @@
 The Varnish Reference Manual
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+.. _reference-vcl:
+
 The VCL language
 ----------------
 
@@ -21,13 +23,8 @@ The VCL language
 	VCL backend health probe <vcl-probe>
 	states.rst
 
-VCL Design Patterns
--------------------
-
-.. toctree::
-	:maxdepth: 1
-
-	dp_vcl_resp_status.rst
+A collection of :ref:`vcl-design-patterns-index` is available in addition to
+these reference manuals.
 
 Bundled VMODs
 -------------

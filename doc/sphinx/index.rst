@@ -74,6 +74,7 @@ Longer listings like example command output and VCL look like this::
     tutorial/index.rst
     users-guide/index.rst
     reference/index.rst
+    vcl-design-patterns/index.rst
     whats-new/index.rst
     dev-guide/index.rst
     phk/index.rst
