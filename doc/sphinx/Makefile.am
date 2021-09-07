@@ -61,6 +61,7 @@ EXTRA_DIST = \
 	tutorial \
 	reference \
 	users-guide \
+	vcl-design-patterns \
 	vtc-syntax.py \
 	whats-new
 
