@@ -149,8 +149,8 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 		 * If the backend closed the connection, it might have sent some
 		 * headers explaining the situation
 		 */
-		if ((errno == ECONNRESET || errno == ENOTCONN || errno == EPIPE)
-			&& !V1F_FetchRespHdr(bo) && bo->beresp && bo->beresp->status) {
+		if (VTCP_Check(-1) && !V1F_FetchRespHdr(bo) &&
+			bo->beresp && bo->beresp->status) {
 			VSLb(bo->vsl, SLT_FetchError,
 				 "backend write error: %d (%s) but status received: %d",
 				 errno, VAS_errtxt(errno), bo->beresp->status);
