@@ -3,8 +3,6 @@
 	SPDX-License-Identifier: BSD-2-Clause
 	See LICENSE file for full text of license
 
-.. _dp_vcl_resp_status:
-
 Using extra digits in resp.status
 =================================
 

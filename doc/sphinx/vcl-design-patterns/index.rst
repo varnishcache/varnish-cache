@@ -17,3 +17,4 @@ may be simplified.
 	:maxdepth: 1
 
 	resp-status.rst
+	req-hash_ignore_vary.rst
