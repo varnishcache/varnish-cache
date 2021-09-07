@@ -207,7 +207,7 @@ vre_capture(const vre_t *code, const char *subject, size_t length,
 	}
 
 	ovector = pcre2_get_ovector_pointer(data);
-	nov = 2 * pcre2_get_ovector_count(data);
+	nov = 2L * pcre2_get_ovector_count(data);
 	for (g = 0; g < nov; g++)
 		ovector[g] = PCRE2_UNSET;
 
