@@ -806,15 +806,15 @@ AC_SUBST(AM_LT_LDFLAGS)
 AC_ARG_ENABLE(coverage,
 	AS_HELP_STRING([--enable-coverage],
 		[enable coverage (implies debugging symbols, default is NO)]),
-	    [],
-	    [enable_coverage=no])
+	[],
+	[enable_coverage=no])
 
 # --enable-debugging-symbols
 AC_ARG_ENABLE(debugging-symbols,
 	AS_HELP_STRING([--enable-debugging-symbols],
 		[enable debugging symbols (default is NO)]),
-	    [],
-	    [enable_debugging_symbols=no])
+	[],
+	[enable_debugging_symbols=no])
 
 if test "$enable_coverage" != no; then
 	AC_DEFINE([ENABLE_COVERAGE], [1], [Define to 1 if code coverage is enabled.])
@@ -843,6 +843,14 @@ if test "$enable_debugging_symbols" != no; then
 	fi
 fi
 
+# --enable-oss-fuzz
+AC_ARG_ENABLE(oss-fuzz,
+	AS_HELP_STRING([--enable-oss-fuzz],
+		[enable build tweaks for OSS-Fuzz (default is NO)]),
+	[],
+	[enable_oss_fuzz=no])
+
+AM_CONDITIONAL(ENABLE_OSS_FUZZ, [test "$enable_oss_fuzz" != no])
 
 # Command line for compiling VCL code.  I wish there were a simple way
 # to figure this out dynamically without introducing a run-time

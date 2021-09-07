@@ -205,10 +205,16 @@ esi_parse_fuzzer_SOURCES = \
 	cache/cache_esi_parse.c \
 	fuzzers/esi_parse_fuzzer.c
 esi_parse_fuzzer_CFLAGS = \
-	-DNOT_IN_A_VMOD -DTEST_DRIVER
+	-DNOT_IN_A_VMOD
 esi_parse_fuzzer_LDADD = \
 	$(top_builddir)/lib/libvarnish/libvarnish.la \
 	$(top_builddir)/lib/libvgz/libvgz.a
+
+if ENABLE_OSS_FUZZ
+esi_parse_fuzzer_LDFLAGS = $(LIB_FUZZING_ENGINE)
+else
+esi_parse_fuzzer_CFLAGS += -DTEST_DRIVER
+endif
 
 TESTS = vhp_table_test vhp_decode_test
 
