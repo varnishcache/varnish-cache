@@ -14,7 +14,7 @@ I'm old enough to remember `HOSTS.TXT` and the introduction of the DNS system.
 Those were the days when you got a class B network by sending a
 polite letter to California, getting a polite letter back, and then,
 some months later, when
-`RFC1166 INTERNET NUMBERS <https://tools.ietf.org/html/rfc1166>`_ 
+`RFC1166 INTERNET NUMBERS <https://tools.ietf.org/html/rfc1166>`_
 arrived with in semi-annual packet of printed RFCs,
 find out that letter had at typo and you had configured all of
 the European Parliaments 1200 computers on 136.172/16 instead of
@@ -43,7 +43,7 @@ why `ping 0x7f000001` becomes `127.0.0.1` and `0127.0.0.1`
 becomes `87.0.0.1`.
 
 If you read the manual page for `getaddrinfo(3)` you will find
-that it does not tell you that, it merely says it 
+that it does not tell you that, it merely says it
 `conforms to IEEE Std 1001`.
 
 But everybody knew what that was back in 1990, and nobody had firewalls
@@ -74,7 +74,7 @@ That has just become CVE-2021-29418 and CVE-2021-28918 and will
 probably become a dozen more, once the CVE-trophy-hunters go to town.
 
 All IP number strings enter Varnish from trusted points, either
-as command line arguments (`-a`, `-b`, `-M` etc.), 
+as command line arguments (`-a`, `-b`, `-M` etc.),
 in the VCL source (`backend`, `acl` etc.) or as PROXYv1 header
 strings from the TLS-stripper in front of Varnish.
 

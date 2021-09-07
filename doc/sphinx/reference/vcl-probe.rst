@@ -140,7 +140,7 @@ is considered fully healthy.
 
 An additional ``.initial`` fills that many "happy" entries in the
 shift register when the VCL is loaded, so that backends can quickly
-become healthy, even if their health is normally considered over 
+become healthy, even if their health is normally considered over
 many samples::
 
     .interval = 1s;

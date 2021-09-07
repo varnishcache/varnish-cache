@@ -19,7 +19,7 @@ Varnish, and it is a pretty apt metafor::
        ┌─────┐     ╔═════════╗    ┌─────┐    ┌─────────┐    ┌─────────┐│┘
        │ app │ --- ║ Network ║ -- │ TLS │ -- │ Varnish │ -- │ Backend │┘
        └─────┘     ╚═════════╝    └─────┘    └─────────┘    └─────────┘
-                   /               
+                   /
        ┌────────────┐
        │ API-client │
        └────────────┘
@@ -65,7 +65,7 @@ be examined and monitored in real time or recorded for later use
 in native or NCSA format, and when we say 'everything' we mean
 *everything*::
 
-    *   << Request  >> 318737    
+    *   << Request  >> 318737
     -   Begin          req 318736 rxreq
     -   Timestamp      Start: 1612787907.221931 0.000000 0.000000
     -   Timestamp      Req: 1612787907.221931 0.000000 0.000000

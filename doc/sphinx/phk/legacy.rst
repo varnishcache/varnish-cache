@@ -32,7 +32,7 @@ also using their own HDLC frame layout.
 you have used it:  That was the hot way to do error-correction on
 modems, when dialing into a BBS or ISP in the 1990ies.
 
-I guess I should say "legacy-modems" ?  
+I guess I should say "legacy-modems" ?
 
 Big-endianess, storing the bytes the sensible way for hex-dumps, is
 rapidly becoming legacy, as the final old HP and SUN irons are

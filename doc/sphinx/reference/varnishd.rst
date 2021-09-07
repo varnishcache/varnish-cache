@@ -20,7 +20,7 @@ HTTP accelerator daemon
 SYNOPSIS
 ========
 
-varnishd 
+varnishd
     [-a [name=][listen_address[,PROTO]]
     [-b [host[:port]|path]]
     [-C]

@@ -26,19 +26,19 @@ with command-completion, command-history and other comforts:
 
 .. code-block:: text
 
-    critter phk> ./varnishadm 
-    200        
+    critter phk> ./varnishadm
+    200
     -----------------------------
     Varnish Cache CLI 1.0
     -----------------------------
     FreeBSD,13.0-CURRENT,amd64,-jnone,-sdefault,-sdefault,-hcritbit
     varnish-trunk revision 2bd5d2adfc407216ebaa653fae882d3c8d47f5e1
-    
+
     Type 'help' for command list.
     Type 'quit' to close CLI session.
     Type 'start' to launch worker process.
-    
-    varnish> 
+
+    varnish>
 
 The CLI always returns a three digit status code to tell how things went.
 

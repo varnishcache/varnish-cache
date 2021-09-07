@@ -6,7 +6,7 @@
 .. _ref-shell_tricks:
 
 %%%%%%%%%%%%
-Shell Tricks 
+Shell Tricks
 %%%%%%%%%%%%
 
 All the varnish programs can be invoked with the single

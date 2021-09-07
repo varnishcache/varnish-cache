@@ -216,7 +216,7 @@ I took myself out of the game:
 	QcQAn18fGLT4Lx2ACBivtk5wEFy6fUcu
 	=3V52
 	-----END PGP SIGNATURE-----
-	-- 
+	--
 	Poul-Henning Kamp       | UNIX since Zilog Zeus 3.20
 	phk@FreeBSD.ORG         | TCP/IP since RFC 956
 	FreeBSD committer       | BSD since 4.3-tahoe

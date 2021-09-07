@@ -52,7 +52,7 @@ IPv4/IPv6 address or a domain name which resolves to *at most*
 one IPv4 and one IPv6 address::
 
     .host = "127.0.0.1";
-    
+
     .host = "[::1]:8080";
 
     .host = "example.com:8081";

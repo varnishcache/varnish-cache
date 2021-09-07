@@ -61,7 +61,7 @@ Logging and monitoring
 	VarnishNCSA - Logging in NCSA format <varnishncsa>
 	VarnishHist - Realtime reponse histogram display <varnishhist>
 	VarnishTop - Realtime activity display <varnishtop>
-	
+
 Counters and statistics
 -----------------------
 

@@ -83,7 +83,7 @@ that to a German Engineer...
 
 Nils Goroll from UPLEX didn't quite say *"Halten Sie Mein Bier…"*,
 but he did produce a VCL workaround right away, once again using
-the inline-C capability, to frob things which are normally 
+the inline-C capability, to frob things which are normally
 "No User Serviceable Parts Behind This Door".
 
 Bravo Nils!

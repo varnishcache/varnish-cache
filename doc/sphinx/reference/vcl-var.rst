@@ -76,21 +76,21 @@ status message.
 
 SEE ALSO
 ========
-     
+
 * :ref:`varnishd(1)`
 * :ref:`vcl(7)`
 
 HISTORY
 =======
-    
+
 VCL was developed by Poul-Henning Kamp in cooperation with Verdens
 Gang AS, Redpill Linpro and Varnish Software.  This manual page is
 written by Per Buer, Poul-Henning Kamp, Martin Blix Grydeland,
 Kristian Lyngstøl, Lasse Karstensen and others.
-        
+
 COPYRIGHT
 =========
-  
+
 This document is licensed under the same license as Varnish
 itself. See LICENSE for details.
 

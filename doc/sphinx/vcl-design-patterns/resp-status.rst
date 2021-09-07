@@ -5,7 +5,7 @@
 
 .. _dp_vcl_resp_status:
 
-Using extra digits in resp.status 
+Using extra digits in resp.status
 =================================
 
 In Varnish the ``.status`` variables can hold more than three
