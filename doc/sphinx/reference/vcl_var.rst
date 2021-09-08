@@ -759,8 +759,11 @@ beresp.do_esi
 
 	Default: ``false``.
 
-	Set it to true to parse the object for ESI directives.
-	Will only be honored if req.esi is true.
+	Set it to true to parse the object for ESI directives. This is
+	necessary for later ESI processing on the client side. If
+	beresp.do_esi is false when an object enters the cache, client
+	side ESI processing will not be possible (obj.can_esi will be
+	false).
 
 	It is a VCL error to use beresp.do_esi after setting beresp.filters.
 
@@ -1254,8 +1257,8 @@ resp.do_esi	``VCL >= 4.1``
 
 	Default: obj.can_esi
 
-	This can be used to selectively disable ESI processing,
-	even though ESI parsing happened during fetch.
+	This can be used to selectively disable ESI processing, even
+	though ESI parsing happened during fetch (see beresp.do_esi).
 	This is useful when Varnish caches peer with each other.
 
 	It is a VCL error to use resp.do_esi after setting resp.filters.
