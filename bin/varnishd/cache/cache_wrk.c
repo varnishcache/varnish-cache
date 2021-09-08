@@ -738,6 +738,25 @@ static struct cli_proto debug_cmds[] = {
 	{ NULL }
 };
 
+void
+WRK_Log(enum VSL_tag_e tag, const char *fmt, ...)
+{
+	struct worker *wrk;
+	va_list ap;
+
+	AN(fmt);
+
+	wrk = THR_GetWorker();
+	CHECK_OBJ_ORNULL(wrk, WORKER_MAGIC);
+
+	va_start(ap, fmt);
+	if (wrk != NULL && wrk->vsl != NULL)
+		VSLbv(wrk->vsl, tag, fmt, ap);
+	else
+		VSLv(tag, 0, fmt, ap);
+	va_end(ap);
+}
+
 /*--------------------------------------------------------------------
  *
  */
