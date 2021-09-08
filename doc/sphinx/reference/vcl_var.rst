@@ -784,8 +784,8 @@ beresp.do_stream
 	have been sent to the client may get freed early, depending
 	on the storage engine used.
 
-	This variable has no effect if do_esi is true or when the
-	response body is empty.
+	This variable has no effect if beresp.do_esi is true or when
+	the response body is empty.
 
 beresp.do_gzip
 
