@@ -524,6 +524,7 @@ void VMOD_Panic(struct vsb *);
 /* cache_wrk.c */
 void WRK_Init(void);
 void WRK_AddStat(const struct worker *);
+void WRK_Log(enum VSL_tag_e, const char *, ...);
 
 /* cache_ws.c */
 void WS_Panic(struct vsb *, const struct ws *);
@@ -576,4 +577,10 @@ void SMP_Ready(void);
 	do {							\
 		if (DO_DEBUG(debug_bit))			\
 			VSL(SLT_Debug, (id), __VA_ARGS__);	\
+	} while (0)
+
+#define DSLb(debug_bit, ...)					\
+	do {							\
+		if (DO_DEBUG(debug_bit))			\
+			WRK_Log(SLT_Debug, __VA_ARGS__);	\
 	} while (0)
