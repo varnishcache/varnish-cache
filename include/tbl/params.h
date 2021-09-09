@@ -1535,7 +1535,10 @@ PARAM_STRING(
 	"the string will be replaced with the source file name, "
 	"%o will be replaced with the output file name, and %w "
 	"will be replaced by the cc_warnings parameter.",
-	/* flags */	MUST_RELOAD
+	/* flags */	MUST_RELOAD | BUILD_OPTIONS,
+	/* dyn_min_reason */	NULL,
+	/* dyn_max_reason */	NULL,
+	/* dyn_def_reason */	"exec $CC $CFLAGS %w -shared -o %o %s"
 )
 
 PARAM_STRING(
@@ -1547,7 +1550,10 @@ PARAM_STRING(
 	"Warnings used when compiling the C source code with "
 	"the cc_command parameter. By default, VCL is compiled "
 	"with the same set of warnings as Varnish itself.",
-	/* flags */	MUST_RELOAD
+	/* flags */	MUST_RELOAD | BUILD_OPTIONS,
+	/* dyn_min_reason */	NULL,
+	/* dyn_max_reason */	NULL,
+	/* dyn_def_reason */	"-Wall -Werror"
 )
 
 PARAM_STRING(
@@ -1573,7 +1579,11 @@ PARAM_STRING(
 	"VCL files in both the system configuration and shared "
 	"data directories to allow packages to drop their VCL "
 	"files in a standard location where relative includes "
-	"would work."
+	"would work.",
+	/* flags */	BUILD_OPTIONS,
+	/* dyn_min_reason */	NULL,
+	/* dyn_max_reason */	NULL,
+	/* dyn_def_reason */	"${sysconfdir}/varnish:${datadir}/varnish/vcl"
 )
 
 PARAM_STRING(
@@ -1583,7 +1593,11 @@ PARAM_STRING(
 	/* def */	VARNISH_VMOD_DIR,
 	/* descr */
 	"Directory (or colon separated list of directories) "
-	"where VMODs are to be found."
+	"where VMODs are to be found.",
+	/* flags */	BUILD_OPTIONS,
+	/* dyn_min_reason */	NULL,
+	/* dyn_max_reason */	NULL,
+	/* dyn_def_reason */	"${libdir}/varnish/vmods"
 )
 
 /*--------------------------------------------------------------------
