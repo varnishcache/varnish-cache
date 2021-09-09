@@ -76,6 +76,10 @@
 		exit(status); \
 	} while (0)
 
+enum pass_mode_e {
+	pass_script,
+	pass_interactive,
+};
 
 static double timeout = 5;
 static int p_arg = 0;
@@ -161,7 +165,7 @@ cli_sock(const char *T_arg, const char *S_arg)
 }
 
 static unsigned
-pass_answer(int fd)
+pass_answer(int fd, enum pass_mode_e mode)
 {
 	unsigned u, status;
 	char *answer = NULL;
@@ -180,7 +184,8 @@ pass_answer(int fd)
 	} else if (p_arg) {
 		printf("%-3u %-8u\n", status, 0U);
 	} else {
-		printf("%u\n", status);
+		if (mode == pass_interactive)
+			printf("%u\n", status);
 		if (answer != NULL)
 			printf("%s\n", answer);
 		if (status == CLIS_TRUNCATED)
@@ -204,7 +209,7 @@ do_args(int sock, int argc, char * const *argv)
 		cli_write(sock, argv[i]);
 	}
 	cli_write(sock, "\n");
-	status = pass_answer(sock);
+	status = pass_answer(sock, pass_script);
 	closefd(&sock);
 	if (status == CLIS_OK || status == CLIS_TRUNCATED)
 		exit(0);
@@ -317,7 +322,7 @@ interactive(int sock)
 		if (fds[0].revents & POLLIN) {
 			/* Get rid of the prompt, kinda hackish */
 			printf("\r           \r");
-			(void)pass_answer(fds[0].fd);
+			(void)pass_answer(fds[0].fd, pass_interactive);
 			rl_forced_update_display();
 		}
 		if (fds[1].revents & POLLIN) {
@@ -348,7 +353,7 @@ pass(int sock)
 		}
 		assert(i > 0);
 		if (fds[0].revents & POLLIN)
-			(void)pass_answer(fds[0].fd);
+			(void)pass_answer(fds[0].fd, pass_script);
 		if (fds[1].revents & POLLIN || fds[1].revents & POLLHUP) {
 			n = read(fds[1].fd, buf, sizeof buf - 1);
 			if (n == 0) {
