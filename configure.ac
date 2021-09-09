@@ -1,4 +1,4 @@
-AC_PREREQ(2.59)
+AC_PREREQ(2.69)
 AC_COPYRIGHT([Copyright (c) 2006 Verdens Gang AS
 Copyright (c) 2006-2021 Varnish Software])
 AC_REVISION([$Id$])
@@ -19,7 +19,7 @@ AC_CANONICAL_SYSTEM
 AC_LANG(C)
 
 AM_MAINTAINER_MODE([disable])
-AM_INIT_AUTOMAKE([1.11 foreign color-tests parallel-tests subdir-objects])
+AM_INIT_AUTOMAKE([1.13 foreign color-tests parallel-tests subdir-objects])
 AM_EXTRA_RECURSIVE_TARGETS([recheck])
 AM_SILENT_RULES([yes])
 AC_DISABLE_STATIC

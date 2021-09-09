@@ -160,6 +160,10 @@ Changes for developers
 Build
 -----
 
+Building from source requires autoconf 2.69 or newer and automake 1.13 or
+newer. Neither are needed when building from a release archive since they
+are already bootstrapped.
+
 There is a new ``--enable-workspace-emulator`` configure flag to replace the
 regular "packed allocation" workspace with a "sparse allocation" alternative.
 Combined with the Address Sanitizer it can help VMOD authors find memory

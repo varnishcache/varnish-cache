@@ -25,10 +25,6 @@ fi
 rm -f $SRCDIR/configure
 autoreconf -i -v $SRCDIR
 
-# autoconf prior to 2.62 has issues with zsh 4.2 and newer
-CONFIG_SHELL=/bin/sh
-export CONFIG_SHELL
-
 # NB: Workaround for make distcheck not working with
 # NB: FreeBSD's make on -current
 # env MAKE=gmake \
