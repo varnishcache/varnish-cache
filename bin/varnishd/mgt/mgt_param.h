@@ -57,6 +57,9 @@ struct parspec {
 #define ONLY_ROOT		(1<<7)
 #define NOT_IMPLEMENTED		(1<<8)
 #define PLATFORM_DEPENDENT	(1<<9)
+#define BUILD_OPTIONS		(1<<10)
+
+#define DOCS_FLAGS	(NOT_IMPLEMENTED|PLATFORM_DEPENDENT|BUILD_OPTIONS)
 
 	const char	*dyn_min_reason;
 	const char	*dyn_max_reason;
