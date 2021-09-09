@@ -543,7 +543,7 @@ AC_CHECK_DECL([SO_ACCEPTFILTER],
 # implement them.
 #
 # Varnish will build and run without these, but connections will not
-# time out, which may leave Varnish vulnerable to denail-of-service
+# time out, which may leave Varnish vulnerable to denial-of-service
 # attacks which would not be possible on other platforms.
 #
 # Newer Solaris releases with the Volo framework (Solaris 11,
