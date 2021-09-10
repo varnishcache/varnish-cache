@@ -1,0 +1,10 @@
+varnishtest "Test setenv"
+
+setenv FOO "BAR BAZ"
+shell -expect "BAR BAZ" {echo $FOO}
+
+setenv -ifunset FOO QUUX
+shell -expect "BAR BAZ" {echo $FOO}
+
+setenv FOO QUUX
+shell -expect QUUX {echo $FOO}
