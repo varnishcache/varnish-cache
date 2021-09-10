@@ -99,9 +99,7 @@ logexpect l1 -v v1 -g raw -d 1 {
 	expect 0 =    RespHeader	{^not: -1}
 	expect 0 =    RespHeader	{^Encrypted: ROT52}
 	expect 0 =    VCL_return	{^deliver}
-} -start
-
-logexpect l1 -wait
+} -run
 
 varnish v1 -errvcl {Wrong enum value.  Expected one of:} {
 	import debug;

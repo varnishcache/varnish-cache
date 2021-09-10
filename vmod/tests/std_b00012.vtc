@@ -1,5 +1,7 @@
 varnishtest "Test std.getenv"
 
+setenv FOO "BAR BAZ"
+
 varnish v1 -vcl {
 	import std;
 
@@ -10,6 +12,7 @@ varnish v1 -vcl {
 	}
 
 	sub vcl_synth {
+		set resp.http.X-FOO = std.getenv("FOO");
 		set resp.http.X-PATH = std.getenv("PATH");
 		set resp.http.X-unset = std.getenv(req.http.unset);
 	}
@@ -18,6 +21,7 @@ varnish v1 -vcl {
 client c1 {
 	txreq
 	rxresp
+	expect resp.http.X-FOO == "BAR BAZ"
 	expect resp.http.X-PATH ~ "^/"
 	expect resp.http.X-unset == ""
 } -run
