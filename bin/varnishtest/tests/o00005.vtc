@@ -1,82 +1,15 @@
-varnishtest "PROXY v2 TLV test"
+varnishtest "PROXY v2 TLV overflow"
 
 # this does does not work with IPv6, the workspace overflow test is too brittle
 feature ipv4
 
-server s1 {
-	rxreq
-	txresp
-} -start
-
-varnish v1 -arg "-p pool_sess=0,0,0" -proto "PROXY" -vcl+backend {
-	import vtc;
-	import proxy;
-
-	sub vcl_deliver {
-		set resp.http.is_ssl = proxy.is_ssl();
-		set resp.http.client_has_cert_sess = proxy.client_has_cert_sess();
-		set resp.http.client_has_cert_conn = proxy.client_has_cert_conn();
-		set resp.http.ssl_verify_result = proxy.ssl_verify_result() == 0;
-		set resp.http.alpn = proxy.alpn();
-		set resp.http.authority = proxy.authority();
-		set resp.http.ssl-version = proxy.ssl_version();
-		set resp.http.cipher = proxy.ssl_cipher();
-		set resp.http.key = proxy.cert_key();
-		set resp.http.sign = proxy.cert_sign();
-		set resp.http.cn = proxy.client_cert_cn();
-		set resp.http.ws_free = vtc.workspace_free(session);
-	}
+varnish v1 -arg "-p pool_sess=0,0,0" -proto "PROXY" -vcl {
+	backend be none;
 } -start
 
 logexpect l1 -v v1 -g raw {
 	expect * 1000	Begin		"sess 0 PROXY"
-	expect * 1000	Proxy		"2 217.70.181.33 60822 95.142.168.34 443"
-	expect * 1000	Link		"req 1001 rxreq"
-} -start
-
-client c1 {
-	# PROXY2 with CRC32C TLV
-	sendhex {
-		0d 0a 0d 0a 00 0d 0a 51 55 49 54 0a
-		21 11 00 65
-		d9 46 b5 21
-		5f 8e a8 22
-		ed 96
-		01 bb
-		03 00 04  95 03 ee 75
-		01 00 02  68 32
-		02 00 0a  68 6f 63 64 65 74 2e 6e 65 74
-		20 00 3d
-		01 00 00 00 00
-		21 00 07  54 4c 53 76 31 2e 33
-		25 00 05  45 43 32 35 36
-		24 00 0a  52 53 41 2d 53 48 41 32 35 36
-		23 00 16  41 45 41 44 2d 41 45 53 31 32 38
-			  2d 47 43 4d 2d 53 48 41 32 35 36
-	}
-	txreq
-	rxresp
-	expect resp.status == 200
-	expect resp.http.is_ssl == true
-	expect resp.http.client_has_cert_sess == false
-	expect resp.http.client_has_cert_conn == false
-	expect resp.http.ssl_verify_result == true
-	expect resp.http.alpn == h2
-	expect resp.http.authority == hocdet.net
-	expect resp.http.ssl-version == TLSv1.3
-	expect resp.http.cipher == AEAD-AES128-GCM-SHA256
-	expect resp.http.key == EC256
-	expect resp.http.sign == RSA-SHA256
-	expect resp.http.cn == ""
-} -run
-
-varnish v1 -vsl_catchup
-
-logexpect l1 -wait
-
-logexpect l1 -v v1 -g raw {
-	expect * 1003	Begin		"sess 0 PROXY"
-	expect * 1003	ProxyGarbage	"PROXY2: CRC error"
+	expect * 1000	ProxyGarbage	"PROXY2: CRC error"
 } -start
 
 client c1 {
@@ -108,8 +41,8 @@ varnish v1 -vsl_catchup
 logexpect l1 -wait
 
 logexpect l1 -v v1 -g raw {
-	expect * 1004	Begin		"sess 0 PROXY"
-	expect * 1004	ProxyGarbage	"PROXY2: TLV Dribble bytes"
+	expect * 1001	Begin		"sess 0 PROXY"
+	expect * 1001	ProxyGarbage	"PROXY2: TLV Dribble bytes"
 } -start
 
 client c1 {
@@ -142,8 +75,8 @@ varnish v1 -vsl_catchup
 logexpect l1 -wait
 
 logexpect l1 -v v1 -g raw {
-	expect * 1005	Begin		"sess 0 PROXY"
-	expect * 1005	ProxyGarbage	"PROXY2: TLV Length Error"
+	expect * 1002	Begin		"sess 0 PROXY"
+	expect * 1002	ProxyGarbage	"PROXY2: TLV Length Error"
 } -start
 
 client c1 {
@@ -175,8 +108,8 @@ varnish v1 -vsl_catchup
 logexpect l1 -wait
 
 logexpect l1 -v v1 -g raw {
-	expect * 1006	Begin		"sess 0 PROXY"
-	expect * 1006	ProxyGarbage	"PROXY2: TLV Length Error"
+	expect * 1003	Begin		"sess 0 PROXY"
+	expect * 1003	ProxyGarbage	"PROXY2: TLV Length Error"
 } -start
 
 client c1 {
