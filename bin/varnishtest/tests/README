@@ -17,7 +17,7 @@ Naming scheme
 	id ~ ^a02	--> HTTP2
 	id ~ ^b		--> Basic functionality tests
 	id ~ ^c		--> Complex functionality tests
-	id ~ ^d		--> Director VMOD tests
+	id ~ ^d		--> Director facility tests
 	id ~ ^e		--> ESI tests
 	id ~ ^f		--> Security related tests
 	id ~ ^g		--> GZIP tests
@@ -34,3 +34,5 @@ Naming scheme
 	id ~ ^t02	--> HTTP2
 	id ~ ^u		--> Utilities and background processes
 	id ~ ^v		--> VCL tests: execute VRT functions
+
+	Coverage for individual VMODs is in "${top_srcdir}vmod/tests".

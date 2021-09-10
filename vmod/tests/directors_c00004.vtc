@@ -1,4 +1,4 @@
-varnishtest "shard director LAZY - d18.vtc"
+varnishtest "shard director LAZY - directors_c00003.vtc"
 
 server s1 -repeat 2 {
 	rxreq

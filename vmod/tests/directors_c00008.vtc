@@ -1,4 +1,4 @@
-varnishtest "shard director - same as d00017.vtc but setting backend in fetch"
+varnishtest "directors_c00007.vtc but setting backend in fetch"
 
 server s1 {
 	rxreq

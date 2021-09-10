@@ -2,17 +2,17 @@ varnishtest "shard director by req.url (default)"
 
 server s1 {
 	rxreq
-	txresp -body "ech3Ooj"
+	txresp
 } -start
 
 server s2 {
 	rxreq
-	txresp -body "ieQu2qua"
+	txresp
 } -start
 
 server s3 {
 	rxreq
-	txresp -body "xiuFi3Pe"
+	txresp
 } -start
 
 varnish v1 -vcl+backend {
@@ -31,19 +31,22 @@ varnish v1 -vcl+backend {
 		return(pass);
 	}
 
+	sub vcl_backend_response {
+		set beresp.http.backend = beresp.backend;
+	}
 } -start
 
 
 client c1 {
 	txreq -url /Boo0aixe
 	rxresp
-	expect resp.body == "ech3Ooj"
+	expect resp.http.backend == s1
 
 	txreq -url /eishoSu2
 	rxresp
-	expect resp.body == "ieQu2qua"
+	expect resp.http.backend == s2
 
 	txreq -url /Aunah3uo
 	rxresp
-	expect resp.body == "xiuFi3Pe"
+	expect resp.http.backend == s3
 } -run

@@ -1,4 +1,4 @@
-varnishtest "d00017.vtc but with weights"
+varnishtest "directors_c00005.vtc but with weights"
 
 server s1 {
 	rxreq
