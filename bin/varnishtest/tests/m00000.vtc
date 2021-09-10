@@ -1,4 +1,4 @@
-varnishtest "Test std, vtc & debug vmod"
+varnishtest "Test vmod usage and test vmods (debug & vtc)"
 
 server s1 {
 	rxreq
@@ -14,31 +14,11 @@ varnish v1 -vcl+backend {
 	import debug as dbg;
 	import debug as dbg;	// again
 
-	sub log {
-		std.log("VCL" + " initiated " + "log");
-		std.log("01030507090b0d0f" +
-			"11131517191b1d1f" +
-			"21232527292b2d2f" +
-			"31333537393b3d3f" +
-			"41434547494b4d4f" +
-			"51535557595b5d5f" +
-			"61636567696b6d6f" +
-			"71737577797b7d7f" +
-			"81838587898b8d8f" +
-			"91939597999b9d9f" +
-			"a1a3a5a7a9abadaf" +
-			"b1b3b5b7b9bbbdbf" +
-			"c1c3c5c7c9cbcdcf" +
-			"d1d3d5d7d9dbdddf" +
-			"e1e3e5e7e9ebedef" +
-			"f1f3f5f7f9fbfdff");
-	}
-
 	sub vcl_init {
 		new objx = dbg.obj();
 		objx.obj();
 		dbg.vsc_new();
-		call log;
+		std.log("inside vcl_init");
 	}
 
 	sub vcl_synth {
@@ -66,8 +46,6 @@ varnish v1 -vcl+backend {
 	}
 
 	sub vcl_deliver {
-		set resp.http.foo = std.toupper(resp.http.foo);
-		set resp.http.bar = std.tolower(resp.http.bar);
 		set resp.http.who = debug.author(mithrandir);
 		set resp.http.really = debug.author();
 		set resp.http.when = objx.date();
@@ -77,7 +55,6 @@ varnish v1 -vcl+backend {
 		debug.test_priv_vcl();
 		objx.test_priv_call();
 		objx.test_priv_vcl();
-		call log;
 		std.syslog(8 + 7, "Somebody runs varnishtest");
 		debug.rot52(resp);
 	}
@@ -90,8 +67,6 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == "4"
-	expect resp.http.foo == "BAR"
-	expect resp.http.bar == "foo"
 	expect resp.http.who == "Tollef"
 	expect resp.http.really == "Poul-Henning"
 	expect resp.http.when == "Thu, 01 Jan 1970 00:00:21 GMT"
@@ -113,23 +88,15 @@ varnish v1 -expect DEBUG.count == 1
 
 logexpect l1 -v v1 -g raw -d 1 {
 	expect * 0    CLI		{^Rd vcl.load}
-	expect 0 0    VCL_Log		{^VCL initiated log}
-	# vsl_reclen = 255b minus NUL byte (last "ff" missing)
-	expect 0 0    VCL_Log		{^01030507090b0d0f11131517191b1d1f21232527292b2d2f31333537393b3d3f41434547494b4d4f51535557595b5d5f61636567696b6d6f71737577797b7d7f81838587898b8d8f91939597999b9d9fa1a3a5a7a9abadafb1b3b5b7b9bbbdbfc1c3c5c7c9cbcdcfd1d3d5d7d9dbdddfe1e3e5e7e9ebedeff1f3f5f7f9fbfd$}
+	expect 0 0    VCL_Log		{^inside vcl_init}
 	expect 0 0    Debug		{VCL_EVENT_WARM}
 
 	expect * 1001 VCL_call		{^DELIVER}
-	expect 0 =    RespUnset	{^foo: bAr}
-	expect 0 =    RespHeader	{^foo: BAR}
-	expect 0 =    RespUnset	{^bar: fOo}
-	expect 0 =    RespHeader	{^bar: foo}
 	expect 0 =    RespHeader	{^who: Tollef}
 	expect 0 =    RespHeader	{^really: Poul-Henning}
 	expect 0 =    RespHeader	{^when: Thu, 01 Jan 1970 00:00:21 GMT}
 	expect 0 =    RespHeader	{^what: [1-9][0-9]}
 	expect 0 =    RespHeader	{^not: -1}
-	expect 0 =    VCL_Log		{^VCL initiated log}
-	expect 0 =    VCL_Log		{^01030507090b0d0f11131517191b1d1f21232527292b2d2f31333537393b3d3f41434547494b4d4f51535557595b5d5f61636567696b6d6f71737577797b7d7f81838587898b8d8f91939597999b9d9fa1a3a5a7a9abadafb1b3b5b7b9bbbdbfc1c3c5c7c9cbcdcfd1d3d5d7d9dbdddfe1e3e5e7e9ebedeff1f3f5f7f9fbfd$}
 	expect 0 =    RespHeader	{^Encrypted: ROT52}
 	expect 0 =    VCL_return	{^deliver}
 } -start
@@ -190,7 +157,6 @@ varnish v1 -errvcl {Failed initialization} {
 
 varnish v1 -cliok "param.set vcc_allow_inline_c on"
 varnish v1 -vcl {
-	import std;
 	import vtc;
 
 	backend be none;
@@ -303,3 +269,29 @@ client c1 {
 	expect resp.http.csc-match == true
 	expect resp.http.uzp-match == true
 } -run
+
+varnish v1 -vcl+backend { }
+
+varnish v1 -cliok "debug.vmod"
+varnish v1 -cliok "vcl.list"
+
+varnish v1 -expect vmods == 3
+
+varnish v1 -cliok "vcl.discard vcl[1-8]"
+varnish v1 -cliok "vcl.list"
+varnish v1 -cliok "debug.vmod"
+
+varnish v1 -expect vmods == 0
+
+varnish v1 -errvcl {Symbol 'std' type (vmod) can not be used in expression.} {
+	import std;
+
+	sub vcl_recv {
+		if (std == 2) {
+		}
+	}
+}
+
+varnish v1 -cliok "debug.vmod"
+varnish v1 -cliok "vcl.list"
+varnish v1 -expect vmods == 0

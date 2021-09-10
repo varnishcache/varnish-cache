@@ -54,27 +54,65 @@ client c1 {
 	expect resp.http.vcl42 == "false"
 } -run
 
-varnish v1 -vcl+backend { }
+server s1 {
+	rxreq
+	txresp -hdr "foo: bAr" -hdr "bar: fOo"
+} -start
 
-varnish v1 -cliok "debug.vmod"
-varnish v1 -cliok "vcl.list"
-
-varnish v1 -expect vmods == 1
-
-varnish v1 -cliok "vcl.discard vcl1"
-varnish v1 -cliok "vcl.discard vcl2"
-varnish v1 -cliok "vcl.list"
-varnish v1 -cliok "debug.vmod"
-
-varnish v1 -errvcl {Symbol 'std' type (vmod) can not be used in expression.} {
+varnish v1 -vcl+backend {
 	import std;
 
-	sub vcl_recv {
-		if (std == 2) {
-		}
+	sub log {
+		std.log("VCL" + " initiated " + "log");
+		std.log("01030507090b0d0f" +
+			"11131517191b1d1f" +
+			"21232527292b2d2f" +
+			"31333537393b3d3f" +
+			"41434547494b4d4f" +
+			"51535557595b5d5f" +
+			"61636567696b6d6f" +
+			"71737577797b7d7f" +
+			"81838587898b8d8f" +
+			"91939597999b9d9f" +
+			"a1a3a5a7a9abadaf" +
+			"b1b3b5b7b9bbbdbf" +
+			"c1c3c5c7c9cbcdcf" +
+			"d1d3d5d7d9dbdddf" +
+			"e1e3e5e7e9ebedef" +
+			"f1f3f5f7f9fbfdff");
+	}
+
+	sub vcl_init {
+		call log;
+	}
+
+	sub vcl_deliver {
+		set resp.http.foo = std.toupper(resp.http.foo);
+		set resp.http.bar = std.tolower(resp.http.bar);
+		std.syslog(8 + 7, "Somebody runs varnishtest");
+		call log;
 	}
 }
 
-varnish v1 -cliok "debug.vmod"
-varnish v1 -cliok "vcl.list"
-varnish v1 -expect vmods == 0
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.foo == "BAR"
+	expect resp.http.bar == "foo"
+} -run
+
+logexpect l1 -v v1 -g raw -d 1 {
+	# vsl_reclen = 255b minus NUL byte (last "ff" missing)
+	expect * 0    VCL_Log		{^VCL initiated log}
+	expect 0 =    VCL_Log		{^01030507090b0d0f11131517191b1d1f21232527292b2d2f31333537393b3d3f41434547494b4d4f51535557595b5d5f61636567696b6d6f71737577797b7d7f81838587898b8d8f91939597999b9d9fa1a3a5a7a9abadafb1b3b5b7b9bbbdbfc1c3c5c7c9cbcdcfd1d3d5d7d9dbdddfe1e3e5e7e9ebedeff1f3f5f7f9fbfd$}
+	expect * 1006 VCL_call		{^DELIVER}
+	expect 0 =    RespUnset		{^foo: bAr}
+	expect 0 =    RespHeader	{^foo: BAR}
+	expect 0 =    RespUnset		{^bar: fOo}
+	expect 0 =    RespHeader	{^bar: foo}
+	expect 0 =    VCL_Log		{^VCL initiated log}
+	expect 0 =    VCL_Log		{^01030507090b0d0f11131517191b1d1f21232527292b2d2f31333537393b3d3f41434547494b4d4f51535557595b5d5f61636567696b6d6f71737577797b7d7f81838587898b8d8f91939597999b9d9fa1a3a5a7a9abadafb1b3b5b7b9bbbdbfc1c3c5c7c9cbcdcfd1d3d5d7d9dbdddfe1e3e5e7e9ebedeff1f3f5f7f9fbfd$}
+	expect 0 =    VCL_return	{^deliver}
+} -run
+
+#logexpect l1 -wait
