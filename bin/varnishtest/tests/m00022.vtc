@@ -8,9 +8,10 @@ server s1 {
 varnish v1 -vcl+backend { } -start
 
 logexpect l1 -v v1 -g raw {
-	expect * 0	VCL_Log         "Should happen first"
-	expect 0 0	VCL_Log         "Should happen second"
-
+	fail add * VCL_Log "Should not happen"
+	expect * 0 VCL_Log "Should happen first"
+	expect 0 0 VCL_Log "Should happen second"
+	fail clear
 } -start
 
 varnish v1 -errvcl "Forced failure" {
@@ -27,14 +28,13 @@ varnish v1 -errvcl "Forced failure" {
 		debug.fail();
 		std.log("Should not happen");
 	}
+
 	sub vcl_fini {
 		std.log("Should happen second");
 	}
 }
 
 logexpect l1 -wait
-
-shell -match "^$" {varnishlog -n ${v1_name} -d -g raw -I "Should not happen"}
 
 varnish v1 -cliok "param.set nuke_limit 42"
 
