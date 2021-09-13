@@ -399,7 +399,7 @@ req.uncacheable
 
 	Readable from: client
 
-	Writable from: client
+	Writable from: vcl_recv, vcl_hash
 
 	Default: ``false``.
 
