@@ -66,7 +66,13 @@ rebuilt from scratch.
 Structured Fields numbers
 =========================
 
-TODO
+VCL types INTEGER and REAL now map respectively to Structured Fields integer
+and decimal numbers. Numbers outside of the Structured Fields bounds are no
+longer accepted by the VCL compiler and the various conversion functions from
+vmod_std will fail the transaction for numbers out of bounds.
+
+The scientific notation is no longer supported, for example ``12.34e+3`` must
+be spelled out as ``12340`` instead.
 
 Memory footprint
 ================
@@ -155,7 +161,7 @@ significantly the VCL compilation time with very large ACLs. The ``table``
 flag improves compilation time at the expense of runtime performance.
 
 Changes for developers
-=======================
+======================
 
 Build
 -----
@@ -268,7 +274,23 @@ authors since they are not exposed by libvarnishapi.
 VNUM
 ''''
 
-TODO
+The ``VNUMpfx()`` function was replaced by ``SF_Parse_Number()`` that parses
+both decimal and integer numbers from RFC8941. In addition there are new
+``SF_Parse_Decimal()`` and ``SF_Parse_Integer()`` more specialized functions.
+
+``VNUM_bytes_unit()`` returns an integer and no longer parses factional bytes.
+
+New token parsers ``VNUM_uint()`` and ``VNUM_hex()`` were added.
+
+The other VNUM functions rely on the new SF functions for parsing, with the
+same limitations.
+
+The following macros define the Structured Fields number bounds:
+
+- ``VRT_INTEGER_MIN``
+- ``VRT_INTEGER_MAX``
+- ``VRT_DECIMAL_MIN``
+- ``VRT_DECIMAL_MAX``
 
 VRE
 '''
