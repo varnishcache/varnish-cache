@@ -56,7 +56,7 @@ by using the RFC 8941 syntax of::
 
 The second and likely more significant change is numbers in VCL
 now conform to RFC8941 as well:  Up to 15 digits and at most 3
-decimal places.
+decimal places, and "scientific notation" is no longer allowed.
 
 (These restrictions were chosen after much careful deliberation, to
 ensure that no overflows would occur, even when HTTP headers are
