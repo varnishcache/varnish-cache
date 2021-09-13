@@ -369,8 +369,8 @@ static void v_noreturn_
 usage(int status)
 {
 	fprintf(stderr,
-	    "Usage: varnishadm [-h] [-n ident] [-t timeout] [-S secretfile] "
-	    "[-T [address]:port] [command [...]]\n");
+	    "Usage: varnishadm [-h] [-p] [-n ident] [-S secretfile] "
+	    "[-t timeout] [-T [address]:port] [command [...]]\n");
 	fprintf(stderr, "\t-n is mutually exclusive with -S and -T\n");
 	exit(status);
 }
