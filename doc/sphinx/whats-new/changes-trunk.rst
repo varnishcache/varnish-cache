@@ -31,10 +31,39 @@ regular expressions are used, like VCL, ban expressions, VSL queries etc.
 
 There were some parameters changes, see the upgrade notes for more details.
 
-Structured Fields numbers
-=========================
+RFC8941 - Structured Fields
+===========================
 
-TODO (probably deserves its own section too)
+It will come as no surprise to VCL writers that HTTP headers use what can
+charitably be described as "heterogenous syntax".
+
+In 2016, on the train back from the HTTP Workshop in Stockholm, and
+in response to proposals to allow JSON in HTTP headers, I started an effort
+which culminated with the publication of `RFC 8941 Structured Fields`_.
+
+The syntax in Structured Fields is distilled from current standardized headers,
+which means that the vast majority of existing HTTP headers are already
+covered.
+There are unfortunate exceptions, most notably the Cookie headers.
+
+Starting with this release, we are gently migrating VCL towards the
+Structured Field semantics.
+
+The first change is that it is now possible to include BLOBs in VCL,
+by using the RFC 8941 syntax of::
+
+	':' + <base64> + ':'
+
+The second and likely more significant change is numbers in VCL
+now conform to RFC8941 as well:  Up to 15 digits and at most 3
+decimal places.
+
+(These restrictions were chosen after much careful deliberation, to
+ensure that no overflows would occur, even when HTTP headers are
+processed in languages where numbers are represented by IEEE-754
+64 binary floating point variables,)
+
+.. _RFC 8941 Structured Fields: https://www.rfc-editor.org/rfc/rfc8941.html
 
 varnishd
 ========
