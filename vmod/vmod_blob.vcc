@@ -122,6 +122,8 @@ also be written as::
 
 The *case* ENUM MUST be set to ``DEFAULT`` for ``IDENTITY`` encodings.
 
+.. _vmod_blob-base64:
+
 BASE64*
 ~~~~~~~
 

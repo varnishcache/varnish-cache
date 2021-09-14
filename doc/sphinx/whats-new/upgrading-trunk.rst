@@ -30,10 +30,15 @@ The new ``varnishd`` parameter ``pcre2_jit_compilation`` controls whether
 jit compilation should be attempted and has no effect if jit support was
 disabled at configure time.
 
+See :ref:`ref_param_pcre2_jit_compilation`.
+
 The former parameters ``pcre_match_limit`` and ``pcre_match_limit_recursion``
 were renamed to ``pcre2_match_limit`` and ``pcre2_depth_limit``. With older
 PCRE2 libraries, it is possible to see the depth limit being referred to as
 recursion limit in error messages.
+
+See :ref:`ref_param_pcre2_depth_limit` and :ref:`ref_param_pcre2_depth_limit`
+for more information.
 
 The syntax of regular expression should be the same, but it is possible to
 run into subtle differences. We are aware one such difference, PCRE2 fails
@@ -159,6 +164,8 @@ To restore the previous default behavior, declare your ACL like this::
 ACLs are optimized for runtime performance by default, which can increase
 significantly the VCL compilation time with very large ACLs. The ``table``
 flag improves compilation time at the expense of runtime performance.
+
+See :ref:`vcl-acl`.
 
 Changes for developers
 ======================

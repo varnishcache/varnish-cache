@@ -44,6 +44,7 @@ which culminated with the publication of `RFC 8941 Structured Fields`_.
 The syntax in Structured Fields is distilled from current standardized headers,
 which means that the vast majority of existing HTTP headers are already
 covered.
+
 There are unfortunate exceptions, most notably the Cookie headers.
 
 Starting with this release, we are gently migrating VCL towards the
@@ -54,6 +55,11 @@ by using the RFC 8941 syntax of::
 
 	':' + <base64> + ':'
 
+For example, the VCL string ``"helloworld"`` can be represented as the BLOB
+literal ``:aGVsbG93b3JsZA==:`` without involving a VMOD.
+
+See :ref:`vmod_blob(3)`.
+
 The second and likely more significant change is numbers in VCL
 now conform to RFC8941 as well:  Up to 15 digits and at most 3
 decimal places, and "scientific notation" is no longer allowed.
@@ -61,7 +67,7 @@ decimal places, and "scientific notation" is no longer allowed.
 (These restrictions were chosen after much careful deliberation, to
 ensure that no overflows would occur, even when HTTP headers are
 processed in languages where numbers are represented by IEEE-754
-64 binary floating point variables,)
+64 binary floating point variables.)
 
 .. _RFC 8941 Structured Fields: https://www.rfc-editor.org/rfc/rfc8941.html
 
@@ -163,11 +169,15 @@ For example::
 
     acl <name> +log -pedantic { ... }
 
+See :ref:`vcl-acl`.
+
 The ``include`` keyword supports a ``glob`` flag.
 
 For example::
 
     include +glob "example.org/*.vcl";
+
+See :ref:`vcl-include`.
 
 See upgrade notes for more details.
 
@@ -183,6 +193,8 @@ New ``BASE64CF`` encoding scheme in ``vmod_blob``. It is similar to
 
 It is used by a certain CDN provider who also inspired the name.
 
+See the ``vmod_blob`` manual (:ref:`vmod_blob-base64`).
+
 varnishlog
 ==========
 
@@ -191,8 +203,12 @@ fetched, ``Hit`` records contain progress of the fetch task. This should help
 troubleshooting when cache hits appear to be slow, whether or not the backend
 is still serving the response.
 
+See :ref:`vcl(7)`.
+
 By default ``VCL_acl`` records are no longer emitted. They can be brought back
 by adding a ``+log`` flag to the ACL  declaration.
+
+See :ref:`vcl-acl`.
 
 varnishncsa
 ===========
@@ -205,7 +221,7 @@ New ``%{...}t`` time formats:
 - ``msec_frac``
 - ``usec_frac``
 
-See the varnishncsa manual for more information.
+See the ``varnishncsa`` manual (:ref:`ncsa-format`) for more information.
 
 varnishadm
 ==========
@@ -220,7 +236,7 @@ varnishtest
 
 Test cases should be generally more reactive, whether it is detecting
 a ``varnishd`` startup failure, waiting for ``varnishd`` to stop, or
-when fail tests and there are barriers waiting for a synchronization.
+when tests fail and there are barriers waiting for a synchronization.
 
 Clients and servers can have up to 64 headers in requests and responses.
 
@@ -245,10 +261,14 @@ There are new feature checks:
 
 The undocumented ``pcre_jit`` feature check is gone.
 
+See the VTC manual (:ref:`vtc-feature`) for more details.
+
 There is a new ``tunnel`` command that acts as a proxy between two peers. A
 tunnel can pause and control how much data goes in each direction, and can
 be used to trigger socket timeouts, possibly in the middle of protocol frames,
 without having to change how the peers are implemented.
+
+See the VTC manual (:ref:`vtc-tunnel`) for more details.
 
 There is a new dynamic macro ``${string,repeat,<uint>,<string>}`` to avoid
 very long lines or potential mistakes when maintained by hand. For example,
@@ -256,6 +276,8 @@ the two following strings are equivalent::
 
     "AAA"
     "${string,repeat,3,A}"
+
+See the VTC manual (:ref:`vtc-macros`) for more details.
 
 There were also various improvements to HTTP/2 testing, and more should be
 expected.
@@ -288,8 +310,5 @@ The VNUM API also changed substantially for structured field number parsing.
 The deprecated functions ``VSB_new()`` and ``VSB_delete()`` were removed.
 
 See upgrade notes for more information.
-
-**XXX changes concerning VRT, the public APIs, source code organization,
-builds etc.**
 
 *eof*

@@ -205,14 +205,19 @@ the flag within parens following a question mark, like this::
         ...
     }
 
+.. _vcl-include:
 
 Include statement
 -----------------
 
-To include a VCL file in another file use the include keyword::
+To include a VCL file in another file use the ``include`` keyword::
 
     include "foo.vcl";
 
+Optionally, the ``include`` keyword can take a ``+glob`` flag to include all
+files matching a glob pattern::
+
+    include +glob "example.org/*.vcl";
 
 Import statement
 ----------------
@@ -247,6 +252,8 @@ Backends and health probes
 --------------------------
 
 Please see :ref:`vcl-backend(7)` and :ref:`vcl-probe(7)`
+
+.. _vcl-acl:
 
 Access Control List (ACL)
 -------------------------

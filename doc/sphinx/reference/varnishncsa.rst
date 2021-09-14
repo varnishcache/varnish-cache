@@ -68,6 +68,8 @@ considers varnish to be the client.
 It is possible to keep two varnishncsa instances running, one in
 backend mode, and one in client mode, logging to different files.
 
+.. _ncsa-format:
+
 FORMAT
 ======
 

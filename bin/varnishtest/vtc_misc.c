@@ -321,7 +321,6 @@ cmd_setenv(CMD_ARGS)
  *
  * Sleep for the number of seconds specified in the argument. The number
  * can include a fractional part, e.g. 1.5.
- *
  */
 void
 cmd_delay(CMD_ARGS)
@@ -454,7 +453,7 @@ addr_no_randomize_works(void)
  *        Varnish was built with its workspace emulator.
  *
  * A feature name can be prefixed with an exclamation mark (!) to skip a
- * test if a feature is present.
+ * test if the feature is present.
  *
  * Be careful with ignore_unknown_macro, because it may cause a test with a
  * misspelled macro to fail silently. You should only need it if you must

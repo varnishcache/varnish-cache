@@ -57,6 +57,8 @@ being the command and the following ones being its arguments. To continue over
 to a new line without breaking the argument string, you can escape the newline
 character (\\n) with a backslash (\\).
 
+.. _vtc-macros:
+
 MACROS
 ======
 

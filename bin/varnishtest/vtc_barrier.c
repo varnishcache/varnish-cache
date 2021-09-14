@@ -430,9 +430,9 @@ barrier_sync(struct barrier *b, struct vtclog *vl)
  *
  * If you wish to synchronize the VCL, you need to declare a "sock" barrier.
  * This will emit a macro definition named "bNAME_sock" that you can use in
- * VCL (after importing the debug vmod)::
+ * VCL (after importing the vtc vmod)::
  *
- *         debug.barrier_sync("${bNAME_sock}");
+ *         vtc.barrier_sync("${bNAME_sock}");
  *
  * This function returns 0 if everything went well and is the equivalent of
  * ``barrier bNAME sync`` at the VTC top-level.
