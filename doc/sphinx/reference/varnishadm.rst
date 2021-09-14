@@ -19,7 +19,7 @@ Control a running Varnish instance
 SYNOPSIS
 ========
 
-varnishadm [-h] [-n ident] [-t timeout] [-S secretfile] [-T [address]:port] [command [...]]
+varnishadm [-h] [-n ident] [-p] [-S secretfile] [-T [address]:port] [-t timeout] [command [...]]
 
 
 DESCRIPTION
