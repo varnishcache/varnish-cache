@@ -74,6 +74,7 @@ if __name__ == "__main__":
         parse_file(fn, cl, tl, sl)
     sl.sort()
     for section in sl:
+        print(".. _vtc-" + section + ":\n")
         print(tl[section], end="")
         a = section
         c = section.count(".")
