@@ -9,6 +9,7 @@ Required command line arguments
 -------------------------------
 
 There a two command line arguments you have to set when starting Varnish, these are:
+
 * what TCP port to serve HTTP from, and
 * where the backend server can be contacted.
 
