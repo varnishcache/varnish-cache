@@ -43,24 +43,24 @@ OPTIONS
 -h
     Print program usage and exit.
 
+-n ident
+    Connect to the instance of `varnishd` with this name.
+
 -p
     Force `pass` mode and make the output follow the VCLI protocol.
     This disables command-history/command-completion and makes it
     easier for programs to parse the response(s).
-
--n ident
-    Connect to the instance of `varnishd` with this name.
 
 -S secretfile
     Specify the authentication secret file. This should be the same -S
     argument as was given to `varnishd`. Only processes which can read
     the contents of this file, will be able to authenticate the CLI connection.
 
--t timeout
-    Wait no longer than this many seconds for an operation to finish.
-
 -T <address:port>
     Connect to the management interface at the specified address and port.
+
+-t timeout
+    Wait no longer than this many seconds for an operation to finish.
 
 
 The syntax and operation of the actual CLI interface is described in
