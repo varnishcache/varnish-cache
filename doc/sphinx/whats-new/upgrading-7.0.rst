@@ -3,15 +3,11 @@
 	SPDX-License-Identifier: BSD-2-Clause
 	See LICENSE file for full text of license
 
-**Note: This is a working document for a future release, with running
-updates for changes in the development branch. For changes in the
-released versions of Varnish, see:** :ref:`whats-new-index`
+.. _whatsnew_upgrading_7.0:
 
-.. _whatsnew_upgrading_CURRENT:
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Upgrading to Varnish **$NEXT_RELEASE**
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%
+Upgrading to Varnish 7.0
+%%%%%%%%%%%%%%%%%%%%%%%%
 
 PCRE2
 =====

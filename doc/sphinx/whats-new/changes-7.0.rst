@@ -3,18 +3,14 @@
 	SPDX-License-Identifier: BSD-2-Clause
 	See LICENSE file for full text of license
 
-**Note: This is a working document for a future release, with running
-updates for changes in the development branch. For changes in the
-released versions of Varnish, see:** :ref:`whats-new-index`
+.. _whatsnew_changes_7.0:
 
-.. _whatsnew_changes_CURRENT:
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Changes in Varnish **$NEXT_RELEASE**
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%
+Changes in Varnish 7.0
+%%%%%%%%%%%%%%%%%%%%%%
 
 For information about updating your current Varnish deployment to the
-new version, see :ref:`whatsnew_upgrading_CURRENT`.
+new version, see :ref:`whatsnew_upgrading_7.0`.
 
 A more detailed and technical account of changes in Varnish, with
 links to issues that have been fixed and pull requests that have been
