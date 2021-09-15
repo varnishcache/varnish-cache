@@ -57,15 +57,15 @@ jobs:
                       name: Verify downloaded tarball
                       command: |
                         echo "<< pipeline.parameters.dist-url-sha256 >> varnish-dist.tar.gz" | sha256sum -c
-            -run:
-              name: Rename the dist tarball by parsed version
-              command: |
-                mkdir parse-version-tmp
-                cd parse-version-tmp
-                tar xzf ../varnish-dist.tar.gz
-                VERSION=$(varnish-*/configure --version | awk 'NR == 1 {print $NF}')
-                cd ..
-                mv -v varnish-dist.tar.gz varnish-${VERSION}.tar.gz
+            - run:
+                name: Rename the dist tarball by parsed version
+                command: |
+                  mkdir parse-version-tmp
+                  cd parse-version-tmp
+                  tar xzf ../varnish-dist.tar.gz
+                  VERSION=$(varnish-*/configure --version | awk 'NR == 1 {print $NF}')
+                  cd ..
+                  mv -v varnish-dist.tar.gz varnish-${VERSION}.tar.gz
       - unless:
           condition: << pipeline.parameters.dist-url >>
           steps:
