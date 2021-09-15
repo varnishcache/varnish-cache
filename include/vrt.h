@@ -53,7 +53,7 @@
  * Whenever something is deleted or changed in a way which is not
  * binary/load-time compatible, increment MAJOR version
  *
- * NEXT (2021-09-15)
+ * 14.0 (2021-09-15)
  *	VIN_n_Arg() no directly returns the directory name.
  *	VSB_new() and VSB_delete() removed
  *	VCL_STRINGLIST, vrt_magic_string_end removed
@@ -225,7 +225,7 @@
  *	vrt_acl type added
  */
 
-#define VRT_MAJOR_VERSION	13U
+#define VRT_MAJOR_VERSION	14U
 
 #define VRT_MINOR_VERSION	0U
 
