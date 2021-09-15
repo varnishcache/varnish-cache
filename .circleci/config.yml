@@ -6,7 +6,7 @@ parameters:
     default: "HEAD"
   pkg-commit:
     type: string
-    default: "master"
+    default: "7.0"
   configure_args:
     type: string
     default: |
@@ -312,43 +312,6 @@ jobs:
 workflows:
   version: 2
   commit:
-    jobs:
-      - dist
-      - distcheck:
-          name: distcheck_centos_7
-          dist: centos
-          release: "7"
-      - distcheck:
-          name: distcheck_centos_8
-          dist: centos
-          release: "8"
-      - distcheck:
-          name: distcheck_debian_buster
-          dist: debian
-          release: buster
-          extra_conf: --enable-asan --enable-ubsan --enable-workspace-emulator
-      - distcheck:
-          name: distcheck_ubuntu_bionic
-          dist: ubuntu
-          release: bionic
-          extra_conf: CFLAGS='-g -O2 -m32'
-      - distcheck:
-          name: distcheck_alpine
-          dist: alpine
-          release: "latest"
-          #extra_conf: --without-jemalloc
-      - distcheck:
-          name: distcheck_archlinux
-          dist: archlinux
-          release: "latest"
-  nightly:
-    triggers:
-      - schedule:
-          cron: "0 4 * * *"
-          filters:
-            branches:
-              only:
-                - master
     jobs:
       - dist
       - tar_pkg_tools
