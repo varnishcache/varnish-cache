@@ -7,6 +7,12 @@ parameters:
   pkg-commit:
     type: string
     default: "master"
+  dist-url:
+    type: string
+    default: ""
+  dist-url-sha256:
+    type: string
+    default: ""
   configure_args:
     type: string
     default: |
@@ -17,7 +23,7 @@ parameters:
         --with-persistent-storage \
 jobs:
   dist:
-    description: Builds varnish-x.y.z.tar.gz that is used later for the packaging jobs
+    description: Build or download varnish-x.y.z.tar.gz that is used later for the packaging jobs
     docker:
       - image: centos:7
     steps:
@@ -37,17 +43,46 @@ jobs:
                 python3 \
                 python-sphinx
       - checkout
-      - run:
-          name: Create the dist tarball
-          command: |
-            git checkout << pipeline.parameters.vc-commit >>
-            # if version is "trunk", it's a weekly tarball, override the version
-            if grep 'AC_INIT.*trunk.*' ./configure.ac; then
-                sed -i -e "s/^AC_INIT.*trunk.*/AC_INIT([Varnish], [$(date +%Y%m%d)], [varnish-dev@varnish-cache.org])/" ./configure.ac
-                touch .is_weekly
-            fi
-            ./autogen.des --quiet
-            make dist -j 16
+      - when:
+          condition: << pipeline.parameters.dist-url >>
+          steps:
+            - run:
+                name: Download the dist tarball
+                command: |
+                  curl -s << pipeline.parameters.dist-url >> -o varnish-dist.tar.gz
+            - when:
+                condition: << pipeline.parameters.dist-url-sha256 >>
+                steps:
+                  - run:
+                      name: Verify downloaded tarball
+                      command: |
+                        echo "<< pipeline.parameters.dist-url-sha256 >> varnish-dist.tar.gz" | sha256sum -c
+            - run:
+                name: Rename the dist tarball by parsed version
+                command: |
+                  mkdir parse-version-tmp
+                  cd parse-version-tmp
+                  tar xzf ../varnish-dist.tar.gz
+                  VERSION=$(varnish-*/configure --version | awk 'NR == 1 {print $NF}')
+                  cd ..
+                  mv -v varnish-dist.tar.gz varnish-${VERSION}.tar.gz
+      - unless:
+          condition: << pipeline.parameters.dist-url >>
+          steps:
+            - run:
+                name: Create the dist tarball
+                command: |
+                  git checkout << pipeline.parameters.vc-commit >>
+                  # Locally built tarballs are always built with weekly in package name
+                  touch .is_weekly
+                  # If version is "trunk", override version to add date
+                  if grep 'AC_INIT.*trunk.*' ./configure.ac; then
+                      sed -e "s/AC_INIT(\[\(.*\)\], \[\(.*\)\], \[\(.*\)\])/AC_INIT([\1], [$(date +%Y%m%d)], [\3])/" ./configure.ac
+                  else
+                      sed -e "s/AC_INIT(\[\(.*\)\], \[\(.*\)\], \[\(.*\)\])/AC_INIT([\1], [\2-$(date +%Y%m%d)], [\3])/" ./configure.ac
+                  fi
+                  ./autogen.des --quiet
+                  make dist -j 16
       - persist_to_workspace:
           root: .
           paths:
