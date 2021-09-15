@@ -1025,6 +1025,29 @@ beresp.filters
 	After beresp.filters is set, using any of the beforementioned
 	``beresp.do_*`` switches is a VCL error.
 
+
+beresp.send_failed
+
+	Type: BOOL
+
+	Readable from: vcl_backend_response, vcl_backend_error
+
+
+	When ``true`` this indicates that we failed to send
+    the full request to the backend. The backend might
+    have still replied with a full response.
+
+beresp.fetch_failed
+
+	Type: BOOL
+
+	Readable from: vcl_backend_response, vcl_backend_error
+
+
+	When ``true`` this indicates that we failed to read
+    a full response from the backend
+
+
 obj
 ~~~
 

@@ -313,19 +313,13 @@ vbe_dir_gethdrs(VRT_CTX, VCL_BACKEND d)
 		}
 
 		/*
-		 * If the backend closed the connection, but it sent
-		 * response with a status, use that as a response
+		 * Try to read a response too if we failed to send
+		 * the full request to the backend, as it might have
+		 * replied and closed the connection
 		 */
-		if (bo->beresp && bo->beresp->status)
-		{
-			AZ(bo->bereq_body);
-			AN(bo->htc->priv);
-			return (0);
-		}
-
-		if (bo->htc->doclose == SC_NULL) {
+		if (bo->htc->doclose == SC_NULL || bo->send_failed) {
 			assert(PFD_State(pfd) == PFD_STATE_USED);
-			if (i == 0)
+			if (i == 0 || bo->send_failed)
 				i = V1F_FetchRespHdr(bo);
 			if (i == 0) {
 				AN(bo->htc->priv);

@@ -142,26 +142,17 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 	if (sc == SC_NULL && i < 0)
 		sc = SC_TX_ERROR;
 
-	if (sc != SC_NULL) {
+	if (sc == SC_NULL) {
+		bo->send_failed = 0;
+	} else {
 		VSLb_ts_busyobj(bo, "Bereq", W_TIM_real(wrk));
 		htc->doclose = sc;
-		/*
-		 * If the backend closed the connection, it might have sent some
-		 * headers explaining the situation
-		 */
-		if (VTCP_Check(-1) && !V1F_FetchRespHdr(bo) &&
-			bo->beresp && bo->beresp->status) {
-			VSLb(bo->vsl, SLT_FetchError,
-				 "backend write error: %d (%s) but status received: %d",
-				 errno, VAS_errtxt(errno), bo->beresp->status);
-			return (0);
-		}
-		else
-		{
-			VSLb(bo->vsl, SLT_FetchError, "backend write error: %d (%s)",
-				 errno, VAS_errtxt(errno));
-			return (-1);
-		}
+		bo->send_failed = 1;
+
+		VSLb(bo->vsl, SLT_FetchError, "backend write error: %d (%s)",
+			 errno, VAS_errtxt(errno));
+		return (-1);
+
 	}
 	VSLb_ts_busyobj(bo, "Bereq", W_TIM_real(wrk));
 	return (0);
@@ -189,6 +180,7 @@ V1F_FetchRespHdr(struct busyobj *bo)
 	/* Receive response */
 
 	HTC_RxInit(htc, bo->ws);
+	bo->fetch_failed = 1;
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
 
@@ -304,5 +296,6 @@ V1F_FetchRespHdr(struct busyobj *bo)
 			return (-1);
 		}
 
+	bo->fetch_failed = 0;
 	return (0);
 }

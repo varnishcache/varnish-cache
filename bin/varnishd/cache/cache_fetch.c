@@ -331,6 +331,8 @@ vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 	bo->do_esi = 0;
 	bo->do_stream = 1;
 	bo->was_304 = 0;
+	bo->fetch_failed = 0;
+	bo->send_failed = 0;
 	bo->err_code = 0;
 	bo->err_reason = NULL;
 

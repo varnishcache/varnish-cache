@@ -1,10 +1,9 @@
-varnishtest "3686: Server disconnects after reading the headers but sends a response first"
+varnishtest "3686: Server disconnects after reading the headers without sending a response"
 
 barrier b1 cond 2
 
 server s1 {
         rxreqhdrs
-        txresp -status 400 -body "Invalid request"
 } -start
 
 varnish v1 -vcl+backend {
@@ -28,16 +27,16 @@ client c1 {
         txreq -method POST -hdr "Transfer-Encoding: chunked"
         chunkedlen 100
         barrier b1 sync
-        chunkedlen 100
         chunkedlen 0
         rxresp
-        expect resp.status == 400
-        expect resp.body == "Invalid request"
-        expect resp.http.br_uncacheable == true
-        expect resp.http.br_send_failed == true
-        expect resp.http.br_fetch_failed == false
+        expect resp.status == 503
+        expect resp.reason == "Backend fetch failed"
+        expect resp.http.be_uncacheable == true
+        expect resp.http.be_send_failed == true
+        expect resp.http.be_fetch_failed == true
 } -start
 
 server s1 -wait
 barrier b1 sync
 client c1 -wait
+
