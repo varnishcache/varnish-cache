@@ -72,3 +72,5 @@ client c1 {
 	rxresp
 	expect resp.body == "xiuFi3Pe"
 } -run
+
+logexpect l1 -wait
