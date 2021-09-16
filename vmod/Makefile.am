@@ -34,10 +34,10 @@ include $(srcdir)/automake_boilerplate_vtc.am
 #
 
 .vsc.c:
-	$(PYTHON) $(top_srcdir)/lib/libvcc/vsctool.py -c $<
+	$(PYTHON) $(top_srcdir)/lib/libvsc/vsctool.py -c $<
 
 .vsc.h:
-	$(PYTHON) $(top_srcdir)/lib/libvcc/vsctool.py -h $<
+	$(PYTHON) $(top_srcdir)/lib/libvsc/vsctool.py -h $<
 
 EXTRA_DIST += VSC_debug.vsc
 nodist_libvmod_debug_la_SOURCES += \

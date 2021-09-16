@@ -36,8 +36,7 @@ dist_noinst_SCRIPTS = \
 	generate.py
 
 dist_pkgdata_SCRIPTS = \
-	vmodtool.py \
-	vsctool.py
+	vmodtool.py
 
 ## keep in sync with include/Makefile.am
 vcc_obj.c: \
