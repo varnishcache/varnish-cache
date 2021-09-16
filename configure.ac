@@ -824,14 +824,6 @@ VMOD_TESTS="$(cd $srcdir/vmod && echo tests/*.vtc)"
 AC_SUBST(VMOD_TESTS)
 AM_SUBST_NOTMAKE(VMOD_TESTS)
 
-VSC_SRC="$(cd $srcdir/bin/varnishd && echo *.vsc)"
-VSC_GEN_C="$(echo $VSC_SRC | sed 's:\.vsc:.c:g')"
-VSC_GEN_H="$(echo $VSC_SRC | sed 's:\.vsc:.h:g')"
-# automake does not allow to AC_SUBST _SOURCES files (for a good
-# reason), so we automate the cleanup at least
-AC_SUBST(VSC_GEN_C)
-AC_SUBST(VSC_GEN_H)
-
 # Make sure this include dir exists
 AC_CONFIG_COMMANDS([mkdir], [$MKDIR_P doc/sphinx/include])
 
@@ -854,6 +846,7 @@ AC_CONFIG_FILES([
     etc/Makefile
     include/Makefile
     lib/Makefile
+    lib/libvsc/Makefile
     lib/libvarnish/Makefile
     lib/libvarnishapi/Makefile
     lib/libvcc/Makefile

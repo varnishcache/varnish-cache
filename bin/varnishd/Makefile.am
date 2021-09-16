@@ -4,7 +4,8 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/lib/libvgz \
 	-I$(top_builddir)/bin/varnishd \
-	-I$(top_builddir)/include
+	-I$(top_builddir)/include \
+	-I$(top_builddir)/lib/libvsc
 
 sbin_PROGRAMS = varnishd
 
@@ -178,6 +179,7 @@ varnishd_LDFLAGS = -export-dynamic
 varnishd_LDADD = \
 	$(top_builddir)/lib/libvcc/libvcc.la \
 	$(top_builddir)/lib/libvarnish/libvarnish.la \
+	$(top_builddir)/lib/libvsc/libvsc.la \
 	$(top_builddir)/lib/libvgz/libvgz.la \
 	@JEMALLOC_LDADD@ \
 	${DL_LIBS} ${PTHREAD_LIBS} ${NET_LIBS} ${RT_LIBS} ${LIBM}
@@ -250,28 +252,3 @@ DISTCLEANFILES = builtin_vcl.c
 
 BUILT_SOURCES	=	vhp_hufdec.h
 DISTCLEANFILES	+=	vhp_hufdec.h
-
-#######################################################################
-
-.vsc.c:
-	$(PYTHON) $(top_srcdir)/lib/libvcc/vsctool.py -ch $<
-
-VSC_SRC = \
-	VSC_lck.vsc \
-	VSC_main.vsc \
-	VSC_mempool.vsc \
-	VSC_mgt.vsc \
-	VSC_sma.vsc \
-	VSC_smf.vsc \
-	VSC_smu.vsc \
-	VSC_vbe.vsc
-
-VSC_GEN_C = @VSC_GEN_C@
-VSC_GEN_H = @VSC_GEN_H@
-
-$(VSC_GEN_C): $(top_srcdir)/lib/libvcc/vsctool.py
-
-BUILT_SOURCES			+= $(VSC_GEN_C)
-CLEANFILES			= $(VSC_GEN_C) $(VSC_GEN_H)
-
-varnishd_SOURCES		+= $(VSC_SRC)

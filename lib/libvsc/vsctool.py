@@ -66,7 +66,7 @@ def genhdr(fo, name):
     fo.write(' * NB:  This file is machine generated, DO NOT EDIT!\n')
     fo.write(' *\n')
     fo.write(' * Edit ' + name +
-             '.vsc and run lib/libvcc/vsctool.py instead.\n')
+             '.vsc and run lib/libvsc/vsctool.py instead.\n')
     fo.write(' */\n')
     fo.write('\n')
 

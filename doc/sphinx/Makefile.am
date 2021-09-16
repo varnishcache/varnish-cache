@@ -86,22 +86,21 @@ include/params.rst: $(top_builddir)/bin/varnishd/varnishd
 BUILT_SOURCES += include/params.rst
 
 COUNTERS = \
-	$(top_srcdir)/bin/varnishd/VSC_main.vsc \
-	$(top_srcdir)/bin/varnishd/VSC_mgt.vsc \
-	$(top_srcdir)/bin/varnishd/VSC_mempool.vsc \
-	$(top_srcdir)/bin/varnishd/VSC_sma.vsc \
-	$(top_srcdir)/bin/varnishd/VSC_smu.vsc \
-	$(top_srcdir)/bin/varnishd/VSC_smf.vsc \
-	$(top_srcdir)/bin/varnishd/VSC_vbe.vsc \
-	$(top_srcdir)/bin/varnishd/VSC_lck.vsc
+	$(top_srcdir)/lib/libvsc/VSC_main.vsc \
+	$(top_srcdir)/lib/libvsc/VSC_mgt.vsc \
+	$(top_srcdir)/lib/libvsc/VSC_mempool.vsc \
+	$(top_srcdir)/lib/libvsc/VSC_sma.vsc \
+	$(top_srcdir)/lib/libvsc/VSC_smu.vsc \
+	$(top_srcdir)/lib/libvsc/VSC_smf.vsc \
+	$(top_srcdir)/lib/libvsc/VSC_vbe.vsc \
+	$(top_srcdir)/lib/libvsc/VSC_lck.vsc
 
-include/counters.rst: $(top_srcdir)/lib/libvcc/vsctool.py $(COUNTERS)
+include/counters.rst: $(top_srcdir)/lib/libvsc/vsctool.py $(COUNTERS)
 	echo -n '' > ${@}_
 	for i in $(COUNTERS); do \
-		$(PYTHON) $(top_srcdir)/lib/libvcc/vsctool.py -r $$i >> ${@}_ ; \
+		$(PYTHON) $(top_srcdir)/lib/libvsc/vsctool.py -r $$i >> ${@}_ ; \
 	done
 	mv -f ${@}_ ${@}
-
 BUILT_SOURCES += include/counters.rst
 
 include/varnishncsa_options.rst: $(top_builddir)/bin/varnishncsa/varnishncsa
