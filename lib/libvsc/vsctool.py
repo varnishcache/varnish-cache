@@ -195,6 +195,10 @@ class CounterSet(object):
         fo.write("#define VSC_" + self.name +
                  "_size PRNDUP(sizeof(" + self.struct + "))\n\n")
 
+        fo.write("struct vsmw_cluster;\n");
+        fo.write("struct vsc_seg;\n");
+        fo.write("\n");
+
         fo.write(self.struct + " *VSC_" + self.name + "_New")
         fo.write("(struct vsmw_cluster *,\n")
         fo.write("    struct vsc_seg **, const char *fmt, ...);\n")
