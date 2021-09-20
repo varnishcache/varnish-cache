@@ -1,0 +1,62 @@
+varnishtest "trivial run of varnishadm in script mode"
+
+feature cmd "python3 -c 'import json'"
+
+varnish v1 -vcl {backend be none;} -start
+
+shell {
+	cat >expected.txt <<-EOF
+	Child_in_state_running
+	EOF
+	varnishadm -n ${v1_name} status | tr ' ' _ >actual.txt
+	diff -u expected.txt actual.txt
+}
+
+# same command via stdin
+shell {
+	echo status | varnishadm -n ${v1_name} | tr ' ' _ >actual.txt
+	diff -u expected.txt actual.txt
+}
+
+shell {
+	cat >expected.txt <<-EOF
+	200_22______
+	Child_in_state_running
+	EOF
+	{
+		varnishadm -n ${v1_name} -p status
+		printf '\n' # easier to add here than remove in expected.txt
+	} | tr ' ' _ >actual.txt
+	diff -u expected.txt actual.txt
+}
+
+# same command via stdin
+shell {
+	echo status | varnishadm -n ${v1_name} -p | tr ' ' _ >actual.txt
+	printf '\n' >>actual.txt
+	diff -u expected.txt actual.txt
+}
+
+shell {
+	varnishadm -n ${v1_name} status -j |
+	python3 -c 'import sys, json; print(json.load(sys.stdin))'
+}
+
+# same command via stdin
+shell {
+	echo 'status -j' |
+	varnishadm -n ${v1_name} |
+	python3 -c 'import sys, json; print(json.load(sys.stdin))'
+}
+
+shell -err {
+	varnishadm -n ${v1_name} -p status -j |
+	python3 -c 'import sys, json; print(json.load(sys.stdin))'
+}
+
+# same command via stdin
+shell -err {
+	echo 'status -j' |
+	varnishadm -n ${v1_name} -p |
+	python3 -c 'import sys, json; print(json.load(sys.stdin))'
+}

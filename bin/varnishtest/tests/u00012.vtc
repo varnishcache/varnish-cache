@@ -16,18 +16,15 @@ varnish v1 -vsl_catchup
 
 process p1 -log {varnishadm -p -n ${v1_name}} -start
 
+# expect a full status line in pass mode (no banner)
 process p1 -write "ping\r"
-
-process p1 -expect-text 0 1 "200 19"
-
-process p1 -expect-text 0 1 "PONG"
+process p1 -expect-text 2 1 "200 19      "
+process p1 -expect-text 3 1 PONG
 
 process p1 -write "vcl.list\r"
-
 process p1 -expect-text 0 0 "auto    warm" 
 
 process p1 -write "vcl.show vcl1\r"
-
 process p1 -expect-text 0 0 "backend s1"
 
 process p1 -screen_dump -write "\x04" -wait

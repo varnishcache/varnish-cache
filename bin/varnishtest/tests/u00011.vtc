@@ -18,16 +18,15 @@ process p1 -log {varnishadm -n ${v1_name}} -start
 
 process p1 -expect-text 0 1 "Type 'quit' to close CLI session."
 
+# expect a status in interactive mode (after a banner)
 process p1 -write "pin\t\r"
-
-process p1 -expect-text 0 1 "PONG"
+process p1 -expect-text 12 1 "200         "
+process p1 -expect-text 13 1 PONG
 
 process p1 -write "vcl.li\t\r"
-
 process p1 -expect-text 0 1 "active   auto    warm"
 
 process p1 -write "vcl.s\t\th\t vcl1\r"
-
 process p1 -expect-text 0 1 "backend s1"
 
 process p1 -screen_dump -write "quit\r" -wait
