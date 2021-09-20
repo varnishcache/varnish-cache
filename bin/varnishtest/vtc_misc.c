@@ -246,34 +246,6 @@ cmd_shell(CMD_ARGS)
 	cmd_shell_engine(vl, ok, av[n], expect, re);
 }
 
-/* SECTION: err_shell err_shell
- *
- * NOTICE: err_shell is deprecated, use `shell -err -expect` instead.
- *
- * This is very similar to the the ``shell`` command, except it takes a first
- * string as argument before the command::
- *
- *         err_shell "foo" "echo foo"
- *
- * err_shell expect the shell command to fail AND stdout to match the string,
- * failing the test case otherwise.
- */
-
-void v_matchproto_(cmd_f)
-cmd_err_shell(CMD_ARGS)
-{
-	(void)priv;
-
-	if (av == NULL)
-		return;
-	AN(av[1]);
-	AN(av[2]);
-	AZ(av[3]);
-	vtc_log(vl, 1,
-	    "NOTICE: err_shell is deprecated, use 'shell -err -expect'");
-	cmd_shell_engine(vl, -1, av[2], av[1], NULL);
-}
-
 /* SECTION: setenv setenv
  *
  * Set or change an environment variable::

@@ -43,7 +43,6 @@ CMD_GLOBAL(shell)
   #define CMD_TOP(x)
 #endif
 CMD_TOP(client)
-CMD_TOP(err_shell)
 CMD_TOP(feature)
 CMD_TOP(haproxy)
 #ifdef VTEST_WITH_VTC_LOGEXPECT
