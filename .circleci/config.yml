@@ -365,7 +365,7 @@ workflows:
           name: distcheck_ubuntu_bionic
           dist: ubuntu
           release: bionic
-          extra_conf: CFLAGS='-g -O2 -m32'
+          extra_conf: CFLAGS="-g -O2 -m32"
       - distcheck:
           name: distcheck_alpine
           dist: alpine
