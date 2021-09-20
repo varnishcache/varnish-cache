@@ -220,10 +220,14 @@ while [ $MAXRUNS -eq 0 ] || [ $i -lt $MAXRUNS ]
 do
 	i=$((i + 1))
 
-	(cd "${SRCDIR}" && git reset --hard > /dev/null 2>&1 || true)
-	(cd "${SRCDIR}" && git clean -df > /dev/null 2>&1 || true)
-	(cd "${SRCDIR}" && git pull > /dev/null 2>&1 || true)
-	(cd "${SRCDIR}" && chmod -R +w varnish-trunk && rm -rf varnish-trunk > /dev/null 2>&1 || true)
+	(
+		cd "${SRCDIR}"
+	        chmod -R +w varnish-trunk > /dev/null 2>&1 || true
+	        rm -rf varnish-trunk > /dev/null 2>&1 || true
+	        git reset --hard > /dev/null 2>&1 || true
+	        git clean -df > /dev/null 2>&1 || true
+	        git pull > /dev/null 2>&1
+	)
 	rev=`cd "${SRCDIR}" && git show -s --pretty=format:%H`
 	if [ "x${rev}" != "x${orev}" ] ; then
 		waitcur=${WAITMIN}
