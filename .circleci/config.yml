@@ -81,7 +81,7 @@ jobs:
                   else
                       sed -i -e "s/AC_INIT(\[\(.*\)\], \[\(.*\)\], \[\(.*\)\])/AC_INIT([\1], [\2-$(date +%Y%m%d)], [\3])/" ./configure.ac
                   fi
-                  ./autogen.des --quiet
+                  ./autogen.des
                   make dist -j 16
       - persist_to_workspace:
           root: .
@@ -318,7 +318,6 @@ jobs:
                 autoreconf -i -v
             sudo -u varnish \
                 ./configure \
-                --quiet \
                 << pipeline.parameters.configure_args >> \
                 << parameters.extra_conf >>
             sudo -u varnish \
