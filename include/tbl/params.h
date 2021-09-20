@@ -1066,18 +1066,6 @@ PARAM_SIMPLE(
 )
 
 PARAM_SIMPLE(
-	/* name */	vsm_space,
-	/* type */	bytes,
-	/* min */	"1M",
-	/* max */	"1G",
-	/* def */	"1M",
-	/* units */	"bytes",
-	/* descr */
-	"DEPRECATED: This parameter is ignored.\n"
-	"There is no global limit on amount of shared memory now."
-)
-
-PARAM_SIMPLE(
 	/* name */	workspace_backend,
 	/* type */	bytes_u,
 	/* min */	"1k",
