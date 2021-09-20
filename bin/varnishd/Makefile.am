@@ -177,7 +177,7 @@ varnishd_LDFLAGS = -export-dynamic
 varnishd_LDADD = \
 	$(top_builddir)/lib/libvcc/libvcc.la \
 	$(top_builddir)/lib/libvarnish/libvarnish.la \
-	$(top_builddir)/lib/libvgz/libvgz.a \
+	$(top_builddir)/lib/libvgz/libvgz.la \
 	@JEMALLOC_LDADD@ \
 	${DL_LIBS} ${PTHREAD_LIBS} ${NET_LIBS} ${RT_LIBS} ${LIBM}
 
@@ -208,7 +208,7 @@ esi_parse_fuzzer_CFLAGS = \
 	-DNOT_IN_A_VMOD
 esi_parse_fuzzer_LDADD = \
 	$(top_builddir)/lib/libvarnish/libvarnish.la \
-	$(top_builddir)/lib/libvgz/libvgz.a
+	$(top_builddir)/lib/libvgz/libvgz.la
 
 if ENABLE_OSS_FUZZ
 esi_parse_fuzzer_LDFLAGS = $(LIB_FUZZING_ENGINE)

@@ -2,12 +2,12 @@
 
 AM_LDFLAGS  = $(AM_LT_LDFLAGS)
 
-noinst_LIBRARIES = libvgz.a
+noinst_LTLIBRARIES = libvgz.la
 
-libvgz_a_CFLAGS = -D_LARGEFILE64_SOURCE=1 -DZLIB_CONST \
+libvgz_la_CFLAGS = -D_LARGEFILE64_SOURCE=1 -DZLIB_CONST \
 	$(libvgz_extra_cflags)
 
-libvgz_a_SOURCES = \
+libvgz_la_SOURCES = \
 	adler32.c \
 	crc32.c \
 	crc32.h \
