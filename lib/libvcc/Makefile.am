@@ -6,9 +6,9 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/include \
 	-I$(top_builddir)/include
 
-noinst_LIBRARIES = libvcc.a
+noinst_LTLIBRARIES = libvcc.la
 
-libvcc_a_SOURCES = \
+libvcc_la_SOURCES = \
 	vcc_compile.h \
 	vcc_namespace.h \
 	vcc_token_defs.h \
