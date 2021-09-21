@@ -201,7 +201,7 @@ jobs:
         type: string
       arch:
         description: build architecture
-        default: "x86-64"
+        default: amd64
         type: string
       extra_conf:
         description: platform-specific configure arguments
@@ -228,7 +228,7 @@ jobs:
       - run:
           name: Extract and distcheck
           command: |
-            docker create --name workspace -v /workspace << parameters.dist >>:<< parameters.release >>:<< parameters.arch >> /bin/true
+            docker create --arch=<< parameters.arch >> --name workspace -v /workspace << parameters.dist >>:<< parameters.release >> /bin/true
             docker cp /workspace workspace:/
             docker run --volumes-from workspace -w /workspace << parameters.dist >>:<< parameters.release >> sh -c '
             if [ << parameters.dist >> = centos ]; then
@@ -385,7 +385,7 @@ workflows:
           release: bionic
           extra_env: CFLAGS
           export_env: export CFLAGS="-g -O2 -m32"
-          arch: x86
+          arch: i386
       - distcheck:
           name: distcheck_alpine
           dist: alpine
