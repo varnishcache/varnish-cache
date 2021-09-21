@@ -257,6 +257,7 @@ jobs:
                     build-essential \
                     ca-certificates \
                     cpio \
+                    gcc-multilib \
                     git \
                     graphviz \
                     libedit-dev \
