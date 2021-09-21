@@ -312,15 +312,24 @@ vbe_dir_gethdrs(VRT_CTX, VCL_BACKEND d)
 			}
 		}
 
-		/*
-		 * Try to read a response too if we failed to send
-		 * the full request to the backend, as it might have
-		 * replied and closed the connection
-		 */
-		if (bo->htc->doclose == SC_NULL || bo->send_failed) {
+		if (bo->htc->doclose == SC_NULL) {
 			assert(PFD_State(pfd) == PFD_STATE_USED);
-			if (i == 0 || bo->send_failed)
+			if (i == 0)
 				i = V1F_FetchRespHdr(bo);
+			if (i == 0) {
+				AN(bo->htc->priv);
+				return (0);
+			}
+		}
+		/*
+		 * Try to read a response if we failed to send the full request to
+		 * the backend, as it might have replied before closing the connection
+		 */
+		if (bo->send_failed) {
+			assert(PFD_State(pfd) == PFD_STATE_USED);
+			enum sess_close close_reason = bo->htc->doclose;
+			i = V1F_FetchRespHdr(bo);
+			bo->htc->doclose = close_reason;
 			if (i == 0) {
 				AN(bo->htc->priv);
 				return (0);

@@ -23,6 +23,12 @@ varnish v1 -vcl+backend {
 
 } -start
 
+logexpect l1 -v v1 -q "vxid == 1002" {
+    expect * 1002 Begin
+	expect * 1002 BackendClose {^\d+ s1 close}
+	fail clear
+} -start
+
 client c1 {
         txreq -method POST -hdr "Transfer-Encoding: chunked"
         chunkedlen 100
@@ -39,4 +45,5 @@ client c1 {
 server s1 -wait
 barrier b1 sync
 client c1 -wait
+logexpect l1 -wait
 
