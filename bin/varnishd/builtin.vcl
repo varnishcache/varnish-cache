@@ -210,7 +210,7 @@ sub vcl_backend_response {
 }
 
 sub vcl_builtin_backend_response {
-	if (beresp.send_failed || beresp.fetch_failed) {
+	if (bereq.send_failed || beresp.fetch_failed) {
 		set beresp.uncacheable = true;
 	}
 	if (bereq.uncacheable) {

@@ -11,13 +11,13 @@ varnish v1 -vcl+backend {
 
 	sub vcl_backend_response {
         set beresp.http.br_uncacheable = beresp.uncacheable;
-        set beresp.http.br_send_failed = beresp.send_failed;
+        set beresp.http.br_send_failed = bereq.send_failed;
         set beresp.http.br_fetch_failed = beresp.fetch_failed;
 	}
 
 	sub vcl_backend_error {
         set beresp.http.be_uncacheable = true;
-        set beresp.http.be_send_failed = beresp.send_failed;
+        set beresp.http.be_send_failed = bereq.send_failed;
         set beresp.http.be_fetch_failed = beresp.fetch_failed;
 	}
 
