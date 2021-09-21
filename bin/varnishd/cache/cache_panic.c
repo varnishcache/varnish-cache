@@ -718,9 +718,11 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 	struct sigaction sa;
 	int err = errno;
 
-	AZ(pthread_mutex_lock(&panicstr_mtx)); /* Won't be released,
-						  we're going to die
-						  anyway */
+	AZ(pthread_mutex_lock(&panicstr_mtx));
+
+	/* If we already panic'ed, do nothing */
+	while (heritage.panic_str[0])
+		sleep(1);
 
 	/*
 	 * should we trigger a SIGSEGV while handling a panic, our sigsegv
@@ -809,6 +811,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 	VSB_putc(pan_vsb, '\0');	/* NUL termination */
 
 	v_gcov_flush();
+	AZ(pthread_mutex_unlock(&panicstr_mtx));
 	abort();
 }
 
