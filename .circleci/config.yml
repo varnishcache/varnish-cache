@@ -378,8 +378,8 @@ workflows:
           name: distcheck_ubuntu_bionic
           dist: ubuntu
           release: bionic
-          extra_env: CFLAGS
-          export_env: export CFLAGS="-g -O2 -m32"
+          extra_env: CC
+          export_env: export CC="gcc -m32"
       - distcheck:
           name: distcheck_alpine
           dist: alpine
