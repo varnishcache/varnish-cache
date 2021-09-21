@@ -229,7 +229,7 @@ jobs:
           name: Extract and distcheck
           command: |
             docker create --platform linux/<< parameters.arch >> --name workspace -v /workspace << parameters.dist >>:<< parameters.release >> /bin/true
-            docker cp --platform linux/<< parameters.arch >> /workspace workspace:/
+            docker cp /workspace workspace:/
             docker run --platform linux/<< parameters.arch >> --volumes-from workspace -w /workspace << parameters.dist >>:<< parameters.release >> sh -c '
             if [ << parameters.dist >> = centos ]; then
                 if [ << parameters.release >> = 8 ]; then
