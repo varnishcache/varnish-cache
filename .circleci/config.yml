@@ -376,7 +376,7 @@ workflows:
           dist: ubuntu
           release: bionic
           extra_env: CC
-          export_env: export CC='gcc -m32'
+          export_env: export CC="gcc -m32"
       - distcheck:
           name: distcheck_alpine
           dist: alpine
