@@ -382,8 +382,6 @@ addr_no_randomize_works(void)
  * the test otherwise; or change the interpretation of the test, as
  * documented below. feature takes any number of arguments from this list:
  *
- * SO_RCVTIMEO_WORKS
- *        The SO_RCVTIMEO socket option is working
  * 64bit
  *        The environment is 64 bits
  * ipv4
@@ -480,12 +478,6 @@ static const unsigned with_persistent_storage = 1;
 static const unsigned with_persistent_storage = 0;
 #endif
 
-#ifdef SO_RCVTIMEO_WORKS
-static const unsigned so_rcvtimeo_works = 1;
-#else
-static const unsigned so_rcvtimeo_works = 0;
-#endif
-
 void v_matchproto_(cmd_f)
 cmd_feature(CMD_ARGS)
 {
@@ -538,7 +530,6 @@ cmd_feature(CMD_ARGS)
 		FEATURE("tsan", tsan);
 		FEATURE("ubsan", ubsan);
 		FEATURE("sanitizer", sanitizer);
-		FEATURE("SO_RCVTIMEO_WORKS", so_rcvtimeo_works);
 		FEATURE("workspace_emulator", workspace_emulator);
 
 		if (!strcmp(feat, "cmd")) {

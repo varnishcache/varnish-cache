@@ -1,7 +1,5 @@
 varnishtest "Check the precedence for timeouts"
 
-feature SO_RCVTIMEO_WORKS
-
 server s1 {
 	rxreq
 	expect req.url == "from_backend"
