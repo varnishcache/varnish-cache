@@ -100,12 +100,8 @@ static struct sock_opt {
 
 	SOCK_OPT(SOL_SOCKET, SO_LINGER, struct linger)
 	SOCK_OPT(SOL_SOCKET, SO_KEEPALIVE, int)
-#ifdef SO_SNDTIMEO_WORKS
 	SOCK_OPT(SOL_SOCKET, SO_SNDTIMEO, struct timeval)
-#endif
-#ifdef SO_RCVTIMEO_WORKS
 	SOCK_OPT(SOL_SOCKET, SO_RCVTIMEO, struct timeval)
-#endif
 
 	SOCK_OPT(IPPROTO_TCP, TCP_NODELAY, int)
 #ifdef HAVE_TCP_KEEP
@@ -204,14 +200,10 @@ vca_sock_opt_init(void)
 
 		SET_VAL(SO_LINGER, so, lg, disable_so_linger);
 		SET_VAL(SO_KEEPALIVE, so, i, enable_so_keepalive);
-#ifdef SO_SNDTIMEO_WORKS
 		NEW_VAL(SO_SNDTIMEO, so, tv,
 		    VTIM_timeval(cache_param->idle_send_timeout));
-#endif
-#ifdef SO_RCVTIMEO_WORKS
 		NEW_VAL(SO_RCVTIMEO, so, tv,
 		    VTIM_timeval(cache_param->timeout_idle));
-#endif
 		SET_VAL(TCP_NODELAY, so, i, enable_tcp_nodelay);
 #ifdef HAVE_TCP_KEEP
 		NEW_VAL(TCP_KEEPIDLE, so, i,

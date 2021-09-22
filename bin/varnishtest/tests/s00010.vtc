@@ -3,8 +3,6 @@ varnishtest "client h1 send timeouts - tcp"
 # XXX See https://github.com/varnishcache/varnish-cache/pull/2980#issuecomment-486214661
 feature cmd {test $(uname) != "SunOS" && test $(uname) != "Darwin"}
 
-feature SO_RCVTIMEO_WORKS
-
 barrier b1 cond 2 -cyclic
 barrier b2 cond 2 -cyclic
 

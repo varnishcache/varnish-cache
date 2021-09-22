@@ -610,11 +610,6 @@ PARAM_SIMPLE(
 	"of that the response is allowed to take up."
 )
 
-#if defined(SO_SNDTIMEO_WORKS)
-#  define PLATFORM_FLAGS DELAYED_EFFECT
-#else
-#  define PLATFORM_FLAGS NOT_IMPLEMENTED
-#endif
 PARAM_SIMPLE(
 	/* name */	idle_send_timeout,
 	/* type */	timeout,
@@ -628,9 +623,8 @@ PARAM_SIMPLE(
 	"When this timeout is hit, the session is closed.\n\n"
 	"See the man page for `setsockopt(2)` or `socket(7)` under"
 	" ``SO_SNDTIMEO`` for more information.",
-	/* flags */	PLATFORM_DEPENDENT | PLATFORM_FLAGS
+	/* flags */	DELAYED_EFFECT
 )
-#undef PLATFORM_FLAGS
 
 PARAM_SIMPLE(
 	/* name */	listen_depth,
@@ -781,11 +775,6 @@ PARAM_SIMPLE(
 	/* flags */	EXPERIMENTAL
 )
 
-#if defined(SO_SNDTIMEO_WORKS)
-#  define PLATFORM_FLAGS DELAYED_EFFECT
-#else
-#  define PLATFORM_FLAGS NOT_IMPLEMENTED
-#endif
 PARAM_SIMPLE(
 	/* name */	send_timeout,
 	/* type */	timeout,
@@ -800,9 +789,8 @@ PARAM_SIMPLE(
 	" timeout is extended unless the total time already taken for sending"
 	" the response in its entirety exceeds this many seconds.\n\n"
 	"When this timeout is hit, the session is closed",
-	/* flags */	PLATFORM_DEPENDENT | PLATFORM_FLAGS
+	/* flags */	DELAYED_EFFECT
 )
-#undef PLATFORM_FLAGS
 
 PARAM_SIMPLE(
 	/* name */	shortlived,
@@ -914,11 +902,6 @@ PARAM_SIMPLE(
 )
 #undef PLATFORM_FLAGS
 
-#if defined(SO_RCVTIMEO_WORKS)
-#  define PLATFORM_FLAGS 0
-#else
-#  define PLATFORM_FLAGS NOT_IMPLEMENTED
-#endif
 PARAM_SIMPLE(
 	/* name */	timeout_idle,
 	/* type */	timeout,
@@ -932,10 +915,8 @@ PARAM_SIMPLE(
 	" request headers.\n\n"
 	"This parameter is particularly relevant for HTTP1 keepalive "
 	" connections which are closed unless the next request is received"
-	" before this timeout is reached.",
-	/* flags */	PLATFORM_DEPENDENT | PLATFORM_FLAGS
+	" before this timeout is reached."
 )
-#undef PLATFORM_FLAGS
 
 PARAM_SIMPLE(
 	/* name */	timeout_linger,
