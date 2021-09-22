@@ -2,8 +2,6 @@ varnishtest "client h1 send timeouts - uds"
 
 feature cmd {test $(uname) != "SunOS"}
 
-feature SO_RCVTIMEO_WORKS
-
 server s1 {
 	rxreq
 	txresp -bodylen 100000

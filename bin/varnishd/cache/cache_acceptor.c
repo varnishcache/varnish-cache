@@ -94,14 +94,8 @@ static struct tcp_opt {
 	TCPO(SOL_SOCKET, SO_LINGER, struct linger, 0)
 	TCPO(SOL_SOCKET, SO_KEEPALIVE, int, 0)
 	TCPO(IPPROTO_TCP, TCP_NODELAY, int, 1)
-
-#ifdef SO_SNDTIMEO_WORKS
 	TCPO(SOL_SOCKET, SO_SNDTIMEO, struct timeval, 0)
-#endif
-
-#ifdef SO_RCVTIMEO_WORKS
 	TCPO(SOL_SOCKET, SO_RCVTIMEO, struct timeval, 0)
-#endif
 
 #ifdef HAVE_TCP_KEEP
 	TCPO(IPPROTO_TCP, TCP_KEEPIDLE, int, 1)
@@ -193,16 +187,12 @@ vca_tcp_opt_init(void)
 		}						\
 	} while (0)
 
-#ifdef SO_SNDTIMEO_WORKS
 		} else if (!strcmp(to->strname, "SO_SNDTIMEO")) {
 			tv = VTIM_timeval(cache_param->idle_send_timeout);
 			NEW_VAL(to, tv);
-#endif
-#ifdef SO_RCVTIMEO_WORKS
 		} else if (!strcmp(to->strname, "SO_RCVTIMEO")) {
 			tv = VTIM_timeval(cache_param->timeout_idle);
 			NEW_VAL(to, tv);
-#endif
 #ifdef HAVE_TCP_KEEP
 		} else if (!strcmp(to->strname, "TCP_KEEPIDLE")) {
 			x = (int)(cache_param->tcp_keepalive_time);

@@ -1000,14 +1000,9 @@ HTTP_VAR(beresp)
 static inline void
 set_idle_send_timeout(const struct sess *sp, VCL_DURATION d)
 {
-#ifdef SO_SNDTIMEO_WORKS
 	struct timeval tv = VTIM_timeval(d);
 	VTCP_Assert(setsockopt(sp->fd, SOL_SOCKET, SO_SNDTIMEO,
 	    &tv, sizeof tv));
-#else
-	(void)sp;
-	(void)d;
-#endif
 }
 
 #define SESS_VAR_DUR(x, setter)				\
