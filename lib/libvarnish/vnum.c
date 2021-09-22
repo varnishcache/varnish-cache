@@ -693,9 +693,10 @@ main(int argc, char *argv[])
 		++ec;
 	}
 	d1 = VNUM_duration(" 365.24219d ");
-	if (d1 != 31556908.8) {
+	d2 = 31556908.8;
+	if (fabs(d1 - d2) > VNUM_EPSILON) {
 		printf("%s: VNUM_Duration() wrong, %.3f delta = %e\n",
-		    *argv, d1, d1 - 31556908.8);
+		    *argv, d1, d1 - d2);
 		++ec;
 	}
 	/* TODO: test invalid strings */
