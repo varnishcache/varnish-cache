@@ -493,7 +493,7 @@ WS_Dump(const struct ws *ws, char where, size_t off, void *buf, size_t len)
 {
 	struct ws_emu *we;
 	struct ws_alloc *wa;
-	unsigned l, r;
+	unsigned l;
 	char *b;
 
 	WS_Assert(ws);
@@ -526,13 +526,11 @@ WS_Dump(const struct ws *ws, char where, size_t off, void *buf, size_t len)
 	}
 
 	b = buf;
-	r = 0;
 	if (where == 'f' && ws->r != NULL) {
 		if (l > len)
 			l = len;
 		memcpy(b, wa->ptr, l);
 		b += l;
-		r += l;
 		len -= l;
 	}
 
@@ -547,7 +545,6 @@ WS_Dump(const struct ws *ws, char where, size_t off, void *buf, size_t len)
 				l = len;
 			memcpy(b, wa->ptr, l);
 			b += l;
-			r += l;
 			len -= l;
 		}
 	}
