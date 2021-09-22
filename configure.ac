@@ -475,91 +475,24 @@ AM_MISSING_HAS_RUN
 
 AC_CHECK_DECL([SO_ACCEPTFILTER],
     AC_DEFINE(HAVE_ACCEPT_FILTERS,1,[Define to 1 if you have accept filters]),
-    ,
-    [
-#include <sys/types.h>
-#include <sys/socket.h>
-    ]
-)
+    [], [
+        #include <sys/types.h>
+        #include <sys/socket.h>
+    ])
 
-# Older Solaris versions define SO_{RCV,SND}TIMEO, but do not
-# implement them.
-#
-# Varnish will build and run without these, but connections will not
-# time out, which may leave Varnish vulnerable to denail-of-service
-# attacks which would not be possible on other platforms.
-#
-# Newer Solaris releases with the Volo framework (Solaris 11,
-# Opensolaris starting with onnv_106) do support SO_{RCV,SND}TIMEO
-# (see PSARC 2007/587, initially committed into onnv-gate /
-# OpenSolaris 8348:4137e18bfaf0 Thu Dec 11 20:04:13 2008)
+AC_CHECK_DECL([SO_RCVTIMEO],
+    [],
+    AC_MSG_ERROR([SO_RCVTIMEO is needed to build Varnish.]), [
+        #include <sys/types.h>
+        #include <sys/socket.h>
+    ])
 
-save_LIBS="${LIBS}"
-LIBS="${LIBS} ${NET_LIBS}"
-AC_CACHE_CHECK([whether SO_RCVTIMEO works],
-  [ac_cv_so_rcvtimeo_works],
-  [AC_RUN_IFELSE(
-    [AC_LANG_PROGRAM([[
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/time.h>
-#include <errno.h>
-    ]],[[
-int s = socket(AF_INET, SOCK_STREAM, 0);
-struct timeval tv = { 1, 0 };
-if (s < 0 && errno == EPROTONOSUPPORT)
-  s = socket(AF_INET6, SOCK_STREAM, 0);
-if (setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof tv) == 0) {
-  socklen_t l = sizeof tv;
-  if (getsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &tv, &l) == 0) {
-    return (l != sizeof tv);
-  }
-}
-return 1;
-    ]])],
-    [ac_cv_so_rcvtimeo_works=yes],
-    [ac_cv_so_rcvtimeo_works=no])
-  ])
-if test "$ac_cv_so_rcvtimeo_works" = yes; then
-   AC_DEFINE([SO_RCVTIMEO_WORKS], [1], [Define if SO_RCVTIMEO works])
-fi
-LIBS="${save_LIBS}"
-
-save_LIBS="${LIBS}"
-LIBS="${LIBS} ${NET_LIBS}"
-AC_CACHE_CHECK([whether SO_SNDTIMEO works],
-  [ac_cv_so_sndtimeo_works],
-  [AC_RUN_IFELSE(
-    [AC_LANG_PROGRAM([[
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/time.h>
-#include <errno.h>
-    ]],[[
-int s = socket(AF_INET, SOCK_STREAM, 0);
-struct timeval tv = { 1, 0 };
-if (s < 0 && errno == EPROTONOSUPPORT)
-  s = socket(AF_INET6, SOCK_STREAM, 0);
-if (setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof tv) == 0) {
-  socklen_t l = sizeof tv;
-  if (getsockopt(s, SOL_SOCKET, SO_SNDTIMEO, &tv, &l) == 0) {
-    return (l != sizeof tv);
-  }
-}
-return 1;
-    ]])],
-    [ac_cv_so_sndtimeo_works=yes],
-    [ac_cv_so_sndtimeo_works=no])
-  ])
-if test "$ac_cv_so_sndtimeo_works" = yes; then
-   AC_DEFINE([SO_SNDTIMEO_WORKS], [1], [Define if SO_SNDTIMEO works])
-fi
-
-if test "$ac_cv_so_rcvtimeo_works" = no ||
-   test "$ac_cv_so_sndtimeo_works" = no; then
-	AC_MSG_WARN([connection timeouts will not work])
-fi
-LIBS="${save_LIBS}"
+AC_CHECK_DECL([SO_SNDTIMEO],
+    [],
+    AC_MSG_ERROR([SO_SNDTIMEO is needed to build Varnish.]), [
+        #include <sys/types.h>
+        #include <sys/socket.h>
+    ])
 
 # Check if the OS supports TCP_KEEP(CNT|IDLE|INTVL) socket options
 save_LIBS="${LIBS}"

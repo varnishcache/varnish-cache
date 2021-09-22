@@ -1,7 +1,5 @@
 varnishtest "Check that the first_byte_timeout works"
 
-feature SO_RCVTIMEO_WORKS
-
 # From VCL
 
 server s1 {

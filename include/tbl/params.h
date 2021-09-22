@@ -746,15 +746,6 @@ PARAM(
 	/* func */	NULL
 )
 
-#if defined(XYZZY)
-  #error "Temporary macro XYZZY already defined"
-#endif
-
-#if defined(SO_SNDTIMEO_WORKS)
-  #define XYZZY DELAYED_EFFECT
-#else
-  #define XYZZY NOT_IMPLEMENTED
-#endif
 PARAM(
 	/* name */	idle_send_timeout,
 	/* typ */	timeout,
@@ -762,7 +753,7 @@ PARAM(
 	/* max */	NULL,
 	/* default */	"60.000",
 	/* units */	"seconds",
-	/* flags */	XYZZY,
+	/* flags */	DELAYED_EFFECT,
 	/* s-text */
 	"Send timeout for individual pieces of data on client connections."
 	" May get extended if 'send_timeout' applies.\n\n"
@@ -772,7 +763,6 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
-#undef XYZZY
 
 PARAM(
 	/* name */	listen_depth,
@@ -1010,15 +1000,6 @@ PARAM(
 	/* func */	NULL
 )
 
-#if defined(XYZZY)
-  #error "Temporary macro XYZZY already defined"
-#endif
-
-#if defined(SO_SNDTIMEO_WORKS)
-  #define XYZZY DELAYED_EFFECT
-#else
-  #define XYZZY NOT_IMPLEMENTED
-#endif
 PARAM(
 	/* name */	send_timeout,
 	/* typ */	timeout,
@@ -1026,7 +1007,7 @@ PARAM(
 	/* max */	NULL,
 	/* default */	"600.000",
 	/* units */	"seconds",
-	/* flags */	XYZZY,
+	/* flags */	DELAYED_EFFECT,
 	/* s-text */
 	"Total timeout for ordinary HTTP1 responses. Does not apply to some"
 	" internally generated errors and pipe mode.\n\n"
@@ -1037,7 +1018,6 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
-#undef XYZZY
 
 #if 0
 /* actual location mgt_param_tbl.c */
@@ -1100,6 +1080,9 @@ PARAM(
 	/* func */	NULL
 )
 
+#if defined(XYZZY)
+  #error "Temporary macro XYZZY already defined"
+#endif
 #if defined(HAVE_TCP_FASTOPEN)
   #define XYZZY MUST_RESTART
 #else
@@ -1425,15 +1408,6 @@ PARAM(
 )
 #endif
 
-#if defined(XYZZY)
-  #error "Temporary macro XYZZY already defined"
-#endif
-
-#if defined(SO_RCVTIMEO_WORKS)
-  #define XYZZY 0
-#else
-  #define XYZZY NOT_IMPLEMENTED
-#endif
 PARAM(
 	/* name */	timeout_idle,
 	/* typ */	timeout,
@@ -1441,7 +1415,7 @@ PARAM(
 	/* max */	NULL,
 	/* default */	"5.000",
 	/* units */	"seconds",
-	/* flags */	XYZZY,
+	/* flags */	0,
 	/* s-text */
 	"Idle timeout for client connections.\n\n"
 	"A connection is considered idle until we have received the full"
@@ -1452,7 +1426,6 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
-#undef XYZZY
 
 PARAM(
 	/* name */	timeout_linger,
