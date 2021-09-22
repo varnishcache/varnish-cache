@@ -321,6 +321,7 @@ vbe_dir_gethdrs(VRT_CTX, VCL_BACKEND d)
 				return (0);
 			}
 		}
+
 		/*
 		 * Try to read a response if we failed to send the full request to
 		 * the backend, as it might have replied before closing the connection

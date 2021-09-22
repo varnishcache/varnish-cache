@@ -139,20 +139,16 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 		*ctr_bodybytes += bytes - hdrbytes;
 	}
 
+	bo->send_failed = sc != SC_NULL;
 	if (sc == SC_NULL && i < 0)
 		sc = SC_TX_ERROR;
 
-	if (sc == SC_NULL) {
-		bo->send_failed = 0;
-	} else {
+	if (sc != SC_NULL) {
+		VSLb(bo->vsl, SLT_FetchError, "backend write error: %d (%s)",
+		    errno, VAS_errtxt(errno));
 		VSLb_ts_busyobj(bo, "Bereq", W_TIM_real(wrk));
 		htc->doclose = sc;
-		bo->send_failed = 1;
-
-		VSLb(bo->vsl, SLT_FetchError, "backend write error: %d (%s)",
-			 errno, VAS_errtxt(errno));
 		return (-1);
-
 	}
 	VSLb_ts_busyobj(bo, "Bereq", W_TIM_real(wrk));
 	return (0);
