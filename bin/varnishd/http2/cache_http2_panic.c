@@ -31,6 +31,8 @@
 
 #include "config.h"
 
+#include <stdint.h>
+
 #include "cache/cache_varnishd.h"
 
 #include "cache/cache_transport.h"
@@ -108,13 +110,14 @@ h2_sess_panic(struct vsb *vsb, const struct sess *sp)
 		VSB_printf(vsb, "t_send = %f, t_winupd = %f,\n",
 		    r2->t_send, r2->t_winupd);
 		VSB_printf(vsb, "t_window = %jd, r_window = %jd,\n",
-		    r2->t_window, r2->r_window);
+		    (intmax_t)r2->t_window, (intmax_t)r2->r_window);
 
 		if (!PAN_dump_struct(vsb, r2->rxbuf, H2_RXBUF_MAGIC, "rxbuf")) {
 			VSB_printf(vsb, "stvbuf = %p,\n", r2->rxbuf->stvbuf);
 			VSB_printf(vsb,
 			    "{size, tail, head} = {%u, %ju, %ju},\n",
-			    r2->rxbuf->size, r2->rxbuf->tail, r2->rxbuf->head);
+			    r2->rxbuf->size, (uintmax_t)r2->rxbuf->tail,
+			    (uintmax_t)r2->rxbuf->head);
 			VSB_indent(vsb, -2);
 			VSB_cat(vsb, "},\n");
 		}
