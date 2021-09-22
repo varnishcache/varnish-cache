@@ -1,7 +1,5 @@
 varnishtest "Check the between_bytes_timeout behaves from backend definition"
 
-feature SO_RCVTIMEO_WORKS
-
 server s1 {
 	rxreq
 	send "HTTP/1.0 200 OK\r\nConnection: close\r\n\r\n"

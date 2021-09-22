@@ -368,8 +368,6 @@ dns_works(void)
  * the test otherwise; or change the interpretation of the test, as
  * documented below. feature takes any number of arguments from this list:
  *
- * SO_RCVTIMEO_WORKS
- *        The SO_RCVTIMEO socket option is working
  * 64bit
  *        The environment is 64 bits
  * !OSX
@@ -431,13 +429,6 @@ cmd_feature(CMD_ARGS)
 
 	for (av++; *av != NULL; av++) {
 		good = 0;
-		if (!strcmp(*av, "SO_RCVTIMEO_WORKS")) {
-#ifdef SO_RCVTIMEO_WORKS
-			good = 1;
-#else
-			vtc_stop = 2;
-#endif
-		}
 
 		if (!strcmp(*av, "!OSX")) {
 #if !defined(__APPLE__) || !defined(__MACH__)
