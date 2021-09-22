@@ -64,6 +64,7 @@ DESIRABLE_WFLAGS = [
     "-Wunused-parameter",
     "-Wunused-parameters",
     "-Wunused-result",
+    "-Wunused-but-set-variable",
     "-Wwrite-strings",
 ]
 
