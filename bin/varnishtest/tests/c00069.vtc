@@ -33,18 +33,24 @@ varnish v1 -vcl+backend {
 	}
 } -start
 
+logexpect l1 -v v1 -q "Begin ~ bereq" -i End {
+	expect 0 1002 End
+} -start
+
 client c1 {
 	txreq
 	rxresp
-	expect resp.http.streaming == "true"
+	expect resp.http.streaming == true
+} -run
 
-	delay 0.1
+logexpect l1 -wait
 
+client c2 {
 	txreq
 	rxresp
-	expect resp.http.streaming == "false"
+	expect resp.http.streaming == false
 
 	txreq -url /synth
 	rxresp
-	expect resp.http.streaming == "false"
+	expect resp.http.streaming == false
 } -run
