@@ -47,21 +47,6 @@ enum baninfo {
 	BI_DROP
 };
 
-/* Storage -----------------------------------------------------------*/
-
-struct storage {
-	unsigned		magic;
-#define STORAGE_MAGIC		0x1a4e51c0
-
-
-	VTAILQ_ENTRY(storage)	list;
-	void			*priv;
-
-	unsigned char		*ptr;
-	unsigned		len;
-	unsigned		space;
-};
-
 /* Prototypes --------------------------------------------------------*/
 
 typedef void storage_init_f(struct stevedore *, int ac, char * const *av);
@@ -80,6 +65,7 @@ typedef void *storage_allocbuf_f(struct worker *, const struct stevedore *,
 typedef void storage_freebuf_f(struct worker *, const struct stevedore *,
     uintptr_t priv);
 
+struct storage;
 typedef struct object *sml_getobj_f(struct worker *, struct objcore *);
 typedef struct storage *sml_alloc_f(const struct stevedore *, size_t size);
 typedef void sml_free_f(struct storage *);

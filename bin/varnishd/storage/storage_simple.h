@@ -33,6 +33,21 @@
  *
  */
 
+/* Storage -----------------------------------------------------------*/
+
+struct storage {
+	unsigned		magic;
+#define STORAGE_MAGIC		0x1a4e51c0
+
+
+	VTAILQ_ENTRY(storage)	list;
+	void			*priv;
+
+	unsigned char		*ptr;
+	unsigned		len;
+	unsigned		space;
+};
+
 /* Object ------------------------------------------------------------*/
 
 VTAILQ_HEAD(storagehead, storage);
