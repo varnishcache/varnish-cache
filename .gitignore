@@ -68,8 +68,8 @@ cscope.*out
 /lib/libvarnishapi/vxp_tokens.h
 
 # Stats
-/bin/varnishd/VSC_*.c
-/bin/varnishd/VSC_*.h
+/lib/libvsc/VSC_*.c
+/lib/libvsc/VSC_*.h
 
 # Misc. generated files for included vmods.
 /vmod/VSC_*.c
