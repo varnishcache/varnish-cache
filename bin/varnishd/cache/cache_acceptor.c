@@ -90,11 +90,13 @@ static struct sock_opt {
 	int		level;
 	int		optname;
 	const char	*strname;
-	int		need;
+	unsigned	mod;
 	socklen_t	sz;
 	union sock_arg	arg[1];
 } sock_opts[] = {
-#define SOCK_OPT(lvl, nam, typ) { lvl, nam, #nam, 0, sizeof(typ) },
+	/* Note: Setting the mod counter to something not-zero is needed
+	 * to force the setsockopt() calls on startup */
+#define SOCK_OPT(lvl, nam, typ) { lvl, nam, #nam, 1, sizeof(typ) },
 
 	SOCK_OPT(SOL_SOCKET, SO_LINGER, struct linger)
 	SOCK_OPT(SOL_SOCKET, SO_KEEPALIVE, int)
@@ -117,6 +119,11 @@ static struct sock_opt {
 
 static const int n_sock_opts = sizeof sock_opts / sizeof sock_opts[0];
 
+struct conn_heritage {
+	unsigned	sess_set;
+	unsigned	listen_mod;
+};
+
 /*--------------------------------------------------------------------
  * We want to get out of any kind of trouble-hit TCP connections as fast
  * as absolutely possible, so we set them LINGER disabled, so that even if
@@ -138,8 +145,6 @@ static const unsigned enable_so_keepalive = 1;
  */
 
 static const unsigned enable_tcp_nodelay = 1;
-
-static unsigned		need_test;
 
 /*--------------------------------------------------------------------
  * lacking a better place, we put some generic periodic updates
@@ -191,9 +196,8 @@ vca_sock_opt_init(void)
 			tmp.fld = (val);				\
 			if (memcmp(&so->arg->fld, &(tmp.fld), sz)) {	\
 				memcpy(&so->arg->fld, &(tmp.fld), sz);	\
-				so->need = 1;				\
+				so->mod++;				\
 				chg = 1;				\
-				need_test = 1;				\
 			}						\
 		}							\
 	} while (0)
@@ -224,6 +228,7 @@ vca_sock_opt_init(void)
 static void
 vca_sock_opt_test(const struct listen_sock *ls, const struct sess *sp)
 {
+	struct conn_heritage *ch;
 	struct sock_opt *so;
 	union sock_arg tmp;
 	socklen_t l;
@@ -234,14 +239,16 @@ vca_sock_opt_test(const struct listen_sock *ls, const struct sess *sp)
 
 	for (n = 0; n < n_sock_opts; n++) {
 		so = &sock_opts[n];
+		ch = &ls->conn_heritage[n];
+		if (ch->sess_set)
+			continue; /* Already set, no need to retest */
 		if (so->level == IPPROTO_TCP && ls->uds)
 			continue;
-		so->need = 1;
 		memset(&tmp, 0, sizeof tmp);
 		l = so->sz;
 		i = getsockopt(sp->fd, so->level, so->optname, &tmp, &l);
-		if (i == 0 && !memcmp(&tmp, so->arg, so->sz))
-			so->need = 0;
+		if (i == 0 && memcmp(&tmp, so->arg, so->sz))
+			ch->sess_set = 1;
 		if (i && errno != ENOPROTOOPT)
 			VTCP_Assert(i);
 	}
@@ -250,6 +257,7 @@ vca_sock_opt_test(const struct listen_sock *ls, const struct sess *sp)
 static void
 vca_sock_opt_set(const struct listen_sock *ls, const struct sess *sp)
 {
+	struct conn_heritage *ch;
 	struct sock_opt *so;
 	int n, sock;
 
@@ -259,12 +267,17 @@ vca_sock_opt_set(const struct listen_sock *ls, const struct sess *sp)
 
 	for (n = 0; n < n_sock_opts; n++) {
 		so = &sock_opts[n];
+		ch = &ls->conn_heritage[n];
 		if (so->level == IPPROTO_TCP && ls->uds)
 			continue;
-		if (so->need || sp == NULL) {
-			VTCP_Assert(setsockopt(sock,
-			    so->level, so->optname, so->arg, so->sz));
-		}
+		if (sp == NULL && ch->listen_mod == so->mod)
+			continue;
+		if  (sp != NULL && !ch->sess_set)
+			continue;
+		VTCP_Assert(setsockopt(sock,
+		    so->level, so->optname, so->arg, so->sz));
+		if (sp == NULL)
+			ch->listen_mod = so->mod;
 	}
 }
 
@@ -410,9 +423,9 @@ vca_make_session(struct worker *wrk, void *arg)
 	vca_pace_good();
 	wrk->stats->sess_conn++;
 
-	if (need_test) {
+	if (wa->acceptlsock->test_heritage) {
 		vca_sock_opt_test(wa->acceptlsock, sp);
-		need_test = 0;
+		wa->acceptlsock->test_heritage = 0;
 	}
 	vca_sock_opt_set(wa->acceptlsock, sp);
 
@@ -607,6 +620,17 @@ vca_acct(void *arg)
 					continue;	// VCA_Shutdown
 				assert (ls->sock > 0);
 				vca_sock_opt_set(ls, NULL);
+				/* If one of the options on a socket has
+				 * changed, also force a retest of whether
+				 * the values are inherited to the
+				 * accepted sockets. This should then
+				 * catch any false positives from previous
+				 * tests that could happen if the set
+				 * value of an option happened to just be
+				 * the OS default for that value, and
+				 * wasn't actually inherited from the
+				 * listening socket. */
+				ls->test_heritage = 1;
 			}
 			AZ(pthread_mutex_unlock(&shut_mtx));
 		}
@@ -642,14 +666,17 @@ ccf_start(struct cli *cli, const char * const *av, void *priv)
 			    ls->endpoint, VAS_errtxt(errno));
 			return;
 		}
+		AZ(ls->conn_heritage);
+		ls->conn_heritage = calloc(n_sock_opts,
+		    sizeof *ls->conn_heritage);
+		AN(ls->conn_heritage);
+		ls->test_heritage = 1;
 		vca_sock_opt_set(ls, NULL);
 		if (cache_param->accept_filter && VTCP_filter_http(ls->sock))
 			VSL(SLT_Error, 0,
 			    "Kernel filtering: sock=%d, errno=%d %s",
 			    ls->sock, errno, VAS_errtxt(errno));
 	}
-
-	need_test = 1;
 
 	AZ(pthread_create(&VCA_thread, NULL, vca_acct, NULL));
 }
