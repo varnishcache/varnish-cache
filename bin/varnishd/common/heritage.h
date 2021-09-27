@@ -36,6 +36,7 @@ struct listen_sock;
 struct transport;
 struct VCLS;
 struct uds_perms;
+struct conn_heritage;
 
 struct listen_sock {
 	unsigned			magic;
@@ -49,6 +50,8 @@ struct listen_sock {
 	struct suckaddr			*addr;
 	const struct transport		*transport;
 	const struct uds_perms		*perms;
+	unsigned			test_heritage;
+	struct conn_heritage		*conn_heritage;
 };
 
 VTAILQ_HEAD(listen_sock_head, listen_sock);
