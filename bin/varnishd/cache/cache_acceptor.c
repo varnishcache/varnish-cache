@@ -211,22 +211,25 @@ vca_sock_opt_init(void)
 }
 
 static void
-vca_sock_opt_test(const int sock, const unsigned uds)
+vca_sock_opt_test(const struct listen_sock *ls, const struct sess *sp)
 {
 	int i, n;
 	struct sock_opt *so;
 	socklen_t l;
 	void *ptr;
 
+	CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+
 	for (n = 0; n < n_sock_opts; n++) {
 		so = &sock_opts[n];
-		if (so->level == IPPROTO_TCP && uds)
+		if (so->level == IPPROTO_TCP && ls->uds)
 			continue;
 		so->need = 1;
 		ptr = calloc(1, so->sz);
 		AN(ptr);
 		l = so->sz;
-		i = getsockopt(sock, so->level, so->optname, ptr, &l);
+		i = getsockopt(sp->fd, so->level, so->optname, ptr, &l);
 		if (i == 0 && !memcmp(ptr, so->ptr, so->sz))
 			so->need = 0;
 		free(ptr);
@@ -236,16 +239,20 @@ vca_sock_opt_test(const int sock, const unsigned uds)
 }
 
 static void
-vca_sock_opt_set(const int sock, const unsigned uds, const int force)
+vca_sock_opt_set(const struct listen_sock *ls, const struct sess *sp)
 {
-	int n;
+	int n, sock;
 	struct sock_opt *so;
+
+	CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
+	CHECK_OBJ_ORNULL(sp, SESS_MAGIC);
+	sock = sp != NULL ? sp->fd : ls->sock;
 
 	for (n = 0; n < n_sock_opts; n++) {
 		so = &sock_opts[n];
-		if (so->level == IPPROTO_TCP && uds)
+		if (so->level == IPPROTO_TCP && ls->uds)
 			continue;
-		if (so->need || force) {
+		if (so->need || sp == NULL) {
 			VTCP_Assert(setsockopt(sock,
 			    so->level, so->optname, so->ptr, so->sz));
 		}
@@ -409,10 +416,10 @@ vca_make_session(struct worker *wrk, void *arg)
 	wrk->stats->sess_conn++;
 
 	if (need_test) {
-		vca_sock_opt_test(sp->fd, wa->acceptlsock->uds);
+		vca_sock_opt_test(wa->acceptlsock, sp);
 		need_test = 0;
 	}
-	vca_sock_opt_set(sp->fd, wa->acceptlsock->uds, 0);
+	vca_sock_opt_set(wa->acceptlsock, sp);
 
 	req = Req_New(wrk, sp);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -588,7 +595,7 @@ vca_acct(void *arg)
 				if (ls->sock == -2)
 					continue;	// VCA_Shutdown
 				assert (ls->sock > 0);
-				vca_sock_opt_set(ls->sock, ls->uds, 1);
+				vca_sock_opt_set(ls, NULL);
 			}
 			AZ(pthread_mutex_unlock(&shut_mtx));
 		}
@@ -627,7 +634,7 @@ ccf_start(struct cli *cli, const char * const *av, void *priv)
 			    ls->endpoint, strerror(errno));
 			return;
 		}
-		vca_sock_opt_set(ls->sock, ls->uds, 1);
+		vca_sock_opt_set(ls, NULL);
 		if (cache_param->accept_filter) {
 			int i;
 			i = VTCP_filter_http(ls->sock);
