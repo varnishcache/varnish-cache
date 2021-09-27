@@ -155,57 +155,54 @@ vca_periodic(vtim_real t0)
 static int
 vca_sock_opt_init(void)
 {
-	int n;
-	int one = 1;
 	struct sock_opt *so;
 	union sock_arg tmp;
-	int chg = 0;
+	int n, chg = 0;
+	size_t sz;
 
 	memset(&tmp, 0, sizeof tmp);
 
 	for (n = 0; n < n_sock_opts; n++) {
 		so = &sock_opts[n];
-		if (!strcmp(so->strname, "SO_LINGER")) {
-			assert(so->sz == sizeof linger);
-			memcpy(so->arg, &linger, sizeof linger);
-			so->need = 1;
-		} else if (!strcmp(so->strname, "TCP_NODELAY")) {
-			assert(so->sz == sizeof one);
-			memcpy(so->arg, &one, sizeof one);
-			so->need = 1;
-		} else if (!strcmp(so->strname, "SO_KEEPALIVE")) {
-			assert(so->sz == sizeof one);
-			memcpy(so->arg, &one, sizeof one);
-			so->need = 1;
-#define NEW_VAL(so, xx)						\
-	do {							\
-		assert(so->sz == sizeof xx);			\
-		if (memcmp(so->arg, &(xx), sizeof xx)) {	\
-			memcpy(so->arg, &(xx), sizeof xx);	\
-			so->need = 1;				\
-			chg = 1;				\
-			need_test = 1;				\
-		}						\
+
+#define SET_VAL(nm, so, fld, val)					\
+	do {								\
+		if (!strcmp(#nm, so->strname)) {			\
+			assert(so->sz == sizeof so->arg->fld);		\
+			so->arg->fld = (val);				\
+		}							\
 	} while (0)
 
-		} else if (!strcmp(so->strname, "SO_SNDTIMEO")) {
-			tmp.tv = VTIM_timeval(cache_param->idle_send_timeout);
-			NEW_VAL(so, tmp.tv);
-		} else if (!strcmp(so->strname, "SO_RCVTIMEO")) {
-			tmp.tv = VTIM_timeval(cache_param->timeout_idle);
-			NEW_VAL(so, tmp.tv);
+#define NEW_VAL(nm, so, fld, val)					\
+	do {								\
+		if (!strcmp(#nm, so->strname)) {			\
+			sz = sizeof tmp.fld;				\
+			assert(so->sz == sz);				\
+			tmp.fld = (val);				\
+			if (memcmp(&so->arg->fld, &(tmp.fld), sz)) {	\
+				memcpy(&so->arg->fld, &(tmp.fld), sz);	\
+				so->need = 1;				\
+				chg = 1;				\
+				need_test = 1;				\
+			}						\
+		}							\
+	} while (0)
+
+		SET_VAL(SO_LINGER, so, lg, linger);
+		SET_VAL(SO_KEEPALIVE, so, i, 1);
+		NEW_VAL(SO_SNDTIMEO, so, tv,
+		    VTIM_timeval(cache_param->idle_send_timeout));
+		NEW_VAL(SO_RCVTIMEO, so, tv,
+		    VTIM_timeval(cache_param->timeout_idle));
 #ifdef HAVE_TCP_KEEP
-		} else if (!strcmp(so->strname, "TCP_KEEPIDLE")) {
-			tmp.i = (int)(cache_param->tcp_keepalive_time);
-			NEW_VAL(so, tmp.i);
-		} else if (!strcmp(so->strname, "TCP_KEEPCNT")) {
-			tmp.i = (int)(cache_param->tcp_keepalive_probes);
-			NEW_VAL(so, tmp.i);
-		} else if (!strcmp(so->strname, "TCP_KEEPINTVL")) {
-			tmp.i = (int)(cache_param->tcp_keepalive_intvl);
-			NEW_VAL(so, tmp.i);
+		SET_VAL(TCP_NODELAY, so, i, 1);
+		NEW_VAL(TCP_KEEPIDLE, so, i,
+		    (int)cache_param->tcp_keepalive_time);
+		NEW_VAL(TCP_KEEPCNT, so, i,
+		    (int)cache_param->tcp_keepalive_probes);
+		NEW_VAL(TCP_KEEPINTVL, so, i,
+		    (int)cache_param->tcp_keepalive_intvl);
 #endif
-		}
 	}
 	return (chg);
 }
