@@ -84,6 +84,7 @@ VCL_Refresh(struct vcl **vcc)
 	while (vcl_active == NULL)
 		(void)usleep(100000);
 
+	ASSERT_VCL_ACTIVE();
 	if (*vcc == vcl_active)
 		return;
 
@@ -97,6 +98,7 @@ VCL_Recache(const struct worker *wrk, struct vcl **vclp)
 	AN(wrk);
 	AN(vclp);
 	CHECK_OBJ_NOTNULL(*vclp, VCL_MAGIC);
+	ASSERT_VCL_ACTIVE();
 
 	if (*vclp != vcl_active || wrk->wpriv->vcl == vcl_active) {
 		VCL_Rel(vclp);

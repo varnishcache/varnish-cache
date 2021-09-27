@@ -38,7 +38,6 @@
 
 #include "cache/cache_varnishd.h"
 #include "cache/cache_filter.h"
-#include "cache/cache_vcl.h"
 
 #include "vsa.h"
 #include "vtim.h"
@@ -437,7 +436,6 @@ event_load(VRT_CTX, struct vmod_priv *priv)
 	struct priv_vcl *priv_vcl;
 
 	AN(ctx->msg);
-	assert(vcl_active == NULL || vcl_active->temp->is_warm);
 
 	loads++;
 
@@ -521,8 +519,6 @@ event_warm(VRT_CTX, const struct vmod_priv *priv)
 	char buf[32];
 	const char *p[2];
 	struct strands msg[1];
-
-	assert(vcl_active == NULL || vcl_active->temp->is_warm);
 
 	// Using VSLs for coverage
 	msg->n = 2;

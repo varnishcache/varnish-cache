@@ -285,7 +285,11 @@ int
 mgt_has_vcl(void)
 {
 
-	return (!VTAILQ_EMPTY(&vclhead) && active_vcl != NULL);
+	if (active_vcl == NULL)
+		return (0);
+
+	AZ(VTAILQ_EMPTY(&vclhead));
+	return (1);
 }
 
 /*
