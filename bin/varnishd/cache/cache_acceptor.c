@@ -87,20 +87,20 @@ static struct tcp_opt {
 	socklen_t	sz;
 	void		*ptr;
 	int		need;
-	int		iponly;
 } tcp_opts[] = {
-#define TCPO(lvl, nam, sz, ip) { lvl, nam, #nam, sizeof(sz), 0, 0, ip},
+#define TCPO(lvl, nam, typ) { lvl, nam, #nam, sizeof(typ), NULL, 0 },
 
-	TCPO(SOL_SOCKET, SO_LINGER, struct linger, 0)
-	TCPO(SOL_SOCKET, SO_KEEPALIVE, int, 0)
-	TCPO(IPPROTO_TCP, TCP_NODELAY, int, 1)
-	TCPO(SOL_SOCKET, SO_SNDTIMEO, struct timeval, 0)
-	TCPO(SOL_SOCKET, SO_RCVTIMEO, struct timeval, 0)
+	TCPO(SOL_SOCKET, SO_LINGER, struct linger)
+	TCPO(SOL_SOCKET, SO_KEEPALIVE, int)
+	TCPO(SOL_SOCKET, SO_SNDTIMEO, struct timeval)
+	TCPO(SOL_SOCKET, SO_RCVTIMEO, struct timeval)
+
+	TCPO(IPPROTO_TCP, TCP_NODELAY, int)
 
 #ifdef HAVE_TCP_KEEP
-	TCPO(IPPROTO_TCP, TCP_KEEPIDLE, int, 1)
-	TCPO(IPPROTO_TCP, TCP_KEEPCNT, int, 1)
-	TCPO(IPPROTO_TCP, TCP_KEEPINTVL, int, 1)
+	TCPO(IPPROTO_TCP, TCP_KEEPIDLE, int)
+	TCPO(IPPROTO_TCP, TCP_KEEPCNT, int)
+	TCPO(IPPROTO_TCP, TCP_KEEPINTVL, int)
 #endif
 
 #undef TCPO
@@ -219,7 +219,7 @@ vca_tcp_opt_test(const int sock, const unsigned uds)
 
 	for (n = 0; n < n_tcp_opts; n++) {
 		to = &tcp_opts[n];
-		if (to->iponly && uds)
+		if (to->level == IPPROTO_TCP && uds)
 			continue;
 		to->need = 1;
 		ptr = calloc(1, to->sz);
@@ -242,7 +242,7 @@ vca_tcp_opt_set(const int sock, const unsigned uds, const int force)
 
 	for (n = 0; n < n_tcp_opts; n++) {
 		to = &tcp_opts[n];
-		if (to->iponly && uds)
+		if (to->level == IPPROTO_TCP && uds)
 			continue;
 		if (to->need || force) {
 			VTCP_Assert(setsockopt(sock,
