@@ -1,0 +1,37 @@
+varnishtest "TCP vs UDS sockopt inheritance"
+
+feature cmd {test $(uname) != SunOS}
+
+server s0 {
+        rxreqhdrs
+        non_fatal
+        rxreqbody
+        txresp
+} -dispatch
+
+varnish v1 -arg {-a :0 -a "${tmpdir}/v1.sock"}
+varnish v1 -cliok "param.set debug +flush_head"
+varnish v1 -cliok "param.set timeout_idle 1"
+varnish v1 -vcl+backend { } -start
+
+client c1 {
+        txreq -req POST -hdr "Content-Length: 100"
+        send some
+        rxresp
+        expect resp.status == 503
+}
+
+# This run performs the inheritance test on a TCP connection
+client c1 -run
+
+# This run relies on the inheritance test results
+client c1 -run
+
+varnish v1 -vsl_catchup
+
+# This run checks that TCP results aren't applied to a UDS
+client c1 -connect "${tmpdir}/v1.sock"
+client c1 -run
+
+# And finally this run checks UDS inheritance test results
+client c1 -run
