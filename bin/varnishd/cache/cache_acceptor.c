@@ -119,11 +119,11 @@ static const int n_sock_opts = sizeof sock_opts / sizeof sock_opts[0];
 
 /*--------------------------------------------------------------------
  * We want to get out of any kind of trouble-hit TCP connections as fast
- * as absolutely possible, so we set them LINGER enabled with zero timeout,
- * so that even if there are outstanding write data on the socket, a close(2)
- * will return immediately.
+ * as absolutely possible, so we set them LINGER disabled, so that even if
+ * there are outstanding write data on the socket, a close(2) will return
+ * immediately.
  */
-static const struct linger linger = {
+static const struct linger disable_so_linger = {
 	.l_onoff	=	0,
 };
 
@@ -132,12 +132,12 @@ static const struct linger linger = {
  * hung up on connections returning from waitinglists
  */
 
-static const unsigned so_keepalive = 1;
+static const unsigned enable_so_keepalive = 1;
 
 /* We disable Nagle's algorithm in favor of low latency setups.
  */
 
-static const unsigned tcp_nodelay = 1;
+static const unsigned enable_tcp_nodelay = 1;
 
 static unsigned		need_test;
 
@@ -198,8 +198,8 @@ vca_sock_opt_init(void)
 		}							\
 	} while (0)
 
-		SET_VAL(SO_LINGER, so, lg, linger);
-		SET_VAL(SO_KEEPALIVE, so, i, so_keepalive);
+		SET_VAL(SO_LINGER, so, lg, disable_so_linger);
+		SET_VAL(SO_KEEPALIVE, so, i, enable_so_keepalive);
 #ifdef SO_SNDTIMEO_WORKS
 		NEW_VAL(SO_SNDTIMEO, so, tv,
 		    VTIM_timeval(cache_param->idle_send_timeout));
@@ -208,7 +208,7 @@ vca_sock_opt_init(void)
 		NEW_VAL(SO_RCVTIMEO, so, tv,
 		    VTIM_timeval(cache_param->timeout_idle));
 #endif
-		SET_VAL(TCP_NODELAY, so, i, tcp_nodelay);
+		SET_VAL(TCP_NODELAY, so, i, enable_tcp_nodelay);
 #ifdef HAVE_TCP_KEEP
 		NEW_VAL(TCP_KEEPIDLE, so, i,
 		    (int)cache_param->tcp_keepalive_time);
