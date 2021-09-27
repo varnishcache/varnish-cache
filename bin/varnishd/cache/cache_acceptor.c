@@ -80,15 +80,21 @@ struct poolsock {
  * TCP options we want to control
  */
 
+union sock_arg {
+	struct linger	lg;
+	struct timeval	tv;
+	int		i;
+};
+
 static struct sock_opt {
 	int		level;
 	int		optname;
 	const char	*strname;
-	socklen_t	sz;
-	void		*ptr;
 	int		need;
+	socklen_t	sz;
+	union sock_arg	arg[1];
 } sock_opts[] = {
-#define SOCK_OPT(lvl, nam, typ) { lvl, nam, #nam, sizeof(typ), NULL, 0 },
+#define SOCK_OPT(lvl, nam, typ) { lvl, nam, #nam, 0, sizeof(typ) },
 
 	SOCK_OPT(SOL_SOCKET, SO_LINGER, struct linger)
 	SOCK_OPT(SOL_SOCKET, SO_KEEPALIVE, int)
@@ -152,35 +158,30 @@ vca_sock_opt_init(void)
 	int n;
 	int one = 1;
 	struct sock_opt *so;
-	struct timeval tv;
+	union sock_arg tmp;
 	int chg = 0;
-	int x;
 
-	memset(&tv, 0, sizeof tv);
-	memset(&x, 0, sizeof x);
+	memset(&tmp, 0, sizeof tmp);
 
 	for (n = 0; n < n_sock_opts; n++) {
 		so = &sock_opts[n];
-		if (so->ptr == NULL)
-			so->ptr = calloc(1, so->sz);
-		AN(so->ptr);
 		if (!strcmp(so->strname, "SO_LINGER")) {
 			assert(so->sz == sizeof linger);
-			memcpy(so->ptr, &linger, sizeof linger);
+			memcpy(so->arg, &linger, sizeof linger);
 			so->need = 1;
 		} else if (!strcmp(so->strname, "TCP_NODELAY")) {
 			assert(so->sz == sizeof one);
-			memcpy(so->ptr, &one, sizeof one);
+			memcpy(so->arg, &one, sizeof one);
 			so->need = 1;
 		} else if (!strcmp(so->strname, "SO_KEEPALIVE")) {
 			assert(so->sz == sizeof one);
-			memcpy(so->ptr, &one, sizeof one);
+			memcpy(so->arg, &one, sizeof one);
 			so->need = 1;
 #define NEW_VAL(so, xx)						\
 	do {							\
 		assert(so->sz == sizeof xx);			\
-		if (memcmp(so->ptr, &(xx), sizeof xx)) {	\
-			memcpy(so->ptr, &(xx), sizeof xx);	\
+		if (memcmp(so->arg, &(xx), sizeof xx)) {	\
+			memcpy(so->arg, &(xx), sizeof xx);	\
 			so->need = 1;				\
 			chg = 1;				\
 			need_test = 1;				\
@@ -188,21 +189,21 @@ vca_sock_opt_init(void)
 	} while (0)
 
 		} else if (!strcmp(so->strname, "SO_SNDTIMEO")) {
-			tv = VTIM_timeval(cache_param->idle_send_timeout);
-			NEW_VAL(so, tv);
+			tmp.tv = VTIM_timeval(cache_param->idle_send_timeout);
+			NEW_VAL(so, tmp.tv);
 		} else if (!strcmp(so->strname, "SO_RCVTIMEO")) {
-			tv = VTIM_timeval(cache_param->timeout_idle);
-			NEW_VAL(so, tv);
+			tmp.tv = VTIM_timeval(cache_param->timeout_idle);
+			NEW_VAL(so, tmp.tv);
 #ifdef HAVE_TCP_KEEP
 		} else if (!strcmp(so->strname, "TCP_KEEPIDLE")) {
-			x = (int)(cache_param->tcp_keepalive_time);
-			NEW_VAL(so, x);
+			tmp.i = (int)(cache_param->tcp_keepalive_time);
+			NEW_VAL(so, tmp.i);
 		} else if (!strcmp(so->strname, "TCP_KEEPCNT")) {
-			x = (int)(cache_param->tcp_keepalive_probes);
-			NEW_VAL(so, x);
+			tmp.i = (int)(cache_param->tcp_keepalive_probes);
+			NEW_VAL(so, tmp.i);
 		} else if (!strcmp(so->strname, "TCP_KEEPINTVL")) {
-			x = (int)(cache_param->tcp_keepalive_intvl);
-			NEW_VAL(so, x);
+			tmp.i = (int)(cache_param->tcp_keepalive_intvl);
+			NEW_VAL(so, tmp.i);
 #endif
 		}
 	}
@@ -212,10 +213,10 @@ vca_sock_opt_init(void)
 static void
 vca_sock_opt_test(const struct listen_sock *ls, const struct sess *sp)
 {
-	int i, n;
 	struct sock_opt *so;
+	union sock_arg tmp;
 	socklen_t l;
-	void *ptr;
+	int i, n;
 
 	CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -225,13 +226,11 @@ vca_sock_opt_test(const struct listen_sock *ls, const struct sess *sp)
 		if (so->level == IPPROTO_TCP && ls->uds)
 			continue;
 		so->need = 1;
-		ptr = calloc(1, so->sz);
-		AN(ptr);
+		memset(&tmp, 0, sizeof tmp);
 		l = so->sz;
-		i = getsockopt(sp->fd, so->level, so->optname, ptr, &l);
-		if (i == 0 && !memcmp(ptr, so->ptr, so->sz))
+		i = getsockopt(sp->fd, so->level, so->optname, &tmp, &l);
+		if (i == 0 && !memcmp(&tmp, so->arg, so->sz))
 			so->need = 0;
-		free(ptr);
 		if (i && errno != ENOPROTOOPT)
 			VTCP_Assert(i);
 	}
@@ -240,8 +239,8 @@ vca_sock_opt_test(const struct listen_sock *ls, const struct sess *sp)
 static void
 vca_sock_opt_set(const struct listen_sock *ls, const struct sess *sp)
 {
-	int n, sock;
 	struct sock_opt *so;
+	int n, sock;
 
 	CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
 	CHECK_OBJ_ORNULL(sp, SESS_MAGIC);
@@ -253,7 +252,7 @@ vca_sock_opt_set(const struct listen_sock *ls, const struct sess *sp)
 			continue;
 		if (so->need || sp == NULL) {
 			VTCP_Assert(setsockopt(sock,
-			    so->level, so->optname, so->ptr, so->sz));
+			    so->level, so->optname, so->arg, so->sz));
 		}
 	}
 }
