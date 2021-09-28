@@ -152,6 +152,7 @@ static const struct stevedore smp_fake_stevedore = {
 static const struct choice STV_choice[] = {
 	{ "file",			&smf_stevedore },
 	{ "malloc",			&sma_stevedore },
+	{ "debug",			&smd_stevedore },
 #ifdef WITH_PERSISTENT_STORAGE
 	{ "deprecated_persistent",	&smp_stevedore },
 	{ "persistent",			&smp_fake_stevedore },

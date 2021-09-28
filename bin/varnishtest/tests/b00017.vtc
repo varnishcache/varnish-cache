@@ -1,6 +1,6 @@
-varnishtest "Check that we do not close one error"
+varnishtest "Check set resp.body in vcl_synth"
 
-varnish v1 -vcl {
+varnish v1 -arg "-sTransient=debug" -vcl {
 	backend foo {
 		.host = "${bad_backend}";
 	}

@@ -144,5 +144,6 @@ void LRU_Touch(struct worker *, struct objcore *, vtim_real now);
 /*--------------------------------------------------------------------*/
 extern const struct stevedore smu_stevedore;
 extern const struct stevedore sma_stevedore;
+extern const struct stevedore smd_stevedore;
 extern const struct stevedore smf_stevedore;
 extern const struct stevedore smp_stevedore;

@@ -187,19 +187,20 @@ sma_init(struct stevedore *parent, int ac, char * const *av)
 
 	AZ(av[ac]);
 	if (ac > 1)
-		ARGV_ERR("(-smalloc) too many arguments\n");
+		ARGV_ERR("(-s%s) too many arguments\n", parent->name);
 
 	if (ac == 0 || *av[0] == '\0')
 		 return;
 
 	e = VNUM_2bytes(av[0], &u, 0);
 	if (e != NULL)
-		ARGV_ERR("(-smalloc) size \"%s\": %s\n", av[0], e);
+		ARGV_ERR("(-s%s) size \"%s\": %s\n", parent->name, av[0], e);
 	if ((u != (uintmax_t)(size_t)u))
-		ARGV_ERR("(-smalloc) size \"%s\": too big\n", av[0]);
+		ARGV_ERR("(-s%s) size \"%s\": too big\n", parent->name, av[0]);
 	if (u < 1024*1024)
-		ARGV_ERR("(-smalloc) size \"%s\": too small, "
-			 "did you forget to specify M or G?\n", av[0]);
+		ARGV_ERR("(-s%s) size \"%s\": too small, "
+		    "did you forget to specify M or G?\n", parent->name,
+		    av[0]);
 
 	sc->sma_max = u;
 }
