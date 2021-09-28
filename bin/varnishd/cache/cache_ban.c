@@ -568,15 +568,19 @@ ban_evaluate(struct worker *wrk, const uint8_t *bsarg, struct objcore *oc,
 			}
 			break;
 		case BANS_OPER_MATCH:
+			if (arg1 == NULL)
+				return (0);
 			rv = VRE_match(bt.arg2_spec, arg1, 0, 0, NULL);
 			xxxassert(rv >= -1);
-			if (arg1 == NULL || rv < 0)
+			if (rv < 0)
 				return (0);
 			break;
 		case BANS_OPER_NMATCH:
+			if (arg1 == NULL)
+				return (0);
 			rv = VRE_match(bt.arg2_spec, arg1, 0, 0, NULL);
 			xxxassert(rv >= -1);
-			if (arg1 == NULL || rv >= 0)
+			if (rv >= 0)
 				return (0);
 			break;
 		case BANS_OPER_GT:
