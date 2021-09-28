@@ -33,19 +33,56 @@
 #include "config.h"
 
 #include "cache/cache_varnishd.h"
+#include "cache/cache_obj.h"
+
+#include <stdlib.h>
 
 #include "storage/storage.h"
 #include "storage/storage_simple.h"
 
-static void
-smd_init(struct stevedore *parent, int ac, char * const *av)
+/* returns one byte less than requested */
+static int v_matchproto_(objgetspace_f)
+smd_lsp_getspace(struct worker *wrk, struct objcore *oc, ssize_t *sz,
+    uint8_t **ptr)
 {
+	AN(sz);
+	if (*sz > 1)
+		(*sz)--;
+	return (SML_methods.objgetspace(wrk, oc, sz, ptr));
+}
+
+static void
+smd_init(struct stevedore *parent, int aac, char * const *aav)
+{
+	struct obj_methods *methods;
 	const char *ident;
+	int i, ac = 0;
+	char **av;
 
 	ident = parent->ident;
 	memcpy(parent, &sma_stevedore, sizeof *parent);
 	parent->ident = ident;
 	parent->name = smd_stevedore.name;
+
+	methods = malloc(sizeof *methods);
+	AN(methods);
+	memcpy(methods, &SML_methods, sizeof *methods);
+	parent->methods = methods;
+
+	av = malloc(sizeof *av * (aac + 1));
+	AN(av);
+	for (i = 0; i < aac; i++) {
+		if (aav[i] == NULL) {
+			av[ac++] = NULL;
+			continue;
+		}
+		if (! strcmp(aav[i], "lessspace")) {
+			methods->objgetspace = smd_lsp_getspace;
+			continue;
+		}
+		av[ac++] = strdup(aav[i]);
+	}
+	av[ac] = NULL;
 
 	sma_stevedore.init(parent, ac, av);
 }

@@ -1,6 +1,6 @@
 varnishtest "Check set resp.body in vcl_synth"
 
-varnish v1 -arg "-sTransient=debug" -vcl {
+varnish v1 -arg "-sTransient=debug,lessspace" -vcl {
 	backend foo {
 		.host = "${bad_backend}";
 	}
