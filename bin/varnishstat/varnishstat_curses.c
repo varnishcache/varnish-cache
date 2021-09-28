@@ -177,8 +177,7 @@ update_position(void)
 			current = 0;
 		if (current > n_ptarray - 1)
 			current = n_ptarray - 1;
-		if (current < page_start)
-			page_start = current;
+		page_start = vmin(page_start, current);
 		if (current > page_start + (l_points - 1))
 			page_start = current - (l_points - 1);
 		if (page_start < 0)

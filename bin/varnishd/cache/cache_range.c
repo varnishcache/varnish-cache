@@ -85,9 +85,7 @@ vrg_range_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 			p += l;
 			len -= l;
 		}
-		l = vrg_priv->range_high - vrg_priv->range_off;
-		if (l > len)
-			l = len;
+		l = vmin(vrg_priv->range_high - vrg_priv->range_off, len);
 		vrg_priv->range_off += len;
 		if (vrg_priv->range_off >= vrg_priv->range_high)
 			act = VDP_END;

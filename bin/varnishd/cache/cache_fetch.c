@@ -110,8 +110,7 @@ vbf_allocobj(struct busyobj *bo, unsigned l)
 	 * on Transient storage.
 	 */
 
-	if (oc->ttl > cache_param->shortlived)
-		oc->ttl = cache_param->shortlived;
+	oc->ttl = vmin_t(float, oc->ttl, cache_param->shortlived);
 	oc->grace = 0.0;
 	oc->keep = 0.0;
 	return (STV_NewObject(bo->wrk, oc, stv_transient, l));
@@ -762,8 +761,7 @@ vbf_objiterator(void *priv, unsigned flush, const void *ptr, ssize_t len)
 		l = len;
 		if (VFP_GetStorage(bo->vfc, &l, &pd) != VFP_OK)
 			return (1);
-		if (len < l)
-			l = len;
+		l = vmin(l, len);
 		memcpy(pd, ps, l);
 		VFP_Extend(bo->vfc, l, l == len ? VFP_END : VFP_OK);
 		ps += l;
@@ -966,8 +964,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 		l = ll;
 		if (VFP_GetStorage(bo->vfc, &l, &ptr) != VFP_OK)
 			break;
-		if (l > ll)
-			l = ll;
+		l = vmin(l, ll);
 		memcpy(ptr, VSB_data(synth_body) + o, l);
 		VFP_Extend(bo->vfc, l, l == ll ? VFP_END : VFP_OK);
 		ll -= l;

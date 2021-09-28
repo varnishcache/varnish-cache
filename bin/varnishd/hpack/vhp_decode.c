@@ -270,9 +270,7 @@ vhd_lookup(struct vhd_ctx *ctx, unsigned first)
 
 	assert(lu->l <= l);
 	p += l - lu->l;
-	l = lu->l;
-	if (l > ctx->out_e - ctx->out)
-		l = ctx->out_e - ctx->out;
+	l = vmin_t(size_t, lu->l, ctx->out_e - ctx->out);
 	memcpy(ctx->out, p, l);
 	ctx->out += l;
 	lu->l -= l;

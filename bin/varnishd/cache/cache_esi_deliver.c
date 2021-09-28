@@ -663,8 +663,7 @@ ved_gzgz_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 		/* The main body of the object */
 		dl = foo->last / 8 - foo->ll;
 		if (dl > 0) {
-			if (dl > len)
-				dl = len;
+			dl = vmin(dl, len);
 			if (ved_bytes(foo->ecx, act, pp, dl))
 				return (-1);
 			foo->ll += dl;
@@ -686,8 +685,7 @@ ved_gzgz_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 		/* Last block */
 		dl = foo->stop / 8 - foo->ll;
 		if (dl > 0) {
-			if (dl > len)
-				dl = len;
+			dl = vmin(dl, len);
 			if (ved_bytes(foo->ecx, act, pp, dl))
 				return (-1);
 			foo->ll += dl;

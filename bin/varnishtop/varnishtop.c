@@ -222,9 +222,7 @@ update(unsigned p)
 		tp2 = VRBT_NEXT(t_order, &h_order, tp);
 
 		if (++l < LINES) {
-			len = tp->clen;
-			if (len > COLS - 20)
-				len = COLS - 20;
+			len = vmin(tp->clen, COLS - 20);
 			AC(mvprintw(l, 0, "%9.2f %-*.*s %*.*s\n",
 				tp->count, maxfieldlen, maxfieldlen,
 				VSL_tags[tp->tag],

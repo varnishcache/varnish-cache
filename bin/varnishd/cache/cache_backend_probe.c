@@ -633,8 +633,7 @@ vbp_set_defaults(struct vbp_target *vt, const struct vrt_backend_probe *vp)
 	if (vt->initial == ~0U)
 		vt->initial = vt->threshold - 1;
 
-	if (vt->initial > vt->threshold)
-		vt->initial = vt->threshold;
+	vt->initial = vmin(vt->initial, vt->threshold);
 }
 
 /*--------------------------------------------------------------------
