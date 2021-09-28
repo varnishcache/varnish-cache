@@ -304,6 +304,7 @@ cnt_synth(struct worker *wrk, struct req *req)
 	struct vsb *synth_body;
 	ssize_t sz, szl;
 	uint8_t *ptr;
+	const char *body;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -368,20 +369,26 @@ cnt_synth(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 	szl = -1;
 	if (STV_NewObject(wrk, req->objcore, stv_transient, 1024)) {
+		body = VSB_data(synth_body);
 		szl = VSB_len(synth_body);
 		assert(szl >= 0);
-		sz = szl;
-		if (sz > 0 &&
-		    ObjGetSpace(wrk, req->objcore, &sz, &ptr) && sz >= szl) {
-			memcpy(ptr, VSB_data(synth_body), szl);
-			ObjExtend(wrk, req->objcore, szl, 1);
-		} else if (sz > 0) {
-			szl = -1;
+		while (szl > 0) {
+			sz = szl;
+			if (! ObjGetSpace(wrk, req->objcore, &sz, &ptr)) {
+				szl = -1;
+				break;
+			}
+			if (sz > szl)
+				sz = szl;
+			szl -= sz;
+			memcpy(ptr, body, sz);
+			ObjExtend(wrk, req->objcore, sz, szl == 0 ? 1 : 0);
+			body += sz;
 		}
 	}
 
 	if (szl >= 0)
-		AZ(ObjSetU64(wrk, req->objcore, OA_LEN, szl));
+		AZ(ObjSetU64(wrk, req->objcore, OA_LEN, VSB_len(synth_body)));
 	HSH_DerefBoc(wrk, req->objcore);
 	VSB_destroy(&synth_body);
 
