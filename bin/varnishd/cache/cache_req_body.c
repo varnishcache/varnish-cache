@@ -100,8 +100,7 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 		req->want100cont = 0;
 		(void)req->transport->minimal_response(req, 100);
 	}
-	if (yet < 0)
-		yet = 0;
+	yet = vmax_t(ssize_t, yet, 0);
 	do {
 		AZ(vfc->failed);
 		if (maxsize >= 0 && req_bodybytes > maxsize) {

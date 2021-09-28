@@ -130,8 +130,7 @@ MAC_reopen_sockets(void)
 		VJ_master(JAIL_MASTER_LOW);
 		if (err == 0)
 			continue;
-		if (err > fail)
-			fail = err;
+		fail = vmax(fail, err);
 		MGT_Complain(C_ERR,
 		    "Could not reopen listen socket %s: %s",
 		    ls->endpoint, VAS_errtxt(err));

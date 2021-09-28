@@ -319,9 +319,7 @@ child_sigmagic(size_t altstksz)
 	memset(&sa, 0, sizeof sa);
 
 #ifdef HAVE_SIGALTSTACK
-	size_t sz = SIGSTKSZ + 4096;
-	if (sz < altstksz)
-		sz = altstksz;
+	size_t sz = vmax_t(size_t, SIGSTKSZ + 4096, altstksz);
 	altstack.ss_sp = mmap(NULL, sz,  PROT_READ | PROT_WRITE,
 			      MAP_PRIVATE | MAP_ANONYMOUS,
 			      -1, 0);

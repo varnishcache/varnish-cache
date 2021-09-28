@@ -174,8 +174,7 @@ update(void)
 		assert(l < n);
 		bm[l] += bucket_miss[k];
 		bh[l] += bucket_hit[k];
-		if (bm[l] + bh[l] > max)
-			max = bm[l] + bh[l];
+		max = vmax(max, bm[l] + bh[l]);
 	}
 
 	/* scale,time */
@@ -210,7 +209,6 @@ update(void)
 inline static void
 upd_vsl_ts(const char *p)
 {
-	double t;
 
 	if (timebend == 0)
 		return;
@@ -220,10 +218,7 @@ upd_vsl_ts(const char *p)
 	if (p == NULL)
 		return;
 
-	t = strtod(p + 1, NULL);
-
-	if (t > vsl_ts)
-		vsl_ts = t;
+	vsl_ts = vmax(vsl_ts, strtod(p + 1, NULL));
 }
 
 static int v_matchproto_ (VSLQ_dispatch_f)
@@ -432,9 +427,7 @@ do_curses(void *arg)
 			ms_delay = 1000U << (ch - '0');
 			break;
 		case '+':
-			ms_delay /= 2;
-			if (ms_delay < 1)
-				ms_delay = 1;
+			ms_delay = vmax(ms_delay >> 1, 1);
 			break;
 		case '-':
 			ms_delay *= 2;
