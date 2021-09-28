@@ -574,8 +574,7 @@ MCF_AddParams(struct parspec *ps)
 			exit(4);
 		}
 		mcf_addpar(pp);
-		if ((int)strlen(pp->name) + 1 > margin2)
-			margin2 = (int)strlen(pp->name) + 1;
+		margin2 = vmax_t(int, margin2, strlen(pp->name) + 1);
 	}
 }
 

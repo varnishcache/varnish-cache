@@ -362,8 +362,7 @@ make_windows(void)
 		l_points += l_info;
 		l_info = 0;
 	}
-	if (l_points < LINES_POINTS_MIN)
-		l_points = LINES_POINTS_MIN;
+	l_points = vmax(l_points, LINES_POINTS_MIN);
 
 	y = 0;
 	y_status = y;

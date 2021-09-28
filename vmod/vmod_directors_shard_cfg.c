@@ -411,8 +411,7 @@ shardcfg_backend_expand(const struct backend_reconfig *re)
 
 	CHECK_OBJ_NOTNULL(re->shardd, SHARDDIR_MAGIC);
 
-	if (min < 16)
-		min = 16;
+	min = vmax_t(unsigned, min, 16);
 
 	if (re->shardd->l_backend < min)
 		re->shardd->l_backend = min;

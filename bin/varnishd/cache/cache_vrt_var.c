@@ -1011,8 +1011,7 @@ VRT_l_sess_##x(VRT_CTX, VCL_DURATION d)		\
 {							\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);		\
 	CHECK_OBJ_NOTNULL(ctx->sp, SESS_MAGIC);		\
-	if (d < 0.0)					\
-		d = 0.0;				\
+	d = vmax(d, 0.0);				\
 	setter;						\
 	ctx->sp->x = d;					\
 }							\

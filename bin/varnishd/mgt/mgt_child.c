@@ -204,8 +204,7 @@ MCH_TrackHighFd(int fd)
 	 * in the master process.
 	 */
 	assert(fd > 0);
-	if (fd > mgt_max_fd)
-		mgt_max_fd = fd;
+	mgt_max_fd = vmax(mgt_max_fd, fd);
 }
 
 /*--------------------------------------------------------------------
