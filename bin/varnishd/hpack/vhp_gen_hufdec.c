@@ -236,8 +236,7 @@ main(int argc, const char **argv)
 	for (u = 0; u < HUF_LEN; u++) {
 		if (maxlen < huf[u].blen)
 			maxlen = huf[u].blen;
-		if (minlen > huf[u].blen)
-			minlen = huf[u].blen;
+		minlen = vmin(minlen, huf[u].blen);
 	}
 
 	top = tbl_new(8);

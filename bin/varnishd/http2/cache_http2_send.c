@@ -212,17 +212,13 @@ H2_Send_Frame(struct worker *wrk, struct h2_sess *h2,
 static int64_t
 h2_win_limit(const struct h2_req *r2, const struct h2_sess *h2)
 {
-	int64_t m;
 
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(h2->req0, H2_REQ_MAGIC);
 
 	Lck_AssertHeld(&h2->sess->mtx);
-	m = r2->t_window;
-	if (m > h2->req0->t_window)
-		m = h2->req0->t_window;
-	return (m);
+	return (vmin(r2->t_window, h2->req0->t_window));
 }
 
 static void
@@ -276,9 +272,7 @@ h2_do_window(struct worker *wrk, struct h2_req *r2,
 			(void)h2_cond_wait(h2->winupd_cond, h2, r2);
 
 		if (h2_errcheck(r2, h2) == 0) {
-			w = h2_win_limit(r2, h2);
-			if (w > wanted)
-				w = wanted;
+			w = vmin(h2_win_limit(r2, h2), wanted);
 			h2_win_charge(r2, h2, w);
 			assert (w > 0);
 		}

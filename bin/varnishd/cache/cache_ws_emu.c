@@ -540,9 +540,7 @@ WS_Dump(const struct ws *ws, char where, size_t off, void *buf, size_t len)
 				break;
 			if (wa->ptr == NULL)
 				break;
-			l = wa->len;
-			if (l > len)
-				l = len;
+			l = vmin_t(size_t, wa->len, len);
 			memcpy(b, wa->ptr, l);
 			b += l;
 			len -= l;

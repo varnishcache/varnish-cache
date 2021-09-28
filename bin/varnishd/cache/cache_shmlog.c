@@ -80,9 +80,7 @@ strands_cat(char *buf, unsigned bufl, const struct strands *s)
 	for (i = 0; i < s->n && bufl > 0; i++) {
 		if (s->p[i] == NULL || *s->p[i] == '\0')
 			continue;
-		ll = strlen(s->p[i]);
-		if (ll > bufl)
-			ll = bufl;
+		ll = vmin_t(unsigned, strlen(s->p[i]), bufl);
 		memcpy(buf, s->p[i], ll);
 		l += ll;
 		buf += ll;
@@ -271,9 +269,8 @@ VSLv(enum VSL_tag_e tag, uint32_t vxid, const char *fmt, va_list ap)
 	if (strchr(fmt, '%') == NULL) {
 		vslr(tag, vxid, fmt, strlen(fmt) + 1);
 	} else {
-		n = vsnprintf(buf, mlen, fmt, ap);
-		if (n > mlen - 1)
-			n = mlen - 1;
+		/* XXX: should probably check return value of vsnprintf */
+		n = vmin_t(unsigned, vsnprintf(buf, mlen, fmt, ap), mlen - 1);
 		buf[n++] = '\0'; /* NUL-terminated */
 		vslr(tag, vxid, buf, n);
 	}
@@ -381,9 +378,7 @@ VSLbs(struct vsl_log *vsl, enum VSL_tag_e tag, const struct strands *s)
 	mlen = cache_param->vsl_reclen;
 
 	/* including NUL */
-	l = strands_len(s) + 1;
-	if (l > mlen)
-		l = mlen;
+	l = vmin(strands_len(s) + 1, mlen);
 
 	assert(vsl->wlp < vsl->wle);
 
@@ -508,8 +503,7 @@ VSLb_bin(struct vsl_log *vsl, enum VSL_tag_e tag, ssize_t len, const void *ptr)
 	mlen = cache_param->vsl_reclen;
 
 	/* Truncate */
-	if (len > mlen)
-		len = mlen;
+	len = vmin_t(ssize_t, len, mlen);
 
 	assert(vsl->wlp < vsl->wle);
 

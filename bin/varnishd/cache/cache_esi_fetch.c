@@ -271,7 +271,6 @@ static enum vfp_status v_matchproto_(vfp_pull_f)
 vfp_esi_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p, ssize_t *lp)
 {
 	enum vfp_status vp;
-	ssize_t d;
 	struct vef_priv *vef;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
@@ -280,9 +279,7 @@ vfp_esi_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p, ssize_t *lp)
 	AN(p);
 	AN(lp);
 	if (DO_DEBUG(DBG_ESI_CHOP)) {
-		d = (VRND_RandomTestable() & 3) + 1;
-		if (d < *lp)
-			*lp = d;
+		*lp = vmin(*lp, (VRND_RandomTestable() & 3) + 1);
 	}
 	vp = VFP_Suck(vc, p, lp);
 	if (vp != VFP_ERROR && *lp > 0)

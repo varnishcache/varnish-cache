@@ -933,8 +933,7 @@ vslq_ratelimit(struct VSLQ *vslq)
 	now = VTIM_mono();
 	delta = now - vslq->last_use;
 	vslq->credits += (delta / vslq->vsl->R_opt_p) * vslq->vsl->R_opt_l;
-	if (vslq->credits > vslq->vsl->R_opt_l)
-		vslq->credits = vslq->vsl->R_opt_l;
+	vslq->credits = vmin_t(double, vslq->credits, vslq->vsl->R_opt_l);
 	vslq->last_use = now;
 
 	if (vslq->credits < 1.0)

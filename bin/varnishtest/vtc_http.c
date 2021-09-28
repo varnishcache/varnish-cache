@@ -1426,9 +1426,7 @@ cmd_http_chunkedlen(CMD_ARGS)
 
 		VSB_printf(hp->vsb, "%x%s", len, nl);
 		for (u = 0; u < len; u += v) {
-			v = len - u;
-			if (v > sizeof buf)
-				v = sizeof buf;
+			v = vmin_t(unsigned, len - u, sizeof buf);
 			VSB_bcat(hp->vsb, buf, v);
 		}
 		VSB_printf(hp->vsb, "%s", nl);

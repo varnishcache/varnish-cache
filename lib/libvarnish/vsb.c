@@ -383,9 +383,7 @@ VSB_vprintf(struct vsb *s, const char *fmt, va_list ap)
 	 * vsnprintf() returns the amount that would have been copied,
 	 * given sufficient space, so don't over-increment s_len.
 	 */
-	if (VSB_FREESPACE(s) < len)
-		len = VSB_FREESPACE(s);
-	s->s_len += len;
+	s->s_len += vmin_t(ssize_t, len, VSB_FREESPACE(s));
 	if (!VSB_HASROOM(s) && !VSB_CANEXTEND(s))
 		s->s_error = ENOMEM;
 

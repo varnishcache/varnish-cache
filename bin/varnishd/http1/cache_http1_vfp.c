@@ -65,8 +65,7 @@ v1f_read(const struct vfp_ctx *vc, struct http_conn *htc, void *d, ssize_t len)
 	if (htc->pipeline_b) {
 		l = htc->pipeline_e - htc->pipeline_b;
 		assert(l > 0);
-		if (l > len)
-			l = len;
+		l = vmin(l, len);
 		memcpy(p, htc->pipeline_b, l);
 		p += l;
 		len -= l;
@@ -210,8 +209,7 @@ v1f_pull_straight(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 
 	if (vfe->priv2 == 0) // XXX: Optimize Content-Len: 0 out earlier
 		return (VFP_END);
-	if (vfe->priv2 < l)
-		l = vfe->priv2;
+	l = vmin(l, vfe->priv2);
 	lr = v1f_read(vc, htc, p, l);
 	if (lr <= 0)
 		return (VFP_Error(vc, "straight insufficient bytes"));

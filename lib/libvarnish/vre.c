@@ -218,9 +218,7 @@ vre_capture(const vre_t *code, const char *subject, size_t length,
 		AN(count);
 		AN(*count);
 		ovector = pcre2_get_ovector_pointer(data);
-		nov = pcre2_get_ovector_count(data);
-		if (nov > *count)
-			nov = *count;
+		nov = vmin_t(size_t, pcre2_get_ovector_count(data), *count);
 		for (g = 0; g < nov; g++) {
 			b = ovector[2 * g];
 			e = ovector[2 * g + 1];
