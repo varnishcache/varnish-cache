@@ -1,0 +1,18 @@
+varnishtest "Null regex subject in ban expression"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend { } -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run
+
+varnish v1 -cliok "ban req.http.nonexistent ~ foo"
+
+client c1 -run
