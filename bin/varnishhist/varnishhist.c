@@ -300,12 +300,9 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			continue;
 
 		/* select bucket */
-		i = lround(HIST_RES * log(value) / log_ten);
-		if (i < hist_low * HIST_RES)
-			i = hist_low * HIST_RES;
-		if (i >= hist_high * HIST_RES)
-			i = hist_high * HIST_RES - 1;
-		i -= hist_low * HIST_RES;
+		i = vlimit_t(int, lround(HIST_RES * log(value) / log_ten),
+		    hist_low * HIST_RES, hist_high * HIST_RES - 1) -
+			hist_low * HIST_RES;
 		assert(i >= 0);
 		assert((unsigned)i < hist_buckets);
 

@@ -173,17 +173,11 @@ update_position(void)
 		current = 0;
 		page_start = 0;
 	} else {
-		if (current < 0)
-			current = 0;
-		if (current > n_ptarray - 1)
-			current = n_ptarray - 1;
+		current = vlimit(current, 0, n_ptarray - 1);
 		page_start = vmin(page_start, current);
 		if (current > page_start + (l_points - 1))
 			page_start = current - (l_points - 1);
-		if (page_start < 0)
-			page_start = 0;
-		if (page_start > n_ptarray - 1)
-			page_start = n_ptarray - 1;
+		page_start = vlimit(page_start, 0, n_ptarray - 1);
 	}
 
 	if (current != old_current || page_start != old_page_start)
@@ -1071,12 +1065,7 @@ handle_help_keypress(enum kb_e kb)
 		WRONG("unhandled key binding");
 	}
 
-	if (help_line > bindings_help_len - l_points)
-		help_line = bindings_help_len - l_points;
-
-	if (help_line < 0)
-		help_line = 0;
-
+	help_line = vlimit(help_line, 0, bindings_help_len - l_points);
 	redraw = (help_line != hl);
 }
 
