@@ -72,12 +72,7 @@ smd_init(struct stevedore *parent, int aac, char * const *aav)
 	av = calloc(aac + 1, sizeof *av);
 	AN(av);
 	for (i = 0; i < aac; i++) {
-		if (aav[i] == NULL) {
-			AZ(av[ac]);
-			ac++;
-			continue;
-		}
-		if (! strcmp(aav[i], "lessspace")) {
+		if (aav[i] != NULL && ! strcmp(aav[i], "lessspace")) {
 			methods->objgetspace = smd_lsp_getspace;
 			continue;
 		}
