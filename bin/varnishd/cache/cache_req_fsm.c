@@ -72,7 +72,7 @@
 #define REQ_STEP(l, U, priv) \
     static req_state_f cnt_##l; \
     priv const struct req_step R_STP_##U[1] = {{ \
-	.name = "Fetch Step" #l, \
+	.name = "Req Step " #l, \
 	.func = cnt_##l, \
     }};
 REQ_STEPS
