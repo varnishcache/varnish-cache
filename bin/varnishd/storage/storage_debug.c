@@ -81,7 +81,8 @@ smd_init(struct stevedore *parent, int aac, char * const *aav)
 			methods->objgetspace = smd_lsp_getspace;
 			continue;
 		}
-		av[ac++] = strdup(aav[i]);
+		REPLACE(av[ac], aav[i]);
+		ac++;
 	}
 	AZ(av[ac]);
 
