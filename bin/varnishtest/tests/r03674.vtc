@@ -33,7 +33,7 @@ varnish v1 -cliexpect "active *warm *warm *0 *vcl_auto" "vcl.list"
 varnish v1 -cliok "vcl.state vcl_warm cold"
 varnish v1 -cliexpect "available *cold *cold *0 *vcl_warm" "vcl.list"
 
-# Restart the cace.
+# Restart the cache.
 varnish v1 -cliok "stop" -cliok "start"
 varnish v1 -cliexpect "available *cold *cold *0 *vcl_cold" "vcl.list"
 varnish v1 -cliexpect "available *cold *cold *0 *vcl_warm" "vcl.list"

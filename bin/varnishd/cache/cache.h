@@ -748,12 +748,6 @@ VSLb_ts_busyobj(struct busyobj *bo, const char *event, vtim_real now)
 /* cache_vcl.c */
 const char *VCL_Name(const struct vcl *);
 
-#define ASSERT_VCL_ACTIVE()					\
-	do {							\
-		assert(vcl_active == NULL ||			\
-		    vcl_active->temp->is_warm);			\
-	} while (0)
-
 /* cache_wrk.c */
 
 typedef void *bgthread_t(struct worker *, void *priv);
