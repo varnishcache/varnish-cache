@@ -69,11 +69,12 @@ smd_init(struct stevedore *parent, int aac, char * const *aav)
 	memcpy(methods, &SML_methods, sizeof *methods);
 	parent->methods = methods;
 
-	av = malloc(sizeof *av * (aac + 1));
+	av = calloc(aac + 1, sizeof *av);
 	AN(av);
 	for (i = 0; i < aac; i++) {
 		if (aav[i] == NULL) {
-			av[ac++] = NULL;
+			AZ(av[ac]);
+			ac++;
 			continue;
 		}
 		if (! strcmp(aav[i], "lessspace")) {
@@ -82,7 +83,7 @@ smd_init(struct stevedore *parent, int aac, char * const *aav)
 		}
 		av[ac++] = strdup(aav[i]);
 	}
-	av[ac] = NULL;
+	AZ(av[ac]);
 
 	sma_stevedore.init(parent, ac, av);
 }
