@@ -60,7 +60,7 @@ struct fetch_step {
 
 #define FETCH_STEP(l, U) \
     static vbf_state_f vbf_stp_##l; \
-    static const struct fetch_step F_STP_##U[1] = {{ .name = "Fetch Step" #l, .func = vbf_stp_##l, }};
+    static const struct fetch_step F_STP_##U[1] = {{ .name = "Fetch Step " #l, .func = vbf_stp_##l, }};
 FETCH_STEPS
 #undef FETCH_STEP
 
