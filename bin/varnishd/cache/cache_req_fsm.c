@@ -555,10 +555,6 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		had_objhead = 1;
 	wrk->strangelove = 0;
 	lr = HSH_Lookup(req, &oc, &busy);
-	assert(wrk->strangelove >= 0);
-	if ((unsigned)wrk->strangelove >= cache_param->vary_notice)
-		VSLb(req->vsl, SLT_Notice, "vsl: High number of variants (%d)",
-		    wrk->strangelove);
 	if (lr == HSH_BUSY) {
 		/*
 		 * We lost the session to a busy object, disembark the
@@ -568,6 +564,10 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		 */
 		return (REQ_FSM_DISEMBARK);
 	}
+	assert(wrk->strangelove >= 0);
+	if ((unsigned)wrk->strangelove >= cache_param->vary_notice)
+		VSLb(req->vsl, SLT_Notice, "vsl: High number of variants (%d)",
+		    wrk->strangelove);
 	if (had_objhead)
 		VSLb_ts_req(req, "Waitinglist", W_TIM_real(wrk));
 
