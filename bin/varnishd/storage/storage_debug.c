@@ -57,7 +57,8 @@ smd_init(struct stevedore *parent, int aac, char * const *aav)
 	struct obj_methods *methods;
 	const char *ident;
 	int i, ac = 0;
-	char **av;
+	size_t nac;
+	char **av;	//lint -e429
 
 	ident = parent->ident;
 	memcpy(parent, &sma_stevedore, sizeof *parent);
@@ -69,7 +70,10 @@ smd_init(struct stevedore *parent, int aac, char * const *aav)
 	memcpy(methods, &SML_methods, sizeof *methods);
 	parent->methods = methods;
 
-	av = calloc(aac + 1, sizeof *av);
+	assert(aac >= 0);
+	nac = aac;
+	nac++;
+	av = calloc(nac, sizeof *av);
 	AN(av);
 	for (i = 0; i < aac; i++) {
 		if (aav[i] != NULL && ! strcmp(aav[i], "lessspace")) {
@@ -79,6 +83,8 @@ smd_init(struct stevedore *parent, int aac, char * const *aav)
 		REPLACE(av[ac], aav[i]);
 		ac++;
 	}
+	assert(ac >= 0);
+	assert(ac < (int)nac);
 	AZ(av[ac]);
 
 	sma_stevedore.init(parent, ac, av);
