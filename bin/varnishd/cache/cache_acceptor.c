@@ -709,21 +709,28 @@ VCA_Shutdown(void)
 static VTAILQ_HEAD(,transport)	transports =
     VTAILQ_HEAD_INITIALIZER(transports);
 
+static uint16_t next_xport;
+
+static void
+XPORT_Register(struct transport *xp)
+{
+
+	CHECK_OBJ_NOTNULL(xp, TRANSPORT_MAGIC);
+	AZ(xp->number);
+
+	xp->number = ++next_xport;
+	VTAILQ_INSERT_TAIL(&transports, xp, list);
+}
+
 void
 XPORT_Init(void)
 {
-	uint16_t n;
-	struct transport *xp;
 
 	ASSERT_MGT();
 
-	VTAILQ_INSERT_TAIL(&transports, &PROXY_transport, list);
-	VTAILQ_INSERT_TAIL(&transports, &HTTP1_transport, list);
-	VTAILQ_INSERT_TAIL(&transports, &H2_transport, list);
-
-	n = 0;
-	VTAILQ_FOREACH(xp, &transports, list)
-		xp->number = ++n;
+	XPORT_Register(&PROXY_transport);
+	XPORT_Register(&HTTP1_transport);
+	XPORT_Register(&H2_transport);
 }
 
 const struct transport *
