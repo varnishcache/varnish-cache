@@ -6,6 +6,7 @@
 
 FLOPS='
 	-I../../lib/libvgz
+	-I../../lib/libvsc
 	-DNOT_IN_A_VMOD
 	-DVARNISH_STATE_DIR="foo"
 	-DVARNISH_VMOD_DIR="foo"
