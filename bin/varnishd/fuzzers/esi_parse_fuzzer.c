@@ -50,7 +50,7 @@ volatile struct params *cache_param;
 
 int
 PAN__DumpStruct(struct vsb *vsb, int block, int track, const void *ptr,
-        const char *smagic, unsigned magic, const char *fmt, ...)
+    const char *smagic, unsigned magic, const char *fmt, ...)
 {
 	(void)vsb;
 	(void)block;
