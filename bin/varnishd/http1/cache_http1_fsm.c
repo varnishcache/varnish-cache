@@ -141,7 +141,7 @@ http1_unwait(struct worker *wrk, void *arg)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(sp, arg, SESS_MAGIC);
 	WS_Release(sp->ws, 0);
-	req = Req_New(wrk, sp);
+	req = Req_New(sp);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	req->htc->rfd = &sp->fd;
 	HTC_RxInit(req->htc, req->ws);

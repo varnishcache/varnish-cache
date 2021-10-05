@@ -399,7 +399,7 @@ vca_make_session(struct worker *wrk, void *arg)
 	}
 	vca_tcp_opt_set(sp->fd, wa->acceptlsock->uds, 0);
 
-	req = Req_New(wrk, sp);
+	req = Req_New(sp);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	req->htc->rfd = &sp->fd;
 

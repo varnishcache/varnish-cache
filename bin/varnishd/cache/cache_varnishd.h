@@ -400,7 +400,7 @@ void pan_pool(struct vsb *);
 int VRG_CheckBo(struct busyobj *);
 
 /* cache_req.c */
-struct req *Req_New(const struct worker *, struct sess *);
+struct req *Req_New(struct sess *);
 void Req_Release(struct req *);
 void Req_Rollback(VRT_CTX);
 void Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req);

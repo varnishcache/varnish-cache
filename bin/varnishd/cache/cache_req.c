@@ -104,7 +104,7 @@ Req_LogHit(struct worker *wrk, struct req *req, struct objcore *oc,
  */
 
 struct req *
-Req_New(const struct worker *wrk, struct sess *sp)
+Req_New(struct sess *sp)
 {
 	struct pool *pp;
 	struct req *req;
@@ -112,7 +112,6 @@ Req_New(const struct worker *wrk, struct sess *sp)
 	unsigned sz, hl;
 	char *p, *e;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	pp = sp->pool;
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);

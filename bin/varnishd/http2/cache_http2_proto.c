@@ -138,14 +138,13 @@ h2_connectionerror(uint32_t u)
 /**********************************************************************/
 
 struct h2_req *
-h2_new_req(const struct worker *wrk, struct h2_sess *h2,
-    unsigned stream, struct req *req)
+h2_new_req(struct h2_sess *h2, unsigned stream, struct req *req)
 {
 	struct h2_req *r2;
 
 	ASSERT_RXTHR(h2);
 	if (req == NULL)
-		req = Req_New(wrk, h2->sess);
+		req = Req_New(h2->sess);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 	r2 = WS_Alloc(req->ws, sizeof *r2);
@@ -661,7 +660,7 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 			return (H2SE_REFUSED_STREAM);	// rfc7540,l,1200,1205
 		}
 		h2->highest_stream = h2->rxf_stream;
-		r2 = h2_new_req(wrk, h2, h2->rxf_stream, NULL);
+		r2 = h2_new_req(h2, h2->rxf_stream, NULL);
 	}
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 

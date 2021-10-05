@@ -129,7 +129,7 @@ ved_include(struct req *preq, const char *src, const char *host,
 		return;
 	}
 
-	req = Req_New(wrk, sp);
+	req = Req_New(sp);
 	AN(req);
 	THR_SetRequest(req);
 	AZ(req->vsl->wid);

@@ -96,7 +96,7 @@ h2_local_settings(struct h2_settings *h2s)
  */
 
 static struct h2_sess *
-h2_init_sess(const struct worker *wrk, struct sess *sp,
+h2_init_sess(struct sess *sp,
     struct h2_sess *h2s, struct req *srq, struct h2h_decode *decode)
 {
 	uintptr_t *up;
@@ -108,7 +108,7 @@ h2_init_sess(const struct worker *wrk, struct sess *sp,
 	assert(*up == 0);
 
 	if (srq == NULL)
-		srq = Req_New(wrk, sp);
+		srq = Req_New(sp);
 	AN(srq);
 	h2 = h2s;
 	AN(h2);
@@ -278,7 +278,7 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 	HTC_RxInit(h2->htc, h2->ws);
 
 	/* Start req thread */
-	r2 = h2_new_req(wrk, h2, 1, req);
+	r2 = h2_new_req(h2, 1, req);
 	req->transport = &H2_transport;
 	assert(req->req_step == R_STP_TRANSPORT);
 	req->task->func = h2_do_req;
@@ -354,9 +354,9 @@ h2_new_session(struct worker *wrk, void *arg)
 
 	assert (req->err_code == H2_PU_MARKER || req->err_code == H2_OU_MARKER);
 
-	h2 = h2_init_sess(wrk, sp, &h2s,
+	h2 = h2_init_sess(sp, &h2s,
 	    req->err_code == H2_PU_MARKER ? req : NULL, &decode);
-	h2->req0 = h2_new_req(wrk, h2, 0, NULL);
+	h2->req0 = h2_new_req(h2, 0, NULL);
 	AZ(h2->htc->priv);
 	h2->htc->priv = h2;
 
