@@ -492,7 +492,7 @@ main(int argc, char **argv)
 	AN(vut);
 	AZ(pthread_condattr_init(&ca));
 	AZ(pthread_condattr_setclock(&ca, CLOCK_MONOTONIC));
-	AZ(pthread_cond_init(&timebend_cv, NULL));
+	AZ(pthread_cond_init(&timebend_cv, &ca));
 
 	while ((i = getopt(argc, argv, vopt_spec.vopt_optstring)) != -1) {
 		switch (i) {
