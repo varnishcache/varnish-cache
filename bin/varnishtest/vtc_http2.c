@@ -330,11 +330,11 @@ write_frame(const struct stream *sp, const struct frame *f, const unsigned lock)
 
 	writeFrameHeader(hdr, f);
 
-	vtc_log(sp->vl, 3, "tx: stream: %d, type: %s (%d), "
-			"flags: 0x%02x, size: %d",
-			f->stid,
-			f->type < TYPE_MAX ? h2_types[f->type] : "?",
-			f->type, f->flags, f->size);
+	vtc_log(sp->vl, 3,
+	    "tx: stream: %d, type: %s (%d), flags: 0x%02x, size: %d",
+	    f->stid,
+	    f->type < TYPE_MAX ? h2_types[f->type] : "?",
+	    f->type, f->flags, f->size);
 
 	if (lock)
 		AZ(pthread_mutex_lock(&hp->mtx));
