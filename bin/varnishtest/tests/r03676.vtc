@@ -1,0 +1,30 @@
+varnishtest "Make sure we do not attempt start without a warm active VCL"
+
+varnish v1 -cliok "vcl.list"
+varnish v1 -clijson "vcl.list -j"
+varnish v1 -clierr 300 "start"
+varnish v1 -cliexpect "No VCL loaded yet" "start"
+
+# Load a cold VCL. This becomes the active VCL.
+
+shell {
+	cat >${tmpdir}/f1 <<-EOF
+	vcl 4.1;
+	backend default none;
+	EOF
+}
+
+varnish v1 -cliok "vcl.load vcl_cold ${tmpdir}/f1 cold"
+varnish v1 -cliexpect "active *cold *cold *- *vcl_cold" "vcl.list"
+varnish v1 -clierr 300 "start"
+varnish v1 -cliexpect "Active VCL is cold" "start"
+
+# Load a warm VCL. This becomes the active VCL.
+varnish v1 -cliok "vcl.load vcl_warm ${tmpdir}/f1 warm"
+varnish v1 -cliexpect "available *warm *warm *- *vcl_warm" "vcl.list"
+varnish v1 -clierr 300 "start"
+varnish v1 -cliexpect "Active VCL is cold" "start"
+
+# Switch to warm VCL and the cache can start
+varnish v1 -cliok "vcl.use vcl_warm"
+varnish v1 -cliok "start"

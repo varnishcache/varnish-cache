@@ -707,15 +707,17 @@ mch_pid_json(struct cli *cli, const char * const *av, void *priv)
 static void v_matchproto_(cli_func_t)
 mch_cli_server_start(struct cli *cli, const char * const *av, void *priv)
 {
+	const char *err;
 
 	(void)av;
 	(void)priv;
 	if (child_state == CH_STOPPED) {
-		if (mgt_has_vcl()) {
+		err = mgt_has_vcl();
+		if (err == NULL) {
 			mgt_launch_child(cli);
 		} else {
+			VCLI_Out(cli, "%s", err);
 			VCLI_SetResult(cli, CLIS_CANT);
-			VCLI_Out(cli, "No VCL available");
 		}
 	} else {
 		VCLI_SetResult(cli, CLIS_CANT);

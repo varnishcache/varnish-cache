@@ -476,13 +476,14 @@ main(int argc, char * const *argv)
 	const char *P_arg = NULL;
 	const char *S_arg = NULL;
 	const char *s_arg = "default,100m";
+	const char *T_arg = "localhost:0";
 	const char *W_arg = NULL;
 	int s_arg_given = 0;
 	int novcl = 0;
-	const char *T_arg = "localhost:0";
 	char *p;
 	struct cli cli[1];
 	char **av;
+	const char *err;
 	unsigned u;
 	struct sigaction sac;
 	struct vev *e;
@@ -909,10 +910,11 @@ main(int argc, char * const *argv)
 	}
 	assert(I_fd == -1);
 
-	if (!d_flag && !mgt_has_vcl() && !novcl)
-		MGT_Complain(C_ERR, "No VCL loaded yet");
+	err = mgt_has_vcl();
+	if (!d_flag && err != NULL)
+		MGT_Complain(C_ERR, "%s", err);
 
-	if (mgt_has_vcl() && ! d_flag)
+	if (err == NULL && !d_flag)
 		u = MCH_Start_Child();
 	else
 		u = 0;
