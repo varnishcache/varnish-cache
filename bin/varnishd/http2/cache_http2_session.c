@@ -429,7 +429,7 @@ h2_new_session(struct worker *wrk, void *arg)
 		VTAILQ_FOREACH(r2, &h2->streams, list)
 			VSLb(h2->vsl, SLT_Debug, "ST %u %d",
 			    r2->stream, r2->state);
-		(void)Lck_CondWait(h2->cond, &h2->sess->mtx, VTIM_real() + .1);
+		(void)Lck_CondWaitUntil(h2->cond, &h2->sess->mtx, VTIM_real() + .1);
 		Lck_Unlock(&h2->sess->mtx);
 	}
 	h2->cond = NULL;

@@ -475,11 +475,11 @@ vbp_thread(struct worker *wrk, void *priv)
 		vt = VBH_root(vbp_heap);
 		if (vt == NULL) {
 			nxt = 8.192 + now;
-			(void)Lck_CondWait(&vbp_cond, &vbp_mtx, nxt);
+			(void)Lck_CondWaitUntil(&vbp_cond, &vbp_mtx, nxt);
 		} else if (vt->due > now) {
 			nxt = vt->due;
 			vt = NULL;
-			(void)Lck_CondWait(&vbp_cond, &vbp_mtx, nxt);
+			(void)Lck_CondWaitUntil(&vbp_cond, &vbp_mtx, nxt);
 		} else {
 			VBH_delete(vbp_heap, vt->heap_idx);
 			vt->due = now + vt->interval;

@@ -500,7 +500,7 @@ VCP_Wait(struct worker *wrk, struct pfd *pfd, vtim_real tmo)
 	assert(pfd->cond == &wrk->cond);
 	Lck_Lock(&cp->mtx);
 	while (pfd->state == PFD_STATE_STOLEN) {
-		r = Lck_CondWait(&wrk->cond, &cp->mtx, tmo);
+		r = Lck_CondWaitUntil(&wrk->cond, &cp->mtx, tmo);
 		if (r != 0) {
 			if (r == EINTR)
 				continue;

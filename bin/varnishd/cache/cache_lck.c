@@ -208,7 +208,7 @@ Lck__Owned(const struct lock *lck)
 }
 
 int v_matchproto_()
-Lck_CondWait(pthread_cond_t *cond, struct lock *lck, vtim_real when)
+Lck_CondWaitUntil(pthread_cond_t *cond, struct lock *lck, vtim_real when)
 {
 	struct ilck *ilck;
 	struct timespec ts;

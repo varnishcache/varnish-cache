@@ -202,7 +202,7 @@ ved_include(struct req *preq, const char *src, const char *host,
 		assert(s == REQ_FSM_DISEMBARK);
 		Lck_Lock(&sp->mtx);
 		if (!ecx->woken)
-			(void)Lck_CondWait(
+			(void)Lck_CondWaitUntil(
 			    &ecx->preq->wrk->cond, &sp->mtx, 0);
 		Lck_Unlock(&sp->mtx);
 		AZ(req->wrk);

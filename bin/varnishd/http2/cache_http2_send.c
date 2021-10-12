@@ -59,7 +59,7 @@ h2_cond_wait(pthread_cond_t *cond, struct h2_sess *h2, struct h2_req *r2)
 	if (cache_param->idle_send_timeout > 0.)
 		when = now + cache_param->idle_send_timeout;
 
-	r = Lck_CondWait(cond, &h2->sess->mtx, when);
+	r = Lck_CondWaitUntil(cond, &h2->sess->mtx, when);
 	assert(r == 0 || r == ETIMEDOUT);
 
 	now = VTIM_real();
@@ -100,7 +100,7 @@ h2_send_get_locked(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	r2->wrk = wrk;
 	VTAILQ_INSERT_TAIL(&h2->txqueue, r2, tx_list);
 	while (!H2_SEND_HELD(h2, r2))
-		AZ(Lck_CondWait(&wrk->cond, &h2->sess->mtx, 0));
+		AZ(Lck_CondWaitUntil(&wrk->cond, &h2->sess->mtx, 0));
 	r2->wrk = NULL;
 }
 

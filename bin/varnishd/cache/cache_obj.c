@@ -257,7 +257,7 @@ ObjWaitExtend(const struct worker *wrk, const struct objcore *oc, uint64_t l)
 		assert(l <= rv || oc->boc->state == BOS_FAILED);
 		if (rv > l || oc->boc->state >= BOS_FINISHED)
 			break;
-		(void)Lck_CondWait(&oc->boc->cond, &oc->boc->mtx, 0);
+		(void)Lck_CondWaitUntil(&oc->boc->cond, &oc->boc->mtx, 0);
 	}
 	rv = oc->boc->len_so_far;
 	Lck_Unlock(&oc->boc->mtx);
@@ -307,7 +307,7 @@ ObjWaitState(const struct objcore *oc, enum boc_state_e want)
 	while (1) {
 		if (oc->boc->state >= want)
 			break;
-		(void)Lck_CondWait(&oc->boc->cond, &oc->boc->mtx, 0);
+		(void)Lck_CondWaitUntil(&oc->boc->cond, &oc->boc->mtx, 0);
 	}
 	Lck_Unlock(&oc->boc->mtx);
 }

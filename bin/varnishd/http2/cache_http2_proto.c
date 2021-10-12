@@ -1038,7 +1038,7 @@ h2_vfp_body(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr, ssize_t *lp)
 		if (retval != VFP_OK || l > 0)
 			break;
 
-		i = Lck_CondWait(r2->cond, &h2->sess->mtx,
+		i = Lck_CondWaitUntil(r2->cond, &h2->sess->mtx,
 		    VTIM_real() + SESS_TMO(h2->sess, timeout_idle));
 		if (i == ETIMEDOUT) {
 			retval = VFP_ERROR;

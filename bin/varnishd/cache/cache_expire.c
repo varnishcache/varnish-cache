@@ -419,7 +419,7 @@ exp_thread(struct worker *wrk, void *priv)
 		} else if (tnext > t) {
 			VSL_Flush(&ep->vsl, 0);
 			Pool_Sumstat(wrk);
-			(void)Lck_CondWait(&ep->condvar, &ep->mtx, tnext);
+			(void)Lck_CondWaitUntil(&ep->condvar, &ep->mtx, tnext);
 		}
 		Lck_Unlock(&ep->mtx);
 

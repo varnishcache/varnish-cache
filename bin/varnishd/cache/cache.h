@@ -690,7 +690,7 @@ extern pthread_mutexattr_t mtxattr_errorcheck;
 
 /* public interface: */
 void Lck_Delete(struct lock *lck);
-int Lck_CondWait(pthread_cond_t *cond, struct lock *lck, vtim_real);
+int Lck_CondWaitUntil(pthread_cond_t *cond, struct lock *lck, vtim_real);
 
 #define Lck_New(a, b) Lck__New(a, b, #b)
 #define Lck_Lock(a) Lck__Lock(a, __func__, __LINE__)
