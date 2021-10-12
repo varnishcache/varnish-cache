@@ -110,6 +110,7 @@ cnt_transport(struct worker *wrk, struct req *req)
 
 	req->doclose = http_DoConnection(req->http, SC_REQ_CLOSE);
 	if (req->doclose == SC_RX_BAD) {
+		wrk->stats->client_req_400++;
 		(void)req->transport->minimal_response(req, 400);
 		return (REQ_FSM_DONE);
 	}
@@ -926,6 +927,20 @@ cnt_recv(struct worker *wrk, struct req *req)
 	VSLb(req->vsl, SLT_ReqStart, "%s %s %s", ci, cp, endpname);
 
 	http_VSL_log(req->http);
+
+	if (http_CountHdr(req->http0, H_Host) > 1) {
+		VSLb(req->vsl, SLT_BogoHeader, "Multiple Host: headers");
+		wrk->stats->client_req_400++;
+		(void)req->transport->minimal_response(req, 400);
+		return (REQ_FSM_DONE);
+	}
+
+	if (http_CountHdr(req->http0, H_Content_Length) > 1) {
+		VSLb(req->vsl, SLT_BogoHeader, "Multiple Content-Length: headers");
+		wrk->stats->client_req_400++;
+		(void)req->transport->minimal_response(req, 400);
+		return (REQ_FSM_DONE);
+	}
 
 	cnt_recv_prep(req, ci);
 

@@ -368,12 +368,6 @@ HTTP1_DissectRequest(struct http_conn *htc, struct http *hp)
 	if (hp->protover < 10 || hp->protover > 11)
 		return (400);
 
-	if (http_CountHdr(hp, H_Host) > 1)
-		return (400);
-
-	if (http_CountHdr(hp, H_Content_Length) > 1)
-		return (400);
-
 	/* RFC2616, section 5.2, point 1 */
 	if (http_scheme_at(hp->hd[HTTP_HDR_URL].b, http))
 		b = hp->hd[HTTP_HDR_URL].b + 7;
