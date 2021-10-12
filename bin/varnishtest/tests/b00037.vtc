@@ -1,6 +1,7 @@
 varnishtest "Error on multiple Host headers"
 
 varnish v1 -vcl {backend be none;} -start
+varnish v1 -cliok "param.set debug +syncvsl"
 
 client c1 {
 	txreq -hdr "Host: foo" -hdr "Host: bar"
@@ -33,12 +34,6 @@ client c2 {
 varnish v1 -vsl_catchup
 varnish v1 -expect client_req_400 == 3
 
-client c3 {
-	stream 3 {
-		txreq -req POST -hdr content-length 12 -hdr content-length 13 -body request
-		rxrst
-	} -run
-} -run
-
-varnish v1 -vsl_catchup
-varnish v1 -expect client_req_400 == 4
+# H2 with multiple content-length runs into thread-scheduling differences,
+# and is unnecessary, as we know the check works from H1 and that it
+# will be hit, because H2 with multiple Host: triggered.
