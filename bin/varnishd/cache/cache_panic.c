@@ -842,7 +842,7 @@ void
 PAN_Init(void)
 {
 
-	AZ(pthread_mutex_init(&panicstr_mtx, NULL));
+	AZ(pthread_mutex_init(&panicstr_mtx, &mtxattr_errorcheck));
 	VAS_Fail_Func = pan_ic;
 	pan_vsb = &pan_vsb_storage;
 	AN(heritage.panic_str);

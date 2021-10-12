@@ -58,8 +58,6 @@ struct ilck {
 	struct VSC_lck		*stat;
 };
 
-static pthread_mutexattr_t attr;
-
 /*--------------------------------------------------------------------*/
 
 static void
@@ -267,7 +265,7 @@ Lck__New(struct lock *lck, struct VSC_lck *st, const char *w)
 	ilck->w = w;
 	ilck->stat = st;
 	ilck->stat->creat++;
-	AZ(pthread_mutex_init(&ilck->mtx, &attr));
+	AZ(pthread_mutex_init(&ilck->mtx, &mtxattr_errorcheck));
 	lck->priv = ilck;
 }
 
@@ -302,8 +300,6 @@ void
 LCK_Init(void)
 {
 
-	AZ(pthread_mutexattr_init(&attr));
-	AZ(pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK));
 #define LOCK(nam)	lck_##nam = Lck_CreateClass(NULL, #nam);
 #include "tbl/locks.h"
 }

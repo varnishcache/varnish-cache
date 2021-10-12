@@ -614,9 +614,9 @@ VSM_Init(void)
 
 	assert(UINT_MAX % VSL_SEGMENTS == VSL_SEGMENTS - 1);
 
-	AZ(pthread_mutex_init(&vsl_mtx, NULL));
-	AZ(pthread_mutex_init(&vsc_mtx, NULL));
-	AZ(pthread_mutex_init(&vsm_mtx, NULL));
+	AZ(pthread_mutex_init(&vsl_mtx, &mtxattr_errorcheck));
+	AZ(pthread_mutex_init(&vsc_mtx, &mtxattr_errorcheck));
+	AZ(pthread_mutex_init(&vsm_mtx, &mtxattr_errorcheck));
 
 	vsc_lock = vsm_vsc_lock;
 	vsc_unlock = vsm_vsc_unlock;

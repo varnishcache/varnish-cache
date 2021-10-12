@@ -175,7 +175,7 @@ STV_open(void)
 	char buf[1024];
 
 	ASSERT_CLI();
-	AZ(pthread_mutex_init(&stv_mtx, NULL));
+	AZ(pthread_mutex_init(&stv_mtx, &mtxattr_errorcheck));
 
 	/* This string was prepared for us before the fork, and should
 	 * point to a configured stevedore. */
