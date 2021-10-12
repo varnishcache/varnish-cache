@@ -479,7 +479,6 @@ main(int argc, char * const *argv)
 	const char *T_arg = "localhost:0";
 	const char *W_arg = NULL;
 	int s_arg_given = 0;
-	int novcl = 0;
 	char *p;
 	struct cli cli[1];
 	char **av;
@@ -652,10 +651,8 @@ main(int argc, char * const *argv)
 			VTAILQ_INSERT_TAIL(&f_args, fa, list);
 			break;
 		case 'f':
-			if (*optarg == '\0') {
-				novcl = 1;
+			if (*optarg == '\0')
 				break;
-			}
 			mgt_f_read(optarg);
 			break;
 		case 'h':
