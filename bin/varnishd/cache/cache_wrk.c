@@ -440,7 +440,8 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 					tmo =  now + 1.;
 				else
 					tmo =  now + 60.;
-				(void)Lck_CondWaitUntil(&wrk->cond, &pp->mtx, tmo);
+				(void)Lck_CondWaitUntil(
+				    &wrk->cond, &pp->mtx, tmo);
 				if (wrk->task->func != NULL) {
 					/* We have been handed a new task */
 					tpx = *wrk->task;
@@ -697,14 +698,14 @@ pool_herder(void *priv)
 		if (pp->lqueue == 0) {
 			if (DO_DEBUG(DBG_VTC_MODE))
 				delay = 0.5;
-			r = Lck_CondWaitUntil(&pp->herder_cond, &pp->mtx,
-			    VTIM_real() + delay);
+			r = Lck_CondWaitTimeout(
+			    &pp->herder_cond, &pp->mtx, delay);
 		} else if (pp->nthr >= cache_param->wthread_max) {
 			/* XXX: unsafe counters */
 			if (r != ETIMEDOUT)
 				VSC_C_main->threads_limited++;
-			r = Lck_CondWaitUntil(&pp->herder_cond, &pp->mtx,
-			    VTIM_real() + 1.0);
+			r = Lck_CondWaitTimeout(
+			    &pp->herder_cond, &pp->mtx, 1.0);
 		}
 		Lck_Unlock(&pp->mtx);
 	}
