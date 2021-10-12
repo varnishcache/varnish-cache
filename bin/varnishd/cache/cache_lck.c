@@ -42,9 +42,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#if defined (__APPLE__)
-#    include "vtim.h"
-#endif
+#include "vtim.h"
 
 #include "VSC_lck.h"
 
@@ -205,6 +203,24 @@ Lck__Owned(const struct lock *lck)
 	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC);
 	AN(ilck->held);
 	return (pthread_equal(ilck->owner, pthread_self()));
+}
+
+int v_matchproto_()
+Lck_CondWait(pthread_cond_t *cond, struct lock *lck)
+{
+       return (Lck_CondWaitUntil(cond, lck, 0));
+}
+
+int v_matchproto_()
+Lck_CondWaitTimeout(pthread_cond_t *cond, struct lock *lck, vtim_dur timeout)
+{
+	assert(timeout >= 0);
+	assert(timeout < 3600);
+
+	if (timeout == 0)
+		return (Lck_CondWaitUntil(cond, lck, 0));
+	else
+		return (Lck_CondWaitUntil(cond, lck, VTIM_real() + timeout));
 }
 
 int v_matchproto_()
