@@ -367,8 +367,7 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 
 	if (vsl_ts > vsl_to) {
 		struct timespec ts;
-		ts.tv_nsec = (long)(modf(vsl_ts - vsl_to, &t) * 1e9);
-		ts.tv_sec = (long)t;
+		ts = VTIM_timespec(vsl_ts - vsl_to);
 		i = pthread_cond_timedwait(&timebend_cv, &mtx, &ts);
 		assert(i == 0 || i == ETIMEDOUT);
 	}
