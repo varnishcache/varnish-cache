@@ -228,7 +228,6 @@ Lck_CondWaitUntil(pthread_cond_t *cond, struct lock *lck, vtim_real when)
 {
 	struct ilck *ilck;
 	struct timespec ts;
-	vtim_real t;
 
 	AN(lck);
 	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC);
@@ -240,8 +239,7 @@ Lck_CondWaitUntil(pthread_cond_t *cond, struct lock *lck, vtim_real when)
 		AZ(errno);
 	} else {
 		assert(when > 1e9);
-		ts.tv_nsec = (long)(modf(when, &t) * 1e9);
-		ts.tv_sec = (long)t;
+		ts = VTIM_timespec(when);
 		assert(ts.tv_nsec >= 0 && ts.tv_nsec <= 999999999);
 		errno = pthread_cond_timedwait(cond, &ilck->mtx, &ts);
 #if defined (__APPLE__)

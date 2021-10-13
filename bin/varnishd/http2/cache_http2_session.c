@@ -39,7 +39,6 @@
 #include "http2/cache_http2.h"
 
 #include "vend.h"
-#include "vtim.h"
 #include "vtcp.h"
 
 static const char h2_resp_101[] =
