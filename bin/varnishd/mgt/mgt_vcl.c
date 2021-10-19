@@ -281,11 +281,16 @@ mgt_vcl_del(struct vclprog *vp)
 	FREE_OBJ(vp);
 }
 
-int
+const char *
 mgt_has_vcl(void)
 {
-
-	return (!VTAILQ_EMPTY(&vclhead));
+	if (VTAILQ_EMPTY(&vclhead))
+		return ("No VCL loaded");
+	if (mgt_vcl_active == NULL)
+		return ("No active VCL");
+	CHECK_OBJ_NOTNULL(mgt_vcl_active, VCLPROG_MAGIC);
+	AN(mgt_vcl_active->warm);
+	return (NULL);
 }
 
 /*
