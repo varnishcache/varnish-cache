@@ -63,7 +63,7 @@ static unsigned vcl_count;
 struct vclproghead vclhead = VTAILQ_HEAD_INITIALIZER(vclhead);
 static struct vclproghead discardhead = VTAILQ_HEAD_INITIALIZER(discardhead);
 struct vmodfilehead vmodhead = VTAILQ_HEAD_INITIALIZER(vmodhead);
-static struct vclprog		*active_vcl;
+static struct vclprog *mgt_vcl_active;
 static struct vev *e_poker;
 
 static int mgt_vcl_setstate(struct cli *, struct vclprog *,
@@ -300,7 +300,7 @@ mgt_vcl_set_cooldown(struct vclprog *vp, vtim_mono now)
 {
 	CHECK_OBJ_NOTNULL(vp, VCLPROG_MAGIC);
 
-	if (vp == active_vcl ||
+	if (vp == mgt_vcl_active ||
 	    vp->state != VCL_STATE_AUTO ||
 	    vp->warm == 0 ||
 	    !VTAILQ_EMPTY(&vp->dto) ||
@@ -401,7 +401,7 @@ mgt_vcl_setstate(struct cli *cli, struct vclprog *vp, const struct vclstate *vs)
 	os = vp->state;
 	vp->state = vs;
 
-	if (vp == active_vcl) {
+	if (vp == mgt_vcl_active) {
 		assert (vs == VCL_STATE_WARM || vs == VCL_STATE_AUTO);
 		AN(vp->warm);
 		warm = 1;
@@ -458,8 +458,8 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 	AZ(C_flag);
 	vp->fname = lib;
 
-	if (active_vcl == NULL)
-		active_vcl = vp;
+	if (mgt_vcl_active == NULL)
+		mgt_vcl_active = vp;
 
 	if ((cli->result == CLIS_OK || cli->result == CLIS_TRUNCATED) &&
 	    vcl_count > mgt_param.max_vcl &&
@@ -501,7 +501,7 @@ mgt_vcl_startup(struct cli *cli, const char *vclsrc, const char *vclname,
 		bprintf(buf, "boot%d", n++);
 		vclname = buf;
 	}
-	active_vcl = NULL;
+	mgt_vcl_active = NULL;
 	(void)mgt_new_vcl(cli, vclname, vclsrc, origin, NULL, C_flag);
 }
 
@@ -514,7 +514,7 @@ mgt_push_vcls(struct cli *cli, unsigned *status, char **p)
 	struct vcldep *vd;
 	int done;
 
-	AN(active_vcl);
+	AN(mgt_vcl_active);
 
 	/* The VCL has not been loaded yet, it cannot fail */
 	(void)cli;
@@ -554,8 +554,10 @@ mgt_push_vcls(struct cli *cli, unsigned *status, char **p)
 		}
 	} while (!done);
 
-	if (mgt_cli_askchild(status, p, "vcl.use \"%s\"\n", active_vcl->name))
+	if (mgt_cli_askchild(status, p, "vcl.use \"%s\"\n",
+	      mgt_vcl_active->name)) {
 		return (1);
+	}
 	free(*p);
 	*p = NULL;
 	return (0);
@@ -617,7 +619,7 @@ mcf_vcl_state(struct cli *cli, const char * const *av, void *priv)
 			VCLI_SetResult(cli, CLIS_CANT);
 			return;
 		}
-		if (vp == active_vcl) {
+		if (vp == mgt_vcl_active) {
 			VCLI_Out(cli, "Cannot set the active VCL cold.");
 			VCLI_SetResult(cli, CLIS_CANT);
 			return;
@@ -639,7 +641,7 @@ mcf_vcl_use(struct cli *cli, const char * const *av, void *priv)
 	vp = mcf_find_vcl(cli, av[2]);
 	if (vp == NULL)
 		return;
-	if (vp == active_vcl)
+	if (vp == mgt_vcl_active)
 		return;
 
 	if (mgt_vcl_requirewarm(cli, vp))
@@ -651,8 +653,8 @@ mcf_vcl_use(struct cli *cli, const char * const *av, void *priv)
 		VCLI_Out(cli, "%s", p);
 	} else {
 		VCLI_Out(cli, "VCL '%s' now active", av[2]);
-		vp2 = active_vcl;
-		active_vcl = vp;
+		vp2 = mgt_vcl_active;
+		mgt_vcl_active = vp;
 		now = VTIM_mono();
 		mgt_vcl_set_cooldown(vp, now);
 		if (vp2 != NULL)
@@ -669,7 +671,7 @@ mgt_vcl_discard(struct cli *cli, struct vclprog *vp)
 
 	AN(vp);
 	AN(vp->discard);
-	assert(vp != active_vcl);
+	assert(vp != mgt_vcl_active);
 
 	while (!VTAILQ_EMPTY(&vp->dto))
 		mgt_vcl_discard(cli, VTAILQ_FIRST(&vp->dto)->from);
@@ -699,7 +701,7 @@ mgt_vcl_discard_mark(struct cli *cli, const char *glob)
 	VTAILQ_FOREACH(vp, &vclhead, list) {
 		if (fnmatch(glob, vp->name, 0))
 			continue;
-		if (vp == active_vcl) {
+		if (vp == mgt_vcl_active) {
 			VCLI_SetResult(cli, CLIS_CANT);
 			VCLI_Out(cli, "Cannot discard active VCL program %s\n",
 			    vp->name);
@@ -829,7 +831,7 @@ mcf_vcl_list(struct cli *cli, const char * const *av, void *priv)
 
 		VTAILQ_FOREACH(vp, &vclhead, list) {
 			VSB_printf(vsb, "%s",
-			    vp == active_vcl ? "active" : "available");
+			    vp == mgt_vcl_active ? "active" : "available");
 			vs = vp->warm ?  VCL_STATE_WARM : VCL_STATE_COLD;
 			VSB_printf(vsb, "\t%s\t%s", vp->state->name, vs->name);
 			VSB_printf(vsb, "\t%6s\t%s", "-", vp->name);
@@ -875,7 +877,7 @@ mcf_vcl_list_json(struct cli *cli, const char * const *av, void *priv)
 			VCLI_Out(cli, "{\n");
 			VSB_indent(cli->sb, 2);
 			VCLI_Out(cli, "\"status\": \"%s\",\n",
-			    vp == active_vcl ? "active" : "available");
+			    vp == mgt_vcl_active ? "active" : "available");
 			VCLI_Out(cli, "\"state\": \"%s\",\n", vp->state->name);
 			vs = vp->warm ?  VCL_STATE_WARM : VCL_STATE_COLD;
 			VCLI_Out(cli, "\"temperature\": \"%s\",\n", vs->name);
@@ -1097,7 +1099,7 @@ mgt_vcl_atexit(void)
 
 	if (getpid() != heritage.mgt_pid)
 		return;
-	active_vcl = NULL;
+	mgt_vcl_active = NULL;
 	while (!VTAILQ_EMPTY(&vclhead))
 		VTAILQ_FOREACH_SAFE(vp, &vclhead, list, vp2)
 			if (VTAILQ_EMPTY(&vp->dto))
