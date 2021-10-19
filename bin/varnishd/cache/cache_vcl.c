@@ -213,6 +213,7 @@ vcl_send_event(struct vcl *vcl, enum vcl_event_e ev, struct vsb **msg)
 	struct vrt_ctx *ctx;
 
 	ASSERT_CLI();
+	ASSERT_VCL_ACTIVE();
 
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	CHECK_OBJ_NOTNULL(vcl->conf, VCL_CONF_MAGIC);
@@ -337,6 +338,7 @@ VCL_Update(struct vcl **vcc, struct vcl *vcl)
 	*vcc = NULL;
 
 	CHECK_OBJ_ORNULL(old, VCL_MAGIC);
+	ASSERT_VCL_ACTIVE();
 
 	Lck_Lock(&vcl_mtx);
 	if (old != NULL) {
@@ -393,6 +395,7 @@ VCL_IterDirector(struct cli *cli, const char *pat,
 	struct vcl *vcl;
 
 	ASSERT_CLI();
+	ASSERT_VCL_ACTIVE();
 	vsb = VSB_new_auto();
 	AN(vsb);
 	if (pat == NULL || *pat == '\0' || !strcmp(pat, "*")) {
@@ -665,6 +668,7 @@ vcl_load(struct cli *cli,
 	struct vsb *msg;
 
 	ASSERT_CLI();
+	ASSERT_VCL_ACTIVE();
 
 	vcl = vcl_find(name);
 	AZ(vcl);
@@ -720,6 +724,7 @@ VCL_Poll(void)
 	struct vcl *vcl, *vcl2;
 
 	ASSERT_CLI();
+	ASSERT_VCL_ACTIVE();
 	VTAILQ_FOREACH_SAFE(vcl, &vcl_head, list, vcl2) {
 		if (vcl->temp == VCL_TEMP_BUSY ||
 		    vcl->temp == VCL_TEMP_COOLING)
@@ -755,6 +760,7 @@ vcl_cli_list(struct cli *cli, const char * const *av, void *priv)
 	(void)av;
 	(void)priv;
 	ASSERT_CLI();
+	ASSERT_VCL_ACTIVE();
 	vsb = VSB_new_auto();
 	AN(vsb);
 	VTAILQ_FOREACH(vcl, &vcl_head, list) {
@@ -787,6 +793,7 @@ vcl_cli_list_json(struct cli *cli, const char * const *av, void *priv)
 
 	(void)priv;
 	ASSERT_CLI();
+	ASSERT_VCL_ACTIVE();
 	VCLI_JSON_begin(cli, 2, av);
 	VCLI_Out(cli, ",\n");
 	VTAILQ_FOREACH(vcl, &vcl_head, list) {
@@ -844,6 +851,7 @@ vcl_cli_state(struct cli *cli, const char * const *av, void *priv)
 
 	AZ(priv);
 	ASSERT_CLI();
+	ASSERT_VCL_ACTIVE();
 	AN(av[2]);
 	AN(av[3]);
 
@@ -869,6 +877,7 @@ vcl_cli_discard(struct cli *cli, const char * const *av, void *priv)
 	struct vcl *vcl;
 
 	ASSERT_CLI();
+	ASSERT_VCL_ACTIVE();
 	(void)cli;
 	AZ(priv);
 	vcl = vcl_find(av[2]);
@@ -902,6 +911,7 @@ vcl_cli_label(struct cli *cli, const char * const *av, void *priv)
 	struct vcl *vcl;
 
 	ASSERT_CLI();
+	ASSERT_VCL_ACTIVE();
 	(void)cli;
 	(void)priv;
 	vcl = vcl_find(av[3]);
@@ -927,6 +937,7 @@ vcl_cli_use(struct cli *cli, const char * const *av, void *priv)
 	struct vcl *vcl;
 
 	ASSERT_CLI();
+	ASSERT_VCL_ACTIVE();
 	AN(cli);
 	AZ(priv);
 	vcl = vcl_find(av[2]);
@@ -945,6 +956,7 @@ vcl_cli_show(struct cli *cli, const char * const *av, void *priv)
 	int i;
 
 	ASSERT_CLI();
+	ASSERT_VCL_ACTIVE();
 	AZ(priv);
 	if (!strcmp(av[2], "-v") && av[3] == NULL) {
 		VCLI_Out(cli, "Too few parameters");
