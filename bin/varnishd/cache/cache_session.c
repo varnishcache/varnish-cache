@@ -468,6 +468,7 @@ SES_Wait(struct sess *sp)
 	if (WS_Reserve(sp->ws, sizeof(struct waited))
 	    < sizeof(struct waited)) {
 		SES_Delete(sp, SC_OVERLOAD, NAN);
+		return;
 	}
 	wp = (void*)sp->ws->f;
 	INIT_OBJ(wp, WAITED_MAGIC);
