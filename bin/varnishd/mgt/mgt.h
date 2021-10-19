@@ -231,7 +231,7 @@ void mgt_vcl_init(void);
 void mgt_vcl_startup(struct cli *, const char *vclsrc, const char *origin,
     const char *vclname, int Cflag);
 int mgt_push_vcls(struct cli *, unsigned *status, char **p);
-int mgt_has_vcl(void);
+const char *mgt_has_vcl(void);
 extern char *mgt_cc_cmd;
 extern const char *mgt_vcl_path;
 extern const char *mgt_vmod_path;
