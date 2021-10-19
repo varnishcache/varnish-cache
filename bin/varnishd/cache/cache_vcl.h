@@ -88,3 +88,9 @@ extern const struct vcltemp VCL_TEMP_COLD[1];
 extern const struct vcltemp VCL_TEMP_WARM[1];
 extern const struct vcltemp VCL_TEMP_BUSY[1];
 extern const struct vcltemp VCL_TEMP_COOLING[1];
+
+#define ASSERT_VCL_ACTIVE()					\
+	do {							\
+		assert(vcl_active == NULL ||			\
+		    vcl_active->temp->is_warm);			\
+	} while (0)
