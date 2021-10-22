@@ -359,6 +359,15 @@ CLI_CMD(DEBUG_REQPOOLFAIL,
 	"allocations will fail.",
 	1, 1
 )
+
+CLI_CMD(DEBUG_SHUTDOWN_DELAY,
+	"debug.shutdown.delay",
+	"debug.shutdown.delay",
+	"Add a delay to the child process shutdown.",
+	"",
+	1, 1
+)
+
 CLI_CMD(DEBUG_XID,
 	"debug.xid",
 	"debug.xid",
