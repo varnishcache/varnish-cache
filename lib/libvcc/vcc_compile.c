@@ -820,6 +820,7 @@ VCC_New(void)
 	struct vcc *tl;
 	struct symbol *sym;
 	struct proc *p;
+	struct vsb *vsb;
 	int i;
 
 	ALLOC_OBJ(tl, VCC_MAGIC);
@@ -849,7 +850,25 @@ VCC_New(void)
 		    SYM_MAIN, SYM_SUB, VCL_LOW, VCL_HIGH);
 		p = vcc_NewProc(tl, sym);
 		p->method = &method_tab[i];
-		VSB_printf(p->cname, "VGC_function_%s", p->method->name);
+
+		// see also VCC_GlobalSymbol()
+		vsb = VSB_new_auto();
+		AN(vsb);
+		VSB_printf(vsb, "%s_%s", SUB->global_pfx, p->method->name);
+		AZ(VSB_finish(vsb));
+
+		AZ(VSB_bcat(p->cname, VSB_data(vsb), VSB_len(vsb)));
+
+		sym->lname = strdup(VSB_data(vsb));
+		AN(sym->lname);
+
+		VSB_clear(vsb);
+		VSB_printf(vsb, "sub_%s", sym->lname);
+		AZ(VSB_finish(vsb));
+
+		sym->rname = strdup(VSB_data(vsb));
+		AN(sym->rname);
+		VSB_destroy(&vsb);
 	}
 	tl->sb = VSB_new_auto();
 	AN(tl->sb);
