@@ -104,8 +104,7 @@ vwk_thread(void *priv)
 			Wait_Call(w, wp, WAITER_TIMEOUT, now);
 		}
 		then = vwk->next - now;
-		ts.tv_sec = (time_t)floor(then);
-		ts.tv_nsec = (long)(1e9 * (then - ts.tv_sec));
+		ts = VTIM_timespec(then);
 		Lck_Unlock(&vwk->mtx);
 		n = kevent(vwk->kq, NULL, 0, ke, NKEV, &ts);
 		assert(n >= 0);

@@ -174,8 +174,7 @@ vws_thread(void *priv)
 			Wait_Call(w, wp, WAITER_TIMEOUT, now);
 		}
 		then = vws->next - now;
-		ts.tv_sec = (time_t)floor(then);
-		ts.tv_nsec = (long)(1e9 * (then - ts.tv_sec));
+		ts = VTIM_timespec(then);
 
 		/*
 		 * min number of events we accept.  could consider to scale up
