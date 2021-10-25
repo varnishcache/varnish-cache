@@ -92,9 +92,12 @@ varnish v1 -vcl {
 	sub vcl_backend_fetch {
 		debug.call(priv_top);
 	}
+	sub vcl_backend_response {
+		set beresp.status = 200;
+	}
 	sub vcl_backend_error {
 		# falling through to None backend would be success
-		set beresp.status = 200;
+		call vcl_backend_response;
 		return (deliver);
 	}
 } -start

@@ -52,16 +52,16 @@ vcc_act_call(struct vcc *tl, struct token *t, struct symbol *sym)
 	t0 = tl->t;
 	sym = VCC_SymbolGet(tl, SYM_MAIN, SYM_NONE, SYMTAB_PARTIAL_NOERR,
 	    XREF_REF);
-	if (sym == NULL)
+	if (sym == NULL) {
 		sym = VCC_SymbolGet(tl, SYM_MAIN, SYM_SUB, SYMTAB_CREATE,
 		    XREF_REF);
-
-	if (sym == NULL)
-		return;
+		if (sym == NULL)
+			return;
+		VCC_GlobalSymbol(sym, SUB);
+	}
 
 	if (sym->kind == SYM_SUB) {
 		vcc_AddCall(tl, t0, sym);
-		VCC_GlobalSymbol(sym, SUB);
 
 		Fb(tl, 1, "%s(ctx, VSUB_STATIC, NULL);\n", sym->lname);
 		SkipToken(tl, ';');
