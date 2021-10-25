@@ -146,14 +146,14 @@ WS_ReqPipeline(struct ws *ws, const void *b, const void *e)
 	else
 		AZ(b);
 
+	r = WS_ReserveAll(ws);
+
 	if (b == NULL) {
 		AZ(e);
-		(void)WS_ReserveAll(ws);
 		return (0);
 	}
 
 	AN(e);
-	r = WS_ReserveAll(ws);
 	l = pdiff(b, e);
 	assert(l <= r);
 	memmove(ws->f, b, l);
