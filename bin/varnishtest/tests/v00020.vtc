@@ -31,9 +31,28 @@ varnish v1 -errvcl {Comparison of different types: INT '!=' STRING} {
 	}
 }
 
-varnish v1 -errvcl {Symbol 'vcl_recv' type (sub) can not be used in expression.} {
+varnish v1 -errvcl {Symbol 'vcl_recv' can only be used as a SUB expression} {
+	backend proforma none;
 	sub vcl_recv {
 		set req.http.foo = vcl_recv;
+	}
+}
+
+varnish v1 -errvcl {Symbol 'vcl_recv' can only be used as a SUB expression} {
+	backend proforma none;
+	sub vcl_recv {
+		return (synth(200));
+	}
+	sub vcl_synth {
+		set req.http.foo = vcl_recv;
+	}
+}
+
+varnish v1 -errvcl {Symbol 'asub' can only be used as a SUB expression} {
+	backend proforma none;
+	sub asub {}
+	sub vcl_recv {
+		set req.http.foo = asub;
 	}
 }
 

@@ -64,6 +64,7 @@
 
 #include "libvcc.h"
 #include "vfil.h"
+#include "vct.h"
 
 static const struct method method_tab[] = {
 	{ "none", 0U, 0},
@@ -869,6 +870,11 @@ VCC_New(void)
 		sym->rname = strdup(VSB_data(vsb));
 		AN(sym->rname);
 		VSB_destroy(&vsb);
+
+		sym->type = SUB;
+		sym->kind = VCC_HandleKind(SUB);
+		AZ(VCT_invalid_name(sym->rname, NULL));
+		sym->eval = vcc_Eval_Sub;
 	}
 	tl->sb = VSB_new_auto();
 	AN(tl->sb);
