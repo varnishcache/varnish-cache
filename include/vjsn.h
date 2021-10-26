@@ -28,13 +28,14 @@
  * SUCH DAMAGE.
  */
 
-extern const char VJSN_OBJECT[];
-extern const char VJSN_ARRAY[];
-extern const char VJSN_NUMBER[];
-extern const char VJSN_STRING[];
-extern const char VJSN_TRUE[];
-extern const char VJSN_FALSE[];
-extern const char VJSN_NULL[];
+#define VJSN_TYPES \
+	VJSN_TYPE_MACRO(OBJECT, object) \
+	VJSN_TYPE_MACRO(ARRAY, array) \
+	VJSN_TYPE_MACRO(NUMBER, number) \
+	VJSN_TYPE_MACRO(STRING, string) \
+	VJSN_TYPE_MACRO(TRUE, true) \
+	VJSN_TYPE_MACRO(FALSE, false) \
+	VJSN_TYPE_MACRO(NULL, null)
 
 struct vjsn_val {
 	unsigned		magic;
@@ -64,3 +65,8 @@ void vjsn_delete(struct vjsn **);
 void vjsn_dump(const struct vjsn *js, FILE *fo);
 void vjsn_dump_val(const struct vjsn_val *jsv, FILE *fo);
 struct vjsn_val *vjsn_child(const struct vjsn_val *, const char *);
+
+#define VJSN_TYPE_MACRO(UPPER, lower) \
+	int vjsn_is_##lower(const struct vjsn_val *jsv);
+VJSN_TYPES
+#undef VJSN_TYPE_MACRO

@@ -258,21 +258,21 @@ command_generator (const char *text, int state)
 		free(answer);
 		AN(jsn_cmds);
 		AN(jsn_cmds->value);
-		assert (jsn_cmds->value->type == VJSN_ARRAY);
+		assert (vjsn_is_array(jsn_cmds->value));
 		jv = VTAILQ_FIRST(&jsn_cmds->value->children);
-		assert (jv->type == VJSN_NUMBER);
+		assert (vjsn_is_number(jv));
 		jv = VTAILQ_NEXT(jv, list);
-		assert (jv->type == VJSN_ARRAY);
+		assert (vjsn_is_array(jv));
 		jv = VTAILQ_NEXT(jv, list);
-		assert (jv->type == VJSN_NUMBER);
+		assert (vjsn_is_number(jv));
 		jv = VTAILQ_NEXT(jv, list);
 	}
 	while (jv != NULL) {
-		assert (jv->type == VJSN_OBJECT);
+		assert (vjsn_is_object(jv));
 		jv2 = VTAILQ_FIRST(&jv->children);
 		AN(jv2);
 		jv = VTAILQ_NEXT(jv, list);
-		assert (jv2->type == VJSN_STRING);
+		assert (vjsn_is_string(jv2));
 		assert (!strcmp(jv2->name, "request"));
 		if (!strncmp(text, jv2->value, strlen(text)))
 			return (strdup(jv2->value));

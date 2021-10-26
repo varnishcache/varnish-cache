@@ -54,7 +54,7 @@ mgt_vcl_symtab_val(const struct vjsn_val *vv, const char *val)
 
 	jv = vjsn_child(vv, val);
 	AN(jv);
-	assert(jv->type == VJSN_STRING);
+	assert(vjsn_is_string(jv));
 	AN(jv->value);
 	return (jv->value);
 }
@@ -165,13 +165,13 @@ mgt_vcl_symtab(struct vclprog *vp, const char *input)
 	AZ(err);
 	AN(vj);
 	vp->symtab = vj;
-	assert(vj->value->type == VJSN_ARRAY);
+	assert(vjsn_is_array(vj->value));
 	VTAILQ_FOREACH(v1, &vj->value->children, list) {
-		assert(v1->type == VJSN_OBJECT);
+		assert(vjsn_is_object(v1));
 		v2 = vjsn_child(v1, "dir");
 		if (v2 == NULL)
 			continue;
-		assert(v2->type == VJSN_STRING);
+		assert(vjsn_is_string(v2));
 		if (strcmp(v2->value, "import"))
 			continue;
 		typ = mgt_vcl_symtab_val(v1, "type");

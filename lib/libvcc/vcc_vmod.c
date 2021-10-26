@@ -108,15 +108,15 @@ func_sym(struct vcc *tl, vcc_kind_t kind, const struct symbol *psym,
 
 	v = VTAILQ_NEXT(v, list);
 
-	assert(v->type == VJSN_ARRAY);
+	assert(vjsn_is_array(v));
 	sym->action = vcc_Act_Call;
 	sym->vmod_name = psym->vmod_name;
 	sym->eval = vcc_Eval_SymFunc;
 	sym->eval_priv = v;
 	v = VTAILQ_FIRST(&v->children);
-	assert(v->type == VJSN_ARRAY);
+	assert(vjsn_is_array(v));
 	v = VTAILQ_FIRST(&v->children);
-	assert(v->type == VJSN_STRING);
+	assert(vjsn_is_string(v));
 	sym->type = VCC_Type(v->value);
 	AN(sym->type);
 	sym->r_methods = VCL_MET_TASK_ALL;
@@ -134,9 +134,9 @@ vcc_json_always(struct vcc *tl, const struct vjsn *vj, const char *vmod_name)
 	ifp = NULL;
 
 	VTAILQ_FOREACH(vv, &vj->value->children, list) {
-		assert(vv->type == VJSN_ARRAY);
+		assert(vjsn_is_array(vv));
 		vv2 = VTAILQ_FIRST(&vv->children);
-		assert(vv2->type == VJSN_STRING);
+		assert(vjsn_is_string(vv2));
 		if (!strcmp(vv2->value, "$VMOD")) {
 			vmod_syntax =
 			    strtod(VTAILQ_NEXT(vv2, list)->value, NULL);
@@ -281,12 +281,12 @@ vcc_VmodSymbols(struct vcc *tl, const struct symbol *sym)
 	}
 
 	for (; vv != NULL; vv = VTAILQ_NEXT(vv, list)) {
-		if (vv->type != VJSN_ARRAY)
+		if (!vjsn_is_array(vv))
 			continue;
 		vv1 = VTAILQ_FIRST(&vv->children);
-		assert(vv1->type == VJSN_STRING);
+		assert(vjsn_is_string(vv1));
 		vv2 = VTAILQ_NEXT(vv1, list);
-		if (vv2->type != VJSN_STRING)
+		if (!vjsn_is_string(vv2))
 			continue;
 
 		kind = vcc_vmod_kind(vv1->value);
@@ -499,9 +499,9 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 
 	vv = VTAILQ_NEXT(vv, list);
 	// vv = flags
-	assert(vv->type == VJSN_OBJECT);
+	assert(vjsn_is_object(vv));
 	VTAILQ_FOREACH(vf, &vv->children, list)
-		if (!strcmp(vf->name, "NULL_OK") && vf->type == VJSN_TRUE)
+		if (!strcmp(vf->name, "NULL_OK") && vjsn_is_true(vf))
 			null_ok = 1;
 	if (!null_ok)
 		VTAILQ_INSERT_TAIL(&tl->sym_objects, isym, sideways);
@@ -514,7 +514,7 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 
 	vf = VTAILQ_FIRST(&vv->children);
 	vv = VTAILQ_NEXT(vv, list);
-	assert(vf->type == VJSN_STRING);
+	assert(vjsn_is_string(vf));
 	assert(!strcmp(vf->value, "$INIT"));
 
 	vf = VTAILQ_NEXT(vf, list);
@@ -530,7 +530,7 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 	isym->def_e = tl->t;
 
 	vf = VTAILQ_FIRST(&vv->children);
-	assert(vf->type == VJSN_STRING);
+	assert(vjsn_is_string(vf));
 	assert(!strcmp(vf->value, "$FINI"));
 
 	vf = VTAILQ_NEXT(vf, list);

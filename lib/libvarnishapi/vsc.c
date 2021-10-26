@@ -237,7 +237,7 @@ vsc_fill_point(const struct vsc *vsc, const struct vsc_seg *seg,
 
 	vt = vjsn_child(vv, "name");
 	AN(vt);
-	assert(vt->type == VJSN_STRING);
+	assert(vjsn_is_string(vt));
 
 	VSB_clear(vsb);
 	VSB_printf(vsb, "%s.%s", seg->fantom->ident, vt->value);
@@ -253,7 +253,7 @@ vsc_fill_point(const struct vsc *vsc, const struct vsc_seg *seg,
 #define DOF(n, k)				\
 	vt = vjsn_child(vv, k);			\
 	AN(vt);					\
-	assert(vt->type == VJSN_STRING);	\
+	assert(vjsn_is_string(vt));		\
 	point->point.n = vt->value;
 
 	DOF(ctype, "ctype");
@@ -262,7 +262,7 @@ vsc_fill_point(const struct vsc *vsc, const struct vsc_seg *seg,
 #undef DOF
 	vt = vjsn_child(vv, "type");
 	AN(vt);
-	assert(vt->type == VJSN_STRING);
+	assert(vjsn_is_string(vt));
 
 	if (!strcmp(vt->value, "counter")) {
 		point->point.semantics = 'c';
@@ -276,7 +276,7 @@ vsc_fill_point(const struct vsc *vsc, const struct vsc_seg *seg,
 
 	vt = vjsn_child(vv, "format");
 	AN(vt);
-	assert(vt->type == VJSN_STRING);
+	assert(vjsn_is_string(vt));
 
 	if (!strcmp(vt->value, "integer")) {
 		point->point.format = 'i';
@@ -292,7 +292,7 @@ vsc_fill_point(const struct vsc *vsc, const struct vsc_seg *seg,
 
 	vt = vjsn_child(vv, "level");
 	AN(vt);
-	assert(vt->type == VJSN_STRING);
+	assert(vjsn_is_string(vt));
 
 	if (!strcmp(vt->value, "info"))  {
 		point->point.level = &levels[info];

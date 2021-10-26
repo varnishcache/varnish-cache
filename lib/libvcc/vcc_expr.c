@@ -496,7 +496,7 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 	int n;
 
 	CAST_OBJ_NOTNULL(vv, priv, VJSN_VAL_MAGIC);
-	assert(vv->type == VJSN_ARRAY);
+	assert(vjsn_is_array(vv));
 	vv = VTAILQ_FIRST(&vv->children);
 	rfmt = VCC_Type(VTAILQ_FIRST(&vv->children)->value);
 	AN(rfmt);
@@ -530,7 +530,7 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 	}
 	VTAILQ_INIT(&head);
 	for (;vv != NULL; vv = VTAILQ_NEXT(vv, list)) {
-		assert(vv->type == VJSN_ARRAY);
+		assert(vjsn_is_array(vv));
 		fa = calloc(1, sizeof *fa);
 		AN(fa);
 		fa->cname = cfunc;
@@ -559,7 +559,7 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 				}
 			}
 		}
-		if (sa != NULL && vvp != NULL && vvp->type == VJSN_TRUE) {
+		if (sa != NULL && vvp != NULL && vjsn_is_true(vvp)) {
 			fa->optional = 1;
 			vvp = VTAILQ_NEXT(vvp, list);
 		}

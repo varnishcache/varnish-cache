@@ -43,13 +43,10 @@
 #include "vqueue.h"
 #include "vjsn.h"
 
-const char VJSN_OBJECT[] = "object";
-const char VJSN_ARRAY[] = "array";
-const char VJSN_NUMBER[] = "number";
-const char VJSN_STRING[] = "string";
-const char VJSN_TRUE[] = "true";
-const char VJSN_FALSE[] = "false";
-const char VJSN_NULL[] = "null";
+#define VJSN_TYPE_MACRO(UPPER, lower) \
+	static const char VJSN_##UPPER[] = #lower;
+VJSN_TYPES
+#undef VJSN_TYPE_MACRO
 
 #define VJSN_EXPECT(js, xxx, ret)					\
 	do {								\
@@ -503,6 +500,17 @@ vjsn_dump(const struct vjsn *js, FILE *fo)
 	AN(fo);
 	vjsn_dump_i(js->value, fo, 0);
 }
+
+#define VJSN_TYPE_MACRO(UPPER, lower) \
+	int \
+	vjsn_is_##lower(const struct vjsn_val *jsv) \
+	{ \
+		CHECK_OBJ_NOTNULL(jsv, VJSN_VAL_MAGIC); \
+		return (jsv->type == VJSN_##UPPER); \
+	}
+VJSN_TYPES
+#undef VJSN_TYPE_MACRO
+
 
 #ifdef VJSN_TEST
 
