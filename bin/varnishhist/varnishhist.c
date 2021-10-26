@@ -366,8 +366,8 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 	vsl_to = vsl_t0 + (t - t0) * timebend;
 
 	if (vsl_ts > vsl_to) {
-		struct timespec ts;
-		ts = VTIM_timespec(vsl_ts - vsl_to);
+		double when = VTIM_real() + vsl_ts - vsl_to;
+		struct timespec ts = VTIM_timespec(when);
 		i = pthread_cond_timedwait(&timebend_cv, &mtx, &ts);
 		assert(i == 0 || i == ETIMEDOUT);
 	}
@@ -485,13 +485,10 @@ main(int argc, char **argv)
 	pthread_t thr;
 	int fnum;
 	struct profile cli_p = {0};
-	pthread_condattr_t ca;
 
 	vut = VUT_InitProg(argc, argv, &vopt_spec);
 	AN(vut);
-	AZ(pthread_condattr_init(&ca));
-	AZ(pthread_condattr_setclock(&ca, CLOCK_MONOTONIC));
-	AZ(pthread_cond_init(&timebend_cv, &ca));
+	AZ(pthread_cond_init(&timebend_cv, NULL));
 
 	while ((i = getopt(argc, argv, vopt_spec.vopt_optstring)) != -1) {
 		switch (i) {
