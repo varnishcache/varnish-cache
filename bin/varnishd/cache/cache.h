@@ -685,7 +685,6 @@ int Lck__Trylock(struct lock *lck, const char *p,  int l);
 void Lck__New(struct lock *lck, struct VSC_lck *, const char *);
 int Lck__Held(const struct lock *lck);
 int Lck__Owned(const struct lock *lck);
-extern pthread_condattr_t condattr_monotime;
 extern pthread_mutexattr_t mtxattr_errorcheck;
 
 /* public interface: */

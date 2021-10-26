@@ -58,7 +58,6 @@ volatile struct params		*cache_param;
 static pthread_mutex_t		cache_vrnd_mtx;
 
 pthread_mutexattr_t mtxattr_errorcheck;
-pthread_condattr_t condattr_monotime;
 
 static void
 cache_vrnd_lock(void)
@@ -368,8 +367,6 @@ child_main(int sigmagic, size_t altstksz)
 	/* Before anything uses pthreads in anger */
 	AZ(pthread_mutexattr_init(&mtxattr_errorcheck));
 	AZ(pthread_mutexattr_settype(&mtxattr_errorcheck, PTHREAD_MUTEX_ERRORCHECK));
-	AZ(pthread_condattr_init(&condattr_monotime));
-	AZ(pthread_condattr_setclock(&condattr_monotime, CLOCK_MONOTONIC));
 
 	cache_param = heritage.param;
 
