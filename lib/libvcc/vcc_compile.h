@@ -351,6 +351,7 @@ sym_act_f vcc_Act_Obj;
 void vcc_Expr_Init(struct vcc *tl);
 sym_expr_t vcc_Eval_Var;
 sym_expr_t vcc_Eval_Handle;
+sym_expr_t vcc_Eval_Sub;
 sym_expr_t vcc_Eval_SymFunc;
 sym_expr_t vcc_Eval_TypeMethod;
 void vcc_Eval_Func(struct vcc *, const struct vjsn_val *,
@@ -377,6 +378,7 @@ void vcc_lex_source(struct vcc *tl, struct source *sp, int eoi);
 void vcc_stevedore(struct vcc *vcc, const char *stv_name);
 
 /* vcc_symb.c */
+vcc_kind_t VCC_HandleKind(vcc_type_t fmt);
 void VCC_PrintCName(struct vsb *vsb, const char *b, const char *e);
 struct symbol *VCC_MkSym(struct vcc *tl, const char *b, vcc_ns_t, vcc_kind_t,
     int, int);

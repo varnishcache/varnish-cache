@@ -329,6 +329,29 @@ vcc_Eval_Handle(struct vcc *tl, struct expr **e, struct token *t,
 	}
 }
 
+void v_matchproto_(sym_expr_t)
+vcc_Eval_Sub(struct vcc *tl, struct expr **e, struct token *t,
+    struct symbol *sym, vcc_type_t type)
+{
+
+	(void)t;
+	(void)tl;
+	AN(sym->rname);
+	AZ(type->stringform);
+
+	assert (sym->type == SUB);
+
+	if (type == SUB) {
+		*e = vcc_mk_expr(sym->type, "%s", sym->rname);
+		(*e)->constant = EXPR_CONST;
+		return;
+	}
+
+	VSB_printf(tl->sb, "Symbol '%s' can only be used as a %s expression\n",
+	    sym->name, sym->type->name);
+	vcc_ErrWhere(tl, tl->t);
+}
+
 /*--------------------------------------------------------------------
  */
 

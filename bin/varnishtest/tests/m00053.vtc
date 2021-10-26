@@ -98,6 +98,7 @@ varnish v1 -vcl {
 	sub vcl_backend_error {
 		# falling through to None backend would be success
 		call vcl_backend_response;
+		debug.call(vcl_backend_response);
 		return (deliver);
 	}
 } -start
@@ -205,6 +206,7 @@ varnish v1 -vcl {
 	}
 
 	sub vcl_init {
+		new vbr = debug.caller(vcl_backend_response);
 		new c = debug.caller(foo);
 	}
 

@@ -76,7 +76,7 @@ struct symtab {
 	VTAILQ_HEAD(,symbol)		symbols;
 };
 
-static vcc_kind_t
+vcc_kind_t
 VCC_HandleKind(vcc_type_t fmt)
 {
 	if (fmt == ACL)		return (SYM_ACL);
@@ -510,7 +510,10 @@ VCC_GlobalSymbol(struct symbol *sym, vcc_type_t type)
 	sym->kind = VCC_HandleKind(sym->type);
 	if (sym->kind != SYM_NONE) {
 		AZ(VCT_invalid_name(sym->rname, NULL));
-		sym->eval = vcc_Eval_Handle;
+		if (type == SUB)
+			sym->eval = vcc_Eval_Sub;
+		else
+			sym->eval = vcc_Eval_Handle;
 	} else {
 		WRONG("Wrong kind of global symbol");
 	}
