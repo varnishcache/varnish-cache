@@ -31,6 +31,20 @@ http://varnish-cache.org/docs/trunk/whats-new/index.html and via
 individual releases. These documents are updated as part of the
 release process.
 
+===============================
+Varnish Cache NEXT (2022-03-15)
+===============================
+
+* Added macros ``TOSTRAND(s)`` and ``TOSTRANDS(x, ...)`` to create a
+  ``struct strands *`` (intended to be used as a ``VCL_STANDS``) from
+  a single string ``s`` or ``x`` strings, respectively.
+
+  Note that the macros create a local pointer value (on the stack),
+  which should only be used for local variables and parameters, but
+  never as a function return value (use ``VRT_AllocStrandsWS()`` for
+  that or just return a ``VCL_STRING`` result created with
+  ``VRT_StrandsWS()``).
+
 ================================
 Varnish Cache 7.0.0 (2021-09-15)
 ================================

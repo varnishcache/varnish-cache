@@ -281,6 +281,12 @@ struct strands {
  */
 extern const struct strands *vrt_null_strands;
 
+/*
+ * Macros for VCL_STRANDS creation
+ */
+#define TOSTRAND(s)(&(struct strands){.n=1,.p=(const char *[1]){s}})
+#define TOSTRANDS(x, ...)(&(struct strands){.n=x,.p=(const char *[x]){__VA_ARGS__}})
+
 /***********************************************************************
  * VCL_BLOB:
  *

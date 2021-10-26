@@ -54,6 +54,7 @@
 #include "common/vsmw.h"
 #include "proxy/cache_proxy.h"
 
+// NOT using TOSTRANDS() to create a NULL pointer element despite n == 0
 const struct strands *vrt_null_strands = &(struct strands){
 	.n = 0,
 	.p = (const char *[1]){NULL}

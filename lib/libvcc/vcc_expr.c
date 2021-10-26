@@ -180,9 +180,8 @@ vcc_expr_edit(struct vcc *tl, vcc_type_t fmt, const char *p, struct expr *e1,
 				VSB_cat(e->vsb,
 				    "\nVRT_STRANDS_string(ctx,\v+\n");
 				VSB_printf(e->vsb,
-				    "&(struct strands){.n = %d, .p = "
-				    "(const char *[%d]){\n%s\n}}",
-				    e3->nstr, e3->nstr, VSB_data(e3->vsb));
+				    "TOSTRANDS(%d,%s)",
+				    e3->nstr, VSB_data(e3->vsb));
 				VSB_cat(e->vsb,
 				    "\v-\n)\n");
 			} else {
@@ -193,10 +192,8 @@ vcc_expr_edit(struct vcc *tl, vcc_type_t fmt, const char *p, struct expr *e1,
 		case 't':
 			e3 = (*p == 'T' ? e1 : e2);
 			AN(e3);
-			VSB_printf(e->vsb,
-			    "&(struct strands){.n = %d, .p = "
-			    "(const char *[%d]){\n%s\n}}",
-			    e3->nstr, e3->nstr, VSB_data(e3->vsb));
+			VSB_printf(e->vsb, "TOSTRANDS(%d,%s)",
+			    e3->nstr, VSB_data(e3->vsb));
 			break;
 		case '1':
 			VSB_cat(e->vsb, VSB_data(e1->vsb));

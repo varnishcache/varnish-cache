@@ -517,15 +517,9 @@ event_warm(VRT_CTX, const struct vmod_priv *priv)
 {
 	struct priv_vcl *priv_vcl;
 	char buf[32];
-	const char *p[2];
-	struct strands msg[1];
 
 	// Using VSLs for coverage
-	msg->n = 2;
-	msg->p = p;
-	p[0] = VCL_Name(ctx->vcl);
-	p[1] = ": VCL_EVENT_WARM";
-	VSLs(SLT_Debug, 0, msg);
+	VSLs(SLT_Debug, 0, TOSTRANDS(2, VCL_Name(ctx->vcl), ": VCL_EVENT_WARM"));
 
 	AN(ctx->msg);
 	if (cache_param->max_esi_depth == 42) {

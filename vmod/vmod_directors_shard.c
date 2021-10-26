@@ -373,8 +373,6 @@ static inline uint32_t
 shard_get_key(VRT_CTX, const struct vmod_directors_shard_param *p)
 {
 	struct http *http;
-	struct strands s[1];
-	const char *sp[1];
 	VCL_ENUM by = default_by(p->by);
 
 	if (by == VENUM(KEY) || by == VENUM(BLOB))
@@ -390,10 +388,7 @@ shard_get_key(VRT_CTX, const struct vmod_directors_shard_param *p)
 			AN(ctx->http_bereq);
 			AN(http = ctx->http_bereq);
 		}
-		sp[0] = http->hd[HTTP_HDR_URL].b;
-		s->n = 1;
-		s->p = sp;
-		return (VRT_HashStrands32(s));
+		return (VRT_HashStrands32(TOSTRAND(http->hd[HTTP_HDR_URL].b)));
 	}
 	WRONG("by enum");
 }
