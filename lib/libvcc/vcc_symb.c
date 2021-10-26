@@ -496,9 +496,7 @@ VCC_GlobalSymbol(struct symbol *sym, vcc_type_t type)
 	sym->lname = strdup(VSB_data(vsb));
 	AN(sym->lname);
 	if (type == SUB) {
-		VSB_destroy(&vsb);
-		vsb = VSB_new_auto();
-		AN(vsb);
+		VSB_clear(vsb);
 		VSB_printf(vsb, "sub_%s", sym->lname);
 		AZ(VSB_finish(vsb));
 	}
