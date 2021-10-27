@@ -22,7 +22,7 @@ clean:
 .PHONY: link_srcdir
 link_srcdir: graphviz conf.py $(BUILT_SOURCES)
 	if test "x$(srcdir)" != "x$(builddir)" && test ! -f index.rst; then \
-		s=`realpath $(srcdir)`; \
+		s=`cd $(srcdir) && pwd`; \
 		for f in `cd $$s && find . -type f`; do \
 			d=`dirname $$f`; \
 			test -d $$d || mkdir -p $$d; \
