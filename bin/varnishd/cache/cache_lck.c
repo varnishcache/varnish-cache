@@ -229,6 +229,34 @@ Lck_CondWaitUntil(pthread_cond_t *cond, struct lock *lck, vtim_real when)
 	struct ilck *ilck;
 	struct timespec ts;
 
+#if defined (__APPLE__)
+	/*
+	 * I hate woo-doo programming in all it's forms and all it's
+	 * manifestations, but for reasons I utterly fail to isolate
+	 * yielding here is stops OSX from throwing a EINVAL to the
+	 * pthread_cond_wait(3) call.
+	 *
+	 * I have tried very hard to determine if any of the three
+	 * arguments are in fact invalid, and found nothing which
+	 * even hints that it might be the case, and with high probability
+	 * repeating the failed call with the exact same arguments
+	 * will succeed.
+	 *
+	 * If you want to dive into this you can trigger the situation
+	 * approx 30% of the time with:
+	 *
+	 *	cd .../vmods && make -j check
+	 *
+	 * Env:
+	 *	Darwin Kernel Version 20.5.0:
+	 *	Sat May  8 05:10:31 PDT 2021;
+	 *	root:xnu-7195.121.3~9/RELEASE_ARM64_T8101 arm64
+	 *
+	 * 20211027 /phk
+	 */
+	pthread_yield_np();
+#endif
+
 	AN(lck);
 	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC);
 	AN(ilck->held);
@@ -242,19 +270,6 @@ Lck_CondWaitUntil(pthread_cond_t *cond, struct lock *lck, vtim_real when)
 		ts = VTIM_timespec(when);
 		assert(ts.tv_nsec >= 0 && ts.tv_nsec <= 999999999);
 		errno = pthread_cond_timedwait(cond, &ilck->mtx, &ts);
-#if defined (__APPLE__)
-		if (errno == EINVAL && when <= VTIM_real()) {
-			/*
-			 * Most kernels treat this as honest error,
-			 * recognizing that a thread has no way to
-			 * prevent being descheduled between a user-
-			 * land check of the timestamp, and getting
-			 * the timestamp into the kernel before it
-			 * expires.  OS/X on the other hand...
-			 */
-			errno = ETIMEDOUT;
-		}
-#endif
 		assert(errno == 0 ||
 		    errno == ETIMEDOUT ||
 		    errno == EINTR);
