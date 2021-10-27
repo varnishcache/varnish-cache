@@ -47,18 +47,14 @@
 #include "vcc_std_if.h"
 
 /*
- * technically, as our VCL_INT is int64_t, its limits are INT64_MIN/INT64_MAX.
+ * technically, as our VCL_INT is int64_t, its limits are INT64_MIN
+ * .. INT64_MAX.
  *
- * Yet, for conversions, we use VNUMpfx with a double intermediate, so above
- * 2^53 we see rounding errors. In order to catch a potential floor rounding
- * error, we make our limit 2^53-1
- *
- * Ref: https://stackoverflow.com/a/1848762
+ * We redistrict to VRT_INTEGER_MIN .. VRT_INTEGER_MAX
  */
-#define VCL_INT_MAX ((INT64_C(1)<<53)-1)
-#define VCL_INT_MIN (-VCL_INT_MAX)
 
-#define VCL_BYTES_MAX VCL_INT_MAX
+/* limited by using double for conversions */
+#define VCL_BYTES_MAX ((INT64_C(1)<<53)-1)
 
 static
 int onearg(VRT_CTX, const char *f, int nargs)
@@ -185,7 +181,7 @@ vmod_integer(VRT_CTX, struct VARGS(integer) *a)
 
 	if (!isnan(r)) {
 		r = trunc(r);
-		if (r >= VCL_INT_MIN && r <= VCL_INT_MAX)
+		if (r >= VRT_INTEGER_MIN && r <= VRT_INTEGER_MAX)
 			return ((VCL_INT)r);
 	}
 
@@ -389,7 +385,7 @@ vmod_time2integer(VRT_CTX, VCL_TIME t, VCL_INT i)
 	if (!isfinite(t))
 		return (i);
 	t = round(t);
-	if (t > VCL_INT_MAX || t < VCL_INT_MIN)
+	if (t > VRT_INTEGER_MAX || t < VRT_INTEGER_MIN)
 		return (i);
 	return ((VCL_INT)t);
 }

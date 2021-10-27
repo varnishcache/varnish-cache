@@ -79,7 +79,7 @@ client c1 {
 	expect resp.http.iszero == true
 	expect resp.http.converted == 0
 
-	# VCL_INT_MAX
+	# VRT_INTEGER_MAX
 	txreq -hdr "foo: 999999999999999" \
 	      -hdr "bytes: 999999999999999b" \
 	      -hdr "duration: 999999999999.999s" \
@@ -95,7 +95,7 @@ client c1 {
 	expect resp.http.real == 999999999999
 	expect resp.http.time == 999999999999
 
-	# VCL_INT_MIN
+	# VRT_INTEGER_MIN
 	txreq -hdr "foo: -999999999999999" \
 	      -hdr "duration: -999999999999s" \
 	      -hdr "real: -999999999999"
