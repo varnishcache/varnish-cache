@@ -78,11 +78,15 @@ client c1 {
 	expect resp.status == 503
 } -run
 
+varnish v1 -vsl_catchup
+
 client c1 {
 	txreq -url "/priv-task-no-mem"
 	rxresp
 	expect resp.status == 503
 } -run
+
+varnish v1 -vsl_catchup
 
 varnish v1 -expect DEBUG.count == 1
 
@@ -268,6 +272,8 @@ client c1 {
 	expect resp.http.uzp-match == true
 } -run
 
+varnish v1 -vsl_catchup
+
 varnish v1 -vcl+backend { }
 
 varnish v1 -cliok "debug.vmod"
@@ -278,6 +284,8 @@ varnish v1 -expect vmods == 3
 varnish v1 -cliok "vcl.discard vcl[1-8]"
 varnish v1 -cliok "vcl.list"
 varnish v1 -cliok "debug.vmod"
+
+delay .5
 
 varnish v1 -expect vmods == 0
 
