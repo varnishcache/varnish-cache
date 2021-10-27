@@ -341,6 +341,7 @@ pass(int sock)
 	char buf[1024];
 	int i;
 	ssize_t n;
+	int busy = 0;
 
 	fds[0].fd = sock;
 	fds[0].events = POLLIN;
@@ -352,16 +353,22 @@ pass(int sock)
 			continue;
 		}
 		assert(i > 0);
-		if (fds[0].revents & POLLIN)
+		if (fds[0].revents & POLLIN) {
 			(void)pass_answer(fds[0].fd, pass_script);
+			busy = 0;
+			if (fds[1].fd < 0)
+				RL_EXIT(0);
+		}
 		if (fds[1].revents & POLLIN || fds[1].revents & POLLHUP) {
 			n = read(fds[1].fd, buf, sizeof buf - 1);
 			if (n == 0) {
-				AZ(shutdown(sock, SHUT_WR));
+				if (!busy)
+					RL_EXIT(0);
 				fds[1].fd = -1;
 			} else if (n < 0) {
 				RL_EXIT(0);
 			} else {
+				busy = 1;
 				buf[n] = '\0';
 				cli_write(sock, buf);
 			}
