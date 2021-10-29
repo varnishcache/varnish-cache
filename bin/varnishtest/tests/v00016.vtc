@@ -1,7 +1,5 @@
 varnishtest "Various VCL compiler coverage tests"
 
-feature dns
-
 shell "true > ${tmpdir}/_varnishtest_empty_file"
 
 varnish v1 -vcl {
@@ -79,13 +77,6 @@ varnish v1 -errvcl {Regexp compilation error:} {
 	backend b { .host = "${localhost}"; }
 	sub vcl_recv {
 		if (req.url ~ "[a") {}
-	}
-}
-
-varnish v1 -errvcl {resolves to too many addresses} {
-	backend b { .host = "${localhost}"; }
-	sub vcl_recv {
-		if (remote.ip == "dns-canary-multi.varnish-cache.org") {}
 	}
 }
 
