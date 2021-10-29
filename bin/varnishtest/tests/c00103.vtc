@@ -8,7 +8,8 @@ varnish v1 -vcl {
 		# on purpose to ensure we don't treat REGEX expressions
 		# differently.
 		if (req.url ~ (debug.just_return_regex(
-		    debug.just_return_regex("hello")))) {
+		    debug.just_return_regex("he" +
+		      "l" + "lo")))) {
 			return (synth(200));
 		}
 		return (synth(500));

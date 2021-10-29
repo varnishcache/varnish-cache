@@ -80,6 +80,27 @@ varnish v1 -errvcl {Regexp compilation error:} {
 	}
 }
 
+varnish v1 -errvcl {Regexp compilation error:} {
+	backend b none;
+	sub vcl_recv {
+		if (req.url ~ "[" + "a") {}
+	}
+}
+
+varnish v1 -errvcl {Expected CSTR got 'req'} {
+	backend b none;
+	sub vcl_recv {
+		if (req.url ~ "a" + req.http.foo) {}
+	}
+}
+
+varnish v1 -errvcl {Expected ')' got '-'} {
+	backend b none;
+	sub vcl_recv {
+		if (req.url ~ "a" - "b") {}
+	}
+}
+
 varnish v1 -errvcl {Expression has type directors.shard, expected ACL} {
 	import directors;
 	backend b none;
