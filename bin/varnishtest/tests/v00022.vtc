@@ -3,7 +3,7 @@ varnishtest "Various VCL compiler coverage tests - DNS dependent"
 feature dns
 
 varnish v1 -errvcl {resolves to too many addresses} {
-	backend b { .host = "${localhost}"; }
+	backend b none;
 	sub vcl_recv {
 		if (remote.ip == "dns-canary-multi.varnish-cache.org") {}
 	}
