@@ -51,19 +51,38 @@
 void
 vcc_regexp(struct vcc *tl, struct vsb *vgc_name)
 {
+	struct vsb *pattern;
 	char buf[BUFSIZ];
 	vre_t *t;
 	int error, erroroffset;
+	struct token *t1;
 	struct inifin *ifp;
 
-	assert(tl->t->tok == CSTR);
+	pattern = VSB_new_auto();
+	AN(pattern);
 
-	t = VRE_compile(tl->t->dec, 0, &error, &erroroffset, 0);
+	assert(tl->t->tok == CSTR);
+	VSB_cat(pattern, tl->t->dec);
+
+	t1 = vcc_PeekToken(tl);
+	AN(t1);
+	while (t1->tok == '+') {
+		vcc_NextToken(tl);
+		SkipToken(tl, '+');
+		ExpectErr(tl, CSTR);
+		VSB_cat(pattern, tl->t->dec);
+		t1 = vcc_PeekToken(tl);
+		AN(t1);
+	}
+	AZ(VSB_finish(pattern));
+
+	t = VRE_compile(VSB_data(pattern), 0, &error, &erroroffset, 0);
 	if (t == NULL) {
 		VSB_cat(tl->sb, "Regexp compilation error:\n\n");
 		AZ(VRE_error(tl->sb, error));
 		VSB_cat(tl->sb, "\n\n");
 		vcc_ErrWhere(tl, tl->t);
+		VSB_destroy(&pattern);
 		return;
 	}
 	VRE_free(&t);
@@ -74,9 +93,10 @@ vcc_regexp(struct vcc *tl, struct vsb *vgc_name)
 	Fh(tl, 0, "static struct vre *%s;\n", buf);
 	ifp = New_IniFin(tl);
 	VSB_printf(ifp->ini, "\tVPI_re_init(&%s, ",buf);
-	EncToken(ifp->ini, tl->t);
+	VSB_quote(ifp->ini, VSB_data(pattern), -1, VSB_QUOTE_CSTR);
 	VSB_cat(ifp->ini, ");");
 	VSB_printf(ifp->fin, "\t\tVPI_re_fini(%s);", buf);
+	VSB_destroy(&pattern);
 }
 
 /*
