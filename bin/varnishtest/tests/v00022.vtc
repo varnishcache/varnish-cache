@@ -1,0 +1,150 @@
+varnishtest "Various VCL compiler coverage tests"
+
+feature dns
+
+shell "true > ${tmpdir}/_varnishtest_empty_file"
+
+varnish v1 -vcl {
+	backend b { .host = "${localhost}"; }
+	include "${tmpdir}/_varnishtest_empty_file" ;
+}
+
+varnish v1 -errvcl {include <string> not followed by semicolon.} {
+	backend b { .host = "${localhost}"; }
+	include "${tmpdir}/_varnishtest_empty_file" |
+}
+
+shell "rm -f ${tmpdir}/_varnishtest_empty_file"
+
+varnish v1 -errvcl {include not followed by string constant.} {
+	backend b { .host = "${localhost}"; }
+	include <<
+}
+
+varnish v1 -errvcl {include not followed by string constant.} {
+	/* token test */
+	error lookup hash pipe pass fetch deliver discard keep restart
+	include
+	if else elseif elsif
+	++ -- && || <= == != >= >> << += -= *= /=
+	{ } ( ) * + - / % > < = ; ! & . | ~ ,
+}
+
+varnish v1 -errvcl {Unknown duration unit 'k'} {
+	backend b { .host = "${localhost}"; }
+	sub vcl_backend_response { set beresp.ttl = 1. k; }
+}
+
+varnish v1 -errvcl {Operator > not possible on BACKEND} {
+	backend a { .host = "${localhost}"; }
+	backend b { .host = "${localhost}"; }
+	sub vcl_recv { if (a > b) { } }
+}
+
+varnish v1 -errvcl {Unknown property 'foo' for type HTTP} {
+	backend b { .host = "${localhost}"; }
+	sub vcl_hash { if (req.foo != "bar") { } }
+}
+
+varnish v1 -errvcl {Symbol not found: 'foo.bar'} {
+	sub vcl_init {
+		new bar = foo.bar();
+	}
+}
+
+varnish v1 -errvcl {Cannot be set in subroutine 'vcl_pipe'} {
+	backend b { .host = "${localhost}"; }
+	sub vcl_pipe {
+		set bereq.first_byte_timeout = 10s;
+	}
+}
+
+varnish v1 -errvcl {Cannot be set in subroutine 'vcl_pipe'.} {
+	backend b { .host = "${localhost}"; }
+	sub vcl_pipe {
+		set bereq.between_bytes_timeout = 10s;
+	}
+}
+
+varnish v1 -errvcl {Undefined backend c, first reference:} {
+	backend b { .host = "${localhost}"; }
+	sub vcl_backend_response {
+		if (beresp.backend == c) {
+			set beresp.ttl = 1h;
+		}
+	}
+}
+
+varnish v1 -errvcl {Regexp compilation error:} {
+	backend b { .host = "${localhost}"; }
+	sub vcl_recv {
+		if (req.url ~ "[a") {}
+	}
+}
+
+varnish v1 -errvcl {resolves to too many addresses} {
+	backend b { .host = "${localhost}"; }
+	sub vcl_recv {
+		if (remote.ip == "dns-canary-multi.varnish-cache.org") {}
+	}
+}
+
+varnish v1 -errvcl {Expression has type directors.shard, expected ACL} {
+	import directors;
+	backend b { .host = "${localhost}"; }
+
+	sub vcl_init {
+		new foo = directors.shard();
+	}
+	sub vcl_recv {
+		if (client.ip ~ foo) {
+			return (synth(200));
+		}
+	}
+}
+
+varnish v1 -syntax 4.0 -errvcl {Expression has type directors.shard, expected ACL} {
+	import directors;
+	backend b { .host = "${localhost}"; }
+
+	sub vcl_init {
+		new foo = directors.shard();
+	}
+	sub vcl_recv {
+		if (client.ip ~ foo) {
+			return (synth(200));
+		}
+	}
+}
+
+varnish v1 -errvcl {Undefined sub foo} {
+	backend dummy None;
+	sub vcl_recv {
+		call foo;
+	}
+}
+
+# NB: The line break in -errvcl is here on purpose, it prevents
+# a spurious "Only available when" addition to be missed when the
+# foo constructor could be confused with the foo instance name.
+varnish v1 -syntax 4.0 -errvcl {Symbol not found: 'directors.foo'
+At:} {
+	import directors;
+	backend b { .host = "${localhost}"; }
+
+	sub vcl_init {
+		new foo = directors.foo();
+	}
+}
+
+# 'foo' overloaded
+varnish v1 -syntax 4.0 -errvcl {Symbol not found: 'foo'} {
+	backend b { .host = "${localhost}"; }
+
+	acl foo -pedantic {
+	    "${localhost}"/32;
+	}
+	sub vcl_init {
+		new bar = foo;
+	}
+}
