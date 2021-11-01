@@ -586,7 +586,7 @@ VCL_VOID
 VRT_SetHdr(VRT_CTX , VCL_HEADER hs, const char *pfx, VCL_STRANDS s)
 {
 	VCL_HTTP hp;
-	unsigned u, l;
+	unsigned u, l, pl;
 	char *p, *b;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -596,9 +596,8 @@ VRT_SetHdr(VRT_CTX , VCL_HEADER hs, const char *pfx, VCL_STRANDS s)
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 
 	u = WS_ReserveAll(hp->ws);
-	l = hs->what[0] + 1;
-	if (pfx != NULL)
-		l += strlen(pfx);
+	pl = (pfx == NULL) ? 0 : strlen(pfx);
+	l = hs->what[0] + 1 + pl;
 	if (u <= l) {
 		WS_Release(hp->ws, 0);
 		WS_MarkOverflow(hp->ws);
@@ -621,11 +620,9 @@ VRT_SetHdr(VRT_CTX , VCL_HEADER hs, const char *pfx, VCL_STRANDS s)
 	memcpy(p, hs->what + 1, hs->what[0]);
 	p += hs->what[0];
 	*p++ = ' ';
-	if (pfx != NULL) {
-		l = strlen(pfx);
-		memcpy(p, pfx, l);
-		p += l;
-	}
+	if (pfx != NULL)
+		memcpy(p, pfx, pl);
+	p += pl;
 	if (FEATURE(FEATURE_VALIDATE_HEADERS) && !validhdr(b)) {
 		VRT_fail(ctx, "Bad header %s", b);
 		WS_Release(hp->ws, 0);
