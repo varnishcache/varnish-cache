@@ -1,0 +1,32 @@
+varnishtest "Test vmod cli methods / vcl tell"
+
+varnish v1 -vcl+backend {
+	import debug;
+
+	backend proforma none;
+
+	sub vcl_init {
+		new obj0 = debug.obj();
+		new obj1 = debug.obj("only_argument");
+		new oo0 = debug.obj_opt();
+	}
+} -start
+
+# vcl2 not found
+varnish v1 -clierr "300" "tell vcl2.obj0 a b c"
+# No object named objX found
+varnish v1 -clierr "300" "tell objX a b c"
+# Object oo0 has no cli method
+varnish v1 -clierr "300" "tell oo0 a b c"
+# Too few parameters
+varnish v1 -clierr "104" "tell obj0"
+
+varnish v1 -cliexpect "obj0: a b c" "tell obj0 a b c"
+varnish v1 -cliexpect "obj0: a b c" "tell vcl1.obj0 a b c"
+varnish v1 -cliexpect "obj1: a b c" "tell obj1 a b c"
+
+varnish v1 -vcl { backend proforma none; }
+
+varnish v1 -cliok "vcl.use vcl2"
+varnish v1 -cliok "vcl.state vcl1 cold"
+varnish v1 -cliexpect "obj0: a b c" "tell vcl1.obj0 a b c"

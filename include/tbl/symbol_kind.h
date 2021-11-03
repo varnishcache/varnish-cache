@@ -47,6 +47,7 @@ VCC_KIND(SUB,		sub)
 VCC_KIND(VAR,		var)
 VCC_KIND(VCL,		vcl)
 VCC_KIND(VMOD,		vmod)
+VCC_KIND(CLI_METHOD,	cli)
 #undef VCC_KIND
 
 /*lint -restore */
