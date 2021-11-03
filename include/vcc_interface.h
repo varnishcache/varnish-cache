@@ -75,7 +75,7 @@ void VPI_acl_log(VRT_CTX, const char *);
 
 /* vmod object instance info */
 struct vpi_ii {
-	const void *			p;
+	uintptr_t *			p;
 	const char * const		name;
 };
 
