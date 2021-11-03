@@ -1016,6 +1016,76 @@ vcl_cli_show(struct cli *cli, const char * const *av, void *priv)
 	}
 }
 
+//	"tell [<vcl>.]<object> <msg> ...",
+
+static void v_matchproto_(cli_func_t)
+vcl_cli_tell(struct cli *cli, const char * const *av, void *priv)
+{
+	struct strands args;
+	const char *objname;
+	struct vcl *vcl;
+	struct vrt_ctx *ctx;
+	struct vsb *msg;
+	char *n;
+	int i;
+
+	AZ(priv);
+	ASSERT_CLI();
+	AN(av[2]);
+	AN(av[3]);
+
+	objname = strchr(av[2], '.');
+	if (objname) {
+		n = strndup(av[2], objname - av[2]);
+		objname++;
+		vcl = vcl_find(n);
+		if (vcl == NULL) {
+			VCLI_SetResult(cli, CLIS_CANT);
+			VCLI_Out(cli, "VCL %s not found", n);
+			REPLACE(n, NULL);
+			return;
+		}
+		REPLACE(n, NULL);
+	} else {
+		vcl = vcl_active;
+		objname = av[2];
+	}
+
+	AN(vcl);
+	AN(objname);
+
+	if (vcl->label)
+		vcl = vcl->label;
+	AN(vcl);
+
+	i = 0;
+	while (av[3 + i] != NULL)
+		i++;
+
+	const char *p[i];
+	args.n = i;
+	args.p = p;
+
+	i = 0;
+	while (av[3 + i] != NULL) {
+		args.p[i] = av[3 + i];
+		i++;
+	}
+
+	ctx = VCL_Get_CliCtx(1);
+	ctx->vcl = vcl;
+	ctx->syntax = ctx->vcl->conf->syntax;
+
+	i = VPI_Tell(ctx, objname, &args);
+
+	msg = VCL_Rel_CliCtx(&ctx);
+
+	VCLI_SetResult(cli, i);
+	// could have VCLI_Cat or VCLI_Vsb
+	VCLI_Out(cli, "%s", VSB_data(msg));
+	VSB_destroy(&msg);
+}
+
 /*--------------------------------------------------------------------*/
 
 static struct cli_proto vcl_cmds[] = {
@@ -1026,6 +1096,7 @@ static struct cli_proto vcl_cmds[] = {
 	{ CLICMD_VCL_USE,		"", vcl_cli_use },
 	{ CLICMD_VCL_SHOW,		"", vcl_cli_show },
 	{ CLICMD_VCL_LABEL,		"", vcl_cli_label },
+	{ CLICMD_TELL,			"", vcl_cli_tell},
 	{ NULL }
 };
 
