@@ -672,82 +672,101 @@ unsigned
 HSH_Purge(struct worker *wrk, struct objhead *oh, vtim_real ttl_now,
     vtim_dur ttl, vtim_dur grace, vtim_dur keep)
 {
-	struct objcore *oc, **ocp;
-	unsigned spc, ospc, nobj, n, n_tot = 0;
-	int more = 0;
+	struct objcore *oc, *oc_nows[2], **ocp;
+	unsigned i, j, n, n_max, total = 0;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
-	ospc = WS_ReserveAll(wrk->aws);
-	assert(ospc >= sizeof *ocp);
-	/*
-	 * Because of "soft" purges, there might be oc's in the list that has
-	 * the OC_F_PURGED flag set. We do not want to let these slip through,
-	 * so we need to clear the flag before entering the do..while loop.
-	 */
-	Lck_Lock(&oh->mtx);
-	assert(oh->refcnt > 0);
-	VTAILQ_FOREACH(oc, &oh->objcs, hsh_list) {
-		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-		assert(oc->objhead == oh);
-		oc->flags &= ~OC_F_PURGED;
-	}
-	Lck_Unlock(&oh->mtx);
 
-	do {
-		more = 0;
-		spc = ospc;
-		nobj = 0;
+	n_max = WS_ReserveLumps(wrk->aws, sizeof *ocp);
+	if (n_max < 2) {
+		/* No space on the workspace. Give it a stack buffer of 2
+		 * elements, which is the minimum for the algorithm
+		 * below. */
+		ocp = oc_nows;
+		n_max = 2;
+	} else
 		ocp = WS_Reservation(wrk->aws);
-		Lck_Lock(&oh->mtx);
-		assert(oh->refcnt > 0);
-		VTAILQ_FOREACH(oc, &oh->objcs, hsh_list) {
+	AN(ocp);
+
+	/* Note: This algorithm uses OC references in the list as
+	 * bookmarks, in order to know how far into the list we were when
+	 * releasing the mutex partway through and want to resume
+	 * again. This relies on the list not being reordered while we are
+	 * not holding the mutex. The only place where that happens is in
+	 * HSH_Unbusy(), where an OC_F_BUSY OC is moved first in the
+	 * list. This does not cause problems because we skip OC_F_BUSY
+	 * OCs. */
+
+	Lck_Lock(&oh->mtx);
+	oc = VTAILQ_FIRST(&oh->objcs);
+	n = 0;
+	while (1) {
+		for (; n < n_max && oc != NULL; oc = VTAILQ_NEXT(oc, hsh_list))
+		{
 			CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 			assert(oc->objhead == oh);
 			if (oc->flags & OC_F_BUSY) {
-				/*
-				 * We cannot purge busy objects here, because
+				/* We cannot purge busy objects here, because
 				 * their owners have special rights to them,
 				 * and may nuke them without concern for the
 				 * refcount, which by definition always must
-				 * be one, so they don't check.
-				 */
+				 * be one, so they don't check. */
 				continue;
 			}
 			if (oc->flags & OC_F_DYING)
 				continue;
-			if (oc->flags & OC_F_PURGED) {
-				/*
-				 * We have already called EXP_Rearm on this
-				 * object, and we do not want to do it
-				 * again. Plus the space in the ocp array may
-				 * be limited.
-				 */
-				continue;
-			}
-			if (spc < sizeof *ocp) {
-				/* Iterate if aws is not big enough */
-				more = 1;
-				break;
-			}
 			oc->refcnt++;
-			spc -= sizeof *ocp;
-			ocp[nobj++] = oc;
-			oc->flags |= OC_F_PURGED;
+			ocp[n++] = oc;
 		}
+
 		Lck_Unlock(&oh->mtx);
 
-		for (n = 0; n < nobj; n++) {
-			oc = ocp[n];
-			CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-			EXP_Rearm(oc, ttl_now, ttl, grace, keep);
-			(void)HSH_DerefObjCore(wrk, &oc, 0);
+		if (n == 0) {
+			/* No eligible objcores found. We are finished. */
+			break;
 		}
-		n_tot += nobj;
-	} while (more);
+
+		j = n;
+		if (oc != NULL) {
+			/* There are more objects on the objhead that we
+			 * have not yet looked at, but no more space on
+			 * the objcore reference list. Do not process the
+			 * last one, it will be used as the bookmark into
+			 * the objcore list for the next iteration of the
+			 * outer loop. */
+			j--;
+			assert(j >= 1); /* True because n_max >= 2 */
+		}
+		for (i = 0; i < j; i++) {
+			CHECK_OBJ_NOTNULL(ocp[i], OBJCORE_MAGIC);
+			EXP_Rearm(ocp[i], ttl_now, ttl, grace, keep);
+			(void)HSH_DerefObjCore(wrk, &ocp[i], 0);
+			AZ(ocp[i]);
+			total++;
+		}
+
+		if (j == n) {
+			/* No bookmark set, that means we got to the end
+			 * of the objcore list in the previous run and are
+			 * finished. */
+			break;
+		}
+
+		Lck_Lock(&oh->mtx);
+
+		/* Move the bookmark first and continue scanning the
+		 * objcores */
+		CHECK_OBJ_NOTNULL(ocp[j], OBJCORE_MAGIC);
+		ocp[0] = ocp[j];
+		n = 1;
+		oc = VTAILQ_NEXT(ocp[0], hsh_list);
+		CHECK_OBJ_ORNULL(oc, OBJCORE_MAGIC);
+	}
+
 	WS_Release(wrk->aws, 0);
-	Pool_PurgeStat(n_tot);
-	return (n_tot);
+	Pool_PurgeStat(total);
+	return (total);
 }
 
 /*---------------------------------------------------------------------
