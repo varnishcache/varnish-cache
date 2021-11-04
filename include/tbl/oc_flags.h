@@ -30,8 +30,7 @@
 
 /*lint -save -e525 -e539 */
 
-OC_FLAG(PURGED,		purged,		(1<<0))		//lint !e835
-OC_FLAG(BUSY,		busy,		(1<<1))
+OC_FLAG(BUSY,		busy,		(1<<1))		//lint !e835
 OC_FLAG(HFM,		hfm,		(1<<2))
 OC_FLAG(HFP,		hfp,		(1<<3))
 OC_FLAG(CANCEL,		cancel,		(1<<4))
