@@ -408,7 +408,7 @@ vcc_instance_info(struct vcc *tl, const struct symbol *sym)
 
 	CHECK_OBJ_NOTNULL(sym, SYMBOL_MAGIC);
 	AN(sym->rname);
-	Fc(tl, 0, "\t{ .p = &%s, .name = \"", sym->rname);
+	Fc(tl, 0, "\t{ .p = (uintptr_t *)&%s, .name = \"", sym->rname);
 	VCC_SymName(tl->fc, sym);
 	Fc(tl, 0, "\" },\n");
 }
