@@ -51,6 +51,7 @@
 
 struct vre {
 	unsigned		magic;
+	int                     re_jit;
 #define VRE_MAGIC		0xe83097dc
 	pcre2_code		*re;
 	pcre2_match_context	*re_ctx;
@@ -107,8 +108,9 @@ VRE_compile(const char *pattern, unsigned options,
 		return (NULL);
 	}
 #if USE_PCRE2_JIT
+	v->re_jit = PCRE2_ERROR_JIT_BADOPTION;
 	if (jit)
-		(void)pcre2_jit_compile(v->re, PCRE2_JIT_COMPLETE);
+		v->re_jit = pcre2_jit_compile(v->re, PCRE2_JIT_COMPLETE);
 #else
 	(void)jit;
 #endif
@@ -211,8 +213,14 @@ vre_capture(const vre_t *code, const char *subject, size_t length,
 	for (g = 0; g < nov; g++)
 		ovector[g] = PCRE2_UNSET;
 
-	matches = pcre2_match(re, (PCRE2_SPTR)subject, length, offset,
-	    options, data, code->re_ctx);
+#if USE_PCRE2_JIT
+	if (code->re_jit == 0 && length != PCRE2_ZERO_TERMINATED)
+		matches = pcre2_jit_match(re, (PCRE2_SPTR)subject,
+				length, offset, options, data, code->re_ctx);
+	else
+#endif
+		matches = pcre2_match(re, (PCRE2_SPTR)subject, length, offset,
+	        options, data, code->re_ctx);
 
 	if (groups != NULL) {
 		AN(count);
