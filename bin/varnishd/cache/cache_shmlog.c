@@ -269,8 +269,8 @@ VSLv(enum VSL_tag_e tag, uint32_t vxid, const char *fmt, va_list ap)
 	if (strchr(fmt, '%') == NULL) {
 		vslr(tag, vxid, fmt, strlen(fmt) + 1);
 	} else {
-		/* XXX: should probably check return value of vsnprintf */
-		n = vmin_t(unsigned, vsnprintf(buf, mlen, fmt, ap), mlen - 1);
+		n = vsnprintf(buf, mlen, fmt, ap);
+		n = vmin_t(unsigned, n, mlen - 1);
 		buf[n++] = '\0'; /* NUL-terminated */
 		vslr(tag, vxid, buf, n);
 	}
