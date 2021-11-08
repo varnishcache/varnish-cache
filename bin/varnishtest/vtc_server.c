@@ -265,7 +265,7 @@ server_disc(void *priv, struct vtclog *vl, int *fdp)
 	CAST_OBJ_NOTNULL(s, priv, SERVER_MAGIC);
 	vtc_log(vl, 3, "shutting fd %d", *fdp);
 	j = shutdown(*fdp, SHUT_WR);
-	if (!VTCP_Check(j))
+	if (!vtc_stop && !VTCP_Check(j))
 		vtc_fatal(vl, "Shutdown failed: %s", strerror(errno));
 	VTCP_close(fdp);
 }
