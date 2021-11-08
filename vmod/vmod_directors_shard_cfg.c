@@ -275,7 +275,7 @@ shardcfg_hashcircle(struct sharddir *shardd)
 	rmax = (UINT32_MAX - 1) / shardd->n_backend;
 	for (b = backends; b < backends + shardd->n_backend; b++) {
 		CHECK_OBJ_NOTNULL(b->backend, DIRECTOR_MAGIC);
-		n_points += vmin(b->replicas, rmax);
+		n_points += vmin_t(uint32_t, b->replicas, rmax);
 	}
 
 	assert(n_points < UINT32_MAX);
@@ -291,7 +291,7 @@ shardcfg_hashcircle(struct sharddir *shardd)
 		AN(ident);
 		assert(ident[0] != '\0');
 
-		r = vmin(b->replicas, rmax);
+		r = vmin_t(uint32_t, b->replicas, rmax);
 
 		for (j = 0; j < r; j++) {
 			assert(snprintf(s, len, "%d", j) < len);

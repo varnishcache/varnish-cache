@@ -105,7 +105,7 @@ vcl_acl_cmp(const struct acl_e *ae1, const struct acl_e *ae2)
 
 	p1 = ae1->data;
 	p2 = ae2->data;
-	m = vmin(ae1->mask, ae2->mask);
+	m = vmin_t(unsigned, ae1->mask, ae2->mask);
 	for (; m >= 8; m -= 8) {
 		CMP(*p1, *p2);
 		p1++;
