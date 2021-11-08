@@ -218,7 +218,7 @@ h2_win_limit(const struct h2_req *r2, const struct h2_sess *h2)
 	CHECK_OBJ_NOTNULL(h2->req0, H2_REQ_MAGIC);
 
 	Lck_AssertHeld(&h2->sess->mtx);
-	return (vmin(r2->t_window, h2->req0->t_window));
+	return (vmin_t(int64_t, r2->t_window, h2->req0->t_window));
 }
 
 static void
