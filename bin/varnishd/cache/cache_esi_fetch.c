@@ -279,7 +279,7 @@ vfp_esi_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p, ssize_t *lp)
 	AN(p);
 	AN(lp);
 	if (DO_DEBUG(DBG_ESI_CHOP)) {
-		*lp = vmin(*lp, (VRND_RandomTestable() & 3) + 1);
+		*lp = vmin_t(size_t, *lp, (VRND_RandomTestable() & 3) + 1);
 	}
 	vp = VFP_Suck(vc, p, lp);
 	if (vp != VFP_ERROR && *lp > 0)
