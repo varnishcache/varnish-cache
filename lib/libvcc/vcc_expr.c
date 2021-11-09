@@ -777,6 +777,7 @@ vcc_expr5(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 			AN(sym);
 			VCC_GlobalSymbol(sym, fmt);
 		}
+		ERRCHK(tl);
 		if (sym == NULL)
 			AZ(VCC_SymbolGet(tl, SYM_MAIN, SYM_NONE,
 			    SYMTAB_PARTIAL, XREF_REF));
