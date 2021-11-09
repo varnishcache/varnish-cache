@@ -32,7 +32,11 @@ Varnish Cache 6.0.9 (unreleased)
 
 * Increase the default stack size to 64k. (3617_)
 
+* Correctly reset the received SIGHUP flag in libvarnishapi when no
+  handling function for this signal is registered. (3437_)
+
 .. _3617: https://github.com/varnishcache/varnish-cache/pull/3617
+.. _3437: https://github.com/varnishcache/varnish-cache/issues/3437'
 
 ================================
 Varnish Cache 6.0.8 (2021-07-13)
