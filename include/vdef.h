@@ -182,29 +182,24 @@ int __llvm_gcov_flush(void);
 
 /* ref: https://gcc.gnu.org/onlinedocs/gcc/Typeof.html */
 
-#define _vmin(a, b, _va, _vb)						\
-({									\
-	typeof (a) _va = (a);						\
-	typeof (b) _vb = (b);						\
+#define _vtake(op, ta, tb, a, b, _va, _vb)				\
+	({								\
+	ta _va = (a);							\
+	tb _vb = (b);							\
 	(void)(&_va == &_vb);						\
-	_va < _vb ? _va : _vb;						\
+	_va op _vb ? _va : _vb;						\
 })
 
-#define _vmax(a, b, _va, _vb)						\
-({									\
-	typeof (a) _va = (a);						\
-	typeof (b) _vb = (b);						\
-	(void)(&_va == &_vb);						\
-	_va > _vb ? _va : _vb;						\
-})
+#define opmin <
+#define opmax >
+#define vtake(n, ta, tb, a, b)	_vtake(op ## n, ta, tb, a, b,		\
+    VUNIQ_NAME(_v ## n ## A), VUNIQ_NAME(_v ## n ## B))
 
-#define vmin(a, b)		_vmin((a), (b), VUNIQ_NAME(_vmina),	\
-    VUNIQ_NAME(_vminb))
-#define vmax(a, b)		_vmax((a), (b), VUNIQ_NAME(_vmaxa),	\
-    VUNIQ_NAME(_vmaxb))
+#define vmin(a, b)		vtake(min, typeof(a), typeof(b), a, b)
+#define vmax(a, b)		vtake(max, typeof(a), typeof(b), a, b)
 
-#define vmin_t(type, a, b)	vmin((type)(a), (type)(b))
-#define vmax_t(type, a, b)	vmax((type)(a), (type)(b))
+#define vmin_t(type, a, b)	vtake(min, type, type, a, b)
+#define vmax_t(type, a, b)	vtake(max, type, type, a, b)
 
 /**********************************************************************
  * Clamp the value between two limits.
