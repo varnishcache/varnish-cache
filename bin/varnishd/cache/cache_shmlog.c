@@ -378,7 +378,7 @@ VSLbs(struct vsl_log *vsl, enum VSL_tag_e tag, const struct strands *s)
 	mlen = cache_param->vsl_reclen;
 
 	/* including NUL */
-	l = vmin(strands_len(s) + 1, mlen);
+	l = vmin_t(unsigned, strands_len(s) + 1, mlen);
 
 	assert(vsl->wlp < vsl->wle);
 

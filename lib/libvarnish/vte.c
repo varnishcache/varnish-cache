@@ -97,7 +97,7 @@ VCLI_VTE(struct cli *cli, struct vsb **src, int width)
 		return;
 	AN(n_col);
 
-	nsp = vlimit((width - (w_ln)) / n_col, 1, 3);
+	nsp = vlimit_t(int, (width - (w_ln)) / n_col, 1, 3);
 
 	cc = 0;
 	wc = 0;

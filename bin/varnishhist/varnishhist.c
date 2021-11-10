@@ -218,7 +218,7 @@ upd_vsl_ts(const char *p)
 	if (p == NULL)
 		return;
 
-	vsl_ts = vmax(vsl_ts, strtod(p + 1, NULL));
+	vsl_ts = vmax_t(double, vsl_ts, strtod(p + 1, NULL));
 }
 
 static int v_matchproto_ (VSLQ_dispatch_f)
