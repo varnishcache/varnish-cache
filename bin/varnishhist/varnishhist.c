@@ -75,7 +75,7 @@ static unsigned hist_buckets;
 static pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
 
 static int end_of_file = 0;
-static int ms_delay = 1000;
+static unsigned ms_delay = 1000;
 static unsigned rr_hist[HIST_N];
 static unsigned nhist;
 static unsigned next_hist;
@@ -424,7 +424,7 @@ do_curses(void *arg)
 			ms_delay = 1000U << (ch - '0');
 			break;
 		case '+':
-			ms_delay = vmax(ms_delay >> 1, 1);
+			ms_delay = vmax(ms_delay >> 1, 1U);
 			break;
 		case '-':
 			ms_delay *= 2;
@@ -487,7 +487,7 @@ main(int argc, char **argv)
 			VUT_Usage(vut, &vopt_spec, 0);
 		case 'p':
 			ms_delay = lround(1e3 * strtod(optarg, NULL));
-			if (ms_delay <= 0)
+			if (ms_delay == 0)
 				VUT_Error(vut, 1, "-p: invalid '%s'", optarg);
 			break;
 		case 'P':
