@@ -41,6 +41,9 @@ Varnish Cache 6.0.9 (unreleased)
 * New `varnishstat` counter `MAIN.esi_req`. This increments for each ESI
   subrequest that is made.
 
+* The CLI command `vcl.show -v` now outputs the `builtin` VCL source last,
+  after any included VCL sources files.
+
 .. _3617: https://github.com/varnishcache/varnish-cache/pull/3617
 .. _3437: https://github.com/varnishcache/varnish-cache/issues/3437'
 .. _3564: https://github.com/varnishcache/varnish-cache/issues/3564'
