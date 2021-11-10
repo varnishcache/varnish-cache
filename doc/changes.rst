@@ -38,6 +38,9 @@ Varnish Cache 6.0.9 (unreleased)
 * Make it possible to set the `sess.timeout_idle` VCL variable also when
   using `VCL` syntax version `4.0`. (3564_)
 
+* New `varnishstat` counter `MAIN.esi_req`. This increments for each ESI
+  subrequest that is made.
+
 .. _3617: https://github.com/varnishcache/varnish-cache/pull/3617
 .. _3437: https://github.com/varnishcache/varnish-cache/issues/3437'
 .. _3564: https://github.com/varnishcache/varnish-cache/issues/3564'
