@@ -180,6 +180,10 @@ int __llvm_gcov_flush(void);
 #	define VUNIQ_NAME(base)	VCOMBINE(base, __LINE__, 0)
 #endif
 
+#ifdef _lint
+#define typeof(x) __typeof__(x)
+#endif
+
 /* ref: https://gcc.gnu.org/onlinedocs/gcc/Typeof.html */
 
 #define _vtake(op, ta, tb, a, b, _va, _vb)				\
