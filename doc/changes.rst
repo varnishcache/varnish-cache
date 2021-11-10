@@ -35,8 +35,12 @@ Varnish Cache 6.0.9 (unreleased)
 * Correctly reset the received SIGHUP flag in libvarnishapi when no
   handling function for this signal is registered. (3437_)
 
+* Make it possible to set the `sess.timeout_idle` VCL variable also when
+  using `VCL` syntax version `4.0`. (3564_)
+
 .. _3617: https://github.com/varnishcache/varnish-cache/pull/3617
 .. _3437: https://github.com/varnishcache/varnish-cache/issues/3437'
+.. _3564: https://github.com/varnishcache/varnish-cache/issues/3564'
 
 ================================
 Varnish Cache 6.0.8 (2021-07-13)
