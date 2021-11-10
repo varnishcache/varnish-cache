@@ -182,7 +182,7 @@ name##_VSPLAY_INSERT(struct name *head, struct type *elm)		\
 	    int __comp;							\
 	    name##_VSPLAY(head, elm);					\
 	    __comp = (cmp)(elm, (head)->sph_root);			\
-	    if(__comp < 0) {						\
+	    if (__comp < 0) {						\
 		    VSPLAY_LEFT(elm, field) = VSPLAY_LEFT((head)->sph_root, field);\
 		    VSPLAY_RIGHT(elm, field) = (head)->sph_root;		\
 		    VSPLAY_LEFT((head)->sph_root, field) = NULL;		\
@@ -370,16 +370,7 @@ struct {								\
  * from the bottom up to the root, to update augmented node data.
  */
 #ifndef VRBT_AUGMENT
-#define VRBT_AUGMENT(x) do {} while (0)
-#define VRBT_AUGMENT_UP(x) do {} while (0)
-#else
-#define VRBT_AUGMENT_UP(x)						\
-	do {								\
-		while((x) != NULL) {					\
-			VRBT_AUGMENT(x);				\
-			x = VRBT_PARENT(x, field);			\
-		}							\
-	} while (0)
+#define VRBT_AUGMENT(x)	break
 #endif
 
 #define VRBT_SWAP_CHILD(head, out, in, field) do {			\
@@ -495,7 +486,7 @@ name##_VRBT_INSERT_COLOR(struct name *head, struct type *elm)		\
 					VRBT_FLIP_RIGHT(elm, field);	\
 				else if (VRBT_RED_RIGHT(child, field))	\
 					VRBT_FLIP_LEFT(parent, field);	\
-		AN(parent);			\
+				AN(parent);				\
 				elm = child;				\
 			}						\
 			VRBT_ROTATE_RIGHT(head, parent, elm, field);	\
@@ -640,7 +631,10 @@ name##_VRBT_REMOVE(struct name *head, struct type *elm)			\
 		VRBT_SET_PARENT(child, parent, field);			\
 	if (parent != NULL)						\
 		name##_VRBT_REMOVE_COLOR(head, parent, child);		\
-	VRBT_AUGMENT_UP(parent);					\
+	while (parent != NULL) {					\
+		VRBT_AUGMENT(parent);					\
+		parent = VRBT_PARENT(parent, field);			\
+	}								\
 	return (old);							\
 }
 
@@ -671,7 +665,10 @@ name##_VRBT_INSERT(struct name *head, struct type *elm)			\
 	else								\
 		VRBT_RIGHT(parent, field) = elm;				\
 	name##_VRBT_INSERT_COLOR(head, elm);				\
-	VRBT_AUGMENT_UP(elm);						\
+	while (elm != NULL) {						\
+		VRBT_AUGMENT(elm);					\
+		elm = VRBT_PARENT(elm, field);				\
+	}								\
 	return (NULL);							\
 }
 
@@ -836,4 +833,5 @@ name##_VRBT_REINSERT(struct name *head, struct type *elm)			\
 	for ((x) = VRBT_MAX(name, head);					\
 	    ((x) != NULL) && ((y) = name##_VRBT_PREV(x), (x) != NULL);	\
 	     (x) = (y))
+
 #endif	/* _VTREE_H_ */
