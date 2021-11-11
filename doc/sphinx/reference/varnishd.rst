@@ -510,6 +510,10 @@ a newline or carriage return.
 If a command in the file is prefixed with '-', failure will not abort
 the startup.
 
+Note that it is necessary to include an explicit `vcl.use` command to
+select which VCL should be the active VCL when relying on CLI Command File
+to load the configurations at startup.
+
 .. _ref-varnishd-params:
 
 RUN TIME PARAMETERS
