@@ -463,9 +463,6 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 	AZ(C_flag);
 	vp->fname = lib;
 
-	if (mgt_vcl_active == NULL)
-		mgt_vcl_active = vp;
-
 	if ((cli->result == CLIS_OK || cli->result == CLIS_TRUNCATED) &&
 	    vcl_count > mgt_param.max_vcl &&
 	    mgt_param.max_vcl_handling == 1) {
@@ -499,6 +496,9 @@ mgt_vcl_startup(struct cli *cli, const char *vclsrc, const char *vclname,
 {
 	char buf[20];
 	static int n = 0;
+	struct vclprog *vp;
+
+	AZ(MCH_Running());
 
 	AN(vclsrc);
 	AN(origin);
@@ -506,8 +506,13 @@ mgt_vcl_startup(struct cli *cli, const char *vclsrc, const char *vclname,
 		bprintf(buf, "boot%d", n++);
 		vclname = buf;
 	}
-	mgt_vcl_active = NULL;
-	(void)mgt_new_vcl(cli, vclname, vclsrc, origin, NULL, C_flag);
+	vp = mgt_new_vcl(cli, vclname, vclsrc, origin, NULL, C_flag);
+	if (vp != NULL) {
+		/* Last startup VCL becomes the automatically selected
+		 * active VCL. */
+		AN(vp->warm);
+		mgt_vcl_active = vp;
+	}
 }
 
 /*--------------------------------------------------------------------*/
