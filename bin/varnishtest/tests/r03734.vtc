@@ -1,0 +1,44 @@
+varnishtest "Issue 3734 - Discard dependency check and labels"
+
+varnish v1 -vcl {
+	backend default none;
+
+	sub vcl_recv {
+		return (synth(200, "vcl1"));
+	}
+} -start
+
+varnish v1 -vcl {
+	backend default none;
+
+	sub vcl_recv {
+		return (synth(200, "vcl2"));
+	}
+}
+
+varnish v1 -cliok { vcl.label lbl_vcl2 vcl2 }
+
+varnish v1 -vcl {
+	backend default none;
+
+	sub vcl_recv {
+		if (req.url == "/label") {
+			return (vcl(lbl_vcl2));
+		}
+		return (synth(200, "vcl3"));
+	}
+}
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.reason == vcl3
+
+	txreq -url /label
+	rxresp
+	expect resp.status == 200
+	expect resp.reason == vcl2
+} -run
+
+varnish v1 -cliok { vcl.discard vcl1 }

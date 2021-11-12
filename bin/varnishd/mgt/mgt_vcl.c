@@ -754,7 +754,7 @@ mgt_vcl_discard_depcheck(struct cli *cli)
 	struct vclprog *vp;
 	struct vcldep *vd;
 
-	VTAILQ_FOREACH(vp, &discardhead, list) {
+	VTAILQ_FOREACH(vp, &discardhead, discard_list) {
 		VTAILQ_FOREACH(vd, &vp->dto, lto)
 			if (!vd->from->discard) {
 				mgt_vcl_discard_depfail(cli, vp);
