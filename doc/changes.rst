@@ -44,9 +44,16 @@ Varnish Cache 6.0.9 (unreleased)
 * The CLI command `vcl.show -v` now outputs the `builtin` VCL source last,
   after any included VCL sources files.
 
+* Improve the ability of log utilities to detect log overruns. (3716_)
+
+* Add an option to `configure` to use `libunwind` for the stack backtrace
+  in the panic output. (3717_)
+
 .. _3617: https://github.com/varnishcache/varnish-cache/pull/3617
 .. _3437: https://github.com/varnishcache/varnish-cache/issues/3437'
 .. _3564: https://github.com/varnishcache/varnish-cache/issues/3564'
+.. _3716: https://github.com/varnishcache/varnish-cache/pull/3716'
+.. _3717: https://github.com/varnishcache/varnish-cache/pull/3717'
 
 ================================
 Varnish Cache 6.0.8 (2021-07-13)
