@@ -11,7 +11,7 @@ varnish v1 -vcl+backend {
 logexpect l1 -v v1 -g session {
 	expect 0 1000	Begin		sess
 	expect 0 =	SessOpen
-	expect 0 =	Link		"req 1001"
+	expect * =	Link		"req 1001"
 	expect 0 =	SessClose
 	expect 0 =	End
 
