@@ -201,7 +201,10 @@ mac_tcp(void *priv, const struct suckaddr *sa)
 		ls->addr = VTCP_my_suckaddr(ls->sock);
 		VTCP_myname(ls->sock, abuf, sizeof abuf,
 		    pbuf, sizeof pbuf);
-		bprintf(nbuf, "%s:%s", abuf, pbuf);
+		if (VSA_Get_Proto(sa) == AF_INET6)
+			bprintf(nbuf, "[%s]:%s", abuf, pbuf);
+		else
+			bprintf(nbuf, "%s:%s", abuf, pbuf);
 		REPLACE(ls->endpoint, nbuf);
 	}
 	VTAILQ_INSERT_TAIL(&la->socks, ls, arglist);
