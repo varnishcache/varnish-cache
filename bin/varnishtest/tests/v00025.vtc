@@ -167,8 +167,8 @@ client c1 {
 	expect resp.http.C-Sess-XID ~ "^[0-9]+$"
 	expect resp.http.B-Sess-XID ~ "^[0-9]+$"
 	expect resp.http.C-Sess-XID == resp.http.B-Sess-XID
-	expect resp.http.C-Endpoint == "${v1_addr}:${v1_port}"
-	expect resp.http.B-Endpoint == "${v1_addr}:${v1_port}"
+	expect resp.http.C-Endpoint ~ ".?${v1_addr}.?:${v1_port}"
+	expect resp.http.B-Endpoint ~ ".?${v1_addr}.?:${v1_port}"
 	expect resp.http.C-Socket == "a0"
 	expect resp.http.B-Socket == "a0"
 } -run
