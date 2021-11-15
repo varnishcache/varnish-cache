@@ -13,7 +13,7 @@ varnish v1 -vcl+backend "" -start
 logexpect l1 -v v1 -g session {
 	expect * 1000	Begin		{^sess .* PROXY$}
 	expect 0 =	SessOpen	{^.* foo .*}
-	expect 0 =	Proxy		{^1 }
+	expect * =	Proxy		{^1 }
 	expect * 1001	Begin		{^req}
 } -start
 
@@ -28,7 +28,7 @@ logexpect l1 -wait
 logexpect l2 -v v1 -g session {
 	expect * 1003	Begin		{^sess .* PROXY$}
 	expect 0 =	SessOpen	{^.* foo .*}
-	expect 0 =	Proxy		{^2 }
+	expect * =	Proxy		{^2 }
 	expect * 1004	Begin		{^req}
 } -start
 
