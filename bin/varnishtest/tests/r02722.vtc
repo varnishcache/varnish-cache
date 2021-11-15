@@ -9,7 +9,7 @@ server s0 {
         txresp
 } -dispatch
 
-varnish v1 -arg {-a :0 -a "${tmpdir}/v1.sock"}
+varnish v1 -arg {-a TCP=:0 -a "UDS=${tmpdir}/v1.sock"}
 varnish v1 -cliok "param.set debug +flush_head"
 varnish v1 -cliok "param.set timeout_idle 1"
 varnish v1 -vcl+backend { } -start

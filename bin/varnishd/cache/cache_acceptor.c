@@ -240,15 +240,27 @@ vca_sock_opt_test(const struct listen_sock *ls, const struct sess *sp)
 	for (n = 0; n < n_sock_opts; n++) {
 		so = &sock_opts[n];
 		ch = &ls->conn_heritage[n];
-		if (ch->sess_set)
-			continue; /* Already set, no need to retest */
-		if (so->level == IPPROTO_TCP && ls->uds)
+		if (ch->sess_set) {
+			VSL(SLT_Debug, sp->vxid,
+			    "sockopt: Not testing nonhereditary %s for %s=%s",
+			    so->strname, ls->name, ls->endpoint);
 			continue;
+		}
+		if (so->level == IPPROTO_TCP && ls->uds) {
+			VSL(SLT_Debug, sp->vxid,
+			    "sockopt: Not testing incompatible %s for %s=%s",
+			    so->strname, ls->name, ls->endpoint);
+			continue;
+		}
 		memset(&tmp, 0, sizeof tmp);
 		l = so->sz;
 		i = getsockopt(sp->fd, so->level, so->optname, &tmp, &l);
-		if (i == 0 && memcmp(&tmp, so->arg, so->sz))
+		if (i == 0 && memcmp(&tmp, so->arg, so->sz)) {
+			VSL(SLT_Debug, sp->vxid,
+			    "sockopt: Test confirmed %s non heredity for %s=%s",
+			    so->strname, ls->name, ls->endpoint);
 			ch->sess_set = 1;
+		}
 		if (i && errno != ENOPROTOOPT)
 			VTCP_Assert(i);
 	}
@@ -259,21 +271,44 @@ vca_sock_opt_set(const struct listen_sock *ls, const struct sess *sp)
 {
 	struct conn_heritage *ch;
 	struct sock_opt *so;
+	unsigned vxid;
 	int n, sock;
 
 	CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
-	CHECK_OBJ_ORNULL(sp, SESS_MAGIC);
-	sock = sp != NULL ? sp->fd : ls->sock;
+
+	if (sp != NULL) {
+		CHECK_OBJ(sp, SESS_MAGIC);
+		sock = sp->fd;
+		vxid = sp->vxid;
+	} else {
+		sock = ls->sock;
+		vxid = 0;
+	}
 
 	for (n = 0; n < n_sock_opts; n++) {
 		so = &sock_opts[n];
 		ch = &ls->conn_heritage[n];
-		if (so->level == IPPROTO_TCP && ls->uds)
+		if (so->level == IPPROTO_TCP && ls->uds) {
+			VSL(SLT_Debug, vxid,
+			    "sockopt: Not setting incompatible %s for %s=%s",
+			    so->strname, ls->name, ls->endpoint);
 			continue;
-		if (sp == NULL && ch->listen_mod == so->mod)
+		}
+		if (sp == NULL && ch->listen_mod == so->mod) {
+			VSL(SLT_Debug, vxid,
+			    "sockopt: Not setting unmodified %s for %s=%s",
+			    so->strname, ls->name, ls->endpoint);
 			continue;
-		if  (sp != NULL && !ch->sess_set)
+		}
+		if  (sp != NULL && !ch->sess_set) {
+			VSL(SLT_Debug, sp->vxid,
+			    "sockopt: %s may be inherited for %s=%s",
+			    so->strname, ls->name, ls->endpoint);
 			continue;
+		}
+		VSL(SLT_Debug, vxid,
+		    "sockopt: Setting %s for %s=%s",
+		    so->strname, ls->name, ls->endpoint);
 		VTCP_Assert(setsockopt(sock,
 		    so->level, so->optname, so->arg, so->sz));
 		if (sp == NULL)
