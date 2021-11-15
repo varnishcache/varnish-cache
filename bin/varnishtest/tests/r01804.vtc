@@ -9,15 +9,11 @@ server s1 {
 varnish v1 -arg "-afoo=127.0.0.1:0,PROXY" -vcl+backend {
 } -start
 
-logexpect l1 -v v1 -d 0 -g session {
-	expect * *	Begin	{^sess .* PROXY$}
-	expect * =	SessOpen	{^.* foo .*}
-	expect * =	Proxy	{^1 }
-	expect * *	Begin	{^req}
-	expect * *	Begin	{^sess .* PROXY$}
-	expect * =	SessOpen	{^.* foo .*}
-	expect * =	Proxy	{^2 }
-	expect * *	Begin	{^req}
+logexpect l1 -v v1 -g session {
+	expect * 1000	Begin		{^sess .* PROXY$}
+	expect 0 =	SessOpen	{^.* foo .*}
+	expect * =	Proxy		{^1 }
+	expect * 1001	Begin		{^req}
 } -start
 
 client c1 {
@@ -25,6 +21,15 @@ client c1 {
 	txreq
 	rxresp
 } -run
+
+logexpect l1 -wait
+
+logexpect l2 -v v1 -g session {
+	expect * 1003	Begin		{^sess .* PROXY$}
+	expect 0 =	SessOpen	{^.* foo .*}
+	expect * =	Proxy		{^2 }
+	expect * 1004	Begin		{^req}
+} -start
 
 client c2 {
 	# good IPv4
@@ -38,4 +43,4 @@ client c2 {
 	rxresp
 } -run
 
-logexpect l1 -wait
+logexpect l2 -wait
