@@ -12,7 +12,7 @@ varnish v1 -arg "-p pool_sess=0,0,0" -proto "PROXY" -vcl+backend {} -start
 logexpect l1 -v v1 -g raw {
 	expect 0 1000	Begin		"sess 0 PROXY"
 	expect 0 =	SessOpen
-	expect 0 =	Proxy		"2 217.70.181.33 60822 95.142.168.34 443"
+	expect * =	Proxy		"2 217.70.181.33 60822 95.142.168.34 443"
 	expect 0 =	Error		{\Qinsufficient workspace (proto_priv)\E}
 	expect 0 =	SessClose	"RX_JUNK"
 } -start
