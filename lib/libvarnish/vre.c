@@ -56,6 +56,11 @@ struct vre {
 	pcre2_match_context	*re_ctx;
 };
 
+/* pcre2 16de9003e59e782ba8cc151708e45aafbfdd74b2 */
+#ifndef PCRE2_ERROR_TOO_MANY_CAPTURES
+#define PCRE2_ERROR_TOO_MANY_CAPTURES		   197
+#endif
+
 /*
  * We don't want to spread or even expose the majority of PCRE2 options
  * and errors so we establish our own symbols and implement hard linkage
