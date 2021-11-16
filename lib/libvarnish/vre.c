@@ -70,6 +70,7 @@ VRE_compile(const char *pattern, unsigned options,
     int *errptr, int *erroffset, unsigned jit)
 {
 	PCRE2_SIZE erroff;
+	uint32_t ngroups;
 	vre_t *v;
 
 	AN(pattern);
@@ -91,12 +92,19 @@ VRE_compile(const char *pattern, unsigned options,
 		VRE_free(&v);
 		return (NULL);
 	}
+	AZ(pcre2_pattern_info(v->re, PCRE2_INFO_CAPTURECOUNT, &ngroups));
+	if (ngroups > VRE_MAX_CAPTURES) {
+		*errptr = PCRE2_ERROR_TOO_MANY_CAPTURES;
+		VRE_free(&v);
+		return (NULL);
+	}
 	v->re_ctx = pcre2_match_context_create(NULL);
 	if (v->re_ctx == NULL) {
 		*errptr = PCRE2_ERROR_NOMEMORY;
 		VRE_free(&v);
 		return (NULL);
 	}
+
 #if USE_PCRE2_JIT
 	if (jit)
 		(void)pcre2_jit_compile(v->re, PCRE2_JIT_COMPLETE);
@@ -113,6 +121,15 @@ VRE_error(struct vsb *vsb, int err)
 	int i;
 
 	CHECK_OBJ_NOTNULL(vsb, VSB_MAGIC);
+	if (err == PCRE2_ERROR_TOO_MANY_CAPTURES) {
+		/* identical to pcre2's message except for the maximum
+		 * and tip
+		 */
+		VSB_printf(vsb, "too many capturing groups (maximum %d) - "
+		    "tip: use (?:...) for non capturing groups",
+		    VRE_MAX_CAPTURES);
+		return (0);
+	}
 	i = pcre2_get_error_message(err, (PCRE2_UCHAR *)buf, VRE_ERROR_LEN);
 	if (i == PCRE2_ERROR_BADDATA) {
 		VSB_printf(vsb, "unknown pcre2 error code (%d)", err);

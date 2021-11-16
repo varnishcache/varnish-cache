@@ -8,8 +8,19 @@ server s1 {
 		-body "012345\n"
 } -start
 
+varnish v1 -errvcl "too many capturing groups (maximum 9) - tip: use (?:...) for non capturing groups" {
+	backend proforma none;
+	sub vcl_recv {
+		if (req.http.foo ~ "(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)") {}
+	}
+}
+
 varnish v1 -vcl+backend {
 	sub vcl_backend_response {
+		if (beresp.http.Foobar ~ "(?:.)?(.)(.)(.)(.)(.)(.)(.)?(.)?(.)?") {
+		    set beresp.http.mood = "nine is fine";
+		}
+
 		set beresp.http.Snafu1 = regsub(beresp.http.Foobar, "ar", "\0\0");
 		set beresp.http.Snafu2 =
 		    regsub(beresp.http.Foobar, "(b)(a)(r)(f)", "\4\3\2p");
@@ -43,4 +54,5 @@ client c1 {
 	expect resp.http.snafu6 == "_f&rap\\_"
 	expect resp.http.snafu7 == "_bf_"
 	expect resp.http.inval == "_rap_"
+	expect resp.http.mood == "nine is fine"
 } -run
