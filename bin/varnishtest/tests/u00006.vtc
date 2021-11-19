@@ -7,9 +7,11 @@ server s1 -repeat 2 {
 
 varnish v1 -vcl+backend {} -start
 
+# We use this to make sure we know there is a "0 CLI" in the binary log.
 process p1 {
-	exec varnishlog -n ${v1_name} -g raw -k 3 -w ${tmpdir}/vlog -A
+	exec varnishlog -n ${v1_name} -g raw -A
 } -start
+
 shell {
 	exec varnishlog -n ${v1_name} -D -P ${tmpdir}/vlog.pid \
 	    -w ${tmpdir}/vlog.bin -R 10/s
@@ -98,8 +100,11 @@ shell -err -expect "-R: Syntax error: Invalid duration" \
 shell -err -expect "-R: Syntax error" \
 	"varnishlog -R 1000000000/1000000000000000000000000000000s"
 
-process p1 -wait
-shell {grep -q "0 CLI" ${tmpdir}/vlog}
+# Wait until the binary also (must) contain a "0 CLI"
+process p1 -expect-text 0 0 "0 CLI"
+process p1 -screen_dump
+process p1 -stop
+
 shell -match "0 CLI[ ]+- Wr 200 [0-9]+ PONG" \
 	{varnishlog -n ${v1_name} -d -g raw -X "Wr 200 [0-9]+ [^P]"}
 
