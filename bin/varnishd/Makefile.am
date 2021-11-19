@@ -185,7 +185,7 @@ varnishd_LDADD = \
 	${DL_LIBS} ${PTHREAD_LIBS} ${NET_LIBS} ${RT_LIBS} ${LIBM}
 
 if WITH_UNWIND
-varnishd_CFLAGS += -DUNW_LOCAL_ONLY
+varnishd_CFLAGS += -DUNW_LOCAL_ONLY ${LIBUNWIND_CFLAGS}
 varnishd_LDADD += ${LIBUNWIND_LIBS}
 endif
 
