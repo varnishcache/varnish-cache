@@ -120,6 +120,7 @@ shell -err -expect "-R: Syntax error" \
 	"varnishlog -R 1000000000/1000000000000000000000000000000s"
 
 process p1 -wait
+shell {cat ${tmpdir}/vlog}
 shell {grep -q "0 CLI" ${tmpdir}/vlog}
 shell -match "0 CLI[ ]+- Wr 200 [0-9]+ PONG" \
 	{varnishlog -n ${v1_name} -d -g raw -X "Wr 200 [0-9]+ [^P]"}
