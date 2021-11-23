@@ -10,6 +10,8 @@ varnish v1 -cliok "help -a"
 
 varnish v1 -cliok "help -d"
 
+varnish v1 -clierr 101 "help -x"
+
 varnish v1 -cliok "help vcl.load"
 
 varnish v1 -clierr 101 "help ban"

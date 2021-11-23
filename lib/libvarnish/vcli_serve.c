@@ -120,25 +120,30 @@ void v_matchproto_(cli_func_t)
 VCLS_func_help(struct cli *cli, const char * const *av, void *priv)
 {
 	struct cli_proto *clp;
-	unsigned all, debug, d;
+	unsigned all = 0, debug = 0, d;
 	struct VCLS *cs;
 
 	(void)priv;
 	cs = cli->cls;
 	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
 
-	if (av[2] == NULL) {
-		all = debug = 0;
-	} else if (!strcmp(av[2], "-a")) {
-		all = 1;
-		debug = 0;
-	} else if (!strcmp(av[2], "-d")) {
-		all = 0;
-		debug = 1;
-	} else {
+        for (av += 2; av[0] != NULL && av[0][0] == '-'; av++) {
+		if (!strcmp(av[0], "-a")) {
+			all = 1;
+			debug = 0;
+		} else if (!strcmp(av[0], "-d")) {
+			all = 0;
+			debug = 1;
+		} else {
+			VCLI_Out(cli, "Unknown flag\n");
+			VCLI_SetResult(cli, CLIS_UNKNOWN);
+			return;
+		}
+	}
+	if (av[0] != NULL) {
 		VTAILQ_FOREACH(clp, &cs->funcs, list) {
 			if (clp->auth <= cli->auth &&
-			    !strcmp(clp->desc->request, av[2])) {
+			    !strcmp(clp->desc->request, av[0])) {
 				VCLI_Out(cli, "%s\n%s\n",
 				    clp->desc->syntax, clp->desc->help);
 				return;
@@ -151,13 +156,13 @@ VCLS_func_help(struct cli *cli, const char * const *av, void *priv)
 	VTAILQ_FOREACH(clp, &cs->funcs, list) {
 		if (clp->auth > cli->auth)
 			continue;
-		d =  strchr(clp->flags, 'd') != NULL ? 1 : 0;
+		d = strchr(clp->flags, 'd') != NULL ? 1 : 0;
 		if (d && (!all && !debug))
 			continue;
 		if (debug && !d)
 			continue;
-		if (clp->desc->syntax != NULL)
-			VCLI_Out(cli, "%s\n", clp->desc->syntax);
+		AN(clp->desc->syntax);
+		VCLI_Out(cli, "%s\n", clp->desc->syntax);
 	}
 }
 
