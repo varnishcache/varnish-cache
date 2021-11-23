@@ -32,7 +32,7 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
-Varnish Cache 7.0.1 (unreleased)
+Varnish Cache 7.0.1 (2021-11-23)
 ================================
 
 * An assertion failure has been fixed which triggered when matching bans
