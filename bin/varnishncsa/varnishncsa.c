@@ -167,7 +167,10 @@ openout(int append)
 {
 
 	AN(CTX.w_arg);
-	CTX.fo = fopen(CTX.w_arg, append ? "a" : "w");
+	if (!strcmp(CTX.w_arg, "-"))
+		CTX.fo = stdout;
+	else
+		CTX.fo = fopen(CTX.w_arg, append ? "a" : "w");
 	if (CTX.fo == NULL)
 		VUT_Error(vut, 1, "Can't open output file (%s)",
 		    strerror(errno));
@@ -1216,6 +1219,9 @@ main(int argc, char * const *argv)
 
 	if (vut->D_opt && !CTX.w_arg)
 		VUT_Error(vut, 1, "Missing -w option");
+
+	if (vut->D_opt && !strcmp(CTX.w_arg, "-"))
+		VUT_Error(vut, 1, "Daemon cannot write to stdout");
 
 	/* Check for valid grouping mode */
 	assert(vut->g_arg < VSL_g__MAX);

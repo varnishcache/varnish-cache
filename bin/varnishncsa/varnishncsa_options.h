@@ -34,7 +34,8 @@
 #define NCSA_OPT_a							\
 	VOPT("a", "[-a]", "Append to file",				\
 	    "When writing output to a file, append to it rather than"	\
-	    " overwrite it."						\
+	    " overwrite it. This option has no effect without the -w"	\
+	    " option."							\
 	)
 
 #define NCSA_OPT_F							\
@@ -62,7 +63,9 @@
 	    " unless the -a option was specified. If the application"	\
 	    " receives a SIGHUP in daemon mode the file will be"	\
 	    " reopened allowing the old one to be rotated away. This"	\
-	    " option is required when running in daemon mode."		\
+	    " option is required when running in daemon mode. If the"	\
+	    " filename is -, varnishncsa writes to the standard output"	\
+	    " and cannot work as a daemon."				\
 	)
 #define NCSA_OPT_b							\
 	VOPT("b", "[-b]", "Backend mode",				\

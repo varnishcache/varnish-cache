@@ -72,9 +72,12 @@ openout(int append)
 {
 
 	AN(LOG.w_arg);
-	if (LOG.A_opt)
-		LOG.fo = fopen(LOG.w_arg, append ? "a" : "w");
-	else
+	if (LOG.A_opt) {
+		if (!strcmp(LOG.w_arg, "-"))
+			LOG.fo = stdout;
+		else
+			LOG.fo = fopen(LOG.w_arg, append ? "a" : "w");
+	} else
 		LOG.fo = VSL_WriteOpen(vut->vsl, LOG.w_arg, append, LOG.u_opt);
 	if (LOG.fo == NULL)
 		VUT_Error(vut, 2, "Cannot open output file (%s)",
@@ -147,6 +150,9 @@ main(int argc, char * const *argv)
 
 	if (vut->D_opt && !LOG.w_arg)
 		VUT_Error(vut, 1, "Missing -w option");
+
+	if (vut->D_opt && !strcmp(LOG.w_arg, "-"))
+		VUT_Error(vut, 1, "Daemon cannot write to stdout");
 
 	/* Setup output */
 	if (LOG.A_opt || !LOG.w_arg) {

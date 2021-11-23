@@ -413,14 +413,17 @@ VSL_WriteOpen(struct VSL_data *vsl, const char *name, int append, int unbuf)
 {
 	const char head[] = VSL_FILE_ID;
 	FILE* f;
-	f = fopen(name, append ? "a" : "w");
+	if (!strcmp(name, "-"))
+		f = stdout;
+	else
+		f = fopen(name, append ? "a" : "w");
 	if (f == NULL) {
 		vsl_diag(vsl, "%s", strerror(errno));
 		return (NULL);
 	}
 	if (unbuf)
 		setbuf(f, NULL);
-	if (0 == ftell(f)) {
+	if (ftell(f) == 0 || f == stdout) {
 		if (fwrite(head, 1, sizeof head, f) != sizeof head) {
 			vsl_diag(vsl, "%s", strerror(errno));
 			(void)fclose(f);
