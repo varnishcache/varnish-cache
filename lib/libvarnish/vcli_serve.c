@@ -116,11 +116,21 @@ VCLS_func_ping_json(struct cli *cli, const char * const *av, void *priv)
 
 /*--------------------------------------------------------------------*/
 
+static void
+help_helper(struct cli *cli, struct cli_proto *clp, const char * const *av)
+{
+	AN(clp->desc->syntax);
+	if (av[0] != NULL)
+		VCLI_Out(cli, "%s\n%s\n", clp->desc->syntax, clp->desc->help);
+	else
+		VCLI_Out(cli, "%s\n", clp->desc->syntax);
+}
+
 void v_matchproto_(cli_func_t)
 VCLS_func_help(struct cli *cli, const char * const *av, void *priv)
 {
 	struct cli_proto *clp;
-	unsigned all = 0, debug = 0, d;
+	unsigned filter = 1, d;
 	struct VCLS *cs;
 
 	(void)priv;
@@ -129,40 +139,30 @@ VCLS_func_help(struct cli *cli, const char * const *av, void *priv)
 
         for (av += 2; av[0] != NULL && av[0][0] == '-'; av++) {
 		if (!strcmp(av[0], "-a")) {
-			all = 1;
-			debug = 0;
+			filter = 3;
 		} else if (!strcmp(av[0], "-d")) {
-			all = 0;
-			debug = 1;
+			filter = 2;
 		} else {
 			VCLI_Out(cli, "Unknown flag\n");
 			VCLI_SetResult(cli, CLIS_UNKNOWN);
 			return;
 		}
 	}
-	if (av[0] != NULL) {
-		VTAILQ_FOREACH(clp, &cs->funcs, list) {
-			if (clp->auth <= cli->auth &&
-			    !strcmp(clp->desc->request, av[0])) {
-				VCLI_Out(cli, "%s\n%s\n",
-				    clp->desc->syntax, clp->desc->help);
-				return;
-			}
-		}
-		VCLI_Out(cli, "Unknown request.\nType 'help' for more info.\n");
-		VCLI_SetResult(cli, CLIS_UNKNOWN);
-		return;
-	}
 	VTAILQ_FOREACH(clp, &cs->funcs, list) {
 		if (clp->auth > cli->auth)
 			continue;
-		d = strchr(clp->flags, 'd') != NULL ? 1 : 0;
-		if (d && (!all && !debug))
-			continue;
-		if (debug && !d)
-			continue;
-		AN(clp->desc->syntax);
-		VCLI_Out(cli, "%s\n", clp->desc->syntax);
+		if (av[0] != NULL && !strcmp(clp->desc->request, av[0])) {
+			help_helper(cli, clp, av);
+			return;
+		} else if (av[0] == NULL) {
+			d = strchr(clp->flags, 'd') != NULL ? 2 : 1;
+			if (filter & d)
+				help_helper(cli, clp, av);
+		}
+	}
+	if (av[0] != NULL) {
+		VCLI_Out(cli, "Unknown request.\nType 'help' for more info.\n");
+		VCLI_SetResult(cli, CLIS_UNKNOWN);
 	}
 }
 
