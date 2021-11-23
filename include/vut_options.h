@@ -93,7 +93,9 @@
 #define VUT_OPT_r							\
 	VOPT("r:", "[-r <filename>]", "Binary file input",		\
 	    "Read log in binary file format from this file. The file"	\
-	    " can be created with ``varnishlog -w filename``."		\
+	    " can be created with ``varnishlog -w filename``. If the"	\
+	    " filename is -, logs are read from the standard input."	\
+	    " and cannot work as a daemon."				\
 	)
 
 #define VUT_OPT_t							\
