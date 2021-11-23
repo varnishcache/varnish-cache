@@ -53,7 +53,7 @@ vrnd_lock_f *VRND_Unlock;
 
 /**********************************************************************
  * Stripped down random(3) implementation from FreeBSD, to provide
- * predicatable "random" numbers of testing purposes.
+ * predictable "random" numbers of testing purposes.
  */
 
 #define	TYPE_3		3		/* x**31 + x**3 + 1 */
@@ -83,7 +83,7 @@ good_rand(uint32_t ctx)
 {
 /*
  * Compute x = (7^5 * x) mod (2^31 - 1)
- * wihout overflowing 31 bits:
+ * without overflowing 31 bits:
  *      (2^31 - 1) = 127773 * (7^5) + 2836
  * From "Random number generators: good ones are hard to find",
  * Park and Miller, Communications of the ACM, vol. 31, no. 10,
