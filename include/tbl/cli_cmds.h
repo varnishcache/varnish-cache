@@ -227,7 +227,7 @@ CLI_CMD(PING,
 
 CLI_CMD(HELP,
 	"help",
-	"help [-j] [<command>]",
+	"help [-j|<command>]",
 	"Show command/protocol help.",
 	"  ``-j`` specifies JSON output.",
 	0, 1

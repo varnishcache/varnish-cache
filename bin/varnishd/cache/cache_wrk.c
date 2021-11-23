@@ -683,7 +683,7 @@ pool_herder(void *priv)
 				Lck_Unlock(&pool_mtx);
 				delay = cache_param->wthread_destroy_delay;
 			} else
-				delay = vmax(delay, 
+				delay = vmax(delay,
 				    cache_param->wthread_destroy_delay);
 		}
 
