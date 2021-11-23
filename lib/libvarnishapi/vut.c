@@ -302,6 +302,9 @@ VUT_Setup(struct VUT *vut)
 	    (vut->r_arg == NULL ? 0 : 2) > 2)
 		VUT_Error(vut, 1, "Only one of -n and -r options may be used");
 
+	if (vut->r_arg != NULL && !strcmp(vut->r_arg, "-") && vut->D_opt)
+		VUT_Error(vut, 1, "Daemon cannot read from stdin");
+
 	/* Create and validate the query expression */
 	vut->vslq = VSLQ_New(vut->vsl, NULL,
 	    (enum VSL_grouping_e)vut->g_arg, vut->q_arg);
