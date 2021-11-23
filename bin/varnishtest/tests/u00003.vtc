@@ -69,6 +69,8 @@ shell -expect "Copyright (c) 2006 Verdens Gang AS" \
 	"varnishncsa -V"
 shell -err -expect "Missing -w option" \
 	{varnishncsa -D}
+shell -err -expect "Daemon cannot write to stdout" \
+	"varnishlog -D -w -"
 shell -err -expect "Unknown format specifier at: %{foo}A" \
 	{varnishncsa -F "%{foo}A"}
 shell -err -expect "Unknown format specifier at: %A" \

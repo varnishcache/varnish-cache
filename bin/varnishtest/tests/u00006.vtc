@@ -26,6 +26,8 @@ shell -err -match "Usage: .*varnishlog <options>" \
 	"varnishlog extra"
 shell -err -expect "Missing -w option" \
 	"varnishlog -D"
+shell -err -expect "Daemon cannot write to stdout" \
+	"varnishlog -D -w -"
 shell -err -expect "Ambiguous grouping type: r" \
 	"varnishlog -g r"
 shell -err -expect "Unknown grouping type: foo" \
