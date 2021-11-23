@@ -46,6 +46,46 @@ Varnish Cache NEXT (2022-03-15)
   ``VRT_StrandsWS()``).
 
 ================================
+Varnish Cache 7.0.1 (2021-11-23)
+================================
+
+* An assertion failure has been fixed which triggered when matching bans
+  on non-existing headers (3706_).
+
+* A VCL compilation issue has been fixed when calling builtin functions
+  directly (3719_).
+
+* It is now again possible to concatenate static strings to produce
+  combined strings of type VCL_REGEX (3721_).
+
+* An issue has been fixed that would cause the VCL dependency checker to
+  incorrectly flag VCLs as dependants of other VCLs when using labels,
+  preventing them from being discarded (3734_).
+
+* VCLs loaded through CLI or the use of startup CLI scripts (-I option to
+  `varnishd`) will, when no active VCL has previously been set, no longer
+  automatically set the first VCL loaded to the active VCL. This prevents
+  situations where it was possible to make a cold VCL the active VCL
+  (3737_).
+
+* There is now a `configure` build-time requirement on working SO_RCVTIMEO
+  and SO_SNDTIMEO socket options.
+
+* The socket option inheritance checks now correctly identifies situations
+  where UDS and TCP listening sockets behave differently, and are no
+  longer subject to the order the inheritance checks happens to be
+  executed (3732_).
+
+* IPv6 listen endpoint address strings are now printed using brackets.
+
+.. _3706: https://github.com/varnishcache/varnish-cache/issues/3706
+.. _3719: https://github.com/varnishcache/varnish-cache/issues/3719
+.. _3721: https://github.com/varnishcache/varnish-cache/issues/3726
+.. _3734: https://github.com/varnishcache/varnish-cache/issues/3734
+.. _3737: https://github.com/varnishcache/varnish-cache/pull/3737
+.. _3732: https://github.com/varnishcache/varnish-cache/pull/3732
+
+================================
 Varnish Cache 7.0.0 (2021-09-15)
 ================================
 
