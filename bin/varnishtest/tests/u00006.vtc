@@ -9,7 +9,7 @@ varnish v1 -vcl+backend {} -start
 
 # We use this to make sure we know there is a "0 CLI" in the binary log.
 process p1 {
-	exec varnishlog -n ${v1_name} -g raw -u -A
+	exec varnishlog -n ${v1_name} -g raw -u -A -w -
 } -start
 
 shell {
