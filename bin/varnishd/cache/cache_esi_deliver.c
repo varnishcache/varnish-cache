@@ -800,10 +800,10 @@ ved_gzgz_fini(struct vdp_ctx *vdc, void **priv)
 }
 
 static const struct vdp ved_gzgz = {
-	.name =         "VZZ",
-	.init =         ved_gzgz_init,
-	.bytes =        ved_gzgz_bytes,
-	.fini =         ved_gzgz_fini,
+	.name =		"VZZ",
+	.init =		ved_gzgz_init,
+	.bytes =	ved_gzgz_bytes,
+	.fini =		ved_gzgz_fini,
 };
 
 /*--------------------------------------------------------------------

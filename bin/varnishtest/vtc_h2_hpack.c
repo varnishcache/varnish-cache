@@ -206,7 +206,7 @@ num_encode(struct hpk_iter *iter, uint8_t prefix, uint32_t num)
 	uint8_t pmax = (1U << prefix) - 1U;
 
 	*iter->buf &= 0xffU << prefix;
-	if (num <=  pmax) {
+	if (num <= pmax) {
 		*iter->buf++ |= num;
 		return (ITER_DONE(iter));
 	} else if (iter->end - iter->buf < 2)

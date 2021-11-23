@@ -437,9 +437,9 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 				else if (wrk->wpriv->vcl == NULL)
 					tmo = 0;
 				else if (DO_DEBUG(DBG_VTC_MODE))
-					tmo =  now + 1.;
+					tmo = now + 1.;
 				else
-					tmo =  now + 60.;
+					tmo = now + 60.;
 				(void)Lck_CondWaitUntil(
 				    &wrk->cond, &pp->mtx, tmo);
 				if (wrk->task->func != NULL) {

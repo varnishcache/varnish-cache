@@ -527,7 +527,7 @@ i_mode(void)
 			    "could not find 'abs_top_builddir' in Makefile\n");
 			exit(2);
 		}
-		topbuild =  strchr(p + 1, '\n');
+		topbuild = strchr(p + 1, '\n');
 		if (topbuild == NULL) {
 			fprintf(stderr,
 			    "No NL after 'abs_top_builddir' in Makefile\n");

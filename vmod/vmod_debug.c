@@ -1055,15 +1055,15 @@ xyzzy_get_ip(VRT_CTX)
 
 extern const struct vmod_data Vmod_wrong0_Data;
 const struct vmod_data Vmod_wrong0_Data = {
-	.vrt_major =    0,
-	.vrt_minor =    0,
+	.vrt_major =	0,
+	.vrt_minor =	0,
 };
 
 //lint -save -e835 A zero has been given as left argument to operatorp'+'
 extern const struct vmod_data Vmod_wrong1_Data;
 const struct vmod_data Vmod_wrong1_Data = {
-	.vrt_major =    VRT_MAJOR_VERSION,
-	.vrt_minor =    VRT_MINOR_VERSION + 1,
+	.vrt_major =	VRT_MAJOR_VERSION,
+	.vrt_minor =	VRT_MINOR_VERSION + 1,
 };
 //lint -restore
 
@@ -1073,8 +1073,8 @@ static const struct foo {
 
 extern const struct vmod_data Vmod_wrong2_Data;
 const struct vmod_data Vmod_wrong2_Data = {
-	.vrt_major =    VRT_MAJOR_VERSION,
-	.vrt_minor =    VRT_MINOR_VERSION,
+	.vrt_major =	VRT_MAJOR_VERSION,
+	.vrt_minor =	VRT_MINOR_VERSION,
 	.name =		"wrongN",
 	.func =		foo_struct,
 	.func_len =	sizeof foo_struct,
@@ -1084,8 +1084,8 @@ const struct vmod_data Vmod_wrong2_Data = {
 
 extern const struct vmod_data Vmod_wrong3_Data;
 const struct vmod_data Vmod_wrong3_Data = {
-	.vrt_major =    VRT_MAJOR_VERSION,
-	.vrt_minor =    VRT_MINOR_VERSION,
+	.vrt_major =	VRT_MAJOR_VERSION,
+	.vrt_minor =	VRT_MINOR_VERSION,
 	.name =		"wrongN",
 	.func =		foo_struct,
 	.func_len =	sizeof foo_struct,

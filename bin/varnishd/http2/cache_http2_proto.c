@@ -1393,8 +1393,8 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 	if (h2->do_sweep)
 		(void)h2_sweep(wrk, h2);
 
-	h2->rxf_len =  vbe32dec(h2->htc->rxbuf_b) >> 8;
-	h2->rxf_type =  h2->htc->rxbuf_b[3];
+	h2->rxf_len = vbe32dec(h2->htc->rxbuf_b) >> 8;
+	h2->rxf_type = h2->htc->rxbuf_b[3];
 	h2->rxf_flags = h2->htc->rxbuf_b[4];
 	h2->rxf_stream = vbe32dec(h2->htc->rxbuf_b + 5);
 	h2->rxf_stream &= ~(1LU<<31);			// rfc7540,l,690,692

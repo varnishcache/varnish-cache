@@ -327,7 +327,7 @@ enum vsl_check {
 	vsl_check_e_notsupp	= -1,
 	vsl_check_e_inval	=  0,
 	vsl_check_warn		=  1,
-	vsl_check_valid	=  2
+	vsl_check_valid		=  2
 };
 
 enum vsl_check
