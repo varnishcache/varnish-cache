@@ -447,24 +447,19 @@ vcl_BackendEvent(const struct vcl *vcl, enum vcl_event_e e)
 }
 
 static void
-vcl_KillBackends(struct vcl *vcl)
+vcl_KillBackends(const struct vcl *vcl)
 {
-	struct vcldir *vdir;
+	struct vcldir *vdir, *vdir2;
 
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
-	AZ(vcl->busy);
-	assert(VTAILQ_EMPTY(&vcl->ref_list));
-	Lck_Lock(&vcl_mtx);
-	while (1) {
-		vdir = VTAILQ_FIRST(&vcl->director_list);
-		if (vdir == NULL)
-			break;
-		VTAILQ_REMOVE(&vcl->director_list, vdir, list);
-		AN(vdir->methods->destroy);
-		vdir->methods->destroy(vdir->dir);
-		vcldir_free(vdir);
-	}
-	Lck_Unlock(&vcl_mtx);
+	assert(vcl->temp == VCL_TEMP_COLD || vcl->temp == VCL_TEMP_INIT);
+	/*
+	 * Unlocked because no further directors can be added, and the
+	 * remaining ones need to be able to remove themselves.
+	 */
+	VTAILQ_FOREACH_SAFE(vdir, &vcl->director_list, list, vdir2)
+		VDI_Event(vdir->dir, VCL_EVENT_DISCARD);
+	assert(VTAILQ_EMPTY(&vcl->director_list));
 }
 
 /*--------------------------------------------------------------------*/

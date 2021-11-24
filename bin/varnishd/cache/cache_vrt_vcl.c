@@ -146,6 +146,7 @@ vcldir_free(struct vcldir *vdir)
 
 	CHECK_OBJ_NOTNULL(vdir, VCLDIR_MAGIC);
 	CHECK_OBJ_NOTNULL(vdir->dir, DIRECTOR_MAGIC);
+	AZ(vdir->refcnt);
 	Lck_Delete(&vdir->dlck);
 	free(vdir->cli_name);
 	FREE_OBJ(vdir->dir);
@@ -225,10 +226,9 @@ VRT_AddDirector(VRT_CTX, const struct vdi_methods *m, void *priv,
 	return (vdir->dir);
 }
 
-void
-VRT_DelDirector(VCL_BACKEND *bp)
+static void
+retire_backend(VCL_BACKEND *bp)
 {
-	struct vcl *vcl;
 	struct vcldir *vdir;
 	const struct vcltemp *temp;
 	VCL_BACKEND d;
@@ -236,17 +236,13 @@ VRT_DelDirector(VCL_BACKEND *bp)
 	TAKE_OBJ_NOTNULL(d, bp, DIRECTOR_MAGIC);
 	vdir = d->vdir;
 	CHECK_OBJ_NOTNULL(vdir, VCLDIR_MAGIC);
-	vcl = vdir->vcl;
-	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
-
-	Lck_Lock(d->mtx);
-	assert(vdir->refcnt == 1);
-	--vdir->refcnt;
-	Lck_Unlock(d->mtx);
+	assert(vdir->refcnt == 0);
+	assert (d == vdir->dir);
+	CHECK_OBJ_NOTNULL(vdir->vcl, VCL_MAGIC);
 
 	Lck_Lock(&vcl_mtx);
-	temp = vcl->temp;
-	VTAILQ_REMOVE(&vcl->director_list, vdir, list);
+	temp = vdir->vcl->temp;
+	VTAILQ_REMOVE(&vdir->vcl->director_list, vdir, list);
 	Lck_Unlock(&vcl_mtx);
 
 	if (temp->is_warm)
@@ -258,8 +254,24 @@ VRT_DelDirector(VCL_BACKEND *bp)
 }
 
 void
+VRT_DelDirector(VCL_BACKEND *bp)
+{
+	struct vcldir *vdir;
+
+	AN(bp);
+	vdir = (*bp)->vdir;
+	CHECK_OBJ_NOTNULL(vdir, VCLDIR_MAGIC);
+	Lck_Lock(&vdir->dlck);
+	assert(vdir->refcnt == 1);
+	vdir->refcnt = 0;
+	Lck_Unlock(&vdir->dlck);
+	retire_backend(bp);
+}
+
+void
 VRT_Assign_Backend(VCL_BACKEND *dst, VCL_BACKEND src)
 {
+	int busy;
 
 	AN(dst);
 	CHECK_OBJ_ORNULL((*dst), DIRECTOR_MAGIC);
@@ -268,8 +280,10 @@ VRT_Assign_Backend(VCL_BACKEND *dst, VCL_BACKEND src)
 		CHECK_OBJ_NOTNULL((*dst)->vdir, VCLDIR_MAGIC);
 		Lck_Lock((*dst)->mtx);
 		assert((*dst)->vdir->refcnt > 0);
-		--(*dst)->vdir->refcnt;
+		busy = --(*dst)->vdir->refcnt;
 		Lck_Unlock((*dst)->mtx);
+		if (!busy)
+			retire_backend(dst);
 	}
 	if (src != NULL) {
 		CHECK_OBJ_NOTNULL(src->vdir, VCLDIR_MAGIC);
