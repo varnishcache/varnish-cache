@@ -49,11 +49,23 @@ Varnish Cache 6.0.9 (unreleased)
 * Add an option to `configure` to use `libunwind` for the stack backtrace
   in the panic output. (3717_)
 
+* A bug in ``vmod_blob`` for base64 decoding with a ``length`` argument
+  and non-padding decoding has been fixed (3378_)
+
+* The socket option inheritance checks now correctly identifies situations
+  where UDS and TCP listening sockets behave differently, and are no
+  longer subject to the order the inheritance checks happens to be
+  executed (3732_).
+
+* IPv6 listen endpoint address strings are now printed using brackets.
+
 .. _3617: https://github.com/varnishcache/varnish-cache/pull/3617
 .. _3437: https://github.com/varnishcache/varnish-cache/issues/3437'
 .. _3564: https://github.com/varnishcache/varnish-cache/issues/3564'
 .. _3716: https://github.com/varnishcache/varnish-cache/pull/3716'
 .. _3717: https://github.com/varnishcache/varnish-cache/pull/3717'
+.. _3378: https://github.com/varnishcache/varnish-cache/issues/3378'
+.. _3732: https://github.com/varnishcache/varnish-cache/pull/3732
 
 ================================
 Varnish Cache 6.0.8 (2021-07-13)
