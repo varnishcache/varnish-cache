@@ -252,6 +252,14 @@ VRT_DelDirector(VCL_BACKEND *bp)
 }
 
 void
+VRT_Assign_Backend(VCL_BACKEND *dst, VCL_BACKEND src)
+{
+
+	AN(dst);
+	*dst = src;
+}
+
+void
 VRT_DisableDirector(VCL_BACKEND d)
 {
 	struct vcldir *vdir;

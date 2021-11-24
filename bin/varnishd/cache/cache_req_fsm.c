@@ -876,7 +876,8 @@ cnt_recv_prep(struct req *req, const char *ci)
 		http_CollectHdr(req->http, H_Cache_Control);
 
 		/* By default we use the first backend */
-		req->director_hint = VCL_DefaultDirector(req->vcl);
+		VRT_Assign_Backend(&req->director_hint,
+		    VCL_DefaultDirector(req->vcl));
 
 		req->d_ttl = -1;
 		req->d_grace = -1;
@@ -1190,6 +1191,7 @@ CNT_Request(struct req *req)
 		VCL_TaskLeave(ctx, req->privs);
 		AN(req->vsl->wid);
 		VRB_Free(req);
+		VRT_Assign_Backend(&req->director_hint, NULL);
 		req->wrk = NULL;
 	}
 	assert(nxt == REQ_FSM_DISEMBARK || !WS_IsReserved(req->ws));

@@ -504,12 +504,21 @@ VRT_r_req_##nm(VRT_CTX)							\
 	return (ctx->req->elem);					\
 }
 
-REQ_VAR_L(backend_hint, director_hint, VCL_BACKEND,)
 REQ_VAR_R(backend_hint, director_hint, VCL_BACKEND)
+
 REQ_VAR_L(ttl, d_ttl, VCL_DURATION, if (!(arg>0.0)) arg = 0;)
 REQ_VAR_R(ttl, d_ttl, VCL_DURATION)
 REQ_VAR_L(grace, d_grace, VCL_DURATION, if (!(arg>0.0)) arg = 0;)
 REQ_VAR_R(grace, d_grace, VCL_DURATION)
+
+VCL_VOID
+VRT_l_req_backend_hint(VRT_CTX, VCL_BACKEND be)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	VRT_Assign_Backend(&ctx->req->director_hint, be);
+}
 
 /*--------------------------------------------------------------------*/
 
@@ -519,7 +528,7 @@ VRT_l_bereq_backend(VRT_CTX, VCL_BACKEND be)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
-	ctx->bo->director_req = be;
+	VRT_Assign_Backend(&ctx->bo->director_req, be);
 }
 
 VCL_BACKEND

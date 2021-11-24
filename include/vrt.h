@@ -53,6 +53,9 @@
  * Whenever something is deleted or changed in a way which is not
  * binary/load-time compatible, increment MAJOR version
  *
+ * Next (2021-03-15)
+ *	VRT_Assign_Backend added
+ *
  * 14.0 (2021-09-15)
  *	VIN_n_Arg() no directly returns the directory name.
  *	VSB_new() and VSB_delete() removed
@@ -682,6 +685,7 @@ VCL_BACKEND VRT_AddDirector(VRT_CTX, const struct vdi_methods *,
 void VRT_DisableDirector(VCL_BACKEND);
 VCL_BACKEND VRT_LookupDirector(VRT_CTX, VCL_STRING);
 void VRT_DelDirector(VCL_BACKEND *);
+void VRT_Assign_Backend(VCL_BACKEND *dst, VCL_BACKEND src);
 
 /***********************************************************************
  * vmod_priv related
