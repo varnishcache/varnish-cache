@@ -256,7 +256,7 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	if (IS_TOPREQ(req))
 		AZ(req->top->vcl0);
 
-	req->director_hint = NULL;
+	AZ(req->director_hint);
 	req->restarts = 0;
 
 	if (req->vcl != NULL)

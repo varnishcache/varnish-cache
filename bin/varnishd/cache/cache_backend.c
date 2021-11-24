@@ -54,9 +54,6 @@
 
 static const char * const vbe_proto_ident = "HTTP Backend";
 
-static VTAILQ_HEAD(, backend) backends = VTAILQ_HEAD_INITIALIZER(backends);
-static VTAILQ_HEAD(, backend) cool_backends =
-    VTAILQ_HEAD_INITIALIZER(cool_backends);
 static struct lock backends_mtx;
 
 /*--------------------------------------------------------------------*/
@@ -426,13 +423,9 @@ vbe_free(struct backend *be)
 
 	VSC_vbe_Destroy(&be->vsc_seg);
 	Lck_Lock(&backends_mtx);
-	if (be->cooled > 0)
-		VTAILQ_REMOVE(&cool_backends, be, list);
-	else
-		VTAILQ_REMOVE(&backends, be, list);
 	VSC_C_main->n_backend--;
-	VCP_Rel(&be->conn_pool);
 	Lck_Unlock(&backends_mtx);
+	VCP_Rel(&be->conn_pool);
 
 #define DA(x)	do { if (be->x != NULL) free(be->x); } while (0)
 #define DN(x)	/**/
@@ -630,21 +623,19 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 	}
 
 	Lck_Lock(&backends_mtx);
-	VTAILQ_INSERT_TAIL(&backends, be, list);
 	VSC_C_main->n_backend++;
 	Lck_Unlock(&backends_mtx);
 
 	be->director = VRT_AddDirector(ctx, m, be, "%s", vrt->vcl_name);
 
-	if (be->director != NULL) {
-		/* for cold VCL, update initial director state */
-		if (be->probe != NULL && ! vcl->temp->is_warm)
-			VBP_Update_Backend(be->probe);
-		return (be->director);
+	if (be->director == NULL) {
+		vbe_free(be);
+		return (NULL);
 	}
-
-	vbe_free(be);
-	return (NULL);
+	/* for cold VCL, update initial director state */
+	if (be->probe != NULL)
+		VBP_Update_Backend(be->probe);
+	return (be->director);
 }
 
 VCL_BACKEND
@@ -664,47 +655,11 @@ VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
 void
 VRT_delete_backend(VRT_CTX, VCL_BACKEND *dp)
 {
-	VCL_BACKEND d;
-	struct backend *be;
 
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	TAKE_OBJ_NOTNULL(d, dp, DIRECTOR_MAGIC);
-	CAST_OBJ_NOTNULL(be, d->priv, BACKEND_MAGIC);
-	Lck_Lock(be->director->mtx);
-	VRT_DisableDirector(be->director);
-	Lck_Unlock(be->director->mtx);
-	Lck_Lock(&backends_mtx);
-	AZ(be->cooled);
-	be->cooled = VTIM_real() + 60.;
-	VTAILQ_REMOVE(&backends, be, list);
-	VTAILQ_INSERT_TAIL(&cool_backends, be, list);
-	Lck_Unlock(&backends_mtx);
-
-	// NB. The backend is still usable for the ongoing transactions,
-	// this is why we don't bust the director's magic number.
-}
-
-/*---------------------------------------------------------------------*/
-
-void
-VBE_Poll(void)
-{
-	struct backend *be, *be2;
-	vtim_real now = VTIM_real();
-
-	ASSERT_CLI();
-	Lck_Lock(&backends_mtx);
-	VTAILQ_FOREACH_SAFE(be, &cool_backends, list, be2) {
-		CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
-		if (be->cooled > now)
-			break;
-		if (be->n_conn > 0)
-			continue;
-		Lck_Unlock(&backends_mtx);
-		VRT_DelDirector(&be->director);
-		Lck_Lock(&backends_mtx);
-	}
-	Lck_Unlock(&backends_mtx);
+	(void)ctx;
+	CHECK_OBJ_NOTNULL(*dp, DIRECTOR_MAGIC);
+	VRT_DisableDirector(*dp);
+	VRT_Assign_Backend(dp, NULL);
 }
 
 /*---------------------------------------------------------------------*/

@@ -140,7 +140,7 @@ VCL_Rel(struct vcl **vcc)
 
 /*--------------------------------------------------------------------*/
 
-void
+static void
 vcldir_free(struct vcldir *vdir)
 {
 
