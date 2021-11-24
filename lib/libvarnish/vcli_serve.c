@@ -137,7 +137,7 @@ VCLS_func_help(struct cli *cli, const char * const *av, void *priv)
 	cs = cli->cls;
 	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
 
-        for (av += 2; av[0] != NULL && av[0][0] == '-'; av++) {
+	for (av += 2; av[0] != NULL && av[0][0] == '-'; av++) {
 		if (!strcmp(av[0], "-a")) {
 			filter = 3;
 		} else if (!strcmp(av[0], "-d")) {
