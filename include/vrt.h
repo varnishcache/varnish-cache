@@ -55,6 +55,7 @@
  *
  * Next (2021-03-15)
  *	VRT_Assign_Backend added
+ *	VRT_StaticDirector added
  *
  * 14.0 (2021-09-15)
  *	VIN_n_Arg() no directly returns the directory name.
@@ -683,6 +684,7 @@ VCL_VOID VRT_SetChanged(VCL_BACKEND, VCL_TIME);
 VCL_BACKEND VRT_AddDirector(VRT_CTX, const struct vdi_methods *,
     void *, const char *, ...) v_printflike_(4, 5);
 void VRT_DisableDirector(VCL_BACKEND);
+void VRT_StaticDirector(VCL_BACKEND);
 VCL_BACKEND VRT_LookupDirector(VRT_CTX, VCL_STRING);
 void VRT_DelDirector(VCL_BACKEND *);
 void VRT_Assign_Backend(VCL_BACKEND *dst, VCL_BACKEND src);
