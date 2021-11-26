@@ -200,17 +200,23 @@ vmod_ip(VRT_CTX, struct VARGS(ip) *a)
 {
 	uintptr_t sn;
 	void *p;
-	VCL_IP retval = NULL;
+	VCL_IP retval = NULL, fb = bogo_ip;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	if (a->valid_fallback)
-		assert(VSA_Sane(a->fallback));
+
+	if (a->valid_fallback) {
+		if (a->fallback == NULL || !VSA_Sane(a->fallback)) {
+			VRT_fail(ctx, "std.ip: invalid fallback");
+			return (fb);
+		}
+		fb = a->fallback;
+	}
 
 	sn = WS_Snapshot(ctx->ws);
 	p = WS_Alloc(ctx->ws, vsa_suckaddr_len);
 	if (p == NULL) {
 		VRT_fail(ctx, "std.ip: insufficient workspace");
-		return (NULL);
+		return (fb);
 	}
 
 	if (a->s != NULL)
@@ -224,11 +230,10 @@ vmod_ip(VRT_CTX, struct VARGS(ip) *a)
 
 	WS_Reset(ctx->ws, sn);
 
-	if (a->valid_fallback)
-		return (a->fallback);
+	if (!a->valid_fallback)
+		VRT_fail(ctx, "std.ip: conversion failed");
 
-	VRT_fail(ctx, "std.ip: conversion failed");
-	return (NULL);
+	return (fb);
 }
 
 VCL_REAL v_matchproto_(td_std_real)
