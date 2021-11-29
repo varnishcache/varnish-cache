@@ -78,12 +78,14 @@ const struct type BACKEND[1] = {{
 const struct type BLOB[1] = {{
 	.magic =		TYPE_MAGIC,
 	.name =			"BLOB",
+	.bodyform =		1,
 	.tostring =		"VRT_BLOB_string(ctx, \v1)",
 }};
 
 const struct type BODY[1] = {{
 	.magic =		TYPE_MAGIC,
 	.name =			"BODY",
+	.noindent =		1,
 }};
 
 const struct type BOOL[1] = {{
@@ -199,6 +201,7 @@ const struct type STRINGS[1] = {{
 	.magic =		TYPE_MAGIC,
 	.name =			"STRINGS",
 	.methods =		strings_methods,
+	.bodyform =		1,
 	.tostring =		"",
 }};
 

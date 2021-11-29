@@ -56,6 +56,14 @@
  * Next (2021-03-15)
  *	VRT_Assign_Backend added
  *	VRT_StaticDirector added
+ *	enum lbody_e changed
+ *	- previous enum lbody_e values are defined as macros
+ *	The following functions changed to take `const char *, BODY`:
+ *	- VRT_l_beresp_body()
+ *	- VRT_l_resp_body()
+ *	BODY can either be a BLOB or a STRANDS, but only a STRANDS
+ *	can take a non-NULL const char * prefix. The changes to BODY
+ *	assignments doesn't break the ABI or the API.
  *
  * 14.0 (2021-09-15)
  *	VIN_n_Arg() no directly returns the directory name.
@@ -328,7 +336,7 @@ extern const struct vrt_blob *vrt_null_blob;
 typedef const struct vrt_acl *			VCL_ACL;
 typedef const struct director *			VCL_BACKEND;
 typedef const struct vrt_blob *			VCL_BLOB;
-typedef const char *				VCL_BODY;
+typedef const void *				VCL_BODY;
 typedef unsigned				VCL_BOOL;
 typedef int64_t					VCL_BYTES;
 typedef vtim_dur				VCL_DURATION;
@@ -615,9 +623,14 @@ VCL_STRING VRT_GetHdr(VRT_CTX, VCL_HEADER);
  */
 
 enum lbody_e {
-	LBODY_SET,
-	LBODY_ADD,
+	LBODY_SET_STRING,
+	LBODY_ADD_STRING,
+	LBODY_SET_BLOB,
+	LBODY_ADD_BLOB,
 };
+
+#define LBODY_SET LBODY_SET_STRING
+#define LBODY_ADD LBODY_ADD_STRING
 
 VCL_BYTES VRT_CacheReqBody(VRT_CTX, VCL_BYTES maxsize);
 

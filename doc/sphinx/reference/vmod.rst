@@ -302,6 +302,13 @@ BLOB
 	An opaque type to pass random bits of memory between VMOD
 	functions.
 
+BODY
+	C-type: ``const void *``
+
+	A type only used on the LHS of an assignment that can take
+	either a blob or an expression that can be converted to a
+	string.
+
 BOOL
 	C-type: ``unsigned``
 

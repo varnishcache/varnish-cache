@@ -237,8 +237,10 @@ vcc_expr_fmt(struct vsb *d, int ind, const struct expr *e1)
 	char *p;
 	int i;
 
-	for (i = 0; i < ind; i++)
-		VSB_cat(d, " ");
+	if (!e1->fmt->noindent) {
+		for (i = 0; i < ind; i++)
+			VSB_putc(d, ' ');
+	}
 	p = VSB_data(e1->vsb);
 	while (*p != '\0') {
 		if (*p == '\n') {
@@ -246,7 +248,7 @@ vcc_expr_fmt(struct vsb *d, int ind, const struct expr *e1)
 			if (*++p == '\0')
 				break;
 			for (i = 0; i < ind; i++)
-				VSB_cat(d, " ");
+				VSB_putc(d, ' ');
 		} else if (*p != '\v') {
 			VSB_putc(d, *p++);
 		} else {
@@ -1417,6 +1419,8 @@ vcc_expr0(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		vcc_expr_cor(tl, e, fmt);
 	ERRCHK(tl);
 
+	assert((*e)->fmt != BODY);
+
 	if ((*e)->fmt == fmt)
 		return;
 
@@ -1429,6 +1433,18 @@ vcc_expr0(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		    vcc_utype(fmt), fmt->name);
 		vcc_ErrWhere2(tl, t1, tl->t);
 		return;
+	}
+
+	if (fmt == BODY && !(*e)->fmt->bodyform)
+		vcc_expr_tostring(tl, e, STRINGS);
+
+	if (fmt == BODY && (*e)->fmt->bodyform) {
+		if ((*e)->fmt == STRINGS)
+			*e = vcc_expr_edit(tl, BODY, "STRING, 0, \vT", *e, NULL);
+		else if ((*e)->fmt == BLOB)
+			*e = vcc_expr_edit(tl, BODY, "BLOB, 0, \v1", *e, NULL);
+		else
+			WRONG("Unhandled bodyform");
 	}
 
 	if ((*e)->fmt == STRINGS && fmt->stringform) {

@@ -965,17 +965,29 @@ VRT_r_resp_do_esi(VRT_CTX)
 #define VRT_BODY_L(which)					\
 VCL_VOID							\
 VRT_l_##which##_body(VRT_CTX, enum lbody_e type,		\
-    const char *str, VCL_STRANDS s)				\
+    const char *str, VCL_BODY body)				\
 {								\
 	int n;							\
 	struct vsb *vsb;					\
+	VCL_STRANDS s;						\
+	VCL_BLOB b;						\
 								\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
+	AN(body);						\
 	CAST_OBJ_NOTNULL(vsb, ctx->specific, VSB_MAGIC);	\
-	assert(type == LBODY_SET || type == LBODY_ADD);		\
-	if (type == LBODY_SET)					\
+	if (type == LBODY_SET_STRING || type == LBODY_SET_BLOB)	\
 		VSB_clear(vsb);					\
+	if (type == LBODY_SET_BLOB || type == LBODY_ADD_BLOB) {	\
+		AZ(str);					\
+		b = body;					\
+		VSB_bcat(vsb, b->blob, b->len);			\
+		return;						\
+	}							\
 	if (str != NULL)					\
 		VSB_cat(vsb, str);				\
+	assert(type == LBODY_SET_STRING ||			\
+	    type == LBODY_ADD_STRING);				\
+	s = body;						\
 	for (n = 0; s != NULL && n < s->n; n++)			\
 		if (s->p[n] != NULL)				\
 			VSB_cat(vsb, s->p[n]);			\

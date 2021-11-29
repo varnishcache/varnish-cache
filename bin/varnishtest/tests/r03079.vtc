@@ -26,7 +26,7 @@ client c1 {
 	expect resp.http.x-powered-by == varnishtest1002
 } -run
 
-# set BODY [+]= STRINGS;
+# set BODY [+]= STRINGS|BLOB;
 
 varnish v1 -vcl {
 	import blob;
@@ -50,11 +50,20 @@ varnish v1 -vcl {
 				set resp.body += "world";
 			}
 		}
+		if (req.url ~ "blob") {
+			set resp.body = blob.decode(HEX, encoded="1100");
+			if (req.url ~ "reset") {
+				set resp.body = blob.decode(HEX, encoded="221100");
+			}
+			if (req.url ~ "add") {
+				set resp.body += blob.decode(HEX, encoded="221100");
+			}
+		}
 		return (deliver);
 	}
 }
 
-client c1 {
+client c2 {
 	txreq -url "/synth"
 	rxresp
 	expect resp.body == hello
@@ -74,4 +83,16 @@ client c1 {
 	txreq -url "/string/add"
 	rxresp
 	expect resp.body == helloworld
+
+	txreq -url "/blob"
+	rxresp
+	expect resp.bodylen == 2
+
+	txreq -url "/blob/reset"
+	rxresp
+	expect resp.bodylen == 3
+
+	txreq -url "/blob/add"
+	rxresp
+	expect resp.bodylen == 5
 } -run
