@@ -226,7 +226,7 @@ do
 	        rm -rf varnish-trunk > /dev/null 2>&1 || true
 	        git reset --hard > /dev/null 2>&1 || true
 	        git clean -df > /dev/null 2>&1 || true
-	        git pull > /dev/null 2>&1
+	        git pull > /dev/null 2>&1 || true
 	)
 	rev=`cd "${SRCDIR}" && git show -s --pretty=format:%H`
 	if [ "x${rev}" != "x${orev}" ] ; then
