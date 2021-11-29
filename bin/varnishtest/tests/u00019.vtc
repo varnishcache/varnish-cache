@@ -15,4 +15,4 @@ client c1 {
 
 shell {varnishlog -d -w - -n ${v1_name} | gzip >vsl.gz}
 shell {ls -l}
-shell -match "RespStatus +503" {zcat vsl.gz | varnishlog -r -}
+shell -match "RespStatus +503" {gunzip < vsl.gz | varnishlog -r -}
