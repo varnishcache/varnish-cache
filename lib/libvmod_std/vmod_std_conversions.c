@@ -90,7 +90,7 @@ vmod_ip(VRT_CTX, VCL_STRING s, VCL_IP d, VCL_BOOL n, VCL_STRING default_port)
 	p = WS_Alloc(ctx->ws, vsa_suckaddr_len);
 	if (p == NULL) {
 		VRT_fail(ctx, "std.ip: insufficient workspace");
-		return (NULL);
+		return (d);
 	}
 
 	if (s != NULL)
