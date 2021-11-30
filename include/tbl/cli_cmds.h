@@ -146,10 +146,10 @@ CLI_CMD(VCL_DEPS,
 
 CLI_CMD(VCL_SHOW,
 	"vcl.show",
-	"vcl.show [-v] <configname>",
+	"vcl.show [-v] [<configname>]",
 	"Display the source code for the specified configuration.",
 	"",
-	1, 2
+	0, 2
 )
 
 CLI_CMD(VCL_USE,

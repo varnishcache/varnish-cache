@@ -946,28 +946,33 @@ vcl_cli_show(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vcl *vcl;
 	int verbose = 0;
-	int i;
+	int i = 2;
 
 	ASSERT_CLI();
 	ASSERT_VCL_ACTIVE();
 	AZ(priv);
-	if (!strcmp(av[2], "-v") && av[3] == NULL) {
-		VCLI_Out(cli, "Too few parameters");
-		VCLI_SetResult(cli, CLIS_TOOFEW);
-		return;
-	} else if (strcmp(av[2], "-v") && av[3] != NULL) {
-		VCLI_Out(cli, "Unknown options '%s'", av[2]);
+
+	if (av[i] != NULL && !strcmp(av[i], "-v")) {
+		verbose = 1;
+		i++;
+	}
+
+	if (av[i] == NULL) {
+		vcl = vcl_active;
+		AN(vcl);
+	} else {
+		vcl = vcl_find(av[i]);
+		i++;
+	}
+
+	if (av[i] != NULL) {
+		VCLI_Out(cli, "Too many parameters: '%s'", av[i]);
 		VCLI_SetResult(cli, CLIS_PARAM);
 		return;
-	} else if (av[3] != NULL) {
-		verbose = 1;
-		vcl = vcl_find(av[3]);
-	} else
-		vcl = vcl_find(av[2]);
+	}
 
 	if (vcl == NULL) {
-		VCLI_Out(cli, "No VCL named '%s'",
-		    av[3] == NULL ? av[2] : av[3]);
+		VCLI_Out(cli, "No VCL named '%s'", av[i - 1]);
 		VCLI_SetResult(cli, CLIS_PARAM);
 		return;
 	}
