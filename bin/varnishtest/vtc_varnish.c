@@ -699,7 +699,7 @@ varnish_wait(struct varnish *v)
 	/* Then stop it */
 	varnish_stop(v);
 
-	if (varnish_ask_cli(v, "panic.clear", NULL) != CLIS_CANT)
+	if (varnish_ask_cli(v, "panic.show", NULL) != CLIS_CANT)
 		vtc_fatal(v->vl, "Unexpected panic");
 
 	varnish_cleanup(v);
