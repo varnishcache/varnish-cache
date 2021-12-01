@@ -562,7 +562,8 @@ vtx_retire(struct VSLQ *vslq, struct vtx **pvtx)
 	AZ(vtx->n_child);
 	AZ(vtx->n_descend);
 	vtx->n_childready = 0;
-	AN(VRBT_REMOVE(vtx_tree, &vslq->tree, &vtx->key));
+	// remove rval is no way to check if element was present
+	(void)VRBT_REMOVE(vtx_tree, &vslq->tree, &vtx->key);
 	vtx->key.vxid = 0;
 	vtx->flags = 0;
 
