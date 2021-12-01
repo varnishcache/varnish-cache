@@ -57,17 +57,14 @@ struct vfilter {
 	VTAILQ_ENTRY(vfilter)		list;
 };
 
-static struct vfilter_head vfp_filters =
-    VTAILQ_HEAD_INITIALIZER(vfp_filters);
-
-static struct vfilter_head vdp_filters =
-    VTAILQ_HEAD_INITIALIZER(vdp_filters);
+static struct vfilter_head vrt_filters =
+    VTAILQ_HEAD_INITIALIZER(vrt_filters);
 
 void
 VRT_AddVFP(VRT_CTX, const struct vfp *filter)
 {
 	struct vfilter *vp;
-	struct vfilter_head *hd = &vfp_filters;
+	struct vfilter_head *hd = &vrt_filters;
 
 	CHECK_OBJ_ORNULL(ctx, VRT_CTX_MAGIC);
 	AN(filter);
@@ -75,14 +72,18 @@ VRT_AddVFP(VRT_CTX, const struct vfp *filter)
 	AN(*filter->name);
 
 	VTAILQ_FOREACH(vp, hd, list) {
+                if (vp->vfp == NULL)
+			continue;
 		xxxassert(vp->vfp != filter);
 		xxxassert(strcasecmp(vp->name, filter->name));
 	}
 	if (ctx != NULL) {
 		ASSERT_CLI();
 		CHECK_OBJ_NOTNULL(ctx->vcl, VCL_MAGIC);
-		hd = &ctx->vcl->vfps;
+		hd = &ctx->vcl->filters;
 		VTAILQ_FOREACH(vp, hd, list) {
+			if (vp->vfp == NULL)
+				continue;
 			xxxassert(vp->vfp != filter);
 			xxxassert(strcasecmp(vp->name, filter->name));
 		}
@@ -99,7 +100,7 @@ void
 VRT_AddVDP(VRT_CTX, const struct vdp *filter)
 {
 	struct vfilter *vp;
-	struct vfilter_head *hd = &vdp_filters;
+	struct vfilter_head *hd = &vrt_filters;
 
 	CHECK_OBJ_ORNULL(ctx, VRT_CTX_MAGIC);
 	AN(filter);
@@ -107,14 +108,18 @@ VRT_AddVDP(VRT_CTX, const struct vdp *filter)
 	AN(*filter->name);
 
 	VTAILQ_FOREACH(vp, hd, list) {
+                if (vp->vdp == NULL)
+			continue;
 		xxxassert(vp->vdp != filter);
 		xxxassert(strcasecmp(vp->name, filter->name));
 	}
 	if (ctx != NULL) {
 		ASSERT_CLI();
 		CHECK_OBJ_NOTNULL(ctx->vcl, VCL_MAGIC);
-		hd = &ctx->vcl->vdps;
+		hd = &ctx->vcl->filters;
 		VTAILQ_FOREACH(vp, hd, list) {
+			if (vp->vdp == NULL)
+				continue;
 			xxxassert(vp->vdp != filter);
 			xxxassert(strcasecmp(vp->name, filter->name));
 		}
@@ -135,7 +140,7 @@ VRT_RemoveVFP(VRT_CTX, const struct vfp *filter)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->vcl, VCL_MAGIC);
-	hd = &ctx->vcl->vfps;
+	hd = &ctx->vcl->filters;
 	AN(filter);
 	AN(filter->name);
 	AN(*filter->name);
@@ -159,7 +164,7 @@ VRT_RemoveVDP(VRT_CTX, const struct vdp *filter)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->vcl, VCL_MAGIC);
-	hd = &ctx->vcl->vdps;
+	hd = &ctx->vcl->filters;
 	AN(filter);
 	AN(filter->name);
 	AN(*filter->name);
@@ -179,7 +184,7 @@ static const struct vfilter vfilter_error[1];
 
 // XXX: idea(fgs): Allow filters (...) arguments in the list
 static const struct vfilter *
-vcl_filter_list_iter(const struct vfilter_head *h1,
+vcl_filter_list_iter(int want_vfp, const struct vfilter_head *h1,
     const struct vfilter_head *h2, const char **flp)
 {
 	const char *fl, *q;
@@ -201,12 +206,22 @@ vcl_filter_list_iter(const struct vfilter_head *h1,
 	for (q = fl; *q && !vct_isspace(*q); q++)
 		continue;
 	*flp = q;
-	VTAILQ_FOREACH(vp, h1, list)
+	VTAILQ_FOREACH(vp, h1, list) {
+		if (want_vfp && vp->vfp == NULL)
+			continue;
+		else if (!want_vfp && vp->vdp == NULL)
+			continue;
 		if (vp->nlen == q - fl && !memcmp(fl, vp->name, vp->nlen))
 			return (vp);
-	VTAILQ_FOREACH(vp, h2, list)
+	}
+	VTAILQ_FOREACH(vp, h2, list) {
+		if (want_vfp && vp->vfp == NULL)
+			continue;
+		else if (!want_vfp && vp->vdp == NULL)
+			continue;
 		if (vp->nlen == q - fl && !memcmp(fl, vp->name, vp->nlen))
 			return (vp);
+	}
 	*flp = fl;
 	return (vfilter_error);
 }
@@ -220,7 +235,7 @@ VCL_StackVFP(struct vfp_ctx *vc, const struct vcl *vcl, const char *fl)
 	VSLb(vc->wrk->vsl, SLT_Filters, "%s", fl);
 
 	while (1) {
-		vp = vcl_filter_list_iter(&vfp_filters, &vcl->vfps, &fl);
+		vp = vcl_filter_list_iter(1, &vrt_filters, &vcl->filters, &fl);
 		if (vp == NULL)
 			return (0);
 		if (vp == vfilter_error)
@@ -238,7 +253,7 @@ VCL_StackVDP(struct req *req, const struct vcl *vcl, const char *fl)
 	AN(fl);
 	VSLb(req->vsl, SLT_Filters, "%s", fl);
 	while (1) {
-		vp = vcl_filter_list_iter(&vdp_filters, &vcl->vdps, &fl);
+		vp = vcl_filter_list_iter(0, &vrt_filters, &vcl->filters, &fl);
 		if (vp == NULL)
 			return (0);
 		if (vp == vfilter_error) {

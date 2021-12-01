@@ -516,8 +516,7 @@ VCL_Close(struct vcl **vclp)
 	struct vcl *vcl;
 
 	TAKE_OBJ_NOTNULL(vcl, vclp, VCL_MAGIC);
-	assert(VTAILQ_EMPTY(&vcl->vfps));
-	assert(VTAILQ_EMPTY(&vcl->vdps));
+	assert(VTAILQ_EMPTY(&vcl->filters));
 	AZ(dlclose(vcl->dlh));
 	FREE_OBJ(vcl);
 }
@@ -685,8 +684,7 @@ vcl_load(struct cli *cli,
 	XXXAN(vcl->loaded_name);
 	VTAILQ_INIT(&vcl->director_list);
 	VTAILQ_INIT(&vcl->ref_list);
-	VTAILQ_INIT(&vcl->vfps);
-	VTAILQ_INIT(&vcl->vdps);
+	VTAILQ_INIT(&vcl->filters);
 
 	vcl->temp = VCL_TEMP_INIT;
 

@@ -55,8 +55,7 @@ struct vcl {
 	int			nrefs;
 	struct vcl		*label;
 	int			nlabels;
-	struct vfilter_head	vfps;
-	struct vfilter_head	vdps;
+	struct vfilter_head	filters;
 };
 
 struct vclref {
