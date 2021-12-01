@@ -70,7 +70,7 @@ extern void mylog(struct vsl_log *vsl, enum VSL_tag_e tag,
 /**********************************************************************/
 
 static enum vfp_status v_matchproto_(vfp_pull_f)
-xyzzy_rot13_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
+xyzzy_vfp_rot13_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
     ssize_t *lp)
 {
 	enum vfp_status vp;
@@ -91,9 +91,9 @@ xyzzy_rot13_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 	return (vp);
 }
 
-static const struct vfp xyzzy_rot13 = {
+static const struct vfp xyzzy_vfp_rot13 = {
 	.name = "rot13",
-	.pull = xyzzy_rot13_pull,
+	.pull = xyzzy_vfp_rot13_pull,
 };
 
 /**********************************************************************/
@@ -102,7 +102,7 @@ static const struct vfp xyzzy_rot13 = {
 #define ROT13_BUFSZ 8
 
 static int v_matchproto_(vdp_init_f)
-xyzzy_rot13_init(struct vdp_ctx *vdc, void **priv, struct objcore *oc)
+xyzzy_vfp_rot13_init(struct vdp_ctx *vdc, void **priv, struct objcore *oc)
 {
 	(void)vdc;
 	(void)oc;
@@ -114,7 +114,7 @@ xyzzy_rot13_init(struct vdp_ctx *vdc, void **priv, struct objcore *oc)
 }
 
 static int v_matchproto_(vdp_bytes_f)
-xyzzy_rot13_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
+xyzzy_vfp_rot13_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
 	char *q;
@@ -152,7 +152,7 @@ xyzzy_rot13_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 }
 
 static int v_matchproto_(vdp_fini_f)
-xyzzy_rot13_fini(struct vdp_ctx *vdc, void **priv)
+xyzzy_vfp_rot13_fini(struct vdp_ctx *vdc, void **priv)
 {
 	(void)vdc;
 	AN(priv);
@@ -163,9 +163,9 @@ xyzzy_rot13_fini(struct vdp_ctx *vdc, void **priv)
 
 static const struct vdp xyzzy_vdp_rot13 = {
 	.name  = "rot13",
-	.init  = xyzzy_rot13_init,
-	.bytes = xyzzy_rot13_bytes,
-	.fini  = xyzzy_rot13_fini,
+	.init  = xyzzy_vfp_rot13_init,
+	.bytes = xyzzy_vfp_rot13_bytes,
+	.fini  = xyzzy_vfp_rot13_fini,
 };
 
 /**********************************************************************
@@ -451,9 +451,19 @@ event_load(VRT_CTX, struct vmod_priv *priv)
 	priv->priv = priv_vcl;
 	priv->methods = priv_vcl_methods;
 
-	VRT_AddVFP(ctx, &xyzzy_rot13);
-
+	VRT_AddVFP(ctx, &xyzzy_vfp_rot13);
 	VRT_AddVDP(ctx, &xyzzy_vdp_rot13);
+
+	// This should fail
+	AN(VRT_AddFilter(ctx, &xyzzy_vfp_rot13, &xyzzy_vdp_rot13));
+	// Reset the error, we know what we're doing.
+	*ctx->handling = 0;
+
+	VRT_RemoveVFP(ctx, &xyzzy_vfp_rot13);
+	VRT_RemoveVDP(ctx, &xyzzy_vdp_rot13);
+
+	AZ(VRT_AddFilter(ctx, &xyzzy_vfp_rot13, &xyzzy_vdp_rot13));
+
 	VRT_AddVDP(ctx, &xyzzy_vdp_pedantic);
 	return (0);
 }
@@ -616,8 +626,7 @@ event_discard(VRT_CTX, void *priv)
 
 	AZ(ctx->msg);
 
-	VRT_RemoveVFP(ctx, &xyzzy_rot13);
-	VRT_RemoveVDP(ctx, &xyzzy_vdp_rot13);
+	VRT_RemoveFilter(ctx, &xyzzy_vfp_rot13, &xyzzy_vdp_rot13);
 	VRT_RemoveVDP(ctx, &xyzzy_vdp_pedantic);
 
 	if (--loads)
