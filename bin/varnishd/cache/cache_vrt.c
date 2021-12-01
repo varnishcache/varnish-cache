@@ -664,6 +664,7 @@ VRT_fail(VRT_CTX, const char *fmt, ...)
 {
 	va_list ap;
 
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	assert(ctx->vsl != NULL || ctx->msg != NULL);
 	AN(ctx->handling);
 	if (*ctx->handling == VCL_RET_FAIL)
