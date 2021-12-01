@@ -475,7 +475,7 @@ VSLbv(struct vsl_log *vsl, enum VSL_tag_e tag, const char *fmt, va_list ap)
 		n = mlen - 1;	/* we truncate long fields */
 	p[n++] = '\0';		/* NUL-terminated */
 	vsl->wlp = vsl_hdr(tag, vsl->wlp, n, vsl->wid);
-	assert(vsl->wlp < vsl->wle);
+	assert(vsl->wlp <= vsl->wle);
 	vsl->wlr++;
 
 	if (DO_DEBUG(DBG_SYNCVSL))
