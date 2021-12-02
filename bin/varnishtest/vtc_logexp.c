@@ -370,7 +370,7 @@ logexp_match(const struct logexp *le, struct logexp_test *test,
     const char *data, int vxid, int tag, int type, int len)
 {
 	const char *legend;
-	int ok = 1, skip = 0, alt, fail;
+	int ok = 1, skip = 0, alt, fail, vxid_ok = 0;
 
 	AN(le);
 	AN(test);
@@ -380,9 +380,11 @@ logexp_match(const struct logexp *le, struct logexp_test *test,
 	if (test->vxid == LE_LAST) {
 		if (le->vxid_last != vxid)
 			ok = 0;
+		vxid_ok = ok;
 	} else if (test->vxid >= 0) {
 		if (test->vxid != vxid)
 			ok = 0;
+		vxid_ok = ok;
 	}
 	if (test->tag == LE_LAST) {
 		if (le->tag_last != tag)
@@ -404,9 +406,14 @@ logexp_match(const struct logexp *le, struct logexp_test *test,
 		    test->skip_max > le->skip_cnt))
 		skip = 1;
 
+	if (skip && vxid_ok && tag == SLT_End)
+		fail = 1;
+
 	if (fail) {
 		if (ok)
 			legend = "fail";
+		else if (skip)
+			legend = "end";
 		else if (le->m_arg)
 			legend = "fmiss";
 		else
@@ -438,7 +445,7 @@ logexp_match(const struct logexp *le, struct logexp_test *test,
 		vtc_log(le->vl, 3, "alt      | %s", VSB_data(test->str));
 		return (logexp_match(le, test, data, vxid, tag, type, len));
 	}
-	if (skip)
+	if (skip && !fail)
 		return (LEM_SKIP);
 	return (LEM_FAIL);
 }
