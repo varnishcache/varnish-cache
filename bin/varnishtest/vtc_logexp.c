@@ -345,17 +345,17 @@ logexp_next(struct logexp *le)
 		logexp_next(le);
 		return;
 	case LE_CLEAR:
-		vtc_log(le->vl, 3, "condition| fail clear");
+		vtc_log(le->vl, 3, "cond | fail clear");
 		VTAILQ_INIT(&le->fail);
 		logexp_next(le);
 		return;
 	case LE_FAIL:
-		vtc_log(le->vl, 3, "condition| %s", VSB_data(le->test->str));
+		vtc_log(le->vl, 3, "cond | %s", VSB_data(le->test->str));
 		VTAILQ_INSERT_TAIL(&le->fail, le->test, faillist);
 		logexp_next(le);
 		return;
 	default:
-		vtc_log(le->vl, 3, "expecting| %s", VSB_data(le->test->str));
+		vtc_log(le->vl, 3, "test | %s", VSB_data(le->test->str));
 	}
 }
 
@@ -413,7 +413,7 @@ logexp_match(const struct logexp *le, struct logexp_test *test,
 		if (ok)
 			legend = "fail";
 		else if (skip)
-			legend = "end";
+			legend = "end", skip = 0;
 		else if (le->m_arg)
 			legend = "fmiss";
 		else
@@ -442,10 +442,10 @@ logexp_match(const struct logexp *le, struct logexp_test *test,
 		test = logexp_alt(test);
 		if (test == NULL)
 			return (LEM_FAIL);
-		vtc_log(le->vl, 3, "alt      | %s", VSB_data(test->str));
+		vtc_log(le->vl, 3, "alt  | %s", VSB_data(test->str));
 		return (logexp_match(le, test, data, vxid, tag, type, len));
 	}
-	if (skip && !fail)
+	if (skip)
 		return (LEM_SKIP);
 	return (LEM_FAIL);
 }
@@ -549,24 +549,24 @@ logexp_thread(void *priv)
 	AZ(le->test);
 	vtc_log(le->vl, 4, "begin|");
 	if (le->query != NULL)
-		vtc_log(le->vl, 4, "qry| %s", le->query);
+		vtc_log(le->vl, 4, "qry  | %s", le->query);
 	logexp_next(le);
 	while (!logexp_done(le) && !vtc_stop && !vtc_error) {
 		i = VSLQ_Dispatch(le->vslq, logexp_dispatch, le);
 		if (i == 2 && le->err_arg) {
-			vtc_log(le->vl, 4, "end| failed as expected");
+			vtc_log(le->vl, 4, "done | failed as expected");
 			return (NULL);
 		}
 		if (i == 2)
-			vtc_fatal(le->vl, "bad| expectation failed");
+			vtc_fatal(le->vl, "bad  | expectation failed");
 		else if (i < 0)
-			vtc_fatal(le->vl, "bad| dispatch failed (%d)", i);
+			vtc_fatal(le->vl, "bad  | dispatch failed (%d)", i);
 		else if (i == 0 && ! logexp_done(le))
 			VTIM_sleep(0.01);
 	}
 	if (!logexp_done(le))
-		vtc_fatal(le->vl, "bad| outstanding expectations");
-	vtc_log(le->vl, 4, "end|");
+		vtc_fatal(le->vl, "bad  | outstanding expectations");
+	vtc_log(le->vl, 4, "done |");
 
 	return (NULL);
 }
