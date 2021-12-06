@@ -3,8 +3,13 @@ varnishtest "Test vcl defined via backends"
 server s1 {
 	loop 5 {
 		rxreq
-		txresp
+		txresp -hdr "Server: s1"
 	}
+} -start
+
+server s2 {
+	rxreq
+	txresp -hdr "Server: s2"
 } -start
 
 # the use case for via-proxy is to have a(n ha)proxy make a(n ssl)
@@ -13,20 +18,23 @@ server s1 {
 # not use any prior information for the actual backend connection -
 # just the information from the proxy protocol
 
-varnish v2 -proto PROXY -vcl {
-	import debug;
+varnish v2 -proto PROXY -vcl+backend {
 	import std;
 	import proxy;
 
-	backend dummy { .host = "${bad_backend}"; }
-
-	sub vcl_init {
-		new s1 = debug.dyn("0.0.0.0", "0");
-	}
-
 	sub vcl_recv {
-		s1.refresh(server.ip, std.port(server.ip));
-		set req.backend_hint = s1.backend();
+		if (server.ip == "${s1_addr}" &&
+		    std.port(server.ip) == ${s1_port}) {
+			set req.backend_hint = s1;
+		} else
+		if (server.ip == "${s2_addr}" &&
+		    std.port(server.ip) == ${s2_port}) {
+			set req.backend_hint = s2;
+		}
+		else {
+		    return (synth(404, "unknown backend"));
+		}
+		std.log("PROXY " + req.url + " -> " + req.backend_hint);
 		return (pass);
 	}
 
@@ -35,24 +43,42 @@ varnish v2 -proto PROXY -vcl {
 	}
 } -start
 
+varnish v2 -cliok "param.set debug +syncvsl"
+
 varnish v1 -vcl {
 	backend v2 { .host = "${v2_addr}"; .port = "${v2_port}"; }
 	backend s1 { .via = v2; .host = "${s1_addr}"; .port = "${s1_port}"; }
+	backend s2 { .via = v2; .host = "${s2_addr}"; .port = "${s2_port}"; }
 
 	sub vcl_recv {
-		set req.backend_hint = s1;
+		if (req.url ~ "^/s1/") {
+			set req.backend_hint = s1;
+		} else if (req.url ~ "^/s2/") {
+			set req.backend_hint = s2;
+		} else {
+			return (synth(400));
+		}
 	}
 } -start
 
 client c1 {
-	txreq -url /1
+	txreq -url /s1/1
 	rxresp
 	expect resp.status == 200
 	expect resp.http.Authority == "127.0.0.1"
-	txreq -url /2
+	expect resp.http.Server == "s1"
+
+	txreq -url /s2/1
 	rxresp
 	expect resp.status == 200
 	expect resp.http.Authority == "127.0.0.1"
+	expect resp.http.Server == "s2"
+
+	txreq -url /s1/2
+	rxresp
+	expect resp.status == 200
+	expect resp.http.Authority == "127.0.0.1"
+	expect resp.http.Server == "s1"
 } -run
 
 varnish v1 -vcl {
@@ -71,7 +97,7 @@ varnish v1 -vcl {
 }
 
 client c1 {
-	txreq -url /3
+	txreq -url /s1/3
 	rxresp
 	expect resp.status == 200
 	expect resp.http.Authority == "authority.com"
@@ -93,7 +119,7 @@ varnish v1 -vcl {
 }
 
 client c1 {
-	txreq -url /4
+	txreq -url /s1/4
 	rxresp
 	expect resp.status == 200
 	expect resp.http.Authority == "host.com"
@@ -116,7 +142,7 @@ varnish v1 -vcl {
 }
 
 client c1 {
-	txreq -url /5
+	txreq -url /s1/5
 	rxresp
 	expect resp.status == 200
 	# vmod_proxy returns the empty string if the TLV is absent.
