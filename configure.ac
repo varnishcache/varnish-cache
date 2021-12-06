@@ -806,26 +806,33 @@ else
 	*-*-solaris*)
 		case $PTHREAD_CC in
 		*gcc*)
-			VCC_CC="$PTHREAD_CC $OCFLAGS $WFLAGS $PTHREAD_CFLAGS -fpic -shared -o %o %s"
+			VCC_CC="$PTHREAD_CC $OCFLAGS %w $PTHREAD_CFLAGS -fpic -shared -o %o %s"
 			break
 			;;
 		*cc)
-			VCC_CC="$PTHREAD_CC $OCFLAGS $WFLAGS -errwarn=%all,no%E_STATEMENT_NOT_REACHED $PTHREAD_CFLAGS -Kpic -G -o %o %s"
+			VCC_CC="$PTHREAD_CC $OCFLAGS %w -errwarn=%all,no%E_STATEMENT_NOT_REACHED $PTHREAD_CFLAGS -Kpic -G -o %o %s"
 			;;
 		esac
 		;;
 	*-*-darwin*)
-		VCC_CC="exec cc $OCFLAGS $WFLAGS -dynamiclib -Wl,-undefined,dynamic_lookup -o %o %s"
+		VCC_CC="exec cc $OCFLAGS %w -dynamiclib -Wl,-undefined,dynamic_lookup -o %o %s"
 		;;
 	*)
-		VCC_CC="exec $PTHREAD_CC $OCFLAGS $WFLAGS $PTHREAD_CFLAGS $SAN_CFLAGS -fpic -shared -Wl,-x -o %o %s"
+		VCC_CC="exec $PTHREAD_CC $OCFLAGS %w $PTHREAD_CFLAGS $SAN_CFLAGS -fpic -shared -Wl,-x -o %o %s"
 		;;
 	esac
+fi
+
+if test "$ac_cv_env_VCC_WARN_set" = set; then
+	VCC_WARN=$ac_cv_env_VCC_WARN_value
+else
+	VCC_WARN=$WFLAGS
 fi
 
 OCFLAGS="$OCFLAGS $WFLAGS"
 
 AC_DEFINE_UNQUOTED([VCC_CC],"$VCC_CC",[C compiler command line for VCL code])
+AC_DEFINE_UNQUOTED([VCC_WARN],"$VCC_WARN",[C compiler warnings for VCL code])
 
 # Stupid automake needs this
 VTC_TESTS="$(cd $srcdir/bin/varnishtest && echo tests/*.vtc)"

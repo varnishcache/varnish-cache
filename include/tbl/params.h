@@ -1533,7 +1533,20 @@ PARAM_STRING(
 	"Command used for compiling the C source code to a "
 	"dlopen(3) loadable object.  Any occurrence of %s in "
 	"the string will be replaced with the source file name, "
-	"and %o will be replaced with the output file name.",
+	"%o will be replaced with the output file name, and %w "
+	"will be replaced by the cc_warnings parameter.",
+	/* flags */	MUST_RELOAD
+)
+
+PARAM_STRING(
+	/* name */	cc_warnings,
+	/* tweak */	tweak_string,
+	/* priv */	&mgt_cc_warn,
+	/* def */	VCC_WARN,
+	/* descr */
+	"Warnings used when compiling the C source code with "
+	"the cc_command parameter. By default, VCL is compiled "
+	"with the same set of warnings as Varnish itself.",
 	/* flags */	MUST_RELOAD
 )
 
