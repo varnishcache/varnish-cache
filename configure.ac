@@ -654,9 +654,11 @@ gl_LD_VERSION_SCRIPT
 # idiocy where write is marked as warn_unused_result, causing build
 # failures.
 
+WFLAGS=
+
 AX_CHECK_COMPILE_FLAG([-Wall],
      [CFLAGS="${CFLAGS} -Wall"
-      OCFLAGS="${OCFLAGS} -Wall"])
+      WFLAGS="${WFLAGS} -Wall"])
 
 if test "$SUNCC" = "yes" ; then
     SUNCC_CFLAGS=" \
@@ -665,27 +667,27 @@ if test "$SUNCC" = "yes" ; then
 	"
     AX_CHECK_COMPILE_FLAG([${SUNCC_CFLAGS}],
 	[CFLAGS="${CFLAGS} ${SUNCC_CFLAGS}"
-	 OCFLAGS="${OCFLAGS} ${SUNCC_CFLAGS}"])
+	 WFLAGS="${WFLAGS} ${SUNCC_CFLAGS}"])
 else
     AX_CHECK_COMPILE_FLAG([-Werror],
 	[CFLAGS="${CFLAGS} -Werror"
-	 OCFLAGS="${OCFLAGS} -Werror"])
+	 WFLAGS="${WFLAGS} -Werror"])
 fi
 
 case $target in
     *-*-darwin*)
 	AX_CHECK_COMPILE_FLAG([-Wno-expansion-to-defined],
 	[CFLAGS="${CFLAGS} -Wno-expansion-to-defined"
-	 OCFLAGS="${OCFLAGS} -Wno-expansion-to-defined"])
+	 WFLAGS="${WFLAGS} -Wno-expansion-to-defined"])
 	;;
 esac
 
 AX_CHECK_COMPILE_FLAG([-Werror=unused-result],
     [CFLAGS="${CFLAGS} -Wno-error=unused-result"
-     OCFLAGS="${OCFLAGS} -Wno-error=unused-result"],
+     WFLAGS="${WFLAGS} -Wno-error=unused-result"],
     [AX_CHECK_COMPILE_FLAG([-Wunused-result],
      [CFLAGS="${CFLAGS} -Wno-unused-result"
-      OCFLAGS="${OCFLAGS} -Wno-unused-result"])])
+      WFLAGS="${WFLAGS} -Wno-unused-result"])])
 
 # This corresponds to FreeBSD's WARNS level 6
 DEVELOPER_CFLAGS=`$PYTHON $srcdir/wflags.py`
@@ -721,7 +723,7 @@ if test "x$SUNCC" != "xyes" && test "x$enable_developer_warnings" != "xno"; then
 		[])
 
 	CFLAGS="${CFLAGS} ${DEVELOPER_CFLAGS}"
-	OCFLAGS="${OCFLAGS} ${DEVELOPER_CFLAGS}"
+	WFLAGS="${WFLAGS} ${DEVELOPER_CFLAGS}"
 fi
 
 # gcc on solaris needs -fstack-protector when calling gcc in linker
@@ -804,22 +806,24 @@ else
 	*-*-solaris*)
 		case $PTHREAD_CC in
 		*gcc*)
-			VCC_CC="$PTHREAD_CC $OCFLAGS $PTHREAD_CFLAGS -fpic -shared -o %o %s"
+			VCC_CC="$PTHREAD_CC $OCFLAGS $WFLAGS $PTHREAD_CFLAGS -fpic -shared -o %o %s"
 			break
 			;;
 		*cc)
-			VCC_CC="$PTHREAD_CC $OCFLAGS -errwarn=%all,no%E_STATEMENT_NOT_REACHED $PTHREAD_CFLAGS -Kpic -G -o %o %s"
+			VCC_CC="$PTHREAD_CC $OCFLAGS $WFLAGS -errwarn=%all,no%E_STATEMENT_NOT_REACHED $PTHREAD_CFLAGS -Kpic -G -o %o %s"
 			;;
 		esac
 		;;
 	*-*-darwin*)
-		VCC_CC="exec cc $OCFLAGS -dynamiclib -Wl,-undefined,dynamic_lookup -o %o %s"
+		VCC_CC="exec cc $OCFLAGS $WFLAGS -dynamiclib -Wl,-undefined,dynamic_lookup -o %o %s"
 		;;
 	*)
-		VCC_CC="exec $PTHREAD_CC $OCFLAGS $PTHREAD_CFLAGS $SAN_CFLAGS -fpic -shared -Wl,-x -o %o %s"
+		VCC_CC="exec $PTHREAD_CC $OCFLAGS $WFLAGS $PTHREAD_CFLAGS $SAN_CFLAGS -fpic -shared -Wl,-x -o %o %s"
 		;;
 	esac
 fi
+
+OCFLAGS="$OCFLAGS $WFLAGS"
 
 AC_DEFINE_UNQUOTED([VCC_CC],"$VCC_CC",[C compiler command line for VCL code])
 
