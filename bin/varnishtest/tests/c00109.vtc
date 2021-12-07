@@ -1,9 +1,11 @@
 varnishtest "cc_command and cc_warnings"
 
 varnish v1 -cliok {param.set debug +vcl_keep}
-varnish v1 -cliok {param.set cc_command "! printf '%w' >world"}
 varnish v1 -cliok {param.set cc_warnings hello}
+varnish v1 -cliok {param.set cc_command << EOF
+! printf 'd="%%s" w="%%s"' '%d' '%w' >world
+EOF}
 
 varnish v1 -errvcl "VCL compilation failed" "backend be none;"
 
-shell -expect hello "cat v1/vcl_*/world"
+shell -match {d=".+" w="hello"} "cat v1/vcl_*/world"
