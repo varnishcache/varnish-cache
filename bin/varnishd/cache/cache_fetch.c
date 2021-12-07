@@ -549,6 +549,8 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 		bo->uncacheable = 1;
 		wrk->vpi->handling = VCL_RET_DELIVER;
 	}
+	if (!bo->uncacheable || !bo->do_stream)
+		oc->boc->transit_buffer = 0;
 	if (bo->uncacheable)
 		oc->flags |= OC_F_HFM;
 
@@ -597,6 +599,9 @@ vbf_stp_fetchbody(struct worker *wrk, struct busyobj *bo)
 		}
 		AZ(vfc->failed);
 		l = est;
+		oc = bo->fetch_objcore;
+		if (oc->boc->transit_buffer > 0)
+			l = vmin_t(ssize_t, l, oc->boc->transit_buffer);
 		assert(l >= 0);
 		if (VFP_GetStorage(vfc, &l, &ptr) != VFP_OK) {
 			bo->htc->doclose = SC_RX_BODY;
@@ -969,6 +974,8 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 		VSB_destroy(&synth_body);
 		return (F_STP_FAIL);
 	}
+
+	oc->boc->transit_buffer = 0;
 
 	ll = VSB_len(synth_body);
 	o = 0;

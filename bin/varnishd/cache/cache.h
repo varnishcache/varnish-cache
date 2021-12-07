@@ -296,6 +296,8 @@ struct boc {
 	enum boc_state_e	state;
 	uint8_t			*vary;
 	uint64_t		fetched_so_far;
+	uint64_t		delivered_so_far;
+	uint64_t		transit_buffer;
 };
 
 /* Object core structure ---------------------------------------------

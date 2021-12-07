@@ -953,6 +953,23 @@ PARAM_SIMPLE(
 )
 
 PARAM_SIMPLE(
+	/* name */	transit_buffer,
+	/* type */	bytes,
+	/* min */	"0k",
+	/* max */	NULL,
+	/* def */	"0k",
+	/* units */	"bytes",
+	/* descr */
+	"The amount of buffer allowed through Varnish for uncacheable "
+	"backend streaming fetches. Zero means that no buffering is "
+	"done and the object is fetched as fast as possible.\n\n"
+	"When a client is slow, this can prevent large uncacheable objects "
+	"from being stored indefinitely when the intent is to simply stream "
+	"them to the client. As a result, a slow client transaction holds "
+	"onto a backend connection until the end of the delivery."
+)
+
+PARAM_SIMPLE(
 	/* name */	vary_notice,
 	/* type */	uint,
 	/* min */	"1",
