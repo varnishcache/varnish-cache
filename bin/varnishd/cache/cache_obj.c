@@ -223,11 +223,10 @@ ObjExtend(struct worker *wrk, struct objcore *oc, ssize_t l, int final)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
-	(void)final;
+	AN(om->objextend);
 	assert(l >= 0);
 
 	Lck_Lock(&oc->boc->mtx);
-	AN(om->objextend);
 	if (l > 0) {
 		om->objextend(wrk, oc, l);
 		oc->boc->fetched_so_far += l;
