@@ -324,7 +324,7 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 	l = 0;
 
 	u = 0;
-	if (boc->len_so_far == 0) {
+	if (boc->fetched_so_far == 0) {
 		ret = func(priv, OBJ_ITER_FLUSH, NULL, 0);
 		if (ret)
 			return (ret);

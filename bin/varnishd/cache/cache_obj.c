@@ -230,7 +230,7 @@ ObjExtend(struct worker *wrk, struct objcore *oc, ssize_t l, int final)
 	AN(om->objextend);
 	if (l > 0) {
 		om->objextend(wrk, oc, l);
-		oc->boc->len_so_far += l;
+		oc->boc->fetched_so_far += l;
 		AZ(pthread_cond_broadcast(&oc->boc->cond));
 	}
 	Lck_Unlock(&oc->boc->mtx);
@@ -253,13 +253,13 @@ ObjWaitExtend(const struct worker *wrk, const struct objcore *oc, uint64_t l)
 	CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
 	Lck_Lock(&oc->boc->mtx);
 	while (1) {
-		rv = oc->boc->len_so_far;
+		rv = oc->boc->fetched_so_far;
 		assert(l <= rv || oc->boc->state == BOS_FAILED);
 		if (rv > l || oc->boc->state >= BOS_FINISHED)
 			break;
 		(void)Lck_CondWait(&oc->boc->cond, &oc->boc->mtx);
 	}
-	rv = oc->boc->len_so_far;
+	rv = oc->boc->fetched_so_far;
 	Lck_Unlock(&oc->boc->mtx);
 	return (rv);
 }
