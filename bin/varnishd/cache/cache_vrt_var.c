@@ -295,6 +295,36 @@ VRT_r_beresp_uncacheable(VRT_CTX)
 
 /*--------------------------------------------------------------------*/
 
+VCL_BYTES
+VRT_r_beresp_transit_buffer(VRT_CTX)
+{
+    struct objcore *oc;
+
+    CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+    CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+
+    oc = ctx->bo->fetch_objcore;
+    CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+
+    return oc->boc->transit_buffer;
+}
+
+VCL_VOID
+VRT_l_beresp_transit_buffer(VRT_CTX, VCL_BYTES value)
+{
+    struct objcore *oc;
+
+    CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+    CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+
+    oc = ctx->bo->fetch_objcore;
+    CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+
+    oc->boc->transit_buffer = value;
+}
+
+/*--------------------------------------------------------------------*/
+
 VCL_STRING
 VRT_r_client_identity(VRT_CTX)
 {

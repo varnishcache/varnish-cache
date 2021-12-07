@@ -11,13 +11,15 @@ server s2 {
 	txresp -bodylen 2000000
 } -start
 
-varnish v1 -cliok "param.set transit_buffer 1k"
 varnish v1 -vcl+backend {
 	sub vcl_recv {
 		set req.backend_hint = s2;
 		if (req.restarts == 1) {
 			set req.backend_hint = s1;
 		}
+	}
+	sub vcl_backend_response {
+		set beresp.transit_buffer = 1k;
 	}
 	sub vcl_deliver {
 		if (req.restarts < 1) {

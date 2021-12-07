@@ -1059,6 +1059,17 @@ beresp.time
 	``vcl_backend_response {}`` was entered, or when
 	``vcl_backend_error {}`` was entered.
 
+beresp.transit_buffer
+
+	Type: BYTES
+
+	Readable from: vcl_backend_response
+
+	Writable from: vcl_backend_response
+
+	The maximum number of bytes the client can be ahead of the
+	backend during a streaming pass if ``beresp`` is uncacheable.
+
 
 beresp.ttl
 
