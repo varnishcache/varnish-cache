@@ -765,6 +765,9 @@ MCF_InitParams(struct cli *cli)
 		mcf_wash_param(cli, pp, MCF_DEFAULT, "default", vsb);
 	}
 	VSB_destroy(&vsb);
+
+	AN(mgt_cc_cmd);
+	REPLACE(mgt_cc_cmd_def, mgt_cc_cmd);
 }
 
 /*--------------------------------------------------------------------*/

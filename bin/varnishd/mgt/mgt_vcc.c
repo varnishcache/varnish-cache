@@ -63,6 +63,7 @@ struct vcc_priv {
 };
 
 char *mgt_cc_cmd;
+char *mgt_cc_cmd_def;
 char *mgt_cc_warn;
 const char *mgt_vcl_path;
 const char *mgt_vmod_path;
@@ -153,6 +154,9 @@ run_cc(void *priv)
 				break;
 			case 'w':
 				VSB_cat(sb, mgt_cc_warn);
+				break;
+			case 'd':
+				VSB_cat(sb, mgt_cc_cmd_def);
 				break;
 			case '%':
 				VSB_putc(sb, '%');

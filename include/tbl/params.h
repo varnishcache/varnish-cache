@@ -1534,7 +1534,8 @@ PARAM_STRING(
 	"dlopen(3) loadable object.  Any occurrence of %s in "
 	"the string will be replaced with the source file name, "
 	"%o will be replaced with the output file name, and %w "
-	"will be replaced by the cc_warnings parameter.",
+	"will be replaced by the cc_warnings parameter. The %d "
+	"sequence expands to the default value for cc_command.",
 	/* flags */	MUST_RELOAD | BUILD_OPTIONS,
 	/* dyn_min_reason */	NULL,
 	/* dyn_max_reason */	NULL,
