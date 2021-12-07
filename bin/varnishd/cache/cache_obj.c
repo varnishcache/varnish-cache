@@ -109,6 +109,7 @@ obj_newboc(void)
 	Lck_New(&boc->mtx, lck_busyobj);
 	AZ(pthread_cond_init(&boc->cond, NULL));
 	boc->refcount = 1;
+	boc->transit_buffer = cache_param->transit_buffer;
 	return (boc);
 }
 
@@ -216,6 +217,29 @@ ObjGetSpace(struct worker *wrk, struct objcore *oc, ssize_t *sz, uint8_t **ptr)
  * surplus space allocated.
  */
 
+static void
+obj_extend_condwait(const struct objcore *oc)
+{
+
+	if (oc->boc->transit_buffer == 0)
+		return;
+
+	assert(oc->flags & (OC_F_PRIVATE | OC_F_HFM | OC_F_HFP));
+	/* NB: strictly signaling progress both ways would be prone to
+	 * deadlocks, so instead we wait for signals from the client side
+	 * when delivered_so_far so far is updated, but in case the fetch
+	 * thread was not waiting at the time of the signal, we will see
+	 * updates to delivered_so_far after timing out.
+	 */
+	while (!(oc->flags & OC_F_CANCEL) && oc->boc->fetched_so_far >
+	    oc->boc->delivered_so_far + oc->boc->transit_buffer) {
+		(void)Lck_CondWaitTimeout(&oc->boc->cond, &oc->boc->mtx, 0.1);
+		/* Fallback: Check if we are alone waiting on this object */
+		if (oc->refcnt == 1)
+			break;
+	}
+}
+
 void
 ObjExtend(struct worker *wrk, struct objcore *oc, ssize_t l, int final)
 {
@@ -228,6 +252,7 @@ ObjExtend(struct worker *wrk, struct objcore *oc, ssize_t l, int final)
 
 	Lck_Lock(&oc->boc->mtx);
 	if (l > 0) {
+		obj_extend_condwait(oc);
 		om->objextend(wrk, oc, l);
 		oc->boc->fetched_so_far += l;
 		AZ(pthread_cond_broadcast(&oc->boc->cond));
@@ -254,6 +279,12 @@ ObjWaitExtend(const struct worker *wrk, const struct objcore *oc, uint64_t l)
 	while (1) {
 		rv = oc->boc->fetched_so_far;
 		assert(l <= rv || oc->boc->state == BOS_FAILED);
+		if (oc->boc->transit_buffer > 0) {
+			assert(oc->flags & (OC_F_PRIVATE | OC_F_HFM | OC_F_HFP));
+			/* Signal the new client position */
+			oc->boc->delivered_so_far = l;
+			AZ(pthread_cond_signal(&oc->boc->cond));
+		}
 		if (rv > l || oc->boc->state >= BOS_FINISHED)
 			break;
 		(void)Lck_CondWait(&oc->boc->cond, &oc->boc->mtx);
