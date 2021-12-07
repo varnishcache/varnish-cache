@@ -520,7 +520,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 			return (HSH_HITMISS);
 		}
 		oc->hits++;
-		boc_progress = oc->boc == NULL ? -1 : oc->boc->len_so_far;
+		boc_progress = oc->boc == NULL ? -1 : oc->boc->fetched_so_far;
 		AN(hsh_deref_objhead_unlock(wrk, &oh, HSH_RUSH_POLICY));
 		Req_LogHit(wrk, req, oc, boc_progress);
 		return (HSH_HIT);
@@ -543,7 +543,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 	}
 
 	if (exp_oc != NULL && exp_oc->boc != NULL)
-		boc_progress = exp_oc->boc->len_so_far;
+		boc_progress = exp_oc->boc->fetched_so_far;
 	else
 		boc_progress = -1;
 

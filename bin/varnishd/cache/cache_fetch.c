@@ -666,7 +666,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (oc->flags & OC_F_PRIVATE)
 		AN(bo->uncacheable);
 
-	oc->boc->len_so_far = 0;
+	oc->boc->fetched_so_far = 0;
 
 	INIT_OBJ(ctx, VRT_CTX_MAGIC);
 	VCL_Bo2Ctx(ctx, bo);
@@ -734,7 +734,7 @@ vbf_stp_fetchend(struct worker *wrk, struct busyobj *bo)
 	   give predictable backend reuse behavior for varnishtest */
 	vbf_cleanup(bo);
 
-	AZ(ObjSetU64(wrk, oc, OA_LEN, oc->boc->len_so_far));
+	AZ(ObjSetU64(wrk, oc, OA_LEN, oc->boc->fetched_so_far));
 
 	if (bo->do_stream)
 		assert(oc->boc->state == BOS_STREAM);
@@ -894,7 +894,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	VSLb_ts_busyobj(bo, "Error", now);
 
 	if (oc->stobj->stevedore != NULL) {
-		oc->boc->len_so_far = 0;
+		oc->boc->fetched_so_far = 0;
 		ObjFreeObj(bo->wrk, oc);
 	}
 
