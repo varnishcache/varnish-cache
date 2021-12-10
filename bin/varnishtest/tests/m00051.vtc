@@ -2,6 +2,7 @@ varnishtest "catflap"
 
 varnish v1 -vcl {
 	import debug;
+	import std;
 
 	backend dummy { .host = "${bad_backend}"; }
 
@@ -15,6 +16,11 @@ varnish v1 -vcl {
 		} else if (req.http.novcf) {
 			set req.http.consume = "some workspace";
 			return (pass);
+		} else if (req.http.rollback) {
+			debug.catflap(first);
+			std.rollback(req);
+			set req.http.consume = "some workspace";
+			set req.http.consume = "some workspace";
 		} else {
 			return (fail);
 		}
@@ -68,6 +74,10 @@ client c1 {
 	# the first object is the one which went into cache last
 
 	txreq -hdr "get: first"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.id == "3"
+	txreq -hdr "rollback: yes"
 	rxresp
 	expect resp.status == 200
 	expect resp.http.id == "3"
