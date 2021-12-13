@@ -1,0 +1,23 @@
+varnishtest "deprecated parameters"
+
+varnish v1 -cliok "param.set debug +syncvsl"
+
+shell -expect "+syncvsl" {
+	varnishadm -n ${v1_name} "param.show deprecated_dummy"
+}
+
+shell -expect "+syncvsl" {
+	varnishadm -n ${v1_name} "param.show -j deprecated_dummy"
+}
+
+shell -err {
+	varnishadm -n ${v1_name} "param.show" | grep deprecated_dummy
+}
+
+shell -err {
+	varnishadm -n ${v1_name} "param.show -l" | grep deprecated_dummy
+}
+
+shell -err {
+	varnishadm -n ${v1_name} "param.show -j" | grep deprecated_dummy
+}

@@ -1647,13 +1647,15 @@ PARAM_PCRE2(
  * When a parameter is renamed, but the a deprecated alias is kept for
  * compatibility, its documentation is minimal: only a description in
  * manual pages, a description and current value in the CLI.
+ *
+ * The deprecated_dummy alias is here for test coverage.
  */
 
 #define PARAM_ALIAS(al, nm) \
 	PARAM(, , al, tweak_alias, NULL, NULL, NULL, #nm, NULL, \
 	    "Deprecated alias for the " #nm " parameter.")
 
-/* PARAM_ALIAS(old, new) */
+PARAM_ALIAS(deprecated_dummy, debug)
 
 #  undef PARAM_ALIAS
 #  undef PARAM_ALL

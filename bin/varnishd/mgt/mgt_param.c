@@ -778,6 +778,8 @@ MCF_DumpRstParam(void)
 	    "output from varnishd -x parameter\n\n");
 	VTAILQ_FOREACH(pl, &phead, list) {
 		pp = pl->spec;
+		if (!strcmp("deprecated_dummy", pp->name))
+		    continue;
 		printf(".. _ref_param_%s:\n\n", pp->name);
 		printf("%s\n", pp->name);
 		for (z = 0; z < strlen(pp->name); z++)
