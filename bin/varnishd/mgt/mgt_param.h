@@ -66,6 +66,7 @@ struct parspec {
 	char		*dyn_def;
 };
 
+tweak_t tweak_alias;
 tweak_t tweak_boolean;
 tweak_t tweak_bytes;
 tweak_t tweak_bytes_u;
