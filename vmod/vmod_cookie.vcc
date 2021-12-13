@@ -67,9 +67,9 @@ Delete ``cookiename`` from internal vmod storage if it exists.
 Example::
 
 	sub vcl_recv {
-	    cookie.parse("cookie1: value1; cookie2: value2;");
+	    cookie.parse("cookie1=value1; cookie2=value2;");
 	    cookie.delete("cookie2");
-	    # get_string() will now yield "cookie1: value1";
+	    # get_string() will now yield "cookie1=value1;";
 	}
 
 $Function VOID filter(PRIV_TASK, STRING filterstring)
@@ -80,10 +80,10 @@ comma-separated argument cookienames.
 Example::
 
 	sub vcl_recv {
-	    cookie.parse("cookie1: value1; cookie2: value2; cookie3: value3");
+	    cookie.parse("cookie1=value1; cookie2=value2; cookie3=value3");
 	    cookie.filter("cookie1,cookie2");
 	    # get_string() will now yield
-	    # "cookie3: value3";
+	    # "cookie3=value3;";
 	}
 
 
@@ -95,10 +95,10 @@ regular expression ``expression``.
 Example::
 
 	sub vcl_recv {
-	    cookie.parse("cookie1: value1; cookie2: value2; cookie3: value3");
+	    cookie.parse("cookie1=value1; cookie2=value2; cookie3=value3");
 	    cookie.filter_re("^cookie[12]$");
 	    # get_string() will now yield
-	    # "cookie3: value3";
+	    # "cookie3=value3;";
 	}
 
 $Function VOID keep(PRIV_TASK, STRING filterstring)
@@ -109,10 +109,10 @@ comma-separated argument cookienames.
 Example::
 
 	sub vcl_recv {
-	    cookie.parse("cookie1: value1; cookie2: value2; cookie3: value3");
+	    cookie.parse("cookie1=value1; cookie2=value2; cookie3=value3");
 	    cookie.keep("cookie1,cookie2");
 	    # get_string() will now yield
-	    # "cookie1: value1; cookie2: value2;";
+	    # "cookie1=value1; cookie2=value2;";
 	}
 
 $Function VOID keep_re(PRIV_TASK, REGEX expression)
@@ -123,10 +123,10 @@ expression ``expression``.
 Example::
 
 	sub vcl_recv {
-	    cookie.parse("cookie1: value1; cookie2: value2; cookie3: value3");
+	    cookie.parse("cookie1=value1; cookie2=value2; cookie3=value3");
 	    cookie.keep_re("^cookie[12]$");
 	    # get_string() will now yield
-	    # "cookie1: value1; cookie2: value2;";
+	    # "cookie1=value1; cookie2=value2;";
 	}
 
 
@@ -156,7 +156,7 @@ Example::
 
 	import std;
 	sub vcl_recv {
-	    cookie.parse("cookie1: value1; cookie2: value2;");
+	    cookie.parse("cookie1=value1; cookie2=value2;");
 	    std.log("cookie1 value is: " + cookie.get("cookie1"));
 	}
 
@@ -202,7 +202,7 @@ Example::
 
 	import std;
 	sub vcl_recv {
-	    cookie.parse("cookie1: value1; cookie2: value2;");
+	    cookie.parse("cookie1=value1; cookie2=value2;");
 	    std.log("cookie1 value is: " + cookie.get_re("^cookie1$"));
 	}
 
@@ -227,7 +227,7 @@ Example::
 
 	import std;
 	sub vcl_recv {
-	    cookie.parse("cookie1: value1; cookie2: value2;");
+	    cookie.parse("cookie1=value1; cookie2=value2;");
 	    if (cookie.isset("cookie2")) {
 	        std.log("cookie2 is set.");
 	    }
