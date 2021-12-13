@@ -37,8 +37,8 @@
 /*lint -save -e525 -e539 -e835 */
 
 /*--------------------------------------------------------------------
- *  * Simple parameters
- *   */
+ * Simple parameters
+ */
 
 #define PARAM_SIMPLE(nm, typ, ...) \
 	PARAM(typ, nm, nm, tweak_##typ, &mgt_param.nm, __VA_ARGS__)
@@ -1167,7 +1167,8 @@ PARAM_SIMPLE(
 /* We have a strict min at the protocol default here. This is because we
  * don't have the 'use settings only after peer ack' in place yet. If the
  * value is lower than the protocol default, the very first stream could
- * get a flow control error. */
+ * get a flow control error.
+ */
 PARAM_SIMPLE(
 	/* name */	h2_initial_window_size,
 	/* type */	bytes_u,
