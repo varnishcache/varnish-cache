@@ -527,3 +527,15 @@ tweak_storage(struct vsb *vsb, const struct parspec *par, const char *arg)
 	}
 	return (tweak_string(vsb, par, arg));
 }
+
+/*--------------------------------------------------------------------
+ * Tweak alias
+ */
+
+int v_matchproto_(tweak_t)
+tweak_alias(struct vsb *vsb, const struct parspec *par, const char *arg)
+{
+
+	par = TRUST_ME(par->priv);
+	return (par->func(vsb, par, arg));
+}

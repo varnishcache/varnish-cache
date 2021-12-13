@@ -262,6 +262,10 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 		pp = pl->spec;
 		if (lfmt && strcmp(pp->name, av[2]) && strcmp("-l", av[2]))
 			continue;
+		if (pp->func == tweak_alias && !lfmt)
+			continue;
+		if (pp->func == tweak_alias && strcmp(pp->name, av[2]))
+			continue;
 		n++;
 
 		VSB_clear(vsb);
@@ -382,6 +386,10 @@ mcf_param_show_json(struct cli *cli, const char * const *av, void *priv)
 	VTAILQ_FOREACH(pl, &phead, list) {
 		pp = pl->spec;
 		if (show != NULL && strcmp(pp->name, show) != 0)
+			continue;
+		if (pp->func == tweak_alias && show == NULL)
+			continue;
+		if (pp->func == tweak_alias && strcmp(pp->name, show))
 			continue;
 		n++;
 
@@ -621,6 +629,13 @@ mcf_wash_param(struct cli *cli, struct parspec *pp, enum mcf_which_e which,
 		WRONG("bad 'which'");
 	}
 	AN(val);
+
+	if (pp->func == tweak_alias) {
+		assert(which == MCF_DEFAULT);
+		pp->priv = mcf_findpar(pp->def);
+		pp->def = NULL;
+		return;
+	}
 
 	VSB_clear(vsb);
 	VSB_printf(vsb, "FAILED to set %s for param %s: %s\n",

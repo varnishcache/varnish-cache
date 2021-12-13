@@ -1641,6 +1641,21 @@ PARAM_PCRE2(
 	" messages."
 )
 
+/*--------------------------------------------------------------------
+ * Parameter deprecated aliases
+ *
+ * When a parameter is renamed, but the a deprecated alias is kept for
+ * compatibility, its documentation is minimal: only a description in
+ * manual pages, a description and current value in the CLI.
+ */
+
+#define PARAM_ALIAS(al, nm) \
+	PARAM(, , al, tweak_alias, NULL, NULL, NULL, #nm, NULL, \
+	    "Deprecated alias for the " #nm " parameter.")
+
+/* PARAM_ALIAS(old, new) */
+
+#  undef PARAM_ALIAS
 #  undef PARAM_ALL
 #  undef PARAM_PCRE2
 #  undef PARAM_STRING
