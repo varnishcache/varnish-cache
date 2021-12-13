@@ -492,7 +492,6 @@ tweak_thread_pool_max(struct vsb *vsb, const struct parspec *par,
 
 /*--------------------------------------------------------------------
  * Tweak storage
- *
  */
 
 int v_matchproto_(tweak_t)
