@@ -101,10 +101,12 @@ static const char ONLY_ROOT_TEXT[] =
 	"NB: This parameter only works if varnishd is run as root.";
 
 static const char NOT_IMPLEMENTED_TEXT[] =
-	"This parameter depends on a feature which is not available"
+	"\n\n"
+	"NB: This parameter depends on a feature which is not available"
 	" on this platform.";
 
 static const char PLATFORM_DEPENDENT_TEXT[] =
+	"\n\n"
 	"NB: This parameter depends on a feature which is not available"
 	" on all platforms.";
 
