@@ -3,6 +3,7 @@ varnishtest "catflap"
 varnish v1 -vcl {
 	import debug;
 	import std;
+	import vtc;
 
 	backend dummy { .host = "${bad_backend}"; }
 
@@ -14,13 +15,12 @@ varnish v1 -vcl {
 		} else if (req.http.get == "last") {
 			debug.catflap(last);
 		} else if (req.http.novcf) {
-			set req.http.consume = "some workspace";
+			vtc.workspace_reserve(client, -1);
 			return (pass);
 		} else if (req.http.rollback) {
 			debug.catflap(first);
 			std.rollback(req);
-			set req.http.consume = "some workspace";
-			set req.http.consume = "some workspace";
+			vtc.workspace_reserve(client, -1);
 		} else {
 			return (fail);
 		}
