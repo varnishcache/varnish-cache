@@ -264,6 +264,7 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 		if (show != NULL) {
 			VCLI_SetResult(cli, CLIS_TOOMANY);
 			VCLI_Out(cli, "Too many parameters");
+			VSB_destroy(&vsb);
 			return;
 		}
 		show = av[n];
@@ -388,6 +389,7 @@ mcf_param_show_json(struct cli *cli, const char * const *av, void *priv)
 		if (show != NULL) {
 			VCLI_SetResult(cli, CLIS_TOOMANY);
 			VCLI_Out(cli, "Too many parameters");
+			VSB_destroy(&vsb);
 			return;
 		}
 		show = av[i];
