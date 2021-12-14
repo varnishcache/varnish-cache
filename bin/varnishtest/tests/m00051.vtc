@@ -17,6 +17,11 @@ varnish v1 -vcl {
 		} else if (req.http.novcfpass) {
 			vtc.workspace_reserve(client, -1);
 			return (pass);
+		} else if (req.http.novcfmiss) {
+			vtc.workspace_reserve(client, -1);
+		} else if (req.http.vcfpass) {
+			debug.catflap(first);
+			return (pass);
 		} else if (req.http.rollback) {
 			debug.catflap(first);
 			std.rollback(req);
@@ -28,7 +33,7 @@ varnish v1 -vcl {
 	}
 
 	sub vcl_backend_error {
-		if (bereq.http.novcfpass) {
+		if (bereq.http.novcfpass || bereq.http.vcfpass) {
 			set beresp.status = 206;
 			return (deliver);
 		}
@@ -92,4 +97,16 @@ client c1 {
 	txreq -hdr "novcfpass: yes"
 	rxresp
 	expect resp.status == 206
+
+	# VCF with return(pass) must not leave the VCF dangling on the
+	# workspace for a subsequent plain miss
+
+	txreq -hdr "vcfpass: yes"
+	rxresp
+	expect resp.status == 206
+
+	txreq -hdr "novcfmiss: yes"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.id == "3"
 } -run

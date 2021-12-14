@@ -288,6 +288,7 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	req->esi_level = 0;
 	req->is_hit = 0;
 	req->req_step = R_STP_TRANSPORT;
+	req->vcf = NULL;
 
 	if (WS_Overflowed(req->ws))
 		wrk->stats->ws_client_overflow++;
