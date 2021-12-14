@@ -180,7 +180,7 @@ CLI_CMD(PARAM_RESET,
 
 CLI_CMD(PARAM_SHOW,
 	"param.show",
-	"param.show [-l|-j] [<param>|changed]",
+	"param.show [-l|-j] [-u] [<param>|changed]",
 	"Show parameters and their values.",
 
 	"  The long form with ``-l`` shows additional information, including"
@@ -189,8 +189,10 @@ CLI_CMD(PARAM_SHOW,
 	" the information for the long form is included; only one of ``-l`` or"
 	" ``-j`` is permitted. If a parameter is specified with ``<param>``,"
 	" show only that parameter. If ``changed`` is specified, show only"
-	" those parameters whose values differ from their defaults.",
-	0, 2
+	" those parameters whose values differ from their defaults. The"
+	" parameter value may be adjusted depending on its type, and ``-u``"
+	" shows the actual user input.",
+	0, 3
 )
 
 CLI_CMD(PARAM_SET,

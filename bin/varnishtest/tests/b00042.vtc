@@ -42,3 +42,11 @@ varnish v1 -clierr "106" "param.show -j -l"
 varnish v1 -clierr "106" "param.show -j fofofofo"
 varnish v1 -clierr "105" "param.show debug debug"
 varnish v1 -clierr "105" "param.show -j debug debug"
+
+varnish v1 -cliok "param.set workspace_client 131072"
+varnish v1 -cliexpect {Value is: 128k}   "param.show -u workspace_client"
+varnish v1 -cliexpect {Input is: 131072} "param.show -u workspace_client"
+
+varnish v1 -cliok "param.set workspace_client 128k"
+varnish v1 -cliexpect {"value": 131072,} "param.show -j -u workspace_client"
+varnish v1 -cliexpect {"input": "128k",} "param.show -j -u workspace_client"

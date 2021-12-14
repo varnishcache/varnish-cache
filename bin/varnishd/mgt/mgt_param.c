@@ -244,7 +244,7 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 {
 	struct plist *pl;
 	const struct parspec *pp;
-	int n, lfmt = 0, chg = 0;
+	int n, lfmt = 0, chg = 0, usr = 0;
 	struct vsb *vsb;
 	const char *show = NULL;
 
@@ -253,6 +253,10 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 	for (n = 2; av[n] != NULL; n++) {
 		if (strcmp(av[n], "-l") == 0) {
 			lfmt = 1;
+			continue;
+		}
+		if (strcmp(av[n], "-u") == 0) {
+			usr = 1;
 			continue;
 		}
 		if (strcmp(av[n], "changed") == 0) {
@@ -309,6 +313,10 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 				VCLI_Out(cli, " [%s]", pp->units);
 			if (pp->def != NULL && !strcmp(pp->def, VSB_data(vsb)))
 				VCLI_Out(cli, " (default)");
+
+			if (usr)
+				VCLI_Out(cli, "\n%-*sInput is: %s", margin1, " ",
+				    pp->val);
 		}
 		VCLI_Out(cli, "\n");
 
@@ -368,7 +376,7 @@ mcf_param_show_json(struct cli *cli, const char * const *av, void *priv)
 	int n, comma = 0;
 	struct plist *pl;
 	const struct parspec *pp;
-	int chg = 0, flags;
+	int chg = 0, usr = 0, flags;
 	struct vsb *vsb, *def;
 	const char *show = NULL;
 
@@ -379,6 +387,10 @@ mcf_param_show_json(struct cli *cli, const char * const *av, void *priv)
 			VCLI_SetResult(cli, CLIS_PARAM);
 			VCLI_Out(cli, "-l not permitted with param.show -j");
 			return;
+		}
+		if (strcmp(av[i], "-u") == 0) {
+			usr = 1;
+			continue;
 		}
 		if (strcmp(av[i], "changed") == 0) {
 			chg = 1;
@@ -436,6 +448,12 @@ mcf_param_show_json(struct cli *cli, const char * const *av, void *priv)
 		}
 		VCLI_Out(cli, "\"implemented\": true,\n");
 		VCLI_Out(cli, "\"value\": %s,\n", VSB_data(vsb));
+		if (usr) {
+			VSB_clear(vsb);
+			VSB_quote(vsb, pp->val, -1, VSB_QUOTE_JSON);
+			AZ(VSB_finish(vsb));
+			VCLI_Out(cli, "\"input\": \"%s\",\n", VSB_data(vsb));
+		}
 		if (pp->units != NULL && *pp->units != '\0')
 			mcf_json_key_valstr(cli, "units", pp->units);
 
