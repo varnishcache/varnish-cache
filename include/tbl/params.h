@@ -1538,6 +1538,7 @@ PARAM_STRING(
 	"- %w: the cc_warnings parameter\n"
 	"- %d: the raw default cc_command\n"
 	"- %D: the expanded default cc_command\n"
+	"- %n: the working directory (-n option)\n"
 	"- %%: a percent sign\n"
 	"\n"
 	"Unknown percent expansion sequences are ignored, and to "

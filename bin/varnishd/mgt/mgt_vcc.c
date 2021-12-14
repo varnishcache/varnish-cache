@@ -33,6 +33,7 @@
 
 #include "config.h"
 
+#include <limits.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -131,6 +132,7 @@ run_vcc(void *priv)
 static const char *
 cc_expand(struct vsb *sb, const char *cc_cmd, char exp)
 {
+	char buf[PATH_MAX];
 	const char *p;
 	int pct;
 
@@ -156,6 +158,10 @@ cc_expand(struct vsb *sb, const char *cc_cmd, char exp)
 				if (exp == pct)
 					return ("recursive expansion");
 				cc_expand(sb, mgt_cc_cmd_def, pct);
+				break;
+			case 'n':
+				AN(getcwd(buf, sizeof buf));
+				VSB_cat(sb, buf);
 				break;
 			case '%':
 				VSB_putc(sb, '%');
@@ -191,8 +197,6 @@ run_cc(void *priv)
 	VJ_subproc(JAIL_SUBPROC_CC);
 	CAST_OBJ_NOTNULL(vp, priv, VCC_PRIV_MAGIC);
 
-	AZ(chdir(VSB_data(vp->dir)));
-
 	sb = VSB_new_auto();
 	AN(sb);
 	err = cc_expand(sb, mgt_cc_cmd, '\0');
@@ -202,6 +206,8 @@ run_cc(void *priv)
 		exit(1);
 	}
 	AZ(VSB_finish(sb));
+
+	AZ(chdir(VSB_data(vp->dir)));
 
 	(void)umask(027);
 	(void)execl("/bin/sh", "/bin/sh", "-c", VSB_data(sb), (char*)0);
