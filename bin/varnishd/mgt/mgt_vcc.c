@@ -125,25 +125,19 @@ run_vcc(void *priv)
 }
 
 /*--------------------------------------------------------------------
- * Invoke system C compiler in a sub-process
+ * Expand the cc_command argument
  */
 
-static void v_matchproto_(vsub_func_f)
-run_cc(void *priv)
+static void
+cc_expand(struct vsb *sb, const char *cc_cmd, char exp)
 {
-	struct vcc_priv *vp;
-	struct vsb *sb;
+	const char *p;
 	int pct;
-	char *p;
 
-	VJ_subproc(JAIL_SUBPROC_CC);
-	CAST_OBJ_NOTNULL(vp, priv, VCC_PRIV_MAGIC);
-
-	AZ(chdir(VSB_data(vp->dir)));
-
-	sb = VSB_new_auto();
 	AN(sb);
-	for (p = mgt_cc_cmd, pct = 0; *p; ++p) {
+	AN(cc_cmd);
+	(void)exp;
+	for (p = cc_cmd, pct = 0; *p; ++p) {
 		if (pct) {
 			switch (*p) {
 			case 's':
@@ -175,6 +169,26 @@ run_cc(void *priv)
 	}
 	if (pct)
 		VSB_putc(sb, '%');
+}
+
+/*--------------------------------------------------------------------
+ * Invoke system C compiler in a sub-process
+ */
+
+static void v_matchproto_(vsub_func_f)
+run_cc(void *priv)
+{
+	struct vcc_priv *vp;
+	struct vsb *sb;
+
+	VJ_subproc(JAIL_SUBPROC_CC);
+	CAST_OBJ_NOTNULL(vp, priv, VCC_PRIV_MAGIC);
+
+	AZ(chdir(VSB_data(vp->dir)));
+
+	sb = VSB_new_auto();
+	AN(sb);
+	cc_expand(sb, mgt_cc_cmd, '\0');
 	AZ(VSB_finish(sb));
 
 	(void)umask(027);
