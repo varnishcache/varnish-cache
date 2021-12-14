@@ -101,8 +101,8 @@ architecture. A failed allocation fails the transaction.
 $Function BYTES workspace_reserve(ENUM { client, backend, session, thread },
 	INT size)
 
-Attempt to reserve *size* bytes and release the reservation right
-away. Return the size of the reservation.
+Attempt to reserve *size* bytes, zero out that memory and release the
+reservation right away. Return the size of the reservation.
 
 See `vtc.workspace_alloc()`_ for semantics of the *size* argument.
 

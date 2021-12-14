@@ -194,6 +194,7 @@ vmod_workspace_reserve(VRT_CTX, VCL_ENUM which, VCL_INT size)
 	r = WS_ReserveSize(ws, size);
 	if (r == 0)
 		return (0);
+	memset(WS_Reservation(ws), 0, r);
 	WS_Release(ws, 0);
 	return (r);
 }
