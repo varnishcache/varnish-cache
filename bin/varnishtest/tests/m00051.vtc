@@ -14,7 +14,7 @@ varnish v1 -vcl {
 			debug.catflap(first);
 		} else if (req.http.get == "last") {
 			debug.catflap(last);
-		} else if (req.http.novcf) {
+		} else if (req.http.novcfpass) {
 			vtc.workspace_reserve(client, -1);
 			return (pass);
 		} else if (req.http.rollback) {
@@ -28,7 +28,7 @@ varnish v1 -vcl {
 	}
 
 	sub vcl_backend_error {
-		if (bereq.http.novcf) {
+		if (bereq.http.novcfpass) {
 			set beresp.status = 206;
 			return (deliver);
 		}
@@ -45,7 +45,7 @@ varnish v1 -vcl {
 		if (req.http.restart) {
 			unset req.http.restart;
 			unset req.http.id;
-			set req.http.novcf = "yes";
+			set req.http.novcfpass = "yes";
 			return (restart);
 		}
 	}
@@ -55,7 +55,7 @@ client c1 {
 	txreq -hdr "id: 1"
 	rxresp
 	expect resp.status == 200
-	txreq -hdr "novcf: yes"
+	txreq -hdr "novcfpass: yes"
 	rxresp
 	expect resp.status == 206
 	txreq -hdr "id: 2"
@@ -67,7 +67,7 @@ client c1 {
 	txreq -hdr "id: 3"
 	rxresp
 	expect resp.status == 200
-	txreq -hdr "novcf: yes"
+	txreq -hdr "novcfpass: yes"
 	rxresp
 	expect resp.status == 206
 
@@ -81,7 +81,7 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 	expect resp.http.id == "3"
-	txreq -hdr "novcf: yes"
+	txreq -hdr "novcfpass: yes"
 	rxresp
 	expect resp.status == 206
 
@@ -89,7 +89,7 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 	expect resp.http.id == "1"
-	txreq -hdr "novcf: yes"
+	txreq -hdr "novcfpass: yes"
 	rxresp
 	expect resp.status == 206
 } -run
