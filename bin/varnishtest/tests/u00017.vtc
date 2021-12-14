@@ -13,7 +13,7 @@ varnish v1 -vcl+backend {
 	}
 } -start
 
-varnish v1 -cliok "param.show vsl_mask +Debug"
+varnish v1 -cliok "param.set vsl_mask +Debug"
 
 client c1 {
 	txreq

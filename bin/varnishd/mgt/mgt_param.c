@@ -242,29 +242,42 @@ mcf_wrap(struct cli *cli, const char *text)
 static void v_matchproto_(cli_func_t)
 mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 {
-	int n;
 	struct plist *pl;
 	const struct parspec *pp;
-	int lfmt = 0, chg = 0;
+	int n, lfmt = 0, chg = 0;
 	struct vsb *vsb;
+	const char *show = NULL;
 
 	vsb = VSB_new_auto();
 	AN(vsb);
 	(void)priv;
 
-	if (av[2] != NULL && !strcmp(av[2], "changed"))
-		chg = 1;
-	else if (av[2] != NULL)
+	for (n = 2; av[n] != NULL; n++) {
+		if (strcmp(av[n], "-l") == 0) {
+			lfmt = 1;
+			continue;
+		}
+		if (strcmp(av[n], "changed") == 0) {
+			chg = 1;
+			continue;
+		}
+		if (show != NULL) {
+			VCLI_SetResult(cli, CLIS_TOOMANY);
+			VCLI_Out(cli, "Too many parameters");
+			return;
+		}
+		show = av[n];
 		lfmt = 1;
+	}
 
 	n = 0;
 	VTAILQ_FOREACH(pl, &phead, list) {
 		pp = pl->spec;
-		if (lfmt && strcmp(pp->name, av[2]) && strcmp("-l", av[2]))
+		if (lfmt && show != NULL && strcmp(pp->name, show))
 			continue;
-		if (pp->func == tweak_alias && !lfmt)
+		if (pp->func == tweak_alias && show == NULL)
 			continue;
-		if (pp->func == tweak_alias && strcmp(pp->name, av[2]))
+		if (pp->func == tweak_alias && strcmp(pp->name, show))
 			continue;
 		n++;
 
@@ -333,9 +346,9 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 			VCLI_Out(cli, "\n\n");
 		}
 	}
-	if (av[2] != NULL && lfmt && strcmp(av[2], "-l") && n == 0) {
+	if (show != NULL && n == 0) {
 		VCLI_SetResult(cli, CLIS_PARAM);
-		VCLI_Out(cli, "Unknown parameter \"%s\".", av[2]);
+		VCLI_Out(cli, "Unknown parameter \"%s\".", show);
 	}
 	VSB_destroy(&vsb);
 }
@@ -372,6 +385,11 @@ mcf_param_show_json(struct cli *cli, const char * const *av, void *priv)
 		}
 		if (strcmp(av[i], "-j") == 0)
 			continue;
+		if (show != NULL) {
+			VCLI_SetResult(cli, CLIS_TOOMANY);
+			VCLI_Out(cli, "Too many parameters");
+			return;
+		}
 		show = av[i];
 	}
 
