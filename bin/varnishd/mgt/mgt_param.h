@@ -64,6 +64,7 @@ struct parspec {
 	char		*dyn_min;
 	char		*dyn_max;
 	char		*dyn_def;
+	char		*val;
 };
 
 tweak_t tweak_alias;

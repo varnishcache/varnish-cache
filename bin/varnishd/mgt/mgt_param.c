@@ -522,7 +522,7 @@ MCF_ParamProtect(struct cli *cli, const char *args)
 void
 MCF_ParamSet(struct cli *cli, const char *param, const char *val)
 {
-	const struct parspec *pp;
+	struct parspec *pp;
 
 	pp = mcf_findpar(param);
 	if (pp == NULL) {
@@ -547,6 +547,9 @@ MCF_ParamSet(struct cli *cli, const char *param, const char *val)
 		val = pp->def;
 	if (pp->func(cli->sb, pp, val))
 		VCLI_SetResult(cli, CLIS_PARAM);
+
+	if (cli->result == CLIS_OK)
+		REPLACE(pp->val, val);
 
 	if (cli->result == CLIS_OK && heritage.param != NULL)
 		*heritage.param = mgt_param;
