@@ -378,7 +378,6 @@ tweak_string(struct vsb *vsb, const struct parspec *par, const char *arg)
 	char **p = TRUST_ME(par->priv);
 
 	AN(p);
-	/* XXX should have tweak_generic_string */
 	if (arg == NULL) {
 		VSB_quote(vsb, *p, -1, 0);
 	} else if (arg == JSON_FMT) {
