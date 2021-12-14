@@ -128,7 +128,7 @@ run_vcc(void *priv)
  * Expand the cc_command argument
  */
 
-static void
+static const char *
 cc_expand(struct vsb *sb, const char *cc_cmd, char exp)
 {
 	const char *p;
@@ -136,7 +136,7 @@ cc_expand(struct vsb *sb, const char *cc_cmd, char exp)
 
 	AN(sb);
 	AN(cc_cmd);
-	(void)exp;
+
 	for (p = cc_cmd, pct = 0; *p; ++p) {
 		if (pct) {
 			switch (*p) {
@@ -151,6 +151,11 @@ cc_expand(struct vsb *sb, const char *cc_cmd, char exp)
 				break;
 			case 'd':
 				VSB_cat(sb, mgt_cc_cmd_def);
+				break;
+			case 'D':
+				if (exp == pct)
+					return ("recursive expansion");
+				cc_expand(sb, mgt_cc_cmd_def, pct);
 				break;
 			case '%':
 				VSB_putc(sb, '%');
@@ -169,6 +174,7 @@ cc_expand(struct vsb *sb, const char *cc_cmd, char exp)
 	}
 	if (pct)
 		VSB_putc(sb, '%');
+	return (NULL);
 }
 
 /*--------------------------------------------------------------------
@@ -180,6 +186,7 @@ run_cc(void *priv)
 {
 	struct vcc_priv *vp;
 	struct vsb *sb;
+	const char *err;
 
 	VJ_subproc(JAIL_SUBPROC_CC);
 	CAST_OBJ_NOTNULL(vp, priv, VCC_PRIV_MAGIC);
@@ -188,7 +195,12 @@ run_cc(void *priv)
 
 	sb = VSB_new_auto();
 	AN(sb);
-	cc_expand(sb, mgt_cc_cmd, '\0');
+	err = cc_expand(sb, mgt_cc_cmd, '\0');
+	if (err != NULL) {
+		VSB_destroy(&sb);
+		fprintf(stderr, "cc_command: %s\n", err);
+		exit(1);
+	}
 	AZ(VSB_finish(sb));
 
 	(void)umask(027);

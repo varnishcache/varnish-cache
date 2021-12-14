@@ -1530,12 +1530,22 @@ PARAM_STRING(
 	/* priv */	&mgt_cc_cmd,
 	/* def */	VCC_CC,
 	/* descr */
-	"Command used for compiling the C source code to a "
-	"dlopen(3) loadable object.  Any occurrence of %s in "
-	"the string will be replaced with the source file name, "
-	"%o will be replaced with the output file name, and %w "
-	"will be replaced by the cc_warnings parameter. The %d "
-	"sequence expands to the default value for cc_command.",
+	"The command used for compiling the C source code to a "
+	"dlopen(3) loadable object. The following expansions can "
+	"be used:\n\n"
+	"- %s: the source file name\n"
+	"- %o: the output file name\n"
+	"- %w: the cc_warnings parameter\n"
+	"- %d: the raw default cc_command\n"
+	"- %D: the expanded default cc_command\n"
+	"- %%: a percent sign\n"
+	"\n"
+	"Unknown percent expansion sequences are ignored, and to "
+	"avoid future incompatibilities percent characters should "
+	"be escaped with a double percent sequence.\n\n"
+	"The %d and %D expansions allow passing the parameter's "
+	"default value to a wrapper script to perform additional "
+	"processing.",
 	/* flags */	MUST_RELOAD | BUILD_OPTIONS,
 	/* dyn_min_reason */	NULL,
 	/* dyn_max_reason */	NULL,
