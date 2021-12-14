@@ -292,6 +292,8 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 
 	if (WS_Overflowed(req->ws))
 		wrk->stats->ws_client_overflow++;
+
+	wrk->seen_methods = 0;
 }
 
 /*----------------------------------------------------------------------
