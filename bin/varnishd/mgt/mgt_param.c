@@ -248,8 +248,6 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 	struct vsb *vsb;
 	const char *show = NULL;
 
-	vsb = VSB_new_auto();
-	AN(vsb);
 	(void)priv;
 
 	for (n = 2; av[n] != NULL; n++) {
@@ -269,6 +267,9 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 		show = av[n];
 		lfmt = 1;
 	}
+
+	vsb = VSB_new_auto();
+	AN(vsb);
 
 	n = 0;
 	VTAILQ_FOREACH(pl, &phead, list) {
