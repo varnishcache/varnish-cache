@@ -195,7 +195,9 @@ statistics, it is essentially a director which state is a ``struct
 backend``. Varnish native backends currently speak HTTP/1 over TCP or
 UDS, and as such, you need to make your own custom backend if you want
 Varnish to do otherwise such as connect over UDP or speak a different
-protocol.
+protocol. A custom backend implementation must implement the ``gethdrs``
+method, and optionally ``http1pipe``. It is the responsibility of the
+custom backend to raise the ``send_failed`` flag from ``struct busyobj``.
 
 If you want to leverage probes declarations in VCL, which have the advantage of
 being reusable since they are only specifications, you can. However, you need
