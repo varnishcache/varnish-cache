@@ -7,7 +7,14 @@ varnishtest "Test timestamps"
 server s1 {
 	rxreq
 	txresp
+
 	rxreq
+	txresp
+
+	rxreq
+	expect req.method == PIPE
+	expect req.http.req-time != <undef>
+	expect req.http.bereq-time != <undef>
 	txresp
 } -start
 
@@ -30,6 +37,10 @@ varnish v1 -vcl+backend {
 		if (req.http.now-recv != req.http.now-recv_sub) {
 			return (fail);
 		}
+	}
+	sub vcl_pipe {
+		set bereq.http.req-time = req.time;
+		set bereq.http.bereq-time = bereq.time;
 	}
 	sub vcl_synth {
 		set resp.http.now-synth = now;
@@ -110,4 +121,7 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 	expect resp.http.now-synth ~ "^..., .. ... .... ..:..:.. GMT"
+
+	txreq -method PIPE
+	rxresp
 } -run

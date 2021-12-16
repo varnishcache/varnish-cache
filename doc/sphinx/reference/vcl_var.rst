@@ -690,7 +690,7 @@ bereq.time
 
 	Type: TIME
 
-	Readable from: backend
+	Readable from: vcl_pipe, backend
 
 	The time when we started preparing the first backend request,
 	remains constant across retries.

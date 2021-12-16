@@ -182,6 +182,7 @@ varnish v1 -expect sc_vcl_failure == 4
 
 logexpect l1012 -v v1 -g vxid -q "vxid == 1012" {
 	expect 0 1012	Begin		{^bereq 1011 pipe}
+	expect 0 =	Timestamp	{^Start:}
 	expect 0 =	BereqMethod	{^GET}
 	expect 0 =	BereqURL	{^/}
 	expect 0 =	BereqProtocol	{^HTTP/1.1}
