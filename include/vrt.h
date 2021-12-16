@@ -54,8 +54,8 @@
  * binary/load-time compatible, increment MAJOR version
  *
  * Next (2021-03-15)
- *	VRT_Assign_Backend added
- *	VRT_StaticDirector added
+ *	VRT_Assign_Backend() added
+ *	VRT_StaticDirector() added
  *	enum lbody_e changed
  *	- previous enum lbody_e values are defined as macros
  *	The following functions changed to take `const char *, BODY`:
