@@ -119,15 +119,6 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 			bo->no_retry = "req.body not cached";
 
 		if (bo->req->req_body_status == BS_ERROR) {
-			/*
-			 * XXX: (#2332) We should test to see if the backend
-			 * XXX: sent us some headers explaining why.
-			 * XXX: This is hard because of the mistaken API split
-			 * XXX: between cache_backend.c and V1F, and therefore
-			 * XXX: Parked in this comment, pending renovation of
-			 * XXX: the VDI/backend-protocol API to allow non-H1
-			 * XXX: backends.
-			 */
 			assert(i < 0);
 			VSLb(bo->vsl, SLT_FetchError,
 			    "req.body read error: %d (%s)",
@@ -158,10 +149,15 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 		    errno, VAS_errtxt(errno), sc->desc);
 		VSLb_ts_busyobj(bo, "Bereq", W_TIM_real(wrk));
 		htc->doclose = sc;
+		/* NB: only raise the flag if we managed to at least send
+		 * the request headers.
+		 */
+		bo->send_failed = bytes >= hdrbytes;
 		return (-1);
 	}
 	CHECK_OBJ_NOTNULL(sc, STREAM_CLOSE_MAGIC);
 	VSLb_ts_busyobj(bo, "Bereq", W_TIM_real(wrk));
+	bo->send_failed = 0;
 	return (0);
 }
 
@@ -171,7 +167,7 @@ V1F_FetchRespHdr(struct busyobj *bo)
 
 	struct http *hp;
 	int i;
-	double t;
+	vtim_real t;
 	struct http_conn *htc;
 	enum htc_status_e hs;
 
@@ -190,7 +186,9 @@ V1F_FetchRespHdr(struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
 
-	t = VTIM_real() + htc->first_byte_timeout;
+	t = VTIM_real();
+	if (!bo->send_failed)
+		t += htc->first_byte_timeout;
 	hs = HTC_RxStuff(htc, HTTP1_Complete, NULL, NULL,
 	    t, NAN, htc->between_bytes_timeout, cache_param->http_resp_size);
 	if (hs != HTC_S_COMPLETE) {
@@ -214,6 +212,8 @@ V1F_FetchRespHdr(struct busyobj *bo)
 			htc->doclose = SC_RX_OVERFLOW;
 			break;
 		case HTC_S_IDLE:
+			if (bo->send_failed)
+				break;
 			VSLb(bo->vsl, SLT_FetchError, "first byte timeout");
 			htc->doclose = SC_RX_TIMEOUT;
 			break;
