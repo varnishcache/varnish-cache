@@ -79,11 +79,18 @@ Restart
 Pipe handling timestamps
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
+The following timestamps are client timestamps specific to pipe transactions:
+
 Pipe
 	Opened a pipe to the backend and forwarded the request.
 
 PipeSess
 	The pipe session has finished.
+
+The following timestamps change meaning in a pipe transaction:
+
+Process
+	Processing finished, ready to begin the pipe delivery.
 
 Backend fetch timestamps
 ~~~~~~~~~~~~~~~~~~~~~~~~

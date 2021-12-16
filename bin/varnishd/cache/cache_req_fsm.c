@@ -766,6 +766,7 @@ cnt_pipe(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	VSLb(bo->vsl, SLT_Begin, "bereq %u pipe", VXID(req->vsl->wid));
 	VSLb(req->vsl, SLT_Link, "bereq %u pipe", VXID(bo->vsl->wid));
+	VSLb_ts_busyobj(bo, "Start", W_TIM_real(wrk));
 	THR_SetBusyobj(bo);
 	bo->sp = req->sp;
 	SES_Ref(bo->sp);
@@ -792,6 +793,8 @@ cnt_pipe(struct worker *wrk, struct req *req)
 		nxt = REQ_FSM_MORE;
 		break;
 	case VCL_RET_PIPE:
+		VSLb_ts_req(req, "Process", W_TIM_real(wrk));
+		VSLb_ts_busyobj(bo, "Process", wrk->lastused);
 		if (V1P_Enter() == 0) {
 			AZ(bo->req);
 			bo->req = req;
