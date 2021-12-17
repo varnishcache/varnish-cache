@@ -251,6 +251,8 @@ VRB_Ignore(struct req *req)
 	if (req->req_body_status->avail > 0)
 		(void)VRB_Iterate(req->wrk, req->vsl, req,
 		    httpq_req_body_discard, NULL);
+	if (req->req_body_status == BS_ERROR)
+		req->doclose = SC_RX_BODY;
 	return (0);
 }
 
