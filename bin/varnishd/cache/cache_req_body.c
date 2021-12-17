@@ -254,6 +254,8 @@ VRB_Ignore(struct req *req)
 	if (req->req_body_status == REQ_BODY_WITH_LEN ||
 	    req->req_body_status == REQ_BODY_WITHOUT_LEN)
 		(void)VRB_Iterate(req, httpq_req_body_discard, NULL);
+	if (req->req_body_status == REQ_BODY_FAIL)
+		req->doclose = SC_RX_BODY;
 	return(0);
 }
 
