@@ -273,7 +273,7 @@ sml_objfree(struct worker *wrk, struct objcore *oc)
 	wrk->stats->n_object--;
 }
 
-static int v_matchproto_(objiterate_f)
+static int v_matchproto_(objiterator_f)
 sml_iterator(struct worker *wrk, struct objcore *oc,
     void *priv, objiterate_f *func, int final)
 {
