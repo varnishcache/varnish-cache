@@ -276,9 +276,8 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 		pp = pl->spec;
 		if (lfmt && show != NULL && strcmp(pp->name, show))
 			continue;
-		if (pp->func == tweak_alias && show == NULL)
-			continue;
-		if (pp->func == tweak_alias && strcmp(pp->name, show))
+		if (pp->func == tweak_alias &&
+		    (show == NULL || strcmp(pp->name, show)))
 			continue;
 		n++;
 
@@ -406,9 +405,8 @@ mcf_param_show_json(struct cli *cli, const char * const *av, void *priv)
 		pp = pl->spec;
 		if (show != NULL && strcmp(pp->name, show) != 0)
 			continue;
-		if (pp->func == tweak_alias && show == NULL)
-			continue;
-		if (pp->func == tweak_alias && strcmp(pp->name, show))
+		if (pp->func == tweak_alias &&
+		    (show == NULL || strcmp(pp->name, show)))
 			continue;
 		n++;
 
