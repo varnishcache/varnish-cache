@@ -677,7 +677,7 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 
 	h2->new_req = req;
 	req->sp = h2->sess;
-	req->transport = &H2_transport;
+	req->transport = &HTTP2_transport;
 
 	req->t_first = VTIM_real();
 	req->t_req = VTIM_real();

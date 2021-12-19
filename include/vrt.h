@@ -54,6 +54,7 @@
  * binary/load-time compatible, increment MAJOR version
  *
  * Next (2021-03-15)
+ *	VRT_r_req_transport() added
  *	VRT_Assign_Backend() added
  *	VRT_StaticDirector() added
  *	enum lbody_e changed

@@ -15,6 +15,7 @@ varnish v1 -arg "-sTransient=default,1m" -vcl+backend {
 	}
 	sub vcl_deliver {
 		set resp.http.o_uncacheable = obj.uncacheable;
+		set resp.http.xport = req.transport;
 	}
 } -start
 
@@ -36,6 +37,7 @@ client c1 {
 	expect resp.http.connection == close
 	expect resp.http.x-ttl == 0.000
 	expect resp.http.o_uncacheable == true
+	expect resp.http.xport == HTTP/1
 } -run
 
 varnish v1 -expect n_object == 0

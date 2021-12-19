@@ -61,6 +61,7 @@ varnish v1 -proto "PROXY" -vcl+backend {
 		set resp.http.sp = std.port(server.ip);
 		set resp.http.fc = (client.ip ~ fwd_client);
 		set resp.http.fs = (server.ip ~ fwd_server);
+		set resp.http.xport = req.transport;
 	}
 } -start
 
@@ -87,6 +88,8 @@ client c1 {
 	expect resp.http.si == "${v1_addr}"
 	expect resp.http.sp == "${v1_port}"
 	expect resp.http.ci == "${localhost}"
+	# Transport is HTTP/1, even though proxy is used
+	expect resp.http.xport == HTTP/1
 } -run
 
 delay .1

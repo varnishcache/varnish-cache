@@ -278,7 +278,7 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 
 	/* Start req thread */
 	r2 = h2_new_req(h2, 1, req);
-	req->transport = &H2_transport;
+	req->transport = &HTTP2_transport;
 	assert(req->req_step == R_STP_TRANSPORT);
 	req->task->func = h2_do_req;
 	req->task->priv = req;
@@ -317,7 +317,7 @@ H2_PU_Sess(struct worker *wrk, struct sess *sp, struct req *req)
 {
 	VSLb(req->vsl, SLT_Debug, "H2 Prior Knowledge Upgrade");
 	req->err_code = H2_PU_MARKER;
-	SES_SetTransport(wrk, sp, req, &H2_transport);
+	SES_SetTransport(wrk, sp, req, &HTTP2_transport);
 }
 
 void
@@ -325,7 +325,7 @@ H2_OU_Sess(struct worker *wrk, struct sess *sp, struct req *req)
 {
 	VSLb(req->vsl, SLT_Debug, "H2 Optimistic Upgrade");
 	req->err_code = H2_OU_MARKER;
-	SES_SetTransport(wrk, sp, req, &H2_transport);
+	SES_SetTransport(wrk, sp, req, &HTTP2_transport);
 }
 
 static void v_matchproto_(task_func_t)
@@ -349,7 +349,7 @@ h2_new_session(struct worker *wrk, void *arg)
 	if (wrk->wpriv->vcl)
 		VCL_Rel(&wrk->wpriv->vcl);
 
-	assert(req->transport == &H2_transport);
+	assert(req->transport == &HTTP2_transport);
 
 	assert (req->err_code == H2_PU_MARKER || req->err_code == H2_OU_MARKER);
 
@@ -438,8 +438,8 @@ h2_new_session(struct worker *wrk, void *arg)
 	wrk->vsl = NULL;
 }
 
-struct transport H2_transport = {
-	.name =			"H2",
+struct transport HTTP2_transport = {
+	.name =			"HTTP/2",
 	.magic =		TRANSPORT_MAGIC,
 	.deliver =		h2_deliver,
 	.minimal_response =	h2_minimal_response,

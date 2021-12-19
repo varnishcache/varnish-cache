@@ -69,9 +69,15 @@ struct transport {
 	VTAILQ_ENTRY(transport)		list;
 };
 
-extern struct transport PROXY_transport;
-extern struct transport HTTP1_transport;
-extern struct transport H2_transport;
+#define TRANSPORTS \
+	TRANSPORT_MACRO(PROXY) \
+	TRANSPORT_MACRO(HTTP1) \
+	TRANSPORT_MACRO(HTTP2)
+
+#define TRANSPORT_MACRO(name) extern struct transport name##_transport;
+TRANSPORTS
+#undef TRANSPORT_MACRO
+
 htc_complete_f H2_prism_complete;
 void H2_PU_Sess(struct worker *, struct sess *, struct req *);
 void H2_OU_Sess(struct worker *, struct sess *, struct req *);

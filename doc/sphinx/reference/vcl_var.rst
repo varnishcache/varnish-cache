@@ -399,6 +399,15 @@ req.time
 	across restarts.
 
 
+req.transport
+
+	Type: STRING
+
+	Readable from: client
+
+	The transport protocol which brought this request.
+
+
 req.ttl
 
 	Type: DURATION

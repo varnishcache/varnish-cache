@@ -800,9 +800,9 @@ XPORT_Init(void)
 
 	ASSERT_MGT();
 
-	XPORT_Register(&PROXY_transport);
-	XPORT_Register(&HTTP1_transport);
-	XPORT_Register(&H2_transport);
+#define TRANSPORT_MACRO(name) XPORT_Register(&name##_transport);
+	TRANSPORTS
+#undef TRANSPORT_MACRO
 }
 
 const struct transport *

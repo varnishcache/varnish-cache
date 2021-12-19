@@ -35,6 +35,7 @@
 #include <stdio.h>
 
 #include "cache_varnishd.h"
+#include "cache_transport.h"
 #include "common/heritage.h"
 
 #include "vcl.h"
@@ -632,6 +633,18 @@ VRT_r_bereq_retries(VRT_CTX)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
 	return (ctx->bo->retries);
+}
+
+/*--------------------------------------------------------------------*/
+
+VCL_STRING
+VRT_r_req_transport(VRT_CTX)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req->transport, TRANSPORT_MAGIC);
+	return (ctx->req->transport->name);
 }
 
 /*--------------------------------------------------------------------
