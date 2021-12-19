@@ -1076,7 +1076,7 @@ vsl_catchup(struct varnish *v)
  *
  * \-errvcl STRING1 STRING2
  *         Load STRING2 as VCL, expecting it to fail, and Varnish to send an
- *         error string matching STRING2
+ *         error string matching STRING1
  *
  * \-jail STRING
  *         Look at ``man varnishd`` (-j) for more information.
