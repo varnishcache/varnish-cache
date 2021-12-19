@@ -601,12 +601,13 @@ pan_backtrace(struct vsb *vsb)
 	}
 	while (unw_step(&cursor) > 0) {
 		fname[0] = '\0';
-		ip = sp = 0;
-		unw_get_reg(&cursor, UNW_REG_IP, &ip);
-		unw_get_reg(&cursor, UNW_REG_SP, &sp);
-		unw_get_proc_name(&cursor, fname, sizeof(fname), &offp);
-		VSB_printf(vsb, "ip=0x%lx, sp=0x%lx <%s+0x%lx>\n", (long) ip,
-		    (long) sp, fname[0] ? fname : "<unknown>", (long)offp);
+		if (!unw_get_reg(&cursor, UNW_REG_IP, &ip))
+			VSB_printf(vsb, "ip=0x%lx", (long) ip);
+		if (!unw_get_reg(&cursor, UNW_REG_SP, &sp))
+			VSB_printf(vsb, " sp=0x%lx", (long) sp);
+		if (!unw_get_proc_name(&cursor, fname, sizeof(fname), &offp))
+			VSB_printf(vsb, " <%s+0x%lx>\n",
+			    fname[0] ? fname : "<unknown>", (long)offp);
 	}
 
 	VSB_indent(vsb, -2);
