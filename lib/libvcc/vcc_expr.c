@@ -149,7 +149,7 @@ vcc_delete_expr(struct expr *e)
  */
 
 static void
-vcc_strands_edit(struct expr *e1, struct expr *e2)
+vcc_strands_edit(const struct expr *e1, const struct expr *e2)
 {
 
 	if (e2->nstr == 1) {
