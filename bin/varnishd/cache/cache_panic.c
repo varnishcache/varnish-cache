@@ -606,8 +606,9 @@ pan_backtrace(struct vsb *vsb)
 		if (!unw_get_reg(&cursor, UNW_REG_SP, &sp))
 			VSB_printf(vsb, " sp=0x%lx", (long) sp);
 		if (!unw_get_proc_name(&cursor, fname, sizeof(fname), &offp))
-			VSB_printf(vsb, " <%s+0x%lx>\n",
+			VSB_printf(vsb, " <%s+0x%lx>",
 			    fname[0] ? fname : "<unknown>", (long)offp);
+		VSB_putc(vsb, '\n');
 	}
 
 	VSB_indent(vsb, -2);
