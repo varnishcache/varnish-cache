@@ -423,7 +423,7 @@ http_PutField(struct http *to, int field, const char *string)
 
 /*--------------------------------------------------------------------*/
 
-static int
+int
 http_IsHdr(const txt *hh, hdr_t hdr)
 {
 	unsigned l;

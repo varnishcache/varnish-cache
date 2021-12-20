@@ -585,6 +585,7 @@ void HTTP_Clone(struct http *to, const struct http * const fm);
 void HTTP_Dup(struct http *to, const struct http * const fm);
 struct http *HTTP_create(void *p, uint16_t nhttp, unsigned);
 const char *http_Status2Reason(unsigned, const char **);
+int http_IsHdr(const txt *hh, hdr_t hdr);
 unsigned http_EstimateWS(const struct http *fm, unsigned how);
 void http_PutResponse(struct http *to, const char *proto, uint16_t status,
     const char *response);
