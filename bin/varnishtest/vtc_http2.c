@@ -1275,16 +1275,12 @@ cmd_sendhex(CMD_ARGS)
 #define ENC(hdr, k, v)					\
 {							\
 	AN(k);						\
-	hdr.key.ptr = strdup(k);			\
-	AN(hdr.key.ptr);				\
+	hdr.key.ptr = TRUST_ME(k);			\
 	hdr.key.len = strlen(k);			\
 	AN(v);						\
-	hdr.value.ptr = strdup(v);			\
-	AN(hdr.value.ptr);				\
+	hdr.value.ptr = TRUST_ME(v);			\
 	hdr.value.len = strlen(v);			\
 	assert(HPK_EncHdr(iter, &hdr) != hpk_err);	\
-	free(hdr.key.ptr);				\
-	free(hdr.value.ptr);				\
 }
 
 #define STR_ENC(av, field, str)						       \
