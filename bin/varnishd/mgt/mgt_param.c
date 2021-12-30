@@ -364,12 +364,11 @@ mcf_json_key_valstr(struct cli *cli, const char *key, const char *val)
 static void v_matchproto_(cli_func_t)
 mcf_param_show_json(struct cli *cli, const char * const *av, void *priv)
 {
-	int n, comma = 0;
+	int n, comma = 0, chg = 0;
 	struct plist *pl;
 	const struct parspec *pp;
-	int chg = 0, flags;
 	struct vsb *vsb, *def;
-	const char *show = NULL;
+	const char *show = NULL, *sep;
 
 	(void)priv;
 
@@ -445,16 +444,15 @@ mcf_param_show_json(struct cli *cli, const char * const *av, void *priv)
 			mcf_json_key_valstr(cli, "maximum", pp->max);
 		mcf_json_key_valstr(cli, "description", pp->descr);
 
-		flags = 0;
-		VCLI_Out(cli, "\"flags\": [\n");
+		VCLI_Out(cli, "\"flags\": [");
 		VSB_indent(cli->sb, 2);
+		sep = "";
 
 #define flag_out(flag, string) do {					\
 			if (pp->flags & flag) {				\
-				if (flags)				\
-					VCLI_Out(cli, ",\n");		\
+				VCLI_Out(cli, "%s\n", sep);		\
 				VCLI_Out(cli, "\"%s\"", #string);	\
-				flags++;				\
+				sep = ",";				\
 			}						\
 		} while(0)
 
@@ -469,10 +467,12 @@ mcf_param_show_json(struct cli *cli, const char * const *av, void *priv)
 
 #undef flag_out
 
+		if (pp->flags)
+			VCLI_Out(cli, "\n");
 		VSB_indent(cli->sb, -2);
-		VCLI_Out(cli, "\n]");
+		VCLI_Out(cli, "]\n");
 		VSB_indent(cli->sb, -2);
-		VCLI_Out(cli, "\n}");
+		VCLI_Out(cli, "}");
 	}
 	VCLI_JSON_end(cli);
 	if (show != NULL && n == 0) {
