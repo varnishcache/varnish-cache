@@ -53,26 +53,27 @@ const char * const JSON_FMT = (const char *)&JSON_FMT;
  */
 
 static int
-tweak_generic_double(struct vsb *vsb, volatile double *dest,
-    const char *arg, const char *min, const char *max, const char *fmt)
+tweak_generic_double(struct vsb *vsb, const char *arg, const struct parspec *pp,
+    const char *fmt)
 {
 	volatile double u, minv = VRT_DECIMAL_MIN, maxv = VRT_DECIMAL_MAX;
+	volatile double *dest = pp->priv;
 	const char *p, *err;
 
 	if (arg != NULL && arg != JSON_FMT) {
-		if (min != NULL) {
-			p = min;
+		if (pp->min != NULL) {
+			p = pp->min;
 			minv = SF_Parse_Decimal(&p, 0, &err);
 			if (errno) {
-				VSB_printf(vsb, "Min: %s (%s)\n", err, min);
+				VSB_printf(vsb, "Min: %s (%s)\n", err, pp->min);
 				return (-1);
 			}
 		}
-		if (max != NULL) {
-			p = max;
+		if (pp->max != NULL) {
+			p = pp->max;
 			maxv = SF_Parse_Decimal(&p, 0, &err);
 			if (errno) {
-				VSB_printf(vsb, "Max: %s (%s)\n", err, max);
+				VSB_printf(vsb, "Max: %s (%s)\n", err, pp->max);
 				return (-1);
 			}
 		}
@@ -85,12 +86,12 @@ tweak_generic_double(struct vsb *vsb, volatile double *dest,
 		}
 		if (u < minv) {
 			VSB_printf(vsb,
-			    "Must be greater or equal to %s\n", min);
+			    "Must be greater or equal to %s\n", pp->min);
 			return (-1);
 		}
 		if (u > maxv) {
 			VSB_printf(vsb,
-			    "Must be less than or equal to %s\n", max);
+			    "Must be less than or equal to %s\n", pp->max);
 			return (-1);
 		}
 		*dest = u;
@@ -105,11 +106,8 @@ tweak_generic_double(struct vsb *vsb, volatile double *dest,
 int v_matchproto_(tweak_t)
 tweak_timeout(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
-	volatile double *dest;
 
-	dest = par->priv;
-	return (tweak_generic_double(vsb, dest, arg,
-	    par->min, par->max, "%.3f"));
+	return (tweak_generic_double(vsb, arg, par, "%.3f"));
 }
 
 /*--------------------------------------------------------------------*/
@@ -117,10 +115,8 @@ tweak_timeout(struct vsb *vsb, const struct parspec *par, const char *arg)
 int v_matchproto_(tweak_t)
 tweak_double(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
-	volatile double *dest;
 
-	dest = par->priv;
-	return (tweak_generic_double(vsb, dest, arg, par->min, par->max, "%g"));
+	return (tweak_generic_double(vsb, arg, par, "%g"));
 }
 
 /*--------------------------------------------------------------------*/
@@ -396,6 +392,7 @@ int v_matchproto_(tweak_t)
 tweak_poolparam(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	volatile struct poolparam *pp, px;
+	struct parspec pt;
 	char **av;
 	int retval = 0;
 
@@ -437,8 +434,10 @@ tweak_poolparam(struct vsb *vsb, const struct parspec *par, const char *arg)
 			    par->dyn_max_reason);
 			if (retval)
 				break;
-			retval = tweak_generic_double(vsb,
-			    &px.max_age, av[3], "0", "1000000", "%.0f");
+			pt.priv = &px.max_age;
+			pt.min = "0";
+			pt.max = "1000000";
+			retval = tweak_generic_double(vsb, av[3], &pt, "%.0f");
 			if (retval)
 				break;
 			if (px.min_pool > px.max_pool) {
