@@ -52,34 +52,44 @@ const char * const JSON_FMT = (const char *)&JSON_FMT;
  * Generic handling of double typed parameters
  */
 
+static double
+parse_decimal(const char *p, const char **err)
+{
+	double v;
+
+	v = SF_Parse_Decimal(&p, 0, err);
+	if (errno == 0 && *p != '\0') {
+		errno = EINVAL;
+		*err = "Invalid number";
+	}
+	return (v);
+}
+
 static int
 tweak_generic_double(struct vsb *vsb, const char *arg, const struct parspec *pp,
     const char *fmt)
 {
 	volatile double u, minv = VRT_DECIMAL_MIN, maxv = VRT_DECIMAL_MAX;
 	volatile double *dest = pp->priv;
-	const char *p, *err;
+	const char *err;
 
 	if (arg != NULL && arg != JSON_FMT) {
 		if (pp->min != NULL) {
-			p = pp->min;
-			minv = SF_Parse_Decimal(&p, 0, &err);
+			minv = parse_decimal(pp->min, &err);
 			if (errno) {
 				VSB_printf(vsb, "Min: %s (%s)\n", err, pp->min);
 				return (-1);
 			}
 		}
 		if (pp->max != NULL) {
-			p = pp->max;
-			maxv = SF_Parse_Decimal(&p, 0, &err);
+			maxv = parse_decimal(pp->max, &err);
 			if (errno) {
 				VSB_printf(vsb, "Max: %s (%s)\n", err, pp->max);
 				return (-1);
 			}
 		}
 
-		p = arg;
-		u = SF_Parse_Decimal(&p, 0, &err);
+		u = parse_decimal(arg, &err);
 		if (errno) {
 			VSB_printf(vsb, "%s (%s)\n", err, arg);
 			return (-1);

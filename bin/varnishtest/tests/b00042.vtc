@@ -4,6 +4,7 @@ varnish v1 -vcl {backend be none;} -start
 
 
 varnish v1 -clierr 106	"param.set default_ttl -1"
+varnish v1 -clierr 106	{param.set acceptor_sleep_decay "0.42 is not a number"}
 varnish v1 -clierr 106	"param.set acceptor_sleep_max 20"
 varnish v1 -cliok	"param.set prefer_ipv6 off"
 varnish v1 -cliok	"param.set prefer_ipv6 no"
