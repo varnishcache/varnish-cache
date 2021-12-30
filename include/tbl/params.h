@@ -385,13 +385,16 @@ PARAM_SIMPLE(
 	/* type */	timeout,
 	/* min */	"0.000",
 	/* max */	NULL,
-	/* def */	"10.000",
+	/* def */	"10s",
 	/* units */	"seconds",
 	/* descr */
 	"Default grace period.  We will deliver an object this long after "
 	"it has expired, provided another thread is attempting to get a "
 	"new copy.",
-	/* flags */	OBJ_STICKY
+	/* flags */	OBJ_STICKY,
+	/* dyn_min_reason */	NULL,
+	/* dyn_max_reason */	NULL,
+	/* dyn_def_reason */	"10s"
 )
 
 PARAM_SIMPLE(
@@ -399,14 +402,17 @@ PARAM_SIMPLE(
 	/* type */	timeout,
 	/* min */	"0.000",
 	/* max */	NULL,
-	/* def */	"0.000",
+	/* def */	"0s",
 	/* units */	"seconds",
 	/* descr */
 	"Default keep period.  We will keep a useless object around this "
 	"long, making it available for conditional backend fetches.  That "
 	"means that the object will be removed from the cache at the end "
 	"of ttl+grace+keep.",
-	/* flags */	OBJ_STICKY
+	/* flags */	OBJ_STICKY,
+	/* dyn_min_reason */	NULL,
+	/* dyn_max_reason */	NULL,
+	/* dyn_def_reason */	"0s"
 )
 
 PARAM_SIMPLE(
@@ -414,12 +420,15 @@ PARAM_SIMPLE(
 	/* type */	timeout,
 	/* min */	"0.000",
 	/* max */	NULL,
-	/* def */	"120.000",
+	/* def */	"2m",
 	/* units */	"seconds",
 	/* descr */
 	"The TTL assigned to objects if neither the backend nor the VCL "
 	"code assigns one.",
-	/* flags */	OBJ_STICKY
+	/* flags */	OBJ_STICKY,
+	/* dyn_min_reason */	NULL,
+	/* dyn_max_reason */	NULL,
+	/* dyn_def_reason */	"2m"
 )
 
 PARAM_SIMPLE(
