@@ -429,6 +429,37 @@ vep_do_remove(struct vep_state *vep, enum dowhat what)
 /*---------------------------------------------------------------------
  */
 
+static void
+include_attr_src(struct vep_state *vep)
+{
+	const char *p;
+
+	if (vep->include_src != NULL) {
+		vep_error(vep,
+		    "ESI 1.0 <esi:include> "
+		    "has multiple src= attributes");
+		vep->state = VEP_TAGERROR;
+		VSB_destroy(&vep->attr_vsb);
+		VSB_destroy(&vep->include_src);
+		return;
+	}
+	for (p = VSB_data(vep->attr_vsb); *p != '\0'; p++)
+		if (vct_islws(*p))
+			break;
+	if (*p != '\0') {
+		vep_error(vep,
+		    "ESI 1.0 <esi:include> "
+		    "has whitespace in src= attribute");
+		vep->state = VEP_TAGERROR;
+		VSB_destroy(&vep->attr_vsb);
+		if (vep->include_src != NULL)
+			VSB_destroy(&vep->include_src);
+		return;
+	}
+	vep->include_src = vep->attr_vsb;
+	vep->attr_vsb = NULL;
+}
+
 static void v_matchproto_()
 vep_do_include(struct vep_state *vep, enum dowhat what)
 {
@@ -439,31 +470,11 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 	if (what == DO_ATTR) {
 		Debug("ATTR (%s) (%s)\n", vep->match_hit->match,
 			VSB_data(vep->attr_vsb));
-		if (vep->include_src != NULL) {
-			vep_error(vep,
-			    "ESI 1.0 <esi:include> "
-			    "has multiple src= attributes");
-			vep->state = VEP_TAGERROR;
-			VSB_destroy(&vep->attr_vsb);
-			VSB_destroy(&vep->include_src);
+		if (!strcmp("src=", vep->match_hit->match)) {
+			include_attr_src(vep);
 			return;
 		}
-		for (p = VSB_data(vep->attr_vsb); *p != '\0'; p++)
-			if (vct_islws(*p))
-				break;
-		if (*p != '\0') {
-			vep_error(vep,
-			    "ESI 1.0 <esi:include> "
-			    "has whitespace in src= attribute");
-			vep->state = VEP_TAGERROR;
-			VSB_destroy(&vep->attr_vsb);
-			if (vep->include_src != NULL)
-				VSB_destroy(&vep->include_src);
-			return;
-		}
-		vep->include_src = vep->attr_vsb;
-		vep->attr_vsb = NULL;
-		return;
+		WRONG("Unhandled <esi:include> attribute");
 	}
 	assert(what == DO_TAG);
 	if (!vep->emptytag)
