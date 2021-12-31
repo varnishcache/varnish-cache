@@ -70,6 +70,10 @@ FEATURE_BIT(ESI_REMOVE_BOM,		esi_remove_bom,
     "Ignore UTF-8 BOM in ESI bodies."
 )
 
+FEATURE_BIT(ESI_INCLUDE_ONERROR,	esi_include_onerror,
+    "Parse the onerror attribute of <esi:include> tags."
+)
+
 FEATURE_BIT(WAIT_SILO,			wait_silo,
     "Wait for persistent silos to completely load before serving requests."
 )

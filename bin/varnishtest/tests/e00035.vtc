@@ -1,0 +1,50 @@
+varnishtest "ESI fragment fetch fail"
+
+server s1 {
+	rxreq
+	expect req.url == "/abort"
+	txresp -hdr {surrogate-control: content="ESI/1.0"} \
+	    -body {before <esi:include src="/fail"/> after}
+
+	rxreq
+	expect req.url == "/fail"
+	txresp -hdr "content-length: 100" -nolen
+	delay 0.1
+} -start
+
+varnish v1 -cliok "param.set feature +esi_disable_xml_check"
+varnish v1 -cliok "param.set feature +esi_include_onerror"
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.do_esi = beresp.http.surrogate-control ~ "ESI/1.0";
+		unset beresp.http.surrogate-control;
+	}
+} -start
+
+client c1 {
+	txreq -url "/abort"
+	non_fatal
+	rxresp
+	expect resp.body == "before "
+} -run
+
+server s1 -wait
+
+server s1 {
+	rxreq
+	expect req.url == "/continue"
+	txresp -hdr {surrogate-control: content="ESI/1.0"} \
+	    -body {before <esi:include src="/fail" onerror="continue"/> after}
+
+	rxreq
+	expect req.url == "/fail"
+	txresp -hdr "content-length: 100" -nolen
+	delay 0.1
+} -start
+
+client c1 {
+	fatal
+	txreq -url "/continue"
+	rxresp
+	expect resp.body == "before  after"
+} -run

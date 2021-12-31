@@ -65,6 +65,7 @@ struct ecx {
 	ssize_t		l;
 	int		isgzip;
 	int		woken;
+	int		abrt;
 
 	struct req	*preq;
 	struct ecx	*pecx;
@@ -378,7 +379,11 @@ ved_vdp_esi_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 				Debug("SKIP1(%d)\n", (int)ecx->l);
 				ecx->state = 4;
 				break;
-			case VEC_INCL:
+			case VEC_INCL_ABRT:
+				ecx->abrt =
+				    FEATURE(FEATURE_ESI_INCLUDE_ONERROR);
+				/* FALLTHROUGH */
+			case VEC_INCL_CONT:
 				ecx->p++;
 				q = (void*)strchr((const char*)ecx->p, '\0');
 				AN(q);
@@ -905,4 +910,9 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 		req->doclose = SC_REM_CLOSE;
 
 	req->acct.resp_bodybytes += VDP_Close(req->vdc);
+
+	if (i && ecx->abrt) {
+		req->top->topreq->vdc->retval = -1;
+		req->top->topreq->doclose = req->doclose;
+	}
 }

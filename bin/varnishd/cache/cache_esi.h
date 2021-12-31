@@ -39,7 +39,8 @@
 #define	VEC_S1	(0x60 + 1)
 #define	VEC_S2	(0x60 + 2)
 #define	VEC_S8	(0x60 + 8)
-#define	VEC_INCL	'I'
+#define	VEC_INCL_ABRT	'I'
+#define	VEC_INCL_CONT	'i'
 
 typedef ssize_t vep_callback_t(struct vfp_ctx *, void *priv, ssize_t l,
     enum vgz_flag flg);
