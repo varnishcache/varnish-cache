@@ -720,23 +720,18 @@ VRT_r_now(VRT_CTX)
 VCL_STRING v_matchproto_()
 VRT_IP_string(VRT_CTX, VCL_IP ip)
 {
-	char *p;
-	unsigned len;
+	char buf[VTCP_ADDRBUFSIZE];
+	struct vsb vsb[1];
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	if (ip == NULL) {
 		VRT_fail(ctx, "%s: Illegal IP", __func__);
 		return (NULL);
 	}
-	len = WS_ReserveAll(ctx->ws);
-	if (len == 0) {
-		WS_Release(ctx->ws, 0);
-		return (NULL);
-	}
-	p = WS_Reservation(ctx->ws);
-	VTCP_name(ip, p, len, NULL, 0);
-	WS_Release(ctx->ws, strlen(p) + 1);
-	return (p);
+	VTCP_name(ip, buf, sizeof buf, NULL, 0);
+	WS_VSB_new(vsb, ctx->ws);
+	VSB_cat(vsb, buf);
+	return (WS_VSB_finish(vsb, ctx->ws, NULL));
 }
 
 int
