@@ -67,6 +67,7 @@
 
 static struct vsb pan_vsb_storage, *pan_vsb;
 static pthread_mutex_t panicstr_mtx;
+static pthread_t panicy;
 
 static void pan_sess(struct vsb *, const struct sess *);
 static void pan_req(struct vsb *, const struct req *);
@@ -720,11 +721,16 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 	struct sigaction sa;
 	int err = errno;
 
-	AZ(pthread_mutex_lock(&panicstr_mtx));
-
-	/* If we already panic'ed, do nothing */
-	while (heritage.panic_str[0])
+	/* If we already panicing in another thread, do nothing */
+	while (heritage.panic_str[0] && panicy != pthread_self())
 		sleep(1);
+
+	if (pthread_mutex_lock(&panicstr_mtx)) {
+		/* Reentrant panic */
+		VSB_printf(pan_vsb,"\n\nPANIC REENTRANCY\n\n");
+		abort();
+	}
+	panicy = pthread_self();
 
 	/*
 	 * should we trigger a SIGSEGV while handling a panic, our sigsegv
