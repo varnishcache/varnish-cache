@@ -252,10 +252,8 @@ vcc_expr_fmt(struct vsb *d, int ind, const struct expr *e1)
 	char *p;
 	int i;
 
-	if (!e1->fmt->noindent) {
-		for (i = 0; i < ind; i++)
-			VSB_putc(d, ' ');
-	}
+	for (i = 0; i < ind; i++)
+		VSB_putc(d, ' ');
 	p = VSB_data(e1->vsb);
 	while (*p != '\0') {
 		if (*p == '\n') {

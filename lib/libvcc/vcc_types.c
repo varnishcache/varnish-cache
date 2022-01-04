@@ -85,7 +85,6 @@ const struct type BLOB[1] = {{
 const struct type BODY[1] = {{
 	.magic =		TYPE_MAGIC,
 	.name =			"BODY",
-	.noindent =		1,
 }};
 
 const struct type BOOL[1] = {{

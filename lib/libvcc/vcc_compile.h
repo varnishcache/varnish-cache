@@ -120,7 +120,6 @@ struct type {
 	vcc_type_t		multype;
 	int			stringform;
 	int			bodyform;
-	int			noindent;
 };
 
 #define VCC_TYPE(UC, lc)	extern const struct type UC[1];
