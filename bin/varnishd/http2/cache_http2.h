@@ -44,7 +44,7 @@ struct h2_error_s {
 	uint32_t			val;
 	int				stream;
 	int				connection;
-	enum sess_close			reason;
+	stream_close_t			reason;
 };
 
 typedef const struct h2_error_s *h2_error;

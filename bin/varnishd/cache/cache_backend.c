@@ -344,11 +344,11 @@ vbe_dir_getip(VRT_CTX, VCL_BACKEND d)
 
 /*--------------------------------------------------------------------*/
 
-static enum sess_close v_matchproto_(vdi_http1pipe_f)
+static stream_close_t v_matchproto_(vdi_http1pipe_f)
 vbe_dir_http1pipe(VRT_CTX, VCL_BACKEND d)
 {
 	int i;
-	enum sess_close retval;
+	stream_close_t retval;
 	struct backend *bp;
 	struct v1p_acct v1a;
 	struct pfd *pfd;

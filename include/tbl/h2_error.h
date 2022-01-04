@@ -30,7 +30,7 @@
  * RFC7540 section 11.4
  *
  * Types: conn=1|stream=2
- * Reason: enum sess_close
+ * Reason: stream_close_t
  */
 
 /*lint -save -e525 -e539 */

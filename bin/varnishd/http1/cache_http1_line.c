@@ -55,7 +55,7 @@ struct v1l {
 	unsigned		magic;
 #define V1L_MAGIC		0x2f2142e5
 	int			*wfd;
-	enum sess_close		werr;	/* valid after V1L_Flush() */
+	stream_close_t		werr;	/* valid after V1L_Flush() */
 	struct iovec		*iov;
 	unsigned		siov;
 	unsigned		niov;
@@ -123,13 +123,13 @@ V1L_Open(struct worker *wrk, struct ws *ws, int *fd, struct vsl_log *vsl,
 	WS_Release(ws, u * sizeof(struct iovec));
 }
 
-enum sess_close
+stream_close_t
 V1L_Close(struct worker *wrk, uint64_t *cnt)
 {
 	struct v1l *v1l;
 	struct ws *ws;
 	uintptr_t ws_snap;
-	enum sess_close sc;
+	stream_close_t sc;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AN(cnt);
@@ -169,7 +169,7 @@ v1l_prune(struct v1l *v1l, size_t bytes)
 	AZ(v1l->liov);
 }
 
-enum sess_close
+stream_close_t
 V1L_Flush(const struct worker *wrk)
 {
 	ssize_t i;

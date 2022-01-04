@@ -956,11 +956,11 @@ http_GetRange(const struct http *hp, ssize_t *lo, ssize_t *hi)
 /*--------------------------------------------------------------------
  */
 
-enum sess_close
-http_DoConnection(struct http *hp, enum sess_close sc_close)
+stream_close_t
+http_DoConnection(struct http *hp, stream_close_t sc_close)
 {
 	const char *h, *b, *e;
-	enum sess_close retval;
+	stream_close_t retval;
 	unsigned u, v;
 	struct http_hdrflg *f;
 

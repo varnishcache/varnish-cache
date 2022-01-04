@@ -89,7 +89,7 @@ void v_matchproto_(vtr_deliver_f)
 V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 {
 	int err = 0, chunked = 0;
-	enum sess_close sc;
+	stream_close_t sc;
 	uint64_t hdrbytes, bytes;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);

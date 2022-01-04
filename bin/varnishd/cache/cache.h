@@ -432,7 +432,7 @@ struct req {
 #define REQ_MAGIC		0xfb4abf6d
 
 	body_status_t		req_body_status;
-	enum sess_close		doclose;
+	stream_close_t		doclose;
 	unsigned		restarts;
 	unsigned		esi_level;
 
@@ -628,7 +628,7 @@ int HTTP_IterHdrPack(struct worker *, struct objcore *, const char **);
 #define HTTP_FOREACH_PACK(wrk, oc, ptr) \
 	 for ((ptr) = NULL; HTTP_IterHdrPack(wrk, oc, &(ptr));)
 const char *HTTP_GetHdrPack(struct worker *, struct objcore *, hdr_t);
-enum sess_close http_DoConnection(struct http *hp, enum sess_close sc_close);
+stream_close_t http_DoConnection(struct http *hp, stream_close_t sc_close);
 int http_IsFiltered(const struct http *hp, unsigned u, unsigned how);
 
 #define HTTPH_R_PASS		(1 << 0)	/* Request (c->b) in pass mode */

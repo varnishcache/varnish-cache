@@ -197,7 +197,7 @@ VDI_Finish(struct busyobj *bo)
 
 /* Get a connection --------------------------------------------------*/
 
-enum sess_close
+stream_close_t
 VDI_Http1Pipe(struct req *req, struct busyobj *bo)
 {
 	const struct director *d;

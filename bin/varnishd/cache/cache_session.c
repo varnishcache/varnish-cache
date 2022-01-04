@@ -510,7 +510,7 @@ SES_Wait(struct sess *sp, const struct transport *xp)
  */
 
 static void
-ses_close_acct(enum sess_close reason)
+ses_close_acct(stream_close_t reason)
 {
 	int i = 0;
 
@@ -537,7 +537,7 @@ ses_close_acct(enum sess_close reason)
  */
 
 void
-SES_Close(struct sess *sp, enum sess_close reason)
+SES_Close(struct sess *sp, stream_close_t reason)
 {
 	int i;
 
@@ -554,7 +554,7 @@ SES_Close(struct sess *sp, enum sess_close reason)
  */
 
 void
-SES_Delete(struct sess *sp, enum sess_close reason, vtim_real now)
+SES_Delete(struct sess *sp, stream_close_t reason, vtim_real now)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -576,7 +576,7 @@ SES_Delete(struct sess *sp, enum sess_close reason, vtim_real now)
 	}
 
 	if (reason == SC_NULL)
-		reason = (enum sess_close)-sp->fd;
+		reason = (stream_close_t)-sp->fd;
 
 	VSL(SLT_SessClose, sp->vxid, "%s %.3f",
 	    sess_close_2str(reason, 0), now - sp->t_open);
@@ -589,7 +589,7 @@ SES_Delete(struct sess *sp, enum sess_close reason, vtim_real now)
 void
 SES_DeleteHS(struct sess *sp, enum htc_status_e hs, vtim_real now)
 {
-	enum sess_close reason;
+	stream_close_t reason;
 
 	switch (hs) {
 	case HTC_S_JUNK:

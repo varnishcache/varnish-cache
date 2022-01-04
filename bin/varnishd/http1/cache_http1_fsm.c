@@ -174,7 +174,7 @@ http1_req_panic(struct vsb *vsb, const struct req *req)
 }
 
 static void v_matchproto_(vtr_req_fail_f)
-http1_req_fail(struct req *req, enum sess_close reason)
+http1_req_fail(struct req *req, stream_close_t reason)
 {
 	assert(reason > 0);
 	assert(req->sp->fd != 0);

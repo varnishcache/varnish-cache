@@ -88,7 +88,7 @@ boc_state_2str(enum boc_state_e e)
 /*--------------------------------------------------------------------*/
 
 const char *
-sess_close_2str(enum sess_close sc, int want_desc)
+sess_close_2str(stream_close_t sc, int want_desc)
 {
 	switch (sc) {
 	case SC_NULL:		return (want_desc ? "(null)" : "NULL");

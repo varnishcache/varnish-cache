@@ -74,7 +74,7 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
     uint64_t *ctr_bodybytes)
 {
 	struct http *hp;
-	enum sess_close sc;
+	stream_close_t sc;
 	ssize_t i;
 	uint64_t bytes, hdrbytes;
 	struct http_conn *htc;

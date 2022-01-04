@@ -31,7 +31,7 @@
 
 /*lint -save -e525 -e539 */
 
-// enum sess_close	  sc_* stat	is_err	Description
+// stream_close_t	  sc_* stat	is_err	Description
 SESS_CLOSE(REM_CLOSE,	  rem_close,	0,	"Client Closed")
 SESS_CLOSE(REQ_CLOSE,	  req_close,	0,	"Client requested close")
 SESS_CLOSE(REQ_HTTP10,	  req_http10,	1,	"Proto < HTTP/1.1")

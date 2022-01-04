@@ -300,7 +300,7 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
  */
 
 void v_matchproto_(vtr_req_fail_f)
-Req_Fail(struct req *req, enum sess_close reason)
+Req_Fail(struct req *req, stream_close_t reason)
 {
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 

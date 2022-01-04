@@ -268,6 +268,8 @@ struct vsl_log;
 struct vsmw_cluster;
 struct ws;
 
+typedef enum sess_close stream_close_t;
+
 /***********************************************************************
  * VCL_STRANDS:
  *
@@ -662,7 +664,7 @@ typedef VCL_BACKEND vdi_resolve_f(VRT_CTX, VCL_BACKEND);
 typedef int vdi_gethdrs_f(VRT_CTX, VCL_BACKEND);
 typedef VCL_IP vdi_getip_f(VRT_CTX, VCL_BACKEND);
 typedef void vdi_finish_f(VRT_CTX, VCL_BACKEND);
-typedef enum sess_close vdi_http1pipe_f(VRT_CTX, VCL_BACKEND);
+typedef stream_close_t vdi_http1pipe_f(VRT_CTX, VCL_BACKEND);
 typedef void vdi_event_f(VCL_BACKEND, enum vcl_event_e);
 typedef void vdi_destroy_f(VCL_BACKEND);
 typedef void vdi_panic_f(VCL_BACKEND, struct vsb *);

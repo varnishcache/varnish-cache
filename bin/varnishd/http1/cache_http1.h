@@ -62,6 +62,6 @@ void V1L_Chunked(const struct worker *w);
 void V1L_EndChunk(const struct worker *w);
 void V1L_Open(struct worker *, struct ws *, int *fd, struct vsl_log *,
     vtim_real deadline, unsigned niov);
-enum sess_close V1L_Flush(const struct worker *w);
-enum sess_close V1L_Close(struct worker *w, uint64_t *cnt);
+stream_close_t V1L_Flush(const struct worker *w);
+stream_close_t V1L_Close(struct worker *w, uint64_t *cnt);
 size_t V1L_Write(const struct worker *w, const void *ptr, ssize_t len);

@@ -136,7 +136,7 @@ h2_init_sess(struct sess *sp,
 }
 
 static void
-h2_del_sess(struct worker *wrk, struct h2_sess *h2, enum sess_close reason)
+h2_del_sess(struct worker *wrk, struct h2_sess *h2, stream_close_t reason)
 {
 	struct sess *sp;
 	struct req *req;
