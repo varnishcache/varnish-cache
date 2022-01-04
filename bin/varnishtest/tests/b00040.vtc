@@ -35,7 +35,7 @@ logexpect l1 -v v1 -g raw {
 	expect * 1012 BogoHeader {Header has ctrl char 0x0d}
 	expect * 1014 BogoHeader {Header has ctrl char 0x0d}
 	expect * 1016 BogoHeader {Missing header name:.*}
-	expect * 1018 VCL_Error  {Bad header foo:}
+	expect * 1018 VCL_Error  {Bad static header foo:}
 } -start
 
 client c1 {

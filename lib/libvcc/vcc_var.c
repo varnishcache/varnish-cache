@@ -96,5 +96,10 @@ vcc_Var_Wildcard(struct vcc *tl, struct symbol *parent, struct symbol *sym)
 	VSB_printf(vsb, "VRT_UnsetHdr(ctx, %s)", sym->rname);
 	AZ(VSB_finish(vsb));
 	sym->uname = TlDup(tl, VSB_data(vsb));
+	VSB_clear(vsb);
+	VSB_printf(vsb, "VRT_SetHeader(ctx, %s, \"%s: \" \v1);",
+	    sym->rname, sym->name);
+	AZ(VSB_finish(vsb));
+	sym->const_assign = TlDup(tl, VSB_data(vsb));
 	VSB_destroy(&vsb);
 }
