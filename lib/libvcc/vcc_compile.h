@@ -200,6 +200,7 @@ struct symbol {
 	unsigned			w_methods;
 	const char			*uname;
 	unsigned			u_methods;
+	const char			*const_assign;
 };
 
 VTAILQ_HEAD(tokenhead, token);

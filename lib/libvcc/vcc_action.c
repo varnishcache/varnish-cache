@@ -151,6 +151,7 @@ vcc_assign_edit(struct vsb *vsb, struct symbol *sym, const struct assign *ap)
 static void v_matchproto_(sym_act_f)
 vcc_act_set(struct vcc *tl, struct token *t, struct symbol *sym)
 {
+	const char *const_assign = NULL;
 	const struct assign *ap;
 	struct vsb *vsb;
 	vcc_type_t type;
@@ -181,7 +182,11 @@ vcc_act_set(struct vcc *tl, struct token *t, struct symbol *sym)
 	AN(vsb);
 	vcc_assign_edit(vsb, sym, ap);
 	AZ(VSB_finish(vsb));
-	vcc_ExprEdit(tl, type, VSB_data(vsb), NULL);
+
+	if (ap->oper == '=')
+		const_assign = sym->const_assign;
+
+	vcc_ExprEdit(tl, type, VSB_data(vsb), const_assign);
 	VSB_destroy(&vsb);
 	SkipToken(tl, ';');
 }
