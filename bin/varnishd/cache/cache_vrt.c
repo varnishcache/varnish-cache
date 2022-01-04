@@ -571,7 +571,7 @@ VRT_ValidHdr(VRT_CTX, VCL_STRANDS s)
 /*--------------------------------------------------------------------*/
 
 VCL_VOID
-VRT_UnsetHdr(VRT_CTX , VCL_HEADER hs)
+VRT_UnsetHdr(VRT_CTX, VCL_HEADER hs)
 {
 	VCL_HTTP hp;
 
@@ -584,7 +584,7 @@ VRT_UnsetHdr(VRT_CTX , VCL_HEADER hs)
 }
 
 VCL_VOID
-VRT_SetHdr(VRT_CTX , VCL_HEADER hs, const char *pfx, VCL_STRANDS s)
+VRT_SetHdr(VRT_CTX, VCL_HEADER hs, const char *pfx, VCL_STRANDS s)
 {
 	VCL_HTTP hp;
 	unsigned u, l, pl;
