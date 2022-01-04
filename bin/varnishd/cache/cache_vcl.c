@@ -101,6 +101,7 @@ VCL_Req2Ctx(struct vrt_ctx *ctx, struct req *req)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(req->doclose, STREAM_CLOSE_MAGIC);
 
 	ctx->vcl = req->vcl;
 	ctx->syntax = ctx->vcl->conf->syntax;

@@ -1178,6 +1178,7 @@ CNT_Request(struct req *req)
 		CHECK_OBJ_NOTNULL(wrk->wpriv, WORKER_PRIV_MAGIC);
 		CHECK_OBJ_ORNULL(wrk->wpriv->nobjhead, OBJHEAD_MAGIC);
 		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+		CHECK_OBJ_NOTNULL(req->doclose, STREAM_CLOSE_MAGIC);
 
 		AN(req->req_step);
 		AN(req->req_step->name);

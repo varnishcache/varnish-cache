@@ -22,7 +22,7 @@ varnish v1 -arg "-p workspace_client=9k" \
 } -start
 
 client c1 {
-	send "PROXY TCP4 127.0.0.1 127.0.0.1 1111 2222\r\nGET /${string,repeat,744,A} HTTP/1.1\r\n\r\n"
+	send "PROXY TCP4 127.0.0.1 127.0.0.1 1111 2222\r\nGET /${string,repeat,736,A} HTTP/1.1\r\n\r\n"
 	rxresp
 } -run
 
@@ -39,6 +39,6 @@ ${string,repeat,732,"42 "}
 } -run
 
 client c3 {
-	send "PROXY TCP4 127.0.0.1 127.0.0.1 1111 2222\r\nGET /${string,repeat,748,C} HTTP/1.1\r\n\r\n"
+	send "PROXY TCP4 127.0.0.1 127.0.0.1 1111 2222\r\nGET /${string,repeat,740,C} HTTP/1.1\r\n\r\n"
 	rxresp
 } -run

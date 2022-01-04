@@ -999,6 +999,7 @@ http_DoConnection(struct http *hp, stream_close_t sc_close)
 			hp->hdf[v] |= HDF_FILTER;
 		}
 	}
+	CHECK_OBJ_NOTNULL(retval, STREAM_CLOSE_MAGIC);
 	return (retval);
 }
 

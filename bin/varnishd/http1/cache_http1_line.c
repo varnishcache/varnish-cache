@@ -178,6 +178,7 @@ V1L_Flush(const struct worker *wrk)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	v1l = wrk->v1l;
 	CHECK_OBJ_NOTNULL(v1l, V1L_MAGIC);
+	CHECK_OBJ_NOTNULL(v1l->werr, STREAM_CLOSE_MAGIC);
 	AN(v1l->wfd);
 
 	assert(v1l->niov <= v1l->siov);
@@ -252,6 +253,7 @@ V1L_Flush(const struct worker *wrk)
 	v1l->niov = 0;
 	if (v1l->ciov < v1l->siov)
 		v1l->ciov = v1l->niov++;
+	CHECK_OBJ_NOTNULL(v1l->werr, STREAM_CLOSE_MAGIC);
 	return (v1l->werr);
 }
 

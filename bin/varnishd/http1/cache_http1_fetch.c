@@ -139,6 +139,7 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 	}
 
 	sc = V1L_Close(wrk, &bytes);
+	CHECK_OBJ_NOTNULL(sc, STREAM_CLOSE_MAGIC);
 
 	/* Bytes accounting */
 	if (bytes < hdrbytes)
@@ -151,13 +152,15 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 	if (sc == SC_NULL && i < 0)
 		sc = SC_TX_ERROR;
 
+	CHECK_OBJ_NOTNULL(sc, STREAM_CLOSE_MAGIC);
 	if (sc != SC_NULL) {
-		VSLb(bo->vsl, SLT_FetchError, "backend write error: %d (%s)",
-		    errno, VAS_errtxt(errno));
+		VSLb(bo->vsl, SLT_FetchError, "backend write error: %d (%s) (%s",
+		    errno, VAS_errtxt(errno), sc->desc);
 		VSLb_ts_busyobj(bo, "Bereq", W_TIM_real(wrk));
 		htc->doclose = sc;
 		return (-1);
 	}
+	CHECK_OBJ_NOTNULL(sc, STREAM_CLOSE_MAGIC);
 	VSLb_ts_busyobj(bo, "Bereq", W_TIM_real(wrk));
 	return (0);
 }

@@ -73,11 +73,19 @@ typedef const char *hdr_t;
 
 /*--------------------------------------------------------------------*/
 
-enum sess_close {
-	SC_NULL = 0,
-#define SESS_CLOSE(nm, stat, err, desc)	SC_##nm,
-#include "tbl/sess_close.h"
+struct stream_close {
+	unsigned		magic;
+#define STREAM_CLOSE_MAGIC	0xc879c93d
+	int			idx;
+	unsigned		is_err;
+	const char		*name;
+	const char		*desc;
 };
+    extern const struct stream_close SC_NULL[1];
+#define SESS_CLOSE(nm, stat, err, desc) \
+    extern const struct stream_close SC_##nm[1];
+#include "tbl/sess_close.h"
+
 
 /*--------------------------------------------------------------------
  * Indices into http->hd[]

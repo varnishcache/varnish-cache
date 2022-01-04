@@ -382,8 +382,6 @@ int PAN__DumpStruct(struct vsb *vsb, int block, int track, const void *ptr,
 #define PAN_dump_once_oneline(vsb, ptr, magic, ...)		\
     PAN__DumpStruct(vsb, 0, 0, ptr, #magic, magic, __VA_ARGS__)
 
-const char *sess_close_2str(stream_close_t sc, int want_desc);
-
 /* cache_pool.c */
 void Pool_Init(void);
 int Pool_Task(struct pool *pp, struct pool_task *task, enum task_prio prio);

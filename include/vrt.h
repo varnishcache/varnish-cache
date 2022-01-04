@@ -253,6 +253,7 @@ struct http;
 struct lock;
 struct req;
 struct stevedore;
+struct stream_close;
 struct suckaddr;
 struct vcl;
 struct vcldir;
@@ -268,7 +269,7 @@ struct vsl_log;
 struct vsmw_cluster;
 struct ws;
 
-typedef enum sess_close stream_close_t;
+typedef const struct stream_close *stream_close_t;
 
 /***********************************************************************
  * VCL_STRANDS:

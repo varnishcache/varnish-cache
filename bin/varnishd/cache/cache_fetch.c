@@ -332,6 +332,8 @@ vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 	bo->was_304 = 0;
 	bo->err_code = 0;
 	bo->err_reason = NULL;
+	if (bo->htc != NULL)
+		bo->htc->doclose = SC_NULL;
 
 	// XXX: BereqEnd + BereqAcct ?
 	VSL_ChgId(bo->vsl, "bereq", "retry", VXID_Get(wrk, VSL_BACKENDMARKER));
@@ -426,6 +428,8 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	VSLb_ts_busyobj(bo, "Fetch", W_TIM_real(wrk));
 	i = VDI_GetHdr(bo);
+	if (bo->htc != NULL)
+		CHECK_OBJ_NOTNULL(bo->htc->doclose, STREAM_CLOSE_MAGIC);
 
 	bo->t_resp = now = W_TIM_real(wrk);
 	VSLb_ts_busyobj(bo, "Beresp", now);

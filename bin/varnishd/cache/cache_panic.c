@@ -87,17 +87,14 @@ boc_state_2str(enum boc_state_e e)
 
 /*--------------------------------------------------------------------*/
 
-const char *
-sess_close_2str(stream_close_t sc, int want_desc)
+static void
+pan_stream_close(struct vsb *vsb, stream_close_t sc)
 {
-	switch (sc) {
-	case SC_NULL:		return (want_desc ? "(null)" : "NULL");
-#define SESS_CLOSE(nm, s, err, desc)			\
-	case SC_##nm: return(want_desc ? desc : #nm);
-#include "tbl/sess_close.h"
 
-	default:		return (want_desc ? "(invalid)" : "INVALID");
-	}
+	if (sc != NULL && sc->magic == STREAM_CLOSE_MAGIC)
+		VSB_printf(vsb, "%s(%s)", sc->name, sc->desc);
+	else
+		VSB_printf(vsb, "%p", sc);
 }
 
 /*--------------------------------------------------------------------*/
@@ -162,7 +159,9 @@ pan_htc(struct vsb *vsb, const struct http_conn *htc)
 		return;
 	if (htc->rfd != NULL)
 		VSB_printf(vsb, "fd = %d (@%p),\n", *htc->rfd, htc->rfd);
-	VSB_printf(vsb, "doclose = %s,\n", sess_close_2str(htc->doclose, 0));
+	VSB_printf(vsb, "doclose = ");
+	pan_stream_close(vsb, htc->doclose);
+	VSB_printf(vsb, "\n");
 	WS_Panic(vsb, htc->ws);
 	VSB_printf(vsb, "{rxbuf_b, rxbuf_e} = {%p, %p},\n",
 	    htc->rxbuf_b, htc->rxbuf_e);
