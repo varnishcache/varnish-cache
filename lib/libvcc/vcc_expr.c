@@ -1510,13 +1510,42 @@ vcc_expr_typecheck(struct vcc *tl, struct expr **e, vcc_type_t fmt,
 void
 vcc_Expr(struct vcc *tl, vcc_type_t fmt)
 {
-	struct expr *e = NULL;
+
+	vcc_ExprEdit(tl, fmt, NULL, NULL);
+}
+
+void
+vcc_ExprEdit(struct vcc *tl, vcc_type_t fmt, const char *var_edit,
+    const char *const_edit)
+{
+	struct expr *e = NULL, *e1 = NULL;
+	const char *edit = NULL;
 
 	assert(fmt != VOID);
 	assert(fmt != STRINGS);
 	vcc_expr0(tl, &e, fmt);
 	ERRCHK(tl);
 	assert(e->fmt == fmt);
+	if (const_edit != NULL)
+		AN(var_edit);
+
+	if (e->constant & EXPR_VAR) {
+		if (e->constant_expr != NULL) {
+			edit = const_edit;
+			e1 = e->constant_expr;
+		}
+	} else {
+		edit = const_edit;
+		e1 = e;
+	}
+
+	if (edit == NULL) {
+		edit = var_edit;
+		e1 = e;
+	}
+
+	if (edit != NULL)
+		e = vcc_expr_edit(tl, e1->fmt, edit, e1, NULL);
 
 	vcc_expr_fmt(tl->fb, tl->indent, e);
 	VSB_cat(tl->fb, "\n");
