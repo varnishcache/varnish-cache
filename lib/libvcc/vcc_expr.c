@@ -46,6 +46,7 @@ struct expr {
 	vcc_type_t	fmt;
 	struct vsb	*vsb;
 	uint8_t		constant;
+	struct expr	*constant_expr;
 #define EXPR_VAR	(1<<0)
 #define EXPR_CONST	(1<<1)
 #define EXPR_STR_CONST	(1<<2)		// Last string elem is "..."
@@ -95,7 +96,6 @@ vcc_new_expr(vcc_type_t fmt)
 	AN(e);
 	e->vsb = VSB_new_auto();
 	e->fmt = fmt;
-	e->constant = EXPR_VAR;
 	return (e);
 }
 
@@ -106,6 +106,7 @@ vcc_mk_expr(vcc_type_t fmt, const char *str, ...)
 	struct expr *e;
 
 	e = vcc_new_expr(fmt);
+	e->constant = EXPR_VAR;
 	va_start(ap, str);
 	VSB_vprintf(e->vsb, str, ap);
 	va_end(ap);
@@ -119,6 +120,7 @@ vcc_delete_expr(struct expr *e)
 	if (e == NULL)
 		return;
 	CHECK_OBJ(e, EXPR_MAGIC);
+	vcc_delete_expr(e->constant_expr);
 	VSB_destroy(&e->vsb);
 	FREE_OBJ(e);
 }
@@ -149,9 +151,10 @@ vcc_delete_expr(struct expr *e)
  */
 
 static void
-vcc_strands_edit(const struct expr *e1, const struct expr *e2)
+vcc_strands_edit(struct expr *e1, const struct expr *e2)
 {
 
+	e1->constant = EXPR_VAR;
 	if (e2->nstr == 1) {
 		VSB_printf(e1->vsb, "TOSTRAND(%s)", VSB_data(e2->vsb));
 		return;
@@ -172,6 +175,15 @@ vcc_expr_edit(struct vcc *tl, vcc_type_t fmt, const char *p, struct expr *e1,
 
 	AN(e1);
 	e = vcc_new_expr(fmt);
+
+	/* NB: An expression with two operands is enough to be considered
+	 * variable, even if both operands are constant.
+	 */
+	if ((e1->constant & EXPR_VAR) || e2 != NULL)
+		e->constant = EXPR_VAR;
+	else
+		e->constant = e1->constant;
+
 	while (*p != '\0') {
 		if (*p != '\v') {
 			if (*p != '\n' || !nl)
@@ -222,7 +234,10 @@ vcc_expr_edit(struct vcc *tl, vcc_type_t fmt, const char *p, struct expr *e1,
 	e->t2 = e1->t2;
 	if (e2 != NULL)
 		e->t2 = e2->t2;
-	vcc_delete_expr(e1);
+	if (!(e1->constant & EXPR_VAR) && e2 == NULL)
+		e->constant_expr = e1;
+	else
+		vcc_delete_expr(e1);
 	vcc_delete_expr(e2);
 	return (e);
 }
@@ -271,6 +286,7 @@ vcc_expr_tobool(struct vcc *tl, struct expr **e)
 
 	if ((*e)->fmt == BOOL)
 		return;
+	(*e)->constant = EXPR_VAR;
 	if ((*e)->fmt == BACKEND || (*e)->fmt == INT)
 		*e = vcc_expr_edit(tl, BOOL, "(\v1 != 0)", *e, NULL);
 	else if ((*e)->fmt == DURATION)
@@ -947,6 +963,11 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
+
+		/* NB: we have no idea what method calls do, at this point all
+		 * bets are off.
+		 */
+		(*e)->constant = EXPR_VAR;
 
 		AN(sym->eval);
 		sym->eval(tl, e, tl->t, sym, sym->type);
