@@ -634,6 +634,32 @@ VRT_SetHdr(VRT_CTX, VCL_HEADER hs, const char *pfx, VCL_STRANDS s)
 	http_SetHeader(hp, b);
 }
 
+VCL_VOID
+VRT_SetHeader(VRT_CTX, VCL_HEADER hs, const char *hdr)
+{
+	VCL_HTTP hp;
+	unsigned wl, hl;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(hs);
+	AN(hs->what);
+	AN(hdr);
+
+	hl = strlen(hdr);
+	wl = hs->what[0];
+	assert(hl > wl);
+	AZ(strncasecmp(hs->what + 1, hdr, wl));
+	hp = VRT_selecthttp(ctx, hs->where);
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+
+	if (FEATURE(FEATURE_VALIDATE_HEADERS) && !validhdr(hdr + wl)) {
+		VRT_fail(ctx, "Bad static header %s", hdr);
+		return;
+	}
+	http_Unset(hp, hs->what);
+	http_SetHeader(hp, hdr);
+}
+
 /*--------------------------------------------------------------------*/
 
 VCL_VOID
