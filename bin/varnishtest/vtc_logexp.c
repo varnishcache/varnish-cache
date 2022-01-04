@@ -410,14 +410,16 @@ logexp_match(const struct logexp *le, struct logexp_test *test,
 		fail = 1;
 
 	if (fail) {
-		if (ok)
+		if (ok) {
 			legend = "fail";
-		else if (skip)
-			legend = "end", skip = 0;
-		else if (le->m_arg)
+		} else if (skip) {
+			legend = "end";
+			skip = 0;
+		} else if (le->m_arg) {
 			legend = "fmiss";
-		else
+		} else {
 			legend = NULL;
+		}
 	}
 	else if (ok)
 		legend = "match";
