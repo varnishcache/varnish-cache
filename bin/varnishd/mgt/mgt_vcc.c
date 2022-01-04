@@ -157,7 +157,7 @@ cc_expand(struct vsb *sb, const char *cc_cmd, char exp)
 			case 'D':
 				if (exp == pct)
 					return ("recursive expansion");
-				cc_expand(sb, mgt_cc_cmd_def, pct);
+				AZ(cc_expand(sb, mgt_cc_cmd_def, pct));
 				break;
 			case 'n':
 				AN(getcwd(buf, sizeof buf));

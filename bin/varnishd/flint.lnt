@@ -38,7 +38,12 @@
 -esym(765, CLI_*)
 -esym(759, CLI_*)
 -esym(755, CLI_*)
--"esym(793,significant characters in an external identifier)"
+
+-esym(765, http_IsHdr)
+-esym(759, http_IsHdr)
+-esym(755, http_IsHdr)
+
+// -"esym(793,significant characters in an external identifier)"
 
 // XXX: I think this is a flexelint bug:
 -esym(522, vbit_clr)
