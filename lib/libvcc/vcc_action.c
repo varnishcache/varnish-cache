@@ -91,35 +91,38 @@ vcc_act_call(struct vcc *tl, struct token *t, struct symbol *sym)
 	Fb(tl, 1, "}\n");
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * We borrow the edit string syntax from vcc_expr.c and use the \v2
+ * sequence to refer to the symbol as itself on the RHS.
+ */
 
 static const struct assign {
 	vcc_type_t		type;
 	unsigned		oper;
 	vcc_type_t		want;
-	const char		*expr;
+	const char		*edit;
 } assign[] = {
-	{ INT,		T_INCR,		INT, "\v + " },
-	{ INT,		T_DECR,		INT, "\v - " },
-	{ INT,		T_MUL,		INT, "\v * " },
-	{ INT,		T_DIV,		INT, "\v / " },
+	{ INT,		T_INCR,		INT, "\v2 + " },
+	{ INT,		T_DECR,		INT, "\v2 - " },
+	{ INT,		T_MUL,		INT, "\v2 * " },
+	{ INT,		T_DIV,		INT, "\v2 / " },
 	{ INT,		'=',		INT },
 	{ INT,		0,		INT },
-	{ TIME,		T_INCR,		DURATION, "\v + " },
-	{ TIME,		T_DECR,		DURATION, "\v - " },
-	{ TIME,		T_MUL,		REAL, "\v * " },
-	{ TIME,		T_DIV,		REAL, "\v / " },
+	{ TIME,		T_INCR,		DURATION, "\v2 + " },
+	{ TIME,		T_DECR,		DURATION, "\v2 - " },
+	{ TIME,		T_MUL,		REAL, "\v2 * " },
+	{ TIME,		T_DIV,		REAL, "\v2 / " },
 	{ TIME,		'=',		TIME },
 	{ TIME,		0,		TIME },
-	{ DURATION,	T_INCR,		DURATION, "\v + " },
-	{ DURATION,	T_DECR,		DURATION, "\v - " },
-	{ DURATION,	T_MUL,		REAL, "\v * " },
-	{ DURATION,	T_DIV,		REAL, "\v / " },
+	{ DURATION,	T_INCR,		DURATION, "\v2 + " },
+	{ DURATION,	T_DECR,		DURATION, "\v2 - " },
+	{ DURATION,	T_MUL,		REAL, "\v2 * " },
+	{ DURATION,	T_DIV,		REAL, "\v2 / " },
 	{ DURATION,	'=',		DURATION },
 	{ DURATION,	0,		DURATION },
-	{ STRING,	T_INCR,		STRANDS, "\v,\n" },
+	{ STRING,	T_INCR,		STRANDS, "\v2,\n" },
 	{ STRING,	'=',		STRANDS, "0,\n" },
-	{ HEADER,	T_INCR,		STRANDS, "VRT_GetHdr(ctx, \v),\n" },
+	{ HEADER,	T_INCR,		STRANDS, "VRT_GetHdr(ctx, \v2),\n" },
 	{ HEADER,	'=',		STRANDS, "0,\n" },
 	{ BODY,		'=',		BODY, "LBODY_SET_" },
 	{ BODY,		T_INCR,		BODY, "LBODY_ADD_" },
@@ -127,23 +130,20 @@ static const struct assign {
 };
 
 static void
-vcc_assign_expr(struct vcc *tl, struct symbol *sym, const struct assign *ap)
+vcc_assign_edit(struct vsb *vsb, struct symbol *sym, const struct assign *ap)
 {
 	const char *e;
-	unsigned indent = 1;
 
-	e = ap->expr;
-	if (e == NULL)
-		return;
-
-	while (*e != '\0') {
-		if (*e == '\v')
-			Fb(tl, indent, "%s", sym->rname);
-		else
-			Fb(tl, indent, "%c", *e);
-		indent = 0;
-		e++;
+	VSB_printf(vsb, "%s\n\v+", sym->lname);
+	for (e = ap->edit; e != NULL && *e != '\0'; e++) {
+		if (*e == '\v' && e[1] == '2') {
+			VSB_cat(vsb, sym->rname);
+			e++;
+			continue;
+		}
+		VSB_putc(vsb, *e);
 	}
+	VSB_cat(vsb, "\v1\v-);\n");
 }
 
 /*--------------------------------------------------------------------*/
@@ -152,6 +152,7 @@ static void v_matchproto_(sym_act_f)
 vcc_act_set(struct vcc *tl, struct token *t, struct symbol *sym)
 {
 	const struct assign *ap;
+	struct vsb *vsb;
 	vcc_type_t type;
 
 	(void)t;
@@ -176,13 +177,12 @@ vcc_act_set(struct vcc *tl, struct token *t, struct symbol *sym)
 	if (ap->type == VOID)
 		SkipToken(tl, ap->oper);
 
-	Fb(tl, 1, "%s\n", sym->lname);
-	tl->indent += INDENT;
-	vcc_assign_expr(tl, sym, ap);
-	vcc_Expr(tl, type);
-	ERRCHK(tl);
-	tl->indent -= INDENT;
-	Fb(tl, 1, ");\n");
+	vsb = VSB_new_auto();
+	AN(vsb);
+	vcc_assign_edit(vsb, sym, ap);
+	AZ(VSB_finish(vsb));
+	vcc_ExprEdit(tl, type, VSB_data(vsb), NULL);
+	VSB_destroy(&vsb);
 	SkipToken(tl, ';');
 }
 
