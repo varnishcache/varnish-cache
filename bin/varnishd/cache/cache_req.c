@@ -153,15 +153,16 @@ Req_New(struct sess *sp)
 	INIT_OBJ(req->vfc, VFP_CTX_MAGIC);
 	p = (void*)PRNDUP(p + sizeof(*req->vfc));
 
-	req->htc = (void*)p;
+	req->htc = (void*)p;				// XXX: TWICE ?!
 	p = (void*)PRNDUP(p + sizeof(*req->htc));
 
 	req->vdc = (void*)p;
 	memset(req->vdc, 0, sizeof *req->vdc);
 	p = (void*)PRNDUP(p + sizeof(*req->vdc));
 
-	req->htc = (void*)p;
+	req->htc = (void*)p;				// XXX: TWICE ?!
 	INIT_OBJ(req->htc, HTTP_CONN_MAGIC);
+	req->htc->doclose = SC_NULL;
 	p = (void*)PRNDUP(p + sizeof(*req->htc));
 
 	req->top = (void*)p;
@@ -176,8 +177,8 @@ Req_New(struct sess *sp)
 	req->t_first = NAN;
 	req->t_prev = NAN;
 	req->t_req = NAN;
-
 	req->req_step = R_STP_TRANSPORT;
+	req->doclose = SC_NULL;
 
 	return (req);
 }
@@ -289,6 +290,8 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	req->is_hit = 0;
 	req->req_step = R_STP_TRANSPORT;
 	req->vcf = NULL;
+	req->doclose = SC_NULL;
+	req->htc->doclose = SC_NULL;
 
 	if (WS_Overflowed(req->ws))
 		wrk->stats->ws_client_overflow++;

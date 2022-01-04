@@ -176,7 +176,7 @@ http1_req_panic(struct vsb *vsb, const struct req *req)
 static void v_matchproto_(vtr_req_fail_f)
 http1_req_fail(struct req *req, stream_close_t reason)
 {
-	assert(reason > 0);
+	assert(reason != SC_NULL);
 	assert(req->sp->fd != 0);
 	if (req->sp->fd > 0)
 		SES_Close(req->sp, reason);
@@ -210,7 +210,7 @@ http1_minimal_response(struct req *req, uint16_t status)
 	if (wl != l) {
 		if (wl < 0)
 			VTCP_Assert(1);
-		if (!req->doclose)
+		if (req->doclose == SC_NULL)
 			req->doclose = SC_REM_CLOSE;
 		return (-1);
 	}
@@ -237,7 +237,7 @@ struct transport HTTP1_transport = {
 static inline void
 http1_abort(struct req *req, uint16_t status)
 {
-	AN(req->doclose);
+	assert(req->doclose != SC_NULL);
 	assert(status >= 400);
 	(void)http1_minimal_response(req, status);
 }
@@ -358,7 +358,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			req->acct.req_hdrbytes +=
 			    req->htc->rxbuf_e - req->htc->rxbuf_b;
 			if (i) {
-				assert(req->doclose > 0);
+				assert(req->doclose != SC_NULL);
 				SES_Close(req->sp, req->doclose);
 				assert(!WS_IsReserved(req->ws));
 				assert(!WS_IsReserved(wrk->aws));

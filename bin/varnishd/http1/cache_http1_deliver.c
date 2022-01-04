@@ -52,7 +52,7 @@ v1d_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 
 	if (len > 0)
 		wl = V1L_Write(vdx->wrk, ptr, len);
-	if (act > VDP_NULL && V1L_Flush(vdx->wrk))
+	if (act > VDP_NULL && V1L_Flush(vdx->wrk) != SC_NULL)
 		return (-1);
 	if (len != wl)
 		return (-1);
@@ -96,9 +96,10 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 	CHECK_OBJ_ORNULL(boc, BOC_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 
-	if (!req->doclose && http_HdrIs(req->resp, H_Connection, "close")) {
+	if (req->doclose == SC_NULL &&
+	    http_HdrIs(req->resp, H_Connection, "close")) {
 		req->doclose = SC_RESP_CLOSE;
-	} else if (req->doclose) {
+	} else if (req->doclose != SC_NULL) {
 		if (!http_HdrIs(req->resp, H_Connection, "close")) {
 			http_Unset(req->resp, H_Connection);
 			http_SetHeader(req->resp, "Connection: close");

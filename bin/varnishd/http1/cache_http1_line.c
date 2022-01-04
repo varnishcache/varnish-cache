@@ -118,6 +118,7 @@ V1L_Open(struct worker *wrk, struct ws *ws, int *fd, struct vsl_log *vsl,
 	v1l->wfd = fd;
 	v1l->deadline = deadline;
 	v1l->vsl = vsl;
+	v1l->werr = SC_NULL;
 	wrk->v1l = v1l;
 
 	WS_Release(ws, u * sizeof(struct iovec));
@@ -134,9 +135,7 @@ V1L_Close(struct worker *wrk, uint64_t *cnt)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AN(cnt);
 	sc = V1L_Flush(wrk);
-	v1l = wrk->v1l;
-	wrk->v1l = NULL;
-	CHECK_OBJ_NOTNULL(v1l, V1L_MAGIC);
+	TAKE_OBJ_NOTNULL(v1l, &wrk->v1l, V1L_MAGIC);
 	*cnt = v1l->cnt;
 	ws = v1l->ws;
 	ws_snap = v1l->ws_snap;
@@ -241,7 +240,7 @@ V1L_Flush(const struct worker *wrk)
 			VSLb(v1l->vsl, SLT_Debug,
 			    "Write error, retval = %zd, len = %zd, errno = %s",
 			    i, v1l->liov, VAS_errtxt(errno));
-			AZ(v1l->werr);
+			assert(v1l->werr == SC_NULL);
 			if (errno == EPIPE)
 				v1l->werr = SC_REM_CLOSE;
 			else

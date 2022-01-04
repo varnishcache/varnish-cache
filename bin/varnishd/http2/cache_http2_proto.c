@@ -1163,7 +1163,7 @@ h2_req_body(struct req *req)
 void v_matchproto_(vtr_req_fail_f)
 h2_req_fail(struct req *req, stream_close_t reason)
 {
-	assert(reason > 0);
+	assert(reason != SC_NULL);
 	assert(req->sp->fd != 0);
 	VSLb(req->vsl, SLT_Debug, "H2FAILREQ");
 }

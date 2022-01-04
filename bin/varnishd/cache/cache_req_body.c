@@ -245,7 +245,7 @@ VRB_Ignore(struct req *req)
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-	if (req->doclose)
+	if (req->doclose != SC_NULL)
 		return (0);
 	if (req->req_body_status->avail > 0)
 		(void)VRB_Iterate(req->wrk, req->vsl, req,

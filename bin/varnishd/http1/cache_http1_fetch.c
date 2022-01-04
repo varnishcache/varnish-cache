@@ -55,7 +55,7 @@ vbf_iter_req_body(void *priv, unsigned flush, const void *ptr, ssize_t l)
 
 	if (l > 0) {
 		(void)V1L_Write(bo->wrk, ptr, l);
-		if (flush && V1L_Flush(bo->wrk))
+		if (flush && V1L_Flush(bo->wrk) != SC_NULL)
 			return (-1);
 	}
 	return (0);
