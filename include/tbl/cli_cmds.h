@@ -92,7 +92,7 @@ CLI_CMD(VCL_INLINE,
 CLI_CMD(VCL_STATE,
 	"vcl.state",
 	"vcl.state <configname> [auto|cold|warm]",
-	"Force the state of the named configuration.",
+	"  Force the state of the named configuration.",
 	"",
 	2, 2
 )
@@ -101,7 +101,7 @@ CLI_CMD(VCL_DISCARD,
 	"vcl.discard",
 	"vcl.discard <name_pattern>...",
 	"Unload the named configurations (when possible).",
-	"Unload the named configurations and labels matching at least"
+	"  Unload the named configurations and labels matching at least"
 	" one name pattern. All matching configurations and labels"
 	" are discarded in the correct order with respect to potential"
 	" dependencies. If one configuration or label could not be"
@@ -139,7 +139,7 @@ CLI_CMD(VCL_DEPS,
 	" separated by white space with the fields:\n\n"
 	"  * VCL: a VCL program\n\n"
 	"  * Dependency: another VCL program it depends on\n\n"
-	"Only direct dependencies are listed, and VCLs with"
+	"  Only direct dependencies are listed, and VCLs with"
 	" multiple dependencies are listed multiple times.",
 	0, 0
 )
@@ -164,9 +164,9 @@ CLI_CMD(VCL_LABEL,
 	"vcl.label",
 	"vcl.label <label> <configname>",
 	"Apply label to configuration.",
-	"A VCL label is like a UNIX symbolic link, "
-	"a name without substance, which points to another VCL.\n\n"
-	"Labels are mandatory whenever one VCL references another.",
+	"  A VCL label is like a UNIX symbolic link, "
+	" a name without substance, which points to another VCL.\n\n"
+	"  Labels are mandatory whenever one VCL references another.",
 	2, 2
 )
 
