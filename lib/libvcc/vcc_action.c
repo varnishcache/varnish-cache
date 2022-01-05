@@ -223,14 +223,9 @@ vcc_act_ban(struct vcc *tl, struct token *t, struct symbol *sym)
 	(void)sym;
 
 	SkipToken(tl, '(');
-
-	Fb(tl, 1, "(void) VRT_ban_string(ctx, \n");
-	tl->indent += INDENT;
-	vcc_Expr(tl, STRING);
-	tl->indent -= INDENT;
+	vcc_ExprEdit(tl, STRING,
+	    "(void) VRT_ban_string(ctx,\v+\n\v1\v-);\n", NULL);
 	ERRCHK(tl);
-	Fb(tl, 1, ");\n");
-
 	SkipToken(tl, ')');
 	SkipToken(tl, ';');
 }
