@@ -253,8 +253,8 @@ vcc_expr_fmt(struct vsb *d, int ind, const struct expr *e1)
 			VSB_putc(d, *p++);
 		} else {
 			switch (*++p) {
-			case '+': ind += 2; break;
-			case '-': ind -= 2; break;
+			case '+': ind += INDENT; break;
+			case '-': ind -= INDENT; break;
 			default:  WRONG("Illegal format in VCC expression");
 			}
 			p++;
