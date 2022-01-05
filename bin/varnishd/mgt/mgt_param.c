@@ -580,6 +580,16 @@ mcf_param_set(struct cli *cli, const char * const *av, void *priv)
 	MCF_ParamSet(cli, av[2], av[3]);
 }
 
+static void v_matchproto_(cli_func_t)
+mcf_param_set_json(struct cli *cli, const char * const *av, void *priv)
+{
+	const char *const avs[] = { av[0], av[1], av[2], av[3], NULL };
+
+	MCF_ParamSet(cli, av[3], av[4]);
+	if (cli->result == CLIS_OK)
+		mcf_param_show_json(cli, avs, priv);
+}
+
 /*--------------------------------------------------------------------*/
 
 static void v_matchproto_(cli_func_t)
@@ -683,10 +693,9 @@ mcf_wash_param(struct cli *cli, struct parspec *pp, enum mcf_which_e which,
 /*--------------------------------------------------------------------*/
 
 static struct cli_proto cli_params[] = {
-	{ CLICMD_PARAM_SHOW,		"", mcf_param_show,
-	  mcf_param_show_json },
-	{ CLICMD_PARAM_SET,		"", mcf_param_set },
-	{ CLICMD_PARAM_RESET,		"", mcf_param_reset },
+	{ CLICMD_PARAM_SHOW,	"", mcf_param_show, mcf_param_show_json },
+	{ CLICMD_PARAM_SET,	"", mcf_param_set, mcf_param_set_json },
+	{ CLICMD_PARAM_RESET,	"", mcf_param_reset },
 	{ NULL }
 };
 
