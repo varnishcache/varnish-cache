@@ -171,7 +171,7 @@ VSC_Value(const struct VSC_point * const pt)
 {
 	uint64_t val;
 
-	val = *pt->ptr;
+	val =  *(const volatile uint64_t*)pt->ptr;
 	if (!pt->raw && pt->semantics == 'g' && val > INT64_MAX)
 		val = 0;
 	return (val);
