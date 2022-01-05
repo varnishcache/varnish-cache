@@ -195,9 +195,14 @@ CLI_CMD(PARAM_SHOW,
 
 CLI_CMD(PARAM_SET,
 	"param.set",
-	"param.set <param> <value>",
+	"param.set [-j] <param> <value>",
 	"Set parameter value.",
-	"",
+	"  The JSON output is the same as ``param.show -j <param>`` and"
+	" contains the updated value as it would be represented by a"
+	" subsequent execution of ``param.show``.\n\n"
+	"  This can be useful to later verify that a parameter value didn't"
+	" change and to use the value from the JSON output to reset the"
+	" parameter to the desired value.",
 	2,2
 )
 
