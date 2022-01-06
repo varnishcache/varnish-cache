@@ -115,8 +115,8 @@ file
 syntax: file,path[,size[,granularity[,advice]]]
 
 The file backend stores objects in virtual memory backed by an
-unlinked file on disk with `mmap`, relying on the kernel handle paging
-as parts of the file are being accessed.
+unlinked file on disk with `mmap`, relying on the kernel to handle
+paging as parts of the file are being accessed.
 
 This implies that sufficient *virtual* memory needs to be available to
 accomodate the file size in addition to any memory Varnish requires
