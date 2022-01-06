@@ -114,8 +114,18 @@ file
 
 syntax: file,path[,size[,granularity[,advice]]]
 
-The file backend stores objects in memory backed by an unlinked file on disk
-with `mmap`.
+The file backend stores objects in virtual memory backed by an
+unlinked file on disk with `mmap`, relying on the kernel handle paging
+as parts of the file are being accessed.
+
+This implies that sufficient *virtual* memory needs to be available to
+accomodate the file size in addition to any memory Varnish requires
+anyway. Traditionally, the virtual memory limit is configured with
+``ulimit -v``, but modern operating systems have other abstractions
+for this limit like control groups (Linux) or resource controls
+(Solaris).
+
+.. XXX idk about the BSD and MacOS abstractions -- slink
 
 The 'path' parameter specifies either the path to the backing file or
 the path to a directory in which `varnishd` will create the backing file.
