@@ -451,7 +451,7 @@ vmod_get_string(VRT_CTX, struct vmod_priv *priv)
 }
 
 VCL_STRING
-vmod_format_rfc1123(VRT_CTX, VCL_TIME ts, VCL_DURATION duration)
+vmod_format_date(VRT_CTX, VCL_TIME ts, VCL_DURATION duration)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
