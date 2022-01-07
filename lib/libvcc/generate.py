@@ -169,18 +169,22 @@ def varproto(s):
         varprotos[s] = True
 
 class vardef(object):
-    def __init__(self, nam, typ, rd, wr, wu, vlo, vhi):
+    def __init__(self, nam, typ, rd, wr, wu, al, vlo, vhi):
         self.nam = nam
         self.typ = typ
         self.rd = rd
         self.wr = wr
         self.uns = wu
+        self.al = al
         self.vlo = vlo
         self.vhi = vhi
 
-        self.emit()
+        if al is None:
+            self.emit_var()
+        else:
+            self.emit_alias()
 
-    def emit(self):
+    def emit_var(self):
         fh.write("\n")
         fo.write("\n")
         cnam = self.nam.replace(".", "_")
@@ -234,6 +238,11 @@ class vardef(object):
         restrict(fo, self.uns)
         fo.write(";\n")
 
+    def emit_alias(self):
+        var_aliases.append("\tsym = VCC_MkSymAlias(tl, \"%s\", \"%s\");\n" %
+                (self.nam, self.al))
+        var_aliases.append("\tAN(sym);\n")
+
 def parse_vcl(x):
     vlo, vhi = (0, 99)
     x = x.split()
@@ -260,6 +269,7 @@ def parse_var(ln):
     vr = []
     vw = []
     vu = []
+    va = None
     while True:
         l = ln.pop(0)
         if l == "":
@@ -281,9 +291,12 @@ def parse_var(ln):
             for i in j[2:]:
                 vu.append(i.strip(",."))
             continue
+        if j[0] == "Alias" and j[1] == "of:":
+            va = j[2]
+            continue
         break
     if vn[:8] != "storage.":
-        vardef(vn, vt, vr, vw, vu, vlo, vhi)
+        vardef(vn, vt, vr, vw, vu, va, vlo, vhi)
 
 def parse_var_doc(fn):
     l = []
@@ -755,7 +768,10 @@ vcc_Var_Init(struct vcc *tl)
     struct symbol *sym;
 """)
 
+var_aliases = []
 parse_var_doc(join(srcroot, "doc/sphinx/reference/vcl_var.rst"))
+for al in var_aliases:
+    fo.write(al)
 fo.write("}\n")
 
 for i in stv_variables:
