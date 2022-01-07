@@ -132,7 +132,7 @@ Example::
 
 
 
-$Function STRING format_rfc1123(TIME now, DURATION timedelta)
+$Function STRING format_date(TIME now, DURATION timedelta)
 
 Get a RFC1123 formatted date string suitable for inclusion in a
 Set-Cookie response header.
@@ -145,7 +145,7 @@ Example::
 	sub vcl_deliver {
 	    # Set a userid cookie on the client that lives for 5 minutes.
 	    set resp.http.Set-Cookie = "userid=" + req.http.userid +
-	        "; Expires=" + cookie.format_rfc1123(now, 5m) + "; httpOnly";
+	        "; Expires=" + cookie.format_date(now, 5m) + "; httpOnly";
 	}
 
 $Function STRING get(PRIV_TASK, STRING cookiename)
@@ -254,3 +254,8 @@ Example::
 	    cookie.set("cookie1", "value1");
 	    std.log("cookie1 value is: " + cookie.get("cookie1"));
 	}
+
+DEPRECATED
+==========
+
+$Alias format_rfc1123 format_date
