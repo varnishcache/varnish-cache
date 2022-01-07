@@ -384,6 +384,7 @@ vcc_kind_t VCC_HandleKind(vcc_type_t fmt);
 void VCC_PrintCName(struct vsb *vsb, const char *b, const char *e);
 struct symbol *VCC_MkSym(struct vcc *tl, const char *b, vcc_ns_t, vcc_kind_t,
     int, int);
+struct symbol *VCC_MkSymAlias(struct vcc *tl, const char *, const char *);
 
 struct symxref { const char *name; };
 extern const struct symxref XREF_NONE[1];
