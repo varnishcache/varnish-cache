@@ -33,6 +33,7 @@
 
 VCC_KIND(NONE,		none)
 VCC_KIND(RESERVED,	reserved)
+VCC_KIND(ALIAS,		alias)
 VCC_KIND(ACL,		acl)
 VCC_KIND(ACTION,	action)
 VCC_KIND(BACKEND,	backend)

@@ -320,6 +320,14 @@ VCC_SymbolGet(struct vcc *tl, vcc_ns_t ns, vcc_kind_t kind,
 			break;
 		tn = tn1;
 	}
+	if (sym != NULL && sym->kind == SYM_ALIAS) {
+		assert(ns == SYM_MAIN);
+		st = vcc_symtab_str(tl->syms[ns->id], sym->eval_priv, NULL, ID);
+		AN(st);
+		st2 = st;
+		sym = vcc_sym_in_tab(tl, st, SYM_NONE, sym->lorev, sym->hirev);
+		AN(sym);
+	}
 	if (sym != NULL && sym->kind == SYM_VMOD && e->partial)
 		e = SYMTAB_EXISTING;
 	if (sym != NULL && e->partial) {
@@ -447,6 +455,29 @@ VCC_MkSym(struct vcc *tl, const char *b, vcc_ns_t ns, vcc_kind_t kind,
 	sym = vcc_new_symbol(tl, st, kind, vlo, vhi);
 	AN(sym);
 	sym->noref = 1;
+	return (sym);
+}
+
+struct symbol *
+VCC_MkSymAlias(struct vcc *tl, const char *alias, const char *name)
+{
+	struct symbol *sym_alias, *sym;
+	struct symtab *st;
+
+	AN(tl);
+	AN(alias);
+	AN(name);
+
+	st = vcc_symtab_str(tl->syms[SYM_MAIN->id], name, NULL, ID);
+	AN(st);
+	sym = vcc_sym_in_tab(tl, st, SYM_NONE, VCL_LOW, VCL_HIGH);
+	AN(sym);
+	assert(sym->kind != SYM_ALIAS);
+	sym_alias = VCC_MkSym(tl, alias, SYM_MAIN, SYM_ALIAS, sym->lorev,
+	    sym->hirev);
+	AN(sym_alias);
+	sym_alias->eval_priv = strdup(name);
+	AN(sym_alias->eval_priv);
 	return (sym);
 }
 
