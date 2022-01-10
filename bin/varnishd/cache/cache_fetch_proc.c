@@ -136,10 +136,11 @@ VFP_Close(struct vfp_ctx *vc)
 }
 
 int
-VFP_Open(struct vfp_ctx *vc)
+VFP_Open(VRT_CTX, struct vfp_ctx *vc)
 {
 	struct vfp_entry *vfe;
 
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vc->resp, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(vc->wrk, WORKER_MAGIC);
@@ -151,7 +152,7 @@ VFP_Open(struct vfp_ctx *vc)
 		if (DO_DEBUG(DBG_PROCESSORS))
 			VSLb(vc->wrk->vsl, SLT_Debug, "VFP_Open(%s)",
 			     vfe->vfp->name);
-		vfe->closed = vfe->vfp->init(vc, vfe);
+		vfe->closed = vfe->vfp->init(ctx, vc, vfe);
 		if (vfe->closed != VFP_OK && vfe->closed != VFP_NULL) {
 			(void)VFP_Error(vc, "Fetch filter %s failed to open",
 			    vfe->vfp->name);

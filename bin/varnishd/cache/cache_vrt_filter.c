@@ -257,9 +257,13 @@ int
 VCL_StackVDP(struct req *req, const struct vcl *vcl, const char *fl)
 {
 	const struct vfilter *vp;
+	struct vrt_ctx ctx[1];
 
 	AN(fl);
 	VSLb(req->vsl, SLT_Filters, "%s", fl);
+	INIT_OBJ(ctx, VRT_CTX_MAGIC);
+	VCL_Req2Ctx(ctx, req);
+
 	while (1) {
 		vp = vcl_filter_list_iter(0, &vrt_filters, &vcl->filters, &fl);
 		if (vp == NULL)
@@ -269,7 +273,7 @@ VCL_StackVDP(struct req *req, const struct vcl *vcl, const char *fl)
 			    "Filter '...%s' not found", fl);
 			return (-1);
 		}
-		if (VDP_Push(req->vdc, req->ws, vp->vdp, NULL))
+		if (VDP_Push(ctx, req->vdc, req->ws, vp->vdp, NULL))
 			return (-1);
 	}
 }

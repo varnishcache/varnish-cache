@@ -288,7 +288,7 @@ VGZ_Gzip(struct vgz *vg, const void **pptr, ssize_t *plen, enum vgz_flag flags)
  */
 
 static int v_matchproto_(vdp_init_f)
-vdp_gunzip_init(struct vdp_ctx *vdp, void **priv, struct objcore *oc)
+vdp_gunzip_init(VRT_CTX, struct vdp_ctx *vdp, void **priv, struct objcore *oc)
 {
 	struct vgz *vg;
 	struct boc *boc;
@@ -298,6 +298,7 @@ vdp_gunzip_init(struct vdp_ctx *vdp, void **priv, struct objcore *oc)
 	ssize_t dl;
 	uint64_t u;
 
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vdp, VDP_CTX_MAGIC);
 	CHECK_OBJ_ORNULL(oc, OBJCORE_MAGIC);
 	req = vdp->req;
@@ -471,10 +472,11 @@ VGZ_Destroy(struct vgz **vgp)
 /*--------------------------------------------------------------------*/
 
 static enum vfp_status v_matchproto_(vfp_init_f)
-vfp_gzip_init(struct vfp_ctx *vc, struct vfp_entry *vfe)
+vfp_gzip_init(VRT_CTX, struct vfp_ctx *vc, struct vfp_entry *vfe)
 {
 	struct vgz *vg;
 
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
 

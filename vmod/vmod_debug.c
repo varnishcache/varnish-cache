@@ -102,10 +102,12 @@ static const struct vfp xyzzy_vfp_rot13 = {
 #define ROT13_BUFSZ 8
 
 static int v_matchproto_(vdp_init_f)
-xyzzy_vfp_rot13_init(struct vdp_ctx *vdc, void **priv, struct objcore *oc)
+xyzzy_vfp_rot13_init(VRT_CTX, struct vdp_ctx *vdc, void **priv, struct objcore *oc)
 {
 	(void)vdc;
 	(void)oc;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(priv);
 	*priv = malloc(ROT13_BUFSZ);
 	if (*priv == NULL)

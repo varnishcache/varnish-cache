@@ -193,7 +193,8 @@ void VDP_Init(struct vdp_ctx *vdx, struct worker *wrk, struct vsl_log *vsl,
     struct req *req);
 uint64_t VDP_Close(struct vdp_ctx *);
 void VDP_Panic(struct vsb *vsb, const struct vdp_ctx *vdc);
-int VDP_Push(struct vdp_ctx *, struct ws *, const struct vdp *, void *priv);
+int VDP_Push(VRT_CTX, struct vdp_ctx *, struct ws *, const struct vdp *,
+    void *priv);
 int VDP_DeliverObj(struct vdp_ctx *vdc, struct objcore *oc);
 extern const struct vdp VDP_gunzip;
 extern const struct vdp VDP_esi;
@@ -281,7 +282,7 @@ struct vfp_entry *VFP_Push(struct vfp_ctx *, const struct vfp *);
 enum vfp_status VFP_GetStorage(struct vfp_ctx *, ssize_t *sz, uint8_t **ptr);
 void VFP_Extend(const struct vfp_ctx *, ssize_t sz, enum vfp_status);
 void VFP_Setup(struct vfp_ctx *vc, struct worker *wrk);
-int VFP_Open(struct vfp_ctx *);
+int VFP_Open(VRT_CTX, struct vfp_ctx *);
 uint64_t VFP_Close(struct vfp_ctx *);
 
 extern const struct vfp VFP_gunzip;

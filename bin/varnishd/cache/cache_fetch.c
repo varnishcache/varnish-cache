@@ -630,6 +630,7 @@ vbf_stp_fetchbody(struct worker *wrk, struct busyobj *bo)
 static const struct fetch_step * v_matchproto_(vbf_state_f)
 vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 {
+	struct vrt_ctx ctx[1];
 	struct objcore *oc;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -667,7 +668,10 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	oc->boc->len_so_far = 0;
 
-	if (VFP_Open(bo->vfc)) {
+	INIT_OBJ(ctx, VRT_CTX_MAGIC);
+	VCL_Bo2Ctx(ctx, bo);
+
+	if (VFP_Open(ctx, bo->vfc)) {
 		(void)VFP_Error(bo->vfc, "Fetch pipeline failed to open");
 		bo->htc->doclose = SC_RX_BODY;
 		vbf_cleanup(bo);
