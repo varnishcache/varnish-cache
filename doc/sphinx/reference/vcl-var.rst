@@ -67,7 +67,7 @@ in ``resp.status`` and ``beresp.status`` to ``return(synth(...))`` and
     }
 
 The ``obj.status`` variable will inherit the VWXYZ form, but in a ban
-expresion only the XYZ part will be available. The VWXYZ form is strictly
+expression only the XYZ part will be available. The VWXYZ form is strictly
 limited to VCL execution.
 
 Assigning an HTTP standardized code to ``resp.status`` or ``beresp.status``

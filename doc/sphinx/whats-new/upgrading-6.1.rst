@@ -219,7 +219,7 @@ Other changes
 
     A JSON response in the CLI always includes a timestamp (epoch time
     in seconds with millisecond precision), indicating the time at
-    which the reponse was generated.
+    which the response was generated.
 
   * The ``backend.list`` command now lists both directors and
     backends, with their health status. The command now has a ``-v``

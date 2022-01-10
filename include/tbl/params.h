@@ -325,7 +325,7 @@ PARAM_SIMPLE(
 	/* def */	"60.000",
 	/* units */	"seconds",
 	/* descr */
-	"Timeout for the childs replies to CLI requests from the "
+	"Timeout for the child's replies to CLI requests from the "
 	"mgt_param."
 )
 

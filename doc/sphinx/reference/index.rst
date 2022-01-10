@@ -59,7 +59,7 @@ Logging and monitoring
 	VSLQ - Filter/Query expressions for VSL <vsl-query>
 	VarnishLog - Logging raw VSL <varnishlog>
 	VarnishNCSA - Logging in NCSA format <varnishncsa>
-	VarnishHist - Realtime reponse histogram display <varnishhist>
+	VarnishHist - Realtime response histogram display <varnishhist>
 	VarnishTop - Realtime activity display <varnishtop>
 
 Counters and statistics

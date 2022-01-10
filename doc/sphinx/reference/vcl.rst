@@ -91,7 +91,7 @@ variables::
 
 There are obvious limitations to what can be done, for instance it
 makes no sense to ``unset req.url;`` - a request must have some kind
-of URL to be valid, and likewise trying to manipulate a backend reponse
+of URL to be valid, and likewise trying to manipulate a backend response
 when there is none (yet) makes no sense.
 The VCL compiler will detect such errors.
 

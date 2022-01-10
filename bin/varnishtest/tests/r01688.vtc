@@ -12,7 +12,7 @@ server s1 {
 varnish v1 -vcl+backend {
 	sub vcl_recv {
 	  if (req.url == "/foo" || req.url == "/quux") {
-	    return(synth(998, "included synthetic reponse"));
+	    return(synth(998, "included synthetic response"));
 	  }
 	}
 

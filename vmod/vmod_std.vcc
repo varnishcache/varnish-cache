@@ -48,7 +48,7 @@ $Function REAL random(REAL lo, REAL hi)
 Returns a random real number between *lo* and *hi*.
 
 This function uses the "testable" random generator in varnishd which
-enables determinstic tests to be run (See ``m00002.vtc``).  This
+enables deterministic tests to be run (See ``m00002.vtc``).  This
 function should not be used for cryptographic applications.
 
 Example::
@@ -354,7 +354,7 @@ be returned or VCL failure will happen.
 
 The IP address includes a port number that can be found with ``std.port()``
 that defaults to 80. The default port can be set to a different value with
-the *p* argument. It will be overriden if *s* contains both an IP address
+the *p* argument. It will be overridden if *s* contains both an IP address
 and a port number or service name.
 
 When *s* contains both, the syntax is either ``address:port`` or

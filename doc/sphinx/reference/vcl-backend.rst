@@ -57,7 +57,7 @@ one IPv4 and one IPv6 address::
 
     .host = "example.com:8081";
 
-The TCP port number can be specied as part of ``.host`` as a bove
+The TCP port number can be specified as part of ``.host`` as above
 or separately using the ``.port`` attribute::
 
     .port = 8081;

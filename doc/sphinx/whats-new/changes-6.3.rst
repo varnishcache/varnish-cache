@@ -55,7 +55,7 @@ Changes to VCL
 VCL variables
 ~~~~~~~~~~~~~
 
-The :ref:`ref_param_timeout_idle` parameter can be overriden in VCL using the
+The :ref:`ref_param_timeout_idle` parameter can be overridden in VCL using the
 ``sess.timeout_idle`` variable.
 
 Other changes to VCL

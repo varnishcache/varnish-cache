@@ -65,7 +65,7 @@ logexpect l1 -wait
 barrier b2 sync
 client c1 -wait
 
-# case 2: send_timeout overriden in VCL
+# case 2: send_timeout overridden in VCL
 
 varnish v1 -cliok "param.reset send_timeout"
 
@@ -111,7 +111,7 @@ logexpect l3 -wait
 barrier b2 sync
 client c3 -wait
 
-# case 4: idle_send_timeout overriden in VCL
+# case 4: idle_send_timeout overridden in VCL
 
 varnish v1 -cliok "param.reset idle_send_timeout"
 
