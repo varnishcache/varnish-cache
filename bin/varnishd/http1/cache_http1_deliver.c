@@ -88,6 +88,7 @@ v1d_error(struct req *req, const char *msg)
 void v_matchproto_(vtr_deliver_f)
 V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 {
+	struct vrt_ctx ctx[1];
 	int err = 0, chunked = 0;
 	stream_close_t sc;
 	uint64_t hdrbytes, bytes;
@@ -117,7 +118,9 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 				req->doclose = SC_TX_EOF;
 			}
 		}
-		if (VDP_Push(req->vdc, req->ws, &v1d_vdp, NULL)) {
+		INIT_OBJ(ctx, VRT_CTX_MAGIC);
+		VCL_Req2Ctx(ctx, req);
+		if (VDP_Push(ctx, req->vdc, req->ws, &v1d_vdp, NULL)) {
 			v1d_error(req, "workspace_thread overflow");
 			AZ(req->wrk->v1l);
 			return;

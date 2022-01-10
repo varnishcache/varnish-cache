@@ -136,10 +136,12 @@ VDP_bytes(struct vdp_ctx *vdc, enum vdp_action act,
 }
 
 int
-VDP_Push(struct vdp_ctx *vdc, struct ws *ws, const struct vdp *vdp, void *priv)
+VDP_Push(VRT_CTX, struct vdp_ctx *vdc, struct ws *ws, const struct vdp *vdp,
+    void *priv)
 {
 	struct vdp_entry *vdpe;
 
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
 	AN(ws);
 	AN(vdp);
@@ -168,11 +170,9 @@ VDP_Push(struct vdp_ctx *vdc, struct ws *ws, const struct vdp *vdp, void *priv)
 	if (vdpe->vdp->init == NULL)
 		return (vdc->retval);
 
-	vdc->retval = vdpe->vdp->init(
-	    vdc,
-	    &vdpe->priv,
-	    vdpe == vdc->nxt ? vdc->req->objcore : NULL
-	);
+	vdc->retval = vdpe->vdp->init(ctx, vdc, &vdpe->priv,
+	    vdpe == vdc->nxt ? vdc->req->objcore : NULL);
+
 	if (vdc->retval > 0) {
 		VTAILQ_REMOVE(&vdc->vdp, vdpe, list);
 		vdc->nxt = VTAILQ_FIRST(&vdc->vdp);

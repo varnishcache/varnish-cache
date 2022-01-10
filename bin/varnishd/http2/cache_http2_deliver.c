@@ -73,9 +73,10 @@ V2D_Init(void)
 /**********************************************************************/
 
 static int v_matchproto_(vdp_init_f)
-h2_init(struct vdp_ctx *vdc, void **priv, struct objcore *oc)
+h2_init(VRT_CTX, struct vdp_ctx *vdc, void **priv, struct objcore *oc)
 {
 
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
 	(void)oc;
 	CHECK_OBJ_NOTNULL(vdc->req, REQ_MAGIC);
@@ -297,6 +298,7 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 	struct sess *sp;
 	struct h2_req *r2;
 	struct vsb resp[1];
+	struct vrt_ctx ctx[1];
 	uintptr_t ss;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -341,7 +343,9 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 
 	/* XXX someone into H2 please add appropriate error handling */
 	if (sendbody) {
-		if (!VDP_Push(req->vdc, req->ws, &h2_vdp, NULL))
+		INIT_OBJ(ctx, VRT_CTX_MAGIC);
+		VCL_Req2Ctx(ctx, req);
+		if (!VDP_Push(ctx, req->vdc, req->ws, &h2_vdp, NULL))
 			(void)VDP_DeliverObj(req->vdc, req->objcore);
 	}
 

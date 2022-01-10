@@ -43,7 +43,8 @@ enum vfp_status {
 	VFP_NULL = 2,
 };
 
-typedef enum vfp_status vfp_init_f(struct vfp_ctx *, struct vfp_entry *);
+typedef enum vfp_status vfp_init_f(VRT_CTX, struct vfp_ctx *,
+    struct vfp_entry *);
 typedef enum vfp_status
     vfp_pull_f(struct vfp_ctx *, struct vfp_entry *, void *ptr, ssize_t *len);
 typedef void vfp_fini_f(struct vfp_ctx *, struct vfp_entry *);
@@ -104,7 +105,8 @@ enum vdp_action {
 	VDP_END,		/* Last buffer or after, implies VDP_FLUSH */
 };
 
-typedef int vdp_init_f(struct vdp_ctx *, void **priv, struct objcore *);
+typedef int vdp_init_f(VRT_CTX, struct vdp_ctx *, void **priv,
+    struct objcore *);
 /*
  * Return value:
  *	negative:	Error - abandon delivery

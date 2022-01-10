@@ -157,10 +157,11 @@ vfp_esi_end(struct vfp_ctx *vc, struct vef_priv *vef,
 }
 
 static enum vfp_status v_matchproto_(vfp_init_f)
-vfp_esi_gzip_init(struct vfp_ctx *vc, struct vfp_entry *vfe)
+vfp_esi_gzip_init(VRT_CTX, struct vfp_ctx *vc, struct vfp_entry *vfe)
 {
 	struct vef_priv *vef;
 
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vc->req, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
@@ -243,11 +244,12 @@ vfp_esi_gzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 }
 
 static enum vfp_status v_matchproto_(vfp_init_f)
-vfp_esi_init(struct vfp_ctx *vc, struct vfp_entry *vfe)
+vfp_esi_init(VRT_CTX, struct vfp_ctx *vc, struct vfp_entry *vfe)
 {
 	struct vef_priv *vef;
 	struct vep_state *vep;
 
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vc->req, HTTP_MAGIC);
 	if (http_GetStatus(vc->resp) == 206) {
