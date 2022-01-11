@@ -171,7 +171,7 @@ sma_free_space(const struct stevedore *st)
 	return (sma_sc->sma_max - sma_sc->sma_alloc);
 }
 
-static void
+static void v_matchproto_(storage_init_f)
 sma_init(struct stevedore *parent, int ac, char * const *av)
 {
 	const char *e;

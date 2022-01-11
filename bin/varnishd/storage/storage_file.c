@@ -113,7 +113,7 @@ struct smf_sc {
 
 /*--------------------------------------------------------------------*/
 
-static void
+static void v_matchproto_(storage_init_f)
 smf_init(struct stevedore *parent, int ac, char * const *av)
 {
 	const char *size, *fn, *r;

@@ -51,7 +51,7 @@ smd_lsp_getspace(struct worker *wrk, struct objcore *oc, ssize_t *sz,
 	return (SML_methods.objgetspace(wrk, oc, sz, ptr));
 }
 
-static void
+static void v_matchproto_(storage_init_f)
 smd_init(struct stevedore *parent, int aac, char * const *aav)
 {
 	struct obj_methods *methods;

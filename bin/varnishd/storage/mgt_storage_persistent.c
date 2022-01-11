@@ -137,7 +137,7 @@ smp_metrics(struct smp_sc *sc)
  * Set up persistent storage silo in the master process.
  */
 
-void
+void v_matchproto_(storage_init_f)
 smp_mgt_init(struct stevedore *parent, int ac, char * const *av)
 {
 	struct smp_sc		*sc;

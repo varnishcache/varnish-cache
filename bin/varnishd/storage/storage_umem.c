@@ -289,7 +289,7 @@ smu_umem_loaded(void)
 	return (0);
 }
 
-static void
+static void v_matchproto_(storage_init_f)
 smu_init(struct stevedore *parent, int ac, char * const *av)
 {
 	static int inited = 0;
