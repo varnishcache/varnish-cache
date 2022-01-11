@@ -32,11 +32,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'cpp', 'python' ]
+        language: [ 'cpp' ]
         # CodeQL supports [ 'cpp', 'csharp', 'go', 'java', 'javascript', 'python', 'ruby' ]
         # Learn more about CodeQL language support at https://git.io/codeql-language-support
 
     steps:
+    
+    - name: Setup
+      run: sudo apt-get update && sudo apt-get -y install build-essential
+    
     - name: Checkout repository
       uses: actions/checkout@v2
 
@@ -63,7 +67,6 @@ jobs:
     #    uses a compiled language
 
     - run:
-        apt-get install build-essential
         configure
         make
 
