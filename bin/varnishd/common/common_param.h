@@ -71,10 +71,12 @@ struct poolparam {
 	vtim_dur		max_age;
 };
 
+#define PARAM_BITMAP(name, len) typedef uint8_t name[(len + 7)>>3]
 
-typedef uint8_t vsl_mask_t[256>>3];
-typedef uint8_t debug_t[(DBG_Reserved+7)>>3];
-typedef uint8_t feature_t[(FEATURE_Reserved+7)>>3];
+PARAM_BITMAP(vsl_mask_t,	256);
+PARAM_BITMAP(debug_t,		DBG_Reserved);
+PARAM_BITMAP(feature_t,		FEATURE_Reserved);
+#undef PARAM_BITMAP
 
 struct params {
 
