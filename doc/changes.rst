@@ -32,7 +32,7 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
-Varnish Cache 6.6.2 (unreleased)
+Varnish Cache 6.6.2 (2022-01-25)
 ================================
 
 * Make sure that HTTP/1 connections are closed on request body related
@@ -75,7 +75,7 @@ Varnish Cache 6.6.0 (2021-03-15)
   - ``BereqAcct``.
 
 * ``VdpAcct`` log records have been added to output delivery filter
-  (VDP) accounting details analogous to the existing ``VfpAcct``. Both
+  (VDP) accounting details analogous to the existing  ``VfpAcct``. Both
   tags are masked by default.
 
 * Many filter (VDP/VFP) related signatures have been changed:
