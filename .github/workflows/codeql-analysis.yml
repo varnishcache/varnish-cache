@@ -67,7 +67,7 @@ jobs:
     #    uses a compiled language
 
     - run:
-        configure
+        ./configure
         make
 
     - name: Perform CodeQL Analysis
