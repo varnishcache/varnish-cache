@@ -32,7 +32,7 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
-Varnish Cache 7.0.2 (unreleased)
+Varnish Cache 7.0.2 (2022-01-25)
 ================================
 
 * Make sure that HTTP/1 connections are closed on request body related
