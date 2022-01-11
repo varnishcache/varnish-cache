@@ -27,7 +27,7 @@ individual releases. These documents are updated as part of the
 release process.
 
 =================================
-Varnish Cache 6.0.10 (unreleased)
+Varnish Cache 6.0.10 (2022-01-25)
 =================================
 
 * Fix a workspace exhaustion issue with the ``vmod_std`` function
