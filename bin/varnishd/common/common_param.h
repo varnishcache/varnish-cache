@@ -68,7 +68,7 @@ COM_FEATURE(const volatile uint8_t *p, enum feature_bits x)
 struct poolparam {
 	unsigned		min_pool;
 	unsigned		max_pool;
-	double			max_age;
+	vtim_dur		max_age;
 };
 
 
