@@ -39,7 +39,7 @@ jobs:
     steps:
     
     - name: Setup
-      run: sudo apt-get update && sudo apt-get -y install build-essential
+      run: sudo apt-get update && sudo apt-get -y install build-essential autotools-dev autoconf
     
     - name: Checkout repository
       uses: actions/checkout@v2
