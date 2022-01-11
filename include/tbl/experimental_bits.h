@@ -1,8 +1,8 @@
 /*-
- * Copyright (c) 2012 Varnish Software AS
+ * Copyright (c) 2022 Varnish Software AS
  * All rights reserved.
  *
- * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
+ * Author: Dridi Boukelmoune <dridi.boukelmoune@gmail.com>
  *
  * SPDX-License-Identifier: BSD-2-Clause
  *
@@ -27,31 +27,13 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Fields in the debug parameter
+ * Fields in the experimental parameter
  *
  */
 
 /*lint -save -e525 -e539 */
 
-DEBUG_BIT(REQ_STATE,		req_state,	"VSL Request state engine")
-DEBUG_BIT(WORKSPACE,		workspace,	"VSL Workspace operations")
-DEBUG_BIT(WAITINGLIST,		waitinglist,	"VSL Waitinglist events")
-DEBUG_BIT(SYNCVSL,		syncvsl,	"Make VSL synchronous")
-DEBUG_BIT(HASHEDGE,		hashedge,	"Edge cases in Hash")
-DEBUG_BIT(VCLREL,		vclrel,		"Rapid VCL release")
-DEBUG_BIT(LURKER,		lurker,		"VSL Ban lurker")
-DEBUG_BIT(ESI_CHOP,		esi_chop,	"Chop ESI fetch to bits")
-DEBUG_BIT(FLUSH_HEAD,		flush_head,	"Flush after http1 head")
-DEBUG_BIT(VTC_MODE,		vtc_mode,	"Varnishtest Mode")
-DEBUG_BIT(WITNESS,		witness,	"Emit WITNESS lock records")
-DEBUG_BIT(VSM_KEEP,		vsm_keep,	"Keep the VSM file on restart")
-DEBUG_BIT(SLOW_ACCEPTOR,	slow_acceptor,	"Slow down Acceptor")
-DEBUG_BIT(H2_NOCHECK,		h2_nocheck,	"Disable various H2 checks")
-DEBUG_BIT(VMOD_SO_KEEP,		vmod_so_keep,	"Keep copied VMOD libraries")
-DEBUG_BIT(PROCESSORS,		processors,	"Fetch/Deliver processors")
-DEBUG_BIT(PROTOCOL,		protocol,	"Protocol debugging")
-DEBUG_BIT(VCL_KEEP,		vcl_keep,	"Keep VCL C and so files")
-DEBUG_BIT(LCK,			lck,		"Additional lock statistics")
-#undef DEBUG_BIT
+EXPERIMENTAL_BIT(DROP_POOLS,	drop_pools,	"Drop thread pools")
+#undef EXPERIMENTAL_BIT
 
 /*lint -restore */

@@ -570,6 +570,7 @@ void SMP_Ready(void);
 #endif
 
 #define FEATURE(x)	COM_FEATURE(cache_param->feature_bits, x)
+#define EXPERIMENTAL(x)	COM_EXPERIMENTAL(cache_param->experimental_bits, x)
 #define DO_DEBUG(x)	COM_DO_DEBUG(cache_param->debug_bits, x)
 
 #define DSL(debug_bit, id, ...)					\

@@ -205,6 +205,51 @@ tweak_debug(struct vsb *vsb, const struct parspec *par, const char *arg)
 }
 
 /*--------------------------------------------------------------------
+ * The experimental parameter
+ */
+
+static const char * const experimental_tags[] = {
+#  define EXPERIMENTAL_BIT(U, l, d) [EXPERIMENTAL_##U] = #l,
+#  include "tbl/experimental_bits.h"
+       NULL
+};
+
+static int v_matchproto_(tweak_t)
+tweak_experimental(struct vsb *vsb, const struct parspec *par, const char *arg)
+{
+	const char *s;
+	unsigned j;
+	(void)par;
+
+	if (arg != NULL && arg != JSON_FMT) {
+		if (!strcmp(arg, "none")) {
+			memset(mgt_param.experimental_bits,
+			    0, sizeof mgt_param.experimental_bits);
+		} else {
+			return (bit_tweak(vsb, mgt_param.experimental_bits,
+			    EXPERIMENTAL_Reserved, arg, experimental_tags,
+			    "experimental bit", "+"));
+		}
+	} else {
+		if (arg == JSON_FMT)
+			VSB_putc(vsb, '"');
+		s = "";
+		for (j = 0; j < (unsigned)EXPERIMENTAL_Reserved; j++) {
+			if (bit(mgt_param.experimental_bits, j, BTST)) {
+				VSB_printf(vsb, "%s+%s", s,
+				    experimental_tags[j]);
+				s = ",";
+			}
+		}
+		if (*s == '\0')
+			VSB_cat(vsb, "none");
+		if (arg == JSON_FMT)
+			VSB_putc(vsb, '"');
+	}
+	return (0);
+}
+
+/*--------------------------------------------------------------------
  * The feature parameter
  */
 
@@ -273,7 +318,15 @@ struct parspec VSL_parspec[] = {
 		"Use +/- prefix to set/reset individual bits:"
 #define DEBUG_BIT(U, l, d) "\n\t" #l "\t" d
 #include "tbl/debug_bits.h"
-#undef DEBUG_BIT
+		},
+	{ "experimental", tweak_experimental, NULL,
+		NULL, NULL, "none",
+		NULL,
+		"Enable/Disable experimental features.\n"
+		"\tnone\tDisable all experimental features\n\n"
+		"Use +/- prefix to set/reset individual bits:"
+#define EXPERIMENTAL_BIT(U, l, d) "\n\t" #l "\t" d
+#include "tbl/experimental_bits.h"
 		},
 	{ "feature", tweak_feature, NULL,
 		NULL, NULL, "default",
@@ -284,7 +337,6 @@ struct parspec VSL_parspec[] = {
 		"Use +/- prefix to enable/disable individual feature:"
 #define FEATURE_BIT(U, l, d) "\n\t" #l "\t" d
 #include "tbl/feature_bits.h"
-#undef FEATURE_BIT
 		},
 	{ NULL, NULL, NULL }
 };

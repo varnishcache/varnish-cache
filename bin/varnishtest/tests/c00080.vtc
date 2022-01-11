@@ -9,7 +9,7 @@ server s1 {
 
 varnish v1 -vcl+backend {} -start
 
-varnish v1 -cliok "param.set debug +drop_pools"
+varnish v1 -cliok "param.set experimental +drop_pools"
 varnish v1 -cliok "param.set debug +slow_acceptor"
 varnish v1 -cliok "param.set thread_pools 1"
 
@@ -40,7 +40,7 @@ server s1 {
 
 varnish v2 -arg "-Wpoll" -vcl+backend {} -start
 
-varnish v2 -cliok "param.set debug +drop_pools"
+varnish v2 -cliok "param.set experimental +drop_pools"
 varnish v2 -cliok "param.set debug +slow_acceptor"
 varnish v2 -cliok "param.set thread_pools 1"
 

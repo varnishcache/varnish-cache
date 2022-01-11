@@ -244,5 +244,6 @@ extern const char *mgt_vmod_path;
 #error "Keep pthreads out of in manager process"
 #endif
 
-#define MGT_FEATURE(x)	COM_FEATURE(mgt_param.feature_bits, x)
-#define MGT_DO_DEBUG(x)	COM_DO_DEBUG(mgt_param.debug_bits, x)
+#define MGT_FEATURE(x)		COM_FEATURE(mgt_param.feature_bits, x)
+#define MGT_EXPERIMENTAL(x)	COM_EXPERIMENTAL(mgt_param.experimental_bits, x)
+#define MGT_DO_DEBUG(x)		COM_DO_DEBUG(mgt_param.debug_bits, x)

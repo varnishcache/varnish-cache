@@ -197,7 +197,7 @@ pool_poolherder(void *priv)
 				continue;
 			}
 		} else if (nwq > cache_param->wthread_pools &&
-				DO_DEBUG(DBG_DROP_POOLS)) {
+				EXPERIMENTAL(EXPERIMENTAL_DROP_POOLS)) {
 			Lck_Lock(&pool_mtx);
 			pp = VTAILQ_FIRST(&pools);
 			CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);

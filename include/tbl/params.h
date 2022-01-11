@@ -1737,6 +1737,23 @@ PARAM(
 )
 
 /* actual location mgt_param_bits.c*/
+/* see tbl/experimental_bits.h */
+PARAM(
+	/* name */	experimental,
+	/* type */	experimental,
+	/* min */	NULL,
+	/* max */	NULL,
+	/* def */	NULL,
+	/* units */	NULL,
+	/* descr */
+	"Enable/Disable experimental features.\n"
+	"	none	Disable all experimental features\n"
+	"\n"
+	"Use +/- prefix to set/reset individual bits:\n"
+	"	drop_pools	Drop thread pools\n"
+)
+
+/* actual location mgt_param_bits.c*/
 /* See tbl/feature_bits.h */
 PARAM(
 	/* name */	feature,
