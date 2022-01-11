@@ -60,11 +60,11 @@ Varnish Cache 6.0.9 (2021-11-24)
 * IPv6 listen endpoint address strings are now printed using brackets.
 
 .. _3617: https://github.com/varnishcache/varnish-cache/pull/3617
-.. _3437: https://github.com/varnishcache/varnish-cache/issues/3437'
-.. _3564: https://github.com/varnishcache/varnish-cache/issues/3564'
-.. _3716: https://github.com/varnishcache/varnish-cache/pull/3716'
-.. _3717: https://github.com/varnishcache/varnish-cache/pull/3717'
-.. _3378: https://github.com/varnishcache/varnish-cache/issues/3378'
+.. _3437: https://github.com/varnishcache/varnish-cache/issues/3437
+.. _3564: https://github.com/varnishcache/varnish-cache/issues/3564
+.. _3716: https://github.com/varnishcache/varnish-cache/pull/3716
+.. _3717: https://github.com/varnishcache/varnish-cache/pull/3717
+.. _3378: https://github.com/varnishcache/varnish-cache/issues/3378
 .. _3732: https://github.com/varnishcache/varnish-cache/pull/3732
 
 ================================
