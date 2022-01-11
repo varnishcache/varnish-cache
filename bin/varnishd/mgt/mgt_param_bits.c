@@ -64,7 +64,7 @@ bit(uint8_t *p, unsigned no, enum bit_do act)
 
 static int
 bit_tweak(struct vsb *vsb, uint8_t *p, unsigned l, const char *arg,
-    const char * const *tags, const char *desc, const char *sign)
+    const char * const *tags, const char *desc, char sign)
 {
 	int i, n;
 	unsigned j;
@@ -94,7 +94,7 @@ bit_tweak(struct vsb *vsb, uint8_t *p, unsigned l, const char *arg,
 			return (-1);
 		}
 		assert(j < l);
-		if (s[0] == *sign)
+		if (s[0] == sign)
 			(void)bit(p, j, BSET);
 		else
 			(void)bit(p, j, BCLR);
@@ -141,7 +141,7 @@ tweak_vsl_mask(struct vsb *vsb, const struct parspec *par, const char *arg)
 			(void)bit(mgt_param.vsl_mask, SLT_ExpKill, BSET);
 		} else {
 			return (bit_tweak(vsb, mgt_param.vsl_mask,
-			    SLT__Reserved, arg, VSL_tags, "VSL tag", "-"));
+			    SLT__Reserved, arg, VSL_tags, "VSL tag", '-'));
 		}
 	} else {
 		if (arg == JSON_FMT)
@@ -184,7 +184,7 @@ tweak_debug(struct vsb *vsb, const struct parspec *par, const char *arg)
 			    0, sizeof mgt_param.debug_bits);
 		} else {
 			return (bit_tweak(vsb, mgt_param.debug_bits,
-			    DBG_Reserved, arg, debug_tags, "debug bit", "+"));
+			    DBG_Reserved, arg, debug_tags, "debug bit", '+'));
 		}
 	} else {
 		if (arg == JSON_FMT)
@@ -228,7 +228,7 @@ tweak_experimental(struct vsb *vsb, const struct parspec *par, const char *arg)
 		} else {
 			return (bit_tweak(vsb, mgt_param.experimental_bits,
 			    EXPERIMENTAL_Reserved, arg, experimental_tags,
-			    "experimental bit", "+"));
+			    "experimental bit", '+'));
 		}
 	} else {
 		if (arg == JSON_FMT)
@@ -278,7 +278,7 @@ tweak_feature(struct vsb *vsb, const struct parspec *par, const char *arg)
 		} else {
 			return (bit_tweak(vsb, mgt_param.feature_bits,
 			    FEATURE_Reserved, arg, feature_tags,
-			    "feature bit", "+"));
+			    "feature bit", '+'));
 		}
 	} else {
 		if (arg == JSON_FMT)
