@@ -32,6 +32,15 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
+Varnish Cache 6.6.2 (unreleased)
+================================
+
+* Make sure that HTTP/1 connections are closed on request body related
+  errors (VSV00008_).
+
+.. _VSV00008: https://varnish-cache.org/security/VSV00008.html
+
+================================
 Varnish Cache 6.6.1 (2021-07-13)
 ================================
 
