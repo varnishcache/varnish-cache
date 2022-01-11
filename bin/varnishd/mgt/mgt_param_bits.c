@@ -115,7 +115,12 @@ tweak_generic_bits(struct vsb *vsb, const struct parspec *par, const char *arg,
 	const char *s;
 	unsigned j;
 
-	(void)par;
+	if (arg != NULL && !strcmp(arg, "default") &&
+	    strcmp(par->def, "none")) {
+		memset(p, 0, l >> 3);
+		return (tweak_generic_bits(vsb, par, par->def, p, l, tags,
+		    desc, sign));
+	}
 
 	if (arg != NULL && arg != JSON_FMT) {
 		if (sign == '+' && !strcmp(arg, "none"))
@@ -152,26 +157,6 @@ static const char * const VSL_tags[256] = {
 static int v_matchproto_(tweak_t)
 tweak_vsl_mask(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
-
-	if (arg != NULL && !strcmp(arg, "default")) {
-		memset(mgt_param.vsl_mask, 0, sizeof mgt_param.vsl_mask);
-		(void)bit(mgt_param.vsl_mask, SLT_VCL_trace, BSET);
-		(void)bit(mgt_param.vsl_mask, SLT_WorkThread, BSET);
-		(void)bit(mgt_param.vsl_mask, SLT_Hash, BSET);
-		(void)bit(mgt_param.vsl_mask, SLT_VfpAcct, BSET);
-		(void)bit(mgt_param.vsl_mask, SLT_VdpAcct, BSET);
-		(void)bit(mgt_param.vsl_mask, SLT_H2TxBody, BSET);
-		(void)bit(mgt_param.vsl_mask, SLT_H2TxHdr, BSET);
-		(void)bit(mgt_param.vsl_mask, SLT_H2RxBody, BSET);
-		(void)bit(mgt_param.vsl_mask, SLT_H2RxHdr, BSET);
-		(void)bit(mgt_param.vsl_mask, SLT_ObjHeader, BSET);
-		(void)bit(mgt_param.vsl_mask, SLT_ObjProtocol, BSET);
-		(void)bit(mgt_param.vsl_mask, SLT_ObjReason, BSET);
-		(void)bit(mgt_param.vsl_mask, SLT_ObjStatus, BSET);
-		(void)bit(mgt_param.vsl_mask, SLT_Debug, BSET);
-		(void)bit(mgt_param.vsl_mask, SLT_ExpKill, BSET);
-		return (0);
-	}
 
 	return (tweak_generic_bits(vsb, par, arg, mgt_param.vsl_mask,
 	    SLT__Reserved, VSL_tags, "VSL tag", '-'));
@@ -227,14 +212,6 @@ static int v_matchproto_(tweak_t)
 tweak_feature(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 
-	if (arg != NULL && !strcmp(arg, "default")) {
-		memset(mgt_param.feature_bits, 0,
-		    sizeof mgt_param.feature_bits);
-		(void)bit(mgt_param.feature_bits,
-		    FEATURE_VALIDATE_HEADERS, BSET);
-		return (0);
-	}
-
 	return (tweak_generic_bits(vsb, par, arg, mgt_param.feature_bits,
 	    FEATURE_Reserved, feature_tags, "feature bit", '+'));
 }
@@ -245,14 +222,32 @@ tweak_feature(struct vsb *vsb, const struct parspec *par, const char *arg)
 
 struct parspec VSL_parspec[] = {
 	{ "vsl_mask", tweak_vsl_mask, NULL,
-		NULL, NULL, "default",
+		NULL, NULL,
+		/* default */
+		"-Debug,"
+		"-ExpKill,"
+		"-H2RxBody,"
+		"-H2RxHdr,"
+		"-H2TxBody,"
+		"-H2TxHdr,"
+		"-Hash,"
+		"-ObjHeader,"
+		"-ObjProtocol,"
+		"-ObjReason,"
+		"-ObjStatus,"
+		"-VCL_trace,"
+		"-VdpAcct,"
+		"-VfpAcct,"
+		"-WorkThread",
 		NULL,
 		"Mask individual VSL messages from being logged.\n"
 		"\tdefault\tSet default value\n"
 		"\nUse +/- prefix in front of VSL tag name to unmask/mask "
 		"individual VSL messages." },
 	{ "debug", tweak_debug, NULL,
-		NULL, NULL, "none",
+		NULL, NULL,
+		/* default */
+		"none",
 		NULL,
 		"Enable/Disable various kinds of debugging.\n"
 		"\tnone\tDisable all debugging\n\n"
@@ -261,7 +256,9 @@ struct parspec VSL_parspec[] = {
 #include "tbl/debug_bits.h"
 		},
 	{ "experimental", tweak_experimental, NULL,
-		NULL, NULL, "none",
+		NULL, NULL,
+		/* default */
+		"none",
 		NULL,
 		"Enable/Disable experimental features.\n"
 		"\tnone\tDisable all experimental features\n\n"
@@ -270,7 +267,9 @@ struct parspec VSL_parspec[] = {
 #include "tbl/experimental_bits.h"
 		},
 	{ "feature", tweak_feature, NULL,
-		NULL, NULL, "default",
+		NULL, NULL,
+		/* default */
+		"+validate_headers",
 		NULL,
 		"Enable/Disable various minor features.\n"
 		"\tdefault\tSet default value\n"
