@@ -105,6 +105,42 @@ bit_tweak(struct vsb *vsb, uint8_t *p, unsigned l, const char *arg,
 
 
 /*--------------------------------------------------------------------
+ */
+
+static int
+tweak_generic_bits(struct vsb *vsb, const struct parspec *par, const char *arg,
+    uint8_t *p, unsigned l, const char * const *tags, const char *desc,
+    char sign)
+{
+	const char *s;
+	unsigned j;
+
+	(void)par;
+
+	if (arg != NULL && arg != JSON_FMT) {
+		if (sign == '+' && !strcmp(arg, "none"))
+			memset(p, 0, l >> 3);
+		else
+			return (bit_tweak(vsb, p, l, arg, tags, desc, sign));
+	} else {
+		if (arg == JSON_FMT)
+			VSB_putc(vsb, '"');
+		s = "";
+		for (j = 0; j < l; j++) {
+			if (bit(p, j, BTST)) {
+				VSB_printf(vsb, "%s%c%s", s, sign, tags[j]);
+				s = ",";
+			}
+		}
+		if (*s == '\0')
+			VSB_cat(vsb, sign == '+' ? "none" : "(all enabled)");
+		if (arg == JSON_FMT)
+			VSB_putc(vsb, '"');
+	}
+	return (0);
+}
+
+/*--------------------------------------------------------------------
  * The vsl_mask parameter
  */
 
@@ -116,9 +152,6 @@ static const char * const VSL_tags[256] = {
 static int v_matchproto_(tweak_t)
 tweak_vsl_mask(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
-	unsigned j;
-	const char *s;
-	(void)par;
 
 	if (arg != NULL && !strcmp(arg, "default")) {
 		memset(mgt_param.vsl_mask, 0, sizeof mgt_param.vsl_mask);
@@ -140,25 +173,8 @@ tweak_vsl_mask(struct vsb *vsb, const struct parspec *par, const char *arg)
 		return (0);
 	}
 
-	if (arg != NULL && arg != JSON_FMT) {
-		return (bit_tweak(vsb, mgt_param.vsl_mask,
-		    SLT__Reserved, arg, VSL_tags, "VSL tag", '-'));
-	} else {
-		if (arg == JSON_FMT)
-			VSB_putc(vsb, '"');
-		s = "";
-		for (j = 0; j < (unsigned)SLT__Reserved; j++) {
-			if (bit(mgt_param.vsl_mask, j, BTST)) {
-				VSB_printf(vsb, "%s-%s", s, VSL_tags[j]);
-				s = ",";
-			}
-		}
-		if (*s == '\0')
-			VSB_cat(vsb, "(all enabled)");
-		if (arg == JSON_FMT)
-			VSB_putc(vsb, '"');
-	}
-	return (0);
+	return (tweak_generic_bits(vsb, par, arg, mgt_param.vsl_mask,
+	    SLT__Reserved, VSL_tags, "VSL tag", '-'));
 }
 
 /*--------------------------------------------------------------------
@@ -174,34 +190,9 @@ static const char * const debug_tags[] = {
 static int v_matchproto_(tweak_t)
 tweak_debug(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
-	const char *s;
-	unsigned j;
-	(void)par;
 
-	if (arg != NULL && arg != JSON_FMT) {
-		if (!strcmp(arg, "none")) {
-			memset(mgt_param.debug_bits,
-			    0, sizeof mgt_param.debug_bits);
-		} else {
-			return (bit_tweak(vsb, mgt_param.debug_bits,
-			    DBG_Reserved, arg, debug_tags, "debug bit", '+'));
-		}
-	} else {
-		if (arg == JSON_FMT)
-			VSB_putc(vsb, '"');
-		s = "";
-		for (j = 0; j < (unsigned)DBG_Reserved; j++) {
-			if (bit(mgt_param.debug_bits, j, BTST)) {
-				VSB_printf(vsb, "%s+%s", s, debug_tags[j]);
-				s = ",";
-			}
-		}
-		if (*s == '\0')
-			VSB_cat(vsb, "none");
-		if (arg == JSON_FMT)
-			VSB_putc(vsb, '"');
-	}
-	return (0);
+	return (tweak_generic_bits(vsb, par, arg, mgt_param.debug_bits,
+	    DBG_Reserved, debug_tags, "debug bit", '+'));
 }
 
 /*--------------------------------------------------------------------
@@ -217,36 +208,9 @@ static const char * const experimental_tags[] = {
 static int v_matchproto_(tweak_t)
 tweak_experimental(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
-	const char *s;
-	unsigned j;
-	(void)par;
 
-	if (arg != NULL && arg != JSON_FMT) {
-		if (!strcmp(arg, "none")) {
-			memset(mgt_param.experimental_bits,
-			    0, sizeof mgt_param.experimental_bits);
-		} else {
-			return (bit_tweak(vsb, mgt_param.experimental_bits,
-			    EXPERIMENTAL_Reserved, arg, experimental_tags,
-			    "experimental bit", '+'));
-		}
-	} else {
-		if (arg == JSON_FMT)
-			VSB_putc(vsb, '"');
-		s = "";
-		for (j = 0; j < (unsigned)EXPERIMENTAL_Reserved; j++) {
-			if (bit(mgt_param.experimental_bits, j, BTST)) {
-				VSB_printf(vsb, "%s+%s", s,
-				    experimental_tags[j]);
-				s = ",";
-			}
-		}
-		if (*s == '\0')
-			VSB_cat(vsb, "none");
-		if (arg == JSON_FMT)
-			VSB_putc(vsb, '"');
-	}
-	return (0);
+	return (tweak_generic_bits(vsb, par, arg, mgt_param.experimental_bits,
+	    EXPERIMENTAL_Reserved, experimental_tags, "experimental bit", '+'));
 }
 
 /*--------------------------------------------------------------------
@@ -262,9 +226,6 @@ static const char * const feature_tags[] = {
 static int v_matchproto_(tweak_t)
 tweak_feature(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
-	const char *s;
-	unsigned j;
-	(void)par;
 
 	if (arg != NULL && !strcmp(arg, "default")) {
 		memset(mgt_param.feature_bits, 0,
@@ -274,31 +235,8 @@ tweak_feature(struct vsb *vsb, const struct parspec *par, const char *arg)
 		return (0);
 	}
 
-	if (arg != NULL && arg != JSON_FMT) {
-		if (!strcmp(arg, "none")) {
-			memset(mgt_param.feature_bits,
-			    0, sizeof mgt_param.feature_bits);
-		} else {
-			return (bit_tweak(vsb, mgt_param.feature_bits,
-			    FEATURE_Reserved, arg, feature_tags,
-			    "feature bit", '+'));
-		}
-	} else {
-		if (arg == JSON_FMT)
-			VSB_putc(vsb, '"');
-		s = "";
-		for (j = 0; j < (unsigned)FEATURE_Reserved; j++) {
-			if (bit(mgt_param.feature_bits, j, BTST)) {
-				VSB_printf(vsb, "%s+%s", s, feature_tags[j]);
-				s = ",";
-			}
-		}
-		if (*s == '\0')
-			VSB_cat(vsb, "none");
-		if (arg == JSON_FMT)
-			VSB_putc(vsb, '"');
-	}
-	return (0);
+	return (tweak_generic_bits(vsb, par, arg, mgt_param.feature_bits,
+	    FEATURE_Reserved, feature_tags, "feature bit", '+'));
 }
 
 /*--------------------------------------------------------------------
