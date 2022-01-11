@@ -63,6 +63,7 @@ jobs:
     #    uses a compiled language
 
     - run:
+        apt-get install build-essential
         configure
         make
 
