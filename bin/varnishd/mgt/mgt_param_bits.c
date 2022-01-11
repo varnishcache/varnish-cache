@@ -120,29 +120,29 @@ tweak_vsl_mask(struct vsb *vsb, const struct parspec *par, const char *arg)
 	const char *s;
 	(void)par;
 
+	if (arg != NULL && !strcmp(arg, "default")) {
+		memset(mgt_param.vsl_mask, 0, sizeof mgt_param.vsl_mask);
+		(void)bit(mgt_param.vsl_mask, SLT_VCL_trace, BSET);
+		(void)bit(mgt_param.vsl_mask, SLT_WorkThread, BSET);
+		(void)bit(mgt_param.vsl_mask, SLT_Hash, BSET);
+		(void)bit(mgt_param.vsl_mask, SLT_VfpAcct, BSET);
+		(void)bit(mgt_param.vsl_mask, SLT_VdpAcct, BSET);
+		(void)bit(mgt_param.vsl_mask, SLT_H2TxBody, BSET);
+		(void)bit(mgt_param.vsl_mask, SLT_H2TxHdr, BSET);
+		(void)bit(mgt_param.vsl_mask, SLT_H2RxBody, BSET);
+		(void)bit(mgt_param.vsl_mask, SLT_H2RxHdr, BSET);
+		(void)bit(mgt_param.vsl_mask, SLT_ObjHeader, BSET);
+		(void)bit(mgt_param.vsl_mask, SLT_ObjProtocol, BSET);
+		(void)bit(mgt_param.vsl_mask, SLT_ObjReason, BSET);
+		(void)bit(mgt_param.vsl_mask, SLT_ObjStatus, BSET);
+		(void)bit(mgt_param.vsl_mask, SLT_Debug, BSET);
+		(void)bit(mgt_param.vsl_mask, SLT_ExpKill, BSET);
+		return (0);
+	}
+
 	if (arg != NULL && arg != JSON_FMT) {
-		if (!strcmp(arg, "default")) {
-			memset(mgt_param.vsl_mask,
-			    0, sizeof mgt_param.vsl_mask);
-			(void)bit(mgt_param.vsl_mask, SLT_VCL_trace, BSET);
-			(void)bit(mgt_param.vsl_mask, SLT_WorkThread, BSET);
-			(void)bit(mgt_param.vsl_mask, SLT_Hash, BSET);
-			(void)bit(mgt_param.vsl_mask, SLT_VfpAcct, BSET);
-			(void)bit(mgt_param.vsl_mask, SLT_VdpAcct, BSET);
-			(void)bit(mgt_param.vsl_mask, SLT_H2TxBody, BSET);
-			(void)bit(mgt_param.vsl_mask, SLT_H2TxHdr, BSET);
-			(void)bit(mgt_param.vsl_mask, SLT_H2RxBody, BSET);
-			(void)bit(mgt_param.vsl_mask, SLT_H2RxHdr, BSET);
-			(void)bit(mgt_param.vsl_mask, SLT_ObjHeader, BSET);
-			(void)bit(mgt_param.vsl_mask, SLT_ObjProtocol, BSET);
-			(void)bit(mgt_param.vsl_mask, SLT_ObjReason, BSET);
-			(void)bit(mgt_param.vsl_mask, SLT_ObjStatus, BSET);
-			(void)bit(mgt_param.vsl_mask, SLT_Debug, BSET);
-			(void)bit(mgt_param.vsl_mask, SLT_ExpKill, BSET);
-		} else {
-			return (bit_tweak(vsb, mgt_param.vsl_mask,
-			    SLT__Reserved, arg, VSL_tags, "VSL tag", '-'));
-		}
+		return (bit_tweak(vsb, mgt_param.vsl_mask,
+		    SLT__Reserved, arg, VSL_tags, "VSL tag", '-'));
 	} else {
 		if (arg == JSON_FMT)
 			VSB_putc(vsb, '"');
@@ -266,13 +266,16 @@ tweak_feature(struct vsb *vsb, const struct parspec *par, const char *arg)
 	unsigned j;
 	(void)par;
 
+	if (arg != NULL && !strcmp(arg, "default")) {
+		memset(mgt_param.feature_bits, 0,
+		    sizeof mgt_param.feature_bits);
+		(void)bit(mgt_param.feature_bits,
+		    FEATURE_VALIDATE_HEADERS, BSET);
+		return (0);
+	}
+
 	if (arg != NULL && arg != JSON_FMT) {
-		if (!strcmp(arg, "default")) {
-			memset(mgt_param.feature_bits,
-			    0, sizeof mgt_param.feature_bits);
-			(void)bit(mgt_param.feature_bits,
-			    FEATURE_VALIDATE_HEADERS, BSET);
-		} else if (!strcmp(arg, "none")) {
+		if (!strcmp(arg, "none")) {
 			memset(mgt_param.feature_bits,
 			    0, sizeof mgt_param.feature_bits);
 		} else {
