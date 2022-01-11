@@ -13,6 +13,7 @@ nobase_pkginclude_HEADERS = \
 	tbl/body_status.h \
 	tbl/cli_cmds.h \
 	tbl/debug_bits.h \
+	tbl/experimental_bits.h \
 	tbl/feature_bits.h \
 	tbl/h2_error.h \
 	tbl/h2_frames.h \

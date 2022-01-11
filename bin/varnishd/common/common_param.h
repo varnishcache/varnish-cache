@@ -52,6 +52,18 @@ COM_DO_DEBUG(const volatile uint8_t *p, enum debug_bits x)
 	return (p[(unsigned)x>>3] & (0x80U >> ((unsigned)x & 7)));
 }
 
+enum experimental_bits {
+#define EXPERIMENTAL_BIT(U, l, d) EXPERIMENTAL_##U,
+#include "tbl/experimental_bits.h"
+       EXPERIMENTAL_Reserved
+};
+
+static inline int
+COM_EXPERIMENTAL(const volatile uint8_t *p, enum experimental_bits x)
+{
+	return (p[(unsigned)x>>3] & (0x80U >> ((unsigned)x & 7)));
+}
+
 enum feature_bits {
 #define FEATURE_BIT(U, l, d) FEATURE_##U,
 #include "tbl/feature_bits.h"
@@ -64,7 +76,6 @@ COM_FEATURE(const volatile uint8_t *p, enum feature_bits x)
 	return (p[(unsigned)x>>3] & (0x80U >> ((unsigned)x & 7)));
 }
 
-
 struct poolparam {
 	unsigned		min_pool;
 	unsigned		max_pool;
@@ -75,6 +86,7 @@ struct poolparam {
 
 PARAM_BITMAP(vsl_mask_t,	256);
 PARAM_BITMAP(debug_t,		DBG_Reserved);
+PARAM_BITMAP(experimental_t,	EXPERIMENTAL_Reserved);
 PARAM_BITMAP(feature_t,		FEATURE_Reserved);
 #undef PARAM_BITMAP
 
@@ -114,5 +126,6 @@ struct params {
 
 	vsl_mask_t		vsl_mask;
 	debug_t			debug_bits;
+	experimental_t		experimental_bits;
 	feature_t		feature_bits;
 };
