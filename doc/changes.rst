@@ -35,7 +35,11 @@ Varnish Cache 6.0.10 (unreleased)
 
 * Fix a workspace exhaustion issue in the ESI delivery code path.
 
+* Make sure that HTTP/1 connections are closed on request body related
+  errors (VSV00008_).
+
 .. _3746: https://github.com/varnishcache/varnish-cache/issues/3746
+.. _VSV00008: https://varnish-cache.org/security/VSV00008.html
 
 ================================
 Varnish Cache 6.0.9 (2021-11-24)
