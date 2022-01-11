@@ -26,6 +26,17 @@ http://varnish-cache.org/docs/trunk/whats-new/index.html and via
 individual releases. These documents are updated as part of the
 release process.
 
+=================================
+Varnish Cache 6.0.10 (unreleased)
+=================================
+
+* Fix a workspace exhaustion issue with the ``vmod_std`` function
+  ``std.ip``. (3746_)
+
+* Fix a workspace exhaustion issue in the ESI delivery code path.
+
+.. _3746: https://github.com/varnishcache/varnish-cache/issues/3746
+
 ================================
 Varnish Cache 6.0.9 (2021-11-24)
 ================================
