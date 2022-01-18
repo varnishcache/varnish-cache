@@ -1,9 +1,14 @@
 varnishtest "traffic.accept coverage"
 
 varnish v1 -vcl {
+	import vtc;
+
 	backend be none;
 
 	sub vcl_recv {
+		if (req.http.barrier) {
+			vtc.barrier_sync(req.http.barrier);
+		}
 		return (synth(200));
 	}
 } -start
@@ -59,3 +64,25 @@ server s2 -listen "${v1_sock}" {
 varnish v1 -clierr 300 traffic.accept
 
 server s2 -break
+
+# http/1 keep-alive
+
+varnish v1 -cliok traffic.accept
+varnish v1 -cliok "param.set timeout_idle 3600"
+
+barrier b1 sock 2
+barrier b2 sock 2
+
+client c3 {
+	txreq -hdr "barrier: ${b1_sock}" -hdr "barrier2: ${b2_sock}"
+	rxresp
+	expect resp.status == 200
+
+	expect_close
+} -start
+
+barrier b1 sync
+varnish v1 -cliok traffic.refuse
+barrier b2 sync
+
+client c3 -wait

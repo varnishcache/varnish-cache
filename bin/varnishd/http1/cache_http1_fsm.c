@@ -403,6 +403,10 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			assert(!WS_IsReserved(wrk->aws));
 			assert(!WS_IsReserved(req->ws));
 
+			if (!cache_param->accept_traffic &&
+			    req->doclose == SC_NULL)
+				req->doclose = SC_TRAFFIC_REFUSE;
+
 			if (sp->fd >= 0 && req->doclose != SC_NULL)
 				SES_Close(sp, req->doclose);
 

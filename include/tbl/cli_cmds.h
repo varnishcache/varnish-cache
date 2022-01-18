@@ -470,7 +470,9 @@ CLI_CMD(TRAFFIC_REFUSE,
     "Listen sockets are closed and it is no longer possible to establish "
     "new connections for clients. This means that traffic.accept may fail "
     "to bind listen addresses again, if meanwhile they end up already in "
-    "use.\n\n",
+    "use.\n\n"
+    "Refusing new traffic also implies refusing new requests for "
+    "existing connections, disabling HTTP/1 keep-alive.",
     0, 0
 )
 
