@@ -472,7 +472,9 @@ CLI_CMD(TRAFFIC_REFUSE,
     "to bind listen addresses again, if meanwhile they end up already in "
     "use.\n\n"
     "Refusing new traffic also implies refusing new requests for "
-    "existing connections, disabling HTTP/1 keep-alive.",
+    "existing connections, disabling HTTP/1 keep-alive.\n\n"
+    "For h2 traffic, a GOAWAY frame is sent to clients to notify them that "
+    "ongoing streams can complete, but new streams will be refused.",
     0, 0
 )
 

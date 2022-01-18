@@ -348,12 +348,32 @@ h2_rx_goaway(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 	assert(r2 == h2->req0);
 
+	h2->goaway = 1;
 	h2->goaway_last_stream = vbe32dec(h2->rxf_data);
 	h2->error = h2_connectionerror(vbe32dec(h2->rxf_data + 4));
 	Lck_Lock(&h2->sess->mtx);
 	VSLb(h2->vsl, SLT_Debug, "GOAWAY %s", h2->error->name);
 	Lck_Unlock(&h2->sess->mtx);
 	return (h2->error);
+}
+
+static void
+h2_tx_goaway(struct worker *wrk, struct h2_sess *h2, h2_error h2e)
+{
+	char b[8];
+
+	ASSERT_RXTHR(h2);
+	AN(h2e);
+
+	if (h2->goaway)
+		return;
+
+	h2->goaway = 1;
+	vbe32enc(b, h2->highest_stream);
+	vbe32enc(b + 4, h2e->val);
+	H2_Send_Get(wrk, h2, h2->req0);
+	H2_Send_Frame(wrk, h2, H2_F_GOAWAY, 0, 8, 0, b);
+	H2_Send_Rel(h2, h2->req0);
 }
 
 /**********************************************************************
@@ -635,6 +655,11 @@ h2_end_headers(struct worker *wrk, struct h2_sess *h2,
 	VCL_TaskEnter(req->top->privs);
 	req->task->func = h2_do_req;
 	req->task->priv = req;
+	if (!cache_param->accept_traffic) {
+		r2->state = H2_S_CLOSED;
+		h2_tx_goaway(wrk, h2, H2SE_REFUSED_STREAM);
+		return (H2SE_REFUSED_STREAM);
+	}
 	r2->scheduled = 1;
 	if (Pool_Task(wrk->pool, req->task, TASK_QUEUE_STR) != 0) {
 		r2->scheduled = 0;
@@ -1368,9 +1393,12 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 	h2_frame h2f;
 	h2_error h2e;
 	const char *s = NULL;
-	char b[8];
 
 	ASSERT_RXTHR(h2);
+
+	if (h2->goaway && h2->open_streams == 0)
+		return (0);
+
 	VTCP_blocking(*h2->htc->rfd);
 	h2->sess->t_idle = VTIM_real();
 	hs = HTC_RxStuff(h2->htc, h2_frame_complete,
@@ -1446,13 +1474,11 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 	}
 
 	h2e = h2_procframe(wrk, h2, h2f);
-	if (h2->error == 0 && h2e) {
+
+	if (h2->error == NULL && h2e != NULL) {
 		h2->error = h2e;
-		vbe32enc(b, h2->highest_stream);
-		vbe32enc(b + 4, h2e->val);
-		H2_Send_Get(wrk, h2, h2->req0);
-		H2_Send_Frame(wrk, h2, H2_F_GOAWAY, 0, 8, 0, b);
-		H2_Send_Rel(h2, h2->req0);
+		h2_tx_goaway(wrk, h2, h2e);
 	}
+
 	return (h2->error ? 0 : 1);
 }

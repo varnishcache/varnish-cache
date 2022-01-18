@@ -9,6 +9,9 @@ varnish v1 -vcl {
 		if (req.http.barrier) {
 			vtc.barrier_sync(req.http.barrier);
 		}
+		if (req.http.barrier2) {
+			vtc.barrier_sync(req.http.barrier2);
+		}
 		return (synth(200));
 	}
 } -start
@@ -86,3 +89,44 @@ varnish v1 -cliok traffic.refuse
 barrier b2 sync
 
 client c3 -wait
+
+# h2 goaway
+
+delay 0.1
+varnish v1 -cliok traffic.accept
+varnish v1 -cliok "param.set feature +http2"
+
+barrier b3 sock 2
+barrier b4 cond 2
+barrier b5 sock 2
+
+client c4 {
+	stream 1 {
+		txreq -hdr barrier ${b3_sock} -hdr barrier2 ${b5_sock}
+		rxresp
+		expect resp.status == 200
+	} -start
+
+	barrier b4 sync
+
+	stream 0 {
+		rxgoaway
+	} -start
+
+	stream 3 {
+		txreq
+		rxrst
+		expect rst.err == REFUSED_STREAM
+	} -run
+
+	barrier b5 sync
+
+	stream 0 -wait
+	stream 1 -wait
+} -start
+
+barrier b3 sync
+varnish v1 -cliok traffic.refuse
+barrier b4 sync
+
+client c4 -wait
