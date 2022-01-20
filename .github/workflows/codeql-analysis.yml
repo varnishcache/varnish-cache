@@ -43,7 +43,7 @@ jobs:
       uses: github/codeql-action/init@v1
       with:
         languages: ${{ matrix.language }}
-        queries: samiberndtson/license-check/license-checks/gpl.ql@main
+        queries: DataDog/qlpack/cpp-queries@main
         #queries: security-and-quality
         # If you wish to specify custom queries, you can do so here or in a config file.
         # By default, queries listed here will override any specified in a config file.
