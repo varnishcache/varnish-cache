@@ -44,7 +44,7 @@ jobs:
       with:
         languages: ${{ matrix.language }}
         queries:
-          - uses: ./my-basic-queries/example-query.ql./.github/gpl.ql
+          - uses: ./.github/gpl.ql
         #queries: security-and-quality
         # If you wish to specify custom queries, you can do so here or in a config file.
         # By default, queries listed here will override any specified in a config file.
