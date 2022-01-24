@@ -33,7 +33,7 @@ jobs:
     steps:
     
     - name: Setup
-      run: sudo apt-get update && sudo apt-get -y install build-essential autotools-dev autoconf libtool python3-docutils python3-sphinx
+      run: sudo apt-get update && sudo apt-get -y install build-essential autotools-dev autoconf libtool clang python3-docutils python3-sphinx
     
     - name: Checkout repository
       uses: actions/checkout@v2
