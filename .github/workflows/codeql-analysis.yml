@@ -63,7 +63,7 @@ jobs:
     #    and modify them (or add more) to build your code if your project
     #    uses a compiled language
 
-    - run: CC=clang; export CC && ./autogen.sh && ./configure && make
+    - run: CC=clang; export CC && ./autogen.des && ./configure && make
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1
