@@ -76,6 +76,7 @@ static const char * const vsl_r_names[VSL_r__MAX] = {
 };
 
 struct vtx;
+VTAILQ_HEAD(vtxhead, vtx);
 
 struct vslc_raw {
 	unsigned		magic;
@@ -161,12 +162,12 @@ struct vtx {
 	enum VSL_reason_e	reason;
 
 	struct vtx		*parent;
-	VTAILQ_HEAD(,vtx)	child;
+	struct vtxhead		child;
 	unsigned		n_child;
 	unsigned		n_childready;
 	unsigned		n_descend;
 
-	VTAILQ_HEAD(,synth)	synth;
+	struct synthhead	synth;
 
 	struct chunk		shmchunks[VTX_SHMCHUNKS];
 	struct chunkhead	shmchunks_free;
@@ -189,11 +190,11 @@ struct VSLQ {
 
 	/* Structured mode */
 	struct vtx_tree		tree;
-	VTAILQ_HEAD(,vtx)	ready;
-	VTAILQ_HEAD(,vtx)	incomplete;
+	struct vtxhead		ready;
+	struct vtxhead		incomplete;
 	int			n_outstanding;
 	struct chunkhead	shmrefs;
-	VTAILQ_HEAD(,vtx)	cache;
+	struct vtxhead		cache;
 	unsigned		n_cache;
 
 	/* Rate limiting */
