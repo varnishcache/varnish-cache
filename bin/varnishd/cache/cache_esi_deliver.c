@@ -589,7 +589,7 @@ struct ved_foo {
 	uint8_t			tailbuf[8];
 };
 
-static int v_matchproto_(vdp_fini_f)
+static int v_matchproto_(vdp_init_f)
 ved_gzgz_init(VRT_CTX, struct vdp_ctx *vdc, void **priv, struct objcore *oc)
 {
 	ssize_t l;
