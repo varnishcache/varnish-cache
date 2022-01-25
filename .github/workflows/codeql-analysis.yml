@@ -33,7 +33,7 @@ jobs:
     steps:
     
     - name: Setup
-      run: sudo apt-get update && sudo apt-get -y install build-essential autotools-dev autoconf libtool python3-docutils python3-sphinx clang-format clang-tidy clang-tools clang clangd libc++-dev libc++1 libc++abi-dev libc++abi1 libclang-dev libclang1 liblldb-dev libllvm-ocaml-dev libomp-dev libomp5 lld lldb llvm-dev llvm-runtime llvm python3-clang
+      run: sudo apt-get update && sudo apt-get -y install build-essential autotools-dev autoconf libtool python3-docutils python3-sphinx
     
     - name: Checkout repository
       uses: actions/checkout@v2
@@ -63,7 +63,7 @@ jobs:
     #    and modify them (or add more) to build your code if your project
     #    uses a compiled language
 
-    - run: env CC=clang; export CC && ./autogen.des && ./configure && make
+    - run: ./autogen.sh && ./configure && make
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1
