@@ -1021,7 +1021,7 @@ PARAM_SIMPLE(
 	/* name */	vsl_reclen,
 	/* type */	vsl_reclen,
 	/* min */	"16b",
-	/* max */	NULL,
+	/* max */	"65535b",	// VSL_LENMASK
 	/* def */	"255b",
 	/* units */	"bytes",
 	/* descr */
