@@ -292,7 +292,7 @@ child_poker(const struct vev *e, int what)
 static void
 mgt_launch_child(struct cli *cli)
 {
-	pid_t pid;
+	pid_t pid, pidr;
 	unsigned u;
 	char *p;
 	struct vev *e;
@@ -413,6 +413,18 @@ mgt_launch_child(struct cli *cli)
 
 	MCH_Fd_Inherit(heritage.cli_out, NULL);
 	closefd(&heritage.cli_out);
+
+	/* Wait for cache/cache_cli.c::CLI_Run() to check in */
+	if (VCLI_ReadResult(child_cli_in, &u, NULL, mgt_param.cli_timeout)) {
+		assert(u == CLIS_COMMS);
+		pidr = waitpid(pid, &i, 0);
+		assert(pidr == pid);
+		perror("Child failed on launch");
+		exit(1);		// XXX Harsh ?
+	} else {
+		assert(u == CLIS_OK);
+		fprintf(stderr, "Child launched OK\n");
+	}
 
 	child_std_vlu = VLU_New(child_line, NULL, 0);
 	AN(child_std_vlu);
