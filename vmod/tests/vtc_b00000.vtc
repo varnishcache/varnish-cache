@@ -1,0 +1,74 @@
+varnishtest "Test vtc.vsl()"
+
+varnish v1 -vcl {
+	import vtc;
+
+	backend proforma none;
+
+	sub vcl_init {
+		# Fake a minimal session log
+		vtc.vsl(9000, "Begin", c, "sess 0 HTTP/1");
+		vtc.vsl(9000, "SessOpen", c, "127.0.0.1 123 a0 127.0.0.1 124 1643281288.313845 22");
+		vtc.vsl(9000, "Link", c, "req 9001 rxreq");
+		vtc.vsl(9001, "Begin", c, "req 9000 rxreq");
+		vtc.vsl(9001, "End", c, "");
+		vtc.vsl(9000, "End", c, "");
+
+		vtc.vsl_replay("""
+**** v1    vsl|       1000 Begin           c sess 0 HTTP/1
+**** v1    vsl|       1000 SessOpen        c 127.0.0.1 53112 a0 127.0.0.1 37263 1643285160.270383 22
+**** v1    vsl|       1000 Link            c req 1001 rxreq
+**** v1    vsl|       1001 Begin           c req 1000 rxreq
+**** v1    vsl|       1001 Timestamp       c Start: 1643285160.271226 0.000000 0.000000
+**** v1    vsl|       1001 Timestamp       c Req: 1643285160.271226 0.000000 0.000000
+**** v1    vsl|       1001 VCL_use         c vcl1
+**** v1    vsl|       1001 ReqStart        c 127.0.0.1 53112 a0
+**** v1    vsl|       1001 ReqMethod       c GET
+**** v1    vsl|       1001 ReqURL          c /
+**** v1    vsl|       1001 ReqProtocol     c HTTP/1.1
+**** v1    vsl|       1001 ReqHeader       c Pattern: /foo/
+**** v1    vsl|       1001 ReqHeader       c Subject: /foo/
+**** v1    vsl|       1001 ReqHeader       c Host: 127.0.0.1
+**** v1    vsl|       1001 ReqHeader       c X-Forwarded-For: 127.0.0.1
+**** v1    vsl|       1001 VCL_call        c RECV
+**** v1    vsl|       1001 VCL_return      c synth
+**** v1    vsl|       1001 VCL_call        c HASH
+**** v1    vsl|       1001 VCL_return      c lookup
+**** v1    vsl|       1001 RespProtocol    c HTTP/1.1
+**** v1    vsl|       1001 RespStatus      c 200
+**** v1    vsl|       1001 RespReason      c OK
+**** v1    vsl|       1001 RespHeader      c Date: Thu, 27 Jan 2022 12:06:00 GMT
+**** v1    vsl|       1001 RespHeader      c Server: Varnish
+**** v1    vsl|       1001 RespHeader      c X-Varnish: 1001
+**** v1    vsl|       1001 VCL_call        c SYNTH
+**** v1    vsl|       1001 RespHeader      c Match: true
+**** v1    vsl|       1001 RespHeader      c Match-Nopathname: true
+**** v1    vsl|       1001 RespHeader      c Match-Noescape: true
+**** v1    vsl|       1001 RespHeader      c Match-Period: true
+**** v1    vsl|       1001 RespHeader      c Content-Type: text/html; charset=utf-8
+**** v1    vsl|       1001 RespHeader      c Retry-After: 5
+**** v1    vsl|       1001 VCL_return      c deliver
+**** v1    vsl|       1001 Timestamp       c Process: 1643285160.271421 0.000195 0.000195
+**** v1    vsl|       1001 RespHeader      c Content-Length: 227
+**** v1    vsl|       1001 Storage         c malloc Transient
+**** v1    vsl|       1001 Filters         c 
+**** v1    vsl|       1001 RespHeader      c Connection: keep-alive
+**** v1    vsl|       1001 Timestamp       c Resp: 1643285160.271493 0.000267 0.000072
+**** v1    vsl|       1001 ReqAcct         c 67 0 67 270 227 497
+**** v1    vsl|       1001 End             c 
+**** v1    vsl|       1000 SessClose       c REM_CLOSE 0.009
+**** v1    vsl|       1000 End             c 
+""");
+	}
+} -start
+
+logexpect l1 -v v1 -d 1 -g vxid {
+	expect * 9000 Begin sess
+	expect 5 9000 End
+} -run
+
+logexpect l2 -v v1 -d 1 -g session -q "SessOpen ~ 53112" {
+	expect * 1000 Begin sess
+	expect * 1001 Begin req
+	expect *    = RespHeader Connection:
+} -run

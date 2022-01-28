@@ -31,6 +31,7 @@
 
 #include "config.h"
 
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -361,4 +362,162 @@ vmod_proxy_header(VRT_CTX, VCL_ENUM venum, VCL_IP client, VCL_IP server,
 
 	return (VRT_blob(ctx, "proxy_header", h, l,
 	    BLOB_VMOD_PROXY_HEADER_TYPE));
+}
+
+// ref vsl.c
+struct vsl_tag2enum {
+	const char	*string;
+	enum VSL_tag_e	tag;
+};
+
+static struct vsl_tag2enum vsl_tag2enum[SLT__MAX] = {
+#define SLTM(name,flags,sdesc,ldesc) [SLT_ ## name] = {	\
+		.string = #name,				\
+		.tag = SLT_ ## name				\
+	},
+#include "tbl/vsl_tags.h"
+};
+
+static int
+vsl_tagcmp(const void *aa, const void *bb)
+{
+	const struct vsl_tag2enum *a = aa, *b = bb;
+
+	// ref vsl2rst.c ptag_cmp
+	if (a->string == NULL && b->string != NULL)
+		return (1);
+	else if (a->string != NULL && b->string == NULL)
+		return (-1);
+	else if (a->string == NULL && b->string == NULL)
+		return (0);
+	return (strcmp(a->string, b->string));
+}
+
+/*lint -esym(528, init_vsl_tag2enum) */
+static void __attribute__((constructor))
+init_vsl_tag2enum(void)
+{
+	qsort(vsl_tag2enum, SLT__MAX, sizeof *vsl_tag2enum, vsl_tagcmp);
+}
+
+
+VCL_VOID
+vmod_vsl(VRT_CTX, VCL_INT id, VCL_STRING tag_s, VCL_ENUM side, VCL_STRANDS s)
+{
+	struct vsl_tag2enum *te, key;
+	uint32_t vxid;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	key.string = tag_s;
+	te = bsearch(&key, vsl_tag2enum, SLT__MAX,
+	    sizeof *vsl_tag2enum, vsl_tagcmp);
+
+	if (te == NULL) {
+		VRT_fail(ctx, "No such tag: %s", tag_s);
+		return;
+	}
+
+	if (id < 0 || id > VSL_IDENTMASK) {
+		VRT_fail(ctx, "id out of bounds");
+		return;
+	}
+
+	vxid = id & VSL_IDENTMASK;
+	if (side == VENUM(c))
+		vxid |= VSL_CLIENTMARKER;
+	else if (side == VENUM(b))
+		vxid |= VSL_BACKENDMARKER;
+	else
+		WRONG("side");
+
+	VSLs(te->tag, vxid, s);
+}
+
+static void
+vsl_line(VRT_CTX, char *str)
+{
+	VCL_INT id;
+	VCL_ENUM side;
+	VCL_STRANDS s;
+	const char *tag, *delim = " \t\r\n";
+	char *save;
+
+	if (*str == '*') {
+		// varnishtest
+		str = strstr(str, "vsl|");
+		if (str == NULL)
+			return;
+		str += 4;
+	}
+	if ((str = strtok_r(str, delim, &save)) == NULL)
+		return;
+	id = strtoll(str, NULL, 10);
+
+	if ((str = strtok_r(NULL, delim, &save)) == NULL)
+		return;
+	tag = str;
+
+	if ((str = strtok_r(NULL, delim, &save)) == NULL)
+		return;
+	if (*str == 'c')
+		side = VENUM(c);
+	else if (*str == 'b')
+		side = VENUM(b);
+	else
+		return;
+
+	str = strtok_r(NULL, "\r\n", &save);
+	if (str == NULL)
+		s = vrt_null_strands;
+	else
+		s = TOSTRAND(str);
+
+	vmod_vsl(ctx, id, tag, side, s);
+}
+
+VCL_VOID
+vmod_vsl_replay(VRT_CTX, VCL_STRANDS s)
+{
+	struct vsb cp[1];
+	const char *p, *pp;
+	size_t l;
+	int i, err = 0;
+
+	if (s == NULL || s->n == 0)
+		return;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->ws, WS_MAGIC);
+	WS_VSB_new(cp, ctx->ws);
+
+	for (i = 0; i < s->n; i++) {
+		p = s->p[i];
+		if (p == NULL || *p == '\0')
+			continue;
+		pp = strpbrk(p, "\r\n");
+		while (pp != NULL) {
+			l = pp - p;
+			if (VSB_bcat(cp, p, l) || VSB_finish(cp)) {
+				err = 1;
+				break;
+			}
+			vsl_line(ctx, VSB_data(cp));
+			VSB_clear(cp);
+			p = pp + 1;
+			pp = strpbrk(p, "\r\n");
+		}
+		if (err || VSB_cat(cp, p)) {
+			err = 1;
+			break;
+		}
+	}
+	if (err || VSB_finish(cp)) {
+		AZ(WS_VSB_finish(cp, ctx->ws, NULL));
+		VRT_fail(ctx, "out of workspace");
+		return;
+	}
+	vsl_line(ctx, VSB_data(cp));
+	VSB_clear(cp);
+	AN(WS_VSB_finish(cp, ctx->ws, NULL));
 }
