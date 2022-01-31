@@ -30,5 +30,6 @@ jobs:
       - uses: vapier/coverity-scan-action@v0
         with:
           project: varnish
+          token: ${{ secrets.COVERITY_SCAN_TOKEN }}
           email: varnish-dev@varnish-cache.org
           build_language: c
