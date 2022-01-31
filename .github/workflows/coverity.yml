@@ -29,6 +29,6 @@ jobs:
       - run: ./configure --with-persistent-storage
       - uses: vapier/coverity-scan-action@v0
         with:
-          project: varnishcache%2Fvarnish-cache
+          project: varnish
           email: varnish-dev@varnish-cache.org
           build_language: c
