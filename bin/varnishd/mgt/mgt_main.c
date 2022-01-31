@@ -457,6 +457,7 @@ create_pid_file(pid_t *ppid, const char *fmt, ...)
 		    VSB_data(vsb), VAS_errtxt(errno));
 	VJ_master(JAIL_MASTER_LOW);
 	VSB_destroy(&vsb);
+	va_end(ap);
 	return (pfh);
 }
 
