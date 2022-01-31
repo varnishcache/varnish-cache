@@ -2,7 +2,8 @@ name: Coverity Scan
 
 on:
   schedule:
-    - cron: '0 10 * * MON'
+    - cron: '0 8 * * MON'
+  workflow_dispatch:
 
 jobs:
   coverity:
