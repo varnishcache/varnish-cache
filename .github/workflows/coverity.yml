@@ -1,0 +1,17 @@
+name: Coverity Scan
+
+on:
+  schedule:
+    - cron: '0 10 * * MON'
+
+jobs:
+  coverity:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - run: ./configure --with-persistent-storage
+    - uses: vapier/coverity-scan-action@v0
+      with:
+        project: varnishcache%2Fvarnish-cache
+        email: varnish-dev@varnish-cache.org
+        build_language: c
