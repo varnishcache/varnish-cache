@@ -253,9 +253,9 @@ command_generator (const char *text, int state)
 			return (NULL);
 		}
 		jsn_cmds = vjsn_parse(answer, &err);
+		free(answer);
 		if (err != NULL)
 			return (NULL);
-		free(answer);
 		AN(jsn_cmds);
 		AN(jsn_cmds->value);
 		assert (vjsn_is_array(jsn_cmds->value));
