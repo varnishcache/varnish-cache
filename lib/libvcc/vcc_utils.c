@@ -73,11 +73,13 @@ void
 vcc_regexp(struct vcc *tl, struct vsb *vgc_name)
 {
 	struct vsb *pattern;
+	struct token *t0;
 	char buf[BUFSIZ];
 	vre_t *t;
 	int error, erroroffset;
 	struct inifin *ifp;
 
+	t0 = tl->t;
 	pattern = VSB_new_auto();
 	AN(pattern);
 	vcc_cstrcat(tl, pattern);
@@ -88,7 +90,7 @@ vcc_regexp(struct vcc *tl, struct vsb *vgc_name)
 		VSB_cat(tl->sb, "Regexp compilation error:\n\n");
 		AZ(VRE_error(tl->sb, error));
 		VSB_cat(tl->sb, "\n\n");
-		vcc_ErrWhere(tl, tl->t);
+		vcc_ErrWhere2(tl, t0, tl->t);
 		VSB_destroy(&pattern);
 		return;
 	}
