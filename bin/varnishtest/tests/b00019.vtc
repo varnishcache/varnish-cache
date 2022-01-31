@@ -1,6 +1,6 @@
 varnishtest "Check that max_restarts outside vcl_recv works and that we don't fall over"
 
-server s1 -repeat 5 {
+server s1 {
 	rxreq
 	txresp -body "012345\n"
 } -start
