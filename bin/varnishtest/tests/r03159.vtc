@@ -10,19 +10,23 @@ shell {
 	EOF
 }
 
-shell -match "^1$" {
-	{
-		varnishd -F -n "${tmpdir}/t" -a "${tmpdir}/sock" \
-			-p vcc_err_unref=off -f "${tmpdir}/unref.vcl" &
-		pid=$!
-		varnishadm -n "${tmpdir}/t" stop
-		kill $pid
-	} 2>&1 | grep -c "That was just a warning"
-}
+process p1 -log {
+	varnishd -F -n "${tmpdir}/t" -a "${tmpdir}/sock" \
+	    -p vcc_err_unref=off -f "${tmpdir}/unref.vcl" 2>&1
+} -start
 
-varnish v1 -cliok "param.set vcc_err_unref off"
+process p1 -expect-text 0 1 "Unused sub foo, defined:"
+process p1 -expect-text 0 1 "(That was just a warning)"
 
-shell -match "^1$" {
-	varnishadm -n "${v1_name}" vcl.load unref "${tmpdir}/unref.vcl" 2>&1 |
-	grep -c "That was just a warning"
-}
+process p1 -screen_dump
+
+process p2 -log {varnishadm -n ${tmpdir}/t "vcl.load unref ${tmpdir}/unref.vcl"} -run
+
+process p2 -expect-text 0 1 "Unused sub foo, defined:"
+process p2 -expect-text 0 1 "(That was just a warning)"
+
+process p2 -screen_dump
+
+process p1 -kill TERM
+
+process p1 -expect-exit 0x40 -wait
