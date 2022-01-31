@@ -529,6 +529,7 @@ WS_Dump(const struct ws *ws, char where, size_t off, void *buf, size_t len)
 	if (where == 'f' && ws->r != NULL) {
 		if (l > len)
 			l = len;
+		AN(wa);
 		memcpy(b, wa->ptr, l);
 		b += l;
 		len -= l;
