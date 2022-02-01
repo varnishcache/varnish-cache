@@ -52,12 +52,6 @@ shell -err -expect {Cannot create secret-file in} {
 
 shell -err -expect {Unknown jail method "xyz"} "varnishd -jxyz -f '' "
 
-shell -err -expect {Invalid backslash sequence} {
-	varnishd -l 'xyz\kk,xyz\foo' -f ''
-}
-shell -err -expect {Invalid backslash sequence} {
-	varnishd -l 'ab\8cd' -f ''
-}
 shell -err -expect {Too many arguments for -V} "varnishd -V -V"
 shell -expect {Copyright (c) 2006} "varnishd -V"
 
@@ -82,19 +76,7 @@ shell -err -expect {Error: -I file CLI command failed (104)} {
 }
 
 shell -err -expect "Can't open non-existent" {
-	varnishd -f '' -I non-existent -n ${tmpdir}/v0 -a :0 -l '2m,"'
-}
-
-shell -err -expect {Error: -l ...: Missing '"'} {
-	varnishd -f '' -I foo -n ${tmpdir}/v0 -a :0 -l '2m,"'
-}
-
-shell -err -expect {Error: Too many sub arguments} {
-	varnishd -f '' -I foo -n ${tmpdir}/v0 -a :0 -l 2m,2m,2m
-}
-
-shell -err -expect {Warning: Ignoring deprecated second subargument} {
-	varnishd -f '' -I foo -n ${tmpdir}/v0 -a :0 -l 2m,2m
+	varnishd -f '' -I non-existent -n ${tmpdir}/v0 -a :0
 }
 
 
@@ -103,9 +85,8 @@ shell -err -expect {Warning: Ignoring deprecated second subargument} {
 # Test -F mode with no VCL loaded
 
 shell {echo ping > ${tmpdir}/I_file}
-process p1 "exec varnishd -n ${tmpdir}/v1 -F -f '' -a :0 -l2m,1m -I ${tmpdir}/I_file 2>&1" -start
+process p1 "exec varnishd -n ${tmpdir}/v1 -F -f '' -a :0 -l2m -I ${tmpdir}/I_file 2>&1" -start
 
-process p1 -expect-text 0 0 {Warning: Ignoring deprecated second subargument to -l}
 process p1 -expect-text 0 1 {PONG}
 process p1 -expect-text 0 1 {END of -I file processing}
 
@@ -179,12 +160,12 @@ varnish v2 -stop -wait
 # Test multiple -f options with a bad VCL
 
 shell -err -expect {Cannot read -f file} {
-	exec varnishd -n ${tmpdir}/v0 -F -a :0 -l2m,3m -f ${tmpdir}/ok1 \
+	exec varnishd -n ${tmpdir}/v0 -F -a :0 -l2m -f ${tmpdir}/ok1 \
 	    -f ${tmpdir}/ok2 -f ${tmpdir}/bad
 }
 
 shell -err -expect {Cannot read -f file} {
-	exec varnishd -n ${tmpdir}/v0 -F -a :0 -l2m,3m -f ${tmpdir}/ok1 \
+	exec varnishd -n ${tmpdir}/v0 -F -a :0 -l2m -f ${tmpdir}/ok1 \
 	    -f ${tmpdir}/bad -f ${tmpdir}/ok2
 }
 

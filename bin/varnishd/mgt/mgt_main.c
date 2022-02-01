@@ -560,7 +560,6 @@ main(int argc, char * const *argv)
 	const char *T_arg = "localhost:0";
 	char *p;
 	struct cli cli[1];
-	char **av;
 	const char *err;
 	unsigned u;
 	struct sigaction sac;
@@ -734,22 +733,8 @@ main(int argc, char * const *argv)
 			VJ_master(JAIL_MASTER_LOW);
 			break;
 		case 'l':
-			av = VAV_Parse(optarg, NULL, ARGV_COMMA);
-			AN(av);
-			if (av[0] != NULL)
-				ARGV_ERR("-l ...: %s\n", av[0]);
-			if (av[1] != NULL && av[2] != NULL && av[3] != NULL)
-				ARGV_ERR("Too many sub arguments to -l\n");
-			if (av[1] != NULL) {
-				MCF_ParamSet(cli, "vsl_space", av[1]);
-				cli_check(cli);
-			}
-			if (av[1] != NULL && av[2] != NULL) {
-				fprintf(stderr,
-				    "Warning: Ignoring deprecated second"
-				    " subargument to -l\n");
-			}
-			VAV_Free(av);
+			MCF_ParamSet(cli, "vsl_space", optarg);
+			cli_check(cli);
 			break;
 		case 'M':
 			M_arg = optarg;
