@@ -34,13 +34,22 @@ shell "varnishd -x parameter > ${tmpdir}/_.param"
 shell "varnishd -x vsl > ${tmpdir}/_.vsl"
 shell "varnishd -x cli > ${tmpdir}/_.cli"
 shell "varnishd -x builtin > ${tmpdir}/_.builtin"
+shell "varnishd -x optstring > ${tmpdir}/_.optstring"
+shell "varnishd --optstring > ${tmpdir}/_.optstring2"
 
 shell -err -expect {-C needs either -b <backend> or -f <vcl_file>} {
 	varnishd -C
 }
+
 shell -err -expect {Cannot open -S file} {
 	varnishd -S ${tmpdir}/nonexistent -n ${tmpdir}/v0 -f ''
 }
+
+shell -err -expect {Cannot create secret-file in} {
+	mkdir ${tmpdir}/is_a_dir ${tmpdir}/is_a_dir/_.secret
+	varnishd -n ${tmpdir}/is_a_dir -d -a :0
+}
+
 shell -err -expect {Unknown jail method "xyz"} "varnishd -jxyz -f '' "
 
 shell -err -expect {Invalid backslash sequence} {
@@ -72,6 +81,10 @@ shell -err -expect {Error: -I file CLI command failed (104)} {
 	varnishd -f '' -I foo -n ${tmpdir}/v0 -a :0 -l 2m
 }
 
+shell -err -expect {Cant open} {
+	varnishd -f '' -I non-existent -n ${tmpdir}/v0 -a :0 -l '2m,"'
+}
+
 shell -err -expect {Error: -l ...: Missing '"'} {
 	varnishd -f '' -I foo -n ${tmpdir}/v0 -a :0 -l '2m,"'
 }
@@ -84,13 +97,19 @@ shell -err -expect {Warning: Ignoring deprecated second subargument} {
 	varnishd -f '' -I foo -n ${tmpdir}/v0 -a :0 -l 2m,2m
 }
 
+
 # Code coverage of mgt_main, (VCL compiler and RSTdump etc) (former a00017)
 
 # Test -F mode with no VCL loaded
 
-process p1 "exec varnishd -n ${tmpdir}/v1 -F -f '' -a :0 -l2m,1m" -log -start
+shell {echo ping > ${tmpdir}/I_file}
+process p1 "exec varnishd -n ${tmpdir}/v1 -F -f '' -a :0 -l2m,1m -I ${tmpdir}/I_file 2>&1" -start
 
-delay 2
+process p1 -expect-text 0 0 {Warning: Ignoring deprecated second subargument to -l}
+process p1 -expect-text 0 1 {PONG}
+process p1 -expect-text 0 1 {END of -I file processing}
+
+process p1 -screen_dump
 
 shell {
 	(
