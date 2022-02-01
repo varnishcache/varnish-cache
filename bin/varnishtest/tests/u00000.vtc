@@ -81,7 +81,7 @@ shell -err -expect {Error: -I file CLI command failed (104)} {
 	varnishd -f '' -I foo -n ${tmpdir}/v0 -a :0 -l 2m
 }
 
-shell -err -expect {Cant open} {
+shell -err -expect "Can't open non-existent" {
 	varnishd -f '' -I non-existent -n ${tmpdir}/v0 -a :0 -l '2m,"'
 }
 

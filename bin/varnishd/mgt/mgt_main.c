@@ -729,7 +729,7 @@ main(int argc, char * const *argv)
 			VJ_master(JAIL_MASTER_FILE);
 			I_fd = open(optarg, O_RDONLY);
 			if (I_fd < 0)
-				ARGV_ERR("\tCant open %s: %s\n",
+				ARGV_ERR("\tCan't open %s: %s\n",
 				    optarg, VAS_errtxt(errno));
 			VJ_master(JAIL_MASTER_LOW);
 			break;
