@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2011-2020 Varnish Software AS
+ * Copyright (c) 2011-2022 Varnish Software AS
  * All rights reserved.
  *
  * Author: Tollef Fog Heen <tfheen@varnish-software.com>
@@ -147,7 +147,10 @@ LIBVARNISHAPI_3.0 {	/* 2021-09-15 release */
 		VTIM_sleep;
 		VTIM_timespec;
 		VTIM_timeval;
+};
 
+LIBVARNISHAPI_4.0 {	/* 202?-??-15 release */
+    global:
 	# vut.c
 		VUT_Arg;
 		VUT_Error;

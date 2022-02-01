@@ -56,11 +56,12 @@
 	VOPT("w:", "[-w <filename>]", "Output filename",		\
 	    "Redirect output to file. The file will be overwritten"	\
 	    " unless the -a option was specified. If the application"	\
-	    " receives a SIGHUP in daemon mode the file will be "	\
-	    " reopened allowing the old one to be rotated away. The"	\
-	    " file can then be read by varnishlog and other tools with"	\
-	    " the -r option, unless the -A option was specified. This"	\
-	    " option is required when running in daemon mode. If the"	\
+	    " application runs as a daemon (-D option) or adds a"	\
+	    " SIGHUP handler (-H option), the -w option is required"	\
+	    " and the file will be reopened allowing the old one to be"	\
+	    " rotated away when a HUP signal is received. The file can" \
+	    " then be read by varnishlog and other tools with the -r"	\
+	    " option, unless the -A option was specified. If the"	\
 	    " filename is -, varnishlog writes to the standard output"	\
 	    " and cannot work as a daemon."				\
 	)
@@ -75,6 +76,7 @@ VUT_GLOBAL_OPT_D
 VSL_OPT_E
 VUT_OPT_g
 VUT_OPT_h
+VUT_OPT_H
 VSL_OPT_i
 VSL_OPT_I
 VUT_OPT_k

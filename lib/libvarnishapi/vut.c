@@ -169,6 +169,10 @@ VUT_Arg(struct VUT *vut, int opt, const char *arg)
 	case 'D':
 		/* Daemon mode */
 		vut->D_opt = 1;
+		/* FALLTHROUGH */
+	case 'H':
+		/* SIGHUP handler */
+		vut->H_opt = 1;
 		return (1);
 	case 'g':
 		/* Grouping */
@@ -423,7 +427,7 @@ VUT_Main(struct VUT *vut)
 			if (vut->sighup_f != NULL)
 				i = vut->sighup_f(vut);
 			else
-				i = 1;
+				i = !vut->H_opt;
 			if (i)
 				break;
 		}
