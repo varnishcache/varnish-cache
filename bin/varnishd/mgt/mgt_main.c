@@ -460,6 +460,35 @@ mgt_b_conv(const char *b_arg)
 	VTAILQ_INSERT_TAIL(&f_args, fa, list);
 }
 
+static int
+mgt_process_f_args(struct cli *cli, unsigned C_flag)
+{
+	int retval = 0;
+	struct f_arg *fa;
+
+	while (!VTAILQ_EMPTY(&f_args)) {
+		fa = VTAILQ_FIRST(&f_args);
+		CHECK_OBJ_NOTNULL(fa, F_ARG_MAGIC);
+		VTAILQ_REMOVE(&f_args, fa, list);
+		mgt_vcl_startup(cli, fa->src,
+		    VTAILQ_EMPTY(&f_args) ? "boot" : NULL, fa->farg, C_flag);
+		if (C_flag) {
+			if (cli->result != CLIS_OK &&
+			    cli->result != CLIS_TRUNCATED)
+				retval = 2;
+			AZ(VSB_finish(cli->sb));
+			fprintf(stderr, "%s\n", VSB_data(cli->sb));
+			VSB_clear(cli->sb);
+		} else {
+			cli_check(cli);
+		}
+		free(fa->farg);
+		free(fa->src);
+		FREE_OBJ(fa);
+	}
+	return (retval);
+}
+
 static const char *
 create_bogo_n_arg(void)
 {
@@ -536,7 +565,6 @@ main(int argc, char * const *argv)
 	unsigned u;
 	struct sigaction sac;
 	struct vev *e;
-	struct f_arg *fa;
 	pid_t pid;
 
 	if (argc == 2 && !strcmp(argv[1], "--optstring")) {
@@ -840,28 +868,7 @@ main(int argc, char * const *argv)
 
 	mgt_vcl_init();
 
-	u = 0;
-	while (!VTAILQ_EMPTY(&f_args)) {
-		fa = VTAILQ_FIRST(&f_args);
-		CHECK_OBJ_NOTNULL(fa, F_ARG_MAGIC);
-		VTAILQ_REMOVE(&f_args, fa, list);
-		mgt_vcl_startup(cli, fa->src,
-		    VTAILQ_EMPTY(&f_args) ? "boot" : NULL,
-		    fa->farg, C_flag);
-		if (C_flag) {
-			if (cli->result != CLIS_OK &&
-			    cli->result != CLIS_TRUNCATED)
-				u = 2;
-			AZ(VSB_finish(cli->sb));
-			fprintf(stderr, "%s\n", VSB_data(cli->sb));
-			VSB_clear(cli->sb);
-		} else {
-			cli_check(cli);
-		}
-		free(fa->farg);
-		free(fa->src);
-		FREE_OBJ(fa);
-	}
+	u = mgt_process_f_args(cli, C_flag);
 	if (C_flag)
 		exit(u);
 
