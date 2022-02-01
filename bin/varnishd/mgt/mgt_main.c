@@ -460,6 +460,28 @@ mgt_b_conv(const char *b_arg)
 	VTAILQ_INSERT_TAIL(&f_args, fa, list);
 }
 
+static const char *
+create_bogo_n_arg(void)
+{
+	struct vsb *vsb;
+	char *p;
+
+	vsb = VSB_new_auto();
+	AN(vsb);
+	if (getenv("TMPDIR") != NULL)
+		VSB_printf(vsb, "%s", getenv("TMPDIR"));
+	else
+		VSB_cat(vsb, "/tmp");
+	VSB_cat(vsb, "/varnishd_C_XXXXXXX");
+	AZ(VSB_finish(vsb));
+	p = strdup(VSB_data(vsb));
+	AN(p);
+	VSB_destroy(&vsb);
+	AN(mkdtemp(p));
+	AZ(chmod(p, 0750));
+	return (p);
+}
+
 static struct vpf_fh *
 create_pid_file(pid_t *ppid, const char *fmt, ...)
 {
@@ -515,7 +537,6 @@ main(int argc, char * const *argv)
 	struct sigaction sac;
 	struct vev *e;
 	struct f_arg *fa;
-	struct vsb *vsb;
 	pid_t pid;
 
 	if (argc == 2 && !strcmp(argv[1], "--optstring")) {
@@ -761,24 +782,8 @@ main(int argc, char * const *argv)
 
 	assert(d_flag == 0 || F_flag == 0);
 
-	if (C_flag) {
-		if (n_arg == NULL) {
-			vsb = VSB_new_auto();
-			AN(vsb);
-			if (getenv("TMPDIR") != NULL)
-				VSB_printf(vsb, "%s", getenv("TMPDIR"));
-			else
-				VSB_cat(vsb, "/tmp");
-			VSB_cat(vsb, "/varnishd_C_XXXXXXX");
-			AZ(VSB_finish(vsb));
-			p = strdup(VSB_data(vsb));
-			AN(p);
-			VSB_destroy(&vsb);
-			AN(mkdtemp(p));
-			AZ(chmod(p, 0750));
-			n_arg = p;
-		}
-	}
+	if (C_flag && n_arg == NULL)
+		n_arg = create_bogo_n_arg();
 
 	if (S_arg != NULL && !strcmp(S_arg, "none")) {
 		fprintf(stderr,
