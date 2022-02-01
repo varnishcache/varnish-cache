@@ -434,6 +434,32 @@ mgt_f_read(const char *fn)
 	VTAILQ_INSERT_TAIL(&f_args, fa, list);
 }
 
+static void
+mgt_b_conv(const char *b_arg)
+{
+	struct f_arg *fa;
+	struct vsb *vsb;
+
+	ALLOC_OBJ(fa, F_ARG_MAGIC);
+	AN(fa);
+	REPLACE(fa->farg, "<-b argument>");
+	vsb = VSB_new_auto();
+	AN(vsb);
+	VSB_cat(vsb, "vcl 4.1;\n");
+	VSB_cat(vsb, "backend default ");
+	if (!strcasecmp(b_arg, "none"))
+		VSB_cat(vsb, "none;\n");
+	else if (*b_arg != '/')
+		VSB_printf(vsb, "{\n    .host = \"%s\";\n}\n", optarg);
+	else
+		VSB_printf(vsb, "{\n    .path = \"%s\";\n}\n", optarg);
+	AZ(VSB_finish(vsb));
+	fa->src = strdup(VSB_data(vsb));
+	AN(fa->src);
+	VSB_destroy(&vsb);
+	VTAILQ_INSERT_TAIL(&f_args, fa, list);
+}
+
 static struct vpf_fh *
 create_pid_file(pid_t *ppid, const char *fmt, ...)
 {
@@ -617,6 +643,9 @@ main(int argc, char * const *argv)
 	/* Initialize the bogo-IP VSA */
 	VSA_Init();
 
+	if (b_arg != NULL)
+		mgt_b_conv(b_arg);
+
 	optind = 1;
 	optreset = 1;
 	while ((o = getopt(argc, argv, opt_spec)) != -1) {
@@ -631,33 +660,13 @@ main(int argc, char * const *argv)
 			MAC_Arg(optarg);
 			break;
 		case 'b':
-			ALLOC_OBJ(fa, F_ARG_MAGIC);
-			AN(fa);
-			REPLACE(fa->farg, "<-b argument>");
-			vsb = VSB_new_auto();
-			AN(vsb);
-			VSB_cat(vsb, "vcl 4.1;\n");
-			VSB_cat(vsb, "backend default ");
-			if (! strcasecmp(optarg, "none"))
-				VSB_cat(vsb, "none;\n");
-			else if (*optarg != '/')
-				VSB_printf(vsb, "{\n    .host = \"%s\";\n}\n",
-				    optarg);
-			else
-				VSB_printf(vsb, "{\n    .path = \"%s\";\n}\n",
-				    optarg);
-			AZ(VSB_finish(vsb));
-			fa->src = strdup(VSB_data(vsb));
-			AN(fa->src);
-			VSB_destroy(&vsb);
-			VTAILQ_INSERT_TAIL(&f_args, fa, list);
+			/* already dealt with */
 			break;
 		case 'f':
-			if (*optarg == '\0') {
+			if (*optarg == '\0')
 				novcl = 1;
-				break;
-			}
-			mgt_f_read(optarg);
+			else
+				mgt_f_read(optarg);
 			break;
 		case 'h':
 			h_arg = optarg;
