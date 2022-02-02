@@ -10,7 +10,7 @@ shell {
 	EOF
 }
 
-process p1 -log {
+process p1 -winsz 200 80 -log {
 	varnishd -F -n "${tmpdir}/t" -a "${tmpdir}/sock" \
 	    -p vcc_err_unref=off -f "${tmpdir}/unref.vcl" 2>&1
 } -start
