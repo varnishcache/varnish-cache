@@ -1,8 +1,7 @@
-FROM archlinux
+FROM archlinux:base-devel
 
 RUN set -e; \
 	pacman -Sy --noconfirm \
-	       base-devel \
 	       ca-certificates \
 	       cpio \
 	       git \
