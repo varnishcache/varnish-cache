@@ -176,14 +176,15 @@ jobs:
                     ;;
             esac
 
-            set -x
-            echo "FROM $IMG" > Dockerfile
-            echo "ADD make-$EXT-packages.sh /usr/bin/" >> Dockerfile
-            echo "CMD make-$EXT-packages.sh" >> Dockerfile
-
             cp .circleci/make-$EXT-packages.sh .
-            docker build -t docker_img .
-            docker run --rm -it -e PARAM_DIST=$(echo "<< parameters.platform >>" | cut -d: -f1) -e PARAM_RELEASE=$(echo "<< parameters.platform >>" | cut -d: -f2) -v$(pwd):/varnish-cache docker_img
+            docker run \
+              --rm \
+              -it \
+              -e PARAM_DIST=$(echo "<< parameters.platform >>" | cut -d: -f1) \
+              -e PARAM_RELEASE=$(echo "<< parameters.platform >>" | cut -d: -f2) \
+              -v$(pwd):/varnish-cache \
+              $IMG \
+              /varnish-cache/make-$EXT-packages.sh
       - run:
           name: List created packages
           command: find ./packages -type f
