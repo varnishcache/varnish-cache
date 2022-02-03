@@ -125,7 +125,7 @@ jobs:
         description: the resource class to use, usuall arm.medium or medium
         type: string
     machine:
-      image: ubuntu-2004:202101-01
+      image: ubuntu-2004:202111-02
     resource_class: << parameters.rclass >>
     steps:
       - attach_workspace:
