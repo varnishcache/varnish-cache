@@ -50,6 +50,7 @@
 
 #include "vtc.h"
 
+#include "vre.h"
 #include "vev.h"
 #include "vlu.h"
 #include "vsb.h"
@@ -352,6 +353,64 @@ term_expect_cursor(const struct process *pp, const char *lin, const char *col)
 	if (x != 0 && (x-1) != pos->tp_col)
 		vtc_fatal(pp->vl, "Cursor in column %d (expected %d)",
 		    pos->tp_col + 1, y);
+}
+
+static void
+term_match_text(struct process *pp,
+    const char *lin, const char *col, const char *re)
+{
+	int i, x, y, l, err, erroff;
+	struct vsb *vsb, re_vsb[1];
+	size_t len;
+	vre_t *vre;
+	char errbuf[VRE_ERROR_LEN];
+
+	vsb = VSB_new_auto();
+	AN(vsb);
+
+	y = strtoul(lin, NULL, 0);
+	if (y < 0 || y > pp->nlin)
+		vtc_fatal(pp->vl, "YYY %d nlin %d", y, pp->nlin);
+	x = strtoul(col, NULL, 0);
+	for(l = 0; l < 10 && x > pp->ncol; l++)	// wait for screen change
+		usleep(100000);
+	if (x < 0 || x > pp->ncol)
+		vtc_fatal(pp->vl, "XXX %d ncol %d", x, pp->ncol);
+
+	if (x)
+		x--;
+
+	if (y)
+		y--;
+
+	vre = VRE_compile(re, 0, &err, &erroff, 1);
+	if (vre == NULL) {
+		AN(VSB_init(re_vsb, errbuf, sizeof errbuf));
+		AZ(VRE_error(re_vsb, err));
+		AZ(VSB_finish(re_vsb));
+		VSB_fini(re_vsb);
+		vtc_fatal(pp->vl, "invalid regexp \"%s\" at %d (%s)",
+		    re, erroff, errbuf);
+	}
+
+	AZ(pthread_mutex_lock(&pp->mtx));
+
+	len = (pp->nlin - y) * (pp->ncol - x);
+	for (i = y; i < pp->nlin; i++) {
+		VSB_bcat(vsb, &pp->vram[i][x], pp->ncol - x);
+		VSB_putc(vsb, '\n');
+	}
+
+	AZ(VSB_finish(vsb));
+
+	if (VRE_match(vre, VSB_data(vsb), len, 0, NULL) < 1)
+		vtc_fatal(pp->vl, "match failed: (\"%s\")", re);
+	else
+		vtc_log(pp->vl, 4, "match succeeded");
+
+	AZ(pthread_mutex_unlock(&pp->mtx));
+	VSB_destroy(&vsb);
+	VRE_free(&vre);
 }
 
 /**********************************************************************
@@ -932,6 +991,12 @@ process_close(struct process *p)
  *	LIN==0 means "on any line"
  *	COL==0 means "anywhere on the line"
  *
+ * \-match-text LIN COL PAT
+ *	Wait for the PAT regular expression to match the text at LIN,COL on the virtual screen.
+ *	Lines and columns are numbered 1...N
+ *	LIN==0 means "on any line"
+ *	COL==0 means "anywhere on the line"
+ *
  * \-close
  *	Alias for "-kill HUP"
  *
@@ -1065,6 +1130,14 @@ cmd_process(CMD_ARGS)
 			AN(av[2]);
 			term_expect_cursor(p, av[1], av[2]);
 			av += 2;
+			continue;
+		}
+		if (!strcmp(*av, "-match-text")) {
+			AN(av[1]);
+			AN(av[2]);
+			AN(av[3]);
+			term_match_text(p, av[1], av[2], av[3]);
+			av += 3;
 			continue;
 		}
 		if (!strcmp(*av, "-screen_dump") ||
