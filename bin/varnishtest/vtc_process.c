@@ -259,6 +259,7 @@ static int
 term_find_textline(const struct process *pp, int *x, int y, const char *pat)
 {
 	const char *t;
+	int l;
 
 	if (*x == 0) {
 		t = strstr(pp->vram[y], pat);
@@ -268,7 +269,9 @@ term_find_textline(const struct process *pp, int *x, int y, const char *pat)
 		}
 	} else if (*x <= pp->ncol) {
 		t = pp->vram[y] + *x - 1;
-		if (!memcmp(t, pat, strlen(pat)))
+		l = strlen(pat);
+		assert((*x - 1) + (l - 1) < pp->ncol);
+		if (!memcmp(t, pat, l))
 			return (1);
 	}
 	return (0);
@@ -309,6 +312,8 @@ term_expect_text(struct process *pp,
 	if (x < 0 || x > pp->ncol)
 		vtc_fatal(pp->vl, "XXX %d ncol %d", x, pp->ncol);
 	l = strlen(pat);
+	if (x + l - 1 > pp->ncol)
+		vtc_fatal(pp->vl, "XXX %d ncol %d", x + l - 1, pp->ncol);
 	AZ(pthread_mutex_lock(&pp->mtx));
 	while (!term_find_text(pp, &x, &y, pat)) {
 		if (x != 0 && y != 0) {
