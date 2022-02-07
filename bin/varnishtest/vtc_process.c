@@ -256,7 +256,7 @@ term_resize(struct process *pp, int lin, int col)
 }
 
 static int
-term_match_textline(const struct process *pp, int *x, int y, const char *pat)
+term_find_textline(const struct process *pp, int *x, int y, const char *pat)
 {
 	const char *t;
 
@@ -275,19 +275,19 @@ term_match_textline(const struct process *pp, int *x, int y, const char *pat)
 }
 
 static int
-term_match_text(const struct process *pp, int *x, int *y, const char *pat)
+term_find_text(const struct process *pp, int *x, int *y, const char *pat)
 {
 	int yy;
 
 	if (*y == 0) {
 		for (yy = 0; yy < pp->nlin; yy++) {
-			if (term_match_textline(pp, x, yy, pat)) {
+			if (term_find_textline(pp, x, yy, pat)) {
 				*y = yy + 1;
 				return (1);
 			}
 		}
 	} else if (*y <= pp->nlin) {
-		if (term_match_textline(pp, x, *y - 1, pat))
+		if (term_find_textline(pp, x, *y - 1, pat))
 			return (1);
 	}
 	return (0);
@@ -310,7 +310,7 @@ term_expect_text(struct process *pp,
 		vtc_fatal(pp->vl, "XXX %d ncol %d", x, pp->ncol);
 	l = strlen(pat);
 	AZ(pthread_mutex_lock(&pp->mtx));
-	while (!term_match_text(pp, &x, &y, pat)) {
+	while (!term_find_text(pp, &x, &y, pat)) {
 		if (x != 0 && y != 0) {
 			t = pp->vram[y - 1] + x - 1;
 			vtc_log(pp->vl, 4,
