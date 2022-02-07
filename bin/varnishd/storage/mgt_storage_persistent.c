@@ -200,7 +200,7 @@ smp_mgt_init(struct stevedore *parent, int ac, char * const *av)
 	/* Try to determine correct mmap address */
 	i = read(sc->fd, &sgn, sizeof sgn);
 	assert(i == sizeof sgn);
-	if (!strcmp(sgn.ident, "SILO"))
+	if (!memcmp(sgn.ident, "SILO", 5))
 		target = (void*)(uintptr_t)sgn.mapped;
 	else
 		target = NULL;
