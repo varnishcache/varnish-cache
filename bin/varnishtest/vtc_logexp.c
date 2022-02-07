@@ -162,6 +162,7 @@
 #define LE_SEEN  (-4)
 #define LE_FAIL  (-5)
 #define LE_CLEAR (-6)	// clear fail list
+#define LE_ABORT (-7)
 
 struct logexp_test {
 	unsigned			magic;
@@ -213,10 +214,12 @@ static VTAILQ_HEAD(, logexp)		logexps =
 
 static cmd_f cmd_logexp_expect;
 static cmd_f cmd_logexp_fail;
+static cmd_f cmd_logexp_abort;
 
 static const struct cmds logexp_cmds[] = {
 	{ "expect",		cmd_logexp_expect },
 	{ "fail",		cmd_logexp_fail },
+	{ "abort",		cmd_logexp_abort },
 	{ NULL,			NULL },
 };
 
@@ -354,6 +357,9 @@ logexp_next(struct logexp *le)
 		VTAILQ_INSERT_TAIL(&le->fail, le->test, faillist);
 		logexp_next(le);
 		return;
+	case LE_ABORT:
+		abort();
+		NEEDLESS(return);
 	default:
 		vtc_log(le->vl, 3, "test | %s", VSB_data(le->test->str));
 	}
@@ -743,6 +749,21 @@ cmd_logexp_fail(CMD_ARGS)
 		vtc_fatal(vl, "Syntax error");
 
 	cmd_logexp_common(le, vl, LE_FAIL, av);
+}
+
+/* aid vsl debugging */
+static void
+cmd_logexp_abort(CMD_ARGS)
+{
+
+	struct logexp *le;
+
+	CAST_OBJ_NOTNULL(le, priv, LOGEXP_MAGIC);
+
+	if (av[1] == NULL || av[2] == NULL || av[3] == NULL)
+		vtc_fatal(vl, "Syntax error");
+
+	cmd_logexp_common(le, vl, LE_ABORT, av);
 }
 
 static void
