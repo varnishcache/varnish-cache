@@ -440,7 +440,7 @@ vsl_line(VRT_CTX, char *str)
 	VCL_INT id;
 	VCL_ENUM side;
 	const char *tag, *delim = " \t\r\n";
-	char *save;
+	char *e, *save;
 
 	if (*str == '*') {
 		// varnishtest
@@ -451,7 +451,9 @@ vsl_line(VRT_CTX, char *str)
 	}
 	if ((str = strtok_r(str, delim, &save)) == NULL)
 		return;
-	id = strtoll(str, NULL, 10);
+	id = strtoll(str, &e, 10);
+	if (e == str)
+		return;
 
 	if ((str = strtok_r(NULL, delim, &save)) == NULL)
 		return;
