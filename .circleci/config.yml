@@ -176,7 +176,6 @@ jobs:
                     ;;
             esac
 
-            cp .circleci/make-$EXT-packages.sh .
             docker run \
               --rm \
               -it \
@@ -184,7 +183,7 @@ jobs:
               -e PARAM_RELEASE=$(echo "<< parameters.platform >>" | cut -d: -f2) \
               -v$(pwd):/varnish-cache \
               $IMG \
-              /varnish-cache/make-$EXT-packages.sh
+              /varnish-cache/.circleci/make-$EXT-packages.sh
       - run:
           name: List created packages
           command: find ./packages -type f
