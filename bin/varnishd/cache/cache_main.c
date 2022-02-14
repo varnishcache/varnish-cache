@@ -182,24 +182,29 @@ THR_Init(void)
  */
 
 static uint32_t vxid_base;
-static uint32_t vxid_chunk = 32768;
+static uint32_t vxid_chunk = 32768, vxid_gen = 0;
 static struct lock vxid_lock;
 
 uint32_t
 VXID_Get(const struct worker *wrk, uint32_t mask)
 {
 	struct vxid_pool *v;
+	uint32_t vxid_new;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk->wpriv, WORKER_PRIV_MAGIC);
 	v = wrk->wpriv->vxid_pool;
 	AZ(VXID(mask));
 	do {
-		if (v->count == 0) {
+		if (v->gen != vxid_gen || v->count == 0) {
 			Lck_Lock(&vxid_lock);
 			v->next = vxid_base;
 			v->count = vxid_chunk;
-			vxid_base = (vxid_base + v->count) & VSL_IDENTMASK;
+			v->gen = vxid_gen;
+			vxid_new = (vxid_base + v->count) & VSL_IDENTMASK;
+			if (vxid_new < vxid_base)
+				vxid_gen++;
+			vxid_base = vxid_new;
 			Lck_Unlock(&vxid_lock);
 		}
 		v->count--;

@@ -1,0 +1,39 @@
+varnishtest "test that vxid caches are not reused after a wrap"
+
+barrier b1 cond 2
+barrier b2 cond 2
+
+varnish v1 -vcl {
+	backend proforma none;
+
+	sub vcl_recv {
+		return (synth(200));
+	}
+} -start
+
+# vxid wrap at 1<<30, assign the first worker the last chunk
+# 1073676288 == (1<<30) - (2 * 32768)
+varnish v1 -cliok "debug.xid 1073676288 32768"
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.x-varnish == 1073676290
+	barrier b1 sync
+	barrier b2 sync
+	txreq
+	rxresp
+	expect resp.http.x-varnish == 32769
+} -start
+
+barrier b1 sync
+
+client c2 {
+	txreq
+	rxresp
+	expect resp.http.x-varnish == 1
+	barrier b2 sync
+} -start
+
+client c1 -wait
+client c2 -wait
