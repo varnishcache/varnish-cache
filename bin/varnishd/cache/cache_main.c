@@ -222,9 +222,13 @@ cli_debug_xid(struct cli *cli, const char * const *av, void *priv)
 	(void)priv;
 	if (av[2] != NULL) {
 		vxid_base = strtoul(av[2], NULL, 0);
-		vxid_chunk = 1;
+		vxid_chunk = 0;
+		if (av[3] != NULL)
+			vxid_chunk = strtoul(av[3], NULL, 0);
+		if (vxid_chunk == 0)
+			vxid_chunk = 1;
 	}
-	VCLI_Out(cli, "XID is %u", vxid_base);
+	VCLI_Out(cli, "XID is %u chunk %u", vxid_base, vxid_chunk);
 }
 
 /*
