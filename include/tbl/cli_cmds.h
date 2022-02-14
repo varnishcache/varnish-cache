@@ -375,7 +375,7 @@ CLI_CMD(DEBUG_SHUTDOWN_DELAY,
 
 CLI_CMD(DEBUG_XID,
 	"debug.xid",
-	"debug.xid [<xid> [<cachesize>]}",
+	"debug.xid [<xid> [<cachesize>]]",
 	"Examine or set XID. <cachesize> defaults to 1.",
 	"",
 	0, 2
