@@ -342,7 +342,6 @@ workflows:
   version: 2
   commit:
     jobs:
-      - dist
       - distcheck:
           name: distcheck_centos_7
           dist: centos
