@@ -160,8 +160,8 @@ jobs:
             mkdir -p packages
             case "<< parameters.platform >>" in
                 debian:*|ubuntu:*)  EXT=deb ;;
-                centos:*)         EXT=rpm ;;
-                alpine:*)         EXT=apk ;;
+                centos:*|fedora:*)  EXT=rpm ;;
+                alpine:*)           EXT=apk ;;
                 *)
                     echo "unrecognized platform: << parameters.platform >>"
                     exit 1
@@ -219,16 +219,18 @@ jobs:
             docker create --name workspace -v /workspace << parameters.dist >>:<< parameters.release >> /bin/true
             docker cp /workspace workspace:/
             docker run --volumes-from workspace -w /workspace << parameters.dist >>:<< parameters.release >> sh -c '
-            if [ << parameters.dist >> = centos ]; then
-                if [ << parameters.release >> = 8 ]; then
-                    dnf install -y "dnf-command(config-manager)"
-                    yum config-manager --set-enabled powertools
-                    yum install -y diffutils python3-sphinx
-                else
-                    yum install -y python-sphinx
+            if [ << parameters.dist >> = centos -o << parameters.dist >> = fedora ]; then
+                yum groupinstall -y "Development Tools"
+                if [ << parameters.dist >> = centos ]; then
+                    if [ << parameters.release >> = 8 ]; then
+                        dnf install -y "dnf-command(config-manager)"
+                        yum config-manager --set-enabled powertools
+                        yum install -y diffutils
+                    fi
+                    yum install -y epel-release
                 fi
-                yum install -y epel-release
                 yum install -y \
+                    cpio \
                     automake \
                     git \
                     jemalloc-devel \
@@ -238,6 +240,7 @@ jobs:
                     make \
                     pcre2-devel \
                     python3 \
+                    /usr/bin/sphinx-build \
                     sudo
             elif [ << parameters.dist >> = debian -o << parameters.dist >> = ubuntu ]; then
                 export DEBIAN_FRONTEND=noninteractive
@@ -296,7 +299,7 @@ jobs:
 
             if [ << parameters.dist >> = archlinux ]; then
                 useradd varnish
-            elif [ << parameters.dist >> = centos ]; then
+            elif [ << parameters.dist >> = centos -o << parameters.dist >> = fedora ]; then
             	adduser varnish
             else
             	adduser --disabled-password --gecos "" varnish
@@ -351,6 +354,14 @@ workflows:
           dist: centos
           release: "8"
       - distcheck:
+          name: distcheck_fedora_latest
+          dist: fedora
+          release: latest
+      - distcheck:
+          name: distcheck_fedora_rawhide
+          dist: fedora
+          release: rawhide
+      - distcheck:
           name: distcheck_debian_buster
           dist: debian
           release: buster
@@ -395,6 +406,7 @@ workflows:
                 - debian:stretch
                 - centos:7
                 - centos:8
+                - fedora:latest
                 - alpine:3
               rclass:
                 - arm.medium
