@@ -346,7 +346,7 @@ workflows:
           dist: centos
           release: "7"
       - distcheck:
-          name: distcheck_fedora_stable
+          name: distcheck_fedora_latest
           dist: fedora
           release: latest
       - distcheck:
