@@ -6,7 +6,7 @@ echo "PARAM_RELEASE: $PARAM_RELEASE"
 echo "PARAM_DIST: $PARAM_DIST"
 
 if [ -z "$PARAM_RELEASE" ]; then
-    echo "Env variable PARAM_RELEASE is not set! For example PARAM_RELEASE=8, for CentOS 8"
+    echo "Env variable PARAM_RELEASE is not set! For example PARAM_RELEASE=stream, for CentOS stream"
     exit 1
 elif [ -z "$PARAM_DIST" ]; then
     echo "Env variable PARAM_DIST is not set! For example PARAM_DIST=centos"
@@ -14,7 +14,7 @@ elif [ -z "$PARAM_DIST" ]; then
 fi
 
 if [ "$PARAM_DIST" = centos ]; then
-    if [ "$PARAM_RELEASE" = 8 ]; then
+    if [ "$PARAM_RELEASE" = stream ]; then
         dnf install -y 'dnf-command(config-manager)'
         yum config-manager --set-enabled powertools
     fi
