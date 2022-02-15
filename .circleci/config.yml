@@ -289,7 +289,8 @@ jobs:
                     tar \
                     sudo
             elif [ << parameters.dist >> = archlinux ]; then
-                pacman -Sy --noconfirm \
+                pacman -Syu --noconfirm
+                pacman -S --noconfirm \
                     ca-certificates \
                     cpio \
                     git \
