@@ -514,7 +514,7 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 	l = VSB_len(vep->include_src);
 	h = 0;
 
-	incl = vep->include_continue ? VEC_INCL_CONT : VEC_INCL_ABRT;
+	incl = vep->include_continue ? VEC_IC : VEC_IA;
 
 	if (l > 7 && !memcmp(p, "http://", 7)) {
 		h = p + 7;
