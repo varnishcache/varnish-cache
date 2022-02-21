@@ -379,11 +379,11 @@ ved_vdp_esi_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 				Debug("SKIP1(%d)\n", (int)ecx->l);
 				ecx->state = 4;
 				break;
-			case VEC_INCL_ABRT:
+			case VEC_IA:
 				ecx->abrt =
 				    FEATURE(FEATURE_ESI_INCLUDE_ONERROR);
 				/* FALLTHROUGH */
-			case VEC_INCL_CONT:
+			case VEC_IC:
 				ecx->p++;
 				q = (void*)strchr((const char*)ecx->p, '\0');
 				AN(q);
