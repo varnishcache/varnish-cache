@@ -77,16 +77,52 @@ static void vcc_VmodObject(struct vcc *tl, struct symbol *sym);
 static void vcc_VmodSymbols(struct vcc *tl, const struct symbol *sym);
 
 static void
-func_sym(struct vcc *tl, vcc_kind_t kind, const struct symbol *psym,
-    const struct vjsn_val *v)
+alias_sym(struct vcc *tl, const struct symbol *psym, const struct vjsn_val *v)
 {
+	char *alias = NULL, *func = NULL;
 	struct symbol *sym;
 	struct vsb *buf;
 
 	buf = VSB_new_auto();
 	AN(buf);
 
+	VCC_SymName(buf, psym);
+	VSB_printf(buf, ".%s", v->value);
+	AZ(VSB_finish(buf));
+	REPLACE(alias, VSB_data(buf));
+
+	v = VTAILQ_NEXT(v, list);
+	assert(vjsn_is_string(v));
+
 	VSB_clear(buf);
+	VCC_SymName(buf, psym);
+	VSB_printf(buf, ".%s", v->value);
+	AZ(VSB_finish(buf));
+	REPLACE(func, VSB_data(buf));
+
+	sym = VCC_MkSymAlias(tl, alias, func);
+	AN(sym);
+	assert(sym->kind == SYM_FUNC || sym->kind == SYM_METHOD);
+	VSB_destroy(&buf);
+	free(alias);
+	free(func);
+}
+
+static void
+func_sym(struct vcc *tl, vcc_kind_t kind, const struct symbol *psym,
+    const struct vjsn_val *v)
+{
+	struct symbol *sym;
+	struct vsb *buf;
+
+	if (kind == SYM_ALIAS) {
+		alias_sym(tl, psym, v);
+		return;
+	}
+
+	buf = VSB_new_auto();
+	AN(buf);
+
 	VCC_SymName(buf, psym);
 	VSB_printf(buf, ".%s", v->value);
 	AZ(VSB_finish(buf));
@@ -158,6 +194,7 @@ vcc_json_always(struct vcc *tl, const struct vjsn *vj, const char *vmod_name)
 			    vv2->value, vmod_name);
 			VSB_printf(ifp->event, "%s(ctx, &vmod_priv_%s, ev)",
 			    vv2->value, vmod_name);
+		} else if (!strcmp(vv2->value, "$ALIAS")) {
 		} else if (!strcmp(vv2->value, "$FUNC")) {
 		} else if (!strcmp(vv2->value, "$OBJ")) {
 		} else {
@@ -237,6 +274,7 @@ vcc_vmod_kind(const char *type)
 	VMOD_KIND("$OBJ", SYM_OBJECT);
 	VMOD_KIND("$METHOD", SYM_METHOD);
 	VMOD_KIND("$FUNC", SYM_FUNC);
+	VMOD_KIND("$ALIAS", SYM_ALIAS);
 #undef VMOD_KIND
 	return (SYM_NONE);
 }

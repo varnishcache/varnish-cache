@@ -835,6 +835,53 @@ class MethodStanza(Stanza):
         self.proto.jsonproto(jl[-1], self.proto.cname())
 
 
+class AliasStanza(Stanza):
+
+    ''' $Alias ALIAS SYMBOL '''
+
+    def find_symbol(self, tbl, name):
+        for sym in tbl:
+            if sym.proto is None:
+                continue;
+            if sym.proto.name == name:
+                return sym
+        err("Symbol '%s' not found\n" % name, warn=False)
+
+    def parse(self):
+        if len(self.toks) != 3:
+            err("Syntax error, expected: $Alias <alias> <symbol>\n", warn=False)
+        if not re.match('^\.?[a-zA-Z_][a-zA-Z0-9_]*$', self.toks[1]):
+            err("%s(): Illegal C-name\n" % self.toks[1], warn=False)
+        if self.toks[1][0] == '.':
+            if not re.match('^[a-zA-Z_][a-zA-Z0-9_]*\.[a-zA-Z_][a-zA-Z0-9_]*$',
+                    self.toks[2]):
+                err("Syntax error, expected: $Alias <.alias> <obj.method>\n",
+                        warn=False)
+            obj_name = self.toks[2].split('.')[0]
+            obj = self.find_symbol(self.vcc.contents, obj_name)
+            self.find_symbol(obj.methods, self.toks[2])
+            self.sym_alias = "%s%s" % (obj_name, self.toks[1])
+            self.doc_alias = "x%s" % self.sym_alias
+            self.sym_name = self.toks[2]
+            self.doc_name = "x%s" % self.toks[2]
+        else:
+            self.find_symbol(self.vcc.contents, self.toks[2])
+            self.sym_alias = self.toks[1]
+            self.doc_alias = self.toks[1]
+            self.sym_name = self.toks[2]
+            self.doc_name = self.toks[2]
+        self.vcc.contents.append(self)
+
+    def rsthead(self, fo, unused_man):
+        write_rst_hdr(fo, "ALIAS %s()" % self.doc_alias, "-")
+        fo.write("\nDeprecated alias for ``%s()``." % self.doc_name)
+        if len(self.doc) > 0:
+            fo.write("\n\n")
+
+    def json(self, jl):
+        jl.append(["$ALIAS", self.sym_alias, self.sym_name])
+
+
 #######################################################################
 
 DISPATCH = {
@@ -846,6 +893,7 @@ DISPATCH = {
     "Object":   ObjectStanza,
     "Method":   MethodStanza,
     "Synopsis": SynopsisStanza,
+    "Alias":    AliasStanza,
 }
 
 
