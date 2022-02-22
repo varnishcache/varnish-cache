@@ -374,3 +374,10 @@ $Object caller(SUB)
 $Method VOID .call()
 
 $Method SUB .xsub()
+
+DEPRECATED
+==========
+
+$Alias .bar obj.foo
+
+Bar was wrong, it was definitely foo.
