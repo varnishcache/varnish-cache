@@ -185,7 +185,7 @@ tweak_debug(struct vsb *vsb, const struct parspec *par, const char *arg)
  */
 
 static const char * const experimental_tags[] = {
-#  define EXPERIMENTAL_BIT(U, l, d) [EXPERIMENTAL_##U] = #l,
+#  define EXPERIMENTAL_BIT(U, l, d) [EXPERIMENT_##U] = #l,
 #  include "tbl/experimental_bits.h"
        NULL
 };
@@ -195,7 +195,7 @@ tweak_experimental(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 
 	return (tweak_generic_bits(vsb, par, arg, mgt_param.experimental_bits,
-	    EXPERIMENTAL_Reserved, experimental_tags, "experimental bit", '+'));
+	    EXPERIMENT_Reserved, experimental_tags, "experimental bit", '+'));
 }
 
 /*--------------------------------------------------------------------
