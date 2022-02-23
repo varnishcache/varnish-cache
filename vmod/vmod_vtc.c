@@ -443,6 +443,7 @@ vsl_line(VRT_CTX, char *str)
 {
 	VCL_INT id;
 	VCL_ENUM side;
+	VCL_STRANDS s;
 	const char *tag, *delim = " \t\r\n";
 	char *e, *save;
 
@@ -474,9 +475,11 @@ vsl_line(VRT_CTX, char *str)
 
 	str = strtok_r(NULL, "\r\n", &save);
 	if (str == NULL)
-		vmod_vsl(ctx, id, tag, side, vrt_null_strands);
+		s = vrt_null_strands;
 	else
-		vmod_vsl(ctx, id, tag, side, TOSTRAND(str));
+		s = TOSTRAND(str);
+
+	vmod_vsl(ctx, id, tag, side, s);
 }
 
 VCL_VOID
