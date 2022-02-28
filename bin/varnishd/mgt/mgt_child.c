@@ -378,6 +378,8 @@ mgt_launch_child(struct cli *cli)
 		heritage.cls = mgt_cls;
 		heritage.ident = VSB_data(vident) + 1;
 
+		vext_load();
+
 		VJ_subproc(JAIL_SUBPROC_WORKER);
 
 		heritage.proc_vsmw = VSMW_New(heritage.vsm_fd, 0640, "_.index");
@@ -385,7 +387,7 @@ mgt_launch_child(struct cli *cli)
 
 		/*
 		 * We pass these two params because child_main needs them
-		 * Well before it has found its own param struct.
+		 * well before it has found its own param struct.
 		 */
 		child_main(mgt_param.sigsegv_handler,
 		    mgt_param.wthread_stacksize);
