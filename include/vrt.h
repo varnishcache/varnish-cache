@@ -65,6 +65,7 @@
  *	BODY can either be a BLOB or a STRANDS, but only a STRANDS
  *	can take a non-NULL const char * prefix. The changes to BODY
  *	assignments doesn't break the ABI or the API.
+ *	VRT_SetHeader() added
  *
  * 14.0 (2021-09-15)
  *	VIN_n_Arg() no directly returns the directory name.
@@ -646,6 +647,7 @@ VCL_VOID VRT_hit_for_pass(VRT_CTX, VCL_DURATION);
 VCL_BOOL VRT_ValidHdr(VRT_CTX, VCL_STRANDS);
 VCL_VOID VRT_UnsetHdr(VRT_CTX, VCL_HEADER);
 VCL_VOID VRT_SetHdr(VRT_CTX, VCL_HEADER, const char *pfx, VCL_STRANDS);
+VCL_VOID VRT_SetHeader(VRT_CTX, VCL_HEADER, const char *);
 VCL_VOID VRT_handling(VRT_CTX, unsigned hand);
 unsigned VRT_handled(VRT_CTX);
 VCL_VOID VRT_fail(VRT_CTX, const char *fmt, ...) v_printflike_(2,3);

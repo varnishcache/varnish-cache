@@ -46,6 +46,7 @@ struct expr {
 	vcc_type_t	fmt;
 	struct vsb	*vsb;
 	uint8_t		constant;
+	struct expr	*constant_expr;
 #define EXPR_VAR	(1<<0)
 #define EXPR_CONST	(1<<1)
 #define EXPR_STR_CONST	(1<<2)		// Last string elem is "..."
@@ -95,7 +96,6 @@ vcc_new_expr(vcc_type_t fmt)
 	AN(e);
 	e->vsb = VSB_new_auto();
 	e->fmt = fmt;
-	e->constant = EXPR_VAR;
 	return (e);
 }
 
@@ -106,6 +106,7 @@ vcc_mk_expr(vcc_type_t fmt, const char *str, ...)
 	struct expr *e;
 
 	e = vcc_new_expr(fmt);
+	e->constant = EXPR_VAR;
 	va_start(ap, str);
 	VSB_vprintf(e->vsb, str, ap);
 	va_end(ap);
@@ -119,6 +120,7 @@ vcc_delete_expr(struct expr *e)
 	if (e == NULL)
 		return;
 	CHECK_OBJ(e, EXPR_MAGIC);
+	vcc_delete_expr(e->constant_expr);
 	VSB_destroy(&e->vsb);
 	FREE_OBJ(e);
 }
@@ -149,9 +151,10 @@ vcc_delete_expr(struct expr *e)
  */
 
 static void
-vcc_strands_edit(const struct expr *e1, const struct expr *e2)
+vcc_strands_edit(struct expr *e1, const struct expr *e2)
 {
 
+	e1->constant = EXPR_VAR;
 	if (e2->nstr == 1) {
 		VSB_printf(e1->vsb, "TOSTRAND(%s)", VSB_data(e2->vsb));
 		return;
@@ -172,6 +175,15 @@ vcc_expr_edit(struct vcc *tl, vcc_type_t fmt, const char *p, struct expr *e1,
 
 	AN(e1);
 	e = vcc_new_expr(fmt);
+
+	/* NB: An expression with two operands is enough to be considered
+	 * variable, even if both operands are constant.
+	 */
+	if ((e1->constant & EXPR_VAR) || e2 != NULL)
+		e->constant = EXPR_VAR;
+	else
+		e->constant = e1->constant;
+
 	while (*p != '\0') {
 		if (*p != '\v') {
 			if (*p != '\n' || !nl)
@@ -222,7 +234,10 @@ vcc_expr_edit(struct vcc *tl, vcc_type_t fmt, const char *p, struct expr *e1,
 	e->t2 = e1->t2;
 	if (e2 != NULL)
 		e->t2 = e2->t2;
-	vcc_delete_expr(e1);
+	if (!(e1->constant & EXPR_VAR) && e2 == NULL)
+		e->constant_expr = e1;
+	else
+		vcc_delete_expr(e1);
 	vcc_delete_expr(e2);
 	return (e);
 }
@@ -237,10 +252,8 @@ vcc_expr_fmt(struct vsb *d, int ind, const struct expr *e1)
 	char *p;
 	int i;
 
-	if (!e1->fmt->noindent) {
-		for (i = 0; i < ind; i++)
-			VSB_putc(d, ' ');
-	}
+	for (i = 0; i < ind; i++)
+		VSB_putc(d, ' ');
 	p = VSB_data(e1->vsb);
 	while (*p != '\0') {
 		if (*p == '\n') {
@@ -271,6 +284,7 @@ vcc_expr_tobool(struct vcc *tl, struct expr **e)
 
 	if ((*e)->fmt == BOOL)
 		return;
+	(*e)->constant = EXPR_VAR;
 	if ((*e)->fmt == BACKEND || (*e)->fmt == INT)
 		*e = vcc_expr_edit(tl, BOOL, "(\v1 != 0)", *e, NULL);
 	else if ((*e)->fmt == DURATION)
@@ -948,6 +962,11 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 			return;
 		}
 
+		/* NB: we have no idea what method calls do, at this point all
+		 * bets are off.
+		 */
+		(*e)->constant = EXPR_VAR;
+
 		AN(sym->eval);
 		sym->eval(tl, e, tl->t, sym, sym->type);
 		ERRCHK(tl);
@@ -1489,13 +1508,42 @@ vcc_expr_typecheck(struct vcc *tl, struct expr **e, vcc_type_t fmt,
 void
 vcc_Expr(struct vcc *tl, vcc_type_t fmt)
 {
-	struct expr *e = NULL;
+
+	vcc_ExprEdit(tl, fmt, NULL, NULL);
+}
+
+void
+vcc_ExprEdit(struct vcc *tl, vcc_type_t fmt, const char *var_edit,
+    const char *const_edit)
+{
+	struct expr *e = NULL, *e1 = NULL;
+	const char *edit = NULL;
 
 	assert(fmt != VOID);
 	assert(fmt != STRINGS);
 	vcc_expr0(tl, &e, fmt);
 	ERRCHK(tl);
 	assert(e->fmt == fmt);
+	if (const_edit != NULL)
+		AN(var_edit);
+
+	if (e->constant & EXPR_VAR) {
+		if (e->constant_expr != NULL) {
+			edit = const_edit;
+			e1 = e->constant_expr;
+		}
+	} else {
+		edit = const_edit;
+		e1 = e;
+	}
+
+	if (edit == NULL) {
+		edit = var_edit;
+		e1 = e;
+	}
+
+	if (edit != NULL)
+		e = vcc_expr_edit(tl, e1->fmt, edit, e1, NULL);
 
 	vcc_expr_fmt(tl->fb, tl->indent, e);
 	VSB_cat(tl->fb, "\n");

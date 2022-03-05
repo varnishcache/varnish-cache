@@ -120,7 +120,6 @@ struct type {
 	vcc_type_t		multype;
 	int			stringform;
 	int			bodyform;
-	int			noindent;
 };
 
 #define VCC_TYPE(UC, lc)	extern const struct type UC[1];
@@ -201,6 +200,7 @@ struct symbol {
 	unsigned			w_methods;
 	const char			*uname;
 	unsigned			u_methods;
+	const char			*const_assign;
 };
 
 VTAILQ_HEAD(tokenhead, token);
@@ -348,6 +348,7 @@ char *TlDup(struct vcc *tl, const char *s);
 
 /* vcc_expr.c */
 void vcc_Expr(struct vcc *tl, vcc_type_t typ);
+void vcc_ExprEdit(struct vcc *tl, vcc_type_t typ, const char *, const char *);
 sym_act_f vcc_Act_Call;
 sym_act_f vcc_Act_Obj;
 void vcc_Expr_Init(struct vcc *tl);
