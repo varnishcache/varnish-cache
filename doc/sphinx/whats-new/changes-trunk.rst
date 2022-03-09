@@ -202,4 +202,12 @@ log processing utilities.
 
 ``http_IsHdr()`` is now exposed as part of the strict ABI for VMODs.
 
+Platform Support
+================
+
+With the End of Life of CentOS 8, there will be no more packages for Red Hat
+Enterprise Linux 8 and its derivatives. We track CentOS Stream in Continuous
+Integration so Varnish Cache is expected to work on this platform, but there
+will be no el8 packages from now on.
+
 *eof*
