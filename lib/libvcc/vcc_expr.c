@@ -1419,8 +1419,6 @@ vcc_expr0(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		vcc_expr_cor(tl, e, fmt);
 	ERRCHK(tl);
 
-	assert((*e)->fmt != BODY);
-
 	if ((*e)->fmt == fmt)
 		return;
 

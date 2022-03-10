@@ -101,6 +101,12 @@ varnish v1 -errvcl {Expected ')' got '-'} {
 	}
 }
 
+varnish v1 -errvcl {Expression has type BODY, expected BOOL} {
+	sub vcl_synth {
+		if (resp.body) { }
+	}
+}
+
 varnish v1 -errvcl {Expression has type directors.shard, expected ACL} {
 	import directors;
 	backend b none;
