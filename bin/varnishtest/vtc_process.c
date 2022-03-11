@@ -910,6 +910,9 @@ process_close(struct process *p)
  * \-stop
  *	Shorthand for -kill TERM.
  *
+ * \-winsz LIN COL
+ *	Change the terminal window size to LIN lines and COL columns.
+ *
  * \-write STRING
  *	Write a string to the process' stdin.
  *
