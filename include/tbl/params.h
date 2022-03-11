@@ -36,12 +36,19 @@
 
 /*lint -save -e525 -e539 -e835 */
 
+#ifndef PARAM_ALL
+#  define PARAM_PRE
+#  define PARAM_POST
+#endif
+
 /*--------------------------------------------------------------------
  * Simple parameters
  */
 
-#define PARAM_SIMPLE(nm, typ, ...) \
-	PARAM(typ, nm, nm, tweak_##typ, &mgt_param.nm, __VA_ARGS__)
+#define PARAM_SIMPLE(nm, typ, ...)					\
+	PARAM_PRE							\
+	PARAM(typ, nm, nm, tweak_##typ, &mgt_param.nm, __VA_ARGS__)	\
+	PARAM_POST
 
 #if defined(PLATFORM_FLAGS)
 #  error "Temporary macro PLATFORM_FLAGS already defined"
@@ -1216,13 +1223,15 @@ PARAM_SIMPLE(
  */
 
 #define PARAM_MEMPOOL(nm, def, descr)					\
+	PARAM_PRE							\
 	PARAM(poolparam, nm, nm, tweak_poolparam, &mgt_param.nm,	\
 	    NULL, NULL, def, NULL,					\
 	    descr							\
 	    "The three numbers are:\n"					\
 	    "\tmin_pool\tminimum size of free pool.\n"			\
 	    "\tmax_pool\tmaximum size of free pool.\n"			\
-	    "\tmax_age\tmax age of free element.")
+	    "\tmax_age\tmax age of free element.")			\
+	PARAM_POST
 
 PARAM_MEMPOOL(
 		/* name */	pool_req,
@@ -1250,8 +1259,10 @@ PARAM_MEMPOOL(
  */
 
 #define PARAM_THREAD(nm, fld, typ, ...)			\
+	PARAM_PRE					\
 	PARAM(typ, wthread_ ## fld, nm, tweak_ ## typ,	\
-	    &mgt_param.wthread_ ## fld, __VA_ARGS__)
+	    &mgt_param.wthread_ ## fld, __VA_ARGS__)	\
+	PARAM_POST
 
 PARAM_THREAD(
 	/* name */	thread_pools,
@@ -1530,8 +1541,10 @@ PARAM_THREAD(
  * String parameters
  */
 
-#  define PARAM_STRING(nm, tw, pv, def, ...) \
-	PARAM(, , nm, tw, pv, NULL, NULL, def, NULL, __VA_ARGS__)
+#  define PARAM_STRING(nm, tw, pv, def, ...)				\
+	PARAM_PRE							\
+	PARAM(, , nm, tw, pv, NULL, NULL, def, NULL, __VA_ARGS__)	\
+	PARAM_POST
 
 PARAM_STRING(
 	/* name */	cc_command,
@@ -1625,8 +1638,11 @@ PARAM_STRING(
  * VCC parameters
  */
 
-#  define PARAM_VCC(nm, def, descr) \
-	PARAM(, , nm, tweak_boolean, &mgt_ ## nm, NULL, NULL, def, "bool", descr)
+#  define PARAM_VCC(nm, def, descr)					\
+	PARAM_PRE							\
+	PARAM(, , nm, tweak_boolean, &mgt_ ## nm, NULL, NULL, def,	\
+	    "bool", descr)						\
+	PARAM_POST
 
 PARAM_VCC(
 	/* name */	vcc_err_unref,
@@ -1655,8 +1671,10 @@ PARAM_VCC(
  */
 
 #  define PARAM_PCRE2(nm, pv, min, def, descr)			\
+	PARAM_PRE						\
 	PARAM(, , nm, tweak_uint, &mgt_param.vre_limits.pv,	\
-	    min, NULL, def, NULL, descr)
+	    min, NULL, def, NULL, descr)			\
+	PARAM_POST
 
 PARAM_PCRE2(
 	/* name */	pcre2_match_limit,
@@ -1699,9 +1717,11 @@ PARAM_PCRE2(
  * The deprecated_dummy alias is here for test coverage.
  */
 
-#define PARAM_ALIAS(al, nm) \
+#define PARAM_ALIAS(al, nm)					\
+	PARAM_PRE						\
 	PARAM(, , al, tweak_alias, NULL, NULL, NULL, #nm, NULL, \
-	    "Deprecated alias for the " #nm " parameter.")
+	    "Deprecated alias for the " #nm " parameter.")	\
+	PARAM_POST
 
 PARAM_ALIAS(deprecated_dummy, debug)
 
@@ -1713,6 +1733,8 @@ PARAM_ALIAS(deprecated_dummy, debug)
 #endif /* defined(PARAM_ALL) */
 
 #undef PARAM_MEMPOOL
+#undef PARAM_POST
+#undef PARAM_PRE
 #undef PARAM_SIMPLE
 #undef PARAM_THREAD
 #undef PARAM
