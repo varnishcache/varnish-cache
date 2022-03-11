@@ -1717,102 +1717,99 @@ PARAM_PCRE2(
 PARAM_ALIAS(deprecated_dummy, debug)
 
 #  undef PARAM_ALIAS
-#  undef PARAM_ALL
 #  undef PARAM_PCRE2
 #  undef PARAM_STRING
 #  undef PARAM_VCC
 #endif /* defined(PARAM_ALL) */
 
+/*--------------------------------------------------------------------
+ * Bits parameters
+ */
+
+#define PARAM_BITS(nm, fld, def, descr)					\
+	PARAM(nm, fld, nm, tweak_ ## nm, &mgt_param.fld, NULL, NULL,	\
+	    def, NULL, descr)
+
+PARAM_PRE
+PARAM_BITS(
+	/* name */	debug,
+	/* fld */	debug_bits,
+	/* def */	"none",
+	/* descr */
+	"Enable/Disable various kinds of debugging.\n"
+	"\tnone\tDisable all debugging\n\n"
+	"Use +/- prefix to set/reset individual bits:")
+#ifdef PARAM_ALL
+#  define DEBUG_BIT(U, l, d) "\n\t" #l "\t" d
+#  include "tbl/debug_bits.h"
+#endif
+PARAM_POST
+
+PARAM_PRE
+PARAM_BITS(
+	/* name */	experimental,
+	/* fld */	experimental_bits,
+	/* def */	"none",
+	/* descr */
+	"Enable/Disable experimental features.\n"
+	"\tnone\tDisable all experimental features\n\n"
+	"Use +/- prefix to set/reset individual bits:")
+#ifdef PARAM_ALL
+#  define EXPERIMENTAL_BIT(U, l, d) "\n\t" #l "\t" d
+#  include "tbl/experimental_bits.h"
+#endif
+PARAM_POST
+
+PARAM_PRE
+PARAM_BITS(
+	/* name */	feature,
+	/* fld */	feature_bits,
+	/* def */	"+validate_headers",
+	/* descr */
+	"Enable/Disable various minor features.\n"
+	"\tdefault\tSet default value\n"
+	"\tnone\tDisable all features.\n\n"
+	"Use +/- prefix to enable/disable individual feature:")
+#ifdef PARAM_ALL
+#  define FEATURE_BIT(U, l, d) "\n\t" #l "\t" d
+#  include "tbl/feature_bits.h"
+#endif
+PARAM_POST
+
+PARAM_PRE
+PARAM_BITS(
+	/* name */	vsl_mask,
+	/* fld */	vsl_mask,
+	/* def */
+	"-Debug,"
+	"-ExpKill,"
+	"-H2RxBody,"
+	"-H2RxHdr,"
+	"-H2TxBody,"
+	"-H2TxHdr,"
+	"-Hash,"
+	"-ObjHeader,"
+	"-ObjProtocol,"
+	"-ObjReason,"
+	"-ObjStatus,"
+	"-VCL_trace,"
+	"-VdpAcct,"
+	"-VfpAcct,"
+	"-WorkThread",
+	/* descr */
+	"Mask individual VSL messages from being logged.\n"
+	"\tdefault\tSet default value\n"
+	"\nUse +/- prefix in front of VSL tag name to unmask/mask "
+	"individual VSL messages.")
+PARAM_POST
+
+#undef PARAM_ALL
+#undef PARAM_BITS
 #undef PARAM_MEMPOOL
 #undef PARAM_POST
 #undef PARAM_PRE
 #undef PARAM_SIMPLE
 #undef PARAM_THREAD
 #undef PARAM
-
-#if 0 /* NOT ACTUALLY DEFINED HERE */
-/* actual location mgt_param_bits.c*/
-/* see tbl/debug_bits.h */
-PARAM(
-	/* name */	debug,
-	/* type */	debug,
-	/* min */	NULL,
-	/* max */	NULL,
-	/* def */	NULL,
-	/* units */	NULL,
-	/* descr */
-	"Enable/Disable various kinds of debugging.\n"
-	"	none	Disable all debugging\n"
-	"\n"
-	"Use +/- prefix to set/reset individual bits:\n"
-	"	req_state	VSL Request state engine\n"
-	"	workspace	VSL Workspace operations\n"
-	"	waiter	VSL Waiter internals\n"
-	"	waitinglist	VSL Waitinglist events\n"
-	"	syncvsl	Make VSL synchronous\n"
-	"	hashedge	Edge cases in Hash\n"
-	"	vclrel	Rapid VCL release\n"
-	"	lurker	VSL Ban lurker\n"
-	"	esi_chop	Chop ESI fetch to bits\n"
-	"	flush_head	Flush after http1 head\n"
-	"	vtc_mode	Varnishtest Mode"
-)
-
-/* actual location mgt_param_bits.c*/
-/* see tbl/experimental_bits.h */
-PARAM(
-	/* name */	experimental,
-	/* type */	experimental,
-	/* min */	NULL,
-	/* max */	NULL,
-	/* def */	NULL,
-	/* units */	NULL,
-	/* descr */
-	"Enable/Disable experimental features.\n"
-	"	none	Disable all experimental features\n"
-	"\n"
-	"Use +/- prefix to set/reset individual bits:\n"
-	"	drop_pools	Drop thread pools\n"
-)
-
-/* actual location mgt_param_bits.c*/
-/* See tbl/feature_bits.h */
-PARAM(
-	/* name */	feature,
-	/* type */	feature,
-	/* min */	NULL,
-	/* max */	NULL,
-	/* def */	NULL,
-	/* units */	NULL,
-	/* descr */
-	"Enable/Disable various minor features.\n"
-	"	none	Disable all features.\n"
-	"\n"
-	"Use +/- prefix to enable/disable individual feature:\n"
-	"	short_panic	Short panic message.\n"
-	"	wait_silo	Wait for persistent silo.\n"
-	"	no_coredump	No coredumps.\n"
-	"	esi_ignore_https	Treat HTTPS as HTTP in ESI:includes\n"
-	"	esi_disable_xml_check	Don't check of body looks like XML\n"
-	"	esi_ignore_other_elements	Ignore non-esi XML-elements\n"
-	"	esi_remove_bom	Remove UTF-8 BOM"
-)
-
-/* actual location mgt_param_bits.c*/
-PARAM(
-	/* name */	vsl_mask,
-	/* type */	vsl_mask,
-	/* min */	NULL,
-	/* max */	NULL,
-	/* def */	"default",
-	/* units */	NULL,
-	/* descr */
-	"Mask individual VSL messages from being logged.\n"
-	"	default	Set default value\n"
-	"\n"
-	"Use +/- prefix in front of VSL tag name to unmask/mask "
-	"individual VSL messages."
-)
-#endif /* NOT ACTUALLY DEFINED HERE */
 
 /*lint -restore */

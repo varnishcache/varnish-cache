@@ -154,7 +154,7 @@ static const char * const VSL_tags[256] = {
 #  include "tbl/vsl_tags.h"
 };
 
-static int v_matchproto_(tweak_t)
+int v_matchproto_(tweak_t)
 tweak_vsl_mask(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 
@@ -172,7 +172,7 @@ static const char * const debug_tags[] = {
        NULL
 };
 
-static int v_matchproto_(tweak_t)
+int v_matchproto_(tweak_t)
 tweak_debug(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 
@@ -190,7 +190,7 @@ static const char * const experimental_tags[] = {
        NULL
 };
 
-static int v_matchproto_(tweak_t)
+int v_matchproto_(tweak_t)
 tweak_experimental(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 
@@ -208,7 +208,7 @@ static const char * const feature_tags[] = {
        NULL
 };
 
-static int v_matchproto_(tweak_t)
+int v_matchproto_(tweak_t)
 tweak_feature(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 
@@ -221,62 +221,5 @@ tweak_feature(struct vsb *vsb, const struct parspec *par, const char *arg)
  */
 
 struct parspec VSL_parspec[] = {
-	{ "vsl_mask", tweak_vsl_mask, NULL,
-		NULL, NULL,
-		/* default */
-		"-Debug,"
-		"-ExpKill,"
-		"-H2RxBody,"
-		"-H2RxHdr,"
-		"-H2TxBody,"
-		"-H2TxHdr,"
-		"-Hash,"
-		"-ObjHeader,"
-		"-ObjProtocol,"
-		"-ObjReason,"
-		"-ObjStatus,"
-		"-VCL_trace,"
-		"-VdpAcct,"
-		"-VfpAcct,"
-		"-WorkThread",
-		NULL,
-		"Mask individual VSL messages from being logged.\n"
-		"\tdefault\tSet default value\n"
-		"\nUse +/- prefix in front of VSL tag name to unmask/mask "
-		"individual VSL messages." },
-	{ "debug", tweak_debug, NULL,
-		NULL, NULL,
-		/* default */
-		"none",
-		NULL,
-		"Enable/Disable various kinds of debugging.\n"
-		"\tnone\tDisable all debugging\n\n"
-		"Use +/- prefix to set/reset individual bits:"
-#define DEBUG_BIT(U, l, d) "\n\t" #l "\t" d
-#include "tbl/debug_bits.h"
-		},
-	{ "experimental", tweak_experimental, NULL,
-		NULL, NULL,
-		/* default */
-		"none",
-		NULL,
-		"Enable/Disable experimental features.\n"
-		"\tnone\tDisable all experimental features\n\n"
-		"Use +/- prefix to set/reset individual bits:"
-#define EXPERIMENTAL_BIT(U, l, d) "\n\t" #l "\t" d
-#include "tbl/experimental_bits.h"
-		},
-	{ "feature", tweak_feature, NULL,
-		NULL, NULL,
-		/* default */
-		"+validate_headers",
-		NULL,
-		"Enable/Disable various minor features.\n"
-		"\tdefault\tSet default value\n"
-		"\tnone\tDisable all features.\n\n"
-		"Use +/- prefix to enable/disable individual feature:"
-#define FEATURE_BIT(U, l, d) "\n\t" #l "\t" d
-#include "tbl/feature_bits.h"
-		},
 	{ NULL, NULL, NULL }
 };
