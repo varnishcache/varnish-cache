@@ -191,7 +191,6 @@ void MCF_ParamConf(enum mcf_which_e, const char *param, const char *, ...)
 void MCF_ParamSet(struct cli *, const char *param, const char *val);
 void MCF_ParamProtect(struct cli *, const char *arg);
 void MCF_DumpRstParam(void);
-void MCF_AddParams(struct parspec *ps);
 extern struct params mgt_param;
 
 /* mgt_shmem.c */

@@ -610,16 +610,25 @@ mcf_param_reset(struct cli *cli, const char * const *av, void *priv)
 }
 
 /*--------------------------------------------------------------------
- * Add a group of parameters to the global set and sort by name.
+ * Initialize parameters and sort by name.
  */
 
-void
-MCF_AddParams(struct parspec *ps)
+static struct parspec mgt_parspec[] = {
+#define PARAM_ALL
+#define PARAM_PRE {
+#define PARAM(typ, fld, nm, ...) #nm, __VA_ARGS__
+#define PARAM_POST },
+#include "tbl/params.h"
+	{ NULL, NULL, NULL }
+};
+
+static void
+mcf_init_params(void)
 {
 	struct parspec *pp;
 	const char *s;
 
-	for (pp = ps; pp->name != NULL; pp++) {
+	for (pp = mgt_parspec; pp->name != NULL; pp++) {
 		AN(pp->func);
 		s = strchr(pp->descr, '\0');
 		if (isspace(s[-1])) {
@@ -720,9 +729,7 @@ MCF_InitParams(struct cli *cli)
 	struct vsb *vsb;
 	ssize_t def, low;
 
-	MCF_AddParams(mgt_parspec);
-	MCF_AddParams(VSL_parspec);
-
+	mcf_init_params();
 	MCF_TcpParams();
 
 	def = 80 * 1024;

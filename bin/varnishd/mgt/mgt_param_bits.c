@@ -215,11 +215,3 @@ tweak_feature(struct vsb *vsb, const struct parspec *par, const char *arg)
 	return (tweak_generic_bits(vsb, par, arg, mgt_param.feature_bits,
 	    FEATURE_Reserved, feature_tags, "feature bit", '+'));
 }
-
-/*--------------------------------------------------------------------
- * The parameter table itself
- */
-
-struct parspec VSL_parspec[] = {
-	{ NULL, NULL, NULL }
-};
