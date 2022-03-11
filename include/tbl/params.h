@@ -1683,7 +1683,7 @@ PARAM_PCRE2(
 /*--------------------------------------------------------------------
  * Parameter deprecated aliases
  *
- * When a parameter is renamed, but the a deprecated alias is kept for
+ * When a parameter is renamed, but a deprecated alias is kept for
  * compatibility, its documentation is minimal: only a description in
  * manual pages, a description and current value in the CLI.
  *
