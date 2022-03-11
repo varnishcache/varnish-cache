@@ -95,13 +95,17 @@ struct params {
 #define ptyp_boolean		unsigned
 #define ptyp_bytes		ssize_t
 #define ptyp_bytes_u		unsigned
+#define ptyp_debug		debug_t
 #define ptyp_double		double
+#define ptyp_experimental	experimental_t
+#define ptyp_feature		feature_t
 #define ptyp_poolparam		struct poolparam
 #define ptyp_thread_pool_max	unsigned
 #define ptyp_thread_pool_min	unsigned
 #define ptyp_timeout		vtim_dur
 #define ptyp_uint		unsigned
 #define ptyp_vsl_buffer		unsigned
+#define ptyp_vsl_mask		vsl_mask_t
 #define ptyp_vsl_reclen		unsigned
 #define PARAM(typ, fld, nm, ...)		\
 	ptyp_##typ		fld;
@@ -109,13 +113,17 @@ struct params {
 #undef ptyp_boolean
 #undef ptyp_bytes
 #undef ptyp_bytes_u
+#undef ptyp_debug
 #undef ptyp_double
+#undef ptyp_experimental
+#undef ptyp_feature
 #undef ptyp_poolparam
 #undef ptyp_thread_pool_max
 #undef ptyp_thread_pool_min
 #undef ptyp_timeout
 #undef ptyp_uint
 #undef ptyp_vsl_buffer
+#undef ptyp_vsl_mask
 #undef ptyp_vsl_reclen
 
 	/* Unprivileged user / group */
@@ -123,9 +131,4 @@ struct params {
 	gid_t			gid;
 
 	struct vre_limits	vre_limits;
-
-	vsl_mask_t		vsl_mask;
-	debug_t			debug_bits;
-	experimental_t		experimental_bits;
-	feature_t		feature_bits;
 };
