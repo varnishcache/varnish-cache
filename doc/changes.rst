@@ -71,6 +71,10 @@ Varnish Cache 7.0.1 (2021-11-23)
 * There is now a `configure` build-time requirement on working SO_RCVTIMEO
   and SO_SNDTIMEO socket options.
 
+  We no longer check whether they effectively work, so the
+  ``SO_RCVTIMEO_WORKS`` feature check has been removed from
+  ``varnishtest``.
+
 * The socket option inheritance checks now correctly identifies situations
   where UDS and TCP listening sockets behave differently, and are no
   longer subject to the order the inheritance checks happens to be
