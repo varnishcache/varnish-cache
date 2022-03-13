@@ -35,15 +35,173 @@ release process.
 Varnish Cache NEXT (2022-03-15)
 ===============================
 
-* Added macros ``TOSTRAND(s)`` and ``TOSTRANDS(x, ...)`` to create a
-  ``struct strands *`` (intended to be used as a ``VCL_STANDS``) from
-  a single string ``s`` or ``x`` strings, respectively.
+* The ``cookie.format_rfc1123()`` function was renamed to
+  ``cookie.format_date()``, and the former was retained as a
+  deprecated alias.
 
-  Note that the macros create a local pointer value (on the stack),
-  which should only be used for local variables and parameters, but
-  never as a function return value (use ``VRT_AllocStrandsWS()`` for
-  that or just return a ``VCL_STRING`` result created with
-  ``VRT_StrandsWS()``).
+* The VCC file ``$Alias`` stanza has been added to support vmod alias
+  functions/methods.
+
+* VCC now supports alias symbols.
+
+* There is a new ``experimental`` parameter that is identical to the
+  ``feature`` parameter, except that it guards features that may not
+  be considered complete or stable. An experimental feature may be
+  promoted to a regular feature or dropped without being considered a
+  breaking change.
+
+* ESI includes now support the ``onerror="continue"``
+  attribute if the ``+esi_include_onerror`` feature flag is set.
+
+* The deprecated sub-argument of the ``-l`` option was removed, it is
+  now a shorthand for the ``vsl_space`` parameter only.
+
+* The ``-T``, ``-M`` and ``-P`` command line options can be used
+  multiple times, instead of retaining only the last occurrence.
+
+* The ``debug.xid`` CLI command has been extended to also set and
+  query the VXID cache chunk size.
+
+* The ``vtc.barrier_sync()`` VMOD function now also works in ``vcl_init``
+
+* The ``abort`` command in the ``logexpect`` facility of
+  ``varnishtest`` can now be used to trigger an ``abort()`` to help
+  debugging the vsl client library code.
+
+* The ``vtc.vsl()`` and ``vtc.vsl_replay()`` functions have been added
+  to the vtc vmod to generate arbitraty log lines for testing.
+
+* The limit of the ``vsl_reclen`` parameter has been corrected.
+
+* Varnish now closes client connections correctly when request body
+  processing failed.
+
+* Filter init methods of types ``vdp_init_f`` and ``vfp_init_f``
+  gained a ``VRT_CTX`` argument.
+
+* The ``param.set`` CLI command accepts a ``-j`` option. In this case
+  the JSON output is the same as ``param.show -j`` of the updated
+  parameter.
+
+* A new ``cc_warnings`` parameter contains a subset of the compiler
+  flags extracted from ``cc_command``, which in turn grew new
+  expansions:
+
+  - ``%d``: the raw default ``cc_command``
+  - ``%D``: the expanded default ``cc_command``
+  - ``%w``: the ``cc_warnings`` parameter
+  - ``%n``: the working directory (``-n`` option)
+
+* For ``return(pipe)``, the backend transactions now emit a Start
+  timestamp and both client and backend transactions emit the Process
+  timestamp.
+
+* ``http_IsHdr()`` is now exposed as part of the strict ABI for VMODs.
+
+* The ``req.transport`` VCL variable has been added, which returns
+  "HTTP/1" or "HTTP/2" as appropriate.
+
+* The ``vtc.workspace_reserve()`` VMOD function now zeroes memory.
+
+* Parameter aliases have been added to facilitate parameter deprecation.
+
+* Two bugs in the catflap facility have been fixed which could trigger
+  panics due to the state pointer not being cleared. (3752_, 3755_)
+
+* It is now possible to assign to a ``BODY`` variable either a
+  ``STRING`` type or a ``BLOB``.
+
+* When the ``vcl.show`` CLI command is invoked without a parameter, it
+  now defaults to the active VCL.
+
+* The reporting of ``logexpect`` events in ``varnishtest`` was
+  rearranged for readability.
+
+* Workspace debugging as enabled by the ``+workspace`` debug flag is
+  now logged with the corresponding transaction.
+
+* VMODs should now register and unregister fetch and delivery filters
+  with ``VRT_AddFilter()`` and ``VRT_RemoveFilter()``.
+
+* ``HSH_purge()`` has been rewritten to properly handle concurrent
+  purges on the same object head.
+
+* ``VSL_WriteOpen()``, ``varnishlog`` and ``varnishncsa`` have been
+  changed to support writing to stdout with ``-w -`` when not in
+  daemon mode.
+
+* In VSL, the case has been optimized that the space remaining in a
+  buffer is close to ``vsl_reclen``.
+
+* ``std.ip()`` has been changed to always return a valid (bogo ip)
+  fallback if the fallback argument is invalid.
+
+* New VCL variables ``{req,req_top,resp,bereq,beresp,obj}.time`` have
+  been added to track when the respective object was born.
+
+* ``VRT_StaticDirector()`` has been added to mark directors with VCL
+  lifetime, to avoid the overhead of reference counting.
+
+* Dynamic backends are now reference-counted, and VMOD authors must
+  explicitly track assignments with ``VRT_Assign_Backend()``.
+
+* Varnish will use libunwind by default when available at configure
+  time, the ``--without-unwind`` configure flag can prevent this and
+  fall back to libexecinfo to generate backtraces.
+
+* A new ``debug.shutdown.delay`` command is available in the Varnish
+  CLI for testing purposes.
+
+* New utility macros ``vmin[_t]``, ``vmax[_t]`` and ``vlimit[_t]``
+  available in ``vdef.h``.
+
+* The macros ``TOSTRAND(s)`` and ``TOSTRANDS(x, ...)`` have been added
+  to create a ``struct strands *`` (intended to be used as a
+  ``VCL_STANDS``) from a single string ``s`` or ``x`` strings,
+  respectively.
+
+  Note that the macros create a compund literal whose scope is the
+  enclosing block. Their value must thus only be used within the same
+  block (it can be passed to called functions) and must not be
+  returned or referenced for use outside the enclosing block.
+
+  As before, ``VRT_AllocStrandsWS()`` or ``VRT_StrandsWS()`` must be
+  used to create ``VCL_STRANDS`` with *task* scope for use outside the
+  current block.
+
+* A bug in the backend connection handling code has been fixed which
+  could trigger an unwarranted assertion failure (3664_).
+
+* ``std.strftime()`` has been added.
+
+* ``Lck_CondWait()`` has lost the timeout argument and now waits
+  forever. ``Lck_CondWaitUntil()`` and ``Lck_CondWaitTimeout()`` have
+  been added to wait on a condition variable until some point in time
+  or until a timeout expires, respectively.
+
+* All mutex locks in core code have been given the
+  ``PTHREAD_MUTEX_ERRORCHECK`` attribute.
+
+* ``Host`` and ``Content-Length`` header checks have been moved to
+  protocol independent code and thus implicitly extended to HTTP2.
+
+* A potential race on busy objects has been closed.
+
+* Use of the ``ObjGetSpace()`` for synthetic objects has been fixed to
+  support stevedores returning less space than requested (as permitted
+  by the API).
+
+* The ``FINI_OBJ()`` macro has been added to standardize the common
+  pattern of zeroing a mini object and clearing a pointer to it.
+
+* The deprecated ``vsm_space`` parameter was removed.
+
+* The ``varnishtest`` ``err_shell`` commando has been removed after
+  having been deprecated since release 5.1.0.
+
+.. _3755: https://github.com/varnishcache/varnish-cache/issues/3755
+.. _3752: https://github.com/varnishcache/varnish-cache/issues/3752
+.. _3664: https://github.com/varnishcache/varnish-cache/issues/3664
 
 ================================
 Varnish Cache 7.0.1 (2021-11-23)
