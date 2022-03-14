@@ -157,7 +157,9 @@ The ``SO_RCVTIMEO_WORKS`` feature check is gone. (introduced with 7.0.1)
 
 The reporting of ``logexpect`` events was rearranged for readability.
 
-XXX: mention the logexpect abort trigger? (it's not documented)
+The ``abort`` command in the ``logexpect`` facility of ``varnishtest``
+can now be used to trigger an ``abort()`` to help debugging the vsl
+client library code.
 
 The ``vtc.barrier_sync()`` VMOD function can be used in ``vcl_init`` from now
 on.
