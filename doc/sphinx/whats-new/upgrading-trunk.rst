@@ -53,16 +53,18 @@ a shorthand for ``vsm_space`` is also no longer accepted.
 Command line options
 ~~~~~~~~~~~~~~~~~~~~
 
-A common pattern when a CLI script is used during startup is to combine the
-``-I`` option with ``-f ''`` to prevent prevent an automatic startup of the
-cache process. In this case a start command is usually present in the CLI
-script, most likely as the last command.
+A common pattern when a CLI script is used during startup is to
+combine the ``-I`` and ``-f ''`` options to prevent an automatic
+startup of the cache process. In this case a start command is usually
+present in the CLI script, most likely as the last command. This
+enables loading VCLs and potentially VCL labels which require a
+specific order if the active VCL is supposed to switch execution to
+labels.
 
-This enables loading VCLs and potentially VCL labels which require a specific
-order if the active VCL is supposed to switch execution to labels. VCL loaded
-through the CLI script is no longer implicitly used if there is no active VCL
-yet. If no VCL was loaded through the ``-b`` or ``-f`` options it means that
-an explicit ``vcl.use`` command is needed before the ``start`` command.
+To support this pattern, a VCL loaded through the CLI script is no
+longer implicitly used if there is no active VCL yet. If no VCL was
+loaded through the ``-b`` or ``-f`` options it means that an explicit
+``vcl.use`` command is needed before the ``start`` command.
 
 In the scenario described above, that would already be the case since the
 desired active VCL would likely need to be loaded last, not eligible for an
@@ -118,14 +120,15 @@ of reference counting with ``VRT_StaticDirector()``.
 Filters
 ~~~~~~~
 
-Two new functions ``VRT_AddFilter()`` and ``VRT_RemoveFilter()`` manage
-filters as pairs. When used as pairs, the filters must have the same name,
-otherwise operating with only one fetch or delivery filter is fine.
+Two new functions ``VRT_AddFilter()`` and ``VRT_RemoveFilter()``
+manage filters as VDP/VFP pairs. When used as pairs, the filters must
+have the same name, otherwise operating with only one fetch or
+delivery filter is fine.
 
 Unlike its deprecated predecessors ``VRT_AddVFP()`` and ``VRT_AddVDP()``,
 the new ``VRT_AddFilter()`` returns an error string. The ``VRT_RemoveVFP()``
-and ``VRT_RemoveVDP()`` functions are also deprecated an simply thin wrapper
-lacking error handling around the new functions.
+and ``VRT_RemoveVDP()`` functions are also deprecated and kept for now
+as wrappers of ``VRT_RemoveFilter()`` without error handling.
 
 VMOD deprecated aliases
 ~~~~~~~~~~~~~~~~~~~~~~~

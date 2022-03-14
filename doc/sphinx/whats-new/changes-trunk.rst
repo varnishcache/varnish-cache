@@ -72,13 +72,14 @@ raised.
 Changes to VCL
 ==============
 
-It is now possible to assign a ``BODY`` variable with either a ``STRING`` type
-or a ``BLOB``.
+It is now possible to assign a ``BLOB`` value to a ``BODY`` variable,
+in addition to ``STRING`` as before.
 
 VCL variables
 ~~~~~~~~~~~~~
 
-New VCL variables to track the beginning of HTTP messages:
+New VCL timestamp variables have been added to track the point in time
+when HTTP messages were created:
 
 - ``req.time``
 - ``req_top.time``
@@ -87,7 +88,8 @@ New VCL variables to track the beginning of HTTP messages:
 - ``beresp.time``
 - ``obj.time``
 
-New ``req.transport`` which returns "HTTP/1" or "HTTP/2" as appropriate.
+The new ``req.transport`` variable returns "HTTP/1" or "HTTP/2" as
+appropriate.
 
 Other changes to VCL
 ~~~~~~~~~~~~~~~~~~~~
@@ -193,8 +195,9 @@ When the ``+workspace`` debug flag is raised, workspace logs are no longer
 emitted as raw logs disconnected from the task. Having workspace logs grouped
 with the rest of the task should help workspace footprint analysis.
 
-It is possible to generate of arbitrary log lines with ``vtc.vsl_replay()``,
-which can help testing log processing utilities.
+It is now possible to generate arbitrary log lines with ``vtc.vsl()``
+and ``vtc.vsl_replay()``, which can help testing log processing
+utilities.
 
 It is also possible to tweak the VXID cache chunk size per thread pool with
 the ``debug.xid`` command for the Varnish CLI, which can also help testing
