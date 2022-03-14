@@ -75,18 +75,24 @@ not affect existing ``-I`` scripts, but if it does, simply add the missing
 Other changes in varnishd
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The ESI parser now recognizes the ``onerror="continue"`` attribute of the
-``<esi:include/>`` XML tag. Other values than "continue" are simply ignored.
-Continuing has always been Varnish's behavior for ESI sub-requests, so this
-behavior is guarded by a new ``+esi_include_onerror`` feature flag.
+The ESI parser now recognizes the ``onerror="continue"`` attribute of
+the ``<esi:include/>`` XML tag.
 
-It means that by default, the top request will continue processing ESI
-fragments even if one failed during delivery. The parsing always takes the
-attribute, and the feature flag only controls whether to honor it or not.
+The ``+esi_include_onerror`` feature flag controls if the attribute is
+honored: If enabled, failure of an include stops ESI processing unless
+the ``onerror="continue"`` attribute was set for it.
 
-This means that the persistence of ESI objects changed and does not tolerate
-downgrades. ESI persisted before support for this attribute assumes a lack of
-such attribute and will abort the delivery if the flag is raised.
+The feature flag is off by default, preserving the existing behavior
+to continue ESI processing despite include failures.
+
+Users of persistent storage engines be advised that objects created
+before the introduction of this change can not carry the
+``onerror="continue"`` attribute and, consequently, will be handled as
+if it was not present if the ``+esi_include_onerror`` feature flag is
+enabled.
+
+Also, as this change is not backwards compatible, downgrades with
+persisted storage are not supported across this release.
 
 varnishtest
 ===========

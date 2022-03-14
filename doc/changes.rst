@@ -50,8 +50,15 @@ Varnish Cache NEXT (2022-03-15)
   promoted to a regular feature or dropped without being considered a
   breaking change.
 
-* ESI includes now support the ``onerror="continue"``
-  attribute if the ``+esi_include_onerror`` feature flag is set.
+* ESI includes now support the ``onerror="continue"`` attribute of
+  ``<esi:include/>`` tags.
+
+  The ``+esi_include_onerror`` feature flag controls if the attribute
+  is honored: If enabled, failure of an include stops ESI processing
+  unless the ``onerror="continue"`` attribute was set for it.
+
+  The feature flag is off by default, preserving the existing behavior
+  to continue ESI processing despite include failures.
 
 * The deprecated sub-argument of the ``-l`` option was removed, it is
   now a shorthand for the ``vsl_space`` parameter only.
