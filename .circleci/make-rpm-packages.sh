@@ -13,13 +13,16 @@ elif [ -z "$PARAM_DIST" ]; then
     exit 1
 fi
 
-if [ "$PARAM_DIST" = centos ]; then
-    if [ "$PARAM_RELEASE" = stream ]; then
+case "$PARAM_DIST:$PARAM_RELEASE" in
+    centos:stream|almalinux:8)
         dnf install -y 'dnf-command(config-manager)'
         yum config-manager --set-enabled powertools
-    fi
-    yum install -y epel-release
-fi
+        yum install -y epel-release
+        ;;
+    centos:7)
+        yum install -y epel-release
+        ;;
+esac
 
 yum install -y rpm-build yum-utils
 
