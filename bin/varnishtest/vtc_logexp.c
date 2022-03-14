@@ -45,6 +45,7 @@
  *                         expect <skip> <vxid> <tag> <regex>
  *                         fail add <vxid> <tag> <regex>
  *                         fail clear
+ *                         abort
  *                         ...
  *                 } [-start|-wait]
  *
@@ -139,6 +140,11 @@
  *      fail clear
  *
  * .. XXX can we come up with a better solution which is still safe?
+ *
+ * abort specification:
+ *
+ * abort(3) varnishtest, intended to help debugging of the VSL client library
+ * itself.
  */
 
 #include "config.h"
@@ -759,9 +765,6 @@ cmd_logexp_abort(CMD_ARGS)
 	struct logexp *le;
 
 	CAST_OBJ_NOTNULL(le, priv, LOGEXP_MAGIC);
-
-	if (av[1] == NULL || av[2] == NULL || av[3] == NULL)
-		vtc_fatal(vl, "Syntax error");
 
 	cmd_logexp_common(le, vl, LE_ABORT, av);
 }
