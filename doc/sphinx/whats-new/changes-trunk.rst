@@ -97,7 +97,7 @@ Other changes to VCL
 Where a regular expression literal is expected, it is now possible to have a
 concatenation of constant strings. It can be useful when part of the
 expression comes from an environment-specific include, or to break a long
-expression into multiple lines.
+expression into multiple lines. (introduced with 7.0.1)
 
 Similarly to ``varnishd`` parameters, it is now possible to have deprecated
 aliases of VCL variables. Although there are none so far, aliases will allow
@@ -153,7 +153,7 @@ environment (service manager, container orchestrator, etc) reacts to a
 varnishtest
 ===========
 
-The ``SO_RCVTIMEO_WORKS`` feature check is gone.
+The ``SO_RCVTIMEO_WORKS`` feature check is gone. (introduced with 7.0.1)
 
 The reporting of ``logexpect`` events was rearranged for readability.
 
@@ -165,10 +165,11 @@ on.
 Changes for developers and VMOD authors
 =======================================
 
-The ``SO_RCVTIMEO`` and ``SO_SNDTIMEO`` socket options are now required at
-build time since their absence would otherwise prevent some timeouts to take
-effect. We no longer check whether they effectively work, hence the removal of
-the ``SO_RCVTIMEO_WORKS`` feature check in ``varnishtest``.
+The ``SO_RCVTIMEO`` and ``SO_SNDTIMEO`` socket options are now
+required at build time since their absence would otherwise prevent
+some timeouts to take effect. We no longer check whether they
+effectively work, hence the removal of the ``SO_RCVTIMEO_WORKS``
+feature check in ``varnishtest``. (introduced with 7.0.1)
 
 Varnish will use libunwind by default when available at configure time, the
 ``--without-unwind`` configure flag can prevent this and fall back to
