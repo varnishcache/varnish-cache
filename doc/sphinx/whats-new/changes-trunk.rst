@@ -205,9 +205,21 @@ log processing utilities.
 Platform Support
 ================
 
+CentOS
+~~~~~~
+
 With the End of Life of CentOS 8, there will be no more packages for Red Hat
 Enterprise Linux 8 and its derivatives. We track CentOS Stream in Continuous
 Integration so Varnish Cache is expected to work on this platform, but there
 will be no el8 packages from now on.
+
+systemd
+~~~~~~~
+
+The kill mode of the varnish service was changed from ``process`` to ``mixed``
+to ensure that the cache process is killed if the manager process is timed out
+by systemd. Otherwise, a race exists if the cache process where a restart is
+carried on before the old cache process exits, creating conflict on resources
+such as listen ports.
 
 *eof*

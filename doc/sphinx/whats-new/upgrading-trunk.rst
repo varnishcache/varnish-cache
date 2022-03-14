@@ -143,4 +143,15 @@ In the VMOD descriptor, it is possible to add the following stanza::
 
 This is a good occasion to revisit unfortunate name choices in existing VMODs.
 
+Platform Support
+================
+
+systemd
+~~~~~~~
+
+To make the selection of the main process deterministic for the kill mode, a
+PID file is now expected by default in the varnish service. In a setup where
+the service command for ``ExecStart`` is overridden, a ``-P`` option matching
+the ``PIDFile`` setting is needed.
+
 *eof*
