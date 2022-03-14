@@ -114,14 +114,11 @@ Assignments should be replaced as such::
     -lvalue = expr;
     +VRT_Assign_Backend(&lvalue, expr);
 
-It doesn't have to be strictly assigned this way, as long as when presented to
-a VMOD a backend is accounted for as long as it is referenced.
+.. XXX: there should be a coccinelle patch to help.
 
-XXX: there should be a coccinelle patch to help.
-
-On the other hand, if a backend is created dynamically but is guaranteed by
-the VMOD not to be removed before its owning VCL is discarded, it can opt out
-of reference counting with ``VRT_StaticDirector()``.
+For backends which are guaranteed at least VCL lifetime, the
+respective VMOD can opt out of reference counting with
+``VRT_StaticDirector()`` to avoid the reference counting overhead.
 
 Filters
 ~~~~~~~
