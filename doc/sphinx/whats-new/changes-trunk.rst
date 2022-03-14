@@ -208,10 +208,10 @@ Platform Support
 CentOS
 ~~~~~~
 
-With the End of Life of CentOS 8, there will be no more packages for Red Hat
-Enterprise Linux 8 and its derivatives. We track CentOS Stream in Continuous
-Integration so Varnish Cache is expected to work on this platform, but there
-will be no el8 packages from now on.
+With the End of Life of CentOS 8, we will build el8 packages on almalinux
+from now on. This means that we will always target the oldest el8 branch.
+For example a package built for el8.5 is not guaranteed to work on el8.1
+even though the latter may still be supported by Red Hat.
 
 systemd
 ~~~~~~~
