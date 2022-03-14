@@ -13,7 +13,7 @@ varnish v1 -vcl {
 		set resp.http.X-foo = cookie.get_string();
 
 		# Test exotic admin-supplied filter strings.
-		cookie.parse("bredela=eggwhites; empire=jellytots;");
+		cookie.parse("bredela=eggwhites; empire=jellytots");
 		cookie.keep(",,,,bredela,    ,empire,baz,");
 		set resp.http.X-bar = cookie.get_string();
 
@@ -25,7 +25,7 @@ varnish v1 -vcl {
 client c1 {
 	txreq -url "/"
 	rxresp
-	expect resp.http.X-foo == "bredela=eggwhites; empire=jellytots;"
-	expect resp.http.X-bar == "bredela=eggwhites; empire=jellytots;"
+	expect resp.http.X-foo == "bredela=eggwhites; empire=jellytots"
+	expect resp.http.X-bar == "bredela=eggwhites; empire=jellytots"
 	expect resp.http.X-baz == ""
 } -run

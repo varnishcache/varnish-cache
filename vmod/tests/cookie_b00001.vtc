@@ -16,6 +16,6 @@ varnish v1 -vcl {
 client c1 {
 	txreq
 	rxresp
-	expect resp.http.X-foo == "cookie1=cookie1BAD;"
+	expect resp.http.X-foo == "cookie1=cookie1BAD"
 	expect resp.http.X-bar == ""
 } -run
