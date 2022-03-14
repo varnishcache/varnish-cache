@@ -441,8 +441,8 @@ vmod_get_string(VRT_CTX, struct vmod_priv *priv)
 		CHECK_OBJ_NOTNULL(curr, VMOD_COOKIE_ENTRY_MAGIC);
 		AN(curr->name);
 		AN(curr->value);
-		VSB_printf(output, "%s%s=%s;", sep, curr->name, curr->value);
-		sep = " ";
+		VSB_printf(output, "%s%s=%s", sep, curr->name, curr->value);
+		sep = "; ";
 	}
 	res = WS_VSB_finish(output, ctx->ws, NULL);
 	if (res == NULL)
