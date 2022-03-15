@@ -31,9 +31,9 @@ http://varnish-cache.org/docs/trunk/whats-new/index.html and via
 individual releases. These documents are updated as part of the
 release process.
 
-===============================
-Varnish Cache NEXT (2022-03-15)
-===============================
+================================
+Varnish Cache 7.1.0 (2022-03-15)
+================================
 
 * The ``cookie.format_rfc1123()`` function was renamed to
   ``cookie.format_date()``, and the former was retained as a
