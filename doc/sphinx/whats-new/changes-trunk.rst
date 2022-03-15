@@ -224,7 +224,7 @@ systemd
 
 The kill mode of the varnish service was changed from ``process`` to ``mixed``
 to ensure that the cache process is killed if the manager process is timed out
-by systemd. Otherwise, a race exists if the cache process where a restart is
+by systemd. Otherwise, a race exists with the cache process where a restart is
 carried on before the old cache process exits, creating conflict on resources
 such as listen ports.
 
