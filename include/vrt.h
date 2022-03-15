@@ -65,7 +65,13 @@
  *	BODY can either be a BLOB or a STRANDS, but only a STRANDS
  *	can take a non-NULL const char * prefix. The changes to BODY
  *	assignments doesn't break the ABI or the API.
- *
+ *	TOSTRAND() and TOSTRANDS() macros added
+ *	[cache.h] enum sess_close replaced by struct stream_close
+ *	[cache.h] http_IsHdr() added
+ *	[cache_filter.h] vfp_init_f() changed to take a VRT_CTX
+ *	[cache_filter.h] vdp_init_f() changed to take a VRT_CTX
+ *	[cache_filter.h] VRT_AddFilter() added
+ *	[cache_filter.h] VRT_RemoveFilter() added
  * 14.0 (2021-09-15)
  *	VIN_n_Arg() no directly returns the directory name.
  *	VSB_new() and VSB_delete() removed
