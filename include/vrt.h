@@ -53,7 +53,7 @@
  * Whenever something is deleted or changed in a way which is not
  * binary/load-time compatible, increment MAJOR version
  *
- * Next (2022-03-15)
+ * 15.0 (2022-03-15)
  *	VRT_r_req_transport() added
  *	VRT_Assign_Backend() added
  *	VRT_StaticDirector() added

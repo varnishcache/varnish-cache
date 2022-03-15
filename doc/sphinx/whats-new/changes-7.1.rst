@@ -1,15 +1,11 @@
-**Note: This is a working document for a future release, with running
-updates for changes in the development branch. For changes in the
-released versions of Varnish, see:** :ref:`whats-new-index`
+.. _whatsnew_changes_7.1:
 
-.. _whatsnew_changes_CURRENT:
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Changes in Varnish **$NEXT_RELEASE**
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+Changes in Varnish **7.1**
+%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 For information about updating your current Varnish deployment to the
-new version, see :ref:`whatsnew_upgrading_CURRENT`.
+new version, see :ref:`whatsnew_upgrading_7.1`.
 
 A more detailed and technical account of changes in Varnish, with
 links to issues that have been fixed and pull requests that have been
@@ -112,9 +108,9 @@ VMODs
 New :ref:`std.strftime()` function for UTC formatting.
 
 It is now possible to declare deprecated aliases of VMOD functions and object
-methods, just like VCL aliases. The ``cookie.format_rfc1123()`` was renamed to
-:ref:`cookie.format_date()`, and the former was retained as a deprecated alias
-of the latter for compatibility.
+methods, just like VCL aliases. The ``cookie.format_rfc1123()`` function was
+renamed to :ref:`cookie.format_date()`, and the former was retained as a
+deprecated alias of the latter for compatibility.
 
 Deprecated VMOD aliases have no runtime overhead, they are reified at VCL
 compile time.
