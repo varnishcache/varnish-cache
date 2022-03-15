@@ -1,6 +1,6 @@
 AC_PREREQ(2.69)
 AC_COPYRIGHT([Copyright (c) 2006 Verdens Gang AS
-Copyright (c) 2006-2021 Varnish Software])
+Copyright (c) 2006-2022 Varnish Software])
 AC_REVISION([$Id$])
 AC_INIT([Varnish], [trunk], [varnish-dev@varnish-cache.org])
 AC_CONFIG_SRCDIR(include/miniobj.h)
