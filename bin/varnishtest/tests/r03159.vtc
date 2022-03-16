@@ -12,7 +12,8 @@ shell {
 
 process p1 -winsz 100 80 -log {
 	varnishd -F -n "${tmpdir}/t" -a "${tmpdir}/sock" \
-	    -p vcc_err_unref=off -f "${tmpdir}/unref.vcl" 2>&1
+	    -p vcc_err_unref=off -f "${tmpdir}/unref.vcl" \
+	    -l 2m 2>&1
 } -start
 
 process p1 -expect-text 0 1 "Unused sub foo, defined:"
