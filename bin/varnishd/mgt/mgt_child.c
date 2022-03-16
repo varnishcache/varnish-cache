@@ -414,20 +414,21 @@ mgt_launch_child(struct cli *cli)
 	MCH_Fd_Inherit(heritage.cli_out, NULL);
 	closefd(&heritage.cli_out);
 
+	child_std_vlu = VLU_New(child_line, NULL, 0);
+	AN(child_std_vlu);
+
 	/* Wait for cache/cache_cli.c::CLI_Run() to check in */
 	if (VCLI_ReadResult(child_cli_in, &u, NULL, mgt_param.cli_timeout)) {
 		assert(u == CLIS_COMMS);
 		pidr = waitpid(pid, &i, 0);
 		assert(pidr == pid);
-		perror("Child failed on launch");
+		(void)VLU_Fd(child_std_vlu, child_output);
+		MGT_Complain(C_ERR, "Child failed on launch");
 		exit(1);		// XXX Harsh ?
 	} else {
 		assert(u == CLIS_OK);
 		fprintf(stderr, "Child launched OK\n");
 	}
-
-	child_std_vlu = VLU_New(child_line, NULL, 0);
-	AN(child_std_vlu);
 
 	AZ(ev_listen);
 	e = VEV_Alloc();
