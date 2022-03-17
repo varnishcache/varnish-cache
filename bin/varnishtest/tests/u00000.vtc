@@ -4,8 +4,7 @@ shell "varnishd -b None -C 2> ${tmpdir}/_.c"
 
 shell {
 	varnishd -n ${tmpdir}/no_keep -C -b None 2> no_keep.c
-	test -s no_keep.c && ! test -d no_keep || \
-	    (test -f no_keep/*/vgc.gcda || test -d no_keep/*/vgc.so.dSYM)
+	test -s no_keep.c && ! test -d no_keep || test -d no_keep/*/vgc.so.dSYM
 }
 
 shell {
