@@ -46,6 +46,10 @@
 #  error "include vdef.h before vrt.h"
 #endif
 
+#define VRT_MAJOR_VERSION	15U
+
+#define VRT_MINOR_VERSION	0U
+
 /***********************************************************************
  * Major and minor VRT API versions.
  *
@@ -248,10 +252,6 @@
  *	vrt_ctx grew .sp field.
  *	vrt_acl type added
  */
-
-#define VRT_MAJOR_VERSION	15U
-
-#define VRT_MINOR_VERSION	0U
 
 /***********************************************************************/
 
