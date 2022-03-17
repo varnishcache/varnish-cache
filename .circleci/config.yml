@@ -21,6 +21,10 @@ parameters:
         --enable-debugging-symbols \
         --disable-stack-protector \
         --with-persistent-storage \
+  build-pkgs:
+    type: string
+    default: ""
+
 jobs:
   dist:
     description: Build or download varnish-x.y.z.tar.gz that is used later for the packaging jobs
@@ -363,6 +367,10 @@ jobs:
 workflows:
   version: 2
   commit:
+    unless: &packaging_cond
+      or:
+        - << pipeline.parameters.build-pkgs >>
+        - << pipeline.parameters.dist-url >>
     jobs:
       - distcheck:
           name: distcheck_centos_7
@@ -404,15 +412,9 @@ workflows:
           name: distcheck_archlinux
           dist: archlinux
           release: base-devel
-  nightly:
-    triggers:
-      - schedule:
-          cron: "0 4 * * *"
-          filters:
-            branches:
-              only:
-                - master
-    jobs:
+  packaging:
+    when: *packaging_cond
+    jobs: &packaging_jobs
       - dist
       - tar_pkg_tools
       - package:
@@ -439,3 +441,12 @@ workflows:
       - collect_packages:
           requires:
             - package
+  nightly:
+    triggers:
+      - schedule:
+          cron: "0 4 * * *"
+          filters:
+            branches:
+              only:
+                - master
+    jobs: *packaging_jobs
