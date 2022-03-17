@@ -53,6 +53,11 @@
  * Whenever something is deleted or changed in a way which is not
  * binary/load-time compatible, increment MAJOR version
  *
+ * NEXT (2022-09-15)
+ *	VRT_AddVDP() deprecated
+ *	VRT_AddVFP() deprecated
+ *	VRT_RemoveVDP() deprecated
+ *	VRT_RemoveVFP() deprecated
  * 15.0 (2022-03-15)
  *	VRT_r_req_transport() added
  *	VRT_Assign_Backend() added

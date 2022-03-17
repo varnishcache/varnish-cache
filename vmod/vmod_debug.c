@@ -453,20 +453,17 @@ event_load(VRT_CTX, struct vmod_priv *priv)
 	priv->priv = priv_vcl;
 	priv->methods = priv_vcl_methods;
 
-	VRT_AddVFP(ctx, &xyzzy_vfp_rot13);
-	VRT_AddVDP(ctx, &xyzzy_vdp_rot13);
+	AZ(VRT_AddFilter(ctx, &xyzzy_vfp_rot13, &xyzzy_vdp_rot13));
 
 	// This should fail
 	AN(VRT_AddFilter(ctx, &xyzzy_vfp_rot13, &xyzzy_vdp_rot13));
 	// Reset the error, we know what we're doing.
 	*ctx->handling = 0;
 
-	VRT_RemoveVFP(ctx, &xyzzy_vfp_rot13);
-	VRT_RemoveVDP(ctx, &xyzzy_vdp_rot13);
-
+	VRT_RemoveFilter(ctx, &xyzzy_vfp_rot13, &xyzzy_vdp_rot13);
 	AZ(VRT_AddFilter(ctx, &xyzzy_vfp_rot13, &xyzzy_vdp_rot13));
 
-	VRT_AddVDP(ctx, &xyzzy_vdp_pedantic);
+	VRT_AddFilter(ctx, NULL, &xyzzy_vdp_pedantic);
 	return (0);
 }
 
@@ -629,7 +626,7 @@ event_discard(VRT_CTX, void *priv)
 	AZ(ctx->msg);
 
 	VRT_RemoveFilter(ctx, &xyzzy_vfp_rot13, &xyzzy_vdp_rot13);
-	VRT_RemoveVDP(ctx, &xyzzy_vdp_pedantic);
+	VRT_RemoveFilter(ctx, NULL, &xyzzy_vdp_pedantic);
 
 	if (--loads)
 		return (0);

@@ -93,9 +93,8 @@ enum vfp_status VFP_Suck(struct vfp_ctx *, void *p, ssize_t *lp);
 enum vfp_status VFP_Error(struct vfp_ctx *, const char *fmt, ...)
     v_printflike_(2, 3);
 
-/* These two deprecated per 2021-12-01, add v_deprecated_ after next major */
-void VRT_AddVFP(VRT_CTX, const struct vfp *);
-void VRT_RemoveVFP(VRT_CTX, const struct vfp *);
+void v_deprecated_ VRT_AddVFP(VRT_CTX, const struct vfp *);
+void v_deprecated_ VRT_RemoveVFP(VRT_CTX, const struct vfp *);
 
 /* Deliver processors ------------------------------------------------*/
 
@@ -152,9 +151,8 @@ struct vdp_ctx {
 
 int VDP_bytes(struct vdp_ctx *, enum vdp_action act, const void *, ssize_t);
 
-/* These two deprecated per 2021-12-01, add v_deprecated_ after next major */
-void VRT_AddVDP(VRT_CTX, const struct vdp *);
-void VRT_RemoveVDP(VRT_CTX, const struct vdp *);
+void v_deprecated_ VRT_AddVDP(VRT_CTX, const struct vdp *);
+void v_deprecated_ VRT_RemoveVDP(VRT_CTX, const struct vdp *);
 
 /* Registry functions -------------------------------------------------*/
 const char *VRT_AddFilter(VRT_CTX, const struct vfp *, const struct vdp *);
