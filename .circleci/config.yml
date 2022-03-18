@@ -393,10 +393,15 @@ workflows:
           name: distcheck_fedora_rawhide
           dist: fedora
           release: rawhide
+      # latest debian uses sanitizers
       - distcheck:
           name: distcheck_debian_buster
           dist: debian
           release: buster
+      - distcheck:
+          name: distcheck_debian_bullseye
+          dist: debian
+          release: bullseye
           extra_conf: --enable-asan --enable-ubsan --enable-workspace-emulator
       # oldest ubuntu goes 32bit
       - distcheck:
@@ -437,8 +442,8 @@ workflows:
                 - ubuntu:bionic
                 - ubuntu:focal
                 - ubuntu:jammy
-                - debian:bullseye
                 - debian:buster
+                - debian:bullseye
                 - debian:stretch
                 - centos:7
                 - centos:stream
