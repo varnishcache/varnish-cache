@@ -210,6 +210,10 @@ jobs:
       release:
         description: the release name (stretch|buster|bionic|focal)
         type: string
+      check:
+        description: the check to perform during the build
+        default: distcheck
+        type: string
       extra_conf:
         description: platform-specific configure arguments
         default: ""
@@ -343,7 +347,7 @@ jobs:
                 << parameters.extra_conf >>
             sudo -u varnish \
                 --preserve-env=ASAN_OPTIONS,LSAN_OPTIONS,TSAN_OPTIONS,UBSAN_OPTIONS \
-                make distcheck VERBOSE=1 -j 4 -k \
+                make << parameters.check >> VERBOSE=1 -j 4 -k \
                 DISTCHECK_CONFIGURE_FLAGS="<< pipeline.parameters.configure_args >> \
                 << parameters.extra_conf >>"
             '
@@ -385,10 +389,12 @@ workflows:
           name: distcheck_almalinux_8
           dist: almalinux
           release: "8"
+      # fedora is our witness
       - distcheck:
           name: distcheck_fedora_latest
           dist: fedora
           release: latest
+          check: witness
       - distcheck:
           name: distcheck_fedora_rawhide
           dist: fedora
