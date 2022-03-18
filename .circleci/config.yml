@@ -398,11 +398,20 @@ workflows:
           dist: debian
           release: buster
           extra_conf: --enable-asan --enable-ubsan --enable-workspace-emulator
+      # oldest ubuntu goes 32bit
       - distcheck:
           name: distcheck_ubuntu_bionic
           prefix: i386/
           dist: ubuntu
           release: bionic
+      - distcheck:
+          name: distcheck_ubuntu_focal
+          dist: ubuntu
+          release: focal
+      - distcheck:
+          name: distcheck_ubuntu_jammy
+          dist: ubuntu
+          release: jammy
       - distcheck:
           name: distcheck_alpine
           dist: alpine
@@ -427,6 +436,7 @@ workflows:
               platform:
                 - ubuntu:bionic
                 - ubuntu:focal
+                - ubuntu:jammy
                 - debian:bullseye
                 - debian:buster
                 - debian:stretch
