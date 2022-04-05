@@ -389,7 +389,7 @@ cmd_http_expect_pattern(CMD_ARGS)
 		if (*p != t)
 			vtc_fatal(hp->vl,
 			    "EXPECT PATTERN FAIL @%zd should 0x%02x is 0x%02x",
-			    p - hp->body, t, *p);
+			    (ssize_t) (p - hp->body), t, *p);
 		t += 1;
 		t &= ~0x08;
 	}
