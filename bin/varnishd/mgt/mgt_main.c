@@ -74,7 +74,7 @@ static char		*workdir;
 
 static struct vfil_path *vcl_path = NULL;
 
-static const char opt_spec[] = "?a:b:Cdf:Fh:i:I:j:l:M:n:P:p:r:S:s:T:t:VW:x:";
+static const char opt_spec[] = "?a:b:CdE:f:Fh:i:I:j:l:M:n:P:p:r:S:s:T:t:VW:x:";
 
 /*--------------------------------------------------------------------*/
 
@@ -123,6 +123,7 @@ usage(void)
 	printf(FMT, "-P file", "PID file");
 	printf(FMT, "-i identity", "Identity of varnish instance");
 	printf(FMT, "-I clifile", "Initialization CLI commands");
+	printf(FMT, "-E extension", "Load extension");
 
 	printf("\nTuning options:\n");
 
@@ -284,7 +285,9 @@ mgt_Cflag_atexit(void)
 	/* Only master process */
 	if (getpid() != heritage.mgt_pid)
 		return;
+	vext_cleanup();
 	VJ_rmdir("vmod_cache");
+	VJ_rmdir("vext_cache");
 	(void)chdir("/");
 	VJ_rmdir(workdir);
 }
@@ -660,6 +663,7 @@ main(int argc, char * const *argv)
 			W_arg = optarg;
 			break;
 		case 'a':
+		case 'E':
 		case 'f':
 		case 'I':
 		case 'p':
@@ -752,6 +756,9 @@ main(int argc, char * const *argv)
 			if (*alp->val != '\0')
 				alp->priv = mgt_f_read(alp->val);
 			break;
+		case 'E':
+			vext_argument(alp->val);
+			break;
 		case 'I':
 			VJ_master(JAIL_MASTER_FILE);
 			I_fd = open(alp->val, O_RDONLY);
@@ -821,11 +828,19 @@ main(int argc, char * const *argv)
 
 	VJ_master(JAIL_MASTER_SYSTEM);
 	AZ(system("rm -rf vmod_cache"));
+	AZ(system("rm -rf vext_cache"));
 	VJ_master(JAIL_MASTER_LOW);
 
 	if (VJ_make_subdir("vmod_cache", "VMOD cache", NULL)) {
 		ARGV_ERR(
 		    "Cannot create vmod directory (%s/vmod_cache): %s\n",
+		    workdir, VAS_errtxt(errno));
+	}
+
+	if (arg_list_count("E") &&
+	    VJ_make_subdir("vext_cache", "VMOD cache", NULL)) {
+		ARGV_ERR(
+		    "Cannot create vmod directory (%s/vext_cache): %s\n",
 		    workdir, VAS_errtxt(errno));
 	}
 
@@ -880,6 +895,8 @@ main(int argc, char * const *argv)
 		else if (!strcmp(alp->arg, "P"))
 			VPF_Write(alp->priv);
 	}
+
+	vext_copyin(vident);
 
 	AZ(VSB_finish(vident));
 
@@ -968,6 +985,10 @@ main(int argc, char * const *argv)
 	MGT_Complain(C_INFO, "manager dies");
 	mgt_cli_close_all();
 	VEV_Destroy(&mgt_evb);
+	VJ_master(JAIL_MASTER_SYSTEM);
+	vext_cleanup();
+	(void)rmdir("vext_cache");
+	VJ_master(JAIL_MASTER_LOW);
 	VTAILQ_FOREACH(alp, &arglist, list) {
 		if (!strcmp(alp->arg, "P"))
 			VPF_Remove(alp->priv);
