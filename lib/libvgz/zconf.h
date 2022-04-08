@@ -501,7 +501,6 @@ typedef uLong FAR uLongf;
 #endif
 
 #ifndef z_off_t
-# error "z_off_t missing"
 #  define z_off_t long
 #endif
 
