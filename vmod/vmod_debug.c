@@ -463,7 +463,7 @@ event_load(VRT_CTX, struct vmod_priv *priv)
 	VRT_RemoveFilter(ctx, &xyzzy_vfp_rot13, &xyzzy_vdp_rot13);
 	AZ(VRT_AddFilter(ctx, &xyzzy_vfp_rot13, &xyzzy_vdp_rot13));
 
-	VRT_AddFilter(ctx, NULL, &xyzzy_vdp_pedantic);
+	AZ(VRT_AddFilter(ctx, NULL, &xyzzy_vdp_pedantic));
 	return (0);
 }
 
