@@ -209,6 +209,17 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
  * return length or -1 on error
  */
 
+static int v_matchproto_(objiterate_f)
+httpq_req_body_discard(void *priv, unsigned flush, const void *ptr, ssize_t len)
+{
+
+	(void)priv;
+	(void)flush;
+	(void)ptr;
+	(void)len;
+	return (0);
+}
+
 ssize_t
 VRB_Iterate(struct worker *wrk, struct vsl_log *vsl,
     struct req *req, objiterate_f *func, void *priv)
@@ -258,17 +269,6 @@ VRB_Iterate(struct worker *wrk, struct vsl_log *vsl,
  * For HTTP1, we do nothing if we are going to close the connection anyway or
  * just iterate it into oblivion.
  */
-
-static int v_matchproto_(objiterate_f)
-httpq_req_body_discard(void *priv, unsigned flush, const void *ptr, ssize_t len)
-{
-
-	(void)priv;
-	(void)flush;
-	(void)ptr;
-	(void)len;
-	return (0);
-}
 
 int
 VRB_Ignore(struct req *req)
