@@ -108,10 +108,6 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 	yet = vmax_t(ssize_t, yet, 0);
 	do {
 		AZ(vfc->failed);
-		if (maxsize >= 0 && req_bodybytes > maxsize) {
-			(void)VFP_Error(vfc, "Request body too big to cache");
-			break;
-		}
 		l = yet;
 		if (VFP_GetStorage(vfc, &l, &ptr) != VFP_OK)
 			break;
@@ -133,7 +129,11 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 			}
 		}
 
-	} while (vfps == VFP_OK);
+	} while (vfps == VFP_OK && (maxsize < 0 || req_bodybytes < maxsize));
+
+	if (maxsize >= 0 && req_bodybytes > maxsize)
+		(void)VFP_Error(vfc, "Request body too big to cache");
+
 	req->acct.req_bodybytes += VFP_Close(vfc);
 	VSLb_ts_req(req, "ReqBody", VTIM_real());
 	if (func != NULL) {
