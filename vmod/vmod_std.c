@@ -239,11 +239,11 @@ vmod_timestamp(VRT_CTX, VCL_STRING label)
 }
 
 VCL_BOOL v_matchproto_(td_std_cache_req_body)
-vmod_cache_req_body(VRT_CTX, VCL_BYTES size)
+vmod_cache_req_body(VRT_CTX, VCL_BYTES size, VCL_BOOL partial)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	size = vmax_t(VCL_BYTES, size, 0);
-	if (VRT_CacheReqBody(ctx, (size_t)size, 0) < 0)
+	if (VRT_CacheReqBody(ctx, (size_t)size, partial) < 0)
 		return (0);
 	return (1);
 }

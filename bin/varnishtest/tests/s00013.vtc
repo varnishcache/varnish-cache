@@ -1,0 +1,111 @@
+varnishtest "partial std.cache_req_body()"
+
+barrier b1 sock 2
+barrier b2 sock 2
+
+server s1 {
+	# chunked with retry
+	close
+
+	accept
+	rxreq
+	expect req.http.transfer-encoding == chunked
+	expect req.bodylen == 150
+	txresp
+	expect_close
+
+	# straight with retry
+	accept
+	close
+
+	accept
+	rxreq
+	expect req.http.content-length == 19
+	expect req.bodylen == 19
+	expect req.body == "hello partial world"
+	txresp
+	expect_close
+
+	# chunked pipe
+	accept
+	rxreq
+	expect req.http.transfer-encoding == chunked
+	expect req.bodylen == 150
+	txresp
+	close
+
+	# straight pipe
+	accept
+	rxreq
+	expect req.http.content-length == 19
+	expect req.bodylen == 19
+	expect req.body == "hello partial world"
+	txresp
+} -start
+
+varnish v1 -cliok "param.set debug +syncvsl,+flush_head,+slow_bereq"
+varnish v1 -vcl+backend {
+	import std;
+	import vtc;
+
+	sub vcl_recv {
+		std.cache_req_body(10b, partial=true);
+	}
+
+	sub vcl_backend_fetch {
+		if (bereq.retries == 1) {
+			vtc.barrier_sync(bereq.http.barrier);
+		}
+		set bereq.http.connection = "close";
+	}
+
+	sub vcl_backend_error {
+		return (retry);
+	}
+} -start
+
+logexpect l1 -v v1 -i FetchError -g raw {
+	expect 0 1002 FetchError "Failed to send a partial req.body"
+	expect 0 1002 FetchError "backend write error"
+} -start
+
+client c1 {
+	txreq -method POST -nolen -hdr "transfer-encoding: chunked" \
+		-hdr "barrier: ${b1_sock}"
+	chunkedlen 100
+	barrier b1 sync
+	chunkedlen 50
+	chunkedlen 0
+	rxresp
+	expect resp.status == 200
+	expect resp.http.x-varnish == 1001
+
+	txreq -method POST -nolen -hdr "content-length: 19" \
+		-hdr "barrier: ${b2_sock}"
+	send "hello partial "
+	barrier b2 sync
+	send "world"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.x-varnish == 1004
+
+	txreq -method PIPE -nolen -hdr "transfer-encoding: chunked"
+	chunkedlen 100
+	chunkedlen 50
+	chunkedlen 0
+	rxresp
+	expect resp.status == 200
+	expect resp.http.x-varnish == <undef>
+	expect_close
+} -run
+
+client c2 {
+	txreq -method PIPE -nolen -hdr "content-length: 19"
+	send "hello partial world"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.x-varnish == <undef>
+} -run
+
+logexpect l1 -wait
+server s1 -wait

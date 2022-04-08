@@ -505,14 +505,18 @@ Example::
 	set req.http.My-Env = std.getenv("MY_ENV");
 
 
-$Function BOOL cache_req_body(BYTES size)
+$Function BOOL cache_req_body(BYTES size, BOOL partial = 0)
 
 Caches the request body if it is smaller than *size*.  Returns
 ``true`` if the body was cached, ``false`` otherwise.
 
 Normally the request body can only be sent once. Caching it enables
 retrying backend requests with a request body, as usually the case
-with ``POST`` and ``PUT``.
+with ``POST`` and ``PUT``. When the ``partial`` argument is ``true``,
+the request body may be larger than ``size`` and only up to ``size``
+bytes may be cached. This also enables retrying backend requests with
+a request body, unless request body bytes were consumed beyond the
+partial cached payload.
 
 Example::
 
