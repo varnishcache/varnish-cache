@@ -54,6 +54,8 @@ vbf_iter_req_body(void *priv, unsigned flush, const void *ptr, ssize_t l)
 	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
 
 	if (l > 0) {
+		if (DO_DEBUG(DBG_SLOW_BEREQ))
+			VTIM_sleep(1.0);
 		(void)V1L_Write(bo->wrk, ptr, l);
 		if (flush && V1L_Flush(bo->wrk) != SC_NULL)
 			return (-1);
