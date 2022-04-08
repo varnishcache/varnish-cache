@@ -111,6 +111,8 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 		    bo, vbf_iter_req_body, 0);
 	} else if (bo->req != NULL &&
 	    bo->req->req_body_status != BS_NONE) {
+		if (DO_DEBUG(DBG_FLUSH_HEAD))
+			(void)V1L_Flush(wrk);
 		if (do_chunked)
 			V1L_Chunked(wrk);
 		i = VRB_Iterate(wrk, bo->vsl, bo->req, vbf_iter_req_body, bo);
