@@ -94,7 +94,7 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 	hp = bo->bereq;
 
 	if (bo->req != NULL && !bo->req->req_body_status->length_known) {
-		http_PrintfHeader(hp, "Transfer-Encoding: chunked");
+		http_ForceHeader(hp, H_Transfer_Encoding, "chunked");
 		do_chunked = 1;
 	}
 
