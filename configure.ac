@@ -803,21 +803,40 @@ if test "$ac_cv_env_VCC_CC_set" = "set"; then
 	VCC_CC="$ac_cv_env_VCC_CC_value"
 else
 	case $target in
+	*-*-darwin*)
+		VCC_CC="cc $OCFLAGS"
+		;;
+	*)
+		VCC_CC="$PTHREAD_CC $OCFLAGS"
+		;;
+	esac
+
+	save_CFLAGS="$CFLAGS"
+	save_CC="$CC"
+	CFLAGS=
+	CC="$VCC_CC"
+	AX_CHECK_COMPILE_FLAG(
+		[-fno-var-tracking-assignments],
+		[VCC_CC="$VCC_CC -fno-var-tracking-assignments"])
+	CFLAGS="$save_CFLAGS"
+	CC="$save_CC"
+
+	case $target in
 	*-*-solaris*)
 		case $PTHREAD_CC in
 		*gcc*)
-			VCC_CC="exec $PTHREAD_CC $OCFLAGS %w $PTHREAD_CFLAGS -fpic -shared -o %o %s"
+			VCC_CC="exec $VCC_CC %w $PTHREAD_CFLAGS -fpic -shared -o %o %s"
 			;;
 		*cc)
-			VCC_CC="exec $PTHREAD_CC $OCFLAGS %w -errwarn=%%all,no%%E_STATEMENT_NOT_REACHED $PTHREAD_CFLAGS -Kpic -G -o %o %s"
+			VCC_CC="exec $VCC_CC %w -errwarn=%%all,no%%E_STATEMENT_NOT_REACHED $PTHREAD_CFLAGS -Kpic -G -o %o %s"
 			;;
 		esac
 		;;
 	*-*-darwin*)
-		VCC_CC="exec cc $OCFLAGS %w -dynamiclib -Wl,-undefined,dynamic_lookup -o %o %s"
+		VCC_CC="exec $VCC_CC %w -dynamiclib -Wl,-undefined,dynamic_lookup -o %o %s"
 		;;
 	*)
-		VCC_CC="exec $PTHREAD_CC $OCFLAGS %w $PTHREAD_CFLAGS $SAN_CFLAGS -fpic -shared -Wl,-x -o %o %s"
+		VCC_CC="exec $VCC_CC %w $PTHREAD_CFLAGS $SAN_CFLAGS -fpic -shared -Wl,-x -o %o %s"
 		;;
 	esac
 fi
