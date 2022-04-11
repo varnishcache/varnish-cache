@@ -806,10 +806,10 @@ else
 	*-*-solaris*)
 		case $PTHREAD_CC in
 		*gcc*)
-			VCC_CC="$PTHREAD_CC $OCFLAGS %w $PTHREAD_CFLAGS -fpic -shared -o %o %s"
+			VCC_CC="exec $PTHREAD_CC $OCFLAGS %w $PTHREAD_CFLAGS -fpic -shared -o %o %s"
 			;;
 		*cc)
-			VCC_CC="$PTHREAD_CC $OCFLAGS %w -errwarn=%%all,no%%E_STATEMENT_NOT_REACHED $PTHREAD_CFLAGS -Kpic -G -o %o %s"
+			VCC_CC="exec $PTHREAD_CC $OCFLAGS %w -errwarn=%%all,no%%E_STATEMENT_NOT_REACHED $PTHREAD_CFLAGS -Kpic -G -o %o %s"
 			;;
 		esac
 		;;
