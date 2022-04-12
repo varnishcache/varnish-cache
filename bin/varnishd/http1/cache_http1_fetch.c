@@ -119,7 +119,7 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 			V1L_Chunked(wrk);
 		i = VRB_Iterate(wrk, bo->vsl, bo->req, vbf_iter_req_body, bo);
 
-		if (bo->req->req_body_status != BS_CACHED)
+		if (!bo->req->req_body_cached)
 			bo->no_retry = "req.body not cached";
 
 		if (bo->req->req_body_status == BS_ERROR) {
