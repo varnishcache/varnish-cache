@@ -979,7 +979,7 @@ VRT_CacheReqBody(VRT_CTX, VCL_BYTES maxsize)
 		    "req.body can only be cached in vcl_recv{}");
 		return (-1);
 	}
-	return (VRB_Cache(ctx->req, maxsize));
+	return (VRB_Cache(ctx->req, maxsize, 0));
 }
 
 /*--------------------------------------------------------------------

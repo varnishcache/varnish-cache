@@ -288,7 +288,7 @@ vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo)
 	bo->ws_bo = WS_Snapshot(bo->ws);
 	HTTP_Clone(bo->bereq, bo->bereq0);
 
-	if (bo->req->req_body_cached) {
+	if (bo->req->req_body_cached && !bo->req->req_body_partial) {
 		AN(bo->req->body_oc);
 		bo->bereq_body = bo->req->body_oc;
 		HSH_Ref(bo->bereq_body);

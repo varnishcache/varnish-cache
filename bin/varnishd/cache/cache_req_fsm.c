@@ -896,6 +896,7 @@ cnt_recv_prep(struct req *req, const char *ci)
 		req->client_identity = NULL;
 		req->storage = NULL;
 		AZ(req->req_body_cached);
+		AZ(req->req_body_partial);
 	}
 
 	req->is_hit = 0;

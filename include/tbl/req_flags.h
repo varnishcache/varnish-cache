@@ -43,6 +43,7 @@ REQ_FLAG(waitinglist,		0, 0, "")
 REQ_FLAG(want100cont,		0, 0, "")
 REQ_FLAG(late100cont,		0, 0, "")
 REQ_FLAG(req_body_cached,	0, 0, "")
+REQ_FLAG(req_body_partial,	0, 0, "")
 #undef REQ_FLAG
 
 /*lint -restore */
