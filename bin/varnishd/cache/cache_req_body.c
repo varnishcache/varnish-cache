@@ -170,7 +170,7 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 		    (uintmax_t)req_bodybytes);
 	}
 
-	req->req_body_status = BS_CACHED;
+	req->req_body_cached = 1;
 	return (req_bodybytes);
 }
 
@@ -192,7 +192,7 @@ VRB_Iterate(struct worker *wrk, struct vsl_log *vsl,
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	AN(func);
 
-	if (req->req_body_status == BS_CACHED) {
+	if (req->req_body_cached) {
 		AN(req->body_oc);
 		if (ObjIterate(wrk, req->body_oc, priv, func, 0))
 			return (-1);
@@ -270,10 +270,13 @@ VRB_Free(struct req *req)
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-	if (req->body_oc == NULL)
+	if (req->body_oc == NULL) {
+		AZ(req->req_body_cached);
 		return;
+	}
 
 	r = HSH_DerefObjCore(req->wrk, &req->body_oc, 0);
+	req->req_body_cached = 0;
 
 	// each busyobj may have gained a reference
 	assert (r >= 0);
@@ -305,13 +308,13 @@ VRB_Cache(struct req *req, ssize_t maxsize)
 	 * where we know we will have no competition or conflicts for the
 	 * updates to req.http.* etc.
 	 */
-	if (req->restarts > 0 && req->req_body_status != BS_CACHED) {
+	if (req->restarts > 0 && !req->req_body_cached) {
 		VSLb(req->vsl, SLT_VCL_Error,
 		    "req.body must be cached before restarts");
 		return (-1);
 	}
 
-	if (req->req_body_status == BS_CACHED) {
+	if (req->req_body_cached) {
 		AZ(ObjGetU64(req->wrk, req->body_oc, OA_LEN, &u));
 		return (u);
 	}
