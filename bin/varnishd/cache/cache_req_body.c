@@ -44,6 +44,47 @@
 #include "hash/hash_slinger.h"
 
 /*----------------------------------------------------------------------
+ * Check and potentially update req framing headers.
+ */
+
+static ssize_t
+vrb_cached(struct req *req, ssize_t req_bodybytes)
+{
+	ssize_t l0, l;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	AZ(req->req_body_cached);
+	assert(req_bodybytes >= 0);
+
+	l0 = http_GetContentLength(req->http0);
+	l = http_GetContentLength(req->http);
+
+	assert(req->req_body_status->avail > 0);
+	if (req->req_body_status->length_known) {
+		assert(req_bodybytes == l0);
+		assert(req_bodybytes == l);
+		AZ(http_GetHdr(req->http0, H_Transfer_Encoding, NULL));
+		AZ(http_GetHdr(req->http, H_Transfer_Encoding, NULL));
+	} else {
+		/* We must update also the "pristine" req.* copy */
+		AZ(http_GetHdr(req->http0, H_Content_Length, NULL));
+		assert(l0 < 0);
+		http_Unset(req->http0, H_Transfer_Encoding);
+		http_PrintfHeader(req->http0, "Content-Length: %ju",
+		    (uintmax_t)req_bodybytes);
+
+		AZ(http_GetHdr(req->http, H_Content_Length, NULL));
+		assert(l < 0);
+		http_Unset(req->http, H_Transfer_Encoding);
+		http_PrintfHeader(req->http, "Content-Length: %ju",
+		    (uintmax_t)req_bodybytes);
+	}
+
+	req->req_body_cached = 1;
+	return (req_bodybytes);
+}
+
+/*----------------------------------------------------------------------
  * Pull the req.body in via/into a objcore
  *
  * This can be called only once per request
@@ -156,22 +197,7 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 		return (-1);
 	}
 
-	assert(req_bodybytes >= 0);
-	if (req_bodybytes != req->htc->content_length) {
-		/* We must update also the "pristine" req.* copy */
-		http_Unset(req->http0, H_Content_Length);
-		http_Unset(req->http0, H_Transfer_Encoding);
-		http_PrintfHeader(req->http0, "Content-Length: %ju",
-		    (uintmax_t)req_bodybytes);
-
-		http_Unset(req->http, H_Content_Length);
-		http_Unset(req->http, H_Transfer_Encoding);
-		http_PrintfHeader(req->http, "Content-Length: %ju",
-		    (uintmax_t)req_bodybytes);
-	}
-
-	req->req_body_cached = 1;
-	return (req_bodybytes);
+	return (vrb_cached(req, req_bodybytes));
 }
 
 /*----------------------------------------------------------------------
