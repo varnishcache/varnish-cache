@@ -1,9 +1,9 @@
-AC_PREREQ(2.69)
+AC_PREREQ([2.69])
 AC_COPYRIGHT([Copyright (c) 2006 Verdens Gang AS
 Copyright (c) 2006-2023 Varnish Software
 Copyright 2010-2023 UPLEX - Nils Goroll Systemoptimierung])
 AC_REVISION([$Id$])
-AC_INIT([Varnish], [trunk], [varnish-dev@varnish-cache.org])
+AC_INIT([Varnish],[trunk],[varnish-dev@varnish-cache.org])
 AC_CONFIG_SRCDIR(include/miniobj.h)
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -23,7 +23,7 @@ OCFLAGS="$CFLAGS"
 EXTCFLAGS="$CFLAGS"
 AC_SUBST(EXTCFLAGS)
 
-AC_CANONICAL_SYSTEM
+AC_CANONICAL_TARGET
 AC_LANG(C)
 
 AM_MAINTAINER_MODE([disable])
@@ -31,12 +31,13 @@ AM_INIT_AUTOMAKE([1.13 foreign color-tests parallel-tests subdir-objects])
 AM_EXTRA_RECURSIVE_TARGETS([recheck])
 AM_SILENT_RULES([yes])
 AC_DISABLE_STATIC
-AC_PROG_LIBTOOL
+LT_INIT
 
 # Checks for programs.
-AC_GNU_SOURCE
 AC_PROG_CC
-AC_PROG_CC_STDC
+# XXX remove the next line when AC_PREREQ >= 2.70 and
+# replace with check of $ac_prog_cc_stdc
+AC_PROG_CC_C99
 
 AX_PTHREAD(,[AC_MSG_ERROR([Could not configure pthreads support])])
 
@@ -106,7 +107,7 @@ AC_CHECK_HEADERS([umem.h])
 AC_CHECK_HEADERS([stdatomic.h])
 
 # XXX: This _may_ be for OS/X
-AC_CHECK_LIBM
+LT_LIB_M
 AC_SUBST(LIBM)
 
 m4_ifndef([PKG_PROG_PKG_CONFIG], [m4_fatal([pkg.m4 missing, please install pkg-config])])
@@ -211,7 +212,6 @@ AC_CHECK_HEADERS([ncursesw/curses.h ncursesw.h ncurses/curses.h ncurses.h curses
 CFLAGS="${save_CFLAGS}"
 
 # Checks for header files.
-AC_HEADER_STDC
 AC_CHECK_HEADERS([sys/endian.h])
 AC_CHECK_HEADERS([sys/filio.h])
 AC_CHECK_HEADERS([sys/mount.h], [], [], [#include <sys/param.h>])
