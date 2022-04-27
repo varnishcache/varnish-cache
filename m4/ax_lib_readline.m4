@@ -1,5 +1,5 @@
 # ===========================================================================
-#      http://www.gnu.org/software/autoconf-archive/ax_lib_readline.html
+#     https://www.gnu.org/software/autoconf-archive/ax_lib_readline.html
 # ===========================================================================
 #
 # SYNOPSIS
@@ -58,7 +58,7 @@
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 6
+#serial 8
 
 AU_ALIAS([VL_LIB_READLINE], [AX_LIB_READLINE])
 AC_DEFUN([AX_LIB_READLINE], [
@@ -73,7 +73,7 @@ AC_DEFUN([AX_LIB_READLINE], [
           TRY_LIB="-l$readline_lib -l$termcap_lib"
         fi
         LIBS="$ORIG_LIBS $TRY_LIB"
-        AC_TRY_LINK_FUNC(readline, ax_cv_lib_readline="$TRY_LIB")
+        AC_LINK_IFELSE([AC_LANG_CALL([], [readline])], [ax_cv_lib_readline="$TRY_LIB"])
         if test -n "$ax_cv_lib_readline"; then
           break
         fi
@@ -96,7 +96,7 @@ AC_DEFUN([AX_LIB_READLINE], [
     AC_CACHE_CHECK([whether readline supports history],
                    ax_cv_lib_readline_history, [
       ax_cv_lib_readline_history="no"
-      AC_TRY_LINK_FUNC(add_history, ax_cv_lib_readline_history="yes")
+      AC_LINK_IFELSE([AC_LANG_CALL([], [add_history])], [ax_cv_lib_readline_history="yes"])
     ])
     if test "$ax_cv_lib_readline_history" = "yes"; then
       AC_DEFINE(HAVE_READLINE_HISTORY, 1,
