@@ -144,7 +144,6 @@ smp_mgt_init(struct stevedore *parent, int ac, char * const *av)
 	struct smp_sign		sgn;
 	void *target;
 	int i, mmap_flags;
-	uintptr_t up;
 
 	ASSERT_MGT();
 
@@ -213,6 +212,7 @@ smp_mgt_init(struct stevedore *parent, int ac, char * const *av)
 		mmap_flags |= MAP_EXCL;
 #endif
 	} else {
+#ifdef __FreeBSD__
 		/*
 		 * I guess the people who came up with ASLR never learned
 		 * that virtual memory can have benficial uses, because they
@@ -222,11 +222,13 @@ smp_mgt_init(struct stevedore *parent, int ac, char * const *av)
 		 * can get away with just hacking something up: 16M below
 		 * the break seems to work on FreeBSD.
 		 */
+		uintptr_t up;
 		up = (uintptr_t)sbrk(0);
 		up -= 1ULL<<24;
 		up -= sc->mediasize;
 		up &= ~(getpagesize() - 1ULL);
 		target = (void *)up;
+#endif
 
 #ifdef MAP_ALIGNED_SUPER
 		mmap_flags |= MAP_ALIGNED_SUPER;
