@@ -143,7 +143,8 @@ smp_mgt_init(struct stevedore *parent, int ac, char * const *av)
 	struct smp_sc		*sc;
 	struct smp_sign		sgn;
 	void *target;
-	int i;
+	int i, mmap_flags;
+	uintptr_t up;
 
 	ASSERT_MGT();
 
@@ -205,12 +206,38 @@ smp_mgt_init(struct stevedore *parent, int ac, char * const *av)
 	else
 		target = NULL;
 
+	mmap_flags = MAP_NOCORE | MAP_NOSYNC | MAP_SHARED;
+	if (target) {
+		mmap_flags |= MAP_FIXED;
+#ifdef MAP_EXCL
+		mmap_flags |= MAP_EXCL;
+#endif
+	} else {
+		/*
+		 * I guess the people who came up with ASLR never learned
+		 * that virtual memory can have benficial uses, because they
+		 * added no facility for realiably and portably allocing
+		 * stable address-space.
+		 * This stevedore is only for testing these days, so we
+		 * can get away with just hacking something up: 16M below
+		 * the break seems to work on FreeBSD.
+		 */
+		up = (uintptr_t)sbrk(0);
+		up -= 1ULL<<24;
+		up -= sc->mediasize;
+		up &= ~(getpagesize() - 1ULL);
+		target = (void *)up;
+
+#ifdef MAP_ALIGNED_SUPER
+		mmap_flags |= MAP_ALIGNED_SUPER;
+#endif
+	}
 	sc->base = (void*)mmap(target, sc->mediasize, PROT_READ|PROT_WRITE,
-	    MAP_NOCORE | MAP_NOSYNC | MAP_SHARED, sc->fd, 0);
+	    mmap_flags, sc->fd, 0);
 
 	if (sc->base == MAP_FAILED)
-		ARGV_ERR("(-spersistent) failed to mmap (%s)\n",
-		    VAS_errtxt(errno));
+		ARGV_ERR("(-spersistent) failed to mmap (%s) @%p\n",
+		    VAS_errtxt(errno), target);
 	if (target != NULL && sc->base != target)
 		fprintf(stderr, "WARNING: Persistent silo lost to ASLR %s\n",
 		    sc->filename);
