@@ -2,6 +2,9 @@ varnishtest "Ban list sync across silos"
 
 feature persistent_storage
 
+# VM-remapping is too random on OSX
+feature cmd {test $(uname) != "Darwin"}
+
 shell "rm -f ${tmpdir}/_.per[12]"
 
 # Silo 1 & 2
