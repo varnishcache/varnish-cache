@@ -45,6 +45,7 @@
 #include "mgt/mgt_vcl.h"
 #include "common/heritage.h"
 #include "storage/storage.h"
+#include "compat/pathmax.h"
 
 #include "libvcc.h"
 #include "vcli_serve.h"

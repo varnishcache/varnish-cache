@@ -43,6 +43,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "compat/pathmax.h"
 #include "vtc.h"
 
 #include "vev.h"

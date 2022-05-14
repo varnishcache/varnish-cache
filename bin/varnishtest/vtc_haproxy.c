@@ -48,6 +48,8 @@
 #include "vsa.h"
 #include "vtim.h"
 
+#include "compat/pathmax.h"
+
 #define HAPROXY_PROGRAM_ENV_VAR	"HAPROXY_PROGRAM"
 #define HAPROXY_ARGS_ENV_VAR	"HAPROXY_ARGS"
 #define HAPROXY_OPT_WORKER	"-W"

@@ -55,6 +55,7 @@
 #  include <linux/magic.h>
 #endif
 
+#include "compat/pathmax.h"
 #include "vdef.h"
 
 #include "miniobj.h"
