@@ -105,10 +105,12 @@ static struct sock_opt {
 
 	SOCK_OPT(IPPROTO_TCP, TCP_NODELAY, int)
 
-#ifdef HAVE_TCP_KEEP
+#if defined(HAVE_TCP_KEEP)
 	SOCK_OPT(IPPROTO_TCP, TCP_KEEPIDLE, int)
 	SOCK_OPT(IPPROTO_TCP, TCP_KEEPCNT, int)
 	SOCK_OPT(IPPROTO_TCP, TCP_KEEPINTVL, int)
+#elif defined(HAVE_TCP_KEEPALIVE)
+	SOCK_OPT(IPPROTO_TCP, TCP_KEEPALIVE, int)
 #endif
 
 #undef SOCK_OPT
@@ -206,13 +208,16 @@ vca_sock_opt_init(void)
 		NEW_VAL(SO_RCVTIMEO, so, tv,
 		    VTIM_timeval(cache_param->timeout_idle));
 		SET_VAL(TCP_NODELAY, so, i, enable_tcp_nodelay);
-#ifdef HAVE_TCP_KEEP
+#if defined(HAVE_TCP_KEEP)
 		NEW_VAL(TCP_KEEPIDLE, so, i,
 		    (int)cache_param->tcp_keepalive_time);
 		NEW_VAL(TCP_KEEPCNT, so, i,
 		    (int)cache_param->tcp_keepalive_probes);
 		NEW_VAL(TCP_KEEPINTVL, so, i,
 		    (int)cache_param->tcp_keepalive_intvl);
+#elif defined(HAVE_TCP_KEEPALIVE)
+		NEW_VAL(TCP_KEEPALIVE, so, i,
+		    (int)cache_param->tcp_keepalive_time);
 #endif
 	}
 	return (chg);

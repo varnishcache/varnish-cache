@@ -49,7 +49,7 @@
 
 #include "vtcp.h"
 
-#ifdef HAVE_TCP_KEEP
+#if defined(HAVE_TCP_KEEP) || defined(HAVE_TCP_KEEPALIVE)
 
 static void
 tcp_probe(int sock, int nam, const char *param, unsigned def)
@@ -75,9 +75,13 @@ tcp_keep_probes(void)
 	if (err != NULL)
 		ARGV_ERR("Could not probe TCP keepalives: %s", err);
 	assert(s > 0);
+#ifdef HAVE_TCP_KEEP
 	tcp_probe(s, TCP_KEEPIDLE, "tcp_keepalive_time",	600);
 	tcp_probe(s, TCP_KEEPCNT, "tcp_keepalive_probes",	5);
 	tcp_probe(s, TCP_KEEPINTVL, "tcp_keepalive_intvl",	5);
+#else
+	tcp_probe(s, TCP_KEEPALIVE, "tcp_keepalive_time",	600);
+#endif
 	closefd(&s);
 }
 #endif
@@ -85,7 +89,7 @@ tcp_keep_probes(void)
 void
 MCF_TcpParams(void)
 {
-#ifdef HAVE_TCP_KEEP
+#if defined(HAVE_TCP_KEEP) || defined(HAVE_TCP_KEEPALIVE)
 	tcp_keep_probes();
 #endif
 }
