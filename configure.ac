@@ -589,6 +589,32 @@ return (0);
   ])
 if test "$ac_cv_have_tcp_keep" = yes; then
    AC_DEFINE([HAVE_TCP_KEEP], [1], [Define if OS supports TCP_KEEP* socket options])
+else
+   # Check TCP_KEEPALIVE on macOs which uses seconds as idle time unit like TCP_KEEPIDLE
+   AC_CACHE_CHECK([for TCP_KEEPALIVE socket option],
+     [ac_cv_have_tcp_keepalive],
+     [AC_RUN_IFELSE(
+     [AC_LANG_PROGRAM([[
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <errno.h>
+    ]],[[
+int s = socket(AF_INET, SOCK_STREAM, 0);
+int i = 5;
+if (s < 0)
+  return (1);
+if (setsockopt(s, IPPROTO_TCP, TCP_KEEPALIVE, &i, sizeof i))
+  return (1);
+return 0;
+    ]])],
+    [ac_cv_have_tcp_keepalive=yes],
+    [ac_cv_have_tcp_keepalive=no])
+  ])
+  if test "$ac_cv_have_tcp_keepalive" = yes; then
+     AC_DEFINE([HAVE_TCP_KEEPALIVE], [1], [Define if OS supports TCP_KEEPALIVE socket option])
+  fi
 fi
 LIBS="${save_LIBS}"
 
