@@ -57,10 +57,17 @@ one IPv4 and one IPv6 address::
 
     .host = "example.com:8081";
 
-The TCP port number can be specified as part of ``.host`` as above
-or separately using the ``.port`` attribute::
+    .host = "example.com:http";
 
-    .port = 8081;
+Attribute ``.port``
+-------------------
+
+The TCP port number or service name can be specified as part of
+``.host`` as above or separately using the ``.port`` attribute::
+
+    .port = "8081";
+
+    .port = "http";
 
 Attribute ``.path``
 -------------------
