@@ -150,6 +150,58 @@ more tight, maybe relying on the ``==`` operator in stead, like this::
     }
 
 
+Connecting Through a Proxy
+--------------------------
+
+.. _PROXY2: https://raw.githubusercontent.com/haproxy/haproxy/master/doc/proxy-protocol.txt
+.. _haproxy: http://www.haproxy.org/
+.. _SNI: https://en.wikipedia.org/wiki/Server_Name_Indication
+
+As of this release, Varnish can connect to an actual *destination*
+through a *proxy* using the `PROXY2`_ protocol. Other protocols may be
+added.
+
+For now, a typical use case of this feature is to make TLS-encrypted
+connections through a TLS *onloader*. The *onloader* needs to support
+dynamic connections with the destination address information taken
+from a `PROXY2`_ preamble. For example with `haproxy`_ Version 2.2 or
+higher, this snippet can be used as a basis for configuring an
+*onloader*::
+
+     # to review and adjust:
+     # - maxconn
+     # - bind ... mode ...
+     # - ca-file ...
+     #
+     listen sslon
+            mode    tcp
+            maxconn 1000
+            bind    /path/to/sslon accept-proxy mode 777
+            stick-table type ip size 100
+            stick   on dst
+            server  s00 0.0.0.0:443 ssl ca-file /etc/ssl/certs/ca-bundle.crt alpn http/1.1 sni fc_pp_authority
+            server  s01 0.0.0.0:443 ssl ca-file /etc/ssl/certs/ca-bundle.crt alpn http/1.1 sni fc_pp_authority
+            server  s02 0.0.0.0:443 ssl ca-file /etc/ssl/certs/ca-bundle.crt alpn http/1.1 sni fc_pp_authority
+            # ...
+            # A higher number of servers improves TLS session caching
+
+Varnish running on the same server/namespace can then use the
+*onloader* with the ``.via`` feature (see :ref:`backend_definition_via`)::
+
+  backend sslon {
+    .path = "/path/to/sslon";
+  }
+
+  backend destination {
+    .host = "my.https.service";
+    .port = "443";
+    .via = sslon;
+  }
+
+The ``.authority`` attribute can be used to specify the `SNI`_ for the
+connection if it differs from ``.host``.
+
+
 .. _users-guide-advanced_backend_servers-directors:
 
 
