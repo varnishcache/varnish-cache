@@ -57,10 +57,18 @@ delay .1
 
 server s1 {
 	rxreq
+	expect req.bodylen == 3
+	txresp
+
+	rxreq
 	txresp
 } -start
 
 client c3 {
+	txreq -req POST -body FOO
+	rxresp
+	expect resp.http.stored == true
+
 	txreq -url "/is_varnish_still_running"
 	rxresp
 	expect resp.status == 200
