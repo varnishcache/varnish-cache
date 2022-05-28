@@ -96,7 +96,7 @@ v1f_read(const struct vfp_ctx *vc, struct http_conn *htc, void *d, ssize_t len)
  */
 
 static enum vfp_status v_matchproto_(vfp_pull_f)
-v1f_pull_chunked(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
+v1f_chunked_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
     ssize_t *lp)
 {
 	struct http_conn *htc;
@@ -185,14 +185,14 @@ v1f_pull_chunked(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
 
 static const struct vfp v1f_chunked = {
 	.name = "V1F_CHUNKED",
-	.pull = v1f_pull_chunked,
+	.pull = v1f_chunked_pull,
 };
 
 
 /*--------------------------------------------------------------------*/
 
 static enum vfp_status v_matchproto_(vfp_pull_f)
-v1f_pull_straight(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
+v1f_straight_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
     ssize_t *lp)
 {
 	ssize_t l, lr;
@@ -222,13 +222,13 @@ v1f_pull_straight(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 
 static const struct vfp v1f_straight = {
 	.name = "V1F_STRAIGHT",
-	.pull = v1f_pull_straight,
+	.pull = v1f_straight_pull,
 };
 
 /*--------------------------------------------------------------------*/
 
 static enum vfp_status v_matchproto_(vfp_pull_f)
-v1f_pull_eof(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p, ssize_t *lp)
+v1f_eof_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p, ssize_t *lp)
 {
 	ssize_t l, lr;
 	struct http_conn *htc;
@@ -253,7 +253,7 @@ v1f_pull_eof(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p, ssize_t *lp)
 
 static const struct vfp v1f_eof = {
 	.name = "V1F_EOF",
-	.pull = v1f_pull_eof,
+	.pull = v1f_eof_pull,
 };
 
 /*--------------------------------------------------------------------
