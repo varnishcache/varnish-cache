@@ -4,9 +4,8 @@ server s1 {
 	rxreq
 	expect req.bodylen == 106
 	txresp -body "ABCD"
-	rxreq
-	expect req.bodylen == 108
-	txresp -body "ABCDE"
+	# the second request fails on the client side and
+	# does not reach the backend
 } -start
 
 varnish v1 -vcl+backend {
