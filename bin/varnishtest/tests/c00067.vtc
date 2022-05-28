@@ -4,7 +4,18 @@ server s1 {
 	rxreq
 	expect req.bodylen == 106
 	txresp -body "ABCD"
-	# the second request fails on the client side and
+
+	rxreq
+	expect req.url == "/2"
+	expect req.bodylen == 109
+	txresp -body "ABCDE"
+
+	rxreq
+	expect req.url == "/3"
+	expect req.bodylen == 110
+	txresp -body "ABCDEF"
+
+	# the last request fails on the client side and
 	# does not reach the backend
 } -start
 
@@ -38,10 +49,51 @@ varnish v1 -vcl+backend {
 	}
 }
 
+logexpect l2 -v v1 -g vxid -q {ReqURL ~ "^/2"} {
+	expect * * ReqUnset        {^Transfer-encoding: chunked}
+	expect 0 = ReqHeader       {^Content-Length: 109}
+	expect * = ReqAcct         {^65 109 }
+} -start
+
+logexpect l3 -v v1 -g vxid -q {ReqURL ~ "^/3"} {
+	expect * * ReqUnset        {^Transfer-encoding: chunked}
+	expect 0 = ReqHeader       {^Content-Length: 110}
+	expect * = ReqAcct         {^65 110 }
+} -start
+
+logexpect l4 -v v1 -g vxid -q {ReqURL ~ "^/4"} {
+	expect * * FetchError      {^Request body too big to cache}
+	expect * = ReqAcct         {^65 111 }
+} -start
+
 client c1 {
-	txreq -req POST -nolen -hdr "Transfer-encoding: chunked"
-	chunked {BLAS}
+	txreq -url "/2" -req POST -nolen -hdr "Transfer-encoding: chunked"
+	chunkedlen 50
 	delay .2
-	chunkedlen 110
+	chunkedlen 59
+	delay .2
+	chunkedlen 0
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 5
+
+	txreq -url "/3" -req POST -nolen -hdr "Transfer-encoding: chunked"
+	chunkedlen 50
+	delay .2
+	chunkedlen 60
+	delay .2
+	chunkedlen 0
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 6
+
+	txreq -url "/4" -req POST -nolen -hdr "Transfer-encoding: chunked"
+	chunked {BLAST}
+	delay .2
+	chunkedlen 106
 	expect_close
 } -run
+
+logexpect l2 -wait
+logexpect l3 -wait
+logexpect l4 -wait
