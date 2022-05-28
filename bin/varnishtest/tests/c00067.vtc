@@ -52,18 +52,18 @@ varnish v1 -vcl+backend {
 logexpect l2 -v v1 -g vxid -q {ReqURL ~ "^/2"} {
 	expect * * ReqUnset        {^Transfer-encoding: chunked}
 	expect 0 = ReqHeader       {^Content-Length: 109}
-	expect * = ReqAcct         {^65 109 }
+	expect * = ReqAcct         {^\d+ 109 }
 } -start
 
 logexpect l3 -v v1 -g vxid -q {ReqURL ~ "^/3"} {
 	expect * * ReqUnset        {^Transfer-encoding: chunked}
 	expect 0 = ReqHeader       {^Content-Length: 110}
-	expect * = ReqAcct         {^65 110 }
+	expect * = ReqAcct         {^\d+ 110 }
 } -start
 
 logexpect l4 -v v1 -g vxid -q {ReqURL ~ "^/4"} {
 	expect * * FetchError      {^Request body too big to cache}
-	expect * = ReqAcct         {^65 111 }
+	expect * = ReqAcct         {^\d+ 111 }
 } -start
 
 client c1 {
