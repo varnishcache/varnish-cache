@@ -40,7 +40,7 @@ enum vfp_status {
 	VFP_ERROR = -1,
 	VFP_OK = 0,
 	VFP_END = 1,
-	VFP_NULL = 2,
+	VFP_NULL = 2,	// signal bypass, never returned by VFP_Suck()
 };
 
 typedef enum vfp_status vfp_init_f(VRT_CTX, struct vfp_ctx *,
