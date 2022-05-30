@@ -46,6 +46,7 @@ vcc_Var_Wildcard(struct vcc *tl, struct symbol *parent, struct symbol *sym)
 	struct vsb *vsb;
 	const char *p;
 
+	AN(sym);
 	assert(parent->type == HEADER);
 
 	if (strlen(sym->name) >= 127) {
@@ -65,11 +66,11 @@ vcc_Var_Wildcard(struct vcc *tl, struct symbol *parent, struct symbol *sym)
 		}
 	}
 
-	AN(sym);
 	sym->noref = 1;
 	sym->kind = SYM_VAR;
 	sym->type = parent->type;
 	sym->eval = vcc_Eval_Var;
+	sym->eval_priv = parent;
 	sym->r_methods = parent->r_methods;
 	sym->w_methods = parent->w_methods;
 	sym->u_methods = parent->u_methods;
