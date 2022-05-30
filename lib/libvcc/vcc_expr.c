@@ -379,6 +379,19 @@ vcc_Eval_Var(struct vcc *tl, struct expr **e, struct token *t,
 		(*e)->fmt = STRINGS;
 }
 
+void v_matchproto_(sym_expr_t)
+vcc_Eval_ProtectedHeader(struct vcc *tl, struct expr **e, struct token *t,
+    struct symbol *sym, vcc_type_t type)
+{
+
+	AN(sym);
+	AZ(sym->lorev);
+
+	vcc_Header_Fh(tl, sym);
+	sym->eval = vcc_Eval_Var;
+	vcc_Eval_Var(tl, e, t, sym, type);
+}
+
 /*--------------------------------------------------------------------
  */
 

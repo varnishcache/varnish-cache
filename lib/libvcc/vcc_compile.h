@@ -355,6 +355,7 @@ sym_act_f vcc_Act_Call;
 sym_act_f vcc_Act_Obj;
 void vcc_Expr_Init(struct vcc *tl);
 sym_expr_t vcc_Eval_Var;
+sym_expr_t vcc_Eval_ProtectedHeader;
 sym_expr_t vcc_Eval_Handle;
 sym_expr_t vcc_Eval_Sub;
 sym_expr_t vcc_Eval_SymFunc;
@@ -455,6 +456,7 @@ char *vcc_Dup_be(const char *b, const char *e);
 int vcc_Has_vcl_prefix(const char *b);
 
 /* vcc_var.c */
+void vcc_Header_Fh(struct vcc *, struct symbol *);
 sym_wildcard_t vcc_Var_Wildcard;
 
 /* vcc_vmod.c */

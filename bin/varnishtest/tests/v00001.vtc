@@ -20,6 +20,16 @@ varnish v1 -errvcl "Variable is read only" {
 	sub vcl_backend_response { set beresp.proto = "HTTP/1.2"; }
 }
 
+varnish v1 -errvcl "Variable is read only" {
+	backend proforma None;
+	sub vcl_recv { set req.http.content-length = "42"; }
+}
+
+varnish v1 -errvcl "Variable cannot be unset" {
+	backend proforma None;
+	sub vcl_recv { unset req.http.content-length; }
+}
+
 server s1 {
 	rxreq
 	txresp -hdr "Connection: close" -body "012345\n"

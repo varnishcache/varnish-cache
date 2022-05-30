@@ -438,6 +438,7 @@ VCC_MkSym(struct vcc *tl, const char *b, vcc_ns_t ns, vcc_kind_t kind,
 {
 	struct symtab *st;
 	struct symbol *sym;
+	const struct symbol *parent;
 
 	AN(tl);
 	AN(b);
@@ -450,6 +451,14 @@ VCC_MkSym(struct vcc *tl, const char *b, vcc_ns_t ns, vcc_kind_t kind,
 	st = vcc_symtab_str(tl->syms[ns->id], b, NULL, ID);
 	AN(st);
 	sym = vcc_sym_in_tab(tl, st, kind, vlo, vhi);
+	if (sym != NULL) {
+		assert(sym->kind == SYM_VAR);
+		parent = sym->eval_priv;
+		AN(parent);
+		AN(parent->wildcard);
+		assert(sym->type == parent->type);
+		return (sym);
+	}
 	AZ(sym);
 	sym = vcc_new_symbol(tl, st, kind, vlo, vhi);
 	AN(sym);
