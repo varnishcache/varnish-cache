@@ -88,13 +88,19 @@ vcc_Var_Wildcard(struct vcc *tl, struct symbol *parent, struct symbol *sym)
 
 	/* Create the symbol r/l values */
 	sym->rname = TlDup(tl, VSB_data(vsb));
-	VSB_clear(vsb);
-	VSB_printf(vsb, "VRT_SetHdr(ctx, %s,", sym->rname);
-	AZ(VSB_finish(vsb));
-	sym->lname = TlDup(tl, VSB_data(vsb));
-	VSB_clear(vsb);
-	VSB_printf(vsb, "VRT_UnsetHdr(ctx, %s)", sym->rname);
-	AZ(VSB_finish(vsb));
-	sym->uname = TlDup(tl, VSB_data(vsb));
+
+	if (sym->w_methods) {
+		VSB_clear(vsb);
+		VSB_printf(vsb, "VRT_SetHdr(ctx, %s,", sym->rname);
+		AZ(VSB_finish(vsb));
+		sym->lname = TlDup(tl, VSB_data(vsb));
+	}
+
+	if (sym->u_methods) {
+		VSB_clear(vsb);
+		VSB_printf(vsb, "VRT_UnsetHdr(ctx, %s)", sym->rname);
+		AZ(VSB_finish(vsb));
+		sym->uname = TlDup(tl, VSB_data(vsb));
+	}
 	VSB_destroy(&vsb);
 }
