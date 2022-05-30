@@ -40,6 +40,29 @@
 
 /*--------------------------------------------------------------------*/
 
+static void
+vcc_Header_Fh(struct vcc *tl, struct symbol *sym)
+{
+	const struct symbol *parent;
+
+	AN(tl);
+	AN(sym);
+	AZ(sym->wildcard);
+	assert(sym->type == HEADER);
+
+	parent = sym->eval_priv;
+	AN(parent);
+	AN(parent->wildcard);
+	assert(parent->type == HEADER);
+
+	/* Create the static identifier */
+	Fh(tl, 0, "static const struct gethdr_s %s =\n", sym->rname + 1);
+	Fh(tl, 0, "    { %s, \"\\%03o%s:\"};\n",
+	    parent->rname, (unsigned int)strlen(sym->name) + 1, sym->name);
+}
+
+/*--------------------------------------------------------------------*/
+
 void v_matchproto_(sym_wildcard_t)
 vcc_Var_Wildcard(struct vcc *tl, struct symbol *parent, struct symbol *sym)
 {
@@ -82,11 +105,6 @@ vcc_Var_Wildcard(struct vcc *tl, struct symbol *parent, struct symbol *sym)
 	VCC_PrintCName(vsb, sym->name, NULL);
 	AZ(VSB_finish(vsb));
 
-	/* Create the static identifier */
-	Fh(tl, 0, "static const struct gethdr_s %s =\n", VSB_data(vsb) + 1);
-	Fh(tl, 0, "    { %s, \"\\%03o%s:\"};\n",
-	    parent->rname, (unsigned int)strlen(sym->name) + 1, sym->name);
-
 	/* Create the symbol r/l values */
 	sym->rname = TlDup(tl, VSB_data(vsb));
 
@@ -104,4 +122,6 @@ vcc_Var_Wildcard(struct vcc *tl, struct symbol *parent, struct symbol *sym)
 		sym->uname = TlDup(tl, VSB_data(vsb));
 	}
 	VSB_destroy(&vsb);
+
+	vcc_Header_Fh(tl, sym);
 }
