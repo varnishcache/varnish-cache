@@ -133,9 +133,18 @@ def varproto(s):
         fh.write(s + ";\n")
         varprotos[s] = True
 
+def var_is_wildcard(sym):
+    return sym[-2:] == '.*'
+
+def var_symbol_name(sym):
+    if var_is_wildcard(sym):
+        return sym[:-2]
+    return sym
+
 class vardef(object):
-    def __init__(self, nam, typ, rd, wr, wu, al, vlo, vhi):
-        self.nam = nam
+    def __init__(self, sym, typ, rd, wr, wu, al, vlo, vhi):
+        self.sym = sym
+        self.nam = var_symbol_name(sym)
         self.typ = typ
         self.rd = rd
         self.wr = wr
@@ -157,7 +166,7 @@ class vardef(object):
 
         # fo.write("\t{ \"%s\", %s,\n" % (nm, self.typ))
         fo.write("\tsym = VCC_MkSym(tl, \"%s\", SYM_MAIN," % self.nam)
-        if self.typ == "HEADER":
+        if var_is_wildcard(self.sym):
             fo.write(" SYM_NONE, %d, %d);\n" % (self.vlo, self.vhi))
             fo.write("\tAN(sym);\n")
             fo.write("\tsym->wildcard = vcc_Var_Wildcard;\n")
@@ -225,8 +234,6 @@ def parse_var(ln):
     l1 = ln.pop(0).split("``")
     assert len(l1) in (1, 3)
     vn = l1[0].strip()
-    if vn[-2:] == '.*':
-        vn = vn[:-2]
     if len(l1) == 3:
         vlo, vhi = parse_vcl(l1[1])
     else:
