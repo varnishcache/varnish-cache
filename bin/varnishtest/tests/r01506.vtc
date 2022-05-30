@@ -7,15 +7,15 @@ server s0 {
 	txresp -nolen \
 	    -hdr "Transfer-Encoding: chunked" \
 	    -hdr "Connection: close"
-	send "11\r\n0_23456789abcdef\n"
-	send "11\r\n1_23456789abcdef\n"
-	send "11\r\n2_23456789abcdef\n"
-	send "11\r\n3_23456789abcdef\n"
+	send "11\r\n0_23456789abcdef\n\n"
+	send "11\r\n1_23456789abcdef\n\n"
+	send "11\r\n2_23456789abcdef\n\n"
+	send "11\r\n3_23456789abcdef\n\n"
 	barrier b1 sync
-	send "11\r\n4_23456789abcdef\n"
-	send "11\r\n5_23456789abcdef\n"
-	send "11\r\n6_23456789abcdef\n"
-	send "11\r\n7_23456789abcdef\n"
+	send "11\r\n4_23456789abcdef\n\n"
+	send "11\r\n5_23456789abcdef\n\n"
+	send "11\r\n6_23456789abcdef\n\n"
+	send "11\r\n7_23456789abcdef\n\n"
 	chunkedlen 0
 
 } -dispatch
