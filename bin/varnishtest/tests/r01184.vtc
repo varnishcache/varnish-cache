@@ -62,6 +62,7 @@ server s1 {
 		sendhex " 10 45 f3 a9 83 b8 18 1c  7b c2 30 55 04 17 13 c4"
 		sendhex " 0f 07 5f 7a 38 f4 8e 50  b3 37 d4 3a 32 4a 34 07"
 		sendhex " FF FF FF FF FF FF FF FF  72 ea 06 5f b3 1c fa dd"
+	send "\n"
 	expect_close
 } -start
 
@@ -93,6 +94,7 @@ server s1 {
 		sendhex " 10 45 f3 a9 83 b8 18 1c  7b c2 30 55 04 17 13 c4"
 		sendhex " 0f 07 5f 7a 38 f4 8e 50  b3 37 d4 3a 32 4a 34 07"
 		sendhex " FF FF FF FF FF FF FF FF  72 ea 06 5f b3 1c fa dd"
+	send "\n"
 	expect_close
 } -start
 
