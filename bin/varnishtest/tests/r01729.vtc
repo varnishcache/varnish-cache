@@ -11,7 +11,7 @@ server s1 {
 	send "\r\n"
 	send "14\r\n"
 	send "0123456789"
-	send "0123456789"
+	send "0123456789\n"
 	send "0\r\n"
 	send "\r\n"
 
@@ -29,7 +29,7 @@ client c1 {
 	send "\r\n"
 	send "14\r\n"
 	send "0123456789"
-	send "0123456789"
+	send "0123456789\n"
 	send "0\r\n"
 	send "\r\n"
 
@@ -45,7 +45,7 @@ client c1 {
 	send "\r\n"
 	send "14\r\n"
 	send "0123456789"
-	send "0123456789"
+	send "0123456789\n"
 	send "0\r\n"
 	send "\r\n"
 

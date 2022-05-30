@@ -90,6 +90,24 @@ v1f_read(const struct vfp_ctx *vc, struct http_conn *htc, void *d, ssize_t len)
 
 
 /*--------------------------------------------------------------------
+ * read (CR)?LF at the end of a chunk
+ */
+static enum vfp_status
+v1f_chunk_end(struct vfp_ctx *vc, struct http_conn *htc)
+{
+	char c;
+
+	if (v1f_read(vc, htc, &c, 1) <= 0)
+		return (VFP_Error(vc, "chunked read err"));
+	if (c == '\r' && v1f_read(vc, htc, &c, 1) <= 0)
+		return (VFP_Error(vc, "chunked read err"));
+	if (c != '\n')
+		return (VFP_Error(vc, "chunked tail no NL"));
+	return (VFP_OK);
+}
+
+
+/*--------------------------------------------------------------------
  * Read a chunked HTTP object.
  *
  * XXX: Reading one byte at a time is pretty pessimal.
@@ -99,6 +117,7 @@ static enum vfp_status v_matchproto_(vfp_pull_f)
 v1f_chunked_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
     ssize_t *lp)
 {
+	static enum vfp_status vfps;
 	struct http_conn *htc;
 	char buf[20];		/* XXX: 20 is arbitrary */
 	char *q;
@@ -168,18 +187,15 @@ v1f_chunked_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
 			return (VFP_Error(vc, "chunked insufficient bytes"));
 		*lp = lr;
 		vfe->priv2 -= lr;
-		if (vfe->priv2 == 0)
-			vfe->priv2 = -1;
-		return (VFP_OK);
+		if (vfe->priv2 != 0)
+			return (VFP_OK);
+
+		vfe->priv2 = -1;
+		return (v1f_chunk_end(vc, htc));
 	}
 	AZ(vfe->priv2);
-	if (v1f_read(vc, htc, buf, 1) <= 0)
-		return (VFP_Error(vc, "chunked read err"));
-	if (buf[0] == '\r' && v1f_read(vc, htc, buf, 1) <= 0)
-		return (VFP_Error(vc, "chunked read err"));
-	if (buf[0] != '\n')
-		return (VFP_Error(vc, "chunked tail no NL"));
-	return (VFP_END);
+	vfps = v1f_chunk_end(vc, htc);
+	return (vfps == VFP_OK ? VFP_END : vfps);
 }
 
 static const struct vfp v1f_chunked = {
