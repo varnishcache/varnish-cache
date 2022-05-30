@@ -77,7 +77,8 @@ client c1 {
 	# Fetch the vampire object and see how that goes...
 	txreq -url "/1"
 	rxresp
-	expect resp.bodylen == 48
+	expect resp.bodylen >= 48
+	expect resp.bodylen <= 64
 } -run
 
 varnish v1 -expectexit 0x40
