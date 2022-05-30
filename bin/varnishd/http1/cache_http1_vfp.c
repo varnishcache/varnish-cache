@@ -38,6 +38,7 @@
 #include "config.h"
 
 #include <inttypes.h>
+#include <poll.h>
 
 #include "cache/cache_varnishd.h"
 #include "cache/cache_filter.h"
@@ -176,6 +177,37 @@ v1f_chunked_hdr(struct vfp_ctx *vc, struct http_conn *htc, ssize_t *szp)
 
 
 /*--------------------------------------------------------------------
+ * Check if data is available
+ */
+
+static int
+v1f_poll(struct http_conn *htc)
+{
+	struct pollfd pfd[1];
+	int r;
+
+	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+
+	if (htc->pipeline_b)
+		return (1);
+
+	pfd->fd = *htc->rfd;
+	pfd->events = POLLIN;
+
+	r = poll(pfd, 1, 0);
+	if (r < 0) {
+		assert(errno == EINTR);
+		return (0);
+	}
+	if (r == 0)
+		return (0);
+	assert(r == 1);
+	assert(pfd->revents & POLLIN);
+	return (1);
+}
+
+
+/*--------------------------------------------------------------------
  * Read a chunked HTTP object.
  *
  */
@@ -213,7 +245,20 @@ v1f_chunked_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
 			return (VFP_OK);
 
 		vfe->priv2 = -1;
-		return (v1f_chunk_end(vc, htc));
+
+		vfps = v1f_chunk_end(vc, htc);
+		if (vfps != VFP_OK)
+			return (vfps);
+
+		/* only if some data of the next chunk header is available, read
+		 * it to check if we can return VFP_END */
+		if (! v1f_poll(htc))
+			return (VFP_OK);
+		vfps = v1f_chunked_hdr(vc, htc, &vfe->priv2);
+		if (vfps != VFP_OK)
+			return (vfps);
+		if (vfe->priv2 != 0)
+			return (VFP_OK);
 	}
 	AZ(vfe->priv2);
 	vfps = v1f_chunk_end(vc, htc);
