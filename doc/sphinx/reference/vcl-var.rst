@@ -35,6 +35,18 @@ and ``vcl_fini {}``.
 
 .. include:: vcl_var.rst
 
+.. _protected_headers:
+
+Protected header fields
+-----------------------
+
+The ``content-length`` and ``transfer-encoding`` headers are read-only. They
+must be preserved to ensure HTTP/1 framing remains consistent and maintain a
+proper request and response synchronization with both clients and backends.
+
+VMODs can still update these headers, when there is a reason to change the
+framing, such as a transformation of a request or response body.
+
 HTTP response status
 --------------------
 

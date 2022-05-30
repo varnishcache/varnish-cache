@@ -40,7 +40,7 @@
 
 /*--------------------------------------------------------------------*/
 
-static void
+void
 vcc_Header_Fh(struct vcc *tl, struct symbol *sym)
 {
 	const struct symbol *parent;
@@ -123,5 +123,6 @@ vcc_Var_Wildcard(struct vcc *tl, struct symbol *parent, struct symbol *sym)
 	}
 	VSB_destroy(&vsb);
 
-	vcc_Header_Fh(tl, sym);
+	if (sym->lorev > 0)
+		vcc_Header_Fh(tl, sym);
 }

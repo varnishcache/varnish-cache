@@ -174,20 +174,23 @@ class vardef(object):
             fo.write(" SYM_VAR, %d, %d);\n" % (self.vlo, self.vhi))
         fo.write("\tAN(sym);\n")
         fo.write("\tsym->type = %s;\n" % self.typ)
-        fo.write("\tsym->eval = vcc_Eval_Var;\n")
+        if self.typ == "HEADER" and not var_is_wildcard(self.sym):
+            fo.write("\tsym->eval = vcc_Eval_ProtectedHeader;\n")
+        else:
+            fo.write("\tsym->eval = vcc_Eval_Var;\n")
 
-        if self.typ == "HEADER":
+        if var_is_wildcard(self.sym):
             fo.write('\tsym->rname = "HDR_')
             fo.write(self.nam.split(".")[0].upper())
             fo.write('";\n')
-        elif self.rd:
+        elif self.rd and self.typ != "HEADER":
             fo.write('\tsym->rname = "VRT_r_%s(ctx)";\n' % cnam)
             varproto("VCL_" + self.typ + " VRT_r_%s(VRT_CTX)" % cnam)
         fo.write("\tsym->r_methods =\n")
         restrict(fo, self.rd)
         fo.write(";\n")
 
-        if self.typ == "HEADER":
+        if var_is_wildcard(self.sym):
             fo.write('\tsym->lname = "HDR_')
             fo.write(self.nam.split(".")[0].upper())
             fo.write('";\n')
