@@ -36,6 +36,7 @@
 
 #include <limits.h>
 #include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -776,7 +777,20 @@ static const char * const vcc_feature_tags[] = {
 int v_matchproto_(tweak_t)
 tweak_vcc_feature(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
+	const struct parspec *orig;
+	char buf[32];
+	int val;
 
+	if (arg != NULL && arg != JSON_FMT &&
+	    strcmp(par->name, "vcc_feature")) {
+		orig = TRUST_ME(par->priv);
+		val = parse_boolean(vsb, arg);
+		if (val < 0)
+			return (-1);
+		bprintf(buf, "%c%s", val ? '+' : '-',
+		    par->name + strlen("vcc_"));
+		return (tweak_vcc_feature(vsb, orig, buf));
+	}
 	return (tweak_generic_bits(vsb, par, arg, mgt_param.vcc_feature_bits,
 	    VCC_FEATURE_Reserved, vcc_feature_tags, "vcc_feature bit", '+'));
 }

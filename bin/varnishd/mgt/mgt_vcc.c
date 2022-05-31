@@ -68,8 +68,6 @@ char *mgt_cc_cmd_def;
 char *mgt_cc_warn;
 const char *mgt_vcl_path;
 const char *mgt_vmod_path;
-#define MGT_VCC(t, n, cc) t mgt_vcc_ ## n;
-#include <tbl/mgt_vcc.h>
 
 #define VGC_SRC		"vgc.c"
 #define VGC_LIB		"vgc.so"
@@ -108,9 +106,9 @@ run_vcc(void *priv)
 	VCC_VCL_path(vcc, mgt_vcl_path);
 	VCC_VMOD_path(vcc, mgt_vmod_path);
 
-#define MGT_VCC(type, name, camelcase)			\
-	VCC_ ## camelcase (vcc, mgt_vcc_ ## name);
-#include "tbl/mgt_vcc.h"
+#define VCC_FEATURE_BIT(U, l, d)			\
+	VCC_Opt_ ## l(vcc, MGT_VCC_FEATURE(VCC_FEATURE_ ## U));
+#include "tbl/vcc_feature_bits.h"
 
 	STV_Foreach(stv)
 		VCC_Predef(vcc, "VCL_STEVEDORE", stv->ident);

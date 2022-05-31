@@ -253,8 +253,8 @@ struct vcc {
 	char			*builtin_vcl;
 	struct vfil_path	*vcl_path;
 	struct vfil_path	*vmod_path;
-#define MGT_VCC(t, n, cc) t n;
-#include <tbl/mgt_vcc.h>
+#define VCC_FEATURE_BIT(U, l, d) unsigned l;
+#include <tbl/vcc_feature_bits.h>
 
 	struct symtab		*syms[VCC_NAMESPACE__MAX];
 

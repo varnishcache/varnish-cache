@@ -921,13 +921,13 @@ VCC_VMOD_path(struct vcc *vcc, const char *str)
  * Configure settings
  */
 
-#define MGT_VCC(type, name, camelcase)				\
-	void VCC_ ## camelcase (struct vcc *vcc, type val)	\
+#define VCC_FEATURE_BIT(U, l, d)				\
+	void VCC_Opt_ ## l(struct vcc *vcc, unsigned val)	\
 	{							\
 		CHECK_OBJ_NOTNULL(vcc, VCC_MAGIC);		\
-		vcc->name = val;				\
+		vcc->l = val;					\
 	}
-#include "tbl/mgt_vcc.h"
+#include "tbl/vcc_feature_bits.h"
 
 /*--------------------------------------------------------------------
  * Configure settings
