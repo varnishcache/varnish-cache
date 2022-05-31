@@ -11,7 +11,7 @@ varnish v1 -vcl+backend {
 	include "${tmpdir}/_.c00053";
 }
 
-varnish v1 -cliok "param.set vcc_unsafe_path off"
+varnish v1 -cliok "param.set vcc_feature -unsafe_path"
 
 varnish v1 -errvcl {' is unsafe} {
 	backend default { .host = "${s1_sock}"; }
@@ -28,7 +28,7 @@ shell "rm -f ${tmpdir}/_.c00053"
 
 # Testing of include +glob
 
-varnish v1 -cliok "param.set vcc_unsafe_path on"
+varnish v1 -cliok "param.set vcc_feature +unsafe_path"
 
 varnish v1 -errvcl "glob pattern matched no files." {
 	vcl 4.0;

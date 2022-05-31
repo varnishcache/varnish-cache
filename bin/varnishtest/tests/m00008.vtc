@@ -29,7 +29,7 @@ varnish v1 -vcl+backend {
 	import std;
 }
 
-varnish v1 -cliok "param.set vcc_unsafe_path off"
+varnish v1 -cliok "param.set vcc_feature -unsafe_path"
 
 varnish v1 -errvcl {'import ... from path ...' is unsafe.} {
 	backend default { .host = "${s1_sock}"; }
@@ -43,7 +43,7 @@ varnish v1 -vcl+backend {
 	import std;
 }
 
-varnish v1 -cliok "param.set vcc_unsafe_path on"
+varnish v1 -cliok "param.set vcc_feature +unsafe_path"
 
 varnish v1 -cliok "param.set vmod_path /nowhere:/else"
 
