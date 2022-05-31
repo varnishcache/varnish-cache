@@ -152,33 +152,43 @@ tweak_double(struct vsb *vsb, const struct parspec *par, const char *arg)
 
 /*--------------------------------------------------------------------*/
 
+static int
+parse_boolean(struct vsb *vsb, const char *arg)
+{
+
+	if (!strcasecmp(arg, "off"))
+		return (0);
+	if (!strcasecmp(arg, "disable"))
+		return (0);
+	if (!strcasecmp(arg, "no"))
+		return (0);
+	if (!strcasecmp(arg, "false"))
+		return (0);
+	if (!strcasecmp(arg, "on"))
+		return (1);
+	if (!strcasecmp(arg, "enable"))
+		return (1);
+	if (!strcasecmp(arg, "yes"))
+		return (1);
+	if (!strcasecmp(arg, "true"))
+		return (1);
+
+	VSB_cat(vsb, "use \"on\" or \"off\"\n");
+	return (-1);
+}
+
 int v_matchproto_(tweak_t)
 tweak_boolean(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	volatile unsigned *dest;
+	int val;
 
 	dest = par->priv;
 	if (arg != NULL && arg != JSON_FMT) {
-		if (!strcasecmp(arg, "off"))
-			*dest = 0;
-		else if (!strcasecmp(arg, "disable"))
-			*dest = 0;
-		else if (!strcasecmp(arg, "no"))
-			*dest = 0;
-		else if (!strcasecmp(arg, "false"))
-			*dest = 0;
-		else if (!strcasecmp(arg, "on"))
-			*dest = 1;
-		else if (!strcasecmp(arg, "enable"))
-			*dest = 1;
-		else if (!strcasecmp(arg, "yes"))
-			*dest = 1;
-		else if (!strcasecmp(arg, "true"))
-			*dest = 1;
-		else {
-			VSB_cat(vsb, "use \"on\" or \"off\"\n");
+		val = parse_boolean(vsb, arg);
+		if (val < 0)
 			return (-1);
-		}
+		*dest = val;
 	} else if (arg == JSON_FMT) {
 		VSB_printf(vsb, "%s", *dest ? "true" : "false");
 	} else {
