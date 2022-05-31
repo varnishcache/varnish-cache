@@ -1787,6 +1787,24 @@ PARAM_POST
 
 PARAM_PRE
 PARAM_BITS(
+	/* name */	vcc_feature,
+	/* fld */	vcc_feature_bits,
+	/* def */
+	"+err_unref,"
+	"+unsafe_path",
+	/* descr */
+	"Enable/Disable various VCC behaviors.\n"
+	"\tdefault\tSet default value\n"
+	"\tnone\tDisable all behaviors.\n\n"
+	"Use +/- prefix to enable/disable individual behavior:")
+#ifdef PARAM_ALL
+#  define VCC_FEATURE_BIT(U, l, d) "\n\t" #l "\t" d
+#  include "tbl/vcc_feature_bits.h"
+#endif
+PARAM_POST
+
+PARAM_PRE
+PARAM_BITS(
 	/* name */	vsl_mask,
 	/* fld */	vsl_mask,
 	/* def */

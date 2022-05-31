@@ -246,3 +246,4 @@ extern const char *mgt_vmod_path;
 #define MGT_FEATURE(x)		COM_FEATURE(mgt_param.feature_bits, x)
 #define MGT_EXPERIMENT(x)	COM_EXPERIMENT(mgt_param.experimental_bits, x)
 #define MGT_DO_DEBUG(x)		COM_DO_DEBUG(mgt_param.debug_bits, x)
+#define MGT_VCC_FEATURE(x)	COM_VCC_FEATURE(mgt_param.vcc_feature_bits, x)

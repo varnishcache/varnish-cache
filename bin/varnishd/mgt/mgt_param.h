@@ -84,6 +84,7 @@ tweak_t tweak_thread_pool_min;
 tweak_t tweak_thread_pool_max;
 tweak_t tweak_timeout;
 tweak_t tweak_uint;
+tweak_t tweak_vcc_feature;
 tweak_t tweak_vsl_buffer;
 tweak_t tweak_vsl_mask;
 tweak_t tweak_vsl_reclen;
