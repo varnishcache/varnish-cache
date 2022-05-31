@@ -27,20 +27,13 @@ server s1 {
 	expect req.http.unset-connection == true
 	txresp
 	expect_close
-
-	accept
-	rxreq
 } -start
 
 varnish v1 -vcl+backend {
-	backend bad { .host = "${bad_backend}"; }
 	sub vcl_recv {
 		return (pass);
 	}
 	sub vcl_backend_fetch {
-		if (bereq.http.fail == "send") {
-			set bereq.backend = bad;
-		}
 		set bereq.http.connection = bereq.http.bereq-connection;
 	}
 	sub vcl_backend_response {
@@ -68,19 +61,9 @@ client c1 {
 	txreq -hdr "bereq-connection: close" -hdr "unset-connection: true"
 	rxresp
 	expect resp.status == 200
-
-	txreq -hdr "fail: fetch"
-	rxresp
-	expect resp.status == 503
 } -run
 
 server s1 -wait
-
-client c2 {
-	txreq -hdr "fail: send"
-	rxresp
-	expect resp.status == 503
-} -run
 
 varnish v1 -expect MAIN.backend_recycle == 0
 varnish v1 -expect VBE.vcl1.s1.conn == 0

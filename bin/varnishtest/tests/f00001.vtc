@@ -4,7 +4,7 @@ varnishtest "Check that we handle bogusly large chunks correctly"
 
 server s1 {
 	rxreq
-	txresp -status 400
+	txresp
 } -start
 
 varnish v1 -vcl+backend {
@@ -18,7 +18,7 @@ client c1 {
 	send "0\r\n\r\n"
 
 	rxresp
-	expect resp.status == 400
+	expect resp.status == 503
 } -run
 
 # Check that the published workaround does not cause harm
