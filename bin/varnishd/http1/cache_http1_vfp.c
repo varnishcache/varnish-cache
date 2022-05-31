@@ -39,6 +39,7 @@
 
 #include <inttypes.h>
 #include <poll.h>
+#include <stdlib.h>
 
 #include "cache/cache_varnishd.h"
 #include "cache/cache_filter.h"
@@ -89,6 +90,15 @@ v1f_read(const struct vfp_ctx *vc, struct http_conn *htc, void *d, ssize_t len)
 	return (i + l);
 }
 
+struct v1f_chunked_priv {
+	unsigned		magic;
+#define V1F_CHUNKED_PRIV_MAGIC 0xf5232e94
+	unsigned		len;
+	struct vfp_ctx		*vc;
+	struct http_conn	*htc;
+	txt			avail;
+	unsigned char		buf[];
+};
 
 /*--------------------------------------------------------------------
  * read (CR)?LF at the end of a chunk
@@ -212,17 +222,46 @@ v1f_poll(struct http_conn *htc)
  *
  */
 
+static enum vfp_status v_matchproto_(vfp_init_f)
+v1f_chunked_init(VRT_CTX, struct vfp_ctx *vc, struct vfp_entry *vfe)
+{
+	struct http_conn *htc;
+	struct v1f_chunked_priv *v1fcp;
+	const unsigned sz = 24 + sizeof(struct v1f_chunked_priv);
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vc->wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
+	CAST_OBJ_NOTNULL(htc, vfe->priv1, HTTP_CONN_MAGIC);
+
+	v1fcp = calloc(1, sz);
+	AN(v1fcp);
+	v1fcp->magic = V1F_CHUNKED_PRIV_MAGIC;
+	v1fcp->len = sz - sizeof *v1fcp;
+	v1fcp->htc = htc;
+	v1fcp->vc = vc;
+	vfe->priv1 = v1fcp;
+
+	return (VFP_OK);
+}
+
+
 static enum vfp_status v_matchproto_(vfp_pull_f)
 v1f_chunked_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
     ssize_t *lp)
 {
 	static enum vfp_status vfps;
+	struct v1f_chunked_priv *v1fcp;
 	struct http_conn *htc;
 	ssize_t l, lr;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
-	CAST_OBJ_NOTNULL(htc, vfe->priv1, HTTP_CONN_MAGIC);
+	CAST_OBJ_NOTNULL(v1fcp, vfe->priv1, V1F_CHUNKED_PRIV_MAGIC);
+	htc = v1fcp->htc;
+	assert(vc == v1fcp->vc);
+	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	AN(ptr);
 	AN(lp);
 
@@ -265,9 +304,23 @@ v1f_chunked_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
 	return (vfps == VFP_OK ? VFP_END : vfps);
 }
 
+static void v_matchproto_(vfp_fini_f)
+v1f_chunked_fini(struct vfp_ctx *vc, struct vfp_entry *vfe)
+{
+	struct v1f_chunked_priv *v1fcp;
+
+	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vc->wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
+	TAKE_OBJ_NOTNULL(v1fcp, &vfe->priv1, V1F_CHUNKED_PRIV_MAGIC);
+	free(v1fcp);
+}
+
 static const struct vfp v1f_chunked = {
 	.name = "V1F_CHUNKED",
+	.init = v1f_chunked_init,
 	.pull = v1f_chunked_pull,
+	.fini = v1f_chunked_fini
 };
 
 
