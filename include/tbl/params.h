@@ -1635,38 +1635,6 @@ PARAM_STRING(
 )
 
 /*--------------------------------------------------------------------
- * VCC parameters
- */
-
-#  define PARAM_VCC(nm, def, descr)					\
-	PARAM_PRE							\
-	PARAM(, , nm, tweak_boolean, &mgt_ ## nm, NULL, NULL, def,	\
-	    "bool", descr)						\
-	PARAM_POST
-
-PARAM_VCC(
-	/* name */	vcc_err_unref,
-	/* def */	"on",
-	/* descr */
-	"Unreferenced VCL objects result in error."
-)
-
-PARAM_VCC(
-	/* name */	vcc_allow_inline_c,
-	/* def */	"off",
-	/* descr */
-	"Allow inline C code in VCL."
-)
-
-PARAM_VCC(
-	/* name */	vcc_unsafe_path,
-	/* def */	"on",
-	/* descr */
-	"Allow '/' in vmod & include paths.\n"
-	"Allow 'import ... from ...'."
-)
-
-/*--------------------------------------------------------------------
  * PCRE2 parameters
  */
 
@@ -1723,12 +1691,14 @@ PARAM_PCRE2(
 	    "Deprecated alias for the " #nm " parameter.")	\
 	PARAM_POST
 
-PARAM_ALIAS(deprecated_dummy, debug)
+PARAM_ALIAS(deprecated_dummy,	debug)
+PARAM_ALIAS(vcc_err_unref,	vcc_feature)
+PARAM_ALIAS(vcc_allow_inline_c,	vcc_feature)
+PARAM_ALIAS(vcc_unsafe_path,	vcc_feature)
 
 #  undef PARAM_ALIAS
 #  undef PARAM_PCRE2
 #  undef PARAM_STRING
-#  undef PARAM_VCC
 #endif /* defined(PARAM_ALL) */
 
 /*--------------------------------------------------------------------

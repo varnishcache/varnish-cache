@@ -39,9 +39,9 @@ void VCC_VMOD_path(struct vcc *, const char *);
 void VCC_Predef(struct vcc *, const char *type, const char *name);
 void VCC_VCL_Range(unsigned *, unsigned *);
 
-#define MGT_VCC(t, n, cc)					\
-	void VCC_ ## cc (struct vcc *, t);
-#include "tbl/mgt_vcc.h"
+#define VCC_FEATURE_BIT(U, l, d)				\
+	void VCC_Opt_ ## l(struct vcc *, unsigned);
+#include "tbl/vcc_feature_bits.h"
 
 int VCC_Compile(struct vcc *, struct vsb **,
     const char *, const char *, const char *, const char *);
