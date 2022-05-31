@@ -291,7 +291,7 @@ SLTM(VCL_acl, 0, "VCL ACL check results",
 	"The format is::\n\n"
 	"\t%s %s [%s [fixed: %s]]\n"
 	"\t|  |   |          |\n"
-	"\t|  |   |          +- Fixed entry (see vcc_acl_pedantic parameter)\n"
+	"\t|  |   |          +- Fixed entry (see acl +pedantic flag)\n"
 	"\t|  |   +------------ Matching entry (only for MATCH)\n"
 	"\t|  +---------------- Name of the ACL\n"
 	"\t+-------------------- MATCH or NO_MATCH\n"
