@@ -32,6 +32,7 @@ nobase_pkginclude_HEADERS = \
 	tbl/sess_attr.h \
 	tbl/sess_close.h \
 	tbl/symbol_kind.h \
+	tbl/vcc_feature_bits.h \
 	tbl/vcl_returns.h \
 	tbl/vcl_states.h \
 	tbl/vhd_fsm.h \

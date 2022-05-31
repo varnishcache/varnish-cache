@@ -762,3 +762,21 @@ tweak_feature(struct vsb *vsb, const struct parspec *par, const char *arg)
 	return (tweak_generic_bits(vsb, par, arg, mgt_param.feature_bits,
 	    FEATURE_Reserved, feature_tags, "feature bit", '+'));
 }
+
+/*--------------------------------------------------------------------
+ * The vcc_feature parameter
+ */
+
+static const char * const vcc_feature_tags[] = {
+#  define VCC_FEATURE_BIT(U, l, d) [VCC_FEATURE_##U] = #l,
+#  include "tbl/vcc_feature_bits.h"
+       NULL
+};
+
+int v_matchproto_(tweak_t)
+tweak_vcc_feature(struct vsb *vsb, const struct parspec *par, const char *arg)
+{
+
+	return (tweak_generic_bits(vsb, par, arg, mgt_param.vcc_feature_bits,
+	    VCC_FEATURE_Reserved, vcc_feature_tags, "vcc_feature bit", '+'));
+}

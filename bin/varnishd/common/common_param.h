@@ -76,6 +76,18 @@ COM_FEATURE(const volatile uint8_t *p, enum feature_bits x)
 	return (p[(unsigned)x>>3] & (0x80U >> ((unsigned)x & 7)));
 }
 
+enum vcc_feature_bits {
+#define VCC_FEATURE_BIT(U, l, d) VCC_FEATURE_##U,
+#include "tbl/vcc_feature_bits.h"
+       VCC_FEATURE_Reserved
+};
+
+static inline int
+COM_VCC_FEATURE(const volatile uint8_t *p, enum vcc_feature_bits x)
+{
+	return (p[(unsigned)x>>3] & (0x80U >> ((unsigned)x & 7)));
+}
+
 struct poolparam {
 	unsigned		min_pool;
 	unsigned		max_pool;
@@ -88,6 +100,7 @@ PARAM_BITMAP(vsl_mask_t,	256);
 PARAM_BITMAP(debug_t,		DBG_Reserved);
 PARAM_BITMAP(experimental_t,	EXPERIMENT_Reserved);
 PARAM_BITMAP(feature_t,		FEATURE_Reserved);
+PARAM_BITMAP(vcc_feature_t,	VCC_FEATURE_Reserved);
 #undef PARAM_BITMAP
 
 struct params {
@@ -104,6 +117,7 @@ struct params {
 #define ptyp_thread_pool_min	unsigned
 #define ptyp_timeout		vtim_dur
 #define ptyp_uint		unsigned
+#define ptyp_vcc_feature	vcc_feature_t
 #define ptyp_vsl_buffer		unsigned
 #define ptyp_vsl_mask		vsl_mask_t
 #define ptyp_vsl_reclen		unsigned
