@@ -116,97 +116,255 @@ v1f_read(const struct vfp_ctx *vc, struct http_conn *htc,
 	return (i + l);
 }
 
+/* txt but not const */
+typedef struct {
+	char		*b;
+	char		*e;
+} wtxt;
+
 struct v1f_chunked_priv {
 	unsigned		magic;
 #define V1F_CHUNKED_PRIV_MAGIC 0xf5232e94
 	unsigned		len;
 	struct vfp_ctx		*vc;
 	struct http_conn	*htc;
-	txt			avail;
-	unsigned char		buf[];
+	wtxt			avail;
+	char			buf[];
 };
 
-/*--------------------------------------------------------------------
- * read (CR)?LF at the end of a chunk
- */
-static enum vfp_status
-v1f_chunk_end(struct vfp_ctx *vc, struct http_conn *htc)
-{
-	char c;
+/* XXX reduce? */
+#define ASSERT_V1F_CHUNKED_PRIV(x)					\
+do {									\
+	CHECK_OBJ_NOTNULL(x, V1F_CHUNKED_PRIV_MAGIC);			\
+	assert((x->avail.b != NULL) == (x->avail.e != NULL));		\
+	assert(x->avail.b == NULL || x->avail.b >= x->buf);		\
+	assert(x->avail.e == NULL || x->avail.e <= x->buf + x->len);	\
+} while (0)
 
-	if (v1f_read(vc, htc, IOV(&c, 1)) <= 0)
-		return (VFP_Error(vc, "chunked read err"));
-	if (c == '\r' && v1f_read(vc, htc, IOV(&c, 1)) <= 0)
-		return (VFP_Error(vc, "chunked read err"));
-	if (c != '\n')
-		return (VFP_Error(vc, "chunked tail no NL"));
+/*
+ * ensure the readahead buffer has at least n bytes available and read
+ * ahead a maximum of ra
+ *
+ * the caller must ensure that ra is below or at the maximum readahead
+ * poosible at that point in order to not read into the next request
+ *
+ * (we can not return data to the next request's htc pipeline (yet))
+ */
+
+static inline enum vfp_status
+v1f_chunked_need(struct v1f_chunked_priv *v1fcp, size_t n, size_t ra)
+{
+	char *p;
+	ssize_t i;
+	size_t l = 0;
+
+	ASSERT_V1F_CHUNKED_PRIV(v1fcp);
+	AN(n);
+	assert(n <= v1fcp->len);
+	assert(n <= ra);
+
+	if (v1fcp->avail.b != NULL)
+		l = Tlen(v1fcp->avail);
+
+	if (l >= n)
+		return (VFP_OK);
+
+	if (l == 0) {
+		p = v1fcp->buf;
+	} else {
+		p = memmove(v1fcp->buf, v1fcp->avail.b, l);
+		p += l;
+	}
+
+	if (ra > v1fcp->len)
+		ra = v1fcp->len;
+
+	assert(ra >= l);
+	ra -= l;
+
+	while (ra > 0 && l < n) {
+		i = v1f_read(v1fcp->vc, v1fcp->htc, IOV(p, ra));
+		if (i <= 0)
+			return (VFP_Error(v1fcp->vc, "chunked read err"));
+
+//		VSLb(vc->wrk->vsl, SLT_Debug, "need read %zu/%zu", i, ra);
+
+		p += i;
+		l += i;
+		ra -= i;
+	}
+
+	v1fcp->avail.b = v1fcp->buf;
+	v1fcp->avail.e = v1fcp->buf + l;
+
+	assert(Tlen(v1fcp->avail) >= n);
+
 	return (VFP_OK);
 }
 
+/*
+ * read chunked data into the buffer, returning an existing readahead
+ * and reading ahead up a maximum of ra
+ */
+
+static ssize_t
+v1f_chunked_data(struct v1f_chunked_priv *v1fcp, void *ptr, size_t len,
+    size_t ra)
+{
+	struct iovec iov[2];
+	size_t r = 0, l;
+	char *p;
+
+	ASSERT_V1F_CHUNKED_PRIV(v1fcp);
+	AN(ptr);
+	AN(len);
+	AN(ra <= v1fcp->len);
+
+	p = ptr;
+
+	if (v1fcp->avail.b != NULL) {
+		l = Tlen(v1fcp->avail);
+		l = vmin(l, len);
+
+		memcpy(p, v1fcp->avail.b, l);
+		p += l;
+		len -= l;
+		v1fcp->avail.b += l;
+		r += l;
+
+		if (Tlen(v1fcp->avail) == 0)
+		    v1fcp->avail.b = v1fcp->avail.e = NULL;
+
+		if (len == 0)
+			return (r);
+	}
+
+	/* all readahead consumed */
+	assert(v1fcp->avail.b == NULL || v1fcp->avail.b == v1fcp->avail.e);
+
+	iov[0].iov_base = p;
+	iov[0].iov_len = len;
+
+	iov[1].iov_base = v1fcp->buf;
+	iov[1].iov_len = ra;
+
+	l = v1f_read(v1fcp->vc, v1fcp->htc, iov, 2);
+	if (l <= len)
+		return (r + l);
+
+	/* we have readahead data */
+	v1fcp->avail.b = v1fcp->buf;
+	v1fcp->avail.e = v1fcp->buf + (l - len);
+
+
+//	VSLb(vc->wrk->vsl, SLT_Debug, "data readahead %zu", l - len);
+
+	return (r + len);
+}
+
+
+#define V1FNEED(priv, n, ra)						\
+do {									\
+	enum vfp_status vfps = v1f_chunked_need(priv, n, ra);		\
+	if (vfps != VFP_OK)						\
+		return (vfps);						\
+} while(0)
+
+/*--------------------------------------------------------------------
+ * read (CR)?LF at the end of a chunk
+ *
+ */
+static enum vfp_status
+v1f_chunk_end(struct v1f_chunked_priv *v1fcp)
+{
+
+	V1FNEED(v1fcp, 1, 1);
+	if (*v1fcp->avail.b == '\r') {
+		v1fcp->avail.b++;
+		V1FNEED(v1fcp, 1, 1);
+	}
+	if (*v1fcp->avail.b != '\n')
+		return (VFP_Error(v1fcp->vc, "chunk end no NL"));
+	v1fcp->avail.b++;
+	return (VFP_OK);
+}
 
 /*--------------------------------------------------------------------
  * Parse a chunk header and, for VFP_OK, return size in a pointer
  *
- * XXX: Reading one byte at a time is pretty pessimal.
  */
 
 static enum vfp_status
-v1f_chunked_hdr(struct vfp_ctx *vc, struct http_conn *htc, ssize_t *szp)
+v1f_chunked_hdr(struct v1f_chunked_priv *v1fcp, ssize_t *szp)
 {
-	char buf[20];		/* XXX: 20 is arbitrary */
+	const size_t ra_safe = 3;
+	const unsigned maxdigits = 20;
 	unsigned u;
 	uintmax_t cll;
-	ssize_t cl, lr;
+	ssize_t cl, ra;
 	char *q;
 
-	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+	ASSERT_V1F_CHUNKED_PRIV(v1fcp);
 	AN(szp);
 	assert(*szp == -1);
 
-	/* Skip leading whitespace */
+	/* safe readahead is 0 digit + NL (end chunklen) + NL (end trailers)
+	 *
+	 * for the first non-zero difit, we can, conservatively, add 2: 1
+	 * (minimum length) + 1 (NL).
+	 *
+	 * thereafter we just add 16 as a conservative lower bound
+	 *
+	 */
+	ra = ra_safe;
+
+	/* Skip leading whitespace. */
 	do {
-		lr = v1f_read(vc, htc, IOV(buf, 1));
-		if (lr <= 0)
-			return (VFP_Error(vc, "chunked read err"));
-	} while (vct_islws(buf[0]));
+		V1FNEED(v1fcp, 1, ra);
+		while (Tlen(v1fcp->avail) && vct_islws(*v1fcp->avail.b))
+			v1fcp->avail.b++;
+	} while (Tlen(v1fcp->avail) == 0);
 
-	if (!vct_ishex(buf[0]))
-		return (VFP_Error(vc, "chunked header non-hex"));
+	V1FNEED(v1fcp, 1, ra);
+	if (!vct_ishex(*v1fcp->avail.b))
+		return (VFP_Error(v1fcp->vc, "chunked header non-hex"));
 
-	/* Collect hex digits, skipping leading zeros */
-	for (u = 1; u < sizeof buf; u++) {
-		do {
-			lr = v1f_read(vc, htc, IOV(buf + u, 1));
-			if (lr <= 0)
-				return (VFP_Error(vc, "chunked read err"));
-		} while (u == 1 && buf[0] == '0' && buf[u] == '0');
-		if (!vct_ishex(buf[u]))
+	/* Collect hex digits and trailing space */
+	assert(v1fcp->len >= maxdigits);
+	for (u = 0; u < maxdigits; u++) {
+		V1FNEED(v1fcp, u + 1, u + ra);
+		if (!vct_ishex(v1fcp->avail.b[u]))
 			break;
+		/* extremely simple and conservative read-ahead adjustment */
+		if (ra > ra_safe)
+			ra += 16;
+		else if (v1fcp->avail.b[u] != '0')
+			ra += 2;
 	}
-
-	if (u >= sizeof buf)
-		return (VFP_Error(vc, "chunked header too long"));
-
-	/* Skip trailing white space */
-	while (vct_islws(buf[u]) && buf[u] != '\n') {
-		lr = v1f_read(vc, htc, IOV(buf + u, 1));
-		if (lr <= 0)
-			return (VFP_Error(vc, "chunked read err"));
+	/* min readahead is one less now ( NL + NL ) */
+	ra--;
+	for (; u < maxdigits; u++) {
+		V1FNEED(v1fcp, u + 1, u + ra);
+		if (!vct_islws(v1fcp->avail.b[u]) || v1fcp->avail.b[u] == '\n')
+			break;
+		v1fcp->avail.b[u] = '\0';
 	}
+	if (u >= maxdigits)
+		return (VFP_Error(v1fcp->vc, "chunked header too long"));
 
-	if (buf[u] != '\n')
-		return (VFP_Error(vc, "chunked header no NL"));
+	if (v1fcp->avail.b[u] != '\n')
+		return (VFP_Error(v1fcp->vc, "chunked header no NL"));
 
-	buf[u] = '\0';
+	v1fcp->avail.b[u] = '\0';
 
-	cll = strtoumax(buf, &q, 16);
+	cll = strtoumax(v1fcp->avail.b, &q, 16);
 	if (q == NULL || *q != '\0')
-		return (VFP_Error(vc, "chunked header number syntax"));
+		return (VFP_Error(v1fcp->vc, "chunked header number syntax"));
 	cl = (ssize_t)cll;
 	if (cl < 0 || (uintmax_t)cl != cll)
-		return (VFP_Error(vc, "bogusly large chunk size"));
+		return (VFP_Error(v1fcp->vc, "bogusly large chunk size"));
 
+	v1fcp->avail.b += u + 1;
 	*szp = cl;
 	return (VFP_OK);
 }
@@ -217,29 +375,11 @@ v1f_chunked_hdr(struct vfp_ctx *vc, struct http_conn *htc, ssize_t *szp)
  */
 
 static int
-v1f_poll(struct http_conn *htc)
+v1f_hasreadahead(struct v1f_chunked_priv *v1fcp)
 {
-	struct pollfd pfd[1];
-	int r;
 
-	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
-
-	if (htc->pipeline_b)
-		return (1);
-
-	pfd->fd = *htc->rfd;
-	pfd->events = POLLIN;
-
-	r = poll(pfd, 1, 0);
-	if (r < 0) {
-		assert(errno == EINTR);
-		return (0);
-	}
-	if (r == 0)
-		return (0);
-	assert(r == 1);
-	assert(pfd->revents & POLLIN);
-	return (1);
+	ASSERT_V1F_CHUNKED_PRIV(v1fcp);
+	return (v1fcp->avail.b != NULL && Tlen(v1fcp->avail));
 }
 
 
@@ -280,7 +420,7 @@ v1f_chunked_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
 	static enum vfp_status vfps;
 	struct v1f_chunked_priv *v1fcp;
 	struct http_conn *htc;
-	ssize_t l, lr;
+	ssize_t ra, l, lr;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
@@ -294,14 +434,26 @@ v1f_chunked_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
 	l = *lp;
 	*lp = 0;
 	if (vfe->priv2 == -1) {
-		vfps = v1f_chunked_hdr(vc, htc, &vfe->priv2);
+		vfps = v1f_chunked_hdr(v1fcp, &vfe->priv2);
 		if (vfps != VFP_OK)
 			return (vfps);
 	}
 	if (vfe->priv2 > 0) {
-		if (vfe->priv2 < l)
+		/* safe readahead is 4:
+		 *
+		 * NL (end chunk)
+		 * 1 digit
+		 * NL (end chunklen)
+		 * NL (end trailers)
+		 */
+		ra = 0;
+
+		if (vfe->priv2 <= l) {
 			l = vfe->priv2;
-		lr = v1f_read(vc, htc, IOV(ptr, l));
+			ra = 4;
+		}
+
+		lr = v1f_chunked_data(v1fcp, ptr, l, ra);
 		if (lr <= 0)
 			return (VFP_Error(vc, "chunked insufficient bytes"));
 		*lp = lr;
@@ -311,22 +463,22 @@ v1f_chunked_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
 
 		vfe->priv2 = -1;
 
-		vfps = v1f_chunk_end(vc, htc);
+		vfps = v1f_chunk_end(v1fcp);
 		if (vfps != VFP_OK)
 			return (vfps);
 
 		/* only if some data of the next chunk header is available, read
 		 * it to check if we can return VFP_END */
-		if (! v1f_poll(htc))
+		if (! v1f_hasreadahead(v1fcp))
 			return (VFP_OK);
-		vfps = v1f_chunked_hdr(vc, htc, &vfe->priv2);
+		vfps = v1f_chunked_hdr(v1fcp, &vfe->priv2);
 		if (vfps != VFP_OK)
 			return (vfps);
 		if (vfe->priv2 != 0)
 			return (VFP_OK);
 	}
 	AZ(vfe->priv2);
-	vfps = v1f_chunk_end(vc, htc);
+	vfps = v1f_chunk_end(v1fcp);
 	return (vfps == VFP_OK ? VFP_END : vfps);
 }
 
