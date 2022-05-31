@@ -40,6 +40,7 @@
 #include <inttypes.h>
 #include <poll.h>
 #include <stdlib.h>
+#include <sys/uio.h>
 
 #include "cache/cache_varnishd.h"
 #include "cache/cache_filter.h"
@@ -49,44 +50,69 @@
 #include "vtcp.h"
 
 /*--------------------------------------------------------------------
- * Read up to len bytes, returning pipelined data first.
+ * Read into the iovecs, returning pipelined data first.
+ *
+ * iova[1] and beyond are for readahead.
+ *
+ * v1f_read() returns with no actual read issued if pipelined data
+ * fills iova[0]
  */
 
+// for single io vector
+#define IOV(ptr,len) (struct iovec[1]){{.iov_base = (ptr), .iov_len = (len)}}, 1
+
 static ssize_t
-v1f_read(const struct vfp_ctx *vc, struct http_conn *htc, void *d, ssize_t len)
+v1f_read(const struct vfp_ctx *vc, struct http_conn *htc,
+    const struct iovec *iova, int iovcnt)
 {
-	ssize_t l;
-	unsigned char *p;
-	ssize_t i = 0;
+	ssize_t l, i = 0;
+	size_t ll;
+	int c;
+	struct iovec iov[iovcnt];
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
-	assert(len > 0);
+	AN(iova);
+	assert(iovcnt > 0);
+	memcpy(iov, iova, sizeof iov);
+	/* only check first iov */
+	AN(iov[0].iov_base);
+	assert(iov[0].iov_len > 0);
+
 	l = 0;
-	p = d;
-	if (htc->pipeline_b) {
-		l = htc->pipeline_e - htc->pipeline_b;
-		assert(l > 0);
-		l = vmin(l, len);
-		memcpy(p, htc->pipeline_b, l);
-		p += l;
-		len -= l;
-		htc->pipeline_b += l;
+	c = 0;
+
+	while (htc->pipeline_b && c < iovcnt) {
+		ll = htc->pipeline_e - htc->pipeline_b;
+		assert(ll > 0);
+		ll = vmin(ll, iov[c].iov_len);
+		memcpy(iov[c].iov_base, htc->pipeline_b, ll);
+		iov[c].iov_base = (unsigned char *)iov[c].iov_base + ll;
+		iov[c].iov_len -= ll;
+		htc->pipeline_b += ll;
+		if (iov[c].iov_len == 0)
+			c++;
 		if (htc->pipeline_b == htc->pipeline_e)
 			htc->pipeline_b = htc->pipeline_e = NULL;
+		l += ll;
 	}
-	if (len > 0) {
-		i = read(*htc->rfd, p, len);
-		if (i < 0) {
-			VTCP_Assert(i);
-			VSLb(vc->wrk->vsl, SLT_FetchError,
-			    "%s", VAS_errtxt(errno));
-			return (i);
-		}
-		if (i == 0)
-			htc->doclose = SC_RESP_CLOSE;
 
+	// see comment above
+	if (c > 0)
+		return (l);
+	AZ(c);
+
+	i = readv(*htc->rfd, iov, iovcnt);
+
+	if (i < 0) {
+		VTCP_Assert(i);
+		VSLb(vc->wrk->vsl, SLT_FetchError, "%s", VAS_errtxt(errno));
+		return (i);
 	}
+
+	if (i == 0)
+		htc->doclose = SC_RESP_CLOSE;
+
 	return (i + l);
 }
 
@@ -108,9 +134,9 @@ v1f_chunk_end(struct vfp_ctx *vc, struct http_conn *htc)
 {
 	char c;
 
-	if (v1f_read(vc, htc, &c, 1) <= 0)
+	if (v1f_read(vc, htc, IOV(&c, 1)) <= 0)
 		return (VFP_Error(vc, "chunked read err"));
-	if (c == '\r' && v1f_read(vc, htc, &c, 1) <= 0)
+	if (c == '\r' && v1f_read(vc, htc, IOV(&c, 1)) <= 0)
 		return (VFP_Error(vc, "chunked read err"));
 	if (c != '\n')
 		return (VFP_Error(vc, "chunked tail no NL"));
@@ -140,7 +166,7 @@ v1f_chunked_hdr(struct vfp_ctx *vc, struct http_conn *htc, ssize_t *szp)
 
 	/* Skip leading whitespace */
 	do {
-		lr = v1f_read(vc, htc, buf, 1);
+		lr = v1f_read(vc, htc, IOV(buf, 1));
 		if (lr <= 0)
 			return (VFP_Error(vc, "chunked read err"));
 	} while (vct_islws(buf[0]));
@@ -151,7 +177,7 @@ v1f_chunked_hdr(struct vfp_ctx *vc, struct http_conn *htc, ssize_t *szp)
 	/* Collect hex digits, skipping leading zeros */
 	for (u = 1; u < sizeof buf; u++) {
 		do {
-			lr = v1f_read(vc, htc, buf + u, 1);
+			lr = v1f_read(vc, htc, IOV(buf + u, 1));
 			if (lr <= 0)
 				return (VFP_Error(vc, "chunked read err"));
 		} while (u == 1 && buf[0] == '0' && buf[u] == '0');
@@ -164,7 +190,7 @@ v1f_chunked_hdr(struct vfp_ctx *vc, struct http_conn *htc, ssize_t *szp)
 
 	/* Skip trailing white space */
 	while (vct_islws(buf[u]) && buf[u] != '\n') {
-		lr = v1f_read(vc, htc, buf + u, 1);
+		lr = v1f_read(vc, htc, IOV(buf + u, 1));
 		if (lr <= 0)
 			return (VFP_Error(vc, "chunked read err"));
 	}
@@ -275,7 +301,7 @@ v1f_chunked_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
 	if (vfe->priv2 > 0) {
 		if (vfe->priv2 < l)
 			l = vfe->priv2;
-		lr = v1f_read(vc, htc, ptr, l);
+		lr = v1f_read(vc, htc, IOV(ptr, l));
 		if (lr <= 0)
 			return (VFP_Error(vc, "chunked insufficient bytes"));
 		*lp = lr;
@@ -345,7 +371,7 @@ v1f_straight_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 	if (vfe->priv2 == 0) // XXX: Optimize Content-Len: 0 out earlier
 		return (VFP_END);
 	l = vmin(l, vfe->priv2);
-	lr = v1f_read(vc, htc, p, l);
+	lr = v1f_read(vc, htc, IOV(p, l));
 	if (lr <= 0)
 		return (VFP_Error(vc, "straight insufficient bytes"));
 	*lp = lr;
@@ -377,7 +403,7 @@ v1f_eof_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p, ssize_t *lp)
 
 	l = *lp;
 	*lp = 0;
-	lr = v1f_read(vc, htc, p, l);
+	lr = v1f_read(vc, htc, IOV(p, l));
 	if (lr < 0)
 		return (VFP_Error(vc, "eof socket fail"));
 	if (lr == 0)
