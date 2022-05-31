@@ -1,4 +1,4 @@
-varnishtest "vcc_err_unref should also cover subs"
+varnishtest "vcc_feature::err_unref should also cover subs"
 
 server s1 {
 	rxreq
@@ -6,7 +6,7 @@ server s1 {
 	txresp -body "foobar"
 } -start
 
-varnish v1 -arg "-p vcc_err_unref=false" -vcl+backend {
+varnish v1 -arg "-p vcc_feature=-err_unref" -vcl+backend {
 	sub foobar {
 		set req.http.foobar = "foobar";
 	}

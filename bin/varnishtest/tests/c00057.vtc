@@ -11,7 +11,7 @@ server s1 {
 
 varnish v1 \
 	-arg "-p feature=+no_coredump" \
-	-arg "-p vcc_allow_inline_c=true" \
+	-arg "-p vcc_feature=+allow_inline_c" \
 	-arg "-p thread_pool_stack=128k" \
 	-vcl+backend {
 	C{
@@ -66,7 +66,7 @@ varnish v1 -expectexit 0x40
 
 varnish v2 \
 	-arg "-p feature=+no_coredump" \
-	-arg "-p vcc_allow_inline_c=true" \
+	-arg "-p vcc_feature=+allow_inline_c" \
 	-vcl+backend {
 
 	C{

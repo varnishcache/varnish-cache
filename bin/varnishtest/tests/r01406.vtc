@@ -5,7 +5,7 @@ server s1 {
 	txresp
 } -start
 
-varnish v1 -arg "-p vcc_allow_inline_c=true" -vcl+backend {
+varnish v1 -arg "-p vcc_feature=+allow_inline_c" -vcl+backend {
 	import std ;
 
 	C{

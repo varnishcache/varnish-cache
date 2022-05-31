@@ -2,7 +2,7 @@ varnishtest "Test backend definition documentation examples"
 
 feature cmd {getent hosts localhost && getent services http}
 
-varnish v1 -arg "-p vcc_err_unref=off" -vcl {
+varnish v1 -arg "-p vcc_feature=-err_unref" -vcl {
 	backend b1 {.host = "127.0.0.1";}
 	backend b2 {.host = "[::1]:8080";}
 	backend b3 {.host = "localhost:8081";}

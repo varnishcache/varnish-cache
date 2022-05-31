@@ -157,7 +157,7 @@ varnish v1 -errvcl {Failed initialization} {
 	}
 }
 
-varnish v1 -cliok "param.set vcc_allow_inline_c on"
+varnish v1 -cliok "param.set vcc_feature +allow_inline_c"
 varnish v1 -vcl {
 	import vtc;
 
