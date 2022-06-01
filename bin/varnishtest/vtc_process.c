@@ -359,9 +359,10 @@ static void
 term_match_text(struct process *pp,
     const char *lin, const char *col, const char *re)
 {
-	int i, x, y, l, err, erroff;
+	int i, l, err, erroff;
 	struct vsb *vsb, re_vsb[1];
 	size_t len;
+	ssize_t x, y;
 	vre_t *vre;
 	char errbuf[VRE_ERROR_LEN];
 
@@ -370,12 +371,12 @@ term_match_text(struct process *pp,
 
 	y = strtoul(lin, NULL, 0);
 	if (y < 0 || y > pp->nlin)
-		vtc_fatal(pp->vl, "YYY %d nlin %d", y, pp->nlin);
+		vtc_fatal(pp->vl, "YYY %zd nlin %d", y, pp->nlin);
 	x = strtoul(col, NULL, 0);
 	for(l = 0; l < 10 && x > pp->ncol; l++)	// wait for screen change
 		usleep(100000);
 	if (x < 0 || x > pp->ncol)
-		vtc_fatal(pp->vl, "XXX %d ncol %d", x, pp->ncol);
+		vtc_fatal(pp->vl, "XXX %zd ncol %d", x, pp->ncol);
 
 	if (x)
 		x--;
