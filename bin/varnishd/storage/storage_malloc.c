@@ -178,7 +178,6 @@ sma_init(struct stevedore *parent, int ac, char * const *av)
 	uintmax_t u;
 	struct sma_sc *sc;
 
-	ASSERT_MGT();
 	ALLOC_OBJ(sc, SMA_SC_MAGIC);
 	AN(sc);
 	sc->sma_max = VRT_INTEGER_MAX;

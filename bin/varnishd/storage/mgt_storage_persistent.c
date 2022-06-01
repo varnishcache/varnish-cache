@@ -145,10 +145,7 @@ smp_mgt_init(struct stevedore *parent, int ac, char * const *av)
 	void *target;
 	int i, mmap_flags;
 
-	ASSERT_MGT();
-
 	AZ(av[ac]);
-
 
 #ifdef HAVE_SYS_PERSONALITY_H
 	i = personality(0xffffffff); /* Fetch old personality. */

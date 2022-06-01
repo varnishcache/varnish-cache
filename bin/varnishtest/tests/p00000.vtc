@@ -2,9 +2,14 @@ varnishtest "Test Basic persistence"
 
 feature persistent_storage
 
-shell -err -expect {-spersistent has been deprecated} {
-	varnishd -spersistent -f '' -n ${tmpdir}
-}
+process p1 -dump {
+	varnishd -spersistent -b localhost -n ${tmpdir} -a :0 -d 2>&1
+} -start -expect-exit 1
+
+process p1 -expect-text 0 0 {to launch}
+process p1 -write "start\n"
+process p1 -expect-text 0 0 {-spersistent has been deprecated}
+process p1 -wait
 
 server s1 {
 	rxreq

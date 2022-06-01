@@ -380,6 +380,8 @@ mgt_launch_child(struct cli *cli)
 
 		vext_load();
 
+		STV_Init();
+
 		VJ_subproc(JAIL_SUBPROC_WORKER);
 
 		heritage.proc_vsmw = VSMW_New(heritage.vsm_fd, 0640, "_.index");

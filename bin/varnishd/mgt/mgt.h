@@ -220,6 +220,7 @@ char **MGT_NamedArg(const char *, const char **, const char *);
 extern const char *mgt_stv_h2_rxbuf;
 void STV_Config(const char *spec);
 void STV_Config_Transient(void);
+void STV_Init(void);
 
 /* mgt_vcc.c */
 void mgt_DumpBuiltin(void);

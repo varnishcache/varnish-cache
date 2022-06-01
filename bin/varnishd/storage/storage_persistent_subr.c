@@ -279,8 +279,6 @@ smp_newsilo(struct smp_sc *sc)
 {
 	struct smp_ident	*si;
 
-	ASSERT_MGT();
-
 	/* Choose a new random number */
 	AZ(VRND_RandomCrypto(&sc->unique, sizeof sc->unique));
 

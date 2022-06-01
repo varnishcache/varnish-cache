@@ -105,7 +105,6 @@ void MCH_Fd_Inherit(int fd, const char *what);
 
 #define ARGV_ERR(...)						\
 	do {							\
-		ASSERT_MGT();					\
 		fprintf(stderr, "Error: " __VA_ARGS__);		\
 		fprintf(stderr, "(-? gives usage)\n");		\
 		exit(2);					\
