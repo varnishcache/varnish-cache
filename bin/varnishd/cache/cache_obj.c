@@ -232,12 +232,8 @@ obj_extend_condwait(const struct objcore *oc)
 	 * updates to delivered_so_far after timing out.
 	 */
 	while (!(oc->flags & OC_F_CANCEL) && oc->boc->fetched_so_far >
-	    oc->boc->delivered_so_far + oc->boc->transit_buffer) {
-		(void)Lck_CondWaitTimeout(&oc->boc->cond, &oc->boc->mtx, 0.1);
-		/* Fallback: Check if we are alone waiting on this object */
-		if (oc->refcnt == 1)
-			break;
-	}
+	    oc->boc->delivered_so_far + oc->boc->transit_buffer)
+		(void)Lck_CondWait(&oc->boc->cond, &oc->boc->mtx);
 }
 
 void
@@ -334,6 +330,9 @@ ObjWaitState(const struct objcore *oc, enum boc_state_e want)
 	CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
 
 	Lck_Lock(&oc->boc->mtx);
+	/* wake up obj_extend_condwait() */
+	if (oc->flags & OC_F_CANCEL)
+		AZ(pthread_cond_signal(&oc->boc->cond));
 	while (1) {
 		if (oc->boc->state >= want)
 			break;
