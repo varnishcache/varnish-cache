@@ -1736,7 +1736,7 @@ PARAM_ALIAS(deprecated_dummy, debug)
  */
 
 #define PARAM_BITS(nm, fld, def, descr)					\
-	PARAM(nm, fld, nm, tweak_ ## nm, &mgt_param.fld, NULL, NULL,	\
+	PARAM(nm, fld, nm, tweak_ ## nm, mgt_param.fld, NULL, NULL,	\
 	    def, NULL, descr)
 
 PARAM_PRE
