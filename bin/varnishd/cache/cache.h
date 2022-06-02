@@ -850,6 +850,15 @@ const char *WS_Printf(struct ws *ws, const char *fmt, ...) v_printflike_(2, 3);
 void WS_VSB_new(struct vsb *, struct ws *);
 char *WS_VSB_finish(struct vsb *, struct ws *, size_t *);
 
+/* WS utility */
+#define WS_TASK_ALLOC_OBJ(ctx, ptr, magic) do {			\
+	ptr = WS_Alloc((ctx)->ws, sizeof *(ptr));		\
+	if ((ptr) == NULL)					\
+		VRT_fail(ctx, "Out of workspace for " #magic);	\
+	else							\
+		INIT_OBJ(ptr, magic);				\
+} while(0)
+
 /* cache_rfc2616.c */
 void RFC2616_Ttl(struct busyobj *, vtim_real now, vtim_real *t_origin,
     float *ttl, float *grace, float *keep);
