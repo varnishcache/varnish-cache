@@ -124,6 +124,8 @@ extern struct stevedore *stv_h2_rxbuf;
 
 /*--------------------------------------------------------------------*/
 
+void STV_Register(const struct stevedore *, const char *altname);
+
 #define STV_Foreach(arg) for (arg = NULL; STV__iter(&arg);)
 
 int STV__iter(struct stevedore ** const );

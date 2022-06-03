@@ -851,8 +851,8 @@ main(int argc, char * const *argv)
 	if (!arg_list_count("s"))
 		STV_Config(s_arg);
 
-	/* Configure Transient storage, if user did not */
-	STV_Config_Transient();
+	/* Configure CLI and Transient storage, if user did not */
+	STV_Config_Final();
 
 	mgt_vcl_init();
 

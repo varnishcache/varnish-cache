@@ -48,6 +48,9 @@
 
 VTAILQ_HEAD(stevedore_head, stevedore);
 
+static struct stevedore_head proto_stevedores =
+    VTAILQ_HEAD_INITIALIZER(proto_stevedores);
+
 static struct stevedore_head pre_stevedores =
     VTAILQ_HEAD_INITIALIZER(pre_stevedores);
 
@@ -146,32 +149,56 @@ smp_fake_init(struct stevedore *parent, int ac, char * const *av)
 
 static const struct stevedore smp_fake_stevedore = {
 	.magic = STEVEDORE_MAGIC,
-	.name = "deprecated_persistent",
+	.name = "persistent",
 	.init = smp_fake_init,
 };
 #endif
 
 /*--------------------------------------------------------------------
- * Parse a stevedore argument on the form:
- *	[ name '=' ] strategy [ ',' arg ] *
+ * Register a stevedore implementation by name.
+ * VEXTs get to do this first, and since the list is searched front to
+ * back a VEXT stevedore which inadvisably wants to steal "default" or
+ * the name of another stevedore implementation can do so.
  */
 
-static const struct choice STV_choice[] = {
-	{ "file",			&smf_stevedore },
-	{ "malloc",			&sma_stevedore },
-	{ "debug",			&smd_stevedore },
+void
+STV_Register(const struct stevedore *cstv, const char *altname)
+{
+	struct stevedore *stv;
+
+	CHECK_OBJ_NOTNULL(cstv, STEVEDORE_MAGIC);
+	ALLOC_OBJ(stv, STEVEDORE_MAGIC);
+	AN(stv);
+	*stv = *cstv;
+	if (altname != NULL)
+		stv->ident = altname;
+	else
+		stv->ident = stv->name;
+	VTAILQ_INSERT_TAIL(&proto_stevedores, stv, list);
+}
+
+static void
+STV_Register_The_Usual_Suspects(void)
+{
+	STV_Register(&smf_stevedore, NULL);
+	STV_Register(&sma_stevedore, NULL);
+	STV_Register(&smd_stevedore, NULL);
 #ifdef WITH_PERSISTENT_STORAGE
-	{ "deprecated_persistent",	&smp_stevedore },
-	{ "persistent",			&smp_fake_stevedore },
+	STV_Register(&smp_stevedore, NULL);
+	STV_Register(&smp_fake_stevedore, NULL);
 #endif
 #if defined(HAVE_UMEM_H)
-	{ "umem",			&smu_stevedore },
-	{ "default",			&smu_stevedore },
+	STV_Register(&smu_stevedore, NULL);
+	STV_Register(&smu_stevedore, "default");
 #else
-	{ "default",			&sma_stevedore },
+	STV_Register(&sma_stevedore, "default");
 #endif
-	{ NULL,		NULL }
-};
+}
+
+/*--------------------------------------------------------------------
+ * Parse a stevedore argument on the form:
+ *     [ name '=' ] strategy [ ',' arg ] *
+ */
 
 void
 STV_Config(const char *spec)
@@ -197,7 +224,8 @@ STV_Config(const char *spec)
 
 	VTAILQ_FOREACH(stv, &pre_stevedores, list)
 		if (!strcmp(stv->ident, ident))
-			ARGV_ERR("(-s %s) '%s' is already defined\n", spec, ident);
+			ARGV_ERR("(-s %s) '%s' is already defined\n",
+			    spec, ident);
 
 	ALLOC_OBJ(stv, STEVEDORE_MAGIC);
 	AN(stv);
@@ -210,16 +238,15 @@ STV_Config(const char *spec)
 /*--------------------------------------------------------------------*/
 
 void
-STV_Config_Transient(void)
+STV_Config_Final(void)
 {
 	struct stevedore *stv;
 	ASSERT_MGT();
 
 	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_stv);
-	STV_Foreach(stv) {
+	STV_Foreach(stv)
 		if (!strcmp(stv->ident, TRANSIENT_STORAGE))
 			return;
-	}
 	STV_Config(TRANSIENT_STORAGE "=default");
 }
 
@@ -236,6 +263,7 @@ STV_Init(void)
 	const struct stevedore *stv2;
 	int ac;
 
+	STV_Register_The_Usual_Suspects();
 	while (!VTAILQ_EMPTY(&pre_stevedores)) {
 		stv = VTAILQ_FIRST(&pre_stevedores);
 		VTAILQ_REMOVE(&pre_stevedores, stv, list);
@@ -248,7 +276,12 @@ STV_Init(void)
 		for (ac = 0; av[ac + 2] != NULL; ac++)
 			continue;
 
-		stv2 = MGT_Pick(STV_choice, av[1], "storage");
+		VTAILQ_FOREACH(stv2, &proto_stevedores, list)
+			if (!strcmp(stv2->ident, av[1]))
+				break;
+		if (stv2 == NULL)
+			ARGV_ERR("Unknown stevedore method \"%s\"\n", av[1]);
+
 		CHECK_OBJ_NOTNULL(stv2, STEVEDORE_MAGIC);
 		*stv = *stv2;
 		AN(stv->name);
