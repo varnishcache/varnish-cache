@@ -943,12 +943,9 @@ xyzzy_catflap(VRT_CTX, VCL_ENUM type)
 	req = ctx->req;
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	XXXAZ(req->vcf);
-	req->vcf = WS_Alloc(req->ws, sizeof *req->vcf);
-	if (req->vcf == NULL) {
-		VRT_fail(ctx, "WS_Alloc failed in debug.catflap()");
+	WS_TASK_ALLOC_OBJ(ctx, req->vcf, VCF_MAGIC);
+	if (req->vcf == NULL)
 		return;
-	}
-	INIT_OBJ(req->vcf, VCF_MAGIC);
 	if (type == VENUM(first) || type == VENUM(miss)) {
 		req->vcf->func = xyzzy_catflap_simple;
 		req->vcf->priv = TRUST_ME(type);

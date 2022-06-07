@@ -187,13 +187,10 @@ vmod_set(VRT_CTX, struct vmod_priv *priv, VCL_STRING name, VCL_STRING value)
 		return;
 	}
 
-	cookie = WS_Alloc(ctx->ws, sizeof *cookie);
-	if (cookie == NULL) {
-		VSLb(ctx->vsl, SLT_Error,
-		    "cookie: unable to get storage for cookie");
+	WS_TASK_ALLOC_OBJ(ctx, cookie, VMOD_COOKIE_ENTRY_MAGIC);
+	if (cookie == NULL)
 		return;
-	}
-	INIT_OBJ(cookie, VMOD_COOKIE_ENTRY_MAGIC);
+
 	cookie->name = WS_Printf(ctx->ws, "%s", name);
 	cookie->value = WS_Printf(ctx->ws, "%s", value);
 	if (cookie->name == NULL || cookie->value == NULL) {

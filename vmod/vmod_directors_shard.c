@@ -924,13 +924,10 @@ shard_param_task_l(VRT_CTX, const void *id, const char *who,
 		return (p);
 	}
 
-	p = WS_Alloc(ctx->ws, sizeof *p);
-	if (p == NULL) {
-		shard_fail(ctx, who, "%s", "WS_Alloc failed");
+	WS_TASK_ALLOC_OBJ(ctx, p, VMOD_SHARD_SHARD_PARAM_MAGIC);
+	if (p == NULL)
 		return (NULL);
-	}
 	task->priv = p;
-	INIT_OBJ(p, VMOD_SHARD_SHARD_PARAM_MAGIC);
 	p->vcl_name = who;
 	p->scope = SCOPE_TASK;
 

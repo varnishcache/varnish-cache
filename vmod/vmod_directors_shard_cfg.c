@@ -127,13 +127,9 @@ shard_change_get(VRT_CTX, struct sharddir * const shardd)
 		return (change);
 	}
 
-	change = WS_Alloc(ctx->ws, sizeof(*change));
-	if (change == NULL) {
-		shard_fail(ctx, shardd->name, "%s", "could not get workspace");
+	WS_TASK_ALLOC_OBJ(ctx, change, SHARD_CHANGE_MAGIC);
+	if (change == NULL)
 		return (NULL);
-	}
-
-	INIT_OBJ(change, SHARD_CHANGE_MAGIC);
 	change->vsl = ctx->vsl;
 	change->shardd = shardd;
 	VSTAILQ_INIT(&change->tasks);
@@ -159,13 +155,9 @@ shard_change_task_add(VRT_CTX, struct shard_change *change,
 
 	CHECK_OBJ_NOTNULL(change, SHARD_CHANGE_MAGIC);
 
-	task = WS_Alloc(ctx->ws, sizeof(*task));
-	if (task == NULL) {
-		shard_fail(ctx, change->shardd->name, "%s",
-		    "could not get workspace for task");
+	WS_TASK_ALLOC_OBJ(ctx, task, SHARD_CHANGE_TASK_MAGIC);
+	if (task == NULL)
 		return (NULL);
-	}
-	INIT_OBJ(task, SHARD_CHANGE_TASK_MAGIC);
 	task->task = task_e;
 	task->priv = priv;
 	VSTAILQ_INSERT_TAIL(&change->tasks, task, list);
