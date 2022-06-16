@@ -1,0 +1,8 @@
+varnishtest "deprecated variables"
+
+varnish v1 -errvcl "Field 'first_byte_timeout' redefined" {
+	backend be {
+		.beresp_start_timeout = 1s;
+		.first_byte_timeout = 1s;
+	}
+}

@@ -554,7 +554,7 @@ struct vrt_endpoint {
 	rigid char			*vcl_name;		\
 	rigid char			*hosthdr;		\
 	vtim_dur			connect_timeout;	\
-	vtim_dur			first_byte_timeout;	\
+	vtim_dur			beresp_start_timeout;	\
 	vtim_dur			between_bytes_timeout;	\
 	unsigned			max_connections;	\
 	unsigned			proxy_header;
@@ -564,7 +564,7 @@ struct vrt_endpoint {
 		DA(vcl_name);			\
 		DA(hosthdr);			\
 		DN(connect_timeout);		\
-		DN(first_byte_timeout);		\
+		DN(beresp_start_timeout);	\
 		DN(between_bytes_timeout);	\
 		DN(max_connections);		\
 		DN(proxy_header);		\

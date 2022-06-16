@@ -351,8 +351,28 @@ VRT_r_bereq_##which(VRT_CTX)					\
 }
 
 BEREQ_TIMEOUT(connect_timeout)
-BEREQ_TIMEOUT(first_byte_timeout)
 BEREQ_TIMEOUT(between_bytes_timeout)
+
+#define FETCH_TIMEOUT(msg, which)				\
+VCL_VOID							\
+VRT_l_##msg##_##which(VRT_CTX, VCL_DURATION num)		\
+{								\
+								\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);		\
+	ctx->bo->msg##_##which = (num > 0.0 ? num : 0.0);	\
+}								\
+								\
+VCL_DURATION							\
+VRT_r_##msg##_##which(VRT_CTX)					\
+{								\
+								\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);		\
+	return (ctx->bo->msg##_##which);			\
+}
+
+FETCH_TIMEOUT(beresp, start_timeout)
 
 /*--------------------------------------------------------------------*/
 

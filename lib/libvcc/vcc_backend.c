@@ -378,7 +378,7 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 	    "?path",
 	    "?host_header",
 	    "?connect_timeout",
-	    "?first_byte_timeout",
+	    "?beresp_start_timeout,first_byte_timeout",
 	    "?between_bytes_timeout",
 	    "?probe",
 	    "?max_connections",
@@ -445,8 +445,9 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 			ERRCHK(tl);
 			Fb(tl, 0, "%g,\n", t);
 			SkipToken(tl, ';');
-		} else if (vcc_IdIs(t_field, "first_byte_timeout")) {
-			Fb(tl, 0, "\t.first_byte_timeout = ");
+		} else if (vcc_IdIs(t_field,
+		    "beresp_start_timeout,first_byte_timeout")) {
+			Fb(tl, 0, "\t.beresp_start_timeout = ");
 			vcc_Duration(tl, &t);
 			ERRCHK(tl);
 			Fb(tl, 0, "%g,\n", t);

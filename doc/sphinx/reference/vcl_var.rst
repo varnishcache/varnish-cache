@@ -574,20 +574,14 @@ bereq.connect_timeout
 	established.
 
 
-bereq.first_byte_timeout
+bereq.first_byte_timeout ``VCL <= 4.1``
 
-	Type: DURATION
+	Type: DEPRECATED
 
-	Readable from: backend
+	Alias of: beresp.start_timeout
 
-	Writable from: backend
-
-	Default: ``.first_byte_timeout`` attribute from the
-	:ref:`backend_definition`, which defaults to the
-	``first_byte_timeout`` parameter, see :ref:`varnishd(1)`.
-
-	The time in seconds to wait getting the first byte back
-	from the backend.  Not available in pipe mode.
+	This variable is deprecated and may be removed in a future
+	release.
 
 
 bereq.hash
@@ -1007,6 +1001,23 @@ beresp.reason
 	Writable from: vcl_backend_response, vcl_backend_error
 
 	The HTTP status message returned by the server.
+
+
+beresp.start_timeout
+
+	Type: DURATION
+
+	Readable from: backend
+
+	Writable from: backend
+
+	Default: ``.beresp_start_timeout`` attribute from the
+	:ref:`backend_definition`, which defaults to the
+	``beresp_start_timeout`` parameter, see
+	:ref:`varnish-params(7)`.
+
+	The time in seconds to wait getting the first byte back
+	from the backend.  Not available in pipe mode.
 
 
 beresp.status

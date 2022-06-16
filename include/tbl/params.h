@@ -237,7 +237,7 @@ PARAM_SIMPLE(
 )
 
 PARAM_SIMPLE(
-	/* name */	first_byte_timeout,
+	/* name */	beresp_start_timeout,
 	/* type */	timeout,
 	/* min */	"0",
 	/* max */	NULL,
@@ -1695,6 +1695,7 @@ PARAM_ALIAS(deprecated_dummy,	debug)
 PARAM_ALIAS(vcc_err_unref,	vcc_feature)
 PARAM_ALIAS(vcc_allow_inline_c,	vcc_feature)
 PARAM_ALIAS(vcc_unsafe_path,	vcc_feature)
+PARAM_ALIAS(first_byte_timeout, beresp_start_timeout)
 
 #  undef PARAM_ALIAS
 #  undef PARAM_PCRE2

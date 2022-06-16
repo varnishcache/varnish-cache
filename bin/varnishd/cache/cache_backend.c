@@ -211,8 +211,8 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 	bo->htc->priv = pfd;
 	bo->htc->rfd = fdp;
 	bo->htc->doclose = SC_NULL;
-	FIND_TMO(first_byte_timeout,
-	    bo->htc->first_byte_timeout, bo, bp);
+	FIND_TMO(beresp_start_timeout,
+	    bo->htc->beresp_start_timeout, bo, bp);
 	FIND_TMO(between_bytes_timeout,
 	    bo->htc->between_bytes_timeout, bo, bp);
 	return (pfd);
@@ -303,7 +303,7 @@ vbe_dir_gethdrs(VRT_CTX, VCL_BACKEND d)
 
 		if (i == 0 && PFD_State(pfd) != PFD_STATE_USED) {
 			if (VCP_Wait(wrk, pfd, VTIM_real() +
-			    bo->htc->first_byte_timeout) != 0) {
+			    bo->htc->beresp_start_timeout) != 0) {
 				bo->htc->doclose = SC_RX_TIMEOUT;
 				VSLb(bo->vsl, SLT_FetchError,
 				     "first byte timeout (reused connection)");

@@ -396,7 +396,7 @@ struct busyobj {
 
 	/* Timeouts */
 	vtim_dur		connect_timeout;
-	vtim_dur		first_byte_timeout;
+	vtim_dur		beresp_start_timeout;
 	vtim_dur		between_bytes_timeout;
 
 	/* Timers */

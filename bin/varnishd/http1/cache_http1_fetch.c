@@ -190,7 +190,7 @@ V1F_FetchRespHdr(struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
 
-	t = VTIM_real() + htc->first_byte_timeout;
+	t = VTIM_real() + htc->beresp_start_timeout;
 	hs = HTC_RxStuff(htc, HTTP1_Complete, NULL, NULL,
 	    t, NAN, htc->between_bytes_timeout, cache_param->http_resp_size);
 	if (hs != HTC_S_COMPLETE) {
