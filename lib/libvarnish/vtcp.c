@@ -361,6 +361,15 @@ VTCP_set_read_timeout(int s, vtim_dur seconds)
 	    &timeout, sizeof timeout));
 }
 
+void
+VTCP_set_send_timeout(int s, vtim_dur seconds)
+{
+	struct timeval timeout = VTIM_timeval(seconds);
+
+	VTCP_Assert(setsockopt(s, SOL_SOCKET, SO_SNDTIMEO,
+	    &timeout, sizeof timeout));
+}
+
 /*--------------------------------------------------------------------
  */
 
