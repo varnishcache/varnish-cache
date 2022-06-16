@@ -1484,6 +1484,30 @@ sess.idle_send_timeout ``VCL <= 4.1``
 	release.
 
 
+sess.idle_timeout
+
+	Type: DURATION
+
+	Readable from: client
+
+	Writable from: client
+
+	Idle timeout for this session, defaults to the
+	``sess_idle_timeout`` parameter, see :ref:`varnish-params(7)`.
+
+
+sess.linger_interrupt
+
+	Type: DURATION
+
+	Readable from: client
+
+	Writable from: client
+
+	Linger timeout for this session, defaults to the
+	``sess_linger_interrupt`` parameter, see :ref:`varnish-params(7)`.
+
+
 sess.send_timeout ``VCL <= 4.1``
 
 	Type: DEPRECATED
@@ -1494,28 +1518,24 @@ sess.send_timeout ``VCL <= 4.1``
 	release.
 
 
-sess.timeout_idle
+sess.timeout_idle ``VCL <= 4.1``
 
-	Type: DURATION
+	Type: DEPRECATED
 
-	Readable from: client
+	Alias of: sess.idle_timeout
 
-	Writable from: client
-
-	Idle timeout for this session, defaults to the
-	``timeout_idle`` parameter, see :ref:`varnishd(1)`
+	This variable is deprecated and may be removed in a future
+	release.
 
 
-sess.timeout_linger
+sess.timeout_linger ``VCL <= 4.1``
 
-	Type: DURATION
+	Type: DEPRECATED
 
-	Readable from: client
+	Alias of: sess.linger_interrupt
 
-	Writable from: client
-
-	Linger timeout for this session, defaults to the
-	``timeout_linger`` parameter, see :ref:`varnishd(1)`
+	This variable is deprecated and may be removed in a future
+	release.
 
 
 sess.xid	``VCL >= 4.1``

@@ -206,7 +206,7 @@ vca_sock_opt_init(void)
 		NEW_VAL(SO_SNDTIMEO, so, tv,
 		    VTIM_timeval(cache_param->resp_idle_interrupt));
 		NEW_VAL(SO_RCVTIMEO, so, tv,
-		    VTIM_timeval(cache_param->timeout_idle));
+		    VTIM_timeval(cache_param->sess_idle_timeout));
 		SET_VAL(TCP_NODELAY, so, i, enable_tcp_nodelay);
 #if defined(HAVE_TCP_KEEP)
 		NEW_VAL(TCP_KEEPIDLE, so, i,

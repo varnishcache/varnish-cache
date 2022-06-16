@@ -545,7 +545,7 @@ vpx_new_session(struct worker *wrk, void *arg)
 
 	HTC_RxInit(req->htc, req->ws);
 	hs = HTC_RxStuff(req->htc, vpx_complete, NULL, NULL, NAN,
-	    sp->t_idle + cache_param->timeout_idle, NAN, VPX_MAX_LEN);
+	    sp->t_idle + cache_param->sess_idle_timeout, NAN, VPX_MAX_LEN);
 	if (hs != HTC_S_COMPLETE) {
 		Req_Release(req);
 		SES_DeleteHS(sp, hs, NAN);

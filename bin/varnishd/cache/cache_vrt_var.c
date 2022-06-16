@@ -998,7 +998,7 @@ VRT_r_resp_##x(VRT_CTX)					\
 {							\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);		\
 	CHECK_OBJ_NOTNULL(ctx->sp, SESS_MAGIC);		\
-	return (SESS_TMO(ctx->sp, resp_##x));		\
+	return (RESP_TMO(ctx->sp, resp_##x));		\
 }
 
 RESP_TIMEOUT(idle_interrupt, VTCP_set_send_timeout(ctx->sp->fd, d))
@@ -1099,5 +1099,5 @@ VRT_r_sess_##x(VRT_CTX)					\
 	return (SESS_TMO(ctx->sp, x));			\
 }
 
-SESS_VAR_DUR(timeout_idle)
-SESS_VAR_DUR(timeout_linger)
+SESS_VAR_DUR(idle_timeout)
+SESS_VAR_DUR(linger_interrupt)

@@ -1039,7 +1039,7 @@ h2_vfp_body(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr, ssize_t *lp)
 			break;
 
 		i = Lck_CondWaitTimeout(r2->cond, &h2->sess->mtx,
-		    SESS_TMO(h2->sess, timeout_idle));
+		    SESS_TMO(h2->sess, idle_timeout));
 		if (i == ETIMEDOUT) {
 			retval = VFP_ERROR;
 			break;
@@ -1251,7 +1251,7 @@ h2_stream_tmo(struct h2_sess *h2, const struct h2_req *r2, vtim_real now)
 		return (0);
 
 	if (isnan(now) || (r2->t_winupd != 0 &&
-	    now - r2->t_winupd > SESS_TMO(h2->sess, resp_idle_interrupt))) {
+	    now - r2->t_winupd > RESP_TMO(h2->sess, resp_idle_interrupt))) {
 		VSLb(h2->vsl, SLT_Debug,
 		     "H2: stream %u: Hit resp_idle_interrupt waiting for"
 		     " WINDOW_UPDATE", r2->stream);
@@ -1259,7 +1259,7 @@ h2_stream_tmo(struct h2_sess *h2, const struct h2_req *r2, vtim_real now)
 	}
 
 	if (r == 0 && r2->t_send != 0 &&
-	    now - r2->t_send > SESS_TMO(h2->sess, resp_send_timeout)) {
+	    now - r2->t_send > RESP_TMO(h2->sess, resp_send_timeout)) {
 		VSLb(h2->vsl, SLT_Debug,
 		     "H2: stream %u: Hit resp_send_timeout", r2->stream);
 		r = 1;
@@ -1365,7 +1365,7 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 	h2->sess->t_idle = VTIM_real();
 	hs = HTC_RxStuff(h2->htc, h2_frame_complete,
 	    NULL, NULL, NAN,
-	    h2->sess->t_idle + SESS_TMO(h2->sess, timeout_idle),
+	    h2->sess->t_idle + SESS_TMO(h2->sess, idle_timeout),
 	    NAN, h2->local_settings.max_frame_size + 9);
 	switch (hs) {
 	case HTC_S_COMPLETE:

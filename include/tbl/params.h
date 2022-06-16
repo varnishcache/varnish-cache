@@ -923,7 +923,7 @@ PARAM_SIMPLE(
 #undef PLATFORM_FLAGS
 
 PARAM_SIMPLE(
-	/* name */	timeout_idle,
+	/* name */	sess_idle_timeout,
 	/* type */	timeout,
 	/* min */	"0.000",
 	/* max */	NULL,
@@ -939,7 +939,7 @@ PARAM_SIMPLE(
 )
 
 PARAM_SIMPLE(
-	/* name */	timeout_linger,
+	/* name */	sess_linger_interrupt,
 	/* type */	timeout,
 	/* min */	"0.000",
 	/* max */	NULL,
@@ -1707,6 +1707,8 @@ PARAM_ALIAS(connect_timeout, bereq_connect_timeout)
 PARAM_ALIAS(idle_send_timeout, resp_idle_interrupt)
 PARAM_ALIAS(pipe_timeout, pipe_idle_timeout)
 PARAM_ALIAS(send_timeout, resp_send_timeout)
+PARAM_ALIAS(timeout_idle, sess_idle_timeout)
+PARAM_ALIAS(timeout_linger, sess_linger_interrupt)
 
 #  undef PARAM_ALIAS
 #  undef PARAM_PCRE2
