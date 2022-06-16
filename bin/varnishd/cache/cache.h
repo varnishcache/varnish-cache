@@ -565,7 +565,7 @@ struct sess {
 	vtim_dur		timeout_idle;
 	vtim_dur		timeout_linger;
 	vtim_dur		send_timeout;
-	vtim_dur		idle_send_timeout;
+	vtim_dur		resp_idle_interrupt;
 };
 
 #define SESS_TMO(sp, tmo)					\

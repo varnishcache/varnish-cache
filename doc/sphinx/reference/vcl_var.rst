@@ -1344,6 +1344,19 @@ resp.http.*
 	See ``req.http.*`` for general notes.
 
 
+resp.idle_interrupt
+
+	Type: DURATION
+
+	Readable from: client
+
+	Writable from: client
+
+	Send timeout for individual pieces of response data on client
+	connections, defaults to the ``resp_idle_interrupt`` parameter,
+	see :ref:`varnish-params(7)`.
+
+
 resp.is_streaming
 
 	Type: BOOL
@@ -1449,17 +1462,14 @@ transactions may take place. It may comprise the traffic over an
 HTTP/1 keep-alive connection, or the multiplexed traffic over an
 HTTP/2 connection.
 
-sess.idle_send_timeout
+sess.idle_send_timeout ``VCL <= 4.1``
 
-	Type: DURATION
+	Type: DEPRECATED
 
-	Readable from: client
+	Alias of: resp.idle_interrupt
 
-	Writable from: client
-
-	Send timeout for individual pieces of data on client
-	connections, defaults to the ``idle_send_timeout`` parameter,
-	see :ref:`varnishd(1)`
+	This variable is deprecated and may be removed in a future
+	release.
 
 
 sess.send_timeout

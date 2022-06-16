@@ -434,7 +434,7 @@ SES_New(struct pool *pp)
 	sp->timeout_idle = NAN;
 	sp->timeout_linger = NAN;
 	sp->send_timeout = NAN;
-	sp->idle_send_timeout = NAN;
+	sp->resp_idle_interrupt = NAN;
 	Lck_New(&sp->mtx, lck_sess);
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	return (sp);

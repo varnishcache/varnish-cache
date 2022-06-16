@@ -204,7 +204,7 @@ vca_sock_opt_init(void)
 		SET_VAL(SO_LINGER, so, lg, disable_so_linger);
 		SET_VAL(SO_KEEPALIVE, so, i, enable_so_keepalive);
 		NEW_VAL(SO_SNDTIMEO, so, tv,
-		    VTIM_timeval(cache_param->idle_send_timeout));
+		    VTIM_timeval(cache_param->resp_idle_interrupt));
 		NEW_VAL(SO_RCVTIMEO, so, tv,
 		    VTIM_timeval(cache_param->timeout_idle));
 		SET_VAL(TCP_NODELAY, so, i, enable_tcp_nodelay);

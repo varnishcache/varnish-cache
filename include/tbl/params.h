@@ -627,16 +627,16 @@ PARAM_SIMPLE(
 )
 
 PARAM_SIMPLE(
-	/* name */	idle_send_timeout,
+	/* name */	resp_idle_interrupt,
 	/* type */	timeout,
 	/* min */	"0.000",
 	/* max */	NULL,
 	/* def */	"60.000",
 	/* units */	"seconds",
 	/* descr */
-	"Send timeout for individual pieces of data on client connections."
-	" May get extended if 'send_timeout' applies.\n\n"
-	"When this timeout is hit, the session is closed.\n\n"
+	"This timeout triggers when no data is sent while Varnish is "
+	"actively trying to send a piece of the response to a client. "
+	"Once it triggers, 'send_timeout' can be checked and enforced.\n\n"
 	"See the man page for `setsockopt(2)` or `socket(7)` under"
 	" ``SO_SNDTIMEO`` for more information.",
 	/* flags */	DELAYED_EFFECT
@@ -1700,6 +1700,7 @@ PARAM_ALIAS(between_bytes_timeout, beresp_idle_timeout)
 PARAM_ALIAS(backend_idle_timeout, backend_pool_timeout)
 PARAM_ALIAS(cli_timeout, cli_resp_timeout)
 PARAM_ALIAS(connect_timeout, bereq_connect_timeout)
+PARAM_ALIAS(idle_send_timeout, resp_idle_interrupt)
 
 #  undef PARAM_ALIAS
 #  undef PARAM_PCRE2
