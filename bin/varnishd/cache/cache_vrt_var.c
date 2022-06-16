@@ -1002,6 +1002,7 @@ VRT_r_resp_##x(VRT_CTX)					\
 }
 
 RESP_TIMEOUT(idle_interrupt, VTCP_set_send_timeout(ctx->sp->fd, d))
+RESP_TIMEOUT(send_timeout, )
 
 /*--------------------------------------------------------------------*/
 
@@ -1100,4 +1101,3 @@ VRT_r_sess_##x(VRT_CTX)					\
 
 SESS_VAR_DUR(timeout_idle)
 SESS_VAR_DUR(timeout_linger)
-SESS_VAR_DUR(send_timeout)

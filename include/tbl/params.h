@@ -636,7 +636,8 @@ PARAM_SIMPLE(
 	/* descr */
 	"This timeout triggers when no data is sent while Varnish is "
 	"actively trying to send a piece of the response to a client. "
-	"Once it triggers, 'send_timeout' can be checked and enforced.\n\n"
+	"Once it triggers, 'resp_send_timeout' can be checked and "
+	"enforced.\n\n"
 	"See the man page for `setsockopt(2)` or `socket(7)` under"
 	" ``SO_SNDTIMEO`` for more information.",
 	/* flags */	DELAYED_EFFECT
@@ -792,19 +793,22 @@ PARAM_SIMPLE(
 )
 
 PARAM_SIMPLE(
-	/* name */	send_timeout,
+	/* name */	resp_send_timeout,
 	/* type */	timeout,
 	/* min */	"0.000",
 	/* max */	NULL,
 	/* def */	"600.000",
 	/* units */	"seconds",
 	/* descr */
-	"Total timeout for ordinary HTTP1 responses. Does not apply to some"
+	"Total timeout to deliver a client response. Does not apply to some"
 	" internally generated errors and pipe mode.\n\n"
-	"When 'idle_send_timeout' is hit while sending an HTTP1 response, the"
-	" timeout is extended unless the total time already taken for sending"
-	" the response in its entirety exceeds this many seconds.\n\n"
-	"When this timeout is hit, the session is closed",
+	"This timeout is checked whenever more data needs to be sent. When"
+	" Varnish is waiting for data to be transmitted, it may be waiting"
+	" for the transmission itself or some other condition. During such"
+	" a wait, 'resp_idle_interrupt' may trigger to grant opportunities"
+	" to check and enforce this timeout.\n\n"
+	"This means that a slow but steady delivery of a client response may"
+	" outlive this timeout.",
 	/* flags */	DELAYED_EFFECT
 )
 
@@ -1702,6 +1706,7 @@ PARAM_ALIAS(cli_timeout, cli_resp_timeout)
 PARAM_ALIAS(connect_timeout, bereq_connect_timeout)
 PARAM_ALIAS(idle_send_timeout, resp_idle_interrupt)
 PARAM_ALIAS(pipe_timeout, pipe_idle_timeout)
+PARAM_ALIAS(send_timeout, resp_send_timeout)
 
 #  undef PARAM_ALIAS
 #  undef PARAM_PCRE2

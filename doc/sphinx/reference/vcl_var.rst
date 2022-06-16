@@ -1398,6 +1398,18 @@ resp.reason
 	The HTTP status message that will be returned.
 
 
+resp.send_timeout
+
+	Type: DURATION
+
+	Readable from: client
+
+	Writable from: client
+
+	Total timeout for ordinary HTTP1 responses, defaults to the
+	``resp_send_timeout`` parameter, see :ref:`varnish-params(7)`.
+
+
 resp.status
 
 	Type: INT
@@ -1472,16 +1484,14 @@ sess.idle_send_timeout ``VCL <= 4.1``
 	release.
 
 
-sess.send_timeout
+sess.send_timeout ``VCL <= 4.1``
 
-	Type: DURATION
+	Type: DEPRECATED
 
-	Readable from: client
+	Alias of: resp.send_timeout
 
-	Writable from: client
-
-	Total timeout for ordinary HTTP1 responses, defaults to the
-	``send_timeout`` parameter, see :ref:`varnishd(1)`
+	This variable is deprecated and may be removed in a future
+	release.
 
 
 sess.timeout_idle

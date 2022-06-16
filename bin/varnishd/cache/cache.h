@@ -564,7 +564,7 @@ struct sess {
 	vtim_real		t_idle;		/* fd accepted or resp sent */
 	vtim_dur		timeout_idle;
 	vtim_dur		timeout_linger;
-	vtim_dur		send_timeout;
+	vtim_dur		resp_send_timeout;
 	vtim_dur		resp_idle_interrupt;
 };
 

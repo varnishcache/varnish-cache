@@ -65,8 +65,8 @@ h2_cond_wait(pthread_cond_t *cond, struct h2_sess *h2, struct h2_req *r2)
 	now = VTIM_real();
 
 	/* NB: when we grab resp_idle_interrupt before acquiring the session
-	 * lock we may time out, but once we wake up both send_timeout and
-	 * resp_idle_interrupt may have changed meanwhile. For this reason
+	 * lock we may time out, but once we wake up both resp_send_timeout
+	 * and resp_idle_interrupt may have changed meanwhile. For this reason
 	 * h2_stream_tmo() may not log what timed out and we need to call
 	 * again with a magic NAN "now" that indicates to h2_stream_tmo()
 	 * that the stream reached the resp_idle_interrupt via the lock and

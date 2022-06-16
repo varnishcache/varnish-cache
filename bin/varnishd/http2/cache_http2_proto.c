@@ -1259,9 +1259,9 @@ h2_stream_tmo(struct h2_sess *h2, const struct h2_req *r2, vtim_real now)
 	}
 
 	if (r == 0 && r2->t_send != 0 &&
-	    now - r2->t_send > SESS_TMO(h2->sess, send_timeout)) {
+	    now - r2->t_send > SESS_TMO(h2->sess, resp_send_timeout)) {
 		VSLb(h2->vsl, SLT_Debug,
-		     "H2: stream %u: Hit send_timeout", r2->stream);
+		     "H2: stream %u: Hit resp_send_timeout", r2->stream);
 		r = 1;
 	}
 
