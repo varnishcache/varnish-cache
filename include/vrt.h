@@ -63,6 +63,18 @@
  *	VRT_AddVFP() deprecated
  *	VRT_RemoveVDP() deprecated
  *	VRT_RemoveVFP() deprecated
+ *	VRT_l_bereq_between_bytes_timeout() renamed to VRT_l_beresp_idle_timeout()
+ *	VRT_r_bereq_between_bytes_timeout() renamed to VRT_r_beresp_idle_timeout()
+ *	VRT_l_bereq_first_byte_timeout() renamed to VRT_l_beresp_start_timeout()
+ *	VRT_r_bereq_first_byte_timeout() renamed to VRT_r_beresp_start_timeout()
+ *	VRT_l_sess_idle_send_timeout() renamed to VRT_l_resp_idle_interrupt()
+ *	VRT_r_sess_idle_send_timeout() renamed to VRT_r_resp_idle_interrupt()
+ *	VRT_l_sess_send_timeout() renamed to VRT_l_resp_send_timeout()
+ *	VRT_r_sess_send_timeout() renamed to VRT_r_resp_send_timeout()
+ *	VRT_l_sess_timeout_idle() renamed to VRT_l_sess_idle_timeout()
+ *	VRT_r_sess_timeout_idle() renamed to VRT_r_sess_idle_timeout()
+ *	VRT_l_sess_timeout_linger() renamed to VRT_l_sess_linger_interrupt()
+ *	VRT_r_sess_timeout_linger() renamed to VRT_r_sess_linger_interrupt()
  * 15.0 (2022-03-15)
  *	VRT_r_req_transport() added
  *	VRT_Assign_Backend() added
