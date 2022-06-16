@@ -109,7 +109,7 @@ struct http_conn {
 
 	/* Timeouts */
 	vtim_dur		beresp_start_timeout;
-	vtim_dur		between_bytes_timeout;
+	vtim_dur		beresp_idle_timeout;
 };
 
 enum htc_status_e {

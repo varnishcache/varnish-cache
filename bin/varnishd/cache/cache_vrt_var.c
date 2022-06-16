@@ -351,7 +351,6 @@ VRT_r_bereq_##which(VRT_CTX)					\
 }
 
 BEREQ_TIMEOUT(connect_timeout)
-BEREQ_TIMEOUT(between_bytes_timeout)
 
 #define FETCH_TIMEOUT(msg, which)				\
 VCL_VOID							\
@@ -372,6 +371,7 @@ VRT_r_##msg##_##which(VRT_CTX)					\
 	return (ctx->bo->msg##_##which);			\
 }
 
+FETCH_TIMEOUT(beresp, idle_timeout)
 FETCH_TIMEOUT(beresp, start_timeout)
 
 /*--------------------------------------------------------------------*/

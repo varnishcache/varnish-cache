@@ -97,7 +97,7 @@ These attributes control how patient `varnishd` is during backend fetches::
 
     .connect_timeout = 1.4s;
     .beresp_start_timeout = 20s;
-    .between_bytes_timeout = 10s;
+    .beresp_idle_timeout = 10s;
 
 The default values comes parameters with the same names, see :ref:`varnishd(1)`.
 

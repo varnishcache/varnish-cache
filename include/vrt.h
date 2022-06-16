@@ -555,7 +555,7 @@ struct vrt_endpoint {
 	rigid char			*hosthdr;		\
 	vtim_dur			connect_timeout;	\
 	vtim_dur			beresp_start_timeout;	\
-	vtim_dur			between_bytes_timeout;	\
+	vtim_dur			beresp_idle_timeout;	\
 	unsigned			max_connections;	\
 	unsigned			proxy_header;
 
@@ -565,7 +565,7 @@ struct vrt_endpoint {
 		DA(hosthdr);			\
 		DN(connect_timeout);		\
 		DN(beresp_start_timeout);	\
-		DN(between_bytes_timeout);	\
+		DN(beresp_idle_timeout);	\
 		DN(max_connections);		\
 		DN(proxy_header);		\
 	} while(0)

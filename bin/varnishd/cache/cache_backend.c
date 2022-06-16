@@ -213,8 +213,8 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 	bo->htc->doclose = SC_NULL;
 	FIND_TMO(beresp_start_timeout,
 	    bo->htc->beresp_start_timeout, bo, bp);
-	FIND_TMO(between_bytes_timeout,
-	    bo->htc->between_bytes_timeout, bo, bp);
+	FIND_TMO(beresp_idle_timeout,
+	    bo->htc->beresp_idle_timeout, bo, bp);
 	return (pfd);
 }
 

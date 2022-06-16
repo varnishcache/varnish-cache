@@ -6,3 +6,10 @@ varnish v1 -errvcl "Field 'first_byte_timeout' redefined" {
 		.first_byte_timeout = 1s;
 	}
 }
+
+varnish v1 -errvcl "Field 'between_bytes_timeout' redefined" {
+	backend be {
+		.beresp_idle_timeout = 1s;
+		.between_bytes_timeout = 1s;
+	}
+}

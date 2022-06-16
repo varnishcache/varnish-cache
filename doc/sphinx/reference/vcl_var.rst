@@ -532,20 +532,14 @@ bereq.backend
 	or backend, respectively.
 
 
-bereq.between_bytes_timeout
+bereq.between_bytes_timeout ``VCL <= 4.1``
 
-	Type: DURATION
+	Type: DEPRECATED
 
-	Readable from: backend
+	Alias of: beresp.idle_timeout
 
-	Writable from: backend
-
-	Default: ``.between_bytes_timeout`` attribute from the
-	:ref:`backend_definition`, which defaults to the
-	``between_bytes_timeout`` parameter, see :ref:`varnishd(1)`.
-
-	The time in seconds to wait between each received byte from the
-	backend.  Not available in pipe mode.
+	This variable is deprecated and may be removed in a future
+	release.
 
 
 bereq.body
@@ -1001,6 +995,23 @@ beresp.reason
 	Writable from: vcl_backend_response, vcl_backend_error
 
 	The HTTP status message returned by the server.
+
+
+beresp.idle_timeout
+
+	Type: DURATION
+
+	Readable from: backend
+
+	Writable from: backend
+
+	Default: ``.beresp_idle_timeout`` attribute from the
+	:ref:`backend_definition`, which defaults to the
+	``beresp_idle_timeout`` parameter, see
+	:ref:`varnish-params(7)`.
+
+	The time in seconds to wait between each received byte from the
+	backend.  Not available in pipe mode.
 
 
 beresp.start_timeout
