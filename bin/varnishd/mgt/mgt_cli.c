@@ -154,7 +154,7 @@ mcf_askchild(struct cli *cli, const char * const *av, void *priv)
 		MCH_Cli_Fail();
 		return;
 	}
-	if (VCLI_ReadResult(cli_i, &u, &q, mgt_param.cli_timeout))
+	if (VCLI_ReadResult(cli_i, &u, &q, mgt_param.cli_resp_timeout))
 		MCH_Cli_Fail();
 	VCLI_SetResult(cli, u);
 	VCLI_Out(cli, "%s", q);
@@ -205,7 +205,7 @@ mgt_cli_askchild(unsigned *status, char **resp, const char *fmt, ...)
 		return (CLIS_COMMS);
 	}
 
-	if (VCLI_ReadResult(cli_i, &u, resp, mgt_param.cli_timeout))
+	if (VCLI_ReadResult(cli_i, &u, resp, mgt_param.cli_resp_timeout))
 		MCH_Cli_Fail();
 	*status = u;
 	return (u == CLIS_OK || u == CLIS_TRUNCATED ? 0 : u);
