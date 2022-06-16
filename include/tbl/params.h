@@ -753,7 +753,7 @@ PARAM_SIMPLE(
 )
 
 PARAM_SIMPLE(
-	/* name */	pipe_timeout,
+	/* name */	pipe_idle_timeout,
 	/* type */	timeout,
 	/* min */	"0.000",
 	/* max */	NULL,
@@ -1701,6 +1701,7 @@ PARAM_ALIAS(backend_idle_timeout, backend_pool_timeout)
 PARAM_ALIAS(cli_timeout, cli_resp_timeout)
 PARAM_ALIAS(connect_timeout, bereq_connect_timeout)
 PARAM_ALIAS(idle_send_timeout, resp_idle_interrupt)
+PARAM_ALIAS(pipe_timeout, pipe_idle_timeout)
 
 #  undef PARAM_ALIAS
 #  undef PARAM_PCRE2

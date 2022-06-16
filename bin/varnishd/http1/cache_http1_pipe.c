@@ -143,7 +143,7 @@ V1P_Process(const struct req *req, int fd, struct v1p_acct *v1a)
 		fds[0].revents = 0;
 		fds[1].revents = 0;
 		i = poll(fds, 2,
-		    (int)(cache_param->pipe_timeout * 1e3));
+		    (int)(cache_param->pipe_idle_timeout * 1e3));
 		if (i < 1)
 			break;
 		if (fds[0].revents &&
