@@ -3,6 +3,7 @@
 dist_man_MANS = \
 	varnish-cli.7 \
 	varnish-counters.7 \
+	varnish-params.7 \
 	vcl.7 \
 	vcl-backend.7 \
 	vcl-probe.7 \
@@ -45,6 +46,10 @@ varnish-cli.7: $(top_builddir)/doc/sphinx/reference/varnish-cli.rst \
 varnish-counters.7: $(top_builddir)/doc/sphinx/reference/varnish-counters.rst \
 	$(top_builddir)/doc/sphinx/include/counters.rst
 	$(BUILD_MAN) $(top_builddir)/doc/sphinx/reference/varnish-counters.rst $@
+
+varnish-params.7: $(top_builddir)/doc/sphinx/reference/varnish-params.rst \
+	$(top_builddir)/doc/sphinx/include/params.rst
+	$(BUILD_MAN) $(top_builddir)/doc/sphinx/reference/varnish-params.rst $@
 
 vcl.7: $(top_builddir)/doc/sphinx/reference/vcl.rst \
 	$(top_builddir)/doc/sphinx/reference/vcl_var.rst \

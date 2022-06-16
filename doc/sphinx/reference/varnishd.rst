@@ -168,7 +168,7 @@ outputs documentation in reStructuredText, aka RST).
 -x parameter
 
   Print documentation of the runtime parameters (-p options), see
-  `List of Parameters`_.
+  :ref:`varnish-params(7)`.
 
 -x vsl
 
@@ -235,7 +235,7 @@ Tuning options
 -p <param=value>
 
   Set the parameter specified by param to the specified value, see
-  `List of Parameters`_ for details. This option can be used multiple
+  :ref:`varnish-params(7)` for details. This option can be used multiple
   times to specify multiple parameters.
 
 -s <[name=]type[,options]>
@@ -250,7 +250,8 @@ Tuning options
 
   Specifies size of the space for the VSL records, shorthand for
   ``-p vsl_space=<vsl>``. Scaling suffixes like 'K' and 'M' can be
-  used up to (G)igabytes. See `vsl_space`_ for more information.
+  used up to (G)igabytes. See :ref:`varnish-params(7)` for more
+  information.
 
 Security options
 ----------------
@@ -514,72 +515,6 @@ Note that it is necessary to include an explicit `vcl.use` command to
 select which VCL should be the active VCL when relying on CLI Command File
 to load the configurations at startup.
 
-.. _ref-varnishd-params:
-
-RUN TIME PARAMETERS
-===================
-
-Run Time Parameter Flags
-------------------------
-
-Runtime parameters are marked with shorthand flags to avoid repeating
-the same text over and over in the table below. The meaning of the
-flags are:
-
-* `experimental`
-
-  We have no solid information about good/bad/optimal values for this
-  parameter. Feedback with experience and observations are most
-  welcome.
-
-* `delayed`
-
-  This parameter can be changed on the fly, but will not take effect
-  immediately.
-
-* `restart`
-
-  The worker process must be stopped and restarted, before this
-  parameter takes effect.
-
-* `reload`
-
-  The VCL programs must be reloaded for this parameter to take effect.
-
-* `wizard`
-
-  Do not touch unless you *really* know what you're doing.
-
-* `only_root`
-
-  Only works if `varnishd` is running as root.
-
-Default Value Exceptions on 32 bit Systems
-------------------------------------------
-
-Be aware that on 32 bit systems, certain default or maximum values are
-reduced relative to the values listed below, in order to conserve VM
-space:
-
-* workspace_client: 24k
-* workspace_backend: 20k
-* http_resp_size: 8k
-* http_req_size: 12k
-* gzip_buffer: 4k
-* vsl_buffer: 4k
-* vsl_space: 1G (maximum)
-* thread_pool_stack: 64k
-
-.. _List of Parameters:
-
-List of Parameters
-------------------
-
-This text is produced from the same text you will find in the CLI if
-you use the param.show command:
-
-.. include:: ../include/params.rst
-
 EXIT CODES
 ==========
 
@@ -607,6 +542,7 @@ SEE ALSO
 * :ref:`varnishstat(1)`
 * :ref:`varnishtop(1)`
 * :ref:`varnish-cli(7)`
+* :ref:`varnish-params(7)`
 * :ref:`vcl(7)`
 
 HISTORY
