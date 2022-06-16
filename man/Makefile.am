@@ -62,7 +62,8 @@ vcl-backend.7: $(top_builddir)/doc/sphinx/reference/vcl-backend.rst
 vcl-probe.7: $(top_builddir)/doc/sphinx/reference/vcl-probe.rst
 	$(BUILD_MAN) $(top_builddir)/doc/sphinx/reference/vcl-probe.rst $@
 
-vcl-var.7: $(top_builddir)/doc/sphinx/reference/vcl-var.rst
+vcl-var.7: $(top_builddir)/doc/sphinx/reference/vcl-var.rst \
+	$(top_builddir)/doc/sphinx/reference/vcl_var.rst
 	$(BUILD_MAN) $(top_builddir)/doc/sphinx/reference/vcl-var.rst $@
 
 vsl.7: $(top_builddir)/doc/sphinx/reference/vsl.rst \
