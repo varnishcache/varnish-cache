@@ -671,6 +671,7 @@ static void
 mcf_wash_param(struct cli *cli, struct parspec *pp, enum mcf_which_e which,
     const char *name, struct vsb *vsb)
 {
+	struct parspec *pp_orig;
 	const char *val;
 	int err;
 
@@ -685,8 +686,9 @@ mcf_wash_param(struct cli *cli, struct parspec *pp, enum mcf_which_e which,
 
 	if (pp->func == tweak_alias) {
 		assert(which == MCF_DEFAULT);
-		pp->priv = mcf_findpar(pp->def);
-		pp->def = NULL;
+		pp_orig = mcf_findpar(pp->def);
+		pp->priv = pp_orig;
+		pp->def = pp_orig->def;
 		return;
 	}
 
