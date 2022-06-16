@@ -331,27 +331,6 @@ VRT_l_client_identity(VRT_CTX, const char *str, VCL_STRANDS s)
 
 /*--------------------------------------------------------------------*/
 
-#define BEREQ_TIMEOUT(which)					\
-VCL_VOID							\
-VRT_l_bereq_##which(VRT_CTX, VCL_DURATION num)			\
-{								\
-								\
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
-	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);		\
-	ctx->bo->which = (num > 0.0 ? num : 0.0);		\
-}								\
-								\
-VCL_DURATION							\
-VRT_r_bereq_##which(VRT_CTX)					\
-{								\
-								\
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
-	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);		\
-	return (ctx->bo->which);				\
-}
-
-BEREQ_TIMEOUT(connect_timeout)
-
 #define FETCH_TIMEOUT(msg, which)				\
 VCL_VOID							\
 VRT_l_##msg##_##which(VRT_CTX, VCL_DURATION num)		\
@@ -371,6 +350,7 @@ VRT_r_##msg##_##which(VRT_CTX)					\
 	return (ctx->bo->msg##_##which);			\
 }
 
+FETCH_TIMEOUT(bereq, connect_timeout)
 FETCH_TIMEOUT(beresp, idle_timeout)
 FETCH_TIMEOUT(beresp, start_timeout)
 

@@ -13,3 +13,10 @@ varnish v1 -errvcl "Field 'between_bytes_timeout' redefined" {
 		.between_bytes_timeout = 1s;
 	}
 }
+
+varnish v1 -errvcl "Field 'connect_timeout' redefined" {
+	backend be {
+		.bereq_connect_timeout = 1s;
+		.connect_timeout = 1s;
+	}
+}

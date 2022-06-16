@@ -361,7 +361,7 @@ PARAM_SIMPLE(
 )
 
 PARAM_SIMPLE(
-	/* name */	connect_timeout,
+	/* name */	bereq_connect_timeout,
 	/* type */	timeout,
 	/* min */	"0.000",
 	/* max */	NULL,
@@ -1699,6 +1699,7 @@ PARAM_ALIAS(first_byte_timeout, beresp_start_timeout)
 PARAM_ALIAS(between_bytes_timeout, beresp_idle_timeout)
 PARAM_ALIAS(backend_idle_timeout, backend_pool_timeout)
 PARAM_ALIAS(cli_timeout, cli_resp_timeout)
+PARAM_ALIAS(connect_timeout, bereq_connect_timeout)
 
 #  undef PARAM_ALIAS
 #  undef PARAM_PCRE2

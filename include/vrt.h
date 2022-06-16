@@ -553,7 +553,7 @@ struct vrt_endpoint {
 #define VRT_BACKEND_FIELDS(rigid)				\
 	rigid char			*vcl_name;		\
 	rigid char			*hosthdr;		\
-	vtim_dur			connect_timeout;	\
+	vtim_dur			bereq_connect_timeout;	\
 	vtim_dur			beresp_start_timeout;	\
 	vtim_dur			beresp_idle_timeout;	\
 	unsigned			max_connections;	\
@@ -563,7 +563,7 @@ struct vrt_endpoint {
 	do {					\
 		DA(vcl_name);			\
 		DA(hosthdr);			\
-		DN(connect_timeout);		\
+		DN(bereq_connect_timeout);	\
 		DN(beresp_start_timeout);	\
 		DN(beresp_idle_timeout);	\
 		DN(max_connections);		\

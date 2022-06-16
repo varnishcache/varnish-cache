@@ -377,7 +377,7 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 	    "?port",
 	    "?path",
 	    "?host_header",
-	    "?connect_timeout",
+	    "?bereq_connect_timeout,connect_timeout",
 	    "?beresp_start_timeout,first_byte_timeout",
 	    "?beresp_idle_timeout,between_bytes_timeout",
 	    "?probe",
@@ -439,8 +439,9 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 			t_hosthdr = tl->t;
 			vcc_NextToken(tl);
 			SkipToken(tl, ';');
-		} else if (vcc_IdIs(t_field, "connect_timeout")) {
-			Fb(tl, 0, "\t.connect_timeout = ");
+		} else if (vcc_IdIs(t_field,
+		    "bereq_connect_timeout,connect_timeout")) {
+			Fb(tl, 0, "\t.bereq_connect_timeout = ");
 			vcc_Duration(tl, &t);
 			ERRCHK(tl);
 			Fb(tl, 0, "%g,\n", t);

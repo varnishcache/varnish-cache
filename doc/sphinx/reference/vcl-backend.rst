@@ -95,7 +95,7 @@ Timeout Attributes
 
 These attributes control how patient `varnishd` is during backend fetches::
 
-    .connect_timeout = 1.4s;
+    .bereq_connect_timeout = 1.4s;
     .beresp_start_timeout = 20s;
     .beresp_idle_timeout = 10s;
 

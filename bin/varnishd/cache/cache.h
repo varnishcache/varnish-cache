@@ -395,7 +395,7 @@ struct busyobj {
 #include "tbl/bo_flags.h"
 
 	/* Timeouts */
-	vtim_dur		connect_timeout;
+	vtim_dur		bereq_connect_timeout;
 	vtim_dur		beresp_start_timeout;
 	vtim_dur		beresp_idle_timeout;
 
