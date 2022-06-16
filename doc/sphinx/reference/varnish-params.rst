@@ -72,6 +72,41 @@ space:
 * vsl_space: 1G (maximum)
 * thread_pool_stack: 64k
 
+Timeout Parameters
+------------------
+
+All timeout parameters follow a consistent naming scheme:
+
+    <subject>_<event>_<type>
+
+The subject may be one of the following:
+
+- ``sess`` (client session)
+- ``req`` (client request)
+- ``resp`` (client response)
+- ``pipe`` (client transaction turning into a pipe)
+- ``bereq`` (backend request)
+- ``beresp`` (backend response)
+- ``backend`` (backend resource)
+- ``cli`` (command line session)
+- ``thread`` (worker thread)
+
+Common events are:
+
+- ``idle`` (waiting for data to be sent or received)
+- ``send`` (complete delivery)
+- ``start`` (first byte fetched)
+- ``pool`` (time spent in a pool)
+
+.. More common events for later:
+.. - ``fetch`` (complete fetch)
+.. - ``task`` (complete task)
+
+Finally, there are two types of timeouts:
+
+- ``timeout`` (definitive failure condition)
+- ``interrupt`` (triggered to verify another condition)
+
 List of Parameters
 ------------------
 
