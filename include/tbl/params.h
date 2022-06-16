@@ -266,7 +266,7 @@ PARAM_SIMPLE(
 )
 
 PARAM_SIMPLE(
-	/* name */	backend_idle_timeout,
+	/* name */	backend_pool_timeout,
 	/* type */	timeout,
 	/* min */	"1",
 	/* max */	NULL,
@@ -1697,6 +1697,7 @@ PARAM_ALIAS(vcc_allow_inline_c,	vcc_feature)
 PARAM_ALIAS(vcc_unsafe_path,	vcc_feature)
 PARAM_ALIAS(first_byte_timeout, beresp_start_timeout)
 PARAM_ALIAS(between_bytes_timeout, beresp_idle_timeout)
+PARAM_ALIAS(backend_idle_timeout, backend_pool_timeout)
 
 #  undef PARAM_ALIAS
 #  undef PARAM_PCRE2

@@ -25,3 +25,5 @@ shell -err {
 varnish v1 -cliexpect vcc_feature "param.show vcc_allow_inline_c"
 varnish v1 -cliexpect vcc_feature "param.show vcc_err_unref"
 varnish v1 -cliexpect vcc_feature "param.show vcc_unsafe_path"
+
+varnish v1 -cliexpect backend_pool_timeout "param.show backend_idle_timeout"
