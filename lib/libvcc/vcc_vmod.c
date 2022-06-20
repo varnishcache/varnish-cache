@@ -164,6 +164,7 @@ vcc_json_always(struct vcc *tl, const struct vjsn *vj, const char *vmod_name)
 	struct inifin *ifp;
 	const struct vjsn_val *vv, *vv2;
 	double vmod_syntax = 0.0;
+	int cproto_seen = 0;
 
 	AN(vj);
 	AN(vmod_name);
@@ -197,6 +198,8 @@ vcc_json_always(struct vcc *tl, const struct vjsn *vj, const char *vmod_name)
 		} else if (!strcmp(vv2->value, "$ALIAS")) {
 		} else if (!strcmp(vv2->value, "$FUNC")) {
 		} else if (!strcmp(vv2->value, "$OBJ")) {
+		} else if (!strcmp(vv2->value, "$CPROTO")) {
+			cproto_seen = 1;
 		} else {
 			VTAILQ_FOREACH(vv2, &vv->children, list)
 				fprintf(stderr, "\tt %s n %s v %s\n",
@@ -204,6 +207,8 @@ vcc_json_always(struct vcc *tl, const struct vjsn *vj, const char *vmod_name)
 			WRONG("Vmod JSON syntax error");
 		}
 	}
+	if (!cproto_seen)
+		WRONG("Vmod JSON has no CPROTO");
 }
 
 static const struct vmod_data *
@@ -244,7 +249,8 @@ vcc_VmodSanity(struct vcc *tl, void *hdl, const struct token *mod, char *fnp)
 	if (vmd->name == NULL ||
 	    vmd->func == NULL ||
 	    vmd->func_len <= 0 ||
-	    vmd->proto == NULL ||
+	    vmd->json == NULL ||
+	    vmd->proto != NULL ||
 	    vmd->abi == NULL) {
 		VSB_printf(tl->sb, "Mangled VMOD %.*s\n", PF(mod));
 		VSB_printf(tl->sb, "\tFile name: %s\n", fnp);
@@ -332,6 +338,32 @@ vcc_VmodSymbols(struct vcc *tl, const struct symbol *sym)
 			continue;
 
 		func_sym(tl, kind, sym, vv2);
+	}
+}
+
+static void
+vcc_emit_c_prototypes(const struct vcc *tl, const struct vjsn *vj)
+{
+	const struct vjsn_val *vv, *vv2, *vv3;
+
+	Fh(tl, 0, "\n");
+	vv = vj->value;
+	assert (vjsn_is_array(vv));
+	vv3 = NULL;
+	VTAILQ_FOREACH(vv2, &vv->children, list) {
+		assert (vjsn_is_array(vv2));
+		vv3 = VTAILQ_FIRST(&vv2->children);
+		assert (vjsn_is_string(vv3));
+		if (!strcmp(vv3->value, "$CPROTO"))
+			break;
+	}
+	assert(vv3 != NULL);
+	while (1) {
+		vv3 = VTAILQ_NEXT(vv3, list);
+		if (vv3 == NULL)
+			break;
+		assert (vjsn_is_string(vv3));
+		Fh(tl, 0, "%s\n", vv3->value);
 	}
 }
 
@@ -493,7 +525,7 @@ vcc_ParseImport(struct vcc *tl)
 	Fh(tl, 0, "\n/* --- BEGIN VMOD %.*s --- */\n\n", PF(mod));
 	Fh(tl, 0, "static struct vmod *VGC_vmod_%.*s;\n", PF(mod));
 	Fh(tl, 0, "static struct vmod_priv vmod_priv_%.*s;\n", PF(mod));
-	Fh(tl, 0, "\n%s\n", vmd->proto);
+	vcc_emit_c_prototypes(tl, vj);
 	Fh(tl, 0, "\n/* --- END VMOD %.*s --- */\n\n", PF(mod));
 	free(fnpx);
 }

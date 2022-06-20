@@ -1087,7 +1087,7 @@ const struct vmod_data Vmod_wrong2_Data = {
 	.func =		foo_struct,
 	.func_len =	sizeof foo_struct,
 	.func_name =	"foo_struct",
-	.proto =	"blablabla",
+	.json =		"blablabla",
 };
 
 extern const struct vmod_data Vmod_wrong3_Data;
@@ -1098,7 +1098,7 @@ const struct vmod_data Vmod_wrong3_Data = {
 	.func =		foo_struct,
 	.func_len =	sizeof foo_struct,
 	.func_name =	"foo_struct",
-	.proto =	"blablabla",
+	.json =		"blablabla",
 	.abi =		"abiblabla",
 };
 

@@ -1084,24 +1084,22 @@ class vcc(object):
             fmt_cstruct(fo, '.enum_%s =' % j, '&VENUM(%s),' % j)
         fo.write("};\n")
 
-    def vmod_proto(self, fo, fnx):
-        fo.write("\nstatic const char Vmod_Proto[] =\n")
-        for i in open(fnx):
-            fo.write('\t"%s\\n"\n' % i.rstrip())
-        fo.write('\t"static struct %s %s;";\n' % (self.csn, self.csn))
-
-    def iter_json(self):
+    def iter_json(self, fnx):
 
         jl = [["$VMOD", "1.0"]]
+        jl.append(["$CPROTO"])
+        for i in open(fnx):
+            jl[-1].append(i.rstrip())
+        jl[-1].append("static struct %s %s;" % (self.csn, self.csn))
         for j in self.contents:
             j.json(jl)
         for i in json.dumps(jl, indent=2, separators=(",", ": ")).splitlines():
             yield i + " "
 
-    def json(self, fo):
+    def json(self, fo, fnx):
         fo.write("\nstatic const char Vmod_Json[] = {\n")
 
-        for i in self.iter_json():
+        for i in self.iter_json(fnx):
             fo.write('\t"')
             for j in i:
                 if j in '"\\':
@@ -1127,7 +1125,6 @@ class vcc(object):
         fo.write('\t.func =\t\t&%s,\n' % self.csn)
         fo.write('\t.func_len =\tsizeof(%s),\n' % self.csn)
         fo.write('\t.func_name =\t"%s",\n' % self.csn)
-        fo.write('\t.proto =\tVmod_Proto,\n')
         fo.write('\t.json =\t\tVmod_Json,\n')
         fo.write('\t.abi =\t\tVMOD_ABI_Version,\n')
         fo.write("\t.file_id =\t\"%s\",\n" % self.file_id)
@@ -1176,9 +1173,7 @@ class vcc(object):
 
         fx.close()
 
-        self.vmod_proto(fo, fnx)
-
-        self.json(fo)
+        self.json(fo, fnx)
 
         self.vmod_data(fo)
 

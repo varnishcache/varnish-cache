@@ -58,6 +58,7 @@
  * binary/load-time compatible, increment MAJOR version
  *
  * NEXT (2022-09-15)
+ *	C-prototypes moved into JSON
  *	VRT_AddVDP() deprecated
  *	VRT_AddVFP() deprecated
  *	VRT_RemoveVDP() deprecated
