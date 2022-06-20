@@ -1101,7 +1101,7 @@ class vcc(object):
     def json(self, fo):
         fo.write("\nstatic const char Vmod_Json[] = {\n")
 
-        for i in self.iter_json(fnx):
+        for i in self.iter_json():
             fo.write('\t"')
             for j in i:
                 if j in '"\\':
