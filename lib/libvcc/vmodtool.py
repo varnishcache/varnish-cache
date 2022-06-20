@@ -842,7 +842,7 @@ class AliasStanza(Stanza):
     def find_symbol(self, tbl, name):
         for sym in tbl:
             if sym.proto is None:
-                continue;
+                continue
             if sym.proto.name == name:
                 return sym
         err("Symbol '%s' not found\n" % name, warn=False)
@@ -1049,7 +1049,7 @@ class vcc(object):
         fo.write("#endif\n")
         fo.write("\n")
 
-        self.mkdefs(fo);
+        self.mkdefs(fo)
 
         for j in sorted(self.enums):
             fo.write("extern VCL_ENUM VENUM(%s);\n" % j)
@@ -1084,22 +1084,31 @@ class vcc(object):
             fmt_cstruct(fo, '.enum_%s =' % j, '&VENUM(%s),' % j)
         fo.write("};\n")
 
-    def json(self, fo):
+    def vmod_proto(self, fo, fnx):
+        fo.write("\nstatic const char Vmod_Proto[] =\n")
+        for i in open(fnx):
+            fo.write('\t"%s\\n"\n' % i.rstrip())
+        fo.write('\t"static struct %s %s;";\n' % (self.csn, self.csn))
+
+    def iter_json(self):
+
         jl = [["$VMOD", "1.0"]]
         for j in self.contents:
             j.json(jl)
+        for i in json.dumps(jl, indent=2, separators=(",", ": ")).splitlines():
+            yield i + " "
 
+    def json(self, fo):
         fo.write("\nstatic const char Vmod_Json[] = {\n")
-        t = '\t"'
-        for i in json.dumps(jl, indent=2, separators=(",", ": ")):
-            if i == '\n':
-                fo.write(t + ' "\n')
-                t = '\t"'
-            else:
-                if i in '"\\':
-                    t += '\\'
-                t += i
-        fo.write(t + '\\n"\n};\n')
+
+        for i in self.iter_json(fnx):
+            fo.write('\t"')
+            for j in i:
+                if j in '"\\':
+                    fo.write('\\')
+                fo.write(j)
+            fo.write('"\n')
+        fo.write('\t\"\\n\"\n};\n')
 
     def vmod_data(self, fo):
         vmd = "Vmod_%s_Data" % self.modname
@@ -1133,7 +1142,7 @@ class vcc(object):
 
         write_c_file_warning(fo, self.inputfile)
 
-        self.mkdefs(fx);
+        self.mkdefs(fx)
 
         fo.write('#include "config.h"\n')
         for i in ["vdef", "vrt", self.pfx, "vmod_abi"]:
@@ -1167,16 +1176,13 @@ class vcc(object):
 
         fx.close()
 
-        fo.write("\nstatic const char Vmod_Proto[] =\n")
-        for i in open(fnx):
-            fo.write('\t"%s\\n"\n' % i.rstrip())
-        fo.write('\t"static struct %s %s;";\n' % (self.csn, self.csn))
-
-        os.remove(fnx)
+        self.vmod_proto(fo, fnx)
 
         self.json(fo)
 
         self.vmod_data(fo)
+
+        os.remove(fnx)
 
         fo.close()
 
