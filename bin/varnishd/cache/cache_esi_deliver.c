@@ -174,6 +174,7 @@ ved_include(struct req *preq, const char *src, const char *host,
 
 	/* Client content already taken care of */
 	http_Unset(req->http, H_Content_Length);
+	http_Unset(req->http, H_Transfer_Encoding);
 	req->req_body_status = BS_NONE;
 
 	AZ(req->vcl);
