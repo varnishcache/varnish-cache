@@ -1,0 +1,83 @@
+varnishtest "ESI vs. request body"
+
+server s1 {
+	rxreq
+	expect req.method == POST
+	expect req.url == "/foo/bar"
+	expect req.bodylen == 6
+	expect req.http.Content-Length == "6"
+	expect req.http.Transfer-Encoding == "<undef>"
+	txresp -body {
+		<html>
+		Before include
+		<!--esi <esi:include src="body1"/> -->
+		After include
+	}
+	rxreq
+	expect req.method == XGET
+	expect req.url == "/foo/body1"
+	expect req.bodylen == 0
+	expect req.http.Content-Length == "<undef>"
+	expect req.http.Transfer-Encoding == "<undef>"
+	txresp -body {
+		Included file
+	}
+
+	rxreq
+	expect req.method == POST
+	expect req.url == "/foo/bar"
+	expect req.bodylen == 66
+	# std.cache_req_body() turns chunked into C-L
+	expect req.http.Content-Length == "66"
+	expect req.http.Transfer-Encoding == "<undef>"
+	txresp -body {
+		<html>
+		Before include
+		<!--esi <esi:include src="body2"/> -->
+		After include
+	}
+	rxreq
+	expect req.method == XGET
+	expect req.url == "/foo/body2"
+	expect req.bodylen == 0
+	expect req.http.Content-Length == "<undef>"
+	expect req.http.Transfer-Encoding == "<undef>"
+	txresp -body {
+		Included file
+	}
+} -start
+
+varnish v1 -vcl+backend {
+	import std;
+
+	sub vcl_recv {
+		std.cache_req_body(1KB);
+		if (req.url ~ "^/foo/body") {
+			set req.method = "XGET";
+		}
+		return (pass);
+	}
+
+	sub vcl_backend_response {
+		if (bereq.url !~ "^/foo/body") {
+			set beresp.do_esi = true;
+		}
+	}
+} -start
+
+client c1 {
+	txreq -url /foo/bar -method POST -body {foobar}
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 67
+
+	txreq -url /foo/bar -method POST -nolen \
+	    -hdr "Transfer-encoding: chunked"
+	chunkedlen 66
+	chunkedlen 0
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 67
+} -run
+
+varnish v1 -expect esi_errors == 0
