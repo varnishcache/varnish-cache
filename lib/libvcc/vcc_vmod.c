@@ -42,11 +42,12 @@
 #include "vmod_abi.h"
 #include "vsb.h"
 
-struct vmod_open {
+struct vmod_import {
 	unsigned		magic;
-#define VMOD_OPEN_MAGIC		0x9995b1f3
+#define VMOD_IMPORT_MAGIC	0x31803a5d
 	void			*hdl;
 	const char		*err;
+	const struct vmod_data	*vmd;
 };
 
 struct vmod_obj {
@@ -60,14 +61,14 @@ struct vmod_obj {
 static int
 vcc_path_dlopen(void *priv, const char *fn)
 {
-	struct vmod_open *vop;
+	struct vmod_import *vim;
 
-	CAST_OBJ_NOTNULL(vop, priv, VMOD_OPEN_MAGIC);
+	CAST_OBJ_NOTNULL(vim, priv, VMOD_IMPORT_MAGIC);
 	AN(fn);
 
-	vop->hdl = dlopen(fn, RTLD_NOW | RTLD_LOCAL);
-	if (vop->hdl == NULL) {
-		vop->err = dlerror();
+	vim->hdl = dlopen(fn, RTLD_NOW | RTLD_LOCAL);
+	if (vim->hdl == NULL) {
+		vim->err = dlerror();
 		return (-1);
 	}
 	return (0);
@@ -377,9 +378,9 @@ vcc_ParseImport(struct vcc *tl)
 	struct symbol *msym, *vsym;
 	const struct vmod_data *vmd;
 	struct vjsn *vj;
-	struct vmod_open vop[1];
+	struct vmod_import *vim;
+	const struct vmod_import *vimold;
 
-	INIT_OBJ(vop, VMOD_OPEN_MAGIC);
 	t1 = tl->t;
 	SkipToken(tl, ID);		/* "import" */
 
@@ -425,8 +426,11 @@ vcc_ParseImport(struct vcc *tl)
 
 	SkipToken(tl, ';');
 
-	if (VFIL_searchpath(tl->vmod_path, vcc_path_dlopen, vop, fn, &fnpx)) {
-		if (vop->err == NULL) {
+	ALLOC_OBJ(vim, VMOD_IMPORT_MAGIC);
+	AN(vim);
+
+	if (VFIL_searchpath(tl->vmod_path, vcc_path_dlopen, vim, fn, &fnpx)) {
+		if (vim->err == NULL) {
 			VSB_printf(tl->sb,
 			    "Could not find VMOD %.*s\n", PF(mod));
 		} else {
@@ -434,22 +438,25 @@ vcc_ParseImport(struct vcc *tl)
 			    "Could not open VMOD %.*s\n", PF(mod));
 			VSB_printf(tl->sb, "\tFile name: %s\n",
 			    fnpx != NULL ? fnpx : fn);
-			VSB_printf(tl->sb, "\tdlerror: %s\n", vop->err);
+			VSB_printf(tl->sb, "\tdlerror: %s\n", vim->err);
 		}
 		vcc_ErrWhere(tl, mod);
 		free(fnpx);
+		FREE_OBJ(vim);
 		return;
 	}
 
-	vmd = vcc_VmodSanity(tl, vop->hdl, mod, fnpx);
+	vmd = vcc_VmodSanity(tl, vim->hdl, mod, fnpx);
 	if (vmd == NULL || tl->err) {
-		AZ(dlclose(vop->hdl));
+		AZ(dlclose(vim->hdl));
 		free(fnpx);
+		FREE_OBJ(vim);
 		return;
 	}
 
-	if (msym->extra != NULL) {
-		if (!strcmp(msym->extra, vmd->file_id)) {
+	CAST_OBJ(vimold, (const void*)(msym->extra), VMOD_IMPORT_MAGIC);
+	if (vimold != NULL) {
+		if (!strcmp(vimold->vmd->file_id, vmd->file_id)) {
 			/* Identical import is OK */
 		} else {
 			VSB_printf(tl->sb,
@@ -457,8 +464,9 @@ vcc_ParseImport(struct vcc *tl)
 			    PF(tmod));
 			vcc_ErrWhere2(tl, t1, tl->t);
 		}
-		AZ(dlclose(vop->hdl));
+		AZ(dlclose(vim->hdl));
 		free(fnpx);
+		FREE_OBJ(vim);
 		return;
 	}
 	msym->def_b = t1;
@@ -466,14 +474,17 @@ vcc_ParseImport(struct vcc *tl)
 
 	VTAILQ_FOREACH(vsym, &tl->sym_vmods, sideways) {
 		assert(vsym->kind == SYM_VMOD);
-		if (!strcmp(vsym->extra, vmd->file_id)) {
+		CAST_OBJ_NOTNULL(vimold, (const void*)(vsym->extra),
+		    VMOD_IMPORT_MAGIC);
+		if (!strcmp(vimold->vmd->file_id, vmd->file_id)) {
 			/* Already loaded under different name */
 			msym->eval_priv = vsym->eval_priv;
 			msym->extra = vsym->extra;
 			msym->vmod_name = vsym->vmod_name;
 			vcc_VmodSymbols(tl, msym);
-			AZ(dlclose(vop->hdl));
+			AZ(dlclose(vim->hdl));
 			free(fnpx);
+			FREE_OBJ(vim);
 			return;
 		}
 	}
@@ -516,7 +527,8 @@ vcc_ParseImport(struct vcc *tl)
 	XXXAZ(p);
 	AN(vj);
 	msym->eval_priv = vj;
-	msym->extra = TlDup(tl, vmd->file_id);
+	vim->vmd = vmd;
+	msym->extra = (const char *)vim;
 	msym->vmod_name = TlDup(tl, vmd->name);
 	vcc_VmodSymbols(tl, msym);
 
