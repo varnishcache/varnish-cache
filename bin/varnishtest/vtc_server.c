@@ -428,6 +428,9 @@ cmd_server_gen_vcl(struct vsb *vsb)
 
 	AZ(pthread_mutex_lock(&server_mtx));
 	VTAILQ_FOREACH(s, &servers, list) {
+		if (s->sock < 0 && s->fd >= 0) /* dispatch instance */
+			continue;
+
 		if (*s->listen != '/')
 			VSB_printf(vsb,
 				   "backend %s { .host = \"%s\"; "
