@@ -42,24 +42,8 @@ shell {
 	   ${tmpdir}/libvmod_wrong.so
 }
 
-varnish v1 -errvcl {Malformed VMOD wrong} {
+varnish v1 -errvcl {Wrong file for VMOD wrong} {
 	import wrong;
-}
-
-varnish v1 -errvcl {Incompatible VMOD wrong0} {
-	import wrong0 from "${tmpdir}/libvmod_wrong.so";
-}
-
-varnish v1 -errvcl {Incompatible VMOD wrong1} {
-	import wrong1 from "${tmpdir}/libvmod_wrong.so";
-}
-
-varnish v1 -errvcl {Mangled VMOD wrong2} {
-	import wrong2 from "${tmpdir}/libvmod_wrong.so";
-}
-
-varnish v1 -errvcl {Wrong file for VMOD wrong3} {
-	import wrong3 from "${tmpdir}/libvmod_wrong.so";
 }
 
 shell "rm -f ${tmpdir}/libvmod_wrong.so"

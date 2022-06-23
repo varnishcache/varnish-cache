@@ -51,7 +51,7 @@ varnish v1 -vcl+backend {
 	import std from "${topbuild}/vmod/.libs/";
 }
 
-varnish v1 -errvcl {Malformed VMOD std} {
+varnish v1 -errvcl {Wrong file for VMOD std} {
 	backend default { .host = "${s1_sock}"; }
 	import std from "${topbuild}/vmod/.libs/libvmod_debug.so";
 }

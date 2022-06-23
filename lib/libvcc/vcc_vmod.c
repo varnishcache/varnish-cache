@@ -33,7 +33,6 @@
 
 #include "config.h"
 
-#include <dlfcn.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -50,8 +49,8 @@
 struct vmod_import {
 	unsigned		magic;
 #define VMOD_IMPORT_MAGIC	0x31803a5d
-	void			*hdl;
 	const char		*err;
+	struct vsb		*json;
 	char			*path;
 
 	// From $VMOD
@@ -75,18 +74,55 @@ typedef void vcc_do_stanza_f(struct vcc *tl, const struct vmod_import *vim,
     const struct vjsn_val *vv);
 
 static int
-vcc_path_dlopen(void *priv, const char *fn)
+vcc_path_open(void *priv, const char *fn)
 {
 	struct vmod_import *vim;
+	const char *magic = "VMOD_JSON_SPEC\x03", *p;
+	int c;
+	FILE *f;
 
 	CAST_OBJ_NOTNULL(vim, priv, VMOD_IMPORT_MAGIC);
 	AN(fn);
 
-	vim->hdl = dlopen(fn, RTLD_NOW | RTLD_LOCAL);
-	if (vim->hdl == NULL) {
-		vim->err = dlerror();
+	vim->json = VSB_new_auto();
+	AN(vim->json);
+
+	f = fopen(fn, "rb");
+        if (f == NULL) {
+		vim->err = strerror(errno);
 		return (-1);
 	}
+	p = magic;
+	vim->err = "No VMOD JSON found";
+	while (1) {
+		c = getc(f);
+		if (c == EOF) {
+			AZ(fclose(f));
+			vim->err = "No VMOD JSON found";
+			return (-1);
+		}
+		if (c != *p) {
+			p = magic;
+			continue;
+		}
+		p++;
+		if (*p == '\0')
+			break;
+	}
+
+	while (1) {
+		c = getc(f);
+		if (c == EOF) {
+			AZ(fclose(f));
+			vim->err = "No VMOD JSON found";
+			return (-1);
+		}
+		if (c == '\0')
+			break;
+		VSB_putc(vim->json, c);
+	}
+	AZ(fclose(f));
+	AZ(VSB_finish(vim->json));
 	return (0);
 }
 
@@ -204,57 +240,13 @@ vcc_ParseJSON(const struct vcc *tl, const char *jsn, struct vmod_import *vim)
  */
 
 static int
-vcc_VmodLoad(const struct vcc *tl, struct vmod_import *vim, char *fnp)
+vcc_VmodLoad(const struct vcc *tl, struct vmod_import *vim)
 {
-	char buf[256];
 	static const char *err;
-	const struct vmod_data *vmd;
 
 	CHECK_OBJ_NOTNULL(vim, VMOD_IMPORT_MAGIC);
-	bprintf(buf, "Vmod_%.*s_Data", PF(vim->t_mod));
-	vmd = dlsym(vim->hdl, buf);
-	if (vmd == NULL) {
-		VSB_printf(tl->sb, "Malformed VMOD %.*s\n", PF(vim->t_mod));
-		VSB_printf(tl->sb, "\tFile name: %s\n", fnp);
-		VSB_cat(tl->sb, "\t(no Vmod_Data symbol)\n");
-		return (-1);
-	}
-	if (vmd->vrt_major == 0 && vmd->vrt_minor == 0 &&
-	    (vmd->abi == NULL || strcmp(vmd->abi, VMOD_ABI_Version))) {
-		VSB_printf(tl->sb, "Incompatible VMOD %.*s\n", PF(vim->t_mod));
-		VSB_printf(tl->sb, "\tFile name: %s\n", fnp);
-		VSB_printf(tl->sb, "\tABI mismatch, expected <%s>, got <%s>\n",
-			   VMOD_ABI_Version, vmd->abi);
-		return (-1);
-	}
-	if (vmd->vrt_major != 0 &&
-	    (vmd->vrt_major != VRT_MAJOR_VERSION ||
-	    vmd->vrt_minor > VRT_MINOR_VERSION)) {
-		VSB_printf(tl->sb, "Incompatible VMOD %.*s\n", PF(vim->t_mod));
-		VSB_printf(tl->sb, "\tFile name: %s\n", fnp);
-		VSB_printf(tl->sb, "\tVMOD wants ABI version %u.%u\n",
-		    vmd->vrt_major, vmd->vrt_minor);
-		VSB_printf(tl->sb, "\tvarnishd provides ABI version %u.%u\n",
-		    VRT_MAJOR_VERSION, VRT_MINOR_VERSION);
-		return (-1);
-	}
-	if (vmd->name == NULL ||
-	    vmd->func == NULL ||
-	    vmd->func_len <= 0 ||
-	    vmd->json == NULL ||
-	    vmd->proto != NULL ||
-	    vmd->abi == NULL) {
-		VSB_printf(tl->sb, "Mangled VMOD %.*s\n", PF(vim->t_mod));
-		VSB_printf(tl->sb, "\tFile name: %s\n", fnp);
-		VSB_cat(tl->sb, "\tInconsistent metadata\n");
-		return (-1);
-	}
 
-	assert(!memcmp(vmd->json, "VMOD_JSON_SPEC\x03", 15));
-
-	err = vcc_ParseJSON(tl, vmd->json + 15, vim);
-	AZ(dlclose(vim->hdl));
-	vim->hdl = NULL;
+	err = vcc_ParseJSON(tl, VSB_data(vim->json), vim);
 	if (err != NULL && *err != '\0') {
 		VSB_printf(tl->sb,
 		    "VMOD %.*s: bad metadata\n", PF(vim->t_mod));
@@ -376,6 +368,8 @@ vcc_vim_destroy(struct vmod_import **vimp)
 		free(vim->path);
 	if (vim->vj)
 		vjsn_delete(&vim->vj);
+	if (vim->json)
+		VSB_destroy(&vim->json);
 	FREE_OBJ(vim);
 }
 
@@ -439,7 +433,7 @@ vcc_ParseImport(struct vcc *tl)
 	vim->t_mod = mod;
 	vim->sym = msym;
 
-	if (VFIL_searchpath(tl->vmod_path, vcc_path_dlopen, vim, fn, &vim->path)) {
+	if (VFIL_searchpath(tl->vmod_path, vcc_path_open, vim, fn, &vim->path)) {
 		if (vim->err == NULL) {
 			VSB_printf(tl->sb,
 			    "Could not find VMOD %.*s\n", PF(mod));
@@ -455,7 +449,7 @@ vcc_ParseImport(struct vcc *tl)
 		return;
 	}
 
-	if (vcc_VmodLoad(tl, vim, vim->path) < 0 || tl->err) {
+	if (vcc_VmodLoad(tl, vim) < 0 || tl->err) {
 		vcc_ErrWhere(tl, vim->t_mod);
 		vcc_vim_destroy(&vim);
 		return;
