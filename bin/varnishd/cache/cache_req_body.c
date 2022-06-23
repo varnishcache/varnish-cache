@@ -44,14 +44,62 @@
 #include "hash/hash_slinger.h"
 
 /*----------------------------------------------------------------------
+ * Check and potentially update req framing headers.
+ */
+
+static ssize_t
+vrb_cached(struct req *req, ssize_t req_bodybytes)
+{
+	ssize_t l0, l;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	AZ(req->req_body_cached);
+	assert(req_bodybytes >= 0);
+
+	l0 = http_GetContentLength(req->http0);
+	l = http_GetContentLength(req->http);
+
+	assert(req->req_body_status->avail > 0);
+	if (req->req_body_status->length_known) {
+		if (req->req_body_partial) {
+			assert(req_bodybytes < l0);
+			assert(req_bodybytes < l);
+		} else {
+			assert(req_bodybytes == l0);
+			assert(req_bodybytes == l);
+		}
+		AZ(http_GetHdr(req->http0, H_Transfer_Encoding, NULL));
+		AZ(http_GetHdr(req->http, H_Transfer_Encoding, NULL));
+	} else if (!req->req_body_partial) {
+		/* We must update also the "pristine" req.* copy */
+		AZ(http_GetHdr(req->http0, H_Content_Length, NULL));
+		assert(l0 < 0);
+		http_Unset(req->http0, H_Transfer_Encoding);
+		http_PrintfHeader(req->http0, "Content-Length: %ju",
+		    (uintmax_t)req_bodybytes);
+
+		AZ(http_GetHdr(req->http, H_Content_Length, NULL));
+		assert(l < 0);
+		http_Unset(req->http, H_Transfer_Encoding);
+		http_PrintfHeader(req->http, "Content-Length: %ju",
+		    (uintmax_t)req_bodybytes);
+	}
+
+	req->req_body_cached = 1;
+	return (req_bodybytes);
+}
+
+/*----------------------------------------------------------------------
  * Pull the req.body in via/into a objcore
  *
- * This can be called only once per request
+ * This can be called only once per request, twice for a partial cached
+ * payload.
  *
  */
 
 static ssize_t
-vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
+vrb_pull(struct req *req, ssize_t maxsize, unsigned partial,
+    objiterate_f *func, void *priv)
 {
 	ssize_t l, r = 0, yet;
 	struct vrt_ctx ctx[1];
@@ -60,12 +108,26 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 	enum vfp_status vfps = VFP_ERROR;
 	const struct stevedore *stv;
 	ssize_t req_bodybytes = 0;
+	uint64_t oa_len;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 	CHECK_OBJ_NOTNULL(req->htc, HTTP_CONN_MAGIC);
 	CHECK_OBJ_NOTNULL(req->vfc, VFP_CTX_MAGIC);
 	vfc = req->vfc;
+	AZ(req->req_body_cached);
+	AN(maxsize);
+
+	if (req->req_body_partial) {
+		assert(req->req_body_status == BS_TAKEN);
+		AN(req->body_oc);
+		AZ(ObjGetU64(req->wrk, req->body_oc, OA_LEN, &oa_len));
+		AN(oa_len);
+		req_bodybytes = oa_len;
+		AZ(HSH_DerefObjCore(req->wrk, &req->body_oc, 0));
+		req->req_body_cached = 0;
+		req->req_body_partial = 0;
+	}
 
 	req->body_oc = HSH_Private(req->wrk);
 	AN(req->body_oc);
@@ -88,16 +150,24 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 
 	vfc->oc = req->body_oc;
 
-	INIT_OBJ(ctx, VRT_CTX_MAGIC);
-	VCL_Req2Ctx(ctx, req);
+	/* NB: we need to open the VFP exactly once, even though we may work
+	 * on up to two pairs of objcore/boc for the same request body when
+	 * partial caching is involved.
+	 */
+	if (req_bodybytes == 0) {
+		INIT_OBJ(ctx, VRT_CTX_MAGIC);
+		VCL_Req2Ctx(ctx, req);
 
-	if (VFP_Open(ctx, vfc) < 0) {
-		req->req_body_status = BS_ERROR;
-		HSH_DerefBoc(req->wrk, req->body_oc);
-		AZ(HSH_DerefObjCore(req->wrk, &req->body_oc, 0));
-		return (-1);
+		if (VFP_Open(ctx, vfc) < 0) {
+			req->req_body_status = BS_ERROR;
+			HSH_DerefBoc(req->wrk, req->body_oc);
+			AZ(HSH_DerefObjCore(req->wrk, &req->body_oc, 0));
+			return (-1);
+		}
 	}
 
+	assert(vfc->wrk == req->wrk);
+	AZ(vfc->failed);
 	AN(req->htc);
 	yet = req->htc->content_length;
 	if (yet != 0 && req->want100cont) {
@@ -107,11 +177,7 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 	yet = vmax_t(ssize_t, yet, 0);
 	do {
 		AZ(vfc->failed);
-		if (maxsize >= 0 && req_bodybytes > maxsize) {
-			(void)VFP_Error(vfc, "Request body too big to cache");
-			break;
-		}
-		l = yet;
+		l = (maxsize < 0) ? yet : maxsize - req_bodybytes;
 		if (VFP_GetStorage(vfc, &l, &ptr) != VFP_OK)
 			break;
 		AZ(vfc->failed);
@@ -132,22 +198,33 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 			}
 		}
 
-	} while (vfps == VFP_OK);
-	req->acct.req_bodybytes += VFP_Close(vfc);
-	VSLb_ts_req(req, "ReqBody", VTIM_real());
-	if (func != NULL) {
-		HSH_DerefBoc(req->wrk, req->body_oc);
-		AZ(HSH_DerefObjCore(req->wrk, &req->body_oc, 0));
-		if (vfps != VFP_END) {
-			req->req_body_status = BS_ERROR;
-			if (r == 0)
-				r = -1;
+	} while (vfps == VFP_OK && (maxsize < 0 || req_bodybytes < maxsize));
+
+	if (!partial) {
+		if (maxsize >= 0 && req_bodybytes > maxsize)
+			(void)VFP_Error(vfc, "Request body too big to cache");
+
+		req->acct.req_bodybytes += VFP_Close(vfc);
+		VSLb_ts_req(req, "ReqBody", VTIM_real());
+		if (func != NULL) {
+			HSH_DerefBoc(req->wrk, req->body_oc);
+			AZ(HSH_DerefObjCore(req->wrk, &req->body_oc, 0));
+			if (vfps != VFP_END) {
+				req->req_body_status = BS_ERROR;
+				if (r == 0)
+					r = -1;
+			}
+			return (r);
 		}
-		return (r);
 	}
 
 	AZ(ObjSetU64(req->wrk, req->body_oc, OA_LEN, req_bodybytes));
 	HSH_DerefBoc(req->wrk, req->body_oc);
+
+	if (vfps == VFP_OK && partial) {
+		req->req_body_partial = 1;
+		return (vrb_cached(req, req_bodybytes));
+	}
 
 	if (vfps != VFP_END) {
 		req->req_body_status = BS_ERROR;
@@ -155,22 +232,7 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 		return (-1);
 	}
 
-	assert(req_bodybytes >= 0);
-	if (req_bodybytes != req->htc->content_length) {
-		/* We must update also the "pristine" req.* copy */
-		http_Unset(req->http0, H_Content_Length);
-		http_Unset(req->http0, H_Transfer_Encoding);
-		http_PrintfHeader(req->http0, "Content-Length: %ju",
-		    (uintmax_t)req_bodybytes);
-
-		http_Unset(req->http, H_Content_Length);
-		http_Unset(req->http, H_Transfer_Encoding);
-		http_PrintfHeader(req->http, "Content-Length: %ju",
-		    (uintmax_t)req_bodybytes);
-	}
-
-	req->req_body_status = BS_CACHED;
-	return (req_bodybytes);
+	return (vrb_cached(req, req_bodybytes));
 }
 
 /*----------------------------------------------------------------------
@@ -182,16 +244,32 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
  * return length or -1 on error
  */
 
+static int v_matchproto_(objiterate_f)
+httpq_req_body_discard(void *priv, unsigned flush, const void *ptr, ssize_t len)
+{
+
+	(void)priv;
+	(void)flush;
+	(void)ptr;
+	(void)len;
+	return (0);
+}
+
 ssize_t
 VRB_Iterate(struct worker *wrk, struct vsl_log *vsl,
     struct req *req, objiterate_f *func, void *priv)
 {
+	unsigned allow_partial;
 	int i;
 
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	AN(vsl);
 	AN(func);
 
-	if (req->req_body_status == BS_CACHED) {
+	allow_partial = (req->vsl == vsl) && (func != httpq_req_body_discard);
+
+	if (req->req_body_cached && (allow_partial || !req->req_body_partial)) {
 		AN(req->body_oc);
 		if (ObjIterate(wrk, req->body_oc, priv, func, 0))
 			return (-1);
@@ -209,6 +287,16 @@ VRB_Iterate(struct worker *wrk, struct vsl_log *vsl,
 		    "Had failed reading req.body before.");
 		return (-1);
 	}
+	if (req->req_body_partial) {
+		AN(req->req_body_cached);
+		AN(req->body_oc);
+		if (ObjIterate(wrk, req->body_oc, priv, func, 0)) {
+			VSLb(vsl, SLT_FetchError,
+			    "Failed to send a partial req.body");
+			return (-1);
+		}
+		req->req_body_cached = 0;
+	}
 	Lck_Lock(&req->sp->mtx);
 	if (req->req_body_status->avail > 0) {
 		req->req_body_status = BS_TAKEN;
@@ -221,7 +309,7 @@ VRB_Iterate(struct worker *wrk, struct vsl_log *vsl,
 		    "Multiple attempts to access non-cached req.body");
 		return (i);
 	}
-	return (vrb_pull(req, -1, func, priv));
+	return (vrb_pull(req, -1, 0, func, priv));
 }
 
 /*----------------------------------------------------------------------
@@ -231,17 +319,6 @@ VRB_Iterate(struct worker *wrk, struct vsl_log *vsl,
  * For HTTP1, we do nothing if we are going to close the connection anyway or
  * just iterate it into oblivion.
  */
-
-static int v_matchproto_(objiterate_f)
-httpq_req_body_discard(void *priv, unsigned flush, const void *ptr, ssize_t len)
-{
-
-	(void)priv;
-	(void)flush;
-	(void)ptr;
-	(void)len;
-	return (0);
-}
 
 int
 VRB_Ignore(struct req *req)
@@ -269,10 +346,14 @@ VRB_Free(struct req *req)
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-	if (req->body_oc == NULL)
+	AZ(req->req_body_partial);
+	if (req->body_oc == NULL) {
+		AZ(req->req_body_cached);
 		return;
+	}
 
 	r = HSH_DerefObjCore(req->wrk, &req->body_oc, 0);
+	req->req_body_cached = 0;
 
 	// each busyobj may have gained a reference
 	assert (r >= 0);
@@ -287,26 +368,30 @@ VRB_Free(struct req *req)
  */
 
 ssize_t
-VRB_Cache(struct req *req, ssize_t maxsize)
+VRB_Cache(struct req *req, ssize_t maxsize, unsigned partial)
 {
 	uint64_t u;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	assert (req->req_step == R_STP_RECV);
-	assert(maxsize >= 0);
+
+	if (maxsize <= 0) {
+		VSLb(req->vsl, SLT_VCL_Error, "Cannot cache an empty req.body");
+		return (-1);
+	}
 
 	/*
 	 * We only allow caching to happen the first time through vcl_recv{}
 	 * where we know we will have no competition or conflicts for the
 	 * updates to req.http.* etc.
 	 */
-	if (req->restarts > 0 && req->req_body_status != BS_CACHED) {
+	if (req->restarts > 0 && !req->req_body_cached) {
 		VSLb(req->vsl, SLT_VCL_Error,
 		    "req.body must be cached before restarts");
 		return (-1);
 	}
 
-	if (req->req_body_status == BS_CACHED) {
+	if (req->req_body_cached) {
 		AZ(ObjGetU64(req->wrk, req->body_oc, OA_LEN, &u));
 		return (u);
 	}
@@ -314,11 +399,11 @@ VRB_Cache(struct req *req, ssize_t maxsize)
 	if (req->req_body_status->avail <= 0)
 		return (req->req_body_status->avail);
 
-	if (req->htc->content_length > maxsize) {
+	if (req->htc->content_length > maxsize && !partial) {
 		req->req_body_status = BS_ERROR;
 		(void)VFP_Error(req->vfc, "Request body too big to cache");
 		return (-1);
 	}
 
-	return (vrb_pull(req, maxsize, NULL, NULL));
+	return (vrb_pull(req, maxsize, partial, NULL, NULL));
 }

@@ -54,6 +54,8 @@ vbf_iter_req_body(void *priv, unsigned flush, const void *ptr, ssize_t l)
 	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
 
 	if (l > 0) {
+		if (DO_DEBUG(DBG_SLOW_BEREQ))
+			VTIM_sleep(1.0);
 		(void)V1L_Write(bo->wrk, ptr, l);
 		if (flush && V1L_Flush(bo->wrk) != SC_NULL)
 			return (-1);
@@ -92,7 +94,7 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 	hp = bo->bereq;
 
 	if (bo->req != NULL && !bo->req->req_body_status->length_known) {
-		http_PrintfHeader(hp, "Transfer-Encoding: chunked");
+		http_ForceHeader(hp, H_Transfer_Encoding, "chunked");
 		do_chunked = 1;
 	}
 
@@ -111,11 +113,13 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 		    bo, vbf_iter_req_body, 0);
 	} else if (bo->req != NULL &&
 	    bo->req->req_body_status != BS_NONE) {
+		if (DO_DEBUG(DBG_FLUSH_HEAD))
+			(void)V1L_Flush(wrk);
 		if (do_chunked)
 			V1L_Chunked(wrk);
 		i = VRB_Iterate(wrk, bo->vsl, bo->req, vbf_iter_req_body, bo);
 
-		if (bo->req->req_body_status != BS_CACHED)
+		if (!bo->req->req_body_cached)
 			bo->no_retry = "req.body not cached";
 
 		if (bo->req->req_body_status == BS_ERROR) {
@@ -154,7 +158,8 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 
 	CHECK_OBJ_NOTNULL(sc, STREAM_CLOSE_MAGIC);
 	if (sc != SC_NULL) {
-		VSLb(bo->vsl, SLT_FetchError, "backend write error: %d (%s) (%s",
+		VSLb(bo->vsl, SLT_FetchError,
+		    "backend write error: %d (%s) (%s)",
 		    errno, VAS_errtxt(errno), sc->desc);
 		VSLb_ts_busyobj(bo, "Bereq", W_TIM_real(wrk));
 		htc->doclose = sc;

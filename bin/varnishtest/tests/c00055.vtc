@@ -14,7 +14,7 @@ varnish v1 -vcl+backend {
 	import std;
 
 	sub vcl_recv {
-		if (std.cache_req_body(1KB)) {
+		if (std.cache_req_body(std.bytes(req.http.cache, 1KB))) {
 			set req.http.stored = true;
 		} else {
 			set req.http.stored = false;
@@ -47,7 +47,7 @@ client c1 {
 
 delay .1
 
-client c1 {
+client c2 {
 	txreq -req POST -nolen -hdr "Content-Length: 52"
 	delay .3
 	expect resp.http.stored == <undef>
@@ -57,20 +57,71 @@ delay .1
 
 server s1 {
 	rxreq
+	expect req.bodylen == 3
+	txresp
+
+	rxreq
 	txresp
 } -start
 
-client c1 {
+client c3 {
+	txreq -req POST -body FOO
+	rxresp
+	expect resp.http.stored == true
+
 	txreq -url "/is_varnish_still_running"
 	rxresp
 	expect resp.status == 200
 	expect resp.http.stored == true
 } -run
 
-client c2 {
-       txreq -req POST -nolen -hdr "Content-Length: 1025"
-       expect_close
+client c4 {
+	txreq -req POST -nolen -hdr "Content-Length: 1025"
+	expect_close
 	expect resp.http.stored == <undef>
 } -run
+
+server s1 {
+	rxreq
+	expect req.body == chunked_body
+	txresp
+} -start
+
+client c5 {
+	txreq -req POST -nolen -hdr "Transfer-Encoding: chunked"
+	chunked chunked
+	chunked _
+	chunked body
+	chunkedlen 0
+	rxresp
+	expect resp.http.stored == true
+} -run
+
+server s1 {
+	rxreq
+	expect req.bodylen == 0
+	txresp
+} -start
+
+client c6 {
+	txreq -req POST -nolen -hdr "Transfer-Encoding: chunked"
+	chunkedlen 0
+	rxresp
+	expect resp.http.stored == true
+} -run
+
+server s1 {
+	rxreq
+	expect req.bodylen == 0
+	txresp
+} -start
+
+client c7 {
+	txreq -req POST -nolen -hdr "cache: 0B" -hdr "Transfer-Encoding: chunked"
+	chunkedlen 0
+	rxresp
+	expect resp.http.stored == false
+} -run
+
 varnish v1 -stop
 logexpect l1 -wait

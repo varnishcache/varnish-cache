@@ -408,7 +408,7 @@ void Req_LogHit(struct worker *, struct req *, struct objcore *, intmax_t);
 
 /* cache_req_body.c */
 int VRB_Ignore(struct req *);
-ssize_t VRB_Cache(struct req *, ssize_t maxsize);
+ssize_t VRB_Cache(struct req *, ssize_t maxsize, unsigned partial);
 void VRB_Free(struct req *);
 
 /* cache_req_fsm.c [CNT] */

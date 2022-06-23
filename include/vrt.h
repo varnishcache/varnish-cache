@@ -63,6 +63,7 @@
  *	VRT_AddVFP() deprecated
  *	VRT_RemoveVDP() deprecated
  *	VRT_RemoveVFP() deprecated
+ *	VRT_CacheReqBody changed signature
  * 15.0 (2022-03-15)
  *	VRT_r_req_transport() added
  *	VRT_Assign_Backend() added
@@ -648,7 +649,7 @@ enum lbody_e {
 #define LBODY_SET LBODY_SET_STRING
 #define LBODY_ADD LBODY_ADD_STRING
 
-VCL_BYTES VRT_CacheReqBody(VRT_CTX, VCL_BYTES maxsize);
+VCL_BYTES VRT_CacheReqBody(VRT_CTX, VCL_BYTES maxsize, VCL_BOOL partial);
 
 VCL_STRING VRT_ban_string(VRT_CTX, VCL_STRING);
 VCL_INT VRT_purge(VRT_CTX, VCL_DURATION, VCL_DURATION, VCL_DURATION);

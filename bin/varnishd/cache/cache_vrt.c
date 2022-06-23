@@ -969,7 +969,7 @@ VRT_ban_string(VRT_CTX, VCL_STRING str)
 }
 
 VCL_BYTES
-VRT_CacheReqBody(VRT_CTX, VCL_BYTES maxsize)
+VRT_CacheReqBody(VRT_CTX, VCL_BYTES maxsize, VCL_BOOL partial)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -979,7 +979,7 @@ VRT_CacheReqBody(VRT_CTX, VCL_BYTES maxsize)
 		    "req.body can only be cached in vcl_recv{}");
 		return (-1);
 	}
-	return (VRB_Cache(ctx->req, maxsize));
+	return (VRB_Cache(ctx->req, maxsize, partial));
 }
 
 /*--------------------------------------------------------------------

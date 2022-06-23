@@ -802,7 +802,7 @@ cnt_pipe(struct worker *wrk, struct req *req)
 			bo->req = req;
 			bo->wrk = wrk;
 			/* Unless cached, reqbody is not our job */
-			if (req->req_body_status != BS_CACHED)
+			if (!req->req_body_cached)
 				req->req_body_status = BS_NONE;
 			SES_Close(req->sp, VDI_Http1Pipe(req, bo));
 			nxt = REQ_FSM_DONE;
@@ -895,6 +895,8 @@ cnt_recv_prep(struct req *req, const char *ci)
 		req->hash_ignore_vary = 0;
 		req->client_identity = NULL;
 		req->storage = NULL;
+		AZ(req->req_body_cached);
+		AZ(req->req_body_partial);
 	}
 
 	req->is_hit = 0;
