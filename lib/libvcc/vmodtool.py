@@ -639,6 +639,12 @@ class ABIStanza(Stanza):
         if self.vcc.strict_abi is None:
             err("Valid ABI types are 'strict' or 'vrt', got '%s'\n" %
                 self.toks[1])
+        if self.vcc.strict_abi:
+            self.vcc.vrt_major = "0"
+            self.vcc.vrt_minor = "0"
+        else:
+            self.vcc.vrt_major = "VRT_MAJOR_VERSION"
+            self.vcc.vrt_minor = "VRT_MINOR_VERSION"
         self.vcc.contents.append(self)
 
 
@@ -1097,16 +1103,27 @@ class vcc(object):
             yield i + " "
 
     def json(self, fo, fnx):
+        fo.write('#define STRINGIFY(arg) #arg\n')
         fo.write("\nstatic const char Vmod_Json[] = {\n")
+        fo.write('\t"VMOD_JSON_SPEC\\x03"\n')
 
-        for i in self.iter_json(fnx):
+        for n, i in enumerate(self.iter_json(fnx)):
             fo.write('\t"')
             for j in i:
                 if j in '"\\':
                     fo.write('\\')
                 fo.write(j)
-            fo.write('"\n')
+            if n == 6:
+                # Hand-munge the JSON to insert stuff only known by
+                # the C-compiler at compile-time.
+                fo.write(',"\n\t"    \\"" VMOD_ABI_Version "\\", "\n')
+                fo.write('\t    STRINGIFY(%s) ", "\n' % self.vrt_major)
+                fo.write('\t    STRINGIFY(%s)\n' % self.vrt_minor)
+            else:
+                fo.write('"\n')
         fo.write('\t\"\\n\"\n};\n')
+        fo.write('#undef STRINGIFY\n')
+
 
     def vmod_data(self, fo):
         vmd = "Vmod_%s_Data" % self.modname
@@ -1115,12 +1132,8 @@ class vcc(object):
             fo.write("/*lint -esym(%d, %s) */\n" % (i, vmd))
         fo.write("\nextern const struct vmod_data %s;\n" % vmd)
         fo.write("\nconst struct vmod_data %s = {\n" % vmd)
-        if self.strict_abi:
-            fo.write("\t.vrt_major =\t0,\n")
-            fo.write("\t.vrt_minor =\t0,\n")
-        else:
-            fo.write("\t.vrt_major =\tVRT_MAJOR_VERSION,\n")
-            fo.write("\t.vrt_minor =\tVRT_MINOR_VERSION,\n")
+        fo.write("\t.vrt_major =\t%s,\n" % self.vrt_major)
+        fo.write("\t.vrt_minor =\t%s,\n" % self.vrt_minor)
         fo.write('\t.name =\t\t"%s",\n' % self.modname)
         fo.write('\t.func =\t\t&%s,\n' % self.csn)
         fo.write('\t.func_len =\tsizeof(%s),\n' % self.csn)

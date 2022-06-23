@@ -54,10 +54,14 @@ struct vmod_import {
 	const char		*err;
 	char			*path;
 
+	// From $VMOD
 	double			vmod_syntax;
 	char			*name;
 	char			*func_name;
 	char			*file_id;
+	char			*abi;
+	unsigned		major;
+	unsigned		minor;
 
 	struct symbol		*sym;
 	const struct token	*t_mod;
@@ -102,30 +106,51 @@ vcc_ParseJSON(const struct vcc *tl, const char *jsn, struct vmod_import *vim)
 		return ("Not array[0]");
 
 	vv2 = VTAILQ_FIRST(&vv->children);
+	AN(vv2);
 	if (!vjsn_is_array(vv2))
 		return ("Not array[1]");
 	vv3 = VTAILQ_FIRST(&vv2->children);
+	AN(vv3);
 	if (!vjsn_is_string(vv3))
 		return ("Not string[2]");
 	if (strcmp(vv3->value, "$VMOD"))
 		return ("Not $VMOD[3]");
 
 	vv3 = VTAILQ_NEXT(vv3, list);
+	AN(vv3);
 	assert(vjsn_is_string(vv3));
 	vim->vmod_syntax = strtod(vv3->value, NULL);
 	assert (vim->vmod_syntax == 1.0);
 
 	vv3 = VTAILQ_NEXT(vv3, list);
+	AN(vv3);
 	assert(vjsn_is_string(vv3));
 	vim->name = vv3->value;
 
 	vv3 = VTAILQ_NEXT(vv3, list);
+	AN(vv3);
 	assert(vjsn_is_string(vv3));
 	vim->func_name = vv3->value;
 
 	vv3 = VTAILQ_NEXT(vv3, list);
+	AN(vv3);
 	assert(vjsn_is_string(vv3));
 	vim->file_id = vv3->value;
+
+	vv3 = VTAILQ_NEXT(vv3, list);
+	AN(vv3);
+	assert(vjsn_is_string(vv3));
+	vim->abi = vv3->value;
+
+	vv3 = VTAILQ_NEXT(vv3, list);
+	AN(vv3);
+	assert(vjsn_is_number(vv3));
+	vim->major = atoi(vv3->value);
+
+	vv3 = VTAILQ_NEXT(vv3, list);
+	AN(vv3);
+	assert(vjsn_is_number(vv3));
+	vim->minor = atoi(vv3->value);
 
 	if (!vcc_IdIs(vim->t_mod, vim->name)) {
 		VSB_printf(tl->sb, "Wrong file for VMOD %.*s\n",
@@ -134,6 +159,27 @@ vcc_ParseJSON(const struct vcc *tl, const char *jsn, struct vmod_import *vim)
 		VSB_printf(tl->sb, "\tContains vmod \"%s\"\n", vim->name);
 		return ("");
 	}
+
+	if (vim->major == 0 && vim->minor == 0 &&
+	    strcmp(vim->abi, VMOD_ABI_Version)) {
+		VSB_printf(tl->sb, "Incompatible VMOD %.*s\n", PF(vim->t_mod));
+		VSB_printf(tl->sb, "\tFile name: %s\n", vim->path);
+		VSB_printf(tl->sb, "\tABI mismatch, expected <%s>, got <%s>\n",
+			   VMOD_ABI_Version, vim->abi);
+		return ("");
+	}
+	if (vim->major != 0 &&
+	    (vim->major != VRT_MAJOR_VERSION ||
+	    vim->minor > VRT_MINOR_VERSION)) {
+		VSB_printf(tl->sb, "Incompatible VMOD %.*s\n", PF(vim->t_mod));
+		VSB_printf(tl->sb, "\tFile name: %s\n", vim->path);
+		VSB_printf(tl->sb, "\tVMOD wants ABI version %u.%u\n",
+		    vim->major, vim->minor);
+		VSB_printf(tl->sb, "\tvarnishd provides ABI version %u.%u\n",
+		    VRT_MAJOR_VERSION, VRT_MINOR_VERSION);
+		return ("");
+	}
+
 
 	VTAILQ_FOREACH(vv2, &vv->children, list) {
 		assert (vjsn_is_array(vv2));
@@ -204,7 +250,9 @@ vcc_VmodLoad(const struct vcc *tl, struct vmod_import *vim, char *fnp)
 		return (-1);
 	}
 
-	err = vcc_ParseJSON(tl, vmd->json, vim);
+	assert(!memcmp(vmd->json, "VMOD_JSON_SPEC\x03", 15));
+
+	err = vcc_ParseJSON(tl, vmd->json + 15, vim);
 	AZ(dlclose(vim->hdl));
 	vim->hdl = NULL;
 	if (err != NULL && *err != '\0') {

@@ -1087,13 +1087,15 @@ const struct vmod_data Vmod_wrong2_Data = {
 	.func =		foo_struct,
 	.func_len =	sizeof foo_struct,
 	.func_name =	"foo_struct",
-	.json =		"["
+	.json =		"VMOD_JSON_SPEC\x03["
 			    "["
 				"\"$VMOD\""
 				", \"1.0\""
 				", \"wrongN\""
 				", \"foo_struct\""
 				", \"file_id\""
+				", \"abi\""
+				", 0, 0"	// major, minor
 			    "]"
 			"]",
 };
@@ -1106,13 +1108,15 @@ const struct vmod_data Vmod_wrong3_Data = {
 	.func =		foo_struct,
 	.func_len =	sizeof foo_struct,
 	.func_name =	"foo_struct",
-	.json =		"["
+	.json =		"VMOD_JSON_SPEC\x03["
 			    "["
 				"\"$VMOD\""
 				", \"1.0\""
 				", \"wrongN\""
 				", \"foo_struct\""
 				", \"file_id\""
+				", \"abi\""
+				", 0, 0"	// major, minor
 			    "]"
 			    ", [\"$CPROTO\", \"\"]"
 			"]",
