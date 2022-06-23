@@ -1087,7 +1087,15 @@ const struct vmod_data Vmod_wrong2_Data = {
 	.func =		foo_struct,
 	.func_len =	sizeof foo_struct,
 	.func_name =	"foo_struct",
-	.json =		"blablabla",
+	.json =		"["
+			    "["
+				"\"$VMOD\""
+				", \"1.0\""
+				", \"wrongN\""
+				", \"foo_struct\""
+				", \"file_id\""
+			    "]"
+			"]",
 };
 
 extern const struct vmod_data Vmod_wrong3_Data;
@@ -1098,7 +1106,16 @@ const struct vmod_data Vmod_wrong3_Data = {
 	.func =		foo_struct,
 	.func_len =	sizeof foo_struct,
 	.func_name =	"foo_struct",
-	.json =		"blablabla",
+	.json =		"["
+			    "["
+				"\"$VMOD\""
+				", \"1.0\""
+				", \"wrongN\""
+				", \"foo_struct\""
+				", \"file_id\""
+			    "]"
+			    ", [\"$CPROTO\", \"\"]"
+			"]",
 	.abi =		"abiblabla",
 };
 

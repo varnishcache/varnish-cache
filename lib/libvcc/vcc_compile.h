@@ -194,6 +194,9 @@ struct symbol {
 
 	const char			*extra;
 
+	/* vcc_vmod.c */
+	const struct vmod_import	*import;
+
 	/* SYM_VAR */
 	const char			*rname;
 	unsigned			r_methods;

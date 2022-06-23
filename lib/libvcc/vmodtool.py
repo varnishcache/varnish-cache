@@ -1086,7 +1086,7 @@ class vcc(object):
 
     def iter_json(self, fnx):
 
-        jl = [["$VMOD", "1.0"]]
+        jl = [["$VMOD", "1.0", self.modname, self.csn, self.file_id]]
         jl.append(["$CPROTO"])
         for i in open(fnx):
             jl[-1].append(i.rstrip())
