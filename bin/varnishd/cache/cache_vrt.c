@@ -973,12 +973,12 @@ VRT_CacheReqBody(VRT_CTX, VCL_BYTES maxsize)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	if (ctx->method != VCL_MET_RECV) {
 		VSLb(ctx->vsl, SLT_VCL_Error,
 		    "req.body can only be cached in vcl_recv{}");
 		return (-1);
 	}
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	return (VRB_Cache(ctx->req, maxsize));
 }
 
