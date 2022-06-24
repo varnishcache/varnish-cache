@@ -971,11 +971,16 @@ VRT_ban_string(VRT_CTX, VCL_STRING str)
 VCL_BYTES
 VRT_CacheReqBody(VRT_CTX, VCL_BYTES maxsize)
 {
+	const char * const err = "req.body can only be cached in vcl_recv{}";
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	if (ctx->method != VCL_MET_RECV) {
-		VSLb(ctx->vsl, SLT_VCL_Error,
-		    "req.body can only be cached in vcl_recv{}");
+		if (ctx->vsl != NULL) {
+			VSLb(ctx->vsl, SLT_VCL_Error, err);
+		} else {
+			AN(ctx->msg);
+			VSB_printf(ctx->msg, "%s\n", err);
+		};
 		return (-1);
 	}
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
