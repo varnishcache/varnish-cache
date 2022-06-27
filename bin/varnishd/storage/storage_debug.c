@@ -80,7 +80,7 @@ smd_init(struct stevedore *parent, int aac, char * const *aav)
 			methods->objgetspace = smd_lsp_getspace;
 			continue;
 		}
-		REPLACE(av[ac], aav[i]);
+		av[ac] = aav[i];
 		ac++;
 	}
 	assert(ac >= 0);
@@ -88,6 +88,7 @@ smd_init(struct stevedore *parent, int aac, char * const *aav)
 	AZ(av[ac]);
 
 	sma_stevedore.init(parent, ac, av);
+	free(av);
 }
 
 const struct stevedore smd_stevedore = {
