@@ -51,6 +51,24 @@
 const char * const JSON_FMT = (const char *)&JSON_FMT;
 
 /*--------------------------------------------------------------------
+ * Tweak alias
+ */
+
+int v_matchproto_(tweak_t)
+tweak_alias(struct vsb *vsb, const struct parspec *par, const char *arg)
+{
+	const struct parspec *orig;
+	struct parspec alias[1];
+
+	orig = TRUST_ME(par->priv);
+	AN(orig);
+	memcpy(alias, orig, sizeof *orig);
+	alias->name = par->name;
+	alias->priv = TRUST_ME(orig);
+	return (alias->func(vsb, alias, arg));
+}
+
+/*--------------------------------------------------------------------
  * Generic handling of double typed parameters
  */
 
@@ -567,24 +585,6 @@ tweak_storage(struct vsb *vsb, const struct parspec *par, const char *arg)
 		}
 	}
 	return (tweak_string(vsb, par, arg));
-}
-
-/*--------------------------------------------------------------------
- * Tweak alias
- */
-
-int v_matchproto_(tweak_t)
-tweak_alias(struct vsb *vsb, const struct parspec *par, const char *arg)
-{
-	const struct parspec *orig;
-	struct parspec alias[1];
-
-	orig = TRUST_ME(par->priv);
-	AN(orig);
-	memcpy(alias, orig, sizeof *orig);
-	alias->name = par->name;
-	alias->priv = TRUST_ME(orig);
-	return (alias->func(vsb, alias, arg));
 }
 
 /*--------------------------------------------------------------------
