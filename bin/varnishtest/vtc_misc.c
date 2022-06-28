@@ -270,7 +270,7 @@ cmd_filewrite(CMD_ARGS)
 	if (fo == NULL)
 		vtc_fatal(vl, "Cannot open %s: %s", av[1], strerror(errno));
 	for (n = 2; av[n] != NULL; n++)
-		fputs(av[n], fo);
+		(void)fputs(av[n], fo);
 	AZ(fclose(fo));
 }
 
