@@ -246,6 +246,34 @@ cmd_shell(CMD_ARGS)
 	cmd_shell_engine(vl, ok, av[n], expect, re);
 }
 
+/* SECTION: filewrite filewrite
+ *
+ * Write strings to file
+ *
+ *         filewrite /somefile "Hello" " " "World\n"
+ *
+ */
+
+void v_matchproto_(cmd_f)
+cmd_filewrite(CMD_ARGS)
+{
+	FILE *fo;
+	int n;
+
+	(void)priv;
+
+	if (av == NULL)
+		return;
+	if (av[1] == NULL)
+		vtc_fatal(vl, "Need filename");
+        fo = fopen(av[1], "w");
+	if (fo == NULL)
+		vtc_fatal(vl, "Cannot open %s: %s", av[1], strerror(errno));
+	for (n = 2; av[n] != NULL; n++)
+		fputs(av[n], fo);
+	AZ(fclose(fo));
+}
+
 /* SECTION: setenv setenv
  *
  * Set or change an environment variable::

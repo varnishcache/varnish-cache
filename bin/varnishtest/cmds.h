@@ -44,6 +44,7 @@ CMD_GLOBAL(shell)
 #endif
 CMD_TOP(client)
 CMD_TOP(feature)
+CMD_TOP(filewrite)
 CMD_TOP(haproxy)
 #ifdef VTEST_WITH_VTC_LOGEXPECT
 CMD_TOP(logexpect)
