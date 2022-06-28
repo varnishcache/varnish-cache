@@ -77,7 +77,7 @@ static int
 vcc_path_open(void *priv, const char *fn)
 {
 	struct vmod_import *vim;
-	const char *magic = "VMOD_JSON_SPEC\x03", *p;
+	const char *magic = "VMOD_JSON_SPEC\x02", *p;
 	int c;
 	FILE *f;
 
@@ -114,10 +114,10 @@ vcc_path_open(void *priv, const char *fn)
 		c = getc(f);
 		if (c == EOF) {
 			AZ(fclose(f));
-			vim->err = "No VMOD JSON found";
+			vim->err = "Truncated VMOD JSON";
 			return (-1);
 		}
-		if (c == '\0')
+		if (c == '\x03')
 			break;
 		VSB_putc(vim->json, c);
 	}
@@ -442,7 +442,7 @@ vcc_ParseImport(struct vcc *tl)
 			    "Could not open VMOD %.*s\n", PF(mod));
 			VSB_printf(tl->sb, "\tFile name: %s\n",
 			    vim->path != NULL ? vim->path : fn);
-			VSB_printf(tl->sb, "\tdlerror: %s\n", vim->err);
+			VSB_printf(tl->sb, "\tError: %s\n", vim->err);
 		}
 		vcc_ErrWhere(tl, mod);
 		vcc_vim_destroy(&vim);

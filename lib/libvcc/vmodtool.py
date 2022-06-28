@@ -1105,7 +1105,7 @@ class vcc(object):
     def json(self, fo, fnx):
         fo.write('#define STRINGIFY(arg) #arg\n')
         fo.write("\nstatic const char Vmod_Json[] = {\n")
-        fo.write('\t"VMOD_JSON_SPEC\\x03"\n')
+        fo.write('\t"VMOD_JSON_SPEC\x02"\n')
 
         for n, i in enumerate(self.iter_json(fnx)):
             fo.write('\t"')
@@ -1121,7 +1121,7 @@ class vcc(object):
                 fo.write('\t    STRINGIFY(%s)\n' % self.vrt_minor)
             else:
                 fo.write('"\n')
-        fo.write('\t\"\\n\"\n};\n')
+        fo.write('\t\"\\n\\x03\"\n};\n')
         fo.write('#undef STRINGIFY\n')
 
 
