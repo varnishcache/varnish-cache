@@ -502,16 +502,18 @@ top_dir(const char *makefile, const char *top_var)
 }
 
 static void
-build_path(const char *topbuilddir, const char *subdir,
+build_path(const char *topdir, const char *subdir,
     const char *pfx, const char *sfx, struct vsb *vsb)
 {
 	char buf[PATH_MAX];
 	DIR *dir;
 	struct dirent *de;
 	struct stat st;
-	const char *sep = "";
+	const char *topsep = "", *sep = "";
 
-	bprintf(buf, "%s/%s/", topbuilddir, subdir);
+	if (*subdir != '\0')
+		topsep = "/";
+	bprintf(buf, "%s%s%s/", topdir, topsep, subdir);
 	dir = opendir(buf);
 	XXXAN(dir);
 	while (1) {
@@ -520,7 +522,7 @@ build_path(const char *topbuilddir, const char *subdir,
 			break;
 		if (strncmp(de->d_name, pfx, strlen(pfx)))
 			continue;
-		bprintf(buf, "%s/%s/%s", topbuilddir, subdir, de->d_name);
+		bprintf(buf, "%s%s%s/%s", topdir, topsep, subdir, de->d_name);
 		if (!stat(buf, &st) && S_ISDIR(st.st_mode)) {
 			VSB_cat(vsb, sep);
 			VSB_cat(vsb, buf);
@@ -568,6 +570,10 @@ i_mode(void)
 	VSB_clear(vsb);
 	VSB_cat(vsb, "PATH=");
 	build_path(topbuild, "bin", "varnish", "", vsb);
+#ifdef WITH_CONTRIB
+	VSB_putc(vsb, ':');
+	build_path(topsrc, "", "contrib", "", vsb);
+#endif
 	VSB_printf(vsb, ":%s", getenv("PATH"));
 	AZ(VSB_finish(vsb));
 	AZ(putenv(strdup(VSB_data(vsb))));
