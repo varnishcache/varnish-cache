@@ -467,6 +467,40 @@ start_test(void)
  *
  */
 
+static char *
+top_dir(const char *makefile, const char *top_var)
+{
+	const char *b, *e;
+	char *var;
+
+	AN(makefile);
+	AN(top_var);
+	assert(*top_var == '\n');
+
+	b = strstr(makefile, top_var);
+	top_var++;
+
+	if (b == NULL) {
+		fprintf(stderr, "could not find '%s' in Makefile\n", top_var);
+		return (NULL);
+	}
+
+	e = strchr(b + 1, '\n');
+	if (e == NULL) {
+		fprintf(stderr, "No NL after '%s' in Makefile\n", top_var);
+		return (NULL);
+	}
+
+	b = memchr(b, '/', e - b);
+	if (b == NULL) {
+		fprintf(stderr, "No '/' after '%s' in Makefile\n", top_var);
+		return (NULL);
+	}
+	var = strndup(b, e - b);
+	AN(var);
+	return (var);
+}
+
 static void
 build_path(const char *topbuilddir, const char *subdir,
     const char *pfx, const char *sfx, struct vsb *vsb)
@@ -501,8 +535,7 @@ static void
 i_mode(void)
 {
 	struct vsb *vsb;
-	char *p, *q;
-	char *topbuild;
+	char *p, *topbuild, *topsrc;
 
 	/*
 	 * This code has a rather intimate knowledge of auto* generated
@@ -512,39 +545,22 @@ i_mode(void)
 	vsb = VSB_new_auto();
 	AN(vsb);
 
-	q = p = VFIL_readfile(NULL, "Makefile", NULL);
+	p = VFIL_readfile(NULL, "Makefile", NULL);
 	if (p == NULL) {
 		fprintf(stderr, "No Makefile to search for -i flag.\n");
-		VSB_printf(vsb, "%s/../..", cwd);
-		AZ(VSB_finish(vsb));
-		topbuild = strdup(VSB_data(vsb));
-		VSB_clear(vsb);
-	} else {
-		p = strstr(p, "\nabs_top_builddir");
-		if (p == NULL) {
-			fprintf(stderr,
-			    "could not find 'abs_top_builddir' in Makefile\n");
-			exit(2);
-		}
-		topbuild = strchr(p + 1, '\n');
-		if (topbuild == NULL) {
-			fprintf(stderr,
-			    "No NL after 'abs_top_builddir' in Makefile\n");
-			exit(2);
-		}
-		*topbuild = '\0';
-		topbuild = strchr(p, '/');
-		if (topbuild == NULL) {
-			fprintf(stderr,
-			    "No '/' after 'abs_top_builddir' in Makefile\n");
-			exit(2);
-		}
-		topbuild = strdup(topbuild);
-		free(q);
-
+		exit(2);
 	}
-	AN(topbuild);
+
+	topbuild = top_dir(p, "\nabs_top_builddir");
+	topsrc = top_dir(p, "\nabs_top_srcdir");
+	free(p);
+	if (topbuild == NULL || topsrc == NULL) {
+		free(topbuild);
+		free(topsrc);
+		exit(2);
+	}
 	extmacro_def("topbuild", NULL, "%s", topbuild);
+	extmacro_def("topsrc", NULL, "%s", topsrc);
 
 	/*
 	 * Build $PATH which can find all programs in the build tree
@@ -567,6 +583,7 @@ i_mode(void)
 	AN(vmod_path);
 
 	free(topbuild);
+	free(topsrc);
 	VSB_destroy(&vsb);
 
 	/*
