@@ -1100,7 +1100,9 @@ class vcc():
             yield i + " "
 
     def json(self, fo, fnx):
-        fo.write('#define STRINGIFY(arg) #arg\n')
+        fo.write('#define STRINGIFY3(arg) #arg\n')
+        fo.write('#define STRINGIFY2(arg) STRINGIFY3(#arg)\n')
+        fo.write('#define STRINGIFY1(arg) STRINGIFY2(arg)\n')
         fo.write("\nstatic const char Vmod_Json[] = {\n")
         fo.write('\t"VMOD_JSON_SPEC\x02"\n')
 
@@ -1114,8 +1116,8 @@ class vcc():
                 # Hand-munge the JSON to insert stuff only known by
                 # the C-compiler at compile-time.
                 fo.write(',"\n\t"    \\"" VMOD_ABI_Version "\\", "\n')
-                fo.write('\t    STRINGIFY(%s) ", "\n' % self.vrt_major)
-                fo.write('\t    STRINGIFY(%s)\n' % self.vrt_minor)
+                fo.write('\t    STRINGIFY1(%s) ", "\n' % self.vrt_major)
+                fo.write('\t    STRINGIFY1(%s)\n' % self.vrt_minor)
             else:
                 fo.write('"\n')
         fo.write('\t\"\\n\\x03\"\n};\n')

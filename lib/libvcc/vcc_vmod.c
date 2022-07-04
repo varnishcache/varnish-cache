@@ -131,6 +131,7 @@ vcc_ParseJSON(const struct vcc *tl, const char *jsn, struct vmod_import *vim)
 {
 	const struct vjsn_val *vv, *vv2, *vv3;
 	const char *err;
+	char *p;
 
 	vim->vj = vjsn_parse(jsn, &err);
 	if (err != NULL)
@@ -180,13 +181,15 @@ vcc_ParseJSON(const struct vcc *tl, const char *jsn, struct vmod_import *vim)
 
 	vv3 = VTAILQ_NEXT(vv3, list);
 	AN(vv3);
-	assert(vjsn_is_number(vv3));
-	vim->major = atoi(vv3->value);
+	assert(vjsn_is_string(vv3));
+	vim->major = strtoul(vv3->value, &p, 10);
+	assert(p == NULL || *p == '\0' || *p == 'U');
 
 	vv3 = VTAILQ_NEXT(vv3, list);
 	AN(vv3);
-	assert(vjsn_is_number(vv3));
-	vim->minor = atoi(vv3->value);
+	assert(vjsn_is_string(vv3));
+	vim->minor = strtoul(vv3->value, &p, 10);
+	assert(p == NULL || *p == '\0' || *p == 'U');
 
 	if (!vcc_IdIs(vim->t_mod, vim->name)) {
 		VSB_printf(tl->sb, "Wrong file for VMOD %.*s\n",
