@@ -250,7 +250,9 @@ cmd_shell(CMD_ARGS)
  *
  * Write strings to file
  *
- *         filewrite /somefile "Hello" " " "World\n"
+ *         filewrite [-a] /somefile "Hello" " " "World\n"
+ *
+ * The -a flag opens the file in append mode.
  *
  */
 
@@ -259,14 +261,19 @@ cmd_filewrite(CMD_ARGS)
 {
 	FILE *fo;
 	int n;
+	const char *mode = "w";
 
 	(void)priv;
 
 	if (av == NULL)
 		return;
+	if (av[1] != NULL && !strcmp(av[1], "-a")) {
+		av++;
+		mode = "a";
+	}
 	if (av[1] == NULL)
 		vtc_fatal(vl, "Need filename");
-        fo = fopen(av[1], "w");
+	fo = fopen(av[1], mode);
 	if (fo == NULL)
 		vtc_fatal(vl, "Cannot open %s: %s", av[1], strerror(errno));
 	for (n = 2; av[n] != NULL; n++)
