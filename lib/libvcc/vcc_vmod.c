@@ -88,7 +88,7 @@ vcc_path_open(void *priv, const char *fn)
 	AN(vim->json);
 
 	f = fopen(fn, "rb");
-        if (f == NULL) {
+	if (f == NULL) {
 		vim->err = strerror(errno);
 		return (-1);
 	}

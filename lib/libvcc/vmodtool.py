@@ -223,7 +223,7 @@ def err(txt, warn=True):
 #######################################################################
 
 
-class CType(object):
+class CType():
     def __init__(self, wl, enums):
         self.nm = None
         self.defval = None
@@ -321,7 +321,7 @@ class arg(CType):
 #######################################################################
 
 
-class ProtoType(object):
+class ProtoType():
     def __init__(self, st, retval=True, prefix=""):
         self.st = st
         self.obj = None
@@ -506,7 +506,7 @@ class ProtoType(object):
 #######################################################################
 
 
-class Stanza(object):
+class Stanza():
 
     ''' Base class for all $-Stanzas '''
 
@@ -631,22 +631,17 @@ class ABIStanza(Stanza):
     def parse(self):
         if len(self.toks) != 2:
             self.syntax()
-        valid = {
+        self.vcc.strict_abi = {
             'strict': True,
             'vrt': False,
-        }
-        self.vcc.strict_abi = valid.get(self.toks[1])
+        }.get(self.toks[1])
         if self.vcc.strict_abi is None:
             err("Valid ABI types are 'strict' or 'vrt', got '%s'\n" %
                 self.toks[1])
-        if self.vcc.strict_abi:
-            self.vcc.vrt_major = "0"
-            self.vcc.vrt_minor = "0"
-        else:
+        self.vcc.contents.append(self)
+        if not self.vcc.strict_abi:
             self.vcc.vrt_major = "VRT_MAJOR_VERSION"
             self.vcc.vrt_minor = "VRT_MINOR_VERSION"
-        self.vcc.contents.append(self)
-
 
 class PrefixStanza(Stanza):
 
@@ -903,7 +898,7 @@ DISPATCH = {
 }
 
 
-class vcc(object):
+class vcc():
 
     ''' Processing context for a single .vcc file '''
 
@@ -917,6 +912,8 @@ class vcc(object):
         self.copyright = ""
         self.enums = {}
         self.strict_abi = True
+        self.vrt_major = "0"
+        self.vrt_minor = "0"
         self.auto_synopsis = True
         self.modname = None
         self.csn = None
