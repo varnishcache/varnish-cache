@@ -59,4 +59,103 @@ varnish v1 -errvcl {Not string[2]} { import wrong; }
 filewrite ${tmpdir}/libvmod_wrong.so "VMOD_JSON_SPEC\x02" "[[\"$VBLA\"]]" "\x03"
 varnish v1 -errvcl {Not $VMOD[3]} { import wrong; }
 
+filewrite ${tmpdir}/libvmod_wrong.so "VMOD_JSON_SPEC\x02"
+filewrite -a ${tmpdir}/libvmod_wrong.so {
+    [
+	[
+	    "$VMOD",
+	    "1.0",
+	    "wrong",
+	    "Vmod_vmod_wrong_Func",
+	    "0000000000000000000000000000000000000000000000000000000000000000",
+	    "0000000000000000000000000000000000000000000000000000000000000000",
+	    0,
+	    0
+	]
+    ]
+}
+filewrite -a ${tmpdir}/libvmod_wrong.so "\x03"
+varnish v1 -errvcl {Incompatible VMOD wrong} { import wrong; }
+
+filewrite ${tmpdir}/libvmod_wrong.so "VMOD_JSON_SPEC\x02"
+filewrite -a ${tmpdir}/libvmod_wrong.so {
+    [
+	[
+	    "$VMOD",
+	    "1.0",
+	    "wrong",
+	    "Vmod_vmod_wrong_Func",
+	    "0000000000000000000000000000000000000000000000000000000000000000",
+	    "0000000000000000000000000000000000000000000000000000000000000000",
+	    1,
+	    0
+	]
+    ]
+}
+filewrite -a ${tmpdir}/libvmod_wrong.so "\x03"
+varnish v1 -errvcl {VMOD wants ABI version 1.0} { import wrong; }
+
+#############################################################
+# NB: in the tests below "15" should track VRT_MAJOR_VERSION
+
+filewrite ${tmpdir}/libvmod_wrong.so "VMOD_JSON_SPEC\x02"
+filewrite -a ${tmpdir}/libvmod_wrong.so {
+    [
+	[
+	    "$VMOD",
+	    "1.0",
+	    "wrong",
+	    "Vmod_vmod_wrong_Func",
+	    "0000000000000000000000000000000000000000000000000000000000000000",
+	    "0000000000000000000000000000000000000000000000000000000000000000",
+	    15,
+	    0
+	], [
+	    "$FOOBAR"
+	]
+    ]
+}
+filewrite -a ${tmpdir}/libvmod_wrong.so "\x03"
+varnish v1 -errvcl {Unknown metadata stanza.} { import wrong; }
+
+filewrite ${tmpdir}/libvmod_wrong.so "VMOD_JSON_SPEC\x02"
+filewrite -a ${tmpdir}/libvmod_wrong.so {
+    [
+	[
+	    "$VMOD",
+	    "1.0",
+	    "wrong",
+	    "Vmod_vmod_wrong_Func",
+	    "0000000000000000000000000000000000000000000000000000000000000000",
+	    "0000000000000000000000000000000000000000000000000000000000000000",
+	    15,
+	    0
+	]
+    ]
+}
+filewrite -a ${tmpdir}/libvmod_wrong.so "\x03"
+varnish v1 -errvcl {Bad cproto stanza} { import wrong; }
+
+filewrite ${tmpdir}/libvmod_wrong.so "VMOD_JSON_SPEC\x02"
+filewrite -a ${tmpdir}/libvmod_wrong.so {
+    [
+	[
+	    "$VMOD",
+	    "1.0",
+	    "wrong",
+	    "Vmod_vmod_wrong_Func",
+	    "0000000000000000000000000000000000000000000000000000000000000000",
+	    "0000000000000000000000000000000000000000000000000000000000000000",
+	    15,
+	    0
+	], [
+	    "$CPROTO"
+	], [
+	    "$VMOD"
+	]
+    ]
+}
+filewrite -a ${tmpdir}/libvmod_wrong.so "\x03"
+varnish v1 -errvcl {Bad vmod stanza} { import wrong; }
+
 shell "rm -f ${tmpdir}/libvmod_wrong.so"

@@ -226,7 +226,7 @@ vcc_ParseJSON(const struct vcc *tl, const char *jsn, struct vmod_import *vim)
     if (!strcmp(vv3->value, "$" #UU)) {vim->n_##ll++; continue;}
 		STANZA_TBL
 #undef STANZA
-		return ("Unknown entry");
+		return ("Unknown metadata stanza.");
 	}
 	if (vim->n_cproto != 1)
 		return ("Bad cproto stanza(s)");
