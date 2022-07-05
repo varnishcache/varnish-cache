@@ -703,6 +703,14 @@
 	of the shared memory log, cycling back to the beginning.
 
 
+.. varnish_vsc:: shm_bytes
+	:level:	diag
+	:format: bytes
+	:oneliner:	SHM bytes
+
+	Number of bytes written to the shared memory log.
+
+
 .. varnish_vsc:: backend_req
 	:oneliner:	Backend requests made
 
