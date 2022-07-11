@@ -932,6 +932,10 @@ AC_ARG_WITH([contrib],
 AM_CONDITIONAL([WITH_CONTRIB], [test "$with_contrib" = yes])
 
 AM_COND_IF([WITH_CONTRIB], [
+	CONTRIB_TESTS="$(cd $srcdir/contrib && echo tests/*.vtc)"
+	AC_SUBST(CONTRIB_TESTS)
+	AM_SUBST_NOTMAKE(CONTRIB_TESTS)
+
 	AC_DEFINE([WITH_CONTRIB], [1],
 		[Define to 1 when Varnish is built with contributions.])
 

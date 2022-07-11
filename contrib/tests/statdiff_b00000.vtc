@@ -1,0 +1,54 @@
+varnishtest "varnishstatdiff coverage"
+
+feature cmd "command -v column"
+feature cmd "command -v diff"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend "" -start
+
+shell {
+	varnishstat -n ${v1_name} -1 \
+		-I MAIN.n_object -I MAIN.cache_* -I MAIN.client_req |
+	tee stat1.txt
+}
+
+client c1 {
+	txreq
+	rxresp
+} -start
+
+varnish v1 -vsl_catchup
+
+shell {
+	varnishstat -n ${v1_name} -1 \
+		-I MAIN.n_object -I MAIN.cache_* -I MAIN.esi_req |
+	tee stat2.txt
+}
+
+shell -expect Usage: {varnishstatdiff -h}
+shell -expect "Error: not enough arguments" -err {varnishstatdiff}
+shell -expect "Error: not enough arguments" -err {varnishstatdiff a}
+shell -expect "Error: too many arguments" -err {varnishstatdiff a b c}
+
+shell {
+	varnishstatdiff stat1.txt stat2.txt | tee diff.txt
+}
+
+shell {
+	sed 's/@/ /' >expected.txt <<-EOF
+	--- stat1.txt
+	+++ stat2.txt
+	@MAIN.cache_miss  -0  -0.00  Cache misses
+	@                 +1  +0.00
+	-MAIN.client_req   0   0.00  Good client requests received
+	+MAIN.esi_req      0   0.00  ESI subrequests
+	@MAIN.n_object    -0   .     object structs made
+	@                 +1   .
+	EOF
+
+	diff -u expected.txt diff.txt
+}
