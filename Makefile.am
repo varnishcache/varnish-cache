@@ -2,6 +2,10 @@ ACLOCAL_AMFLAGS = -I m4 -I .
 
 SUBDIRS = include lib bin vmod etc doc man
 
+if WITH_CONTRIB
+SUBDIRS += contrib
+endif
+
 TESTS = tools/magic_check.sh
 
 pkgconfigdir = $(libdir)/pkgconfig
@@ -35,6 +39,7 @@ AM_DISTCHECK_CONFIGURE_FLAGS = \
     --enable-developer-warnings \
     --enable-debugging-symbols \
     --enable-dependency-tracking \
+    --with-contrib \
     CFLAGS="$(EXTCFLAGS)"
 
 if WITH_UNWIND

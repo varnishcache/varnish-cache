@@ -35,4 +35,5 @@ $SRCDIR/configure \
     --enable-debugging-symbols \
     --enable-dependency-tracking \
     --with-persistent-storage \
+    --with-contrib \
     "$@"

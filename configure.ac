@@ -924,4 +924,18 @@ AC_CONFIG_FILES([
     varnishapi-uninstalled.pc
     vmod/Makefile
 ])
+
+AC_ARG_WITH([contrib],
+	[AS_HELP_STRING([--with-contrib],
+		[Build Varnish with external contributions.])])
+
+AM_CONDITIONAL([WITH_CONTRIB], [test "$with_contrib" = yes])
+
+AM_COND_IF([WITH_CONTRIB], [
+	AC_DEFINE([WITH_CONTRIB], [1],
+		[Define to 1 when Varnish is built with contributions.])
+
+	AC_CONFIG_FILES([contrib/Makefile])
+])
+
 AC_OUTPUT
