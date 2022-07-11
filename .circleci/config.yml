@@ -16,6 +16,7 @@ parameters:
   configure_args:
     type: string
     default: |
+        --with-contrib \
         --with-unwind \
         --enable-developer-warnings \
         --enable-debugging-symbols \
