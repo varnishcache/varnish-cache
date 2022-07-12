@@ -80,6 +80,7 @@ client c3 {
 	txreq -hdr "barrier: ${b1_sock}" -hdr "barrier2: ${b2_sock}"
 	rxresp
 	expect resp.status == 200
+	expect resp.http.connection == close
 
 	expect_close
 } -start

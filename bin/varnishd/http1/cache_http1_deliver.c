@@ -99,6 +99,9 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 	CHECK_OBJ_ORNULL(boc, BOC_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 
+	if (req->doclose == SC_NULL && !cache_param->accept_traffic)
+		req->doclose = SC_TRAFFIC_REFUSE;
+
 	if (req->doclose == SC_NULL &&
 	    http_HdrIs(req->resp, H_Connection, "close")) {
 		req->doclose = SC_RESP_CLOSE;
