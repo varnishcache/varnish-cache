@@ -68,6 +68,8 @@ varnish v1 -clierr 300 traffic.accept
 
 server s2 -break
 
+varnish v1 -expect MAIN.sc_traffic_refuse == 0
+
 # http/1 keep-alive
 
 varnish v1 -cliok traffic.accept
@@ -90,6 +92,8 @@ varnish v1 -cliok traffic.refuse
 barrier b2 sync
 
 client c3 -wait
+
+varnish v1 -expect MAIN.sc_traffic_refuse == 1
 
 # h2 goaway
 
@@ -131,3 +135,38 @@ varnish v1 -cliok traffic.refuse
 barrier b4 sync
 
 client c4 -wait
+
+varnish v1 -expect MAIN.sc_traffic_refuse == 1
+
+# timeout_linger
+
+delay 0.1
+varnish v1 -cliok traffic.accept
+varnish v1 -cliok "param.set timeout_linger 0.001"
+
+barrier b6 cond 2
+barrier b7 sock 2
+
+client c5 {
+	txreq
+	rxresp
+	expect resp.status == 200
+
+	delay 1
+
+	barrier b6 sync
+	barrier b7 sync
+
+	txreq
+	rxresp
+	expect resp.status == 503
+	expect_close
+} -start
+
+barrier b6 sync
+varnish v1 -cliok traffic.refuse
+barrier b7 sync
+
+client c5 -wait
+
+varnish v1 -expect MAIN.sc_traffic_refuse == 2

@@ -304,8 +304,19 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 	 * blocking mode.  It would be simpler to do this in the acceptor
 	 * or waiter, but we'd rather do the syscall in the worker thread.
 	 */
-	if (http1_getstate(sp) == H1NEWREQ)
+	if (http1_getstate(sp) == H1NEWREQ) {
 		VTCP_blocking(sp->fd);
+		if (!cache_param->accept_traffic) {
+			assert(!WS_IsReserved(wrk->aws));
+			assert(WS_IsReserved(req->ws));
+			WS_Release(req->htc->ws, 0);
+			req->doclose = SC_TRAFFIC_REFUSE;
+			http1_abort(req, 503);
+			Req_AcctLogCharge(wrk->stats, req);
+			SES_Close(req->sp, req->doclose);
+			http1_setstate(sp, H1CLEANUP);
+		}
+	}
 
 	req->transport = &HTTP1_transport;
 
