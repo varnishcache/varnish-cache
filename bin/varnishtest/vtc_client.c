@@ -188,11 +188,14 @@ client_connect(struct vtclog *vl, struct client *c)
 	const char *err;
 	int fd;
 
+	/* The connect timeout is 3s, to make up for the slow_acceptor
+	 * debug flag that adds 2s per connection.
+	 */
 	vtc_log(vl, 3, "Connect to %s", c->addr);
 	if (VUS_is(c->addr))
-		fd = client_uds_connect(vl, c->addr, 10., &err);
+		fd = client_uds_connect(vl, c->addr, 3., &err);
 	else
-		fd = client_tcp_connect(vl, c->addr, 10., &err);
+		fd = client_tcp_connect(vl, c->addr, 3., &err);
 	if (fd < 0)
 		vtc_fatal(c->vl, "Failed to open %s: %s",
 		    c->addr, err);
