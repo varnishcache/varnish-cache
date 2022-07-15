@@ -316,7 +316,7 @@ if test "x$UBSAN_FLAGS$TSAN_FLAGS$ASAN_FLAGS$MSAN_FLAGS" != "x"; then
 	AC_DEFINE([ENABLE_SANITIZER], [1],
 		[Define to 1 if any sanitizer is enabled.])
 	SAN_FLAGS="$ASAN_FLAGS $UBSAN_FLAGS $TSAN_FLAGS $MSAN_FLAGS"
-	SAN_CFLAGS="$SAN_FLAGS -fPIC -fPIE -fno-omit-frame-pointer"
+	SAN_CFLAGS="$SAN_FLAGS -fPIC -fPIE -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer"
 	SAN_LDFLAGS=
 	save_CFLAGS=$CFLAGS
 	CFLAGS="${CFLAGS} -Werror=unused-command-line-argument"
