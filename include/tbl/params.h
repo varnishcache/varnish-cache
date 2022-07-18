@@ -1312,7 +1312,7 @@ PARAM_THREAD(
 	/* name */	thread_pool_min,
 	/* field */	min,
 	/* type */	thread_pool_min,
-	/* min */	"5" /* TASK_QUEUE__END */,
+	/* min */	"5" /* TASK_QUEUE_RESERVE */,
 	/* max */	NULL,
 	/* def */	"100",
 	/* units */	"threads",
@@ -1323,9 +1323,9 @@ PARAM_THREAD(
 	"situations or when threads have expired.\n"
 	"\n"
 	"Technical minimum is 5 threads, but this parameter is "
-	/*                    ^ TASK_QUEUE__END */
+	/*                    ^ TASK_QUEUE_RESERVE */
 	"strongly recommended to be at least 10",
-	/*               2 * TASK_QUEUE__END ^^ */
+	/*            2 * TASK_QUEUE_RESERVE ^^ */
 	/* flags */	DELAYED_EFFECT,
 	/* dyn_min_reason */	NULL,
 	/* dyn_max_reason */	"thread_pool_max"
@@ -1350,7 +1350,7 @@ PARAM_THREAD(
 	"priority tasks from running even under high load.\n"
 	"\n"
 	"The effective value is at least 5 (the number of internal "
-	/*                               ^ TASK_QUEUE__END */
+	/*                               ^ TASK_QUEUE_RESERVE */
 	"priority classes), irrespective of this parameter.",
 	/* flags */	DELAYED_EFFECT,
 	/* dyn_min_reason */	NULL,

@@ -216,8 +216,8 @@ pool_reserve(void)
 		if (cache_param->wthread_reserve < lim)
 			lim = cache_param->wthread_reserve;
 	}
-	if (lim < TASK_QUEUE__END)
-		return (TASK_QUEUE__END);
+	if (lim < TASK_QUEUE_RESERVE)
+		return (TASK_QUEUE_RESERVE);
 	return (lim);
 }
 
@@ -231,7 +231,7 @@ pool_getidleworker(struct pool *pp, enum task_prio prio)
 
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 	Lck_AssertHeld(&pp->mtx);
-	if (pp->nidle > (pool_reserve() * prio / TASK_QUEUE__END)) {
+	if (pp->nidle > (pool_reserve() * prio / TASK_QUEUE_RESERVE)) {
 		pt = VTAILQ_FIRST(&pp->idle_queue);
 		if (pt == NULL)
 			AZ(pp->nidle);
@@ -387,8 +387,8 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 		Lck_Lock(&pp->mtx);
 		reserve = pool_reserve();
 
-		for (i = 0; i < TASK_QUEUE__END; i++) {
-			if (pp->nidle < (reserve * i / TASK_QUEUE__END))
+		for (i = 0; i < TASK_QUEUE_RESERVE; i++) {
+			if (pp->nidle < (reserve * i / TASK_QUEUE_RESERVE))
 				break;
 			tp = VTAILQ_FIRST(&pp->queues[i]);
 			if (tp != NULL) {
@@ -760,6 +760,6 @@ WRK_Log(enum VSL_tag_e tag, const char *fmt, ...)
 void
 WRK_Init(void)
 {
-	assert(cache_param->wthread_min >= TASK_QUEUE__END);
+	assert(cache_param->wthread_min >= TASK_QUEUE_RESERVE);
 	CLI_AddFuncs(debug_cmds);
 }

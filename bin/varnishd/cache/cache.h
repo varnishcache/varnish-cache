@@ -206,7 +206,7 @@ struct pool_task {
  * TASK_QUEUE_RUSH is req's returning from waiting list
  *
  * NOTE: When changing the number of classes, update places marked with
- * TASK_QUEUE__END in mgt_pool.c
+ * TASK_QUEUE_RESERVE in params.h
  */
 enum task_prio {
 	TASK_QUEUE_BO,
@@ -218,6 +218,7 @@ enum task_prio {
 };
 
 #define TASK_QUEUE_HIGHEST_PRIORITY TASK_QUEUE_BO
+#define TASK_QUEUE_RESERVE TASK_QUEUE__END
 #define TASK_QUEUE_LIMITED(prio) \
 	(prio == TASK_QUEUE_REQ || prio == TASK_QUEUE_STR)
 
