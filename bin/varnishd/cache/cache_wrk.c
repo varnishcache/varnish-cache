@@ -333,11 +333,9 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum task_prio prio)
 		return (0);
 	}
 
-	/*
-	 * queue limits only apply to client threads - all other
-	 * work is vital and needs do be done at the earliest
+	/* Vital work is always queued.
 	 */
-	if (!TASK_QUEUE_CLIENT(prio) ||
+	if (!TASK_QUEUE_LIMITED(prio) ||
 	    pp->lqueue + pp->nthr < cache_param->wthread_max +
 	    cache_param->wthread_queue_limit) {
 		pp->nqueued++;
