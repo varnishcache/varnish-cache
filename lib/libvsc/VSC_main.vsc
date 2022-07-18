@@ -256,11 +256,11 @@
 
 	beresp fetch failed.
 
-.. varnish_vsc:: fetch_no_thread
+.. varnish_vsc:: bgfetch_no_thread
 	:group: wrk
-	:oneliner:	Fetch failed (no thread)
+	:oneliner:	Background fetch failed (no thread)
 
-	beresp fetch failed, no thread available.
+	A bgfetch triggered by a grace hit failed, no thread available.
 
 .. varnish_vsc:: pools
 	:type:	gauge

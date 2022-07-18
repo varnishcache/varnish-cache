@@ -1173,7 +1173,7 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	bo->fetch_task->func = vbf_fetch_thread;
 
 	if (Pool_Task(wrk->pool, bo->fetch_task, TASK_QUEUE_BO)) {
-		wrk->stats->fetch_no_thread++;
+		wrk->stats->bgfetch_no_thread++;
 		(void)vbf_stp_fail(req->wrk, bo);
 		if (bo->stale_oc != NULL)
 			(void)HSH_DerefObjCore(wrk, &bo->stale_oc, 0);
