@@ -1109,6 +1109,7 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 {
 	struct boc *boc;
 	struct busyobj *bo;
+	enum task_prio prio;
 	const char *how;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -1126,13 +1127,16 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 
 	switch (mode) {
 	case VBF_PASS:
+		prio = TASK_QUEUE_BO;
 		how = "pass";
 		bo->uncacheable = 1;
 		break;
 	case VBF_NORMAL:
+		prio = TASK_QUEUE_BO;
 		how = "fetch";
 		break;
 	case VBF_BACKGROUND:
+		prio = TASK_QUEUE_BG;
 		how = "bgfetch";
 		bo->is_bgfetch = 1;
 		break;
@@ -1172,7 +1176,7 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	bo->fetch_task->priv = bo;
 	bo->fetch_task->func = vbf_fetch_thread;
 
-	if (Pool_Task(wrk->pool, bo->fetch_task, TASK_QUEUE_BO)) {
+	if (Pool_Task(wrk->pool, bo->fetch_task, prio)) {
 		wrk->stats->bgfetch_no_thread++;
 		(void)vbf_stp_fail(req->wrk, bo);
 		if (bo->stale_oc != NULL)
