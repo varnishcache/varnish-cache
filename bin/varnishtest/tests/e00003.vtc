@@ -1,5 +1,7 @@
 varnishtest "ESI include"
 
+feature cmd "command -v diff"
+
 server s1 {
 	rxreq
 	expect req.http.esi0 == "foo"
