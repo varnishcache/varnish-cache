@@ -976,7 +976,7 @@ VRT_CacheReqBody(VRT_CTX, VCL_BYTES maxsize)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	if (ctx->method != VCL_MET_RECV) {
 		if (ctx->vsl != NULL) {
-			VSLb(ctx->vsl, SLT_VCL_Error, err);
+			VSLbs(ctx->vsl, SLT_VCL_Error, TOSTRAND(err));
 		} else {
 			AN(ctx->msg);
 			VSB_printf(ctx->msg, "%s\n", err);
