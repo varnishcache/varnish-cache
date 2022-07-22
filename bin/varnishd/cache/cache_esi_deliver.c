@@ -136,13 +136,15 @@ ved_include(struct req *preq, const char *src, const char *host,
 	AZ(req->vsl->wid);
 	req->vsl->wid = VXID_Get(wrk, VSL_CLIENTMARKER);
 
-	VSLb(req->vsl, SLT_Begin, "req %u esi", VXID(preq->vsl->wid));
-	VSLb(preq->vsl, SLT_Link, "req %u esi", VXID(req->vsl->wid));
-
-	VSLb_ts_req(req, "Start", W_TIM_real(wrk));
-
 	wrk->stats->esi_req++;
 	req->esi_level = preq->esi_level + 1;
+
+	VSLb(req->vsl, SLT_Begin, "req %u esi %u", VXID(preq->vsl->wid),
+	    req->esi_level);
+	VSLb(preq->vsl, SLT_Link, "req %u esi %u", VXID(req->vsl->wid),
+	    req->esi_level);
+
+	VSLb_ts_req(req, "Start", W_TIM_real(wrk));
 
 	memset(req->top, 0, sizeof *req->top);
 	req->top = preq->top;
