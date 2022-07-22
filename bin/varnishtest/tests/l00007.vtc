@@ -1,0 +1,125 @@
+varnishtest "Begin[4] and VSL_OPT_E"
+
+varnish v1 -vcl {
+	import vtc;
+
+	backend be none;
+
+	sub vcl_init {
+		# make up a replay with -i Begin,Link,End
+		vtc.vsl_replay({"
+**** v1    vsl|       1000 Begin           c sess 0 HTTP/1
+**** v1    vsl|       1000 Link            c req 1001 rxreq
+**** v1    vsl|       1003 Begin           b bereq 1002 fetch
+**** v1    vsl|       1003 End             b
+**** v1    vsl|       1002 Begin           c req 1001 vmod_foo:subreq 1
+**** v1    vsl|       1002 End             c
+**** v1    vsl|       1001 Begin           c req 1000 rxreq
+**** v1    vsl|       1001 Link            c req 1002 vmod_foo:subreq 1
+**** v1    vsl|       1001 End             c
+**** v1    vsl|       1000 End             c
+**** v1    vsl|       1004 Begin           c sess 0 HTTP/1
+**** v1    vsl|       1004 End             c
+		"});
+	}
+} -start
+
+varnish v1 -vsl_catchup
+
+logexpect l1 -v v1 -d 1 {
+	expect 0 1003 Begin	"bereq 1002 fetch"
+	expect 0 =    End
+	expect 0 1001 Begin	"req 1000 rxreq"
+	expect 0 =    Link	"req 1002 vmod_foo:subreq"
+	expect 0 =    End
+	expect 0 1000 Begin	"sess 0 HTTP/1"
+	expect 0 =    Link	"req 1001 rxreq"
+	expect 0 =    End
+	expect 0 1004 Begin	"sess 0 HTTP/1"
+	expect 0 =    End
+} -run
+
+logexpect l1_bis -v v1 -d 1 -b 1 -c 1 {
+	expect 0 1003 Begin	"bereq 1002 fetch"
+	expect 0 =    End
+	expect 0 1001 Begin	"req 1000 rxreq"
+	expect 0 =    Link	"req 1002 vmod_foo:subreq"
+	expect 0 =    End
+	expect 0 1000 Begin	"sess 0 HTTP/1"
+	expect 0 =    Link	"req 1001 rxreq"
+	expect 0 =    End
+	expect 0 1004 Begin	"sess 0 HTTP/1"
+	expect 0 =    End
+} -run
+
+logexpect l2 -v v1 -d 1 -b 1 {
+	expect 0 1003 Begin	"bereq 1002 fetch"
+	expect 0 =    End
+} -run
+
+logexpect l3 -v v1 -d 1 -c 1 {
+	expect 0 1001 Begin	"req 1000 rxreq"
+	expect 0 =    Link	"req 1002 vmod_foo:subreq"
+	expect 0 =    End
+	expect 0 1000 Begin	"sess 0 HTTP/1"
+	expect 0 =    Link	"req 1001 rxreq"
+	expect 0 =    End
+	expect 0 1004 Begin	"sess 0 HTTP/1"
+	expect 0 =    End
+} -run
+
+logexpect l4 -v v1 -d 1 -E 1 {
+	expect 0 1002 Begin	"req 1001 vmod_foo:subreq"
+	expect 0 =    End
+	expect 0 1001 Begin	"req 1000 rxreq"
+	expect 0 =    Link	"req 1002 vmod_foo:subreq"
+	expect 0 =    End
+	expect 0 1000 Begin	"sess 0 HTTP/1"
+	expect 0 =    Link	"req 1001 rxreq"
+	expect 0 =    End
+	expect 0 1004 Begin	"sess 0 HTTP/1"
+	expect 0 =    End
+} -run
+
+logexpect l4_bis -v v1 -d 1 -c 1 -E 1 {
+	expect 0 1002 Begin	"req 1001 vmod_foo:subreq"
+	expect 0 =    End
+	expect 0 1001 Begin	"req 1000 rxreq"
+	expect 0 =    Link	"req 1002 vmod_foo:subreq"
+	expect 0 =    End
+	expect 0 1000 Begin	"sess 0 HTTP/1"
+	expect 0 =    Link	"req 1001 rxreq"
+	expect 0 =    End
+	expect 0 1004 Begin	"sess 0 HTTP/1"
+	expect 0 =    End
+} -run
+
+logexpect l5 -v v1 -d 1 -b 1 -E 1 {
+	expect 0 1003 Begin	"bereq 1002 fetch"
+	expect 0 =    End
+	expect 0 1002 Begin	"req 1001 vmod_foo:subreq"
+	expect 0 =    End
+	expect 0 1001 Begin	"req 1000 rxreq"
+	expect 0 =    Link	"req 1002 vmod_foo:subreq"
+	expect 0 =    End
+	expect 0 1000 Begin	"sess 0 HTTP/1"
+	expect 0 =    Link	"req 1001 rxreq"
+	expect 0 =    End
+	expect 0 1004 Begin	"sess 0 HTTP/1"
+	expect 0 =    End
+} -run
+
+logexpect l5_bis -v v1 -d 1 -b 1 -c 1 -E 1 {
+	expect 0 1003 Begin	"bereq 1002 fetch"
+	expect 0 =    End
+	expect 0 1002 Begin	"req 1001 vmod_foo:subreq"
+	expect 0 =    End
+	expect 0 1001 Begin	"req 1000 rxreq"
+	expect 0 =    Link	"req 1002 vmod_foo:subreq"
+	expect 0 =    End
+	expect 0 1000 Begin	"sess 0 HTTP/1"
+	expect 0 =    Link	"req 1001 rxreq"
+	expect 0 =    End
+	expect 0 1004 Begin	"sess 0 HTTP/1"
+	expect 0 =    End
+} -run

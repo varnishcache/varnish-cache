@@ -689,10 +689,10 @@ vtx_set_parent(struct vtx *parent, struct vtx *child)
    successfully parsed. */
 static int
 vtx_parse_link(const char *str, enum VSL_transaction_e *ptype,
-    unsigned *pvxid, enum VSL_reason_e *preason)
+    unsigned *pvxid, enum VSL_reason_e *preason, unsigned *psub)
 {
 	char type[16], reason[16];
-	unsigned vxid;
+	unsigned vxid, sub;
 	int i;
 	enum VSL_transaction_e et;
 	enum VSL_reason_e er;
@@ -702,7 +702,7 @@ vtx_parse_link(const char *str, enum VSL_transaction_e *ptype,
 	AN(pvxid);
 	AN(preason);
 
-	i = sscanf(str, "%15s %u %15s", type, &vxid, reason);
+	i = sscanf(str, "%15s %u %15s %u", type, &vxid, reason, &sub);
 	if (i < 1)
 		return (0);
 
@@ -729,7 +729,13 @@ vtx_parse_link(const char *str, enum VSL_transaction_e *ptype,
 	if (er >= VSL_r__MAX)
 		er = VSL_r_unknown;
 	*preason = er;
-	return (3);
+	if (i == 3)
+		return (3);
+
+	/* request sub-level */
+	if (psub != NULL)
+		*psub = sub;
+	return (4);
 }
 
 /* Parse and process a begin record */
@@ -746,8 +752,8 @@ vtx_scan_begin(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr)
 
 	AZ(vtx->flags & VTX_F_READY);
 
-	i = vtx_parse_link(VSL_CDATA(ptr), &type, &p_vxid, &reason);
-	if (i != 3)
+	i = vtx_parse_link(VSL_CDATA(ptr), &type, &p_vxid, &reason, NULL);
+	if (i < 3)
 		return (vtx_diag_tag(vtx, ptr, "parse error"));
 	if (type == VSL_t_unknown)
 		(void)vtx_diag_tag(vtx, ptr, "unknown vxid type");
@@ -813,8 +819,8 @@ vtx_scan_link(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr)
 
 	AZ(vtx->flags & VTX_F_READY);
 
-	i = vtx_parse_link(VSL_CDATA(ptr), &c_type, &c_vxid, &c_reason);
-	if (i != 3)
+	i = vtx_parse_link(VSL_CDATA(ptr), &c_type, &c_vxid, &c_reason, NULL);
+	if (i < 3)
 		return (vtx_diag_tag(vtx, ptr, "parse error"));
 	if (c_type == VSL_t_unknown)
 		(void)vtx_diag_tag(vtx, ptr, "unknown vxid type");
@@ -1288,7 +1294,7 @@ vslq_candidate(struct VSLQ *vslq, const uint32_t *ptr)
 	enum VSL_reason_e reason;
 	struct VSL_data *vsl;
 	enum VSL_tag_e tag;
-	unsigned p_vxid;
+	unsigned p_vxid, sub;
 	int i;
 
 	CHECK_OBJ_NOTNULL(vslq, VSLQ_MAGIC);
@@ -1302,24 +1308,24 @@ vslq_candidate(struct VSLQ *vslq, const uint32_t *ptr)
 	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
 	if (vslq->grouping == VSL_g_vxid) {
 		if (!vsl->c_opt && !vsl->b_opt)
-			return (1); /* Implies also !vsl->E_opt */
-		if (!vsl->b_opt && !VSL_CLIENT(ptr))
+			AZ(vsl->E_opt);
+		else if (!vsl->b_opt && !VSL_CLIENT(ptr))
 			return (0);
-		if (!vsl->c_opt && !VSL_BACKEND(ptr))
+		else if (!vsl->c_opt && !VSL_BACKEND(ptr))
 			return (0);
 		/* Need to parse the Begin tag - fallthrough to below */
 	}
 
 	tag = VSL_TAG(ptr);
 	assert(tag == SLT_Begin);
-	i = vtx_parse_link(VSL_CDATA(ptr), &type, &p_vxid, &reason);
-	if (i != 3 || type == VSL_t_unknown)
+	i = vtx_parse_link(VSL_CDATA(ptr), &type, &p_vxid, &reason, &sub);
+	if (i < 3 || type == VSL_t_unknown)
 		return (0);
 
-	if (type == VSL_t_sess)
+	if (vslq->grouping == VSL_g_request && type == VSL_t_sess)
 		return (0);
 
-	if (vslq->grouping == VSL_g_vxid && reason == VSL_r_esi && !vsl->E_opt)
+	if (vslq->grouping == VSL_g_vxid && i > 3 && sub > 0 && !vsl->E_opt)
 		return (0);
 
 	return (1);
