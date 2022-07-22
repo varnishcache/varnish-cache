@@ -190,10 +190,12 @@ VSL_Match(struct VSL_data *vsl, const struct VSL_cursor *c)
 	tag = VSL_TAG(c->rec.ptr);
 	if (tag <= SLT__Bogus || tag >= SLT__Reserved)
 		return (0);
-	if (vsl->c_opt && !VSL_CLIENT(c->rec.ptr))
-		return (0);
-	if (vsl->b_opt && !VSL_BACKEND(c->rec.ptr))
-		return (0);
+	if (!vsl->c_opt || !vsl->b_opt) {
+		if (vsl->c_opt && !VSL_CLIENT(c->rec.ptr))
+			return (0);
+		if (vsl->b_opt && !VSL_BACKEND(c->rec.ptr))
+			return (0);
+	}
 	if (!VTAILQ_EMPTY(&vsl->vslf_select) &&
 	    vsl_match_IX(vsl, &vsl->vslf_select, c))
 		return (1);

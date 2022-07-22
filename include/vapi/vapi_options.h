@@ -54,7 +54,9 @@
 
 #define VSL_OPT_E							\
 	VOPT("E", "[-E]", "Display ESI transactions",			\
-	    "Display ESI transactions and other client transactions."	\
+	    "Display ESI transactions and other types of sub-requests."	\
+	    " This implies the -c option and includes other client"	\
+	    " transactions."						\
 	)
 
 #define VSL_OPT_i							\
