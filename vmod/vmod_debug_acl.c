@@ -200,7 +200,7 @@ xyzzy_sweep_acl(VRT_CTX, VCL_ACL acl, VCL_IP ip0, VCL_IP ip1, VCL_INT step)
 		VSB_putc(vsb, "-X"[i]);
 		if ((j & 0x3f) == 0x3f) {
 			AZ(VSB_finish(vsb));
-			VSLb(ctx->vsl, SLT_Debug, "%s", VSB_data(vsb));
+			VSLbs(ctx->vsl, SLT_Debug, TOSTRAND(VSB_data(vsb)));
 			sz =VSB_len(vsb);
 			assert (sz > 0);
 			VSHA256_Update(vsha, VSB_data(vsb), sz);
@@ -211,7 +211,7 @@ xyzzy_sweep_acl(VRT_CTX, VCL_ACL acl, VCL_IP ip0, VCL_IP ip1, VCL_INT step)
 	}
 	if (VSB_len(vsb)) {
 		AZ(VSB_finish(vsb));
-		VSLb(ctx->vsl, SLT_Debug, "%s", VSB_data(vsb));
+		VSLbs(ctx->vsl, SLT_Debug, TOSTRAND(VSB_data(vsb)));
 		sz =VSB_len(vsb);
 		assert (sz > 0);
 		VSHA256_Update(vsha, VSB_data(vsb), sz);

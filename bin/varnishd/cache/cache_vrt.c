@@ -123,7 +123,7 @@ VPI_acl_log(VRT_CTX, const char *msg)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(msg);
 	if (ctx->vsl != NULL)
-		VSLb(ctx->vsl, SLT_VCL_acl, "%s", msg);
+		VSLbs(ctx->vsl, SLT_VCL_acl, TOSTRAND(msg));
 	else
 		VSL(SLT_VCL_acl, 0, "%s", msg);
 }
@@ -602,7 +602,7 @@ VRT_SetHdr(VRT_CTX, VCL_HEADER hs, const char *pfx, VCL_STRANDS s)
 	if (u <= l) {
 		WS_Release(hp->ws, 0);
 		WS_MarkOverflow(hp->ws);
-		VSLb(ctx->vsl, SLT_LostHeader, "%s", hs->what + 1);
+		VSLbs(ctx->vsl, SLT_LostHeader, TOSTRAND(hs->what + 1));
 		return;
 	}
 	b = WS_Reservation(hp->ws);
@@ -611,7 +611,8 @@ VRT_SetHdr(VRT_CTX, VCL_HEADER hs, const char *pfx, VCL_STRANDS s)
 		if (p == NULL) {
 			WS_Release(hp->ws, 0);
 			WS_MarkOverflow(hp->ws);
-			VSLb(ctx->vsl, SLT_LostHeader, "%s", hs->what + 1);
+			VSLbs(ctx->vsl, SLT_LostHeader,
+			    TOSTRAND(hs->what + 1));
 			return;
 		}
 	} else {

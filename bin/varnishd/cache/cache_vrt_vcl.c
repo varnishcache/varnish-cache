@@ -555,9 +555,10 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 	wrk->cur_method = method;
 	wrk->seen_methods |= method;
 	AN(ctx.vsl);
-	VSLb(ctx.vsl, SLT_VCL_call, "%s", VCL_Method_Name(method));
+	VSLbs(ctx.vsl, SLT_VCL_call, TOSTRAND(VCL_Method_Name(method)));
 	func(&ctx, VSUB_STATIC, NULL);
-	VSLb(ctx.vsl, SLT_VCL_return, "%s", VCL_Return_Name(wrk->handling));
+	VSLbs(ctx.vsl, SLT_VCL_return,
+	    TOSTRAND(VCL_Return_Name(wrk->handling)));
 	wrk->cur_method |= 1;		// Magic marker
 	if (wrk->handling == VCL_RET_FAIL)
 		wrk->stats->vcl_fail++;

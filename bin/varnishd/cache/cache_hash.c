@@ -196,7 +196,7 @@ HSH_AddString(struct req *req, void *ctx, const char *str)
 	AN(ctx);
 	if (str != NULL) {
 		VSHA256_Update(ctx, str, strlen(str));
-		VSLb(req->vsl, SLT_Hash, "%s", str);
+		VSLbs(req->vsl, SLT_Hash, TOSTRAND(str));
 	} else
 		VSHA256_Update(ctx, &str, 1);
 }

@@ -181,7 +181,8 @@ h2_minimal_response(struct req *req, uint16_t status)
 
 	VSLb(req->vsl, SLT_RespProtocol, "HTTP/2.0");
 	VSLb(req->vsl, SLT_RespStatus, "%03d", status);
-	VSLb(req->vsl, SLT_RespReason, "%s", http_Status2Reason(status, NULL));
+	VSLbs(req->vsl, SLT_RespReason,
+	      TOSTRAND(http_Status2Reason(status, NULL)));
 
 	if (status >= 400)
 		req->err_code = status;

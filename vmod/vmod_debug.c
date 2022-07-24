@@ -813,7 +813,8 @@ xyzzy_sethdr(VRT_CTX, VCL_HEADER hdr, VCL_STRANDS s)
 	} else {
 		b = VRT_StrandsWS(hp->ws, hdr->what + 1, s);
 		if (b == NULL) {
-			VSLb(ctx->vsl, SLT_LostHeader, "%s", hdr->what + 1);
+			VSLbs(ctx->vsl, SLT_LostHeader,
+			    TOSTRAND(hdr->what + 1));
 		} else {
 			if (*b != '\0')
 				AN(WS_Allocated(hp->ws, b, strlen(b) + 1));

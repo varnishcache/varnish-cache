@@ -199,7 +199,7 @@ http1_minimal_response(struct req *req, uint16_t status)
 
 	VSLb(req->vsl, SLT_RespProtocol, "HTTP/1.1");
 	VSLb(req->vsl, SLT_RespStatus, "%03d", status);
-	VSLb(req->vsl, SLT_RespReason, "%s", reason);
+	VSLbs(req->vsl, SLT_RespReason, TOSTRAND(reason));
 
 	if (status >= 400)
 		req->err_code = status;

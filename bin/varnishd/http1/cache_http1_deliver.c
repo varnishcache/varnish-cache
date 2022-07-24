@@ -72,7 +72,7 @@ v1d_error(struct req *req, const char *msg)
 	    "Server: Varnish\r\n"
 	    "Connection: close\r\n\r\n";
 
-	VSLb(req->vsl, SLT_Error, "%s", msg);
+	VSLbs(req->vsl, SLT_Error, TOSTRAND(msg));
 	VSLb(req->vsl, SLT_RespProtocol, "HTTP/1.1");
 	VSLb(req->vsl, SLT_RespStatus, "500");
 	VSLb(req->vsl, SLT_RespReason, "Internal Server Error");

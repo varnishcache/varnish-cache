@@ -415,7 +415,7 @@ http_PutField(struct http *to, int field, const char *string)
 	p = WS_Copy(to->ws, string, -1);
 	if (p == NULL) {
 		http_fail(to);
-		VSLb(to->vsl, SLT_LostHeader, "%s", string);
+		VSLbs(to->vsl, SLT_LostHeader, TOSTRAND(string));
 		return;
 	}
 	http_SetH(to, field, p);
@@ -535,7 +535,8 @@ http_CollectHdrSep(struct http *hp, hdr_t hdr, const char *sep)
 			x = Tlen(hp->hd[f]);
 			if (b + x >= e) {
 				http_fail(hp);
-				VSLb(hp->vsl, SLT_LostHeader, "%s", hdr + 1);
+				VSLbs(hp->vsl, SLT_LostHeader,
+				    TOSTRAND(hdr + 1));
 				WS_Release(hp->ws, 0);
 				return;
 			}
@@ -557,7 +558,7 @@ http_CollectHdrSep(struct http *hp, hdr_t hdr, const char *sep)
 
 		if (b + lsep + x >= e) {
 			http_fail(hp);
-			VSLb(hp->vsl, SLT_LostHeader, "%s", hdr + 1);
+			VSLbs(hp->vsl, SLT_LostHeader, TOSTRAND(hdr + 1));
 			WS_Release(hp->ws, 0);
 			return;
 		}
@@ -1441,7 +1442,7 @@ http_CopyHome(const struct http *hp)
 		p = WS_Copy(hp->ws, hp->hd[u].b, l + 1L);
 		if (p == NULL) {
 			http_fail(hp);
-			VSLb(hp->vsl, SLT_LostHeader, "%s", hp->hd[u].b);
+			VSLbs(hp->vsl, SLT_LostHeader, TOSTRAND(hp->hd[u].b));
 			return;
 		}
 		hp->hd[u].b = p;
@@ -1457,7 +1458,7 @@ http_SetHeader(struct http *to, const char *header)
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	if (to->nhd >= to->shd) {
-		VSLb(to->vsl, SLT_LostHeader, "%s", header);
+		VSLbs(to->vsl, SLT_LostHeader, TOSTRAND(header));
 		http_fail(to);
 		return;
 	}
@@ -1511,14 +1512,14 @@ http_TimeHeader(struct http *to, const char *fmt, vtim_real now)
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	if (to->nhd >= to->shd) {
-		VSLb(to->vsl, SLT_LostHeader, "%s", fmt);
+		VSLbs(to->vsl, SLT_LostHeader, TOSTRAND(fmt));
 		http_fail(to);
 		return;
 	}
 	p = WS_Alloc(to->ws, strlen(fmt) + VTIM_FORMAT_SIZE);
 	if (p == NULL) {
 		http_fail(to);
-		VSLb(to->vsl, SLT_LostHeader, "%s", fmt);
+		VSLbs(to->vsl, SLT_LostHeader, TOSTRAND(fmt));
 		return;
 	}
 	strcpy(p, fmt);
