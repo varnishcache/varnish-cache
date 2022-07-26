@@ -402,8 +402,8 @@ varnish_launch(struct varnish *v)
 	vsb = VSB_new_auto();
 	AN(vsb);
 	VSB_cat(vsb, "cd ${pwd} &&");
-	VSB_printf(vsb, " exec varnishd %s -d -n %s",
-	    v->jail, v->workdir);
+	VSB_printf(vsb, " exec varnishd %s -d -n %s -i %s",
+	    v->jail, v->workdir, v->name);
 	VSB_cat(vsb, VSB_data(params_vsb));
 	if (leave_temp) {
 		VSB_cat(vsb, " -p debug=+vcl_keep");
