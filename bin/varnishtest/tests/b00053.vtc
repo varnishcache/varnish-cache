@@ -9,6 +9,10 @@ varnish v1 -arg "-a ${tmpdir}/v1.sock -a ${listen_addr}" -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.do_stream = false;
 	}
+	sub vcl_deliver {
+		# make s_resp_hdrbytes deterministic
+		unset resp.http.via;
+	}
 } -start
 
 varnish v1 -cliok "param.set debug +workspace"
@@ -31,7 +35,7 @@ varnish v1 -expect client_req == 1
 varnish v1 -expect cache_miss == 1
 varnish v1 -expect s_sess == 1
 varnish v1 -expect s_resp_bodybytes == 7
-varnish v1 -expect s_resp_hdrbytes == 178
+varnish v1 -expect s_resp_hdrbytes == 146
 
 # varnishtest "vtc v_* macros when the listen address is UDS" (a00019)
 
