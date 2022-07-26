@@ -1,0 +1,21 @@
+varnishtest "Append Via header"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend "" -start
+
+varnish v2 -vcl {
+	backend v1 {
+		.host = "${v1_sock}";
+	}
+} -start
+
+client c1 -connect ${v2_sock} {
+	txreq
+	rxresp
+	expect resp.http.via == \
+		"1.1 varnish (Varnish/${pkg_branch}), 1.1 varnish (Varnish/${pkg_branch})"
+} -run
