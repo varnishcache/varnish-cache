@@ -866,21 +866,13 @@ cnt_restart(struct worker *wrk, struct req *req)
 static void v_matchproto_(req_state_f)
 cnt_recv_prep(struct req *req, const char *ci)
 {
-	const char *xff;
 
 	if (req->restarts == 0) {
 		/*
 		 * This really should be done earlier, but we want to capture
 		 * it in the VSL log.
 		 */
-		http_CollectHdr(req->http, H_X_Forwarded_For);
-		if (http_GetHdr(req->http, H_X_Forwarded_For, &xff)) {
-			http_Unset(req->http, H_X_Forwarded_For);
-			http_PrintfHeader(req->http, "X-Forwarded-For: %s, %s",
-			    xff, ci);
-		} else {
-			http_PrintfHeader(req->http, "X-Forwarded-For: %s", ci);
-		}
+		http_AppendHeader(req->http, H_X_Forwarded_For, ci);
 		http_CollectHdr(req->http, H_Cache_Control);
 
 		/* By default we use the first backend */
