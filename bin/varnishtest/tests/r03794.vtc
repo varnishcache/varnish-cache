@@ -1,4 +1,4 @@
-varnishtest "Append Via header"
+varnishtest "Append configurable Via header"
 
 server s1 {
 	rxreq
@@ -17,5 +17,5 @@ client c1 -connect ${v2_sock} {
 	txreq
 	rxresp
 	expect resp.http.via == \
-		"1.1 varnish (Varnish/${pkg_branch}), 1.1 varnish (Varnish/${pkg_branch})"
+		"1.1 v1 (Varnish/${pkg_branch}), 1.1 v2 (Varnish/${pkg_branch})"
 } -run

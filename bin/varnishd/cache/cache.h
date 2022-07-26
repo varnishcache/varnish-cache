@@ -605,6 +605,7 @@ void http_AppendHeader(struct http *to, hdr_t, const char *val);
 void http_PrintfHeader(struct http *to, const char *fmt, ...)
     v_printflike_(2, 3);
 void http_TimeHeader(struct http *to, const char *fmt, vtim_real now);
+const char * http_ViaHeader(void);
 void http_Proto(struct http *to);
 void http_SetHeader(struct http *to, const char *header);
 void http_SetH(struct http *to, unsigned n, const char *header);

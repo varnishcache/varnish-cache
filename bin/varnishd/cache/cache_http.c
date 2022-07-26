@@ -35,6 +35,9 @@
 
 #include "cache_varnishd.h"
 #include <stdio.h>
+#include <stdlib.h>
+
+#include "common/heritage.h"
 
 #include "vct.h"
 #include "vend.h"
@@ -57,6 +60,8 @@
 const char H__Status[]	= "\010:status:";
 const char H__Proto[]	= "\007:proto:";
 const char H__Reason[]	= "\010:reason:";
+
+static char * via_hdr;
 
 /*--------------------------------------------------------------------
  * Perfect hash to rapidly recognize headers from tbl/http_headers.h
@@ -178,9 +183,17 @@ http_init_hdr(char *hdr, int flg)
 void
 HTTP_Init(void)
 {
+	struct vsb *vsb;
 
 #define HTTPH(a, b, c) http_init_hdr(b, c);
 #include "tbl/http_headers.h"
+
+	vsb = VSB_new_auto();
+	VSB_printf(vsb, "1.1 %s (Varnish/" PACKAGE_BRANCH ")",
+	    heritage.identity);
+	AZ(VSB_finish(vsb));
+	REPLACE(via_hdr, VSB_data(vsb));
+	VSB_destroy(&vsb);
 }
 
 /*--------------------------------------------------------------------
@@ -1538,6 +1551,13 @@ http_TimeHeader(struct http *to, const char *fmt, vtim_real now)
 	strcpy(p, fmt);
 	VTIM_format(now, strchr(p, '\0'));
 	http_SetH(to, to->nhd++, p);
+}
+
+const char *
+http_ViaHeader(void)
+{
+
+	return (via_hdr);
 }
 
 /*--------------------------------------------------------------------*/
