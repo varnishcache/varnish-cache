@@ -601,6 +601,7 @@ void http_FilterReq(struct http *to, const struct http *fm, unsigned how);
 void HTTP_Encode(const struct http *fm, uint8_t *, unsigned len, unsigned how);
 int HTTP_Decode(struct http *to, const uint8_t *fm);
 void http_ForceHeader(struct http *to, hdr_t, const char *val);
+void http_AppendHeader(struct http *to, hdr_t, const char *val);
 void http_PrintfHeader(struct http *to, const char *fmt, ...)
     v_printflike_(2, 3);
 void http_TimeHeader(struct http *to, const char *fmt, vtim_real now);
