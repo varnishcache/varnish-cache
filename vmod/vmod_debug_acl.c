@@ -183,7 +183,7 @@ xyzzy_sweep_acl(VRT_CTX, VCL_ACL acl, VCL_IP ip0, VCL_IP ip1, VCL_INT step)
 	AN(ip1);
 	assert(step > 0);
 	if (setup_sweep(ctx, asw, ip0, ip1, step))
-		return(NULL);
+		return (NULL);
 
 	vsb = VSB_new_auto();
 	AN(vsb);
@@ -247,7 +247,7 @@ xyzzy_time_acl(VRT_CTX, VCL_ACL acl, VCL_IP ip0, VCL_IP ip1,
 	assert(turnus > 0);
 
 	if (setup_sweep(ctx, asw, ip0, ip1, step))
-		return(-1);
+		return (-1);
 	do {
 		(void)VRT_acl_match(ctx, acl, asw->probe);
 	} while (step_sweep(asw) <= 0);

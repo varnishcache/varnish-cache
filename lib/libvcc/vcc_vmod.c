@@ -260,7 +260,7 @@ vcc_VmodLoad(const struct vcc *tl, struct vmod_import *vim)
 	if (err != NULL)
 		return (-1);
 
-	return(0);
+	return (0);
 }
 
 static void v_matchproto_(vcc_do_stanza_f)

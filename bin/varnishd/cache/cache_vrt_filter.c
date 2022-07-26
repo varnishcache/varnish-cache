@@ -124,7 +124,7 @@ vrt_addfilter(VRT_CTX, const struct vfp *vfp, const struct vdp *vdp)
 	vp->name = name;
 	vp->nlen = strlen(name);
 	VTAILQ_INSERT_TAIL(hd, vp, list);
-	return(err);
+	return (err);
 }
 
 const char *

@@ -130,8 +130,7 @@ v1f_chunked_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
 			do {
 				lr = v1f_read(vc, htc, buf + u, 1);
 				if (lr <= 0)
-					return (VFP_Error(vc,
-					    "chunked read err"));
+					return (VFP_Error(vc, "chunked read err"));
 			} while (u == 1 && buf[0] == '0' && buf[u] == '0');
 			if (!vct_ishex(buf[u]))
 				break;

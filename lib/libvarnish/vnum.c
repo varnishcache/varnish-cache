@@ -119,7 +119,7 @@ SF_Parse_Integer(const char **ipp, const char **errtxt)
 	int sign;
 
 	retval = sf_parse_int(ipp, errtxt, &sign, 15);
-	return(retval * sign);
+	return (retval * sign);
 }
 
 /**********************************************************************
@@ -182,7 +182,7 @@ SF_Parse_Decimal(const char **ipp, int strict, const char **errtxt)
 
 	retval = SF_Parse_Number(ipp, strict, errtxt);
 	if (errno)
-		return(retval);
+		return (retval);
 	if (retval < VRT_DECIMAL_MIN || retval > VRT_DECIMAL_MAX)
 		BAIL(err_fatnum);
 	return (retval);
@@ -345,9 +345,9 @@ VNUM_2bytes(const char *p, uintmax_t *r, uintmax_t rel)
 
 	fval = SF_Parse_Number(&p, 1, &errtxt);
 	if (errno)
-		return(errtxt);
+		return (errtxt);
 	if (fval < 0)
-		return(err_invalid_num);
+		return (err_invalid_num);
 
 	fval = VNUM_bytes_unit(fval, p, NULL, rel, &errtxt);
 	if (errno)
