@@ -189,6 +189,7 @@ logexpect l1012 -v v1 -g vxid -q "vxid == 1012" {
 	expect 0 =	BereqHeader	{^foo: pipe}
 	expect 0 =	BereqHeader	{^Host: }
 	expect 0 =	BereqHeader	{^X-Forwarded-For: }
+	expect 0 =	BereqHeader	{^Via: }
 	expect 0 =	BereqHeader	{^X-Varnish: 1011}
 	expect 0 =	BereqHeader	{^Connection: close}
 	expect 0 =	BereqAcct	{^0 0 0 0 0 0}
@@ -207,6 +208,7 @@ logexpect l1011 -v v1 -g vxid -q "vxid == 1011" {
 	expect 0 =	ReqHeader       {^foo: pipe}
 	expect 0 =	ReqHeader       {^Host: }
 	expect 0 =	ReqHeader       {^X-Forwarded-For: }
+	expect 0 =	ReqHeader	{^Via: }
 	expect 0 =	VCL_call        {^RECV}
 	expect 0 =	VCL_return      {^pipe}
 	expect 0 =	VCL_call        {^HASH}
