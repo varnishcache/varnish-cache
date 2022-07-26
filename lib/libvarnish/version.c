@@ -57,6 +57,8 @@ VCS_String(const char *which)
 		return (PACKAGE_TARNAME);
 	case 'P':
 		return (PACKAGE_VERSION);
+	case 'B':
+		return (PACKAGE_BRANCH);
 	case 'R':
 		return (VCS_Version);
 	case 'V':
