@@ -460,7 +460,7 @@ vcc_ParseImport(struct vcc *tl)
 
 	vimold = msym->import;
 	if (vimold != NULL) {
-		CHECK_OBJ_NOTNULL(vimold, VMOD_IMPORT_MAGIC);
+		CHECK_OBJ(vimold, VMOD_IMPORT_MAGIC);
 		if (!strcmp(vimold->file_id, vim->file_id)) {
 			/* Identical import is OK */
 		} else {
