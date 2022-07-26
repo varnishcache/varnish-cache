@@ -9,6 +9,11 @@ AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_USE_SYSTEM_EXTENSIONS
 
+PACKAGE_BRANCH=${PACKAGE_VERSION%.*}
+AC_SUBST([PACKAGE_BRANCH])
+AC_DEFINE_UNQUOTED([PACKAGE_BRANCH], ["$PACKAGE_BRANCH"],
+	[Define the branch of this package.])
+
 # save command line CFLAGS for use in VCC_CC (to pass through things like -m64)
 # and make distcheck configure
 OCFLAGS="$CFLAGS"
