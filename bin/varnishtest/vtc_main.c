@@ -808,6 +808,9 @@ main(int argc, char * const *argv)
 	else
 		tmppath = strdup("/tmp");
 
+	extmacro_def("pkg_version", NULL, PACKAGE_VERSION);
+	extmacro_def("pkg_branch", NULL, PACKAGE_BRANCH);
+
 	cwd = getcwd(buf, sizeof buf);
 	extmacro_def("pwd", NULL, "%s", cwd);
 
