@@ -612,12 +612,12 @@ VSB_quote_pfx(struct vsb *s, const char *pfx, const void *v, int len, int how)
 			if (how & VSB_QUOTE_CSTR) {
 				VSB_printf(s, "\\n\"\n%s\"", pfx);
 			} else if (how & VSB_QUOTE_JSON) {
-				VSB_printf(s, "\\n");
+				VSB_cat(s, "\\n");
 			} else if (how & VSB_QUOTE_NONL) {
 				VSB_putc(s, *q);
 				nl = 1;
 			} else {
-				VSB_printf(s, "\\n");
+				VSB_cat(s, "\\n");
 			}
 			break;
 		case '\r':

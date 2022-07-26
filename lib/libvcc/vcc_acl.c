@@ -544,7 +544,7 @@ vcc_acl_emit(struct vcc *tl, const struct symbol *sym)
 
 	func = VSB_new_auto();
 	AN(func);
-	VSB_printf(func, "match_acl_");
+	VSB_cat(func, "match_acl_");
 	VCC_PrintCName(func, sym->name, NULL);
 	AZ(VSB_finish(func));
 

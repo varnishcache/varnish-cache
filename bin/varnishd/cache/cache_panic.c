@@ -159,9 +159,9 @@ pan_htc(struct vsb *vsb, const struct http_conn *htc)
 		return;
 	if (htc->rfd != NULL)
 		VSB_printf(vsb, "fd = %d (@%p),\n", *htc->rfd, htc->rfd);
-	VSB_printf(vsb, "doclose = ");
+	VSB_cat(vsb, "doclose = ");
 	pan_stream_close(vsb, htc->doclose);
-	VSB_printf(vsb, "\n");
+	VSB_cat(vsb, "\n");
 	WS_Panic(vsb, htc->ws);
 	VSB_printf(vsb, "{rxbuf_b, rxbuf_e} = {%p, %p},\n",
 	    htc->rxbuf_b, htc->rxbuf_e);
@@ -726,7 +726,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 
 	if (pthread_mutex_lock(&panicstr_mtx)) {
 		/* Reentrant panic */
-		VSB_printf(pan_vsb,"\n\nPANIC REENTRANCY\n\n");
+		VSB_cat(pan_vsb, "\n\nPANIC REENTRANCY\n\n");
 		abort();
 	}
 	panicy = pthread_self();

@@ -113,7 +113,7 @@ vext_copyin(struct vsb *vident)
 			u %= 26;
 			VSB_printf(vp->vsb, "%c", 'a' + (char)u);
 		}
-		VSB_printf(vp->vsb, ".so");
+		VSB_cat(vp->vsb, ".so");
 		AZ(VSB_finish(vp->vsb));
 		fprintf(stderr, "ee2 %s\n", VSB_data(vp->vsb));
 		fdo = open(VSB_data(vp->vsb), O_WRONLY|O_CREAT|O_EXCL, 0700);

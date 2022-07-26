@@ -120,7 +120,7 @@ vcc_include_glob_file(struct vcc *tl, const struct source *src_sp,
 		}
 		break;
 	case GLOB_NOMATCH:
-		VSB_printf(tl->sb, "glob pattern matched no files.\n");
+		VSB_cat(tl->sb, "glob pattern matched no files.\n");
 		tl->err = 1;
 		break;
 	default:

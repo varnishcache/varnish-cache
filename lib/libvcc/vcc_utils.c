@@ -321,7 +321,7 @@ vcc_UintVal(struct vcc *tl)
 	}
 	retval = (int64_t)round(tl->t->num);
 	if (retval < 0) {
-		VSB_printf(tl->sb, "UINT cannot be negative\n");
+		VSB_cat(tl->sb, "UINT cannot be negative\n");
 		vcc_ErrWhere(tl, tl->t);
 		return (0);
 	}
