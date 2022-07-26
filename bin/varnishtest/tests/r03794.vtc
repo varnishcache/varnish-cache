@@ -2,6 +2,8 @@ varnishtest "Append configurable Via header"
 
 server s1 {
 	rxreq
+	expect req.http.via == \
+		"1.1 v2 (Varnish/${pkg_branch}), 1.1 v1 (Varnish/${pkg_branch})"
 	txresp
 } -start
 

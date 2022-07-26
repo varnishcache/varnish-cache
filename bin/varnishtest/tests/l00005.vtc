@@ -11,6 +11,10 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
+	sub vcl_recv {
+		# make BereqAcct deterministic
+		unset req.http.via;
+	}
 	sub vcl_backend_fetch {
 		unset bereq.http.x-forwarded-for;
 		unset bereq.http.x-varnish;

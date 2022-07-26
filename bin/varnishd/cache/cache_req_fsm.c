@@ -873,6 +873,7 @@ cnt_recv_prep(struct req *req, const char *ci)
 		 * it in the VSL log.
 		 */
 		http_AppendHeader(req->http, H_X_Forwarded_For, ci);
+		http_AppendHeader(req->http, H_Via, http_ViaHeader());
 		http_CollectHdr(req->http, H_Cache_Control);
 
 		/* By default we use the first backend */
