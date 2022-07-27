@@ -198,7 +198,7 @@ jobs:
           root: .
           paths:
             - "packages"
-  distcheck:
+  build:
     parameters:
       prefix:
         description: the container image prefix (repository or architecture)
@@ -210,8 +210,8 @@ jobs:
       release:
         description: the release name (stretch|buster|bionic|focal)
         type: string
-      check:
-        description: the check to perform during the build
+      make_target:
+        description: the make target to execute during the build
         default: distcheck
         type: string
       extra_conf:
@@ -229,7 +229,7 @@ jobs:
           command: yum install -y docker
       - checkout
       - run:
-          name: Extract and distcheck
+          name: Extract and build
           command: |
             docker create --name workspace -v /workspace << parameters.prefix >><< parameters.dist >>:<< parameters.release >> /bin/true
             docker cp /workspace workspace:/
@@ -347,7 +347,7 @@ jobs:
                 << parameters.extra_conf >>
             sudo -u varnish \
                 --preserve-env=ASAN_OPTIONS,LSAN_OPTIONS,TSAN_OPTIONS,UBSAN_OPTIONS \
-                make << parameters.check >> VERBOSE=1 -j 4 -k \
+                make << parameters.make_target >> VERBOSE=1 -j 4 -k \
                 DISTCHECK_CONFIGURE_FLAGS="<< pipeline.parameters.configure_args >> \
                 << parameters.extra_conf >>"
             '
@@ -376,60 +376,60 @@ workflows:
         - << pipeline.parameters.build-pkgs >>
         - << pipeline.parameters.dist-url >>
     jobs:
-      - distcheck:
-          name: distcheck_centos_7
+      - build:
+          name: build_centos_7
           dist: centos
           release: "7"
-      - distcheck:
-          name: distcheck_centos_stream
+      - build:
+          name: build_centos_stream
           prefix: quay.io/centos/
           dist: centos
           release: stream
-      - distcheck:
-          name: distcheck_almalinux_8
+      - build:
+          name: build_almalinux_8
           dist: almalinux
           release: "8"
       # fedora is our witness
-      - distcheck:
-          name: distcheck_fedora_latest
+      - build:
+          name: build_fedora_latest
           dist: fedora
           release: latest
-          check: witness
-      - distcheck:
-          name: distcheck_fedora_rawhide
+          make_target: witness
+      - build:
+          name: build_fedora_rawhide
           dist: fedora
           release: rawhide
       # latest debian uses sanitizers
-      - distcheck:
-          name: distcheck_debian_buster
+      - build:
+          name: build_debian_buster
           dist: debian
           release: buster
-      - distcheck:
-          name: distcheck_debian_bullseye
+      - build:
+          name: build_debian_bullseye
           dist: debian
           release: bullseye
           extra_conf: --enable-asan --enable-ubsan --enable-workspace-emulator
       # oldest ubuntu goes 32bit
-      - distcheck:
-          name: distcheck_ubuntu_bionic
+      - build:
+          name: build_ubuntu_bionic
           prefix: i386/
           dist: ubuntu
           release: bionic
-      - distcheck:
-          name: distcheck_ubuntu_focal
+      - build:
+          name: build_ubuntu_focal
           dist: ubuntu
           release: focal
-      - distcheck:
-          name: distcheck_ubuntu_jammy
+      - build:
+          name: build_ubuntu_jammy
           dist: ubuntu
           release: jammy
-      - distcheck:
-          name: distcheck_alpine
+      - build:
+          name: build_alpine
           dist: alpine
           release: "latest"
           #extra_conf: --without-jemalloc
-      - distcheck:
-          name: distcheck_archlinux
+      - build:
+          name: build_archlinux
           dist: archlinux
           release: base-devel
   packaging:
