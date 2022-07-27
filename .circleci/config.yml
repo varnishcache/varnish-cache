@@ -238,6 +238,12 @@ jobs:
             centos|almalinux|fedora)
                 yum groupinstall -y "Development Tools"
                 case "<< parameters.dist >>:<< parameters.release >>" in
+                    almalinux:9)
+                        dnf install -y "dnf-command(config-manager)"
+                        yum config-manager --set-enabled crb
+                        yum install -y diffutils
+                        yum install -y epel-release
+                        ;;
                     centos:stream|almalinux:8)
                         dnf install -y "dnf-command(config-manager)"
                         yum config-manager --set-enabled powertools
@@ -389,6 +395,10 @@ workflows:
           name: build_almalinux_8
           dist: almalinux
           release: "8"
+      - build:
+          name: build_almalinux_9
+          dist: almalinux
+          release: "9"
       # fedora is our witness
       - build:
           name: build_fedora_latest
@@ -454,6 +464,7 @@ workflows:
                 - centos:7
                 - centos:stream
                 - almalinux:8
+                - almalinux:9
                 - fedora:latest
                 - alpine:3
               rclass:

@@ -14,6 +14,11 @@ elif [ -z "$PARAM_DIST" ]; then
 fi
 
 case "$PARAM_DIST:$PARAM_RELEASE" in
+    almalinux:9)
+        dnf install -y 'dnf-command(config-manager)'
+        yum config-manager --set-enabled crb
+        yum install -y epel-release
+        ;;
     centos:stream|almalinux:8)
         dnf install -y 'dnf-command(config-manager)'
         yum config-manager --set-enabled powertools
