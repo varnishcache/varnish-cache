@@ -47,7 +47,7 @@ struct http {
 #define HTTP_MAGIC		0x2f02169c
 	int			*sfd;
 	struct vtc_sess		*sess;
-	int			timeout;
+	vtim_dur		timeout;
 	struct vtclog		*vl;
 
 	struct vsb		*vsb;
