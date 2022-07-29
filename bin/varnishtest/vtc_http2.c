@@ -176,12 +176,12 @@ get_bytes(const struct http *hp, char *buf, int n)
 		pfd[0].fd = hp->sess->fd;
 		pfd[0].events = POLLIN;
 		pfd[0].revents = 0;
-		i = poll(pfd, 1, hp->timeout);
+		i = poll(pfd, 1, hp->timeout * 1000);
 		if (i < 0 && errno == EINTR)
 			continue;
 		if (i == 0)
 			vtc_log(hp->vl, 3,
-			    "HTTP2 rx timeout (fd:%d %u ms)",
+			    "HTTP2 rx timeout (fd:%d %.3fs)",
 			    hp->sess->fd, hp->timeout);
 		if (i < 0)
 			vtc_log(hp->vl, 3,

@@ -496,12 +496,12 @@ http_rxchar(struct http *hp, int n, int eof)
 		pfd[0].fd = hp->sess->fd;
 		pfd[0].events = POLLIN;
 		pfd[0].revents = 0;
-		i = poll(pfd, 1, hp->timeout);
+		i = poll(pfd, 1, hp->timeout * 1000);
 		if (i < 0 && errno == EINTR)
 			continue;
 		if (i == 0) {
 			vtc_log(hp->vl, hp->fatal,
-			    "HTTP rx timeout (fd:%d %u ms)",
+			    "HTTP rx timeout (fd:%d %.3fs)",
 			    hp->sess->fd, hp->timeout);
 			continue;
 		}
@@ -1473,7 +1473,7 @@ cmd_http_timeout(CMD_ARGS)
 	d = VNUM(av[1]);
 	if (isnan(d))
 		vtc_fatal(vl, "timeout is not a number (%s)", av[1]);
-	hp->timeout = (int)(d * 1000.0);
+	hp->timeout = d;
 }
 
 /* SECTION: client-server.spec.expect_close
@@ -1500,7 +1500,7 @@ cmd_http_expect_close(CMD_ARGS)
 		fds[0].fd = hp->sess->fd;
 		fds[0].events = POLLIN;
 		fds[0].revents = 0;
-		i = poll(fds, 1, hp->timeout);
+		i = poll(fds, 1, hp->timeout * 1000);
 		if (i < 0 && errno == EINTR)
 			continue;
 		if (i == 0)
@@ -1821,7 +1821,7 @@ http_process(struct vtclog *vl, struct vtc_sess *vsp, const char *spec,
 	AN(hp);
 	hp->sess = vsp;
 	hp->sess->fd = sock;
-	hp->timeout = vtc_maxdur * 1000 / 2;
+	hp->timeout = vtc_maxdur * .5;
 
 	if (rcvbuf) {
 		// XXX setsockopt() too late on SunOS
