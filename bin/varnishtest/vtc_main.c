@@ -94,7 +94,7 @@ struct vtc_job {
 
 
 int iflg = 0;
-unsigned vtc_maxdur = 60;
+vtim_dur vtc_maxdur = 60;
 static unsigned vtc_bufsiz = 1024 * 1024;
 
 static VTAILQ_HEAD(, vtc_tst) tst_head = VTAILQ_HEAD_INITIALIZER(tst_head);
