@@ -76,7 +76,7 @@ extern volatile sig_atomic_t vtc_error; /* Error, bail out */
 extern int vtc_stop;		/* Abandon current test, no error */
 extern pthread_t	vtc_thread;
 extern int iflg;
-extern unsigned vtc_maxdur;
+extern vtim_dur vtc_maxdur;
 extern char *vmod_path;
 extern struct vsb *params_vsb;
 extern int leave_temp;
