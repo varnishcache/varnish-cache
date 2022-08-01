@@ -856,6 +856,8 @@ main(int argc, char * const *argv)
 
 	mgt_vcl_init();
 
+	vext_copyin(vident);
+
 	u = 0;
 	VTAILQ_FOREACH(alp, &arglist, list) {
 		if (!strcmp(alp->arg, "f") && alp->priv != NULL)
@@ -895,8 +897,6 @@ main(int argc, char * const *argv)
 		else if (!strcmp(alp->arg, "P"))
 			VPF_Write(alp->priv);
 	}
-
-	vext_copyin(vident);
 
 	AZ(VSB_finish(vident));
 
