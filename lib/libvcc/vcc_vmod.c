@@ -47,51 +47,51 @@
 #include "vcc_vmod.h"
 
 struct vmod_import {
-	unsigned		magic;
-#define VMOD_IMPORT_MAGIC	0x31803a5d
-	const char		*err;
-	struct vsb		*json;
-	char			*path;
+	unsigned			magic;
+#define VMOD_IMPORT_MAGIC		0x31803a5d
+	const char			*err;
+	struct vsb			*json;
+	char				*path;
+	VTAILQ_ENTRY(vmod_import)	list;
 
 	// From $VMOD
-	double			vmod_syntax;
-	char			*name;
-	char			*func_name;
-	char			*file_id;
-	char			*abi;
-	unsigned		major;
-	unsigned		minor;
+	double				vmod_syntax;
+	char				*name;
+	char				*func_name;
+	char				*file_id;
+	char				*abi;
+	unsigned			major;
+	unsigned			minor;
 
-	struct symbol		*sym;
-	const struct token	*t_mod;
-	struct vjsn		*vj;
-#define STANZA(UU, ll, ss) int n_##ll;
+	struct symbol			*sym;
+	const struct token		*t_mod;
+	struct vjsn			*vj;
+#define STANZA(UU, ll, ss)		int n_##ll;
 	STANZA_TBL
 #undef STANZA
 };
+
+static VTAILQ_HEAD(,vmod_import) imports = VTAILQ_HEAD_INITIALIZER(imports);
 
 typedef void vcc_do_stanza_f(struct vcc *tl, const struct vmod_import *vim,
     const struct vjsn_val *vv);
 
 static int
-vcc_path_open(void *priv, const char *fn)
+vcc_Extract_JSON(struct vmod_import *vim, const char *filename)
 {
-	struct vmod_import *vim;
 	const char *magic = "VMOD_JSON_SPEC\x02", *p;
 	int c;
 	FILE *f;
 
-	CAST_OBJ_NOTNULL(vim, priv, VMOD_IMPORT_MAGIC);
-	AN(fn);
+	CHECK_OBJ_NOTNULL(vim, VMOD_IMPORT_MAGIC);
+	AN(filename);
 
-	vim->json = VSB_new_auto();
-	AN(vim->json);
-
-	f = fopen(fn, "rb");
+	f = fopen(filename, "rb");
 	if (f == NULL) {
 		vim->err = strerror(errno);
 		return (-1);
 	}
+
 	p = magic;
 	vim->err = "No VMOD JSON found";
 	while (1) {
@@ -110,11 +110,15 @@ vcc_path_open(void *priv, const char *fn)
 			break;
 	}
 
+	vim->json = VSB_new_auto();
+	AN(vim->json);
+
 	while (1) {
 		c = getc(f);
 		if (c == EOF) {
 			AZ(fclose(f));
 			vim->err = "Truncated VMOD JSON";
+			VSB_destroy(&vim->json);
 			return (-1);
 		}
 		if (c == '\x03')
@@ -243,9 +247,10 @@ vcc_ParseJSON(const struct vcc *tl, const char *jsn, struct vmod_import *vim)
  */
 
 static int
-vcc_VmodLoad(const struct vcc *tl, struct vmod_import *vim)
+vcc_VmodLoad(struct vcc *tl, struct vmod_import *vim)
 {
 	static const char *err;
+	struct vmod_import *vim2;
 
 	CHECK_OBJ_NOTNULL(vim, VMOD_IMPORT_MAGIC);
 
@@ -259,6 +264,24 @@ vcc_VmodLoad(const struct vcc *tl, struct vmod_import *vim)
 
 	if (err != NULL)
 		return (-1);
+
+	VTAILQ_FOREACH(vim2, &imports, list) {
+		if (strcmp(vim->name, vim2->name))
+			continue;
+		if (!strcmp(vim->file_id, vim2->file_id)) {
+			// (Truly) duplicate imports are OK
+			return (0);
+		}
+		VSB_printf(tl->sb,
+		    "Different version of VMOD %.*s already loaded\n",
+		    PF(vim->t_mod));
+		vcc_ErrWhere(tl, vim->t_mod);
+		VSB_printf(tl->sb, "Previous import at:\n");
+		vcc_ErrWhere(tl, vim2->t_mod);
+		vcc_Warn(tl);
+		break;
+	}
+	VTAILQ_INSERT_TAIL(&imports, vim, list);
 
 	return (0);
 }
@@ -374,6 +397,17 @@ vcc_vim_destroy(struct vmod_import **vimp)
 	if (vim->json)
 		VSB_destroy(&vim->json);
 	FREE_OBJ(vim);
+}
+
+static int
+vcc_path_open(void *priv, const char *fn)
+{
+	struct vmod_import *vim;
+
+	CAST_OBJ_NOTNULL(vim, priv, VMOD_IMPORT_MAGIC);
+	AN(fn);
+
+	return (vcc_Extract_JSON(vim, fn));
 }
 
 void

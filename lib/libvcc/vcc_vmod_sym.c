@@ -177,8 +177,10 @@ vcc_VmodSymbols(struct vcc *tl, const struct symbol *sym)
 		if (!vjsn_is_array(vv))
 			continue;
 		vv1 = VTAILQ_FIRST(&vv->children);
+		AN(vv1);
 		assert(vjsn_is_string(vv1));
 		vv2 = VTAILQ_NEXT(vv1, list);
+		AN(vv2);
 		if (!vjsn_is_string(vv2))
 			continue;
 

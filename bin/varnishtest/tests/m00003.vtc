@@ -158,4 +158,37 @@ filewrite -a ${tmpdir}/libvmod_wrong.so {
 filewrite -a ${tmpdir}/libvmod_wrong.so "\x03"
 varnish v1 -errvcl {Bad vmod stanza} { import wrong; }
 
-shell "rm -f ${tmpdir}/libvmod_wrong.so"
+filewrite ${tmpdir}/libvmod_wrong.so "VMOD_JSON_SPEC\x02"
+filewrite -a ${tmpdir}/libvmod_wrong.so {
+    [
+	[
+	    "$VMOD",
+	    "1.0",
+	    "std",
+	    "Vmod_vmod_std_Func",
+	    "0000000000000000000000000000000000000000000000000000000000000000",
+	    "0000000000000000000000000000000000000000000000000000000000000000",
+	    "15",
+	    "0"
+	], [
+	    "$CPROTO", "/* blabla */"
+	]
+    ]
+}
+filewrite -a ${tmpdir}/libvmod_wrong.so "\x03"
+
+varnish v1 -cliok "param.set vmod_path ${topbuild}/vmod/.libs/"
+varnish v1 -cliok "stop"
+
+filewrite  ${tmpdir}/wrong.vcl {
+	vcl 4.1;
+	import std;
+	import std as foo from "${tmpdir}/libvmod_wrong.so";
+	backend default none;
+}
+
+varnish v1 -cliexpect {Different version of VMOD std already loaded} {
+	vcl.load dupvmod ${tmpdir}/wrong.vcl
+}
+
+shell "rm -f ${tmpdir}/libvmod_wrong.so ${tmpdir}wrong.vcl"
