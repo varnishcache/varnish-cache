@@ -85,6 +85,13 @@ mgt_DumpBuiltin(void)
  * Invoke system VCC compiler in a sub-process
  */
 
+static void
+vcc_vext_iter_func(const char *filename, void *priv)
+{
+
+	VCC_VEXT(priv, filename);
+}
+
 static void v_noreturn_ v_matchproto_(vsub_func_f)
 run_vcc(void *priv)
 {
@@ -109,6 +116,8 @@ run_vcc(void *priv)
 #define VCC_FEATURE_BIT(U, l, d)			\
 	VCC_Opt_ ## l(vcc, MGT_VCC_FEATURE(VCC_FEATURE_ ## U));
 #include "tbl/vcc_feature_bits.h"
+
+	vext_iter(vcc_vext_iter_func, vcc);
 
 	STV_Foreach(stv)
 		VCC_Predef(vcc, "VCL_STEVEDORE", stv->ident);

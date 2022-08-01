@@ -956,3 +956,10 @@ VCC_Predef(struct vcc *vcc, const char *type, const char *name)
 	else
 		WRONG("Unknown VCC predef type");
 }
+
+void
+VCC_VEXT(struct vcc *vcc, const char *filename)
+{
+	CHECK_OBJ_NOTNULL(vcc, VCC_MAGIC);
+	(void)filename;
+}

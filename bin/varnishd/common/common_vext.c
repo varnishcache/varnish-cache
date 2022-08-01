@@ -86,6 +86,15 @@ vext_argument(const char *arg)
 }
 
 void
+vext_iter(vext_iter_f *func, void *priv)
+{
+	struct vext *vp;
+
+	VTAILQ_FOREACH(vp, &vext_list, list)
+		func(VSB_data(vp->vsb), priv);
+}
+
+void
 vext_copyin(struct vsb *vident)
 {
 	struct vext *vp;
