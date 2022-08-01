@@ -88,8 +88,16 @@ mgt_DumpBuiltin(void)
 static void
 vcc_vext_iter_func(const char *filename, void *priv)
 {
+	struct vsb *sb;
 
-	VCC_VEXT(priv, filename);
+	/* VCC runs in the per-VCL subdir */
+	sb = VSB_new_auto();
+	AN(sb);
+	VSB_cat(sb, "../");
+	VSB_cat(sb, filename);
+	AZ(VSB_finish(sb));
+	VCC_VEXT(priv, VSB_data(sb));
+	VSB_destroy(&sb);
 }
 
 static void v_noreturn_ v_matchproto_(vsub_func_f)

@@ -53,6 +53,8 @@ struct vmod_import {
 	struct vsb			*json;
 	char				*path;
 	VTAILQ_ENTRY(vmod_import)	list;
+	int				from_vext;
+	int				unimported_vext;
 
 	// From $VMOD
 	double				vmod_syntax;
@@ -195,13 +197,6 @@ vcc_ParseJSON(const struct vcc *tl, const char *jsn, struct vmod_import *vim)
 	vim->minor = strtoul(vv3->value, &p, 10);
 	assert(p == NULL || *p == '\0' || *p == 'U');
 
-	if (!vcc_IdIs(vim->t_mod, vim->name)) {
-		VSB_printf(tl->sb, "Wrong file for VMOD %.*s\n",
-		    PF(vim->t_mod));
-		VSB_printf(tl->sb, "\tFile name: %s\n", vim->path);
-		VSB_printf(tl->sb, "\tContains vmod \"%s\"\n", vim->name);
-		return ("");
-	}
 
 	if (vim->major == 0 && vim->minor == 0 &&
 	    strcmp(vim->abi, VMOD_ABI_Version)) {
@@ -353,8 +348,14 @@ vcc_emit_setup(struct vcc *tl, const struct vmod_import *vim)
 	VSB_cat(ifp->ini, ",\n");
 	AN(vim->file_id);
 	VSB_printf(ifp->ini, "\t    \"%s\",\n", vim->file_id);
-	VSB_printf(ifp->ini, "\t    \"./vmod_cache/_vmod_%.*s.%s\"\n",
-	    PF(mod), vim->file_id);
+	if (vim->from_vext) {
+		VSB_cat(ifp->ini, "\t    ");
+		VSB_quote(ifp->ini, vim->path, -1, VSB_QUOTE_CSTR);
+		VSB_cat(ifp->ini, "\n");
+	} else {
+		VSB_printf(ifp->ini, "\t    \"./vmod_cache/_vmod_%.*s.%s\"\n",
+		    PF(mod), vim->file_id);
+	}
 	VSB_cat(ifp->ini, "\t    ))\n");
 	VSB_cat(ifp->ini, "\t\treturn(1);");
 
@@ -362,6 +363,10 @@ vcc_emit_setup(struct vcc *tl, const struct vmod_import *vim)
 	VSB_cat(tl->symtab, "\t\"dir\": \"import\",\n");
 	VSB_cat(tl->symtab, "\t\"type\": \"$VMOD\",\n");
 	VSB_printf(tl->symtab, "\t\"name\": \"%.*s\",\n", PF(mod));
+	if (vim->from_vext)
+		VSB_printf(tl->symtab, "\t\"vext\": true,\n");
+	else
+		VSB_printf(tl->symtab, "\t\"vext\": false,\n");
 	VSB_printf(tl->symtab, "\t\"file\": \"%s\",\n", vim->path);
 	VSB_printf(tl->symtab, "\t\"dst\": \"./vmod_cache/_vmod_%.*s.%s\"\n",
 	    PF(mod), vim->file_id);
@@ -417,7 +422,7 @@ vcc_ParseImport(struct vcc *tl)
 	const char *p;
 	struct token *mod, *tmod, *t1;
 	struct symbol *msym, *vsym;
-	struct vmod_import *vim;
+	struct vmod_import *vim = NULL;
 	const struct vmod_import *vimold;
 
 	t1 = tl->t;
@@ -438,6 +443,7 @@ vcc_ParseImport(struct vcc *tl)
 	ERRCHK(tl);
 	AN(msym);
 
+	bprintf(fn, "libvmod_%.*s.so", PF(mod));
 	if (tl->t->tok == ID) {
 		if (!vcc_IdIs(tl->t, "from")) {
 			VSB_cat(tl->sb, "Expected 'from path ...'\n");
@@ -460,34 +466,56 @@ vcc_ParseImport(struct vcc *tl)
 			bprintf(fn, "%s", tl->t->dec);
 		vcc_NextToken(tl);
 	} else {
-		bprintf(fn, "libvmod_%.*s.so", PF(mod));
+		VTAILQ_FOREACH(vim, &imports, list) {
+			if (!vcc_IdIs(mod, vim->name))
+				continue;
+			if (!vim->unimported_vext)
+				continue;
+			fprintf(stderr, "IMPORT %s from VEXT\n", vim->name);
+			vim->unimported_vext = 0;
+			vim->t_mod = mod;
+			vim->sym = msym;
+			break;
+		}
 	}
 
 	SkipToken(tl, ';');
 
-	ALLOC_OBJ(vim, VMOD_IMPORT_MAGIC);
-	AN(vim);
-	vim->t_mod = mod;
-	vim->sym = msym;
+	if (vim == NULL) {
+		ALLOC_OBJ(vim, VMOD_IMPORT_MAGIC);
+		AN(vim);
+		vim->t_mod = mod;
+		vim->sym = msym;
 
-	if (VFIL_searchpath(tl->vmod_path, vcc_path_open, vim, fn, &vim->path)) {
-		if (vim->err == NULL) {
-			VSB_printf(tl->sb,
-			    "Could not find VMOD %.*s\n", PF(mod));
-		} else {
-			VSB_printf(tl->sb,
-			    "Could not open VMOD %.*s\n", PF(mod));
-			VSB_printf(tl->sb, "\tFile name: %s\n",
-			    vim->path != NULL ? vim->path : fn);
-			VSB_printf(tl->sb, "\tError: %s\n", vim->err);
+		if (VFIL_searchpath(tl->vmod_path, vcc_path_open, vim, fn, &vim->path)) {
+			if (vim->err == NULL) {
+				VSB_printf(tl->sb,
+				    "Could not find VMOD %.*s\n", PF(mod));
+			} else {
+				VSB_printf(tl->sb,
+				    "Could not open VMOD %.*s\n", PF(mod));
+				VSB_printf(tl->sb, "\tFile name: %s\n",
+				    vim->path != NULL ? vim->path : fn);
+				VSB_printf(tl->sb, "\tError: %s\n", vim->err);
+			}
+			vcc_ErrWhere(tl, mod);
+			vcc_vim_destroy(&vim);
+			return;
 		}
-		vcc_ErrWhere(tl, mod);
-		vcc_vim_destroy(&vim);
-		return;
+
+		if (vcc_VmodLoad(tl, vim) < 0 || tl->err) {
+			vcc_ErrWhere(tl, vim->t_mod);
+			vcc_vim_destroy(&vim);
+			return;
+		}
 	}
 
-	if (vcc_VmodLoad(tl, vim) < 0 || tl->err) {
+	if (!vcc_IdIs(vim->t_mod, vim->name)) {
 		vcc_ErrWhere(tl, vim->t_mod);
+		VSB_printf(tl->sb, "Wrong file for VMOD %.*s\n",
+		    PF(vim->t_mod));
+		VSB_printf(tl->sb, "\tFile name: %s\n", vim->path);
+		VSB_printf(tl->sb, "\tContains vmod \"%s\"\n", vim->name);
 		vcc_vim_destroy(&vim);
 		return;
 	}
@@ -533,4 +561,30 @@ vcc_ParseImport(struct vcc *tl)
 	vcc_VmodSymbols(tl, msym);
 
 	vcc_emit_setup(tl, vim);
+}
+
+void
+vcc_ImportVext(struct vcc *tl, const char *filename)
+{
+	struct vmod_import *vim;
+
+	ALLOC_OBJ(vim, VMOD_IMPORT_MAGIC);
+	AN(vim);
+
+	if (vcc_Extract_JSON(vim, filename)) {
+		FREE_OBJ(vim);
+		return;
+	}
+	fprintf(stderr, "FOUND VMOD in VEXT %s\n", filename);
+	if (vcc_VmodLoad(tl, vim) < 0 || tl->err) {
+		// vcc_ErrWhere(tl, vim->t_mod);
+		vcc_vim_destroy(&vim);
+		return;
+	}
+	vim->from_vext = 1;
+	vim->unimported_vext = 1;
+	vim->path = strdup(filename);
+	vim->path += 1;
+	AN(vim->path);
+	fprintf(stderr, "GOOD VMOD %s in VEXT %s\n", vim->name, filename);
 }

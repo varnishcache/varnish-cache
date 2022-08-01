@@ -458,6 +458,7 @@ sym_wildcard_t vcc_Var_Wildcard;
 
 /* vcc_vmod.c */
 void vcc_ParseImport(struct vcc *tl);
+void vcc_ImportVext(struct vcc *tl, const char *filename);
 sym_act_f vcc_Act_New;
 
 /* vcc_xref.c */

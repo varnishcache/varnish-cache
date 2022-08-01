@@ -961,5 +961,5 @@ void
 VCC_VEXT(struct vcc *vcc, const char *filename)
 {
 	CHECK_OBJ_NOTNULL(vcc, VCC_MAGIC);
-	(void)filename;
+	vcc_ImportVext(vcc, filename);
 }
