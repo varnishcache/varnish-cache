@@ -158,14 +158,15 @@ vext_load(void)
 }
 
 void
-vext_cleanup(void)
+vext_cleanup(int do_unlink)
 {
 	struct vext *vp;
 
 	VTAILQ_FOREACH(vp, &vext_list, list) {
 		fprintf(stderr, "ee3 %s\n", VSB_data(vp->vsb));
 		if (vp->vsb != NULL && VSB_len(vp->vsb) > 0) {
-			XXXAZ(unlink(VSB_data(vp->vsb)));
+			if (do_unlink)
+				XXXAZ(unlink(VSB_data(vp->vsb)));
 			VSB_clear(vp->vsb);
 		}
 	}

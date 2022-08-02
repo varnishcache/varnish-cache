@@ -285,7 +285,7 @@ mgt_Cflag_atexit(void)
 	/* Only master process */
 	if (getpid() != heritage.mgt_pid)
 		return;
-	vext_cleanup();
+	vext_cleanup(1);
 	VJ_rmdir("vmod_cache");
 	VJ_rmdir("vext_cache");
 	(void)chdir("/");
@@ -986,7 +986,7 @@ main(int argc, char * const *argv)
 	mgt_cli_close_all();
 	VEV_Destroy(&mgt_evb);
 	VJ_master(JAIL_MASTER_SYSTEM);
-	vext_cleanup();
+	vext_cleanup(! MGT_DO_DEBUG(DBG_VMOD_SO_KEEP));
 	(void)rmdir("vext_cache");
 	VJ_master(JAIL_MASTER_LOW);
 	VTAILQ_FOREACH(alp, &arglist, list) {
