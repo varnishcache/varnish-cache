@@ -51,6 +51,7 @@
 #include "hash/hash_slinger.h"
 #include "libvcc.h"
 #include "vcli_serve.h"
+#include "vct.h"
 #include "vend.h"
 #include "vev.h"
 #include "vfil.h"
@@ -585,6 +586,7 @@ main(int argc, char * const *argv)
 	const char *S_arg = NULL;
 	const char *s_arg = "default,100m";
 	const char *W_arg = NULL;
+	const char *c;
 	char *p;
 	struct cli cli[1];
 	const char *err;
@@ -816,6 +818,10 @@ main(int argc, char * const *argv)
 
 	if (i_arg == NULL || *i_arg == '\0')
 		i_arg = mgt_HostName();
+	else for (c = i_arg; *c != '\0'; c++) {
+		if (!vct_istchar(*c))
+			ARGV_ERR("Invalid character '%c' for -i\n", *c);
+	}
 	heritage.identity = i_arg;
 
 	mgt_ProcTitle("Mgt");
