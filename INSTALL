@@ -17,7 +17,7 @@ This file only mentions the basic steps:
 	make
 	make install
 
-Varnish will store run-time state in /var/run/varnish; you may
+Varnish will store run-time state in /var/run/varnishd; you may
 want to tune this using configure's --localstatedir parameter.
 
 Additional configure options of interest:
