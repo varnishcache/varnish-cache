@@ -155,6 +155,7 @@ jobs:
             case "<< parameters.platform >>" in
                 debian:*|ubuntu:*)  EXT=deb ;;
                 centos:*)         EXT=rpm ;;
+                almalinux:*)      EXT=rpm ;;
                 alpine:*)         EXT=apk ;;
                 *)
                     echo "unrecognized platform: << parameters.platform >>"
@@ -213,7 +214,7 @@ jobs:
             docker create --name workspace -v /workspace << parameters.dist >>:<< parameters.release >> /bin/true
             docker cp /workspace workspace:/
             docker run --volumes-from workspace -w /workspace << parameters.dist >>:<< parameters.release >> sh -c '
-            if [ << parameters.dist >> = centos ]; then
+            if [ << parameters.dist >> = centos -o << parameters.dist >> = almalinux ]; then
                 if [ << parameters.release >> = 8 ]; then
                     dnf install -y "dnf-command(config-manager)"
                     yum config-manager --set-enabled powertools
@@ -295,7 +296,7 @@ jobs:
 
             if [ << parameters.dist >> = archlinux ]; then
                 useradd varnish
-            elif [ << parameters.dist >> = centos ]; then
+            elif [ << parameters.dist >> = centos -o << parameters.dist >> = almalinux ]; then
             	adduser varnish
             else
             	adduser --disabled-password --gecos "" varnish
@@ -358,7 +359,7 @@ workflows:
                 - debian:buster
                 - debian:stretch
                 - centos:7
-                - centos:8
+                - almalinux:8
                 - alpine:3
               rclass:
                 - arm.medium
