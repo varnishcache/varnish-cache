@@ -53,7 +53,7 @@ jobs:
             - run:
                 name: Download the dist tarball
                 command: |
-                  curl -s << pipeline.parameters.dist-url >> -o varnish-dist.tar.gz
+                  curl -Ls '<< pipeline.parameters.dist-url >>' -o varnish-dist.tar.gz
             - when:
                 condition: << pipeline.parameters.dist-url-sha256 >>
                 steps:
