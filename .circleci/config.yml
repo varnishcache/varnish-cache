@@ -218,7 +218,7 @@ jobs:
                 if [ << parameters.release >> = 8 ]; then
                     dnf install -y "dnf-command(config-manager)"
                     yum config-manager --set-enabled powertools
-                    yum install -y diffutils python3-sphinx
+                    yum install -y diffutils
                 else
                     yum install -y python-sphinx
                 fi
@@ -233,6 +233,7 @@ jobs:
                     make \
                     pcre2-devel \
                     python3 \
+                    /usr/bin/sphinx-build \
                     sudo
             elif [ << parameters.dist >> = debian -o << parameters.dist >> = ubuntu ]; then
                 export DEBIAN_FRONTEND=noninteractive
