@@ -1,0 +1,29 @@
+varnishtest "3830: Do not call http_hdr_flags() on pseudo-headers"
+
+server s1 {
+	rxreq
+	txresp -reason ":x"
+
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		return (hash);
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run
+
+client c2 {
+	txreq -url :x -method :x
+	rxresp
+	expect resp.status == 200
+} -run
+
+varnish v1 -vsl_catchup
