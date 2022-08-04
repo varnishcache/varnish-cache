@@ -1131,6 +1131,8 @@ http_isfiltered(const struct http *fm, unsigned u, unsigned how)
 
 	if (fm->hdf[u] & HDF_FILTER)
 		return (1);
+	if (u < HTTP_HDR_FIRST)
+		return (0);
 	e = strchr(fm->hd[u].b, ':');
 	if (e == NULL)
 		return (0);
