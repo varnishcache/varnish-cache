@@ -32,6 +32,15 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
+Varnish Cache 7.1.1 (unreleased)
+================================
+
+* Do not filter pseudo-headers as regular headers (VSV00009_ / 3830_).
+
+.. _VSV00009: https://varnish-cache.org/security/VSV00009.html
+.. _3830: https://github.com/varnishcache/varnish-cache/issues/3830
+
+================================
 Varnish Cache 7.1.0 (2022-03-15)
 ================================
 
