@@ -140,9 +140,9 @@ http_hdr_flags(const char *b, const char *e)
 	unsigned u;
 	struct http_hdrflg *retval;
 
-	if (e == NULL)
-		return(NULL);
-	assert(e > b);
+	if (b == NULL || e == NULL)
+		return (NULL);
+	assert(b <= e);
 	u = (unsigned)(e - b);
 	assert(b + u == e);
 	if (u < 2 || u > 19)		// MIN_WORD_LENGTH & MAX_WORD_LENGTH
