@@ -32,7 +32,7 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
-Varnish Cache 7.0.3 (unreleased)
+Varnish Cache 7.0.3 (2022-08-09)
 ================================
 
 * Do not filter pseudo-headers as regular headers (VSV00009_ / 3830_).
