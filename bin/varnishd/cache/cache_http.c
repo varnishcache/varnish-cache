@@ -189,6 +189,7 @@ HTTP_Init(void)
 #include "tbl/http_headers.h"
 
 	vsb = VSB_new_auto();
+	AN(vsb);
 	VSB_printf(vsb, "1.1 %s (Varnish/" PACKAGE_BRANCH ")",
 	    heritage.identity);
 	AZ(VSB_finish(vsb));
