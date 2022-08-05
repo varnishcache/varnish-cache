@@ -9,6 +9,9 @@ server s1 {
 	rxreq
 	expect req.url == /big
 	txresp -bodylen 1037480
+
+	expect_close
+	accept
 	rxreq
 	txresp -nolen -hdr "Content-Length: 6545" -body "<html>"
 	loop 92 {
@@ -17,6 +20,9 @@ server s1 {
 		send { />}
 	}
 	send "</html>"
+
+	expect_close
+	accept
 	rxreq
 	expect req.url == /long1234567890123456789012345678901234567890.txt
 	txresp -body {fo}
@@ -25,6 +31,9 @@ server s1 {
 varnish v1 -arg "-pfetch_chunksize=4k" \
 	-arg "-p feature=+esi_disable_xml_check" \
 	-arg "-sdefault,1m" -vcl+backend {
+	sub vcl_backend_fetch {
+		set bereq.http.connection = "close";
+	}
 	sub vcl_backend_response {
 		set beresp.do_esi = true;
 	}
@@ -34,6 +43,9 @@ client c1 {
 	txreq -url /big
 	rxresp
 	expect resp.bodylen == 1037480
-	txreq -url /
+
+	txreq
 	rxresp
 } -run
+
+varnish v1 -expect SM?.s0.c_fail == 1
