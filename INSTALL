@@ -1,6 +1,6 @@
 		      Installation Instructions
 
-See https://varnish-cache.org/docs/7.1/installation/install_source.html
+See https://varnish-cache.org/docs/trunk/installation/install_source.html
 for complete and up to date install instructions.
 
 This file only mentions the basic steps:
