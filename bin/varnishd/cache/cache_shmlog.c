@@ -193,7 +193,8 @@ vsl_get(unsigned len, unsigned records, unsigned flushes)
 	VSC_C_main->shm_writes++;
 	VSC_C_main->shm_flushes += flushes;
 	VSC_C_main->shm_records += records;
-	VSC_C_main->shm_bytes += VSL_BYTES(VSL_OVERHEAD + VSL_WORDS(len));
+	VSC_C_main->shm_bytes +=
+	    VSL_BYTES(VSL_OVERHEAD + VSL_WORDS((uint64_t)len));
 
 	/* Wrap if necessary */
 	if (VSL_END(vsl_ptr, len) >= vsl_end)
