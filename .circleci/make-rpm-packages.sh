@@ -15,7 +15,7 @@ fi
 
 yum install -y epel-release
 
-if [ "$PARAM_DIST" = centos ]; then
+if [ "$PARAM_DIST" = centos -o "$PARAM_DIST" = almalinux ]; then
   if [ "$PARAM_RELEASE" = 8 ]; then
       dnf install -y 'dnf-command(config-manager)'
       yum config-manager --set-enabled powertools
