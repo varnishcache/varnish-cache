@@ -47,7 +47,7 @@
  *                         fail clear
  *                         abort
  *                         ...
- *                 } [-start|-wait]
+ *                 } [-start|-wait|-run]
  *
  * And once declared, you can start them, or wait on them::
  *
@@ -85,6 +85,9 @@
  *
  * \-wait
  *         Wait for the logexpect thread to finish
+ *
+ * \-run
+ *        Equivalent to "-start -wait".
  *
  * VSL arguments (similar to the varnishlog options):
  *
