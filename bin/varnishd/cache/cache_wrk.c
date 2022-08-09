@@ -89,7 +89,6 @@ wrk_bgthread(void *arg)
 	struct worker wrk;
 	struct worker_priv wpriv[1];
 	struct VSC_main_wrk ds;
-	void *r;
 
 	CAST_OBJ_NOTNULL(bt, arg, BGTHREAD_MAGIC);
 	THR_SetName(bt->name);
@@ -100,12 +99,7 @@ wrk_bgthread(void *arg)
 	memset(&ds, 0, sizeof ds);
 	wrk.stats = &ds;
 
-	r = bt->func(&wrk, bt->priv);
-
-	if (! cache_shutdown)
-		WRONG("BgThread terminated");
-
-	return (r);
+	return (bt->func(&wrk, bt->priv));
 }
 
 void
