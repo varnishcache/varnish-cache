@@ -14,7 +14,9 @@ if you find yourself thinking "Why did he do _that_ ? the answer has to
 do with security.
 
 The Varnish security model is based on some very crude but easy to understand
-barriers between the various components::
+barriers between the various components:
+
+.. code-block:: text
 
                 .-->- provides ->---------------------------------------.
                 |                                          |            |
