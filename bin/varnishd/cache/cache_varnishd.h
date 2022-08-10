@@ -243,7 +243,6 @@ void EXP_Rearm(struct objcore *oc, vtim_real now,
     vtim_dur ttl, vtim_dur grace, vtim_dur keep);
 
 /* From cache_main.c */
-extern int cache_shutdown;
 void BAN_Init(void);
 void BAN_Compile(void);
 void BAN_Shutdown(void);

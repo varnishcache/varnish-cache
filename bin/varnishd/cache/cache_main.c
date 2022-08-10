@@ -54,8 +54,6 @@
 
 #include "hash/hash_slinger.h"
 
-int cache_shutdown = 0;
-
 volatile struct params		*cache_param;
 static pthread_mutex_t		cache_vrnd_mtx;
 static vtim_dur			shutdown_delay = 0;
@@ -452,8 +450,6 @@ child_main(int sigmagic, size_t altstksz)
 #endif
 
 	CLI_Run();
-
-	cache_shutdown = 1;
 
 	if (shutdown_delay > 0)
 		VTIM_sleep(shutdown_delay);
