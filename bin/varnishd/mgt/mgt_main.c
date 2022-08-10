@@ -992,6 +992,7 @@ main(int argc, char * const *argv)
 	mgt_cli_close_all();
 	VEV_Destroy(&mgt_evb);
 	VJ_master(JAIL_MASTER_SYSTEM);
+	/*lint -e(730)*/
 	vext_cleanup(! MGT_DO_DEBUG(DBG_VMOD_SO_KEEP));
 	(void)rmdir("vext_cache");
 	VJ_master(JAIL_MASTER_LOW);
