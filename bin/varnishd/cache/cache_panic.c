@@ -616,7 +616,7 @@ pan_backtrace(struct vsb *vsb)
 
 #else /* WITH_UNWIND */
 
-#if ENABLE_SANITIZER
+#if defined(ENABLE_SANITIZER)
 #  define BACKTRACE_LEVELS	20
 #else
 #  define BACKTRACE_LEVELS	10

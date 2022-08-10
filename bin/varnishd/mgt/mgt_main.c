@@ -52,7 +52,6 @@
 #include "libvcc.h"
 #include "vcli_serve.h"
 #include "vct.h"
-#include "vend.h"
 #include "vev.h"
 #include "vfil.h"
 #include "vin.h"
