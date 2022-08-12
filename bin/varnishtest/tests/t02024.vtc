@@ -1,0 +1,90 @@
+varnishtest "Dying h2 session with ESI stream on waiting list"
+
+barrier b1 cond 2
+barrier b2 cond 2
+barrier b3 cond 2
+
+server s1 {
+	rxreq
+	expect req.url == "/esi"
+	barrier b1 sync
+	barrier b3 sync
+	txresp -hdr "included: esi" -body hello
+} -start
+
+server s2 {
+	rxreq
+	expect req.url == "/"
+	txresp -body {<esi:include src="/esi"/><esi:include src="/esi"/><esi:include src="/esi"/>}
+} -start
+
+varnish v1 -cliok "param.set thread_pools 1"
+varnish v1 -cliok "param.set feature +http2"
+varnish v1 -cliok "param.set debug +waitinglist"
+varnish v1 -cliok "param.set debug +syncvsl"
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		if (req.url == "/") {
+			set req.backend_hint = s2;
+		}
+	}
+	sub vcl_backend_response {
+		set beresp.do_esi = !beresp.http.included;
+	}
+} -start
+
+logexpect l1 -v v1 -g raw {
+	expect * 1006 Debug "on waiting list"
+} -start
+
+logexpect l2 -v v1 -g raw {
+	expect * 1006 Debug "walking away"
+	expect 0 1006 Debug "off waiting list"
+} -start
+
+# c1 will block during a backend fetch
+client c1 {
+	txreq -url "/esi"
+	rxresp
+	expect resp.body == hello
+} -start
+
+barrier b1 sync
+
+client c2 {
+	stream 1 {
+		txreq
+	} -run
+	stream 3 {
+		barrier b2 sync
+		# bork the session
+		txsettings
+	} -run
+	stream 0 {
+		rxgoaway
+		expect goaway.laststream == 1
+		expect goaway.err == PROTOCOL_ERROR
+	} -run
+} -start
+
+logexpect l1 -wait
+barrier b2 sync
+
+logexpect l2 -wait
+barrier b3 sync
+
+client c1 -wait
+client c2 -wait
+server s1 -wait
+server s2 -wait
+
+varnish v1 -expect busy_killed == 1
+varnish v1 -expect cache_hit == 0
+
+client c3 {
+	txreq
+	rxresp
+	expect resp.body == hellohellohello
+} -run
+
+varnish v1 -expect cache_hit == 4

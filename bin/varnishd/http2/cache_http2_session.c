@@ -485,19 +485,24 @@ h2_top_reembark(struct worker *wrk, struct req *req)
 		VSLb(req->vsl, SLT_Debug, "off h2 waiting list <%p>", r2);
 
 	Lck_Lock(&r2->h2sess->sess->mtx);
-	VTAILQ_REMOVE(&r2->waitinglist, req, t_list);
 	oh = req->transport_objhead;
-	req->transport_objhead = NULL;
+	CHECK_OBJ_ORNULL(oh, OBJHEAD_MAGIC);
+	if (oh != NULL) {
+		VTAILQ_REMOVE(&r2->waitinglist, req, t_list);
+		req->transport_objhead = NULL;
+	}
 	Lck_Unlock(&r2->h2sess->sess->mtx);
 
-	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
-	Lck_Lock(&oh->mtx);
-	AN(req->hash_objhead);
-	AZ(req->waitinglist);
-	AZ(req->wrk);
-	assert(oh->refcnt > 1);
-	oh->refcnt--;
-	Lck_Unlock(&oh->mtx);
+	if (oh != NULL) {
+		Lck_Lock(&oh->mtx);
+		AN(req->hash_objhead);
+		AZ(req->waitinglist);
+		AZ(req->wrk);
+		AZ(req->walkaway);
+		assert(oh->refcnt > 1);
+		oh->refcnt--;
+		Lck_Unlock(&oh->mtx);
+	}
 }
 
 struct transport HTTP2_transport = {

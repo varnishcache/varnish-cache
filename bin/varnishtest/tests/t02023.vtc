@@ -1,0 +1,66 @@
+varnishtest "Dying h2 session with stream on waiting list"
+
+barrier b1 cond 2
+barrier b2 cond 2
+barrier b3 cond 2
+
+server s1 {
+	rxreq
+	barrier b1 sync
+	barrier b3 sync
+	txresp
+} -start
+
+varnish v1 -cliok "param.set thread_pools 1"
+varnish v1 -cliok "param.set feature +http2"
+varnish v1 -cliok "param.set debug +waitinglist"
+varnish v1 -cliok "param.set debug +syncvsl"
+varnish v1 -vcl+backend {} -start
+
+logexpect l1 -v v1 -g raw {
+	expect * 1003 Debug "on waiting list"
+} -start
+
+logexpect l2 -v v1 {
+	expect * 1003	Debug		"walking away"
+	expect 0 =	Debug		"off waiting list"
+	expect * =	Timestamp	"^Waitinglist: "
+	expect 0 =	Error		"The client is going away"
+} -start
+
+client c1 {
+	stream 1 {
+		txreq
+		barrier b1 sync
+	} -run
+	stream 3 {
+		txreq
+	} -run
+	stream 5 {
+		barrier b2 sync
+		txsettings
+	} -run
+	stream 0 {
+		rxgoaway
+		expect goaway.laststream == 3
+		expect goaway.err == PROTOCOL_ERROR
+	} -run
+} -start
+
+logexpect l1 -wait
+barrier b2 sync
+
+logexpect l2 -wait
+barrier b3 sync
+
+server s1 -wait
+
+varnish v1 -expect busy_killed == 1
+
+client c2 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run
+
+varnish v1 -expect cache_hit == 1

@@ -209,9 +209,13 @@ void
 h2_kill_req(struct worker *wrk, struct h2_sess *h2,
     struct h2_req *r2, h2_error h2e)
 {
+	VTAILQ_HEAD(, req) wl;
+	struct req *req, *t;
+	struct objhead *oh;
 
 	ASSERT_RXTHR(h2);
 	AN(h2e);
+	VTAILQ_INIT(&wl);
 	Lck_Lock(&h2->sess->mtx);
 	VSLb(h2->vsl, SLT_Debug, "KILL st=%u state=%d sched=%d",
 	    r2->stream, r2->state, r2->scheduled);
@@ -223,16 +227,34 @@ h2_kill_req(struct worker *wrk, struct h2_sess *h2,
 	if (r2->error == NULL)
 		r2->error = h2e;
 	if (r2->scheduled) {
-		if (r2->cond != NULL)
-			AZ(pthread_cond_signal(r2->cond));
-		r2 = NULL;
+		VTAILQ_FOREACH_SAFE(req, &r2->waitinglist, t_list, t) {
+			CHECK_OBJ(req, REQ_MAGIC);
+			VTAILQ_REMOVE(&r2->waitinglist, req, t_list);
+			VTAILQ_INSERT_TAIL(&wl, req, t_list);
+		}
+		if (VTAILQ_EMPTY(&wl)) {
+			if (r2->cond != NULL)
+				AZ(pthread_cond_signal(r2->cond));
+			r2 = NULL;
+		}
 	} else {
 		if (r2->state == H2_S_OPEN && h2->new_req == r2->req)
 			(void)h2h_decode_fini(h2);
 	}
 	Lck_Unlock(&h2->sess->mtx);
-	if (r2 != NULL)
+	if (VTAILQ_EMPTY(&wl) && r2 != NULL) {
 		h2_del_req(wrk, r2);
+		return;
+	}
+	VTAILQ_FOREACH_SAFE(req, &wl, t_list, t) {
+		Lck_Lock(&h2->sess->mtx);
+		VTAILQ_REMOVE(&wl, req, t_list);
+		oh = req->transport_objhead;
+		req->transport_objhead = NULL;
+		Lck_Unlock(&h2->sess->mtx);
+		HSH_WalkAway(wrk, &oh, req);
+		AZ(oh);
+	}
 }
 
 /**********************************************************************/
