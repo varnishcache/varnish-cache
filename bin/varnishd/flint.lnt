@@ -164,6 +164,9 @@
 
 -e441	//  for clause irregularity: loop variable '___' not found in 2nd for expression
 
+// cache_vpi.c
+-esym(552, vpi_wrk_len)
+
 // from libvarnish
 --emacro((835),VBH_NOIDX)
 --emacro((835),O_CLOEXEC)

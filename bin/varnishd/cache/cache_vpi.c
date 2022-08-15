@@ -124,7 +124,8 @@ vpi_ref_panic(struct vsb *vsb, unsigned n, const struct vcl *vcl)
 
 	if (src != NULL) {
 		w = strlen(src);
-		if (ref->offset >= w)
+		assert(w > 0);
+		if (ref->offset >= (unsigned)w)
 			src = NULL;
 	}
 	if (src != NULL) {

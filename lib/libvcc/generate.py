@@ -689,7 +689,7 @@ struct VCL_conf {
 	unsigned		nref;
 	const struct vpi_ref	*ref;
 
-	int			nsrc;
+	unsigned		nsrc;
 	unsigned		nsub;
 	const char		**srcname;
 	const char		**srcbody;

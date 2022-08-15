@@ -282,7 +282,7 @@ vcl_find(const char *name)
 static void
 vcl_panic_conf(struct vsb *vsb, const struct VCL_conf *conf)
 {
-	int i;
+	unsigned u;
 	const struct vpi_ii *ii;
 
 	if (PAN_dump_struct(vsb, conf, VCL_CONF_MAGIC, "conf"))
@@ -290,8 +290,8 @@ vcl_panic_conf(struct vsb *vsb, const struct VCL_conf *conf)
 	VSB_printf(vsb, "syntax = \"%u\",\n", conf->syntax);
 	VSB_cat(vsb, "srcname = {\n");
 	VSB_indent(vsb, 2);
-	for (i = 0; i < conf->nsrc; ++i)
-		VSB_printf(vsb, "[%d] = \"%s\",\n", i, conf->srcname[i]);
+	for (u = 0; u < conf->nsrc; ++u)
+		VSB_printf(vsb, "[%u] = \"%s\",\n", u, conf->srcname[u]);
 	VSB_indent(vsb, -2);
 	VSB_cat(vsb, "},\n");
 	VSB_cat(vsb, "instances = {\n");
@@ -947,6 +947,7 @@ vcl_cli_show(struct cli *cli, const char * const *av, void *priv)
 	struct vcl *vcl;
 	int verbose = 0;
 	int i = 2;
+	unsigned u;
 
 	ASSERT_CLI();
 	ASSERT_VCL_ACTIVE();
@@ -984,11 +985,11 @@ vcl_cli_show(struct cli *cli, const char * const *av, void *priv)
 	}
 	CHECK_OBJ_NOTNULL(vcl->conf, VCL_CONF_MAGIC);
 	if (verbose) {
-		for (i = 0; i < vcl->conf->nsrc; i++)
-			VCLI_Out(cli, "// VCL.SHOW %d %zd %s\n%s\n",
-			    i, strlen(vcl->conf->srcbody[i]),
-			    vcl->conf->srcname[i],
-			    vcl->conf->srcbody[i]);
+		for (u = 0; u < vcl->conf->nsrc; u++)
+			VCLI_Out(cli, "// VCL.SHOW %u %zd %s\n%s\n",
+			    u, strlen(vcl->conf->srcbody[u]),
+			    vcl->conf->srcname[u],
+			    vcl->conf->srcbody[u]);
 	} else {
 		VCLI_Out(cli, "%s", vcl->conf->srcbody[0]);
 	}
