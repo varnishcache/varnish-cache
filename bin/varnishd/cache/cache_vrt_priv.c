@@ -280,7 +280,7 @@ VRT_priv_fini(VRT_CTX, const struct vmod_priv *p)
 	VRT_CTX_Assert(ctx);
 
 	m->fini(ctx, p->priv);
-	assert(*ctx->handling == 0 || *ctx->handling == VCL_RET_FAIL);
+	assert(ctx->vpi->handling == 0 || ctx->vpi->handling == VCL_RET_FAIL);
 }
 
 /*--------------------------------------------------------------------*/
@@ -298,8 +298,8 @@ VCL_TaskLeave(VRT_CTX, struct vrt_privs *privs)
 	struct vrt_priv *vp, *vp1;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	AN(ctx->handling);
-	assert(*ctx->handling == 0 || *ctx->handling == VCL_RET_FAIL);
+	AN(ctx->vpi);
+	assert(ctx->vpi->handling == 0 || ctx->vpi->handling == VCL_RET_FAIL);
 
 	/*
 	 * NB: We don't bother removing entries as we finish them because it's

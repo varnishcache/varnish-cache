@@ -89,12 +89,12 @@ void
 VPI_vcl_fini(VRT_CTX)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	AN(ctx->handling);
+	AN(ctx->vpi);
 
-	if (*ctx->handling == VCL_RET_FAIL)
+	if (ctx->vpi->handling == VCL_RET_FAIL)
 		return;
-	assert(*ctx->handling == VCL_RET_OK);
-	*ctx->handling = 0;
+	assert(ctx->vpi->handling == VCL_RET_OK);
+	ctx->vpi->handling = 0;
 }
 
 VCL_VCL

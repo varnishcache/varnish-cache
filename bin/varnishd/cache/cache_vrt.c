@@ -643,19 +643,19 @@ VRT_handling(VRT_CTX, unsigned hand)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	assert(hand != VCL_RET_FAIL);
-	AN(ctx->handling);
-	AZ(*ctx->handling);
+	AN(ctx->vpi);
+	AZ(ctx->vpi->handling);
 	assert(hand > 0);
 	assert(hand < VCL_RET_MAX);
-	*ctx->handling = hand;
+	ctx->vpi->handling = hand;
 }
 
 unsigned
 VRT_handled(VRT_CTX)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	AN(ctx->handling);
-	return (*ctx->handling);
+	AN(ctx->vpi);
+	return (ctx->vpi->handling);
 }
 
 /*--------------------------------------------------------------------*/
@@ -667,10 +667,10 @@ VRT_fail(VRT_CTX, const char *fmt, ...)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	assert(ctx->vsl != NULL || ctx->msg != NULL);
-	AN(ctx->handling);
-	if (*ctx->handling == VCL_RET_FAIL)
+	AN(ctx->vpi);
+	if (ctx->vpi->handling == VCL_RET_FAIL)
 		return;
-	AZ(*ctx->handling);
+	AZ(ctx->vpi->handling);
 	AN(fmt);
 	AZ(strchr(fmt, '\n'));
 	va_start(ap, fmt);
@@ -682,7 +682,7 @@ VRT_fail(VRT_CTX, const char *fmt, ...)
 		VSB_putc(ctx->msg, '\n');
 	}
 	va_end(ap);
-	*ctx->handling = VCL_RET_FAIL;
+	ctx->vpi->handling = VCL_RET_FAIL;
 }
 
 /*--------------------------------------------------------------------

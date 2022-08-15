@@ -91,8 +91,8 @@ VCL_Bo2Ctx(struct vrt_ctx *ctx, struct busyobj *bo)
 	ctx->sp = bo->sp;
 	ctx->now = bo->t_prev;
 	ctx->ws = bo->ws;
-	ctx->handling = &bo->wrk->handling;
-	*ctx->handling = 0;
+	ctx->vpi = bo->wrk->vpi;
+	ctx->vpi->handling = 0;
 }
 
 void
@@ -114,8 +114,8 @@ VCL_Req2Ctx(struct vrt_ctx *ctx, struct req *req)
 	ctx->sp = req->sp;
 	ctx->now = req->t_prev;
 	ctx->ws = req->ws;
-	ctx->handling = &req->wrk->handling;
-	*ctx->handling = 0;
+	ctx->vpi = req->wrk->vpi;
+	ctx->vpi->handling = 0;
 }
 
 /*--------------------------------------------------------------------*/
@@ -186,10 +186,10 @@ vcl_event_handling(VRT_CTX)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
-	if (*ctx->handling == 0)
+	if (ctx->vpi->handling == 0)
 		return (0);
 
-	assert(*ctx->handling == VCL_RET_FAIL);
+	assert(ctx->vpi->handling == VCL_RET_FAIL);
 
 	if (ctx->method == VCL_MET_INIT)
 		return (1);
@@ -200,7 +200,7 @@ vcl_event_handling(VRT_CTX)
 	 */
 	assert(ctx->method == VCL_MET_FINI);
 
-	*ctx->handling = 0;
+	ctx->vpi->handling = 0;
 	VRT_fail(ctx, "VRT_fail() from vcl_fini{} has no effect");
 	return (0);
 }
@@ -239,8 +239,8 @@ vcl_send_event(struct vcl *vcl, enum vcl_event_e ev, struct vsb **msg)
 
 	ctx = VCL_Get_CliCtx(havemsg);
 
-	AN(ctx->handling);
-	AZ(*ctx->handling);
+	AN(ctx->vpi);
+	AZ(ctx->vpi->handling);
 	AN(ctx->ws);
 
 	ctx->vcl = vcl;

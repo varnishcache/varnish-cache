@@ -408,10 +408,12 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	VCL_backend_fetch_method(bo->vcl, wrk, NULL, bo, NULL);
 
-	if (wrk->handling == VCL_RET_ABANDON || wrk->handling == VCL_RET_FAIL)
+	if (wrk->vpi->handling == VCL_RET_ABANDON ||
+	    wrk->vpi->handling == VCL_RET_FAIL)
 		return (F_STP_FAIL);
 
-	assert (wrk->handling == VCL_RET_FETCH || wrk->handling == VCL_RET_ERROR);
+	assert (wrk->vpi->handling == VCL_RET_FETCH ||
+	    wrk->vpi->handling == VCL_RET_ERROR);
 
 	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, SLT_BerespMethod);
 
@@ -424,7 +426,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	bo->vfc->resp = bo->beresp;
 	bo->vfc->req = bo->bereq;
 
-	if (wrk->handling == VCL_RET_ERROR)
+	if (wrk->vpi->handling == VCL_RET_ERROR)
 		return (F_STP_ERROR);
 
 	VSLb_ts_busyobj(bo, "Fetch", W_TIM_real(wrk));
@@ -501,24 +503,25 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 		return (F_STP_ERROR);
 	}
 
-	if (wrk->handling == VCL_RET_ABANDON || wrk->handling == VCL_RET_FAIL ||
-	    wrk->handling == VCL_RET_ERROR) {
+	if (wrk->vpi->handling == VCL_RET_ABANDON ||
+	    wrk->vpi->handling == VCL_RET_FAIL ||
+	    wrk->vpi->handling == VCL_RET_ERROR) {
 		/* do not count deliberately ending the backend connection as
 		 * fetch failure
 		 */
-		handling = wrk->handling;
+		handling = wrk->vpi->handling;
 		if (bo->htc)
 			bo->htc->doclose = SC_RESP_CLOSE;
 		vbf_cleanup(bo);
-		wrk->handling = handling;
+		wrk->vpi->handling = handling;
 
-		if (wrk->handling == VCL_RET_ERROR)
+		if (wrk->vpi->handling == VCL_RET_ERROR)
 			return (F_STP_ERROR);
 		else
 			return (F_STP_FAIL);
 	}
 
-	if (wrk->handling == VCL_RET_RETRY) {
+	if (wrk->vpi->handling == VCL_RET_RETRY) {
 		if (bo->htc && bo->htc->body_status != BS_NONE)
 			bo->htc->doclose = SC_RESP_CLOSE;
 		vbf_cleanup(bo);
@@ -541,15 +544,15 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	if (bo->do_esi)
 		bo->do_stream = 0;
-	if (wrk->handling == VCL_RET_PASS) {
+	if (wrk->vpi->handling == VCL_RET_PASS) {
 		oc->flags |= OC_F_HFP;
 		bo->uncacheable = 1;
-		wrk->handling = VCL_RET_DELIVER;
+		wrk->vpi->handling = VCL_RET_DELIVER;
 	}
 	if (bo->uncacheable)
 		oc->flags |= OC_F_HFM;
 
-	assert(wrk->handling == VCL_RET_DELIVER);
+	assert(wrk->vpi->handling == VCL_RET_DELIVER);
 
 	return (bo->was_304 ? F_STP_CONDFETCH : F_STP_FETCH);
 }
@@ -639,7 +642,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	oc = bo->fetch_objcore;
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
-	assert(wrk->handling == VCL_RET_DELIVER);
+	assert(wrk->vpi->handling == VCL_RET_DELIVER);
 
 	if (bo->htc == NULL) {
 		(void)VFP_Error(bo->vfc, "No backend connection (rollback?)");
@@ -888,7 +891,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	AN(oc->flags & OC_F_BUSY);
 	assert(bo->director_state == DIR_S_NULL);
 
-	if (wrk->handling != VCL_RET_ERROR)
+	if (wrk->vpi->handling != VCL_RET_ERROR)
 		wrk->stats->fetch_failed++;
 
 	now = W_TIM_real(wrk);
@@ -942,12 +945,12 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 
 	AZ(VSB_finish(synth_body));
 
-	if (wrk->handling == VCL_RET_ABANDON || wrk->handling == VCL_RET_FAIL) {
+	if (wrk->vpi->handling == VCL_RET_ABANDON || wrk->vpi->handling == VCL_RET_FAIL) {
 		VSB_destroy(&synth_body);
 		return (F_STP_FAIL);
 	}
 
-	if (wrk->handling == VCL_RET_RETRY) {
+	if (wrk->vpi->handling == VCL_RET_RETRY) {
 		VSB_destroy(&synth_body);
 		if (bo->retries++ < cache_param->max_retries)
 			return (F_STP_RETRY);
@@ -955,7 +958,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 		return (F_STP_FAIL);
 	}
 
-	assert(wrk->handling == VCL_RET_DELIVER);
+	assert(wrk->vpi->handling == VCL_RET_DELIVER);
 
 	assert(bo->vfc->wrk == bo->wrk);
 	assert(bo->vfc->oc == oc);

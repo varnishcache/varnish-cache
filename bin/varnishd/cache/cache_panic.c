@@ -297,11 +297,11 @@ pan_wrk(struct vsb *vsb, const struct worker *wrk)
 	else
 		VSB_printf(vsb, "0x%x,\n", m);
 
-	hand = VCL_Return_Name(wrk->handling);
+	hand = VCL_Return_Name(wrk->vpi->handling);
 	if (hand != NULL)
 		VSB_printf(vsb, "VCL::return = %s,\n", hand);
 	else
-		VSB_printf(vsb, "VCL::return = 0x%x,\n", wrk->handling);
+		VSB_printf(vsb, "VCL::return = 0x%x,\n", wrk->vpi->handling);
 	VSB_cat(vsb, "VCL::methods = {");
 	m = wrk->seen_methods;
 	p = "";
