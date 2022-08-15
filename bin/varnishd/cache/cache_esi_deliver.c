@@ -546,7 +546,6 @@ ved_pretend_gzip_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 			lx = 65535;
 		else
 			lx = (uint16_t)l;
-		lx = (uint16_t)l;
 		buf[0] = 0;
 		vle16enc(buf + 1, lx);
 		vle16enc(buf + 3, ~lx);
