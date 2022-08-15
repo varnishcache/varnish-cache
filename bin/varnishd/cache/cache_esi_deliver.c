@@ -523,7 +523,7 @@ static int v_matchproto_(vdp_bytes_f)
 ved_pretend_gzip_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
     const void *pv, ssize_t l)
 {
-	uint8_t buf[5];
+	uint8_t buf1[5], buf2[5];
 	const uint8_t *p;
 	uint16_t lx;
 	struct ecx *ecx;
@@ -541,22 +541,34 @@ ved_pretend_gzip_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 	ecx->crc = crc32(ecx->crc, p, l);
 	ecx->l_crc += l;
 
+	/*
+	 * buf1 can safely be emitted multiple times for objects longer
+	 * than 64K-1 bytes.
+	 */
+	lx = 65535;
+	buf1[0] = 0;
+	vle16enc(buf1 + 1, lx);
+	vle16enc(buf1 + 3, ~lx);
+
 	while (l > 0) {
-		if (l >= 65535)
+		if (l >= 65535) {
 			lx = 65535;
-		else
+			if (ved_bytes(ecx, VDP_NULL, buf1, sizeof buf1))
+				return (-1);
+		} else {
 			lx = (uint16_t)l;
-		buf[0] = 0;
-		vle16enc(buf + 1, lx);
-		vle16enc(buf + 3, ~lx);
-		if (ved_bytes(ecx, VDP_NULL, buf, sizeof buf))
-			return (-1);
+			buf2[0] = 0;
+			vle16enc(buf2 + 1, lx);
+			vle16enc(buf2 + 3, ~lx);
+			if (ved_bytes(ecx, VDP_NULL, buf2, sizeof buf2))
+				return (-1);
+		}
 		if (ved_bytes(ecx, VDP_NULL, p, lx))
 			return (-1);
 		l -= lx;
 		p += lx;
 	}
-	/* buf1 & buf2 is local, have to flush */
+	/* buf1 & buf2 are local, so we have to flush */
 	return (ved_bytes(ecx, VDP_FLUSH, NULL, 0));
 }
 
