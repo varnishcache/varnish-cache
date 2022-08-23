@@ -124,6 +124,7 @@ cli_sock(const char *T_arg, const char *S_arg)
 	if (status == CLIS_AUTH) {
 		if (S_arg == NULL) {
 			fprintf(stderr, "Authentication required\n");
+			free(answer);
 			closefd(&sock);
 			return (-1);
 		}
