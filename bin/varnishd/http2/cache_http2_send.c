@@ -409,7 +409,7 @@ void
 H2_Send(struct worker *wrk, struct h2_req *r2, h2_frame ftyp, uint8_t flags,
     uint32_t len, const void *ptr, uint64_t *counter)
 {
-	uint64_t dummy_counter;
+	uint64_t dummy_counter = 0;
 
 	if (counter == NULL)
 		counter = &dummy_counter;
