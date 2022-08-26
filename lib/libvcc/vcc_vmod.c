@@ -271,7 +271,7 @@ vcc_VmodLoad(struct vcc *tl, struct vmod_import *vim)
 		    "Different version of VMOD %.*s already loaded\n",
 		    PF(vim->t_mod));
 		vcc_ErrWhere(tl, vim->t_mod);
-		VSB_printf(tl->sb, "Previous import at:\n");
+		VSB_cat(tl->sb, "Previous import at:\n");
 		vcc_ErrWhere(tl, vim2->t_mod);
 		vcc_Warn(tl);
 		break;
@@ -364,9 +364,9 @@ vcc_emit_setup(struct vcc *tl, const struct vmod_import *vim)
 	VSB_cat(tl->symtab, "\t\"type\": \"$VMOD\",\n");
 	VSB_printf(tl->symtab, "\t\"name\": \"%.*s\",\n", PF(mod));
 	if (vim->from_vext)
-		VSB_printf(tl->symtab, "\t\"vext\": true,\n");
+		VSB_cat(tl->symtab, "\t\"vext\": true,\n");
 	else
-		VSB_printf(tl->symtab, "\t\"vext\": false,\n");
+		VSB_cat(tl->symtab, "\t\"vext\": false,\n");
 	VSB_printf(tl->symtab, "\t\"file\": \"%s\",\n", vim->path);
 	VSB_printf(tl->symtab, "\t\"dst\": \"./vmod_cache/_vmod_%.*s.%s\"\n",
 	    PF(mod), vim->file_id);
