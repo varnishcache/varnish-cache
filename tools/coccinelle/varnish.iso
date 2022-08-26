@@ -18,11 +18,11 @@ Type
 type VCL_VOID;
 @@
 
-void <=> VCL_VOID
+VCL_VOID <=> void
 
 Type
 @ vcl_bool @
 type VCL_BOOL;
 @@
 
-unsigned <=> VCL_BOOL
+VCL_BOOL <=> unsigned
