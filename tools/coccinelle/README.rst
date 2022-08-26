@@ -15,6 +15,13 @@ Unless noted otherwise, all patches should work when invoked as::
 	       -I include/ -I bin/varnishd/ --dir . --in-place \
 	       --sp-file $COCCI
 
+To expand a patch and see the implicit rules that will be taken into account,
+it is possible to parse the file::
+
+	spatch --macro-file tools/coccinelle/vdef.h \
+	       -I include/ -I bin/varnishd/ --parse-cocci
+	       --sp-file $COCCI
+
 The ``archive/`` directory contains patches which we used once and
 should not need again, but want to retain for reference.
 

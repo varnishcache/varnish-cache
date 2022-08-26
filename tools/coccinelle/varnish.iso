@@ -5,24 +5,26 @@
  * It can be used directly by semantic patches from the same directory
  * with the following syntax:
  *
- *     using "varnish.iso"
+ *     @using "varnish.iso"@
+ *     <decl>
+ *     @@
+ *
+ *     <semantic-diff>
  *
  * XXX: way incomplete.
- * XXX: consider autogeneration.
+ * XXX: consider autogeneration?
  */
 
 /* This section contains VCL types used by VMODs */
 
 Type
 @ vcl_void @
-type VCL_VOID;
+typedef VCL_VOID;
 @@
-
 VCL_VOID <=> void
 
 Type
 @ vcl_bool @
-type VCL_BOOL;
+typedef VCL_BOOL;
 @@
-
 VCL_BOOL <=> unsigned
