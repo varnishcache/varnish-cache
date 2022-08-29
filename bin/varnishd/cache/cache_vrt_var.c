@@ -253,6 +253,9 @@ VRT_r_bereq_##field(VRT_CTX)						\
 #undef VBERESPRF1
 #undef VBERESPR0
 #undef VBERESPR1
+
+#undef VBEREQR0
+#undef VBEREQR1
 /*--------------------------------------------------------------------*/
 
 VCL_BOOL
