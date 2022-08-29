@@ -181,7 +181,7 @@ VRT_r_obj_reason(VRT_CTX)
 }
 
 /*--------------------------------------------------------------------
- * bool-fields (.do_*)
+ * beresp bool-fields
  */
 
 static inline int
@@ -228,21 +228,10 @@ VRT_r_beresp_##field(VRT_CTX)						\
 	return (ctx->bo->field);					\
 }
 
-#define VBEREQR0(field, str, fltchk)
-#define VBEREQR1(field, str, fltchk)					\
-VCL_BOOL								\
-VRT_r_bereq_##field(VRT_CTX)						\
-{									\
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
-	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);			\
-	return (ctx->bo->field);					\
-}
-
-#define BO_FLAG(l, r, rr, rw, f, d)		\
-	VBEREQR##r(l, #l, f)			\
-	VBERESPR##rr(l, #l, f)			\
-	VBERESPW##rw(l, #l, f)
-#include "tbl/bo_flags.h"
+#define BERESP_FLAG(l, r, w, f, d)		\
+	VBERESPR##r(l, #l, f)			\
+	VBERESPW##w(l, #l, f)
+#include "tbl/beresp_flags.h"
 
 #undef VBERESPWF0
 #undef VBERESPWF1
@@ -253,6 +242,27 @@ VRT_r_bereq_##field(VRT_CTX)						\
 #undef VBERESPRF1
 #undef VBERESPR0
 #undef VBERESPR1
+
+/*--------------------------------------------------------------------
+ * bereq bool-fields
+ */
+
+#define VBEREQR0(field, str)
+#define VBEREQR1(field, str)						\
+VCL_BOOL								\
+VRT_r_bereq_##field(VRT_CTX)						\
+{									\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);			\
+	return (ctx->bo->field);					\
+}
+
+// w is unused
+#define VBEREQW0(ctx, str) (void) 0
+
+#define BEREQ_FLAG(l, r, w, d)		\
+	VBEREQR##r(l, #l)
+#include "tbl/bereq_flags.h"
 
 #undef VBEREQR0
 #undef VBEREQR1
