@@ -331,6 +331,7 @@ vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 	bo->do_esi = 0;
 	bo->do_stream = 1;
 	bo->was_304 = 0;
+	bo->send_failed = 0;
 	bo->err_code = 0;
 	bo->err_reason = NULL;
 	if (bo->htc != NULL)
@@ -551,6 +552,8 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	}
 	if (bo->uncacheable)
 		oc->flags |= OC_F_HFM;
+	if (bo->send_failed)
+		HSH_Kill(oc);
 
 	assert(wrk->vpi->handling == VCL_RET_DELIVER);
 
@@ -750,7 +753,7 @@ vbf_stp_fetchend(struct worker *wrk, struct busyobj *bo)
 
 	ObjSetState(wrk, oc, BOS_FINISHED);
 	VSLb_ts_busyobj(bo, "BerespBody", W_TIM_real(wrk));
-	if (bo->stale_oc != NULL)
+	if (bo->stale_oc != NULL && !bo->send_failed)
 		HSH_Kill(bo->stale_oc);
 	return (F_STP_DONE);
 }

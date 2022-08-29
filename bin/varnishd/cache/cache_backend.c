@@ -243,7 +243,8 @@ vbe_dir_finish(VRT_CTX, VCL_BACKEND d)
 		AZ(pfd);
 		Lck_Lock(bp->director->mtx);
 	} else {
-		assert (PFD_State(pfd) == PFD_STATE_USED);
+		assert(PFD_State(pfd) == PFD_STATE_USED);
+		AZ(bo->send_failed);
 		VSLb(bo->vsl, SLT_BackendClose, "%d %s recycle", *PFD_Fd(pfd),
 		    VRT_BACKEND_string(d));
 		Lck_Lock(bp->director->mtx);
@@ -268,6 +269,7 @@ vbe_dir_gethdrs(VRT_CTX, VCL_BACKEND d)
 	struct pfd *pfd;
 	struct busyobj *bo;
 	struct worker *wrk;
+	stream_close_t sc;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
@@ -275,6 +277,7 @@ vbe_dir_gethdrs(VRT_CTX, VCL_BACKEND d)
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	if (bo->htc != NULL)
 		CHECK_OBJ_NOTNULL(bo->htc->doclose, STREAM_CLOSE_MAGIC);
+	AZ(bo->send_failed);
 	wrk = ctx->bo->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
@@ -301,8 +304,10 @@ vbe_dir_gethdrs(VRT_CTX, VCL_BACKEND d)
 		i = V1F_SendReq(wrk, bo, &bo->acct.bereq_hdrbytes,
 		    &bo->acct.bereq_bodybytes);
 
-		if (i == 0 && PFD_State(pfd) != PFD_STATE_USED) {
-			if (VCP_Wait(wrk, pfd, VTIM_real() +
+		if (PFD_State(pfd) != PFD_STATE_USED) {
+			if (bo->send_failed)
+				(void)VCP_Wait(wrk, pfd, VTIM_real());
+			else if (VCP_Wait(wrk, pfd, VTIM_real() +
 			    bo->htc->first_byte_timeout) != 0) {
 				bo->htc->doclose = SC_RX_TIMEOUT;
 				VSLb(bo->vsl, SLT_FetchError,
@@ -311,16 +316,24 @@ vbe_dir_gethdrs(VRT_CTX, VCL_BACKEND d)
 			}
 		}
 
-		if (bo->htc->doclose == SC_NULL) {
+		if (bo->htc->doclose == SC_NULL)
 			assert(PFD_State(pfd) == PFD_STATE_USED);
+
+		sc = bo->htc->doclose;
+		if (i == 0 || bo->send_failed) {
+			i = V1F_FetchRespHdr(bo);
 			if (i == 0)
-				i = V1F_FetchRespHdr(bo);
-			if (i == 0) {
 				AN(bo->htc->priv);
-				return (0);
-			}
 		}
 		CHECK_OBJ_NOTNULL(bo->htc->doclose, STREAM_CLOSE_MAGIC);
+
+		if (bo->send_failed) {
+			assert(sc != SC_NULL);
+			bo->htc->doclose = sc;
+		}
+
+		if (i == 0)
+			return (0);
 
 		/*
 		 * If we recycled a backend connection, there is a finite chance
