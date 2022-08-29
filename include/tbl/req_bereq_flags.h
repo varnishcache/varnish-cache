@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2014-2015 Varnish Software AS
+ * Copyright (c) 2015 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -32,11 +32,8 @@
 /*lint -save -e525 -e539 */
 
 /* lower, vcl_r, vcl_w, doc */
-BEREQ_FLAG(uncacheable,	0, 0, "")	// also beresp
-BEREQ_FLAG(is_bgfetch,	1, 0, "")
-#define REQ_BEREQ_FLAG(lower, vcl_r, vcl_w, doc) \
-	BEREQ_FLAG(lower, vcl_r, vcl_w, doc)
-#include "tbl/req_bereq_flags.h"
-#undef BEREQ_FLAG
+REQ_BEREQ_FLAG(is_hitmiss,		1, 0, "")
+REQ_BEREQ_FLAG(is_hitpass,		1, 0, "")
+#undef REQ_BEREQ_FLAG
 
 /*lint -restore */
