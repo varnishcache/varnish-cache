@@ -49,7 +49,7 @@ enum debug_bits {
 static inline int
 COM_DO_DEBUG(const volatile uint8_t *p, enum debug_bits x)
 {
-	return (p[(unsigned)x>>3] & (0x80U >> ((unsigned)x & 7)));
+	return ((p[(unsigned)x>>3] & (0x80U >> ((unsigned)x & 7))) != 0);
 }
 
 enum experimental_bits {
@@ -61,7 +61,7 @@ enum experimental_bits {
 static inline int
 COM_EXPERIMENT(const volatile uint8_t *p, enum experimental_bits x)
 {
-	return (p[(unsigned)x>>3] & (0x80U >> ((unsigned)x & 7)));
+	return ((p[(unsigned)x>>3] & (0x80U >> ((unsigned)x & 7))) != 0);
 }
 
 enum feature_bits {
@@ -73,7 +73,7 @@ enum feature_bits {
 static inline int
 COM_FEATURE(const volatile uint8_t *p, enum feature_bits x)
 {
-	return (p[(unsigned)x>>3] & (0x80U >> ((unsigned)x & 7)));
+	return ((p[(unsigned)x>>3] & (0x80U >> ((unsigned)x & 7))) != 0);
 }
 
 enum vcc_feature_bits {
@@ -85,7 +85,7 @@ enum vcc_feature_bits {
 static inline int
 COM_VCC_FEATURE(const volatile uint8_t *p, enum vcc_feature_bits x)
 {
-	return (p[(unsigned)x>>3] & (0x80U >> ((unsigned)x & 7)));
+	return ((p[(unsigned)x>>3] & (0x80U >> ((unsigned)x & 7))) != 0);
 }
 
 struct poolparam {
