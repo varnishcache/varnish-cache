@@ -209,9 +209,9 @@ EXP_Insert(struct worker *wrk, struct objcore *oc)
 		ObjSendEvent(wrk, oc, OEV_EXPIRE);
 		tmpoc = oc;
 		assert(oc->refcnt >= 2); /* Silence coverity */
-		(void)HSH_DerefObjCore(wrk, &tmpoc, 0);
-		AZ(tmpoc);
-		assert(oc->refcnt >= 1); /* Silence coverity */
+		(void)HSH_DerefObjCore(wrk, &oc, 0);
+		AZ(oc);
+		assert(tmpoc->refcnt >= 1); /* Silence coverity */
 	}
 }
 

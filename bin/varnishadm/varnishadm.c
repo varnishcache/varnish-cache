@@ -133,6 +133,7 @@ cli_sock(const char *T_arg, const char *S_arg)
 			fprintf(stderr, "Cannot open \"%s\": %s\n",
 			    S_arg, strerror(errno));
 			closefd(&sock);
+			free(answer);
 			return (-1);
 		}
 		VCLI_AuthResponse(fd, answer, buf);
