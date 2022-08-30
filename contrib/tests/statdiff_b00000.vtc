@@ -1,6 +1,5 @@
 varnishtest "varnishstatdiff coverage"
 
-feature cmd "command -v column"
 feature cmd "command -v diff"
 
 server s1 {
