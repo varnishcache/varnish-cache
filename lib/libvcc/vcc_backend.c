@@ -364,7 +364,8 @@ vcc_ParseProbe(struct vcc *tl)
  */
 
 static void
-vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
+vcc_ParseHostDef(struct vcc *tl, struct symbol *sym,
+    const struct token *t_be, const char *vgcname)
 {
 	const struct token *t_field;
 	const struct token *t_val;
@@ -548,6 +549,19 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 			ERRCHK(tl);
 			AN(via);
 			AN(via->rname);
+
+			if (via->extra != NULL) {
+				AZ(strcmp(via->extra, "via"));
+				VSB_cat(tl->sb,
+					"Can not stack .via backends at\n");
+				vcc_ErrWhere(tl, tl->t);
+				VSB_destroy(&tl->fb);
+				return;
+			}
+
+			AN(sym);
+			AZ(sym->extra);
+			sym->extra = "via";
 			SkipToken(tl, ';');
 		} else if (vcc_IdIs(t_field, "authority")) {
 			ExpectErr(tl, CSTR);
@@ -581,6 +595,9 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 		vcc_ErrWhere(tl, t_be);
 		return;
 	}
+
+	if (via != NULL)
+		AZ(via->extra);
 
 	vsb1 = VSB_new_auto();
 	AN(vsb1);
@@ -666,7 +683,7 @@ void
 vcc_ParseBackend(struct vcc *tl)
 {
 	struct token *t_first, *t_be;
-	struct symbol *sym;
+	struct symbol *sym = NULL;
 	const char *dn;
 
 	tl->ndirector++;
@@ -704,7 +721,7 @@ vcc_ParseBackend(struct vcc *tl)
 		}
 	}
 	Fh(tl, 0, "\nstatic VCL_BACKEND %s;\n", dn);
-	vcc_ParseHostDef(tl, t_be, dn);
+	vcc_ParseHostDef(tl, sym, t_be, dn);
 	if (tl->err) {
 		VSB_printf(tl->sb,
 		    "\nIn %.*s specification starting at:\n", PF(t_first));

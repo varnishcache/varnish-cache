@@ -169,8 +169,9 @@ supported.
 The ``.via`` attribute is unrelated to ``.proxy_header``. If both are
 used, a second header is sent as per ``.proxy_header`` specification.
 
-As of this release, the *proxy* backend used with ``.via`` can not be a
-director and the protocol is fixed to `PROXY2`_.
+As of this release, the *proxy* backend used with ``.via`` can not be
+a director, it can not itself use ``.via`` (error: *Can not stack .via
+backends*) and the protocol is fixed to `PROXY2`_.
 
 Implementation detail:
 

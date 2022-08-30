@@ -12,7 +12,7 @@ server s2 {
 	txresp -hdr "Server: s2"
 } -start
 
-# the use case for via-proxy is to have a(n ha)proxy make a(n ssl)
+# the use case for via-proxy is to have a(n ha)proxy make a (TLS)
 # connection on our behalf. For the purpose of testing, we use another
 # varnish in place - but we are behaving realistically in that we do
 # not use any prior information for the actual backend connection -
@@ -145,6 +145,7 @@ client c1 {
 	txreq -url /s1/5
 	rxresp
 	expect resp.status == 200
+
 	# vmod_proxy returns the empty string if the TLV is absent.
 	expect resp.http.Authority == ""
 } -run
@@ -155,5 +156,23 @@ varnish v1 -errvcl "Cannot set both .via and .path" {
 	backend s1 {
 		.via = v2;
 		.path = "/path/to/uds";
+	}
+}
+
+varnish v1 -errvcl "Can not stack .via backends" {
+	backend a { .host = "${v2_addr}"; .port = "${v2_port}"; }
+
+	backend b {
+		.via = a;
+		.host = "127.0.0.1";
+	}
+
+	backend c {
+		.via = b;
+		.host = "127.0.0.2";
+	}
+
+	sub vcl_backend_fetch {
+		set bereq.backend = c;
 	}
 }
