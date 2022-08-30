@@ -10,6 +10,7 @@ nobase_pkginclude_HEADERS = \
 	tbl/ban_vars.h \
 	tbl/bereq_flags.h \
 	tbl/beresp_flags.h \
+	tbl/boc_state.h \
 	tbl/body_status.h \
 	tbl/cli_cmds.h \
 	tbl/debug_bits.h \
