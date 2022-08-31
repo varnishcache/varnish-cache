@@ -217,7 +217,6 @@ VRT_l_beresp_##field(VRT_CTX, VCL_BOOL a)				\
 		return (0);			\
 	} while(0)
 
-#define VBERESPR0(field, str, fltchk)
 #define VBERESPR1(field, str, fltchk)					\
 VCL_BOOL								\
 VRT_r_beresp_##field(VRT_CTX)						\
@@ -240,7 +239,6 @@ VRT_r_beresp_##field(VRT_CTX)						\
 
 #undef VBERESPRF0
 #undef VBERESPRF1
-#undef VBERESPR0
 #undef VBERESPR1
 
 /*--------------------------------------------------------------------
@@ -256,9 +254,6 @@ VRT_r_bereq_##field(VRT_CTX)						\
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);			\
 	return (ctx->bo->field);					\
 }
-
-// w is unused
-#define VBEREQW0(ctx, str) (void) 0
 
 #define BEREQ_FLAG(l, r, w, d)		\
 	VBEREQR##r(l, #l)
