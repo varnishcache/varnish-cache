@@ -259,6 +259,7 @@ void
 VRY_Finish(struct req *req, enum vry_finish_flag flg)
 {
 	uint8_t *p = NULL;
+	size_t l;
 
 	if (req->vary_b + 2 >= req->vary_e) {
 		AZ(req->vary_l);
@@ -269,13 +270,12 @@ VRY_Finish(struct req *req, enum vry_finish_flag flg)
 		return;
 	}
 
-	(void)VRY_Validate(req->vary_b);
+	l = VRY_Validate(req->vary_b);
 	if (flg == KEEP && req->vary_l != NULL) {
-		p = malloc(req->vary_l - req->vary_b);
-		if (p != NULL) {
-			memcpy(p, req->vary_b, req->vary_l - req->vary_b);
-			(void)VRY_Validate(p);
-		}
+		assert(l == req->vary_l - req->vary_b);
+		p = malloc(l);
+		if (p != NULL)
+			memcpy(p, req->vary_b, l);
 	}
 	WS_Release(req->ws, 0);
 	req->vary_l = NULL;
