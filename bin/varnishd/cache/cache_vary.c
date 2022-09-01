@@ -382,12 +382,13 @@ VRY_Match(struct req *req, const uint8_t *vary)
 static unsigned
 VRY_Validate(const uint8_t *vary)
 {
-	unsigned retval = 0;
+	unsigned l, retval = 0;
 
 	while (vary[2] != 0) {
-		assert(strlen((const char*)vary+3) == vary[2]);
-		retval += VRY_Len(vary);
-		vary += VRY_Len(vary);
+		assert(strlen((const char*)vary + 3) == vary[2]);
+		l = VRY_Len(vary);
+		retval += l;
+		vary += l;
 	}
 	return (retval + 3);
 }
