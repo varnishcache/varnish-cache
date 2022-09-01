@@ -45,7 +45,7 @@ tr '[:upper:]' '[:lower:]' |
 sort |
 uniq -c |
 sort |
-awk '$1 != 1 || $2 !~ /^0x[0-9a-f]*$/ || length($2) !~ /^(4|10)$/' |
+awk '$1 != 1 || $2 !~ /^0x[0-9a-f]*$/ || length($2) !~ /^(4|6|10)$/' |
 while read -r COUNT MAGIC
 do
 	if [ $COUNT -eq 1 ]

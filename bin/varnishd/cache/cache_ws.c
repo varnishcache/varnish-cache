@@ -39,15 +39,40 @@
 
 static const uintptr_t snap_overflowed = (uintptr_t)&snap_overflowed;
 
+static inline void
+ws_high(struct ws *ws)
+{
+	if (ws->f > ws->h)
+		ws->h = ws->f;
+}
+
+static inline void
+ws_relhigh(struct ws *ws)
+{
+	if (ws->reported) {
+		ws->reported = 0;
+		return;
+	}
+
+	/* not reported, but reservation was smaller
+	 * than high water, so we're fine */
+	if (ws->r <= ws->h)
+		return;
+
+	ws_high(ws);
+	ws->at_least = 1;
+}
+
 void
 WS_Assert(const struct ws *ws)
 {
 
 	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
-	DSLb(DBG_WORKSPACE, "WS(%s, %p) = {%p %zu %zu %zu}",
+	DSLb(DBG_WORKSPACE, "WS(%s, %p) = {%p %zu %zu %zu %zu}",
 	    ws->id, ws, ws->s, pdiff(ws->s, ws->f),
 	    ws->r == NULL ? 0 : pdiff(ws->f, ws->r),
-	    pdiff(ws->s, ws->e));
+	    pdiff(ws->s, ws->e),
+	    ws->h == NULL ? 0 : pdiff(ws->s, ws->h));
 	assert(ws->s != NULL);
 	assert(PAOK(ws->s));
 	assert(ws->e != NULL);
@@ -59,7 +84,10 @@ WS_Assert(const struct ws *ws)
 	if (ws->r) {
 		assert(ws->r >= ws->f);
 		assert(ws->r <= ws->e);
+	} else {
+		AZ(ws->reported);
 	}
+
 	assert(*ws->e == WS_REDZONE_END);
 }
 
@@ -106,6 +134,7 @@ WS_Init(struct ws *ws, const char *id, void *space, unsigned len)
  *
  * does not reset the overflow bit and asserts that, if WS_Snapshot had found
  * the workspace overflown, the marker is intact
+ *
  */
 
 void
@@ -177,6 +206,7 @@ WS_Alloc(struct ws *ws, unsigned bytes)
 	r = ws->f;
 	ws->f += bytes;
 	DSLb(DBG_WORKSPACE, "WS_Alloc(%s, %p, %u) = %p", ws->id, ws, bytes, r);
+	ws_high(ws);
 	WS_Assert(ws);
 	return (r);
 }
@@ -203,6 +233,7 @@ WS_Copy(struct ws *ws, const void *str, int len)
 	ws->f += bytes;
 	memcpy(r, str, len);
 	DSLb(DBG_WORKSPACE, "WS_Copy(%s, %p, %d) = %p", ws->id, ws, len, r);
+	ws_high(ws);
 	WS_Assert(ws);
 	return (r);
 }
@@ -232,6 +263,7 @@ WS_ReserveAll(struct ws *ws)
 
 	WS_Assert(ws);
 	assert(ws->r == NULL);
+	AZ(ws->reported);
 
 	ws->r = ws->e;
 	b = pdiff(ws->f, ws->r);
@@ -252,6 +284,7 @@ WS_ReserveSize(struct ws *ws, unsigned bytes)
 
 	WS_Assert(ws);
 	assert(ws->r == NULL);
+	AZ(ws->reported);
 	assert(bytes > 0);
 
 	l = pdiff(ws->f, ws->e);
@@ -275,6 +308,7 @@ WS_Release(struct ws *ws, unsigned bytes)
 	assert(ws->r != NULL);
 	assert(ws->f + bytes <= ws->r);
 	ws->f += PRNDUP(bytes);
+	ws_relhigh(ws);
 	ws->r = NULL;
 	WS_Assert(ws);
 }
@@ -289,6 +323,7 @@ WS_ReleaseP(struct ws *ws, const char *ptr)
 	assert(ptr >= ws->f);
 	assert(ptr <= ws->r);
 	ws->f += PRNDUP(ptr - ws->f);
+	ws_relhigh(ws);
 	ws->r = NULL;
 	WS_Assert(ws);
 }
@@ -376,10 +411,11 @@ WS_Panic(struct vsb *vsb, const struct ws *ws)
 	if (ws->id[0] != '\0' && (!(ws->id[0] & 0x20)))	// cheesy islower()
 		VSB_cat(vsb, "OVERFLOWED ");
 	VSB_printf(vsb, "id = \"%s\",\n", ws->id);
-	VSB_printf(vsb, "{s, f, r, e} = {%p", ws->s);
+	VSB_printf(vsb, "{s, f, r, e, h} = {%p", ws->s);
 	ws_printptr(vsb, ws->s, ws->f);
 	ws_printptr(vsb, ws->s, ws->r);
 	ws_printptr(vsb, ws->s, ws->e);
+	ws_printptr(vsb, ws->s, ws->h);
 	VSB_cat(vsb, "},\n");
 	VSB_indent(vsb, -2);
 	VSB_cat(vsb, "},\n");

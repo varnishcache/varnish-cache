@@ -17,7 +17,7 @@ logexpect l1 -v v1 -g raw {
 	expect 0 =	SessClose	"RX_JUNK"
 } -start
 
-varnish v1 -cliok "param.set workspace_session 480"
+varnish v1 -cliok "param.set workspace_session 488"
 
 client c1 {
 	# PROXY2 with CRC32C TLV

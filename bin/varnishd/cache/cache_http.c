@@ -551,6 +551,7 @@ http_CollectHdrSep(struct http *hp, hdr_t hdr, const char *sep)
 				http_fail(hp);
 				VSLbs(hp->vsl, SLT_LostHeader,
 				    TOSTRAND(hdr + 1));
+				WS_Report(hp->ws, b + x);
 				WS_Release(hp->ws, 0);
 				return;
 			}
@@ -573,6 +574,7 @@ http_CollectHdrSep(struct http *hp, hdr_t hdr, const char *sep)
 		if (b + lsep + x >= e) {
 			http_fail(hp);
 			VSLbs(hp->vsl, SLT_LostHeader, TOSTRAND(hdr + 1));
+			WS_Report(hp->ws, b + lsep + x);
 			WS_Release(hp->ws, 0);
 			return;
 		}
@@ -588,6 +590,7 @@ http_CollectHdrSep(struct http *hp, hdr_t hdr, const char *sep)
 	*b = '\0';
 	hp->hd[f].b = WS_Reservation(hp->ws);
 	hp->hd[f].e = b;
+	WS_Report(hp->ws, b + 1);
 	WS_ReleaseP(hp->ws, b + 1);
 }
 

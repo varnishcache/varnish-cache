@@ -529,12 +529,14 @@ VRT_UpperLowerStrands(VRT_CTX, VCL_STRANDS s, int up)
 	}
 	assert(b <= e);
 	if (!copy) {
+		WS_ReportSize(ctx->ws, 0);
 		WS_Release(ctx->ws, 0);
 		return (q);
 	}
 	assert(b < e);
 	*b++ = '\0';
 	assert(b <= e);
+	WS_Report(ctx->ws, b);
 	WS_ReleaseP(ctx->ws, b);
 	return (r);
 }
@@ -630,7 +632,9 @@ VRT_SetHdr(VRT_CTX, VCL_HEADER hs, const char *pfx, VCL_STRANDS s)
 		WS_Release(hp->ws, 0);
 		return;
 	}
-	WS_ReleaseP(hp->ws, strchr(p, '\0') + 1);
+	p = strchr(p, '\0') + 1;
+	WS_Report(hp->ws, p);
+	WS_ReleaseP(hp->ws, p);
 	http_Unset(hp, hs->what);
 	http_SetHeader(hp, b);
 }

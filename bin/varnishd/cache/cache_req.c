@@ -240,7 +240,14 @@ Req_Rollback(VRT_CTX)
 	WS_Rollback(req->ws, req->ws_req);
 }
 
-/*----------------------------------------------------------------------
+static void
+req_ws_report(struct vsl_log *vsl, const struct ws *ws, const char *name)
+{
+	VSLb(vsl, SLT_Debug, "ws highwater %s %s %zu", name,
+	     WS_Atleast(ws) ? ">=" : "=", WS_Highwater(ws));
+}
+
+/*--------------------------- -------------------------------------------
  * TODO: remove code duplication with cnt_recv_prep
  */
 
@@ -263,6 +270,10 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 
 	/* Charge and log byte counters */
 	if (req->vsl->wid) {
+		req_ws_report(req->vsl, req->ws, "client");
+		req_ws_report(req->vsl, req->sp->ws, "session");
+		req_ws_report(req->vsl, wrk->aws, "thread");
+
 		Req_AcctLogCharge(wrk->stats, req);
 		if (req->vsl->wid != sp->vxid)
 			VSL_End(req->vsl);

@@ -282,6 +282,7 @@ Pool_Task_Arg(struct worker *wrk, enum task_prio prio, task_func_t *func,
 	AZ(wrk2->task->func);
 	assert(arg_len <= WS_ReserveSize(wrk2->aws, arg_len));
 	memcpy(WS_Reservation(wrk2->aws), arg, arg_len);
+	WS_ReportSize(wrk2->aws, arg_len);
 	wrk2->task->func = func;
 	wrk2->task->priv = WS_Reservation(wrk2->aws);
 	Lck_Unlock(&pp->mtx);
