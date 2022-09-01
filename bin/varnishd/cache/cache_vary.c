@@ -343,11 +343,11 @@ VRY_Match(struct req *req, const uint8_t *vary)
 			memcpy(vsp + 2, vary + 2, vary[2] + 2);
 			if (h != NULL)
 				memcpy(vsp + 2 + vsp[2] + 2, h, lh);
-			vsp[ln] = 0xff;
-			vsp[ln + 1] = 0xff;
-			vsp[ln + 2] = 0;
-			(void)VRY_Validate(vsp);
-			req->vary_l = vsp + ln + 3;
+			vsp[ln++] = 0xff;
+			vsp[ln++] = 0xff;
+			vsp[ln++] = 0;
+			assert(VRY_Validate(vsp) == ln);
+			req->vary_l = vsp + ln;
 
 			i = vry_cmp(vary, vsp);
 			assert(i == 0 || i == 2);
