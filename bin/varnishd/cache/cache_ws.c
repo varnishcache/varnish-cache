@@ -358,6 +358,15 @@ WS_Dump(const struct ws *ws, char where, size_t off, void *buf, size_t len)
 
 /*--------------------------------------------------------------------*/
 
+static inline void
+ws_printptr(struct vsb *vsb, const char *s, const char *p)
+{
+	if (p >= s)
+		VSB_printf(vsb, ", +%ld", (long) (p - s));
+	else
+		VSB_printf(vsb, ", %p", p);
+}
+
 void
 WS_Panic(struct vsb *vsb, const struct ws *ws)
 {
@@ -368,18 +377,9 @@ WS_Panic(struct vsb *vsb, const struct ws *ws)
 		VSB_cat(vsb, "OVERFLOWED ");
 	VSB_printf(vsb, "id = \"%s\",\n", ws->id);
 	VSB_printf(vsb, "{s, f, r, e} = {%p", ws->s);
-	if (ws->f >= ws->s)
-		VSB_printf(vsb, ", +%ld", (long) (ws->f - ws->s));
-	else
-		VSB_printf(vsb, ", %p", ws->f);
-	if (ws->r >= ws->s)
-		VSB_printf(vsb, ", +%ld", (long) (ws->r - ws->s));
-	else
-		VSB_printf(vsb, ", %p", ws->r);
-	if (ws->e >= ws->s)
-		VSB_printf(vsb, ", +%ld", (long) (ws->e - ws->s));
-	else
-		VSB_printf(vsb, ", %p", ws->e);
+	ws_printptr(vsb, ws->s, ws->f);
+	ws_printptr(vsb, ws->s, ws->r);
+	ws_printptr(vsb, ws->s, ws->e);
 	VSB_cat(vsb, "},\n");
 	VSB_indent(vsb, -2);
 	VSB_cat(vsb, "},\n");
