@@ -438,7 +438,7 @@ workflows:
           name: build_alpine
           dist: alpine
           release: "latest"
-          #extra_conf: --without-jemalloc
+          extra_conf: --without-contrib
       - build:
           name: build_archlinux
           dist: archlinux
