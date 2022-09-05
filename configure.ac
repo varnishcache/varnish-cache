@@ -892,6 +892,20 @@ VMOD_TESTS="$(cd $srcdir/vmod && echo tests/*.vtc)"
 AC_SUBST(VMOD_TESTS)
 AM_SUBST_NOTMAKE(VMOD_TESTS)
 
+AC_ARG_WITH([contrib],
+	[AS_HELP_STRING([--with-contrib],
+		[Build Varnish with external contributions.])])
+
+AM_CONDITIONAL([WITH_CONTRIB], [test "$with_contrib" = yes])
+CONTRIB_TESTS="$(cd $srcdir/contrib && echo tests/*.vtc)"
+AC_SUBST(CONTRIB_TESTS)
+AM_SUBST_NOTMAKE(CONTRIB_TESTS)
+
+AM_COND_IF([WITH_CONTRIB], [
+	AC_DEFINE([WITH_CONTRIB], [1],
+		[Define to 1 when Varnish is built with contributions.])
+])
+
 # Make sure this include dir exists
 AC_CONFIG_COMMANDS([mkdir], [$MKDIR_P doc/sphinx/include])
 
@@ -907,6 +921,7 @@ AC_CONFIG_FILES([
     bin/varnishhist/Makefile
     bin/varnishtest/Makefile
     bin/varnishncsa/Makefile
+    contrib/Makefile
     doc/Makefile
     doc/graphviz/Makefile
     doc/sphinx/Makefile
@@ -923,23 +938,6 @@ AC_CONFIG_FILES([
     varnishapi.pc
     varnishapi-uninstalled.pc
     vmod/Makefile
-])
-
-AC_ARG_WITH([contrib],
-	[AS_HELP_STRING([--with-contrib],
-		[Build Varnish with external contributions.])])
-
-AM_CONDITIONAL([WITH_CONTRIB], [test "$with_contrib" = yes])
-
-AM_COND_IF([WITH_CONTRIB], [
-	CONTRIB_TESTS="$(cd $srcdir/contrib && echo tests/*.vtc)"
-	AC_SUBST(CONTRIB_TESTS)
-	AM_SUBST_NOTMAKE(CONTRIB_TESTS)
-
-	AC_DEFINE([WITH_CONTRIB], [1],
-		[Define to 1 when Varnish is built with contributions.])
-
-	AC_CONFIG_FILES([contrib/Makefile])
 ])
 
 AC_OUTPUT
