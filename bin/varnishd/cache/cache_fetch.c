@@ -488,7 +488,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	if (http_IsStatus(bo->beresp, 304) && vbf_304_logic(bo) < 0)
 		return (F_STP_ERROR);
 
-	if (bo->htc->doclose == SC_NULL &&
+	if (bo->htc != NULL && bo->htc->doclose == SC_NULL &&
 	    http_GetHdrField(bo->bereq, H_Connection, "close", NULL))
 		bo->htc->doclose = SC_REQ_CLOSE;
 
