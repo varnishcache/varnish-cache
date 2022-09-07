@@ -103,6 +103,8 @@ thereof) in log utilities to include sub-tasks or not. Internally, only ESI
 tasks are subject to this filtering, but it can apply to tasks spawned by
 VMODs too.
 
+Similarly, the ``Link`` record has the same optional 4th field.
+
 .. XXX: any reason against ``varnish{hist,top} -k``?
 
 The ``-k`` option from ``varnishlog`` is now available in ``varnishncsa``.
