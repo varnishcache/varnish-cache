@@ -540,8 +540,8 @@ h2_do_req(struct worker *wrk, void *priv)
 	THR_SetRequest(req);
 	CNT_Embark(wrk, req);
 
-	wrk->stats->client_req++;
 	if (CNT_Request(req) != REQ_FSM_DISEMBARK) {
+		wrk->stats->client_req++;
 		assert(!WS_IsReserved(req->ws));
 		AZ(req->top->vcl0);
 		h2 = r2->h2sess;

@@ -386,10 +386,10 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 		} else if (st == H1PROC) {
 			req->task->func = http1_req;
 			req->task->priv = req;
-			wrk->stats->client_req++;
 			CNT_Embark(wrk, req);
 			if (CNT_Request(req) == REQ_FSM_DISEMBARK)
 				return;
+			wrk->stats->client_req++;
 			AZ(req->top->vcl0);
 			req->task->func = NULL;
 			req->task->priv = NULL;
