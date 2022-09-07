@@ -23,7 +23,16 @@ varnishd
 Extensions
 ~~~~~~~~~~
 
-TODO: VEXT
+From the very first days of Varnish, we have been talking about having
+an extension points for "more advanced stuff" and we did, by and large,
+keep a place ready for it in the overall architecture.
+
+Now a credible use-case finally appeared, and we have implemented
+"Varnish Extensions" (VTLA: "VEXT"), which can both be used to load
+ambient VMODs and to implement entirely new functionaly, for instance
+stevedores.
+
+See :ref:`ref-vext` in the reference manual for more information.
 
 Parameters
 ~~~~~~~~~~
@@ -43,8 +52,11 @@ parameters. The latter still exist as deprecated aliases.
 Other changes in varnishd
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The VCC (compilation) process no longer loads VMODs using ``dlopen(3)`` to
-collect their metadata.
+The metadata VMODs exposes to Varnishd has changed to a non-binary
+format, and it is incompatible with all previous releases.
+That makes it possible for the VCC (compilation) process to avoid
+opening the VMODs with ``dlopen(3)``, which is both faster and
+safer.
 
 Background fetch tasks are no longer queued as this could result in slow
 grace hits subject to indefinite delays when thread pools are saturated.
@@ -72,8 +84,8 @@ the case, but is now (pun intended) formally defined behavior. It keeps the
 same value even if the execution blocks for a significant time, for example
 while calling a VMOD function.
 
-VMODs
-=====
+Bundled VMODs
+=============
 
 For a real time timestamp, the function ``std.now()`` can be used instead.
 There is also a new ``std.timed_call()`` to measure the execution time of a

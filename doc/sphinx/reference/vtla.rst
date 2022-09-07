@@ -59,6 +59,9 @@ VEND
 VEV
     Varnish EVent -- library functions to implement a simple event-dispatcher.
 
+VEXT
+    Varnish Extension -- Shared library loaded into the child process.
+
 VGB
     Varnish Governing Board -- May or may not exist.
     If you need to ask, you are not on it.

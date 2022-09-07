@@ -97,6 +97,7 @@ For Developers & DevOps
 
 	Shell tricks <shell_tricks>
 	VMODS - Extensions to VCL <vmod>
+	VEXT - Varnish Extensions <vext>
 	VSM - Shared memory use <vsm>
 	VDIR - Backends & Directors <directors>
 	VCLI - CLI protocol API <cli_protocol>
