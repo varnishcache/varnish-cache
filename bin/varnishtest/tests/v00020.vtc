@@ -480,6 +480,13 @@ varnish v1 -vcl+backend {
 		    (resp.http.foo + resp.http.bar) == ("X" + resp.http.foo);
 		// Ticket 2809
 		set resp.http.bar = true == false;
+
+		set resp.http.a = req.http.inexistent;
+		// correct? #3844
+		set resp.http.a-eq-inexistent = resp.http.a == req.http.inexistent;
+		// discussion in #3844 - and should !!hdr work?
+		set resp.http.is-a = !(!resp.http.a);
+		set resp.http.is-inexistent = !(!req.http.inexistent);
 	}
 	sub vcl_deliver {
 		set resp.http.p = (0 + 999999999999999);
@@ -499,6 +506,13 @@ client c1 {
 	expect resp.http.p == 999999999999999
 	expect resp.http.n == -999999999999999
 	expect resp.http.o == 200
+
+	expect resp.http.a == ""
+	# correct? #3844
+	expect resp.http.a-eq-inexistent == "false"
+	# discussion in #3844
+	expect resp.http.is-a == "true"
+	expect resp.http.is-inexistent == "false"
 } -run
 
 varnish v1 -vcl {
