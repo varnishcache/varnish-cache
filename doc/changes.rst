@@ -117,6 +117,11 @@ Varnish Cache NEXT (2022-09-15)
 * There is a new ``contrib/`` directory in the Varnish source tree. The first
   contribution is a ``varnishstatdiff`` script.
 
+* A regression in the transport code led MAIN.client_req to be incremented
+  for requests coming back from the waiting list, it was fixed.  (3841_)
+
+.. _3841: https://github.com/varnishcache/varnish-cache/pull/3841
+
 ================================
 Varnish Cache 7.1.0 (2022-03-15)
 ================================
