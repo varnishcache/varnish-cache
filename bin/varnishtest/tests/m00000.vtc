@@ -148,7 +148,7 @@ varnish v1 -errvcl {rot13: VFP already registered (per-vcl)} {
 	}
 }
 
-varnish v1 -errvcl {Failed initialization} {
+varnish v1 -errvcl {Failed from VCL} {
 	import debug;
 	import directors;
 	backend default { .host = "${localhost}"; }
