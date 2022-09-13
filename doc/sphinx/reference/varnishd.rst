@@ -84,7 +84,9 @@ Basic options
   ("127.0.0.1") or an IPv6 address enclosed in square brackets
   ("[::1]")
 
-  If port is not specified, port 80 (http) is used.
+  The port can be a port number (80), a service name (http), or a port
+  range (80-81). Port ranges are inclusive and cannot overlap. If port
+  is not specified, port 80 (http) is used.
 
   At least one of ip_address or port is required.
 
