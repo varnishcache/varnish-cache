@@ -121,6 +121,11 @@ $Method STRING .test_priv_top(STRING s="")
 
 Test per-object priv_top via VRT_priv_top()
 
+$Function VOID rot104()
+
+Try to register the rot52 filter again. This should always fail
+the vcl.
+
 $Function VOID rot52(HTTP hdr)
 
 Encrypt the HTTP header with quad-ROT13 encryption,

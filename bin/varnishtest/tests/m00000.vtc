@@ -140,6 +140,14 @@ varnish v1 -errvcl {Symbol not found: 'obj'} {
 	}
 }
 
+varnish v1 -errvcl {rot13: VFP already registered (per-vcl)} {
+	import debug;
+	backend none none;
+	sub vcl_init {
+		debug.rot104();
+	}
+}
+
 varnish v1 -errvcl {Failed initialization} {
 	import debug;
 	import directors;
@@ -281,7 +289,7 @@ varnish v1 -cliok "vcl.list"
 
 varnish v1 -expect vmods == 3
 
-varnish v1 -cliok "vcl.discard vcl[1-8]"
+varnish v1 -cliok "vcl.discard vcl[1-9]"
 varnish v1 -cliok "vcl.list"
 varnish v1 -cliok "debug.vmod"
 

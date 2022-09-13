@@ -334,6 +334,15 @@ xyzzy_test_priv_vcl(VRT_CTX, struct vmod_priv *priv)
 	assert(!strcmp(priv_vcl->foo, "FOO"));
 }
 
+VCL_VOID v_matchproto_(td_debug_rot104)
+xyzzy_rot104(VRT_CTX)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	// This should fail
+	AN(VRT_AddFilter(ctx, &xyzzy_vfp_rot13, &xyzzy_vdp_rot13));
+}
+
 VCL_VOID v_matchproto_(td_debug_rot52)
 xyzzy_rot52(VRT_CTX, VCL_HTTP hp)
 {
@@ -456,15 +465,6 @@ event_load(VRT_CTX, struct vmod_priv *priv)
 	priv->methods = priv_vcl_methods;
 
 	AZ(VRT_AddFilter(ctx, &xyzzy_vfp_rot13, &xyzzy_vdp_rot13));
-
-	// This should fail
-	AN(VRT_AddFilter(ctx, &xyzzy_vfp_rot13, &xyzzy_vdp_rot13));
-	// Reset the error, we know what we're doing.
-	ctx->vpi->handling = 0;
-
-	VRT_RemoveFilter(ctx, &xyzzy_vfp_rot13, &xyzzy_vdp_rot13);
-	AZ(VRT_AddFilter(ctx, &xyzzy_vfp_rot13, &xyzzy_vdp_rot13));
-
 	AZ(VRT_AddFilter(ctx, NULL, &xyzzy_vdp_pedantic));
 	return (0);
 }
