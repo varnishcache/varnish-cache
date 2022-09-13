@@ -371,7 +371,7 @@ MAC_Arg(const char *spec)
 	if (VUS_is(la->endpoint))
 		error = VUS_resolver(av[1], mac_uds, la, &err);
 	else
-		error = VSS_resolver(av[1], "80", mac_tcp, la, &err);
+		error = VSS_resolver_range(av[1], "80", mac_tcp, la, &err);
 
 	if (VTAILQ_EMPTY(&la->socks) || error)
 		ARGV_ERR("Got no socket(s) for %s\n", av[1]);
