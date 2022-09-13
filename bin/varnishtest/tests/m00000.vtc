@@ -165,6 +165,14 @@ varnish v1 -errvcl {Failed from VCL} {
 	}
 }
 
+varnish v1 -errvcl {Failed initialization} {
+	import debug;
+	backend none none;
+	sub vcl_init {
+		new fails = debug.obj("fail");
+	}
+}
+
 varnish v1 -cliok "param.set vcc_feature +allow_inline_c"
 varnish v1 -vcl {
 	import vtc;
@@ -289,7 +297,7 @@ varnish v1 -cliok "vcl.list"
 
 varnish v1 -expect vmods == 3
 
-varnish v1 -cliok "vcl.discard vcl[1-9]"
+varnish v1 -cliok "vcl.discard vcl[1-9] vcl10"
 varnish v1 -cliok "vcl.list"
 varnish v1 -cliok "debug.vmod"
 

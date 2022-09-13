@@ -73,6 +73,8 @@ $Object obj(STRING string="default", ENUM { one, two, three } number=one)
 
 Test object
 
+Fail for string="fail".
+
 .. NOTE: .enum before .foo as part of test r01332.vtc
 $Method VOID .enum(ENUM { phk, des, kristian, mithrandir, martin })
 
