@@ -103,7 +103,7 @@ vrt_addfilter(VRT_CTX, const struct vfp *vfp, const struct vdp *vdp)
 	err = is_dup_filter(hd, vfp, vdp, name);
 	if (err != NULL) {
 		if (ctx != NULL)
-			VRT_fail(ctx, "%s (global)", err);
+			VRT_fail(ctx, "%s: %s (global)", name, err);
 		return (err);
 	}
 	if (ctx != NULL) {
@@ -112,7 +112,7 @@ vrt_addfilter(VRT_CTX, const struct vfp *vfp, const struct vdp *vdp)
 		hd = &ctx->vcl->filters;
 		err = is_dup_filter(hd, vfp, vdp, name);
 		if (err != NULL) {
-			VRT_fail(ctx, "%s (per-vcl)", err);
+			VRT_fail(ctx, "%s: %s (per-vcl)", name, err);
 			return (err);
 		}
 	}
