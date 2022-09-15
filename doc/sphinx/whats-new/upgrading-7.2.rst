@@ -1,12 +1,8 @@
-**Note: This is a working document for a future release, with running
-updates for changes in the development branch. For changes in the
-released versions of Varnish, see:** :ref:`whats-new-index`
+.. _whatsnew_upgrading_7.2:
 
-.. _whatsnew_upgrading_CURRENT:
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Upgrading to Varnish **$NEXT_RELEASE**
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Upgrading to Varnish **7.2**
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 varnishd
 ========
