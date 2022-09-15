@@ -57,7 +57,7 @@
  * Whenever something is deleted or changed in a way which is not
  * binary/load-time compatible, increment MAJOR version
  *
- * NEXT (2022-09-15)
+ * 16.0 (2022-09-15)
  *	VMOD C-prototypes moved into JSON
  *	VRT_AddVDP() deprecated
  *	VRT_AddVFP() deprecated
