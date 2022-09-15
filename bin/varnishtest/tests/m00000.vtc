@@ -173,6 +173,23 @@ varnish v1 -errvcl {Failed initialization} {
 	}
 }
 
+shell {
+	cat >${tmpdir}/f1 <<-EOF
+	vcl 4.1;
+	import debug;
+	backend none none;
+	sub vcl_init {
+		new fails = debug.obj("fail");
+	}
+	EOF
+}
+
+varnish v1 -clierr 300 "vcl.load f1 ${tmpdir}/f1"
+
+shell -exit 1 -expect {failing as requested} {
+	varnishadm -n ${tmpdir}/v1 vcl.load f1 ${tmpdir}/f1
+}
+
 varnish v1 -cliok "param.set vcc_feature +allow_inline_c"
 varnish v1 -vcl {
 	import vtc;
