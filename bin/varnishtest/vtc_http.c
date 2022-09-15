@@ -769,7 +769,7 @@ cmd_http_gunzip(CMD_ARGS)
 
 static char* const *
 http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
-    char *body, unsigned nohost)
+    char *body, unsigned nohost, unsigned nodate)
 {
 	long bodylen = 0;
 	char *b, *c;
@@ -785,12 +785,16 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
 			nolen = 1;
 		} else if (!strcmp(*av, "-nohost")) {
 			nohost = 1;
+		} else if (!strcmp(*av, "-nodate")) {
+			nodate = 1;
 		} else if (!strcmp(*av, "-hdr")) {
 			if (!strncasecmp(av[1], "Content-Length:", 15) ||
 			    !strncasecmp(av[1], "Transfer-Encoding:", 18))
 				nolen = 1;
 			if (!strncasecmp(av[1], "Host:", 5))
 				nohost = 1;
+			if (!strncasecmp(av[1], "Date:", 5))
+				nodate = 1;
 			VSB_printf(hp->vsb, "%s%s", av[1], nl);
 			av++;
 		} else if (!strcmp(*av, "-hdrlen")) {
@@ -865,6 +869,11 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
 		macro_cat(vl, hp->vsb, "localhost", NULL);
 		VSB_cat(hp->vsb, nl);
 	}
+	if (!nodate) {
+		VSB_cat(hp->vsb, "Date: ");
+		macro_cat(vl, hp->vsb, "date", NULL);
+		VSB_cat(hp->vsb, nl);
+	}
 	if (body != NULL && !nolen)
 		VSB_printf(hp->vsb, "Content-Length: %ld%s", bodylen, nl);
 	VSB_cat(hp->vsb, nl);
@@ -913,6 +922,9 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
  *
  *         \-nolen
  *                 Don't include a Content-Length header.
+ *
+ *         \-nodate
+ *                 Don't include a Date header in the response.
  *
  *         \-hdr STRING
  *                 Add STRING as a header, it must follow this format:
@@ -988,7 +1000,7 @@ cmd_http_txresp(CMD_ARGS)
 	/* send a "Content-Length: 0" header unless something else happens */
 	REPLACE(body, "");
 
-	av = http_tx_parse_args(av, vl, hp, body, 1);
+	av = http_tx_parse_args(av, vl, hp, body, 1, 0);
 	if (*av != NULL)
 		vtc_fatal(hp->vl, "Unknown http txresp spec: %s\n", *av);
 
@@ -1220,7 +1232,7 @@ cmd_http_txreq(CMD_ARGS)
 				"HTTP2-Settings: %s%s", nl, nl, up, nl);
 
 	nohost = strcmp(proto, "HTTP/1.1") != 0;
-	av = http_tx_parse_args(av, vl, hp, NULL, nohost);
+	av = http_tx_parse_args(av, vl, hp, NULL, nohost, 1);
 	if (*av != NULL)
 		vtc_fatal(hp->vl, "Unknown http txreq spec: %s\n", *av);
 	http_write(hp, 4, "txreq");

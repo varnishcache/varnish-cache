@@ -3,7 +3,7 @@ varnishtest "very very very long return header"
 server s1 {
 	rxreq
 	expect req.url == "/"
-	txresp -hdr "Location: ${string,repeat,8136,1}" -body {foo}
+	txresp -hdr "Location: ${string,repeat,8136,1}" -nodate -body {foo}
 } -start
 
 varnish v1 -vcl+backend {
