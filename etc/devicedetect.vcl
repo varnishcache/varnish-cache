@@ -34,7 +34,7 @@ sub devicedetect {
 	unset req.http.X-UA-Device;
 	set req.http.X-UA-Device = "pc";
 
-	# Handle that a cookie may override the detection alltogether.
+	# Handle that a cookie may override the detection altogether.
 	if (req.http.Cookie ~ "(?i)X-UA-Device-force") {
 		/* ;?? means zero or one ;, non-greedy to match the first. */
 		set req.http.X-UA-Device = regsub(req.http.Cookie, "(?i).*X-UA-Device-force=([^;]+);??.*", "\1");
