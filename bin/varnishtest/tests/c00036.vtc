@@ -2,13 +2,13 @@ varnishtest "Backend close retry"
 
 server s1 -repeat 1 {
 	rxreq
-	txresp -bodylen 5
+	txresp -nodate -bodylen 5
 
 	rxreq
 	accept
 
 	rxreq
-	txresp -bodylen 6
+	txresp -nodate -bodylen 6
 
 } -start
 

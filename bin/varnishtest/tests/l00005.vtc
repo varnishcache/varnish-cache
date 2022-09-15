@@ -3,7 +3,7 @@ varnishtest "Test backend fetch byte counters"
 server s1 {
 	rxreq
 	expect req.url == "/1"
-	txresp -bodylen 1000
+	txresp -nodate -bodylen 1000
 
 	rxreq
 	expect req.url == "/2"
