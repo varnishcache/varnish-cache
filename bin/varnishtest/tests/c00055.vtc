@@ -14,6 +14,9 @@ varnish v1 -vcl+backend {
 	import std;
 
 	sub vcl_recv {
+		if (req.url == "/wrong-sub") {
+			return (pass);
+		}
 		if (std.cache_req_body(1KB)) {
 			set req.http.stored = true;
 		} else {
@@ -26,6 +29,15 @@ varnish v1 -vcl+backend {
 			return (restart);
 		}
 		set resp.http.stored = req.http.stored;
+	}
+	sub vcl_backend_fetch {
+		if (bereq.url == "/wrong-sub") {
+			if (std.cache_req_body(1KB)) {
+				return (error(200));
+			} else {
+				return (error(503));
+			}
+		}
 	}
 } -start
 
@@ -61,6 +73,12 @@ server s1 {
 } -start
 
 client c1 {
+	txreq -url "/wrong-sub"
+	rxresp
+	expect resp.status == 503
+} -run
+
+client c1 {
 	txreq -url "/is_varnish_still_running"
 	rxresp
 	expect resp.status == 200
@@ -72,5 +90,16 @@ client c2 {
        expect_close
 	expect resp.http.stored == <undef>
 } -run
+
+varnish v1 -errvcl {req.body can only be cached in vcl_recv} {
+	import std;
+	backend none none;
+	sub vcl_init {
+		if (! std.cache_req_body(1KB)) {
+			return (fail);
+		}
+	}
+}
+
 varnish v1 -stop
 logexpect l1 -wait
