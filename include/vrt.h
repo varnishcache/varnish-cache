@@ -46,7 +46,7 @@
 #  error "include vdef.h before vrt.h"
 #endif
 
-#define VRT_MAJOR_VERSION	15U
+#define VRT_MAJOR_VERSION	16U
 
 #define VRT_MINOR_VERSION	0U
 
