@@ -47,7 +47,7 @@
 #include "vgz.h"
 
 static vtr_deliver_f ved_deliver;
-static vtr_reembark_f ved_reembark;
+static vtr_waitlist_f ved_reembark;
 
 static const uint8_t gzip_hdr[] = {
 	0x1f, 0x8b, 0x08,
@@ -91,7 +91,7 @@ static const struct transport VED_transport = {
 
 /*--------------------------------------------------------------------*/
 
-static void v_matchproto_(vtr_reembark_f)
+static void v_matchproto_(vtr_waitlist_f)
 ved_reembark(struct worker *wrk, struct req *req)
 {
 	struct ecx *ecx;
