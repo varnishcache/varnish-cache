@@ -42,6 +42,10 @@ Varnish Cache NEXT (2022-09-15)
   semi-colon (``';'``) at the end of the string. This could break VCL relying
   on the previous incorrect behavior.
 
+* The ``SessClose`` and ``BackendClose`` reason ``rx_body``, which
+  previously output ``Failure receiving req.body``, has been rewritten
+  to ``Failure receiving body``.
+
 * Prototypical Varnish Extensions (VEXT). Similar to VMODs, a VEXT is loaded
   by the cache process. Unlike VMODs that have the combined lifetime of all
   the VCLs that reference them, a VEXT has the lifetime of the cache process
@@ -50,10 +54,17 @@ Varnish Cache NEXT (2022-09-15)
 * The VCC (compilation) process no longer loads VMODs with ``dlopen(3)`` to
   collect their metadata.
 
+* Stevedore initialization via the ``.init()`` callback has been moved
+  to the worker process.
+
 * The parameter ``tcp_keepalive_time`` is supported on MacOS.
 
 * Duration parameters can optionally take a unit, with the same syntax as
   duration units in VCL. Example: ``param.set default_grace 1h``.
+
+* Calls to ``VRT_CacheReqBody()`` and ``std.cache_req_body`` from outside
+  client vcl subs now fail properly instead of triggering an
+  assertion failure (3846_).
 
 * New ``"B"`` string for the package branch in ``VCS_String()``. For the 7.2.0
   version, it would yield the 7.2 branch.
@@ -84,6 +95,9 @@ Varnish Cache NEXT (2022-09-15)
   Via headers are appended in both directions, to work with other hops that
   may advertise themselves.
 
+* A ``resp.http.via`` header is no longer overwritten by varnish, but
+  rather appended to.
+
 * The ``server.identity`` syntax is now limited to a "token" as defined in
   the HTTP grammar to be suitable for Via headers.
 
@@ -93,8 +107,20 @@ Varnish Cache NEXT (2022-09-15)
 
 * VMOD and VEXT authors can use functions from ``vnum.h``.
 
+* Do not filter pseudo-headers as regular headers (VSV00009_ / 3830_).
+
 * The termination rules for ``WRK_BgThread()`` were relaxed to allow VMODs to
   use it.
+
+* ``(struct worker).handling`` has been moved to the newly introduced
+  ``struct wrk_vpi`` and replaced by a pointer to it, as well as
+  ``(struct vrt_ctx).handling`` has been replaced by that pointer.
+
+  ``struct wrk_vpi`` is for state at the interface between VRT and VGC
+  and, in particular, is not const as ``struct vrt_ctx`` aka
+  ``VRT_CTX``.
+
+* Panics now contain information about VCL source files and lines.
 
 * The ``Begin`` log record has a 4th field for subtasks like ESI sub-requests.
 
@@ -114,13 +140,21 @@ Varnish Cache NEXT (2022-09-15)
 * The unused ``fetch_no_thread`` counter was renamed to ``bgfetch_no_thread``
   because regular backend fetch tasks are always scheduled.
 
+* The macros ``FEATURE()``, ``EXPERIMENT()``, ``DO_DEBUG()``,
+  ``MGT_FEATURE()``, ``MGT_EXPERIMENT()``, ``MGT_DO_DEBUG()`` and
+  ``MGT_VCC_FEATURE()`` now return a boolean value (``0`` or ``1``)
+  instead of the (private) flag value.
+
 * There is a new ``contrib/`` directory in the Varnish source tree. The first
   contribution is a ``varnishstatdiff`` script.
 
 * A regression in the transport code led MAIN.client_req to be incremented
   for requests coming back from the waiting list, it was fixed.  (3841_)
 
+.. _3830: https://github.com/varnishcache/varnish-cache/issues/3830
 .. _3841: https://github.com/varnishcache/varnish-cache/pull/3841
+.. _3846: https://github.com/varnishcache/varnish-cache/issues/3846
+.. _VSV00009: https://varnish-cache.org/security/VSV00009.html
 
 ================================
 Varnish Cache 7.1.0 (2022-03-15)
