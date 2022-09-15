@@ -75,6 +75,9 @@ which defaults to the host name. A ``req.http.via`` header is generated
 also before entering ``vcl_recv``. If a client request or backend response
 already had a Via header, it is now appended to instead of overwritten.
 
+A ``resp.http.via`` header is no longer overwritten by varnish, but
+rather appended to.
+
 The ``server.identity`` variable is guaranteed to be a single token as
 defined in the HTTP grammar, to safely be used as either a host name or
 pseudonym in Via headers.

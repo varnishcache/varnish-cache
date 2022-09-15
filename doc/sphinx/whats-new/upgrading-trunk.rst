@@ -62,6 +62,9 @@ The Via header is generated with the ``server.identity`` variable for
 the ``received-by`` field. See `rfc9110_` for a description of the Via
 header.
 
+A ``resp.http.via`` header is no longer overwritten by varnish, but
+rather appended to.
+
 .. _rfc9110: https://www.rfc-editor.org/rfc/rfc9110#name-via
 
 VMODs
