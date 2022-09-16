@@ -786,6 +786,9 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
 		} else if (!strcmp(*av, "-nohost")) {
 			nohost = 1;
 		} else if (!strcmp(*av, "-hdr")) {
+			if (!strncasecmp(av[1], "Content-Length:", 15) ||
+			    !strncasecmp(av[1], "Transfer-Encoding:", 18))
+				nolen = 1;
 			if (!strncasecmp(av[1], "Host:", 5))
 				nohost = 1;
 			VSB_printf(hp->vsb, "%s%s", av[1], nl);

@@ -13,7 +13,7 @@ varnish v1 -vsl_catchup
 varnish v1 -expect client_req_400 == 1
 
 client c1 {
-	txreq -method POST -hdr "Content-Length: 12" -bodylen 12
+	txreq -method POST -hdr "Content-Length: 12" -hdr "Content-Length: 12" -bodylen 12
 	rxresp
 	expect resp.status == 400
 } -run
