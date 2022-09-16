@@ -274,7 +274,7 @@ vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo)
 	    ObjCheckFlag(bo->wrk, bo->stale_oc, OF_IMSCAND) &&
 	    (bo->stale_oc->boc != NULL || ObjGetLen(wrk, bo->stale_oc) != 0)) {
 		AZ(bo->stale_oc->flags & (OC_F_HFM|OC_F_PRIVATE));
-		q = HTTP_GetHdrPack(bo->wrk, bo->stale_oc, H_Last_Modified);
+		q = RFC2616_Strong_LM(NULL, wrk, bo->stale_oc);
 		if (q != NULL)
 			http_PrintfHeader(bo->bereq0,
 			    "If-Modified-Since: %s", q);
@@ -700,7 +700,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	if (!(oc->flags & OC_F_HFM) &&
 	    http_IsStatus(bo->beresp, 200) && (
-	      http_GetHdr(bo->beresp, H_Last_Modified, NULL) ||
+	      RFC2616_Strong_LM(bo->beresp, NULL, NULL) != NULL ||
 	      http_GetHdr(bo->beresp, H_ETag, NULL)))
 		ObjSetFlag(bo->wrk, oc, OF_IMSCAND, 1);
 
