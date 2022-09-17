@@ -1,5 +1,7 @@
 #
 
+include $(top_srcdir)/vtc.am
+
 if !WITH_CONTRIB
 dist_noinst_SCRIPTS = \
 	varnishstatdiff
@@ -9,7 +11,6 @@ dist_bin_SCRIPTS = \
 
 TESTS = @CONTRIB_TESTS@
 
-include $(top_srcdir)/vtc.am
 endif
 
 EXTRA_DIST = @CONTRIB_TESTS@
