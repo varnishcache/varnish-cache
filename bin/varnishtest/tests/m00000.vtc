@@ -177,10 +177,8 @@ shell {
 	cat >${tmpdir}/f1 <<-EOF
 	vcl 4.1;
 	import debug;
-	import vtc;
 	backend none none;
 	sub vcl_init {
-		vtc.sleep(10s);
 		new fails = debug.obj("fail");
 	}
 	EOF
