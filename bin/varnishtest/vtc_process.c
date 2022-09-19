@@ -911,7 +911,7 @@ process_close(struct process *p)
  *	process pNAME SPEC [-log] [-dump] [-hexdump] [-expect-exit N]
  *		[-start] [-run]
  *		[-write STRING] [-writeln STRING]
- *		[-kill STRING] [-stop] [-wait] [-close]
+ *		[-kill STRING] [-stop] [-wait] [-close] [-screen-dump]
  *
  * pNAME
  *	Name of the process. It must start with 'p'.
@@ -1001,7 +1001,7 @@ process_close(struct process *p)
  * \-close
  *	Alias for "-kill HUP"
  *
- * \-screen_dump
+ * \-screen-dump
  *	Dump the virtual screen into vtc_log
  *
  */
