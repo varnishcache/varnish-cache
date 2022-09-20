@@ -344,8 +344,10 @@ ban_export(void)
 		AZ(VSB_bcat(vsb, b->spec, ban_len(b->spec)));
 	AZ(VSB_finish(vsb));
 	assert(VSB_len(vsb) == ln);
+	Lck_Unlock(&ban_mtx);
 	STV_BanExport((const uint8_t *)VSB_data(vsb), VSB_len(vsb));
 	VSB_destroy(&vsb);
+	Lck_Lock(&ban_mtx);
 	VSC_C_main->bans_persisted_bytes =
 	    bans_persisted_bytes = ln;
 	VSC_C_main->bans_persisted_fragmentation =
@@ -361,7 +363,6 @@ ban_export(void)
 void
 ban_info_new(const uint8_t *ban, unsigned len)
 {
-	/* XXX martin pls review if ban_mtx needs to be held */
 	Lck_AssertHeld(&ban_mtx);
 	if (STV_BanInfoNew(ban, len))
 		ban_export();
@@ -370,7 +371,6 @@ ban_info_new(const uint8_t *ban, unsigned len)
 void
 ban_info_drop(const uint8_t *ban, unsigned len)
 {
-	/* XXX martin pls review if ban_mtx needs to be held */
 	Lck_AssertHeld(&ban_mtx);
 	if (STV_BanInfoDrop(ban, len))
 		ban_export();
