@@ -89,6 +89,7 @@ wrk_bgthread(void *arg)
 	struct worker wrk;
 	struct worker_priv wpriv[1];
 	struct VSC_main_wrk ds;
+	void *r;
 
 	CAST_OBJ_NOTNULL(bt, arg, BGTHREAD_MAGIC);
 	THR_SetName(bt->name);
@@ -100,7 +101,10 @@ wrk_bgthread(void *arg)
 	memset(&ds, 0, sizeof ds);
 	wrk.stats = &ds;
 
-	return (bt->func(&wrk, bt->priv));
+	r = bt->func(&wrk, bt->priv);
+	HSH_Cleanup(&wrk);
+	Pool_Sumstat(&wrk);
+	return (r);
 }
 
 void
