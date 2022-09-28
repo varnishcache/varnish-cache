@@ -218,11 +218,14 @@ vtr_deliver_f h2_deliver;
 vtr_minimal_response_f h2_minimal_response;
 #endif /* TRANSPORT_MAGIC */
 
+#define H2H_DECODE_FLAG_SCHEME_SEEN	0x1
+
 /* http2/cache_http2_hpack.c */
 struct h2h_decode {
 	unsigned			magic;
 #define H2H_DECODE_MAGIC		0xd092bde4
 
+	int				flags;
 	h2_error			error;
 	enum vhd_ret_e			vhd_ret;
 	char				*out;
