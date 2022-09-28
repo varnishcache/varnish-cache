@@ -127,7 +127,7 @@ h2h_checkhdr(const struct http *hp, const char *b, size_t namelen, size_t len)
 }
 
 static h2_error
-h2h_addhdr(struct http *hp, char *b, size_t namelen, size_t len)
+h2h_addhdr(struct http *hp, char *b, size_t namelen, size_t len, int *flags)
 {
 	/* XXX: This might belong in cache/cache_http.c */
 	const char *b0;
@@ -188,9 +188,18 @@ h2h_addhdr(struct http *hp, char *b, size_t namelen, size_t len)
 			/* XXX: What to do about this one? (typically
 			   "http" or "https"). For now set it as a normal
 			   header, stripping the first ':'. */
+			if (*flags & H2H_DECODE_FLAG_SCHEME_SEEN) {
+				VSLb(hp->vsl, SLT_BogoHeader,
+				    "Duplicate pseudo-header %.*s%.*s",
+				    (int)namelen, b0,
+				    (int)(len > 20 ? 20 : len), b);
+				return (H2SE_PROTOCOL_ERROR);
+			}
+
 			b++;
 			len-=1;
 			n = hp->nhd;
+			*flags |= H2H_DECODE_FLAG_SCHEME_SEEN;
 
 			for (p = b + namelen, u = 0; u < len-namelen;
 			    p++, u++) {
@@ -380,7 +389,8 @@ h2h_decode_bytes(struct h2_sess *h2, const uint8_t *in, size_t in_l)
 			    d->out_u);
 			if (d->error)
 				break;
-			d->error = h2h_addhdr(hp, d->out, d->namelen, d->out_u);
+			d->error = h2h_addhdr(hp, d->out, d->namelen, d->out_u,
+			    &d->flags);
 			if (d->error)
 				break;
 			d->out[d->out_u++] = '\0'; /* Zero guard */
