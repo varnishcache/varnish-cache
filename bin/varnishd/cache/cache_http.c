@@ -65,73 +65,113 @@ const char H__Reason[]	= "\010:reason:";
  * A suitable algorithm can be found with `gperf`:
  *
  *	tr '" ,' '   ' < include/tbl/http_headers.h |
- *		awk '$1 == "H(" && $4 != "0" {print$2}' |
+ *		awk '$1 == "H(" {print $2}' |
  *		gperf --ignore-case
  *
  */
 
+#define GPERF_MIN_WORD_LENGTH 2
+#define GPERF_MAX_WORD_LENGTH 19
+#define GPERF_MAX_HASH_VALUE 79
+
 static const unsigned char http_asso_values[256] = {
-	39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
-	39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
-	39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
-	39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
-	39, 39, 39, 39, 39, 25, 39,  0, 20,  5, 39, 39, 39, 15,  0, 39,
-	10, 39,  0, 39, 15, 10, 39, 39,  0, 39, 39, 39, 39, 39, 39, 39,
-	39, 39, 39, 39, 39, 25, 39,  0, 20,  5, 39, 39, 39, 15,  0, 39,
-	10, 39,  0, 39, 15, 10, 39, 39,  0, 39, 39, 39, 39, 39, 39, 39,
-	39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
-	39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
-	39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
-	39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
-	39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
-	39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
-	39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39,
-	39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39
+	80, 80, 80, 80, 80, 80, 80, 80, 80, 80,
+	80, 80, 80, 80, 80, 80, 80, 80, 80, 80,
+	80, 80, 80, 80, 80, 80, 80, 80, 80, 80,
+	80, 80, 80, 80, 80, 80, 80, 80, 80, 80,
+	80, 80, 80, 80, 80, 80, 80, 80, 80, 80,
+	80, 80, 80,  0, 80, 80, 80, 80, 80, 80,
+	80, 80, 80, 80, 80,  5, 80, 20,  0,  0,
+	5, 10,  5,  5, 80,  0, 15,  0, 20, 80,
+	40, 80,  0, 35, 10, 20, 55, 45,  0,  0,
+	80, 80, 80, 80, 80, 80, 80,  5, 80, 20,
+	0,  0,  5, 10,  5,  5, 80,  0, 15,  0,
+	20, 80, 40, 80,  0, 35, 10, 20, 55, 45,
+	0,  0, 80, 80, 80, 80, 80, 80, 80, 80,
+	80, 80, 80, 80, 80, 80, 80, 80, 80, 80,
+	80, 80, 80, 80, 80, 80, 80, 80, 80, 80,
+	80, 80, 80, 80, 80, 80, 80, 80, 80, 80,
+	80, 80, 80, 80, 80, 80, 80, 80, 80, 80,
+	80, 80, 80, 80, 80, 80, 80, 80, 80, 80,
+	80, 80, 80, 80, 80, 80, 80, 80, 80, 80,
+	80, 80, 80, 80, 80, 80, 80, 80, 80, 80,
+	80, 80, 80, 80, 80, 80, 80, 80, 80, 80,
+	80, 80, 80, 80, 80, 80, 80, 80, 80, 80,
+	80, 80, 80, 80, 80, 80, 80, 80, 80, 80,
+	80, 80, 80, 80, 80, 80, 80, 80, 80, 80,
+	80, 80, 80, 80, 80, 80, 80, 80, 80, 80,
+	80, 80, 80, 80, 80, 80
 };
 
 static struct http_hdrflg {
 	char		*hdr;
 	unsigned	flag;
-} http_hdrflg[38 + 1] = {			// MAX_HASH_VALUE
-	{ NULL },
-	{ NULL },
-	{ H_TE },
-	{ H_Age },
-	{ NULL },
+} http_hdrflg[GPERF_MAX_HASH_VALUE + 1] = {
+	{ NULL }, { NULL }, { NULL }, { NULL },
+	{ H_Date },
 	{ H_Range },
 	{ NULL },
-	{ H_Upgrade },
-	{ H_If_Range },
-	{ NULL },
-	{ H_Connection },
-	{ NULL },
-	{ H_Trailer },
-	{ H_If_None_Match },
-	{ NULL },
-	{ NULL },
-	{ NULL },
-	{ H_Transfer_Encoding },
-	{ H_Proxy_Authenticate },
-	{ H_Proxy_Authorization },
+	{ H_Referer },
+	{ H_Age },
+	{ H_From },
 	{ H_Keep_Alive },
-	{ NULL },
-	{ NULL },
+	{ H_Retry_After },
+	{ H_TE },
+	{ H_If_Range },
+	{ H_ETag },
+	{ H_X_Forwarded_For },
+	{ H_Expect },
+	{ H_Trailer },
 	{ H_If_Match },
-	{ H_HTTP2_Settings },
-	{ NULL },
-	{ NULL },
-	{ NULL },
-	{ H_Content_Range },
+	{ H_Host },
+	{ H_Accept_Language },
+	{ H_Accept },
+	{ H_If_Modified_Since },
+	{ H_If_None_Match },
 	{ H_If_Unmodified_Since },
 	{ NULL },
+	{ H_Cookie },
+	{ H_Upgrade },
+	{ H_Last_Modified },
+	{ H_Accept_Charset },
+	{ H_Accept_Encoding },
+	{ H_Content_MD5 },
+	{ H_Content_Type },
+	{ H_Content_Range },
+	{ NULL }, { NULL },
+	{ H_Content_Language },
+	{ H_Transfer_Encoding },
+	{ H_Authorization },
+	{ H_Content_Length },
+	{ H_User_Agent },
+	{ H_Server },
+	{ H_Expires },
+	{ H_Location },
 	{ NULL },
-	{ H_If_Modified_Since },
+	{ H_Set_Cookie },
+	{ H_Content_Encoding },
+	{ H_Max_Forwards },
 	{ H_Cache_Control },
 	{ NULL },
+	{ H_Connection },
+	{ H_Pragma },
 	{ NULL },
+	{ H_Accept_Ranges },
+	{ H_HTTP2_Settings },
+	{ H_Allow },
+	{ H_Content_Location },
 	{ NULL },
+	{ H_Proxy_Authenticate },
+	{ H_Vary },
 	{ NULL },
-	{ H_Accept_Ranges }
+	{ H_WWW_Authenticate },
+	{ H_Warning },
+	{ H_Via },
+	{ NULL }, { NULL }, { NULL }, { NULL },
+	{ NULL }, { NULL }, { NULL }, { NULL },
+	{ NULL }, { NULL }, { NULL }, { NULL },
+	{ NULL }, { NULL }, { NULL },
+	{ H_Proxy_Authorization }
 };
 
 static struct http_hdrflg *
@@ -145,12 +185,12 @@ http_hdr_flags(const char *b, const char *e)
 	assert(b <= e);
 	u = (unsigned)(e - b);
 	assert(b + u == e);
-	if (u < 2 || u > 19)		// MIN_WORD_LENGTH & MAX_WORD_LENGTH
-		return(NULL);
-	if (u > 3)
-		u += http_asso_values[((const uint8_t*)b)[3]];
-	if (u > 38)			// MAX_HASH_VALUE
-		return(NULL);
+	if (u < GPERF_MIN_WORD_LENGTH || u > GPERF_MAX_WORD_LENGTH)
+		return (NULL);
+	u += http_asso_values[((const uint8_t *)b)[u - 1]] +
+	    http_asso_values[((const uint8_t *)b)[0]];
+	if (u > GPERF_MAX_HASH_VALUE)
+		return (NULL);
 	retval = &http_hdrflg[u];
 	if (retval->hdr == NULL)
 		return(NULL);
@@ -168,11 +208,9 @@ http_init_hdr(char *hdr, int flg)
 
 	hdr[0] = strlen(hdr + 1);
 	f = http_hdr_flags(hdr + 1, hdr + hdr[0]);
-	if (flg) {
-		AN(f);
-		assert(f->hdr == hdr);
-		f->flag = flg;
-	}
+	AN(f);
+	assert(f->hdr == hdr);
+	f->flag = flg;
 }
 
 void

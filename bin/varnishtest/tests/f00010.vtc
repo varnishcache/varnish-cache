@@ -1,0 +1,19 @@
+varnishtest "Do not allow critical headers to be marked hop-by-hop"
+
+varnish v1 -vcl {
+	backend default none;
+} -start
+
+client c1 {
+	txreq -hdr "Connection: Content-Length" -body "asdf"
+	rxresp
+	expect resp.status == 400
+	expect_close
+} -run
+
+client c2 {
+	txreq -hdr "Connection: Host"
+	rxresp
+	expect resp.status == 400
+	expect_close
+} -run
