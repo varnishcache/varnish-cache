@@ -2,15 +2,16 @@ varnishtest "Filter hop-by-hop headers out of h2 responses"
 
 server s1 {
 	rxreq
-	txresp
+	txresp -body "water"
 } -start
 
 varnish v1 -cliok "param.set feature +http2"
 varnish v1 -vcl+backend {
 	sub vcl_deliver {
 		set resp.http.Keep-Alive = "timeout=5, max=1000";
-		set resp.http.Connection = "other";
+		set resp.http.Connection = "other, Content-Length, another";
 		set resp.http.Other = "foo";
+		set resp.http.Another = "bar";
 	}
 } -start
 
@@ -21,5 +22,7 @@ client c1 {
 		expect resp.http.keep-alive == <undef>
 		expect resp.http.connection == <undef>
 		expect resp.http.other == <undef>
+		expect resp.http.another == <undef>
+		expect resp.http.Content-Length == 5
 	} -run
 } -run

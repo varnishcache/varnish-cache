@@ -718,17 +718,21 @@ http_DoConnection(struct http *hp)
 	AN(h);
 	while (http_split(&h, NULL, ",", &b, &e)) {
 		u = pdiff(b, e);
-		if (u == 5 && !strncasecmp(b, "close", u))
+		if (u == 5 && retval != SC_RX_BAD &&
+		    !strncasecmp(b, "close", u))
 			retval = SC_REQ_CLOSE;
-		if (u == 10 && !strncasecmp(b, "keep-alive", u))
+		if (u == 10 && retval != SC_RX_BAD &&
+		    !strncasecmp(b, "keep-alive", u))
 			retval = SC_NULL;
 
 		/* Refuse removal of well-known-headers if they would pass. */
 /*lint -save -e506 [constant value boolean] */
 #define HTTPH(a, x, c)						\
 		if (!((c) & HTTPH_R_PASS) &&			\
-		    strlen(a) == u && !strncasecmp(a, b, u))	\
-			return (SC_RX_BAD);
+		    strlen(a) == u && !strncasecmp(a, b, u)) {	\
+			retval = SC_RX_BAD;			\
+			continue;				\
+		}
 #include "tbl/http_headers.h"
 /*lint -restore */
 
