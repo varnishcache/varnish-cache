@@ -1,0 +1,48 @@
+varnishtest "Empty pseudo-headers"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -arg "-p feature=+http2" -vcl+backend {
+} -start
+
+client c1 {
+	txreq -url ""
+	rxresp
+	expect resp.status == 400
+} -run
+
+client c1 {
+	txreq -req ""
+	rxresp
+	expect resp.status == 400
+} -run
+
+client c1 {
+	txreq -proto ""
+	rxresp
+	expect resp.status == 400
+} -run
+
+client c1 {
+	stream 1 {
+		txreq -url ""
+		rxrst
+	} -run
+} -run
+
+client c1 {
+	stream 1 {
+		txreq -scheme ""
+		rxrst
+	} -run
+} -run
+
+client c1 {
+	stream 1 {
+		txreq -req ""
+		rxrst
+	} -run
+} -run
