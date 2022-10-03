@@ -38,8 +38,6 @@
 
 #include "cache/cache_varnishd.h"
 #include "cache/cache_filter.h"
-#include "vcc_interface.h"	// struct wrk_vpi
-
 
 #include "vsa.h"
 #include "vtim.h"
