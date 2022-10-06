@@ -679,7 +679,7 @@ HSH_Purge(struct worker *wrk, struct objhead *oh, vtim_real ttl_now,
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 
 	n_max = WS_ReserveLumps(wrk->aws, sizeof *ocp);
-	if (n_max < 2) {
+	if (n_max <= 2) {
 		/* No space on the workspace. Give it a stack buffer of 2
 		 * elements, which is the minimum for the algorithm
 		 * below. */
@@ -726,6 +726,8 @@ HSH_Purge(struct worker *wrk, struct objhead *oh, vtim_real ttl_now,
 			/* No eligible objcores found. We are finished. */
 			break;
 		}
+		if (n_max > 2)
+			WS_ReportSize(wrk->aws, n * sizeof *ocp);
 
 		j = n;
 		if (oc != NULL) {

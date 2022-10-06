@@ -162,12 +162,14 @@ ses_res_attr(struct sess *sp, enum sess_attr a, void **dst, ssize_t *szp)
 		return (0);
 	o = WS_ReservationOffset(sp->ws);
 	if (o >= SES_NOATTR_OFFSET) {
+		WS_ReportSize(sp->ws, 0);
 		WS_Release(sp->ws, 0);
 		return (0);
 	}
 	*dst = WS_Reservation(sp->ws);
 	*szp = sz;
 	sp->sattr[a] = (uint16_t)o;
+	WS_ReportSize(sp->ws, sz);
 	WS_Release(sp->ws, sz);
 	return (1);
 }
@@ -326,6 +328,7 @@ HTC_RxStuff(struct http_conn *htc, htc_complete_f *func,
 
 	if (l == r) {
 		/* Can't work with a zero size buffer */
+		WS_Report(htc->ws, htc->rxbuf_b);
 		WS_ReleaseP(htc->ws, htc->rxbuf_b);
 		return (HTC_S_OVERFLOW);
 	}
@@ -342,10 +345,12 @@ HTC_RxStuff(struct http_conn *htc, htc_complete_f *func,
 
 		hs = func(htc);
 		if (hs == HTC_S_OVERFLOW || hs == HTC_S_JUNK) {
+			WS_Report(htc->ws, htc->rxbuf_b);
 			WS_ReleaseP(htc->ws, htc->rxbuf_b);
 			return (hs);
 		}
 		if (hs == HTC_S_COMPLETE) {
+			WS_Report(htc->ws, htc->rxbuf_e);
 			WS_ReleaseP(htc->ws, htc->rxbuf_e);
 			/* Got it, run with it */
 			if (t1 != NULL && isnan(*t1))
@@ -379,6 +384,7 @@ HTC_RxStuff(struct http_conn *htc, htc_complete_f *func,
 		if (z <= 0) {
 			/* maxbytes reached but not HTC_S_COMPLETE. Return
 			 * overflow. */
+			WS_Report(htc->ws, htc->rxbuf_b);
 			WS_ReleaseP(htc->ws, htc->rxbuf_b);
 			return (HTC_S_OVERFLOW);
 		}
@@ -386,11 +392,13 @@ HTC_RxStuff(struct http_conn *htc, htc_complete_f *func,
 			tmo = 1e-3;
 		z = VTCP_read(*htc->rfd, htc->rxbuf_e, z, tmo);
 		if (z == 0 || z == -1) {
+			WS_Report(htc->ws, htc->rxbuf_b);
 			WS_ReleaseP(htc->ws, htc->rxbuf_b);
 			return (HTC_S_EOF);
 		} else if (z > 0)
 			htc->rxbuf_e += z;
 		else if (z == -2) {
+			WS_Report(htc->ws, htc->rxbuf_b);
 			WS_ReleaseP(htc->ws, htc->rxbuf_b);
 			if (hs == HTC_S_EMPTY)
 				return (HTC_S_IDLE);
@@ -530,6 +538,7 @@ SES_Wait(struct sess *sp, const struct transport *xp)
 	wp->idle = sp->t_idle;
 	wp->func = ses_handle;
 	wp->tmo = SESS_TMO(sp, timeout_idle);
+	WS_ReportSize(sp->ws, sizeof *wp);
 	if (Wait_Enter(pp->waiter, wp))
 		SES_Delete(sp, SC_PIPE_OVERFLOW, NAN);
 }

@@ -111,6 +111,7 @@ WS_Printf(struct ws *ws, const char *fmt, ...)
 		WS_MarkOverflow(ws);
 		p = NULL;
 	} else {
+		WS_ReportSize(ws, v + 1);
 		WS_Release(ws, v + 1);
 	}
 	return (p);
@@ -149,15 +150,18 @@ char *
 WS_VSB_finish(struct vsb *vsb, struct ws *ws, size_t *szp)
 {
 	char *p;
+	size_t sz;
 
 	AN(vsb);
 	WS_Assert(ws);
 	if (!VSB_finish(vsb)) {
 		p = VSB_data(vsb);
 		if (p == ws->f) {
-			WS_Release(ws, VSB_len(vsb) + 1);
+			sz = VSB_len(vsb) + 1;
+			WS_ReportSize(ws, sz);
+			WS_Release(ws, sz);
 			if (szp != NULL)
-				*szp = VSB_len(vsb);
+				*szp = sz - 1;
 			VSB_fini(vsb);
 			return (p);
 		}

@@ -129,13 +129,20 @@ struct lock { void *priv; };	// Opaque
 #define WS_ID_SIZE 4
 
 struct ws {
-	unsigned		magic;
-#define WS_MAGIC		0x35fac554
+	uint16_t		magic;
+#define WS_MAGIC		0x35fa
+
+	// h has been reported during current reservation
+	unsigned		reported:1;
+	// have seen reservations without reporting
+	unsigned		at_least:1;
+
 	char			id[WS_ID_SIZE];	/* identity */
 	char			*s;		/* (S)tart of buffer */
 	char			*f;		/* (F)ree/front pointer */
 	char			*r;		/* (R)eserved length */
 	char			*e;		/* (E)nd of buffer */
+	const char		*h;		/* (H)igh water */
 };
 
 /*--------------------------------------------------------------------
@@ -839,6 +846,34 @@ WS_ReserveLumps(struct ws *ws, size_t sz)
 
 	AN(sz);
 	return (WS_ReserveAll(ws) / sz);
+}
+
+static inline void
+WS_Report(struct ws *ws, const char *ptr)
+{
+	AN(ws->r);
+	ws->reported = 1;
+
+	if (ptr > ws->h)
+		ws->h = ptr;
+}
+
+static inline void
+WS_ReportSize(struct ws *ws, size_t sz)
+{
+	WS_Report(ws, ws->r + sz);
+}
+
+static inline size_t
+WS_Highwater(const struct ws *ws)
+{
+	return (ws->h ? ws->h - ws->s : 0);
+}
+
+static inline int
+WS_Atleast(const struct ws *ws)
+{
+	return (ws->at_least != 0);
 }
 
 /* cache_ws_common.c */

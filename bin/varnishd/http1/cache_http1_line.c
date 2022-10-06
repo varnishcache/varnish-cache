@@ -59,6 +59,7 @@ struct v1l {
 	struct iovec		*iov;
 	unsigned		siov;
 	unsigned		niov;
+	unsigned		hiov;	// "high" (used)
 	ssize_t			liov;
 	ssize_t			cliov;
 	unsigned		ciov;	/* Chunked header marker */
@@ -121,6 +122,8 @@ V1L_Open(struct worker *wrk, struct ws *ws, int *fd, struct vsl_log *vsl,
 	v1l->werr = SC_NULL;
 	wrk->v1l = v1l;
 
+	// Actual reporting is in V1L_Close
+	WS_ReportSize(v1l->ws, 0);
 	WS_Release(ws, u * sizeof(struct iovec));
 }
 
@@ -131,6 +134,7 @@ V1L_Close(struct worker *wrk, uint64_t *cnt)
 	struct ws *ws;
 	uintptr_t ws_snap;
 	stream_close_t sc;
+	size_t used;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AN(cnt);
@@ -139,8 +143,13 @@ V1L_Close(struct worker *wrk, uint64_t *cnt)
 	*cnt = v1l->cnt;
 	ws = v1l->ws;
 	ws_snap = v1l->ws_snap;
+	used = sizeof *v1l + sizeof(struct iovec) * v1l->hiov;
 	ZERO_OBJ(v1l, sizeof *v1l);
 	WS_Rollback(ws, ws_snap);
+	/* Used ws reporting after the fact */
+	WS_ReserveAll(ws);
+	WS_ReportSize(ws, used);
+	WS_Release(ws, 0);
 	return (sc);
 }
 
@@ -211,6 +220,9 @@ V1L_Flush(const struct worker *wrk)
 				i = -1;
 				break;
 			}
+
+			if (v1l->niov > v1l->hiov)
+				v1l->hiov = v1l->niov;
 
 			i = writev(*v1l->wfd, v1l->iov, v1l->niov);
 			if (i > 0)

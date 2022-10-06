@@ -467,6 +467,7 @@ vca_make_session(struct worker *wrk, void *arg)
 	req->htc->rfd = &sp->fd;
 
 	SES_SetTransport(wrk, sp, req, wa->acceptlsock->transport);
+	WS_ReportSize(wrk->aws, 0);	// XXX correct?
 	WS_Release(wrk->aws, 0);
 }
 
