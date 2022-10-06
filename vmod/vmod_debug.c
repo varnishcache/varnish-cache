@@ -40,6 +40,8 @@
 #include "cache/cache_filter.h"
 
 #include "vsa.h"
+#include "vss.h"
+#include "vtcp.h"
 #include "vtim.h"
 #include "vcc_debug_if.h"
 #include "VSC_debug.h"
@@ -1457,4 +1459,49 @@ xyzzy_caller_xsub(VRT_CTX, struct VPFX(debug_caller) *caller)
 	AN(caller->sub);
 
 	return (caller->sub);
+}
+
+struct resolve_priv {
+	struct vsb vsb[1];
+	const char *fail_port;
+	const char *errp[1];
+};
+
+static int v_matchproto_(vus_resolved_f)
+resolve_cb(void *priv, const struct suckaddr *sa)
+{
+	struct resolve_priv *p;
+	char abuf[VTCP_ADDRBUFSIZE], pbuf[VTCP_PORTBUFSIZE];
+
+	p = (struct resolve_priv *)priv;
+	CHECK_OBJ_NOTNULL(p->vsb, VSB_MAGIC);
+	AN(sa);
+	VTCP_name(sa, abuf, sizeof abuf, pbuf, sizeof pbuf);
+	if (p->fail_port != NULL && !strcmp(p->fail_port, pbuf)) {
+		*(p->errp) = "vmod-debug: fail_port";
+		return (-1);
+	}
+	VSB_printf(p->vsb, "%s%s:%s", VSB_len(p->vsb) ? ", " : "", abuf, pbuf);
+	return (0);
+}
+
+VCL_STRING
+xyzzy_resolve_range(VRT_CTX, struct VARGS(resolve_range) *args)
+{
+	struct resolve_priv p;
+	const char *def_port;
+	int ret;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	if (args->addr == NULL)
+		return ("vmod-debug: s was NULL");
+	memset(&p, 0, sizeof p);
+	WS_VSB_new(p.vsb, ctx->ws);
+	p.fail_port = args->valid_fail_port ? args->fail_port : NULL;
+	def_port = args->valid_def_port ? args->def_port : NULL;
+	ret = VSS_resolver_range(args->addr, def_port, resolve_cb, &p, p.errp);
+	if (ret)
+		VSB_printf(p.vsb, "%s%s", VSB_len(p.vsb) ? ", " : "",
+		    *(p.errp));
+	return (WS_VSB_finish(p.vsb, ctx->ws, NULL));
 }

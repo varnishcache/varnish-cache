@@ -403,6 +403,13 @@ $Method VOID .call()
 
 $Method SUB .xsub()
 
+$Function STRING resolve_range(STRING addr, [STRING def_port], [STRING fail_port])
+
+Resolve addr and return the result. If addr has a port range, all successfully
+resolved sockets are retuned in a comma delimited string. If fail_port is
+specified, the resolution callback will fail for that port, and the reason will
+be appended to the return value.
+
 DEPRECATED
 ==========
 

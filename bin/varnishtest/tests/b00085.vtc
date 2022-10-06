@@ -1,0 +1,156 @@
+varnishtest "Test VSS_resolver_range"
+
+varnish v1 -vcl {
+	backend default none;
+
+	import debug;
+
+	sub vcl_recv {
+		return (synth(200, debug.resolve_range(req.http.resolve,
+		    req.http.def-port, req.http.fail-port)));
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.reason == "vmod-debug: s was NULL"
+
+	# Bad ranges
+
+	txreq -hdr "resolve: localhost:-"
+	rxresp
+	expect resp.reason == "Range start missing"
+
+	txreq -hdr "resolve: localhost:foo-"
+	rxresp
+	expect resp.reason == "Range start invalid"
+
+	txreq -hdr "resolve: localhost:foo80-"
+	rxresp
+	expect resp.reason == "Range start invalid"
+
+	txreq -hdr "resolve: localhost:80foo-"
+	rxresp
+	expect resp.reason == "Range start invalid"
+
+	txreq -hdr "resolve: localhost:80-"
+	rxresp
+	expect resp.reason == "Range end missing"
+
+	txreq -hdr "resolve: localhost:80-foo"
+	rxresp
+	expect resp.reason == "Range end invalid"
+
+	txreq -hdr "resolve: localhost:80-foo81"
+	rxresp
+	expect resp.reason == "Range end invalid"
+
+	txreq -hdr "resolve: localhost:80-81foo"
+	rxresp
+	expect resp.reason == "Range end invalid"
+
+	txreq -hdr "resolve: localhost:65535-65536"
+	rxresp
+	expect resp.reason == "Range end invalid"
+
+	txreq -hdr "resolve: localhost:80--81"
+	rxresp
+	expect resp.reason == "Only one hyphen allowed"
+
+	txreq -hdr "resolve: localhost:80-81-"
+	rxresp
+	expect resp.reason == "Only one hyphen allowed"
+
+	txreq -hdr "resolve: localhost:81-80"
+	rxresp
+	expect resp.reason == "Range start higher than range end"
+
+	txreq -hdr "resolve: localhost:0-1"
+	rxresp
+	expect resp.reason == "Range start cannot be 0"
+
+	# No port
+
+	txreq -hdr "resolve: 127.0.0.1"
+	rxresp
+	expect resp.reason == "127.0.0.1:0"
+
+	txreq -hdr "resolve: 127.0.0.1" -hdr "def-port: 8000"
+	rxresp
+	expect resp.reason == "127.0.0.1:8000"
+
+	txreq -hdr "resolve: [::1]" -hdr "def-port: 8000"
+	rxresp
+	expect resp.reason == "::1:8000"
+
+	txreq -hdr "resolve: ::1" -hdr "def-port: 8000"
+	rxresp
+	expect resp.reason == "::1:8000"
+
+	# No range
+
+	txreq -hdr "resolve: 127.0.0.1:0"
+	rxresp
+	expect resp.reason == "127.0.0.1:0"
+
+	txreq -hdr "resolve: 127.0.0.1:http"
+	rxresp
+	expect resp.reason == "127.0.0.1:80"
+
+	txreq -hdr "resolve: 127.0.0.1:8000"
+	rxresp
+	expect resp.reason == "127.0.0.1:8000"
+
+	txreq -hdr "resolve: 127.0.0.1:8000" -hdr "def-port: 8001"
+	rxresp
+	expect resp.reason == "127.0.0.1:8000"
+
+	# Different address formats
+
+	txreq -hdr "resolve: 127.0.0.1:80-81"
+	rxresp
+	expect resp.reason == "127.0.0.1:80, 127.0.0.1:81"
+
+	txreq -hdr "resolve: 127.0.0.1 80-81"
+	rxresp
+	expect resp.reason == "127.0.0.1:80, 127.0.0.1:81"
+
+	txreq -hdr "resolve: [::1]:80-81"
+	rxresp
+	expect resp.reason == "::1:80, ::1:81"
+
+	txreq -hdr "resolve: [::1] 80-81"
+	rxresp
+	expect resp.reason == "::1:80, ::1:81"
+
+	txreq -hdr "resolve: [::]:80-81"
+	rxresp
+	expect resp.reason == ":::80, :::81"
+
+	txreq -hdr "resolve: [::] 80-81"
+	rxresp
+	expect resp.reason == ":::80, :::81"
+
+	txreq -hdr "resolve: [::1]:80-81"
+	rxresp
+	expect resp.reason == "::1:80, ::1:81"
+
+	txreq -hdr "resolve: ::1 80-81"
+	rxresp
+	expect resp.reason == "::1:80, ::1:81"
+
+	# Fail ports
+
+	txreq -hdr "resolve: 127.0.0.1" -hdr "def-port: 80" -hdr "fail-port: 80"
+	rxresp
+	expect resp.reason == "vmod-debug: fail_port"
+
+	txreq -hdr "resolve: 127.0.0.1:80-81" -hdr "fail-port: 80"
+	rxresp
+	expect resp.reason == "vmod-debug: fail_port"
+
+	txreq -hdr "resolve: 127.0.0.1:80-82" -hdr "fail-port: 81"
+	rxresp
+	expect resp.reason == "127.0.0.1:80, vmod-debug: fail_port"
+} -run
