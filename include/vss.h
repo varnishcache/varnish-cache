@@ -36,6 +36,8 @@ int VSS_resolver(const char *addr, const char *def_port, vss_resolved_f *func,
    void *priv, const char **err);
 int VSS_resolver_socktype(const char *addr, const char *def_port,
     vss_resolved_f *func, void *priv, const char **err, int socktype);
+int VSS_resolver_range(const char *addr, const char *def_port,
+    vss_resolved_f *func, void *priv, const char **errp);
 const struct suckaddr *VSS_ResolveOne(void *dst,
     const char *addr, const char *port,
     int family, int socktype, int flags);
