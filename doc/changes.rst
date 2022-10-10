@@ -32,6 +32,16 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
+Varnish Cache 7.1.2 (unreleased)
+================================
+
+* Attempts to mark well-known headers like `Content-Length` and `Host`
+  hop-by-hop through a `Connection`-header will now cause a 400 "Bad
+  request" response. (VSV00010_)
+
+.. _VSV00010: https://varnish-cache.org/security/VSV00010.html
+
+================================
 Varnish Cache 7.1.1 (2022-08-09)
 ================================
 
