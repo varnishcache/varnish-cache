@@ -149,7 +149,7 @@ vmod_log(VRT_CTX, VCL_STRANDS s)
 	if (ctx->vsl != NULL)
 		VSLbs(ctx->vsl, SLT_VCL_Log, s);
 	else
-		VSLs(SLT_VCL_Log, 0, s);
+		VSLs(SLT_VCL_Log, NO_VXID, s);
 }
 
 /* XXX use vsyslog() ? */

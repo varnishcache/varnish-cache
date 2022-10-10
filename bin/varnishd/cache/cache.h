@@ -690,6 +690,7 @@ extern const char H__Reason[];
 #define http_range_at(str, tok, l)	http_tok_at(str, #tok, l)
 
 /* cache_main.c */
+#define NO_VXID (0U)
 #define VXID(u) ((u) & VSL_IDENTMASK)
 uint32_t VXID_Get(const struct worker *, uint32_t marker);
 extern pthread_key_t witness_key;

@@ -75,7 +75,7 @@ vwp_extend_pollspace(struct vwp *vwp)
 	else
 		inc = (1<<16);
 
-	VSL(SLT_Debug, 0, "Acceptor poll space increased by %zu to %zu",
+	VSL(SLT_Debug, NO_VXID, "Acceptor poll space increased by %zu to %zu",
 	    inc, vwp->npoll + inc);
 
 	vwp->pollfd = realloc(vwp->pollfd,

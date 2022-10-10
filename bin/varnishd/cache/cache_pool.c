@@ -207,7 +207,7 @@ pool_poolherder(void *priv)
 				nwq--;
 			Lck_Unlock(&pool_mtx);
 			if (!pp->die) {
-				VSL(SLT_Debug, 0, "XXX Kill Pool %p", pp);
+				VSL(SLT_Debug, NO_VXID, "XXX Kill Pool %p", pp);
 				pp->die = 1;
 				VCA_DestroyPool(pp);
 				AZ(pthread_cond_signal(&pp->herder_cond));

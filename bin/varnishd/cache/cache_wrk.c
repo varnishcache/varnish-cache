@@ -152,12 +152,12 @@ WRK_Thread(struct pool *qp, size_t stacksize, unsigned thread_workspace)
 	VPI_wrk_init(w, vpi, sizeof vpi);
 	AN(w->vpi);
 
-	VSL(SLT_WorkThread, 0, "%p start", w);
+	VSL(SLT_WorkThread, NO_VXID, "%p start", w);
 
 	Pool_Work_Thread(qp, w);
 	AZ(w->pool);
 
-	VSL(SLT_WorkThread, 0, "%p end", w);
+	VSL(SLT_WorkThread, NO_VXID, "%p end", w);
 	if (w->wpriv->vcl != NULL)
 		VCL_Rel(&w->wpriv->vcl);
 	AZ(pthread_cond_destroy(&w->cond));
@@ -313,7 +313,7 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum task_prio prio)
 		retval = reqpoolfail & 1;
 		reqpoolfail >>= 1;
 		if (retval) {
-			VSL(SLT_Debug, 0,
+			VSL(SLT_Debug, NO_VXID,
 			    "Failing due to reqpoolfail (next= 0x%jx)",
 			    reqpoolfail);
 			return (retval);
@@ -549,7 +549,7 @@ pool_breed(struct pool *qp)
 	errno = pthread_create(&tp, &tp_attr, pool_thread, pi);
 	if (errno) {
 		FREE_OBJ(pi);
-		VSL(SLT_Debug, 0, "Create worker thread failed %d %s",
+		VSL(SLT_Debug, NO_VXID, "Create worker thread failed %d %s",
 		    errno, VAS_errtxt(errno));
 		Lck_Lock(&pool_mtx);
 		VSC_C_main->threads_failed++;
@@ -626,7 +626,7 @@ pool_herder(void *priv)
 			dq = pp->ndequeued;
 			dqt = VTIM_mono();
 		} else if (VTIM_mono() - dqt > cache_param->wthread_watchdog) {
-			VSL(SLT_Error, 0,
+			VSL(SLT_Error, NO_VXID,
 			    "Pool Herder: Queue does not move ql=%u dt=%f",
 			    pp->lqueue, VTIM_mono() - dqt);
 			WRONG("Worker Pool Queue does not move");
@@ -756,7 +756,7 @@ WRK_Log(enum VSL_tag_e tag, const char *fmt, ...)
 	if (wrk != NULL && wrk->vsl != NULL)
 		VSLbv(wrk->vsl, tag, fmt, ap);
 	else
-		VSLv(tag, 0, fmt, ap);
+		VSLv(tag, NO_VXID, fmt, ap);
 	va_end(ap);
 }
 

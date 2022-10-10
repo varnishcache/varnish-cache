@@ -89,7 +89,7 @@ sharddir_backend(const struct sharddir *shardd, unsigned id)
 #define SHDBG(flag, shardd, ...)					\
 	do {								\
 		if ((shardd)->debug_flags & (flag))			\
-			VSL(SLT_Debug, 0, "vmod_directors: shard: "	\
+			VSL(SLT_Debug, NO_VXID, "vmod_directors: shard: " \
 			    __VA_ARGS__);				\
 	} while (0)
 

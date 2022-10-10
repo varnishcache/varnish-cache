@@ -86,7 +86,7 @@ sharddir_log(struct vsl_log *vsl, enum VSL_tag_e tag,  const char *fmt, ...)
 	if (vsl != NULL)
 		VSLbv(vsl, tag, fmt, ap);
 	else
-		VSLv(tag, 0, fmt, ap);
+		VSLv(tag, NO_VXID, fmt, ap);
 	va_end(ap);
 }
 

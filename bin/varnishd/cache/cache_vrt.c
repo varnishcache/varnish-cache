@@ -125,7 +125,7 @@ VPI_acl_log(VRT_CTX, const char *msg)
 	if (ctx->vsl != NULL)
 		VSLbs(ctx->vsl, SLT_VCL_acl, TOSTRAND(msg));
 	else
-		VSL(SLT_VCL_acl, 0, "%s", msg);
+		VSL(SLT_VCL_acl, NO_VXID, "%s", msg);
 }
 
 int

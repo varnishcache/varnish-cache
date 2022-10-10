@@ -75,7 +75,7 @@ VPI_count(VRT_CTX, unsigned u)
 		    ctx->vcl->loaded_name, u, ctx->vcl->conf->ref[u].source,
 		    ctx->vcl->conf->ref[u].line, ctx->vcl->conf->ref[u].pos);
 	else
-		VSL(SLT_VCL_trace, 0, "%s %u %u.%u.%u",
+		VSL(SLT_VCL_trace, NO_VXID, "%s %u %u.%u.%u",
 		    ctx->vcl->loaded_name, u, ctx->vcl->conf->ref[u].source,
 		    ctx->vcl->conf->ref[u].line, ctx->vcl->conf->ref[u].pos);
 }

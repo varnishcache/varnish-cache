@@ -386,7 +386,7 @@ obj_cb(struct worker *wrk, void *priv, struct objcore *oc, unsigned event)
 	}
 
 	/* We cannot trust %p to be 0x... format as expected by m00021.vtc */
-	VSL(SLT_Debug, 0, "Object Event: %s 0x%jx", what,
+	VSL(SLT_Debug, NO_VXID, "Object Event: %s 0x%jx", what,
 	    (intmax_t)(uintptr_t)oc);
 }
 
@@ -400,7 +400,7 @@ xyzzy_register_obj_events(VRT_CTX, struct vmod_priv *priv)
 	AZ(priv_vcl->obj_cb);
 	priv_vcl->obj_cb = ObjSubscribeEvents(obj_cb, priv_vcl,
 		OEV_INSERT|OEV_EXPIRE);
-	VSL(SLT_Debug, 0, "Subscribed to Object Events");
+	VSL(SLT_Debug, NO_VXID, "Subscribed to Object Events");
 }
 
 VCL_VOID v_matchproto_(td_debug_fail)
@@ -529,7 +529,7 @@ event_warm(VRT_CTX, const struct vmod_priv *priv)
 	const char *vcl_name = VCL_Name(ctx->vcl);
 
 	// Using VSLs for coverage
-	VSLs(SLT_Debug, 0, TOSTRANDS(2, vcl_name, ": VCL_EVENT_WARM"));
+	VSLs(SLT_Debug, NO_VXID, TOSTRANDS(2, vcl_name, ": VCL_EVENT_WARM"));
 
 	AN(ctx->msg);
 	if (cache_param->max_esi_depth == 42) {
@@ -590,7 +590,7 @@ event_cold(VRT_CTX, const struct vmod_priv *priv)
 
 	CAST_OBJ_NOTNULL(priv_vcl, priv->priv, PRIV_VCL_MAGIC);
 
-	VSL(SLT_Debug, 0, "%s: VCL_EVENT_COLD", VCL_Name(ctx->vcl));
+	VSL(SLT_Debug, NO_VXID, "%s: VCL_EVENT_COLD", VCL_Name(ctx->vcl));
 
 	VRT_DelDirector(&priv_vcl->be);
 
@@ -833,7 +833,7 @@ mylog(struct vsl_log *vsl, enum VSL_tag_e tag,  const char *fmt, ...)
 	if (vsl != NULL)
 		VSLbv(vsl, tag, fmt, ap);
 	else
-		VSLv(tag, 0, fmt, ap);
+		VSLv(tag, NO_VXID, fmt, ap);
 	va_end(ap);
 }
 

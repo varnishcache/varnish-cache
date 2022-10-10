@@ -179,7 +179,8 @@ VBP_Update_Backend(struct vbp_target *vt)
 	vt->backend->sick = i;
 
 	AN(vt->backend->vcl_name);
-	VSL(SLT_Backend_health, 0, "%s %s %s %s %u %u %u %.6f %.6f \"%s\"",
+	VSL(SLT_Backend_health, NO_VXID,
+	    "%s %s %s %s %u %u %u %.6f %.6f \"%s\"",
 	    vt->backend->vcl_name, chg ? "Went" : "Still",
 	    i ? "sick" : "healthy", bits,
 	    vt->good, vt->threshold, vt->window,

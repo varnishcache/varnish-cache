@@ -81,7 +81,7 @@ Lck_Witness_Lock(const struct ilck *il, const char *p, int l, const char *try)
 	bprintf(t, "%d", l);
 	strcat(q, t);
 	if (emit)
-		VSL(SLT_Witness, 0, "%s", q);
+		VSL(SLT_Witness, NO_VXID, "%s", q);
 }
 
 static void
@@ -98,7 +98,7 @@ Lck_Witness_Unlock(const struct ilck *il)
 	else
 		*r++ = '\0';
 	if (memcmp(r, il->w, strlen(il->w)))
-		VSL(SLT_Witness, 0, "Unlock %s @ %s <%s>", il->w, r, q);
+		VSL(SLT_Witness, NO_VXID, "Unlock %s @ %s <%s>", il->w, r, q);
 	else
 		*r = '\0';
 }

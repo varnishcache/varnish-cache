@@ -241,7 +241,7 @@ EXP_Rearm(struct objcore *oc, vtim_real now,
 
 	when = EXP_WHEN(oc);
 
-	VSL(SLT_ExpKill, 0, "EXP_Rearm p=%p E=%.6f e=%.6f f=0x%x", oc,
+	VSL(SLT_ExpKill, NO_VXID, "EXP_Rearm p=%p E=%.6f e=%.6f f=0x%x", oc,
 	    oc->timer_when, when, oc->flags);
 
 	if (when < oc->t_origin || when < oc->timer_when) {
