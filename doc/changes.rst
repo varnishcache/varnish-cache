@@ -32,7 +32,7 @@ individual releases. These documents are updated as part of the
 release process.
 
 ================================
-Varnish Cache 7.2.1 (unreleased)
+Varnish Cache 7.2.1 (2022-11-08)
 ================================
 
 * Attempts to mark well-known headers like `Content-Length` and `Host`
