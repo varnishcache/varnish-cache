@@ -269,7 +269,7 @@ vca_sock_opt_set(const struct listen_sock *ls, const struct sess *sp)
 {
 	struct conn_heritage *ch;
 	struct sock_opt *so;
-	unsigned vxid;
+	vxid_t vxid;
 	int n, sock;
 
 	CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
@@ -280,7 +280,7 @@ vca_sock_opt_set(const struct listen_sock *ls, const struct sess *sp)
 		vxid = sp->vxid;
 	} else {
 		sock = ls->sock;
-		vxid = 0;
+		vxid = NO_VXID;
 	}
 
 	for (n = 0; n < n_sock_opts; n++) {
@@ -559,7 +559,7 @@ vca_accept_task(struct worker *wrk, void *arg)
 				    lport, VTCP_PORTBUFSIZE);
 			}
 
-			VSL(SLT_SessError, 0, "%s %s %s %d %d \"%s\"",
+			VSL(SLT_SessError, NO_VXID, "%s %s %s %d %d \"%s\"",
 			    wa.acceptlsock->name, laddr, lport,
 			    ls->sock, i, VAS_errtxt(i));
 			(void)Pool_TrySumstat(wrk);
@@ -587,7 +587,7 @@ vca_accept_task(struct worker *wrk, void *arg)
 
 	}
 
-	VSL(SLT_Debug, 0, "XXX Accept thread dies %p", ps);
+	VSL(SLT_Debug, NO_VXID, "XXX Accept thread dies %p", ps);
 	FREE_OBJ(ps);
 }
 
@@ -690,7 +690,7 @@ ccf_start(struct cli *cli, const char * const *av, void *priv)
 		assert (ls->sock > 0);	// We know where stdin is
 		if (cache_param->tcp_fastopen &&
 		    VTCP_fastopen(ls->sock, cache_param->listen_depth))
-			VSL(SLT_Error, 0,
+			VSL(SLT_Error, NO_VXID,
 			    "Kernel TCP Fast Open: sock=%d, errno=%d %s",
 			    ls->sock, errno, VAS_errtxt(errno));
 		if (listen(ls->sock, cache_param->listen_depth)) {
@@ -706,7 +706,7 @@ ccf_start(struct cli *cli, const char * const *av, void *priv)
 		ls->test_heritage = 1;
 		vca_sock_opt_set(ls, NULL);
 		if (cache_param->accept_filter && VTCP_filter_http(ls->sock))
-			VSL(SLT_Error, 0,
+			VSL(SLT_Error, NO_VXID,
 			    "Kernel filtering: sock=%d, errno=%d %s",
 			    ls->sock, errno, VAS_errtxt(errno));
 	}

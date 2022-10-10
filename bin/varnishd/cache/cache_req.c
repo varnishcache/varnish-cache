@@ -55,7 +55,7 @@ Req_AcctLogCharge(struct VSC_main_wrk *ds, struct req *req)
 
 	a = &req->acct;
 
-	if (req->vsl->wid && !(req->res_mode & RES_PIPE)) {
+	if (!IS_NO_VXID(req->vsl->wid) && !(req->res_mode & RES_PIPE)) {
 		VSLb(req->vsl, SLT_ReqAcct, "%ju %ju %ju %ju %ju %ju",
 		    (uintmax_t)a->req_hdrbytes,
 		    (uintmax_t)a->req_bodybytes,
@@ -194,7 +194,7 @@ Req_Release(struct req *req)
 #include "tbl/acct_fields_req.h"
 
 	AZ(req->vcl);
-	if (req->vsl->wid)
+	if (!IS_NO_VXID(req->vsl->wid))
 		VSL_End(req->vsl);
 #ifdef ENABLE_WORKSPACE_EMULATOR
 	WS_Rollback(req->ws, 0);
@@ -262,12 +262,12 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 		VCL_Recache(wrk, &req->vcl);
 
 	/* Charge and log byte counters */
-	if (req->vsl->wid) {
+	if (!IS_NO_VXID(req->vsl->wid)) {
 		Req_AcctLogCharge(wrk->stats, req);
-		if (req->vsl->wid != sp->vxid)
+		if (!IS_SAME_VXID(req->vsl->wid, sp->vxid))
 			VSL_End(req->vsl);
 		else
-			req->vsl->wid = 0; /* ending an h2 stream 0 */
+			req->vsl->wid = NO_VXID; /* ending an h2 stream 0 */
 	}
 
 	if (!isnan(req->t_prev) && req->t_prev > 0. && req->t_prev > sp->t_idle)

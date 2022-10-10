@@ -1113,7 +1113,7 @@ cnt_diag(struct req *req, const char *state)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 	VSLb(req->vsl,  SLT_Debug, "vxid %u STP_%s sp %p vcl %p",
-	    req->vsl->wid, state, req->sp, req->vcl);
+	    req->vsl->wid.vxid, state, req->sp, req->vcl);	// XXX_VXID
 	VSL_Flush(req->vsl, 0);
 }
 
@@ -1160,7 +1160,7 @@ CNT_Request(struct req *req)
 	    req->req_step == R_STP_LOOKUP ||
 	    req->req_step == R_STP_TRANSPORT);
 
-	AN(req->vsl->wid & VSL_CLIENTMARKER);
+	AN(VXID_TAG(req->vsl->wid) & VSL_CLIENTMARKER);
 	AN(req->vcl);
 
 	for (nxt = REQ_FSM_MORE; nxt == REQ_FSM_MORE; ) {
@@ -1192,7 +1192,7 @@ CNT_Request(struct req *req)
 				VCL_Recache(wrk, &req->top->vcl0);
 		}
 		VCL_TaskLeave(ctx, req->privs);
-		AN(req->vsl->wid);
+		assert(!IS_NO_VXID(req->vsl->wid));
 		VRB_Free(req);
 		VRT_Assign_Backend(&req->director_hint, NULL);
 		req->wrk = NULL;

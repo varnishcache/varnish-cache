@@ -57,6 +57,20 @@
 
 /*--------------------------------------------------------------------*/
 
+struct vxids {
+	uint32_t	vxid;
+};
+
+typedef struct vxids vxid_t;
+
+#define NO_VXID ((struct vxids){0})
+#define IS_NO_VXID(x) ((x).vxid == 0)
+#define VXID_TAG(x) ((x).vxid & (VSL_CLIENTMARKER|VSL_BACKENDMARKER))
+#define VXID(u) ((u.vxid) & VSL_IDENTMASK)
+#define IS_SAME_VXID(x, y) ((x).vxid == (y).vxid)
+
+/*--------------------------------------------------------------------*/
+
 struct body_status {
 	const char		*name;
 	int			nbr;
@@ -179,9 +193,9 @@ struct acct_bereq {
 /*--------------------------------------------------------------------*/
 
 struct vsl_log {
-	uint32_t                *wlb, *wlp, *wle;
-	unsigned                wlr;
-	unsigned                wid;
+	uint32_t		*wlb, *wlp, *wle;
+	unsigned		wlr;
+	vxid_t			wid;
 };
 
 /*--------------------------------------------------------------------*/
@@ -557,7 +571,7 @@ struct sess {
 	struct listen_sock	*listen_sock;
 	int			refcnt;
 	int			fd;
-	uint32_t		vxid;
+	vxid_t			vxid;
 
 	struct lock		mtx;
 
@@ -690,9 +704,7 @@ extern const char H__Reason[];
 #define http_range_at(str, tok, l)	http_tok_at(str, #tok, l)
 
 /* cache_main.c */
-#define NO_VXID (0U)
-#define VXID(u) ((u) & VSL_IDENTMASK)
-uint32_t VXID_Get(const struct worker *, uint32_t marker);
+vxid_t VXID_Get(const struct worker *, uint32_t marker);
 extern pthread_key_t witness_key;
 
 /* cache_lck.c */
@@ -761,10 +773,10 @@ ssize_t VRB_Iterate(struct worker *, struct vsl_log *, struct req *,
 const char *SES_Get_String_Attr(const struct sess *sp, enum sess_attr a);
 
 /* cache_shmlog.c */
-void VSLv(enum VSL_tag_e tag, uint32_t vxid, const char *fmt, va_list va);
-void VSL(enum VSL_tag_e tag, uint32_t vxid, const char *fmt, ...)
+void VSLv(enum VSL_tag_e tag, vxid_t vxid, const char *fmt, va_list va);
+void VSL(enum VSL_tag_e tag, vxid_t vxid, const char *fmt, ...)
     v_printflike_(3, 4);
-void VSLs(enum VSL_tag_e tag, uint32_t vxid, const struct strands *s);
+void VSLs(enum VSL_tag_e tag, vxid_t vxid, const struct strands *s);
 void VSLbv(struct vsl_log *, enum VSL_tag_e tag, const char *fmt, va_list va);
 void VSLb(struct vsl_log *, enum VSL_tag_e tag, const char *fmt, ...)
     v_printflike_(3, 4);

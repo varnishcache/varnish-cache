@@ -133,7 +133,7 @@ ved_include(struct req *preq, const char *src, const char *host,
 	req = Req_New(sp);
 	AN(req);
 	THR_SetRequest(req);
-	AZ(req->vsl->wid);
+	assert(IS_NO_VXID(req->vsl->wid));
 	req->vsl->wid = VXID_Get(wrk, VSL_CLIENTMARKER);
 
 	wrk->stats->esi_req++;

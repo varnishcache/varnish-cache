@@ -60,7 +60,7 @@ vmod_barrier_sync(VRT_CTX, VCL_STRING addr, VCL_DURATION tmo)
 	if (ctx->vsl != NULL)
 		VSLb(ctx->vsl, SLT_Debug, "barrier_sync(\"%s\")", addr);
 	else
-		VSL(SLT_Debug, 0, "barrier_sync(\"%s\")", addr);
+		VSL(SLT_Debug, NO_VXID, "barrier_sync(\"%s\")", addr);
 
 	sock = VTCP_open(addr, NULL, 0., &err);
 	if (sock < 0) {
@@ -409,7 +409,7 @@ VCL_VOID
 vmod_vsl(VRT_CTX, VCL_INT id, VCL_STRING tag_s, VCL_ENUM side, VCL_STRANDS s)
 {
 	struct vsl_tag2enum *te, key;
-	uint32_t vxid;
+	vxid_t vxid;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
@@ -427,11 +427,11 @@ vmod_vsl(VRT_CTX, VCL_INT id, VCL_STRING tag_s, VCL_ENUM side, VCL_STRANDS s)
 		return;
 	}
 
-	vxid = id & VSL_IDENTMASK;
+	vxid.vxid = id & VSL_IDENTMASK;
 	if (side == VENUM(c))
-		vxid |= VSL_CLIENTMARKER;
+		vxid.vxid |= VSL_CLIENTMARKER;
 	else if (side == VENUM(b))
-		vxid |= VSL_BACKENDMARKER;
+		vxid.vxid |= VSL_BACKENDMARKER;
 	else
 		WRONG("side");
 

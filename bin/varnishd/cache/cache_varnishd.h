@@ -449,7 +449,7 @@ extern struct VSC_main *VSC_C_main;
 void VSM_Init(void);
 void VSL_Setup(struct vsl_log *vsl, void *ptr, size_t len);
 void VSL_ChgId(struct vsl_log *vsl, const char *typ, const char *why,
-    uint32_t vxid);
+    vxid_t vxid);
 void VSL_End(struct vsl_log *vsl);
 void VSL_Flush(struct vsl_log *, int overflow);
 

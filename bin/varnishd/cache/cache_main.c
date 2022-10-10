@@ -183,15 +183,16 @@ static uint32_t vxid_base;
 static uint32_t vxid_chunk = 32768;
 static struct lock vxid_lock;
 
-uint32_t
+vxid_t
 VXID_Get(const struct worker *wrk, uint32_t mask)
 {
 	struct vxid_pool *v;
+	vxid_t retval;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk->wpriv, WORKER_PRIV_MAGIC);
 	v = wrk->wpriv->vxid_pool;
-	AZ(VXID(mask));
+	AZ(mask & VSL_IDENTMASK);
 	do {
 		if (v->count == 0) {
 			Lck_Lock(&vxid_lock);
@@ -203,7 +204,8 @@ VXID_Get(const struct worker *wrk, uint32_t mask)
 		v->count--;
 		v->next++;
 	} while (v->next == 0);
-	return (v->next | mask);
+	retval.vxid = v->next | mask;
+	return (retval);
 }
 
 /*--------------------------------------------------------------------
@@ -272,7 +274,7 @@ static struct cli_proto debug_cmds[] = {
 static void
 child_malloc_fail(void *p, const char *s)
 {
-	VSL(SLT_Error, 0, "MALLOC ERROR: %s (%p)", s, p);
+	VSL(SLT_Error, NO_VXID, "MALLOC ERROR: %s (%p)", s, p);
 	fprintf(stderr, "MALLOC ERROR: %s (%p)\n", s, p);
 	WRONG("Malloc Error");
 }

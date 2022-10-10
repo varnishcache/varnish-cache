@@ -251,7 +251,7 @@ http1_dissect(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req->transport, TRANSPORT_MAGIC);
 
 	/* Allocate a new vxid now that we know we'll need it. */
-	AZ(req->vsl->wid);
+	assert(IS_NO_VXID(req->vsl->wid));
 	req->vsl->wid = VXID_Get(wrk, VSL_CLIENTMARKER);
 
 	VSLb(req->vsl, SLT_Begin, "req %u rxreq", VXID(req->sp->vxid));

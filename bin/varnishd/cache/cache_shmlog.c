@@ -134,7 +134,7 @@ vsl_tag_is_masked(enum VSL_tag_e tag)
  */
 
 static inline uint32_t *
-vsl_hdr(enum VSL_tag_e tag, uint32_t *p, unsigned len, uint32_t vxid)
+vsl_hdr(enum VSL_tag_e tag, uint32_t *p, unsigned len, vxid_t vxid)
 {
 
 	AZ((uintptr_t)p & 0x3);
@@ -142,7 +142,7 @@ vsl_hdr(enum VSL_tag_e tag, uint32_t *p, unsigned len, uint32_t vxid)
 	assert(tag < SLT__Reserved);
 	AZ(len & ~VSL_LENMASK);
 
-	p[1] = vxid;
+	p[1] = vxid.vxid;
 	p[0] = ((((unsigned)tag & 0xff) << 24) | len);
 	return (VSL_END(p, len));
 }
@@ -227,7 +227,7 @@ vsl_get(unsigned len, unsigned records, unsigned flushes)
  */
 
 static void
-vslr(enum VSL_tag_e tag, uint32_t vxid, const char *b, unsigned len)
+vslr(enum VSL_tag_e tag, vxid_t vxid, const char *b, unsigned len)
 {
 	uint32_t *p;
 	unsigned mlen;
@@ -246,7 +246,7 @@ vslr(enum VSL_tag_e tag, uint32_t vxid, const char *b, unsigned len)
 	 * vsl_hdr() writes p[1] again, but we want to make sure it
 	 * has hit memory because we work on the live buffer here.
 	 */
-	p[1] = vxid;
+	p[1] = vxid.vxid;
 	VWMB();
 	(void)vsl_hdr(tag, p, len, vxid);
 }
@@ -259,7 +259,7 @@ vslr(enum VSL_tag_e tag, uint32_t vxid, const char *b, unsigned len)
  */
 
 void
-VSLv(enum VSL_tag_e tag, uint32_t vxid, const char *fmt, va_list ap)
+VSLv(enum VSL_tag_e tag, vxid_t vxid, const char *fmt, va_list ap)
 {
 	unsigned n, mlen = cache_param->vsl_reclen;
 	char buf[mlen];
@@ -280,7 +280,7 @@ VSLv(enum VSL_tag_e tag, uint32_t vxid, const char *fmt, va_list ap)
 }
 
 void
-VSLs(enum VSL_tag_e tag, uint32_t vxid, const struct strands *s)
+VSLs(enum VSL_tag_e tag, vxid_t vxid, const struct strands *s)
 {
 	unsigned n, mlen = cache_param->vsl_reclen;
 	char buf[mlen];
@@ -294,7 +294,7 @@ VSLs(enum VSL_tag_e tag, uint32_t vxid, const struct strands *s)
 }
 
 void
-VSL(enum VSL_tag_e tag, uint32_t vxid, const char *fmt, ...)
+VSL(enum VSL_tag_e tag, vxid_t vxid, const char *fmt, ...)
 {
 	va_list ap;
 
@@ -567,16 +567,16 @@ VSL_Setup(struct vsl_log *vsl, void *ptr, size_t len)
 	vsl->wle = ptr;
 	vsl->wle += len / sizeof(*vsl->wle);
 	vsl->wlr = 0;
-	vsl->wid = 0;
+	vsl->wid = NO_VXID;
 	vsl_sanity(vsl);
 }
 
 /*--------------------------------------------------------------------*/
 
 void
-VSL_ChgId(struct vsl_log *vsl, const char *typ, const char *why, uint32_t vxid)
+VSL_ChgId(struct vsl_log *vsl, const char *typ, const char *why, vxid_t vxid)
 {
-	uint32_t ovxid;
+	vxid_t ovxid;
 
 	vsl_sanity(vsl);
 	ovxid = vsl->wid;
@@ -595,12 +595,12 @@ VSL_End(struct vsl_log *vsl)
 	char p[] = "";
 
 	vsl_sanity(vsl);
-	AN(vsl->wid);
+	assert(!IS_NO_VXID(vsl->wid));
 	t.b = p;
 	t.e = p;
 	VSLbt(vsl, SLT_End, t);
 	VSL_Flush(vsl, 0);
-	vsl->wid = 0;
+	vsl->wid = NO_VXID;
 }
 
 static void v_matchproto_(vsm_lock_f)
