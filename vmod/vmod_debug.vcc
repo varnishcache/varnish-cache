@@ -277,6 +277,10 @@ Test object method with all the fancy stuff.
 
 $Function STRANDS return_strands(STRANDS strand)
 
+$Function VOID vsl_flush()
+
+call VSL_Flush(ctx->cts, 0)
+
 $Function VOID catflap(ENUM {miss, first, last} type)
 
 Test the HSH_Lookup catflap
