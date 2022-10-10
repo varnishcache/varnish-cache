@@ -382,18 +382,18 @@ VSLbs(struct vsl_log *vsl, enum VSL_tag_e tag, const struct strands *s)
 	/* including NUL */
 	l = vmin_t(unsigned, strands_len(s) + 1, mlen);
 
-	assert(vsl->wlp < vsl->wle);
+	assert(vsl->wlp <= vsl->wle);
 
 	/* Flush if necessary */
-	if (VSL_END(vsl->wlp, l) >= vsl->wle)
+	if (VSL_END(vsl->wlp, l) > vsl->wle)
 		VSL_Flush(vsl, 1);
-	assert(VSL_END(vsl->wlp, l) < vsl->wle);
+	assert(VSL_END(vsl->wlp, l) <= vsl->wle);
 
 	mlen = strands_cat(VSL_DATA(vsl->wlp), l, s);
 	assert(l == mlen);
 
 	vsl->wlp = vsl_hdr(tag, vsl->wlp, l, vsl->wid);
-	assert(vsl->wlp < vsl->wle);
+	assert(vsl->wlp <= vsl->wle);
 	vsl->wlr++;
 
 	if (DO_DEBUG(DBG_SYNCVSL))

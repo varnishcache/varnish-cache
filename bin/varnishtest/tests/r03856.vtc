@@ -1,0 +1,47 @@
+varnishtest "Regression test off-by-one in VSLbs"
+
+# vsl_buffer=257 bytes - 2 bytes header -> 255 bytes
+
+varnish v1 -arg "-p vsl_buffer=267" -vcl {
+	import debug;
+	backend b None;
+	sub vcl_recv {
+
+		# Assert error in VSLbs(), cache/cache_shmlog.c line 385:
+		#   Condition(vsl->wlp < vsl->wle) not true.
+
+		debug.vsl_flush();
+		set req.http.a =
+			# 255 = "a: " + 8 * 32 - 4
+			"0123456789abcdef0123456789abcdef" +
+			"0123456789abcdef0123456789abcdef" +
+			"0123456789abcdef0123456789abcdef" +
+			"0123456789abcdef0123456789abcdef" +
+			"0123456789abcdef0123456789abcdef" +
+			"0123456789abcdef0123456789abcdef" +
+			"0123456789abcdef0123456789abcdef" +
+			"0123456789abcdef0123456789ab";
+		debug.return_strands("xyz");
+
+		# Assert error in VSLbs(), cache/cache_shmlog.c line 390:
+		#   Condition(VSL_END(vsl->wlp, l) < vsl->wle) not true.
+		debug.vsl_flush();
+		debug.return_strands(
+			# 255 = 8 * 32 - 1
+			"0123456789abcdef0123456789abcdef" +
+			"0123456789abcdef0123456789abcdef" +
+			"0123456789abcdef0123456789abcdef" +
+			"0123456789abcdef0123456789abcdef" +
+			"0123456789abcdef0123456789abcdef" +
+			"0123456789abcdef0123456789abcdef" +
+			"0123456789abcdef0123456789abcdef" +
+			"0123456789abcdef0123456789abcde");
+		return (synth(200));
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run
