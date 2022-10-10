@@ -39,7 +39,12 @@ Varnish Cache 7.1.2 (unreleased)
   hop-by-hop through a `Connection`-header will now cause a 400 "Bad
   request" response. (VSV00010_)
 
+* Apply the same character set rules to HTTP/2 pseudo-headers as is
+  done on the corresponding HTTP/1 request-line field
+  parsing. (VSV00011_)
+
 .. _VSV00010: https://varnish-cache.org/security/VSV00010.html
+.. _VSV00011: https://varnish-cache.org/security/VSV00011.html
 
 ================================
 Varnish Cache 7.1.1 (2022-08-09)
