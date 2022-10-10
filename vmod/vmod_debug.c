@@ -888,6 +888,13 @@ xyzzy_return_strands(VRT_CTX, VCL_STRANDS strand)
 	return (strand);
 }
 
+VCL_VOID
+xyzzy_vsl_flush(VRT_CTX)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	VSL_Flush(ctx->vsl, 0);
+}
+
 /*---------------------------------------------------------------------*/
 
 static const struct vcf_return * v_matchproto_(vcf_func_f)
