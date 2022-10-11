@@ -237,6 +237,7 @@ VRY_Prep(struct req *req)
 	req->vary_e = req->vary_b + WS_ReservationSize(req->ws);
 	if (req->vary_b + 2 < req->vary_e)
 		req->vary_b[2] = '\0';
+	req->vary_l = NULL;
 }
 
 void
