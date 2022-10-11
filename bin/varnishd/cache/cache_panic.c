@@ -99,6 +99,19 @@ pan_stream_close(struct vsb *vsb, stream_close_t sc)
 
 /*--------------------------------------------------------------------*/
 
+static void
+pan_storage(struct vsb *vsb, const char *n, const struct stevedore *stv)
+{
+
+	if (stv != NULL && stv->magic == STEVEDORE_MAGIC)
+		VSB_printf(vsb, "%s = %s(%s,%s),\n",
+		    n, stv->name, stv->ident, stv->vclname);
+	else
+		VSB_printf(vsb, "%s = %p,\n", n, stv);
+}
+
+/*--------------------------------------------------------------------*/
+
 #define N_ALREADY 256
 static const void *already_list[N_ALREADY];
 static int already_idx;
@@ -400,6 +413,7 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 
 	// timeouts/timers/acct/storage left out
 
+	pan_storage(vsb, "storage", bo->storage);
 	VDI_Panic(bo->director_req, vsb, "director_req");
 	if (bo->director_resp == bo->director_req)
 		VSB_cat(vsb, "director_resp = director_req,\n");
@@ -464,6 +478,16 @@ pan_req(struct vsb *vsb, const struct req *req)
 
 	VSB_printf(vsb, "restarts = %u, esi_level = %u,\n",
 	    req->restarts, req->esi_level);
+
+	VSB_printf(vsb, "vary_b = %p, vary_l = %p, vary_e = %p,\n",
+	    req->vary_b, req->vary_l, req->vary_e);
+
+	VSB_printf(vsb, "d_ttl = %f, d_grace = %f,\n",
+	    req->d_ttl, req->d_grace);
+
+	pan_storage(vsb, "storage", req->storage);
+
+	VDI_Panic(req->director_hint, vsb, "director_hint");
 
 	if (req->sp != NULL)
 		pan_sess(vsb, req->sp);
