@@ -43,8 +43,12 @@ Varnish Cache 7.2.1 (unreleased)
   done on the corresponding HTTP/1 request-line field
   parsing. (VSV00011_)
 
+* Fix a problem related to logging strands and unfortunate alignment,
+  which would result in a panic. (3856_)
+
 .. _VSV00010: https://varnish-cache.org/security/VSV00010.html
 .. _VSV00011: https://varnish-cache.org/security/VSV00011.html
+.. _3856: https://github.com/varnishcache/varnish-cache/issues/3856
 
 ================================
 Varnish Cache 7.2.0 (2022-09-15)
