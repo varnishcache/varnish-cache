@@ -428,9 +428,11 @@ workflows:
           matrix:
             parameters:
               platform:
+                - ubuntu:xenial
                 - ubuntu:bionic
                 - ubuntu:focal
                 - ubuntu:jammy
+                - debian:stretch
                 - debian:buster
                 - debian:bullseye
                 - centos:7
