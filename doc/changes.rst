@@ -27,6 +27,26 @@ individual releases. These documents are updated as part of the
 release process.
 
 =================================
+Varnish Cache 6.0.11 (unreleased)
+=================================
+
+* Handling of hop-by-hop headers has been fixed for HTTP/2 (3416_).
+
+* Handling of the ``Keep-Alive`` HTTP header as hop-by-hop has been fixed
+  (3417_).
+
+* Apply the same character set rules to HTTP/2 pseudo-headers as is done
+  on the corresponding HTTP/1 request-line field parsing. (VSV00011_)
+
+* The ``%{X}T`` format has been added to ``varnishncsa``, which
+  generalizes ``%D`` and ``%T``, but also support milliseconds
+  (``ms``) output.
+
+.. _3416: https://github.com/varnishcache/varnish-cache/pull/3416
+.. _3417: https://github.com/varnishcache/varnish-cache/pull/3417
+.. _VSV00011: https://varnish-cache.org/security/VSV00011.html
+
+=================================
 Varnish Cache 6.0.10 (2022-01-25)
 =================================
 
