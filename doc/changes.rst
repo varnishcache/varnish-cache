@@ -27,7 +27,7 @@ individual releases. These documents are updated as part of the
 release process.
 
 =================================
-Varnish Cache 6.0.11 (unreleased)
+Varnish Cache 6.0.11 (2022-11-08)
 =================================
 
 * Handling of hop-by-hop headers has been fixed for HTTP/2 (3416_).
