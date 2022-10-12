@@ -2,7 +2,7 @@
 
 set -eux
 
-apk add -q --no-progress --update tar alpine-sdk
+apk add -q --no-progress --update tar alpine-sdk sudo
 
 echo "PARAM_RELEASE: $PARAM_RELEASE"
 echo "PARAM_DIST: $PARAM_DIST"
