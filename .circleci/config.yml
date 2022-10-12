@@ -16,6 +16,9 @@ parameters:
   dist-url:
     type: string
     default: ""
+  dist-url-sha256:
+    type: string
+    default: ""
 
 jobs:
   dist:
@@ -46,7 +49,17 @@ jobs:
             - run:
                 name: Download the dist tarball
                 command: |
-                  curl -s << pipeline.parameters.dist-url >> -o varnish-dist.tar.gz
+                  curl -Ls << pipeline.parameters.dist-url >> -o varnish-dist.tar.gz
+            - when:
+                condition: << pipeline.parameters.dist-url-sha256 >>
+                steps:
+                  - run:
+                      name: Verify downloaded tarball
+                      command: |
+                        echo "<< pipeline.parameters.dist-url-sha256 >> varnish-dist.tar.gz" | sha256sum -c
+            - run:
+                name: Rename the dist tarball by parsed version
+                command: |
                   mkdir parse-version-tmp
                   cd parse-version-tmp
                   tar xzf ../varnish-dist.tar.gz
