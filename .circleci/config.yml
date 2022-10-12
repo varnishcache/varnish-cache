@@ -1,11 +1,5 @@
 version: 2.1
 
-aliases:
-  pkg_req: &pkg_req
-    requires:
-      - dist
-      - tar_pkg_tools
-
 parameters:
   vc-commit:
     type: string
@@ -19,10 +13,21 @@ parameters:
   dist-url-sha256:
     type: string
     default: ""
+  configure_args:
+    type: string
+    default: |
+        --with-unwind \
+        --enable-developer-warnings \
+        --enable-debugging-symbols \
+        --disable-stack-protector \
+        --with-persistent-storage \
+  build-pkgs:
+    type: string
+    default: ""
 
 jobs:
   dist:
-    description: Builds varnish-x.y.z.tar.gz that is used later for the packaging jobs
+    description: Build or download varnish-x.y.z.tar.gz that is used later for the packaging jobs
     docker:
       - image: centos:7
     steps:
@@ -49,7 +54,7 @@ jobs:
             - run:
                 name: Download the dist tarball
                 command: |
-                  curl -Ls << pipeline.parameters.dist-url >> -o varnish-dist.tar.gz
+                  curl -Ls '<< pipeline.parameters.dist-url >>' -o varnish-dist.tar.gz
             - when:
                 condition: << pipeline.parameters.dist-url-sha256 >>
                 steps:
@@ -65,7 +70,7 @@ jobs:
                   tar xzf ../varnish-dist.tar.gz
                   VERSION=$(varnish-*/configure --version | awk 'NR == 1 {print $NF}')
                   cd ..
-                  mv varnish-dist.tar.gz varnish-${VERSION}.tar.gz
+                  mv -v varnish-dist.tar.gz varnish-${VERSION}.tar.gz
       - unless:
           condition: << pipeline.parameters.dist-url >>
           steps:
@@ -73,12 +78,15 @@ jobs:
                 name: Create the dist tarball
                 command: |
                   git checkout << pipeline.parameters.vc-commit >>
-                  # if version is "trunk", it's a weekly tarball, override the version
+                  # Locally built tarballs are always built with weekly in package name
+                  touch .is_weekly
+                  # If version is "trunk", override version to add date
                   if grep 'AC_INIT.*trunk.*' ./configure.ac; then
-                      sed -i -e "s/^AC_INIT.*trunk.*/AC_INIT([Varnish], [$(date +%Y%m%d)], [varnish-dev@varnish-cache.org])/" ./configure.ac
-                      touch .is_weekly
+                      sed -i -e "s/AC_INIT(\[\(.*\)\], \[\(.*\)\], \[\(.*\)\])/AC_INIT([\1], [$(date +%Y%m%d)], [\3])/" ./configure.ac
+                  else
+                      sed -i -e "s/AC_INIT(\[\(.*\)\], \[\(.*\)\], \[\(.*\)\])/AC_INIT([\1], [\2-$(date +%Y%m%d)], [\3])/" ./configure.ac
                   fi
-                  ./autogen.des --quiet
+                  ./autogen.des
                   make dist -j 16
       - persist_to_workspace:
           root: .
@@ -115,81 +123,142 @@ jobs:
             - alpine.tar.gz
   package:
     parameters:
-      dist:
-        description: the Linux distribution (debian|ubuntu|centos)
+      platform:
+        description: the Linux distribution, with release, e.g. debian:buster, centos:7
         type: string
-      release:
-        description: the release name (stretch|buster|xenial|bionic|7|8)
-        type: string
-      ext:
-        description: the package extension (deb|rpm|apk)
-        type: string
-      arch:
-        description: the architecture (x64|aarch64)
-        type: string
-      image:
-        description: the base Docker image for Dockerfile
+      rclass:
+        description: the resource class to use, usuall arm.medium or medium
         type: string
     machine:
       image: ubuntu-2004:202111-02
+    resource_class: << parameters.rclass >>
     steps:
       - attach_workspace:
           at: ~/project
-      - run: ls -la ~/project
+
+      - when:
+          condition:
+            matches:
+              pattern: ^alpine.*
+              value: << parameters.platform >>
+          steps:
+            - run:
+                # https://wiki.alpinelinux.org/wiki/Release_Notes_for_Alpine_3.14.0#faccessat2
+                name: grab the latest docker version
+                command: |
+                  # using https://docs.docker.com/engine/install/ubuntu/
+                  sudo apt-get update
+                  sudo apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release
+                  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+                  case "<< parameters.rclass >>" in
+                      arm.*)  ARCH=arm64;;
+                      *)      ARCH=amd64;;
+                  esac
+                  echo \
+                    "deb [signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
+                      $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+                  sudo apt-get update
+                  sudo apt-get install docker-ce docker-ce-cli containerd.io
       - run:
-          name: Activate QEMU
-          command: |
-            sudo docker run -it --rm --privileged multiarch/qemu-user-static --reset --credential yes --persistent yes
-      - run:
-          name: Create Dockerfile
-          command: |
-            echo "FROM << parameters.image >>" > Dockerfile
-            echo "ADD make-<< parameters.ext >>-packages.sh /usr/bin/" >> Dockerfile
-            echo 'CMD ["make-<< parameters.ext >>-packages.sh"]' >> Dockerfile
-      - run:
-          name: Build << parameters.dist >> << parameters.release >> << parameters.arch >> << parameters.ext >>
+          name: Build for << parameters.platform >> on << parameters.rclass >>
           command: |
             mkdir -p packages
-            cp .circleci/make-<< parameters.ext >>-packages.sh .
-            docker build -t varnish-<< parameters.ext >>-package-build:<< parameters.arch >> .
-            docker run --rm -it -e PARAM_DIST=<< parameters.dist >> -e PARAM_RELEASE=<< parameters.release >> -v$(pwd):/varnish-cache varnish-<< parameters.ext >>-package-build:<< parameters.arch >>
+            case "<< parameters.platform >>" in
+                debian:*|ubuntu:*)  EXT=deb ;;
+                centos:*|fedora:*)  EXT=rpm ;;
+                almalinux:*)        EXT=rpm ;;
+                alpine:*)           EXT=apk ;;
+                *)
+                    echo "unrecognized platform: << parameters.platform >>"
+                    exit 1
+            esac
+
+            case "<< parameters.platform >>" in
+                centos:stream)      REPO=quay.io/centos/ ;;
+                *)                  REPO= ;;
+            esac
+
+            case "<< parameters.rclass >>" in
+                arm.*)              ARCH=arm64 ;;
+                *)                  ARCH=amd64 ;;
+            esac
+
+            docker run \
+              --rm \
+              -it \
+              -e PARAM_DIST=$(echo "<< parameters.platform >>" | cut -d: -f1) \
+              -e PARAM_RELEASE=$(echo "<< parameters.platform >>" | cut -d: -f2) \
+              -v$(pwd):/varnish-cache \
+              --platform linux/$ARCH \
+              ${REPO}<< parameters.platform >> \
+              /varnish-cache/.circleci/make-$EXT-packages.sh
       - run:
           name: List created packages
-          command: find ./packages -name "*.<< parameters.ext >>"
+          command: find ./packages -type f
       - persist_to_workspace:
           root: .
           paths:
             - "packages"
-  distcheck:
+  build:
     parameters:
+      prefix:
+        description: the container image prefix (repository or architecture)
+        type: string
+        default: ""
       dist:
         description: the Linux distribution (debian|ubuntu)
         type: string
       release:
-        description: the release name (stretch|buster|xenial|bionic)
+        description: the release name (buster|bullseye|bionic|focal|jammy)
+        type: string
+      make_target:
+        description: the make target to execute during the build
+        default: distcheck
         type: string
       extra_conf:
         description: platform-specific configure arguments
         default: ""
         type: string
     docker:
-      - image: << parameters.dist >>:<< parameters.release >>
+      - image: centos:7
     working_directory: /workspace
     steps:
+      - setup_remote_docker:
+          version: 20.10.11
       - run:
-          name: Possible << parameters.dist >>:<< parameters.release >> extra repos
+          name: Install docker
+          command: yum install -y docker
+      - checkout
+      - run:
+          name: Extract and build
           command: |
-            if [ << parameters.dist >> = centos ]; then
-                if [ << parameters.release >> = 8 ]; then
-                    dnf install -y 'dnf-command(config-manager)'
-                    yum config-manager --set-enabled powertools
-                    yum install -y diffutils python3-sphinx
-                else
-                    yum install -y python-sphinx
-                fi
-                yum install -y epel-release
+            docker create --name workspace -v /workspace << parameters.prefix >><< parameters.dist >>:<< parameters.release >> /bin/true
+            docker cp /workspace workspace:/
+            docker run --volumes-from workspace -w /workspace << parameters.prefix >><< parameters.dist >>:<< parameters.release >> sh -c '
+            case "<< parameters.dist >>" in
+            centos|almalinux|fedora)
+                yum groupinstall -y "Development Tools"
+                case "<< parameters.dist >>:<< parameters.release >>" in
+                    almalinux:9)
+                        dnf install -y "dnf-command(config-manager)"
+                        yum config-manager --set-enabled crb
+                        yum install -y diffutils
+                        yum install -y epel-release
+                        ;;
+                    centos:stream|almalinux:8)
+                        dnf install -y "dnf-command(config-manager)"
+                        yum config-manager --set-enabled powertools
+                        yum install -y diffutils
+                        yum install -y epel-release
+                        ;;
+                    centos:7)
+                        yum install -y epel-release
+                        ;;
+                esac
                 yum install -y \
+                    cpio \
                     automake \
+                    git \
                     jemalloc-devel \
                     libedit-devel \
                     libtool \
@@ -197,8 +266,10 @@ jobs:
                     make \
                     pcre-devel \
                     python3 \
+                    /usr/bin/sphinx-build \
                     sudo
-            elif [ << parameters.dist >> = debian -o << parameters.dist >> = ubuntu ]; then
+                ;;
+            debian|ubuntu)
                 export DEBIAN_FRONTEND=noninteractive
                 export DEBCONF_NONINTERACTIVE_SEEN=true
                 apt-get update
@@ -208,6 +279,7 @@ jobs:
                     build-essential \
                     ca-certificates \
                     cpio \
+                    git \
                     graphviz \
                     libedit-dev \
                     libjemalloc-dev \
@@ -218,7 +290,8 @@ jobs:
                     pkg-config \
                     python3-sphinx \
                     sudo
-            elif [ << parameters.dist >> = alpine ]; then
+                ;;
+            alpine)
                 apk update
                 apk add -q \
                     autoconf \
@@ -226,6 +299,7 @@ jobs:
                     build-base \
                     ca-certificates \
                     cpio \
+                    git \
                     gzip \
                     libedit-dev \
                     libtool \
@@ -236,18 +310,34 @@ jobs:
                     py3-sphinx \
                     tar \
                     sudo
-            fi
-      - attach_workspace:
-          at: /workspace
-      - run:
-          name: Extract and distcheck
-          command: |
-            tar xavf varnish-*.tar.gz --strip 1
-            if [ << parameters.dist >> = centos ]; then
-            	adduser varnish
-            else
-            	adduser --disabled-password --gecos "" varnish
-            fi
+                ;;
+            archlinux)
+                pacman -Syu --noconfirm \
+                    ca-certificates \
+                    cpio \
+                    git \
+                    libedit \
+                    libtool \
+                    libunwind \
+                    linux-headers \
+                    pcre \
+                    python-docutils \
+                    python-sphinx \
+                    tar
+                ;;
+            esac
+
+            case "<< parameters.dist >>" in
+            archlinux)
+                useradd varnish
+                ;;
+            centos|almalinux|fedora)
+                adduser varnish
+                ;;
+            *)
+                adduser --disabled-password --gecos "" varnish
+                ;;
+            esac
 
             chown -R varnish:varnish .
 
@@ -256,17 +346,18 @@ jobs:
             export TSAN_OPTIONS=abort_on_error=1,halt_on_error=1,use_sigaltstack=0,suppressions=$(pwd)/tools/tsan.suppr
             export UBSAN_OPTIONS=halt_on_error=1,print_stacktrace=1,use_sigaltstack=0,suppressions=$(pwd)/tools/ubsan.suppr
 
-            sudo -u varnish ./configure \
-            	--quiet \
-            	--with-unwind \
-            	--enable-developer-warnings \
-            	--enable-debugging-symbols \
-            	--disable-stack-protector \
-            	--with-persistent-storage \
-            	<< parameters.extra_conf >>
             sudo -u varnish \
-            	--preserve-env=ASAN_OPTIONS,LSAN_OPTIONS,TSAN_OPTIONS,UBSAN_OPTIONS \
-            	make distcheck VERBOSE=1 -j 12 -k
+                autoreconf -i -v
+            sudo -u varnish \
+                ./configure \
+                << pipeline.parameters.configure_args >> \
+                << parameters.extra_conf >>
+            sudo -u varnish \
+                --preserve-env=ASAN_OPTIONS,LSAN_OPTIONS,TSAN_OPTIONS,UBSAN_OPTIONS \
+                make << parameters.make_target >> VERBOSE=1 -j 4 -k \
+                DISTCHECK_CONFIGURE_FLAGS="<< pipeline.parameters.configure_args >> \
+                << parameters.extra_conf >>"
+            '
 
   collect_packages:
     docker:
@@ -287,147 +378,78 @@ jobs:
 workflows:
   version: 2
   commit:
+    unless: &packaging_cond
+      or:
+        - << pipeline.parameters.build-pkgs >>
+        - << pipeline.parameters.dist-url >>
     jobs:
-      - distcheck:
-          name: distcheck_centos_7
+      - build:
+          name: build_centos_7
           dist: centos
           release: "7"
-          requires:
-            - dist
-      - distcheck:
-          name: distcheck_debian_buster
+      - build:
+          name: build_almalinux_8
+          dist: almalinux
+          release: "8"
+      - build:
+          name: build_almalinux_9
+          dist: almalinux
+          release: "9"
+      - build:
+          name: build_debian_buster
           dist: debian
           release: buster
-          extra_conf: --enable-asan --enable-ubsan
-          requires:
-            - dist
+      - build:
+          name: build_debian_bullseye
+          dist: debian
+          release: bullseye
+      - build:
+          name: build_ubuntu_bionic
+          dist: ubuntu
+          release: bionic
+      - build:
+          name: build_ubuntu_focal
+          dist: ubuntu
+          release: focal
+      - build:
+          name: build_ubuntu_jammy
+          dist: ubuntu
+          release: jammy
+  packaging:
+    when: *packaging_cond
+    jobs: &packaging_jobs
       - dist
       - tar_pkg_tools
       - package:
-          name: aarch64-ubuntu-focal
-          dist: ubuntu
-          release: focal
-          arch: aarch64
-          image: arm64v8/ubuntu:focal
-          ext: deb
-          <<: *pkg_req
-      - package:
-          name: x64-ubuntu-focal
-          dist: ubuntu
-          release: focal
-          arch: x64
-          image: ubuntu:focal
-          ext: deb
-          <<: *pkg_req
-      - package:
-          name: aarch64-ubuntu-bionic
-          dist: ubuntu
-          release: bionic
-          arch: aarch64
-          image: arm64v8/ubuntu:bionic
-          ext: deb
-          <<: *pkg_req
-      - package:
-          name: x64-ubuntu-bionic
-          dist: ubuntu
-          release: bionic
-          arch: x64
-          image: ubuntu:bionic
-          ext: deb
-          <<: *pkg_req
-      - package:
-          name: aarch64-ubuntu-xenial
-          dist: ubuntu
-          release: xenial
-          arch: aarch64
-          image: arm64v8/ubuntu:xenial
-          ext: deb
-          <<: *pkg_req
-      - package:
-          name: x64-ubuntu-xenial
-          dist: ubuntu
-          release: xenial
-          arch: x64
-          image: ubuntu:xenial
-          ext: deb
-          <<: *pkg_req
-      - package:
-          name: aarch64-debian-buster
-          dist: debian
-          release: buster
-          arch: aarch64
-          image: arm64v8/debian:buster-slim
-          ext: deb
-          <<: *pkg_req
-      - package:
-          name: x64-debian-buster
-          dist: debian
-          release: buster
-          arch: x64
-          image: debian:buster-slim
-          ext: deb
-          <<: *pkg_req
-      - package:
-          name: aarch64-debian-stretch
-          dist: debian
-          release: stretch
-          arch: aarch64
-          image: arm64v8/debian:stretch-slim
-          ext: deb
-          <<: *pkg_req
-      - package:
-          name: x64-debian-stretch
-          dist: debian
-          release: stretch
-          arch: x64
-          image: debian:stretch-slim
-          ext: deb
-          <<: *pkg_req
-      - package:
-          name: aarch64-centos-8
-          dist: centos
-          release: "8"
-          arch: aarch64
-          image: arm64v8/centos:8
-          ext: rpm
-          <<: *pkg_req
-      - package:
-          name: x64-centos-8
-          dist: centos
-          release: "8"
-          arch: x64
-          image: centos:8
-          ext: rpm
-          <<: *pkg_req
-      - package:
-          name: aarch64-centos-7
-          dist: centos
-          release: "7"
-          arch: aarch64
-          image: arm64v8/centos:7
-          ext: rpm
-          <<: *pkg_req
-      - package:
-          name: x64-centos-7
-          dist: centos
-          release: "7"
-          arch: x64
-          image: centos:7
-          ext: rpm
-          <<: *pkg_req
+          name: << matrix.platform >> packages (<< matrix.rclass >>)
+          requires:
+            - dist
+            - tar_pkg_tools
+          matrix:
+            parameters:
+              platform:
+                - ubuntu:bionic
+                - ubuntu:focal
+                - ubuntu:jammy
+                - debian:buster
+                - debian:bullseye
+                - centos:7
+                - almalinux:8
+                - almalinux:9
+                - fedora:latest
+                - alpine:3
+              rclass:
+                - arm.medium
+                - medium
       - collect_packages:
           requires:
-            - x64-ubuntu-xenial
-            - aarch64-ubuntu-xenial
-            - x64-ubuntu-bionic
-            - aarch64-ubuntu-bionic
-            - x64-ubuntu-focal
-            - aarch64-ubuntu-focal
-            - x64-debian-stretch
-            - aarch64-debian-stretch
-            - x64-debian-buster
-            - aarch64-debian-buster
-            - x64-centos-8
-            - aarch64-centos-8
-            - x64-centos-7
-            - aarch64-centos-7
+            - package
+  nightly:
+    triggers:
+      - schedule:
+          cron: "0 4 * * *"
+          filters:
+            branches:
+              only:
+                - master
+    jobs: *packaging_jobs
