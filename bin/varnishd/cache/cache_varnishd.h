@@ -462,7 +462,7 @@ void VCP_Panic(struct vsb *, struct conn_pool *);
 
 /* cache_vary.c */
 int VRY_Create(struct busyobj *bo, struct vsb **psb);
-int VRY_Match(struct req *, const uint8_t *vary);
+int VRY_Match(const struct req *, const uint8_t *vary);
 void VRY_Prep(struct req *);
 void VRY_Clear(struct req *);
 enum vry_finish_flag { KEEP, DISCARD };

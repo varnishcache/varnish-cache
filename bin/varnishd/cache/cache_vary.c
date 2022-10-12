@@ -286,7 +286,7 @@ VRY_Finish(struct req *req, enum vry_finish_flag flg)
  */
 
 int
-VRY_Match(struct req *req, const uint8_t *vary)
+VRY_Match(const struct req *req, const uint8_t *vary)
 {
 	uint8_t *vsp = req->vary_b;
 	const char *h, *e;
