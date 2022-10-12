@@ -6,21 +6,28 @@ echo "PARAM_RELEASE: $PARAM_RELEASE"
 echo "PARAM_DIST: $PARAM_DIST"
 
 if [ -z "$PARAM_RELEASE" ]; then
-    echo "Env variable PARAM_RELEASE is not set! For example PARAM_RELEASE=8, for CentOS 8"
+    echo "Env variable PARAM_RELEASE is not set! For example PARAM_RELEASE=stream, for CentOS stream"
     exit 1
 elif [ -z "$PARAM_DIST" ]; then
     echo "Env variable PARAM_DIST is not set! For example PARAM_DIST=centos"
     exit 1
 fi
 
-yum install -y epel-release
-
-if [ "$PARAM_DIST" = centos ]; then
-  if [ "$PARAM_RELEASE" = 8 ]; then
-      dnf install -y 'dnf-command(config-manager)'
-      yum config-manager --set-enabled powertools
-  fi
-fi
+case "$PARAM_DIST:$PARAM_RELEASE" in
+    almalinux:9)
+        dnf install -y 'dnf-command(config-manager)'
+        yum config-manager --set-enabled crb
+        yum install -y epel-release
+        ;;
+    centos:stream|almalinux:8)
+        dnf install -y 'dnf-command(config-manager)'
+        yum config-manager --set-enabled powertools
+        yum install -y epel-release
+        ;;
+    centos:7)
+        yum install -y epel-release
+        ;;
+esac
 
 yum install -y rpm-build yum-utils
 
