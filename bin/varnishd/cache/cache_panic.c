@@ -479,8 +479,8 @@ pan_req(struct vsb *vsb, const struct req *req)
 	VSB_printf(vsb, "restarts = %u, esi_level = %u,\n",
 	    req->restarts, req->esi_level);
 
-	VSB_printf(vsb, "vary_b = %p, vary_l = %p, vary_e = %p,\n",
-	    req->vary_b, req->vary_l, req->vary_e);
+	VSB_printf(vsb, "vary_b = %p, vary_e = %p,\n",
+	    req->vary_b, req->vary_e);
 
 	VSB_printf(vsb, "d_ttl = %f, d_grace = %f,\n",
 	    req->d_ttl, req->d_grace);

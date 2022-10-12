@@ -227,7 +227,6 @@ VRY_Prep(struct req *req)
 	if (req->hash_objhead == NULL) {
 		/* Not a waiting list return */
 		AZ(req->vary_b);
-		AZ(req->vary_l);
 		AZ(req->vary_e);
 		(void)WS_ReserveAll(req->ws);
 	} else {
@@ -237,7 +236,6 @@ VRY_Prep(struct req *req)
 	req->vary_e = req->vary_b + WS_ReservationSize(req->ws);
 	if (req->vary_b + 2 < req->vary_e)
 		req->vary_b[2] = '\0';
-	req->vary_l = NULL;
 }
 
 void
@@ -249,7 +247,6 @@ VRY_Clear(struct req *req)
 		free(req->vary_b);
 	req->vary_b = NULL;
 	AZ(req->vary_e);
-	AZ(req->vary_l);
 }
 
 /**********************************************************************
@@ -263,7 +260,6 @@ VRY_Finish(struct req *req, enum vry_finish_flag flg)
 	size_t l;
 
 	if (req->vary_b + 2 >= req->vary_e) {
-		AZ(req->vary_l);
 		req->vary_b = NULL;
 		req->vary_e = NULL;
 		WS_Release(req->ws, 0);
@@ -272,14 +268,12 @@ VRY_Finish(struct req *req, enum vry_finish_flag flg)
 	}
 
 	l = VRY_Validate(req->vary_b);
-	if (flg == KEEP && req->vary_l != NULL) {
-		assert(l == req->vary_l - req->vary_b);
+	if (flg == KEEP && l > 3) {
 		p = malloc(l);
 		if (p != NULL)
 			memcpy(p, req->vary_b, l);
 	}
 	WS_Release(req->ws, 0);
-	req->vary_l = NULL;
 	req->vary_e = NULL;
 	req->vary_b = p;
 }
@@ -348,7 +342,6 @@ VRY_Match(struct req *req, const uint8_t *vary)
 			vsp[ln++] = 0xff;
 			vsp[ln++] = 0;
 			assert(VRY_Validate(vsp) == ln);
-			req->vary_l = vsp + ln;
 
 			i = vry_cmp(vary, vsp);
 			assert(i == 0 || i == 2);
@@ -364,7 +357,6 @@ VRY_Match(struct req *req, const uint8_t *vary)
 	}
 	if (oflo) {
 		vsp = req->vary_b;
-		req->vary_l = NULL;
 		if (vsp + 2 < req->vary_e) {
 			vsp[0] = 0xff;
 			vsp[1] = 0xff;

@@ -491,9 +491,8 @@ struct req {
 	/* The busy objhead we sleep on */
 	struct objhead		*hash_objhead;
 
-	/* Built Vary string */
+	/* Built Vary string == workspace reservation */
 	uint8_t			*vary_b;
-	uint8_t			*vary_l;
 	uint8_t			*vary_e;
 
 	uint8_t			digest[DIGEST_LEN];
