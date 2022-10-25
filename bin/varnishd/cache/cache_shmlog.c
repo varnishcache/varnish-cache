@@ -350,10 +350,11 @@ vslb_get(struct vsl_log *vsl, enum VSL_tag_e tag, unsigned *length)
 
 	/* If it still doesn't fit, truncate */
 	if (VSL_END(vsl->wlp, mlen) > vsl->wle)
-		*length = mlen = ((char *)vsl->wle) - VSL_DATA(vsl->wlp);
+		mlen = ((char *)vsl->wle) - VSL_DATA(vsl->wlp);
 
 	vsl->wlp = vsl_hdr(tag, vsl->wlp, mlen, vsl->wid);
 	vsl->wlr++;
+	*length = mlen;
 	return (retval);
 }
 
