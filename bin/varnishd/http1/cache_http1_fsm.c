@@ -254,8 +254,8 @@ http1_dissect(struct worker *wrk, struct req *req)
 	assert(IS_NO_VXID(req->vsl->wid));
 	req->vsl->wid = VXID_Get(wrk, VSL_CLIENTMARKER);
 
-	VSLb(req->vsl, SLT_Begin, "req %u rxreq", VXID(req->sp->vxid));
-	VSL(SLT_Link, req->sp->vxid, "req %u rxreq", VXID(req->vsl->wid));
+	VSLb(req->vsl, SLT_Begin, "req %ju rxreq", VXID(req->sp->vxid));
+	VSL(SLT_Link, req->sp->vxid, "req %ju rxreq", VXID(req->vsl->wid));
 	AZ(isnan(req->t_first)); /* First byte timestamp set by http1_wait */
 	AZ(isnan(req->t_req));	 /* Complete req rcvd set by http1_wait */
 	req->t_prev = req->t_first;

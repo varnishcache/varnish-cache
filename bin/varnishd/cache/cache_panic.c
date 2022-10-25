@@ -452,7 +452,7 @@ pan_req(struct vsb *vsb, const struct req *req)
 	if (PAN_dump_struct(vsb, req, REQ_MAGIC, "req"))
 		return;
 	xp = req->transport;
-	VSB_printf(vsb, "vxid = %u, transport = %s", VXID(req->vsl->wid),
+	VSB_printf(vsb, "vxid = %ju, transport = %s", VXID(req->vsl->wid),
 	    xp == NULL ? "NULL" : xp->name);
 
 	if (xp != NULL && xp->req_panic != NULL) {
@@ -553,7 +553,7 @@ pan_sess(struct vsb *vsb, const struct sess *sp)
 
 	if (PAN_dump_struct(vsb, sp, SESS_MAGIC, "sess"))
 		return;
-	VSB_printf(vsb, "fd = %d, vxid = %u,\n",
+	VSB_printf(vsb, "fd = %d, vxid = %ju,\n",
 	    sp->fd, VXID(sp->vxid));
 	VSB_printf(vsb, "t_open = %f,\n", sp->t_open);
 	VSB_printf(vsb, "t_idle = %f,\n", sp->t_idle);

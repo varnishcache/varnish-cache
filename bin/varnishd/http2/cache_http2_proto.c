@@ -672,8 +672,8 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 	req->vsl->wid = VXID_Get(wrk, VSL_CLIENTMARKER);
-	VSLb(req->vsl, SLT_Begin, "req %u rxreq", VXID(req->sp->vxid));
-	VSL(SLT_Link, req->sp->vxid, "req %u rxreq", VXID(req->vsl->wid));
+	VSLb(req->vsl, SLT_Begin, "req %ju rxreq", VXID(req->sp->vxid));
+	VSL(SLT_Link, req->sp->vxid, "req %ju rxreq", VXID(req->vsl->wid));
 
 	h2->new_req = req;
 	req->sp = h2->sess;

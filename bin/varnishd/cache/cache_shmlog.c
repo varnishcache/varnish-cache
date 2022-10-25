@@ -580,10 +580,10 @@ VSL_ChgId(struct vsl_log *vsl, const char *typ, const char *why, vxid_t vxid)
 
 	vsl_sanity(vsl);
 	ovxid = vsl->wid;
-	VSLb(vsl, SLT_Link, "%s %u %s", typ, VXID(vxid), why);
+	VSLb(vsl, SLT_Link, "%s %ju %s", typ, VXID(vxid), why);
 	VSL_End(vsl);
 	vsl->wid = vxid;
-	VSLb(vsl, SLT_Begin, "%s %u %s", typ, VXID(ovxid), why);
+	VSLb(vsl, SLT_Begin, "%s %ju %s", typ, VXID(ovxid), why);
 }
 
 /*--------------------------------------------------------------------*/

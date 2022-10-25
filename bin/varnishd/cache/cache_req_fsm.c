@@ -153,10 +153,10 @@ Resp_Setup_Deliver(struct req *req)
 	http_ForceField(h, HTTP_HDR_PROTO, "HTTP/1.1");
 
 	if (req->is_hit)
-		http_PrintfHeader(h, "X-Varnish: %u %u", VXID(req->vsl->wid),
+		http_PrintfHeader(h, "X-Varnish: %ju %u", VXID(req->vsl->wid),
 		    ObjGetXID(req->wrk, oc));
 	else
-		http_PrintfHeader(h, "X-Varnish: %u", VXID(req->vsl->wid));
+		http_PrintfHeader(h, "X-Varnish: %ju", VXID(req->vsl->wid));
 
 	/*
 	 * We base Age calculation upon the last timestamp taken during client
@@ -193,7 +193,7 @@ Resp_Setup_Synth(struct req *req)
 
 	http_TimeHeader(h, "Date: ", W_TIM_real(req->wrk));
 	http_SetHeader(h, "Server: Varnish");
-	http_PrintfHeader(h, "X-Varnish: %u", VXID(req->vsl->wid));
+	http_PrintfHeader(h, "X-Varnish: %ju", VXID(req->vsl->wid));
 
 	/*
 	 * For late 100-continue, we suggest to VCL to close the connection to
@@ -767,8 +767,8 @@ cnt_pipe(struct worker *wrk, struct req *req)
 	wrk->stats->s_pipe++;
 	bo = VBO_GetBusyObj(wrk, req);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	VSLb(bo->vsl, SLT_Begin, "bereq %u pipe", VXID(req->vsl->wid));
-	VSLb(req->vsl, SLT_Link, "bereq %u pipe", VXID(bo->vsl->wid));
+	VSLb(bo->vsl, SLT_Begin, "bereq %ju pipe", VXID(req->vsl->wid));
+	VSLb(req->vsl, SLT_Link, "bereq %ju pipe", VXID(bo->vsl->wid));
 	VSLb_ts_busyobj(bo, "Start", W_TIM_real(wrk));
 	THR_SetBusyobj(bo);
 	bo->sp = req->sp;
@@ -776,7 +776,7 @@ cnt_pipe(struct worker *wrk, struct req *req)
 
 	HTTP_Setup(bo->bereq, req->ws, bo->vsl, SLT_BereqMethod);
 	http_FilterReq(bo->bereq, req->http, 0);	// XXX: 0 ?
-	http_PrintfHeader(bo->bereq, "X-Varnish: %u", VXID(req->vsl->wid));
+	http_PrintfHeader(bo->bereq, "X-Varnish: %ju", VXID(req->vsl->wid));
 	http_ForceHeader(bo->bereq, H_Connection, "close");
 
 	if (req->want100cont) {
@@ -1112,7 +1112,7 @@ cnt_diag(struct req *req, const char *state)
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-	VSLb(req->vsl,  SLT_Debug, "vxid %u STP_%s sp %p vcl %p",
+	VSLb(req->vsl,  SLT_Debug, "vxid %ju STP_%s sp %p vcl %p",
 	    req->vsl->wid.vxid, state, req->sp, req->vcl);	// XXX_VXID
 	VSL_Flush(req->vsl, 0);
 }

@@ -58,7 +58,7 @@
 /*--------------------------------------------------------------------*/
 
 struct vxids {
-	uint32_t	vxid;
+	uint64_t	vxid;
 };
 
 typedef struct vxids vxid_t;
@@ -66,7 +66,7 @@ typedef struct vxids vxid_t;
 #define NO_VXID ((struct vxids){0})
 #define IS_NO_VXID(x) ((x).vxid == 0)
 #define VXID_TAG(x) ((x).vxid & (VSL_CLIENTMARKER|VSL_BACKENDMARKER))
-#define VXID(u) ((u.vxid) & VSL_IDENTMASK)
+#define VXID(u) ((uintmax_t)(u.vxid) & VSL_IDENTMASK)
 #define IS_SAME_VXID(x, y) ((x).vxid == (y).vxid)
 
 /*--------------------------------------------------------------------*/

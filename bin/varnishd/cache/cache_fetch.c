@@ -404,7 +404,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->retries > 0)
 		http_Unset(bo->bereq, "\012X-Varnish:");
 
-	http_PrintfHeader(bo->bereq, "X-Varnish: %u", VXID(bo->vsl->wid));
+	http_PrintfHeader(bo->bereq, "X-Varnish: %ju", VXID(bo->vsl->wid));
 
 	VCL_backend_fetch_method(bo->vcl, wrk, NULL, bo, NULL);
 
@@ -1147,9 +1147,9 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 #define REQ_BEREQ_FLAG(l, r, w, d) bo->l = req->l;
 #include "tbl/req_bereq_flags.h"
 
-	VSLb(bo->vsl, SLT_Begin, "bereq %u %s", VXID(req->vsl->wid), how);
+	VSLb(bo->vsl, SLT_Begin, "bereq %ju %s", VXID(req->vsl->wid), how);
 	VSLbs(bo->vsl, SLT_VCL_use, TOSTRAND(VCL_Name(bo->vcl)));
-	VSLb(req->vsl, SLT_Link, "bereq %u %s", VXID(bo->vsl->wid), how);
+	VSLb(req->vsl, SLT_Link, "bereq %ju %s", VXID(bo->vsl->wid), how);
 
 	THR_SetBusyobj(bo);
 
