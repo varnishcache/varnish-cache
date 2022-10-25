@@ -240,7 +240,7 @@ vslr(enum VSL_tag_e tag, vxid_t vxid, const char *b, unsigned len)
 
 	p = vsl_get(len, 1, 0);
 
-	memcpy(p + 2, b, len);
+	memcpy(p + VSL_OVERHEAD, b, len);
 
 	/*
 	 * vsl_hdr() writes p[1] again, but we want to make sure it
@@ -320,7 +320,7 @@ VSL_Flush(struct vsl_log *vsl, int overflow)
 
 	p = vsl_get(l, vsl->wlr, overflow);
 
-	memcpy(p + 2, vsl->wlb, l);
+	memcpy(p + VSL_OVERHEAD, vsl->wlb, l);
 	p[1] = l;
 	VWMB();
 	p[0] = ((((unsigned)SLT__Batch & 0xff) << 24));
