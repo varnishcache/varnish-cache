@@ -7,13 +7,11 @@ server s1 -repeat 100 {
 
 varnish v1 -vcl+backend {
 	import vtc;
-	import std;
 	sub vcl_recv {
 		return (pass);
 	}
 	sub vcl_backend_fetch {
-		vtc.workspace_alloc(backend, -4 *
-			(std.integer(bereq.xid, 1002) - 1000) / 2);
+		vtc.workspace_alloc(backend, -4 * (bereq.xid - 1000) / 2);
 	}
 } -start
 
