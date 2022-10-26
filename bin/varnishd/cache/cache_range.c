@@ -108,34 +108,19 @@ vrg_dorange(struct req *req, void **priv)
 	struct vrg_priv *vrg_priv;
 	const char *err;
 
-	err = http_GetRange(req->http, &low, &high);
+	err = http_GetRange(req->http, &low, &high, req->resp_len);
 	if (err != NULL)
 		return (err);
 
-	assert(low >= -1);
-	assert(high >= -1);
+	if (low < 0 || high < 0)
+		return (NULL);		// Allow 200 response
 
-	if (low < 0) {
-		if (req->resp_len < 0 || high < 0)
-			return (NULL);		// Allow 200 response
-		assert(high > 0);
-		low = req->resp_len - high;
-		if (low < 0)
-			low = 0;
-		high = req->resp_len - 1;
-	} else if (req->resp_len >= 0 && (high >= req->resp_len || high < 0))
-		high = req->resp_len - 1;
-	else if (high < 0)
-		return (NULL);			// Allow 200 response
 	/*
 	 * else (bo != NULL) {
 	 *    We assume that the client knows what it's doing and trust
 	 *    that both low and high make sense.
 	 * }
 	 */
-
-	if (req->resp_len >= 0 && low >= req->resp_len)
-		return ("low range beyond object");
 
 	if (req->resp_len >= 0) {
 		http_PrintfHeader(req->resp, "Content-Range: bytes %jd-%jd/%jd",
@@ -268,7 +253,7 @@ VRG_CheckBo(struct busyobj *bo)
 	if (!cache_param->http_range_support)
 		return (0);
 
-	err = http_GetRange(bo->bereq0, &rlo, &rhi);
+	err = http_GetRange(bo->bereq0, &rlo, &rhi, -1);
 	clen = http_GetContentLength(bo->beresp);
 	crlen = http_GetContentRange(bo->beresp, &crlo, &crhi);
 
