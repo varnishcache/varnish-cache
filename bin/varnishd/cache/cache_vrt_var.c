@@ -767,7 +767,7 @@ VRT_DO_AGE_R(beresp, ctx->bo->fetch_objcore)
  * [[be]req|sess].xid
  */
 
-VCL_STRING
+VCL_INT
 VRT_r_req_xid(VRT_CTX)
 {
 
@@ -775,12 +775,10 @@ VRT_r_req_xid(VRT_CTX)
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req->http, HTTP_MAGIC);
 	AN(ctx->req->vsl);
-
-	return (WS_Printf(ctx->req->http->ws, "%ju",
-	    VXID(ctx->req->vsl->wid)));
+	return (VXID(ctx->req->vsl->wid));
 }
 
-VCL_STRING
+VCL_INT
 VRT_r_bereq_xid(VRT_CTX)
 {
 
@@ -788,10 +786,10 @@ VRT_r_bereq_xid(VRT_CTX)
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
 	AN(ctx->bo->vsl);
 
-	return (WS_Printf(ctx->ws, "%ju", VXID(ctx->bo->vsl->wid)));
+	return (VXID(ctx->bo->vsl->wid));
 }
 
-VCL_STRING
+VCL_INT
 VRT_r_sess_xid(VRT_CTX)
 {
 	struct sess *sp;
@@ -807,7 +805,7 @@ VRT_r_sess_xid(VRT_CTX)
 	}
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	return (WS_Printf(ctx->ws, "%ju", VXID(sp->vxid)));
+	return (VXID(sp->vxid));
 }
 
 /*--------------------------------------------------------------------

@@ -434,7 +434,7 @@ req.url
 
 req.xid
 
-	Type: STRING
+	Type: INT
 
 	Readable from: client
 
@@ -720,7 +720,7 @@ bereq.url
 
 bereq.xid
 
-	Type: STRING
+	Type: INT
 
 	Readable from: vcl_pipe, backend
 
@@ -1488,7 +1488,7 @@ sess.timeout_linger
 
 sess.xid	``VCL >= 4.1``
 
-	Type: STRING
+	Type: INT
 
 	Readable from: client, backend
 
