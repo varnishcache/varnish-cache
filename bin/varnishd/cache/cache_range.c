@@ -115,13 +115,6 @@ vrg_dorange(struct req *req, void **priv)
 	if (low < 0 || high < 0)
 		return (NULL);		// Allow 200 response
 
-	/*
-	 * else (bo != NULL) {
-	 *    We assume that the client knows what it's doing and trust
-	 *    that both low and high make sense.
-	 * }
-	 */
-
 	if (req->resp_len >= 0) {
 		http_PrintfHeader(req->resp, "Content-Range: bytes %jd-%jd/%jd",
 		    (intmax_t)low, (intmax_t)high, (intmax_t)req->resp_len);
