@@ -362,13 +362,13 @@ vslc_file_next(const struct VSL_cursor *cursor)
 	do {
 		c->cursor.rec.ptr = NULL;
 		assert(c->buflen >= 2);
-		i = vslc_file_readn(c->fd, c->buf, VSL_BYTES(2));
+		i = vslc_file_readn(c->fd, c->buf, VSL_BYTES(VSL_OVERHEAD));
 		if (i < 0)
 			return (vsl_e_io);
 		if (i == 0)
 			return (vsl_e_eof);
-		assert(i == VSL_BYTES(2));
-		l = 2 + VSL_WORDS(VSL_LEN(c->buf));
+		assert(i == VSL_BYTES(VSL_OVERHEAD));
+		l = VSL_OVERHEAD + VSL_WORDS(VSL_LEN(c->buf));
 		if (c->buflen < l) {
 			while (c->buflen < l)
 				c->buflen = 2 * l;
@@ -376,13 +376,13 @@ vslc_file_next(const struct VSL_cursor *cursor)
 			AN(c->buf);
 		}
 		if (l > 2) {
-			i = vslc_file_readn(c->fd, c->buf + 2,
-			    VSL_BYTES(l - 2));
+			i = vslc_file_readn(c->fd, c->buf + VSL_OVERHEAD,
+			    VSL_BYTES(l - VSL_OVERHEAD));
 			if (i < 0)
 				return (vsl_e_io);
 			if (i == 0)
 				return (vsl_e_eof);
-			assert(i == VSL_BYTES(l - 2));
+			assert(i == VSL_BYTES(l - VSL_OVERHEAD));
 		}
 		c->cursor.rec.ptr = c->buf;
 	} while (VSL_TAG(c->cursor.rec.ptr) == SLT__Batch);
