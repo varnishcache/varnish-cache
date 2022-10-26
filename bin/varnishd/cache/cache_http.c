@@ -960,15 +960,15 @@ http_GetContentRange(const struct http *hp, ssize_t *lo, ssize_t *hi)
 const char *
 http_GetRange(const struct http *hp, ssize_t *lo, ssize_t *hi)
 {
-	ssize_t tmp;
+	ssize_t tmp_lo, tmp_hi;
 	const char *b, *t;
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 
 	if (lo == NULL)
-		lo = &tmp;
+		lo = &tmp_lo;
 	if (hi == NULL)
-		hi = &tmp;
+		hi = &tmp_hi;
 
 	*lo = *hi = -1;
 
