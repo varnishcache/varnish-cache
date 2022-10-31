@@ -131,8 +131,9 @@ def run_gcov(prog, subdir):
                     continue
                 if ln[0].find("reating") != -1:
                     gn = root + rpath + ln[1].strip("'")
+                    gn = os.path.normpath(gn)
                     assert gn[-5:] == ".gcov"
-                    sn = root + rpath + gn[:-5]
+                    sn = gn[:-5]
                     process_gcov(gn, sn)
 
 def produce_output(fdo):
