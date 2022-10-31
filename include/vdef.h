@@ -241,6 +241,12 @@ int __llvm_gcov_flush(void);
 #  define v_unused_
 #endif
 
+#if __GNUC_PREREQ__(4, 3) || defined(__clang__)
+#  define v_cold_    __attribute__((cold))
+#else
+#  define v_cold_
+#endif
+
 /* VTIM API overhaul WIP */
 typedef double vtim_mono;
 typedef double vtim_real;
