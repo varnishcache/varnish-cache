@@ -11,9 +11,9 @@ varnish v1 -vcl+backend {
 	}
 } -start
 
-process p1 -dump {varnishstat -n ${v1_name}} -start
-process p2 -dump {varnishstat -n ${v1_name}} -start
-process p3 -dump {varnishstat -n ${v1_name}} -start
+process p1 {varnishstat -n ${v1_name}} -start
+process p2 {varnishstat -n ${v1_name}} -start
+process p3 {varnishstat -n ${v1_name}} -start
 
 process p1 -expect-text 0 0 "VBE.vcl1.s1.happy"
 process p1 -screen_dump
@@ -65,6 +65,24 @@ process p1 -write {h}
 process p1 -winsz 25 132
 process p1 -expect-text 4 124 "AVG_1000"
 process p1 -expect-text 22 108 "UNSEEN  DIAG"
+
+process p1 -key NPAGE
+process p1 -expect-text 0 0 "VBE.vcl1.s1.helddown"
+process p1 -screen_dump
+
+process p1 -key PPAGE
+process p1 -expect-text 0 0 "VBE.vcl1.s1.happy"
+process p1 -screen_dump
+
+process p1 -key END
+process p1 -expect-text 22 1 "   "
+process p1 -expect-text 4 1 "^^^"
+process p1 -screen_dump
+
+process p1 -key HOME
+process p1 -expect-text 22 1 "vvv"
+process p1 -expect-text 4 1 "   "
+process p1 -screen_dump
 
 process p1 -screen_dump -write {q} -wait
 process p2 -screen_dump -kill TERM -wait

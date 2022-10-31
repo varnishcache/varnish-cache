@@ -964,6 +964,11 @@ process_close(struct process *p)
  *	expression from either output, consider using it if you only need
  *	to match one.
  *
+ * \-key KEYSYM
+ *      Send emulated key-press.
+ *      KEYSYM can be one of (NPAGE, PPAGE, HOME, END)
+ *
+ *
  * \-kill SIGNAL
  *	Send a signal to the process. The argument can be either
  *	the string "TERM", "INT", or "KILL" for SIGTERM, SIGINT or SIGKILL
@@ -1098,6 +1103,19 @@ cmd_process(CMD_ARGS)
 				vtc_fatal(p->vl,
 				    "Cannot dump a running process");
 			p->log = 3;
+			continue;
+		}
+		if (!strcmp(*av, "-key")) {
+			if (!strcmp(av[1], "NPAGE"))
+				process_write(p, "\x1b\x5b\x36\x7e");
+			else if (!strcmp(av[1], "PPAGE"))
+				process_write(p, "\x1b\x5b\x35\x7e");
+			else if (!strcmp(av[1], "HOME"))
+				process_write(p, "\x1b\x4f\x48");
+			else if (!strcmp(av[1], "END"))
+				process_write(p, "\x1b\x4f\x46");
+			else
+				vtc_fatal(p->vl, "Unknown key %s", av[1]);
 			continue;
 		}
 		if (!strcmp(*av, "-kill")) {
