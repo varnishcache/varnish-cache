@@ -18,4 +18,4 @@ you're doing. We've worked hard to make the defaults sane and Varnish
 should be able to handle most workloads with the default settings.
 
 For a complete listing of all parameters and their specifics see
-:ref:`List of Parameters`.
+:ref:`varnish-params(7)`.

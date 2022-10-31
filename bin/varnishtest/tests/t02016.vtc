@@ -8,12 +8,12 @@ server s1 {
 varnish v1 -cliok "param.set feature +http2"
 varnish v1 -vcl+backend "" -start
 
-# coverage for send_timeout with c1
+# coverage for resp_send_timeout with c1
 
-varnish v1 -cliok "param.set send_timeout 1"
+varnish v1 -cliok "param.set resp_send_timeout 1"
 
 logexpect l1 -v v1 {
-	expect * * Debug "Hit send_timeout"
+	expect * * Debug "Hit resp_send_timeout"
 } -start
 
 client c1 {
@@ -44,13 +44,13 @@ client c1 {
 
 logexpect l1 -wait
 
-# coverage for idle_send_timeout with c2
+# coverage for resp_idle_interrupt with c2
 
-varnish v1 -cliok "param.set idle_send_timeout 1"
-varnish v1 -cliok "param.reset send_timeout"
+varnish v1 -cliok "param.set resp_idle_interrupt 1"
+varnish v1 -cliok "param.reset resp_send_timeout"
 
 logexpect l2 -v v1 {
-	expect * * Debug "Hit idle_send_timeout"
+	expect * * Debug "Hit resp_idle_interrupt"
 } -start
 
 client c2 {
@@ -79,12 +79,12 @@ client c2 {
 
 logexpect l2 -wait
 
-# coverage for idle_send_timeout change with c3
+# coverage for resp_idle_interrupt change with c3
 
 barrier b3 cond 2
 
 logexpect l3 -v v1 {
-	expect * * Debug "Hit idle_send_timeout"
+	expect * * Debug "Hit resp_idle_interrupt"
 } -start
 
 client c3 {
@@ -113,7 +113,7 @@ client c3 {
 } -start
 
 barrier b3 sync
-varnish v1 -cliok "param.reset idle_send_timeout"
+varnish v1 -cliok "param.reset resp_idle_interrupt"
 
 client c3 -wait
 logexpect l3 -wait

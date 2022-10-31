@@ -422,7 +422,8 @@ mgt_launch_child(struct cli *cli)
 	AN(child_std_vlu);
 
 	/* Wait for cache/cache_cli.c::CLI_Run() to check in */
-	if (VCLI_ReadResult(child_cli_in, &u, NULL, mgt_param.cli_timeout)) {
+	if (VCLI_ReadResult(child_cli_in, &u, NULL,
+	    mgt_param.cli_resp_timeout)) {
 		assert(u == CLIS_COMMS);
 		pidr = waitpid(pid, &i, 0);
 		assert(pidr == pid);
@@ -535,7 +536,7 @@ mgt_reap_child(void)
 	XXXAN(vsb);
 
 	/* Wait for child to die */
-	for (i = 0; i < mgt_param.cli_timeout * 10; i++) {
+	for (i = 0; i < mgt_param.cli_resp_timeout * 10; i++) {
 		r = waitpid(child_pid, &status, WNOHANG);
 		if (r == child_pid)
 			break;
@@ -627,9 +628,9 @@ mgt_reap_child(void)
  * for us to do but to drag it behind the barn and get it over with.
  *
  * The typical case is where the child process fails to return a reply
- * before the cli_timeout expires.  This invalidates the CLI pipes for
- * all future use, as we don't know if the child was just slow and the
- * result gets piped later on, or if the child is catatonic.
+ * before the cli_resp_timeout expires.  This invalidates the CLI pipes
+ * for all future use, as we don't know if the child was just slow and
+ * the result gets piped later on, or if the child is catatonic.
  */
 
 void

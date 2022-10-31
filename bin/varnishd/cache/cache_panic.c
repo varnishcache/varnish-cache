@@ -184,10 +184,10 @@ pan_htc(struct vsb *vsb, const struct http_conn *htc)
 	    (intmax_t)htc->content_length);
 	VSB_printf(vsb, "body_status = %s,\n",
 	    htc->body_status ? htc->body_status->name : "NULL");
-	VSB_printf(vsb, "first_byte_timeout = %f,\n",
-	    htc->first_byte_timeout);
-	VSB_printf(vsb, "between_bytes_timeout = %f,\n",
-	    htc->between_bytes_timeout);
+	VSB_printf(vsb, "beresp_start_timeout = %f,\n",
+	    htc->beresp_start_timeout);
+	VSB_printf(vsb, "beresp_idle_timeout = %f,\n",
+	    htc->beresp_idle_timeout);
 	VSB_indent(vsb, -2);
 	VSB_cat(vsb, "},\n");
 }

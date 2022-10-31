@@ -519,7 +519,7 @@
 	:group: wrk
 	:oneliner:	Session herd
 
-	Number of times the timeout_linger triggered
+	Number of times the sess_linger_interrupt triggered
 
 .. varnish_vsc:: sc_rem_close
 	:level:	diag
@@ -574,7 +574,7 @@
 	:oneliner:	Session Err RX_CLOSE_IDLE
 
 	Number of session closes with Error RX_CLOSE_IDLE:
-	timeout_idle has been exceeded while waiting for a
+	sess_idle_timeout has been exceeded while waiting for a
 	client request.
 
 .. varnish_vsc:: sc_tx_pipe

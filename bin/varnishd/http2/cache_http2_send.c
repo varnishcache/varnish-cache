@@ -56,20 +56,20 @@ h2_cond_wait(pthread_cond_t *cond, struct h2_sess *h2, struct h2_req *r2)
 
 	Lck_AssertHeld(&h2->sess->mtx);
 
-	if (cache_param->idle_send_timeout > 0.)
-		tmo = cache_param->idle_send_timeout;
+	if (cache_param->resp_idle_interrupt > 0.)
+		tmo = cache_param->resp_idle_interrupt;
 
 	r = Lck_CondWaitTimeout(cond, &h2->sess->mtx, tmo);
 	assert(r == 0 || r == ETIMEDOUT);
 
 	now = VTIM_real();
 
-	/* NB: when we grab idle_send_timeout before acquiring the session
-	 * lock we may time out, but once we wake up both send_timeout and
-	 * idle_send_timeout may have changed meanwhile. For this reason
+	/* NB: when we grab resp_idle_interrupt before acquiring the session
+	 * lock we may time out, but once we wake up both resp_send_timeout
+	 * and resp_idle_interrupt may have changed meanwhile. For this reason
 	 * h2_stream_tmo() may not log what timed out and we need to call
 	 * again with a magic NAN "now" that indicates to h2_stream_tmo()
-	 * that the stream reached the idle_send_timeout via the lock and
+	 * that the stream reached the resp_idle_interrupt via the lock and
 	 * force it to log it.
 	 */
 	if (h2_stream_tmo(h2, r2, now))

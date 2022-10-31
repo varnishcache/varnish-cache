@@ -414,9 +414,9 @@ struct busyobj {
 #include "tbl/beresp_flags.h"
 
 	/* Timeouts */
-	vtim_dur		connect_timeout;
-	vtim_dur		first_byte_timeout;
-	vtim_dur		between_bytes_timeout;
+	vtim_dur		bereq_connect_timeout;
+	vtim_dur		beresp_start_timeout;
+	vtim_dur		beresp_idle_timeout;
 
 	/* Timers */
 	vtim_real		t_first;	/* First timestamp logged */
@@ -580,13 +580,16 @@ struct sess {
 
 	vtim_real		t_open;		/* fd accepted */
 	vtim_real		t_idle;		/* fd accepted or resp sent */
-	vtim_dur		timeout_idle;
-	vtim_dur		timeout_linger;
-	vtim_dur		send_timeout;
-	vtim_dur		idle_send_timeout;
+	vtim_dur		idle_timeout;
+	vtim_dur		linger_interrupt;
+	vtim_dur		resp_send_timeout;
+	vtim_dur		resp_idle_interrupt;
 };
 
 #define SESS_TMO(sp, tmo)					\
+	(isnan((sp)->tmo) ? cache_param->sess_##tmo : (sp)->tmo)
+
+#define RESP_TMO(sp, tmo)					\
 	(isnan((sp)->tmo) ? cache_param->tmo : (sp)->tmo)
 
 /* Prototypes etc ----------------------------------------------------*/

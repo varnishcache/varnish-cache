@@ -139,7 +139,7 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 
 	AZ(req->wrk->v1l);
 	V1L_Open(req->wrk, req->wrk->aws, &req->sp->fd, req->vsl,
-	    req->t_prev + SESS_TMO(req->sp, send_timeout),
+	    req->t_prev + RESP_TMO(req->sp, resp_send_timeout),
 	    cache_param->http1_iovs);
 
 	if (WS_Overflowed(req->wrk->aws)) {

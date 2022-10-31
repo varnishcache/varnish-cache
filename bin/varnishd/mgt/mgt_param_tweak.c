@@ -51,6 +51,36 @@
 const char * const JSON_FMT = (const char *)&JSON_FMT;
 
 /*--------------------------------------------------------------------
+ * Tweak alias
+ */
+
+static inline const struct parspec *
+alias_resolve(const struct parspec *par)
+{
+
+	AN(par);
+	if (par->func == tweak_alias)
+		par = TRUST_ME(par->priv);
+	AN(par);
+	return (par);
+}
+
+int v_matchproto_(tweak_t)
+tweak_alias(struct vsb *vsb, const struct parspec *par, const char *arg)
+{
+	const struct parspec *orig;
+	struct parspec alias[1];
+
+	orig = alias_resolve(par);
+	assert(orig != par);
+	memcpy(alias, orig, sizeof *orig);
+	alias->name = par->name;
+	alias->priv = TRUST_ME(orig);
+	alias->func = tweak_alias;
+	return (orig->func(vsb, alias, arg));
+}
+
+/*--------------------------------------------------------------------
  * Generic handling of double typed parameters
  */
 
@@ -139,6 +169,7 @@ int v_matchproto_(tweak_t)
 tweak_timeout(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 
+	par = alias_resolve(par);
 	return (tweak_generic_double(vsb, arg, par, parse_duration, "%.3f"));
 }
 
@@ -148,6 +179,7 @@ int v_matchproto_(tweak_t)
 tweak_double(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 
+	par = alias_resolve(par);
 	return (tweak_generic_double(vsb, arg, par, parse_decimal, "%g"));
 }
 
@@ -184,6 +216,7 @@ tweak_boolean(struct vsb *vsb, const struct parspec *par, const char *arg)
 	volatile unsigned *dest;
 	int val;
 
+	par = alias_resolve(par);
 	dest = par->priv;
 	if (arg != NULL && arg != JSON_FMT) {
 		val = parse_boolean(vsb, arg);
@@ -265,6 +298,7 @@ tweak_uint(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	volatile unsigned *dest;
 
+	par = alias_resolve(par);
 	dest = par->priv;
 	return (tweak_generic_uint(vsb, dest, arg, par->min, par->max,
 	    par->dyn_min_reason, par->dyn_max_reason));
@@ -354,6 +388,7 @@ tweak_bytes(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	volatile ssize_t *dest;
 
+	par = alias_resolve(par);
 	dest = par->priv;
 	return (tweak_generic_bytes(vsb, dest, arg, par->min, par->max));
 }
@@ -366,6 +401,7 @@ tweak_bytes_u(struct vsb *vsb, const struct parspec *par, const char *arg)
 	volatile unsigned *d1;
 	volatile ssize_t dest;
 
+	par = alias_resolve(par);
 	d1 = par->priv;
 	dest = *d1;
 	if (tweak_generic_bytes(vsb, &dest, arg, par->min, par->max))
@@ -384,6 +420,7 @@ tweak_vsl_buffer(struct vsb *vsb, const struct parspec *par, const char *arg)
 	volatile unsigned *d1;
 	volatile ssize_t dest;
 
+	par = alias_resolve(par);
 	d1 = par->priv;
 	dest = *d1;
 	if (tweak_generic_bytes(vsb, &dest, arg, par->min, par->max))
@@ -399,6 +436,7 @@ tweak_vsl_reclen(struct vsb *vsb, const struct parspec *par, const char *arg)
 	volatile unsigned *d1;
 	volatile ssize_t dest;
 
+	par = alias_resolve(par);
 	d1 = par->priv;
 	dest = *d1;
 	if (tweak_generic_bytes(vsb, &dest, arg, par->min, par->max))
@@ -415,6 +453,7 @@ tweak_string(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	char **p = TRUST_ME(par->priv);
 
+	par = alias_resolve(par);
 	AN(p);
 	if (arg == NULL) {
 		VSB_quote(vsb, *p, -1, 0);
@@ -438,6 +477,7 @@ tweak_poolparam(struct vsb *vsb, const struct parspec *par, const char *arg)
 	char **av;
 	int retval = 0;
 
+	par = alias_resolve(par);
 	pp = par->priv;
 	if (arg == JSON_FMT) {
 		VSB_cat(vsb, "{\n");
@@ -508,6 +548,8 @@ int v_matchproto_(tweak_t)
 tweak_thread_pool_min(struct vsb *vsb, const struct parspec *par,
     const char *arg)
 {
+
+	par = alias_resolve(par);
 	if (tweak_uint(vsb, par, arg))
 		return (-1);
 
@@ -523,6 +565,7 @@ tweak_thread_pool_max(struct vsb *vsb, const struct parspec *par,
     const char *arg)
 {
 
+	par = alias_resolve(par);
 	if (tweak_uint(vsb, par, arg))
 		return (-1);
 
@@ -544,6 +587,8 @@ tweak_storage(struct vsb *vsb, const struct parspec *par, const char *arg)
 	 * h2_rxbuf_storage parameter, we could have a mechanism here
 	 * that when the child is running calls out through CLI to change
 	 * the stevedore being used. */
+
+	par = alias_resolve(par);
 
 	if (arg == NULL || arg == JSON_FMT)
 		return (tweak_string(vsb, par, arg));
@@ -567,24 +612,6 @@ tweak_storage(struct vsb *vsb, const struct parspec *par, const char *arg)
 		}
 	}
 	return (tweak_string(vsb, par, arg));
-}
-
-/*--------------------------------------------------------------------
- * Tweak alias
- */
-
-int v_matchproto_(tweak_t)
-tweak_alias(struct vsb *vsb, const struct parspec *par, const char *arg)
-{
-	const struct parspec *orig;
-	struct parspec alias[1];
-
-	orig = TRUST_ME(par->priv);
-	AN(orig);
-	memcpy(alias, orig, sizeof *orig);
-	alias->name = par->name;
-	alias->priv = TRUST_ME(orig);
-	return (alias->func(vsb, alias, arg));
 }
 
 /*--------------------------------------------------------------------
@@ -706,6 +733,7 @@ int v_matchproto_(tweak_t)
 tweak_vsl_mask(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 
+	par = alias_resolve(par);
 	return (tweak_generic_bits(vsb, par, arg, mgt_param.vsl_mask,
 	    SLT__Reserved, VSL_tags, "VSL tag", '-'));
 }
@@ -724,6 +752,7 @@ int v_matchproto_(tweak_t)
 tweak_debug(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 
+	par = alias_resolve(par);
 	return (tweak_generic_bits(vsb, par, arg, mgt_param.debug_bits,
 	    DBG_Reserved, debug_tags, "debug bit", '+'));
 }
@@ -742,6 +771,7 @@ int v_matchproto_(tweak_t)
 tweak_experimental(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 
+	par = alias_resolve(par);
 	return (tweak_generic_bits(vsb, par, arg, mgt_param.experimental_bits,
 	    EXPERIMENT_Reserved, experimental_tags, "experimental bit", '+'));
 }
@@ -760,6 +790,7 @@ int v_matchproto_(tweak_t)
 tweak_feature(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 
+	par = alias_resolve(par);
 	return (tweak_generic_bits(vsb, par, arg, mgt_param.feature_bits,
 	    FEATURE_Reserved, feature_tags, "feature bit", '+'));
 }
@@ -781,9 +812,8 @@ tweak_vcc_feature(struct vsb *vsb, const struct parspec *par, const char *arg)
 	char buf[32];
 	int val;
 
-	if (arg != NULL && arg != JSON_FMT &&
-	    strcmp(par->name, "vcc_feature")) {
-		orig = TRUST_ME(par->priv);
+	orig = alias_resolve(par);
+	if (arg != NULL && arg != JSON_FMT && orig != par) {
 		val = parse_boolean(vsb, arg);
 		if (val < 0)
 			return (-1);

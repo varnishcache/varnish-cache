@@ -286,5 +286,5 @@ address information, irrespective of which VCLs they are defined in,
 their connections are taken from a common pool.
 
 If not actively closed by the backend, pooled connections are kept
-open by Varnish until the :ref:`ref_param_backend_idle_timeout`
+open by Varnish until the :ref:`ref_param_backend_pool_timeout`
 expires.

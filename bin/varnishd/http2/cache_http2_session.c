@@ -289,8 +289,9 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 
 	/* Wait for PRISM response */
 	hs = HTC_RxStuff(h2->htc, H2_prism_complete,
-	    NULL, NULL, NAN, h2->sess->t_idle + cache_param->timeout_idle, NAN,
-	    sizeof H2_prism);
+	    NULL, NULL, NAN,
+	    h2->sess->t_idle + cache_param->sess_idle_timeout,
+	    NAN, sizeof H2_prism);
 	if (hs != HTC_S_COMPLETE) {
 		VSLb(h2->vsl, SLT_Debug, "H2: No/Bad OU PRISM (hs=%d)", hs);
 		r2->scheduled = 0;

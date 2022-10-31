@@ -532,20 +532,14 @@ bereq.backend
 	or backend, respectively.
 
 
-bereq.between_bytes_timeout
+bereq.between_bytes_timeout ``VCL <= 4.1``
 
-	Type: DURATION
+	Type: DEPRECATED
 
-	Readable from: backend
+	Alias of: beresp.idle_timeout
 
-	Writable from: backend
-
-	Default: ``.between_bytes_timeout`` attribute from the
-	:ref:`backend_definition`, which defaults to the
-	``between_bytes_timeout`` parameter, see :ref:`varnishd(1)`.
-
-	The time in seconds to wait between each received byte from the
-	backend.  Not available in pipe mode.
+	This variable is deprecated and may be removed in a future
+	release.
 
 
 bereq.body
@@ -574,20 +568,14 @@ bereq.connect_timeout
 	established.
 
 
-bereq.first_byte_timeout
+bereq.first_byte_timeout ``VCL <= 4.1``
 
-	Type: DURATION
+	Type: DEPRECATED
 
-	Readable from: backend
+	Alias of: beresp.start_timeout
 
-	Writable from: backend
-
-	Default: ``.first_byte_timeout`` attribute from the
-	:ref:`backend_definition`, which defaults to the
-	``first_byte_timeout`` parameter, see :ref:`varnishd(1)`.
-
-	The time in seconds to wait getting the first byte back
-	from the backend.  Not available in pipe mode.
+	This variable is deprecated and may be removed in a future
+	release.
 
 
 bereq.hash
@@ -1009,6 +997,40 @@ beresp.reason
 	The HTTP status message returned by the server.
 
 
+beresp.idle_timeout
+
+	Type: DURATION
+
+	Readable from: backend
+
+	Writable from: backend
+
+	Default: ``.beresp_idle_timeout`` attribute from the
+	:ref:`backend_definition`, which defaults to the
+	``beresp_idle_timeout`` parameter, see
+	:ref:`varnish-params(7)`.
+
+	The time in seconds to wait between each received byte from the
+	backend.  Not available in pipe mode.
+
+
+beresp.start_timeout
+
+	Type: DURATION
+
+	Readable from: backend
+
+	Writable from: backend
+
+	Default: ``.beresp_start_timeout`` attribute from the
+	:ref:`backend_definition`, which defaults to the
+	``beresp_start_timeout`` parameter, see
+	:ref:`varnish-params(7)`.
+
+	The time in seconds to wait getting the first byte back
+	from the backend.  Not available in pipe mode.
+
+
 beresp.status
 
 	Type: INT
@@ -1322,6 +1344,19 @@ resp.http.*
 	See ``req.http.*`` for general notes.
 
 
+resp.idle_interrupt
+
+	Type: DURATION
+
+	Readable from: client
+
+	Writable from: client
+
+	Send timeout for individual pieces of response data on client
+	connections, defaults to the ``resp_idle_interrupt`` parameter,
+	see :ref:`varnish-params(7)`.
+
+
 resp.is_streaming
 
 	Type: BOOL
@@ -1361,6 +1396,18 @@ resp.reason
 	Writable from: vcl_deliver, vcl_synth
 
 	The HTTP status message that will be returned.
+
+
+resp.send_timeout
+
+	Type: DURATION
+
+	Readable from: client
+
+	Writable from: client
+
+	Total timeout for ordinary HTTP1 responses, defaults to the
+	``resp_send_timeout`` parameter, see :ref:`varnish-params(7)`.
 
 
 resp.status
@@ -1437,32 +1484,17 @@ transactions may take place. It may comprise the traffic over an
 HTTP/1 keep-alive connection, or the multiplexed traffic over an
 HTTP/2 connection.
 
-sess.idle_send_timeout
+sess.idle_send_timeout ``VCL <= 4.1``
 
-	Type: DURATION
+	Type: DEPRECATED
 
-	Readable from: client
+	Alias of: resp.idle_interrupt
 
-	Writable from: client
-
-	Send timeout for individual pieces of data on client
-	connections, defaults to the ``idle_send_timeout`` parameter,
-	see :ref:`varnishd(1)`
+	This variable is deprecated and may be removed in a future
+	release.
 
 
-sess.send_timeout
-
-	Type: DURATION
-
-	Readable from: client
-
-	Writable from: client
-
-	Total timeout for ordinary HTTP1 responses, defaults to the
-	``send_timeout`` parameter, see :ref:`varnishd(1)`
-
-
-sess.timeout_idle
+sess.idle_timeout
 
 	Type: DURATION
 
@@ -1471,10 +1503,10 @@ sess.timeout_idle
 	Writable from: client
 
 	Idle timeout for this session, defaults to the
-	``timeout_idle`` parameter, see :ref:`varnishd(1)`
+	``sess_idle_timeout`` parameter, see :ref:`varnish-params(7)`.
 
 
-sess.timeout_linger
+sess.linger_interrupt
 
 	Type: DURATION
 
@@ -1483,7 +1515,37 @@ sess.timeout_linger
 	Writable from: client
 
 	Linger timeout for this session, defaults to the
-	``timeout_linger`` parameter, see :ref:`varnishd(1)`
+	``sess_linger_interrupt`` parameter, see :ref:`varnish-params(7)`.
+
+
+sess.send_timeout ``VCL <= 4.1``
+
+	Type: DEPRECATED
+
+	Alias of: resp.send_timeout
+
+	This variable is deprecated and may be removed in a future
+	release.
+
+
+sess.timeout_idle ``VCL <= 4.1``
+
+	Type: DEPRECATED
+
+	Alias of: sess.idle_timeout
+
+	This variable is deprecated and may be removed in a future
+	release.
+
+
+sess.timeout_linger ``VCL <= 4.1``
+
+	Type: DEPRECATED
+
+	Alias of: sess.linger_interrupt
+
+	This variable is deprecated and may be removed in a future
+	release.
 
 
 sess.xid	``VCL >= 4.1``

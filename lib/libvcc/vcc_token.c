@@ -304,21 +304,32 @@ vcc__Expect(struct vcc *tl, unsigned tok, unsigned line)
 }
 
 /*--------------------------------------------------------------------
- * Compare ID token to string, return true of match
+ * Compare ID token to string, return true of match.
+ *
+ * The string may be a comma-separated list of identifiers.
  */
 
 int
 vcc_IdIs(const struct token *t, const char *p)
 {
-	const char *q;
+	txt id;
 
 	assert(t->tok == ID);
-	for (q = t->b; q < t->e && *p != '\0'; p++, q++)
-		if (*q != *p)
-			return (0);
-	if (q != t->e || *p != '\0')
-		return (0);
-	return (1);
+	AN(p);
+	AN(*p);
+	while (*p != '\0') {
+		id.b = p;
+		id.e = strchr(p, ',');
+		if (id.e == NULL)
+			id.e = strchr(p, '\0');
+
+		if (Tlen(*t) == Tlen(id) && !memcmp(t->b, id.b, Tlen(id)))
+			return (1);
+		p = id.e;
+		if (*p == ',')
+			p++;
+	}
+	return (0);
 }
 
 /*--------------------------------------------------------------------

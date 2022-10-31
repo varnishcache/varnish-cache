@@ -277,7 +277,7 @@ VCP_Recycle(const struct worker *wrk, struct pfd **pfdp)
 	pfd->waited->idle = VTIM_real();
 	pfd->state = PFD_STATE_AVAIL;
 	pfd->waited->func = vcp_handle;
-	pfd->waited->tmo = cache_param->backend_idle_timeout;
+	pfd->waited->tmo = cache_param->backend_pool_timeout;
 	if (Wait_Enter(wrk->pool->waiter, pfd->waited)) {
 		cp->methods->close(pfd);
 		memset(pfd, 0x33, sizeof *pfd);

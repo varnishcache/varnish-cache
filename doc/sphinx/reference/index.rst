@@ -78,6 +78,7 @@ The Varnishd program
 	:maxdepth: 1
 
 	VarnishD - The program which does the actual work <varnishd>
+	Run Time Parameters - The varnishd tunable parameters <varnish-params>
 
 Varnishtest
 -----------

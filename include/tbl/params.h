@@ -237,7 +237,7 @@ PARAM_SIMPLE(
 )
 
 PARAM_SIMPLE(
-	/* name */	first_byte_timeout,
+	/* name */	beresp_start_timeout,
 	/* type */	timeout,
 	/* min */	"0",
 	/* max */	NULL,
@@ -252,7 +252,7 @@ PARAM_SIMPLE(
 )
 
 PARAM_SIMPLE(
-	/* name */	between_bytes_timeout,
+	/* name */	beresp_idle_timeout,
 	/* type */	timeout,
 	/* min */	"0",
 	/* max */	NULL,
@@ -266,7 +266,7 @@ PARAM_SIMPLE(
 )
 
 PARAM_SIMPLE(
-	/* name */	backend_idle_timeout,
+	/* name */	backend_pool_timeout,
 	/* type */	timeout,
 	/* min */	"1",
 	/* max */	NULL,
@@ -325,7 +325,7 @@ PARAM_SIMPLE(
 )
 
 PARAM_SIMPLE(
-	/* name */	cli_timeout,
+	/* name */	cli_resp_timeout,
 	/* type */	timeout,
 	/* min */	"0.000",
 	/* max */	NULL,
@@ -361,7 +361,7 @@ PARAM_SIMPLE(
 )
 
 PARAM_SIMPLE(
-	/* name */	connect_timeout,
+	/* name */	bereq_connect_timeout,
 	/* type */	timeout,
 	/* min */	"0.000",
 	/* max */	NULL,
@@ -627,16 +627,17 @@ PARAM_SIMPLE(
 )
 
 PARAM_SIMPLE(
-	/* name */	idle_send_timeout,
+	/* name */	resp_idle_interrupt,
 	/* type */	timeout,
 	/* min */	"0.000",
 	/* max */	NULL,
 	/* def */	"60.000",
 	/* units */	"seconds",
 	/* descr */
-	"Send timeout for individual pieces of data on client connections."
-	" May get extended if 'send_timeout' applies.\n\n"
-	"When this timeout is hit, the session is closed.\n\n"
+	"This timeout triggers when no data is sent while Varnish is "
+	"actively trying to send a piece of the response to a client. "
+	"Once it triggers, 'resp_send_timeout' can be checked and "
+	"enforced.\n\n"
 	"See the man page for `setsockopt(2)` or `socket(7)` under"
 	" ``SO_SNDTIMEO`` for more information.",
 	/* flags */	DELAYED_EFFECT
@@ -753,7 +754,7 @@ PARAM_SIMPLE(
 )
 
 PARAM_SIMPLE(
-	/* name */	pipe_timeout,
+	/* name */	pipe_idle_timeout,
 	/* type */	timeout,
 	/* min */	"0.000",
 	/* max */	NULL,
@@ -792,19 +793,22 @@ PARAM_SIMPLE(
 )
 
 PARAM_SIMPLE(
-	/* name */	send_timeout,
+	/* name */	resp_send_timeout,
 	/* type */	timeout,
 	/* min */	"0.000",
 	/* max */	NULL,
 	/* def */	"600.000",
 	/* units */	"seconds",
 	/* descr */
-	"Total timeout for ordinary HTTP1 responses. Does not apply to some"
+	"Total timeout to deliver a client response. Does not apply to some"
 	" internally generated errors and pipe mode.\n\n"
-	"When 'idle_send_timeout' is hit while sending an HTTP1 response, the"
-	" timeout is extended unless the total time already taken for sending"
-	" the response in its entirety exceeds this many seconds.\n\n"
-	"When this timeout is hit, the session is closed",
+	"This timeout is checked whenever more data needs to be sent. When"
+	" Varnish is waiting for data to be transmitted, it may be waiting"
+	" for the transmission itself or some other condition. During such"
+	" a wait, 'resp_idle_interrupt' may trigger to grant opportunities"
+	" to check and enforce this timeout.\n\n"
+	"This means that a slow but steady delivery of a client response may"
+	" outlive this timeout.",
 	/* flags */	DELAYED_EFFECT
 )
 
@@ -919,7 +923,7 @@ PARAM_SIMPLE(
 #undef PLATFORM_FLAGS
 
 PARAM_SIMPLE(
-	/* name */	timeout_idle,
+	/* name */	sess_idle_timeout,
 	/* type */	timeout,
 	/* min */	"0.000",
 	/* max */	NULL,
@@ -935,7 +939,7 @@ PARAM_SIMPLE(
 )
 
 PARAM_SIMPLE(
-	/* name */	timeout_linger,
+	/* name */	sess_linger_interrupt,
 	/* type */	timeout,
 	/* min */	"0.000",
 	/* max */	NULL,
@@ -1695,6 +1699,16 @@ PARAM_ALIAS(deprecated_dummy,	debug)
 PARAM_ALIAS(vcc_err_unref,	vcc_feature)
 PARAM_ALIAS(vcc_allow_inline_c,	vcc_feature)
 PARAM_ALIAS(vcc_unsafe_path,	vcc_feature)
+PARAM_ALIAS(first_byte_timeout, beresp_start_timeout)
+PARAM_ALIAS(between_bytes_timeout, beresp_idle_timeout)
+PARAM_ALIAS(backend_idle_timeout, backend_pool_timeout)
+PARAM_ALIAS(cli_timeout, cli_resp_timeout)
+PARAM_ALIAS(connect_timeout, bereq_connect_timeout)
+PARAM_ALIAS(idle_send_timeout, resp_idle_interrupt)
+PARAM_ALIAS(pipe_timeout, pipe_idle_timeout)
+PARAM_ALIAS(send_timeout, resp_send_timeout)
+PARAM_ALIAS(timeout_idle, sess_idle_timeout)
+PARAM_ALIAS(timeout_linger, sess_linger_interrupt)
 
 #  undef PARAM_ALIAS
 #  undef PARAM_PCRE2

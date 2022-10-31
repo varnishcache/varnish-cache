@@ -97,7 +97,7 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 	}
 
 	VTCP_blocking(*htc->rfd);	/* XXX: we should timeout instead */
-	/* XXX: need a send_timeout for the backend side */
+	/* XXX: need a bereq_send_timeout */
 	V1L_Open(wrk, wrk->aws, htc->rfd, bo->vsl, nan(""), 0);
 	hdrbytes = HTTP1_Write(wrk, hp, HTTP1_Req);
 
@@ -190,9 +190,9 @@ V1F_FetchRespHdr(struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
 
-	t = VTIM_real() + htc->first_byte_timeout;
+	t = VTIM_real() + htc->beresp_start_timeout;
 	hs = HTC_RxStuff(htc, HTTP1_Complete, NULL, NULL,
-	    t, NAN, htc->between_bytes_timeout, cache_param->http_resp_size);
+	    t, NAN, htc->beresp_idle_timeout, cache_param->http_resp_size);
 	if (hs != HTC_S_COMPLETE) {
 		bo->acct.beresp_hdrbytes +=
 		    htc->rxbuf_e - htc->rxbuf_b;
@@ -225,7 +225,7 @@ V1F_FetchRespHdr(struct busyobj *bo)
 		}
 		return (htc->rxbuf_e == htc->rxbuf_b ? 1 : -1);
 	}
-	VTCP_set_read_timeout(*htc->rfd, htc->between_bytes_timeout);
+	VTCP_set_read_timeout(*htc->rfd, htc->beresp_idle_timeout);
 
 	hp = bo->beresp;
 

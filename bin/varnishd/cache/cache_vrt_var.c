@@ -339,28 +339,28 @@ VRT_l_client_identity(VRT_CTX, const char *str, VCL_STRANDS s)
 
 /*--------------------------------------------------------------------*/
 
-#define BEREQ_TIMEOUT(which)					\
+#define FETCH_TIMEOUT(msg, which)				\
 VCL_VOID							\
-VRT_l_bereq_##which(VRT_CTX, VCL_DURATION num)			\
+VRT_l_##msg##_##which(VRT_CTX, VCL_DURATION num)		\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);		\
-	ctx->bo->which = (num > 0.0 ? num : 0.0);		\
+	ctx->bo->msg##_##which = (num > 0.0 ? num : 0.0);	\
 }								\
 								\
 VCL_DURATION							\
-VRT_r_bereq_##which(VRT_CTX)					\
+VRT_r_##msg##_##which(VRT_CTX)					\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);		\
-	return (ctx->bo->which);				\
+	return (ctx->bo->msg##_##which);			\
 }
 
-BEREQ_TIMEOUT(connect_timeout)
-BEREQ_TIMEOUT(first_byte_timeout)
-BEREQ_TIMEOUT(between_bytes_timeout)
+FETCH_TIMEOUT(bereq, connect_timeout)
+FETCH_TIMEOUT(beresp, idle_timeout)
+FETCH_TIMEOUT(beresp, start_timeout)
 
 /*--------------------------------------------------------------------*/
 
@@ -979,6 +979,37 @@ VRT_r_resp_do_esi(VRT_CTX)
 	return (!ctx->req->disable_esi);
 }
 
+/*--------------------------------------------------------------------
+ * XXX: Response timeouts are currently broken since they operate at
+ * the session level. Customizing a response timeout for one client
+ * transaction will still leak into the next HTTP/1 transaction or
+ * simply result in concurrent meddlings on h2 sessions. In particular
+ * socket options should only apply to HTTP/1 and this should probably
+ * be moved to protocol-specific code.
+ */
+
+#define RESP_TIMEOUT(x, setter)				\
+VCL_VOID						\
+VRT_l_resp_##x(VRT_CTX, VCL_DURATION d)			\
+{							\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);		\
+	CHECK_OBJ_NOTNULL(ctx->sp, SESS_MAGIC);		\
+	d = vmax(d, 0.0);				\
+	setter;						\
+	ctx->sp->resp_##x = d;				\
+}							\
+							\
+VCL_DURATION						\
+VRT_r_resp_##x(VRT_CTX)					\
+{							\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);		\
+	CHECK_OBJ_NOTNULL(ctx->sp, SESS_MAGIC);		\
+	return (RESP_TMO(ctx->sp, resp_##x));		\
+}
+
+RESP_TIMEOUT(idle_interrupt, VTCP_set_send_timeout(ctx->sp->fd, d))
+RESP_TIMEOUT(send_timeout, )
+
 /*--------------------------------------------------------------------*/
 
 #define VRT_BODY_L(which)					\
@@ -1056,34 +1087,23 @@ HTTP_VAR(beresp)
 
 /*--------------------------------------------------------------------*/
 
-static inline void
-set_idle_send_timeout(const struct sess *sp, VCL_DURATION d)
-{
-	struct timeval tv = VTIM_timeval(d);
-	VTCP_Assert(setsockopt(sp->fd, SOL_SOCKET, SO_SNDTIMEO,
-	    &tv, sizeof tv));
-}
-
-#define SESS_VAR_DUR(x, setter)				\
+#define SESS_VAR_DUR(x)					\
 VCL_VOID						\
-VRT_l_sess_##x(VRT_CTX, VCL_DURATION d)		\
+VRT_l_sess_##x(VRT_CTX, VCL_DURATION d)			\
 {							\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);		\
 	CHECK_OBJ_NOTNULL(ctx->sp, SESS_MAGIC);		\
 	d = vmax(d, 0.0);				\
-	setter;						\
 	ctx->sp->x = d;					\
 }							\
 							\
 VCL_DURATION						\
-VRT_r_sess_##x(VRT_CTX)				\
+VRT_r_sess_##x(VRT_CTX)					\
 {							\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);		\
 	CHECK_OBJ_NOTNULL(ctx->sp, SESS_MAGIC);		\
 	return (SESS_TMO(ctx->sp, x));			\
 }
 
-SESS_VAR_DUR(timeout_idle, )
-SESS_VAR_DUR(timeout_linger, )
-SESS_VAR_DUR(send_timeout, )
-SESS_VAR_DUR(idle_send_timeout, set_idle_send_timeout(ctx->sp, d))
+SESS_VAR_DUR(idle_timeout)
+SESS_VAR_DUR(linger_interrupt)
