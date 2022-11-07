@@ -108,17 +108,14 @@ local z_crc_t x2nmodp OF((z_off64_t n, unsigned k));
 #endif
 
 #if defined(W) && (!defined(ARMCRC32) || defined(DYNAMIC_CRC_TABLE))
-
-local z_word_t byte_swap OF((z_word_t word));
-local z_crc_t crc_word OF((z_word_t data));
-local z_word_t crc_word_big OF((z_word_t data));
-
 /*
   Swap the bytes in a z_word_t to convert between little and big endian. Any
   self-respecting compiler will optimize this to a single machine byte-swap
   instruction, if one is available. This assumes that word_t is either 32 bits
   or 64 bits.
  */
+local z_word_t byte_swap OF((z_word_t word));
+
 local z_word_t byte_swap(word)
     z_word_t word;
 {
@@ -719,6 +716,8 @@ unsigned long ZEXPORT crc32_z(crc, buf, len)
   least-significant byte of the word as the first byte of data, without any pre
   or post conditioning. This is used to combine the CRCs of each braid.
  */
+local z_crc_t crc_word OF((z_word_t data));
+
 local z_crc_t crc_word(data)
     z_word_t data;
 {
@@ -727,6 +726,8 @@ local z_crc_t crc_word(data)
         data = (data >> 8) ^ crc_table[data & 0xff];
     return (z_crc_t)data;
 }
+
+local z_word_t crc_word_big OF((z_word_t data));
 
 local z_word_t crc_word_big(data)
     z_word_t data;
