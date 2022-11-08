@@ -86,6 +86,11 @@ FEATURE_BIT(BUSY_STATS_RATE,	busy_stats_rate,
     "Make busy workers comply with thread_stats_rate."
 )
 
+FEATURE_BIT(TRACE,			trace,
+    "Enable VCL tracing by default (enable (be)req.trace). "
+    "Required for tracing vcl_init / vcl_fini"
+)
+
 #undef FEATURE_BIT
 
 /*lint -restore */

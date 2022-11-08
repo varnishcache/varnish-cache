@@ -59,6 +59,7 @@
  *
  * NEXT (2023-09-15)
  *	[cache_filter.h] struct vdp gained priv1 member
+ *	VRT_trace() added
  * 17.0 (2023-03-15)
  *	VXID is 64 bit
  *	[cache.h] http_GetRange() changed
@@ -676,6 +677,7 @@ VCL_VOID VRT_UnsetHdr(VRT_CTX, VCL_HEADER);
 VCL_VOID VRT_SetHdr(VRT_CTX, VCL_HEADER, const char *pfx, VCL_STRANDS);
 VCL_VOID VRT_handling(VRT_CTX, unsigned hand);
 unsigned VRT_handled(VRT_CTX);
+VCL_VOID VRT_trace(VRT_CTX, VCL_BOOL);
 VCL_VOID VRT_fail(VRT_CTX, const char *fmt, ...) v_printflike_(2,3);
 VCL_VOID VRT_hashdata(VRT_CTX, VCL_STRANDS);
 

@@ -301,6 +301,23 @@ VRT_r_beresp_uncacheable(VRT_CTX)
 	return (ctx->bo->uncacheable);
 }
 
+VCL_VOID
+VRT_l_req_trace(VRT_CTX, VCL_BOOL a)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	ctx->req->trace = a;
+	VRT_trace(ctx, a);
+}
+VCL_VOID
+VRT_l_bereq_trace(VRT_CTX, VCL_BOOL a)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	ctx->bo->trace = a;
+	VRT_trace(ctx, a);
+}
+
 /*--------------------------------------------------------------------*/
 
 VCL_BYTES

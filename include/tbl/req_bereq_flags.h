@@ -34,6 +34,7 @@
 /* lower, vcl_r, vcl_w, doc */
 REQ_BEREQ_FLAG(is_hitmiss,		1, 0, "")
 REQ_BEREQ_FLAG(is_hitpass,		1, 0, "")
+REQ_BEREQ_FLAG(trace,			1, 0, "")
 #undef REQ_BEREQ_FLAG
 
 /*lint -restore */

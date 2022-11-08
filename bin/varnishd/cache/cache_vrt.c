@@ -658,6 +658,15 @@ VRT_handled(VRT_CTX)
 	return (ctx->vpi->handling);
 }
 
+/* the trace value is cached in the VPI for efficiency */
+VCL_VOID
+VRT_trace(VRT_CTX, VCL_BOOL a)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(ctx->vpi);
+	ctx->vpi->trace = a;
+}
+
 /*--------------------------------------------------------------------*/
 
 VCL_VOID

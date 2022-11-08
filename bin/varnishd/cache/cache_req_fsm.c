@@ -891,6 +891,7 @@ cnt_recv_prep(struct req *req, const char *ci)
 		req->hash_ignore_vary = 0;
 		req->client_identity = NULL;
 		req->storage = NULL;
+		req->trace = FEATURE(FEATURE_TRACE);
 	}
 
 	req->is_hit = 0;

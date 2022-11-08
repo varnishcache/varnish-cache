@@ -451,6 +451,23 @@ req.time
 	across restarts.
 
 
+.. _req.trace:
+
+req.trace
+
+	Type: BOOL
+
+	Readable from: client
+
+	Writable from: client
+
+	Controls if ``VCL_trace`` VSL records are emitted for the current
+	request, see :ref:`vsl(7)`.
+
+	Defaults to the setting of the ``feature trace`` parameter,
+	see :ref:`varnishd(1)`. Does not get reset by a rollback.
+
+
 .. _req.transport:
 
 req.transport
@@ -792,6 +809,23 @@ bereq.time
 
 	The time when we started preparing the first backend request,
 	remains constant across retries.
+
+
+.. _bereq.trace:
+
+bereq.trace
+
+	Type: BOOL
+
+	Readable from: backend
+
+	Writable from: backend
+
+	Controls if ``VCL_trace`` VSL records are emitted for the current
+	request, see :ref:`vsl(7)`.
+
+	Inherits the value of ``req.trace`` when the backend request
+	is created. Does not get reset by a rollback.
 
 
 .. _bereq.uncacheable:
