@@ -409,6 +409,7 @@ struct vslc_mmap {
 	unsigned			magic;
 #define VSLC_MMAP_MAGIC			0x7de15f61
 	int				fd;
+	int				close_fd;
 	char				*b;
 	char				*e;
 	struct VSL_cursor		cursor;
@@ -424,6 +425,8 @@ vslc_mmap_delete(const struct VSL_cursor *cursor)
 	CAST_OBJ_NOTNULL(c, cursor->priv_data, VSLC_MMAP_MAGIC);
 	assert(&c->cursor == cursor);
 	AZ(munmap(c->b, c->e - c->b));
+	if (c->close_fd)
+		(void)close(c->fd);
 	FREE_OBJ(c);
 }
 
@@ -480,7 +483,7 @@ static const struct vslc_tbl vslc_mmap_tbl = {
 };
 
 static struct VSL_cursor *
-vsl_cursor_mmap(struct VSL_data *vsl, int fd)
+vsl_cursor_mmap(struct VSL_data *vsl, int fd, int close_fd)
 {
 	struct vslc_mmap *c;
 	struct stat st[1];
@@ -500,7 +503,8 @@ vsl_cursor_mmap(struct VSL_data *vsl, int fd)
 	ALLOC_OBJ(c, VSLC_MMAP_MAGIC);
 	if (c == NULL) {
 		(void)munmap(p, st->st_size);
-		(void)close(fd);
+		if (close_fd)
+			(void)close(fd);
 		vsl_diag(vsl, "Out of memory");
 		return (NULL);
 	}
@@ -508,6 +512,7 @@ vsl_cursor_mmap(struct VSL_data *vsl, int fd)
 	c->cursor.priv_data = c;
 
 	c->fd = fd;
+	c->close_fd = close_fd;
 	c->b = p;
 	c->e = c->b + st->st_size;
 	c->next.ptr = TRUST_ME(c->b + sizeof VSL_FILE_ID);
@@ -557,7 +562,7 @@ VSL_CursorFile(struct VSL_data *vsl, const char *name, unsigned options)
 		return (NULL);
 	}
 
-	mc = vsl_cursor_mmap(vsl, fd);
+	mc = vsl_cursor_mmap(vsl, fd, close_fd);
 	if (mc == NULL)
 		return (NULL);
 	if (mc != MAP_FAILED)
