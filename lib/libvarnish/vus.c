@@ -41,24 +41,41 @@
 #include "vus.h"
 #include "vtcp.h"
 
+static int
+sun_init(struct sockaddr_un *uds, const char *path, const char **err)
+{
+	AN(uds);
+	AN(path);
+	assert(*path == '/');
+
+	if (err)
+		*err = NULL;
+
+	if (strlen(path) + 1 > sizeof(uds->sun_path)) {
+		errno = ENAMETOOLONG;
+		if (err)
+			*err = "Path too long for a Unix domain socket";
+		return (-1);
+	}
+	memset(uds->sun_path, 0, sizeof(uds->sun_path));
+	bprintf(uds->sun_path, "%s", path);
+	uds->sun_family = PF_UNIX;
+	return (0);
+}
+
 int
 VUS_resolver(const char *path, vus_resolved_f *func, void *priv,
 	     const char **err)
 {
 	struct sockaddr_un uds;
-	int ret = 0;
-
-	AN(path);
-	assert(*path == '/');
+	int ret;
 
 	AN(err);
-	*err = NULL;
-	if (strlen(path) + 1 > sizeof(uds.sun_path)) {
-		*err = "Path too long for a Unix domain socket";
-		return (-1);
-	}
-	bprintf(uds.sun_path, "%s", path);
-	uds.sun_family = PF_UNIX;
+
+	ret = sun_init(&uds, path, err);
+	if (ret)
+		return (ret);
+
 	if (func != NULL)
 		ret = func(priv, &uds);
 	return (ret);
@@ -110,8 +127,9 @@ VUS_connect(const char *path, int msec)
 
 	if (path == NULL)
 		return (-1);
-	uds.sun_family = PF_UNIX;
-	bprintf(uds.sun_path, "%s", path);
+	i = sun_init(&uds, path, NULL);
+	if (i)
+		return (i);
 	AN(sl);
 
 	s = socket(PF_UNIX, SOCK_STREAM, 0);

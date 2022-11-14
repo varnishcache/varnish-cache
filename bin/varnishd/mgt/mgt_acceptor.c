@@ -77,10 +77,16 @@ static VTAILQ_HEAD(,listen_arg) listen_args =
     VTAILQ_HEAD_INITIALIZER(listen_args);
 
 static int
+mac_vus_bind(void *priv, const struct sockaddr_un *uds)
+{
+	return (VUS_bind(uds, priv));
+}
+
+static int
 mac_opensocket(struct listen_sock *ls)
 {
 	int fail;
-	struct sockaddr_un uds;
+	const char *err;
 
 	CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
 	if (ls->sock > 0) {
@@ -89,11 +95,8 @@ mac_opensocket(struct listen_sock *ls)
 	}
 	if (!ls->uds)
 		ls->sock = VTCP_bind(ls->addr, NULL);
-	else {
-		uds.sun_family = PF_UNIX;
-		bprintf(uds.sun_path, "%s", ls->endpoint);
-		ls->sock = VUS_bind(&uds, NULL);
-	}
+	else
+		ls->sock = VUS_resolver(ls->endpoint, mac_vus_bind, NULL, &err);
 	fail = errno;
 	if (ls->sock < 0) {
 		AN(fail);
