@@ -192,8 +192,8 @@ http_hdr_flags(const char *b, const char *e)
 	assert(b + u == e);
 	if (u < GPERF_MIN_WORD_LENGTH || u > GPERF_MAX_WORD_LENGTH)
 		return (NULL);
-	u += http_asso_values[((const uint8_t *)b)[u - 1]] +
-	    http_asso_values[((const uint8_t *)b)[0]];
+	u += http_asso_values[(uint8_t)(e[-1])] +
+	     http_asso_values[(uint8_t)(b[0])];
 	if (u > GPERF_MAX_HASH_VALUE)
 		return (NULL);
 	retval = &http_hdrflg[u];
