@@ -76,6 +76,11 @@ The absolute path to a Unix(4) domain socket of a local backend::
 
     .path = "/var/run/http.sock";
 
+or, where available, ``@`` followed by the name of an abstract socket
+of a local backend::
+
+    .path = "@mybackend";
+
 A warning will be issued if the uds-socket does not exist when the
 VCL is loaded.  This makes it possible to start the UDS-listening peer,
 or set the socket file's permissions afterwards.

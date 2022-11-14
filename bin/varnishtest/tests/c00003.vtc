@@ -33,16 +33,20 @@ shell -err -expect "Unix domain socket addresses must be absolute paths" {
 }
 
 # -a args for UDS permissions not permitted with IP addresses
-shell -err -expect "Invalid sub-arg user=u for IP addresses" {
+shell -err -expect "Invalid sub-arg user=u" {
 	varnishd -a ${localhost}:80000,user=u -d
 }
 
-shell -err -expect "Invalid sub-arg group=g for IP addresses" {
+shell -err -expect "Invalid sub-arg group=g" {
 	varnishd -a ${localhost}:80000,group=g -d
 }
 
-shell -err -expect "Invalid sub-arg mode=660 for IP addresses" {
+shell -err -expect "Invalid sub-arg mode=660" {
 	varnishd -a ${localhost}:80000,mode=660 -d
+}
+
+shell -err -expect "Invalid sub-arg mode=660" {
+	varnishd -a @abstract,mode=660 -d
 }
 
 # Illegal mode sub-args

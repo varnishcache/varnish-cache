@@ -38,6 +38,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/socket.h>
+#include <sys/un.h>
 #include <sys/types.h>
 #include <netinet/in.h>
 
@@ -229,11 +230,14 @@ VSA_GetPtr(const struct suckaddr *sua, const unsigned char ** dst)
 static inline
 socklen_t sua_len(const struct sockaddr *sa)
 {
+
 	switch (sa->sa_family) {
 	case PF_INET:
 		return (sizeof(struct sockaddr_in));
 	case PF_INET6:
 		return (sizeof(struct sockaddr_in6));
+	case AF_UNIX:
+		return (sizeof(struct sockaddr_un));
 	default:
 		return (0);
 	}

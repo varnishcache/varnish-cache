@@ -221,9 +221,10 @@ mac_uds(void *priv, const struct sockaddr_un *uds)
 	struct listen_sock *ls;
 
 	CAST_OBJ_NOTNULL(la, priv, LISTEN_ARG_MAGIC);
+	(void) uds;
 
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
-		if (ls->uds && strcmp(uds->sun_path, ls->endpoint) == 0)
+		if (ls->uds && strcmp(ls->endpoint, la->endpoint) == 0)
 			ARGV_ERR("-a arguments %s and %s have same address\n",
 			    ls->endpoint, la->endpoint);
 	}
@@ -289,7 +290,7 @@ MAC_Arg(const char *spec)
 			continue;
 		}
 		if (la->endpoint[0] != '/')
-			ARGV_ERR("Invalid sub-arg %s for IP addresses"
+			ARGV_ERR("Invalid sub-arg %s"
 			    " in -a\n", av[i]);
 
 		val = eq + 1;

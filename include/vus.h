@@ -40,5 +40,5 @@ int VUS_connect(const char *path, int msec);
 static inline int
 VUS_is(const char *path)
 {
-	return (*path == '/');
+	return (*path == '/' || *path == '@');
 }

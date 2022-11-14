@@ -93,11 +93,13 @@ Basic options
   (VCL4.1 and higher)
 
   Accept connections on a Unix domain socket.  Path must be absolute
-  ("/path/to/listen.sock").
+  ("/path/to/listen.sock") or "@" followed by the name of an abstract
+  socket ("@myvarnishd").
 
   The user, group and mode sub-arguments may be used to specify the
   permissions of the socket file -- use names for user and group, and
-  a 3-digit octal value for mode.
+  a 3-digit octal value for mode. These sub-arguments do not apply to
+  abstract sockets.
 
 -b <[host[:port]|path]>
 

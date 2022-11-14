@@ -1,0 +1,80 @@
+varnishtest "Abstract UDS backend: change path, drop poll"
+
+# XXX better test to check for abstract sockets
+feature cmd {socat abstract-listen:test file:/dev/null & date | socat fd:0  abstract-client:test}
+
+server s1 -listen "@vtc.s1.sock" {
+	non_fatal
+	timeout 3
+	loop 40 {
+		rxreq
+		txresp
+		accept
+	}
+} -start
+
+server s2 -listen "@vtc.s2.sock" {
+	non_fatal
+	timeout 3
+	loop 40 {
+		rxreq
+		txresp
+		accept
+	}
+} -start
+
+varnish v1 -arg "-a @vtc.v1.sock" -vcl {
+	probe default {
+		.window = 8;
+		.initial = 7;
+		.threshold = 8;
+		.interval = 0.1s;
+	}
+	backend s1 {
+		.path = "@vtc.s2.sock";
+	}
+} -start
+
+delay 1
+
+varnish v1 -vcl {
+	probe default {
+		.window = 8;
+		.initial = 7;
+		.threshold = 8;
+		.interval = 0.1s;
+	}
+	backend s1 {
+		.path = "@vtc.s1.sock";
+	}
+} -cliok "vcl.use vcl2" -cliok "vcl.discard vcl1"
+
+delay 1
+
+varnish v1 -vcl {
+	backend s1 {
+		.path = "@vtc.s1.sock";
+	}
+} -cliok "vcl.use vcl3" -cliok "vcl.discard vcl2"
+
+delay 1
+
+varnish v1 -cliok "vcl.list"
+varnish v1 -cliok "backend.list -p"
+
+server s1 -break {
+	rxreq
+	expect req.url == /foo
+	txresp -bodylen 4
+} -start
+
+delay 1
+
+client c1 -connect "@vtc.v1.sock" {
+	txreq -url /foo
+	rxresp
+	txreq -url /foo
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 4
+} -run

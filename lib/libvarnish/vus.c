@@ -58,7 +58,10 @@ sun_init(struct sockaddr_un *uds, const char *path, const char **err)
 		return (-1);
 	}
 	memset(uds->sun_path, 0, sizeof(uds->sun_path));
-	bprintf(uds->sun_path, "%s", path);
+	if (*path == '@')
+		bprintf(uds->sun_path, "%c%s", 0, path + 1);
+	else
+		bprintf(uds->sun_path, "%s", path);
 	uds->sun_family = PF_UNIX;
 	return (0);
 }

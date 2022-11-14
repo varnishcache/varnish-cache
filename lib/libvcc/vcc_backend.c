@@ -92,6 +92,14 @@ Emit_Sockaddr(struct vcc *tl, struct vsb *vsb1, const struct token *t_host,
  * the IP suckaddrs to NULL.
  */
 static void
+emit_path(struct vsb *vsb1, char *path)
+{
+	VSB_printf(vsb1, "\t.uds_path = \"%s\",\n", path);
+	VSB_cat(vsb1, "\t.ipv4 = (void *) 0,\n");
+	VSB_cat(vsb1, "\t.ipv6 = (void *) 0,\n");
+}
+
+static void
 Emit_UDS_Path(struct vcc *tl, struct vsb *vsb1,
     const struct token *t_path, const char *errid)
 {
@@ -100,6 +108,10 @@ Emit_UDS_Path(struct vcc *tl, struct vsb *vsb1,
 	AN(t_path);
 	AN(t_path->dec);
 
+	if (*t_path->dec == '@') {
+		emit_path(vsb1, t_path->dec);
+		return;
+	}
 	if (*t_path->dec != '/') {
 		VSB_printf(tl->sb,
 			   "%s: Must be an absolute path:\n", errid);
@@ -121,9 +133,7 @@ Emit_UDS_Path(struct vcc *tl, struct vsb *vsb1,
 		vcc_ErrWhere(tl, t_path);
 		return;
 	}
-	VSB_printf(vsb1, "\t.uds_path = \"%s\",\n", t_path->dec);
-	VSB_cat(vsb1, "\t.ipv4 = (void *) 0,\n");
-	VSB_cat(vsb1, "\t.ipv6 = (void *) 0,\n");
+	emit_path(vsb1, t_path->dec);
 }
 
 /*--------------------------------------------------------------------
