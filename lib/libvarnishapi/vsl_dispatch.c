@@ -93,7 +93,7 @@ struct synth {
 
 	VTAILQ_ENTRY(synth)	list;
 	size_t			offset;
-	uint32_t		data[2 + 64 / sizeof (uint32_t)];
+	uint32_t		data[VSL_OVERHEAD + 64 / sizeof (uint32_t)];
 };
 VTAILQ_HEAD(synthhead, synth);
 
@@ -1036,8 +1036,8 @@ vtx_synth_rec(struct vtx *vtx, unsigned tag, const char *fmt, ...)
 	ALLOC_OBJ(synth, SYNTH_MAGIC);
 	AN(synth);
 
-	buf = (char *)&synth->data[2];
-	buflen = sizeof (synth->data) - 2 * sizeof (uint32_t);
+	buf = (char *)&synth->data[VSL_OVERHEAD];
+	buflen = sizeof (synth->data) - VSL_OVERHEAD * sizeof (uint32_t);
 	va_start(ap, fmt);
 	l = vsnprintf(buf, buflen, fmt, ap);
 	assert(l >= 0);
