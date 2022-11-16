@@ -67,13 +67,20 @@
 #define VSL_IDENTMASK		(~(3U<<30))
 
 #define VSL_LENMASK		0xffff
-#define VSL_OVERHEAD		2
+#define VSL_VERMASK		0x3
+#define VSL_VERSHIFT		16
+#define VSL_IDMASK		0xff
+#define VSL_IDSHIFT		24
+#define VSL_OVERHEAD		3
+#define VSL_VERSION_2		0x0
+#define VSL_VERSION_3		0x1
 #define VSL_WORDS(len)		(((len) + 3) / 4)
 #define VSL_BYTES(words)	((words) * 4)
 #define VSL_END(ptr, len)	((ptr) + VSL_OVERHEAD + VSL_WORDS(len))
 #define VSL_NEXT(ptr)		VSL_END(ptr, VSL_LEN(ptr))
 #define VSL_LEN(ptr)		((ptr)[0] & VSL_LENMASK)
-#define VSL_TAG(ptr)		((enum VSL_tag_e)((ptr)[0] >> 24))
+#define VSL_VER(ptr)		(((ptr)[0] & VSL_VERMASK) >> VSL_VERSHIFT)
+#define VSL_TAG(ptr)		((enum VSL_tag_e)((ptr)[0] >> VSL_IDSHIFT))
 #define VSL_ID(ptr)		(((ptr)[1]) & VSL_IDENTMASK)
 #define VSL_CLIENT(ptr)		(((ptr)[1]) & VSL_CLIENTMARKER)
 #define VSL_BACKEND(ptr)	(((ptr)[1]) & VSL_BACKENDMARKER)
