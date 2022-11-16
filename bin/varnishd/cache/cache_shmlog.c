@@ -152,6 +152,26 @@ vsl_hdr(enum VSL_tag_e tag, uint32_t *p, unsigned len, vxid_t vxid)
 }
 
 /*--------------------------------------------------------------------
+ * Space available in a VSL buffer when accounting for overhead
+ */
+
+static unsigned
+vsl_space(const struct vsl_log *vsl)
+{
+	ptrdiff_t mlen;
+
+	mlen = vsl->wle - vsl->wlp;
+	assert(mlen >= 0);
+	if (mlen < VSL_OVERHEAD + 1)
+		return (0);
+	mlen -= VSL_OVERHEAD;
+	mlen *= sizeof *vsl->wlp;
+	if (mlen > cache_param->vsl_reclen)
+		mlen = cache_param->vsl_reclen;
+	return(mlen);
+}
+
+/*--------------------------------------------------------------------
  * Wrap the VSL buffer
  */
 
@@ -353,7 +373,7 @@ vslb_get(struct vsl_log *vsl, enum VSL_tag_e tag, unsigned *length)
 
 	/* If it still doesn't fit, truncate */
 	if (VSL_END(vsl->wlp, mlen) > vsl->wle)
-		mlen = ((char *)vsl->wle) - VSL_DATA(vsl->wlp);
+		mlen = vsl_space(vsl);
 
 	vsl->wlp = vsl_hdr(tag, vsl->wlp, mlen, vsl->wid);
 	vsl->wlr++;
@@ -448,7 +468,7 @@ VSLbv(struct vsl_log *vsl, enum VSL_tag_e tag, const char *fmt, va_list ap)
 
 	vsl_sanity(vsl);
 
-	mlen = (char *)vsl->wle - VSL_DATA(vsl->wlp);
+	mlen = vsl_space(vsl);
 
 	// First attempt, only if any space at all
 	if (mlen > 0) {
@@ -458,11 +478,10 @@ VSLbv(struct vsl_log *vsl, enum VSL_tag_e tag, const char *fmt, va_list ap)
 		va_end(ap2);
 	}
 
-	// Second attempt after a flush
-	if (mlen == 0 || n + 1 > mlen) {
-		// Second attempt after a flush
+	// Second attempt, if a flush might help
+	if (mlen == 0 || (n + 1 > mlen && n + 1 <= cache_param->vsl_reclen)) {
 		VSL_Flush(vsl, 1);
-		mlen = (char *)vsl->wle - VSL_DATA(vsl->wlp);
+		mlen = vsl_space(vsl);
 		p = VSL_DATA(vsl->wlp);
 		n = vsnprintf(p, mlen, fmt, ap);
 	}
