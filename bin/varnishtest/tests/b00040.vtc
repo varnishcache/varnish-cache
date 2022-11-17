@@ -109,7 +109,7 @@ client c1 {
 
 logexpect l1 -wait
 
-varnish v1 -cliok "param.set feature -validate_headers"
+varnish v1 -cliok "param.set feature -validate_headers,-validate_backend_requests"
 
 client c1 {
 	txreq -url /9

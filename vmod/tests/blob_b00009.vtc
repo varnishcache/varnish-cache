@@ -140,6 +140,8 @@ varnish v1 -arg "-p http_max_hdr=128" -vcl+backend {
 
 } -start
 
+varnish v1 -cliok "param.set feature -validate_backend_requests"
+
 client c1 {
 	txreq -url "/foo%20bar"
 	rxresp
