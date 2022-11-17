@@ -1643,3 +1643,163 @@ http_Unset(struct http *hp, hdr_t hdr)
 	}
 	hp->nhd = v;
 }
+
+/*--------------------------------------------------------------------*/
+
+static inline int
+http_valid_Method(struct vsl_log *vsl, const txt t)
+{
+	const char *p;
+
+	if (t.b == t.e) {
+		VSLb(vsl, SLT_HttpGarbage, "Empty method");
+		return (-1);
+	}
+	for (p = t.b; p < t.e && *p != ':'; p++) {
+		if (!vct_istchar(*p)) {
+			VSLb(vsl, SLT_HttpGarbage, "Method: %.*s",
+			    (int)(t.e - t.b), t.b);
+			return (-1);
+		}
+	}
+	return (0);
+}
+
+static inline int
+http_valid_URL(struct vsl_log *vsl, const txt t)
+{
+	const char *p;
+
+	if (t.b == t.e) {
+		VSLb(vsl, SLT_HttpGarbage, "Empty URL");
+		return (-1);
+	}
+	for (p = t.b; p < t.e; p++) {
+		if (vct_islws(*p) || vct_isctl(*p)) {
+			VSLb(vsl, SLT_HttpGarbage, "URL: %.*s",
+			    (int)(t.e - t.b), t.b);
+			return (-1);
+		}
+	}
+	return (0);
+}
+
+static inline int
+http_valid_Protocol(struct vsl_log *vsl, const txt t)
+{
+	const char *p;
+
+	for (p = t.b; p < t.e; p++) {
+		if (vct_islws(*p) || vct_isctl(*p)) {
+			VSLb(vsl, SLT_HttpGarbage, "Protocol: %.*s",
+			    (int)(t.e - t.b), t.b);
+			return (-1);
+		}
+	}
+	return (0);
+}
+
+static inline int
+http_valid_Status(struct vsl_log *vsl, const txt t)
+{
+	const char *p;
+	int n;
+
+	for (p = t.b, n = 0; p < t.e; p++, n++) {
+		if (!vct_isdigit(*p)) {
+			VSLb(vsl, SLT_HttpGarbage, "Status: %.*s",
+			    (int)(t.e - t.b), t.b);
+			return (-1);
+		}
+	}
+	if (n != 3) {
+		VSLb(vsl, SLT_HttpGarbage, "Status: %.*s",
+		    (int)(t.e - t.b), t.b);
+		return (-1);
+	}
+	return (0);
+}
+
+static inline int
+http_valid_Reason(struct vsl_log *vsl, const txt t)
+{
+	const char *p;
+
+	for (p = t.b; p < t.e; p++) {
+		if (!vct_ishdrval(*p)) {
+			VSLb(vsl, SLT_HttpGarbage, "Reason: %.*s",
+			    (int)(t.e - t.b), t.b);
+			return (-1);
+		}
+	}
+	return (0);
+}
+
+static inline int
+http_valid_header(struct vsl_log *vsl, const txt t)
+{
+	const char *p;
+
+	(void)vsl;
+	for (p = t.b; p < t.e && *p != ':'; p++) {
+		if (!vct_istchar(*p)) {
+			VSLb(vsl, SLT_HttpGarbage, "Header: %.*s",
+			    (int)(t.e - t.b), t.b);
+			return (-1);
+		}
+	}
+	if (*p != ':') {
+		VSLb(vsl, SLT_HttpGarbage, "Header: %.*s",
+		    (int)(t.e - t.b), t.b);
+		return (-1);
+	}
+	for (; p < t.e; p++) {
+		if (!vct_ishdrval(*p)) {
+			VSLb(vsl, SLT_HttpGarbage, "Header: %.*s",
+			    (int)(t.e - t.b), t.b);
+			return (-1);
+		}
+	}
+	return (0);
+}
+
+static inline int
+http_validate(const struct http *hp, int do_req, int do_resp)
+{
+	unsigned u;
+	int r = 0;
+
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+	for (u = 0; r == 0 && u < hp->nhd; u++) {
+#define SLTH(tag, ind, req, resp, sdesc, ldesc)				\
+		if (req && do_req && u == ind) {			\
+			r = http_valid_##tag(hp->vsl, hp->hd[u]);	\
+			continue;					\
+		}							\
+		if (resp && do_resp && u == ind) {			\
+			r = http_valid_##tag(hp->vsl, hp->hd[u]);	\
+			continue;					\
+		}
+#define SLTH_SKIP_EXTRA
+#include "tbl/vsl_tags_http.h"
+		if (u >= HTTP_HDR_FIRST)
+			r = http_valid_header(hp->vsl, hp->hd[u]);
+	}
+
+	return (r);
+}
+
+int
+HTTP_ValidateReq(const struct http *hp)
+{
+	return (http_validate(hp, 1, 0));
+}
+
+int
+HTTP_ValidateResp(const struct http *hp)
+{
+	return (http_validate(hp, 0, 1));
+}
+
+/*--------------------------------------------------------------------*/
+
