@@ -1,0 +1,46 @@
+varnishtest "resp and bereq character validation feature flags"
+
+server s1 {
+	rxreq
+	txresp
+
+	rxreq
+	expect req.url == /2
+	expect req.http.foo == FOO
+	expect req.http.bar == BAR
+	txresp -hdr "from: /2"
+} -start
+
+varnish v1 -vcl+backend {
+	import blob;
+
+	sub vcl_recv {
+		if (req.url == "/2") {
+			set req.http.foo = blob.transcode(encoded="FOO%0d%0abar: BAR", decoding=URL);
+		}
+	}
+
+	sub vcl_deliver {
+		if (req.url == "/1") {
+			set resp.http.foo = blob.transcode(encoded="FOO%0d%0abar: BAR", decoding=URL);
+		}
+	}
+} -start
+
+varnish v1 -cliok "param.set feature -validate_client_responses,-validate_headers"
+varnish v1 -cliok "param.set feature -validate_backend_requests,-validate_headers"
+
+client c1 {
+	txreq -url /1
+	rxresp
+	expect resp.status == 200
+	expect resp.http.foo == FOO
+	expect resp.http.bar == BAR
+} -run
+
+client c2 {
+	txreq -url /2
+	rxresp
+	expect resp.status == 200
+	expect resp.http.from == /2
+} -run
