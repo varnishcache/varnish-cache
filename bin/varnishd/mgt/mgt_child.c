@@ -426,7 +426,9 @@ mgt_launch_child(struct cli *cli)
 		assert(u == CLIS_COMMS);
 		pidr = waitpid(pid, &i, 0);
 		assert(pidr == pid);
-		(void)VLU_Fd(child_std_vlu, child_output);
+		do {
+			i = VLU_Fd(child_std_vlu, child_output);
+		} while (i == 0);
 		MGT_Complain(C_ERR, "Child failed on launch");
 		exit(1);		// XXX Harsh ?
 	} else {
