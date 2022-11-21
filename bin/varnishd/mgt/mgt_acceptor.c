@@ -158,8 +158,7 @@ mk_listen_sock(const struct listen_arg *la, const struct suckaddr *sa)
 	ls->name = la->name;
 	ls->transport = la->transport;
 	ls->perms = la->perms;
-	if (VUS_is(la->endpoint))
-		ls->uds = 1;
+	ls->uds = VUS_is(la->endpoint);
 	VJ_master(JAIL_MASTER_PRIVPORT);
 	fail = mac_opensocket(ls);
 	VJ_master(JAIL_MASTER_LOW);
@@ -368,10 +367,10 @@ MAC_Arg(const char *spec)
 	else
 		AZ(la->perms);
 
-	if (! VUS_is(la->endpoint))
-		error = VSS_resolver(av[1], "80", mac_tcp, la, &err);
-	else
+	if (VUS_is(la->endpoint))
 		error = VUS_resolver(av[1], mac_uds, la, &err);
+	else
+		error = VSS_resolver(av[1], "80", mac_tcp, la, &err);
 
 	if (VTAILQ_EMPTY(&la->socks) || error)
 		ARGV_ERR("Got no socket(s) for %s\n", av[1]);

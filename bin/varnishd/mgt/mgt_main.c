@@ -484,10 +484,10 @@ mgt_b_conv(const char *b_arg)
 	VSB_cat(vsb, "backend default ");
 	if (!strcasecmp(b_arg, "none"))
 		VSB_cat(vsb, "none;\n");
-	else if (! VUS_is(b_arg))
-		VSB_printf(vsb, "{\n    .host = \"%s\";\n}\n", b_arg);
-	else
+	else if (VUS_is(b_arg))
 		VSB_printf(vsb, "{\n    .path = \"%s\";\n}\n", b_arg);
+	else
+		VSB_printf(vsb, "{\n    .host = \"%s\";\n}\n", b_arg);
 	AZ(VSB_finish(vsb));
 	fa->src = strdup(VSB_data(vsb));
 	AN(fa->src);
