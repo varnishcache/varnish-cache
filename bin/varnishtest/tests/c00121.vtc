@@ -1,7 +1,6 @@
 varnishtest "Abstract UDS backend: change path, drop poll"
 
-# XXX better test to check for abstract sockets
-feature cmd {socat abstract-listen:test file:/dev/null & date | socat fd:0  abstract-client:test}
+feature abstract_uds
 
 server s1 -listen "@vtc.s1.sock" {
 	non_fatal

@@ -39,6 +39,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/un.h>
 #include <unistd.h>
 
 #ifdef HAVE_SYS_PERSONALITY_H
@@ -52,6 +53,7 @@
 #include "vtcp.h"
 #include "vss.h"
 #include "vtim.h"
+#include "vus.h"
 
 /* SECTION: vtest vtest
  *
@@ -411,6 +413,28 @@ addr_no_randomize_works(void)
 	return (r >= 0);
 }
 
+/**********************************************************************/
+
+static int
+uds_socket(void *priv, const struct sockaddr_un *uds)
+{
+
+	(void) priv;
+	return (socket(uds->sun_family, SOCK_STREAM, 0));
+}
+static int
+abstract_uds_works(void)
+{
+	const char *err;
+	int fd;
+
+	fd = VUS_resolver("@vtc.feature.abstract_uds", uds_socket, NULL, &err);
+	if (fd < 0)
+		return (0);
+	close(fd);
+	return (1);
+}
+
 /* SECTION: feature feature
  *
  * Test that the required feature(s) for a test are available, and skip
@@ -456,6 +480,8 @@ addr_no_randomize_works(void)
  *        Varnish was built with a sanitizer.
  * workspace_emulator
  *        Varnish was built with its workspace emulator.
+ * abstract_uds
+ *        Creation of an abstract unix domain socket succeeded
  *
  * A feature name can be prefixed with an exclamation mark (!) to skip a
  * test if the feature is present.
@@ -566,6 +592,7 @@ cmd_feature(CMD_ARGS)
 		FEATURE("ubsan", ubsan);
 		FEATURE("sanitizer", sanitizer);
 		FEATURE("workspace_emulator", workspace_emulator);
+		FEATURE("abstract_uds", abstract_uds_works());
 
 		if (!strcmp(feat, "cmd")) {
 			good = 1;
