@@ -57,6 +57,13 @@ sun_init(struct sockaddr_un *uds, const char *path, const char **err)
 			*err = "Path too long for a Unix domain socket";
 		return (-1);
 	}
+	if (! strcmp(path, "@")) {
+		errno = EINVAL;
+		if (err)
+			*err = "The empty abstract socket name is not"
+			    " supported";
+		return (-1);
+	}
 	memset(uds->sun_path, 0, sizeof(uds->sun_path));
 	if (*path == '@')
 		bprintf(uds->sun_path, "%c%s", 0, path + 1);
