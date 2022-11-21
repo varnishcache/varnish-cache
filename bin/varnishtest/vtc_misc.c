@@ -419,8 +419,7 @@ static int
 uds_socket(void *priv, const struct sockaddr_un *uds)
 {
 
-	(void) priv;
-	return (socket(uds->sun_family, SOCK_STREAM, 0));
+	return (VUS_bind(uds, priv));
 }
 static int
 abstract_uds_works(void)
@@ -431,7 +430,7 @@ abstract_uds_works(void)
 	fd = VUS_resolver("@vtc.feature.abstract_uds", uds_socket, NULL, &err);
 	if (fd < 0)
 		return (0);
-	close(fd);
+	AZ(close(fd));
 	return (1);
 }
 
