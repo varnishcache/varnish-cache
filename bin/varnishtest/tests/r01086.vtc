@@ -1,5 +1,7 @@
 varnishtest "#1086 junk after gzip from backend and streaming enabled"
 
+barrier b1 cond 2
+
 server s1 {
 	# This one will be streamed
 	rxreq
@@ -20,7 +22,7 @@ server s1 {
 		sendhex "00000000"
 	send "\r\n"
 
-	delay .2
+	barrier b1 sync
 
 	chunked "FOOBAR"
 	non_fatal
@@ -40,6 +42,7 @@ client c1 {
 	txreq -hdr "Cookie: FOO"
 	rxresphdrs
 	expect resp.status == 200
+	barrier b1 sync
 	expect_close
 } -run
 
