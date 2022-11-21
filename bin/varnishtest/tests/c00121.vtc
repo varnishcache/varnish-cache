@@ -77,3 +77,15 @@ client c1 -connect "@vtc.v1.sock" {
 	expect resp.status == 200
 	expect resp.bodylen == 4
 } -run
+
+########################################
+# coverage
+
+varnish v1 -errvcl {Backend path: The empty abstract socket name is not supported} {
+	backend s1 {
+		.path = "@";
+	}
+}
+
+shell -err -expect "Error: Got no socket(s) for @" \
+	"varnishd -n ${tmpdir}/v0 -a @ -b None"
