@@ -117,9 +117,15 @@ varnish v1 -errvcl "Address redefinition at:" {
 	}
 }
 
-varnish v1 -errvcl "Must be an absolute path:" {
+varnish v1 -errvcl "Must be a valid path or abstract socket:" {
 	backend b1 {
 		.path = "server.sock";
+	}
+}
+
+varnish v1 -errvcl "Path too long for a Unix domain socket" {
+	backend b1 {
+		.path = "/this/super/long/path/this/super/long/path/this/super/long/path/this/super/long/path/this/super/long/path/this/super/long/path/this/super/long/path/this/super/long/path/this/super/long/path/this/super/long/path/this/super/long/path/this/super/long/path/this/super/long/path/this/super/long/path/this/super/long/path/this/super/long/path/this/super/long/path/this/super/long/path/this/super/long/path/this/super/long/path/this/super/long/path/this/super/long/path/this/super/long/path";
 	}
 }
 

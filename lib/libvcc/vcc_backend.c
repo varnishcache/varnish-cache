@@ -37,6 +37,7 @@
 #include <sys/stat.h>
 
 #include "vcc_compile.h"
+#include "vus.h"
 
 const char *
 vcc_default_probe(struct vcc *tl)
@@ -87,10 +88,19 @@ Emit_Sockaddr(struct vcc *tl, struct vsb *vsb1, const struct token *t_host,
 }
 
 /*
- * For UDS, we do not create a VSA. Check if it's an absolute path, can
- * be accessed, and is a socket. If so, just emit the path field and set
- * the IP suckaddrs to NULL.
+ * For UDS, we do not create a VSA. We run the VUS_resolver() checks and, if
+ * it's a path, can be accessed, and is a socket. If so, just emit the path
+ * field and set the IP suckaddrs to NULL.
  */
+
+static int
+uds_resolved(void *priv, const struct sockaddr_un *uds)
+{
+	(void) priv;
+	(void) uds;
+	return (42);
+}
+
 static void
 emit_path(struct vsb *vsb1, char *path)
 {
@@ -104,20 +114,28 @@ Emit_UDS_Path(struct vcc *tl, struct vsb *vsb1,
     const struct token *t_path, const char *errid)
 {
 	struct stat st;
+	const char *vus_err;
 
 	AN(t_path);
 	AN(t_path->dec);
 
+	if (! VUS_is(t_path->dec)) {
+		VSB_printf(tl->sb,
+			   "%s: Must be a valid path or abstract socket:\n",
+			   errid);
+		vcc_ErrWhere(tl, t_path);
+		return;
+	}
+	if (VUS_resolver(t_path->dec, uds_resolved, NULL, &vus_err) != 42) {
+		VSB_printf(tl->sb, "%s: %s\n", errid, vus_err);
+		vcc_ErrWhere(tl, t_path);
+		return;
+	}
 	if (*t_path->dec == '@') {
 		emit_path(vsb1, t_path->dec);
 		return;
 	}
-	if (*t_path->dec != '/') {
-		VSB_printf(tl->sb,
-			   "%s: Must be an absolute path:\n", errid);
-		vcc_ErrWhere(tl, t_path);
-		return;
-	}
+	assert(*t_path->dec == '/');
 	errno = 0;
 	if (stat(t_path->dec, &st) != 0) {
 		int err = errno;
