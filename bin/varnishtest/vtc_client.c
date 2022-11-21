@@ -186,7 +186,7 @@ client_connect(struct vtclog *vl, struct client *c)
 	int fd;
 
 	vtc_log(vl, 3, "Connect to %s", c->addr);
-	if (*c->addr == '/')
+	if (VUS_is(c->addr))
 		fd = client_uds_connect(vl, c->addr, 10., &err);
 	else
 		fd = client_tcp_connect(vl, c->addr, 10., &err);

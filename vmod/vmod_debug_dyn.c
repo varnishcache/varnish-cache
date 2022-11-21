@@ -41,6 +41,7 @@
 
 #include "vsa.h"
 #include "vss.h"
+#include "vus.h"
 #include "vcc_debug_if.h"
 
 struct xyzzy_debug_dyn {
@@ -178,7 +179,7 @@ dyn_uds_init(VRT_CTX, struct xyzzy_debug_dyn_uds *uds, VCL_STRING path)
 		VRT_fail(ctx, "path is NULL");
 		return (-1);
 	}
-	if (*path != '/') {
+	if (! VUS_is(path)) {
 		VRT_fail(ctx, "path must be an absolute path: %s", path);
 		return (-1);
 	}

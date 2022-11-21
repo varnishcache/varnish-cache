@@ -62,6 +62,7 @@
 #include "vtim.h"
 #include "waiter/mgt_waiter.h"
 #include "vsa.h"
+#include "vus.h"
 
 struct heritage		heritage;
 unsigned		d_flag = 0;
@@ -483,7 +484,7 @@ mgt_b_conv(const char *b_arg)
 	VSB_cat(vsb, "backend default ");
 	if (!strcasecmp(b_arg, "none"))
 		VSB_cat(vsb, "none;\n");
-	else if (*b_arg != '/')
+	else if (! VUS_is(b_arg))
 		VSB_printf(vsb, "{\n    .host = \"%s\";\n}\n", b_arg);
 	else
 		VSB_printf(vsb, "{\n    .path = \"%s\";\n}\n", b_arg);

@@ -46,7 +46,7 @@ sun_init(struct sockaddr_un *uds, const char *path, const char **err)
 {
 	AN(uds);
 	AN(path);
-	assert(*path == '/');
+	assert(VUS_is(path));
 
 	if (err)
 		*err = NULL;

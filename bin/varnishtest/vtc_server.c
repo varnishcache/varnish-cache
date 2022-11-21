@@ -216,7 +216,7 @@ server_listen(struct server *s)
 
 	if (s->sock >= 0)
 		VTCP_close(&s->sock);
-	if (*s->listen != '/')
+	if (! VUS_is(s->listen))
 		server_listen_tcp(s, &err);
 	else
 		server_listen_uds(s, &err);
@@ -248,7 +248,7 @@ server_conn(void *priv, struct vtclog *vl)
 	fd = accept(s->sock, addr, &l);
 	if (fd < 0)
 		vtc_fatal(vl, "Accept failed: %s", strerror(errno));
-	if (*s->listen != '/') {
+	if (! VUS_is(s->listen)) {
 		VTCP_hisname(fd, abuf, sizeof abuf, pbuf, sizeof pbuf);
 		vtc_log(vl, 3, "accepted fd %d %s %s", fd, abuf, pbuf);
 	} else
@@ -431,7 +431,7 @@ cmd_server_gen_vcl(struct vsb *vsb)
 		if (s->sock < 0 && s->fd >= 0) /* dispatch instance */
 			continue;
 
-		if (*s->listen != '/')
+		if (! VUS_is(s->listen))
 			VSB_printf(vsb,
 				   "backend %s { .host = \"%s\"; "
 				   ".port = \"%s\"; }\n",
@@ -456,7 +456,7 @@ cmd_server_gen_haproxy_conf(struct vsb *vsb)
 
 	AZ(pthread_mutex_lock(&server_mtx));
 	VTAILQ_FOREACH(s, &servers, list) {
-		if (*s->listen != '/')
+		if (! VUS_is(s->listen))
 			VSB_printf(vsb,
 			   "\n    backend be%s\n"
 			   "\tserver srv%s %s:%s\n",
@@ -465,7 +465,7 @@ cmd_server_gen_haproxy_conf(struct vsb *vsb)
 			INCOMPL();
 	}
 	VTAILQ_FOREACH(s, &servers, list) {
-		if (*s->listen != '/')
+		if (! VUS_is(s->listen))
 			VSB_printf(vsb,
 			   "\n    frontend http%s\n"
 			   "\tuse_backend be%s\n"

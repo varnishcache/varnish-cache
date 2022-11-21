@@ -158,7 +158,7 @@ mk_listen_sock(const struct listen_arg *la, const struct suckaddr *sa)
 	ls->name = la->name;
 	ls->transport = la->transport;
 	ls->perms = la->perms;
-	if (*la->endpoint == '/')
+	if (VUS_is(la->endpoint))
 		ls->uds = 1;
 	VJ_master(JAIL_MASTER_PRIVPORT);
 	fail = mac_opensocket(ls);
@@ -273,7 +273,7 @@ MAC_Arg(const char *spec)
 		ARGV_ERR("Unix domain socket addresses must be"
 		    " absolute paths in -a (%s)\n", la->endpoint);
 
-	if (*la->endpoint == '/' && heritage.min_vcl_version < 41)
+	if (VUS_is(la->endpoint) && heritage.min_vcl_version < 41)
 		heritage.min_vcl_version = 41;
 
 	for (int i = 2; av[i] != NULL; i++) {
@@ -368,7 +368,7 @@ MAC_Arg(const char *spec)
 	else
 		AZ(la->perms);
 
-	if (*la->endpoint != '/')
+	if (! VUS_is(la->endpoint))
 		error = VSS_resolver(av[1], "80", mac_tcp, la, &err);
 	else
 		error = VUS_resolver(av[1], mac_uds, la, &err);
