@@ -89,8 +89,9 @@ vtc_gzip_vsb(struct vtclog *vl, int fatal, int gzip_level, const struct vsb *vin
 	} while (i == Z_OK || i == Z_BUF_ERROR);
 	if (i != Z_STREAM_END)
 		vtc_log(vl, fatal,
-		    "Gzip error = %d (%s) in:%jd out:%jd",
-		    i, vz.msg, (intmax_t)vz.total_in, (intmax_t)vz.total_out);
+		    "Gzip error = %d (%s) in:%jd out:%jd len:%zd",
+		    i, vz.msg, (intmax_t)vz.total_in, (intmax_t)vz.total_out,
+		    VSB_len(vin));
 	AZ(VSB_finish(vout));
 #ifdef VGZ_EXTENSIONS
 	*residual = vz.stop_bit & 7;
@@ -157,8 +158,9 @@ vtc_gunzip_vsb(struct vtclog *vl, int fatal, const struct vsb *vin)
 	} while (i == Z_OK || i == Z_BUF_ERROR);
 	if (i != Z_STREAM_END)
 		vtc_log(vl, fatal,
-		    "Gunzip error = %d (%s) in:%jd out:%jd",
-		    i, vz.msg, (intmax_t)vz.total_in, (intmax_t)vz.total_out);
+		    "Gunzip error = %d (%s) in:%jd out:%jd len:%zd",
+		    i, vz.msg, (intmax_t)vz.total_in, (intmax_t)vz.total_out,
+		    VSB_len(vin));
 	AZ(VSB_finish(vout));
 #ifdef VGZ_EXTENSIONS
 	vtc_report_gz_bits(vl, &vz);
