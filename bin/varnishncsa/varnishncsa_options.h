@@ -61,9 +61,10 @@
 	VOPT("w:", "[-w <filename>]", "Output filename",		\
 	    "Redirect output to file. The file will be overwritten"	\
 	    " unless the -a option was specified. If the application"	\
-	    " receives a SIGHUP in daemon mode the file will be"	\
-	    " reopened allowing the old one to be rotated away. This"	\
-	    " option is required when running in daemon mode. If the"	\
+	    " application runs as a daemon (-D option) or adds a"	\
+	    " SIGHUP handler (-H option), the -w option is required"	\
+	    " and the file will be reopened allowing the old one to be"	\
+	    " rotated away when a HUP signal is received. If the"	\
 	    " filename is -, varnishncsa writes to the standard output"	\
 	    " and cannot work as a daemon."				\
 	)
@@ -102,6 +103,7 @@ NCSA_OPT_F
 NCSA_OPT_f
 NCSA_OPT_g
 VUT_OPT_h
+VUT_OPT_H
 NCSA_OPT_j
 VUT_OPT_k
 VSL_OPT_L

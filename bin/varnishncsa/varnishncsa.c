@@ -1217,7 +1217,7 @@ main(int argc, char * const *argv)
 	if (optind != argc)
 		VUT_Usage(vut, &vopt_spec, 1);
 
-	if (vut->D_opt && !CTX.w_arg)
+	if (vut->H_opt && !CTX.w_arg)
 		VUT_Error(vut, 1, "Missing -w option");
 
 	if (vut->D_opt && !strcmp(CTX.w_arg, "-"))
@@ -1239,7 +1239,7 @@ main(int argc, char * const *argv)
 	if (CTX.w_arg) {
 		openout(CTX.a_opt);
 		AN(CTX.fo);
-		if (vut->D_opt)
+		if (vut->H_opt)
 			vut->sighup_f = rotateout;
 	} else
 		CTX.fo = stdout;

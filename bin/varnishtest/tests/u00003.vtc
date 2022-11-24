@@ -24,11 +24,6 @@ varnish v1 -vcl+backend {
 	}
 } -start
 
-shell {
-	varnishncsa -n ${v1_name} -D -P ${tmpdir}/ncsa.pid \
-		-w ${tmpdir}/ncsa.log -R 100/s
-}
-
 process p1 -winsz 25 200 {varnishncsa -n ${v1_name}} -start
 
 delay 1
@@ -40,27 +35,21 @@ client c1 {
 	rxresp
 } -run
 
-delay 1
-
-shell "mv ${tmpdir}/ncsa.log ${tmpdir}/ncsa.old.log"
-shell "kill -HUP `cat ${tmpdir}/ncsa.pid`"
-
-client c1 {
+client c2 {
 	txreq -url /2
 	rxresp
 } -run
 
 delay 1
 
-shell "kill `cat ${tmpdir}/ncsa.pid`"
-
-# default formatter and rotation
-shell -match {${localhost} - user \[../.../20[1-9][0-9]:..:..:.. (?#
+# default formatter
+shell -match {^${localhost} - user \[../.../20[1-9][0-9]:..:..:.. (?#
 )[+-]....\] "GET http://${localhost}/1\?foo=bar HTTP/1.1" 200 100 "-" "-"
 ${localhost} - - \[../.../20[1-9][0-9]:..:..:.. [+-]....\] (?#
-)"GET http://${localhost}/1\?foo=bar HTTP/1.1" 404 \d+ "-" "-"$} \
-	"cat ${tmpdir}/ncsa.old.log"
-shell "grep -q /2 ${tmpdir}/ncsa.log"
+)"GET http://${localhost}/1\?foo=bar HTTP/1.1" 404 \d+ "-" "-"
+${localhost} - - \[../.../20[1-9][0-9]:..:..:.. [+-]....\] (?#
+)"GET http://${localhost}/2 HTTP/1.1" - - "-" "-"$} \
+	"varnishncsa -n ${v1_name} -d"
 
 # command line
 shell -match "Usage: .*varnishncsa <options>" \
@@ -168,4 +157,5 @@ delay 1
 process p2 -expect-exit 1 -kill INT -wait
 shell {grep -q "VSM: Attach interrupted" ${p2_err}}
 
+# HUP coverage in u00020.vtc
 # ESI coverage in e00003.vtc

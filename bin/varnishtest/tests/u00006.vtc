@@ -12,12 +12,6 @@ process p1 {
 	exec varnishlog -n ${v1_name} -g raw -u -A -w -
 } -start
 
-shell {
-	exec varnishlog -n ${v1_name} -D -P ${tmpdir}/vlog.pid \
-	    -w ${tmpdir}/vlog.bin -R 10/s \
-	    -i RespStatus -i ReqURL -i BereqURL
-}
-
 shell -match "Usage: .*varnishlog <options>" \
 	"varnishlog -h"
 shell -expect "Copyright (c) 2006 Verdens Gang AS" \
@@ -138,9 +132,6 @@ client c1 {
 
 delay 1
 
-shell "mv ${tmpdir}/vlog.bin ${tmpdir}/vlog.bin~"
-shell "kill -HUP `cat ${tmpdir}/vlog.pid`"
-
 client c1 {
 	txreq -url /bar
 	rxresp
@@ -148,7 +139,10 @@ client c1 {
 
 delay 1
 
-shell "kill `cat ${tmpdir}/vlog.pid`"
+shell {
+	varnishlog -n ${v1_name} -d -w vlog.bin~ -q 'vxid <= 1002'
+	varnishlog -n ${v1_name} -d -w vlog.bin  -q 'vxid >  1002'
+}
 
 shell -match {^\*[ ]+<< Request\s+>>[ ]+1001[ ]+
 -[ ]+1001 ReqURL[ ]+c /foo
@@ -172,4 +166,5 @@ shell "echo foobar > ${tmpdir}/foo"
 shell -err -expect "Not a VSL file: ${tmpdir}/foo" \
 	"varnishlog -r ${tmpdir}/foo"
 
+# HUP coverage in u00020.vtc
 # ESI coverage in e00003.vtc

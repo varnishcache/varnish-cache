@@ -1,0 +1,89 @@
+varnishtest "VUT SIGHUP handler"
+
+server s0 {
+	rxreq
+	txresp
+} -dispatch
+
+varnish v1 -vcl+backend {} -start
+
+shell {
+	varnishlog  -n ${v1_name} -D -P ${tmpdir}/vlog.pid \
+		-w ${tmpdir}/vlog_daemon.vsl
+
+	varnishncsa -n ${v1_name} -D -P ${tmpdir}/ncsa.pid \
+		-w ${tmpdir}/ncsa_daemon.log -F '%r %s'
+}
+
+process pvlog {
+	exec varnishlog  -n ${v1_name} -H -w vlog_hup.vsl
+} -start
+
+process pncsa {
+	exec varnishncsa -n ${v1_name} -H -w ncsa_hup.log -F '%r %s'
+} -start
+
+delay 1
+
+client c1 {
+	txreq
+	rxresp
+
+	txreq -method POST
+	rxresp
+} -run
+
+delay 1
+
+shell {
+	mv vlog_daemon.vsl vlog_daemon_old.vsl
+	mv ncsa_daemon.log ncsa_daemon_old.log
+
+	mv vlog_hup.vsl vlog_hup_old.vsl
+	mv ncsa_hup.log ncsa_hup_old.log
+
+	kill -HUP $(cat vlog.pid) $(cat ncsa.pid) ${pvlog_pid} ${pncsa_pid}
+}
+
+delay 1
+
+client c2 {
+	txreq -method PIPE
+	rxresp
+} -run
+
+delay 1
+
+shell { kill $(cat vlog.pid) $(cat ncsa.pid) }
+
+process pvlog -stop
+process pncsa -stop
+
+shell {
+	set -e
+
+	cat >expected_old.txt <<- EOF
+	GET http://127.0.0.1/ HTTP/1.1 200
+	POST http://127.0.0.1/ HTTP/1.1 200
+	EOF
+
+	cat >expected.txt <<- EOF
+	PIPE http://127.0.0.1/ HTTP/1.1 -
+	EOF
+
+	varnishncsa -F '%r %s' -r vlog_daemon_old.vsl -w vlog_daemon_old.log
+	varnishncsa -F '%r %s' -r vlog_daemon.vsl -w vlog_daemon.log
+
+	varnishncsa -F '%r %s' -r vlog_hup_old.vsl -w vlog_hup_old.log
+	varnishncsa -F '%r %s' -r vlog_hup.vsl -w vlog_hup.log
+
+	diff -u expected_old.txt vlog_daemon_old.log
+	diff -u expected_old.txt ncsa_daemon_old.log
+	diff -u expected.txt vlog_daemon.log
+	diff -u expected.txt ncsa_daemon.log
+
+	diff -u expected_old.txt vlog_hup_old.log
+	diff -u expected_old.txt ncsa_hup_old.log
+	diff -u expected.txt vlog_hup.log
+	diff -u expected.txt ncsa_hup.log
+}

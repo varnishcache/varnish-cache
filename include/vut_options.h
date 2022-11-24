@@ -33,7 +33,12 @@
 
 #define VUT_GLOBAL_OPT_D						\
 	VOPT("D", "[-D]", "Daemonize",					\
-	    "Daemonize."						\
+	    "Daemonize. This implies the -H option."			\
+	)
+
+#define VUT_OPT_H						\
+	VOPT("H", "[-H]", "Add SIGHUP handler",				\
+	    "Add a signal handler for HUP signals."			\
 	)
 
 #define VUT_GLOBAL_OPT_P						\

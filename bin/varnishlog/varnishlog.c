@@ -148,7 +148,7 @@ main(int argc, char * const *argv)
 	if (optind != argc)
 		VUT_Usage(vut, &vopt_spec, 1);
 
-	if (vut->D_opt && !LOG.w_arg)
+	if (vut->H_opt && !LOG.w_arg)
 		VUT_Error(vut, 1, "Missing -w option");
 
 	if (vut->D_opt && !strcmp(LOG.w_arg, "-"))
@@ -171,7 +171,7 @@ main(int argc, char * const *argv)
 	if (LOG.w_arg) {
 		openout(LOG.a_opt);
 		AN(LOG.fo);
-		if (vut->D_opt)
+		if (vut->H_opt)
 			vut->sighup_f = rotateout;
 	} else
 		LOG.fo = stdout;
