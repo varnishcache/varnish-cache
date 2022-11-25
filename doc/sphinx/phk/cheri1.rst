@@ -15,7 +15,7 @@ it yet, you should read up on it, now:
 
 https://www.cl.cam.ac.uk/research/security/ctsrd/cheri/
 
-The core idea in CHERI is that pointers are not integers, whicb
+The core idea in CHERI is that pointers are not integers, which
 means that you cannot randomly make up or modify pointers to point
 at random things any more, whatever your intentions might be.
 
@@ -26,7 +26,7 @@ saw in 2019:
 
 https://msrc-blog.microsoft.com/2022/01/20/an_armful_of_cheris/
 
-Yes, we can pause while you sell all your shares in sliced bread.
+(Yes, we can pause while you sell all your shares in sliced bread.)
 
 I have been eagerly waiting to see how my own Varnish HTTP Cache
 Software would fare under CHERI, because one of my goals with the
@@ -37,8 +37,8 @@ Robert has graciously lent me a shell-account on one of his shiny
 new MORELLO machines, which rock an ARM64 prototype CPU with CHERI
 capabilites.
 
-In this sequence of rants I will sing the saga of How Varnish meets
-CHERI, as it happens.
+In this sequence of rants I will sing the saga of "How Varnish meets
+CHERI" - as it happens.
 
 My hope is that it will inspire and help other software projects
 to take the CHERI-plunge, and to help convince ARM that "MORELLO"
@@ -76,15 +76,15 @@ Autocrap is a hack on a hack on hack which really ruins software
 portability, but it is the "industry standard" so we use it also
 for Varnish, no matter how much I hate it.
 
-https://dl.acm.org/doi/abs/10.1145/2346916.2349257
+See: https://dl.acm.org/doi/abs/10.1145/2346916.2349257
 
 Because a lot of software does not work in CHERI mode, there are two
 kinds of packages for CheriBSD:  Regular and Cheri.
 
-https://ctsrd-cheri.github.io/cheribsd-getting-started/packages/index.html
+See: https://ctsrd-cheri.github.io/cheribsd-getting-started/packages/index.html
 
-Autocrap does not grok that some packages end up in /usr/local and
-some in /usr/local64, so the first thing I had to do, was to explain
+Autocrap does not grok that some packages end up in ``/usr/local`` and
+some in ``/usr/local64``, so the first thing I had to do, was to explain
 this::
 
 	export LIBTOOLIZE=/usr/local64/bin/libtoolize
@@ -141,7 +141,7 @@ since one of our quality policies is to never convert an integer
 to a pointer.
 
 But there are a couple of places where we have used them
-because for "private" struct members, instead of unions.
+for "private" struct members, instead of unions.
 
 Those become the first stumbling block::
 
