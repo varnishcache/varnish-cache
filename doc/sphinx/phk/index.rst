@@ -13,6 +13,7 @@ You may or may not want to know what Poul-Henning thinks.
 .. toctree::
 	:maxdepth: 1
 
+	cheri1.rst
 	routine.rst
 	503aroundtheworld.rst
 	legacy.rst
