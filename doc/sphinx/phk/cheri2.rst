@@ -7,17 +7,36 @@ CHERI capabilities are twice the size of pointers, and Varnish not
 only uses a lot of pointers per request, it is also stingy with
 RAM, because it is not uncommon to use 100K worker threads.
 
-A number of test-cases fail because they are too stingy with memory
-allocations, I will deal with them as I get to them, and merely
-note them here as part of the accounting::
+A number of test-cases fail because they are stingy with memory
+allocations, and other test-cases run out of cache space.
 
-    Increase workspace
-    ==================
+The job of these test-cases is to push varnish into obscure code-paths,
+using finely tuned sizes of objects, lengths of headers and parameter
+settings to varnish, and the bigger pointers in Varnish trows that
+tuning off.
+
+These test-failures have nothing to do with CHERI.
+
+There was enough margin that we could find magic numbers which work
+on both 32 bit and 64 bit CPUs, that is with both 4 and 8 byte
+pointers, but it is doubtful there is enough margin to make them
+also work with 16 byte pointers, so I will merely list these tests
+here as part of the accounting::
+
+    Workspace sizes
+    =====================
     TEST tests/c00108.vtc
     TEST tests/r01038.vtc
     TEST tests/r01120.vtc
     TEST tests/r02219.vtc
     TEST tests/o00005.vtc
+
+    Cache sizes
+    =====================
+    TEST tests/r03502.vtc
+    TEST tests/r01140.vtc
+    TEST tests/r02831.vtc
+    TEST tests/v00064.vtc
 
 Things you cannot do under CHERI: Pointers in Pipes
 ---------------------------------------------------
@@ -62,6 +81,8 @@ write a nonce-byte into the pipe to the waiter-thread, but that
 goes at the bottom of the TODO list, and for now I just remove the
 -Wpoll argument from five tests, which then pass::
 
+    -Wpoll
+    =====================
     TEST tests/b00009.vtc
     TEST tests/b00048.vtc
     TEST tests/b00054.vtc
@@ -95,6 +116,8 @@ directives to pointers to make that monster work under CHERI.
 
 I just ran my script and 20 more tests pass::
 
+    Red-Black Trees
+    =====================
     TEST tests/b00068.vtc
     TEST tests/c00005.vtc
     TEST tests/e00003.vtc
@@ -116,6 +139,6 @@ I just ran my script and 20 more tests pass::
     TEST tests/v00041.vtc
     TEST tests/v00043.vtc
 
-Only nine failing tests left now.
+Four failures left…
 
 */phk*
