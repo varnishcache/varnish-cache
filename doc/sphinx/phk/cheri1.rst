@@ -173,10 +173,10 @@ First test-run
 Just to see how bad it is, we run the main test-scripts::
 
     % cd bin/varnishtest
-    % ./varnistest -i -k -q tests/*.vtc
+    % ./varnishtest -i -k -q tests/*.vtc
     […]
     38 tests failed, 33 tests skipped, 754 tests passed
 
 That's not half bad…
 
-/phk
+*/phk*
