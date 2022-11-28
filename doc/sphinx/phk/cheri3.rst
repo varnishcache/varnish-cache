@@ -3,7 +3,7 @@
 How Varnish met CHERI 3/N
 =========================
 
-Of the four tests which still fail, three uses the "file stevedore".
+Of the four tests which still fail, three use the "file stevedore".
 
 Things you cannot do under CHERI: Pointers in shared files
 ----------------------------------------------------------
@@ -49,7 +49,7 @@ As previously mentioned, when you have 100K threads, you have to be
 stingy with memory, in particular with the thread stacks.
 
 But if you tune things too hard, the threads will step out of their
-stack and coredups result.  We try to be a little bit helpful
+stack and coredumps result.  We try to be a little bit helpful
 about the diagnostics in such cases, and we have a test-case
 which tries to exercise that.
 
