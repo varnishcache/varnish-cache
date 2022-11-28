@@ -918,13 +918,17 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
  *         following ones.
  *
  *         \-nohost
- *                 Don't include a Host header in the request.
+ *                 Don't include a Host header in the request. Also Implied
+ *                 by the addition of a Host header with ``-hdr``.
  *
  *         \-nolen
- *                 Don't include a Content-Length header.
+ *                 Don't include a Content-Length header. Also implied by the
+ *                 addition of a Content-Length or Transfer-Encoding header
+ *                 with ``-hdr``.
  *
  *         \-nodate
- *                 Don't include a Date header in the response.
+ *                 Don't include a Date header in the response. Also implied
+ *                 by the addition of a Date header with ``-hdr``.
  *
  *         \-hdr STRING
  *                 Add STRING as a header, it must follow this format:
