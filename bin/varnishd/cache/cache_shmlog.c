@@ -294,13 +294,13 @@ VSLv(enum VSL_tag_e tag, vxid_t vxid, const char *fmt, va_list ap)
 
 	if (strchr(fmt, '%') == NULL) {
 		vslr(tag, vxid, fmt, strlen(fmt) + 1);
-	} else {
-		n = vsnprintf(buf, mlen, fmt, ap);
-		n = vmin_t(unsigned, n, mlen - 1);
-		buf[n++] = '\0'; /* NUL-terminated */
-		vslr(tag, vxid, buf, n);
+		return;
 	}
 
+	n = vsnprintf(buf, mlen, fmt, ap);
+	n = vmin_t(unsigned, n, mlen - 1);
+	buf[n++] = '\0'; /* NUL-terminated */
+	vslr(tag, vxid, buf, n);
 }
 
 void
