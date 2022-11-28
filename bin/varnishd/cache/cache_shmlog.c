@@ -342,6 +342,11 @@ VSLs(enum VSL_tag_e tag, vxid_t vxid, const struct strands *s)
 
 	mlen = cache_param->vsl_reclen;
 
+	if (s->n == 1 && s->p[0] != NULL) {
+		vslr(tag, vxid, s->p[0], strlen(s->p[0]) + 1);
+		return;
+	}
+
 	n = strands_cat(buf, sizeof buf, s);
 
 	if (n <= sizeof buf) {
