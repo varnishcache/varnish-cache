@@ -336,7 +336,8 @@ static void *
 server_dispatch_thread(void *priv)
 {
 	struct server *s, *s2;
-	int sn = 1, fd;
+	static int sn = 1;
+	int fd;
 	char snbuf[8];
 	struct vtclog *vl;
 	struct sockaddr_storage addr_s;
