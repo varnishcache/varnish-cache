@@ -65,7 +65,7 @@ strands_len(const struct strands *s)
 /*
  * like VRT_Strands(), but truncating instead of failing for end of buffer
  *
- * returns number of bytes including NUL
+ * returns total number of bytes including NUL
  */
 static unsigned
 strands_cat(char *buf, unsigned bufl, const struct strands *s)
@@ -77,12 +77,14 @@ strands_cat(char *buf, unsigned bufl, const struct strands *s)
 	assert(bufl > 0);
 	bufl--;
 
-	for (i = 0; i < s->n && bufl > 0; i++) {
+	for (i = 0; i < s->n; i++) {
 		if (s->p[i] == NULL || *s->p[i] == '\0')
 			continue;
-		ll = vmin_t(unsigned, strlen(s->p[i]), bufl);
-		memcpy(buf, s->p[i], ll);
+		ll = strlen(s->p[i]);
 		l += ll;
+		ll = vmin_t(unsigned, ll, bufl);
+		if (ll > 0)
+			memcpy(buf, s->p[i], ll);
 		buf += ll;
 		bufl -= ll;
 	}
@@ -331,15 +333,31 @@ VSLv(enum VSL_tag_e tag, vxid_t vxid, const char *fmt, va_list ap)
 void
 VSLs(enum VSL_tag_e tag, vxid_t vxid, const struct strands *s)
 {
-	unsigned n, mlen = cache_param->vsl_reclen;
-	char buf[mlen];
+	unsigned n, mlen;
+	char buf[128], *d;
+	uint32_t *p;
 
 	if (vsl_tag_is_masked(tag))
 		return;
 
-	n = strands_cat(buf, mlen, s);
+	mlen = cache_param->vsl_reclen;
 
-	vslr(tag, vxid, buf, n);
+	n = strands_cat(buf, sizeof buf, s);
+
+	if (n <= sizeof buf) {
+		vslr(tag, vxid, buf, n);
+		return;
+	}
+
+	if (n > mlen)
+		n = mlen;
+
+	p = vsl_get(n, 1, 0);
+	AN(p);
+	d = VSL_DATA(p);
+	(void)strands_cat(d, n, s);
+
+	vslr_commit(tag, vxid, p, n);
 }
 
 void
