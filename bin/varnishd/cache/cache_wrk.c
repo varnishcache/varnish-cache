@@ -629,7 +629,8 @@ pool_herder(void *priv)
 			VSL(SLT_Error, NO_VXID,
 			    "Pool Herder: Queue does not move ql=%u dt=%f",
 			    pp->lqueue, VTIM_mono() - dqt);
-			WRONG("Worker Pool Queue does not move");
+			WRONG("Worker Pool Queue does not move"
+			      " - see thread_pool_watchdog parameter");
 		}
 		wthread_min = cache_param->wthread_min;
 		if (pp->die)
