@@ -1396,8 +1396,8 @@ resp.status
 	304 is sent.
 
 	Secondly, ``req.http.If-Modified-Since`` is compared against
-	``resp.http.Last-Modified`` or, if it is unset, against the
-	point in time when the object was last modified based on the
+	``resp.http.Last-Modified`` or, if it is unset or weak, against
+        the point in time when the object was last modified based on the
 	``Date`` and ``Age`` headers received with the backend
 	response which created the object. If the object has not been
 	modified based on that comparison, a 304 is sent.
