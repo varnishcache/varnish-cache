@@ -250,6 +250,19 @@ vsl_get(unsigned len, unsigned records, unsigned flushes)
  * Stick a finished record into VSL.
  */
 
+static inline void
+vslr_commit(enum VSL_tag_e tag, vxid_t vxid, uint32_t *p, unsigned len)
+{
+
+	/*
+	 * vsl_hdr() writes p[1] again, but we want to make sure it
+	 * has hit memory because we work on the live buffer here.
+	 */
+	p[1] = vxid.vxid;
+	VWMB();
+	(void)vsl_hdr(tag, p, len, vxid);
+}
+
 static void
 vslr(enum VSL_tag_e tag, vxid_t vxid, const char *b, unsigned len)
 {
@@ -265,14 +278,7 @@ vslr(enum VSL_tag_e tag, vxid_t vxid, const char *b, unsigned len)
 	p = vsl_get(len, 1, 0);
 
 	memcpy(p + VSL_OVERHEAD, b, len);
-
-	/*
-	 * vsl_hdr() writes p[1] again, but we want to make sure it
-	 * has hit memory because we work on the live buffer here.
-	 */
-	p[1] = vxid.vxid;
-	VWMB();
-	(void)vsl_hdr(tag, p, len, vxid);
+	vslr_commit(tag, vxid, p, len);
 }
 
 /*--------------------------------------------------------------------
