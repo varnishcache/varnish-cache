@@ -406,14 +406,16 @@ const struct vdp VDP_gunzip = {
 /*--------------------------------------------------------------------*/
 
 void
-VGZ_UpdateObj(const struct vfp_ctx *vc, struct vgz *vg, enum vgz_ua_e e)
+VGZ_UpdateObj(const struct vfp_ctx *vc, struct vgz *vg, enum vgzret_e e)
 {
 	char *p;
 	intmax_t ii;
 
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
+	if (e < VGZ_OK)
+		return;
 	ii = vg->vz.start_bit + vg->vz.last_bit + vg->vz.stop_bit;
-	if (e == VUA_UPDATE && ii == vg->bits)
+	if (e != VGZ_END && ii == vg->bits)
 		return;
 	vg->bits = ii;
 	p = ObjSetAttr(vc->wrk, vc->oc, OA_GZIPBITS, 32, NULL);
@@ -421,9 +423,11 @@ VGZ_UpdateObj(const struct vfp_ctx *vc, struct vgz *vg, enum vgz_ua_e e)
 	vbe64enc(p, vg->vz.start_bit);
 	vbe64enc(p + 8, vg->vz.last_bit);
 	vbe64enc(p + 16, vg->vz.stop_bit);
-	if (e == VUA_END_GZIP)
+	if (e != VGZ_END)
+		return;
+	if (vg->dir == VGZ_GZ)
 		vbe64enc(p + 24, vg->vz.total_in);
-	if (e == VUA_END_GUNZIP)
+	if (vg->dir == VGZ_UN)
 		vbe64enc(p + 24, vg->vz.total_out);
 }
 
@@ -620,7 +624,7 @@ vfp_gzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 			if (vr < VGZ_OK)
 				return (VFP_Error(vc, "Gzip failed"));
 			if (dl > 0) {
-				VGZ_UpdateObj(vc, vg, VUA_UPDATE);
+				VGZ_UpdateObj(vc, vg, vr);
 				*lp = dl;
 				assert(dp == p);
 				if (vr != VGZ_END || !VGZ_IbufEmpty(vg))
@@ -632,7 +636,7 @@ vfp_gzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 
 	if (vr != VGZ_END)
 		return (VFP_Error(vc, "Gzip failed"));
-	VGZ_UpdateObj(vc, vg, VUA_END_GZIP);
+	VGZ_UpdateObj(vc, vg, VGZ_END);
 	return (VFP_END);
 }
 
@@ -673,11 +677,10 @@ vfp_testgunzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 				    "Invalid Gzip data: %s", vgz_msg(vg)));
 		} while (!VGZ_IbufEmpty(vg));
 	}
-	VGZ_UpdateObj(vc, vg, VUA_UPDATE);
+	VGZ_UpdateObj(vc, vg, vr);
 	if (vp == VFP_END) {
 		if (vr != VGZ_END)
 			return (VFP_Error(vc, "tGunzip failed"));
-		VGZ_UpdateObj(vc, vg, VUA_END_GUNZIP);
 	}
 	return (vp);
 }

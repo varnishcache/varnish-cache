@@ -55,10 +55,4 @@ enum vgzret_e VGZ_Gzip(struct vgz *, const void **, ssize_t *len,
 // enum vgzret_e VGZ_Gunzip(struct vgz *, const void **, ssize_t *len);
 enum vgzret_e VGZ_Destroy(struct vgz **);
 
-enum vgz_ua_e {
-	VUA_UPDATE,		// Update start/stop/last bits if changed
-	VUA_END_GZIP,		// Record uncompressed size
-	VUA_END_GUNZIP,		// Record uncompressed size
-};
-
-void VGZ_UpdateObj(const struct vfp_ctx *, struct vgz*, enum vgz_ua_e);
+void VGZ_UpdateObj(const struct vfp_ctx *, struct vgz*, enum vgzret_e);
