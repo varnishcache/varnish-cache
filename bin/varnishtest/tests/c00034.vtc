@@ -178,12 +178,10 @@ client c5 {
 		-hdr "Range: bytes=2-5" \
 		-hdr "Accept-encoding: gzip"
 	rxresp
-	expect resp.status == 200
-	expect resp.http.Content-Range == <undef>
+	expect resp.status == 206
+	expect resp.http.Content-Range == "bytes 2-5/*"
 	expect resp.http.Content-Length == <undef>
-	expect resp.http.Content-Encoding == gzip
-	gunzip
-	expect resp.bodylen == 100
+	expect resp.bodylen == 4
 } -run
 
 # Test partial range with http2

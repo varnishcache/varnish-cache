@@ -33,7 +33,6 @@ client c1 {
 	txreq -url /1 -hdr "Range: bytes=17-101"
 	rxresphdrs
 	expect resp.status == 206
-	expect resp.http.content-length == 85
 	barrier b1 sync
 	rxrespbody
 	expect resp.bodylen == 85
@@ -59,15 +58,13 @@ client c1 {
 	expect resp.bodylen == 136
 	delay .1
 
-	# Invalid range
+	# Handles out of bounds range
 	txreq -url /4 -hdr "Range: bytes=102-200"
 	rxresphdrs
 	expect resp.status == 206
-	expect resp.http.content-length == 99
 	barrier b1 sync
-	recv 34
-	delay .3
-	expect_close
+	rxrespbody
+	expect resp.bodylen == 34
 } -run
 
 varnish v1 -expect sc_range_short == 1

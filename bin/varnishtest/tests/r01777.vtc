@@ -14,5 +14,8 @@ varnish v1 -vcl+backend { } -start
 client c1 {
 	txreq -hdr "Range: bytes=0-129"
 	rxresp
-	expect resp.status == 200
+	expect resp.status == 206
+	expect resp.http.Content-Range == "bytes 0-129/*"
+	expect resp.http.Content-Length == <undef>
+	expect resp.bodylen == 128
 } -run
