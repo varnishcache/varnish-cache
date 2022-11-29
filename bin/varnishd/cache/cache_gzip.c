@@ -66,6 +66,11 @@ struct vgz {
 	intmax_t		bits;
 
 	z_stream		vz;
+
+	size_t			total_in;
+	size_t			start_bit;	/* first deflate block */
+	size_t			last_bit;	/* last deflate block */
+	size_t			stop_bit;	/* end of last deflate block */
 };
 
 static const char *
@@ -179,6 +184,7 @@ VGZ_Ibuf(struct vgz *vg, const void *ptr, ssize_t len)
 	AZ(vg->vz.avail_in);
 	vg->vz.next_in = TRUST_ME(ptr);
 	vg->vz.avail_in = len;
+	vg->total_in += len;
 }
 
 int
@@ -418,8 +424,7 @@ VGZ_UpdateObj(const struct vfp_ctx *vc, struct vgz *vg, enum vgzret_e e)
 	intmax_t ii;
 
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
-	if (e < VGZ_OK)
-		return;
+
 	ii = vg->vz.start_bit + vg->vz.last_bit + vg->vz.stop_bit;
 	if (e != VGZ_END && ii == vg->bits)
 		return;
@@ -435,6 +440,12 @@ VGZ_UpdateObj(const struct vfp_ctx *vc, struct vgz *vg, enum vgzret_e e)
 		vbe64enc(p + 24, vg->vz.total_in);
 	if (vg->dir == VGZ_UN)
 		vbe64enc(p + 24, vg->vz.total_out);
+
+	if (vg->dir == VGZ_UN) {
+		assert(vg->start_bit == vg->vz.start_bit);
+		assert(vg->stop_bit == vg->vz.stop_bit);
+		assert(vg->last_bit == vg->vz.last_bit);
+	}
 }
 
 /*--------------------------------------------------------------------
@@ -653,6 +664,26 @@ vfp_gzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
  * collecting the magic bits while we're at it.
  */
 
+static void
+testgunzip_bits(struct vgz *vg)
+{
+	size_t bits;
+	unsigned type;
+
+	/* NB: vgz.h contains the explanation on how inflate() is
+	 * affected by the Z_BLOCK flag. That is where the magic
+	 * values 0x80, 0x40 and 0x07 come from.
+	 */
+	type = vg->vz.data_type;
+	bits = ((vg->total_in - vg->vz.avail_in) << 3) - (type & 0x07);
+	if ((type & 0xc0) == 0x80) {
+		if (vg->start_bit == 0)
+			vg->start_bit = bits;
+		vg->last_bit = bits;
+	} else if ((type & 0xc0) != 0x40)
+		vg->stop_bit = bits;
+}
+
 static enum vfp_status v_matchproto_(vfp_pull_f)
 vfp_testgunzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
     ssize_t *lp)
@@ -675,15 +706,16 @@ vfp_testgunzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 		VGZ_Ibuf(vg, p, *lp);
 		do {
 			VGZ_Obuf(vg, vg->m_buf, vg->m_sz);
-			vr = VGZ_Gunzip(vg, &dp, &dl, VGZ_NORMAL);
+			vr = VGZ_Gunzip(vg, &dp, &dl, VGZ_ALIGN);
 			if (vr == VGZ_END && !VGZ_IbufEmpty(vg))
 				return (VFP_Error(vc, "Junk after gzip data"));
+			testgunzip_bits(vg);
+			VGZ_UpdateObj(vc, vg, vr);
 			if (vr < VGZ_OK)
 				return (VFP_Error(vc,
 				    "Invalid Gzip data: %s", vgz_msg(vg)));
 		} while (!VGZ_IbufEmpty(vg));
 	}
-	VGZ_UpdateObj(vc, vg, vr);
 	if (vp == VFP_END && vr != VGZ_END)
 		return (VFP_Error(vc, "tGunzip failed"));
 	return (vp);
