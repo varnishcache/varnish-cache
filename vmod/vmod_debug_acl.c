@@ -131,9 +131,12 @@ setup_sweep(VRT_CTX, struct acl_sweep *asw, VCL_IP ip0, VCL_IP ip1,
 	}
 	asw->this = asw->reset;
 
-	asw->probe = VSA_Clone(ip0);
+	/* Dont try this at home */
+	asw->probe = malloc(vsa_suckaddr_len);
+	AN(asw->probe);
+	memcpy(asw->probe, ip0, vsa_suckaddr_len);
 	(void)VSA_GetPtr(asw->probe, &ptr);
-	asw->probe_p = TRUST_ME(ptr);
+	asw->probe_p = ((uint8_t*)(asw->probe)) + (ptr - (uint8_t*)asw->probe);
 
 	asw->step = step;
 
