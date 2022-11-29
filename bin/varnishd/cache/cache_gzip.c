@@ -678,10 +678,8 @@ vfp_testgunzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 		} while (!VGZ_IbufEmpty(vg));
 	}
 	VGZ_UpdateObj(vc, vg, vr);
-	if (vp == VFP_END) {
-		if (vr != VGZ_END)
-			return (VFP_Error(vc, "tGunzip failed"));
-	}
+	if (vp == VFP_END && vr != VGZ_END)
+		return (VFP_Error(vc, "tGunzip failed"));
 	return (vp);
 }
 
