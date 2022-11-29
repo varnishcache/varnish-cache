@@ -30,7 +30,7 @@
  * Interaction with the linvgz (zlib) library.
  *
  * The zlib library pollutes namespace a LOT when you include the "vgz.h"
- * (aka (zlib.h") file so we contain the damage by vectoring all access
+ * (aka "zlib.h") file so we contain the damage by vectoring all access
  * to libz through this source file.
  *
  * The API defined by this file, will also insulate the rest of the code,
