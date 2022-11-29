@@ -264,7 +264,7 @@ VGZ_Gzip(struct vgz *vg, const void **pptr, ssize_t *plen, enum vgz_flag flags)
 	case VGZ_ALIGN:		zflg = Z_SYNC_FLUSH; break;
 	case VGZ_RESET:		zflg = Z_FULL_FLUSH; break;
 	case VGZ_FINISH:	zflg = Z_FINISH; break;
-	default:		INCOMPL();
+	default:		WRONG("Invalid VGZ flag");
 	}
 	i = deflate(&vg->vz, zflg);
 	if (i == Z_OK || i == Z_STREAM_END) {
