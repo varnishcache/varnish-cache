@@ -212,20 +212,26 @@ VGZ_ObufFull(const struct vgz *vg)
 /*--------------------------------------------------------------------*/
 
 static enum vgzret_e
-VGZ_Gunzip(struct vgz *vg, const void **pptr, ssize_t *plen)
+VGZ_Gunzip(struct vgz *vg, const void **pptr, ssize_t *plen,
+    enum vgz_flag flags)
 {
-	int i;
+	int i, zflg;
 	ssize_t l;
 	const uint8_t *before;
 
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
+	switch (flags) {
+	case VGZ_NORMAL:	zflg = Z_NO_FLUSH; break;
+	case VGZ_ALIGN:		zflg = Z_BLOCK; break;
+	default:		WRONG("Invalid VGZ flag");
+	}
 
 	*pptr = NULL;
 	*plen = 0;
 	AN(vg->vz.next_out);
 	AN(vg->vz.avail_out);
 	before = vg->vz.next_out;
-	i = inflate(&vg->vz, 0);
+	i = inflate(&vg->vz, zflg);
 	if (i == Z_OK || i == Z_STREAM_END) {
 		*pptr = before;
 		l = (const uint8_t *)vg->vz.next_out - before;
@@ -375,7 +381,7 @@ vdp_gunzip_bytes(struct vdp_ctx *vdc, enum vdp_action act, void **priv,
 
 	VGZ_Ibuf(vg, ptr, len);
 	do {
-		vr = VGZ_Gunzip(vg, &dp, &dl);
+		vr = VGZ_Gunzip(vg, &dp, &dl, VGZ_NORMAL);
 		if (vr == VGZ_END && !VGZ_IbufEmpty(vg)) {
 			VSLb(vg->vsl, SLT_Gzip, "G(un)zip error: %d (%s)",
 			     vr, "junk after VGZ_END");
@@ -564,7 +570,7 @@ vfp_gunzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 			VGZ_Ibuf(vg, vg->m_buf, l);
 		}
 		if (!VGZ_IbufEmpty(vg) || vp == VFP_END) {
-			vr = VGZ_Gunzip(vg, &dp, &dl);
+			vr = VGZ_Gunzip(vg, &dp, &dl, VGZ_NORMAL);
 			if (vr == VGZ_END && !VGZ_IbufEmpty(vg))
 				return (VFP_Error(vc, "Junk after gzip data"));
 			if (vr < VGZ_OK)
@@ -669,7 +675,7 @@ vfp_testgunzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 		VGZ_Ibuf(vg, p, *lp);
 		do {
 			VGZ_Obuf(vg, vg->m_buf, vg->m_sz);
-			vr = VGZ_Gunzip(vg, &dp, &dl);
+			vr = VGZ_Gunzip(vg, &dp, &dl, VGZ_NORMAL);
 			if (vr == VGZ_END && !VGZ_IbufEmpty(vg))
 				return (VFP_Error(vc, "Junk after gzip data"));
 			if (vr < VGZ_OK)
