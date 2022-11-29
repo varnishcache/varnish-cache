@@ -25,12 +25,13 @@ varnish v1 -cliok "param.set http_gzip_support true" -vcl+backend {
 } -start
 
 client c1 {
-	# no range support with streaming cache miss and gunzip
+	# cache miss
 	txreq -hdr "Range: bytes=3-5"
 	rxresp
-	expect resp.status == 200
-	expect resp.bodylen == "10"
+	expect resp.status == 206
+	expect resp.bodylen == "3"
 	expect resp.http.content-encoding == <undef>
+	expect resp.body == "BAR"
 } -run
 
 varnish v1 -vsl_catchup

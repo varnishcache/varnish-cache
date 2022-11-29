@@ -124,7 +124,7 @@ vrg_dorange(struct req *req, void **priv)
 		high = req->resp_len - 1;
 	} else if (req->resp_len >= 0 && (high >= req->resp_len || high < 0))
 		high = req->resp_len - 1;
-	else if (high < 0 || req->resp_len < 0)
+	else if (high < 0)
 		return (NULL);			// Allow 200 response
 	/*
 	 * else (bo != NULL) {
@@ -136,13 +136,13 @@ vrg_dorange(struct req *req, void **priv)
 	if (req->resp_len >= 0 && low >= req->resp_len)
 		return ("low range beyond object");
 
-	if (req->resp_len >= 0)
+	if (req->resp_len >= 0) {
 		http_PrintfHeader(req->resp, "Content-Range: bytes %jd-%jd/%jd",
 		    (intmax_t)low, (intmax_t)high, (intmax_t)req->resp_len);
-	else
+		req->resp_len = (intmax_t)(1 + high - low);
+	} else
 		http_PrintfHeader(req->resp, "Content-Range: bytes %jd-%jd/*",
 		    (intmax_t)low, (intmax_t)high);
-	req->resp_len = (intmax_t)(1 + high - low);
 
 	vrg_priv = WS_Alloc(req->ws, sizeof *vrg_priv);
 	if (vrg_priv == NULL)
