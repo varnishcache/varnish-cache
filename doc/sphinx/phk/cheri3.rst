@@ -43,7 +43,7 @@ ever be able to see the pointers, and those three test cases pass::
 only reason it exists is precisely to to resurrect those pointers later.)
 
 The final and really nasty test-case
-====================================
+------------------------------------
 
 As previously mentioned, when you have 100K threads, you have to be
 stingy with memory, in particular with the thread stacks.
