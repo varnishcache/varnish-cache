@@ -725,6 +725,8 @@ int ZEXPORT deflateSetHeader(z_streamp strm, gz_headerp head) {
     return Z_OK;
 }
 
+#endif
+
 /* ========================================================================= */
 int ZEXPORT deflatePending(z_streamp strm, unsigned *pending, int *bits) {
     if (deflateStateCheck(strm)) return Z_STREAM_ERROR;
@@ -742,6 +744,8 @@ int ZEXPORT deflateUsed(z_streamp strm, int *bits) {
         *bits = strm->state->bi_used;
     return Z_OK;
 }
+
+#ifdef NOVGZ
 
 /* ========================================================================= */
 int ZEXPORT deflatePrime(z_streamp strm, int bits, int value) {
