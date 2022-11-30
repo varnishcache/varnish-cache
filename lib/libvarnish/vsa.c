@@ -36,6 +36,7 @@
 #include "config.h"
 
 #include <string.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <sys/un.h>
