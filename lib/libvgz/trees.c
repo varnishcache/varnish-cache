@@ -36,6 +36,8 @@
 
 #include "deflate.h"
 
+#include <stdio.h>
+
 #ifdef ZLIB_DEBUG
 #  include <ctype.h>
 #endif
@@ -866,9 +868,12 @@ void ZLIB_INTERNAL _tr_stored_block(s, buf, stored_len, last)
     ulg stored_len;   /* length of input block */
     int last;         /* one if this is the last block for a file */
 {
-    if (last)
+    if (last) {
         s->strm->last_bit =
            (s->strm->total_out + s->pending) * 8 + s->bi_valid;
+        fprintf(stderr, "%s z=%p last=%lu\n",
+	    __func__, s->strm, s->strm->last_bit);
+    }
 
     send_bits(s, (STORED_BLOCK<<1)+last, 3);    /* send block type */
     bi_windup(s);        /* align on byte boundary */
@@ -883,9 +888,12 @@ void ZLIB_INTERNAL _tr_stored_block(s, buf, stored_len, last)
     s->bits_sent += 2*16;
     s->bits_sent += stored_len<<3;
 #endif
-    if (last)
+    if (last) {
         s->strm->stop_bit =
            (s->strm->total_out + s->pending) * 8 + s->bi_valid;
+        fprintf(stderr, "%s z=%p stop=%lu\n",
+	    __func__, s->strm, s->strm->stop_bit);
+    }
 }
 
 /* ===========================================================================
@@ -925,9 +933,12 @@ void ZLIB_INTERNAL _tr_flush_block(s, buf, stored_len, last)
     ulg opt_lenb, static_lenb; /* opt_len and static_len in bytes */
     int max_blindex = 0;  /* index of last bit length code of non zero freq */
 
-    if (last)
+    if (last) {
         s->strm->last_bit =
            (s->strm->total_out + s->pending) * 8 + s->bi_valid;
+        fprintf(stderr, "%s z=%p last=%lu\n",
+	    __func__, s->strm, s->strm->last_bit);
+    }
 
     /* Build the Huffman trees unless a stored block is forced */
     if (s->level > 0) {
@@ -1011,6 +1022,8 @@ void ZLIB_INTERNAL _tr_flush_block(s, buf, stored_len, last)
     if (last) {
         s->strm->stop_bit =
            (s->strm->total_out + s->pending) * 8 + s->bi_valid;
+        fprintf(stderr, "%s z=%p stop=%lu\n",
+	    __func__, s->strm, s->strm->stop_bit);
         bi_windup(s);
 #ifdef ZLIB_DEBUG
         s->compressed_len += 7;  /* align on byte boundary */
