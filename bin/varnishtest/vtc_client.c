@@ -42,6 +42,7 @@
 
 #include "vtc.h"
 
+#include "vsa.h"
 #include "vss.h"
 #include "vtcp.h"
 #include "vus.h"
@@ -75,7 +76,7 @@ static VTAILQ_HEAD(, client)	clients = VTAILQ_HEAD_INITIALIZER(clients);
 static void
 client_proxy(struct vtclog *vl, int fd, int version, const char *spec)
 {
-	struct suckaddr *sac, *sas;
+	const struct suckaddr *sac, *sas;
 	char *p, *p2;
 
 	p = strdup(spec);
@@ -93,8 +94,8 @@ client_proxy(struct vtclog *vl, int fd, int version, const char *spec)
 	if (vtc_send_proxy(fd, version, sac, sas))
 		vtc_fatal(vl, "Write failed: %s", strerror(errno));
 	free(p);
-	free(sac);
-	free(sas);
+	VSA_free(&sac);
+	VSA_free(&sas);
 }
 
 /**********************************************************************

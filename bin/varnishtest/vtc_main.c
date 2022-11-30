@@ -49,8 +49,8 @@
 #include "vfil.h"
 #include "vnum.h"
 #include "vrnd.h"
-#include "vss.h"
 #include "vsa.h"
+#include "vss.h"
 #include "vsub.h"
 #include "vtcp.h"
 #include "vtim.h"
@@ -605,7 +605,7 @@ i_mode(void)
 static void
 ip_magic(void)
 {
-	struct suckaddr *sa;
+	const struct suckaddr *sa;
 	char abuf[VTCP_ADDRBUFSIZE];
 	char pbuf[VTCP_PORTBUFSIZE];
 	char *s;
@@ -621,7 +621,7 @@ ip_magic(void)
 	AN(sa);
 	bad_backend_fd = VTCP_bind(sa, NULL);
 	if (bad_backend_fd < 0) {
-		free(sa);
+		VSA_free(&sa);
 		sa = VSS_ResolveFirst(NULL, "localhost", "0", 0, SOCK_STREAM, 0);
 		AN(sa);
 		bad_backend_fd = VTCP_bind(sa, NULL);
@@ -657,7 +657,7 @@ ip_magic(void)
 	extmacro_def("listen_addr", NULL, "%s", abuf);
 	default_listen_addr = strdup(abuf);
 	AN(default_listen_addr);
-	free(sa);
+	VSA_free(&sa);
 
 	/*
 	 * We need an IP number which will not repond, ever, and that is a

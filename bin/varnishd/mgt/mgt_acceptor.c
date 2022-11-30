@@ -163,7 +163,7 @@ mk_listen_sock(const struct listen_arg *la, const struct suckaddr *sa)
 	fail = mac_opensocket(ls);
 	VJ_master(JAIL_MASTER_LOW);
 	if (fail) {
-		free(ls->addr);
+		VSA_free(&ls->addr);
 		free(ls->endpoint);
 		FREE_OBJ(ls);
 		if (fail != EAFNOSUPPORT)
@@ -199,7 +199,7 @@ mac_tcp(void *priv, const struct suckaddr *sa)
 		 * port number this VTCP_bind() found us, as if
 		 * it was specified by the argv.
 		 */
-		free(ls->addr);
+		VSA_free(&ls->addr);
 		ls->addr = VTCP_my_suckaddr(ls->sock);
 		VTCP_myname(ls->sock, abuf, sizeof abuf,
 		    pbuf, sizeof pbuf);

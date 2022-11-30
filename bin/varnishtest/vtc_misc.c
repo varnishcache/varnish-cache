@@ -51,6 +51,7 @@
 #include "vnum.h"
 #include "vre.h"
 #include "vtcp.h"
+#include "vsa.h"
 #include "vss.h"
 #include "vtim.h"
 #include "vus.h"
@@ -356,7 +357,7 @@ cmd_delay(CMD_ARGS)
 static int
 dns_works(void)
 {
-	struct suckaddr *sa;
+	const struct suckaddr *sa;
 	char abuf[VTCP_ADDRBUFSIZE];
 	char pbuf[VTCP_PORTBUFSIZE];
 
@@ -365,7 +366,7 @@ dns_works(void)
 	if (sa == NULL)
 		return (0);
 	VTCP_name(sa, abuf, sizeof abuf, pbuf, sizeof pbuf);
-	free(sa);
+	VSA_free(&sa);
 	if (strcmp(abuf, "192.0.2.255"))
 		return (0);
 
@@ -373,7 +374,7 @@ dns_works(void)
 	    AF_INET6, SOCK_STREAM, 0);
 	if (sa == NULL)
 		return (1); /* the canary is ipv4 only */
-	free(sa);
+	VSA_free(&sa);
 	return (0);
 }
 
@@ -384,14 +385,14 @@ dns_works(void)
 static int
 ipvx_works(const char *target)
 {
-	struct suckaddr *sa;
+	const struct suckaddr *sa;
 	int fd;
 
 	sa = VSS_ResolveOne(NULL, target, "0", 0, SOCK_STREAM, 0);
 	if (sa == NULL)
 		return (0);
 	fd = VTCP_bind(sa, NULL);
-	free(sa);
+	VSA_free(&sa);
 	if (fd >= 0) {
 		VTCP_close(&fd);
 		return (1);

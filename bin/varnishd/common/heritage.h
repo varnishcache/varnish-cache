@@ -48,7 +48,7 @@ struct listen_sock {
 	int				uds;
 	char				*endpoint;
 	const char			*name;
-	struct suckaddr			*addr;
+	const struct suckaddr		*addr;
 	const struct transport		*transport;
 	const struct uds_perms		*perms;
 	unsigned			test_heritage;

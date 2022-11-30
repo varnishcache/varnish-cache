@@ -247,7 +247,7 @@ vbp_write_proxy_v1(struct vbp_target *vt, int *sock)
 	char addr[VTCP_ADDRBUFSIZE];
 	char port[VTCP_PORTBUFSIZE];
 	char vsabuf[vsa_suckaddr_len];
-	struct suckaddr *sua;
+	const struct suckaddr *sua;
 	int proto;
 	struct vsb vsb;
 

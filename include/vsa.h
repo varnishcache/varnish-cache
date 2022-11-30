@@ -42,9 +42,10 @@ int VSA_Sane(const struct suckaddr *);
 unsigned VSA_Port(const struct suckaddr *);
 int VSA_Compare(const struct suckaddr *, const struct suckaddr *);
 int VSA_Compare_IP(const struct suckaddr *, const struct suckaddr *);
-struct suckaddr *VSA_Clone(const struct suckaddr *sua);
-struct suckaddr *VSA_getsockname(int, void *, size_t);
-struct suckaddr *VSA_getpeername(int, void *, size_t);
+const struct suckaddr *VSA_Clone(const struct suckaddr *sua);
+const struct suckaddr *VSA_getsockname(int, void *, size_t);
+const struct suckaddr *VSA_getpeername(int, void *, size_t);
+void VSA_free(const struct suckaddr **);
 
 const void *VSA_Get_Sockaddr(const struct suckaddr *, socklen_t *sl);
 int VSA_Get_Proto(const struct suckaddr *);
@@ -52,13 +53,14 @@ int VSA_Get_Proto(const struct suckaddr *);
 /*
  * 's' is a sockaddr of some kind, 'sal' is its length
  */
-struct suckaddr *VSA_Malloc(const void *s, unsigned  sal);
+const struct suckaddr *VSA_Malloc(const void *s, unsigned  sal);
 
 /*
- * 'd' SHALL point to vsa_suckaddr_len aligned bytes of storage,
+ * 'd' can point to vsa_suckaddr_len aligned bytes of storage, but
+ *     if it is NULL, malloc will be called.
  * 's' is a sockaddr of some kind, 'sal' is its length.
  */
-struct suckaddr *VSA_Build(void *d, const void *s, unsigned sal);
+const struct suckaddr *VSA_Build(void *d, const void *s, unsigned sal);
 
 /* 'd' SHALL point to vsa_suckaddr_len aligned bytes of storage
  *
@@ -69,7 +71,7 @@ struct suckaddr *VSA_Build(void *d, const void *s, unsigned sal);
  * NULL or 0 length argument are ignored.
  * argument of the wrong length are an error (NULL return value, EINVAL)
  */
-struct suckaddr * VSA_BuildFAP(void *d, sa_family_t fam,
+const struct suckaddr * VSA_BuildFAP(void *d, sa_family_t fam,
     const void *a, unsigned al, const void *p, unsigned pl);
 
 /*

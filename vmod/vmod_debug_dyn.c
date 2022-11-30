@@ -64,7 +64,7 @@ static void
 dyn_dir_init(VRT_CTX, struct xyzzy_debug_dyn *dyn,
      VCL_STRING addr, VCL_STRING port, VCL_PROBE probe)
 {
-	struct suckaddr *sa;
+	const struct suckaddr *sa;
 	VCL_BACKEND dir, dir2;
 	struct vrt_endpoint vep;
 	struct vrt_backend vrt;
@@ -105,7 +105,7 @@ dyn_dir_init(VRT_CTX, struct xyzzy_debug_dyn *dyn,
 	if (dir2 != NULL)
 		VRT_delete_backend(ctx, &dir2);
 
-	free(sa);
+	VSA_free(&sa);
 }
 
 VCL_VOID

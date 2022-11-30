@@ -173,8 +173,8 @@ struct rss {
 	unsigned		magic;
 #define RSS_MAGIC		0x11e966ab
 
-	struct suckaddr		*vsa4;
-	struct suckaddr		*vsa6;
+	const struct suckaddr	*vsa4;
+	const struct suckaddr	*vsa6;
 	struct vsb		*vsb;
 	int			retval;
 	int			wrong;
@@ -246,8 +246,10 @@ Resolve_Sockaddr(struct vcc *tl,
 		    "(Sorry if that error message is gibberish.)\n",
 		    errid, PF(t_err), err);
 		vcc_ErrWhere(tl, t_err);
-		free(rss->vsa4);
-		free(rss->vsa6);
+		if (rss->vsa4 != NULL)
+			VSA_free(&rss->vsa4);
+		if (rss->vsa6 != NULL)
+			VSA_free(&rss->vsa6);
 		VSB_destroy(&rss->vsb);
 		ZERO_OBJ(rss, sizeof rss);
 		return;
@@ -255,11 +257,11 @@ Resolve_Sockaddr(struct vcc *tl,
 	AZ(error);
 	if (rss->vsa4 != NULL) {
 		vcc_suckaddr(tl, host, rss->vsa4, ipv4, ipv4_ascii, p_ascii);
-		free(rss->vsa4);
+		VSA_free(&rss->vsa4);
 	}
 	if (rss->vsa6 != NULL) {
 		vcc_suckaddr(tl, host, rss->vsa6, ipv6, ipv6_ascii, p_ascii);
-		free(rss->vsa6);
+		VSA_free(&rss->vsa6);
 	}
 	if (rss->retval == 0) {
 		VSB_printf(tl->sb,

@@ -583,7 +583,7 @@ static void
 tunnel_listen(struct tunnel *t)
 {
 	char buf[vsa_suckaddr_len];
-	struct suckaddr *sua;
+	const struct suckaddr *sua;
 	const char *err;
 
 	if (t->lsock >= 0)

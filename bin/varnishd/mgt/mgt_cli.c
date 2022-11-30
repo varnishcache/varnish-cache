@@ -552,7 +552,7 @@ mgt_cli_telnet(const char *T_arg)
 struct m_addr {
 	unsigned		magic;
 #define M_ADDR_MAGIC		0xbc6217ed
-	struct suckaddr		*sa;
+	const struct suckaddr	*sa;
 	VTAILQ_ENTRY(m_addr)	list;
 };
 
