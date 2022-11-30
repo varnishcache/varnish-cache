@@ -360,7 +360,8 @@ RFC2616_Vary_AE(struct http *hp)
 /*--------------------------------------------------------------------*/
 
 const char *
-RFC2616_Strong_LM(struct http *hp, struct worker *wrk, struct objcore *oc)
+RFC2616_Strong_LM(const struct http *hp, struct worker *wrk,
+    struct objcore *oc)
 {
 	const char *p = NULL, *e = NULL;
 	vtim_real lm, d;
@@ -370,8 +371,8 @@ RFC2616_Strong_LM(struct http *hp, struct worker *wrk, struct objcore *oc)
 	CHECK_OBJ_ORNULL(hp, HTTP_MAGIC);
 
 	if (hp != NULL) {
-		http_GetHdr(hp, H_Last_Modified, &p);
-		http_GetHdr(hp, H_Date, &e);
+		(void)http_GetHdr(hp, H_Last_Modified, &p);
+		(void)http_GetHdr(hp, H_Date, &e);
 	} else if (wrk != NULL && oc != NULL) {
 		p = HTTP_GetHdrPack(wrk, oc, H_Last_Modified);
 		e = HTTP_GetHdrPack(wrk, oc, H_Date);

@@ -880,7 +880,7 @@ unsigned RFC2616_Req_Gzip(const struct http *);
 int RFC2616_Do_Cond(const struct req *sp);
 void RFC2616_Weaken_Etag(struct http *hp);
 void RFC2616_Vary_AE(struct http *hp);
-const char * RFC2616_Strong_LM(struct http *hp, struct worker *wrk,
+const char * RFC2616_Strong_LM(const struct http *hp, struct worker *wrk,
     struct objcore *oc);
 
 /*
