@@ -110,7 +110,7 @@ this is *precisely* why my own
 `phkmalloc <https://papers.freebsd.org/1998/phk-malloc/>`_
 became a big hit twenty years ago:  By firmly separating the metadata
 from the allocated space, several new classes of mistakes using the
-``malloc(3)`` API could, and was, detected.
+``malloc(3)`` API could, and were, detected.
 
 But this *is* going to be an embuggerance for CHERI users, because
 with CHERI getting from one pointer to different one is actual work.
