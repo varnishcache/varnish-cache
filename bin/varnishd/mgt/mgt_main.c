@@ -286,9 +286,11 @@ mgt_Cflag_atexit(void)
 	/* Only master process */
 	if (getpid() != heritage.mgt_pid)
 		return;
-	vext_cleanup(1);
+	if (arg_list_count("E")) {
+		vext_cleanup(1);
+		VJ_rmdir("vext_cache");
+	}
 	VJ_rmdir("vmod_cache");
-	VJ_rmdir("vext_cache");
 	(void)chdir("/");
 	VJ_rmdir(workdir);
 }
