@@ -645,7 +645,7 @@ ved_gzgz_init(VRT_CTX, struct vdp_ctx *vdc, void **priv, struct objcore *oc)
  * in VDP_bytes(), but ved_bytes() covers it.
  *
  * To avoid unnecessary chunks downstream, it would be nice to re-structure the
- * code to intendify the last block, send VDP_END/VDP_FLUSH for that one and
+ * code to identify the last block, send VDP_END/VDP_FLUSH for that one and
  * VDP_NULL for anything before it.
  */
 
