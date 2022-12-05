@@ -367,10 +367,11 @@ static void
 vca_mk_tcp(const struct wrk_accept *wa,
     struct sess *sp, char *laddr, char *lport, char *raddr, char *rport)
 {
-	struct suckaddr *sa;
+	struct suckaddr *sa = NULL;
 	ssize_t sz;
 
 	AN(SES_Reserve_remote_addr(sp, &sa, &sz));
+	AN(sa);
 	assert(sz == vsa_suckaddr_len);
 	AN(VSA_Build(sa, &wa->acceptaddr, wa->acceptaddrlen));
 	sp->sattr[SA_CLIENT_ADDR] = sp->sattr[SA_REMOTE_ADDR];
@@ -390,11 +391,12 @@ static void
 vca_mk_uds(struct wrk_accept *wa, struct sess *sp, char *laddr, char *lport,
 	   char *raddr, char *rport)
 {
-	struct suckaddr *sa;
+	struct suckaddr *sa = NULL;
 	ssize_t sz;
 
 	(void) wa;
 	AN(SES_Reserve_remote_addr(sp, &sa, &sz));
+	AN(sa);
 	assert(sz == vsa_suckaddr_len);
 	AZ(SES_Set_remote_addr(sp, bogo_ip));
 	sp->sattr[SA_CLIENT_ADDR] = sp->sattr[SA_REMOTE_ADDR];
