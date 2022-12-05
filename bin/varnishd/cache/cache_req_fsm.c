@@ -49,7 +49,6 @@
 #include "hash/hash_slinger.h"
 #include "http1/cache_http1.h"
 #include "storage/storage.h"
-#include "common/heritage.h"
 #include "vcl.h"
 #include "vct.h"
 #include "vsha256.h"
@@ -909,7 +908,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 {
 	unsigned recv_handling;
 	struct VSHA256Context sha256ctx;
-	const char *ci, *cp, *endpname;
+	const char *ci;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -922,13 +921,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 	AZ(isnan(req->t_prev));
 	AZ(isnan(req->t_req));
 
-	ci = SES_Get_String_Attr(req->sp, SA_CLIENT_IP);
-	cp = SES_Get_String_Attr(req->sp, SA_CLIENT_PORT);
-	CHECK_OBJ_NOTNULL(req->sp->listen_sock, LISTEN_SOCK_MAGIC);
-	endpname = req->sp->listen_sock->name;
-	AN(endpname);
-	VSLb(req->vsl, SLT_ReqStart, "%s %s %s", ci, cp, endpname);
-
+	ci = Req_LogStart(wrk, req);
 	http_VSL_log(req->http);
 
 	if (http_CountHdr(req->http0, H_Host) > 1) {
