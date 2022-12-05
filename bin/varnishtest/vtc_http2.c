@@ -607,6 +607,10 @@ parse_settings(const struct stream *s, struct frame *f)
 		vtc_fatal(s->vl,
 		    "Size should be a multiple of 6, but isn't (%d)", f->size);
 
+	if (s->id != 0)
+		vtc_fatal(s->vl,
+		    "Setting frames should only be on stream 0, but received on stream: %d", s->id);
+
 	for (u = 0; u <= SETTINGS_MAX; u++)
 		f->md.settings[u] = NAN;
 
