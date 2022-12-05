@@ -70,7 +70,11 @@ static const char * const h2_settings[] = {
 	NULL
 };
 
-#define SETTINGS_MAX (sizeof(h2_settings)/sizeof(h2_settings[0]) - 1U)
+enum h2_settings {
+#define H2_SETTING(U,l,v,...) SETTINGS_##U = v,
+#include <tbl/h2_settings.h>
+	SETTINGS_MAX
+};
 
 
 enum h2_type {
@@ -1026,9 +1030,9 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 			return (buf);
 		}
 		if (!strcmp(spec, "push")) {
-			if (isnan(f->md.settings[2]))
+			if (isnan(f->md.settings[SETTINGS_ENABLE_PUSH]))
 				return (NULL);
-			else if (f->md.settings[2] == 1)
+			else if (f->md.settings[SETTINGS_ENABLE_PUSH] == 1)
 				snprintf(buf, 20, "true");
 			else
 				snprintf(buf, 20, "false");
