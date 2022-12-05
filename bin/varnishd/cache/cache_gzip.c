@@ -272,7 +272,7 @@ VGZ_Gzip(struct vgz *vg, const void **pptr, ssize_t *plen, enum vgz_flag flags)
 	AN(vg->vz.avail_out);
 	before = vg->vz.next_out;
 	switch (flags) {
-	case VGZ_NORMAL:	zflg = Z_BLOCK; break;
+	case VGZ_NORMAL:	zflg = Z_NO_FLUSH; break;
 	case VGZ_ALIGN:		zflg = Z_SYNC_FLUSH; break;
 	case VGZ_RESET:		zflg = Z_FULL_FLUSH; break;
 	case VGZ_FINISH:	zflg = Z_FINISH; break;
@@ -417,16 +417,13 @@ const struct vdp VDP_gunzip = {
 
 /*--------------------------------------------------------------------*/
 
-#include <stdio.h>
-
 void
 VGZ_UpdateObj(const struct vfp_ctx *vc, struct vgz *vg, enum vgzret_e e)
 {
 	char *p;
 	intmax_t ii;
 	size_t bits;
-	int bi_valid;
-	unsigned type, pending;
+	unsigned type;
 
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 
@@ -443,14 +440,6 @@ VGZ_UpdateObj(const struct vfp_ctx *vc, struct vgz *vg, enum vgzret_e e)
 			vg->last_bit = bits;
 		} else if ((type & 0xc0) != 0x40)
 			vg->stop_bit = bits;
-	} else {
-		assert(deflatePending(&vg->vz, &pending, &bi_valid) == Z_OK);
-		bits = (vg->vz.total_out + pending) * 8 + bi_valid;
-		assert(vg->vz.start_bit == 0 || vg->vz.start_bit == 80);
-		fprintf(stderr,
-		    "%s z=%p start=%lu stop=%lu last=%lu bits=%zu\n",
-		    __func__, &vg->vz,
-		    vg->vz.start_bit, vg->vz.stop_bit, vg->vz.last_bit, bits);
 	}
 
 	ii = vg->vz.start_bit + vg->vz.last_bit + vg->vz.stop_bit;

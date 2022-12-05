@@ -512,8 +512,6 @@ int ZEXPORT deflateGetDictionary (strm, dictionary, dictLength)
 
 #endif /* NOVGZ */
 
-#include <stdio.h>
-
 /* ========================================================================= */
 int ZEXPORT deflateResetKeep (strm)
     z_streamp strm;
@@ -1077,10 +1075,8 @@ int ZEXPORT deflate (strm, flush)
 #endif /* NOVGZ */
 #endif
 
-    if (strm->start_bit == 0) {
+    if (strm->start_bit == 0)
         strm->start_bit = (strm->total_out + s->pending) * 8 + s->bi_valid;
-        fprintf(stderr, "%s z=%p start=%lu\n", __func__, strm, strm->start_bit);
-    }
 
     /* Start a new block or continue the current one.
      */
