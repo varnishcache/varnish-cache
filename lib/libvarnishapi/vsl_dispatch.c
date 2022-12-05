@@ -232,6 +232,7 @@ vtx_keycmp(const struct vtx_key *a, const struct vtx_key *b)
 VRBT_GENERATE_REMOVE_COLOR(vtx_tree, vtx_key, entry, static)
 VRBT_GENERATE_REMOVE(vtx_tree, vtx_key, entry, static)
 VRBT_GENERATE_INSERT_COLOR(vtx_tree, vtx_key, entry, static)
+VRBT_GENERATE_INSERT_FINISH(vtx_tree, vtx_key, entry, static)
 VRBT_GENERATE_INSERT(vtx_tree, vtx_key, entry, vtx_keycmp, static)
 VRBT_GENERATE_FIND(vtx_tree, vtx_key, entry, vtx_keycmp, static)
 

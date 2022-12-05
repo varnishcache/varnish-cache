@@ -150,6 +150,7 @@ vcl_acl_disjoint(const struct acl_e *ae1, const struct acl_e *ae2)
 }
 
 VRBT_GENERATE_INSERT_COLOR(acl_tree, acl_e, branch, static)
+VRBT_GENERATE_INSERT_FINISH(acl_tree, acl_e, branch, static)
 VRBT_GENERATE_INSERT(acl_tree, acl_e, branch, vcl_acl_cmp, static)
 VRBT_GENERATE_MINMAX(acl_tree, acl_e, branch, static)
 VRBT_GENERATE_NEXT(acl_tree, acl_e, branch, static)

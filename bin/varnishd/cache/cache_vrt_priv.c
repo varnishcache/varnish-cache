@@ -55,6 +55,7 @@ static inline int vrt_priv_dyncmp(const struct vrt_priv *,
 
 VRBT_GENERATE_INSERT_COLOR(vrt_privs, vrt_priv, entry, static)
 VRBT_GENERATE_FIND(vrt_privs, vrt_priv, entry, vrt_priv_dyncmp, static)
+VRBT_GENERATE_INSERT_FINISH(vrt_privs, vrt_priv, entry, static)
 VRBT_GENERATE_INSERT(vrt_privs, vrt_priv, entry, vrt_priv_dyncmp, static)
 VRBT_GENERATE_MINMAX(vrt_privs, vrt_priv, entry, static)
 VRBT_GENERATE_NEXT(vrt_privs, vrt_priv, entry, static)
