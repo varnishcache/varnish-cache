@@ -271,7 +271,7 @@ struct worker {
 struct storeobj {
 	const struct stevedore	*stevedore;
 	void			*priv;
-	uintptr_t		priv2;
+	uint64_t		priv2;
 };
 
 /* Busy Objcore structure --------------------------------------------
