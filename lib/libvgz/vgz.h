@@ -113,6 +113,17 @@ typedef struct z_stream_s {
 typedef z_stream FAR *z_streamp;
 
 /*
+     deflate block boundaries information obtained from zlib routines.
+*/
+typedef struct z_bounds_s {
+    uLong   init_block; /* bit position of the initial deflate block */
+    uLong   last_block; /* bit position of the last deflate block */
+    uLong   last_bit;   /* bit position after the last deflate block */
+} z_bounds;
+
+typedef z_bounds FAR *z_boundsp;
+
+/*
      gzip header information passed to and from zlib routines.  See RFC 1952
   for more details on the meanings of these fields.
 */
@@ -777,6 +788,13 @@ ZEXTERN uLong ZEXPORT deflateBound OF((z_streamp strm,
    than Z_FINISH or Z_NO_FLUSH are used.
 */
 
+ZEXTERN int ZEXPORT deflateBlockBounds OF((z_streamp strm,
+                                           z_boundsp dest));
+/*
+     TODO:
+   description.
+*/
+
 ZEXTERN int ZEXPORT deflatePending OF((z_streamp strm,
                                        unsigned *pending,
                                        int *bits));
@@ -1176,6 +1194,13 @@ ZEXTERN int ZEXPORT inflateBackEnd OF((z_streamp strm));
 
      inflateBackEnd() returns Z_OK on success, or Z_STREAM_ERROR if the stream
    state was inconsistent.
+*/
+
+ZEXTERN int ZEXPORT inflateBlockBounds OF((z_streamp strm,
+                                           z_boundsp dest));
+/*
+     TODO:
+   description.
 */
 
 ZEXTERN uLong ZEXPORT zlibCompileFlags OF((void));

@@ -141,6 +141,7 @@ z_streamp strm;
     state->lencode = state->distcode = state->next = state->codes;
     state->sane = 1;
     state->back = -1;
+    zmemzero(&state->bounds, sizeof state->bounds);
     Tracev((stderr, "inflate: reset\n"));
     return Z_OK;
 }
@@ -274,6 +275,18 @@ int value;
 }
 
 #endif /* NOVGZ */
+
+int ZEXPORT inflateBlockBounds (strm, dest)
+    z_streamp strm;
+    z_boundsp dest;
+{
+    struct inflate_state FAR *state;
+    if (inflateStateCheck(strm)) return Z_STREAM_ERROR;
+    state = (struct inflate_state FAR *)strm->state;
+    if (dest != Z_NULL)
+        memcpy(dest, &state->bounds, sizeof *dest);
+    return Z_OK;
+}
 
 /*
    Return state with length and distance decoding tables and index sizes set to
@@ -870,18 +883,23 @@ int flush;
             if (flush == Z_BLOCK || flush == Z_TREES) goto inf_leave;
                 /* fallthrough */
         case TYPEDO:
-            if (strm->start_bit == 0)
+            if (state->bounds.init_block == 0) {
                 strm->start_bit = 8 * (strm->total_in + in - have) - bits;
+		state->bounds.init_block = INFLATE_BITS(strm, in - have, bits);
+	    }
             if (state->last) {
                 strm->stop_bit = 8 * (strm->total_in + in - have) - bits;
+		state->bounds.last_bit = INFLATE_BITS(strm, in - have, bits);
                 BYTEBITS();
                 state->mode = CHECK;
                 break;
             }
             NEEDBITS(3);
             state->last = BITS(1);
-            if (state->last)
+            if (state->last) {
                 strm->last_bit = 8 * (strm->total_in + in - have) - bits;
+		state->bounds.last_block = INFLATE_BITS(strm, in - have, bits);
+	    }
             DROPBITS(1);
             switch (BITS(2)) {
             case 0:                             /* stored block */
