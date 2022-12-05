@@ -576,8 +576,6 @@ int ZEXPORT deflateSetHeader (strm, head)
     return Z_OK;
 }
 
-#endif
-
 /* ========================================================================= */
 int ZEXPORT deflatePending (strm, pending, bits)
     unsigned *pending;
@@ -591,8 +589,6 @@ int ZEXPORT deflatePending (strm, pending, bits)
         *bits = strm->state->bi_valid;
     return Z_OK;
 }
-
-#ifdef NOVGZ
 
 /* ========================================================================= */
 int ZEXPORT deflatePrime (strm, bits, value)
