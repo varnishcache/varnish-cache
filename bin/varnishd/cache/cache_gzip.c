@@ -414,21 +414,26 @@ const struct vdp VDP_gunzip = {
 void
 VGZ_UpdateObj(const struct vfp_ctx *vc, struct vgz *vg, enum vgzret_e e)
 {
+	z_bounds bounds;
 	char *p;
 	intmax_t ii;
 
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	if (e < VGZ_OK)
 		return;
-	ii = vg->vz.start_bit + vg->vz.last_bit + vg->vz.stop_bit;
+	if (vg->dir == VGZ_GZ)
+		assert(Z_OK == deflateBlockBounds(&vg->vz, &bounds));
+	else
+		assert(Z_OK == inflateBlockBounds(&vg->vz, &bounds));
+	ii = bounds.init_block + bounds.last_block + bounds.last_bit;
 	if (e != VGZ_END && ii == vg->bits)
 		return;
 	vg->bits = ii;
 	p = ObjSetAttr(vc->wrk, vc->oc, OA_GZIPBITS, 32, NULL);
 	AN(p);
-	vbe64enc(p, vg->vz.start_bit);
-	vbe64enc(p + 8, vg->vz.last_bit);
-	vbe64enc(p + 16, vg->vz.stop_bit);
+	vbe64enc(p, bounds.init_block);
+	vbe64enc(p + 8, bounds.last_block);
+	vbe64enc(p + 16, bounds.last_bit);
 	if (e != VGZ_END)
 		return;
 	if (vg->dir == VGZ_GZ)
@@ -445,17 +450,22 @@ VGZ_Destroy(struct vgz **vgp)
 {
 	struct vgz *vg;
 	enum vgzret_e vr;
+	z_bounds bounds;
 	int i;
 
 	TAKE_OBJ_NOTNULL(vg, vgp, VGZ_MAGIC);
 	AN(vg->id);
+	if (vg->dir == VGZ_GZ)
+		assert(Z_OK == deflateBlockBounds(&vg->vz, &bounds));
+	else
+		assert(Z_OK == inflateBlockBounds(&vg->vz, &bounds));
 	VSLb(vg->vsl, SLT_Gzip, "%s %jd %jd %jd %jd %jd",
 	    vg->id,
 	    (intmax_t)vg->vz.total_in,
 	    (intmax_t)vg->vz.total_out,
-	    (intmax_t)vg->vz.start_bit,
-	    (intmax_t)vg->vz.last_bit,
-	    (intmax_t)vg->vz.stop_bit);
+	    (intmax_t)bounds.init_block,
+	    (intmax_t)bounds.last_block,
+	    (intmax_t)bounds.last_bit);
 	if (vg->dir == VGZ_GZ)
 		i = deflateEnd(&vg->vz);
 	else
