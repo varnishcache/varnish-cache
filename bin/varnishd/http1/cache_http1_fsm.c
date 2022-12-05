@@ -35,16 +35,14 @@
 
 #include "config.h"
 
-#include "cache/cache_varnishd.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "cache/cache_varnishd.h"
 #include "cache/cache_objhead.h"
 #include "cache/cache_transport.h"
 #include "cache_http1.h"
 
-#include "common/heritage.h"
 #include "vtcp.h"
 
 static const char H1NEWREQ[] = "HTTP1::NewReq";
@@ -246,7 +244,6 @@ http1_abort(struct req *req, uint16_t status)
 static int
 http1_dissect(struct worker *wrk, struct req *req)
 {
-	const char *ci, *cp, *endpname;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -274,13 +271,7 @@ http1_dissect(struct worker *wrk, struct req *req)
 		    req->htc->rxbuf_b);
 		wrk->stats->client_req_400++;
 
-		ci = SES_Get_String_Attr(req->sp, SA_CLIENT_IP);
-		cp = SES_Get_String_Attr(req->sp, SA_CLIENT_PORT);
-		CHECK_OBJ_NOTNULL(req->sp->listen_sock, LISTEN_SOCK_MAGIC);
-		endpname = req->sp->listen_sock->name;
-		AN(endpname);
-
-		VSLb(req->vsl, SLT_ReqStart, "%s %s %s", ci, cp, endpname);
+		(void)Req_LogStart(wrk, req);
 
 		req->doclose = SC_RX_JUNK;
 		http1_abort(req, 400);
