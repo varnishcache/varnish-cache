@@ -100,7 +100,7 @@ Req_LogHit(struct worker *wrk, struct req *req, struct objcore *oc,
 }
 
 const char *
-Req_LogStart(struct worker *wrk, struct req *req)
+Req_LogStart(const struct worker *wrk, struct req *req)
 {
 	const char *ci, *cp, *endpname;
 
