@@ -234,7 +234,7 @@ jobs:
           command: |
             docker create --name workspace -v /workspace << parameters.prefix >><< parameters.dist >>:<< parameters.release >> /bin/true
             docker cp /workspace workspace:/
-            docker run --volumes-from workspace -w /workspace << parameters.prefix >><< parameters.dist >>:<< parameters.release >> sh -c '
+            docker run --volumes-from workspace -w /workspace --network host << parameters.prefix >><< parameters.dist >>:<< parameters.release >> sh -c '
             case "<< parameters.dist >>" in
             centos|almalinux|fedora)
                 yum groupinstall -y "Development Tools"
