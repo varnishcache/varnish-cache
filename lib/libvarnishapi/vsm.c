@@ -76,7 +76,7 @@ static vlu_f vsm_vlu_func;
 #define VSM_PRIV_SHIFT							\
 	(sizeof (uint64_t) * 4)
 #define VSM_PRIV_MASK							\
-	((1UL << VSM_PRIV_SHIFT) - 1)
+	((1ULL << VSM_PRIV_SHIFT) - 1)
 #define VSM_PRIV_LOW(u)							\
 	((uint64_t)(u) & VSM_PRIV_MASK)
 #define VSM_PRIV_HIGH(u)						\
@@ -792,7 +792,7 @@ vsm_findseg(const struct vsm *vd, const struct vsm_fantom *vf)
 {
 	struct vsm_set *vs;
 	struct vsm_seg *vg;
-	uintptr_t x;
+	uint64_t x;
 
 	x = VSM_PRIV_HIGH(vf->priv);
 	if (x == vd->serial) {
