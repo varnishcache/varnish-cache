@@ -74,13 +74,13 @@ const struct vsm_valid VSM_valid[1] = {{"valid"}};
 static vlu_f vsm_vlu_func;
 
 #define VSM_PRIV_SHIFT							\
-	(sizeof (uintptr_t) * 4)
+	(sizeof (uint64_t) * 4)
 #define VSM_PRIV_MASK							\
 	((1UL << VSM_PRIV_SHIFT) - 1)
 #define VSM_PRIV_LOW(u)							\
-	((uintptr_t)(u) & VSM_PRIV_MASK)
+	((uint64_t)(u) & VSM_PRIV_MASK)
 #define VSM_PRIV_HIGH(u)						\
-	(((uintptr_t)(u) >> VSM_PRIV_SHIFT) & VSM_PRIV_MASK)
+	(((uint64_t)(u) >> VSM_PRIV_SHIFT) & VSM_PRIV_MASK)
 #define VSM_PRIV_MERGE(low, high)					\
 	(VSM_PRIV_LOW(low) | (VSM_PRIV_LOW(high) << VSM_PRIV_SHIFT))
 
@@ -105,7 +105,7 @@ struct vsm_seg {
 	size_t			sz;
 	void			*b;
 	void			*e;
-	uintptr_t		serial;
+	uint64_t		serial;
 };
 
 struct vsm_set {
@@ -140,7 +140,7 @@ struct vsm {
 #define VSM_MAGIC		0x6e3bd69b
 
 	struct vsb		*diag;
-	uintptr_t		serial;
+	uint64_t		serial;
 
 	int			wdfd;
 	struct stat		wdst;
