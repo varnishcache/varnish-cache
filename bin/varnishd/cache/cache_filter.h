@@ -63,7 +63,7 @@ struct vfp_entry {
 	enum vfp_status		closed;
 	const struct vfp	*vfp;
 	void			*priv1;
-	int64_t			priv2;
+	ssize_t			priv2;
 	VTAILQ_ENTRY(vfp_entry)	list;
 	uint64_t		calls;
 	uint64_t		bytes_out;
