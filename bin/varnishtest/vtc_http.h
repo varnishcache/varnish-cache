@@ -91,6 +91,7 @@ struct http {
 	struct hpk_ctx		*encctx;
 	struct hpk_ctx		*decctx;
 	struct h2_window	h2_win_self[1];
+	struct h2_window	h2_win_peer[1];
 };
 
 int http_process(struct vtclog *vl, struct vtc_sess *vsp, const char *spec,
