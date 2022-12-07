@@ -8,7 +8,19 @@ server s1 {
 		txcont -hdr "baz" "qux"
 		txdata -data "foo"
 		txdata -data "bar"
+		expect stream.peer_window == 65529
+		rxreq
+		txresp -bodylen 529
+		expect stream.peer_window == 65000
+		rxwinup
+		expect stream.peer_window == 65200
 	} -run
+	stream 0 {
+		expect stream.peer_window == 65000
+		rxwinup
+		expect stream.peer_window == 66000
+	} -run
+
 
 } -start
 
@@ -35,6 +47,15 @@ client c1 -connect ${s1_sock} {
 	stream 0 {
 		expect stream.window == 65529
 	} -run
+	stream 2 {
+		txreq
+		rxresp
+		txwinup -size 200
+	} -run
+	stream 0 {
+		txwinup -size 1000
+	} -run
+
 } -run
 
 server s1 -wait
