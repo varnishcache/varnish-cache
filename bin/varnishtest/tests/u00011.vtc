@@ -14,7 +14,7 @@ client c1 {
 
 varnish v1 -vsl_catchup
 
-process p1 -log {varnishadm -n ${v1_name}} -start
+process p1 -log -winsz 25 120 {varnishadm -n ${v1_name}} -start
 
 process p1 -expect-text 0 1 "Type 'quit' to close CLI session."
 
