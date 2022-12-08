@@ -387,7 +387,7 @@ workflows:
           name: build_centos_7
           dist: centos
           release: "7"
-          extra_conf: --with-jemalloc
+          extra_conf: --with-jemalloc JEMALLOC_LIBS=-ljemalloc
       - build:
           name: build_centos_stream
           prefix: quay.io/centos/
