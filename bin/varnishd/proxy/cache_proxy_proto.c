@@ -286,7 +286,7 @@ vpx_tlv_itern(struct vpx_tlv_iter *vpi)
 		(vpi->e == NULL) && vpx_tlv_itern(itv);)
 
 int
-VPX_tlv(const struct req *req, int typ, void **dst, int *len)
+VPX_tlv(const struct req *req, int typ, const void **dst, int *len)
 {
 	struct vpx_tlv *tlv;
 	struct vpx_tlv_iter vpi[1], vpi2[1];
