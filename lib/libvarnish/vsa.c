@@ -255,7 +255,8 @@ VSA_Malloc(const void *s, unsigned  sal)
 	return (VSA_Build(NULL, s, sal));
 }
 
-/* 'd' SHALL point to vsa_suckaddr_len aligned bytes of storage
+/*
+ * 'd' SHALL point to vsa_suckaddr_len aligned bytes of storage
  *
  * fam: address family
  * a / al : address and length
@@ -466,4 +467,3 @@ VSA_free(const struct suckaddr **vsap)
 	TAKE_OBJ_NOTNULL(vsa, vsap, SUCKADDR_MAGIC);
 	free(TRUST_ME(vsa));
 }
-

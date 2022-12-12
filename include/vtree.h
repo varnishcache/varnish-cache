@@ -533,7 +533,7 @@ name##_VRBT_INSERT_COLOR(struct name *head,				\
 	/*								\
 	 * Initially, elm is a leaf.  Either its parent was previously	\
 	 * a leaf, with two black null children, or an interior node	\
-	 * with a black non-null child and a red null child. The        \
+	 * with a black non-null child and a red null child. The	\
 	 * balance criterion "the rank of any leaf is 1" precludes the  \
 	 * possibility of two red null children for the initial parent. \
 	 * So the first loop iteration cannot lead to accessing an      \
@@ -694,12 +694,12 @@ name##_VRBT_REMOVE_COLOR(struct name *head,				\
 			 *	     par		 par		\
 			 *	    ╱	╲		╱   ╲		\
 			 *	   ╱	sib	      elm    ╲		\
-			 *	  ╱	/ ╲	            elm*	\
-			 *	elm   elm* ╲	            ╱  ╲	\
+			 *	  ╱	/ ╲		     elm*	\
+			 *	elm   elm* ╲		    ╱  ╲	\
 			 *	      ╱	╲   ╲		   ╱    ╲	\
 			 *	     ╱   ╲   z		  ╱      ╲	\
 			 *	    x	  y		 x      sib	\
-			 *				        ╱  ╲	\
+			 *					╱  ╲	\
 			 *				       ╱    z	\
 			 *				      y		\
 			 */						\

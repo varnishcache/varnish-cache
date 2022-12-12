@@ -88,8 +88,7 @@ VCLI_WriteResult(int fd, unsigned status, const char *result)
 
 	len = strlen(result);
 
-	i = snprintf(res, sizeof res,
-	    "%-3d %-8zd\n", status, len);
+	i = snprintf(res, sizeof res, "%-3d %-8zd\n", status, len);
 	assert(i == CLI_LINE0_LEN);
 	assert(strtoul(res + 3, NULL, 10) == len);
 

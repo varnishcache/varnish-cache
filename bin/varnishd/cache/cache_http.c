@@ -389,7 +389,7 @@ http_Teardown(struct http *hp)
  */
 
 void
-HTTP_Dup(struct http *to, const struct http * const fm)
+HTTP_Dup(struct http *to, const struct http * fm)
 {
 
 	assert(fm->nhd <= to->shd);
