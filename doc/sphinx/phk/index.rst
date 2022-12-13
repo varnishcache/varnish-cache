@@ -13,6 +13,7 @@ You may or may not want to know what Poul-Henning thinks.
 .. toctree::
 	:maxdepth: 1
 
+	cheri7.rst
 	cheri6.rst
 	cheri5.rst
 	cheri4.rst
