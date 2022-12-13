@@ -764,7 +764,7 @@ vbf_stp_fetchend(struct worker *wrk, struct busyobj *bo)
  */
 
 static int v_matchproto_(objiterate_f)
-vbf_objiterator(void *priv, unsigned flush, const void *ptr, ssize_t len)
+vbf_objiterate(void *priv, unsigned flush, const void *ptr, ssize_t len)
 {
 	struct busyobj *bo;
 	ssize_t l;
@@ -852,7 +852,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 		ObjSetState(wrk, oc, BOS_STREAM);
 	}
 
-	if (ObjIterate(wrk, stale_oc, bo, vbf_objiterator, 0))
+	if (ObjIterate(wrk, stale_oc, bo, vbf_objiterate, 0))
 		(void)VFP_Error(bo->vfc, "Template object failed");
 
 	if (bo->vfc->failed) {
