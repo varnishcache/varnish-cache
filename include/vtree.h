@@ -448,7 +448,7 @@ struct {								\
 #define VRBT_PROTOTYPE_INSERT(name, type, attr)				\
 	attr struct type *name##_VRBT_INSERT(struct name *, struct type *)
 #define VRBT_PROTOTYPE_FIND(name, type, attr)				\
-	attr const struct type *name##_VRBT_FIND(const struct name *, const struct type *)
+	attr struct type *name##_VRBT_FIND(const struct name *, const struct type *)
 #define VRBT_PROTOTYPE_NFIND(name, type, attr)				\
 	attr struct type *name##_VRBT_NFIND(struct name *, struct type *)
 #define VRBT_PROTOTYPE_NEXT(name, type, attr)				\
@@ -462,7 +462,7 @@ struct {								\
 	attr struct type *name##_VRBT_INSERT_PREV(struct name *,		\
 	    struct type *, struct type *)
 #define VRBT_PROTOTYPE_MINMAX(name, type, attr)				\
-	attr const struct type *name##_VRBT_MINMAX(struct name *, int)
+	attr struct type *name##_VRBT_MINMAX(const struct name *, int)
 #define VRBT_PROTOTYPE_REINSERT(name, type, attr)			\
 	attr struct type *name##_VRBT_REINSERT(struct name *, struct type *)
 
