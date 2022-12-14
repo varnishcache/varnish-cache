@@ -2,7 +2,7 @@ varnishtest "range requests on streamed response"
 
 barrier b1 cond 2 -cyclic
 
-server s1 -repeat 4 {
+server s1 -repeat 5 {
 	rxreq
 	txresp -nolen \
 	    -hdr "Transfer-Encoding: chunked" \
@@ -23,11 +23,6 @@ server s1 -repeat 4 {
 varnish v1 -vcl+backend {} -start
 
 varnish v1 -cliok "param.set debug +syncvsl"
-
-logexpect l1 -v v1 -g session {
-	expect 0 1000	Begin		sess
-	expect * =	SessClose	RANGE_SHORT
-} -start
 
 client c1 {
 	txreq -url /1 -hdr "Range: bytes=17-101"
@@ -65,7 +60,15 @@ client c1 {
 	barrier b1 sync
 	rxrespbody
 	expect resp.bodylen == 34
+	delay .1
+
+	# Keeps working after short response
+	txreq -url /5 -hdr "Range: bytes=17-101"
+	rxresphdrs
+	expect resp.status == 206
+	barrier b1 sync
+	rxrespbody
+	expect resp.bodylen == 85
 } -run
 
-varnish v1 -expect sc_range_short == 1
-logexpect l1 -wait
+varnish v1 -expect sc_range_short == 0

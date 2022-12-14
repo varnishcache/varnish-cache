@@ -14,6 +14,11 @@ server s1 {
 
 varnish v1 -vcl+backend { } -start
 
+logexpect l1 -v v1 -g session {
+	expect 0 1000	Begin		sess
+	expect * =	SessClose	RANGE_SHORT
+} -start
+
 client c1 {
 	txreq -hdr "range: bytes=0-16"
 	rxresp -no_obj
@@ -24,6 +29,7 @@ client c1 {
 } -run
 
 varnish v1 -expect MAIN.sc_range_short == 1
+logexpect l1 -wait
 
 delay .3
 
@@ -43,3 +49,5 @@ client c2 {
 		expect rst.err == INTERNAL_ERROR
 	} -run
 } -run
+
+varnish v1 -expect MAIN.sc_range_short == 1
