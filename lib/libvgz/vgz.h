@@ -1,5 +1,5 @@
 /* zlib.h -- interface of the 'zlib' general purpose compression library
-  version 1.2.12, March 11th, 2022
+  version 1.2.13, October 13th, 2022
 
   Copyright (C) 1995-2022 Jean-loup Gailly and Mark Adler
 
@@ -37,11 +37,11 @@
 extern "C" {
 #endif
 
-#define ZLIB_VERSION "1.2.12"
-#define ZLIB_VERNUM 0x12c0
+#define ZLIB_VERSION "1.2.13"
+#define ZLIB_VERNUM 0x12d0
 #define ZLIB_VER_MAJOR 1
 #define ZLIB_VER_MINOR 2
-#define ZLIB_VER_REVISION 12
+#define ZLIB_VER_REVISION 13
 #define ZLIB_VER_SUBREVISION 0
 
 /*
@@ -1864,9 +1864,8 @@ ZEXTERN int ZEXPORT gzgetc_ OF((gzFile file));  /* backward compatibility */
    ZEXTERN z_off64_t ZEXPORT gzoffset64 OF((gzFile));
    ZEXTERN uLong ZEXPORT adler32_combine64 OF((uLong, uLong, z_off64_t));
    ZEXTERN uLong ZEXPORT crc32_combine64 OF((uLong, uLong, z_off64_t));
+   ZEXTERN uLong ZEXPORT crc32_combine_gen64 OF((z_off64_t));
 #endif
-
-ZEXTERN uLong ZEXPORT crc32_combine_gen64 OF((z_off64_t));
 
 #if !defined(ZLIB_INTERNAL) && defined(Z_WANT64)
 #  ifdef Z_PREFIX_SET
