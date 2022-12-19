@@ -312,7 +312,7 @@ local void tr_static_init()
 }
 
 /* ===========================================================================
- * Genererate the file trees.h describing the static trees.
+ * Generate the file trees.h describing the static trees.
  */
 #ifdef GEN_TREES_H
 #  ifndef ZLIB_DEBUG
@@ -807,8 +807,8 @@ local int build_bl_tree(s)
 
     /* Build the bit length tree: */
     build_tree(s, (tree_desc *)(&(s->bl_desc)));
-    /* opt_len now includes the length of the tree representations, except
-     * the lengths of the bit lengths codes and the 5+5+4 bits for the counts.
+    /* opt_len now includes the length of the tree representations, except the
+     * lengths of the bit lengths codes and the 5 + 5 + 4 bits for the counts.
      */
 
     /* Determine the number of bit length codes to send. The pkzip format
@@ -961,7 +961,10 @@ void ZLIB_INTERNAL _tr_flush_block(s, buf, stored_len, last)
                 opt_lenb, s->opt_len, static_lenb, s->static_len, stored_len,
                 s->sym_next / 3));
 
-        if (static_lenb <= opt_lenb) opt_lenb = static_lenb;
+#ifndef FORCE_STATIC
+        if (static_lenb <= opt_lenb || s->strategy == Z_FIXED)
+#endif
+            opt_lenb = static_lenb;
 
     } else {
         Assert(buf != (char*)0, "lost buf");
@@ -982,11 +985,7 @@ void ZLIB_INTERNAL _tr_flush_block(s, buf, stored_len, last)
          */
         _tr_stored_block(s, buf, stored_len, last);
 
-#ifdef FORCE_STATIC
-    } else if (static_lenb >= 0) { /* force static trees */
-#else
-    } else if (s->strategy == Z_FIXED || static_lenb == opt_lenb) {
-#endif
+    } else if (static_lenb == opt_lenb) {
         send_bits(s, (STATIC_TREES<<1)+last, 3);
         compress_block(s, (const ct_data *)static_ltree,
                        (const ct_data *)static_dtree);
@@ -1028,11 +1027,11 @@ void ZLIB_INTERNAL _tr_flush_block(s, buf, stored_len, last)
 int ZLIB_INTERNAL _tr_tally (s, dist, lc)
     deflate_state *s;
     unsigned dist;  /* distance of matched string */
-    unsigned lc;    /* match length-MIN_MATCH or unmatched char (if dist==0) */
+    unsigned lc;    /* match length - MIN_MATCH or unmatched char (dist==0) */
 {
-    s->sym_buf[s->sym_next++] = dist;
-    s->sym_buf[s->sym_next++] = dist >> 8;
-    s->sym_buf[s->sym_next++] = lc;
+    s->sym_buf[s->sym_next++] = (uch)dist;
+    s->sym_buf[s->sym_next++] = (uch)(dist >> 8);
+    s->sym_buf[s->sym_next++] = (uch)lc;
     if (dist == 0) {
         /* lc is the unmatched char */
         s->dyn_ltree[lc].Freq++;
@@ -1074,7 +1073,7 @@ local void compress_block(s, ltree, dtree)
         } else {
             /* Here, lc is the match length - MIN_MATCH */
             code = _length_code[lc];
-            send_code(s, code+LITERALS+1, ltree); /* send the length code */
+            send_code(s, code + LITERALS + 1, ltree);   /* send length code */
             extra = extra_lbits[code];
             if (extra != 0) {
                 lc -= base_length[code];
