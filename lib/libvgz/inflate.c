@@ -885,11 +885,11 @@ int flush;
         case TYPEDO:
             if (state->bounds.init_block == 0) {
                 strm->start_bit = 8 * (strm->total_in + in - have) - bits;
-		state->bounds.init_block = INFLATE_BITS(strm, in - have, bits);
-	    }
+                state->bounds.init_block = INFLATE_BITS(strm, in - have, bits);
+            }
             if (state->last) {
                 strm->stop_bit = 8 * (strm->total_in + in - have) - bits;
-		state->bounds.last_bit = INFLATE_BITS(strm, in - have, bits);
+                state->bounds.last_bit = INFLATE_BITS(strm, in - have, bits);
                 BYTEBITS();
                 state->mode = CHECK;
                 break;
@@ -898,8 +898,8 @@ int flush;
             state->last = BITS(1);
             if (state->last) {
                 strm->last_bit = 8 * (strm->total_in + in - have) - bits;
-		state->bounds.last_block = INFLATE_BITS(strm, in - have, bits);
-	    }
+                state->bounds.last_block = INFLATE_BITS(strm, in - have, bits);
+            }
             DROPBITS(1);
             switch (BITS(2)) {
             case 0:                             /* stored block */
