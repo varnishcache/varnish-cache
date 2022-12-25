@@ -442,8 +442,6 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 		return (F_STP_ERROR);
 	}
 
-	http_VSL_log(bo->beresp);
-
 	if (bo->htc != NULL && bo->htc->body_status == BS_ERROR) {
 		bo->htc->doclose = SC_RX_BODY;
 		vbf_cleanup(bo);

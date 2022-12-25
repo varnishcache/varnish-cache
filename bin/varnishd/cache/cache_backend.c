@@ -273,6 +273,7 @@ vbe_dir_gethdrs(VRT_CTX, VCL_BACKEND d)
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	bo = ctx->bo;
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(bo->bereq, HTTP_MAGIC);
 	if (bo->htc != NULL)
 		CHECK_OBJ_NOTNULL(bo->htc->doclose, STREAM_CLOSE_MAGIC);
 	wrk = ctx->bo->wrk;
@@ -317,6 +318,7 @@ vbe_dir_gethdrs(VRT_CTX, VCL_BACKEND d)
 				i = V1F_FetchRespHdr(bo);
 			if (i == 0) {
 				AN(bo->htc->priv);
+				http_VSL_log(bo->beresp);
 				return (0);
 			}
 		}
