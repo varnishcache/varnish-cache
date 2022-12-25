@@ -75,6 +75,8 @@ Varnish Cache NEXT (2023-03-15)
 * The ``debug.xid`` CLI command now sets the next XID to be used,
   rather than "one less than the next XID to be used"
 
+* Backend implementations are in charge of logging their headers.
+
 ================================
 Varnish Cache 7.2.0 (2022-09-15)
 ================================
