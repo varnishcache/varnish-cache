@@ -3,10 +3,18 @@ varnishtest "Test that esi+gzip correctly bypasses Vary: accept-encoding"
 server s1 {
 	rxreq
 	expect req.http.accept-encoding == gzip
+	txresp -hdr "Vary: Accept-encoding" -gzipbody {<esi:include src="/inc"/>}
+
+	rxreq
+	expect req.http.accept-encoding == gzip
 	txresp -hdr "Vary: Accept-encoding" -gzipbody {FOO}
 } -start
 
-varnish v1 -vcl+backend { } -start
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.do_esi = true;
+	}
+} -start
 
 client c1 {
 	txreq -hdr "Accept-encoding: gzip"
@@ -15,10 +23,12 @@ client c1 {
 	expect resp.status == 200
 	gunzip
 	expect resp.bodylen == 3
+	expect resp.body == FOO
 
 	txreq
 	rxresp
 	expect resp.http.content-encoding == <undef>
 	expect resp.status == 200
 	expect resp.bodylen == 3
+	expect resp.body == FOO
 } -run
