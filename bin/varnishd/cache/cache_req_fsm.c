@@ -860,7 +860,7 @@ cnt_restart(struct worker *wrk, struct req *req)
  *
  * TODO
  * - make restarts == 0 bit re-usable for rollback
- * - remove duplicatation with Req_Cleanup()
+ * - remove duplication with Req_Cleanup()
  */
 
 static void v_matchproto_(req_state_f)
