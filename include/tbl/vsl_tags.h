@@ -367,7 +367,7 @@ SLTM(ExpKill, 0, "Object expiry event",
 	"\tEXP_Inbox p=%p e=%f f=0x%x\n"
 	"\tEXP_Kill p=%p e=%f f=0x%x\n"
 	"\tEXP_When p=%p e=%f f=0x%x\n"
-	"\tEXP_Expired x=%u t=%f\n"
+	"\tEXP_Expired x=%u t=%f h=%u\n"
 	"\tLRU_Cand p=%p f=0x%x r=%d\n"
 	"\tLRU x=%u\n"
 	"\tLRU_Fail\n"
@@ -380,6 +380,7 @@ SLTM(ExpKill, 0, "Object expiry event",
 	"\tf=0x%x       Objcore flags\n"
 	"\tr=%d         Objcore refcount\n"
 	"\tx=%u         Object VXID\n"
+	"\th=%u         Objcore hits\n"
 	"\n"
 )
 

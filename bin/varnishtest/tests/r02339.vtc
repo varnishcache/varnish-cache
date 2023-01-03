@@ -21,7 +21,7 @@ varnish v1 -vcl+backend {
 varnish v1 -cliok "param.set timeout_idle 2"
 
 logexpect l0 -v v1 -g raw {
-	expect * 0 ExpKill	"EXP_Expired xid=1002"
+	expect * 0 ExpKill	"EXP_Expired x=1002"
 } -start
 
 logexpect l2 -v v1 -g raw {
