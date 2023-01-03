@@ -1,0 +1,42 @@
+varnishtest "Make sure EXP_Removed is logged correctly"
+
+server s1 -repeat 4 {
+	rxreq
+	txresp -bodylen 500000
+} -start
+
+varnish v1 -arg "-ss1=default,1m" -vcl+backend { } -start
+varnish v1 -cliok "param.set vsl_mask +ExpKill"
+
+logexpect l1 -v v1 -g raw {
+	expect * 0 ExpKill "EXP_Removed x=1002 t=.* h=1"
+	expect * 0 ExpKill "EXP_Removed x=1005 t=.* h=0"
+} -start
+
+client c1 {
+	loop 2 {
+		txreq -url "/1"
+		rxresp
+		expect resp.status == 200
+	}
+
+	txreq -url "/2"
+	rxresp
+	expect resp.status == 200
+
+	txreq -url "/3"
+	rxresp
+	expect resp.status == 200
+
+	txreq -url "/4"
+	rxresp
+	expect resp.status == 200
+} -run
+
+# NOTE: Nuked objects are mailed twice
+varnish v1 -expect n_lru_nuked == 2
+varnish v1 -expect MAIN.n_object == 2
+varnish v1 -expect MAIN.exp_mailed == 6
+varnish v1 -expect MAIN.exp_received == 6
+
+logexpect l1 -wait

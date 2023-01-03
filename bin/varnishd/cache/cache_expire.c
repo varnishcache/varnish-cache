@@ -261,7 +261,7 @@ EXP_Rearm(struct objcore *oc, vtim_real now,
  */
 
 static void
-exp_inbox(struct exp_priv *ep, struct objcore *oc, unsigned flags)
+exp_inbox(struct exp_priv *ep, struct objcore *oc, unsigned flags, double now)
 {
 
 	CHECK_OBJ_NOTNULL(ep, EXP_PRIV_MAGIC);
@@ -279,6 +279,9 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, unsigned flags)
 		assert(oc->timer_idx == VBH_NOIDX);
 		assert(oc->refcnt > 0);
 		AZ(oc->exp_flags);
+		VSLb(&ep->vsl, SLT_ExpKill, "EXP_Removed x=%ju t=%.0f h=%ld",
+		    VXID(ObjGetXID(ep->wrk, oc)), EXP_Ttl(NULL, oc) - now,
+		    oc->hits);
 		ObjSendEvent(ep->wrk, oc, OEV_EXPIRE);
 		(void)HSH_DerefObjCore(ep->wrk, &oc, 0);
 		return;
@@ -427,7 +430,7 @@ exp_thread(struct worker *wrk, void *priv)
 		t = VTIM_real();
 
 		if (oc != NULL)
-			exp_inbox(ep, oc, flags);
+			exp_inbox(ep, oc, flags, t);
 		else
 			tnext = exp_expire(ep, t);
 	}
