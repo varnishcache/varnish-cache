@@ -261,7 +261,7 @@ vsl_print(const struct VSL_data *vsl, const struct VSL_cursor *c, void *fo,
     int terse)
 {
 	enum VSL_tag_e tag;
-	uint32_t vxid;
+	uint64_t vxid;
 	unsigned len;
 	const char *data;
 	int type;
@@ -279,7 +279,7 @@ vsl_print(const struct VSL_data *vsl, const struct VSL_cursor *c, void *fo,
 	data = VSL_CDATA(c->rec.ptr);
 
 	if (!terse)
-		VSL_PRINT(fo, "%10u ", vxid);
+		VSL_PRINT(fo, "%10ju ", (uintmax_t)vxid);
 	VSL_PRINT(fo, "%-14s ", VSL_tags[tag]);
 	if (!terse)
 		VSL_PRINT(fo, "%c ", type);
@@ -373,11 +373,11 @@ VSL_PrintTransactions(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			else
 				VSL_PRINT(fo, "%-3.*s ",
 				    (int)(t->level), "***");
-			VSL_PRINT(fo, "%*.s%-14s %*.s%-10u\n",
+			VSL_PRINT(fo, "%*.s%-14s %*.s%-10ju\n",
 			    verbose ? 10 + 1 : 0, " ",
 			    VSL_transactions[t->type],
 			    verbose ? 1 + 1 : 0, " ",
-			    t->vxid);
+			    (uintmax_t)t->vxid);
 			delim = 1;
 		}
 

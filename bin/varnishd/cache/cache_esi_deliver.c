@@ -139,10 +139,10 @@ ved_include(struct req *preq, const char *src, const char *host,
 	wrk->stats->esi_req++;
 	req->esi_level = preq->esi_level + 1;
 
-	VSLb(req->vsl, SLT_Begin, "req %ju esi %u", VXID(preq->vsl->wid),
-	    req->esi_level);
-	VSLb(preq->vsl, SLT_Link, "req %ju esi %u", VXID(req->vsl->wid),
-	    req->esi_level);
+	VSLb(req->vsl, SLT_Begin, "req %ju esi %u",
+	    (uintmax_t)VXID(preq->vsl->wid), req->esi_level);
+	VSLb(preq->vsl, SLT_Link, "req %ju esi %u",
+	    (uintmax_t)VXID(req->vsl->wid), req->esi_level);
 
 	VSLb_ts_req(req, "Start", W_TIM_real(wrk));
 

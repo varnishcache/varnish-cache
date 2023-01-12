@@ -137,7 +137,7 @@ struct vslc_vtx {
 };
 
 struct vtx_key {
-	unsigned		vxid;
+	uint64_t		vxid;
 	VRBT_ENTRY(vtx_key)	entry;
 };
 VRBT_HEAD(vtx_tree, vtx_key);
@@ -603,7 +603,7 @@ vtx_retire(struct VSLQ *vslq, struct vtx **pvtx)
 
 /* Lookup a vtx by vxid from the managed list */
 static struct vtx *
-vtx_lookup(const struct VSLQ *vslq, unsigned vxid)
+vtx_lookup(const struct VSLQ *vslq, uint64_t vxid)
 {
 	struct vtx_key lkey, *key;
 	struct vtx *vtx;
@@ -619,7 +619,7 @@ vtx_lookup(const struct VSLQ *vslq, unsigned vxid)
 
 /* Insert a new vtx into the managed list */
 static struct vtx *
-vtx_add(struct VSLQ *vslq, unsigned vxid)
+vtx_add(struct VSLQ *vslq, uint64_t vxid)
 {
 	struct vtx *vtx;
 
@@ -690,10 +690,10 @@ vtx_set_parent(struct vtx *parent, struct vtx *child)
    successfully parsed. */
 static int
 vtx_parse_link(const char *str, enum VSL_transaction_e *ptype,
-    unsigned *pvxid, enum VSL_reason_e *preason, unsigned *psub)
+    uint64_t *pvxid, enum VSL_reason_e *preason, uint64_t *psub)
 {
 	char type[16], reason[16];
-	unsigned vxid, sub;
+	uintmax_t vxid, sub;
 	int i;
 	enum VSL_transaction_e et;
 	enum VSL_reason_e er;
@@ -703,7 +703,7 @@ vtx_parse_link(const char *str, enum VSL_transaction_e *ptype,
 	AN(pvxid);
 	AN(preason);
 
-	i = sscanf(str, "%15s %u %15s %u", type, &vxid, reason, &sub);
+	i = sscanf(str, "%15s %ju %15s %ju", type, &vxid, reason, &sub);
 	if (i < 1)
 		return (0);
 
@@ -746,7 +746,7 @@ vtx_scan_begin(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr)
 	int i;
 	enum VSL_transaction_e type;
 	enum VSL_reason_e reason;
-	unsigned p_vxid;
+	uint64_t p_vxid;
 	struct vtx *p_vtx;
 
 	assert(VSL_TAG(ptr) == SLT_Begin);
@@ -813,7 +813,7 @@ vtx_scan_link(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr)
 	int i;
 	enum VSL_transaction_e c_type;
 	enum VSL_reason_e c_reason;
-	unsigned c_vxid;
+	uint64_t c_vxid;
 	struct vtx *c_vtx;
 
 	assert(VSL_TAG(ptr) == SLT_Link);
@@ -1295,7 +1295,7 @@ vslq_candidate(struct VSLQ *vslq, const uint32_t *ptr)
 	enum VSL_reason_e reason;
 	struct VSL_data *vsl;
 	enum VSL_tag_e tag;
-	unsigned p_vxid, sub;
+	uint64_t p_vxid, sub;
 	int i;
 
 	CHECK_OBJ_NOTNULL(vslq, VSLQ_MAGIC);
@@ -1341,7 +1341,8 @@ vslq_next(struct VSLQ *vslq)
 	enum vsl_status r;
 	enum VSL_tag_e tag;
 	ssize_t len;
-	unsigned vxid, keep;
+	uint64_t vxid;
+	unsigned keep;
 	struct vtx *vtx;
 
 	c = vslq->c;

@@ -179,7 +179,7 @@ THR_Init(void)
  * zero vxid, in order to reserve that for "unassociated" VSL records.
  */
 
-static uint32_t vxid_base;
+static uint64_t vxid_base;
 static uint32_t vxid_chunk = 32768;
 static struct lock vxid_lock;
 
@@ -221,14 +221,14 @@ cli_debug_xid(struct cli *cli, const char * const *av, void *priv)
 {
 	(void)priv;
 	if (av[2] != NULL) {
-		vxid_base = strtoul(av[2], NULL, 0);
+		vxid_base = strtoull(av[2], NULL, 0);
 		vxid_chunk = 0;
 		if (av[3] != NULL)
 			vxid_chunk = strtoul(av[3], NULL, 0);
 		if (vxid_chunk == 0)
 			vxid_chunk = 1;
 	}
-	VCLI_Out(cli, "XID is %u chunk %u", vxid_base, vxid_chunk);
+	VCLI_Out(cli, "XID is %ju chunk %u", (uintmax_t)vxid_base, vxid_chunk);
 }
 
 /*

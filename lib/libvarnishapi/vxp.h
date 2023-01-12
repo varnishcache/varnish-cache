@@ -85,7 +85,7 @@ struct vex_lhs {
 	int			level;
 	int			level_pm;
 	unsigned		taglist;
-	unsigned		vxid;
+	int64_t			vxid;
 };
 
 enum vex_rhs_e {
@@ -102,7 +102,7 @@ struct vex_rhs {
 	unsigned		magic;
 #define VEX_RHS_MAGIC		0x3F109965
 	enum vex_rhs_e		type;
-	long long		val_int;
+	int64_t			val_int;
 	double			val_float;
 	char			*val_string;
 	size_t			val_stringlen;

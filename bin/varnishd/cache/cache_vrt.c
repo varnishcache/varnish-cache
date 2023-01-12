@@ -748,7 +748,7 @@ VRT_INT_string(VRT_CTX, VCL_INT num)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	if (!VRT_INT_is_valid(num))
-		VRT_fail(ctx, "INT overflow converting to string (%jX)",
+		VRT_fail(ctx, "INT overflow converting to string (0x%jx)",
 		    (intmax_t)num);
 	return (WS_Printf(ctx->ws, "%jd", (intmax_t)num));
 }

@@ -66,7 +66,7 @@ extern const struct req_step R_STP_TRANSPORT[1];
 extern const struct req_step R_STP_RECV[1];
 
 struct vxid_pool {
-	uint32_t		next;
+	uint64_t		next;
 	uint32_t		count;
 };
 

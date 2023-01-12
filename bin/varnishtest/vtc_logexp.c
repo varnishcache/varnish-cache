@@ -180,7 +180,7 @@ struct logexp_test {
 	VTAILQ_ENTRY(logexp_test)	faillist;
 
 	struct vsb			*str;
-	int				vxid;
+	int64_t				vxid;
 	int				tag;
 	vre_t				*vre;
 	int				skip_max;
@@ -201,7 +201,7 @@ struct logexp {
 
 	struct logexp_test		*test;
 	int				skip_cnt;
-	int				vxid_last;
+	int64_t				vxid_last;
 	int				tag_last;
 
 	struct tests_head		fail;
@@ -382,7 +382,7 @@ enum le_match_e {
 
 static enum le_match_e
 logexp_match(const struct logexp *le, struct logexp_test *test,
-    const char *data, int vxid, int tag, int type, int len)
+    const char *data, int64_t vxid, int tag, int type, int len)
 {
 	const char *legend;
 	int ok = 1, skip = 0, alt, fail, vxid_ok = 0;
@@ -446,8 +446,8 @@ logexp_match(const struct logexp *le, struct logexp_test *test,
 		legend = "err";
 
 	if (legend != NULL)
-		vtc_log(le->vl, 4, "%-5s| %10u %-15s %c %.*s",
-		    legend, vxid, VSL_tags[tag], type, len,
+		vtc_log(le->vl, 4, "%-5s| %10ju %-15s %c %.*s",
+		    legend, (intmax_t)vxid, VSL_tags[tag], type, len,
 		    data);
 
 	if (ok) {
@@ -469,7 +469,7 @@ logexp_match(const struct logexp *le, struct logexp_test *test,
 
 static enum le_match_e
 logexp_failchk(const struct logexp *le,
-    const char *data, int vxid, int tag, int type, int len)
+    const char *data, int64_t vxid, int tag, int type, int len)
 {
 	struct logexp_test *test;
 	static enum le_match_e r;
@@ -500,7 +500,8 @@ logexp_dispatch(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 	struct VSL_transaction *t;
 	int i;
 	enum le_match_e r;
-	int vxid, tag, type, len;
+	int64_t vxid;
+	int tag, type, len;
 	const char *data;
 
 	CAST_OBJ_NOTNULL(le, priv, LOGEXP_MAGIC);
@@ -650,7 +651,8 @@ cmd_logexp_common(struct logexp *le, struct vtclog *vl,
 {
 	vre_t *vre;
 	struct vsb vsb[1];
-	int err, pos, tag, vxid;
+	int64_t vxid;
+	int err, pos, tag;
 	struct logexp_test *test;
 	char *end, errbuf[VRE_ERROR_LEN];
 
@@ -659,7 +661,7 @@ cmd_logexp_common(struct logexp *le, struct vtclog *vl,
 	else if (!strcmp(av[2], "="))
 		vxid = LE_LAST;
 	else {
-		vxid = (int)strtol(av[2], &end, 10);
+		vxid = (int)strtoll(av[2], &end, 10);
 		if (*end != '\0' || vxid < 0)
 			vtc_fatal(vl, "Not a positive integer: '%s'", av[2]);
 	}

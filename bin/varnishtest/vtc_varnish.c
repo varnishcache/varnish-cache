@@ -203,7 +203,7 @@ varnishlog_thread(void *priv)
 	struct vsm *vsm;
 	struct VSL_cursor *c;
 	enum VSL_tag_e tag;
-	uint32_t vxid;
+	uint64_t vxid;
 	unsigned len;
 	const char *tagname, *data;
 	int type, i, opt;
@@ -259,11 +259,13 @@ varnishlog_thread(void *priv)
 				VSB_quote(vsb, data, len, VSB_QUOTE_HEX);
 				AZ(VSB_finish(vsb));
 				/* +2 to skip "0x" */
-				vtc_log(v->vl, 4, "vsl| %10u %-15s %c [%s]",
-				    vxid, tagname, type, VSB_data(vsb) + 2);
+				vtc_log(v->vl, 4, "vsl| %10ju %-15s %c [%s]",
+				    (uintmax_t)vxid, tagname, type,
+				    VSB_data(vsb) + 2);
 			} else {
-				vtc_log(v->vl, 4, "vsl| %10u %-15s %c %.*s",
-				    vxid, tagname, type, (int)len, data);
+				vtc_log(v->vl, 4, "vsl| %10ju %-15s %c %.*s",
+				    (uintmax_t)vxid, tagname, type, (int)len,
+				    data);
 			}
 		}
 		if (i == 0) {
