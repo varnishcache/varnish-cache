@@ -286,6 +286,28 @@ Resolve_Sockaddr(struct vcc *tl,
 }
 
 /*--------------------------------------------------------------------
+* Recognize boolean const "true" or "false"
+*/
+
+uint8_t
+vcc_BoolVal(struct vcc *tl)
+{
+	struct symbol* sym;
+
+	if (tl->t->tok != ID) {
+		Expect(tl, ID);
+		return (0);
+	}
+	sym = VCC_SymbolGet(tl, SYM_MAIN, SYM_NONE, SYMTAB_EXISTING, XREF_NONE);
+	if (sym == NULL || sym->type != BOOL) {
+		VSB_cat(tl->sb, "Expected \"true\" or \"false\"\n");
+		vcc_ErrWhere(tl, tl->t);
+		return (0);
+	}
+	return (sym->eval_priv != NULL);
+}
+
+/*--------------------------------------------------------------------
  * Recognize and convert units of duration, return seconds.
  */
 
