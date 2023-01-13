@@ -60,6 +60,7 @@
  * NEXT (2023-03-15)
  *	VXID is 64 bit
  *	[cache.h] http_GetRange() changed
+ *	exp_close added to struct vrt_backend_probe
  * 16.0 (2022-09-15)
  *	VMOD C-prototypes moved into JSON
  *	VRT_AddVDP() deprecated
@@ -589,7 +590,8 @@ struct vrt_backend {
 	unsigned			exp_status;		\
 	unsigned			window;			\
 	unsigned			threshold;		\
-	unsigned			initial;
+	unsigned			initial;		\
+	unsigned			exp_close;
 
 #define VRT_BACKEND_PROBE_HANDLE()		\
 	do {					\
@@ -599,6 +601,7 @@ struct vrt_backend {
 		DN(window);			\
 		DN(threshold);			\
 		DN(initial);			\
+		DN(exp_close);			\
 	} while (0)
 
 struct vrt_backend_probe {

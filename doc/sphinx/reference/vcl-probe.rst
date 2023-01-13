@@ -95,6 +95,15 @@ The expected HTTP status, defaults to ``200``::
 
     .expected_response = 418;
 
+Attribute ``.expect_close``
+---------------------------
+
+Whether or not to expect the backend to close the underlying connection.
+
+Accepts ``true`` or ``false``, defaults to ``true``::
+
+    .expect_close = false;
+
 Attribute ``.timeout``
 ----------------------
 

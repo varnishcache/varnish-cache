@@ -183,7 +183,7 @@ vcc_ParseProbeSpec(struct vcc *tl, const struct symbol *sym, char **namep)
 	const struct token *t_field;
 	const struct token *t_did = NULL, *t_window = NULL, *t_threshold = NULL;
 	struct token *t_initial = NULL;
-	unsigned window, threshold, initial, status;
+	unsigned window, threshold, initial, status, exp_close;
 	char buf[32];
 	const char *name;
 	double t;
@@ -197,6 +197,7 @@ vcc_ParseProbeSpec(struct vcc *tl, const struct symbol *sym, char **namep)
 	    "?window",
 	    "?threshold",
 	    "?initial",
+	    "?expect_close",
 	    NULL);
 
 	SkipToken(tl, '{');
@@ -216,6 +217,7 @@ vcc_ParseProbeSpec(struct vcc *tl, const struct symbol *sym, char **namep)
 	threshold = 0;
 	initial = 0;
 	status = 0;
+	exp_close = 1;
 	while (tl->t->tok != '}') {
 
 		vcc_IsField(tl, &t_field, fs);
@@ -273,6 +275,9 @@ vcc_ParseProbeSpec(struct vcc *tl, const struct symbol *sym, char **namep)
 			t_threshold = tl->t;
 			threshold = vcc_UintVal(tl);
 			ERRCHK(tl);
+		} else if (vcc_IdIs(t_field, "expect_close")) {
+			exp_close = vcc_BoolVal(tl);
+			ERRCHK(tl);
 		} else {
 			vcc_ErrToken(tl, t_field);
 			vcc_ErrWhere(tl, t_field);
@@ -321,6 +326,7 @@ vcc_ParseProbeSpec(struct vcc *tl, const struct symbol *sym, char **namep)
 		Fh(tl, 0, "\t.initial = ~0U,\n");
 	if (status > 0)
 		Fh(tl, 0, "\t.exp_status = %u,\n", status);
+	Fh(tl, 0, "\t.exp_close = %u,\n", exp_close);
 	Fh(tl, 0, "}};\n");
 	SkipToken(tl, '}');
 }
