@@ -448,6 +448,7 @@ double vcc_DurationUnit(struct vcc *);
 void vcc_ByteVal(struct vcc *, VCL_INT *);
 void vcc_Duration(struct vcc *tl, double *);
 uint64_t vcc_UintVal(struct vcc *tl);
+uint8_t vcc_BoolVal(struct vcc *tl);
 int vcc_IsFlag(struct vcc *tl);
 int vcc_IsFlagRaw(struct vcc *, const struct token *, const struct token *);
 char *vcc_Dup_be(const char *b, const char *e);
