@@ -104,6 +104,10 @@ Accepts ``true`` or ``false``, defaults to ``true``::
 
     .expect_close = false;
 
+Warning: when the backend does not close the connection,
+setting ``expect_close`` to ``false`` makes probe tasks wait until
+they time out before inspecting the response.
+
 Attribute ``.timeout``
 ----------------------
 

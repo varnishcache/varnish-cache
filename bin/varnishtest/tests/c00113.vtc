@@ -10,7 +10,7 @@ varnish v1 -vcl+backend {
 	probe default {
 		.window = 1;
 		.threshold = 1;
-		.timeout = 1s;
+		.timeout = 0.1s;
 		.interval = 0.1s;
 		.expect_close = true;
 	}
@@ -20,10 +20,13 @@ varnish v2 -vcl+backend {
 	probe default {
 		.window = 1;
 		.threshold = 1;
-		.timeout = 1s;
+		.timeout = 0.1s;
 		.interval = 0.1s;
 		.expect_close = false;
 	}
 } -start
 
-# expect_close has no effect yet
+delay 0.5
+
+varnish v1 -cliexpect sick backend.list
+varnish v2 -cliexpect healthy backend.list
