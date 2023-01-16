@@ -722,7 +722,6 @@ VCL_STRING v_matchproto_()
 VRT_IP_string(VRT_CTX, VCL_IP ip)
 {
 	char buf[VTCP_ADDRBUFSIZE];
-	struct vsb vsb[1];
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	if (ip == NULL) {
@@ -730,9 +729,7 @@ VRT_IP_string(VRT_CTX, VCL_IP ip)
 		return (NULL);
 	}
 	VTCP_name(ip, buf, sizeof buf, NULL, 0);
-	WS_VSB_new(vsb, ctx->ws);
-	VSB_cat(vsb, buf);
-	return (WS_VSB_finish(vsb, ctx->ws, NULL));
+	return (WS_Copy(ctx->ws, buf, -1));
 }
 
 int
