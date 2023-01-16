@@ -32,6 +32,17 @@ varnish v1 -vcl {
 	}
 }
 
+# Check expect_close definition
+varnish v1 -vcl {
+	backend b1 {
+		.host = "${localhost}";
+		.probe = {
+			.url = "/";
+			.expect_close = false;
+		}
+	}
+}
+
 # Check redefinition
 varnish v1 -errvcl {Probe request redefinition at:} {
 	backend b1 {

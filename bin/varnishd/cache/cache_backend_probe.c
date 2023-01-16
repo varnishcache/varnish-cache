@@ -357,8 +357,11 @@ vbp_poke(struct vbp_target *vt)
 		}
 		i = poll(pfd, 1, tmo);
 		if (i <= 0) {
-			if (!i)
+			if (!i) {
+				if (!vt->exp_close)
+					break;
 				errno = ETIMEDOUT;
+			}
 			bprintf(vt->resp_buf, "Poll error %d (%s)",
 			    errno, VAS_errtxt(errno));
 			i = -1;
