@@ -2,7 +2,7 @@ varnishtest "range requests on streamed response"
 
 barrier b1 cond 2 -cyclic
 
-server s1 -repeat 5 {
+server s0 {
 	rxreq
 	txresp -nolen \
 	    -hdr "Transfer-Encoding: chunked" \
@@ -18,7 +18,7 @@ server s1 -repeat 5 {
 	send "11\r\n7_23456789abcdef\n"
 	chunkedlen 0
 
-} -start
+} -dispatch
 
 varnish v1 -vcl+backend {} -start
 
@@ -31,7 +31,6 @@ client c1 {
 	barrier b1 sync
 	rxrespbody
 	expect resp.bodylen == 85
-	delay .1
 
 	# We cannot do tail-ranges when streaming
 	txreq -url /2 -hdr "Range: bytes=-10"
@@ -41,7 +40,6 @@ client c1 {
 	barrier b1 sync
 	rxrespbody
 	expect resp.bodylen == 136
-	delay .1
 
 	# We cannot do open-ranges when streaming
 	txreq -url /3 -hdr "Range: bytes=17-"
@@ -51,7 +49,6 @@ client c1 {
 	barrier b1 sync
 	rxrespbody
 	expect resp.bodylen == 136
-	delay .1
 
 	# Handles out of bounds range
 	txreq -url /4 -hdr "Range: bytes=102-200"
@@ -60,7 +57,6 @@ client c1 {
 	barrier b1 sync
 	rxrespbody
 	expect resp.bodylen == 34
-	delay .1
 
 	# Keeps working after short response
 	txreq -url /5 -hdr "Range: bytes=17-101"
