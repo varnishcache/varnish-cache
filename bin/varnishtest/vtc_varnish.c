@@ -620,7 +620,7 @@ varnish_start(struct varnish *v)
 	wait_running(v);
 	free(resp);
 	resp = NULL;
-	u = varnish_ask_cli(v, "debug.xid 999", &resp);
+	u = varnish_ask_cli(v, "debug.xid 1000", &resp);
 	if (vtc_error)
 		return;
 	if (u != CLIS_OK)

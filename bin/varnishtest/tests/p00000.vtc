@@ -43,7 +43,7 @@ varnish v1 -cliok "debug.persistent s0 sync"
 varnish v1 -stop
 
 varnish v1 -start
-varnish v1 -cliok "debug.xid 1999"
+varnish v1 -cliok "debug.xid 2000"
 
 client c1 {
 	txreq -url "/"

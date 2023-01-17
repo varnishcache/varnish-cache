@@ -179,7 +179,7 @@ THR_Init(void)
  * zero vxid, in order to reserve that for "unassociated" VSL records.
  */
 
-static uint64_t vxid_base;
+static uint64_t vxid_base = 1;
 static uint32_t vxid_chunk = 32768;
 static struct lock vxid_lock;
 
@@ -193,18 +193,20 @@ VXID_Get(const struct worker *wrk, uint32_t mask)
 	CHECK_OBJ_NOTNULL(wrk->wpriv, WORKER_PRIV_MAGIC);
 	v = wrk->wpriv->vxid_pool;
 	AZ(mask & VSL_IDENTMASK);
-	do {
-		if (v->count == 0) {
-			Lck_Lock(&vxid_lock);
-			v->next = vxid_base;
-			v->count = vxid_chunk;
-			vxid_base = (vxid_base + v->count) & VSL_IDENTMASK;
-			Lck_Unlock(&vxid_lock);
-		}
-		v->count--;
-		v->next++;
-	} while (v->next == 0);
+	while (v->count == 0 || v->next >= VSL_CLIENTMARKER) {
+		Lck_Lock(&vxid_lock);
+		v->next = vxid_base;
+		v->count = vxid_chunk;
+		vxid_base += v->count;
+		if (vxid_base >= VSL_CLIENTMARKER)
+			vxid_base = 1;
+		Lck_Unlock(&vxid_lock);
+	}
+	v->count--;
+	assert(v->next > 0);
+	assert(v->next < VSL_CLIENTMARKER);
 	retval.vxid = v->next | mask;
+	v->next++;
 	return (retval);
 }
 
