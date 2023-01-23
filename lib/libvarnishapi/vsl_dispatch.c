@@ -1033,6 +1033,7 @@ vtx_synth_rec(struct vtx *vtx, unsigned tag, const char *fmt, ...)
 	va_list ap;
 	char *buf;
 	int l, buflen;
+	uint64_t vxid;
 
 	ALLOC_OBJ(synth, SYNTH_MAGIC);
 	AN(synth);
@@ -1046,18 +1047,21 @@ vtx_synth_rec(struct vtx *vtx, unsigned tag, const char *fmt, ...)
 	if (l > buflen - 1)
 		l = buflen - 1;
 	buf[l++] = '\0';	/* NUL-terminated */
-	synth->data[1] = vtx->key.vxid;
+	vxid = vtx->key.vxid;
 	switch (vtx->type) {
 	case VSL_t_req:
-		synth->data[1] |= VSL_CLIENTMARKER;
+		vxid |= VSL_CLIENTMARKER;
 		break;
 	case VSL_t_bereq:
-		synth->data[1] |= VSL_BACKENDMARKER;
+		vxid |= VSL_BACKENDMARKER;
 		break;
 	default:
 		break;
 	}
-	synth->data[0] = (((tag & 0xff) << 24) | l);
+	synth->data[2] = vxid >> 32;
+	synth->data[1] = vxid;
+	synth->data[0] = (((tag & VSL_IDMASK) << VSL_IDSHIFT) |
+	    (VSL_VERSION_3 << VSL_VERSHIFT) | l);
 	synth->offset = vtx->c.offset;
 
 	VTAILQ_FOREACH_REVERSE(it, &vtx->synth, synthhead, list) {

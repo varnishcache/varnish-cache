@@ -422,7 +422,7 @@ vmod_vsl(VRT_CTX, VCL_INT id, VCL_STRING tag_s, VCL_ENUM side, VCL_STRANDS s)
 		return;
 	}
 
-	if (id < 0 || id > VSL_IDENTMASK) {
+	if (id < 0 || id > VRT_INTEGER_MAX) {
 		VRT_fail(ctx, "id out of bounds");
 		return;
 	}

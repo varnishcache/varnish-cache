@@ -661,7 +661,7 @@ cmd_logexp_common(struct logexp *le, struct vtclog *vl,
 	else if (!strcmp(av[2], "="))
 		vxid = LE_LAST;
 	else {
-		vxid = (int)strtoll(av[2], &end, 10);
+		vxid = strtoll(av[2], &end, 10);
 		if (*end != '\0' || vxid < 0)
 			vtc_fatal(vl, "Not a positive integer: '%s'", av[2]);
 	}

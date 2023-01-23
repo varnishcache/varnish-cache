@@ -35,6 +35,24 @@ release process.
 Varnish Cache NEXT (2023-03-15)
 ===============================
 
+* VXIDs are 64 bit now and the binary format of SHM and raw saved
+  VSL files has changed as a consequence.
+
+  The actual valid range for VXIDs is [1…999999999999999], so it
+  fits in a VRT_INTEGER.
+
+  At one million cache-missing single request sessions per second
+  VXIDs will roll over in a little over ten years::
+
+    (1e15-1) / (3 * 1e6  * 86400 * 365) = 10.57
+
+  That should be enough for everybody™.
+
+  You can test if your downstream log-chewing pipeline handle the
+  larger VXIDs correctly using the CLI command::
+
+    ``debug.xid 20000000000``
+
 * The ``debug.xid`` CLI command now sets the next XID to be used,
   rather than "one less than the next XID to be used"
 

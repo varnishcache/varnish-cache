@@ -65,8 +65,8 @@ typedef struct vxids vxid_t;
 
 #define NO_VXID ((struct vxids){0})
 #define IS_NO_VXID(x) ((x).vxid == 0)
-#define VXID_TAG(x) ((x).vxid & (VSL_CLIENTMARKER|VSL_BACKENDMARKER))
-#define VXID(u) ((uintmax_t)(u.vxid) & VSL_IDENTMASK)
+#define VXID_TAG(x) ((uintmax_t)((x).vxid & (VSL_CLIENTMARKER|VSL_BACKENDMARKER)))
+#define VXID(u) ((uintmax_t)((u.vxid) & VSL_IDENTMASK))
 #define IS_SAME_VXID(x, y) ((x).vxid == (y).vxid)
 
 /*--------------------------------------------------------------------*/
@@ -704,10 +704,6 @@ extern const char H__Reason[];
 
 // rfc7233,l,1207,1208
 #define http_range_at(str, tok, l)	http_tok_at(str, #tok, l)
-
-/* cache_main.c */
-vxid_t VXID_Get(const struct worker *, uint32_t marker);
-extern pthread_key_t witness_key;
 
 /* cache_lck.c */
 

@@ -1,6 +1,4 @@
-varnishtest "test vsl api handling of incomplete vtxes combined with bad vxids"
-
-feature cmd false
+varnishtest "test 64 bit vxid rollover"
 
 server s1 {
 	rxreq
@@ -28,17 +26,14 @@ varnish v1 -vcl+backend {
 
 } -start
 
-# xid spill into client marker emitting a bad SLT_Link for bereq retry
-# triggering vtx_force by way of a timeout
-#
-#    VSLb(bo->vsl, SLT_Link, "bereq %u retry", wid);
+process p1 -winsz 100 200 {exec varnishlog -n ${v1_name} -g raw} -start
+process p1 -expect-text 0 0 CLI
 
 varnish v1 -cliok "param.set debug +syncvsl"
-# vxid wrap at 1<<30
-varnish v1 -cliok "debug.xid 1073741823"
+varnish v1 -cliok "debug.xid 999999999999998"
 
 logexpect l1 -v v1 -g request -T 2 {
-	expect 0 1	Begin		"req 107374182"
+	expect 0 1	Begin		"req 999999999999998"
 	expect * =	ReqStart
 	expect 0 =	ReqMethod	GET
 	expect 0 =	ReqURL		/
@@ -62,15 +57,14 @@ client c1 {
 	expect resp.status == 200
 } -run
 
+varnish v1 -vsl_catchup
+
 logexpect l1 -wait
+process p1 -expect-text 0 1 "999999999999998 SessClose"
+process p1 -screen_dump
 
 
 ################################################################################
-
-# case xid spill into client marker emitting a bad SLT_Link for restart
-#
-#          VSLb(req->vsl, SLT_Link, "req %u restart", wid);
-
 
 server s1 {
 	rxreq
@@ -78,24 +72,23 @@ server s1 {
 } -start
 
 varnish v1 -cliok "param.set debug +syncvsl"
-# vxid wrap at 1<<30
-varnish v1 -cliok "debug.xid 1073741823"
+varnish v1 -cliok "debug.xid 999999999999997"
 
 logexpect l1 -v v1 -g request {
-	expect 0 1	Begin		"req 1073741823"
+	expect 0 999999999999998	Begin		"req 999999999999997"
 	expect * =	ReqStart
 	expect 0 =	ReqMethod	GET
 	expect 0 =	ReqURL		/
 	expect 0 =	ReqProtocol	HTTP/1.1
 	expect * =	ReqHeader	"Foo: bar"
-	expect * =	Link		"bereq 2 fetch"
-	expect * =	Link		"req 3 restart"
+	expect * =	Link		"bereq 1 fetch"
+	expect * =	Link		"req 2 restart"
 	expect * =	End
 
-	expect 0 2	Begin		"bereq 1"
+	expect 0 1	Begin		"bereq 999999999999998"
 	expect * =	End
 
-	expect 0 3	Begin		"req 1 restart"
+	expect 0 2	Begin		"req 999999999999998 restart"
 	expect * =	End
 } -start
 
@@ -105,4 +98,10 @@ client c1 {
 	expect resp.status == 200
 } -run
 
+varnish v1 -vsl_catchup
 logexpect l1 -wait
+
+process p1 -expect-text 0 1 "999999999999998 Link           c req 2 restart"
+process p1 -expect-text 0 1 "999999999999997 SessClose"
+process p1 -screen_dump
+process p1 -stop

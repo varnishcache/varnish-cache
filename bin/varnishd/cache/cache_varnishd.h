@@ -302,6 +302,9 @@ uint16_t HTTP1_DissectResponse(struct http_conn *, struct http *resp,
 unsigned HTTP1_Write(const struct worker *w, const struct http *hp, const int*);
 
 /* cache_main.c */
+vxid_t VXID_Get(const struct worker *, uint64_t marker);
+extern pthread_key_t witness_key;
+
 void THR_SetName(const char *name);
 const char* THR_GetName(void);
 void THR_SetBusyobj(const struct busyobj *);

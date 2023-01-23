@@ -143,7 +143,7 @@ vsl_hdr(enum VSL_tag_e tag, uint32_t *p, unsigned len, vxid_t vxid)
 	assert(tag < SLT__Reserved);
 	AZ(len & ~VSL_LENMASK);
 
-	p[2] = 0;
+	p[2] = vxid.vxid >> 32;
 	p[1] = vxid.vxid;
 	p[0] = (((unsigned)tag & VSL_IDMASK) << VSL_IDSHIFT) |
 	     (VSL_VERSION_3 << VSL_VERSHIFT) |

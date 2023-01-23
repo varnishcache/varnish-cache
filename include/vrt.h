@@ -58,6 +58,7 @@
  * binary/load-time compatible, increment MAJOR version
  *
  * NEXT (2023-03-15)
+ *	VXID is 64 bit
  *	[cache.h] http_GetRange() changed
  * 16.0 (2022-09-15)
  *	VMOD C-prototypes moved into JSON
