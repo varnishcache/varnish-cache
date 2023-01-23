@@ -50,10 +50,20 @@
  * The log member points to an array of 32bit unsigned integers containing
  * log records.
  *
- * Each logrecord consist of:
- *	[n]		= ((type & 0xff) << 24) | (length & 0xffff)
- *	[n + 1]		= ((marker & 0x03) << 30) | (identifier & 0x3fffffff)
- *	[n + 2] ... [m]	= content (NUL-terminated)
+ * Each logrecord consist of four or more 32 bit words, stored in
+ * native endiansess:
+ *
+ *   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ *   |     TAG       |  unused   |ver|          length               |
+ *   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ *   |                   32 lower bits of VXID                       |
+ *   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ *   |B|C|    unused (zero)    |        19 upper bits of VXID        |
+ *   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ *   | content ... (NUL-terminated)                                  |
+ *   +-+-+                                                       +-+-+
+ *   | ...							     |
+ *   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  *
  * Logrecords are NUL-terminated so that string functions can be run
  * directly on the shmlog data.
