@@ -140,9 +140,5 @@ struct params {
 #undef ptyp_vsl_mask
 #undef ptyp_vsl_reclen
 
-	/* Unprivileged user / group */
-	uid_t			uid;
-	gid_t			gid;
-
 	struct vre_limits	vre_limits;
 };

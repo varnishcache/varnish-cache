@@ -259,10 +259,6 @@ mgt_vcc_touchfile(const char *fn, struct vsb *sb)
 		VSB_printf(sb, "Failed to create %s: %s", fn, VAS_errtxt(errno));
 		return (2);
 	}
-	if (fchown(i, mgt_param.uid, mgt_param.gid) != 0)
-		if (geteuid() == 0)
-			VSB_printf(sb, "Failed to change owner on %s: %s\n",
-			    fn, VAS_errtxt(errno));
 	closefd(&i);
 	return (0);
 }
