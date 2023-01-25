@@ -449,6 +449,32 @@ CLI_CMD(PID,
 	0, 0
 )
 
+CLI_CMD(TRAFFIC_ACCEPT,
+    "traffic.accept",
+    "traffic.accept",
+    "Accept new client connections and requests.",
+    "Accepting client traffic is the normal mode of operations.",
+    0, 0
+)
+
+CLI_CMD(TRAFFIC_REFUSE,
+    "traffic.refuse",
+    "traffic.refuse",
+    "Refuse new client connections and requests.",
+    "When a Varnish instance is taken offline, for example to be removed "
+    "from a cluster, new traffic can be refused without affecting ongoing "
+    "transactions.",
+    0, 0
+)
+
+CLI_CMD(TRAFFIC_STATUS,
+    "traffic.status",
+    "traffic.status [-j]",
+    "Check the status for new client connections and requests.",
+    "",
+    0, 0
+)
+
 #undef CLI_CMD
 
 /*lint -restore */

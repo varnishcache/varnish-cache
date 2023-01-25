@@ -141,4 +141,7 @@ struct params {
 #undef ptyp_vsl_reclen
 
 	struct vre_limits	vre_limits;
+
+	/* Traffic management */
+	unsigned		accept_traffic;
 };

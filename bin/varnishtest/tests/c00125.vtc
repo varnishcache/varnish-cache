@@ -1,0 +1,16 @@
+varnishtest "traffic.accept coverage"
+
+varnish v1 -vcl {
+	backend be none;
+} -start
+
+# CLI
+
+varnish v1 -cliexpect "Traffic accepted" "traffic.status"
+varnish v1 -cliexpect {"traffic": true}  "traffic.status -j"
+varnish v1 -clijson "traffic.status -j"
+
+varnish v1 -cliok traffic.refuse
+varnish v1 -cliexpect "Traffic refused"  "traffic.status"
+varnish v1 -cliexpect {"traffic": false} "traffic.status -j"
+varnish v1 -clijson "traffic.status -j"

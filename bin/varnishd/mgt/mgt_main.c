@@ -333,6 +333,8 @@ mgt_initialize(struct cli *cli)
 
 	mgt_cli_init_cls();		// CLI commands can be registered
 
+	TRF_Init();
+
 	MCF_InitParams(cli);
 
 	VCC_VCL_Range(&heritage.min_vcl_version, &heritage.max_vcl_version);

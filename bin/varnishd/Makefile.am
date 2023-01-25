@@ -92,6 +92,7 @@ varnishd_SOURCES = \
 	mgt/mgt_smuggler.c \
 	mgt/mgt_shmem.c \
 	mgt/mgt_symtab.c \
+	mgt/mgt_traffic.c \
 	mgt/mgt_util.c \
 	mgt/mgt_vcc.c \
 	mgt/mgt_vcl.c \

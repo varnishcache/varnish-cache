@@ -230,6 +230,9 @@ void STV_Config(const char *spec);
 void STV_Config_Final(void);
 void STV_Init(void);
 
+/* mgt_traffic.c */
+void TRF_Init(void);
+
 /* mgt_vcc.c */
 void mgt_DumpBuiltin(void);
 char *mgt_VccCompile(struct cli *, struct vclprog *, const char *vclname,
