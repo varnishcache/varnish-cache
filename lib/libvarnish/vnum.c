@@ -678,6 +678,8 @@ main(int argc, char *argv[])
 		e = VNUM_2bytes(tc->str, &val, tc->rel);
 		if (e != NULL)
 			val = 0;
+		else
+			val = -1;
 		if (e == tc->err && val == tc->val)
 			continue;
 		++ec;
