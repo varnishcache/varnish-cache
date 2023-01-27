@@ -634,6 +634,13 @@
 
 	Number of session closes with Error VCL_FAILURE (VCL failure)
 
+.. varnish_vsc:: sc_traffic_refuse
+	:level: diag
+	:oneliner:	Session OK TRAFFIC_REFUSE
+
+	Number of times a session was closed because Varnish does not accept
+	new client traffic. See traffic.refuse in the CLI.
+
 .. varnish_vsc:: client_resp_500
 	:level: diag
 	:group: wrk

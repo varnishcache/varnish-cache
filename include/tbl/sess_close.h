@@ -50,6 +50,7 @@ SESS_CLOSE(PIPE_OVERFLOW, pipe_overflow,1,	"Session pipe overflow")
 SESS_CLOSE(RANGE_SHORT,   range_short,	1,	"Insufficient data for range")
 SESS_CLOSE(REQ_HTTP20,	  req_http20,	1,	"HTTP2 not accepted")
 SESS_CLOSE(VCL_FAILURE,	  vcl_failure,	1,	"VCL failure")
+SESS_CLOSE(TRAFFIC_REFUSE,traffic_refuse,0,	"Not accepting new traffic")
 #undef SESS_CLOSE
 
 /*lint -restore */
