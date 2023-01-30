@@ -3,7 +3,7 @@
 AM_CFLAGS = $(AM_LT_CFLAGS) \
 	-D_LARGEFILE64_SOURCE=1 \
 	-DZLIB_CONST \
-	$(libvgz_extra_cflags) \
+	$(VGZ_CFLAGS) \
 	@SAN_CFLAGS@
 
 AM_LDFLAGS = $(AM_LT_LDFLAGS)
