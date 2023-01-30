@@ -1096,7 +1096,7 @@ static int
 vtx_diag_tag(struct vtx *vtx, const uint32_t *ptr, const char *reason)
 {
 
-	vtx_synth_rec(vtx, SLT_VSL, "%s (%u:%s \"%.*s\")", reason, VSL_ID(ptr),
+	vtx_synth_rec(vtx, SLT_VSL, "%s (%ju:%s \"%.*s\")", reason, VSL_ID(ptr),
 	    VSL_tags[VSL_TAG(ptr)], (int)VSL_LEN(ptr), VSL_CDATA(ptr));
 	return (-1);
 }
