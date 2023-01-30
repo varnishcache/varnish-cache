@@ -249,14 +249,14 @@ LIBS="${save_LIBS}"
 
 AC_CHECK_DECL([__SUNPRO_C], [SUNCC="yes"], [SUNCC="no"])
 
-# Support for visibility attribute
-save_CFLAGS="${CFLAGS}"
 if test "$SUNCC" = "yes" ; then
 	CFLAGS="${CFLAGS} -errwarn=%all,no%E_EMPTY_TRANSLATION_UNIT"
 else
 	CFLAGS="${CFLAGS} -Werror"
 fi
 
+# Support for visibility attribute
+save_CFLAGS="${CFLAGS}"
 AC_CACHE_CHECK([whether we have support for visibility attributes],
 	[ac_cv_have_viz],
 	[AC_RUN_IFELSE(
