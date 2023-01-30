@@ -447,10 +447,6 @@ static void
 vjs_setuid(void)
 {
 	if (priv_ineffect(PRIV_PROC_SETID)) {
-		if (getgid() != mgt_param.gid)
-			XXXAZ(setgid(mgt_param.gid));
-		if (getuid() != mgt_param.uid)
-			XXXAZ(setuid(mgt_param.uid));
 		AZ(setppriv(PRIV_OFF, PRIV_EFFECTIVE, vjs_proc_setid));
 		AZ(setppriv(PRIV_OFF, PRIV_PERMITTED, vjs_proc_setid));
 	} else {
