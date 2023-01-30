@@ -244,29 +244,25 @@ AC_CHECK_FUNCS([pthread_setname_np])
 AC_CHECK_FUNCS([pthread_mutex_isowned_np])
 LIBS="${save_LIBS}"
 
-# Support for visibility attribute
-save_CFLAGS="${CFLAGS}"
-CFLAGS="${CFLAGS} -Werror"
+# zlib-specific flags
+libvgz_extra_cflags="-Wno-error=strict-prototypes"
 
+dnl https://github.com/madler/zlib/issues/633
+libvgz_extra_cflags="$libvgz_extra_cflags -Wno-error=deprecated-non-prototype"
+
+AC_SUBST(libvgz_extra_cflags)
+
+# Support for visibility attribute (zlib)
 AC_CACHE_CHECK([whether we have support for visibility attributes],
 	[ac_cv_have_viz],
-	[AC_RUN_IFELSE(
+	[AC_COMPILE_IFELSE(
 		[AC_LANG_PROGRAM([[
-			#if ((__GNUC__-0) * 10 + __GNUC_MINOR__-0 >= 33)
-			#  define ZLIB_INTERNAL __attribute__((visibility ("hidden")))
-			#else
-			#  define ZLIB_INTERNAL
-			#endif
-			int ZLIB_INTERNAL foo;
+			int __attribute__((visibility ("hidden"))) foo;
 		]],[])],
-	[ac_cv_have_viz=yes],
-	[ac_cv_have_viz=no])
+	[AC_DEFINE([HAVE_HIDDEN], [1],
+		[Define to 1 if visibility attribute hidden is available.])
+	])
 ])
-if test "$ac_cv_have_viz" = no; then
-	libvgz_extra_cflags="-DNO_VIZ"
-	AC_SUBST(libvgz_extra_cflags)
-fi
-CFLAGS="${save_CFLAGS}"
 
 if test "x$GCC" = "xyes"; then
 	libvgz_extra_cflags="${libvgz_extra_cflags} -Wno-unknown-warning-option -Wno-implicit-fallthrough"
