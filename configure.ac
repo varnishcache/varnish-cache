@@ -249,27 +249,6 @@ LIBS="${save_LIBS}"
 
 AC_CHECK_DECL([__SUNPRO_C], [SUNCC="yes"], [SUNCC="no"])
 
-# zlib-specific flags
-VGZ_CFLAGS="-Wno-error=strict-prototypes -Wno-unknown-warning-option"
-
-dnl https://github.com/madler/zlib/issues/633
-AX_CHECK_COMPILE_FLAG([-Wno-error=deprecated-non-prototype],
-	[VGZ_CFLAGS="$VGZ_CFLAGS -Wno-error=deprecated-non-prototype"])
-
-AC_SUBST(VGZ_CFLAGS)
-
-# Support for visibility attribute (zlib)
-AC_CACHE_CHECK([whether we have support for visibility attributes],
-	[ac_cv_have_viz],
-	[AC_COMPILE_IFELSE(
-		[AC_LANG_PROGRAM([[
-			int __attribute__((visibility ("hidden"))) foo;
-		]],[])],
-	[AC_DEFINE([HAVE_HIDDEN], [1],
-		[Define to 1 if visibility attribute hidden is available.])
-	])
-])
-
 AC_ARG_ENABLE(ubsan,
 	AS_HELP_STRING([--enable-ubsan],
 		[enable undefined behavior sanitizer (default is NO)]),
@@ -720,6 +699,28 @@ DEVELOPER_CFLAGS=`$PYTHON $srcdir/wflags.py`
 if test $? -ne 0 ; then
   AC_MSG_ERROR([wflags.py failure])
 fi
+
+# zlib-specific flags
+AX_CHECK_COMPILE_FLAG([-Wno-error=strict-prototypes],
+	[VGZ_CFLAGS="$VGZ_CFLAGS -Wno-error=strict-prototypes"])
+
+dnl https://github.com/madler/zlib/issues/633
+AX_CHECK_COMPILE_FLAG([-Wno-error=deprecated-non-prototype],
+	[VGZ_CFLAGS="$VGZ_CFLAGS -Wno-error=deprecated-non-prototype"])
+
+AC_SUBST(VGZ_CFLAGS)
+
+# Support for visibility attribute (zlib)
+AC_CACHE_CHECK([whether we have support for visibility attributes],
+	[ac_cv_have_viz],
+	[AC_COMPILE_IFELSE(
+		[AC_LANG_PROGRAM([[
+			int __attribute__((visibility ("hidden"))) foo;
+		]],[])],
+	[AC_DEFINE([HAVE_HIDDEN], [1],
+		[Define to 1 if visibility attribute hidden is available.])
+	])
+])
 
 # --enable-stack-protector
 AC_ARG_ENABLE(stack-protector,
