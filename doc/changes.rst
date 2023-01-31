@@ -35,6 +35,25 @@ release process.
 Varnish Cache NEXT (2023-03-15)
 ===============================
 
+* Do not ESI:include failed objects unless instructed to.
+
+  Previously, any ESI:include object would be included, no matter
+  what the status of it were, 200, 503, didn't matter.
+
+  From now on, by default, only objects with 200 and 204 status
+  will be included and any other status code will fail the parent
+  ESI request.
+
+  If objects with other status should be delivered, they should
+  have their status changed to 200 in VCL, for instance in
+  ``sub vcl_backend_error{}``, ``vcl_synth{}`` or ``vcl_deliver{}``.
+
+  If ``param.set feature +esi_include_onerror`` is used, and the
+  ``<esi:include …>`` tag has a ``onerror="continue"`` attribute,
+  any and all ESI:include objects will be delivered, no matter what
+  their status might be, and not even a partial delivery of them
+  will fail the parent ESI request.  To be used with great caution.
+
 * VXIDs are 64 bit now and the binary format of SHM and raw saved
   VSL files has changed as a consequence.
 

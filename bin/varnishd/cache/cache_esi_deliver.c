@@ -65,7 +65,7 @@ struct ecx {
 	ssize_t		l;
 	int		isgzip;
 	int		woken;
-	int		abrt;
+	int		incl_cont;
 
 	struct req	*preq;
 	struct ecx	*pecx;
@@ -382,11 +382,11 @@ ved_vdp_esi_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
 				Debug("SKIP1(%d)\n", (int)ecx->l);
 				ecx->state = 4;
 				break;
-			case VEC_IA:
-				ecx->abrt =
+			case VEC_IC:
+				ecx->incl_cont =
 				    FEATURE(FEATURE_ESI_INCLUDE_ONERROR);
 				/* FALLTHROUGH */
-			case VEC_IC:
+			case VEC_IA:
 				ecx->p++;
 				q = (void*)strchr((const char*)ecx->p, '\0');
 				AN(q);
@@ -869,6 +869,14 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 	if (wantbody == 0)
 		return;
 
+	if (!ecx->incl_cont &&
+	    req->resp->status != 200 &&
+	    req->resp->status != 204) {
+		req->top->topreq->vdc->retval = -1;
+		req->top->topreq->doclose = req->doclose;
+		return;
+	}
+
 	if (boc == NULL && ObjGetLen(req->wrk, req->objcore) == 0)
 		return;
 
@@ -918,7 +926,7 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 
 	req->acct.resp_bodybytes += VDP_Close(req->vdc);
 
-	if (i && ecx->abrt) {
+	if (i && !ecx->incl_cont) {
 		req->top->topreq->vdc->retval = -1;
 		req->top->topreq->doclose = req->doclose;
 	}
