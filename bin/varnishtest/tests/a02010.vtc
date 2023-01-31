@@ -2,16 +2,22 @@ varnishtest "Verify the initial window size"
 
 server s1 {
 	stream 0 {
+		expect stream.peer_window == 65535
 		rxsettings
 		txsettings -ack
 	} -run
 	stream 1 {
+		expect stream.peer_window == 128
 		rxreq
 		txresp -bodylen 100
+		expect stream.peer_window == 28
 	} -run
 	stream 0 {
 		rxsettings
 		txsettings -ack
+	} -run
+	stream 1 {
+		expect stream.peer_window == -36
 	} -run
 } -start
 

@@ -1124,7 +1124,11 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 	/* SECTION: stream.spec.zexpect.zstream Stream
 	 *
 	 * stream.window
-	 *	The current window size of the stream, or, if on stream 0,
+	 *	The current local window size of the stream, or, if on stream 0,
+	 *	of the connection.
+	 *
+	 * stream.peer_window
+	 *	The current peer window size of the stream, or, if on stream 0,
 	 *	of the connection.
 	 *
 	 * stream.weight
@@ -1136,6 +1140,11 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 	if (!strcmp(spec, "stream.window")) {
 		snprintf(buf, 20, "%jd",
 		    (intmax_t)(s->id ? s->win_self : s->hp->h2_win_self->size));
+		return (buf);
+	}
+	if (!strcmp(spec, "stream.peer_window")) {
+		snprintf(buf, 20, "%jd",
+		    (intmax_t)(s->id ? s->win_peer : s->hp->h2_win_peer->size));
 		return (buf);
 	}
 	if (!strcmp(spec, "stream.weight")) {
