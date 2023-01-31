@@ -575,7 +575,7 @@ main(int argc, char *argv[])
 {
 	int ec = 0;
 	struct test_case *tc;
-	uintmax_t val;
+	uintmax_t val = 0;
 	const char **p;
 	const char *e;
 	double d1, d2;
@@ -678,8 +678,6 @@ main(int argc, char *argv[])
 		e = VNUM_2bytes(tc->str, &val, tc->rel);
 		if (e != NULL)
 			val = 0;
-		else
-			val = -1;
 		if (e == tc->err && val == tc->val)
 			continue;
 		++ec;
