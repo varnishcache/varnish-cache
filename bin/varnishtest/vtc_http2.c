@@ -106,7 +106,7 @@ struct stream {
 	struct frame		*frame;
 	pthread_t		tp;
 	struct http		*hp;
-	int64_t			ws;
+	int64_t			win_self;
 	int			wf;
 
 	VTAILQ_HEAD(, frame)   fq;
@@ -422,7 +422,7 @@ parse_data(struct stream *s, struct frame *f)
 	}
 
 	if (s->id)
-		s->ws -= size;
+		s->win_self -= size;
 
 	s->hp->h2_win_self->size -= size;
 
@@ -1129,7 +1129,7 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 	 */
 	if (!strcmp(spec, "stream.window")) {
 		snprintf(buf, 20, "%jd",
-		    (intmax_t)(s->id ? s->ws : s->hp->h2_win_self->size));
+		    (intmax_t)(s->id ? s->win_self : s->hp->h2_win_self->size));
 		return (buf);
 	}
 	if (!strcmp(spec, "stream.weight")) {
@@ -1939,7 +1939,7 @@ cmd_txsettings(CMD_ARGS)
 		else if (!strcmp(*av, "-winsize"))	{
 			PUT_KV(av, vl, winsize, val, 0x4);
 			VTAILQ_FOREACH(_s, &hp->streams, list)
-				_s->ws += (val - hp->h2_win_self->init);
+				_s->win_self += (val - hp->h2_win_self->init);
 			hp->h2_win_self->init = val;
 		}
 		else if (!strcmp(*av, "-framesize"))
@@ -2107,7 +2107,7 @@ cmd_txwinup(CMD_ARGS)
 	AZ(pthread_mutex_lock(&hp->mtx));
 	if (s->id == 0)
 		hp->h2_win_self->size += size;
-	s->ws += size;
+	s->win_self += size;
 	AZ(pthread_mutex_unlock(&hp->mtx));
 
 	size = htonl(size);
@@ -2601,7 +2601,7 @@ stream_new(const char *name, struct http *h)
 	REPLACE(s->name, name);
 	AN(s->name);
 	VTAILQ_INIT(&s->fq);
-	s->ws = h->h2_win_self->init;
+	s->win_self = h->h2_win_self->init;
 	s->vl = vtc_logopen("%s.%s", h->sess->name, name);
 	vtc_log_set_cmd(s->vl, stream_cmds);
 
