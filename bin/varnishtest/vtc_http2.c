@@ -1913,7 +1913,7 @@ cmd_txprio(CMD_ARGS)
 static void
 cmd_txsettings(CMD_ARGS)
 {
-	struct stream *s, *_s;
+	struct stream *s, *s2;
 	struct http *hp;
 	char *p;
 	uint32_t val = 0;
@@ -1953,8 +1953,8 @@ cmd_txsettings(CMD_ARGS)
 			PUT_KV(av, vl, maxstreams, val, 0x3);
 		else if (!strcmp(*av, "-winsize"))	{
 			PUT_KV(av, vl, winsize, val, 0x4);
-			VTAILQ_FOREACH(_s, &hp->streams, list)
-				_s->win_self += (val - hp->h2_win_self->init);
+			VTAILQ_FOREACH(s2, &hp->streams, list)
+				s2->win_self += (val - hp->h2_win_self->init);
 			hp->h2_win_self->init = val;
 		}
 		else if (!strcmp(*av, "-framesize"))
@@ -2439,7 +2439,7 @@ cmd_rxwinup(CMD_ARGS)
 static void
 cmd_rxsettings(CMD_ARGS)
 {
-	struct stream *s, *_s;
+	struct stream *s, *s2;
 	uint32_t val = 0;
 	struct http *hp;
 	struct frame *f;
@@ -2451,8 +2451,8 @@ cmd_rxsettings(CMD_ARGS)
 	CHKFRAME(f->type, TYPE_SETTINGS, 0, *av);
 	if (! isnan(f->md.settings[SETTINGS_INITIAL_WINDOW_SIZE])) {
 		val = f->md.settings[SETTINGS_INITIAL_WINDOW_SIZE];
-		VTAILQ_FOREACH(_s, &hp->streams, list)
-			_s->win_peer += (val - hp->h2_win_peer->init);
+		VTAILQ_FOREACH(s2, &hp->streams, list)
+			s2->win_peer += (val - hp->h2_win_peer->init);
 		hp->h2_win_peer->init = val;
 	}
 }
