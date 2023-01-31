@@ -204,6 +204,11 @@ to implement the whole probing infrastructure from scratch.
 You may also consider making your custom backend compliant with regards to the
 VCL state (see :ref:`ref-vmod-event-functions`).
 
+If you are implementing the `gethdrs` method of your backend (i.e. your
+backend is able to generate a backend response to be manipulated in
+`vcl_backend_response`), you will want to log the response code, protocol and
+the various headers it'll create for easier debugging. For this, you can look
+at the `VSL*` family of functions, listed in `cache/cache.h`.
 
 Data structure considerations
 -----------------------------

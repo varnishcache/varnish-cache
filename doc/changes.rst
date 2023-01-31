@@ -35,6 +35,8 @@ release process.
 Varnish Cache NEXT (2023-03-15)
 ===============================
 
+* Backend implementations are in charge of logging their headers.
+
 ================================
 Varnish Cache 7.2.0 (2022-09-15)
 ================================
