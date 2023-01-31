@@ -77,7 +77,7 @@ enum h2_settings_e {
 };
 
 
-enum h2_type {
+enum h2_type_e {
 #define H2_FRAME(l,u,t,f,...) TYPE_##u = t,
 #include <tbl/h2_frames.h>
 	TYPE_MAX
@@ -2169,7 +2169,7 @@ cmd_rxhdrs(CMD_ARGS)
 	int loop = 0;
 	unsigned long int times = 1;
 	unsigned rcv = 0;
-	enum h2_type expect = TYPE_HEADERS;
+	enum h2_type_e expect = TYPE_HEADERS;
 
 	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
 
@@ -2365,7 +2365,7 @@ cmd_rxpush(CMD_ARGS)
 	int loop = 0;
 	unsigned long int times = 1;
 	unsigned rcv = 0;
-	enum h2_type expect = TYPE_PUSH_PROMISE;
+	enum h2_type_e expect = TYPE_PUSH_PROMISE;
 
 	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
 
