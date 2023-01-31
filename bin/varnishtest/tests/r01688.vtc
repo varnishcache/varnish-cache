@@ -18,6 +18,7 @@ varnish v1 -vcl+backend {
 
 	sub vcl_synth {
 	  if (resp.status == 998) {
+	    set resp.status = 200;
 	    set resp.body = "this is the body of an " +
 		"included synthetic response";
 	    return(deliver);

@@ -14,6 +14,7 @@ varnish v1 -vcl+backend {
 
 	sub vcl_synth {
 		if (resp.status == 998) {
+			set resp.status = 200;
 			set resp.body = "synthetic body";
 			return (deliver);
 		}
