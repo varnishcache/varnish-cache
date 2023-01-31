@@ -575,7 +575,7 @@ main(int argc, char *argv[])
 {
 	int ec = 0;
 	struct test_case *tc;
-	uintmax_t val;
+	uintmax_t val = 0;
 	const char **p;
 	const char *e;
 	double d1, d2;
