@@ -107,6 +107,7 @@ struct stream {
 	pthread_t		tp;
 	struct http		*hp;
 	int64_t			win_self;
+	int64_t			win_peer;
 	int			wf;
 
 	VTAILQ_HEAD(, frame)   fq;
@@ -321,7 +322,7 @@ clean_frame(struct frame **fp)
 }
 
 static void
-write_frame(const struct stream *sp, const struct frame *f, const unsigned lock)
+write_frame(struct stream *sp, const struct frame *f, const unsigned lock)
 {
 	struct http *hp;
 	ssize_t l;
@@ -339,6 +340,11 @@ write_frame(const struct stream *sp, const struct frame *f, const unsigned lock)
 	    f->stid,
 	    f->type < TYPE_MAX ? h2_types[f->type] : "?",
 	    f->type, f->flags, f->size);
+
+	if (f->type == TYPE_DATA) {
+		sp->win_peer -= f->size;
+		hp->h2_win_peer->size -= f->size;
+	}
 
 	if (lock)
 		AZ(pthread_mutex_lock(&hp->mtx));
@@ -2398,6 +2404,50 @@ cmd_rxpush(CMD_ARGS)
 	s->frame = f;
 }
 
+/* SECTION: stream.spec.winup_rxwinup rxwinup
+ *
+ * Receive a WINDOW_UPDATE frame.
+ */
+static void
+cmd_rxwinup(CMD_ARGS)
+{
+	struct stream *s;
+	struct frame *f;
+
+	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
+	s->frame = rxstuff(s);
+	CAST_OBJ_NOTNULL(f, s->frame, FRAME_MAGIC);
+	CHKFRAME(f->type, TYPE_WINDOW_UPDATE, 0, *av);
+	if (s->id == 0)
+		s->hp->h2_win_peer->size += s->frame->md.winup_size;
+	s->win_peer += s->frame->md.winup_size;
+}
+
+/* SECTION: stream.spec.settings_rxsettings rxsettings
+ *
+ * Receive a SETTINGS frame.
+ */
+static void
+cmd_rxsettings(CMD_ARGS)
+{
+	struct stream *s, *_s;
+	uint32_t val = 0;
+	struct http *hp;
+	struct frame *f;
+
+	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
+	CAST_OBJ_NOTNULL(hp, s->hp, HTTP_MAGIC);
+	s->frame = rxstuff(s);
+	CAST_OBJ_NOTNULL(f, s->frame, FRAME_MAGIC);
+	CHKFRAME(f->type, TYPE_SETTINGS, 0, *av);
+	if (! isnan(f->md.settings[SETTINGS_INITIAL_WINDOW_SIZE])) {
+		val = f->md.settings[SETTINGS_INITIAL_WINDOW_SIZE];
+		VTAILQ_FOREACH(_s, &hp->streams, list)
+			_s->win_peer += (val - hp->h2_win_peer->init);
+		hp->h2_win_peer->init = val;
+	}
+}
+
 #define RXFUNC(lctype, upctype) \
 	static void \
 	cmd_rx ## lctype(CMD_ARGS) { \
@@ -2425,12 +2475,6 @@ RXFUNC(prio,	PRIORITY)
  */
 RXFUNC(rst,	RST_STREAM)
 
-/* SECTION: stream.spec.settings_rxsettings rxsettings
- *
- * Receive a SETTINGS frame.
- */
-RXFUNC(settings,SETTINGS)
-
 /* SECTION: stream.spec.ping_rxping rxping
  *
  * Receive a PING frame.
@@ -2442,12 +2486,6 @@ RXFUNC(ping,	PING)
  * Receive a GOAWAY frame.
  */
 RXFUNC(goaway,	GOAWAY)
-
-/* SECTION: stream.spec.winup_rxwinup rxwinup
- *
- * Receive a WINDOW_UPDATE frame.
- */
-RXFUNC(winup,	WINDOW_UPDATE)
 
 /* SECTION: stream.spec.frame_rxframe
  *
@@ -2602,6 +2640,7 @@ stream_new(const char *name, struct http *h)
 	AN(s->name);
 	VTAILQ_INIT(&s->fq);
 	s->win_self = h->h2_win_self->init;
+	s->win_peer = h->h2_win_peer->init;
 	s->vl = vtc_logopen("%s.%s", h->sess->name, name);
 	vtc_log_set_cmd(s->vl, stream_cmds);
 
@@ -2850,7 +2889,8 @@ start_h2(struct http *hp)
 	VTAILQ_INIT(&hp->streams);
 	hp->h2_win_self->init = 0xffff;
 	hp->h2_win_self->size = 0xffff;
-
+	hp->h2_win_peer->init = 0xffff;
+	hp->h2_win_peer->size = 0xffff;
 	hp->h2 = 1;
 
 	hp->decctx = HPK_NewCtx(4096);
