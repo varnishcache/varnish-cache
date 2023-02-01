@@ -104,9 +104,9 @@ Accepts ``true`` or ``false``, defaults to ``true``::
 
     .expect_close = false;
 
-Note that probing takes more time when backend does not close the connection.
-Even when ``expect_close`` is set to ``false``, probe will still wait until timeout is
-reached before processing the response.
+Warning: when the backend does not close the connection,
+setting ``expect_close`` to ``false`` makes probe tasks wait until
+they time out before inspecting the response.
 
 Attribute ``.timeout``
 ----------------------
