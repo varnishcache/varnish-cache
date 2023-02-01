@@ -27,9 +27,7 @@ with VCL::
  esi:remove
  <!--esi ...-->
 
-Content substitution based on variables and cookies is not implemented
-but is on the roadmap. At least if you look at the roadmap from a
-certain angle. During a full moon.
+Content substitution based on variables and cookies is not implemented.
 
 Varnish will not process ESI instructions in HTML comments.
 
@@ -66,6 +64,10 @@ For ESI to work you need to activate ESI processing in VCL, like this::
         }
     }
 
+Note that ``set beresp.do_esi = true;`` is not required, and should
+be avoided, for the included fragments, unless they also contains
+``<ESI::include …/>`` instructions.
+
 Example: esi:remove and <!--esi ... -->
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 The `<esi:remove>` and `<!--esi ... -->` constructs can be used to present
@@ -87,8 +89,39 @@ For example::
   <esi:include src="http://example.com/LICENSE" />
   -->
 
-Footnotes about ESI
--------------------
+What happens when it fails ?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+By default, the fragments must have ``resp.status`` 200 or 206 or
+their inclusion will cause the parent request to abort.
+
+Likewise, if the fragment is a streaming fetch, and that fetch
+fails, the parent request aborts.
+
+If you include synthetic fragments, that is fragments created in
+``vcl_backend_error{}`` or ``vcl_synth{}``, you must set
+``(be)resp.status`` to 200 before ``return(deliver);``	
+
+We say "abort" rather than "fail", because by the time Varnish
+starts inserting the fragments, the HTTP response header has long
+since been sent, and it is no longer possible to change the parent
+requests's ``resp.status`` to a 5xx, so the only way to signal that
+something is amiss, is to close the connection.
+
+However, it is possible to allow individual ``<ESI:include…`` to
+continue in case of failures, by setting::
+
+    param.set feature +esi_include_onerror
+
+and tagging those specific includes::
+
+    <ESI:include src="…" onerror="continue"/>
+
+Can an ESI fragment also use ESI-includes ?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Yes, but the depth is limited by the ``max_esi_depth``
+parameter in order to prevent infinite recursion.
 
 Doing ESI on JSON and other non-XML'ish content
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -120,23 +153,23 @@ ESI includes with HTTPS protocol
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If ESI:include tags specify HTTPS protocol, it will be ignored
-by default, because Varnish has no way to fetch it encryption
-enabled.  If you want to treat HTTPS in ESI:include tags as if
-it were HTTP, set::
+by default, because Varnish has no way to fetch it with encryption.
+If you want Varnish to fetch them like it does anything else, set::
 
    param.set feature +esi_ignore_https
 
 ESI on partial responses (206)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Varnish can ``pass`` range requests but it is ESI processing a partial
-response makes no sense, so the fetch fails if you do ask for that.
-If you really know what you are doing, you can use this workaround::
+Varnish supports range requests, but in general partial responses
+make no sense in an ESI context.
+
+If you really know what you are doing, change the 206 to a 200::
 
    sub vcl_backend_response {
        if (beresp.status == 206 && beresp.http.secret == "swordfish") {
            set beresp.do_esi = True;
-           set beresp.status = 1206;
+           set beresp.status = 200;
        }
    }
 
@@ -147,3 +180,26 @@ If the original client request switched to a different VCL using
 ``return(vcl(...))`` in ``vcl_recv``, any esi:include-requests
 will still start out in the same VCL as the original did, *not*
 in the one it switched to.
+
+ESI and gzip compression
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Varnish's ESI implementation handles gzip compression automatically,
+no matter how it is mixed:  The parent request can be compressed
+or uncompressed and the fragments can be compressed or uncompressed,
+it all works out.
+
+Varnish does this compressing all parts of ESI responses
+separately, and stitching them together on the fly during
+delivery, which has a negative impact on compression ratio.
+
+When you ``set beresp.do_esi = True;`` on a gzip'ed response, it
+will be uncompressed and recompressed part-wise during the fetch.
+
+The part-wise compression reduces the opportunities for
+removing redundancy, because back-references in the gzip
+data stream cannot point outside it's own part.
+
+The other case where compression ratio is impacted, is if an
+uncompressed fragment is inserted into a compressed
+response.
