@@ -301,7 +301,6 @@ vcc_BoolVal(struct vcc *tl)
 	sym = VCC_SymbolGet(tl, SYM_MAIN, SYM_NONE, SYMTAB_EXISTING, XREF_NONE);
 	if (sym == NULL || sym->type != BOOL) {
 		VSB_cat(tl->sb, "Expected \"true\" or \"false\"\n");
-		vcc_ErrWhere(tl, tl->t);
 		return (0);
 	}
 	return (sym->eval_priv != NULL);
