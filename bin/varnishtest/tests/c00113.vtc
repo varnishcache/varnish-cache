@@ -12,6 +12,7 @@ varnish v1 -vcl+backend {
 		.threshold = 1;
 		.timeout = 1s;
 		.interval = 0.1s;
+		.expect_close = true;
 	}
 } -start
 
