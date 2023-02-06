@@ -590,8 +590,10 @@ struct vrt_endpoint {
 	vtim_dur			connect_timeout;	\
 	vtim_dur			first_byte_timeout;	\
 	vtim_dur			between_bytes_timeout;	\
+	vtim_dur			backend_wait_timeout;	\
 	unsigned			max_connections;	\
-	unsigned			proxy_header;
+	unsigned			proxy_header;		\
+	unsigned			backend_wait_limit;
 
 #define VRT_BACKEND_INIT(be)					\
 	do {							\
@@ -599,6 +601,7 @@ struct vrt_endpoint {
 		(be)->connect_timeout = -1.0;			\
 		(be)->first_byte_timeout = -1.0;		\
 		(be)->between_bytes_timeout = -1.0;		\
+		(be)->backend_wait_timeout = -1.0;		\
 	} while(0)
 
 #define VRT_BACKEND_HANDLE()			\
@@ -609,8 +612,10 @@ struct vrt_endpoint {
 		DN(connect_timeout);		\
 		DN(first_byte_timeout);		\
 		DN(between_bytes_timeout);	\
+		DN(backend_wait_timeout);	\
 		DN(max_connections);		\
 		DN(proxy_header);		\
+		DN(backend_wait_limit);		\
 	} while(0)
 
 struct vrt_backend {

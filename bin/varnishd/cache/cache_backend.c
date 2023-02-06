@@ -111,6 +111,20 @@ VBE_Connect_Error(struct VSC_vbe *vsc, int err)
 			dst = cache_param->tmx;				\
 	} while (0)
 
+#define FIND_BE_SPEC(tmx, dst, be, def)					\
+	do {								\
+		CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);			\
+		dst = be->tmx;						\
+		if (dst == def)						\
+			dst = cache_param->tmx;				\
+	} while (0)
+
+#define FIND_BE_PARAM(tmx, dst, be)					\
+	FIND_BE_SPEC(tmx, dst, be, 0)
+
+#define FIND_BE_TMO(tmx, dst, be)					\
+	FIND_BE_SPEC(tmx, dst, be, -1.0)
+
 #define BE_BUSY(be)	\
 	(be->max_connections > 0 && be->n_conn >= be->max_connections)
 
@@ -160,6 +174,7 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 	vtim_dur tmod;
 	char abuf1[VTCP_ADDRBUFSIZE], abuf2[VTCP_ADDRBUFSIZE];
 	char pbuf1[VTCP_PORTBUFSIZE], pbuf2[VTCP_PORTBUFSIZE];
+	unsigned wait_limit;
 	vtim_dur wait_tmod;
 	vtim_dur wait_end;
 
@@ -177,15 +192,16 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 		return (NULL);
 	}
 
-	/* temporary: need new param */
-	FIND_TMO(connect_timeout, wait_tmod, bo, bp);
-
 	Lck_Lock(bp->director->mtx);
 	cw_state = CW_DO_CONNECT;
 	if (!VTAILQ_EMPTY(&bp->cw_head) || BE_BUSY(bp)) {
+		FIND_BE_PARAM(backend_wait_limit, wait_limit, bp);
+		FIND_BE_TMO(backend_wait_timeout, wait_tmod, bp);
 		cw_state = CW_BE_BUSY;
 	}
-	if (cw_state == CW_BE_BUSY && wait_tmod > 0.0) {
+
+	if (cw_state == CW_BE_BUSY && wait_limit > 0 &&
+	    wait_tmod > 0.0 && bp->cw_count < wait_limit) {
 		VTAILQ_INSERT_TAIL(&bp->cw_head, bo, cw_list);
 		bp->cw_count++;
 		cw_state = CW_QUEUED;
