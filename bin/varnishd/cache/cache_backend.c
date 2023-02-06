@@ -54,6 +54,12 @@
 
 /*--------------------------------------------------------------------*/
 
+enum connwait_e {
+	CW_DO_CONNECT = 1,
+	CW_QUEUED,
+	CW_BE_BUSY,
+};
+
 static const char * const vbe_proto_ident = "HTTP Backend";
 
 static struct lock backends_mtx;
@@ -105,6 +111,38 @@ VBE_Connect_Error(struct VSC_vbe *vsc, int err)
 			dst = cache_param->tmx;				\
 	} while (0)
 
+#define BE_BUSY(be)	\
+	(be->max_connections > 0 && be->n_conn >= be->max_connections)
+
+/*--------------------------------------------------------------------*/
+
+static void
+vbe_connwait_signal_locked(struct backend *bp)
+{
+	struct busyobj *bo;
+
+	Lck_AssertHeld(bp->director->mtx);
+
+	if (bp->n_conn < bp->max_connections) {
+		bo = VTAILQ_FIRST(&bp->cw_head);
+		if (bo != NULL) {
+			CHECK_OBJ(bo, BUSYOBJ_MAGIC);
+			PTOK(pthread_cond_signal(&bo->cw_cond));
+		}
+	}
+}
+
+static void
+vbe_connwait_dequeue(struct backend *bp, struct busyobj *bo, int lock_it)
+{
+	if (lock_it)
+		Lck_Lock(bp->director->mtx);
+	VTAILQ_REMOVE(&bp->cw_head, bo, cw_list);
+	vbe_connwait_signal_locked(bp);
+	if (lock_it)
+		Lck_Unlock(bp->director->mtx);
+}
+
 /*--------------------------------------------------------------------
  * Get a connection to the backend
  *
@@ -118,9 +156,12 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 	struct busyobj *bo;
 	struct pfd *pfd;
 	int *fdp, err;
+	enum connwait_e cw_state;
 	vtim_dur tmod;
 	char abuf1[VTCP_ADDRBUFSIZE], abuf2[VTCP_ADDRBUFSIZE];
 	char pbuf1[VTCP_PORTBUFSIZE], pbuf2[VTCP_PORTBUFSIZE];
+	vtim_dur wait_tmod;
+	vtim_dur wait_end;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
@@ -136,7 +177,32 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 		return (NULL);
 	}
 
-	if (bp->max_connections > 0 && bp->n_conn >= bp->max_connections) {
+	/* temporary: need new param */
+	FIND_TMO(connect_timeout, wait_tmod, bo, bp);
+
+	Lck_Lock(bp->director->mtx);
+	cw_state = CW_DO_CONNECT;
+	if (!VTAILQ_EMPTY(&bp->cw_head) || BE_BUSY(bp)) {
+		cw_state = CW_BE_BUSY;
+	}
+	if (cw_state == CW_BE_BUSY && wait_tmod > 0.0) {
+		VTAILQ_INSERT_TAIL(&bp->cw_head, bo, cw_list);
+		bp->cw_count++;
+		cw_state = CW_QUEUED;
+		wait_end = VTIM_real() + wait_tmod;
+		do {
+			err = Lck_CondWaitUntil(&bo->cw_cond, bp->director->mtx,
+			    wait_end);
+		} while (err == EINTR);
+		bp->cw_count--;
+		if (err != 0) {
+			VTAILQ_REMOVE(&bp->cw_head, bo, cw_list);
+			cw_state = CW_BE_BUSY;
+		}
+	}
+	Lck_Unlock(bp->director->mtx);
+
+	if (cw_state == CW_BE_BUSY) {
 		VSLb(bo->vsl, SLT_FetchError,
 		     "backend %s: busy", VRT_BACKEND_string(dir));
 		bp->vsc->busy++;
@@ -149,6 +215,8 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 	if (bo->htc == NULL) {
 		VSLb(bo->vsl, SLT_FetchError, "out of workspace");
 		/* XXX: counter ? */
+		if (cw_state == CW_QUEUED)
+			vbe_connwait_dequeue(bp, bo, 1);
 		return (NULL);
 	}
 	bo->htc->doclose = SC_NULL;
@@ -165,6 +233,8 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 		     VRT_BACKEND_string(dir), err, VAS_errtxt(err));
 		VSC_C_main->backend_fail++;
 		bo->htc = NULL;
+		if (cw_state == CW_QUEUED)
+			vbe_connwait_dequeue(bp, bo, 1);
 		return (NULL);
 	}
 
@@ -177,6 +247,9 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 	bp->n_conn++;
 	bp->vsc->conn++;
 	bp->vsc->req++;
+	if (cw_state == CW_QUEUED)
+		vbe_connwait_dequeue(bp, bo, 0);
+
 	Lck_Unlock(bp->director->mtx);
 
 	CHECK_OBJ_NOTNULL(bo->htc->doclose, STREAM_CLOSE_MAGIC);
@@ -198,6 +271,7 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 		bp->n_conn--;
 		bp->vsc->conn--;
 		bp->vsc->req--;
+		vbe_connwait_signal_locked(bp);
 		Lck_Unlock(bp->director->mtx);
 		return (NULL);
 	}
@@ -258,6 +332,7 @@ vbe_dir_finish(VRT_CTX, VCL_BACKEND d)
 	bp->vsc->conn--;
 #define ACCT(foo)	bp->vsc->foo += bo->acct.foo;
 #include "tbl/acct_fields_bereq.h"
+	vbe_connwait_signal_locked(bp);
 	Lck_Unlock(bp->director->mtx);
 	bo->htc = NULL;
 }
@@ -455,6 +530,7 @@ vbe_free(struct backend *be)
 #undef DN
 	free(be->endpoint);
 
+	assert(VTAILQ_EMPTY(&be->cw_head));
 	FREE_OBJ(be);
 }
 
@@ -687,6 +763,7 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 	ALLOC_OBJ(be, BACKEND_MAGIC);
 	if (be == NULL)
 		return (NULL);
+	VTAILQ_INIT(&be->cw_head);
 
 #define DA(x)	do { if (vrt->x != NULL) REPLACE((be->x), (vrt->x)); } while (0)
 #define DN(x)	do { be->x = vrt->x; } while (0)
