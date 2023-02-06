@@ -195,6 +195,21 @@
 .. varnish_vsc:: backend_retry
 	:oneliner:	Backend conn. retry
 
+.. varnish_vsc:: backend_wait
+	:oneliner:	Backend conn. waited in queue for a connection
+
+	Count of backend requests that waited in a backend_wait queue for
+	a connection to become available.  The size of a backend wait queue
+	is defined by the backend wait_limit property.  The wait queue is
+	only used when max_connections to the backend are in use.
+
+.. varnish_vsc:: backend_wait_fail
+	:oneliner:	Backend conn. waited in queue and did not get a connection
+
+	Count of backend requests that waited in a backend_wait queue for
+	a connection to become available and did not get one (timed out).
+	The maximum time to wait in the queue is defined by the backend
+	wait_timeout property.
 
 .. varnish_vsc:: fetch_head
 	:group: wrk

@@ -204,6 +204,7 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 	    wait_tmod > 0.0 && bp->cw_count < wait_limit) {
 		VTAILQ_INSERT_TAIL(&bp->cw_head, bo, cw_list);
 		bp->cw_count++;
+		VSC_C_main->backend_wait++;
 		cw_state = CW_QUEUED;
 		wait_end = VTIM_real() + wait_tmod;
 		do {
@@ -213,6 +214,7 @@ vbe_dir_getfd(VRT_CTX, struct worker *wrk, VCL_BACKEND dir, struct backend *bp,
 		bp->cw_count--;
 		if (err != 0) {
 			VTAILQ_REMOVE(&bp->cw_head, bo, cw_list);
+			VSC_C_main->backend_wait_fail++;
 			cw_state = CW_BE_BUSY;
 		}
 	}
