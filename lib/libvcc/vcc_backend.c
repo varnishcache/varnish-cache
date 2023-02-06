@@ -385,6 +385,7 @@ vcc_ParseHostDef(struct vcc *tl, struct symbol *sym,
 	vtim_dur connect_timeout = NAN;
 	vtim_dur first_byte_timeout = NAN;
 	vtim_dur between_bytes_timeout = NAN;
+	vtim_dur backend_wait_timeout = NAN;
 	char *p;
 	unsigned u;
 
@@ -426,6 +427,8 @@ vcc_ParseHostDef(struct vcc *tl, struct symbol *sym,
 	    "?preamble",
 	    "?via",
 	    "?authority",
+	    "?wait_timeout",
+	    "?wait_limit",
 	    NULL);
 
 	tl->fb = VSB_new_auto();
@@ -572,6 +575,17 @@ vcc_ParseHostDef(struct vcc *tl, struct symbol *sym,
 			t_authority = tl->t;
 			vcc_NextToken(tl);
 			SkipToken(tl, ';');
+		} else if (vcc_IdIs(t_field, "wait_timeout")) {
+			Fb(tl, 0, "\t.backend_wait_timeout = ");
+			vcc_Duration(tl, &backend_wait_timeout);
+			ERRCHK(tl);
+			Fb(tl, 0, "%g,\n", backend_wait_timeout);
+			SkipToken(tl, ';');
+		} else if (vcc_IdIs(t_field, "wait_limit")) {
+			u = vcc_UintVal(tl);
+			ERRCHK(tl);
+			SkipToken(tl, ';');
+			Fb(tl, 0, "\t.backend_wait_limit = %u,\n", u);
 		} else {
 			ErrInternal(tl);
 			VSB_destroy(&tl->fb);
@@ -590,6 +604,8 @@ vcc_ParseHostDef(struct vcc *tl, struct symbol *sym,
 		Fb(tl, 0, "\t.first_byte_timeout = -1.0,\n");
 	if (isnan(between_bytes_timeout))
 		Fb(tl, 0, "\t.between_bytes_timeout = -1.0,\n");
+	if (isnan(backend_wait_timeout))
+		Fb(tl, 0, "\t.backend_wait_timeout = -1.0,\n");
 
 	ExpectErr(tl, '}');
 
