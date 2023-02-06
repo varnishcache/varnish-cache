@@ -69,6 +69,9 @@ struct backend {
 	struct conn_pool	*conn_pool;
 
 	VCL_BACKEND		director;
+
+	VTAILQ_HEAD(, busyobj)	cw_head;
+	unsigned		cw_count;
 };
 
 /*---------------------------------------------------------------------
