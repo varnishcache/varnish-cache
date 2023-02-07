@@ -227,6 +227,7 @@ AC_CHECK_HEADERS([sys/vfs.h])
 AC_CHECK_HEADERS([endian.h])
 AC_CHECK_HEADERS([pthread_np.h], [], [], [#include <pthread.h>])
 AC_CHECK_HEADERS([priv.h])
+AC_CHECK_HEADERS([linux/close_range.h])
 AC_CHECK_HEADERS([fnmatch.h], [], [AC_MSG_ERROR([fnmatch.h is required])])
 
 # Checks for library functions.
