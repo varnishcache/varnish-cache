@@ -43,6 +43,16 @@ varnish v1 -errvcl {Expected "true" or "false"} {
 	}
 }
 
+varnish v1 -errvcl {Expected ID got '1'} {
+	backend b1 {
+		.host = "${localhost}";
+		.probe = {
+			.url = "/";
+			.expect_close = 1;
+		}
+	}
+}
+
 # Check redefinition
 varnish v1 -errvcl {Probe request redefinition at:} {
 	backend b1 {
