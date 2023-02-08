@@ -14,7 +14,7 @@ varnish v1 -vcl+backend {
 		.interval = 0.1s;
 		.expect_close = true;
 	}
-}
+} -start
 
 varnish v2 -vcl+backend {
 	probe default {
@@ -24,10 +24,7 @@ varnish v2 -vcl+backend {
 		.interval = 0.1s;
 		.expect_close = false;
 	}
-}
-
-varnish v1 -start
-varnish v2 -start
+} -start
 
 delay 0.5
 
