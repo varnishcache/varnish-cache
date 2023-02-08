@@ -437,13 +437,12 @@ cmd_server_gen_vcl(struct vsb *vsb)
 
 		if (VUS_is(s->listen))
 			VSB_printf(vsb,
-				   "backend %s { .path = \"%s\"; }\n",
-				   s->name, s->listen);
+			   "backend %s { .path = \"%s\"; }\n",
+			   s->name, s->listen);
 		else
 			VSB_printf(vsb,
-				   "backend %s { .host = \"%s\"; "
-				   ".port = \"%s\"; }\n",
-				   s->name, s->aaddr, s->aport);
+			   "backend %s { .host = \"%s\"; .port = \"%s\"; }\n",
+			   s->name, s->aaddr, s->aport);
 	}
 	AZ(pthread_mutex_unlock(&server_mtx));
 }
