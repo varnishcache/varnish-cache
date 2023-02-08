@@ -59,6 +59,7 @@ struct server {
 	int			depth;
 	int			sock;
 	int			fd;
+	unsigned		is_dispatch;
 	char			listen[256];
 	char			aaddr[VTCP_ADDRBUFSIZE];
 	char			aport[VTCP_PORTBUFSIZE];
@@ -361,6 +362,7 @@ server_dispatch_thread(void *priv)
 		bprintf(snbuf, "s%d", sn++);
 		vtc_log(vl, 3, "dispatch fd %d -> %s", fd, snbuf);
 		s2 = server_new(snbuf, vl);
+		s2->is_dispatch = 1;
 		s2->spec = s->spec;
 		bstrcpy(s2->listen, s->listen);
 		s2->fd = fd;
@@ -430,7 +432,7 @@ cmd_server_gen_vcl(struct vsb *vsb)
 
 	AZ(pthread_mutex_lock(&server_mtx));
 	VTAILQ_FOREACH(s, &servers, list) {
-		if (s->sock < 0 && s->fd >= 0) /* dispatch instance */
+		if (s->is_dispatch)
 			continue;
 
 		if (VUS_is(s->listen))
