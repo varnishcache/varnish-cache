@@ -119,10 +119,10 @@ The only "proper" solution is to build some kind of datastructure:
 List, tree, hash, DB2 database, pick any poison you prefer, and
 search out the metadata pointer using the impotent pointer as key.
 Given that CHERI pointers are huge, it may be a better idea to embed
-a numeric index in the object and use that the key,
+a numeric index in the object and use that as the key.
 
 An important benefit of this »additional work« is that if your
-free-function get passed a pointer to something else, you will
+free-function gets passed a pointer to something else, you will
 find out, because it is not in your data-structure.
 
 It would be a good idea if CHERI came with a quality implementation

@@ -72,7 +72,7 @@ For those of you not familiar with Varnish, you will need to know:
 I still hate Autocrap tools
 ---------------------------
 
-Autocrap is a hack on a hack on hack which really ruins software
+Autocrap is a hack on a hack on a hack which really ruins software
 portability, but it is the "industry standard" so we use it also
 for Varnish, no matter how much I hate it.
 
@@ -133,7 +133,7 @@ so::
 
 The two typedefs ``uintptr_t`` and ``intptr_t`` are big enough to
 hold a pointer so that you can write "portable" code which
-does the kind the kind of integer-pointer-mis-math which
+does the kind of integer-pointer-mis-math which
 CHERI prevents you from doing.
 
 In theory we should not have any ``[u]intptr_t`` in Varnish,
