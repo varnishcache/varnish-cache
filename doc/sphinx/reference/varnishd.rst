@@ -443,15 +443,15 @@ specific options. Available jails are:
 
 -j <solaris[,worker=`privspec`]>
 
-  Reduce `privileges(5)` for `varnishd` and sub-process to the
+  Reduce `privileges(5)` for `varnishd` and sub-processes to the
   minimally required set. Only available on platforms which have the
   `setppriv(2)` call.
 
   The optional `worker` argument can be used to pass a
   privilege-specification (see `ppriv(1)`) by which to extend the
   effective set of the varnish worker process. While extended
-  privileges may be required by custom vmods, it is always the more
-  secure to *not* use the `worker` option.
+  privileges may be required by custom vmods, *not* using the `worker`
+  option is always more secure.
 
   Example to grant basic privileges to the worker process::
 
