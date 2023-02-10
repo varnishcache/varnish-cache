@@ -475,6 +475,18 @@ specific options. Available jails are:
   The optional `workuser` argument specifies an alternative user to use
   for the worker process. It defaults to ``vcache``.
 
+  The users given for the `user` and `workuser` arguments need to have
+  the same primary ("login") group.
+
+  To set up a system for the default users with a group name
+  ``varnish``, shell commands similar to these may be used::
+
+    groupadd varnish
+    useradd -g varnish -d /nonexistent -s /bin/false \
+      -c "Varnish-Cache Daemon User" varnish
+    useradd -g varnish -d /nonexistent -s /bin/false \
+      -c "Varnish-Cache Worker User" vcache
+
 -j none
 
   last resort jail choice: With jail mechanism ``none``, varnish will
