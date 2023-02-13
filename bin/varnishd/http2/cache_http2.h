@@ -141,6 +141,7 @@ struct h2_req {
 	int64_t				t_window;
 	int64_t				r_window;
 	uint64_t			req_len;
+	char				hpack_err;
 
 	/* Where to wake this stream up */
 	struct worker			*wrk;
@@ -227,7 +228,7 @@ struct h2h_decode {
 void h2h_decode_init(const struct h2_sess *h2);
 h2_error h2h_decode_fini(const struct h2_sess *h2);
 h2_error h2h_decode_bytes(struct h2_sess *h2, const uint8_t *ptr,
-    size_t len);
+    size_t len, struct h2_req *r2);
 
 /* cache_http2_send.c */
 void H2_Send_Get(struct worker *, struct h2_sess *, struct h2_req *);

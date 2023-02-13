@@ -155,6 +155,7 @@ h2_new_req(struct h2_sess *h2, unsigned stream, struct req *req)
 	r2->stream = stream;
 	r2->req = req;
 	r2->req_len = 0;
+	r2->hpack_err = 0;
 	if (stream)
 		r2->counted = 1;
 	r2->r_window = h2->local_settings.initial_window_size;
@@ -567,7 +568,7 @@ h2_end_headers(struct worker *wrk, struct h2_sess *h2,
 	ASSERT_RXTHR(h2);
 	assert(r2->state == H2_S_OPEN);
 	r2->req_len = (uint64_t)(h2->decode->out - (char*)WS_Reservation(req->http->ws));
-	if (r2->req_len > cache_param->http_req_size ||
+	if (r2->hpack_err || r2->req_len > cache_param->http_req_size ||
 		r2->req_len > cache_param->h2_max_header_list_size) {
 		VSLb(h2->new_req->http->vsl, SLT_BogoHeader,
 				"H2: stream %u: Received request header(s) that "
@@ -719,7 +720,7 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		l -= 5;
 		p += 5;
 	}
-	h2e = h2h_decode_bytes(h2, p, l);
+	h2e = h2h_decode_bytes(h2, p, l, r2);
 	if (h2e != NULL) {
 		Lck_Lock(&h2->sess->mtx);
 		VSLb(h2->vsl, SLT_Debug, "HPACK(hdr) %s", h2e->name);
@@ -753,7 +754,7 @@ h2_rx_continuation(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	if (r2 == NULL || r2->state != H2_S_OPEN || r2->req != h2->new_req)
 		return (H2CE_PROTOCOL_ERROR);	// XXX spec ?
 	req = r2->req;
-	h2e = h2h_decode_bytes(h2, h2->rxf_data, h2->rxf_len);
+	h2e = h2h_decode_bytes(h2, h2->rxf_data, h2->rxf_len, r2);
 	r2->req->acct.req_hdrbytes += h2->rxf_len;
 	if (h2e != NULL) {
 		Lck_Lock(&h2->sess->mtx);
