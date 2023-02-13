@@ -154,6 +154,7 @@ h2_new_req(struct h2_sess *h2, unsigned stream, struct req *req)
 	r2->h2sess = h2;
 	r2->stream = stream;
 	r2->req = req;
+	r2->req_len = 0;
 	if (stream)
 		r2->counted = 1;
 	r2->r_window = h2->local_settings.initial_window_size;
@@ -561,9 +562,23 @@ h2_end_headers(struct worker *wrk, struct h2_sess *h2,
 {
 	h2_error h2e;
 	ssize_t cl;
+	char b[5] = {0x18, 0x03, '4', '3', '1'};
 
 	ASSERT_RXTHR(h2);
 	assert(r2->state == H2_S_OPEN);
+	r2->req_len = (uint64_t)(h2->decode->out - (char*)WS_Reservation(req->http->ws));
+	if (r2->req_len > cache_param->http_req_size ||
+		r2->req_len > cache_param->h2_max_header_list_size) {
+		VSLb(h2->new_req->http->vsl, SLT_BogoHeader,
+				"H2: stream %u: Received request header(s) that "
+				"exceed http_req_size or h2_max_header_list_size",
+				h2->rxf_stream);
+		//rfc7540,l,3998,4002
+		H2_Send_Get(wrk, h2, r2);
+		H2_Send_Frame(wrk, h2, H2_F_HEADERS, H2FF_HEADERS_END_HEADERS, 5, h2->rxf_stream, b);
+		H2_Send_Rel(h2, r2);
+		return (H2SE_ENHANCE_YOUR_CALM);
+	}
 	h2e = h2h_decode_fini(h2);
 	h2->new_req = NULL;
 	if (h2e != NULL) {

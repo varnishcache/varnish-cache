@@ -140,6 +140,7 @@ struct h2_req {
 	VTAILQ_ENTRY(h2_req)		list;
 	int64_t				t_window;
 	int64_t				r_window;
+	uint64_t			req_len;
 
 	/* Where to wake this stream up */
 	struct worker			*wrk;
