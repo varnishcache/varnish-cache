@@ -18,6 +18,7 @@ libvarnish_la_SOURCES = \
 	vbh.c \
 	vas.c \
 	vav.c \
+	vbt.c \
 	vcli_proto.c \
 	vcli_serve.c \
 	vct.c \
@@ -45,6 +46,11 @@ libvarnish_la_SOURCES = \
 	vus.c
 
 libvarnish_la_LIBADD = @PCRE2_LIBS@ $(LIBM)
+
+if WITH_UNWIND
+libvarnish_la_CFLAGS += -DUNW_LOCAL_ONLY $(LIBUNWIND_CFLAGS)
+libvarnish_la_LIBADD += $(LIBUNWIND_LIBS)
+endif
 
 TESTS = \
 	vav_test \
