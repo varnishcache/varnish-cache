@@ -31,12 +31,6 @@
 
 #include "config.h"
 
-#ifdef WITH_UNWIND
-#  include <libunwind.h>
-#else
-#  include <execinfo.h>
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -51,6 +45,7 @@
 #include "storage/storage.h"
 #include "vcli_serve.h"
 #include "vtim.h"
+#include "vbt.h"
 #include "vcs.h"
 #include "vtcp.h"
 #include "vsa.h"
@@ -604,92 +599,15 @@ pan_sess(struct vsb *vsb, const struct sess *sp)
 
 /*--------------------------------------------------------------------*/
 
-#ifdef WITH_UNWIND
-
 static void
 pan_backtrace(struct vsb *vsb)
 {
-	unw_cursor_t cursor; unw_context_t uc;
-	unw_word_t ip, sp;
-	unw_word_t offp;
-	char fname[1024];
-	int ret;
 
 	VSB_cat(vsb, "Backtrace:\n");
 	VSB_indent(vsb, 2);
-
-	ret = unw_getcontext(&uc);
-	if (ret != 0) {
-		VSB_printf(vsb, "Backtrace not available "
-		    "(unw_getcontext returned %d)\n", ret);
-		return;
-	}
-	ret = unw_init_local(&cursor, &uc);
-	if (ret != 0) {
-		VSB_printf(vsb, "Backtrace not available "
-		    "(unw_init_local returned %d)\n", ret);
-		return;
-	}
-	while (unw_step(&cursor) > 0) {
-		fname[0] = '\0';
-		if (!unw_get_reg(&cursor, UNW_REG_IP, &ip))
-			VSB_printf(vsb, "ip=0x%lx", (long) ip);
-		if (!unw_get_reg(&cursor, UNW_REG_SP, &sp))
-			VSB_printf(vsb, " sp=0x%lx", (long) sp);
-		if (!unw_get_proc_name(&cursor, fname, sizeof(fname), &offp))
-			VSB_printf(vsb, " <%s+0x%lx>",
-			    fname[0] ? fname : "<unknown>", (long)offp);
-		VSB_putc(vsb, '\n');
-	}
-
+	VBT_format(vsb);
 	VSB_indent(vsb, -2);
 }
-
-#else /* WITH_UNWIND */
-
-#define BACKTRACE_LEVELS	20
-
-static void
-pan_backtrace(struct vsb *vsb)
-{
-	void *array[BACKTRACE_LEVELS];
-	size_t size;
-	size_t i;
-	char **strings;
-	char *p;
-	char buf[32];
-
-	size = backtrace (array, BACKTRACE_LEVELS);
-	if (size > BACKTRACE_LEVELS) {
-		VSB_printf(vsb, "Backtrace not available (ret=%zu)\n", size);
-		return;
-	}
-	VSB_cat(vsb, "Backtrace:\n");
-	VSB_indent(vsb, 2);
-	for (i = 0; i < size; i++) {
-		bprintf(buf, "%p", array[i]);
-		VSB_printf(vsb, "%s: ", buf);
-		strings = backtrace_symbols(&array[i], 1);
-		if (strings == NULL || strings[0] == NULL) {
-			VSB_cat(vsb, "(?)");
-		} else {
-			p = strings[0];
-			if (!memcmp(buf, p, strlen(buf))) {
-				p += strlen(buf);
-				if (*p == ':')
-					p++;
-				while (*p == ' ')
-					p++;
-			}
-			VSB_printf(vsb, "%s", p);
-		}
-		VSB_cat(vsb, "\n");
-		free(strings);
-	}
-	VSB_indent(vsb, -2);
-}
-
-#endif /* WITH_UNWIND */
 
 #ifdef HAVE_PTHREAD_GETATTR_NP
 static void
