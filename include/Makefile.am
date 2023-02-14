@@ -88,8 +88,8 @@ nobase_pkginclude_HEADERS += \
 # Private headers
 nobase_noinst_HEADERS = \
 	compat/daemon.h \
-	vfl.h \
 	libvcc.h \
+	vbt.h \
 	vcc_interface.h \
 	vcli_serve.h \
 	vcs_version.h \
@@ -99,6 +99,7 @@ nobase_noinst_HEADERS = \
 	vend.h \
 	vev.h \
 	vfil.h \
+	vfl.h \
 	vin.h \
 	vjsn.h \
 	vlu.h \
