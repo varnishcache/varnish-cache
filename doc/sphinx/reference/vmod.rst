@@ -264,6 +264,29 @@ managing instances, in particular their memory management. As the
 lifetime of object instances is the vcl, they will usually be
 allocated from the heap.
 
+Deprecated Aliases
+------------------
+
+The ``$Alias`` stanza offers a mechanism to rename a function or an
+object's method without removing the previous name. This allows name
+changes to maintain compatibility until the alias is dropped.
+
+The syntax for a function is::
+
+    $Alias deprecated_function original_function
+
+    [description]
+
+The syntax for a method is::
+
+    $Alias .deprecated_method object.original_method
+
+    [description]
+
+The ``$Alias`` stanza can appear anywhere, this allows grouping them
+in a dedicated "deprecated" section of their manual. The optional
+description can be used to explain why a function was renamed.
+
 .. _ref-vmod-vcl-c-types:
 
 VCL and C data types
