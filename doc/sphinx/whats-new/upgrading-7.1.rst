@@ -119,7 +119,7 @@ In the VMOD descriptor, it is possible to add the following stanza::
 
     or
 
-    $Alias .deprecated_method objec.original_method
+    $Alias .deprecated_method object.original_method
 
 This is a good occasion to revisit unfortunate name choices in existing VMODs.
 
