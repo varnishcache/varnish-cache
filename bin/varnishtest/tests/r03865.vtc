@@ -38,6 +38,20 @@ client c1 {
 	expect resp.body == "before "
 } -run
 
+varnish v1 -cliok "param.set max_esi_depth 0"
+
+client c1 {
+	txreq -url "/abort"
+	non_fatal
+	rxresphdrs
+	expect resp.status == 200
+	rxchunk
+	expect_close
+	expect resp.body == "before "
+} -run
+
+varnish v1 -cliok "param.set max_esi_depth 1"
+
 varnish v1 -vsl_catchup
 
 server s1 -wait
@@ -54,4 +68,13 @@ client c1 {
 	txreq -url "/continue"
 	rxresp
 	expect resp.body == "before FOOBAR after"
+} -run
+
+varnish v1 -cliok "param.set max_esi_depth 0"
+
+client c1 {
+	fatal
+	txreq -url "/continue"
+	rxresp
+	expect resp.body == "before  after"
 } -run
