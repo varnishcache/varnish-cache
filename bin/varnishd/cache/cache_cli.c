@@ -76,8 +76,8 @@ cli_cb_before(const struct cli *cli)
 
 	ASSERT_CLI();
 	VSL(SLT_CLI, NO_VXID, "Rd %s", VSB_data(cli->cmd));
-	VCL_Poll();
 	Lck_Lock(&cli_mtx);
+	VCL_Poll();
 }
 
 static void
