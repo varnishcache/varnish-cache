@@ -240,17 +240,12 @@ VRT_StaticDirector(VCL_BACKEND b)
 }
 
 static void
-retire_backend(VCL_BACKEND *bp)
+vcldir_retire(struct vcldir *vdir)
 {
-	struct vcldir *vdir;
 	const struct vcltemp *temp;
-	VCL_BACKEND d;
 
-	TAKE_OBJ_NOTNULL(d, bp, DIRECTOR_MAGIC);
-	vdir = d->vdir;
 	CHECK_OBJ_NOTNULL(vdir, VCLDIR_MAGIC);
 	assert(vdir->refcnt == 0);
-	assert (d == vdir->dir);
 	CHECK_OBJ_NOTNULL(vdir->vcl, VCL_MAGIC);
 
 	Lck_Lock(&vcl_mtx);
@@ -259,26 +254,27 @@ retire_backend(VCL_BACKEND *bp)
 	Lck_Unlock(&vcl_mtx);
 
 	if (temp->is_warm)
-		VDI_Event(d, VCL_EVENT_COLD);
+		VDI_Event(vdir->dir, VCL_EVENT_COLD);
 	if (vdir->methods->destroy != NULL)
-		vdir->methods->destroy(d);
-	assert (d == vdir->dir);
+		vdir->methods->destroy(vdir->dir);
 	vcldir_free(vdir);
 }
 
 void
-VRT_DelDirector(VCL_BACKEND *bp)
+VRT_DelDirector(VCL_BACKEND *dirp)
 {
+	VCL_BACKEND dir;
 	struct vcldir *vdir;
 
-	AN(bp);
-	vdir = (*bp)->vdir;
+	TAKE_OBJ_NOTNULL(dir, dirp, DIRECTOR_MAGIC);
+
+	vdir = dir->vdir;
 	CHECK_OBJ_NOTNULL(vdir, VCLDIR_MAGIC);
 	Lck_Lock(&vdir->dlck);
 	assert(vdir->refcnt == 1);
 	vdir->refcnt = 0;
 	Lck_Unlock(&vdir->dlck);
-	retire_backend(bp);
+	vcldir_retire(vdir);
 }
 
 void
@@ -299,7 +295,7 @@ VRT_Assign_Backend(VCL_BACKEND *dst, VCL_BACKEND src)
 			busy = --vdir->refcnt;
 			Lck_Unlock(&vdir->dlck);
 			if (!busy)
-				retire_backend(dst);
+				vcldir_retire(vdir);
 		}
 	}
 	if (src != NULL) {
