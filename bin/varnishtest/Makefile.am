@@ -63,6 +63,7 @@ varnishtest_CFLAGS = \
 		-DTOP_BUILDDIR='"${top_builddir}"'
 
 EXTRA_DIST = $(top_srcdir)/bin/varnishtest/tests/*.vtc \
+	$(top_srcdir)/bin/varnishtest/tests/common.pem \
 	$(top_srcdir)/bin/varnishtest/tests/README \
 	$(top_srcdir)/bin/varnishtest/gensequences \
 	$(top_srcdir)/bin/varnishtest/sequences \
