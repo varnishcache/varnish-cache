@@ -472,7 +472,7 @@ varnish_launch(struct varnish *v)
 	fd[1].events = POLLIN;
 	fd[2].fd = v->fds[2];
 	fd[2].events = POLLIN;
-	i = poll(fd, 2, vtc_maxdur * 1000 / 3);
+	i = poll(fd, 2, (int)(vtc_maxdur * 1000 / 3));
 	vtc_log(v->vl, 4, "CLIPOLL %d 0x%x 0x%x 0x%x",
 	    i, fd[0].revents, fd[1].revents, fd[2].revents);
 	if (i == 0)

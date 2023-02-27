@@ -181,7 +181,7 @@ get_bytes(const struct http *hp, char *buf, int n)
 		pfd[0].fd = hp->sess->fd;
 		pfd[0].events = POLLIN;
 		pfd[0].revents = 0;
-		i = poll(pfd, 1, hp->timeout * 1000);
+		i = poll(pfd, 1, (int)(hp->timeout * 1000));
 		if (i < 0 && errno == EINTR)
 			continue;
 		if (i == 0)
@@ -2450,7 +2450,7 @@ cmd_rxsettings(CMD_ARGS)
 	CAST_OBJ_NOTNULL(f, s->frame, FRAME_MAGIC);
 	CHKFRAME(f->type, TYPE_SETTINGS, 0, *av);
 	if (! isnan(f->md.settings[SETTINGS_INITIAL_WINDOW_SIZE])) {
-		val = f->md.settings[SETTINGS_INITIAL_WINDOW_SIZE];
+		val = (uint32_t)f->md.settings[SETTINGS_INITIAL_WINDOW_SIZE];
 		VTAILQ_FOREACH(s2, &hp->streams, list)
 			s2->win_peer += (val - hp->h2_win_peer->init);
 		hp->h2_win_peer->init = val;

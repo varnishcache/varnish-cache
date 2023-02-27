@@ -496,7 +496,7 @@ http_rxchar(struct http *hp, int n, int eof)
 		pfd[0].fd = hp->sess->fd;
 		pfd[0].events = POLLIN;
 		pfd[0].revents = 0;
-		i = poll(pfd, 1, hp->timeout * 1000);
+		i = poll(pfd, 1, (int)(hp->timeout * 1000));
 		if (i < 0 && errno == EINTR)
 			continue;
 		if (i == 0) {
@@ -1500,7 +1500,7 @@ cmd_http_expect_close(CMD_ARGS)
 		fds[0].fd = hp->sess->fd;
 		fds[0].events = POLLIN;
 		fds[0].revents = 0;
-		i = poll(fds, 1, hp->timeout * 1000);
+		i = poll(fds, 1, (int)(hp->timeout * 1000));
 		if (i < 0 && errno == EINTR)
 			continue;
 		if (i == 0)
