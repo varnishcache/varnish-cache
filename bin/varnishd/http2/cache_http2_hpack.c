@@ -99,7 +99,7 @@ h2h_addhdr(struct http *hp, char *b, size_t namelen, size_t len)
 	int disallow_empty;
 	unsigned n;
 	char *p;
-	int i;
+	unsigned u;
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	AN(b);
@@ -125,7 +125,7 @@ h2h_addhdr(struct http *hp, char *b, size_t namelen, size_t len)
 			disallow_empty = 1;
 
 			/* First field cannot contain SP or CTL */
-			for (p = b, i = 0; i < len; p++, i++) {
+			for (p = b, u = 0; u < len; p++, u++) {
 				if (vct_issp(*p) || vct_isctl(*p))
 					return (H2SE_PROTOCOL_ERROR);
 			}
@@ -136,7 +136,7 @@ h2h_addhdr(struct http *hp, char *b, size_t namelen, size_t len)
 			disallow_empty = 1;
 
 			/* Second field cannot contain LWS or CTL */
-			for (p = b, i = 0; i < len; p++, i++) {
+			for (p = b, u = 0; u < len; p++, u++) {
 				if (vct_islws(*p) || vct_isctl(*p))
 					return (H2SE_PROTOCOL_ERROR);
 			}
@@ -148,13 +148,13 @@ h2h_addhdr(struct http *hp, char *b, size_t namelen, size_t len)
 			len-=1;
 			n = hp->nhd;
 
-			for (p = b + namelen, i = 0; i < len-namelen;
-			    p++, i++) {
+			for (p = b + namelen, u = 0; u < len-namelen;
+			    p++, u++) {
 				if (vct_issp(*p) || vct_isctl(*p))
 					return (H2SE_PROTOCOL_ERROR);
 			}
 
-			if (!i)
+			if (!u)
 				return (H2SE_PROTOCOL_ERROR);
 		} else if (!strncmp(b, ":authority: ", namelen)) {
 			b+=6;
