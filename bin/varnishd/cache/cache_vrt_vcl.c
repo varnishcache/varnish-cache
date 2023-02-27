@@ -284,29 +284,32 @@ VRT_DelDirector(VCL_BACKEND *bp)
 void
 VRT_Assign_Backend(VCL_BACKEND *dst, VCL_BACKEND src)
 {
+	struct vcldir *vdir;
 	int busy;
 
 	AN(dst);
 	CHECK_OBJ_ORNULL((*dst), DIRECTOR_MAGIC);
 	CHECK_OBJ_ORNULL(src, DIRECTOR_MAGIC);
 	if (*dst != NULL) {
-		CHECK_OBJ_NOTNULL((*dst)->vdir, VCLDIR_MAGIC);
-		if (!((*dst)->vdir->flags & VDIR_FLG_NOREFCNT)) {
-			Lck_Lock((*dst)->mtx);
-			assert((*dst)->vdir->refcnt > 0);
-			busy = --(*dst)->vdir->refcnt;
-			Lck_Unlock((*dst)->mtx);
+		vdir = (*dst)->vdir;
+		CHECK_OBJ_NOTNULL(vdir, VCLDIR_MAGIC);
+		if (!(vdir->flags & VDIR_FLG_NOREFCNT)) {
+			Lck_Lock(&vdir->dlck);
+			assert(vdir->refcnt > 0);
+			busy = --vdir->refcnt;
+			Lck_Unlock(&vdir->dlck);
 			if (!busy)
 				retire_backend(dst);
 		}
 	}
 	if (src != NULL) {
-		CHECK_OBJ_NOTNULL(src->vdir, VCLDIR_MAGIC);
-		if (!(src->vdir->flags & VDIR_FLG_NOREFCNT)) {
-			Lck_Lock(src->mtx);
-			assert(src->vdir->refcnt > 0);
-			src->vdir->refcnt++;
-			Lck_Unlock(src->mtx);
+		vdir = src->vdir;
+		CHECK_OBJ_NOTNULL(vdir, VCLDIR_MAGIC);
+		if (!(vdir->flags & VDIR_FLG_NOREFCNT)) {
+			Lck_Lock(&vdir->dlck);
+			assert(vdir->refcnt > 0);
+			vdir->refcnt++;
+			Lck_Unlock(&vdir->dlck);
 		}
 	}
 	*dst = src;
