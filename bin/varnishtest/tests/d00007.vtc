@@ -1,34 +1,5 @@
 varnishtest "Test dynamic backends"
 
-server s1 {
-	rxreq
-	expect req.url == "/"
-	expect req.http.Probe == "p1"
-	expect req.http.Authority == <undef>
-	txresp
-	close
-	accept
-	rxreq
-	expect req.url == "/1"
-	expect req.http.Probe == <undef>
-	expect req.http.Authority == <undef>
-	txresp
-	close
-	accept
-	rxreq
-	expect req.url == "/"
-	expect req.http.Probe == "p2"
-	expect req.http.Authority == "127.0.0.1"
-	txresp
-	close
-	accept
-	rxreq
-	expect req.url == "/2"
-	expect req.http.Probe == <undef>
-	expect req.http.Authority == "127.0.0.1"
-	txresp
-} -start
-
 # the use case for via-proxy is to have a(n ha)proxy make a(n ssl)
 # connection on our behalf. For the purpose of testing, we use another
 # varnish in place - but we are behaving realistically in that we do
@@ -56,6 +27,40 @@ varnish v2 -proto PROXY -vcl {
 	sub vcl_deliver {
 		set resp.http.Authority = req.http.Authority;
 	}
+} -start
+
+
+# NB: ${v2_addr} in s1's work should really be ${s1_addr}, but it is not
+#     defined until after the (implicit) listen(2) call, so we cheat
+#     and use v2's address instead.
+
+server s1 {
+	rxreq
+	expect req.url == "/"
+	expect req.http.Probe == "p1"
+	expect req.http.Authority == <undef>
+	txresp
+	close
+	accept
+	rxreq
+	expect req.url == "/1"
+	expect req.http.Probe == <undef>
+	expect req.http.Authority == <undef>
+	txresp
+	close
+	accept
+	rxreq
+	expect req.url == "/"
+	expect req.http.Probe == "p2"
+	expect req.http.Authority == "${v2_addr}"
+	txresp
+	close
+	accept
+	rxreq
+	expect req.url == "/2"
+	expect req.http.Probe == <undef>
+	expect req.http.Authority == "${v2_addr}"
+	txresp
 } -start
 
 #
@@ -122,5 +127,5 @@ client c1 {
 	txreq -url /2
 	rxresp
 	expect resp.status == 200
-	expect resp.http.Authority == "127.0.0.1"
+	expect resp.http.Authority == "${s1_addr}"
 } -run
