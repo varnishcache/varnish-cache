@@ -205,6 +205,13 @@ sharddir_set_param(struct sharddir *shardd,
 }
 
 void
+sharddir_release(struct sharddir *shardd)
+{
+	CHECK_OBJ_NOTNULL(shardd, SHARDDIR_MAGIC);
+	shardcfg_backend_clear(shardd);
+}
+
+void
 sharddir_delete(struct sharddir **sharddp)
 {
 	struct sharddir *shardd;

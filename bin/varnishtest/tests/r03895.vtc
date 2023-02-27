@@ -1,0 +1,48 @@
+
+
+varnishtest "looped backends"
+
+server s1 {
+} -start
+
+server s2 {
+} -start
+
+server s3 {
+} -start
+
+server s4 {
+} -start
+
+varnish v1 -vcl+backend {
+	import directors;
+	import std;
+
+	sub vcl_init {
+		new rr = directors.round_robin();
+		rr.add_backend(s1);
+		rr.add_backend(s2);
+		rr.add_backend(s3);
+		rr.add_backend(s4);
+		new rr2 = directors.round_robin();
+		rr2.add_backend(rr.backend());
+
+		rr.add_backend(rr2.backend());
+	}
+} -start
+
+varnish v1 -vcl+backend {
+	import directors;
+	import std;
+
+	sub vcl_init {
+		new rr2 = directors.round_robin();
+		rr2.add_backend(s1);
+		rr2.add_backend(s2);
+		rr2.add_backend(s3);
+		rr2.add_backend(s4);
+	}
+}
+
+varnish v1 -cliok "vcl.discard vcl1"
+varnish v1 -cliok "vcl.list"

@@ -172,4 +172,13 @@ There is a new ``authority`` field for via backends in ``struct vrt_backend``.
 
 There is a new ``exp_close`` field in ``struct vrt_backend_probe``.
 
+Directors which take and hold references to other directors via
+``VRT_Assign_Backend()`` (typically any director which has other
+directors as backends) are now expected to implement the new
+``.release`` callback of type ``void
+vdi_release_f(VCL_BACKEND)``. This function is called by
+``VRT_DelDirector()``. The implementation is expected drop any backend
+references which the director holds (again using
+``VRT_Assign_Backend()`` with ``NULL`` as the second argument).
+
 *eof*

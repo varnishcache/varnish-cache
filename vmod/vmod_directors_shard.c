@@ -205,6 +205,15 @@ shard__assert(void)
 	assert(t2a == t2b);
 }
 
+static void v_matchproto_(vdi_release_f)
+vmod_shard_release(VCL_BACKEND dir)
+{
+	struct sharddir *shardd;
+
+	CAST_OBJ_NOTNULL(shardd, dir->priv, SHARDDIR_MAGIC);
+	sharddir_release(shardd);
+}
+
 static void v_matchproto_(vdi_destroy_f)
 vmod_shard_destroy(VCL_BACKEND dir)
 {
@@ -219,6 +228,7 @@ static const struct vdi_methods vmod_shard_methods[1] = {{
 	.type =		"shard",
 	.resolve =	vmod_shard_resolve,
 	.healthy =	vmod_shard_healthy,
+	.release =	vmod_shard_release,
 	.destroy =	vmod_shard_destroy,
 	.list =		vmod_shard_list
 }};

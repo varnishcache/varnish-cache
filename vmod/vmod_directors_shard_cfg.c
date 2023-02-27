@@ -449,7 +449,7 @@ shardcfg_backend_add(struct backend_reconfig *re,
 	bb[i].replicas = replicas;
 }
 
-static void
+void
 shardcfg_backend_clear(struct sharddir *shardd)
 {
 	unsigned i;
@@ -675,10 +675,8 @@ shardcfg_reconfigure(VRT_CTX, struct sharddir *shardd, VCL_INT replicas)
 void
 shardcfg_delete(const struct sharddir *shardd)
 {
-	unsigned i;
 
-	for (i = 0; i < shardd->n_backend; i++)
-		shardcfg_backend_free(&shardd->backend[i]);
+	AZ(shardd->n_backend);
 	if (shardd->backend)
 		free(shardd->backend);
 	if (shardd->hashcircle)

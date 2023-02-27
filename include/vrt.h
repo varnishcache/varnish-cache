@@ -64,6 +64,7 @@
  *	VRT_new_backend() signature changed
  *	VRT_new_backend_clustered() signature changed
  *	authority field added to struct vrt_backend
+ *	release field added to struct vdi_methods
  * 16.0 (2022-09-15)
  *	VMOD C-prototypes moved into JSON
  *	VRT_AddVDP() deprecated
@@ -692,6 +693,7 @@ typedef VCL_IP vdi_getip_f(VRT_CTX, VCL_BACKEND);
 typedef void vdi_finish_f(VRT_CTX, VCL_BACKEND);
 typedef stream_close_t vdi_http1pipe_f(VRT_CTX, VCL_BACKEND);
 typedef void vdi_event_f(VCL_BACKEND, enum vcl_event_e);
+typedef void vdi_release_f(VCL_BACKEND);
 typedef void vdi_destroy_f(VCL_BACKEND);
 typedef void vdi_panic_f(VCL_BACKEND, struct vsb *);
 typedef void vdi_list_f(VRT_CTX, VCL_BACKEND, struct vsb *, int, int);
@@ -707,6 +709,9 @@ struct vdi_methods {
 	vdi_getip_f			*getip;
 	vdi_finish_f			*finish;
 	vdi_event_f			*event;
+	// called by VRT_DelDirector: deref all backends
+	vdi_release_f			*release;
+	// when refcount goes 0
 	vdi_destroy_f			*destroy;
 	vdi_panic_f			*panic;
 	vdi_list_f			*list;

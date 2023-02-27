@@ -86,6 +86,16 @@ vmod_random_resolve(VRT_CTX, VCL_BACKEND dir)
 	return (be);
 }
 
+static void v_matchproto_(vdi_release_f)
+vmod_random_release(VCL_BACKEND dir)
+{
+	struct vmod_directors_random *random;
+
+	CHECK_OBJ_NOTNULL(dir, DIRECTOR_MAGIC);
+	CAST_OBJ_NOTNULL(random, dir->priv, VMOD_DIRECTORS_RANDOM_MAGIC);
+	vdir_release(random->vd);
+}
+
 static void v_matchproto_(vdi_destroy_f)
 vmod_random_destroy(VCL_BACKEND dir)
 {
@@ -102,6 +112,7 @@ static const struct vdi_methods vmod_random_methods[1] = {{
 	.type =			"random",
 	.healthy =		vmod_random_healthy,
 	.resolve =		vmod_random_resolve,
+	.release =		vmod_random_release,
 	.destroy =		vmod_random_destroy,
 	.list =			vmod_random_list
 }};

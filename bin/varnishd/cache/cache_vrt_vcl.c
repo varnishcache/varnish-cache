@@ -289,6 +289,9 @@ VRT_DelDirector(VCL_BACKEND *dirp)
 	vdir = dir->vdir;
 	CHECK_OBJ_NOTNULL(vdir, VCLDIR_MAGIC);
 
+	if (vdir->methods->release != NULL)
+		vdir->methods->release(vdir->dir);
+
 	if (vdir->flags & VDIR_FLG_NOREFCNT) {
 		vdir->flags &= ~VDIR_FLG_NOREFCNT;
 		AZ(vcldir_deref(vdir));

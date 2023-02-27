@@ -93,16 +93,26 @@ vdir_new(VRT_CTX, struct vdir **vdp, const char *vcl_name,
 }
 
 void
+vdir_release(struct vdir *vd)
+{
+	unsigned u;
+
+	CHECK_OBJ_NOTNULL(vd, VDIR_MAGIC);
+
+	for (u = 0; u < vd->n_backend; u++)
+		VRT_Assign_Backend(&vd->backend[u], NULL);
+	vd->n_backend = 0;
+}
+
+void
 vdir_delete(struct vdir **vdp)
 {
 	struct vdir *vd;
-	unsigned u;
 
 	TAKE_OBJ_NOTNULL(vd, vdp, VDIR_MAGIC);
 
 	AZ(vd->dir);
-	for (u = 0; u < vd->n_backend; u++)
-		VRT_Assign_Backend(&vd->backend[u], NULL);
+	AZ(vd->n_backend);
 	free(vd->backend);
 	free(vd->weight);
 	AZ(pthread_rwlock_destroy(&vd->mtx));

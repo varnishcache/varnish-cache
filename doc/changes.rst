@@ -91,6 +91,18 @@ Varnish Cache NEXT (2023-03-15)
   * The ``VRT_new_backend_clustered()`` and ``VRT_new_backend()``
     signatures have been changed
 
+* Directors which take and hold references to other directors via
+  ``VRT_Assign_Backend()`` (typically any director which has other
+  directors as backends) are now expected to implement the new
+  ``.release`` callback of type ``void
+  vdi_release_f(VCL_BACKEND)``. This function is called by
+  ``VRT_DelDirector()``. The implementation is expected drop any
+  backend references which the director holds (again using
+  ``VRT_Assign_Backend()`` with ``NULL`` as the second argument).
+
+  Failure to implement this callback can result in deadlocks, in
+  particular during VCL discard.
+
 ================================
 Varnish Cache 7.2.0 (2022-09-15)
 ================================
