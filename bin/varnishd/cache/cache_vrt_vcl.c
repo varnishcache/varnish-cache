@@ -260,7 +260,7 @@ retire_backend(VCL_BACKEND *bp)
 
 	if (temp->is_warm)
 		VDI_Event(d, VCL_EVENT_COLD);
-	if(vdir->methods->destroy != NULL)
+	if (vdir->methods->destroy != NULL)
 		vdir->methods->destroy(d);
 	assert (d == vdir->dir);
 	vcldir_free(vdir);
