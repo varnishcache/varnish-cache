@@ -29,6 +29,7 @@ haproxy h1 -conf {
 
 # Note the use of port 0 for server s0.
 haproxy h2 -conf {
+    unix-bind mode 777
     listen clear-to-ssl
 	bind unix@"${tmpdir}/h2.sock" accept-proxy
 	server s0 0.0.0.0:0 ssl verify none sni fc_pp_authority
