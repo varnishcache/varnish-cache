@@ -65,19 +65,19 @@ client c1 {
 	txreq -url /s1/1
 	rxresp
 	expect resp.status == 200
-	expect resp.http.Authority == "127.0.0.1"
+	expect resp.http.Authority == "${s1_addr}"
 	expect resp.http.Server == "s1"
 
 	txreq -url /s2/1
 	rxresp
 	expect resp.status == 200
-	expect resp.http.Authority == "127.0.0.1"
+	expect resp.http.Authority == "${s2_addr}"
 	expect resp.http.Server == "s2"
 
 	txreq -url /s1/2
 	rxresp
 	expect resp.status == 200
-	expect resp.http.Authority == "127.0.0.1"
+	expect resp.http.Authority == "${s1_addr}"
 	expect resp.http.Server == "s1"
 } -run
 
