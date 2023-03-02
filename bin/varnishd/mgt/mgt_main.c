@@ -82,6 +82,8 @@ static const char opt_spec[] = "?a:b:CdE:f:Fh:i:I:j:l:M:n:P:p:r:S:s:T:t:VW:x:";
 static void
 usage(void)
 {
+	char buf[1024];
+
 #define FMT "  %-28s # %s\n"
 
 	printf( "Usage: varnishd [options]\n");
@@ -102,7 +104,8 @@ usage(void)
 	printf(FMT, "", "  default: \":80\"");
 	printf(FMT, "-f vclfile", "VCL program");
 	printf(FMT, "", "Can be specified multiple times.");
-	printf(FMT, "-n dir", "Working directory");
+	bprintf(buf, "Working directory (default: %s)", VIN_n_Arg(NULL));
+	printf(FMT, "-n dir", buf);
 
 	printf("\n-b can be used only once, and not together with -f\n");
 
