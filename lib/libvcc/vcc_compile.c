@@ -611,11 +611,12 @@ EmitStruct(const struct vcc *tl)
  */
 
 static struct vsb *
-vcc_CompileSource(struct vcc *tl, struct source *sp, const char *jfile)
+vcc_CompileSource(struct vcc *tl, struct source **sps, const char *jfile)
 {
 	struct proc *p;
 	struct vsb *vsb;
 	struct inifin *ifp;
+	struct source *sp;
 
 	Fh(tl, 0, "/* ---===### VCC generated .h code ###===---*/\n");
 	Fc(tl, 0, "\n/* ---===### VCC generated .c code ###===---*/\n");
@@ -637,11 +638,14 @@ vcc_CompileSource(struct vcc *tl, struct source *sp, const char *jfile)
 	Fh(tl, 0, "\nextern const struct VCL_conf VCL_conf;\n");
 
 	/* Register and lex the main source */
-	if (sp != NULL) {
-		AN(vcc_builtin);
-		vcc_lex_source(tl, sp, 0);
-		if (tl->err)
-			return (NULL);
+	if (sps != NULL && *sps != NULL) {
+		while (*sps != NULL) {
+			AN(vcc_builtin);
+			vcc_lex_source(tl, *sps, 0);
+			if (tl->err)
+				return (NULL);
+			sps++;
+		}
 	}
 
 	/* Register and lex the builtin VCL */
@@ -770,18 +774,25 @@ VCC_VCL_Range(unsigned *lo, unsigned *hi)
 
 int
 VCC_Compile(struct vcc *tl, struct vsb **sb,
-    const char *vclsrc, const char *vclsrcfile,
+    const char *vclsrc, const char * const *vclsrcfiles,
     const char *ofile, const char *jfile)
 {
-	struct source *sp;
+	struct source **sp;
 	struct vsb *r = NULL;
-	int retval = 0;
+	int retval = 0, n = 1;
 
 	CHECK_OBJ_NOTNULL(tl, VCC_MAGIC);
 	AN(sb);
-	AN(vclsrcfile);
+	AN(vclsrcfiles);
+	AN(*vclsrcfiles);
 	AN(ofile);
 	AN(jfile);
+
+	while (vclsrcfiles[n-1])
+		n++;
+	sp = calloc(n, sizeof(struct source*));
+	AN(sp);
+	sp[n-1] = NULL;
 
 	AZ(vcc_builtin);
 	vcc_builtin = vcc_ParseBuiltin(tl);
@@ -793,11 +804,13 @@ VCC_Compile(struct vcc *tl, struct vsb **sb,
 	}
 
 	if (vclsrc != NULL)
-		sp = vcc_new_source(vclsrc, "vcl.inline", vclsrcfile);
-	else
-		sp = vcc_file_source(tl, vclsrcfile);
+		sp[0] = vcc_new_source(vclsrc, "vcl.inline", *vclsrcfiles);
+	else {
+		for (int i=0; vclsrcfiles[i]; i++)
+			sp[i] = vcc_file_source(tl, vclsrcfiles[i]);
+	}
 
-	if (sp != NULL)
+	if (sp[0] != NULL)
 		r = vcc_CompileSource(tl, sp, jfile);
 
 	if (r != NULL) {
@@ -808,6 +821,7 @@ VCC_Compile(struct vcc *tl, struct vsb **sb,
 	}
 	AZ(VSB_finish(tl->sb));
 	*sb = tl->sb;
+	free(sp);
 	return (retval);
 }
 

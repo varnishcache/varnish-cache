@@ -1,0 +1,53 @@
+varnishtest "Test vcl.load_files with multiple vcl files"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+shell {
+	(
+	echo 'vcl 4.0;'
+	echo 'backend default {'
+	echo '  .host="${s1_addr}";'
+	echo '  .port="${s1_port}";'
+	echo '}'
+	echo ''
+	echo 'sub vcl_deliver {'
+	echo '	set resp.http.test1 = "test1";'
+	echo '}'
+	) > ${tmpdir}/file1.vcl
+}
+
+shell {
+	(
+	echo 'vcl 4.0;'
+	echo 'sub vcl_deliver {'
+	echo '	set resp.http.test2 = "test2";'
+	echo '}'
+	) > ${tmpdir}/file2.vcl
+}
+
+shell {
+	(
+	echo 'vcl 4.0;'
+	echo 'sub vcl_deliver {'
+	echo '	set resp.http.test3 = "test3";'
+	echo '}'
+	) > ${tmpdir}/file3.vcl
+}
+
+varnish v1 -cliok {vcl.load_files -s cold foo ${tmpdir}/file1.vcl ${tmpdir}/file2.vcl ${tmpdir}/file3.vcl}
+varnish v1 -cliexpect "VCL 'foo' is cold" {vcl.use foo}
+varnish v1 -cliok {vcl.state foo warm}
+varnish v1 -cliok {vcl.use foo}
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.test1 == "test1"
+	expect resp.http.test2 == "test2"
+	expect resp.http.test3 == "test3"
+} -run

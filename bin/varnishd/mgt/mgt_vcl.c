@@ -56,6 +56,15 @@ struct vclstate {
 	static const struct vclstate VCL_STATE_ ## sym[1] = {{ str }};
 #include "tbl/vcl_states.h"
 
+#define FAIL_NO_ARG(a, p)      \
+       do {                                    \
+               if (a == NULL) {        \
+                       VCLI_Out(cli, p " requires an argument\n"); \
+                       VCLI_SetResult(cli, CLIS_TOOFEW); \
+                       return; \
+               }                                       \
+       } while (0)
+
 static const struct vclstate VCL_STATE_LABEL[1] = {{ "label" }};
 
 static unsigned vcl_count;
@@ -428,7 +437,7 @@ mgt_vcl_setstate(struct cli *cli, struct vclprog *vp, const struct vclstate *vs)
 
 static struct vclprog *
 mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
-    const char *vclsrcfile, const char *state, int C_flag)
+    const char * const *vclsrcfiles, const char *state, int C_flag)
 {
 	unsigned status;
 	char *lib, *p;
@@ -454,7 +463,7 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 		return (NULL);
 
 	vp = mgt_vcl_add(vclname, vs);
-	lib = mgt_VccCompile(cli, vp, vclname, vclsrc, vclsrcfile, C_flag);
+	lib = mgt_VccCompile(cli, vp, vclname, vclsrc, vclsrcfiles, C_flag);
 	if (lib == NULL) {
 		mgt_vcl_del(vp);
 		return (NULL);
@@ -497,6 +506,7 @@ mgt_vcl_startup(struct cli *cli, const char *vclsrc, const char *vclname,
 	char buf[20];
 	static int n = 0;
 	struct vclprog *vp;
+	const char *vcls[] = {origin, NULL};
 
 	AZ(MCH_Running());
 
@@ -506,7 +516,7 @@ mgt_vcl_startup(struct cli *cli, const char *vclsrc, const char *vclname,
 		bprintf(buf, "boot%d", n++);
 		vclname = buf;
 	}
-	vp = mgt_new_vcl(cli, vclname, vclsrc, origin, NULL, C_flag);
+	vp = mgt_new_vcl(cli, vclname, vclsrc, vcls, NULL, C_flag);
 	if (vp != NULL) {
 		/* Last startup VCL becomes the automatically selected
 		 * active VCL. */
@@ -580,12 +590,13 @@ mcf_vcl_inline(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vclprog *vp;
 
+	const char *vcls[] = {"<vcl.inline>", NULL};
 	(void)priv;
 
 	if (!mcf_find_no_vcl(cli, av[2]))
 		return;
 
-	vp = mgt_new_vcl(cli, av[2], av[3], "<vcl.inline>", av[4], 0);
+	vp = mgt_new_vcl(cli, av[2], av[3], vcls, av[4], 0);
 	if (vp != NULL && !MCH_Running())
 		VCLI_Out(cli, "VCL compiled.\n");
 }
@@ -594,16 +605,48 @@ static void v_matchproto_(cli_func_t)
 mcf_vcl_load(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vclprog *vp;
+	const char *vcls[] = {av[3], NULL};
 
 	(void)priv;
 	if (!mcf_find_no_vcl(cli, av[2]))
 		return;
 
-	vp = mgt_new_vcl(cli, av[2], NULL, av[3], av[4], 0);
+	vp = mgt_new_vcl(cli, av[2], NULL, vcls, av[4], 0);
 	if (vp != NULL && !MCH_Running())
 		VCLI_Out(cli, "VCL compiled.\n");
 }
 
+static void v_matchproto_(cli_func_t)
+mcf_vcl_load_files(struct cli *cli, const char * const *av, void *priv)
+{
+	struct vclprog *vp;
+	int i = 2;
+	const char *state = NULL;
+
+	while (av[i] != NULL) {
+		if (!strcmp(av[i], "-s")) {
+			FAIL_NO_ARG(av[i+1], "-s");
+			state = av[i+1];
+			i += 2;
+		} else {
+			break;
+		}
+	}
+
+	if (av[i] == NULL || av[i+1] == NULL) {
+			VCLI_SetResult(cli, CLIS_TOOFEW);
+			VCLI_Out(cli, "Too few arguments\n");
+			return;
+	}
+
+	(void)priv;
+	if (!mcf_find_no_vcl(cli, av[i]))
+		return;
+
+	vp = mgt_new_vcl(cli, av[i], NULL, &av[i+1], state, 0);
+	if (vp != NULL && !MCH_Running())
+		VCLI_Out(cli, "VCL compiled.\n");
+}
 
 static void v_matchproto_(cli_func_t)
 mcf_vcl_state(struct cli *cli, const char * const *av, void *priv)
@@ -1093,6 +1136,7 @@ mgt_vcl_poker(const struct vev *e, int what)
 
 static struct cli_proto cli_vcl[] = {
 	{ CLICMD_VCL_LOAD,		"", mcf_vcl_load },
+	{ CLICMD_VCL_LOAD_FILES,	"", mcf_vcl_load_files },
 	{ CLICMD_VCL_INLINE,		"", mcf_vcl_inline },
 	{ CLICMD_VCL_USE,		"", mcf_vcl_use },
 	{ CLICMD_VCL_STATE,		"", mcf_vcl_state },

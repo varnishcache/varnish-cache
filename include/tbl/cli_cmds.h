@@ -78,6 +78,16 @@ CLI_CMD(VCL_LOAD,
 	2, 3
 )
 
+CLI_CMD(VCL_LOAD_FILES,
+	"vcl.load_files",
+	"vcl.load_files [-s auto|cold|warm] <configname> <filename1> [filename2, ...]",
+	"Compile and load multiple VCL files under the name provided.",
+	"  When multiple files are specified, they are parsed in the order"
+	"  they were provided and treated as if they were concatenated and merged into"
+	"  a single vcl file.",
+	2, -1
+)
+
 CLI_CMD(VCL_INLINE,
 	"vcl.inline",
 	"vcl.inline <configname> <quoted_VCLstring> [auto|cold|warm]",

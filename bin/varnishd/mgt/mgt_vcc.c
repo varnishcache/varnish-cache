@@ -56,7 +56,7 @@ struct vcc_priv {
 	unsigned	magic;
 #define VCC_PRIV_MAGIC	0x70080cb8
 	const char	*vclsrc;
-	const char	*vclsrcfile;
+	const char * const *vclsrcfiles;
 	struct vsb	*dir;
 	struct vsb	*csrcfile;
 	struct vsb	*libfile;
@@ -132,7 +132,7 @@ run_vcc(void *priv)
 	VTAILQ_FOREACH(vpg, &vclhead, list)
 		if (mcf_is_label(vpg))
 			VCC_Predef(vcc, "VCL_VCL", vpg->name);
-	i = VCC_Compile(vcc, &sb, vp->vclsrc, vp->vclsrcfile,
+	i = VCC_Compile(vcc, &sb, vp->vclsrc, vp->vclsrcfiles,
 	    VGC_SRC, VGC_SYM);
 	if (VSB_len(sb))
 		printf("%s", VSB_data(sb));
@@ -347,7 +347,7 @@ mgt_vcc_fini_vp(struct vcc_priv *vp, int leave_lib)
 
 char *
 mgt_VccCompile(struct cli *cli, struct vclprog *vcl, const char *vclname,
-    const char *vclsrc, const char *vclsrcfile, int C_flag)
+    const char *vclsrc, const char * const *vclsrcfiles, int C_flag)
 {
 	struct vcc_priv vp[1];
 	struct vsb *sb;
@@ -361,7 +361,7 @@ mgt_VccCompile(struct cli *cli, struct vclprog *vcl, const char *vclname,
 
 	mgt_vcc_init_vp(vp);
 	vp->vclsrc = vclsrc;
-	vp->vclsrcfile = vclsrcfile;
+	vp->vclsrcfiles = vclsrcfiles;
 
 	/*
 	 * The subdirectory must have a unique name to 100% certain evade

@@ -225,7 +225,7 @@ void STV_Init(void);
 /* mgt_vcc.c */
 void mgt_DumpBuiltin(void);
 char *mgt_VccCompile(struct cli *, struct vclprog *, const char *vclname,
-    const char *vclsrc, const char *vclsrcfile, int C_flag);
+    const char *vclsrc, const char * const *vclsrcfiles, int C_flag);
 
 void mgt_vcl_init(void);
 void mgt_vcl_startup(struct cli *, const char *vclsrc, const char *origin,
