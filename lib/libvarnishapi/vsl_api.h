@@ -31,7 +31,9 @@
  *
  */
 
-#define VSL_FILE_ID			"VSL"
+static const char			vsl_file_id[] = {'V', 'S', 'L', '2'};
+
+#define VSL_FILE_ID			(vsl_file_id)
 
 /*lint -esym(534, vsl_diag) */
 int vsl_diag(struct VSL_data *vsl, const char *fmt, ...) v_printflike_(2, 3);
