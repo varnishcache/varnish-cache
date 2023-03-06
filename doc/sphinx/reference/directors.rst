@@ -123,6 +123,14 @@ references to other directors. They *must* implement a ``release``
 callback which has to release all references to other directors and
 ensure that none are gained after it returns.
 
+Static Directors
+================
+
+As opposed to dynamic backends covered below, directors which are
+guaranteed to have VCL lifetime (that is, they do not get destroyed
+before the VCL goes cold) can call ``VRT_StaticDirector()`` to avoid
+reference counting overhead.
+
 Dynamic Backends
 ================
 
@@ -153,9 +161,8 @@ its VCL, it can be deleted any time with ``VRT_delete_backend``. The
 VCL will delete the remaining backends once discarded, you don't need
 to take care of it.
 
-.. XXX this does not quite work yet because the deleted backend could
-   be referenced, but at least that's where we want to get to. See
-   also https://github.com/varnishcache/varnish-cache/pull/2725
+Reference counting is used to ensure that backends which are no longer
+referenced are destroyed.
 
 Finally, Varnish will take care of event propagation for *all* native backends,
 but dynamic backends can only be created when the VCL is warm. If your backends
