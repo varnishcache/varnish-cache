@@ -104,7 +104,7 @@
 #define VSL_WRAPMARKER	(((uint32_t)SLT__Reserved << 24) | 0x575757) /* "WWW" */
 
 /*
- * The identifiers in shmlogtag are "SLT_" + XML tag.  A script may be run
+ * The identifiers in shmlogtag are "SLT_" + VSL tag.  A script may be run
  * on this file to extract the table rather than handcode it
  */
 #define SLT__MAX 256
