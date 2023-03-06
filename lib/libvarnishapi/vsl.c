@@ -413,8 +413,8 @@ VSL_PrintTransactions(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 FILE*
 VSL_WriteOpen(struct VSL_data *vsl, const char *name, int append, int unbuf)
 {
-	const char head[] = VSL_FILE_ID;
 	FILE* f;
+
 	if (!strcmp(name, "-"))
 		f = stdout;
 	else
@@ -426,7 +426,8 @@ VSL_WriteOpen(struct VSL_data *vsl, const char *name, int append, int unbuf)
 	if (unbuf)
 		setbuf(f, NULL);
 	if (ftell(f) == 0 || f == stdout) {
-		if (fwrite(head, 1, sizeof head, f) != sizeof head) {
+		if (fwrite(VSL_FILE_ID, 1, sizeof VSL_FILE_ID, f) !=
+		    sizeof VSL_FILE_ID) {
 			vsl_diag(vsl, "%s", strerror(errno));
 			(void)fclose(f);
 			return (NULL);
