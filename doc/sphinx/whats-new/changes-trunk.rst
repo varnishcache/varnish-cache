@@ -164,4 +164,12 @@ Custom backend implementations are now in charge of printing headers, which
 avoids duplicates when a custom implementation relied on ``http_*()`` that
 would also log the headers being set up.
 
+The ``VRT_new_backend*()`` functions take an additional backend argument, the
+optional via backend. It can not be a custom backend implementation, but it
+can be a director resolving a native backend.
+
+There is a new ``authority`` field for via backends in ``struct vrt_backend``.
+
+There is a new ``exp_close`` field in ``struct vrt_backend_probe``.
+
 *eof*
