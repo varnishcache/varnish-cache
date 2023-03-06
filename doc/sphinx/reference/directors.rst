@@ -49,6 +49,7 @@ code instead::
         vdi_getip_f                     *getip;
         vdi_finish_f                    *finish;
         vdi_event_f                     *event;
+        vdi_release_f                   *release;
         vdi_destroy_f                   *destroy;
         vdi_panic_f                     *panic;
         vdi_list_f                      *list;
@@ -60,6 +61,7 @@ code instead::
         void                            *priv;
         char                            *vcl_name;
         struct vcldir                   *vdir;
+        struct lock                     *mtx;
     };
 
 A director can be summed up as:
@@ -93,10 +95,10 @@ The fundamental steps towards a director implementation are:
 
 - in your destructor or other finalizer, call ``VRT_DelDirector()``
 
-For forwards compatibility, it is strongly recommended for the last
-step not to destroy the actual director private state, but rather
-implement and declare in ``struct vdi_methods`` a ``destroy``
-callback.
+- implement a ``destroy`` callback to destroy the actual director
+  private state. It will be called when all references to the director
+  are gone, until then the private state must remain intact and
+  ``vdi_methods`` functions callable (but they may return errors).
 
 While vmods can implement functions returning directors,
 :ref:`ref-vmod-vcl-c-objects` are usually a more natural
@@ -116,6 +118,10 @@ director. Directors are walked until a leaf director is found. A leaf director
 doesn't have a ``resolve`` function and is used to actually make the backend
 request, just like the backends you declare in VCL.
 
+*load balancing* directors use ``VRT_Assign_Backend()`` to take
+references to other directors. They *must* implement a ``release``
+callback which has to release all references to other directors and
+ensure that none are gained after it returns.
 
 Dynamic Backends
 ================
