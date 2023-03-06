@@ -405,7 +405,7 @@ workflows:
           name: build_fedora_latest
           dist: fedora
           release: latest
-          make_target: witness
+          make_target: witness.dot
       - build:
           name: build_fedora_rawhide
           dist: fedora
