@@ -91,7 +91,7 @@ CLI_CMD(VCL_INLINE,
 
 CLI_CMD(VCL_STATE,
 	"vcl.state",
-	"vcl.state <configname> [auto|cold|warm]",
+	"vcl.state <configname> auto|cold|warm",
 	"  Force the state of the named configuration.",
 	"",
 	2, 2
