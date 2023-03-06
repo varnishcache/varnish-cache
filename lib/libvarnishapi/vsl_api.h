@@ -31,7 +31,7 @@
  *
  */
 
-static const char			vsl_file_id[] = {'V', 'S', 'L', '2'};
+extern const char			vsl_file_id[4];
 
 #define VSL_FILE_ID			(vsl_file_id)
 

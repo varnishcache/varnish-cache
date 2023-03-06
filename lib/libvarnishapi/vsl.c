@@ -51,6 +51,8 @@
 
 /*--------------------------------------------------------------------*/
 
+const char			vsl_file_id[] = {'V', 'S', 'L', '2'};
+
 const char * const VSL_tags[SLT__MAX] = {
 #  define SLTM(foo,flags,sdesc,ldesc)       [SLT_##foo] = #foo,
 #  include "tbl/vsl_tags.h"
