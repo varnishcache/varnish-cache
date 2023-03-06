@@ -72,6 +72,12 @@ Varnish Cache NEXT (2023-03-15)
 
     ``debug.xid 20000000000``
 
+* Consequently, VSL clients (log processing tools) are now
+  incompatible with logs and in-memory data written by previous
+  versions, and vice versa.
+
+* Unused log tags (SLTs) have been removed.
+
 * The ``debug.xid`` CLI command now sets the next XID to be used,
   rather than "one less than the next XID to be used"
 

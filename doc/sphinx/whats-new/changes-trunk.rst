@@ -111,7 +111,7 @@ varnishlog
 The in-memory and on-disk format of VSL records changed to allow 64bit VXID
 numbers. The new binary format is not compatible with previous versions, and
 log dumps performed with a previous Varnish release are no longer readable
-from now on.
+from now on. Consequently, unused log tags have been removed.
 
 The VXID range is limited to ``VRT_INTEGER`` to fit in VCL the variables
 ``req.xid``, ``bereq.xid`` and ``sess.xid``.
