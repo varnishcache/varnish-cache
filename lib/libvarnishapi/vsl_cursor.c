@@ -527,7 +527,7 @@ VSL_CursorFile(struct VSL_data *vsl, const char *name, unsigned options)
 	struct vslc_file *c;
 	int fd;
 	int close_fd = 0;
-	char buf[] = VSL_FILE_ID;
+	char buf[sizeof VSL_FILE_ID];
 	ssize_t i;
 
 	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
