@@ -81,7 +81,7 @@ gcov_digest:
 witness.dot: all
 	$(MAKE) check AM_VTC_LOG_FLAGS=-pdebug=+witness
 	$(AM_V_GEN) $(srcdir)/tools/witness.sh witness.dot bin/varnishtest/ \
-		lib/libvmod_*/
+		vmod/
 
 .dot.svg:
 	$(AM_V_GEN) $(DOT) -Tsvg $< >$@
