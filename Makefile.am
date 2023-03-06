@@ -84,19 +84,8 @@ witness.dot: all
 		lib/libvmod_*/
 
 .dot.svg:
-if ! HAVE_DOT
-	@echo ==================================================
-	@echo You need graphviz installed to generate svg output
-	@echo ==================================================
-	@false
-else
 	$(AM_V_GEN) $(DOT) -Tsvg $< >$@
-endif
 
-if HAVE_DOT
 witness: witness.svg
-else
-witness: witness.dot
-endif
 
 .PHONY: cscope witness.dot
