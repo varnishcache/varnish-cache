@@ -89,11 +89,11 @@ vmod_random_resolve(VRT_CTX, VCL_BACKEND dir)
 static void v_matchproto_(vdi_release_f)
 vmod_random_release(VCL_BACKEND dir)
 {
-	struct vmod_directors_random *random;
+	struct vmod_directors_random *rr;
 
 	CHECK_OBJ_NOTNULL(dir, DIRECTOR_MAGIC);
-	CAST_OBJ_NOTNULL(random, dir->priv, VMOD_DIRECTORS_RANDOM_MAGIC);
-	vdir_release(random->vd);
+	CAST_OBJ_NOTNULL(rr, dir->priv, VMOD_DIRECTORS_RANDOM_MAGIC);
+	vdir_release(rr->vd);
 }
 
 static void v_matchproto_(vdi_destroy_f)
