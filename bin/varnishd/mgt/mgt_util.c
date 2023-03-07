@@ -172,7 +172,7 @@ MGT_Complain(const char *loud, const char *fmt, ...)
 	else
 		WRONG("Wrong complaint loudness");
 
-	if (complain_to_stderr && loud != C_CLI)
+	if (loud != C_CLI && (complain_to_stderr || loud != C_DEBUG))
 		fprintf(stderr, "%s %s\n", loud, VSB_data(vsb));
 
 	if (!MGT_DO_DEBUG(DBG_VTC_MODE))

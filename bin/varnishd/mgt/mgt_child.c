@@ -233,12 +233,14 @@ MCH_Fd_Inherit(int fd, const char *what)
  * Listen to stdout+stderr from the child
  */
 
+static const char *whining_child = C_ERR;
+
 static int v_matchproto_(vlu_f)
 child_line(void *priv, const char *p)
 {
 	(void)priv;
 
-	MGT_Complain(C_INFO, "Child (%jd) said %s", (intmax_t)child_pid, p);
+	MGT_Complain(whining_child, "Child (%jd) said %s", (intmax_t)child_pid, p);
 	return (0);
 }
 
@@ -435,6 +437,7 @@ mgt_launch_child(struct cli *cli)
 		assert(u == CLIS_OK);
 		fprintf(stderr, "Child launched OK\n");
 	}
+	whining_child = C_INFO;
 
 	AZ(ev_listen);
 	e = VEV_Alloc();
