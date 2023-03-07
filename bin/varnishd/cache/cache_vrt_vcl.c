@@ -312,7 +312,7 @@ VRT_Assign_Backend(VCL_BACKEND *dst, VCL_BACKEND src)
 		vdir = (*dst)->vdir;
 		CHECK_OBJ_NOTNULL(vdir, VCLDIR_MAGIC);
 		if (!(vdir->flags & VDIR_FLG_NOREFCNT))
-			vcldir_deref(vdir);
+			(void)vcldir_deref(vdir);
 	}
 	if (src != NULL) {
 		vdir = src->vdir;
