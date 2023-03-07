@@ -1038,8 +1038,8 @@ vtx_synth_rec(struct vtx *vtx, unsigned tag, const char *fmt, ...)
 	ALLOC_OBJ(synth, SYNTH_MAGIC);
 	AN(synth);
 
-	buf = (char *)&synth->data[VSL_OVERHEAD];
-	buflen = sizeof (synth->data) - VSL_OVERHEAD * sizeof (uint32_t);
+	buf = VSL_DATA(synth->data);
+	buflen = sizeof(synth->data) - VSL_BYTES(VSL_OVERHEAD);
 	va_start(ap, fmt);
 	l = vsnprintf(buf, buflen, fmt, ap);
 	assert(l >= 0);
