@@ -93,7 +93,7 @@ struct synth {
 
 	VTAILQ_ENTRY(synth)	list;
 	size_t			offset;
-	uint32_t		data[VSL_OVERHEAD + 64 / sizeof (uint32_t)];
+	uint32_t		data[VSL_OVERHEAD + VSL_WORDS(64)];
 };
 VTAILQ_HEAD(synthhead, synth);
 
