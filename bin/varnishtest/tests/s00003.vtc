@@ -18,6 +18,7 @@ server s1 {
 
 varnish v1 \
 	-arg "-sTransient=file,${tmpdir}/_.file,10m" \
+	-arg "-sdir=file,${tmpdir}/,10m" \
 	-vcl+backend {
 		sub vcl_backend_response {
 			set beresp.do_stream = false;
@@ -39,3 +40,20 @@ client c1 {
 	rxresp
 	expect resp.bodylen == 262
 } -run
+
+varnish v1 -vsl_catchup
+
+varnish v1 -cliok "ban obj.http.date ~ ."
+
+process p1 {
+	varnishd -sTransient=file,${tmpdir}/foo,xxx -blocalhost -a:0 -n ${tmpdir} 2>&1
+} -expect-exit 255 -dump -start -expect-text 0 0 "Invalid number" -wait -screen_dump
+
+process p1 {
+	varnishd -sTransient=file,${tmpdir}/foo,10M,xxx -blocalhost -a:0 -n ${tmpdir} 2>&1
+} -expect-exit 255 -dump -start -expect-text 0 0 "granularity" -wait -screen_dump
+
+process p1 {
+	varnishd -sTransient=file,${tmpdir}/foo,10m,,foo -blocalhost -a:0 -n ${tmpdir} 2>&1
+} -expect-exit 255 -dump -start -expect-text 0 0 "invalid advice" -wait
+
