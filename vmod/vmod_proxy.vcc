@@ -45,6 +45,8 @@ Example::
 
 	set req.http.alpn = proxy.alpn();
 
+$Restrict client
+
 $Function STRING authority()
 
 Extract authority attribute. This corresponds to SNI from a TLS
@@ -53,6 +55,8 @@ connection.
 Example::
 
 	set req.http.authority = proxy.authority();
+
+$Restrict client
 
 $Function BOOL is_ssl()
 
@@ -64,15 +68,21 @@ Example::
 		set req.http.ssl-version = proxy.ssl_version();
 	}
 
+$Restrict client
+
 $Function BOOL client_has_cert_sess()
 
 Report if the client provided a certificate at least once over the TLS
 session this connection belongs to.
 
+$Restrict client
+
 $Function BOOL client_has_cert_conn()
 
 Report if the client provided a certificate over the current
 connection.
+
+$Restrict client
 
 $Function INT ssl_verify_result()
 
@@ -86,6 +96,8 @@ Example::
 		set req.http.ssl-verify = "ok";
 	}
 
+$Restrict client
+
 $Function STRING ssl_version()
 
 Extract SSL version attribute.
@@ -94,12 +106,16 @@ Example::
 
 	set req.http.ssl-version = proxy.ssl_version();
 
+$Restrict client
+
 $Function STRING client_cert_cn()
 
 Extract the common name attribute of the client certificate's.
 
 Example::
 	set req.http.cert-cn = proxy.client_cert_cn();
+
+$Restrict client
 
 $Function STRING ssl_cipher()
 
@@ -109,6 +125,8 @@ Example::
 
 	set req.http.ssl-cipher = proxy.ssl_cipher();
 
+$Restrict client
+
 $Function STRING cert_sign()
 
 Extract the certificate signature algorithm attribute.
@@ -117,6 +135,8 @@ Example::
 
 	set req.http.cert-sign = proxy.cert_sign();
 
+$Restrict client
+
 $Function STRING cert_key()
 
 Extract the certificate key algorithm attribute.
@@ -124,6 +144,8 @@ Extract the certificate key algorithm attribute.
 Example::
 
 	set req.http.cert-key = proxy.cert_key();
+
+$Restrict client
 
 SEE ALSO
 ========
