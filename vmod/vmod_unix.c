@@ -49,9 +49,6 @@
 #define VERR(ctx, fmt, ...) \
 	VSLb((ctx)->vsl, SLT_VCL_Error, "vmod unix error: " fmt, __VA_ARGS__)
 
-#define FAILNOINIT(ctx) \
-	FAIL((ctx), "may not be called in vcl_init or vcl_fini")
-
 #define ERRNOTUDS(ctx) \
 	ERR((ctx), "not listening on a Unix domain socket")
 
@@ -93,10 +90,7 @@ vmod_##func(VRT_CTX)					\
 	int ret;					\
 							\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);		\
-	if ((ctx->method & VCL_MET_TASK_H) != 0) {	\
-		FAILNOINIT(ctx);			\
-		return (-1);				\
-	}						\
+	AZ(ctx->method & VCL_MET_TASK_H);	\
 							\
 	sp = get_sp(ctx);				\
 	if (!sp->listen_sock->uds) {			\
