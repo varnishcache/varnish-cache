@@ -48,12 +48,7 @@
 VCL_BACKEND
 VPFX(lookup)(VRT_CTX, VCL_STRING name)
 {
-	if ((ctx->method & VCL_MET_TASK_H) == 0) {
-		VRT_fail(ctx,
-		    "lookup() may only be called from vcl_init / vcl_fini");
-		return (NULL);
-	}
-
+	AN(ctx->method & VCL_MET_TASK_H);
 	return (VRT_LookupDirector(ctx, name));
 }
 

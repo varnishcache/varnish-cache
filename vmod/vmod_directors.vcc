@@ -650,7 +650,7 @@ Reset the parameter set to default values as documented for
 * backend context and in ``vcl_pipe {}``, resets the parameter set for
   this backend request to the VCL defaults
 
-This method may not be used in client context other than ``vcl_pipe {}``.
+$Restrict vcl_pipe backend housekeeping
 
 $Method VOID .set(
 	[ ENUM {HASH, URL, KEY, BLOB} by ],
@@ -670,7 +670,7 @@ Change the given parameters of a parameter set as documented for
   for this backend request, keeping the defaults set for this VCL for
   unspecified arguments.
 
-This method may not be used in client context other than ``vcl_pipe {}``.
+$Restrict vcl_pipe backend housekeeping
 
 $Method STRING .get_by()
 
@@ -706,16 +706,16 @@ shard director using this parameter object would use. See
 
 $Method BLOB .use()
 
-This method may only be used in backend context and in ``vcl_pipe {}``.
-
 For use with the *param* argument of `xshard.backend()`_
 to associate this shard parameter set with a shard director.
+
+$Restrict vcl_pipe backend housekeeping
 
 $Function BACKEND lookup(STRING)
 
 Lookup a backend by its name.
 
-This function can only be used from ``vcl_init{}`` and  ``vcl_fini{}``.
+$Restrict housekeeping
 
 ACKNOWLEDGEMENTS
 ================
