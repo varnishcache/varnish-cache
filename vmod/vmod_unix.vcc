@@ -67,17 +67,25 @@ $Function STRING user()
 
 Return the user name of the peer process owner.
 
+$Restrict client backend
+
 $Function STRING group()
 
 Return the group name of the peer process owner.
+
+$Restrict client backend
 
 $Function INT uid()
 
 Return the numeric user id of the peer process owner.
 
+$Restrict client backend
+
 $Function INT gid()
 
 Return the numeric group id of the peer process owner.
+
+$Restrict client backend
 
 ERRORS
 ======
