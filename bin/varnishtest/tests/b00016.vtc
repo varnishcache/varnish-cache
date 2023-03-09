@@ -9,9 +9,6 @@ varnish v1 -vcl+backend {
 	import directors;
 
 	sub vcl_recv {
-		if (req.url == "/lookup") {
-			set req.http.foo = directors.lookup("s1");
-		}
 		return (pass);
 	}
 
@@ -24,10 +21,6 @@ client c1 {
 	txreq -url "/"
 	rxresp
 	expect resp.http.X-Backend-Name == "s1"
-	txreq -url "/lookup"
-	rxresp
-	expect resp.status == 503
-	expect resp.reason == "VCL failed"
 } -run
 
 varnish v1 -vcl+backend {
@@ -55,3 +48,17 @@ client c1 {
 	expect resp.http.X-Director-Name == "bar"
 	expect resp.http.X-Backend-Name == "s1"
 } -run
+
+varnish v1 -errvcl "Not available in subroutine 'vcl_recv'" {
+	import directors;
+
+	backend dummy None;
+
+	sub vcl_recv {
+		if (req.url == "/lookup") {
+			set req.http.foo = directors.lookup("s1");
+		}
+		return (pass);
+	}
+
+}
