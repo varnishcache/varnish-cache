@@ -27,3 +27,43 @@ client c1 {
 	} -run
 
 } -run
+
+client c1 {
+	stream 3 {
+		txreq -noadd -hdr ":authority" "foo.com" -hdr ":path" "*a" -hdr ":scheme" "http" -hdr ":method" "GET"
+		rxrst
+		expect rst.err == PROTOCOL_ERROR
+	} -run
+} -run
+
+client c1 {
+	stream 1 {
+		txreq -noadd -hdr ":authority" "foo.com" -hdr ":path" "*" -hdr ":scheme" "http" -hdr ":method" "GET"
+		rxrst
+		expect rst.err == PROTOCOL_ERROR
+	} -run
+} -run
+
+client c1 {
+	stream 1 {
+		txreq -noadd -hdr ":authority" "foo.com" -hdr ":path" "*" -hdr ":scheme" "http" -hdr ":method" "OPTIONS"
+		rxresp
+		expect resp.status == 200
+	} -run
+} -run
+
+client c1 {
+	stream 1 {
+		txreq -noadd -hdr ":authority" "foo.com" -hdr ":path" "*" -hdr ":scheme" "http" -hdr ":method" "OPTIONs"
+		rxrst
+		expect rst.err == PROTOCOL_ERROR
+	} -run
+} -run
+
+client c1 {
+	stream 1 {
+		txreq -noadd -hdr ":authority" "foo.com" -hdr ":path" "*" -hdr ":scheme" "http" -hdr ":method" "OPTIONSx"
+		rxrst
+		expect rst.err == PROTOCOL_ERROR
+	} -run
+} -run

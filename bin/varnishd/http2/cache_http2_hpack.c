@@ -135,8 +135,9 @@ h2h_addhdr(struct h2h_decode *d, struct http *hp, char *b, size_t namelen,
 			disallow_empty = 1;
 
 			// rfc7540,l,3060,3071
-			if ((len > 0 && *b != '/') ||
-			    (len > 1 && *(b+1) == '/')) {
+			if (((len > 0 && *b != '/') ||
+			    (len > 1 && *(b+1) == '/')) &&
+			    (strncmp(b, "*", len) != 0)) {
 				VSLb(hp->vsl, SLT_BogoHeader,
 				    "Illegal :path pseudo-header %.*s",
 				    (int)len, b);
