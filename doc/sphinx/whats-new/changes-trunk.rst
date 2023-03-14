@@ -32,25 +32,47 @@ from filling up storage too fast at the expense of cacheable resources. When
 transit buffer is enabled, a client request will effectively hold its backend
 connection open until the client response delivery completes.
 
+ESI processing changes
+----------------------
+
+Response status codes other than 200 and 204 are now considered errors for ESI
+fragments.
+
+Previously, any ``ESI:include`` object would be included, no matter what
+the status of it were, 200, 503, didn't matter.
+
+From now on, by default, only objects with 200 and 204 status will be
+included and any other status code will fail the parent ESI request.
+
+If objects with other status should be delivered, they should have
+their status changed to 200 in VCL, for instance in ``sub
+vcl_backend_error{}``, ``vcl_synth{}`` or ``vcl_deliver{}``.
+
+If ``param.set feature +esi_include_onerror`` is used, and the
+``<esi:include …>`` tag has a ``onerror="continue"`` attribute, any
+and all ESI:include objects will be delivered, no matter what their
+status might be, and not even a partial delivery of them will fail the
+parent ESI request.  To be used with great caution.
+
+
 Other changes in varnishd
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In addition to classic Unix-domain sockets, abstract sockets can now be used
-on Linux. Instead of an absolute path, the syntax ``-a @name`` can be used to
-bind the abstract socket called ``name``.
+In addition to classic Unix-domain sockets, Varnish now supports
+abstract sockets. If the operating system supports them, as does any
+fairly recent Linux kernel, abstract sockets can be specified using
+the commonplace ``@`` notation for accept sockets, e.g.::
 
-Weak ``Last-Modified`` headers are no longer candidates for revalidation. This
-means that a subsequent fetch will not, when such a stale object is available,
-include an ``If-Modified-Since`` header. A weak ``Last-Modified`` header does
-not prevent ``Etag`` revalidation.
+    varnishd -a @kandinsky
+
+Weak ``Last-Modified`` headers whose timestamp lies within one second
+of the corresponding ``Date`` header are no longer candidates for
+revalidation. This means that a subsequent fetch will not, when a
+stale object is available, include an ``If-Modified-Since`` header. A
+weak ``Last-Modified`` header does not prevent ``Etag`` revalidation.
 
 A cache hit on an object being streamed no longer prevents delivery of partial
 responses (status code 206) to range requests.
-
-Response status codes other than 200 and 204 are now considered errors for ESI
-fragments. The default behavior was changed, errors are no longer delivered by
-default. The feature flag ``esi_include_onerror`` can be raised to allow a
-backend to specify whether to continue.
 
 Changes to VCL
 ==============
@@ -70,7 +92,7 @@ variable.
 Other changes to VCL
 ~~~~~~~~~~~~~~~~~~~~
 
-Backends have a new ``.via`` attribute referencing another backend::
+Backends have a new ``.via`` attribute optionally referencing another backend::
 
     backend detour {
         .host = "...";
@@ -88,8 +110,8 @@ define an authority TLV in the PROXYv2 header.
 
 Backends can connect to abstract sockets on linux::
 
-    backend abstract {
-        .path = "@name";
+    backend miro {
+      .path = "@miro";
     }
 
 This is the same syntax as the ``varnishd -a`` command line option.
@@ -108,10 +130,11 @@ varnishlog
 
 **XXX changes concerning varnishlog(1) and/or vsl(7)**
 
-The in-memory and on-disk format of VSL records changed to allow 64bit VXID
-numbers. The new binary format is not compatible with previous versions, and
-log dumps performed with a previous Varnish release are no longer readable
-from now on. Consequently, unused log tags have been removed.
+The in-memory and on-disk format of VSL records changed to allow 64bit
+VXID numbers. The new binary format is **not compatible** with
+previous versions, and log dumps performed with a previous Varnish
+release are no longer readable from now on. Consequently, unused log
+tags have been removed.
 
 The VXID range is limited to ``VRT_INTEGER`` to fit in VCL the variables
 ``req.xid``, ``bereq.xid`` and ``sess.xid``.
@@ -124,10 +147,8 @@ varnishadm
 
 **XXX changes concerning varnishadm(1) and/or varnish-cli(7)**
 
-The ``debug.xid`` command generally used by ``varnishtest`` used to set up the
-current VXID. As the intent usually is to set up the next VXID, this forced to
-set an off-by-one value. To simplify its usage it now sets up the next VXID
-directly.
+The ``debug.xid`` command generally used by ``varnishtest`` now sets
+up the next VXID directly.
 
 varnishstat
 ===========
