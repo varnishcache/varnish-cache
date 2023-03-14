@@ -1067,8 +1067,12 @@ beresp.transit_buffer
 
 	Writable from: vcl_backend_response
 
+	Default: ``transit_buffer`` parameter, see :ref:`varnishd(1)`.
+
 	The maximum number of bytes the client can be ahead of the
-	backend during a streaming pass if ``beresp`` is uncacheable.
+	backend during a streaming pass if ``beresp`` is
+	uncacheable. See also ``transit_buffer`` parameter
+	documentation in :ref:`varnishd(1)`.
 
 
 beresp.ttl

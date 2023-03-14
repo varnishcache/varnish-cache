@@ -960,13 +960,21 @@ PARAM_SIMPLE(
 	/* def */	"0k",
 	/* units */	"bytes",
 	/* descr */
-	"The amount of buffer allowed through Varnish for uncacheable "
-	"backend streaming fetches. Zero means that no buffering is "
-	"done and the object is fetched as fast as possible.\n\n"
-	"When a client is slow, this can prevent large uncacheable objects "
-	"from being stored indefinitely when the intent is to simply stream "
-	"them to the client. As a result, a slow client transaction holds "
-	"onto a backend connection until the end of the delivery."
+
+	"The number of bytes which Varnish buffers for uncacheable "
+	"backend streaming fetches - in other words, how many bytes "
+	"Varnish reads from the backend ahead of what has been sent to "
+	"the client.\n"
+	"A zero value means no limit, the object is fetched as fast as "
+	"possible.\n\n"
+	"When dealing with slow clients, setting this parameter to "
+	"non-zero can prevent large uncacheable objects from being "
+	"stored in full when the intent is to simply stream them to the "
+	"client. As a result, a slow client transaction holds onto a "
+	"backend connection until the end of the delivery.\n\n"
+	"This parameter is the default to the VCL variable "
+	"``beresp.transit_buffer``, which can be used to control the "
+	"transit buffer per backend request."
 )
 
 PARAM_SIMPLE(
