@@ -35,25 +35,6 @@ release process.
 Varnish Cache NEXT (2023-03-15)
 ===============================
 
-* Do not ESI:include failed objects unless instructed to.
-
-  Previously, any ESI:include object would be included, no matter
-  what the status of it were, 200, 503, didn't matter.
-
-  From now on, by default, only objects with 200 and 204 status
-  will be included and any other status code will fail the parent
-  ESI request.
-
-  If objects with other status should be delivered, they should
-  have their status changed to 200 in VCL, for instance in
-  ``sub vcl_backend_error{}``, ``vcl_synth{}`` or ``vcl_deliver{}``.
-
-  If ``param.set feature +esi_include_onerror`` is used, and the
-  ``<esi:include …>`` tag has a ``onerror="continue"`` attribute,
-  any and all ESI:include objects will be delivered, no matter what
-  their status might be, and not even a partial delivery of them
-  will fail the parent ESI request.  To be used with great caution.
-
 * The macro ``WS_TASK_ALLOC_OBJ`` as been added to handle the common
   case of allocating mini objects on a workspace.
 
@@ -85,6 +66,19 @@ Varnish Cache NEXT (2023-03-15)
   have been changed to return or take pointers to
   ``const``. ``VSA_free()`` has been added.
 
+* Processing of Range requests has been improved: Previously, varnish
+  would send a 200 response with the full body when it could not
+  reliably determine (yet) the object size during streaming.
+
+.. `RFC9110`_ : https://httpwg.org/specs/rfc9110.html#field.content-range
+
+  Now a 206 response is sent even in this case (for HTTP/1.1 as
+  chunked encoding) with ``*`` in place of the ``complete-length`` as
+  per `RFC9110`_.
+
+* The ``debug.xid`` CLI command now sets the next XID to be used,
+  rather than "one less than the next XID to be used"
+
 * VXIDs are 64 bit now and the binary format of SHM and raw saved
   VSL files has changed as a consequence.
 
@@ -107,20 +101,24 @@ Varnish Cache NEXT (2023-03-15)
   incompatible with logs and in-memory data written by previous
   versions, and vice versa.
 
-* Unused log tags (SLTs) have been removed.
+* Do not ESI:include failed objects unless instructed to.
 
-.. `RFC9110`_ : https://httpwg.org/specs/rfc9110.html#field.content-range
+  Previously, any ESI:include object would be included, no matter
+  what the status of it were, 200, 503, didn't matter.
 
-* Processing of Range requests has been improved: Previously, varnish
-  would send a 200 response with the full body when it could not
-  reliably determine (yet) the object size during streaming.
+  From now on, by default, only objects with 200 and 204 status
+  will be included and any other status code will fail the parent
+  ESI request.
 
-  Now a 206 response is sent even in this case (for HTTP/1.1 as
-  chunked encoding) with ``*`` in place of the ``complete-length`` as
-  per `RFC9110`_.
+  If objects with other status should be delivered, they should
+  have their status changed to 200 in VCL, for instance in
+  ``sub vcl_backend_error{}``, ``vcl_synth{}`` or ``vcl_deliver{}``.
 
-* The ``debug.xid`` CLI command now sets the next XID to be used,
-  rather than "one less than the next XID to be used"
+  If ``param.set feature +esi_include_onerror`` is used, and the
+  ``<esi:include …>`` tag has a ``onerror="continue"`` attribute,
+  any and all ESI:include objects will be delivered, no matter what
+  their status might be, and not even a partial delivery of them
+  will fail the parent ESI request.  To be used with great caution.
 
 * Backend implementations are in charge of logging their headers.
 
@@ -139,6 +137,8 @@ Varnish Cache NEXT (2023-03-15)
   * The ``VRT_new_backend_clustered()`` and ``VRT_new_backend()``
     signatures have been changed
 
+* Unused log tags (SLTs) have been removed.
+
 * Directors which take and hold references to other directors via
   ``VRT_Assign_Backend()`` (typically any director which has other
   directors as backends) are now expected to implement the new
@@ -152,7 +152,6 @@ Varnish Cache NEXT (2023-03-15)
   particular during VCL discard.
 
 * Handling of the HTTP/2 :path pseudo header has been improved.
-
 
 ================================
 Varnish Cache 7.2.0 (2022-09-15)
