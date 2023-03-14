@@ -54,6 +54,37 @@ Varnish Cache NEXT (2023-03-15)
   their status might be, and not even a partial delivery of them
   will fail the parent ESI request.  To be used with great caution.
 
+* The macro ``WS_TASK_ALLOC_OBJ`` as been added to handle the common
+  case of allocating mini objects on a workspace.
+
+* ``xid`` variables in VCL are now of type ``INT``.
+
+* The new ``beresp.transit_buffer`` variable has been added to VCL,
+  which defaults to the newly added parameter ``transit_buffer``. This
+  variable limits the number of bytes varnish pre-fetches for
+  uncacheable streaming fetches.
+
+* Varnish now supports abstract unix domain sockets. If the operating
+  system supports them, abstract sockets can be specified using the
+  commonplace ``@`` notation for accept sockets, e.g.::
+
+    varnishd -a @kandinsky
+
+  and backend paths, e.g.::
+
+    backend miro {
+      .path = "@miro";
+    }
+
+* For backend requests, the timestamp from the ``Last-Modified``
+  response header is now only used to create an ``If-Modified-Since``
+  conditional ``GET`` request if it is at least one second older than
+  the timestamp from the ``Date`` header.
+
+* Various interfaces of varnish's own socket address abstraction, VSA,
+  have been changed to return or take pointers to
+  ``const``. ``VSA_free()`` has been added.
+
 * VXIDs are 64 bit now and the binary format of SHM and raw saved
   VSL files has changed as a consequence.
 
@@ -78,10 +109,27 @@ Varnish Cache NEXT (2023-03-15)
 
 * Unused log tags (SLTs) have been removed.
 
+.. `RFC9110`_ : https://httpwg.org/specs/rfc9110.html#field.content-range
+
+* Processing of Range requests has been improved: Previously, varnish
+  would send a 200 response with the full body when it could not
+  reliably determine (yet) the object size during streaming.
+
+  Now a 206 response is sent even in this case (for HTTP/1.1 as
+  chunked encoding) with ``*`` in place of the ``complete-length`` as
+  per `RFC9110`_.
+
 * The ``debug.xid`` CLI command now sets the next XID to be used,
   rather than "one less than the next XID to be used"
 
 * Backend implementations are in charge of logging their headers.
+
+* VCL backend ``probe``\ s gained an ``.expect_close`` boolean
+  attribute. By setting to to ``false``, backends which fail to honor
+  ``Connection: close`` can be probed.
+
+  Notice that the probe ``.timeout`` needs to be reached for a probe
+  with ``.expect_close = false`` to return.
 
 * Support for backend connections through a proxy with a PROXY2
   preamble has been added:
@@ -102,6 +150,9 @@ Varnish Cache NEXT (2023-03-15)
 
   Failure to implement this callback can result in deadlocks, in
   particular during VCL discard.
+
+* Handling of the HTTP/2 :path pseudo header has been improved.
+
 
 ================================
 Varnish Cache 7.2.0 (2022-09-15)
