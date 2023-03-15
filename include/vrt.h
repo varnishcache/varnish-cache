@@ -46,7 +46,7 @@
 #  error "include vdef.h before vrt.h"
 #endif
 
-#define VRT_MAJOR_VERSION	16U
+#define VRT_MAJOR_VERSION	17U
 
 #define VRT_MINOR_VERSION	0U
 
@@ -57,7 +57,7 @@
  * Whenever something is deleted or changed in a way which is not
  * binary/load-time compatible, increment MAJOR version
  *
- * NEXT (2023-03-15)
+ * 17.0 (2023-03-15)
  *	VXID is 64 bit
  *	[cache.h] http_GetRange() changed
  *	exp_close added to struct vrt_backend_probe
