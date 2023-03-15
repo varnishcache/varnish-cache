@@ -31,9 +31,9 @@ http://varnish-cache.org/docs/trunk/whats-new/index.html and via
 individual releases. These documents are updated as part of the
 release process.
 
-===============================
-Varnish Cache NEXT (2023-03-15)
-===============================
+================================
+Varnish Cache 7.3.0 (2023-03-15)
+================================
 
 * The macro ``WS_TASK_ALLOC_OBJ`` as been added to handle the common
   case of allocating mini objects on a workspace.
