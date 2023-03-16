@@ -48,8 +48,9 @@ $Function REAL random(REAL lo, REAL hi)
 Returns a random real number between *lo* and *hi*.
 
 This function uses the "testable" random generator in varnishd which
-enables deterministic tests to be run (See ``m00002.vtc``).  This
-function should not be used for cryptographic applications.
+enables deterministic tests to be run (See ``debug.srandom`` CLI
+command).  This function should not be used for cryptographic
+applications.
 
 Example::
 
