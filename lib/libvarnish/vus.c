@@ -86,6 +86,8 @@ VUS_resolver(const char *path, vus_resolved_f *func, void *priv,
 	if (ret)
 		return (ret);
 
+	assert(uds.sun_path[1] != '\0');
+
 	if (func != NULL)
 		ret = func(priv, &uds);
 	return (ret);
@@ -95,7 +97,9 @@ int
 VUS_bind(const struct sockaddr_un *uds, const char **errp)
 {
 	int sd, e;
-	socklen_t sl = sizeof(*uds);
+	socklen_t sl;
+
+	sl = VUS_socklen(uds);
 
 	if (errp != NULL)
 		*errp = NULL;
@@ -133,13 +137,18 @@ VUS_connect(const char *path, int msec)
 	int s, i;
 	struct pollfd fds[1];
 	struct sockaddr_un uds;
-	socklen_t sl = (socklen_t) sizeof(uds);
+	socklen_t sl;
 
 	if (path == NULL)
 		return (-1);
 	i = sun_init(&uds, path, NULL);
 	if (i)
 		return (i);
+
+	assert(uds.sun_path[1] != '\0');
+
+	sl = VUS_socklen(&uds);
+
 	AN(sl);
 
 	s = socket(PF_UNIX, SOCK_STREAM, 0);
@@ -181,4 +190,20 @@ VUS_connect(const char *path, int msec)
 	}
 
 	return (VTCP_connected(s));
+}
+
+socklen_t
+VUS_socklen(const struct sockaddr_un *uds)
+{
+	socklen_t sl;
+	char *p;
+	if (*uds->sun_path)
+		sl = sizeof(*uds);
+	else {
+		p = strchr(uds->sun_path + 1, '\0');
+		assert(p != NULL);
+		sl = p - (const char*)uds;
+	}
+	assert(sl <= sizeof(*uds));
+	return sl;
 }

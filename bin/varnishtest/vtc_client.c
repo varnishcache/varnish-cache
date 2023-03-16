@@ -127,7 +127,9 @@ uds_open(void *priv, const struct sockaddr_un *uds)
 	double *p;
 	int s, i, tmo;
 	struct pollfd fds[1];
-	socklen_t sl = sizeof(*uds);
+	socklen_t sl;
+
+	sl = VUS_socklen(uds);
 
 	AN(priv);
 	AN(uds);
