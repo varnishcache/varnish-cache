@@ -57,6 +57,7 @@
  * Whenever something is deleted or changed in a way which is not
  * binary/load-time compatible, increment MAJOR version
  *
+ * NEXT (2023-09-15)
  * 17.0 (2023-03-15)
  *	VXID is 64 bit
  *	[cache.h] http_GetRange() changed
