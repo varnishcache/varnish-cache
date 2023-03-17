@@ -521,6 +521,8 @@ Example::
 		...
 	}
 
+$Restrict vcl_recv
+
 $Function VOID late_100_continue(BOOL late)
 
 Controls when varnish reacts to an ``Expect: 100-continue`` client
@@ -555,6 +557,8 @@ Example::
 		...
 	 }
 
+$Restrict vcl_recv
+
 $Function VOID set_ip_tos(INT tos)
 
 Sets the Differentiated Services Codepoint (DSCP) / IPv4 Type of
@@ -572,6 +576,8 @@ Example::
 		std.set_ip_tos(0);
 	}
 
+$Restrict client
+
 $Function VOID rollback(HTTP h)
 
 Restores the *h* HTTP headers to their original state.
@@ -579,6 +585,8 @@ Restores the *h* HTTP headers to their original state.
 Example::
 
 	std.rollback(bereq);
+
+$Restrict backend vcl_recv vcl_pass vcl_hash vcl_purge vcl_miss vcl_hit vcl_deliver vcl_synth
 
 $Function BOOL ban(STRING)
 
