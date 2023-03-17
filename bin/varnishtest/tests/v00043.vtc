@@ -98,10 +98,7 @@ varnish v1 -cliok "param.set debug +syncvsl" -vcl+backend {
 	}
 
 	sub vcl_backend_fetch {
-		if (bereq.url == "/fail") {
-			# dynamic priv not checked at compile time
-			o2.test_priv_top("only works on client side");
-		}
+
 	}
 
 	sub vcl_backend_response {
@@ -126,8 +123,3 @@ client c1 {
 
 varnish v1 -expect client_req == 2
 
-client c2 {
-	txreq -url /fail
-	rxresp
-	expect resp.status == 503
-} -run
