@@ -17,9 +17,7 @@ varnish v1 -vcl+backend {
 	import std;
 
 	sub vcl_recv {
-		if (req.url != "/wrong-sub") {
-			set req.http.stored = std.cache_req_body(1KB);
-		}
+		set req.http.stored = std.cache_req_body(1KB);
 		return (pass);
 	}
 
@@ -30,15 +28,6 @@ varnish v1 -vcl+backend {
 		set resp.http.stored = req.http.stored;
 	}
 
-	sub vcl_backend_fetch {
-		if (bereq.url == "/wrong-sub") {
-			if (std.cache_req_body(1KB)) {
-				return (error(200));
-			} else {
-				return (error(503));
-			}
-		}
-	}
 } -start
 
 varnish v1 -cliok "param.set debug +syncvsl"
@@ -63,13 +52,6 @@ client c2 {
 
 logexpect l1 -wait
 
-# wrong calling context
-client c3 {
-	txreq -url "/wrong-sub"
-	rxresp
-	expect resp.status == 503
-} -run
-
 delay .1
 
 varnish v1 -expect MGT.child_died == 0
@@ -92,13 +74,3 @@ client c5 {
 	txreq -req POST -hdr "Content-Length: 1025"
 	expect_close
 } -run
-
-varnish v1 -errvcl {req.body can only be cached in vcl_recv} {
-	import std;
-	backend none none;
-	sub vcl_init {
-		if (! std.cache_req_body(1KB)) {
-			return (fail);
-		}
-	}
-}

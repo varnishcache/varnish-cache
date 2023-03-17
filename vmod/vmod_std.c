@@ -270,12 +270,7 @@ VCL_VOID v_matchproto_(td_std_late_100_continue)
 vmod_late_100_continue(VRT_CTX, VCL_BOOL late)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	if (ctx->method != VCL_MET_RECV) {
-		VSLb(ctx->vsl, SLT_VCL_Error,
-		    "std.late_100_continue() only valid in vcl_recv{}");
-		return;
-	}
-
+	AN(ctx->method & VCL_MET_RECV);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	if (ctx->req->want100cont)
 		ctx->req->late100cont = late;
