@@ -538,3 +538,30 @@ logexpect l1 -v v1 -g raw {
 
 varnish v1 -cliok "vcl.discard vcl10"
 logexpect l1 -wait
+
+#######################################################################
+# Fail vcl - debug.client_ip function restricted to client and backend
+
+varnish v1 -errvcl {Not available in subroutine 'vcl_init'} {
+	import debug;
+
+	sub vcl_init {
+		debug.client_ip();
+    }
+}
+
+#######################################################################
+# Fail vcl - obj.test_priv_top method restricted to client
+
+varnish v1 -errvcl {Not available in subroutine 'vcl_backend_response'} {
+	import debug;
+
+	sub vcl_init {
+		new test_obj = debug.obj("bar");
+	}
+
+	sub vcl_backend_response {
+		set beresp.http.foo = test_obj.test_priv_top();
+	}
+}
+

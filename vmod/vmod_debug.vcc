@@ -123,6 +123,8 @@ $Method STRING .test_priv_top(STRING s="")
 
 Test per-object priv_top via VRT_priv_top()
 
+$Restrict client
+
 $Function VOID rot104()
 
 Try to register the rot52 filter again. This should always fail
@@ -285,6 +287,8 @@ $Function VOID catflap(ENUM {miss, first, last} type)
 
 Test the HSH_Lookup catflap
 
+$Restrict client
+
 $Function BYTES stk()
 
 Return an approximation of the amount of stack used.
@@ -293,6 +297,8 @@ This function is by no means guaranteed to work cross platform and
 should now only be used for diagnostic purposes.
 
 0B is returned if no sensible value can be determined.
+
+$Restrict client
 
 $Function VOID vcl_prevent_cold(PRIV_VCL)
 
@@ -316,6 +322,8 @@ Set the client socket' send buffer size to *sndbuf*. The previous, desired
 and actual values appear in the logs. Not currently implemented for backend
 transactions.
 
+$Restrict client backend
+
 $Function VOID store_ip(IP)
 
 Store an IP address to be later found by ``debug.get_ip()`` in the same
@@ -336,9 +344,13 @@ $Function STRING client_ip()
 
 Get the stringified client ip from the session attr
 
+$Restrict client backend
+
 $Function STRING client_port()
 
 Get the stringified client port from the session attr
+
+$Restrict client backend
 
 $Function VOID fail_task_fini()
 
