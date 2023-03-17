@@ -35,6 +35,7 @@
 	STANZA(FUNC, func, SYM_FUNC) \
 	STANZA(METHOD, method, SYM_METHOD) \
 	STANZA(OBJ, obj, SYM_OBJECT) \
-	STANZA(VMOD, vmod, SYM_NONE)
+	STANZA(VMOD, vmod, SYM_NONE) \
+	STANZA(RESTRICT, restrict, SYM_NONE)
 
 void vcc_VmodSymbols(struct vcc *tl, const struct symbol *sym);

@@ -58,6 +58,7 @@ cscope.*out
 /include/vmod_abi.h
 /include/tbl/vcl_returns.h
 /include/tbl/vrt_stv_var.h
+/include/tbl/vcl_context.h
 /include/vcs_version.h
 /lib/libvcc/vcc_fixed_token.c
 /lib/libvcc/vcc_obj.c

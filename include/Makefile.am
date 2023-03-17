@@ -35,6 +35,7 @@ nobase_pkginclude_HEADERS = \
 	tbl/symbol_kind.h \
 	tbl/vcc_feature_bits.h \
 	tbl/vcl_returns.h \
+	tbl/vcl_context.h \
 	tbl/vcl_states.h \
 	tbl/vhd_fsm.h \
 	tbl/vhd_fsm_funcs.h \

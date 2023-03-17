@@ -264,6 +264,19 @@ managing instances, in particular their memory management. As the
 lifetime of object instances is the vcl, they will usually be
 allocated from the heap.
 
+Functions and Methods scope restriction
+---------------------------------------
+
+The ``$Restrict`` stanza offers a way to limit the scope of the preceding vmod function
+or method, so that they can only be called from restricted vcl call sites.
+It must only appear after a ``$Method`` or ``$Function`` and has the following syntax::
+
+    $Restrict scope1 [scope2 ...]
+
+Possible scope values are:
+backend, client, housekeeping, recv, pipe, pass, hash, purge, miss, hit,
+deliver, synth, backend_fetch, backend_response, backend_error, init, fini
+
 Deprecated Aliases
 ------------------
 
