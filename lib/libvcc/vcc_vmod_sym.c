@@ -108,8 +108,48 @@ alias_sym(struct vcc *tl, const struct symbol *psym, const struct vjsn_val *v)
 }
 
 static void
+func_restrict(struct vcc *tl, struct symbol *sym, vcc_kind_t kind, const struct vjsn_val *v)
+{
+	struct vjsn_val *vv;
+
+	AN(v);
+	AN(sym);
+
+	if (kind != SYM_FUNC && kind != SYM_METHOD)
+		return;
+
+	v = VTAILQ_NEXT(v, list);
+	if (!v || !vjsn_is_array(v))
+		return;
+	vv = VTAILQ_FIRST(&v->children);
+	AN(vv);
+	assert(vjsn_is_string(vv));
+	if (strcmp(vv->value, "$RESTRICT"))
+		return;
+	vv = VTAILQ_NEXT(vv, list);
+	AN(vv);
+	assert(vjsn_is_array(vv));
+	sym->r_methods = 0;
+	vv = VTAILQ_FIRST(&vv->children);
+	unsigned s;
+	while (vv) {
+		s = 0;
+		#define VCL_CTX(l,H) \
+			if (strcmp(vv->value,#l) == 0) s = VCL_MET_##H;
+		#include "tbl/vcl_context.h"
+		if (!s) {
+			VSB_printf(tl->sb, "Error in vmod \"%s\", invalid scope for $Restrict: %s\n",sym->vmod_name, vv->value);
+			tl->err = 1;
+			break;
+		}
+		sym->r_methods |= s;
+		vv = VTAILQ_NEXT(vv,list);
+	}
+}
+
+static void
 func_sym(struct vcc *tl, vcc_kind_t kind, const struct symbol *psym,
-    const struct vjsn_val *v)
+    const struct vjsn_val *v, const struct vjsn_val *vv)
 {
 	struct symbol *sym;
 	struct vsb *buf;
@@ -155,6 +195,7 @@ func_sym(struct vcc *tl, vcc_kind_t kind, const struct symbol *psym,
 	sym->type = VCC_Type(v->value);
 	AN(sym->type);
 	sym->r_methods = VCL_MET_TASK_ALL;
+	func_restrict(tl, sym, kind, vv);
 }
 
 void
@@ -188,8 +229,10 @@ vcc_VmodSymbols(struct vcc *tl, const struct symbol *sym)
 #define STANZA(UU, ll, ss) if (!strcmp(vv1->value, "$" #UU)) kind = ss;
 	STANZA_TBL
 #undef STANZA
-		if (kind != SYM_NONE)
-			func_sym(tl, kind, sym, vv2);
+		if (kind != SYM_NONE) {
+			func_sym(tl, kind, sym, vv2, vv);
+			ERRCHK(tl);
+		}
 	}
 }
 

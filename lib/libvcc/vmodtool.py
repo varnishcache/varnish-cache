@@ -714,6 +714,7 @@ class FunctionStanza(Stanza):
         self.proto = ProtoType(self)
         self.rstlbl = '%s.%s()' % (self.vcc.modname, self.proto.name)
         self.vcc.contents.append(self)
+        self.restrict = None
 
     def cstuff(self, fo, where):
         fo.write(self.proto.cproto(['VRT_CTX'], where))
@@ -721,9 +722,17 @@ class FunctionStanza(Stanza):
     def cstruct(self, fo, define):
         self.fmt_cstruct_proto(fo, self.proto, define)
 
+    def rstdoc(self, fo, unused_man):
+        super().rstdoc(fo,unused_man)
+        if (self.restrict is not None):
+            fo.write("\nRestricted to: ``%s``\n\n" % ', '.join(self.restrict.restrict_toks))
+            self.restrict.rstdoc(fo, unused_man)
+
     def json(self, jl):
         jl.append(["$FUNC", "%s" % self.proto.name])
         self.proto.jsonproto(jl[-1], self.proto.cname())
+        if (self.restrict is not None):
+            self.restrict.json(jl)
 
 
 class ObjectStanza(Stanza):
@@ -830,13 +839,47 @@ class MethodStanza(Stanza):
         self.proto.obj = "x" + self.pfx
         self.rstlbl = 'x%s()' % self.proto.name
         p.methods.append(self)
+        self.restrict = None
 
     def cstruct(self, fo, define):
         self.fmt_cstruct_proto(fo, self.proto, define)
 
+    def rstdoc(self, fo, unused_man):
+        super().rstdoc(fo,unused_man)
+        if (self.restrict is not None):
+            fo.write("\nRestricted to: ``%s``\n\n" % ', '.join(self.restrict.restrict_toks))
+            self.restrict.rstdoc(fo, unused_man)
+
     def json(self, jl):
         jl.append(["$METHOD", self.proto.name[len(self.pfx)+1:]])
         self.proto.jsonproto(jl[-1], self.proto.cname())
+        if (self.restrict is not None):
+            self.restrict.json(jl)
+
+
+class RestrictStanza(Stanza):
+
+    ''' $Restrict scope1 [scope2 ..] '''
+
+    def parse(self):
+        if len(self.toks) < 2:
+            self.syntax()
+        p = self.vcc.contents[-1]
+        if (isinstance(p, ObjectStanza)):
+            if(p.methods):
+                p.methods[-1].restrict = self
+            else:
+                err("$Restrict should be after $Method or $Function", False)
+        elif (isinstance(p, FunctionStanza)):
+            p.restrict = self
+        else :
+            err("$Restrict should be after $Method or $Function", False)
+        self.restrict_toks = self.toks[1:]
+
+    def json(self, jl):
+        tab = ["$RESTRICT"]
+        tab.append(self.restrict_toks)
+        jl.append(tab)
 
 
 class AliasStanza(Stanza):
@@ -898,6 +941,7 @@ DISPATCH = {
     "Method":   MethodStanza,
     "Synopsis": SynopsisStanza,
     "Alias":    AliasStanza,
+    "Restrict": RestrictStanza,
 }
 
 
