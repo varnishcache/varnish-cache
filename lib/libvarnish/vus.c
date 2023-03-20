@@ -196,7 +196,7 @@ socklen_t
 VUS_socklen(const struct sockaddr_un *uds)
 {
 	socklen_t sl;
-	char *p;
+	const char *p;
 	if (*uds->sun_path)
 		sl = sizeof(*uds);
 	else {
