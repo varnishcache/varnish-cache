@@ -35,6 +35,11 @@ release process.
 Varnish Cache NEXT (2023-09-15)
 ===============================
 
+.. _3908: https://github.com/varnishcache/varnish-cache/pull/3908
+
+* The newly introduced abstract socket support was incompatible with
+  other implementations, this has been fixed (3908_).
+
 ================================
 Varnish Cache 7.3.0 (2023-03-15)
 ================================
