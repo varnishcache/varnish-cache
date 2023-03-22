@@ -14,6 +14,9 @@ feature ignore_unknown_macro
 
 feature cmd {haproxy --version 2>&1 | grep -q 'HA-*Proxy version'}
 
+# not sure which haproxy versions work, but 1.0 certainly do not.
+feature cmd "haproxy --version 2>&1 | grep 'HAProxy version [^1][.]'"
+
 server s1 {
 	rxreq
 	txresp -hdr "Foo: bar"
