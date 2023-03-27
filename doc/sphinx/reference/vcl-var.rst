@@ -74,6 +74,79 @@ Assigning an HTTP standardized code to ``resp.status`` or ``beresp.status``
 will also set ``resp.reason`` or ``beresp.reason``  to the corresponding
 status message.
 
+
+304 handling
+~~~~~~~~~~~~
+
+For a 304 response, Varnish core code amends ``beresp`` before calling
+`vcl_backend_response`:
+
+* If the gzip status changed, ``Content-Encoding`` is unset and any
+  ``Etag`` is weakened
+
+* Any headers not present in the 304 response are copied from the
+  existing cache object. ``Content-Length`` is copied if present in
+  the existing cache object and discarded otherwise.
+
+* The status gets set to 200.
+
+`beresp.was_304` marks that this conditional response processing has
+happened.
+
+Note: Backend conditional requests are independent of client
+conditional requests, so clients may receive 304 responses no matter
+if a backend request was conditional.
+
+beresp.ttl / beresp.grace / beresp.keep
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Before calling `vcl_backend_response`, core code sets ``beresp.ttl``
+based on the response status and the response headers ``Age``,
+``Cache-Control`` or ``Expires`` and ``Date`` as follows:
+
+* If present and valid, the value of the ``Age`` header is effectively
+  deduced from all ttl calculations.
+
+* For status codes 200, 203, 204, 300, 301, 304, 404, 410 and 414:
+
+  * If ``Cache-Control`` contains an ``s-maxage`` or ``max-age`` field
+    (in that order of preference), the ttl is set to the respective
+    non-negative value or 0 if negative.
+
+  * Otherwise, if no ``Expires`` header exists, the default ttl is
+    used.
+
+  * Otherwise, if ``Expires`` contains a time stamp before ``Date``,
+    the ttl is set to 0.
+
+  * Otherwise, if no ``Date`` header is present or the ``Date`` header
+    timestamp differs from the local clock by no more than the
+    `clock_skew` parameter, the ttl is set to
+
+    * 0 if ``Expires`` denotes a past timestamp or
+
+    * the difference between the local clock and the ``Expires``
+      header otherwise.
+
+  * Otherwise, the ttl is set to the difference between ``Expires``
+    and ``Date``
+
+* For status codes 302 and 307, the calculation is identical except
+  that the default ttl is not used and -1 is returned if neither
+  ``Cache-Control`` nor ``Expires`` exists.
+
+* For all other status codes, ttl -1 is returned.
+
+``beresp.grace`` defaults to the `default_grace` parameter.
+
+For a non-negative ttl, if ``Cache-Control`` contains a
+``stale-while-revalidate`` field value, ``beresp.grace`` is
+set to that value if non-negative or 0 otherwise.
+
+``beresp.keep`` defaults to the `default_keep` parameter.
+
+
+
 SEE ALSO
 ========
 
