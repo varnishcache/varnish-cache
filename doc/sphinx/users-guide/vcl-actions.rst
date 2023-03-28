@@ -14,7 +14,7 @@ processing in varnish continues as shown in :ref:`reference-states`.
 
 Common actions are documented here, while additional actions specific
 to only one or some subroutines are documented in
-:ref:`vcl-built-in-subs` as well as which action can be used from
+:ref:`vcl-steps(7)` as well as which action can be used from
 which built in subroutine.
 
 common actions for the client and backend side

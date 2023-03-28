@@ -19,6 +19,7 @@ The VCL language
 
 	VCL - The Varnish Configuration Language <vcl>
 	VCL Variables <vcl-var>
+	VCL Steps <vcl-step>
 	VCL backend configuration <vcl-backend>
 	VCL backend health probe <vcl-probe>
 	states.rst

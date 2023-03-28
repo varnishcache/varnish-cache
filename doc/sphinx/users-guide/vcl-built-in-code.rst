@@ -4,7 +4,7 @@ Built-in VCL
 ============
 
 Whenever a VCL program is loaded, the built-in VCL is appended to it. The
-:ref:`vcl-built-in-subs` have a special property, they can appear multiple
+vcl built-in subs (:ref:`vcl_steps`) have a special property, they can appear multiple
 times and the result is concatenation of all built-in subroutines.
 
 For example, let's take the following snippet::

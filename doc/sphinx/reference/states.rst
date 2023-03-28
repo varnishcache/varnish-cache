@@ -18,7 +18,7 @@ state machines. Whenever a state is entered, a C function is called,
 which in turn calls the appropriate Varnish core code functions to
 process the request or response at this stage. For most states, core
 code also calls into a state-specific function compiled from VCL, a
-VCL subroutine (see :ref:`vcl-built-in-subs` ).
+VCL subroutine (see :ref:`vcl_steps`).
 
 As a general guideline, core code aims to prepare objects accessible
 from VCL with good defaults for the most common cases before calling
