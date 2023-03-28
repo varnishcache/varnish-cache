@@ -83,75 +83,40 @@ tokens = {
 #######################################################################
 # Our methods and actions
 
-returns = (
-    ###############################################################
-    # Client side
+returns = []
 
-    ('recv',
-     "C",
-     ('fail', 'synth', 'restart', 'pass', 'pipe', 'hash', 'purge', 'vcl')
-    ),
-    ('pipe',
-     "C",
-     ('fail', 'synth', 'pipe',)
-    ),
-    ('pass',
-     "C",
-     ('fail', 'synth', 'restart', 'fetch',)
-    ),
-    ('hash',
-     "C",
-     ('fail', 'lookup',)
-    ),
-    ('purge',
-     "C",
-     ('fail', 'synth', 'restart',)
-    ),
-    ('miss',
-     "C",
-     ('fail', 'synth', 'restart', 'pass', 'fetch',)
-    ),
-    ('hit',
-     "C",
-     ('fail', 'synth', 'restart', 'pass', 'deliver',)
-    ),
-    ('deliver',
-     "C",
-     ('fail', 'synth', 'restart', 'deliver',)
-    ),
-    ('synth',
-     "C",
-     ('fail', 'restart', 'deliver',)
-    ),
+def parse_subs(ln, c):
+    ctx = ['C', 'B', 'H']
+    rets = []
+    for i in ln[2:]:
+        if (len(i) > 4 and i.startswith('  | ``') and i.endswith('``')):
+            rets.append(i[6:-2].split('(')[0])
+    returns.append((ln[0][4:], ctx[c], rets))
 
-    ###############################################################
-    # Backend-fetch
+def parse_subs_doc(fn):
+    l = []
+    j = -1
+    start = False
+    for i in open(fn):
+        if i.startswith('##########'):
+            j += 1
+            l.append([])
+            start = True
+            continue
+        if start:
+            l[j].append(i.rstrip())
+    for i in range(0, len(l)):
+        for n in range(0, len(l[i])):
+            if len(l[i][n]) < 5 or not l[i][n].startswith("~~~~~"):
+                continue
+            m = n + 1
+            while m < len(l[i]) and (len(l[i][m]) < 5 or not l[i][m].startswith("~~~~~")):
+                m += 1
+            if m != len(l[i]):
+                m -= 2
+            parse_subs(l[i][n-1:m], i)
 
-    ('backend_fetch',
-     "B",
-     ('fail', 'fetch', 'abandon', 'error')
-    ),
-    ('backend_response',
-     "B",
-     ('fail', 'deliver', 'retry', 'abandon', 'pass', 'error')
-    ),
-    ('backend_error',
-     "B",
-     ('fail', 'deliver', 'retry', 'abandon')
-    ),
-
-    ###############################################################
-    # Housekeeping
-
-    ('init',
-     "H",
-     ('ok', 'fail')
-    ),
-    ('fini',
-     "H",
-     ('ok',)
-    ),
-)
+parse_subs_doc(join(srcroot, "doc/sphinx/reference/vcl_step.rst"))
 
 #######################################################################
 # Variables available in sessions
