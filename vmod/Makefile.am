@@ -33,10 +33,10 @@ include $(srcdir)/automake_boilerplate_vtc.am
 # Post-boilerplate tweaks
 #
 
-.vsc.c:
+.vsc.c: $(top_srcdir)/lib/libvsc/vsctool.py
 	$(PYTHON) $(top_srcdir)/lib/libvsc/vsctool.py -c $<
 
-.vsc.h:
+.vsc.h: $(top_srcdir)/lib/libvsc/vsctool.py
 	$(PYTHON) $(top_srcdir)/lib/libvsc/vsctool.py -h $<
 
 EXTRA_DIST += VSC_debug.vsc
