@@ -32,8 +32,11 @@ $(libvmod_blob_la_OBJECTS): vcc_blob_if.h
 
 vcc_blob_if.h vmod_blob.rst vmod_blob.man.rst: vcc_blob_if.c
 
+# A doc-change will not update mtime on the .h and .c files, so a
+# touch(1) is necessary to signal that vmodtool was in fact run.
 vcc_blob_if.c: $(vmodtool) $(srcdir)/vmod_blob.vcc
 	@PYTHON@ $(vmodtool) $(vmodtoolargs_blob) $(srcdir)/vmod_blob.vcc
+	touch vcc_blob_if.c
 
 clean-local: clean-vmod-blob
 

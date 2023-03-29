@@ -76,8 +76,11 @@ $(libvmod_XXX_la_OBJECTS): PFX.h
 
 PFX.h vmod_XXX.rst vmod_XXX.man.rst: PFX.c
 
+# A doc-change will not update mtime on the .h and .c files, so a
+# touch(1) is necessary to signal that vmodtool was in fact run.
 PFX.c: $(vmodtool) $(srcdir)/VCC
 \t@PYTHON@ $(vmodtool) $(vmodtoolargs_XXX) $(srcdir)/VCC
+\ttouch PFX.c
 
 clean-local: clean-vmod-XXX
 
@@ -924,7 +927,15 @@ class vcc():
 
     def commit(self):
         for i in self.commit_files:
-            os.rename(i + ".tmp", i)
+            try:
+                before = open(i, "rb").read()
+            except:
+                before = None
+            after = open(i + ".tmp", "rb").read()
+            if before != after:
+                os.rename(i + ".tmp", i)
+            else:
+                os.remove(i + ".tmp")
 
     def parse(self):
         global inputline
