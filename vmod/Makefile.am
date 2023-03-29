@@ -56,7 +56,7 @@ vmod_debug_symbols_regex = 'Vmod_.*_Data'
 vmodtoolargs_debug = --boilerplate -o vcc_debug_if
 
 # unregister VCC file installation
-dist_noinst_DATA := $(srcdir)/vmod_debug.vcc
+dist_noinst_DATA = $(srcdir)/vmod_debug.vcc
 vmod_debug_vcc =
 
 dist_vcc_DATA = $(vmod_vcc_files)
