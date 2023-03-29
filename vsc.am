@@ -1,0 +1,14 @@
+# Generic rule to generate C code from VSC files. VSC files must be listed
+# in the $(VSC_SRC) variable.
+
+VSC_GEN = $(VSC_SRC:.vsc=.c) $(VSC_SRC:.vsc=.h)
+
+$(VSC_GEN): $(top_srcdir)/lib/libvsc/vsctool.py
+
+.vsc.c:
+	$(AM_V_GEN) $(PYTHON) $(top_srcdir)/lib/libvsc/vsctool.py -ch $<
+
+clean-local: vsc-clean
+
+vsc-clean:
+	rm -f $(VSC_GEN)

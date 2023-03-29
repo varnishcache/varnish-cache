@@ -26,6 +26,7 @@ EXTRA_DIST = \
 	varnishapi.pc.in \
 	varnish.m4 \
 	varnish-legacy.m4 \
+	vsc.am \
 	vtc.am \
 	wflags.py
 

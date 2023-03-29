@@ -2,6 +2,7 @@
 
 TESTS = @VMOD_TESTS@
 
+include $(top_srcdir)/vsc.am
 include $(top_srcdir)/vtc.am
 
 EXTRA_DIST = $(TESTS)
@@ -36,18 +37,9 @@ include $(srcdir)/automake_boilerplate_vtc.am
 # Post-boilerplate tweaks
 #
 
-.vsc.c: $(top_srcdir)/lib/libvsc/vsctool.py
-	$(PYTHON) $(top_srcdir)/lib/libvsc/vsctool.py -c $<
+VSC_SRC = VSC_debug.vsc
 
-.vsc.h: $(top_srcdir)/lib/libvsc/vsctool.py
-	$(PYTHON) $(top_srcdir)/lib/libvsc/vsctool.py -h $<
-
-EXTRA_DIST += VSC_debug.vsc
-nodist_libvmod_debug_la_SOURCES += \
-	VSC_debug.c \
-	VSC_debug.h
-
-vmod_debug.c: VSC_debug.c VSC_debug.h
+libvmod_debug_la_SOURCES += $(VSC_SRC)
 
 # Allow Vmod_wrong*_Data to be exported
 vmod_debug_symbols_regex = 'Vmod_.*_Data'
