@@ -25,19 +25,19 @@ of the following keywords:
 
   |
   | ``fail``
-  |  see :ref:`fail`
+  |  see :ref:`fail` section above
   |
   | ``synth(status code, reason)``
-  |  see :ref:`synth`
+  |  see :ref:`synth` section above
   |
   | ``restart``
-  |  see :ref:`restart`
+  |  see :ref:`restart` section above
   |
   | ``pass``
-  |  see :ref:`pass`
+  |  see :ref:`pass` section above
   |
   | ``pipe``
-  |  see :ref:`pipe`
+  |  see :ref:`pipe` section above
   |
   | ``hash``
   |  Continue processing the object as a potential candidate for
@@ -57,7 +57,7 @@ of the following keywords:
   |  The ``vcl(label)`` return is only valid while the ``req.restarts``
   |  count is zero and if used from the active vcl.
   |
-  |  See the :ref:`ref_cli_vcl_label` command.
+  |  See the :ref:`ref_cli_vcl_label` command in :ref:`varnish-cli(7)`.
 
 .. _vcl_pipe:
 
@@ -76,10 +76,10 @@ of the following keywords:
 
   |
   | ``fail``
-  |  see :ref:`fail`
+  |  see :ref:`fail` section above
   |
   | ``synth(status code, reason)``
-  |  see :ref:`synth`
+  |  see :ref:`synth` section above
   |
   | ``pipe``
   |  Proceed with pipe mode.
@@ -99,13 +99,13 @@ of the following keywords:
 
   |
   | ``fail``
-  |  see :ref:`fail`
+  |  see :ref:`fail` section above
   |
   | ``synth(status code, reason)``
-  |  see :ref:`synth`
+  |  see :ref:`synth` section above
   |
   | ``restart``
-  |  see :ref:`restart`
+  |  see :ref:`restart` section above
   |
   | ``fetch``
   |  Proceed with pass mode - initiate a backend request.
@@ -123,7 +123,7 @@ of the following keywords:
 
   |
   | ``fail``
-  |  see :ref:`fail`
+  |  see  :ref:`fail` section above
   |
   | ``lookup``
   |  Look up the object in cache.
@@ -155,13 +155,13 @@ of the following keywords:
 
   |
   | ``fail``
-  |  see :ref:`fail`
+  |  see :ref:`fail` section above
   |
   | ``synth(status code, reason)``
-  |  see :ref:`synth`
+  |  see :ref:`synth` section above
   |
   | ``restart``
-  |  see :ref:`restart`
+  |  see :ref:`restart` section above
 
 .. _vcl_miss:
 
@@ -180,16 +180,16 @@ of the following keywords:
 
   |
   | ``fail``
-  |  see :ref:`fail`
+  |  see :ref:`fail` section above
   |
   | ``synth(status code, reason)``
-  |  see :ref:`synth`
+  |  see :ref:`synth` section above
   |
   | ``restart``
-  |  see :ref:`restart`
+  |  see :ref:`restart` section above
   |
   | ``pass``
-  |  see :ref:`pass`
+  |  see :ref:`pass` section above
   |
   | ``fetch``
   |  Retrieve the requested object from the backend. Control will
@@ -208,16 +208,16 @@ The `vcl_hit` subroutine may terminate with calling ``return()``
 with one of the following keywords:
 
   | ``fail``
-  |  see :ref:`fail`
+  |  see :ref:`fail` section above
   |
   | ``synth(status code, reason)``
-  |  see :ref:`synth`
+  |  see :ref:`synth` section above
   |
   | ``restart``
-  |  see :ref:`restart`
+  |  see :ref:`restart` section above
   |
   | ``pass``
-  |  see :ref:`pass`
+  |  see :ref:`pass` section above
   |
   | ``deliver``
   |  Deliver the object. If it is stale, a background fetch to refresh
@@ -235,13 +235,13 @@ of the following keywords:
 
   |
   | ``fail``
-  |  see :ref:`fail`
+  |  see :ref:`fail` section above
   |
   | ``synth(status code, reason)``
-  |  see :ref:`synth`
+  |  see :ref:`synth` section above
   |
   | ``restart``
-  |  see :ref:`restart`
+  |  see :ref:`restart` section above
   |
   | ``deliver``
   |  Deliver the object to the client.
@@ -263,10 +263,10 @@ following keywords:
 
   |
   | ``fail``
-  |  see :ref:`fail`
+  |  see :ref:`fail` section above
   |
   | ``restart``
-  |  see :ref:`restart`
+  |  see :ref:`restart` section above
   |
   | ``deliver``
   |  Directly deliver the object defined by `vcl_synth` to the client
@@ -288,10 +288,10 @@ The `vcl_backend_fetch` subroutine may terminate with calling
 
   |
   | ``fail``
-  |  see :ref:`fail`
+  |  see :ref:`fail` section above
   |
   | ``abandon``
-  |  see :ref:`abandon`
+  |  see :ref:`abandon` section above
   |
   | ``fetch``
   |  Fetch the object from the backend.
@@ -342,10 +342,10 @@ The `vcl_backend_response` subroutine may terminate with calling
 
   |
   | ``fail``
-  |  see :ref:`fail`
+  |  see :ref:`fail` section above
   |
   | ``abandon``
-  |  see :ref:`abandon`
+  |  see :ref:`abandon` section above
   |
   | ``deliver``
   |  For a 304 response, create an updated cache object.
@@ -397,10 +397,10 @@ with one of the following keywords:
 
   |
   | ``fail``
-  |  see :ref:`fail`
+  |  see :ref:`fail` section above
   |
   | ``abandon``
-  |  see :ref:`abandon`
+  |  see :ref:`abandon` section above
   |
   | ``deliver``
   |  Deliver and possibly cache the object defined in
