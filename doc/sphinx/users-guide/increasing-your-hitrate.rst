@@ -222,7 +222,7 @@ Cookies coming from the backend
 
 If your backend server sets a cookie using the 'Set-Cookie' header
 Varnish will not cache the page when using the default configuration.
-A `hit-for-miss` object (see :ref:`user-guide-vcl_actions`) is
+A `hit-for-miss` object (see :ref:`vcl_actions`) is
 created.  So, if the backend server acts silly and sets unwanted
 cookies just unset the 'Set-Cookie' header and all should be fine.
 

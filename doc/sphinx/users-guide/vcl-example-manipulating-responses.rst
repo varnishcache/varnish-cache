@@ -21,4 +21,4 @@ matches certain criteria::
 
 
 We also remove any Set-Cookie headers in order to avoid creation of a
-`hit-for-miss` object. See :ref:`user-guide-vcl_actions`.
+`hit-for-miss` object. See :ref:`vcl_actions`.
