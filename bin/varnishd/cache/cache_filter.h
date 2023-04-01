@@ -62,7 +62,7 @@ struct vfp_entry {
 #define VFP_ENTRY_MAGIC		0xbe32a027
 	enum vfp_status		closed;
 	const struct vfp	*vfp;
-	void			*priv1;
+	void			*priv1;	// XXX ambiguous with priv1 in struct vfp
 	ssize_t			priv2;
 	VTAILQ_ENTRY(vfp_entry)	list;
 	uint64_t		calls;
