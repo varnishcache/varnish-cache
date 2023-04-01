@@ -9,7 +9,7 @@
 
 
 local, server, remote and client
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------
 
 These variables describe the network connection between the
 client and varnishd.
@@ -144,7 +144,7 @@ local.socket	``VCL >= 4.1``
 
 
 req and req_top
-~~~~~~~~~~~~~~~
+---------------
 
 These variables describe the present request, and when ESI:include
 requests are being processed, req_top points to the request received
@@ -497,7 +497,7 @@ req_top.url
 
 
 bereq
-~~~~~
+-----
 
 This is the request we send to the backend, it is built from the
 clients ``req.*`` fields by filtering out "per-hop" fields which
@@ -728,7 +728,7 @@ bereq.xid
 
 
 beresp
-~~~~~~
+------
 
 The response received from the backend, one cache misses, the
 store object is built from ``beresp``.
@@ -1121,7 +1121,7 @@ beresp.was_304
 
 
 obj
-~~~
+---
 
 This is the object we found in cache.  It cannot be modified.
 
@@ -1258,7 +1258,7 @@ obj.uncacheable
 
 
 resp
-~~~~
+----
 
 This is the response we send to the client, it is built from either
 ``beresp`` (pass/miss), ``obj`` (hits) or created from whole cloth (synth).
@@ -1418,7 +1418,7 @@ resp.time
 
 
 Special variables
-~~~~~~~~~~~~~~~~~
+-----------------
 
 now
 
@@ -1444,7 +1444,7 @@ now
 	:ref:`std.timed_call()` in :ref:`vmod_std(3)`.
 
 sess
-~~~~
+----
 
 A session corresponds to the "conversation" that Varnish has with a
 single client connection, over which one or more request/response
@@ -1511,7 +1511,7 @@ sess.xid	``VCL >= 4.1``
 
 
 storage
-~~~~~~~
+-------
 
 storage.<name>.free_space
 
