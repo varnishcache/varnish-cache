@@ -29,6 +29,8 @@ With PROXY protocol::
 	CLIENT ------------ PROXY ------------ VARNISHD
 
 
+.. _client.identity:
+
 client.identity
 
 	Type: STRING
@@ -46,6 +48,8 @@ client.identity
 	header.
 
 
+.. _client.ip:
+
 client.ip
 
 	Type: IP
@@ -57,6 +61,8 @@ client.ip
 	or what the PROXY protocol told us.
 
 
+.. _server.hostname:
+
 server.hostname
 
 	Type: STRING
@@ -66,6 +72,8 @@ server.hostname
 	The host name of the server, as returned by the
 	`gethostname(3)` system function.
 
+
+.. _server.identity:
 
 server.identity
 
@@ -79,6 +87,8 @@ server.identity
 	value from `gethostname(3)` system function will be used.
 
 
+.. _server.ip:
+
 server.ip
 
 	Type: IP
@@ -90,6 +100,8 @@ server.ip
 	connection was received, either the same as ``server.ip``
 	or what the PROXY protocol told us.
 
+
+.. _remote.ip:
 
 remote.ip
 
@@ -105,6 +117,8 @@ remote.ip
 	will be ``0.0.0.0:0``
 
 
+.. _local.endpoint:
+
 local.endpoint	``VCL >= 4.1``
 
 	Type: STRING
@@ -115,6 +129,8 @@ local.endpoint	``VCL >= 4.1``
 
 	If the argument was ``-a foo=:81`` this would be ":81"
 
+
+.. _local.ip:
 
 local.ip
 
@@ -128,6 +144,8 @@ local.ip
 	If the connection is a UNIX domain socket, the value
 	will be ``0.0.0.0:0``
 
+
+.. _local.socket:
 
 local.socket	``VCL >= 4.1``
 
@@ -150,6 +168,8 @@ These variables describe the present request, and when ESI:include
 requests are being processed, req_top points to the request received
 from the client.
 
+.. _req:
+
 req
 
 	Type: HTTP
@@ -160,6 +180,8 @@ req
 	The entire request HTTP data structure.
 	Mostly useful for passing to VMODs.
 
+
+.. _req.backend_hint:
 
 req.backend_hint
 
@@ -176,6 +198,8 @@ req.backend_hint
 	When used in string context, returns the name of the director
 	or backend, respectively.
 
+
+.. _req.can_gzip:
 
 req.can_gzip
 
@@ -201,6 +225,8 @@ req.esi	``VCL <= 4.0``
 	in VCL 4.1.
 
 
+.. _req.esi_level:
+
 req.esi_level
 
 	Type: INT
@@ -209,6 +235,8 @@ req.esi_level
 
 	A count of how many levels of ESI requests we're currently at.
 
+
+.. _req.grace:
 
 req.grace
 
@@ -225,6 +253,8 @@ req.grace
 	grace value will be used as the object's grace.
 
 
+.. _req.hash:
+
 req.hash
 
 	Type: BLOB
@@ -236,6 +266,8 @@ req.hash
 	Mostly useful for passing to VMODs, but can also be useful
 	for debugging hit/miss status.
 
+
+.. _req.hash_always_miss:
 
 req.hash_always_miss
 
@@ -254,6 +286,8 @@ req.hash_always_miss
 	existing entries in case the fetch fails.
 
 
+.. _req.hash_ignore_busy:
+
 req.hash_ignore_busy
 
 	Type: BOOL
@@ -269,6 +303,8 @@ req.hash_ignore_busy
 	You only want to do this when you have two server looking
 	up content sideways from each other to avoid deadlocks.
 
+
+.. _req.hash_ignore_vary:
 
 req.hash_ignore_vary
 
@@ -290,6 +326,8 @@ req.hash_ignore_vary
 
 	Use with caution.
 
+
+.. _req.http:
 
 req.http.*
 
@@ -316,6 +354,8 @@ req.http.*
 	quoted syntax is discouraged but available for interoperability.
 
 
+.. _req.is_hitmiss:
+
 req.is_hitmiss
 
 	Type: BOOL
@@ -325,6 +365,8 @@ req.is_hitmiss
 	If this request resulted in a hitmiss
 
 
+.. _req.is_hitpass:
+
 req.is_hitpass
 
 	Type: BOOL
@@ -333,6 +375,8 @@ req.is_hitpass
 
 	If this request resulted in a hitpass
 
+
+.. _req.method:
 
 req.method
 
@@ -357,6 +401,8 @@ req.proto	``VCL <= 4.0``
 	The HTTP protocol version used by the client, usually "HTTP/1.1"
 	or "HTTP/2.0".
 
+.. _req.proto:
+
 req.proto	``VCL >= 4.1``
 
 	Type: STRING
@@ -367,6 +413,8 @@ req.proto	``VCL >= 4.1``
 	or "HTTP/2.0".
 
 
+.. _req.restarts:
+
 req.restarts
 
 	Type: INT
@@ -376,6 +424,8 @@ req.restarts
 
 	A count of how many times this request has been restarted.
 
+
+.. _req.storage:
 
 req.storage
 
@@ -389,6 +439,8 @@ req.storage
 	The storage backend to use to save this request body.
 
 
+.. _req.time:
+
 req.time
 
 	Type: TIME
@@ -399,6 +451,8 @@ req.time
 	across restarts.
 
 
+.. _req.transport:
+
 req.transport
 
 	Type: STRING
@@ -407,6 +461,8 @@ req.transport
 
 	The transport protocol which brought this request.
 
+
+.. _req.ttl:
 
 req.ttl
 
@@ -420,6 +476,8 @@ req.ttl
 	Upper limit on the object age for cache lookups to return hit.
 
 
+.. _req.url:
+
 req.url
 
 	Type: STRING
@@ -432,6 +490,8 @@ req.url
 	The requested URL, for instance "/robots.txt".
 
 
+.. _req.xid:
+
 req.xid
 
 	Type: INT
@@ -440,6 +500,8 @@ req.xid
 
 	Unique ID of this request.
 
+
+.. _req_top.http:
 
 req_top.http.*
 
@@ -453,6 +515,8 @@ req_top.http.*
 	See ``req.http.*`` for general notes.
 
 
+.. _req_top.method:
+
 req_top.method
 
 	Type: STRING
@@ -463,6 +527,8 @@ req_top.method
 	of ESI requests. (e.g. "GET", "HEAD").
 	Identical to req.method in non-ESI requests.
 
+
+.. _req_top.proto:
 
 req_top.proto
 
@@ -475,6 +541,8 @@ req_top.proto
 	Identical to req.proto in non-ESI requests.
 
 
+.. _req_top.time:
+
 req_top.time
 
 	Type: TIME
@@ -484,6 +552,8 @@ req_top.time
 	The time when the top-level request was fully received,
 	remains constant across restarts.
 
+
+.. _req_top.url:
 
 req_top.url
 
@@ -516,6 +586,8 @@ bereq
 	Mostly useful as argument to VMODs.
 
 
+.. _bereq.backend:
+
 bereq.backend
 
 	Type: BACKEND
@@ -531,6 +603,8 @@ bereq.backend
 	When used in string context, returns the name of the director
 	or backend, respectively.
 
+
+.. _bereq.between_bytes_timeout:
 
 bereq.between_bytes_timeout
 
@@ -548,6 +622,8 @@ bereq.between_bytes_timeout
 	backend.  Not available in pipe mode.
 
 
+.. _bereq.body:
+
 bereq.body
 
 	Type: BODY
@@ -557,6 +633,8 @@ bereq.body
 	The request body.
 
 	Unset will also remove ``bereq.http.Content-Length``.
+
+.. _bereq.connect_timeout:
 
 bereq.connect_timeout
 
@@ -574,6 +652,8 @@ bereq.connect_timeout
 	established.
 
 
+.. _bereq.first_byte_timeout:
+
 bereq.first_byte_timeout
 
 	Type: DURATION
@@ -590,6 +670,8 @@ bereq.first_byte_timeout
 	from the backend.  Not available in pipe mode.
 
 
+.. _bereq.hash:
+
 bereq.hash
 
 	Type: BLOB
@@ -598,6 +680,8 @@ bereq.hash
 
 	The hash key of this request, a copy of ``req.hash``.
 
+
+.. _bereq.http:
 
 bereq.http.*
 
@@ -614,6 +698,8 @@ bereq.http.*
 	See ``req.http.*`` for general notes.
 
 
+.. _bereq.is_bgfetch:
+
 bereq.is_bgfetch
 
 	Type: BOOL
@@ -625,6 +711,8 @@ bereq.is_bgfetch
 	a fresh copy.
 
 
+.. _bereq.is_hitmiss:
+
 bereq.is_hitmiss
 
 	Type: BOOL
@@ -634,6 +722,8 @@ bereq.is_hitmiss
 	If this backend request was caused by a hitmiss.
 
 
+.. _bereq.is_hitpass:
+
 bereq.is_hitpass
 
 	Type: BOOL
@@ -642,6 +732,8 @@ bereq.is_hitpass
 
 	If this backend request was caused by a hitpass.
 
+
+.. _bereq.method:
 
 bereq.method
 
@@ -667,6 +759,8 @@ bereq.proto	``VCL <= 4.0``
 	The HTTP protocol version, "HTTP/1.1" unless a pass or pipe
 	request has "HTTP/1.0" in ``req.proto``
 
+.. _bereq.proto:
+
 bereq.proto	``VCL >= 4.1``
 
 	Type: STRING
@@ -677,6 +771,8 @@ bereq.proto	``VCL >= 4.1``
 	request has "HTTP/1.0" in ``req.proto``
 
 
+.. _bereq.retries:
+
 bereq.retries
 
 	Type: INT
@@ -685,6 +781,8 @@ bereq.retries
 
 	A count of how many times this request has been retried.
 
+
+.. _bereq.time:
 
 bereq.time
 
@@ -695,6 +793,8 @@ bereq.time
 	The time when we started preparing the first backend request,
 	remains constant across retries.
 
+
+.. _bereq.uncacheable:
 
 bereq.uncacheable
 
@@ -707,6 +807,8 @@ bereq.uncacheable
 	`pass` in the client side or a hit on an hit-for-pass object.
 
 
+.. _bereq.url:
+
 bereq.url
 
 	Type: STRING
@@ -717,6 +819,8 @@ bereq.url
 
 	The requested URL, copied from ``req.url``
 
+
+.. _bereq.xid:
 
 bereq.xid
 
@@ -742,6 +846,8 @@ beresp
 	The entire backend response HTTP data structure, useful as
 	argument to VMOD functions.
 
+.. _beresp.age:
+
 beresp.age
 
 	Type: DURATION
@@ -752,6 +858,8 @@ beresp.age
 
 	The age of the object.
 
+
+.. _beresp.backend:
 
 beresp.backend
 
@@ -774,6 +882,8 @@ beresp.backend.ip	``VCL <= 4.0``
 	IP of the backend this response was fetched from.
 
 
+.. _beresp.backend.name:
+
 beresp.backend.name
 
 	Type: STRING
@@ -784,6 +894,8 @@ beresp.backend.name
 	Same as beresp.backend.
 
 
+.. _beresp.body:
+
 beresp.body
 
 	Type: BODY
@@ -792,6 +904,8 @@ beresp.body
 
 	For producing a synthetic body.
 
+
+.. _beresp.do_esi:
 
 beresp.do_esi
 
@@ -812,6 +926,8 @@ beresp.do_esi
 	It is a VCL error to use beresp.do_esi after setting beresp.filters.
 
 
+.. _beresp.do_gunzip:
+
 beresp.do_gunzip
 
 	Type: BOOL
@@ -831,6 +947,8 @@ beresp.do_gunzip
 	It is a VCL error to use beresp.do_gunzip after setting beresp.filters.
 
 
+.. _beresp.do_gzip:
+
 beresp.do_gzip
 
 	Type: BOOL
@@ -848,6 +966,8 @@ beresp.do_gzip
 
 	It is a VCL error to use beresp.do_gzip after setting beresp.filters.
 
+
+.. _beresp.do_stream:
 
 beresp.do_stream
 
@@ -869,6 +989,8 @@ beresp.do_stream
 	This variable has no effect if beresp.do_esi is true or when
 	the response body is empty.
 
+
+.. _beresp.filters:
 
 beresp.filters
 
@@ -930,6 +1052,8 @@ beresp.filters
 	``beresp.do_*`` switches is a VCL error.
 
 
+.. _beresp.grace:
+
 beresp.grace
 
 	Type: DURATION
@@ -943,6 +1067,8 @@ beresp.grace
 
 	Set to a period to enable grace.
 
+
+.. _beresp.http:
 
 beresp.http.*
 
@@ -958,6 +1084,8 @@ beresp.http.*
 
 	See ``req.http.*`` for general notes.
 
+
+.. _beresp.keep:
 
 beresp.keep
 
@@ -989,6 +1117,8 @@ beresp.proto	``VCL <= 4.0``
 	The HTTP protocol version the backend replied with.
 
 
+.. _beresp.proto:
+
 beresp.proto	``VCL >= 4.1``
 
 	Type: STRING
@@ -997,6 +1127,8 @@ beresp.proto	``VCL >= 4.1``
 
 	The HTTP protocol version the backend replied with.
 
+
+.. _beresp.reason:
 
 beresp.reason
 
@@ -1008,6 +1140,8 @@ beresp.reason
 
 	The HTTP status message returned by the server.
 
+
+.. _beresp.status:
 
 beresp.status
 
@@ -1021,6 +1155,8 @@ beresp.status
 
 	More information in the `HTTP response status`_ section.
 
+
+.. _beresp.storage:
 
 beresp.storage
 
@@ -1049,6 +1185,8 @@ beresp.storage_hint	``VCL <= 4.0``
 	particular storage backend.
 
 
+.. _beresp.time:
+
 beresp.time
 
 	Type: TIME
@@ -1058,6 +1196,8 @@ beresp.time
 	When the backend headers were fully received just before
 	``vcl_backend_response {}`` was entered, or when
 	``vcl_backend_error {}`` was entered.
+
+.. _beresp.transit_buffer:
 
 beresp.transit_buffer
 
@@ -1075,6 +1215,8 @@ beresp.transit_buffer
 	documentation in :ref:`varnishd(1)`.
 
 
+.. _beresp.ttl:
+
 beresp.ttl
 
 	Type: DURATION
@@ -1089,6 +1231,8 @@ beresp.ttl
 
 	The object's remaining time to live, in seconds.
 
+
+.. _beresp.uncacheable:
 
 beresp.uncacheable
 
@@ -1108,6 +1252,8 @@ beresp.uncacheable
 	"Ignoring attempt to reset beresp.uncacheable".
 
 
+.. _beresp.was_304:
+
 beresp.was_304
 
 	Type: BOOL
@@ -1125,6 +1271,8 @@ obj
 
 This is the object we found in cache.  It cannot be modified.
 
+.. _obj.age:
+
 obj.age
 
 	Type: DURATION
@@ -1133,6 +1281,8 @@ obj.age
 
 	The age of the object.
 
+
+.. _obj.can_esi:
 
 obj.can_esi
 
@@ -1146,6 +1296,8 @@ obj.can_esi
 	processed.
 
 
+.. _obj.grace:
+
 obj.grace
 
 	Type: DURATION
@@ -1154,6 +1306,8 @@ obj.grace
 
 	The object's grace period in seconds.
 
+
+.. _obj.hits:
 
 obj.hits
 
@@ -1167,6 +1321,8 @@ obj.hits
 	In `vcl_deliver` a value of 0 indicates a cache miss.
 
 
+.. _obj.http:
+
 obj.http.*
 
 	Type: HEADER
@@ -1178,6 +1334,8 @@ obj.http.*
 	See ``req.http.*`` for general notes.
 
 
+.. _obj.keep:
+
 obj.keep
 
 	Type: DURATION
@@ -1186,6 +1344,8 @@ obj.keep
 
 	The object's keep period in seconds.
 
+
+.. _obj.proto:
 
 obj.proto
 
@@ -1196,6 +1356,8 @@ obj.proto
 	The HTTP protocol version stored in the object.
 
 
+.. _obj.reason:
+
 obj.reason
 
 	Type: STRING
@@ -1205,6 +1367,8 @@ obj.reason
 
 	The HTTP reason phrase stored in the object.
 
+
+.. _obj.status:
 
 obj.status
 
@@ -1218,6 +1382,8 @@ obj.status
 	More information in the `HTTP response status`_ section.
 
 
+.. _obj.storage:
+
 obj.storage
 
 	Type: STEVEDORE
@@ -1226,6 +1392,8 @@ obj.storage
 
 	The storage backend where this object is stored.
 
+
+.. _obj.time:
 
 obj.time
 
@@ -1238,6 +1406,8 @@ obj.time
 	``now`` - ``obj.age``.
 
 
+.. _obj.ttl:
+
 obj.ttl
 
 	Type: DURATION
@@ -1246,6 +1416,8 @@ obj.ttl
 
 	The object's remaining time to live, in seconds.
 
+
+.. _obj.uncacheable:
 
 obj.uncacheable
 
@@ -1276,6 +1448,8 @@ resp
 	to VMODs.
 
 
+.. _resp.body:
+
 resp.body
 
 	Type: BODY
@@ -1284,6 +1458,8 @@ resp.body
 
 	To produce a synthetic response body, for instance for errors.
 
+
+.. _resp.do_esi:
 
 resp.do_esi	``VCL >= 4.1``
 
@@ -1301,6 +1477,8 @@ resp.do_esi	``VCL >= 4.1``
 
 	It is a VCL error to use resp.do_esi after setting resp.filters.
 
+
+.. _resp.filters:
 
 resp.filters
 
@@ -1322,6 +1500,8 @@ resp.filters
 	set.
 
 
+.. _resp.http:
+
 resp.http.*
 
 	Type: HEADER
@@ -1336,6 +1516,8 @@ resp.http.*
 
 	See ``req.http.*`` for general notes.
 
+
+.. _resp.is_streaming:
 
 resp.is_streaming
 
@@ -1358,6 +1540,8 @@ resp.proto	``VCL <= 4.0``
 	The HTTP protocol version to use for the response.
 
 
+.. _resp.proto:
+
 resp.proto	``VCL >= 4.1``
 
 	Type: STRING
@@ -1366,6 +1550,8 @@ resp.proto	``VCL >= 4.1``
 
 	The HTTP protocol version to use for the response.
 
+
+.. _resp.reason:
 
 resp.reason
 
@@ -1377,6 +1563,8 @@ resp.reason
 
 	The HTTP status message that will be returned.
 
+
+.. _resp.status:
 
 resp.status
 
@@ -1407,6 +1595,8 @@ resp.status
 	modified based on that comparison, a 304 is sent.
 
 
+.. _resp.time:
+
 resp.time
 
 	Type: TIME
@@ -1419,6 +1609,8 @@ resp.time
 
 Special variables
 -----------------
+
+.. _now:
 
 now
 
@@ -1452,6 +1644,8 @@ transactions may take place. It may comprise the traffic over an
 HTTP/1 keep-alive connection, or the multiplexed traffic over an
 HTTP/2 connection.
 
+.. _sess.idle_send_timeout:
+
 sess.idle_send_timeout
 
 	Type: DURATION
@@ -1465,6 +1659,8 @@ sess.idle_send_timeout
 	see :ref:`varnishd(1)`
 
 
+.. _sess.send_timeout:
+
 sess.send_timeout
 
 	Type: DURATION
@@ -1476,6 +1672,8 @@ sess.send_timeout
 	Total timeout for ordinary HTTP1 responses, defaults to the
 	``send_timeout`` parameter, see :ref:`varnishd(1)`
 
+
+.. _sess.timeout_idle:
 
 sess.timeout_idle
 
@@ -1489,6 +1687,8 @@ sess.timeout_idle
 	``timeout_idle`` parameter, see :ref:`varnishd(1)`
 
 
+.. _sess.timeout_linger:
+
 sess.timeout_linger
 
 	Type: DURATION
@@ -1500,6 +1700,8 @@ sess.timeout_linger
 	Linger timeout for this session, defaults to the
 	``timeout_linger`` parameter, see :ref:`varnishd(1)`
 
+
+.. _sess.xid:
 
 sess.xid	``VCL >= 4.1``
 
@@ -1513,6 +1715,8 @@ sess.xid	``VCL >= 4.1``
 storage
 -------
 
+.. _storage.free_space:
+
 storage.<name>.free_space
 
 	Type: BYTES
@@ -1524,6 +1728,8 @@ storage.<name>.free_space
 	the malloc stevedore.
 
 
+.. _storage.happy:
+
 storage.<name>.happy
 
 	Type: BOOL
@@ -1534,6 +1740,8 @@ storage.<name>.happy
 	Health status for the named stevedore. Not available in any of the
 	current stevedores.
 
+
+.. _storage.used_space:
 
 storage.<name>.used_space
 
