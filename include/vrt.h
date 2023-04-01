@@ -58,6 +58,7 @@
  * binary/load-time compatible, increment MAJOR version
  *
  * NEXT (2023-09-15)
+ *	[cache_filter.h] struct vdp gained priv1 member
  * 17.0 (2023-03-15)
  *	VXID is 64 bit
  *	[cache.h] http_GetRange() changed

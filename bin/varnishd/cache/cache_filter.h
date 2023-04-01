@@ -122,6 +122,7 @@ struct vdp {
 	vdp_init_f		*init;
 	vdp_bytes_f		*bytes;
 	vdp_fini_f		*fini;
+	const void		*priv1;
 };
 
 struct vdp_entry {
