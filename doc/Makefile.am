@@ -1,6 +1,6 @@
 #
 #
-RST2ANY_FLAGS = --halt=2
+RST2ANY_FLAGS = --strict
 
 EXTRA_DIST = changes.rst changes.html
 
