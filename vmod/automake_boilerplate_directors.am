@@ -37,8 +37,8 @@ vcc_directors_if.h vmod_directors.rst vmod_directors.man.rst: vcc_directors_if.c
 
 # A doc-change will not update mtime on the .h and .c files, so a
 # touch(1) is necessary to signal that vmodtool was in fact run.
-vcc_directors_if.c: $(vmodtool) $(srcdir)/vmod_directors.vcc
-	@PYTHON@ $(vmodtool) $(vmodtoolargs_directors) $(srcdir)/vmod_directors.vcc
+vcc_directors_if.c: $(VMODTOOL) $(srcdir)/vmod_directors.vcc
+	@PYTHON@ $(VMODTOOL) $(vmodtoolargs_directors) $(srcdir)/vmod_directors.vcc
 	touch vcc_directors_if.c
 
 clean-local: clean-vmod-directors
