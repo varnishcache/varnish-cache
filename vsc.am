@@ -1,12 +1,13 @@
 # Generic rule to generate C code from VSC files. VSC files must be listed
-# in the $(VSC_SRC) variable.
+# in the $(VSC_SRC) variable. The $(VSCTOOL) variable must point to the
+# location of vsctool.py, normally set up by varnish.m4 at configure time.
 
 VSC_GEN = $(VSC_SRC:.vsc=.c) $(VSC_SRC:.vsc=.h)
 
-$(VSC_GEN): $(top_srcdir)/lib/libvsc/vsctool.py
+$(VSC_GEN): $(VSCTOOL)
 
 .vsc.c:
-	$(AM_V_GEN) $(PYTHON) $(top_srcdir)/lib/libvsc/vsctool.py -ch $<
+	$(AM_V_GEN) $(PYTHON) $(VSCTOOL) -ch $<
 
 clean-local: vsc-clean
 
