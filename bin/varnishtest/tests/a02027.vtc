@@ -22,8 +22,8 @@ client c1 {
 client c1 {
 	stream 1 {
 		txreq -noadd -hdr ":authority" "foo.com" -hdr ":path" "//foo" -hdr ":scheme" "http" -hdr ":method" "GET"
-		rxrst
-		expect rst.err == PROTOCOL_ERROR
+		rxresp
+		expect resp.status == 200
 	} -run
 
 } -run
