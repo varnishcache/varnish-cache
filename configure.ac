@@ -645,6 +645,7 @@ AC_SUBST(pkgsysconfdir)
 # VMOD variables
 AC_SUBST(vmoddir, [$\(pkglibdir\)/vmods])
 AC_SUBST(VMODTOOL, [$\(top_srcdir\)/lib/libvcc/vmodtool.py])
+AC_SUBST(VSCTOOL, [$\(top_srcdir\)/lib/libvsc/vsctool.py])
 
 # Check for linker script support
 gl_LD_VERSION_SCRIPT
