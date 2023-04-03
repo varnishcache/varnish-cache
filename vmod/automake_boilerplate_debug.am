@@ -34,8 +34,8 @@ vcc_debug_if.h vmod_debug.rst vmod_debug.man.rst: vcc_debug_if.c
 
 # A doc-change will not update mtime on the .h and .c files, so a
 # touch(1) is necessary to signal that vmodtool was in fact run.
-vcc_debug_if.c: $(vmodtool) $(srcdir)/vmod_debug.vcc
-	@PYTHON@ $(vmodtool) $(vmodtoolargs_debug) $(srcdir)/vmod_debug.vcc
+vcc_debug_if.c: $(VMODTOOL) $(srcdir)/vmod_debug.vcc
+	@PYTHON@ $(VMODTOOL) $(vmodtoolargs_debug) $(srcdir)/vmod_debug.vcc
 	touch vcc_debug_if.c
 
 clean-local: clean-vmod-debug

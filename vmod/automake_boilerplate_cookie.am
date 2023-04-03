@@ -31,8 +31,8 @@ vcc_cookie_if.h vmod_cookie.rst vmod_cookie.man.rst: vcc_cookie_if.c
 
 # A doc-change will not update mtime on the .h and .c files, so a
 # touch(1) is necessary to signal that vmodtool was in fact run.
-vcc_cookie_if.c: $(vmodtool) $(srcdir)/vmod_cookie.vcc
-	@PYTHON@ $(vmodtool) $(vmodtoolargs_cookie) $(srcdir)/vmod_cookie.vcc
+vcc_cookie_if.c: $(VMODTOOL) $(srcdir)/vmod_cookie.vcc
+	@PYTHON@ $(VMODTOOL) $(vmodtoolargs_cookie) $(srcdir)/vmod_cookie.vcc
 	touch vcc_cookie_if.c
 
 clean-local: clean-vmod-cookie

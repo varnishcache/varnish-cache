@@ -82,8 +82,8 @@ PFX.h vmod_XXX.rst vmod_XXX.man.rst: PFX.c
 
 # A doc-change will not update mtime on the .h and .c files, so a
 # touch(1) is necessary to signal that vmodtool was in fact run.
-PFX.c: $(vmodtool) $(srcdir)/VCC
-\t@PYTHON@ $(vmodtool) $(vmodtoolargs_XXX) $(srcdir)/VCC
+PFX.c: $(VMODTOOL) $(srcdir)/VCC
+\t@PYTHON@ $(VMODTOOL) $(vmodtoolargs_XXX) $(srcdir)/VCC
 \ttouch PFX.c
 
 clean-local: clean-vmod-XXX

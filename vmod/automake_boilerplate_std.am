@@ -34,8 +34,8 @@ vcc_std_if.h vmod_std.rst vmod_std.man.rst: vcc_std_if.c
 
 # A doc-change will not update mtime on the .h and .c files, so a
 # touch(1) is necessary to signal that vmodtool was in fact run.
-vcc_std_if.c: $(vmodtool) $(srcdir)/vmod_std.vcc
-	@PYTHON@ $(vmodtool) $(vmodtoolargs_std) $(srcdir)/vmod_std.vcc
+vcc_std_if.c: $(VMODTOOL) $(srcdir)/vmod_std.vcc
+	@PYTHON@ $(VMODTOOL) $(vmodtoolargs_std) $(srcdir)/vmod_std.vcc
 	touch vcc_std_if.c
 
 clean-local: clean-vmod-std
