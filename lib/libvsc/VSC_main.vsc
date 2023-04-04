@@ -942,4 +942,8 @@
 	from a backend. They are done to verify the gzip stream while it's
 	inserted in storage.
 
+
+.. varnish_vsc:: http1_iovs_flush
+	:oneliner:	Premature iovec flushes
+
 .. varnish_vsc_end::	main

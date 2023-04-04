@@ -1,0 +1,17 @@
+varnishtest "test iovec flush counter"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -arg "-p http1_iovs=5" -vcl+backend {} -start
+
+varnish v1 -expect MAIN.http1_iovs_flush == 0
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+varnish v1 -expect MAIN.http1_iovs_flush > 0
