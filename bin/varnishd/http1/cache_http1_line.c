@@ -278,8 +278,10 @@ V1L_Write(const struct worker *wrk, const void *ptr, ssize_t len)
 	v1l->liov += len;
 	v1l->niov++;
 	v1l->cliov += len;
-	if (v1l->niov >= v1l->siov)
+	if (v1l->niov >= v1l->siov) {
 		(void)V1L_Flush(wrk);
+		VSC_C_main->http1_iovs_flush++;
+	}
 	return (len);
 }
 
@@ -298,8 +300,10 @@ V1L_Chunked(const struct worker *wrk)
 	 * If there is no space for chunked header, a chunk of data and
 	 * a chunk tail, we might as well flush right away.
 	 */
-	if (v1l->niov + 3 >= v1l->siov)
+	if (v1l->niov + 3 >= v1l->siov) {
 		(void)V1L_Flush(wrk);
+		VSC_C_main->http1_iovs_flush++;
+	}
 	v1l->siov--;
 	v1l->ciov = v1l->niov++;
 	v1l->cliov = 0;
