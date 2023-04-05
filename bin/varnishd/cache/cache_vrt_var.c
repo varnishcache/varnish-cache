@@ -35,6 +35,7 @@
 #include <stdio.h>
 
 #include "cache_varnishd.h"
+#include "cache_objhead.h"
 #include "cache_transport.h"
 #include "common/heritage.h"
 
@@ -612,6 +613,11 @@ VRT_u_bereq_body(VRT_CTX)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	if (ctx->bo->bereq_body != NULL) {
+		HSH_DerefObjCore(ctx->bo->wrk, &ctx->bo->bereq_body, 0);
+		http_Unset(ctx->bo->bereq, H_Content_Length);
+	}
+
 	if (ctx->bo->req != NULL) {
 		CHECK_OBJ(ctx->bo->req, REQ_MAGIC);
 		ctx->bo->req = NULL;
