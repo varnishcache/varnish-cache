@@ -27,7 +27,7 @@ client c2 {
 	# Send 1 byte
 	send a
 	# Wait timeout_idle
-	delay 1.1
+	delay 2
 	# Send 1 byte
 	send b
 	rxresp
@@ -44,7 +44,7 @@ client c3 {
 	# Send 1 byte
 	send a
 	# Wait timeout_idle
-	delay 1.1
+	delay 2
 	# Send 1 byte
 	send b
 	rxresp
