@@ -31,7 +31,7 @@ varnish v1 -vcl {
 	sub vcl_backend_fetch {
 		set bereq.backend = s1.backend();
 		# hot swap should happen while we sleep
-		vtc.sleep(2s);
+		vtc.sleep(3s);
 		if (std.healthy(bereq.backend)) {
 			return(abandon);
 		} else {
