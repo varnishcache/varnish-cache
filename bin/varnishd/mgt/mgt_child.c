@@ -351,6 +351,10 @@ mgt_launch_child(struct cli *cli)
 		assert(dup2(heritage.std_fd, STDOUT_FILENO) == STDOUT_FILENO);
 		assert(dup2(heritage.std_fd, STDERR_FILENO) == STDERR_FILENO);
 
+		setbuf(stdout, NULL);
+		setbuf(stderr, NULL);
+		printf("Child starts\n");
+
 		/*
 		 * Close all FDs the child shouldn't know about
 		 *

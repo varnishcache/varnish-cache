@@ -377,9 +377,6 @@ child_main(int sigmagic, size_t altstksz)
 	(void)signal(SIGINT, SIG_DFL);
 	(void)signal(SIGTERM, SIG_DFL);
 
-	setbuf(stdout, NULL);
-	setbuf(stderr, NULL);
-	printf("Child starts\n");
 #if defined(__FreeBSD__) && __FreeBSD_version >= 1000000
 	malloc_message = child_malloc_fail;
 #endif
