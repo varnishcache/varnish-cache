@@ -74,7 +74,7 @@ client c1 {
 	delay 0.2
 	txreq
 	rxresp
-	delay 1.2
+	delay 2.0
 	txreq
 	rxresp
 } -start
@@ -85,7 +85,7 @@ client c1u -connect "${tmpdir}/v1.sock" {
 	delay 0.2
 	txreq
 	rxresp
-	delay 1.2
+	delay 2.0
 	txreq
 	rxresp
 } -start
@@ -93,10 +93,10 @@ client c1u -connect "${tmpdir}/v1.sock" {
 client c2 {
 	txreq -url /longer
 	rxresp
-	delay 1.2
+	delay 0.2
 	txreq -url /longer
 	rxresp
-	delay 2.2
+	delay 3.0
 	txreq -url /longer
 	rxresp
 } -start
@@ -104,10 +104,10 @@ client c2 {
 client c2u -connect "${tmpdir}/v1.sock" {
 	txreq -url /longer
 	rxresp
-	delay 1.2
+	delay 0.2
 	txreq -url /longer
 	rxresp
-	delay 2.2
+	delay 3.0
 	txreq -url /longer
 	rxresp
 } -start
