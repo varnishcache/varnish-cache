@@ -154,37 +154,12 @@ logexpect l1 -wait
 
 varnish v1 -cliok "param.set workspace_session 384"
 
-delay 1
+# get rid of the surplus session mpl & zero vsc
 
-# get rid of the surplus session mpl
-client c10 -proxy1 "1.2.3.4:1111 5.6.7.8:5678" {
-	txreq
-	rxresp
-} -start
-client c11 -proxy1 "1.2.3.4:1111 5.6.7.8:5678" {
-	txreq
-	rxresp
-} -start
-client c12 -proxy1 "1.2.3.4:1111 5.6.7.8:5678" {
-	txreq
-	rxresp
-} -start
-client c13 -proxy1 "1.2.3.4:1111 5.6.7.8:5678" {
-	txreq
-	rxresp
-} -start
-client c14 -proxy1 "1.2.3.4:1111 5.6.7.8:5678" {
-	txreq
-	rxresp
-} -start
-
-client c10 -wait
-client c11 -wait
-client c12 -wait
-client c13 -wait
-client c14 -wait
-
+varnish v1 -stop
 varnish v1 -cliok "param.set pool_sess 1,1,1"
+varnish v1 -start
+
 client c2 {
 	# PROXY2 with CRC32C TLV
 	sendhex {
