@@ -26,8 +26,8 @@ varnish v1 -vcl {
 
 	probe foo {
 		.url = "/";
-		.timeout = 1s;
-		.interval = 1s;
+		.timeout = 2s;
+		.interval = 2s;
 		.window = 3;
 		.threshold = 2;
 		.initial = 0;
@@ -42,9 +42,9 @@ varnish v1 -vcl {
 
 	sub vcl_recv {
 		if (std.healthy(default)) {
-			return(synth(200,"Backend healthy"));
+			return(synth(200,"Backend healthy " + req.url));
 		} else {
-			return(synth(500,"Backend sick"));
+			return(synth(500,"Backend sick " + req.url));
 		}
 	}
 } -start
