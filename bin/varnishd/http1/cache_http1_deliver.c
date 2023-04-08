@@ -72,6 +72,8 @@ v1d_error(struct req *req, const char *msg)
 	    "Server: Varnish\r\n"
 	    "Connection: close\r\n\r\n";
 
+	AZ(req->wrk->v1l);
+
 	VSLbs(req->vsl, SLT_Error, TOSTRAND(msg));
 	VSLb(req->vsl, SLT_RespProtocol, "HTTP/1.1");
 	VSLb(req->vsl, SLT_RespStatus, "500");
@@ -122,7 +124,6 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 		VCL_Req2Ctx(ctx, req);
 		if (VDP_Push(ctx, req->vdc, req->ws, &v1d_vdp, NULL)) {
 			v1d_error(req, "workspace_thread overflow");
-			AZ(req->wrk->v1l);
 			return;
 		}
 	}
@@ -144,7 +145,6 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 
 	if (WS_Overflowed(req->wrk->aws)) {
 		v1d_error(req, "workspace_thread overflow");
-		AZ(req->wrk->v1l);
 		return;
 	}
 
