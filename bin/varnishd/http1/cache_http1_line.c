@@ -119,6 +119,8 @@ V1L_Open(struct worker *wrk, struct ws *ws, int *fd, struct vsl_log *vsl,
 	v1l->deadline = deadline;
 	v1l->vsl = vsl;
 	v1l->werr = SC_NULL;
+
+	AZ(wrk->v1l);
 	wrk->v1l = v1l;
 
 	WS_Release(ws, u * sizeof(struct iovec));

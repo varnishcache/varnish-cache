@@ -138,7 +138,6 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 		return;
 	}
 
-	AZ(req->wrk->v1l);
 	V1L_Open(req->wrk, req->wrk->aws, &req->sp->fd, req->vsl,
 	    req->t_prev + SESS_TMO(req->sp, send_timeout),
 	    cache_param->http1_iovs);
