@@ -75,4 +75,3 @@ void HSH_AddString(struct req *, void *ctx, const char *str);
 unsigned HSH_Purge(struct worker *, struct objhead *, vtim_real ttl_now,
     vtim_dur ttl, vtim_dur grace, vtim_dur keep);
 struct objcore *HSH_Private(const struct worker *wrk);
-void HSH_Cancel(struct worker *, struct objcore *, struct boc *);

@@ -866,19 +866,24 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 
 	CAST_OBJ_NOTNULL(ecx, req->transport_priv, ECX_MAGIC);
 
-	if (wantbody == 0)
+	if (wantbody == 0) {
+		HSH_Cancel(req->wrk, req->objcore, boc);
 		return;
+	}
 
 	if (!ecx->incl_cont &&
 	    req->resp->status != 200 &&
 	    req->resp->status != 204) {
 		req->top->topreq->vdc->retval = -1;
 		req->top->topreq->doclose = req->doclose;
+		HSH_Cancel(req->wrk, req->objcore, boc);
 		return;
 	}
 
-	if (boc == NULL && ObjGetLen(req->wrk, req->objcore) == 0)
+	if (boc == NULL && ObjGetLen(req->wrk, req->objcore) == 0) {
+		HSH_Cancel(req->wrk, req->objcore, boc);
 		return;
+	}
 
 	if (http_GetHdr(req->resp, H_Content_Encoding, &p))
 		i = http_coding_eq(p, gzip);
@@ -898,6 +903,7 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 		if (req->objcore->flags & OC_F_FAILED) {
 			/* No way of signalling errors in the middle of
 			   the ESI body. Omit this ESI fragment. */
+			HSH_Cancel(req->wrk, req->objcore, boc);
 			return;
 		}
 
@@ -930,4 +936,6 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 		req->top->topreq->vdc->retval = -1;
 		req->top->topreq->doclose = req->doclose;
 	}
+
+	HSH_Cancel(req->wrk, req->objcore, boc);
 }

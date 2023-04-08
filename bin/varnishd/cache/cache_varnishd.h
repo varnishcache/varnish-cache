@@ -251,6 +251,7 @@ void BAN_Shutdown(void);
 void BAN_NewObjCore(struct objcore *oc);
 void BAN_DestroyObj(struct objcore *oc);
 int BAN_CheckObject(struct worker *, struct objcore *, struct req *);
+void HSH_Cancel(struct worker *, struct objcore *, struct boc *);
 
 /* cache_busyobj.c */
 void VBO_Init(void);

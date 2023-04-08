@@ -169,4 +169,6 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 		sc = SC_REM_CLOSE;
 	if (sc != SC_NULL)
 		Req_Fail(req, sc);
+
+	HSH_Cancel(req->wrk, req->objcore, boc);
 }
