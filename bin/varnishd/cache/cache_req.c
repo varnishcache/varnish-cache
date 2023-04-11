@@ -88,13 +88,13 @@ Req_LogHit(struct worker *wrk, struct req *req, struct objcore *oc,
 			clen = sep = "";
 		else
 			sep = " ";
-		VSLb(req->vsl, SLT_Hit, "%u %.6f %.6f %.6f %jd%s%s",
-		    ObjGetXID(wrk, oc), EXP_Dttl(req, oc),
+		VSLb(req->vsl, SLT_Hit, "%ju %.6f %.6f %.6f %jd%s%s",
+		    VXID(ObjGetXID(wrk, oc)), EXP_Dttl(req, oc),
 		    oc->grace, oc->keep,
 		    fetch_progress, sep, clen);
 	} else {
-		VSLb(req->vsl, SLT_Hit, "%u %.6f %.6f %.6f",
-		    ObjGetXID(wrk, oc), EXP_Dttl(req, oc),
+		VSLb(req->vsl, SLT_Hit, "%ju %.6f %.6f %.6f",
+		    VXID(ObjGetXID(wrk, oc)), EXP_Dttl(req, oc),
 		    oc->grace, oc->keep);
 	}
 }

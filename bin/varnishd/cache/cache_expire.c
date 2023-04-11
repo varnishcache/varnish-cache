@@ -354,8 +354,8 @@ exp_expire(struct exp_priv *ep, vtim_real now)
 		assert(oc->timer_idx == VBH_NOIDX);
 
 		CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
-		VSLb(&ep->vsl, SLT_ExpKill, "EXP_Expired x=%u t=%.0f",
-		    ObjGetXID(ep->wrk, oc), EXP_Ttl(NULL, oc) - now);
+		VSLb(&ep->vsl, SLT_ExpKill, "EXP_Expired xid=%ju t=%.0f",
+		    VXID(ObjGetXID(ep->wrk, oc)), EXP_Ttl(NULL, oc) - now);
 		ObjSendEvent(ep->wrk, oc, OEV_EXPIRE);
 		(void)HSH_DerefObjCore(ep->wrk, &oc, 0);
 	}

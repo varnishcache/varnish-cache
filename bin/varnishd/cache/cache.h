@@ -752,10 +752,9 @@ typedef int objiterate_f(void *priv, unsigned flush,
 int ObjIterate(struct worker *, struct objcore *,
     void *priv, objiterate_f *func, int final);
 
-unsigned ObjGetXID(struct worker *, struct objcore *);
+vxid_t ObjGetXID(struct worker *, struct objcore *);
 uint64_t ObjGetLen(struct worker *, struct objcore *);
 int ObjGetDouble(struct worker *, struct objcore *, enum obj_attr, double *);
-int ObjGetU32(struct worker *, struct objcore *, enum obj_attr, uint32_t *);
 int ObjGetU64(struct worker *, struct objcore *, enum obj_attr, uint64_t *);
 int ObjCheckFlag(struct worker *, struct objcore *, enum obj_flags of);
 

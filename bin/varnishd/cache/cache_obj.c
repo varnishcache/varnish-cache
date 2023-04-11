@@ -536,12 +536,23 @@ ObjCopyAttr(struct worker *wrk, struct objcore *oc, struct objcore *ocs,
 	return (0);
 }
 
-unsigned
+int
+ObjSetXID(struct worker *wrk, struct objcore *oc, vxid_t xid)
+{
+	uint64_t u;
+
+	u = VXID(xid);
+	AZ(ObjSetU64(wrk, oc, OA_VXID, u));
+	return (0);
+}
+
+
+vxid_t
 ObjGetXID(struct worker *wrk, struct objcore *oc)
 {
-	uint32_t u;
+	vxid_t u;
 
-	AZ(ObjGetU32(wrk, oc, OA_VXID, &u));
+	AZ(ObjGetU64(wrk, oc, OA_VXID, &u.vxid));
 	return (u);
 }
 
@@ -613,32 +624,6 @@ ObjGetU64(struct worker *wrk, struct objcore *oc, enum obj_attr a, uint64_t *d)
 		return (-1);
 	if (d != NULL)
 		*d = vbe64dec(vp);
-	return (0);
-}
-
-int
-ObjSetU32(struct worker *wrk, struct objcore *oc, enum obj_attr a, uint32_t t)
-{
-	void *vp;
-
-	vp = ObjSetAttr(wrk, oc, a, sizeof t, NULL);
-	if (vp == NULL)
-		return (-1);
-	vbe32enc(vp, t);
-	return (0);
-}
-
-int
-ObjGetU32(struct worker *wrk, struct objcore *oc, enum obj_attr a, uint32_t *d)
-{
-	const void *vp;
-	ssize_t l;
-
-	vp = ObjGetAttr(wrk, oc, a, &l);
-	if (vp == NULL || l != sizeof *d)
-		return (-1);
-	if (d != NULL)
-		*d = vbe32dec(vp);
 	return (0);
 }
 

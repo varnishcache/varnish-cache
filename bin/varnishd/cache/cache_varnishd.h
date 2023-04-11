@@ -347,8 +347,8 @@ int ObjCopyAttr(struct worker *, struct objcore *, struct objcore *,
 void ObjBocDone(struct worker *, struct objcore *, struct boc **);
 
 int ObjSetDouble(struct worker *, struct objcore *, enum obj_attr, double);
-int ObjSetU32(struct worker *, struct objcore *, enum obj_attr, uint32_t);
 int ObjSetU64(struct worker *, struct objcore *, enum obj_attr, uint64_t);
+int ObjSetXID(struct worker *, struct objcore *, vxid_t);
 
 void ObjSetFlag(struct worker *, struct objcore *, enum obj_flags of, int val);
 

@@ -218,7 +218,7 @@ vbf_beresp2obj(struct busyobj *bo)
 		VSB_destroy(&vary);
 	}
 
-	AZ(ObjSetU32(bo->wrk, oc, OA_VXID, VXID(bo->vsl->wid)));
+	AZ(ObjSetXID(bo->wrk, oc, bo->vsl->wid));
 
 	/* for HTTP_Encode() VSLH call */
 	bo->beresp->logtag = SLT_ObjMethod;

@@ -72,7 +72,7 @@ varnish v1 -expect SM?.rxbuf.g_bytes >= 1048000
 varnish v1 -expect MAIN.n_lru_nuked == 0
 
 logexpect l1 -v v1 -g raw -q "Expkill ~ LRU" {
-	expect * * Expkill x=1005
+	expect * * Expkill xid=1005
 } -start
 
 client c3 {

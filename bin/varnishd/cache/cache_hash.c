@@ -499,7 +499,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 		(void)req->vcf->func(req, &oc, &exp_oc, 1);
 
 	if (oc != NULL && oc->flags & OC_F_HFP) {
-		xid = ObjGetXID(wrk, oc);
+		xid = VXID(ObjGetXID(wrk, oc));
 		dttl = EXP_Dttl(req, oc);
 		AN(hsh_deref_objhead_unlock(wrk, &oh, HSH_RUSH_POLICY));
 		wrk->stats->cache_hitpass++;
@@ -511,7 +511,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 		*ocp = oc;
 		oc->refcnt++;
 		if (oc->flags & OC_F_HFM) {
-			xid = ObjGetXID(wrk, oc);
+			xid = VXID(ObjGetXID(wrk, oc));
 			dttl = EXP_Dttl(req, oc);
 			*bocp = hsh_insert_busyobj(wrk, oh);
 			Lck_Unlock(&oh->mtx);
@@ -533,7 +533,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp)
 		 * XXX should HFM objects actually have grace/keep ?
 		 * XXX also:  why isn't *ocp = exp_oc ?
 		 */
-		xid = ObjGetXID(wrk, exp_oc);
+		xid = VXID(ObjGetXID(wrk, exp_oc));
 		dttl = EXP_Dttl(req, exp_oc);
 		*bocp = hsh_insert_busyobj(wrk, oh);
 		Lck_Unlock(&oh->mtx);

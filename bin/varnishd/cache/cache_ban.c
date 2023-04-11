@@ -706,7 +706,8 @@ BAN_CheckObject(struct worker *wrk, struct objcore *oc, struct req *req)
 		ObjSendEvent(wrk, oc, OEV_BANCHG);
 		return (0);
 	} else {
-		VSLb(vsl, SLT_ExpBan, "%u banned lookup", ObjGetXID(wrk, oc));
+		VSLb(vsl, SLT_ExpBan,
+		    "%ju banned lookup", VXID(ObjGetXID(wrk, oc)));
 		return (1);
 	}
 }

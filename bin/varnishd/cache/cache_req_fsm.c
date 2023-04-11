@@ -152,8 +152,8 @@ Resp_Setup_Deliver(struct req *req)
 	http_ForceField(h, HTTP_HDR_PROTO, "HTTP/1.1");
 
 	if (req->is_hit)
-		http_PrintfHeader(h, "X-Varnish: %ju %u", VXID(req->vsl->wid),
-		    ObjGetXID(req->wrk, oc));
+		http_PrintfHeader(h, "X-Varnish: %ju %ju", VXID(req->vsl->wid),
+		    VXID(ObjGetXID(req->wrk, oc)));
 	else
 		http_PrintfHeader(h, "X-Varnish: %ju", VXID(req->vsl->wid));
 

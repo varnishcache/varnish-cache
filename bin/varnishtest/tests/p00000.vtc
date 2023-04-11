@@ -13,7 +13,7 @@ process p1 -wait
 
 server s1 {
 	rxreq
-	txresp
+	txresp -body FOO
 	accept
 	rxreq
 	txresp -status 700

@@ -33,11 +33,11 @@
 
 /* upper, lower, size */
 #ifdef OBJ_FIXATTR
-  OBJ_FIXATTR(LEN, len, 8)
-  OBJ_FIXATTR(VXID, vxid, 4)
+  OBJ_FIXATTR(LEN, len, sizeof(uint64_t))
+  OBJ_FIXATTR(VXID, vxid, sizeof(uint64_t))
   OBJ_FIXATTR(FLAGS, flags, 1)
   OBJ_FIXATTR(GZIPBITS, gzipbits, 32)
-  OBJ_FIXATTR(LASTMODIFIED, lastmodified, 8)
+  OBJ_FIXATTR(LASTMODIFIED, lastmodified, sizeof(double))
   #undef OBJ_FIXATTR
 #endif
 
