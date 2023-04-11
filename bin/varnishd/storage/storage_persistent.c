@@ -683,8 +683,14 @@ smp_init(void)
 {
 	lck_smp = Lck_CreateClass(NULL, "smp");
 	CLI_AddFuncs(debug_cmds);
-	smp_oc_realmethods = SML_methods;
-	smp_oc_realmethods.objtouch = NULL;
+	smp_oc_realmethods.objfree = SML_methods.objfree;
+	smp_oc_realmethods.objiterator = SML_methods.objiterator;
+	smp_oc_realmethods.objgetspace = SML_methods.objgetspace;
+	smp_oc_realmethods.objextend = SML_methods.objextend;
+	smp_oc_realmethods.objbocdone = SML_methods.objbocdone;
+	smp_oc_realmethods.objgetattr = SML_methods.objgetattr;
+	smp_oc_realmethods.objsetattr = SML_methods.objsetattr;
+	smp_oc_realmethods.objtouch = LRU_Touch;
 	smp_oc_realmethods.objfree = smp_oc_objfree;
 }
 
