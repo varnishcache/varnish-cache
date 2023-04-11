@@ -43,8 +43,8 @@ struct vtc_sess {
 };
 
 struct h2_window {
-        uint64_t init;
-        int64_t  size;
+	uint64_t		init;
+	int64_t			size;
 };
 
 struct http {
