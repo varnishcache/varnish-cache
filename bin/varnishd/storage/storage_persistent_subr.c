@@ -95,7 +95,7 @@ smp_chk_sign(struct smp_signctx *ctx)
 		r = 1;
 	else if (ctx->unique != ctx->ss->unique)
 		r = 2;
-	else if ((uintptr_t)ctx->ss != ctx->ss->mapped)
+	else if (!ctx->ss->mapped)
 		r = 3;
 	else {
 		VSHA256_Init(&ctx->ctx);

@@ -2,8 +2,6 @@ varnishtest "Test address remapping"
 
 feature persistent_storage
 
-feature disable_aslr
-
 # VM-remapping is too random on OSX
 feature cmd {test $(uname) != "Darwin"}
 # Same on some hardened Linux

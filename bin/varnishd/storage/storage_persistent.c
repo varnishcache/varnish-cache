@@ -494,7 +494,7 @@ smp_allocx(const struct stevedore *st, size_t min_size, size_t max_size,
 	INIT_OBJ(ss, STORAGE_MAGIC);
 	ss->ptr = PRNUP(sc, ss + 1);
 	ss->space = max_size;
-	ss->priv = sc;
+	ss->priv = sc->base;
 	if (ssg != NULL)
 		*ssg = sg;
 	return (ss);
@@ -566,7 +566,7 @@ smp_allocobj(struct worker *wrk, const struct stevedore *stv,
 	assert(sizeof so->hash == DIGEST_LEN);
 	memcpy(so->hash, oc->objhead->digest, DIGEST_LEN);
 	EXP_COPY(so, oc);
-	so->ptr = (uint8_t*)o - sc->base;
+	so->ptr = (uint8_t*)(o->objstore) - sc->base;
 	so->ban = BAN_Time(oc->ban);
 
 	smp_init_oc(oc, sg, objidx);

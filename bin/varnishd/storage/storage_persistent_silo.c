@@ -396,13 +396,27 @@ smp_loaded_st(const struct smp_sc *sc, const struct smp_seg *sg,
  * objcore methods for persistent objects
  */
 
+static void
+fix_ptr(const struct smp_seg *sg, const struct storage *st, void **ptr)
+{
+	// See comment where used below
+	uintptr_t u;
+
+	u = (uintptr_t)(*ptr);
+	if (u != 0) {
+		u -= (uintptr_t)st->priv;
+		u += (uintptr_t)sg->sc->base;
+	}
+	*ptr = (void *)u;
+}
+
 struct object * v_matchproto_(sml_getobj_f)
 smp_sml_getobj(struct worker *wrk, struct objcore *oc)
 {
 	struct object *o;
 	struct smp_seg *sg;
 	struct smp_object *so;
-	struct storage *st;
+	struct storage *st, *st2;
 	uint64_t l;
 	int bad;
 
@@ -413,7 +427,43 @@ smp_sml_getobj(struct worker *wrk, struct objcore *oc)
 	CAST_OBJ_NOTNULL(sg, oc->stobj->priv, SMP_SEG_MAGIC);
 	so = smp_find_so(sg, oc->stobj->priv2);
 
-	o = (void*)(sg->sc->base + so->ptr);
+	/**************************************************************
+	 * The silo may have been remapped at a different address,
+	 * because the people who came up with ASLR were unable
+	 * imagine that there might be beneficial use-cases for
+	 * always mapping a file at the same specific address.
+	 *
+	 * We store the silos base address in struct storage->priv
+	 * and manually fix all the pointers in struct object and
+	 * the list of struct storage objects which hold the body.
+	 * When done, we update the storage->priv, so we can do the
+	 * same trick next time.
+	 *
+	 * This is a prohibitively expensive workaround, but we can
+	 * live with it, because the role of this stevedore is only
+	 * to keep the internal stevedore API honest.
+	 */
+
+	st = (void*)(sg->sc->base + so->ptr);
+	fix_ptr(sg, st, (void**)&st->ptr);
+
+	o = (void*)st->ptr;
+	fix_ptr(sg, st, (void**)&o->objstore);
+	fix_ptr(sg, st, (void**)&o->va_vary);
+	fix_ptr(sg, st, (void**)&o->va_headers);
+	fix_ptr(sg, st, (void**)&o->list.vtqh_first);
+	fix_ptr(sg, st, (void**)&o->list.vtqh_last);
+	st->priv = (void*)(sg->sc->base);
+
+	st2 = o->list.vtqh_first;
+	while (st2 != NULL) {
+		fix_ptr(sg, st2, (void**)&st2->list.vtqe_next);
+		fix_ptr(sg, st2, (void**)&st2->list.vtqe_prev);
+		fix_ptr(sg, st2, (void**)&st2->ptr);
+		st2->priv = (void*)(sg->sc->base);
+		st2 = st2->list.vtqe_next;
+	}
+
 	/*
 	 * The object may not be in this segment since we allocate it
 	 * In a separate operation than the smp_object.  We could check
