@@ -330,7 +330,7 @@ child_signal_handler(int s, siginfo_t *si, void *c)
 }
 
 /*=====================================================================
- * Magic for panicing properly on signals
+ * Magic for panicking properly on signals
  */
 
 static void
@@ -363,6 +363,17 @@ child_sigmagic(size_t altstksz)
 	(void)sigaction(SIGSEGV, &sa, NULL);
 }
 
+static void
+cli_quit(int sig)
+{
+
+	if (!IS_CLI()) {
+		AZ(pthread_kill(cli_thread, sig));
+		return;
+	}
+
+	WRONG("It's time for the big quit");
+}
 
 /*=====================================================================
  * Run the child process
@@ -376,6 +387,7 @@ child_main(int sigmagic, size_t altstksz)
 		child_sigmagic(altstksz);
 	(void)signal(SIGINT, SIG_DFL);
 	(void)signal(SIGTERM, SIG_DFL);
+	(void)signal(SIGQUIT, cli_quit);
 
 #if defined(__FreeBSD__) && __FreeBSD_version >= 1000000
 	malloc_message = child_malloc_fail;
