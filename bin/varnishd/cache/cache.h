@@ -605,7 +605,8 @@ void BAN_Abandon(struct ban_proto *b);
 
 /* cache_cli.c [CLI] */
 extern pthread_t cli_thread;
-#define ASSERT_CLI() do {assert(pthread_equal(pthread_self(), cli_thread));} while (0)
+#define IS_CLI() (pthread_equal(pthread_self(), cli_thread))
+#define ASSERT_CLI() do {assert(IS_CLI());} while (0)
 
 /* cache_http.c */
 unsigned HTTP_estimate(unsigned nhttp);
