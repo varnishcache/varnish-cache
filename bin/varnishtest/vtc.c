@@ -216,6 +216,26 @@ macro_undef(struct vtclog *vl, const char *instance, const char *name)
 	AZ(pthread_mutex_unlock(&macro_mtx));
 }
 
+unsigned
+macro_isdef(const char *instance, const char *name)
+{
+	char buf1[256];
+	struct macro *m;
+
+	if (instance != NULL) {
+		bprintf(buf1, "%s_%s", instance, name);
+		name = buf1;
+	}
+
+	AZ(pthread_mutex_lock(&macro_mtx));
+	VTAILQ_FOREACH(m, &macro_list, list)
+		if (!strcmp(name, m->name))
+			break;
+	AZ(pthread_mutex_unlock(&macro_mtx));
+
+	return (m != NULL);
+}
+
 void
 macro_cat(struct vtclog *vl, struct vsb *vsb, const char *b, const char *e)
 {
