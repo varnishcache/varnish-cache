@@ -93,8 +93,6 @@ struct varnish {
 
 #define NONSENSE	"%XJEIFLH|)Xspa8P"
 
-#define VARNISHD_ADD_ARGS_ENV_VAR	"VTEST_VARNISHD_ADD_ARGS"
-
 static VTAILQ_HEAD(, varnish)	varnishes =
     VTAILQ_HEAD_INITIALIZER(varnishes);
 
@@ -391,7 +389,7 @@ varnish_launch(struct varnish *v)
 	char abuf[128], pbuf[128];
 	struct pollfd fd[3];
 	enum VCLI_status_e u;
-	const char *err, *env_args;
+	const char *err;
 	char *r = NULL;
 
 	/* Create listener socket */
@@ -431,9 +429,6 @@ varnish_launch(struct varnish *v)
 	VSB_printf(vsb, " -P %s/varnishd.pid", v->workdir);
 	if (vmod_path != NULL)
 		VSB_printf(vsb, " -p vmod_path=%s", vmod_path);
-	env_args = getenv(VARNISHD_ADD_ARGS_ENV_VAR);
-	if (env_args)
-		VSB_printf(vsb, " %s", env_args);
 	VSB_printf(vsb, " %s", VSB_data(v->args));
 	AZ(VSB_finish(vsb));
 	vtc_log(v->vl, 3, "CMD: %s", VSB_data(vsb));
@@ -1072,9 +1067,6 @@ vsl_catchup(struct varnish *v)
  *
  * \-arg STRING
  *         Pass an argument to varnishd, for example "-h simple_list".
- *
- *         The environment variable VTEST_VARNISHD_ADD_ARGS can be used to
- *         inject additional arguments.
  *
  * \-vcl STRING
  *         Specify the VCL to load on this Varnish instance. You'll probably
