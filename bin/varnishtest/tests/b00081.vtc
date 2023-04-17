@@ -1,17 +1,196 @@
 varnishtest "test iovec flush counter"
 
-server s1 {
+server s0 {
 	rxreq
 	txresp
-} -start
+} -dispatch
 
-varnish v1 -arg "-p http1_iovs=5" -vcl+backend {} -start
+# http1_iovs
+# Simple request/response
 
-varnish v1 -expect MAIN.http1_iovs_flush == 0
+varnish v1 -vcl+backend {} -start
+
+varnish v1 -cliok "param.set http1_iovs 30"
 
 client c1 {
 	txreq
 	rxresp
 } -run
 
+varnish v1 -expect MAIN.http1_iovs_flush == 0
+
+# Decreasing http1_iovs causes premature flushes
+varnish v1 -cliok "param.set http1_iovs 5"
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+varnish v1 -expect MAIN.http1_iovs_flush > 0
+
+##################################################
+# Increase number of headers on fetch side
+
+varnish v1 -cliok "param.set http1_iovs 30"
+
+varnish v1 -stop
+varnish v1 -vcl+backend {
+	sub vcl_backend_fetch {
+		set bereq.http.hdr1 = "hdr";
+		set bereq.http.hdr2 = "hdr";
+		set bereq.http.hdr3 = "hdr";
+		set bereq.http.hdr4 = "hdr";
+		set bereq.http.hdr5 = "hdr";
+		set bereq.http.hdr6 = "hdr";
+		set bereq.http.hdr7 = "hdr";
+		set bereq.http.hdr8 = "hdr";
+		set bereq.http.hdr9 = "hdr";
+		set bereq.http.hdr10 = "hdr";
+		set bereq.http.hdr11 = "hdr";
+		set bereq.http.hdr12 = "hdr";
+		set bereq.http.hdr13 = "hdr";
+		set bereq.http.hdr14 = "hdr";
+		set bereq.http.hdr15 = "hdr";
+		set bereq.http.hdr16 = "hdr";
+		set bereq.http.hdr17 = "hdr";
+		set bereq.http.hdr18 = "hdr";
+		set bereq.http.hdr19 = "hdr";
+		set bereq.http.hdr20 = "hdr";
+	}
+} -start
+
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+# http1_iovs parameter does not affect fetch
+varnish v1 -expect MAIN.http1_iovs_flush == 0
+
+#####################################################
+# Increase number of headers on deliver side
+
+varnish v1 -stop
+varnish v1 -vcl+backend {
+	sub vcl_deliver {
+		set resp.http.hdr1 = "hdr";
+		set resp.http.hdr2 = "hdr";
+		set resp.http.hdr3 = "hdr";
+		set resp.http.hdr4 = "hdr";
+		set resp.http.hdr5 = "hdr";
+		set resp.http.hdr6 = "hdr";
+		set resp.http.hdr7 = "hdr";
+		set resp.http.hdr8 = "hdr";
+		set resp.http.hdr9 = "hdr";
+		set resp.http.hdr10 = "hdr";
+		set resp.http.hdr11 = "hdr";
+		set resp.http.hdr12 = "hdr";
+		set resp.http.hdr13 = "hdr";
+		set resp.http.hdr14 = "hdr";
+		set resp.http.hdr15 = "hdr";
+		set resp.http.hdr16 = "hdr";
+		set resp.http.hdr17 = "hdr";
+		set resp.http.hdr18 = "hdr";
+		set resp.http.hdr19 = "hdr";
+		set resp.http.hdr20 = "hdr";
+	}
+} -start
+
+varnish v1 -cliok "param.set http1_iovs 30"
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+# http1_iovs parameter affects deliver
+varnish v1 -expect MAIN.http1_iovs_flush > 0
+
+##################################################
+# Compare with workspace_thread
+# 0.5k is enough for simplest request/response
+
+varnish v1 -cliok "param.reset http1_iovs"
+varnish v1 -stop
+
+varnish v1 -cliok "param.set workspace_thread 0.5k"
+varnish v1 -vcl+backend {} -start
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+varnish v1 -expect MAIN.http1_iovs_flush == 0
+
+# Increase number of headers on fetch side
+varnish v1 -stop
+varnish v1 -vcl+backend {
+	sub vcl_backend_fetch {
+		set bereq.http.hdr1 = "hdr";
+		set bereq.http.hdr2 = "hdr";
+		set bereq.http.hdr3 = "hdr";
+		set bereq.http.hdr4 = "hdr";
+		set bereq.http.hdr5 = "hdr";
+		set bereq.http.hdr6 = "hdr";
+		set bereq.http.hdr7 = "hdr";
+		set bereq.http.hdr8 = "hdr";
+		set bereq.http.hdr9 = "hdr";
+		set bereq.http.hdr10 = "hdr";
+		set bereq.http.hdr11 = "hdr";
+		set bereq.http.hdr12 = "hdr";
+		set bereq.http.hdr13 = "hdr";
+		set bereq.http.hdr14 = "hdr";
+		set bereq.http.hdr15 = "hdr";
+		set bereq.http.hdr16 = "hdr";
+		set bereq.http.hdr17 = "hdr";
+		set bereq.http.hdr18 = "hdr";
+		set bereq.http.hdr19 = "hdr";
+		set bereq.http.hdr20 = "hdr";
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+# workspace_thread parameter affects fetch
+varnish v1 -expect MAIN.http1_iovs_flush > 0
+
+# Increase number of headers on deliver side
+varnish v1 -stop
+varnish v1 -vcl+backend {
+	sub vcl_deliver {
+		set resp.http.hdr1 = "hdr";
+		set resp.http.hdr2 = "hdr";
+		set resp.http.hdr3 = "hdr";
+		set resp.http.hdr4 = "hdr";
+		set resp.http.hdr5 = "hdr";
+		set resp.http.hdr6 = "hdr";
+		set resp.http.hdr7 = "hdr";
+		set resp.http.hdr8 = "hdr";
+		set resp.http.hdr9 = "hdr";
+		set resp.http.hdr10 = "hdr";
+		set resp.http.hdr11 = "hdr";
+		set resp.http.hdr12 = "hdr";
+		set resp.http.hdr13 = "hdr";
+		set resp.http.hdr14 = "hdr";
+		set resp.http.hdr15 = "hdr";
+		set resp.http.hdr16 = "hdr";
+		set resp.http.hdr17 = "hdr";
+		set resp.http.hdr18 = "hdr";
+		set resp.http.hdr19 = "hdr";
+		set resp.http.hdr20 = "hdr";
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+# workspace_thread parameter affects deliver
 varnish v1 -expect MAIN.http1_iovs_flush > 0
