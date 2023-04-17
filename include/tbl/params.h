@@ -448,7 +448,10 @@ PARAM_SIMPLE(
 	/* descr */
 	"Number of io vectors to allocate for HTTP1 protocol transmission."
 	"  A HTTP1 header needs 7 + 2 per HTTP header field."
-	"  Allocated from workspace_thread.",
+	"  Allocated from workspace_thread."
+	"  This parameter affects only io vectors used for client delivery."
+	"  For backend fetches, the maximum number of io vectors (up to IOV_MAX)"
+	"  is allocated from available workspace_thread memory.",
 	/* flags */	WIZARD
 )
 
