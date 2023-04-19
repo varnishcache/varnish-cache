@@ -1,0 +1,64 @@
+name: Bug report
+description: Create a report to help us improve
+body:
+- type: markdown
+  attributes:
+    value: |+
+      Did you check that there are no similar bug reports or pull requests?
+      
+      If your panic happens in the child_sigsegv_handler function, look at the backtrace to determine whether it is similar to another issue. When in doubt, open a new one and it will be closed as a duplicate if needed.
+      
+      If it's a packaging bug (including sysv or systemd services bugs) please open an issue on [varnishcache/pkg-varnish-cache](https://github.com/varnishcache/pkg-varnish-cache) instead.
+      
+      If it's a feature request, please start a thread on the [varnish-misc](https://varnish-cache.org/support/index.html#mailing-lists) list instead.
+      
+- type: textarea
+  attributes:
+    label: Expected Behavior
+    placeholder: |+
+      If you're describing a bug, tell us what should happen.
+      If you're suggesting a change/improvement, tell us how it should work.
+  validations:
+    required: true
+- type: textarea
+  attributes:
+    label: Current Behavior
+    placeholder: |+
+      If describing a bug, tell us what happens instead of the expected behavior.
+      If suggesting a change/improvement, explain the difference from current behavior.
+  validations:
+    required: true
+- type: textarea
+  attributes:
+    label: Possible Solution
+    placeholder: |+
+      Not obligatory, but suggest a fix/reason for the bug, or ideas how to implement the addition or change
+- type: textarea
+  attributes:
+    label: Steps to Reproduce (for bugs)
+    placeholder: |+
+      Provide a link to a live example, or an unambiguous set of steps to reproduce this bug. Include code to reproduce, if relevant.
+      1.
+      2.
+      3.
+      4.
+- type: textarea
+  attributes:
+    label: Context
+    placeholder: |+
+      How has this issue affected you? What are you trying to accomplish?
+      Providing context helps us come up with a solution that is most useful in the real world.
+  validations:
+    required: true
+- type: input
+  attributes:
+    label: Varnish Cache version(varnishd -V output)
+    placeholder: "varnishd (varnish-7.3.0 revision 84d79120b6d17b11819a663a93160743f293e63f)"
+- type: input
+  attributes:
+    placeholder: Ubuntu22.04
+    label: Operating system
+- type: input
+  attributes:
+    label: Source of binary packages used (if any)
+    placeholder: https://packagecloud.io/varnishcache/
