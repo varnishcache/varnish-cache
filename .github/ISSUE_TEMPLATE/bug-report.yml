@@ -15,7 +15,7 @@ body:
 - type: textarea
   attributes:
     label: Expected Behavior
-    placeholder: |+
+    description: |+
       If you're describing a bug, tell us what should happen.
       If you're suggesting a change/improvement, tell us how it should work.
   validations:
@@ -23,7 +23,7 @@ body:
 - type: textarea
   attributes:
     label: Current Behavior
-    placeholder: |+
+    description: |+
       If describing a bug, tell us what happens instead of the expected behavior.
       If suggesting a change/improvement, explain the difference from current behavior.
   validations:
@@ -31,13 +31,14 @@ body:
 - type: textarea
   attributes:
     label: Possible Solution
-    placeholder: |+
+    description: |+
       Not obligatory, but suggest a fix/reason for the bug, or ideas how to implement the addition or change
 - type: textarea
   attributes:
     label: Steps to Reproduce (for bugs)
-    placeholder: |+
+    description: |+
       Provide a link to a live example, or an unambiguous set of steps to reproduce this bug. Include code to reproduce, if relevant.
+    placeholder: |+
       1.
       2.
       3.
@@ -45,14 +46,16 @@ body:
 - type: textarea
   attributes:
     label: Context
-    placeholder: |+
+    description: |+
       How has this issue affected you? What are you trying to accomplish?
       Providing context helps us come up with a solution that is most useful in the real world.
   validations:
     required: true
 - type: input
   attributes:
-    label: Varnish Cache version(varnishd -V output)
+    label: Varnish Cache version
+    description: |+
+      The version can be obtained by "varnishd -V".
     placeholder: "varnishd (varnish-7.3.0 revision 84d79120b6d17b11819a663a93160743f293e63f)"
 - type: input
   attributes:
