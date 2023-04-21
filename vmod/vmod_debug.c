@@ -171,36 +171,113 @@ static const struct vdp xyzzy_vdp_rot13 = {
 };
 
 /**********************************************************************
- * assert that we see a VDP_END
+ * pendantic tests of the VDP API:
+ * - assert that we see a VDP_END
+ * - assert that _fini gets called before the task ends
  *
  * note:
  * we could lookup our own vdpe in _fini and check for vdpe->end == VDP_END
  * yet that would cross the API
  */
 
-static void * end_marker = &end_marker;
+enum vdp_state_e {
+	VDPS_NULL = 0,
+	VDPS_INIT,	// _init called
+	VDPS_BYTES,	// _bytes called act != VDP_END
+	VDPS_END,	// _bytes called act == VDP_END
+	VDPS_FINI	// _fini called
+};
+
+struct vdp_state_s {
+	unsigned		magic;
+#define VDP_STATE_MAGIC	0x57c8d309
+	enum vdp_state_e	state;
+};
+
+static void v_matchproto_(vmod_priv_fini_f)
+priv_pedantic_fini(VRT_CTX, void *priv)
+{
+	struct vdp_state_s *vdps;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CAST_OBJ_NOTNULL(vdps, priv, VDP_STATE_MAGIC);
+
+	assert(vdps->state == VDPS_FINI);
+}
+
+static const struct vmod_priv_methods priv_pedantic_methods[1] = {{
+	.magic = VMOD_PRIV_METHODS_MAGIC,
+	.type = "debug_vdp_pedantic",
+	.fini = priv_pedantic_fini
+}};
+
+static int v_matchproto_(vdp_init_f)
+xyzzy_pedantic_init(VRT_CTX, struct vdp_ctx *vdx, void **priv,
+    struct objcore *oc)
+{
+	struct vdp_state_s *vdps;
+	struct vmod_priv *p;
+
+	(void)oc;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	WS_TASK_ALLOC_OBJ(ctx, vdps, VDP_STATE_MAGIC);
+	if (vdps == NULL)
+		return (-1);
+	assert(vdps->state == VDPS_NULL);
+
+	p = VRT_priv_task(ctx, (void *)vdx);
+	if (p == NULL)
+		return (-1);
+	p->priv = vdps;
+	p->methods = priv_pedantic_methods;
+
+	AN(priv);
+	*priv = vdps;
+
+	vdps->state = VDPS_INIT;
+
+	return (0);
+}
 
 static int v_matchproto_(vdp_bytes_f)
 xyzzy_pedantic_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
-	AZ(*priv);
+	struct vdp_state_s *vdps;
+
+	CAST_OBJ_NOTNULL(vdps, *priv, VDP_STATE_MAGIC);
+	assert(vdps->state >= VDPS_INIT);
+	assert(vdps->state < VDPS_END);
+
 	if (act == VDP_END)
-		*priv = end_marker;
+		vdps->state = VDPS_END;
+	else
+		vdps->state = VDPS_BYTES;
+
 	return (VDP_bytes(vdx, act, ptr, len));
 }
 
 static int v_matchproto_(vdp_fini_f)
-xyzzy_pedantic_fini(struct vdp_ctx *vdc, void **priv)
+xyzzy_pedantic_fini(struct vdp_ctx *vdx, void **priv)
 {
-	(void) vdc;
-	assert (*priv == end_marker);
+	struct vdp_state_s *vdps;
+
+	(void) vdx;
+	AN(priv);
+	if (*priv == NULL)
+		return (0);
+	CAST_OBJ_NOTNULL(vdps, *priv, VDP_STATE_MAGIC);
+	assert(vdps->state == VDPS_INIT || vdps->state == VDPS_END);
+	vdps->state = VDPS_FINI;
+
 	*priv = NULL;
 	return (0);
 }
 
 static const struct vdp xyzzy_vdp_pedantic = {
 	.name  = "debug.pedantic",
+	.init  = xyzzy_pedantic_init,
 	.bytes = xyzzy_pedantic_bytes,
 	.fini  = xyzzy_pedantic_fini,
 };
