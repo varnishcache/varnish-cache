@@ -496,6 +496,9 @@ cnt_transmit(struct worker *wrk, struct req *req)
 		req->doclose = SC_TX_ERROR;
 	}
 
+	if (req->doclose != SC_NULL)
+		req->acct.resp_bodybytes += VDP_Close(req->vdc);
+
 	if (boc != NULL)
 		HSH_DerefBoc(wrk, req->objcore);
 

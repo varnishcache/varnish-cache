@@ -6,11 +6,13 @@ server s1 {
 } -start
 
 varnish v1 -arg "-a ${tmpdir}/v1.sock" -vcl+backend {
+	import debug;
 	import vtc;
 	sub vcl_recv {
 		return (hash);
 	}
 	sub vcl_deliver {
+		set resp.filters += " debug.pedantic";
 		if (req.method == "GET") {
 			vtc.workspace_alloc(client, -1 * (req.xid - 1001));
 		} else if (req.method == "HEAD") {
@@ -28,18 +30,25 @@ varnish v1 -cliok "param.set vsl_mask -VCL_call,-VCL_return,-Hit"
 
 logexpect l1 -v v1 -g raw {
 	expect * *	VCL_Error	"Attempted negative WS allocation"
+	expect * *	Error		"Failure to push processors"
+	expect * *	VCL_Error	"Out of workspace for VDP_STATE_MAGIC"
+	expect * *	Error		"Failure to push processors"
 	expect * *	Error		"Failure to push v1d processor"
 	expect * *	VCL_Error	"Attempted negative WS allocation"
-	expect * *	Error		"workspace_client overflow"
+	expect * *	Error		"Failure to push processors"
+	expect * *	VCL_Error	"Out of workspace for VDP_STATE_MAGIC"
+	expect * *	Error		"Failure to push processors"
 } -start
 
 # some responses will fail (503), some won't. All we care
 # about here is the fact that we don't panic
 client c1 -connect "${tmpdir}/v1.sock" -repeat 100 {
+	non_fatal
 	txreq -url "/"
 	rxresp
 } -run
 client c1 -connect "${tmpdir}/v1.sock" -repeat 100 {
+	non_fatal
 	txreq -url "/" -method "HEAD"
 	rxresp
 } -run
