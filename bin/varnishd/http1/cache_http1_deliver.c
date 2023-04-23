@@ -123,7 +123,7 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 		INIT_OBJ(ctx, VRT_CTX_MAGIC);
 		VCL_Req2Ctx(ctx, req);
 		if (VDP_Push(ctx, req->vdc, req->ws, &v1d_vdp, NULL)) {
-			v1d_error(req, "workspace_thread overflow");
+			v1d_error(req, "Failure to push v1d processor");
 			return;
 		}
 	}
