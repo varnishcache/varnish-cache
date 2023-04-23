@@ -12,9 +12,9 @@ varnish v1 -arg "-a ${tmpdir}/v1.sock" -vcl+backend {
 	}
 	sub vcl_deliver {
 		if (req.method == "GET") {
-			vtc.workspace_alloc(client, -2 * (req.xid - 1001));
+			vtc.workspace_alloc(client, -1 * (req.xid - 1001));
 		} else if (req.method == "HEAD") {
-			vtc.workspace_alloc(client, -2 * (req.xid - 1202));
+			vtc.workspace_alloc(client, -1 * (req.xid - 1202));
 		}
 	}
 } -start
