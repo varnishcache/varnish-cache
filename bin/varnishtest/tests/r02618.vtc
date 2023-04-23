@@ -15,6 +15,13 @@ varnish v1 -vcl+backend {
 	}
 } -start
 
+varnish v1 -cliok "param.set vsl_mask -ReqHeader,-ReqUnset"
+varnish v1 -cliok "param.set vsl_mask -ReqProtocol"
+varnish v1 -cliok "param.set vsl_mask -RespHeader,-RespUnset"
+varnish v1 -cliok "param.set vsl_mask -RespReason,-RespProtocol"
+varnish v1 -cliok "param.set vsl_mask -Timestamp,-Debug"
+varnish v1 -cliok "param.set vsl_mask -VCL_call,-VCL_return,-Hit"
+
 client c1 -repeat 100 {
 	txreq -url "/"
 	# some responses will fail (503), some won't. All we care
