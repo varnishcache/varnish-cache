@@ -11,7 +11,11 @@ varnish v1 -arg "-a ${tmpdir}/v1.sock" -vcl+backend {
 		return (hash);
 	}
 	sub vcl_deliver {
-		vtc.workspace_alloc(client, -4 * (req.xid - 1001) / 2);
+		if (req.method == "GET") {
+			vtc.workspace_alloc(client, -2 * (req.xid - 1001));
+		} else if (req.method == "HEAD") {
+			vtc.workspace_alloc(client, -2 * (req.xid - 1202));
+		}
 	}
 } -start
 
@@ -22,9 +26,22 @@ varnish v1 -cliok "param.set vsl_mask -RespReason,-RespProtocol"
 varnish v1 -cliok "param.set vsl_mask -Timestamp,-Debug"
 varnish v1 -cliok "param.set vsl_mask -VCL_call,-VCL_return,-Hit"
 
+logexpect l1 -v v1 -g raw {
+	expect * *	VCL_Error	"Attempted negative WS allocation"
+	expect * *	Error		"Failure to push v1d processor"
+	expect * *	VCL_Error	"Attempted negative WS allocation"
+	expect * *	Error		"workspace_client overflow"
+} -start
+
+# some responses will fail (503), some won't. All we care
+# about here is the fact that we don't panic
 client c1 -connect "${tmpdir}/v1.sock" -repeat 100 {
 	txreq -url "/"
-	# some responses will fail (503), some won't. All we care
-	# about here is the fact that we don't panic
 	rxresp
 } -run
+client c1 -connect "${tmpdir}/v1.sock" -repeat 100 {
+	txreq -url "/" -method "HEAD"
+	rxresp
+} -run
+
+logexpect l1 -wait
