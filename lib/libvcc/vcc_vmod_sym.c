@@ -134,9 +134,9 @@ func_restrict(struct vcc *tl, struct symbol *sym, vcc_kind_t kind, const struct 
 	unsigned s;
 	while (vv) {
 		s = 0;
-		#define VCL_CTX(l,H) \
-			if (strcmp(vv->value,#l) == 0) s = VCL_MET_##H;
-		#include "tbl/vcl_context.h"
+#define VCL_CTX(l,H)							\
+		if (strcmp(vv->value, #l) == 0) s = VCL_MET_##H;
+#include "tbl/vcl_context.h"
 		if (!s) {
 			VSB_printf(tl->sb, "Error in vmod \"%s\", invalid scope for $Restrict: %s\n",sym->vmod_name, vv->value);
 			tl->err = 1;
