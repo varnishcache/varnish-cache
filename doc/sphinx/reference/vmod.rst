@@ -274,8 +274,8 @@ It must only appear after a ``$Method`` or ``$Function`` and has the following s
     $Restrict scope1 [scope2 ...]
 
 Possible scope values are:
-backend, client, housekeeping, recv, pipe, pass, hash, purge, miss, hit,
-deliver, synth, backend_fetch, backend_response, backend_error, init, fini
+``backend, client, housekeeping, vcl_recv, vcl_pipe, vcl_pass, vcl_hash, vcl_purge, vcl_miss, vcl_hit,
+vcl_deliver, vcl_synth, vcl_backend_fetch, vcl_backend_response, vcl_backend_error, vcl_init, vcl_fini``
 
 Deprecated Aliases
 ------------------
