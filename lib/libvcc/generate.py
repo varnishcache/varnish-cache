@@ -711,11 +711,13 @@ fo.close()
 fo = open(join(buildroot, "include/tbl/vcl_context.h"), "w")
 file_header(fo)
 
+fo.write("/*lint -save -e525 -e539 */\n")
 for i in returns:
     fo.write("\nVCL_CTX(vcl_%s,%s)" % (i[0],i[0].upper()))
 fo.write("\nVCL_CTX(backend, TASK_B)")
 fo.write("\nVCL_CTX(client, TASK_C)")
 fo.write("\nVCL_CTX(housekeeping, TASK_H)")
+fo.write("/*lint -restore */\n")
 fo.write("\n")
 fo.write("\n#undef VCL_CTX")
 fo.write("\n")

@@ -59,6 +59,7 @@
 -esym(768, vrt_ref::*)
 -esym(768, vcf_return::name)
 -esym(768, VCL_conf::*)
+-esym(768, vdp::priv1)
 
 // FLINT Bug20090910_838
 -efunc(838, VRT_purge)
