@@ -35,6 +35,15 @@ release process.
 Varnish Cache NEXT (2023-09-15)
 ===============================
 
+.. PLEASE keep this roughly in commit order as shown by git-log / tig
+   (new to old)
+
+* Call sites of VMOD fuctions and methods can now be restricted to
+  built-in subroutines using the ``$Restrict`` stanza in the VCC file.
+
+* Varnish Delivery Processors (VDPs) are now also properly closed for
+  error conditions, avoiding potential minor memory leaks.
+
 .. _3908: https://github.com/varnishcache/varnish-cache/pull/3908
 
 * The newly introduced abstract socket support was incompatible with
