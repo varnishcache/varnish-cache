@@ -39,6 +39,9 @@
 -elib(659)		// no tokens after struct def.
 -elib(123)		// macro def. with arg at, (just warn)
 
++libh(/usr/include/libunwind.h)
+-elib(849)
+
 -emacro(702, WEXITSTATUS)	// signed shift right
 
 -e825	// control flows into case/default without -fallthrough comment
