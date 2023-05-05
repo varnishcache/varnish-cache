@@ -66,6 +66,9 @@ struct heritage {
 	/* File descriptor for stdout/stderr */
 	int				std_fd;
 
+	/* File descriptor for smuggling socketpair */
+	int				fence;
+
 	int				vsm_fd;
 
 	/* Sockets from which to accept connections */

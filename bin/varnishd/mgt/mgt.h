@@ -100,6 +100,12 @@ void mgt_cli_init_cls(void);
 #define MCF_NOAUTH	0	/* NB: zero disables here-documents */
 #define MCF_AUTH	16
 
+/* mgt_smuggler.c */
+int mgt_SMUG_Init(void);
+void mgt_SMUG_Fini(void);
+int mgt_SMUG_Cancel(uint64_t nonce);
+uint64_t mgt_smuggle(int fd);
+
 /* mgt_jail.c */
 
 enum jail_master_e {

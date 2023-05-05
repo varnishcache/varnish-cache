@@ -445,6 +445,8 @@ child_main(int sigmagic, size_t altstksz)
 
 	VCA_Init();
 
+	SMUG_Init();
+
 	STV_open();
 
 	VMOD_Init();

@@ -33,7 +33,9 @@
 
 #include "config.h"
 
+#include <sys/wait.h>
 #include <sys/types.h>
+#include <sys/socket.h>
 
 #include <poll.h>
 #include <stdarg.h>
@@ -331,6 +333,10 @@ mgt_launch_child(struct cli *cli)
 	MCH_Fd_Inherit(heritage.cli_out, "cli_out");
 	child_cli_in = cp[0];
 
+	/* Create socketpair for posting fd's to the child */
+	heritage.fence = mgt_SMUG_Init();
+	MCH_Fd_Inherit(heritage.fence, "smug-fence");
+
 	/*
 	 * Open pipe for child stdout/err
 	 * NB: not inherited, because we dup2() it to stdout/stderr in child
@@ -431,6 +437,9 @@ mgt_launch_child(struct cli *cli)
 
 	MCH_Fd_Inherit(heritage.cli_out, NULL);
 	closefd(&heritage.cli_out);
+
+	MCH_Fd_Inherit(heritage.fence, NULL);
+	closefd(&heritage.fence);
 
 	child_std_vlu = VLU_New(child_line, NULL, 0);
 	AN(child_std_vlu);
@@ -620,6 +629,9 @@ mgt_reap_child(void)
 	(void)child_listener(NULL, VEV__RD);
 	closefd(&child_output);
 	VLU_Destroy(&child_std_vlu);
+
+	/* Notify smug that the child has been reaped */
+	mgt_SMUG_Fini();
 
 	child_pid = -1;
 

@@ -36,6 +36,7 @@ varnishd_SOURCES = \
 	cache/cache_obj.c \
 	cache/cache_panic.c \
 	cache/cache_pool.c \
+	cache/cache_smuggler.c \
 	cache/cache_range.c \
 	cache/cache_req.c \
 	cache/cache_req_body.c \
@@ -88,6 +89,7 @@ varnishd_SOURCES = \
 	mgt/mgt_param.c \
 	mgt/mgt_param_tcp.c \
 	mgt/mgt_param_tweak.c \
+	mgt/mgt_smuggler.c \
 	mgt/mgt_shmem.c \
 	mgt/mgt_symtab.c \
 	mgt/mgt_util.c \
