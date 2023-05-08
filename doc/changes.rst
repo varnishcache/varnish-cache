@@ -38,16 +38,38 @@ Varnish Cache NEXT (2023-09-15)
 .. PLEASE keep this roughly in commit order as shown by git-log / tig
    (new to old)
 
-* Call sites of VMOD fuctions and methods can now be restricted to
-  built-in subroutines using the ``$Restrict`` stanza in the VCC file.
-
 * Varnish Delivery Processors (VDPs) are now also properly closed for
   error conditions, avoiding potential minor memory leaks.
 
-.. _3908: https://github.com/varnishcache/varnish-cache/pull/3908
+* A regression introduced with Varnish Cache 7.3.0 was fixed: On
+  HTTP/2 connections, URLs starting with ``//`` no longer trigger a
+  protocol error (3911_).
+
+* Call sites of VMOD functions and methods can now be restricted to
+  built-in subroutines using the ``$Restrict`` stanza in the VCC file.
+
+* The counter ``MAIN.http1_iovs_flush`` has been added to track the
+  number of premature ``writev()`` calls due to an insufficient number
+  of IO vectors. This number is configured through the ``http1_iovs``
+  parameter for client connections and implicitly defined by the
+  amount of free workspace for backend connections.
+
+* Object creation failures by the selected storage engine are now
+  logged under the ``Error`` tag as ``Failed to create object object
+  from %s %s``.
+
+* ``varnishtest`` gained the macro ``varnishd_args`` to globally
+  append additional arguments to the ``varnishd`` command line. Macros
+  in this macro's value will be expanded.
+
+* The limit on the size of ``varnishtest`` macros has been raised to
+  2KB.
 
 * The newly introduced abstract socket support was incompatible with
   other implementations, this has been fixed (3908_).
+
+.. _3908: https://github.com/varnishcache/varnish-cache/pull/3908
+.. _3911: https://github.com/varnishcache/varnish-cache/issues/3911
 
 ================================
 Varnish Cache 7.3.0 (2023-03-15)
