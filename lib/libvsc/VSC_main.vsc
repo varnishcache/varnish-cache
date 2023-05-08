@@ -946,4 +946,11 @@
 .. varnish_vsc:: http1_iovs_flush
 	:oneliner:	Premature iovec flushes
 
+	Number of additional writes performed on HTTP1 connections
+	because the number of IO vectors was too small to submit all
+	possible IO in one go. This number is configured through the
+	``http1_iovs`` parameter for client connections and implicitly
+	defined by the amount of free workspace for backend
+	connections.
+
 .. varnish_vsc_end::	main
