@@ -1427,6 +1427,7 @@ static void
 cmd_tx11obj(CMD_ARGS)
 {
 	struct stream *s;
+	int i;
 	int status_done = 1;
 	int method_done = 1;
 	int path_done = 1;
@@ -1597,17 +1598,15 @@ cmd_tx11obj(CMD_ARGS)
 				f.flags &= ~END_STREAM;
 				av++;
 			}
-			else if (!strcmp(*av, "-gzipbody")) {
-				vtc_gzip_cmd(s->hp, av, &body, &bodylen);
-				ENC(hdr, ":content-encoding", "gzip");
-				f.flags &= ~END_STREAM;
-				av++;
-			}
-			else if (!strcmp(*av, "-gziplen")) {
-				vtc_gzip_cmd(s->hp, av, &body, &bodylen);
-				ENC(hdr, ":content-encoding", "gzip");
-				f.flags &= ~END_STREAM;
-				av++;
+			else if (!strncmp(*av, "-gzip", 5)) {
+				i = vtc_gzip_cmd(s->hp, av, &body, &bodylen);
+				if (i == 0)
+					break;
+				av += i;
+				if (i > 1) {
+					ENC(hdr, ":content-encoding", "gzip");
+					f.flags &= ~END_STREAM;
+				}
 			}
 			else if (AV_IS("-dep")) {
 				STRTOU32_CHECK(stid, av, p, vl, "-dep", 0);

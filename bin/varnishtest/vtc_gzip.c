@@ -194,26 +194,41 @@ vtc_gunzip(struct http *hp, char *body, long *bodylen)
 	bprintf(hp->bodylen, "%ld", *bodylen);
 }
 
-void
-vtc_gzip_cmd(struct http *hp, char * const *argv, char **body, long *bodylen)
+int
+vtc_gzip_cmd(struct http *hp, char * const *av, char **body, long *bodylen)
 {
 	char *b;
 
 	AN(hp);
-	AN(argv);
+	AN(av);
 	AN(body);
 	AN(bodylen);
 
-	if (!strcmp(*argv, "-gzipbody")) {
-		AZ(*body);
-		vtc_gzip(hp, argv[1], body, bodylen);
+	if (!strcmp(*av, "-gzipresidual")) {
+		hp->gzipresidual = strtoul(av[1], NULL, 0);
+		return (1);
+	}
+	if (!strcmp(*av, "-gziplevel")) {
+		hp->gziplevel = strtoul(av[1], NULL, 0);
+		return (1);
+	}
+	if (!strcmp(*av, "-gzipbody")) {
+		if (*body != NULL)
+			free(*body);
+		*body = NULL;
+		vtc_gzip(hp, av[1], body, bodylen);
 		AN(*body);
-	} else if (!strcmp(*argv, "-gziplen")) {
-		b = synth_body(argv[1], 1);
+		return (2);
+	}
+	if (!strcmp(*av, "-gziplen")) {
+		if (*body != NULL)
+			free(*body);
+		*body = NULL;
+		b = synth_body(av[1], 1);
 		vtc_gzip(hp, b, body, bodylen);
 		AN(*body);
 		free(b);
-	} else {
-		WRONG("Wrong cmd til vtc_gzip_cmd");
+		return (2);
 	}
+	return (0);
 }

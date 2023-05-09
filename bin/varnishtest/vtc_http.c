@@ -839,26 +839,13 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
 			body = synth_body(av[1], 0);
 			bodylen = strlen(body);
 			av++;
-		} else if (!strcmp(*av, "-gzipresidual")) {
-			hp->gzipresidual = strtoul(av[1], NULL, 0);
-			av++;
-		} else if (!strcmp(*av, "-gziplevel")) {
-			hp->gziplevel = strtoul(av[1], NULL, 0);
-			av++;
-		} else if (!strcmp(*av, "-gziplen")) {
-			assert(body == nullbody);
-			free(body);
-			body = NULL;
-			vtc_gzip_cmd(hp, av, &body, &bodylen);
-			VSB_printf(hp->vsb, "Content-Encoding: gzip%s", nl);
-			av++;
-		} else if (!strcmp(*av, "-gzipbody")) {
-			assert(body == nullbody);
-			free(body);
-			body = NULL;
-			vtc_gzip_cmd(hp, av, &body, &bodylen);
-			VSB_printf(hp->vsb, "Content-Encoding: gzip%s", nl);
-			av++;
+		} else if (!strncmp(*av, "-gzip", 5)) {
+			l = vtc_gzip_cmd(hp, av, &body, &bodylen);
+			if (l == 0)
+				break;
+			av += l;
+			if (l > 1)
+				VSB_printf(hp->vsb, "Content-Encoding: gzip%s", nl);
 		} else
 			break;
 	}
