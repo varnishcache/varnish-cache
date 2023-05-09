@@ -132,7 +132,7 @@ vtc_gunzip(struct http *hp, char *body, long *bodylen)
  */
 
 static int
-vtc_gzip_chunk(z_stream *vz, struct vsb *vout, const void *in, size_t inlen, int flush)
+vtc_gzip_chunk(z_stream *vz, struct vsb *vout, const char *in, size_t inlen, int flush)
 {
 	int i;
 	char buf[BUFSIZ];
@@ -145,7 +145,7 @@ vtc_gzip_chunk(z_stream *vz, struct vsb *vout, const void *in, size_t inlen, int
 		i = deflate(vz, flush);
 		if (vz->avail_out != sizeof buf)
 			VSB_bcat(vout, buf, sizeof buf - vz->avail_out);
-	} while (i == Z_OK || i == Z_BUF_ERROR);
+	} while (i == Z_OK || vz->avail_in > 0);
 	vz->next_out = NULL;
 	vz->avail_out = 0;
 	vz->next_in = NULL;
@@ -155,10 +155,11 @@ vtc_gzip_chunk(z_stream *vz, struct vsb *vout, const void *in, size_t inlen, int
 }
 
 static void
-vtc_gzip(struct http *hp, const void *input, char **body, long *bodylen)
+vtc_gzip(struct http *hp, const char *input, char **body, long *bodylen, int fragment)
 {
 	struct vsb *vout;
 	int i, res;
+	size_t inlen = strlen(input);
 	z_stream vz;
 
 	memset(&vz, 0, sizeof vz);
@@ -168,7 +169,20 @@ vtc_gzip(struct http *hp, const void *input, char **body, long *bodylen)
 	assert(Z_OK == deflateInit2(&vz,
 	    hp->gziplevel, Z_DEFLATED, 31, 9, Z_DEFAULT_STRATEGY));
 
-	i = vtc_gzip_chunk(&vz, vout, input, strlen(input), Z_FINISH);
+	while (fragment && inlen > 3) {
+		res = inlen / 3;
+		i = vtc_gzip_chunk(&vz, vout, input, res, Z_BLOCK);
+		if (i != Z_OK && i != Z_BUF_ERROR) {
+			vtc_log(hp->vl, hp->fatal,
+			    "Gzip error = %d (%s) in:%jd out:%jd len:%zd",
+			    i, vz.msg, (intmax_t)vz.total_in,
+			    (intmax_t)vz.total_out, strlen(input));
+		}
+		input += res;
+		inlen -= res;
+	}
+
+	i = vtc_gzip_chunk(&vz, vout, input, inlen, Z_FINISH);
 	if (i != Z_STREAM_END) {
 		vtc_log(hp->vl, hp->fatal,
 		    "Gzip error = %d (%s) in:%jd out:%jd len:%zd",
@@ -222,7 +236,7 @@ vtc_gzip_cmd(struct http *hp, char * const *av, char **body, long *bodylen)
 		if (*body != NULL)
 			free(*body);
 		*body = NULL;
-		vtc_gzip(hp, av[1], body, bodylen);
+		vtc_gzip(hp, av[1], body, bodylen, 0);
 		AN(*body);
 		return (2);
 	}
@@ -231,7 +245,7 @@ vtc_gzip_cmd(struct http *hp, char * const *av, char **body, long *bodylen)
 			free(*body);
 		*body = NULL;
 		b = synth_body(av[1], 1);
-		vtc_gzip(hp, b, body, bodylen);
+		vtc_gzip(hp, b, body, bodylen, 1);
 		AN(*body);
 		free(b);
 		return (2);
