@@ -28,6 +28,9 @@ varnish v1 -vcl+backend {
 varnish v1 -cliok "vcl.label vclB vcl2"
 varnish v1 -cliok "vcl.list"
 
+# Ensure old VSLs do not confuse l1
+varnish v1 -vsl_catchup
+
 logexpect l1 -v v1 -g raw {
 	expect * 1002	VCL_call	"BACKEND_FETCH"
 	expect 0 1002	VCL_trace	{^vcl1 \d+ \d+\.\d+\.\d+$}
