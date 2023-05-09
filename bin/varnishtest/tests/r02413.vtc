@@ -11,6 +11,8 @@ varnish v1 -arg "-p feature=+trace" -vcl+backend {
 	}
 } -start
 
+varnish v1 -cliok "param.set debug +syncvsl"
+
 varnish v1 -cliok "vcl.label vclA vcl1"
 
 varnish v1 -vcl+backend {
@@ -32,12 +34,12 @@ varnish v1 -cliok "vcl.list"
 varnish v1 -vsl_catchup
 
 logexpect l1 -v v1 -g raw {
-	expect * 1002	VCL_call	"BACKEND_FETCH"
-	expect 0 1002	VCL_trace	{^vcl1 \d+ \d+\.\d+\.\d+$}
 	expect * 1001	VCL_call	"RECV"
 	expect 0 1001	VCL_trace	{^vcl2 \d+ \d+\.\d+\.\d+$}
 	expect * 1001	VCL_call	"RECV"
 	expect 0 1001	VCL_trace	{^vcl1 \d+ \d+\.\d+\.\d+$}
+	expect * 1002	VCL_call	"BACKEND_FETCH"
+	expect 0 1002	VCL_trace	{^vcl1 \d+ \d+\.\d+\.\d+$}
 	expect * 1003	VCL_call	"DELIVER"
 	expect 0 1003	RespHeader	{^vcl: vcl2}
 } -start
