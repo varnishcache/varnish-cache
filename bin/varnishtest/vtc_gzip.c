@@ -103,7 +103,7 @@ vtc_gzip_vsb(struct vtclog *vl, int fatal, int gzip_level, const struct vsb *vin
 	return (vout);
 }
 
-void
+static void
 vtc_gzip(struct http *hp, const char *input, char **body, long *bodylen)
 {
 	struct vsb *vin, *vout;
@@ -192,4 +192,28 @@ vtc_gunzip(struct http *hp, char *body, long *bodylen)
 	vtc_log(hp->vl, 3, "new bodylen %ld", *bodylen);
 	vtc_dump(hp->vl, 4, "body", body, *bodylen);
 	bprintf(hp->bodylen, "%ld", *bodylen);
+}
+
+void
+vtc_gzip_cmd(struct http *hp, char * const *argv, char **body, long *bodylen)
+{
+	char *b;
+
+	AN(hp);
+	AN(argv);
+	AN(body);
+	AN(bodylen);
+
+	if (!strcmp(*argv, "-gzipbody")) {
+		AZ(*body);
+		vtc_gzip(hp, argv[1], body, bodylen);
+		AN(*body);
+	} else if (!strcmp(*argv, "-gziplen")) {
+		b = synth_body(argv[1], 1);
+		vtc_gzip(hp, b, body, bodylen);
+		AN(*body);
+		free(b);
+	} else {
+		WRONG("Wrong cmd til vtc_gzip_cmd");
+	}
 }

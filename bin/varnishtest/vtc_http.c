@@ -848,18 +848,16 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
 		} else if (!strcmp(*av, "-gziplen")) {
 			assert(body == nullbody);
 			free(body);
-			b = synth_body(av[1], 1);
-			vtc_gzip(hp, b, &body, &bodylen);
-			free(b);
+			body = NULL;
+			vtc_gzip_cmd(hp, av, &body, &bodylen);
 			VSB_printf(hp->vsb, "Content-Encoding: gzip%s", nl);
-			// vtc_hexdump(hp->vl, 4, "gzip", (void*)body, bodylen);
 			av++;
 		} else if (!strcmp(*av, "-gzipbody")) {
 			assert(body == nullbody);
 			free(body);
-			vtc_gzip(hp, av[1], &body, &bodylen);
+			body = NULL;
+			vtc_gzip_cmd(hp, av, &body, &bodylen);
 			VSB_printf(hp->vsb, "Content-Encoding: gzip%s", nl);
-			// vtc_hexdump(hp->vl, 4, "gzip", (void*)body, bodylen);
 			av++;
 		} else
 			break;

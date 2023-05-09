@@ -150,8 +150,8 @@ void stop_h2(struct http *hp);
 void b64_settings(const struct http *hp, const char *s);
 
 /* vtc_gzip.c */
-void vtc_gzip(struct http *, const char *, char **, long *);
 void vtc_gunzip(struct http *, char *, long *);
+void vtc_gzip_cmd(struct http *hp, char * const *argv, char **body, long *bodylen);
 
 /* vtc_subr.c */
 struct vsb *vtc_hex_to_bin(struct vtclog *vl, const char *arg);

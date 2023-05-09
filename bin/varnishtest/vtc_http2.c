@@ -1443,7 +1443,7 @@ cmd_tx11obj(CMD_ARGS)
 	/*XXX: do we need a better api? yes we do */
 	struct hpk_hdr hdr;
 	char *cmd_str = *av;
-	char *b, *p;
+	char *p;
 
 	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
 	INIT_FRAME(f, CONTINUATION, 0, s->id, END_HEADERS);
@@ -1598,19 +1598,13 @@ cmd_tx11obj(CMD_ARGS)
 				av++;
 			}
 			else if (!strcmp(*av, "-gzipbody")) {
-				AZ(body);
-				vtc_gzip(s->hp, av[1], &body, &bodylen);
-				AN(body);
+				vtc_gzip_cmd(s->hp, av, &body, &bodylen);
 				ENC(hdr, ":content-encoding", "gzip");
 				f.flags &= ~END_STREAM;
 				av++;
 			}
 			else if (!strcmp(*av, "-gziplen")) {
-				AZ(body);
-				b = synth_body(av[1], 1);
-				vtc_gzip(s->hp, b, &body, &bodylen);
-				AN(body);
-				free(b);
+				vtc_gzip_cmd(s->hp, av, &body, &bodylen);
 				ENC(hdr, ":content-encoding", "gzip");
 				f.flags &= ~END_STREAM;
 				av++;
