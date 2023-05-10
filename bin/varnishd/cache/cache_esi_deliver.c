@@ -924,7 +924,7 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 	if (i && req->doclose == SC_NULL)
 		req->doclose = SC_REM_CLOSE;
 
-	req->acct.resp_bodybytes += VDP_Close(req->vdc);
+	req->acct.resp_bodybytes += VDP_Close(req->vdc, req->objcore, boc);
 
 	if (i && !ecx->incl_cont) {
 		req->top->topreq->vdc->retval = -1;

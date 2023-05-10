@@ -191,7 +191,7 @@ void VDI_Init(void);
 /* cache_deliver_proc.c */
 void VDP_Init(struct vdp_ctx *vdx, struct worker *wrk, struct vsl_log *vsl,
     struct req *req);
-uint64_t VDP_Close(struct vdp_ctx *);
+uint64_t VDP_Close(struct vdp_ctx *, struct objcore *, struct boc *);
 void VDP_Panic(struct vsb *vsb, const struct vdp_ctx *vdc);
 int VDP_Push(VRT_CTX, struct vdp_ctx *, struct ws *, const struct vdp *,
     void *priv);

@@ -33,6 +33,7 @@
 
 #include "cache_varnishd.h"
 #include "cache_filter.h"
+#include "cache_objhead.h"
 
 void
 VDP_Panic(struct vsb *vsb, const struct vdp_ctx *vdc)
@@ -182,12 +183,16 @@ VDP_Push(VRT_CTX, struct vdp_ctx *vdc, struct ws *ws, const struct vdp *vdp,
 }
 
 uint64_t
-VDP_Close(struct vdp_ctx *vdc)
+VDP_Close(struct vdp_ctx *vdc, struct objcore *oc, struct boc *boc)
 {
 	struct vdp_entry *vdpe;
 	uint64_t rv = 0;
 
 	CHECK_OBJ_NOTNULL(vdc, VDP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vdc->wrk, WORKER_MAGIC);
+	CHECK_OBJ_ORNULL(oc, OBJCORE_MAGIC);
+	CHECK_OBJ_ORNULL(boc, BOC_MAGIC);
+
 	while (!VTAILQ_EMPTY(&vdc->vdp)) {
 		vdpe = VTAILQ_FIRST(&vdc->vdp);
 		rv = vdpe->bytes_in;
@@ -209,6 +214,8 @@ VDP_Close(struct vdp_ctx *vdc)
 			assert(vdpe->end == VDP_END);
 #endif
 	}
+	if (oc != NULL)
+		HSH_Cancel(vdc->wrk, oc, boc);
 	return (rv);
 }
 

@@ -163,7 +163,7 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 	AZ(req->wrk->v1l);
 
 	req->acct.resp_hdrbytes += hdrbytes;
-	req->acct.resp_bodybytes += VDP_Close(req->vdc);
+	req->acct.resp_bodybytes += VDP_Close(req->vdc, req->objcore, boc);
 
 	if (sc == SC_NULL && err && req->sp->fd >= 0)
 		sc = SC_REM_CLOSE;

@@ -488,8 +488,6 @@ cnt_transmit(struct worker *wrk, struct req *req)
 
 	VSLb_ts_req(req, "Resp", W_TIM_real(wrk));
 
-	HSH_Cancel(wrk, req->objcore, boc);
-
 	if (req->doclose == SC_NULL && (req->objcore->flags & OC_F_FAILED)) {
 		/* The object we delivered failed due to a streaming error.
 		 * Fail the request. */
@@ -497,7 +495,7 @@ cnt_transmit(struct worker *wrk, struct req *req)
 	}
 
 	if (req->doclose != SC_NULL)
-		req->acct.resp_bodybytes += VDP_Close(req->vdc);
+		req->acct.resp_bodybytes += VDP_Close(req->vdc, req->objcore, boc);
 
 	if (boc != NULL)
 		HSH_DerefBoc(wrk, req->objcore);
