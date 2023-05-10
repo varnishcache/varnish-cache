@@ -130,6 +130,12 @@ vsl_tag_is_masked(enum VSL_tag_e tag)
 	return (*bm & b);
 }
 
+int
+VSL_tag_is_masked(enum VSL_tag_e tag)
+{
+	return (vsl_tag_is_masked(tag));
+}
+
 /*--------------------------------------------------------------------
  * Lay down a header fields, and return pointer to the next record
  */
