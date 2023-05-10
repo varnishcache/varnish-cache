@@ -2,15 +2,13 @@ varnishtest "double sub unref warning / warnings output for -f"
 
 # Also tests #3160
 
-shell {
-	cat >unref.vcl <<-EOF
+filewrite ${tmpdir}/unref.vcl {
 	vcl 4.1;
 	backend be none;
 	sub foo { }
-	EOF
 }
 
-process p1 -winsz 100 80 -log {
+process p1 -log {
 	varnishd -F -n "${tmpdir}/t" -a "${tmpdir}/sock" \
 	    -p vcc_feature=-err_unref -f "${tmpdir}/unref.vcl" \
 	    -l 2m 2>&1
@@ -23,11 +21,12 @@ process p1 -screen_dump
 
 process p2 -log {varnishadm -n ${tmpdir}/t "vcl.load unref ${tmpdir}/unref.vcl"} -run
 
-process p2 -expect-text 0 1 "Unused sub foo, defined:"
-process p2 -expect-text 0 1 "(That was just a warning)"
+process p2 -wait
+process p1 -kill TERM
 
 process p2 -screen_dump
 
-process p1 -kill TERM
+process p2 -expect-text 0 1 "Unused sub foo, defined:"
+process p2 -expect-text 0 1 "(That was just a warning)"
 
 process p1 -expect-exit 0x40 -wait
