@@ -783,6 +783,7 @@ void VSLbs(struct vsl_log *, enum VSL_tag_e tag, const struct strands *s);
 void VSLb_ts(struct vsl_log *, const char *event, vtim_real first,
     vtim_real *pprev, vtim_real now);
 void VSLb_bin(struct vsl_log *, enum VSL_tag_e, ssize_t, const void*);
+int VSL_tag_is_masked(enum VSL_tag_e tag);
 
 static inline void
 VSLb_ts_req(struct req *req, const char *event, vtim_real now)
