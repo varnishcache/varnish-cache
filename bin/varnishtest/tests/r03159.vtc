@@ -12,14 +12,19 @@ process p1 -log {
 	varnishd -F -n "${tmpdir}/t" -a "${tmpdir}/sock" \
 	    -p vcc_feature=-err_unref -f "${tmpdir}/unref.vcl" \
 	    -l 2m 2>&1
-} -start
+} -start -expect-exit 0x40
 
 process p1 -expect-text 0 1 "Unused sub foo, defined:"
 process p1 -expect-text 0 1 "(That was just a warning)"
 
 process p1 -screen_dump
 
-process p2 -log {varnishadm -n ${tmpdir}/t "vcl.load unref ${tmpdir}/unref.vcl"} -run
+process p2 -log {
+	set -e
+	varnishadm -n ${tmpdir}/t "vcl.list"
+	varnishadm -n ${tmpdir}/t -t 20 "vcl.load unref ${tmpdir}/unref.vcl"
+	varnishadm -n ${tmpdir}/t "vcl.list"
+} -run
 
 process p2 -wait
 process p1 -kill TERM
@@ -29,4 +34,4 @@ process p2 -screen_dump
 process p2 -expect-text 0 1 "Unused sub foo, defined:"
 process p2 -expect-text 0 1 "(That was just a warning)"
 
-process p1 -expect-exit 0x40 -wait
+process p1 -wait
