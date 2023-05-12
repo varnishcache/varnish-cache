@@ -1805,6 +1805,9 @@ local block_state deflate_stored(s, flush)
             s->strm->total_out += len;
         }
     } while (last == 0);
+    if (last) 
+        s->strm->stop_bit =
+           (s->strm->total_out + s->pending) * 8 + s->bi_valid;
 
     /* Update the sliding window with the last s->w_size bytes of the copied
      * data, or append all of the copied data to the existing window if less
