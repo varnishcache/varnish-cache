@@ -80,11 +80,14 @@ CLI_CMD(VCL_LOAD,
 
 CLI_CMD(VCL_LOAD_FILES,
 	"vcl.load_files",
-	"vcl.load_files [-s auto|cold|warm] <configname> <filename1> [filename2, ...]",
+	"vcl.load_files [-s auto|cold|warm] [-p vcl_path] <configname> <filename1> [filename2, ...]",
 	"Compile and load multiple VCL files under the name provided.",
 	"  When multiple files are specified, they are parsed in the order"
 	"  they were provided and treated as if they were concatenated and merged into"
-	"  a single vcl file.",
+	"  a single vcl file."
+	"  The optional ``-p`` argument specifies the path of the vcl files (and included files),"
+	"  it is prepended to the ``vcl_path`` parameter. This command will fail when ``-p`` is specified"
+	"  and ``vcl_path`` is protected (read only).",
 	2, -1
 )
 

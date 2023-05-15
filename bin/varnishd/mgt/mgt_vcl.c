@@ -43,6 +43,7 @@
 #include "mgt/mgt_vcl.h"
 #include "common/heritage.h"
 
+#include "mgt_param.h"
 #include "vcli_serve.h"
 #include "vct.h"
 #include "vev.h"
@@ -437,7 +438,7 @@ mgt_vcl_setstate(struct cli *cli, struct vclprog *vp, const struct vclstate *vs)
 
 static struct vclprog *
 mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
-    const char * const *vclsrcfiles, const char *state, int C_flag)
+    const char * const *vclsrcfiles, const char *state, const char *vcl_path, int C_flag)
 {
 	unsigned status;
 	char *lib, *p;
@@ -463,7 +464,7 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 		return (NULL);
 
 	vp = mgt_vcl_add(vclname, vs);
-	lib = mgt_VccCompile(cli, vp, vclname, vclsrc, vclsrcfiles, C_flag);
+	lib = mgt_VccCompile(cli, vp, vclname, vclsrc, vclsrcfiles, vcl_path, C_flag);
 	if (lib == NULL) {
 		mgt_vcl_del(vp);
 		return (NULL);
@@ -516,7 +517,7 @@ mgt_vcl_startup(struct cli *cli, const char *vclsrc, const char *vclname,
 		bprintf(buf, "boot%d", n++);
 		vclname = buf;
 	}
-	vp = mgt_new_vcl(cli, vclname, vclsrc, vcls, NULL, C_flag);
+	vp = mgt_new_vcl(cli, vclname, vclsrc, vcls, NULL, NULL, C_flag);
 	if (vp != NULL) {
 		/* Last startup VCL becomes the automatically selected
 		 * active VCL. */
@@ -596,7 +597,7 @@ mcf_vcl_inline(struct cli *cli, const char * const *av, void *priv)
 	if (!mcf_find_no_vcl(cli, av[2]))
 		return;
 
-	vp = mgt_new_vcl(cli, av[2], av[3], vcls, av[4], 0);
+	vp = mgt_new_vcl(cli, av[2], av[3], vcls, av[4], NULL, 0);
 	if (vp != NULL && !MCH_Running())
 		VCLI_Out(cli, "VCL compiled.\n");
 }
@@ -611,7 +612,7 @@ mcf_vcl_load(struct cli *cli, const char * const *av, void *priv)
 	if (!mcf_find_no_vcl(cli, av[2]))
 		return;
 
-	vp = mgt_new_vcl(cli, av[2], NULL, vcls, av[4], 0);
+	vp = mgt_new_vcl(cli, av[2], NULL, vcls, av[4], NULL, 0);
 	if (vp != NULL && !MCH_Running())
 		VCLI_Out(cli, "VCL compiled.\n");
 }
@@ -620,13 +621,25 @@ static void v_matchproto_(cli_func_t)
 mcf_vcl_load_files(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vclprog *vp;
+	const struct parspec *pp;
 	int i = 2;
 	const char *state = NULL;
+	const char *vcl_path = NULL;
 
 	while (av[i] != NULL) {
 		if (!strcmp(av[i], "-s")) {
 			FAIL_NO_ARG(av[i+1], "-s");
 			state = av[i+1];
+			i += 2;
+		} else if (!strcmp(av[i], "-p")) {
+			FAIL_NO_ARG(av[i+1], "-p");
+			pp = MCF_FindPar("vcl_path");
+			if (pp->flags & PROTECTED) {
+				VCLI_SetResult(cli, CLIS_AUTH);
+				VCLI_Out(cli, "parameter \"vcl_path\" is protected.\n");
+				return;
+			}
+			vcl_path = av[i+1];
 			i += 2;
 		} else {
 			break;
@@ -643,7 +656,7 @@ mcf_vcl_load_files(struct cli *cli, const char * const *av, void *priv)
 	if (!mcf_find_no_vcl(cli, av[i]))
 		return;
 
-	vp = mgt_new_vcl(cli, av[i], NULL, &av[i+1], state, 0);
+	vp = mgt_new_vcl(cli, av[i], NULL, &av[i+1], state, vcl_path, 0);
 	if (vp != NULL && !MCH_Running())
 		VCLI_Out(cli, "VCL compiled.\n");
 }

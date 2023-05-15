@@ -84,6 +84,19 @@ Varnish Cache NEXT (2023-09-15)
 .. _3908: https://github.com/varnishcache/varnish-cache/pull/3908
 .. _3911: https://github.com/varnishcache/varnish-cache/issues/3911
 
+* A new ``vcl.load_files`` command has been added to cli. It has
+  the following syntax:
+
+  ``vcl.load_file [-s auto|cold|warm] [-p vcl_path]
+  <configname> <filename1> [filename2, ...]``
+
+  It is similar to ``vcl.load`` command except that it turns the state argument
+  into ``[-s auto|cold|warm]``, it has an optional ``-p`` argument that is prepended
+  to ``vcl_path`` parameter when loading the vcls, and it allows to specify multiple
+  vcl files to load, they are parsed in the order they are provided, and treated
+  as if they were concatenated and merged into a single vcl file. Note that this command
+  will fail when ``-p`` is specified and ``vcl_path`` is protected (read only).
+
 ================================
 Varnish Cache 7.3.0 (2023-03-15)
 ================================

@@ -1,0 +1,40 @@
+varnishtest "Test vcl.load_files -p arg"
+
+server s1 {
+	rxreq
+	txresp -status 202
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+shell {
+	(
+	echo 'vcl 4.0;'
+	echo 'backend default {'
+	echo '  .host="${s1_addr}";'
+	echo '  .port="${s1_port}";'
+	echo '}'
+	echo ''
+	echo 'include "inc.vcl";'
+	) > ${tmpdir}/c00123.vcl
+}
+
+shell {
+	(
+	echo 'sub vcl_deliver {'
+	echo '	set resp.http.test = "c00123";'
+	echo '}'
+	) > ${tmpdir}/inc.vcl
+}
+
+varnish v1 -cliexpect "No such file or directory" {vcl.load_files foo c00123.vcl}
+
+varnish v1 -cliok {vcl.load_files -p ${tmpdir} foo c00123.vcl}
+varnish v1 -cliok {vcl.use foo}
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.test == "c00123"
+	expect resp.status == 202
+} -run
