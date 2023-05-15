@@ -534,6 +534,12 @@ MCF_ParamProtect(struct cli *cli, const char *args)
 
 /*--------------------------------------------------------------------*/
 
+struct parspec *
+MCF_FindPar(const char *name)
+{
+	return mcf_findpar(name);
+}
+
 void
 MCF_ParamSet(struct cli *cli, const char *param, const char *val)
 {
