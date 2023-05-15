@@ -623,7 +623,8 @@ vfp_gzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 				VGZ_UpdateObj(vc, vg, VUA_UPDATE);
 				*lp = dl;
 				assert(dp == p);
-				return (VFP_OK);
+				if (vr != VGZ_END || !VGZ_IbufEmpty(vg))
+					return (VFP_OK);
 			}
 		}
 		AN(VGZ_IbufEmpty(vg));
