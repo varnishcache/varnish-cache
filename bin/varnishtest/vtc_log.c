@@ -235,7 +235,7 @@ vtc_dump(struct vtclog *vl, int lvl, const char *pfx, const char *str, int len)
 		    lead[lvl < 0 ? 1: lvl], vl->id, pfx);
 		if (len < 0)
 			len = strlen(str);
-		else if (str[0] == 0x1f && str[1] == 0x8b)
+		else if (str[0] == 0x1f && (uint8_t)str[1] == 0x8b)
 			quote = VSB_QUOTE_HEX; // Dump gzip data in HEX
 		VSB_quote_pfx(vl->vsb, buf, str,
 		    len > MAX_DUMP ? MAX_DUMP : len, quote);
