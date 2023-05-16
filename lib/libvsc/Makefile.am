@@ -19,4 +19,6 @@ VSC_SRC = \
 noinst_LTLIBRARIES = libvsc.la
 libvsc_la_SOURCES = $(VSC_SRC)
 
+BUILT_SOURCES = $(VSC_GEN)
+
 dist_pkgdata_SCRIPTS = vsctool.py
