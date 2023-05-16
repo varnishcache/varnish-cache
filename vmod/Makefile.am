@@ -41,6 +41,8 @@ VSC_SRC = VSC_debug.vsc
 
 libvmod_debug_la_SOURCES += $(VSC_SRC)
 
+BUILT_SOURCES = $(VSC_GEN)
+
 # Allow Vmod_wrong*_Data to be exported
 vmod_debug_symbols_regex = 'Vmod_.*_Data'
 
