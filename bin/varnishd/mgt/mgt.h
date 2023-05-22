@@ -188,6 +188,8 @@ enum mcf_which_e {
 void MCF_ParamConf(enum mcf_which_e, const char *param, const char *, ...)
     v_printflike_(3, 4);
 
+struct parspec *MCF_FindPar(const char *name);
+
 void MCF_ParamSet(struct cli *, const char *param, const char *val);
 void MCF_ParamProtect(struct cli *, const char *arg);
 void MCF_DumpRstParam(void);
@@ -225,7 +227,7 @@ void STV_Init(void);
 /* mgt_vcc.c */
 void mgt_DumpBuiltin(void);
 char *mgt_VccCompile(struct cli *, struct vclprog *, const char *vclname,
-    const char *vclsrc, const char *vclsrcfile, int C_flag);
+    const char *vclsrc, const char * const *vclsrcfiles, const char *vcl_path, int C_flag);
 
 void mgt_vcl_init(void);
 void mgt_vcl_startup(struct cli *, const char *vclsrc, const char *origin,

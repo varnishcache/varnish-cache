@@ -56,7 +56,8 @@ struct vcc_priv {
 	unsigned	magic;
 #define VCC_PRIV_MAGIC	0x70080cb8
 	const char	*vclsrc;
-	const char	*vclsrcfile;
+	const char * const *vclsrcfiles;
+	const char	*vcl_path;
 	struct vsb	*dir;
 	struct vsb	*csrcfile;
 	struct vsb	*libfile;
@@ -103,7 +104,7 @@ vcc_vext_iter_func(const char *filename, void *priv)
 static void v_noreturn_ v_matchproto_(vsub_func_f)
 run_vcc(void *priv)
 {
-	struct vsb *sb = NULL;
+	struct vsb *sb = NULL, *vsb = NULL;
 	struct vclprog *vpg;
 	struct vcc_priv *vp;
 	struct vcc *vcc;
@@ -118,8 +119,17 @@ run_vcc(void *priv)
 	vcc = VCC_New();
 	AN(vcc);
 	VCC_Builtin_VCL(vcc, builtin_vcl);
-	VCC_VCL_path(vcc, mgt_vcl_path);
 	VCC_VMOD_path(vcc, mgt_vmod_path);
+	if (vp->vcl_path != NULL) {
+		vsb = VSB_new_auto();
+		AN(vsb);
+		VSB_printf(vsb, "%s:%s", vp->vcl_path, mgt_vcl_path);
+		AZ(VSB_finish(vsb));
+		VCC_VCL_path(vcc, VSB_data(vsb));
+		VSB_destroy(&vsb);
+	} else {
+		VCC_VCL_path(vcc, mgt_vcl_path);
+	}
 
 #define VCC_FEATURE_BIT(U, l, d)			\
 	VCC_Opt_ ## l(vcc, MGT_VCC_FEATURE(VCC_FEATURE_ ## U));
@@ -132,7 +142,7 @@ run_vcc(void *priv)
 	VTAILQ_FOREACH(vpg, &vclhead, list)
 		if (mcf_is_label(vpg))
 			VCC_Predef(vcc, "VCL_VCL", vpg->name);
-	i = VCC_Compile(vcc, &sb, vp->vclsrc, vp->vclsrcfile,
+	i = VCC_Compile(vcc, &sb, vp->vclsrc, vp->vclsrcfiles,
 	    VGC_SRC, VGC_SYM);
 	if (VSB_len(sb))
 		printf("%s", VSB_data(sb));
@@ -347,7 +357,7 @@ mgt_vcc_fini_vp(struct vcc_priv *vp, int leave_lib)
 
 char *
 mgt_VccCompile(struct cli *cli, struct vclprog *vcl, const char *vclname,
-    const char *vclsrc, const char *vclsrcfile, int C_flag)
+    const char *vclsrc, const char * const *vclsrcfiles, const char *vcl_path, int C_flag)
 {
 	struct vcc_priv vp[1];
 	struct vsb *sb;
@@ -361,7 +371,8 @@ mgt_VccCompile(struct cli *cli, struct vclprog *vcl, const char *vclname,
 
 	mgt_vcc_init_vp(vp);
 	vp->vclsrc = vclsrc;
-	vp->vclsrcfile = vclsrcfile;
+	vp->vclsrcfiles = vclsrcfiles;
+	vp->vcl_path = vcl_path;
 
 	/*
 	 * The subdirectory must have a unique name to 100% certain evade

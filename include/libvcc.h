@@ -45,4 +45,4 @@ void VCC_VEXT(struct vcc *, const char *);
 #include "tbl/vcc_feature_bits.h"
 
 int VCC_Compile(struct vcc *, struct vsb **,
-    const char *, const char *, const char *, const char *);
+    const char *, const char *const *, const char *, const char *);
