@@ -38,6 +38,9 @@ Varnish Cache NEXT (2023-09-15)
 .. PLEASE keep this roughly in commit order as shown by git-log / tig
    (new to old)
 
+* A bug has been fixed where ``unset bereq.body`` had no effect when
+  used with a cached body (3914_)
+
 * VCL tracing now needs to be explicitly activated by setting the
   ``req.trace`` or ``bereq.trace`` VCL variables, which are
   initialized from the ``feature +trace`` flag. Only if the trace
@@ -83,6 +86,7 @@ Varnish Cache NEXT (2023-09-15)
 
 .. _3908: https://github.com/varnishcache/varnish-cache/pull/3908
 .. _3911: https://github.com/varnishcache/varnish-cache/issues/3911
+.. _3914: https://github.com/varnishcache/varnish-cache/pull/3914
 
 ================================
 Varnish Cache 7.3.0 (2023-03-15)
