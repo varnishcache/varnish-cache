@@ -179,9 +179,9 @@ higher, this snippet can be used as a basis for configuring an
             bind    /path/to/sslon accept-proxy mode 777
             stick-table type ip size 100
             stick   on dst
-            server  s00 0.0.0.0:443 ssl ca-file /etc/ssl/certs/ca-bundle.crt alpn http/1.1 sni fc_pp_authority
-            server  s01 0.0.0.0:443 ssl ca-file /etc/ssl/certs/ca-bundle.crt alpn http/1.1 sni fc_pp_authority
-            server  s02 0.0.0.0:443 ssl ca-file /etc/ssl/certs/ca-bundle.crt alpn http/1.1 sni fc_pp_authority
+            server  s00 0.0.0.0:0 ssl ca-file /etc/ssl/certs/ca-bundle.crt alpn http/1.1 sni fc_pp_authority
+            server  s01 0.0.0.0:0 ssl ca-file /etc/ssl/certs/ca-bundle.crt alpn http/1.1 sni fc_pp_authority
+            server  s02 0.0.0.0:0 ssl ca-file /etc/ssl/certs/ca-bundle.crt alpn http/1.1 sni fc_pp_authority
             # ...
             # A higher number of servers improves TLS session caching
 
