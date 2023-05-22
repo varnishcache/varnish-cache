@@ -243,6 +243,10 @@ h2_vsl_frame(const struct h2_sess *h2, const void *ptr, size_t len)
 	const char *p;
 	unsigned u;
 
+	if (VSL_tag_is_masked(SLT_H2RxHdr) &&
+	    VSL_tag_is_masked(SLT_H2RxBody))
+		return;
+
 	AN(ptr);
 	assert(len >= 9);
 	b = ptr;
