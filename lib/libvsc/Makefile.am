@@ -22,3 +22,11 @@ libvsc_la_SOURCES = $(VSC_SRC)
 BUILT_SOURCES = $(VSC_GEN)
 
 dist_pkgdata_SCRIPTS = vsctool.py
+
+nodist_noinst_DATA = counters.rst
+
+counters.rst: $(VSC_RST)
+	$(AM_V_GEN)cat $(VSC_RST) >${@}_
+	@mv ${@}_ $@
+
+CLEANFILES = $(nodist_noinst_DATA)
