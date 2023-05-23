@@ -337,11 +337,13 @@ mgt_vcc_init_vp(struct vcc_priv *vp)
 static void
 mgt_vcc_fini_vp(struct vcc_priv *vp, enum vcc_fini_e vcc_status)
 {
+	int ignore_enoent = (vcc_status == VCC_FAILED);
+
 	if (!MGT_DO_DEBUG(DBG_VCL_KEEP)) {
-		VJ_unlink(VSB_data(vp->csrcfile));
-		VJ_unlink(VSB_data(vp->symfile));
+		VJ_unlink(VSB_data(vp->csrcfile), ignore_enoent);
+		VJ_unlink(VSB_data(vp->symfile), ignore_enoent);
 		if (vcc_status != VCC_SUCCESS) {
-			VJ_unlink(VSB_data(vp->libfile));
+			VJ_unlink(VSB_data(vp->libfile), ignore_enoent);
 			VJ_rmdir(VSB_data(vp->dir));
 		}
 	}
