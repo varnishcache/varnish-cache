@@ -63,6 +63,11 @@ struct vcc_priv {
 	struct vsb	*symfile;
 };
 
+enum vcc_fini_e {
+	VCC_SUCCESS,
+	VCC_FAILED,
+};
+
 char *mgt_cc_cmd;
 char *mgt_cc_cmd_def;
 char *mgt_cc_warn;
@@ -330,12 +335,12 @@ mgt_vcc_init_vp(struct vcc_priv *vp)
 }
 
 static void
-mgt_vcc_fini_vp(struct vcc_priv *vp, int leave_lib)
+mgt_vcc_fini_vp(struct vcc_priv *vp, enum vcc_fini_e vcc_status)
 {
 	if (!MGT_DO_DEBUG(DBG_VCL_KEEP)) {
 		VJ_unlink(VSB_data(vp->csrcfile));
 		VJ_unlink(VSB_data(vp->symfile));
-		if (!leave_lib) {
+		if (vcc_status != VCC_SUCCESS) {
 			VJ_unlink(VSB_data(vp->libfile));
 			VJ_rmdir(VSB_data(vp->dir));
 		}
@@ -410,7 +415,7 @@ mgt_VccCompile(struct cli *cli, struct vclprog *vcl, const char *vclname,
 	AZ(VSB_finish(vp->symfile));
 
 	if (VJ_make_subdir(VSB_data(vp->dir), "VCL", cli->sb)) {
-		mgt_vcc_fini_vp(vp, 0);
+		mgt_vcc_fini_vp(vp, VCC_FAILED);
 		VSB_destroy(&sb);
 		VCLI_Out(cli, "VCL compilation failed");
 		VCLI_SetResult(cli, CLIS_PARAM);
@@ -424,7 +429,7 @@ mgt_VccCompile(struct cli *cli, struct vclprog *vcl, const char *vclname,
 	VSB_destroy(&sb);
 
 	if (status || C_flag) {
-		mgt_vcc_fini_vp(vp, 0);
+		mgt_vcc_fini_vp(vp, VCC_FAILED);
 		if (status) {
 			VCLI_Out(cli, "VCL compilation failed");
 			VCLI_SetResult(cli, CLIS_PARAM);
@@ -437,6 +442,6 @@ mgt_VccCompile(struct cli *cli, struct vclprog *vcl, const char *vclname,
 	mgt_vcl_symtab(vcl, p);
 
 	REPLACE(p, VSB_data(vp->libfile));
-	mgt_vcc_fini_vp(vp, 1);
+	mgt_vcc_fini_vp(vp, VCC_SUCCESS);
 	return (p);
 }
