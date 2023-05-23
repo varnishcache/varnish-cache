@@ -199,12 +199,13 @@ VJ_make_subdir(const char *dname, const char *what, struct vsb *vsb)
 }
 
 void
-VJ_unlink(const char *fname)
+VJ_unlink(const char *fname, int ignore_enoent)
 {
 	VJ_master(JAIL_MASTER_FILE);
 	if (unlink(fname)) {
-		fprintf(stderr, "Could not delete '%s': %s\n",
-		    fname, strerror(errno));
+		if (errno != ENOENT || !ignore_enoent)
+		    fprintf(stderr, "Could not delete '%s': %s\n",
+		        fname, strerror(errno));
 	}
 	VJ_master(JAIL_MASTER_LOW);
 }
