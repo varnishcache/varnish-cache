@@ -1,0 +1,13 @@
+root = true
+
+[*]
+charset = utf-8
+max_line_length = 80
+end_of_line = lf
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[*.{c,h}]
+indent_style = tab
+indent_size = 8
+tab_width = 8
