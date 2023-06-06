@@ -256,7 +256,8 @@ mgt_vcc_touchfile(const char *fn, struct vsb *sb)
 
 	i = open(fn, O_WRONLY|O_CREAT|O_TRUNC, 0640);
 	if (i < 0) {
-		VSB_printf(sb, "Failed to create %s: %s", fn, VAS_errtxt(errno));
+		VSB_printf(sb, "Failed to create %s: %s\n",
+		    fn, VAS_errtxt(errno));
 		return (2);
 	}
 	closefd(&i);
