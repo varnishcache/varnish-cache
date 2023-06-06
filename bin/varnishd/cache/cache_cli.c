@@ -115,8 +115,8 @@ CLI_Run(void)
 /*--------------------------------------------------------------------*/
 
 static struct cli_proto cli_cmds[] = {
-	{ CLICMD_PING,	"i", VCLS_func_ping, VCLS_func_ping_json },
-	{ CLICMD_HELP,	"i", VCLS_func_help, VCLS_func_help_json },
+	{ CLICMD_PING,	"", VCLS_func_ping, VCLS_func_ping_json },
+	{ CLICMD_HELP,	"", VCLS_func_help, VCLS_func_help_json },
 	{ NULL }
 };
 
