@@ -2,16 +2,19 @@ varnishtest "Test fallback director"
 
 server s1 {
 	rxreq
+	expect req.http.resolved == "s1"
 	txresp -hdr "Foo: 1"
 } -start
 
 server s2 {
 	rxreq
+	expect req.http.resolved == "s2"
 	txresp -hdr "Foo: 2"
 } -start
 
 server s3 {
 	rxreq
+	expect req.http.resolved == "s3"
 	txresp -hdr "Foo: 3"
 } -start
 
@@ -40,6 +43,7 @@ varnish v1 -vcl+backend {
 
 	sub vcl_backend_fetch {
 		set bereq.backend = fb1.backend();
+		set bereq.http.resolved = bereq.backend.resolve();
 	}
 } -start
 
