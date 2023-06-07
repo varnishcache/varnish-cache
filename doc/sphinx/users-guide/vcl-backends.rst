@@ -309,6 +309,53 @@ not to change the probe config if you do a lot of VCL loading. Unloading
 the VCL will discard the probes. For more information on how to do this
 please see ref:`reference-vcl-director`.
 
+Layering
+--------
+
+By default, most directors' ``.backend()`` methods return a reference
+to the director itself. This allows for layering, like in this
+example::
+
+    import directors;
+
+    sub vcl_init {
+        new dc1 = directors.round_robin();
+        dc1.add_backend(server1A);
+        dc1.add_backend(server1B);
+
+        new dc2 = directors.round_robin();
+        dc2.add_backend(server2A);
+        dc2.add_backend(server2B);
+
+        new dcprio = directors.fallback();
+        dcprio.add_backend(dc1);
+        dcprio.add_backend(dc2);
+    }
+
+With this initialization, ``dcprio.backend()`` will resolve to either
+``server1A`` or ``server1B`` if both are healthy or one of them if
+only one is healthy. Only if both are sick will a healthy server from
+``dc2`` be returned, if any.
+
+Director Resolution
+-------------------
+
+The actual resolution happens when the backend connection is prepared
+after a return from ``vcl_backend_fetch {}``.
+
+In some cases like server sharding the resolution outcome is required
+already in VCL. For such cases, the ``.resolve()`` method can be used,
+like in this example::
+
+	set req.backend_hint = dcprio.backend().resolve();
+
+When using this statement with the previous example code,
+``req.backend_hint`` will be set to one of the ``server*`` backends or
+the ``none`` backend if they were all sick.
+
+``.resolve()`` works on any object of the ``BACKEND`` type.
+
+
 .. _users-guide-advanced_backend_connection-pooling:
 
 Connection Pooling
