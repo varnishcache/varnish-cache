@@ -71,6 +71,7 @@ cscope.*out
 # Stats
 /lib/libvsc/VSC_*.c
 /lib/libvsc/VSC_*.h
+/lib/libvsc/VSC_*.rst
 
 # Misc. generated files for included vmods.
 /vmod/VSC_*.c
