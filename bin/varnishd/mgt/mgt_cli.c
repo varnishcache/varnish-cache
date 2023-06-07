@@ -162,7 +162,7 @@ mcf_askchild(struct cli *cli, const char * const *av, void *priv)
 }
 
 static const struct cli_cmd_desc CLICMD_WILDCARD[1] =
-    {{ "*", "<wild-card-entry>", "<fall through to cacher>", "", CLI_F_NONE, 0, 999 }};
+    {{ "*", "<wild-card-entry>", "<fall through to cacher>", "", CLI_F_INTERNAL, 0, 999 }};
 
 static struct cli_proto cli_askchild[] = {
 	{ CLICMD_WILDCARD, mcf_askchild, mcf_askchild },
@@ -692,6 +692,8 @@ mgt_DumpRstCli(void)
 	for (z = 0; z < ncmds; z++, cp++) {
 		cp = cmds[z];
 		if (!strncmp(cp->request, "debug.", 6))
+			continue;
+		if (cp->flags & CLI_F_INTERNAL)
 			continue;
 		printf(".. _ref_cli_");
 		for (p = cp->request; *p; p++)

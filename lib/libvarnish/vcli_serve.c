@@ -151,6 +151,8 @@ VCLS_func_help(struct cli *cli, const char * const *av, void *priv)
 	VTAILQ_FOREACH(clp, &cs->funcs, list) {
 		if (clp->auth > cli->auth)
 			continue;
+		if (clp->desc->flags & CLI_F_INTERNAL)
+			continue;
 		if (av[0] != NULL && !strcmp(clp->desc->request, av[0])) {
 			help_helper(cli, clp, av);
 			return;
@@ -181,6 +183,8 @@ VCLS_func_help_json(struct cli *cli, const char * const *av, void *priv)
 	VTAILQ_FOREACH(clp, &cs->funcs, list) {
 		sep = "";
 		if (clp->auth > cli->auth)
+			continue;
+		if (clp->desc->flags & CLI_F_INTERNAL)
 			continue;
 		VCLI_Out(cli, ",\n  {\n");
 		VSB_indent(cli->sb, 2);
