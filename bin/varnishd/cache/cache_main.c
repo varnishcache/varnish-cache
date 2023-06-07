@@ -262,9 +262,9 @@ cli_debug_srandom(struct cli *cli, const char * const *av, void *priv)
 }
 
 static struct cli_proto debug_cmds[] = {
-	{ CLICMD_DEBUG_XID,		"d", cli_debug_xid },
-	{ CLICMD_DEBUG_SHUTDOWN_DELAY,	"d", cli_debug_shutdown_delay },
-	{ CLICMD_DEBUG_SRANDOM,		"d", cli_debug_srandom },
+	{ CLICMD_DEBUG_XID,		cli_debug_xid },
+	{ CLICMD_DEBUG_SHUTDOWN_DELAY,	cli_debug_shutdown_delay },
+	{ CLICMD_DEBUG_SRANDOM,		cli_debug_srandom },
 	{ NULL }
 };
 

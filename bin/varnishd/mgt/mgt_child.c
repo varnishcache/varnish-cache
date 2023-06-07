@@ -800,14 +800,14 @@ mch_cli_server_status_json(struct cli *cli, const char * const *av, void *priv)
 }
 
 static struct cli_proto cli_mch[] = {
-	{ CLICMD_SERVER_STATUS,		"", mch_cli_server_status,
+	{ CLICMD_SERVER_STATUS,		mch_cli_server_status,
 	  mch_cli_server_status_json },
-	{ CLICMD_SERVER_START,		"", mch_cli_server_start },
-	{ CLICMD_SERVER_STOP,		"", mch_cli_server_stop },
-	{ CLICMD_PANIC_SHOW,		"", mch_cli_panic_show,
+	{ CLICMD_SERVER_START,		mch_cli_server_start },
+	{ CLICMD_SERVER_STOP,		mch_cli_server_stop },
+	{ CLICMD_PANIC_SHOW,		mch_cli_panic_show,
 	  mch_cli_panic_show_json },
-	{ CLICMD_PANIC_CLEAR,		"", mch_cli_panic_clear },
-	{ CLICMD_PID,			"", mch_pid, mch_pid_json },
+	{ CLICMD_PANIC_CLEAR,		mch_cli_panic_clear },
+	{ CLICMD_PID,			mch_pid, mch_pid_json },
 	{ NULL }
 };
 

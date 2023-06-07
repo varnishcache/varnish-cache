@@ -125,7 +125,7 @@ stv_cli_list_json(struct cli *cli, const char * const *av, void *priv)
 /*--------------------------------------------------------------------*/
 
 static struct cli_proto cli_stv[] = {
-	{ CLICMD_STORAGE_LIST,		"", stv_cli_list, stv_cli_list_json },
+	{ CLICMD_STORAGE_LIST,		stv_cli_list, stv_cli_list_json },
 	{ NULL}
 };
 

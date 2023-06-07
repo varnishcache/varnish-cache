@@ -736,7 +736,7 @@ debug_reqpoolfail(struct cli *cli, const char * const *av, void *priv)
 }
 
 static struct cli_proto debug_cmds[] = {
-	{ CLICMD_DEBUG_REQPOOLFAIL,		"d", debug_reqpoolfail },
+	{ CLICMD_DEBUG_REQPOOLFAIL,		debug_reqpoolfail },
 	{ NULL }
 };
 

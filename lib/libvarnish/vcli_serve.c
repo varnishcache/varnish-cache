@@ -155,7 +155,7 @@ VCLS_func_help(struct cli *cli, const char * const *av, void *priv)
 			help_helper(cli, clp, av);
 			return;
 		} else if (av[0] == NULL) {
-			d = strchr(clp->flags, 'd') != NULL ? 2 : 1;
+			d = clp->desc->flags & CLI_F_DEBUG ? 2 : 1;
 			if (filter & d)
 				help_helper(cli, clp, av);
 		}
@@ -171,6 +171,7 @@ VCLS_func_help_json(struct cli *cli, const char * const *av, void *priv)
 {
 	struct cli_proto *clp;
 	struct VCLS *cs;
+	const char* sep;
 
 	(void)priv;
 	cs = cli->cls;
@@ -178,6 +179,7 @@ VCLS_func_help_json(struct cli *cli, const char * const *av, void *priv)
 
 	VCLI_JSON_begin(cli, 2, av);
 	VTAILQ_FOREACH(clp, &cs->funcs, list) {
+		sep = "";
 		if (clp->auth > cli->auth)
 			continue;
 		VCLI_Out(cli, ",\n  {\n");
@@ -195,9 +197,14 @@ VCLS_func_help_json(struct cli *cli, const char * const *av, void *priv)
 		VCLI_Out(cli, ",\n");
 		VCLI_Out(cli, "\"maxarg\": %d", clp->desc->maxarg);
 		VCLI_Out(cli, ",\n");
-		VCLI_Out(cli, "\"flags\": ");
-		VCLI_JSON_str(cli, clp->flags);
-		VCLI_Out(cli, ",\n");
+		VCLI_Out(cli, "\"flags\": [");
+		#define CLI_FLAG(U, v) \
+			if (clp->desc->flags & v) { \
+				VCLI_Out(cli, "%s\""#U "\"", sep); \
+				sep = ", "; \
+			}
+		#include "tbl/cli_flags.h"
+		VCLI_Out(cli, "],\n");
 		VCLI_Out(cli, "\"json\": %s",
 		    clp->jsonfunc == NULL ? "false" : "true");
 		VCLI_Out(cli, "\n");

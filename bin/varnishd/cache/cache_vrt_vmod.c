@@ -223,7 +223,7 @@ ccf_debug_vmod(struct cli *cli, const char * const *av, void *priv)
 }
 
 static struct cli_proto vcl_cmds[] = {
-	{ CLICMD_DEBUG_VMOD,			"d", ccf_debug_vmod },
+	{ CLICMD_DEBUG_VMOD,			ccf_debug_vmod },
 	{ NULL }
 };
 

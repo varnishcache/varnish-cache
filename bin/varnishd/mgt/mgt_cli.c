@@ -54,12 +54,12 @@
 #include "vss.h"
 #include "vtcp.h"
 
-#define CLI_CMD(U,l,s,h,d,m,M) \
-const struct cli_cmd_desc CLICMD_##U[1] = {{ l, s, h, d, m, M }};
+#define CLI_CMD(U,l,s,h,d,f,m,M) \
+const struct cli_cmd_desc CLICMD_##U[1] = {{ l, s, h, d, f, m, M }};
 #include "tbl/cli_cmds.h"
 
 static const struct cli_cmd_desc *cmds[] = {
-#define CLI_CMD(U,l,s,h,d,m,M) CLICMD_##U,
+#define CLI_CMD(U,l,s,h,d,f,m,M) CLICMD_##U,
 #include "tbl/cli_cmds.h"
 };
 
@@ -95,7 +95,7 @@ mcf_banner(struct cli *cli, const char *const *av, void *priv)
 /*--------------------------------------------------------------------*/
 
 static struct cli_proto cli_proto[] = {
-	{ CLICMD_BANNER,		"", mcf_banner },
+	{ CLICMD_BANNER,		mcf_banner },
 	{ NULL }
 };
 
@@ -115,7 +115,7 @@ mcf_panic(struct cli *cli, const char * const *av, void *priv)
 }
 
 static struct cli_proto cli_debug[] = {
-	{ CLICMD_DEBUG_PANIC_MASTER,		"d", mcf_panic },
+	{ CLICMD_DEBUG_PANIC_MASTER,		mcf_panic },
 	{ NULL }
 };
 
@@ -162,10 +162,10 @@ mcf_askchild(struct cli *cli, const char * const *av, void *priv)
 }
 
 static const struct cli_cmd_desc CLICMD_WILDCARD[1] =
-    {{ "*", "<wild-card-entry>", "<fall through to cacher>", "", 0, 999 }};
+    {{ "*", "<wild-card-entry>", "<fall through to cacher>", "", CLI_F_NONE, 0, 999 }};
 
 static struct cli_proto cli_askchild[] = {
-	{ CLICMD_WILDCARD, "", mcf_askchild, mcf_askchild },
+	{ CLICMD_WILDCARD, mcf_askchild, mcf_askchild },
 	{ NULL }
 };
 
@@ -317,10 +317,10 @@ mcf_help_json(struct cli *cli, const char * const *av, void *priv)
 }
 
 static struct cli_proto cli_auth[] = {
-	{ CLICMD_HELP,		"", mcf_help, mcf_help_json },
-	{ CLICMD_PING,		"", VCLS_func_ping, VCLS_func_ping_json },
-	{ CLICMD_AUTH,		"", mcf_auth },
-	{ CLICMD_QUIT,		"", VCLS_func_close },
+	{ CLICMD_HELP,		mcf_help, mcf_help_json },
+	{ CLICMD_PING,		VCLS_func_ping, VCLS_func_ping_json },
+	{ CLICMD_AUTH,		mcf_auth },
+	{ CLICMD_QUIT,		VCLS_func_close },
 	{ NULL }
 };
 

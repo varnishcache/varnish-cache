@@ -243,7 +243,7 @@ debug_fragfetch(struct cli *cli, const char * const *av, void *priv)
 }
 
 static struct cli_proto debug_cmds[] = {
-	{ CLICMD_DEBUG_FRAGFETCH,		"d", debug_fragfetch },
+	{ CLICMD_DEBUG_FRAGFETCH,	debug_fragfetch },
 	{ NULL }
 };
 

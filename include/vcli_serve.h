@@ -40,23 +40,28 @@ struct VCLS;
 
 typedef void cli_func_t(struct cli*, const char * const *av, void *priv);
 
+enum cli_flags {
+#define CLI_FLAG(U, v)	CLI_F_##U = v,
+#include "tbl/cli_flags.h"
+};
+
 struct cli_cmd_desc {
 	/* Must match CLI_CMD macro in include/tbl/cli_cmds.h */
 	const char			*request;
 	const char			*syntax;
 	const char			*help;
 	const char			*doc;
+	unsigned			flags;
 	int				minarg;
 	int				maxarg;
 };
 
-#define CLI_CMD(U,l,s,h,d,m,M) extern const struct cli_cmd_desc CLICMD_##U[1];
+#define CLI_CMD(U,l,s,h,d,f,m,M) extern const struct cli_cmd_desc CLICMD_##U[1];
 #include "tbl/cli_cmds.h"
 
 /* A CLI command */
 struct cli_proto {
 	const struct cli_cmd_desc	*desc;
-	const char			*flags;
 
 	/* Dispatch information */
 	cli_func_t			*func;
