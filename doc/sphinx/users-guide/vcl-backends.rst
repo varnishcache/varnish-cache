@@ -341,7 +341,7 @@ Director Resolution
 -------------------
 
 The actual resolution happens when the backend connection is prepared
-after a return from ``vcl_backend_fetch {}``.
+after a return from ``vcl_backend_fetch {}`` or ``vcl_pipe {}``.
 
 In some cases like server sharding the resolution outcome is required
 already in VCL. For such cases, the ``.resolve()`` method can be used,
