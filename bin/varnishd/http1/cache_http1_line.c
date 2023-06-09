@@ -174,6 +174,7 @@ stream_close_t
 V1L_Flush(const struct worker *wrk)
 {
 	ssize_t i;
+	int err;
 	struct v1l *v1l;
 	char cbuf[32];
 
@@ -228,7 +229,9 @@ V1L_Flush(const struct worker *wrk)
 			 * prevent slowloris attacks
 			 */
 
-			if (errno == EWOULDBLOCK) {
+			err = errno;
+
+			if (err == EWOULDBLOCK) {
 				VSLb(v1l->vsl, SLT_Debug,
 				    "Hit idle send timeout, "
 				    "wrote = %zd/%zd; retrying",
@@ -237,14 +240,14 @@ V1L_Flush(const struct worker *wrk)
 
 			if (i > 0)
 				v1l_prune(v1l, i);
-		} while (i > 0 || errno == EWOULDBLOCK);
+		} while (i > 0 || err == EWOULDBLOCK);
 
 		if (i <= 0) {
 			VSLb(v1l->vsl, SLT_Debug,
 			    "Write error, retval = %zd, len = %zd, errno = %s",
-			    i, v1l->liov, VAS_errtxt(errno));
+			    i, v1l->liov, VAS_errtxt(err));
 			assert(v1l->werr == SC_NULL);
-			if (errno == EPIPE)
+			if (err == EPIPE)
 				v1l->werr = SC_REM_CLOSE;
 			else
 				v1l->werr = SC_TX_ERROR;
