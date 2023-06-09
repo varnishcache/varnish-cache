@@ -77,7 +77,7 @@ CLI_CMD(VCL_LOAD,
 	"vcl.load <configname> <filename> [auto|cold|warm]",
 	"Compile and load the VCL file under the name provided.",
 	"",
-	CLI_F_NONE,
+	CLI_F_AUTH,
 	2, 3
 )
 
@@ -88,7 +88,7 @@ CLI_CMD(VCL_INLINE,
 
 	"  Multi-line VCL can be input using the here document"
 	" :ref:`ref_syntax`.",
-	CLI_F_NONE,
+	CLI_F_AUTH,
 	2, 3
 )
 
@@ -97,7 +97,7 @@ CLI_CMD(VCL_STATE,
 	"vcl.state <configname> auto|cold|warm",
 	"  Force the state of the named configuration.",
 	"",
-	CLI_F_NONE,
+	CLI_F_AUTH,
 	2, 2
 )
 
@@ -113,7 +113,7 @@ CLI_CMD(VCL_DISCARD,
 	" nothing is discarded."
 	" Each individual name pattern must match at least one named"
 	" configuration or label.",
-	CLI_F_NONE,
+	CLI_F_AUTH,
 	1, -1
 )
 
@@ -132,7 +132,7 @@ CLI_CMD(VCL_LIST,
 	"  * [ ``<-`` | ``->`` ] and label info last two fields)\n\n"
 	"    * ``->`` <vcl> : label \"points to\" the named <vcl>\n\n"
 	"    * ``<-`` (<n> label[s]): the vcl has <n> label(s)\n\n",
-	CLI_F_NONE,
+	CLI_F_AUTH,
 	0, 0
 )
 
@@ -147,7 +147,7 @@ CLI_CMD(VCL_DEPS,
 	"  * Dependency: another VCL program it depends on\n\n"
 	"  Only direct dependencies are listed, and VCLs with"
 	" multiple dependencies are listed multiple times.",
-	CLI_F_NONE,
+	CLI_F_AUTH,
 	0, 0
 )
 
@@ -165,7 +165,7 @@ CLI_CMD(VCL_USE,
 	"vcl.use <configname|label>",
 	"Switch to the named configuration immediately.",
 	"",
-	CLI_F_NONE,
+	CLI_F_AUTH,
 	1, 1
 )
 
@@ -176,7 +176,7 @@ CLI_CMD(VCL_LABEL,
 	"  A VCL label is like a UNIX symbolic link, "
 	" a name without substance, which points to another VCL.\n\n"
 	"  Labels are mandatory whenever one VCL references another.",
-	CLI_F_NONE,
+	CLI_F_AUTH,
 	2, 2
 )
 
@@ -187,7 +187,7 @@ CLI_CMD(PARAM_RESET,
 	"  The JSON output is the same as ``param.show -j <param>`` and"
 	" contains the updated value as it would be represented by a"
 	" subsequent execution of ``param.show``.\n\n",
-	CLI_F_NONE,
+	CLI_F_AUTH,
 	1,1
 )
 
@@ -203,7 +203,7 @@ CLI_CMD(PARAM_SHOW,
 	" ``-j`` is permitted. If a parameter is specified with ``<param>``,"
 	" show only that parameter. If ``changed`` is specified, show only"
 	" those parameters whose values differ from their defaults.",
-	CLI_F_NONE,
+	CLI_F_AUTH,
 	0, 2
 )
 
@@ -217,7 +217,7 @@ CLI_CMD(PARAM_SET,
 	"  This can be useful to later verify that a parameter value didn't"
 	" change and to use the value from the JSON output to reset the"
 	" parameter to the desired value.",
-	CLI_F_NONE,
+	CLI_F_AUTH,
 	2,2
 )
 
@@ -226,7 +226,7 @@ CLI_CMD(SERVER_STOP,
 	"stop",
 	"Stop the Varnish cache process.",
 	"",
-	CLI_F_NONE,
+	CLI_F_AUTH,
 	0, 0
 )
 
@@ -235,7 +235,7 @@ CLI_CMD(SERVER_START,
 	"start",
 	"Start the Varnish cache process.",
 	"",
-	CLI_F_NONE,
+	CLI_F_AUTH,
 	0, 0
 )
 
@@ -271,7 +271,7 @@ CLI_CMD(SERVER_STATUS,
 	"status [-j]",
 	"Check status of Varnish cache process.",
 	"  ``-j`` specifies JSON output.",
-	CLI_F_NONE,
+	CLI_F_AUTH,
 	0, 0
 )
 
@@ -280,7 +280,7 @@ CLI_CMD(BANNER,
 	"banner",
 	"Print welcome banner.",
 	"",
-	CLI_F_NONE,
+	CLI_F_AUTH,
 	0, 0
 )
 
@@ -299,7 +299,7 @@ CLI_CMD(PANIC_SHOW,
 	"Return the last panic, if any.",
 	"  ``-j`` specifies JSON output -- the panic message is returned as an"
 	" unstructured JSON string.",
-	CLI_F_NONE,
+	CLI_F_AUTH,
 	0, 0
 )
 
@@ -309,7 +309,7 @@ CLI_CMD(PANIC_CLEAR,
 	"Clear the last panic, if any,"
 	" -z will clear related varnishstat counter(s)",
 	"",
-	CLI_F_NONE,
+	CLI_F_AUTH,
 	0, 1
 )
 
@@ -436,6 +436,7 @@ CLI_CMD(DEBUG_PANIC_MASTER,
 	"debug.panic.master",
 	"Panic the master process.",
 	"",
+	CLI_F_AUTH|
 	CLI_F_DEBUG,
 	0, 0
 )
@@ -476,7 +477,7 @@ CLI_CMD(STORAGE_LIST,
 	"storage.list [-j]",
 	"List storage devices.",
 	"  ``-j`` specifies JSON output.",
-	CLI_F_NONE,
+	CLI_F_AUTH,
 	0, 0
 )
 
@@ -485,7 +486,7 @@ CLI_CMD(PID,
 	"pid [-j]",
 	"Show the pid of the master process, and the worker if it's running.",
 	"  ``-j`` specifies JSON output.",
-	CLI_F_NONE,
+	CLI_F_AUTH,
 	0, 0
 )
 

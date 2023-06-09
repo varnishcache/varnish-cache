@@ -821,5 +821,5 @@ void
 MCH_Init(void)
 {
 
-	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_mch);
+	VCLS_AddFunc(mgt_cls, cli_mch);
 }

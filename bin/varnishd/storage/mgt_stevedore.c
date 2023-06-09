@@ -243,7 +243,7 @@ STV_Config_Final(void)
 	struct stevedore *stv;
 	ASSERT_MGT();
 
-	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_stv);
+	VCLS_AddFunc(mgt_cls, cli_stv);
 	STV_Foreach(stv)
 		if (!strcmp(stv->ident, TRANSIENT_STORAGE))
 			return;

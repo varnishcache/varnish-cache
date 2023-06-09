@@ -97,8 +97,6 @@ void mgt_cli_secret(const char *S_arg);
 void mgt_cli_close_all(void);
 void mgt_DumpRstCli(void);
 void mgt_cli_init_cls(void);
-#define MCF_NOAUTH	0	/* NB: zero disables here-documents */
-#define MCF_AUTH	16
 
 /* mgt_jail.c */
 

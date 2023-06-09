@@ -174,8 +174,16 @@ mcf_askchild(struct cli *cli, const char * const *av, void *priv)
 	free(q);
 }
 
-static const struct cli_cmd_desc CLICMD_WILDCARD[1] =
-    {{ "*", "<wild-card-entry>", "<fall through to cacher>", "", CLI_F_INTERNAL, 0, 999 }};
+static const struct cli_cmd_desc CLICMD_WILDCARD[1] = {{
+	"*",
+       "<wild-card-entry>",
+       "<fall through to cacher>",
+       "",
+       CLI_F_INTERNAL|
+       CLI_F_AUTH,
+       0,
+       999
+}};
 
 static struct cli_proto cli_askchild[] = {
 	{ CLICMD_WILDCARD, mcf_askchild, mcf_askchild },
@@ -303,7 +311,7 @@ mcf_auth(struct cli *cli, const char *const *av, void *priv)
 		VCLI_SetResult(cli, CLIS_CLOSE);
 		return;
 	}
-	cli->auth = MCF_AUTH;
+	cli->auth = 1;
 	memset(cli->challenge, 0, sizeof cli->challenge);
 	VCLI_SetResult(cli, CLIS_OK);
 	mcf_banner(cli, av, priv);
@@ -373,10 +381,10 @@ mgt_cli_init_cls(void)
 	mgt_cls = VCLS_New(NULL);
 	AN(mgt_cls);
 	VCLS_SetHooks(mgt_cls, mgt_cli_cb_before, mgt_cli_cb_after);
-	VCLS_AddFunc(mgt_cls, MCF_NOAUTH, cli_auth);
-	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_proto);
-	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_debug);
-	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_askchild);
+	VCLS_AddFunc(mgt_cls, cli_auth);
+	VCLS_AddFunc(mgt_cls, cli_proto);
+	VCLS_AddFunc(mgt_cls, cli_debug);
+	VCLS_AddFunc(mgt_cls, cli_askchild);
 	cli_buf = VSB_new_auto();
 	AN(cli_buf);
 }
@@ -420,10 +428,10 @@ mgt_cli_setup(int fdi, int fdo, int auth, const char *ident,
 	REPLACE(cli->ident, ident);
 
 	if (!auth && secret_file != NULL) {
-		cli->auth = MCF_NOAUTH;
+		cli->auth = 0;
 		mgt_cli_challenge(cli);
 	} else {
-		cli->auth = MCF_AUTH;
+		cli->auth = 1;
 		mcf_banner(cli, NULL, NULL);
 	}
 	AZ(VSB_finish(cli->sb));

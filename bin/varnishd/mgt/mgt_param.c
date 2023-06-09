@@ -772,7 +772,7 @@ MCF_InitParams(struct cli *cli)
 	MCF_ParamConf(MCF_DEFAULT, "accept_filter", "off");
 #endif
 
-	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_params);
+	VCLS_AddFunc(mgt_cls, cli_params);
 
 	vsb = VSB_new_auto();
 	AN(vsb);

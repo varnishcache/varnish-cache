@@ -29,7 +29,8 @@
 
 
 CLI_FLAG(NONE, 0)
-CLI_FLAG(DEBUG, (1 << 0))
-CLI_FLAG(INTERNAL, (1 << 1))
+CLI_FLAG(AUTH, (1 << 0))
+CLI_FLAG(DEBUG, (1 << 1))
+CLI_FLAG(INTERNAL, (1 << 2))
 
 #undef CLI_FLAG

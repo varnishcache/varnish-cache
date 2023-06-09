@@ -1139,5 +1139,5 @@ mgt_vcl_init(void)
 
 	AZ(atexit(mgt_vcl_atexit));
 
-	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_vcl);
+	VCLS_AddFunc(mgt_cls, cli_vcl);
 }
