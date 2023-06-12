@@ -59,7 +59,8 @@ struct ilck {
 /*--------------------------------------------------------------------*/
 
 static void
-Lck_Witness_Lock(const struct ilck *il, const char *p, int l, const char *try)
+Lck_Witness_Lock(const struct ilck *il, const char *p, int l,
+    const char *attempt)
 {
 	char *q, t[10];	//lint -e429
 	int emit;
@@ -74,7 +75,7 @@ Lck_Witness_Lock(const struct ilck *il, const char *p, int l, const char *try)
 	emit = *q != '\0';
 	strcat(q, " ");
 	strcat(q, il->w);
-	strcat(q, try);
+	strcat(q, attempt);
 	strcat(q, ",");
 	strcat(q, p);
 	strcat(q, ",");
