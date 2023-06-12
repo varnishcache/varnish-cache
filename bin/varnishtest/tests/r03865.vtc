@@ -34,6 +34,7 @@ client c1 {
 	rxresphdrs
 	expect resp.status == 200
 	rxchunk
+	rxchunk
 	expect_close
 	expect resp.body == "before "
 } -run
@@ -45,6 +46,7 @@ client c1 {
 	non_fatal
 	rxresphdrs
 	expect resp.status == 200
+	rxchunk
 	rxchunk
 	expect_close
 	expect resp.body == "before "
