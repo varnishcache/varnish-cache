@@ -125,7 +125,7 @@ ved_include(struct req *preq, const char *src, const char *host,
 
 	if (preq->esi_level >= cache_param->max_esi_depth) {
 		VSLb(preq->vsl, SLT_VCL_Error,
-		    "ESI depth limit reach (param max_esi_depth = %u)",
+		    "ESI depth limit reached (param max_esi_depth = %u)",
 		    cache_param->max_esi_depth);
 		if (!ecx->incl_cont)
 			preq->top->topreq->vdc->retval = -1;
