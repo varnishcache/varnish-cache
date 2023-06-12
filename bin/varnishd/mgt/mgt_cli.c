@@ -141,7 +141,20 @@ mcf_askchild(struct cli *cli, const char * const *av, void *priv)
 		    "Type 'help' for more info.");
 		return;
 	}
+
+	for (i = 0; i < ncmds; i++) {
+		if (strcmp(av[1], cmds[i]->request))
+			continue;
+		if (cmds[i]->flags & CLI_F_INTERNAL) {
+			VCLI_Out(cli, "Unknown request.\nType 'help' for more info.\n");
+			VCLI_SetResult(cli, CLIS_UNKNOWN);
+			return;
+		}
+		break;
+	}
+
 	VSB_clear(cli_buf);
+
 	for (i = 1; av[i] != NULL; i++) {
 		VSB_quote(cli_buf, av[i], strlen(av[i]), 0);
 		VSB_putc(cli_buf, ' ');
