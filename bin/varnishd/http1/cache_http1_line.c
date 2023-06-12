@@ -205,6 +205,7 @@ V1L_Flush(const struct worker *wrk)
 		}
 
 		i = 0;
+		err = 0;
 		do {
 			if (VTIM_real() > v1l->deadline) {
 				VSLb(v1l->vsl, SLT_Debug,
