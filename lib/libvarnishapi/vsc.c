@@ -362,7 +362,7 @@ vsc_add_seg(const struct vsc *vsc, struct vsm *vsm, const struct vsm_fantom *fp)
 	assert(sp->head->ready > 0);
 	sp->body = (char*)sp->fantom->b + sp->head->body_offset;
 
-	if (!strcmp(fp->class, VSC_CLASS)) {
+	if (!strcmp(fp->category, VSC_CLASS)) {
 		VTAILQ_FOREACH(spd, &vsc->segs, list)
 			if (spd->head->doc_id == sp->head->doc_id)
 				break;
@@ -385,7 +385,7 @@ vsc_add_seg(const struct vsc *vsc, struct vsm *vsm, const struct vsm_fantom *fp)
 		VSB_destroy(&vsb);
 		return (sp);
 	}
-	assert(!strcmp(fp->class, VSC_DOC_CLASS));
+	assert(!strcmp(fp->category, VSC_DOC_CLASS));
 	sp->vj = vjsn_parse(sp->body, &e);
 	XXXAZ(e);
 	AN(sp->vj);
@@ -456,9 +456,9 @@ VSC_Iter(struct vsc *vsc, struct vsm *vsm, VSC_iter_f *fiter, void *priv)
 	AN(vsm);
 	sp = VTAILQ_FIRST(&vsc->segs);
 	VSM_FOREACH(&ifantom, vsm) {
-		AN(ifantom.class);
-		if (strcmp(ifantom.class, VSC_CLASS) &&
-		    strcmp(ifantom.class, VSC_DOC_CLASS))
+		AN(ifantom.category);
+		if (strcmp(ifantom.category, VSC_CLASS) &&
+		    strcmp(ifantom.category, VSC_DOC_CLASS))
 			continue;
 		while (sp != NULL &&
 		    (strcmp(ifantom.ident, sp->fantom->ident) ||

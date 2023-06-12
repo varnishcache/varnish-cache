@@ -878,9 +878,9 @@ VSM__itern(struct vsm *vd, struct vsm_fantom *vf)
 	memset(vf, 0, sizeof *vf);
 	vf->priv = VSM_PRIV_MERGE(vg->serial, vd->serial);
 	vf->priv2 = (uintptr_t)vg;
-	vf->class = vg->av[4];
+	vf->category = vg->av[4];
 	vf->ident = vg->av[5];
-	AN(vf->class);
+	AN(vf->category);
 	return (1);
 }
 
@@ -901,7 +901,7 @@ VSM_Map(struct vsm *vd, struct vsm_fantom *vf)
 		return (vsm_diag(vd, "VSM_Map: bad fantom"));
 
 	assert(vg->serial == VSM_PRIV_LOW(vf->priv));
-	assert(vg->av[4] == vf->class);
+	assert(vg->av[4] == vf->category);
 	assert(vg->av[5] == vf->ident);
 
 	if (vg->b != NULL) {
@@ -1018,13 +1018,13 @@ VSM_StillValid(const struct vsm *vd, const struct vsm_fantom *vf)
 
 int
 VSM_Get(struct vsm *vd, struct vsm_fantom *vf,
-    const char *class, const char *ident)
+    const char *category, const char *ident)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	AN(vd->attached);
 	VSM_FOREACH(vf, vd) {
-		if (strcmp(vf->class, class))
+		if (strcmp(vf->category, category))
 			continue;
 		if (ident != NULL && strcmp(vf->ident, ident))
 			continue;
@@ -1037,7 +1037,7 @@ VSM_Get(struct vsm *vd, struct vsm_fantom *vf,
 /*--------------------------------------------------------------------*/
 
 char *
-VSM_Dup(struct vsm *vd, const char *class, const char *ident)
+VSM_Dup(struct vsm *vd, const char *category, const char *ident)
 {
 	struct vsm_fantom vf;
 	char *p = NULL;
@@ -1045,7 +1045,7 @@ VSM_Dup(struct vsm *vd, const char *class, const char *ident)
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	AN(vd->attached);
 	VSM_FOREACH(&vf, vd) {
-		if (strcmp(vf.class, class))
+		if (strcmp(vf.category, category))
 			continue;
 		if (ident != NULL && strcmp(vf.ident, ident))
 			continue;

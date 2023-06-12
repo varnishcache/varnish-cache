@@ -55,11 +55,11 @@ static struct vsmw *mgt_vsmw;
 
 void
 mgt_SHM_static_alloc(const void *ptr, ssize_t size,
-    const char *class, const char *ident)
+    const char *category, const char *ident)
 {
 	void *p;
 
-	p = VSMW_Allocf(mgt_vsmw, NULL, class, size, "%s", ident);
+	p = VSMW_Allocf(mgt_vsmw, NULL, category, size, "%s", ident);
 	AN(p);
 	memcpy(p, ptr, size);
 }

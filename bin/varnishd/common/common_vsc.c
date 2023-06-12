@@ -83,14 +83,14 @@ vsm_lock_f *vsc_unlock = vsc_dummy_lock;
 static const size_t vsc_overhead = PRNDUP(sizeof(struct vsc_head));
 
 static struct vsc_seg *
-vrt_vsc_mksegv(struct vsmw_cluster *vc, const char *class,
+vrt_vsc_mksegv(struct vsmw_cluster *vc, const char *category,
     size_t payload, const char *fmt, va_list va)
 {
 	struct vsc_seg *vsg;
 
 	ALLOC_OBJ(vsg, VSC_SEG_MAGIC);
 	AN(vsg);
-	vsg->seg = VSMW_Allocv(heritage.proc_vsmw, vc, class,
+	vsg->seg = VSMW_Allocv(heritage.proc_vsmw, vc, category,
 	    VRT_VSC_Overhead(payload), fmt, va);
 	AN(vsg->seg);
 	vsg->vsm = heritage.proc_vsmw;
@@ -101,13 +101,13 @@ vrt_vsc_mksegv(struct vsmw_cluster *vc, const char *class,
 }
 
 static struct vsc_seg *
-vrt_vsc_mksegf(const char *class, size_t payload, const char *fmt, ...)
+vrt_vsc_mksegf(const char *category, size_t payload, const char *fmt, ...)
 {
 	va_list ap;
 	struct vsc_seg *vsg;
 
 	va_start(ap, fmt);
-	vsg = vrt_vsc_mksegv(NULL, class, payload, fmt, ap);
+	vsg = vrt_vsc_mksegv(NULL, category, payload, fmt, ap);
 	va_end(ap);
 	return (vsg);
 }

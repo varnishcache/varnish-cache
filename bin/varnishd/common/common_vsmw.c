@@ -114,7 +114,7 @@ struct vsmwseg {
 	VTAILQ_ENTRY(vsmwseg)		list;
 	struct vsmw_cluster		*cluster;
 
-	char				*class;
+	char				*category;
 	size_t				off;
 	size_t				len;
 	char				*id;
@@ -163,7 +163,7 @@ vsmw_fmt_index(const struct vsmw *vsmw, const struct vsmwseg *seg, char act)
 	    seg->cluster->fn,
 	    seg->off,
 	    seg->len,
-	    seg->class,
+	    seg->category,
 	    seg->id);
 }
 
@@ -257,7 +257,7 @@ vsmw_delseg(struct vsmw *vsmw, struct vsmwseg *seg)
 		REPLACE(t, NULL);
 		vsmw->nsubs = 0;
 	}
-	REPLACE(seg->class, NULL);
+	REPLACE(seg->category, NULL);
 	REPLACE(seg->id, NULL);
 	FREE_OBJ(seg);
 }
@@ -317,7 +317,7 @@ VSMW_NewCluster(struct vsmw *vsmw, size_t len, const char *pfx)
 	vc->cseg = seg;
 	seg->len = vc->len;
 	seg->cluster = vc;
-	REPLACE(seg->class, "");
+	REPLACE(seg->category, "");
 	REPLACE(seg->id, "");
 	vc->refs++;
 	vc->named = 1;
@@ -365,7 +365,7 @@ VSMW_DestroyCluster(struct vsmw *vsmw, struct vsmw_cluster **vsmcp)
 
 void *
 VSMW_Allocv(struct vsmw *vsmw, struct vsmw_cluster *vc,
-    const char *class, size_t payload,
+    const char *category, size_t payload,
     const char *fmt, va_list va)
 {
 	struct vsmwseg *seg;
@@ -375,7 +375,7 @@ VSMW_Allocv(struct vsmw *vsmw, struct vsmw_cluster *vc,
 
 	ALLOC_OBJ(seg, VSMWSEG_MAGIC);
 	AN(seg);
-	REPLACE(seg->class, class);
+	REPLACE(seg->category, category);
 	seg->len = PRNDUP(payload);
 
 	VSB_clear(vsmw->vsb);
@@ -384,7 +384,7 @@ VSMW_Allocv(struct vsmw *vsmw, struct vsmw_cluster *vc,
 	REPLACE(seg->id, VSB_data(vsmw->vsb));
 
 	if (vc == NULL)
-		vc = vsmw_newcluster(vsmw, seg->len, class);
+		vc = vsmw_newcluster(vsmw, seg->len, category);
 	AN(vc);
 	vc->refs++;
 
@@ -402,13 +402,13 @@ VSMW_Allocv(struct vsmw *vsmw, struct vsmw_cluster *vc,
 
 void *
 VSMW_Allocf(struct vsmw *vsmw, struct vsmw_cluster *vc,
-    const char *class, size_t len, const char *fmt, ...)
+    const char *category, size_t len, const char *fmt, ...)
 {
 	va_list ap;
 	void *p;
 
 	va_start(ap, fmt);
-	p = VSMW_Allocv(vsmw, vc, class, len, fmt, ap);
+	p = VSMW_Allocv(vsmw, vc, category, len, fmt, ap);
 	va_end(ap);
 	return (p);
 }
