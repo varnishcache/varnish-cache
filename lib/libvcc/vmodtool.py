@@ -720,7 +720,8 @@ class FunctionMethodStanzaBase(Stanza):
     def rstdoc(self, fo, unused_man):
         super().rstdoc(fo,unused_man)
         if (self.restrict is not None):
-            fo.write("\nRestricted to: ``%s``\n\n" % ', '.join(self.restrict.restrict_toks))
+            fo.write("\nRestricted to: ``%s``.\n\n" %
+                     '``, ``'.join(self.restrict.restrict_toks))
             self.restrict.rstdoc(fo, unused_man)
 
     def json(self, jl):
