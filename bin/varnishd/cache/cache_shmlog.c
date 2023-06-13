@@ -355,7 +355,7 @@ VSL_Flush(struct vsl_log *vsl, int overflow)
 	memcpy(p + VSL_OVERHEAD, vsl->wlb, l);
 	p[1] = l;
 	VWMB();
-	p[0] = ((((unsigned)SLT__Batch & 0xff) << 24));
+	p[0] = ((((unsigned)SLT__Batch & 0xff) << VSL_IDSHIFT));
 	vsl->wlp = vsl->wlb;
 	vsl->wlr = 0;
 }
