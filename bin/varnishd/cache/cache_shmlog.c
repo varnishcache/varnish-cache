@@ -273,9 +273,11 @@ vslr(enum VSL_tag_e tag, vxid_t vxid, const char *b, unsigned len)
 	memcpy(p + VSL_OVERHEAD, b, len);
 
 	/*
-	 * vsl_hdr() writes p[1] again, but we want to make sure it
-	 * has hit memory because we work on the live buffer here.
+	 * the vxid needs to be written before the barrier to
+	 * ensure it is valid when vsl_hdr() marks the record
+	 * ready by writing p[0]
 	 */
+	p[2] = vxid.vxid >> 32;
 	p[1] = vxid.vxid;
 	VWMB();
 	(void)vsl_hdr(tag, p, len, vxid);
