@@ -312,7 +312,7 @@ static int v_matchproto_(vdp_bytes_f)
 ved_vdp_esi_bytes(struct vdp_ctx *vdx, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
-	uint8_t *q, *r;
+	const uint8_t *q, *r;
 	ssize_t l = 0;
 	uint32_t icrc = 0;
 	uint8_t tailbuf[8 + 5];
