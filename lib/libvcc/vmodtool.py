@@ -710,7 +710,26 @@ class EventStanza(Stanza):
         jl.append(["$EVENT", "%s._event" % self.vcc.csn])
 
 
-class FunctionStanza(Stanza):
+class FunctionMethodStanzaBase(Stanza):
+
+    ''' Base class for $Function and Method '''
+
+    def cstruct(self, fo, define):
+        self.fmt_cstruct_proto(fo, self.proto, define)
+
+    def rstdoc(self, fo, unused_man):
+        super().rstdoc(fo,unused_man)
+        if (self.restrict is not None):
+            fo.write("\nRestricted to: ``%s``\n\n" % ', '.join(self.restrict.restrict_toks))
+            self.restrict.rstdoc(fo, unused_man)
+
+    def json(self, jl):
+        self.proto.jsonproto(jl[-1], self.proto.cname())
+        if (self.restrict is not None):
+            self.restrict.json(jl)
+
+
+class FunctionStanza(FunctionMethodStanzaBase):
 
     ''' $Function TYPE name ( ARGUMENTS ) '''
 
@@ -723,20 +742,9 @@ class FunctionStanza(Stanza):
     def cstuff(self, fo, where):
         fo.write(self.proto.cproto(['VRT_CTX'], where))
 
-    def cstruct(self, fo, define):
-        self.fmt_cstruct_proto(fo, self.proto, define)
-
-    def rstdoc(self, fo, unused_man):
-        super().rstdoc(fo,unused_man)
-        if (self.restrict is not None):
-            fo.write("\nRestricted to: ``%s``\n\n" % ', '.join(self.restrict.restrict_toks))
-            self.restrict.rstdoc(fo, unused_man)
-
     def json(self, jl):
         jl.append(["$FUNC", "%s" % self.proto.name])
-        self.proto.jsonproto(jl[-1], self.proto.cname())
-        if (self.restrict is not None):
-            self.restrict.json(jl)
+        super().json(jl)
 
 
 class ObjectStanza(Stanza):
@@ -828,7 +836,7 @@ class ObjectStanza(Stanza):
 #######################################################################
 
 
-class MethodStanza(Stanza):
+class MethodStanza(FunctionMethodStanzaBase):
 
     ''' $Method TYPE . method ( ARGUMENTS ) '''
 
@@ -845,20 +853,9 @@ class MethodStanza(Stanza):
         p.methods.append(self)
         self.restrict = None
 
-    def cstruct(self, fo, define):
-        self.fmt_cstruct_proto(fo, self.proto, define)
-
-    def rstdoc(self, fo, unused_man):
-        super().rstdoc(fo,unused_man)
-        if (self.restrict is not None):
-            fo.write("\nRestricted to: ``%s``\n\n" % ', '.join(self.restrict.restrict_toks))
-            self.restrict.rstdoc(fo, unused_man)
-
     def json(self, jl):
         jl.append(["$METHOD", self.proto.name[len(self.pfx)+1:]])
-        self.proto.jsonproto(jl[-1], self.proto.cname())
-        if (self.restrict is not None):
-            self.restrict.json(jl)
+        super().json(jl)
 
 
 class RestrictStanza(Stanza):
