@@ -499,7 +499,7 @@ class ProtoType():
         ''' Produce VCL prototype as JSON '''
         ll = []
         self.retval.jsonproto(ll)
-        ll.append('%s.%s' % (self.st.vcc.csn, cfunc))
+        ll.append('%s.f_%s' % (self.st.vcc.csn, cfunc))
         if self.argstruct:
             # We cannot use VARGS() here, we are after the #undef
             ll.append('struct arg_%s%s_%s' %
@@ -571,12 +571,12 @@ class Stanza():
             fmt_cstruct(
                 fo,
                 proto.typedef_name(),
-                '*' + proto.cname() + ';'
+                '*f_' + proto.cname() + ';'
             )
         else:
             fmt_cstruct(
                 fo,
-                '.' + proto.cname() + ' =',
+                '.f_' + proto.cname() + ' =',
                 self.vcc.sympfx + proto.cname() + ','
             )
 
@@ -1190,13 +1190,13 @@ class vcc():
         fo.write("\nconst struct vmod_data %s = {\n" % vmd)
         fo.write("\t.vrt_major =\t%s,\n" % self.vrt_major)
         fo.write("\t.vrt_minor =\t%s,\n" % self.vrt_minor)
+        fo.write("\t.file_id =\t\"%s\",\n" % self.file_id)
         fo.write('\t.name =\t\t"%s",\n' % self.modname)
+        fo.write('\t.func_name =\t"%s",\n' % self.csn)
         fo.write('\t.func =\t\t&%s,\n' % self.csn)
         fo.write('\t.func_len =\tsizeof(%s),\n' % self.csn)
-        fo.write('\t.func_name =\t"%s",\n' % self.csn)
         fo.write('\t.json =\t\tVmod_Json,\n')
         fo.write('\t.abi =\t\tVMOD_ABI_Version,\n')
-        fo.write("\t.file_id =\t\"%s\",\n" % self.file_id)
         fo.write("};\n")
 
     def mkcfile(self):
