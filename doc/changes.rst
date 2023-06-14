@@ -41,6 +41,23 @@ Varnish Cache NEXT (2024-03-15)
 .. PLEASE keep this roughly in commit order as shown by git-log / tig
    (new to old)
 
+* Backend tasks can now queue if the backend has reached its max_connections.
+  This allows the task to wait for a connection to become available rather
+  than immediately failing. This feature must be enabled with the new
+  parameters added.
+
+  New parameters:
+  ``backend_wait_timeout`` sets the amount of time a task will wait.
+  ``backend_wait_limit`` sets the maximum number of tasks that can wait.
+
+  These parameters can also be set in the backend with ``wait_timeout``
+  and ``wait_limit``.
+
+  New counters:
+  ``backend_wait`` count of tasks that waited in queue for a connection.
+  ``backend_wait_fail`` count of tasks that waited in queue but did not get
+  a connection within the ``wait_timeout``.
+
 * The ``fold`` flag has been added to Access Control Lists (ACLs)
   in VCL. When it is activated with ``acl ... +fold {}``, ACL entries
   get optimized in that subnets contained in other entries are skipped
