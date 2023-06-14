@@ -58,6 +58,8 @@
  * binary/load-time compatible, increment MAJOR version
  *
  * NEXT (2024-03-15)
+ *	struct vrt_backend.backend_wait_timeout added
+ *	struct vrt_backend.backend_wait_limit  added
  *	[cache.h] (struct req).filter_list renamed to vdp_filter_list
  *	order of vcl/vmod and director COLD events reversed to directors first
  * 18.1 (2023-12-05)
