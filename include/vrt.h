@@ -58,6 +58,8 @@
  * binary/load-time compatible, increment MAJOR version
  *
  * NEXT (2024-09-15)
+ *	struct vrt_backend.backend_wait_timeout added
+ *	struct vrt_backend.backend_wait_limit  added
  * 19.1 (2024-05-27)
  *	[cache_varnishd.h] ObjWaitExtend() gained statep argument
  * 19.0 (2024-03-18)
